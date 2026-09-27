@@ -2359,6 +2359,7 @@ export type I18nKey =
   | 'mu.errors.credential'
   | 'mu.errors.importFailed'
   | 'mu.errors.importMissing'
+  | 'mu.errors.installPath'
   | 'mu.errors.invalid'
   | 'mu.errors.invalidJson'
   | 'mu.errors.judgeEndpoint'

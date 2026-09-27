@@ -759,6 +759,7 @@
     "unreadable": "No se pudo leer {{file}}.",
     "runtimeOffline": "El entorno de ejecución de mu no está en línea. Comprueba el lanzador local y el inicio de sesión.",
     "otherRegistration": "Ya hay otro comando mu registrado en la aplicación.",
+    "installPath": "mu no puede iniciarse desde la carpeta en la que está instalado: la ruta de la carpeta tiene espacios. Vuelve a instalar mu en una carpeta cuya ruta no tenga espacios, como C:\\mu.",
     "backend": "El servicio local no respondió como se esperaba (HTTP {{status}}).",
     "invalid": "Uno de los valores no es válido.",
     "unknown": "Algo salió mal en mu.",

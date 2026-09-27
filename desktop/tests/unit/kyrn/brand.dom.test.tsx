@@ -181,4 +181,23 @@ describe('StartupGate', () => {
     expect(alert).not.toHaveTextContent('not online');
     expect(screen.queryByTestId('mu-error-detail')).not.toBeInTheDocument();
   });
+
+  // #4: what is left to the person when Windows gives the launcher no spelling without spaces.
+  it('says to install mu into a folder whose path has no spaces when it cannot start from where it is', async () => {
+    catalog.mockResolvedValueOnce({
+      ok: false,
+      code: 'installPath',
+      error:
+        'mu cannot be started from where it is installed: C:\\Program Files\\mu\\resources\\mu\\acp.cmd has spaces',
+    });
+    view(
+      <StartupGate>
+        <div>app</div>
+      </StartupGate>
+    );
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(mu.errors.installPath);
+    expect(alert).toHaveTextContent('C:\\mu');
+    expect(screen.queryByTestId('mu-error-detail')).not.toBeInTheDocument();
+  });
 });

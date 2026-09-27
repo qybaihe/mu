@@ -746,6 +746,7 @@
     "keyVariable": "{{name}} には判定器のキーを保存できません。TYPESAFE_API_KEY、AI_GATEWAY_API_KEY、または MU_JUDGE_ で始まる名前を使用してください。",
     "judgeEndpoint": "Jev のサービスにアドレスがないため、キーの送り先がありません。アドレスを入力するか、別のサービスを選んでください。",
     "otherRegistration": "別の mu コマンドがすでにアプリに登録されています。",
+    "installPath": "mu をインストール先のフォルダーから起動できません：フォルダーのパスに空白が含まれています。C:\\mu のように、パスに空白のないフォルダーへ mu をインストールし直してください。",
     "backend": "ローカルサービスから想定外の応答がありました（HTTP {{status}}）。",
     "invalid": "無効な値があります。",
     "unknown": "mu で問題が発生しました。",

@@ -759,6 +759,7 @@
     "unreadable": "無法讀取 {{file}}。",
     "runtimeOffline": "mu 核心目前離線，請檢查本機啟動器和登入狀態。",
     "otherRegistration": "應用程式中已經註冊了另一個 mu 指令。",
+    "installPath": "mu 無法從它的安裝資料夾啟動：這個資料夾的路徑裡有空格。請把 mu 重新安裝到路徑裡沒有空格的資料夾，例如 C:\\mu。",
     "backend": "本機服務回應異常（HTTP {{status}}）。",
     "invalid": "有一項填寫的值無效。",
     "unknown": "mu 出了點問題。",

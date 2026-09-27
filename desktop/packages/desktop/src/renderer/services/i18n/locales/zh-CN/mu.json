@@ -759,6 +759,7 @@
     "unreadable": "无法读取 {{file}}。",
     "runtimeOffline": "mu 内核目前离线，请检查本机启动器和登录状态。",
     "otherRegistration": "应用中已经注册了另一个 mu 命令。",
+    "installPath": "mu 无法从它的安装文件夹启动：这个文件夹的路径里有空格。请把 mu 重新安装到路径里没有空格的文件夹，例如 C:\\mu。",
     "backend": "本地服务返回异常（HTTP {{status}}）。",
     "invalid": "有一项填写的值无效。",
     "unknown": "mu 出了点问题。",

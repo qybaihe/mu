@@ -86,6 +86,8 @@ export function muErrorText(t: TFunction, language: string, error: MuError, mani
       return only(t('mu.errors.runtimeOffline'));
     case 'otherRegistration':
       return only(t('mu.errors.otherRegistration'));
+    case 'installPath':
+      return only(t('mu.errors.installPath'));
     case 'backend':
       return withDetail(t('mu.errors.backend', { status: word(params.status) }));
     case 'importMissing':

@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { systemProxyEnv } from './config/systemProxy.ts';
 import { log } from './errorLog.ts';
 import { muEnv, muHome } from './naming.ts';
-import { wslLaunch, wslLocation } from './wsl.ts';
+import { wslLaunch, wslLocation } from './windows/wsl.ts';
 
 export type JsonRecord = Record<string, unknown>;
 export const asRecord = (value: unknown): JsonRecord =>
@@ -120,7 +120,7 @@ export class PiRpc implements RpcPort {
   private stderr = '';
   /** The unfinished last line of mu's error output, for forward(). */
   private partial = '';
-  /** Runs inside WSL, through wsl.exe (see wsl.ts). */
+  /** Runs inside WSL, through wsl.exe (see windows/wsl.ts). */
   private wsl: boolean;
   private onEvent: (event: JsonRecord) => void;
   constructor(

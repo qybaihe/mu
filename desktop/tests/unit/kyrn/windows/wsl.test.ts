@@ -3,7 +3,12 @@ import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:f
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { WSL_START, withWslenv, wslLaunch, wslLocation } from '../../../packages/desktop/src/process/agent/kyrn/wsl.ts';
+import {
+  WSL_START,
+  withWslenv,
+  wslLaunch,
+  wslLocation,
+} from '../../../../packages/desktop/src/process/agent/kyrn/windows/wsl.ts';
 
 describe('a project inside WSL runs mu inside WSL', () => {
   it('knows a folder Windows shows from inside a WSL distribution', () => {

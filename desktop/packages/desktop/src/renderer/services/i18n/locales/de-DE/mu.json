@@ -759,6 +759,7 @@
     "unreadable": "{{file}} konnte nicht gelesen werden.",
     "runtimeOffline": "Die mu-Laufzeit ist nicht online. Prüfe den lokalen Starter und die Anmeldung.",
     "otherRegistration": "In der App ist bereits ein anderer mu-Befehl registriert.",
+    "installPath": "mu kann nicht aus dem Ordner starten, in dem es installiert ist: Der Pfad des Ordners enthält Leerzeichen. Installiere mu erneut in einen Ordner, dessen Pfad keine Leerzeichen enthält, zum Beispiel C:\\mu.",
     "backend": "Der lokale Dienst hat nicht wie erwartet geantwortet (HTTP {{status}}).",
     "invalid": "Einer der Werte ist ungültig.",
     "unknown": "In mu ist etwas schiefgelaufen.",

@@ -4,10 +4,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SettingsStore } from '../../../packages/desktop/src/process/agent/kyrn/settings';
 import {
+  findRegistration,
   initializeKyrn,
   recheckKyrn,
   type BackendRequest,
+  type OwnCommand,
 } from '../../../packages/desktop/src/process/agent/kyrn/product';
+import { ownLauncher } from '../../../packages/desktop/src/process/agent/kyrn/windows/launcherCommand';
 import { configPath, muEnv, muHome } from '../../../packages/desktop/src/process/agent/kyrn/naming';
 
 function fixture() {
@@ -513,5 +516,76 @@ describe('mu-only backend catalog', () => {
     const { calls, request } = backend([{ id: 'other', name: 'Codex', command: '/codex', enabled: true }]);
     await recheckKyrn(request, '/kyrn/acp');
     expect(calls.map((call) => call.path)).toEqual(['/api/agents/management']);
+  });
+
+  // #4: an app installed in C:\Program Files\mu registers its launcher's 8.3 short path, which AionCore can start. A
+  // registration an earlier start left may hold another spelling of the same launcher.
+  describe('on Windows, where one launcher has several spellings', () => {
+    const long = 'C:\\Program Files\\mu\\resources\\mu\\acp.cmd';
+    const short = 'C:\\PROGRA~1\\mu\\resources\\mu\\acp.cmd';
+    /** What the app works out on such a machine (windows/launcherCommand.ts): the short path, registered. */
+    const installed = (): Promise<OwnCommand> =>
+      ownLauncher(long, {
+        platform: 'win32',
+        env: { ProgramData: 'C:\\ProgramData' },
+        shortPath: async () => short,
+        realPath: (file) =>
+          [long, short].some((spelling) => spelling.toLowerCase() === file.toLowerCase()) ? long : undefined,
+        write: () => false,
+      });
+
+    it('finds the registration by the exact command first', async () => {
+      const own = await installed();
+      const rows = [
+        { id: 'old', name: 'KYRN', command: long, enabled: false },
+        { id: 'k', name: 'mu', command: short, enabled: true },
+      ];
+      expect(own.command).toBe(short);
+      expect(findRegistration(rows, own)?.id).toBe('k');
+    });
+    it.each([
+      ['its short path in another case', short.toLowerCase()],
+      ['its long path', long],
+      ['its long path in another case', long.toUpperCase()],
+      ['a forwarder written for it', 'C:\\ProgramData\\mu-desktop\\acp.cmd'],
+    ])(
+      'takes a registration under mu’s name that runs %s as its own, and registers the short path in it',
+      async (_how, registered) => {
+        const { calls, request } = backend([
+          {
+            id: 'k',
+            name: 'mu',
+            command: registered,
+            enabled: true,
+            yolo_id: 'full',
+            env: [{ name: 'A', value: 'b' }],
+          },
+          { id: 'other', enabled: true },
+        ]);
+
+        const catalog = await initializeKyrn(request, await installed());
+
+        expect(catalog.agentId).toBe('k');
+        expect(calls.filter((call) => call.path === '/api/agents/custom')).toEqual([]);
+        // The update replaces the whole record: the variables go back with the new command.
+        expect(puts(calls)).toEqual([
+          {
+            method: 'PUT',
+            path: '/api/agents/custom/k',
+            body: expect.objectContaining({ name: 'mu', command: short, env: [{ name: 'A', value: 'b' }] }),
+          },
+        ]);
+      }
+    );
+    it.each(['mu', 'KYRN'])('still refuses a registration named %s that runs another launcher', async (name) => {
+      const { calls, request } = backend([{ id: 'k', name, command: 'C:\\mu\\resources\\mu\\acp.cmd' }]);
+      await expect(initializeKyrn(request, await installed())).rejects.toMatchObject({ code: 'otherRegistration' });
+      expect(calls).toHaveLength(1);
+    });
+    it('checks the registration again while it still holds the long path', async () => {
+      const { calls, request } = backend([{ id: 'k', name: 'mu', command: long, enabled: true, yolo_id: 'full' }]);
+      await recheckKyrn(request, await installed());
+      expect(calls.map((call) => call.path)).toEqual(['/api/agents/management', '/api/agents/k/health-check']);
+    });
   });
 });

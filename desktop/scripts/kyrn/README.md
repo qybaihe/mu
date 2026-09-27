@@ -48,6 +48,16 @@ conversation ends the harness's whole process tree with `taskkill /T`. macOS and
 checkout's bash forwarder: the registration is found by its command, so that path must not change there. Not run on
 a real Windows machine yet.
 
+AionCore runs a registration's command only up to its first space, and the installer puts the app for all users in
+`C:\Program Files\mu` (#4). So on Windows a launcher whose path has whitespace is registered by a spelling without it
+(`process/agent/kyrn/windows/launcherCommand.ts`): its real path when that has none, else its 8.3 short path
+(`C:\PROGRA~1\mu\resources\mu\acp.cmd`), else a forwarder: `mu-desktop\acp.cmd`, an ASCII batch file that hands over
+to the launcher, in the first folder without spaces that takes it (the user's local app data, ProgramData, the public
+profile), rewritten at each start. A registration under mu's name that runs the same launcher by another spelling gets
+this start's command; one that runs another file is still refused. When no spelling works (a folder outside ASCII
+without a short name, no folder for the forwarder), the start says to install mu into a folder whose path has no
+spaces, such as `C:\mu`. `register.mjs` does the same on Windows, where it needs Node 22.18 or newer.
+
 The packaged app has no desktop sources and no tsx, and needs no Node on the machine. It carries the adapter bundled
 into one file, `out/main/mu-acp.js` (unpacked from the asar, built by `scripts/build-mcp-servers.js` like the builtin
 MCP servers), and mu itself: the npm package `mu-agent` with its dependencies in `<resources>/harness/mu-agent`. It
@@ -64,7 +74,7 @@ harness checkout (`node kyrn/npm/build.mjs --pack`; the MU repository's CI packs
 dependencies are installed by npm for the target system and processor (`--os`, `--cpu`), without install scripts;
 npm is needed at build time only.
 
-WSL (`process/agent/kyrn/wsl.ts`): on Windows, a conversation whose folder is inside a WSL distribution
+WSL (`process/agent/kyrn/windows/wsl.ts`): on Windows, a conversation whose folder is inside a WSL distribution
 (`\\wsl.localhost\<distro>\...`, or `\\wsl$\...`) gets its harness started inside that distribution:
 `wsl.exe --distribution <distro> --cd <linux path> --exec bash -lc <start script>`. mu must be installed there
 (`npm i -g mu-agent`); the script finds it on the login PATH, through nvm or in npm's usual folders, and says what to

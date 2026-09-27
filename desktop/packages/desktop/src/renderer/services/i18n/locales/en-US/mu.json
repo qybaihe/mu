@@ -759,6 +759,7 @@
     "unreadable": "{{file}} could not be read.",
     "runtimeOffline": "The mu runtime is not online. Check the local launcher and the sign-in.",
     "otherRegistration": "Another mu command is already registered in the app.",
+    "installPath": "mu cannot start from the folder it is installed in: the folder’s path has spaces. Install mu again into a folder whose path has no spaces, such as C:\\mu.",
     "backend": "The local service did not answer as expected (HTTP {{status}}).",
     "invalid": "One of the values is not valid.",
     "unknown": "Something went wrong in mu.",

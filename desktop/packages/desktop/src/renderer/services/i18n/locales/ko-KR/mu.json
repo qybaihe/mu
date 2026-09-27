@@ -759,6 +759,7 @@
     "unreadable": "{{file}}을(를) 읽을 수 없습니다.",
     "runtimeOffline": "mu 런타임이 오프라인입니다. 로컬 실행기와 로그인 상태를 확인하세요.",
     "otherRegistration": "다른 mu 명령이 이미 앱에 등록되어 있습니다.",
+    "installPath": "mu가 설치된 폴더에서 mu를 시작할 수 없습니다: 폴더 경로에 공백이 있습니다. C:\\mu처럼 경로에 공백이 없는 폴더에 mu를 다시 설치하세요.",
     "backend": "로컬 서비스가 예상대로 응답하지 않았습니다(HTTP {{status}}).",
     "invalid": "값 중 하나가 올바르지 않습니다.",
     "unknown": "mu에서 문제가 발생했습니다.",

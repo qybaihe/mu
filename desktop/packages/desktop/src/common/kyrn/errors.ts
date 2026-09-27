@@ -38,6 +38,11 @@ export const KYRN_ERROR_CODES = [
   'runtimeOffline',
   /** Another command is registered under mu's name. */
   'otherRegistration',
+  /**
+   * mu's launcher cannot be registered from where the app is installed (Windows): its path has spaces, which a command
+   * the backend runs cannot have, it has no short name without them, and no launcher forwarding to it could be written.
+   */
+  'installPath',
   /** The local backend answered with an HTTP error. Params: `status`. */
   'backend',
   /** This mu cannot import Claude Code or Codex conversations: it is older than `mu import`. */

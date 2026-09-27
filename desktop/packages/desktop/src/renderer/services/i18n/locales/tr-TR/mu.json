@@ -759,6 +759,7 @@
     "unreadable": "{{file}} okunamadı.",
     "runtimeOffline": "mu çalışma zamanı çevrimiçi değil. Yerel başlatıcıyı ve giriş durumunu kontrol edin.",
     "otherRegistration": "Uygulamada zaten başka bir mu komutu kayıtlı.",
+    "installPath": "mu kurulu olduğu klasörden başlatılamıyor: Klasörün yolunda boşluk var. mu'yu yolunda boşluk olmayan bir klasöre, örneğin C:\\mu klasörüne yeniden kurun.",
     "backend": "Yerel hizmet beklendiği gibi yanıt vermedi (HTTP {{status}}).",
     "invalid": "Değerlerden biri geçerli değil.",
     "unknown": "mu'da bir sorun oluştu.",

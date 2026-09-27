@@ -45,15 +45,32 @@ const LEGACY_FULL_AUTO = new Set(['yolo', 'yoloNoSandbox']);
 const needsFullAuto = (row: AgentRow): boolean => !row.yolo_id?.trim() || LEGACY_FULL_AUTO.has(row.yolo_id.trim());
 
 /**
+ * mu's command as the backend may hold it: `command`, the one this start registers, and `sameFile`, whether a command
+ * a registration holds runs the same launcher by another spelling. On Windows a launcher has several (any case, its 8.3
+ * short path, the forwarder written for it: windows/launcherCommand.ts); a plain string is only itself.
+ */
+export type OwnCommand = { command: string; sameFile: (registered: string) => boolean };
+
+const ownCommand = (own: string | OwnCommand): OwnCommand =>
+  typeof own === 'string' ? { command: own, sameFile: (registered) => registered === own } : own;
+
+/**
  * The registration is the row that runs our adapter command. Its display name is a label that has changed
  * once already: looking it up by name would register a second agent after a rename and leave every old
  * conversation on the first one. `scripts/kyrn/register.mjs` follows the same rules.
+ *
+ * A row under our name that runs our launcher by another spelling is ours too: an earlier start may have registered
+ * another one (the path with a space, which AionCore cannot start; the short path; a forwarder), and `initializeKyrn`
+ * gives it this start's. A row under our name that runs another file stays another mu's: it is never taken over.
  */
-export function findRegistration(agents: AgentRow[], command: string): AgentRow | undefined {
+export function findRegistration(agents: AgentRow[], own: string | OwnCommand): AgentRow | undefined {
+  const { command, sameFile } = ownCommand(own);
   const ours = agents.find((row) => row.command === command);
   if (ours) return ours;
-  const namesake = agents.find((row) => [AGENT_NAME, ...FORMER_NAMES].includes(row.name));
-  if (namesake) throw new KyrnError('otherRegistration', 'A different mu command is already registered');
+  const namesakes = agents.filter((row) => [AGENT_NAME, ...FORMER_NAMES].includes(row.name));
+  const respelled = namesakes.find((row) => row.command !== undefined && sameFile(row.command));
+  if (respelled) return respelled;
+  if (namesakes.length > 0) throw new KyrnError('otherRegistration', 'A different mu command is already registered');
   return undefined;
 }
 
@@ -105,13 +122,15 @@ async function update(request: BackendRequest, before: AgentRow, command: string
 }
 
 /** Make mu the only enabled runtime, in the backend catalog as well as the picker. */
-export async function initializeKyrn(request: BackendRequest, command: string): Promise<KyrnCatalog> {
+export async function initializeKyrn(request: BackendRequest, own: string | OwnCommand): Promise<KyrnCatalog> {
+  const { command } = ownCommand(own);
   const agents = await request<AgentRow[]>('GET', '/api/agents/management');
-  let agent = findRegistration(agents, command);
-  if (agent && (agent.name !== AGENT_NAME || needsFullAuto(agent))) {
+  let agent = findRegistration(agents, own);
+  if (agent && (agent.command !== command || agent.name !== AGENT_NAME || needsFullAuto(agent))) {
     const before = agent;
     // A label or the mode of scheduled runs must not keep the app from starting: the registration works without
     // them, and the next start tries again. The backend probes the agent before it saves, so a refusal is possible.
+    // An older spelling of the command is kept the same way: the health check below then says whether it runs.
     agent = await update(request, before, command).catch(() => before);
   }
   agent ??= await request<AgentRow>('POST', '/api/agents/custom', {
@@ -151,7 +170,7 @@ export async function initializeKyrn(request: BackendRequest, command: string): 
  * the registration's record, where the model pickers and the / menu read it. The start checks once, so a model set up
  * since then was missing there until the app started again. Without a registration there is nothing to check.
  */
-export async function recheckKyrn(request: BackendRequest, command: string): Promise<void> {
-  const agent = findRegistration(await request<AgentRow[]>('GET', '/api/agents/management'), command);
+export async function recheckKyrn(request: BackendRequest, own: string | OwnCommand): Promise<void> {
+  const agent = findRegistration(await request<AgentRow[]>('GET', '/api/agents/management'), own);
   if (agent) await request('POST', `/api/agents/${encodeURIComponent(agent.id)}/health-check`, {});
 }

@@ -18,7 +18,16 @@ const OWN_DESCRIPTIONS = ['KYRN', 'KYRN harness · local Codex login · Jev judg
 const FULL_AUTO_MODE = 'full';
 const LEGACY_FULL_AUTO = ['yolo', 'yoloNoSandbox'];
 const needsFullAuto = (row) => !row.yolo_id?.trim() || LEGACY_FULL_AUTO.includes(row.yolo_id.trim());
-const command = fileURLToPath(new URL('./acp', import.meta.url));
+// The launcher the registration runs: the bash `acp`, on Windows acp.cmd. On Windows a path with a space is registered
+// by another spelling, as the app does it (packages/desktop/src/process/agent/kyrn/windows/launcherCommand.ts, loaded
+// through Node's own type stripping: Node 22.18 or newer, which a Windows checkout needs anyway).
+const launcher = fileURLToPath(new URL(process.platform === 'win32' ? './acp.cmd' : './acp', import.meta.url));
+const { command, sameFile } =
+  process.platform === 'win32'
+    ? await (
+        await import('../../packages/desktop/src/process/agent/kyrn/windows/launcherCommand.ts')
+      ).ownLauncher(launcher)
+    : { command: launcher, sameFile: (registered) => registered === launcher };
 async function request(path, body, method = body === undefined ? 'GET' : 'POST') {
   const response = await fetch(new URL(path, base), {
     method,
@@ -66,11 +75,15 @@ async function update(before) {
   return { ...before, ...updated, id: before.id };
 }
 const agents = await request('/api/agents/management');
-// The adapter command identifies the registration. Its display name is a label that has changed once already.
-let agent = agents.find((item) => item.command === command);
-if (!agent && agents.some((item) => [NAME, ...FORMER_NAMES].includes(item.name)))
+// The adapter command identifies the registration. Its display name is a label that has changed once already. A row
+// under our name that runs our launcher by another spelling is ours too, and gets this command.
+const namesake = (item) => [NAME, ...FORMER_NAMES].includes(item.name);
+let agent =
+  agents.find((item) => item.command === command) ??
+  agents.find((item) => namesake(item) && typeof item.command === 'string' && sameFile(item.command));
+if (!agent && agents.some(namesake))
   throw new Error('A different mu registration already exists; inspect it in Settings');
-if (agent && (agent.name !== NAME || needsFullAuto(agent))) {
+if (agent && (agent.command !== command || agent.name !== NAME || needsFullAuto(agent))) {
   const before = agent;
   agent = await update(before).catch((error) => {
     console.error(`Kept the registration as it was ("${before.name}"): ${error.message}`);

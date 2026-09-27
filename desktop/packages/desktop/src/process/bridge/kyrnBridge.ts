@@ -15,7 +15,8 @@ import { OnnxLocalJudge, openFolder, usesOnnxJudge } from '../agent/kyrn/localJu
 import { importCli, importService } from '../agent/kyrn/importChats';
 import { LessonsStore, lessonsProject, type LessonsProject } from '../agent/kyrn/lessons';
 import { activityPage, modelLevels } from '../agent/kyrn/telemetry';
-import { findRegistration, initializeKyrn, recheckKyrn } from '../agent/kyrn/product';
+import { findRegistration, initializeKyrn, recheckKyrn, type OwnCommand } from '../agent/kyrn/product';
+import { ownLauncher } from '../agent/kyrn/windows/launcherCommand';
 import { muEnv, muHome } from '../agent/kyrn/naming';
 import { asRecord, text } from '../agent/kyrn/piRpc';
 import { sessionBinding } from '../agent/kyrn/sessionBinding';
@@ -84,13 +85,32 @@ export function initKyrnBridge(): void {
   // script: there the command is acp.cmd, which runs the same adapter with Node. The packaged app has no sources:
   // it carries the adapter bundled (out/main/mu-acp.js) and its launchers in resources/mu.
   const launchers = app.isPackaged ? join(process.resourcesPath, 'mu') : join(desktopRoot, 'scripts', 'kyrn');
-  const command = join(launchers, process.platform === 'win32' ? 'acp.cmd' : 'acp');
+  const launcher = join(launchers, process.platform === 'win32' ? 'acp.cmd' : 'acp');
+  // What is registered: the launcher, or on Windows a spelling of it without spaces (windows/launcherCommand.ts).
+  // Worked out once per start, again after a failure.
+  let owning: Promise<OwnCommand> | undefined;
+  const own = (): Promise<OwnCommand> => {
+    owning ??= ownLauncher(launcher).then(
+      (registered) => {
+        if (registered.command !== launcher)
+          console.log(`[mu] launcher: ${launcher}, registered as ${registered.command}`);
+        return registered;
+      },
+      (error: unknown) => {
+        owning = undefined;
+        throw error;
+      }
+    );
+    return owning;
+  };
   let initialization: Promise<KyrnCatalog> | undefined;
   const catalog = (): Promise<KyrnCatalog> => {
-    initialization ??= initializeKyrn(httpRequest, command).catch((error) => {
-      initialization = undefined;
-      throw error;
-    });
+    initialization ??= own()
+      .then((command) => initializeKyrn(httpRequest, command))
+      .catch((error) => {
+        initialization = undefined;
+        throw error;
+      });
     return initialization;
   };
   kyrnBridge.catalog.provider(() => result(catalog));
@@ -99,14 +119,14 @@ export function initKyrnBridge(): void {
   kyrnBridge.availableModels.provider(() =>
     result(async () => {
       const agents = await httpRequest<Parameters<typeof findRegistration>[0]>('GET', '/api/agents/management');
-      return availableModels(findRegistration(agents, command));
+      return availableModels(findRegistration(agents, await own()));
     })
   );
   // After the start's own check, and one at a time: a change saved while a check runs is checked after it, so the
   // last check sees the last change.
   const recheck = async (): Promise<void> => {
     await catalog().catch((): undefined => undefined);
-    await recheckKyrn(httpRequest, command);
+    await recheckKyrn(httpRequest, await own());
   };
   let rechecked = Promise.resolve();
   kyrnBridge.recheck.provider(() => {

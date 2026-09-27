@@ -759,6 +759,7 @@
     "unreadable": "Impossible de lire {{file}}.",
     "runtimeOffline": "L’environnement d’exécution de mu n’est pas en ligne. Vérifiez le lanceur local et la connexion.",
     "otherRegistration": "Une autre commande mu est déjà enregistrée dans l’application.",
+    "installPath": "mu ne peut pas démarrer depuis le dossier où il est installé : le chemin du dossier contient des espaces. Réinstallez mu dans un dossier dont le chemin ne contient pas d’espace, par exemple C:\\mu.",
     "backend": "Le service local n’a pas répondu comme prévu (HTTP {{status}}).",
     "invalid": "Une des valeurs n’est pas valide.",
     "unknown": "Une erreur s’est produite dans mu.",
