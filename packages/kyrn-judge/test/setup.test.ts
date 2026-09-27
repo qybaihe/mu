@@ -752,7 +752,9 @@ describe("mu setup, asking in a terminal", () => {
 		const backup = join(home, "backups", "2026-09-27T12-00-00");
 		expect(readFileSync(join(backup, ".env"), "utf8")).toBe("# mine\nOTHER=1\n");
 		expect(JSON.parse(readFileSync(join(backup, "mu.json"), "utf8")).tiers).toEqual(["laya"]);
-		expect(run.printed).toContain("The files as they were are copied to ~/backups/2026-09-27T12-00-00");
+		expect(run.printed).toContain(
+			`The files as they were are copied to ${join("~", "backups", "2026-09-27T12-00-00")}`,
+		);
 		expect(run.said).toContain("Done. mu starts on Anthropic · claude-opus-4-8. Judge: Jev.");
 	});
 
