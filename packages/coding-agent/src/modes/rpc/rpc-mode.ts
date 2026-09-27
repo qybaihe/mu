@@ -1,8 +1,8 @@
 /**
- * RPC mode: Headless operation with JSON stdin/stdout protocol.
+ * RPC mode: Headless operation with a JSON protocol, over stdin/stdout or a transport the embedder passes.
  *
  * Used for embedding the agent in other applications.
- * Receives commands as JSON on stdin, outputs events and responses as JSON on stdout.
+ * Receives commands as JSON records, outputs events and responses as JSON records (see rpc-transport.ts).
  *
  * Protocol:
  * - Commands: JSON objects with `type` field, optional `id` for correlation
@@ -19,16 +19,10 @@ import type {
 	ExtensionWidgetOptions,
 	WorkingIndicatorOptions,
 } from "../../core/extensions/index.ts";
-import {
-	flushRawStdout,
-	takeOverStdout,
-	waitForRawStdoutBackpressure,
-	writeRawStdout,
-} from "../../core/output-guard.ts";
 import { killTrackedDetachedChildren } from "../../utils/shell.ts";
 import { type Theme, theme } from "../interactive/theme/theme.ts";
 import { toJsonEvent } from "../json-event.ts";
-import { attachJsonlLineReader, serializeJsonLine } from "./jsonl.ts";
+import { type RpcTransport, stdioRpcTransport } from "./rpc-transport.ts";
 import type {
 	RpcCommand,
 	RpcExtensionUIRequest,
@@ -49,16 +43,19 @@ export type {
 
 /**
  * Run in RPC mode.
- * Listens for JSON commands on stdin, outputs events and responses on stdout.
+ * Listens for JSON commands on the transport (stdin by default), outputs events and responses on it (stdout).
  */
-export async function runRpcMode(runtimeHost: AgentSessionRuntime): Promise<never> {
-	takeOverStdout();
+export async function runRpcMode(
+	runtimeHost: AgentSessionRuntime,
+	transport: RpcTransport = stdioRpcTransport(),
+): Promise<never> {
+	transport.start();
 	let session = runtimeHost.session;
 	let unsubscribe: (() => void) | undefined;
 	let unsubscribeBackpressure: (() => void) | undefined;
 
 	const output = (obj: RpcResponse | RpcExtensionUIRequest | object) => {
-		writeRawStdout(serializeJsonLine(obj));
+		transport.write(JSON.stringify(obj));
 	};
 
 	const success = <T extends RpcCommand["type"]>(
@@ -359,7 +356,7 @@ export async function runRpcMode(runtimeHost: AgentSessionRuntime): Promise<neve
 			}
 		});
 		unsubscribeBackpressure = session.agent.subscribe(async () => {
-			await waitForRawStdoutBackpressure();
+			await transport.drained();
 		});
 	};
 
@@ -739,9 +736,9 @@ export async function runRpcMode(runtimeHost: AgentSessionRuntime): Promise<neve
 		unsubscribeBackpressure?.();
 		await runtimeHost.dispose();
 		detachInput();
-		process.stdin.pause();
+		transport.close();
 		if (signal !== "SIGTERM") {
-			await flushRawStdout();
+			await transport.flush();
 		}
 		process.exit(exitCode);
 	}
@@ -763,7 +760,7 @@ export async function runRpcMode(runtimeHost: AgentSessionRuntime): Promise<neve
 					`Failed to parse command: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
 				),
 			);
-			await waitForRawStdoutBackpressure();
+			await transport.drained();
 			return;
 		}
 
@@ -788,7 +785,7 @@ export async function runRpcMode(runtimeHost: AgentSessionRuntime): Promise<neve
 			const response = await handleCommand(command);
 			if (response) {
 				output(response);
-				await waitForRawStdoutBackpressure();
+				await transport.drained();
 			}
 			await checkShutdownRequested();
 		} catch (commandError: unknown) {
@@ -799,24 +796,18 @@ export async function runRpcMode(runtimeHost: AgentSessionRuntime): Promise<neve
 					commandError instanceof Error ? commandError.message : String(commandError),
 				),
 			);
-			await waitForRawStdoutBackpressure();
+			await transport.drained();
 		}
 	};
 
-	const onInputEnd = () => {
-		void shutdown();
-	};
-	process.stdin.on("end", onInputEnd);
-
-	detachInput = (() => {
-		const detachJsonl = attachJsonlLineReader(process.stdin, (line) => {
+	detachInput = transport.listen(
+		(line) => {
 			void handleInputLine(line);
-		});
-		return () => {
-			detachJsonl();
-			process.stdin.off("end", onInputEnd);
-		};
-	})();
+		},
+		() => {
+			void shutdown();
+		},
+	);
 
 	// Keep process alive forever
 	return new Promise(() => {});

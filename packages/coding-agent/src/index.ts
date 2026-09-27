@@ -1,7 +1,8 @@
 // Core session management
 
 export { type Args, parseArgs } from "./cli/args.ts";
-
+// Main entry point, and the setup its command line runs first (an app that runs `main` in a process of its own does too)
+export { setupCli } from "./cli/setup.ts";
 // Config paths
 export {
 	CONFIG_DIR_NAME,
@@ -386,7 +387,6 @@ export {
 	type ProjectTrustStoreEntry,
 	type ProjectTrustUpdate,
 } from "./core/trust-manager.ts";
-// Main entry point
 export { type MainOptions, main } from "./main.ts";
 // Run modes for programmatic SDK usage
 export {
@@ -403,8 +403,10 @@ export {
 	type RpcExtensionUIResponse,
 	type RpcResponse,
 	type RpcSessionState,
+	type RpcTransport,
 	runPrintMode,
 	runRpcMode,
+	stdioRpcTransport,
 } from "./modes/index.ts";
 // UI components for extensions
 export {
