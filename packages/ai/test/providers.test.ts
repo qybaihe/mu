@@ -192,7 +192,7 @@ describe("builtin providers", () => {
 			["openrouter", "openai/gpt-5.6-terra"],
 		] as const;
 		const unsupported = [
-			["fireworks", "accounts/fireworks/models/kimi-k2p6"],
+			["fireworks", "accounts/fireworks/routers/kimi-latest"],
 			["openai", "gpt-4.1"],
 			["openai", "gpt-5.2"],
 			["anthropic", "claude-sonnet-4-5"],

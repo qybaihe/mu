@@ -15,6 +15,7 @@
 ### Changed
 
 - The welcome screen and `mu doctor` point to `mu setup` when there is no model or no judge key.
+- With only a Fireworks key, mu starts on Fireworks' Kimi router (`accounts/fireworks/routers/kimi-latest`). Kimi K2.6, the model it started on before, has left Fireworks' model list.
 
 ### Fixed
 
