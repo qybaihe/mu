@@ -44,6 +44,7 @@ export function packageEntries(input: { root: string; platform: Platform }): {
 	extension: string;
 	auth: string;
 	import: string;
+	setup: string;
 };
 export function envFilePath(input: { layout: Layout; root: string; muDir: string; platform: Platform }): string;
 export function agentDirFor(input: { env: Env; muDir: string; platform: Platform }): string;
@@ -143,6 +144,44 @@ export function planImport(input: {
 	stripsTypes?: boolean;
 	fs: { exists(path: string): boolean; isDir(path: string): boolean; readFile(path: string): string };
 }): { error?: undefined; command: string; args: string[]; env: Record<string, string>; agentDir: string } | { error: string };
+
+export const SETUP_DECLINED_FILE: string;
+export const SETUP_EXIT_START: number;
+export const SETUP_EXIT_CANCELLED: number;
+export const SETUP_VALUE_FLAGS: readonly string[];
+export const MODEL_KEY_VARIABLES: readonly string[];
+export interface SetupPlan {
+	error?: undefined;
+	command: string;
+	args: string[];
+	env: Record<string, string>;
+	strategy: "spawn";
+	agentDir: string;
+	/** A key came on the command line; it is in env.MU_SETUP_KEY, and never in args. */
+	keyGiven: boolean;
+}
+export function planSetup(input: {
+	platform: Platform;
+	env: Env;
+	argv: readonly string[];
+	root: string;
+	home: string;
+	execPath: string;
+	/** Whether the Node that runs mu strips TypeScript types itself (process.features.typescript). Default true. */
+	stripsTypes?: boolean;
+	fs: { exists(path: string): boolean; isDir(path: string): boolean; readFile(path: string): string };
+}): SetupPlan | { error: string; code?: number };
+export function planFirstRun(input: {
+	platform: Platform;
+	env: Env;
+	argv: readonly string[];
+	/** stdin and stdout are both terminals. */
+	interactive: boolean;
+	agentDir: string;
+	/** The .env the launcher reads, when there is one. */
+	envText?: string;
+	fs: { exists(path: string): boolean; readFile(path: string): string };
+}): boolean;
 
 export function linkPath(input: { platform: Platform; env: Env; home: string }): string;
 export function shimContent(input: { linkDir: string; bin: string }): string;

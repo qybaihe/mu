@@ -104,7 +104,7 @@ try {
 row(
 	authBytes > 8 ? "ok" : "fix",
 	"login",
-	authBytes > 8 ? "credentials stored (not read here)" : "none yet: start mu and run /login",
+	authBytes > 8 ? "credentials stored (not read here)" : "none yet: run mu setup (or /login inside mu)",
 );
 
 const settings = readJson(join(agentDir, "settings.json")) ?? {};

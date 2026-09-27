@@ -64,10 +64,10 @@ describe("welcome screen", () => {
 		const fresh = renderWelcome({ ...view, model: undefined, health: "checking" }, 100, plain);
 
 		expect(down.join("\n")).toContain("not reachable, falling back to stock behaviour");
-		expect(keyless.join("\n")).toContain("no usable key, falling back to stock behaviour");
+		expect(keyless.join("\n")).toContain("no usable key (mu setup), falling back to stock behaviour");
 		expect(broken.join("\n")).toContain("failing (server), falling back to stock behaviour");
 		expect(off.join("\n")).toContain("off · pi's stock behaviour everywhere");
-		expect(fresh.join("\n")).toContain("/login, then /model");
+		expect(fresh.join("\n")).toContain("none yet · /login, or mu setup in a terminal");
 		expect(fresh.join("\n")).toContain("checking");
 	});
 

@@ -79,7 +79,7 @@ export type Paint = Pick<Theme, "fg" | "bold">;
 /** Failures the user can act on, said as what to fix rather than as the error's name. */
 const HEALTH_ERROR: Readonly<Record<string, string>> = {
 	unreachable: "not reachable",
-	auth: "no usable key",
+	auth: "no usable key (mu setup)",
 	payment_required: "out of credit",
 };
 
@@ -102,7 +102,7 @@ export function renderWelcome(view: WelcomeView, width: number, paint: Paint): s
 	const cwd = view.cwd.startsWith(home) ? `~${view.cwd.slice(home.length)}` : view.cwd;
 	const model = view.model
 		? `${view.model}${view.thinking ? paint.fg("dim", ` · thinking ${view.thinking}`) : ""}`
-		: paint.fg("warning", "none yet · /login, then /model");
+		: paint.fg("warning", "none yet · /login, or mu setup in a terminal");
 	const rows: [string, string][] = [
 		["judge", healthText(view, paint)],
 		["model", model],

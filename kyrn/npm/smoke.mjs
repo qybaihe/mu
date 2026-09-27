@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// After `npm i -g mu-agent`: does the installed `mu` run, does it load the judgment layer, do `mu auth` and
-// `mu import` answer?
+// After `npm i -g mu-agent`: does the installed `mu` run, does it load the judgment layer, do `mu auth`,
+// `mu import` and `mu setup` answer?
 //
 //   node kyrn/npm/smoke.mjs [the mu command]
 //
@@ -77,6 +77,14 @@ check(
 	"mu import --list",
 	imports.status === 0 && Array.isArray(found?.conversations) && found.conversations.length === 0,
 	imports.stderr.trim() || imports.stdout.trim().slice(0, 300),
+);
+
+// The setup wizard starts with pi's bundle behind it; its help tells scripts to give the key on stdin. No key is checked.
+const setupHelp = spawnSync(mu, ["setup", "--help"], options);
+check(
+	"mu setup --help",
+	setupHelp.status === 0 && setupHelp.stdout.includes("--key-stdin"),
+	setupHelp.stderr.trim() || setupHelp.stdout.trim().slice(0, 300),
 );
 
 // Within the heap of a 1 GB server. mu 0.1.3 transpiled the judgment layer with Babel at every start, which took

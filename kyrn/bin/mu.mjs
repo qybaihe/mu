@@ -100,6 +100,8 @@ export function usage(platform) {
 		'  mu "prompt"              interactive, starting with this prompt',
 		'  mu -p "prompt"           one-shot: print the answer and exit',
 		"  mu -c | -r               continue the last session | pick one to resume",
+		"  mu setup                 connect a model (an API key, or a service from a list) and choose the judge",
+		"                           (mu setup --help: scripts, a key from stdin, the services it knows)",
 		"  mu judge <cmd>           the local judge (Laya): setup | start | stop | status | run",
 		"  mu ledger [n] [--json]   what the judge decided in the last n sessions",
 		"  mu import --list | <file>...   bring Claude Code and Codex conversations into mu (mu import --help)",
@@ -316,7 +318,10 @@ export function layoutOf({ root, platform, exists }) {
 	return exists(path.join(root, "dist", "bundle", "cli.js")) ? "package" : "repo";
 }
 
-/** The files the npm package runs: pi, the judgment layer, the sign-in of `mu auth` and the importer of `mu import`. */
+/**
+ * The files the npm package runs: pi, the judgment layer, the sign-in of `mu auth`, the importer of `mu import` and the
+ * wizard of `mu setup`.
+ */
 export function packageEntries({ root, platform }) {
 	const path = pathFor(platform);
 	return {
@@ -324,6 +329,7 @@ export function packageEntries({ root, platform }) {
 		extension: path.join(root, "judge", "dist", "kyrn-judge.js"),
 		auth: path.join(root, "judge", "dist", "auth.js"),
 		import: path.join(root, "judge", "dist", "import.js"),
+		setup: path.join(root, "judge", "dist", "setup.js"),
 	};
 }
 
@@ -633,6 +639,178 @@ export function planImport({ platform, env, argv, root, home, execPath, fs, stri
 	childEnv.KYRN_CODING_AGENT_DIR = agentDir;
 	childEnv.PI_CODING_AGENT_DIR = agentDir;
 	return { command: execPath, args: [...entry, ...argv], env: childEnv, agentDir };
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// mu setup
+// ---------------------------------------------------------------------------------------------------------
+
+/** What a "no" to the first-start question leaves in the agent folder (packages/kyrn-judge/src/setup/wizard.ts). */
+export const SETUP_DECLINED_FILE = "setup-declined";
+
+/** How `mu setup` says: set up, and start a session now. */
+export const SETUP_EXIT_START = 3;
+
+/** How `mu setup` says it was cancelled (ctrl+c): a first start then goes no further. */
+export const SETUP_EXIT_CANCELLED = 130;
+
+/** The options of `mu setup` that take a value (wizard.ts keeps the same list): the word after one is not a key. */
+export const SETUP_VALUE_FLAGS = ["--service", "--model", "--base-url", "--api", "--name", "--judge"];
+
+/**
+ * The environment variables that give pi a model on their own: packages/ai/src/env-api-keys.ts, which a test holds this
+ * list to, and AWS_BEARER_TOKEN_BEDROCK, which is there for nothing else. TYPESAFE_API_KEY is left out, as pi's
+ * typesafe provider has classifiers only (the key is Jev's). So are AWS profiles and Google Cloud's default
+ * credentials: many machines have them for other work.
+ */
+export const MODEL_KEY_VARIABLES = [
+	"COPILOT_GITHUB_TOKEN",
+	"ANTHROPIC_AUTH_TOKEN",
+	"ANTHROPIC_OAUTH_TOKEN",
+	"ANTHROPIC_API_KEY",
+	"ANT_LING_API_KEY",
+	"QWEN_TOKEN_PLAN_API_KEY",
+	"QWEN_TOKEN_PLAN_CN_API_KEY",
+	"OPENAI_API_KEY",
+	"AZURE_OPENAI_API_KEY",
+	"NVIDIA_API_KEY",
+	"DEEPSEEK_API_KEY",
+	"GEMINI_API_KEY",
+	"GOOGLE_CLOUD_API_KEY",
+	"GROQ_API_KEY",
+	"CEREBRAS_API_KEY",
+	"XAI_API_KEY",
+	"RADIUS_API_KEY",
+	"OPENROUTER_API_KEY",
+	"AI_GATEWAY_API_KEY",
+	"ZAI_API_KEY",
+	"ZAI_CODING_CN_API_KEY",
+	"MISTRAL_API_KEY",
+	"MINIMAX_API_KEY",
+	"MINIMAX_CN_API_KEY",
+	"MOONSHOT_API_KEY",
+	"HF_TOKEN",
+	"FIREWORKS_API_KEY",
+	"TOGETHER_API_KEY",
+	"BASETEN_API_KEY",
+	"OPENCODE_API_KEY",
+	"KIMI_API_KEY",
+	"META_API_KEY",
+	"CLOUDFLARE_API_KEY",
+	"XIAOMI_API_KEY",
+	"XIAOMI_TOKEN_PLAN_CN_API_KEY",
+	"XIAOMI_TOKEN_PLAN_AMS_API_KEY",
+	"XIAOMI_TOKEN_PLAN_SGP_API_KEY",
+	"AWS_BEARER_TOKEN_BEDROCK",
+];
+
+/**
+ * `mu setup`: the wizard that connects a model and chooses the judge (packages/kyrn-judge/src/setup). It is pi's code,
+ * so it runs the way `mu auth` runs: from the sources in a checkout, built in the package. A key on the command line
+ * (`mu setup <key>`) goes to the wizard in the environment, MU_SETUP_KEY, never in its argv, which every process on
+ * the machine can read. The launcher waits for the wizard, since a finished setup may go on into a session.
+ */
+export function planSetup({ platform, env, argv, root, home, execPath, fs, stripsTypes = true }) {
+	const path = pathFor(platform);
+	const layout = layoutOf({ root, platform, exists: fs.exists });
+	let entry;
+	if (layout === "package") {
+		const { setup } = packageEntries({ root, platform });
+		if (!fs.exists(setup)) {
+			return { error: `This mu-agent package has no mu setup (${setup} is missing). Update it: npm i -g mu-agent` };
+		}
+		entry = [setup];
+	} else {
+		const runtime = sourceRuntime({ root, platform, stripsTypes, exists: fs.exists, readFile: fs.readFile });
+		if (runtime.error) return { error: runtime.error };
+		entry = [...runtime.args, path.join(root, "packages", "kyrn-judge", "src", "setup", "main.ts")];
+	}
+	const args = [];
+	let key;
+	for (let index = 0; index < argv.length; index++) {
+		const arg = argv[index];
+		if (SETUP_VALUE_FLAGS.includes(arg)) {
+			args.push(arg);
+			if (index + 1 < argv.length) args.push(argv[++index]);
+		} else if (arg.startsWith("-") || arg === "help") args.push(arg);
+		else if (key === undefined) key = arg;
+		else return { error: "mu setup takes one key at most (mu setup --help)", code: 2 };
+	}
+	const muDir = muHome({ home, platform, isDir: fs.isDir });
+	const agentDir = agentDirFor({ env, muDir, platform });
+	const childEnv = {};
+	for (const [name, value] of Object.entries(env)) if (typeof value === "string") childEnv[name] = value;
+	if (key !== undefined) childEnv.MU_SETUP_KEY = key;
+	childEnv.MU_AGENT_DIR = agentDir;
+	childEnv.MU_CODING_AGENT_DIR = agentDir;
+	childEnv.KYRN_CODING_AGENT_DIR = agentDir;
+	childEnv.PI_CODING_AGENT_DIR = agentDir;
+	childEnv.MU_SETUP_HOME = muDir;
+	// The .env a session gets: the wizard writes the Jev key there, and reads a proxy from it.
+	childEnv.MU_SETUP_ENV_FILE = envFilePath({ layout, root, muDir, platform });
+	return { command: execPath, args: [...entry, ...args], env: childEnv, strategy: "spawn", agentDir, keyGiven: key !== undefined };
+}
+
+/** pi's own commands: none of them starts a session. */
+const PI_COMMANDS = new Set(["install", "remove", "uninstall", "update", "list", "config", "auth"]);
+/** Options for a run without a person (-p, --mode rpc), one that ends at once, or one that names its model itself. */
+const NO_SETUP_FLAGS = new Set([
+	"-p",
+	"--print",
+	"--mode",
+	"-h",
+	"--help",
+	"-v",
+	"--version",
+	"--list-models",
+	"--export",
+	"--api-key",
+	"--provider",
+	"--model",
+	"--models",
+]);
+
+/**
+ * Whether `mu` offers to set up a model before a session: only to a person at a terminal (stdin and stdout) who starts
+ * a session, on a machine where nothing gives mu a model yet, and who has not answered no before (SETUP_DECLINED_FILE)
+ * or turned the question off (MU_NO_SETUP=1). Nothing gives a model: no credential in auth.json, no provider in
+ * models.json, no default provider in settings.json, no key of MODEL_KEY_VARIABLES in the environment or the .env.
+ * A file that cannot be read counts as set up: the question is for an empty home, never for a broken one.
+ *
+ * `fs` is { exists, readFile }; `envText` is the .env the launcher reads, when there is one.
+ */
+export function planFirstRun({ platform, env, argv, interactive, agentDir, envText, fs }) {
+	if (!interactive) return false;
+	const off = muEnv("NO_SETUP", env);
+	if (off && off !== "0" && off.toLowerCase() !== "false") return false;
+	if (argv[0] !== undefined && PI_COMMANDS.has(argv[0])) return false;
+	if (argv.some((arg) => NO_SETUP_FLAGS.has(arg.split("=")[0]))) return false;
+	const path = pathFor(platform);
+	if (fs.exists(path.join(agentDir, SETUP_DECLINED_FILE))) return false;
+	const read = (name) => {
+		const file = path.join(agentDir, name);
+		if (!fs.exists(file)) return {};
+		try {
+			const text = fs.readFile(file).replace(/^﻿/, "");
+			const value = text.trim() ? JSON.parse(text) : {};
+			return value && typeof value === "object" && !Array.isArray(value) ? value : undefined;
+		} catch {
+			return undefined;
+		}
+	};
+	const auth = read("auth.json");
+	if (!auth || Object.keys(auth).length > 0) return false;
+	const models = read("models.json");
+	const providers = models?.providers;
+	if (!models || (providers && typeof providers === "object" && Object.keys(providers).length > 0)) return false;
+	const settings = read("settings.json");
+	if (!settings || settings.defaultProvider) return false;
+	if (MODEL_KEY_VARIABLES.some((name) => env[name])) return false;
+	if (envText !== undefined) {
+		const { entries } = parseEnvFile(envText);
+		if (entries.some(([name, value]) => value && MODEL_KEY_VARIABLES.includes(name))) return false;
+	}
+	return true;
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -1162,6 +1340,30 @@ export async function main(argv = process.argv.slice(2)) {
 		}
 		return handOver({ command: plan.command, args: plan.args, env: plan.env, strategy });
 	}
+	// What the session gets, when there is one: after a `mu setup` that ends in "start mu now", a plain session.
+	let sessionArgv = argv;
+	if (command === "setup") {
+		const plan = planSetup({
+			platform,
+			env,
+			argv: rest,
+			root,
+			home,
+			execPath: process.execPath,
+			stripsTypes: Boolean(process.features.typescript),
+			fs: { exists: existsSync, isDir, readFile: readText },
+		});
+		if (plan.error) {
+			err(plan.error);
+			return plan.code ?? 1;
+		}
+		// The key leaves this process's own command line too, as far as the platform lets a process rewrite it.
+		if (plan.keyGiven) process.title = "mu setup";
+		mkdirSync(plan.agentDir, { recursive: true });
+		const code = await handOver(plan);
+		if (code !== SETUP_EXIT_START) return code;
+		sessionArgv = [];
+	}
 	if (command === "doctor") {
 		const link = linkPath({ platform, env, home });
 		return handOver({
@@ -1222,10 +1424,45 @@ export async function main(argv = process.argv.slice(2)) {
 		return 0;
 	}
 
+	// A first start with nothing to work with: one question, and the wizard, before the session (`mu setup`). Never
+	// right after `mu setup` itself: its subscription route leaves nothing written, and the person was just asked.
+	const muDir = muHome({ home, platform, isDir });
+	let envText;
+	try {
+		envText = readText(envFilePath({ layout, root, muDir, platform }));
+	} catch {}
+	const firstRun = command !== "setup" && planFirstRun({
+		platform,
+		env,
+		argv: sessionArgv,
+		interactive: Boolean(process.stdin.isTTY && process.stdout.isTTY),
+		agentDir: agentDirFor({ env, muDir, platform }),
+		envText,
+		fs: { exists: existsSync, readFile: readText },
+	});
+	if (firstRun) {
+		const setup = planSetup({
+			platform,
+			env,
+			argv: ["--first-run"],
+			root,
+			home,
+			execPath: process.execPath,
+			stripsTypes: Boolean(process.features.typescript),
+			fs: { exists: existsSync, isDir, readFile: readText },
+		});
+		if (!setup.error) {
+			mkdirSync(setup.agentDir, { recursive: true });
+			// Whatever the wizard ends with, the session follows (pi says itself when there is no model), unless it was cancelled.
+			if ((await handOver(setup)) === SETUP_EXIT_CANCELLED) return SETUP_EXIT_CANCELLED;
+		}
+	}
+
+	// Planned after the wizard: what it wrote into the .env (the Jev key) goes to the session too.
 	const plan = planLaunch({
 		platform,
 		env,
-		argv,
+		argv: sessionArgv,
 		root,
 		home,
 		execPath: process.execPath,
