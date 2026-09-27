@@ -13,7 +13,9 @@ mu
 
 You need Node.js 22.19 or newer. The package is called `mu-agent`; the command is `mu`. It works on macOS, Linux, Windows and WSL.
 
-Inside mu, `/login` signs in to a model provider and `/model` picks a model. `/help` lists everything. `mu doctor` checks the setup from your shell.
+`mu setup` connects a model from your shell: paste an API key and mu tells which service it belongs to (DeepSeek, Qwen, Kimi, GLM, SiliconFlow, StepFun, OpenRouter, OpenAI, Anthropic, Google Gemini, xAI), or pick Ollama or an address of your own. It checks the key with one request, picks the model to start with, and sets up the judge. The first `mu` offers to run it while no model is set up.
+
+Inside mu, `/login` signs in to a model provider or a subscription and `/model` picks a model. `/help` lists everything. `mu doctor` checks the setup from your shell.
 
 ## What it adds to pi
 
@@ -27,7 +29,7 @@ mu is built on [pi](https://github.com/earendil-works/pi). It hands the small qu
 
 Without one, mu works like pi with the extra tools.
 
-- **Jev** (hosted): set `TYPESAFE_API_KEY` (TypeSafe), `MU_JUDGE_OPENROUTER_API_KEY` (Jev on OpenRouter) or `AI_GATEWAY_API_KEY` (Vercel AI Gateway) in your environment, or put it in `~/.mu/.env` as `KEY=value`. mu reads that file as data and never prints it.
+- **Jev** (hosted): set `TYPESAFE_API_KEY` (TypeSafe), `MU_JUDGE_OPENROUTER_API_KEY` (Jev on OpenRouter) or `AI_GATEWAY_API_KEY` (Vercel AI Gateway) in your environment, or put it in `~/.mu/.env` as `KEY=value`; `mu setup` asks for a TypeSafe key and writes it there. mu reads that file as data and never prints it.
 - **CLM** (self-hosted; its encoder needs a GPU): start `clm-serve` from [Contrastive-LM/CLM](https://github.com/Contrastive-LM/CLM), then `/mu judge clm`. For a server on another machine, add `"judges": { "clm": { "type": "clm", "baseUrl": "http://<host>:8700" } }` to `~/.mu/agent/mu.json`. A server started with `CLM_API_KEY` needs the same value in `MU_JUDGE_CLM_API_KEY`. `mu doctor` checks the server.
 - **Laya** (local, macOS on Apple Silicon): `mu judge setup` installs it into `~/.mu/local-judge`. It downloads about 930 MB, only when you run that command.
 - **Any model you already use:** `/mu judge llm:<provider>/<model>`.
@@ -41,6 +43,7 @@ mu                       interactive session in the current directory
 mu "prompt"              interactive, starting with this prompt
 mu -p "prompt"           one-shot: print the answer and exit
 mu -c | -r               continue the last session | pick one to resume
+mu setup [key]           connect a model and choose the judge (mu setup --help: scripts, the services)
 mu judge <cmd>           the local judge (Laya): setup | start | stop | status | run
 mu ledger [n] [--json]   what the judge decided in the last n sessions
 mu doctor                check the installation

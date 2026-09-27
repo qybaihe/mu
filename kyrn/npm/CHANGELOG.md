@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.6] - unreleased
+
+### Added
+
+- `mu setup` connects a model in a few questions ([#3](https://github.com/qybaihe/mu/issues/3)). Paste an API key and mu tells by its shape which service it belongs to: DeepSeek, Qwen, Kimi, GLM, SiliconFlow, StepFun, OpenRouter, OpenAI, Anthropic, Google Gemini or xAI; Ollama and an address of your own are picked from the list, and a subscription is pointed to `/login`. One request that lists the service's models checks the key, the model to start with is chosen from what it lists, and then the judge: Jev (a TypeSafe key, saved in the `.env` mu reads), the model itself, or none for now.
+  - A key is sent only to the service it belongs to. When two services issue keys of the same shape (DeepSeek and Qwen), you are asked which one; Kimi's key is tried at its .cn address, then at .ai.
+  - A check that fails says what to do: a key the service does not accept, an account without balance, a region or network that blocks the service (with your proxy named), a wrong address, an Ollama that is not running.
+  - Keys go into `auth.json` the way `/login` stores them, never into `models.json`. Every file is copied to `~/.mu/backups/<time>/` before it changes; a file that is not plain JSON is left alone.
+  - In Chinese when your locale is.
+- For scripts: `mu setup --service <id> --key-stdin [--model <id>] [--base-url <url>] [--judge jev|model|none] [--yes]`, with the key on stdin (the Jev key on its second line). `mu setup --list` names the services. `mu setup <key>` works too; the key reaches the wizard in its environment, never in a process's arguments.
+- A first `mu` at a terminal, with nothing that gives it a model (no sign-in, no key in the environment or the `.env`, no provider in `models.json`), asks once whether to set one up now, and then starts the session. A no is remembered; `MU_NO_SETUP=1` turns the question off.
+
+### Changed
+
+- The welcome screen and `mu doctor` point to `mu setup` when there is no model or no judge key.
+
 ## [0.1.5] - 2026-09-25
 
 ### Added
