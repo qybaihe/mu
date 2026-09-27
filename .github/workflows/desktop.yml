@@ -15,7 +15,8 @@ name: Desktop app
 #
 # The app each build made is then started as a person starts it: its own mu alone first, then the whole app holding a
 # conversation (desktop/tests/e2e/mu-conversation), on every system but the Intel Mac: its app, built on an arm64
-# runner, sees an arm64 Mac there and asks for the arm64 app instead.
+# runner, sees an arm64 Mac there and asks for the arm64 app instead. On windows-x64 the app its installer puts in
+# C:\Program Files\mu holds one too: a path with a space.
 #
 # Adapted from AionUi's own build pipeline (desktop/.github/workflows/_build-reusable.yml). The macOS builds
 # are signed with a Developer ID certificate and notarized with an App Store Connect API key when the
@@ -393,6 +394,52 @@ jobs:
             !${{ runner.temp }}/mu-e2e/**/.env
             !${{ runner.temp }}/mu-e2e/**/auth.json
             !${{ runner.temp }}/mu-e2e/**/models-store.json
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
+
+      # The same conversation in the app installed where the installer puts it for all users: C:\Program Files\mu.
+      # AionCore runs a registration's command only up to its first space, and the conversation above runs the app from
+      # D:\a\...\out, a path with none, so it never met that (github.com/qybaihe/mu/issues/4): the installed app
+      # registers its launcher by its 8.3 short path. The installer runs as a person's would, silently (/S) and for all
+      # users (/allusers, as the runner's administrator).
+      - name: Hold a conversation in the app installed in Program Files
+        id: installed
+        if: matrix.platform == 'windows-x64'
+        shell: pwsh
+        timeout-minutes: 25
+        env:
+          MU_E2E_ROOT: ${{ runner.temp }}/mu-e2e-installed
+        run: |
+          $installer = Get-ChildItem out -File | Where-Object { $_.Name -match '^mu-.+-win-x64\.exe$' } |
+            Select-Object -First 1
+          if (-not $installer) { throw 'No installer in out/' }
+          $setup = Start-Process -FilePath $installer.FullName -ArgumentList '/S', '/allusers' -Wait -PassThru
+          if ($setup.ExitCode -ne 0) { throw "The installer ended with exit code $($setup.ExitCode)" }
+          $app = Join-Path $env:ProgramFiles 'mu'
+          if (-not (Test-Path (Join-Path $app 'mu.exe'))) { throw "The installer put no mu.exe in $app" }
+          node scripts/kyrn/e2e-conversation.mjs --app $app
+          $status = $LASTEXITCODE
+          # What the app registered for its launcher, from its log.
+          Get-ChildItem $env:MU_E2E_ROOT -Recurse -File -Filter *.log |
+            Select-String -Pattern '\[mu\] launcher: ' | Select-Object -First 1 | ForEach-Object { $_.Line }
+          exit $status
+
+      - name: Upload the installed app's conversation report and logs
+        if: failure() && steps.installed.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: conversation-${{ matrix.platform }}-installed
+          path: |
+            desktop/tests/e2e/report/mu-conversation
+            desktop/tests/e2e/results/mu-conversation
+            ${{ runner.temp }}/mu-e2e-installed/logs
+            ${{ runner.temp }}/mu-e2e-installed/userData/logs
+            ${{ runner.temp }}/mu-e2e-installed/home/.mu
+            ${{ runner.temp }}/mu-e2e-installed/agent
+            !${{ runner.temp }}/mu-e2e-installed/**/.env
+            !${{ runner.temp }}/mu-e2e-installed/**/auth.json
+            !${{ runner.temp }}/mu-e2e-installed/**/models-store.json
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 14
