@@ -16,7 +16,7 @@ import {
 	writeEnvValue,
 	writeJsonFile,
 } from "./files.ts";
-import type { SetupLanguage, Text } from "./language.ts";
+import { article, type SetupLanguage, type Text } from "./language.ts";
 import {
 	chatModels,
 	checkKindOf,
@@ -99,8 +99,11 @@ export interface PiAccess {
 	providerExists(provider: string): boolean;
 	/** pi's models of a provider. */
 	models(provider: string): readonly string[];
-	/** Where pi sends a provider's requests, models.json's address included. */
-	baseUrl(provider: string): string | undefined;
+	/**
+	 * Where pi sends a provider's requests of this API, models.json's address included. One provider may speak two APIs
+	 * at two addresses: OpenRouter's Anthropic models are at /api, its OpenAI-compatible ones at /api/v1.
+	 */
+	baseUrl(provider: string, api: SetupApi): string | undefined;
 	/** How auth.json holds a credential for this provider, if it does. */
 	credential(provider: string): Promise<"api_key" | "oauth" | undefined>;
 	/** Stores the key as an api_key credential in auth.json, the way /login does (models.json is read again first). */
@@ -352,6 +355,8 @@ class Setup {
 	private jevFromStdin: string | undefined;
 	/** The key given for the model: a Jev key is never the same one. */
 	private modelKey: string | undefined;
+	/** The provider id a service of one's own (`other`) gets in mu. */
+	private customName: string | undefined;
 
 	constructor(args: SetupArgs, deps: SetupDeps) {
 		this.args = args;
@@ -374,8 +379,9 @@ class Setup {
 		return text[this.language];
 	}
 
+	/** A service in a sentence: `other` by the name it was given, once it has one ("box does not accept this key"). */
 	private name(service: SetupService): string {
-		return label(service, this.language);
+		return service.id === "other" && this.customName ? this.customName : label(service, this.language);
 	}
 
 	private names(services: readonly SetupService[]): string {
@@ -567,7 +573,7 @@ class Setup {
 	private pickService(services: readonly SetupService[], question?: string): Promise<SetupService> {
 		return this.choose(
 			question ?? this.t({ zh: "选哪个服务？", en: "Which service?" }),
-			services.map((service) => ({ label: this.name(service), value: service })),
+			services.map((service) => ({ label: label(service, this.language), value: service })),
 		);
 	}
 
@@ -579,7 +585,10 @@ class Setup {
 		const matches = servicesForKey(key);
 		if (matches.length === 1) {
 			this.io.say(
-				this.t({ zh: `这是 ${this.name(matches[0])} 的密钥。`, en: `This is a ${this.name(matches[0])} key.` }),
+				this.t({
+					zh: `这是 ${this.name(matches[0])} 的密钥。`,
+					en: `This is ${article(this.name(matches[0]))} key.`,
+				}),
 			);
 			return matches[0];
 		}
@@ -621,6 +630,8 @@ class Setup {
 		given: string | undefined,
 	): Promise<{ service: SetupService; key?: string }> {
 		if (service.keyless) return { service };
+		// A service of one's own: its address comes first, and then its key (checked asks for it).
+		if (service.keyOptional && given === undefined) return { service };
 		let key = given;
 		if (key === undefined && !this.scripted) {
 			if (service.keyPage) {
@@ -628,15 +639,7 @@ class Setup {
 					this.t({ zh: `密钥在这里创建：${service.keyPage}`, en: `Keys are made at ${service.keyPage}` }),
 				);
 			}
-			key = service.keyOptional
-				? await this.secret(
-						this.t({
-							zh: "粘贴它的 API 密钥；不需要密钥就直接回车（不会显示）：",
-							en: "Paste its API key, or press Enter if it takes none (not shown): ",
-						}),
-						true,
-					)
-				: await this.pasteKey();
+			key = await this.pasteKey();
 		}
 		if (!key) {
 			if (service.keyOptional) return { service };
@@ -646,13 +649,15 @@ class Setup {
 			);
 		}
 		const matches = servicesForKey(key);
-		if (matches.length === 0 || matches.includes(service)) return { service, key };
+		// An address the person gives (`other`, --base-url) is where they send the key: relays issue keys of every shape.
+		const ownAddress = service.id === "other" || this.args.baseUrl !== undefined;
+		if (matches.length === 0 || matches.includes(service) || ownAddress) return { service, key };
 		// The key looks like another service's: the person says where it goes, before it goes anywhere.
 		if (this.scripted) {
 			this.io.warn(
 				this.t({
 					zh: `注意：这个密钥看起来是 ${this.names(matches)} 的；按 --service 发给 ${this.name(service)}。`,
-					en: `Note: this key looks like a ${this.names(matches)} key; it goes to ${this.name(service)}, as --service says.`,
+					en: `Note: this key looks like ${article(this.names(matches))} key; it goes to ${this.name(service)}, as --service says.`,
 				}),
 			);
 			return { service, key };
@@ -661,7 +666,7 @@ class Setup {
 			[service, ...matches],
 			this.t({
 				zh: `这个密钥看起来是 ${this.names(matches)} 的，不像 ${this.name(service)} 的。它是哪家的？`,
-				en: `This key looks like a ${this.names(matches)} key, not a ${this.name(service)} one. Which service is it for?`,
+				en: `This key looks like ${article(this.names(matches))} key, not ${article(this.name(service))} one. Which service is it for?`,
 			}),
 		);
 		return { service: chosen, key };
@@ -679,7 +684,7 @@ class Setup {
 				provider: service.providers[index],
 				builtIn: service.builtIn,
 				// pi's own address, with a models.json override: the key goes where pi will send it anyway.
-				baseUrl: (service.builtIn && deps.pi.baseUrl(service.providers[index])) || baseUrl,
+				baseUrl: (service.builtIn && deps.pi.baseUrl(service.providers[index], service.api)) || baseUrl,
 				api: service.api,
 			}));
 			return args.baseUrl ? [{ ...own[0], baseUrl: args.baseUrl.replace(/\/+$/, "") }] : own;
@@ -739,6 +744,7 @@ class Setup {
 			);
 			if (typed) provider = typed.toLowerCase().replace(/[^a-z0-9-]+/g, "-");
 		}
+		this.customName = provider;
 		return [{ provider, builtIn: false, baseUrl: base, api }];
 	}
 
@@ -761,6 +767,16 @@ class Setup {
 	private async checked(service: SetupService, firstKey: string | undefined): Promise<Target> {
 		let key = firstKey;
 		const reaches = await this.reaches(service);
+		if (service.keyOptional && key === undefined && !this.scripted) {
+			key =
+				(await this.secret(
+					this.t({
+						zh: "粘贴它的 API 密钥；不需要密钥就直接回车（不会显示）：",
+						en: "Paste its API key, or press Enter if it takes none (not shown): ",
+					}),
+					true,
+				)) || undefined;
+		}
 		// A provider of mu's lives in models.json, which is never rewritten when it cannot be read: said before anything is sent.
 		if (!reaches[0].builtIn || this.args.baseUrl) this.modelsFileWritable();
 		await this.oauthConflict(service, reaches);
@@ -826,7 +842,10 @@ class Setup {
 				this.io.say(
 					count === undefined
 						? this.t({ zh: "密钥可以用。", en: "The key works." })
-						: this.t({ zh: `可以用：列出了 ${count} 个模型。`, en: `It works: ${count} models listed.` }),
+						: this.t({
+								zh: `可以用：列出了 ${count} 个模型。`,
+								en: `It works: ${count} model${count === 1 ? "" : "s"} listed.`,
+							}),
 				);
 				return { ok: true, reach, listed: result.models };
 			}
@@ -939,16 +958,25 @@ class Setup {
 				}),
 			);
 		}
-		const answer = await this.ask(
-			this.t({
-				zh: `请选择 1-${shown.length}，或输入模型名 [1]：`,
-				en: `Choose 1-${shown.length}, or type a model name [1]: `,
-			}),
-		);
-		const number = Number(answer);
-		if (answer === "") return shown[0];
-		if (Number.isInteger(number) && number >= 1 && number <= shown.length) return shown[number - 1];
-		return answer;
+		for (;;) {
+			const answer = await this.ask(
+				this.t({
+					zh: `请选择 1-${shown.length}，或输入模型名 [1]：`,
+					en: `Choose 1-${shown.length}, or type a model name [1]: `,
+				}),
+			);
+			if (answer === "") return shown[0];
+			const number = Number(answer);
+			if (Number.isInteger(number) && number >= 1 && number <= shown.length) return shown[number - 1];
+			// A number past the list is a slip, not the name of a model.
+			if (options.includes(answer) || !/^\d+$/.test(answer)) return answer;
+			this.io.say(
+				this.t({
+					zh: `请输入 1-${shown.length} 之间的数字，或模型名。`,
+					en: `Type a number from 1-${shown.length}, or a model name.`,
+				}),
+			);
+		}
 	}
 
 	/** A provider models.json has at another address is moved only with a yes. */
@@ -1101,7 +1129,7 @@ class Setup {
 			const anyway = await this.confirm(
 				this.t({
 					zh: `这看起来是 ${this.name(branded)} 的密钥，不是 Jev 的，它会被发给 TypeSafe。仍然使用吗？[y/N] `,
-					en: `This looks like a ${this.name(branded)} key, not a Jev key, and it would be sent to TypeSafe. Use it anyway? [y/N] `,
+					en: `This looks like ${article(this.name(branded))} key, not a Jev key, and it would be sent to TypeSafe. Use it anyway? [y/N] `,
 				}),
 				false,
 			);

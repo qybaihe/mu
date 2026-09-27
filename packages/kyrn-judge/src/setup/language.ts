@@ -36,3 +36,8 @@ export interface Text {
 	readonly zh: string;
 	readonly en: string;
 }
+
+/** A name with its English article, as it is said: "a DeepSeek", "an OpenAI", "an xAI". */
+export function article(name: string): string {
+	return `${/^[AEIOUaeioux]/.test(name) ? "an" : "a"} ${name}`;
+}

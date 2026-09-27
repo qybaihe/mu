@@ -11,7 +11,9 @@ export function piAccess(runtime: ModelRuntime, agentDir: string): PiAccess {
 	return {
 		providerExists: (provider) => runtime.getProvider(provider) !== undefined,
 		models: (provider) => runtime.getModels(provider).map((model) => model.id),
-		baseUrl: (provider) => runtime.getModels(provider)[0]?.baseUrl,
+		baseUrl: (provider, api) =>
+			runtime.getModels(provider).find((model) => model.api === api)?.baseUrl ??
+			runtime.getProvider(provider)?.baseUrl,
 		credential: async (provider) => {
 			const found = (await runtime.listCredentials()).find((credential) => credential.providerId === provider);
 			if (!found) return undefined;

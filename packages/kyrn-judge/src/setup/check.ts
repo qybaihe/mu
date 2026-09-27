@@ -1,5 +1,5 @@
 import { redactSecrets } from "../redact.ts";
-import type { SetupLanguage } from "./language.ts";
+import { article, type SetupLanguage } from "./language.ts";
 import type { CheckKind } from "./services.ts";
 
 /**
@@ -279,7 +279,7 @@ export function explainProblem(problem: Problem, context: ExplainContext, langua
 		case "key":
 			return zh
 				? `${service} 不接受这个密钥。检查是否完整复制，以及它确实是 ${service} 的密钥。`
-				: `${service} does not accept this key. Check that you copied all of it, and that it is a ${service} key.`;
+				: `${service} does not accept this key. Check that you copied all of it, and that it is ${article(service)} key.`;
 		case "refused":
 			return zh
 				? `${service} 拒绝了这个密钥（HTTP 403）：可能是密钥不对，或它没有访问权限。${said}`
