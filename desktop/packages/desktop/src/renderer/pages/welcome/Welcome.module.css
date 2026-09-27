@@ -201,6 +201,53 @@
   line-height: 18px;
 }
 
+/* The ways that need an address typed in: a small title of their own in the list of ways, above its hairline. */
+.otherWays {
+  padding: 20px 0 6px;
+  border-top: 1px solid var(--border-base);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+/* Under the service: how it was found, and where its keys are made. */
+.hintRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 12px;
+}
+
+.keyPage {
+  padding: 0;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/* What the check of the key came to: a dot and one sentence, what the service said, and a way to ask again. */
+.check {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.checkStatus {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 20px;
+  text-wrap: pretty;
+}
+
+/* The dot on the first line of a sentence that may wrap. */
+.checkStatus > [data-dot] {
+  margin-top: 5.5px;
+}
+
 .summary {
   display: flex;
   flex-direction: column;

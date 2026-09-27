@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { isSafeEndpoint, type ProviderTestResult } from '@/common/kyrn/models';
 import type { KyrnSettings } from '@/common/kyrn/types';
 import { newDraft } from '@/renderer/pages/settings/KyrnSettings/draft';
 import {
@@ -17,6 +18,7 @@ import {
 } from '@/renderer/pages/settings/KyrnSettings/judgeChoice';
 import {
   apiModelProblem,
+  keyOutcome,
   markOnboardingSeen,
   needsOnboarding,
   ONBOARDING_KEY,
@@ -26,6 +28,14 @@ import {
   withApiModel,
   withSignedInModel,
 } from '@/renderer/pages/welcome/onboarding';
+import {
+  MODEL_SERVICES,
+  namedModel,
+  serviceById,
+  servicesForKey,
+  startModel,
+  type ServiceId,
+} from '@/renderer/pages/welcome/services';
 
 function settings(patch: Partial<KyrnSettings> = {}): KyrnSettings {
   return {
@@ -365,5 +375,215 @@ describe('the first-run guide', () => {
     expect(signedIn.settings.models.providers).toEqual([]);
     expect(signedIn.providerKeys).toEqual({});
     expect(signedIn.settings.models.defaults).toMatchObject({ provider: 'openai-codex', model: 'gpt-5.6-sol' });
+  });
+});
+
+/** Made-up keys of each service's shape: none of them is anyone's. */
+const KEYS = {
+  deepseekOrQwen: `sk-${'0123456789abcdef'.repeat(2)}`,
+  kimi: `sk-${'Ab1'.repeat(16)}`,
+  glm: `${'0123456789abcdef'.repeat(2)}.AbCdEfGh12345678`,
+  siliconflow: `sk-${'abcdefghijkl'.repeat(4)}`,
+  openrouter: `sk-or-v1-${'a'.repeat(64)}`,
+  openai: `sk-proj-${'Ab_1-'.repeat(20)}`,
+  // OpenAI's older keys: 48 letters and digits, as Kimi's, but with T3BlbkFJ in them.
+  openaiOld: `sk-${'Ab12'.repeat(5)}T3BlbkFJ${'Cd34'.repeat(5)}`,
+  anthropic: `sk-ant-api03-${'x'.repeat(90)}`,
+  google: `AIza${'Sy'.repeat(17)}A`,
+  xai: `xai-${'Ab1'.repeat(26)}`,
+};
+const idsFor = (key: string) => servicesForKey(key).map((service) => service.id);
+
+describe('the service a key belongs to', () => {
+  it('names the one service a key has the shape of, spaces pasted around it too', () => {
+    const named: [string, ServiceId][] = [
+      [KEYS.kimi, 'kimi'],
+      [KEYS.glm, 'glm'],
+      [KEYS.siliconflow, 'siliconflow'],
+      [KEYS.openrouter, 'openrouter'],
+      [KEYS.openai, 'openai'],
+      [KEYS.openaiOld, 'openai'],
+      [KEYS.anthropic, 'anthropic'],
+      [KEYS.google, 'google'],
+      [KEYS.xai, 'xai'],
+    ];
+    for (const [key, id] of named) expect(idsFor(` ${key}\n`), id).toEqual([id]);
+  });
+
+  it('asks about a key DeepSeek and Qwen both make, and names nothing for a key no shape fits', () => {
+    expect(idsFor(KEYS.deepseekOrQwen)).toEqual(['deepseek', 'qwen']);
+    // A StepFun key has no shape to tell it by; half a key is no key.
+    expect(idsFor('f'.repeat(64))).toEqual([]);
+    expect(idsFor(KEYS.kimi.slice(0, 20))).toEqual([]);
+    expect(idsFor('  ')).toEqual([]);
+  });
+
+  it('keeps lookalike keys apart: SiliconFlow’s lowercase keys and OpenAI’s older ones are not Kimi’s', () => {
+    // Only DeepSeek's and Qwen's shapes are one: every other key fits a single service.
+    for (const [name, key] of Object.entries(KEYS)) {
+      expect(idsFor(key), name).toHaveLength(name === 'deepseekOrQwen' ? 2 : 1);
+    }
+    // And every service with a shape is told by one of the keys above.
+    const told = new Set(Object.values(KEYS).flatMap((key) => idsFor(key)));
+    expect(told.size).toBe(MODEL_SERVICES.filter((service) => service.keyShape).length);
+    expect(idsFor(`sk-ant-api03-${'x'.repeat(40)}T3BlbkFJ${'x'.repeat(40)}`)).toEqual(['anthropic']);
+  });
+
+  it('knows where each service answers and where its keys are made, or that it needs no key', () => {
+    expect(new Set(MODEL_SERVICES.map((service) => service.id)).size).toBe(MODEL_SERVICES.length);
+    for (const service of MODEL_SERVICES) {
+      expect(service.keyless || service.keyPage?.startsWith('https://'), service.id).toBeTruthy();
+      for (const baseUrl of service.baseUrls) expect(isSafeEndpoint(baseUrl), baseUrl).toBe(true);
+    }
+    expect(serviceById('kimi').baseUrls).toEqual(['https://api.moonshot.cn/v1', 'https://api.moonshot.ai/v1']);
+  });
+});
+
+describe('the model a service starts with', () => {
+  it('starts on the table’s model when the service lists it, else on the next one it names', () => {
+    const deepseek = serviceById('deepseek');
+    expect(startModel(deepseek, ['deepseek-chat', 'deepseek-v4-pro'])).toBe('deepseek-v4-pro');
+    expect(startModel(deepseek, ['deepseek-reasoner', 'deepseek-chat'])).toBe('deepseek-chat');
+    expect(startModel(serviceById('qwen'), ['qwen-plus', 'qwen3-max'])).toBe('qwen3-max');
+  });
+
+  it('starts on the newest of a family: the plain one of a version, a later version before an earlier one', () => {
+    expect(startModel(serviceById('glm'), ['glm-4.5', 'glm-4.6-air', 'glm-4.6', 'glm-z1-air', 'glm-4-plus'])).toBe(
+      'glm-4.6'
+    );
+    expect(startModel(serviceById('glm'), ['glm-5', 'glm-5.1-flash', 'glm-5.1', 'glm-4.6'])).toBe('glm-5.1');
+    expect(startModel(serviceById('stepfun'), ['step-1-8k', 'step-2-16k', 'step-3', 'step-1.5v-mini'])).toBe('step-3');
+    const siliconflow = serviceById('siliconflow');
+    expect(
+      startModel(siliconflow, [
+        'Qwen/Qwen3-Coder-30B-A3B-Instruct',
+        'Pro/deepseek-ai/DeepSeek-V3.2',
+        'deepseek-ai/DeepSeek-V3',
+        'deepseek-ai/DeepSeek-V3.2',
+        'deepseek-ai/DeepSeek-V3.1-Terminus',
+      ])
+    ).toBe('deepseek-ai/DeepSeek-V3.2');
+    expect(
+      startModel(siliconflow, ['moonshotai/Kimi-K2-Instruct-0905', 'moonshotai/Kimi-K2.5', 'Qwen/Qwen3-Coder-30B'])
+    ).toBe('moonshotai/Kimi-K2.5');
+  });
+
+  it('falls back to the first model listed, and to none when nothing is listed', () => {
+    expect(startModel(serviceById('openai'), ['gpt-4o', 'o3'])).toBe('gpt-4o');
+    expect(startModel(serviceById('ollama'), ['qwen3:8b', 'llama3.3'])).toBe('qwen3:8b');
+    expect(startModel(serviceById('anthropic'), [])).toBeUndefined();
+    // Without a list, only a model the table names in full is known.
+    expect(namedModel(serviceById('deepseek'))).toBe('deepseek-v4-pro');
+    expect(namedModel(serviceById('glm'))).toBeUndefined();
+  });
+});
+
+/** What the connection test answers: a refusal unless `patch` says otherwise. */
+const answer = (patch: Partial<ProviderTestResult>): ProviderTestResult => ({
+  ok: false,
+  code: 'http',
+  latencyMs: 5,
+  models: [],
+  detail: '',
+  ...patch,
+});
+
+describe('what a key check came to', () => {
+  it('says the key works when the service lists models for it, and when it lists none', () => {
+    expect(keyOutcome(answer({ ok: true, code: 'ok-models', status: 200, models: ['m'] }))).toBe('ok');
+    expect(keyOutcome(answer({ ok: true, code: 'ok-models', status: 200 }))).toBe('empty');
+  });
+
+  it('reads a wrong key from a 401, and from the 400 Google and xAI turn one down with', () => {
+    expect(keyOutcome(answer({ code: 'auth', status: 401, detail: 'Authentication Fails' }))).toBe('wrongKey');
+    const google = 'API key not valid. Please pass a valid API key.';
+    expect(keyOutcome(answer({ status: 400, detail: google }))).toBe('wrongKey');
+    const xai = 'Incorrect API key provided. You can obtain an API key from https://console.x.ai.';
+    expect(keyOutcome(answer({ status: 400, detail: xai }))).toBe('wrongKey');
+  });
+
+  it('tells an empty account and a region the service does not serve apart from a wrong key', () => {
+    expect(keyOutcome(answer({ status: 402, detail: 'Insufficient Balance' }))).toBe('quota');
+    const empty = 'Sorry, your account balance is insufficient';
+    expect(keyOutcome(answer({ code: 'auth', status: 403, detail: empty }))).toBe('quota');
+    expect(keyOutcome(answer({ status: 429, detail: 'You exceeded your current quota' }))).toBe('quota');
+    const openai = 'Country, region, or territory not supported';
+    expect(keyOutcome(answer({ code: 'auth', status: 403, detail: openai }))).toBe('region');
+    expect(keyOutcome(answer({ code: 'auth', status: 403, detail: 'Request not allowed' }))).toBe('region');
+    const google = 'User location is not supported for the API use.';
+    expect(keyOutcome(answer({ status: 400, detail: google }))).toBe('region');
+  });
+
+  it('tells a service out of reach, one without a model list, a wrong address and a service in trouble', () => {
+    expect(keyOutcome(answer({ code: 'network' }))).toBe('unreachable');
+    expect(keyOutcome(answer({ code: 'timeout' }))).toBe('unreachable');
+    expect(keyOutcome(answer({ code: 'not-found', status: 404 }))).toBe('unlisted');
+    expect(keyOutcome(answer({ status: 405 }))).toBe('unlisted');
+    expect(keyOutcome(answer({ code: 'redirect', status: 301 }))).toBe('wrongAddress');
+    expect(keyOutcome(answer({ code: 'invalid-response', status: 200 }))).toBe('wrongAddress');
+    expect(keyOutcome(answer({ status: 503 }))).toBe('down');
+    // Too many requests, and nothing said about the account: a moment later it answers.
+    expect(keyOutcome(answer({ status: 429, detail: 'Rate limit reached for requests' }))).toBe('down');
+    // Anything else is worded by the connection test's own texts.
+    expect(keyOutcome(answer({ status: 400, detail: 'Unknown parameter' }))).toBe('other');
+  });
+});
+
+describe('what the key tile writes', () => {
+  const service = (id: ServiceId) => serviceById(id);
+  const write = (id: ServiceId, key: string, model: string, draft = newDraft(settings()), previous?: string) =>
+    withApiModel(draft, { api: service(id).api, baseUrl: service(id).baseUrls[0], key, model }, previous, service(id));
+
+  it('adds a service as a provider named after it, under an id pi has no provider of', () => {
+    const deepseek = write('deepseek', 'sk-1', 'deepseek-v4-pro');
+    expect(deepseek.id).toBe('deepseek-custom');
+    expect(deepseek.draft.settings.models.providers).toMatchObject([
+      {
+        id: 'deepseek-custom',
+        name: 'DeepSeek',
+        api: 'openai-completions',
+        baseUrl: 'https://api.deepseek.com',
+        isNew: true,
+        models: [{ id: 'deepseek-v4-pro' }],
+      },
+    ]);
+    expect(deepseek.draft.settings.models.defaults).toMatchObject({
+      provider: 'deepseek-custom',
+      model: 'deepseek-v4-pro',
+    });
+    expect(deepseek.draft.providerKeys).toEqual({ 'deepseek-custom': 'sk-1' });
+    expect(write('qwen', 'sk-2', 'qwen3-coder-plus').id).toBe('qwen');
+    const google = write('google', 'AIza-3', 'gemini-3.1-pro-preview');
+    expect(google.draft.settings.models.providers[0]).toMatchObject({
+      id: 'google-custom',
+      name: 'Google Gemini',
+      api: 'google-generative-ai',
+    });
+  });
+
+  it('keeps clear of a hand-written entry’s id, and replaces what the guide added before', () => {
+    const handWritten = newDraft(
+      settings({
+        models: {
+          ...settings().models,
+          foreign: [{ id: 'qwen', name: 'Qwen by hand', api: 'openai-completions', baseUrl: 'x', modelCount: 1 }],
+        },
+      })
+    );
+    const first = write('qwen', 'sk-2', 'qwen-plus', handWritten);
+    expect(first.id).toBe('qwen-custom');
+    const again = write('kimi', 'sk-3', 'kimi-k2.6', first.draft, first.id);
+    expect(again.draft.settings.models.providers.map((provider) => provider.id)).toEqual(['kimi']);
+    expect(again.draft.providerKeys).toEqual({ kimi: 'sk-3' });
+  });
+
+  it('keeps no key for a service on this machine', () => {
+    const ollama = write('ollama', '', 'qwen3:8b');
+    expect(ollama.id).toBe('ollama');
+    expect(ollama.draft.settings.models.providers[0]).toMatchObject({
+      name: 'Ollama',
+      baseUrl: 'http://localhost:11434/v1',
+    });
+    expect(ollama.draft.providerKeys).toEqual({});
   });
 });

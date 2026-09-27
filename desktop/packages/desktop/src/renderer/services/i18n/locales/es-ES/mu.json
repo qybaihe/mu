@@ -507,7 +507,7 @@
       "openai": {
         "title": "API compatible con OpenAI",
         "tag": "El más común",
-        "description": "OpenAI, DeepSeek, Kimi, Qwen, Ollama y servicios intermediarios",
+        "description": "Servicios intermediarios y cualquier otro servicio con una API compatible con OpenAI",
         "modelPlaceholder": "Ej. deepseek-chat"
       },
       "anthropic": {
@@ -526,6 +526,97 @@
         "openai-responses": "Responses",
         "openai-completionsHint": "Funciona casi en todas partes; la mayoría de servicios e intermediarios lo usan.",
         "openai-responsesHint": "La API más reciente de OpenAI; solo algunos servicios la admiten."
+      },
+      "other": "Otro servicio (introduce su dirección)"
+    },
+    "apiKey": {
+      "title": "Pegar una clave de API",
+      "tag": "Lo más fácil",
+      "description": "DeepSeek, Kimi, Qwen, GLM, OpenAI, Claude, Gemini y más: mu reconoce el servicio por la clave y configura el resto",
+      "placeholder": "Pega la clave aquí",
+      "service": "Servicio",
+      "servicePlaceholder": "Se reconoce por la clave",
+      "serviceHint": "mu reconoce el servicio por la clave. Si no lo consigue, elígelo aquí.",
+      "recognized": "Reconocido por la clave.",
+      "ambiguous": "Las claves de varios servicios tienen este aspecto. ¿De cuál es esta?",
+      "unknown": "mu no conoce este tipo de clave. ¿De qué servicio es?",
+      "keyPage": "¿Dónde consigo una clave?",
+      "checking": "Comprobando la clave con {{service}}…",
+      "lookingLocal": "Buscando {{service}} en este ordenador…",
+      "recheck": "Comprobar de nuevo",
+      "startsWith": "mu empezará con",
+      "modelHint": "Puedes cambiar de modelo cuando quieras.",
+      "outcome": {
+        "ok": "La clave funciona.",
+        "okLocal": "{{service}} se está ejecutando en este ordenador.",
+        "openList": "{{service}} ha respondido. Su lista de modelos está abierta a cualquiera, así que la clave se comprueba cuando mu la use por primera vez.",
+        "empty": "La clave funciona, pero {{service}} no muestra ningún modelo para ella.",
+        "emptyLocal": "{{service}} aún no tiene modelos. Descarga uno primero (por ejemplo: ollama pull qwen3) y vuelve a comprobarlo.",
+        "unlisted": "{{service}} ha respondido, pero no muestra su lista de modelos, así que la clave se comprueba cuando mu la use por primera vez.",
+        "wrongKey": "{{service}} no ha aceptado esta clave. Comprueba que se ha copiado entera y que sigue siendo válida.",
+        "quota": "{{service}} dice que la cuenta no tiene saldo ni cuota. Recárgala y vuelve a comprobarlo.",
+        "unreachable": "No se ha podido conectar con {{service}}. Revisa la red; si el servicio está bloqueado donde estás, activa un proxy y vuelve a comprobarlo.",
+        "offline": "{{service}} no responde en este ordenador. Inícialo y vuelve a comprobarlo.",
+        "region": "{{service}} no está disponible en tu región. Conéctate a través de un proxy en una región compatible o elige otro servicio.",
+        "wrongAddress": "{{service}} no ha respondido como se esperaba (HTTP {{status}}). Puede que su dirección haya cambiado: introdúcela en «Otro servicio», más abajo.",
+        "down": "{{service}} tiene problemas ahora mismo (HTTP {{status}}). Vuelve a intentarlo en un momento."
+      },
+      "problems": {
+        "key": "Primero pega la clave de API.",
+        "service": "Elige el servicio al que pertenece esta clave.",
+        "notWorking": "La clave aún no funciona. Corrígela arriba, elige otra forma u omite este paso por ahora.",
+        "notReady": "{{service}} todavía no está listo. Sigue la indicación de arriba, elige otra forma u omite este paso por ahora.",
+        "model": "Introduce el modelo con el que empezar."
+      },
+      "services": {
+        "deepseek": {
+          "name": "DeepSeek",
+          "label": "DeepSeek"
+        },
+        "qwen": {
+          "name": "Qwen",
+          "label": "Qwen (Alibaba Cloud Model Studio)"
+        },
+        "kimi": {
+          "name": "Kimi",
+          "label": "Kimi (Moonshot AI)"
+        },
+        "glm": {
+          "name": "GLM",
+          "label": "GLM (Zhipu AI)"
+        },
+        "siliconflow": {
+          "name": "SiliconFlow",
+          "label": "SiliconFlow"
+        },
+        "stepfun": {
+          "name": "StepFun",
+          "label": "StepFun"
+        },
+        "openrouter": {
+          "name": "OpenRouter",
+          "label": "OpenRouter"
+        },
+        "openai": {
+          "name": "OpenAI",
+          "label": "OpenAI"
+        },
+        "anthropic": {
+          "name": "Anthropic",
+          "label": "Anthropic (Claude API)"
+        },
+        "google": {
+          "name": "Google Gemini",
+          "label": "Google Gemini"
+        },
+        "xai": {
+          "name": "xAI",
+          "label": "xAI Grok"
+        },
+        "ollama": {
+          "name": "Ollama",
+          "label": "Ollama (este ordenador)"
+        }
       }
     },
     "judge": {

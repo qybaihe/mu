@@ -507,7 +507,7 @@
       "openai": {
         "title": "API compatível com OpenAI",
         "tag": "Mais comum",
-        "description": "OpenAI, DeepSeek, Kimi, Qwen, Ollama e serviços intermediários",
+        "description": "Serviços intermediários e qualquer outro serviço com API compatível com OpenAI",
         "modelPlaceholder": "ex.: deepseek-chat"
       },
       "anthropic": {
@@ -526,6 +526,97 @@
         "openai-responses": "Responses",
         "openai-completionsHint": "Funciona em quase todo lugar; a maioria dos serviços e intermediários usa este formato.",
         "openai-responsesHint": "A API mais nova da OpenAI; só alguns serviços oferecem suporte."
+      },
+      "other": "Outro serviço (informe o endereço)"
+    },
+    "apiKey": {
+      "title": "Colar uma chave de API",
+      "tag": "Mais fácil",
+      "description": "DeepSeek, Kimi, Qwen, GLM, OpenAI, Claude, Gemini e outros: o mu reconhece o serviço pela chave e configura o resto",
+      "placeholder": "Cole a chave aqui",
+      "service": "Serviço",
+      "servicePlaceholder": "Reconhecido pela chave",
+      "serviceHint": "O mu reconhece o serviço pela chave. Se não conseguir, escolha aqui.",
+      "recognized": "Reconhecido pela chave.",
+      "ambiguous": "Chaves de mais de um serviço têm esta forma. De qual deles é esta?",
+      "unknown": "O mu não conhece este tipo de chave. De qual serviço ela é?",
+      "keyPage": "Onde consigo uma chave?",
+      "checking": "Verificando a chave com {{service}}…",
+      "lookingLocal": "Procurando {{service}} nesta máquina…",
+      "recheck": "Verificar de novo",
+      "startsWith": "O mu vai começar com",
+      "modelHint": "Você pode trocar de modelo quando quiser.",
+      "outcome": {
+        "ok": "A chave funciona.",
+        "okLocal": "{{service}} está rodando nesta máquina.",
+        "openList": "{{service}} respondeu. A lista de modelos dele é aberta a qualquer um, então a chave em si é verificada quando o mu a usar pela primeira vez.",
+        "empty": "A chave funciona, mas {{service}} não lista nenhum modelo para ela.",
+        "emptyLocal": "{{service}} ainda não tem modelos. Baixe um primeiro (por exemplo: ollama pull qwen3) e verifique de novo.",
+        "unlisted": "{{service}} respondeu, mas não lista os modelos, então a chave é verificada quando o mu a usar pela primeira vez.",
+        "wrongKey": "{{service}} não aceitou esta chave. Confira se ela foi copiada inteira e se ainda é válida.",
+        "quota": "{{service}} diz que a conta está sem saldo ou cota. Recarregue e verifique de novo.",
+        "unreachable": "Não foi possível acessar {{service}}. Verifique a rede; se o serviço for bloqueado onde você está, ative um proxy e verifique de novo.",
+        "offline": "{{service}} não está respondendo nesta máquina. Inicie-o e verifique de novo.",
+        "region": "{{service}} não está disponível na sua região. Conecte-se por um proxy em uma região atendida ou escolha outro serviço.",
+        "wrongAddress": "{{service}} não respondeu como esperado (HTTP {{status}}). O endereço pode ter mudado: informe-o em “Outro serviço”, abaixo.",
+        "down": "{{service}} está com problemas agora (HTTP {{status}}). Tente de novo daqui a pouco."
+      },
+      "problems": {
+        "key": "Cole a chave de API primeiro.",
+        "service": "Escolha o serviço desta chave.",
+        "notWorking": "A chave ainda não funciona. Corrija acima, escolha outra forma ou pule por enquanto.",
+        "notReady": "{{service}} ainda não está pronto. Siga a indicação acima, escolha outra forma ou pule por enquanto.",
+        "model": "Informe o modelo com que começar."
+      },
+      "services": {
+        "deepseek": {
+          "name": "DeepSeek",
+          "label": "DeepSeek"
+        },
+        "qwen": {
+          "name": "Qwen",
+          "label": "Qwen (Alibaba Cloud Model Studio)"
+        },
+        "kimi": {
+          "name": "Kimi",
+          "label": "Kimi (Moonshot AI)"
+        },
+        "glm": {
+          "name": "GLM",
+          "label": "GLM (Zhipu AI)"
+        },
+        "siliconflow": {
+          "name": "SiliconFlow",
+          "label": "SiliconFlow"
+        },
+        "stepfun": {
+          "name": "StepFun",
+          "label": "StepFun"
+        },
+        "openrouter": {
+          "name": "OpenRouter",
+          "label": "OpenRouter"
+        },
+        "openai": {
+          "name": "OpenAI",
+          "label": "OpenAI"
+        },
+        "anthropic": {
+          "name": "Anthropic",
+          "label": "Anthropic (Claude API)"
+        },
+        "google": {
+          "name": "Google Gemini",
+          "label": "Google Gemini"
+        },
+        "xai": {
+          "name": "xAI",
+          "label": "xAI Grok"
+        },
+        "ollama": {
+          "name": "Ollama",
+          "label": "Ollama (esta máquina)"
+        }
       }
     },
     "judge": {

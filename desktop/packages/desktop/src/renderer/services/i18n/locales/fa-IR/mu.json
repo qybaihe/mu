@@ -507,7 +507,7 @@
       "openai": {
         "title": "API سازگار با OpenAI",
         "tag": "رایج‌ترین",
-        "description": "OpenAI، DeepSeek، Kimi، Qwen، Ollama و سرویس‌های واسط",
+        "description": "سرویس‌های واسط و هر سرویس دیگری با API سازگار با OpenAI",
         "modelPlaceholder": "مثلاً deepseek-chat"
       },
       "anthropic": {
@@ -526,6 +526,97 @@
         "openai-responses": "Responses",
         "openai-completionsHint": "تقریباً همه‌جا کار می‌کند؛ بیشتر سرویس‌ها و واسط‌ها از آن پشتیبانی می‌کنند.",
         "openai-responsesHint": "API جدیدتر OpenAI؛ فقط برخی سرویس‌ها از آن پشتیبانی می‌کنند."
+      },
+      "other": "سرویس دیگر (نشانی‌اش را وارد کنید)"
+    },
+    "apiKey": {
+      "title": "جای‌گذاری کلید API",
+      "tag": "ساده‌ترین",
+      "description": "DeepSeek، Kimi، Qwen، GLM، OpenAI، Claude، Gemini و موارد دیگر: mu سرویس را از روی کلید می‌شناسد و بقیه را خودش تنظیم می‌کند",
+      "placeholder": "کلید را اینجا جای‌گذاری کنید",
+      "service": "سرویس",
+      "servicePlaceholder": "از روی کلید شناخته می‌شود",
+      "serviceHint": "mu سرویس را از روی کلید می‌شناسد. اگر نشناخت، آن را اینجا انتخاب کنید.",
+      "recognized": "از روی کلید شناخته شد.",
+      "ambiguous": "کلید چند سرویس این شکلی است. این کلید مال کدام است؟",
+      "unknown": "mu این نوع کلید را نمی‌شناسد. این کلید مال کدام سرویس است؟",
+      "keyPage": "کلید را از کجا بگیرم؟",
+      "checking": "در حال بررسی کلید با {{service}}…",
+      "lookingLocal": "در حال جست‌وجوی {{service}} روی همین دستگاه…",
+      "recheck": "بررسی دوباره",
+      "startsWith": "mu با این مدل شروع می‌کند",
+      "modelHint": "هر وقت خواستید می‌توانید مدل را عوض کنید.",
+      "outcome": {
+        "ok": "کلید کار می‌کند.",
+        "okLocal": "{{service}} روی همین دستگاه در حال اجراست.",
+        "openList": "{{service}} پاسخ داد. فهرست مدل‌هایش برای همه باز است، پس خود کلید وقتی بررسی می‌شود که mu اولین بار از آن استفاده کند.",
+        "empty": "کلید کار می‌کند، اما {{service}} هیچ مدلی برای آن فهرست نمی‌کند.",
+        "emptyLocal": "{{service}} هنوز مدلی ندارد. اول یکی را دانلود کنید (مثلاً: ollama pull qwen3)، بعد دوباره بررسی کنید.",
+        "unlisted": "{{service}} پاسخ داد اما مدل‌هایش را فهرست نمی‌کند، پس کلید وقتی بررسی می‌شود که mu اولین بار از آن استفاده کند.",
+        "wrongKey": "{{service}} این کلید را نپذیرفت. مطمئن شوید کامل کپی شده و هنوز معتبر است.",
+        "quota": "{{service}} می‌گوید حساب موجودی یا سهمیه‌ای ندارد. آن را شارژ کنید و دوباره بررسی کنید.",
+        "unreachable": "به {{service}} وصل نشد. شبکه را بررسی کنید؛ اگر این سرویس جایی که هستید مسدود است، پروکسی را روشن کنید و دوباره بررسی کنید.",
+        "offline": "{{service}} روی همین دستگاه پاسخ نمی‌دهد. آن را اجرا کنید و دوباره بررسی کنید.",
+        "region": "{{service}} در منطقهٔ شما در دسترس نیست. از راه پروکسی در منطقه‌ای که پشتیبانی می‌کند وصل شوید، یا سرویس دیگری انتخاب کنید.",
+        "wrongAddress": "{{service}} آن‌طور که انتظار می‌رفت پاسخ نداد (HTTP {{status}}). شاید نشانی‌اش عوض شده باشد: آن را در «سرویس دیگر» در پایین وارد کنید.",
+        "down": "{{service}} الان مشکل دارد (HTTP {{status}}). کمی بعد دوباره امتحان کنید."
+      },
+      "problems": {
+        "key": "اول کلید API را جای‌گذاری کنید.",
+        "service": "سرویسی را که این کلید مال آن است انتخاب کنید.",
+        "notWorking": "کلید هنوز کار نمی‌کند. آن را در بالا درست کنید، راه دیگری انتخاب کنید یا فعلاً از این مرحله بگذرید.",
+        "notReady": "{{service}} هنوز آماده نیست. راهنمای بالا را دنبال کنید، راه دیگری انتخاب کنید یا فعلاً از این مرحله بگذرید.",
+        "model": "مدلی را که mu با آن شروع می‌کند وارد کنید."
+      },
+      "services": {
+        "deepseek": {
+          "name": "DeepSeek",
+          "label": "DeepSeek"
+        },
+        "qwen": {
+          "name": "Qwen",
+          "label": "Qwen (Alibaba Cloud Model Studio)"
+        },
+        "kimi": {
+          "name": "Kimi",
+          "label": "Kimi (Moonshot AI)"
+        },
+        "glm": {
+          "name": "GLM",
+          "label": "GLM (Zhipu AI)"
+        },
+        "siliconflow": {
+          "name": "SiliconFlow",
+          "label": "SiliconFlow"
+        },
+        "stepfun": {
+          "name": "StepFun",
+          "label": "StepFun"
+        },
+        "openrouter": {
+          "name": "OpenRouter",
+          "label": "OpenRouter"
+        },
+        "openai": {
+          "name": "OpenAI",
+          "label": "OpenAI"
+        },
+        "anthropic": {
+          "name": "Anthropic",
+          "label": "Anthropic (Claude API)"
+        },
+        "google": {
+          "name": "Google Gemini",
+          "label": "Google Gemini"
+        },
+        "xai": {
+          "name": "xAI",
+          "label": "xAI Grok"
+        },
+        "ollama": {
+          "name": "Ollama",
+          "label": "Ollama (همین دستگاه)"
+        }
       }
     },
     "judge": {

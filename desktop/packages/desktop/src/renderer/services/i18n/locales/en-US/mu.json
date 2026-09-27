@@ -507,7 +507,7 @@
       "openai": {
         "title": "OpenAI-compatible API",
         "tag": "Most common",
-        "description": "OpenAI, DeepSeek, Kimi, Qwen, Ollama, and relay services",
+        "description": "Relay services, and any other service with an OpenAI-compatible API",
         "modelPlaceholder": "e.g. deepseek-chat"
       },
       "anthropic": {
@@ -526,6 +526,97 @@
         "openai-responses": "Responses",
         "openai-completionsHint": "Works almost everywhere; most services and relays speak it.",
         "openai-responsesHint": "OpenAI's newer API; only some services support it."
+      },
+      "other": "Another service (enter its address)"
+    },
+    "apiKey": {
+      "title": "Paste an API key",
+      "tag": "Easiest",
+      "description": "DeepSeek, Kimi, Qwen, GLM, OpenAI, Claude, Gemini and more: mu tells the service from the key and sets up the rest",
+      "placeholder": "Paste the key here",
+      "service": "Service",
+      "servicePlaceholder": "Found from the key",
+      "serviceHint": "mu finds the service from the key. If it cannot, choose it here.",
+      "recognized": "Found from the key.",
+      "ambiguous": "Keys of more than one service look like this. Which one is it from?",
+      "unknown": "mu does not know this kind of key. Which service is it from?",
+      "keyPage": "Where do I get a key?",
+      "checking": "Checking the key with {{service}}…",
+      "lookingLocal": "Looking for {{service}} on this machine…",
+      "recheck": "Check again",
+      "startsWith": "mu will start with",
+      "modelHint": "You can switch models at any time.",
+      "outcome": {
+        "ok": "The key works.",
+        "okLocal": "{{service}} is running on this machine.",
+        "openList": "{{service}} answered. Its model list is open to anyone, so the key itself is checked when mu first uses it.",
+        "empty": "The key works, but {{service}} lists no models for it.",
+        "emptyLocal": "{{service}} has no models yet. Download one first (for example: ollama pull qwen3), then check again.",
+        "unlisted": "{{service}} answered, but does not list its models, so the key is checked when mu first uses it.",
+        "wrongKey": "{{service}} did not accept this key. Check that it was copied whole and is still valid.",
+        "quota": "{{service}} says the account has no balance or quota left. Top it up, then check again.",
+        "unreachable": "Could not reach {{service}}. Check the network; if the service is blocked where you are, turn on a proxy and check again.",
+        "offline": "{{service}} is not answering on this machine. Start it, then check again.",
+        "region": "{{service}} is not available in your region. Connect through a proxy in a region it serves, or choose another service.",
+        "wrongAddress": "{{service}} did not answer as expected (HTTP {{status}}). Its address may have changed: enter it under “Another service” below.",
+        "down": "{{service}} is having trouble right now (HTTP {{status}}). Try again in a moment."
+      },
+      "problems": {
+        "key": "Paste the API key first.",
+        "service": "Choose the service this key is from.",
+        "notWorking": "The key does not work yet. Fix it above, choose another way, or skip for now.",
+        "notReady": "{{service}} is not ready yet. Follow the note above, choose another way, or skip for now.",
+        "model": "Enter the model to start with."
+      },
+      "services": {
+        "deepseek": {
+          "name": "DeepSeek",
+          "label": "DeepSeek"
+        },
+        "qwen": {
+          "name": "Qwen",
+          "label": "Qwen (Alibaba Cloud Model Studio)"
+        },
+        "kimi": {
+          "name": "Kimi",
+          "label": "Kimi (Moonshot AI)"
+        },
+        "glm": {
+          "name": "GLM",
+          "label": "GLM (Zhipu AI)"
+        },
+        "siliconflow": {
+          "name": "SiliconFlow",
+          "label": "SiliconFlow"
+        },
+        "stepfun": {
+          "name": "StepFun",
+          "label": "StepFun"
+        },
+        "openrouter": {
+          "name": "OpenRouter",
+          "label": "OpenRouter"
+        },
+        "openai": {
+          "name": "OpenAI",
+          "label": "OpenAI"
+        },
+        "anthropic": {
+          "name": "Anthropic",
+          "label": "Anthropic (Claude API)"
+        },
+        "google": {
+          "name": "Google Gemini",
+          "label": "Google Gemini"
+        },
+        "xai": {
+          "name": "xAI",
+          "label": "xAI Grok"
+        },
+        "ollama": {
+          "name": "Ollama",
+          "label": "Ollama (this machine)"
+        }
       }
     },
     "judge": {

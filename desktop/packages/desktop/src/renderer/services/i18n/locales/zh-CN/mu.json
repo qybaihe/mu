@@ -507,7 +507,7 @@
       "openai": {
         "title": "OpenAI 兼容接口",
         "tag": "最常见",
-        "description": "OpenAI、DeepSeek、Kimi、Qwen、Ollama，以及各种中转服务",
+        "description": "各种中转服务，以及其他兼容 OpenAI 接口的服务",
         "modelPlaceholder": "例如 deepseek-chat"
       },
       "anthropic": {
@@ -526,6 +526,97 @@
         "openai-responses": "Responses",
         "openai-completionsHint": "兼容性最好，大多数服务和中转都用这个。",
         "openai-responsesHint": "OpenAI 的新接口，只有部分服务支持。"
+      },
+      "other": "其他服务（需要填写接口地址）"
+    },
+    "apiKey": {
+      "title": "粘贴 API 密钥",
+      "tag": "最省事",
+      "description": "DeepSeek、Kimi、通义千问、智谱、OpenAI、Claude、Gemini 等都行：mu 看密钥就知道是哪家，其余自动配好",
+      "placeholder": "把密钥粘贴到这里",
+      "service": "服务商",
+      "servicePlaceholder": "根据密钥自动识别",
+      "serviceHint": "mu 会根据密钥认出服务商；认不出时，在这里选一下。",
+      "recognized": "已根据密钥识别。",
+      "ambiguous": "好几家服务商的密钥都长这样，这是哪家的？",
+      "unknown": "mu 认不出这种密钥，这是哪家的？",
+      "keyPage": "去哪里获取密钥？",
+      "checking": "正在向 {{service}} 验证密钥…",
+      "lookingLocal": "正在本机查找 {{service}}…",
+      "recheck": "重新检查",
+      "startsWith": "mu 先用这个模型",
+      "modelHint": "之后随时可以换。",
+      "outcome": {
+        "ok": "密钥可以用。",
+        "okLocal": "本机的 {{service}} 正在运行。",
+        "openList": "{{service}} 有响应。它的模型列表谁都能看，所以密钥本身要等 mu 第一次用时才会验证。",
+        "empty": "密钥可以用，但 {{service}} 没有列出这个密钥能用的模型。",
+        "emptyLocal": "{{service}} 里还没有模型。先下载一个（例如 ollama pull qwen3），再重新检查。",
+        "unlisted": "{{service}} 有响应，但不提供模型列表，密钥要等 mu 第一次用时才会验证。",
+        "wrongKey": "{{service}} 没有接受这个密钥。请确认复制完整，并且密钥还有效。",
+        "quota": "{{service}} 说这个账户没有余额或额度了。充值后再重新检查。",
+        "unreachable": "连不上 {{service}}。请检查网络；如果这项服务在你所在的地区用不了，请打开代理后再重新检查。",
+        "offline": "本机的 {{service}} 没有响应。先把它打开，再重新检查。",
+        "region": "{{service}} 不对你所在的地区开放。请通过它支持地区的代理连接，或者换一家服务。",
+        "wrongAddress": "{{service}} 的响应不对（HTTP {{status}}）。它的地址可能变了：请在下面的“其他服务”里填写地址。",
+        "down": "{{service}} 暂时出了问题（HTTP {{status}}），请稍后再试。"
+      },
+      "problems": {
+        "key": "请先粘贴 API 密钥。",
+        "service": "请选一下这个密钥是哪家的。",
+        "notWorking": "密钥还不能用。请在上面改好，或换一种方式，也可以先跳过。",
+        "notReady": "{{service}} 还没准备好。请按上面的提示处理，或换一种方式，也可以先跳过。",
+        "model": "请填写要用的模型。"
+      },
+      "services": {
+        "deepseek": {
+          "name": "DeepSeek",
+          "label": "DeepSeek 深度求索"
+        },
+        "qwen": {
+          "name": "通义千问",
+          "label": "通义千问 Qwen（阿里云百炼）"
+        },
+        "kimi": {
+          "name": "Kimi",
+          "label": "Kimi 月之暗面"
+        },
+        "glm": {
+          "name": "智谱",
+          "label": "智谱 GLM"
+        },
+        "siliconflow": {
+          "name": "硅基流动",
+          "label": "硅基流动 SiliconFlow"
+        },
+        "stepfun": {
+          "name": "阶跃星辰",
+          "label": "阶跃星辰 StepFun"
+        },
+        "openrouter": {
+          "name": "OpenRouter",
+          "label": "OpenRouter"
+        },
+        "openai": {
+          "name": "OpenAI",
+          "label": "OpenAI"
+        },
+        "anthropic": {
+          "name": "Anthropic",
+          "label": "Anthropic（Claude API）"
+        },
+        "google": {
+          "name": "Google Gemini",
+          "label": "Google Gemini"
+        },
+        "xai": {
+          "name": "xAI",
+          "label": "xAI Grok"
+        },
+        "ollama": {
+          "name": "Ollama",
+          "label": "Ollama（本机）"
+        }
       }
     },
     "judge": {

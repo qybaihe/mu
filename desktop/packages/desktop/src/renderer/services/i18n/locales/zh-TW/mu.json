@@ -507,7 +507,7 @@
       "openai": {
         "title": "OpenAI 相容介面",
         "tag": "最常見",
-        "description": "OpenAI、DeepSeek、Kimi、Qwen、Ollama，以及各種中轉服務",
+        "description": "各種中轉服務，以及其他相容 OpenAI 介面的服務",
         "modelPlaceholder": "例如 deepseek-chat"
       },
       "anthropic": {
@@ -526,6 +526,97 @@
         "openai-responses": "Responses",
         "openai-completionsHint": "相容性最好，大多數服務和中轉服務都支援。",
         "openai-responsesHint": "OpenAI 的新介面，只有部分服務支援。"
+      },
+      "other": "其他服務（需要填寫介面位址）"
+    },
+    "apiKey": {
+      "title": "貼上 API 金鑰",
+      "tag": "最省事",
+      "description": "DeepSeek、Kimi、通義千問、智譜、OpenAI、Claude、Gemini 等都可以：mu 看金鑰就知道是哪家，其餘自動設定好",
+      "placeholder": "把金鑰貼到這裡",
+      "service": "服務商",
+      "servicePlaceholder": "依金鑰自動辨識",
+      "serviceHint": "mu 會依金鑰認出服務商；認不出時，在這裡選一下。",
+      "recognized": "已依金鑰辨識。",
+      "ambiguous": "好幾家服務商的金鑰都長這樣，這是哪家的？",
+      "unknown": "mu 認不出這種金鑰，這是哪家的？",
+      "keyPage": "去哪裡取得金鑰？",
+      "checking": "正在向 {{service}} 驗證金鑰…",
+      "lookingLocal": "正在本機尋找 {{service}}…",
+      "recheck": "重新檢查",
+      "startsWith": "mu 先用這個模型",
+      "modelHint": "之後隨時可以換。",
+      "outcome": {
+        "ok": "金鑰可以用。",
+        "okLocal": "本機的 {{service}} 正在執行。",
+        "openList": "{{service}} 有回應。它的模型清單誰都能看，所以金鑰本身要等 mu 第一次使用時才會驗證。",
+        "empty": "金鑰可以用，但 {{service}} 沒有列出這個金鑰能用的模型。",
+        "emptyLocal": "{{service}} 裡還沒有模型。先下載一個（例如 ollama pull qwen3），再重新檢查。",
+        "unlisted": "{{service}} 有回應，但不提供模型清單，金鑰要等 mu 第一次使用時才會驗證。",
+        "wrongKey": "{{service}} 沒有接受這個金鑰。請確認複製完整，而且金鑰仍然有效。",
+        "quota": "{{service}} 表示這個帳戶沒有餘額或額度了。儲值後再重新檢查。",
+        "unreachable": "連不上 {{service}}。請檢查網路；如果這項服務在你所在的地區無法使用，請開啟代理後再重新檢查。",
+        "offline": "本機的 {{service}} 沒有回應。先把它開啟，再重新檢查。",
+        "region": "{{service}} 不對你所在的地區開放。請透過它支援地區的代理連線，或者換一家服務。",
+        "wrongAddress": "{{service}} 的回應不對（HTTP {{status}}）。它的位址可能變了：請在下方的「其他服務」裡填寫位址。",
+        "down": "{{service}} 暫時出了問題（HTTP {{status}}），請稍後再試。"
+      },
+      "problems": {
+        "key": "請先貼上 API 金鑰。",
+        "service": "請選一下這個金鑰是哪家的。",
+        "notWorking": "金鑰還不能用。請在上面改好，或換一種方式，也可以先略過。",
+        "notReady": "{{service}} 還沒準備好。請依上面的提示處理，或換一種方式，也可以先略過。",
+        "model": "請填寫要用的模型。"
+      },
+      "services": {
+        "deepseek": {
+          "name": "DeepSeek",
+          "label": "DeepSeek 深度求索"
+        },
+        "qwen": {
+          "name": "通義千問",
+          "label": "通義千問 Qwen（阿里雲百煉）"
+        },
+        "kimi": {
+          "name": "Kimi",
+          "label": "Kimi 月之暗面"
+        },
+        "glm": {
+          "name": "智譜",
+          "label": "智譜 GLM"
+        },
+        "siliconflow": {
+          "name": "硅基流動",
+          "label": "硅基流動 SiliconFlow"
+        },
+        "stepfun": {
+          "name": "階躍星辰",
+          "label": "階躍星辰 StepFun"
+        },
+        "openrouter": {
+          "name": "OpenRouter",
+          "label": "OpenRouter"
+        },
+        "openai": {
+          "name": "OpenAI",
+          "label": "OpenAI"
+        },
+        "anthropic": {
+          "name": "Anthropic",
+          "label": "Anthropic（Claude API）"
+        },
+        "google": {
+          "name": "Google Gemini",
+          "label": "Google Gemini"
+        },
+        "xai": {
+          "name": "xAI",
+          "label": "xAI Grok"
+        },
+        "ollama": {
+          "name": "Ollama",
+          "label": "Ollama（本機）"
+        }
       }
     },
     "judge": {

@@ -511,7 +511,7 @@
       "openai": {
         "title": "API, совместимый с OpenAI",
         "tag": "Популярный",
-        "description": "OpenAI, DeepSeek, Kimi, Qwen, Ollama и прокси-сервисы",
+        "description": "Прокси-сервисы и любые другие сервисы с API, совместимым с OpenAI",
         "modelPlaceholder": "например, deepseek-chat"
       },
       "anthropic": {
@@ -530,6 +530,97 @@
         "openai-responses": "Responses",
         "openai-completionsHint": "Работает почти везде: его поддерживает большинство сервисов и прокси.",
         "openai-responsesHint": "Более новый API от OpenAI; поддерживается лишь некоторыми сервисами."
+      },
+      "other": "Другой сервис (укажите его адрес)"
+    },
+    "apiKey": {
+      "title": "Вставить API-ключ",
+      "tag": "Проще всего",
+      "description": "DeepSeek, Kimi, Qwen, GLM, OpenAI, Claude, Gemini и другие: mu узнаёт сервис по ключу и настраивает остальное",
+      "placeholder": "Вставьте ключ сюда",
+      "service": "Сервис",
+      "servicePlaceholder": "Определяется по ключу",
+      "serviceHint": "mu определяет сервис по ключу. Если не получится, выберите его здесь.",
+      "recognized": "Определён по ключу.",
+      "ambiguous": "Так выглядят ключи нескольких сервисов. От какого этот ключ?",
+      "unknown": "mu не знает такой вид ключа. От какого он сервиса?",
+      "keyPage": "Где взять ключ?",
+      "checking": "Проверяем ключ в {{service}}…",
+      "lookingLocal": "Ищем {{service}} на этом компьютере…",
+      "recheck": "Проверить снова",
+      "startsWith": "mu начнёт с модели",
+      "modelHint": "Модель можно сменить в любой момент.",
+      "outcome": {
+        "ok": "Ключ работает.",
+        "okLocal": "{{service}} запущен на этом компьютере.",
+        "openList": "{{service}} ответил. Его список моделей открыт для всех, поэтому сам ключ проверится, когда mu впервые им воспользуется.",
+        "empty": "Ключ работает, но {{service}} не показывает для него ни одной модели.",
+        "emptyLocal": "В {{service}} ещё нет моделей. Сначала скачайте одну (например: ollama pull qwen3), затем проверьте снова.",
+        "unlisted": "{{service}} ответил, но не показывает список моделей, поэтому ключ проверится, когда mu впервые им воспользуется.",
+        "wrongKey": "{{service}} не принял этот ключ. Убедитесь, что он скопирован целиком и всё ещё действует.",
+        "quota": "{{service}} сообщает, что на счёте не осталось баланса или квоты. Пополните его и проверьте снова.",
+        "unreachable": "Не удалось связаться с {{service}}. Проверьте сеть; если сервис заблокирован там, где вы находитесь, включите прокси и проверьте снова.",
+        "offline": "{{service}} на этом компьютере не отвечает. Запустите его и проверьте снова.",
+        "region": "{{service}} недоступен в вашем регионе. Подключитесь через прокси в поддерживаемом регионе или выберите другой сервис.",
+        "wrongAddress": "{{service}} ответил не так, как ожидалось (HTTP {{status}}). Возможно, его адрес изменился: укажите его в разделе «Другой сервис» ниже.",
+        "down": "У {{service}} сейчас неполадки (HTTP {{status}}). Попробуйте чуть позже."
+      },
+      "problems": {
+        "key": "Сначала вставьте API-ключ.",
+        "service": "Выберите сервис, которому принадлежит ключ.",
+        "notWorking": "Ключ пока не работает. Исправьте его выше, выберите другой способ или пока пропустите этот шаг.",
+        "notReady": "{{service}} пока не готов. Следуйте подсказке выше, выберите другой способ или пока пропустите этот шаг.",
+        "model": "Укажите модель, с которой начать."
+      },
+      "services": {
+        "deepseek": {
+          "name": "DeepSeek",
+          "label": "DeepSeek"
+        },
+        "qwen": {
+          "name": "Qwen",
+          "label": "Qwen (Alibaba Cloud Model Studio)"
+        },
+        "kimi": {
+          "name": "Kimi",
+          "label": "Kimi (Moonshot AI)"
+        },
+        "glm": {
+          "name": "GLM",
+          "label": "GLM (Zhipu AI)"
+        },
+        "siliconflow": {
+          "name": "SiliconFlow",
+          "label": "SiliconFlow"
+        },
+        "stepfun": {
+          "name": "StepFun",
+          "label": "StepFun"
+        },
+        "openrouter": {
+          "name": "OpenRouter",
+          "label": "OpenRouter"
+        },
+        "openai": {
+          "name": "OpenAI",
+          "label": "OpenAI"
+        },
+        "anthropic": {
+          "name": "Anthropic",
+          "label": "Anthropic (Claude API)"
+        },
+        "google": {
+          "name": "Google Gemini",
+          "label": "Google Gemini"
+        },
+        "xai": {
+          "name": "xAI",
+          "label": "xAI Grok"
+        },
+        "ollama": {
+          "name": "Ollama",
+          "label": "Ollama (этот компьютер)"
+        }
       }
     },
     "judge": {

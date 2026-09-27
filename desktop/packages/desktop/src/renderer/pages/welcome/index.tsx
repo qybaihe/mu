@@ -24,6 +24,8 @@ import ConnectionTest from '@/renderer/pages/settings/KyrnSettings/providers/Con
 import { ChoiceBody, JudgeChoiceTile } from '@/renderer/pages/settings/KyrnSettings/sections/JudgesSection';
 import choiceStyles from '@/renderer/pages/settings/KyrnSettings/sections/sections.module.css';
 import { useMuSettings } from '@/renderer/pages/settings/KyrnSettings/useMuSettings';
+import Field from './Field';
+import KeyPaste from './KeyPaste';
 import {
   apiModelProblem,
   type ApiModel,
@@ -33,13 +35,17 @@ import {
   withSignedInModel,
 } from './onboarding';
 import SubscriptionLogin from './SubscriptionLogin';
+import { useKeySetup } from './useKeySetup';
 import styles from './Welcome.module.css';
 
 type Step = 'intro' | 'model' | 'judge' | 'done';
 /** The steps of the setup itself; the introduction before them is not one. */
 const STEPS: Step[] = ['model', 'judge', 'done'];
-/** A tile of the model step: an account mu is signed in to, or one of the two API families. */
-type Way = 'signedIn' | 'openai' | 'anthropic';
+/**
+ * A tile of the model step: an API key of a service mu knows, an account mu is signed in to, or one of the two API
+ * families at an address typed in.
+ */
+type Way = 'key' | 'signedIn' | 'openai' | 'anthropic';
 const API_WAYS = ['openai', 'anthropic'] as const;
 type ApiWay = (typeof API_WAYS)[number];
 type OpenAiApi = Extract<GuideApi, 'openai-completions' | 'openai-responses'>;
@@ -63,6 +69,7 @@ export default function Welcome() {
   const [listed, setListed] = useState<string[]>([]);
   const [tried, setTried] = useState(false);
   const [added, setAdded] = useState<string>();
+  const keys = useKeySetup();
 
   const { base, draft } = mu;
   const chosenWay: Way | undefined = way;
@@ -74,10 +81,22 @@ export default function Welcome() {
 
   const apiOf = (tile: ApiWay): GuideApi => (tile === 'openai' ? openaiApi : 'anthropic-messages');
   const apiInput = (api: GuideApi): ApiModel => ({ api, ...form });
-  const problem = chosenWay && chosenWay !== 'signedIn' ? apiModelProblem(apiInput(apiOf(chosenWay))) : undefined;
+  const apiWay = chosenWay === 'openai' || chosenWay === 'anthropic' ? chosenWay : undefined;
+  const problem = apiWay ? apiModelProblem(apiInput(apiOf(apiWay))) : undefined;
 
   const nextFromModel = () => {
     if (!chosenWay) return setStep('judge');
+    if (chosenWay === 'key') {
+      setTried(true);
+      if (!keys.choice || !draft) return;
+      const { service, baseUrl, key, model } = keys.choice;
+      // A provider of its own, as for an address typed in: named after the service, its id made from the service's.
+      const result = withApiModel(draft, { api: service.api, baseUrl, key, model }, added, service);
+      mu.edit(() => result.draft);
+      setAdded(result.id);
+      setTried(false);
+      return setStep('judge');
+    }
     if (chosenWay === 'signedIn') {
       const [provider, ...rest] = signedIn.split('/');
       const model = rest.join('/');
@@ -160,6 +179,19 @@ export default function Welcome() {
         <p className={styles.subtitle}>{t('mu.welcome.model.subtitle')}</p>
         <div className={choiceStyles.choices} role='radiogroup' aria-label={t('mu.welcome.model.title')}>
           <ChoiceTile
+            testId='mu-welcome-way-key'
+            title={t('mu.welcome.apiKey.title')}
+            tag={t('mu.welcome.apiKey.tag')}
+            description={t('mu.welcome.apiKey.description')}
+            active={chosenWay === 'key'}
+            onPick={() => {
+              setWay('key');
+              setTried(false);
+            }}
+          >
+            <KeyPaste setup={keys} tried={tried} />
+          </ChoiceTile>
+          <ChoiceTile
             testId='mu-welcome-way-signedIn'
             title={t('mu.welcome.model.signedIn.title')}
             tag={t('mu.welcome.model.signedIn.tag')}
@@ -177,6 +209,8 @@ export default function Welcome() {
               </div>
             ) : null}
           </ChoiceTile>
+          {/* The ways that need an address typed in: for a relay, or a service the key tile does not know. */}
+          <div className={styles.otherWays}>{t('mu.welcome.model.other')}</div>
           {API_WAYS.map((tile) => {
             const api = apiOf(tile);
             return (
@@ -388,7 +422,14 @@ export default function Welcome() {
               {t('mu.welcome.intro.start')}
             </Button>
           ) : step === 'model' ? (
-            <Button type='primary' shape='round' data-testid='mu-welcome-next' onClick={nextFromModel}>
+            <Button
+              type='primary'
+              shape='round'
+              data-testid='mu-welcome-next'
+              // A key being checked: Next waits for what the service says.
+              loading={chosenWay === 'key' && keys.check.phase === 'checking'}
+              onClick={nextFromModel}
+            >
               {t('mu.welcome.next')}
             </Button>
           ) : step === 'judge' ? (
@@ -408,20 +449,6 @@ export default function Welcome() {
           )}
         </footer>
       </main>
-    </div>
-  );
-}
-
-function Field({ label, problem, children }: { label: string; problem?: string; children: React.ReactNode }) {
-  return (
-    <div className={styles.field}>
-      <label className={choiceStyles.choiceLabel}>{label}</label>
-      {children}
-      {problem ? (
-        <div className={styles.problem} role='alert'>
-          {problem}
-        </div>
-      ) : null}
     </div>
   );
 }

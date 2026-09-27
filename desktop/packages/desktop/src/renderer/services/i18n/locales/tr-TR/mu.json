@@ -507,7 +507,7 @@
       "openai": {
         "title": "OpenAI uyumlu API",
         "tag": "En yaygın",
-        "description": "OpenAI, DeepSeek, Kimi, Qwen, Ollama ve aktarma hizmetleri",
+        "description": "Aktarma hizmetleri ve OpenAI uyumlu API’si olan diğer hizmetler",
         "modelPlaceholder": "örn. deepseek-chat"
       },
       "anthropic": {
@@ -526,6 +526,97 @@
         "openai-responses": "Responses",
         "openai-completionsHint": "Neredeyse her yerde çalışır; çoğu hizmet ve aktarma hizmeti bunu destekler.",
         "openai-responsesHint": "OpenAI'ın daha yeni API'si; yalnızca bazı hizmetler destekler."
+      },
+      "other": "Başka bir hizmet (adresini girin)"
+    },
+    "apiKey": {
+      "title": "API anahtarı yapıştırın",
+      "tag": "En kolayı",
+      "description": "DeepSeek, Kimi, Qwen, GLM, OpenAI, Claude, Gemini ve diğerleri: mu hizmeti anahtardan tanır, gerisini kendisi ayarlar",
+      "placeholder": "Anahtarı buraya yapıştırın",
+      "service": "Hizmet",
+      "servicePlaceholder": "Anahtardan bulunur",
+      "serviceHint": "mu hizmeti anahtardan bulur. Bulamazsa buradan seçin.",
+      "recognized": "Anahtardan bulundu.",
+      "ambiguous": "Birden fazla hizmetin anahtarı böyle görünür. Bu anahtar hangisinin?",
+      "unknown": "mu bu tür anahtarı tanımıyor. Hangi hizmetin anahtarı?",
+      "keyPage": "Anahtarı nereden alırım?",
+      "checking": "Anahtar {{service}} ile denetleniyor…",
+      "lookingLocal": "Bu bilgisayarda {{service}} aranıyor…",
+      "recheck": "Yeniden denetle",
+      "startsWith": "mu’nun başlayacağı model",
+      "modelHint": "Modeli istediğiniz zaman değiştirebilirsiniz.",
+      "outcome": {
+        "ok": "Anahtar çalışıyor.",
+        "okLocal": "{{service}} bu bilgisayarda çalışıyor.",
+        "openList": "{{service}} yanıt verdi. Model listesi herkese açık olduğundan anahtarın kendisi, mu onu ilk kullandığında denetlenir.",
+        "empty": "Anahtar çalışıyor ancak {{service}} bu anahtar için hiç model listelemiyor.",
+        "emptyLocal": "{{service}} içinde henüz model yok. Önce bir tane indirin (örneğin: ollama pull qwen3), sonra yeniden denetleyin.",
+        "unlisted": "{{service}} yanıt verdi ancak modellerini listelemiyor; anahtar, mu onu ilk kullandığında denetlenir.",
+        "wrongKey": "{{service}} bu anahtarı kabul etmedi. Tamamen kopyalandığından ve hâlâ geçerli olduğundan emin olun.",
+        "quota": "{{service}}, hesapta bakiye veya kota kalmadığını söylüyor. Yükleme yapın, sonra yeniden denetleyin.",
+        "unreachable": "{{service}} hizmetine ulaşılamadı. Ağı denetleyin; hizmet bulunduğunuz yerde engelliyse bir proxy açıp yeniden denetleyin.",
+        "offline": "Bu bilgisayardaki {{service}} yanıt vermiyor. Başlatın, sonra yeniden denetleyin.",
+        "region": "{{service}} bölgenizde kullanılamıyor. Desteklediği bir bölgedeki proxy üzerinden bağlanın ya da başka bir hizmet seçin.",
+        "wrongAddress": "{{service}} beklendiği gibi yanıt vermedi (HTTP {{status}}). Adresi değişmiş olabilir: aşağıdaki “Başka bir hizmet” bölümünde adresini girin.",
+        "down": "{{service}} şu anda sorun yaşıyor (HTTP {{status}}). Birazdan yeniden deneyin."
+      },
+      "problems": {
+        "key": "Önce API anahtarını yapıştırın.",
+        "service": "Bu anahtarın ait olduğu hizmeti seçin.",
+        "notWorking": "Anahtar henüz çalışmıyor. Yukarıda düzeltin, başka bir yol seçin ya da şimdilik atlayın.",
+        "notReady": "{{service}} henüz hazır değil. Yukarıdaki açıklamayı izleyin, başka bir yol seçin ya da şimdilik atlayın.",
+        "model": "Başlanacak modeli girin."
+      },
+      "services": {
+        "deepseek": {
+          "name": "DeepSeek",
+          "label": "DeepSeek"
+        },
+        "qwen": {
+          "name": "Qwen",
+          "label": "Qwen (Alibaba Cloud Model Studio)"
+        },
+        "kimi": {
+          "name": "Kimi",
+          "label": "Kimi (Moonshot AI)"
+        },
+        "glm": {
+          "name": "GLM",
+          "label": "GLM (Zhipu AI)"
+        },
+        "siliconflow": {
+          "name": "SiliconFlow",
+          "label": "SiliconFlow"
+        },
+        "stepfun": {
+          "name": "StepFun",
+          "label": "StepFun"
+        },
+        "openrouter": {
+          "name": "OpenRouter",
+          "label": "OpenRouter"
+        },
+        "openai": {
+          "name": "OpenAI",
+          "label": "OpenAI"
+        },
+        "anthropic": {
+          "name": "Anthropic",
+          "label": "Anthropic (Claude API)"
+        },
+        "google": {
+          "name": "Google Gemini",
+          "label": "Google Gemini"
+        },
+        "xai": {
+          "name": "xAI",
+          "label": "xAI Grok"
+        },
+        "ollama": {
+          "name": "Ollama",
+          "label": "Ollama (bu bilgisayar)"
+        }
       }
     },
     "judge": {

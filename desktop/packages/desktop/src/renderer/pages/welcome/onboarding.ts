@@ -5,10 +5,12 @@ import {
   RESERVED_PROVIDER_IDS,
   suggestProviderId,
   type EndpointType,
+  type ProviderTestResult,
 } from '@/common/kyrn/models';
 import type { KyrnSettings } from '@/common/kyrn/types';
 import type { Draft } from '@/renderer/pages/settings/KyrnSettings/draft';
 import { blankModel, blankProvider } from '@/renderer/pages/settings/KyrnSettings/providers/endpoints';
+import type { ModelService } from './services';
 
 /**
  * The first-run guide: a model, a judge, done. It is shown once, to someone who has no startup model yet; it is
@@ -36,10 +38,13 @@ export function markOnboardingSeen(storage: Pick<Storage, 'setItem'> | undefined
 /** Someone new: nothing tells mu which model to start with. */
 export const needsOnboarding = (settings: KyrnSettings): boolean => !settings.models.defaults.provider;
 
-/** The wire formats the guide offers (OpenAI's two, Anthropic's); Google's is in the provider settings. */
+/**
+ * The wire formats the guide asks about for an address typed in (OpenAI's two, Anthropic's); Google's is in the
+ * provider settings, and a service of the key tile brings its own.
+ */
 export type GuideApi = Extract<EndpointType, 'openai-completions' | 'openai-responses' | 'anthropic-messages'>;
 
-export type ApiModel = { api: GuideApi; baseUrl: string; key: string; model: string };
+export type ApiModel = { api: EndpointType; baseUrl: string; key: string; model: string };
 
 const isLoopback = (baseUrl: string): boolean => {
   try {
@@ -65,8 +70,21 @@ function hostWord(hostname: string): string {
 }
 
 /**
+ * `word` itself when no provider has it, else `word-custom`, `word-custom-2`, …: pi's built-in providers have their
+ * ids already (a models.json entry under a built-in id reroutes it instead of adding one).
+ */
+export function freeIdFrom(word: string, taken: ReadonlySet<string>): string {
+  const free = (id: string) => !taken.has(id) && !RESERVED_PROVIDER_IDS.has(id) && PROVIDER_ID.test(id);
+  if (free(word)) return word;
+  for (let n = 1; ; n += 1) {
+    const id = n === 1 ? `${word}-custom` : `${word}-custom-${n}`;
+    if (free(id)) return id;
+  }
+}
+
+/**
  * A readable id from the address: `https://api.deepseek.com/v1` -> `deepseek`, or `deepseek-custom` when pi has a
- * built-in provider of that name (a models.json entry under a built-in id reroutes it instead of adding one).
+ * built-in provider of that name.
  */
 export function providerIdFor(baseUrl: string, taken: ReadonlySet<string>): string {
   let base = 'custom';
@@ -78,12 +96,7 @@ export function providerIdFor(baseUrl: string, taken: ReadonlySet<string>): stri
   } catch {
     // An address that does not parse is caught by the check before this is ever called.
   }
-  const free = (id: string) => !taken.has(id) && !RESERVED_PROVIDER_IDS.has(id) && PROVIDER_ID.test(id);
-  if (free(base)) return base;
-  for (let n = 1; ; n += 1) {
-    const id = n === 1 ? `${base}-custom` : `${base}-custom-${n}`;
-    if (free(id)) return id;
-  }
+  return freeIdFrom(base, taken);
 }
 
 /**
@@ -106,14 +119,22 @@ export function providerNameFor(baseUrl: string, id: string): string {
 /**
  * The draft with the typed endpoint as a new provider and its model as the startup model. `previous` is the id the
  * guide added the last time through (going back and changing the address must not leave a second provider behind).
+ * `named`: a known service, whose id the provider's is made from and whose name it takes.
  */
-export function withApiModel(draft: Draft, input: ApiModel, previous?: string): { draft: Draft; id: string } {
+export function withApiModel(
+  draft: Draft,
+  input: ApiModel,
+  previous?: string,
+  named?: Pick<ModelService, 'id' | 'name'>
+): { draft: Draft; id: string } {
   const models = draft.settings.models;
   const kept = models.providers.filter((provider) => !(provider.isNew && provider.id === previous));
-  const id = providerIdFor(input.baseUrl.trim(), new Set(kept.map((provider) => provider.id)));
+  // A hand-written entry keeps its id in models.json too: a new provider under it would be refused on save.
+  const taken = new Set([...kept.map((provider) => provider.id), ...models.foreign.map((entry) => entry.id)]);
+  const id = named ? freeIdFrom(named.id, taken) : providerIdFor(input.baseUrl.trim(), taken);
   const provider = {
     ...blankProvider(id),
-    name: providerNameFor(input.baseUrl.trim(), id),
+    name: named ? named.name : providerNameFor(input.baseUrl.trim(), id),
     api: input.api,
     baseUrl: input.baseUrl.trim(),
     models: [{ ...blankModel(input.model.trim()), name: input.model.trim() }],
@@ -149,4 +170,47 @@ export function withSignedInModel(draft: Draft, provider: string, model: string,
       models: { ...models, providers: kept, defaults: { ...models.defaults, provider, model } },
     },
   };
+}
+
+/**
+ * What a key check came to, in the words of the key tile. The key works (`ok`, or `empty` when the service lists no
+ * model for it), the service answered without a model list (`unlisted`), or why not: the key (`wrongKey`), the
+ * account's balance or quota (`quota`), the way there (`unreachable`, `region`), the address (`wrongAddress`), the
+ * service itself, busy or in trouble (`down`: try again in a moment). `other` is worded by the connection test's own
+ * texts.
+ */
+export type KeyOutcome =
+  | 'ok'
+  | 'empty'
+  | 'unlisted'
+  | 'wrongKey'
+  | 'quota'
+  | 'unreachable'
+  | 'region'
+  | 'wrongAddress'
+  | 'down'
+  | 'other';
+
+// How services word a refusal (their answers seen 2026-09): Google and xAI turn a wrong key down with a 400, SiliconFlow
+// an empty account with a 403, OpenAI and Anthropic a region they do not serve with a 403.
+const REGION =
+  /country, region|unsupported_country|region is not supported|location is not supported|not available in your (country|region)|request not allowed/i;
+const QUOTA =
+  /insufficient[_ ](balance|quota|funds|credits?)|balance is insufficient|account balance|credit balance|exceeded[_ ](your[_ ])?current[_ ]quota|quota[_ ]exceeded|(no|any) credits|余额|欠费/i;
+const WRONG_KEY =
+  /(invalid|incorrect|not valid|wrong).{0,20}(api[ _-]?key|token)|(api[ _-]?key|token).{0,20}(invalid|incorrect|not valid)/i;
+
+export function keyOutcome(result: ProviderTestResult): KeyOutcome {
+  if (result.ok) return result.models.length || result.code === 'ok-completion' ? 'ok' : 'empty';
+  const { code, status, detail } = result;
+  if (REGION.test(detail)) return 'region';
+  // A 429 alone is too many requests: a model list rarely looks at the balance, so only the words say quota.
+  if (status === 402 || QUOTA.test(detail)) return 'quota';
+  if (code === 'auth' || (status === 400 && WRONG_KEY.test(detail))) return 'wrongKey';
+  if (code === 'network' || code === 'timeout') return 'unreachable';
+  // The services' addresses are known to answer: no list there is a service without one, not a wrong address.
+  if (code === 'not-found' || status === 405 || status === 501) return 'unlisted';
+  if (code === 'redirect' || code === 'invalid-response') return 'wrongAddress';
+  if (status === 429 || (status !== undefined && status >= 500)) return 'down';
+  return 'other';
 }

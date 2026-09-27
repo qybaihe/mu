@@ -12,6 +12,7 @@ import SettingsArea from '@/renderer/pages/settings/KyrnSettings/SettingsArea';
 import Welcome from '@/renderer/pages/welcome';
 import { ONBOARDING_KEY } from '@/renderer/pages/welcome/onboarding';
 import { useFirstRunWelcome } from '@/renderer/pages/welcome/useFirstRunWelcome';
+import { SETTLE_MS } from '@/renderer/pages/welcome/useKeySetup';
 
 const bridge = vi.hoisted(() => ({
   settings: vi.fn(),
@@ -53,6 +54,12 @@ vi.mock('@/common/kyrn/bridge', () => ({
 // The guide's code, which the first-run check loads before it opens the guide.
 const guideCode = vi.hoisted(() => ({ preload: vi.fn() }));
 vi.mock('@/renderer/pages/welcome/page', () => ({ WelcomePage: { preload: guideCode.preload } }));
+// A page the guide opens in the browser: here, only which one.
+const external = vi.hoisted(() => ({ open: vi.fn() }));
+vi.mock('@/renderer/utils/platform', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/renderer/utils/platform')>()),
+  openExternalUrl: external.open,
+}));
 // The real switcher changes the app's own i18next and writes the setting; here it only has to be there.
 vi.mock('@/renderer/components/settings/LanguageSwitcher', () => ({
   default: () => <div data-testid='language-switcher' />,
@@ -695,5 +702,215 @@ describe('signing in with a subscription', () => {
     const alert = await screen.findByText('Signing in did not finish. You can try again.', {}, { timeout: 3000 });
     expect(alert).toHaveTextContent('Token exchange request failed');
     expect(screen.getByTestId('mu-login-openai-codex')).not.toBeDisabled();
+  });
+});
+
+/** A service's answer to the check: the models it lists for the key. */
+const listing = (models: string[]) => ({
+  ok: true,
+  data: { ok: true, code: 'ok-models', status: 200, latencyMs: 9, detail: '', models },
+});
+
+describe('pasting an API key', () => {
+  const glmKey = `${'0123456789abcdef'.repeat(2)}.AbCdEfGh12345678`;
+  // DeepSeek and Qwen both make keys of this shape.
+  const sharedShape = `sk-${'fedcba9876543210'.repeat(2)}`;
+  const kimiKey = `sk-${'Ab1'.repeat(16)}`;
+  const refused = {
+    ok: true,
+    data: { ok: false, code: 'auth', status: 401, latencyMs: 9, detail: 'Invalid Authentication', models: [] },
+  };
+  const toKeyTile = async () => {
+    at('/welcome', <Welcome />);
+    fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-way-key'));
+  };
+  const paste = (key: string) => fireEvent.change(screen.getByLabelText('API key'), { target: { value: key } });
+  const said = (text: string) =>
+    waitFor(() => expect(screen.getByTestId('mu-welcome-key-status')).toHaveTextContent(text), { timeout: 3000 });
+  /** The hosts the key was sent to, in order. */
+  const hosts = () =>
+    bridge.testProvider.mock.calls.map(([input]: [{ baseUrl: string }]) => new URL(input.baseUrl).host);
+  const toSummary = async () => {
+    fireEvent.click(screen.getByTestId('mu-welcome-next'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-next'));
+    await screen.findByTestId('mu-welcome-step-done');
+  };
+  const saved = async () => {
+    fireEvent.click(screen.getByTestId('mu-welcome-start'));
+    await waitFor(() => expect(bridge.save).toHaveBeenCalledTimes(1));
+    return bridge.save.mock.calls[0][0] as SaveSettings;
+  };
+
+  it('is the first way offered, above the ways that need an address typed in', async () => {
+    at('/welcome', <Welcome />);
+    fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
+    const ways = within(await screen.findByRole('radiogroup')).getAllByRole('radio');
+    expect(ways.map((way) => way.dataset.testid)).toEqual([
+      'mu-welcome-way-key',
+      'mu-welcome-way-signedIn',
+      'mu-welcome-way-openai',
+      'mu-welcome-way-anthropic',
+    ]);
+    expect(ways[0]).toHaveTextContent('Paste an API key');
+    expect(screen.getByText('Another service (enter its address)')).toBeInTheDocument();
+  });
+
+  it('tells the service from the key, checks the key once with that service alone, and starts on its newest model', async () => {
+    bridge.testProvider.mockResolvedValue(listing(['glm-4.5', 'glm-4.6-air', 'glm-4.6', 'embedding-3']));
+    await toKeyTile();
+    paste(` ${glmKey} `);
+    expect(screen.getByTestId('mu-welcome-key-service')).toHaveTextContent('GLM (Zhipu AI)');
+    expect(screen.getByTestId('mu-welcome-key-hint')).toHaveTextContent('Found from the key.');
+    expect(screen.getByTestId('mu-welcome-key-status')).toHaveTextContent('Checking the key with GLM');
+    await said('The key works.');
+    expect(bridge.testProvider).toHaveBeenCalledTimes(1);
+    // The model list alone (no model, so nothing billed), with the key as pasted, at GLM's own address.
+    expect(bridge.testProvider).toHaveBeenCalledWith({
+      id: '',
+      api: 'openai-completions',
+      baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+      authHeader: false,
+      model: '',
+      apiKey: glmKey,
+    });
+    expect(screen.getByTestId('mu-welcome-key-model')).toHaveTextContent('glm-4.6');
+    // Where such keys are made opens in the browser.
+    fireEvent.click(screen.getByTestId('mu-welcome-key-page'));
+    expect(external.open).toHaveBeenCalledWith('https://open.bigmodel.cn/usercenter/apikeys');
+
+    await toSummary();
+    expect(screen.getByText('GLM / glm-4.6')).toBeInTheDocument();
+    const settings = await saved();
+    expect(settings.models?.providers).toMatchObject([
+      {
+        id: 'glm',
+        name: 'GLM',
+        api: 'openai-completions',
+        baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+        models: [{ id: 'glm-4.6' }],
+      },
+    ]);
+    expect(settings.models?.defaults).toMatchObject({ provider: 'glm', model: 'glm-4.6' });
+    expect(settings.credentials).toEqual([{ name: 'MU_PROVIDER_GLM_API_KEY', value: glmKey }]);
+    expect(bridge.testProvider).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks which service a key DeepSeek and Qwen both make is from, and sends it nowhere until told', async () => {
+    bridge.testProvider.mockResolvedValue(listing(['deepseek-chat', 'deepseek-v4-pro']));
+    await toKeyTile();
+    paste(sharedShape);
+    expect(screen.getByTestId('mu-welcome-key-hint')).toHaveTextContent('Keys of more than one service look like this');
+    await new Promise((resolve) => setTimeout(resolve, SETTLE_MS + 200));
+    expect(bridge.testProvider).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId('mu-welcome-next'));
+    expect(screen.getByText('Choose the service this key is from.')).toBeInTheDocument();
+
+    // Only the two services the key can be from are offered.
+    fireEvent.click(screen.getByLabelText('Service'));
+    const deepseek = await screen.findByText('DeepSeek', { selector: '.arco-select-option' });
+    expect([...document.querySelectorAll('.arco-select-option')].map((option) => option.textContent)).toEqual([
+      'DeepSeek',
+      'Qwen (Alibaba Cloud Model Studio)',
+    ]);
+    fireEvent.click(deepseek);
+    await said('The key works.');
+    expect(hosts()).toEqual(['api.deepseek.com']);
+
+    await toSummary();
+    expect(screen.getByText('DeepSeek / deepseek-v4-pro')).toBeInTheDocument();
+    const settings = await saved();
+    // pi has a provider called deepseek of its own: the guide's goes beside it.
+    expect(settings.models?.providers).toMatchObject([
+      { id: 'deepseek-custom', name: 'DeepSeek', baseUrl: 'https://api.deepseek.com' },
+    ]);
+    expect(settings.credentials).toEqual([{ name: 'MU_PROVIDER_DEEPSEEK_CUSTOM_API_KEY', value: sharedShape }]);
+  });
+
+  it('tries a Kimi key at Moonshot’s other address and nowhere else, and keeps the address that took it', async () => {
+    bridge.testProvider.mockResolvedValue(refused);
+    await toKeyTile();
+    paste(kimiKey);
+    await said('Kimi did not accept this key.');
+    expect(hosts()).toEqual(['api.moonshot.cn', 'api.moonshot.ai']);
+    expect(screen.getByText('The endpoint said: Invalid Authentication')).toBeInTheDocument();
+    // A key that does not work is not written.
+    fireEvent.click(screen.getByTestId('mu-welcome-next'));
+    expect(screen.getByTestId('mu-welcome-step-model')).toBeInTheDocument();
+    expect(screen.getByText(/The key does not work yet/)).toBeInTheDocument();
+
+    // Made on the international site: it works there, and that address is the one kept.
+    bridge.testProvider.mockReset();
+    bridge.testProvider.mockImplementation(async ({ baseUrl }: { baseUrl: string }) =>
+      baseUrl === 'https://api.moonshot.ai/v1' ? listing(['kimi-k2-turbo-preview', 'kimi-k2.6']) : refused
+    );
+    fireEvent.click(screen.getByTestId('mu-welcome-key-recheck'));
+    await said('The key works.');
+    expect(hosts()).toEqual(['api.moonshot.cn', 'api.moonshot.ai']);
+    await toSummary();
+    expect(screen.getByText('Kimi / kimi-k2.6')).toBeInTheDocument();
+    const settings = await saved();
+    expect(settings.models?.providers).toMatchObject([
+      { id: 'kimi', name: 'Kimi', baseUrl: 'https://api.moonshot.ai/v1', models: [{ id: 'kimi-k2.6' }] },
+    ]);
+  });
+
+  it('looks for Ollama on this machine without a key, and keeps no key for it', async () => {
+    bridge.testProvider.mockResolvedValue(listing(['qwen3:8b', 'llama3.3']));
+    await toKeyTile();
+    fireEvent.click(screen.getByLabelText('Service'));
+    fireEvent.click(await screen.findByText('Ollama (this machine)', { selector: '.arco-select-option' }));
+    await said('Ollama is running on this machine.');
+    expect(bridge.testProvider).toHaveBeenCalledTimes(1);
+    expect(bridge.testProvider.mock.calls[0][0]).toEqual({
+      id: '',
+      api: 'openai-completions',
+      baseUrl: 'http://localhost:11434/v1',
+      authHeader: false,
+      model: '',
+    });
+    expect(screen.queryByTestId('mu-welcome-key-page')).not.toBeInTheDocument();
+    await toSummary();
+    expect(screen.getByText('Ollama / qwen3:8b')).toBeInTheDocument();
+    const settings = await saved();
+    expect(settings.models?.providers).toMatchObject([
+      { id: 'ollama', name: 'Ollama', baseUrl: 'http://localhost:11434/v1' },
+    ]);
+    expect(settings.credentials ?? []).toEqual([]);
+  });
+
+  it('says Ollama is not ready when it does not answer, with no word about a key', async () => {
+    bridge.testProvider.mockResolvedValue({
+      ok: true,
+      data: { ok: false, code: 'network', latencyMs: 3, detail: '', models: [] },
+    });
+    await toKeyTile();
+    fireEvent.click(screen.getByLabelText('Service'));
+    fireEvent.click(await screen.findByText('Ollama (this machine)', { selector: '.arco-select-option' }));
+    await said('Ollama is not answering on this machine. Start it, then check again.');
+    fireEvent.click(screen.getByTestId('mu-welcome-next'));
+    expect(screen.getByTestId('mu-welcome-step-model')).toBeInTheDocument();
+    expect(screen.getByText(/Ollama is not ready yet/)).toBeInTheDocument();
+    expect(screen.queryByText(/The key does not work yet/)).not.toBeInTheDocument();
+  });
+
+  it('starts on the service’s usual model when it lists none for a key it took', async () => {
+    bridge.testProvider.mockResolvedValue(listing([]));
+    await toKeyTile();
+    paste(kimiKey);
+    await said('The key works, but Kimi lists no models for it.');
+    // Asked once: a key .cn took is not tried at .ai.
+    expect(hosts()).toEqual(['api.moonshot.cn']);
+    expect(screen.getByLabelText('mu will start with')).toHaveValue('kimi-k2.6');
+    await toSummary();
+    expect(screen.getByText('Kimi / kimi-k2.6')).toBeInTheDocument();
+  });
+
+  it('asks for the key when Next is pressed before one is pasted', async () => {
+    await toKeyTile();
+    fireEvent.click(screen.getByTestId('mu-welcome-next'));
+    expect(screen.getByText('Paste the API key first.')).toBeInTheDocument();
+    expect(screen.getByTestId('mu-welcome-step-model')).toBeInTheDocument();
+    expect(bridge.testProvider).not.toHaveBeenCalled();
   });
 });

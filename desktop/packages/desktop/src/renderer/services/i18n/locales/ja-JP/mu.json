@@ -507,7 +507,7 @@
       "openai": {
         "title": "OpenAI 互換 API",
         "tag": "最も一般的",
-        "description": "OpenAI、DeepSeek、Kimi、Qwen、Ollama、および中継サービス",
+        "description": "中継サービスや、OpenAI 互換 API を持つその他のサービス",
         "modelPlaceholder": "例: deepseek-chat"
       },
       "anthropic": {
@@ -526,6 +526,97 @@
         "openai-responses": "Responses",
         "openai-completionsHint": "ほぼどこでも使えます。ほとんどのサービスや中継サービスが対応しています。",
         "openai-responsesHint": "OpenAI の新しい API です。対応しているサービスは一部のみです。"
+      },
+      "other": "その他のサービス（アドレスを入力）"
+    },
+    "apiKey": {
+      "title": "API キーを貼り付け",
+      "tag": "いちばん簡単",
+      "description": "DeepSeek、Kimi、Qwen、GLM、OpenAI、Claude、Gemini など。キーからサービスを見分けて、残りは mu が設定します",
+      "placeholder": "ここにキーを貼り付け",
+      "service": "サービス",
+      "servicePlaceholder": "キーから判別",
+      "serviceHint": "mu がキーからサービスを見分けます。見分けられないときは、ここで選んでください。",
+      "recognized": "キーから判別しました。",
+      "ambiguous": "この形のキーを使うサービスが複数あります。どのサービスのキーですか？",
+      "unknown": "mu はこの種類のキーを知りません。どのサービスのキーですか？",
+      "keyPage": "キーはどこで取得できますか？",
+      "checking": "{{service}} でキーを確認しています…",
+      "lookingLocal": "このマシンで {{service}} を探しています…",
+      "recheck": "もう一度確認",
+      "startsWith": "mu が最初に使うモデル",
+      "modelHint": "モデルはいつでも切り替えられます。",
+      "outcome": {
+        "ok": "キーは使えます。",
+        "okLocal": "{{service}} はこのマシンで動いています。",
+        "openList": "{{service}} が応答しました。モデル一覧は誰でも見られるため、キー自体は mu が最初に使うときに確認されます。",
+        "empty": "キーは使えますが、{{service}} にはこのキーで使えるモデルが一覧にありません。",
+        "emptyLocal": "{{service}} にはまだモデルがありません。先に 1 つダウンロードしてから（例: ollama pull qwen3）、もう一度確認してください。",
+        "unlisted": "{{service}} は応答しましたが、モデル一覧を出していません。キーは mu が最初に使うときに確認されます。",
+        "wrongKey": "{{service}} はこのキーを受け付けませんでした。キー全体がコピーされているか、まだ有効かを確認してください。",
+        "quota": "{{service}} によると、アカウントの残高かクォータが残っていません。チャージしてから、もう一度確認してください。",
+        "unreachable": "{{service}} に接続できませんでした。ネットワークを確認してください。いる場所でサービスがブロックされている場合は、プロキシをオンにしてもう一度確認してください。",
+        "offline": "このマシンの {{service}} が応答しません。起動してから、もう一度確認してください。",
+        "region": "{{service}} はお使いの地域では利用できません。対応地域のプロキシ経由で接続するか、別のサービスを選んでください。",
+        "wrongAddress": "{{service}} の応答が想定と違います（HTTP {{status}}）。アドレスが変わったのかもしれません。下の「その他のサービス」でアドレスを入力してください。",
+        "down": "{{service}} で今、問題が起きています（HTTP {{status}}）。少し待ってから、もう一度お試しください。"
+      },
+      "problems": {
+        "key": "先に API キーを貼り付けてください。",
+        "service": "このキーのサービスを選んでください。",
+        "notWorking": "キーがまだ使えません。上で直すか、別の方法を選ぶか、今はスキップしてください。",
+        "notReady": "{{service}} の準備がまだできていません。上の案内に従うか、別の方法を選ぶか、今はスキップしてください。",
+        "model": "最初に使うモデルを入力してください。"
+      },
+      "services": {
+        "deepseek": {
+          "name": "DeepSeek",
+          "label": "DeepSeek"
+        },
+        "qwen": {
+          "name": "Qwen",
+          "label": "Qwen（Alibaba Cloud Model Studio）"
+        },
+        "kimi": {
+          "name": "Kimi",
+          "label": "Kimi（Moonshot AI）"
+        },
+        "glm": {
+          "name": "GLM",
+          "label": "GLM（Zhipu AI）"
+        },
+        "siliconflow": {
+          "name": "SiliconFlow",
+          "label": "SiliconFlow"
+        },
+        "stepfun": {
+          "name": "StepFun",
+          "label": "StepFun"
+        },
+        "openrouter": {
+          "name": "OpenRouter",
+          "label": "OpenRouter"
+        },
+        "openai": {
+          "name": "OpenAI",
+          "label": "OpenAI"
+        },
+        "anthropic": {
+          "name": "Anthropic",
+          "label": "Anthropic（Claude API）"
+        },
+        "google": {
+          "name": "Google Gemini",
+          "label": "Google Gemini"
+        },
+        "xai": {
+          "name": "xAI",
+          "label": "xAI Grok"
+        },
+        "ollama": {
+          "name": "Ollama",
+          "label": "Ollama（このマシン）"
+        }
       }
     },
     "judge": {
