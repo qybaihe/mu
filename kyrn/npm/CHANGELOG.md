@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.1.6] - unreleased
+## [0.1.6] - 2026-09-27
 
 ### Added
 
@@ -15,6 +15,10 @@
 ### Changed
 
 - The welcome screen and `mu doctor` point to `mu setup` when there is no model or no judge key.
+
+### Fixed
+
+- In the desktop app on macOS, a conversation no longer puts a bouncing icon in the Dock. The app runs mu on its own Electron binary as Node, and naming such a process (`process.title`) registers it with macOS as a foreground app; mu now names its process only where that is harmless.
 
 ## [0.1.5] - 2026-09-25
 
