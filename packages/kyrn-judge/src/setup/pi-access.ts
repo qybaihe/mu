@@ -1,22 +1,16 @@
 // pi itself: its sources in a checkout, its own bundle's index in the npm package (kyrn/npm/build.mjs).
-import {
-	CredentialSynchronizationError,
-	defaultModelPerProvider,
-	type ModelRuntime,
-	SettingsManager,
-} from "@earendil-works/pi-coding-agent";
+import { CredentialSynchronizationError, type ModelRuntime, SettingsManager } from "@earendil-works/pi-coding-agent";
 import type { PiAccess } from "./wizard.ts";
 
 /**
- * The wizard's view of pi: its providers and defaults, and its own writers for auth.json and settings.json, so that
- * both files come out exactly as pi's /login and /model leave them (a lock, mode 0600, every other field kept).
+ * The wizard's view of pi: its providers, and its own writers for auth.json and settings.json, so that both files come
+ * out exactly as pi's /login and /model leave them (under pi's lock, auth.json readable by its owner only, every other
+ * field kept).
  */
 export function piAccess(runtime: ModelRuntime, agentDir: string): PiAccess {
-	const preferred: Readonly<Record<string, string>> = defaultModelPerProvider;
 	return {
 		providerExists: (provider) => runtime.getProvider(provider) !== undefined,
 		models: (provider) => runtime.getModels(provider).map((model) => model.id),
-		defaultModel: (provider) => preferred[provider],
 		baseUrl: (provider) => runtime.getModels(provider)[0]?.baseUrl,
 		credential: async (provider) => {
 			const found = (await runtime.listCredentials()).find((credential) => credential.providerId === provider);

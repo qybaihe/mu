@@ -322,10 +322,9 @@ export function explainProblem(problem: Problem, context: ExplainContext, langua
 				: `Could not find ${host}: there is no internet connection, or the name cannot be resolved here. ${proxyHint}`;
 		case "connection":
 			if (local) {
-				const ollama = /ollama/i.test(service);
 				return zh
-					? `${host} 上没有服务在监听。${ollama ? "Ollama 在运行吗？用 ollama serve 启动它。" : "服务启动了吗？"}`
-					: `Nothing is listening at ${host}. ${ollama ? "Is Ollama running? Start it with: ollama serve" : "Is the service running?"}`;
+					? `${host} 上没有服务在监听：它启动了吗？`
+					: `Nothing is listening at ${host}: is the service running?`;
 			}
 			return zh ? `连不上 ${host}。${proxyHint}` : `Could not connect to ${host}. ${proxyHint}`;
 		case "tls":

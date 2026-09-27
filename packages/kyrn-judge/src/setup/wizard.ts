@@ -17,15 +17,17 @@ import {
 	writeJsonFile,
 } from "./files.ts";
 import type { SetupLanguage, Text } from "./language.ts";
-import { chatModels, chooseModel } from "./models.ts";
 import {
-	type CheckKind,
+	chatModels,
+	checkKindOf,
 	cleanKey,
-	type Reach,
+	namedModel,
 	SETUP_SERVICES,
+	type SetupApi,
 	type SetupService,
 	serviceById,
 	servicesForKey,
+	tableModel,
 } from "./services.ts";
 
 /**
@@ -69,6 +71,16 @@ const JEV_PAGE = "https://typesafe.ai";
 /** Services whose keys carry the vendor's own mark: a key of theirs pasted as the Jev key is a mistake. */
 const BRANDED = new Set(["openai", "anthropic", "openrouter", "google", "xai"]);
 
+const OTHER: Text = {
+	zh: "其他 OpenAI 或 Anthropic 兼容的服务",
+	en: "Another OpenAI- or Anthropic-compatible service",
+};
+/** A local service that does not answer, or lists no model, is not ready yet; a key has nothing to do with it. */
+const NOT_READY: Text = {
+	zh: "Ollama 还没准备好（用 `ollama serve` 启动它，再拉取一个模型）。",
+	en: "Ollama is not ready yet (start it with `ollama serve`, pull a model).",
+};
+
 type Env = Readonly<Record<string, string | undefined>>;
 
 /** The terminal, as the wizard uses it. `ask` and `secret` give undefined when the input ended or was cancelled. */
@@ -85,10 +97,8 @@ export interface Prompter {
 export interface PiAccess {
 	/** Whether pi has a provider by this id: one of its own, or one from models.json. */
 	providerExists(provider: string): boolean;
-	/** pi's models of a provider, in pi's order. */
+	/** pi's models of a provider. */
 	models(provider: string): readonly string[];
-	/** pi's defaultModelPerProvider. */
-	defaultModel(provider: string): string | undefined;
 	/** Where pi sends a provider's requests, models.json's address included. */
 	baseUrl(provider: string): string | undefined;
 	/** How auth.json holds a credential for this provider, if it does. */
@@ -152,9 +162,9 @@ export function parseSetupArgs(argv: readonly string[]): SetupArgs | { readonly 
 			}
 			values.set(flag, value);
 		} else if (SETUP_FLAGS[arg]) flags.add(SETUP_FLAGS[arg]);
-		else if (arg.startsWith("-") && arg.length > 1)
+		else if (arg.startsWith("-") && arg.length > 1) {
 			return { error: { zh: `不认识的选项 ${arg}`, en: `unknown option ${arg}` } };
-		else words.push(arg);
+		} else words.push(arg);
 	}
 	const api = values.get("--api");
 	if (api !== undefined && api !== "openai" && api !== "anthropic") {
@@ -239,9 +249,14 @@ export function setupUsage(language: SetupLanguage): string {
 	].join("\n");
 }
 
+/** A service as the lists show it: its name, and for `other` what it stands for. */
+function label(service: SetupService, language: SetupLanguage): string {
+	return service.id === "other" ? OTHER[language] : service.name;
+}
+
 export function serviceList(language: SetupLanguage): string {
 	const width = Math.max(...SETUP_SERVICES.map((service) => service.id.length));
-	return SETUP_SERVICES.map((service) => `  ${service.id.padEnd(width)}  ${service.name[language]}`).join("\n");
+	return SETUP_SERVICES.map((service) => `  ${service.id.padEnd(width)}  ${label(service, language)}`).join("\n");
 }
 
 /** A provider id for an address of one's own: a plain word that pi and the /model picker take as it is. */
@@ -253,8 +268,9 @@ export function providerIdFor(baseUrl: string): string {
 		return "custom";
 	}
 	const [name, port] = host.split(/:(?=\d+$)/);
-	if (name === "localhost" || /^\d+(\.\d+){3}$/.test(name) || name.startsWith("["))
+	if (name === "localhost" || /^\d+(\.\d+){3}$/.test(name) || name.startsWith("[")) {
 		return port ? `local-${port}` : "local";
+	}
 	const parts = name.split(".").filter((part) => part !== "api" && part !== "www");
 	const main = parts.length >= 2 ? parts[parts.length - 2] : (parts[0] ?? "");
 	return main.replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "") || "custom";
@@ -287,6 +303,14 @@ export function jevKeyAt(
 		if (envFileText !== undefined && envFileValue(envFileText, name)) return { name, where: "file" };
 	}
 	return undefined;
+}
+
+/** One address a service is reached at, and pi's provider there. */
+interface Reach {
+	readonly provider: string;
+	readonly builtIn: boolean;
+	readonly baseUrl: string;
+	readonly api: SetupApi;
 }
 
 interface Target {
@@ -351,11 +375,11 @@ class Setup {
 	}
 
 	private name(service: SetupService): string {
-		return service.name[this.language];
+		return label(service, this.language);
 	}
 
 	private names(services: readonly SetupService[]): string {
-		return services.map((service) => this.name(service)).join(this.language === "zh" ? "和" : " and ");
+		return services.map((service) => this.name(service)).join(this.language === "zh" ? " 和 " : " and ");
 	}
 
 	private path(path: string): string {
@@ -387,6 +411,12 @@ class Setup {
 			const key = cleanKey(answer);
 			if (key || allowEmpty) return key;
 		}
+	}
+
+	private pasteKey(): Promise<string> {
+		return this.secret(
+			this.t({ zh: "粘贴 API 密钥（不会显示出来）：", en: "Paste the API key (it is not shown): " }),
+		);
 	}
 
 	private async choose<T>(question: string, choices: readonly Choice<T>[]): Promise<T> {
@@ -530,9 +560,7 @@ class Setup {
 			return "subscription";
 		}
 		if (route === "list") return this.keyFor(await this.pickService(SETUP_SERVICES), undefined);
-		const pasted = await this.secret(
-			this.t({ zh: "粘贴 API 密钥（不会显示出来）：", en: "Paste the API key (it is not shown): " }),
-		);
+		const pasted = await this.pasteKey();
 		return { service: await this.serviceOf(pasted), key: pasted };
 	}
 
@@ -551,7 +579,7 @@ class Setup {
 		const matches = servicesForKey(key);
 		if (matches.length === 1) {
 			this.io.say(
-				this.t({ zh: `这是${this.name(matches[0])}的密钥。`, en: `This is a ${this.name(matches[0])} key.` }),
+				this.t({ zh: `这是 ${this.name(matches[0])} 的密钥。`, en: `This is a ${this.name(matches[0])} key.` }),
 			);
 			return matches[0];
 		}
@@ -559,7 +587,7 @@ class Setup {
 			throw this.fail(
 				matches.length > 1
 					? {
-							zh: `${this.names(matches)}的密钥长得一样。用 --service 说明是哪家：${matches.map((service) => service.id).join(" 或 ")}`,
+							zh: `${this.names(matches)} 的密钥长得一样。用 --service 说明是哪家：${matches.map((service) => service.id).join(" 或 ")}`,
 							en: `keys of ${this.names(matches)} look the same. Say which with --service ${matches.map((service) => service.id).join(" or ")}`,
 						}
 					: {
@@ -573,13 +601,13 @@ class Setup {
 			return this.pickService(
 				matches,
 				this.t({
-					zh: `${this.names(matches)}的密钥长得一样。这个密钥是哪家的？mu 只把密钥发给它所属的服务。`,
+					zh: `${this.names(matches)} 的密钥长得一样。这个密钥是哪家的？mu 只把密钥发给它所属的服务。`,
 					en: `Keys of ${this.names(matches)} look the same. Which service is this key for? mu sends a key only to the service it belongs to.`,
 				}),
 			);
 		}
 		return this.pickService(
-			SETUP_SERVICES.filter((service) => service.key !== "none"),
+			SETUP_SERVICES.filter((service) => !service.keyless),
 			this.t({
 				zh: "mu 认不出这个密钥。它是哪个服务的？",
 				en: "mu does not recognise this key. Which service is it for?",
@@ -592,30 +620,28 @@ class Setup {
 		service: SetupService,
 		given: string | undefined,
 	): Promise<{ service: SetupService; key?: string }> {
-		if (service.key === "none") return { service };
+		if (service.keyless) return { service };
 		let key = given;
 		if (key === undefined && !this.scripted) {
-			if (service.keyPage)
+			if (service.keyPage) {
 				this.io.say(
 					this.t({ zh: `密钥在这里创建：${service.keyPage}`, en: `Keys are made at ${service.keyPage}` }),
 				);
-			key =
-				service.key === "optional"
-					? await this.secret(
-							this.t({
-								zh: "粘贴它的 API 密钥；不需要密钥就直接回车（不会显示）：",
-								en: "Paste its API key, or press Enter if it takes none (not shown): ",
-							}),
-							true,
-						)
-					: await this.secret(
-							this.t({ zh: "粘贴 API 密钥（不会显示出来）：", en: "Paste the API key (it is not shown): " }),
-						);
+			}
+			key = service.keyOptional
+				? await this.secret(
+						this.t({
+							zh: "粘贴它的 API 密钥；不需要密钥就直接回车（不会显示）：",
+							en: "Paste its API key, or press Enter if it takes none (not shown): ",
+						}),
+						true,
+					)
+				: await this.pasteKey();
 		}
 		if (!key) {
-			if (service.key === "optional") return { service };
+			if (service.keyOptional) return { service };
 			throw this.fail(
-				{ zh: `${this.name(service)}需要一个 API 密钥`, en: `${this.name(service)} needs an API key` },
+				{ zh: `${this.name(service)} 需要一个 API 密钥`, en: `${this.name(service)} needs an API key` },
 				SETUP_EXIT.usage,
 			);
 		}
@@ -625,7 +651,7 @@ class Setup {
 		if (this.scripted) {
 			this.io.warn(
 				this.t({
-					zh: `注意：这个密钥看起来是${this.names(matches)}的；按 --service 发给${this.name(service)}。`,
+					zh: `注意：这个密钥看起来是 ${this.names(matches)} 的；按 --service 发给 ${this.name(service)}。`,
 					en: `Note: this key looks like a ${this.names(matches)} key; it goes to ${this.name(service)}, as --service says.`,
 				}),
 			);
@@ -634,7 +660,7 @@ class Setup {
 		const chosen = await this.pickService(
 			[service, ...matches],
 			this.t({
-				zh: `这个密钥看起来是${this.names(matches)}的，不像${this.name(service)}的。它是哪家的？`,
+				zh: `这个密钥看起来是 ${this.names(matches)} 的，不像 ${this.name(service)} 的。它是哪家的？`,
 				en: `This key looks like a ${this.names(matches)} key, not a ${this.name(service)} one. Which service is it for?`,
 			}),
 		);
@@ -645,23 +671,27 @@ class Setup {
 	// Step 3: one request to the service
 	// -----------------------------------------------------------------------------------------------------------
 
-	/** The addresses to try, in order: the service's own (as pi has it), or the one typed for `other`. */
+	/** The addresses to try, in order: the service's own (where pi has them), or the one typed for `other`. */
 	private async reaches(service: SetupService): Promise<Reach[]> {
 		const { args, deps } = this;
 		if (service.id !== "other") {
-			if (args.baseUrl) return [{ ...service.reach[0], baseUrl: args.baseUrl.replace(/\/+$/, "") }];
-			// pi's own address, with a models.json override: the key goes where pi will send it anyway.
-			return service.reach.map((reach) =>
-				reach.builtIn ? { ...reach, baseUrl: deps.pi.baseUrl(reach.provider) ?? reach.baseUrl } : reach,
-			);
+			const own = service.baseUrls.map((baseUrl, index) => ({
+				provider: service.providers[index],
+				builtIn: service.builtIn,
+				// pi's own address, with a models.json override: the key goes where pi will send it anyway.
+				baseUrl: (service.builtIn && deps.pi.baseUrl(service.providers[index])) || baseUrl,
+				api: service.api,
+			}));
+			return args.baseUrl ? [{ ...own[0], baseUrl: args.baseUrl.replace(/\/+$/, "") }] : own;
 		}
 		let baseUrl = args.baseUrl;
 		if (!baseUrl) {
-			if (this.scripted)
+			if (this.scripted) {
 				throw this.fail(
 					{ zh: "服务 other 需要 --base-url", en: "--service other needs --base-url" },
 					SETUP_EXIT.usage,
 				);
+			}
 			for (;;) {
 				baseUrl = await this.ask(
 					this.t({
@@ -717,9 +747,14 @@ class Setup {
 		return models.state === "ok" && existingProvider(models.value, provider) !== undefined;
 	}
 
-	private checkKind(service: SetupService, reach: Reach): CheckKind {
-		if (service.id !== "other") return service.check;
-		return reach.api === "anthropic-messages" ? "anthropic-models" : "openai-models";
+	/** A failure as the person can act on it: a local service that is silent is not ready yet, whatever the key. */
+	private explain(service: SetupService, problem: Problem): string {
+		if (service.keyless && ["connection", "timeout", "dns"].includes(problem.kind)) return this.t(NOT_READY);
+		return explainProblem(
+			problem,
+			{ service: this.name(service), proxy: this.deps.proxy, timeoutMs: this.deps.timeoutMs },
+			this.language,
+		);
 	}
 
 	/** The key, checked: asked again, retried, or taken unchecked until the person has one that works, or stops. */
@@ -732,16 +767,12 @@ class Setup {
 		for (;;) {
 			const result = await this.tryReaches(service, reaches, key);
 			if (result.ok) return { service, reach: result.reach, key, listed: result.listed };
-			const said = explainProblem(
-				result.problem,
-				{ service: this.name(service), proxy: this.deps.proxy, timeoutMs: this.deps.timeoutMs },
-				this.language,
-			);
+			const said = this.explain(service, result.problem);
 			if (this.scripted) throw this.fail({ zh: said, en: said });
 			this.io.say(said);
 			type Next = "key" | "again" | "unchecked" | "stop";
 			const choices: Choice<Next>[] = [];
-			if (service.key !== "none")
+			if (!service.keyless)
 				choices.push({ label: this.t({ zh: "换一个密钥", en: "Paste another key" }), value: "key" });
 			choices.push({ label: this.t({ zh: "再试一次", en: "Try again" }), value: "again" });
 			if (result.problem.kind !== "key") {
@@ -757,11 +788,7 @@ class Setup {
 			const next = await this.choose(this.t({ zh: "接下来怎么办？", en: "What now?" }), choices);
 			if (next === "stop") throw this.cancelled();
 			if (next === "unchecked") return { service, reach: reaches[0], key };
-			if (next === "key") {
-				key = await this.secret(
-					this.t({ zh: "粘贴 API 密钥（不会显示出来）：", en: "Paste the API key (it is not shown): " }),
-				);
-			}
+			if (next === "key") key = await this.pasteKey();
 		}
 	}
 
@@ -775,20 +802,20 @@ class Setup {
 		const candidates = [...reaches];
 		for (let index = 0; index < candidates.length; index++) {
 			const reach = candidates[index];
-			const host = hostOf(reach.baseUrl);
+			const where = `${this.name(service)}（${hostOf(reach.baseUrl)}）`;
 			this.io.say(
 				key
 					? this.t({
-							zh: `正在用${this.name(service)}（${host}）检查密钥……`,
-							en: `Checking the key with ${this.name(service)} (${host})...`,
+							zh: `正在用 ${where}检查密钥……`,
+							en: `Checking the key with ${this.name(service)} (${hostOf(reach.baseUrl)})...`,
 						})
 					: this.t({
-							zh: `正在检查${this.name(service)}（${host}）……`,
-							en: `Checking ${this.name(service)} (${host})...`,
+							zh: `正在检查 ${where}……`,
+							en: `Checking ${this.name(service)} (${hostOf(reach.baseUrl)})...`,
 						}),
 			);
 			const result = await checkKey({
-				kind: this.checkKind(service, reach),
+				kind: checkKindOf(service, reach.api),
 				baseUrl: reach.baseUrl,
 				key,
 				fetch: this.deps.fetch,
@@ -798,14 +825,14 @@ class Setup {
 				const count = result.models?.length;
 				this.io.say(
 					count === undefined
-						? this.t({ zh: "可以用。", en: "It works." })
+						? this.t({ zh: "密钥可以用。", en: "The key works." })
 						: this.t({ zh: `可以用：列出了 ${count} 个模型。`, en: `It works: ${count} models listed.` }),
 				);
 				return { ok: true, reach, listed: result.models };
 			}
 			if (result.problem.kind === "permission") {
 				// The key was accepted; it only may not read the list.
-				this.io.say(explainProblem(result.problem, { service: this.name(service) }, this.language));
+				this.io.say(this.explain(service, result.problem));
 				return { ok: true, reach };
 			}
 			first ??= result.problem;
@@ -830,13 +857,13 @@ class Setup {
 			if (this.args.yes) return;
 			if (this.scripted) {
 				throw this.fail({
-					zh: `${this.name(service)}已经用订阅账号登录了。要改存密钥，加上 --yes`,
+					zh: `${this.name(service)} 已经用订阅账号登录了。要改存密钥，加上 --yes`,
 					en: `${this.name(service)} is signed in with a subscription. To store a key instead, add --yes`,
 				});
 			}
 			const replace = await this.confirm(
 				this.t({
-					zh: `你已经用订阅账号登录了${this.name(service)}。改用这个密钥吗？登录会被替换（留有备份）。[y/N] `,
+					zh: `你已经用订阅账号登录了 ${this.name(service)}。改用这个密钥吗？登录会被替换（留有备份）。[y/N] `,
 					en: `You are signed in to ${this.name(service)} with a subscription. Use this key instead? The sign-in is replaced (a copy is kept). [y/N] `,
 				}),
 				false,
@@ -860,60 +887,51 @@ class Setup {
 	// -----------------------------------------------------------------------------------------------------------
 
 	private async model(target: Target): Promise<string> {
-		const { pi } = this.deps;
-		const provider = target.reach.provider;
+		const { service, listed } = target;
 		if (this.args.model) {
-			if (target.listed && !target.listed.includes(this.args.model)) {
+			if (listed && listed.length > 0 && !listed.includes(this.args.model)) {
 				this.io.say(
 					this.t({
-						zh: `注意：${this.name(target.service)}没有列出 ${this.args.model}，照样使用。`,
-						en: `Note: ${this.name(target.service)} does not list ${this.args.model}; it is used anyway.`,
+						zh: `注意：${this.name(service)} 没有列出 ${this.args.model}，照样使用。`,
+						en: `Note: ${this.name(service)} does not list ${this.args.model}; it is used anyway.`,
 					}),
 				);
 			}
 			return this.args.model;
 		}
-		const choice = chooseModel({
-			steps: target.service.model,
-			listed: target.listed,
-			provider,
-			defaultOf: (id) => pi.defaultModel(id),
-			catalog: target.reach.builtIn ? pi.models(provider) : [],
-		});
 		const startWith = this.t({ zh: "先用这个模型：", en: "Model to start with: " });
-		if (choice.chosen) {
-			this.io.say(`${startWith}${choice.chosen}`);
-			return choice.chosen;
+		// The table's choice when the service lists it; a service that lists nothing starts on the model it names.
+		const chosen = listed && listed.length > 0 ? tableModel(service, listed) : namedModel(service);
+		if (chosen) {
+			this.io.say(`${startWith}${chosen}`);
+			return chosen;
 		}
-		if (choice.options.length === 0) {
+		const options = chatModels(listed ?? []);
+		if (options.length === 0) {
+			const none = service.keyless
+				? NOT_READY
+				: {
+						zh: `${this.name(service)} 没有列出模型。`,
+						en: `${this.name(service)} lists no models.`,
+					};
 			if (this.scripted) {
-				throw this.fail({
-					zh: `${this.name(target.service)}没有列出模型。用 --model 指定一个`,
-					en: `${this.name(target.service)} lists no models. Name one with --model`,
-				});
+				throw this.fail({ zh: `${none.zh}可以用 --model 指定一个。`, en: `${none.en} Name one with --model.` });
 			}
-			if (target.service.id === "ollama") {
-				this.io.say(
-					this.t({
-						zh: "Ollama 里还没有模型。先下载一个，例如：ollama pull qwen2.5-coder",
-						en: "Ollama has no models yet. Pull one first, for example: ollama pull qwen2.5-coder",
-					}),
-				);
-			}
+			this.io.say(this.t(none));
 			for (;;) {
 				const typed = await this.ask(this.t({ zh: "要用的模型名：", en: "The name of the model to use: " }));
 				if (typed) return typed;
 			}
 		}
 		if (this.scripted) {
-			this.io.say(`${startWith}${choice.options[0]}`);
-			return choice.options[0];
+			this.io.say(`${startWith}${options[0]}`);
+			return options[0];
 		}
-		const shown = choice.options.slice(0, 20);
+		const shown = options.slice(0, 20);
 		this.io.say(this.t({ zh: "mu 先用哪个模型？", en: "Which model should mu start with?" }));
 		for (const [index, id] of shown.entries()) this.io.say(`  ${index + 1}) ${id}`);
-		if (choice.options.length > shown.length) {
-			const more = choice.options.length - shown.length;
+		if (options.length > shown.length) {
+			const more = options.length - shown.length;
 			this.io.say(
 				this.t({
 					zh: `  （还有 ${more} 个，输入名字也可以）`,
@@ -1082,7 +1100,7 @@ class Setup {
 			if (!branded) return key;
 			const anyway = await this.confirm(
 				this.t({
-					zh: `这看起来是${this.name(branded)}的密钥，不是 Jev 的，它会被发给 TypeSafe。仍然使用吗？[y/N] `,
+					zh: `这看起来是 ${this.name(branded)} 的密钥，不是 Jev 的，它会被发给 TypeSafe。仍然使用吗？[y/N] `,
 					en: `This looks like a ${this.name(branded)} key, not a Jev key, and it would be sent to TypeSafe. Use it anyway? [y/N] `,
 				}),
 				false,
@@ -1121,12 +1139,12 @@ class Setup {
 					let next = file.state === "ok" ? file.value : {};
 					if (custom) {
 						next = withProvider(next, provider, {
-							name: service.id === "other" ? undefined : this.name(service),
+							name: service.id === "other" ? undefined : service.name,
 							baseUrl: reach.baseUrl,
 							api: reach.api,
 							// pi counts a provider without a key as unusable: a keyless service gets a placeholder, never a real key.
-							apiKey: service.key === "none" ? "ollama" : key ? undefined : "none",
-							compat: reach.compat,
+							apiKey: service.keyless ? "ollama" : key ? undefined : "none",
+							compat: service.compat,
 							// What the service lists goes into /model, the one to start with first.
 							models: [model, ...chatModels(target.listed ?? []).filter((id) => id !== model)].map((id) => ({
 								id,
@@ -1159,7 +1177,7 @@ class Setup {
 					saved.push(
 						this.savedLine(
 							authPath,
-							this.t({ zh: `${this.name(service)}的密钥`, en: `the ${this.name(service)} key` }),
+							this.t({ zh: `${this.name(service)} 的密钥`, en: `the ${this.name(service)} key` }),
 						),
 					);
 				}
@@ -1288,7 +1306,7 @@ class Setup {
 		const done =
 			target && model
 				? this.t({
-						zh: `完成。mu 会用${this.name(target.service)} · ${model} 开始工作。`,
+						zh: `完成。mu 会用 ${this.name(target.service)} · ${model} 开始工作。`,
 						en: `Done. mu starts on ${this.name(target.service)} · ${model}.`,
 					})
 				: this.t({ zh: "完成。", en: "Done." });
