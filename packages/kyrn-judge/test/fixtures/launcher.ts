@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { lstatSync, rmSync, unlinkSync } from "node:fs";
 import { delimiter, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -40,6 +40,38 @@ export function runScript(script: string, args: readonly string[], env: Record<s
 			})
 		: spawnSync(script, args, options);
 	return { code: result.status, out: result.stdout, err: result.stderr };
+}
+
+/**
+ * runScript without blocking this process, so that a server of the test's own can answer the script meanwhile.
+ * `input` is what the script reads on stdin.
+ */
+export function runScriptAsync(
+	script: string,
+	args: readonly string[],
+	env: Record<string, string>,
+	{ input = "", timeout = 60_000 }: { readonly input?: string; readonly timeout?: number } = {},
+): Promise<{ code: number | null; out: string; err: string }> {
+	const options = { env: scriptEnv(env), timeout, windowsHide: true };
+	const child = windows
+		? spawn(process.env.ComSpec ?? "cmd.exe", ["/d", "/s", "/c", `""${script}" ${args.join(" ")}"`], {
+				...options,
+				windowsVerbatimArguments: true,
+			})
+		: spawn(script, args, options);
+	let out = "";
+	let err = "";
+	child.stdout.setEncoding("utf8").on("data", (chunk: string) => {
+		out += chunk;
+	});
+	child.stderr.setEncoding("utf8").on("data", (chunk: string) => {
+		err += chunk;
+	});
+	child.stdin.end(input);
+	return new Promise((resolve, reject) => {
+		child.on("error", reject);
+		child.on("close", (code) => resolve({ code, out, err }));
+	});
 }
 
 /**
