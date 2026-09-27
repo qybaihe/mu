@@ -34,6 +34,7 @@ import {
 	parseTasklist,
 	parseWindowsProcesses,
 	planAuth,
+	planHost,
 	planImport,
 	planJudge,
 	planLaunch,
@@ -457,6 +458,70 @@ describe("starting pi", () => {
 		expect(launch({ argv: ["--help"] }).preface).toContain("Agent flags:");
 		expect(launch({ argv: ["-h"] }).preface).toContain("mu link | unlink");
 		expect(launch({ argv: ["-p", "--help"] }).preface).toBeUndefined();
+	});
+});
+
+describe("pi inside another program (the desktop app's runtime host)", () => {
+	const WIN_PACKAGE = "C:\\Program Files\\mu\\resources\\harness\\mu-agent";
+	const winPackage = {
+		[`${WIN_PACKAGE}\\dist\\bundle\\cli.js`]: "",
+		[`${WIN_PACKAGE}\\judge\\dist\\kyrn-judge.js`]: "",
+	};
+	const rpc = ["--mode", "rpc"];
+
+	it("imports pi's bundle and runs the built judgment layer from the package, in the launcher's environment", () => {
+		const input = {
+			platform: "win32" as const,
+			env: { Path: "C:\\Windows" },
+			argv: rpc,
+			root: WIN_PACKAGE,
+			home: WIN_HOME,
+			fs: disk({ ...winPackage, "C:\\Users\\bai\\.mu\\.env": "TYPESAFE_API_KEY=from-home\n" }),
+		};
+		const host = planHost(input);
+		if (host.error !== undefined) throw new Error(host.error);
+		expect(host).toMatchObject({
+			module: `${WIN_PACKAGE}\\dist\\bundle\\index.js`,
+			execArgv: [],
+			args: ["-e", `${WIN_PACKAGE}\\judge\\dist\\kyrn-judge.js`, "--mode", "rpc"],
+			layout: "package",
+			appDir: WIN_PACKAGE,
+			agentDir: "C:\\Users\\bai\\.mu\\agent",
+		});
+		// The command line's pi and the app's are one: the same home, settings, sign-ins and keys.
+		expect(host.env).toEqual(launch({ ...input, execPath: "node.exe" }).env);
+		expect(host.env.TYPESAFE_API_KEY).toBe("from-home");
+	});
+
+	it("runs a checkout's sources on Node's own type stripping, with pi's source resolver", () => {
+		const host = planHost({
+			platform: "linux",
+			env: {},
+			argv: rpc,
+			root: POSIX_ROOT,
+			home: "/home/bai",
+			fs: disk(posixInstalled),
+		});
+		if (host.error !== undefined) throw new Error(host.error);
+		expect(host).toMatchObject({
+			module: `${POSIX_ROOT}/packages/coding-agent/src/index.ts`,
+			execArgv: POSIX_NATIVE,
+			args: ["-e", `${POSIX_ROOT}/packages/kyrn-judge/src/extension/kyrn-judge.ts`, "--mode", "rpc"],
+			layout: "repo",
+			appDir: "/home/bai/.mu/app",
+		});
+		expect(host.env).toEqual(launch({ argv: rpc }).env);
+	});
+
+	it("does not put tsx in front of a checkout it cannot run on the host's own Node", () => {
+		const input = { platform: "linux" as const, env: {}, argv: rpc, root: POSIX_ROOT, home: "/home/bai" };
+		expect(planHost({ ...input, stripsTypes: false, fs: disk(posixInstalled) }).error).toContain(
+			"strips TypeScript types",
+		);
+		const noResolver = Object.fromEntries(
+			Object.entries(posixInstalled).filter(([path]) => !path.endsWith("source-resolver.ts")),
+		);
+		expect(planHost({ ...input, fs: disk(noResolver) }).error).toContain("source resolver");
 	});
 });
 

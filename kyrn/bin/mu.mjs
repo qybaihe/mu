@@ -554,6 +554,73 @@ export function planLaunch({
 	};
 }
 
+/**
+ * Everything about running pi inside a process of another program, such as the desktop app's runtime host, decided
+ * as planLaunch decides it and without touching anything: the module to import pi's `setupCli` and `main` from, the
+ * Node flags that process starts with, pi's arguments (the judgment layer, then `argv`) and its whole environment.
+ * The app's pi and the command line's are then one: the same files, settings, sign-ins and keys.
+ *
+ * A checkout runs in such a process only on a Node that strips TypeScript types itself, with pi's source resolver:
+ * tsx cannot be put in front of a module another program imports. Returns { error } otherwise.
+ */
+export function planHost({ platform, env, argv, root, home, fs, wsl = false, stripsTypes = true }) {
+	const path = pathFor(platform);
+	const launch = planLaunch({ platform, env, argv, root, home, execPath: "", fs, wsl, stripsTypes });
+	if (launch.error !== undefined) return { error: launch.error };
+	const common = {
+		env: launch.env,
+		layout: launch.layout,
+		muDir: launch.muDir,
+		appDir: launch.appDir,
+		agentDir: launch.agentDir,
+		startJudge: launch.startJudge,
+		notes: launch.notes,
+	};
+	if (launch.layout === "package") {
+		return {
+			...common,
+			module: path.join(root, "dist", "bundle", "index.js"),
+			execArgv: [],
+			args: ["-e", packageEntries({ root, platform }).extension, ...argv],
+		};
+	}
+	const resolver = path.join(root, "packages", "coding-agent", "src", "experimental", "source-resolver.ts");
+	if (!stripsTypes || !fs.exists(resolver)) {
+		return {
+			error: `pi's sources run inside another program only on a Node that strips TypeScript types itself (22.18 or newer), with pi's source resolver (${resolver})`,
+		};
+	}
+	const runtime = sourceRuntime({ root, platform, stripsTypes, exists: fs.exists, readFile: fs.readFile });
+	if (runtime.error) return { error: runtime.error };
+	return {
+		...common,
+		module: path.join(root, "packages", "coding-agent", "src", "index.ts"),
+		execArgv: runtime.args,
+		args: ["-e", path.join(root, "packages", "kyrn-judge", "src", "extension", "kyrn-judge.ts"), ...argv],
+	};
+}
+
+/**
+ * What is done before pi starts, for the command line and the desktop app's runtime host alike: the app view that
+ * names a checkout mu, mu's agent folder, the configuration's notes (to `err`), and the local judge when the
+ * configuration asks for it. `bin` is this launcher's folder. The local judge is one shared sidecar: starting it is
+ * idempotent and never blocks pi.
+ */
+export function prepareLaunch({ plan, platform, root, bin, err }) {
+	const path = pathFor(platform);
+	if (plan.layout === "repo") {
+		ensureAppView({ platform, app: plan.appDir, upstream: path.join(root, "packages", "coding-agent") });
+	}
+	mkdirSync(plan.agentDir, { recursive: true });
+	for (const note of plan.notes) err(note);
+	if (plan.startJudge) {
+		const started = spawnSync(path.join(bin, "kyrn-judge-local"), ["start"], { stdio: "ignore", env: plan.env });
+		if (started.status !== 0) {
+			err("mu: the local judge did not start (mu judge status); decisions fall back to pi's behaviour");
+		}
+	}
+}
+
 // ---------------------------------------------------------------------------------------------------------
 // mu auth
 // ---------------------------------------------------------------------------------------------------------
@@ -1476,18 +1543,7 @@ export async function main(argv = process.argv.slice(2)) {
 		return 1;
 	}
 
-	if (plan.layout === "repo") {
-		ensureAppView({ platform, app: plan.appDir, upstream: path.join(root, "packages", "coding-agent") });
-	}
-	mkdirSync(plan.agentDir, { recursive: true });
-	for (const note of plan.notes) err(note);
-	// The local judge is one shared sidecar; starting it is idempotent and must never block mu.
-	if (plan.startJudge) {
-		const started = spawnSync(path.join(bin, "kyrn-judge-local"), ["start"], { stdio: "ignore", env: plan.env });
-		if (started.status !== 0) {
-			err("mu: the local judge did not start (mu judge status); decisions fall back to pi's behaviour");
-		}
-	}
+	prepareLaunch({ plan, platform, root, bin, err });
 	if (plan.preface) out(plan.preface);
 	return handOver(plan);
 }

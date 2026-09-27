@@ -90,6 +90,48 @@ export function planLaunch(input: {
 	fs: { exists(path: string): boolean; isDir(path: string): boolean; readFile(path: string): string };
 }): LaunchPlan | { error: string };
 
+/** How pi runs inside a process of another program (the desktop app's runtime host): see planHost in mu.mjs. */
+export interface HostPlan {
+	error?: undefined;
+	/** The module to import pi's `setupCli` and `main` from: pi's bundle in the package, its sources in a checkout. */
+	module: string;
+	/** The Node flags the host process starts with: a checkout's source resolver and compile cache, none for the package. */
+	execArgv: string[];
+	/** pi's arguments: the judgment layer, then the ones asked for. */
+	args: string[];
+	env: Record<string, string>;
+	layout: Layout;
+	muDir: string;
+	/** PI_PACKAGE_DIR: the view at <home>/app for a checkout, the package itself for mu-agent. */
+	appDir: string;
+	agentDir: string;
+	startJudge: boolean;
+	notes: string[];
+}
+export function planHost(input: {
+	platform: Platform;
+	env: Env;
+	argv: readonly string[];
+	root: string;
+	home: string;
+	wsl?: boolean;
+	/** Whether the host's Node strips TypeScript types itself (process.features.typescript). Default true. */
+	stripsTypes?: boolean;
+	fs: { exists(path: string): boolean; isDir(path: string): boolean; readFile(path: string): string };
+}): HostPlan | { error: string };
+
+/**
+ * What is done before pi starts, for the command line and the app's host alike: the app view of a checkout, mu's agent
+ * folder, the configuration's notes and the local judge. `bin` is the launcher's folder (kyrn/bin).
+ */
+export function prepareLaunch(input: {
+	plan: Pick<HostPlan, "layout" | "appDir" | "agentDir" | "notes" | "startJudge" | "env">;
+	platform: Platform;
+	root: string;
+	bin: string;
+	err(message: string): void;
+}): void;
+
 /** Node's arguments for running a checkout's TypeScript, up to the entry file. */
 export function sourceRuntime(input: {
 	root: string;
