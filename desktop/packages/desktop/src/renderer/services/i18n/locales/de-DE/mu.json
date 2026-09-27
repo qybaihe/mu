@@ -713,6 +713,8 @@
     "startFailed": "mu konnte nicht starten.",
     "timeout": "mu hat nicht rechtzeitig geantwortet.",
     "processClosed": "mu wurde beendet. Sende die Nachricht erneut, um es neu zu starten.",
+    "regionBlocked": "Der Modelldienst lehnt die Region dieses Netzwerks ab. Schalte einen Proxy ein (mu folgt dem System-Proxy) oder wähle ein anderes Modell.",
+    "unreachable": "Der Modelldienst ist nicht erreichbar. Prüfe Netzwerk oder Proxy, oder wähle ein anderes Modell.",
     "modelFailed": "Die Modellanfrage ist fehlgeschlagen.",
     "turnRunning": "mu arbeitet noch an der vorherigen Nachricht. Warte, bis es fertig ist, oder stoppe es zuerst.",
     "noModel": "mu hat kein Modell, mit dem es antworten kann."

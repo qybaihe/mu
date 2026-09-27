@@ -3,6 +3,7 @@ import { createInterface } from 'node:readline';
 import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { systemProxyEnv } from './config/systemProxy.ts';
 import { log } from './errorLog.ts';
 import { muEnv, muHome } from './naming.ts';
 import { wslLaunch, wslLocation } from './wsl.ts';
@@ -146,7 +147,7 @@ export class PiRpc implements RpcPort {
           inherited: process.env.WSLENV,
           home: homedir(),
         })
-      : { command: launch.command, args: launch.args, cwd, env: { ...launch.env, ...env } };
+      : { command: launch.command, args: launch.args, cwd, env: { ...systemProxyEnv(), ...launch.env, ...env } };
     this.child = spawn(start.command, start.args, {
       cwd: start.cwd,
       env: { ...process.env, ...start.env },

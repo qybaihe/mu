@@ -703,6 +703,8 @@
   },
   "turnErrors": {
     "processExited": "mu stopped in the middle of the turn. Send the message again to restart it.",
+    "regionBlocked": "The model's service refused this network's region. Turn on a proxy (mu follows the system proxy) or pick another model.",
+    "unreachable": "Could not reach the model's service. Check the network or proxy, or pick another model.",
     "modelFailed": "The model request failed.",
     "turnRunning": "mu is still working on the previous message. Wait for it, or stop it first.",
     "busyConfig": "Wait for the current turn to finish before changing the model or thinking level.",

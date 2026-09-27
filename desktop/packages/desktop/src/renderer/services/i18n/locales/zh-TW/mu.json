@@ -703,6 +703,8 @@
   },
   "turnErrors": {
     "processExited": "mu 在這一輪中途停止了，重新傳送訊息即可重新啟動。",
+    "regionBlocked": "模型服務拒絕了目前網路所在的地區。開啟代理（mu 會跟隨系統代理），或換一個模型。",
+    "unreachable": "連不上模型服務。檢查網路或代理，或換一個模型。",
     "modelFailed": "模型請求失敗。",
     "turnRunning": "mu 還在處理上一則訊息，請等待或先停止。",
     "busyConfig": "請等這一輪結束後再切換模型或思考強度。",

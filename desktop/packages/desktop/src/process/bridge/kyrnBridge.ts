@@ -1,5 +1,5 @@
 import { basename, dirname, join } from 'node:path';
-import { app, shell, utilityProcess } from 'electron';
+import { app, net, shell, utilityProcess } from 'electron';
 import { kyrnBridge } from '../../common/kyrn/bridge';
 import { KyrnError, kyrnFailure, type KyrnResult } from '../../common/kyrn/errors';
 import type { KyrnCatalog } from '../../common/kyrn/types';
@@ -113,7 +113,10 @@ export function initKyrnBridge(): void {
     rechecked = rechecked.catch((): undefined => undefined).then(recheck);
     return result(() => rechecked);
   });
-  kyrnBridge.testProvider.provider((input) => result(() => testProvider(input, settings.storedKey(input.id))));
+  // Chromium's network stack, not Node's: it goes through the system's proxy like a browser, and like mu (systemProxy.ts).
+  kyrnBridge.testProvider.provider((input) =>
+    result(() => testProvider(input, settings.storedKey(input.id), { fetch: (url, init) => net.fetch(url, init) }))
+  );
   const login = new LoginManager(spawnAuth(launcherOf(harness, process.platform), agentDir), (url) => {
     if (openable(url)) void shell.openExternal(url);
   });

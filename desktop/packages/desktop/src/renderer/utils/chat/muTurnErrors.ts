@@ -20,6 +20,16 @@ const MU_TURN_ERROR_TEXTS = [
   ['noModel', 'No API key found for'],
   ['noModel', 'No models available'],
   ['noModel', 'No model selected'],
+  // What the network said, in pi's words after "Model request failed: ": the headline then says what to do about it.
+  // Google and OpenAI refuse a region by these words; the rest are Node's for a service it could not reach.
+  ['regionBlocked', 'User location is not supported'],
+  ['regionBlocked', 'unsupported_country_region_territory'],
+  ['regionBlocked', 'Country, region, or territory not supported'],
+  ['unreachable', 'Connect Timeout Error'],
+  ['unreachable', 'getaddrinfo ENOTFOUND'],
+  ['unreachable', 'ECONNREFUSED'],
+  ['unreachable', 'ETIMEDOUT'],
+  ['unreachable', 'fetch failed'],
   ['modelFailed', 'Model request failed'],
   ['turnRunning', 'A mu turn is already running'],
   ['busyConfig', 'Wait for the current turn before changing configuration'],

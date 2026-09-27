@@ -10,6 +10,12 @@ import {
   type JsonRecord,
   type RpcDeadlines,
 } from '../../../packages/desktop/src/process/agent/kyrn/piRpc.ts';
+import {
+  parseInternetSettings,
+  parseScutil,
+  proxyEnv,
+  readSystemProxy,
+} from '../../../packages/desktop/src/process/agent/kyrn/config/systemProxy.ts';
 
 const ROOT = join(__dirname, '../../..');
 const PI_RPC = join(ROOT, 'packages/desktop/src/process/agent/kyrn/piRpc.ts');
@@ -287,5 +293,125 @@ describe('stoppedReport', () => {
     expect(report).toHaveLength(41);
     expect(report[1]).toBe('[mu harness] line 10');
     expect(report.at(-1)).toBe('[mu harness] line 49');
+  });
+});
+
+/** `reg query` output for the Internet Settings key, with these value lines. */
+const registry = (lines: string[]) =>
+  ['', 'HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', ...lines, ''].join('\r\n');
+
+/** The system's proxy handed to mu (config/systemProxy.ts): an app opened from the Dock has no HTTPS_PROXY. */
+describe('system proxy for mu', () => {
+  const scutil = [
+    '<dictionary> {',
+    '  ExceptionsList : <array> {',
+    '    0 : 127.0.0.1',
+    '    1 : 192.168.0.0/16',
+    '    2 : localhost',
+    '    3 : *.local',
+    '    4 : timestamp.apple.com',
+    '  }',
+    '  FTPPassive : 1',
+    '  HTTPEnable : 1',
+    '  HTTPPort : 7897',
+    '  HTTPProxy : 127.0.0.1',
+    '  HTTPSEnable : 1',
+    '  HTTPSPort : 7897',
+    '  HTTPSProxy : 127.0.0.1',
+    '  ProxyAutoConfigEnable : 0',
+    '  SOCKSEnable : 1',
+    '  SOCKSPort : 7897',
+    '  SOCKSProxy : 127.0.0.1',
+    '}',
+  ].join('\n');
+  it('reads the Mac proxy from scutil, with its exceptions', () => {
+    expect(parseScutil(scutil)).toEqual({
+      http: 'http://127.0.0.1:7897',
+      https: 'http://127.0.0.1:7897',
+      exceptions: ['127.0.0.1', '192.168.0.0/16', 'localhost', '*.local', 'timestamp.apple.com'],
+    });
+  });
+
+  it('leaves a Mac with only a SOCKS proxy or none alone', () => {
+    const socksOnly = scutil.replace('HTTPEnable : 1', 'HTTPEnable : 0').replace('HTTPSEnable : 1', 'HTTPSEnable : 0');
+    expect(parseScutil(socksOnly)).toBeUndefined();
+    expect(parseScutil('<dictionary> {\n  HTTPEnable : 0\n}')).toBeUndefined();
+  });
+
+  it('reads the Windows proxy, one for everything or one per scheme', () => {
+    expect(
+      parseInternetSettings(
+        registry([
+          '    ProxyEnable    REG_DWORD    0x1',
+          '    ProxyServer    REG_SZ    127.0.0.1:7890',
+          '    ProxyOverride    REG_SZ    localhost;127.*;10.*;<local>',
+        ])
+      )
+    ).toEqual({
+      http: 'http://127.0.0.1:7890',
+      https: 'http://127.0.0.1:7890',
+      exceptions: ['localhost', '127.*', '10.*', '<local>'],
+    });
+    expect(
+      parseInternetSettings(
+        registry([
+          '    ProxyEnable    REG_DWORD    0x1',
+          '    ProxyServer    REG_SZ    http=proxy.lan:8080;https=proxy.lan:8443;socks=proxy.lan:1080',
+        ])
+      )
+    ).toEqual({ http: 'http://proxy.lan:8080', https: 'http://proxy.lan:8443', exceptions: [''] });
+    expect(
+      parseInternetSettings(
+        registry(['    ProxyEnable    REG_DWORD    0x0', '    ProxyServer    REG_SZ    127.0.0.1:7890'])
+      )
+    ).toBeUndefined();
+  });
+
+  it('hands the proxy on with what NO_PROXY can say, keeping this machine direct', () => {
+    const env = proxyEnv({}, parseScutil(scutil));
+    expect(env).toEqual({
+      HTTP_PROXY: 'http://127.0.0.1:7897',
+      HTTPS_PROXY: 'http://127.0.0.1:7897',
+      NO_PROXY: 'localhost,127.0.0.1,::1,*.local,timestamp.apple.com',
+    });
+    const windows = proxyEnv(
+      { NO_PROXY: 'intranet.example' },
+      {
+        https: 'http://127.0.0.1:7890',
+        exceptions: ['localhost', '127.*', '10.*', '<local>'],
+      }
+    );
+    expect(windows).toEqual({
+      HTTPS_PROXY: 'http://127.0.0.1:7890',
+      NO_PROXY: 'intranet.example,localhost,127.0.0.1,::1',
+    });
+  });
+
+  it('never overrides a proxy the person set, in either case', () => {
+    const proxy = parseScutil(scutil);
+    for (const name of ['HTTPS_PROXY', 'https_proxy', 'HTTP_PROXY', 'http_proxy', 'ALL_PROXY', 'all_proxy']) {
+      expect(proxyEnv({ [name]: 'http://mine:1' }, proxy)).toEqual({});
+    }
+    expect(proxyEnv({}, undefined)).toEqual({});
+  });
+
+  it('asks each system its own way, and nothing elsewhere or on failure', () => {
+    const asked: string[][] = [];
+    const read = (command: string, args: string[]) => {
+      asked.push([command, ...args]);
+      return command.endsWith('scutil') ? scutil : registry(['    ProxyEnable    REG_DWORD    0x0']);
+    };
+    expect(readSystemProxy('darwin', read)?.https).toBe('http://127.0.0.1:7897');
+    expect(readSystemProxy('win32', read)).toBeUndefined();
+    expect(readSystemProxy('linux', read)).toBeUndefined();
+    expect(asked).toEqual([
+      ['/usr/sbin/scutil', '--proxy'],
+      ['reg', 'query', 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings'],
+    ]);
+    expect(
+      readSystemProxy('darwin', () => {
+        throw new Error('no scutil');
+      })
+    ).toBeUndefined();
   });
 });

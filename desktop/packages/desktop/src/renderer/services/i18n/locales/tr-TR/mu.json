@@ -713,6 +713,8 @@
     "startFailed": "mu başlatılamadı.",
     "timeout": "mu zamanında yanıt vermedi.",
     "processClosed": "mu durdu. Yeniden başlatmak için mesajı tekrar gönderin.",
+    "regionBlocked": "Model hizmeti bu ağın bölgesini reddetti. Bir proxy açın (mu sistem proxy'sini izler) ya da başka bir model seçin.",
+    "unreachable": "Model hizmetine ulaşılamıyor. Ağı veya proxy'yi kontrol edin ya da başka bir model seçin.",
     "modelFailed": "Model isteği başarısız oldu.",
     "turnRunning": "mu hâlâ önceki mesaj üzerinde çalışıyor. Bekleyin ya da önce durdurun.",
     "noModel": "mu'nun yanıt verebileceği bir model yok."

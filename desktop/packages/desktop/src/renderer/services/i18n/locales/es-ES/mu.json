@@ -713,6 +713,8 @@
     "startFailed": "mu no pudo iniciarse.",
     "timeout": "mu no respondió a tiempo.",
     "processClosed": "mu se ha detenido. Vuelve a enviar el mensaje para reiniciarlo.",
+    "regionBlocked": "El servicio del modelo rechazó la región de esta red. Activa un proxy (mu sigue el proxy del sistema) o elige otro modelo.",
+    "unreachable": "No se pudo conectar con el servicio del modelo. Revisa la red o el proxy, o elige otro modelo.",
     "modelFailed": "Falló la solicitud al modelo.",
     "turnRunning": "mu sigue trabajando en el mensaje anterior. Espera o detenlo primero.",
     "noModel": "mu no tiene ningún modelo con el que responder."

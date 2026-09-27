@@ -92,7 +92,8 @@ function detailOf(body: unknown, raw: string, key: string): string {
   return (key ? clean.split(key).join('***') : clean).trim().slice(0, 300);
 }
 
-export type TestOptions = { timeoutMs?: number; fetch?: typeof fetch };
+/** `fetch` in the app is Electron's `net.fetch` (kyrnBridge.ts): it follows the system's proxy, as the check should. */
+export type TestOptions = { timeoutMs?: number; fetch?: (url: string, init: RequestInit) => Promise<Response> };
 
 /**
  * One minimal request from the main process, in the wire format of the chosen endpoint type.

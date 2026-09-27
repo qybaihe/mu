@@ -9,6 +9,7 @@ import {
   type LoginStatus,
   type SubscriptionProvider,
 } from '../../../common/kyrn/login';
+import { systemProxyEnv } from './config/systemProxy';
 import { endTree, launchCommand } from './piRpc';
 
 /**
@@ -316,7 +317,7 @@ export function spawnAuth(launcher: string, agentDir: string): SpawnRunner {
   return (args) => {
     const start = launchCommand(launcher, ['auth', ...args]);
     const child = spawn(start.command, start.args, {
-      env: { ...process.env, ...start.env, MU_AGENT_DIR: agentDir },
+      env: { ...process.env, ...systemProxyEnv(), ...start.env, MU_AGENT_DIR: agentDir },
       stdio: ['pipe', 'pipe', 'pipe'],
       // A process group of its own on POSIX, so that ending it ends what it started too (a checkout runs pi through
       // tsx, which starts a second Node). Windows ends the tree with taskkill (see endTree).

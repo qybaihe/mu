@@ -76,6 +76,22 @@ describe('mu bridge errors', () => {
     expect(findMuTurnError(['Rate limit reached', null])).toBeUndefined();
   });
 
+  it('says what to do when the provider refused the region or could not be reached', () => {
+    // As the app logged them on 2026-09-26, with a Google model and no proxy reaching mu.
+    const region =
+      'Agent internal error (code -32603) ({"details":"Model request failed: Cloud Code Assist error (400): User location is not supported for the API use."})';
+    const timeout =
+      'Model request failed: Network error: Connect Timeout Error (attempted address: daily-cloudcode-pa.sandbox.googleapis.com:443, timeout: 10000ms)';
+    expect(findMuTurnError([region])).toBe('regionBlocked');
+    expect(findMuTurnError([undefined, timeout])).toBe('unreachable');
+    expect(findMuTurnError(['Model request failed: 403 unsupported_country_region_territory'])).toBe('regionBlocked');
+    expect(findMuTurnError(['Model request failed: fetch failed'])).toBe('unreachable');
+    for (const locale of [enMu, zhMu, twMu] as Array<{ turnErrors?: Record<string, string> }>) {
+      expect(locale.turnErrors?.regionBlocked).toEqual(expect.any(String));
+      expect(locale.turnErrors?.unreachable).toEqual(expect.any(String));
+    }
+  });
+
   it('translates a mu error headline', () => {
     const zh = translator('zh-CN', { mu: zhMu });
     expect(zh(muTurnErrorKey('turnRunning'))).toBe('mu 还在处理上一条消息，请等待或先停止。');
