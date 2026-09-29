@@ -162,11 +162,17 @@ export function parseSkillBlock(text: string): ParsedSkillBlock | null {
 
 /** Session-specific events that extend the core AgentEvent */
 export type AgentSessionEvent =
-	| Exclude<AgentEvent, { type: "agent_end" }>
+	| Exclude<AgentEvent, { type: "agent_end" } | { type: "message_end" }>
 	| {
 			type: "agent_end";
 			messages: AgentMessage[];
 			willRetry: boolean;
+	  }
+	| {
+			type: "message_end";
+			message: AgentMessage;
+			/** The id of the session entry the message is saved as, for a message the session saves. */
+			entryId?: string;
 	  }
 	| { type: "agent_settled" }
 	| {
@@ -916,7 +922,19 @@ export class AgentSession {
 
 		// Emit to extensions first, then notify public listeners.
 		await this._emitExtensionEvent(event);
-		this._emit(event.type === "agent_end" ? { ...event, willRetry: this._willRetryAfterAgentEnd(event) } : event);
+		// A message the session saves gets its entry id now, so listeners learn it with message_end. The entry is
+		// written after they have run: they see the branch as it was before the message.
+		const reservedId =
+			event.type === "message_end" && this._savesMessage(event.message)
+				? this.sessionManager.reserveEntryId()
+				: undefined;
+		this._emit(
+			event.type === "agent_end"
+				? { ...event, willRetry: this._willRetryAfterAgentEnd(event) }
+				: event.type === "message_end"
+					? { ...event, ...(reservedId !== undefined ? { entryId: reservedId } : {}) }
+					: event,
+		);
 
 		// Handle session persistence
 		if (event.type === "message_end") {
@@ -929,15 +947,11 @@ export class AgentSession {
 					event.message.content,
 					event.message.display,
 					event.message.details,
+					reservedId,
 				);
-			} else if (
-				event.message.role === "system" ||
-				event.message.role === "user" ||
-				event.message.role === "assistant" ||
-				event.message.role === "toolResult"
-			) {
+			} else if (this._savesMessage(event.message)) {
 				// Regular LLM message - persist as SessionMessageEntry
-				entryId = this.sessionManager.appendMessage(event.message);
+				entryId = this.sessionManager.appendMessage(event.message, reservedId);
 			}
 			if (entryId) this._entryIdsByMessage.set(event.message, entryId);
 			// Other message types (bashExecution, compactionSummary, branchSummary) are persisted elsewhere
@@ -972,6 +986,19 @@ export class AgentSession {
 			this._flushPendingCustomMessages();
 		}
 	};
+
+	/** Whether message_end's message becomes a session entry: custom messages and the LLM's own kinds do. */
+	private _savesMessage(
+		message: AgentMessage,
+	): message is Extract<AgentMessage, { role: "custom" | "system" | "user" | "assistant" | "toolResult" }> {
+		return (
+			message.role === "custom" ||
+			message.role === "system" ||
+			message.role === "user" ||
+			message.role === "assistant" ||
+			message.role === "toolResult"
+		);
+	}
 
 	private _willRetryAfterAgentEnd(event: Extract<AgentEvent, { type: "agent_end" }>): boolean {
 		if (this._agentRunAbortRequested) return false;
@@ -1970,7 +1997,7 @@ export class AgentSession {
 	}
 
 	private _appendCustomMessage(appMessage: CustomMessage): void {
-		this.sessionManager.appendCustomMessageEntry(
+		const entryId = this.sessionManager.appendCustomMessageEntry(
 			appMessage.customType,
 			appMessage.content,
 			appMessage.display,
@@ -1978,7 +2005,7 @@ export class AgentSession {
 		);
 		this._refreshFinalizedContext();
 		this._emit({ type: "message_start", message: appMessage });
-		this._emit({ type: "message_end", message: appMessage });
+		this._emit({ type: "message_end", message: appMessage, entryId });
 	}
 
 	/**

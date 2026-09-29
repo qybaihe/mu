@@ -65,7 +65,7 @@ A turn is one assistant response plus any tool calls and tool results produced b
 |---|---|---|
 | `message_start` | `message` | A message started. |
 | `message_update` | `usage`, `assistantMessageEvent` | An assistant message emitted a content-block update. |
-| `message_end` | `message` | A message completed. This is the authoritative final message. |
+| `message_end` | `message`, `entryId` | A message completed. This is the authoritative final message. `entryId` is the id of the session entry the message is saved as, for a message the session saves; the entry is written just after the event, so a listener sees the branch without it. |
 
 ### Reconstruct streaming messages
 

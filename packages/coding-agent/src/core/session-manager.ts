@@ -993,6 +993,8 @@ export class SessionManager {
 	private flushed: boolean = false;
 	private fileEntries: FileEntry[] = [];
 	private byId: Map<string, SessionEntry> = new Map();
+	/** Entry ids handed out by reserveEntryId() and not written yet. */
+	private reservedIds: Set<string> = new Set();
 	private labelsById: Map<string, string> = new Map();
 	private labelTimestampsById: Map<string, string> = new Map();
 	private leafId: string | null = null;
@@ -1186,6 +1188,26 @@ export class SessionManager {
 		}
 	}
 
+	private newId(): string {
+		return generateId({ has: (id) => this.byId.has(id) || this.reservedIds.has(id) });
+	}
+
+	/**
+	 * An id for an entry that is about to be appended, so it can be announced before the entry is written (message_end
+	 * fires before its message is saved). Pass it to appendMessage() or appendCustomMessageEntry(); no other entry
+	 * takes it in between.
+	 */
+	reserveEntryId(): string {
+		const id = this.newId();
+		this.reservedIds.add(id);
+		return id;
+	}
+
+	/** The reserved id when there is one to spend, else a new one. */
+	private takeEntryId(reserved: string | undefined): string {
+		return reserved !== undefined && this.reservedIds.delete(reserved) ? reserved : this.newId();
+	}
+
 	private _appendEntry(entry: SessionEntry): void {
 		this.fileEntries.push(entry);
 		this.byId.set(entry.id, entry);
@@ -1199,10 +1221,10 @@ export class SessionManager {
 	 * so it is easier to find them.
 	 * These need to be appended via appendCompaction() and appendBranchSummary() methods.
 	 */
-	appendMessage(message: Message | CustomMessage | BashExecutionMessage): string {
+	appendMessage(message: Message | CustomMessage | BashExecutionMessage, reservedId?: string): string {
 		const entry: SessionMessageEntry = {
 			type: "message",
-			id: generateId(this.byId),
+			id: this.takeEntryId(reservedId),
 			parentId: this.leafId,
 			timestamp: new Date().toISOString(),
 			message,
@@ -1215,7 +1237,7 @@ export class SessionManager {
 	appendThinkingLevelChange(thinkingLevel: string): string {
 		const entry: ThinkingLevelChangeEntry = {
 			type: "thinking_level_change",
-			id: generateId(this.byId),
+			id: this.newId(),
 			parentId: this.leafId,
 			timestamp: new Date().toISOString(),
 			thinkingLevel,
@@ -1228,7 +1250,7 @@ export class SessionManager {
 	appendModelChange(provider: string, modelId: string): string {
 		const entry: ModelChangeEntry = {
 			type: "model_change",
-			id: generateId(this.byId),
+			id: this.newId(),
 			parentId: this.leafId,
 			timestamp: new Date().toISOString(),
 			provider,
@@ -1242,7 +1264,7 @@ export class SessionManager {
 	appendUsage(kind: string, provider: string, model: string, usage: Usage, note?: string): UsageEntry {
 		const entry: UsageEntry = {
 			type: "usage",
-			id: generateId(this.byId),
+			id: this.newId(),
 			parentId: this.leafId,
 			timestamp: new Date().toISOString(),
 			kind,
@@ -1266,7 +1288,7 @@ export class SessionManager {
 	): string {
 		const timestamp = new Date().toISOString();
 		const systemMessage = getCurrentSystemMessage(this.buildSessionProjection().messages);
-		const id = generateId(this.byId);
+		const id = this.newId();
 		const entry: CompactionEntry<T> = {
 			type: "compaction",
 			id,
@@ -1290,7 +1312,7 @@ export class SessionManager {
 			type: "custom",
 			customType,
 			data,
-			id: generateId(this.byId),
+			id: this.newId(),
 			parentId: this.leafId,
 			timestamp: new Date().toISOString(),
 		};
@@ -1303,7 +1325,7 @@ export class SessionManager {
 		const sanitizedName = name.replace(/[\r\n]+/g, " ").trim();
 		const entry: SessionInfoEntry = {
 			type: "session_info",
-			id: generateId(this.byId),
+			id: this.newId(),
 			parentId: this.leafId,
 			timestamp: new Date().toISOString(),
 			name: sanitizedName,
@@ -1332,6 +1354,7 @@ export class SessionManager {
 	 * @param content Message content (string or TextContent/ImageContent array)
 	 * @param display Whether to show in TUI (true = styled display, false = hidden)
 	 * @param details Optional extension-specific metadata (not sent to LLM)
+	 * @param reservedId An id from reserveEntryId() to write the entry under
 	 * @returns Entry id
 	 */
 	appendCustomMessageEntry<T = unknown>(
@@ -1339,6 +1362,7 @@ export class SessionManager {
 		content: string | (TextContent | ImageContent)[],
 		display: boolean,
 		details?: T,
+		reservedId?: string,
 	): string {
 		const entry: CustomMessageEntry<T> = {
 			type: "custom_message",
@@ -1346,7 +1370,7 @@ export class SessionManager {
 			content,
 			display,
 			details,
-			id: generateId(this.byId),
+			id: this.takeEntryId(reservedId),
 			parentId: this.leafId,
 			timestamp: new Date().toISOString(),
 		};
@@ -1385,7 +1409,7 @@ export class SessionManager {
 				: replacement;
 		const entry: ContextEditEntry = {
 			type: "context_edit",
-			id: generateId(this.byId),
+			id: this.newId(),
 			parentId: this.leafId,
 			timestamp: new Date().toISOString(),
 			targetId,
@@ -1442,7 +1466,7 @@ export class SessionManager {
 		}
 		const entry: LabelEntry = {
 			type: "label",
-			id: generateId(this.byId),
+			id: this.newId(),
 			parentId: this.leafId,
 			timestamp: new Date().toISOString(),
 			targetId,
@@ -1604,7 +1628,7 @@ export class SessionManager {
 		this.leafId = branchFromId;
 		const entry: BranchSummaryEntry = {
 			type: "branch_summary",
-			id: generateId(this.byId),
+			id: this.newId(),
 			parentId: branchFromId,
 			timestamp: new Date().toISOString(),
 			fromId,
