@@ -374,6 +374,16 @@ function withToolChanges(message: SystemMessage, { toolsAdded, toolsRemoved }: T
 }
 
 /**
+ * An error that comes after the run was aborted is the abort's own. A request that fails before it starts (key
+ * resolution, a lazily loaded provider, a fetch on a signal that is already aborted) reports the abort as an error,
+ * and a run stopped in the middle of a tool ends with such a request: the person who stopped it did not get a failure.
+ * The message keeps its error text.
+ */
+function settleAbort(message: AssistantMessage, signal: AbortSignal | undefined): AssistantMessage {
+	return message.stopReason === "error" && signal?.aborted ? { ...message, stopReason: "aborted" } : message;
+}
+
+/**
  * Stream an assistant response from the LLM.
  * This is where AgentMessage[] gets transformed to Message[] for the LLM.
  */
@@ -439,7 +449,7 @@ async function streamAssistantResponse(
 
 			case "done":
 			case "error": {
-				const finalMessage = await response.result();
+				const finalMessage = settleAbort(await response.result(), signal);
 				if (addedPartial) {
 					context.messages[context.messages.length - 1] = finalMessage;
 				} else {
@@ -454,7 +464,7 @@ async function streamAssistantResponse(
 		}
 	}
 
-	const finalMessage = await response.result();
+	const finalMessage = settleAbort(await response.result(), signal);
 	if (addedPartial) {
 		context.messages[context.messages.length - 1] = finalMessage;
 	} else {

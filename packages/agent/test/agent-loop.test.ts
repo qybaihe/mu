@@ -1166,6 +1166,98 @@ describe("agentLoop with AgentMessage", () => {
 		},
 	);
 
+	it("counts a failed model request as an abort once the run's signal is aborted", async () => {
+		// A request that fails before it starts (a key lookup, a lazily loaded provider, a fetch on an aborted
+		// signal) reports the abort as an error; the run was stopped, so it ends aborted, with the error's text kept.
+		const controller = new AbortController();
+		const toolSchema = Type.Object({});
+		const stopper: AgentTool<typeof toolSchema, undefined> = {
+			name: "stop_run",
+			label: "Stop",
+			description: "Stops the run while it executes",
+			parameters: toolSchema,
+			execute: async () => {
+				controller.abort();
+				return { content: [{ type: "text", text: "stopped" }], details: undefined };
+			},
+		};
+		const events: AgentEvent[] = [];
+		let calls = 0;
+		await runAgentLoop(
+			[createUserMessage("run")],
+			{ messages: [], tools: [stopper] },
+			{ model: createModel(), convertToLlm: identityConverter },
+			(event) => {
+				events.push(event);
+			},
+			controller.signal,
+			() => {
+				calls++;
+				const stream = new MockAssistantStream();
+				queueMicrotask(() => {
+					if (calls === 1) {
+						stream.push({
+							type: "done",
+							reason: "toolUse",
+							message: createAssistantMessage(
+								[{ type: "toolCall", id: "tool-1", name: "stop_run", arguments: {} }],
+								"toolUse",
+							),
+						});
+					} else {
+						stream.push({
+							type: "error",
+							reason: "error",
+							error: {
+								...createAssistantMessage([], "error"),
+								errorMessage: "This operation was aborted",
+							},
+						});
+					}
+				});
+				return stream;
+			},
+		);
+
+		expect(calls).toBe(2);
+		const ended = events.flatMap((event) =>
+			event.type === "message_end" && event.message.role === "assistant" ? [event.message] : [],
+		);
+		expect(ended.map((message) => message.stopReason)).toEqual(["toolUse", "aborted"]);
+		expect(ended[1]).toMatchObject({ errorMessage: "This operation was aborted" });
+		const finalTurn = events.filter((event) => event.type === "turn_end").at(-1);
+		expect(finalTurn).toMatchObject({ message: { stopReason: "aborted" } });
+	});
+
+	it("leaves a failed model request an error while the run's signal is not aborted", async () => {
+		const events: AgentEvent[] = [];
+		await runAgentLoop(
+			[createUserMessage("run")],
+			{ messages: [], tools: [] },
+			{ model: createModel(), convertToLlm: identityConverter },
+			(event) => {
+				events.push(event);
+			},
+			new AbortController().signal,
+			() => {
+				const stream = new MockAssistantStream();
+				queueMicrotask(() => {
+					stream.push({
+						type: "error",
+						reason: "error",
+						error: { ...createAssistantMessage([], "error"), errorMessage: "provider down" },
+					});
+				});
+				return stream;
+			},
+		);
+
+		const ended = events.flatMap((event) =>
+			event.type === "message_end" && event.message.role === "assistant" ? [event.message] : [],
+		);
+		expect(ended.map((message) => message.stopReason)).toEqual(["error"]);
+	});
+
 	it("action:end skips queue polling and next-turn preparation", async () => {
 		const toolSchema = Type.Object({});
 		const tool: AgentTool<typeof toolSchema, undefined> = {
