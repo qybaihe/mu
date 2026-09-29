@@ -600,6 +600,20 @@ export function planHost({ platform, env, argv, root, home, fs, wsl = false, str
 	};
 }
 
+/** What mu says when the local judge does not come up. */
+const LOCAL_JUDGE_NOT_STARTED =
+	"mu: the local judge did not start (mu judge status); decisions fall back to pi's behaviour";
+
+/** The part of the preparation that is files: the app view of a checkout, mu's agent folder, the configuration's notes. */
+function prepareFiles({ plan, platform, root, err }) {
+	const path = pathFor(platform);
+	if (plan.layout === "repo") {
+		ensureAppView({ platform, app: plan.appDir, upstream: path.join(root, "packages", "coding-agent") });
+	}
+	mkdirSync(plan.agentDir, { recursive: true });
+	for (const note of plan.notes) err(note);
+}
+
 /**
  * What is done before pi starts, for the command line and the desktop app's runtime host alike: the app view that
  * names a checkout mu, mu's agent folder, the configuration's notes (to `err`), and the local judge when the
@@ -607,18 +621,32 @@ export function planHost({ platform, env, argv, root, home, fs, wsl = false, str
  * idempotent and never blocks pi.
  */
 export function prepareLaunch({ plan, platform, root, bin, err }) {
-	const path = pathFor(platform);
-	if (plan.layout === "repo") {
-		ensureAppView({ platform, app: plan.appDir, upstream: path.join(root, "packages", "coding-agent") });
-	}
-	mkdirSync(plan.agentDir, { recursive: true });
-	for (const note of plan.notes) err(note);
+	prepareFiles({ plan, platform, root, err });
 	if (plan.startJudge) {
-		const started = spawnSync(path.join(bin, "kyrn-judge-local"), ["start"], { stdio: "ignore", env: plan.env });
-		if (started.status !== 0) {
-			err("mu: the local judge did not start (mu judge status); decisions fall back to pi's behaviour");
-		}
+		const started = spawnSync(pathFor(platform).join(bin, "kyrn-judge-local"), ["start"], {
+			stdio: "ignore",
+			env: plan.env,
+		});
+		if (started.status !== 0) err(LOCAL_JUDGE_NOT_STARTED);
 	}
+}
+
+/**
+ * prepareLaunch for a program that must not stop while the local judge starts, such as the desktop app's main process:
+ * the same steps and notes, with the local judge started through a child process it waits for without blocking.
+ */
+export async function prepareLaunchAsync({ plan, platform, root, bin, err }) {
+	prepareFiles({ plan, platform, root, err });
+	if (!plan.startJudge) return;
+	const status = await new Promise((resolve) => {
+		const child = spawn(pathFor(platform).join(bin, "kyrn-judge-local"), ["start"], {
+			stdio: "ignore",
+			env: plan.env,
+		});
+		child.once("error", () => resolve(null));
+		child.once("close", (code) => resolve(code));
+	});
+	if (status !== 0) err(LOCAL_JUDGE_NOT_STARTED);
 }
 
 // ---------------------------------------------------------------------------------------------------------

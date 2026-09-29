@@ -124,13 +124,21 @@ export function planHost(input: {
  * What is done before pi starts, for the command line and the app's host alike: the app view of a checkout, mu's agent
  * folder, the configuration's notes and the local judge. `bin` is the launcher's folder (kyrn/bin).
  */
-export function prepareLaunch(input: {
+export function prepareLaunch(input: PrepareLaunchInput): void;
+
+/**
+ * prepareLaunch for a program that must not stop while the local judge starts (the desktop app's main process): the
+ * same steps and notes, the local judge started through a child process that is waited for without blocking.
+ */
+export function prepareLaunchAsync(input: PrepareLaunchInput): Promise<void>;
+
+export interface PrepareLaunchInput {
 	plan: Pick<HostPlan, "layout" | "appDir" | "agentDir" | "notes" | "startJudge" | "env">;
 	platform: Platform;
 	root: string;
 	bin: string;
 	err(message: string): void;
-}): void;
+}
 
 /** Node's arguments for running a checkout's TypeScript, up to the entry file. */
 export function sourceRuntime(input: {

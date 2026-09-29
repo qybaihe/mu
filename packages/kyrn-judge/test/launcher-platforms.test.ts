@@ -41,6 +41,8 @@ import {
 	planLink,
 	planUnlink,
 	platformName,
+	prepareLaunch,
+	prepareLaunchAsync,
 	resolveTsx,
 	shimContent,
 	sourceRuntime,
@@ -522,6 +524,77 @@ describe("pi inside another program (the desktop app's runtime host)", () => {
 			Object.entries(posixInstalled).filter(([path]) => !path.endsWith("source-resolver.ts")),
 		);
 		expect(planHost({ ...input, fs: disk(noResolver) }).error).toContain("source resolver");
+	});
+});
+
+describe("preparing a launch, for the command line and for a program that must not stop", () => {
+	const posix = process.platform !== "win32";
+	const NOT_STARTED = "the local judge did not start";
+
+	/** A launcher folder whose local judge is a script that runs `script`, and an agent folder to prepare. */
+	function prepared(script: string | undefined, startJudge: boolean) {
+		const root = temp();
+		const bin = join(root, "bin");
+		mkdirSync(bin);
+		if (script !== undefined) writeFileSync(join(bin, "kyrn-judge-local"), `#!/bin/sh\n${script}\n`, { mode: 0o755 });
+		const notes: string[] = [];
+		const input = {
+			plan: {
+				layout: "package" as const,
+				appDir: root,
+				agentDir: join(root, "agent"),
+				notes: ["a note from the configuration"],
+				startJudge,
+				env: { PATH: "/usr/bin:/bin" },
+			},
+			platform: process.platform,
+			root,
+			bin,
+			err: (message: string) => notes.push(message),
+		};
+		return { root, input, notes };
+	}
+
+	it("makes the agent folder and passes the configuration's notes on, whichever way it is called", async () => {
+		const sync = prepared(undefined, false);
+		prepareLaunch(sync.input);
+		const later = prepared(undefined, false);
+		await prepareLaunchAsync(later.input);
+		for (const each of [sync, later]) {
+			expect(existsSync(join(each.root, "agent"))).toBe(true);
+			expect(each.notes).toEqual(["a note from the configuration"]);
+		}
+	});
+
+	it.skipIf(!posix)("starts the local judge through its script, and says nothing when it starts", async () => {
+		const { root, input, notes } = prepared('echo "$1" > "$(dirname "$0")/started"', true);
+		await prepareLaunchAsync(input);
+		expect(readFileSync(join(root, "bin", "started"), "utf8").trim()).toBe("start");
+		expect(notes).toEqual(["a note from the configuration"]);
+	});
+
+	it.skipIf(!posix)("does not stop the process while the local judge starts", async () => {
+		const { input } = prepared("sleep 0.5", true);
+		let ticks = 0;
+		const timer = setInterval(() => ticks++, 25);
+		try {
+			await prepareLaunchAsync(input);
+		} finally {
+			clearInterval(timer);
+		}
+		// spawnSync would hold the event loop for the whole half second: no timer could have run.
+		expect(ticks).toBeGreaterThanOrEqual(5);
+	});
+
+	it.skipIf(!posix)("says the same when the local judge fails or is missing, blocking or not", async () => {
+		for (const script of ["exit 3", undefined]) {
+			const sync = prepared(script, true);
+			prepareLaunch(sync.input);
+			const later = prepared(script, true);
+			await prepareLaunchAsync(later.input);
+			expect(sync.notes.at(-1)).toContain(NOT_STARTED);
+			expect(later.notes).toEqual(sync.notes);
+		}
 	});
 });
 
