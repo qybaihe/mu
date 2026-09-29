@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="402" viewBox="0 0 880 402" role="img" aria-labelledby="t d" font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif'>
+<title id="t">Real failing test logs: 51% folded without loss</title>
+<desc id="d">5 failures, one diff each: 37819 characters, 86% folded. DOM test, 4 failures: 34115 characters, 44% folded. The same run, sub-agent: 34115 characters, 44% folded. Shared stderr stack: 15565 characters, 47% folded. 2 failures: 9249 characters, 16% folded. 7 suites fail to parse: 4953 characters, 0% folded. 5 different failures: 4004 characters, 0% folded.</desc>
+<text x="0" y="22" font-size="18" font-weight="600" fill="#f0f6fc">Real failing test logs: 51% folded without loss</text>
+<text x="0" y="46" font-size="13.5" fill="#b7bdc8">The 7 test logs over 4,000 characters in two days of the authors' sessions (Vitest). A run of 6 or more lines</text>
+<text x="0" y="65" font-size="13.5" fill="#b7bdc8">identical to one kept above becomes one back-reference. The markers expand to the original, byte for byte.</text>
+<line x1="0" x2="880" y1="89" y2="89" stroke="#262c33"/>
+<path d="M0,101 H14 Q14,101 14,101 V113 Q14,113 14,113 H0 Z" fill="#5f5e5a"/>
+<text x="20" y="112" font-size="12.5" fill="#b7bdc8">kept, what the model reads</text>
+<path d="M196,101 H210 Q210,101 210,101 V113 Q210,113 210,113 H196 Z" fill="#3987e5"/>
+<text x="216" y="112" font-size="12.5" fill="#b7bdc8">exact repeats, folded by rule (no model call)</text>
+<line x1="200" x2="200" y1="132" y2="356" stroke="#3d444d"/>
+<line x1="335" x2="335" y1="132" y2="356" stroke="#262c33"/>
+<line x1="470" x2="470" y1="132" y2="356" stroke="#262c33"/>
+<line x1="605" x2="605" y1="132" y2="356" stroke="#262c33"/>
+<line x1="740" x2="740" y1="132" y2="356" stroke="#262c33"/>
+<text x="186" y="152.5" text-anchor="end" font-size="13.5" fill="#f0f6fc">5 failures, one diff each</text>
+<path d="M200,140 H271.4825 Q271.4825,140 271.4825,140 V156 Q271.4825,156 271.4825,156 H200 Z" fill="#5f5e5a"/>
+<path d="M273.4825,140 H706.5564999999999 Q710.5564999999999,140 710.5564999999999,144 V152 Q710.5564999999999,156 706.5564999999999,156 H273.4825 Z" fill="#3987e5"/>
+<text x="718.5564999999999" y="152.5" font-size="13.5" font-weight="600" fill="#f0f6fc" stroke="#0d1117" stroke-width="4" paint-order="stroke">86% folded</text>
+<text x="186" y="184.5" text-anchor="end" font-size="13.5" fill="#f0f6fc">DOM test, 4 failures</text>
+<path d="M200,172 H457.904 Q457.904,172 457.904,172 V188 Q457.904,188 457.904,188 H200 Z" fill="#5f5e5a"/>
+<path d="M459.904,172 H656.5525 Q660.5525,172 660.5525,176 V184 Q660.5525,188 656.5525,188 H459.904 Z" fill="#3987e5"/>
+<text x="668.5525" y="184.5" font-size="13.5" font-weight="600" fill="#f0f6fc" stroke="#0d1117" stroke-width="4" paint-order="stroke">44% folded</text>
+<text x="186" y="216.5" text-anchor="end" font-size="13.5" fill="#f0f6fc">The same run, sub-agent</text>
+<path d="M200,204 H457.904 Q457.904,204 457.904,204 V220 Q457.904,220 457.904,220 H200 Z" fill="#5f5e5a"/>
+<path d="M459.904,204 H656.5525 Q660.5525,204 660.5525,208 V216 Q660.5525,220 656.5525,220 H459.904 Z" fill="#3987e5"/>
+<text x="668.5525" y="216.5" font-size="13.5" font-weight="600" fill="#f0f6fc" stroke="#0d1117" stroke-width="4" paint-order="stroke">44% folded</text>
+<text x="186" y="248.5" text-anchor="end" font-size="13.5" fill="#f0f6fc">Shared stderr stack</text>
+<path d="M200,236 H311.3615 Q311.3615,236 311.3615,236 V252 Q311.3615,252 311.3615,252 H200 Z" fill="#5f5e5a"/>
+<path d="M313.3615,236 H406.1275 Q410.1275,236 410.1275,240 V248 Q410.1275,252 406.1275,252 H313.3615 Z" fill="#3987e5"/>
+<text x="418.1275" y="248.5" font-size="13.5" font-weight="600" fill="#f0f6fc" stroke="#0d1117" stroke-width="4" paint-order="stroke">47% folded</text>
+<text x="186" y="280.5" text-anchor="end" font-size="13.5" fill="#f0f6fc">2 failures</text>
+<path d="M200,268 H304.8815 Q304.8815,268 304.8815,268 V284 Q304.8815,284 304.8815,284 H200 Z" fill="#5f5e5a"/>
+<path d="M306.8815,268 H320.8615 Q324.8615,268 324.8615,272 V280 Q324.8615,284 320.8615,284 H306.8815 Z" fill="#3987e5"/>
+<text x="332.8615" y="280.5" font-size="13.5" font-weight="600" fill="#f0f6fc" stroke="#0d1117" stroke-width="4" paint-order="stroke">16% folded</text>
+<text x="186" y="312.5" text-anchor="end" font-size="13.5" fill="#f0f6fc">7 suites fail to parse</text>
+<path d="M200,300 H262.8655 Q266.8655,300 266.8655,304 V312 Q266.8655,316 262.8655,316 H200 Z" fill="#5f5e5a"/>
+<text x="274.8655" y="312.5" font-size="13.5" font-weight="400" fill="#b7bdc8" stroke="#0d1117" stroke-width="4" paint-order="stroke">0%, too little to fold</text>
+<text x="186" y="344.5" text-anchor="end" font-size="13.5" fill="#f0f6fc">5 different failures</text>
+<path d="M200,332 H250.054 Q254.054,332 254.054,336 V344 Q254.054,348 250.054,348 H200 Z" fill="#5f5e5a"/>
+<text x="262.054" y="344.5" font-size="13.5" font-weight="400" fill="#b7bdc8" stroke="#0d1117" stroke-width="4" paint-order="stroke">0%, no repeats</text>
+<text x="200" y="370" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">0</text>
+<text x="335" y="370" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">10K</text>
+<text x="470" y="370" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">20K</text>
+<text x="605" y="370" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">30K</text>
+<text x="740" y="370" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">40K</text>
+<text x="470" y="390" text-anchor="middle" font-size="12" fill="#b7bdc8">characters per log · 139,820 in all, 71,296 folded</text>
+</svg>

@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="444" viewBox="0 0 880 444" role="img" aria-labelledby="t d" font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif'>
+<title id="t">Test logs: what the judge cuts, and what it keeps</title>
+<desc id="d">Goals the question wording was tuned on: mu · Jev 40.2% cut, 0 of 72 required lines lost; Perfect judge 52.5% cut, 0 of 72 required lines lost; Keep failures only 61.9% cut, 9 of 72 required lines lost. Held-out goals, never tuned on: mu · Jev 46.4% cut, 0 of 19 required lines lost; Perfect judge 46.5% cut, 0 of 19 required lines lost; Keep failures only 59.4% cut, 6 of 19 required lines lost.</desc>
+<text x="0" y="22" font-size="18" font-weight="600" fill="#f0f6fc">Test logs: what the judge cuts, and what it keeps</text>
+<text x="0" y="46" font-size="13.5" fill="#b7bdc8">Share of a verbose test log left out of the model's context, and required lines lost with it.</text>
+<text x="0" y="65" font-size="13.5" fill="#b7bdc8">Runner output of synthetic projects plus hand-written edge cases, labeled by hand. Jev measured live, 2026-09-21.</text>
+<line x1="0" x2="880" y1="89" y2="89" stroke="#262c33"/>
+<text x="700" y="108" font-size="12.5" font-weight="600" fill="#b7bdc8">Required lines lost</text>
+<text x="0" y="142" font-size="14" font-weight="600" fill="#f0f6fc">Goals the question wording was tuned on<tspan font-weight="400" fill="#b7bdc8">  ·  29 goals · 72 required lines</tspan></text>
+<line x1="190" x2="190" y1="154" y2="256" stroke="#3d444d"/>
+<line x1="257.1428571428571" x2="257.1428571428571" y1="154" y2="256" stroke="#262c33"/>
+<line x1="324.2857142857143" x2="324.2857142857143" y1="154" y2="256" stroke="#262c33"/>
+<line x1="391.42857142857144" x2="391.42857142857144" y1="154" y2="256" stroke="#262c33"/>
+<line x1="458.57142857142856" x2="458.57142857142856" y1="154" y2="256" stroke="#262c33"/>
+<line x1="525.7142857142858" x2="525.7142857142858" y1="154" y2="256" stroke="#262c33"/>
+<line x1="592.8571428571429" x2="592.8571428571429" y1="154" y2="256" stroke="#262c33"/>
+<line x1="660" x2="660" y1="154" y2="256" stroke="#262c33"/>
+<text x="176" y="170" text-anchor="end" font-size="13.5" font-weight="600" fill="#f0f6fc">mu · Jev</text>
+<text x="176" y="184" text-anchor="end" font-size="11.5" fill="#8b949e">goal-aware judge</text>
+<path d="M190,163 H455.9142857142857 Q459.9142857142857,163 459.9142857142857,167 V175 Q459.9142857142857,179 455.9142857142857,179 H190 Z" fill="#3987e5"/>
+<text x="467.9142857142857" y="175.5" font-size="13.5" font-weight="600" fill="#f0f6fc" stroke="#0d1117" stroke-width="4" paint-order="stroke" style="font-variant-numeric: tabular-nums">40.2%</text>
+<path d="M700,171 l3.5,3.5 l6.5,-7" fill="none" stroke="#0ca30c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="718" y="175.5" font-size="13.5" fill="#f0f6fc">none</text>
+<text x="176" y="204" text-anchor="end" font-size="13.5" font-weight="400" fill="#f0f6fc">Perfect judge</text>
+<text x="176" y="218" text-anchor="end" font-size="11.5" fill="#8b949e">reads the labels</text>
+<path d="M190,197 H538.5 Q542.5,197 542.5,201 V209 Q542.5,213 538.5,213 H190 Z" fill="#5f5e5a"/>
+<text x="550.5" y="209.5" font-size="13.5" font-weight="400" fill="#f0f6fc" stroke="#0d1117" stroke-width="4" paint-order="stroke" style="font-variant-numeric: tabular-nums">52.5%</text>
+<path d="M700,205 l3.5,3.5 l6.5,-7" fill="none" stroke="#0ca30c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="718" y="209.5" font-size="13.5" fill="#f0f6fc">none</text>
+<text x="176" y="238" text-anchor="end" font-size="13.5" font-weight="400" fill="#f0f6fc">Keep failures only</text>
+<text x="176" y="252" text-anchor="end" font-size="11.5" fill="#8b949e">goal-blind filter</text>
+<path d="M190,231 H601.6142857142856 Q605.6142857142856,231 605.6142857142856,235 V243 Q605.6142857142856,247 601.6142857142856,247 H190 Z" fill="#5f5e5a"/>
+<text x="613.6142857142856" y="243.5" font-size="13.5" font-weight="400" fill="#f0f6fc" stroke="#0d1117" stroke-width="4" paint-order="stroke" style="font-variant-numeric: tabular-nums">61.9%</text>
+<path d="M700,235 l8,8 M708,235 l-8,8" fill="none" stroke="#e66767" stroke-width="2.2" stroke-linecap="round"/>
+<text x="718" y="243.5" font-size="13.5" fill="#f0f6fc">9 of 72</text>
+<text x="0" y="284" font-size="14" font-weight="600" fill="#f0f6fc">Held-out goals, never tuned on<tspan font-weight="400" fill="#b7bdc8">  ·  9 goals · 19 required lines</tspan></text>
+<line x1="190" x2="190" y1="296" y2="398" stroke="#3d444d"/>
+<line x1="257.1428571428571" x2="257.1428571428571" y1="296" y2="398" stroke="#262c33"/>
+<line x1="324.2857142857143" x2="324.2857142857143" y1="296" y2="398" stroke="#262c33"/>
+<line x1="391.42857142857144" x2="391.42857142857144" y1="296" y2="398" stroke="#262c33"/>
+<line x1="458.57142857142856" x2="458.57142857142856" y1="296" y2="398" stroke="#262c33"/>
+<line x1="525.7142857142858" x2="525.7142857142858" y1="296" y2="398" stroke="#262c33"/>
+<line x1="592.8571428571429" x2="592.8571428571429" y1="296" y2="398" stroke="#262c33"/>
+<line x1="660" x2="660" y1="296" y2="398" stroke="#262c33"/>
+<text x="176" y="312" text-anchor="end" font-size="13.5" font-weight="600" fill="#f0f6fc">mu · Jev</text>
+<text x="176" y="326" text-anchor="end" font-size="11.5" fill="#8b949e">goal-aware judge</text>
+<path d="M190,305 H497.54285714285714 Q501.54285714285714,305 501.54285714285714,309 V317 Q501.54285714285714,321 497.54285714285714,321 H190 Z" fill="#3987e5"/>
+<text x="509.54285714285714" y="317.5" font-size="13.5" font-weight="600" fill="#f0f6fc" stroke="#0d1117" stroke-width="4" paint-order="stroke" style="font-variant-numeric: tabular-nums">46.4%</text>
+<path d="M700,313 l3.5,3.5 l6.5,-7" fill="none" stroke="#0ca30c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="718" y="317.5" font-size="13.5" fill="#f0f6fc">none</text>
+<text x="176" y="346" text-anchor="end" font-size="13.5" font-weight="400" fill="#f0f6fc">Perfect judge</text>
+<text x="176" y="360" text-anchor="end" font-size="11.5" fill="#8b949e">reads the labels</text>
+<path d="M190,339 H498.2142857142857 Q502.2142857142857,339 502.2142857142857,343 V351 Q502.2142857142857,355 498.2142857142857,355 H190 Z" fill="#5f5e5a"/>
+<text x="510.2142857142857" y="351.5" font-size="13.5" font-weight="400" fill="#f0f6fc" stroke="#0d1117" stroke-width="4" paint-order="stroke" style="font-variant-numeric: tabular-nums">46.5%</text>
+<path d="M700,347 l3.5,3.5 l6.5,-7" fill="none" stroke="#0ca30c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="718" y="351.5" font-size="13.5" fill="#f0f6fc">none</text>
+<text x="176" y="380" text-anchor="end" font-size="13.5" font-weight="400" fill="#f0f6fc">Keep failures only</text>
+<text x="176" y="394" text-anchor="end" font-size="11.5" fill="#8b949e">goal-blind filter</text>
+<path d="M190,373 H584.8285714285714 Q588.8285714285714,373 588.8285714285714,377 V385 Q588.8285714285714,389 584.8285714285714,389 H190 Z" fill="#5f5e5a"/>
+<text x="596.8285714285714" y="385.5" font-size="13.5" font-weight="400" fill="#f0f6fc" stroke="#0d1117" stroke-width="4" paint-order="stroke" style="font-variant-numeric: tabular-nums">59.4%</text>
+<path d="M700,377 l8,8 M708,377 l-8,8" fill="none" stroke="#e66767" stroke-width="2.2" stroke-linecap="round"/>
+<text x="718" y="385.5" font-size="13.5" fill="#f0f6fc">6 of 19</text>
+<text x="190" y="412" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">0%</text>
+<text x="257.1428571428571" y="412" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">10%</text>
+<text x="324.2857142857143" y="412" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">20%</text>
+<text x="391.42857142857144" y="412" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">30%</text>
+<text x="458.57142857142856" y="412" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">40%</text>
+<text x="525.7142857142858" y="412" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">50%</text>
+<text x="592.8571428571429" y="412" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">60%</text>
+<text x="660" y="412" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">70%</text>
+<text x="425" y="432" text-anchor="middle" font-size="12" fill="#b7bdc8">characters left out of the context (net of markers)</text>
+</svg>

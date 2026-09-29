@@ -21,7 +21,7 @@ A coding agent makes hundreds of decisions per session that are not about the co
 - **mu desktop**: a native app that carries mu and its runtime. Download, connect a model, start.
 - **Jev**: the judge. Yes/no, choice and score questions, a probability per answer, every verdict in a ledger. A local judge (Laya) or any LLM can take a decision point instead.
 
-> Early development. Its authors use it every day; nothing has been released yet. Names, settings and formats may still change.
+> Early development. Pre-releases (0.1.x) are on npm and under [Releases](https://github.com/qybaihe/mu/releases); its authors use it every day. Names, settings and formats may still change.
 
 ## A turn
 
@@ -110,7 +110,66 @@ Each decision point is `active`, `shadow` (asked and logged, changes nothing: fo
 - **Laya** (local). A 322M-parameter judge that runs on your machine and never touches the network. Nothing is downloaded without your consent. Reliable on simple predicates, weaker on meta-judgments: run it in shadow next to Jev and read the ledger before giving it a decision point.
 - **Any LLM**, as a tier: `llm:<provider>/<model>`.
 
-What this buys, in the authors' own sessions: the context never fills, because tool output enters chunk by chunk and stale results are dropped without a summary; in failing test logs, 51% of the bytes were exact repeats and are folded losslessly; the prompt cache stays warm because the kernel guesses when you will be back.
+What this buys, in the authors' own sessions: the context never fills, because tool output enters chunk by chunk and stale results are dropped without a summary; in the longest failing test logs, folding exact repeats saved 51% of the characters without losing one (see [Measured](#measured)); the prompt cache stays warm because the kernel guesses when you will be back.
+
+## Measured
+
+The numbers below come from the repository's own replay, [`kyrn/spikes/judge-bench/test-log-replay.ts`](kyrn/spikes/judge-bench/test-log-replay.ts). The method and the full tables are in [kyrn/docs/09-test-log-admission.md](kyrn/docs/09-test-log-admission.md) (in Chinese).
+
+**Exact repeats.** A failing run often prints the same diff, DOM dump or stack once per failed test. mu keeps the first copy and replaces each later copy with one line that names the lines it repeats. No model is called. The markers expand to the original byte for byte, and the full log stays on disk, behind a pointer at the end of the output.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/bench-test-log-repeats-dark.svg">
+    <img src="docs/readme/bench-test-log-repeats-light.svg" width="880" alt="Seven real failing Vitest logs from the authors' sessions, 139,820 characters in all. Folding exact repeats removed 86%, 44%, 44%, 47% and 16% of the five largest; the two smallest were left whole. 51% in all.">
+  </picture>
+</p>
+
+<p align="center"><img src="docs/readme/test-log-folding.gif" width="960" alt="A failing Vitest run of 338 lines scrolls by, its repeated diff blocks marked. Then the same run as the model reads it: 135 lines, one marker line per folded run. 7,686 characters become 4,262, with no model call."></p>
+
+**Goal-aware selection.** With a verbose reporter, what to keep depends on what you asked for: passing tests are noise when you debug a failure, and evidence when you ask which tests ran. In one request, Jev is asked about each block of passing tests and each block of test output: does the goal still need it? The summary and every failure are never asked about. A block is left out only when Jev gives "not needed" a probability of 0.9 or more.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/bench-test-log-judge-dark.svg">
+    <img src="docs/readme/bench-test-log-judge-light.svg" width="880" alt="On 29 tuned goals, Jev cut 40.2% and lost none of 72 required lines; a perfect judge cut 52.5%; keeping failures only cut 61.9% and lost 9. On 9 held-out goals, Jev cut 46.4% and lost none of 19; a perfect judge cut 46.5%; keeping failures only cut 59.4% and lost 6.">
+  </picture>
+</p>
+
+*Perfect judge* reads the labels: the most a correct judge could cut. *Keep failures only* is a judge that always answers "leave it out", which is what a filter that ignores the goal does. All 282 live Jev requests of the study cost about $0.017 at list price; with the default wording, a request took 345 ms at the median.
+
+Both are off by default. `"features": { "admission": { "testLog": "rules" } }` in `~/.mu/agent/mu.json`, or *Test log trimming* in the desktop app's settings, folds repeats. `"jev"` adds the selection, which stays in shadow (asked and logged, changing nothing) until `/mu mode tool.admission.test-log active`.
+
+What these numbers are not:
+
+- The selection cases are real Vitest, node:test and pytest output of synthetic projects, plus 13 hand-written edge cases; the goals and labels are the authors'. The held-out goals were labeled first and run once, and nothing was changed afterwards.
+- They measure what reaches the model and what is lost, not whether the model then finishes the task.
+- The repeats come from two days of one developer's sessions: 15 test logs, all Vitest, of which the 7 over 4,000 characters are charted. Other runners are not measured.
+- There is no end-to-end comparison with pi, Claude Code or Codex on the same tasks yet.
+
+`node kyrn/spikes/judge-bench/test-log-replay.ts` reruns every arm but Jev's in seconds, with no key; on the current code they come out 0.6 to 1.1 points above the chart, which was measured on 2026-09-21. The Jev arm needs `TYPESAFE_API_KEY`.
+
+<details>
+<summary>The charts as tables</summary>
+
+| Goal-aware selection | Tuned goals (29): cut | Required lines lost | Held-out goals (9): cut | Required lines lost |
+| --- | --- | --- | --- | --- |
+| mu · Jev | 40.2% | 0 of 72 | 46.4% | 0 of 19 |
+| Perfect judge | 52.5% | 0 of 72 | 46.5% | 0 of 19 |
+| Keep failures only | 61.9% | 9 of 72 | 59.4% | 6 of 19 |
+
+| Real failing test log | Characters | Folded |
+| --- | --- | --- |
+| 5 failures, one diff each | 37,819 | 86% |
+| DOM test, 4 failures | 34,115 | 44% |
+| The same run, seen by a sub-agent | 34,115 | 44% |
+| Shared stderr stack | 15,565 | 47% |
+| 2 failures | 9,249 | 16% |
+| 7 suites fail to parse | 4,953 | 0%: one repeat, too little to fold |
+| 5 different failures | 4,004 | 0%: no repeats |
+| All 7 | 139,820 | 51.0% |
+
+</details>
 
 ## The hive
 
@@ -197,4 +256,4 @@ mu is built on [pi](https://github.com/earendil-works/pi) (the coding agent, MIT
 
 ## Community
 
-Support and discussion: [linux.do](https://linux.do).
+Bugs and requests: [GitHub Issues](https://github.com/qybaihe/mu/issues). Discussion, in Chinese: [linux.do](https://linux.do).
