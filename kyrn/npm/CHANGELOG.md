@@ -9,6 +9,10 @@
   - The launcher plans and prepares such a host: `planHost` says which module to import, with which Node flags, arguments and environment, without side effects; `prepareLaunch` does what the command line does before pi starts (the app view of a checkout, the agent folder, the notes, the local judge), and `prepareLaunchAsync` does the same without holding the calling program while the local judge starts. The command line uses the same code.
   - `message_end` carries `entryId`, the id the message is saved under in the session file (for the messages the session saves), so a program showing a live conversation can fork from a message, hide a retried attempt or walk the tree by the ids the file uses.
 
+### Changed
+
+- With only a Together key, mu starts on Kimi K3 (`moonshotai/Kimi-K3`), and with only an OpenCode Go key on OpenCode Go's Kimi K3 (`kimi-k3`). Kimi K2.6, the model each started on before, has left both model lists.
+
 ### Fixed
 
 - A run you stopped while a tool ran, or while mu asked about a command, no longer ends as a failure ("This operation was aborted"). The model request that followed the stop failed before it started, and now belongs to the stop: the run ends as aborted.
