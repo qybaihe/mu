@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.7] - 2026-09-30
+
+### Added
+
+- mu can run inside another program, which is how the desktop app runs it now, in a process of its own with no bridge over a command line.
+  - pi's RPC mode takes a transport from the program that embeds it (`runRpcMode(runtime, transport)`, `main(args, { rpcTransport })`, `setupCli` exported). The default is the JSON lines on stdin and stdout it always spoke, so `--mode rpc` is unchanged.
+  - The launcher plans and prepares such a host: `planHost` says which module to import, with which Node flags, arguments and environment, without side effects; `prepareLaunch` does what the command line does before pi starts (the app view of a checkout, the agent folder, the notes, the local judge), and `prepareLaunchAsync` does the same without holding the calling program while the local judge starts. The command line uses the same code.
+  - `message_end` carries `entryId`, the id the message is saved under in the session file (for the messages the session saves), so a program showing a live conversation can fork from a message, hide a retried attempt or walk the tree by the ids the file uses.
+
+### Fixed
+
+- A run you stopped while a tool ran, or while mu asked about a command, no longer ends as a failure ("This operation was aborted"). The model request that followed the stop failed before it started, and now belongs to the stop: the run ends as aborted.
+
 ## [0.1.6] - 2026-09-27
 
 ### Added
