@@ -5,7 +5,6 @@
 import { expect, test } from '@playwright/test';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { processTree } from './app.mjs';
 import { createNativeWorld } from './nativeWorld.mjs';
 
 const desktopRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -30,11 +29,18 @@ const {
   newConversation,
 } = createNativeWorld({ desktopRoot });
 
-/** The hosts the app runs now: its Electron utility processes that run node (the network service is not one). */
+/**
+ * The hosts the app runs now: its Electron utility processes that run node (the network service is not one), asked of
+ * Electron itself. The process table cannot say: on Linux a host names itself with process.title, which replaces its
+ * command line there.
+ */
 async function hostProcesses() {
-  const pid = run.state?.app.process().pid;
-  if (!pid) return [];
-  return (await processTree(pid)).filter((entry) => /utility-sub-type=node\.mojom\.NodeService/.test(entry.command));
+  const app = run.state?.app;
+  if (!app) return [];
+  const metrics = await app.evaluate(({ app: electron }) =>
+    electron.getAppMetrics().map(({ pid, type, serviceName }) => ({ pid, type, serviceName }))
+  );
+  return metrics.filter((entry) => entry.type === 'Utility' && entry.serviceName === 'node.mojom.NodeService');
 }
 
 test('a conversation exists with one answered message, so its session has a file', async () => {
