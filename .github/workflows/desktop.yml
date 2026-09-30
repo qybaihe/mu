@@ -14,9 +14,10 @@ name: Desktop app
 # every build puts it into the app (desktop/scripts/kyrn/bundle-harness.mjs, through MU_HARNESS_TARBALL).
 #
 # The app each build made is then started as a person starts it: its own mu alone first, then the whole app holding a
-# conversation (desktop/tests/e2e/mu-conversation), on every system but the Intel Mac: its app, built on an arm64
+# conversation (desktop/tests/e2e/mu-conversation) twice, on the native host the app uses by default (mu in a process
+# of the app's own) and on AionCore (MU_NATIVE_HOST=0), on every system but the Intel Mac: its app, built on an arm64
 # runner, sees an arm64 Mac there and asks for the arm64 app instead. On windows-x64 the app its installer puts in
-# C:\Program Files\mu holds one too: a path with a space.
+# C:\Program Files\mu holds them too: a path with a space.
 #
 # Adapted from AionUi's own build pipeline (desktop/.github/workflows/_build-reusable.yml). The macOS builds
 # are signed with a Developer ID certificate and notarized with an App Store Connect API key when the
@@ -359,7 +360,8 @@ jobs:
       # app in out/, with the mu and the backend it carries, against a local fake model, in a throwaway profile (home,
       # app data, mu's agent folder, a project). No key, no real model, nothing downloaded. On Windows this is the only
       # place the app is ever run. Linux has no display here: Xvfb is one, a 1280 x 800 screen (xvfb-run's own, 640 x 480
-      # at 8 bits, is smaller than the app's narrowest window).
+      # at 8 bits, is smaller than the app's narrowest window). This one is held on AionCore, the way the app talked to
+      # mu before its native host (the test turns the host off with MU_NATIVE_HOST=0); the next one on the native host.
       - name: Hold a conversation in the app
         id: conversation
         if: matrix.conversation
@@ -394,6 +396,47 @@ jobs:
             !${{ runner.temp }}/mu-e2e/**/.env
             !${{ runner.temp }}/mu-e2e/**/auth.json
             !${{ runner.temp }}/mu-e2e/**/models-store.json
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
+
+      # The same conversation on the native host, which the app uses by default: mu runs in a process of the app's own,
+      # with no AionCore between them. These are the tests that meet what a system can differ in: a first start, a start
+      # with no model, replies that stream, are asked about and stop, a host killed in the middle of a run, the list
+      # read from mu's own session files, the panels. Every test file makes its profile in the runner's temporary
+      # folder (TMPDIR on macOS and Linux, TEMP and TMP on Windows), so one run holds them all: a passing file takes its
+      # profile away, a failing one leaves it for the upload below.
+      - name: Hold a conversation in the app on the native host
+        id: native
+        if: matrix.conversation
+        shell: bash
+        timeout-minutes: 25
+        run: |
+          mkdir -p "$RUNNER_TEMP/mu-e2e-native"
+          export TMPDIR="$RUNNER_TEMP/mu-e2e-native" TEMP="$RUNNER_TEMP/mu-e2e-native" TMP="$RUNNER_TEMP/mu-e2e-native"
+          specs=(native.spec native-resilience native-firstrun native-home native-panels native-composer)
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            xvfb-run -a -s "-screen 0 1280x800x24" node scripts/kyrn/e2e-conversation.mjs --native --app out --arch ${{ matrix.arch }} -- "${specs[@]}"
+          else
+            node scripts/kyrn/e2e-conversation.mjs --native --app out --arch ${{ matrix.arch }} -- "${specs[@]}"
+          fi
+
+      - name: Upload the native conversation's report and logs
+        if: failure() && steps.native.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-conversation-${{ matrix.platform }}
+          path: |
+            desktop/tests/e2e/report/mu-native
+            desktop/tests/e2e/results/mu-native
+            ${{ runner.temp }}/mu-e2e-native/*/logs
+            ${{ runner.temp }}/mu-e2e-native/*/userData/logs
+            ${{ runner.temp }}/mu-e2e-native/*/home/Library/Logs
+            ${{ runner.temp }}/mu-e2e-native/*/home/.mu
+            ${{ runner.temp }}/mu-e2e-native/*/agent
+            !${{ runner.temp }}/mu-e2e-native/**/.env
+            !${{ runner.temp }}/mu-e2e-native/**/auth.json
+            !${{ runner.temp }}/mu-e2e-native/**/models-store.json
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 14
@@ -440,6 +483,39 @@ jobs:
             !${{ runner.temp }}/mu-e2e-installed/**/.env
             !${{ runner.temp }}/mu-e2e-installed/**/auth.json
             !${{ runner.temp }}/mu-e2e-installed/**/models-store.json
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
+
+      # And the native host in it: pi runs from the app's resources, C:\Program Files\mu\resources\harness, a path with a
+      # space, as a process of the app's own.
+      - name: Hold a conversation on the native host in the app installed in Program Files
+        id: installed-native
+        if: matrix.platform == 'windows-x64'
+        shell: pwsh
+        timeout-minutes: 25
+        env:
+          MU_E2E_ROOT: ${{ runner.temp }}/mu-e2e-installed-native
+        run: |
+          $app = Join-Path $env:ProgramFiles 'mu'
+          node scripts/kyrn/e2e-conversation.mjs --native --app $app '--' native.spec
+          exit $LASTEXITCODE
+
+      - name: Upload the installed app's native conversation report and logs
+        if: failure() && steps.installed-native.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-conversation-${{ matrix.platform }}-installed
+          path: |
+            desktop/tests/e2e/report/mu-native
+            desktop/tests/e2e/results/mu-native
+            ${{ runner.temp }}/mu-e2e-installed-native/logs
+            ${{ runner.temp }}/mu-e2e-installed-native/userData/logs
+            ${{ runner.temp }}/mu-e2e-installed-native/home/.mu
+            ${{ runner.temp }}/mu-e2e-installed-native/agent
+            !${{ runner.temp }}/mu-e2e-installed-native/**/.env
+            !${{ runner.temp }}/mu-e2e-installed-native/**/auth.json
+            !${{ runner.temp }}/mu-e2e-installed-native/**/models-store.json
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 14
