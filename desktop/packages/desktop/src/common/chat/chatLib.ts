@@ -135,6 +135,11 @@ export type IMessageText = IMessage<
     senderAgentType?: string;
     /** Sender teammate's conversation id — lets the renderer resolve preset avatars via their conversation extras. */
     senderConversationId?: string;
+    /**
+     * Images the person sent as themselves, not as files (a native conversation's message: pi's image blocks, base64
+     * and type). A row that carries files by path has none.
+     */
+    images?: Array<{ mimeType: string; data: string }>;
   }
 >;
 

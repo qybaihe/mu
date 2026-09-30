@@ -183,7 +183,8 @@ export type LessonsView = {
   lessons: StoredLesson[];
 };
 
-/** One change the lessons tab makes to one lesson, written as one appended line: its new text, or its retirement. */
-export type LessonChange =
-  | { conversationId: string; id: string; action: 'edit'; lesson: string }
-  | { conversationId: string; id: string; action: 'retire' };
+/** One change to one lesson, written as one appended line: its new text, or its retirement. */
+export type LessonEdit = { id: string; action: 'edit'; lesson: string } | { id: string; action: 'retire' };
+
+/** One change the lessons tab makes to one lesson of an app conversation's project. */
+export type LessonChange = LessonEdit & { conversationId: string };

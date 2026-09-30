@@ -341,9 +341,9 @@ const ensureAssistantDirs = async (): Promise<void> => {
 };
 
 const getBuiltinMcpBaseDir = (): string => {
-  const mainModuleDir =
-    typeof require !== 'undefined' && require.main?.filename ? path.dirname(require.main.filename) : __dirname;
-  const baseDir = path.basename(mainModuleDir) === 'chunks' ? path.dirname(mainModuleDir) : mainModuleDir;
+  // From this bundle file's own folder: `require.main.filename` is the string "electron" in Electron 44, whose
+  // `dirname` is "." and made every built-in MCP script path relative to the working directory.
+  const baseDir = path.basename(__dirname) === 'chunks' ? path.dirname(__dirname) : __dirname;
   // In packaged mode the main bundle lives inside app.asar, but external node
   // processes cannot read files from ASAR archives. Redirect to the unpacked copy.
   if (getPlatformServices().paths.isPackaged()) {

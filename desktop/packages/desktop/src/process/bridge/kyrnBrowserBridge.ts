@@ -5,11 +5,13 @@ import { muHome } from '../agent/kyrn/naming';
 import { conversationOfSession } from '../agent/kyrn/sessionBinding';
 import { removeAdvert, writeAdvert } from '../services/muBrowser/advert';
 import { BrowserBridge } from '../services/muBrowser/bridge';
+import { browserConversationOf } from '../services/muBrowser/conversationOf';
 import { blankAndPainted, electronPage } from '../services/muBrowser/electronPage';
 import { guardAgentPage, hardenAgentSession, lockWebviewPreferences } from '../services/muBrowser/pageGuards';
 import { PanelHost } from '../services/muBrowser/panelHost';
 import { startBridgeServer } from '../services/muBrowser/server';
 import { getDataPath } from '../utils/utils';
+import { nativeConversationOf } from './nativeBridge';
 
 /**
  * Offers the app's browser panel to a mu harness on this machine (kyrn/docs/features/embedded-browser.md in the
@@ -33,13 +35,12 @@ async function start(): Promise<void> {
   const host = new PanelHost({
     request: (request) => kyrnBrowserBridge.request.emit(request),
     publish: (event) => kyrnBrowserBridge.events.emit(event),
-    conversationOf: (adapterSession) => {
-      try {
-        return conversationOfSession(getDataPath(), adapterSession) || undefined;
-      } catch {
-        return undefined;
-      }
-    },
+    // A native conversation's mu names it by the name the app gave it (MU_DESKTOP_SESSION); an ACP session by its own.
+    conversationOf: (adapterSession) =>
+      browserConversationOf(adapterSession, {
+        native: nativeConversationOf,
+        classic: (named) => conversationOfSession(getDataPath(), named),
+      }),
     nudge: (waiting) => {
       // A question is waiting and the person may be looking elsewhere: the taskbar or dock entry asks for them.
       for (const window of BrowserWindow.getAllWindows()) {

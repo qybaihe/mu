@@ -2,6 +2,7 @@ import { basename, dirname, join } from 'node:path';
 import { app, net, shell, utilityProcess } from 'electron';
 import { kyrnBridge } from '../../common/kyrn/bridge';
 import { KyrnError, kyrnFailure, type KyrnResult } from '../../common/kyrn/errors';
+import { kyrnFolderBridge } from '../../common/kyrn/folderBridge';
 import type { KyrnCatalog } from '../../common/kyrn/types';
 import { httpRequest } from '../../common/adapter/httpBridge';
 import { SettingsStore } from '../agent/kyrn/settings';
@@ -14,6 +15,7 @@ import { LocalJudge } from '../agent/kyrn/localJudge';
 import { OnnxLocalJudge, openFolder, usesOnnxJudge } from '../agent/kyrn/localJudgeOnnx';
 import { importCli, importService } from '../agent/kyrn/importChats';
 import { LessonsStore, lessonsProject, type LessonsProject } from '../agent/kyrn/lessons';
+import { listFolder, readFolder } from '../agent/kyrn/folderFiles';
 import { activityPage, modelLevels } from '../agent/kyrn/telemetry';
 import { findRegistration, initializeKyrn, recheckKyrn, type OwnCommand } from '../agent/kyrn/product';
 import { ownLauncher } from '../agent/kyrn/windows/launcherCommand';
@@ -23,10 +25,12 @@ import { sessionBinding } from '../agent/kyrn/sessionBinding';
 import { conversationSessions } from '../agent/kyrn/conversationSession';
 import { getDataPath } from '../utils/utils';
 
-/** `out/main/localJudgeOnnx.js`, next to the main entry even when this module sits in `out/main/chunks/`. */
+/**
+ * `out/main/localJudgeOnnx.js`, next to the main entry even when this module sits in `out/main/chunks/`. Found from
+ * `__dirname`: `require.main.filename` is the string "electron" in Electron 44, so a path built from it is relative.
+ */
 function localJudgeEntry(): string {
-  const main = require.main?.filename ? dirname(require.main.filename) : __dirname;
-  return join(basename(main) === 'chunks' ? dirname(main) : main, 'localJudgeOnnx.js');
+  return join(basename(__dirname) === 'chunks' ? dirname(__dirname) : __dirname, 'localJudgeOnnx.js');
 }
 
 // Always answer IPC, including failure: the generic bridge otherwise only logs exceptions.
@@ -191,6 +195,13 @@ export function initKyrnBridge(): void {
   kyrnBridge.lessonsChange.provider((change) =>
     result(async () => lessons.change(await projectOf(change.conversationId), change))
   );
+  // A native conversation's panel reads by its folder: it has no AionCore conversation (common/kyrn/folderBridge.ts).
+  const folderProject = (cwd: unknown): LessonsProject => lessonsProject(store, '', readFolder(cwd));
+  kyrnFolderBridge.lessons.provider(({ cwd }) => result(() => lessons.view(folderProject(cwd))));
+  kyrnFolderBridge.lessonsChange.provider(({ cwd, ...change }) =>
+    result(() => lessons.change(folderProject(cwd), change))
+  );
+  kyrnFolderBridge.files.provider(({ cwd, path }) => result(() => listFolder(readFolder(cwd), path)));
   const imports = importService({
     cli: importCli(harness),
     // A conversation deleted since it was made is no error here: the import makes a new one.

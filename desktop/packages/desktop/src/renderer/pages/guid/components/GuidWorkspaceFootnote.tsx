@@ -12,6 +12,7 @@ import { Close, Down } from '@icon-park/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import { useNativeFolders, withNativeFolders } from '../hooks/useNativeFolders';
 import styles from '../index.module.css';
 
 type GuidWorkspaceFootnoteProps = {
@@ -54,7 +55,8 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
   onClearWorkspace,
 }) => {
   const { t } = useTranslation();
-  const recentWorkspaces = getRecentWorkspaces();
+  // With the native host on, the folders its conversations work in count as recent too.
+  const recentWorkspaces = withNativeFolders(getRecentWorkspaces(), useNativeFolders());
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});

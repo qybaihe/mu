@@ -1,4 +1,5 @@
 import type { PermissionOptionKind, SessionConfigOption, ToolCallUpdate, ToolKind } from '@agentclientprotocol/sdk';
+import { readPresentation } from '../../../common/utils/nativeHost/presentation.ts';
 import { array, asRecord, text, type JsonRecord } from './piRpc.ts';
 
 /*
@@ -61,18 +62,8 @@ const callId = (value: unknown): string | undefined =>
 
 /** A presentation event mu sends on its status channel, or undefined for any other event. */
 export function presentation(event: JsonRecord): { kind: string; payload: JsonRecord } | undefined {
-  if (
-    event.type !== 'extension_ui_request' ||
-    event.method !== 'setStatus' ||
-    event.statusKey !== 'kyrn.presentation.v1'
-  )
-    return undefined;
-  try {
-    const frame = asRecord(JSON.parse(text(event.statusText)));
-    return typeof frame.kind === 'string' ? { kind: frame.kind, payload: asRecord(frame.payload) } : undefined;
-  } catch {
-    return undefined;
-  }
+  const frame = readPresentation(event);
+  return frame ? { kind: frame.kind, payload: frame.payload } : undefined;
 }
 
 /** Mode ids are words (`full`, `jev`, `ask`): anything else is not sent on as a command. */

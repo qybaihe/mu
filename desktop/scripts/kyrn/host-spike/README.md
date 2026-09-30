@@ -78,3 +78,20 @@ registration is dropped as side-effect free.
   via `ELECTRON_EXEC_PATH`. pi needs Node ≥ 22.19; the packaged app's Electron has to satisfy that.
 - Gotcha found here: in an ESM main entry, top-level `await app.whenReady()` never resolves on Electron 44.
   Use `app.whenReady().then(...)`.
+
+## The native host, measured (`measure-host.mjs`)
+
+The spike's successor is the app's native host ([docs/native-host.md](../../../docs/native-host.md)): pi's own RPC
+mode inside a utility process, started by the launcher's plan. `measure-host.mjs` and its Electron main
+`measure-host-main.mjs` start it through the app's code path (`startNativeHost`) in real utility processes, with the
+E2E fake model and the mock judge in a throwaway home, and check LaunchServices' list (the Dock) while it runs.
+
+```bash
+export PATH="$HOME/.nvm/versions/node/v24.16.0/bin:$PATH"
+node scripts/kyrn/host-spike/measure-host.mjs --rounds 3     # forks the entry's TypeScript source
+node scripts/kyrn/host-spike/measure-host.mjs --built        # forks out/main/nativeHost.js (electron-vite build first)
+```
+
+One `[measure]` line per round: ms from `startNativeHost` to fork, pi imported, first record and first `get_state`
+answer, a PLAIN turn, the host's resident memory after it, dispose (and when the process exited and was gone), and
+whether the host was listed. Exit code 0 means no host was listed and each was gone within 2 s of its dispose. The results are in docs/native-host.md.

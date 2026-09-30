@@ -10,7 +10,7 @@ import { IconSearch } from '@arco-design/web-react/icon';
 import classNames from 'classnames';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useMessageList } from '../hooks';
+import { useMessageList, useMessageListRun } from '../hooks';
 import type { MessageAnchorItem } from './anchors';
 import { useConversationAnchors } from './useConversationAnchors';
 import {
@@ -62,11 +62,14 @@ const MessageAnchorRail: React.FC = () => {
   const { t } = useTranslation();
   const messages = useMessageList();
   const conversationContext = useConversationContextSafe();
-  const conversationId = conversationContext?.conversation_id;
+  // A native conversation's list holds the rows its screen draws (the latest, and the earlier ones once the reader has
+  // scrolled up to them), and AionCore has none of it to read.
+  const run = useMessageListRun();
+  const conversationId = run ? run.conversationId : conversationContext?.conversation_id;
 
   // Covers the whole conversation, not just the pages the chat area has loaded, so
   // reopening an old conversation shows every turn without scrolling up first.
-  const anchors = useConversationAnchors(conversationId, messages);
+  const anchors = useConversationAnchors(run ? undefined : conversationId, messages);
 
   // A callback ref, not a plain one: the rail is not rendered until a second
   // anchor arrives, so a mount-only effect would run while there is no element to
@@ -305,17 +308,20 @@ const MessageAnchorRail: React.FC = () => {
       {/* Search entry, sitting at the head of the stack so it reads as the first
           anchor. Lives outside the hover zone so hovering it cannot
           magnet-select a tick, and so a click never doubles as a jump. */}
-      <button
-        type='button'
-        className={styles.searchButton}
-        style={{ top: searchTop }}
-        data-testid='message-anchor-rail-search'
-        aria-label={t('messages.anchorRail.searchAria')}
-        title={t('messages.anchorRail.searchAria')}
-        onClick={openSearchPanel}
-      >
-        <IconSearch className={styles.searchIcon} />
-      </button>
+      {/* The search panel reads AionCore's copy of a conversation: a native one has none. */}
+      {run ? null : (
+        <button
+          type='button'
+          className={styles.searchButton}
+          style={{ top: searchTop }}
+          data-testid='message-anchor-rail-search'
+          aria-label={t('messages.anchorRail.searchAria')}
+          title={t('messages.anchorRail.searchAria')}
+          onClick={openSearchPanel}
+        >
+          <IconSearch className={styles.searchIcon} />
+        </button>
+      )}
 
       {activeAnchor && (
         <div

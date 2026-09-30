@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SlashCommandItem } from '@/common/chat/slash/types';
 import type { TChatConversation } from '@/common/config/storage';
+import type { NativeConversation } from '@/common/kyrn/nativeBridge';
 import {
   MATCHED_CONVERSATIONS,
   MATCHED_SETTINGS,
@@ -32,6 +33,15 @@ const conversation = (id: string, name: string, minutesAgo: number): TChatConver
     modified_at: NOW - minutesAgo * MINUTE,
     extra: {},
   }) as unknown as TChatConversation;
+
+const native = (id: string, title: string, cwd: string, minutesAgo: number): NativeConversation => ({
+  id,
+  cwd,
+  title,
+  createdAt: NOW - minutesAgo * MINUTE,
+  updatedAt: NOW - minutesAgo * MINUTE,
+  live: false,
+});
 
 const command = (name: string): SlashCommandItem => ({
   name,
@@ -59,6 +69,37 @@ const group = (groups: PaletteGroup[], id: PaletteGroup['id']) => groups.find((e
 const labels = (groups: PaletteGroup[], id: PaletteGroup['id']) => group(groups, id)?.items.map((item) => item.label);
 
 describe('buildPaletteGroups', () => {
+  it('lists the native host’s conversations among the others by time, found by title or folder, with their page', () => {
+    const groups = buildPaletteGroups(
+      sources({
+        query: 'notes',
+        conversations: [conversation('c1', 'notes classic', 5)],
+        nativeConversations: [
+          native('n1', 'notes native', '/work/alpha', 1),
+          native('n2', 'other', '/work/notes-app', 10),
+          native('n3', 'unrelated', '/work/beta', 2),
+        ],
+      })
+    );
+    const rows = group(groups, 'conversations')?.items ?? [];
+    expect(rows.map((row) => row.label)).toEqual(['notes native', 'notes classic', 'other']);
+    expect(rows[0]).toMatchObject({ key: 'native:n1', path: '/conversation/native/n1', detail: 'alpha' });
+    // Found by its folder: nothing of its title is underlined.
+    expect(rows[2]).toMatchObject({ key: 'native:n2', hits: [], detail: 'notes-app' });
+    // A classic row is as it was: no page of its own, no folder.
+    expect(rows[1]).toEqual(expect.objectContaining({ key: 'conversation:c1' }));
+    expect(rows[1]).not.toHaveProperty('path');
+    expect(rows[1]).not.toHaveProperty('detail');
+  });
+
+  it('lists what it listed before when there are no native conversations', () => {
+    const conversations = [conversation('c1', 'alpha', 3), conversation('c2', 'beta', 1)];
+    for (const query of ['', 'a', '/'])
+      expect(buildPaletteGroups(sources({ query, conversations, nativeConversations: [] }))).toEqual(
+        buildPaletteGroups(sources({ query, conversations }))
+      );
+  });
+
   it('lists at most eight matching conversations, the most recent first', () => {
     // Twelve matches, listed oldest first: the palette must sort, not trust the order it is given.
     const conversations = Array.from({ length: 12 }, (_item, index) =>

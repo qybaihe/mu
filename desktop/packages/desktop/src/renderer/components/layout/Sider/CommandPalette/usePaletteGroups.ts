@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useSlashCommands } from '@/renderer/hooks/chat/useSlashCommands';
 import { useConversationHistoryContext } from '@/renderer/hooks/context/ConversationHistoryContext';
 import { useCurrentConversation } from '@/renderer/pages/conversation/explorer/currentConversationStore';
+import { useNativeConversations, useNativeEnabled } from '@/renderer/pages/native/hooks/useNativeConversations';
 import { buildPaletteGroups, type PaletteGroup } from './paletteGroups';
 
 /**
@@ -36,6 +37,8 @@ export const usePaletteGroups = (query: string): PaletteGroup[] => {
     agentStatus: ASK_NOW,
     prepareRuntime: RUNTIME_ALREADY_UP,
   });
+  // With the native host on, its conversations are listed too (read when the palette opens, kept as they change).
+  const { conversations: nativeConversations } = useNativeConversations(useNativeEnabled() === true);
   // One clock per opening: the relative times do not tick while the palette is open.
   const [now] = useState(() => Date.now());
 
@@ -44,12 +47,13 @@ export const usePaletteGroups = (query: string): PaletteGroup[] => {
       buildPaletteGroups({
         query,
         conversations,
+        nativeConversations,
         commandTarget,
         commands,
         t,
         language: i18n.language,
         now,
       }),
-    [commandTarget, commands, conversations, i18n.language, now, query, t]
+    [commandTarget, commands, conversations, i18n.language, nativeConversations, now, query, t]
   );
 };

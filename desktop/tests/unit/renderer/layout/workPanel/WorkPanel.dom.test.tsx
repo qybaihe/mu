@@ -22,6 +22,16 @@ const wires = vi.hoisted(() => ({
   /** Each conversation's lessons, as the main process folds them from mu's file; and which conversations read them. */
   lessons: {} as Record<string, unknown>,
   lessonReads: [] as string[],
+  /** A native conversation's folder: its lessons, the changes asked for, its directories, which ones were read. */
+  folderLessons: {} as Record<string, unknown>,
+  folderLessonReads: [] as string[],
+  folderChanges: [] as unknown[],
+  folders: {} as Record<string, Record<string, unknown[]>>,
+  folderReads: [] as string[],
+  /** A native conversation's repository, as git reads it; and which folders were read. */
+  gitReads: [] as string[],
+  /** Files opened in the preview, by their full path. */
+  opened: [] as string[],
   stream: undefined as undefined | ((message: StreamMessage) => void),
   preview: {
     isOpen: false,
@@ -51,6 +61,54 @@ vi.mock('@/common/kyrn/bridge', () => ({
     },
   },
   unwrap: (result: { data: unknown }) => result.data,
+}));
+vi.mock('@/common/kyrn/folderBridge', () => ({
+  kyrnFolderBridge: {
+    lessons: {
+      invoke: async ({ cwd }: { cwd: string }) => {
+        wires.folderLessonReads.push(cwd);
+        return { ok: true, data: wires.folderLessons[cwd] ?? { project: cwd, lessons: [] } };
+      },
+    },
+    lessonsChange: {
+      invoke: async (change: { cwd: string }) => {
+        wires.folderChanges.push(change);
+        return { ok: true, data: wires.folderLessons[change.cwd] };
+      },
+    },
+    files: {
+      invoke: async ({ cwd, path }: { cwd: string; path: string }) => {
+        wires.folderReads.push(`${cwd}:${path}`);
+        return { ok: true, data: { path, entries: wires.folders[cwd]?.[path] ?? [], more: 0 } };
+      },
+    },
+  },
+}));
+vi.mock('@/common/kyrn/gitBridge', () => ({
+  kyrnGitBridge: {
+    status: {
+      invoke: async ({ cwd }: { cwd: string }) => {
+        wires.gitReads.push(cwd);
+        return {
+          ok: true,
+          data: {
+            state: 'repository',
+            root: cwd,
+            branch: { name: 'main', commit: 'abc1234' },
+            changes: [{ path: 'notes/hello.txt', area: 'untracked', kind: 'untracked' }],
+            more: 0,
+            truncated: false,
+          },
+        };
+      },
+    },
+    diff: { invoke: async () => ({ ok: false, error: 'not in this test' }) },
+  },
+}));
+vi.mock('@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview', () => ({
+  useLocalFilePreview: () => async (path: string) => {
+    wires.opened.push(path);
+  },
 }));
 vi.mock('@/common', () => ({
   ipcBridge: {
@@ -118,6 +176,7 @@ import {
   setCurrentProject,
 } from '@/renderer/pages/conversation/explorer/currentProjectStore';
 import { requestHiveFocus } from '@/renderer/pages/conversation/KyrnPanel';
+import { publishNativeActivity } from '@/renderer/pages/native/utils/nativeActivityStore';
 import {
   browserNow,
   openBrowserPage,
@@ -215,6 +274,14 @@ beforeEach(() => {
   wires.records = {};
   wires.lessons = {};
   wires.lessonReads = [];
+  wires.folderLessons = {};
+  wires.folderLessonReads = [];
+  wires.folderChanges = [];
+  wires.folders = {};
+  wires.folderReads = [];
+  wires.gitReads = [];
+  wires.opened = [];
+  publishNativeActivity(undefined);
   wires.preview = { isOpen: false, activeTab: null, tabs: [], isMaximized: false, showPreview: () => {} };
   setCurrentConversation('conv-1');
 });
@@ -390,6 +457,8 @@ describe('the work panel', () => {
     await settle();
     expect(dots()).toEqual([]);
     expect(wires.lessonReads).toEqual(['conv-1']);
+    // An app conversation's lessons are read by the conversation, as before the native host: never by a folder.
+    expect(wires.folderLessonReads).toEqual([]);
     expect(screen.getByTestId('mu-lessons')).toHaveTextContent('Run vitest with Node 24.');
     expect(screen.getByTestId('mu-lessons-notes')).toHaveTextContent('This turn brought in 1 lesson');
   });
@@ -602,6 +671,8 @@ describe('the work panel', () => {
     fireEvent.click(tab('Files'));
     expect(screen.getByText(common.workPanel.noProject)).toBeInTheDocument();
     expect(screen.queryByTestId('explorer')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('native-files')).not.toBeInTheDocument();
+    expect(wires.folderReads).toEqual([]);
   });
 
   it('moves between tabs with the arrow keys', async () => {
@@ -667,6 +738,142 @@ describe('the work panel', () => {
     act(() => setCurrentConversation(null));
     show();
     expect(screen.queryByTestId('work-panel')).not.toBeInTheDocument();
+  });
+});
+
+describe('beside a native conversation', () => {
+  const lesson = {
+    id: 'lesson-1',
+    kind: 'pitfall',
+    trigger: 'Running the desktop tests',
+    lesson: 'Run vitest with Node 24.',
+    scope: { cwd: '/work/app' },
+    source: { origin: 'outcome' },
+    status: 'active',
+    uses: { recalled: 1, applied: 0 },
+    created: '2026-09-23T00:00:00.000Z',
+    updated: '2026-09-23T00:00:00.000Z',
+  };
+  /** What the native page publishes: its view as activity, and its folder once known. */
+  const native = (events: Activity[] = [], cwd: string | null = '/work/app') =>
+    act(() => {
+      publishNativeActivity({
+        conversationId: 'conv-1',
+        activity: { events, loading: false, settled: true },
+        ...(cwd ? { cwd } : {}),
+      });
+    });
+  const openPanel = () =>
+    act(() => {
+      dispatchWorkspaceToggleEvent();
+    });
+  const files = () => screen.queryAllByTestId('native-file').map((row) => row.dataset.path);
+
+  it('reads its lessons by the folder it works in, and retires one there', async () => {
+    wires.folderLessons['/work/app'] = { project: '/work/app', lessons: [lesson] };
+    native();
+    show();
+    await settle();
+    openPanel();
+    fireEvent.click(tab('Lessons'));
+    await settle();
+    expect(wires.folderLessonReads).toEqual(['/work/app']);
+    expect(wires.lessonReads).toEqual([]);
+    expect(screen.getByTestId('mu-lessons')).toHaveTextContent('Run vitest with Node 24.');
+
+    wires.folderLessons['/work/app'] = { project: '/work/app', lessons: [{ ...lesson, status: 'retired' }] };
+    const row = screen.getByTestId('mu-lesson');
+    fireEvent.click(within(row).getAllByRole('button')[0]);
+    fireEvent.click(within(row).getByRole('button', { name: common.kyrn.lessonsView.retire }));
+    await act(async () => {
+      fireEvent.click(within(row).getByRole('button', { name: common.kyrn.lessonsView.retire }));
+    });
+    expect(wires.folderChanges).toEqual([{ cwd: '/work/app', id: 'lesson-1', action: 'retire' }]);
+    expect(screen.queryAllByTestId('mu-lesson')).toHaveLength(0);
+  });
+
+  it('says its lessons show once the conversation has opened, while its folder is not known', async () => {
+    native([], null);
+    show();
+    await settle();
+    openPanel();
+    fireEvent.click(tab('Lessons'));
+    await settle();
+    expect(screen.getByTestId('kernel-no-lessons')).toHaveTextContent(mu.native.panel.noLessons);
+    expect(wires.folderLessonReads).toEqual([]);
+  });
+
+  it('lists its folder under files, again after each run, and opens a file in the preview', async () => {
+    wires.folders['/work/app'] = {
+      '': [
+        { name: 'notes', path: 'notes', kind: 'dir' },
+        { name: 'README.md', path: 'README.md', kind: 'file' },
+      ],
+      notes: [],
+    };
+    native();
+    show();
+    await settle();
+    // Nothing is read while the tab is not shown.
+    expect(wires.folderReads).toEqual([]);
+    openPanel();
+    fireEvent.click(tab('Files'));
+    await settle();
+    expect(screen.queryByTestId('explorer')).not.toBeInTheDocument();
+    expect(screen.getByTestId('native-files')).toHaveAccessibleName('Files in app');
+    expect(files()).toEqual(['notes', 'README.md']);
+    fireEvent.click(screen.getByText('notes'));
+    await settle();
+    expect(screen.getByText('notes').closest('button')).toHaveAttribute('aria-expanded', 'true');
+
+    // The model wrote a file; the run's end has the folder and its open directory read again.
+    wires.folders['/work/app'].notes = [{ name: 'hello.txt', path: 'notes/hello.txt', kind: 'file' }];
+    wires.folderReads = [];
+    native([event('agent_start', {}), event('agent_settled', {})]);
+    await settle();
+    expect(wires.folderReads.toSorted()).toEqual(['/work/app:', '/work/app:notes']);
+    expect(files()).toEqual(['notes', 'notes/hello.txt', 'README.md']);
+    fireEvent.click(screen.getByText('hello.txt'));
+    expect(wires.opened).toEqual(['/work/app/notes/hello.txt']);
+  });
+
+  it('shows its folder’s changes under source, read with git by the folder', async () => {
+    native();
+    show();
+    await settle();
+    openPanel();
+    expect(wires.gitReads).toEqual([]);
+    fireEvent.click(tab('Source'));
+    await settle();
+    expect(screen.getByTestId('native-source')).toHaveAttribute('data-state', 'changes');
+    expect(screen.getByTestId('native-source')).toHaveAccessibleName('Changes in app');
+    expect(screen.getByTestId('native-source-file')).toHaveAttribute('data-path', 'notes/hello.txt');
+    expect(wires.gitReads).toEqual(['/work/app']);
+    expect(screen.queryByTestId('explorer')).not.toBeInTheDocument();
+  });
+
+  it('keeps an app conversation’s source tab the project explorer’s, and reads no folder with git', async () => {
+    setCurrentProject('project-1');
+    native();
+    show();
+    await settle();
+    openPanel();
+    fireEvent.click(tab('Source'));
+    await settle();
+    expect(screen.getByTestId('explorer')).toHaveAttribute('data-view', 'changes');
+    expect(screen.queryByTestId('native-source')).not.toBeInTheDocument();
+    expect(wires.gitReads).toEqual([]);
+  });
+
+  it('keeps an app conversation’s project explorer when both are known', async () => {
+    setCurrentProject('project-1');
+    native();
+    show();
+    await settle();
+    openPanel();
+    fireEvent.click(tab('Files'));
+    expect(screen.getByTestId('explorer')).toHaveAttribute('data-view', 'files');
+    expect(screen.queryByTestId('native-files')).not.toBeInTheDocument();
   });
 });
 

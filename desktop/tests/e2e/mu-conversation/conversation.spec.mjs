@@ -251,6 +251,9 @@ test.beforeAll(async () => {
     throw new Error(`MU_E2E_APP names no packaged app for ${process.platform}-${process.arch}: ${named}`);
   run.profile = createProfile({ desktopRoot, root: process.env.MU_E2E_ROOT, app });
   const { harness } = run.profile;
+  // The conversation on AionCore is the kill switch's path: the native host is on by default, and this test is of the
+  // other one.
+  run.profile.env.MU_NATIVE_HOST = '0';
   // The harness's keys (a checkout's own .env; none beside the mu a packaged app carries): stamped (never read)
   // before, compared after.
   run.untouched = [join(harness.root, '.env')].map((path) => ({ path, before: stamp(path) }));
@@ -379,6 +382,9 @@ test('a plain reply streams in, in several pieces', async () => {
     await box.press('Enter');
     await p.waitForURL(/#\/conversation\//, { timeout: 60_000 });
     run.conversationUrl = p.url();
+    // MU_NATIVE_HOST=0: the conversation is AionCore's, and the sidebar has no group of the native host's.
+    expect(run.conversationUrl).not.toContain('/conversation/native/');
+    await expect(p.getByTestId('native-sidebar-group')).toHaveCount(0);
     const reply = replies().last();
     const deadline = Date.now() + 90_000;
     while (Date.now() < deadline) {

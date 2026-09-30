@@ -6,11 +6,13 @@
 
 import type { SlashCommandItem } from '@/common/chat/slash/types';
 import type { TChatConversation } from '@/common/config/storage';
+import type { NativeConversation } from '@/common/kyrn/nativeBridge';
 import { getFuzzyMatchIndices } from '@/renderer/hooks/chat/useSlashCommandController';
 import { SETTINGS_GROUPS, SETTINGS_HOME, SETTINGS_PAGES } from '@/renderer/pages/settings/settingsNav';
 import { formatRelativeTime } from '@/renderer/utils/chat/relativeTime';
 import { commandDescription } from '@/renderer/utils/chat/muCommands';
 import { getActivityTime } from '@/renderer/utils/chat/timeline';
+import { folderName, nativeConversationPath } from '@/renderer/pages/native/utils/paths';
 
 /** Conversations an empty query lists: the most recent ones. */
 export const RECENT_CONVERSATIONS = 5;
@@ -25,9 +27,21 @@ export const TOP_COMMANDS = 5;
 export type PaletteAction = 'newConversation' | 'scheduledTasks';
 const ACTIONS: readonly PaletteAction[] = ['newConversation', 'scheduledTasks'];
 
-/** One row. `hits` are the indices of `label` that the query matched; they are underlined. */
+/**
+ * One row. `hits` are the indices of `label` that the query matched; they are underlined. A conversation on the native
+ * host has the route of its page (`path`) and its folder's name (`detail`); a classic one has neither.
+ */
 export type PaletteItem =
-  | { kind: 'conversation'; key: string; label: string; hits: number[]; conversationId: string; time: string }
+  | {
+      kind: 'conversation';
+      key: string;
+      label: string;
+      hits: number[];
+      conversationId: string;
+      time: string;
+      path?: string;
+      detail?: string;
+    }
   | { kind: 'messages'; key: string; label: string; hits: number[]; query: string }
   | { kind: 'settings'; key: string; label: string; hits: number[]; path: string }
   | { kind: 'action'; key: string; label: string; hits: number[]; action: PaletteAction }
@@ -55,30 +69,51 @@ export type PaletteSources = {
   commandTarget: string | null;
   /** The harness's slash commands in the open conversation. */
   commands: readonly SlashCommandItem[];
+  /** The conversations on the native host, while it is on: found by their title and by their folder's name. */
+  nativeConversations?: readonly NativeConversation[];
   t: Translate;
   language: string;
   now: number;
 };
 
-const byRecency = (a: TChatConversation, b: TChatConversation): number => getActivityTime(b) - getActivityTime(a);
+/** A conversation the palette can list: an AionCore one, or one on the native host (with its folder and page). */
+type Listed = { id: string; label: string; time: number; folder?: string; path?: string };
 
 const conversationRows = (
-  { conversations, t, language, now }: PaletteSources,
+  { conversations, nativeConversations = [], t, language, now }: PaletteSources,
   keyword: string,
   limit: number
 ): PaletteItem[] => {
+  const listed: Listed[] = [
+    ...conversations.map((conversation) => ({
+      id: conversation.id,
+      label: conversation.name?.trim() || t('conversation.welcome.newConversation'),
+      time: getActivityTime(conversation),
+    })),
+    ...nativeConversations.map((conversation) => ({
+      id: conversation.id,
+      label: conversation.title || t('mu.native.untitled'),
+      time: conversation.updatedAt,
+      folder: folderName(conversation.cwd),
+      path: nativeConversationPath(conversation.id),
+    })),
+  ];
   const rows: PaletteItem[] = [];
-  for (const conversation of conversations.toSorted(byRecency)) {
-    const label = conversation.name?.trim() || t('conversation.welcome.newConversation');
-    const hits = getFuzzyMatchIndices(label, keyword);
+  // A stable sort: conversations of one time keep their order.
+  for (const conversation of listed.toSorted((a, b) => b.time - a.time)) {
+    // A native conversation is found by its folder too; then no character of its title is underlined.
+    const hits =
+      getFuzzyMatchIndices(conversation.label, keyword) ??
+      (conversation.folder && getFuzzyMatchIndices(conversation.folder, keyword) ? [] : null);
     if (!hits) continue;
     rows.push({
       kind: 'conversation',
-      key: `conversation:${conversation.id}`,
-      label,
+      key: conversation.path ? `native:${conversation.id}` : `conversation:${conversation.id}`,
+      label: conversation.label,
       hits,
       conversationId: conversation.id,
-      time: formatRelativeTime(getActivityTime(conversation), language, now),
+      time: formatRelativeTime(conversation.time, language, now),
+      ...(conversation.path ? { path: conversation.path, detail: conversation.folder } : {}),
     });
     if (rows.length === limit) break;
   }

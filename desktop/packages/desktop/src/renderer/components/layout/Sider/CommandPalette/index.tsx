@@ -83,7 +83,8 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ onNavigate }) => {
       switch (item.kind) {
         case 'conversation':
           close(false);
-          void navigate(`/conversation/${item.conversationId}`);
+          // A native conversation has a page of its own.
+          void navigate(item.path ?? `/conversation/${item.conversationId}`);
           onNavigate?.();
           return;
         case 'settings':

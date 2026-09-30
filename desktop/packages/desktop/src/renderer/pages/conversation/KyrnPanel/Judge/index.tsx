@@ -42,16 +42,19 @@ type LessonText = (id: string) => string;
  * and a sentence), newest at the bottom. It follows new lines while the person reads the bottom and stops the moment
  * they scroll up; the verdict on the message being worked on stays pinned above the log while its turn runs. A line
  * opens to the whole record: its code, then a judgment as question, verdict and effect, an event as its words and raw
- * payload. Lessons are named by their words: the lessons file is read while the tab is in view and the log names one.
+ * payload. Lessons are named by their words: the lessons file is read while the tab is in view and the log names one,
+ * by the conversation, or by `cwd` for a native conversation's folder.
  */
 export default function JudgeLog({
   events,
   conversationId,
   visible = true,
+  cwd,
 }: {
   events: Activity[];
   conversationId?: string;
   visible?: boolean;
+  cwd?: string;
 }) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -66,7 +69,8 @@ export default function JudgeLog({
   const { view: lessonsView } = useLessons(
     conversationId ?? '',
     lessonEvents.map((event) => event.id).join('\n'),
-    needsLessons
+    needsLessons,
+    cwd
   );
   const lessonText = useMemo<LessonText>(() => {
     const byId = new Map((lessonsView?.lessons ?? []).map((lesson) => [lesson.id, lesson.lesson]));

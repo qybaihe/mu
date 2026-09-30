@@ -40,6 +40,20 @@ const isLive = (status: NormalizedToolStatus): boolean => status === 'running' |
 const PATH_KEYS: ReadonlySet<string> = new Set(['file_path', 'path']);
 
 /**
+ * A shell command as tools give it: a string (`command`, or `cmd` as Codex's `exec_command` names it), or the words of
+ * a command line (Codex's `shell` sends `["bash", "-lc", "npm test"]`, and what ran is the script, `npm test`).
+ */
+const commandText = (value: unknown): string | undefined => {
+  if (typeof value === 'string') return value || undefined;
+  if (!Array.isArray(value) || value.length === 0 || !value.every((part) => typeof part === 'string')) return undefined;
+  const words: string[] = value;
+  return words.length >= 3 && /^-\w*c$/.test(words[words.length - 2]) ? words[words.length - 1] : words.join(' ');
+};
+
+/** The arguments a shell command is in, before the ones that name a file or a search. */
+const COMMAND_KEYS: ReadonlySet<string> = new Set(['command', 'cmd']);
+
+/**
  * The one string worth showing next to a tool's name, and whether it is a path. A JSON input is mined for the argument
  * that names the work (a command, a path, a query); anything else falls back to its first line.
  */
@@ -49,8 +63,8 @@ const inputTarget = (input?: string): { text: string; path: boolean } | undefine
     const value: unknown = JSON.parse(input);
     if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
       const record = value as Record<string, unknown>;
-      for (const key of ['command', 'file_path', 'path', 'query', 'pattern', 'url', 'prompt']) {
-        const text = record[key];
+      for (const key of ['command', 'cmd', 'file_path', 'path', 'query', 'pattern', 'url', 'prompt']) {
+        const text = COMMAND_KEYS.has(key) ? commandText(record[key]) : record[key];
         if (typeof text === 'string' && text) return { text, path: PATH_KEYS.has(key) };
       }
       return undefined;

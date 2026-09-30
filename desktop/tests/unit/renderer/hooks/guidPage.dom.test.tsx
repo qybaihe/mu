@@ -82,6 +82,7 @@ const {
     setSelectedMode: vi.fn(),
     selectedAcpModel: null,
     setSelectedAcpModel: vi.fn(),
+    setSelectedThoughtLevelValue: vi.fn(),
     currentAcpCachedModelInfo: null,
     defaultAssistantId: 'bare-aionrs',
     setSelectedAssistantId: vi.fn(),
@@ -172,6 +173,25 @@ vi.mock('@/renderer/pages/guid/hooks/useGuidSend', () => ({
   useGuidSend: (deps: Record<string, unknown>) => {
     capturedGuidSendDeps.push(deps);
     return sendMock;
+  },
+}));
+
+/** Whether the main process says the native host is on (undefined: it has not said), and the native send's calls. */
+const nativeHost = vi.hoisted(() => ({
+  enabled: undefined as boolean | undefined,
+  deps: [] as Array<Record<string, unknown>>,
+  send: { handleSend: vi.fn(), sendMessageHandler: vi.fn(), isButtonDisabled: false },
+}));
+
+vi.mock('@/renderer/pages/native/hooks/useNativeConversations', () => ({
+  useNativeEnabled: () => nativeHost.enabled,
+  useNativeConversations: () => ({ conversations: [], loading: false }),
+}));
+
+vi.mock('@/renderer/pages/guid/hooks/useGuidNativeSend', () => ({
+  useGuidNativeSend: (deps: Record<string, unknown>) => {
+    nativeHost.deps.push(deps);
+    return nativeHost.send;
   },
 }));
 
@@ -297,6 +317,8 @@ describe('GuidPage', () => {
     agentSelectionMock.currentAgentModeOptions = [];
     agentSelectionMock.selectedMode = 'default';
     muStartMode.value = undefined;
+    nativeHost.enabled = undefined;
+    nativeHost.deps.length = 0;
     agentSelectionMock.currentAcpCachedModelInfo = null;
     agentSelectionMock.selectedAssistantBackend = 'aionrs';
     agentSelectionMock.setSelectedAcpModel.mockReset();
@@ -323,6 +345,51 @@ describe('GuidPage', () => {
         deletable: false,
       },
     ];
+  });
+
+  it('sends as it always did while the native host is off, or before the main process has said', () => {
+    for (const enabled of [undefined, false]) {
+      nativeHost.enabled = enabled;
+      const view = render(<GuidPage />);
+      expect(capturedGuidActionRowProps.at(-1)?.onSend).toBe(sendMock.sendMessageHandler);
+      expect(capturedGuidActionRowProps.at(-1)?.isButtonDisabled).toBe(sendMock.isButtonDisabled);
+      view.unmount();
+    }
+    // The classic send got what it always got.
+    expect(capturedGuidSendDeps.at(-1)).toMatchObject({ selectedAssistantId: 'bare-aionrs', selectedMode: '' });
+  });
+
+  it('starts a native conversation while the native host is on, with the page’s folder, mode and model', () => {
+    nativeHost.enabled = true;
+    agentSelectionMock.selectedAcpModel = 'e2e/e2e-fake-model' as never;
+    render(<GuidPage />);
+    expect(capturedGuidActionRowProps.at(-1)?.onSend).toBe(nativeHost.send.sendMessageHandler);
+    // No mode was picked here: mu starts in the mode its settings name.
+    expect(nativeHost.deps.at(-1)).toMatchObject({
+      input: guidInputMock.input,
+      dir: guidInputMock.dir,
+      selectedMode: '',
+      selectedAcpModel: 'e2e/e2e-fake-model',
+    });
+    agentSelectionMock.selectedAcpModel = null;
+  });
+
+  it('hands the native start only a thinking level picked on the page, and drops it when another model is picked', () => {
+    nativeHost.enabled = true;
+    render(<GuidPage />);
+    // The pill shows a level whether or not one was picked; only a pick counts.
+    expect(nativeHost.deps.at(-1)).toMatchObject({ pickedThoughtLevel: '' });
+    const row = () =>
+      capturedGuidActionRowProps.at(-1) as {
+        onThoughtLevelSelect: (level: string) => void;
+        setSelectedAcpModel: (model: string) => void;
+      };
+    act(() => row().onThoughtLevelSelect('high'));
+    expect(nativeHost.deps.at(-1)).toMatchObject({ pickedThoughtLevel: 'high' });
+    expect(agentSelectionMock.setSelectedThoughtLevelValue).toHaveBeenCalledWith('high', expect.anything());
+    // A level belongs to its model: another model, another pick.
+    act(() => row().setSelectedAcpModel('e2e/e2e-fake-model-2'));
+    expect(nativeHost.deps.at(-1)).toMatchObject({ pickedThoughtLevel: '' });
   });
 
   it('keeps the existing replace contract for ordinary Guid prefills', () => {

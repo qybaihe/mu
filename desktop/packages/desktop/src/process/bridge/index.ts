@@ -13,6 +13,8 @@ import { initNotificationBridge } from './notificationBridge';
 import { initThemeBridge } from './themeBridge';
 import { initKyrnBridge } from './kyrnBridge';
 import { initKyrnBrowserBridge } from './kyrnBrowserBridge';
+import { initNativeBridge } from './nativeBridge';
+import { initFolderGitBridge } from '../services/folderGit';
 
 export type BridgeDependencies = Record<string, never>;
 
@@ -26,6 +28,8 @@ export function initAllBridges(_deps: BridgeDependencies = {}): void {
   initThemeBridge();
   initKyrnBridge();
   initKyrnBrowserBridge();
+  initNativeBridge();
+  initFolderGitBridge();
 }
 
 export {

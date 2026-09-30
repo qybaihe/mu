@@ -90,7 +90,9 @@ export type KernelTab = 'board' | 'judge' | 'hive' | 'lessons';
  * One kernel tab of the work panel. It waits, quietly, for the conversation's record to arrive, so what was already
  * there is not taken for news; a failed read is said above whatever did arrive. The board tab keeps its gauges (context
  * and cache) above all of that. `visible`: the tab is the one the open panel shows (the lessons tab reads its file
- * only then). Give it `key={conversationId}`.
+ * only then). `lessons`: whether the main process can read the conversation's lessons file (a native conversation's
+ * it can once its folder is known, `cwd`, by which they are read; until then the tab says so and the judge tab names
+ * lessons by id). Give it `key={conversationId}`.
  */
 export function KernelBody({
   tab,
@@ -98,12 +100,16 @@ export function KernelBody({
   activity,
   focus,
   visible = true,
+  lessons = true,
+  cwd,
 }: {
   tab: KernelTab;
   conversationId: string;
   activity: KyrnActivity;
   focus?: HiveFocusRequest;
   visible?: boolean;
+  lessons?: boolean;
+  cwd?: string;
 }) {
   const { t } = useTranslation();
   const ready = activity.settled || activity.error !== undefined;
@@ -138,9 +144,18 @@ export function KernelBody({
         {error}
         <div className='flex-1 min-h-0'>
           {tab === 'judge' ? (
-            <JudgeLog events={activity.events} conversationId={conversationId} visible={visible} />
+            <JudgeLog
+              events={activity.events}
+              conversationId={lessons ? conversationId : undefined}
+              visible={visible}
+              cwd={cwd}
+            />
+          ) : lessons ? (
+            <LessonsTab conversationId={conversationId} events={activity.events} visible={visible} cwd={cwd} />
           ) : (
-            <LessonsTab conversationId={conversationId} events={activity.events} visible={visible} />
+            <p className='m-0 px-12px py-10px text-13px leading-20px text-t-secondary' data-testid='kernel-no-lessons'>
+              {t('mu.native.panel.noLessons')}
+            </p>
           )}
         </div>
       </div>

@@ -2,7 +2,10 @@
 // Runs the mu conversation E2E test (tests/e2e/mu-conversation): builds the app into out/, then runs the test's own
 // Playwright configuration. The exit code is the test's: 0 passed, anything else failed.
 //
-//   bun run e2e:conversation [--skip-build] [--app <app> [--arch arm64|x64]] [-- <playwright options>]
+//   bun run e2e:conversation [--native] [--skip-build] [--app <app> [--arch arm64|x64]] [-- <playwright options>]
+//
+// --native runs the native host's test (tests/e2e/mu-conversation/native.spec.mjs: pi inside the app, the default)
+// instead of the conversation on AionCore (which the classic run reaches with MU_NATIVE_HOST=0).
 //
 // --app runs a packaged app instead of the checkout's build, and builds nothing. <app> is the app's executable, the app
 // (a `.app` on macOS, the unpacked folder elsewhere), or electron-builder's output folder (out/), where the app for this
@@ -28,6 +31,7 @@ const option = (name) => {
   return index >= 0 ? own[index + 1] : undefined;
 };
 const skipBuild = own.includes('--skip-build') || process.env.MU_E2E_SKIP_BUILD === '1';
+const native = own.includes('--native');
 // MU_E2E_APP names a packaged app the same way, for the test alone as well.
 const appTarget = option('app') ?? process.env.MU_E2E_APP;
 const arch = option('arch') ?? process.arch;
@@ -59,6 +63,7 @@ function step(title, script, scriptArgs, env = process.env) {
 }
 
 const env = { ...process.env };
+if (native) env.MU_E2E_SPEC = 'native';
 if (appTarget) {
   const app = packagedApp(resolve(appTarget), arch);
   if (!app) {

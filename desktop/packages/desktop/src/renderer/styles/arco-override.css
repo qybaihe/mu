@@ -625,6 +625,15 @@ body[arco-theme='dark'] .arco-message-error {
   overflow: visible;
 }
 
+/* A model's thinking levels (ModelLevelMenu) fly out with a two-line note above five or six levels. Arco's 200px cap on
+ * .arco-dropdown-menu left the note and the first four in view and the rest under a scroll, and the flyout of a chip at
+ * the bottom of the window ends at the window's edge, so nothing showed there was more. The list is short and fixed:
+ * show every level. */
+.arco-dropdown-menu:has(.model-level-note) {
+  max-height: none;
+  overflow: visible;
+}
+
 /* Explorer file-tree right-click menu: show every item, no height cap / scroll.
    Arco caps .arco-dropdown-menu at 200px (overflow:auto), so a 6+ item menu
    (add-to-chat / reveal / copy rel / copy abs / rename / delete) grows a

@@ -203,7 +203,12 @@ const ConversationRow: React.FC<ConversationRowProps> = (props) => {
 
     return (
       <span className='absolute end-8px top-1/2 -translate-y-1/2 flex items-center justify-center group-hover:hidden group-focus-within:hidden'>
-        <span className='h-8px w-8px rounded-full bg-[rgb(var(--primary-6))] shadow-[0_0_0_2px_rgba(var(--primary-6),0.18)]' />
+        {/* Inline: the theme's `--primary-6` is comma separated, and the utility class for `rgb(var(--primary-6))` adds
+            `/ opacity` to it, which is no colour at all (the dot was there, and could not be seen). */}
+        <span
+          className='h-8px w-8px rounded-full'
+          style={{ background: 'rgb(var(--primary-6))', boxShadow: '0 0 0 2px rgba(var(--primary-6), 0.18)' }}
+        />
       </span>
     );
   };

@@ -14,6 +14,7 @@ import { basename, dirname, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { THINKING_LEVELS, type ModelThinkingLevels, type ThinkingLevel } from '../../../common/kyrn/models';
 import type { Activity, ActivityPage } from '../../../common/kyrn/types';
+import { readPresentation } from '../../../common/utils/nativeHost/presentation.ts';
 import { array, asRecord, text, type JsonRecord } from './piRpc';
 
 const MAX_PAGE = 16 * 1024 * 1024;
@@ -217,25 +218,10 @@ export class Telemetry {
   }
   capture(event: JsonRecord): void {
     try {
-      if (
-        event.type === 'extension_ui_request' &&
-        event.method === 'setStatus' &&
-        event.statusKey === 'kyrn.presentation.v1'
-      ) {
-        const frame = asRecord(JSON.parse(text(event.statusText)));
-        if (frame.version === 1 && typeof frame.kind === 'string') {
-          const correlation =
-            typeof frame.runtimeId === 'string' &&
-            frame.runtimeId &&
-            Number.isSafeInteger(frame.turnId) &&
-            Number(frame.turnId) >= 0 &&
-            Number.isSafeInteger(frame.sequence) &&
-            Number(frame.sequence) > 0
-              ? { runtimeId: frame.runtimeId, turnId: Number(frame.turnId), sequence: Number(frame.sequence) }
-              : undefined;
-          this.append(frame.kind, asRecord(frame.payload), undefined, undefined, correlation);
-          if (frame.kind === 'memory.recalled') this.presentsRecall = true;
-        }
+      const frame = readPresentation(event);
+      if (frame?.version === 1) {
+        this.append(frame.kind, frame.payload, undefined, undefined, frame.correlation);
+        if (frame.kind === 'memory.recalled') this.presentsRecall = true;
       }
       if (['agent_start', 'agent_settled', 'kyrn_rpc_closed'].includes(text(event.type)))
         this.append(text(event.type), {});

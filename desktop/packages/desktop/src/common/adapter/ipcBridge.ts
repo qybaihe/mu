@@ -1566,11 +1566,13 @@ export type INotificationOptions = {
   body: string;
   icon?: string;
   conversation_id?: string;
+  /** The conversation is a native one (its page is not an AionCore conversation's): a click opens that page. */
+  native?: boolean;
 };
 
 export const notification = {
   show: bridge.buildProvider<void, INotificationOptions>('notification.show'),
-  clicked: bridge.buildEmitter<{ conversation_id?: string }>('notification.clicked'),
+  clicked: bridge.buildEmitter<{ conversation_id?: string; native?: boolean }>('notification.clicked'),
 };
 
 // ---------------------------------------------------------------------------

@@ -848,5 +848,126 @@
     "doctor": "Prüfen, ob Judge, Modell, Browser und Unteragenten richtig angebunden sind",
     "import-chat": "Ein Gespräch dieses Projekts aus Claude Code oder Codex in mu holen und fortsetzen: /import-chat [Datei]",
     "llama": "Modelle des llama.cpp-Routers verwalten"
+  },
+  "native": {
+    "untitled": "Neue Unterhaltung",
+    "retried": "Fehlgeschlagene Versuche vor dieser Antwort: {{count}}",
+    "compacted": "Hier wurde die Unterhaltung komprimiert, um Platz zu schaffen: {{tokens}} Tokens früherer Nachrichten wurden verdichtet.",
+    "compactedPlain": "Hier wurde die Unterhaltung komprimiert, um Platz zu schaffen.",
+    "sentImage": "Bild {{index}}",
+    "forkNoEntry": "Die Nachricht hat noch keinen Sitzungseintrag",
+    "phase": {
+      "idle": "Läuft nicht",
+      "starting": "Startet",
+      "running": "Läuft",
+      "needsModel": "Kein Modell",
+      "failed": "Gestoppt"
+    },
+    "status": {
+      "starting": "mu wird gestartet…",
+      "classifying": "Jev liest deine Nachricht…",
+      "compacting": "Die Unterhaltung wird verdichtet…",
+      "retrying": "Die Anfrage an das Modell ist fehlgeschlagen. Neuer Versuch ({{attempt}} von {{max}})…",
+      "thinking": "Denkt nach…",
+      "working": "Arbeitet…",
+      "sending": "Wird gesendet…"
+    },
+    "send": {
+      "placeholder": "Nachricht an mu…",
+      "placeholderWorking": "Lenke mu jetzt, oder hinterlasse eine Nachricht für nach diesem Lauf…",
+      "steer": "Jetzt",
+      "steerHint": "Erreicht mu bei seinem nächsten Schritt",
+      "followUp": "Danach",
+      "followUpHint": "Wartet, bis dieser Lauf endet"
+    },
+    "queue": {
+      "title": "Wartet auf das Senden",
+      "steer": "Nächster Schritt",
+      "followUp": "Nach diesem Lauf",
+      "takeBack": "Zurücknehmen"
+    },
+    "dialog": {
+      "yes": "Ja",
+      "no": "Nein",
+      "dismiss": "Verwerfen",
+      "cancel": "Abbrechen",
+      "submit": "Senden",
+      "save": "Speichern",
+      "countdown": "Schließt sich in {{seconds}} s; danach macht mu ohne deine Antwort weiter.",
+      "more": "Danach warten noch: {{count}}"
+    },
+    "host": {
+      "output": "Letzte Ausgabe von mu",
+      "restartHint": "Sende eine Nachricht, um mu wieder zu starten."
+    },
+    "error": {
+      "off": "Der native Host ist abgeschaltet (MU_NATIVE_HOST=0). Starte die App ohne diese Variable, um ihn zu nutzen.",
+      "noHarness": "Die App findet kein mu, das sie ausführen kann.",
+      "oldHarness": "Dieses mu ist zu alt, um in der App zu laufen. Aktualisiere mu und versuche es dann erneut.",
+      "plan": "Die App konnte nicht ermitteln, wie mu zu starten ist.",
+      "noModels": "mu hat angehalten: Es hat kein Modell, das es nutzen kann.",
+      "failed": "mu hat angehalten, bevor es gestartet war.",
+      "crashed": "mu hat unerwartet angehalten.",
+      "closed": "mu wurde für diese Unterhaltung beendet.",
+      "timeout": "mu hat nicht rechtzeitig geantwortet.",
+      "command": "mu hat die Anfrage abgelehnt.",
+      "noFolder": "Der Projektordner dieser Unterhaltung existiert nicht mehr, deshalb kann mu darin nicht starten.",
+      "unknownConversation": "Diese Unterhaltung gibt es nicht mehr.",
+      "invalid": "Die App hat eine Anfrage gesendet, die mu nicht lesen kann."
+    },
+    "open": {
+      "home": "Startseite",
+      "retry": "Erneut versuchen"
+    },
+    "empty": {
+      "title": "Eine neue Unterhaltung in {{folder}}",
+      "body": "mu arbeitet in diesem Ordner. Sag, was erledigt werden soll."
+    },
+    "sider": {
+      "title": "Nativ",
+      "new": "Neue Unterhaltung in einem Ordner",
+      "empty": "Noch keine Unterhaltungen",
+      "all": "Alle anzeigen ({{count}})",
+      "fewer": "Weniger anzeigen",
+      "deleteConfirm": "„{{title}}“ löschen? Die Sitzungsdatei landet im Papierkorb, wo du sie noch wiederherstellen kannst.",
+      "messages": "Nachrichten: {{count}}",
+      "unread": "Neue Aktivität",
+      "working": "Arbeitet"
+    },
+    "notify": {
+      "failed": "Ein Durchlauf wurde mit einem Fehler beendet",
+      "failedNamed": "„{{name}}“ wurde mit einem Fehler beendet"
+    },
+    "new": {
+      "title": "Neue Unterhaltung",
+      "recent": "Zuletzt verwendete Ordner",
+      "pick": "Ordner auswählen…",
+      "permissions": "Berechtigungen",
+      "defaultPermissions": "Standard von mu"
+    },
+    "panel": {
+      "noLessons": "Die Lektionen erscheinen, sobald die Unterhaltung geöffnet ist.",
+      "source": {
+        "label": "Änderungen in {{folder}}",
+        "noGit": "Git kann hier nicht ausgeführt werden, daher können die Änderungen nicht angezeigt werden.",
+        "untracked": "Nicht verfolgt",
+        "detached": "Losgelöst bei {{commit}}",
+        "noCommits": "Noch keine Commits",
+        "upstream": "{{ahead}} vor {{upstream}}, {{behind}} dahinter"
+      },
+      "files": {
+        "label": "Dateien in {{folder}}",
+        "refresh": "Aktualisieren",
+        "empty": "Dieser Ordner ist leer.",
+        "failed": "Dieser Ordner konnte nicht gelesen werden.",
+        "more": "Nicht angezeigt: {{count}} weitere"
+      }
+    },
+    "home": {
+      "noFolder": "Wähle zuerst einen Ordner, in dem mu arbeiten soll."
+    },
+    "attach": {
+      "failed": "{{name}} konnte nicht angehängt werden."
+    }
   }
 }

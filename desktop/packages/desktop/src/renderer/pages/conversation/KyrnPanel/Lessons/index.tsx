@@ -19,22 +19,25 @@ const NONE: StoredLesson[] = [];
  * use, the most followed first; "all" adds the retired and replaced ones, greyed. Above the list, a few quiet lines say
  * what the lessons did in this session. A lesson in use can be reworded or retired, each one line appended to the file
  * the harness writes too. The file is read when the tab comes into view and after every lesson event of the session.
- * Give it `key={conversationId}`.
+ * `cwd`: a native conversation's folder, by which its lessons are read (it has no app conversation). Give it
+ * `key={conversationId}`.
  */
 export default function LessonsTab({
   conversationId,
   events,
   visible,
+  cwd,
 }: {
   conversationId: string;
   events: Activity[];
   visible: boolean;
+  cwd?: string;
 }) {
   const { t } = useTranslation();
   const clock = useClock();
   const happened = useMemo(() => memoryEvents(events), [events]);
   const signature = happened.map((event) => event.id).join('\n');
-  const { view, error, loading, change } = useLessons(conversationId, signature, visible);
+  const { view, error, loading, change } = useLessons(conversationId, signature, visible, cwd);
   const [filter, setFilter] = useState<LessonFilter>('active');
   const [query, setQuery] = useState('');
   const [opened, setOpened] = useState<ReadonlySet<string>>(() => new Set());

@@ -848,5 +848,126 @@
     "doctor": "Check that the judge, the model, the browser and the sub-agents are wired up",
     "import-chat": "Bring a Claude Code or Codex conversation of this project into mu and continue it: /import-chat [file]",
     "llama": "Manage llama.cpp router models"
+  },
+  "native": {
+    "untitled": "New conversation",
+    "retried": "Failed attempts before this reply: {{count}}",
+    "compacted": "Conversation compacted here to make room: {{tokens}} tokens of earlier messages were condensed.",
+    "compactedPlain": "Conversation compacted here to make room.",
+    "sentImage": "Image {{index}}",
+    "forkNoEntry": "the message has no session entry yet",
+    "phase": {
+      "idle": "Not running",
+      "starting": "Starting",
+      "running": "Running",
+      "needsModel": "No model",
+      "failed": "Stopped"
+    },
+    "status": {
+      "starting": "Starting mu…",
+      "classifying": "Jev is reading your message…",
+      "compacting": "Compacting the conversation…",
+      "retrying": "The model request failed. Trying again ({{attempt}} of {{max}})…",
+      "thinking": "Thinking…",
+      "working": "Working…",
+      "sending": "Sending…"
+    },
+    "send": {
+      "placeholder": "Message mu…",
+      "placeholderWorking": "Steer mu now, or leave a message for after this run…",
+      "steer": "Now",
+      "steerHint": "Reaches mu at its next step",
+      "followUp": "After",
+      "followUpHint": "Waits until this run ends"
+    },
+    "queue": {
+      "title": "Waiting to be sent",
+      "steer": "Next step",
+      "followUp": "After this run",
+      "takeBack": "Take back"
+    },
+    "dialog": {
+      "yes": "Yes",
+      "no": "No",
+      "dismiss": "Dismiss",
+      "cancel": "Cancel",
+      "submit": "Send",
+      "save": "Save",
+      "countdown": "Closes in {{seconds}} s; mu then goes on without your answer.",
+      "more": "Waiting after this one: {{count}}"
+    },
+    "host": {
+      "output": "mu's last output",
+      "restartHint": "Send a message to start mu again."
+    },
+    "error": {
+      "off": "The native host is turned off (MU_NATIVE_HOST=0). Start the app without it to use it.",
+      "noHarness": "The app cannot find a mu to run.",
+      "oldHarness": "This mu is too old to run inside the app. Update mu, then try again.",
+      "plan": "The app could not work out how to start mu.",
+      "noModels": "mu stopped: it has no model to use.",
+      "failed": "mu stopped before it started.",
+      "crashed": "mu stopped unexpectedly.",
+      "closed": "mu was closed for this conversation.",
+      "timeout": "mu did not answer in time.",
+      "command": "mu refused the request.",
+      "noFolder": "The project folder no longer exists, so mu cannot start in it.",
+      "unknownConversation": "This conversation no longer exists.",
+      "invalid": "The app sent a request mu cannot read."
+    },
+    "open": {
+      "home": "Home",
+      "retry": "Try again"
+    },
+    "empty": {
+      "title": "A new conversation in {{folder}}",
+      "body": "mu works in this folder. Say what you want done."
+    },
+    "sider": {
+      "title": "Native",
+      "new": "New conversation in a folder",
+      "empty": "No conversations yet",
+      "all": "Show all ({{count}})",
+      "fewer": "Show fewer",
+      "deleteConfirm": "Delete “{{title}}”? Its session file goes to the bin, where you can still restore it.",
+      "messages": "Messages: {{count}}",
+      "unread": "New activity",
+      "working": "Working"
+    },
+    "notify": {
+      "failed": "A run stopped with an error",
+      "failedNamed": "\"{{name}}\" stopped with an error"
+    },
+    "new": {
+      "title": "New conversation",
+      "recent": "Recent folders",
+      "pick": "Choose a folder…",
+      "permissions": "Permissions",
+      "defaultPermissions": "mu's default"
+    },
+    "panel": {
+      "noLessons": "Lessons show once the conversation has opened.",
+      "source": {
+        "label": "Changes in {{folder}}",
+        "noGit": "Git could not run here, so the changes cannot be shown.",
+        "untracked": "Untracked",
+        "detached": "Detached at {{commit}}",
+        "noCommits": "No commits yet",
+        "upstream": "{{ahead}} ahead of {{upstream}}, {{behind}} behind"
+      },
+      "files": {
+        "label": "Files in {{folder}}",
+        "refresh": "Refresh",
+        "empty": "This folder is empty.",
+        "failed": "This folder could not be read.",
+        "more": "Not shown: {{count}} more"
+      }
+    },
+    "home": {
+      "noFolder": "Choose a folder for mu to work in first."
+    },
+    "attach": {
+      "failed": "{{name}} could not be attached."
+    }
   }
 }

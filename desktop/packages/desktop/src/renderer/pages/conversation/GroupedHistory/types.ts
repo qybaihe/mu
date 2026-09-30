@@ -88,6 +88,11 @@ export type WorkspaceGroupedHistoryProps = {
   batchMode?: boolean;
   onBatchModeChange?: (value: boolean) => void;
   afterPinnedContent?: ReactNode;
+  /**
+   * No placeholder that says there is no conversation history when the list is empty: the content above it lists
+   * conversations of its own (the native group), which says so itself when it has none.
+   */
+  hideEmptyState?: boolean;
 };
 
 export type DragItemType = 'conversation' | 'workspace';

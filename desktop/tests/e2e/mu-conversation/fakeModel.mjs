@@ -9,7 +9,7 @@
 //   E2E:PLAIN            a plain reply, streamed in several chunks
 //   E2E:WRITE <path>     calls `write` with <path>; once the result is back, says WRITE-DONE and what the tool said
 //   E2E:BASH <command>   calls `bash` with <command>; once the result is back, says BASH-SAW and what the tool said
-//   E2E:SLOW             a long reply, one chunk every 200 ms, for stopping in the middle
+//   E2E:SLOW [<n>]       a long reply, one chunk every 200 ms, for stopping in the middle; <n> chunks (150 without it)
 //   E2E:ECHO <text>      replies <text>
 //
 // Anything else (a request mu makes for itself) gets a short neutral reply; the board's writer gets the JSON it asks
@@ -47,8 +47,14 @@ export function textOf(content) {
 }
 
 /**
- * What to answer, from the request's messages: the turn is the last user message, the step is how many tool results
- * came back after it.
+ * mu's own note about the task frame goes to the model as a user message after the person's (a session it has no frame
+ * for yet, an imported one, gets one at its first message): it is not the person's turn.
+ */
+const isFrameNote = (message) => /^\s*\[mu task frame/.test(textOf(message?.content));
+
+/**
+ * What to answer, from the request's messages: the turn is the last user message (not mu's note about the task frame),
+ * the step is how many tool results came back after it.
  */
 export function planReply(messages) {
   const list = Array.isArray(messages) ? messages : [];
@@ -58,7 +64,7 @@ export function planReply(messages) {
     .join('\n');
   let lastUser = -1;
   for (let i = list.length - 1; i >= 0; i -= 1) {
-    if (list[i]?.role === 'user') {
+    if (list[i]?.role === 'user' && !isFrameNote(list[i])) {
       lastUser = i;
       break;
     }
@@ -76,13 +82,19 @@ export function planReply(messages) {
   switch (name) {
     case 'PLAIN':
       return { scenario: 'plain', kind: 'text', chunks: PLAIN_CHUNKS, delay: 150 };
-    case 'SLOW':
+    case 'SLOW': {
+      // `E2E:SLOW 50` is a run that ends in 10 s, for a test that waits for its end; words after it (`keep going`) count for nothing.
+      const count = Number.parseInt(argument, 10);
       return {
         scenario: 'slow',
         kind: 'text',
-        chunks: Array.from({ length: SLOW_CHUNK_COUNT }, (_, i) => `SLOW-${String(i + 1).padStart(3, '0')} `),
+        chunks: Array.from(
+          { length: count > 0 ? count : SLOW_CHUNK_COUNT },
+          (_, i) => `SLOW-${String(i + 1).padStart(3, '0')} `
+        ),
         delay: 200,
       };
+    }
     case 'ECHO':
       return { scenario: 'echo', kind: 'text', chunks: [argument || 'ECHO'] };
     case 'WRITE':
@@ -162,7 +174,8 @@ export async function startFakeModel({ port = 0, log = () => {} } = {}) {
         response.end(JSON.stringify({ error: { message: `fake model: no route ${request.method} ${path}` } }));
         return;
       }
-      const body = JSON.parse((await readBody(request)) || '{}');
+      const raw = (await readBody(request)) || '{}';
+      const body = JSON.parse(raw);
       const plan = planReply(body.messages);
       sequence += 1;
       const record = {
@@ -174,15 +187,32 @@ export async function startFakeModel({ port = 0, log = () => {} } = {}) {
         authorization: request.headers.authorization ?? '',
         model: body.model,
         tools: Array.isArray(body.tools) ? body.tools.map((tool) => tool?.function?.name).filter(Boolean) : [],
+        /** How many messages the request carried (the history pi sent), and how many bytes its body was. */
+        messageCount: Array.isArray(body.messages) ? body.messages.length : 0,
+        /** How many of them each role has (`user`, `assistant`, `tool`, `system`). */
+        roles: Array.isArray(body.messages)
+          ? body.messages.reduce((counts, message) => {
+              const role = String(message?.role);
+              counts[role] = (counts[role] ?? 0) + 1;
+              return counts;
+            }, {})
+          : {},
+        bodyBytes: raw.length,
         lastUser: '',
+        /** The images in the last user message (`image_url` parts). */
+        images: 0,
+        /** The thinking level pi asked for (`reasoning_effort`), for a model that reasons. */
+        reasoningEffort: typeof body.reasoning_effort === 'string' ? body.reasoning_effort : undefined,
         toolResult: plan.result,
         sentChunks: 0,
         finished: false,
         aborted: false,
       };
       for (let i = (body.messages?.length ?? 0) - 1; i >= 0; i -= 1) {
-        if (body.messages[i]?.role === 'user') {
-          record.lastUser = textOf(body.messages[i].content).slice(-400);
+        if (body.messages[i]?.role === 'user' && !isFrameNote(body.messages[i])) {
+          const content = body.messages[i].content;
+          record.lastUser = textOf(content).slice(-400);
+          record.images = Array.isArray(content) ? content.filter((part) => part?.type === 'image_url').length : 0;
           break;
         }
       }

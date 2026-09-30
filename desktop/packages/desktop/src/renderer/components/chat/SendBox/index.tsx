@@ -287,6 +287,11 @@ const SendBox: React.FC<{
    * sits above both the box's surface and a preceding ThoughtDisplay bar.
    */
   topRightOverlay?: React.ReactNode;
+  /**
+   * The test ids of the text field, the send button and the stop button, for a screen whose end-to-end tests name
+   * them its own way (the native conversation). Defaults: sendbox-input, sendbox-send-btn, sendbox-stop-btn.
+   */
+  testIds?: { input?: string; send?: string; stop?: string };
 }> = ({
   onSend,
   onStop,
@@ -329,6 +334,7 @@ const SendBox: React.FC<{
   active = true,
   onFocused,
   topRightOverlay,
+  testIds,
 }) => {
   const layout = useLayoutContext();
   const isMobile = layout?.isMobile ?? false;
@@ -1703,7 +1709,7 @@ const SendBox: React.FC<{
           style={sendButtonShapeStyle}
           icon={<SendArrowIcon size={16} />}
           onClick={handlePrimaryAction}
-          data-testid='sendbox-send-btn'
+          data-testid={testIds?.send ?? 'sendbox-send-btn'}
           aria-label={typeof sendActionTooltip === 'string' ? sendActionTooltip : sendNowLabel}
         />
       </span>
@@ -1743,7 +1749,7 @@ const SendBox: React.FC<{
       className='bg-animate sendbox-stop-button'
       icon={<div className='mx-auto size-12px bg-6'></div>}
       onClick={stopHandler}
-      data-testid='sendbox-stop-btn'
+      data-testid={testIds?.stop ?? 'sendbox-stop-btn'}
       aria-label={t('conversation.sendbox.stop')}
     ></Button>
   );
@@ -2117,7 +2123,7 @@ const SendBox: React.FC<{
                     : ((bottomHint as string | undefined) ?? sendboxHint)
               }
               className={`${shouldUseHighlightOverlay ? 'sendbox-highlight-textarea ' : ''}ps-0 pe-0 !b-none focus:shadow-none m-0 !bg-transparent !focus:bg-transparent !hover:bg-transparent lh-[20px] !resize-none text-14px ${isMobile ? 'sendbox-input--mobile' : ''}`}
-              data-testid='sendbox-input'
+              data-testid={testIds?.input ?? 'sendbox-input'}
               style={{
                 width: '100%',
                 flex: isSingleLine ? 1 : 'none',

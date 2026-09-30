@@ -6,6 +6,8 @@ import { cleanupSiderTooltips, getSiderTooltipProps } from '@renderer/utils/ui/s
 import { useLayoutContext } from '@renderer/hooks/context/LayoutContext';
 import { blurActiveElement } from '@renderer/utils/ui/focus';
 import { useThemeContext } from '@renderer/hooks/context/ThemeContext';
+import NativeSiderGroup from '@renderer/pages/native/components/NativeSiderGroup';
+import { useNativeEnabled } from '@renderer/pages/native/hooks/useNativeConversations';
 import { SETTINGS_HOME } from '@renderer/pages/settings/settingsNav';
 import { SiderToolbar, SiderSearchEntry, SiderScheduledEntry } from './SiderNav';
 import SiderFooter from './SiderFooter';
@@ -114,12 +116,17 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
   // conversations (a column of first letters says too little to pick one by).
   const rail = collapsed && !isMobile;
 
+  const nativeOn = useNativeEnabled() === true;
   const workspaceHistoryProps = {
     collapsed,
     tooltipEnabled,
     onSessionClick,
     batchMode: isBatchMode,
     onBatchModeChange: setIsBatchMode,
+    // Conversations on the native host, while it is on: nothing otherwise. The list under it has no conversations of
+    // its own then (a new install never has any), and its placeholder would say there are none above it.
+    afterPinnedContent: <NativeSiderGroup onSessionClick={onSessionClick} />,
+    hideEmptyState: nativeOn,
   };
 
   return (

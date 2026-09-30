@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IMessageText } from '@/common/chat/chatLib';
 import { ipcBridge } from '@/common';
 import { ConversationProvider } from '@/renderer/hooks/context/ConversationContext';
+import { MessageListRunProvider } from '@/renderer/pages/conversation/Messages/hooks';
 import MessageText, {
   formatMessageTime,
   parseTeamContextResetNotice,
@@ -808,6 +809,38 @@ describe('MessageText fork entry point', () => {
   it('shows the fork button on the last message for head-only backends', () => {
     renderWithCapability({ at_turn: false }, { isLastMessage: true });
     expect(screen.getByTestId('message-fork-button')).toBeInTheDocument();
+  });
+
+  it('a list whose host forks its own session offers the button where the host has a fork, and forks through it', () => {
+    const action = vi.fn();
+    const fork = vi.fn(() => action);
+    render(
+      <MessageListRunProvider value={{ conversationId: 'native-1', isProcessing: false, hydrated: true, fork }}>
+        <MessageText message={forkMessage()} isLastMessage={false} />
+      </MessageListRunProvider>
+    );
+    expect(fork).toHaveBeenCalledWith(expect.objectContaining({ id: 'msg-fork-1' }));
+    fireEvent.click(screen.getByTestId('message-fork-button'));
+    expect(action).toHaveBeenCalledTimes(1);
+    expect(forkMocks.fork).not.toHaveBeenCalled();
+  });
+
+  it('offers no host fork on a message the host has no fork point for, nor while the list has none (a run goes)', () => {
+    const { unmount } = render(
+      <MessageListRunProvider
+        value={{ conversationId: 'native-1', isProcessing: false, hydrated: true, fork: () => undefined }}
+      >
+        <MessageText message={forkMessage()} isLastMessage />
+      </MessageListRunProvider>
+    );
+    expect(screen.queryByTestId('message-fork-button')).toBeNull();
+    unmount();
+    render(
+      <MessageListRunProvider value={{ conversationId: 'native-1', isProcessing: true, hydrated: true }}>
+        <MessageText message={forkMessage()} isLastMessage />
+      </MessageListRunProvider>
+    );
+    expect(screen.queryByTestId('message-fork-button')).toBeNull();
   });
 
   it('clicking fork calls the API, refreshes, navigates, and pre-warms the runtime', async () => {

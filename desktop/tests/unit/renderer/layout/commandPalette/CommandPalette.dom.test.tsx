@@ -26,6 +26,9 @@ const state = vi.hoisted(() => ({
   mac: true,
   pathname: '/conversation/c1',
   conversations: [] as unknown[],
+  /** The native host's conversations, and whether it is on (undefined: the main process has not said). */
+  native: [] as unknown[],
+  nativeOn: undefined as boolean | undefined,
   commands: [] as unknown[],
   slashCommandCalls: [] as Array<{ id: string; options: Record<string, unknown> }>,
 }));
@@ -73,6 +76,10 @@ vi.mock('@/renderer/utils/platform', async (importOriginal) => ({
 }));
 vi.mock('@/renderer/hooks/context/ConversationHistoryContext', () => ({
   useConversationHistoryContext: () => ({ conversations: state.conversations }),
+}));
+vi.mock('@/renderer/pages/native/hooks/useNativeConversations', () => ({
+  useNativeEnabled: () => state.nativeOn,
+  useNativeConversations: (enabled: boolean) => ({ conversations: enabled ? state.native : [], loading: false }),
 }));
 vi.mock('@/renderer/hooks/chat/useSlashCommands', () => ({
   useSlashCommands: (id: string, options: Record<string, unknown>) => {
@@ -154,6 +161,10 @@ describe('command palette', () => {
     state.mac = true;
     state.pathname = '/conversation/c1';
     state.slashCommandCalls = [];
+    state.nativeOn = undefined;
+    state.native = [
+      { id: 'n1', cwd: '/work/kyrn-desktop', title: 'Native board fixes', createdAt: 1, updatedAt: NOW, live: false },
+    ];
     state.conversations = [
       conversation('c1', 'Refactor the auth flow', 1),
       conversation('c2', 'Board copy review', 30),
@@ -441,6 +452,28 @@ describe('command palette', () => {
 
       expect(navigate).toHaveBeenCalledWith('/conversation/c2');
       expect(onNavigate).toHaveBeenCalledTimes(1);
+      await waitFor(() => expect(queryInput()).not.toBeInTheDocument());
+    });
+
+    it('finds a native conversation by its title or its folder while the native host is on, and opens its page', async () => {
+      render(<Harness />);
+      openPalette();
+      type('native board');
+      // Off, or not said yet: the list is the classic one.
+      expect(labelsOf('conversations')).toEqual([]);
+      cleanup();
+      state.nativeOn = true;
+      render(<Harness />);
+      openPalette();
+      type('native board');
+      expect(labelsOf('conversations')).toEqual(['Native board fixes']);
+      expect(document.querySelector('[data-palette-group="conversations"] [role="option"]')).toHaveTextContent(
+        'kyrn-desktop'
+      );
+      type('kyrn-desk');
+      expect(labelsOf('conversations')).toEqual(['Native board fixes']);
+      key('Enter');
+      expect(navigate).toHaveBeenCalledWith('/conversation/native/n1');
       await waitFor(() => expect(queryInput()).not.toBeInTheDocument());
     });
 

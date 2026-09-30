@@ -848,5 +848,126 @@
     "doctor": "Hakemin, modelin, tarayıcının ve alt ajanların bağlı olup olmadığını denetler",
     "import-chat": "Bu projenin Claude Code ya da Codex konuşmasını mu’ya getirip sürdürür: /import-chat [dosya]",
     "llama": "llama.cpp yönlendiricisinin modellerini yönetir"
+  },
+  "native": {
+    "untitled": "Yeni konuşma",
+    "retried": "Bu yanıttan önceki başarısız denemeler: {{count}}",
+    "compacted": "Konuşma burada yer açmak için sıkıştırıldı: önceki mesajların {{tokens}} token'ı yoğunlaştırıldı.",
+    "compactedPlain": "Konuşma burada yer açmak için sıkıştırıldı.",
+    "sentImage": "Görsel {{index}}",
+    "forkNoEntry": "İletinin henüz bir oturum kaydı yok",
+    "phase": {
+      "idle": "Çalışmıyor",
+      "starting": "Başlatılıyor",
+      "running": "Çalışıyor",
+      "needsModel": "Model yok",
+      "failed": "Durdu"
+    },
+    "status": {
+      "starting": "mu başlatılıyor…",
+      "classifying": "Jev mesajınızı okuyor…",
+      "compacting": "Konuşma sıkıştırılıyor…",
+      "retrying": "Model isteği başarısız oldu. Yeniden deneniyor ({{attempt}}/{{max}})…",
+      "thinking": "Düşünüyor…",
+      "working": "Çalışıyor…",
+      "sending": "Gönderiliyor…"
+    },
+    "send": {
+      "placeholder": "mu'ya mesaj yazın…",
+      "placeholderWorking": "mu'yu şimdi yönlendirin ya da bu çalışmadan sonrası için bir mesaj bırakın…",
+      "steer": "Şimdi",
+      "steerHint": "mu'ya bir sonraki adımında ulaşır",
+      "followUp": "Sonra",
+      "followUpHint": "Bu çalışma bitene kadar bekler"
+    },
+    "queue": {
+      "title": "Gönderilmeyi bekliyor",
+      "steer": "Sonraki adım",
+      "followUp": "Bu çalışmadan sonra",
+      "takeBack": "Geri al"
+    },
+    "dialog": {
+      "yes": "Evet",
+      "no": "Hayır",
+      "dismiss": "Yok say",
+      "cancel": "İptal",
+      "submit": "Gönder",
+      "save": "Kaydet",
+      "countdown": "{{seconds}} sn içinde kapanır; ardından mu yanıtınız olmadan devam eder.",
+      "more": "Bundan sonra bekleyen: {{count}}"
+    },
+    "host": {
+      "output": "mu'nun son çıktısı",
+      "restartHint": "mu'yu yeniden başlatmak için bir mesaj gönderin."
+    },
+    "error": {
+      "off": "Yerel ana makine kapalı (MU_NATIVE_HOST=0). Kullanmak için uygulamayı bu değişken olmadan başlatın.",
+      "noHarness": "Uygulama çalıştırılacak bir mu bulamıyor.",
+      "oldHarness": "Bu mu, uygulamanın içinde çalışmak için çok eski. mu'yu güncelleyip yeniden deneyin.",
+      "plan": "Uygulama mu'nun nasıl başlatılacağını belirleyemedi.",
+      "noModels": "mu durdu: kullanabileceği bir model yok.",
+      "failed": "mu başlamadan önce durdu.",
+      "crashed": "mu beklenmedik şekilde durdu.",
+      "closed": "Bu konuşmanın mu'su kapatıldı.",
+      "timeout": "mu zamanında yanıt vermedi.",
+      "command": "mu isteği reddetti.",
+      "noFolder": "Bu konuşmanın proje klasörü artık yok, bu yüzden mu içinde başlatılamıyor.",
+      "unknownConversation": "Bu konuşma artık yok.",
+      "invalid": "Uygulama, mu'nun okuyamadığı bir istek gönderdi."
+    },
+    "open": {
+      "home": "Ana sayfa",
+      "retry": "Yeniden dene"
+    },
+    "empty": {
+      "title": "{{folder}} içinde yeni bir konuşma",
+      "body": "mu bu klasörde çalışır. Ne yapılmasını istediğinizi söyleyin."
+    },
+    "sider": {
+      "title": "Yerel",
+      "new": "Bir klasörde yeni konuşma",
+      "empty": "Henüz konuşma yok",
+      "all": "Tümünü göster ({{count}})",
+      "fewer": "Daha az göster",
+      "deleteConfirm": "“{{title}}” silinsin mi? Oturum dosyası çöp kutusuna taşınır; oradan hâlâ geri yükleyebilirsiniz.",
+      "messages": "Mesajlar: {{count}}",
+      "unread": "Yeni etkinlik",
+      "working": "Çalışıyor"
+    },
+    "notify": {
+      "failed": "Bir çalıştırma hatayla durdu",
+      "failedNamed": "\"{{name}}\" bir hatayla durdu"
+    },
+    "new": {
+      "title": "Yeni konuşma",
+      "recent": "Son klasörler",
+      "pick": "Klasör seç…",
+      "permissions": "İzinler",
+      "defaultPermissions": "mu varsayılanı"
+    },
+    "panel": {
+      "noLessons": "Dersler, konuşma açıldığında görünür.",
+      "source": {
+        "label": "{{folder}} içindeki değişiklikler",
+        "noGit": "Git burada çalıştırılamıyor, bu yüzden değişiklikler gösterilemiyor.",
+        "untracked": "İzlenmeyen",
+        "detached": "{{commit}} üzerinde ayrık",
+        "noCommits": "Henüz commit yok",
+        "upstream": "{{upstream}} dalının {{ahead}} önünde, {{behind}} gerisinde"
+      },
+      "files": {
+        "label": "{{folder}} içindeki dosyalar",
+        "refresh": "Yenile",
+        "empty": "Bu klasör boş.",
+        "failed": "Bu klasör okunamadı.",
+        "more": "Gösterilmeyen: {{count}} tane daha"
+      }
+    },
+    "home": {
+      "noFolder": "Önce mu'nun çalışacağı bir klasör seçin."
+    },
+    "attach": {
+      "failed": "{{name}} eklenemedi."
+    }
   }
 }

@@ -77,7 +77,7 @@ export function modelLevelMenu(
       >
         <div
           data-testid='composer-thinking-note'
-          className='px-12px py-6px max-w-260px text-12px leading-16px text-t-tertiary whitespace-normal break-words'
+          className='model-level-note px-12px py-6px max-w-260px text-12px leading-16px text-t-tertiary whitespace-normal break-words'
         >
           {t('conversation.composer.thinkingNote')}
         </div>

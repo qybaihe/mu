@@ -20,6 +20,7 @@ const setTheme = vi.fn();
 const toggleCommandPalette = vi.fn();
 let pathname = '/guid';
 let theme = 'light';
+let nativeOn = false;
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
@@ -42,7 +43,13 @@ vi.mock('@renderer/hooks/context/LayoutContext', () => ({ useLayoutContext: () =
 vi.mock('@renderer/hooks/context/ThemeContext', () => ({
   useThemeContext: () => ({ theme, setTheme }),
 }));
-vi.mock('@renderer/pages/conversation/GroupedHistory', () => ({ default: () => <div data-testid='history' /> }));
+vi.mock('@renderer/pages/conversation/GroupedHistory', () => ({
+  default: ({ hideEmptyState }: { hideEmptyState?: boolean }) => (
+    <div data-testid='history' data-hide-empty={String(hideEmptyState === true)} />
+  ),
+}));
+vi.mock('@renderer/pages/native/components/NativeSiderGroup', () => ({ default: () => null }));
+vi.mock('@renderer/pages/native/hooks/useNativeConversations', () => ({ useNativeEnabled: () => nativeOn }));
 vi.mock('@renderer/components/layout/Sider/CommandPalette', () => ({
   default: () => <div data-testid='command-palette-host' />,
   toggleCommandPalette: () => toggleCommandPalette(),
@@ -58,6 +65,7 @@ describe('sidebar entries', () => {
     toggleCommandPalette.mockClear();
     pathname = '/guid';
     theme = 'light';
+    nativeOn = false;
   });
 
   afterEach(() => cleanup());
@@ -81,6 +89,15 @@ describe('sidebar entries', () => {
     expect(screen.getByTestId('sider-new-chat')).toHaveAttribute('aria-label', 'conversation.welcome.newConversation');
     expect(screen.getByTestId('sider-settings')).toHaveAttribute('aria-label', 'common.settings');
     expect(screen.queryByTestId('history')).not.toBeInTheDocument();
+  });
+
+  it('leaves the history list its placeholder, unless the native host is on and its group speaks for the list', async () => {
+    renderSider();
+    expect(await screen.findByTestId('history')).toHaveAttribute('data-hide-empty', 'false');
+    cleanup();
+    nativeOn = true;
+    renderSider();
+    expect(await screen.findByTestId('history')).toHaveAttribute('data-hide-empty', 'true');
   });
 
   it('keeps search in the sidebar on the desktop, not only on a phone', () => {

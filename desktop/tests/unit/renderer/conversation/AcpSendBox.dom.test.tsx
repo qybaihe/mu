@@ -229,7 +229,7 @@ vi.mock('@/renderer/components/chat/MobileActionSheet', () => ({
   },
   useAttachEntry: () => ({ entries: [] }),
 }));
-vi.mock('@/renderer/components/chat/ThoughtDisplay', () => ({ default: () => null }));
+vi.mock('@/renderer/components/chat/ThoughtDisplay', () => ({ default: () => <div data-testid='thought-display' /> }));
 vi.mock('@/renderer/components/media/FileAttachButton', () => ({ default: () => null }));
 vi.mock('@/renderer/components/media/FilePreview', () => ({ default: () => null }));
 vi.mock('@/renderer/components/media/HorizontalFileList', () => ({
@@ -1268,6 +1268,15 @@ describe('AcpSendBox', () => {
       goalState.current = { status: 'paused', text: 'every test passes' };
       render(goalBox());
       expect(screen.getByTestId('composer-goal-line').getAttribute('data-status')).toBe('paused');
+    });
+
+    it('puts the goal line above the status line, which tucks under what follows it and would cover the line', () => {
+      goalState.current = { status: 'active', text: 'every test passes' };
+      render(goalBox());
+      expect(
+        screen.getByTestId('composer-goal-line').compareDocumentPosition(screen.getByTestId('thought-display')) &
+          Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
     });
 
     it('shows no line once a goal is met or cleared', () => {

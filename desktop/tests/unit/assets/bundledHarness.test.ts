@@ -19,6 +19,9 @@ const PACKAGE_FILES = [
   'judge/manifest.json',
 ];
 
+/** The launcher as the native host needs it: it exports the two functions that start pi in a process of its own. */
+const LAUNCHER = 'export function planHost() {}\nexport async function prepareLaunch() {}\n';
+
 function writeFile(filePath: string, content = '') {
   mkdirSync(dirname(filePath), { recursive: true });
   writeFileSync(filePath, content);
@@ -28,7 +31,8 @@ function writeFile(filePath: string, content = '') {
 function seedHarness(resourcesDir: string, { platform = 'darwin', arch = 'arm64', version = '0.1.1' } = {}) {
   const pkg = join(resourcesDir, 'harness', 'mu-agent');
   writeFile(join(pkg, 'package.json'), JSON.stringify({ name: 'mu-agent', version, dependencies: DEPENDENCIES }));
-  for (const file of PACKAGE_FILES) writeFile(join(pkg, ...file.split('/')));
+  for (const file of PACKAGE_FILES)
+    writeFile(join(pkg, ...file.split('/')), file === 'kyrn/bin/mu.mjs' ? LAUNCHER : '');
   for (const name of Object.keys(DEPENDENCIES))
     writeFile(join(pkg, 'node_modules', ...name.split('/'), 'package.json'));
   writeFile(
@@ -115,6 +119,20 @@ describe('verifyBundledHarness', () => {
     ]);
   });
 
+  it('names a launcher the native host cannot run pi with', () => {
+    const pkg = seedHarness(resourcesDir);
+    // A mu from before the native host: a launcher without planHost, or with a prepareLaunch that is only a word.
+    writeFile(
+      join(pkg, 'kyrn', 'bin', 'mu.mjs'),
+      'export function planLaunch() {}\n// prepareLaunch is not exported\n'
+    );
+    const result = verifyBundledHarness({ resourcesDir, electronPlatformName: 'darwin', targetArch: 'arm64' });
+    expect(result.missing).toEqual([
+      'harness/mu-agent/kyrn/bin/mu.mjs<export:planHost>',
+      'harness/mu-agent/kyrn/bin/mu.mjs<export:prepareLaunch>',
+    ]);
+  });
+
   it('fails without mu at all', () => {
     const result = verifyBundledHarness({ resourcesDir, electronPlatformName: 'win32', targetArch: 'x64' });
     expect(result.missing).toContain('harness/mu-agent/package.json');
@@ -191,7 +209,7 @@ describe('bundle-harness', () => {
     const files: Record<string, string> = {
       'package/package.json': JSON.stringify({ name: 'mu-agent', version: '0.1.1', dependencies: DEPENDENCIES }),
     };
-    for (const file of PACKAGE_FILES) files[`package/${file}`] = '';
+    for (const file of PACKAGE_FILES) files[`package/${file}`] = file === 'kyrn/bin/mu.mjs' ? LAUNCHER : '';
     tarball(join(tmp, 'mu-agent-0.1.1.tgz'), files);
     const calls: { args: string[]; cwd: string }[] = [];
     const npm = (args: string[], cwd: string) => {

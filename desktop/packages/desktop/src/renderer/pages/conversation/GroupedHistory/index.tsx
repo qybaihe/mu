@@ -85,6 +85,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
   batchMode = false,
   onBatchModeChange,
   afterPinnedContent,
+  hideEmptyState = false,
 }) => {
   const { id } = useParams();
   const { t } = useTranslation();
@@ -285,9 +286,11 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
     return (
       <>
         {afterPinnedContent}
-        <div className='py-48px flex-center'>
-          <Empty description={t('conversation.history.noHistory')} />
-        </div>
+        {hideEmptyState ? null : (
+          <div className='py-48px flex-center'>
+            <Empty description={t('conversation.history.noHistory')} />
+          </div>
+        )}
       </>
     );
   }

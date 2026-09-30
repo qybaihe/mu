@@ -137,6 +137,25 @@ describe('what a call line is made of', () => {
     });
   });
 
+  it('reads the command of the tools other harnesses bring: cmd, and a command line as words', () => {
+    // Codex's exec_command, and its shell (the script of `bash -lc`, or the words themselves).
+    expect(toolLabel(call('exec_command', 'completed', { cmd: 'git status', workdir: '/p' }))).toEqual({
+      verb: 'exec_command',
+      target: 'git status',
+    });
+    expect(toolLabel(call('shell', 'completed', { command: ['bash', '-lc', 'npm test'], workdir: '/p' }))).toEqual({
+      verb: 'shell',
+      target: 'npm test',
+    });
+    expect(toolLabel(call('shell', 'completed', { command: ['ls', '-la'] }))).toEqual({
+      verb: 'shell',
+      target: 'ls -la',
+    });
+    // A list that is not words says nothing, and the next argument that names the work is used.
+    expect(toolLabel(call('shell', 'completed', { command: [1, 2], path: 'src/a.ts' })).target).toBe('src/a.ts');
+    expect(toolLabel(call('shell', 'completed', { command: [] })).target).toBeUndefined();
+  });
+
   it('says when the target is a path, which a narrow row cuts in its middle', () => {
     expect(toolLabel(call('edit', 'completed', { path: 'src/b.ts', old_text: 'x' })).path).toBe(true);
     expect(toolLabel(call('grep', 'completed', { pattern: 'useState' })).path).toBeUndefined();
@@ -151,6 +170,9 @@ describe('what a call line is made of', () => {
     expect(toolKind('read')).toBe('read');
     expect(toolKind('Shell Command')).toBe('shell');
     expect(toolKind('WriteFile')).toBe('edit');
+    // Codex's write_stdin types into a running command: a shell, not a file edit.
+    expect(toolKind('write_stdin')).toBe('shell');
+    expect(toolKind('exec_command')).toBe('shell');
     expect(toolKind('rg')).toBe('search');
     expect(toolKind('grep')).toBe('search');
     expect(toolKind('delegate')).toBe('agent');

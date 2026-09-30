@@ -848,5 +848,126 @@
     "doctor": "Comprobar que el juez, el modelo, el navegador y los subagentes están bien conectados",
     "import-chat": "Traer a mu una conversación de Claude Code o Codex de este proyecto y continuarla: /import-chat [archivo]",
     "llama": "Gestionar los modelos del router de llama.cpp"
+  },
+  "native": {
+    "untitled": "Nueva conversación",
+    "retried": "Intentos fallidos antes de esta respuesta: {{count}}",
+    "compacted": "La conversación se compactó aquí para hacer espacio: {{tokens}} tokens de mensajes anteriores se condensaron.",
+    "compactedPlain": "La conversación se compactó aquí para hacer espacio.",
+    "sentImage": "Imagen {{index}}",
+    "forkNoEntry": "El mensaje aún no tiene una entrada de sesión",
+    "phase": {
+      "idle": "Sin ejecutar",
+      "starting": "Iniciando",
+      "running": "En ejecución",
+      "needsModel": "Sin modelo",
+      "failed": "Detenido"
+    },
+    "status": {
+      "starting": "Iniciando mu…",
+      "classifying": "Jev está leyendo tu mensaje…",
+      "compacting": "Compactando la conversación…",
+      "retrying": "La solicitud al modelo ha fallado. Reintentando ({{attempt}} de {{max}})…",
+      "thinking": "Pensando…",
+      "working": "Trabajando…",
+      "sending": "Enviando…"
+    },
+    "send": {
+      "placeholder": "Escribe a mu…",
+      "placeholderWorking": "Guía a mu ahora o deja un mensaje para cuando termine esta ejecución…",
+      "steer": "Ahora",
+      "steerHint": "Llega a mu en su siguiente paso",
+      "followUp": "Después",
+      "followUpHint": "Espera a que termine esta ejecución"
+    },
+    "queue": {
+      "title": "Pendiente de enviar",
+      "steer": "Siguiente paso",
+      "followUp": "Tras esta ejecución",
+      "takeBack": "Recuperar"
+    },
+    "dialog": {
+      "yes": "Sí",
+      "no": "No",
+      "dismiss": "Descartar",
+      "cancel": "Cancelar",
+      "submit": "Enviar",
+      "save": "Guardar",
+      "countdown": "Se cierra en {{seconds}} s; después mu sigue sin tu respuesta.",
+      "more": "En espera después de esta: {{count}}"
+    },
+    "host": {
+      "output": "Última salida de mu",
+      "restartHint": "Envía un mensaje para volver a iniciar mu."
+    },
+    "error": {
+      "off": "El host nativo está desactivado (MU_NATIVE_HOST=0). Inicia la aplicación sin esa variable para usarlo.",
+      "noHarness": "La aplicación no encuentra ningún mu que ejecutar.",
+      "oldHarness": "Este mu es demasiado antiguo para ejecutarse dentro de la aplicación. Actualiza mu y vuelve a intentarlo.",
+      "plan": "La aplicación no ha podido determinar cómo iniciar mu.",
+      "noModels": "mu se ha detenido: no tiene ningún modelo que usar.",
+      "failed": "mu se ha detenido antes de iniciarse.",
+      "crashed": "mu se ha detenido de forma inesperada.",
+      "closed": "mu se ha cerrado para esta conversación.",
+      "timeout": "mu no ha respondido a tiempo.",
+      "command": "mu ha rechazado la solicitud.",
+      "noFolder": "La carpeta del proyecto de esta conversación ya no existe, así que mu no puede iniciarse en ella.",
+      "unknownConversation": "Esta conversación ya no existe.",
+      "invalid": "La aplicación ha enviado una solicitud que mu no puede leer."
+    },
+    "open": {
+      "home": "Inicio",
+      "retry": "Reintentar"
+    },
+    "empty": {
+      "title": "Una nueva conversación en {{folder}}",
+      "body": "mu trabaja en esta carpeta. Di qué quieres que se haga."
+    },
+    "sider": {
+      "title": "Nativo",
+      "new": "Nueva conversación en una carpeta",
+      "empty": "Aún no hay conversaciones",
+      "all": "Mostrar todas ({{count}})",
+      "fewer": "Mostrar menos",
+      "deleteConfirm": "¿Eliminar “{{title}}”? Su archivo de sesión va a la papelera, desde donde aún puedes restaurarlo.",
+      "messages": "Mensajes: {{count}}",
+      "unread": "Nueva actividad",
+      "working": "Trabajando"
+    },
+    "notify": {
+      "failed": "Una ejecución se detuvo con un error",
+      "failedNamed": "«{{name}}» se detuvo con un error"
+    },
+    "new": {
+      "title": "Nueva conversación",
+      "recent": "Carpetas recientes",
+      "pick": "Elegir una carpeta…",
+      "permissions": "Permisos",
+      "defaultPermissions": "Predeterminado de mu"
+    },
+    "panel": {
+      "noLessons": "Las lecciones aparecen cuando la conversación se ha abierto.",
+      "source": {
+        "label": "Cambios en {{folder}}",
+        "noGit": "Git no puede ejecutarse aquí, así que no se pueden mostrar los cambios.",
+        "untracked": "Sin seguimiento",
+        "detached": "Desacoplado en {{commit}}",
+        "noCommits": "Aún no hay commits",
+        "upstream": "{{ahead}} por delante de {{upstream}}, {{behind}} por detrás"
+      },
+      "files": {
+        "label": "Archivos en {{folder}}",
+        "refresh": "Actualizar",
+        "empty": "Esta carpeta está vacía.",
+        "failed": "No se pudo leer esta carpeta.",
+        "more": "Sin mostrar: {{count}} más"
+      }
+    },
+    "home": {
+      "noFolder": "Primero elige una carpeta en la que trabaje mu."
+    },
+    "attach": {
+      "failed": "No se pudo adjuntar {{name}}."
+    }
   }
 }

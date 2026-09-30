@@ -12,6 +12,8 @@ import { useCurrentProject } from '@/renderer/pages/conversation/explorer/curren
 import { ExplorerContainer, type ExplorerView } from '@/renderer/pages/conversation/explorer/ExplorerContainer';
 import { KernelBody, useKyrnActivity, type KernelTab } from '@/renderer/pages/conversation/KyrnPanel';
 import { PreviewPanel, usePreviewContext } from '@/renderer/pages/conversation/Preview';
+import FolderFiles from '@/renderer/pages/conversation/explorer/FolderFiles';
+import { useNativeActivity, useNativeFolder } from '@/renderer/pages/native/utils/nativeActivityStore';
 import BrowserPanel from '@/renderer/pages/conversation/Preview/browser/BrowserPanel';
 import { setBrowserMaximized, useBrowserMaximized } from '@/renderer/pages/conversation/Preview/browser/browserStore';
 import { panelGeometry } from './panelGeometry';
@@ -160,7 +162,14 @@ export default function WorkPanelHost({ rowWidth, isMobile }: { rowWidth: number
   const { t } = useTranslation();
   const conversationId = useCurrentConversation();
   const projectId = useCurrentProject();
-  const activity = useKyrnActivity(conversationId);
+  // A native conversation's Jev tabs read its view, which its page publishes; any other conversation's are polled. It
+  // has no AionCore project: its lessons and files are read by the folder it works in.
+  const native = useNativeActivity(conversationId);
+  const nativeFolder = useNativeFolder(conversationId);
+  const polled = useKyrnActivity(native ? null : conversationId);
+  const activity = native ?? polled;
+  // The last run's end: the folder is read again after it, so what the model wrote shows.
+  const lastRun = native?.events.findLast((event) => event.kind === 'agent_settled')?.id ?? '';
   const { memory, unread, focus, select, close, resize } = useWorkPanel(conversationId, activity);
   const { isMaximized } = usePreviewContext();
   const browserMaximized = useBrowserMaximized();
@@ -244,6 +253,8 @@ export default function WorkPanelHost({ rowWidth, isMobile }: { rowWidth: number
                   activity={activity}
                   focus={focus}
                   visible={open && active === tab}
+                  lessons={!native || nativeFolder !== undefined}
+                  cwd={nativeFolder}
                 />
               )
             )}
@@ -257,6 +268,14 @@ export default function WorkPanelHost({ rowWidth, isMobile }: { rowWidth: number
                   projectId={projectId}
                   view={wantedView}
                   onViewChange={(view) => select(view === 'changes' ? 'source' : 'files')}
+                />
+              ) : nativeFolder ? (
+                <FolderFiles
+                  key={nativeFolder}
+                  cwd={nativeFolder}
+                  view={wantedView}
+                  visible={open && explorerActive}
+                  refresh={lastRun}
                 />
               ) : (
                 <p className={styles.quiet}>{t('common.workPanel.noProject')}</p>

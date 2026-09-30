@@ -23,6 +23,8 @@ const FOLLOW_BOTTOM_THRESHOLD_PX = 4;
 interface UseAutoScrollOptions {
   messages: TMessage[];
   itemCount: number;
+  /** Called when the list's content or its scroller changes size, from the observer that follows the end of it. */
+  onContentResize?: () => void;
 }
 
 interface ScrollElementIntoViewOptions {
@@ -46,7 +48,7 @@ const getBottomGap = (element: HTMLElement): number => {
   return element.scrollHeight - element.clientHeight - element.scrollTop;
 };
 
-export function useAutoScroll({ messages, itemCount }: UseAutoScrollOptions): UseAutoScrollReturn {
+export function useAutoScroll({ messages, itemCount, onContentResize }: UseAutoScrollOptions): UseAutoScrollReturn {
   const [scrollerEl, setScrollerEl] = useState<HTMLDivElement | null>(null);
   const [contentEl, setContentEl] = useState<HTMLDivElement | null>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -187,13 +189,14 @@ export function useAutoScroll({ messages, itemCount }: UseAutoScrollOptions): Us
     const observer = new ResizeObserver(() => {
       scheduleAutoFollow();
       updateBottomState(scrollerEl);
+      onContentResize?.();
     });
 
     observer.observe(scrollerEl);
     observer.observe(contentEl);
 
     return () => observer.disconnect();
-  }, [contentEl, scheduleAutoFollow, scrollerEl, updateBottomState]);
+  }, [contentEl, onContentResize, scheduleAutoFollow, scrollerEl, updateBottomState]);
 
   useEffect(() => {
     if (!scrollerEl || initialScrollDoneRef.current || itemCount === 0) return;

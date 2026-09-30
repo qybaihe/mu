@@ -55,7 +55,7 @@ const isFile = (path) => {
 };
 
 /** Every file under a folder, recursively. */
-function filesUnder(dir) {
+export function filesUnder(dir) {
   if (!existsSync(dir)) return [];
   const found = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {

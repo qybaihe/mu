@@ -19,11 +19,22 @@ const HARNESS_FILES = [
   'judge/manifest.json',
 ];
 
+/** What the launcher exports for the app's native host to run pi in a process of its own. */
+const NATIVE_HOST_EXPORTS = ['planHost', 'prepareLaunch'];
+
 function isFile(filePath) {
   try {
     return fs.statSync(filePath).isFile();
   } catch {
     return false;
+  }
+}
+
+function readText(filePath) {
+  try {
+    return fs.readFileSync(filePath, 'utf8');
+  } catch {
+    return null;
   }
 }
 
@@ -52,6 +63,16 @@ function verifyBundledHarness({ resourcesDir, electronPlatformName, targetArch }
   for (const file of HARNESS_FILES) need(`mu-agent/${file}`, isFile(inPackage(file)));
   for (const name of Object.keys(manifest?.dependencies ?? {})) {
     need(`mu-agent/node_modules/${name}/package.json`, isFile(inPackage(`node_modules/${name}/package.json`)));
+  }
+
+  // The native host (docs/native-host.md) starts pi with two functions of the launcher. A mu without them would not
+  // fail: every conversation of the app would quietly stay on AionCore, so the build says so instead.
+  const launcher = readText(inPackage('kyrn/bin/mu.mjs'));
+  if (launcher !== null) {
+    for (const name of NATIVE_HOST_EXPORTS) {
+      if (!new RegExp(`export (?:async )?function ${name}\\b`).test(launcher))
+        missing.push(`harness/mu-agent/kyrn/bin/mu.mjs<export:${name}>`);
+    }
   }
 
   const bundle = readJson(path.join(root, 'bundle.json'));

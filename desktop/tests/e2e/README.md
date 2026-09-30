@@ -205,6 +205,7 @@ account, no key and no network:
 ```bash
 bun run e2e:conversation                 # builds out/, then runs the test
 bun run e2e:conversation --skip-build    # out/ is already fresh
+bun run e2e:conversation --native        # the native host's tests (the default) instead of the conversation on AionCore (MU_NATIVE_HOST=0)
 MU_E2E_KEEP=1 bun run e2e:conversation   # keep the profile after a pass too
 bun run e2e:conversation --app out --arch arm64   # the packaged app electron-builder left in out/
 MU_E2E_WINDOW=819x691 bun run e2e:conversation --skip-build   # the window a 1024 x 768 screen gives (Windows runner)

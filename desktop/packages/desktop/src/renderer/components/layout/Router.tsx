@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, useRef } from 'react';
 import { HashRouter, Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { Button, Result, Space } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +21,7 @@ import {
   type SettingsPageId,
 } from '@/renderer/pages/settings/settingsNav';
 const Conversation = preloadablePage(() => import('@renderer/pages/conversation'));
+const NativeConversation = preloadablePage(() => import('@renderer/pages/native'));
 const Guid = preloadablePage(() => import('@renderer/pages/guid'));
 const MuSettings = preloadablePage(() => import('@renderer/pages/settings/KyrnSettings'));
 const MovedFeatureOptions = preloadablePage(() =>
@@ -102,11 +103,21 @@ class RouteErrorBoundary extends React.Component<{ children: React.ReactNode }, 
   }
 }
 
+/**
+ * A navigation whose state says `samePage: true` moves a page to a path of its own without leaving it: a native
+ * conversation whose draft id gave way to its session's id. The page stays mounted, with what the person was typing.
+ */
+const isSamePage = (state: unknown): boolean =>
+  typeof state === 'object' && state !== null && (state as { samePage?: unknown }).samePage === true;
+
 /** Keep page failures inside the route, preserving navigation and running agents. */
 export const RouteContent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { pathname } = useLocation();
+  const { pathname, state } = useLocation();
+  // Any other move to another path starts the page afresh, and a failed page with it.
+  const page = useRef(pathname);
+  if (!isSamePage(state)) page.current = pathname;
   return (
-    <RouteErrorBoundary key={pathname}>
+    <RouteErrorBoundary key={page.current}>
       <Suspense fallback={<AppLoader />}>{children}</Suspense>
     </RouteErrorBoundary>
   );
@@ -205,6 +216,8 @@ const PanelRoute: React.FC<{ layout: React.ReactElement }> = ({ layout }) => {
           <Route path='/guid' element={withRouteFallback(Guid)} />
           <Route path='/welcome' element={withRouteFallback(WelcomePage)} />
           <Route path='/conversation/:id' element={withRouteFallback(Conversation)} />
+          {/* A conversation on the native host: the page goes home unless the main process runs it (not with MU_NATIVE_HOST=0). */}
+          <Route path='/conversation/native/:id' element={withRouteFallback(NativeConversation)} />
           <Route path='/team/:id' element={<Navigate to='/guid' replace />} />
           {/* The settings rail: one route per entry, all under one draft of mu's settings. */}
           <Route element={<SettingsScope />}>

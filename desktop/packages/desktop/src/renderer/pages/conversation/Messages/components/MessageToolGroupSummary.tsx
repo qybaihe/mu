@@ -18,6 +18,7 @@ import { HiveToolCard } from '@/renderer/pages/conversation/KyrnPanel/Hive';
 import { swarmProgressText } from '@/renderer/pages/conversation/KyrnPanel/Hive/codes';
 import { formatNumber } from '@/renderer/services/i18n/format';
 import { downloadFileFromPath } from '@/renderer/utils/file/download';
+import { useMessageListRun } from '../hooks';
 import styles from './MessageToolGroupSummary.module.css';
 import ToolKindIcon from './ToolKindIcon';
 import {
@@ -154,8 +155,19 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
     </>
   );
 
+  // A native conversation's end-to-end tests read each call by pi's tool name and how it stands.
+  const native = useMessageListRun() !== undefined;
   return (
-    <div className={styles.call}>
+    <div
+      className={styles.call}
+      {...(native
+        ? {
+            'data-testid': 'native-tool-call',
+            'data-tool': item.name,
+            'data-status': item.denied ? 'denied' : item.status,
+          }
+        : {})}
+    >
       {messageContext}
       {displayItem.hive ? (
         <>

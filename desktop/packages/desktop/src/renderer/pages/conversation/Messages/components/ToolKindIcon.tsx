@@ -18,7 +18,7 @@ type Kind = 'read' | 'edit' | 'shell' | 'search' | 'web' | 'agent' | 'other';
 
 /** In order: the first word of the name that names a kind wins, so `WriteFile` is an edit and not a read. */
 const WORDS: ReadonlyArray<readonly [ReadonlySet<string>, Kind]> = [
-  [new Set(['bash', 'shell', 'exec', 'terminal', 'command', 'run']), 'shell'],
+  [new Set(['bash', 'shell', 'exec', 'terminal', 'command', 'run', 'stdin']), 'shell'],
   [new Set(['write', 'edit', 'replace', 'patch', 'apply', 'notebook', 'create']), 'edit'],
   [new Set(['read', 'cat', 'view', 'open', 'file']), 'read'],
   [new Set(['grep', 'glob', 'search', 'find', 'rg', 'ls', 'list']), 'search'],

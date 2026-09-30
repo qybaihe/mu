@@ -14,7 +14,7 @@ import {
   flatLesson,
   inScope,
   parseLessons,
-  type LessonChange,
+  type LessonEdit,
   type LessonLine,
   type LessonsView,
   type StoredLesson,
@@ -130,7 +130,7 @@ export class LessonsStore {
    * A new text (`{ id, lesson, updated }`) or a retirement (`{ id, status: "retired", updated }`) for a lesson of this
    * project that is in use, appended as one line; then the lessons as they are now. The same text again writes nothing.
    */
-  change(project: LessonsProject, change: LessonChange, now: Date = new Date()): LessonsView {
+  change(project: LessonsProject, change: LessonEdit, now: Date = new Date()): LessonsView {
     const request = asRecord(change);
     const id = text(request.id);
     if (!id.trim() || id.length > 256) throw new KyrnError('invalid', 'Invalid lesson id');

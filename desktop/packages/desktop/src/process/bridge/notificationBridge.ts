@@ -59,10 +59,12 @@ export async function showNotification({
   title,
   body,
   conversation_id,
+  native,
 }: {
   title: string;
   body: string;
   conversation_id?: string;
+  native?: boolean;
 }): Promise<void> {
   // Check if notification is enabled
   const notificationEnabled = await ProcessConfig.get('system.notificationEnabled');
@@ -90,7 +92,7 @@ export async function showNotification({
           win.show();
           win.focus();
         }
-        ipcBridge.notification.clicked.emit({ conversation_id });
+        ipcBridge.notification.clicked.emit({ conversation_id, ...(native ? { native } : {}) });
       });
       notification.show();
       console.log(`[Notification] show() called (isSupported=${electronNotification.isSupported()})`);

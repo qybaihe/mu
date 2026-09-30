@@ -349,6 +349,67 @@ const getKatexStyleSheet = (): CSSStyleSheet | null => {
 
 type ShadowDivElement = HTMLDivElement & { __init__shadow?: boolean };
 
+/** The page's variables a message's shadow tree is drawn with (see createInitStyle). */
+const THEME_VARIABLES = [
+  '--bg-1',
+  '--bg-2',
+  '--bg-3',
+  '--color-text-1',
+  '--color-text-2',
+  '--color-text-3',
+  '--text-primary',
+  '--text-secondary',
+  '--chat-font-size',
+  '--code-font-size',
+] as const;
+
+type ThemeSnapshot = { theme: string; cssVars: Record<string, string> };
+
+/**
+ * Reading a computed style makes the browser bring the page's styles up to date, and every message that mounts has
+ * just changed the page, so one read per message made a list of thousands quadratic: a session of 6,752 entries took
+ * 24 seconds to open, nearly all of it in these reads. Messages that mount together share one read; it is dropped at
+ * the end of the task, and when the observer below sees the page's theme change.
+ */
+let themeSnapshot: ThemeSnapshot | undefined;
+
+const readTheme = (): ThemeSnapshot => {
+  if (themeSnapshot) return themeSnapshot;
+  const computedStyle = getComputedStyle(document.documentElement);
+  const cssVars: Record<string, string> = {};
+  for (const name of THEME_VARIABLES) cssVars[name] = computedStyle.getPropertyValue(name);
+  themeSnapshot = { theme: document.documentElement.getAttribute('data-theme') || 'light', cssVars };
+  queueMicrotask(() => {
+    themeSnapshot = undefined;
+  });
+  return themeSnapshot;
+};
+
+/** One observer of the page's theme for every message on screen, not one each. */
+const themeListeners = new Set<() => void>();
+let themeObserver: MutationObserver | undefined;
+
+const subscribeToTheme = (listener: () => void): (() => void) => {
+  themeListeners.add(listener);
+  if (!themeObserver) {
+    themeObserver = new MutationObserver(() => {
+      themeSnapshot = undefined;
+      for (const notify of themeListeners) notify();
+    });
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme', 'class', 'style'],
+    });
+  }
+  return () => {
+    themeListeners.delete(listener);
+    if (themeListeners.size === 0) {
+      themeObserver?.disconnect();
+      themeObserver = undefined;
+    }
+  };
+};
+
 const ShadowView = ({ children }: { children: React.ReactNode }) => {
   const [root, setRoot] = useState<ShadowRoot | null>(null);
   const styleRef = React.useRef<HTMLStyleElement | null>(null);
@@ -376,20 +437,7 @@ const ShadowView = ({ children }: { children: React.ReactNode }) => {
   // Update CSS variables and custom styles in Shadow DOM
   const updateStyles = React.useCallback(
     (shadowRoot: ShadowRoot) => {
-      const computedStyle = getComputedStyle(document.documentElement);
-      const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-      const cssVars = {
-        '--bg-1': computedStyle.getPropertyValue('--bg-1'),
-        '--bg-2': computedStyle.getPropertyValue('--bg-2'),
-        '--bg-3': computedStyle.getPropertyValue('--bg-3'),
-        '--color-text-1': computedStyle.getPropertyValue('--color-text-1'),
-        '--color-text-2': computedStyle.getPropertyValue('--color-text-2'),
-        '--color-text-3': computedStyle.getPropertyValue('--color-text-3'),
-        '--text-primary': computedStyle.getPropertyValue('--text-primary'),
-        '--text-secondary': computedStyle.getPropertyValue('--text-secondary'),
-        '--chat-font-size': computedStyle.getPropertyValue('--chat-font-size'),
-        '--code-font-size': computedStyle.getPropertyValue('--code-font-size'),
-      };
+      const { theme: currentTheme, cssVars } = readTheme();
 
       // Remove old style and add new style
       if (styleRef.current) {
@@ -419,17 +467,8 @@ const ShadowView = ({ children }: { children: React.ReactNode }) => {
   React.useEffect(() => {
     if (!root) return;
 
-    // Listen for theme changes
-    const observer = new MutationObserver(() => {
-      updateStyles(root);
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-theme', 'class', 'style'],
-    });
-
-    return () => observer.disconnect();
+    // Update styles when the page's theme changes
+    return subscribeToTheme(() => updateStyles(root));
   }, [root, updateStyles]);
 
   return (

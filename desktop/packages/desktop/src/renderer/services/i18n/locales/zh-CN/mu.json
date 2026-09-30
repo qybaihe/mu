@@ -848,5 +848,126 @@
     "doctor": "检查判定器、模型、浏览器和子代理有没有接好",
     "import-chat": "导入这个项目在 Claude Code 或 Codex 里的对话，接着在这里聊：/import-chat [文件]",
     "llama": "管理 llama.cpp 路由器上的模型"
+  },
+  "native": {
+    "untitled": "新对话",
+    "retried": "这条回复之前失败的尝试：{{count}} 次",
+    "compacted": "对话在这里做了压缩以腾出空间：更早的 {{tokens}} tokens 被浓缩了。",
+    "compactedPlain": "对话在这里做了压缩以腾出空间。",
+    "sentImage": "图片 {{index}}",
+    "forkNoEntry": "这条消息还没有对应的会话记录",
+    "phase": {
+      "idle": "未运行",
+      "starting": "启动中",
+      "running": "运行中",
+      "needsModel": "没有模型",
+      "failed": "已停止"
+    },
+    "status": {
+      "starting": "正在启动 mu…",
+      "classifying": "Jev 正在读你的消息…",
+      "compacting": "正在压缩对话…",
+      "retrying": "模型请求失败，正在重试（第 {{attempt}} 次，共 {{max}} 次）…",
+      "thinking": "思考中…",
+      "working": "工作中…",
+      "sending": "发送中…"
+    },
+    "send": {
+      "placeholder": "给 mu 发消息…",
+      "placeholderWorking": "现在引导 mu，或者留一条消息，等这一轮结束后再发…",
+      "steer": "现在",
+      "steerHint": "在 mu 的下一步送达",
+      "followUp": "之后",
+      "followUpHint": "等这一轮运行结束后再发"
+    },
+    "queue": {
+      "title": "等待发送",
+      "steer": "下一步",
+      "followUp": "这一轮结束后",
+      "takeBack": "撤回"
+    },
+    "dialog": {
+      "yes": "是",
+      "no": "否",
+      "dismiss": "忽略",
+      "cancel": "取消",
+      "submit": "发送",
+      "save": "保存",
+      "countdown": "{{seconds}} 秒后关闭，之后 mu 会不等你的回答继续。",
+      "more": "后面还有：{{count}} 个"
+    },
+    "host": {
+      "output": "mu 最后的输出",
+      "restartHint": "发送一条消息即可重新启动 mu。"
+    },
+    "error": {
+      "off": "原生运行被关闭了（MU_NATIVE_HOST=0）。不带这个变量启动应用即可使用。",
+      "noHarness": "应用找不到可以运行的 mu。",
+      "oldHarness": "这个 mu 版本太旧，无法在应用里运行。请更新 mu 后再试。",
+      "plan": "应用没能确定怎样启动 mu。",
+      "noModels": "mu 已停止：没有可用的模型。",
+      "failed": "mu 在启动之前就停止了。",
+      "crashed": "mu 意外停止了。",
+      "closed": "这个对话的 mu 已关闭。",
+      "timeout": "mu 没有及时回应。",
+      "command": "mu 拒绝了这个请求。",
+      "noFolder": "这个对话的项目文件夹已经不存在了，mu 没法在里面运行。",
+      "unknownConversation": "这个对话已经不存在了。",
+      "invalid": "应用发出了 mu 读不懂的请求。"
+    },
+    "open": {
+      "home": "回到首页",
+      "retry": "重试"
+    },
+    "empty": {
+      "title": "在 {{folder}} 里的新对话",
+      "body": "mu 会在这个文件夹里工作。说说你想做什么。"
+    },
+    "sider": {
+      "title": "原生",
+      "new": "在文件夹里新建对话",
+      "empty": "还没有对话",
+      "all": "显示全部（{{count}}）",
+      "fewer": "收起",
+      "deleteConfirm": "删除「{{title}}」？它的会话文件会移到废纸篓，之后仍可恢复。",
+      "messages": "消息数：{{count}}",
+      "unread": "有新动态",
+      "working": "处理中"
+    },
+    "notify": {
+      "failed": "一次运行因出错而停止",
+      "failedNamed": "「{{name}}」因出错而停止"
+    },
+    "new": {
+      "title": "新对话",
+      "recent": "最近的文件夹",
+      "pick": "选择文件夹…",
+      "permissions": "权限",
+      "defaultPermissions": "mu 的默认设置"
+    },
+    "panel": {
+      "noLessons": "对话打开后显示经验。",
+      "source": {
+        "label": "{{folder}} 中的变更",
+        "noGit": "git 无法在这里运行，因此无法显示变更。",
+        "untracked": "未跟踪",
+        "detached": "分离于 {{commit}}",
+        "noCommits": "还没有提交",
+        "upstream": "领先 {{upstream}} {{ahead}} 个提交，落后 {{behind}} 个"
+      },
+      "files": {
+        "label": "{{folder}} 中的文件",
+        "refresh": "刷新",
+        "empty": "此文件夹是空的。",
+        "failed": "无法读取此文件夹。",
+        "more": "还有 {{count}} 项未显示"
+      }
+    },
+    "home": {
+      "noFolder": "请先选择一个让 mu 工作的文件夹。"
+    },
+    "attach": {
+      "failed": "无法附加 {{name}}。"
+    }
   }
 }

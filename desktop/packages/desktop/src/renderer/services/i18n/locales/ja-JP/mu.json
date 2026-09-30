@@ -848,5 +848,126 @@
     "doctor": "判定器、モデル、ブラウザ、サブエージェントが正しくつながっているか確認します",
     "import-chat": "このプロジェクトの Claude Code または Codex の会話を mu に取り込み、続きをここで話せます：/import-chat [ファイル]",
     "llama": "llama.cpp ルーターのモデルを管理します"
+  },
+  "native": {
+    "untitled": "新しい会話",
+    "retried": "この返答の前に失敗した試行: {{count}} 回",
+    "compacted": "ここで会話を圧縮して空きを作りました。それ以前の {{tokens}} トークン分を縮めています。",
+    "compactedPlain": "ここで会話を圧縮して空きを作りました。",
+    "sentImage": "画像 {{index}}",
+    "forkNoEntry": "このメッセージにはまだセッションの記録がありません",
+    "phase": {
+      "idle": "未起動",
+      "starting": "起動中",
+      "running": "実行中",
+      "needsModel": "モデルなし",
+      "failed": "停止"
+    },
+    "status": {
+      "starting": "mu を起動しています…",
+      "classifying": "Jev がメッセージを読んでいます…",
+      "compacting": "会話を圧縮しています…",
+      "retrying": "モデルへのリクエストが失敗しました。再試行しています（{{attempt}} / {{max}}）…",
+      "thinking": "考えています…",
+      "working": "作業しています…",
+      "sending": "送信しています…"
+    },
+    "send": {
+      "placeholder": "mu にメッセージを送る…",
+      "placeholderWorking": "今すぐ mu を導くか、この実行が終わった後に送るメッセージを残す…",
+      "steer": "今すぐ",
+      "steerHint": "mu の次のステップで届きます",
+      "followUp": "後で",
+      "followUpHint": "この実行が終わるまで待ちます"
+    },
+    "queue": {
+      "title": "送信待ち",
+      "steer": "次のステップ",
+      "followUp": "この実行の後",
+      "takeBack": "取り消す"
+    },
+    "dialog": {
+      "yes": "はい",
+      "no": "いいえ",
+      "dismiss": "閉じる",
+      "cancel": "キャンセル",
+      "submit": "送信",
+      "save": "保存",
+      "countdown": "{{seconds}} 秒後に閉じます。その後 mu は回答なしで続けます。",
+      "more": "この後に待っているもの: {{count}} 件"
+    },
+    "host": {
+      "output": "mu の最後の出力",
+      "restartHint": "メッセージを送ると mu がもう一度起動します。"
+    },
+    "error": {
+      "off": "ネイティブホストがオフになっています（MU_NATIVE_HOST=0）。この変数なしでアプリを起動すると使えます。",
+      "noHarness": "アプリが実行できる mu を見つけられません。",
+      "oldHarness": "この mu は古すぎてアプリの中では動きません。mu を更新してからもう一度お試しください。",
+      "plan": "アプリは mu の起動方法を決められませんでした。",
+      "noModels": "mu は停止しました: 使えるモデルがありません。",
+      "failed": "mu は起動する前に停止しました。",
+      "crashed": "mu が予期せず停止しました。",
+      "closed": "この会話の mu は閉じられました。",
+      "timeout": "mu が時間内に応答しませんでした。",
+      "command": "mu がリクエストを拒否しました。",
+      "noFolder": "この会話のプロジェクトフォルダーはもう存在しないため、mu はその中で起動できません。",
+      "unknownConversation": "この会話はもう存在しません。",
+      "invalid": "アプリが mu の読めないリクエストを送りました。"
+    },
+    "open": {
+      "home": "ホーム",
+      "retry": "もう一度試す"
+    },
+    "empty": {
+      "title": "{{folder}} での新しい会話",
+      "body": "mu はこのフォルダーで作業します。やりたいことを伝えてください。"
+    },
+    "sider": {
+      "title": "ネイティブ",
+      "new": "フォルダーで新しい会話",
+      "empty": "まだ会話はありません",
+      "all": "すべて表示（{{count}}）",
+      "fewer": "折りたたむ",
+      "deleteConfirm": "「{{title}}」を削除しますか？セッションファイルはゴミ箱に移り、あとで復元できます。",
+      "messages": "メッセージ数: {{count}}",
+      "unread": "新しいアクティビティ",
+      "working": "作業中"
+    },
+    "notify": {
+      "failed": "実行がエラーで停止しました",
+      "failedNamed": "「{{name}}」がエラーで停止しました"
+    },
+    "new": {
+      "title": "新しい会話",
+      "recent": "最近のフォルダー",
+      "pick": "フォルダーを選択…",
+      "permissions": "権限",
+      "defaultPermissions": "mu の既定"
+    },
+    "panel": {
+      "noLessons": "会話を開くと教訓が表示されます。",
+      "source": {
+        "label": "{{folder}} の変更",
+        "noGit": "ここでは git を実行できないため、変更を表示できません。",
+        "untracked": "未追跡",
+        "detached": "{{commit}} で切り離し中",
+        "noCommits": "まだコミットがありません",
+        "upstream": "{{upstream}} より {{ahead}} 件進み、{{behind}} 件遅れています"
+      },
+      "files": {
+        "label": "{{folder}} のファイル",
+        "refresh": "再読み込み",
+        "empty": "このフォルダーは空です。",
+        "failed": "このフォルダーを読み込めませんでした。",
+        "more": "未表示: ほか {{count}} 件"
+      }
+    },
+    "home": {
+      "noFolder": "まず mu が作業するフォルダーを選んでください。"
+    },
+    "attach": {
+      "failed": "{{name}} を添付できませんでした。"
+    }
   }
 }

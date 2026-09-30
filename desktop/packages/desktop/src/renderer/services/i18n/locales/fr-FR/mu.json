@@ -848,5 +848,126 @@
     "doctor": "Vérifier que le juge, le modèle, le navigateur et les sous-agents sont bien branchés",
     "import-chat": "Importer dans mu une conversation Claude Code ou Codex de ce projet et la poursuivre : /import-chat [fichier]",
     "llama": "Gérer les modèles du routeur llama.cpp"
+  },
+  "native": {
+    "untitled": "Nouvelle conversation",
+    "retried": "Tentatives échouées avant cette réponse : {{count}}",
+    "compacted": "La conversation a été compactée ici pour libérer de la place : {{tokens}} tokens de messages précédents ont été condensés.",
+    "compactedPlain": "La conversation a été compactée ici pour libérer de la place.",
+    "sentImage": "Image {{index}}",
+    "forkNoEntry": "Le message n’a pas encore d’entrée de session",
+    "phase": {
+      "idle": "Arrêté",
+      "starting": "Démarrage",
+      "running": "En cours",
+      "needsModel": "Aucun modèle",
+      "failed": "Interrompu"
+    },
+    "status": {
+      "starting": "Démarrage de mu…",
+      "classifying": "Jev lit votre message…",
+      "compacting": "Compactage de la conversation…",
+      "retrying": "La requête au modèle a échoué. Nouvelle tentative ({{attempt}} sur {{max}})…",
+      "thinking": "Réflexion…",
+      "working": "Travail en cours…",
+      "sending": "Envoi…"
+    },
+    "send": {
+      "placeholder": "Écrire à mu…",
+      "placeholderWorking": "Orientez mu maintenant, ou laissez un message pour après cette exécution…",
+      "steer": "Maintenant",
+      "steerHint": "Parvient à mu à sa prochaine étape",
+      "followUp": "Après",
+      "followUpHint": "Attend la fin de cette exécution"
+    },
+    "queue": {
+      "title": "En attente d’envoi",
+      "steer": "Prochaine étape",
+      "followUp": "Après cette exécution",
+      "takeBack": "Reprendre"
+    },
+    "dialog": {
+      "yes": "Oui",
+      "no": "Non",
+      "dismiss": "Ignorer",
+      "cancel": "Annuler",
+      "submit": "Envoyer",
+      "save": "Enregistrer",
+      "countdown": "Se ferme dans {{seconds}} s ; mu continue ensuite sans votre réponse.",
+      "more": "En attente après celle-ci : {{count}}"
+    },
+    "host": {
+      "output": "Dernière sortie de mu",
+      "restartHint": "Envoyez un message pour redémarrer mu."
+    },
+    "error": {
+      "off": "L’hôte natif est désactivé (MU_NATIVE_HOST=0). Lancez l’application sans cette variable pour l’utiliser.",
+      "noHarness": "L’application ne trouve aucun mu à exécuter.",
+      "oldHarness": "Ce mu est trop ancien pour fonctionner dans l’application. Mettez mu à jour, puis réessayez.",
+      "plan": "L’application n’a pas pu déterminer comment démarrer mu.",
+      "noModels": "mu s’est arrêté : il n’a aucun modèle à utiliser.",
+      "failed": "mu s’est arrêté avant d’avoir démarré.",
+      "crashed": "mu s’est arrêté de façon inattendue.",
+      "closed": "mu a été fermé pour cette conversation.",
+      "timeout": "mu n’a pas répondu à temps.",
+      "command": "mu a refusé la requête.",
+      "noFolder": "Le dossier du projet de cette conversation n’existe plus ; mu ne peut donc pas démarrer dedans.",
+      "unknownConversation": "Cette conversation n’existe plus.",
+      "invalid": "L’application a envoyé une requête que mu ne peut pas lire."
+    },
+    "open": {
+      "home": "Accueil",
+      "retry": "Réessayer"
+    },
+    "empty": {
+      "title": "Une nouvelle conversation dans {{folder}}",
+      "body": "mu travaille dans ce dossier. Dites ce que vous voulez faire."
+    },
+    "sider": {
+      "title": "Natif",
+      "new": "Nouvelle conversation dans un dossier",
+      "empty": "Aucune conversation pour l’instant",
+      "all": "Tout afficher ({{count}})",
+      "fewer": "Afficher moins",
+      "deleteConfirm": "Supprimer « {{title}} » ? Son fichier de session part à la corbeille, d’où vous pouvez encore le restaurer.",
+      "messages": "Messages : {{count}}",
+      "unread": "Nouvelle activité",
+      "working": "En cours"
+    },
+    "notify": {
+      "failed": "Une exécution s'est arrêtée sur une erreur",
+      "failedNamed": "« {{name}} » s'est arrêtée sur une erreur"
+    },
+    "new": {
+      "title": "Nouvelle conversation",
+      "recent": "Dossiers récents",
+      "pick": "Choisir un dossier…",
+      "permissions": "Autorisations",
+      "defaultPermissions": "Réglage par défaut de mu"
+    },
+    "panel": {
+      "noLessons": "Les leçons s’affichent une fois la conversation ouverte.",
+      "source": {
+        "label": "Modifications dans {{folder}}",
+        "noGit": "Git ne peut pas s’exécuter ici, les modifications ne peuvent donc pas être affichées.",
+        "untracked": "Non suivis",
+        "detached": "Détaché sur {{commit}}",
+        "noCommits": "Aucun commit pour l’instant",
+        "upstream": "{{ahead}} en avance sur {{upstream}}, {{behind}} en retard"
+      },
+      "files": {
+        "label": "Fichiers de {{folder}}",
+        "refresh": "Actualiser",
+        "empty": "Ce dossier est vide.",
+        "failed": "Ce dossier n’a pas pu être lu.",
+        "more": "Non affichés : {{count}} de plus"
+      }
+    },
+    "home": {
+      "noFolder": "Choisissez d’abord un dossier dans lequel mu travaillera."
+    },
+    "attach": {
+      "failed": "Impossible de joindre {{name}}."
+    }
   }
 }

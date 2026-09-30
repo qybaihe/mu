@@ -23,6 +23,7 @@ import CollapsibleContent from '@renderer/components/chat/CollapsibleContent';
 import FilePreview from '@renderer/components/media/FilePreview';
 import HorizontalFileList from '@renderer/components/media/HorizontalFileList';
 import MarkdownView from '@renderer/components/Markdown';
+import MessageImages from './MessageImages';
 import { closeOpenFence } from './streamMarkdown';
 import { stripThinkTags, hasThinkTags } from '@renderer/utils/chat/thinkTagFilter';
 import { buildTurnClipboardText } from '@renderer/utils/chat/turnCopy';
@@ -51,6 +52,7 @@ export const formatMessageTime = (timestamp: number, language?: string | null, n
   });
 };
 import MessageCronBadge from './MessageCronBadge';
+import { useMessageListRun } from '../hooks';
 import { resolveAgentLogo, useAgentLogos } from '@/renderer/utils/model/agentLogo';
 import TeammateMessageAvatar from './TeammateMessageAvatar';
 import { useTeammateColor } from '@/renderer/pages/team/identity/TeamIdentityContext';
@@ -167,17 +169,27 @@ const MessageText: React.FC<{
   const markdown = useMemo(() => (typeof data === 'string' ? closeOpenFence(data) : data), [data]);
   const shouldRenderPlainText = isUserMessage || Boolean(contextResetNotice);
   const conversationContext = useConversationContextSafe();
+  // A native conversation has no AionCore conversation around it: its project folder comes with its list.
+  const run = useMessageListRun();
+  const workspace = conversationContext?.workspace ?? run?.workspace;
   const forkConversation = useForkConversation(conversationContext?.conversation_id);
   const layout = useLayoutContext();
   const isMobile = layout?.isMobile ?? false;
-  const handleLocalFileLink = useLocalFilePreview(conversationContext?.workspace);
+  const handleLocalFileLink = useLocalFilePreview(workspace);
   const resolvedFiles = useMemo(
-    () => files.map((file_path) => resolveMessageFilePath(file_path, conversationContext?.workspace)),
-    [conversationContext?.workspace, files]
+    () => files.map((file_path) => resolveMessageFilePath(file_path, workspace)),
+    [workspace, files]
   );
 
+  // Images the person sent as themselves (a native conversation's): only a person's row has them, and they may come
+  // without a word. Every other row is shown exactly as before.
+  const images = isUserMessage && message.content.images?.length ? message.content.images : undefined;
+
   // 过滤空内容，避免渲染空DOM
-  if (!message.content.content || (typeof message.content.content === 'string' && !message.content.content.trim())) {
+  if (
+    !images &&
+    (!message.content.content || (typeof message.content.content === 'string' && !message.content.content.trim()))
+  ) {
     return null;
   }
 
@@ -213,16 +225,20 @@ const MessageText: React.FC<{
 
   // Fork entry point: only when the agent declares the capability, and only on
   // messages the backend can actually fork at (any message for at_turn/codex,
-  // the last message otherwise) — see `isForkEnabled`.
-  const showForkButton = isForkEnabled(conversationContext?.forkCapability, {
-    isLastMessage,
-    hasTurnAnchor: hasForkAnchor,
-  });
+  // the last message otherwise) — see `isForkEnabled`. A list whose host forks its own session (a native
+  // conversation's) says for each message what forking there does, and forks through the host.
+  const hostFork = run?.fork?.(message);
+  const showForkButton =
+    hostFork !== undefined ||
+    isForkEnabled(conversationContext?.forkCapability, {
+      isLastMessage,
+      hasTurnAnchor: hasForkAnchor,
+    });
   const forkButton = showForkButton ? (
     <Tooltip content={t('messages.fork.action')}>
       <div
         className='p-4px rd-4px cursor-pointer hover:bg-3 transition-colors opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
-        onClick={() => void forkConversation(message.msg_id ?? message.id)}
+        onClick={() => (hostFork ? hostFork() : void forkConversation(message.msg_id ?? message.id))}
         style={{ lineHeight: 0 }}
         data-testid='message-fork-button'
       >
@@ -310,45 +326,49 @@ const MessageText: React.FC<{
             )}
           </div>
         )}
-        <div
-          className={classNames('min-w-0 [&>p:first-child]:mt-0px [&>p:last-child]:mb-0px', {
-            'bg-aou-2 p-6px md:p-8px': isUserMessage || cronMeta,
-            'bg-3 p-6px md:p-8px': isTeammateMessage,
-            'w-full': !(isUserMessage || cronMeta || isTeammateMessage),
-          })}
-          style={{
-            ...(isUserMessage || cronMeta
-              ? { borderRadius: '8px 0 8px 8px', color: 'var(--text-primary)' }
-              : isTeammateMessage
-                ? {
-                    borderRadius: '0 8px 8px 8px',
-                    ...(teammateColor ? { borderLeft: `3px solid ${teammateColor}` } : {}),
-                  }
-                : undefined),
-          }}
-        >
-          {/* JSON 内容使用折叠组件 Use CollapsibleContent for JSON content */}
-          {shouldRenderPlainText ? (
-            <div className='whitespace-pre-wrap [overflow-wrap:anywhere]' data-testid='message-text-content'>
-              {renderedText}
-            </div>
-          ) : json ? (
-            <CollapsibleContent maxHeight={200} defaultCollapsed={true}>
-              <div data-testid='message-text-content'>
-                <MarkdownView
-                  codeStyle={CODE_STYLE}
-                  onLocalFileLink={handleLocalFileLink}
-                >{`\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``}</MarkdownView>
+        {images ? <MessageImages images={images} end /> : null}
+        {/* A message of images alone has no bubble of text. */}
+        {!images || renderedText.trim() ? (
+          <div
+            className={classNames('min-w-0 [&>p:first-child]:mt-0px [&>p:last-child]:mb-0px', {
+              'bg-aou-2 p-6px md:p-8px': isUserMessage || cronMeta,
+              'bg-3 p-6px md:p-8px': isTeammateMessage,
+              'w-full': !(isUserMessage || cronMeta || isTeammateMessage),
+            })}
+            style={{
+              ...(isUserMessage || cronMeta
+                ? { borderRadius: '8px 0 8px 8px', color: 'var(--text-primary)' }
+                : isTeammateMessage
+                  ? {
+                      borderRadius: '0 8px 8px 8px',
+                      ...(teammateColor ? { borderLeft: `3px solid ${teammateColor}` } : {}),
+                    }
+                  : undefined),
+            }}
+          >
+            {/* JSON 内容使用折叠组件 Use CollapsibleContent for JSON content */}
+            {shouldRenderPlainText ? (
+              <div className='whitespace-pre-wrap [overflow-wrap:anywhere]' data-testid='message-text-content'>
+                {renderedText}
               </div>
-            </CollapsibleContent>
-          ) : (
-            <div data-testid='message-text-content'>
-              <MarkdownView codeStyle={CODE_STYLE} onLocalFileLink={handleLocalFileLink}>
-                {markdown}
-              </MarkdownView>
-            </div>
-          )}
-        </div>
+            ) : json ? (
+              <CollapsibleContent maxHeight={200} defaultCollapsed={true}>
+                <div data-testid='message-text-content'>
+                  <MarkdownView
+                    codeStyle={CODE_STYLE}
+                    onLocalFileLink={handleLocalFileLink}
+                  >{`\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``}</MarkdownView>
+                </div>
+              </CollapsibleContent>
+            ) : (
+              <div data-testid='message-text-content'>
+                <MarkdownView codeStyle={CODE_STYLE} onLocalFileLink={handleLocalFileLink}>
+                  {markdown}
+                </MarkdownView>
+              </div>
+            )}
+          </div>
+        ) : null}
         {isPendingDelivery && (
           <div className='text-12px text-t-secondary mt-4px select-none' data-testid='message-status-badge'>
             {t('messages.delivery.pending', { defaultValue: 'Unread' })}

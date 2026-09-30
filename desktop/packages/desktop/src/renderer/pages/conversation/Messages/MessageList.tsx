@@ -32,7 +32,7 @@ import MessageMuNotice from '@renderer/pages/conversation/Messages/acp/MessageMu
 import { muNotice } from '@renderer/pages/conversation/Messages/acp/muNotice';
 import { questionsBeforeCalls } from './permissionOrder';
 import classNames from 'classnames';
-import React, { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { uuid } from '@renderer/utils/common';
@@ -47,6 +47,7 @@ import {
   useLoadPreviousMessagePage,
   useMessageList,
   useMessageListLoading,
+  useMessageListRun,
   useMessagePaginationState,
 } from './hooks';
 import MessageAgentStatus from './components/MessageAgentStatus';
@@ -173,6 +174,31 @@ const getProcessedItemAnchorId = (item: IProcessedItem): string => {
 const getProcessedItemKey = (item: IProcessedItem): string =>
   'type' in item && item.type === 'thinking_history' ? item.id : getProcessedItemAnchorId(item);
 
+/**
+ * The reader's place while a native conversation draws the rows before the ones on screen: the row that was first, and
+ * where it was from the top of the list. The rows push it down, and their content grows after they are drawn (a
+ * message's text is rendered in a second pass), so the list puts the row back to where it was for as long as they
+ * keep growing (`KEEP_PLACE_MS` after they were drawn), until the reader scrolls.
+ */
+type KeptPlace = {
+  scroller: HTMLDivElement;
+  /** The DOM id of the row that was first: the rows are drawn when another row is first. */
+  anchor: string;
+  /** Where that row was, from the top of the list, when the rows were asked for. */
+  offset: number;
+  /** The list's height when the rows were asked for. */
+  height: number;
+  at: number;
+  /** When the rows were drawn. */
+  drawnAt?: number;
+  /** The anchor was gone when the rows were drawn, and the list was put back by its growth instead. */
+  approximated?: boolean;
+};
+
+const KEEP_PLACE_MS = 1500;
+/** How long the rows asked for may take to be drawn before the request is forgotten. */
+const EARLIER_ROWS_MS = 2000;
+
 /** The grouped rows are memoised so an unchanged group is not redrawn when another row streams. */
 const ThoughtHistoryRow = React.memo(ThoughtHistory);
 const FileChangesRow = React.memo(MessageFileChanges);
@@ -248,6 +274,16 @@ const highlightStyle: React.CSSProperties = {
 };
 
 const getUnhandledMessageType = (_message: never): string => 'unknown';
+
+/**
+ * A row's test id. A native conversation's list names the person's and mu's messages as its end-to-end tests read
+ * them; every other list keeps the generic ids.
+ */
+const rowTestId = (message: TMessage, native: boolean): string => {
+  if (native && message.type === 'text' && message.position === 'right') return 'native-message-user';
+  if (native && message.type === 'text' && message.position === 'left') return 'native-message-assistant';
+  return `message-${message.type}-${message.position}`;
+};
 
 // Image preview context
 export const ImagePreviewContext = createContext<{ inPreviewGroup: boolean }>({ inPreviewGroup: false });
@@ -338,10 +374,11 @@ const MessageItem: React.FC<{
       highlighted?: boolean;
       rowWidthClass: string;
     };
+    const native = useMessageListRun() !== undefined;
     return (
       <div
         id={`message-${message.id}`}
-        data-testid={`message-${message.type}-${message.position}`}
+        data-testid={rowTestId(message, native)}
         data-message-type={message.type}
         data-message-position={message.position}
         className={classNames(
@@ -471,13 +508,17 @@ const MessageList: React.FC<{
   const pagination = useMessagePaginationState();
   const artifacts = useConversationArtifacts();
   const conversationContext = useConversationContextSafe();
+  // A native conversation's list: its host says whether a run goes, and AionCore has no pages of it.
+  const run = useMessageListRun();
+  const conversationId = run ? run.conversationId : conversationContext?.conversation_id;
   const rowWidthClass = getChatSurfaceWidthClass();
-  const loadPreviousMessagePage = useLoadPreviousMessagePage(conversationContext?.conversation_id);
-  const loadAnchorMessageWindow = useLoadAnchorMessageWindow(conversationContext?.conversation_id);
+  const loadPreviousMessagePage = useLoadPreviousMessagePage(run ? undefined : conversationId);
+  const loadAnchorMessageWindow = useLoadAnchorMessageWindow(run ? undefined : conversationId);
   // While the agent is still streaming, the in-progress turn's last text keeps
   // moving down, so we defer its copy/timestamp row until the turn finishes to
   // avoid the row flashing in and the layout reflowing mid-stream.
-  const { isProcessing, hydrated } = useConversationRuntimeView(conversationContext?.conversation_id ?? '');
+  const runtime = useConversationRuntimeView(run ? '' : (conversationId ?? ''));
+  const { isProcessing, hydrated } = run ?? runtime;
   const { t } = useTranslation();
   const location = useLocation();
   const locationState = (location.state || {}) as ConversationLocationState;
@@ -489,6 +530,32 @@ const MessageList: React.FC<{
   // Last render's grouped rows, so a group that did not change keeps the object React already drew.
   const previousItemsRef = useRef<Map<string, IProcessedItem>>(new Map());
   const contentElementRef = useRef<HTMLDivElement | null>(null);
+  // Where the reader was when a native conversation was asked for the rows before those drawn (see the scroll handler).
+  const keptPlaceRef = useRef<KeptPlace | undefined>(undefined);
+  // The rows a native conversation drew above the reader push the reader's rows down: the list is scrolled by as much as
+  // the row that was first has moved, in the render that draws them, before the page is painted, and again each time
+  // the list's height changes for a moment after (their content is rendered in a second pass), so the reader's place
+  // does not move.
+  const keepPlace = useCallback((): void => {
+    const kept = keptPlaceRef.current;
+    if (!kept?.drawnAt) return;
+    if (Date.now() - kept.drawnAt > KEEP_PLACE_MS) {
+      keptPlaceRef.current = undefined;
+      return;
+    }
+    const anchor = document.getElementById(kept.anchor);
+    if (!anchor) {
+      // The row is gone: a run of steps it began was extended upwards by the rows drawn, and is named by its new first
+      // step. Nothing to measure the reader's row by, so the list goes down by as much as it grew, once.
+      if (!kept.approximated) {
+        kept.approximated = true;
+        kept.scroller.scrollTop += kept.scroller.scrollHeight - kept.height;
+      }
+      return;
+    }
+    const shift = anchor.getBoundingClientRect().top - kept.scroller.getBoundingClientRect().top - kept.offset;
+    if (Math.abs(shift) >= 1) kept.scroller.scrollTop += shift;
+  }, []);
   // Thoughts the reader opened. An opened thought keeps its own row, still open, after it stops
   // being live, so completion or cancellation never collapses what is being read.
   const [openThoughtIds, setOpenThoughtIds] = useState<ReadonlySet<string>>(() => new Set());
@@ -773,6 +840,7 @@ const MessageList: React.FC<{
   } = useAutoScroll({
     messages: list,
     itemCount: processedList.length,
+    onContentResize: keepPlace,
   });
 
   const setScrollerRef = useCallback(
@@ -791,15 +859,31 @@ const MessageList: React.FC<{
     [handleContentRef]
   );
 
-  const handleMessageListScroll = useCallback(
-    (event: React.UIEvent<HTMLDivElement>) => {
-      handleScroll(event);
-      const scroller = event.currentTarget;
+  /** Asks for the rows before the first, when the reader is at the top of the list and there are any. */
+  const requestEarlier = useCallback(
+    (scroller: HTMLDivElement) => {
       if (!pagination.hasMoreBefore || pagination.isLoadingBefore || scroller.scrollTop > 160) {
         return;
       }
 
       const previousHeight = contentElementRef.current?.scrollHeight ?? 0;
+      // A native conversation that shows only its latest rows draws the ones before on request, and they reach this
+      // list in a render of their own: the reader's place is kept from that render (below), not from a frame.
+      if (run?.loadEarlier) {
+        const asked = keptPlaceRef.current;
+        if (asked && !asked.drawnAt) return;
+        const first = contentElementRef.current?.querySelector<HTMLElement>('[id^="message-"]');
+        if (!first) return;
+        keptPlaceRef.current = {
+          scroller,
+          anchor: first.id,
+          offset: first.getBoundingClientRect().top - scroller.getBoundingClientRect().top,
+          height: scroller.scrollHeight,
+          at: Date.now(),
+        };
+        if (!run.loadEarlier()) keptPlaceRef.current = undefined;
+        return;
+      }
       void loadPreviousMessagePage().then((loaded) => {
         if (!loaded) return;
         requestAnimationFrame(() => {
@@ -808,8 +892,48 @@ const MessageList: React.FC<{
         });
       });
     },
-    [handleScroll, loadPreviousMessagePage, pagination.hasMoreBefore, pagination.isLoadingBefore]
+    [loadPreviousMessagePage, pagination.hasMoreBefore, pagination.isLoadingBefore, run?.loadEarlier]
   );
+
+  const handleMessageListScroll = useCallback(
+    (event: React.UIEvent<HTMLDivElement>) => {
+      handleScroll(event);
+      requestEarlier(event.currentTarget);
+    },
+    [handleScroll, requestEarlier]
+  );
+
+  useLayoutEffect(() => {
+    const kept = keptPlaceRef.current;
+    if (!kept) return;
+    if (!kept.drawnAt) {
+      if (Date.now() - kept.at > EARLIER_ROWS_MS) {
+        // The rows never came: forget the request, so a later change is not taken for them.
+        keptPlaceRef.current = undefined;
+        return;
+      }
+      const first = contentElementRef.current?.querySelector('[id^="message-"]');
+      if (first?.id === kept.anchor) return;
+      kept.drawnAt = Date.now();
+    }
+    keepPlace();
+  }, [keepPlace, processedList]);
+
+  // The reader takes over: rows that grow after this are theirs to scroll past.
+  const handleListWheel = useCallback(
+    (event: React.WheelEvent<HTMLDivElement>) => {
+      if (keptPlaceRef.current?.drawnAt) keptPlaceRef.current = undefined;
+      // A reader who is already at the top has no scroll to make (the list does not move, so it sends no scroll event):
+      // the wheel asks for the rows before, as the scroll would have.
+      if (event.deltaY < 0 && event.currentTarget.scrollTop <= 0) requestEarlier(event.currentTarget);
+      handleWheel(event);
+    },
+    [handleWheel, requestEarlier]
+  );
+  const handleListPointerDown = useCallback(() => {
+    if (keptPlaceRef.current?.drawnAt) keptPlaceRef.current = undefined;
+    handlePointerDown();
+  }, [handlePointerDown]);
 
   useEffect(() => {
     if (!targetMessageId || processedList.length === 0) {
@@ -858,8 +982,7 @@ const MessageList: React.FC<{
     const handleMessageJump = (event: Event) => {
       const detail = (event as CustomEvent<ChatMessageJumpDetail>).detail;
       if (!detail || !detail.conversation_id) return;
-      if (!conversationContext?.conversation_id || detail.conversation_id !== conversationContext.conversation_id)
-        return;
+      if (!conversationId || detail.conversation_id !== conversationId) return;
 
       const targetIndex = processedList.findIndex((item) => {
         if (
@@ -910,13 +1033,7 @@ const MessageList: React.FC<{
     return () => {
       window.removeEventListener(CHAT_MESSAGE_JUMP_EVENT, handleMessageJump);
     };
-  }, [
-    conversationContext?.conversation_id,
-    hideScrollButton,
-    loadAnchorMessageWindow,
-    processedList,
-    scrollElementIntoView,
-  ]);
+  }, [conversationId, hideScrollButton, loadAnchorMessageWindow, processedList, scrollElementIntoView]);
 
   // Click scroll button
   const handleScrollButtonClick = () => {
@@ -1016,9 +1133,9 @@ const MessageList: React.FC<{
             // window edge, while re-applying that padding inside to keep message content inset.
             className='message-list-scroller flex-1 h-full overflow-y-auto pb-10px box-border -mx-20px px-20px'
             style={{ overflowAnchor: 'none' }}
-            onPointerDown={handlePointerDown}
+            onPointerDown={handleListPointerDown}
             onScroll={handleMessageListScroll}
-            onWheel={handleWheel}
+            onWheel={handleListWheel}
           >
             <div
               ref={setContentRef}

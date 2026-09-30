@@ -114,7 +114,9 @@ const CommandPalettePanel: React.FC<{ onRun: (item: PaletteItem) => void }> = ({
                   <span className={styles.label}>
                     <MatchedLabel text={item.label} hits={item.hits} />
                   </span>
-                  {item.kind === 'command' && item.detail ? <span className={styles.detail}>{item.detail}</span> : null}
+                  {(item.kind === 'command' || item.kind === 'conversation') && item.detail ? (
+                    <span className={styles.detail}>{item.detail}</span>
+                  ) : null}
                   {item.kind === 'conversation' ? <span className={styles.meta}>{item.time}</span> : null}
                   {item.kind === 'messages' ? <span className={styles.meta}>{messageSearchShortcut}</span> : null}
                 </div>

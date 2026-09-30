@@ -23,6 +23,7 @@ import MuStarters from '@renderer/components/brand/MuStarters';
 import { useGuidAssistantSelection } from './hooks/useGuidAssistantSelection';
 import { useGuidInput } from './hooks/useGuidInput';
 import { useGuidModelSelection } from './hooks/useGuidModelSelection';
+import { useGuidNativeSend } from './hooks/useGuidNativeSend';
 import { useGuidSend } from './hooks/useGuidSend';
 import { useMuStartMode } from './hooks/useMuStartMode';
 import { useTypewriterPlaceholder } from './hooks/useTypewriterPlaceholder';
@@ -37,6 +38,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useSWR from 'swr';
 import { commandDescription } from '@/renderer/utils/chat/muCommands';
+import { useNativeEnabled } from '@/renderer/pages/native/hooks/useNativeConversations';
 import styles from './index.module.css';
 
 type GuidNavigationState = {
@@ -246,7 +248,7 @@ const GuidPage: React.FC = () => {
     [slashController.filteredCommands, slashController.query, t]
   );
 
-  const send = useGuidSend({
+  const classicSend = useGuidSend({
     // Input state
     input: guidInput.input,
     setInput: guidInput.setInput,
@@ -285,6 +287,27 @@ const GuidPage: React.FC = () => {
     t,
     localeKey,
   });
+  // While the native host is on, the page starts a conversation on it instead: pi inside the app, no AionCore.
+  const nativeHost = useNativeEnabled() === true;
+  // The thinking level the person picked on this page: the native start sends only that, never the level the pill shows
+  // by default. A model picked after it clears it (a level belongs to its model).
+  const [pickedThoughtLevel, setPickedThoughtLevel] = useState('');
+  const nativeSend = useGuidNativeSend({
+    input: guidInput.input,
+    setInput: guidInput.setInput,
+    files: guidInput.files,
+    setFiles: guidInput.setFiles,
+    dir: guidInput.dir,
+    setDir: guidInput.setDir,
+    loading: guidInput.loading,
+    setLoading: guidInput.setLoading,
+    selectedMode: modePicked ? agentSelection.selectedMode : '',
+    selectedAcpModel: agentSelection.selectedAcpModel,
+    pickedThoughtLevel,
+    navigate,
+    t,
+  });
+  const send = nativeHost ? nativeSend : classicSend;
 
   // --- Coordinated handlers (depend on multiple hooks) ---
   const handleInputChange = useCallback(
@@ -488,6 +511,7 @@ const GuidPage: React.FC = () => {
   const setGuidSelectedAcpModel = useCallback(
     (model: React.SetStateAction<string | null>) => {
       manualModelSelectionAssistantRef.current = selectedAssistantId;
+      setPickedThoughtLevel('');
       agentSelection.setSelectedAcpModel(model, { persistPreference: !hasSelectedAssistant });
     },
     [agentSelection, hasSelectedAssistant, selectedAssistantId]
@@ -495,6 +519,7 @@ const GuidPage: React.FC = () => {
   const setGuidSelectedThoughtLevel = useCallback(
     (value: string) => {
       manualThoughtLevelSelectionAssistantRef.current = selectedAssistantId;
+      setPickedThoughtLevel(value);
       agentSelection.setSelectedThoughtLevelValue(value, { persistPreference: !hasSelectedAssistant });
     },
     [agentSelection, hasSelectedAssistant, selectedAssistantId]

@@ -864,6 +864,8 @@ Please check your local CLI tool authentication status`,
         onRemove={remove}
         onClear={clear}
       />
+      {/* Above the status line, which tucks 20 px under what follows it and would cover a goal line put after it. */}
+      {liveGoal && <GoalLine key={liveGoal.text} goal={liveGoal} onEnd={handleEndGoal} />}
       <ThoughtDisplay
         running={teamRuntime?.loading ?? (aiProcessing && !hasThinkingMessage)}
         statusText={teamRuntime?.statusText}
@@ -874,7 +876,6 @@ Please check your local CLI tool authentication status`,
       />
       <NodeRuntimeNote conversationId={conversation_id} />
       <CrossSessionDisabledBanner />
-      {liveGoal && <GoalLine key={liveGoal.text} goal={liveGoal} onEnd={handleEndGoal} />}
       <SendBox
         onMobilePlusClick={isMobile ? () => setIsMobileSheetOpen(true) : undefined}
         value={content}

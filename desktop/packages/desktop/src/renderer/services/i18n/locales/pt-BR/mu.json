@@ -848,5 +848,126 @@
     "doctor": "Verificar se o juiz, o modelo, o navegador e os subagentes estão bem conectados",
     "import-chat": "Trazer para o mu uma conversa do Claude Code ou do Codex deste projeto e continuá-la: /import-chat [arquivo]",
     "llama": "Gerenciar os modelos do roteador llama.cpp"
+  },
+  "native": {
+    "untitled": "Nova conversa",
+    "retried": "Tentativas que falharam antes desta resposta: {{count}}",
+    "compacted": "A conversa foi compactada aqui para liberar espaço: {{tokens}} tokens de mensagens anteriores foram condensados.",
+    "compactedPlain": "A conversa foi compactada aqui para liberar espaço.",
+    "sentImage": "Imagem {{index}}",
+    "forkNoEntry": "A mensagem ainda não tem uma entrada de sessão",
+    "phase": {
+      "idle": "Parado",
+      "starting": "Iniciando",
+      "running": "Em execução",
+      "needsModel": "Sem modelo",
+      "failed": "Interrompido"
+    },
+    "status": {
+      "starting": "Iniciando o mu…",
+      "classifying": "O Jev está lendo sua mensagem…",
+      "compacting": "Compactando a conversa…",
+      "retrying": "A solicitação ao modelo falhou. Tentando de novo ({{attempt}} de {{max}})…",
+      "thinking": "Pensando…",
+      "working": "Trabalhando…",
+      "sending": "Enviando…"
+    },
+    "send": {
+      "placeholder": "Mensagem para o mu…",
+      "placeholderWorking": "Oriente o mu agora ou deixe uma mensagem para depois desta execução…",
+      "steer": "Agora",
+      "steerHint": "Chega ao mu no próximo passo dele",
+      "followUp": "Depois",
+      "followUpHint": "Espera esta execução terminar"
+    },
+    "queue": {
+      "title": "Aguardando envio",
+      "steer": "Próximo passo",
+      "followUp": "Depois desta execução",
+      "takeBack": "Recuperar"
+    },
+    "dialog": {
+      "yes": "Sim",
+      "no": "Não",
+      "dismiss": "Dispensar",
+      "cancel": "Cancelar",
+      "submit": "Enviar",
+      "save": "Salvar",
+      "countdown": "Fecha em {{seconds}} s; depois o mu segue sem a sua resposta.",
+      "more": "Aguardando depois desta: {{count}}"
+    },
+    "host": {
+      "output": "Última saída do mu",
+      "restartHint": "Envie uma mensagem para iniciar o mu de novo."
+    },
+    "error": {
+      "off": "O host nativo está desligado (MU_NATIVE_HOST=0). Inicie o app sem essa variável para usá-lo.",
+      "noHarness": "O app não encontra um mu para executar.",
+      "oldHarness": "Este mu é antigo demais para rodar dentro do app. Atualize o mu e tente de novo.",
+      "plan": "O app não conseguiu descobrir como iniciar o mu.",
+      "noModels": "O mu parou: não tem nenhum modelo para usar.",
+      "failed": "O mu parou antes de iniciar.",
+      "crashed": "O mu parou inesperadamente.",
+      "closed": "O mu foi fechado para esta conversa.",
+      "timeout": "O mu não respondeu a tempo.",
+      "command": "O mu recusou a solicitação.",
+      "noFolder": "A pasta do projeto desta conversa não existe mais, então o mu não consegue iniciar nela.",
+      "unknownConversation": "Esta conversa não existe mais.",
+      "invalid": "O app enviou uma solicitação que o mu não consegue ler."
+    },
+    "open": {
+      "home": "Início",
+      "retry": "Tentar de novo"
+    },
+    "empty": {
+      "title": "Uma nova conversa em {{folder}}",
+      "body": "O mu trabalha nesta pasta. Diga o que você quer que seja feito."
+    },
+    "sider": {
+      "title": "Nativo",
+      "new": "Nova conversa em uma pasta",
+      "empty": "Nenhuma conversa ainda",
+      "all": "Mostrar todas ({{count}})",
+      "fewer": "Mostrar menos",
+      "deleteConfirm": "Excluir “{{title}}”? O arquivo da sessão vai para a lixeira, de onde ainda pode ser restaurado.",
+      "messages": "Mensagens: {{count}}",
+      "unread": "Nova atividade",
+      "working": "Trabalhando"
+    },
+    "notify": {
+      "failed": "Uma execução parou com um erro",
+      "failedNamed": "\"{{name}}\" parou com um erro"
+    },
+    "new": {
+      "title": "Nova conversa",
+      "recent": "Pastas recentes",
+      "pick": "Escolher uma pasta…",
+      "permissions": "Permissões",
+      "defaultPermissions": "Padrão do mu"
+    },
+    "panel": {
+      "noLessons": "As lições aparecem quando a conversa estiver aberta.",
+      "source": {
+        "label": "Alterações em {{folder}}",
+        "noGit": "O git não pode ser executado aqui, então as alterações não podem ser mostradas.",
+        "untracked": "Não rastreados",
+        "detached": "Desanexado em {{commit}}",
+        "noCommits": "Ainda não há commits",
+        "upstream": "{{ahead}} à frente de {{upstream}}, {{behind}} atrás"
+      },
+      "files": {
+        "label": "Arquivos em {{folder}}",
+        "refresh": "Atualizar",
+        "empty": "Esta pasta está vazia.",
+        "failed": "Não foi possível ler esta pasta.",
+        "more": "Não exibidos: mais {{count}}"
+      }
+    },
+    "home": {
+      "noFolder": "Primeiro escolha uma pasta para o mu trabalhar."
+    },
+    "attach": {
+      "failed": "Não foi possível anexar {{name}}."
+    }
   }
 }

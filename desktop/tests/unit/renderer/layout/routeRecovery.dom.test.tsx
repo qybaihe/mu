@@ -1,7 +1,7 @@
 import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Link, MemoryRouter, useLocation } from 'react-router-dom';
+import { Link, MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import { RouteContent } from '@/renderer/components/layout/Router';
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
@@ -71,5 +71,54 @@ describe('route failure recovery', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Working session' }));
     expect(await screen.findByText('/conversation/working')).toBeVisible();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+});
+
+describe('a page that moves to a path of its own', () => {
+  /** Counts its mounts, and offers both kinds of move: to another page, and to a new path of its own. */
+  function Counted({ mounts }: { mounts: string[] }) {
+    const { pathname } = useLocation();
+    const navigate = useNavigate();
+    const [draft, setDraft] = React.useState('');
+    React.useEffect(() => {
+      mounts.push(pathname);
+      // oxlint-disable-next-line react-hooks/exhaustive-deps -- once per mount
+    }, []);
+    return (
+      <div>
+        <span>{pathname}</span>
+        <input aria-label='draft' value={draft} onChange={(event) => setDraft(event.target.value)} />
+        <button
+          type='button'
+          onClick={() => void navigate('/conversation/native/s1', { replace: true, state: { samePage: true } })}
+        >
+          follow
+        </button>
+        <button type='button' onClick={() => void navigate('/conversation/native/s2')}>
+          other
+        </button>
+      </div>
+    );
+  }
+
+  it('stays mounted, with what it holds, when the move says it is the same page; any other move starts it afresh', async () => {
+    const mounts: string[] = [];
+    render(
+      <MemoryRouter initialEntries={['/conversation/native/draft-1']}>
+        <RouteContent>
+          <Counted mounts={mounts} />
+        </RouteContent>
+      </MemoryRouter>
+    );
+    fireEvent.change(await screen.findByLabelText('draft'), { target: { value: '/lessons' } });
+    fireEvent.click(screen.getByRole('button', { name: 'follow' }));
+    expect(await screen.findByText('/conversation/native/s1')).toBeVisible();
+    expect(screen.getByLabelText('draft')).toHaveValue('/lessons');
+    expect(mounts).toEqual(['/conversation/native/draft-1']);
+    // An ordinary move (every conversation of the classic path moves so) mounts the page anew, as before.
+    fireEvent.click(screen.getByRole('button', { name: 'other' }));
+    expect(await screen.findByText('/conversation/native/s2')).toBeVisible();
+    expect(screen.getByLabelText('draft')).toHaveValue('');
+    expect(mounts).toEqual(['/conversation/native/draft-1', '/conversation/native/s2']);
   });
 });

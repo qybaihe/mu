@@ -112,6 +112,15 @@ describe('showNotification', () => {
     expect(clickedEmit).toHaveBeenCalledWith({ conversation_id: 'c1' });
   });
 
+  it('says a click is on a native conversation, whose page is not an AionCore conversation’s', async () => {
+    setNotificationMainWindow(makeWindow(false) as never);
+    await showNotification({ title: 'mu', body: 'done', conversation_id: 'n1', native: true });
+
+    FakeElectronNotification.instances[0].handlers.click?.();
+
+    expect(clickedEmit).toHaveBeenCalledWith({ conversation_id: 'n1', native: true });
+  });
+
   it('logs when skipping because notifications are disabled in settings', async () => {
     notificationEnabled = false;
     setNotificationMainWindow(makeWindow(false) as never);
