@@ -273,12 +273,11 @@ function assistantRows(message: ViewAssistantMessage, context: Context): TMessag
   return rows;
 }
 
-/** What mu notified, as the bridge shows it: its own words, or its checkpoint notice by code. */
+/** What mu notified, as the bridge shows it: its own words, or a notice of its own by code (checkpoints, the free Jev). */
 function noticeOf(conversationId: string, notice: ViewNotice, at: number): IMessageAcpToolCall {
-  const input: Record<string, unknown> =
-    notice.code === 'checkpoint_off'
-      ? { notice: 'checkpoint_off', ...(notice.reason ? { code: notice.reason } : {}), params: notice.params ?? {} }
-      : { level: notice.level };
+  const input: Record<string, unknown> = notice.code
+    ? { notice: notice.code, ...(notice.reason ? { code: notice.reason } : {}), params: notice.params ?? {} }
+    : { level: notice.level };
   return noticeRow(conversationId, `notice:${notice.id}`, at, notice.text, input);
 }
 

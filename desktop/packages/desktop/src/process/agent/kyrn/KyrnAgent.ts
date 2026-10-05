@@ -80,7 +80,7 @@ type Session = {
   noModel?: boolean;
   /** A look for a model this conversation can run on, while one is under way (`findModel`). */
   finding?: Promise<void>;
-  /** What the conversation's notices have said: a warning or a checkpoint notice is said once. */
+  /** What the conversation's notices have said: a warning, a checkpoint or a judge notice is said once. */
   said: Set<string>;
   /** A warning of mu's, held until its next event, which may say the same in the app's words (`checkpoint.off`). */
   held?: { text: string; level: NoticeLevel; timer: NodeJS.Timeout };
@@ -197,6 +197,16 @@ export const MU_NOTICES = {
    * names (`code`, `params`); the title is mu's own line, already in the app's language, and this only its stand-in.
    */
   checkpoint_off: 'mu: checkpoints are off in this session.',
+  /**
+   * No Jev key is set, so the judge answers with the free Jev on OpenCode Zen (mu's `judge.notice`). The title is mu's
+   * own line, already in the app's language, and this only its stand-in.
+   */
+  free_jev: 'mu: no Jev key is set, so the judge uses the free Jev on OpenCode Zen for now.',
+  /**
+   * The free Jev stopped answering (mu's `judge.notice`); the input's `code` says why: `paid` (it asks for a key or
+   * payment) or `gone` (no longer offered). Plain rules decide until a Jev key is set.
+   */
+  free_jev_unavailable: 'mu: the free Jev stopped answering, so plain rules decide until a Jev key is set.',
   /** The person stopped the reply: what came before this line is all of it. */
   stopped: 'You stopped this reply.',
 } as const;
@@ -461,6 +471,7 @@ export class KyrnAgent implements Agent {
       }
       if (notified && !quiet) this.harnessNotice(id, session, text(event.message), text(event.notifyType));
       if (shown?.kind === 'checkpoint.off') this.checkpointNotice(id, session, shown.payload);
+      if (shown?.kind === 'judge.notice') this.judgeNotice(id, session, shown.payload);
     };
     session.rpc = this.factory(cwd, file, onEvent, id, {
       ...harnessEnv(id, this.home),
@@ -932,12 +943,14 @@ export class KyrnAgent implements Agent {
    * What mu notified, as a line of its own: it is no part of the reply. mu words it in the app's language already.
    * An answer (`info`, such as a command's reply) is said each time; a warning or an error once per conversation, and
    * only after a moment, because mu may say the same right after by its code (`checkpoint.off`), which the app words.
+   * Words a coded notice said just before (`judge.notice`) are not said again.
    */
   private harnessNotice(id: string, session: Session, message: string, type: string): void {
     const words = message.trim();
     if (!words) return;
     const level: NoticeLevel = type === 'warning' || type === 'error' ? type : 'info';
     if (level === 'info') {
+      if (session.said.has(`coded:${words}`)) return;
       this.line(id, session, words, { level });
       return;
     }
@@ -975,6 +988,25 @@ export class KyrnAgent implements Agent {
       title: message,
       input: { ...(reason ? { code: reason } : {}), params },
     });
+  }
+  /**
+   * mu's `judge.notice`: the judge answers with the free Jev on OpenCode Zen (`free_jev`), or the free Jev stopped
+   * (`free_jev_unavailable`, why in `reason`). One line each per conversation, by code, which the desktop words in the
+   * app's language; mu's own line, its title, comes right after as a notification and is not said again. A code this
+   * build does not know leaves mu's line to say it.
+   */
+  private judgeNotice(id: string, session: Session, payload: JsonRecord): void {
+    const code = text(payload.code);
+    if (code !== 'free_jev' && code !== 'free_jev_unavailable') return;
+    const message = text(payload.message).trim();
+    if (message) {
+      session.said.add(`coded:${message}`);
+      session.said.add(`text:${message}`);
+    }
+    if (session.said.has(code)) return;
+    session.said.add(code);
+    const reason = text(payload.reason);
+    this.notice(id, session, code, { title: message, input: reason ? { code: reason } : {} });
   }
   /**
    * Asks the app one of mu's questions and answers mu exactly once, whatever happens: a failure to ask, an answer that

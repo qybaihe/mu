@@ -116,7 +116,7 @@
     "services": {
       "auto": {
         "name": "自動",
-        "help": "次の順で、キーが設定されている最初のサービスを使います：TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare。どれもなければ Vercel AI Gateway を使います。",
+        "help": "次の順で、キーが設定されている最初のサービスを使います：TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare。どれもなければ、OpenCode Zen 上の Jev 1.13 を期間限定で無料で使います。判定に読む内容は OpenCode に送られますが、学習には使われません。",
         "key": "TypeSafe の API キー"
       },
       "opencodeFree": {
@@ -648,6 +648,7 @@
       "judge": "判定器",
       "none": "未設定",
       "noKey": "キー未設定: 設定するまでは既定の方針で処理します",
+      "freeJev": "キーはまだありません：当面は OpenCode Zen の Jev を期間限定で無料で使います",
       "saveFailed": "保存できませんでした: {{reason}}",
       "modelValue": "{{provider}} / {{model}}"
     },
@@ -745,6 +746,11 @@
   },
   "notices": {
     "checkpointOff": "この会話ではチェックポイントがオフです。",
+    "freeJev": "Jev のキーが設定されていないため、判定器は OpenCode Zen 上の Jev 1.13（期間限定で無料）を使います。判定に読む内容は OpenCode に送られますが、学習には使われません。自分のキーを使うには「設定 → 判定器」で入力してください。",
+    "freeJevUnavailable": {
+      "paid": "OpenCode Zen の無料の Jev がキーか支払いを求めるようになったため、当面はルールで判定します。「設定 → 判定器」で Jev のキーを入力すると戻ります。",
+      "gone": "OpenCode Zen が無料の Jev の提供を終えたため、当面はルールで判定します。「設定 → 判定器」で Jev のキーを入力すると戻ります。"
+    },
     "checkpointOffWhy": {
       "gitMissing": "この会話ではチェックポイントがオフです：このコンピューターに Git が見つかりませんでした。Git をインストールしてから新しい会話を始めると、チェックポイントが使えます。",
       "xcodeLicense": "この会話ではチェックポイントがオフです：Xcode のライセンスに同意するまで、この Mac では Git を実行できません。ターミナルで sudo xcodebuild -license を実行して同意してから新しい会話を始めると、チェックポイントが使えます。",

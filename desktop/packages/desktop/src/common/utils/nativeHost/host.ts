@@ -135,14 +135,15 @@ function addNotice(view: NativeView, notice: Omit<ViewNotice, 'id' | 'after'>): 
 
 /**
  * What an extension notified: an answer (`info`) each time it comes, a warning or an error once, as the CLI bridge
- * says them (`KyrnAgent.harnessNotice`).
+ * says them (`KyrnAgent.harnessNotice`). A line a coded notice already carries (mu's `judge.notice` comes first) is not
+ * said again.
  */
 export function takeNotify(view: NativeView, record: PiRecord): NativeView {
   const text = asText(record.message).trim();
   if (!text) return view;
   const type = asText(record.notifyType);
   const level = NOTICE_LEVELS.has(type) ? (type as ViewNotice['level']) : 'info';
-  if (level !== 'info' && view.host.notices.some((notice) => notice.text === text)) return view;
+  if (view.host.notices.some((notice) => notice.text === text && (level !== 'info' || notice.code))) return view;
   return addNotice(view, { level, text });
 }
 
@@ -163,6 +164,32 @@ export function takeCheckpointOff(view: NativeView, payload: JsonObject): Native
   if (said < 0) return addNotice(view, { level: 'warning', text, ...coded });
   const next = notices.slice();
   next[said] = { ...notices[said], level: 'warning', ...coded };
+  return withHost(view, { notices: next });
+}
+
+/**
+ * mu's `judge.notice`: the judge answers with the free Jev on OpenCode Zen (`free_jev`), or the free Jev stopped
+ * (`free_jev_unavailable`, with `paid` or `gone`), said once each, by code, so the app words it. mu sends its own line
+ * with `notify` right after (`takeNotify` drops it); a line already said becomes the coded notice where it stands. A
+ * code this build does not know leaves mu's line to say it.
+ */
+export function takeJudgeNotice(view: NativeView, payload: JsonObject): NativeView {
+  const named = asText(payload.code);
+  const code = named === 'free_jev' || named === 'free_jev_unavailable' ? named : undefined;
+  if (!code) return view;
+  const notices = view.host.notices;
+  if (notices.some((notice) => notice.code === code)) return view;
+  const text = asText(payload.message).trim();
+  const reason = asText(payload.reason);
+  const coded: Pick<ViewNotice, 'level' | 'code' | 'reason'> = {
+    level: code === 'free_jev' ? 'info' : 'warning',
+    code,
+    ...(reason ? { reason } : {}),
+  };
+  const said = text ? notices.findIndex((notice) => notice.text === text) : -1;
+  if (said < 0) return addNotice(view, { text, ...coded });
+  const next = notices.slice();
+  next[said] = { ...notices[said], ...coded };
   return withHost(view, { notices: next });
 }
 

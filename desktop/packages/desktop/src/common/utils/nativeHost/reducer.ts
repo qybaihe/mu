@@ -25,6 +25,7 @@ import {
   nextNumber,
   readPermission,
   takeCheckpointOff,
+  takeJudgeNotice,
   takeNotify,
   takeQueue,
   takeResponse,
@@ -499,6 +500,8 @@ function uiRequest(view: NativeView, record: PiRecord): NativeView {
     }
     case 'checkpoint.off':
       return takeCheckpointOff(shown, frame.payload);
+    case 'judge.notice':
+      return takeJudgeNotice(shown, frame.payload);
     case GOAL_FRAME:
       return takeGoal(shown, frame.payload);
     default:

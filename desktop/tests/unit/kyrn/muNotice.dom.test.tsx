@@ -11,6 +11,7 @@ import MessageMuNotice from '@/renderer/pages/conversation/Messages/acp/MessageM
 import {
   CHECKPOINT_OFF_KEYS,
   checkpointOffWords,
+  FREE_JEV_UNAVAILABLE_KEYS,
   MU_NOTICE_CODES,
   MU_NOTICE_KEYS,
   MU_NOTICE_LINKS,
@@ -64,12 +65,15 @@ describe('the bridge’s notices', () => {
     expect(languages).toHaveLength(13);
     for (const language of languages) {
       const mu = JSON.parse(readFileSync(join(LOCALES, language, 'mu.json'), 'utf8')) as Record<string, unknown>;
-      for (const code of MU_NOTICE_CODES) {
-        const [, , key] = MU_NOTICE_KEYS[code].split('.');
-        expect((mu.notices as Record<string, unknown> | undefined)?.[key], `${language} ${code}`).toEqual(
-          expect.any(String)
-        );
-      }
+      const sentence = (key: string): unknown =>
+        key
+          .split('.')
+          .slice(1)
+          .reduce<unknown>((at, name) => (at as Record<string, unknown> | undefined)?.[name], mu);
+      for (const code of MU_NOTICE_CODES)
+        expect(sentence(MU_NOTICE_KEYS[code]), `${language} ${code}`).toEqual(expect.any(String));
+      for (const key of Object.values(FREE_JEV_UNAVAILABLE_KEYS))
+        expect(sentence(key), `${language} ${key}`).toEqual(expect.any(String));
     }
   });
 
@@ -217,6 +221,31 @@ describe('checkpoints that are off', () => {
     // No words of mu's at all: the plain sentence.
     showNotice('zh', notice({ title: '', raw_input: { notice: 'checkpoint_off', code: 'disk_full' } }));
     expect(screen.getByTestId('mu-notice')).toHaveTextContent(zhMu.notices.checkpointOff);
+  });
+});
+
+describe('the free Jev', () => {
+  it('says the free Jev answers, and why it stopped, in the reader’s language', () => {
+    const free = showNotice('zh', notice({ title: 'mu: no key', raw_input: { notice: 'free_jev', params: {} } }));
+    expect(screen.getByTestId('mu-notice')).toHaveTextContent(zhMu.notices.freeJev);
+    expect(screen.getByTestId('mu-notice')).toHaveAttribute('data-code', 'free_jev');
+    free.unmount();
+    const stopped = (code?: string) =>
+      notice({ title: 'mu: it stopped', raw_input: { notice: 'free_jev_unavailable', ...(code ? { code } : {}) } });
+    expect(muNotice(stopped('gone'))).toEqual({
+      code: 'free_jev_unavailable',
+      title: 'mu: it stopped',
+      reason: 'gone',
+    });
+    const gone = showNotice('en', stopped('gone'));
+    expect(screen.getByTestId('mu-notice')).toHaveTextContent(enMu.notices.freeJevUnavailable.gone);
+    gone.unmount();
+    const paid = showNotice('zh', stopped('paid'));
+    expect(screen.getByTestId('mu-notice')).toHaveTextContent(zhMu.notices.freeJevUnavailable.paid);
+    paid.unmount();
+    // A reason this build has no words for is said in mu's own.
+    showNotice('en', stopped('newer'));
+    expect(screen.getByTestId('mu-notice')).toHaveTextContent('mu: it stopped');
   });
 });
 

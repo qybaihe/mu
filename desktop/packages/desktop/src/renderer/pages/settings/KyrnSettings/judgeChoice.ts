@@ -199,6 +199,28 @@ export function jevVariables(judge: JudgeSettings | undefined): string[] {
   return [judge?.apiKeyEnv || JEV_KEY_VARIABLE];
 }
 
+/** The keys the automatic Jev looks for, in its order; Cloudflare's counts with its account only. */
+const AUTO_KEYS: readonly (readonly string[])[] = [
+  [JEV_KEY_VARIABLE],
+  [OPENROUTER_KEY_VARIABLE],
+  ['AI_GATEWAY_API_KEY'],
+  [OPENCODE_KEY_VARIABLE],
+  [CLOUDFLARE_KEY_VARIABLE, CLOUDFLARE_ACCOUNT_VARIABLE],
+];
+
+/**
+ * Whether the automatic Jev answers with the free Jev on OpenCode Zen: none of its keys is saved or typed. (mu also
+ * takes a Vercel AI Gateway key kept with /login first, which this page does not see.)
+ */
+export function answersFree(
+  judge: JudgeSettings | undefined,
+  keys: Readonly<Record<string, boolean>>,
+  typed: Readonly<Record<string, string>>
+): boolean {
+  if (serviceOf(judge) !== 'auto') return false;
+  return !AUTO_KEYS.some((names) => names.every((name) => keys[name] || Boolean(typed[name])));
+}
+
 /** The variable a Jev profile's key lives in; undefined for OpenCode Zen's free Jev, which needs none. */
 export const jevKeyVariable = (judge: JudgeSettings | undefined): string | undefined => jevVariables(judge)[0];
 

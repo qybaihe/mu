@@ -116,7 +116,7 @@
     "services": {
       "auto": {
         "name": "Automatisch",
-        "help": "Der erste Dienst, dessen Schlüssel gesetzt ist, in dieser Reihenfolge: TypeSafe, OpenRouter, das Vercel AI Gateway, OpenCode Zen, Cloudflare. Ist keiner gesetzt, das Vercel AI Gateway.",
+        "help": "Der erste Dienst, dessen Schlüssel gesetzt ist, in dieser Reihenfolge: TypeSafe, OpenRouter, das Vercel AI Gateway, OpenCode Zen, Cloudflare. Ist keiner gesetzt, antwortet Jev 1.13 auf OpenCode Zen, für begrenzte Zeit kostenlos; was er beurteilt, geht an OpenCode, das nicht damit trainiert.",
         "key": "API-Schlüssel für TypeSafe"
       },
       "opencodeFree": {
@@ -648,6 +648,7 @@
       "judge": "Judge",
       "none": "Nicht festgelegt",
       "noKey": "Noch kein Schlüssel: Bis dahin gilt die Standardstrategie",
+      "freeJev": "Noch kein Schlüssel: vorerst antwortet Jev kostenlos auf OpenCode Zen (für begrenzte Zeit)",
       "saveFailed": "Speichern fehlgeschlagen: {{reason}}",
       "modelValue": "{{provider}} / {{model}}"
     },
@@ -745,6 +746,11 @@
   },
   "notices": {
     "checkpointOff": "Checkpoints sind in dieser Unterhaltung aus.",
+    "freeJev": "Es ist kein Jev-Schlüssel gesetzt, daher nutzt der Judge Jev 1.13 auf OpenCode Zen, für begrenzte Zeit kostenlos. Was er beurteilt, geht an OpenCode, das nicht damit trainiert. Für einen eigenen Schlüssel: unter Einstellungen → Judges eintragen.",
+    "freeJevUnavailable": {
+      "paid": "Der kostenlose Jev auf OpenCode Zen verlangt jetzt einen Schlüssel oder eine Zahlung, daher entscheiden vorerst feste Regeln. Trage unter Einstellungen → Judges einen Jev-Schlüssel ein, um den Judge zurückzubekommen.",
+      "gone": "OpenCode Zen bietet den kostenlosen Jev nicht mehr an, daher entscheiden vorerst feste Regeln. Trage unter Einstellungen → Judges einen Jev-Schlüssel ein, um den Judge zurückzubekommen."
+    },
     "checkpointOffWhy": {
       "gitMissing": "Checkpoints sind in dieser Unterhaltung aus: Git wurde auf diesem Computer nicht gefunden. Installiere Git und starte dann eine neue Unterhaltung, um sie zu bekommen.",
       "xcodeLicense": "Checkpoints sind in dieser Unterhaltung aus: Git läuft auf diesem Mac erst, wenn die Xcode-Lizenz akzeptiert ist. Akzeptiere sie mit sudo xcodebuild -license im Terminal und starte dann eine neue Unterhaltung, um sie zu bekommen.",

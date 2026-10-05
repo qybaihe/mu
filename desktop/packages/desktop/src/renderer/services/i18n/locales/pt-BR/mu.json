@@ -116,7 +116,7 @@
     "services": {
       "auto": {
         "name": "Automático",
-        "help": "O primeiro serviço com chave configurada, nesta ordem: TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare. Sem nenhuma, o Vercel AI Gateway.",
+        "help": "O primeiro serviço com chave configurada, nesta ordem: TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare. Sem nenhuma, responde o Jev 1.13 no OpenCode Zen, grátis por tempo limitado; o que ele julga vai para a OpenCode, que não treina com isso.",
         "key": "Chave de API do TypeSafe"
       },
       "opencodeFree": {
@@ -648,6 +648,7 @@
       "judge": "Juiz",
       "none": "Não definido",
       "noKey": "Ainda sem chave: até haver uma, vale a estratégia padrão",
+      "freeJev": "Ainda sem chave: por enquanto o Jev responde de graça no OpenCode Zen (por tempo limitado)",
       "saveFailed": "Não foi possível salvar: {{reason}}",
       "modelValue": "{{provider}} / {{model}}"
     },
@@ -745,6 +746,11 @@
   },
   "notices": {
     "checkpointOff": "Os pontos de controle estão desativados nesta conversa.",
+    "freeJev": "Nenhuma chave do Jev configurada, então o juiz usa o Jev 1.13 no OpenCode Zen, grátis por tempo limitado. O que ele julga é enviado à OpenCode, que não treina com isso. Para usar uma chave sua, preencha em Configurações → Juízes.",
+    "freeJevUnavailable": {
+      "paid": "O Jev grátis do OpenCode Zen agora pede uma chave ou pagamento, então regras simples decidem por enquanto. Preencha uma chave do Jev em Configurações → Juízes para ter o juiz de volta.",
+      "gone": "O OpenCode Zen não oferece mais o Jev grátis, então regras simples decidem por enquanto. Preencha uma chave do Jev em Configurações → Juízes para ter o juiz de volta."
+    },
     "checkpointOffWhy": {
       "gitMissing": "Os pontos de controle estão desativados nesta conversa: o Git não foi encontrado neste computador. Instale o Git e comece uma nova conversa para tê-los.",
       "xcodeLicense": "Os pontos de controle estão desativados nesta conversa: o Git não pode ser executado neste Mac até que a licença do Xcode seja aceita. Aceite-a com sudo xcodebuild -license no Terminal e comece uma nova conversa para tê-los.",

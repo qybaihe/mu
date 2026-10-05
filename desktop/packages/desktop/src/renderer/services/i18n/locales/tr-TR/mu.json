@@ -116,7 +116,7 @@
     "services": {
       "auto": {
         "name": "Otomatik",
-        "help": "Anahtarı ayarlanmış ilk hizmet, şu sırayla: TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare. Hiçbiri yoksa Vercel AI Gateway.",
+        "help": "Anahtarı ayarlanmış ilk hizmet, şu sırayla: TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare. Hiçbiri yoksa OpenCode Zen'deki Jev 1.13 sınırlı bir süre ücretsiz yanıt verir; değerlendirdikleri OpenCode'a gider, OpenCode bununla model eğitmez.",
         "key": "TypeSafe API anahtarı"
       },
       "opencodeFree": {
@@ -648,6 +648,7 @@
       "judge": "Hakem",
       "none": "Ayarlanmadı",
       "noKey": "Henüz anahtar yok: anahtar girilene kadar kararlar varsayılan kurallara göre verilir",
+      "freeJev": "Henüz anahtar yok: şimdilik Jev, OpenCode Zen'de ücretsiz yanıt veriyor (sınırlı süre)",
       "saveFailed": "Kaydedilemedi: {{reason}}",
       "modelValue": "{{provider}} / {{model}}"
     },
@@ -745,6 +746,11 @@
   },
   "notices": {
     "checkpointOff": "Bu konuşmada kontrol noktaları kapalı.",
+    "freeJev": "Jev anahtarı ayarlanmadığı için hakem, sınırlı bir süre ücretsiz olan OpenCode Zen'deki Jev 1.13'ü kullanıyor. Değerlendirdikleri OpenCode'a gönderilir, OpenCode bununla model eğitmez. Kendi anahtarınızı kullanmak için Ayarlar → Hakemler'e girin.",
+    "freeJevUnavailable": {
+      "paid": "OpenCode Zen'deki ücretsiz Jev artık anahtar veya ödeme istiyor; şimdilik basit kurallar karar veriyor. Hakemi geri almak için Ayarlar → Hakemler'e bir Jev anahtarı girin.",
+      "gone": "OpenCode Zen artık ücretsiz Jev sunmuyor; şimdilik basit kurallar karar veriyor. Hakemi geri almak için Ayarlar → Hakemler'e bir Jev anahtarı girin."
+    },
     "checkpointOffWhy": {
       "gitMissing": "Bu konuşmada kontrol noktaları kapalı: Bu bilgisayarda Git bulunamadı. Git'i kurun, ardından kontrol noktaları için yeni bir konuşma başlatın.",
       "xcodeLicense": "Bu konuşmada kontrol noktaları kapalı: Xcode lisansı kabul edilene kadar Git bu Mac'te çalışamaz. Terminal'de sudo xcodebuild -license ile kabul edin, ardından kontrol noktaları için yeni bir konuşma başlatın.",

@@ -116,7 +116,7 @@
     "services": {
       "auto": {
         "name": "자동",
-        "help": "다음 순서로 키가 설정된 첫 번째 서비스를 사용합니다: TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare. 아무것도 없으면 Vercel AI Gateway를 사용합니다.",
+        "help": "다음 순서로 키가 설정된 첫 번째 서비스를 사용합니다: TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare. 아무것도 없으면 OpenCode Zen의 Jev 1.13을 기간 한정 무료로 사용합니다. 판정에 읽는 내용은 OpenCode로 보내지지만 학습에는 쓰이지 않습니다.",
         "key": "TypeSafe API 키"
       },
       "opencodeFree": {
@@ -648,6 +648,7 @@
       "judge": "판정기",
       "none": "설정 안 됨",
       "noKey": "아직 키가 없습니다. 키를 설정할 때까지 기본 전략으로 처리됩니다",
+      "freeJev": "아직 키가 없습니다: 당분간 OpenCode Zen의 Jev를 기간 한정 무료로 씁니다",
       "saveFailed": "저장하지 못했습니다: {{reason}}",
       "modelValue": "{{provider}} / {{model}}"
     },
@@ -745,6 +746,11 @@
   },
   "notices": {
     "checkpointOff": "이 대화에서는 체크포인트가 꺼져 있습니다.",
+    "freeJev": "Jev 키가 설정되지 않아 판정기는 OpenCode Zen의 Jev 1.13(기간 한정 무료)을 사용합니다. 판정에 읽는 내용은 OpenCode로 보내지지만 학습에는 쓰이지 않습니다. 자신의 키를 쓰려면 '설정 → 판정기'에서 입력하세요.",
+    "freeJevUnavailable": {
+      "paid": "OpenCode Zen의 무료 Jev가 이제 키나 결제를 요구해서, 당분간 규칙으로 판정합니다. '설정 → 판정기'에서 Jev 키를 입력하면 돌아옵니다.",
+      "gone": "OpenCode Zen이 무료 Jev 제공을 끝내서, 당분간 규칙으로 판정합니다. '설정 → 판정기'에서 Jev 키를 입력하면 돌아옵니다."
+    },
     "checkpointOffWhy": {
       "gitMissing": "이 대화에서는 체크포인트가 꺼져 있습니다: 이 컴퓨터에서 Git을 찾을 수 없습니다. Git을 설치한 뒤 새 대화를 시작하면 체크포인트를 쓸 수 있습니다.",
       "xcodeLicense": "이 대화에서는 체크포인트가 꺼져 있습니다: Xcode 라이선스에 동의하기 전에는 이 Mac에서 Git을 실행할 수 없습니다. 터미널에서 sudo xcodebuild -license로 동의한 뒤 새 대화를 시작하면 체크포인트를 쓸 수 있습니다.",

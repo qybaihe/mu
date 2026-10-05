@@ -8,6 +8,7 @@ import LanguageSwitcher from '@/renderer/components/settings/LanguageSwitcher';
 import ChoiceTile from '@/renderer/pages/settings/KyrnSettings/fields/ChoiceTile';
 import MuErrorMessage from '@/renderer/pages/settings/KyrnSettings/fields/MuErrorMessage';
 import {
+  answersFree,
   choiceOf,
   choose,
   GUIDE_CHOICES,
@@ -321,6 +322,7 @@ export default function Welcome() {
     const { provider: startProvider, model } = settings.models.defaults;
     const needed = judge === 'jev' ? jevVariables(judgeProfile) : [];
     const keyReady = needed.every((variable) => Boolean(settings.keys[variable] || draft.judgeKeys[variable]));
+    const free = judge === 'jev' && answersFree(judgeProfile, settings.keys, draft.judgeKeys);
     body = (
       <>
         <h1 className={styles.title}>{t('mu.welcome.done.title')}</h1>
@@ -341,7 +343,11 @@ export default function Welcome() {
             <dt>{t('mu.welcome.done.judge')}</dt>
             <dd>
               {judge ? t(`mu.judges.choices.${judge}.title`) : t('mu.welcome.done.none')}
-              {judge === 'jev' && !keyReady ? <span className={styles.warn}>{t('mu.welcome.done.noKey')}</span> : null}
+              {free ? (
+                <span className={styles.note}>{t('mu.welcome.done.freeJev')}</span>
+              ) : judge === 'jev' && !keyReady ? (
+                <span className={styles.warn}>{t('mu.welcome.done.noKey')}</span>
+              ) : null}
             </dd>
           </div>
         </dl>

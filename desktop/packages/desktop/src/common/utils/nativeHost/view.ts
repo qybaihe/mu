@@ -196,14 +196,16 @@ export type ViewActivity = {
 /**
  * What an extension said with `notify` (the answer to a command, a warning), as a line of the conversation after the
  * message it followed. A warning or an error is said once. `checkpoint_off` is mu's own notice that the session goes
- * without checkpoints, with its reason code and the numbers it names, for the app to word.
+ * without checkpoints, with its reason code and the numbers it names, for the app to word; `free_jev` and
+ * `free_jev_unavailable` say that the judge answers with the free Jev on OpenCode Zen, or that it stopped (mu's
+ * `judge.notice`).
  */
 export type ViewNotice = {
   /** `n1`, `n2`, … */
   id: string;
   level: 'info' | 'warning' | 'error';
   text: string;
-  code?: 'checkpoint_off';
+  code?: 'checkpoint_off' | 'free_jev' | 'free_jev_unavailable';
   reason?: string;
   params?: Record<string, number>;
   /** The message that was last when it came; none when it came before any. */

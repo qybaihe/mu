@@ -225,6 +225,30 @@ describe('notices', () => {
     ]);
   });
 
+  it('says the free Jev’s notices by code, once each, and mu’s line after one not again', () => {
+    const free = 'mu: no Jev key is set, so the judge uses the free Jev.';
+    const paid = 'mu: the free Jev now asks for a key.';
+    const view = reduceAll([
+      frame('judge.notice', { code: 'free_jev', message: free }),
+      notify(free, 'info'),
+      frame('judge.notice', { code: 'free_jev', message: free }),
+      frame('judge.notice', { code: 'free_jev_unavailable', reason: 'paid', message: paid }),
+      notify(paid, 'warning'),
+      // A code this build does not know leaves mu's line to say it.
+      frame('judge.notice', { code: 'newer', message: 'Something newer.' }),
+      notify('Something newer.', 'info'),
+    ]);
+    expect(view.host.notices).toEqual([
+      { id: 'n1', level: 'info', text: free, code: 'free_jev' },
+      { id: 'n2', level: 'warning', text: paid, code: 'free_jev_unavailable', reason: 'paid' },
+      { id: 'n3', level: 'info', text: 'Something newer.' },
+    ]);
+    // mu's line already said becomes the coded notice where it stands.
+    expect(
+      reduceAll([notify(free, 'info'), frame('judge.notice', { code: 'free_jev', message: free })]).host.notices
+    ).toEqual([{ id: 'n1', level: 'info', text: free, code: 'free_jev' }]);
+  });
+
   it('keeps the latest notices only', () => {
     let view = emptyView();
     for (let index = 0; index < NOTICE_LIMIT + 2; index++) view = reduce(view, notify(`answer ${index}`));

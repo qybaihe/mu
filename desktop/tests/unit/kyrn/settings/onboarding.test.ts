@@ -3,6 +3,7 @@ import { isSafeEndpoint, type ProviderTestResult } from '@/common/kyrn/models';
 import type { KyrnSettings } from '@/common/kyrn/types';
 import { newDraft } from '@/renderer/pages/settings/KyrnSettings/draft';
 import {
+  answersFree,
   choiceOf,
   choose,
   classifierVariables,
@@ -156,6 +157,26 @@ describe('the judge choice', () => {
       expect(defaultModelOf(service), service).toBeTruthy();
     }
     expect(choiceOf(withJevService(settings({ tiers: ['jev'] }), 0, 'custom'))).toBe('jev');
+  });
+
+  it('knows when the automatic Jev answers with the free Jev: none of its keys saved or typed', () => {
+    const auto = settings().judges.jev;
+    expect(answersFree(auto, {}, {})).toBe(true);
+    expect(answersFree(auto, { TYPESAFE_API_KEY: true }, {})).toBe(false);
+    expect(answersFree(auto, {}, { OPENCODE_API_KEY: 'sk-typed' })).toBe(false);
+    expect(answersFree(auto, { AI_GATEWAY_API_KEY: true }, {})).toBe(false);
+    // Cloudflare's token counts with its account only.
+    expect(answersFree(auto, { CLOUDFLARE_API_KEY: true }, {})).toBe(true);
+    expect(answersFree(auto, { CLOUDFLARE_API_KEY: true }, { CLOUDFLARE_ACCOUNT_ID: 'a1' })).toBe(false);
+    // A Jev picked by its service is not the automatic one.
+    const picked = {
+      type: 'classifier' as const,
+      model: 'opencode/jev-1.13',
+      baseUrl: '',
+      apiKeyEnv: '',
+      timeoutMs: 1,
+    };
+    expect(answersFree(picked, {}, {})).toBe(false);
   });
 
   it('knows Jev on OpenCode Zen and Cloudflare by its model, and asks for the keys pi reads there', () => {

@@ -1287,6 +1287,32 @@ describe('what mu notifies', () => {
       f.cleanup();
     }
   });
+
+  it('says the free Jev’s notices by code, once each, and not again in mu’s words', async () => {
+    const f = fixture();
+    try {
+      await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
+      const free = 'mu: no Jev key is set, so the judge uses Jev 1.13 on OpenCode Zen, free for a limited time.';
+      const paid = 'mu: the free Jev on OpenCode Zen now asks for a key or payment, so plain rules decide for now.';
+      // mu's coded event comes first, its own line right after.
+      f.emit(shown('judge.notice', { code: 'free_jev', message: free }));
+      notify(f, free, 'info');
+      f.emit(shown('judge.notice', { code: 'free_jev_unavailable', reason: 'paid', message: paid }));
+      notify(f, paid, 'warning');
+      f.emit(shown('judge.notice', { code: 'free_jev_unavailable', reason: 'gone', message: 'again' }));
+      // A code this build does not know leaves mu's line to say it.
+      f.emit(shown('judge.notice', { code: 'newer', message: 'Something newer.' }));
+      notify(f, 'Something newer.', 'info');
+      await vi.waitFor(() => expect(noticesOf(f.updates)).toHaveLength(3));
+      expect(noticesOf(f.updates).map((update) => [update.title, update.rawInput])).toEqual([
+        [free, { notice: 'free_jev' }],
+        [paid, { notice: 'free_jev_unavailable', code: 'paid' }],
+        ['Something newer.', { level: 'info' }],
+      ]);
+    } finally {
+      f.cleanup();
+    }
+  });
 });
 
 const asRecordOf = (value: unknown): Record<string, unknown> =>

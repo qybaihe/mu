@@ -8,7 +8,14 @@ import type { TMessage } from '@/common/chat/chatLib';
  * What mu notified itself (a command's answer, a warning) comes the same way with no code, only its level: mu wrote it
  * in the app's language already, and the line shows it as it is.
  */
-export const MU_NOTICE_CODES = ['answer_lost', 'bash_missing', 'checkpoint_off', 'stopped'] as const;
+export const MU_NOTICE_CODES = [
+  'answer_lost',
+  'bash_missing',
+  'checkpoint_off',
+  'free_jev',
+  'free_jev_unavailable',
+  'stopped',
+] as const;
 export type MuNoticeCode = (typeof MU_NOTICE_CODES)[number];
 export type MuNoticeLevel = 'info' | 'warning' | 'error';
 export type MuNotice = {
@@ -16,7 +23,7 @@ export type MuNotice = {
   title: string;
   /** How a notice of mu's own reads; a coded one has its own look. */
   level?: MuNoticeLevel;
-  /** Why checkpoints are off (`checkpoint_off`): mu's reason code, and the numbers its sentence names. */
+  /** Why checkpoints are off (`checkpoint_off`), or why the free Jev stopped (`free_jev_unavailable`): mu's code. */
   reason?: string;
   params?: Record<string, number>;
 };
@@ -26,7 +33,15 @@ export const MU_NOTICE_KEYS: Readonly<Record<MuNoticeCode, string>> = {
   answer_lost: 'mu.notices.answerLost',
   bash_missing: 'mu.notices.bashMissing',
   checkpoint_off: 'mu.notices.checkpointOff',
+  free_jev: 'mu.notices.freeJev',
+  free_jev_unavailable: 'mu.notices.freeJevUnavailable.paid',
   stopped: 'mu.notices.stopped',
+};
+
+/** Why the free Jev stopped, by mu's reason (`paid`: it asks for a key or payment; `gone`: no longer offered). */
+export const FREE_JEV_UNAVAILABLE_KEYS: Readonly<Record<string, string>> = {
+  paid: 'mu.notices.freeJevUnavailable.paid',
+  gone: 'mu.notices.freeJevUnavailable.gone',
 };
 
 /** A page the line ends with, where the person can act on it: the same address in every language. */
@@ -89,8 +104,9 @@ export function muNotice(message: TMessage): MuNotice | undefined {
   const level = str(input.level);
   const title = str(update.title);
   if (!isCode(code)) return { title, ...(LEVELS.has(level) ? { level: level as MuNoticeLevel } : {}) };
-  if (code !== 'checkpoint_off') return { code, title };
   const reason = str(input.code);
+  if (code === 'free_jev_unavailable') return { code, title, ...(reason ? { reason } : {}) };
+  if (code !== 'checkpoint_off') return { code, title };
   return { code, title, ...(reason ? { reason } : {}), params: readCheckpointParams(input.params) };
 }
 

@@ -116,7 +116,7 @@
     "services": {
       "auto": {
         "name": "Automatic",
-        "help": "The first service whose key is set, in this order: TypeSafe, OpenRouter, the Vercel AI Gateway, OpenCode Zen, Cloudflare. With none set, the Vercel AI Gateway.",
+        "help": "The first service whose key is set, in this order: TypeSafe, OpenRouter, the Vercel AI Gateway, OpenCode Zen, Cloudflare. With none set, Jev 1.13 on OpenCode Zen answers, free for a limited time; what it judges goes to OpenCode, which does not train on it.",
         "key": "TypeSafe API key"
       },
       "opencodeFree": {
@@ -648,6 +648,7 @@
       "judge": "Judge",
       "none": "Not set",
       "noKey": "No key yet: judgments follow the default rules until there is one",
+      "freeJev": "No key yet: Jev answers for free on OpenCode Zen for now (for a limited time)",
       "saveFailed": "Saving did not work: {{reason}}",
       "modelValue": "{{provider}} / {{model}}"
     },
@@ -745,6 +746,11 @@
   },
   "notices": {
     "checkpointOff": "Checkpoints are off in this conversation.",
+    "freeJev": "No Jev key is set, so the judge uses Jev 1.13 on OpenCode Zen, free for a limited time. What it judges is sent to OpenCode, which does not train on it. To use a key of your own, fill one in under Settings → Judges.",
+    "freeJevUnavailable": {
+      "paid": "The free Jev on OpenCode Zen now asks for a key or payment, so plain rules decide for now. Fill in a Jev key under Settings → Judges to get the judge back.",
+      "gone": "OpenCode Zen no longer offers the free Jev, so plain rules decide for now. Fill in a Jev key under Settings → Judges to get the judge back."
+    },
     "checkpointOffWhy": {
       "gitMissing": "Checkpoints are off in this conversation: Git was not found on this computer. Install Git, then start a new conversation to get them.",
       "xcodeLicense": "Checkpoints are off in this conversation: Git cannot run on this Mac until the Xcode license is accepted. Accept it with sudo xcodebuild -license in Terminal, then start a new conversation to get them.",

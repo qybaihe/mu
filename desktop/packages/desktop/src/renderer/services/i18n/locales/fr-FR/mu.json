@@ -116,7 +116,7 @@
     "services": {
       "auto": {
         "name": "Automatique",
-        "help": "Le premier service dont la clé est définie, dans cet ordre : TypeSafe, OpenRouter, le Vercel AI Gateway, OpenCode Zen, Cloudflare. Sans aucune clé, le Vercel AI Gateway.",
+        "help": "Le premier service dont la clé est définie, dans cet ordre : TypeSafe, OpenRouter, le Vercel AI Gateway, OpenCode Zen, Cloudflare. Sans aucune clé, Jev 1.13 sur OpenCode Zen répond, gratuitement pour une durée limitée ; ce qu'il juge part chez OpenCode, qui ne s'en sert pas pour l'entraînement.",
         "key": "Clé API TypeSafe"
       },
       "opencodeFree": {
@@ -648,6 +648,7 @@
       "judge": "Juge",
       "none": "Non défini",
       "noKey": "Pas encore de clé : les jugements suivent les règles par défaut en attendant",
+      "freeJev": "Pas encore de clé : Jev répond gratuitement sur OpenCode Zen pour l'instant (durée limitée)",
       "saveFailed": "L’enregistrement a échoué : {{reason}}",
       "modelValue": "{{provider}} / {{model}}"
     },
@@ -745,6 +746,11 @@
   },
   "notices": {
     "checkpointOff": "Les points de restauration sont désactivés dans cette conversation.",
+    "freeJev": "Aucune clé Jev n'est définie : le juge utilise Jev 1.13 sur OpenCode Zen, gratuit pour une durée limitée. Ce qu'il juge est envoyé à OpenCode, qui ne s'en sert pas pour l'entraînement. Pour utiliser votre propre clé, saisissez-la dans Paramètres → Juges.",
+    "freeJevUnavailable": {
+      "paid": "Le Jev gratuit d'OpenCode Zen demande désormais une clé ou un paiement : des règles simples décident pour l'instant. Saisissez une clé Jev dans Paramètres → Juges pour retrouver le juge.",
+      "gone": "OpenCode Zen ne propose plus le Jev gratuit : des règles simples décident pour l'instant. Saisissez une clé Jev dans Paramètres → Juges pour retrouver le juge."
+    },
     "checkpointOffWhy": {
       "gitMissing": "Les points de restauration sont désactivés dans cette conversation : Git est introuvable sur cet ordinateur. Installez Git, puis ouvrez une nouvelle conversation pour les avoir.",
       "xcodeLicense": "Les points de restauration sont désactivés dans cette conversation : Git ne peut pas s’exécuter sur ce Mac tant que la licence Xcode n’est pas acceptée. Acceptez-la avec sudo xcodebuild -license dans le Terminal, puis ouvrez une nouvelle conversation pour les avoir.",

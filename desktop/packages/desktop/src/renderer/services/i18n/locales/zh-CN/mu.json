@@ -116,7 +116,7 @@
     "services": {
       "auto": {
         "name": "自动",
-        "help": "按顺序用第一个设置了密钥的服务：TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare。都没有设置时走 Vercel AI Gateway。",
+        "help": "按顺序用第一个设置了密钥的服务：TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare。都没有设置时，用 OpenCode Zen 上限时免费的 Jev 1.13；判定要读的内容会发给 OpenCode，它不拿来训练模型。",
         "key": "TypeSafe API 密钥"
       },
       "opencodeFree": {
@@ -648,6 +648,7 @@
       "judge": "判定器",
       "none": "暂未设置",
       "noKey": "还没有密钥，配好之前各判定点按默认规则处理",
+      "freeJev": "还没有密钥：先用 OpenCode Zen 上限时免费的 Jev",
       "saveFailed": "保存没有成功：{{reason}}",
       "modelValue": "{{provider}} / {{model}}"
     },
@@ -745,6 +746,11 @@
   },
   "notices": {
     "checkpointOff": "这个对话的检查点已关闭。",
+    "freeJev": "没有配置 Jev 密钥，判定器先用 OpenCode Zen 上限时免费的 Jev 1.13。判定要读的内容会发给 OpenCode，它不拿来训练模型。想用自己的密钥，在「设置 → 判定器」里填。",
+    "freeJevUnavailable": {
+      "paid": "OpenCode Zen 上的免费 Jev 现在要密钥或付费了，判定暂时交给规则。在「设置 → 判定器」里填一个 Jev 密钥就能恢复。",
+      "gone": "OpenCode Zen 已经不提供免费的 Jev 了，判定暂时交给规则。在「设置 → 判定器」里填一个 Jev 密钥就能恢复。"
+    },
     "checkpointOffWhy": {
       "gitMissing": "这个对话的检查点已关闭：这台电脑上找不到 Git。装好 Git 后新开一个对话就有了。",
       "xcodeLicense": "这个对话的检查点已关闭：这台 Mac 要先同意 Xcode 许可协议才能运行 Git。在终端运行 sudo xcodebuild -license 同意后，新开一个对话就有了。",
