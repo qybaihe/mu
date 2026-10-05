@@ -106,7 +106,7 @@
 
 ## 判定器
 
-- **Jev**（云端）。有边界的问题，答案带概率。可以经 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI，或任何支持同一协议的服务调用，每个服务有自己的密钥（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`）：在桌面端的「判定器」页选一个，默认用第一个设置了密钥的。一个密钥都没有时，`jev-opencode-free` 用 OpenCode Zen 上的 Jev 1.13，限时免费。在作者自己的会话里实测：HTTP/2 上一个热连接的问题约 0.3 秒；16 块工具输出并成一个请求判完 0.44 秒，状态只计费一次。判定、概率和耗时都进流水：`mu ledger`，或桌面端的「判定」页。
+- **Jev**（云端）。有边界的问题，答案带概率。可以经 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI，或任何支持同一协议的服务调用，每个服务有自己的密钥（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`）：在桌面端的「判定器」页选一个，默认用第一个设置了密钥的。一个密钥都没有时，默认由 OpenCode Zen 上限时免费的 Jev 1.13 回答：判定要读的内容会发给 OpenCode，它不拿来训练模型，mu 每天提示一次。配上密钥（`mu setup`，或「判定器」页）后，下一个问题起就用你的密钥。在作者自己的会话里实测：HTTP/2 上一个热连接的问题约 0.3 秒；16 块工具输出并成一个请求判完 0.44 秒，状态只计费一次。判定、概率和耗时都进流水：`mu ledger`，或桌面端的「判定」页。
 - **Laya**（本地）。一个 3.22 亿参数的判定器，在你的机器上跑，不走网络。未经你同意不下载任何东西。简单谓词上可靠，元判断上偏弱：先让它以影子模式和 Jev 并行跑，看过流水再把判定点交给它。
 - **pi 模型目录里的任何分类模型**，作为一级：`classifier:<提供商>/<模型>`。比如 Cloudflare 的 Clef（`clef`、`clef-flash`）、OpenRouter 和 Vercel AI Gateway 上的 System One 模型、llama.cpp 的分类模型。
 - **任何大模型**，作为一级：`llm:<提供商>/<模型>`。
@@ -239,7 +239,7 @@ pi 自己的命令（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`
 
 ## 隐私
 
-密钥只在本机。mu 不会自己下载任何模型或运行时；需要下载的东西都会先问你。判定器只看到一个问题所需的字段；每一次判定都记录在本机，你都能翻到。
+密钥只在本机。mu 不会自己下载任何模型或运行时；需要下载的东西都会先问你。判定器只看到一个问题所需的字段（没配密钥时，这些字段发给 OpenCode Zen 上免费的 Jev；用 `MU_JUDGE=off` 或 Laya 就全部留在本机）；每一次判定都记录在本机，你都能翻到。
 
 ## 开发
 

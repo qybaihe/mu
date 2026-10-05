@@ -106,7 +106,7 @@
 
 ## 判定器
 
-- **Jev**（クラウド）。範囲の決まった問いに、確率付きで答えます。TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI、または同じプロトコルを話す任意のサービスから呼び出せて、サービスごとにキーを持ちます（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` と `CLOUDFLARE_ACCOUNT_ID`）。デスクトップアプリの「判定器」ページで選べて、既定ではキーが設定されている最初のものを使います。キーが一つもなければ、`jev-opencode-free` で OpenCode Zen 上の Jev 1.13 を期間限定で無料で使えます。作者たち自身のセッションでの実測では、HTTP/2 のウォームな接続で 1 問あたり約 0.3 秒、ツール出力 16 チャンクを 1 リクエストで判定して 0.44 秒で、状態の課金は 1 回だけでした。判定、確率、所要時間は台帳に残ります。`mu ledger`、またはデスクトップアプリの「判定」タブで見られます。
+- **Jev**（クラウド）。範囲の決まった問いに、確率付きで答えます。TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI、または同じプロトコルを話す任意のサービスから呼び出せて、サービスごとにキーを持ちます（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` と `CLOUDFLARE_ACCOUNT_ID`）。デスクトップアプリの「判定器」ページで選べて、既定ではキーが設定されている最初のものを使います。キーが一つもなければ、OpenCode Zen 上で期間限定無料の Jev 1.13 が答えます。判定に必要な内容は OpenCode に送られますが、モデルの学習には使われません。mu はそのことを 1 日 1 回知らせます。キーを設定すると（`mu setup`、または「判定器」ページ）、次の問いからそのキーを使います。作者たち自身のセッションでの実測では、HTTP/2 のウォームな接続で 1 問あたり約 0.3 秒、ツール出力 16 チャンクを 1 リクエストで判定して 0.44 秒で、状態の課金は 1 回だけでした。判定、確率、所要時間は台帳に残ります。`mu ledger`、またはデスクトップアプリの「判定」タブで見られます。
 - **Laya**（ローカル）。322M パラメータの判定器で、あなたのマシンで動き、ネットワークには一切触れません。あなたの同意なしには何もダウンロードしません。単純な述語には強く、メタ判断には弱めです。判定ポイントを任せる前に、シャドーモードで Jev と並べて動かし、台帳を確認してください。
 - **pi のモデルカタログにある任意の分類モデル**も、階層の一つとして使えます：`classifier:<provider>/<model>`。Cloudflare の Clef（`clef`、`clef-flash`）、OpenRouter と Vercel AI Gateway の System One モデル、llama.cpp の分類モデルなど。
 - **任意の LLM** も、階層の一つとして使えます：`llm:<provider>/<model>`。
@@ -239,7 +239,7 @@ pi 自身のコマンド（`/model`、`/thinking`、`/login`、`/resume`、`/tre
 
 ## プライバシー
 
-キーはこのマシンから出ません。mu が自分からモデルやランタイムをダウンロードすることはなく、ダウンロードが必要なものは必ず先に確認します。判定器が見るのは、問いに必要なフィールドだけです。すべての判定はローカルに記録され、どれでも読み返せます。
+キーはこのマシンから出ません。mu が自分からモデルやランタイムをダウンロードすることはなく、ダウンロードが必要なものは必ず先に確認します。判定器が見るのは、問いに必要なフィールドだけです（キーがなければ、それは OpenCode Zen の無料 Jev に送られます。`MU_JUDGE=off` か Laya なら、すべてこのマシンに残ります）。すべての判定はローカルに記録され、どれでも読み返せます。
 
 ## 開発
 

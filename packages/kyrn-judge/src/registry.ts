@@ -4,6 +4,7 @@ import { JudgeError } from "./errors.ts";
 import { Judge, type JudgeLike } from "./judge.ts";
 import { muEnv } from "./naming.ts";
 import { type ClassifierCall, ClassifierJudgeProvider } from "./providers/classifier.ts";
+import { FreeJevFallback, type FreeJevOutcome } from "./providers/free-jev.ts";
 import { type ApiKeyResolver, GatewayJudgeProvider } from "./providers/gateway.ts";
 import { type LlmCompletion, LlmJudgeProvider } from "./providers/llm.ts";
 import { LocalJudgeProvider } from "./providers/local.ts";
@@ -20,6 +21,8 @@ export interface JudgeHost {
 	llm?: (model: string, options: { thinking?: string }) => LlmCompletion | undefined;
 	/** A classifier model of the host's catalog, bound to "provider/model-id", or undefined when the host has none. */
 	classify?: (model: string) => ClassifierCall | undefined;
+	/** How each call to the free Jev went, when the `jev` judge falls back to it (no key for any of Jev's services). */
+	freeJev?: (outcome: FreeJevOutcome) => void;
 	env?: Readonly<Record<string, string | undefined>>;
 }
 
@@ -118,8 +121,8 @@ function createProvider(name: string, judge: JudgeConfig, host: JudgeHost): Judg
 		}
 		case "jev": {
 			// A TypeSafe key is the direct route, a key for Jev on OpenRouter the next, then a Vercel AI Gateway key, an
-			// OpenCode key (the paid Jev: the free one is a choice of its own) and Cloudflare's key and account. Without
-			// any of them, Jev is reached through the Vercel AI Gateway, with the key pi keeps for it when there is one.
+			// OpenCode key (the paid Jev) and Cloudflare's key and account. Without any of them: the Vercel AI Gateway
+			// when pi keeps a key for it, else Jev 1.13 on OpenCode Zen, free for a limited time, with no key at all.
 			// Each service names the model its own way: a model set here is TypeSafe's ("jev-latest"), and reaches the
 			// gateway only when it is written the gateway's way ("typesafe-ai/jev").
 			const env = host.env ?? {};
@@ -135,6 +138,12 @@ function createProvider(name: string, judge: JudgeConfig, host: JudgeHost): Judg
 				if (env.CLOUDFLARE_API_KEY && env.CLOUDFLARE_ACCOUNT_ID) {
 					return createProvider(name, BUILT_IN_JUDGES["jev-cloudflare"], host);
 				}
+				return new FreeJevFallback({
+					gateway: createProvider(name, gateway, host),
+					free: createProvider(name, BUILT_IN_JUDGES["jev-opencode-free"], host),
+					gatewayKey: host.gatewayApiKey ?? (() => env.AI_GATEWAY_API_KEY),
+					onFree: host.freeJev,
+				});
 			}
 			return createProvider(name, gateway, host);
 		}

@@ -254,6 +254,16 @@ Since 2026-10-05 pi's own MCP client runs the servers. The codes `unreachable`, 
 - `same_command_failed`: `{ times, command }`, where `command` is data
 - `monitor_trouble`: `{ times, kind, detail }`, where `detail` is data
 
+## judge.notice
+
+A new event (2026-10-05) about where the judge's questions go: `{ code, reason?, message }`. `message` is the line the terminal shows, already in Chinese or English; the same line is sent with `notify` right after, so an app that words the notice by its code can drop that line.
+
+| code | reason | when | English |
+| --- | --- | --- | --- |
+| `free_jev` | | the `jev` judge answered with the free Jev on OpenCode Zen because no key is set; once a day (`<agentDir>/mu/notices.json`) | no Jev key is set, so the judge uses Jev 1.13 on OpenCode Zen, free for a limited time. What it judges is sent to OpenCode, which does not train on it. To use a key of your own, run mu setup, or fill one in under Settings → Judges in the desktop app |
+| `free_jev_unavailable` | `paid` | the free Jev answered 401/402/403: it asks for a key or payment now; once per session | the free Jev on OpenCode Zen now asks for a key or payment, so plain rules decide for now. Set a Jev key to get the judge back: … |
+| `free_jev_unavailable` | `gone` | the model is no longer offered (a 4xx, or gone from the catalog); once per session | OpenCode Zen no longer offers the free Jev, so plain rules decide for now. … |
+
 ## checkpoint.off
 
 A new event, sent once per session, when the session goes without checkpoints: `{ code, params, message }`. `message` is the line the terminal shows, already in Chinese or English. It is sent at the session's first call that could change a file, not at the start.

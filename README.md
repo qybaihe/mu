@@ -106,7 +106,7 @@ Each decision point is `active`, `shadow` (asked and logged, changes nothing: fo
 
 ## Judges
 
-- **Jev** (hosted). Bounded questions with probabilities. Reached through TypeSafe, OpenRouter, the Vercel AI Gateway, OpenCode Zen, Cloudflare Workers AI or any service that speaks the same protocol, each with its own key (`TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`): the desktop app's judges page picks one, and by default the first whose key is set is used. Without any key, `jev-opencode-free` reaches Jev 1.13 on OpenCode Zen, free for a limited time. Measured from the authors' own sessions: one warm question in about 0.3 s over HTTP/2; 16 chunks of tool output judged in one request in 0.44 s, the state billed once. Verdicts, probabilities and timings go to the ledger: `mu ledger`, or the judgments tab of the desktop app.
+- **Jev** (hosted). Bounded questions with probabilities. Reached through TypeSafe, OpenRouter, the Vercel AI Gateway, OpenCode Zen, Cloudflare Workers AI or any service that speaks the same protocol, each with its own key (`TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`): the desktop app's judges page picks one, and by default the first whose key is set is used. With no key set, Jev 1.13 on OpenCode Zen answers, free for a limited time: what it judges goes to OpenCode, which does not train on it, and mu says so once a day. Set a key (`mu setup`, or the judges page) and mu uses it from the next question. Measured from the authors' own sessions: one warm question in about 0.3 s over HTTP/2; 16 chunks of tool output judged in one request in 0.44 s, the state billed once. Verdicts, probabilities and timings go to the ledger: `mu ledger`, or the judgments tab of the desktop app.
 - **Laya** (local). A 322M-parameter judge that runs on your machine and never touches the network. Nothing is downloaded without your consent. Reliable on simple predicates, weaker on meta-judgments: run it in shadow next to Jev and read the ledger before giving it a decision point.
 - **Any classifier model** in pi's catalog, as a tier: `classifier:<provider>/<model>`. Cloudflare's Clef (`clef`, `clef-flash`), the System One models on OpenRouter and the Vercel AI Gateway, a llama.cpp classifier.
 - **Any LLM**, as a tier: `llm:<provider>/<model>`.
@@ -239,7 +239,7 @@ pi's own commands (`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`,
 
 ## Privacy
 
-Keys stay on this machine. mu never downloads a model or a runtime on its own; anything that needs a download asks first. The judge sees only the fields a question needs; every verdict is logged locally, and you can read them all.
+Keys stay on this machine. mu never downloads a model or a runtime on its own; anything that needs a download asks first. The judge sees only the fields a question needs (with no key set, those go to OpenCode Zen's free Jev; `MU_JUDGE=off` or Laya keeps everything on the machine); every verdict is logged locally, and you can read them all.
 
 ## Development
 

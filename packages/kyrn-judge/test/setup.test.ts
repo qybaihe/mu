@@ -741,7 +741,8 @@ describe("mu setup, asking in a terminal", () => {
 		writeFileSync(join(home, "agent", "mu.json"), JSON.stringify({ tiers: ["laya"], modes: { default: "active" } }));
 		const run = await wizard({
 			home,
-			answers: ["1", "1", "n"],
+			// The second "2": Jev with a key of one's own (the free Jev is offered first while no key is set).
+			answers: ["1", "2", "n"],
 			secrets: [KEYS.anthropic, KEYS.jev],
 			respond: () => answer(200, { data: [{ id: "claude-opus-4-8" }, { id: "claude-sonnet-5" }] }),
 		});
@@ -761,7 +762,7 @@ describe("mu setup, asking in a terminal", () => {
 
 	it("does not take the model's key, nor another vendor's without a yes, as the Jev key", async () => {
 		const run = await wizard({
-			answers: ["1", "1", "n", "n"],
+			answers: ["1", "2", "n", "n"],
 			secrets: [KEYS.anthropic, KEYS.anthropic, KEYS.openaiProject, KEYS.jev],
 			respond: () => answer(200, { data: [{ id: "claude-opus-4-8" }] }),
 		});
@@ -1050,8 +1051,12 @@ describe("mu setup in a script", () => {
 			respond: () => listing("deepseek-v4-pro"),
 		});
 		expect(free.code).toBe(SETUP_EXIT.done);
-		expect(free.json("mu.json")).toEqual({ tiers: ["jev-opencode-free"] });
+		// `jev`, the default, answers with the free Jev while no key is set, and with a key once one is: nothing to write.
+		expect(free.read("mu.json")).toBeUndefined();
 		expect(free.read(".env")).toBeUndefined();
+		expect(free.said.join("\n")).toContain(
+			"Judge: Jev, free on OpenCode Zen for a limited time until you add a key.",
+		);
 
 		const paid = await stdinRun(["--service", "deepseek", "--judge", "opencode"], `${KEYS.hex32}\n`, {
 			respond: () => listing("deepseek-v4-pro"),

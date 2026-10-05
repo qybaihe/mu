@@ -179,7 +179,7 @@ if (jevTier) {
 	const judge = config?.judges?.[jevTier] ?? JEV_ROUTES[jevTier];
 	if (judge.type === "jev") {
 		// The order the registry tries: TypeSafe directly, Jev on OpenRouter, the Vercel AI Gateway, OpenCode Zen,
-		// Cloudflare Workers AI (key and account).
+		// Cloudflare Workers AI (key and account). With none of them, a gateway key kept with /login, else the free Jev.
 		const route = [
 			["TYPESAFE_API_KEY", "Jev is called directly at api.typesafe.ai"],
 			["MU_JUDGE_OPENROUTER_API_KEY", "Jev is called through OpenRouter"],
@@ -188,11 +188,11 @@ if (jevTier) {
 			["CLOUDFLARE_API_KEY", "Jev is called on Cloudflare Workers AI", "CLOUDFLARE_ACCOUNT_ID"],
 		].find(([name, , also]) => has(name) && (!also || has(also)));
 		row(
-			route ? "ok" : "fix",
+			route ? "ok" : "--",
 			"jev key",
 			route
 				? `${route[0]} is set: ${route[1]} (value not shown)`
-				: `missing: add TYPESAFE_API_KEY (or MU_JUDGE_OPENROUTER_API_KEY, AI_GATEWAY_API_KEY, OPENCODE_API_KEY) ${where}`,
+				: `none set: Jev 1.13 on OpenCode Zen answers, free for a limited time (what it judges goes to OpenCode). For your own key, add TYPESAFE_API_KEY (or MU_JUDGE_OPENROUTER_API_KEY, AI_GATEWAY_API_KEY, OPENCODE_API_KEY) ${where}`,
 		);
 	} else {
 		const name = judge.apiKeyEnv ?? (judge.type === "gateway" ? "AI_GATEWAY_API_KEY" : "TYPESAFE_API_KEY");

@@ -1,14 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { BUILT_IN_JUDGES, parseConfig } from "../src/config.ts";
-import { isJudgeError } from "../src/errors.ts";
+import { isJudgeError, JudgeError } from "../src/errors.ts";
 import {
 	type ClassifierCall,
 	ClassifierJudgeProvider,
 	type ClassifierOutcome,
 	type ClassifierWireQuestion,
 } from "../src/providers/classifier.ts";
+import { FreeJevFallback } from "../src/providers/free-jev.ts";
 import { buildJudge, type JudgeHost } from "../src/registry.ts";
-import type { Questions } from "../src/types.ts";
+import type { JudgeProvider, Questions } from "../src/types.ts";
 
 const questions = {
 	edit: { type: "boolean", instructions: "Does `user_message` ask for a code change?" },
@@ -134,6 +135,42 @@ describe("ClassifierJudgeProvider", () => {
 	});
 });
 
+describe("the jev judge with no key", () => {
+	const fixed = (id: string, outcome: "answer" | JudgeError): JudgeProvider & { asked: number } => ({
+		id,
+		asked: 0,
+		async evaluate() {
+			this.asked++;
+			if (outcome !== "answer") throw outcome;
+			return { answers: {}, modelId: id };
+		},
+	});
+
+	it("answers with the free Jev, unless the host keeps a gateway key, and says how each free call went", async () => {
+		let stored: string | undefined;
+		const heard: string[] = [];
+		const gateway = fixed("gateway:typesafe-ai/jev", "answer");
+		const free = fixed("classifier:opencode/jev-1.13-free", "answer");
+		const judge = new FreeJevFallback({ gateway, free, gatewayKey: () => stored, onFree: (o) => heard.push(o) });
+		await judge.evaluate({ state: "s", questions: {} });
+		expect([free.asked, gateway.asked, judge.id]).toEqual([1, 0, "classifier:opencode/jev-1.13-free"]);
+		// A key stored during the session (a sign-in) is used from the next call on.
+		stored = "vck";
+		await judge.evaluate({ state: "s", questions: {} });
+		expect([free.asked, gateway.asked, judge.id]).toEqual([1, 1, "gateway:typesafe-ai/jev"]);
+		expect(heard).toEqual(["answered"]);
+
+		const ended = new FreeJevFallback({
+			gateway,
+			free: fixed("classifier:opencode/jev-1.13-free", new JudgeError("payment_required", "402")),
+			gatewayKey: () => undefined,
+			onFree: (o) => heard.push(o),
+		});
+		await expect(ended.evaluate({ state: "s", questions: {} })).rejects.toThrow("402");
+		expect(heard).toEqual(["answered", "payment_required"]);
+	});
+});
+
 describe("classifier judges in the registry", () => {
 	const host = (env: Record<string, string> = {}): JudgeHost & { asked: string[] } => {
 		const asked: string[] = [];
@@ -184,8 +221,10 @@ describe("classifier judges in the registry", () => {
 		expect(buildJudge(jev, host({ CLOUDFLARE_API_KEY: "c", CLOUDFLARE_ACCOUNT_ID: "a" })).judge.id).toBe(
 			"classifier:cloudflare-workers-ai/typesafe/jev",
 		);
-		// Cloudflare needs its account as well; without it, as without any key, the gateway is asked.
-		expect(buildJudge(jev, host({ CLOUDFLARE_API_KEY: "c" })).judge.id).toBe("gateway:typesafe-ai/jev");
+		// Cloudflare needs its account as well; without it, as without any key, the free Jev answers.
+		expect(buildJudge(jev, host({ CLOUDFLARE_API_KEY: "c" })).judge.id).toBe("classifier:opencode/jev-1.13-free");
+		// Outside a mu session there is no catalog to reach it with: the gateway, as before.
+		expect(buildJudge(jev, { env: {} }).judge.id).toBe("gateway:typesafe-ai/jev");
 		// A key that reaches Jev already keeps doing so.
 		expect(buildJudge(jev, host({ TYPESAFE_API_KEY: "t", OPENCODE_API_KEY: "o" })).judge.id).toBe(
 			"typesafe:jev-latest",

@@ -234,7 +234,7 @@ export function setupUsage(language: SetupLanguage): string {
 			"",
 			"  --judge jev     Jev 密钥（TypeSafe）写在标准输入的第二行；已经设置了 TYPESAFE_API_KEY 就不用",
 			"  --judge opencode  OpenCode Zen 上的 Jev，用 OpenCode 的密钥（--service opencode 或 OPENCODE_API_KEY）",
-			"  --judge free    OpenCode Zen 上限时免费的 Jev，不用密钥",
+			"  --judge free    OpenCode Zen 上限时免费的 Jev，不用密钥（没有密钥时本来就用它）",
 			"  --judge model   用刚设置的模型当判定器（更慢，每次判断都花 token）",
 			"  --judge none    不改判定器；不写 --judge 时也不改",
 			"  --api, --name   服务 other 的接口（openai 或 anthropic）和它在 mu 里的名字",
@@ -259,7 +259,7 @@ export function setupUsage(language: SetupLanguage): string {
 		"",
 		"  --judge jev     the Jev key (TypeSafe) is the second line of stdin, unless TYPESAFE_API_KEY is set already",
 		"  --judge opencode  Jev on OpenCode Zen, with OpenCode's key (--service opencode, or OPENCODE_API_KEY)",
-		"  --judge free    Jev on OpenCode Zen, free for a limited time, with no key at all",
+		"  --judge free    Jev on OpenCode Zen, free for a limited time, with no key (what jev uses while no key is set)",
 		"  --judge model   the model just set up answers as the judge (slower, and every decision costs tokens)",
 		"  --judge none    leaves the judge as it is, as leaving out --judge does",
 		"  --api, --name   for the service `other`: its API (openai or anthropic) and its name in mu",
@@ -1049,6 +1049,17 @@ class Setup {
 					})
 			: undefined;
 		const choices: Choice<"keep" | "jev" | "opencode" | "free" | "model" | "none">[] = [];
+		// With no key for Jev anywhere, the free Jev is what the `jev` judge uses anyway: the first offer.
+		const keyless = !opencode && !where;
+		if (keyless) {
+			choices.push({
+				label: this.t({
+					zh: "Jev 免费版（推荐），在 OpenCode Zen 上：不用密钥，限时免费；以后加了密钥自动换用",
+					en: "Jev for free (recommended) on OpenCode Zen: no key, free for a limited time; a key added later takes over",
+				}),
+				value: "free",
+			});
+		}
 		if (opencode && !where) {
 			choices.push({
 				label: this.t({
@@ -1076,18 +1087,20 @@ class Setup {
 							en: `Jev with a TypeSafe key: ${JEV_PAGE}`,
 						})
 					: this.t({
-							zh: `Jev（推荐）：又快又准，按次计费。密钥在 TypeSafe 申请：${JEV_PAGE}`,
-							en: `Jev (recommended): fast and accurate, billed per call. Get a key from TypeSafe: ${JEV_PAGE}`,
+							zh: `Jev，用自己的密钥：又快又准，按次计费。密钥在 TypeSafe 申请：${JEV_PAGE}`,
+							en: `Jev with a key of your own: fast and accurate, billed per call. Get a key from TypeSafe: ${JEV_PAGE}`,
 						}),
 			value: "jev",
 		});
-		choices.push({
-			label: this.t({
-				zh: "Jev 免费版，在 OpenCode Zen 上：不用密钥，限时免费",
-				en: "Jev for free on OpenCode Zen: no key, free for a limited time",
-			}),
-			value: "free",
-		});
+		if (!keyless) {
+			choices.push({
+				label: this.t({
+					zh: "Jev 免费版，在 OpenCode Zen 上：不用密钥，限时免费",
+					en: "Jev for free on OpenCode Zen: no key, free for a limited time",
+				}),
+				value: "free",
+			});
+		}
 		if (model) {
 			choices.push({
 				label: this.t({
@@ -1350,8 +1363,10 @@ class Setup {
 		if (judge.kind === "model") {
 			if (target && model) tiers = [`llm:${target.reach.provider}/${model}`];
 		} else if (judge.kind === "opencode") tiers = ["jev-opencode"];
-		else if (judge.kind === "free") tiers = ["jev-opencode-free"];
-		else if (!tiersOf(current).some((tier) => JEV_TIERS.has(tier))) tiers = ["jev"];
+		else if (judge.kind === "free") {
+			// `jev` uses the free Jev while no key is set, and a key added later without another setup.
+			if (!tiersOf(current).some((tier) => tier === "jev" || tier === "jev-opencode-free")) tiers = ["jev"];
+		} else if (!tiersOf(current).some((tier) => JEV_TIERS.has(tier))) tiers = ["jev"];
 		if (tiers && config.state === "unreadable") {
 			notes.push(
 				this.t({
@@ -1414,8 +1429,8 @@ class Setup {
 							? this.t({ zh: "判定器：OpenCode Zen 上的 Jev。", en: " Judge: Jev on OpenCode Zen." })
 							: judge.kind === "free"
 								? this.t({
-										zh: "判定器：OpenCode Zen 上免费的 Jev（限时）。",
-										en: " Judge: Jev for free on OpenCode Zen (for a limited time).",
+										zh: "判定器：Jev，加密钥之前用 OpenCode Zen 上限时免费的版本。",
+										en: " Judge: Jev, free on OpenCode Zen for a limited time until you add a key.",
 									})
 								: this.t({ zh: "判定器：Jev。", en: " Judge: Jev." });
 		this.io.say("");

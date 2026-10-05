@@ -34,6 +34,7 @@ import { registerCompletion } from "./features/completion.ts";
 import { registerConstraints } from "./features/constraints.ts";
 import { registerForgetting } from "./features/forgetting.ts";
 import { registerFrame } from "./features/frame.ts";
+import { registerFreeJevNotice } from "./features/free-jev.ts";
 import { registerGoal } from "./features/goal.ts";
 import { registerGoogleLogin } from "./features/google-login.ts";
 import { registerGuard } from "./features/guard.ts";
@@ -224,6 +225,7 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 	for (const [name, register] of features) {
 		if (!options.only || options.only.includes(name)) register(runtime);
 	}
+	registerFreeJevNotice(runtime, roots);
 	registerCommands(runtime, roots);
 	registerImport(pi);
 	if (roots) registerLockSafeQuit(pi, roots.agentDir);

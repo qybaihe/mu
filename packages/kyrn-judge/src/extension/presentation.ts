@@ -35,6 +35,7 @@ export interface KyrnPresentationEvent {
 		| "permissions.approved"
 		| "checkpoint.taken"
 		| "checkpoint.off"
+		| "judge.notice"
 		| "rewind.proposed"
 		| "rewind.done"
 		| "rewind.undone"

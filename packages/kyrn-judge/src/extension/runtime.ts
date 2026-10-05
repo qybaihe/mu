@@ -11,6 +11,7 @@ import { compactFrame, type Frame, type FrameState, isStale } from "../frame/fra
 import type { JudgeLike } from "../judge.ts";
 import { CompositeLedger, type LedgerRecord, type LedgerSink, MemoryLedger } from "../ledger.ts";
 import type { ClassifierCall } from "../providers/classifier.ts";
+import type { FreeJevOutcome } from "../providers/free-jev.ts";
 import type { LlmCompletion } from "../providers/llm.ts";
 import { buildJudge, resolveJudgeConfig } from "../registry.ts";
 import { createJudgeFetch, type JudgeFetch } from "./judge-fetch.ts";
@@ -209,6 +210,8 @@ export class KyrnRuntime {
 	private judgeHttp: JudgeFetch | undefined;
 	private presentationSequence = 0;
 	onPresentation?: PresentationListener;
+	/** Set by the free Jev notice: how each call went when the `jev` judge falls back to the free Jev. */
+	onFreeJev?: (outcome: FreeJevOutcome) => void;
 	/** Features that show the person what another feature announced: the board says a permission is waiting. */
 	private readonly observers = new Map<KyrnPresentationEvent["kind"], Set<(payload: unknown) => void>>();
 
@@ -261,6 +264,7 @@ export class KyrnRuntime {
 					process.env.AI_GATEWAY_API_KEY,
 				llm: (model, options) => this.llm(model, options),
 				classify: (model) => this.classifier(model),
+				freeJev: (outcome) => this.onFreeJev?.(outcome),
 			},
 		);
 		this.problems.push(...built.problems);

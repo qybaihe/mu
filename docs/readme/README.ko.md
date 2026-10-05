@@ -106,7 +106,7 @@
 
 ## 판정기
 
-- **Jev**(클라우드). 답의 범위가 정해진 질문에 확률과 함께 답해요. TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare Workers AI, 또는 같은 프로토콜을 쓰는 어떤 서비스로든 부를 수 있고, 서비스마다 키가 따로 있어요(`TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY`와 `CLOUDFLARE_ACCOUNT_ID`). 데스크톱 앱의 '판정기' 페이지에서 고를 수 있고, 기본값은 키가 설정된 첫 번째 서비스예요. 키가 하나도 없으면 `jev-opencode-free`로 OpenCode Zen의 Jev 1.13을 기간 한정 무료로 쓸 수 있어요. 만든 사람들의 실제 세션에서 잰 값으로, HTTP/2 웜 연결에서 질문 하나에 약 0.3초, 도구 출력 16청크를 요청 하나로 판정하는 데 0.44초가 걸렸고, 상태는 한 번만 과금됐어요. 판정, 확률, 소요 시간은 판정 장부에 남아요. `mu ledger`나 데스크톱 앱의 '판정' 탭에서 볼 수 있어요.
+- **Jev**(클라우드). 답의 범위가 정해진 질문에 확률과 함께 답해요. TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare Workers AI, 또는 같은 프로토콜을 쓰는 어떤 서비스로든 부를 수 있고, 서비스마다 키가 따로 있어요(`TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY`와 `CLOUDFLARE_ACCOUNT_ID`). 데스크톱 앱의 '판정기' 페이지에서 고를 수 있고, 기본값은 키가 설정된 첫 번째 서비스예요. 키가 하나도 없으면 OpenCode Zen의 기간 한정 무료 Jev 1.13이 답해요. 판정에 필요한 내용은 OpenCode로 가지만 모델 학습에는 쓰이지 않고, mu가 하루에 한 번 알려 줘요. 키를 설정하면(`mu setup`이나 '판정기' 페이지) 다음 질문부터 그 키를 써요. 만든 사람들의 실제 세션에서 잰 값으로, HTTP/2 웜 연결에서 질문 하나에 약 0.3초, 도구 출력 16청크를 요청 하나로 판정하는 데 0.44초가 걸렸고, 상태는 한 번만 과금됐어요. 판정, 확률, 소요 시간은 판정 장부에 남아요. `mu ledger`나 데스크톱 앱의 '판정' 탭에서 볼 수 있어요.
 - **Laya**(로컬). 여러분의 컴퓨터에서 돌아가고 네트워크에는 전혀 닿지 않는 322M 파라미터 판정기예요. 여러분이 동의하지 않으면 아무것도 내려받지 않아요. 단순한 술어에는 믿을 만하지만 메타 판단에는 약한 편이에요. 판정 지점을 맡기기 전에 섀도 모드로 Jev와 나란히 돌려 보고 판정 장부를 읽어 보세요.
 - **pi 모델 카탈로그의 어떤 분류 모델이든** 계층 하나로 쓸 수 있어요: `classifier:<provider>/<model>`. Cloudflare의 Clef(`clef`, `clef-flash`), OpenRouter와 Vercel AI Gateway의 System One 모델, llama.cpp 분류 모델 등.
 - **어떤 LLM이든** 계층 하나로 쓸 수 있어요: `llm:<provider>/<model>`.
@@ -239,7 +239,7 @@ pi의 자체 명령(`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`
 
 ## 프라이버시
 
-키는 이 컴퓨터를 떠나지 않아요. mu는 모델이나 런타임을 스스로 내려받지 않고, 내려받아야 하는 것은 모두 먼저 물어봐요. 판정기는 질문에 필요한 필드만 봐요. 모든 판정은 로컬에 기록되고, 전부 읽어 볼 수 있어요.
+키는 이 컴퓨터를 떠나지 않아요. mu는 모델이나 런타임을 스스로 내려받지 않고, 내려받아야 하는 것은 모두 먼저 물어봐요. 판정기는 질문에 필요한 필드만 봐요(키가 없으면 그 필드는 OpenCode Zen의 무료 Jev로 가요. `MU_JUDGE=off`나 Laya를 쓰면 전부 이 컴퓨터에 남아요). 모든 판정은 로컬에 기록되고, 전부 읽어 볼 수 있어요.
 
 ## 개발
 
