@@ -392,7 +392,7 @@ describe("starting pi", () => {
 	});
 
 	it("passes pi's own commands to pi as its first argument, without the judgment layer in front of them", () => {
-		for (const command of ["install", "remove", "uninstall", "update", "list", "config", "mcp"]) {
+		for (const command of ["install", "remove", "uninstall", "update", "list", "config", "auth", "mcp"]) {
 			const plan = launch({ argv: [command, "-l"] });
 			expect(plan.args.slice(-2)).toEqual([command, "-l"]);
 			expect(plan.args).not.toContain("-e");

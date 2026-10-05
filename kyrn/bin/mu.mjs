@@ -444,14 +444,11 @@ export function launchStrategy({ platform, env, canExec }) {
 	return "exec";
 }
 
-/** The commands pi dispatches on its first argument (packages, config, mcp). mu's usage presents them as mu's own;
- *  the judgment layer never runs for them, so its extension stays out of their way. */
-const AGENT_COMMANDS = ["install", "remove", "uninstall", "update", "list", "config", "mcp"];
-
 /** How the judgment layer's extension joins pi's arguments: in front for a session, never in front of pi's own
- *  commands, which pi reads as its first argument — an -e before them would turn them into a prompt. */
+ *  commands (PI_COMMANDS), which pi reads as its first argument — an -e before them would turn them into a prompt.
+ *  The judgment layer never runs for them, so its extension stays out of their way. */
 function judgeArgs({ argv, layout, root, platform }) {
-	if (AGENT_COMMANDS.includes(argv[0])) return [];
+	if (PI_COMMANDS.has(argv[0])) return [];
 	const path = pathFor(platform);
 	return layout === "package"
 		? ["-e", packageEntries({ root, platform }).extension]
@@ -831,7 +828,7 @@ export function planSetup({ platform, env, argv, root, home, execPath, fs, strip
 	return { command: execPath, args: [...entry, ...args], env: childEnv, strategy: "spawn", agentDir, keyGiven: key !== undefined };
 }
 
-/** pi's own commands: none of them starts a session. */
+/** pi's own commands, read from its first argument: none of them starts a session. */
 const PI_COMMANDS = new Set(["install", "remove", "uninstall", "update", "list", "config", "auth", "mcp"]);
 
 /** Options of `pi mcp add` that take a value (extensions/mcp/cli.ts); the rest are flags. */
