@@ -15,7 +15,7 @@
   <b>English</b> · <a href="docs/readme/README.zh-CN.md">简体中文</a> · <a href="docs/readme/README.zh-TW.md">繁體中文</a> · <a href="docs/readme/README.ja.md">日本語</a> · <a href="docs/readme/README.ko.md">한국어</a>
 </p>
 
-A coding agent makes hundreds of decisions per session that are not about the code: what stays in the context, whether a command is safe, whether a finding is worth telling another agent, when the work is done. Left to the big model, they cost tokens, latency and attention. Left to fixed rules, they are wrong too often. mu gives them to a **judge**: a small, fast model that answers one bounded question at a time, at 35 decision points in every turn. The big model keeps its attention for the work.
+A coding agent makes hundreds of decisions per session that are not about the code: what stays in the context, whether a command is safe, whether a finding is worth telling another agent, when the work is done. Left to the big model, they cost tokens, latency and attention. Left to fixed rules, they are wrong too often. mu gives them to a **judge**: a small, fast model that answers one bounded question at a time, at 38 decision points in every turn. The big model keeps its attention for the work.
 
 - **mu**: the command line. Everything pi does, plus the judgment kernel.
 - **mu desktop**: a native app that carries mu and its runtime. Download, connect a model, start.
@@ -31,11 +31,12 @@ A coding agent makes hundreds of decisions per session that are not about the co
            ▼
          model ──▶ tool call ──▶ tool.risk · tool.constraint · tool.approval ──▶ runs
            ▲                                                                     │
+           │    tool.injection   web pages and MCP output: instructions aimed at the AI are withheld
            │    tool.admission   chunk by chunk: into the context, or archived behind a pointer
            │    context.forget · context.compact   when the context grows        │
            └─────────────────────────────────────────────────────────────────────┘
 
- turn ends ──▶ turn.completion · turn.drift · turn.rewind · memory.applied · board.read · cache.warming
+ turn ends ──▶ turn.completion · turn.continue · turn.drift · turn.rewind · memory.applied · board.read · cache.warming
 ```
 
 Every name is a decision point. Each one is asked as a short question about a small state; the answer changes what the model does next, never whether it asks you. Rules are the floor: a dangerous-looking command is caught by rules first, and the judge only vouches that you asked for it.
@@ -77,7 +78,9 @@ Each decision point is `active`, `shadow` (asked and logged, changes nothing: fo
 | `tool.risk` | A command the rules flag: did you ask for it? | Unsure means asking you |
 | `tool.approval` | In the *Jev approves* mode: does the task clearly need this command, this change outside the project, this outside action, this sub-agent? | Only what it is sure of runs; the rest asks you |
 | `tool.constraint` | Before a call that changes something: does it cross a constraint you stated? | The call is stopped |
+| `tool.injection` | A web page, a search result or an MCP server's output, passage by passage: does it carry instructions aimed at the AI? | Those passages never reach the model; a note marks where each was |
 | `files.locate` | Which files match what you describe? | Candidates ranked, instead of a string of greps |
+| `judge.items` | The model's own yes/no question, about each of many items: files, log lines, findings | A probability per item, through the `judge_items` tool, instead of reading them all |
 | `browser.step` | Observe, one judgment, act: what is the next operation, on which element? | The built-in browser moves one step |
 | `review.triage` | For each finding of `/review`: does it change behaviour, and is it about this change? | Findings ranked P0 to P3 |
 | `diagnostics.delivery` | New language-server diagnostics after an edit: tell now, at the next pause, or never? | Errors reach the model; style warnings do not |
@@ -89,6 +92,7 @@ Each decision point is `active`, `shadow` (asked and logged, changes nothing: fo
 | `turn.drift` | Every few steps: does the work still serve the goal? | Rules catch circles; the judge catches drift |
 | `turn.rewind` | The same failure again and again: is this approach a dead end? | Back to a checkpoint |
 | `turn.completion` | The model says it is done: did anything verify that? | One nudge if not |
+| `turn.continue` | The run ends on "Let me run the tests next", or on asking for a go-ahead on work you asked for: did it stop short? | Sent back to it, at most twice per message, never toward a step that is hard to undo |
 | `output.drift` | While the model writes: does the tail of its output cross your constraints? | Experimental; corrected mid-stream |
 | `goal.met` | In goal mode, when the big model gives no answer: is the condition met? | The fallback for `/goal` |
 | `board.read` | Where do things stand, in multiple choice? | Feeds the plain-language board |

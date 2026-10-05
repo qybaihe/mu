@@ -15,7 +15,7 @@
   <a href="../../README.md">English</a> · <a href="README.zh-CN.md">简体中文</a> · <b>繁體中文</b> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a>
 </p>
 
-一個程式設計代理每個工作階段要做幾百個和程式碼無關的決定：什麼留在上下文裡，一條指令安不安全，一個發現值不值得告訴另一個代理，工作做完了沒有。交給大模型，花的是 token、延遲和注意力；交給寫死的規則，錯得太多。mu 把它們交給一個**判定器**：一個小而快的模型，每次只回答一個有邊界的問題，每一輪有 35 個判定點。大模型把注意力留給正事。
+一個程式設計代理每個工作階段要做幾百個和程式碼無關的決定：什麼留在上下文裡，一條指令安不安全，一個發現值不值得告訴另一個代理，工作做完了沒有。交給大模型，花的是 token、延遲和注意力；交給寫死的規則，錯得太多。mu 把它們交給一個**判定器**：一個小而快的模型，每次只回答一個有邊界的問題，每一輪有 38 個判定點。大模型把注意力留給正事。
 
 - **mu**：命令列。pi 的全部能力，加上判定核心。
 - **mu 桌面版**：原生應用程式，內建 mu 和執行環境。下載，接上一個模型，開始。
@@ -31,11 +31,12 @@
           ▼
         模型 ──▶ 工具呼叫 ──▶ tool.risk · tool.constraint · tool.approval ──▶ 執行
           ▲                                                                   │
+          │    tool.injection   web pages and MCP output: instructions aimed at the AI are withheld
           │    tool.admission   chunk by chunk: into the context, or archived behind a pointer
           │    context.forget · context.compact   when the context grows      │
           └───────────────────────────────────────────────────────────────────┘
 
- 一輪結束 ──▶ turn.completion · turn.drift · turn.rewind · memory.applied · board.read · cache.warming
+ 一輪結束 ──▶ turn.completion · turn.continue · turn.drift · turn.rewind · memory.applied · board.read · cache.warming
 ```
 
 每個名字都是一個判定點。每個判定點是一個關於一小段狀態的短問題；答案改變模型接下來做什麼，從不改變它要不要問你。規則是底線：看起來危險的指令先由規則攔下，判定器只負責確認這是你要的。
@@ -77,7 +78,9 @@
 | `tool.risk` | 一條被規則標記的指令：是你要的嗎？ | 拿不準就問你 |
 | `tool.approval` | 在「Jev 審批」模式下：這條指令、這個專案外的變更、這個對外動作、這個子代理，任務明確需要嗎？ | 確定需要的直接放行；其餘問你 |
 | `tool.constraint` | 在一個會改變東西的呼叫之前：它越過了你定下的約束嗎？ | 呼叫被攔下 |
+| `tool.injection` | 網頁、搜尋結果或 MCP 伺服器的輸出，一段一段看：裡面有沒有衝著 AI 來的指令？ | 這些段落不會到達模型，原處留一條說明 |
 | `files.locate` | 哪些檔案符合你的描述？ | 為候選檔案排序，取代一連串 grep |
+| `judge.items` | 模型自己提的一個是非題，對很多項逐項問：檔案、日誌行、審查發現 | 透過 `judge_items` 工具，每項得到一個機率，不用一項項讀 |
 | `browser.step` | 觀察、判一次、動手：下一步操作是什麼，作用在哪個元素上？ | 內建瀏覽器走一步 |
 | `review.triage` | `/review` 的每條發現：會改變程式行為嗎，是關於這次變更的嗎？ | 按 P0 到 P3 分級 |
 | `diagnostics.delivery` | 一次編輯後新的語言伺服器診斷：現在說，下次停頓時說，還是不說？ | 錯誤送到模型；風格警告不送 |
@@ -89,6 +92,7 @@
 | `turn.drift` | 每隔幾步：工作還在為目標服務嗎？ | 規則抓繞圈子，判定器抓偏離 |
 | `turn.rewind` | 同一個失敗一次又一次：這條路是死路嗎？ | 退回到某個檢查點 |
 | `turn.completion` | 模型說做完了：有什麼東西驗證過嗎？ | 沒有就提醒一次 |
+| `turn.continue` | 一輪停在「接下來我跑一下測試」，或在你已經要它做的事上問「要我動手嗎」：是不是沒做完就停了？ | 讓它接著做，每則訊息最多兩次；難以撤銷的一步不會推它去做 |
 | `output.drift` | 模型正在寫的時候：輸出的末尾越過了你的約束嗎？ | 實驗性；邊寫邊糾正 |
 | `goal.met` | 目標模式下大模型給不出答案時：條件成立了嗎？ | `/goal` 的備援 |
 | `board.read` | 事情做到哪了，選擇題？ | 供人話看板使用 |
