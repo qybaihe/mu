@@ -2,11 +2,13 @@ import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import { ENV_AGENT_DIR } from "../src/config.ts";
 
 const cliPath = resolve(__dirname, "../src/cli.ts");
-const sourceResolverPath = resolve(__dirname, "../src/experimental/source-resolver.ts");
+// --import takes a module specifier, not a filesystem path.
+const sourceResolverUrl = pathToFileURL(resolve(__dirname, "../src/experimental/source-resolver.ts")).href;
 const tempDirs: string[] = [];
 
 afterEach(() => {
@@ -66,7 +68,7 @@ function readSessionInfoNames(sessionFile: string): string[] {
 
 async function runCli(args: string[], dirs: CliDirs): Promise<CliResult> {
 	let stderr = "";
-	const child = spawn(process.execPath, ["--import", sourceResolverPath, cliPath, ...args], {
+	const child = spawn(process.execPath, ["--import", sourceResolverUrl, cliPath, ...args], {
 		cwd: dirs.projectDir,
 		env: {
 			...process.env,

@@ -1,5 +1,5 @@
 import { type Component, dispatchMouseEvent, type TuiMouseDispatchResult, type TuiMouseEvent } from "../tui.ts";
-import { applyBackgroundToLine, visibleWidth } from "../utils.ts";
+import { flattenLines, visibleWidth } from "../utils.ts";
 
 type RenderCache = {
 	childLines: string[];
@@ -106,14 +106,16 @@ export class Box implements Component {
 		const contentWidth = Math.max(1, width - this.paddingX * 2);
 		const leftPad = " ".repeat(this.paddingX);
 
-		// Render all children
+		// Render all children. Keep the child lines unpadded: children usually return the same string
+		// objects every frame, so the cache check below is a cheap identity comparison per line.
+		// Padding here would create new strings that must be compared character by character.
 		const childLines: string[] = [];
 		const mouseChildren: Array<{ component: Component; height: number }> = [];
 		for (const child of this.children) {
 			const lines = child.render(contentWidth);
 			mouseChildren.push({ component: child, height: lines.length });
 			for (const line of lines) {
-				childLines.push(leftPad + line);
+				childLines.push(line);
 			}
 		}
 		this.mouseLayout = { width: contentWidth, children: mouseChildren };
@@ -140,7 +142,7 @@ export class Box implements Component {
 
 		// Content
 		for (const line of childLines) {
-			result.push(this.applyBg(line, width));
+			result.push(this.applyBg(leftPad + line, width));
 		}
 
 		// Bottom padding
@@ -149,6 +151,7 @@ export class Box implements Component {
 		}
 
 		// Update cache
+		flattenLines(result);
 		this.cache = { childLines, width, bgSample, lines: result };
 
 		return result;
@@ -158,10 +161,7 @@ export class Box implements Component {
 		const visLen = visibleWidth(line);
 		const padNeeded = Math.max(0, width - visLen);
 		const padded = line + " ".repeat(padNeeded);
-
-		if (this.bgFn) {
-			return applyBackgroundToLine(padded, width, this.bgFn);
-		}
-		return padded;
+		// Already padded to width, so apply the background directly instead of measuring the line again.
+		return this.bgFn ? this.bgFn(padded) : padded;
 	}
 }

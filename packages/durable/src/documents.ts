@@ -1,15 +1,19 @@
 import { copyJson, type JsonValue } from "@earendil-works/chord";
 import type { Op } from "@earendil-works/chord/delta";
+import { idFromNumber } from "./ids.ts";
 import type {
+	CheckpointInfo,
 	CommonDocDefinition,
 	ConversationDocFamilyToken,
 	ConversationDocToken,
+	ConversationId,
 	DocDefinition,
 	DocFamilyDefinition,
 	DocFamilyToken,
 	DocToken,
 	DocumentAddress,
 	DocumentCreate,
+	DocumentId,
 	DocumentRecord,
 	DocumentSemantics,
 	Id,
@@ -23,6 +27,7 @@ import type {
 	StoredDocument,
 	TaskDocFamilyToken,
 	TaskDocToken,
+	TaskId,
 } from "./types.ts";
 
 type FamilyInput<T extends JsonObject, I extends JsonValue> = Omit<CommonDocDefinition<T>, "initial"> & {
@@ -81,7 +86,7 @@ export type AnyDocDefinition = DocumentSemantics & {
 	readonly family?: true;
 	initial(seed?: JsonValue): JsonObject;
 	migrate?(value: JsonObject, fromVersion: number): JsonObject;
-	checkpointWhen?(value: Readonly<JsonObject>, ops: readonly Op[]): boolean;
+	checkpointWhen?(value: Readonly<JsonObject>, ops: readonly Op[], info: CheckpointInfo): boolean;
 };
 
 /** Erased singleton or family token. */
@@ -109,10 +114,10 @@ export function resolveAddress(definition: AnyDocDefinition, args: readonly unkn
 			scope = { kind: "session" };
 			break;
 		case "conversation":
-			scope = { kind: "conversation", conversationId: ownerId(args[index++], definition) };
+			scope = { kind: "conversation", conversationId: ownerId<ConversationId>(args[index++], definition) };
 			break;
 		case "task":
-			scope = { kind: "task", taskId: ownerId(args[index++], definition) };
+			scope = { kind: "task", taskId: ownerId<TaskId>(args[index++], definition) };
 			break;
 	}
 	const key = definition.family === true ? (args[index++] as string) : undefined;
@@ -121,11 +126,11 @@ export function resolveAddress(definition: AnyDocDefinition, args: readonly unkn
 	return { address, id: addressId(address), nextArgument: index };
 }
 
-function ownerId(value: unknown, definition: AnyDocDefinition): Id {
-	if (!Number.isSafeInteger(value as number)) {
+function ownerId<I extends Id<string>>(value: unknown, definition: AnyDocDefinition): I {
+	if (typeof value !== "number" || !Number.isSafeInteger(value)) {
 		throw new TypeError(`Document ${definition.kind} requires a ${definition.scope} ID`);
 	}
-	return value as Id;
+	return idFromNumber<I>(value);
 }
 
 /** Stable string identity of one logical address. */
@@ -140,7 +145,7 @@ export function addressId(address: DocumentAddress): string {
 }
 
 /** Build the storage create record for a new incarnation at an address. */
-export function documentCreate(definition: AnyDocDefinition, address: DocumentAddress, id: Id): DocumentCreate {
+export function documentCreate(definition: AnyDocDefinition, address: DocumentAddress, id: DocumentId): DocumentCreate {
 	const key = address.key === undefined ? {} : { key: address.key };
 	switch (address.scope.kind) {
 		case "session":
@@ -160,7 +165,7 @@ export function documentCreate(definition: AnyDocDefinition, address: DocumentAd
 }
 
 /** Reject typed access whose token disagrees with the persisted scope, history, or fork semantics. */
-export function checkRecordScope(definition: AnyDocDefinition, record: DocumentRecord): void {
+export function checkRecordScope(definition: AnyDocDefinition, record: DocumentCreate | DocumentRecord): void {
 	if (
 		record.scope.kind !== definition.scope ||
 		(record.scope.kind === "conversation" &&
@@ -171,7 +176,11 @@ export function checkRecordScope(definition: AnyDocDefinition, record: DocumentR
 }
 
 /** Reject typed access to a stored version the supplied definition cannot use. */
-export function checkRecordVersion(definition: AnyDocDefinition, record: DocumentRecord, version: number): void {
+export function checkRecordVersion(
+	definition: AnyDocDefinition,
+	record: DocumentCreate | DocumentRecord,
+	version: number,
+): void {
 	if (version > definition.version) {
 		throw new Error(`Document ${record.id} (${record.kind}) has newer version ${version} than ${definition.version}`);
 	}
@@ -182,8 +191,18 @@ export function checkRecordVersion(definition: AnyDocDefinition, record: Documen
 
 /** Validate and materialize a detached stored value for typed access. */
 export function materializeDocument(definition: AnyDocDefinition, stored: StoredDocument): JsonObject {
-	checkRecordScope(definition, stored.record);
-	checkRecordVersion(definition, stored.record, stored.version);
-	if (stored.version === definition.version) return stored.value;
-	return copyJson(definition.migrate!(stored.value, stored.version)) as JsonObject;
+	return materializeDocumentValue(definition, stored.record, stored.version, stored.value);
+}
+
+/** Validate and materialize one detached value before its first persisted incarnation. */
+export function materializeDocumentValue(
+	definition: AnyDocDefinition,
+	record: DocumentCreate | DocumentRecord,
+	version: number,
+	value: JsonObject,
+): JsonObject {
+	checkRecordScope(definition, record);
+	checkRecordVersion(definition, record, version);
+	if (version === definition.version) return value;
+	return copyJson(definition.migrate!(value, version)) as JsonObject;
 }

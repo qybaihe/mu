@@ -700,9 +700,9 @@ describe("Generate E2E Tests", () => {
 	);
 
 	describe.skipIf(!hasCloudflareAiGatewayCredentials() || !process.env.ANTHROPIC_API_KEY)(
-		"Cloudflare AI Gateway → Anthropic BYOK (claude-sonnet-4.5 via /anthropic messages)",
+		"Cloudflare AI Gateway → Anthropic BYOK (claude-sonnet-4-5 via /anthropic messages)",
 		() => {
-			const llm = getModel("cloudflare-ai-gateway", "claude-sonnet-4.5");
+			const llm = getModel("cloudflare-ai-gateway", "claude-sonnet-4-5");
 			const options = { headers: { Authorization: `Bearer ${process.env.ANTHROPIC_API_KEY}` } };
 			const thinkingOptions = {
 				...options,
@@ -809,8 +809,8 @@ describe("Generate E2E Tests", () => {
 		});
 	});
 
-	describe.skipIf(!process.env.NVIDIA_API_KEY)("NVIDIA NIM Provider (Nemotron 3 Super via OpenAI Completions)", () => {
-		const llm = getModel("nvidia", "nvidia/nemotron-3-super-120b-a12b");
+	describe.skipIf(!process.env.NVIDIA_API_KEY)("NVIDIA NIM Provider (Nemotron 3 Ultra via OpenAI Completions)", () => {
+		const llm = getModel("nvidia", "nvidia/nemotron-3-ultra-550b-a55b");
 
 		it("should complete basic text generation", { retry: 3 }, async () => {
 			await basicTextGeneration(llm);

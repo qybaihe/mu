@@ -87,6 +87,23 @@ close, or fresh hydration. Applications may place these values inside any
 routing, request, response, or event envelope; Chord does not prescribe that
 outer protocol.
 
+Provider subscriptions atomically capture a snapshot and buffer subsequent
+updates until activation. Activation and reentrant publication use the same FIFO.
+The provider retains at most 100 pending updates per subscription, excluding the
+running delivery. Adding update 101 replaces the entire pending queue with
+`{ type: "reset", snapshot }`: a current full subscription snapshot whose state
+members contain `[["r", value]]` and their new sequence baselines. It also captures
+current instance membership, so discarded spawn/close/replacement events cannot
+leave stale instances behind. Live keyed generations retain their existing handles.
+The reset carries the context of the publication that triggered overflow.
+
+Consumers and codecs must handle this explicit reset before accepting subsequent
+ordinary deltas. A root operation in an ordinary `state` update does **not** permit
+a sequence gap. Resets restart the subscription's path dictionaries, and later
+deltas must be contiguous from each reset baseline. Transport adapters must
+preserve snapshot/reset/update order; they must not drop encoded delta batches or
+assume their own asynchronous queues are bounded by the provider's queue.
+
 ## Tracking JSON deltas
 
 Import the standalone transactional tracker from `@earendil-works/chord/delta`:
@@ -136,6 +153,29 @@ unusable when the callback returns. Chord emits string append and front-truncate
 operations, array splices and permutations, sets, and deletes; large edit sets may
 fold into a complete replacement. Remote connection plumbing encodes each batch
 independently for every client/state pairing.
+
+### Public state subscriptions
+
+`state.subscribe(async (value, context, delivery) => { ... })` serializes callbacks
+independently for each subscription. Hydration starts immediately when a value is
+available, and its returned promise must settle before updates start. Synchronous
+callbacks still run synchronously. Read the captured `value` inside an asynchronous
+callback: `state.value` may already refer to a later revision.
+
+Each subscription retains at most 100 pending complete-value deliveries, excluding
+the running callback. On overflow, only the newest pending value, context, and
+delivery metadata are retained; a not-yet-started initial hydration is preserved.
+Thus public delivery sequences may skip. This is a frame-count policy, not a byte
+limit. Internal exact-operation subscriptions remain synchronous and receive every
+revision, independently of slow public callbacks.
+
+The returned unsubscribe function immediately discards pending work and prevents
+new callbacks. It neither aborts nor waits for the running callback. Synchronous
+throws and promise rejections are observed, reported, and do not stop other
+subscriptions or subsequent callbacks. Attached sources and remote bindings use
+their `onError` handler; local mutable states (and attached sources without a
+handler) report failures by throwing in a microtask. Unsubscribing does not hide a
+later rejection from the running callback.
 
 The standalone [Delta guide](src/delta/README.md) defines the complete ownership,
 lifecycle, operation, and replica contracts.

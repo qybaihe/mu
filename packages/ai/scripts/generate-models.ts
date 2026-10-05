@@ -30,6 +30,7 @@ import type {
 import {
 	assertExactModelIds,
 	createModelDataManifest,
+	groupProviderModelData,
 	type ModelDataStructure,
 	MODEL_DATA_MANIFEST_FILE,
 	readModelDataProviderIds,
@@ -151,6 +152,7 @@ interface NvidiaNimModelListItem {
 interface AiGatewayModel {
 	id: string;
 	name?: string;
+	type?: string;
 	context_window?: number;
 	max_tokens?: number;
 	tags?: string[];
@@ -196,7 +198,7 @@ const TOGETHER_REASONING_ONLY_MODELS = new Set([
 	"MiniMaxAI/MiniMax-M2.7",
 ]);
 const TOGETHER_REASONING_EFFORT_MODELS = new Set(["openai/gpt-oss-20b", "openai/gpt-oss-120b"]);
-const TOGETHER_TOGGLE_REASONING_EFFORT_MODELS = new Set(["deepseek-ai/DeepSeek-V4-Pro"]);
+const TOGETHER_TOGGLE_REASONING_EFFORT_MODELS = new Set(["deepseek-ai/DeepSeek-V4-Pro-0813"]);
 const TOGETHER_FIXED_REASONING_LEVEL_MAP = {
 	off: null,
 	minimal: null,
@@ -222,6 +224,9 @@ const TOGETHER_TOGGLE_REASONING_LEVEL_MAP = {
 
 const AI_GATEWAY_MODELS_URL = "https://ai-gateway.vercel.sh/v1";
 const AI_GATEWAY_BASE_URL = "https://ai-gateway.vercel.sh";
+// TypeSafe-compatible System One endpoint for evaluation models.
+// https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe
+const AI_GATEWAY_TYPESAFE_BASE_URL = "https://ai-gateway.vercel.sh/typesafe/v1";
 const VERTEX_BASE_URL = "https://{location}-aiplatform.googleapis.com";
 const NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1";
 const NVIDIA_HEADERS = {
@@ -365,6 +370,7 @@ const OPENAI_TOOL_SEARCH_MODEL_IDS = new Set([
 	"gpt-6-astra",
 	"gpt-6-sol",
 	"gpt-6-luna",
+	"gpt-6.1-sol",
 ]);
 const OPENAI_ADDITIONAL_TOOLS_MODEL_IDS = OPENAI_TOOL_SEARCH_MODEL_IDS;
 const OPENAI_MID_CONVO_SYSTEM_MESSAGE_MODEL_IDS = OPENAI_TOOL_SEARCH_MODEL_IDS;
@@ -375,6 +381,7 @@ const OPENAI_CODEX_ADDITIONAL_TOOLS_MODEL_IDS = new Set([
 	"gpt-6-astra",
 	"gpt-6-sol",
 	"gpt-6-luna",
+	"gpt-6.1-sol",
 ]);
 const OPENAI_LONG_CONTEXT_INPUT_THRESHOLD = 272000;
 const OPENAI_SHORT_CONTEXT_CAPPED_MODEL_IDS = new Set([
@@ -386,6 +393,7 @@ const OPENAI_SHORT_CONTEXT_CAPPED_MODEL_IDS = new Set([
 	"gpt-6-astra",
 	"gpt-6-sol",
 	"gpt-6-luna",
+	"gpt-6.1-sol",
 ]);
 const OPENAI_LONG_CONTEXT_PRICING_MODEL_IDS = new Set([
 	"gpt-5.4",
@@ -398,6 +406,7 @@ const OPENAI_LONG_CONTEXT_PRICING_MODEL_IDS = new Set([
 	"gpt-6-astra",
 	"gpt-6-sol",
 	"gpt-6-luna",
+	"gpt-6.1-sol",
 ]);
 
 // Keep the generated default no less restrictive than coding-agent's historical
@@ -435,6 +444,7 @@ const OPENAI_STANDARD_COSTS: Record<string, ModelCost> = {
 	"gpt-6-astra": { input: 10, output: 50, cacheRead: 1, cacheWrite: 12.5 },
 	"gpt-6-luna": { input: 0.1, output: 0.5, cacheRead: 0.01, cacheWrite: 0.125 },
 	"gpt-6-sol": { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 2.5 },
+	"gpt-6.1-sol": { input: 2, output: 10, cacheRead: 0.1, cacheWrite: 2.5 },
 };
 
 const OPENAI_RESPONSES_NONE_REASONING_MODELS = new Set([
@@ -591,6 +601,7 @@ function supportsAnthropicMidConvoEffort(modelId: string): boolean {
 	const id = modelId.toLowerCase().replace(/^~?anthropic\//, "");
 	return (
 		/^claude-opus-(?:5|5[.-]5)(?:-\d{8})?$/.test(id) ||
+		/^claude-sonnet-5[.-]5(?:-\d{8})?$/.test(id) ||
 		/^claude-(?:fable|mythos)-5(?:[.-]1)(?:-\d{8})?$/.test(id)
 	);
 }
@@ -598,6 +609,7 @@ function supportsAnthropicMidConvoEffort(modelId: string): boolean {
 function supportsAnthropicMidConvoSystemMessages(modelId: string): boolean {
 	return (
 		/^claude-opus-(?:4[.-]8|5(?:[.-]5)?)(?:-\d{8})?$/.test(modelId) ||
+		/^claude-sonnet-5[.-]5(?:-\d{8})?$/.test(modelId) ||
 		/^claude-(?:fable|mythos)-5(?:[.-]1)?(?:-\d{8})?$/.test(modelId)
 	);
 }
@@ -629,7 +641,9 @@ function isAnthropicTemperatureUnsupportedModel(modelId: string): boolean {
 		id.includes("opus-4-8") ||
 		id.includes("opus-4.8") ||
 		id.includes("opus-5") ||
-		id.includes("opus.5")
+		id.includes("opus.5") ||
+		id.includes("sonnet-5-5") ||
+		id.includes("sonnet-5.5")
 	);
 }
 
@@ -1020,13 +1034,17 @@ function applyThinkingLevelMetadata(model: Model<any>): void {
 		mergeThinkingLevelMap(model, { off: null });
 	}
 	if (
-		(model.id === "gpt-6-astra" || model.id === "gpt-6-sol" || model.id === "gpt-6-luna") &&
+		(model.id === "gpt-6-astra" ||
+			model.id === "gpt-6-sol" ||
+			model.id === "gpt-6-luna" ||
+			model.id === "gpt-6.1-sol") &&
 		(model.api === "openai-responses" ||
 			model.api === "azure-openai-responses" ||
 			model.api === "openai-codex-responses")
 	) {
 		mergeThinkingLevelMap(model, {
-			off: model.id === "gpt-6-astra" ? null : "none",
+			// GPT-6 Astra and GPT-6.1 Sol reject reasoning.effort "none".
+			off: model.id === "gpt-6-astra" || model.id === "gpt-6.1-sol" ? null : "none",
 			minimal: null,
 			low: "low",
 			medium: "medium",
@@ -1212,6 +1230,10 @@ function getAnthropicMessagesCompat(provider: string, modelId: string): Anthropi
 	if (provider === "xiaomi" || provider.startsWith("xiaomi-token-plan-")) {
 		compat.allowEmptySignature = true;
 	}
+	// OpenCode Qwen 3.8 Flash emits and accepts thinking blocks with empty signatures.
+	if ((provider === "opencode" || provider === "opencode-go") && modelId === "qwen3.8-flash") {
+		compat.allowEmptySignature = true;
+	}
 	return Object.keys(compat).length > 0 ? compat : undefined;
 }
 
@@ -1320,13 +1342,17 @@ async function fetchRadiusModels(): Promise<Model<"pi-messages">[]> {
 	}
 }
 
-async function fetchAiGatewayModels(): Promise<Model<any>[]> {
+async function fetchAiGatewayModels(): Promise<{
+	chat: Model<any>[];
+	classifiers: ClassifierModel<"typesafe-system-one">[];
+}> {
 	try {
 		console.log("Fetching models from Vercel AI Gateway API...");
 		const response = await fetch(`${AI_GATEWAY_MODELS_URL}/models`);
 		if (!response.ok) throw new Error(`Vercel AI Gateway API returned ${response.status}`);
 		const data = await response.json();
 		const models: Model<any>[] = [];
+		const classifiers: ClassifierModel<"typesafe-system-one">[] = [];
 
 		const toNumber = (value: string | number | undefined): number => {
 			if (typeof value === "number") {
@@ -1338,6 +1364,27 @@ async function fetchAiGatewayModels(): Promise<Model<any>[]> {
 
 		const items = Array.isArray(data.data) ? (data.data as AiGatewayModel[]) : [];
 		for (const model of items) {
+			// Evaluation models such as TypeSafe's Jev are served through the
+			// TypeSafe-compatible System One endpoint.
+			if (model.type === "evaluation") {
+				classifiers.push({
+					type: "classifier",
+					id: model.id,
+					name: model.name || model.id,
+					api: "typesafe-system-one",
+					provider: "vercel-ai-gateway",
+					baseUrl: AI_GATEWAY_TYPESAFE_BASE_URL,
+					input: ["text"],
+					cost: {
+						input: roundCost(toNumber(model.pricing?.input) * 1_000_000),
+						output: roundCost(toNumber(model.pricing?.output) * 1_000_000),
+						cacheRead: 0,
+						cacheWrite: 0,
+					},
+					contextWindow: model.context_window || 4096,
+				});
+				continue;
+			}
 			const tags = Array.isArray(model.tags) ? model.tags : [];
 			// Only include models that support tools
 			if (!tags.includes("tool-use")) continue;
@@ -1372,12 +1419,14 @@ async function fetchAiGatewayModels(): Promise<Model<any>[]> {
 			});
 		}
 
-		console.log(`Fetched ${models.length} tool-capable models from Vercel AI Gateway`);
-		return models;
+		console.log(
+			`Fetched ${models.length} tool-capable and ${classifiers.length} classifier models from Vercel AI Gateway`,
+		);
+		return { chat: models, classifiers };
 	} catch (error) {
 		console.error("Failed to fetch Vercel AI Gateway models:", error);
 		if (generatorOptions.strict) throw error;
-		return [];
+		return { chat: [], classifiers: [] };
 	}
 }
 
@@ -1742,12 +1791,8 @@ async function loadModelsDevData(): Promise<Model<any>[]> {
 					baseUrl: getBedrockBaseUrl(id),
 					reasoning: m.reasoning === true,
 					input: (m.modalities?.input?.includes("image") ? ["text", "image"] : ["text"]) as ("text" | "image")[],
-					cost: {
-						input: m.cost?.input || 0,
-						output: m.cost?.output || 0,
-						cacheRead: m.cost?.cache_read || 0,
-						cacheWrite: m.cost?.cache_write || 0,
-					},
+					// Includes models.dev pricing tiers, e.g. the long-context tier for OpenAI models (#10326).
+					cost: getModelsDevCost(m.cost),
 					contextWindow: m.limit?.context || 4096,
 					maxTokens: m.limit?.output || 4096,
 					...(m.structured_output === true && { compat: { supportsStrictMode: true } }),
@@ -1918,7 +1963,10 @@ async function loadModelsDevData(): Promise<Model<any>[]> {
 				} else if (upstream === "anthropic") {
 					api = "anthropic-messages";
 					baseUrl = CLOUDFLARE_AI_GATEWAY_ANTHROPIC_BASE_URL;
-					id = nativeId;
+					// The /anthropic passthrough forwards the model ID to Anthropic unchanged.
+					// models.dev lists dotted versions (claude-opus-5.5), but Anthropic only
+					// accepts dashed IDs (claude-opus-5-5).
+					id = nativeId.replaceAll(".", "-");
 				} else if (upstream === "workers-ai") {
 					api = "openai-completions";
 					baseUrl = CLOUDFLARE_AI_GATEWAY_COMPAT_BASE_URL;
@@ -2048,6 +2096,10 @@ async function loadModelsDevData(): Promise<Model<any>[]> {
 				const m = model as ModelsDevModel;
 				if (m.tool_call !== true) continue;
 
+				// Models with effort values use `reasoning_effort` with these levels.
+				// Reasoning models without them (Magistral) use `prompt_mode`.
+				const thinkingLevelMap = getEffortThinkingLevelMap(m.reasoning_options ?? []);
+
 				models.push({
 					id: modelId,
 					name: m.name || modelId,
@@ -2055,6 +2107,7 @@ async function loadModelsDevData(): Promise<Model<any>[]> {
 					provider: "mistral",
 					baseUrl: "https://api.mistral.ai",
 					reasoning: m.reasoning === true,
+					...(thinkingLevelMap ? { thinkingLevelMap } : {}),
 					input: m.modalities?.input?.includes("image") ? ["text", "image"] : ["text"],
 					cost: {
 						input: m.cost?.input || 0,
@@ -2065,7 +2118,6 @@ async function loadModelsDevData(): Promise<Model<any>[]> {
 					contextWindow: m.limit?.context || 4096,
 					maxTokens: m.limit?.output || 4096,
 				});
-				recordModelsDevReasoningOptions("mistral", modelId, m);
 			}
 		}
 
@@ -2638,7 +2690,8 @@ async function loadModelsDevClassifierModels(): Promise<ClassifierModel<"typesaf
 				provider: "typesafe",
 				baseUrl: "https://api.typesafe.ai/v1/",
 				input: metadata.modalities?.input?.includes("image") ? ["text", "image"] : ["text"],
-				// The canonical models.dev entry has no direct-provider pricing and System One reports no token usage.
+				// The canonical models.dev entry has no direct-provider pricing. System One reports token usage,
+				// so classify() results carry token counts but price them at zero.
 				cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
 				contextWindow: metadata.limit?.context || 64000,
 			},
@@ -2653,7 +2706,61 @@ async function loadModelsDevClassifierModels(): Promise<ClassifierModel<"typesaf
 // Workers AI has no unauthenticated catalog and models.dev does not list its
 // System One models yet. Cloudflare publishes pricing only in the dashboard.
 // https://developers.cloudflare.com/ai/models/typesafe/jev/
+// OpenCode Zen serves Jev through its TypeSafe-compatible System One endpoint.
+// Neither its /zen/v1/models listing nor models.dev carries metadata for it.
+// https://opencode.ai/docs/zen
+const OPENCODE_CLASSIFIER_MODELS: ClassifierModel<"typesafe-system-one">[] = [
+	{
+		type: "classifier",
+		id: "jev-1.13",
+		name: "Jev 1.13",
+		api: "typesafe-system-one",
+		provider: "opencode",
+		baseUrl: "https://opencode.ai/zen/v1",
+		input: ["text"],
+		cost: { input: 0.042, output: 0, cacheRead: 0, cacheWrite: 0 },
+		contextWindow: 32000,
+	},
+	{
+		type: "classifier",
+		id: "jev-1.13-free",
+		name: "Jev 1.13 Free",
+		api: "typesafe-system-one",
+		provider: "opencode",
+		baseUrl: "https://opencode.ai/zen/v1",
+		input: ["text"],
+		cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+		contextWindow: 32000,
+	},
+];
+
 const CLOUDFLARE_WORKERS_AI_CLASSIFIER_MODELS: ClassifierModel<"cloudflare-workers-ai-system-one">[] = [
+	// Cloudflare-hosted Clef decision models. They accept images, but classifier
+	// contexts carry text or JSON state only, so the catalog advertises text.
+	// Pricing: https://developers.cloudflare.com/workers-ai/models/clef/
+	// and https://developers.cloudflare.com/workers-ai/models/clef-flash/
+	{
+		type: "classifier",
+		id: "@cf/cloudflare/clef",
+		name: "Clef",
+		api: "cloudflare-workers-ai-system-one",
+		provider: "cloudflare-workers-ai",
+		baseUrl: CLOUDFLARE_WORKERS_AI_REST_BASE_URL,
+		input: ["text"],
+		cost: { input: 0.24, output: 0, cacheRead: 0, cacheWrite: 0 },
+		contextWindow: 65536,
+	},
+	{
+		type: "classifier",
+		id: "@cf/cloudflare/clef-flash",
+		name: "Clef Flash",
+		api: "cloudflare-workers-ai-system-one",
+		provider: "cloudflare-workers-ai",
+		baseUrl: CLOUDFLARE_WORKERS_AI_REST_BASE_URL,
+		input: ["text"],
+		cost: { input: 0.09, output: 0, cacheRead: 0, cacheWrite: 0 },
+		contextWindow: 65536,
+	},
 	{
 		type: "classifier",
 		id: "typesafe/jev",
@@ -2676,11 +2783,11 @@ async function generateModels() {
 	const modelsDevModels = await loadModelsDevData();
 	const modelsDevClassifierModels = await loadModelsDevClassifierModels();
 	const openRouterCatalog = await fetchOpenRouterModels();
-	const aiGatewayModels = await fetchAiGatewayModels();
+	const aiGatewayCatalog = await fetchAiGatewayModels();
 	const radiusModels = await fetchRadiusModels();
 
 	// Combine chat models (models.dev has priority where sources overlap).
-	const allModels = [...modelsDevModels, ...openRouterCatalog.chat, ...aiGatewayModels, ...radiusModels].filter(
+	const allModels = [...modelsDevModels, ...openRouterCatalog.chat, ...aiGatewayCatalog.chat, ...radiusModels].filter(
 		(model) =>
 			!(model.provider === "xai" && XAI_BUILTIN_EXCLUDED_MODEL_IDS.has(model.id)) &&
 			!((model.provider === "opencode" || model.provider === "opencode-go") && model.id === "gpt-5.3-codex-spark"),
@@ -2707,6 +2814,32 @@ async function generateModels() {
 			},
 			input: ["text", "image"],
 			cost: { input: 4, output: 20, cacheRead: 0.2, cacheWrite: 5 },
+			contextWindow: 1000000,
+			maxTokens: 128000,
+		});
+	}
+
+	// Add Claude Sonnet 5.5 until models.dev includes it.
+	// https://platform.claude.com/docs/en/models/sonnet-5-5/overview
+	if (!allModels.some((model) => model.provider === "anthropic" && model.id === "claude-sonnet-5-5")) {
+		allModels.push({
+			id: "claude-sonnet-5-5",
+			name: "Claude Sonnet 5.5",
+			api: "anthropic-messages",
+			provider: "anthropic",
+			baseUrl: "https://api.anthropic.com",
+			reasoning: true,
+			thinkingLevelMap: {
+				off: null,
+				minimal: null,
+				low: "low",
+				medium: "medium",
+				high: "high",
+				xhigh: "xhigh",
+				max: "max",
+			},
+			input: ["text", "image"],
+			cost: { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 2.5 },
 			contextWindow: 1000000,
 			maxTokens: 128000,
 		});
@@ -2763,9 +2896,10 @@ async function generateModels() {
 			candidate.contextWindow = 1000000;
 		}
 
-		// models.dev may list Opus 5.5 before its effort metadata is complete.
+		// models.dev may list Opus 5.5 and Sonnet 5.5 before their effort metadata is complete.
 		if (
-			(candidate.provider === "anthropic" && candidate.id === "claude-opus-5-5") ||
+			(candidate.provider === "anthropic" &&
+				(candidate.id === "claude-opus-5-5" || candidate.id === "claude-sonnet-5-5")) ||
 			(candidate.provider === "github-copilot" && candidate.id === "claude-opus-5.5")
 		) {
 			mergeThinkingLevelMap(candidate, {
@@ -2852,6 +2986,18 @@ async function generateModels() {
 
 	// Add missing gpt models
 	const missingOpenAiModels: Model<"openai-responses">[] = [
+		{
+			id: "gpt-6.1-sol",
+			name: "GPT-6.1 Sol",
+			api: "openai-responses",
+			baseUrl: "https://api.openai.com/v1",
+			provider: "openai",
+			reasoning: true,
+			input: ["text", "image"],
+			cost: withOpenAiLongContextPricing(OPENAI_STANDARD_COSTS["gpt-6.1-sol"]),
+			contextWindow: OPENAI_LONG_CONTEXT_INPUT_THRESHOLD,
+			maxTokens: 128000,
+		},
 		{
 			id: "gpt-6-astra",
 			name: "GPT-6 Astra",
@@ -3086,6 +3232,18 @@ async function generateModels() {
 	const CODEX_MAX_TOKENS = 128000;
 	const codexModels: Model<"openai-codex-responses">[] = [
 		{
+			id: "gpt-6.1-sol",
+			name: "GPT-6.1 Sol",
+			api: "openai-codex-responses",
+			provider: "openai-codex",
+			baseUrl: CODEX_BASE_URL,
+			reasoning: true,
+			input: ["text", "image"],
+			cost: withOpenAiLongContextPricing(OPENAI_STANDARD_COSTS["gpt-6.1-sol"]),
+			contextWindow: CODEX_CONTEXT,
+			maxTokens: CODEX_MAX_TOKENS,
+		},
+		{
 			id: "gpt-6-astra",
 			name: "GPT-6 Astra",
 			api: "openai-codex-responses",
@@ -3193,6 +3351,7 @@ async function generateModels() {
 			provider: "mistral",
 			baseUrl: "https://api.mistral.ai",
 			reasoning: true,
+			thinkingLevelMap: getEffortThinkingLevelMap([{ type: "effort", values: ["none", "high"] }]),
 			input: ["text", "image"],
 			cost: {
 				input: 1.5,
@@ -3317,6 +3476,8 @@ async function generateModels() {
 	const classifierModels: ClassifierModel<ClassifierApi>[] = [
 		...modelsDevClassifierModels,
 		...openRouterCatalog.classifiers,
+		...aiGatewayCatalog.classifiers,
+		...OPENCODE_CLASSIFIER_MODELS,
 		...CLOUDFLARE_WORKERS_AI_CLASSIFIER_MODELS,
 	];
 	for (const model of classifierModels) {
@@ -3360,22 +3521,9 @@ async function generateModels() {
 	const generatedDataProviders: Record<string, Record<string, Record<string, AnyModel>>> = {};
 	const modelDataStructure: ModelDataStructure = {};
 	for (const providerId of generatedDataProviderIds) {
-		const models = jsonAllProviders[providerId];
-		generatedDataProviders[providerId] = {};
-		modelDataStructure[providerId] = {};
-		const apiIds = Array.from(new Set(models.map((model) => model.api))).sort();
-		for (const api of apiIds) {
-			generatedDataProviders[providerId][api] = {};
-			for (const model of models) {
-				if (model.api !== api) continue;
-				const identity = `${model.type}:${model.id}`;
-				if (generatedDataProviders[providerId][api][identity]) {
-					throw new Error(`${providerId}/${identity} has duplicate ${api} catalog entries`);
-				}
-				generatedDataProviders[providerId][api][identity] = model;
-				modelDataStructure[providerId][identity] = api;
-			}
-		}
+		const { groups, structure } = groupProviderModelData(providerId, jsonAllProviders[providerId]);
+		generatedDataProviders[providerId] = groups;
+		modelDataStructure[providerId] = structure;
 	}
 
 	const generatedAt = new Date().toISOString();

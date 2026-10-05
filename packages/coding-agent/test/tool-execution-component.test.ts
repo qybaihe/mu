@@ -3,10 +3,6 @@ import { resetCapabilitiesCache, setCapabilities, Text, type TUI, type TuiMouseE
 import { Type } from "typebox";
 import { afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 
-const imageConvertMocks = vi.hoisted(() => ({ convertToPng: vi.fn() }));
-
-vi.mock("../src/utils/image-convert.ts", () => imageConvertMocks);
-
 import { getReadmePath } from "../src/config.ts";
 import type { ToolDefinition } from "../src/core/extensions/types.ts";
 import { type BashOperations, createBashToolDefinition } from "../src/core/tools/bash.ts";
@@ -30,6 +26,10 @@ function createBaseToolDefinition(name = "custom_tool"): ToolDefinition {
 	};
 }
 
+// Small 2x2 blue JPEG image
+const TINY_JPEG =
+	"/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAACAAIDAREAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/xAAVAQEBAAAAAAAAAAAAAAAAAAAGCf/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AD3VTB3/2Q==";
+
 function createFakeTui(): TUI {
 	return {
 		requestRender: () => {},
@@ -42,44 +42,27 @@ describe("ToolExecutionComponent parity", () => {
 	});
 	afterEach(() => {
 		resetCapabilitiesCache();
-		imageConvertMocks.convertToPng.mockReset();
 		vi.useRealTimers();
 	});
 
-	// Issue #8577: ignore conversions that finish after the image was replaced.
-	test("keeps the final tool image when a partial image conversion finishes late", async () => {
+	// Issue #10292: the component loads the PNG transcoder itself, so this works in any TUI host.
+	// Issue #8577: a replaced partial image must not resurface.
+	test("converts non-PNG tool images once the transcoder loads", async () => {
 		setCapabilities({ images: "kitty", trueColor: true, hyperlinks: true });
-		let finishConversion!: (result: { data: string; mimeType: string }) => void;
-		const conversion = new Promise<{ data: string; mimeType: string }>((resolve) => {
-			finishConversion = resolve;
-		});
-		imageConvertMocks.convertToPng.mockReturnValue(conversion);
-		const component = new ToolExecutionComponent(
-			"custom_tool",
-			"tool-image-race",
-			{},
-			{},
-			undefined,
-			createFakeTui(),
-			process.cwd(),
-		);
-
+		const component = new ToolExecutionComponent("tool", "id", {}, {}, undefined, createFakeTui(), process.cwd());
 		component.updateResult(
-			{ content: [{ type: "image", data: "partial-jpeg", mimeType: "image/jpeg" }], isError: false },
+			{ content: [{ type: "image", data: "cGFydGlhbA==", mimeType: "image/jpeg" }], isError: false },
 			true,
 		);
-		component.updateResult({
-			content: [{ type: "image", data: "final-png", mimeType: "image/png" }],
-			isError: false,
-		});
-		expect(component.render(120).join("\n")).toContain("final-png");
+		component.updateResult({ content: [{ type: "image", data: TINY_JPEG, mimeType: "image/jpeg" }], isError: false });
 
-		finishConversion({ data: "converted-partial", mimeType: "image/png" });
-		await conversion;
-
+		await vi.waitFor(() => expect(component.render(120).join("\n")).toContain(";iVBORw0KGgo"));
 		const rendered = component.render(120).join("\n");
-		expect(rendered).toContain("final-png");
-		expect(rendered).not.toContain("converted-partial");
+		expect(rendered).not.toContain("cGFydGlhbA==");
+
+		// Invalidation reuses the converted Image, so the Kitty image ID stays the same.
+		component.invalidate();
+		expect(component.render(120).join("\n")).toBe(rendered);
 	});
 
 	test("stacks custom call and result renderers like the old implementation", () => {
@@ -294,6 +277,22 @@ describe("ToolExecutionComponent parity", () => {
 		expect(rendered.match(/\bread\b/g)?.length ?? 0).toBe(1);
 	});
 
+	// Issue #9996: strict tool schemas make models send null for omitted optional fields.
+	test("renders read calls with null offset and limit as full-file reads", () => {
+		const component = new ToolExecutionComponent(
+			"read",
+			"tool-read-null-range",
+			{ path: "src/example.ts", offset: null, limit: null },
+			{},
+			createReadToolDefinition(process.cwd()),
+			createFakeTui(),
+			process.cwd(),
+		);
+		const rendered = stripAnsi(component.render(120).join("\n"));
+		expect(rendered).toContain("read src/example.ts");
+		expect(rendered).not.toContain("src/example.ts:");
+	});
+
 	test("inherits missing built-in result renderer slot from the built-in tool", () => {
 		const overrideDefinition: ToolDefinition = {
 			...createBaseToolDefinition("read"),
@@ -430,6 +429,33 @@ describe("ToolExecutionComponent parity", () => {
 		component.updateResult({ content: [{ type: "text", text: "done" }], details: {}, isError: false }, false);
 		const rendered = stripAnsi(component.render(120).join("\n"));
 		expect(rendered).toContain("arg:bar");
+	});
+
+	test("shows arguments in the fallback call header", () => {
+		const longValue = "x".repeat(200);
+		const component = new ToolExecutionComponent(
+			"custom_tool",
+			"tool-args",
+			{ query: "pi", long: longValue, text: "line one\nline two" },
+			{},
+			createBaseToolDefinition(),
+			createFakeTui(),
+			process.cwd(),
+		);
+
+		const collapsed = stripAnsi(component.render(300).join("\n"));
+		expect(collapsed).toContain('custom_tool query="pi" long="xxx');
+		expect(collapsed).toContain("...");
+		expect(collapsed).not.toContain(longValue);
+
+		component.setExpanded(true);
+		const expanded = stripAnsi(component.render(300).join("\n"));
+		expect(expanded).toContain("  query: pi");
+		expect(expanded).toContain(longValue);
+		const expandedLines = expanded.split("\n").map((line) => line.trimEnd());
+		const textLine = expandedLines.findIndex((line) => line.endsWith("  text: line one"));
+		expect(textLine).toBeGreaterThan(-1);
+		expect(expandedLines[textLine + 1]).toMatch(/^\s+ {4}line two$/);
 	});
 
 	test("collapses fallback results until expanded", () => {

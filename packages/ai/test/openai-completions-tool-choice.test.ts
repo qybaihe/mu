@@ -1320,7 +1320,7 @@ describe("openai-completions tool_choice", () => {
 			},
 		];
 
-		const { compat: _compat, ...baseModel } = getModel("opencode-go", "kimi-k2.7-code")!;
+		const { compat: _compat, ...baseModel } = getModel("opencode-go", "kimi-k3")!;
 		const model = { ...baseModel, api: "openai-completions" } as const;
 		const response = await streamSimple(
 			model,
@@ -1367,7 +1367,7 @@ describe("openai-completions tool_choice", () => {
 	});
 
 	it("replays OpenCode Go reasoning thinking blocks as reasoning_content", () => {
-		const { compat: _compat, ...baseModel } = getModel("opencode-go", "kimi-k2.7-code")!;
+		const { compat: _compat, ...baseModel } = getModel("opencode-go", "kimi-k3")!;
 		const model = { ...baseModel, api: "openai-completions" } as Model<"openai-completions">;
 		const messages = convertMessages(
 			model,
@@ -1377,7 +1377,7 @@ describe("openai-completions tool_choice", () => {
 						role: "assistant",
 						api: "openai-completions",
 						provider: "opencode-go",
-						model: "kimi-k2.7-code",
+						model: "kimi-k3",
 						content: [
 							{ type: "thinking", thinking: "think", thinkingSignature: "reasoning" },
 							{ type: "toolCall", id: "call_1", name: "read", arguments: { path: "README.md" } },

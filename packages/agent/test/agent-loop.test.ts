@@ -8,9 +8,16 @@ import {
 } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import { describe, expect, it } from "vitest";
-import { agentLoop, agentLoopContinue, runAgentLoop } from "../src/agent-loop.ts";
+import { agentLoop, agentLoopContinue, runAgentLoop, runToolCall } from "../src/agent-loop.ts";
 import { setDefaultStreamFn } from "../src/index.ts";
-import type { AgentContext, AgentEvent, AgentLoopConfig, AgentMessage, AgentTool } from "../src/types.ts";
+import type {
+	AgentContext,
+	AgentEvent,
+	AgentLoopConfig,
+	AgentMessage,
+	AgentTool,
+	AgentToolCall,
+} from "../src/types.ts";
 
 // Mock stream for testing - mimics MockAssistantStream
 class MockAssistantStream extends EventStream<AssistantMessageEvent, AssistantMessage> {
@@ -2171,5 +2178,108 @@ describe("agentLoopContinue with AgentMessage", () => {
 		const messages = await stream.result();
 		expect(messages.length).toBe(1);
 		expect(messages[0].role).toBe("assistant");
+	});
+});
+
+describe("runToolCall", () => {
+	const echoSchema = Type.Object({ value: Type.String() });
+	const echo: AgentTool<typeof echoSchema> = {
+		name: "echo",
+		label: "Echo",
+		description: "Echo tool",
+		parameters: echoSchema,
+		outputSchema: Type.Object({ value: Type.String() }),
+		async execute(_toolCallId, params, _signal, onUpdate) {
+			onUpdate?.({ content: [{ type: "text", text: "partial" }], details: {} });
+			return {
+				content: [{ type: "text", text: params.value }],
+				details: {},
+				structuredContent: { value: params.value },
+			};
+		},
+	};
+	const failing: AgentTool = {
+		name: "failing",
+		label: "Failing",
+		description: "Returns an error result",
+		parameters: Type.Object({}),
+		async execute() {
+			return { content: [{ type: "text", text: "bad" }], details: { partial: true }, isError: true };
+		},
+	};
+	const assistantMessage = createAssistantMessage([]);
+	const call = (id: string, name: string, args: AgentToolCall["arguments"]): AgentToolCall => ({
+		type: "toolCall",
+		id,
+		name,
+		arguments: args,
+	});
+
+	it("validates, runs the hooks, and reports failures as error outcomes", async () => {
+		const hookCalls: string[] = [];
+		const updates: unknown[] = [];
+		const options = {
+			tools: [echo, failing],
+			assistantMessage,
+			context: { messages: [] },
+			beforeToolCall: async ({ toolCall, args }: { toolCall: { id: string }; args: unknown }) => {
+				hookCalls.push(`before ${toolCall.id}`);
+				if ((args as { value?: string }).value === "blocked") return { block: true, reason: "nope" };
+				return undefined;
+			},
+			afterToolCall: async ({ toolCall }: { toolCall: { id: string } }) => {
+				hookCalls.push(`after ${toolCall.id}`);
+				return undefined;
+			},
+			onUpdate: (partial: unknown) => {
+				updates.push(partial);
+			},
+		};
+
+		expect(await runToolCall(call("a", "echo", { value: "a" }), options)).toMatchObject({
+			toolCall: { id: "a" },
+			result: { structuredContent: { value: "a" } },
+			isError: false,
+		});
+		expect(await runToolCall(call("b", "echo", { value: { nested: true } }), options)).toMatchObject({
+			isError: true,
+		});
+		expect(await runToolCall(call("c", "echo", { value: "blocked" }), options)).toMatchObject({
+			result: { content: [{ type: "text", text: "nope" }] },
+			isError: true,
+		});
+		expect(await runToolCall(call("d", "missing", {}), options)).toMatchObject({
+			result: { content: [{ type: "text", text: "Tool missing not found" }] },
+			isError: true,
+		});
+		// Error results keep their details.
+		expect(await runToolCall(call("e", "failing", {}), options)).toMatchObject({
+			result: { details: { partial: true } },
+			isError: true,
+		});
+		expect(updates).toEqual([{ content: [{ type: "text", text: "partial" }], details: {} }]);
+		// Validation failures and unknown tools never reach the hooks; blocked calls skip afterToolCall.
+		expect(hookCalls).toEqual(["before a", "after a", "before c", "before e", "after e"]);
+	});
+
+	it("lets afterToolCall replace structured content and drops it when only content is replaced", async () => {
+		const redacted = [{ type: "text" as const, text: "redacted" }];
+		const results = [
+			{ content: redacted },
+			{ structuredContent: { value: "replaced" } },
+			{ content: redacted, structuredContent: { value: "both" } },
+			{ details: { note: "kept" } },
+		];
+		const seen: unknown[] = [];
+		for (const afterResult of results) {
+			const outcome = await runToolCall(call("x", "echo", { value: "original" }), {
+				tools: [echo],
+				assistantMessage,
+				context: { messages: [] },
+				afterToolCall: async () => afterResult,
+			});
+			seen.push(outcome.result.structuredContent);
+		}
+		expect(seen).toEqual([undefined, { value: "replaced" }, { value: "both" }, { value: "original" }]);
 	});
 });

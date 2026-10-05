@@ -1,3 +1,4 @@
+import { linearSrgbToRgb, okhslToRgb, oklabToLinearSrgb, rgbToOkhsl, rgbToOklab } from "./oklab.ts";
 import type { RgbColor } from "./terminal-colors.ts";
 
 export interface IndexedColor {
@@ -28,6 +29,16 @@ export interface OklchChannels {
 	l: number;
 	c: number;
 	h: number;
+}
+
+/**
+ * OKHSL channels: hue in degrees, saturation and lightness 0-1. Saturation is relative to the most the
+ * sRGB gamut allows at that hue and lightness, so every value is in gamut.
+ */
+export interface OkhslChannels {
+	h: number;
+	s: number;
+	l: number;
 }
 
 export interface TextAttributes {
@@ -81,6 +92,31 @@ const OKLCH_PATTERN = new RegExp(
 	`^oklch\\(\\s*(${NUMBER_PATTERN})(%)?\\s+(${NUMBER_PATTERN})\\s+(${NUMBER_PATTERN})(?:deg)?\\s*\\)$`,
 	"i",
 );
+const OKHSL_PATTERN = new RegExp(
+	`^okhsl\\(\\s*(${NUMBER_PATTERN})(?:deg)?\\s+(${NUMBER_PATTERN})(%)?\\s+(${NUMBER_PATTERN})(%)?\\s*\\)$`,
+	"i",
+);
+
+/**
+ * An OKHSL color, converted to sRGB. Saturation is relative to the sRGB gamut at the hue and lightness,
+ * so equal saturation looks equally colorful across hues and lightness.
+ * @param h Hue in degrees.
+ * @param s Saturation, 0-1.
+ * @param l Lightness, 0-1.
+ */
+export function okhslColor(h: number, s: number, l: number): RgbColorValue {
+	requireFinite(h, "h");
+	requireFinite(s, "s");
+	requireFinite(l, "l");
+	if (s < 0 || s > 1) throw new Error(`s must be between 0 and 1: ${s}`);
+	if (l < 0 || l > 1) throw new Error(`l must be between 0 and 1: ${l}`);
+	const { r, g, b } = okhslToRgb(h, s, l);
+	return rgbColor(r, g, b);
+}
+
+export function colorToOkhsl(color: Color): OkhslChannels {
+	return rgbToOkhsl(colorToRgb(color));
+}
 
 export function parseColor(value: string | number): Color {
 	if (typeof value === "number") return indexedColor(value);
@@ -99,6 +135,13 @@ export function parseColor(value: string | number): Color {
 	if (oklch) {
 		const lightness = Number.parseFloat(oklch[1]) / (oklch[2] ? 100 : 1);
 		return oklchColor(lightness, Number.parseFloat(oklch[3]), Number.parseFloat(oklch[4]));
+	}
+
+	const okhsl = OKHSL_PATTERN.exec(value);
+	if (okhsl) {
+		const saturation = Number.parseFloat(okhsl[2]) / (okhsl[3] ? 100 : 1);
+		const lightness = Number.parseFloat(okhsl[4]) / (okhsl[5] ? 100 : 1);
+		return okhslColor(Number.parseFloat(okhsl[1]), saturation, lightness);
 	}
 
 	throw new Error(`Invalid color value: ${value}`);
@@ -139,65 +182,9 @@ function indexedToRgb(index: number): RgbColor {
 	return { r: gray, g: gray, b: gray };
 }
 
-function srgbToLinear(channel: number): number {
-	return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
-}
-
-function linearToSrgb(channel: number): number {
-	return channel <= 0.0031308 ? channel * 12.92 : 1.055 * channel ** (1 / 2.4) - 0.055;
-}
-
-interface OklabChannels {
-	l: number;
-	a: number;
-	b: number;
-}
-
-interface LinearRgbChannels {
-	r: number;
-	g: number;
-	b: number;
-}
-
-function rgbToOklab({ r, g, b }: RgbColor): OklabChannels {
-	const linearR = srgbToLinear(r / 255);
-	const linearG = srgbToLinear(g / 255);
-	const linearB = srgbToLinear(b / 255);
-	const l = Math.cbrt(0.4122214708 * linearR + 0.5363325363 * linearG + 0.0514459929 * linearB);
-	const m = Math.cbrt(0.2119034982 * linearR + 0.6806995451 * linearG + 0.1073969566 * linearB);
-	const s = Math.cbrt(0.0883024619 * linearR + 0.2817188376 * linearG + 0.6299787005 * linearB);
-	return {
-		l: 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
-		a: 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
-		b: 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
-	};
-}
-
-function oklabToLinearRgb({ l, a, b }: OklabChannels): LinearRgbChannels {
-	const lRoot = l + 0.3963377774 * a + 0.2158037573 * b;
-	const mRoot = l - 0.1055613458 * a - 0.0638541728 * b;
-	const sRoot = l - 0.0894841775 * a - 1.291485548 * b;
-	const lValue = lRoot ** 3;
-	const mValue = mRoot ** 3;
-	const sValue = sRoot ** 3;
-	return {
-		r: 4.0767416621 * lValue - 3.3077115913 * mValue + 0.2309699292 * sValue,
-		g: -1.2684380046 * lValue + 2.6097574011 * mValue - 0.3413193965 * sValue,
-		b: -0.0041960863 * lValue - 0.7034186147 * mValue + 1.707614701 * sValue,
-	};
-}
-
-function isInSrgbGamut({ r, g, b }: LinearRgbChannels): boolean {
+function isInSrgbGamut(linear: number[]): boolean {
 	const epsilon = 1e-7;
-	return r >= -epsilon && r <= 1 + epsilon && g >= -epsilon && g <= 1 + epsilon && b >= -epsilon && b <= 1 + epsilon;
-}
-
-function linearRgbToChannels({ r, g, b }: LinearRgbChannels): RgbColor {
-	return {
-		r: Math.round(Math.max(0, Math.min(1, linearToSrgb(r))) * 255),
-		g: Math.round(Math.max(0, Math.min(1, linearToSrgb(g))) * 255),
-		b: Math.round(Math.max(0, Math.min(1, linearToSrgb(b))) * 255),
-	};
+	return linear.every((channel) => channel >= -epsilon && channel <= 1 + epsilon);
 }
 
 function oklchToRgb({ l, c, h }: OklchChannels): RgbColor {
@@ -205,10 +192,10 @@ function oklchToRgb({ l, c, h }: OklchChannels): RgbColor {
 	const radians = (h * Math.PI) / 180;
 	const cos = Math.cos(radians);
 	const sin = Math.sin(radians);
-	const atChroma = (chroma: number) => oklabToLinearRgb({ l, a: chroma * cos, b: chroma * sin });
+	const atChroma = (chroma: number) => oklabToLinearSrgb([l, chroma * cos, chroma * sin]);
 
 	const direct = atChroma(c);
-	if (isInSrgbGamut(direct)) return linearRgbToChannels(direct);
+	if (isInSrgbGamut(direct)) return linearSrgbToRgb(direct);
 
 	// Reduce chroma until the color fits. The achromatic color is always in gamut, so it is the
 	// fallback when no bisection step fits, e.g. `oklch(100% 0.3 150)` must map to white.
@@ -225,7 +212,7 @@ function oklchToRgb({ l, c, h }: OklchChannels): RgbColor {
 			high = chroma;
 		}
 	}
-	return linearRgbToChannels(linear);
+	return linearSrgbToRgb(linear);
 }
 
 export function colorToRgb(color: Color): RgbColor {
@@ -241,12 +228,8 @@ export function colorToRgb(color: Color): RgbColor {
 
 export function colorToOklch(color: Color): OklchChannels {
 	if (color.kind === "oklch") return { l: color.l, c: color.c, h: color.h };
-	const lab = rgbToOklab(colorToRgb(color));
-	return {
-		l: lab.l,
-		c: Math.hypot(lab.a, lab.b),
-		h: ((Math.atan2(lab.b, lab.a) * 180) / Math.PI + 360) % 360,
-	};
+	const [l, a, b] = rgbToOklab(colorToRgb(color));
+	return { l, c: Math.hypot(a, b), h: ((Math.atan2(b, a) * 180) / Math.PI + 360) % 360 };
 }
 
 export function colorToHex(color: Color): string {

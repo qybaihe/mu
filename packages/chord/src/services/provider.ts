@@ -44,6 +44,7 @@ interface ProviderSubscriber {
 	readonly buffer: { readonly update: ServiceProviderUpdate; readonly context: Context }[];
 	readonly snapshotSequences: Map<string, number>;
 	active: boolean;
+	draining: boolean;
 	terminated: boolean;
 	closed: boolean;
 }
@@ -251,6 +252,7 @@ export class RemoteServiceProvider {
 			buffer: [],
 			snapshotSequences: new Map(),
 			active: false,
+			draining: false,
 			terminated: false,
 			closed: false,
 		};
@@ -262,19 +264,7 @@ export class RemoteServiceProvider {
 			activate: () => {
 				if (subscriber.closed || subscriber.active) return;
 				subscriber.active = true;
-				const errors: unknown[] = [];
-				try {
-					for (const entry of subscriber.buffer.splice(0)) {
-						try {
-							listener(entry.update, entry.context);
-						} catch (error) {
-							errors.push(error);
-						}
-					}
-				} finally {
-					if (subscriber.terminated) subscriber.closed = true;
-				}
-				throwCollectedErrors(errors, "Failed to activate remote service subscription");
+				throwCollectedErrors(drainSubscriber(subscriber), "Failed to activate remote service subscription");
 			},
 			close: () => {
 				if (subscriber.closed) return;
@@ -312,7 +302,7 @@ export class RemoteServiceProvider {
 				}
 			}
 			for (const subscriber of registration.subscribers) {
-				if (subscriber.active) {
+				if (subscriber.active && !subscriber.draining) {
 					subscriber.closed = true;
 					subscriber.buffer.length = 0;
 				} else {
@@ -456,19 +446,21 @@ export class RemoteServiceProvider {
 		if (registration.subscribers.size === 0) return;
 		const deliveryContext = context ?? serviceDeliveryContext();
 		const errors: unknown[] = [];
-		for (const subscriber of registration.subscribers) {
+		const subscribers = [...registration.subscribers];
+		// Queue for everyone before invoking user code, including reentrant publications.
+		for (const subscriber of subscribers) {
 			if (subscriber.closed || updateCoveredBySnapshot(subscriber.snapshotSequences, update)) continue;
-			const entry = { update, context: deliveryContext };
-			if (!subscriber.active) {
-				subscriber.buffer.push(entry);
-				continue;
-			}
-			try {
-				subscriber.listener(entry.update, entry.context);
-			} catch (error) {
-				errors.push(error);
+			if (subscriber.buffer.length === 100) {
+				const snapshot = this.#snapshot(registration);
+				subscriber.buffer.length = 0;
+				subscriber.snapshotSequences.clear();
+				recordSnapshotSequences(subscriber.snapshotSequences, snapshot.instances);
+				subscriber.buffer.push({ update: { type: "reset", snapshot }, context: deliveryContext });
+			} else {
+				subscriber.buffer.push({ update, context: deliveryContext });
 			}
 		}
+		for (const subscriber of subscribers) errors.push(...drainSubscriber(subscriber));
 		throwCollectedErrors(errors, `Failed to publish remote service ${registration.serviceId} update`);
 	}
 
@@ -485,6 +477,27 @@ export class RemoteServiceProvider {
 	#assertActive(): void {
 		if (this.#disposed) throw new Error("Remote service provider is disposed");
 	}
+}
+
+function drainSubscriber(subscriber: ProviderSubscriber): unknown[] {
+	if (!subscriber.active || subscriber.closed || subscriber.draining) return [];
+	const errors: unknown[] = [];
+	subscriber.draining = true;
+	try {
+		while (!subscriber.closed) {
+			const entry = subscriber.buffer.shift();
+			if (entry === undefined) break;
+			try {
+				subscriber.listener(entry.update, entry.context);
+			} catch (error) {
+				errors.push(error);
+			}
+		}
+	} finally {
+		subscriber.draining = false;
+		if (subscriber.terminated) subscriber.closed = true;
+	}
+	return errors;
 }
 
 function recordSnapshotSequences(sequences: Map<string, number>, instances: readonly ServiceInstanceSnapshot[]): void {
@@ -505,6 +518,10 @@ function updateCoveredBySnapshot(sequences: Map<string, number>, update: Service
 			sequences.delete(key);
 			return false;
 		}
+		case "reset":
+			sequences.clear();
+			recordSnapshotSequences(sequences, update.snapshot.instances);
+			return false;
 		case "replaced":
 			sequences.clear();
 			recordSnapshotSequences(sequences, [update.snapshot]);

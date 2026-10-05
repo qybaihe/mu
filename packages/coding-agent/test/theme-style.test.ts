@@ -1,13 +1,18 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { colorToHex, styleText } from "@earendil-works/pi-tui";
+import { colorToHex, okhslColor, styleText } from "@earendil-works/pi-tui";
 import { afterEach, describe, expect, it } from "vitest";
-import { loadThemeFromPath, setTerminalDefaultColors } from "../src/modes/interactive/theme/theme.ts";
+import { loadThemeFromPath, setTerminalColors } from "../src/modes/interactive/theme/theme.ts";
 
 const tempDirs: string[] = [];
 
-type ThemeFile = { name: string; appearance?: "dark" | "light"; colors: Record<string, string | number> };
+type ThemeFile = {
+	name: string;
+	appearance?: "dark" | "light";
+	vars?: Record<string, string | number>;
+	colors: Record<string, string | number>;
+};
 
 /** Load a copy of a built-in theme, modified by `edit`. */
 function loadTheme(base: "dark" | "light", edit: (theme: ThemeFile) => void = () => {}) {
@@ -23,7 +28,7 @@ function loadTheme(base: "dark" | "light", edit: (theme: ThemeFile) => void = ()
 }
 
 afterEach(() => {
-	setTerminalDefaultColors({});
+	setTerminalColors({});
 	for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
@@ -49,9 +54,23 @@ describe("theme styles", () => {
 		expect(theme.colors.accent).toEqual({ kind: "oklch", l: 0.62, c: 0.1, h: 200 });
 	});
 
+	it("loads OKHSL theme values, including through variables", () => {
+		const theme = loadTheme("dark", (json) => {
+			json.vars = { ...json.vars, brand: "okhsl(250 60% 55%)" };
+			json.colors.accent = "brand";
+			json.colors.error = "okhsl(20 90% 60%)";
+		});
+		expect(colorToHex(theme.colors.accent)).toBe(colorToHex(okhslColor(250, 0.6, 0.55)));
+		expect(colorToHex(theme.colors.error)).toBe(colorToHex(okhslColor(20, 0.9, 0.6)));
+	});
+
 	it("detects the appearance unless it is declared", () => {
 		expect(loadTheme("dark").appearance).toBe("dark");
 		expect(loadTheme("light").appearance).toBe("light");
+		// Without a declaration, the appearance is detected from the theme's own colors.
+		for (const base of ["dark", "light"] as const) {
+			expect(loadTheme(base, (json) => delete json.appearance).appearance).toBe(base);
+		}
 		expect(
 			loadTheme("dark", (json) => {
 				json.appearance = "light";
@@ -60,10 +79,11 @@ describe("theme styles", () => {
 
 		// Palette colors 0-15 follow the terminal palette, so such themes follow the terminal background.
 		const paletteOnly = loadTheme("dark", (json) => {
+			delete json.appearance;
 			for (const key of Object.keys(json.colors)) json.colors[key] = key.endsWith("Bg") ? 0 : 7;
 		});
 		expect(paletteOnly.appearance).toBe("dark");
-		setTerminalDefaultColors({ background: { r: 250, g: 250, b: 250 } });
+		setTerminalColors({ background: { r: 250, g: 250, b: 250 } });
 		expect(paletteOnly.appearance).toBe("light");
 	});
 
@@ -77,7 +97,7 @@ describe("theme styles", () => {
 		expect(colorToHex(theme.colors.text)).toBe("#e5e5e7");
 		expect(colorToHex(theme.colors.userMessageBg)).toBe("#000000");
 
-		setTerminalDefaultColors({ foreground: { r: 200, g: 210, b: 220 }, background: { r: 10, g: 20, b: 30 } });
+		setTerminalColors({ foreground: { r: 200, g: 210, b: 220 }, background: { r: 10, g: 20, b: 30 } });
 		expect(colorToHex(theme.colors.text)).toBe("#c8d2dc");
 		expect(colorToHex(theme.colors.userMessageBg)).toBe("#0a141e");
 	});

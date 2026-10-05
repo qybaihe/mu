@@ -16,7 +16,7 @@ import { mergeProviderAttributionHeaders } from "./provider-attribution.ts";
 import type { ResourceLoader } from "./resource-loader.ts";
 import { DefaultResourceLoader } from "./resource-loader.ts";
 import { getDefaultSessionDir, SessionManager } from "./session-manager.ts";
-import { SettingsManager } from "./settings-manager.ts";
+import { DEFAULT_TOOL_NAMES, SettingsManager } from "./settings-manager.ts";
 import { time } from "./timings.ts";
 import {
 	createBashTool,
@@ -29,9 +29,9 @@ import {
 	createReadOnlyTools,
 	createReadTool,
 	createWriteTool,
-	type ToolName,
 	withFileMutationQueue,
 } from "./tools/index.ts";
+import { getBranchSelection } from "./virtual-models.ts";
 
 // Preserve the pre-0.81 fallback for extensions that construct Agent instances
 // or invoke low-level agent loops without supplying streamFn. Agent core remains
@@ -65,7 +65,7 @@ export interface CreateAgentSessionOptions {
 	/**
 	 * Optional allowlist of tool names.
 	 *
-	 * When omitted, pi uses the `defaultTools` setting for the initial built-in
+	 * When omitted, pi uses the resolved `defaultTools` setting for the initial
 	 * selection when configured. Otherwise it enables the default built-in tools
 	 * (read, bash, edit, write). Extension/custom tools remain enabled unless
 	 * `noTools` changes that default. When provided, only the listed tool names are
@@ -198,14 +198,20 @@ export async function createAgentSession(options: CreateAgentSessionOptions = {}
 	let model = options.model;
 	let modelFallbackMessage: string | undefined;
 
+	// Assistant messages name the physical model that answered, so a virtual selection is only in
+	// model_change entries.
+	const sessionModel = getBranchSelection(sessionManager.getBranch(), (provider, modelId) =>
+		modelRuntime.getModel(provider, modelId),
+	);
+
 	// If session has data, try to restore model from it
-	if (!model && hasExistingSession && existingSession.model) {
-		const restoredModel = modelRuntime.getModel(existingSession.model.provider, existingSession.model.modelId);
+	if (!model && hasExistingSession && sessionModel) {
+		const restoredModel = modelRuntime.getModel(sessionModel.provider, sessionModel.modelId);
 		if (restoredModel && modelRuntime.hasConfiguredAuth(restoredModel.provider)) {
 			model = restoredModel;
 		}
 		if (!model) {
-			modelFallbackMessage = `Could not restore model ${existingSession.model.provider}/${existingSession.model.modelId}`;
+			modelFallbackMessage = `Could not restore model ${sessionModel.provider}/${sessionModel.modelId}`;
 		}
 	}
 
@@ -255,13 +261,12 @@ export async function createAgentSession(options: CreateAgentSessionOptions = {}
 		thinkingLevel = clampThinkingLevel(model, thinkingLevel) as ThinkingLevel;
 	}
 
-	const defaultActiveToolNames: ToolName[] = ["read", "bash", "edit", "write"];
 	const configuredDefaultToolNames = settingsManager.getDefaultTools();
 	const allowedToolNames = options.tools ?? (options.noTools === "all" ? [] : undefined);
 	const excludedToolNames = options.excludeTools;
 	const excludedToolNameSet = excludedToolNames ? new Set(excludedToolNames) : undefined;
 	const initialActiveToolNames = (
-		options.tools ?? (options.noTools ? [] : (configuredDefaultToolNames ?? defaultActiveToolNames))
+		options.tools ?? (options.noTools ? [] : (configuredDefaultToolNames ?? DEFAULT_TOOL_NAMES))
 	).filter((name) => !excludedToolNameSet?.has(name));
 
 	// Create convertToLlm wrapper that filters images if blockImages is enabled (defense-in-depth)
@@ -335,6 +340,8 @@ export async function createAgentSession(options: CreateAgentSessionOptions = {}
 			},
 		};
 	};
+	// Warm only requests for the selected model. Requests a virtual selection routed, or that an
+	// extension redirected, may not be repeated by the next request, so warming them could be wasted.
 	const cacheContextIsCurrent = (requestModel: Model<any>) => {
 		const messages = agent.state.messages;
 		return () => {
@@ -438,6 +445,7 @@ export async function createAgentSession(options: CreateAgentSessionOptions = {}
 		modelRuntime,
 		cacheWarmer,
 		initialActiveToolNames,
+		usesDefaultTools: options.tools === undefined && !options.noTools,
 		allowedToolNames,
 		excludedToolNames,
 		extensionRunnerRef,

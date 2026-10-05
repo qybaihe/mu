@@ -12,15 +12,17 @@ import type { RegisteredTool } from "./types.ts";
 
 /**
  * Wrap a RegisteredTool into an AgentTool.
- * Uses the runner's createContext() for consistent context across tools and event handlers.
+ * Uses the runner's createToolContext() for consistent context across tools and event handlers.
  */
 export function wrapRegisteredTool(registeredTool: RegisteredTool, runner: ExtensionRunner): AgentTool {
-	return wrapToolDefinition(registeredTool.definition, () => runner.createContext());
+	return wrapToolDefinition(registeredTool.definition, (toolCallId, signal) =>
+		runner.createToolContext(toolCallId, signal),
+	);
 }
 
 /**
  * Wrap all registered tools into AgentTools.
- * Uses the runner's createContext() for consistent context across tools and event handlers.
+ * Uses the runner's createToolContext() for consistent context across tools and event handlers.
  */
 export function wrapRegisteredTools(registeredTools: RegisteredTool[], runner: ExtensionRunner): AgentTool[] {
 	return registeredTools.map((tool) => wrapRegisteredTool(tool, runner));

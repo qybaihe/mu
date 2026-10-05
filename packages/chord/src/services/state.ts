@@ -15,7 +15,87 @@ import type {
 } from "../types.ts";
 import { registerReplicatedStateInternals } from "./state-internals.ts";
 
+/** The void signature also accepts synchronous callbacks that return an ignored value. */
 type StateListener<T> = (value: T, context: Context, delivery: ReplicatedStateDelivery) => void;
+
+type StateDelivery<T> = {
+	readonly value: T;
+	readonly context: Context;
+	readonly delivery: ReplicatedStateDelivery;
+};
+
+/** One public subscription, independent of producer and other subscriber progress. */
+class StateSubscriber<T> {
+	readonly #listener: StateListener<T>;
+	readonly #reportError: (error: Error) => void;
+	readonly #pending: StateDelivery<T>[] = [];
+	#running = false;
+	#started = false;
+	#closed = false;
+
+	constructor(listener: StateListener<T>, reportError: (error: Error) => void) {
+		this.#listener = listener;
+		this.#reportError = reportError;
+	}
+
+	push(frame: StateDelivery<T>): void {
+		if (this.#closed) return;
+		if (this.#pending.length === 100) {
+			// A cold replica can queue updates reentrantly before this subscriber's first hydration starts.
+			const hydration = this.#started ? undefined : this.#pending[0];
+			this.#pending.length = 0;
+			if (hydration !== undefined) this.#pending.push(hydration);
+		}
+		this.#pending.push(frame);
+	}
+
+	drain(): void {
+		if (this.#running || this.#closed) return;
+		this.#running = true;
+		for (let frame = this.#pending.shift(); frame !== undefined; frame = this.#pending.shift()) {
+			this.#started = true;
+			try {
+				const result: unknown = this.#listener(frame.value, frame.context, frame.delivery);
+				if (isPromiseLike(result)) {
+					void Promise.resolve(result).then(
+						() => this.#resume(),
+						(error: unknown) => {
+							this.#report(error);
+							this.#resume();
+						},
+					);
+					return;
+				}
+			} catch (error) {
+				this.#report(error);
+			}
+		}
+		this.#running = false;
+	}
+
+	clear(): void {
+		this.#pending.length = 0;
+	}
+
+	close(): void {
+		this.#closed = true;
+		this.clear();
+	}
+
+	#resume(): void {
+		this.#running = false;
+		this.drain();
+	}
+
+	#report(error: unknown): void {
+		try {
+			this.#reportError(toError(error));
+		} catch (reportError) {
+			reportErrorAsync(toError(reportError));
+		}
+	}
+}
+
 type SourceListener = (ops: readonly Op[], sequence: number, context: Context) => void;
 
 type Publication<T> = {
@@ -27,15 +107,17 @@ type Publication<T> = {
 
 /** Maintains local publication order independently of how revisions are produced. */
 class ReplicatedStatePublisher<T> {
-	readonly #listeners = new Map<StateListener<T>, number>();
+	readonly #listeners = new Map<StateSubscriber<T>, number>();
+	readonly #reportError: (error: Error) => void;
 	readonly #sourceListeners = new Set<SourceListener>();
 	readonly #publications: Publication<T>[] = [];
 	#value: T;
 	#sequence = 0;
 	#delivering = false;
 
-	constructor(initial: T) {
+	constructor(initial: T, reportError: (error: Error) => void = reportErrorAsync) {
 		this.#value = initial;
+		this.#reportError = reportError;
 	}
 
 	get value(): T {
@@ -48,14 +130,14 @@ class ReplicatedStatePublisher<T> {
 
 	subscribe(listener: StateListener<T>): () => void {
 		const { value, sequence } = this.snapshot();
-		this.#listeners.set(listener, sequence);
-		try {
-			listener(value, serviceDeliveryContext(), { kind: "hydrate", sequence });
-		} catch (error) {
-			this.#listeners.delete(listener);
-			throw error;
-		}
-		return () => this.#listeners.delete(listener);
+		const subscriber = new StateSubscriber(listener, this.#reportError);
+		this.#listeners.set(subscriber, sequence);
+		subscriber.push({ value, context: serviceDeliveryContext(), delivery: { kind: "hydrate", sequence } });
+		subscriber.drain();
+		return () => {
+			subscriber.close();
+			this.#listeners.delete(subscriber);
+		};
 	}
 
 	subscribeSource(listener: SourceListener): () => void {
@@ -86,13 +168,10 @@ class ReplicatedStatePublisher<T> {
 					}
 				}
 				const delivery = { kind: "update", sequence: publication.sequence } as const;
-				for (const [listener, hydratedSequence] of [...this.#listeners]) {
+				for (const [subscriber, hydratedSequence] of [...this.#listeners]) {
 					if (publication.sequence <= hydratedSequence) continue;
-					try {
-						listener(publication.value, publication.context, delivery);
-					} catch (error) {
-						errors.push(error);
-					}
+					subscriber.push({ value: publication.value, context: publication.context, delivery });
+					subscriber.drain();
 				}
 			}
 		} finally {
@@ -177,8 +256,8 @@ class AttachedReplicatedStateImpl<T> implements AttachedReplicatedState<T> {
 		assertCursor(snapshot.cursor, "snapshot");
 		this.#attachment = attachment;
 		this.#cursor = snapshot.cursor;
-		this.#publisher = new ReplicatedStatePublisher(snapshot.value);
 		this.#reportError = options.onError ?? reportErrorAsync;
+		this.#publisher = new ReplicatedStatePublisher(snapshot.value, (error) => this.#report(error));
 		registerReplicatedStateInternals(this, {
 			snapshot: () => this.#publisher.snapshot(),
 			subscribe: (listener) => this.#publisher.subscribeSource(listener),
@@ -263,7 +342,7 @@ export function attachReplicatedStateSource<T>(
 
 /** A cold read-only state used by service consumers until a complete snapshot arrives. */
 export class ReplicatedStateReplica<T extends JsonValue = JsonValue> implements ReplicatedState<T> {
-	readonly #listeners = new Set<StateListener<T>>();
+	readonly #listeners = new Set<StateSubscriber<T>>();
 	readonly #reportError: (error: Error) => void;
 	readonly #validator = new JsonRevisionValidator();
 	#value: T | undefined;
@@ -278,14 +357,20 @@ export class ReplicatedStateReplica<T extends JsonValue = JsonValue> implements 
 	}
 
 	subscribe(listener: StateListener<T>): () => void {
-		this.#listeners.add(listener);
+		const subscriber = new StateSubscriber(listener, this.#reportError);
+		this.#listeners.add(subscriber);
 		if (this.#value !== undefined) {
-			this.#deliver(listener, this.#value, serviceDeliveryContext(), {
-				kind: "hydrate",
-				sequence: this.#sequence!,
+			subscriber.push({
+				value: this.#value,
+				context: serviceDeliveryContext(),
+				delivery: { kind: "hydrate", sequence: this.#sequence! },
 			});
+			subscriber.drain();
 		}
-		return () => this.#listeners.delete(listener);
+		return () => {
+			subscriber.close();
+			this.#listeners.delete(subscriber);
+		};
 	}
 
 	hydrate(sequence: number, ops: readonly Op[], context: Context): void {
@@ -325,19 +410,16 @@ export class ReplicatedStateReplica<T extends JsonValue = JsonValue> implements 
 	clear(): void {
 		this.#value = undefined;
 		this.#sequence = undefined;
+		for (const subscriber of this.#listeners) subscriber.clear();
 	}
 
 	#deliverAll(context: Context, delivery: ReplicatedStateDelivery): void {
 		if (this.#value === undefined) return;
-		for (const listener of this.#listeners) this.#deliver(listener, this.#value, context, delivery);
-	}
-
-	#deliver(listener: StateListener<T>, value: T, context: Context, delivery: ReplicatedStateDelivery): void {
-		try {
-			listener(value, context, delivery);
-		} catch (error) {
-			this.#reportError(toError(error));
-		}
+		const frame = { value: this.#value, context, delivery };
+		const subscribers = [...this.#listeners];
+		// Enqueue for everyone before user code can publish another revision reentrantly.
+		for (const subscriber of subscribers) subscriber.push(frame);
+		for (const subscriber of subscribers) subscriber.drain();
 	}
 }
 

@@ -124,6 +124,35 @@ describe("DefaultPackageManager", () => {
 			expect(result.extensions.some((r) => r.path === extPath && r.enabled)).toBe(true);
 		});
 
+		it("should resolve built-in extensions with user exclusions and project overrides", async () => {
+			const pm = new DefaultPackageManager({
+				cwd: tempDir,
+				agentDir,
+				settingsManager,
+				builtinExtensions: ["mcp", "llama.cpp"],
+			});
+			const builtins = async () =>
+				(await pm.resolve()).extensions.map((r) => [r.path, r.enabled, r.metadata.source, r.metadata.scope]);
+
+			expect(await builtins()).toEqual([
+				["builtin:mcp", true, "builtin", "user"],
+				["builtin:llama.cpp", true, "builtin", "user"],
+			]);
+
+			settingsManager.setExtensionPaths(["-builtin:mcp"]);
+			settingsManager.setProjectExtensionPaths(["+builtin:mcp", "-builtin:llama.cpp"]);
+			expect(await builtins()).toEqual([
+				["builtin:mcp", true, "builtin", "project"],
+				["builtin:llama.cpp", false, "builtin", "project"],
+			]);
+
+			settingsManager.setProjectExtensionPaths([]);
+			expect(await builtins()).toEqual([
+				["builtin:mcp", false, "builtin", "user"],
+				["builtin:llama.cpp", true, "builtin", "user"],
+			]);
+		});
+
 		it("should resolve skill paths from settings", async () => {
 			const skillDir = join(agentDir, "skills", "my-skill");
 			mkdirSync(skillDir, { recursive: true });
@@ -2613,6 +2642,35 @@ export default function(api) { api.registerTool({ name: "test", description: "te
 			const result = await packageManager.resolveExtensionSources([gitSource], { temporary: true });
 			expect(result.extensions.some((r) => pathEndsWith(r.path, "extensions/index.ts") && r.enabled)).toBe(true);
 			expect(refreshTemporaryGitSourceSpy).not.toHaveBeenCalled();
+		});
+
+		// https://github.com/earendil-works/pi/issues/9982
+		it("should load a new checkout when a pinned temporary git source changes ref", async () => {
+			const managerWithInternals = packageManager as unknown as PackageManagerInternals;
+			const oldSource = "git:github.com/example/repo@aaaaaaa";
+			const newSource = "git:github.com/example/repo@bbbbbbb";
+			const oldParsed = managerWithInternals.parseSource(oldSource);
+			const newParsed = managerWithInternals.parseSource(newSource);
+			if (oldParsed.type !== "git" || newParsed.type !== "git") {
+				throw new Error("Expected git sources");
+			}
+
+			const oldPath = managerWithInternals.getGitInstallPath(oldParsed, "temporary");
+			mkdirSync(join(oldPath, "extensions"), { recursive: true });
+			writeFileSync(join(oldPath, "extensions", "old.ts"), "export default function() {};");
+
+			const installParsedSourceSpy = vi
+				.spyOn(packageManager as any, "installParsedSource")
+				.mockImplementation(async () => {
+					const newPath = managerWithInternals.getGitInstallPath(newParsed, "temporary");
+					mkdirSync(join(newPath, "extensions"), { recursive: true });
+					writeFileSync(join(newPath, "extensions", "new.ts"), "export default function() {};");
+				});
+
+			const result = await packageManager.resolveExtensionSources([newSource], { temporary: true });
+			expect(installParsedSourceSpy).toHaveBeenCalledTimes(1);
+			expect(result.extensions.some((r) => pathEndsWith(r.path, "extensions/new.ts") && r.enabled)).toBe(true);
+			expect(result.extensions.some((r) => pathEndsWith(r.path, "extensions/old.ts"))).toBe(false);
 		});
 
 		it("should not run npm view during resolve for installed unpinned packages", async () => {

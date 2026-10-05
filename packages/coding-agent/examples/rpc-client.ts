@@ -2,7 +2,7 @@
  * Run one prompt through a Pi RPC child process.
  *
  * Build the coding-agent package first, then run:
- * npx tsx examples/rpc-client.ts "Explain this repository"
+ * node examples/rpc-client.ts "Explain this repository"
  */
 
 import { dirname, join } from "node:path";

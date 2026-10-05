@@ -19,8 +19,12 @@ const INITIAL_SCHEMA: readonly string[] = [
 	) STRICT`,
 	`CREATE TABLE conversations (
 		id INTEGER PRIMARY KEY,
+		owner_conversation_id INTEGER,
+		owner_task_id INTEGER,
 		record TEXT NOT NULL CHECK (json_valid(record))
 	) STRICT`,
+	"CREATE INDEX conversations_by_owner_conversation ON conversations (owner_conversation_id, id)",
+	"CREATE INDEX conversations_by_owner_task ON conversations (owner_task_id, id)",
 	`CREATE TABLE entries (
 		id INTEGER PRIMARY KEY,
 		conversation_id INTEGER NOT NULL,
@@ -34,7 +38,7 @@ const INITIAL_SCHEMA: readonly string[] = [
 		id INTEGER PRIMARY KEY,
 		conversation_id INTEGER NOT NULL,
 		kind TEXT NOT NULL,
-		status TEXT NOT NULL CHECK (status IN ('pending', 'running', 'terminal')),
+		status TEXT NOT NULL CHECK (status IN ('pending', 'running', 'waiting', 'completing', 'terminal')),
 		abort_requested INTEGER NOT NULL CHECK (abort_requested IN (0, 1)),
 		background INTEGER NOT NULL CHECK (background IN (0, 1)),
 		record TEXT NOT NULL CHECK (json_valid(record))
@@ -48,9 +52,12 @@ const INITIAL_SCHEMA: readonly string[] = [
 		id INTEGER PRIMARY KEY,
 		conversation_id INTEGER NOT NULL,
 		request_id TEXT,
+		status TEXT NOT NULL CHECK (status IN ('queued', 'placed', 'done', 'unanswered')),
 		record TEXT NOT NULL CHECK (json_valid(record))
 	) STRICT`,
 	"CREATE INDEX submissions_by_request ON submissions (conversation_id, request_id)",
+	"CREATE INDEX submissions_by_conversation ON submissions (conversation_id, id)",
+	"CREATE INDEX submissions_by_status ON submissions (status, id)",
 	`CREATE TABLE documents (
 		id INTEGER PRIMARY KEY,
 		kind TEXT NOT NULL,
@@ -77,7 +84,7 @@ const INITIAL_SCHEMA: readonly string[] = [
 	"CREATE INDEX document_revisions_by_kind ON document_revisions (document_id, kind, seq DESC)",
 ];
 
-/** Immutable, ordered schema history. Append new migrations; never edit released ones. */
+/** Immutable, ordered schema history. Append new migrations after the initial schema ships. */
 export const SQLITE_MIGRATIONS: readonly SqliteMigration[] = [{ version: 1, statements: INITIAL_SCHEMA }];
 
 export const CURRENT_SQLITE_SCHEMA_VERSION = SQLITE_MIGRATIONS.at(-1)?.version ?? 0;
@@ -95,13 +102,13 @@ export async function applySqliteMigrations(
 		}
 	}
 
-	await database.transaction(() => {
-		database.exec(`CREATE TABLE IF NOT EXISTS durable_schema (
+	await database.transaction(async (transaction) => {
+		await transaction.exec(`CREATE TABLE IF NOT EXISTS durable_schema (
 			singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
 			version INTEGER NOT NULL CHECK (version >= 0)
 		) STRICT`);
-		database.prepare("INSERT OR IGNORE INTO durable_schema (singleton, version) VALUES (1, 0)").run();
-		const row = database.prepare("SELECT version FROM durable_schema WHERE singleton = 1").get<SchemaRow>();
+		await transaction.run("INSERT OR IGNORE INTO durable_schema (singleton, version) VALUES (1, 0)");
+		const row = await transaction.get<SchemaRow>("SELECT version FROM durable_schema WHERE singleton = 1");
 		if (row === undefined) throw new Error("Durable SQLite schema metadata is missing");
 		const currentVersion = migrations.at(-1)?.version ?? 0;
 		if (row.version > currentVersion) {
@@ -111,8 +118,8 @@ export async function applySqliteMigrations(
 		}
 		for (const migration of migrations) {
 			if (migration.version <= row.version) continue;
-			for (const statement of migration.statements) database.exec(statement);
-			database.prepare("UPDATE durable_schema SET version = ? WHERE singleton = 1").run(migration.version);
+			for (const statement of migration.statements) await transaction.exec(statement);
+			await transaction.run("UPDATE durable_schema SET version = ? WHERE singleton = 1", migration.version);
 		}
 	});
 }

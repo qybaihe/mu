@@ -2,10 +2,12 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import { VERSION } from "../src/config.ts";
 
-const sourceResolverPath = resolve(__dirname, "../src/experimental/source-resolver.ts");
+// --import takes a module specifier, not a filesystem path.
+const sourceResolverUrl = pathToFileURL(resolve(__dirname, "../src/experimental/source-resolver.ts")).href;
 const tempDirs: string[] = [];
 
 afterEach(() => {
@@ -19,7 +21,7 @@ function runEntry(entry: string, experimental: boolean) {
 		process.execPath,
 		[
 			"--import",
-			sourceResolverPath,
+			sourceResolverUrl,
 			resolve(__dirname, "../src", entry),
 			"server",
 			"--server-id",

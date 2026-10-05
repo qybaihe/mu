@@ -61,8 +61,10 @@ A successful `prompt` response means the prompt was accepted, queued, or handled
 
 ```json
 {"id":"req-2","type":"prompt","message":"Review this repository"}
-{"id":"req-2","type":"response","command":"prompt","success":true}
+{"id":"req-2","type":"response","command":"prompt","success":true,"data":{"disposition":"started"}}
 ```
+
+`data.disposition` reports what happened to the prompt. If it is `"handled"`, no run started for this prompt, so don't wait for `agent_settled`. See [RPC Commands](rpc-commands.md#prompt) for all values.
 
 Continue consuming [events](json.md) after that response. `agent_end` marks the end of one low-level agent run, but retries, overflow recovery, compaction, steering, or follow-up work can still follow. Wait for `agent_settled` when the client needs to know Pi will not continue automatically.
 

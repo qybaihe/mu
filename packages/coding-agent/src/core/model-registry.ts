@@ -1,19 +1,33 @@
 import type {
 	Api,
+	AssistantImages,
 	AssistantMessage,
 	AssistantMessageEventStream,
+	AuthOperationOptions,
 	AuthResult,
+	ClassifierApi,
+	ClassifierContext,
+	ClassifierModel,
+	ClassifierResult,
 	Context,
+	ImageApi,
+	ImageModel,
+	ImagesContext,
 	Model,
 	ModelsApiStreamOptions,
+	ModelsClassifierOptions,
+	ModelsImagesOptions,
 	ModelsRefreshOptions,
 	ModelsRefreshResult,
 	ModelsSimpleStreamOptions,
+	ModelType,
+	ModelTypeMap,
 	Provider,
 	ProviderHeaders,
 } from "@earendil-works/pi-ai";
 import type { ModelRuntime } from "./model-runtime.ts";
 import type { AuthStatus, ProviderConfigInput } from "./provider-composer.ts";
+import type { VirtualModelDefinition } from "./virtual-models.ts";
 
 export type { ProviderConfigInput } from "./provider-composer.ts";
 export type ResolvedRequestAuth =
@@ -57,6 +71,15 @@ export class ModelRegistry {
 
 	find(provider: string, modelId: string): Model<Api> | undefined {
 		return this.runtime.getModel(provider, modelId);
+	}
+
+	/** Find a model of a non-chat type, e.g. `findOfType("classifier", "typesafe", "jev-latest")`. */
+	findOfType<TType extends ModelType>(
+		type: TType,
+		provider: string,
+		modelId: string,
+	): ModelTypeMap[TType] | undefined {
+		return this.runtime.getModelOfType(type, provider, modelId);
 	}
 
 	hasConfiguredAuth(model: Model<Api>): boolean {
@@ -124,6 +147,46 @@ export class ModelRegistry {
 		return this.runtime.complete(model, context, options);
 	}
 
+	/** Every known model of a type (chat, image, classifier), optionally for one provider. */
+	getModelsOfType<TType extends ModelType>(type: TType, provider?: string): readonly ModelTypeMap[TType][] {
+		return this.runtime.getModelsOfType(type, provider);
+	}
+
+	/** Models of a type whose provider has working credentials. */
+	getAvailableOfType<TType extends ModelType>(
+		type: TType,
+		provider?: string,
+		options?: AuthOperationOptions,
+	): Promise<readonly ModelTypeMap[TType][]> {
+		return this.runtime.getAvailableOfType(type, provider, options);
+	}
+
+	getModelOfType<TType extends ModelType>(
+		type: TType,
+		provider: string,
+		modelId: string,
+	): ModelTypeMap[TType] | undefined {
+		return this.runtime.getModelOfType(type, provider, modelId);
+	}
+
+	/** Classify structured state with request-time authentication. Never rejects. */
+	classify(
+		model: ClassifierModel<ClassifierApi>,
+		context: ClassifierContext,
+		options?: ModelsClassifierOptions,
+	): Promise<ClassifierResult> {
+		return this.runtime.classify(model, context, options);
+	}
+
+	/** Generate images with request-time authentication. Never rejects. */
+	generateImages(
+		model: ImageModel<ImageApi>,
+		context: ImagesContext,
+		options?: ModelsImagesOptions,
+	): Promise<AssistantImages> {
+		return this.runtime.generateImages(model, context, options);
+	}
+
 	getProviderDisplayName(provider: string): string {
 		return this.runtime.getProvider(provider)?.name ?? provider;
 	}
@@ -157,6 +220,14 @@ export class ModelRegistry {
 
 	unregisterProvider(providerName: string): void {
 		this.runtime.unregisterProvider(providerName);
+	}
+
+	registerVirtualModel(definition: VirtualModelDefinition): void {
+		this.runtime.registerVirtualModel(definition);
+	}
+
+	unregisterVirtualModel(providerName: string, id: string): void {
+		this.runtime.unregisterVirtualModel(providerName, id);
 	}
 
 	getRegisteredProviderConfig(providerName: string): ProviderConfigInput | undefined {

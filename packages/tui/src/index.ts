@@ -15,14 +15,17 @@ export {
 	type Color,
 	type ColorMixSpace,
 	colorToHex,
+	colorToOkhsl,
 	colorToOklch,
 	colorToRgb,
 	foregroundAnsi,
 	type IndexedColor,
 	indexedColor,
 	mixColors,
+	type OkhslChannels,
 	type OklchChannels,
 	type OklchColorValue,
+	okhslColor,
 	oklchColor,
 	parseColor,
 	type RgbColorValue,
@@ -38,7 +41,13 @@ export { Box } from "./components/box.ts";
 export { CancellableLoader } from "./components/cancellable-loader.ts";
 export { Editor, type EditorOptions, type EditorTheme } from "./components/editor.ts";
 export { HStack } from "./components/h-stack.ts";
-export { Image, type ImageOptions, type ImageTheme } from "./components/image.ts";
+export {
+	Image,
+	type ImageOptions,
+	type ImageTheme,
+	type ImageTranscoder,
+	setImageTranscoder,
+} from "./components/image.ts";
 export { Input } from "./components/input.ts";
 export { Loader, type LoaderIndicatorOptions } from "./components/loader.ts";
 export { type DefaultTextStyle, Markdown, type MarkdownOptions, type MarkdownTheme } from "./components/markdown.ts";
@@ -101,16 +110,17 @@ export {
 export { type RenderLatexOptions, renderLatex } from "./latex.ts";
 // Native platform integration
 export { getNativeClipboard, type NativeClipboard } from "./native-platform.ts";
+export { oklabToOkhslLightness } from "./oklab.ts";
 // Input buffering for batch splitting
 export { StdinBuffer, type StdinBufferEventMap, type StdinBufferOptions } from "./stdin-buffer.ts";
 // Terminal interface and implementations
-export { ProcessTerminal, type Terminal } from "./terminal.ts";
+export { isAppleTerminalSession, ProcessTerminal, type Terminal } from "./terminal.ts";
 // Terminal colors
 export {
-	parseOsc11BackgroundColor,
 	parseTerminalColorSchemeReport,
 	type RgbColor,
 	type TerminalColorScheme,
+	type TerminalColors,
 } from "./terminal-colors.ts";
 // Terminal image support
 export {
@@ -179,3 +189,4 @@ export {
 	visibleWidth,
 	wrapTextWithAnsi,
 } from "./utils.ts";
+export type { WheelScrollLines } from "./wheel-scroll.ts";

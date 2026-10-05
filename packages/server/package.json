@@ -1,6 +1,6 @@
 {
 	"name": "@earendil-works/pi-server",
-	"version": "0.87.1",
+	"version": "1.0.2",
 	"description": "experimental server package for pi",
 	"type": "module",
 	"main": "./dist/index.js",
@@ -26,10 +26,10 @@
 	],
 	"scripts": {
 		"clean": "shx rm -rf dist",
-		"dev": "tsgo -p tsconfig.build.json --watch --preserveWatchOutput",
-		"build": "tsgo -p tsconfig.build.json",
+		"dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+		"build": "tsc -p tsconfig.build.json",
 		"test": "vitest --run",
-		"typecheck": "tsgo -p tsconfig.test.json",
+		"typecheck": "tsc -p tsconfig.test.json",
 		"prepublishOnly": "npm run clean && npm run build"
 	},
 	"keywords": [
@@ -47,12 +47,11 @@
 		"node": ">=22.19.0"
 	},
 	"dependencies": {
-		"@earendil-works/chord": "^0.87.1",
-		"@earendil-works/pi-agent-core": "^0.87.1",
-		"@earendil-works/pi-protocol": "^0.87.1"
+		"@earendil-works/chord": "^1.0.2",
+		"@earendil-works/pi-protocol": "^1.0.2"
 	},
 	"devDependencies": {
 		"shx": "0.4.0",
-		"vitest": "4.1.9"
+		"vitest": "4.1.11"
 	}
 }

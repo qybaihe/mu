@@ -504,6 +504,31 @@ describe("TuiAltScreen", () => {
 		tui.stop();
 	});
 
+	// #9758: wheel line counts can change at runtime; Alt keeps its multiplier.
+	it("applies runtime wheel line count updates", async () => {
+		const terminal = new VirtualTerminal(20, 4);
+		const tui = new TuiAltScreen(terminal, undefined, undefined, { wheelScrollLines: 3 });
+		const deltas: Array<number | undefined> = [];
+		tui.addChild(
+			new MouseRegion(new Text("wheel target", 0, 0), (event) => {
+				if (event.type !== "wheel") return undefined;
+				deltas.push(event.wheelDelta);
+				return { handled: true };
+			}),
+		);
+		tui.start();
+		try {
+			await terminal.waitForRender();
+			terminal.sendInput("\x1b[<64;1;1M");
+			tui.setWheelScrollLines(2);
+			terminal.sendInput("\x1b[<65;1;1M");
+			terminal.sendInput("\x1b[<72;1;1M");
+			assert.deepStrictEqual(deltas, [-3, 2, -10]);
+		} finally {
+			tui.stop();
+		}
+	});
+
 	it("chains unused wheel delta to an outer scroll view", async () => {
 		const terminal = new VirtualTerminal(20, 4);
 		const tui = new TuiAltScreen(terminal, undefined, undefined, { wheelScrollLines: 3 });
@@ -1035,6 +1060,47 @@ describe("TuiAltScreen", () => {
 		);
 
 		tui.stop();
+	});
+
+	it("redraws WezTerm Kitty images after writes to covered rows", async () => {
+		// Regression test for #10319: a scrollbar update below an unchanged image anchor erased its cells.
+		const weztermPane = process.env.WEZTERM_PANE;
+		let tui: TuiAltScreen | undefined;
+		process.env.WEZTERM_PANE = "1";
+		setCapabilities({ images: "kitty", trueColor: true, hyperlinks: true });
+		try {
+			const terminal = new RecordingTerminal(20, 4);
+			const imageId = 10319;
+			const imageLine = encodeKitty("AAAA", { columns: 2, rows: 3, imageId, moveCursor: false });
+			registerKittyImageMetadata({ imageId, columns: 2, rows: 3, widthPx: 100, heightPx: 100 });
+			let coveredLine = "";
+			tui = new TuiAltScreen(terminal);
+			tui.setLayoutRoot({
+				render: () => [imageLine, coveredLine, "", "after"],
+				invalidate: () => {},
+			});
+			tui.start();
+			await terminal.waitForRender();
+			const eventCount = terminal.events.length;
+
+			coveredLine = "changed";
+			tui.requestRender();
+			await terminal.waitForRender();
+			const redrawWrites = terminal.events
+				.slice(eventCount)
+				.filter((event): event is { type: "write"; data: string } => event.type === "write")
+				.map((event) => event.data)
+				.join("");
+			const placementIndex = redrawWrites.indexOf("\x1b_Ga=p,q=2");
+			assert.ok(redrawWrites.includes("\x1b_Ga=d,d=a,q=2\x1b\\"));
+			assert.ok(placementIndex > redrawWrites.indexOf("changed"));
+			assert.ok(!redrawWrites.includes("\x1b_Ga=T"));
+		} finally {
+			tui?.stop();
+			resetCapabilitiesCache();
+			if (weztermPane === undefined) delete process.env.WEZTERM_PANE;
+			else process.env.WEZTERM_PANE = weztermPane;
+		}
 	});
 
 	it("reuses moved Kitty images without dropping HStack siblings", async () => {

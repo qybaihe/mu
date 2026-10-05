@@ -30,12 +30,7 @@ export function ensureAppView(input: {
 	fs?: Record<string, (...args: never[]) => unknown>;
 }): string[];
 
-export function resolveTsx(input: {
-	root: string;
-	platform: Platform;
-	exists(path: string): boolean;
-	readFile(path: string): string;
-}): string | undefined;
+export function dependenciesInstalled(input: { root: string; platform: Platform; exists(path: string): boolean }): boolean;
 export function installHint(input: { root: string; platform: Platform }): string;
 export type Layout = "repo" | "package";
 export function layoutOf(input: { root: string; platform: Platform; exists(path: string): boolean }): Layout;
@@ -146,7 +141,6 @@ export function sourceRuntime(input: {
 	platform: Platform;
 	stripsTypes: boolean;
 	exists(path: string): boolean;
-	readFile(path: string): string;
 }): { error?: undefined; args: string[] } | { error: string };
 
 export const AUTH_COMMANDS: readonly string[];

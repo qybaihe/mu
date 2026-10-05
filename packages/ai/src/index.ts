@@ -21,8 +21,6 @@ export type { PiMessagesEvent, PiMessagesOptions, PiMessagesRewriteImpact } from
 export * from "./auth/context.ts";
 export * from "./auth/credential-store.ts";
 export * from "./auth/helpers.ts";
-// The sign-in result page: a pure string builder, exported so that mu's own sign-ins show the same page.
-export { oauthErrorHtml, oauthSuccessHtml } from "./auth/oauth/oauth-page.ts";
 export * from "./auth/types.ts";
 export type {
 	OAuthAuthInfo,
@@ -41,6 +39,8 @@ export * from "./utils/assistant-message-frame.ts";
 export * from "./utils/diagnostics.ts";
 export * from "./utils/event-stream.ts";
 export * from "./utils/json-parse.ts";
+// The sign-in result page: a pure string builder, exported so that mu's own sign-ins show the same page.
+export { oauthErrorHtml, oauthSuccessHtml } from "./utils/oauth-page.ts";
 export * from "./utils/overflow.ts";
 export * from "./utils/retry.ts";
 export { contentText, getSystemMessageText, renderSystemMessageUpdate } from "./utils/text.ts";

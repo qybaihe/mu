@@ -10,6 +10,7 @@ import {
 	SettingsList,
 	Spacer,
 	Text,
+	type WheelScrollLines,
 } from "@earendil-works/pi-tui";
 import { formatHttpIdleTimeoutMs, HTTP_IDLE_TIMEOUT_CHOICES } from "../../../core/http-dispatcher.ts";
 import {
@@ -18,10 +19,17 @@ import {
 	type DefaultProjectTrust,
 	type FullscreenExitOutput,
 	type MermaidRenderingMode,
+	type QuietStartup,
 	type TuiMode,
 	type WarningSettings,
 } from "../../../core/settings-manager.ts";
-import { getSettingsListTheme, parseAutoThemeSetting, type TerminalTheme, theme } from "../theme/theme.ts";
+import {
+	getSettingsListTheme,
+	parseAutoThemeSetting,
+	SYSTEM_THEME_NAME,
+	type TerminalTheme,
+	theme,
+} from "../theme/theme.ts";
 import { DynamicBorder } from "./dynamic-border.ts";
 import { keyDisplayText } from "./keybinding-hints.ts";
 import { SelectSubmenu, SteppedSubmenu, type SteppedSubmenuStep } from "./settings-submenu.ts";
@@ -80,7 +88,7 @@ export interface SettingsConfig {
 	editorPaddingX: number;
 	outputPad: 0 | 1;
 	autocompleteMaxVisible: number;
-	quietStartup: boolean;
+	quietStartup: QuietStartup;
 	defaultProjectTrust: DefaultProjectTrust;
 	clearOnShrink: boolean;
 	showTerminalProgress: boolean;
@@ -88,6 +96,7 @@ export interface SettingsConfig {
 	fullscreenExitOutput: FullscreenExitOutput;
 	fullscreenScrollbar: ScrollViewScrollbar;
 	fullscreenCopyOnSelect: boolean;
+	fullscreenWheelScrollLines: WheelScrollLines;
 	warnings: WarningSettings;
 }
 
@@ -118,7 +127,7 @@ export interface SettingsCallbacks {
 	onEditorPaddingXChange: (padding: number) => void;
 	onOutputPadChange: (padding: 0 | 1) => void;
 	onAutocompleteMaxVisibleChange: (maxVisible: number) => void;
-	onQuietStartupChange: (enabled: boolean) => void;
+	onQuietStartupChange: (quiet: QuietStartup) => void;
 	onDefaultProjectTrustChange: (defaultProjectTrust: DefaultProjectTrust) => void;
 	onClearOnShrinkChange: (enabled: boolean) => void;
 	onShowTerminalProgressChange: (enabled: boolean) => void;
@@ -126,6 +135,7 @@ export interface SettingsCallbacks {
 	onFullscreenExitOutputChange: (output: FullscreenExitOutput) => void;
 	onFullscreenScrollbarChange: (mode: ScrollViewScrollbar) => void;
 	onFullscreenCopyOnSelectChange: (enabled: boolean) => void;
+	onFullscreenWheelScrollLinesChange: (lines: WheelScrollLines) => void;
 	onWarningsChange: (warnings: WarningSettings) => void;
 	onCancel: () => void;
 }
@@ -199,19 +209,25 @@ function themeItems(availableThemes: string[], currentTheme: string): SelectItem
 	return availableThemes.map((name) => ({
 		value: name,
 		label: `${name === currentTheme ? "✓ " : "  "}${name}`,
+		...(name === SYSTEM_THEME_NAME ? { description: "Theme created from your terminal's colors" } : {}),
 	}));
 }
 
 const AUTOMATIC_THEME_VALUE = "/";
 
+/** The system theme comes first, then automatic mode, then the remaining themes. */
 function singleModeThemeItems(availableThemes: string[], currentTheme: string): SelectItem[] {
+	const items = themeItems(availableThemes, currentTheme);
+	const systemIndex = items.findIndex((item) => item.value === SYSTEM_THEME_NAME);
+	const system = systemIndex === -1 ? [] : items.splice(systemIndex, 1);
 	return [
+		...system,
 		{
 			value: AUTOMATIC_THEME_VALUE,
-			label: "  Automatic",
+			label: "  automatic",
 			description: "Use separate themes for light and dark terminal appearance",
 		},
-		...themeItems(availableThemes, currentTheme),
+		...items,
 	];
 }
 
@@ -229,7 +245,7 @@ function defaultAutomaticThemes(
 	if (autoTheme) return autoTheme;
 
 	const currentFixedTheme = currentThemeSetting.includes("/") ? undefined : currentThemeSetting;
-	const themeName = preferredTheme(availableThemes, currentFixedTheme, "dark");
+	const themeName = preferredTheme(availableThemes, currentFixedTheme, SYSTEM_THEME_NAME);
 	return { lightTheme: themeName, darkTheme: themeName };
 }
 
@@ -267,7 +283,7 @@ class ThemeSubmenu extends Container {
 		this.singleTheme = preferredTheme(
 			availableThemes,
 			fixedTheme ?? (autoTheme ? this.getActiveAutomaticTheme() : undefined),
-			"dark",
+			SYSTEM_THEME_NAME,
 		);
 
 		if (this.mode === "automatic") {
@@ -291,7 +307,7 @@ class ThemeSubmenu extends Container {
 		this.mode = "single";
 		const menu = new SelectSubmenu(
 			"Theme",
-			"Select a theme, or choose Automatic to follow terminal appearance.",
+			"Select a theme, or choose automatic to follow terminal appearance.",
 			singleModeThemeItems(this.availableThemes, this.singleTheme),
 			this.singleTheme,
 			(value) => {
@@ -538,9 +554,9 @@ export class SettingsSelectorComponent extends Container {
 			{
 				id: "quiet-startup",
 				label: "Quiet startup",
-				description: "Disable verbose printing at startup",
-				currentValue: config.quietStartup ? "true" : "false",
-				values: ["true", "false"],
+				description: "Disable verbose printing at startup (header: keep only the startup header)",
+				currentValue: String(config.quietStartup),
+				values: ["true", "header", "false"],
 			},
 			{
 				id: "install-telemetry",
@@ -689,7 +705,7 @@ export class SettingsSelectorComponent extends Container {
 			{
 				id: "tui-mode",
 				label: "TUI mode",
-				description: "Interface layout; fullscreen mode is experimental",
+				description: "Interface layout; regular mode uses the terminal's normal scrollback",
 				currentValue: config.tuiMode,
 				values: ["regular", "fullscreen"],
 			},
@@ -713,6 +729,20 @@ export class SettingsSelectorComponent extends Container {
 				description: "Automatically copy selected text in fullscreen mode; disable to copy selections with Ctrl+X",
 				currentValue: config.fullscreenCopyOnSelect ? "true" : "false",
 				values: ["true", "false"],
+			},
+			{
+				id: "fullscreen-wheel-scroll-lines",
+				label: "Fullscreen wheel scrolling",
+				description:
+					"Lines per mouse-wheel event in fullscreen mode; 'auto' speeds up fast wheel spins where the terminal does not",
+				currentValue: String(config.fullscreenWheelScrollLines),
+				values: [
+					"auto",
+					...[...new Set([1, 2, 3, 5, 10, config.fullscreenWheelScrollLines])]
+						.filter((lines) => lines !== "auto")
+						.sort((a, b) => a - b)
+						.map(String),
+				],
 			},
 			{
 				id: "theme",
@@ -891,7 +921,7 @@ export class SettingsSelectorComponent extends Container {
 						callbacks.onCollapseChangelogChange(newValue === "true");
 						break;
 					case "quiet-startup":
-						callbacks.onQuietStartupChange(newValue === "true");
+						callbacks.onQuietStartupChange(newValue === "header" ? "header" : newValue === "true");
 						break;
 					case "install-telemetry":
 						callbacks.onEnableInstallTelemetryChange(newValue === "true");
@@ -940,6 +970,9 @@ export class SettingsSelectorComponent extends Container {
 						break;
 					case "fullscreen-copy-on-select":
 						callbacks.onFullscreenCopyOnSelectChange(newValue === "true");
+						break;
+					case "fullscreen-wheel-scroll-lines":
+						callbacks.onFullscreenWheelScrollLinesChange(newValue === "auto" ? "auto" : parseInt(newValue, 10));
 						break;
 					case "theme":
 						callbacks.onThemeChange(newValue);

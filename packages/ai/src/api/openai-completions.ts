@@ -62,7 +62,12 @@ import {
 } from "./constrained-sampling.ts";
 import { buildCopilotDynamicHeaders, hasCopilotVisionInput } from "./github-copilot-headers.ts";
 import { clampOpenAIPromptCacheKey } from "./openai-prompt-cache.ts";
-import { buildBaseOptions, clampThinkingBudgetToAnswerRoom, thinkingBudgetForLevel } from "./simple-options.ts";
+import {
+	buildBaseOptions,
+	clampThinkingBudgetToAnswerRoom,
+	resolveSamplingParams,
+	thinkingBudgetForLevel,
+} from "./simple-options.ts";
 import { transformMessages } from "./transform-messages.ts";
 
 /**
@@ -827,7 +832,7 @@ function buildParams(
 	};
 
 	if (compat.supportsUsageInStreaming !== false) {
-		(params as any).stream_options = { include_usage: true };
+		params.stream_options = { include_usage: true };
 	}
 
 	if (compat.supportsStore) {
@@ -836,7 +841,8 @@ function buildParams(
 
 	if (options?.maxTokens) {
 		if (compat.maxTokensField === "max_tokens") {
-			(params as any).max_tokens = options.maxTokens;
+			// Deprecated by OpenAI, but some OpenAI-compatible providers only accept max_tokens.
+			(params as { max_tokens?: number }).max_tokens = options.maxTokens;
 		} else {
 			params.max_completion_tokens = options.maxTokens;
 		}
@@ -994,9 +1000,10 @@ function buildParams(
 		}
 	}
 
-	// Last so custom keys override the named request fields.
-	if (options?.samplingParams) {
-		Object.assign(params, options.samplingParams);
+	// Last so model and request sampling parameters override named request fields.
+	const samplingParams = resolveSamplingParams(model, options?.reasoningEffort ?? "off", options?.samplingParams);
+	if (samplingParams) {
+		Object.assign(params, samplingParams);
 	}
 
 	return params;

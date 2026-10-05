@@ -1,0 +1,243 @@
+import { describe, expect, it } from "vitest";
+import {
+	mcpStructuredContentSchema,
+	renderDeclarations,
+	renderToolSample,
+	renderToolSignature,
+	schemaToType,
+} from "../src/index.ts";
+
+const execute = () => undefined;
+
+function mcpResultSchema(structuredContent?: unknown) {
+	return {
+		type: "object",
+		properties: {
+			content: { type: "array", items: { type: "object" } },
+			...(structuredContent === undefined ? {} : { structuredContent }),
+			isError: { type: "boolean" },
+			_meta: { type: "object" },
+		},
+		required: ["content"],
+	};
+}
+
+describe("schemaToType", () => {
+	it("renders primitives, literals, and unions", () => {
+		expect(schemaToType({ type: "string" })).toBe("string");
+		expect(schemaToType({ type: "integer" })).toBe("number");
+		expect(schemaToType({ type: ["string", "null"] })).toBe("string | null");
+		expect(schemaToType({ const: "a" })).toBe('"a"');
+		expect(schemaToType({ enum: ["a", 1, null] })).toBe('"a" | 1 | null');
+		expect(schemaToType({ anyOf: [{ type: "string" }, { type: "number" }] })).toBe("string | number");
+		expect(schemaToType({ anyOf: [{ type: "string" }, {}] })).toBe("unknown");
+		expect(schemaToType({ allOf: [{ anyOf: [{ type: "string" }, { type: "number" }] }, { const: 1 }] })).toBe(
+			"(string | number) & 1",
+		);
+		expect(schemaToType({ $ref: "#/defs/x" })).toBe("unknown");
+		expect(schemaToType(true)).toBe("unknown");
+		expect(schemaToType(false)).toBe("never");
+	});
+
+	it("renders objects on one line with sorted properties", () => {
+		expect(
+			schemaToType({
+				type: "object",
+				properties: { city: { type: "string" }, "max-lines": { type: "number" } },
+				required: ["city"],
+				additionalProperties: false,
+			}),
+		).toBe('{ city: string; "max-lines"?: number; }');
+		expect(schemaToType({ type: "object", additionalProperties: { type: "number" } })).toBe(
+			"{ [key: string]: number; }",
+		);
+		expect(schemaToType({ type: "object" })).toBe("{ [key: string]: unknown; }");
+		expect(schemaToType({ type: "object", properties: {}, additionalProperties: false })).toBe("{}");
+	});
+
+	it("puts property descriptions on comment lines", () => {
+		expect(
+			schemaToType({
+				type: "object",
+				properties: {
+					weather: {
+						type: "array",
+						description: "look up weather for a given list of locations",
+						items: { type: "object", properties: { location: { type: "string" } }, required: ["location"] },
+					},
+				},
+				required: ["weather"],
+			}),
+		).toBe("{\n  // look up weather for a given list of locations\n  weather: Array<{ location: string; }>;\n}");
+		expect(
+			schemaToType({
+				type: "object",
+				properties: {
+					outer: {
+						type: "object",
+						description: "Outer",
+						properties: { inner: { type: "string", description: "Inner" } },
+					},
+				},
+			}),
+		).toBe("{\n  // Outer\n  outer?: {\n    // Inner\n    inner?: string;\n  };\n}");
+	});
+
+	it("resolves local references and stops at recursive ones", () => {
+		const schema = {
+			type: "object",
+			properties: {
+				item: { $ref: "#/$defs/Item" },
+				legacy: { $ref: "#/definitions/Legacy" },
+				remote: { $ref: "https://example.com/schema.json" },
+			},
+			required: ["item"],
+			$defs: {
+				Item: {
+					type: "object",
+					properties: { id: { type: "string" }, parent: { $ref: "#/$defs/Item" } },
+					required: ["id"],
+				},
+			},
+			definitions: { Legacy: { enum: ["a", "b"] } },
+		};
+		expect(schemaToType(schema)).toBe(
+			'{ item: { id: string; parent?: unknown; }; legacy?: "a" | "b"; remote?: unknown; }',
+		);
+	});
+
+	it("renders arrays and tuples", () => {
+		expect(schemaToType({ type: "array", items: { type: "string" } })).toBe("Array<string>");
+		expect(schemaToType({ type: "array", prefixItems: [{ type: "string" }, { type: "number" }] })).toBe(
+			"[string, number]",
+		);
+		expect(schemaToType({ type: "array" })).toBe("unknown[]");
+	});
+
+	it("renders types over the budget as unknown", () => {
+		const properties = Object.fromEntries(Array.from({ length: 50 }, (_, i) => [`field${i}`, { type: "string" }]));
+		const schema = { type: "object", properties };
+		expect(schemaToType(schema, { maxChars: 100 })).toBe("unknown");
+		expect(schemaToType(schema)).toContain("field49?: string;");
+	});
+});
+
+describe("tool declarations", () => {
+	it("renders signatures with normalized identifiers", () => {
+		expect(
+			renderToolSignature({
+				name: "hidden-dynamic-tool",
+				inputSchema: {
+					type: "object",
+					properties: { city: { type: "string" } },
+					required: ["city"],
+					additionalProperties: false,
+				},
+				outputSchema: { type: "object", properties: { ok: { type: "boolean" } }, required: ["ok"] },
+			}),
+		).toBe("hidden_dynamic_tool(args: { city: string; }): Promise<{ ok: boolean; }>;");
+		expect(renderToolSignature({ name: "free" })).toBe("free(args: unknown): Promise<unknown>;");
+	});
+
+	it("renders MCP CallToolResult output schemas as CallToolResult<T>", () => {
+		const inputSchema = { type: "object", properties: {}, additionalProperties: false };
+		expect(
+			renderToolSignature({
+				name: "mcp__sample__search",
+				inputSchema,
+				outputSchema: mcpResultSchema({
+					type: "object",
+					properties: { results: { type: "array", items: { $ref: "#/definitions/Result~1item~0v1" } } },
+					required: ["results"],
+					additionalProperties: false,
+					definitions: {
+						"Result/item~v1": {
+							type: "object",
+							properties: { id: { type: "string" }, score: { type: "number" } },
+							required: ["id", "score"],
+							additionalProperties: false,
+						},
+					},
+				}),
+			}),
+		).toBe(
+			"mcp__sample__search(args: {}): Promise<CallToolResult<{ results: Array<{ id: string; score: number; }>; }>>;",
+		);
+		expect(renderToolSignature({ name: "plain", inputSchema, outputSchema: mcpResultSchema() })).toBe(
+			"plain(args: {}): Promise<CallToolResult>;",
+		);
+		expect(
+			mcpStructuredContentSchema({ type: "object", properties: { content: { type: "array" } } }),
+		).toBeUndefined();
+	});
+
+	it("renders the per-tool sample", () => {
+		expect(renderToolSample({ name: "foo", description: "bar", inputSchema: { type: "string" } })).toBe(
+			"bar\n\ncodemode tool declaration:\n```ts\ndeclare const tools: { foo(args: string): Promise<unknown>; };\n```",
+		);
+	});
+});
+
+describe("renderDeclarations", () => {
+	it("renders tools and globals", () => {
+		const text = renderDeclarations({
+			tools: [
+				{
+					name: "read",
+					description: "Read a file.\nSecond line.",
+					inputSchema: { type: "object", properties: { path: { type: "string" } }, required: ["path"] },
+					outputSchema: { type: "string" },
+					execute,
+				},
+				{ name: "remote-api", execute },
+			],
+			globals: [{ name: "attach", description: "Attach it.", inputSchema: { type: "string" }, execute }],
+		});
+		expect(text).toBe(
+			[
+				"declare const tools: {",
+				"  /**",
+				"   * Read a file.",
+				"   * Second line.",
+				"   */",
+				"  read(args: { path: string; }): Promise<string>;",
+				"  remote_api(args: unknown): Promise<unknown>;",
+				"};",
+				"",
+				"/** Attach it. */",
+				"declare function attach(args: string): Promise<unknown>;",
+			].join("\n"),
+		);
+	});
+
+	it("renders namespaced globals and explicit signatures", () => {
+		const text = renderDeclarations({
+			globals: [
+				{
+					name: "models.list",
+					description: "List models.",
+					signature: "(type: string): Promise<string[]>",
+					execute,
+				},
+				{ name: "models.get", inputSchema: { type: "string" }, execute },
+				{ name: "plain", signature: "(): void", execute },
+			],
+		});
+		expect(text).toBe(
+			[
+				"declare function plain(): void;",
+				"",
+				"declare const models: {",
+				"  /** List models. */",
+				"  list(type: string): Promise<string[]>;",
+				"  get(args: string): Promise<unknown>;",
+				"};",
+			].join("\n"),
+		);
+	});
+
+	it("escapes comment terminators in descriptions", () => {
+		const text = renderDeclarations({ tools: [{ name: "x", description: "a */ b", execute }] });
+		expect(text).toContain("/** a *\\/ b */");
+	});
+});

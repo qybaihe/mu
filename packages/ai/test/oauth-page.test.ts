@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { oauthErrorHtml, oauthSuccessHtml } from "../src/auth/oauth/oauth-page.ts";
+import { oauthErrorHtml, oauthSuccessHtml } from "../src/utils/oauth-page.ts";
 
 // The glyph's first stroke, as the desktop's components/brand/glyph.ts draws it.
 const MU_GLYPH_START = "M41 32 L35 74.4";

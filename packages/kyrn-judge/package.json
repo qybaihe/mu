@@ -54,7 +54,7 @@
 	},
 	"scripts": {
 		"clean": "shx rm -rf dist",
-		"build": "tsgo -p tsconfig.build.json",
+		"build": "tsc -p tsconfig.build.json",
 		"test": "vitest --run",
 		"prepublishOnly": "npm run clean && npm run build"
 	},
@@ -66,8 +66,8 @@
 		"undici": "8.10.2"
 	},
 	"peerDependencies": {
-		"@earendil-works/pi-coding-agent": "^0.87.1",
-		"@earendil-works/pi-tui": "^0.87.1"
+		"@earendil-works/pi-coding-agent": "^1.0.2",
+		"@earendil-works/pi-tui": "^1.0.2"
 	},
 	"peerDependenciesMeta": {
 		"@earendil-works/pi-coding-agent": {
@@ -79,6 +79,6 @@
 	},
 	"devDependencies": {
 		"shx": "0.4.0",
-		"vitest": "4.1.9"
+		"vitest": "4.1.11"
 	}
 }

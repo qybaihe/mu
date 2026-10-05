@@ -62,6 +62,7 @@ import { SettingsManager } from "./core/settings-manager.ts";
 import { printTimings, resetTimings, time } from "./core/timings.ts";
 import { hasTrustRequiringProjectResources, ProjectTrustStore } from "./core/trust-manager.ts";
 import { builtInExtensions } from "./extensions/index.ts";
+import { loadMcpCommand } from "./extensions/mcp/cli.lazy.ts";
 import { runMigrations, showDeprecationWarnings } from "./migrations.ts";
 import { InteractiveMode, runPrintMode, runRpcMode } from "./modes/index.ts";
 import { initTheme, setThemeJsonValidator, stopThemeWatcher } from "./modes/interactive/theme/theme.ts";
@@ -466,6 +467,12 @@ function buildSessionOptions(
 	// Model from CLI
 	// - supports --provider <name> --model <pattern>
 	// - supports --model <provider>/<pattern>
+	if (parsed.provider && !parsed.model) {
+		diagnostics.push({
+			type: "error",
+			message: `--provider requires --model (for example: --provider ${parsed.provider} --model <pattern>)`,
+		});
+	}
 	if (parsed.model) {
 		const resolved = resolveCliModel({
 			cliProvider: parsed.provider,
@@ -604,6 +611,12 @@ export async function main(args: string[], options?: MainOptions) {
 	}
 
 	if (await handleConfigCommand(args, { extensionFactories })) {
+		return;
+	}
+
+	if (args[0] === "mcp") {
+		const { runMcpCommand } = await loadMcpCommand();
+		process.exitCode = await runMcpCommand(args.slice(1), { cwd, agentDir });
 		return;
 	}
 

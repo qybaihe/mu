@@ -1,7 +1,11 @@
 import type { Context } from "@earendil-works/chord";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import {
+	type CommitPublication,
+	type ConversationId,
 	type DocumentAddress,
+	type DocumentCommitChange,
+	type DocumentId,
 	type DocumentPoint,
 	type DocumentRecord,
 	type Id,
@@ -9,9 +13,7 @@ import {
 	type Seq,
 	type StorageWrite,
 } from "@earendil-works/pi-durable";
-import type { CommitPublication } from "../src/session/publications.ts";
-import { SessionKernel } from "../src/session/session.ts";
-import type { DocumentCommitChange } from "../src/session/transaction.ts";
+import { SessionImpl } from "../src/session/session.ts";
 
 export const context: Context = BACKGROUND_CONTEXT;
 
@@ -38,6 +40,7 @@ export class ControlledStorage extends MemoryStorage {
 	/** Detached batches for value assertions. */
 	readonly commits: (readonly StorageWrite[])[] = [];
 	mintCount = 0;
+	documentReadCount = 0;
 	#commitGate: { gate: Deferred; entered: Deferred } | undefined;
 	#findGate: { gate: Deferred; entered: Deferred } | undefined;
 	#commitFailure: Error | undefined;
@@ -52,6 +55,11 @@ export class ControlledStorage extends MemoryStorage {
 		const held = { gate: deferred(), entered: deferred() };
 		this.#findGate = held;
 		return { entered: held.entered.promise, release: () => this.#release("find", held) };
+	}
+
+	/** Simulate a crash during the held commit: it never reaches storage, and later commits proceed. */
+	crash(): void {
+		this.#commitGate = undefined;
 	}
 
 	failNextCommit(error: Error): void {
@@ -80,9 +88,14 @@ export class ControlledStorage extends MemoryStorage {
 		return super.commit(writes, commitContext);
 	}
 
-	override mintId(): Promise<Id> {
+	override mintId<I extends Id<string>>(): Promise<I> {
 		this.mintCount++;
-		return super.mintId();
+		return super.mintId<I>();
+	}
+
+	override document(id: DocumentId, at: DocumentPoint, callContext: Context) {
+		this.documentReadCount++;
+		return super.document(id, at, callContext);
 	}
 
 	override async findDocument(
@@ -102,11 +115,11 @@ export class ControlledStorage extends MemoryStorage {
 /** Session kernel plus its controlled storage and every committed publication. */
 export function openTestSession(): {
 	readonly storage: ControlledStorage;
-	readonly session: SessionKernel;
+	readonly session: SessionImpl;
 	readonly publications: CommitPublication[];
 } {
 	const storage = new ControlledStorage();
-	const session = new SessionKernel(storage);
+	const session = new SessionImpl(storage);
 	const publications: CommitPublication[] = [];
 	session.subscribeCommits((publication) => {
 		publications.push(publication);
@@ -114,13 +127,26 @@ export function openTestSession(): {
 	return { storage, session, publications };
 }
 
-export function documentChanges(publication: CommitPublication): readonly DocumentCommitChange[] {
-	return publication.changes.filter((change): change is DocumentCommitChange => change.type === "document");
+export function documentChanges(
+	publication: CommitPublication,
+): readonly Extract<DocumentCommitChange, { readonly type: "document" }>[] {
+	return publication.changes.filter(
+		(change): change is Extract<DocumentCommitChange, { readonly type: "document" }> => change.type === "document",
+	);
+}
+
+export function documentCopyChanges(
+	publication: CommitPublication,
+): readonly Extract<DocumentCommitChange, { readonly type: "document.copy" }>[] {
+	return publication.changes.filter(
+		(change): change is Extract<DocumentCommitChange, { readonly type: "document.copy" }> =>
+			change.type === "document.copy",
+	);
 }
 
 /** Create one conversation and return its ID. */
-export async function createConversation(session: SessionKernel): Promise<Id> {
-	return session.commit(async (tx) => (await tx.createConversation({})).id, context);
+export async function createConversation(session: SessionImpl): Promise<ConversationId> {
+	return session.commit(async (tx) => (await tx.createConversation({ ownership: { kind: "ownerless" } })).id, context);
 }
 
 /** Resolve after pending microtasks and one macrotask turn. */

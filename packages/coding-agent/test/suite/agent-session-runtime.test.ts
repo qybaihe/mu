@@ -384,7 +384,7 @@ describe("AgentSessionRuntime characterization", () => {
 		expect(leafId).toBeTruthy();
 
 		await expect(runtime.fork(leafId!, { position: "at" })).rejects.toThrow(
-			"This session has not been saved yet. Wait for the first assistant response before cloning or forking it.",
+			"This session has not been saved yet. Send a message before cloning or forking it.",
 		);
 	});
 

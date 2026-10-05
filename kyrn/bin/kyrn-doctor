@@ -8,6 +8,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
+	dependenciesInstalled,
 	detectWsl,
 	envFilePath,
 	findOnPath,
@@ -17,7 +18,6 @@ import {
 	packageEntries,
 	parseEnvFile,
 	platformName,
-	resolveTsx,
 } from "./mu.mjs";
 
 const [root, link] = process.argv.slice(2);
@@ -68,12 +68,11 @@ if (layout === "package") {
 	});
 	row(onPath ? "ok" : "fix", "command", onPath ? tilde(onPath) : "`mu` is not on PATH: add npm's global bin folder (npm prefix -g) to it");
 } else {
-	// The JavaScript behind tsx, which is what the launcher runs: node_modules/.bin holds a .cmd shim on Windows.
-	const tsx = resolveTsx({ root, platform: process.platform, exists: existsSync, readFile: (path) => readFileSync(path, "utf8") });
+	const installed = dependenciesInstalled({ root, platform: process.platform, exists: existsSync });
 	row(
-		tsx ? "ok" : "fix",
+		installed ? "ok" : "fix",
 		"dependencies",
-		tsx
+		installed
 			? "installed"
 			: `missing: cd ${root} && npm ci --ignore-scripts && npm run hydrate:model-data`,
 	);

@@ -9,7 +9,7 @@ Example code for the pi-coding-agent SDK, process integration, and extensions.
 Build the coding-agent package before running it from a repository checkout:
 
 ```bash
-npx tsx examples/rpc-client.ts "Explain this repository"
+node examples/rpc-client.ts "Explain this repository"
 ```
 
 ## Directories

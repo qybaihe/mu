@@ -1159,21 +1159,23 @@ export class SessionManager {
 		return this.sessionFile;
 	}
 
+	/**
+	 * A new session file is created only once the session contains a user or assistant message.
+	 * Setup entries alone (model, thinking level, system prompt) stay in memory so opening and
+	 * closing pi without chatting leaves no file behind. Starting at the user message (not the
+	 * first assistant reply) keeps the prompt on disk if the first turn never completes (#10000).
+	 */
+	private _hasConversation(): boolean {
+		return this.fileEntries.some(
+			(e) => e.type === "message" && (e.message.role === "user" || e.message.role === "assistant"),
+		);
+	}
+
 	_persist(entry: SessionEntry): void {
 		if (!this.persist || !this.sessionFile) return;
 
-		const hasAssistant = this.fileEntries.some((e) => e.type === "message" && e.message.role === "assistant");
-		if (!hasAssistant) {
-			if (this.flushed) {
-				appendFileSync(this.sessionFile, `${JSON.stringify(entry)}\n`);
-			} else {
-				// Mark as not flushed so when assistant arrives, all entries get written
-				this.flushed = false;
-			}
-			return;
-		}
-
 		if (!this.flushed) {
+			if (!this._hasConversation()) return;
 			const fd = openSync(this.sessionFile, "wx");
 			try {
 				for (const e of this.fileEntries) {
@@ -1337,10 +1339,10 @@ export class SessionManager {
 	/** Get the current session name from the latest session_info entry, if any. */
 	getSessionName(): string | undefined {
 		// Walk entries in reverse to find the latest session_info entry.
-		// Empty names explicitly clear the session title.
-		const entries = this.getEntries();
-		for (let i = entries.length - 1; i >= 0; i--) {
-			const entry = entries[i];
+		// Empty names explicitly clear the session title. Reads fileEntries directly: the footer
+		// calls this on every frame, and getEntries() copies the whole session.
+		for (let i = this.fileEntries.length - 1; i >= 0; i--) {
+			const entry = this.fileEntries[i];
 			if (entry.type === "session_info") {
 				return entry.name?.trim() || undefined;
 			}
@@ -1527,6 +1529,11 @@ export class SessionManager {
 	getHeader(): SessionHeader | null {
 		const h = this.fileEntries.find((e) => e.type === "session");
 		return h ? (h as SessionHeader) : null;
+	}
+
+	/** Number of session entries (excludes header), without copying them like `getEntries()`. */
+	getEntryCount(): number {
+		return this.byId.size;
 	}
 
 	/**
@@ -1731,13 +1738,9 @@ export class SessionManager {
 			this.sessionFile = newSessionFile;
 			this._buildIndex();
 
-			// Only write the file now if it contains an assistant message.
-			// Otherwise defer to _persist(), which creates the file on the
-			// first assistant response, matching the newSession() contract
-			// and avoiding the duplicate-header bug when _persist()'s
-			// no-assistant guard later resets flushed to false.
-			const hasAssistant = this.fileEntries.some((e) => e.type === "message" && e.message.role === "assistant");
-			if (hasAssistant) {
+			// Use the same rule as _persist(): write now if the branched path already
+			// has a conversation, otherwise let _persist() create the file later.
+			if (this._hasConversation()) {
 				this._rewriteFile();
 				this.flushed = true;
 			} else {

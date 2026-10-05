@@ -6,10 +6,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+	dependenciesInstalled,
 	MODEL_KEY_VARIABLES,
 	planFirstRun,
 	planSetup,
-	resolveTsx,
 	SETUP_DECLINED_FILE,
 	SETUP_EXIT_CANCELLED,
 	SETUP_EXIT_START,
@@ -52,8 +52,7 @@ const KEY = `sk-${"0123456789abcdef".repeat(2)}`;
 
 const POSIX_ROOT = "/home/bai/KYRN";
 const posixInstalled = {
-	[`${POSIX_ROOT}/node_modules/tsx/package.json`]: JSON.stringify({ bin: { tsx: "./dist/cli.mjs" } }),
-	[`${POSIX_ROOT}/node_modules/tsx/dist/cli.mjs`]: "",
+	[`${POSIX_ROOT}/node_modules/undici/package.json`]: "{}",
 	[`${POSIX_ROOT}/packages/coding-agent/src/experimental/source-resolver.ts`]: "",
 };
 const POSIX_NATIVE = [
@@ -159,8 +158,8 @@ describe("mu setup, as the launcher starts it", () => {
 		expect(old.error).toContain("npm i -g mu-agent");
 	});
 
-	it("takes the sources through tsx where Node does not strip types, and follows the agent folder and old homes", () => {
-		const tsx = planSetup({
+	it("says so where Node does not strip types, and follows the agent folder and old homes", () => {
+		const unstripped = planSetup({
 			...setupArgs,
 			platform: "linux",
 			argv: [],
@@ -168,12 +167,7 @@ describe("mu setup, as the launcher starts it", () => {
 			stripsTypes: false,
 			fs: disk(posixInstalled),
 		});
-		expect(tsx.error === undefined && tsx.args).toEqual([
-			`${POSIX_ROOT}/node_modules/tsx/dist/cli.mjs`,
-			"--tsconfig",
-			`${POSIX_ROOT}/tsconfig.json`,
-			POSIX_ENTRY,
-		]);
+		expect(unstripped.error).toContain("does not strip types");
 		const moved = planSetup({
 			...setupArgs,
 			platform: "linux",
@@ -294,7 +288,16 @@ describe("the first start", () => {
 			source.indexOf("function getApiKeyEnvVars"),
 			source.indexOf("export function findEnvKeys"),
 		);
-		const constants = [...source.matchAll(/export const ANTHROPIC_\w+_ENV = "(\w+)"/g)].map((match) => match[1]);
+		// Federation's organization, service account, workspace and token file go with its rule id, which mu counts.
+		const federationParts = [
+			"ANTHROPIC_ORGANIZATION_ID",
+			"ANTHROPIC_SERVICE_ACCOUNT_ID",
+			"ANTHROPIC_WORKSPACE_ID",
+			"ANTHROPIC_IDENTITY_TOKEN_FILE",
+		];
+		const constants = [...source.matchAll(/export const ANTHROPIC_\w+_ENV = "(\w+)"/g)]
+			.map((match) => match[1])
+			.filter((name) => !federationParts.includes(name));
 		const named = [...lookup.matchAll(/"([A-Z][A-Z0-9_]+)"/g)].map((match) => match[1]);
 		const pi = new Set([...constants, ...named]);
 		// The Jev key is TypeSafe's classifier key: pi's typesafe provider has no chat model.
@@ -306,12 +309,7 @@ describe("the first start", () => {
 });
 
 describe("mu setup, run for real on this machine", () => {
-	const runnable = resolveTsx({
-		root: repo,
-		platform: process.platform,
-		exists: existsSync,
-		readFile: (path: string) => readFileSync(path, "utf8"),
-	});
+	const runnable = dependenciesInstalled({ root: repo, platform: process.platform, exists: existsSync });
 
 	it.skipIf(!runnable)(
 		"sets up a service of one's own from a key on the command line, against a server of the test's own",

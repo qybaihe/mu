@@ -32,7 +32,7 @@ export type KnownImageApi = "openrouter-images";
 
 export type ImageApi = KnownImageApi | (string & {});
 
-export type KnownClassifierApi = "typesafe-system-one" | "cloudflare-workers-ai-system-one";
+export type KnownClassifierApi = "typesafe-system-one" | "cloudflare-workers-ai-system-one" | "llama-cpp-classify";
 
 export type ClassifierApi = KnownClassifierApi | (string & {});
 
@@ -85,6 +85,8 @@ export type ToolChoice = "auto" | "none";
 export type ThinkingLevel = "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
 export type ModelThinkingLevel = "off" | ThinkingLevel;
 export type ThinkingLevelMap = Partial<Record<ModelThinkingLevel, string | null>>;
+export type SamplingParams = Record<string, unknown>;
+export type SamplingParamsByThinkingLevel = Partial<Record<ModelThinkingLevel, SamplingParams>>;
 export type ChatTemplateKwargValue =
 	| string
 	| number
@@ -204,7 +206,7 @@ export interface StreamOptions extends ProviderRequestOptions<Model<Api>> {
 	 * `repetition_penalty`. Merged over `Model.samplingParams` per key. Only applied by
 	 * OpenAI-compatible adapters (completions, responses, Azure responses); other APIs ignore it.
 	 */
-	samplingParams?: Record<string, unknown>;
+	samplingParams?: SamplingParams;
 	maxTokens?: number;
 	/**
 	 * Preferred transport for providers that support multiple transports.
@@ -321,7 +323,14 @@ export interface ProviderClassifier {
 	): Promise<ClassifierResult>;
 }
 
-export interface ClassifierOptions extends ProviderRequestOptions<ClassifierModel<ClassifierApi>> {}
+export interface ClassifierOptions extends ProviderRequestOptions<ClassifierModel<ClassifierApi>> {
+	/**
+	 * Divides the answer logits by this value before they are normalized into probabilities.
+	 * Values above 1 soften the distribution; values below 1 sharpen it. Must be positive.
+	 * APIs that cannot apply it ignore it.
+	 */
+	temperature?: number;
+}
 
 export interface ImagesOptions extends ProviderRequestOptions<ImageModel<ImageApi>> {
 	/**
@@ -546,6 +555,8 @@ export interface AssistantMessage {
 	responseId?: string; // Provider-specific response/message identifier when the upstream API exposes one
 	/** Exact provider-native effort level used for this response. Absent for legacy or unmanaged responses. */
 	providerThinkingLevel?: string;
+	/** Pi thinking level the agent loop requested for this response. Absent outside the agent loop and for legacy responses. */
+	thinkingLevel?: ModelThinkingLevel;
 	diagnostics?: AssistantMessageDiagnostic[]; // Redacted provider/runtime diagnostics for failures and recoveries.
 	usage: Usage;
 	stopReason: StopReason;
@@ -560,6 +571,28 @@ export interface AssistantMessage {
 	timestamp: number; // Unix timestamp in milliseconds
 }
 
+/** A tool call that another tool made while it ran, for example from a codemode script. */
+export interface NestedToolCallRecord {
+	id: string;
+	name: string;
+	/** Omitted when over the size limits; `argumentsBytes` then gives their size. */
+	arguments?: JsonObject;
+	/** UTF-8 size of the arguments as JSON, set when `arguments` is omitted. */
+	argumentsBytes?: number;
+	/** `unfinished`: the call was still running when the calling tool finished. */
+	status: "ok" | "error" | "unfinished";
+	durationMs?: number;
+	/** Error text, truncated. */
+	error?: string;
+}
+
+/** Bounded record of the nested calls a tool made. Results are not recorded. */
+export interface NestedToolCalls {
+	calls: NestedToolCallRecord[];
+	/** False when calls were dropped, arguments omitted, or calls had not finished. */
+	complete: boolean;
+}
+
 export type ToolResultMessage<TDetails = JsonValue> = IsJsonCompatible<TDetails> extends true
 	? {
 			role: "toolResult";
@@ -569,6 +602,8 @@ export type ToolResultMessage<TDetails = JsonValue> = IsJsonCompatible<TDetails>
 			details?: JsonRepresentation<TDetails>;
 			/** Usage from the tool execution itself, if available. Not part of main LLM context accounting. */
 			usage?: Usage;
+			/** Calls this tool made to other tools. Kept for the session record; not sent to the model. */
+			nestedCalls?: NestedToolCalls;
 			isError: boolean;
 			timestamp: number; // Unix timestamp in milliseconds
 		}
@@ -648,6 +683,8 @@ export interface ClassifierResult {
 	provider: ProviderId;
 	model: string;
 	answers: Record<string, ClassifierAnswer>;
+	/** Token usage and its cost at the model's catalog price, when the service reports token counts. */
+	usage?: Usage;
 	stopReason: ClassifierStopReason;
 	errorMessage?: string;
 	timestamp: number; // Unix timestamp in milliseconds
@@ -908,7 +945,7 @@ export interface AnthropicMessagesCompat {
 	supportsMidConvoEffort?: boolean;
 	/** Whether the exact model accepts system-role messages inside the conversation. When false, later system messages are folded into the top-level system prompt. Default: false. */
 	supportsMidConvoSystemMessages?: boolean;
-	/** Whether the exact model accepts mid-conversation `tool_addition` and `tool_removal` blocks. Requires `supportsMidConvoSystemMessages`. Default: false. */
+	/** Whether the exact model accepts mid-conversation `tool_addition` blocks with inline tool definitions (`inline-tools-2026-09-15`) and `tool_removal` blocks. Requires `supportsMidConvoSystemMessages`. Default: false. */
 	supportsMidConvoToolChanges?: boolean;
 	/**
 	 * Models Anthropic accepts in `fallbacks` for server-side refusal fallback,
@@ -1091,7 +1128,9 @@ export interface Model<TApi extends Api> extends BaseModel<TApi> {
 	contextWindow: number;
 	maxTokens: number;
 	/** Default sampling parameters for this model. See {@link StreamOptions.samplingParams}; per-request keys override these. */
-	samplingParams?: Record<string, unknown>;
+	samplingParams?: SamplingParams;
+	/** Sampling parameter overrides selected by the effective pi thinking level. */
+	samplingParamsByThinkingLevel?: SamplingParamsByThinkingLevel;
 	/** Compatibility overrides for OpenAI-compatible APIs. If not set, auto-detected from baseUrl. */
 	compat?: TApi extends "openai-completions"
 		? OpenAICompletionsCompat

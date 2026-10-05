@@ -15,6 +15,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
 	appViewPlan,
 	busyFromProcesses,
+	dependenciesInstalled,
 	detectWsl,
 	ensureAppView,
 	envFileAdditions,
@@ -43,7 +44,6 @@ import {
 	platformName,
 	prepareLaunch,
 	prepareLaunchAsync,
-	resolveTsx,
 	shimContent,
 	sourceRuntime,
 	usage,
@@ -85,16 +85,14 @@ function disk(files: Record<string, string>, folders: string[] = []) {
 
 const WIN_ROOT = "C:\\Users\\bai\\code\\KYRN";
 const WIN_HOME = "C:\\Users\\bai";
-const WIN_TSX = `${WIN_ROOT}\\node_modules\\tsx`;
+/** A checkout with its dependencies installed (undici, one of them, is what the launcher looks for) and pi's resolver. */
 const winInstalled = {
-	[`${WIN_TSX}\\package.json`]: JSON.stringify({ bin: "./dist/cli.mjs" }),
-	[`${WIN_TSX}\\dist\\cli.mjs`]: "",
+	[`${WIN_ROOT}\\node_modules\\undici\\package.json`]: "{}",
 	[`${WIN_ROOT}\\packages\\coding-agent\\src\\experimental\\source-resolver.ts`]: "",
 };
 const POSIX_ROOT = "/home/bai/KYRN";
 const posixInstalled = {
-	[`${POSIX_ROOT}/node_modules/tsx/package.json`]: JSON.stringify({ bin: { tsx: "./dist/cli.mjs" } }),
-	[`${POSIX_ROOT}/node_modules/tsx/dist/cli.mjs`]: "",
+	[`${POSIX_ROOT}/node_modules/undici/package.json`]: "{}",
 	[`${POSIX_ROOT}/packages/coding-agent/src/experimental/source-resolver.ts`]: "",
 };
 /** How Node runs a checkout's TypeScript itself: pi's source resolver and Node's compile cache (sourceRuntime). */
@@ -105,7 +103,6 @@ const POSIX_NATIVE = [
 	"--import",
 	`file://${POSIX_ROOT}/packages/coding-agent/src/experimental/source-resolver.ts`,
 ];
-const POSIX_TSX = [`${POSIX_ROOT}/node_modules/tsx/dist/cli.mjs`, "--tsconfig", `${POSIX_ROOT}/tsconfig.json`];
 
 function launch(overrides: Partial<Parameters<typeof planLaunch>[0]>): LaunchPlan {
 	const plan = planLaunch({
@@ -311,29 +308,27 @@ describe("the app view", () => {
 });
 
 describe("starting pi", () => {
-	it("finds the JavaScript behind the tsx command instead of its shim", () => {
-		expect(resolveTsx({ root: WIN_ROOT, platform: "win32", ...disk(winInstalled) })).toBe(
-			`${WIN_TSX}\\dist\\cli.mjs`,
-		);
-		expect(resolveTsx({ root: POSIX_ROOT, platform: "linux", ...disk(posixInstalled) })).toBe(
-			`${POSIX_ROOT}/node_modules/tsx/dist/cli.mjs`,
-		);
-		expect(resolveTsx({ root: POSIX_ROOT, platform: "linux", ...disk({}) })).toBeUndefined();
+	it("finds the dependencies the way Node resolves an import", () => {
+		expect(dependenciesInstalled({ root: WIN_ROOT, platform: "win32", ...disk(winInstalled) })).toBe(true);
+		expect(dependenciesInstalled({ root: POSIX_ROOT, platform: "linux", ...disk(posixInstalled) })).toBe(true);
+		expect(dependenciesInstalled({ root: POSIX_ROOT, platform: "linux", ...disk({}) })).toBe(false);
 		// A worktree under the main checkout runs on the main checkout's dependencies, as its imports do.
 		expect(
-			resolveTsx({ root: `${POSIX_ROOT}/.claude/worktrees/one`, platform: "linux", ...disk(posixInstalled) }),
-		).toBe(`${POSIX_ROOT}/node_modules/tsx/dist/cli.mjs`);
+			dependenciesInstalled({
+				root: `${POSIX_ROOT}/.claude/worktrees/one`,
+				platform: "linux",
+				...disk(posixInstalled),
+			}),
+		).toBe(true);
 		expect(
-			resolveTsx({ root: `${WIN_ROOT}\\.claude\\worktrees\\one`, platform: "win32", ...disk(winInstalled) }),
-		).toBe(`${WIN_TSX}\\dist\\cli.mjs`);
-		// The real one, when this checkout has its dependencies.
-		const real = resolveTsx({
-			root: repo,
-			platform: process.platform,
-			exists: existsSync,
-			readFile: (path) => readFileSync(path, "utf8"),
-		});
-		if (existsSync(join(repo, "node_modules/tsx"))) expect(real).toBe(join(repo, "node_modules/tsx/dist/cli.mjs"));
+			dependenciesInstalled({
+				root: `${WIN_ROOT}\\.claude\\worktrees\\one`,
+				platform: "win32",
+				...disk(winInstalled),
+			}),
+		).toBe(true);
+		// The real one: this checkout runs its tests on its dependencies.
+		expect(dependenciesInstalled({ root: repo, platform: process.platform, exists: existsSync })).toBe(true);
 	});
 
 	it("says how to install when the dependencies are missing, without `&&` on Windows", () => {
@@ -396,7 +391,7 @@ describe("starting pi", () => {
 		});
 	});
 
-	it("runs a checkout's TypeScript with Node itself, and through tsx where Node cannot or the checkout is older", () => {
+	it("runs a checkout's TypeScript with Node itself, and says why where it cannot", () => {
 		expect(launch({ argv: ["--mode", "rpc"] }).args).toEqual([
 			...POSIX_NATIVE,
 			`${POSIX_ROOT}/packages/coding-agent/src/experimental/cli.ts`,
@@ -405,25 +400,23 @@ describe("starting pi", () => {
 			"--mode",
 			"rpc",
 		]);
-		// A runtime that does not strip types: an Electron that runs mu as Node may not.
-		expect(launch({ stripsTypes: false }).args.slice(0, 3)).toEqual(POSIX_TSX);
+		const runtime = (stripsTypes: boolean, files: Record<string, string>) =>
+			sourceRuntime({ root: POSIX_ROOT, platform: "linux", stripsTypes, ...disk(files) }).error;
+		// A runtime that does not strip types.
+		expect(runtime(false, posixInstalled)).toContain("does not strip types");
 		// A checkout from before pi's source resolver.
 		const older = Object.entries(posixInstalled).filter(([file]) => !file.endsWith("source-resolver.ts"));
-		expect(launch({ fs: disk(Object.fromEntries(older)) }).args.slice(0, 3)).toEqual(POSIX_TSX);
+		expect(runtime(true, Object.fromEntries(older))).toContain("source resolver");
 		// Node strips types, but the dependencies are not installed: that is still said, not left to a failed import.
-		expect(sourceRuntime({ root: POSIX_ROOT, platform: "linux", stripsTypes: true, ...disk({}) }).error).toContain(
-			"npm ci --ignore-scripts",
-		);
+		expect(runtime(true, {})).toContain("npm ci --ignore-scripts");
 		// A user name with a space or beyond ASCII is escaped in the URL, and the file is still found.
 		const root = "C:\\Users\\白鹤 Li\\KYRN";
-		const tsx = `${root}\\node_modules\\tsx`;
 		const named = sourceRuntime({
 			root,
 			platform: "win32",
 			stripsTypes: true,
 			...disk({
-				[`${tsx}\\package.json`]: JSON.stringify({ bin: "./dist/cli.mjs" }),
-				[`${tsx}\\dist\\cli.mjs`]: "",
+				[`${root}\\node_modules\\undici\\package.json`]: "{}",
 				[`${root}\\packages\\coding-agent\\src\\experimental\\source-resolver.ts`]: "",
 			}),
 		});
@@ -515,10 +508,10 @@ describe("pi inside another program (the desktop app's runtime host)", () => {
 		expect(host.env).toEqual(launch({ argv: rpc }).env);
 	});
 
-	it("does not put tsx in front of a checkout it cannot run on the host's own Node", () => {
+	it("refuses a checkout it cannot run on the host's own Node", () => {
 		const input = { platform: "linux" as const, env: {}, argv: rpc, root: POSIX_ROOT, home: "/home/bai" };
 		expect(planHost({ ...input, stripsTypes: false, fs: disk(posixInstalled) }).error).toContain(
-			"strips TypeScript types",
+			"does not strip types",
 		);
 		const noResolver = Object.fromEntries(
 			Object.entries(posixInstalled).filter(([path]) => !path.endsWith("source-resolver.ts")),
@@ -624,7 +617,7 @@ describe("the npm package (mu-agent)", () => {
 		expect(layoutOf({ root: POSIX_ROOT, platform: "linux", exists: exists({}) })).toBe("repo");
 	});
 
-	it("runs pi's bundle with the built judgment layer: no tsx, and the package names the app itself", () => {
+	it("runs pi's bundle with the built judgment layer, and the package names the app itself", () => {
 		const prompt = 'say "hi" & del %USERPROFILE% | more';
 		const plan = launch({
 			platform: "win32",
@@ -934,7 +927,7 @@ describe("mu import", () => {
 		expect(plan.error === undefined && plan.env.MU_CODING_AGENT_DIR).toBe("D:\\mu-test");
 	});
 
-	it("takes a checkout's sources through tsx on a runtime that does not strip types, as the app's Electron may not", () => {
+	it("refuses a checkout's sources on a runtime that does not strip types", () => {
 		const source = `${WIN_ROOT}\\packages\\kyrn-judge\\src\\import\\cli.ts`;
 		const electron = {
 			...importArgs,
@@ -944,14 +937,12 @@ describe("mu import", () => {
 			execPath: "C:\\Program Files\\mu\\mu.exe",
 			stripsTypes: false,
 		};
-		expect(planImport({ ...electron, fs: disk({ ...winInstalled, [source]: "" }) })).toMatchObject({
-			command: "C:\\Program Files\\mu\\mu.exe",
-			args: [`${WIN_TSX}\\dist\\cli.mjs`, "--tsconfig", `${WIN_ROOT}\\tsconfig.json`, source, "--list"],
-		});
-		expect(planImport({ ...electron, fs: disk({ [source]: "" }) }).error).toContain("npm ci --ignore-scripts");
+		expect(planImport({ ...electron, fs: disk({ ...winInstalled, [source]: "" }) }).error).toContain(
+			"does not strip types",
+		);
 	});
 
-	it("imports through the launcher without tsx", () => {
+	it("imports through the launcher", () => {
 		const dir = temp();
 		const transcript = join(dir, "claude", "projects", "p", "0b9c6f7e-1111-4222-8333-444455556666.jsonl");
 		mkdirSync(dirname(transcript), { recursive: true });
@@ -1241,7 +1232,7 @@ describe("mu migrate without pgrep", () => {
 });
 
 describe("the launcher, run for real on this machine", () => {
-	const installed = existsSync(join(repo, "node_modules/.bin/tsx"));
+	const installed = dependenciesInstalled({ root: repo, platform: process.platform, exists: existsSync });
 	const windows = process.platform === "win32";
 	const run = (args: string[], env: Record<string, string>) => runScript(MU, args, env);
 	/** A search path without the Node that runs these tests: `first`, then the system's own folders. */
@@ -1310,7 +1301,7 @@ describe("the launcher, run for real on this machine", () => {
 		expect(reached.out).toContain("reached help");
 	});
 
-	// Three starts of pi from its sources: on GitHub's Windows runners each took over ten seconds through tsx.
+	// Three starts of pi from its sources, each slow on GitHub's Windows runners.
 	it.skipIf(!installed)(
 		"starts pi as a child too, the way Windows has to, and passes its exit code on",
 		() => {

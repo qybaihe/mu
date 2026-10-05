@@ -339,33 +339,17 @@ export function envFilePath({ layout, root, muDir, platform }) {
 }
 
 /**
- * The JavaScript file behind the `tsx` command. node_modules/.bin/tsx is a `.cmd` shim on Windows, and a shim
- * can only be started through a shell, where a prompt with quotes or `&` in it is re-parsed. Running the real
- * entry with the Node that runs this file avoids the shell on every platform.
+ * Whether a checkout's dependencies are installed: undici, which pi and the judgment layer both depend on, is found
+ * the way Node resolves an import: here, then in every parent. A git worktree of this repository kept under the
+ * main checkout (as the agent worktrees are) has no node_modules of its own and runs on the main checkout's,
+ * exactly as its imports do.
  */
-export function resolveTsx({ root, platform, exists, readFile }) {
+export function dependenciesInstalled({ root, platform, exists }) {
 	const path = pathFor(platform);
-	// Looked for the way Node resolves an import: here, then in every parent. A git worktree of this repository
-	// kept under the main checkout (as the agent worktrees are) has no node_modules of its own and runs on the
-	// main checkout's, exactly as its imports do.
 	for (let dir = root; ; dir = path.dirname(dir)) {
-		const entry = tsxEntry(path.join(dir, "node_modules", "tsx"), path, exists, readFile);
-		if (entry) return entry;
-		if (path.dirname(dir) === dir) return undefined;
+		if (exists(path.join(dir, "node_modules", "undici", "package.json"))) return true;
+		if (path.dirname(dir) === dir) return false;
 	}
-}
-
-function tsxEntry(dir, path, exists, readFile) {
-	let bin;
-	try {
-		bin = JSON.parse(readFile(path.join(dir, "package.json"))).bin;
-	} catch {
-		return undefined;
-	}
-	const relative = typeof bin === "string" ? bin : bin?.tsx;
-	if (typeof relative !== "string") return undefined;
-	const entry = path.join(dir, ...relative.split("/").filter((part) => part && part !== "."));
-	return exists(entry) ? entry : undefined;
 }
 
 export function installHint({ root, platform }) {
@@ -376,22 +360,24 @@ export function installHint({ root, platform }) {
 		: `mu's dependencies are not installed. Run:  ${steps.join(" && ")}`;
 }
 
+/** What mu says on a Node that does not strip TypeScript types, which a checkout cannot run on. */
+const NO_TYPE_STRIPPING =
+	"mu runs a checkout's TypeScript with Node's own type stripping (on by default from Node 22.18), and this Node does not strip types";
+
 /**
- * Node's arguments for running a checkout's TypeScript, up to the entry file. A Node that strips types itself (on
- * by default from 22.18) runs the sources as they are, with pi's own source resolver
- * (packages/coding-agent/src/experimental/source-resolver.ts: each workspace package resolves to its sources, as
- * tsconfig.json's paths say) and Node's compile cache (compile-cache.mjs). tsx runs its loader on a thread of its
- * own and hands every file over from there: pi with the judgment layer took 2 s to start that way, about 0.85 s
- * this way, and a checkout starts mu for every conversation the desktop app opens. A runtime that does not strip
- * types (`stripsTypes` false; an Electron that runs mu as Node may not), or a checkout from before the resolver,
- * still goes through tsx. tsx is one of the checkout's dependencies either way: without it they are not installed.
+ * Node's arguments for running a checkout's TypeScript, up to the entry file. Node strips the types itself (on by
+ * default from 22.18, in both Electrons the desktop app runs mu with too) and runs the sources as they are, with
+ * pi's own source resolver (packages/coding-agent/src/experimental/source-resolver.ts: each workspace package
+ * resolves to its sources, as tsconfig.json's paths say) and Node's compile cache (compile-cache.mjs), the way pi
+ * runs its own checkout (pi-test.sh). A runtime that does not strip types, a checkout whose dependencies are not
+ * installed and one without the resolver are each said, not left to a failed import.
  */
-export function sourceRuntime({ root, platform, stripsTypes, exists, readFile }) {
+export function sourceRuntime({ root, platform, stripsTypes, exists }) {
 	const path = pathFor(platform);
-	const tsx = resolveTsx({ root, platform, exists, readFile });
-	if (!tsx) return { error: installHint({ root, platform }) };
+	if (!stripsTypes) return { error: NO_TYPE_STRIPPING };
+	if (!dependenciesInstalled({ root, platform, exists })) return { error: installHint({ root, platform }) };
 	const resolver = path.join(root, "packages", "coding-agent", "src", "experimental", "source-resolver.ts");
-	if (!stripsTypes || !exists(resolver)) return { args: [tsx, "--tsconfig", path.join(root, "tsconfig.json")] };
+	if (!exists(resolver)) return { error: `pi's source resolver is missing from this checkout (${resolver})` };
 	// As URLs: `--import` reads a Windows path such as C:\... as a URL whose scheme is c:.
 	const url = (file) => pathToFileURL(file, { windows: platform === "win32" }).href;
 	return {
@@ -486,7 +472,7 @@ export function planLaunch({
 		}
 		entry = [files.cli, "-e", files.extension];
 	} else {
-		const runtime = sourceRuntime({ root, platform, stripsTypes, exists: fs.exists, readFile: fs.readFile });
+		const runtime = sourceRuntime({ root, platform, stripsTypes, exists: fs.exists });
 		if (runtime.error) return { error: runtime.error };
 		entry = [
 			...runtime.args,
@@ -560,8 +546,7 @@ export function planLaunch({
  * Node flags that process starts with, pi's arguments (the judgment layer, then `argv`) and its whole environment.
  * The app's pi and the command line's are then one: the same files, settings, sign-ins and keys.
  *
- * A checkout runs in such a process only on a Node that strips TypeScript types itself, with pi's source resolver:
- * tsx cannot be put in front of a module another program imports. Returns { error } otherwise.
+ * A checkout runs there as it runs on the command line (sourceRuntime). Returns { error } when pi cannot run.
  */
 export function planHost({ platform, env, argv, root, home, fs, wsl = false, stripsTypes = true }) {
 	const path = pathFor(platform);
@@ -584,13 +569,7 @@ export function planHost({ platform, env, argv, root, home, fs, wsl = false, str
 			args: ["-e", packageEntries({ root, platform }).extension, ...argv],
 		};
 	}
-	const resolver = path.join(root, "packages", "coding-agent", "src", "experimental", "source-resolver.ts");
-	if (!stripsTypes || !fs.exists(resolver)) {
-		return {
-			error: `pi's sources run inside another program only on a Node that strips TypeScript types itself (22.18 or newer), with pi's source resolver (${resolver})`,
-		};
-	}
-	const runtime = sourceRuntime({ root, platform, stripsTypes, exists: fs.exists, readFile: fs.readFile });
+	const runtime = sourceRuntime({ root, platform, stripsTypes, exists: fs.exists });
 	if (runtime.error) return { error: runtime.error };
 	return {
 		...common,
@@ -671,7 +650,7 @@ export function planAuth({ platform, env, argv, root, home, execPath, fs, canExe
 		}
 		entry = [auth];
 	} else {
-		const runtime = sourceRuntime({ root, platform, stripsTypes, exists: fs.exists, readFile: fs.readFile });
+		const runtime = sourceRuntime({ root, platform, stripsTypes, exists: fs.exists });
 		if (runtime.error) return { error: runtime.error };
 		entry = [...runtime.args, path.join(root, "packages", "kyrn-judge", "src", "auth", "main.ts")];
 	}
@@ -705,8 +684,7 @@ export function planJudge({ platform, env, argv, bin, wsl = false }) {
 /**
  * `mu import`: Claude Code and Codex conversations into mu's sessions (packages/kyrn-judge/src/import). The importer
  * needs nothing but Node: the npm package runs its build, judge/dist/import.js, and a checkout its TypeScript with
- * Node's own type stripping (on by default from 22.18). A runtime that does not strip types (`stripsTypes` false;
- * an Electron that runs mu as Node may not) takes the sources through tsx, as pi runs in a checkout.
+ * Node's own type stripping (on by default from 22.18).
  */
 export function planImport({ platform, env, argv, root, home, execPath, fs, stripsTypes = true }) {
 	const path = pathFor(platform);
@@ -720,12 +698,8 @@ export function planImport({ platform, env, argv, root, home, execPath, fs, stri
 	} else {
 		const source = path.join(root, "packages", "kyrn-judge", "src", "import", "cli.ts");
 		if (!fs.exists(source)) return { error: `mu import is missing from this checkout (${source})` };
-		if (stripsTypes) entry = ["--disable-warning=ExperimentalWarning", source];
-		else {
-			const tsx = resolveTsx({ root, platform, exists: fs.exists, readFile: fs.readFile });
-			if (!tsx) return { error: installHint({ root, platform }) };
-			entry = [tsx, "--tsconfig", path.join(root, "tsconfig.json"), source];
-		}
+		if (!stripsTypes) return { error: NO_TYPE_STRIPPING };
+		entry = ["--disable-warning=ExperimentalWarning", source];
 	}
 	const agentDir = agentDirFor({ env, muDir: muHome({ home, platform, isDir: fs.isDir }), platform });
 	const childEnv = {};
@@ -763,6 +737,8 @@ export const MODEL_KEY_VARIABLES = [
 	"ANTHROPIC_AUTH_TOKEN",
 	"ANTHROPIC_OAUTH_TOKEN",
 	"ANTHROPIC_API_KEY",
+	// Anthropic's workload identity federation needs three variables together; its rule id stands for them.
+	"ANTHROPIC_FEDERATION_RULE_ID",
 	"ANT_LING_API_KEY",
 	"QWEN_TOKEN_PLAN_API_KEY",
 	"QWEN_TOKEN_PLAN_CN_API_KEY",
@@ -816,7 +792,7 @@ export function planSetup({ platform, env, argv, root, home, execPath, fs, strip
 		}
 		entry = [setup];
 	} else {
-		const runtime = sourceRuntime({ root, platform, stripsTypes, exists: fs.exists, readFile: fs.readFile });
+		const runtime = sourceRuntime({ root, platform, stripsTypes, exists: fs.exists });
 		if (runtime.error) return { error: runtime.error };
 		entry = [...runtime.args, path.join(root, "packages", "kyrn-judge", "src", "setup", "main.ts")];
 	}
@@ -1508,7 +1484,7 @@ export async function main(argv = process.argv.slice(2)) {
 		return 0;
 	}
 	// Asked before `version` too, as it always was: a checkout without its dependencies says so at the first command.
-	if (layout === "repo" && !resolveTsx({ root, platform, exists: existsSync, readFile: readText })) {
+	if (layout === "repo" && !dependenciesInstalled({ root, platform, exists: existsSync })) {
 		err(installHint({ root, platform }));
 		return 1;
 	}

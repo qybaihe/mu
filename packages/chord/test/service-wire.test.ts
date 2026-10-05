@@ -134,6 +134,57 @@ describe("service wire protocol", () => {
 		expect(dec.decodeUpdate(secondWire)).toEqual(second);
 	});
 
+	test("validates explicit resets and restarts path dictionaries at the new baseline", () => {
+		const enc = createServiceStateEncoder();
+		const dec = createServiceStateDecoder();
+		const snapshot: ServiceSubscriptionSnapshot = {
+			serviceId: "pi.states",
+			mode: "singleton",
+			instances: [{ members: [{ name: "state", kind: "state", sequence: 0, ops: [["r", { before: 0 }]] }] }],
+		};
+		dec.decodeSnapshot(enc.encodeSnapshot(snapshot));
+		for (let sequence = 1; sequence <= 2; sequence += 1) {
+			dec.decodeUpdate(
+				enc.encodeUpdate({ type: "state", member: "state", sequence, ops: [["s", ["before"], sequence]] }),
+			);
+		}
+		const reset: ServiceProviderUpdate = {
+			type: "reset",
+			snapshot: {
+				...snapshot,
+				instances: [{ members: [{ name: "state", kind: "state", sequence: 103, ops: [["r", { after: 103 }]] }] }],
+			},
+		};
+		expect(parseServiceProviderUpdate(reset)).toBe(reset);
+		const wireReset = enc.encodeUpdate(reset);
+		expect(parseWireServiceProviderUpdate(wireReset)).toBe(wireReset);
+		expect(dec.decodeUpdate(wireReset)).toEqual(reset);
+		for (let sequence = 104; sequence <= 106; sequence += 1) {
+			const update: ServiceProviderUpdate = {
+				type: "state",
+				member: "state",
+				sequence,
+				ops: [["s", ["after"], sequence]],
+			};
+			expect(dec.decodeUpdate(enc.encodeUpdate(update))).toEqual(update);
+		}
+		for (const parse of [parseServiceProviderUpdate, parseWireServiceProviderUpdate]) {
+			expect(() => parse({ ...reset, extra: true })).toThrow();
+			expect(() => parse({ type: "reset", snapshot: {} })).toThrow();
+			expect(() =>
+				parse({
+					type: "reset",
+					snapshot: {
+						...snapshot,
+						instances: [
+							{ members: [{ name: "state", kind: "state", sequence: 103, ops: [["s", ["before"], 103]] }] },
+						],
+					},
+				}),
+			).toThrow(/full root replacements/);
+		}
+	});
+
 	test("isolates operation dictionaries between states and subscriptions", () => {
 		const snapshot: ServiceSubscriptionSnapshot = {
 			serviceId: "pi.states",

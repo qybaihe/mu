@@ -10,6 +10,8 @@
 
 import type {
 	AgentMessage,
+	AgentTool,
+	AgentToolCallOutcome,
 	AgentToolResult,
 	AgentToolUpdateCallback,
 	ThinkingLevel,
@@ -24,6 +26,7 @@ import type {
 	ConstrainedSamplingConfig,
 	ImageApi,
 	ImageContent,
+	JsonValue,
 	Message,
 	Model,
 	OAuthCredentials,
@@ -60,6 +63,7 @@ import type { EventBus } from "../event-bus.ts";
 import type { ExecOptions, ExecResult } from "../exec.ts";
 import type { ReadonlyFooterDataProvider } from "../footer-data-provider.ts";
 import type { KeybindingsManager } from "../keybindings.ts";
+import type { McpServerConfig, McpServerRegistry, RegisteredMcpServer } from "../mcp-servers.ts";
 import type { CustomMessage } from "../messages.ts";
 import type { ModelRegistry } from "../model-registry.ts";
 import type { ScopedModel } from "../model-resolver.ts";
@@ -73,6 +77,7 @@ import type {
 	SessionEntry,
 	SessionManager,
 } from "../session-manager.ts";
+import type { Settings } from "../settings-manager.ts";
 import type { SlashCommandInfo } from "../slash-commands.ts";
 import type { SourceInfo } from "../source-info.ts";
 import type { BuildSystemPromptOptions, NormalizedBuildSystemPromptOptions } from "../system-prompt.ts";
@@ -94,6 +99,7 @@ import type {
 	ReadToolInput,
 	WriteToolInput,
 } from "../tools/index.ts";
+import type { ModelRoute, ModelRouteRequest, VirtualModelDefinition } from "../virtual-models.ts";
 
 export type { ExecOptions, ExecResult } from "../exec.ts";
 export type { BuildSystemPromptOptions, NormalizedBuildSystemPromptOptions } from "../system-prompt.ts";
@@ -358,6 +364,36 @@ export interface ExtensionContext {
 	getSystemPrompt(): string;
 }
 
+/** Options for {@link ExtensionToolContext.executeTool}. */
+export interface ExecuteToolOptions {
+	/** Defaults to the calling tool's signal. */
+	signal?: AbortSignal;
+	/** Receives partial results of the nested tool, in addition to `tool_execution_update` events. */
+	onUpdate?: AgentToolUpdateCallback;
+}
+
+/**
+ * Context passed to tool `execute()` in a session: the extension context plus `executeTool()`
+ * for running other tools through the same validation, hooks, and permission checks as
+ * model-issued calls.
+ *
+ * A tool wrapped with `wrapToolDefinition()` without a context factory, such as a built-in tool
+ * created with `createBashTool()` and run in a plain `Agent` or called directly, gets no context.
+ */
+export interface ExtensionToolContext extends ExtensionContext {
+	/** Tools {@link executeTool} can call. */
+	readonly tools: readonly AgentTool[];
+	/**
+	 * Run another tool. The call gets the id `<calling id>/<n>`, and the `tool_call`, `tool_result`,
+	 * and `tool_execution_*` events carry `parentToolCallId`. It does not appear in the transcript;
+	 * a bounded record of it is kept as `nestedCalls` on the calling tool's result message.
+	 *
+	 * Never rejects for tool failures: unknown tools, validation errors, blocked calls, and thrown
+	 * errors come back as `isError: true`.
+	 */
+	executeTool(name: string, args: unknown, options?: ExecuteToolOptions): Promise<AgentToolCallOutcome>;
+}
+
 /**
  * Extended context for command handlers.
  * Includes session control methods only safe in user-initiated commands.
@@ -456,6 +492,74 @@ export interface ToolRenderContext<TState = any, TArgs = any> {
 }
 
 /**
+ * How the model reaches a tool. "Callable" means callable from other tools through
+ * `ctx.executeTool()`, as the `codemode` tool does.
+ *
+ * - `direct`: declared to the model while active, and callable while active.
+ * - `model-only`: declared to the model while active, never callable. Use it for orchestrating or
+ *   interactive tools.
+ * - `codemode`: callable whenever registered. Not declared to the model unless explicitly
+ *   activated. Codemode tools list it in their description.
+ * - `deferred`: like `codemode`, but codemode tools do not list it; tool search can find it.
+ * - `hidden`: registered but unreachable. Activating it has no effect.
+ *
+ * `direct` and `model-only` tools are activated when they are registered; the others are not.
+ * The active tool set (`getActiveTools`/`setActiveTools`) is the set declared to the model.
+ */
+export type ToolExposure = "direct" | "model-only" | "codemode" | "deferred" | "hidden";
+
+/**
+ * Hints about what a tool does, with the meaning of MCP tool annotations. They come from the tool's
+ * author and are not verified; permission extensions can use them to decide which calls to confirm.
+ */
+export interface ToolAnnotations {
+	/** The tool does not modify its environment. */
+	readOnlyHint?: boolean;
+	/** The tool may delete or overwrite data, rather than only add to it. Meaningful when not read-only. */
+	destructiveHint?: boolean;
+	/** Repeating a call with the same arguments has no further effect. Meaningful when not read-only. */
+	idempotentHint?: boolean;
+	/** The tool reaches an open world of external entities, such as the web, rather than a closed domain. */
+	openWorldHint?: boolean;
+}
+
+/** A group of related tools, such as the tools of one MCP server. Codemode tools list them together. */
+export interface ToolNamespace {
+	/** For example `mcp__docs`. */
+	name: string;
+	/** Short summary shown once with the group in model-facing tool listings. */
+	description?: string;
+	/**
+	 * Longer usage guidance, such as MCP server instructions. Not part of tool listings; tools that
+	 * describe the namespace on request (codemode's `describeNamespace()`) return it.
+	 */
+	instructions?: string;
+}
+
+/** The tools of a session as {@link ToolDefinition.prepareLoadout} sees them. */
+export interface ToolLoadout {
+	/** Tools declared to the model (the active tools), in order, with their original descriptions. */
+	readonly declared: readonly AgentTool[];
+	/** Tools callable through `ctx.executeTool()`. */
+	readonly callable: readonly AgentTool[];
+	/** Every registered tool. */
+	readonly registered: readonly AgentTool[];
+	getExposure(name: string): ToolExposure;
+	getNamespace(name: string): ToolNamespace | undefined;
+}
+
+/** Changes {@link ToolDefinition.prepareLoadout} makes to what the model sees. */
+export interface ToolLoadoutChanges {
+	/** Model-facing descriptions of declared tools, by tool name. */
+	descriptions?: Readonly<Record<string, string>>;
+	/**
+	 * Declared tools whose declarations requests leave out. They stay active and callable, and the
+	 * transcript still declares them, so the active set survives `/tree` and resume.
+	 */
+	hiddenDeclarations?: readonly string[];
+}
+
+/**
  * Tool definition for registerTool().
  */
 export interface ToolDefinition<TParams extends TSchema = TSchema, TDetails = unknown, TState = any> {
@@ -480,6 +584,37 @@ export interface ToolDefinition<TParams extends TSchema = TSchema, TDetails = un
 	prepareArguments?: (args: unknown) => Static<TParams>;
 
 	/**
+	 * JSON Schema of `structuredContent` in successful results. Tools that declare it should always
+	 * set `structuredContent`; codemode scripts then receive it instead of the text content.
+	 */
+	outputSchema?: TSchema;
+
+	/**
+	 * How the model reaches the tool. Default: `"direct"`. See {@link ToolExposure}.
+	 */
+	exposure?: ToolExposure;
+
+	/** Group the tool belongs to, for example its MCP server. */
+	namespace?: ToolNamespace;
+
+	/** Hints about what the tool does, for example from an MCP server. */
+	annotations?: ToolAnnotations;
+
+	/**
+	 * Whether registering the tool activates it. Default: `true` for `direct` and `model-only` tools;
+	 * other exposures are never activated on registration. A tool with `defaultActive: false` is
+	 * activated by naming it in `--tools` or the `defaultTools` setting, or with `setActiveTools()`.
+	 */
+	defaultActive?: boolean;
+
+	/**
+	 * Adjust how the loadout is presented to the model while this tool is active. Called whenever
+	 * the active tools change. Tools that orchestrate other tools use it, for example to list the
+	 * callable tools in their own description.
+	 */
+	prepareLoadout?: (loadout: ToolLoadout) => ToolLoadoutChanges | undefined;
+
+	/**
 	 * Per-tool execution mode override.
 	 * - "sequential": this tool must execute one at a time with other tool calls.
 	 * - "parallel": this tool can execute concurrently with other tool calls.
@@ -494,7 +629,7 @@ export interface ToolDefinition<TParams extends TSchema = TSchema, TDetails = un
 		params: Static<TParams>,
 		signal: AbortSignal | undefined,
 		onUpdate: AgentToolUpdateCallback<TDetails> | undefined,
-		ctx: ExtensionContext,
+		ctx: ExtensionToolContext,
 	): Promise<AgentToolResult<TDetails>>;
 
 	/** Custom rendering for tool call display */
@@ -510,6 +645,17 @@ export interface ToolDefinition<TParams extends TSchema = TSchema, TDetails = un
 }
 
 type AnyToolDefinition = ToolDefinition<any, any, any>;
+
+export type ToolRenderers = Pick<AnyToolDefinition, "renderShell" | "renderCall" | "renderResult">;
+
+/**
+ * Chooses how calls to a tool are drawn, including tools that are not registered. `next()` returns
+ * the renderers the remaining resolvers, then the registered tool, would use.
+ */
+export type ToolRendererResolver = (
+	toolName: string,
+	next: () => ToolRenderers | undefined,
+) => ToolRenderers | undefined;
 
 /**
  * Preserve parameter inference for standalone tool definitions.
@@ -564,6 +710,18 @@ export interface ResourcesDiscoverResult {
 	skillPaths?: string[];
 	promptPaths?: string[];
 	themePaths?: string[];
+}
+
+/**
+ * Fired when an extension registers or unregisters an MCP server after the extensions are bound
+ * (see {@link ExtensionAPI.registerMcpServer}). Servers registered while extensions load are read
+ * with `pi.getMcpServers()` on `session_start`. Handling this event marks an extension as the one
+ * that connects registered servers.
+ */
+export interface McpServersChangeEvent {
+	type: "mcp_servers_change";
+	/** Every registered server after the change. */
+	servers: RegisteredMcpServer[];
 }
 
 // ============================================================================
@@ -899,6 +1057,8 @@ export interface ToolExecutionStartEvent {
 	toolCallId: string;
 	toolName: string;
 	args: any;
+	/** Set when another tool (for example a codemode script) made this call. */
+	parentToolCallId?: string;
 }
 
 /** Fired during tool execution with partial/streaming output */
@@ -908,6 +1068,8 @@ export interface ToolExecutionUpdateEvent {
 	toolName: string;
 	args: any;
 	partialResult: any;
+	/** Set when another tool (for example a codemode script) made this call. */
+	parentToolCallId?: string;
 }
 
 /** Fired when a tool finishes executing */
@@ -917,6 +1079,8 @@ export interface ToolExecutionEndEvent {
 	toolName: string;
 	result: any;
 	isError: boolean;
+	/** Set when another tool (for example a codemode script) made this call. */
+	parentToolCallId?: string;
 }
 
 // ============================================================================
@@ -987,7 +1151,14 @@ export type InputEventResult =
 
 interface ToolCallEventBase {
 	type: "tool_call";
+	/**
+	 * The call's id. For calls another tool made (with `parentToolCallId` set), pi assigns
+	 * `<parent id>/<n>`; such ids never appear as tool calls or tool results in the transcript, only
+	 * in the parent result's `nestedCalls` record.
+	 */
 	toolCallId: string;
+	/** Set when another tool (for example a codemode script) issued this call. */
+	parentToolCallId?: string;
 }
 
 export interface BashToolCallEvent extends ToolCallEventBase {
@@ -1054,9 +1225,17 @@ export type ToolCallEvent =
 
 interface ToolResultEventBase {
 	type: "tool_result";
+	/** The call's id; `<parent id>/<n>` for nested calls, see `ToolCallEvent`. */
 	toolCallId: string;
+	/** Set when another tool (for example a codemode script) issued this call. */
+	parentToolCallId?: string;
 	input: Record<string, unknown>;
 	content: (TextContent | ImageContent)[];
+	/**
+	 * Machine-readable result for tools that declare an `outputSchema`. Handlers that redact
+	 * `content` should also replace this; replacing `content` alone drops it.
+	 */
+	structuredContent?: JsonValue;
 	isError: boolean;
 	/** Usage from the tool execution itself, if available. */
 	usage?: Usage;
@@ -1185,6 +1364,7 @@ export function isToolCallEventType(toolName: string, event: ToolCallEvent): boo
 export type ExtensionEvent =
 	| ProjectTrustEvent
 	| ResourcesDiscoverEvent
+	| McpServersChangeEvent
 	| SessionEvent
 	| ContextEvent
 	| ContextWithSystemEvent
@@ -1254,9 +1434,15 @@ export type UserBashEventResult =
 			result: BashResult;
 	  };
 
+/**
+ * Changes a `tool_result` handler makes. Omitted fields stay as they are, except that replacing
+ * `content` without returning `structuredContent` drops the structured content, because it may no
+ * longer match. Return it along with `content` to keep it.
+ */
 export interface ToolResultEventResult {
 	content?: (TextContent | ImageContent)[];
 	details?: unknown;
+	structuredContent?: JsonValue;
 	isError?: boolean;
 	usage?: Usage;
 }
@@ -1389,6 +1575,7 @@ export interface ExtensionAPI {
 	on(event: "session_compact", handler: ExtensionHandler<SessionCompactEvent>): () => void;
 	on(event: "session_compact_failed", handler: ExtensionHandler<SessionCompactFailedEvent>): () => void;
 	on(event: "session_shutdown", handler: ExtensionHandler<SessionShutdownEvent>): () => void;
+	on(event: "mcp_servers_change", handler: ExtensionHandler<McpServersChangeEvent>): () => void;
 	on(
 		event: "session_before_tree",
 		handler: ExtensionHandler<SessionBeforeTreeEvent, SessionBeforeTreeResult>,
@@ -1492,6 +1679,9 @@ export interface ExtensionAPI {
 	/** Register a custom renderer for CustomEntry. Custom entries do not participate in LLM context. */
 	registerEntryRenderer<T = unknown>(customType: string, renderer: EntryRenderer<T>): void;
 
+	/** Choose how tool calls are drawn. Resolvers run in extension load order. */
+	registerToolRenderer(resolver: ToolRendererResolver): void;
+
 	// =========================================================================
 	// Actions
 	// =========================================================================
@@ -1531,13 +1721,19 @@ export interface ExtensionAPI {
 	/** Execute a shell command. */
 	exec(command: string, args: string[], options?: ExecOptions): Promise<ExecResult>;
 
-	/** Get the list of currently active tool names. */
+	/** Get the names of the active tools, which are the tools declared to the model. */
 	getActiveTools(): string[];
 
-	/** Get all configured tools with parameter schema, prompt guidelines, and source metadata. */
+	/** Get all configured tools with parameter schema, prompt guidelines, exposure, and source metadata. */
 	getAllTools(): ToolInfo[];
 
-	/** Set the active tools by name. */
+	/** Get a copy of the effective settings (global and project settings merged, with overrides). */
+	getSettings(): Settings;
+
+	/**
+	 * Set the active tools by name. Unknown and `hidden` tools are ignored. Tools with `codemode` or
+	 * `deferred` exposure stay callable from codemode scripts whether active or not.
+	 */
 	setActiveTools(toolNames: string[]): void;
 
 	/** Get available slash commands in the current session. */
@@ -1636,6 +1832,46 @@ export interface ExtensionAPI {
 	 */
 	unregisterProvider(name: string): void;
 
+	// =========================================================================
+	// MCP Servers
+	// =========================================================================
+
+	/**
+	 * Register an MCP server for this session, with the same config as an `mcpServers` entry in
+	 * `mcp.json`. The server connects next to the configured servers: on `session_start` when
+	 * registered during extension load, right away when registered later. Registering a name again
+	 * replaces the extension's earlier registration.
+	 *
+	 * The registration is not saved; register again on every load. A server of the same name in
+	 * `mcp.json` takes precedence. Throws for invalid configs and for names another extension
+	 * registered. When no loaded extension handles MCP servers (for example because another MCP
+	 * extension replaced the built-in one), the registration is reported as an extension error.
+	 *
+	 * @example
+	 * pi.registerMcpServer("jira", { url: "https://mcp.example.com/jira" });
+	 */
+	registerMcpServer(name: string, config: McpServerConfig): void;
+
+	/** Remove an MCP server this extension registered and close its connection. */
+	unregisterMcpServer(name: string): void;
+
+	/** Every MCP server registered by extensions. For extensions that connect MCP servers. */
+	getMcpServers(): RegisteredMcpServer[];
+
+	/**
+	 * Register a virtual model: a selectable catalog entry that routes each request to a physical
+	 * model. The selection (`ctx.model`, `model_change` entries) names the virtual model; assistant
+	 * messages record the physical model and thinking level the router picked.
+	 *
+	 * `provider` may be any provider id, including one with physical models, and may list several
+	 * virtual models. Registering the same provider and id again replaces the virtual model. See
+	 * docs/virtual-models.md.
+	 */
+	registerVirtualModel<TState = unknown>(model: ExtensionVirtualModel<TState>): void;
+
+	/** Remove a virtual model registered with `registerVirtualModel()`. */
+	unregisterVirtualModel(provider: string, id: string): void;
+
 	/** Shared event bus for extension communication. */
 	events: EventBus;
 }
@@ -1643,6 +1879,12 @@ export interface ExtensionAPI {
 // ============================================================================
 // Provider Registration Types
 // ============================================================================
+
+/** Virtual model registered via pi.registerVirtualModel(). */
+export interface ExtensionVirtualModel<TState = unknown> extends Omit<VirtualModelDefinition<TState>, "route"> {
+	/** Like `VirtualModelDefinition.route`, with an extension context. */
+	route(request: ModelRouteRequest<TState>, ctx: ExtensionContext): ModelRoute<TState> | Promise<ModelRoute<TState>>;
+}
 
 /** Configuration for registering a provider via pi.registerProvider(). */
 export interface ProviderConfig {
@@ -1764,11 +2006,31 @@ export type ExtensionFactory = (pi: ExtensionAPI) => void | Promise<void>;
 export type InlineExtension =
 	| ExtensionFactory
 	| {
-			/** Display name shown as `<inline:name>` in the startup Extensions list. */
+			/**
+			 * Display name shown as `<inline:name>` in the startup Extensions list and errors. With
+			 * `builtin`, the extension is named `builtin:name` in errors and diagnostics.
+			 */
 			name: string;
 			factory: ExtensionFactory;
 			/** Omit this extension from the startup Extensions list. */
 			hidden?: boolean;
+			/**
+			 * Leave this extension out when another extension registers a tool, command, or flag with a
+			 * name it registers during loading, instead of reporting a conflict. The CLI's built-in MCP,
+			 * codemode, and tool search extensions use it, so for example an MCP extension that registers
+			 * `/mcp` replaces the built-in MCP support. The factory still runs, so it should only register
+			 * tools, commands, flags, and event handlers.
+			 */
+			replaceable?: boolean;
+			/**
+			 * Supply the code of the `builtin:<name>` extension instead of loading as an inline extension.
+			 * `builtin:<name>` is an extension resource like a file: it loads by default, `pi config` lists
+			 * it, `-builtin:<name>` in the `extensions` setting and `--no-extensions` disable it, and
+			 * `-e builtin:<name>` loads it explicitly. It is hidden from the startup Extensions list and
+			 * loads after project trust is resolved, so it cannot handle `project_trust`. The CLI's built-in
+			 * extensions use it.
+			 */
+			builtin?: boolean;
 	  };
 
 // ============================================================================
@@ -1817,10 +2079,15 @@ export type GetActiveToolsHandler = () => string[];
 
 /** Tool info with name, description, parameter schema, prompt guidelines, and source metadata. */
 export type ToolInfo = Pick<ToolDefinition, "name" | "description" | "parameters" | "promptGuidelines"> & {
+	exposure: ToolExposure;
+	namespace?: ToolNamespace;
+	annotations?: ToolAnnotations;
 	sourceInfo: SourceInfo;
 };
 
 export type GetAllToolsHandler = () => ToolInfo[];
+
+export type GetSettingsHandler = () => Settings;
 
 export type GetCommandsHandler = () => SlashCommandInfo[];
 
@@ -1846,6 +2113,10 @@ export interface ExtensionRuntimeState {
 	pendingProviderRegistrations: Array<{ name: string; config: ProviderConfig; extensionPath: string }>;
 	/** Native pi-ai provider registrations queued during extension loading, processed when runner binds. */
 	pendingNativeProviderRegistrations: Array<{ provider: Provider; extensionPath: string }>;
+	/** Virtual model registrations queued during extension loading, processed when runner binds. */
+	pendingVirtualModelRegistrations: Array<{ definition: VirtualModelDefinition; extensionPath: string }>;
+	/** Create an extension context. Throws before the runner binds. */
+	createContext: () => ExtensionContext;
 	/** Throws when this extension instance is stale after runtime replacement. */
 	assertActive: () => void;
 	/** Marks this extension instance as stale after runtime replacement or reload. */
@@ -1861,6 +2132,10 @@ export interface ExtensionRuntimeState {
 	registerProvider: (name: string, config: ProviderConfig, extensionPath?: string) => void;
 	registerNativeProvider: (provider: Provider, extensionPath?: string) => void;
 	unregisterProvider: (name: string, extensionPath?: string) => void;
+	/** Servers registered with `pi.registerMcpServer()`. */
+	mcpServers: McpServerRegistry;
+	registerVirtualModel: (definition: VirtualModelDefinition, extensionPath?: string) => void;
+	unregisterVirtualModel: (provider: string, id: string) => void;
 }
 
 /**
@@ -1876,6 +2151,7 @@ export interface ExtensionActions {
 	setLabel: SetLabelHandler;
 	getActiveTools: GetActiveToolsHandler;
 	getAllTools: GetAllToolsHandler;
+	getSettings: GetSettingsHandler;
 	setActiveTools: SetActiveToolsHandler;
 	refreshTools: RefreshToolsHandler;
 	getCommands: GetCommandsHandler;
@@ -1901,6 +2177,15 @@ export interface ExtensionContextActions {
 	compact: (options?: CompactOptions) => void;
 	getSystemPrompt: () => string;
 	getSystemPromptOptions?: () => BuildSystemPromptOptions;
+	/** Backs `ExtensionToolContext.executeTool()`. Without it, nested calls fail. */
+	executeTool?: (
+		callerId: string,
+		name: string,
+		args: unknown,
+		options: ExecuteToolOptions,
+	) => Promise<AgentToolCallOutcome>;
+	/** Backs `ExtensionToolContext.tools`. */
+	getCallableTools?: () => readonly AgentTool[];
 }
 
 /**
@@ -1940,10 +2225,13 @@ export interface Extension {
 	path: string;
 	resolvedPath: string;
 	hidden?: boolean;
+	/** See {@link InlineExtension}. */
+	replaceable?: boolean;
 	sourceInfo: SourceInfo;
 	handlers: Map<string, HandlerFn[]>;
 	tools: Map<string, RegisteredTool>;
 	messageRenderers: Map<string, MessageRenderer>;
+	toolRenderers?: ToolRendererResolver[];
 	markdownTransformer?: MarkdownTransformer;
 	entryRenderers?: Map<string, EntryRenderer>;
 	commands: Map<string, RegisteredCommand>;
