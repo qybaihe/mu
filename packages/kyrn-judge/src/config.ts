@@ -108,7 +108,8 @@ export const BUILT_IN_JUDGES: Readonly<Record<string, JudgeConfig>> = {
 export const DEFAULT_CONFIG: KyrnConfig = {
 	tiers: ["jev"],
 	judges: {},
-	modes: { default: "shadow" },
+	// Verdicts take effect out of the box; a point that should only watch is set to "shadow" on its own.
+	modes: { default: "active" },
 	routes: {},
 	features: {},
 	recordState: false,

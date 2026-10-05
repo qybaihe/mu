@@ -239,7 +239,7 @@ export class KyrnRuntime {
 		this.engine = new DecisionEngine({
 			judge: judge ?? this.buildConfiguredJudge(config.tiers),
 			ledger: new CompositeLedger([this.memory, sessionLedger]),
-			defaultMode: config.modes.default ?? "shadow",
+			defaultMode: config.modes.default ?? "active",
 			modes: Object.fromEntries(Object.entries(config.modes).filter(([specId]) => specId !== "default")),
 			recordState: config.recordState,
 			// Which turn asked, and under which version of the task: a verdict about "the goal" is only as good as that goal.

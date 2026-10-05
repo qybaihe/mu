@@ -54,7 +54,9 @@ describe("kyrn judge extension", () => {
 
 	it("judges each user message in shadow mode without changing what the model sees", async () => {
 		const provider = new MockJudgeProvider(() => chatVerdict);
-		const harness = await createHarness({ extensionFactories: [createKyrnJudgeExtension({ provider })] });
+		const harness = await createHarness({
+			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "shadow" })],
+		});
 		harnesses.push(harness);
 		harness.setResponses([fauxAssistantMessage("It refreshes the access token.")]);
 

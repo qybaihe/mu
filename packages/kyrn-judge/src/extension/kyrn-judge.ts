@@ -6,7 +6,7 @@
  * Configuration lives in `<agent dir>/kyrn.json` (see `../config.ts`), with
  * environment overrides:
  *   KYRN_JUDGE            judges to use, in order: jev | laya | mock | classifier:<provider>/<model> | llm:<provider>/<model> | a name from kyrn.json; "off" disables
- *   KYRN_JUDGE_MODE       default mode of every decision: shadow (default) | active | off
+ *   KYRN_JUDGE_MODE       default mode of every decision: active (default) | shadow | off
  *   KYRN_LOCAL_JUDGE_URL  sidecar address for `laya` (default http://127.0.0.1:47823)
  *
  * The decision model is pluggable: features ask typed questions through one

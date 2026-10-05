@@ -264,7 +264,7 @@ describe("judge configuration", () => {
 			judges: [1],
 		});
 		expect(config.tiers).toEqual(["jev"]);
-		expect(config.modes).toEqual({ default: "shadow", "tool.admission": "active" });
+		expect(config.modes).toEqual({ default: "active", "tool.admission": "active" });
 		expect(config.judges).toEqual({});
 	});
 });

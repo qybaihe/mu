@@ -117,7 +117,7 @@ row(
 
 const config = readJson(join(agentDir, "mu.json")) ?? readJson(join(agentDir, "kyrn.json"));
 const tiers = (env("JUDGE") ? env("JUDGE").split(",") : (config?.tiers ?? ["jev"])).map((tier) => tier.trim());
-const mode = env("JUDGE_MODE") ?? config?.modes?.default ?? "shadow";
+const mode = env("JUDGE_MODE") ?? config?.modes?.default ?? "active";
 row("--", "judges", `${tiers.join(" > ")} · decisions ${mode}${env("JUDGE") ? " (from MU_JUDGE)" : ""}`);
 const overrides = Object.entries(config?.modes ?? {}).filter(([id]) => id !== "default");
 if (overrides.length > 0) row("--", "modes", overrides.map(([id, value]) => `${id}=${value}`).join(" "));

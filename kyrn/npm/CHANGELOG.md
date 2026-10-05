@@ -14,6 +14,7 @@
 
 ### Changed
 
+- Decision points are active by default: verdicts take effect on a fresh install, and on an existing one whose `mu.json` sets no `modes.default`. Set `"modes": { "default": "shadow" }` (or `/mu mode default shadow`) to only record them, as before.
 - MCP servers run on pi's built-in client instead of mu's own. mu keeps discovery from Claude Code, Cursor and Codex settings, Jev's disclosure of servers per task, approval of project servers, redaction and the environment whitelist.
 
 ### Fixed
