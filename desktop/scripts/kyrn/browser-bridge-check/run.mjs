@@ -5,10 +5,10 @@
  *   node scripts/kyrn/browser-bridge-check/run.mjs
  *
  * What runs: an Electron main with ONLY the bridge and one window of `<webview>` tabs (`app-main.ts`, bundled on
- * the fly with esbuild), and the harness's own client, session and loop (`driver.mts`, through the harness
- * repository's tsx) with a scripted judge. No AionCore, no conversations, no model, no judge service. `HOME` is a
- * throw-away directory for both, so the advert is written to and found in a throw-away mu home, and the real
- * `~/.mu` is never touched. Electron needs the window server: it cannot start inside a sandboxed shell.
+ * the fly with esbuild), and the harness's own client, session and loop (`driver.mts`, run by Node itself with the
+ * harness's source resolver) with a scripted judge. No AionCore, no conversations, no model, no judge service.
+ * `HOME` is a throw-away directory for both, so the advert is written to and found in a throw-away mu home, and the
+ * real `~/.mu` is never touched. Electron needs the window server: it cannot start inside a sandboxed shell.
  *
  * Environment: ELECTRON_EXEC_PATH (default: the Electron the dev app uses, `<desktop repo>/kyrn/node_modules/…`),
  * MU_HARNESS_ROOT (default: `<desktop repo>/../KYRN`), MU_CHECK_VERBOSE=1, MU_CHECK_SHOW=0 (keep the window
@@ -19,7 +19,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync,
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const worktree = resolve(here, '../../..');
@@ -30,13 +30,13 @@ const harness = resolve(process.env.MU_HARNESS_ROOT ?? join(mainCheckout, '../KY
 const electron =
   process.env.ELECTRON_EXEC_PATH ??
   join(mainCheckout, 'kyrn/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron');
-const tsx = join(harness.split('/.claude/')[0], 'node_modules/tsx/dist/cli.mjs');
-const tsconfig = join(harness.split('/.claude/')[0], 'tsconfig.json');
+// Node strips the driver's types itself; pi's source resolver points the harness's package imports at its sources.
+const resolver = join(harness, 'packages/coding-agent/src/experimental/source-resolver.ts');
 
 for (const [what, path] of [
   ['Electron binary (ELECTRON_EXEC_PATH)', electron],
   ['harness checkout (MU_HARNESS_ROOT)', join(harness, 'packages/kyrn-judge/src/browser/embedded.ts')],
-  ['harness tsx', tsx],
+  ["pi's source resolver in the harness", resolver],
 ]) {
   if (!existsSync(path)) {
     console.error(`Missing ${what}: ${path}`);
@@ -94,7 +94,12 @@ try {
 
   const driver = spawn(
     process.execPath,
-    [tsx, '--tsconfig', tsconfig, process.env.MU_CHECK_DRIVER ?? join(here, 'driver.mts')],
+    [
+      '--disable-warning=ExperimentalWarning',
+      '--import',
+      pathToFileURL(resolver).href,
+      process.env.MU_CHECK_DRIVER ?? join(here, 'driver.mts'),
+    ],
     {
       env,
       stdio: ['ignore', 'pipe', 'inherit'],

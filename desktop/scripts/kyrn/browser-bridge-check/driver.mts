@@ -3,7 +3,8 @@
  * (`runBrowserTask`) and app handshake (`EmbeddedBrowser`), loaded from the harness checkout and pointed at the
  * bridge running in a real Electron. Only the judge is scripted (`MockJudgeProvider`): no model is called.
  *
- * Started by run.mjs through the harness repository's tsx. Prints one JSON report; exit code 0 when all pass.
+ * Started by run.mjs with Node's own type stripping and the harness's source resolver. Prints one JSON report; exit
+ * code 0 when all pass.
  */
 import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
