@@ -35,7 +35,7 @@ With nothing set up, Jev 1.13 on OpenCode Zen answers, free for a limited time a
 - **Laya** (local, macOS on Apple Silicon): `mu judge setup` installs it into `~/.mu/local-judge`. It downloads about 930 MB, only when you run that command.
 - **Any model you already use:** `/mu judge llm:<provider>/<model>`.
 
-Decisions start in `shadow` mode. When you trust the judge: `/mu mode default active`.
+Decisions take effect from the start (`active`). To only record what the judge would do: `/mu mode default shadow`, or `"modes": { "default": "shadow" }` in `~/.mu/agent/mu.json`.
 
 ## Commands
 

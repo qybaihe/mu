@@ -24,7 +24,7 @@ From this repository, `kyrn/bin/mu` (on Windows `kyrn\bin\mu.cmd`; the launcher 
 {
   "tiers": ["laya", "jev"],          // asked in order; a later tier only gets what an earlier one is unsure of or not trusted on
   "judges": { "luna": { "type": "llm", "model": "openai-codex/gpt-5.6-luna" } },
-  "modes": { "default": "shadow" },  // off | shadow (record only) | active, per decision id
+  "modes": { "default": "active" },  // off | shadow (record only) | active (the default), per decision id
   "features": {
     "swarm": { "models": ["openai-codex/gpt-5.6-luna", "openai-codex/gpt-5.6-sol"] },   // cheapest to strongest
     "browser": { "headless": true }
