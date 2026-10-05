@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { ClassifierQuestion, JsonObject } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { CapabilityCatalog } from "../catalog/catalog.ts";
 import { featureOptions, type KyrnConfig } from "../config.ts";
@@ -9,6 +10,7 @@ import { JudgeError } from "../errors.ts";
 import { compactFrame, type Frame, type FrameState, isStale } from "../frame/frame.ts";
 import type { JudgeLike } from "../judge.ts";
 import { CompositeLedger, type LedgerRecord, type LedgerSink, MemoryLedger } from "../ledger.ts";
+import type { ClassifierCall } from "../providers/classifier.ts";
 import type { LlmCompletion } from "../providers/llm.ts";
 import { buildJudge, resolveJudgeConfig } from "../registry.ts";
 import { createJudgeFetch, type JudgeFetch } from "./judge-fetch.ts";
@@ -258,6 +260,7 @@ export class KyrnRuntime {
 					(await this.latestCtx?.modelRegistry.getApiKeyForProvider(GATEWAY_PROVIDER_ID)) ??
 					process.env.AI_GATEWAY_API_KEY,
 				llm: (model, options) => this.llm(model, options),
+				classify: (model) => this.classifier(model),
 			},
 		);
 		this.problems.push(...built.problems);
@@ -269,6 +272,54 @@ export class KyrnRuntime {
 		const before = this.problems.length;
 		this.engine.setJudge(this.buildConfiguredJudge(tiers));
 		return this.problems.slice(before);
+	}
+
+	/**
+	 * A classifier model of the host's catalog ("provider/model-id"), reached with the host's credentials for its
+	 * provider. Looked up per call, because models (llama.cpp's among them) load after extensions.
+	 */
+	classifier(modelRef: string): ClassifierCall {
+		return async ({ state, questions, signal }) => {
+			const ctx = this.latestCtx;
+			if (!ctx) throw new JudgeError("unreachable", "No session is attached yet");
+			const slash = modelRef.indexOf("/");
+			const model =
+				slash > 0
+					? ctx.modelRegistry.getModelOfType("classifier", modelRef.slice(0, slash), modelRef.slice(slash + 1))
+					: undefined;
+			if (!model) throw new JudgeError("bad_request", `Classifier "${modelRef}" is not in the model catalog`);
+			// OpenCode serves its free models to anyone with the key "public", as its own client does without a sign-in.
+			const free = model.provider === "opencode" && model.cost.input === 0 && model.cost.output === 0;
+			const apiKey = free && !(await ctx.modelRegistry.getApiKeyForProvider(model.provider)) ? "public" : undefined;
+			// Only System One takes a yes/no question without criteria; a llama.cpp classifier reads both labels.
+			const systemOne = model.api.endsWith("system-one");
+			const wire = Object.fromEntries(
+				Object.entries(questions).map(([id, question]) => [
+					id,
+					question.type === "bool" && !question.criteria && !systemOne
+						? { ...question, criteria: { true: "", false: "" } }
+						: question,
+				]),
+			);
+			const result = await ctx.modelRegistry.classify(
+				model,
+				// System One takes any JSON state; mu's states are text or objects.
+				{ state: state as JsonObject, questions: wire as Record<string, ClassifierQuestion> },
+				// The kernel owns timeouts and retries.
+				{
+					signal,
+					maxRetries: 0,
+					...(apiKey ? { apiKey } : {}),
+					...(this.judgeHttp ? { fetch: this.judgeHttp.fetch } : {}),
+				},
+			);
+			return {
+				answers: result.answers,
+				usage: result.usage ? { input: result.usage.input, output: result.usage.output } : undefined,
+				stopReason: result.stopReason,
+				errorMessage: result.errorMessage,
+			};
+		};
 	}
 
 	/** A completion function over one of the host's models. Looked up per call, because models load after extensions. */

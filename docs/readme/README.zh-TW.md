@@ -42,7 +42,7 @@
 
 ## 判定點
 
-每個判定點可以是 `active`（生效）、`shadow`（照常提問並記錄，但不改變任何行為，用來在開啟之前比較判定器）或 `off`（關閉），也可以指定自己的判定器：`jev`、`laya`（本機）、`llm:<provider>/<model>`，或 `laya,jev` 這樣的串接。
+每個判定點可以是 `active`（生效）、`shadow`（照常提問並記錄，但不改變任何行為，用來在開啟之前比較判定器）或 `off`（關閉），也可以指定自己的判定器：`jev`、`laya`（本機）、`classifier:<provider>/<model>`、`llm:<provider>/<model>`，或 `laya,jev` 這樣的串接。
 
 **輸入**
 
@@ -106,8 +106,9 @@
 
 ## 判定器
 
-- **Jev**（雲端）。有邊界的問題，答案帶機率。可以經 TypeSafe、OpenRouter、Vercel AI Gateway，或任何支援同一協定的服務呼叫，每個服務有自己的位址和金鑰（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`）：在桌面版的「判定器」頁選一個，預設用第一個設定了金鑰的。在作者自己的工作階段裡實測：HTTP/2 上一個熱連線的問題約 0.3 秒；16 塊工具輸出併成一個請求判完 0.44 秒，狀態只計費一次。判定、機率和耗時都進判定帳本：`mu ledger`，或桌面版的「判定」頁。
+- **Jev**（雲端）。有邊界的問題，答案帶機率。可以經 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI，或任何支援同一協定的服務呼叫，每個服務有自己的金鑰（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`）：在桌面版的「判定器」頁選一個，預設用第一個設定了金鑰的。一把金鑰都沒有時，`jev-opencode-free` 使用 OpenCode Zen 上的 Jev 1.13，限時免費。在作者自己的工作階段裡實測：HTTP/2 上一個熱連線的問題約 0.3 秒；16 塊工具輸出併成一個請求判完 0.44 秒，狀態只計費一次。判定、機率和耗時都進判定帳本：`mu ledger`，或桌面版的「判定」頁。
 - **Laya**（本機）。一個 3.22 億參數的判定器，在你的機器上執行，不經過網路。未經你同意不下載任何東西。在簡單述詞上可靠，在後設判斷上偏弱：先讓它以影子模式和 Jev 並行執行，看過判定帳本再把判定點交給它。
+- **pi 模型目錄裡的任何分類模型**，作為一個層級：`classifier:<provider>/<model>`。例如 Cloudflare 的 Clef（`clef`、`clef-flash`）、OpenRouter 和 Vercel AI Gateway 上的 System One 模型、llama.cpp 的分類模型。
 - **任何大模型**，作為一個層級：`llm:<provider>/<model>`。
 
 這換來什麼，以作者自己的工作階段為準：上下文從不填滿，因為工具輸出逐塊進入、過期結果不寫摘要直接放下；最長的幾份失敗測試記錄裡，折疊完全相同的重複省下 51% 的字元，一個字元也沒丟（見[實測](#實測)）；提示快取保持熱的，因為核心會猜你什麼時候回來。
@@ -218,7 +219,7 @@ mu doctor     # 檢查安裝、判定器和各項連線
 | 指令 | 做什麼 |
 | --- | --- |
 | `/status` | 判定器、各判定點的模式、沒放進上下文的內容、最近的判定 |
-| `/mu judge <judges>` | 由哪些判定器回答、按什麼順序：`laya`、`laya,jev`、`llm:<provider>/<model>` |
+| `/mu judge <judges>` | 由哪些判定器回答、按什麼順序：`laya`、`laya,jev`、`jev-opencode-free`、`classifier:<provider>/<model>`、`llm:<provider>/<model>` |
 | `/mu route <point> <judge>` | 讓某一個判定點用自己的判定器 |
 | `/mu mode <point> <off\|shadow\|active>` | 切換某一個判定點 |
 | `/frame` | 任務框架：目標、你的約束及其出處、驗收條件 |

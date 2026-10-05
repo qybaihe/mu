@@ -3,6 +3,7 @@ import { BUILT_IN_JUDGES, type JudgeConfig, type KyrnConfig } from "./config.ts"
 import { JudgeError } from "./errors.ts";
 import { Judge, type JudgeLike } from "./judge.ts";
 import { muEnv } from "./naming.ts";
+import { type ClassifierCall, ClassifierJudgeProvider } from "./providers/classifier.ts";
 import { type ApiKeyResolver, GatewayJudgeProvider } from "./providers/gateway.ts";
 import { type LlmCompletion, LlmJudgeProvider } from "./providers/llm.ts";
 import { LocalJudgeProvider } from "./providers/local.ts";
@@ -17,6 +18,8 @@ export interface JudgeHost {
 	fetch?: typeof fetch;
 	/** A completion function bound to "provider/model-id", or undefined when the host has no such model. */
 	llm?: (model: string, options: { thinking?: string }) => LlmCompletion | undefined;
+	/** A classifier model of the host's catalog, bound to "provider/model-id", or undefined when the host has none. */
+	classify?: (model: string) => ClassifierCall | undefined;
 	env?: Readonly<Record<string, string | undefined>>;
 }
 
@@ -30,6 +33,8 @@ const DEFAULT_TIMEOUT_MS: Readonly<Record<JudgeConfig["type"], number>> = {
 	local: 4000,
 	http: 8000,
 	llm: 30_000,
+	// Jev and its kin on a service of the host's catalog: the same latency as Jev's own routes.
+	classifier: 10_000,
 	mock: 1000,
 };
 
@@ -43,9 +48,10 @@ const KEYS_FOR_ELSEWHERE: ReadonlySet<string> = new Set([
 	"MU_JUDGE_CLM_API_KEY",
 ]);
 
-/** `llm:provider/model` names an LLM judge inline, without a `judges` entry. */
+/** `llm:provider/model` and `classifier:provider/model` name a judge inline, without a `judges` entry. */
 export function resolveJudgeConfig(name: string, config: KyrnConfig): JudgeConfig | undefined {
 	if (name.startsWith("llm:")) return { type: "llm", model: name.slice("llm:".length) };
+	if (name.startsWith("classifier:")) return { type: "classifier", model: name.slice("classifier:".length) };
 	return config.judges[name] ?? BUILT_IN_JUDGES[name];
 }
 
@@ -77,6 +83,12 @@ function createProvider(name: string, judge: JudgeConfig, host: JudgeHost): Judg
 			if (!complete) throw new TypeError(`Judge "${name}": model "${judge.model}" is not available`);
 			return new LlmJudgeProvider({ id: `llm:${judge.model}`, complete });
 		}
+		case "classifier": {
+			if (!judge.model?.includes("/")) throw new TypeError(`Judge "${name}" needs a model ("provider/model-id")`);
+			const call = host.classify?.(judge.model);
+			if (!call) throw new TypeError(`Judge "${name}": classifier models need a mu session`);
+			return new ClassifierJudgeProvider({ model: judge.model, call });
+		}
 		case "typesafe": {
 			const keyName = judge.apiKeyEnv ?? "TYPESAFE_API_KEY";
 			// A key set up for another service goes only to the address it was set up with, never to TypeSafe's.
@@ -105,15 +117,26 @@ function createProvider(name: string, judge: JudgeConfig, host: JudgeHost): Judg
 			});
 		}
 		case "jev": {
-			// A TypeSafe key is the direct route, a key for Jev on OpenRouter the next; without either, Jev is reached
-			// through the Vercel AI Gateway. Each service names the model its own way: a model set here is TypeSafe's
-			// ("jev-latest"), and reaches the gateway only when it is written the gateway's way ("typesafe-ai/jev").
-			if (host.env?.[judge.apiKeyEnv ?? "TYPESAFE_API_KEY"])
+			// A TypeSafe key is the direct route, a key for Jev on OpenRouter the next, then a Vercel AI Gateway key, an
+			// OpenCode key (the paid Jev: the free one is a choice of its own) and Cloudflare's key and account. Without
+			// any of them, Jev is reached through the Vercel AI Gateway, with the key pi keeps for it when there is one.
+			// Each service names the model its own way: a model set here is TypeSafe's ("jev-latest"), and reaches the
+			// gateway only when it is written the gateway's way ("typesafe-ai/jev").
+			const env = host.env ?? {};
+			if (env[judge.apiKeyEnv ?? "TYPESAFE_API_KEY"])
 				return createProvider(name, { ...judge, type: "typesafe" }, host);
 			const openRouter = BUILT_IN_JUDGES["jev-openrouter"];
-			if (openRouter.apiKeyEnv && host.env?.[openRouter.apiKeyEnv]) return createProvider(name, openRouter, host);
+			if (openRouter.apiKeyEnv && env[openRouter.apiKeyEnv]) return createProvider(name, openRouter, host);
 			const model = judge.model?.includes("/") ? judge.model : "typesafe-ai/jev";
-			return createProvider(name, { ...judge, type: "gateway", model }, host);
+			const gateway: JudgeConfig = { ...judge, type: "gateway", model };
+			if (env.AI_GATEWAY_API_KEY) return createProvider(name, gateway, host);
+			if (host.classify) {
+				if (env.OPENCODE_API_KEY) return createProvider(name, BUILT_IN_JUDGES["jev-opencode"], host);
+				if (env.CLOUDFLARE_API_KEY && env.CLOUDFLARE_ACCOUNT_ID) {
+					return createProvider(name, BUILT_IN_JUDGES["jev-cloudflare"], host);
+				}
+			}
+			return createProvider(name, gateway, host);
 		}
 		default:
 			return new GatewayJudgeProvider({

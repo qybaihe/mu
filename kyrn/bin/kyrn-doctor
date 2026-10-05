@@ -154,6 +154,21 @@ const JEV_ROUTES = {
 	"jev-openrouter": { type: "typesafe", baseUrl: "https://openrouter.ai/api/v1/systemone", apiKeyEnv: "MU_JUDGE_OPENROUTER_API_KEY" },
 	"jev-gateway": { type: "gateway" },
 	gateway: { type: "gateway" },
+	"jev-opencode": { type: "classifier", model: "opencode/jev-1.13" },
+	"jev-opencode-free": { type: "classifier", model: "opencode/jev-1.13-free" },
+	"jev-cloudflare": { type: "classifier", model: "cloudflare-workers-ai/typesafe/jev" },
+	clef: { type: "classifier", model: "cloudflare-workers-ai/@cf/cloudflare/clef" },
+	"clef-flash": { type: "classifier", model: "cloudflare-workers-ai/@cf/cloudflare/clef-flash" },
+};
+// The variables pi reads a classifier provider's credentials from (packages/ai/src/env-api-keys.ts); a key stored
+// with /login or `mu auth` works as well. llama.cpp on this machine needs none.
+const CLASSIFIER_KEYS = {
+	opencode: ["OPENCODE_API_KEY"],
+	"cloudflare-workers-ai": ["CLOUDFLARE_API_KEY", "CLOUDFLARE_ACCOUNT_ID"],
+	openrouter: ["OPENROUTER_API_KEY"],
+	typesafe: ["TYPESAFE_API_KEY"],
+	"vercel-ai-gateway": ["AI_GATEWAY_API_KEY"],
+	"llama.cpp": [],
 };
 // Parsed the way the launcher parses it (quotes, `export `), and only asked whether a name has a value.
 const fromFile = existsSync(envFile) ? parseEnvFile(readFileSync(envFile, "utf8")).entries : [];
@@ -163,18 +178,21 @@ const jevTier = tiers.find((tier) => ["jev", "typesafe", "gateway"].includes((co
 if (jevTier) {
 	const judge = config?.judges?.[jevTier] ?? JEV_ROUTES[jevTier];
 	if (judge.type === "jev") {
-		// The order the registry tries: TypeSafe directly, Jev on OpenRouter, the Vercel AI Gateway.
+		// The order the registry tries: TypeSafe directly, Jev on OpenRouter, the Vercel AI Gateway, OpenCode Zen,
+		// Cloudflare Workers AI (key and account).
 		const route = [
 			["TYPESAFE_API_KEY", "Jev is called directly at api.typesafe.ai"],
 			["MU_JUDGE_OPENROUTER_API_KEY", "Jev is called through OpenRouter"],
 			["AI_GATEWAY_API_KEY", "Jev is called through the Vercel AI Gateway"],
-		].find(([name]) => has(name));
+			["OPENCODE_API_KEY", "Jev is called on OpenCode Zen (jev-1.13)"],
+			["CLOUDFLARE_API_KEY", "Jev is called on Cloudflare Workers AI", "CLOUDFLARE_ACCOUNT_ID"],
+		].find(([name, , also]) => has(name) && (!also || has(also)));
 		row(
 			route ? "ok" : "fix",
 			"jev key",
 			route
 				? `${route[0]} is set: ${route[1]} (value not shown)`
-				: `missing: add TYPESAFE_API_KEY (or MU_JUDGE_OPENROUTER_API_KEY, or AI_GATEWAY_API_KEY) ${where}`,
+				: `missing: add TYPESAFE_API_KEY (or MU_JUDGE_OPENROUTER_API_KEY, AI_GATEWAY_API_KEY, OPENCODE_API_KEY) ${where}`,
 		);
 	} else {
 		const name = judge.apiKeyEnv ?? (judge.type === "gateway" ? "AI_GATEWAY_API_KEY" : "TYPESAFE_API_KEY");
@@ -193,6 +211,35 @@ if (jevTier) {
 				: has(name)
 					? `${name} is set: Jev is called ${via} (value not shown)`
 					: `missing: add ${name} ${where} (Jev is called ${via})`,
+		);
+	}
+}
+
+// Classifier models of pi's catalog (Jev on OpenCode Zen or Cloudflare, Clef, …), for the tiers and routes that use them.
+const classifierOf = (tier) =>
+	tier.startsWith("classifier:")
+		? { type: "classifier", model: tier.slice("classifier:".length) }
+		: (config?.judges?.[tier] ?? JEV_ROUTES[tier]);
+const askedTiers = [
+	...tiers,
+	...Object.values(config?.routes ?? {}).flatMap((value) => (Array.isArray(value) ? value : String(value).split(","))),
+].map((tier) => String(tier).trim());
+for (const model of new Set(askedTiers.map(classifierOf).filter((judge) => judge?.type === "classifier").map((judge) => judge.model))) {
+	const provider = String(model ?? "").split("/")[0];
+	// OpenCode's free models answer without a key (the client sends "public", as OpenCode's own does).
+	const names = provider === "opencode" && String(model).endsWith("-free") ? [] : CLASSIFIER_KEYS[provider];
+	if (!model?.includes("/")) {
+		row("fix", "classifier", `${model ?? "a classifier judge"} needs a model written "provider/model-id"`);
+	} else if (!names) {
+		row("--", "classifier", `${model}: a provider of your own; its key is the one models.json names`);
+	} else if (names.every(has)) {
+		row("ok", "classifier", `${model}: ${names.length > 0 ? `${names.join(", ")} set (value not shown)` : "no key needed"}`);
+	} else {
+		const unset = names.filter((name) => !has(name));
+		row(
+			authBytes > 8 ? "--" : "fix",
+			"classifier",
+			`${model}: ${unset.join(" and ")} not set${authBytes > 8 ? `; a key stored with /login ${provider} works too (not read here)` : `: add ${unset.join(", ")} ${where}, or store a key with /login ${provider}`}`,
 		);
 	}
 }
@@ -270,7 +317,11 @@ row(
 );
 for (const line of moreAdvice) row("--", "", line);
 const canRelate = (tier) =>
-	tier.startsWith("jev") || tier === "gateway" || tier.startsWith("llm:") || ["llm", "clm"].includes(judgeOf(tier)?.type);
+	tier.startsWith("jev") ||
+	tier === "gateway" ||
+	tier.startsWith("llm:") ||
+	tier.startsWith("classifier:") ||
+	["llm", "clm", "classifier"].includes(judgeOf(tier)?.type);
 const browseTiers = config?.routes?.["browser.step"] ?? tiers;
 const routed = Object.entries(config?.routes ?? {});
 if (routed.length > 0) row("--", "routes", routed.map(([id, value]) => `${id} -> ${[value].flat().join(" > ")}`).join(" · "));

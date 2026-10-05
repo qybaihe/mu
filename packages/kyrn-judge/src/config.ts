@@ -13,17 +13,24 @@ import { CONFIG_FILE, LEGACY_CONFIG_FILE, muEnv } from "./naming.ts";
  * - `local`:   the Laya sidecar started by `mu judge start`.
  * - `http`:    any endpoint that takes `{state, questions}` and returns `{answers}`.
  * - `llm`:     a generative model from the host's model registry, prompted to answer as JSON.
+ * - `classifier`: a classifier model from the host's model catalog (Jev on OpenCode Zen or Cloudflare, Clef, the
+ *              System One models on OpenRouter, a llama.cpp classifier), reached with the host's own credentials.
  * - `mock`:    neutral answers, for tests and offline work.
  */
 export interface JudgeConfig {
 	/**
 	 * `jev` is Jev by whichever access this machine has: TypeSafe directly when TYPESAFE_API_KEY is set, else
-	 * OpenRouter when MU_JUDGE_OPENROUTER_API_KEY is set, else the Vercel AI Gateway. `typesafe` is Jev over
+	 * OpenRouter when MU_JUDGE_OPENROUTER_API_KEY is set, else the Vercel AI Gateway when AI_GATEWAY_API_KEY is
+	 * set, else OpenCode Zen when OPENCODE_API_KEY is set, else Cloudflare Workers AI when CLOUDFLARE_API_KEY and
+	 * CLOUDFLARE_ACCOUNT_ID are, else the Vercel AI Gateway with the key pi keeps for it. `typesafe` is Jev over
 	 * System One at `baseUrl` (TypeSafe's own, OpenRouter's, a relay's), `gateway` through the Vercel AI Gateway.
 	 * `clm` is CLM-8B (github.com/Contrastive-LM/CLM) at the address of a `clm-serve`, which speaks System One too.
 	 */
-	readonly type: "jev" | "typesafe" | "clm" | "gateway" | "local" | "http" | "llm" | "mock";
-	/** jev, typesafe, gateway: judge model id. clm: a model the server serves, default "clm-latest". llm: "provider/model-id". */
+	readonly type: "jev" | "typesafe" | "clm" | "gateway" | "local" | "http" | "llm" | "classifier" | "mock";
+	/**
+	 * jev, typesafe, gateway: judge model id. clm: a model the server serves, default "clm-latest". llm and
+	 * classifier: "provider/model-id", e.g. "opencode/jev-1.13" or "cloudflare-workers-ai/@cf/cloudflare/clef".
+	 */
 	readonly model?: string;
 	/**
 	 * gateway, local, http, clm, and the System One route (`typesafe`, or `jev` when a TypeSafe key is set).
@@ -50,7 +57,7 @@ export interface JudgeConfig {
 export interface KyrnConfig {
 	/** Judges tried in order; each later one only sees what the earlier ones left uncertain. */
 	readonly tiers: readonly string[];
-	/** Named judges, merged over the built-in ones (`jev` and its routes, `clm`, `laya`, `mock`). */
+	/** Named judges, merged over the built-in ones (`jev` and its routes, `clef`, `clm`, `laya`, `mock`). */
 	readonly judges: Readonly<Record<string, JudgeConfig>>;
 	/** `default` plus per-decision overrides keyed by spec id. */
 	readonly modes: Readonly<Record<string, DecisionMode>>;
@@ -81,6 +88,15 @@ export const BUILT_IN_JUDGES: Readonly<Record<string, JudgeConfig>> = {
 		apiKeyEnv: "MU_JUDGE_OPENROUTER_API_KEY",
 	},
 	"jev-gateway": { type: "gateway", model: "typesafe-ai/jev" },
+	// Jev on OpenCode Zen, with the key of OpenCode's models (OPENCODE_API_KEY, or `mu auth`). The free one is a
+	// limited-time offer of OpenCode's and needs no key at all. OpenCode does not train on what Jev is sent.
+	"jev-opencode": { type: "classifier", model: "opencode/jev-1.13" },
+	"jev-opencode-free": { type: "classifier", model: "opencode/jev-1.13-free" },
+	// Jev on Cloudflare Workers AI, with Cloudflare's key and account (CLOUDFLARE_API_KEY, CLOUDFLARE_ACCOUNT_ID).
+	"jev-cloudflare": { type: "classifier", model: "cloudflare-workers-ai/typesafe/jev" },
+	// Cloudflare's own System One classifiers. Not measured on mu's questions yet.
+	clef: { type: "classifier", model: "cloudflare-workers-ai/@cf/cloudflare/clef" },
+	"clef-flash": { type: "classifier", model: "cloudflare-workers-ai/@cf/cloudflare/clef-flash" },
 	// CLM-8B on this machine, where `clm-serve` listens by default. Its profile is not measured on mu's questions yet.
 	clm: { type: "clm" },
 	// Measured in kyrn/docs/03-local-judge.md: the base checkpoint classifies one text well, says "yes" to
@@ -99,6 +115,17 @@ export const DEFAULT_CONFIG: KyrnConfig = {
 };
 
 const MODES: readonly string[] = ["off", "shadow", "active"];
+const JUDGE_TYPES: readonly string[] = [
+	"jev",
+	"typesafe",
+	"clm",
+	"gateway",
+	"local",
+	"http",
+	"llm",
+	"classifier",
+	"mock",
+] satisfies JudgeConfig["type"][];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -136,7 +163,7 @@ function readJudges(value: unknown): Record<string, JudgeConfig> {
 	if (!isRecord(value)) return judges;
 	for (const [name, config] of Object.entries(value)) {
 		if (!isRecord(config) || typeof config.type !== "string") continue;
-		if (!["jev", "typesafe", "clm", "gateway", "local", "http", "llm", "mock"].includes(config.type)) continue;
+		if (!JUDGE_TYPES.includes(config.type)) continue;
 		judges[name] = config as unknown as JudgeConfig;
 	}
 	return judges;

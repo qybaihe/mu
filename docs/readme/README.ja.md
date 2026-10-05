@@ -42,7 +42,7 @@
 
 ## 判定ポイント
 
-各判定ポイントは `active`（オン）、`shadow`（問い合わせて記録するが、何も変えない。判定器をオンにする前に比較するためのもの）、`off`（オフ）のいずれかで、それぞれ独自の判定器を指定できます。指定できるのは `jev`、`laya`（ローカル）、`llm:<provider>/<model>`、または `laya,jev` のようなカスケードです。
+各判定ポイントは `active`（オン）、`shadow`（問い合わせて記録するが、何も変えない。判定器をオンにする前に比較するためのもの）、`off`（オフ）のいずれかで、それぞれ独自の判定器を指定できます。指定できるのは `jev`、`laya`（ローカル）、`classifier:<provider>/<model>`、`llm:<provider>/<model>`、または `laya,jev` のようなカスケードです。
 
 **入力**
 
@@ -106,8 +106,9 @@
 
 ## 判定器
 
-- **Jev**（クラウド）。範囲の決まった問いに、確率付きで答えます。TypeSafe、OpenRouter、Vercel AI Gateway、または同じプロトコルを話す任意のサービスから呼び出せて、サービスごとにアドレスとキーを持ちます（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`）。デスクトップアプリの「判定器」ページで選べて、既定ではキーが設定されている最初のものを使います。作者たち自身のセッションでの実測では、HTTP/2 のウォームな接続で 1 問あたり約 0.3 秒、ツール出力 16 チャンクを 1 リクエストで判定して 0.44 秒で、状態の課金は 1 回だけでした。判定、確率、所要時間は台帳に残ります。`mu ledger`、またはデスクトップアプリの「判定」タブで見られます。
+- **Jev**（クラウド）。範囲の決まった問いに、確率付きで答えます。TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI、または同じプロトコルを話す任意のサービスから呼び出せて、サービスごとにキーを持ちます（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` と `CLOUDFLARE_ACCOUNT_ID`）。デスクトップアプリの「判定器」ページで選べて、既定ではキーが設定されている最初のものを使います。キーが一つもなければ、`jev-opencode-free` で OpenCode Zen 上の Jev 1.13 を期間限定で無料で使えます。作者たち自身のセッションでの実測では、HTTP/2 のウォームな接続で 1 問あたり約 0.3 秒、ツール出力 16 チャンクを 1 リクエストで判定して 0.44 秒で、状態の課金は 1 回だけでした。判定、確率、所要時間は台帳に残ります。`mu ledger`、またはデスクトップアプリの「判定」タブで見られます。
 - **Laya**（ローカル）。322M パラメータの判定器で、あなたのマシンで動き、ネットワークには一切触れません。あなたの同意なしには何もダウンロードしません。単純な述語には強く、メタ判断には弱めです。判定ポイントを任せる前に、シャドーモードで Jev と並べて動かし、台帳を確認してください。
+- **pi のモデルカタログにある任意の分類モデル**も、階層の一つとして使えます：`classifier:<provider>/<model>`。Cloudflare の Clef（`clef`、`clef-flash`）、OpenRouter と Vercel AI Gateway の System One モデル、llama.cpp の分類モデルなど。
 - **任意の LLM** も、階層の一つとして使えます：`llm:<provider>/<model>`。
 
 作者たち自身のセッションでは、これによって次の効果が得られています。ツール出力がチャンクごとに入り、古い結果は要約なしで手放されるため、コンテキストがいっぱいになりません。特に長い失敗テストログでは、完全な繰り返しを折りたたむことで文字数が 51% 減り、失われた文字はありません（[実測](#実測)を参照）。あなたがいつ戻ってくるかをカーネルが見積もるので、プロンプトキャッシュはウォームなまま保たれます。
@@ -218,7 +219,7 @@ Node 22.19 以降が必要です。`mu -p "prompt"` は 1 回だけ実行して�
 | コマンド | 内容 |
 | --- | --- |
 | `/status` | 判定器、各判定ポイントのモード、コンテキストに入れなかったもの、最新の判定 |
-| `/mu judge <judges>` | どの判定器がどの順で答えるか：`laya`、`laya,jev`、`llm:<provider>/<model>` |
+| `/mu judge <judges>` | どの判定器がどの順で答えるか：`laya`、`laya,jev`、`jev-opencode-free`、`classifier:<provider>/<model>`、`llm:<provider>/<model>` |
 | `/mu route <point> <judge>` | 一つの判定ポイントに専用の判定器を割り当てる |
 | `/mu mode <point> <off\|shadow\|active>` | 一つの判定ポイントを切り替える |
 | `/frame` | タスクフレーム：目標、あなたの制約とその出どころ、受け入れ条件 |

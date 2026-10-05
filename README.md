@@ -42,7 +42,7 @@ Every name is a decision point. Each one is asked as a short question about a sm
 
 ## Decision points
 
-Each decision point is `active`, `shadow` (asked and logged, changes nothing: for comparing judges before switching one on) or `off`, and each can name its own judge: `jev`, `laya` (local), `llm:<provider>/<model>`, or a cascade such as `laya,jev`.
+Each decision point is `active`, `shadow` (asked and logged, changes nothing: for comparing judges before switching one on) or `off`, and each can name its own judge: `jev`, `laya` (local), `classifier:<provider>/<model>`, `llm:<provider>/<model>`, or a cascade such as `laya,jev`.
 
 **Input**
 
@@ -106,8 +106,9 @@ Each decision point is `active`, `shadow` (asked and logged, changes nothing: fo
 
 ## Judges
 
-- **Jev** (hosted). Bounded questions with probabilities. Reached through TypeSafe, OpenRouter, the Vercel AI Gateway or any service that speaks the same protocol, each with its own address and key (`TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`): the desktop app's judges page picks one, and by default the first whose key is set is used. Measured from the authors' own sessions: one warm question in about 0.3 s over HTTP/2; 16 chunks of tool output judged in one request in 0.44 s, the state billed once. Verdicts, probabilities and timings go to the ledger: `mu ledger`, or the judgments tab of the desktop app.
+- **Jev** (hosted). Bounded questions with probabilities. Reached through TypeSafe, OpenRouter, the Vercel AI Gateway, OpenCode Zen, Cloudflare Workers AI or any service that speaks the same protocol, each with its own key (`TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`): the desktop app's judges page picks one, and by default the first whose key is set is used. Without any key, `jev-opencode-free` reaches Jev 1.13 on OpenCode Zen, free for a limited time. Measured from the authors' own sessions: one warm question in about 0.3 s over HTTP/2; 16 chunks of tool output judged in one request in 0.44 s, the state billed once. Verdicts, probabilities and timings go to the ledger: `mu ledger`, or the judgments tab of the desktop app.
 - **Laya** (local). A 322M-parameter judge that runs on your machine and never touches the network. Nothing is downloaded without your consent. Reliable on simple predicates, weaker on meta-judgments: run it in shadow next to Jev and read the ledger before giving it a decision point.
+- **Any classifier model** in pi's catalog, as a tier: `classifier:<provider>/<model>`. Cloudflare's Clef (`clef`, `clef-flash`), the System One models on OpenRouter and the Vercel AI Gateway, a llama.cpp classifier.
 - **Any LLM**, as a tier: `llm:<provider>/<model>`.
 
 What this buys, in the authors' own sessions: the context never fills, because tool output enters chunk by chunk and stale results are dropped without a summary; in the longest failing test logs, folding exact repeats saved 51% of the characters without losing one (see [Measured](#measured)); the prompt cache stays warm because the kernel guesses when you will be back.
@@ -218,7 +219,7 @@ Node 22.19 or newer. `mu -p "prompt"` runs once and prints; `mu -c` continues th
 | Command | What it does |
 | --- | --- |
 | `/status` | The judges, each decision point's mode, what was kept out of the context, the latest verdicts |
-| `/mu judge <judges>` | Which judges answer, in which order: `laya`, `laya,jev`, `llm:<provider>/<model>` |
+| `/mu judge <judges>` | Which judges answer, in which order: `laya`, `laya,jev`, `jev-opencode-free`, `classifier:<provider>/<model>`, `llm:<provider>/<model>` |
 | `/mu route <point> <judge>` | One decision point on its own judge |
 | `/mu mode <point> <off\|shadow\|active>` | Switch one decision point |
 | `/frame` | The task frame: goal, your constraints with their source, acceptance criteria |

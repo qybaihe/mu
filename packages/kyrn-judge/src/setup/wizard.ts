@@ -66,7 +66,17 @@ const SETUP_FLAGS: Readonly<Record<string, string>> = {
 
 /** Where the `jev` judge finds its key, in the order it looks (registry.ts). */
 const JEV_KEY_NAMES = ["TYPESAFE_API_KEY", "MU_JUDGE_OPENROUTER_API_KEY", "AI_GATEWAY_API_KEY"] as const;
-const JEV_TIERS = new Set(["jev", "jev-direct", "jev-openrouter", "jev-gateway"]);
+const JEV_TIERS = new Set([
+	"jev",
+	"jev-direct",
+	"jev-openrouter",
+	"jev-gateway",
+	"jev-opencode",
+	"jev-opencode-free",
+	"jev-cloudflare",
+]);
+/** Where OpenCode Zen's key is, for Jev there: the variable pi reads it from. */
+const OPENCODE_KEY = "OPENCODE_API_KEY";
 const JEV_PAGE = "https://typesafe.ai";
 /** Services whose keys carry the vendor's own mark: a key of theirs pasted as the Jev key is a mistake. */
 const BRANDED = new Set(["openai", "anthropic", "openrouter", "google", "xai"]);
@@ -145,7 +155,7 @@ export interface SetupArgs {
 	readonly baseUrl?: string;
 	readonly api?: "openai" | "anthropic";
 	readonly name?: string;
-	readonly judge?: "jev" | "model" | "none";
+	readonly judge?: "jev" | "opencode" | "free" | "model" | "none";
 	/** What is not an option: a key, when the entry is started without the launcher. */
 	readonly words: readonly string[];
 }
@@ -174,8 +184,13 @@ export function parseSetupArgs(argv: readonly string[]): SetupArgs | { readonly 
 		return { error: { zh: "--api 只能是 openai 或 anthropic", en: "--api is openai or anthropic" } };
 	}
 	const judge = values.get("--judge");
-	if (judge !== undefined && judge !== "jev" && judge !== "model" && judge !== "none") {
-		return { error: { zh: "--judge 只能是 jev、model 或 none", en: "--judge is jev, model or none" } };
+	if (judge !== undefined && !["jev", "opencode", "free", "model", "none"].includes(judge)) {
+		return {
+			error: {
+				zh: "--judge 只能是 jev、opencode、free、model 或 none",
+				en: "--judge is jev, opencode, free, model or none",
+			},
+		};
 	}
 	const service = values.get("--service");
 	if (service !== undefined && !serviceById(service)) {
@@ -198,7 +213,7 @@ export function parseSetupArgs(argv: readonly string[]): SetupArgs | { readonly 
 		baseUrl: values.get("--base-url"),
 		api,
 		name: values.get("--name"),
-		judge,
+		judge: judge as SetupArgs["judge"],
 		words,
 	};
 }
@@ -210,7 +225,7 @@ export function setupUsage(language: SetupLanguage): string {
 			"",
 			"  mu setup                 在终端里一步一步问",
 			"  mu setup <密钥>          从一个 API 密钥开始：mu 按密钥的样子认出它属于哪个服务",
-			"  mu setup --service <id> --key-stdin [--model <id>] [--base-url <地址>] [--judge jev|model|none] [--yes]",
+			"  mu setup --service <id> --key-stdin [--model <id>] [--base-url <地址>] [--judge <判定器>] [--yes]",
 			"                           给脚本用：密钥从标准输入读取",
 			"  mu setup --list          mu 认识的服务和它们的 id",
 			"",
@@ -218,6 +233,8 @@ export function setupUsage(language: SetupLanguage): string {
 			"这台电脑上能列出进程的程序也都看得到它。mu setup <密钥> 只是为了上手快；能在提示里粘贴就粘贴。",
 			"",
 			"  --judge jev     Jev 密钥（TypeSafe）写在标准输入的第二行；已经设置了 TYPESAFE_API_KEY 就不用",
+			"  --judge opencode  OpenCode Zen 上的 Jev，用 OpenCode 的密钥（--service opencode 或 OPENCODE_API_KEY）",
+			"  --judge free    OpenCode Zen 上限时免费的 Jev，不用密钥",
 			"  --judge model   用刚设置的模型当判定器（更慢，每次判断都花 token）",
 			"  --judge none    不改判定器；不写 --judge 时也不改",
 			"  --api, --name   服务 other 的接口（openai 或 anthropic）和它在 mu 里的名字",
@@ -232,7 +249,7 @@ export function setupUsage(language: SetupLanguage): string {
 		"",
 		"  mu setup                 asks step by step, in a terminal",
 		"  mu setup <key>           starts from an API key: mu tells by its shape which service it belongs to",
-		"  mu setup --service <id> --key-stdin [--model <id>] [--base-url <url>] [--judge jev|model|none] [--yes]",
+		"  mu setup --service <id> --key-stdin [--model <id>] [--base-url <url>] [--judge <judge>] [--yes]",
 		"                           for scripts: the key is read from stdin",
 		"  mu setup --list          the services mu knows, with their ids",
 		"",
@@ -241,6 +258,8 @@ export function setupUsage(language: SetupLanguage): string {
 		"prompt when you can.",
 		"",
 		"  --judge jev     the Jev key (TypeSafe) is the second line of stdin, unless TYPESAFE_API_KEY is set already",
+		"  --judge opencode  Jev on OpenCode Zen, with OpenCode's key (--service opencode, or OPENCODE_API_KEY)",
+		"  --judge free    Jev on OpenCode Zen, free for a limited time, with no key at all",
 		"  --judge model   the model just set up answers as the judge (slower, and every decision costs tokens)",
 		"  --judge none    leaves the judge as it is, as leaving out --judge does",
 		"  --api, --name   for the service `other`: its API (openai or anthropic) and its name in mu",
@@ -327,6 +346,9 @@ interface Target {
 type JudgeChoice =
 	| { readonly kind: "keep" }
 	| { readonly kind: "jev"; readonly key: string }
+	/** Jev on OpenCode Zen: with the OpenCode key (`jev-opencode`), or the free model without one. */
+	| { readonly kind: "opencode" }
+	| { readonly kind: "free" }
 	| { readonly kind: "model" }
 	| { readonly kind: "none" };
 
@@ -1011,7 +1033,13 @@ class Setup {
 		const { env, paths } = this.deps;
 		const envText = readTextFile(paths.envFile);
 		const existing = jevKeyAt(env, envText);
-		if (this.scripted) return this.scriptedJudge(model, envText, existing !== undefined);
+		// An OpenCode key reaches Jev on OpenCode Zen too: the one just set up, or one pi or the environment has.
+		const opencode =
+			model?.provider === "opencode" ||
+			Boolean(env[OPENCODE_KEY]) ||
+			(!(OPENCODE_KEY in env) && envText !== undefined && Boolean(envFileValue(envText, OPENCODE_KEY))) ||
+			(await this.deps.pi.credential("opencode")) !== undefined;
+		if (this.scripted) return this.scriptedJudge(model, envText, existing !== undefined, opencode);
 		const where = existing
 			? existing.where === "env"
 				? this.t({ zh: `环境变量 ${existing.name}`, en: `${existing.name} in your environment` })
@@ -1020,7 +1048,16 @@ class Setup {
 						en: `${existing.name} in ${this.path(paths.envFile)}`,
 					})
 			: undefined;
-		const choices: Choice<"keep" | "jev" | "model" | "none">[] = [];
+		const choices: Choice<"keep" | "jev" | "opencode" | "free" | "model" | "none">[] = [];
+		if (opencode && !where) {
+			choices.push({
+				label: this.t({
+					zh: "Jev（推荐），在 OpenCode Zen 上，用你的 OpenCode 密钥，按次计费",
+					en: "Jev (recommended) on OpenCode Zen, with your OpenCode key, billed per call",
+				}),
+				value: "opencode",
+			});
+		}
 		if (where) {
 			choices.push({
 				label: this.t({
@@ -1033,11 +1070,23 @@ class Setup {
 		choices.push({
 			label: where
 				? this.t({ zh: "Jev，换一个新密钥", en: "Jev, with a new key" })
-				: this.t({
-						zh: `Jev（推荐）：又快又准，按次计费。密钥在 TypeSafe 申请：${JEV_PAGE}`,
-						en: `Jev (recommended): fast and accurate, billed per call. Get a key from TypeSafe: ${JEV_PAGE}`,
-					}),
+				: opencode
+					? this.t({
+							zh: `Jev，用 TypeSafe 的密钥：${JEV_PAGE}`,
+							en: `Jev with a TypeSafe key: ${JEV_PAGE}`,
+						})
+					: this.t({
+							zh: `Jev（推荐）：又快又准，按次计费。密钥在 TypeSafe 申请：${JEV_PAGE}`,
+							en: `Jev (recommended): fast and accurate, billed per call. Get a key from TypeSafe: ${JEV_PAGE}`,
+						}),
 			value: "jev",
+		});
+		choices.push({
+			label: this.t({
+				zh: "Jev 免费版，在 OpenCode Zen 上：不用密钥，限时免费",
+				en: "Jev for free on OpenCode Zen: no key, free for a limited time",
+			}),
+			value: "free",
 		});
 		if (model) {
 			choices.push({
@@ -1070,8 +1119,22 @@ class Setup {
 		model: { provider: string; model: string } | undefined,
 		envText: string | undefined,
 		keySet: boolean,
+		opencode: boolean,
 	): JudgeChoice | undefined {
 		switch (this.args.judge) {
+			case "opencode":
+				if (!opencode) {
+					throw this.fail(
+						{
+							zh: "--judge opencode 需要 OpenCode 的密钥：用 --service opencode 设置它，或先设置 OPENCODE_API_KEY",
+							en: "--judge opencode needs an OpenCode key: set it up with --service opencode, or set OPENCODE_API_KEY first",
+						},
+						SETUP_EXIT.usage,
+					);
+				}
+				return { kind: "opencode" };
+			case "free":
+				return { kind: "free" };
 			case "jev": {
 				const key = this.jevFromStdin;
 				if (!key) {
@@ -1286,7 +1349,9 @@ class Setup {
 		let tiers: string[] | undefined;
 		if (judge.kind === "model") {
 			if (target && model) tiers = [`llm:${target.reach.provider}/${model}`];
-		} else if (!tiersOf(current).some((tier) => JEV_TIERS.has(tier))) tiers = ["jev"];
+		} else if (judge.kind === "opencode") tiers = ["jev-opencode"];
+		else if (judge.kind === "free") tiers = ["jev-opencode-free"];
+		else if (!tiersOf(current).some((tier) => JEV_TIERS.has(tier))) tiers = ["jev"];
 		if (tiers && config.state === "unreadable") {
 			notes.push(
 				this.t({
@@ -1345,7 +1410,14 @@ class Setup {
 					? this.t({ zh: "判定器：同一个模型。", en: " Judge: the same model." })
 					: judge.kind === "none"
 						? this.t({ zh: "判定器：暂时没有。", en: " Judge: none for now." })
-						: this.t({ zh: "判定器：Jev。", en: " Judge: Jev." });
+						: judge.kind === "opencode"
+							? this.t({ zh: "判定器：OpenCode Zen 上的 Jev。", en: " Judge: Jev on OpenCode Zen." })
+							: judge.kind === "free"
+								? this.t({
+										zh: "判定器：OpenCode Zen 上免费的 Jev（限时）。",
+										en: " Judge: Jev for free on OpenCode Zen (for a limited time).",
+									})
+								: this.t({ zh: "判定器：Jev。", en: " Judge: Jev." });
 		this.io.say("");
 		this.io.say(`${done}${judged}`);
 		this.io.say(

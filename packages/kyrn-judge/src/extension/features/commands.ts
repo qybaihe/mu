@@ -33,7 +33,7 @@ const helpZh = () => `mu ${VERSIONS.mu} · 先判断再动手的编程代理，�
 判断层
   你的每条消息都先交给判定器读：读的时候消息停在输入框上方（按 esc 可跳过等待），
   判定结果留在对话里这条消息下面。${keyText("app.tools.expand")} 可以看每个判定背后的全部回答。
-  /mu judge <判定器>：由哪些模型来判定、按什么顺序，比如 laya | laya,jev | clm | llm:<提供商>/<模型>
+  /mu judge <判定器>：由哪些模型来判定、按什么顺序，比如 laya | laya,jev | jev-opencode-free | clm | classifier:<提供商>/<模型> | llm:<提供商>/<模型>
   /mu route <判定点> <判定器|default>：让某一个判定点用自己的判定器，比如 browser.step luna
   /mu mode <判定点|default> <off|shadow|active>：off 关闭，shadow 影子（只记录，不起作用），active 生效
   /frame：查看任务帧，也就是 mu 记住的目标、你的硬约束（原话加出处）和验收条件
@@ -84,7 +84,7 @@ Start here
 Judgment layer
   Every message is read by the judge first: it waits above the editor while that happens (esc skips
   the wait), and the verdict stays under it in the chat. ${keyText("app.tools.expand")} shows every answer behind a verdict.
-  /mu judge <tiers>      which models judge, in order: laya | laya,jev | clm | llm:<provider>/<model>
+  /mu judge <tiers>      which models judge, in order: laya | laya,jev | jev-opencode-free | clm | classifier:<provider>/<model> | llm:<provider>/<model>
   /mu route <decision> <tiers|default>      one decision on its own judge, e.g. browser.step luna
   /mu mode <decision|default> <off|shadow|active>
   /frame                   the task as mu holds it: goal, your hard constraints and where you said them, to-do items

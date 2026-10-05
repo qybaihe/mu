@@ -202,6 +202,10 @@ export async function checkKey({
 	fetch,
 	timeoutMs = CHECK_TIMEOUT_MS,
 }: CheckOptions): Promise<CheckResult> {
+	if (kind === "opencode-key") {
+		const refused = await opencodeRefuses(baseUrl, key, fetch, timeoutMs);
+		if (refused) return { ok: false, problem: refused };
+	}
 	const request = checkRequest(kind, baseUrl, key);
 	// Never the URL with a query in a message: none carries a key here, but the address is what a person compares.
 	const url = request.url.split("?")[0];
@@ -336,4 +340,40 @@ export function explainProblem(problem: Problem, context: ExplainContext, langua
 				? `${service} 拒绝了这次检查（HTTP ${problem.status ?? "?"}）。${said}`
 				: `${service} refused the check (HTTP ${problem.status ?? "?"}).${said}`;
 	}
+}
+
+/**
+ * OpenCode Zen's model list answers any key. One question to its free Jev model (no charge) does not: a wrong key is
+ * turned down with 401. Undefined when the key was taken.
+ */
+async function opencodeRefuses(
+	baseUrl: string,
+	key: string | undefined,
+	fetch: typeof globalThis.fetch,
+	timeoutMs: number,
+): Promise<Problem | undefined> {
+	const url = `${baseUrl.replace(/\/+$/, "")}/systemone`;
+	let response: Response;
+	try {
+		response = await fetch(url, {
+			method: "POST",
+			headers: { "content-type": "application/json", ...(key ? { authorization: `Bearer ${key}` } : {}) },
+			body: JSON.stringify({
+				model: "jev-1.13-free",
+				state: "mu setup is checking a key.",
+				questions: { check: { type: "noul", instructions: "Is this a key check?" } },
+			}),
+			signal: AbortSignal.timeout(timeoutMs),
+		});
+	} catch (error) {
+		return { kind: classifyFailure(error), url };
+	}
+	if (response.ok) return undefined;
+	const text = await response.text().catch(() => "");
+	return {
+		kind: classifyAnswer(response.status, text),
+		url,
+		status: response.status,
+		said: safeMessage(messageOf(text), key) || undefined,
+	};
 }

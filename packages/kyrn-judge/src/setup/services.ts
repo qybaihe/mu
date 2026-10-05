@@ -20,8 +20,10 @@ export type SetupApi = "openai-completions" | "openai-responses" | "anthropic-me
  * - `google-models`: GET {baseUrl}/models, `x-goog-api-key`
  * - `openrouter-key`: GET {baseUrl}/key, OpenRouter's "Get current API key" (its API reference). OpenRouter's model
  *   list answers any key, a wrong one too, so the list would say only that the service is there.
+ * - `opencode-key`: OpenCode Zen's model list answers any key as well; its free Jev model (POST {baseUrl}/systemone,
+ *   no charge) turns a wrong key down. Then GET {baseUrl}/models for the list.
  */
-export type CheckKind = "openai-models" | "anthropic-models" | "google-models" | "openrouter-key";
+export type CheckKind = "openai-models" | "anthropic-models" | "google-models" | "openrouter-key" | "opencode-key";
 
 export interface SetupService {
 	// The fields of the app's table, with the same meaning.
@@ -169,6 +171,17 @@ export const SETUP_SERVICES: readonly SetupService[] = [
 		providers: ["openrouter"],
 		builtIn: true,
 		check: "openrouter-key",
+	},
+	{
+		id: "opencode",
+		name: "OpenCode Zen",
+		baseUrls: ["https://opencode.ai/zen/v1"],
+		api: "openai-completions",
+		models: ["kimi-k2.6"],
+		keyPage: "https://opencode.ai/auth",
+		providers: ["opencode"],
+		builtIn: true,
+		check: "opencode-key",
 	},
 	{
 		id: "openai",

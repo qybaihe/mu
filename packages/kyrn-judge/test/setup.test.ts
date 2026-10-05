@@ -523,6 +523,7 @@ class FakePi implements PiAccess {
 		moonshotai: { baseUrl: "https://api.moonshot.ai/v1", models: ["kimi-k2.6"] },
 		"zai-coding-cn": { baseUrl: "https://open.bigmodel.cn/api/coding/paas/v4", models: ["glm-5.3"] },
 		openrouter: { baseUrl: "https://openrouter.ai/api/v1", models: ["moonshotai/kimi-k2.6"] },
+		opencode: { baseUrl: "https://opencode.ai/zen/v1", models: ["kimi-k2.6", "claude-opus-4-8"] },
 		openai: { baseUrl: "https://api.openai.com/v1", models: ["gpt-5.5"] },
 		anthropic: { baseUrl: "https://api.anthropic.com", models: ["claude-opus-4-8"] },
 		google: { baseUrl: "https://generativelanguage.googleapis.com/v1beta", models: ["gemini-3.1-pro-preview"] },
@@ -649,7 +650,7 @@ describe("mu setup, asking in a terminal", () => {
 	it("asks whose key it is when two vendors share its shape, and sends it to that one only", async () => {
 		const run = await wizard({
 			// Paste a key; it is Qwen's; no judge for now; no session now.
-			answers: ["1", "2", "3", "n"],
+			answers: ["1", "2", "4", "n"],
 			secrets: [KEYS.hex32],
 			respond: (url) =>
 				url.startsWith("https://dashscope.aliyuncs.com/")
@@ -713,7 +714,7 @@ describe("mu setup, asking in a terminal", () => {
 		const good = `sk-${"fedcba9876543210".repeat(2)}`;
 		const run = await wizard({
 			// Paste; DeepSeek; (401) paste another; judge: the model; start mu now.
-			answers: ["1", "1", "1", "2", "y"],
+			answers: ["1", "1", "1", "3", "y"],
 			secrets: [KEYS.hex32, good],
 			respond: (_url, headers) =>
 				headers.authorization === `Bearer ${good}`
@@ -771,8 +772,8 @@ describe("mu setup, asking in a terminal", () => {
 	});
 
 	it("points a subscription to /login inside mu, and still offers the judge", async () => {
-		// Subscription; judge: not now (Jev or nothing: there is no model to judge with); no session.
-		const run = await wizard({ answers: ["3", "2", "n"] });
+		// Subscription; judge: not now (Jev, free Jev or nothing: there is no model to judge with); no session.
+		const run = await wizard({ answers: ["3", "3", "n"] });
 		expect(run.code).toBe(SETUP_EXIT.done);
 		expect(run.printed).toContain("start mu, type /login");
 		expect(run.said).toContain("Start mu and type /login to sign in.");
@@ -783,7 +784,7 @@ describe("mu setup, asking in a terminal", () => {
 	it("asks which service a key of another shape is for, before sending it anywhere", async () => {
 		const run = await wizard({
 			// From the list: DeepSeek; the pasted key looks like Anthropic's: it is Anthropic's.
-			answers: ["2", "1", "2", "3", "n"],
+			answers: ["2", "1", "2", "4", "n"],
 			secrets: [KEYS.anthropic],
 			respond: (url) => (url.startsWith("https://api.anthropic.com/") ? answer(200, { data: [] }) : new Error(url)),
 		});
@@ -796,16 +797,16 @@ describe("mu setup, asking in a terminal", () => {
 	});
 
 	it("sets up Ollama without a key, and says when it is not ready", async () => {
-		const down = await wizard({ answers: ["2", "13", "3"], respond: refused });
+		const down = await wizard({ answers: ["2", "14", "3"], respond: refused });
 		expect(down.said).toContain("Ollama is not ready yet (start it with `ollama serve`, pull a model).");
 		expect(down.code).toBe(SETUP_EXIT.cancelled);
 		expect(down.events.some((event) => event.kind === "secret")).toBe(false);
 		expect(down.printed).not.toContain("Paste another key");
-		const empty = await wizard({ answers: ["2", "13", "3"], respond: () => listing() });
+		const empty = await wizard({ answers: ["2", "14", "3"], respond: () => listing() });
 		expect(empty.said).toContain("Ollama is not ready yet (start it with `ollama serve`, pull a model).");
 		const up = await wizard({
 			// From the list: Ollama; its first chat model; no judge; no session.
-			answers: ["2", "13", "", "3", "n"],
+			answers: ["2", "14", "", "4", "n"],
 			respond: () => listing("nomic-embed-text:latest", "qwen2.5-coder:7b"),
 		});
 		expect(up.code).toBe(SETUP_EXIT.done);
@@ -826,7 +827,7 @@ describe("mu setup, asking in a terminal", () => {
 	it("takes an address of one's own, asks its key after it, finds its /v1, and names it", async () => {
 		const run = await wizard({
 			// From the list: other; its address; OpenAI-compatible; its name; (no key); its model; no judge; no session.
-			answers: ["2", "14", "http://127.0.0.1:8080", "1", "box", "", "3", "n"],
+			answers: ["2", "15", "http://127.0.0.1:8080", "1", "box", "", "4", "n"],
 			secrets: [""],
 			respond: (url) => (url === "http://127.0.0.1:8080/v1/models" ? listing("local-coder") : answer(404, "no")),
 		});
@@ -848,7 +849,7 @@ describe("mu setup, asking in a terminal", () => {
 
 	it("takes a number past the list as a slip, and a typed name as a model", async () => {
 		const run = await wizard({
-			answers: ["2", "13", "7", "my-model", "3", "n"],
+			answers: ["2", "14", "7", "my-model", "4", "n"],
 			respond: () => listing("a-coder", "b-coder"),
 		});
 		expect(run.said).toContain("Type a number from 1-2, or a model name.");
@@ -862,7 +863,7 @@ describe("mu setup, asking in a terminal", () => {
 		expect(no.printed).toContain("mu will not ask again");
 		const yes = await wizard({
 			argv: ["--first-run"],
-			answers: ["", "1", "3"],
+			answers: ["", "1", "4"],
 			secrets: [KEYS.xai],
 			respond: () => listing("grok-4.7", "grok-3"),
 		});
@@ -884,7 +885,7 @@ describe("mu setup, asking in a terminal", () => {
 	it("speaks Chinese", async () => {
 		const run = await wizard({
 			language: "zh",
-			answers: ["1", "1", "3", "n"],
+			answers: ["1", "1", "4", "n"],
 			secrets: [KEYS.hex32],
 			respond: () => listing("deepseek-v4-pro"),
 		});
@@ -1015,6 +1016,53 @@ describe("mu setup in a script", () => {
 			headers: { accept: "application/json", "x-goog-api-key": KEYS.google },
 		});
 		expect((run.pi as FakePi).defaults).toEqual([{ provider: "google", model: "gemini-3.1-pro-preview" }]);
+	});
+
+	it("checks an OpenCode key with free Jev, whose answer a wrong key does not get, and makes Jev there the judge", async () => {
+		const good = "sk-opencode-good-key-0123456789";
+		const respond = (url: string, headers: Readonly<Record<string, string>>) =>
+			url === "https://opencode.ai/zen/v1/systemone"
+				? headers.authorization === `Bearer ${good}`
+					? answer(200, { answers: { check: { type: "noul", noul: 0.9 } } })
+					: answer(401, { type: "error", error: { type: "AuthError", message: "Invalid API key." } })
+				: url === "https://opencode.ai/zen/v1/models"
+					? listing("kimi-k2.6", "claude-opus-4-8")
+					: new Error(url);
+		const wrong = await stdinRun(["--service", "opencode"], "sk-opencode-wrong-key-0123456789\n", { respond });
+		expect(wrong.code).toBe(SETUP_EXIT.failed);
+		expect(wrong.calls.map((call) => call.url)).toEqual(["https://opencode.ai/zen/v1/systemone"]);
+
+		const run = await stdinRun(["--service", "opencode", "--judge", "opencode"], `${good}\n`, { respond });
+		expect(run.code).toBe(SETUP_EXIT.done);
+		expect((run.pi as FakePi).stored).toEqual([{ provider: "opencode", key: good }]);
+		expect((run.pi as FakePi).defaults).toEqual([{ provider: "opencode", model: "kimi-k2.6" }]);
+		expect(run.json("mu.json")).toEqual({ tiers: ["jev-opencode"] });
+		expect(run.said).toContain("Done. mu starts on OpenCode Zen · kimi-k2.6. Judge: Jev on OpenCode Zen.");
+
+		// In a terminal, Jev on OpenCode Zen comes first once there is an OpenCode key.
+		const asked = await wizard({ answers: ["2", "9", "", "", "n"], secrets: [good], respond });
+		expect(asked.printed).toContain("1) Jev (recommended) on OpenCode Zen, with your OpenCode key, billed per call");
+		expect(asked.json("mu.json")).toEqual({ tiers: ["jev-opencode"] });
+	});
+
+	it("makes free Jev on OpenCode Zen the judge with no key, and wants a key for the paid one", async () => {
+		const free = await stdinRun(["--service", "deepseek", "--judge", "free"], `${KEYS.hex32}\n`, {
+			respond: () => listing("deepseek-v4-pro"),
+		});
+		expect(free.code).toBe(SETUP_EXIT.done);
+		expect(free.json("mu.json")).toEqual({ tiers: ["jev-opencode-free"] });
+		expect(free.read(".env")).toBeUndefined();
+
+		const paid = await stdinRun(["--service", "deepseek", "--judge", "opencode"], `${KEYS.hex32}\n`, {
+			respond: () => listing("deepseek-v4-pro"),
+		});
+		expect(paid.code).toBe(SETUP_EXIT.usage);
+		expect(paid.warned.join("\n")).toContain("--judge opencode needs an OpenCode key");
+		const keyed = await stdinRun(["--service", "deepseek", "--judge", "opencode"], `${KEYS.hex32}\n`, {
+			env: { OPENCODE_API_KEY: "o" },
+			respond: () => listing("deepseek-v4-pro"),
+		});
+		expect(keyed.json("mu.json")).toEqual({ tiers: ["jev-opencode"] });
 	});
 
 	it("checks an OpenRouter key where only a working key is answered", async () => {
