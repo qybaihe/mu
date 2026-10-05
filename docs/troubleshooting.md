@@ -24,7 +24,7 @@ If none of this helps, [open an issue](https://github.com/qybaihe/mu/issues/new/
 
 ## The judge
 
-**The judge seems to do nothing.** On a fresh install every decision point runs in shadow: verdicts are recorded and change nothing. `/status` shows the modes; see [Getting started](getting-started.md#turning-the-decisions-on) to switch them on.
+**The judge seems to do nothing.** A point in shadow records its verdicts and changes nothing, and one that is off is not asked. `/status` shows each point's mode; look for `"default": "shadow"` or `"off"` in `~/.mu/agent/mu.json`, or a `MU_JUDGE_MODE` in your environment. See [Getting started](getting-started.md#decisions-and-their-modes).
 
 **"No judge is available yet, so mu asks about each step."** In the *Jev approves* permission mode, mu asks you about every step that needs approval when no judge can answer: no key and the free Jev unavailable, an exhausted account, or only a local judge, which is not trusted with approvals. Set a Jev key (`mu setup`), or switch the permission mode with `/permissions`.
 

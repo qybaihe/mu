@@ -2,7 +2,7 @@
 
 ## Using mu
 
-- [Getting started](getting-started.md): install the desktop app or the command line, connect a model, turn the decisions on.
+- [Getting started](getting-started.md): install the desktop app or the command line, connect a model, watch or switch off the decisions.
 - [Configuration](configuration.md): `mu.json`, modes, environment variables, proxies.
 - [Judges](judges.md): hosted Jev, the free Jev, the local judge, classifier models and LLMs; comparing them.
 - [Troubleshooting](troubleshooting.md): when something does not work.

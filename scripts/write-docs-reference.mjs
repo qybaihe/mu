@@ -32,7 +32,7 @@ function decisionPoints() {
 		"",
 		...manifest.modes.map((mode) => `- \`${mode.value}\`: ${en(mode.help)}`),
 		"",
-		"A fresh install runs every point in `shadow` (`\"modes\": { \"default\": \"shadow\" }` is the built-in default). Set `\"default\": \"active\"` in `~/.mu/agent/mu.json`, or a point's mode in the desktop app's settings, to let verdicts take effect; `/mu mode <point|default> <off|shadow|active>` switches one for the current session. See [Configuration](../configuration.md).",
+		"Every point is `active` unless set otherwise (`\"modes\": { \"default\": \"active\" }` is the built-in default). Set `\"default\": \"shadow\"`, or a point's own mode, in `~/.mu/agent/mu.json` to only record verdicts; the desktop app's settings switch a point on or off; `/mu mode <point|default> <off|shadow|active>` switches one for the current session. See [Configuration](../configuration.md).",
 		"",
 		"The feature column names the switch in `features` that turns the whole behaviour off; its options are in [Features](features.md).",
 		"",

@@ -40,7 +40,7 @@ mu setup            # 接上一個模型
 mu                  # 在目前目錄開一個工作階段
 ```
 
-開始使用不需要判定器的金鑰：設定之前，由 OpenCode Zen 上免費的 Jev 回答。全新安裝時，所有判定點都是 shadow：只記錄判定器會怎麼做，不會真的改變行為，方便你先看它的判定（`/status`、`mu ledger`、桌面版的判定分頁）；在桌面版設定裡把預設模式改成 `active`，或在 `~/.mu/agent/mu.json` 寫入 `{"modes": {"default": "active"}}`，判定才會生效。更多請見 [Getting started](../getting-started.md)（英文）。
+開始使用不需要判定器的金鑰：設定之前，由 OpenCode Zen 上免費的 Jev 回答。所有判定點一開始就生效，每次判定都會記錄下來（`/status`、`mu ledger`、桌面版的判定分頁）。如果只想記錄判定器會怎麼做、不改變行為，在 `~/.mu/agent/mu.json` 寫入 `{"modes": {"default": "shadow"}}`。更多請見 [Getting started](../getting-started.md)（英文）。
 
 ## 一輪是怎麼走的
 
@@ -62,7 +62,7 @@ mu                  # 在目前目錄開一個工作階段
 
 ## 判定點
 
-每個判定點可以是 `active`（生效）、`shadow`（照常提問並記錄，但不改變任何行為，用來在開啟之前比較判定器）或 `off`（關閉），也可以指定自己的判定器：`jev`、`laya`（本機）、`classifier:<provider>/<model>`、`llm:<provider>/<model>`，或 `laya,jev` 這樣的串接。全新安裝時預設是 `shadow`。
+每個判定點可以是 `active`（生效，預設）、`shadow`（照常提問並記錄，但不改變任何行為，用來在開啟之前比較判定器）或 `off`（關閉），也可以指定自己的判定器：`jev`、`laya`（本機）、`classifier:<provider>/<model>`、`llm:<provider>/<model>`，或 `laya,jev` 這樣的串接。
 
 **輸入**
 
@@ -164,7 +164,7 @@ mu                  # 在目前目錄開一個工作階段
 
 *完美判定器*（Perfect judge）直接讀標註，代表一個全對的判定器最多能省多少。*只留失敗*（Keep failures only）是一個永遠回答「省掉」的判定器，也就是不看目標的過濾器會做的事。這次研究的全部 282 次真實 Jev 請求，依牌價約 $0.017；用預設問法，單次請求的中位耗時 345 毫秒。
 
-兩者預設都關閉。在 `~/.mu/agent/mu.json` 裡寫 `"features": { "admission": { "testLog": "rules" } }`，或在桌面版設定裡打開「測試日誌精簡」，就會折疊重複。`"jev"` 再加上挑選；挑選以影子模式執行（只提問和記錄，不改任何東西），直到執行 `/mu mode tool.admission.test-log active`。
+兩者預設都關閉。在 `~/.mu/agent/mu.json` 裡寫 `"features": { "admission": { "testLog": "rules" } }`，或在桌面版設定裡打開「測試日誌精簡」，就會折疊重複。`"jev"` 再讓判定器挑出剩下的部分裡目前目標用得上的；執行 `/mu mode tool.admission.test-log shadow` 則只記錄挑選結果。
 
 這些數字不代表什麼：
 

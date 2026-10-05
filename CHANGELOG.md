@@ -18,6 +18,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ### Changed
 
+- **Decisions act by default.** Every decision point is `active` unless `mu.json` says otherwise; before, a fresh install only recorded verdicts. To keep recording only, set `"modes": { "default": "shadow" }` in `~/.mu/agent/mu.json`.
 - MCP servers run on pi's built-in client. mu keeps what it adds: servers stay hidden until a task needs them, project servers need your approval, their output is screened and credentials are masked.
 
 ### Fixed

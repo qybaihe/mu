@@ -40,7 +40,7 @@ mu setup            # 모델 연결
 mu                  # 현재 디렉터리에서 세션 시작
 ```
 
-시작할 때 판정기 키는 필요 없어요. 키를 설정하기 전까지는 OpenCode Zen의 무료 Jev가 답해요. 새로 설치하면 모든 판정 지점이 shadow 상태예요. 판정기가 어떻게 할지 기록만 하고 동작은 바꾸지 않으니, 먼저 판정을 살펴볼 수 있어요(`/status`, `mu ledger`, 데스크톱 앱의 판정 탭). 판정을 반영하려면 데스크톱 앱 설정에서 기본 모드를 `active`로 바꾸거나 `~/.mu/agent/mu.json`에 `{"modes": {"default": "active"}}`를 적으세요. 자세한 내용은 [Getting started](../getting-started.md)(영어).
+시작할 때 판정기 키는 필요 없어요. 키를 설정하기 전까지는 OpenCode Zen의 무료 Jev가 답해요. 모든 판정 지점은 처음부터 판정을 반영하고, 판정은 모두 기록돼요(`/status`, `mu ledger`, 데스크톱 앱의 판정 탭). 판정기가 어떻게 할지 기록만 하고 싶다면 `~/.mu/agent/mu.json`에 `{"modes": {"default": "shadow"}}`를 적으세요. 자세한 내용은 [Getting started](../getting-started.md)(영어).
 
 ## 한 턴의 흐름
 
@@ -62,7 +62,7 @@ mu                  # 현재 디렉터리에서 세션 시작
 
 ## 판정 지점
 
-판정 지점마다 `active`(켬), `shadow`(묻고 기록하지만 아무것도 바꾸지 않음. 판정기를 켜기 전에 비교해 보는 용도), `off`(끔) 중 하나로 둘 수 있고, 판정기도 따로 지정할 수 있어요: `jev`, `laya`(로컬), `classifier:<provider>/<model>`, `llm:<provider>/<model>`, 또는 `laya,jev` 같은 캐스케이드. 새로 설치하면 기본값은 `shadow`예요.
+판정 지점마다 `active`(켬, 기본값), `shadow`(묻고 기록하지만 아무것도 바꾸지 않음. 판정기를 켜기 전에 비교해 보는 용도), `off`(끔) 중 하나로 둘 수 있고, 판정기도 따로 지정할 수 있어요: `jev`, `laya`(로컬), `classifier:<provider>/<model>`, `llm:<provider>/<model>`, 또는 `laya,jev` 같은 캐스케이드.
 
 **입력**
 
@@ -164,7 +164,7 @@ mu                  # 현재 디렉터리에서 세션 시작
 
 *Perfect judge*(완벽한 판정기)는 레이블을 직접 읽어요. 올바른 판정기가 줄일 수 있는 최대치예요. *Keep failures only*(실패만 남기기)는 늘 "빼라"고 답하는 판정기로, 목표를 보지 않는 필터가 하는 일과 같아요. 이 조사에서 실제로 보낸 Jev 요청은 모두 282건이고, 정가로 약 $0.017이었어요. 기본 질문 방식에서 요청 하나의 소요 시간 중앙값은 345ms예요.
 
-둘 다 기본값은 꺼짐이에요. `~/.mu/agent/mu.json`에 `"features": { "admission": { "testLog": "rules" } }`를 쓰거나 데스크톱 앱 설정에서 '테스트 로그 정리'를 켜면 반복이 접혀요. `"jev"`로 하면 선별이 더해지는데, `/mu mode tool.admission.test-log active`를 실행하기 전까지는 섀도(질문하고 기록만 하고, 아무것도 바꾸지 않음)로 돌아가요.
+둘 다 기본값은 꺼짐이에요. `~/.mu/agent/mu.json`에 `"features": { "admission": { "testLog": "rules" } }`를 쓰거나 데스크톱 앱 설정에서 '테스트 로그 정리'를 켜면 반복이 접혀요. `"jev"`로 하면 남은 부분 중 지금 목표에 필요한 것을 판정기가 골라요. `/mu mode tool.admission.test-log shadow`를 실행하면 선별 결과는 기록만 돼요.
 
 이 숫자가 말해 주지 않는 것:
 

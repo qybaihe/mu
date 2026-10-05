@@ -38,7 +38,7 @@ Only your own `mu.json` is read. A project cannot change the judge, its endpoint
 | Key | Meaning | Default |
 | --- | --- | --- |
 | `tiers` | The judges that answer, in order. A later judge only sees what the earlier ones left uncertain: `["laya", "jev"]` asks the local judge first. | `["jev"]` |
-| `modes` | `default` plus one entry per decision point: `active` (verdicts take effect), `shadow` (asked and logged, nothing changes) or `off` (not asked). | `{ "default": "shadow" }` |
+| `modes` | `default` plus one entry per decision point: `active` (verdicts take effect), `shadow` (asked and logged, nothing changes) or `off` (not asked). | `{ "default": "active" }` |
 | `routes` | A decision point on its own judges, in place of `tiers`. | none |
 | `judges` | Named judges of your own, added to the built-in ones. See [Judges](judges.md#your-own-judge). | none |
 | `features` | Per-feature switches and options: `false` turns a feature off, an object overrides options. Every feature and option: [reference/features.md](reference/features.md). | each feature's defaults |
@@ -50,9 +50,9 @@ A part mu does not understand falls back to its default instead of stopping mu. 
 
 ## Modes in practice
 
-- Start in shadow, read the ledger (`mu ledger`, `/status`, or the judgments tab), then switch a point to active when its verdicts look right.
-- `/mu mode <point> <off|shadow|active>` switches one point for the current session; `/mu mode default active` all of them. To keep a mode, put it in `mu.json` or set it in the app.
-- `MU_JUDGE_MODE=active mu` sets the default for one run.
+- Every point acts from the start. To try a judge, or a point you are unsure of, put it in shadow, read the ledger (`mu ledger`, `/status`, or the judgments tab), then set it back to active when its verdicts look right.
+- `/mu mode <point> <off|shadow|active>` switches one point for the current session; `/mu mode default shadow` all of them. To keep a mode, put it in `mu.json`; the app's settings switch points on or off.
+- `MU_JUDGE_MODE=shadow mu` sets the default for one run.
 
 Every decision point, with what it decides: [reference/decision-points.md](reference/decision-points.md).
 

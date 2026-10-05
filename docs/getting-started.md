@@ -46,17 +46,19 @@ Inside a session, `/status` shows the judge, each decision point's mode and the 
 
 mu asks a small, fast judge the routine questions of a session. You do not have to set one up: with no Jev key, the free Jev on OpenCode Zen answers, and mu tells you once a day. To use your own key, a local judge, or another model, see [Judges](judges.md).
 
-## Turning the decisions on
+## Decisions and their modes
 
-A fresh install runs every decision point in **shadow**: the judge is asked and its verdicts are logged, but they change nothing yet. This lets you read what it would have done (`/status`, `mu ledger`, or the judgments tab in the app) before trusting it.
+Every decision point is **active** from the start: the judge is asked and mu acts on its verdicts. Each verdict is logged, so you can read what it decided (`/status`, `mu ledger`, or the judgments tab in the app).
 
-To let the verdicts take effect, set the default mode to `active`: in the app, Settings → decision points → *Default mode*; or in `~/.mu/agent/mu.json`:
+To watch the judge before trusting it, set the default mode to **shadow**: the judge is still asked and its verdicts are logged, but they change nothing. In `~/.mu/agent/mu.json`:
 
 ```json
-{ "modes": { "default": "active" } }
+{ "modes": { "default": "shadow" } }
 ```
 
-Single points can stay in shadow or be switched off; see [Configuration](configuration.md). Two things work regardless of the mode: the permission mode you choose (*Jev approves* is the opt-in for `tool.approval`), and the `judge_items` tool when the model calls it.
+or `/mu mode default shadow` for the current session. The app's settings (Settings → decision points) switch each point, and the default, on or off; a point in shadow shows as off there.
+
+Single points can be set to shadow or switched off on their own; see [Configuration](configuration.md). Two things work regardless of the mode: the permission mode you choose (*Jev approves* is the opt-in for `tool.approval`), and the `judge_items` tool when the model calls it.
 
 ## Permissions
 

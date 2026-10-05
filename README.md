@@ -40,7 +40,7 @@ mu setup            # connect a model
 mu                  # a session in the current directory
 ```
 
-No judge key is needed to start: until you set one, the free Jev on OpenCode Zen answers. A fresh install runs every decision point in shadow, recording what the judge would do without acting on it, so you can read its verdicts first (`/status`, `mu ledger`, the app's judgments tab); set the default mode to `active` in the app's settings or with `{"modes": {"default": "active"}}` in `~/.mu/agent/mu.json` to let them take effect. More in [Getting started](docs/getting-started.md).
+No judge key is needed to start: until you set one, the free Jev on OpenCode Zen answers. Every decision point acts on its verdicts from the start, and each verdict is logged (`/status`, `mu ledger`, the app's judgments tab). To only record what the judge would do, put `{"modes": {"default": "shadow"}}` in `~/.mu/agent/mu.json`. More in [Getting started](docs/getting-started.md).
 
 ## A turn
 
@@ -62,7 +62,7 @@ Every name is a decision point. Each one is asked as a short question about a sm
 
 ## Decision points
 
-Each decision point is `active`, `shadow` (asked and logged, changes nothing: for comparing judges before switching one on; the default on a fresh install) or `off`, and each can name its own judge: `jev`, `laya` (local), `classifier:<provider>/<model>`, `llm:<provider>/<model>`, or a cascade such as `laya,jev`.
+Each decision point is `active` (the default), `shadow` (asked and logged, changes nothing: for comparing judges before switching one on) or `off`, and each can name its own judge: `jev`, `laya` (local), `classifier:<provider>/<model>`, `llm:<provider>/<model>`, or a cascade such as `laya,jev`.
 
 **Input**
 
@@ -164,7 +164,7 @@ The numbers below come from the repository's own replay, [`kyrn/spikes/judge-ben
 
 *Perfect judge* reads the labels: the most a correct judge could cut. *Keep failures only* is a judge that always answers "leave it out", which is what a filter that ignores the goal does. All 282 live Jev requests of the study cost about $0.017 at list price; with the default wording, a request took 345 ms at the median.
 
-Both are off by default. `"features": { "admission": { "testLog": "rules" } }` in `~/.mu/agent/mu.json`, or *Test log trimming* in the desktop app's settings, folds repeats. `"jev"` adds the selection, which stays in shadow (asked and logged, changing nothing) until `/mu mode tool.admission.test-log active`.
+Both are off by default. `"features": { "admission": { "testLog": "rules" } }` in `~/.mu/agent/mu.json`, or *Test log trimming* in the desktop app's settings, folds repeats. `"jev"` also asks the judge which of the remaining parts the current goal needs; `/mu mode tool.admission.test-log shadow` only records that choice.
 
 What these numbers are not:
 
