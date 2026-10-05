@@ -147,6 +147,23 @@ describe("the mu launcher", () => {
 		},
 		60_000,
 	);
+
+	it.skipIf(!installed)(
+		"runs pi's own commands instead of prompting pi with them",
+		() => {
+			const dir = home();
+
+			const list = run("mu", ["list"], { HOME: dir });
+			expect(list.code).toBe(0);
+			expect(list.out).toContain("No packages installed.");
+
+			// A package command missing its source says so; it does not hand the word to the model as a prompt.
+			const install = run("mu", ["install"], { HOME: dir });
+			expect(install.code).not.toBe(0);
+			expect(install.out).toContain("Missing install source.");
+		},
+		60_000,
+	);
 });
 
 describe("mu migrate", () => {
