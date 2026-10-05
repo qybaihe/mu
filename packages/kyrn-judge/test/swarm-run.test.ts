@@ -1,8 +1,10 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { Theme } from "@earendil-works/pi-coding-agent";
 import { visibleWidth } from "@earendil-works/pi-tui";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { renderSwarmResult } from "../src/extension/features/swarm.ts";
 import type { Paint } from "../src/extension/features/welcome.ts";
 import {
 	CHECKPOINT,
@@ -682,6 +684,20 @@ describe("swarm view", () => {
 		const text = renderSwarm(view, { expanded: false, width: 140 }, plain).join("\n");
 		expect(text).toContain("no sign of life for 1m32s");
 		expect(text).toContain("三个精确 Google 查询均被反爬页拦截");
+	});
+
+	// https://github.com/qybaihe/mu/issues/7
+	it("cuts the status shown before the first snapshot to the terminal width", () => {
+		const status = "choosing a role, a model and a thinking level for 1 sub-agent…";
+		const result = renderSwarmResult(
+			{ content: [{ type: "text", text: `${status}\n${status}` }] },
+			{ expanded: false },
+			plain as unknown as Theme,
+		);
+		for (const width of [24, 40]) {
+			for (const line of result.render(width)) expect(visibleWidth(line)).toBeLessThanOrEqual(width);
+		}
+		expect(result.render(100)).toEqual([status, status]);
 	});
 
 	it("adds each bee's recent steps when expanded, and never draws wider than the terminal", () => {

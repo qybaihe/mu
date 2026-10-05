@@ -5,6 +5,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { getAgentDir, type Theme } from "@earendil-works/pi-coding-agent";
+import { truncateToWidth } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 import { swarmRouting } from "../../decisions/swarm-routing.ts";
 import { say } from "../../language.ts";
@@ -396,8 +397,12 @@ export function renderSwarmResult(
 	const details = result.details as SwarmDetails | undefined;
 	return {
 		render: (width: number) => {
+			// The status before the first snapshot ("choosing a role…") is cut to the width too: a longer line kills the TUI (#7).
 			if (!details?.snapshot)
-				return (result.content[0]?.text ?? "").split("\n").slice(0, options.expanded ? 400 : 12);
+				return (result.content[0]?.text ?? "")
+					.split("\n")
+					.slice(0, options.expanded ? 400 : 12)
+					.map((line) => truncateToWidth(line, width, "…"));
 			return renderSwarm(details.snapshot, { expanded: options.expanded, width, reports: details.reports }, theme);
 		},
 		invalidate() {},
