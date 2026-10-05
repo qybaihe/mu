@@ -116,6 +116,8 @@ export function createDefaultTransport(
 		args: config.args?.map(expandHome),
 		cwd: resolve(cwd, expandHome(config.cwd ?? ".")),
 		env,
+		// mu: see McpStdioServerConfig.inheritEnv.
+		...(config.inheritEnv === false ? { inheritEnv: false } : {}),
 		stderr: "pipe",
 	});
 }

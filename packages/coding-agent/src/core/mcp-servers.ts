@@ -50,6 +50,12 @@ export interface McpStdioServerConfig extends McpServerConfigBase {
 	env?: Record<string, string>;
 	/** Relative paths resolve against the session working directory. */
 	cwd?: string;
+	/**
+	 * mu: false starts the server with `env` only, without pi's own environment, which holds model keys. mu
+	 * registers the servers it takes over from other tools this way, with the few variables a program needs.
+	 * Default: true.
+	 */
+	inheritEnv?: boolean;
 }
 
 /** OAuth client settings for servers that do not support dynamic client registration. */
@@ -272,6 +278,9 @@ export function validateMcpServerConfig(name: string, raw: unknown): McpServerCo
 		if (value.env !== undefined && !isStringRecord(value.env))
 			return `server "${name}": env must map names to strings`;
 		if (value.cwd !== undefined && typeof value.cwd !== "string") return `server "${name}": cwd must be a string`;
+		if (value.inheritEnv !== undefined && typeof value.inheritEnv !== "boolean") {
+			return `server "${name}": inheritEnv must be a boolean`;
+		}
 		return value as unknown as McpStdioServerConfig;
 	}
 	return `server "${name}" needs either "command" (stdio) or "url" (streamable HTTP)`;

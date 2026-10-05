@@ -412,7 +412,15 @@ export {
 export { type CodemodeExtensionOptions, createCodemodeExtension } from "./extensions/codemode/index.ts";
 export type { CodemodeStoreEntryData, CodemodeToolDetails } from "./extensions/codemode/tool.ts";
 export type { LoadedMcpConfig, McpExposure, McpServerConfig, McpServerEntry } from "./extensions/mcp/config.ts";
-export { createMcpExtension, type McpExtensionOptions, type McpTransportFactory } from "./extensions/mcp/index.ts";
+// mu: mu's catalog reads which servers mcp.json defines, and follows the ones it registers.
+export { loadMcpConfig } from "./extensions/mcp/config.ts";
+export {
+	createMcpExtension,
+	MCP_CONNECTION_EVENT,
+	type McpConnectionEvent,
+	type McpExtensionOptions,
+	type McpTransportFactory,
+} from "./extensions/mcp/index.ts";
 export { createToolSearchExtension } from "./extensions/tool-search/index.ts";
 export { type MainOptions, main } from "./main.ts";
 // Run modes for programmatic SDK usage

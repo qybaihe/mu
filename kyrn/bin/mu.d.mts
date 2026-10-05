@@ -215,6 +215,8 @@ export function planSetup(input: {
 	stripsTypes?: boolean;
 	fs: { exists(path: string): boolean; isDir(path: string): boolean; readFile(path: string): string };
 }): SetupPlan | { error: string; code?: number };
+/** `mu mcp add` without `--exposure` gets `--exposure deferred`; any other argv is returned as it is. */
+export function mcpAddDefaults(argv: readonly string[]): readonly string[];
 export function planFirstRun(input: {
 	platform: Platform;
 	env: Env;

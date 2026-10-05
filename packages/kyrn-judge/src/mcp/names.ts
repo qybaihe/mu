@@ -1,14 +1,9 @@
-import { createHash } from "node:crypto";
-
 /**
- * Names the model sees. A provider accepts `[A-Za-z0-9_-]` and at most 64
- * characters in a tool name; server and tool names in the wild have dots,
- * spaces and slashes. A tool is `mcp_<server>_<tool>`, which also keeps two
- * servers that both offer `search` apart.
+ * Server names pi accepts. pi's MCP client takes `[A-Za-z0-9_-]` in a server
+ * name, treats `-` and `_` as the same (both become `_` in the tool names
+ * `mcp__<server>__<tool>`), and names its tools itself. Names in the wild have
+ * dots, spaces and slashes.
  */
-const MAX_TOOL_NAME = 64;
-const PREFIX = "mcp_";
-
 export function sanitizeName(name: string): string {
 	const clean = name
 		.normalize("NFKD")
@@ -18,55 +13,31 @@ export function sanitizeName(name: string): string {
 	return clean || "x";
 }
 
-function shortHash(text: string): string {
-	return createHash("sha256").update(text).digest("hex").slice(0, 6);
-}
-
-/** `taken` gets the returned name added. A second claim on a name gets a number: `figma`, `figma_2`. */
-function claim(wanted: string, taken: Set<string>): string {
-	let name = wanted;
-	for (let count = 2; taken.has(name.toLowerCase()); count++) name = `${wanted}_${count}`;
-	taken.add(name.toLowerCase());
-	return name;
-}
+/** Two names pi would mix up: the same once `-` is `_`, in any case. */
+export const nameKey = (name: string): string => name.replace(/-/g, "_").toLowerCase();
 
 /**
- * One id per server, in the order given, stable for a given set of names.
- * Two names that sanitize to the same id ("my.server", "my server") both stay usable.
+ * One pi server name per server, in the order given, stable for a given set of names. Two names that
+ * sanitize to the same one ("my.server", "my server") both stay usable, and none takes a name of
+ * `reserved` (the servers pi's own mcp.json defines).
  */
-export function allocateServerIds(names: readonly string[]): Map<string, string> {
-	const ids = new Map<string, string>();
-	const taken = new Set<string>();
+export function allocateServerNames(names: readonly string[], reserved: Iterable<string> = []): Map<string, string> {
+	const allocated = new Map<string, string>();
+	const taken = new Set([...reserved].map(nameKey));
 	for (const name of names) {
-		// Leaves room for the prefix, the separator and a recognizable piece of the tool's own name.
-		ids.set(
-			name,
-			claim(
-				sanitizeName(name)
-					.slice(0, 24)
-					.replace(/[_-]+$/, "") || "x",
-				taken,
-			),
-		);
+		// Short enough to leave room for a recognizable piece of each tool's own name.
+		const wanted =
+			sanitizeName(name)
+				.slice(0, 24)
+				.replace(/[_-]+$/, "") || "x";
+		let candidate = wanted;
+		for (let count = 2; taken.has(nameKey(candidate)); count++) candidate = `${wanted}_${count}`;
+		taken.add(nameKey(candidate));
+		allocated.set(name, candidate);
 	}
-	return ids;
+	return allocated;
 }
 
-/** The registered name of each of a server's tools, keyed by the name the server knows it by. */
-export function allocateToolNames(serverId: string, tools: readonly string[]): Map<string, string> {
-	const names = new Map<string, string>();
-	const taken = new Set<string>();
-	for (const tool of tools) {
-		let name = `${PREFIX}${serverId}_${sanitizeName(tool)}`;
-		if (name.length > MAX_TOOL_NAME) {
-			// Cut, but keep it unique and the same from one session to the next.
-			name = `${name.slice(0, MAX_TOOL_NAME - 7)}_${shortHash(tool)}`;
-		}
-		names.set(tool, claim(name, taken).slice(0, MAX_TOOL_NAME));
-	}
-	return names;
-}
-
-export function capabilityId(serverId: string): string {
-	return `mcp:${serverId}`;
+export function capabilityId(serverName: string): string {
+	return `mcp:${serverName}`;
 }

@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
 	dependenciesInstalled,
 	MODEL_KEY_VARIABLES,
+	mcpAddDefaults,
 	planFirstRun,
 	planSetup,
 	SETUP_DECLINED_FILE,
@@ -248,10 +249,40 @@ describe("the first start", () => {
 			["--help"],
 			["config"],
 			["install", "npm:x"],
+			["mcp", "list"],
 			["--list-models"],
 		]) {
 			expect(first({ argv }), argv.join(" ")).toBe(false);
 		}
+	});
+
+	it("makes a server added with mu mcp add deferred, unless the command says otherwise", () => {
+		expect(mcpAddDefaults(["mcp", "add", "docs", "--url", "https://x/mcp"])).toEqual([
+			"mcp",
+			"add",
+			"--exposure",
+			"deferred",
+			"docs",
+			"--url",
+			"https://x/mcp",
+		]);
+		const own = ["mcp", "add", "-l", "fs", "--exposure", "direct", "--", "npx", "fs"];
+		expect(mcpAddDefaults(own)).toBe(own);
+		// After `--`, or after the server's command, `--exposure` belongs to that command.
+		expect(mcpAddDefaults(["mcp", "add", "fs", "--", "srv", "--exposure", "x"]).slice(2, 4)).toEqual([
+			"--exposure",
+			"deferred",
+		]);
+		expect(mcpAddDefaults(["mcp", "add", "fs", "srv", "--exposure", "x"]).slice(2, 4)).toEqual([
+			"--exposure",
+			"deferred",
+		]);
+		// A value that looks like an option is still a value.
+		expect(mcpAddDefaults(["mcp", "add", "fs", "--description", "--exposure", "--url", "u"]).slice(2, 4)).toEqual([
+			"--exposure",
+			"deferred",
+		]);
+		for (const argv of [["mcp", "list"], ["fix", "add"], []]) expect(mcpAddDefaults(argv)).toBe(argv);
 	});
 
 	it("never asks again after a no, or when it is turned off", () => {

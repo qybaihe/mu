@@ -2,7 +2,6 @@ import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { McpServerDefinition } from "../inherit/types.ts";
-import type { McpEra } from "./protocol.ts";
 
 /**
  * What mu remembers about MCP servers between sessions, in `<agentDir>/mu`:
@@ -26,7 +25,6 @@ export interface CachedTool {
 }
 
 export interface CachedServer {
-	readonly era: McpEra;
 	readonly tools: readonly CachedTool[];
 	readonly updatedAt: string;
 }
@@ -109,13 +107,12 @@ export class McpStore {
 		return entry && Array.isArray(entry.tools) ? entry : undefined;
 	}
 
-	remember(server: McpServerDefinition, era: McpEra, tools: readonly { name: string; description?: string }[]): void {
+	remember(server: McpServerDefinition, tools: readonly { name: string; description?: string }[]): void {
 		// Read again first: another session may have written since this one started.
 		this.cache = readJson<CacheFile>(this.cachePath, this.cache);
 		this.cache.servers = {
 			...this.cache.servers,
 			[cacheKey(server)]: {
-				era,
 				tools: tools.map((tool) => ({
 					name: tool.name,
 					description: (tool.description ?? "").replace(/\s+/g, " ").trim().slice(0, DESCRIPTION_LENGTH),
@@ -123,14 +120,6 @@ export class McpStore {
 				updatedAt: new Date().toISOString(),
 			},
 		};
-		writeJson(this.cachePath, this.cache);
-	}
-
-	/** Forgets which era a server was, after that turned out wrong. */
-	forgetEra(server: McpServerDefinition): void {
-		const entry = this.cached(server);
-		if (!entry || entry.era === "legacy") return;
-		this.cache.servers = { ...this.cache.servers, [cacheKey(server)]: { ...entry, era: "legacy" } };
 		writeJson(this.cachePath, this.cache);
 	}
 

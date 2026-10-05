@@ -7236,19 +7236,19 @@
 				"fa-IR": "سرورهای MCP"
 			},
 			"summary": {
-				"zh": "内置的 MCP 客户端（stdio 与 Streamable HTTP）。每个服务器是能力目录里的一项，默认隐藏：Jev 认定任务需要，或模型主动申请，才启动进程并注册它的工具。工具清单会缓存，服务器没跑过 Jev 也有描述可判。项目里定义的服务器第一次启动前要你点头，定义变了会再问。在设置文件里可以把某个服务器设为常开。",
-				"en": "A built-in MCP client (stdio and Streamable HTTP). Each server is a catalog entry that stays hidden: its process starts and its tools register only when the judge finds the task needs it or the model asks through find_capability. Tool lists are cached, so the judge has a description before a server ever ran. A server defined by a project asks before its first start, and again when its definition changes. \"exposure\": \"always\" under mcp.servers in mu.json keeps a server open.",
-				"zh-TW": "內建的 MCP 用戶端（stdio 與 Streamable HTTP）。每個伺服器都是能力目錄裡的一項，預設隱藏：判定器認定任務需要它，或模型透過 find_capability 要求時，才啟動它的程序並註冊它的工具。工具清單會快取，所以伺服器即使從未執行過，判定器也有描述可以判斷。專案定義的伺服器第一次啟動前會先問你，定義變了也會再問。在 mu.json 的 mcp.servers 下為伺服器加上 \"exposure\": \"always\"，就能讓它常駐開啟。",
-				"ja-JP": "組み込みの MCP クライアントです（stdio と Streamable HTTP）。各サーバーはカタログの項目として非表示になっており、タスクに必要だと判定器が判定したとき、またはモデルが find_capability で求めたときにだけ、プロセスが起動してツールが登録されます。ツール一覧はキャッシュされるため、サーバーを一度も起動していなくても判定器は説明を参照できます。プロジェクトで定義されたサーバーは、初回の起動前と、定義が変わったときに確認します。mu.json の mcp.servers で \"exposure\": \"always\" を指定すると、そのサーバーは常に開いたままになります。",
-				"ko-KR": "내장 MCP 클라이언트(stdio 및 Streamable HTTP)입니다. 각 서버는 숨겨진 카탈로그 항목으로, 판정기가 작업에 필요하다고 보거나 모델이 find_capability로 요청할 때만 프로세스가 시작되고 도구가 등록됩니다. 도구 목록은 캐시되므로 서버가 한 번도 실행되지 않았어도 판정기가 설명을 볼 수 있습니다. 프로젝트에서 정의한 서버는 처음 시작하기 전에 묻고, 정의가 바뀌면 다시 묻습니다. mu.json의 mcp.servers에서 \"exposure\": \"always\"를 지정하면 서버가 항상 열려 있습니다.",
-				"de-DE": "Ein integrierter MCP-Client (stdio und Streamable HTTP). Jeder Server ist ein Katalogeintrag, der verborgen bleibt: Erst wenn der Judge feststellt, dass die Aufgabe ihn braucht, oder das Modell über find_capability danach fragt, startet sein Prozess und werden seine Tools registriert. Tool-Listen werden zwischengespeichert, sodass der Judge schon eine Beschreibung hat, bevor ein Server überhaupt gelaufen ist. Ein in einem Projekt definierter Server fragt vor seinem ersten Start nach und erneut, wenn sich seine Definition ändert. \"exposure\": \"always\" unter mcp.servers in mu.json hält einen Server ständig offen.",
-				"fr-FR": "Un client MCP intégré (stdio et Streamable HTTP). Chaque serveur est une entrée du catalogue qui reste masquée : son processus démarre et ses outils s’enregistrent seulement quand le juge estime que la tâche en a besoin, ou quand le modèle le demande via find_capability. Les listes d’outils sont mises en cache : le juge dispose donc d’une description avant même le premier lancement d’un serveur. Un serveur défini par un projet demande votre accord avant son premier démarrage, puis de nouveau si sa définition change. Avec \"exposure\": \"always\" sous mcp.servers dans mu.json, un serveur reste ouvert.",
-				"es-ES": "Un cliente MCP integrado (stdio y Streamable HTTP). Cada servidor es una entrada del catálogo que permanece oculta: su proceso se inicia y sus herramientas se registran solo cuando el juez ve que la tarea lo necesita o el modelo lo pide mediante find_capability. Las listas de herramientas se guardan en caché, así que el juez tiene una descripción aunque el servidor no se haya ejecutado nunca. Un servidor definido por un proyecto pide permiso antes de su primer inicio y otra vez si cambia su definición. \"exposure\": \"always\" en mcp.servers de mu.json mantiene un servidor abierto.",
-				"pt-BR": "Um cliente MCP integrado (stdio e Streamable HTTP). Cada servidor é uma entrada do catálogo que fica oculta: o processo dele inicia e as ferramentas dele são registradas só quando o juiz conclui que a tarefa precisa dele ou o modelo o pede por find_capability. As listas de ferramentas ficam em cache, então o juiz tem uma descrição antes mesmo de um servidor ter rodado. Um servidor definido por um projeto pede a sua aprovação antes de iniciar pela primeira vez, e de novo quando a definição dele muda. \"exposure\": \"always\" em mcp.servers no mu.json mantém um servidor sempre ativo.",
-				"ru-RU": "Встроенный MCP-клиент (stdio и Streamable HTTP). Каждый сервер — скрытая запись в каталоге возможностей: его процесс запускается, а инструменты регистрируются, только когда судья решает, что он нужен задаче, или модель запрашивает его через find_capability. Списки инструментов кэшируются, поэтому у судьи есть описание, даже если сервер ещё ни разу не запускался. Для сервера, заданного в проекте, mu спрашивает разрешения перед первым запуском и снова — когда его определение меняется. \"exposure\": \"always\" в mcp.servers в mu.json держит сервер подключённым.",
-				"uk-UA": "Вбудований клієнт MCP (stdio і Streamable HTTP). Кожен сервер — прихований запис у каталозі можливостей: його процес запускається, а інструменти реєструються лише тоді, коли суддя визначає, що він потрібен завданню, або модель просить про це через find_capability. Списки інструментів кешуються, тож суддя має опис ще до першого запуску сервера. Сервер, визначений у проєкті, запитує дозволу перед першим запуском і знову, коли його визначення змінюється. \"exposure\": \"always\" у mcp.servers у mu.json тримає сервер відкритим.",
-				"tr-TR": "Yerleşik bir MCP istemcisi (stdio ve Streamable HTTP). Her sunucu, gizli kalan bir katalog girdisidir: süreci yalnızca hakem görevin ona ihtiyaç duyduğuna karar verdiğinde ya da model find_capability ile istediğinde başlar ve araçları da o zaman kaydedilir. Araç listeleri önbelleğe alınır; böylece bir sunucu hiç çalışmamış olsa bile hakemin elinde bir açıklama olur. Bir projenin tanımladığı sunucu ilk kez başlamadan önce ve tanımı her değiştiğinde izin ister. mu.json içinde mcp.servers altında \"exposure\": \"always\" bir sunucuyu açık tutar.",
-				"fa-IR": "یک کلاینت MCP داخلی (stdio و Streamable HTTP). هر سرور یک مورد در فهرست توانمندی‌هاست که پنهان می‌ماند: فرایندش شروع نمی‌شود و ابزارهایش ثبت نمی‌شوند، مگر وقتی داور تشخیص دهد وظیفه به آن نیاز دارد یا مدل از طریق find_capability آن را بخواهد. فهرست ابزارها در حافظهٔ نهان نگه داشته می‌شود، پس داور حتی پیش از نخستین اجرای یک سرور توضیحی از آن دارد. سروری که یک پروژه تعریف کرده، پیش از نخستین راه‌اندازی از شما اجازه می‌گیرد و هر بار تعریفش تغییر کند دوباره می‌پرسد. \"exposure\": \"always\" در mcp.servers در mu.json یک سرور را همیشه باز نگه می‌دارد."
+				"zh": "MCP 服务器由 pi 自带的客户端连接（stdio 与 Streamable HTTP，支持 OAuth 登录，用 /mcp 管理）。从 Claude Code、Cursor、Codex 和 mu.json 沿用的服务器，每个是能力目录里的一项，默认隐藏：Jev 认定任务需要，或模型主动申请，才启动它并把工具交给模型。工具清单会缓存，服务器没跑过 Jev 也有描述可判。项目里定义的服务器第一次启动前要你点头，定义变了会再问。在 mu.json 里可以把某个服务器设为常开。用 mu mcp add 加的服务器归 pi 管：随会话连接，工具由 tool_search 按需加载。",
+				"en": "MCP servers are connected by pi's own client (stdio and Streamable HTTP, OAuth sign-in, managed with /mcp). Each server mu takes over from Claude Code, Cursor, Codex and mu.json is a catalog entry that stays hidden: it starts and its tools are handed to the model only when the judge finds the task needs it or the model asks through find_capability. Tool lists are cached, so the judge has a description before a server ever ran. A server defined by a project asks before its first start, and again when its definition changes. \"exposure\": \"always\" under mcp.servers in mu.json keeps a server open. Servers added with mu mcp add are pi's: they connect with the session, and tool_search loads their tools when needed.",
+				"zh-TW": "MCP 伺服器由 pi 內建的用戶端連線（stdio 與 Streamable HTTP，支援 OAuth 登入，用 /mcp 管理）。從 Claude Code、Cursor、Codex 和 mu.json 沿用的每個伺服器都是能力目錄裡的一項，預設隱藏：判定器認定任務需要它，或模型透過 find_capability 要求時，才啟動它並把工具交給模型。工具清單會快取，所以伺服器即使從未執行過，判定器也有描述可以判斷。專案定義的伺服器第一次啟動前會先問你，定義變了也會再問。在 mu.json 的 mcp.servers 下為伺服器加上 \"exposure\": \"always\"，就能讓它常駐開啟。用 mu mcp add 加入的伺服器歸 pi 管理：隨工作階段連線，工具由 tool_search 按需載入。",
+				"ja-JP": "MCP サーバーには pi 組み込みのクライアントで接続します（stdio と Streamable HTTP、OAuth サインイン、/mcp で管理）。Claude Code、Cursor、Codex、mu.json から引き継いだ各サーバーはカタログの項目として非表示になっており、タスクに必要だと判定器が判定したとき、またはモデルが find_capability で求めたときにだけ起動し、ツールがモデルに渡されます。ツール一覧はキャッシュされるため、サーバーを一度も起動していなくても判定器は説明を参照できます。プロジェクトで定義されたサーバーは、初回の起動前と、定義が変わったときに確認します。mu.json の mcp.servers で \"exposure\": \"always\" を指定すると、そのサーバーは常に開いたままになります。mu mcp add で追加したサーバーは pi が管理します。セッションとともに接続され、ツールは必要なときに tool_search が読み込みます。",
+				"ko-KR": "MCP 서버는 pi 내장 클라이언트로 연결합니다(stdio 및 Streamable HTTP, OAuth 로그인, /mcp로 관리). Claude Code, Cursor, Codex, mu.json에서 이어받은 각 서버는 숨겨진 카탈로그 항목으로, 판정기가 작업에 필요하다고 보거나 모델이 find_capability로 요청할 때만 시작되고 도구가 모델에 전달됩니다. 도구 목록은 캐시되므로 서버가 한 번도 실행되지 않았어도 판정기가 설명을 볼 수 있습니다. 프로젝트에서 정의한 서버는 처음 시작하기 전에 묻고, 정의가 바뀌면 다시 묻습니다. mu.json의 mcp.servers에서 \"exposure\": \"always\"를 지정하면 서버가 항상 열려 있습니다. mu mcp add로 추가한 서버는 pi가 관리합니다. 세션과 함께 연결되고, 도구는 필요할 때 tool_search가 불러옵니다.",
+				"de-DE": "MCP-Server verbindet pis eigener Client (stdio und Streamable HTTP, OAuth-Anmeldung, verwaltet mit /mcp). Jeder Server, den mu aus Claude Code, Cursor, Codex und mu.json übernimmt, ist ein Katalogeintrag, der verborgen bleibt: Er startet und seine Werkzeuge gehen erst an das Modell, wenn der Judge feststellt, dass die Aufgabe ihn braucht, oder das Modell ihn über find_capability anfordert. Werkzeuglisten werden zwischengespeichert, sodass der Judge schon eine Beschreibung hat, bevor ein Server je gelaufen ist. Ein vom Projekt definierter Server fragt vor seinem ersten Start nach, und erneut, wenn sich seine Definition ändert. \"exposure\": \"always\" unter mcp.servers in mu.json hält einen Server dauerhaft offen. Mit mu mcp add hinzugefügte Server verwaltet pi: Sie verbinden sich mit der Sitzung, und tool_search lädt ihre Werkzeuge bei Bedarf.",
+				"fr-FR": "Les serveurs MCP sont connectés par le client intégré de pi (stdio et Streamable HTTP, connexion OAuth, gestion avec /mcp). Chaque serveur que mu reprend de Claude Code, Cursor, Codex et mu.json est une entrée du catalogue qui reste masquée : il ne démarre et ses outils ne sont confiés au modèle que lorsque le juge estime que la tâche en a besoin ou que le modèle le demande via find_capability. Les listes d'outils sont mises en cache, de sorte que le juge dispose d'une description avant même qu'un serveur ait tourné. Un serveur défini par un projet demande votre accord avant son premier démarrage, et de nouveau quand sa définition change. \"exposure\": \"always\" sous mcp.servers dans mu.json garde un serveur ouvert. Les serveurs ajoutés avec mu mcp add appartiennent à pi : ils se connectent avec la session, et tool_search charge leurs outils au besoin.",
+				"es-ES": "Los servidores MCP se conectan con el cliente propio de pi (stdio y Streamable HTTP, inicio de sesión OAuth, gestionados con /mcp). Cada servidor que mu toma de Claude Code, Cursor, Codex y mu.json es una entrada del catálogo que permanece oculta: solo arranca y entrega sus herramientas al modelo cuando el juez determina que la tarea lo necesita o el modelo lo pide mediante find_capability. Las listas de herramientas se guardan en caché, así que el juez tiene una descripción antes de que un servidor se haya ejecutado nunca. Un servidor definido por un proyecto pide permiso antes de su primer arranque, y de nuevo cuando cambia su definición. \"exposure\": \"always\" en mcp.servers de mu.json mantiene un servidor abierto. Los servidores añadidos con mu mcp add son de pi: se conectan con la sesión y tool_search carga sus herramientas cuando hacen falta.",
+				"pt-BR": "Os servidores MCP são conectados pelo cliente próprio do pi (stdio e Streamable HTTP, login OAuth, gerenciados com /mcp). Cada servidor que o mu herda do Claude Code, Cursor, Codex e mu.json é uma entrada do catálogo que fica oculta: ele só inicia e entrega suas ferramentas ao modelo quando o juiz conclui que a tarefa precisa dele ou o modelo pede via find_capability. As listas de ferramentas ficam em cache, então o juiz tem uma descrição antes mesmo de um servidor ter rodado. Um servidor definido pelo projeto pede confirmação antes da primeira inicialização, e de novo quando sua definição muda. \"exposure\": \"always\" em mcp.servers no mu.json mantém um servidor aberto. Servidores adicionados com mu mcp add são do pi: conectam-se com a sessão, e o tool_search carrega suas ferramentas quando necessário.",
+				"ru-RU": "Серверы MCP подключает собственный клиент pi (stdio и Streamable HTTP, вход через OAuth, управление командой /mcp). Каждый сервер, который mu берёт из Claude Code, Cursor, Codex и mu.json, — это скрытая запись каталога: он запускается, а его инструменты передаются модели, только когда судья решает, что задаче он нужен, или модель запрашивает его через find_capability. Списки инструментов кешируются, поэтому у судьи есть описание ещё до первого запуска сервера. Сервер, определённый проектом, спрашивает разрешения перед первым запуском и снова — когда меняется его определение. \"exposure\": \"always\" в mcp.servers файла mu.json держит сервер открытым. Серверы, добавленные через mu mcp add, принадлежат pi: они подключаются вместе с сеансом, а tool_search загружает их инструменты по мере надобности.",
+				"uk-UA": "Сервери MCP підключає власний клієнт pi (stdio і Streamable HTTP, вхід через OAuth, керування командою /mcp). Кожен сервер, який mu переймає з Claude Code, Cursor, Codex і mu.json, — це прихований запис каталогу: він запускається, а його інструменти передаються моделі, лише коли суддя вирішує, що завданню він потрібен, або модель запитує його через find_capability. Списки інструментів кешуються, тож суддя має опис ще до першого запуску сервера. Сервер, визначений проєктом, питає дозволу перед першим запуском і знову — коли змінюється його визначення. \"exposure\": \"always\" у mcp.servers файлу mu.json тримає сервер відкритим. Сервери, додані через mu mcp add, належать pi: вони підключаються разом із сеансом, а tool_search завантажує їхні інструменти за потреби.",
+				"tr-TR": "MCP sunucularına pi'nin kendi istemcisi bağlanır (stdio ve Streamable HTTP, OAuth ile giriş, /mcp ile yönetim). mu'nun Claude Code, Cursor, Codex ve mu.json'dan devraldığı her sunucu gizli kalan bir katalog girdisidir: yalnızca yargıç görevin ona ihtiyaç duyduğuna karar verdiğinde ya da model find_capability ile istediğinde başlar ve araçları modele verilir. Araç listeleri önbelleğe alınır; böylece bir sunucu hiç çalışmamış olsa da yargıcın elinde bir açıklama olur. Proje tarafından tanımlanan bir sunucu ilk başlatmadan önce ve tanımı değiştiğinde yeniden onay ister. mu.json'daki mcp.servers altında \"exposure\": \"always\" bir sunucuyu açık tutar. mu mcp add ile eklenen sunucular pi'ye aittir: oturumla birlikte bağlanır, araçlarını gerektiğinde tool_search yükler.",
+				"fa-IR": "سرورهای MCP را کلاینت خودِ pi وصل می‌کند (stdio و Streamable HTTP، ورود با OAuth، مدیریت با /mcp). هر سروری که mu از Claude Code، Cursor، Codex و mu.json برمی‌دارد یک مدخل پنهان در کاتالوگ است: فقط وقتی داور تشخیص دهد که کار به آن نیاز دارد، یا مدل از طریق find_capability آن را بخواهد، راه می‌افتد و ابزارهایش به مدل داده می‌شود. فهرست ابزارها کش می‌شود، پس داور حتی پیش از نخستین اجرای سرور توضیحی در دست دارد. سروری که پروژه تعریف کرده پیش از نخستین راه‌اندازی، و دوباره هر بار که تعریفش عوض شود، اجازه می‌گیرد. \"exposure\": \"always\" زیر mcp.servers در mu.json سرور را همیشه باز نگه می‌دارد. سرورهایی که با mu mcp add افزوده می‌شوند متعلق به pi هستند: همراه نشست وصل می‌شوند و tool_search ابزارهایشان را هر وقت لازم شد بارگذاری می‌کند."
 			},
 			"defaultEnabled": true,
 			"options": [
@@ -7339,95 +7339,6 @@
 						"uk-UA": "Тайм-аут виклику",
 						"tr-TR": "Çağrı zaman aşımı",
 						"fa-IR": "مهلت هر فراخوانی"
-					}
-				},
-				{
-					"key": "waitMs",
-					"kind": "number",
-					"default": 8000,
-					"min": 0,
-					"max": 60000,
-					"unit": {
-						"zh": "毫秒",
-						"en": "ms",
-						"zh-TW": "毫秒",
-						"ja-JP": "ミリ秒",
-						"ko-KR": "밀리초",
-						"de-DE": "ms",
-						"fr-FR": "ms",
-						"es-ES": "ms",
-						"pt-BR": "ms",
-						"ru-RU": "мс",
-						"uk-UA": "мс",
-						"tr-TR": "ms",
-						"fa-IR": "میلی‌ثانیه"
-					},
-					"label": {
-						"zh": "回合开始前最多等常开服务器",
-						"en": "Wait for pinned servers before a turn",
-						"zh-TW": "每輪開始前最多等常駐伺服器",
-						"ja-JP": "ターン開始前に常時オンのサーバーを待つ時間",
-						"ko-KR": "턴 시작 전 상시 서버 대기 시간",
-						"de-DE": "Wartezeit auf ständig offene Server vor einer Runde",
-						"fr-FR": "Attente des serveurs toujours ouverts avant un tour",
-						"es-ES": "Espera a los servidores siempre abiertos al iniciar un turno",
-						"pt-BR": "Esperar pelos servidores sempre ativos antes de um turno",
-						"ru-RU": "Ждать постоянные серверы перед ходом",
-						"uk-UA": "Чекати на закріплені сервери перед ходом",
-						"tr-TR": "Tur öncesinde her zaman açık sunucular için en fazla bekleme",
-						"fa-IR": "انتظار برای سرورهای همیشه‌باز پیش از نوبت"
-					}
-				},
-				{
-					"key": "maxResultChars",
-					"kind": "number",
-					"default": 60000,
-					"min": 2000,
-					"max": 1000000,
-					"unit": {
-						"zh": "字符",
-						"en": "chars",
-						"zh-TW": "字元",
-						"ja-JP": "文字",
-						"ko-KR": "자",
-						"de-DE": "Zeichen",
-						"fr-FR": "caractères",
-						"es-ES": "caracteres",
-						"pt-BR": "caracteres",
-						"ru-RU": "симв.",
-						"uk-UA": "символів",
-						"tr-TR": "karakter",
-						"fa-IR": "نویسه"
-					},
-					"label": {
-						"zh": "单个结果最多进上下文",
-						"en": "Most of one result kept in context",
-						"zh-TW": "單個結果最多進入上下文",
-						"ja-JP": "1 つの結果をコンテキストに残す上限",
-						"ko-KR": "컨텍스트에 넣는 결과 1개 최대량",
-						"de-DE": "Höchstens im Kontext behaltener Teil eines Ergebnisses",
-						"fr-FR": "Maximum d’un résultat gardé dans le contexte",
-						"es-ES": "Máximo de un resultado que queda en el contexto",
-						"pt-BR": "Máximo de um resultado mantido no contexto",
-						"ru-RU": "Объём результата в контексте не больше",
-						"uk-UA": "Макс. обсяг результату в контексті",
-						"tr-TR": "Bir sonuçtan bağlamda en fazla tutulan metin",
-						"fa-IR": "حداکثر متن هر نتیجه در زمینه"
-					},
-					"help": {
-						"zh": "超出的部分截掉，完整结果存到文件。",
-						"en": "The rest is cut and the whole result saved to a file.",
-						"zh-TW": "超出的部分會截斷，完整結果存到檔案。",
-						"ja-JP": "超えた部分は切り捨て、結果全体をファイルに保存します。",
-						"ko-KR": "나머지는 잘리고, 전체 결과는 파일에 저장됩니다.",
-						"de-DE": "Der Rest wird abgeschnitten und das vollständige Ergebnis in einer Datei gespeichert.",
-						"fr-FR": "Le reste est coupé, et le résultat complet est enregistré dans un fichier.",
-						"es-ES": "El resto se corta y el resultado completo se guarda en un archivo.",
-						"pt-BR": "O resto é cortado, e o resultado inteiro é salvo em um arquivo.",
-						"ru-RU": "Остальное обрезается, а полный результат сохраняется в файл.",
-						"uk-UA": "Решта обрізається, а повний результат зберігається у файл.",
-						"tr-TR": "Gerisi kesilir ve sonucun tamamı bir dosyaya kaydedilir.",
-						"fa-IR": "بقیه بریده می‌شود و کل نتیجه در یک فایل ذخیره می‌شود."
 					}
 				}
 			]

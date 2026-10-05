@@ -148,6 +148,20 @@ function hasIndirectTools(entry: McpServerEntry): boolean {
 	return exposures.has("codemode") || exposures.has("deferred");
 }
 
+/**
+ * mu: emitted on `pi.events` when a server's connection changes, for extensions that register servers
+ * and wait for them (mu's catalog connects a server when a task needs it). `tools` are the pi tool
+ * names the server's tools are registered under.
+ */
+export const MCP_CONNECTION_EVENT = "mcp:connection";
+
+export interface McpConnectionEvent {
+	server: string;
+	state: McpServerConnection["state"];
+	error?: string;
+	tools: string[];
+}
+
 /** Name of the system prompt section that lists the servers whose tools are not declared. */
 export const MCP_SERVERS_SECTION = "mcp_servers";
 /** Characters of a server description in the section, as Codex allows for deferred namespaces. */
@@ -511,6 +525,13 @@ export function createMcpExtension(options: McpExtensionOptions = {}): Extension
 			if (connection.state !== "needs-auth") tokensAtSignIn.delete(connection);
 			else if (!tokensAtSignIn.has(connection)) tokensAtSignIn.set(connection, storedTokens(connection));
 			emitChange();
+			const server = connection.entry.name;
+			pi.events.emit(MCP_CONNECTION_EVENT, {
+				server,
+				state: connection.state,
+				...(connection.error ? { error: connection.error } : {}),
+				tools: [...(serverTools.get(server) ?? [])],
+			} satisfies McpConnectionEvent);
 		};
 		/** Reconnect servers that need a sign-in when their credentials were stored since. */
 		const reconnectSignedIn = async (ctx: ExtensionContext) => {

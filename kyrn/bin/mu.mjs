@@ -823,7 +823,40 @@ export function planSetup({ platform, env, argv, root, home, execPath, fs, strip
 }
 
 /** pi's own commands: none of them starts a session. */
-const PI_COMMANDS = new Set(["install", "remove", "uninstall", "update", "list", "config", "auth"]);
+const PI_COMMANDS = new Set(["install", "remove", "uninstall", "update", "list", "config", "auth", "mcp"]);
+
+/** Options of `pi mcp add` that take a value (extensions/mcp/cli.ts); the rest are flags. */
+const MCP_ADD_VALUES = new Set([
+	"--url",
+	"--env",
+	"--cwd",
+	"--header",
+	"--bearer-token-env-var",
+	"--oauth-client-id",
+	"--oauth-client-secret",
+	"--oauth-callback-port",
+	"--oauth-client-name",
+	"--exposure",
+	"--description",
+]);
+
+/**
+ * `mu mcp add` without `--exposure`: the server's tools are `deferred`, loaded by tool_search when a task needs them,
+ * instead of pi's default `codemode`, which reaches them only from scripts. Like pi, the options end at `--` or at the
+ * second positional argument; what follows belongs to the server's command.
+ */
+export function mcpAddDefaults(argv) {
+	if (argv[0] !== "mcp" || argv[1] !== "add") return argv;
+	let positionals = 0;
+	for (let index = 2; index < argv.length && positionals < 2; index++) {
+		const arg = argv[index];
+		if (arg === "--") break;
+		if (arg === "--exposure") return argv;
+		if (MCP_ADD_VALUES.has(arg)) index++;
+		else if (!arg.startsWith("-")) positionals++;
+	}
+	return [...argv.slice(0, 2), "--exposure", "deferred", ...argv.slice(2)];
+}
 /** Options for a run without a person (-p, --mode rpc), one that ends at once, or one that names its model itself. */
 const NO_SETUP_FLAGS = new Set([
 	"-p",
@@ -1412,7 +1445,7 @@ export async function main(argv = process.argv.slice(2)) {
 		return handOver({ command: plan.command, args: plan.args, env: plan.env, strategy });
 	}
 	// What the session gets, when there is one: after a `mu setup` that ends in "start mu now", a plain session.
-	let sessionArgv = argv;
+	let sessionArgv = mcpAddDefaults(argv);
 	if (command === "setup") {
 		const plan = planSetup({
 			platform,

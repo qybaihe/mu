@@ -120,9 +120,6 @@ export function isBuiltinExtension(input: InlineExtension): input is BuiltinExte
 function omitReplacedExtensions(
 	extensions: Extension[],
 	warnings?: Array<{ path: string; warning: string }>,
-	// mu: an extension named on the command line (`-e`, as mu's launcher names mu's own) replaces a built-in on
-	// purpose, so the built-in is left out without a warning on every start.
-	namedOnCommandLine: (extension: Extension) => boolean = () => false,
 ): Extension[] {
 	const names = (extension: Extension) => [
 		...[...extension.tools.keys()].map((name) => `tool:${name}`),
@@ -140,7 +137,7 @@ function omitReplacedExtensions(
 			.map((name) => ({ name, extension: taken.get(name) }))
 			.find((value): value is { name: string; extension: Extension } => value.extension !== undefined);
 		if (!replacement) return true;
-		if (extension.path.startsWith(BUILTIN_PATH_PREFIX) && !namedOnCommandLine(replacement.extension)) {
+		if (extension.path.startsWith(BUILTIN_PATH_PREFIX)) {
 			const builtinName = extension.path.slice(BUILTIN_PATH_PREFIX.length);
 			const [kind, rawName] = replacement.name.split(":", 2);
 			const registeredName = kind === "command" ? `/${rawName}` : kind === "flag" ? `--${rawName}` : rawName;
@@ -697,19 +694,9 @@ export class DefaultResourceLoader implements ResourceLoader {
 		extensionsResult.extensions.push(...inlineExtensions.extensions);
 		extensionsResult.errors.push(...inlineExtensions.errors);
 		const replacementWarnings: Array<{ path: string; warning: string }> = [];
-		extensionsResult.extensions = omitReplacedExtensions(
-			extensionsResult.extensions,
-			replacementWarnings,
-			this.namedOnCommandLine(),
-		);
+		extensionsResult.extensions = omitReplacedExtensions(extensionsResult.extensions, replacementWarnings);
 		mergeExtensionWarnings(extensionsResult, replacementWarnings);
 		return extensionsResult;
-	}
-
-	/** mu: whether an extension was named on the command line (`-e`); see omitReplacedExtensions. */
-	private namedOnCommandLine(): (extension: Extension) => boolean {
-		const paths = new Set(this.additionalExtensionPaths.map((path) => this.resolveExtensionLoadPath(path)));
-		return (extension) => paths.has(extension.resolvedPath);
 	}
 
 	private resolveExtensionLoadPath(path: string): string {
@@ -783,7 +770,7 @@ export class DefaultResourceLoader implements ResourceLoader {
 
 		const replacementWarnings: Array<{ path: string; warning: string }> = [];
 		const extensionsResult: LoadExtensionsResult = {
-			extensions: omitReplacedExtensions(orderedExtensions, replacementWarnings, this.namedOnCommandLine()),
+			extensions: omitReplacedExtensions(orderedExtensions, replacementWarnings),
 			errors: [...(preTrustExtensions?.errors ?? []), ...remainingExtensions.errors, ...inlineExtensions.errors],
 			warnings: [...(preTrustExtensions?.warnings ?? []), ...(remainingExtensions.warnings ?? [])],
 			runtime: remainingExtensions.runtime,

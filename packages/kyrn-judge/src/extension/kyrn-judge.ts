@@ -5,7 +5,7 @@
  *
  * Configuration lives in `<agent dir>/kyrn.json` (see `../config.ts`), with
  * environment overrides:
- *   KYRN_JUDGE            judges to use, in order: jev | laya | mock | llm:<provider>/<model> | a name from kyrn.json; "off" disables
+ *   KYRN_JUDGE            judges to use, in order: jev | laya | mock | classifier:<provider>/<model> | llm:<provider>/<model> | a name from kyrn.json; "off" disables
  *   KYRN_JUDGE_MODE       default mode of every decision: shadow (default) | active | off
  *   KYRN_LOCAL_JUDGE_URL  sidecar address for `laya` (default http://127.0.0.1:47823)
  *
@@ -42,7 +42,7 @@ import { registerImport } from "./features/import.ts";
 import { type HarnessRoots, registerInherit } from "./features/inherit.ts";
 import { registerInterjection } from "./features/interjection.ts";
 import { registerLsp } from "./features/lsp.ts";
-import { type McpFeatureOptions, registerMcp } from "./features/mcp.ts";
+import { registerMcp } from "./features/mcp.ts";
 import { registerMemory } from "./features/memory.ts";
 import { registerMonitor } from "./features/monitor.ts";
 import { registerNotify } from "./features/notify.ts";
@@ -85,8 +85,6 @@ export interface KyrnJudgeExtensionOptions {
 	 * state in. Default: the real ones, unless `config` or `provider` was injected, in which case no home is read.
 	 */
 	roots?: HarnessRoots;
-	/** For tests of the MCP feature. */
-	mcp?: McpFeatureOptions;
 	/** For tests of the checkpoint feature: how git is run. */
 	checkpoint?: CheckpointDeps;
 }
@@ -217,7 +215,7 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["tools", registerTools],
 		["browser", registerBrowser],
 		["inherit", (shared) => registerInherit(shared, roots)],
-		["mcp", (shared) => registerMcp(shared, roots, options.mcp)],
+		["mcp", (shared) => registerMcp(shared, roots)],
 		["background", registerBackground],
 		["web", registerWeb],
 		["packs", registerPacks],

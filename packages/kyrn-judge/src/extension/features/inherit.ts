@@ -225,7 +225,7 @@ export function registerInherit(runtime: KyrnRuntime, roots: HarnessRoots | unde
 			if (found.skills.length > 0) lines.push("", "Skills:");
 			for (const skill of found.skills) lines.push(`  ${skill.name}  ${skill.dir}`);
 			const servers = found.servers.filter((server) => server.tool !== "mu");
-			if (servers.length > 0) lines.push("", "MCP servers (see /mcp):");
+			if (servers.length > 0) lines.push("", "MCP servers (each a capability: /capabilities; once open, /mcp):");
 			for (const server of servers)
 				lines.push(`  ${server.name}  ${server.source}${server.scope === "project" ? "  (project)" : ""}`);
 			if (found.skipped.length > 0) lines.push("", "Not used:");

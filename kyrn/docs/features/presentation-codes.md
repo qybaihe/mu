@@ -240,12 +240,12 @@ The mode labels and descriptions are already in Chinese or English. Key your own
 | `project_untrusted` | a project-defined server in an untrusted folder |
 | `needs_approval` {source} | a project-defined server not yet approved, and nobody to ask |
 | `denied` | the person said no to starting it |
-| `unreachable`, `closed`, `timeout`, `aborted`, `rpc`, `protocol` | the start failed (the MCP client's own kinds) |
-| `start_failed` | the start failed some other way |
-| `crashed` {willRestart} | it crashed while running (`willRestart` is also a field) |
-| `restart_failed` {cause} | the restart after a crash failed too. Before this batch, nothing was sent. |
+| `needs_sign_in` {server} | the server wants an OAuth sign-in: `/mcp login <server>` |
+| `timeout` | it did not answer within `startTimeoutMs` |
+| `start_failed` | the start failed; `reason` holds pi's words |
+| `disconnected` | the connection dropped after the start; pi connects again with the next call (`willRestart: true`) |
 
-A server that dies during its start now sends one `mcp.failed` (its start failure). It no longer sends a `crashed` / `willRestart: true` event first, and that no longer uses up its one restart.
+Since 2026-10-05 pi's own MCP client runs the servers. The codes `unreachable`, `closed`, `aborted`, `rpc`, `protocol`, `crashed` {willRestart} and `restart_failed` {cause} came from mu's own client before that, and only an older harness sends them.
 
 ## rewind.proposed
 
