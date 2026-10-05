@@ -301,6 +301,16 @@ export const MANIFEST: HarnessManifest = {
 			},
 		},
 		{
+			id: "tool.injection",
+			group: "tools",
+			feature: "injection",
+			title: { zh: "外来内容里的指令", en: "Instructions in outside content" },
+			summary: {
+				zh: "网页、搜索结果和 MCP 服务器返回的内容，模型读到之前先过一遍：哪一段是写给 AI 的指令（让它忽略规则、交出数据、跑命令，或借一个链接把对话带出去）。这样的段落被扣下，换成一行说明。Jev 没答上来时，只扣下明显的注入用语。",
+				en: "Before the model reads a web page, search results or an MCP server's answer: which passages carry instructions aimed at an AI (ignore rules, hand over data, run commands, or carry the conversation out through a link)? Those are withheld and replaced by a one-line note. When Jev gives no answer, only plain injection phrases are withheld.",
+			},
+		},
+		{
 			id: "files.locate",
 			group: "tools",
 			feature: "locate",
@@ -308,6 +318,16 @@ export const MANIFEST: HarnessManifest = {
 			summary: {
 				zh: "用一句话描述要找什么，判定器给候选文件排序，省去一次次搜索。",
 				en: "Describe what you are looking for; the judge ranks candidate files instead of a string of greps.",
+			},
+		},
+		{
+			id: "judge.items",
+			group: "tools",
+			feature: "judgeItems",
+			title: { zh: "批量判定（模型用的工具）", en: "Judging many items (a tool for the model)" },
+			summary: {
+				zh: "模型要从几百个文件、日志行或发现里挑东西时，把一个是非题交给 Jev 逐条回答，每条给一个概率，不用自己一条条读。只在任务用得上时出现。是模型自己问的，所以影子模式下也照常回答；关闭则不能用。",
+				en: "When the model has to sort hundreds of files, log lines or findings, it hands Jev one yes/no question to answer item by item, with a probability each, instead of reading them all. It appears only when a task needs it. The model asked, so it answers in shadow too; off turns it away.",
 			},
 		},
 		{
@@ -348,6 +368,16 @@ export const MANIFEST: HarnessManifest = {
 			summary: {
 				zh: "模型说「做完了」时，判断是否真的验证过；没验证就提醒一次。",
 				en: "When the model says it is done, checks whether anything verified that; one nudge if not.",
+			},
+		},
+		{
+			id: "turn.continue",
+			group: "turn",
+			feature: "continuation",
+			title: { zh: "半路停下", en: "Stopped short" },
+			summary: {
+				zh: "一轮结束在「接下来我去跑测试」却什么也没做，或者你已经让它做了它还在问「要我改吗」：让它接着做。难以撤销、或要出这台电脑的一步（推送、发布、删除、付款）不催。每条消息最多催两次。",
+				en: 'A run that ends on "next I\'ll run the tests" without doing it, or asks for a go-ahead on work you already asked for, is sent back to it. A step that is hard to undo or reaches beyond this machine (push, publish, delete, pay) is never pushed. At most twice per message.',
 			},
 		},
 		{
@@ -762,6 +792,40 @@ export const MANIFEST: HarnessManifest = {
 					max: 30000,
 					unit: ms,
 					label: { zh: "最多等待", en: "Wait at most" },
+				},
+			],
+		},
+		{
+			name: "injection",
+			title: { zh: "注入筛查", en: "Injection screening" },
+			summary: {
+				zh: "模型读网页、搜索结果和 MCP 结果之前，扣下写给 AI 的指令。",
+				en: "Withholds instructions aimed at an AI before the model reads web pages, search results and MCP answers.",
+			},
+			defaultEnabled: true,
+			options: [
+				{
+					key: "tools",
+					kind: "list",
+					default: ["web_fetch", "web_search", "browse", "mcp__*"],
+					label: { zh: "要筛的工具", en: "Tools screened" },
+					help: {
+						zh: "工具名，或以 * 结尾的前缀；mcp__* 是所有 MCP 服务器。",
+						en: "Tool names, or a prefix ending in *; mcp__* is every MCP server.",
+					},
+				},
+				{
+					key: "waitMs",
+					kind: "number",
+					default: 6000,
+					min: 500,
+					max: 30000,
+					unit: ms,
+					label: { zh: "最多等待", en: "Wait at most" },
+					help: {
+						zh: "超时就只按规则扣下明显的注入用语，判定照样记账。",
+						en: "After this only plain injection phrases are withheld, by rule; the verdict is still recorded.",
+					},
 				},
 			],
 		},
@@ -1494,6 +1558,38 @@ export const MANIFEST: HarnessManifest = {
 			],
 		},
 		{
+			name: "continuation",
+			title: { zh: "半路停下时接着做", en: "Carry on after stopping short" },
+			summary: {
+				zh: "说了要做却停下的一轮，让它接着做。",
+				en: "Sends a run that stopped short of what it said it would do back to it.",
+			},
+			defaultEnabled: true,
+			options: [
+				{
+					key: "maxNudges",
+					kind: "number",
+					default: 2,
+					min: 1,
+					max: 5,
+					label: { zh: "每条消息最多催几次", en: "Most nudges per message" },
+				},
+				{
+					key: "waitMs",
+					kind: "number",
+					default: 3000,
+					min: 500,
+					max: 30000,
+					unit: ms,
+					label: { zh: "最多等待", en: "Wait at most" },
+					help: {
+						zh: "超时就不催了，判定只记账。",
+						en: "After this there is no nudge; the verdict is only recorded.",
+					},
+				},
+			],
+		},
+		{
 			name: "notify",
 			title: { zh: "通知分流", en: "Notification routing" },
 			summary: { zh: "决定各类事件何时告诉模型。", en: "Decides when events are told to the model." },
@@ -1726,6 +1822,25 @@ export const MANIFEST: HarnessManifest = {
 					min: 1,
 					max: 100,
 					label: { zh: "返回条数", en: "Results returned" },
+				},
+			],
+		},
+		{
+			name: "judgeItems",
+			title: { zh: "批量判定工具", en: "Bulk judging tool" },
+			summary: {
+				zh: "judge_items 工具：一个是非题，对很多条目逐条给出概率。",
+				en: "The judge_items tool: one yes/no question, a probability for each of many items.",
+			},
+			defaultEnabled: true,
+			options: [
+				{
+					key: "maxItems",
+					kind: "number",
+					default: 500,
+					min: 10,
+					max: 5000,
+					label: { zh: "一次最多几条", en: "Most items per call" },
 				},
 			],
 		},

@@ -132,6 +132,8 @@ export interface TurnState {
 	editedFiles: Set<string>;
 	ranCommandAfterLastEdit: boolean;
 	nudgedForCompletion: boolean;
+	/** Times the agent was sent back to work it said it would do and then did not (`turn.continue`). */
+	continued: number;
 }
 
 export interface Savings {
@@ -184,6 +186,11 @@ export class KyrnRuntime {
 	goalActive = false;
 	/** The harness itself cut the run that is ending (mid-stream correction), and will start the next one. Not the user's Esc. */
 	harnessAbort = false;
+	/**
+	 * The ends of runs (pi's `agent_end` event, the one object every handler gets) after which a feature already sent
+	 * the agent back to work, so a later check says nothing more about the same end. One voice is enough.
+	 */
+	readonly nudgedEnds = new WeakSet<object>();
 	/**
 	 * Whoever keeps the task frame sets this. It hears of a message the moment its turn is counted,
 	 * so the frame's judge runs alongside preflight's instead of after its wait.
@@ -563,6 +570,7 @@ function emptyTurn(userMessage: string): TurnState {
 		editedFiles: new Set(),
 		ranCommandAfterLastEdit: false,
 		nudgedForCompletion: false,
+		continued: 0,
 	};
 }
 

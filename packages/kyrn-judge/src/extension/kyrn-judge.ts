@@ -32,6 +32,7 @@ import { registerCommands } from "./features/commands.ts";
 import { registerCompaction } from "./features/compaction.ts";
 import { registerCompletion } from "./features/completion.ts";
 import { registerConstraints } from "./features/constraints.ts";
+import { registerContinuation } from "./features/continuation.ts";
 import { registerForgetting } from "./features/forgetting.ts";
 import { registerFrame } from "./features/frame.ts";
 import { registerFreeJevNotice } from "./features/free-jev.ts";
@@ -41,7 +42,9 @@ import { registerGuard } from "./features/guard.ts";
 import { registerHive } from "./features/hive.ts";
 import { registerImport } from "./features/import.ts";
 import { type HarnessRoots, registerInherit } from "./features/inherit.ts";
+import { registerInjection } from "./features/injection.ts";
 import { registerInterjection } from "./features/interjection.ts";
+import { registerJudgeItems } from "./features/judge-items.ts";
 import { registerLsp } from "./features/lsp.ts";
 import { registerMcp } from "./features/mcp.ts";
 import { registerMemory } from "./features/memory.ts";
@@ -103,12 +106,14 @@ export type FeatureName =
 	| "goal"
 	| "board"
 	| "ttsr"
+	| "injection"
 	| "admission"
 	| "forgetting"
 	| "compaction"
 	| "monitor"
 	| "lsp"
 	| "completion"
+	| "continuation"
 	| "checkpoint"
 	| "notify"
 	| "warming"
@@ -116,6 +121,7 @@ export type FeatureName =
 	| "swarm"
 	| "hive"
 	| "tools"
+	| "judgeItems"
 	| "browser"
 	| "inherit"
 	| "mcp"
@@ -195,6 +201,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["constraints", registerConstraints],
 		// After the constraint gate: a call the user ruled out is stopped before anyone is asked to allow it.
 		["permissions", (shared) => registerPermissions(shared, roots)],
+		// Before admission, which then archives the screened text, and before the MCP feature, whose label goes in front of it.
+		["injection", registerInjection],
 		["admission", registerAdmission],
 		["forgetting", registerForgetting],
 		["compaction", registerCompaction],
@@ -204,6 +212,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["lsp", registerLsp],
 		["goal", registerGoal],
 		["completion", registerCompletion],
+		// After the completion check and the language servers: when either sent the agent back, this one says nothing.
+		["continuation", registerContinuation],
 		// Reads the frame and the steps; says nothing to the model, so its place among the others does not matter.
 		["board", (shared) => registerBoard(shared, roots)],
 		// After the guard and the monitor: a blocked call needs no checkpoint, and the monitor's trouble is what the rewind hears.
@@ -214,6 +224,7 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["swarm", (shared) => registerSwarm(shared, options.swarmRunner)],
 		["hive", (shared) => registerHive(shared, options.swarmRunner)],
 		["tools", registerTools],
+		["judgeItems", registerJudgeItems],
 		["browser", registerBrowser],
 		["inherit", (shared) => registerInherit(shared, roots)],
 		["mcp", (shared) => registerMcp(shared, roots)],

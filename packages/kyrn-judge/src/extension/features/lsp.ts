@@ -362,6 +362,7 @@ export function registerLsp(runtime: KyrnRuntime): void {
 			runtime.savings.diagnosticsWithheldChars += report.omitted * 80;
 			present("delivered", items, ctx, { by: "rule", when: "turn_end", omitted: report.omitted });
 			if (errors.length > 0) {
+				runtime.nudgedEnds.add(event);
 				pi.sendMessage(
 					{
 						customType: DIAGNOSTICS_MESSAGE,

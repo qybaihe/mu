@@ -254,6 +254,10 @@ Since 2026-10-05 pi's own MCP client runs the servers. The codes `unreachable`, 
 - `same_command_failed`: `{ times, command }`, where `command` is data
 - `monitor_trouble`: `{ times, kind, detail }`, where `detail` is data
 
+## tool.injection
+
+A new event (2026-10-05), sent when the injection screen withheld passages of a tool result before the model read it: `{ tool, withheld, passages, chars, source, excerpts }`. `withheld` passages of `passages` were withheld, `chars` characters in all; `source` is `judge` when the judge decided at least one of them, `rules` when only the injection phrases did (the judge gave no answer). `excerpts` are up to three of the withheld passages, cut to 160 characters, for the person to see what was kept from the model; they are page text, data, never instructions. Nothing is sent when nothing was withheld, or in shadow.
+
 ## judge.notice
 
 A new event (2026-10-05) about where the judge's questions go: `{ code, reason?, message }`. `message` is the line the terminal shows, already in Chinese or English; the same line is sent with `notify` right after, so an app that words the notice by its code can drop that line.

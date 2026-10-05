@@ -62,6 +62,7 @@ export function registerCompletion(runtime: KyrnRuntime): void {
 			const decision = await within(runtime.engine.decide(turnCompletion, input), options.waitMs);
 			if (decision?.source !== "judge" || decision.outcome !== "nudge") return undefined;
 			turn.nudgedForCompletion = true;
+			runtime.nudgedEnds.add(event);
 			const said: string[] = [];
 			if (unverified) {
 				said.push(
