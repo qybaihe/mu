@@ -171,6 +171,8 @@ export class McpServerConnection implements McpToolCaller, McpResourceServer {
 	/** Last OAuth challenge from the server; sign-in uses its resource metadata URL and scope. */
 	challenge: OAuthChallenge | undefined;
 	private client: McpClient | undefined;
+	/** mu: the client of a connect still in progress, so close() stops its server too. */
+	private connecting: McpClient | undefined;
 	private opening: Promise<McpClient> | undefined;
 	private closed = false;
 	/** Stderr of the last stdio server that failed to connect. */
@@ -381,6 +383,7 @@ export class McpServerConnection implements McpToolCaller, McpResourceServer {
 		const log = this.log;
 		if (log) client.onNotification("notifications/message", (params) => log.write(this.entry.name, params));
 		let transport: McpTransport | undefined;
+		this.connecting = client;
 		try {
 			transport = this.createTransport(this.entry, this.cwd, this.authProvider);
 			await client.connect(transport);
@@ -417,6 +420,8 @@ export class McpServerConnection implements McpToolCaller, McpResourceServer {
 				this.stderrTail = transport.stderr.trim().slice(-STDERR_TAIL_CHARS) || undefined;
 			}
 			throw error;
+		} finally {
+			if (this.connecting === client) this.connecting = undefined;
 		}
 	}
 
@@ -469,6 +474,8 @@ export class McpServerConnection implements McpToolCaller, McpResourceServer {
 		const client = this.client;
 		this.client = undefined;
 		await client?.close().catch(() => undefined);
+		// mu: a server still starting would otherwise run on until its initialize request times out.
+		await this.connecting?.close().catch(() => undefined);
 		// A refresh the server already answered may have rotated the refresh token; exiting before the
 		// new tokens are saved would lose the grant.
 		await this.authProvider?.settled();

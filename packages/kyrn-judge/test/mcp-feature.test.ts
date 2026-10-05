@@ -226,9 +226,10 @@ describe("MCP servers in the capability catalog", () => {
 		expect(JSON.stringify([results, events, harness.sessionManager.getEntries()])).not.toContain(SECRET);
 	});
 
-	it("gives up on a server that does not answer, and lets it be opened again later", async () => {
+	it("gives up on a server that does not answer, and stops its process", async () => {
+		const startsFile = join(home().home, "starts");
 		const { harness, events } = await start({
-			servers: { stuck: fake("--hang-on-start") },
+			servers: { stuck: fake("--hang-on-start", "--starts-file", startsFile) },
 			features: { mcp: { startTimeoutMs: 1000 } },
 		});
 		harness.setResponses([
@@ -239,6 +240,17 @@ describe("MCP servers in the capability catalog", () => {
 		expect(toolResults(harness)[0]).toContain("did not answer within 1 s");
 		expect(kinds(events, "mcp.failed")).toEqual([expect.objectContaining({ id: "mcp:stuck", code: "timeout" })]);
 		expect(mcpTools(harness)).toEqual([]);
+		// Not left running until its initialize request times out (on Windows it would also hold the folder).
+		const pid = Number(readFileSync(startsFile, "utf8").trim());
+		const running = () => {
+			try {
+				process.kill(pid, 0);
+				return true;
+			} catch {
+				return false;
+			}
+		};
+		await vi.waitFor(() => expect(running()).toBe(false), { timeout: 10_000, interval: 100 });
 	});
 
 	it("starts a server without mu's environment, which holds model keys", async () => {
