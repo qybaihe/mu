@@ -497,7 +497,7 @@ describe('one revision over the three files', () => {
     using(fixture(handWritten, { defaultModel: 'a' }), (f) => {
       const old = f.store.read();
       writeFileSync(join(f.dir, name), name === 'models.json' ? '{"providers":{}}' : '{"tiers":["mock"]}');
-      expect(() => f.store.save({ ...old, mode: 'active' })).toThrow('Configuration changed');
+      expect(() => f.store.save({ ...old, mode: 'shadow' })).toThrow('Configuration changed');
       // The rejected save wrote nothing: no `modes` anywhere.
       for (const file of ['mu.json', 'settings.json', 'models.json'])
         if (existsSync(join(f.dir, file))) expect(readFileSync(join(f.dir, file), 'utf8')).not.toContain('modes');
@@ -506,7 +506,7 @@ describe('one revision over the three files', () => {
   it('writes only the files a save changes', () => {
     using(fixture(handWritten, { defaultModel: 'a' }), (f) => {
       const before = ['models.json', 'settings.json'].map((name) => readFileSync(join(f.dir, name), 'utf8'));
-      f.store.save({ ...f.store.read(), mode: 'active' });
+      f.store.save({ ...f.store.read(), mode: 'shadow' });
       expect(['models.json', 'settings.json'].map((name) => readFileSync(join(f.dir, name), 'utf8'))).toEqual(before);
       expect(existsSync(join(f.dir, 'mu.json'))).toBe(true);
     });

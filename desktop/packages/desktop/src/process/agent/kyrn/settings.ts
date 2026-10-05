@@ -155,14 +155,14 @@ export class SettingsStore {
     }
     for (const name of classifierVariables) keys[name] = hasVariable(name, env);
     const compression = asRecord(config.features).compaction;
-    const mode = text(asRecord(config.modes).default) || 'shadow';
+    const mode = text(asRecord(config.modes).default) || 'active';
     const manifest = harness.status === 'ok' ? harness.manifest : undefined;
     const features = manifest ? readFeatures(manifest, config) : {};
     return {
       revision: files.revision,
       tiers: array(config.tiers).length ? array(config.tiers).map(text) : ['jev'],
       judges,
-      mode: (modes.has(mode) ? mode : 'shadow') as DecisionMode,
+      mode: (modes.has(mode) ? mode : 'active') as DecisionMode,
       keys,
       betaCompression: compression === true || asRecord(compression).enabled === true,
       autoCompaction: compaction.enabled !== false,

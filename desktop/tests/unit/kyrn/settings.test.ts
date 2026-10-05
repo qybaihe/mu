@@ -309,13 +309,13 @@ describe('the rename from KYRN to mu', () => {
   it('keeps saving to kyrn.json while that is the only file, and follows it once it is renamed', () => {
     const f = fixture();
     try {
-      f.store.save({ ...f.store.read(), mode: 'active' });
+      f.store.save({ ...f.store.read(), mode: 'shadow' });
       expect(existsSync(join(f.dir, 'mu.json'))).toBe(false);
-      expect(JSON.parse(readFileSync(join(f.dir, 'kyrn.json'), 'utf8')).modes.default).toBe('active');
+      expect(JSON.parse(readFileSync(join(f.dir, 'kyrn.json'), 'utf8')).modes.default).toBe('shadow');
 
       // The one-time move of the home renames the file. The same store follows it without a restart.
       renameSync(join(f.dir, 'kyrn.json'), join(f.dir, 'mu.json'));
-      expect(f.store.read().mode).toBe('active');
+      expect(f.store.read().mode).toBe('shadow');
       f.store.save({ ...f.store.read(), mode: 'off' });
       expect(JSON.parse(readFileSync(join(f.dir, 'mu.json'), 'utf8')).modes.default).toBe('off');
       expect(existsSync(join(f.dir, 'kyrn.json'))).toBe(false);

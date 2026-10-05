@@ -66,8 +66,8 @@ describe('the harness manifest', () => {
         expect(read.decisionModes).toEqual({});
         expect(read.features).toEqual({});
         // The basic settings still save, and what the manifest would have described is left alone.
-        f.store.save({ ...read, mode: 'active' });
-        expect(f.file()).toEqual({ modes: { 'tool.risk': 'active', default: 'active' }, features: { hive: false } });
+        f.store.save({ ...read, mode: 'shadow' });
+        expect(f.file()).toEqual({ modes: { 'tool.risk': 'active', default: 'shadow' }, features: { hive: false } });
         expect(() => f.store.save({ ...f.store.read(), features: { hive: { enabled: true, options: {} } } })).toThrow(
           'does not describe'
         );
@@ -296,13 +296,13 @@ describe('what a save leaves alone', () => {
       const swarm = { ...read.features.swarm, options: { ...read.features.swarm.options, concurrency: 5 } };
       f.store.save({
         ...read,
-        mode: 'active',
+        mode: 'shadow',
         decisionModes: { 'tool.risk': 'active' },
         features: { ...read.features, swarm },
       });
       expect(f.file()).toEqual({
         ...config,
-        modes: { default: 'active', 'tool.risk': 'active' },
+        modes: { default: 'shadow', 'tool.risk': 'active' },
         features: { hive: { maxBees: 4 }, swarm: { concurrency: 5 } },
       });
     });
@@ -312,10 +312,10 @@ describe('what a save leaves alone', () => {
       const before = readFileSync(join(f.dir, 'mu.json'), 'utf8');
       f.store.save(f.store.read());
       expect(readFileSync(join(f.dir, 'mu.json'), 'utf8')).toBe(before);
-      f.store.save({ ...f.store.read(), mode: 'active' });
+      f.store.save({ ...f.store.read(), mode: 'shadow' });
       // Tabs, as the file had them, and no `judges` block full of defaults.
       expect(readFileSync(join(f.dir, 'mu.json'), 'utf8')).toBe(
-        '{\n\t"tiers": [\n\t\t"jev"\n\t],\n\t"modes": {\n\t\t"default": "active"\n\t}\n}\n'
+        '{\n\t"tiers": [\n\t\t"jev"\n\t],\n\t"modes": {\n\t\t"default": "shadow"\n\t}\n}\n'
       );
     });
   });
