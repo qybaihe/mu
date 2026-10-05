@@ -1,102 +1,165 @@
-# Contributing to pi
+# Contributing to mu
 
-This guide exists to save both sides time.
+Thank you for helping. Bug reports, fixes, new decision points, measurements of judges, translations and documentation are all welcome, from anyone, in English or Chinese.
 
-## Philosophy
+> **中文简介**：欢迎用中文提 issue 和 PR。报 bug 请用 Bug 模板，写清版本、系统和复现步骤；想加功能或新判定点，先开 issue 讨论；提交前在本地跑 `npm run check` 和 `./test.sh`（改了桌面端再跑 `desktop/` 里的检查），PR 模板里的清单逐条确认即可。下面是完整说明。
 
-First things first: **pi's core is minimal**.
+## Contents
 
-If your feature does not belong in the core, it should be an extension. PRs that bloat the core will likely be rejected.
+- [Ways to contribute](#ways-to-contribute)
+- [Ground rules](#ground-rules)
+- [The repository](#the-repository)
+- [Setting up](#setting-up)
+- [Checks and tests](#checks-and-tests)
+- [Code style](#code-style)
+- [Commits and pull requests](#commits-and-pull-requests)
+- [Larger changes](#larger-changes)
+- [Dependencies](#dependencies)
+- [Upstream: pi and AionUi](#upstream-pi-and-aionui)
+- [License of contributions](#license-of-contributions)
 
-Pi's core exists to be minimal and to be extensible so that it can be influenced and manipulated by extensions.  Even hook points for extensions however should be well considered and discussed to avoid adding unmaintainable bloat and complex interactions.
+## Ways to contribute
 
-## The One Rule
+- **Report a bug** with the [bug report form](https://github.com/qybaihe/mu/issues/new?template=bug_report.yml). A short report with the version, the platform and the steps to reproduce it is worth more than a long one.
+- **Propose a feature** with the [feature request form](https://github.com/qybaihe/mu/issues/new?template=feature_request.yml), or a **new decision point** with the [decision point form](https://github.com/qybaihe/mu/issues/new?template=decision_point.yml).
+- **Fix something.** Issues labelled [`good first issue`](https://github.com/qybaihe/mu/labels/good%20first%20issue) and [`help wanted`](https://github.com/qybaihe/mu/labels/help%20wanted) are a good start. Say in the issue that you are on it, so two people do not do the same work.
+- **Measure a judge.** Run a decision point in `shadow` with another judge and compare the ledgers (`mu ledger --json`). Numbers on real sessions are the most useful thing a judge change can come with.
+- **Translate.** The desktop app speaks 13 languages and the README five; see [docs/translations.md](docs/translations.md).
+- **Improve the documentation** in [docs/](docs/README.md). Small fixes can go straight to a pull request.
+- **Ask and answer** in [Discussions](https://github.com/qybaihe/mu/discussions).
 
-**You must understand your code.** If you cannot explain what your changes do and how they interact with the rest of the system, your PR will be closed.
+Security problems are not reported in public issues: see [SECURITY.md](SECURITY.md).
 
-Using AI to write code is fine. Submitting AI-generated slop without understanding it is not.
+## Ground rules
 
-If you use an agent, run it from the `pi` root directory so it picks up `AGENTS.md` automatically. Your agent must follow the rules and guidelines in that file.
+- **Understand your change.** If you cannot explain what your change does and how it interacts with the rest of mu, it will not be merged. Using AI to write code or text is fine; sending what you have not read and understood is not. When an AI wrote most of an issue or a pull request description, say so in one line.
+- **Keep it small and focused.** One fix or one feature per pull request. A refactor that a fix needs goes in its own commit.
+- **Behaviour comes with tests.** A fix comes with a test that fails without it; a feature with tests of what it does. Reference the issue next to a regression test (`// https://github.com/qybaihe/mu/issues/7`).
+- **Be kind.** Everyone here follows the [Code of Conduct](CODE_OF_CONDUCT.md).
 
-## Contribution Gate
+## The repository
 
-All issues and PRs from new contributors are auto-closed by default.
+mu is a fork of [pi](https://github.com/earendil-works/pi)'s monorepo with a judgment kernel added, plus a desktop app built on [AionUi](https://github.com/iOfficeAI/AionUi).
 
-Issues submitted Friday through Sunday are not guaranteed to be reviewed.  If something is urgent, ask on Discord: https://discord.com/invite/3cU7Bz4UPx
+| Path | What is there |
+| --- | --- |
+| `packages/kyrn-judge/` | The judgment kernel: decision points (`src/decisions/`), the features that ask them (`src/extension/features/`), judges (`src/providers/`), the ledger, the settings manifest (`src/manifest.ts`, `i18n/manifest.json`, generated `manifest.json`) |
+| `packages/coding-agent/`, `packages/ai/`, `packages/agent/`, `packages/tui/`, … | pi's packages: the agent, providers and models, the terminal UI. mu keeps changes here small and marked, so pi can be merged in |
+| `kyrn/bin/mu.mjs` | The `mu` launcher: `mu setup`, `mu doctor`, `mu import`, and starting pi with the kernel |
+| `kyrn/npm/` | The `mu-agent` npm package and its [changelog](kyrn/npm/CHANGELOG.md) |
+| `kyrn/local-judge/` | Laya, the local judge's sidecar |
+| `kyrn/docs/` | Design notes and measurements, mostly in Chinese |
+| `desktop/` | The desktop app (Electron); mu's parts are under `desktop/packages/desktop/src/**/kyrn/` and `KyrnPanel/` |
+| `docs/` | User and contributor documentation |
 
-Maintainers review auto-closed issues daily and reopen worthwhile ones. Issues that do not meet the quality bar below will not be reopened or receive a reply.
+Both "kyrn" and "mu" appear in names: the project was called KYRN until 2026-09-21. New code says mu where a name is visible to users.
 
-Approval happens through maintainer replies on issues:
+## Setting up
 
-- `lgtmi`: your future issues will not be auto-closed
-- `lgtm`: your future issues and PRs will not be auto-closed
-
-The command must be at the start of the reply (optionally after one or more `@username` mentions) or at the end. `lgtmi` does not grant rights to submit PRs. Only `lgtm` grants rights to submit PRs.
-
-## Quality Bar For Issues
-
-If you open an issue, you must use one of the two GitHub issue templates.
-
-If you open an issue, keep it short, concrete, and worth reading.
-
-- Keep it concise. If it does not fit on one screen, it is too long.
-- Write in your own voice (do not use an LLM to generate text, if you must, follow up with a clearly AI labeled comment).
-- State the bug or request clearly.
-- Explain why it matters.
-- If you want to implement the change yourself, say so.
-
-If the issue is real and written well, a maintainer may reopen it or reply with `lgtmi` or `lgtm` in the command position described above.
-
-## Blocking
-
-If you ignore this document twice, or if you spam the tracker with agent-generated issues, your GitHub account will be permanently blocked.
-
-If you send a large volume of issues through automation, your GitHub account will be permanently blocked. No taksies backsies.
-
-## Before Submitting a PR
-
-Do not open a PR unless you have already been approved by a maintainer using `lgtm` in the command position described above.
-
-Before submitting a PR:
+You need Node.js 22.19 or newer (CI uses Node 24) and, for the desktop app, [Bun](https://bun.sh).
 
 ```bash
-npm run check
-./test.sh
+git clone https://github.com/qybaihe/mu.git
+cd mu
+npm install --ignore-scripts
+node kyrn/bin/mu.mjs          # mu from this checkout; Node runs the TypeScript directly
 ```
 
-Both must pass.
+To try your build as `mu` everywhere, `node kyrn/bin/mu.mjs link` puts a `mu` command on your PATH that runs this checkout (`mu unlink` removes it).
 
-Do not edit `CHANGELOG.md`. Changelog entries are added by maintainers.
+The desktop app runs against the mu in the same checkout:
 
-If you are adding a new provider to `packages/ai`, see `AGENTS.md` for required tests.
+```bash
+cd desktop
+bun install
+KYRN_ROOT="$(cd .. && pwd)" bun run start
+```
 
-## Questions?
+A first start without a model asks for one (`mu setup`). With no Jev key set, the free Jev on OpenCode Zen answers the judge's questions; see [docs/judges.md](docs/judges.md).
 
-Ask on [Discord](https://discord.com/invite/nKXTsAcmbT).
+## Checks and tests
 
-## FAQ
+Run these before you open a pull request. CI runs the same, on Linux, and the kernel's and the app's unit tests on Windows too.
 
-### Why are new issues and PRs auto-closed?
+```bash
+npm run check      # formatting, lint and types for everything outside desktop/
+./test.sh          # unit tests; tests that need a model or a key are skipped without one
+```
 
-pi receives more issues than the maintainers can responsibly review in real time. Many reports do not meet the quality bar in this guide or do not follow CONTRIBUTING.md. Some are slung at the repository mindlessly via an agent instead of being reviewed and shaped by the person submitting them. Auto-closing creates a buffer so maintainers can review the tracker on their own schedule and reopen the issues that meet the quality bar.
+One test file, from its package:
 
-### Why are weekend issues lower priority?
+```bash
+cd packages/kyrn-judge
+node ../../node_modules/vitest/dist/cli.js --run test/injection.test.ts
+```
 
-We triage the tracker during working hours. That means more issues can accumulate over the weekend. Anything submitted Friday through Sunday may be missed or given lower priority in the Monday review queue. If a problem is urgent, ask on Discord and include the short version, a repro, and the relevant logs.
+If your shell has provider keys set (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY` and the like), unset them for test runs: some end-to-end tests turn on when a key is present and would call a real model.
 
-### Why do some issues get no reply?
+Tests of the kernel use the mock judge (`MockJudgeProvider`, which answers what the test scripts and a neutral 0.5 otherwise) and pi's test harness (`packages/coding-agent/test/suite/harness.ts`) with its faux model, so they need no network and no key.
 
-A reply is maintenance work too. Low-signal issues, unclear reports, duplicates, and issues that do not follow this guide may be closed without discussion. This keeps time available for reproducible bugs, thoughtful requests, and contributors who have done the work to make their report actionable.
+For the desktop app:
 
-### Why not let AI triage everything?
+```bash
+cd desktop
+bun run lint
+bun run format:check
+node scripts/check-i18n.js
+bunx tsc --noEmit
+bunx vitest run
+```
 
-AI can help group duplicates, summarize reports, and spot missing information. It is not trusted to make final maintainer decisions. Polished AI-generated issues can still be wrong, misleading, or expensive to investigate. Human review remains the final gate.
+## Code style
 
-### Is this hostile to contributors?
+`npm run check` enforces most of it. Beyond that:
 
-No. It is a guardrail against burnout and tracker spam. Short, concrete, reproducible issues are welcome. Thoughtful contributions are welcome. Automated slop, entitlement, and large volumes of low-effort reports are not.
+- TypeScript that Node can run by stripping types: no `enum`, `namespace`, parameter properties or `import =`. No `any` unless there is no other way. Imports at the top of the file only.
+- Comments say why, not what. Names and messages in plain words.
+- Text users see in the kernel comes in Chinese and English (`say({ zh, en })`). Text the desktop app shows is an i18n key, in every one of its 13 languages ([docs/translations.md](docs/translations.md)).
+- A key binding is never hard-coded: add it to the defaults, so it stays configurable.
+- Decision points never make the model ask the user: a verdict changes what the model does, not whether it asks.
 
-## Where can I learn about plans?
+[AGENTS.md](AGENTS.md) holds the full rules for this monorepo; coding agents read it automatically, and it applies to people too.
 
-Earendil uses RFCs to discuss larger changes.  Not all of them are public, but
-quite a few are.  They can be found at [rfc.earendil.com](https://rfc.earendil.com/keyword/pi/).
+## Commits and pull requests
+
+Commit messages follow `type(scope): summary`:
+
+- type: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
+- scope: `coding-agent` (the harness and the kernel), `desktop`, `ai`, `agent`, `tui`, or none
+- summary: what changes for a user, in the present tense, without a trailing period
+
+```
+fix(coding-agent): sub-agent status before the first snapshot fits a narrow terminal
+```
+
+Put `fixes #123` in the body to close an issue when the change is merged.
+
+Pull requests:
+
+1. Fork, branch from `main`, commit.
+2. Fill in the template: what changed, why, how you checked it.
+3. CI must pass. A first-time contributor's CI runs after a maintainer approves them, usually within a day.
+4. A maintainer reviews. Small follow-ups may be pushed by the maintainer, on your branch or right after the merge.
+5. Pull requests are squash-merged, so the title becomes the commit message.
+
+Do not edit the changelogs: maintainers write them when they prepare a release.
+
+## Larger changes
+
+Open an issue before you start on anything that adds a feature, a setting, a decision point or a dependency, or that changes how mu talks to models or stores data. A short description of the problem and the approach saves rework on both sides.
+
+A new decision point needs a question a small judge can answer from a small state, a safe fallback for when no judge answers, tests with the mock judge, settings text and desktop labels. [docs/adding-a-decision-point.md](docs/adding-a-decision-point.md) walks through all of it.
+
+## Dependencies
+
+- Direct dependencies are pinned to exact versions, and lockfile changes are reviewed like code.
+- Install with `npm install --ignore-scripts`: lifecycle scripts do not run unless a maintainer decides they must.
+- A dependency with an install script needs an explicit allowlist entry (`scripts/generate-coding-agent-install-lock.mjs`).
+
+## Upstream: pi and AionUi
+
+mu merges pi's releases regularly. A bug that is also in pi is best fixed in [pi](https://github.com/earendil-works/pi) first (mention it in your mu issue); one in the desktop shell that AionUi shares can go to [AionUi](https://github.com/iOfficeAI/AionUi). Such issues get the `upstream` label.
+
+## License of contributions
+
+By contributing you agree that your contribution is licensed under the license of the part of the repository it changes: MIT for everything outside `desktop/` ([LICENSE](LICENSE)), Apache 2.0 for `desktop/` ([desktop/LICENSE](desktop/LICENSE)).

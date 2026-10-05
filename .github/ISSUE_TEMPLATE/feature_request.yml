@@ -1,0 +1,43 @@
+name: Feature request
+description: Suggest a change or a new feature. 功能建议。
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem first: what you are trying to do, and what gets in the way. A good problem statement often leads to a better solution than the first one that comes to mind. For a new decision point, use the decision point form instead.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do, and what gets in the way today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you propose
+      description: How it could work, from a user's point of view.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Other ways you considered, or how you work around it now.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: help
+    attributes:
+      label: Would you like to implement it?
+      options:
+        - "Yes, I would like to send a pull request"
+        - "Maybe, with some guidance"
+        - "No"
+    validations:
+      required: true

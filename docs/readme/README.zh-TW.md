@@ -9,6 +9,9 @@
   <a href="https://github.com/qybaihe/mu/actions/workflows/ci.yml"><img src="https://github.com/qybaihe/mu/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/qybaihe/mu/actions/workflows/desktop.yml"><img src="https://github.com/qybaihe/mu/actions/workflows/desktop.yml/badge.svg" alt="Desktop app"></a>
   <a href="https://www.npmjs.com/package/mu-agent"><img src="https://img.shields.io/npm/v/mu-agent?label=mu-agent" alt="npm"></a>
+  <a href="https://github.com/qybaihe/mu/releases"><img src="https://img.shields.io/github/v/release/qybaihe/mu?include_prereleases&label=desktop" alt="Desktop release"></a>
+  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-MIT%20%2B%20Apache--2.0-blue" alt="License"></a>
+  <a href="https://github.com/qybaihe/mu/discussions"><img src="https://img.shields.io/github/discussions/qybaihe/mu?label=discussions" alt="Discussions"></a>
 </p>
 
 <p align="center">
@@ -22,6 +25,22 @@
 - **Jev**：判定器。是非題、選擇題、評分題，每個答案帶機率，每一次判定都記進判定帳本。本機判定器（Laya）或任何一個大模型都可以接管某個判定點。
 
 > 還在早期開發。預發布版（0.1.x）在 npm 和 [Releases](https://github.com/qybaihe/mu/releases) 上，作者每天都在用。名稱、設定和格式都可能改變。
+
+**目錄：**[快速開始](#快速開始) · [一輪是怎麼走的](#一輪是怎麼走的) · [判定點](#判定點) · [判定器](#判定器) · [實測](#實測) · [蜂群](#蜂群) · [人話看板](#人話看板) · [桌面版](#桌面版) · [命令列](#命令列) · [文件](#文件) · [參與貢獻](#參與貢獻)
+
+## 快速開始
+
+**桌面版。** 從 [Releases](https://github.com/qybaihe/mu/releases/latest) 下載 macOS、Windows 或 Linux 安裝檔，開啟後貼上一組 API 金鑰，或用 ChatGPT、Claude、Grok、Google 訂閱登入。不需要再安裝其他東西。
+
+**命令列。**
+
+```bash
+npm i -g mu-agent   # Node.js 22.19 或更新版本
+mu setup            # 接上一個模型
+mu                  # 在目前目錄開一個工作階段
+```
+
+開始使用不需要判定器的金鑰：設定之前，由 OpenCode Zen 上免費的 Jev 回答。全新安裝時，所有判定點都是 shadow：只記錄判定器會怎麼做，不會真的改變行為，方便你先看它的判定（`/status`、`mu ledger`、桌面版的判定分頁）；在桌面版設定裡把預設模式改成 `active`，或在 `~/.mu/agent/mu.json` 寫入 `{"modes": {"default": "active"}}`，判定才會生效。更多請見 [Getting started](../getting-started.md)（英文）。
 
 ## 一輪是怎麼走的
 
@@ -43,7 +62,7 @@
 
 ## 判定點
 
-每個判定點可以是 `active`（生效）、`shadow`（照常提問並記錄，但不改變任何行為，用來在開啟之前比較判定器）或 `off`（關閉），也可以指定自己的判定器：`jev`、`laya`（本機）、`classifier:<provider>/<model>`、`llm:<provider>/<model>`，或 `laya,jev` 這樣的串接。
+每個判定點可以是 `active`（生效）、`shadow`（照常提問並記錄，但不改變任何行為，用來在開啟之前比較判定器）或 `off`（關閉），也可以指定自己的判定器：`jev`、`laya`（本機）、`classifier:<provider>/<model>`、`llm:<provider>/<model>`，或 `laya,jev` 這樣的串接。全新安裝時預設是 `shadow`。
 
 **輸入**
 
@@ -107,6 +126,8 @@
 | `hive.publish` | 一隻 bee 的發現值得上共享板嗎？ | 發布，或自己留著 |
 | `hive.deliver` | 板上的一條筆記和這隻 bee 的工作有關嗎？ | 有關才投遞 |
 | `hive.relate` | 一條新發現推翻、矛盾還是支持了早先的某一條？ | 更正和爭議送到拿著舊筆記的 bee 那裡 |
+
+每個判定點對應的功能開關和選項：[docs/reference/decision-points.md](../reference/decision-points.md)（英文）。
 
 ## 判定器
 
@@ -245,20 +266,35 @@ pi 自己的指令（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`
 
 金鑰只留在本機。mu 不會自己下載任何模型或執行環境；需要下載的東西都會先問你。判定器只看得到一個問題所需的欄位（沒設金鑰時，這些欄位送到 OpenCode Zen 上免費的 Jev；用 `MU_JUDGE=off` 或 Laya 就全部留在本機）；每一次判定都記錄在本機，你全都看得到。
 
-## 開發
+## 文件
+
+- [Getting started](../getting-started.md) · [設定](../configuration.md) · [判定器](../judges.md) · [疑難排解](../troubleshooting.md)（英文）
+- 參考：[所有判定點](../reference/decision-points.md) · [所有功能和選項](../reference/features.md) · [更新紀錄](../../CHANGELOG.md)
+- 給貢獻者：[mu 如何運作](../architecture.md) · [新增一個判定點](../adding-a-decision-point.md) · [翻譯](../translations.md)
+
+## 參與貢獻
+
+歡迎回報 bug、修 bug、提出新的判定點、評測判定器、協助翻譯，中文或英文都可以。請先看 [CONTRIBUTING.md](../../CONTRIBUTING.md)；標記 [`good first issue`](https://github.com/qybaihe/mu/labels/good%20first%20issue) 的 issue 適合入門。
 
 ```bash
 npm install --ignore-scripts   # 安裝相依套件，不執行生命週期指令碼
+node kyrn/bin/mu.mjs           # 從這份程式碼啟動 mu
 npm run check                  # 格式、靜態檢查、型別
 ./test.sh                      # 測試（沒有金鑰時跳過需要模型的測試）
 ```
 
-桌面版在 `desktop/`：`bun install`，然後 `KYRN_ROOT="$(cd .. && pwd)" bun run start` 啟動開發版，它會使用儲存庫裡的 mu（先在根目錄執行 `npm install`）。儲存庫結構和貢獻規則：[AGENTS.md](../../AGENTS.md)。
+桌面版在 `desktop/`：`bun install`，然後 `KYRN_ROOT="$(cd .. && pwd)" bun run start` 啟動開發版，它會使用儲存庫裡的 mu（先在根目錄執行 `npm install`）。
+
+所有參與者都遵守[行為準則](../../CODE_OF_CONDUCT.md)。安全問題請依 [SECURITY.md](../../SECURITY.md) 私下回報。
 
 ## 來源與授權
 
-mu 以 [pi](https://github.com/earendil-works/pi)（程式設計代理，MIT；根目錄的 [LICENSE](../../LICENSE) 涵蓋 `packages/` 和 `kyrn/`）和 [AionUi](https://github.com/iOfficeAI/AionUi)（桌面版，Apache 2.0；`desktop/` 保留它的 [LICENSE](../../desktop/LICENSE)）為基礎改造，感謝這兩個專案。判定核心用到的第三方程式碼列在 [THIRD_PARTY_NOTICES.md](../../packages/kyrn-judge/THIRD_PARTY_NOTICES.md)。
+mu 以 [pi](https://github.com/earendil-works/pi)（程式設計代理，MIT；根目錄的 [LICENSE](../../LICENSE) 涵蓋 `packages/` 和 `kyrn/`）和 [AionUi](https://github.com/iOfficeAI/AionUi)（桌面版，Apache 2.0；`desktop/` 保留它的 [LICENSE](../../desktop/LICENSE)）為基礎改造，感謝這兩個專案。有幾個判定點參考了其他專案：提示注入篩檢的問法來自 [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills)，續跑檢查和批次判定工具參考了 [oh-my-pi](https://github.com/can1357/oh-my-pi)。判定核心用到的第三方程式碼列在 [THIRD_PARTY_NOTICES.md](../../packages/kyrn-judge/THIRD_PARTY_NOTICES.md)。
 
 ## 社群支援
 
-問題和建議：[GitHub Issues](https://github.com/qybaihe/mu/issues)。討論（簡體中文）：[linux.do](https://linux.do)。
+- 提問和想法：[Discussions](https://github.com/qybaihe/mu/discussions)；中文討論（簡體中文）也可以到 [linux.do](https://linux.do)。
+- bug 和需求：[Issues](https://github.com/qybaihe/mu/issues/new/choose)。
+- 更多：[SUPPORT.md](../../SUPPORT.md)。
+
+如果 mu 對你有幫助，給個 star 能讓更多人看到它。

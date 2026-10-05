@@ -1,87 +1,61 @@
-# Security Policy
+# Security policy
 
-This document should guide you about understanding the security concept behind
-Pi and also where the boundaries are.
+## Reporting a vulnerability
 
-In general Pi is a coding agent that runs locally within the security boundary
-of the user that is running it.  It's the responsibility of the user to monitor
-its operations or to contain it within a container, virtual machine or other
-Sandbox solution.
+Please report security problems **privately**, through the repository's [private report form](https://github.com/qybaihe/mu/security/advisories/new) (Security → Report a vulnerability). Only the maintainers can read it. Do not open a public issue, pull request or discussion about it.
 
-Pi treats the local user account and files writable by that account as inside
-the same trust boundary as the Pi process itself.  If an attacker can modify files
-under the user's home directory, workspace, shell startup files, environment, or
-Pi configuration, they can generally influence Pi or other local developer tools.
-Reports that depend on such prior local write access are not security
-vulnerabilities unless they demonstrate how Pi grants that write access or crosses
-an operating-system privilege boundary.
+Include:
 
-Pi relies on users installing trustworthy extensions and loading trustworthy
-skills and only to use pi within trusted repositories.  This is because files
-like `AGENTS.md` or instructions in comments can be used to prompt inject the
-coding agent trivially and this cannot be protected against.
+- what an attacker can do, and what they need first;
+- steps to reproduce, a proof of concept or logs;
+- the version (`mu --version`, or the desktop app's About page), the platform, and the configuration that matters (permission mode, judges);
+- any mitigation you know of.
 
-## Reporting a Vulnerability
+mu is maintained by a small team. You can expect an acknowledgement within a few days and a first assessment within two weeks. We will agree on a disclosure date with you, credit you in the advisory unless you prefer not to be named, and publish a fixed release before the details.
 
-If you believe you found a security vulnerability in pi or another package in
-this repository, please report it privately by either:
+请通过仓库的[私密报告表单](https://github.com/qybaihe/mu/security/advisories/new)报告安全问题，不要公开发 issue。中文报告同样欢迎。
 
-- Emailing `security@earendil.com`, or
-- Opening a private report through GitHub Security Advisories for this repository
+## Supported versions
 
-Please include:
+mu is in pre-release (0.1.x). Fixes go into `main` and the next release; older releases are not patched. Please check that a problem exists on the latest release or on `main`.
 
-- A description of the issue and its impact
-- Steps to reproduce, proof of concept, or relevant logs
-- Affected package, version, commit, or configuration
-- Any known mitigations
+| Version | Supported |
+| --- | --- |
+| Latest 0.1.x release (desktop app and `mu-agent` on npm) | Yes |
+| `main` | Yes |
+| Earlier releases | No: update first |
 
-Do not open a public issue for security-sensitive reports.  We will review
-reports and coordinate disclosure as appropriate.
+## How mu draws its boundaries
 
-## Scope
+mu is a coding agent that runs on your machine, as you. Like pi, which it is built on, it treats your user account, your files and your configuration as inside one trust boundary: it can run commands and change files, and it is not a sandbox. Run it in a container or a virtual machine when you need isolation.
 
-Security issues in the distributed packages, command-line tools, APIs, and
-repository code are in scope as well as earendil operated infrastructure
-on `pi.dev`.
+On top of that, mu adds guards. They lower risk; they are not guarantees, and a report that one of them can be talked around is welcome but is judged by its impact:
 
-## Out Of Scope
+- **Permission modes.** *Full access*, *Jev approves* and *Minimal permissions* decide what runs without asking ([details](kyrn/docs/features/permissions.md)). Commands flagged by the risk rules (`rm -rf`, force pushes, `sudo`, running a downloaded script and others) are never allowed for a whole conversation, and calls that touch mu's own settings folder are asked about every time.
+- **Your constraints.** What you said not to do is checked before every call that changes something, in every mode.
+- **Prompt-injection screening.** Web pages, search results and MCP output are screened passage by passage (`tool.injection`); passages carrying instructions aimed at the AI are withheld from the model. A judge can miss one: this is defence in depth, not a filter you can rely on alone.
+- **Projects are untrusted by default.** MCP servers defined by a project are not started until you approve them, and a project cannot point the judge at an endpoint of its choosing.
+- **Secrets.** Keys stay on your machine. Credentials are masked before text reaches the judge, the board or a session title, `.env` and key files are kept out of checkpoints, and a key set for one judge service is never sent to another.
 
-- Local code execution or sandboxing behavior (the Pi coding agent intentionally does not have a sandbox)
-- Behavior of pi extensions or skills installed by the user
-- Risks from working in untrusted repositories
-- Risks from installing untrusted extensions, skills, packages, or tools
-- Isuses caused by non trustworthy MITM proxies
-- Public internet exposure of a Pi installation
-- Prompt injection attacks
-- Exposed secrets that are third-party/user-controlled credentials
-- Reports requiring the ability to create, modify, delete, or replace files,
-  directories, symlinks, environment variables, shell configuration, or other
-  user-controlled local state on the target machine. This includes `~/.pi`,
-  `~/.pi/agent/models.json`, workspace files, `AGENTS.md`, skills, extensions,
-  extension configuration, dotfiles, and files synchronized through NFS, roaming
-  profiles, or dotfile managers, unless the report shows how Pi itself grants
-  that access.
-- Issues caused by intentionally weakened user configuration.
-- Resource/DOS claims that require trusted local input/config against the pi coding agent.
-- Reports about malicious model output.
-- User-approved or user-initiated local actions presented as vulnerabilities.
+### What leaves your machine
 
-## Notes for Reporters
+- Your conversation goes to the model provider you chose, as with any coding agent.
+- The judge sees only the fields each question needs. With no judge key, those questions go to the free Jev on OpenCode Zen; with a key, to the service it belongs to. `MU_JUDGE=off`, or the local judge (Laya), keeps them on your machine.
+- Nothing is downloaded without your consent: the local judge's model, browser runtimes and app updates all ask first.
+- The desktop app sends no telemetry and no crash reports.
 
-The most useful reports show a current, reproducible security boundary bypass
-with demonstrated impact.  Reports that only show expected local-agent behavior,
-prompt injection, or a malicious trusted extension/skill are not security
-vulnerabilities under this model.
+## In scope
 
-For example, a report showing that malicious contents written to a trusted Pi
-configuration file cause Pi to execute commands, load attacker-controlled tools,
-send credentials to an attacker-controlled endpoint, or otherwise change behavior
-is out of scope.
+- The `mu` launcher and the judgment kernel (`kyrn/`, `packages/kyrn-judge/`), the `mu-agent` npm package and the desktop app (`desktop/`), as released here.
+- A way past a guard above that needs no prior write access to your machine: for example, a web page or an MCP result that makes mu run a command the permission mode should have asked about, or that gets a credential sent to a third party.
+- Leaks of credentials or conversation content to a party you did not choose.
+- The update and download paths of the desktop app.
 
-When possible, include the exact affected path, package version or commit SHA,
-configuration, and a proof of concept against the latest release or latest
-`main`.  For dependency reports, include evidence that the shipped dependency is
-affected and that the issue is reachable through Pi.  For exposed-secret reports,
-include evidence that the credential is owned by Earendil or grants access to
-Earendil-operated infrastructure or services.
+## Out of scope
+
+- Behaviour that needs an attacker to already write to your home directory, your shell configuration, mu's settings (`~/.mu`), the project's files you chose to trust, or the environment.
+- Commands you allowed, or that full access lets run, doing what they do.
+- A model or a judge simply being wrong, without a boundary being crossed.
+- Extensions, skills, packages and MCP servers you installed or approved yourself.
+- Vulnerabilities in pi or AionUi that mu does not change: please report those [to pi](https://github.com/earendil-works/pi/security) or [to AionUi](https://github.com/iOfficeAI/AionUi/security) as well; we will take their fixes.
+- Third-party services (model providers, TypeSafe, OpenCode, Cloudflare).

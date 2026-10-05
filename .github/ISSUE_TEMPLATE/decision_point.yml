@@ -1,0 +1,49 @@
+name: Decision point proposal
+description: A call the judge could make that mu leaves to the big model or to a fixed rule today. 新判定点提案。
+labels: ["decision point", "enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A decision point is one short question a small, fast judge answers about a small state, and an effect the answer has. Good candidates come up often, cost the big model attention or tokens, and are hard to get right with a fixed rule. See [docs/adding-a-decision-point.md](https://github.com/qybaihe/mu/blob/main/docs/adding-a-decision-point.md) and the [existing points](https://github.com/qybaihe/mu/blob/main/docs/reference/decision-points.md).
+
+  - type: textarea
+    id: moment
+    attributes:
+      label: When it is asked
+      description: The moment in a turn, and how often (each message, each tool result, at the end of a run…).
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: The question
+      description: Yes/no, a choice between named answers, or a score. Write it as the judge would read it.
+      placeholder: "Does `final_message` say the assistant will now act, and then end without doing so?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: state
+    attributes:
+      label: What the judge reads
+      description: The fields of the state, and roughly how long they are. Smaller is better.
+    validations:
+      required: true
+
+  - type: textarea
+    id: effect
+    attributes:
+      label: The effect
+      description: What changes when the answer is yes (or each choice), and what happens when no judge answers. A verdict changes what the model does, never whether it asks the user.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Examples from real sessions, measurements, or prior art in other projects.
+    validations:
+      required: false

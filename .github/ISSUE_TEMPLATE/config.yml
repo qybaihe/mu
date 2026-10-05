@@ -1,5 +1,11 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Questions
-    url: https://discord.com/invite/3cU7Bz4UPx
-    about: Ask questions on Discord instead of opening an issue
+  - name: Questions and ideas
+    url: https://github.com/qybaihe/mu/discussions
+    about: Ask how to do something, or share an idea, in Discussions. 提问和想法请到 Discussions。
+  - name: Report a security problem
+    url: https://github.com/qybaihe/mu/security/advisories/new
+    about: Privately, never in a public issue. 安全问题请私密报告。
+  - name: Documentation
+    url: https://github.com/qybaihe/mu/blob/main/docs/README.md
+    about: Getting started, configuration, judges, troubleshooting.

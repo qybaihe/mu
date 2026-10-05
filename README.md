@@ -9,6 +9,9 @@
   <a href="https://github.com/qybaihe/mu/actions/workflows/ci.yml"><img src="https://github.com/qybaihe/mu/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/qybaihe/mu/actions/workflows/desktop.yml"><img src="https://github.com/qybaihe/mu/actions/workflows/desktop.yml/badge.svg" alt="Desktop app"></a>
   <a href="https://www.npmjs.com/package/mu-agent"><img src="https://img.shields.io/npm/v/mu-agent?label=mu-agent" alt="npm"></a>
+  <a href="https://github.com/qybaihe/mu/releases"><img src="https://img.shields.io/github/v/release/qybaihe/mu?include_prereleases&label=desktop" alt="Desktop release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT%20%2B%20Apache--2.0-blue" alt="License"></a>
+  <a href="https://github.com/qybaihe/mu/discussions"><img src="https://img.shields.io/github/discussions/qybaihe/mu?label=discussions" alt="Discussions"></a>
 </p>
 
 <p align="center">
@@ -22,6 +25,22 @@ A coding agent makes hundreds of decisions per session that are not about the co
 - **Jev**: the judge. Yes/no, choice and score questions, a probability per answer, every verdict in a ledger. A local judge (Laya) or any LLM can take a decision point instead.
 
 > Early development. Pre-releases (0.1.x) are on npm and under [Releases](https://github.com/qybaihe/mu/releases); its authors use it every day. Names, settings and formats may still change.
+
+**Contents:** [Quick start](#quick-start) · [A turn](#a-turn) · [Decision points](#decision-points) · [Judges](#judges) · [Measured](#measured) · [The hive](#the-hive) · [The board](#the-plain-language-board) · [Desktop app](#the-desktop-app) · [Command line](#command-line) · [Documentation](#documentation) · [Contributing](#contributing)
+
+## Quick start
+
+**Desktop app.** Download the installer for macOS, Windows or Linux from [Releases](https://github.com/qybaihe/mu/releases/latest), open it, and paste an API key or sign in with a ChatGPT, Claude, Grok or Google subscription. Nothing else to install.
+
+**Command line.**
+
+```bash
+npm i -g mu-agent   # Node.js 22.19 or newer
+mu setup            # connect a model
+mu                  # a session in the current directory
+```
+
+No judge key is needed to start: until you set one, the free Jev on OpenCode Zen answers. A fresh install runs every decision point in shadow, recording what the judge would do without acting on it, so you can read its verdicts first (`/status`, `mu ledger`, the app's judgments tab); set the default mode to `active` in the app's settings or with `{"modes": {"default": "active"}}` in `~/.mu/agent/mu.json` to let them take effect. More in [Getting started](docs/getting-started.md).
 
 ## A turn
 
@@ -43,7 +62,7 @@ Every name is a decision point. Each one is asked as a short question about a sm
 
 ## Decision points
 
-Each decision point is `active`, `shadow` (asked and logged, changes nothing: for comparing judges before switching one on) or `off`, and each can name its own judge: `jev`, `laya` (local), `classifier:<provider>/<model>`, `llm:<provider>/<model>`, or a cascade such as `laya,jev`.
+Each decision point is `active`, `shadow` (asked and logged, changes nothing: for comparing judges before switching one on; the default on a fresh install) or `off`, and each can name its own judge: `jev`, `laya` (local), `classifier:<provider>/<model>`, `llm:<provider>/<model>`, or a cascade such as `laya,jev`.
 
 **Input**
 
@@ -107,6 +126,8 @@ Each decision point is `active`, `shadow` (asked and logged, changes nothing: fo
 | `hive.publish` | Is a bee's finding worth the shared board? | Published, or kept to itself |
 | `hive.deliver` | Does a note on the board matter to this bee's work? | Delivered only then |
 | `hive.relate` | Does a new finding replace, contradict or support an earlier one? | Corrections and disputes reach the bees that hold the old note |
+
+Every point with its feature switch and options: [docs/reference/decision-points.md](docs/reference/decision-points.md).
 
 ## Judges
 
@@ -245,20 +266,35 @@ pi's own commands (`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`,
 
 Keys stay on this machine. mu never downloads a model or a runtime on its own; anything that needs a download asks first. The judge sees only the fields a question needs (with no key set, those go to OpenCode Zen's free Jev; `MU_JUDGE=off` or Laya keeps everything on the machine); every verdict is logged locally, and you can read them all.
 
-## Development
+## Documentation
+
+- [Getting started](docs/getting-started.md) · [Configuration](docs/configuration.md) · [Judges](docs/judges.md) · [Troubleshooting](docs/troubleshooting.md)
+- Reference: [every decision point](docs/reference/decision-points.md) · [every feature and option](docs/reference/features.md) · [Changelog](CHANGELOG.md)
+- For contributors: [How mu works](docs/architecture.md) · [Adding a decision point](docs/adding-a-decision-point.md) · [Translations](docs/translations.md)
+
+## Contributing
+
+Bug reports, fixes, new decision points, measurements of judges and translations are welcome, in English or Chinese. Start with [CONTRIBUTING.md](CONTRIBUTING.md); issues labelled [`good first issue`](https://github.com/qybaihe/mu/labels/good%20first%20issue) are a good way in.
 
 ```bash
 npm install --ignore-scripts   # dependencies, without lifecycle scripts
+node kyrn/bin/mu.mjs           # mu from this checkout
 npm run check                  # formatting, lint, types
 ./test.sh                      # tests (the ones that need a model are skipped without a key)
 ```
 
-The desktop app is in `desktop/`: `bun install`, then `KYRN_ROOT="$(cd .. && pwd)" bun run start` runs the development build against the mu in this repository (run `npm install` at the root first). Layout and contribution rules: [AGENTS.md](AGENTS.md).
+The desktop app is in `desktop/`: `bun install`, then `KYRN_ROOT="$(cd .. && pwd)" bun run start` runs the development build against the mu in this repository (run `npm install` at the root first).
+
+Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md). Security problems: report them privately, as [SECURITY.md](SECURITY.md) describes.
+
+## Community and support
+
+- Questions and ideas: [Discussions](https://github.com/qybaihe/mu/discussions). Discussion in Chinese also on [linux.do](https://linux.do).
+- Bugs and requests: [Issues](https://github.com/qybaihe/mu/issues/new/choose).
+- More: [SUPPORT.md](SUPPORT.md).
+
+If mu is useful to you, a star helps others find it.
 
 ## Credits and license
 
-mu is built on [pi](https://github.com/earendil-works/pi) (the coding agent, MIT; the root [LICENSE](LICENSE) covers `packages/` and `kyrn/`) and [AionUi](https://github.com/iOfficeAI/AionUi) (the desktop app, Apache 2.0; `desktop/` keeps its [LICENSE](desktop/LICENSE)). We are grateful to both. Third-party code in the judgment kernel is listed in [THIRD_PARTY_NOTICES.md](packages/kyrn-judge/THIRD_PARTY_NOTICES.md).
-
-## Community
-
-Bugs and requests: [GitHub Issues](https://github.com/qybaihe/mu/issues). Discussion, in Chinese: [linux.do](https://linux.do).
+mu is built on [pi](https://github.com/earendil-works/pi) (the coding agent, MIT; the root [LICENSE](LICENSE) covers `packages/` and `kyrn/`) and [AionUi](https://github.com/iOfficeAI/AionUi) (the desktop app, Apache 2.0; `desktop/` keeps its [LICENSE](desktop/LICENSE)). We are grateful to both. Some decision points build on ideas from other projects: the wording of the prompt-injection screen comes from [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills), and the carry-on check and the bulk judging tool follow [oh-my-pi](https://github.com/can1357/oh-my-pi). Third-party code in the judgment kernel is listed in [THIRD_PARTY_NOTICES.md](packages/kyrn-judge/THIRD_PARTY_NOTICES.md).

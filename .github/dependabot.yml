@@ -1,0 +1,14 @@
+# Updates for the GitHub Actions the workflows use, once a month in one pull request.
+# npm and Bun dependencies are updated by hand: they are pinned and every lockfile change is reviewed.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+    labels: ["dependencies"]
+    commit-message:
+      prefix: chore

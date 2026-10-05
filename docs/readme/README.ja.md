@@ -9,6 +9,9 @@
   <a href="https://github.com/qybaihe/mu/actions/workflows/ci.yml"><img src="https://github.com/qybaihe/mu/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/qybaihe/mu/actions/workflows/desktop.yml"><img src="https://github.com/qybaihe/mu/actions/workflows/desktop.yml/badge.svg" alt="Desktop app"></a>
   <a href="https://www.npmjs.com/package/mu-agent"><img src="https://img.shields.io/npm/v/mu-agent?label=mu-agent" alt="npm"></a>
+  <a href="https://github.com/qybaihe/mu/releases"><img src="https://img.shields.io/github/v/release/qybaihe/mu?include_prereleases&label=desktop" alt="Desktop release"></a>
+  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-MIT%20%2B%20Apache--2.0-blue" alt="License"></a>
+  <a href="https://github.com/qybaihe/mu/discussions"><img src="https://img.shields.io/github/discussions/qybaihe/mu?label=discussions" alt="Discussions"></a>
 </p>
 
 <p align="center">
@@ -22,6 +25,22 @@
 - **Jev**：判定器です。Yes/No、選択、スコアの問いに答え、答えごとに確率を付け、すべての判定を台帳に残します。ローカルの判定器（Laya）や任意の LLM が、Jev の代わりに判定ポイントを受け持つこともできます。
 
 > まだ開発の初期段階です。プレリリース版（0.1.x）を npm と [Releases](https://github.com/qybaihe/mu/releases) で公開していて、作者たちは毎日使っています。名前、設定、形式は今後も変わる可能性があります。
+
+**目次：**[クイックスタート](#クイックスタート) · [1 ターンの流れ](#1-ターンの流れ) · [判定ポイント](#判定ポイント) · [判定器](#判定器) · [実測](#実測) · [ハイブ](#ハイブ) · [わかりやすいボード](#わかりやすいボード) · [デスクトップアプリ](#デスクトップアプリ) · [コマンドライン](#コマンドライン) · [ドキュメント](#ドキュメント) · [コントリビュート](#コントリビュート)
+
+## クイックスタート
+
+**デスクトップアプリ。** [Releases](https://github.com/qybaihe/mu/releases/latest) から macOS、Windows、Linux 用のインストーラーをダウンロードして開き、API キーを貼り付けるか、ChatGPT、Claude、Grok、Google のサブスクリプションでサインインします。ほかにインストールするものはありません。
+
+**コマンドライン。**
+
+```bash
+npm i -g mu-agent   # Node.js 22.19 以降
+mu setup            # モデルを接続する
+mu                  # 現在のディレクトリでセッションを始める
+```
+
+始めるのに判定器のキーは要りません。キーを設定するまでは、OpenCode Zen の無料の Jev が答えます。新しくインストールした状態では、すべての判定ポイントが shadow です。判定器がどうするかを記録するだけで動作は変えないので、まず判定を確かめられます（`/status`、`mu ledger`、デスクトップアプリの判定タブ）。判定を反映させるには、デスクトップアプリの設定で既定のモードを `active` にするか、`~/.mu/agent/mu.json` に `{"modes": {"default": "active"}}` と書きます。詳しくは [Getting started](../getting-started.md)（英語）。
 
 ## 1 ターンの流れ
 
@@ -43,7 +62,7 @@
 
 ## 判定ポイント
 
-各判定ポイントは `active`（オン）、`shadow`（問い合わせて記録するが、何も変えない。判定器をオンにする前に比較するためのもの）、`off`（オフ）のいずれかで、それぞれ独自の判定器を指定できます。指定できるのは `jev`、`laya`（ローカル）、`classifier:<provider>/<model>`、`llm:<provider>/<model>`、または `laya,jev` のようなカスケードです。
+各判定ポイントは `active`（オン）、`shadow`（問い合わせて記録するが、何も変えない。判定器をオンにする前に比較するためのもの）、`off`（オフ）のいずれかで、それぞれ独自の判定器を指定できます。指定できるのは `jev`、`laya`（ローカル）、`classifier:<provider>/<model>`、`llm:<provider>/<model>`、または `laya,jev` のようなカスケードです。新しくインストールした状態の既定は `shadow` です。
 
 **入力**
 
@@ -107,6 +126,8 @@
 | `hive.publish` | ビーの発見は共有ボードに載せる価値があるか？ | 公開するか、手元にとどめる |
 | `hive.deliver` | ボード上のメモは、このビーの作業に関係があるか？ | 関係があるときだけ届ける |
 | `hive.relate` | 新しい発見は、以前の発見を覆すか、矛盾するか、裏付けるか？ | 訂正と対立が、古いメモを持つビーに届く |
+
+各判定ポイントの機能スイッチとオプション：[docs/reference/decision-points.md](../reference/decision-points.md)（英語）。
 
 ## 判定器
 
@@ -245,20 +266,35 @@ pi 自身のコマンド（`/model`、`/thinking`、`/login`、`/resume`、`/tre
 
 キーはこのマシンから出ません。mu が自分からモデルやランタイムをダウンロードすることはなく、ダウンロードが必要なものは必ず先に確認します。判定器が見るのは、問いに必要なフィールドだけです（キーがなければ、それは OpenCode Zen の無料 Jev に送られます。`MU_JUDGE=off` か Laya なら、すべてこのマシンに残ります）。すべての判定はローカルに記録され、どれでも読み返せます。
 
-## 開発
+## ドキュメント
+
+- [Getting started](../getting-started.md) · [設定](../configuration.md) · [判定器](../judges.md) · [トラブルシューティング](../troubleshooting.md)（英語）
+- リファレンス：[すべての判定ポイント](../reference/decision-points.md) · [すべての機能とオプション](../reference/features.md) · [変更履歴](../../CHANGELOG.md)
+- コントリビューター向け：[mu の仕組み](../architecture.md) · [判定ポイントの追加](../adding-a-decision-point.md) · [翻訳](../translations.md)
+
+## コントリビュート
+
+バグ報告、修正、新しい判定ポイント、判定器の評価、翻訳を歓迎します。英語か中国語で書いてください。まず [CONTRIBUTING.md](../../CONTRIBUTING.md) を読んでください。[`good first issue`](https://github.com/qybaihe/mu/labels/good%20first%20issue) ラベルの issue から始めるのがおすすめです。
 
 ```bash
 npm install --ignore-scripts   # 依存パッケージのインストール（ライフサイクルスクリプトは実行しない）
+node kyrn/bin/mu.mjs           # このチェックアウトから mu を起動
 npm run check                  # フォーマット、lint、型チェック
 ./test.sh                      # テスト（モデルが必要なテストは、キーがなければスキップ）
 ```
 
-デスクトップアプリは `desktop/` にあります。`bun install` のあと、`KYRN_ROOT="$(cd .. && pwd)" bun run start` を実行すると、このリポジトリの mu を使う開発版が起動します（先にルートで `npm install` を実行してください）。構成とコントリビューションのルール：[AGENTS.md](../../AGENTS.md)。
+デスクトップアプリは `desktop/` にあります。`bun install` のあと、`KYRN_ROOT="$(cd .. && pwd)" bun run start` を実行すると、このリポジトリの mu を使う開発版が起動します（先にルートで `npm install` を実行してください）。
+
+参加者は全員[行動規範](../../CODE_OF_CONDUCT.md)に従います。セキュリティの問題は [SECURITY.md](../../SECURITY.md) のとおり非公開で報告してください。
 
 ## クレジットとライセンス
 
-mu は [pi](https://github.com/earendil-works/pi)（コーディングエージェント、MIT。ルートの [LICENSE](../../LICENSE) が `packages/` と `kyrn/` に適用されます）と [AionUi](https://github.com/iOfficeAI/AionUi)（デスクトップアプリ、Apache 2.0。`desktop/` には AionUi の [LICENSE](../../desktop/LICENSE) を残しています）をもとに作られています。二つのプロジェクトに感謝します。判定カーネルで使っているサードパーティのコードは [THIRD_PARTY_NOTICES.md](../../packages/kyrn-judge/THIRD_PARTY_NOTICES.md) に記載しています。
+mu は [pi](https://github.com/earendil-works/pi)（コーディングエージェント、MIT。ルートの [LICENSE](../../LICENSE) が `packages/` と `kyrn/` に適用されます）と [AionUi](https://github.com/iOfficeAI/AionUi)（デスクトップアプリ、Apache 2.0。`desktop/` には AionUi の [LICENSE](../../desktop/LICENSE) を残しています）をもとに作られています。二つのプロジェクトに感謝します。いくつかの判定ポイントは他のプロジェクトのアイデアをもとにしています。プロンプトインジェクション検査の問い方は [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills) から、続行チェックと一括判定ツールは [oh-my-pi](https://github.com/can1357/oh-my-pi) にならっています。判定カーネルで使っているサードパーティのコードは [THIRD_PARTY_NOTICES.md](../../packages/kyrn-judge/THIRD_PARTY_NOTICES.md) に記載しています。
 
 ## コミュニティ
 
-バグ報告と要望：[GitHub Issues](https://github.com/qybaihe/mu/issues)。ディスカッション（中国語）：[linux.do](https://linux.do)
+- 質問とアイデア：[Discussions](https://github.com/qybaihe/mu/discussions)。中国語のディスカッションは [linux.do](https://linux.do) でも。
+- バグ報告と要望：[Issues](https://github.com/qybaihe/mu/issues/new/choose)。
+- そのほか：[SUPPORT.md](../../SUPPORT.md)。
+
+mu が役に立ったら、スターを付けてもらえると、ほかの人が見つけやすくなります。

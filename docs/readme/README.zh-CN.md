@@ -9,6 +9,9 @@
   <a href="https://github.com/qybaihe/mu/actions/workflows/ci.yml"><img src="https://github.com/qybaihe/mu/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/qybaihe/mu/actions/workflows/desktop.yml"><img src="https://github.com/qybaihe/mu/actions/workflows/desktop.yml/badge.svg" alt="Desktop app"></a>
   <a href="https://www.npmjs.com/package/mu-agent"><img src="https://img.shields.io/npm/v/mu-agent?label=mu-agent" alt="npm"></a>
+  <a href="https://github.com/qybaihe/mu/releases"><img src="https://img.shields.io/github/v/release/qybaihe/mu?include_prereleases&label=desktop" alt="Desktop release"></a>
+  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-MIT%20%2B%20Apache--2.0-blue" alt="License"></a>
+  <a href="https://github.com/qybaihe/mu/discussions"><img src="https://img.shields.io/github/discussions/qybaihe/mu?label=discussions" alt="Discussions"></a>
 </p>
 
 <p align="center">
@@ -22,6 +25,22 @@
 - **Jev**：判定器。是非题、选择题、打分题，每个答案带概率，每一次判定都进流水。本地判定器（Laya）或任何一个大模型都可以接管某个判定点。
 
 > 还在早期开发。预发布版（0.1.x）在 npm 和 [Releases](https://github.com/qybaihe/mu/releases) 上，作者每天在用。名字、设置和格式都可能变。
+
+**目录：**[快速开始](#快速开始) · [一轮是怎么走的](#一轮是怎么走的) · [判定点](#判定点) · [判定器](#判定器) · [实测](#实测) · [蜂群](#蜂群) · [人话看板](#人话看板) · [桌面端](#桌面端) · [命令行](#命令行) · [文档](#文档) · [参与贡献](#参与贡献)
+
+## 快速开始
+
+**桌面端。** 从 [Releases](https://github.com/qybaihe/mu/releases/latest) 下载 macOS、Windows 或 Linux 安装包，打开后粘贴一个 API key，或用 ChatGPT、Claude、Grok、Google 订阅登录。不用再装别的。
+
+**命令行。**
+
+```bash
+npm i -g mu-agent   # Node.js 22.19 或更新
+mu setup            # 接入一个模型
+mu                  # 在当前目录开一个会话
+```
+
+开始用不需要判定器的 key：没设置之前，由 OpenCode Zen 上免费的 Jev 回答。全新安装时，所有判定点都是 shadow：只记录判定器会怎么做，不真的改变行为，方便你先看它的判定（`/status`、`mu ledger`、桌面端的判定页）；在桌面端设置里把默认模式改成 `active`，或在 `~/.mu/agent/mu.json` 里写 `{"modes": {"default": "active"}}`，判定才会生效。更多见 [Getting started](../getting-started.md)（英文）。
 
 ## 一轮是怎么走的
 
@@ -43,7 +62,7 @@
 
 ## 判定点
 
-每个判定点可以是 `active`（生效）、`shadow`（照常提问并记录，但不改变任何行为，用来在切换前比较判定器）或 `off`（关闭），并且可以指定自己的判定器：`jev`、`laya`（本地）、`classifier:<提供商>/<模型>`、`llm:<提供商>/<模型>`，或 `laya,jev` 这样的级联。
+每个判定点可以是 `active`（生效）、`shadow`（照常提问并记录，但不改变任何行为，用来在切换前比较判定器）或 `off`（关闭），并且可以指定自己的判定器：`jev`、`laya`（本地）、`classifier:<提供商>/<模型>`、`llm:<提供商>/<模型>`，或 `laya,jev` 这样的级联。全新安装时默认是 `shadow`。
 
 **输入**
 
@@ -107,6 +126,8 @@
 | `hive.publish` | 一只 bee 的发现值得上共享板吗？ | 发布，或自己留着 |
 | `hive.deliver` | 板上的一条笔记和这只 bee 的工作有关吗？ | 有关才投递 |
 | `hive.relate` | 一条新发现推翻、矛盾还是支持了早先的某一条？ | 纠正和争议送到拿着旧笔记的 bee 那里 |
+
+每个判定点对应的功能开关和选项：[docs/reference/decision-points.md](../reference/decision-points.md)（英文）。
 
 ## 判定器
 
@@ -245,20 +266,35 @@ pi 自己的命令（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`
 
 密钥只在本机。mu 不会自己下载任何模型或运行时；需要下载的东西都会先问你。判定器只看到一个问题所需的字段（没配密钥时，这些字段发给 OpenCode Zen 上免费的 Jev；用 `MU_JUDGE=off` 或 Laya 就全部留在本机）；每一次判定都记录在本机，你都能翻到。
 
-## 开发
+## 文档
+
+- [Getting started](../getting-started.md) · [配置](../configuration.md) · [判定器](../judges.md) · [排错](../troubleshooting.md)（英文）
+- 参考：[全部判定点](../reference/decision-points.md) · [全部功能和选项](../reference/features.md) · [更新日志](../../CHANGELOG.md)
+- 给贡献者：[mu 是怎么工作的](../architecture.md) · [新增一个判定点](../adding-a-decision-point.md) · [翻译](../translations.md)
+
+## 参与贡献
+
+欢迎报 bug、修 bug、提新判定点、测判定器、做翻译，中文英文都可以。先看 [CONTRIBUTING.md](../../CONTRIBUTING.md)；标了 [`good first issue`](https://github.com/qybaihe/mu/labels/good%20first%20issue) 的 issue 适合上手。
 
 ```bash
 npm install --ignore-scripts   # 安装依赖，不跑生命周期脚本
+node kyrn/bin/mu.mjs           # 从这份代码启动 mu
 npm run check                  # 格式、静态检查、类型
 ./test.sh                      # 测试（没有密钥时跳过依赖模型的测试）
 ```
 
-桌面端在 `desktop/`：`bun install`，然后 `KYRN_ROOT="$(cd .. && pwd)" bun run start` 起开发版，它从仓库里的 mu 启动（先在根目录 `npm install`）。仓库布局和贡献规则：[AGENTS.md](../../AGENTS.md)。
+桌面端在 `desktop/`：`bun install`，然后 `KYRN_ROOT="$(cd .. && pwd)" bun run start` 起开发版，它从仓库里的 mu 启动（先在根目录 `npm install`）。
+
+所有参与者遵守[行为准则](../../CODE_OF_CONDUCT.md)。安全问题请按 [SECURITY.md](../../SECURITY.md) 私下报告。
 
 ## 来源与协议
 
-mu 基于 [pi](https://github.com/earendil-works/pi)（编码代理，MIT；根目录的 [LICENSE](../../LICENSE) 覆盖 `packages/` 和 `kyrn/`）和 [AionUi](https://github.com/iOfficeAI/AionUi)（桌面端，Apache 2.0；`desktop/` 保留它的 [LICENSE](../../desktop/LICENSE)）改造，感谢两个项目。判定内核用到的第三方代码列在 [THIRD_PARTY_NOTICES.md](../../packages/kyrn-judge/THIRD_PARTY_NOTICES.md)。
+mu 基于 [pi](https://github.com/earendil-works/pi)（编码代理，MIT；根目录的 [LICENSE](../../LICENSE) 覆盖 `packages/` 和 `kyrn/`）和 [AionUi](https://github.com/iOfficeAI/AionUi)（桌面端，Apache 2.0；`desktop/` 保留它的 [LICENSE](../../desktop/LICENSE)）改造，感谢两个项目。有几个判定点借鉴了别的项目：提示注入筛查的问法来自 [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills)，续跑检查和批量判定工具参考了 [oh-my-pi](https://github.com/can1357/oh-my-pi)。判定内核用到的第三方代码列在 [THIRD_PARTY_NOTICES.md](../../packages/kyrn-judge/THIRD_PARTY_NOTICES.md)。
 
 ## 社区支持
 
-问题和建议：[GitHub Issues](https://github.com/qybaihe/mu/issues)。讨论：[linux.do](https://linux.do)。
+- 提问和想法：[Discussions](https://github.com/qybaihe/mu/discussions)；中文讨论也可以去 [linux.do](https://linux.do)。
+- bug 和需求：[Issues](https://github.com/qybaihe/mu/issues/new/choose)。
+- 更多：[SUPPORT.md](../../SUPPORT.md)。
+
+如果 mu 对你有用，点个 star 能让更多人看到它。

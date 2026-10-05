@@ -9,6 +9,9 @@
   <a href="https://github.com/qybaihe/mu/actions/workflows/ci.yml"><img src="https://github.com/qybaihe/mu/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/qybaihe/mu/actions/workflows/desktop.yml"><img src="https://github.com/qybaihe/mu/actions/workflows/desktop.yml/badge.svg" alt="Desktop app"></a>
   <a href="https://www.npmjs.com/package/mu-agent"><img src="https://img.shields.io/npm/v/mu-agent?label=mu-agent" alt="npm"></a>
+  <a href="https://github.com/qybaihe/mu/releases"><img src="https://img.shields.io/github/v/release/qybaihe/mu?include_prereleases&label=desktop" alt="Desktop release"></a>
+  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-MIT%20%2B%20Apache--2.0-blue" alt="License"></a>
+  <a href="https://github.com/qybaihe/mu/discussions"><img src="https://img.shields.io/github/discussions/qybaihe/mu?label=discussions" alt="Discussions"></a>
 </p>
 
 <p align="center">
@@ -22,6 +25,22 @@
 - **Jev**: 판정기예요. 예/아니요, 선택, 점수 질문에 답하고, 답마다 확률을 붙이고, 모든 판정을 판정 장부에 남겨요. 로컬 판정기(Laya)나 어떤 LLM이든 Jev 대신 판정 지점을 맡을 수 있어요.
 
 > 아직 초기 개발 단계예요. 프리릴리스(0.1.x)를 npm과 [Releases](https://github.com/qybaihe/mu/releases)에 올려 두었고, 만든 사람들은 매일 쓰고 있어요. 이름, 설정, 형식은 앞으로 바뀔 수 있어요.
+
+**목차:** [빠른 시작](#빠른-시작) · [한 턴의 흐름](#한-턴의-흐름) · [판정 지점](#판정-지점) · [판정기](#판정기) · [실측](#실측) · [하이브](#하이브) · [쉬운 말 보드](#쉬운-말-보드) · [데스크톱 앱](#데스크톱-앱) · [명령줄](#명령줄) · [문서](#문서) · [기여하기](#기여하기)
+
+## 빠른 시작
+
+**데스크톱 앱.** [Releases](https://github.com/qybaihe/mu/releases/latest)에서 macOS, Windows, Linux용 설치 파일을 내려받아 열고, API 키를 붙여 넣거나 ChatGPT, Claude, Grok, Google 구독으로 로그인하세요. 따로 설치할 것은 없어요.
+
+**명령줄.**
+
+```bash
+npm i -g mu-agent   # Node.js 22.19 이상
+mu setup            # 모델 연결
+mu                  # 현재 디렉터리에서 세션 시작
+```
+
+시작할 때 판정기 키는 필요 없어요. 키를 설정하기 전까지는 OpenCode Zen의 무료 Jev가 답해요. 새로 설치하면 모든 판정 지점이 shadow 상태예요. 판정기가 어떻게 할지 기록만 하고 동작은 바꾸지 않으니, 먼저 판정을 살펴볼 수 있어요(`/status`, `mu ledger`, 데스크톱 앱의 판정 탭). 판정을 반영하려면 데스크톱 앱 설정에서 기본 모드를 `active`로 바꾸거나 `~/.mu/agent/mu.json`에 `{"modes": {"default": "active"}}`를 적으세요. 자세한 내용은 [Getting started](../getting-started.md)(영어).
 
 ## 한 턴의 흐름
 
@@ -43,7 +62,7 @@
 
 ## 판정 지점
 
-판정 지점마다 `active`(켬), `shadow`(묻고 기록하지만 아무것도 바꾸지 않음. 판정기를 켜기 전에 비교해 보는 용도), `off`(끔) 중 하나로 둘 수 있고, 판정기도 따로 지정할 수 있어요: `jev`, `laya`(로컬), `classifier:<provider>/<model>`, `llm:<provider>/<model>`, 또는 `laya,jev` 같은 캐스케이드.
+판정 지점마다 `active`(켬), `shadow`(묻고 기록하지만 아무것도 바꾸지 않음. 판정기를 켜기 전에 비교해 보는 용도), `off`(끔) 중 하나로 둘 수 있고, 판정기도 따로 지정할 수 있어요: `jev`, `laya`(로컬), `classifier:<provider>/<model>`, `llm:<provider>/<model>`, 또는 `laya,jev` 같은 캐스케이드. 새로 설치하면 기본값은 `shadow`예요.
 
 **입력**
 
@@ -107,6 +126,8 @@
 | `hive.publish` | 비(bee)의 발견이 공유 보드에 올릴 만한가? | 게시하거나, 혼자 간직함 |
 | `hive.deliver` | 보드의 메모가 이 비의 작업과 관련 있는가? | 관련 있을 때만 전달 |
 | `hive.relate` | 새 발견이 앞선 발견을 뒤집는가, 모순되는가, 뒷받침하는가? | 정정과 이견이 옛 메모를 가진 비에게 전달됨 |
+
+판정 지점마다의 기능 스위치와 옵션: [docs/reference/decision-points.md](../reference/decision-points.md)(영어).
 
 ## 판정기
 
@@ -245,20 +266,35 @@ pi의 자체 명령(`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`
 
 키는 이 컴퓨터를 떠나지 않아요. mu는 모델이나 런타임을 스스로 내려받지 않고, 내려받아야 하는 것은 모두 먼저 물어봐요. 판정기는 질문에 필요한 필드만 봐요(키가 없으면 그 필드는 OpenCode Zen의 무료 Jev로 가요. `MU_JUDGE=off`나 Laya를 쓰면 전부 이 컴퓨터에 남아요). 모든 판정은 로컬에 기록되고, 전부 읽어 볼 수 있어요.
 
-## 개발
+## 문서
+
+- [Getting started](../getting-started.md) · [설정](../configuration.md) · [판정기](../judges.md) · [문제 해결](../troubleshooting.md)(영어)
+- 참고: [모든 판정 지점](../reference/decision-points.md) · [모든 기능과 옵션](../reference/features.md) · [변경 기록](../../CHANGELOG.md)
+- 기여자용: [mu의 동작 방식](../architecture.md) · [판정 지점 추가하기](../adding-a-decision-point.md) · [번역](../translations.md)
+
+## 기여하기
+
+버그 제보, 수정, 새 판정 지점, 판정기 측정, 번역을 환영해요. 영어나 중국어로 써 주세요. 먼저 [CONTRIBUTING.md](../../CONTRIBUTING.md)를 읽어 주세요. [`good first issue`](https://github.com/qybaihe/mu/labels/good%20first%20issue) 라벨이 붙은 이슈부터 시작하기 좋아요.
 
 ```bash
 npm install --ignore-scripts   # 의존성 설치, 라이프사이클 스크립트는 실행하지 않음
+node kyrn/bin/mu.mjs           # 이 체크아웃에서 mu 실행
 npm run check                  # 포맷, 린트, 타입 검사
 ./test.sh                      # 테스트 (모델이 필요한 테스트는 키가 없으면 건너뜀)
 ```
 
-데스크톱 앱은 `desktop/`에 있어요. `bun install` 다음에 `KYRN_ROOT="$(cd .. && pwd)" bun run start`를 실행하면 이 저장소의 mu를 쓰는 개발 빌드가 시작돼요(먼저 루트에서 `npm install`을 실행하세요). 구조와 기여 규칙: [AGENTS.md](../../AGENTS.md).
+데스크톱 앱은 `desktop/`에 있어요. `bun install` 다음에 `KYRN_ROOT="$(cd .. && pwd)" bun run start`를 실행하면 이 저장소의 mu를 쓰는 개발 빌드가 시작돼요(먼저 루트에서 `npm install`을 실행하세요).
+
+참여하는 모든 사람은 [행동 강령](../../CODE_OF_CONDUCT.md)을 따라요. 보안 문제는 [SECURITY.md](../../SECURITY.md)에 적힌 대로 비공개로 제보해 주세요.
 
 ## 출처와 라이선스
 
-mu는 [pi](https://github.com/earendil-works/pi)(코딩 에이전트, MIT; 루트의 [LICENSE](../../LICENSE)가 `packages/`와 `kyrn/`에 적용)와 [AionUi](https://github.com/iOfficeAI/AionUi)(데스크톱 앱, Apache 2.0; `desktop/`에는 AionUi의 [LICENSE](../../desktop/LICENSE)를 그대로 둠)를 바탕으로 만들었어요. 두 프로젝트에 감사드려요. 판정 커널에 쓰인 서드파티 코드는 [THIRD_PARTY_NOTICES.md](../../packages/kyrn-judge/THIRD_PARTY_NOTICES.md)에 정리되어 있어요.
+mu는 [pi](https://github.com/earendil-works/pi)(코딩 에이전트, MIT; 루트의 [LICENSE](../../LICENSE)가 `packages/`와 `kyrn/`에 적용)와 [AionUi](https://github.com/iOfficeAI/AionUi)(데스크톱 앱, Apache 2.0; `desktop/`에는 AionUi의 [LICENSE](../../desktop/LICENSE)를 그대로 둠)를 바탕으로 만들었어요. 두 프로젝트에 감사드려요. 몇몇 판정 지점은 다른 프로젝트의 아이디어를 바탕으로 해요. 프롬프트 인젝션 검사의 질문 방식은 [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills)에서, 이어서 하기 검사와 일괄 판정 도구는 [oh-my-pi](https://github.com/can1357/oh-my-pi)를 따랐어요. 판정 커널에 쓰인 서드파티 코드는 [THIRD_PARTY_NOTICES.md](../../packages/kyrn-judge/THIRD_PARTY_NOTICES.md)에 정리되어 있어요.
 
 ## 커뮤니티
 
-버그 제보와 요청: [GitHub Issues](https://github.com/qybaihe/mu/issues). 토론(중국어): [linux.do](https://linux.do)
+- 질문과 아이디어: [Discussions](https://github.com/qybaihe/mu/discussions). 중국어 토론은 [linux.do](https://linux.do)에서도.
+- 버그 제보와 요청: [Issues](https://github.com/qybaihe/mu/issues/new/choose).
+- 그 밖에: [SUPPORT.md](../../SUPPORT.md).
+
+mu가 쓸모 있었다면 스타를 눌러 주세요. 다른 사람들이 찾기 쉬워져요.
