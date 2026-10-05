@@ -358,7 +358,10 @@
         "review": "每則審查發現有多嚴重？",
         "board": "工作進展到哪一步了？",
         "relate": "這則發現對之前的發現意味著什麼？",
-        "approval": "這一步是任務需要、也是你會預期的做法嗎？"
+        "approval": "這一步是任務需要、也是你會預期的做法嗎？",
+        "injection": "這段工具輸出裡有沒有衝著 AI 來的指令？",
+        "continuation": "這一輪是不是該做的沒做完就停了？",
+        "items": "代理就每一項提出的問題"
       },
       "fields": {
         "turnType": "任務類型",
@@ -399,7 +402,12 @@
         "target": "目標元素",
         "probability": "機率",
         "omit": "省略的日誌段",
-        "key": "值得告訴你的事件"
+        "key": "值得告訴你的事件",
+        "withhold": "攔下的段落",
+        "kept": "放行的段落",
+        "answeredYes": "回答「是」",
+        "answeredNo": "回答「否」",
+        "answeredUnsure": "拿不準"
       },
       "values": {
         "true": "是",
@@ -504,7 +512,10 @@
         "listing": "檔名或搜尋比對",
         "content": "程式碼或文字",
         "log": "建置或測試輸出",
-        "data": "查到的事實"
+        "data": "查到的事實",
+        "end": "讓這一輪結束",
+        "promised": "去做它說的下一步",
+        "go_ahead": "直接動手，不再問"
       },
       "probabilityValue": "判定為「是」的機率：{{percent}}",
       "optionProbability": "{{option}} {{percent}}",
@@ -888,6 +899,25 @@
             "unrelated": "與任務無關",
             "unclear": "說不準"
           }
+        },
+        "injection": {
+          "questions": {
+            "injected": "帶有衝著 AI 來的指令",
+            "passage": "第 {{number}} 段帶有衝著 AI 來的指令"
+          }
+        },
+        "continuation": {
+          "questions": {
+            "promised": "說了下一步要做什麼，然後停了",
+            "asks_go_ahead": "最後在問要不要動手",
+            "work_requested": "使用者要的是動手做，不只是回答",
+            "irreversible": "下一步難以撤銷，或會影響到這台機器之外"
+          }
+        },
+        "items": {
+          "questions": {
+            "item": "第 {{number}} 項：是"
+          }
         }
       },
       "log": {
@@ -1012,6 +1042,9 @@
           "ready": "修補程式已就緒",
           "applied": "已套用修補程式"
         }
+      },
+      "tool": {
+        "injection": "工具結果中有段落被攔下"
       }
     },
     "contextUsage": "上下文用量",
@@ -1371,6 +1404,11 @@
       "board": {
         "on": "看板：開啟",
         "off": "看板：關閉"
+      },
+      "injection": {
+        "withheld": "{{tool}}：{{total}} 段中攔下 {{withheld}} 段，裡面有衝著 AI 來的指令",
+        "byRules": "判定器沒有回答：按 mu 的規則判斷",
+        "excerpt": "開頭：{{text}}"
       }
     },
     "gauges": {

@@ -38,6 +38,9 @@ export const DECISIONS = {
   'board.read': 'board',
   'hive.relate': 'relate',
   'tool.approval': 'approval',
+  'tool.injection': 'injection',
+  'turn.continue': 'continuation',
+  'judge.items': 'items',
 } as const;
 
 export type JudgeStage = (typeof DECISIONS)[keyof typeof DECISIONS] | 'other';
@@ -424,6 +427,35 @@ const position = (value: unknown): string => {
   return Number.isSafeInteger(index) && index >= 0 ? String(index + 1) : scalar(value);
 };
 
+/** Every probability in an outcome of per-item probabilities, batches flattened (`[[0.9, 0.1], [0.02]]`). */
+const probabilities = (value: unknown): number[] =>
+  Array.isArray(value)
+    ? value.flatMap(probabilities)
+    : typeof value === 'number' && Number.isFinite(value)
+      ? [value]
+      : [];
+
+/**
+ * Counts for the decision points whose outcome is one probability per item: the passages the injection screen
+ * withheld (over 0.5, as the harness reads it) and passed on, and the model's own question answered yes, no or
+ * neither (the harness's 0.8 and 0.2).
+ */
+function probabilityFacts(stage: JudgeStage, outcome: unknown[]): JudgeFact[] | undefined {
+  if (stage !== 'injection' && stage !== 'items') return undefined;
+  const all = probabilities(outcome);
+  const count = (keep: (probability: number) => boolean) => String(all.filter(keep).length);
+  if (stage === 'injection')
+    return [
+      { name: 'withhold', values: [count((probability) => probability > 0.5)] },
+      { name: 'kept', values: [count((probability) => probability <= 0.5)] },
+    ];
+  return [
+    { name: 'answeredYes', values: [count((probability) => probability >= 0.8)] },
+    { name: 'answeredNo', values: [count((probability) => probability <= 0.2)] },
+    { name: 'answeredUnsure', values: [count((probability) => probability > 0.2 && probability < 0.8)] },
+  ];
+}
+
 /**
  * The outcome as labelled fields. Names and values stay raw: the view translates the ones it knows; positions are
  * counted from 1. Nothing here turns a verdict into a claim that the operation was carried out. `lessonText` names a
@@ -443,6 +475,8 @@ export function resultFacts(card: JudgeCard, lessonText?: (id: string) => string
       .slice(0, FACT_LIMIT);
   }
   if (Array.isArray(outcome)) {
+    const counted = probabilityFacts(card.stage, outcome);
+    if (counted) return counted;
     const rows = list(outcome);
     if (card.stage === 'admission')
       return [

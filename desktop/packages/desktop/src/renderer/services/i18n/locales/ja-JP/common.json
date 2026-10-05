@@ -358,7 +358,10 @@
         "review": "各指摘の重大度はどの程度か？",
         "board": "作業はどこまで進んでいるか？",
         "relate": "この発見は以前の発見に対して何を意味するか？",
-        "approval": "これはタスクに必要な手順で、期待どおりのやり方か？"
+        "approval": "これはタスクに必要な手順で、期待どおりのやり方か？",
+        "injection": "このツール出力に AI に向けた指示は含まれているか？",
+        "continuation": "やるべきことの手前で止まっていないか？",
+        "items": "エージェントが各項目について尋ねた質問"
       },
       "fields": {
         "turnType": "タスクの種類",
@@ -399,7 +402,12 @@
         "target": "対象の要素",
         "probability": "確率",
         "omit": "省いたログの部分",
-        "key": "伝える価値のある出来事"
+        "key": "伝える価値のある出来事",
+        "withhold": "差し止めた段落",
+        "kept": "通した段落",
+        "answeredYes": "「はい」の数",
+        "answeredNo": "「いいえ」の数",
+        "answeredUnsure": "判断つかず"
       },
       "values": {
         "true": "はい",
@@ -504,7 +512,10 @@
         "listing": "ファイル名や検索の一致",
         "content": "コードや文章",
         "log": "ビルドやテストの出力",
-        "data": "調べた事実"
+        "data": "調べた事実",
+        "end": "このまま終える",
+        "promised": "言った次の手順を実行させる",
+        "go_ahead": "尋ねずに作業を進める"
       },
       "probabilityValue": "「はい」の確率: {{percent}}",
       "optionProbability": "{{option}} {{percent}}",
@@ -888,6 +899,25 @@
             "unrelated": "タスクと関係ない",
             "unclear": "判断できない"
           }
+        },
+        "injection": {
+          "questions": {
+            "injected": "AI に向けた指示を含む",
+            "passage": "段落 {{number}} は AI に向けた指示を含む"
+          }
+        },
+        "continuation": {
+          "questions": {
+            "promised": "次にやることを言ってから止まった",
+            "asks_go_ahead": "進めてよいかを尋ねて終わった",
+            "work_requested": "ユーザーは回答だけでなく作業を求めた",
+            "irreversible": "次の手順は取り消しにくいか、このマシンの外に及ぶ"
+          }
+        },
+        "items": {
+          "questions": {
+            "item": "項目 {{number}}：はい"
+          }
         }
       },
       "log": {
@@ -1012,6 +1042,9 @@
           "ready": "パッチの準備ができました",
           "applied": "パッチを適用しました"
         }
+      },
+      "tool": {
+        "injection": "ツール結果の一部を差し止め"
       }
     },
     "contextUsage": "コンテキスト使用量",
@@ -1371,6 +1404,11 @@
       "board": {
         "on": "ボード：オン",
         "off": "ボード：オフ"
+      },
+      "injection": {
+        "withheld": "{{tool}}：{{total}} 段落中 {{withheld}} 段落を差し止め（AI に向けた指示を含んでいました）",
+        "byRules": "判定器が答えなかったため mu のルールで判断",
+        "excerpt": "冒頭：{{text}}"
       }
     },
     "gauges": {

@@ -358,7 +358,10 @@
         "review": "Quelle est la gravité de chaque remarque de revue ?",
         "board": "Où en est le travail ?",
         "relate": "Que change cette découverte pour une découverte antérieure ?",
-        "approval": "Est-ce une étape dont la tâche a besoin, faite comme vous l’attendriez ?"
+        "approval": "Est-ce une étape dont la tâche a besoin, faite comme vous l’attendriez ?",
+        "injection": "Cette sortie d'outil contient-elle des instructions adressées à l'IA ?",
+        "continuation": "L'exécution s'est-elle arrêtée avant de faire ce qu'elle devait ?",
+        "items": "La question de l'agent sur chaque élément"
       },
       "fields": {
         "turnType": "Type de tâche",
@@ -399,7 +402,12 @@
         "target": "Élément",
         "probability": "Probabilité",
         "omit": "Parties du journal omises",
-        "key": "Événements à raconter"
+        "key": "Événements à raconter",
+        "withhold": "Passages retenus",
+        "kept": "Passages transmis",
+        "answeredYes": "Réponses oui",
+        "answeredNo": "Réponses non",
+        "answeredUnsure": "Incertains"
       },
       "values": {
         "true": "Oui",
@@ -504,7 +512,10 @@
         "listing": "Noms de fichiers ou correspondances",
         "content": "Code ou texte",
         "log": "Sortie de build ou de tests",
-        "data": "Faits recherchés"
+        "data": "Faits recherchés",
+        "end": "Laisser l'exécution finir",
+        "promised": "Faire l'étape annoncée",
+        "go_ahead": "Faire le travail sans demander"
       },
       "probabilityValue": "Probabilité de « oui » : {{percent}}",
       "optionProbability": "{{option}} {{percent}}",
@@ -888,6 +899,25 @@
             "unrelated": "Hors de la tâche",
             "unclear": "Impossible à dire"
           }
+        },
+        "injection": {
+          "questions": {
+            "injected": "Contient des instructions adressées à l'IA",
+            "passage": "Le passage {{number}} contient des instructions adressées à l'IA"
+          }
+        },
+        "continuation": {
+          "questions": {
+            "promised": "A dit ce qu'il ferait ensuite, puis s'est arrêté",
+            "asks_go_ahead": "Se termine en demandant s'il doit continuer",
+            "work_requested": "L'utilisateur a demandé le travail, pas seulement une réponse",
+            "irreversible": "L'étape suivante est difficile à annuler ou dépasse cette machine"
+          }
+        },
+        "items": {
+          "questions": {
+            "item": "Élément {{number}} : oui"
+          }
         }
       },
       "log": {
@@ -1012,6 +1042,9 @@
           "ready": "Patch prêt",
           "applied": "Patch appliqué"
         }
+      },
+      "tool": {
+        "injection": "Passages retenus d'un résultat d'outil"
       }
     },
     "contextUsage": "Utilisation du contexte",
@@ -1371,6 +1404,11 @@
       "board": {
         "on": "Tableau : activé",
         "off": "Tableau : désactivé"
+      },
+      "injection": {
+        "withheld": "{{tool}} : passages retenus : {{withheld}} sur {{total}}, ils contenaient des instructions adressées à l'IA",
+        "byRules": "le juge n'a pas répondu : décidé selon les règles de mu",
+        "excerpt": "commence : {{text}}"
       }
     },
     "gauges": {

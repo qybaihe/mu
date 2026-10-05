@@ -358,7 +358,10 @@
         "review": "Her inceleme bulgusu ne kadar ciddi?",
         "board": "İş ne durumda?",
         "relate": "Bu bulgu önceki bir bulgu için ne anlama geliyor?",
-        "approval": "Bu, görevin ihtiyaç duyduğu ve beklediğiniz şekilde yapılan bir adım mı?"
+        "approval": "Bu, görevin ihtiyaç duyduğu ve beklediğiniz şekilde yapılan bir adım mı?",
+        "injection": "Bu araç çıktısı yapay zekâya yönelik talimatlar içeriyor mu?",
+        "continuation": "Çalışma yapması gerekeni yapmadan mı durdu?",
+        "items": "Ajanın her öğe için sorduğu soru"
       },
       "fields": {
         "turnType": "Görev türü",
@@ -399,7 +402,12 @@
         "target": "Öğe",
         "probability": "Olasılık",
         "omit": "Atlanan günlük parçaları",
-        "key": "Anlatmaya değer olaylar"
+        "key": "Anlatmaya değer olaylar",
+        "withhold": "Alıkonulan bölümler",
+        "kept": "Geçirilen bölümler",
+        "answeredYes": "Evet yanıtı",
+        "answeredNo": "Hayır yanıtı",
+        "answeredUnsure": "Emin değil"
       },
       "values": {
         "true": "Evet",
@@ -504,7 +512,10 @@
         "listing": "Dosya adları veya eşleşmeler",
         "content": "Kod veya metin",
         "log": "Derleme veya test çıktısı",
-        "data": "Bulunan bilgiler"
+        "data": "Bulunan bilgiler",
+        "end": "Çalışmanın bitmesine izin ver",
+        "promised": "Söylediği adımı yap",
+        "go_ahead": "Sormadan işi yap"
       },
       "probabilityValue": "Evet olasılığı: {{percent}}",
       "optionProbability": "{{option}} {{percent}}",
@@ -888,6 +899,25 @@
             "unrelated": "Görevin parçası değil",
             "unclear": "Belli değil"
           }
+        },
+        "injection": {
+          "questions": {
+            "injected": "Yapay zekâya yönelik talimat içeriyor",
+            "passage": "{{number}}. bölüm yapay zekâya yönelik talimat içeriyor"
+          }
+        },
+        "continuation": {
+          "questions": {
+            "promised": "Sırada ne yapacağını söyleyip durdu",
+            "asks_go_ahead": "Devam edip etmeyeceğini sorarak bitiyor",
+            "work_requested": "Kullanıcı yalnızca yanıt değil, işin yapılmasını istedi",
+            "irreversible": "Sonraki adım geri alınması zor ya da bu makinenin ötesine uzanıyor"
+          }
+        },
+        "items": {
+          "questions": {
+            "item": "{{number}}. öğe: evet"
+          }
         }
       },
       "log": {
@@ -1012,6 +1042,9 @@
           "ready": "Yama hazır",
           "applied": "Yama uygulandı"
         }
+      },
+      "tool": {
+        "injection": "Araç sonucundan bölümler alıkonuldu"
       }
     },
     "contextUsage": "Bağlam kullanımı",
@@ -1371,6 +1404,11 @@
       "board": {
         "on": "Pano: açık",
         "off": "Pano: kapalı"
+      },
+      "injection": {
+        "withheld": "{{tool}}: alıkonulan bölüm: {{total}} içinden {{withheld}}, yapay zekâya yönelik talimatlar içeriyordu",
+        "byRules": "yargıç yanıt vermedi: mu'nun kurallarıyla karar verildi",
+        "excerpt": "başlangıç: {{text}}"
       }
     },
     "gauges": {

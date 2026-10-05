@@ -358,7 +358,10 @@
         "review": "每条评审发现有多严重？",
         "board": "工作进展到哪一步了？",
         "relate": "这条发现对之前的发现意味着什么？",
-        "approval": "这一步是任务需要、也是你会预期的做法吗？"
+        "approval": "这一步是任务需要、也是你会预期的做法吗？",
+        "injection": "这段工具输出里有没有冲着 AI 来的指令？",
+        "continuation": "这一轮是不是该做的没做完就停了？",
+        "items": "代理就每一项提出的问题"
       },
       "fields": {
         "turnType": "任务类型",
@@ -399,7 +402,12 @@
         "target": "目标元素",
         "probability": "概率",
         "omit": "省略的日志段",
-        "key": "值得告诉你的事件"
+        "key": "值得告诉你的事件",
+        "withhold": "拦下的段落",
+        "kept": "放行的段落",
+        "answeredYes": "回答「是」",
+        "answeredNo": "回答「否」",
+        "answeredUnsure": "拿不准"
       },
       "values": {
         "true": "是",
@@ -504,7 +512,10 @@
         "listing": "文件名或搜索匹配",
         "content": "代码或文本",
         "log": "构建或测试输出",
-        "data": "查到的事实"
+        "data": "查到的事实",
+        "end": "让这一轮结束",
+        "promised": "去做它说的下一步",
+        "go_ahead": "直接动手，不再问"
       },
       "probabilityValue": "判定为「是」的概率：{{percent}}",
       "optionProbability": "{{option}} {{percent}}",
@@ -888,6 +899,25 @@
             "unrelated": "与任务无关",
             "unclear": "说不准"
           }
+        },
+        "injection": {
+          "questions": {
+            "injected": "带有冲着 AI 来的指令",
+            "passage": "第 {{number}} 段带有冲着 AI 来的指令"
+          }
+        },
+        "continuation": {
+          "questions": {
+            "promised": "说了下一步要做什么，然后停了",
+            "asks_go_ahead": "最后在问要不要动手",
+            "work_requested": "用户要的是动手做，不只是回答",
+            "irreversible": "下一步难以撤销，或会影响到这台机器之外"
+          }
+        },
+        "items": {
+          "questions": {
+            "item": "第 {{number}} 项：是"
+          }
         }
       },
       "log": {
@@ -1012,6 +1042,9 @@
           "ready": "补丁已就绪",
           "applied": "补丁已应用"
         }
+      },
+      "tool": {
+        "injection": "工具结果中有段落被拦下"
       }
     },
     "contextUsage": "上下文占用",
@@ -1371,6 +1404,11 @@
       "board": {
         "on": "看板：打开",
         "off": "看板：关闭"
+      },
+      "injection": {
+        "withheld": "{{tool}}：{{total}} 段中拦下 {{withheld}} 段，里面有冲着 AI 来的指令",
+        "byRules": "判定器没有回答：按 mu 的规则判断",
+        "excerpt": "开头：{{text}}"
       }
     },
     "gauges": {

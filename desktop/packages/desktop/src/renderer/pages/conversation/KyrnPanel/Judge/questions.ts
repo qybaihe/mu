@@ -134,6 +134,17 @@ export const JUDGE_QUESTIONS: Record<keyof typeof DECISIONS, readonly JudgeQuest
     { id: 'claims_done', type: 'boolean' },
     { id: 'needs_check', type: 'boolean' },
   ],
+  'turn.continue': [
+    { id: 'promised', type: 'boolean' },
+    { id: 'asks_go_ahead', type: 'boolean' },
+    { id: 'work_requested', type: 'boolean' },
+    { id: 'irreversible', type: 'boolean' },
+  ],
+  'tool.injection': [
+    { id: 'injected', type: 'boolean' },
+    { id: 'i', key: 'passage', from: 1, type: 'boolean' },
+  ],
+  'judge.items': [{ id: 'q', key: 'item', from: 1, type: 'boolean' }],
   'notify.routing': [{ id: 'urgency', type: 'choice', answers: ['now', 'next_turn', 'drop', 'other'] }],
   'cache.warming': [
     { id: 'finished', type: 'boolean' },

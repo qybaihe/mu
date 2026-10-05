@@ -358,7 +358,10 @@
         "review": "각 리뷰 발견은 얼마나 심각한가?",
         "board": "작업은 어디까지 진행되었는가?",
         "relate": "이 발견은 이전 발견에 어떤 의미가 있는가?",
-        "approval": "작업에 필요한 단계이고, 예상한 방식대로 하는가?"
+        "approval": "작업에 필요한 단계이고, 예상한 방식대로 하는가?",
+        "injection": "이 도구 출력에 AI를 겨냥한 지시가 들어 있는가?",
+        "continuation": "해야 할 일을 하기 전에 멈췄는가?",
+        "items": "에이전트가 항목마다 던진 질문"
       },
       "fields": {
         "turnType": "작업 유형",
@@ -399,7 +402,12 @@
         "target": "대상 요소",
         "probability": "확률",
         "omit": "생략한 로그 부분",
-        "key": "알릴 만한 사건"
+        "key": "알릴 만한 사건",
+        "withhold": "보류한 단락",
+        "kept": "통과시킨 단락",
+        "answeredYes": "'예' 답변",
+        "answeredNo": "'아니요' 답변",
+        "answeredUnsure": "불확실"
       },
       "values": {
         "true": "예",
@@ -504,7 +512,10 @@
         "listing": "파일 이름이나 검색 결과",
         "content": "코드나 글",
         "log": "빌드나 테스트 출력",
-        "data": "찾아본 사실"
+        "data": "찾아본 사실",
+        "end": "이대로 종료",
+        "promised": "말한 다음 단계를 실행",
+        "go_ahead": "묻지 않고 작업 진행"
       },
       "probabilityValue": "'예'일 확률: {{percent}}",
       "optionProbability": "{{option}} {{percent}}",
@@ -888,6 +899,25 @@
             "unrelated": "작업과 관련 없음",
             "unclear": "판단할 수 없음"
           }
+        },
+        "injection": {
+          "questions": {
+            "injected": "AI를 겨냥한 지시가 있음",
+            "passage": "단락 {{number}}에 AI를 겨냥한 지시가 있음"
+          }
+        },
+        "continuation": {
+          "questions": {
+            "promised": "다음에 할 일을 말하고 멈춤",
+            "asks_go_ahead": "진행해도 되는지 물으며 끝남",
+            "work_requested": "사용자는 답변만이 아니라 작업을 요청함",
+            "irreversible": "다음 단계는 되돌리기 어렵거나 이 컴퓨터 밖에 영향을 줌"
+          }
+        },
+        "items": {
+          "questions": {
+            "item": "항목 {{number}}: 예"
+          }
         }
       },
       "log": {
@@ -1012,6 +1042,9 @@
           "ready": "패치 준비됨",
           "applied": "패치 적용됨"
         }
+      },
+      "tool": {
+        "injection": "도구 결과의 일부 단락을 보류함"
       }
     },
     "contextUsage": "컨텍스트 사용량",
@@ -1371,6 +1404,11 @@
       "board": {
         "on": "보드: 켜짐",
         "off": "보드: 꺼짐"
+      },
+      "injection": {
+        "withheld": "{{tool}}: 단락 {{total}}개 중 {{withheld}}개 보류 (AI를 겨냥한 지시가 들어 있었음)",
+        "byRules": "판정기가 답하지 않아 mu의 규칙으로 판단함",
+        "excerpt": "시작 부분: {{text}}"
       }
     },
     "gauges": {

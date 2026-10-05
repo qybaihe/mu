@@ -358,7 +358,10 @@
         "review": "Qual a gravidade de cada apontamento da revisão?",
         "board": "Em que ponto está o trabalho?",
         "relate": "O que esta descoberta significa para uma anterior?",
-        "approval": "É um passo de que a tarefa precisa, feito do jeito que você esperaria?"
+        "approval": "É um passo de que a tarefa precisa, feito do jeito que você esperaria?",
+        "injection": "Esta saída de ferramenta contém instruções dirigidas à IA?",
+        "continuation": "A execução parou antes de fazer o que devia?",
+        "items": "A pergunta do agente sobre cada item"
       },
       "fields": {
         "turnType": "Tipo de tarefa",
@@ -399,7 +402,12 @@
         "target": "Elemento",
         "probability": "Probabilidade",
         "omit": "Partes do log omitidas",
-        "key": "Eventos que valem contar"
+        "key": "Eventos que valem contar",
+        "withhold": "Trechos retidos",
+        "kept": "Trechos repassados",
+        "answeredYes": "Respondidos com sim",
+        "answeredNo": "Respondidos com não",
+        "answeredUnsure": "Incertos"
       },
       "values": {
         "true": "Sim",
@@ -504,7 +512,10 @@
         "listing": "Nomes de arquivo ou correspondências",
         "content": "Código ou texto",
         "log": "Saída de build ou de testes",
-        "data": "Fatos consultados"
+        "data": "Fatos consultados",
+        "end": "Deixar a execução terminar",
+        "promised": "Fazer o passo que anunciou",
+        "go_ahead": "Fazer o trabalho sem perguntar"
       },
       "probabilityValue": "Probabilidade de “sim”: {{percent}}",
       "optionProbability": "{{option}} {{percent}}",
@@ -888,6 +899,25 @@
             "unrelated": "Fora da tarefa",
             "unclear": "Não dá para saber"
           }
+        },
+        "injection": {
+          "questions": {
+            "injected": "Contém instruções dirigidas à IA",
+            "passage": "O trecho {{number}} contém instruções dirigidas à IA"
+          }
+        },
+        "continuation": {
+          "questions": {
+            "promised": "Disse o que faria a seguir e parou",
+            "asks_go_ahead": "Termina perguntando se deve seguir em frente",
+            "work_requested": "O usuário pediu o trabalho, não só uma resposta",
+            "irreversible": "O próximo passo é difícil de desfazer ou vai além desta máquina"
+          }
+        },
+        "items": {
+          "questions": {
+            "item": "Item {{number}}: sim"
+          }
         }
       },
       "log": {
@@ -1012,6 +1042,9 @@
           "ready": "Patch pronto",
           "applied": "Patch aplicado"
         }
+      },
+      "tool": {
+        "injection": "Trechos retidos de um resultado de ferramenta"
       }
     },
     "contextUsage": "Uso do contexto",
@@ -1371,6 +1404,11 @@
       "board": {
         "on": "Painel: ativado",
         "off": "Painel: desativado"
+      },
+      "injection": {
+        "withheld": "{{tool}}: trechos retidos: {{withheld}} de {{total}}, continham instruções dirigidas à IA",
+        "byRules": "o juiz não respondeu: decidido pelas regras do mu",
+        "excerpt": "começa: {{text}}"
       }
     },
     "gauges": {

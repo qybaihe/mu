@@ -320,6 +320,46 @@ describe('Jev judgment cards: readable result and details', () => {
   const card = (payload: Record<string, unknown>) =>
     judgeCards([event('decision', payload, turn('runtime-a', 1, 5))])[0];
 
+  it('counts per-item probabilities: passages withheld over 0.5, the agent’s question answered yes, no or unsure', () => {
+    // A screen of two batches: batches are flattened, a passage without an answer counts as neither.
+    expect(
+      resultFacts(
+        card(
+          ledger({
+            specId: 'tool.injection',
+            outcome: [
+              [0.98, 0.02, 0.5],
+              [0.04, null],
+            ],
+          })
+        )
+      )
+    ).toEqual([
+      { name: 'withhold', values: ['1'] },
+      { name: 'kept', values: ['3'] },
+    ]);
+    expect(
+      resultFacts(
+        card(
+          ledger({
+            specId: 'judge.items',
+            outcome: [
+              [0.95, 0.5, 0.02],
+              [0.8, 0.2],
+            ],
+          })
+        )
+      )
+    ).toEqual([
+      { name: 'answeredYes', values: ['2'] },
+      { name: 'answeredNo', values: ['2'] },
+      { name: 'answeredUnsure', values: ['1'] },
+    ]);
+    expect(resultFacts(card(ledger({ specId: 'turn.continue', outcome: 'go_ahead' })))).toEqual([
+      { name: 'result', values: ['go_ahead'] },
+    ]);
+  });
+
   it('labels scalar, list, ranked and per-candidate outcomes without inventing anything', () => {
     expect(resultFacts(card(ledger({ specId: 'turn.drift', outcome: 'on_track' })))).toEqual([
       { name: 'result', values: ['on_track'] },
@@ -560,6 +600,9 @@ describe('Jev judgment cards: what the view can translate', () => {
       'hive.relate',
       'tool.approval',
       'tool.admission.test-log',
+      'tool.injection',
+      'turn.continue',
+      'judge.items',
     ];
     expect(harness.map(stageOf)).not.toContain('other');
     expect(new Set(harness.map(stageOf)).size).toBe(harness.length);

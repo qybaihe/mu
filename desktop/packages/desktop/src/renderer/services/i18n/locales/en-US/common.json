@@ -358,7 +358,10 @@
         "review": "How serious is each review finding?",
         "board": "Where does the work stand?",
         "relate": "What does this finding do to an earlier one?",
-        "approval": "Is this a step the task needs, done the way you would expect?"
+        "approval": "Is this a step the task needs, done the way you would expect?",
+        "injection": "Does this tool output carry instructions aimed at the AI?",
+        "continuation": "Did the run stop short of what it should do?",
+        "items": "The agent's own question about each item"
       },
       "fields": {
         "turnType": "Task type",
@@ -399,7 +402,12 @@
         "target": "Element",
         "probability": "Probability",
         "omit": "Log parts left out",
-        "key": "Events worth telling"
+        "key": "Events worth telling",
+        "withhold": "Passages withheld",
+        "kept": "Passages passed on",
+        "answeredYes": "Answered yes",
+        "answeredNo": "Answered no",
+        "answeredUnsure": "Unsure"
       },
       "values": {
         "true": "Yes",
@@ -504,7 +512,10 @@
         "listing": "File names or matches",
         "content": "Code or text",
         "log": "Build or test output",
-        "data": "Looked-up facts"
+        "data": "Looked-up facts",
+        "end": "Let the run end",
+        "promised": "Do the step it named",
+        "go_ahead": "Do the work without asking"
       },
       "probabilityValue": "Probability of yes: {{percent}}",
       "optionProbability": "{{option}} {{percent}}",
@@ -888,6 +899,25 @@
             "unrelated": "Not part of the task",
             "unclear": "Can’t tell"
           }
+        },
+        "injection": {
+          "questions": {
+            "injected": "Carries instructions aimed at the AI",
+            "passage": "Passage {{number}} carries instructions aimed at the AI"
+          }
+        },
+        "continuation": {
+          "questions": {
+            "promised": "Said what it would do next, then stopped",
+            "asks_go_ahead": "Ends by asking whether to go ahead",
+            "work_requested": "The user asked for the work, not only an answer",
+            "irreversible": "The next step is hard to undo or reaches beyond this machine"
+          }
+        },
+        "items": {
+          "questions": {
+            "item": "Item {{number}}: yes"
+          }
         }
       },
       "log": {
@@ -1012,6 +1042,9 @@
           "ready": "Patch ready",
           "applied": "Patch applied"
         }
+      },
+      "tool": {
+        "injection": "Passages withheld from a tool result"
       }
     },
     "contextUsage": "Context usage",
@@ -1371,6 +1404,11 @@
       "board": {
         "on": "Board: on",
         "off": "Board: off"
+      },
+      "injection": {
+        "withheld": "{{tool}}: passages withheld {{withheld}} of {{total}}, they carried instructions aimed at the AI",
+        "byRules": "the judge gave no answer: read by mu's rules",
+        "excerpt": "begins: {{text}}"
       }
     },
     "gauges": {

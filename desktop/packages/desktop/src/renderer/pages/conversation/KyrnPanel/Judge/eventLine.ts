@@ -406,6 +406,25 @@ function checkpointLine(t: TFunction, payload: Record<string, unknown>, language
   return lines(words ? t(words.key, values) : str(payload.message));
 }
 
+// ── tool.injection ──────────────────────────────────────────────────────────
+
+/**
+ * Passages of a tool's result that carried instructions aimed at the AI and were kept from the model: how many, by
+ * whom when the judge gave no answer, and the start of each as page text (data, quoted).
+ */
+function injectionLines(t: TFunction, payload: Record<string, unknown>): string[] | undefined {
+  const params = parseParams(payload);
+  const count = whole(params, 'withheld');
+  const total = whole(params, 'passages');
+  if (count === undefined || total === undefined) return undefined;
+  const excerpts = Array.isArray(payload.excerpts) ? payload.excerpts.map(str).filter(Boolean).slice(0, 3) : [];
+  return lines(
+    t(`${KEY}.injection.withheld`, { withheld: count, total, tool: str(payload.tool) }),
+    str(payload.source) === 'rules' ? t(`${KEY}.injection.byRules`) : undefined,
+    ...excerpts.map((text) => t(`${KEY}.injection.excerpt`, { text }))
+  );
+}
+
 // ── board.switched ──────────────────────────────────────────────────────────
 
 /** Whether the board is on: the harness says so whenever it starts and after each switch, so this is a state. */
@@ -451,6 +470,8 @@ export function eventLines(
       return checkpointLine(t, payload, language);
     case 'board.switched':
       return boardLine(t, payload);
+    case 'tool.injection':
+      return injectionLines(t, payload);
     default:
       return undefined;
   }

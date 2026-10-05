@@ -358,7 +358,10 @@
         "review": "¿Qué gravedad tiene cada hallazgo de la revisión?",
         "board": "¿En qué punto está el trabajo?",
         "relate": "¿Qué supone este hallazgo para uno anterior?",
-        "approval": "¿Es un paso que la tarea necesita, hecho como lo esperarías?"
+        "approval": "¿Es un paso que la tarea necesita, hecho como lo esperarías?",
+        "injection": "¿Contiene esta salida de herramienta instrucciones dirigidas a la IA?",
+        "continuation": "¿Se detuvo la ejecución antes de hacer lo que debía?",
+        "items": "La pregunta del agente sobre cada elemento"
       },
       "fields": {
         "turnType": "Tipo de tarea",
@@ -399,7 +402,12 @@
         "target": "Elemento",
         "probability": "Probabilidad",
         "omit": "Partes del registro omitidas",
-        "key": "Eventos que vale la pena contar"
+        "key": "Eventos que vale la pena contar",
+        "withhold": "Fragmentos retenidos",
+        "kept": "Fragmentos que pasaron",
+        "answeredYes": "Respondidos con sí",
+        "answeredNo": "Respondidos con no",
+        "answeredUnsure": "Dudosos"
       },
       "values": {
         "true": "Sí",
@@ -504,7 +512,10 @@
         "listing": "Nombres de archivo o coincidencias",
         "content": "Código o texto",
         "log": "Salida de compilación o pruebas",
-        "data": "Datos consultados"
+        "data": "Datos consultados",
+        "end": "Dejar que termine",
+        "promised": "Hacer el paso que anunció",
+        "go_ahead": "Hacer el trabajo sin preguntar"
       },
       "probabilityValue": "Probabilidad de «sí»: {{percent}}",
       "optionProbability": "{{option}} {{percent}}",
@@ -888,6 +899,25 @@
             "unrelated": "No forma parte de la tarea",
             "unclear": "No se puede saber"
           }
+        },
+        "injection": {
+          "questions": {
+            "injected": "Contiene instrucciones dirigidas a la IA",
+            "passage": "El fragmento {{number}} contiene instrucciones dirigidas a la IA"
+          }
+        },
+        "continuation": {
+          "questions": {
+            "promised": "Dijo lo que haría a continuación y se detuvo",
+            "asks_go_ahead": "Termina preguntando si debe seguir adelante",
+            "work_requested": "El usuario pidió el trabajo, no solo una respuesta",
+            "irreversible": "El siguiente paso es difícil de deshacer o va más allá de esta máquina"
+          }
+        },
+        "items": {
+          "questions": {
+            "item": "Elemento {{number}}: sí"
+          }
         }
       },
       "log": {
@@ -1012,6 +1042,9 @@
           "ready": "Parche listo",
           "applied": "Parche aplicado"
         }
+      },
+      "tool": {
+        "injection": "Fragmentos retenidos de un resultado de herramienta"
       }
     },
     "contextUsage": "Uso del contexto",
@@ -1371,6 +1404,11 @@
       "board": {
         "on": "Tablero: activado",
         "off": "Tablero: desactivado"
+      },
+      "injection": {
+        "withheld": "{{tool}}: fragmentos retenidos: {{withheld}} de {{total}}, contenían instrucciones dirigidas a la IA",
+        "byRules": "el juez no respondió: decidido con las reglas de mu",
+        "excerpt": "empieza: {{text}}"
       }
     },
     "gauges": {

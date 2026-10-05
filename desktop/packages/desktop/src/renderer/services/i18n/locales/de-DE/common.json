@@ -358,7 +358,10 @@
         "review": "Wie schwerwiegend ist jeder Review-Befund?",
         "board": "Wo steht die Arbeit?",
         "relate": "Was bedeutet diese Erkenntnis für eine frühere?",
-        "approval": "Ist das ein Schritt, den die Aufgabe braucht, so ausgeführt, wie du es erwarten würdest?"
+        "approval": "Ist das ein Schritt, den die Aufgabe braucht, so ausgeführt, wie du es erwarten würdest?",
+        "injection": "Enthält diese Werkzeugausgabe Anweisungen an die KI?",
+        "continuation": "Hat der Lauf aufgehört, bevor er tat, was er sollte?",
+        "items": "Die Frage des Agenten zu jedem Eintrag"
       },
       "fields": {
         "turnType": "Aufgabentyp",
@@ -399,7 +402,12 @@
         "target": "Element",
         "probability": "Wahrscheinlichkeit",
         "omit": "Ausgelassene Log-Teile",
-        "key": "Erzählenswerte Ereignisse"
+        "key": "Erzählenswerte Ereignisse",
+        "withhold": "Zurückgehaltene Abschnitte",
+        "kept": "Weitergegebene Abschnitte",
+        "answeredYes": "Mit Ja beantwortet",
+        "answeredNo": "Mit Nein beantwortet",
+        "answeredUnsure": "Unsicher"
       },
       "values": {
         "true": "Ja",
@@ -504,7 +512,10 @@
         "listing": "Dateinamen oder Treffer",
         "content": "Code oder Text",
         "log": "Build- oder Testausgabe",
-        "data": "Nachgeschlagene Fakten"
+        "data": "Nachgeschlagene Fakten",
+        "end": "Lauf enden lassen",
+        "promised": "Den genannten Schritt ausführen",
+        "go_ahead": "Ohne Rückfrage arbeiten"
       },
       "probabilityValue": "Wahrscheinlichkeit für „Ja“: {{percent}}",
       "optionProbability": "{{option}} {{percent}}",
@@ -888,6 +899,25 @@
             "unrelated": "Gehört nicht zur Aufgabe",
             "unclear": "Lässt sich nicht sagen"
           }
+        },
+        "injection": {
+          "questions": {
+            "injected": "Enthält Anweisungen an die KI",
+            "passage": "Abschnitt {{number}} enthält Anweisungen an die KI"
+          }
+        },
+        "continuation": {
+          "questions": {
+            "promised": "Sagte, was es als Nächstes tut, und hörte auf",
+            "asks_go_ahead": "Endet mit der Frage, ob es loslegen soll",
+            "work_requested": "Der Nutzer wollte die Arbeit, nicht nur eine Antwort",
+            "irreversible": "Der nächste Schritt ist schwer rückgängig zu machen oder reicht über diesen Rechner hinaus"
+          }
+        },
+        "items": {
+          "questions": {
+            "item": "Eintrag {{number}}: ja"
+          }
         }
       },
       "log": {
@@ -1012,6 +1042,9 @@
           "ready": "Patch bereit",
           "applied": "Patch angewendet"
         }
+      },
+      "tool": {
+        "injection": "Abschnitte eines Werkzeugergebnisses zurückgehalten"
       }
     },
     "contextUsage": "Kontextnutzung",
@@ -1371,6 +1404,11 @@
       "board": {
         "on": "Klartext: ein",
         "off": "Klartext: aus"
+      },
+      "injection": {
+        "withheld": "{{tool}}: Abschnitte zurückgehalten: {{withheld}} von {{total}}, sie enthielten Anweisungen an die KI",
+        "byRules": "der Richter hat nicht geantwortet: nach den Regeln von mu entschieden",
+        "excerpt": "beginnt: {{text}}"
       }
     },
     "gauges": {
