@@ -444,6 +444,20 @@ export function launchStrategy({ platform, env, canExec }) {
 	return "exec";
 }
 
+/** The commands pi dispatches on its first argument (packages, config, mcp). mu's usage presents them as mu's own;
+ *  the judgment layer never runs for them, so its extension stays out of their way. */
+const AGENT_COMMANDS = ["install", "remove", "uninstall", "update", "list", "config", "mcp"];
+
+/** How the judgment layer's extension joins pi's arguments: in front for a session, never in front of pi's own
+ *  commands, which pi reads as its first argument — an -e before them would turn them into a prompt. */
+function judgeArgs({ argv, layout, root, platform }) {
+	if (AGENT_COMMANDS.includes(argv[0])) return [];
+	const path = pathFor(platform);
+	return layout === "package"
+		? ["-e", packageEntries({ root, platform }).extension]
+		: ["-e", path.join(root, "packages", "kyrn-judge", "src", "extension", "kyrn-judge.ts")];
+}
+
 /**
  * Everything about starting pi, decided without touching anything: the command, its arguments as an array
  * (never a shell string) and the child's whole environment.
@@ -470,16 +484,11 @@ export function planLaunch({
 		if (!fs.exists(files.extension)) {
 			return { error: `This mu-agent package is incomplete (${files.extension} is missing). Reinstall it: npm i -g mu-agent` };
 		}
-		entry = [files.cli, "-e", files.extension];
+		entry = [files.cli];
 	} else {
 		const runtime = sourceRuntime({ root, platform, stripsTypes, exists: fs.exists });
 		if (runtime.error) return { error: runtime.error };
-		entry = [
-			...runtime.args,
-			path.join(root, "packages", "coding-agent", "src", "experimental", "cli.ts"),
-			"-e",
-			path.join(root, "packages", "kyrn-judge", "src", "extension", "kyrn-judge.ts"),
-		];
+		entry = [...runtime.args, path.join(root, "packages", "coding-agent", "src", "experimental", "cli.ts")];
 	}
 
 	const muDir = muHome({ home, platform, isDir: fs.isDir });
@@ -527,7 +536,7 @@ export function planLaunch({
 
 	return {
 		command: execPath,
-		args: [...entry, ...argv],
+		args: [...entry, ...judgeArgs({ argv, layout, root, platform }), ...argv],
 		env: childEnv,
 		strategy: launchStrategy({ platform, env, canExec }),
 		layout,
@@ -566,7 +575,7 @@ export function planHost({ platform, env, argv, root, home, fs, wsl = false, str
 			...common,
 			module: path.join(root, "dist", "bundle", "index.js"),
 			execArgv: [],
-			args: ["-e", packageEntries({ root, platform }).extension, ...argv],
+			args: [...judgeArgs({ argv, layout: launch.layout, root, platform }), ...argv],
 		};
 	}
 	const runtime = sourceRuntime({ root, platform, stripsTypes, exists: fs.exists });
@@ -575,7 +584,7 @@ export function planHost({ platform, env, argv, root, home, fs, wsl = false, str
 		...common,
 		module: path.join(root, "packages", "coding-agent", "src", "index.ts"),
 		execArgv: runtime.args,
-		args: ["-e", path.join(root, "packages", "kyrn-judge", "src", "extension", "kyrn-judge.ts"), ...argv],
+		args: [...judgeArgs({ argv, layout: launch.layout, root, platform }), ...argv],
 	};
 }
 

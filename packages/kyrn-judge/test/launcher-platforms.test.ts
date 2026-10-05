@@ -391,6 +391,17 @@ describe("starting pi", () => {
 		});
 	});
 
+	it("passes pi's own commands to pi as its first argument, without the judgment layer in front of them", () => {
+		for (const command of ["install", "remove", "uninstall", "update", "list", "config", "mcp"]) {
+			const plan = launch({ argv: [command, "-l"] });
+			expect(plan.args.slice(-2)).toEqual([command, "-l"]);
+			expect(plan.args).not.toContain("-e");
+		}
+		// Anything else is a prompt, and the judgment layer loads for it as before.
+		const prompt = launch({ argv: ["reviewing", "something"] });
+		expect(prompt.args).toContain(`${POSIX_ROOT}/packages/kyrn-judge/src/extension/kyrn-judge.ts`);
+	});
+
 	it("runs a checkout's TypeScript with Node itself, and says why where it cannot", () => {
 		expect(launch({ argv: ["--mode", "rpc"] }).args).toEqual([
 			...POSIX_NATIVE,
@@ -506,6 +517,19 @@ describe("pi inside another program (the desktop app's runtime host)", () => {
 			appDir: "/home/bai/.mu/app",
 		});
 		expect(host.env).toEqual(launch({ argv: rpc }).env);
+	});
+
+	it("starts the host's pi the same way for pi's own commands, without the judgment layer in front of them", () => {
+		const input = {
+			platform: "linux" as const,
+			env: {},
+			root: POSIX_ROOT,
+			home: "/home/bai",
+			fs: disk(posixInstalled),
+		};
+		const host = planHost({ ...input, argv: ["list"] });
+		if (host.error !== undefined) throw new Error(host.error);
+		expect(host.args).toEqual(["list"]);
 	});
 
 	it("refuses a checkout it cannot run on the host's own Node", () => {
