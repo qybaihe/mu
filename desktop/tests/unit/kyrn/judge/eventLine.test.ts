@@ -300,6 +300,12 @@ describe('Runtime event lines by the harness codes', () => {
         "github: you did not allow this project's server to start",
         'github：你没有允许这个项目的服务器启动',
       ],
+      [
+        'needs_sign_in',
+        { server: 'github' },
+        'github: it needs a sign-in first: run /mcp login github',
+        'github：需要先登录：运行 /mcp login github',
+      ],
     ];
     for (const [code, params, english, chinese] of bare) {
       // These reasons are the English of the code itself, so nothing more follows.
@@ -364,6 +370,11 @@ describe('Runtime event lines by the harness codes', () => {
       '详情：spawn gh-mcp ENOENT',
     ]);
     expect(say(zh, 'mcp.failed', { ...payload, code: 'crashed' })).toEqual(['github：spawn gh-mcp ENOENT']);
+    // A connection that dropped after the start: pi's words stay as the detail.
+    expect(say(zh, 'mcp.failed', { ...payload, code: 'disconnected', willRestart: true })).toEqual([
+      'github：连接断开了；下次调用时 mu 会重新连接',
+      '详情：spawn gh-mcp ENOENT',
+    ]);
     expect(say(zh, 'mcp.failed', { reason: 'no name given' })).toEqual(['no name given']);
     expect(say(zh, 'mcp.failed', { name: 'github' })).toEqual(['github']);
   });

@@ -116,8 +116,12 @@
     "services": {
       "auto": {
         "name": "自动",
-        "help": "设置了 TypeSafe 密钥就用 TypeSafe，否则设置了 OpenRouter 密钥就用 OpenRouter，都没有则走 Vercel AI Gateway。",
+        "help": "按顺序用第一个设置了密钥的服务：TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare。都没有设置时走 Vercel AI Gateway。",
         "key": "TypeSafe API 密钥"
+      },
+      "opencodeFree": {
+        "name": "OpenCode Zen（免费）",
+        "help": "OpenCode Zen 上的 Jev 1.13，限时免费：不用密钥，不用账号。OpenCode 不会拿 Jev 读到的内容做训练。"
       },
       "typesafe": {
         "name": "TypeSafe",
@@ -134,6 +138,19 @@
         "help": "始终经由 Vercel AI Gateway。",
         "key": "Vercel AI Gateway API 密钥"
       },
+      "opencode": {
+        "name": "OpenCode Zen",
+        "help": "OpenCode Zen 上的 Jev 1.13，按次计费，记在你的 OpenCode 账户上。同一个密钥也能在 mu 里用 OpenCode Zen 的对话模型。",
+        "key": "OpenCode API 密钥"
+      },
+      "cloudflare": {
+        "name": "Cloudflare Workers AI",
+        "help": "Cloudflare Workers AI 上的 Jev，需要 Cloudflare API 令牌和你的账户 ID。",
+        "key": "Cloudflare API 令牌",
+        "account": "Cloudflare 账户 ID",
+        "accountHelp": "在 Cloudflare 控制台的 Workers AI 页面可以看到。和令牌一样保存。",
+        "accountPlaceholder": "粘贴账户 ID"
+      },
       "custom": {
         "name": "自定义服务",
         "help": "任何支持 TypeSafe System One 协议的服务：你自己运行的、局域网里的中转，或其他提供 Jev 的服务商。",
@@ -149,7 +166,8 @@
     "endpointDefault": "使用服务的默认地址",
     "types": {
       "localHelp": "在这台电脑上运行。",
-      "clmHelp": "运行在你自己的 CLM 服务器上。"
+      "clmHelp": "运行在你自己的 CLM 服务器上。",
+      "classifierHelp": "mu 模型目录里的分类模型：{{model}}。mu 用它所属服务商的密钥调用它。"
     },
     "intro": "mu 工作时要做很多小判断：这条消息该怎么处理、这一步会不会违反你定的规则……判定器负责回答。选一个就行。",
     "choose": "选择判定器",
@@ -159,7 +177,7 @@
       "jev": {
         "title": "Jev",
         "tag": "推荐",
-        "description": "又快又准，按次计费。需要 TypeSafe、OpenRouter、Vercel AI Gateway 或你自己服务的密钥。"
+        "description": "又快又准。在 OpenCode Zen 上限时免费；也可以用 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare 或你自己服务的密钥，按次计费。"
       },
       "local": {
         "title": "本地 Laya",
@@ -837,7 +855,7 @@
     "hive": "让几个调查员同时查一个问题：/hive <问题>；不带问题时同 /swarm，看正在干活的子代理",
     "browse": "让内置浏览器打开网址，照你说的去做：/browse <网址> [要做的事]",
     "inherit": "mu 从 Claude Code、Cursor 和 Codex 沿用了什么，各来自哪个文件",
-    "mcp": "MCP 服务器：/mcp 查看，/mcp open <ID> 打开，/mcp restart <ID> 重启",
+    "mcp": "管理 MCP 服务器：登录、重新连接、启用或停用、调整暴露方式",
     "jobs": "后台命令：/jobs 查看，/jobs stop <编号|all> 停掉",
     "commit": "把还没提交的改动拆成几个提交：先给你看计划，你同意才提交，从不推送",
     "review": "让评审子代理审查还没提交的改动（或你指定的内容），评审发现按轻重排成 P0 到 P3",

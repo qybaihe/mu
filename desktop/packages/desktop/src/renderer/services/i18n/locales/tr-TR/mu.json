@@ -116,8 +116,12 @@
     "services": {
       "auto": {
         "name": "Otomatik",
-        "help": "Anahtarı ayarlıysa TypeSafe, değilse anahtarı ayarlıysa OpenRouter, o da değilse Vercel AI Gateway.",
+        "help": "Anahtarı ayarlanmış ilk hizmet, şu sırayla: TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare. Hiçbiri yoksa Vercel AI Gateway.",
         "key": "TypeSafe API anahtarı"
+      },
+      "opencodeFree": {
+        "name": "OpenCode Zen (ücretsiz)",
+        "help": "OpenCode Zen'de Jev 1.13, sınırlı bir süre ücretsiz: anahtar da hesap da gerekmez. OpenCode, Jev'in okuduklarıyla model eğitmez."
       },
       "typesafe": {
         "name": "TypeSafe",
@@ -134,6 +138,19 @@
         "help": "Her zaman Vercel AI Gateway üzerinden.",
         "key": "Vercel AI Gateway API anahtarı"
       },
+      "opencode": {
+        "name": "OpenCode Zen",
+        "help": "OpenCode Zen'de Jev 1.13, çağrı başına OpenCode hesabınızdan ücretlendirilir. Aynı anahtar mu'da OpenCode Zen'in sohbet modellerini de açar.",
+        "key": "OpenCode API anahtarı"
+      },
+      "cloudflare": {
+        "name": "Cloudflare Workers AI",
+        "help": "Cloudflare Workers AI'da Jev; bir Cloudflare API belirteci ve hesap kimliğiniz gerekir.",
+        "key": "Cloudflare API belirteci",
+        "account": "Cloudflare hesap kimliği",
+        "accountHelp": "Cloudflare panosundaki Workers AI sayfasında görünür. Belirteçle aynı şekilde kaydedilir.",
+        "accountPlaceholder": "Hesap kimliğini yapıştırın"
+      },
       "custom": {
         "name": "Özel hizmet",
         "help": "TypeSafe'in System One protokolünü konuşan herhangi bir hizmet: kendi çalıştırdığınız bir hizmet, ağınızdaki bir aktarıcı ya da Jev sunan başka bir sağlayıcı.",
@@ -149,7 +166,8 @@
     "endpointDefault": "Hizmetin varsayılan adresi",
     "types": {
       "localHelp": "Bu bilgisayarda çalışır.",
-      "clmHelp": "Kendi CLM sunucunuzda çalışır."
+      "clmHelp": "Kendi CLM sunucunuzda çalışır.",
+      "classifierHelp": "mu'nun model kataloğundan bir sınıflandırma modeli: {{model}}. mu onu sağlayıcısının anahtarıyla çağırır."
     },
     "intro": "mu çalışırken pek çok küçük soruyla karşılaşır: bu mesaj nasıl ele alınmalı, bu adım koyduğunuz bir kuralı çiğniyor mu? Bunları hakem yanıtlar. Birini seçin.",
     "choose": "Bir hakem seçin",
@@ -159,7 +177,7 @@
       "jev": {
         "title": "Jev",
         "tag": "Önerilen",
-        "description": "Hızlı ve isabetli, çağrı başına ücretlendirilir. TypeSafe, OpenRouter, Vercel AI Gateway ya da kendi hizmetinizin anahtarı gerekir."
+        "description": "Hızlı ve doğru. OpenCode Zen'de sınırlı bir süre ücretsiz; ya da TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare veya kendi hizmetinizin anahtarıyla çağrı başına ücretli."
       },
       "local": {
         "title": "Yerel Laya",
@@ -837,7 +855,7 @@
     "hive": "Tek bir soruya aynı anda birkaç araştırmacı koyar: /hive <soru>. Soru olmadan /swarm ile aynıdır",
     "browse": "Yerleşik tarayıcıyı bir adrese gönderip söylediğinizi yaptırır: /browse <url> [hedef]",
     "inherit": "mu’nun Claude Code, Cursor ve Codex’ten neyi, nereden devraldığı",
-    "mcp": "MCP sunucuları: /mcp, /mcp open <id>, /mcp restart <id>",
+    "mcp": "MCP sunucularını yönet: oturum aç, yeniden bağlan, aç veya kapat, görünürlüğü değiştir",
     "jobs": "Arka plan işleri: /jobs, /jobs stop <id|all>",
     "commit": "Commit edilmemiş değişikliği commit’lere böler: önce planı gösterir, yalnızca onay verdiğinizde commit eder, asla push yapmaz",
     "review": "Commit edilmemiş değişikliği ya da belirttiğinizi inceleyici alt ajanla gözden geçirir; bulgular P0’dan P3’e sıralanır",

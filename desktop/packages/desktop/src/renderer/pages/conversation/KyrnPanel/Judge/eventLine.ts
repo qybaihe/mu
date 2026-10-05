@@ -167,6 +167,7 @@ const MCP_REASONS: ReadonlyMap<string, string> = new Map([
   ['rpc', 'rpc'],
   ['protocol', 'protocol'],
   ['start_failed', 'startFailed'],
+  ['disconnected', 'disconnected'],
 ]);
 /** Codes whose `reason` is the server's or the transport's own words, not the English of the code: kept as a detail. */
 const MCP_WORDS = new Set([
@@ -177,6 +178,7 @@ const MCP_WORDS = new Set([
   'rpc',
   'protocol',
   'start_failed',
+  'disconnected',
   'crashed',
   'restart_failed',
 ]);
@@ -193,6 +195,10 @@ function mcpReason(
     case 'needs_approval': {
       const source = data(params, 'source');
       return source ? t(`${KEY}.mcp.needsApproval`, { source }) : undefined;
+    }
+    case 'needs_sign_in': {
+      const server = data(params, 'server');
+      return server ? t(`${KEY}.mcp.needsSignIn`, { server }) : undefined;
     }
     case 'crashed': {
       // The param is 0/1; the event's own `willRestart` says the same.

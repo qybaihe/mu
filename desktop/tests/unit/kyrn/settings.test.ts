@@ -141,6 +141,56 @@ describe('native mu settings', () => {
       f.cleanup();
     }
   });
+  it('offers Jev on OpenCode Zen and Cloudflare, and Clef, as classifier models whose keys go where pi reads them', () => {
+    const f = fixture();
+    try {
+      const read = f.store.read();
+      expect(read.judges['jev-opencode-free']).toEqual({
+        type: 'classifier',
+        model: 'opencode/jev-1.13-free',
+        baseUrl: '',
+        apiKeyEnv: '',
+        timeoutMs: 10000,
+      });
+      expect(read.judges['jev-cloudflare'].model).toBe('cloudflare-workers-ai/typesafe/jev');
+      expect(read.judges.clef.model).toBe('cloudflare-workers-ai/@cf/cloudflare/clef');
+      expect(read.keys).toMatchObject({
+        OPENCODE_API_KEY: false,
+        CLOUDFLARE_API_KEY: false,
+        CLOUDFLARE_ACCOUNT_ID: false,
+      });
+      const saved = f.store.save({
+        ...read,
+        tiers: ['jev-cloudflare', 'jev-opencode-free'],
+        credentials: [
+          { name: 'CLOUDFLARE_API_KEY', value: 'fixture-cloudflare' },
+          { name: 'CLOUDFLARE_ACCOUNT_ID', value: '0123abcd' },
+        ],
+      });
+      expect(saved.keys).toMatchObject({
+        CLOUDFLARE_API_KEY: true,
+        CLOUDFLARE_ACCOUNT_ID: true,
+        OPENCODE_API_KEY: false,
+      });
+      expect(readFileSync(join(f.root, '.env'), 'utf8')).toContain('CLOUDFLARE_ACCOUNT_ID=0123abcd');
+      const raw = JSON.parse(readFileSync(join(f.dir, 'kyrn.json'), 'utf8'));
+      expect(raw.tiers).toEqual(['jev-cloudflare', 'jev-opencode-free']);
+      expect(raw.judges['jev-cloudflare']).toBeUndefined();
+      // A provider's variable is saved like a judge's key, but no judge may name it as its key.
+      const now = f.store.read();
+      const named = { ...now.judges['jev-direct'], apiKeyEnv: 'OPENCODE_API_KEY' };
+      expect(() => f.store.save({ ...now, judges: { ...now.judges, 'jev-direct': named } })).toThrow(
+        'Invalid credential variable'
+      );
+      // A classifier model is named "provider/model-id".
+      const bare = { ...now.judges['jev-opencode'], model: 'jev-1.13' };
+      expect(() => f.store.save({ ...now, tiers: ['odd'], judges: { ...now.judges, odd: bare } })).toThrow(
+        'Invalid model'
+      );
+    } finally {
+      f.cleanup();
+    }
+  });
   it('refuses to put a custom service in the order without an address, so its key never goes to TypeSafe', () => {
     const f = fixture();
     try {

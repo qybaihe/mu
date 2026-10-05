@@ -5,12 +5,14 @@ import { newDraft } from '@/renderer/pages/settings/KyrnSettings/draft';
 import {
   choiceOf,
   choose,
+  classifierVariables,
   clmKeyVariable,
   defaultModelOf,
   GUIDE_CHOICES,
   JEV_SERVICES,
   JUDGE_CHOICES,
   jevKeyVariable,
+  jevVariables,
   kindOf,
   profileFor,
   serviceOf,
@@ -154,6 +156,42 @@ describe('the judge choice', () => {
       expect(defaultModelOf(service), service).toBeTruthy();
     }
     expect(choiceOf(withJevService(settings({ tiers: ['jev'] }), 0, 'custom'))).toBe('jev');
+  });
+
+  it('knows Jev on OpenCode Zen and Cloudflare by its model, and asks for the keys pi reads there', () => {
+    const classifier = (model: string) => ({
+      type: 'classifier' as const,
+      model,
+      baseUrl: '',
+      apiKeyEnv: '',
+      timeoutMs: 10000,
+    });
+    const free = classifier('opencode/jev-1.13-free');
+    const paid = classifier('opencode/jev-1.13');
+    const cloudflare = classifier('cloudflare-workers-ai/typesafe/jev');
+    const clef = classifier('cloudflare-workers-ai/@cf/cloudflare/clef');
+    expect([free, paid, cloudflare, clef].map(serviceOf)).toEqual([
+      'opencodeFree',
+      'opencode',
+      'cloudflare',
+      undefined,
+    ]);
+    expect([free, paid, cloudflare, clef].map(kindOf)).toEqual(['jev', 'jev', 'jev', undefined]);
+    // The free Jev needs nothing; Cloudflare its account as well as its token.
+    expect(jevVariables(free)).toEqual([]);
+    expect(jevKeyVariable(free)).toBeUndefined();
+    expect(jevVariables(paid)).toEqual(['OPENCODE_API_KEY']);
+    expect(jevVariables(cloudflare)).toEqual(['CLOUDFLARE_API_KEY', 'CLOUDFLARE_ACCOUNT_ID']);
+    expect(classifierVariables(clef)).toEqual(['CLOUDFLARE_API_KEY', 'CLOUDFLARE_ACCOUNT_ID']);
+    expect(classifierVariables(classifier('openrouter/liquid/d1'))).toEqual([]);
+    expect(jevVariables(settings().judges.jev)).toEqual(['TYPESAFE_API_KEY']);
+    // Picked as the service, the free Jev takes the place of the judge, made from its preset.
+    const made = withJevService(settings({ tiers: ['jev'] }), 0, 'opencodeFree');
+    expect(made.tiers).toEqual(['jev-opencode-free']);
+    expect(made.judges['jev-opencode-free']).toEqual(free);
+    expect(choiceOf(made)).toBe('jev');
+    // Clef in the order is no choice of the three: it goes by its own name.
+    expect(choiceOf(settings({ tiers: ['clef'], judges: { ...settings().judges, clef } }))).toBeUndefined();
   });
 
   it('puts the profile of the service picked in its place in the order, made from its preset when there is none', () => {

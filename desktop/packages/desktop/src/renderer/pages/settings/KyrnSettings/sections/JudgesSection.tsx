@@ -12,7 +12,9 @@ import ChoiceTile from '../fields/ChoiceTile';
 import Row from '../fields/Row';
 import fieldStyles from '../fields/fields.module.css';
 import {
+  CLOUDFLARE_ACCOUNT_VARIABLE,
   choiceOf,
+  classifierVariables,
   choose,
   clmKeyVariable,
   defaultModelOf,
@@ -20,7 +22,7 @@ import {
   JUDGE_CHOICES,
   type JevService,
   type JudgeChoice,
-  jevKeyVariable,
+  jevVariables,
   kindOf,
   profileFor,
   serviceOf,
@@ -172,10 +174,7 @@ export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: Bo
 
   if (choice === 'jev') {
     const service = serviceOf(judge) ?? 'auto';
-    const variable = jevKeyVariable(judge);
-    const set = settings.keys[variable];
     const address = addressOf(t, service, judge?.baseUrl ?? '');
-    const keyLabel = t(`mu.judges.services.${service}.key`);
     return (
       <div className={styles.choiceFields}>
         <div className={styles.choiceField}>
@@ -212,21 +211,26 @@ export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: Bo
             )}
           </div>
         ) : null}
-        <div className={styles.choiceField}>
-          <label className={styles.choiceLabel}>
-            {keyLabel}
-            <Tag size='small'>{t(set ? 'mu.keyState.set' : 'mu.keyState.none')}</Tag>
-          </label>
-          <Input.Password
-            className={styles.choiceInput}
-            aria-label={keyLabel}
-            autoComplete='new-password'
-            value={draft.judgeKeys[variable] ?? ''}
-            placeholder={set ? t('mu.keyKeep') : t('mu.judges.keyPlaceholder')}
-            onChange={(value) => onKey(variable, value)}
-          />
-          <div className={styles.choiceHint}>{t('mu.keyHelp')}</div>
-        </div>
+        {jevVariables(judge).map((variable) => {
+          const label = variableLabel(t, service, variable);
+          return (
+            <div className={styles.choiceField} key={variable}>
+              <label className={styles.choiceLabel}>
+                {label}
+                <Tag size='small'>{t(settings.keys[variable] ? 'mu.keyState.set' : 'mu.keyState.none')}</Tag>
+              </label>
+              <VariableInput
+                className={styles.choiceInput}
+                variable={variable}
+                label={label}
+                set={settings.keys[variable]}
+                draft={draft}
+                onKey={onKey}
+              />
+              <div className={styles.choiceHint}>{variableHelp(t, variable)}</div>
+            </div>
+          );
+        })}
       </div>
     );
   }
@@ -258,12 +262,18 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
     const kind = kindOf(settings.judges[profile]);
     return kind ? t(`mu.judges.choices.${kind}.title`) : profile;
   };
-  // Every judge in the order, and Jev, Laya and CLM when they are not in it yet.
+  // Every judge in the order, Jev, Laya and CLM when they are not in it yet, and the other classifier models (Clef).
   const offered = [
     ...settings.tiers,
     ...JUDGE_CHOICES.filter((choice) => !settings.tiers.some((name) => kindOf(settings.judges[name]) === choice))
       .map((choice) => profileFor(settings, choice))
       .filter((name): name is string => name !== undefined),
+    ...Object.keys(settings.judges).filter(
+      (name) =>
+        !settings.tiers.includes(name) &&
+        settings.judges[name].type === 'classifier' &&
+        kindOf(settings.judges[name]) === undefined
+    ),
   ];
   return (
     <div className={styles.stack} data-testid='mu-judge-tiers'>
@@ -289,15 +299,19 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
         </Row>
       </Card>
       {settings.tiers.map((name, index) => {
-        const kind = kindOf(settings.judges[name]);
+        const judge = settings.judges[name];
+        const kind = kindOf(judge);
+        const classifier = kind === undefined && judge?.type === 'classifier';
         const summary =
           kind === 'local'
             ? t('mu.judges.types.localHelp')
             : kind === 'clm'
               ? t('mu.judges.types.clmHelp')
-              : kind === undefined
-                ? t('mu.judges.customTier')
-                : undefined;
+              : classifier
+                ? t('mu.judges.types.classifierHelp', { model: judge.model })
+                : kind === undefined
+                  ? t('mu.judges.customTier')
+                  : undefined;
         return (
           <Card
             key={`${index}:${name}`}
@@ -309,6 +323,8 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
               <JevFields draft={draft} base={base} index={index} onChange={onChange} onKey={onKey} />
             ) : kind === 'clm' ? (
               <ClmFields draft={draft} base={base} index={index} onChange={onChange} onKey={onKey} />
+            ) : classifier ? (
+              <ClassifierFields draft={draft} index={index} onKey={onKey} />
             ) : kind === 'local' && index > 0 ? (
               // The first judge is the one chosen above, whose choice installs and starts it.
               <div className={styles.tierPanel}>
@@ -349,6 +365,42 @@ function addressOf(t: TFunction, service: JevService, baseUrl: string) {
   };
 }
 
+/** The label of one of a Jev service's variables: its key, or Cloudflare's account ID. */
+const variableLabel = (t: TFunction, service: JevService, variable: string): string =>
+  variable === CLOUDFLARE_ACCOUNT_VARIABLE
+    ? t('mu.judges.services.cloudflare.account')
+    : t(`mu.judges.services.${service}.key`);
+
+const variableHelp = (t: TFunction, variable: string): string =>
+  t(variable === CLOUDFLARE_ACCOUNT_VARIABLE ? 'mu.judges.services.cloudflare.accountHelp' : 'mu.keyHelp');
+
+type VariableInputProps = {
+  className: string;
+  size?: 'small';
+  variable: string;
+  label: string;
+  set: boolean | undefined;
+  draft: Draft;
+  onKey: JudgesSectionProps['onKey'];
+};
+
+/** Where a Jev service's variable is typed: a key hidden as it is typed, Cloudflare's account ID in plain sight. */
+function VariableInput({ className, size, variable, label, set, draft, onKey }: VariableInputProps) {
+  const { t } = useTranslation();
+  const account = variable === CLOUDFLARE_ACCOUNT_VARIABLE;
+  const props = {
+    size,
+    className,
+    'aria-label': label,
+    value: draft.judgeKeys[variable] ?? '',
+    placeholder: set
+      ? t('mu.keyKeep')
+      : t(account ? 'mu.judges.services.cloudflare.accountPlaceholder' : 'mu.judges.keyPlaceholder'),
+    onChange: (value: string) => onKey(variable, value),
+  };
+  return account ? <Input {...props} autoComplete='off' /> : <Input.Password {...props} autoComplete='new-password' />;
+}
+
 /** The settings with fields of one judge's profile changed. */
 const withProfile = (settings: KyrnSettings, name: string, patch: Partial<JudgeSettings>): KyrnSettings => ({
   ...settings,
@@ -374,8 +426,6 @@ function JevFields({ draft, base, index, onChange, onKey }: JudgesSectionProps &
   const service = serviceOf(judge) ?? 'auto';
   const before = base.judges[base.tiers[index] ?? ''];
   const saved = base.judges[name];
-  const variable = jevKeyVariable(judge);
-  const keyLabel = t(`mu.judges.services.${service}.key`);
   const address = addressOf(t, service, judge.baseUrl);
   // The first judge's key is asked for in the choice above.
   const keyHere = index > 0;
@@ -395,16 +445,19 @@ function JevFields({ draft, base, index, onChange, onKey }: JudgesSectionProps &
           options={serviceOptions(t)}
         />
       </Row>
-      <Row title={t('mu.judges.model')} modified={saved !== undefined && saved.model !== judge.model}>
-        <Input
-          size='small'
-          className={fieldStyles.wide}
-          aria-label={t('mu.judges.model')}
-          placeholder={defaultModelOf(service)}
-          value={judge.model}
-          onChange={(model) => onChange((now) => withProfile(now, name, { model }))}
-        />
-      </Row>
+      {judge.type === 'classifier' ? null : (
+        // A classifier model's id is its service: the free Jev and the paid one are two services.
+        <Row title={t('mu.judges.model')} modified={saved !== undefined && saved.model !== judge.model}>
+          <Input
+            size='small'
+            className={fieldStyles.wide}
+            aria-label={t('mu.judges.model')}
+            placeholder={defaultModelOf(service)}
+            value={judge.model}
+            onChange={(model) => onChange((now) => withProfile(now, name, { model }))}
+          />
+        </Row>
+      )}
       {address ? (
         <Row
           title={t('mu.judges.baseUrl')}
@@ -423,24 +476,67 @@ function JevFields({ draft, base, index, onChange, onKey }: JudgesSectionProps &
           />
         </Row>
       ) : null}
-      {keyHere ? (
-        <Row
-          title={keyLabel}
-          help={t('mu.keyHelp')}
-          modified={Boolean(draft.judgeKeys[variable])}
-          badges={<Tag size='small'>{t(settings.keys[variable] ? 'mu.keyState.set' : 'mu.keyState.none')}</Tag>}
-        >
-          <Input.Password
-            size='small'
-            className={fieldStyles.wide}
-            aria-label={keyLabel}
-            autoComplete='new-password'
-            value={draft.judgeKeys[variable] ?? ''}
-            placeholder={settings.keys[variable] ? t('mu.keyKeep') : t('mu.judges.keyPlaceholder')}
-            onChange={(value) => onKey(variable, value)}
-          />
-        </Row>
-      ) : null}
+      {keyHere
+        ? jevVariables(judge).map((variable) => {
+            const label = variableLabel(t, service, variable);
+            return (
+              <Row
+                key={variable}
+                title={label}
+                help={variableHelp(t, variable)}
+                modified={Boolean(draft.judgeKeys[variable])}
+                badges={<Tag size='small'>{t(settings.keys[variable] ? 'mu.keyState.set' : 'mu.keyState.none')}</Tag>}
+              >
+                <VariableInput
+                  size='small'
+                  className={fieldStyles.wide}
+                  variable={variable}
+                  label={label}
+                  set={settings.keys[variable]}
+                  draft={draft}
+                  onKey={onKey}
+                />
+              </Row>
+            );
+          })
+        : null}
+    </>
+  );
+}
+
+/**
+ * A classifier model in the order that is not Jev (Clef): the key of its provider where this page keeps it, asked for
+ * here wherever it stands, since no choice above stands for it.
+ */
+function ClassifierFields({ draft, index, onKey }: Pick<JudgesSectionProps, 'draft' | 'onKey'> & { index: number }) {
+  const { t } = useTranslation();
+  const { settings } = draft;
+  const judge = settings.judges[settings.tiers[index]];
+  const service: JevService = judge.model.startsWith('opencode/') ? 'opencode' : 'cloudflare';
+  return (
+    <>
+      {classifierVariables(judge).map((variable) => {
+        const label = variableLabel(t, service, variable);
+        return (
+          <Row
+            key={variable}
+            title={label}
+            help={variableHelp(t, variable)}
+            modified={Boolean(draft.judgeKeys[variable])}
+            badges={<Tag size='small'>{t(settings.keys[variable] ? 'mu.keyState.set' : 'mu.keyState.none')}</Tag>}
+          >
+            <VariableInput
+              size='small'
+              className={fieldStyles.wide}
+              variable={variable}
+              label={label}
+              set={settings.keys[variable]}
+              draft={draft}
+              onKey={onKey}
+            />
+          </Row>
+        );
+      })}
     </>
   );
 }

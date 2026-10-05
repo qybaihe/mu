@@ -3,7 +3,8 @@ import type { DecisionMode, FeatureState, HarnessState } from './manifest';
 import type { ModelsSettings } from './models';
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
-export type JudgeType = 'jev' | 'typesafe' | 'clm' | 'gateway' | 'local' | 'http' | 'llm' | 'mock';
+/** `classifier`: a classifier model of mu's model catalog, `model` = "provider/model-id" (Jev on OpenCode Zen, Clef…). */
+export type JudgeType = 'jev' | 'typesafe' | 'clm' | 'gateway' | 'local' | 'http' | 'llm' | 'classifier' | 'mock';
 export type JudgeSettings = {
   type: JudgeType;
   model: string;

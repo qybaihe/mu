@@ -11,7 +11,7 @@ import {
   choiceOf,
   choose,
   GUIDE_CHOICES,
-  jevKeyVariable,
+  jevVariables,
   profileFor,
 } from '@/renderer/pages/settings/KyrnSettings/judgeChoice';
 import {
@@ -319,8 +319,8 @@ export default function Welcome() {
     );
   } else {
     const { provider: startProvider, model } = settings.models.defaults;
-    const jevKey = judge === 'jev' ? jevKeyVariable(judgeProfile) : undefined;
-    const keyReady = jevKey ? Boolean(settings.keys[jevKey] || draft.judgeKeys[jevKey]) : true;
+    const needed = judge === 'jev' ? jevVariables(judgeProfile) : [];
+    const keyReady = needed.every((variable) => Boolean(settings.keys[variable] || draft.judgeKeys[variable]));
     body = (
       <>
         <h1 className={styles.title}>{t('mu.welcome.done.title')}</h1>

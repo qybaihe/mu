@@ -116,8 +116,12 @@
     "services": {
       "auto": {
         "name": "自動",
-        "help": "TypeSafe のキーがあれば TypeSafe、なければ OpenRouter のキーがあれば OpenRouter、どちらもなければ Vercel AI Gateway を使います。",
+        "help": "次の順で、キーが設定されている最初のサービスを使います：TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare。どれもなければ Vercel AI Gateway を使います。",
         "key": "TypeSafe の API キー"
+      },
+      "opencodeFree": {
+        "name": "OpenCode Zen（無料）",
+        "help": "OpenCode Zen 上の Jev 1.13。期間限定で無料、キーもアカウントも不要です。OpenCode は Jev が読む内容を学習に使いません。"
       },
       "typesafe": {
         "name": "TypeSafe",
@@ -134,6 +138,19 @@
         "help": "常に Vercel AI Gateway を経由します。",
         "key": "Vercel AI Gateway の API キー"
       },
+      "opencode": {
+        "name": "OpenCode Zen",
+        "help": "OpenCode Zen 上の Jev 1.13。呼び出しごとに OpenCode アカウントへ課金されます。同じキーで mu から OpenCode Zen のチャットモデルも使えます。",
+        "key": "OpenCode の API キー"
+      },
+      "cloudflare": {
+        "name": "Cloudflare Workers AI",
+        "help": "Cloudflare Workers AI 上の Jev。Cloudflare の API トークンとアカウント ID が必要です。",
+        "key": "Cloudflare の API トークン",
+        "account": "Cloudflare のアカウント ID",
+        "accountHelp": "Cloudflare ダッシュボードの Workers AI ページに表示されています。トークンと同じように保存されます。",
+        "accountPlaceholder": "アカウント ID を貼り付け"
+      },
       "custom": {
         "name": "カスタムサービス",
         "help": "TypeSafe の System One プロトコルに対応したサービスなら使えます。自分で動かすサーバー、ネットワーク内の中継、Jev を提供する他のサービスなどです。",
@@ -149,7 +166,8 @@
     "endpointDefault": "サービスの既定のアドレス",
     "types": {
       "localHelp": "このコンピューターで動きます。",
-      "clmHelp": "あなた自身の CLM サーバーで動きます。"
+      "clmHelp": "あなた自身の CLM サーバーで動きます。",
+      "classifierHelp": "mu のモデルカタログにある分類モデル：{{model}}。mu はそのプロバイダーのキーで呼び出します。"
     },
     "intro": "mu は作業中に、このメッセージをどう扱うか、このステップが設定したルールに反していないか、といった小さな判断を何度も迫られます。それに答えるのが判定器です。1 つ選んでください。",
     "choose": "判定器を選択",
@@ -159,7 +177,7 @@
       "jev": {
         "title": "Jev",
         "tag": "おすすめ",
-        "description": "高速かつ正確で、呼び出しごとに課金されます。TypeSafe、OpenRouter、Vercel AI Gateway、または自前のサービスのキーが必要です。"
+        "description": "高速かつ正確です。OpenCode Zen では期間限定で無料。TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare、または自前のサービスのキーを使えば呼び出しごとに課金されます。"
       },
       "local": {
         "title": "ローカル Laya",
@@ -837,7 +855,7 @@
     "hive": "複数の調査員に一つの問いを同時に調べさせます：/hive <問い>。問いがなければ /swarm と同じです",
     "browse": "内蔵ブラウザで URL を開き、指示どおりに操作させます：/browse <URL> [やること]",
     "inherit": "mu が Claude Code、Cursor、Codex から引き継いだ設定と、その出どころ",
-    "mcp": "MCP サーバー：/mcp で表示、/mcp open <ID> で開く、/mcp restart <ID> で再起動",
+    "mcp": "MCP サーバーを管理：サインイン、再接続、有効化・無効化、公開方法の変更",
     "jobs": "バックグラウンドジョブ：/jobs で表示、/jobs stop <ID|all> で停止",
     "commit": "未コミットの変更を複数のコミットに分けます：まず計画を示し、同意したときだけコミットし、プッシュはしません",
     "review": "レビュー担当のサブエージェントが未コミットの変更（または指定した内容）をレビューし、指摘を P0〜P3 の重さ順に並べます",

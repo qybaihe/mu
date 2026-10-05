@@ -33,12 +33,25 @@ const defaults: Record<string, Partial<JudgeSettings>> = {
   laya: { type: 'local', baseUrl: 'http://127.0.0.1:47823' },
   // CLM on a server of one's own; no address is clm-serve's default on this machine (common/kyrn/clm.ts).
   clm: { type: 'clm', model: CLM_DEFAULT_MODEL, apiKeyEnv: CLM_KEY_VARIABLE },
+  // Classifier models of mu's catalog, reached with the provider's own key (OPENCODE_API_KEY, CLOUDFLARE_API_KEY and
+  // CLOUDFLARE_ACCOUNT_ID, or a sign-in in mu). Jev 1.13 free on OpenCode Zen needs no key, for a limited time.
+  'jev-opencode': { type: 'classifier', model: 'opencode/jev-1.13' },
+  'jev-opencode-free': { type: 'classifier', model: 'opencode/jev-1.13-free' },
+  'jev-cloudflare': { type: 'classifier', model: 'cloudflare-workers-ai/typesafe/jev' },
+  clef: { type: 'classifier', model: 'cloudflare-workers-ai/@cf/cloudflare/clef' },
+  'clef-flash': { type: 'classifier', model: 'cloudflare-workers-ai/@cf/cloudflare/clef-flash' },
   mock: { type: 'mock' },
 };
-const types = new Set(['jev', 'typesafe', 'clm', 'gateway', 'local', 'http', 'llm', 'mock']);
+const types = new Set(['jev', 'typesafe', 'clm', 'gateway', 'local', 'http', 'llm', 'classifier', 'mock']);
 const modes = new Set<string>(DECISION_MODES);
 /** What a judge may name as its credential. A provider's key is deliberately not among them. */
 const variable = /^(?:TYPESAFE_API_KEY|AI_GATEWAY_API_KEY|(?:MU|KYRN)_JUDGE_[A-Z0-9_]+)$/;
+/**
+ * The provider variables a classifier judge of this page is reached with. They are saved and reported like a judge's
+ * key, but never named as one (`apiKeyEnv`): mu gives them to their own provider only.
+ */
+const classifierVariables = ['OPENCODE_API_KEY', 'CLOUDFLARE_API_KEY', 'CLOUDFLARE_ACCOUNT_ID'];
+const saved = (name: string): boolean => variable.test(name) || classifierVariables.includes(name);
 /**
  * Keys for a service other than TypeSafe: Jev on OpenRouter or at an address of one's own, and a CLM server. The
  * harness refuses a System One judge keyed by one of them that has no address of its own (KEYS_FOR_ELSEWHERE in
@@ -140,6 +153,7 @@ export class SettingsStore {
     for (const name of ['TYPESAFE_API_KEY', 'AI_GATEWAY_API_KEY', ...Object.values(judges).map((j) => j.apiKeyEnv)]) {
       if (variable.test(name)) keys[name] = hasVariable(name, env);
     }
+    for (const name of classifierVariables) keys[name] = hasVariable(name, env);
     const compression = asRecord(config.features).compaction;
     const mode = text(asRecord(config.modes).default) || 'shadow';
     const manifest = harness.status === 'ok' ? harness.manifest : undefined;
@@ -202,6 +216,8 @@ export class SettingsStore {
     for (const name of input.tiers) {
       const judge = input.judges[name];
       if (current.tiers.includes(name) && sameJudge(current.judges[name], judge)) continue;
+      if (judge.type === 'classifier' && !/^[^/\s]+\/\S+$/.test(judge.model))
+        throw new KyrnError('invalid', 'Invalid model');
       if (judge.type === 'typesafe' && keysForElsewhere.has(judge.apiKeyEnv) && !judge.baseUrl)
         throw new KyrnError('judgeEndpoint', `Judge ${name} has no base URL, and its key is not sent to TypeSafe`, {
           name,
@@ -210,7 +226,7 @@ export class SettingsStore {
     const credentials: Credential[] = [...(input.credential ? [input.credential] : []), ...(input.credentials ?? [])];
     for (const credential of credentials) {
       const named = typeof credential?.name === 'string' && typeof credential.value === 'string';
-      if (!named || !(variable.test(credential.name) || providerVariable.test(credential.name)))
+      if (!named || !(saved(credential.name) || providerVariable.test(credential.name)))
         throw new KyrnError('invalid', 'Invalid credential');
       if (!secret.test(credential.value)) throw new KyrnError('credential', 'Invalid credential');
     }
@@ -306,8 +322,7 @@ export class SettingsStore {
       changed.pi ||= change.pi;
       for (const [name, value] of change.env) env.set(name, value);
     }
-    for (const credential of credentials)
-      if (variable.test(credential.name)) env.set(credential.name, credential.value);
+    for (const credential of credentials) if (saved(credential.name)) env.set(credential.name, credential.value);
 
     // Everything above only checked and prepared. The key goes first: a provider must never point at a missing one.
     if (env.size) atomic(this.envPath, withVariables(files.env, env));

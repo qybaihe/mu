@@ -116,8 +116,12 @@
     "services": {
       "auto": {
         "name": "Automático",
-        "help": "TypeSafe si su clave está definida; si no, OpenRouter si su clave está definida; si no, Vercel AI Gateway.",
+        "help": "El primer servicio cuya clave esté configurada, en este orden: TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare. Sin ninguna, Vercel AI Gateway.",
         "key": "Clave de API de TypeSafe"
+      },
+      "opencodeFree": {
+        "name": "OpenCode Zen (gratis)",
+        "help": "Jev 1.13 en OpenCode Zen, gratis por tiempo limitado: sin clave ni cuenta. OpenCode no entrena con lo que lee Jev."
       },
       "typesafe": {
         "name": "TypeSafe",
@@ -134,6 +138,19 @@
         "help": "Siempre a través de Vercel AI Gateway.",
         "key": "Clave de API de Vercel AI Gateway"
       },
+      "opencode": {
+        "name": "OpenCode Zen",
+        "help": "Jev 1.13 en OpenCode Zen, facturado por llamada a tu cuenta de OpenCode. La misma clave también abre en mu los modelos de chat de OpenCode Zen.",
+        "key": "Clave de API de OpenCode"
+      },
+      "cloudflare": {
+        "name": "Cloudflare Workers AI",
+        "help": "Jev en Cloudflare Workers AI, con un token de API de Cloudflare y el ID de tu cuenta.",
+        "key": "Token de API de Cloudflare",
+        "account": "ID de cuenta de Cloudflare",
+        "accountHelp": "Aparece en la página Workers AI del panel de Cloudflare. Se guarda igual que el token.",
+        "accountPlaceholder": "Pega el ID de la cuenta"
+      },
       "custom": {
         "name": "Servicio personalizado",
         "help": "Cualquier servicio que hable el protocolo System One de TypeSafe: uno que ejecutes tú, un relé en tu red u otro proveedor de Jev.",
@@ -149,7 +166,8 @@
     "endpointDefault": "Dirección predeterminada del servicio",
     "types": {
       "localHelp": "Se ejecuta en este ordenador.",
-      "clmHelp": "Se ejecuta en tu propio servidor CLM."
+      "clmHelp": "Se ejecuta en tu propio servidor CLM.",
+      "classifierHelp": "Un modelo de clasificación del catálogo de mu: {{model}}. mu lo llama con la clave de su proveedor."
     },
     "intro": "Mientras trabaja, mu hace muchas pequeñas valoraciones: cómo tratar este mensaje, si este paso rompe una regla que has fijado. El juez las responde. Elige uno.",
     "choose": "Elige un juez",
@@ -159,7 +177,7 @@
       "jev": {
         "title": "Jev",
         "tag": "Recomendado",
-        "description": "Rápido y preciso, se cobra por llamada. Necesita una clave de TypeSafe, OpenRouter, Vercel AI Gateway o de un servicio propio."
+        "description": "Rápido y preciso. Gratis en OpenCode Zen por tiempo limitado, o facturado por llamada con una clave de TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare o de un servicio propio."
       },
       "local": {
         "title": "Laya local",
@@ -837,7 +855,7 @@
     "hive": "Poner a varios investigadores con una misma pregunta a la vez: /hive <pregunta>. Sin ella, igual que /swarm",
     "browse": "Hacer que el navegador integrado abra una dirección y haga lo que dices: /browse <url> [objetivo]",
     "inherit": "Lo que mu tomó de Claude Code, Cursor y Codex, y de dónde",
-    "mcp": "Servidores MCP: /mcp, /mcp open <id>, /mcp restart <id>",
+    "mcp": "Gestionar servidores MCP: iniciar sesión, reconectar, activar o desactivar y cambiar la exposición",
     "jobs": "Tareas en segundo plano: /jobs, /jobs stop <id|all>",
     "commit": "Dividir el cambio sin confirmar en commits: muestra el plan, confirma solo cuando dices que sí y nunca hace push",
     "review": "Revisar el cambio sin confirmar, o lo que indiques, con el subagente revisor; hallazgos ordenados de P0 a P3",

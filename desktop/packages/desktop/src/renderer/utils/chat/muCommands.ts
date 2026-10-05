@@ -6,7 +6,7 @@
 
 /**
  * mu's slash commands, by name, with the words mu-agent gives each one in English and in Chinese (pi's
- * `get_commands`, with MU_LANG en or zh). `llama` is pi's own command, in English only. `clear` and `new` are not in
+ * `get_commands`, with MU_LANG en or zh). `llama` and `mcp` are pi's own commands, in English only. `clear` and `new` are not in
  * the menu (`process/agent/kyrn/commands.ts`).
  *
  * pi gives a command no code to translate by, and mu has wording in those two languages only: a reader of the app in
@@ -128,13 +128,8 @@ export const MU_COMMAND_WORDS: ReadonlyMap<string, readonly string[]> = new Map(
       'mu 从 Claude Code、Cursor 和 Codex 沿用了什么，各来自哪个文件',
     ],
   ],
-  [
-    'mcp',
-    [
-      'MCP servers: /mcp, /mcp open <id>, /mcp restart <id>',
-      'MCP 服务器：/mcp 查看，/mcp open <ID> 打开，/mcp restart <ID> 重启',
-    ],
-  ],
+  // pi's own command since mu took pi's MCP client (2026-10-05), in English only.
+  ['mcp', ['Manage MCP servers: sign in, reconnect, enable or disable, and change exposure']],
   ['jobs', ['Background jobs: /jobs, /jobs stop <id|all>', '后台命令：/jobs 查看，/jobs stop <编号|all> 停掉']],
   [
     'commit',
