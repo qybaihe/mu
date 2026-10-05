@@ -1,5 +1,27 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Three decision points, 38 in all:
+  - `tool.injection`: the results of `web_fetch`, `web_search`, `browse` and MCP tools (`features.injection.tools`) are screened passage by passage; in active mode a passage Jev gives more than 0.5 of carrying instructions aimed at the AI is withheld, and a note says where and how much. When no judge answers, phrase rules decide. The wording comes from kerpopule/hermes-jev-skills (MIT).
+  - `turn.continue`: a run that ends on a promise of what comes next without doing it, or on asking for a go-ahead on work the user asked for, is sent back to it, at most `maxNudges` (2) times per message and never toward a step that is hard to undo or reaches beyond the machine. After can1357/oh-my-pi's unexpected-stop check (MIT).
+  - `judge.items` and the `judge_items` tool: one yes/no question about each of up to 500 items, a probability per item, answered in shadow too because the model asked. Opened by the capability catalog when a task needs it.
+- With no Jev key at all, the free Jev 1.13 on OpenCode Zen answers (`jev-opencode-free`, no key), and `judge.notice` says so once a day; when the offer ends, mu says so too. `mu setup --judge free` chooses it explicitly.
+- Classifier models as judges: `classifier:<provider>/<model>` takes any classifier in pi's catalog. Built in: `jev-opencode` (`OPENCODE_API_KEY`), `jev-cloudflare` (`CLOUDFLARE_API_KEY`, `CLOUDFLARE_ACCOUNT_ID`), `clef`, `clef-flash`. The `jev` tier tries OpenCode Zen and Cloudflare after TypeSafe, OpenRouter and the Vercel AI Gateway. `mu setup --judge opencode`.
+- Built on pi 1.0.2.
+
+### Changed
+
+- MCP servers run on pi's built-in client instead of mu's own. mu keeps discovery from Claude Code, Cursor and Codex settings, Jev's disclosure of servers per task, approval of project servers, redaction and the environment whitelist.
+
+### Fixed
+
+- `mu install`, `remove`, `uninstall`, `update`, `list`, `config`, `auth` and `mcp` reach pi as its first argument again, from the command line and from the desktop app's host, instead of being sent to the model as a prompt ([#8](https://github.com/qybaihe/mu/issues/8), [#9](https://github.com/qybaihe/mu/pull/9) by [@nyxmoth](https://github.com/nyxmoth)).
+- The status of `delegate` and `hive` before their first snapshot is cut to the terminal width; a terminal narrower than the line no longer kills the TUI ([#7](https://github.com/qybaihe/mu/issues/7)).
+- Closing an MCP server that is still starting stops its process.
+
 ## [0.1.7] - 2026-09-30
 
 ### Added
