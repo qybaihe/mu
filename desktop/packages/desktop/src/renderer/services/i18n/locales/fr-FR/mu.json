@@ -256,13 +256,16 @@
   "permissions": {
     "modes": {
       "full": {
-        "title": "Accès complet"
+        "title": "Accès complet",
+        "description": "Exécute tout sans demander. Ce que vous avez interdit reste bloqué."
       },
       "jev": {
-        "title": "Jev approuve"
+        "title": "Jev approuve",
+        "description": "Lire et modifier dans le projet se fait directement ; Jev approuve pour vous les commandes, les changements hors du projet et les actions vers l’extérieur, et ne vous demande que s’il a un doute."
       },
       "ask": {
-        "title": "Autorisations minimales"
+        "title": "Autorisations minimales",
+        "description": "Seule la lecture se fait directement ; chaque modification, commande ou action vers l’extérieur vous est d’abord demandée."
       }
     }
   },
@@ -482,6 +485,7 @@
     "progress": "Progression de la configuration",
     "steps": {
       "model": "Modèle",
+      "permissions": "Autorisations",
       "judge": "Juge",
       "done": "Terminé"
     },
@@ -492,7 +496,7 @@
     "start": "Commencer",
     "model": {
       "title": "Connecter un modèle",
-      "subtitle": "mu l’utilise pour écrire du code et vous répondre. Trois étapes ; vous pourrez tout modifier plus tard dans les paramètres.",
+      "subtitle": "mu l’utilise pour écrire du code et vous répondre. Vous pourrez tout modifier plus tard dans les paramètres.",
       "model": "Modèle",
       "baseUrl": "URL de base",
       "key": "Clé API",
@@ -640,7 +644,8 @@
       "import": "Conversations",
       "importOpen": "Choisir lesquelles…",
       "importFound_one": "{{count}} conversation Claude Code ou Codex sur cet ordinateur peut être importée pour la poursuivre ici",
-      "importFound_other": "{{count}} conversations Claude Code ou Codex sur cet ordinateur peuvent être importées pour les poursuivre ici"
+      "importFound_other": "{{count}} conversations Claude Code ou Codex sur cet ordinateur peuvent être importées pour les poursuivre ici",
+      "permissions": "Autorisations"
     },
     "intro": {
       "title": "Bienvenue dans mu",
@@ -708,6 +713,11 @@
         "cancel": "Ne pas se connecter"
       },
       "readingModels": "Connecté à {{name}}. Lecture des modèles disponibles pour ce compte…"
+    },
+    "permissions": {
+      "title": "Ce que mu fait de lui-même",
+      "subtitle": "Les nouvelles conversations démarrent dans le mode choisi ici. Vous pouvez en changer à tout moment dans la zone de saisie ou avec /permissions.",
+      "recommended": "Recommandé"
     }
   },
   "turnErrors": {

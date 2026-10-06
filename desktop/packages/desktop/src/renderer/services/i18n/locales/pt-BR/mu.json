@@ -256,13 +256,16 @@
   "permissions": {
     "modes": {
       "full": {
-        "title": "Acesso total"
+        "title": "Acesso total",
+        "description": "Executa tudo sem perguntar. O que você disse para não fazer continua bloqueado."
       },
       "jev": {
-        "title": "O Jev aprova"
+        "title": "O Jev aprova",
+        "description": "Ler e editar dentro do projeto segue direto; o Jev aprova por você comandos, mudanças fora do projeto e ações externas, e só pergunta quando não tem certeza."
       },
       "ask": {
-        "title": "Permissões mínimas"
+        "title": "Permissões mínimas",
+        "description": "Só a leitura segue direto; toda edição, comando ou ação externa pergunta a você antes."
       }
     }
   },
@@ -482,6 +485,7 @@
     "progress": "Progresso da configuração",
     "steps": {
       "model": "Modelo",
+      "permissions": "Permissões",
       "judge": "Juiz",
       "done": "Concluído"
     },
@@ -492,7 +496,7 @@
     "start": "Começar",
     "model": {
       "title": "Conecte um modelo",
-      "subtitle": "O mu o usa para escrever código e responder a você. São três passos; você pode mudar tudo depois nas Configurações.",
+      "subtitle": "O mu o usa para escrever código e responder a você. Você pode mudar tudo depois nas Configurações.",
       "model": "Modelo",
       "baseUrl": "URL base",
       "key": "Chave de API",
@@ -640,7 +644,8 @@
       "import": "Conversas",
       "importOpen": "Escolher quais…",
       "importFound_one": "Há {{count}} conversa do Claude Code ou do Codex neste computador que pode vir junto, para continuar aqui",
-      "importFound_other": "Há {{count}} conversas do Claude Code ou do Codex neste computador que podem vir junto, para continuar aqui"
+      "importFound_other": "Há {{count}} conversas do Claude Code ou do Codex neste computador que podem vir junto, para continuar aqui",
+      "permissions": "Permissões"
     },
     "intro": {
       "title": "Boas-vindas ao mu",
@@ -708,6 +713,11 @@
         "cancel": "Não entrar"
       },
       "readingModels": "Conectado a {{name}}. Lendo os modelos que esta conta pode usar…"
+    },
+    "permissions": {
+      "title": "Quanto o mu faz sozinho",
+      "subtitle": "As conversas novas começam no modo escolhido aqui. Você pode trocar a qualquer momento na caixa de envio ou com /permissions.",
+      "recommended": "Recomendado"
     }
   },
   "turnErrors": {

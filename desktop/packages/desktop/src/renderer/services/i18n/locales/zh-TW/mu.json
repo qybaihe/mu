@@ -256,13 +256,16 @@
   "permissions": {
     "modes": {
       "full": {
-        "title": "完全存取"
+        "title": "完全存取",
+        "description": "什麼都不問，直接執行。你明確說過不許做的事仍然會被攔下。"
       },
       "jev": {
-        "title": "Jev 審批"
+        "title": "Jev 審批",
+        "description": "專案裡的讀取和修改直接進行；指令、專案外的改動、對外操作由 Jev 替你審批，它拿不準的才問你。"
       },
       "ask": {
-        "title": "最小權限"
+        "title": "最小權限",
+        "description": "只有讀取直接進行；改檔案、執行指令、對外操作都先問你。"
       }
     }
   },
@@ -482,6 +485,7 @@
     "progress": "引導進度",
     "steps": {
       "model": "模型",
+      "permissions": "權限",
       "judge": "判定器",
       "done": "完成"
     },
@@ -492,7 +496,7 @@
     "start": "開始使用",
     "model": {
       "title": "連接一個模型",
-      "subtitle": "mu 用它寫程式、回答問題。三步就好，之後隨時可以在設定裡修改。",
+      "subtitle": "mu 用它寫程式、回答問題。之後隨時可以在設定裡修改。",
       "model": "模型",
       "baseUrl": "端點位址",
       "key": "API 金鑰",
@@ -640,7 +644,8 @@
       "import": "對話",
       "importOpen": "選擇要匯入的…",
       "importFound_one": "這台電腦上有 {{count}} 段 Claude Code 或 Codex 的對話，可以匯入後接著聊",
-      "importFound_other": "這台電腦上有 {{count}} 段 Claude Code 或 Codex 的對話，可以匯入後接著聊"
+      "importFound_other": "這台電腦上有 {{count}} 段 Claude Code 或 Codex 的對話，可以匯入後接著聊",
+      "permissions": "權限方式"
     },
     "intro": {
       "title": "歡迎使用 mu",
@@ -708,6 +713,11 @@
         "cancel": "不登入了"
       },
       "readingModels": "已登入 {{name}}，正在讀取這個帳號能用的模型…"
+    },
+    "permissions": {
+      "title": "mu 自己能做多少",
+      "subtitle": "新對話從這裡選的方式開始。之後隨時可以在輸入框裡或用 /permissions 切換。",
+      "recommended": "推薦"
     }
   },
   "turnErrors": {

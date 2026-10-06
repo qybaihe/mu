@@ -256,13 +256,16 @@
   "permissions": {
     "modes": {
       "full": {
-        "title": "전체 접근"
+        "title": "전체 접근",
+        "description": "묻지 않고 모두 실행합니다. 하지 말라고 한 일은 여전히 막습니다."
       },
       "jev": {
-        "title": "Jev 승인"
+        "title": "Jev 승인",
+        "description": "프로젝트 안의 읽기와 편집은 바로 진행합니다. 명령, 프로젝트 밖의 변경, 외부 작업은 Jev가 대신 승인하고, 확신이 없을 때만 묻습니다."
       },
       "ask": {
-        "title": "최소 권한"
+        "title": "최소 권한",
+        "description": "읽기만 바로 진행합니다. 모든 편집, 명령, 외부 작업은 먼저 묻습니다."
       }
     }
   },
@@ -482,6 +485,7 @@
     "progress": "설정 진행 상황",
     "steps": {
       "model": "모델",
+      "permissions": "권한",
       "judge": "판정기",
       "done": "완료"
     },
@@ -492,7 +496,7 @@
     "start": "시작하기",
     "model": {
       "title": "모델 연결",
-      "subtitle": "mu는 이 모델로 코드를 작성하고 답합니다. 세 단계면 되며, 나중에 설정에서 모두 바꿀 수 있습니다.",
+      "subtitle": "mu는 이 모델로 코드를 작성하고 답합니다. 나중에 설정에서 모두 바꿀 수 있습니다.",
       "model": "모델",
       "baseUrl": "기본 URL",
       "key": "API 키",
@@ -640,7 +644,8 @@
       "import": "대화",
       "importOpen": "가져올 대화 선택…",
       "importFound_one": "이 컴퓨터에 Claude Code 또는 Codex 대화가 {{count}}개 있습니다. 가져와서 이어갈 수 있습니다",
-      "importFound_other": "이 컴퓨터에 Claude Code 또는 Codex 대화가 {{count}}개 있습니다. 가져와서 이어갈 수 있습니다"
+      "importFound_other": "이 컴퓨터에 Claude Code 또는 Codex 대화가 {{count}}개 있습니다. 가져와서 이어갈 수 있습니다",
+      "permissions": "권한"
     },
     "intro": {
       "title": "mu에 오신 것을 환영합니다",
@@ -708,6 +713,11 @@
         "cancel": "로그인하지 않기"
       },
       "readingModels": "{{name}}에 로그인했습니다. 이 계정에서 쓸 수 있는 모델을 불러오는 중…"
+    },
+    "permissions": {
+      "title": "mu가 스스로 하는 범위",
+      "subtitle": "새 대화는 여기서 고른 모드로 시작합니다. 입력창이나 /permissions로 언제든 바꿀 수 있습니다.",
+      "recommended": "추천"
     }
   },
   "turnErrors": {

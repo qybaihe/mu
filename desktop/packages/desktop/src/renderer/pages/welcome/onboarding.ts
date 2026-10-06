@@ -13,7 +13,7 @@ import { blankModel, blankProvider } from '@/renderer/pages/settings/KyrnSetting
 import type { ModelService } from './services';
 
 /**
- * The first-run guide: a model, a judge, done. It is shown once, to someone who has no startup model yet; it is
+ * The first-run guide: a model, a permission mode, a judge, done. It is shown once, to someone who has no startup model yet; it is
  * marked seen when it is finished or skipped, and can be opened again from the models settings.
  */
 export const ONBOARDING_KEY = 'mu.onboarding.v1';
@@ -169,6 +169,37 @@ export function withSignedInModel(draft: Draft, provider: string, model: string,
       ...draft.settings,
       models: { ...models, providers: kept, defaults: { ...models.defaults, provider, model } },
     },
+  };
+}
+
+/** The permission modes the guide knows how to describe, in the order it shows them. */
+export const GUIDE_PERMISSION_MODES = ['jev', 'full', 'ask'] as const;
+export type GuidePermissionMode = (typeof GUIDE_PERMISSION_MODES)[number];
+
+/** The permission modes this harness offers that the guide can describe; none when it has no permission modes. */
+export function permissionModesOf(settings: KyrnSettings): GuidePermissionMode[] {
+  const manifest = settings.harness.status === 'ok' ? settings.harness.manifest : undefined;
+  const option = manifest?.features
+    .find((feature) => feature.name === 'permissions')
+    ?.options.find((entry) => entry.key === 'mode');
+  if (!settings.permissions.mode || option?.kind !== 'choice') return [];
+  const offered = new Set(option.choices.map((choice) => choice.value));
+  return GUIDE_PERMISSION_MODES.filter((mode) => offered.has(mode));
+}
+
+/**
+ * The settings with `mode` as the permission mode new conversations start in: the permission modes feature's own
+ * option, where the settings set it. mu's last pick (from /permissions or a send box) wins over that option, so when
+ * there is one it moves along with it; `toSave` writes it then.
+ */
+export function withPermissionMode(settings: KyrnSettings, mode: string): KyrnSettings {
+  const feature = settings.features.permissions;
+  return {
+    ...settings,
+    ...(feature
+      ? { features: { ...settings.features, permissions: { ...feature, options: { ...feature.options, mode } } } }
+      : {}),
+    permissions: { ...settings.permissions, mode },
   };
 }
 

@@ -256,13 +256,16 @@
   "permissions": {
     "modes": {
       "full": {
-        "title": "Vollzugriff"
+        "title": "Vollzugriff",
+        "description": "Führt alles aus, ohne zu fragen. Was du ausdrücklich verboten hast, wird trotzdem gestoppt."
       },
       "jev": {
-        "title": "Jev gibt frei"
+        "title": "Jev gibt frei",
+        "description": "Lesen und Bearbeiten im Projekt laufen direkt; Befehle, Änderungen außerhalb des Projekts und Aktionen nach außen gibt Jev für dich frei und fragt dich nur, wenn es unsicher ist."
       },
       "ask": {
-        "title": "Minimale Berechtigungen"
+        "title": "Minimale Berechtigungen",
+        "description": "Nur Lesen läuft direkt; jede Änderung, jeder Befehl und jede Aktion nach außen fragt dich zuerst."
       }
     }
   },
@@ -482,6 +485,7 @@
     "progress": "Fortschritt der Einrichtung",
     "steps": {
       "model": "Modell",
+      "permissions": "Berechtigungen",
       "judge": "Judge",
       "done": "Fertig"
     },
@@ -492,7 +496,7 @@
     "start": "Loslegen",
     "model": {
       "title": "Modell verbinden",
-      "subtitle": "mu schreibt damit Code und antwortet dir. Drei Schritte; alles lässt sich später in den Einstellungen ändern.",
+      "subtitle": "mu schreibt damit Code und antwortet dir. Alles lässt sich später in den Einstellungen ändern.",
       "model": "Modell",
       "baseUrl": "Basis-URL",
       "key": "API-Schlüssel",
@@ -640,7 +644,8 @@
       "import": "Unterhaltungen",
       "importOpen": "Auswählen…",
       "importFound_one": "{{count}} Unterhaltung aus Claude Code oder Codex auf diesem Computer kann mitkommen, um sie hier fortzusetzen",
-      "importFound_other": "{{count}} Unterhaltungen aus Claude Code oder Codex auf diesem Computer können mitkommen, um sie hier fortzusetzen"
+      "importFound_other": "{{count}} Unterhaltungen aus Claude Code oder Codex auf diesem Computer können mitkommen, um sie hier fortzusetzen",
+      "permissions": "Berechtigungen"
     },
     "intro": {
       "title": "Willkommen bei mu",
@@ -708,6 +713,11 @@
         "cancel": "Nicht anmelden"
       },
       "readingModels": "Bei {{name}} angemeldet. Die Modelle für dieses Konto werden geladen…"
+    },
+    "permissions": {
+      "title": "Wie viel mu selbst erledigt",
+      "subtitle": "Neue Unterhaltungen starten in dem Modus, den du hier wählst. Wechseln kannst du jederzeit im Eingabefeld oder mit /permissions.",
+      "recommended": "Empfohlen"
     }
   },
   "turnErrors": {

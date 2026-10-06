@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { createInstance } from 'i18next';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { defaultFeatureState, parseManifest } from '@/common/kyrn/manifest';
 import type { KyrnSettings, Result, SaveSettings } from '@/common/kyrn/types';
 import enCommon from '@/renderer/services/i18n/locales/en-US/common.json';
 import enMu from '@/renderer/services/i18n/locales/en-US/mu.json';
@@ -13,6 +14,8 @@ import Welcome from '@/renderer/pages/welcome';
 import { ONBOARDING_KEY } from '@/renderer/pages/welcome/onboarding';
 import { useFirstRunWelcome } from '@/renderer/pages/welcome/useFirstRunWelcome';
 import { SETTLE_MS } from '@/renderer/pages/welcome/useKeySetup';
+import manifestJson from './manifest.fixture.json';
+import { withOwnPlaces } from './muState.fixture';
 
 const bridge = vi.hoisted(() => ({
   settings: vi.fn(),
@@ -554,6 +557,88 @@ describe('the first-run guide', () => {
     expect(screen.queryByText('the guide')).not.toBeInTheDocument();
     // Not seen: the guide still opens from home.
     expect(localStorage.getItem(ONBOARDING_KEY)).toBeNull();
+  });
+});
+
+describe('the permission step', () => {
+  /** Someone new on a mu with permission modes, in `permissions`, the feature on or off. */
+  function withModes(permissions: KyrnSettings['permissions'] = { mode: 'jev', from: 'default' }, enabled = true) {
+    const parsed = parseManifest(withOwnPlaces(manifestJson));
+    if (parsed.status !== 'ok') throw new Error('manifest with permission modes is not readable');
+    const features = Object.fromEntries(
+      parsed.manifest.features.map((feature) => [feature.name, defaultFeatureState(feature)])
+    );
+    features.permissions = { ...features.permissions, enabled };
+    return newUser({ harness: parsed, features, permissions });
+  }
+
+  async function toPermissions() {
+    at('/welcome', <Welcome />);
+    fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
+    return screen.findByTestId('mu-welcome-step-permissions');
+  }
+
+  async function finish(): Promise<SaveSettings> {
+    fireEvent.click(screen.getByTestId('mu-welcome-next'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
+    await screen.findByTestId('mu-welcome-step-done');
+    fireEvent.click(screen.getByTestId('mu-welcome-start'));
+    await waitFor(() => expect(bridge.save).toHaveBeenCalledTimes(1));
+    return bridge.save.mock.calls[0][0] as SaveSettings;
+  }
+
+  it('comes after the model, starts on Jev approves, and saves a pick as the feature’s option', async () => {
+    bridge.settings.mockResolvedValue({ ok: true, data: withModes() });
+    await toPermissions();
+    expect(screen.getByRole('list', { name: 'Setup progress' })).toHaveTextContent('ModelPermissionsJudgeDone');
+    const jev = screen.getByTestId('mu-welcome-permission-jev');
+    expect(jev).toHaveAttribute('aria-checked', 'true');
+    expect(jev).toHaveTextContent('Recommended');
+    // A mode is always chosen: there is nothing to skip.
+    expect(screen.queryByTestId('mu-welcome-skip')).toBeNull();
+    fireEvent.click(screen.getByTestId('mu-welcome-permission-full'));
+    expect(screen.getByTestId('mu-welcome-permission-full')).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByTestId('mu-welcome-permission-full')).toHaveTextContent('Runs everything without asking.');
+    const saved = await finish();
+    expect(saved.features?.permissions.options).toEqual({ mode: 'full' });
+    // No last pick to move along: the option is where the mode lives.
+    expect(saved).not.toHaveProperty('permissions');
+  });
+
+  it('shows the mode picked with /permissions, and moves that pick along, as it would win over the option', async () => {
+    bridge.settings.mockResolvedValue({ ok: true, data: withModes({ mode: 'ask', from: 'picked' }) });
+    await toPermissions();
+    expect(screen.getByTestId('mu-welcome-permission-ask')).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(screen.getByTestId('mu-welcome-permission-jev'));
+    fireEvent.click(screen.getByTestId('mu-welcome-next'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
+    expect(await screen.findByTestId('mu-welcome-step-done')).toHaveTextContent('PermissionsJev approves');
+    fireEvent.click(screen.getByTestId('mu-welcome-start'));
+    await waitFor(() => expect(bridge.save).toHaveBeenCalledTimes(1));
+    const saved = bridge.save.mock.calls[0][0] as SaveSettings;
+    expect(saved.permissions).toEqual({ mode: 'jev' });
+    expect(saved.features?.permissions.options).toEqual({ mode: 'jev' });
+  });
+
+  it('saves nothing for a mode left as it was', async () => {
+    bridge.settings.mockResolvedValue({ ok: true, data: withModes() });
+    await toPermissions();
+    fireEvent.click(screen.getByTestId('mu-welcome-next'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
+    await screen.findByTestId('mu-welcome-step-done');
+    fireEvent.click(screen.getByTestId('mu-welcome-start'));
+    expect(await screen.findByText('landing page')).toBeInTheDocument();
+    expect(bridge.save).not.toHaveBeenCalled();
+  });
+
+  it('is not there when mu has no permission modes, or they are switched off', async () => {
+    bridge.settings.mockResolvedValue({ ok: true, data: withModes(undefined, false) });
+    at('/welcome', <Welcome />);
+    fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
+    expect(await screen.findByTestId('mu-welcome-step-judge')).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Setup progress' })).not.toHaveTextContent('Permissions');
   });
 });
 

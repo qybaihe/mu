@@ -256,13 +256,16 @@
   "permissions": {
     "modes": {
       "full": {
-        "title": "完全访问"
+        "title": "完全访问",
+        "description": "什么都不问，直接执行。你明确说过不许做的事仍然会被拦下。"
       },
       "jev": {
-        "title": "Jev 审批"
+        "title": "Jev 审批",
+        "description": "项目里的读和改直接做；命令、项目外的改动、对外操作由 Jev 替你审批，它拿不准的才问你。"
       },
       "ask": {
-        "title": "最小权限"
+        "title": "最小权限",
+        "description": "只读操作直接做；改文件、跑命令、对外操作都先问你。"
       }
     }
   },
@@ -482,6 +485,7 @@
     "progress": "引导进度",
     "steps": {
       "model": "模型",
+      "permissions": "权限",
       "judge": "判定器",
       "done": "完成"
     },
@@ -492,7 +496,7 @@
     "start": "开始使用",
     "model": {
       "title": "连接一个模型",
-      "subtitle": "mu 用它写代码、回答问题。三步就好，之后随时可以在设置里修改。",
+      "subtitle": "mu 用它写代码、回答问题。之后随时可以在设置里修改。",
       "model": "模型",
       "baseUrl": "接口地址",
       "key": "API 密钥",
@@ -640,7 +644,8 @@
       "import": "对话",
       "importOpen": "选择要导入的…",
       "importFound_one": "这台电脑上有 {{count}} 段 Claude Code 或 Codex 的对话，可以导进来接着聊",
-      "importFound_other": "这台电脑上有 {{count}} 段 Claude Code 或 Codex 的对话，可以导进来接着聊"
+      "importFound_other": "这台电脑上有 {{count}} 段 Claude Code 或 Codex 的对话，可以导进来接着聊",
+      "permissions": "权限方式"
     },
     "intro": {
       "title": "欢迎使用 mu",
@@ -708,6 +713,11 @@
         "cancel": "不登录了"
       },
       "readingModels": "已登录 {{name}}，正在读取这个账号能用的模型…"
+    },
+    "permissions": {
+      "title": "mu 自己能做多少",
+      "subtitle": "新对话从这里选的方式开始。之后随时可以在输入框里或用 /permissions 切换。",
+      "recommended": "推荐"
     }
   },
   "turnErrors": {

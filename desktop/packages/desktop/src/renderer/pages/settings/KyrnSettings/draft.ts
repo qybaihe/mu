@@ -155,8 +155,9 @@ export const newDraft = (settings: KyrnSettings): Draft => ({ settings, judgeKey
 
 /**
  * The settings as the page reads them. A main process older than this page sends no permission default and no board
- * model: without them the whole area would fail to draw; with these it shows that mu cannot be told. The permission
- * default is read (the guide starts a conversation in it) and never written from here.
+ * model: without them the whole area would fail to draw; with these it shows that mu cannot be told. The settings set
+ * the permission default through the permission modes feature's option; only the guide moves mu's last pick (see
+ * `toSave`).
  */
 export const completeSettings = (settings: KyrnSettings): KyrnSettings => ({
   ...settings,
@@ -209,6 +210,8 @@ export function dirtySections(base: KyrnSettings, draft: Draft): Set<SectionId> 
     dirty.add('context');
   // The summary-free compaction is one switch on the context page: the feature and the old beta flag as one.
   if (base.betaCompression !== next.betaCompression) dirty.add('features');
+  // The permission default belongs to the permission modes feature.
+  if (base.permissions.mode !== next.permissions.mode) dirty.add('features');
   return dirty;
 }
 
@@ -223,16 +226,12 @@ export function removedEntries(base: KyrnSettings, draft: Draft): string[] {
  * settings the draft was made from, says which hand-written entries were removed.
  */
 export function toSave(draft: Draft, base?: KyrnSettings): SaveSettings {
-  const {
-    keys: _keys,
-    harness,
-    decisionModes,
-    features,
-    models,
-    permissions: _permissions,
-    boardModel,
-    ...rest
-  } = draft.settings;
+  const { keys: _keys, harness, decisionModes, features, models, permissions, boardModel, ...rest } = draft.settings;
+  // mu's last pick wins over the feature's option: a mode picked in the guide moves it along when there is one.
+  const pick =
+    base?.permissions.from === 'picked' && permissions.mode && permissions.mode !== base.permissions.mode
+      ? { permissions: { mode: permissions.mode } }
+      : {};
   const removeEntries = base ? removedEntries(base, draft) : [];
   const credentials: Credential[] = [
     ...Object.entries(draft.judgeKeys).map(([name, value]) => ({ name, value })),
@@ -249,6 +248,7 @@ export function toSave(draft: Draft, base?: KyrnSettings): SaveSettings {
       ...(removeEntries.length ? { removeEntries } : {}),
     },
     ...(credentials.length ? { credentials } : {}),
+    ...pick,
     ...(boardModel.supported ? { boardModel: { model: boardModel.model } } : {}),
   };
 }

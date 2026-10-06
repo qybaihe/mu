@@ -38,16 +38,16 @@ import {
   type ApiModel,
   type GuideApi,
   markOnboardingSeen,
+  permissionModesOf,
   withApiModel,
+  withPermissionMode,
   withSignedInModel,
 } from './onboarding';
 import SubscriptionLogin from './SubscriptionLogin';
 import { useKeySetup } from './useKeySetup';
 import styles from './Welcome.module.css';
 
-type Step = 'intro' | 'model' | 'judge' | 'done';
-/** The steps of the setup itself; the introduction before them is not one. */
-const STEPS: Step[] = ['model', 'judge', 'done'];
+type Step = 'intro' | 'model' | 'permissions' | 'judge' | 'done';
 /**
  * A tile of the model step: an API key of a service mu knows, an account mu is signed in to, or one of the two API
  * families at an address typed in.
@@ -75,7 +75,7 @@ function Ready({ text, testId }: { text: string; testId: string }) {
 }
 
 /**
- * The first-run guide: what mu is, then connect a model, pick a judge, done. One question at a time, nothing that
+ * The first-run guide: what mu is, then connect a model, choose how much it does without asking, pick a judge, done. One question at a time, nothing that
  * can wait; all of it is written in one save at the end, and every step can be skipped. Everything here is also in
  * the settings. The last step also offers the Claude Code and Codex conversations on this computer, to go on with
  * them in mu.
@@ -121,6 +121,12 @@ export default function Welcome() {
 
   const { base, draft } = mu;
   const chosenWay: Way | undefined = way;
+  // The steps of the setup itself; the introduction before them is not one. The permission step only when this mu
+  // has permission modes and they are on.
+  const permissionModes =
+    base && draft?.settings.features.permissions?.enabled !== false ? permissionModesOf(base) : [];
+  const steps: Step[] = permissionModes.length ? ['model', 'permissions', 'judge', 'done'] : ['model', 'judge', 'done'];
+  const after = (now: Step): Step => steps[steps.indexOf(now) + 1] ?? 'done';
 
   const leave = () => {
     markOnboardingSeen();
@@ -133,7 +139,7 @@ export default function Welcome() {
   const problem = apiWay ? apiModelProblem(apiInput(apiOf(apiWay))) : undefined;
 
   const nextFromModel = () => {
-    if (!chosenWay) return setStep('judge');
+    if (!chosenWay) return setStep(after('model'));
     if (chosenWay === 'key') {
       setTried(true);
       if (!keys.choice || !draft) return;
@@ -143,7 +149,7 @@ export default function Welcome() {
       mu.edit(() => result.draft);
       setAdded(result.id);
       setTried(false);
-      return setStep('judge');
+      return setStep(after('model'));
     }
     if (chosenWay === 'signedIn') {
       const [provider, ...rest] = signedIn.split('/');
@@ -153,14 +159,14 @@ export default function Welcome() {
       mu.edit((now) => withSignedInModel(now, provider, model, added));
       setAdded(undefined);
       setTried(false);
-      return setStep('judge');
+      return setStep(after('model'));
     }
     setTried(true);
     if (problem || !draft) return;
     const result = withApiModel(draft, apiInput(apiOf(chosenWay)), added);
     mu.edit(() => result.draft);
     setAdded(result.id);
-    setStep('judge');
+    setStep(after('model'));
   };
 
   const finish = async () => {
@@ -356,6 +362,26 @@ export default function Welcome() {
         </div>
       </>
     );
+  } else if (step === 'permissions') {
+    body = (
+      <>
+        <h1 className={styles.title}>{t('mu.welcome.permissions.title')}</h1>
+        <p className={styles.subtitle}>{t('mu.welcome.permissions.subtitle')}</p>
+        <div className={choiceStyles.choices} role='radiogroup' aria-label={t('mu.welcome.permissions.title')}>
+          {permissionModes.map((mode) => (
+            <ChoiceTile
+              key={mode}
+              testId={`mu-welcome-permission-${mode}`}
+              title={t(`mu.permissions.modes.${mode}.title`)}
+              tag={mode === 'jev' ? t('mu.welcome.permissions.recommended') : undefined}
+              description={t(`mu.permissions.modes.${mode}.description`)}
+              active={settings.permissions.mode === mode}
+              onPick={() => mu.editSettings((now) => withPermissionMode(now, mode))}
+            />
+          ))}
+        </div>
+      </>
+    );
   } else if (step === 'judge') {
     body = (
       <>
@@ -427,6 +453,12 @@ export default function Welcome() {
                 : t('mu.welcome.done.none')}
             </dd>
           </div>
+          {permissionModes.length ? (
+            <div className={styles.summaryRow}>
+              <dt>{t('mu.welcome.done.permissions')}</dt>
+              <dd>{t(`mu.permissions.modes.${settings.permissions.mode}.title`)}</dd>
+            </div>
+          ) : null}
           <div className={styles.summaryRow}>
             <dt>{t('mu.welcome.done.judge')}</dt>
             <dd>
@@ -472,8 +504,8 @@ export default function Welcome() {
     );
   }
 
-  const index = STEPS.indexOf(step);
-  const back = () => setStep(index <= 0 ? 'intro' : STEPS[index - 1]);
+  const index = steps.indexOf(step);
+  const back = () => setStep(index <= 0 ? 'intro' : steps[index - 1]);
   return (
     <div className={styles.screen} data-testid='mu-welcome'>
       <div className={styles.drag} />
@@ -494,7 +526,7 @@ export default function Welcome() {
           </div>
           {step === 'intro' ? null : (
             <ol className={styles.steps} aria-label={t('mu.welcome.progress')}>
-              {STEPS.map((name, position) => (
+              {steps.map((name, position) => (
                 <li
                   key={name}
                   aria-current={name === step ? 'step' : undefined}
@@ -521,13 +553,14 @@ export default function Welcome() {
             </button>
           )}
           <span className={styles.spacer} />
-          {/* Skipping is a quiet text button on both steps; the lavender button is always the way on. */}
+          {/* Skipping is a quiet text button on the steps that ask for something (the permission step always has a
+              mode chosen); the lavender button is always the way on. */}
           {step === 'model' || step === 'judge' ? (
             <button
               type='button'
               className={styles.textButton}
               data-testid='mu-welcome-skip'
-              onClick={() => setStep(step === 'model' ? 'judge' : 'done')}
+              onClick={() => setStep(after(step))}
             >
               {t('mu.welcome.skipStep')}
             </button>
@@ -547,8 +580,8 @@ export default function Welcome() {
             >
               {t('mu.welcome.next')}
             </Button>
-          ) : step === 'judge' ? (
-            <Button type='primary' shape='round' data-testid='mu-welcome-next' onClick={() => setStep('done')}>
+          ) : step === 'judge' || step === 'permissions' ? (
+            <Button type='primary' shape='round' data-testid='mu-welcome-next' onClick={() => setStep(after(step))}>
               {t('mu.welcome.next')}
             </Button>
           ) : (

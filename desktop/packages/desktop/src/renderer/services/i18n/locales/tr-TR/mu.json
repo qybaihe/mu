@@ -256,13 +256,16 @@
   "permissions": {
     "modes": {
       "full": {
-        "title": "Tam erişim"
+        "title": "Tam erişim",
+        "description": "Hiçbir şey sormadan her şeyi çalıştırır. Yapma dediğiniz şeyler yine durdurulur."
       },
       "jev": {
-        "title": "Jev onaylar"
+        "title": "Jev onaylar",
+        "description": "Proje içinde okuma ve düzenleme doğrudan yapılır; komutları, proje dışındaki değişiklikleri ve dışarıya dönük işlemleri sizin yerinize Jev onaylar, yalnızca emin olmadığında size sorar."
       },
       "ask": {
-        "title": "En az izin"
+        "title": "En az izin",
+        "description": "Yalnızca okuma doğrudan yapılır; her düzenleme, komut ve dışarıya dönük işlem önce size sorulur."
       }
     }
   },
@@ -482,6 +485,7 @@
     "progress": "Kurulum ilerlemesi",
     "steps": {
       "model": "Model",
+      "permissions": "İzinler",
       "judge": "Hakem",
       "done": "Bitti"
     },
@@ -492,7 +496,7 @@
     "start": "Başla",
     "model": {
       "title": "Bir model bağlayın",
-      "subtitle": "mu bunu kod yazmak ve size yanıt vermek için kullanır. Üç adım; hepsini daha sonra Ayarlar'dan değiştirebilirsiniz.",
+      "subtitle": "mu bunu kod yazmak ve size yanıt vermek için kullanır. Hepsini daha sonra Ayarlar'dan değiştirebilirsiniz.",
       "model": "Model",
       "baseUrl": "Temel URL",
       "key": "API anahtarı",
@@ -640,7 +644,8 @@
       "import": "Sohbetler",
       "importOpen": "Seç…",
       "importFound_one": "Bu bilgisayarda burada sürdürmek için içe aktarılabilecek {{count}} Claude Code veya Codex sohbeti var",
-      "importFound_other": "Bu bilgisayarda burada sürdürmek için içe aktarılabilecek {{count}} Claude Code veya Codex sohbeti var"
+      "importFound_other": "Bu bilgisayarda burada sürdürmek için içe aktarılabilecek {{count}} Claude Code veya Codex sohbeti var",
+      "permissions": "İzinler"
     },
     "intro": {
       "title": "mu'ya hoş geldiniz",
@@ -708,6 +713,11 @@
         "cancel": "Giriş yapma"
       },
       "readingModels": "{{name}} ile giriş yapıldı. Bu hesabın kullanabileceği modeller okunuyor…"
+    },
+    "permissions": {
+      "title": "mu kendi başına ne kadar yapsın",
+      "subtitle": "Yeni konuşmalar burada seçtiğiniz modla başlar. İstediğiniz zaman gönderme kutusundan ya da /permissions ile değiştirebilirsiniz.",
+      "recommended": "Önerilen"
     }
   },
   "turnErrors": {

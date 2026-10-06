@@ -256,13 +256,16 @@
   "permissions": {
     "modes": {
       "full": {
-        "title": "フルアクセス"
+        "title": "フルアクセス",
+        "description": "何も確認せずに実行します。やらないでと伝えたことは引き続き止められます。"
       },
       "jev": {
-        "title": "Jev が承認"
+        "title": "Jev が承認",
+        "description": "プロジェクト内の読み取りと編集はそのまま進めます。コマンド、プロジェクト外の変更、外部への操作は Jev があなたの代わりに承認し、判断に迷うときだけあなたに確認します。"
       },
       "ask": {
-        "title": "最小権限"
+        "title": "最小権限",
+        "description": "読み取りだけはそのまま進めます。編集、コマンド、外部への操作はすべて先にあなたに確認します。"
       }
     }
   },
@@ -482,6 +485,7 @@
     "progress": "セットアップの進捗",
     "steps": {
       "model": "モデル",
+      "permissions": "権限",
       "judge": "判定器",
       "done": "完了"
     },
@@ -492,7 +496,7 @@
     "start": "はじめる",
     "model": {
       "title": "モデルを接続",
-      "subtitle": "mu はこのモデルを使ってコードを書き、質問に答えます。3 ステップで完了し、あとから「設定」でいつでも変更できます。",
+      "subtitle": "mu はこのモデルを使ってコードを書き、質問に答えます。あとから「設定」でいつでも変更できます。",
       "model": "モデル",
       "baseUrl": "ベース URL",
       "key": "API キー",
@@ -640,7 +644,8 @@
       "import": "会話",
       "importOpen": "取り込む会話を選ぶ…",
       "importFound_one": "このコンピューターに Claude Code または Codex の会話が {{count}} 件あります。取り込んで続けられます",
-      "importFound_other": "このコンピューターに Claude Code または Codex の会話が {{count}} 件あります。取り込んで続けられます"
+      "importFound_other": "このコンピューターに Claude Code または Codex の会話が {{count}} 件あります。取り込んで続けられます",
+      "permissions": "権限"
     },
     "intro": {
       "title": "mu へようこそ",
@@ -708,6 +713,11 @@
         "cancel": "ログインしない"
       },
       "readingModels": "{{name}} にログインしました。このアカウントで使えるモデルを読み込んでいます…"
+    },
+    "permissions": {
+      "title": "mu が自分で進める範囲",
+      "subtitle": "新しい会話はここで選んだモードで始まります。送信欄や /permissions でいつでも切り替えられます。",
+      "recommended": "おすすめ"
     }
   },
   "turnErrors": {

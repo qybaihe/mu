@@ -256,13 +256,16 @@
   "permissions": {
     "modes": {
       "full": {
-        "title": "Full access"
+        "title": "Full access",
+        "description": "Runs everything without asking. What you said not to do is still stopped."
       },
       "jev": {
-        "title": "Jev approves"
+        "title": "Jev approves",
+        "description": "Reads and edits in the project go ahead; Jev approves commands, changes outside the project and outside actions for you, and asks you only when it is not sure."
       },
       "ask": {
-        "title": "Minimal permissions"
+        "title": "Minimal permissions",
+        "description": "Only reading goes ahead; every edit, command and outside action asks you first."
       }
     }
   },
@@ -482,6 +485,7 @@
     "progress": "Setup progress",
     "steps": {
       "model": "Model",
+      "permissions": "Permissions",
       "judge": "Judge",
       "done": "Done"
     },
@@ -492,7 +496,7 @@
     "start": "Get started",
     "model": {
       "title": "Connect a model",
-      "subtitle": "mu uses it to write code and answer you. Three steps; you can change all of it in Settings later.",
+      "subtitle": "mu uses it to write code and answer you. You can change all of it in Settings later.",
       "model": "Model",
       "baseUrl": "Base URL",
       "key": "API key",
@@ -640,7 +644,8 @@
       "import": "Conversations",
       "importOpen": "Choose which…",
       "importFound_one": "{{count}} Claude Code or Codex conversation on this computer can come along, to go on with it here",
-      "importFound_other": "{{count}} Claude Code or Codex conversations on this computer can come along, to go on with them here"
+      "importFound_other": "{{count}} Claude Code or Codex conversations on this computer can come along, to go on with them here",
+      "permissions": "Permissions"
     },
     "intro": {
       "title": "Welcome to mu",
@@ -708,6 +713,11 @@
         "cancel": "Don't sign in"
       },
       "readingModels": "Signed in to {{name}}. Reading the models this account can use…"
+    },
+    "permissions": {
+      "title": "How much mu does on its own",
+      "subtitle": "New conversations start in the mode you pick here. Switch any time in the send box or with /permissions.",
+      "recommended": "Recommended"
     }
   },
   "turnErrors": {

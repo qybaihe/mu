@@ -256,13 +256,16 @@
   "permissions": {
     "modes": {
       "full": {
-        "title": "Acceso completo"
+        "title": "Acceso completo",
+        "description": "Lo ejecuta todo sin preguntar. Lo que dijiste que no hiciera se sigue deteniendo."
       },
       "jev": {
-        "title": "Jev aprueba"
+        "title": "Jev aprueba",
+        "description": "Leer y editar dentro del proyecto sigue adelante; Jev aprueba por ti los comandos, los cambios fuera del proyecto y las acciones hacia fuera, y solo te pregunta cuando no está seguro."
       },
       "ask": {
-        "title": "Permisos mínimos"
+        "title": "Permisos mínimos",
+        "description": "Solo la lectura sigue adelante; cada edición, comando o acción hacia fuera te pregunta primero."
       }
     }
   },
@@ -482,6 +485,7 @@
     "progress": "Progreso de la configuración",
     "steps": {
       "model": "Modelo",
+      "permissions": "Permisos",
       "judge": "Juez",
       "done": "Listo"
     },
@@ -492,7 +496,7 @@
     "start": "Empezar",
     "model": {
       "title": "Conecta un modelo",
-      "subtitle": "mu lo usa para escribir código y responderte. Son tres pasos; luego puedes cambiarlo todo en Configuración.",
+      "subtitle": "mu lo usa para escribir código y responderte. Luego puedes cambiarlo todo en Configuración.",
       "model": "Modelo",
       "baseUrl": "URL base",
       "key": "Clave de API",
@@ -640,7 +644,8 @@
       "import": "Conversaciones",
       "importOpen": "Elegir cuáles…",
       "importFound_one": "Hay {{count}} conversación de Claude Code o Codex en este equipo que puedes traer para seguirla aquí",
-      "importFound_other": "Hay {{count}} conversaciones de Claude Code o Codex en este equipo que puedes traer para seguirlas aquí"
+      "importFound_other": "Hay {{count}} conversaciones de Claude Code o Codex en este equipo que puedes traer para seguirlas aquí",
+      "permissions": "Permisos"
     },
     "intro": {
       "title": "Bienvenido a mu",
@@ -708,6 +713,11 @@
         "cancel": "No iniciar sesión"
       },
       "readingModels": "Sesión iniciada en {{name}}. Leyendo los modelos que puede usar esta cuenta…"
+    },
+    "permissions": {
+      "title": "Cuánto hace mu por su cuenta",
+      "subtitle": "Las conversaciones nuevas empiezan en el modo que elijas aquí. Puedes cambiarlo cuando quieras en el cuadro de envío o con /permissions.",
+      "recommended": "Recomendado"
     }
   },
   "turnErrors": {
