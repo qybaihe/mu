@@ -804,7 +804,21 @@
     "unwritable": "No se pudo escribir {{file}}.",
     "contextLimit": "El límite de contexto debe ser 0 o un número entero de {{min}} a {{max}}.",
     "importMissing": "Esta versión de mu aún no puede importar conversaciones. Actualiza mu primero.",
-    "importFailed": "mu no pudo importar las conversaciones."
+    "importFailed": "mu no pudo importar las conversaciones.",
+    "skillInvalid": "Esta carpeta no tiene un SKILL.md con descripción, así que no es una habilidad.",
+    "skillName": "«{{name}}» no puede ser el nombre de carpeta de una habilidad: usa minúsculas, números y guiones.",
+    "skillExists": "mu ya tiene una habilidad llamada {{name}}.",
+    "skillTooLarge": "Esta carpeta es demasiado grande para ser una habilidad (más de 2000 archivos o 50 MB).",
+    "notFound": "No se encontró {{name}}. Puede que se haya movido.",
+    "notMine": "{{name}} viene {{source}}; mu no cambia esos archivos.",
+    "mcpName": "«{{name}}» no puede nombrar un servidor: usa letras, números, _ y -.",
+    "mcpExists": "mu ya tiene un servidor llamado {{name}}.",
+    "mcpInvalid": {
+      "command": "El comando no se puede usar. Revísalo y vuelve a intentarlo.",
+      "url": "La URL debe empezar por http:// o https://.",
+      "env": "Un nombre de variable solo puede tener letras, números y _, y no puede empezar por un número.",
+      "headers": "Un nombre o valor de cabecera no se puede usar."
+    }
   },
   "importChats": {
     "title": "Importar conversaciones",
@@ -1024,5 +1038,118 @@
       "team": "Trabajo en equipo",
       "other": "Otros"
     }
+  },
+  "capabilities": {
+    "toolsClassic": "MCP e imágenes",
+    "remove": "Quitar",
+    "from": {
+      "mu": "de la carpeta de habilidades de mu",
+      "agents": "de la carpeta compartida .agents",
+      "builtin": "del propio mu",
+      "claude": "de Claude Code",
+      "codex": "de Codex",
+      "cursor": "de Cursor"
+    },
+    "skills": {
+      "lead": "Las habilidades que mu puede usar en cada conversación y de dónde viene cada una.",
+      "search": "Buscar habilidades",
+      "open": "Abrir carpeta",
+      "add": "Añadir habilidad",
+      "added": "Se añadió {{name}}. Las conversaciones nuevas ya pueden usarla.",
+      "removed": "{{name}} se movió a la papelera.",
+      "removeTitle": "¿Quitar la habilidad {{name}}?",
+      "removeContent": "Su carpeta va a la papelera y las conversaciones nuevas dejan de cargarla.",
+      "empty": "mu todavía no tiene habilidades.",
+      "noMatch": "Ninguna habilidad coincide.",
+      "failed": "No se pudieron leer las habilidades de mu.",
+      "project": "Las habilidades propias de un proyecto (.mu/skills, .agents/skills, .claude/skills) solo se cargan en las conversaciones de ese proyecto y no aparecen aquí.",
+      "groups": {
+        "mu": {
+          "title": "Habilidades de mu",
+          "help": "En {{folder}}. Las habilidades que añades van aquí, y solo estas se pueden quitar."
+        },
+        "agents": {
+          "title": "Habilidades compartidas",
+          "help": "En ~/.agents/skills, compartidas por varios agentes. mu las lee y nunca las cambia."
+        },
+        "builtin": {
+          "title": "Incluidas con mu",
+          "help": "Vienen con mu y están activas mientras lo esté la función que las trae."
+        },
+        "claude": {
+          "title": "De Claude Code",
+          "help": "De ~/.claude/skills. mu solo las lee; features.inherit en mu.json deja de tomarlas."
+        },
+        "codex": {
+          "title": "De Codex",
+          "help": "De ~/.codex/skills. mu solo las lee; features.inherit en mu.json deja de tomarlas."
+        }
+      }
+    },
+    "mcp": {
+      "title": "Servidores MCP",
+      "lead": "Los servidores MCP que mu puede usar en cada conversación y dónde está configurado cada uno.",
+      "open": "Abrir archivo de configuración",
+      "add": "Añadir servidor",
+      "added": "Se añadió {{name}}. Las conversaciones nuevas ya pueden usarlo.",
+      "removed": "Se quitó {{name}}.",
+      "removeTitle": "¿Quitar el servidor {{name}}?",
+      "removeContent": "Su entrada se borra de {{file}}.",
+      "use": "Usar {{name}}",
+      "empty": "mu todavía no usa ningún servidor MCP.",
+      "failed": "No se pudieron leer los servidores MCP de mu.",
+      "featureOff": "La función MCP está desactivada en mu.json: solo se usan los servidores de mcp.json.",
+      "unreadable": "No se pudieron leer estos archivos, así que faltan sus servidores: {{files}}",
+      "project": "Los servidores propios de un proyecto (.mu/mcp.json, .mcp.json, .cursor/mcp.json) solo se usan en las conversaciones de ese proyecto y no aparecen aquí.",
+      "locked": {
+        "offInSource": {
+          "label": "Desactivado en su origen",
+          "help": "Está desactivado en la configuración de su propia herramienta. mu no cambia archivos de otras herramientas: actívalo allí."
+        },
+        "unsupported": {
+          "label": "No compatible",
+          "help": "Usa el antiguo transporte HTTP+SSE, que mu no admite."
+        }
+      },
+      "groups": {
+        "mu": {
+          "title": "Servidores de mu",
+          "help": "En mcp.json y mu.json. Los servidores que añades van a {{file}}, como con mu mcp add."
+        },
+        "claude": {
+          "title": "De Claude Code",
+          "help": "De ~/.claude.json. Desactivarlo aquí solo escribe en mu.json, nunca en el archivo de Claude Code."
+        },
+        "cursor": {
+          "title": "De Cursor",
+          "help": "De ~/.cursor/mcp.json. Desactivarlo aquí solo escribe en mu.json, nunca en el archivo de Cursor."
+        },
+        "codex": {
+          "title": "De Codex",
+          "help": "De ~/.codex/config.toml. Desactivarlo aquí solo escribe en mu.json, nunca en el archivo de Codex."
+        }
+      },
+      "form": {
+        "title": "Añadir un servidor MCP",
+        "submit": "Añadir",
+        "name": "Nombre",
+        "nameHelp": "Letras, números, _ y -",
+        "kind": "Conexión",
+        "command": "Comando",
+        "commandHelp": "El programa que mu inicia y sus argumentos, tal como los escribirías en un terminal.",
+        "env": "Variables de entorno",
+        "envPlaceholder": "KEY=value, una por línea (opcional)",
+        "url": "URL",
+        "headers": "Cabeceras",
+        "headersPlaceholder": "Authorization: Bearer …, una por línea (opcional)",
+        "needName": "Escribe un nombre.",
+        "needCommand": "Escribe un comando.",
+        "needUrl": "Escribe una URL.",
+        "openQuote": "Hay una comilla sin cerrar en el comando.",
+        "badLine": "La línea {{line}} no tiene la forma correcta."
+      }
+    },
+    "showAll": "Mostrar todas ({{count}})",
+    "showFewer": "Mostrar menos"
   }
 }

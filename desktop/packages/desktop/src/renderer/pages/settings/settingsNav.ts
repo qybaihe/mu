@@ -95,6 +95,13 @@ export type SettingsPage = {
   Icon: unknown;
   /** A page for the people who build mu: in the rail and the palette of a development build only. */
   devOnly?: boolean;
+  /**
+   * A page of what the app keeps for the classic mode (MU_NATIVE_HOST=0), which mu does not read: not listed while mu
+   * runs inside the app, and its route leads to {@link NATIVE_REPLACEMENTS} then.
+   */
+  classicOnly?: boolean;
+  /** The page's name while mu runs inside the app, when the page then shows something else. */
+  nativeLabelKey?: string;
 };
 
 const DETAIL_ICONS: Record<DetailArea, unknown> = {
@@ -209,14 +216,18 @@ export const SETTINGS_PAGES = [
     labelKey: 'settings.skills',
     Icon: Book,
   },
+  // While mu runs inside the app, the tools are the MCP servers mu uses: it does not use the image generation.
+  // Both labels stay apart from the details' tools page in the rail.
   {
     id: 'tools',
     group: 'capabilities',
     path: 'tools',
     route: '/settings/tools',
-    labelKey: 'settings.tools',
+    labelKey: 'mu.capabilities.toolsClassic',
+    nativeLabelKey: 'mu.capabilities.mcp.title',
     Icon: Toolkit,
   },
+  // The assistants are the classic mode's: mu running inside the app has none.
   {
     id: 'assistants',
     group: 'capabilities',
@@ -224,6 +235,7 @@ export const SETTINGS_PAGES = [
     route: '/settings/assistants',
     labelKey: 'settings.assistants',
     Icon: Peoples,
+    classicOnly: true,
   },
   {
     id: 'browser',
@@ -414,8 +426,28 @@ export const FEATURE_LIST_PAGES: readonly SettingsPageId[] = DETAIL_AREAS.map(de
 /** A development build: one run from its sources, where the pages for the people who build mu are listed. */
 const DEVELOPMENT_BUILD = process.env.NODE_ENV !== 'production';
 
-/** Whether a page is listed in the rail, the phone's row of chips and the palette of this build. */
-export const isSettingsPageListed = (page: SettingsPage): boolean => !page.devOnly || DEVELOPMENT_BUILD;
+/**
+ * Whether a page is listed in the rail, the phone's row of chips and the palette of this build; `native`: while mu runs
+ * inside the app.
+ */
+export const isSettingsPageListed = (page: SettingsPage, native = false): boolean =>
+  (!page.devOnly || DEVELOPMENT_BUILD) && !(native && page.classicOnly);
+
+/** A page's name where it stands alone, while mu runs inside the app (`native`) or not. */
+export const settingsPageLabelKey = (page: SettingsPage, native = false): string =>
+  (native && page.nativeLabelKey) || page.labelKey;
+
+/** The rail's shorter name of a page, while mu runs inside the app (`native`) or not. */
+export const settingsPageRailLabelKey = (page: SettingsPage, native = false): string =>
+  (native && page.nativeLabelKey) || page.railLabelKey || page.labelKey;
+
+/**
+ * Where the route of a classic-only page leads while mu runs inside the app: the assistants to the skills, the page
+ * next to them, where what mu brings to a task is.
+ */
+export const NATIVE_REPLACEMENTS: Partial<Record<SettingsPageId, string>> = {
+  assistants: '/settings/skills',
+};
 
 /** Whether `pathname` is the page at `route` or one of its own sub-pages (a skill's detail, a feature's options). */
 export const isSettingsRouteActive = (pathname: string, route: string): boolean =>

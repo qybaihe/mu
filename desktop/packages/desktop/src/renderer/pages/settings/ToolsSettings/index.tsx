@@ -13,7 +13,7 @@ import { SettingsPage } from '../components/SettingsPageHeader';
 const ToolsSettings: React.FC = () => {
   const { t } = useTranslation();
   return (
-    <SettingsPage title={t('settings.tools')} description={t('settings.toolsDescription')}>
+    <SettingsPage title={t('mu.capabilities.toolsClassic')} description={t('settings.toolsDescription')}>
       <ToolsModalContent />
     </SettingsPage>
   );

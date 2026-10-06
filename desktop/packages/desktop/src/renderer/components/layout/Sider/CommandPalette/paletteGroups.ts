@@ -13,6 +13,7 @@ import {
   SETTINGS_HOME,
   SETTINGS_PAGES,
   isSettingsPageListed,
+  settingsPageLabelKey,
 } from '@/renderer/pages/settings/settingsNav';
 import { formatRelativeTime } from '@/renderer/utils/chat/relativeTime';
 import { commandDescription } from '@/renderer/utils/chat/muCommands';
@@ -76,6 +77,8 @@ export type PaletteSources = {
   commands: readonly SlashCommandItem[];
   /** The conversations on the native host, while it is on: found by their title and by their folder's name. */
   nativeConversations?: readonly NativeConversation[];
+  /** Whether mu runs inside the app: the settings pages of the classic mode's own storage are then not offered. */
+  native?: boolean;
   t: Translate;
   language: string;
   now: number;
@@ -140,10 +143,10 @@ const GROUP_LABELS: ReadonlyMap<string, string> = new Map(SETTINGS_GROUPS.map((g
  * all; the ones it found by name come first, and only those have characters underlined. The row that opens the
  * settings leads.
  */
-const settingsRows = ({ t }: PaletteSources, keyword: string): PaletteItem[] => {
+const settingsRows = ({ t, native = false }: PaletteSources, keyword: string): PaletteItem[] => {
   const settingsWord = t('common.settings');
-  const found = SETTINGS_PAGES.filter(isSettingsPageListed).flatMap((page) => {
-    const label = t(page.labelKey);
+  const found = SETTINGS_PAGES.filter((page) => isSettingsPageListed(page, native)).flatMap((page) => {
+    const label = t(settingsPageLabelKey(page, native));
     const hits = getFuzzyMatchIndices(label, keyword);
     const railKey: string | undefined = 'railLabelKey' in page ? page.railLabelKey : undefined;
     const groupKey = GROUP_LABELS.get(page.group);

@@ -804,7 +804,21 @@
     "unwritable": "{{file}} konnte nicht geschrieben werden.",
     "contextLimit": "Die Kontextgrenze muss 0 oder eine ganze Zahl von {{min}} bis {{max}} sein.",
     "importMissing": "Diese mu-Version kann noch keine Unterhaltungen importieren. Aktualisiere mu zuerst.",
-    "importFailed": "mu konnte die Unterhaltungen nicht importieren."
+    "importFailed": "mu konnte die Unterhaltungen nicht importieren.",
+    "skillInvalid": "Dieser Ordner enthält keine SKILL.md mit Beschreibung (description) und ist daher kein Skill.",
+    "skillName": "„{{name}}“ kann kein Ordnername eines Skills sein: Verwende Kleinbuchstaben, Ziffern und Bindestriche.",
+    "skillExists": "mu hat bereits einen Skill namens {{name}}.",
+    "skillTooLarge": "Dieser Ordner ist für einen Skill zu groß (über 2.000 Dateien oder 50 MB).",
+    "notFound": "{{name}} wurde nicht gefunden. Vielleicht wurde er verschoben.",
+    "notMine": "{{name}} stammt {{source}}; mu ändert dort keine Dateien.",
+    "mcpName": "„{{name}}“ kann keinen Server benennen: Verwende Buchstaben, Ziffern, _ und -.",
+    "mcpExists": "mu hat bereits einen Server namens {{name}}.",
+    "mcpInvalid": {
+      "command": "Der Befehl ist nicht verwendbar. Prüfe ihn und versuche es erneut.",
+      "url": "Die URL muss mit http:// oder https:// beginnen.",
+      "env": "Ein Variablenname darf nur Buchstaben, Ziffern und _ enthalten und nicht mit einer Ziffer beginnen.",
+      "headers": "Ein Header-Name oder -Wert ist nicht verwendbar."
+    }
   },
   "importChats": {
     "title": "Unterhaltungen importieren",
@@ -1024,5 +1038,118 @@
       "team": "Teamarbeit",
       "other": "Sonstiges"
     }
+  },
+  "capabilities": {
+    "toolsClassic": "MCP und Bilder",
+    "remove": "Entfernen",
+    "from": {
+      "mu": "aus dem Skill-Ordner von mu",
+      "agents": "aus dem gemeinsamen .agents-Ordner",
+      "builtin": "aus mu selbst",
+      "claude": "aus Claude Code",
+      "codex": "aus Codex",
+      "cursor": "aus Cursor"
+    },
+    "skills": {
+      "lead": "Die Skills, die mu in jeder Unterhaltung nutzen kann, und woher sie jeweils kommen.",
+      "search": "Skills suchen",
+      "open": "Ordner öffnen",
+      "add": "Skill hinzufügen",
+      "added": "{{name}} hinzugefügt. Neue Unterhaltungen können ihn nutzen.",
+      "removed": "{{name}} in den Papierkorb verschoben.",
+      "removeTitle": "Skill {{name}} entfernen?",
+      "removeContent": "Sein Ordner kommt in den Papierkorb, und neue Unterhaltungen laden ihn nicht mehr.",
+      "empty": "mu hat noch keine Skills.",
+      "noMatch": "Kein Skill passt.",
+      "failed": "Die Skills von mu konnten nicht gelesen werden.",
+      "project": "Die eigenen Skills eines Projekts (.mu/skills, .agents/skills, .claude/skills) werden nur in dessen Unterhaltungen geladen und hier nicht aufgeführt.",
+      "groups": {
+        "mu": {
+          "title": "Skills von mu",
+          "help": "In {{folder}}. Hinzugefügte Skills landen hier, und nur diese lassen sich entfernen."
+        },
+        "agents": {
+          "title": "Gemeinsame Skills",
+          "help": "In ~/.agents/skills, von mehreren Agenten genutzt. mu liest sie und ändert sie nie."
+        },
+        "builtin": {
+          "title": "Mit mu geliefert",
+          "help": "Kommen mit mu und sind an, solange die Funktion an ist, die sie mitbringt."
+        },
+        "claude": {
+          "title": "Aus Claude Code",
+          "help": "Aus ~/.claude/skills. mu liest sie nur; features.inherit in mu.json beendet die Übernahme."
+        },
+        "codex": {
+          "title": "Aus Codex",
+          "help": "Aus ~/.codex/skills. mu liest sie nur; features.inherit in mu.json beendet die Übernahme."
+        }
+      }
+    },
+    "mcp": {
+      "title": "MCP-Server",
+      "lead": "Die MCP-Server, die mu in jeder Unterhaltung nutzen kann, und wo sie jeweils eingerichtet sind.",
+      "open": "Konfigurationsdatei öffnen",
+      "add": "Server hinzufügen",
+      "added": "{{name}} hinzugefügt. Neue Unterhaltungen können ihn nutzen.",
+      "removed": "{{name}} entfernt.",
+      "removeTitle": "Server {{name}} entfernen?",
+      "removeContent": "Sein Eintrag wird aus {{file}} gelöscht.",
+      "use": "{{name}} verwenden",
+      "empty": "mu nutzt noch keine MCP-Server.",
+      "failed": "Die MCP-Server von mu konnten nicht gelesen werden.",
+      "featureOff": "Die MCP-Funktion ist in mu.json aus: Nur die Server aus mcp.json werden genutzt.",
+      "unreadable": "Diese Dateien konnten nicht gelesen werden, ihre Server fehlen daher: {{files}}",
+      "project": "Die eigenen Server eines Projekts (.mu/mcp.json, .mcp.json, .cursor/mcp.json) werden nur in dessen Unterhaltungen genutzt und hier nicht aufgeführt.",
+      "locked": {
+        "offInSource": {
+          "label": "An der Quelle aus",
+          "help": "Er ist in den Einstellungen seines eigenen Werkzeugs abgeschaltet. mu ändert keine Dateien anderer Werkzeuge: Schalte ihn dort ein."
+        },
+        "unsupported": {
+          "label": "Nicht unterstützt",
+          "help": "Er nutzt das alte HTTP+SSE-Verfahren, das mu nicht unterstützt."
+        }
+      },
+      "groups": {
+        "mu": {
+          "title": "Server von mu",
+          "help": "In mcp.json und mu.json. Hinzugefügte Server kommen wie bei mu mcp add in {{file}}."
+        },
+        "claude": {
+          "title": "Aus Claude Code",
+          "help": "Aus ~/.claude.json. Hier abschalten schreibt nur in mu.json, nie in die Datei von Claude Code."
+        },
+        "cursor": {
+          "title": "Aus Cursor",
+          "help": "Aus ~/.cursor/mcp.json. Hier abschalten schreibt nur in mu.json, nie in die Datei von Cursor."
+        },
+        "codex": {
+          "title": "Aus Codex",
+          "help": "Aus ~/.codex/config.toml. Hier abschalten schreibt nur in mu.json, nie in die Datei von Codex."
+        }
+      },
+      "form": {
+        "title": "MCP-Server hinzufügen",
+        "submit": "Hinzufügen",
+        "name": "Name",
+        "nameHelp": "Buchstaben, Ziffern, _ und -",
+        "kind": "Verbindung",
+        "command": "Befehl",
+        "commandHelp": "Das Programm, das mu startet, mit seinen Argumenten, so wie du es im Terminal eingibst.",
+        "env": "Umgebungsvariablen",
+        "envPlaceholder": "KEY=value, eine pro Zeile (optional)",
+        "url": "URL",
+        "headers": "Header",
+        "headersPlaceholder": "Authorization: Bearer …, einer pro Zeile (optional)",
+        "needName": "Gib einen Namen ein.",
+        "needCommand": "Gib einen Befehl ein.",
+        "needUrl": "Gib eine URL ein.",
+        "openQuote": "Ein Anführungszeichen im Befehl ist nicht geschlossen.",
+        "badLine": "Zeile {{line}} hat nicht die richtige Form."
+      }
+    },
+    "showAll": "Alle anzeigen ({{count}})",
+    "showFewer": "Weniger anzeigen"
   }
 }

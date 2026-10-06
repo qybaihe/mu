@@ -804,7 +804,21 @@
     "unwritable": "{{file}} could not be written.",
     "contextLimit": "The context cap must be 0 or a whole number from {{min}} to {{max}}.",
     "importMissing": "This version of mu cannot import conversations yet. Update mu first.",
-    "importFailed": "mu could not import the conversations."
+    "importFailed": "mu could not import the conversations.",
+    "skillInvalid": "This folder has no SKILL.md with a description, so it is not a skill.",
+    "skillName": "“{{name}}” cannot be a skill’s folder name: use lowercase letters, digits and hyphens.",
+    "skillExists": "mu already has a skill named {{name}}.",
+    "skillTooLarge": "This folder is too large to be a skill (over 2,000 files or 50 MB).",
+    "notFound": "{{name}} was not found. It may have been moved.",
+    "notMine": "{{name}} comes from {{source}}. mu does not change those files.",
+    "mcpName": "“{{name}}” cannot name a server: use letters, digits, _ and -.",
+    "mcpExists": "mu already has a server named {{name}}.",
+    "mcpInvalid": {
+      "command": "The command cannot be used. Check it and try again.",
+      "url": "The URL must start with http:// or https://.",
+      "env": "A variable name may only have letters, digits and _, and must not start with a digit.",
+      "headers": "A header name or value cannot be used."
+    }
   },
   "importChats": {
     "title": "Import conversations",
@@ -1024,5 +1038,118 @@
       "team": "Teamwork",
       "other": "Other"
     }
+  },
+  "capabilities": {
+    "toolsClassic": "MCP and images",
+    "remove": "Remove",
+    "from": {
+      "mu": "mu’s skills folder",
+      "agents": "the shared .agents folder",
+      "builtin": "mu itself",
+      "claude": "Claude Code",
+      "codex": "Codex",
+      "cursor": "Cursor"
+    },
+    "skills": {
+      "lead": "The skills mu can use in every conversation, and where each comes from.",
+      "search": "Search skills",
+      "open": "Open folder",
+      "add": "Add skill",
+      "added": "Added {{name}}. New conversations can use it.",
+      "removed": "Moved {{name}} to the trash.",
+      "removeTitle": "Remove the skill {{name}}?",
+      "removeContent": "Its folder goes to the trash, and new conversations no longer load it.",
+      "empty": "mu has no skills yet.",
+      "noMatch": "No skill matches.",
+      "failed": "mu’s skills could not be read.",
+      "project": "A project’s own skills (.mu/skills, .agents/skills, .claude/skills) load only in that project’s conversations and are not listed here.",
+      "groups": {
+        "mu": {
+          "title": "mu’s skills",
+          "help": "In {{folder}}. Added skills go here, and only these can be removed."
+        },
+        "agents": {
+          "title": "Shared skills",
+          "help": "In ~/.agents/skills, shared by several agents. mu reads them and never changes them."
+        },
+        "builtin": {
+          "title": "Comes with mu",
+          "help": "Shipped with mu. Each is on while the feature that brings it is on."
+        },
+        "claude": {
+          "title": "From Claude Code",
+          "help": "From ~/.claude/skills. mu only reads them; features.inherit in mu.json stops taking them over."
+        },
+        "codex": {
+          "title": "From Codex",
+          "help": "From ~/.codex/skills. mu only reads them; features.inherit in mu.json stops taking them over."
+        }
+      }
+    },
+    "mcp": {
+      "title": "MCP servers",
+      "lead": "The MCP servers mu can use in every conversation, and where each is set up.",
+      "open": "Open config file",
+      "add": "Add server",
+      "added": "Added {{name}}. New conversations can use it.",
+      "removed": "Removed {{name}}.",
+      "removeTitle": "Remove the server {{name}}?",
+      "removeContent": "Its entry is deleted from {{file}}.",
+      "use": "Use {{name}}",
+      "empty": "mu uses no MCP servers yet.",
+      "failed": "mu’s MCP servers could not be read.",
+      "featureOff": "The MCP feature is off in mu.json: only the servers in mcp.json are used.",
+      "unreadable": "These files could not be read, so their servers are missing: {{files}}",
+      "project": "A project’s own servers (.mu/mcp.json, .mcp.json, .cursor/mcp.json) are used only in that project’s conversations and are not listed here.",
+      "locked": {
+        "offInSource": {
+          "label": "Off at its source",
+          "help": "It is switched off in its own tool’s settings. mu does not change other tools’ files: switch it on there."
+        },
+        "unsupported": {
+          "label": "Not supported",
+          "help": "It uses the old HTTP+SSE transport, which mu does not support."
+        }
+      },
+      "groups": {
+        "mu": {
+          "title": "mu’s servers",
+          "help": "In mcp.json and mu.json. Added servers go into {{file}}, as with mu mcp add."
+        },
+        "claude": {
+          "title": "From Claude Code",
+          "help": "From ~/.claude.json. Switching one off here writes only to mu.json, never to Claude Code’s file."
+        },
+        "cursor": {
+          "title": "From Cursor",
+          "help": "From ~/.cursor/mcp.json. Switching one off here writes only to mu.json, never to Cursor’s file."
+        },
+        "codex": {
+          "title": "From Codex",
+          "help": "From ~/.codex/config.toml. Switching one off here writes only to mu.json, never to Codex’s file."
+        }
+      },
+      "form": {
+        "title": "Add an MCP server",
+        "submit": "Add",
+        "name": "Name",
+        "nameHelp": "Letters, digits, _ and -",
+        "kind": "Connection",
+        "command": "Command",
+        "commandHelp": "The program mu starts and its arguments, as you would type them in a terminal.",
+        "env": "Environment variables",
+        "envPlaceholder": "KEY=value, one per line (optional)",
+        "url": "URL",
+        "headers": "Headers",
+        "headersPlaceholder": "Authorization: Bearer …, one per line (optional)",
+        "needName": "Enter a name.",
+        "needCommand": "Enter a command.",
+        "needUrl": "Enter a URL.",
+        "openQuote": "A quote in the command is not closed.",
+        "badLine": "Line {{line}} is not in the right form."
+      }
+    },
+    "showAll": "Show all ({{count}})",
+    "showFewer": "Show fewer"
   }
 }

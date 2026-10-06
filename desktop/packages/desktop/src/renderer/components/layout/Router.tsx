@@ -15,6 +15,7 @@ import {
   FEATURE_LIST_PAGES,
   MOVED_FEATURE_LISTS,
   MOVED_SETTINGS_TABS,
+  NATIVE_REPLACEMENTS,
   RETIRED_SETTINGS_PATHS,
   SETTINGS_HOME,
   SETTINGS_PAGES,
@@ -24,6 +25,7 @@ import {
   type DetailsPageId,
   type SettingsPageId,
 } from '@/renderer/pages/settings/settingsNav';
+import { useNativeEnabled } from '@/renderer/pages/native/hooks/useNativeConversations';
 const Conversation = preloadablePage(() => import('@renderer/pages/conversation'));
 const NativeConversation = preloadablePage(() => import('@renderer/pages/native'));
 const Guid = preloadablePage(() => import('@renderer/pages/guid'));
@@ -34,6 +36,8 @@ const MovedFeatureOptions = preloadablePage(() =>
 const SkillsSettings = preloadablePage(() => import('@renderer/pages/settings/SkillsSettings/SkillsHubSettings'));
 const SkillDetailPage = preloadablePage(() => import('@renderer/pages/settings/SkillsSettings/SkillDetailPage'));
 const ToolsSettings = preloadablePage(() => import('@renderer/pages/settings/ToolsSettings'));
+const MuSkillsSettings = preloadablePage(() => import('@renderer/pages/settings/MuCapabilities/SkillsPage'));
+const MuMcpSettings = preloadablePage(() => import('@renderer/pages/settings/MuCapabilities/McpPage'));
 const AssistantSettings = preloadablePage(() => import('@renderer/pages/settings/AssistantSettings'));
 const AppearanceSettings = preloadablePage(() => import('@renderer/pages/settings/AppearanceSettings'));
 const SystemSettings = preloadablePage(() => import('@renderer/pages/settings/SystemSettings'));
@@ -65,6 +69,8 @@ const PRELOADED: readonly PreloadablePage[] = [
   AssistantSettings,
   ToolsSettings,
   SkillsSettings,
+  MuSkillsSettings,
+  MuMcpSettings,
   BrowserSettings,
   AboutSettings,
   ArchivedSettings,
@@ -159,6 +165,44 @@ const SETTINGS_PAGE_ELEMENTS: Record<SettingsPageId, PreloadablePage> = {
 };
 
 /**
+ * The pages that show what mu itself uses while it runs inside the app, in place of the app's own storage, which mu
+ * does not read: its skills, and its MCP servers in place of the tools (MCP servers and the image generation).
+ */
+const NATIVE_PAGE_ELEMENTS: Partial<Record<SettingsPageId, PreloadablePage>> = {
+  skills: MuSkillsSettings,
+  tools: MuMcpSettings,
+};
+
+/**
+ * A page that depends on whether mu runs inside the app: there, its native page, or for a page of the classic mode
+ * alone the page it leads to; otherwise the classic page. Nothing is drawn until the main process said which, so
+ * neither page starts reading for the other.
+ */
+export const ByMode: React.FC<{ classic: PreloadablePage; native?: PreloadablePage; elsewhere?: string }> = ({
+  classic,
+  native,
+  elsewhere,
+}) => {
+  const { state } = useLocation();
+  const on = useNativeEnabled();
+  if (on === undefined) return null;
+  if (on && elsewhere) return <Navigate to={elsewhere} replace state={state} />;
+  return withRouteFallback(on && native ? native : classic);
+};
+
+/** The element of a settings entry: by mode when the native mode changes it, the page itself otherwise. */
+const settingsPageElement = (id: SettingsPageId): React.ReactElement =>
+  NATIVE_PAGE_ELEMENTS[id] || NATIVE_REPLACEMENTS[id] ? (
+    <ByMode
+      classic={SETTINGS_PAGE_ELEMENTS[id]}
+      native={NATIVE_PAGE_ELEMENTS[id]}
+      elsewhere={NATIVE_REPLACEMENTS[id]}
+    />
+  ) : (
+    withRouteFallback(SETTINGS_PAGE_ELEMENTS[id])
+  );
+
+/**
  * Around every settings page: the one draft of mu's settings they all edit. A route change draws the page afresh, so
  * the draft lives here, above the pages: a change typed on one page is still there, unsaved, on the next, until the
  * settings are left.
@@ -228,9 +272,9 @@ const PanelRoute: React.FC<{ layout: React.ReactElement }> = ({ layout }) => {
                 path={route}
                 element={
                   route in MOVED_SETTINGS_TABS ? (
-                    <WithMovedTabs path={route}>{withRouteFallback(SETTINGS_PAGE_ELEMENTS[id])}</WithMovedTabs>
+                    <WithMovedTabs path={route}>{settingsPageElement(id)}</WithMovedTabs>
                   ) : (
-                    withRouteFallback(SETTINGS_PAGE_ELEMENTS[id])
+                    settingsPageElement(id)
                   )
                 }
               />
@@ -243,8 +287,12 @@ const PanelRoute: React.FC<{ layout: React.ReactElement }> = ({ layout }) => {
             {MOVED_FEATURE_LISTS.map((list) => (
               <Route key={list} path={`${list}/:feature/:part?`} element={withRouteFallback(MovedFeatureOptions)} />
             ))}
-            <Route path='/settings/skills/import-history' element={withRouteFallback(SkillsSettings)} />
-            <Route path='/settings/skills/detail/:skillName' element={withRouteFallback(SkillDetailPage)} />
+            {/* The app's own skills' history and details: while mu runs inside the app, its skills page. */}
+            <Route path='/settings/skills/import-history' element={settingsPageElement('skills')} />
+            <Route
+              path='/settings/skills/detail/:skillName'
+              element={<ByMode classic={SkillDetailPage} elsewhere='/settings/skills' />}
+            />
             <Route path='/settings/ext/:tabId' element={withRouteFallback(ExtensionSettingsPage)} />
           </Route>
 

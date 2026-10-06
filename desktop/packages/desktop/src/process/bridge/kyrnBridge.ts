@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { app, net, shell, utilityProcess } from 'electron';
 import { kyrnBridge } from '../../common/kyrn/bridge';
@@ -14,12 +16,20 @@ import { checkClmServer } from '../agent/kyrn/clmServer';
 import { LocalJudge } from '../agent/kyrn/localJudge';
 import { OnnxLocalJudge, openFolder, usesOnnxJudge } from '../agent/kyrn/localJudgeOnnx';
 import { importCli, importService } from '../agent/kyrn/importChats';
+import { addSkill, listSkills, removeSkill, skillsFolder } from '../agent/kyrn/capabilities/skills';
+import {
+  addMcpServer,
+  listMcpServers,
+  mcpFile,
+  removeMcpServer,
+  switchMcpServer,
+} from '../agent/kyrn/capabilities/mcp';
 import { LessonsStore, lessonsProject, type LessonsProject } from '../agent/kyrn/lessons';
 import { listFolder, readFolder } from '../agent/kyrn/folderFiles';
 import { activityPage, modelLevels } from '../agent/kyrn/telemetry';
 import { findRegistration, initializeKyrn, recheckKyrn, type OwnCommand } from '../agent/kyrn/product';
 import { ownLauncher } from '../agent/kyrn/windows/launcherCommand';
-import { muEnv, muHome } from '../agent/kyrn/naming';
+import { muAgentDir, muEnv, muHome } from '../agent/kyrn/naming';
 import { asRecord, text } from '../agent/kyrn/piRpc';
 import { sessionBinding } from '../agent/kyrn/sessionBinding';
 import { conversationSessions } from '../agent/kyrn/conversationSession';
@@ -79,7 +89,7 @@ export function initKyrnBridge(): void {
   );
   const root = harness.root;
   const home = muHome();
-  const agentDir = muEnv('AGENT_DIR') || join(home, 'agent');
+  const agentDir = muAgentDir();
   const store = join(home, 'acp-sessions');
   const settings = new SettingsStore(agentDir, root, {
     env: envFileOf(harness, home, process.platform),
@@ -222,4 +232,30 @@ export function initKyrnBridge(): void {
     result(() => imports.run(paths, locale, native === true))
   );
   kyrnBridge.importHistory.provider(({ conversationId }) => result(() => imports.history(conversationId)));
+  // The skills and MCP servers mu itself uses, for the settings pages while mu runs inside the app. The skills that
+  // come with mu lie next to its manifest.
+  const skillRoots = {
+    agentDir,
+    home: homedir(),
+    builtinDir: join(dirname(manifestOf(harness, process.platform)), 'skills'),
+  };
+  const mcpRoots = { agentDir, home: homedir() };
+  kyrnBridge.skills.provider(() => result(() => listSkills(skillRoots)));
+  kyrnBridge.skillAdd.provider(({ path }) => result(() => addSkill(skillRoots, path)));
+  kyrnBridge.skillRemove.provider(({ name }) =>
+    result(() => removeSkill(skillRoots, name, (target) => shell.trashItem(target)))
+  );
+  kyrnBridge.mcpServers.provider(() => result(() => listMcpServers(mcpRoots)));
+  kyrnBridge.mcpAdd.provider((input) => result(() => addMcpServer(mcpRoots, input)));
+  kyrnBridge.mcpRemove.provider(({ name }) => result(() => removeMcpServer(mcpRoots, name)));
+  kyrnBridge.mcpSwitch.provider(({ name, on }) => result(() => switchMcpServer(mcpRoots, name, on)));
+  kyrnBridge.capabilityReveal.provider(({ what }) =>
+    result(async () => {
+      if (what === 'skills') return openFolder(skillsFolder(skillRoots), (path) => shell.openPath(path));
+      if (what !== 'mcp') throw new KyrnError('invalid', 'Nothing to show');
+      const file = mcpFile(mcpRoots);
+      if (existsSync(file)) shell.showItemInFolder(file);
+      else await openFolder(agentDir, (path) => shell.openPath(path));
+    })
+  );
 }

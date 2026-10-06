@@ -804,7 +804,21 @@
     "unwritable": "{{file}} yazılamadı.",
     "contextLimit": "Bağlam sınırı 0 ya da {{min}} ile {{max}} arasında bir tam sayı olmalıdır.",
     "importMissing": "Bu mu sürümü henüz konuşmaları içe aktaramıyor. Önce mu’yu güncelleyin.",
-    "importFailed": "mu konuşmaları içe aktaramadı."
+    "importFailed": "mu konuşmaları içe aktaramadı.",
+    "skillInvalid": "Bu klasörde açıklamalı (description) bir SKILL.md yok, bu yüzden bir beceri değil.",
+    "skillName": "“{{name}}” bir becerinin klasör adı olamaz: küçük harf, rakam ve kısa çizgi kullanın.",
+    "skillExists": "mu’nun zaten {{name}} adında bir becerisi var.",
+    "skillTooLarge": "Bu klasör bir beceri için çok büyük (2.000’den fazla dosya veya 50 MB).",
+    "notFound": "{{name}} bulunamadı. Taşınmış olabilir.",
+    "notMine": "{{name}} şuradan geliyor: {{source}}. mu bu dosyaları değiştirmez.",
+    "mcpName": "“{{name}}” bir sunucu adı olamaz: harf, rakam, _ ve - kullanın.",
+    "mcpExists": "mu’nun zaten {{name}} adında bir sunucusu var.",
+    "mcpInvalid": {
+      "command": "Komut kullanılamıyor. Kontrol edip yeniden deneyin.",
+      "url": "URL http:// veya https:// ile başlamalıdır.",
+      "env": "Değişken adı yalnızca harf, rakam ve _ içerebilir ve rakamla başlayamaz.",
+      "headers": "Bir üst bilgi adı veya değeri kullanılamıyor."
+    }
   },
   "importChats": {
     "title": "Konuşmaları içe aktar",
@@ -1024,5 +1038,118 @@
       "team": "Ekip çalışması",
       "other": "Diğer"
     }
+  },
+  "capabilities": {
+    "toolsClassic": "MCP ve görseller",
+    "remove": "Kaldır",
+    "from": {
+      "mu": "mu’nun beceri klasörü",
+      "agents": "paylaşılan .agents klasörü",
+      "builtin": "mu’nun kendisi",
+      "claude": "Claude Code",
+      "codex": "Codex",
+      "cursor": "Cursor"
+    },
+    "skills": {
+      "lead": "mu’nun her konuşmada kullanabileceği beceriler ve her birinin nereden geldiği.",
+      "search": "Becerilerde ara",
+      "open": "Klasörü aç",
+      "add": "Beceri ekle",
+      "added": "{{name}} eklendi. Yeni konuşmalar artık kullanabilir.",
+      "removed": "{{name}} çöp kutusuna taşındı.",
+      "removeTitle": "{{name}} becerisi kaldırılsın mı?",
+      "removeContent": "Klasörü çöp kutusuna taşınır ve yeni konuşmalar artık onu yüklemez.",
+      "empty": "mu’nun henüz becerisi yok.",
+      "noMatch": "Eşleşen beceri yok.",
+      "failed": "mu’nun becerileri okunamadı.",
+      "project": "Bir projenin kendi becerileri (.mu/skills, .agents/skills, .claude/skills) yalnızca o projenin konuşmalarında yüklenir ve burada listelenmez.",
+      "groups": {
+        "mu": {
+          "title": "mu’nun becerileri",
+          "help": "{{folder}} içinde. Eklenen beceriler buraya gelir ve yalnızca bunlar kaldırılabilir."
+        },
+        "agents": {
+          "title": "Paylaşılan beceriler",
+          "help": "~/.agents/skills içinde, birkaç ajan ortak kullanır. mu bunları okur, hiç değiştirmez."
+        },
+        "builtin": {
+          "title": "mu ile gelenler",
+          "help": "mu ile birlikte gelir; onu getiren özellik açık olduğu sürece açıktır."
+        },
+        "claude": {
+          "title": "Claude Code’dan",
+          "help": "~/.claude/skills klasöründen. mu yalnızca okur; mu.json içindeki features.inherit devralmayı durdurur."
+        },
+        "codex": {
+          "title": "Codex’ten",
+          "help": "~/.codex/skills klasöründen. mu yalnızca okur; mu.json içindeki features.inherit devralmayı durdurur."
+        }
+      }
+    },
+    "mcp": {
+      "title": "MCP sunucuları",
+      "lead": "mu’nun her konuşmada kullanabileceği MCP sunucuları ve her birinin nerede ayarlandığı.",
+      "open": "Yapılandırma dosyasını aç",
+      "add": "Sunucu ekle",
+      "added": "{{name}} eklendi. Yeni konuşmalar artık kullanabilir.",
+      "removed": "{{name}} kaldırıldı.",
+      "removeTitle": "{{name}} sunucusu kaldırılsın mı?",
+      "removeContent": "Kaydı {{file}} dosyasından silinir.",
+      "use": "{{name}} kullanılsın",
+      "empty": "mu henüz hiçbir MCP sunucusu kullanmıyor.",
+      "failed": "mu’nun MCP sunucuları okunamadı.",
+      "featureOff": "MCP özelliği mu.json içinde kapalı: yalnızca mcp.json içindeki sunucular kullanılır.",
+      "unreadable": "Bu dosyalar okunamadı, bu yüzden sunucuları listede yok: {{files}}",
+      "project": "Bir projenin kendi sunucuları (.mu/mcp.json, .mcp.json, .cursor/mcp.json) yalnızca o projenin konuşmalarında kullanılır ve burada listelenmez.",
+      "locked": {
+        "offInSource": {
+          "label": "Kaynağında kapalı",
+          "help": "Kendi aracının ayarlarında kapatılmış. mu diğer araçların dosyalarını değiştirmez: orada açın."
+        },
+        "unsupported": {
+          "label": "Desteklenmiyor",
+          "help": "mu’nun desteklemediği eski HTTP+SSE aktarımını kullanıyor."
+        }
+      },
+      "groups": {
+        "mu": {
+          "title": "mu’nun sunucuları",
+          "help": "mcp.json ve mu.json içinde. Eklenen sunucular, mu mcp add’de olduğu gibi {{file}} dosyasına yazılır."
+        },
+        "claude": {
+          "title": "Claude Code’dan",
+          "help": "~/.claude.json dosyasından. Burada kapatmak yalnızca mu.json’a yazar, Claude Code’un dosyasına asla."
+        },
+        "cursor": {
+          "title": "Cursor’dan",
+          "help": "~/.cursor/mcp.json dosyasından. Burada kapatmak yalnızca mu.json’a yazar, Cursor’ın dosyasına asla."
+        },
+        "codex": {
+          "title": "Codex’ten",
+          "help": "~/.codex/config.toml dosyasından. Burada kapatmak yalnızca mu.json’a yazar, Codex’in dosyasına asla."
+        }
+      },
+      "form": {
+        "title": "MCP sunucusu ekle",
+        "submit": "Ekle",
+        "name": "Ad",
+        "nameHelp": "Harfler, rakamlar, _ ve -",
+        "kind": "Bağlantı",
+        "command": "Komut",
+        "commandHelp": "mu’nun başlattığı program ve argümanları; terminale yazacağınız gibi.",
+        "env": "Ortam değişkenleri",
+        "envPlaceholder": "KEY=value, satır başına bir tane (isteğe bağlı)",
+        "url": "URL",
+        "headers": "Üst bilgiler",
+        "headersPlaceholder": "Authorization: Bearer …, satır başına bir tane (isteğe bağlı)",
+        "needName": "Bir ad girin.",
+        "needCommand": "Bir komut girin.",
+        "needUrl": "Bir URL girin.",
+        "openQuote": "Komuttaki bir tırnak kapatılmamış.",
+        "badLine": "{{line}}. satır doğru biçimde değil."
+      }
+    },
+    "showAll": "Tümünü göster ({{count}})",
+    "showFewer": "Daha az göster"
   }
 }

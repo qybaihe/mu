@@ -38,7 +38,8 @@ export const usePaletteGroups = (query: string): PaletteGroup[] => {
     prepareRuntime: RUNTIME_ALREADY_UP,
   });
   // With the native host on, its conversations are listed too (read when the palette opens, kept as they change).
-  const { conversations: nativeConversations } = useNativeConversations(useNativeEnabled() === true);
+  const native = useNativeEnabled() === true;
+  const { conversations: nativeConversations } = useNativeConversations(native);
   // One clock per opening: the relative times do not tick while the palette is open.
   const [now] = useState(() => Date.now());
 
@@ -48,12 +49,13 @@ export const usePaletteGroups = (query: string): PaletteGroup[] => {
         query,
         conversations,
         nativeConversations,
+        native,
         commandTarget,
         commands,
         t,
         language: i18n.language,
         now,
       }),
-    [commandTarget, commands, conversations, i18n.language, nativeConversations, now, query, t]
+    [commandTarget, commands, conversations, i18n.language, native, nativeConversations, now, query, t]
   );
 };

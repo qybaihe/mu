@@ -49,6 +49,27 @@ export const KYRN_ERROR_CODES = [
   'importMissing',
   /** `mu import` failed or answered with something else than its JSON: the message says what it printed. */
   'importFailed',
+  /** The folder chosen as a skill has no SKILL.md with a description. */
+  'skillInvalid',
+  /** A skill's name cannot be a folder name (lowercase letters, digits and hyphens). Params: `name`. */
+  'skillName',
+  /** mu already has a skill of that name. Params: `name`. */
+  'skillExists',
+  /** The folder chosen as a skill holds far more files than a skill would. */
+  'skillTooLarge',
+  /** No skill or MCP server of that name is in the list. Params: `name`. */
+  'notFound',
+  /**
+   * The skill or MCP server comes from somewhere mu does not change (Claude Code, Codex, Cursor, a folder agents
+   * share, mu itself). Params: `name`, `source` (a `SkillSource` or `McpSource`).
+   */
+  'notMine',
+  /** An MCP server's name has characters other than letters, digits, `_` and `-`. Params: `name`. */
+  'mcpName',
+  /** mu already has an MCP server of that name. Params: `name`. */
+  'mcpExists',
+  /** An MCP server's command, address, variables or headers are not usable. Params: `field`. */
+  'mcpInvalid',
   /** A value the screen never sends: the message says which. */
   'invalid',
   'unknown',

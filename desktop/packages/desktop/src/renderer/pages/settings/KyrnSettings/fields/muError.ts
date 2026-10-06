@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next';
+import { MCP_SOURCES, SKILL_SOURCES, type McpSource, type SkillSource } from '@/common/kyrn/capabilities';
 import { isKyrnErrorCode, type KyrnErrorCode, type KyrnErrorParams } from '@/common/kyrn/errors';
 import { localized, type HarnessManifest, type OptionProblem } from '@/common/kyrn/manifest';
 import { formatNumber } from '@/renderer/services/i18n/format';
@@ -24,6 +25,9 @@ export function toMuError(cause: unknown): MuError {
 }
 
 const OPTION_PROBLEMS: readonly OptionProblem[] = ['type', 'range', 'choice', 'length'];
+/** Where a skill or MCP server can come from, each with words in `mu.capabilities.from`. */
+const CAPABILITY_SOURCES = [...new Set<SkillSource | McpSource>([...SKILL_SOURCES, ...MCP_SOURCES])];
+const MCP_FIELDS = ['command', 'url', 'env', 'headers'] as const;
 /** A sentence that says everything: no detail under it. */
 const only = (text: string): MuErrorText => ({ text, detail: '' });
 const word = (value: unknown): string =>
@@ -94,6 +98,30 @@ export function muErrorText(t: TFunction, language: string, error: MuError, mani
       return only(t('mu.errors.importMissing'));
     case 'importFailed':
       return withDetail(t('mu.errors.importFailed'));
+    case 'skillInvalid':
+      return only(t('mu.errors.skillInvalid'));
+    case 'skillTooLarge':
+      return only(t('mu.errors.skillTooLarge'));
+    case 'skillName':
+    case 'skillExists':
+    case 'notFound':
+    case 'mcpName':
+    case 'mcpExists':
+      return only(t(`mu.errors.${error.code}`, { name: word(params.name) }));
+    case 'notMine': {
+      const source = CAPABILITY_SOURCES.find((entry) => entry === params.source);
+      return only(
+        t('mu.errors.notMine', {
+          name: word(params.name),
+          source: source ? t(`mu.capabilities.from.${source}`) : word(params.source),
+        })
+      );
+    }
+    case 'mcpInvalid': {
+      // A command's arguments are part of the command line the person typed.
+      const field = MCP_FIELDS.find((entry) => entry === params.field) ?? 'command';
+      return only(t(`mu.errors.mcpInvalid.${field}`));
+    }
     case 'invalid':
       return withDetail(t('mu.errors.invalid'));
     case 'unknown':

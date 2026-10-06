@@ -26,6 +26,14 @@ export function muHome(home: string = homedir()): string {
 }
 
 /**
+ * mu's agent folder, decided as mu's launcher decides it (`agentDirFor` in `kyrn/bin/mu.mjs`), so the app reads the
+ * files the mu it runs reads: `MU_AGENT_DIR`, else pi's own `MU_CODING_AGENT_DIR`, else `agent` in mu's home.
+ */
+export function muAgentDir(env: NodeJS.ProcessEnv = process.env, home: string = homedir()): string {
+  return muEnv('AGENT_DIR', env) || muEnv('CODING_AGENT_DIR', env) || join(muHome(home), 'agent');
+}
+
+/**
  * The judgment configuration of an agent directory: `mu.json`, or `kyrn.json` while that is the only one there.
  * Saving goes to the file that was read, so there is never a second file shadowing the first.
  */

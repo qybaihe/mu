@@ -804,7 +804,21 @@
     "unwritable": "Impossible d’écrire {{file}}.",
     "contextLimit": "La limite de contexte doit être 0 ou un nombre entier de {{min}} à {{max}}.",
     "importMissing": "Cette version de mu ne sait pas encore importer de conversations. Mettez d’abord mu à jour.",
-    "importFailed": "mu n’a pas pu importer les conversations."
+    "importFailed": "mu n’a pas pu importer les conversations.",
+    "skillInvalid": "Ce dossier ne contient pas de SKILL.md avec une description : ce n’est pas une compétence.",
+    "skillName": "« {{name}} » ne peut pas être le nom de dossier d’une compétence : utilisez des minuscules, des chiffres et des tirets.",
+    "skillExists": "mu a déjà une compétence nommée {{name}}.",
+    "skillTooLarge": "Ce dossier est trop gros pour une compétence (plus de 2 000 fichiers ou 50 Mo).",
+    "notFound": "{{name}} est introuvable. Il a peut-être été déplacé.",
+    "notMine": "{{name}} vient {{source}} ; mu ne modifie pas ces fichiers.",
+    "mcpName": "« {{name}} » ne peut pas nommer un serveur : utilisez des lettres, des chiffres, _ et -.",
+    "mcpExists": "mu a déjà un serveur nommé {{name}}.",
+    "mcpInvalid": {
+      "command": "La commande n’est pas utilisable. Vérifiez-la et réessayez.",
+      "url": "L’URL doit commencer par http:// ou https://.",
+      "env": "Un nom de variable ne peut contenir que des lettres, des chiffres et _, et ne peut pas commencer par un chiffre.",
+      "headers": "Un nom ou une valeur d’en-tête n’est pas utilisable."
+    }
   },
   "importChats": {
     "title": "Importer des conversations",
@@ -1024,5 +1038,118 @@
       "team": "Travail d’équipe",
       "other": "Autre"
     }
+  },
+  "capabilities": {
+    "toolsClassic": "MCP et images",
+    "remove": "Retirer",
+    "from": {
+      "mu": "du dossier de compétences de mu",
+      "agents": "du dossier partagé .agents",
+      "builtin": "de mu lui-même",
+      "claude": "de Claude Code",
+      "codex": "de Codex",
+      "cursor": "de Cursor"
+    },
+    "skills": {
+      "lead": "Les compétences que mu peut utiliser dans chaque conversation, et d’où vient chacune.",
+      "search": "Rechercher des compétences",
+      "open": "Ouvrir le dossier",
+      "add": "Ajouter une compétence",
+      "added": "{{name}} ajoutée. Les nouvelles conversations peuvent l’utiliser.",
+      "removed": "{{name}} a été placée dans la corbeille.",
+      "removeTitle": "Retirer la compétence {{name}} ?",
+      "removeContent": "Son dossier va dans la corbeille, et les nouvelles conversations ne la chargent plus.",
+      "empty": "mu n’a encore aucune compétence.",
+      "noMatch": "Aucune compétence ne correspond.",
+      "failed": "Impossible de lire les compétences de mu.",
+      "project": "Les compétences propres à un projet (.mu/skills, .agents/skills, .claude/skills) ne sont chargées que dans ses conversations et ne figurent pas ici.",
+      "groups": {
+        "mu": {
+          "title": "Compétences de mu",
+          "help": "Dans {{folder}}. Les compétences ajoutées vont ici, et seules celles-ci peuvent être retirées."
+        },
+        "agents": {
+          "title": "Compétences partagées",
+          "help": "Dans ~/.agents/skills, partagées par plusieurs agents. mu les lit sans jamais les modifier."
+        },
+        "builtin": {
+          "title": "Fournies avec mu",
+          "help": "Livrées avec mu ; chacune est active tant que la fonction qui l’apporte l’est."
+        },
+        "claude": {
+          "title": "Reprises de Claude Code",
+          "help": "Depuis ~/.claude/skills. mu les lit seulement ; features.inherit dans mu.json arrête de les reprendre."
+        },
+        "codex": {
+          "title": "Reprises de Codex",
+          "help": "Depuis ~/.codex/skills. mu les lit seulement ; features.inherit dans mu.json arrête de les reprendre."
+        }
+      }
+    },
+    "mcp": {
+      "title": "Serveurs MCP",
+      "lead": "Les serveurs MCP que mu peut utiliser dans chaque conversation, et où chacun est configuré.",
+      "open": "Ouvrir le fichier de configuration",
+      "add": "Ajouter un serveur",
+      "added": "{{name}} ajouté. Les nouvelles conversations peuvent l’utiliser.",
+      "removed": "{{name}} retiré.",
+      "removeTitle": "Retirer le serveur {{name}} ?",
+      "removeContent": "Son entrée est supprimée de {{file}}.",
+      "use": "Utiliser {{name}}",
+      "empty": "mu n’utilise encore aucun serveur MCP.",
+      "failed": "Impossible de lire les serveurs MCP de mu.",
+      "featureOff": "La fonction MCP est désactivée dans mu.json : seuls les serveurs de mcp.json sont utilisés.",
+      "unreadable": "Ces fichiers n’ont pas pu être lus, leurs serveurs manquent donc : {{files}}",
+      "project": "Les serveurs propres à un projet (.mu/mcp.json, .mcp.json, .cursor/mcp.json) ne sont utilisés que dans ses conversations et ne figurent pas ici.",
+      "locked": {
+        "offInSource": {
+          "label": "Désactivé à la source",
+          "help": "Il est désactivé dans les réglages de son propre outil. mu ne modifie pas les fichiers des autres outils : activez-le là-bas."
+        },
+        "unsupported": {
+          "label": "Non pris en charge",
+          "help": "Il utilise l’ancien transport HTTP+SSE, que mu ne prend pas en charge."
+        }
+      },
+      "groups": {
+        "mu": {
+          "title": "Serveurs de mu",
+          "help": "Dans mcp.json et mu.json. Les serveurs ajoutés vont dans {{file}}, comme avec mu mcp add."
+        },
+        "claude": {
+          "title": "Repris de Claude Code",
+          "help": "Depuis ~/.claude.json. Le désactiver ici n’écrit que dans mu.json, jamais dans le fichier de Claude Code."
+        },
+        "cursor": {
+          "title": "Repris de Cursor",
+          "help": "Depuis ~/.cursor/mcp.json. Le désactiver ici n’écrit que dans mu.json, jamais dans le fichier de Cursor."
+        },
+        "codex": {
+          "title": "Repris de Codex",
+          "help": "Depuis ~/.codex/config.toml. Le désactiver ici n’écrit que dans mu.json, jamais dans le fichier de Codex."
+        }
+      },
+      "form": {
+        "title": "Ajouter un serveur MCP",
+        "submit": "Ajouter",
+        "name": "Nom",
+        "nameHelp": "Lettres, chiffres, _ et -",
+        "kind": "Connexion",
+        "command": "Commande",
+        "commandHelp": "Le programme que mu lance et ses arguments, comme vous les taperiez dans un terminal.",
+        "env": "Variables d’environnement",
+        "envPlaceholder": "KEY=value, une par ligne (facultatif)",
+        "url": "URL",
+        "headers": "En-têtes",
+        "headersPlaceholder": "Authorization: Bearer …, un par ligne (facultatif)",
+        "needName": "Saisissez un nom.",
+        "needCommand": "Saisissez une commande.",
+        "needUrl": "Saisissez une URL.",
+        "openQuote": "Un guillemet de la commande n’est pas fermé.",
+        "badLine": "La ligne {{line}} n’a pas la bonne forme."
+      }
+    },
+    "showAll": "Tout afficher ({{count}})",
+    "showFewer": "Afficher moins"
   }
 }

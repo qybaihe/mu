@@ -11,12 +11,15 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Input, Tooltip } from '@arco-design/web-react';
 import { getSiderTooltipProps } from '@/renderer/utils/ui/siderTooltip';
 import { rowButtonProps } from '@/renderer/utils/ui/rowButton';
+import { useNativeEnabled } from '@/renderer/pages/native/hooks/useNativeConversations';
 import {
   SETTINGS_ANCHOR_REMAP,
   SETTINGS_GROUPS,
   SETTINGS_PAGES,
   isSettingsPageListed,
   isSettingsRouteActive,
+  settingsPageLabelKey,
+  settingsPageRailLabelKey,
   type SettingsGroupId,
   type SettingsPage,
 } from '../settingsNav';
@@ -52,22 +55,24 @@ export type SettingsNavGroup = { id: SettingsGroupId; label: string; items: Sett
 /**
  * The settings navigation as groups of entries: the built-in pages of `settingsNav.ts`, with extension tabs placed
  * before or after the page they anchor to, and unanchored ones at the end of the capabilities. The rail and the
- * mobile top navigation both draw this list.
+ * mobile top navigation both draw this list. While mu runs inside the app, the pages of the classic mode's own
+ * storage are left out, and a page that then shows something else has that name.
  */
 export function useSettingsNav(): SettingsNavGroup[] {
   const { t } = useTranslation();
   const extensionTabs = useExtensionSettingsTabs();
   const { resolveExtTabName } = useExtI18n();
+  const native = useNativeEnabled() === true;
 
   return useMemo(() => {
     const groups: SettingsNavGroup[] = SETTINGS_GROUPS.map(({ id, labelKey }) => ({
       id,
       label: t(labelKey),
-      items: SETTINGS_PAGES.filter((page) => page.group === id && isSettingsPageListed(page)).map(
+      items: SETTINGS_PAGES.filter((page) => page.group === id && isSettingsPageListed(page, native)).map(
         (page: SettingsPage) => ({
           id: page.id,
-          label: t(page.labelKey),
-          railLabel: t(page.railLabelKey ?? page.labelKey),
+          label: t(settingsPageLabelKey(page, native)),
+          railLabel: t(settingsPageRailLabelKey(page, native)),
           icon: React.createElement(page.Icon as React.ComponentType),
           path: page.path,
         })
@@ -108,7 +113,7 @@ export function useSettingsNav(): SettingsNavGroup[] {
     }
     groups.find((group) => group.id === UNANCHORED_GROUP)?.items.push(...unanchored.map(toItem));
     return groups;
-  }, [t, extensionTabs, resolveExtTabName]);
+  }, [t, extensionTabs, resolveExtTabName, native]);
 }
 
 /**
@@ -134,9 +139,10 @@ const SettingsSider: React.FC<{ collapsed?: boolean; tooltipEnabled?: boolean }>
   const [query, setQuery] = useState('');
   const searching = !collapsed && query.trim() !== '';
   const manifest = useSearchManifest(searching);
+  const native = useNativeEnabled() === true;
   const hits = useMemo(
-    () => (searching ? searchSettings(query, t, i18n.language, manifest) : []),
-    [searching, query, t, i18n.language, manifest]
+    () => (searching ? searchSettings(query, t, i18n.language, manifest, native) : []),
+    [searching, query, t, i18n.language, manifest, native]
   );
 
   useEffect(() => {

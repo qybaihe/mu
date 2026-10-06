@@ -1,4 +1,5 @@
 import { bridge } from '../platform/bridge';
+import type { McpServerInput, MuMcpServers, MuSkills } from './capabilities';
 import type { ClmServerState } from './clm';
 import { KyrnError, type KyrnResult } from './errors';
 import type { ImportedHistory, ImportList, ImportOutcome } from './importChats';
@@ -69,6 +70,22 @@ export const kyrnBridge = {
   ),
   /** How the CLM server behind a judge's address is (common/kyrn/clm.ts), asked by the main process. */
   clmCheck: bridge.buildProvider<KyrnResult<ClmServerState>, { baseUrl: string }>('kyrn.clm.check'),
+  /** The skills mu loads in every conversation, and where each comes from (common/kyrn/capabilities.ts). */
+  skills: bridge.buildProvider<KyrnResult<MuSkills>, void>('kyrn.skills'),
+  /** Copies a skill folder (or the folder of a SKILL.md) into mu's skills folder; answers with the skills after it. */
+  skillAdd: bridge.buildProvider<KyrnResult<MuSkills>, { path: string }>('kyrn.skills.add'),
+  /** Moves a skill of mu's own folder to the trash; one from anywhere else is refused (`notMine`). */
+  skillRemove: bridge.buildProvider<KyrnResult<MuSkills>, { name: string }>('kyrn.skills.remove'),
+  /** The MCP servers mu uses in every conversation, and where each is defined. Nothing is started. */
+  mcpServers: bridge.buildProvider<KyrnResult<MuMcpServers>, void>('kyrn.mcp'),
+  /** Adds a server to mu's `mcp.json`, as `mu mcp add` does. */
+  mcpAdd: bridge.buildProvider<KyrnResult<MuMcpServers>, McpServerInput>('kyrn.mcp.add'),
+  /** Removes one of mu's own servers; a server taken over from another tool is refused (`notMine`). */
+  mcpRemove: bridge.buildProvider<KyrnResult<MuMcpServers>, { name: string }>('kyrn.mcp.remove'),
+  /** Switches a server on or off in mu's own configuration; another tool's file is never written. */
+  mcpSwitch: bridge.buildProvider<KyrnResult<MuMcpServers>, { name: string; on: boolean }>('kyrn.mcp.switch'),
+  /** Opens mu's skills folder, or shows its `mcp.json`, in the file manager. */
+  capabilityReveal: bridge.buildProvider<KyrnResult<void>, { what: 'skills' | 'mcp' }>('kyrn.capabilities.reveal'),
 };
 
 /** The data of a bridge answer; a failure is thrown as a `KyrnError` that keeps its code for the screen to translate. */

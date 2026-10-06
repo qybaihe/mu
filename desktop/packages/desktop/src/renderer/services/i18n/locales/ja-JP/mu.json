@@ -804,7 +804,21 @@
     "runtimeOffline": "mu のランタイムがオフラインです。ローカルのランチャーとログイン状態を確認してください。",
     "sharedKey": "{{providers}} が同じキー変数を共有することになります。いずれかの ID を変更してください。",
     "importMissing": "このバージョンの mu はまだ会話を取り込めません。先に mu を更新してください。",
-    "importFailed": "mu は会話を取り込めませんでした。"
+    "importFailed": "mu は会話を取り込めませんでした。",
+    "skillInvalid": "このフォルダーには説明（description）付きの SKILL.md がないため、スキルではありません。",
+    "skillName": "「{{name}}」はスキルのフォルダー名に使えません。英小文字、数字、ハイフンだけを使ってください。",
+    "skillExists": "mu には {{name}} という名前のスキルがすでにあります。",
+    "skillTooLarge": "このフォルダーはスキルにしては大きすぎます（2000 ファイルまたは 50 MB を超えています）。",
+    "notFound": "{{name}} が見つかりません。移動された可能性があります。",
+    "notMine": "{{name}} は {{source}} のもので、mu はそのファイルを変更しません。",
+    "mcpName": "「{{name}}」はサーバー名に使えません。英字、数字、_ と - だけを使ってください。",
+    "mcpExists": "mu には {{name}} という名前のサーバーがすでにあります。",
+    "mcpInvalid": {
+      "command": "このコマンドは使えません。確認してもう一度お試しください。",
+      "url": "URL は http:// または https:// で始まる必要があります。",
+      "env": "環境変数名には英字、数字、_ だけを使い、数字で始めないでください。",
+      "headers": "使えないヘッダー名または値があります。"
+    }
   },
   "importChats": {
     "title": "会話を取り込む",
@@ -1024,5 +1038,118 @@
       "team": "連携",
       "other": "その他"
     }
+  },
+  "capabilities": {
+    "toolsClassic": "MCP と画像",
+    "remove": "削除",
+    "from": {
+      "mu": "mu のスキルフォルダー",
+      "agents": "共有の .agents フォルダー",
+      "builtin": "mu 本体",
+      "claude": "Claude Code",
+      "codex": "Codex",
+      "cursor": "Cursor"
+    },
+    "skills": {
+      "lead": "mu がすべての会話で使えるスキルと、それぞれの出どころ。",
+      "search": "スキルを検索",
+      "open": "フォルダーを開く",
+      "add": "スキルを追加",
+      "added": "{{name}} を追加しました。新しい会話から使えます。",
+      "removed": "{{name}} をゴミ箱に移しました。",
+      "removeTitle": "スキル {{name}} を削除しますか？",
+      "removeContent": "フォルダーはゴミ箱に移され、新しい会話では読み込まれなくなります。",
+      "empty": "mu にはまだスキルがありません。",
+      "noMatch": "一致するスキルはありません。",
+      "failed": "mu のスキルを読み込めませんでした。",
+      "project": "プロジェクト固有のスキル（.mu/skills、.agents/skills、.claude/skills）はそのプロジェクトの会話でのみ読み込まれ、ここには表示されません。",
+      "groups": {
+        "mu": {
+          "title": "mu のスキル",
+          "help": "{{folder}} にあります。追加したスキルはここに入り、削除できるのもここにあるものだけです。"
+        },
+        "agents": {
+          "title": "共有スキル",
+          "help": "~/.agents/skills にあり、複数のエージェントで共有されます。mu は読み取るだけで変更しません。"
+        },
+        "builtin": {
+          "title": "mu に付属",
+          "help": "mu と一緒に提供され、それをもたらす機能がオンのときに読み込まれます。"
+        },
+        "claude": {
+          "title": "Claude Code から引き継ぎ",
+          "help": "~/.claude/skills から。mu は読み取るだけです。mu.json の features.inherit で引き継ぎを止められます。"
+        },
+        "codex": {
+          "title": "Codex から引き継ぎ",
+          "help": "~/.codex/skills から。mu は読み取るだけです。mu.json の features.inherit で引き継ぎを止められます。"
+        }
+      }
+    },
+    "mcp": {
+      "title": "MCP サーバー",
+      "lead": "mu がすべての会話で使える MCP サーバーと、それぞれの設定場所。",
+      "open": "設定ファイルを開く",
+      "add": "サーバーを追加",
+      "added": "{{name}} を追加しました。新しい会話から使えます。",
+      "removed": "{{name}} を削除しました。",
+      "removeTitle": "サーバー {{name}} を削除しますか？",
+      "removeContent": "{{file}} からその設定が削除されます。",
+      "use": "{{name}} を使う",
+      "empty": "mu はまだ MCP サーバーを使っていません。",
+      "failed": "mu の MCP サーバーを読み込めませんでした。",
+      "featureOff": "mu.json で MCP 機能がオフになっています。mcp.json のサーバーだけが使われます。",
+      "unreadable": "次のファイルを読み込めなかったため、そのサーバーは表示されていません: {{files}}",
+      "project": "プロジェクト固有のサーバー（.mu/mcp.json、.mcp.json、.cursor/mcp.json）はそのプロジェクトの会話でのみ使われ、ここには表示されません。",
+      "locked": {
+        "offInSource": {
+          "label": "元の設定でオフ",
+          "help": "所属するツールの設定でオフになっています。mu は他のツールのファイルを変更しないため、使うにはそちらでオンにしてください。"
+        },
+        "unsupported": {
+          "label": "非対応",
+          "help": "旧来の HTTP+SSE 方式を使っており、mu は対応していません。"
+        }
+      },
+      "groups": {
+        "mu": {
+          "title": "mu のサーバー",
+          "help": "mcp.json と mu.json にあります。追加したサーバーは mu mcp add と同じく {{file}} に書き込まれます。"
+        },
+        "claude": {
+          "title": "Claude Code から引き継ぎ",
+          "help": "~/.claude.json から。ここでオフにすると mu.json にだけ書き込まれ、Claude Code のファイルは変更されません。"
+        },
+        "cursor": {
+          "title": "Cursor から引き継ぎ",
+          "help": "~/.cursor/mcp.json から。ここでオフにすると mu.json にだけ書き込まれ、Cursor のファイルは変更されません。"
+        },
+        "codex": {
+          "title": "Codex から引き継ぎ",
+          "help": "~/.codex/config.toml から。ここでオフにすると mu.json にだけ書き込まれ、Codex のファイルは変更されません。"
+        }
+      },
+      "form": {
+        "title": "MCP サーバーを追加",
+        "submit": "追加",
+        "name": "名前",
+        "nameHelp": "英字、数字、_ と -",
+        "kind": "接続方法",
+        "command": "コマンド",
+        "commandHelp": "mu が起動するプログラムと引数。ターミナルで入力するのと同じです。",
+        "env": "環境変数",
+        "envPlaceholder": "KEY=value を 1 行に 1 つ（省略可）",
+        "url": "URL",
+        "headers": "ヘッダー",
+        "headersPlaceholder": "Authorization: Bearer … を 1 行に 1 つ（省略可）",
+        "needName": "名前を入力してください。",
+        "needCommand": "コマンドを入力してください。",
+        "needUrl": "URL を入力してください。",
+        "openQuote": "コマンドの引用符が閉じられていません。",
+        "badLine": "{{line}} 行目の形式が正しくありません。"
+      }
+    },
+    "showAll": "すべて表示（{{count}}）",
+    "showFewer": "折りたたむ"
   }
 }

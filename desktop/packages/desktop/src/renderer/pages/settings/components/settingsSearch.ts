@@ -8,6 +8,7 @@ import {
   SETTINGS_PAGES,
   detailsPageOf,
   isSettingsPageListed,
+  settingsPageLabelKey,
   type DetailArea,
   type SettingsPageId,
 } from '../settingsNav';
@@ -71,6 +72,12 @@ const PAGE_TEXTS: Partial<Record<SettingsPageId, string[]>> = {
   about: ['settings.aboutDescription'],
 };
 
+/** The texts of the pages that show something else while mu runs inside the app. */
+const NATIVE_PAGE_TEXTS: Partial<Record<SettingsPageId, string[]>> = {
+  skills: ['mu.capabilities.skills.lead', 'mu.capabilities.skills.add'],
+  tools: ['mu.capabilities.mcp.lead', 'mu.capabilities.mcp.add'],
+};
+
 /** One thing the rail's search finds: a page, or a feature or decision point on a page of the details. */
 export type SettingsHit = {
   key: string;
@@ -86,21 +93,23 @@ const pageName = (t: TFunction, area: DetailArea): string => t(`mu.pages.details
 /**
  * Everything whose texts hold every word of the query, in the rail's order: the pages first (by their name, the group
  * they are in and the texts on them), then the features (in every language the harness has, so an English word finds
- * its entry in a Chinese screen too) and the decision points whose names are not their feature's.
+ * its entry in a Chinese screen too) and the decision points whose names are not their feature's. `native`: while mu
+ * runs inside the app, which leaves some pages out and has others show something else.
  */
 export function searchSettings(
   query: string,
   t: TFunction,
   language: string,
-  manifest: HarnessManifest | undefined
+  manifest: HarnessManifest | undefined,
+  native = false
 ): SettingsHit[] {
   if (!query.trim()) return [];
   const groups = new Map<string, string>(SETTINGS_GROUPS.map((group) => [group.id, t(group.labelKey)]));
-  const pages = SETTINGS_PAGES.filter(isSettingsPageListed).flatMap((page): SettingsHit[] => {
-    const label = t(page.labelKey);
+  const pages = SETTINGS_PAGES.filter((page) => isSettingsPageListed(page, native)).flatMap((page): SettingsHit[] => {
+    const label = t(settingsPageLabelKey(page, native));
     const rail = 'railLabelKey' in page ? t(page.railLabelKey) : '';
     const group = groups.get(page.group) ?? '';
-    const texts = (PAGE_TEXTS[page.id] ?? []).map((key) => t(key));
+    const texts = ((native && NATIVE_PAGE_TEXTS[page.id]) || PAGE_TEXTS[page.id] || []).map((key) => t(key));
     return matches(query, label, rail, group, ...texts)
       ? [{ key: `page:${page.id}`, label, where: group, path: page.route }]
       : [];

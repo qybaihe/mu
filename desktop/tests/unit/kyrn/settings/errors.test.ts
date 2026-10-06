@@ -250,6 +250,13 @@ describe('the words a screen shows for a code', () => {
     unreadable: { file: '/home/me/.mu/agent/settings.json' },
     unwritable: { file: '/home/me/.mu/.env' },
     backend: { status: 500 },
+    skillName: { name: 'My Skill' },
+    skillExists: { name: 'review' },
+    notFound: { name: 'review' },
+    notMine: { name: 'review', source: 'claude' },
+    mcpName: { name: 'my server' },
+    mcpExists: { name: 'github' },
+    mcpInvalid: { field: 'url' },
   };
 
   it.each(['en-US', 'zh-CN', 'zh-TW'])(
@@ -293,6 +300,15 @@ describe('the words a screen shows for a code', () => {
       detail: 'database is locked',
     });
     expect(word('stale').text).toMatch(/^Another program/);
+    expect(word('notMine')).toEqual({
+      text: 'review comes from Claude Code. mu does not change those files.',
+      detail: '',
+    });
+    expect(word('mcpInvalid').text).toBe('The URL must start with http:// or https://.');
+    // A command's arguments are part of the command.
+    expect(muErrorText(t, 'en-US', { code: 'mcpInvalid', params: { field: 'args' }, message: '' }).text).toBe(
+      'The command cannot be used. Check it and try again.'
+    );
     await i18n.changeLanguage('zh-CN');
     expect(muErrorText(t, 'zh-CN', { code: 'sharedKey', params: params.sharedKey, message: '' }).text).toBe(
       'a.b 和 a-b 会共用同一个密钥变量，请修改其中一个 ID。'
@@ -300,6 +316,9 @@ describe('the words a screen shows for a code', () => {
     expect(
       muErrorText(t, 'zh-CN', { code: 'optionValue', params: params.optionValue, message: '' }, manifest).text
     ).toBe('「最多等待」超出了允许的范围。');
+    expect(
+      muErrorText(t, 'zh-CN', { code: 'notMine', params: { name: 'x', source: 'agents' }, message: '' }).text
+    ).toBe('x 来自 共享的 .agents 文件夹，mu 不改动那里的文件。');
   });
 
   it('reads any caught value, and a code it does not know is unknown', () => {

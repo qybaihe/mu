@@ -16,6 +16,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { SWRConfig } from 'swr';
 import { defaultFeatureState, parseManifest } from '@/common/kyrn/manifest';
+import enMu from '@/renderer/services/i18n/locales/en-US/mu.json';
+import zhMu from '@/renderer/services/i18n/locales/zh-CN/mu.json';
 import manifestJson from '../kyrn/settings/manifest.fixture.json';
 
 vi.mock('react-i18next', () => ({
@@ -45,6 +47,13 @@ vi.mock('@/common/kyrn/bridge', () => ({
   },
 }));
 
+// Whether mu runs inside the app, as the main process answered: the classic mode unless a test says otherwise.
+const native = vi.hoisted(() => ({ on: false as boolean | undefined }));
+vi.mock('@/renderer/pages/native/hooks/useNativeConversations', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/renderer/pages/native/hooks/useNativeConversations')>()),
+  useNativeEnabled: () => native.on,
+}));
+
 // What the router module pulls in besides the redirects under test.
 vi.mock('@/renderer/components/layout/AppLoader', () => ({ default: () => <span>Loading</span> }));
 vi.mock('@/renderer/components/layout/DocumentTitle', () => ({ default: () => null }));
@@ -55,7 +64,8 @@ vi.mock('@/renderer/pages/settings/KyrnSettings/StartupGate', () => ({
 
 let extensionTabs: { id: string; name: string; url: string; position?: unknown }[] = [];
 
-import { RetiredSettingsPath, WithMovedTabs } from '@/renderer/components/layout/Router';
+import { ByMode, RetiredSettingsPath, WithMovedTabs } from '@/renderer/components/layout/Router';
+import { preloadablePage } from '@/renderer/components/layout/preloadablePage';
 import SettingsSider, { BUILTIN_TAB_IDS } from '@/renderer/pages/settings/components/SettingsSider';
 import {
   DETAIL_AREAS,
@@ -101,6 +111,10 @@ const groupRows = (container: HTMLElement) =>
       railRows(group),
     ])
   );
+
+afterEach(() => {
+  native.on = false;
+});
 
 describe('the settings rail', () => {
   beforeEach(() => {
@@ -253,6 +267,28 @@ describe('the settings rail', () => {
     expect(here()).toHaveAttribute('data-path', '/settings/ext/ext-after');
   });
 
+  it('while mu runs inside the app, has no assistants page and names the tools page after the MCP servers', () => {
+    native.on = true;
+    const { container } = renderRail();
+    expect(groupRows(container).capabilities).toEqual(['skills', 'tools', 'browser']);
+    expect(container.querySelector('[data-settings-id="tools"]')).toHaveTextContent('mu.capabilities.mcp.title');
+    // Until the main process answered, the rail is the classic one: it never shows less than it may have.
+    cleanup();
+    native.on = undefined;
+    expect(groupRows(renderRail().container).capabilities).toEqual(['skills', 'tools', 'assistants', 'browser']);
+  });
+
+  it('calls the classic tools page by what it holds, apart from the tools page of the details', () => {
+    const { container } = renderRail();
+    expect(container.querySelector('[data-settings-id="tools"]')).toHaveTextContent('mu.capabilities.toolsClassic');
+    expect(container.querySelector('[data-settings-id="details-tools"]')).toHaveTextContent('mu.details.areas.tools');
+    for (const mu of [enMu, zhMu]) {
+      expect(mu.capabilities.toolsClassic).not.toBe(mu.details.areas.tools);
+      expect(mu.capabilities.mcp.title).not.toBe(mu.details.areas.tools);
+    }
+    expect(zhMu.capabilities.mcp.title).toBe('MCP 服务器');
+  });
+
   it('opens on the first page of the models group: what a new user sets up first', () => {
     expect(SETTINGS_HOME).toBe(SETTINGS_PAGES.find((page) => page.group === 'models')?.route);
   });
@@ -394,6 +430,51 @@ describe('links to settings pages that no longer exist', () => {
     expect(retiredSettingsTarget('/settings/nothing-like-it', '?x=1')).toBe(`${SETTINGS_HOME}?x=1`);
   });
 
+  it('sends a link to the assistants or to one of the app’s skills to mu’s skills while mu runs inside the app', () => {
+    native.on = true;
+    const page = (text: string) => preloadablePage(() => Promise.resolve({ default: () => <p>{text}</p> }));
+    const routes = (path: string, state?: unknown) =>
+      render(
+        <MemoryRouter initialEntries={[{ pathname: path, state }]}>
+          <Routes>
+            <Route
+              path='/settings/assistants'
+              element={<ByMode classic={page('assistants')} elsewhere='/settings/skills' />}
+            />
+            <Route path='/settings/skills' element={<Here />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    routes('/settings/assistants', { from: 'palette' });
+    expect(here()).toHaveAttribute('data-path', '/settings/skills');
+    expect(here()).toHaveAttribute('data-state', JSON.stringify({ from: 'palette' }));
+    cleanup();
+    // In the classic mode the page is there; and nothing is drawn until the main process answered.
+    native.on = undefined;
+    const { container } = routes('/settings/assistants');
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('draws the page of the mode: mu’s own page while mu runs inside the app, the classic page otherwise', async () => {
+    const page = (text: string) => preloadablePage(() => Promise.resolve({ default: () => <p>{text}</p> }));
+    const classic = page('classic page');
+    const own = page('mu page');
+    const draw = () =>
+      render(
+        <MemoryRouter>
+          <ByMode classic={classic} native={own} />
+        </MemoryRouter>
+      );
+    native.on = true;
+    draw();
+    expect(await screen.findByText('mu page')).toBeInTheDocument();
+    expect(screen.queryByText('classic page')).not.toBeInTheDocument();
+    cleanup();
+    native.on = false;
+    draw();
+    expect(await screen.findByText('classic page')).toBeInTheDocument();
+  });
+
   it('resolves every extension anchor of the past to a page of the rail', () => {
     const ids = new Set<string>(SETTINGS_PAGES.map((page) => page.id));
     for (const [anchor, target] of Object.entries(SETTINGS_ANCHOR_REMAP)) expect(ids.has(target), anchor).toBe(true);
@@ -465,6 +546,18 @@ describe('the rail’s search', () => {
     fireEvent.keyDown(box(), { key: 'Enter' });
     expect(here()).toHaveAttribute('data-path', '/settings/details-safety?feature=guard');
     expect(readSettings).toHaveBeenCalledTimes(1);
+  });
+
+  it('finds neither the hidden page nor the image generation while mu runs inside the app, but mu’s MCP servers', () => {
+    native.on = true;
+    const { container } = renderRail();
+    fireEvent.change(box(), { target: { value: 'settings.assistants' } });
+    expect(hits(container)).not.toContain('page:assistants');
+    // The classic page's description names the image generation.
+    fireEvent.change(box(), { target: { value: 'settings.toolsDescription' } });
+    expect(hits(container)).not.toContain('page:tools');
+    fireEvent.change(box(), { target: { value: 'mu.capabilities.mcp' } });
+    expect(hits(container)).toContain('page:tools');
   });
 
   it('has no search box while the rail is folded to its icons', () => {

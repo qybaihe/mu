@@ -804,7 +804,21 @@
     "unwritable": "無法寫入 {{file}}。",
     "contextLimit": "上下文上限必須是 0，或 {{min}} 到 {{max}} 之間的整數。",
     "importMissing": "目前的 mu 版本還不能匯入對話，請先更新 mu。",
-    "importFailed": "mu 沒能匯入這些對話。"
+    "importFailed": "mu 沒能匯入這些對話。",
+    "skillInvalid": "這個資料夾裡沒有附說明（description）的 SKILL.md，不是一個技能。",
+    "skillName": "「{{name}}」不能作為技能的資料夾名稱：只能使用小寫字母、數字和連字號。",
+    "skillExists": "mu 已經有一個名為 {{name}} 的技能。",
+    "skillTooLarge": "這個資料夾太大（超過 2000 個檔案或 50 MB），不像一個技能。",
+    "notFound": "找不到 {{name}}，可能已被移走。",
+    "notMine": "{{name}} 來自 {{source}}，mu 不更改那裡的檔案。",
+    "mcpName": "「{{name}}」不能作為伺服器名稱：只能使用字母、數字、_ 和 -。",
+    "mcpExists": "mu 已經有一個名為 {{name}} 的伺服器。",
+    "mcpInvalid": {
+      "command": "這個指令無法使用，請檢查後再試。",
+      "url": "網址必須以 http:// 或 https:// 開頭。",
+      "env": "環境變數名稱只能使用字母、數字和 _，且不能以數字開頭。",
+      "headers": "有一個請求標頭的名稱或內容無法使用。"
+    }
   },
   "importChats": {
     "title": "匯入對話",
@@ -1024,5 +1038,118 @@
       "team": "協作",
       "other": "其他"
     }
+  },
+  "capabilities": {
+    "toolsClassic": "MCP 與圖像",
+    "remove": "移除",
+    "from": {
+      "mu": "mu 的技能資料夾",
+      "agents": "共用的 .agents 資料夾",
+      "builtin": "mu 本身",
+      "claude": "Claude Code",
+      "codex": "Codex",
+      "cursor": "Cursor"
+    },
+    "skills": {
+      "lead": "mu 在每個對話裡都能用的技能，以及各自從哪裡來。",
+      "search": "搜尋技能",
+      "open": "開啟資料夾",
+      "add": "新增技能",
+      "added": "已新增 {{name}}，新對話裡可以使用了。",
+      "removed": "已將 {{name}} 移到垃圾桶。",
+      "removeTitle": "移除技能 {{name}}？",
+      "removeContent": "它的資料夾會移到垃圾桶，新對話裡不再載入。",
+      "empty": "mu 還沒有技能。",
+      "noMatch": "沒有符合的技能。",
+      "failed": "無法讀取 mu 的技能。",
+      "project": "專案自己的技能（.mu/skills、.agents/skills、.claude/skills）只在該專案的對話裡載入，這裡不列出。",
+      "groups": {
+        "mu": {
+          "title": "mu 的技能",
+          "help": "在 {{folder}} 裡。新增的技能放在這裡，也只有這裡的可以移除。"
+        },
+        "agents": {
+          "title": "共用的技能",
+          "help": "在 ~/.agents/skills 裡，多個代理共用。mu 只讀取，不做變更。"
+        },
+        "builtin": {
+          "title": "mu 內建",
+          "help": "隨 mu 提供，帶來它的功能開啟時才載入。"
+        },
+        "claude": {
+          "title": "沿用 Claude Code",
+          "help": "來自 ~/.claude/skills。mu 只讀取；可在 mu.json 的 features.inherit 裡停止沿用。"
+        },
+        "codex": {
+          "title": "沿用 Codex",
+          "help": "來自 ~/.codex/skills。mu 只讀取；可在 mu.json 的 features.inherit 裡停止沿用。"
+        }
+      }
+    },
+    "mcp": {
+      "title": "MCP 伺服器",
+      "lead": "mu 在每個對話裡都能用的 MCP 伺服器，以及各自在哪裡設定。",
+      "open": "開啟設定檔",
+      "add": "新增伺服器",
+      "added": "已新增 {{name}}，新對話裡可以使用了。",
+      "removed": "已移除 {{name}}。",
+      "removeTitle": "移除伺服器 {{name}}？",
+      "removeContent": "它的設定會從 {{file}} 中刪除。",
+      "use": "使用 {{name}}",
+      "empty": "mu 還沒有用到 MCP 伺服器。",
+      "failed": "無法讀取 mu 的 MCP 伺服器。",
+      "featureOff": "mu.json 裡關閉了 MCP 功能：只使用 mcp.json 裡的伺服器。",
+      "unreadable": "這些檔案無法讀取，其中的伺服器沒有列出：{{files}}",
+      "project": "專案自己的伺服器（.mu/mcp.json、.mcp.json、.cursor/mcp.json）只在該專案的對話裡使用，這裡不列出。",
+      "locked": {
+        "offInSource": {
+          "label": "已在原處關閉",
+          "help": "它在所屬工具的設定裡關閉了。mu 不更改其他工具的檔案，要使用請到那裡開啟。"
+        },
+        "unsupported": {
+          "label": "不支援",
+          "help": "它使用舊的 HTTP+SSE 連線方式，mu 不支援。"
+        }
+      },
+      "groups": {
+        "mu": {
+          "title": "mu 的伺服器",
+          "help": "在 mcp.json 和 mu.json 裡。新增的伺服器寫入 {{file}}，與 mu mcp add 相同。"
+        },
+        "claude": {
+          "title": "沿用 Claude Code",
+          "help": "來自 ~/.claude.json。在這裡關閉只寫入 mu.json，不更改 Claude Code 的檔案。"
+        },
+        "cursor": {
+          "title": "沿用 Cursor",
+          "help": "來自 ~/.cursor/mcp.json。在這裡關閉只寫入 mu.json，不更改 Cursor 的檔案。"
+        },
+        "codex": {
+          "title": "沿用 Codex",
+          "help": "來自 ~/.codex/config.toml。在這裡關閉只寫入 mu.json，不更改 Codex 的檔案。"
+        }
+      },
+      "form": {
+        "title": "新增 MCP 伺服器",
+        "submit": "新增",
+        "name": "名稱",
+        "nameHelp": "字母、數字、_ 和 -",
+        "kind": "連線方式",
+        "command": "指令",
+        "commandHelp": "mu 啟動的程式和參數，和在終端機裡輸入的一樣。",
+        "env": "環境變數",
+        "envPlaceholder": "KEY=value，每行一個，可不填",
+        "url": "網址",
+        "headers": "請求標頭",
+        "headersPlaceholder": "Authorization: Bearer …，每行一個，可不填",
+        "needName": "請填寫名稱。",
+        "needCommand": "請填寫指令。",
+        "needUrl": "請填寫網址。",
+        "openQuote": "指令裡有引號沒有閉合。",
+        "badLine": "第 {{line}} 行的格式不對。"
+      }
+    },
+    "showAll": "顯示全部（{{count}}）",
+    "showFewer": "收合"
   }
 }
