@@ -29,6 +29,9 @@ import { useCallback, useSyncExternalStore } from 'react';
 export const WORK_PANEL_TABS = ['board', 'judge', 'hive', 'lessons', 'files', 'preview', 'source', 'browser'] as const;
 export type WorkPanelTab = (typeof WORK_PANEL_TABS)[number];
 
+/** The tabs every conversation needs. The others join the strip once the conversation uses them (WorkPanelTabs). */
+export const ALWAYS_SHOWN_TABS: ReadonlySet<WorkPanelTab> = new Set(['board', 'judge', 'files']);
+
 export const isWorkPanelTab = (value: unknown): value is WorkPanelTab =>
   typeof value === 'string' && (WORK_PANEL_TABS as readonly string[]).includes(value);
 
@@ -112,10 +115,27 @@ function persist(next: State): void {
   }
 }
 
-/** What the panel shows for a conversation: its own memory, or the last choice for one it has not been used in. */
+/**
+ * What the panel shows for a conversation: its own memory, or the last choice for one it has not been used in. The
+ * last tab carries over only when every conversation has it: a swarm or a web page opened elsewhere would otherwise
+ * open this conversation on an empty 蜂群 or 浏览器.
+ */
 export function readWorkPanelMemory(conversationId: string | null): WorkPanelMemory {
   const current = load();
-  return (conversationId ? current.conversations[conversationId]?.memory : undefined) ?? current.last;
+  const own = conversationId ? current.conversations[conversationId]?.memory : undefined;
+  if (own) return own;
+  return ALWAYS_SHOWN_TABS.has(current.last.tab) ? current.last : lastWithoutTab(current.last);
+}
+
+/** The last choice with the default tab, kept as one object per last choice so the snapshot stays stable. */
+const fallbacks = new WeakMap<WorkPanelMemory, WorkPanelMemory>();
+function lastWithoutTab(last: WorkPanelMemory): WorkPanelMemory {
+  let memory = fallbacks.get(last);
+  if (!memory) {
+    memory = { ...last, tab: DEFAULT_MEMORY.tab };
+    fallbacks.set(last, memory);
+  }
+  return memory;
 }
 
 /** Remember a change the person made to one conversation's panel. */

@@ -23,7 +23,8 @@
   "anchorRail": {
     "label": "Якоря сообщений диалога",
     "tickAria": "Перейти к сообщению {{index}}",
-    "searchAria": "Поиск по переписке"
+    "searchAria": "Поиск по переписке",
+    "jumpHint": "Сообщение {{index}} из {{count}} · нажмите, чтобы перейти"
   },
   "availableCommands": "{{count}} доступных команд",
   "availableCommands_one": "{{count}} доступная команда",

@@ -8,7 +8,7 @@ import { useConversationContextSafe } from '@/renderer/hooks/context/Conversatio
 import { dispatchChatMessageJump, dispatchChatSearchPanelOpen } from '@/renderer/utils/chat/chatMinimapEvents';
 import { IconSearch } from '@arco-design/web-react/icon';
 import classNames from 'classnames';
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMessageList, useMessageListRun } from '../hooks';
 import type { MessageAnchorItem } from './anchors';
@@ -339,6 +339,10 @@ const MessageAnchorRail: React.FC = () => {
               {activeAnchor.answer}
             </div>
           )}
+          {/* The ticks say nothing at rest: the card says what they are and what a click does. */}
+          <div className='text-11px text-t-tertiary leading-16px' data-testid='message-anchor-hint'>
+            {t('messages.anchorRail.jumpHint', { index: activeAnchor.index, count: anchors.length })}
+          </div>
         </div>
       )}
     </div>

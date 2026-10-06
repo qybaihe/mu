@@ -1,9 +1,9 @@
 /**
  * What mu may do without asking in this conversation (full access, Jev approves, minimal), as a pill at the left of
  * the send box, with the look of the permission pill in mu's other conversations (AgentModeSelector, compact). The mode
- * in force is mu's latest `permissions.mode` frame, else what the session file says; a pick sends mu's own
- * `/permissions <mode> --here`, which switches this conversation only (the mode new conversations start in is set in
- * the settings). It runs at once, during a run too: mu checks the next call under the new mode.
+ * in force is mu's latest `permissions.mode` frame, else what the session file says, else mu's default; a pick sends
+ * mu's own `/permissions <mode> --here`, which switches this conversation only (the mode new conversations start in is
+ * set in the settings). It runs at once, during a run too: mu checks the next call under the new mode.
  */
 import { Dropdown, Menu, Tooltip } from '@arco-design/web-react';
 import { Down, Shield } from '@icon-park/react';
@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import type { NativeResult } from '@/common/kyrn/nativeBridge';
 import type { PiCommand } from '@/common/utils/nativeHost';
 import RuntimeSelectorPill from '@/renderer/components/agent/RuntimeSelectorPill';
+import { useMuDefaultPermission } from '@/renderer/hooks/agent/useMuDefaultPermission';
 import { iconColors } from '@/renderer/styles/colors';
 import { permissionCommand, type PermissionState } from './composerModel';
 
@@ -25,9 +26,12 @@ const NativePermissionPill: React.FC<{
   const [visible, setVisible] = useState(false);
   const [switching, setSwitching] = useState(false);
   const { mode, modes } = state;
+  // A conversation that has said no mode yet starts in mu's default: the pill names it rather than "mu's default".
+  const fallback = useMuDefaultPermission();
+  const shown = mode ?? fallback;
   const nameOf = (id: string, label?: string): string => t(`agentMode.${id}`, { defaultValue: label || id });
-  const current = mode
-    ? nameOf(mode, modes.find((each) => each.id === mode)?.label)
+  const current = shown
+    ? nameOf(shown, modes.find((each) => each.id === shown)?.label)
     : t('mu.native.new.defaultPermissions');
 
   const pick = async (next: string) => {
@@ -45,10 +49,10 @@ const NativePermissionPill: React.FC<{
     <Menu>
       <Menu.ItemGroup title={t('agentMode.switchMode')}>
         {modes.map((each) => (
-          <Menu.Item key={each.id} className={mode === each.id ? '!bg-2' : ''} onClick={() => void pick(each.id)}>
+          <Menu.Item key={each.id} className={shown === each.id ? '!bg-2' : ''} onClick={() => void pick(each.id)}>
             <div className='flex items-center gap-8px' data-testid='native-permission-option' data-mode={each.id}>
               <span aria-hidden='true' className='w-16px shrink-0 flex items-center text-t-primary'>
-                {mode === each.id ? '✓' : ''}
+                {shown === each.id ? '✓' : ''}
               </span>
               <Tooltip
                 content={t(`agentMode.descriptions.${each.id}`, { defaultValue: each.description || each.id })}

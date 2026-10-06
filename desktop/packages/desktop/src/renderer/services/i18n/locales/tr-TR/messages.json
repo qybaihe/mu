@@ -21,7 +21,8 @@
   "anchorRail": {
     "label": "Sohbet mesajı bağlantı noktaları",
     "tickAria": "{{index}}. mesaja git",
-    "searchAria": "Sohbette ara"
+    "searchAria": "Sohbette ara",
+    "jumpHint": "{{count}} mesajdan {{index}}. · buraya gitmek için tıklayın"
   },
   "availableCommands": "{{count}} Kullanılabilir Komut",
   "availableCommands_one": "{{count}} Kullanılabilir Komut",

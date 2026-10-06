@@ -275,7 +275,9 @@
         "exitedKilled": "el subagente recibió una señal y se detuvo antes de terminar",
         "chainBroken": "no iniciado: el paso anterior («{{step}}») no terminó",
         "detail": "{{reason}}: {{detail}}"
-      }
+      },
+      "cutShort": "No terminó",
+      "noRecord": "Sin registro"
     },
     "judgeView": {
       "empty": "Aún no hay veredictos registrados en esta sesión.",
@@ -1288,7 +1290,8 @@
       "noJudge": "Todavía no hay ningún juez disponible, así que los mensajes no se clasifican.",
       "setUp": "Configurar un juez",
       "skipped": "Clasificación omitida",
-      "off": "La clasificación está desactivada"
+      "off": "La clasificación está desactivada",
+      "firstHint": "Esta línea es la valoración de Jev: Jev clasifica primero cada mensaje y luego mu decide cómo seguir. Cada valoración está en Veredictos, a la derecha."
     },
     "eventLine": {
       "detail": "Detalles: {{detail}}",
@@ -1513,7 +1516,8 @@
     "noProject": "Esta conversación no tiene carpeta de proyecto, así que no hay archivos ni cambios que mostrar.",
     "previewEmpty": "Aún no hay nada que previsualizar. Aquí aparecen los archivos que se abren desde la conversación.",
     "previewHidden": "La vista previa está oculta.",
-    "browserEmpty": "No hay páginas abiertas. Escribe una dirección o una búsqueda arriba. Las páginas que se abren desde la conversación también aparecen aquí."
+    "browserEmpty": "No hay páginas abiertas. Escribe una dirección o una búsqueda arriba. Las páginas que se abren desde la conversación también aparecen aquí.",
+    "firstHint": "Tablero cuenta el avance con palabras sencillas, Veredictos lista cada valoración de Jev y Archivos es la carpeta de esta conversación. Las demás pestañas aparecen cuando se usan."
   },
   "nodeRuntime": {
     "title": "¿Descargar Node.js?",
@@ -1523,5 +1527,8 @@
     "later": "Más tarde",
     "note": "Node.js no está descargado, así que este agente no puede ejecutarse. mu volverá a preguntar en el próximo inicio.",
     "toolNote": "Node.js no está descargado, así que las herramientas que lo necesitan no pueden ejecutarse. mu volverá a preguntar en el próximo inicio."
+  },
+  "firstHint": {
+    "close": "Entendido"
   }
 }

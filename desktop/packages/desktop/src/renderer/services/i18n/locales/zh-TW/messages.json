@@ -21,7 +21,8 @@
   "anchorRail": {
     "label": "對話訊息錨點",
     "tickAria": "跳轉到第 {{index}} 則訊息",
-    "searchAria": "搜尋對話內容"
+    "searchAria": "搜尋對話內容",
+    "jumpHint": "第 {{index}} / {{count}} 則 · 點一下跳到這裡"
   },
   "availableCommands": "{{count}} 個可用指令",
   "availableCommands_one": "{{count}} 個可用指令",

@@ -21,7 +21,8 @@
   "anchorRail": {
     "label": "대화 메시지 앵커",
     "tickAria": "{{index}}번째 메시지로 이동",
-    "searchAria": "대화 검색"
+    "searchAria": "대화 검색",
+    "jumpHint": "{{count}}개 중 {{index}}번째 메시지 · 클릭하면 이동"
   },
   "availableCommands": "{{count}}개의 사용 가능한 명령어",
   "availableCommands_one": "{{count}}개의 사용 가능한 명령어",

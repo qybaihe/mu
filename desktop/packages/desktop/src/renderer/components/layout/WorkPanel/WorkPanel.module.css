@@ -173,6 +173,17 @@
   color: var(--text-primary);
 }
 
+/* The first-time hint under the tabs; nothing at all once it is closed. */
+.firstHint {
+  flex: none;
+  padding: 8px 12px 0;
+  border-bottom: 1px solid var(--border-base);
+}
+
+.firstHint:empty {
+  display: none;
+}
+
 /* ---- Bodies: all mounted, the open one on top; the others invisible and out of reach ---- */
 
 .bodies {

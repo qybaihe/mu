@@ -1,0 +1,33 @@
+/* A first-time hint: one quiet sentence and a way to close it, no box and no colour. */
+
+.hint {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  margin: 2px 0 6px;
+  padding: 0 2px;
+  color: var(--text-tertiary, var(--text-secondary));
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.text {
+  min-width: 0;
+}
+
+.close {
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.close:hover,
+.close:focus-visible {
+  text-decoration: underline;
+}

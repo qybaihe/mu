@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import FirstHint from '@/renderer/components/base/FirstHint';
 import { isTurnType, judgeName, type JevLine } from './jevLine';
 import styles from './MessageJevLine.module.css';
 
@@ -52,7 +53,7 @@ export default function MessageJevLine({ line }: { line: JevLine }) {
   const muted =
     line.stage === 'fallback' || line.stage === 'noJudge' || (line.stage === 'classified' && line.state !== 'applied');
   const hints = line.stage === 'classifying' ? [] : (line.hints ?? []);
-  return (
+  const verdict = (
     <div className={styles.line} data-testid='mu-jev-line' data-stage={line.stage}>
       <span
         className={line.stage === 'classifying' ? styles.dotBusy : muted ? styles.dotMuted : styles.dot}
@@ -71,6 +72,13 @@ export default function MessageJevLine({ line }: { line: JevLine }) {
           {t(`common.kyrn.judgeView.hintChips.${id}`)}
         </span>
       ))}
+    </div>
+  );
+  // The first verdict someone sees says once what the line is.
+  return (
+    <div className={styles.stack}>
+      {verdict}
+      <FirstHint id='jevLine' wants={line.stage === 'classified'} text={t('common.kyrn.jevLine.firstHint')} />
     </div>
   );
 }

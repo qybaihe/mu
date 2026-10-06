@@ -275,7 +275,9 @@
         "exitedKilled": "o subagente foi encerrado por um sinal antes de terminar",
         "chainBroken": "não começou: a etapa anterior (“{{step}}”) não terminou",
         "detail": "{{reason}}: {{detail}}"
-      }
+      },
+      "cutShort": "Não terminou",
+      "noRecord": "Sem registro"
     },
     "judgeView": {
       "empty": "Ainda não há vereditos registrados nesta sessão.",
@@ -1288,7 +1290,8 @@
       "noJudge": "Ainda não há nenhum juiz disponível, então as mensagens não são classificadas.",
       "setUp": "Configurar um juiz",
       "skipped": "Classificação pulada",
-      "off": "A classificação está desativada"
+      "off": "A classificação está desativada",
+      "firstHint": "Esta linha é o veredito do Jev: o Jev classifica cada mensagem primeiro e depois o mu decide como seguir. Todos os vereditos ficam em Vereditos, à direita."
     },
     "eventLine": {
       "detail": "Detalhes: {{detail}}",
@@ -1513,7 +1516,8 @@
     "noProject": "Esta conversa não tem pasta de projeto, então não há arquivos nem alterações para mostrar.",
     "previewEmpty": "Nada para pré-visualizar ainda. Arquivos abertos na conversa aparecem aqui.",
     "previewHidden": "A prévia está oculta.",
-    "browserEmpty": "Nenhuma página aberta. Digite um endereço ou uma pesquisa acima. As páginas abertas na conversa também aparecem aqui."
+    "browserEmpty": "Nenhuma página aberta. Digite um endereço ou uma pesquisa acima. As páginas abertas na conversa também aparecem aqui.",
+    "firstHint": "Painel conta o progresso em palavras simples, Vereditos lista cada veredito do Jev e Arquivos é a pasta desta conversa. As outras abas aparecem quando são usadas."
   },
   "nodeRuntime": {
     "title": "Baixar o Node.js?",
@@ -1523,5 +1527,8 @@
     "later": "Depois",
     "note": "O Node.js não foi baixado, então este agente não pode ser executado. O mu pergunta de novo na próxima inicialização.",
     "toolNote": "O Node.js não foi baixado, então as ferramentas que precisam dele não podem ser executadas. O mu pergunta de novo na próxima inicialização."
+  },
+  "firstHint": {
+    "close": "Entendi"
   }
 }

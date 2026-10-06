@@ -57,6 +57,19 @@ describe('what the work panel remembers', () => {
     expect(readWorkPanelMemory('conv-2')).toEqual({ open: false, tab: 'judge', width: 420 });
   });
 
+  it('starts a new conversation on the board when the last tab was one only some conversations use', () => {
+    rememberWorkPanel('conv-1', { open: true, tab: 'browser', width: 480 });
+    // Open and as wide as left, but not on an empty browser.
+    expect(readWorkPanelMemory('conv-2')).toEqual({ open: true, tab: 'board', width: 480 });
+    // One object while the last choice holds, so a snapshot read twice is the same.
+    expect(readWorkPanelMemory('conv-2')).toBe(readWorkPanelMemory('conv-3'));
+    rememberWorkPanel('conv-1', { tab: 'hive' });
+    expect(readWorkPanelMemory('conv-2')).toEqual({ open: true, tab: 'board', width: 480 });
+    rememberWorkPanel('conv-1', { tab: 'files' });
+    expect(readWorkPanelMemory('conv-2')).toEqual({ open: true, tab: 'files', width: 480 });
+    expect(readWorkPanelMemory('conv-1')).toEqual({ open: true, tab: 'files', width: 480 });
+  });
+
   it('comes back on the browser after a restart when that is where it was left', () => {
     rememberWorkPanel('conv-1', { open: true, tab: 'browser', width: 480 });
     rememberWorkPanel('conv-2', { open: false, tab: 'files' });

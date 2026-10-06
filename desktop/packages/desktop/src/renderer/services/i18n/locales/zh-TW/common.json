@@ -275,7 +275,9 @@
         "exitedKilled": "子代理在完成前被訊號終止",
         "chainBroken": "未開始：前一步（「{{step}}」）沒有完成",
         "detail": "{{reason}}：{{detail}}"
-      }
+      },
+      "cutShort": "沒有跑完",
+      "noRecord": "沒有紀錄"
     },
     "judgeView": {
       "empty": "目前對話還沒有判定記錄。",
@@ -1288,7 +1290,8 @@
       "noJudge": "還沒有可用的判定器，訊息不會被分類。",
       "setUp": "設定判定器",
       "skipped": "已略過分類",
-      "off": "分類已關閉"
+      "off": "分類已關閉",
+      "firstHint": "這一行是 Jev 的判斷：每則訊息先由 Jev 快速分類，mu 再決定怎麼接。每次判斷都在右側「判定」裡。"
     },
     "eventLine": {
       "detail": "詳細資訊：{{detail}}",
@@ -1513,7 +1516,8 @@
     "noProject": "這個對話沒有專案資料夾，沒有可顯示的檔案或變更。",
     "previewEmpty": "還沒有可預覽的內容。從對話中開啟的檔案會顯示在這裡。",
     "previewHidden": "預覽已隱藏。",
-    "browserEmpty": "還沒有開啟的網頁。在上方輸入網址或搜尋內容；從對話中開啟的網頁也會顯示在這裡。"
+    "browserEmpty": "還沒有開啟的網頁。在上方輸入網址或搜尋內容；從對話中開啟的網頁也會顯示在這裡。",
+    "firstHint": "看板用白話說進度，判定列出 Jev 的每次判斷，檔案是這次對話的資料夾。其他分頁用到時才出現。"
   },
   "nodeRuntime": {
     "title": "下載 Node.js？",
@@ -1523,5 +1527,8 @@
     "later": "稍後",
     "note": "Node.js 尚未下載，這個智慧體暫時無法執行。下次啟動 mu 時會再詢問。",
     "toolNote": "Node.js 尚未下載，需要它的工具暫時無法執行。下次啟動 mu 時會再詢問。"
+  },
+  "firstHint": {
+    "close": "知道了"
   }
 }

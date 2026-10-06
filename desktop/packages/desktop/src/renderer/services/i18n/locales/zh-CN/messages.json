@@ -21,7 +21,8 @@
   "anchorRail": {
     "label": "对话消息锚点",
     "tickAria": "跳转到第 {{index}} 条消息",
-    "searchAria": "搜索对话内容"
+    "searchAria": "搜索对话内容",
+    "jumpHint": "第 {{index}} / {{count}} 条 · 点击跳到这里"
   },
   "availableCommands": "{{count}} 个可用命令",
   "availableCommands_one": "{{count}} 个可用命令",

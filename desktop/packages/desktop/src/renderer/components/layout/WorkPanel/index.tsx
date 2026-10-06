@@ -14,6 +14,7 @@ import { KernelBody, useKyrnActivity, type KernelTab } from '@/renderer/pages/co
 import { PreviewPanel, usePreviewContext } from '@/renderer/pages/conversation/Preview';
 import FolderFiles from '@/renderer/pages/conversation/explorer/FolderFiles';
 import { useNativeActivity, useNativeFolder } from '@/renderer/pages/native/utils/nativeActivityStore';
+import FirstHint from '@/renderer/components/base/FirstHint';
 import BrowserPanel from '@/renderer/pages/conversation/Preview/browser/BrowserPanel';
 import { setBrowserMaximized, useBrowserMaximized } from '@/renderer/pages/conversation/Preview/browser/browserStore';
 import { panelGeometry } from './panelGeometry';
@@ -241,6 +242,10 @@ export default function WorkPanelHost({ rowWidth, isMobile }: { rowWidth: number
             onClose={close}
             onBack={fill ? close : undefined}
           />
+          {/* The first time the panel opens, one sentence on what its tabs are. */}
+          <div className={styles.firstHint}>
+            <FirstHint id='workPanel' wants={open} text={t('common.workPanel.firstHint')} />
+          </div>
           <div className={styles.bodies}>
             {KERNEL_TABS.map((tab) =>
               body(

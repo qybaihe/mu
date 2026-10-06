@@ -275,7 +275,9 @@
         "exitedKilled": "le sous-agent a été arrêté par un signal avant d’avoir terminé",
         "chainBroken": "non démarré : l’étape précédente (« {{step}} ») n’a pas abouti",
         "detail": "{{reason}} : {{detail}}"
-      }
+      },
+      "cutShort": "Inachevé",
+      "noRecord": "Aucune trace"
     },
     "judgeView": {
       "empty": "Aucun jugement n’a encore été enregistré dans cette session.",
@@ -1288,7 +1290,8 @@
       "noJudge": "Aucun juge n’est encore disponible, donc les messages ne sont pas classés.",
       "setUp": "Configurer un juge",
       "skipped": "Classification ignorée",
-      "off": "La classification est désactivée"
+      "off": "La classification est désactivée",
+      "firstHint": "Cette ligne est le jugement de Jev : Jev classe d’abord chaque message, puis mu décide comment continuer. Chaque jugement se trouve dans Jugements, à droite."
     },
     "eventLine": {
       "detail": "Détails : {{detail}}",
@@ -1513,7 +1516,8 @@
     "noProject": "Cette conversation n’a pas de dossier de projet : il n’y a ni fichiers ni modifications à afficher.",
     "previewEmpty": "Rien à prévisualiser pour l’instant. Les fichiers ouverts depuis la conversation s’affichent ici.",
     "previewHidden": "L’aperçu est masqué.",
-    "browserEmpty": "Aucune page ouverte. Saisissez une adresse ou une recherche ci-dessus. Les pages ouvertes depuis la conversation s’affichent aussi ici."
+    "browserEmpty": "Aucune page ouverte. Saisissez une adresse ou une recherche ci-dessus. Les pages ouvertes depuis la conversation s’affichent aussi ici.",
+    "firstHint": "Tableau raconte l’avancement en mots simples, Jugements liste chaque jugement de Jev, Fichiers est le dossier de cette conversation. Les autres onglets apparaissent quand ils servent."
   },
   "nodeRuntime": {
     "title": "Télécharger Node.js ?",
@@ -1523,5 +1527,8 @@
     "later": "Plus tard",
     "note": "Node.js n'est pas téléchargé, cet agent ne peut donc pas s'exécuter. mu redemandera au prochain démarrage.",
     "toolNote": "Node.js n'est pas téléchargé, les outils qui en ont besoin ne peuvent donc pas s'exécuter. mu redemandera au prochain démarrage."
+  },
+  "firstHint": {
+    "close": "Compris"
   }
 }

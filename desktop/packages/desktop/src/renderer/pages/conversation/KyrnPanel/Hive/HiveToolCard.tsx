@@ -112,9 +112,17 @@ export default function HiveToolCard({
   };
   const title = t(data.kind === 'delegate' ? 'common.kyrn.hiveView.agents' : 'common.kyrn.hiveView.title');
   const runTitle = data.snapshot ? swarmTitleText(t, data.snapshot) : data.goal;
+  // A call with no snapshot that is over did not get as far as one: mu stopped mid-call, or the call failed at once.
+  const cutShort = !running && status === 'error';
   const summary = bees
     ? swarmSummary(t, bees, running)
-    : t(running ? 'common.kyrn.hiveView.pending' : 'common.kyrn.hiveView.unknown');
+    : t(
+        running
+          ? 'common.kyrn.hiveView.pending'
+          : cutShort
+            ? 'common.kyrn.hiveView.cutShort'
+            : 'common.kyrn.hiveView.unknown'
+      );
 
   return (
     <section className={styles.agents} aria-label={title} data-testid='swarm-tool-card'>
@@ -153,7 +161,9 @@ export default function HiveToolCard({
               <span className={styles.agentName}>{name}</span>
               {bee?.role && <span className={styles.agentRole}>{beeRole(t, bee.role)}</span>}
               <span className={bee?.error ? styles.agentFailed : styles.agentDoing}>
-                {bee ? beeLine(t, bee, language) : t('common.kyrn.hiveView.pending')}
+                {bee
+                  ? beeLine(t, bee, language)
+                  : t(running ? 'common.kyrn.hiveView.pending' : 'common.kyrn.hiveView.noRecord')}
               </span>
             </Button>
           );

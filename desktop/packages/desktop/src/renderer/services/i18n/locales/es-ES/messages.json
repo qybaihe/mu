@@ -21,7 +21,8 @@
   "anchorRail": {
     "label": "Anclas de mensajes de la conversación",
     "tickAria": "Ir al mensaje {{index}}",
-    "searchAria": "Buscar en la conversación"
+    "searchAria": "Buscar en la conversación",
+    "jumpHint": "Mensaje {{index}} de {{count}} · haz clic para ir aquí"
   },
   "availableCommands": "{{count}} comandos disponibles",
   "availableCommands_one": "{{count}} comando disponible",

@@ -148,10 +148,19 @@ describe('the draft of the settings area', () => {
       'judges',
     ]);
   });
-  it('never writes the mode a new conversation starts in: that is the permission feature’s option now', () => {
+  it('writes the mode a new conversation starts in only when the guide moves mu’s last pick', () => {
     const picked = { ...base, permissions: { mode: 'full', from: 'picked' as const } };
-    expect(toSave(newDraft(picked))).not.toHaveProperty('permissions');
-    expect([...dirtySections(base, newDraft(picked))]).toEqual([]);
+    // As read, the settings never write it: it is the permission feature's option.
+    expect(toSave(newDraft(picked), picked)).not.toHaveProperty('permissions');
+    expect([...dirtySections(picked, newDraft(picked))]).toEqual([]);
+    // The guide picks another mode: the last pick, which wins over the option, moves along with it.
+    const moved = newDraft({ ...picked, permissions: { mode: 'ask', from: 'picked' } });
+    expect(toSave(moved, picked).permissions).toEqual({ mode: 'ask' });
+    expect([...dirtySections(picked, moved)]).toEqual(['features']);
+    // With no last pick there is nothing to move: the option holds the mode.
+    const configured = { ...base, permissions: { mode: 'jev', from: 'config' as const } };
+    const changed = newDraft({ ...configured, permissions: { mode: 'ask', from: 'config' } });
+    expect(toSave(changed, configured)).not.toHaveProperty('permissions');
   });
   it('searches every word, in any of the texts, ignoring case', () => {
     expect(matches('', 'anything')).toBe(true);

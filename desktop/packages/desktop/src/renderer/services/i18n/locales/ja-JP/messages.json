@@ -21,7 +21,8 @@
   "anchorRail": {
     "label": "会話メッセージのアンカー",
     "tickAria": "メッセージ {{index}} へ移動",
-    "searchAria": "会話を検索"
+    "searchAria": "会話を検索",
+    "jumpHint": "{{count}} 件中 {{index}} 件目 · クリックでここへ移動"
   },
   "availableCommands": "{{count}} 個の利用可能なコマンド",
   "availableCommands_one": "{{count}} 個の利用可能なコマンド",

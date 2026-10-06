@@ -275,7 +275,9 @@
         "exitedKilled": "alt ajan işini bitirmeden bir sinyalle sonlandırıldı",
         "chainBroken": "başlatılmadı: önceki adım (“{{step}}”) tamamlanmadı",
         "detail": "{{reason}}: {{detail}}"
-      }
+      },
+      "cutShort": "Bitmedi",
+      "noRecord": "Kayıt yok"
     },
     "judgeView": {
       "empty": "Bu oturumda henüz kaydedilmiş bir karar yok.",
@@ -1288,7 +1290,8 @@
       "noJudge": "Henüz kullanılabilir bir hakem yok, bu yüzden mesajlar sınıflandırılmıyor.",
       "setUp": "Hakem ayarla",
       "skipped": "Sınıflandırma atlandı",
-      "off": "Sınıflandırma kapalı"
+      "off": "Sınıflandırma kapalı",
+      "firstHint": "Bu satır Jev’in kararı: Jev önce her mesajı sınıflandırır, sonra mu nasıl devam edeceğine karar verir. Tüm kararlar sağdaki Kararlar sekmesinde."
     },
     "eventLine": {
       "detail": "Ayrıntılar: {{detail}}",
@@ -1513,7 +1516,8 @@
     "noProject": "Bu konuşmanın proje klasörü yok; gösterilecek dosya veya değişiklik de yok.",
     "previewEmpty": "Henüz önizlenecek bir şey yok. Konuşmadan açılan dosyalar burada görünür.",
     "previewHidden": "Önizleme gizli.",
-    "browserEmpty": "Açık sayfa yok. Yukarıya bir adres ya da arama yazın. Konuşmadan açılan sayfalar da burada görünür."
+    "browserEmpty": "Açık sayfa yok. Yukarıya bir adres ya da arama yazın. Konuşmadan açılan sayfalar da burada görünür.",
+    "firstHint": "Pano ilerlemeyi sade bir dille anlatır, Kararlar Jev’in her kararını listeler, Dosyalar bu konuşmanın klasörüdür. Diğer sekmeler kullanıldıklarında görünür."
   },
   "nodeRuntime": {
     "title": "Node.js indirilsin mi?",
@@ -1523,5 +1527,8 @@
     "later": "Sonra",
     "note": "Node.js indirilmediği için bu ajan çalışamıyor. mu bir sonraki başlatmada yeniden sorar.",
     "toolNote": "Node.js indirilmediği için ona ihtiyaç duyan araçlar çalışamıyor. mu bir sonraki başlatmada yeniden sorar."
+  },
+  "firstHint": {
+    "close": "Anladım"
   }
 }

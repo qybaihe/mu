@@ -9,6 +9,7 @@ import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import remarkBreaks from 'remark-breaks';
+import remarkCjkFriendly from 'remark-cjk-friendly';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 
@@ -16,8 +17,12 @@ import remarkMath from 'remark-math';
  * Shared remark plugin set for every markdown surface: GFM tables/strikethrough,
  * `$...$` / `$$...$$` math, and hard line breaks. Kept as a single module-level
  * constant so all renderers stay in sync and React sees a stable reference.
+ *
+ * remark-cjk-friendly lets `**` close after Chinese or Japanese punctuation:
+ * plain CommonMark leaves `**范围问题：**你说的` as literal asterisks, because
+ * the closing `**` sits between a punctuation mark and a letter.
  */
-export const MARKDOWN_REMARK_PLUGINS = [remarkGfm, remarkMath, remarkBreaks];
+export const MARKDOWN_REMARK_PLUGINS = [remarkGfm, remarkCjkFriendly, remarkMath, remarkBreaks];
 
 /**
  * Rehype pipeline for surfaces that render raw HTML embedded in semi-trusted

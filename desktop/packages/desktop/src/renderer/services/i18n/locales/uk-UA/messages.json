@@ -22,7 +22,8 @@
   "anchorRail": {
     "label": "Якорі повідомлень розмови",
     "tickAria": "Перейти до повідомлення {{index}}",
-    "searchAria": "Пошук у розмові"
+    "searchAria": "Пошук у розмові",
+    "jumpHint": "Повідомлення {{index}} з {{count}} · натисніть, щоб перейти"
   },
   "availableCommands": "Доступні команди: {{count}}",
   "availableCommands_one": "Доступні команди: {{count}}",

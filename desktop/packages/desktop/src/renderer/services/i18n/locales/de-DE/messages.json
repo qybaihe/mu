@@ -21,7 +21,8 @@
   "anchorRail": {
     "label": "Anker für Unterhaltungsnachrichten",
     "tickAria": "Zu Nachricht {{index}} springen",
-    "searchAria": "Unterhaltung durchsuchen"
+    "searchAria": "Unterhaltung durchsuchen",
+    "jumpHint": "Nachricht {{index}} von {{count}} · Klicken springt hierhin"
   },
   "availableCommands": "{{count}} verfügbare Befehle",
   "availableCommands_one": "{{count}} verfügbarer Befehl",

@@ -275,7 +275,9 @@
         "exitedKilled": "der Unteragent wurde vor dem Abschluss durch ein Signal beendet",
         "chainBroken": "nicht gestartet: Der vorherige Schritt („{{step}}“) wurde nicht abgeschlossen",
         "detail": "{{reason}}: {{detail}}"
-      }
+      },
+      "cutShort": "Nicht zu Ende gelaufen",
+      "noRecord": "Nichts aufgezeichnet"
     },
     "judgeView": {
       "empty": "In dieser Sitzung wurden noch keine Urteile aufgezeichnet.",
@@ -1288,7 +1290,8 @@
       "noJudge": "Noch ist kein Judge verfügbar, daher werden Nachrichten nicht eingeordnet.",
       "setUp": "Judge einrichten",
       "skipped": "Einordnung übersprungen",
-      "off": "Einordnung ist aus"
+      "off": "Einordnung ist aus",
+      "firstHint": "Diese Zeile ist Jevs Urteil: Jev ordnet jede Nachricht zuerst ein, dann entscheidet mu, wie es weitergeht. Jedes Urteil steht rechts unter Urteile."
     },
     "eventLine": {
       "detail": "Details: {{detail}}",
@@ -1513,7 +1516,8 @@
     "noProject": "Diese Unterhaltung hat keinen Projektordner, daher gibt es keine Dateien oder Änderungen anzuzeigen.",
     "previewEmpty": "Noch nichts zur Vorschau. Dateien, die aus der Unterhaltung geöffnet werden, erscheinen hier.",
     "previewHidden": "Die Vorschau ist ausgeblendet.",
-    "browserEmpty": "Keine Seiten geöffnet. Oben eine Adresse oder einen Suchbegriff eingeben. Seiten, die aus der Unterhaltung geöffnet werden, erscheinen ebenfalls hier."
+    "browserEmpty": "Keine Seiten geöffnet. Oben eine Adresse oder einen Suchbegriff eingeben. Seiten, die aus der Unterhaltung geöffnet werden, erscheinen ebenfalls hier.",
+    "firstHint": "Klartext erzählt den Fortschritt in einfachen Worten, Urteile listet jedes Urteil von Jev, Dateien ist der Ordner dieser Unterhaltung. Weitere Tabs erscheinen, sobald sie gebraucht werden."
   },
   "nodeRuntime": {
     "title": "Node.js herunterladen?",
@@ -1523,5 +1527,8 @@
     "later": "Später",
     "note": "Node.js ist nicht heruntergeladen, daher kann dieser Agent nicht laufen. mu fragt beim nächsten Start erneut.",
     "toolNote": "Node.js ist nicht heruntergeladen, daher können Werkzeuge, die es brauchen, nicht laufen. mu fragt beim nächsten Start erneut."
+  },
+  "firstHint": {
+    "close": "Verstanden"
   }
 }

@@ -1,5 +1,18 @@
 /* Jev's class for a message: one quiet line, no box. */
 
+/* The line, and under it the first-time hint when there is one. */
+.stack {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+/* The hint starts under the line's words, past its dot (6px) and gap (8px), so it never reads as a second verdict. */
+.stack [role='note'] {
+  padding-inline-start: 16px;
+}
+
 .line {
   display: flex;
   align-items: center;

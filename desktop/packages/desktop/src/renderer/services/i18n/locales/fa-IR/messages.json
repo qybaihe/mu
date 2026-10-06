@@ -21,7 +21,8 @@
   "anchorRail": {
     "label": "لنگرهای پیام‌های گفتگو",
     "tickAria": "رفتن به پیام {{index}}",
-    "searchAria": "جست‌وجو در گفتگو"
+    "searchAria": "جست‌وجو در گفتگو",
+    "jumpHint": "پیام {{index}} از {{count}} · برای رفتن به آن کلیک کنید"
   },
   "availableCommands": "{{count}} دستور موجود",
   "availableCommands_one": "{{count}} دستور موجود",

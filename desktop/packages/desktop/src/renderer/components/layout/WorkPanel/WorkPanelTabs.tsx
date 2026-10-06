@@ -21,7 +21,7 @@ import {
   ViewGridDetail,
 } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
-import { WORK_PANEL_TABS, type WorkPanelTab } from './workPanelStore';
+import { ALWAYS_SHOWN_TABS, WORK_PANEL_TABS, type WorkPanelTab } from './workPanelStore';
 import styles from './WorkPanel.module.css';
 
 export const workPanelTabId = (tab: WorkPanelTab): string => `mu-work-panel-tab-${tab}`;
@@ -39,10 +39,6 @@ const TAB_ICONS: Record<WorkPanelTab, typeof Bee> = {
   source: Code,
   browser: Browser,
 };
-
-/** The tabs every conversation needs. The others join the strip once the conversation uses them; until then they
- * wait under 更多, so a conversation that never ran a swarm or opened a page does not carry those tabs. */
-const ALWAYS: ReadonlySet<WorkPanelTab> = new Set(['board', 'judge', 'files']);
 
 /**
  * Whether every label fits the strip. The labels' width is measured while they show and kept, so the strip goes back
@@ -105,7 +101,9 @@ export default function WorkPanelTabs({
   const { t } = useTranslation();
   const list = useRef<HTMLDivElement>(null);
   const tabs = WORK_PANEL_TABS.filter(
-    (tab) => !used || ALWAYS.has(tab) || used.has(tab) || unread.has(tab) || tab === active
+    // The others wait under 更多 until used, so a conversation that never ran a swarm or opened a page does not carry
+    // those tabs.
+    (tab) => !used || ALWAYS_SHOWN_TABS.has(tab) || used.has(tab) || unread.has(tab) || tab === active
   );
   const more = WORK_PANEL_TABS.filter((tab) => !tabs.includes(tab));
   const labels = tabs.map((tab) => t(`common.workPanel.tabs.${tab}`));

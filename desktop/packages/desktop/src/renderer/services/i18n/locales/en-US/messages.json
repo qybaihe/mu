@@ -21,7 +21,8 @@
   "anchorRail": {
     "label": "Conversation message anchors",
     "tickAria": "Jump to message {{index}}",
-    "searchAria": "Search conversation"
+    "searchAria": "Search conversation",
+    "jumpHint": "Message {{index}} of {{count}} · click to jump here"
   },
   "availableCommands": "{{count}} Available Commands",
   "availableCommands_one": "{{count}} Available Command",

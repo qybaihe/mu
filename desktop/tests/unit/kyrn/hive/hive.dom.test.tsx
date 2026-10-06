@@ -232,6 +232,18 @@ describe('a sub-agent card whose call is over', () => {
     expect(dots.map((dot) => dot.getAttribute('data-filled'))).toEqual(['false', 'true', 'false', 'true']);
   });
 
+  it('says a call cut off before any snapshot did not finish, and waits for nothing', () => {
+    const message = hiveMessage();
+    message.content.update.status = 'failed';
+    message.content.update.rawOutput = undefined;
+    message.content.update.content = [];
+    render(view(<MessageToolGroupSummary messages={[message]} />));
+    const card = screen.getByTestId('swarm-tool-card');
+    expect(within(card).getByText(common.kyrn.hiveView.cutShort)).toBeInTheDocument();
+    expect(cardRow(card, 'prefix-mutations')).toHaveTextContent(common.kyrn.hiveView.noRecord);
+    expect(within(card).queryByText(common.kyrn.hiveView.pending)).not.toBeInTheDocument();
+  });
+
   it('keeps what the bees are doing while the call runs', () => {
     render(view(<MessageToolGroupSummary messages={[caughtMidRun('in_progress')]} />));
     const card = screen.getByTestId('swarm-tool-card');

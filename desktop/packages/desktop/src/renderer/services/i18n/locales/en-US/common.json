@@ -275,7 +275,9 @@
         "exitedKilled": "sub-agent was ended by a signal before it finished",
         "chainBroken": "not started: the step before it (\"{{step}}\") did not finish",
         "detail": "{{reason}}: {{detail}}"
-      }
+      },
+      "cutShort": "Did not finish",
+      "noRecord": "No record"
     },
     "judgeView": {
       "empty": "No judgments recorded in this session yet.",
@@ -1288,7 +1290,8 @@
       "noJudge": "No judge is available yet, so messages are not classified.",
       "setUp": "Set up a judge",
       "skipped": "Classification skipped",
-      "off": "Classification is off"
+      "off": "Classification is off",
+      "firstHint": "This line is Jev’s call: Jev sorts each message first, then mu decides how to go on. Every call is under Judge on the right."
     },
     "eventLine": {
       "detail": "Details: {{detail}}",
@@ -1513,7 +1516,8 @@
     "noProject": "This conversation has no project folder, so there are no files or changes to show.",
     "previewEmpty": "Nothing to preview yet. Files opened from the conversation show here.",
     "previewHidden": "The preview is hidden.",
-    "browserEmpty": "No pages open. Type an address or a search above. Pages opened from the conversation show here too."
+    "browserEmpty": "No pages open. Type an address or a search above. Pages opened from the conversation show here too.",
+    "firstHint": "Board tells the progress in plain words, Judge lists every call Jev made, Files is this conversation’s folder. Other tabs appear once they are used."
   },
   "nodeRuntime": {
     "title": "Download Node.js?",
@@ -1523,5 +1527,8 @@
     "later": "Later",
     "note": "Node.js is not downloaded, so this agent cannot run. mu asks again at the next start.",
     "toolNote": "Node.js is not downloaded, so tools that need it cannot run. mu asks again at the next start."
+  },
+  "firstHint": {
+    "close": "Got it"
   }
 }
