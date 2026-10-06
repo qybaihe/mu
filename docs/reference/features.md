@@ -251,7 +251,7 @@ On by default: yes. Decision points: `goal.met`.
 | `checkTimeoutMs` | `90000` ms | Longest wait for the check. After that, Jev decides, and failing that the facts alone. Range 5000 to 600000. |
 | `stallLimit` | `2` | Runs without progress before it stops. The check found the agent repeating itself. The first time it is told to change course; at this count the goal pauses for you. Range 1 to 10. |
 | `maxContinuations` | `20` | Continuations at most. Counted from your last message. Range 1 to 200. |
-| `maxMinutes` | `180` | Minutes at most. Counted from your last message. Range 5 to 1440. |
+| `maxMinutes` | `180` min | Longest automatic run. Counted from your last message. Range 5 to 1440. |
 | `idleLimit` | `2` | Idle runs before it stops. Runs in a row that ended without a single tool call: the agent is going nowhere. Range 1 to 10. |
 
 ## board
@@ -414,7 +414,7 @@ On by default: yes.
 | `searchFallback` | `true` | Try the other built-in sources on failure. Applies to a verification page, no results, or results unrelated to the query. |
 | `maxChars` | `20000` chars | Most that one web_fetch returns. |
 | `timeoutMs` | `20000` ms | Time limit of one request. |
-| `maxBytes` | `2000000` | Download limit (bytes). |
+| `maxBytes` | `2000000` bytes | Download limit. |
 | `maxRedirects` | `5` | Redirects followed. Range 0 to 20. |
 | `allowLoopback` | `true` | Allow this machine's dev servers. Only when the URL itself says localhost or 127.0.0.1; a redirect from the web is always refused. |
 | `allowPrivate` | `false` | Allow private network addresses. 10/8, 172.16/12, 192.168/16, link-local and the like. Refused by default so a page cannot steer the reader into the local network. |
