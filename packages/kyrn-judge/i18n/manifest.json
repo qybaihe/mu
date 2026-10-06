@@ -3711,18 +3711,18 @@
 			"fa-IR": "از آخرین پیام شما شمرده می‌شود."
 		},
 		"features[name=goal].options[key=maxMinutes].label": {
-			"en": "Minutes at most",
-			"zh-TW": "最多執行幾分鐘",
-			"ja-JP": "最大時間（分）",
-			"ko-KR": "최대 실행 시간(분)",
-			"de-DE": "Höchstdauer in Minuten",
-			"fr-FR": "Minutes au plus",
-			"es-ES": "Máximo de minutos",
-			"pt-BR": "Máximo de minutos",
-			"ru-RU": "Минут не больше",
-			"uk-UA": "Макс. хвилин",
-			"tr-TR": "En fazla dakika",
-			"fa-IR": "حداکثر دقیقه"
+			"en": "Longest automatic run",
+			"zh-TW": "最長自動執行",
+			"ja-JP": "自動実行の最長時間",
+			"ko-KR": "최대 자동 실행 시간",
+			"de-DE": "Längste automatische Laufzeit",
+			"fr-FR": "Durée maximale d’exécution automatique",
+			"es-ES": "Ejecución automática más larga",
+			"pt-BR": "Execução automática mais longa",
+			"ru-RU": "Максимальная длительность автозапуска",
+			"uk-UA": "Максимальна тривалість автозапуску",
+			"tr-TR": "En uzun otomatik çalışma",
+			"fa-IR": "طولانی‌ترین اجرای خودکار"
 		},
 		"features[name=goal].options[key=maxMinutes].help": {
 			"en": "Counted from your last message.",
@@ -5237,18 +5237,18 @@
 			"fa-IR": "مهلت هر درخواست"
 		},
 		"features[name=web].options[key=maxBytes].label": {
-			"en": "Download limit (bytes)",
-			"zh-TW": "下載上限（位元組）",
-			"ja-JP": "ダウンロードの上限（バイト）",
-			"ko-KR": "다운로드 한도(바이트)",
-			"de-DE": "Download-Limit (Bytes)",
-			"fr-FR": "Limite de téléchargement (octets)",
-			"es-ES": "Límite de descarga (bytes)",
-			"pt-BR": "Limite de download (bytes)",
-			"ru-RU": "Лимит загрузки (байт)",
-			"uk-UA": "Ліміт завантаження (байти)",
-			"tr-TR": "İndirme sınırı (bayt)",
-			"fa-IR": "سقف بارگیری (بایت)"
+			"en": "Download limit",
+			"zh-TW": "下載上限",
+			"ja-JP": "ダウンロードの上限",
+			"ko-KR": "다운로드 한도",
+			"de-DE": "Download-Limit",
+			"fr-FR": "Limite de téléchargement",
+			"es-ES": "Límite de descarga",
+			"pt-BR": "Limite de download",
+			"ru-RU": "Лимит загрузки",
+			"uk-UA": "Ліміт завантаження",
+			"tr-TR": "İndirme sınırı",
+			"fa-IR": "سقف بارگیری"
 		},
 		"features[name=web].options[key=maxRedirects].label": {
 			"en": "Redirects followed",
@@ -6509,6 +6509,34 @@
 			"uk-UA": "Після цього нагадування немає, а рішення лише записується.",
 			"tr-TR": "Bu süreden sonra hatırlatma yapılmaz; karar yalnızca kaydedilir.",
 			"fa-IR": "پس از این مدت یادآوری‌ای در کار نیست؛ نتیجهٔ داوری فقط ثبت می‌شود."
+		},
+		"features[name=goal].options[key=maxMinutes].unit": {
+			"en": "min",
+			"zh-TW": "分鐘",
+			"ja-JP": "分",
+			"ko-KR": "분",
+			"de-DE": "Min.",
+			"fr-FR": "min",
+			"es-ES": "min",
+			"pt-BR": "min",
+			"ru-RU": "мин",
+			"uk-UA": "хв",
+			"tr-TR": "dk",
+			"fa-IR": "دقیقه"
+		},
+		"features[name=web].options[key=maxBytes].unit": {
+			"en": "bytes",
+			"zh-TW": "位元組",
+			"ja-JP": "バイト",
+			"ko-KR": "바이트",
+			"de-DE": "Bytes",
+			"fr-FR": "octets",
+			"es-ES": "bytes",
+			"pt-BR": "bytes",
+			"ru-RU": "байт",
+			"uk-UA": "байтів",
+			"tr-TR": "bayt",
+			"fa-IR": "بایت"
 		}
 	}
 }

@@ -1432,7 +1432,8 @@ export const MANIFEST: HarnessManifest = {
 					default: 180,
 					min: 5,
 					max: 1440,
-					label: { zh: "最长自动运行（分钟）", en: "Minutes at most" },
+					unit: { zh: "分钟", en: "min" },
+					label: { zh: "最长自动运行", en: "Longest automatic run" },
 					help: { zh: "从你上一次发言算起。", en: "Counted from your last message." },
 				},
 				{
@@ -2024,7 +2025,8 @@ export const MANIFEST: HarnessManifest = {
 					kind: "number",
 					default: 2000000,
 					min: 10000,
-					label: { zh: "下载上限（字节）", en: "Download limit (bytes)" },
+					unit: { zh: "字节", en: "bytes" },
+					label: { zh: "下载上限", en: "Download limit" },
 				},
 				{
 					key: "maxRedirects",
