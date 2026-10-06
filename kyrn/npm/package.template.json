@@ -1,6 +1,6 @@
 {
 	"name": "mu-agent",
-	"version": "0.1.7",
+	"version": "0.1.8",
 	"description": "mu: a coding agent that thinks before it acts. A small, fast judge makes the routine calls; the big model keeps its attention for the work. Built on pi.",
 	"type": "module",
 	"bin": {

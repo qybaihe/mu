@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-10-06
+
 ### Added
 
 - Three decision points, 38 in all:
