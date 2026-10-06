@@ -4,6 +4,7 @@
     "preferences": "偏好",
     "models": "模型",
     "kernel": "核心",
+    "details": "細項",
     "capabilities": "能力",
     "system": "系統"
   },
@@ -367,13 +368,14 @@
   },
   "notification": "通知",
   "cronNotificationEnabled": "定時任務完成通知",
-  "promptTimeout": "模型請求逾時時間（秒）",
+  "promptTimeout": "模型請求逾時時間",
   "groupAiCore": "AI 核心",
   "groupApp": "應用",
   "groupAbout": "其他",
-  "agentIdleTimeout": "代理閒置逾時（分鐘）",
+  "agentIdleTimeout": "代理閒置逾時",
   "agentIdleTimeoutDesc": "代理閒置超過這個時長就會停止，以釋放記憶體。",
-  "previewTextSizeLimit": "預覽大小上限（MB）",
+  "previewTextSizeLimit": "預覽大小上限",
+  "previewTextSizeLimitUnit": "MB",
   "previewTextSizeLimitDesc": "超過該大小的文字檔案只顯示提示、不載入內容。僅對新開啟的標籤頁生效。",
   "gemini": "Gemini",
   "model": "模型",
@@ -623,7 +625,7 @@
   "closeDevTools": "關閉 DevTools",
   "restartNow": "立即重新啟動",
   "cdp": {
-    "title": "應用內瀏覽器連線（開發者）",
+    "title": "應用內瀏覽器連線",
     "connection": "代理怎樣操作應用內瀏覽器",
     "about": "透過本機上的一條連線（127.0.0.1，每次啟動換一個連接埠），只通到那個瀏覽器檢視，碰不到 mu 自己的視窗。本機其他程式也能使用它，下面的設定就是這樣連上的。代理可以使用應用內瀏覽器時它才會執行，這個開關在應用內瀏覽器設定裡。",
     "openBrowserSettings": "應用內瀏覽器設定",
@@ -1074,5 +1076,17 @@
   "appearanceDescription": "介面語言、主題、字型和介面縮放。",
   "systemDescription": "開機啟動、關閉視窗後繼續執行、通知，以及 mu 的工作目錄和日誌目錄。",
   "conversationsDescription": "逾時時間、預覽大小上限、上傳檔案的去處，以及對話之間的訊息。",
-  "aboutDescription": "目前的 mu 版本、更新，以及日誌資料夾的入口。"
+  "aboutDescription": "目前的 mu 版本、更新，以及日誌資料夾的入口。",
+  "developer": {
+    "title": "開發者",
+    "description": "開發者工具，以及外部工具連線應用內瀏覽器用的連接埠和 MCP 設定。",
+    "devOnly": "這些工具只在從原始碼執行的 mu 裡提供。"
+  },
+  "search": {
+    "placeholder": "搜尋設定",
+    "empty": "沒有符合的設定。",
+    "results": "搜尋結果"
+  },
+  "learnMore": "了解更多",
+  "showLess": "收起"
 }

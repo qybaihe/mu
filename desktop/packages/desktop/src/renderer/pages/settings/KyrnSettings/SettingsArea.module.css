@@ -81,12 +81,6 @@
   min-width: 0;
 }
 
-.note {
-  color: var(--text-secondary);
-  font-size: 12px;
-  line-height: 18px;
-}
-
 .saveBar {
   position: sticky;
   bottom: 0;
@@ -107,6 +101,13 @@
   color: var(--text-primary);
   font-size: 13px;
   line-height: 20px;
+}
+
+.saveNote {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 18px;
 }
 
 .saveError {

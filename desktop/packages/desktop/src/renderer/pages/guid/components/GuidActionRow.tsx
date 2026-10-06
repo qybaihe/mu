@@ -154,7 +154,6 @@ const GuidActionRow: React.FC<GuidActionRowProps> = ({
     }
   }, []);
   const showModeSwitch = dynamicModes.length > 0;
-  const configOptionCount = (modelSelectorNode ? 1 : 0) + (showModeSwitch ? 1 : 0);
 
   const getModeDisplayLabel = (mode: AgentModeOption): string =>
     t(`agentMode.${mode.value}`, { defaultValue: mode.label });
@@ -546,6 +545,20 @@ const GuidActionRow: React.FC<GuidActionRowProps> = ({
             </Dropdown>
           )}
         </div>
+        {/* The permission chip sits by the "+", as in a conversation's send box; on mobile it moves into the sheet. */}
+        {!isMobile && showModeSwitch && (
+          <AgentModeSelector
+            backend={modeBackend}
+            compact
+            initialMode={selectedMode}
+            onModeSelect={onModeSelect}
+            dynamicModes={dynamicModes}
+            compactLeadingIcon={<Shield theme='outline' size='14' fill={iconColors.secondary} />}
+            modeLabelFormatter={getModeDisplayLabel}
+            compactLabelPrefix={t('agentMode.permission')}
+            hideCompactLabelPrefixOnMobile
+          />
+        )}
       </div>
       {isMobile && (
         <MobileActionSheet
@@ -556,24 +569,10 @@ const GuidActionRow: React.FC<GuidActionRowProps> = ({
         />
       )}
       <div className={styles.actionSubmit}>
-        {/* Desktop keeps the inline model/permission selectors; on mobile they move into the sheet. */}
-        {!isMobile && configOptionCount > 0 && (
+        {/* Desktop keeps the model selector inline; on mobile it moves into the sheet. */}
+        {!isMobile && modelSelectorNode && (
           <div className={styles.actionConfigGroup} data-mobile={isMobile ? 'true' : undefined}>
             {modelSelectorNode}
-
-            {showModeSwitch && (
-              <AgentModeSelector
-                backend={modeBackend}
-                compact
-                initialMode={selectedMode}
-                onModeSelect={onModeSelect}
-                dynamicModes={dynamicModes}
-                compactLeadingIcon={<Shield theme='outline' size='14' fill={iconColors.secondary} />}
-                modeLabelFormatter={getModeDisplayLabel}
-                compactLabelPrefix={t('agentMode.permission')}
-                hideCompactLabelPrefixOnMobile
-              />
-            )}
           </div>
         )}
 

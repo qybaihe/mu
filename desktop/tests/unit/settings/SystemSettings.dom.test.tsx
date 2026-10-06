@@ -11,6 +11,7 @@ import SystemSettings from '@/renderer/pages/settings/SystemSettings';
 import AboutSettings from '@/renderer/pages/settings/SystemSettings/AboutSettings';
 import BrowserSettings from '@/renderer/pages/settings/SystemSettings/BrowserSettings';
 import ConversationSettings from '@/renderer/pages/settings/SystemSettings/ConversationSettings';
+import DeveloperSettings from '@/renderer/pages/settings/SystemSettings/DeveloperSettings';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
@@ -24,6 +25,9 @@ vi.mock('@/renderer/components/settings/SettingsModal/contents/SystemModalConten
 }));
 vi.mock('@/renderer/components/settings/SettingsModal/contents/SystemModalContent/BrowserDataSection', () => ({
   default: () => <div data-testid='browser-data-section' />,
+}));
+vi.mock('@/renderer/components/settings/SettingsModal/contents/SystemModalContent/DevSettings', () => ({
+  default: () => <div data-testid='dev-settings' />,
 }));
 vi.mock('@/renderer/components/settings/SettingsModal/contents/AboutModalContent', () => ({
   default: () => <div data-testid='about-modal-content'>AboutModalContent</div>,
@@ -60,6 +64,13 @@ describe('the pages that were one long system page', () => {
       'browser-data-section',
     ],
     ['about', AboutSettings, 'settings.about', 'settings.aboutDescription', 'about-modal-content'],
+    [
+      'developer tools',
+      DeveloperSettings,
+      'settings.developer.title',
+      'settings.developer.description',
+      'dev-settings',
+    ],
   ])(
     'gives the %s its own page, titled and described, in the page frame with no width of its own',
     (_name, Page, title, description, content) => {

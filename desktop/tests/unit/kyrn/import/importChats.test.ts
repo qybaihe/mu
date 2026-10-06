@@ -510,6 +510,62 @@ describe('the import service', () => {
     expect(listImportRecords(store)).toEqual([]);
   });
 
+  it('with the app running mu itself, makes no app conversation: the session is the conversation', async () => {
+    const store = temp('store');
+    const project = temp('project');
+    const gone = join(temp('parent'), 'moved-away');
+    const made = session(temp('a'), project, conversationBody);
+    const before = session(temp('b'), project, conversationBody);
+    const lost = session(temp('c'), gone, conversationBody);
+    const { cli } = cliAnswering({
+      results: [
+        { status: 'imported', source: '/t/new.jsonl', tool: 'claude-code', sessionFile: made, sessionId: 's1' },
+        {
+          status: 'already-imported',
+          source: '/t/old.jsonl',
+          tool: 'claude-code',
+          sessionFile: before,
+          sessionId: 's1',
+        },
+        { status: 'imported', source: '/t/lost.jsonl', tool: 'claude-code', sessionFile: lost, sessionId: 's1' },
+      ],
+    });
+    const { request, calls } = backend();
+    const service = importService({ cli, request, store, assistant: async () => 'mu-assistant' });
+    const outcomes = await service.run(['/t/new.jsonl', '/t/old.jsonl', '/t/lost.jsonl'], 'en-US', true);
+    expect(outcomes).toEqual([
+      {
+        status: 'imported',
+        source: '/t/new.jsonl',
+        tool: 'claude-code',
+        conversationId: 's1',
+        name: 'Fix the login form',
+        native: true,
+      },
+      { status: 'listed', source: '/t/old.jsonl', conversationId: 's1', name: 'Fix the login form', native: true },
+      { status: 'failed', source: '/t/lost.jsonl', reason: 'folderMissing', detail: gone },
+    ]);
+    expect(calls).toEqual([]);
+    expect(listImportRecords(store)).toEqual([]);
+
+    // The list names the session each transcript became, by the id the native host knows it by.
+    const listing = cliAnswering({
+      conversations: [
+        { tool: 'claude-code', path: '/t/old.jsonl', title: 'Old', modified: at, size: 1, importedAs: before },
+        { tool: 'codex', path: '/t/fresh.jsonl', title: 'Fresh', modified: at, size: 1 },
+        { tool: 'codex', path: '/t/deleted.jsonl', title: 'Deleted', modified: at, size: 1, importedAs: '/s/no.jsonl' },
+      ],
+    });
+    const lister = importService({ cli: listing.cli, request, store, assistant: async () => 'mu-assistant' });
+    const { conversations } = await lister.list(undefined, true);
+    expect(conversations.map((chat) => [chat.path, chat.conversationId, chat.native])).toEqual([
+      ['/t/old.jsonl', 's1', true],
+      ['/t/fresh.jsonl', undefined, undefined],
+      ['/t/deleted.jsonl', undefined, undefined],
+    ]);
+    expect(calls).toEqual([]);
+  });
+
   it('refuses paths that are not absolute, and too many at once', async () => {
     const { cli, asked } = cliAnswering({ results: [] });
     const service = importService({

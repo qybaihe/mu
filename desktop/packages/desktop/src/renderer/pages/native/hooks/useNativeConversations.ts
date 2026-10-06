@@ -1,8 +1,8 @@
 /**
  * The native conversations for the sidebar: the main process's list, newest first, kept as it changes (`changed`: a new
  * conversation, a title, a host that starts or ends, a draft whose session gave it its id, one removed), and read
- * again when the window comes back to the front: a session the command line made meanwhile has no `changed` (nothing
- * in this app made it). And whether the native host is on at all: with it off, no native screen exists.
+ * again when the window comes back to the front, or when asked (`rereadNativeConversations`): a session the command
+ * line made meanwhile has no `changed` (nothing in this app made it). And whether the native host is on at all: with it off, no native screen exists.
  */
 import { useEffect, useState } from 'react';
 import type { NativeChangedEvent, NativeConversation, NativeFailure } from '@/common/kyrn/nativeBridge';
@@ -19,6 +19,16 @@ const newestFirst = (list: NativeConversation[]): NativeConversation[] =>
 
 /** The list is not read again for a window that comes back sooner than this after the last read. */
 const REREAD_MS = 1000;
+
+const REREAD_EVENT = 'mu-native-reread';
+
+/**
+ * Reads the list again: sessions something other than the host wrote (`mu import`, run from the import dialog) have
+ * no `changed`, and the window did not leave the front for them.
+ */
+export function rereadNativeConversations(): void {
+  window.dispatchEvent(new Event(REREAD_EVENT));
+}
 
 export function useNativeConversations(enabled: boolean): NativeConversationList {
   const client = useNativeClient();
@@ -68,13 +78,19 @@ export function useNativeConversations(enabled: boolean): NativeConversationList
       if (!read || reading || document.visibilityState === 'hidden' || Date.now() - readAt < REREAD_MS) return;
       load();
     };
+    // Even while a read is on its way: it may have been asked before the sessions were written.
+    const again = () => {
+      if (read) load();
+    };
     window.addEventListener('focus', back);
     document.addEventListener('visibilitychange', back);
+    window.addEventListener(REREAD_EVENT, again);
     return () => {
       disposed = true;
       stop();
       window.removeEventListener('focus', back);
       document.removeEventListener('visibilitychange', back);
+      window.removeEventListener(REREAD_EVENT, again);
     };
   }, [client, enabled]);
   return list;

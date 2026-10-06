@@ -5,7 +5,7 @@
  */
 
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Button, Tooltip } from '@arco-design/web-react';
+import { Button, Dropdown, Menu, Tooltip } from '@arco-design/web-react';
 import {
   ArrowLeft,
   Bee,
@@ -13,8 +13,10 @@ import {
   Browser,
   Close,
   Code,
+  Down,
   FolderOpen,
   Gavel,
+  More,
   PreviewOpen,
   ViewGridDetail,
 } from '@icon-park/react';
@@ -37,6 +39,10 @@ const TAB_ICONS: Record<WorkPanelTab, typeof Bee> = {
   source: Code,
   browser: Browser,
 };
+
+/** The tabs every conversation needs. The others join the strip once the conversation uses them; until then they
+ * wait under 更多, so a conversation that never ran a swarm or opened a page does not carry those tabs. */
+const ALWAYS: ReadonlySet<WorkPanelTab> = new Set(['board', 'judge', 'files']);
 
 /**
  * Whether every label fits the strip. The labels' width is measured while they show and kept, so the strip goes back
@@ -73,29 +79,37 @@ function useLabelsFit(list: React.RefObject<HTMLDivElement | null>, labels: stri
 }
 
 /**
- * The 40px strip: 看板 · 判定 · 蜂群 · 经验 · 文件 · 预览 · 源码 · 浏览器, then a close button. The open tab is underlined
- * in the one accent colour; a tab with news the person has not seen carries a small dot. Arrow keys move between
- * tabs. A panel too narrow for every label shows one icon per tab instead, each named by its tooltip, so no tab is
- * ever out of view. While the panel fills the row (the transcript set aside), the strip leads with a named way back
+ * The 40px strip: 看板 · 判定 · 文件, the tabs this conversation used (of 蜂群 · 经验 · 预览 · 源码 · 浏览器, in that
+ * order), 更多 for the rest, then a close button. The open tab is underlined in the one accent colour; a tab with news
+ * the person has not seen carries a small dot (news also brings a tab into the strip). Arrow keys move between the
+ * tabs shown. A panel too narrow for every label shows one icon per tab instead, each named by its tooltip, so no tab
+ * is ever out of view. While the panel fills the row (the transcript set aside), the strip leads with a named way back
  * to the conversation (`onBack`).
  */
 export default function WorkPanelTabs({
   active,
   unread,
+  used,
   onSelect,
   onClose,
   onBack,
 }: {
   active: WorkPanelTab;
   unread: ReadonlySet<WorkPanelTab>;
+  /** The tabs this conversation used; every tab when not given. */
+  used?: ReadonlySet<WorkPanelTab>;
   onSelect: (tab: WorkPanelTab) => void;
   onClose: () => void;
   onBack?: () => void;
 }) {
   const { t } = useTranslation();
   const list = useRef<HTMLDivElement>(null);
-  const labels = WORK_PANEL_TABS.map((tab) => t(`common.workPanel.tabs.${tab}`));
-  const labelsFit = useLabelsFit(list, labels.join('\n'), active);
+  const tabs = WORK_PANEL_TABS.filter(
+    (tab) => !used || ALWAYS.has(tab) || used.has(tab) || unread.has(tab) || tab === active
+  );
+  const more = WORK_PANEL_TABS.filter((tab) => !tabs.includes(tab));
+  const labels = tabs.map((tab) => t(`common.workPanel.tabs.${tab}`));
+  const labelsFit = useLabelsFit(list, [...labels, more.length ? t('common.more') : ''].join('\n'), active);
   // Should even the icons not fit (a very large text size), only the strip scrolls: `scrollIntoView` would also shift
   // the clipped panel and the row around it.
   useEffect(() => {
@@ -110,17 +124,17 @@ export default function WorkPanelTabs({
   const move = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const step =
       event.key === 'Home'
-        ? -WORK_PANEL_TABS.length
+        ? -tabs.length
         : event.key === 'End'
-          ? WORK_PANEL_TABS.length
+          ? tabs.length
           : event.key === 'ArrowRight' || event.key === 'ArrowLeft'
             ? (event.key === 'ArrowRight' ? 1 : -1) *
               (getComputedStyle(event.currentTarget).direction === 'rtl' ? -1 : 1)
             : 0;
     if (!step) return;
     event.preventDefault();
-    const index = Math.min(WORK_PANEL_TABS.length - 1, Math.max(0, WORK_PANEL_TABS.indexOf(active) + step));
-    const tab = WORK_PANEL_TABS[index];
+    const index = Math.min(tabs.length - 1, Math.max(0, tabs.indexOf(active) + step));
+    const tab = tabs[index];
     onSelect(tab);
     document.getElementById(workPanelTabId(tab))?.focus({ preventScroll: true });
   };
@@ -149,7 +163,7 @@ export default function WorkPanelTabs({
           if (!event.deltaX) event.currentTarget.scrollLeft += event.deltaY;
         }}
       >
-        {WORK_PANEL_TABS.map((tab, index) => {
+        {tabs.map((tab, index) => {
           const selected = tab === active;
           const label = labels[index];
           const news = unread.has(tab) && !selected;
@@ -178,6 +192,46 @@ export default function WorkPanelTabs({
             </Tooltip>
           );
         })}
+        {more.length ? (
+          <Dropdown
+            trigger='click'
+            position='br'
+            droplist={
+              <Menu onClickMenuItem={(key) => onSelect(key as WorkPanelTab)}>
+                {more.map((tab) => {
+                  const Icon = TAB_ICONS[tab];
+                  return (
+                    <Menu.Item key={tab} data-testid='work-panel-more-tab' data-tab={tab}>
+                      <span className='inline-flex items-center gap-8px'>
+                        <Icon theme='outline' size={14} strokeWidth={3} fill='currentColor' />
+                        {t(`common.workPanel.tabs.${tab}`)}
+                      </span>
+                    </Menu.Item>
+                  );
+                })}
+              </Menu>
+            }
+          >
+            <Tooltip content={t('common.more')} position='bottom' mini disabled={labelsFit}>
+              <Button
+                type='text'
+                className={styles.tab}
+                data-testid='work-panel-more'
+                aria-haspopup='menu'
+                aria-label={labelsFit ? undefined : t('common.more')}
+              >
+                {labelsFit ? (
+                  <span className='inline-flex items-center gap-2px'>
+                    {t('common.more')}
+                    <Down size={12} />
+                  </span>
+                ) : (
+                  <More theme='outline' size={16} strokeWidth={3} fill='currentColor' className={styles.tabIcon} />
+                )}
+              </Button>
+            </Tooltip>
+          </Dropdown>
+        ) : null}
       </div>
       <Button
         type='text'

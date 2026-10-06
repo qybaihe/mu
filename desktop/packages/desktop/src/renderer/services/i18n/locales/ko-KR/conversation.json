@@ -602,7 +602,11 @@
       "endLabel": "목표 끝내기"
     },
     "thinkingNote": "사고 강도를 바꾸면 프롬프트 캐시가 사라집니다. 같은 모델에서는 되도록 바꾸지 마세요",
-    "modelBusy": "이 응답이 끝난 뒤 모델을 바꾸세요."
+    "modelBusy": "이 응답이 끝난 뒤 모델을 바꾸세요.",
+    "defaultTag": "기본",
+    "makeDefault": "새 대화의 기본 모델로 설정",
+    "madeDefault": "새 대화는 이 모델로 시작합니다.",
+    "makeDefaultFailed": "기본 모델을 저장하지 못했습니다."
   },
   "agentTip": {
     "codes": {

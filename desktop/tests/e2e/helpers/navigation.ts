@@ -17,6 +17,7 @@ export const ROUTES = {
     tools: '#/settings/tools',
     display: '#/settings/appearance',
     system: '#/settings/system',
+    developer: '#/settings/developer',
     about: '#/settings/about',
   },
   /** Dynamic extension settings tab route */

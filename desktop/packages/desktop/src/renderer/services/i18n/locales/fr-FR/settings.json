@@ -4,6 +4,7 @@
     "preferences": "Préférences",
     "models": "Modèles",
     "kernel": "Noyau",
+    "details": "Détails",
     "capabilities": "Capacités",
     "system": "Système"
   },
@@ -367,13 +368,14 @@
   },
   "notification": "Notifications",
   "cronNotificationEnabled": "Fin de tâche planifiée",
-  "promptTimeout": "Délai d’attente des requêtes au modèle (s)",
+  "promptTimeout": "Délai d’attente des requêtes au modèle",
   "groupAiCore": "Noyau IA",
   "groupApp": "Application",
   "groupAbout": "Autres",
-  "agentIdleTimeout": "Délai d'inactivité de l'agent (min)",
+  "agentIdleTimeout": "Délai d'inactivité de l'agent",
   "agentIdleTimeoutDesc": "Un agent inactif s’arrête après cette durée pour libérer de la mémoire.",
-  "previewTextSizeLimit": "Limite de taille d'aperçu (Mo)",
+  "previewTextSizeLimit": "Limite de taille d'aperçu",
+  "previewTextSizeLimitUnit": "Mo",
   "previewTextSizeLimitDesc": "Les fichiers texte plus volumineux s'ouvrent avec un message au lieu du contenu. S'applique uniquement aux nouveaux onglets.",
   "gemini": "Gemini CLI",
   "model": "Modèle",
@@ -623,7 +625,7 @@
   "closeDevTools": "Fermer les DevTools",
   "restartNow": "Redémarrer maintenant",
   "cdp": {
-    "title": "Connexion au navigateur intégré (développeurs)",
+    "title": "Connexion au navigateur intégré",
     "connection": "Comment l'agent pilote le navigateur intégré",
     "about": "Par une connexion sur cet ordinateur (127.0.0.1, un nouveau port à chaque démarrage) qui mène à cette vue de navigateur seule, jamais à la fenêtre de mu. D'autres programmes de cet ordinateur peuvent aussi l'utiliser, comme le font les configurations ci-dessous. Elle fonctionne tant que l'agent peut utiliser le navigateur intégré, ce qui se règle dans les réglages du navigateur intégré.",
     "openBrowserSettings": "Réglages du navigateur intégré",
@@ -1073,5 +1075,17 @@
   "appearanceDescription": "La langue, le thème, les polices et l'échelle.",
   "systemDescription": "Le démarrage avec l'ordinateur, ce qui se passe quand la fenêtre se ferme, les notifications et les dossiers où mu travaille et écrit ses journaux.",
   "conversationsDescription": "Les délais d'attente, la taille maximale de l'aperçu, l'emplacement des téléversements et les messages entre conversations.",
-  "aboutDescription": "La version de mu, ses mises à jour et l'accès à ses journaux."
+  "aboutDescription": "La version de mu, ses mises à jour et l'accès à ses journaux.",
+  "developer": {
+    "title": "Développement",
+    "description": "Les outils de développement, ainsi que le port et les configurations MCP qui permettent à d’autres outils d’atteindre le navigateur intégré.",
+    "devOnly": "Ces outils ne sont proposés que lorsque mu est lancé depuis ses sources."
+  },
+  "search": {
+    "placeholder": "Rechercher dans les paramètres",
+    "empty": "Aucun paramètre ne correspond.",
+    "results": "Résultats de la recherche"
+  },
+  "learnMore": "En savoir plus",
+  "showLess": "Réduire"
 }

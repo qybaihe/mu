@@ -24,7 +24,7 @@ async function scrollToDevSettings(page: import('@playwright/test').Page): Promi
 
 test.describe('DevSettings', () => {
   test.beforeEach(async ({ page }) => {
-    await goToSettings(page, 'system');
+    await goToSettings(page, 'developer');
     await waitForSettle(page);
   });
 

@@ -5,11 +5,11 @@ import type { LoginStatus } from '@/common/kyrn/login';
 import type { AvailableModels } from '@/common/kyrn/models';
 import type { KyrnSettings } from '@/common/kyrn/types';
 import ChoiceTile from '../fields/ChoiceTile';
-import { ModifiedMark } from '../fields/Row';
 import fieldStyles from '../fields/fields.module.css';
 import { Card } from '../sections/SectionShell';
 import sectionStyles from '../sections/sections.module.css';
 import { providerLabel } from './endpoints';
+import { filterModelOption, modelNamesOf, modelOption } from './modelOptions';
 
 /** The board is written by the conversation's own model. */
 const SESSION = 'session';
@@ -25,7 +25,6 @@ export function splitModelRef(ref: string): { provider: string; model: string } 
 
 type BoardModelCardProps = {
   settings: KyrnSettings;
-  base: KyrnSettings;
   available: AvailableModels;
   /** Subscriptions signed in to from the app, which a running mu may not have reported yet. */
   accounts?: LoginStatus['signedIn'];
@@ -35,17 +34,10 @@ type BoardModelCardProps = {
 };
 
 /**
- * The model that writes the plain-language board: one picked here, or the conversation's own. `/board model` in a
- * conversation sets the same thing, and the first `/board on` asks when nothing is picked yet.
+ * The model that writes the plain-language board, the whole of its page: one picked here, or the conversation's own.
+ * `/board model` in a conversation sets the same thing, and the first `/board on` asks when nothing is picked yet.
  */
-export default function BoardModelCard({
-  settings,
-  base,
-  available,
-  accounts = [],
-  hidden,
-  onChange,
-}: BoardModelCardProps) {
+export default function BoardModelCard({ settings, available, accounts = [], hidden, onChange }: BoardModelCardProps) {
   const { t } = useTranslation();
   const { model: value, supported } = settings.boardModel;
   const session = value === SESSION;
@@ -72,12 +64,10 @@ export default function BoardModelCard({
     accounts.find((entry) => entry.provider === provider)?.models ??
     [];
   const modelIds = [...new Set([...models.map((model) => model.id), picked.model])].filter(Boolean);
-  // The recommended ones first, marked; the rest as they came.
-  const modelOptions = [...modelIds.filter(isRecommended), ...modelIds.filter((id) => !isRecommended(id))].map(
-    (id) => ({
-      value: id,
-      label: isRecommended(id) ? `${id} · ${t('mu.boardModel.recommendedTag')}` : id,
-    })
+  const names = modelNamesOf(models);
+  // The recommended ones first, marked; the rest as they came. Each by its name, its id in the tooltip.
+  const modelOptions = [...modelIds.filter(isRecommended), ...modelIds.filter((id) => !isRecommended(id))].map((id) =>
+    modelOption(id, names.get(id) ?? '', isRecommended(id) ? t('mu.boardModel.recommendedTag') : undefined)
   );
 
   const pick = (ref: string) => {
@@ -86,12 +76,8 @@ export default function BoardModelCard({
   };
 
   return (
-    <Card
-      title={t('mu.boardModel.title')}
-      badges={<ModifiedMark show={value !== base.boardModel.model} />}
-      summary={t('mu.boardModel.summary')}
-      testId='mu-board-model'
-    >
+    // The page's header names the setting and says what it is: the card is its choices alone.
+    <Card testId='mu-board-model'>
       {supported ? (
         <div className={sectionStyles.choiceRows} role='radiogroup' aria-label={t('mu.boardModel.title')}>
           <ChoiceTile
@@ -130,6 +116,7 @@ export default function BoardModelCard({
                 placeholder={provider ? t('mu.boardModel.notSet') : t('mu.boardModel.pickProvider')}
                 value={picked.model || undefined}
                 options={modelOptions}
+                filterOption={filterModelOption}
                 onChange={(model?: string) => pick(model ? `${provider}/${model}` : '')}
               />
               {value ? null : <div className={sectionStyles.choiceHint}>{t('mu.boardModel.unset')}</div>}

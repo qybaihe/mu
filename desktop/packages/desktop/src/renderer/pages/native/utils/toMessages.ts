@@ -7,8 +7,8 @@
  *   as `thinking` rows;
  * - a tool call as the `acp_tool_call` the bridge sends, its result or latest output as its content;
  * - Jev's verdict on a message as the `jev:` line under it, and Jev at work on the next one as a pending `jev:` line;
- * - what mu notified, a stopped reply, a reply that came after failed attempts, and a place where the conversation was
- *   compacted as `mu:notice:` lines;
+ * - what mu notified, a stopped reply, a reply that came after failed attempts, a place where the conversation was
+ *   compacted, and what mu told the model (its `kyrn.*` messages) as `mu:notice:` lines;
  * - a failed request as the `tips` error the bridge's turn error becomes, in the bridge's fixed English, which the
  *   tips row words in the reader's language.
  *
@@ -62,6 +62,12 @@ const STOPPED_TITLE = 'You stopped this reply.';
 /** pi's words when a command needs bash on Windows and finds none (the bridge's `bashMissing`). */
 const NO_BASH = /No bash shell found/;
 const BASH_MISSING_TITLE = 'mu needs Git for Windows to run commands.';
+
+/**
+ * mu's own messages to the model (`kyrn.nudge`, `kyrn.goal`, …) and the note at the top of an imported conversation
+ * (`mu.import`): a line that says what mu did, not a reply.
+ */
+const TO_MODEL = /^(kyrn\.|mu\.import$)/;
 
 const isRunning = (view: NativeView): boolean => view.status === 'working' || view.status === 'thinking';
 
@@ -350,7 +356,17 @@ export function createMessageMapper(): (view: NativeView, options: MessageOption
             ...(verdict ? [verdict] : []),
           ];
         } else if (message.role === 'custom') {
-          own = message.text.trim() ? [textRow(conversationId, message.id, message.id, at, 'left', message.text)] : [];
+          const text = message.text.trim();
+          if (!text) own = [];
+          else if (TO_MODEL.test(message.customType))
+            own = [
+              noticeRow(conversationId, message.id, at, message.text, {
+                notice: 'to_model',
+                kind: message.customType,
+                text: message.text,
+              }),
+            ];
+          else own = [textRow(conversationId, message.id, message.id, at, 'left', message.text)];
         } else if (message.role === 'compaction') {
           own = [
             noticeRow(conversationId, `${message.id}:compacted`, at, words.compacted(message.tokensBefore), {

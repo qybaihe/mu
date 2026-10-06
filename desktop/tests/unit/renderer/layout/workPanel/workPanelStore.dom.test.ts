@@ -10,12 +10,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   bumpWorkPanelNews,
   handPreviewToBrowser,
+  markWorkPanelUsed,
   noteWorkPanelSignature,
   readWorkPanelMemory,
   rememberWorkPanel,
   resetWorkPanelStoreForTest,
   setWorkPanelViewing,
   useWorkPanelUnread,
+  useWorkPanelUsed,
   WORK_PANEL_TABS,
 } from '@/renderer/components/layout/WorkPanel/workPanelStore';
 import { renderHook } from '@testing-library/react';
@@ -31,6 +33,7 @@ afterEach(() => {
 });
 
 const unread = (conversationId: string) => renderHook(() => useWorkPanelUnread(conversationId)).result.current;
+const used = (conversationId: string) => renderHook(() => useWorkPanelUsed(conversationId)).result.current;
 
 describe('what the work panel remembers', () => {
   it('shows the kernel tabs, then the project workspace, then the browser', () => {
@@ -175,6 +178,46 @@ describe('which tabs have news', () => {
   });
 });
 
+describe('which tabs a conversation used', () => {
+  it('counts a tab the person opened, once, in that conversation only', () => {
+    expect(used('conv-1').size).toBe(0);
+    markWorkPanelUsed('conv-1', 'hive');
+    const after = used('conv-1');
+    expect([...after]).toEqual(['hive']);
+    // Opened again: nothing changes, not even the set.
+    markWorkPanelUsed('conv-1', 'hive');
+    expect(used('conv-1')).toBe(after);
+    expect(used('conv-2').size).toBe(0);
+  });
+
+  it('counts a kernel tab with something to show, but not one that says nothing yet', () => {
+    noteWorkPanelSignature('conv-1', 'hive', 'run-1 scout thinking');
+    noteWorkPanelSignature('conv-1', 'lessons', '');
+    expect([...used('conv-1')]).toEqual(['hive']);
+    // The first signature is where the conversation stands: used, not news.
+    expect(unread('conv-1').size).toBe(0);
+
+    // Its first words after that are news, and the tab is used from then on.
+    noteWorkPanelSignature('conv-1', 'lessons', 'lesson-1 stored');
+    expect([...used('conv-1')].toSorted()).toEqual(['hive', 'lessons']);
+    expect([...unread('conv-1')]).toEqual(['lessons']);
+  });
+
+  it('counts a tab with news, and keeps it once the news is seen', () => {
+    bumpWorkPanelNews('conv-1', 'browser');
+    expect([...used('conv-1')]).toEqual(['browser']);
+    setWorkPanelViewing('conv-1', 'browser');
+    expect(unread('conv-1').size).toBe(0);
+    expect([...used('conv-1')]).toEqual(['browser']);
+
+    // News on the tab being looked at is seen at once, and still counts.
+    setWorkPanelViewing('conv-1', 'preview');
+    bumpWorkPanelNews('conv-1', 'preview');
+    expect(unread('conv-1').size).toBe(0);
+    expect([...used('conv-1')].toSorted()).toEqual(['browser', 'preview']);
+  });
+});
+
 describe('the words of the work panel', () => {
   const REPO_ROOT = path.resolve(__dirname, '../../../../..');
   const config = JSON.parse(
@@ -189,7 +232,7 @@ describe('the words of the work panel', () => {
           path.join(REPO_ROOT, 'packages/desktop/src/renderer/services/i18n/locales', language, 'common.json'),
           'utf8'
         )
-      ) as { workPanel: Record<string, unknown> & { tabs: Record<string, string> } };
+      ) as { more: string; workPanel: Record<string, unknown> & { tabs: Record<string, string> } };
       for (const tab of WORK_PANEL_TABS) expect(common.workPanel.tabs[tab], `${language} ${tab}`).toBeTruthy();
       for (const key of [
         'label',
@@ -203,6 +246,8 @@ describe('the words of the work panel', () => {
       ])
         expect(common.workPanel[key], `${language} ${key}`).toBeTruthy();
       expect(common.workPanel.unread, language).toContain('{{tab}}');
+      // 更多, where the tabs a conversation has not used wait.
+      expect(common.more, `${language} more`).toBeTruthy();
     }
   });
 });

@@ -8,7 +8,7 @@ import { useModelNames } from '@/renderer/hooks/agent/useModelNames';
 import { beeRecords } from './activity';
 import BeeAvatar from './BeeAvatar';
 import { beeErrorText } from './codes';
-import { beeModel } from './HiveToolCard';
+import { beeModel, beeRole } from './HiveToolCard';
 import styles from './Hive.module.css';
 import { useClock } from '../clock';
 import { beeCounters, ErrorNotice, quietLabel } from '../text';
@@ -44,7 +44,7 @@ export default function BeeInspector({ bee, focus, events }: { bee: HiveBee; foc
         <BeeAvatar name={bee.name} status={bee.status} />
         <div className='min-w-0 flex-1'>
           <h3 className={styles.beeName}>{bee.name}</h3>
-          <div className={styles.hint}>{bee.role}</div>
+          <div className={styles.hint}>{bee.role && beeRole(t, bee.role)}</div>
         </div>
       </div>
       <div className='flex flex-wrap gap-6px my-8px'>

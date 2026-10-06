@@ -82,8 +82,22 @@
   },
   "activity": {
     "running": "در حال اجرای {{label}} · {{steps}} گام",
-    "summary": "{{steps}} گام",
-    "summaryFailed": "{{steps}} گام · {{failed}} ناموفق"
+    "parts": {
+      "read_one": "{{n}} فایل خوانده شد",
+      "read_other": "{{n}} فایل خوانده شد",
+      "look_one": "{{n}} جست‌وجو",
+      "look_other": "{{n}} جست‌وجو",
+      "edit_one": "{{n}} فایل ویرایش شد",
+      "edit_other": "{{n}} فایل ویرایش شد",
+      "run_one": "{{n}} فرمان اجرا شد",
+      "run_other": "{{n}} فرمان اجرا شد",
+      "web_one": "{{n}} درخواست وب",
+      "web_other": "{{n}} درخواست وب",
+      "other_one": "{{n}} گام دیگر",
+      "other_other": "{{n}} گام دیگر"
+    },
+    "separator": " · ",
+    "doneFailed": "{{done}} · {{failed}} ناموفق"
   },
   "kind": {
     "edit": "ویرایش فایل",

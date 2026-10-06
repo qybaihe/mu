@@ -4,6 +4,7 @@
     "preferences": "Preferências",
     "models": "Modelos",
     "kernel": "Núcleo",
+    "details": "Detalhes",
     "capabilities": "Capacidades",
     "system": "Sistema"
   },
@@ -367,13 +368,14 @@
   },
   "notification": "Notificações",
   "cronNotificationEnabled": "Conclusão de Tarefa Agendada",
-  "promptTimeout": "Tempo Limite de Solicitação ao Modelo (s)",
+  "promptTimeout": "Tempo Limite de Solicitação ao Modelo",
   "groupAiCore": "Core da IA",
   "groupApp": "Aplicativo",
   "groupAbout": "Outros",
-  "agentIdleTimeout": "Tempo Limite de Ociosidade do Agente (min)",
+  "agentIdleTimeout": "Tempo Limite de Ociosidade do Agente",
   "agentIdleTimeoutDesc": "Um agente ocioso para depois deste tempo, para liberar memória.",
-  "previewTextSizeLimit": "Limite de tamanho da pré-visualização (MB)",
+  "previewTextSizeLimit": "Limite de tamanho da pré-visualização",
+  "previewTextSizeLimitUnit": "MB",
   "previewTextSizeLimitDesc": "Arquivos de texto maiores que isso abrem com um aviso em vez do conteúdo. Aplica-se somente às novas abas.",
   "gemini": "Gemini CLI",
   "model": "Modelo",
@@ -623,7 +625,7 @@
   "closeDevTools": "Fechar DevTools",
   "restartNow": "Reiniciar Agora",
   "cdp": {
-    "title": "Conexão com o navegador integrado (para desenvolvedores)",
+    "title": "Conexão com o navegador integrado",
     "connection": "Como o agente controla o navegador integrado",
     "about": "Por uma conexão neste computador (127.0.0.1, uma porta nova a cada início) que leva só a essa visualização do navegador, nunca à janela do próprio mu. Outros programas neste computador também podem usá-la, como fazem as configurações abaixo. Ela funciona enquanto o agente pode usar o navegador integrado, o que se ativa nas configurações do navegador integrado.",
     "openBrowserSettings": "Configurações do navegador integrado",
@@ -1076,5 +1078,17 @@
   "appearanceDescription": "O idioma, o tema, as fontes e a escala.",
   "systemDescription": "Iniciar com o sistema, continuar rodando ao fechar a janela, notificações e as pastas onde o mu trabalha e grava seus logs.",
   "conversationsDescription": "Os tempos limite, o limite de tamanho da pré-visualização, onde ficam os uploads e as mensagens entre conversas.",
-  "aboutDescription": "Qual versão do mu é esta, suas atualizações e o caminho para os logs."
+  "aboutDescription": "Qual versão do mu é esta, suas atualizações e o caminho para os logs.",
+  "developer": {
+    "title": "Desenvolvedor",
+    "description": "As ferramentas de desenvolvedor e a porta e as configurações MCP que outras ferramentas usam para chegar ao navegador integrado.",
+    "devOnly": "Essas ferramentas só aparecem quando o mu roda a partir do código-fonte."
+  },
+  "search": {
+    "placeholder": "Buscar configurações",
+    "empty": "Nenhuma configuração corresponde.",
+    "results": "Resultados da busca"
+  },
+  "learnMore": "Saiba mais",
+  "showLess": "Mostrar menos"
 }

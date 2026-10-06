@@ -170,7 +170,7 @@ export default function WorkPanelHost({ rowWidth, isMobile }: { rowWidth: number
   const activity = native ?? polled;
   // The last run's end: the folder is read again after it, so what the model wrote shows.
   const lastRun = native?.events.findLast((event) => event.kind === 'agent_settled')?.id ?? '';
-  const { memory, unread, focus, select, close, resize } = useWorkPanel(conversationId, activity);
+  const { memory, unread, used, focus, select, close, resize } = useWorkPanel(conversationId, activity);
   const { isMaximized } = usePreviewContext();
   const browserMaximized = useBrowserMaximized();
   const viewportWidth = useViewportWidth();
@@ -236,6 +236,7 @@ export default function WorkPanelHost({ rowWidth, isMobile }: { rowWidth: number
           <WorkPanelTabs
             active={active}
             unread={unread}
+            used={used}
             onSelect={select}
             onClose={close}
             onBack={fill ? close : undefined}

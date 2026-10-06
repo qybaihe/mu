@@ -11,8 +11,9 @@ import { filterModelMenu, modelMenu } from '@/renderer/pages/conversation/platfo
 import { iconColors } from '@/renderer/styles/colors';
 import { getModelDisplayLabel } from '@/renderer/utils/model/agentLogo';
 import type { AgentRuntimeDerivedOption } from '@/renderer/utils/model/agentRuntimeCatalog';
+import { useModelNames } from '@/renderer/hooks/agent/useModelNames';
 import { useProviderNames } from '@/renderer/hooks/agent/useProviderNames';
-import { providerDisplayName } from '@/renderer/utils/model/providerName';
+import { modelDisplayName, providerDisplayName } from '@/renderer/utils/model/providerName';
 import type { AcpModelInfo } from '../types';
 import { getAvailableModels } from '../utils/modelUtils';
 import { Button, Dropdown, Menu, Tooltip } from '@arco-design/web-react';
@@ -39,6 +40,13 @@ type GuidModelSelectorProps = {
   setSelectedAcpModel: React.Dispatch<React.SetStateAction<string | null>>;
   thoughtLevelOption?: AgentRuntimeDerivedOption | null;
   onThoughtLevelSelect?: (value: string) => void;
+  /**
+   * The model new conversations start on (`provider/model-id`): what the chip shows while nothing is picked, since a
+   * send without a pick starts on it. Without it the chip shows the model the agent reported last.
+   */
+  defaultModel?: string;
+  /** Makes the picked model the default. */
+  onMakeDefault?: (model: string) => void;
 };
 
 /** Composite id for a provider+model pair, so the shared flat model list can track selection. */
@@ -54,6 +62,8 @@ type AcpModelChipProps = {
   } | null;
   onThoughtLevelSelect?: (value: string) => void;
   label: string;
+  defaultModel?: string;
+  onMakeDefault?: (model: string) => void;
 };
 
 /**
@@ -67,11 +77,13 @@ const AcpModelChip: React.FC<AcpModelChipProps> = ({
   thoughtLevel,
   onThoughtLevelSelect,
   label,
+  defaultModel,
+  onMakeDefault,
 }) => {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   const [query, setQuery] = useState('');
-  const current = selected ?? info.current_model_id;
+  const current = selected ?? defaultModel ?? info.current_model_id;
   const names = useProviderNames();
   const groups = useMemo(
     () =>
@@ -119,6 +131,15 @@ const AcpModelChip: React.FC<AcpModelChipProps> = ({
         current,
         level: thoughtLevel?.currentValue,
         onPick: pick,
+        defaultModel,
+        ...(onMakeDefault && current
+          ? {
+              onMakeDefault: () => {
+                setVisible(false);
+                onMakeDefault(current);
+              },
+            }
+          : {}),
       })}
     >
       <span className='inline-flex min-w-0'>
@@ -145,9 +166,14 @@ const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
   setSelectedAcpModel,
   thoughtLevelOption,
   onThoughtLevelSelect,
+  defaultModel,
+  onMakeDefault,
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const names = useModelNames();
+  // A send without a pick starts on the default model: that is what the chip names until one is picked.
+  const shownAcpModel = selectedAcpModel ?? defaultModel ?? null;
   const defaultModelLabel = t('common.defaultModel');
 
   // 过滤掉被禁用的 provider
@@ -170,27 +196,28 @@ const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
   }, [current_model?.use_model, defaultModelLabel, geminiSelectedLabel]);
 
   const acpSelectedLabel = React.useMemo(() => {
-    return (
-      currentAcpCachedModelInfo?.available_models?.find((m) => m.id === selectedAcpModel)?.label ||
-      currentAcpCachedModelInfo?.current_model_label ||
-      currentAcpCachedModelInfo?.current_model_id ||
-      ''
-    );
+    if (shownAcpModel)
+      return (
+        currentAcpCachedModelInfo?.available_models?.find((m) => m.id === shownAcpModel)?.label ||
+        modelDisplayName(shownAcpModel, names)
+      );
+    return currentAcpCachedModelInfo?.current_model_label || currentAcpCachedModelInfo?.current_model_id || '';
   }, [
     currentAcpCachedModelInfo?.available_models,
     currentAcpCachedModelInfo?.current_model_id,
     currentAcpCachedModelInfo?.current_model_label,
-    selectedAcpModel,
+    names,
+    shownAcpModel,
   ]);
 
   const acpButtonLabel = React.useMemo(() => {
     return getModelDisplayLabel({
-      selected_value: selectedAcpModel || currentAcpCachedModelInfo?.current_model_id,
+      selected_value: shownAcpModel || currentAcpCachedModelInfo?.current_model_id,
       selectedLabel: acpSelectedLabel,
       defaultModelLabel,
       fallbackLabel: defaultModelLabel,
     });
-  }, [acpSelectedLabel, currentAcpCachedModelInfo?.current_model_id, defaultModelLabel, selectedAcpModel]);
+  }, [acpSelectedLabel, currentAcpCachedModelInfo?.current_model_id, defaultModelLabel, shownAcpModel]);
   const selectedThoughtLevelValue = thoughtLevelOption?.currentValue || thoughtLevelOption?.options[0]?.value || '';
   const normalizedThoughtLevelOption =
     thoughtLevelOption && thoughtLevelOption.options.length > 0
@@ -295,6 +322,8 @@ const GuidModelSelector: React.FC<GuidModelSelectorProps> = ({
         thoughtLevel={normalizedThoughtLevelOption}
         onThoughtLevelSelect={onThoughtLevelSelect}
         label={combinedAcpButtonLabel}
+        defaultModel={defaultModel}
+        onMakeDefault={onMakeDefault}
       />
     );
   }

@@ -128,15 +128,8 @@ export default function OptionField({ option, value, onChange, disabled, scope }
     <Row
       testId={`mu-option-${scope}-${option.key}`}
       title={label}
-      help={
-        // The harness's help and the app's range sentence: separate lines, not one glued sentence.
-        help || range ? (
-          <>
-            {help ? <div>{help}</div> : null}
-            {range ? <div>{range}</div> : null}
-          </>
-        ) : undefined
-      }
+      // The harness's help and the app's range sentence, as one line that opens to both.
+      help={[help, range].filter(Boolean).join(' ') || undefined}
       modified={!optionEquals(value, option.default)}
       problem={problem ? t(`mu.options.problem.${problem}`) : undefined}
     >

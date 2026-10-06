@@ -60,7 +60,10 @@ describe('the bridge’s notices', () => {
   });
 
   it('has a line in every language for every notice the bridge sends', () => {
-    expect([...MU_NOTICE_CODES].toSorted()).toEqual(Object.keys(MU_NOTICES).toSorted());
+    // `to_model` (what mu told the model) comes from a native conversation's view, not from the bridge.
+    expect([...MU_NOTICE_CODES].filter((code) => code !== 'to_model').toSorted()).toEqual(
+      Object.keys(MU_NOTICES).toSorted()
+    );
     const languages = readdirSync(LOCALES).filter((name) => /^[a-z]{2}-[A-Z]{2}$/.test(name));
     expect(languages).toHaveLength(13);
     for (const language of languages) {
@@ -271,5 +274,25 @@ describe('a stopped reply, and what mu notified', () => {
     expect(line).toHaveAttribute('data-level', 'warning');
     expect(line).toHaveAttribute('data-code', '');
     expect(line.textContent).toBe('mu could not save a checkpoint.\nIt goes on without one.');
+  });
+});
+
+describe('what mu told the model', () => {
+  it('is one line in the reader’s language, and the words the model got are a click away', () => {
+    const sent = 'You edited a.ts and nothing has run since. Verify the change.';
+    showNotice('zh', notice({ title: sent, rawInput: { notice: 'to_model', kind: 'kyrn.nudge', text: sent } }));
+    const line = screen.getByTestId('mu-notice');
+    expect(line).toHaveAttribute('data-code', 'to_model');
+    expect(line).toHaveTextContent(zhMu.notices.toModel.nudge);
+    expect(line).not.toHaveTextContent(sent);
+    fireEvent.click(screen.getByTestId('mu-notice-original'));
+    expect(screen.getByTestId('mu-notice-sent')).toHaveTextContent(sent);
+    fireEvent.click(screen.getByTestId('mu-notice-original'));
+    expect(screen.queryByTestId('mu-notice-sent')).toBeNull();
+  });
+
+  it('says it in general words for a kind this build does not know', () => {
+    showNotice('en', notice({ title: 'Psst', rawInput: { notice: 'to_model', kind: 'kyrn.newer', text: 'Psst' } }));
+    expect(screen.getByTestId('mu-notice')).toHaveTextContent(enMu.notices.toModel.other);
   });
 });

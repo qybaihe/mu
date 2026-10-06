@@ -602,7 +602,11 @@
       "endLabel": "End the goal"
     },
     "thinkingNote": "Changing the thinking level drops the prompt cache; keep it steady on the same model",
-    "modelBusy": "Switch the model once this reply is done."
+    "modelBusy": "Switch the model once this reply is done.",
+    "defaultTag": "default",
+    "makeDefault": "Make default for new conversations",
+    "madeDefault": "New conversations will start on this model.",
+    "makeDefaultFailed": "Could not save the default model."
   },
   "agentTip": {
     "codes": {

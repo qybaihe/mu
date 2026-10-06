@@ -602,7 +602,11 @@
       "endLabel": "結束目標"
     },
     "thinkingNote": "切換思考強度會丟失提示快取，同一模型盡量不要切換",
-    "modelBusy": "等這一輪回覆結束再換模型。"
+    "modelBusy": "等這一輪回覆結束再換模型。",
+    "defaultTag": "預設",
+    "makeDefault": "設為新對話的預設模型",
+    "madeDefault": "新對話會預設使用這個模型。",
+    "makeDefaultFailed": "無法儲存預設模型。"
   },
   "agentTip": {
     "codes": {

@@ -82,8 +82,22 @@
   },
   "activity": {
     "running": "{{steps}}단계 · 실행 중 {{label}}",
-    "summary": "{{steps}}단계",
-    "summaryFailed": "{{steps}}단계 · {{failed}}개 실패"
+    "parts": {
+      "read_one": "파일 {{n}}개 읽음",
+      "read_other": "파일 {{n}}개 읽음",
+      "look_one": "{{n}}번 찾아봄",
+      "look_other": "{{n}}번 찾아봄",
+      "edit_one": "파일 {{n}}개 수정",
+      "edit_other": "파일 {{n}}개 수정",
+      "run_one": "명령 {{n}}개 실행",
+      "run_other": "명령 {{n}}개 실행",
+      "web_one": "웹 {{n}}번 확인",
+      "web_other": "웹 {{n}}번 확인",
+      "other_one": "기타 {{n}}단계",
+      "other_other": "기타 {{n}}단계"
+    },
+    "separator": " · ",
+    "doneFailed": "{{done}} · {{failed}}개 실패"
   },
   "kind": {
     "edit": "파일 편집",

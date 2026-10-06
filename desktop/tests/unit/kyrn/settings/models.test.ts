@@ -478,6 +478,33 @@ describe('the startup model and thinking level in settings.json', () => {
       expect(f.pi().modelThinkingLevels).toEqual({ 'p/m': 'minimal', 'p/other': 'low' });
     });
   });
+  it('a send box makes a model the default: only the defaults change, with no revision to match', () => {
+    const pi = { theme: 'dark', defaultProvider: 'p', defaultModel: 'm', defaultThinkingLevel: 'low' };
+    using(fixture({ providers: {} }, pi), (f) => {
+      const models = readFileSync(join(f.dir, 'models.json'), 'utf8');
+      expect(f.store.defaultModel()).toEqual({ provider: 'p', model: 'm', thinkingLevel: 'low' });
+      // Without a level, the default level stays.
+      expect(f.store.setDefaultModel({ provider: 'openai-codex', model: 'gpt-5.6-luna' })).toEqual({
+        provider: 'openai-codex',
+        model: 'gpt-5.6-luna',
+        thinkingLevel: 'low',
+      });
+      expect(f.pi()).toEqual({ ...pi, defaultProvider: 'openai-codex', defaultModel: 'gpt-5.6-luna' });
+      f.store.setDefaultModel({ provider: 'openai-codex', model: 'gpt-5.6-luna', thinkingLevel: 'high' });
+      expect(f.pi().defaultThinkingLevel).toBe('high');
+      expect(readFileSync(join(f.dir, 'models.json'), 'utf8')).toBe(models);
+    });
+  });
+  it('refuses a default from a send box without a model or with a level pi does not have', () => {
+    using(fixture(), (f) => {
+      expect(() => f.store.setDefaultModel({ provider: 'p', model: '' })).toThrow('Invalid model');
+      expect(() =>
+        f.store.setDefaultModel({ provider: 'p', model: 'm', thinkingLevel: 'ultra' as unknown as 'high' })
+      ).toThrow('Invalid model');
+      expect(existsSync(join(f.dir, 'settings.json'))).toBe(false);
+      expect(f.store.defaultModel()).toEqual({ provider: '', model: '', thinkingLevel: '' });
+    });
+  });
   it('knows which levels a model takes, by pi’s rule', () => {
     expect(supportedThinkingLevels(false)).toEqual(['off']);
     expect(supportedThinkingLevels(true)).toEqual(['off', 'minimal', 'low', 'medium', 'high']);

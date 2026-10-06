@@ -5,12 +5,13 @@
  */
 
 import React, { useId } from 'react';
+import OneLine from '@/renderer/components/settings/OneLine';
 
 type Nameable = { 'aria-label'?: string; 'aria-labelledby'?: string; children?: React.ReactNode };
 
 /**
  * One row of a settings panel: its title in the body text colour and weight of every settings row (mu's own pages
- * draw theirs the same way), the sentence under it, and its control on the right.
+ * draw theirs the same way), the sentence under it on one line, and its control on the right.
  *
  * A control with nothing to read of its own (a switch) is named by the row's title, so a screen reader says
  * "Notifications, switch, on" rather than "switch, on". A button keeps its own words, and a named control its name.
@@ -35,12 +36,8 @@ const PreferenceRow: React.FC<{
         <div id={titleId} className='text-14px font-500 leading-22px text-t-primary'>
           {label}
         </div>
-        {/* Balanced lines: a sentence never leaves one or two characters alone on its last line. */}
-        {description && (
-          <div className='mt-2px text-12px leading-18px text-t-secondary' style={{ textWrap: 'balance' }}>
-            {description}
-          </div>
-        )}
+        {/* One line; the rest opens from it, its lines balanced. */}
+        {description ? <OneLine text={description} /> : null}
       </div>
       <div className='flex-shrink-0'>{controls}</div>
     </div>

@@ -604,7 +604,11 @@
       "endLabel": "Hedefi bitir"
     },
     "thinkingNote": "Düşünme düzeyini değiştirmek istem önbelleğini düşürür; aynı modelde sabit tutun",
-    "modelBusy": "Bu yanıt bitince modeli değiştirin."
+    "modelBusy": "Bu yanıt bitince modeli değiştirin.",
+    "defaultTag": "varsayılan",
+    "makeDefault": "Yeni sohbetler için varsayılan yap",
+    "madeDefault": "Yeni sohbetler bu modelle başlayacak.",
+    "makeDefaultFailed": "Varsayılan model kaydedilemedi."
   },
   "agentTip": {
     "codes": {

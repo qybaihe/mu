@@ -45,14 +45,24 @@ const renderDevSettings = () =>
     </SWRConfig>
   );
 
-describe('the developer part of the system page', () => {
+describe('the developer page', () => {
   beforeEach(() => {
     bridge.getCdpStatus.mockReset();
     bridge.navigate.mockReset();
   });
 
-  it('shows nothing in an installed app', async () => {
+  it('says in an installed app that its tools are for a build run from its sources, and shows none of them', async () => {
     bridge.getCdpStatus.mockResolvedValue({ success: true, data: { isDevMode: false, enabled: true, port: 9230 } });
+
+    renderDevSettings();
+
+    expect(await screen.findByText('settings.developer.devOnly')).toBeInTheDocument();
+    expect(screen.queryByTestId('dev-settings')).not.toBeInTheDocument();
+    expect(screen.queryByText('http://127.0.0.1:9230')).not.toBeInTheDocument();
+  });
+
+  it('shows nothing while the status is not known', async () => {
+    bridge.getCdpStatus.mockResolvedValue({ success: false, msg: 'no' });
 
     const { container } = renderDevSettings();
 

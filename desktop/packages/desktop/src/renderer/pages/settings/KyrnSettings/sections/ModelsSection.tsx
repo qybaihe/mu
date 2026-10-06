@@ -7,6 +7,7 @@ import type { KyrnSettings } from '@/common/kyrn/types';
 import { useSubscriptionLogin } from '../accounts/useSubscriptionLogin';
 import type { Draft } from '../draft';
 import { ErrorDetail } from '../fields/MuErrorMessage';
+import { ModifiedMark } from '../fields/Row';
 import BoardModelCard from '../providers/BoardModelCard';
 import DefaultModelCard from '../providers/DefaultModelCard';
 import ProviderManager from '../providers/ProviderManager';
@@ -67,13 +68,12 @@ export default function ProvidersSection({ draft, base, available, onDraft }: Mo
 }
 
 /**
- * The model and thinking level a new session starts with, and the model that writes the plain-language board. Both
- * offer every provider set up on the previous page, and the models of a subscription signed in to a moment ago.
+ * The model and thinking level a new session starts with. It offers every provider set up on the previous page, and
+ * the models of a subscription signed in to a moment ago.
  */
 export function DefaultModelSection({ draft, base, available, onDraft }: ModelsSectionProps) {
   const { t } = useTranslation();
   const { accounts } = useSubscriptionLogin();
-  const hidden = hiddenOf(draft.settings);
   return (
     <SectionShell id='defaultModel' title={t('mu.sections.defaultModel')} description={t('mu.defaults.summary')}>
       <DefaultModelCard
@@ -81,7 +81,7 @@ export function DefaultModelSection({ draft, base, available, onDraft }: ModelsS
         base={base}
         available={available}
         accounts={accounts}
-        hidden={hidden}
+        hidden={hiddenOf(draft.settings)}
         onChange={(defaults) =>
           onDraft((now) => ({
             ...now,
@@ -89,12 +89,29 @@ export function DefaultModelSection({ draft, base, available, onDraft }: ModelsS
           }))
         }
       />
+    </SectionShell>
+  );
+}
+
+/**
+ * The model that writes the plain-language board, a page of its own: one of the models of the providers, or the
+ * conversation's own.
+ */
+export function BoardModelSection({ draft, base, available, onDraft }: ModelsSectionProps) {
+  const { t } = useTranslation();
+  const { accounts } = useSubscriptionLogin();
+  return (
+    <SectionShell
+      id='boardModel'
+      title={t('mu.sections.boardModel')}
+      description={t('mu.boardModel.summary')}
+      actions={<ModifiedMark show={draft.settings.boardModel.model !== base.boardModel.model} />}
+    >
       <BoardModelCard
         settings={draft.settings}
-        base={base}
         available={available}
         accounts={accounts}
-        hidden={hidden}
+        hidden={hiddenOf(draft.settings)}
         onChange={(model) =>
           onDraft((now) => ({
             ...now,

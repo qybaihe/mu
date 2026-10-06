@@ -5,17 +5,19 @@ import {
   type OptionInfo,
 } from '../../../../packages/desktop/src/common/kyrn/manifest';
 import type { KyrnSettings } from '../../../../packages/desktop/src/common/kyrn/types';
+import { DETAIL_AREAS } from '../../../../packages/desktop/src/renderer/pages/settings/settingsNav';
 import {
   PAGE_ROWS,
-  decisionPageOf,
+  areaOf,
+  areaRows,
   dirtySections,
-  featurePageOf,
   isStale,
-  isStrayDecision,
   matches,
   newDraft,
   optionParts,
+  rowCount,
   setCompaction,
+  strayAreaOf,
   toSave,
 } from '../../../../packages/desktop/src/renderer/pages/settings/KyrnSettings/draft';
 import {
@@ -75,20 +77,21 @@ describe('the draft of the settings area', () => {
     edited.decisionModes = { 'tool.risk': 'off' };
     edited.features.guard.enabled = false;
     edited.maxContextTokens = 64000;
-    expect(new Set(dirtySections(base, newDraft(edited)))).toEqual(new Set(['decisions', 'moreFeatures', 'context']));
-    // A switch that carries the product is on the features page; every other feature on the more-features page.
-    edited.features.swarm.enabled = !edited.features.swarm.enabled;
-    expect(dirtySections(base, newDraft(edited)).has('features')).toBe(true);
+    expect(new Set(dirtySections(base, newDraft(edited)))).toEqual(new Set(['decisions', 'features', 'context']));
+    // A core switch is one of the features as well: the features part, wherever it was moved.
+    const core = structuredClone(base);
+    core.features.swarm.enabled = !core.features.swarm.enabled;
+    expect([...dirtySections(base, newDraft(core))]).toEqual(['features']);
     expect([...dirtySections(base, { ...newDraft(base), judgeKeys: { TYPESAFE_API_KEY: 'k' } })]).toEqual(['judges']);
     expect([...dirtySections(base, { ...newDraft(base), providerKeys: { relay: 'k' } })]).toEqual(['providers']);
     expect([...dirtySections(base, { ...newDraft(base), providerKeys: { relay: '' } })]).toEqual([]);
   });
-  it('counts the startup model and the board’s model as the default model page', () => {
+  it('counts the startup model and the board’s model as two pages', () => {
     const startup = structuredClone(base);
     startup.models.defaults = { provider: 'relay', model: 'x', thinkingLevel: 'high' };
     expect([...dirtySections(base, newDraft(startup))]).toEqual(['defaultModel']);
     const board = { ...base, boardModel: { ...base.boardModel, model: 'relay/x' } };
-    expect([...dirtySections(base, newDraft(board))]).toEqual(['defaultModel']);
+    expect([...dirtySections(base, newDraft(board))]).toEqual(['boardModel']);
     expect(toSave(newDraft(startup)).models?.defaults).toEqual({
       provider: 'relay',
       model: 'x',
@@ -119,11 +122,11 @@ describe('the draft of the settings area', () => {
     // Without the base nothing is known to be removed, so nothing is.
     expect(toSave(draft).models).not.toHaveProperty('removeEntries');
   });
-  it('keeps the beta switch and the compaction feature as one, on the more-features page', () => {
+  it('keeps the beta switch and the compaction feature as one, a feature on the context page', () => {
     const on = setCompaction(base, true);
     expect([on.betaCompression, on.features.compaction.enabled]).toEqual([true, true]);
     expect(setCompaction({ ...base, features: {} }, true).betaCompression).toBe(true);
-    expect([...dirtySections(base, newDraft(on))]).toEqual(['moreFeatures']);
+    expect([...dirtySections(base, newDraft(on))]).toEqual(['features']);
   });
   it('names the one judges page for the choice, the order, a profile’s field and any judge’s key', () => {
     const laya = { type: 'local' as const, model: '', baseUrl: '', apiKeyEnv: '', timeoutMs: 3000 };
@@ -192,39 +195,64 @@ describe('provider form rules', () => {
   });
 });
 
-describe('which page a setting is on', () => {
+describe('which page of the details a setting is on', () => {
   const { manifest } = harness;
 
-  it('puts a decision point on its group’s page, and the lessons’ points on a page of their own', () => {
-    expect(decisionPageOf({ group: 'tools', feature: 'guard' })).toBe('tools');
-    // The experience library's points are in the context group, where with the rest they would run past a page.
-    expect(decisionPageOf({ group: 'context', feature: 'memory' })).toBe('memory');
-    expect(decisionPageOf({ group: 'memory', feature: 'anything' })).toBe('memory');
-    // A group the rail has no page for is shown on the first page, under its own name.
-    expect(decisionPageOf({ group: 'misc', feature: 'x' })).toBe('input');
-    expect(isStrayDecision({ group: 'misc', feature: 'x' })).toBe(true);
-    expect(isStrayDecision({ group: 'input', feature: 'preflight' })).toBe(false);
-    expect(isStrayDecision({ group: 'context', feature: 'memory' })).toBe(false);
-    for (const decision of manifest.decisions) expect(isStrayDecision(decision), decision.id).toBe(false);
+  it('puts a feature on the area of the first point it asks, or on the area it has of its own', () => {
+    const area = (name: string) => areaOf(manifest, { name });
+    expect(area('preflight')).toBe('input');
+    expect(area('compaction')).toBe('context');
+    expect(area('swarm')).toBe('team');
+    // The lessons have a page of their own; the guard and the constraints are safety, apart from the tools.
+    expect(area('memory')).toBe('memory');
+    expect(area('guard')).toBe('safety');
+    expect(area('constraints')).toBe('safety');
+    expect(area('locate')).toBe('tools');
+    // The capability catalog asks in the context group, and decides which tools are shown: the tools.
+    expect(area('catalog')).toBe('tools');
+    // One that asks at no point, or one the harness does not have, is under Other.
+    expect(area('background')).toBe('other');
+    expect(area('no-such-feature')).toBe('other');
+    expect(areaOf(undefined, { name: 'preflight' })).toBe('other');
+    // A point whose feature the harness does not describe goes by its group, and a group without a page is Other.
+    expect(strayAreaOf({ group: 'tools', feature: 'gone' })).toBe('tools');
+    expect(strayAreaOf({ group: 'misc', feature: 'gone' })).toBe('other');
+    expect(strayAreaOf({ group: 'context', feature: 'memory' })).toBe('memory');
   });
 
-  it('puts a feature on the page of the first point it acts at, and one that acts at none under Other', () => {
-    const page = (name: string) => featurePageOf(manifest, { name });
-    expect(page('preflight')).toBe('input');
-    expect(page('compaction')).toBe('context');
-    expect(page('welcome')).toBe('other');
-    expect(page('no-such-feature')).toBe('other');
-    // The team group has no more-features page: its features are under Other.
-    const team = manifest.decisions.find((decision) => decision.group === 'team');
-    if (team) expect(page(team.feature)).toBe('other');
-    expect(featurePageOf(undefined, { name: 'preflight' })).toBe('other');
+  it('nests each point under its feature, lists a point without one alone, and leaves the terminal’s features out', () => {
+    const team = areaRows(manifest, 'team');
+    expect(team.map((row) => [row.feature?.name, row.decisions.map((decision) => decision.id)])).toEqual([
+      ['swarm', ['swarm.routing']],
+      ['hive', ['hive.publish', 'hive.deliver']],
+    ]);
+    expect(rowCount(team)).toBe(5);
+    const other = areaRows(manifest, 'other').map((row) => row.feature?.name);
+    expect(other).toContain('background');
+    expect(other).not.toContain('welcome');
+    const stray = parseManifest({
+      ...manifestJson,
+      decisions: [...manifestJson.decisions, { ...manifestJson.decisions[0], id: 'gone.point', feature: 'gone' }],
+    });
+    if (stray.status !== 'ok') throw new Error('unreadable');
+    const input = areaRows(stray.manifest, 'input');
+    expect(input.at(-1)).toEqual({ decisions: [expect.objectContaining({ id: 'gone.point' })] });
+    expect(areaRows(undefined, 'input')).toEqual([]);
   });
 
-  it('keeps every page of the fixture harness within a page of rows', () => {
-    const decisions = new Map<string, number>();
-    for (const decision of manifest.decisions)
-      decisions.set(decisionPageOf(decision), (decisions.get(decisionPageOf(decision)) ?? 0) + 1);
-    for (const [page, count] of decisions) expect(count, page).toBeLessThanOrEqual(PAGE_ROWS);
+  it('puts every point and every feature of the fixture harness on one page, each page within twelve rows', () => {
+    const all = DETAIL_AREAS.map((area) => areaRows(manifest, area));
+    for (const [index, rows] of all.entries())
+      expect(rowCount(rows), DETAIL_AREAS[index]).toBeLessThanOrEqual(PAGE_ROWS);
+    const decisions = all.flat().flatMap((row) => row.decisions.map((decision) => decision.id));
+    expect(decisions.toSorted()).toEqual(manifest.decisions.map((decision) => decision.id).toSorted());
+    const features = all.flat().flatMap((row) => (row.feature ? [row.feature.name] : []));
+    expect(features.toSorted()).toEqual(
+      manifest.features
+        .filter((feature) => feature.name !== 'welcome')
+        .map((feature) => feature.name)
+        .toSorted()
+    );
     for (const feature of manifest.features) expect(optionParts(feature.options).length, feature.name).toBe(1);
   });
 });

@@ -602,7 +602,11 @@
       "endLabel": "结束目标"
     },
     "thinkingNote": "切换思考强度会丢失提示缓存，同一模型尽量不切",
-    "modelBusy": "等这一轮回复结束再换模型。"
+    "modelBusy": "等这一轮回复结束再换模型。",
+    "defaultTag": "默认",
+    "makeDefault": "设为新对话的默认模型",
+    "madeDefault": "新对话会默认用这个模型。",
+    "makeDefaultFailed": "没能保存默认模型。"
   },
   "agentTip": {
     "codes": {

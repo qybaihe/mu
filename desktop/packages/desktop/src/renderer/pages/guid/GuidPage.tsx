@@ -39,6 +39,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import useSWR from 'swr';
 import { commandDescription } from '@/renderer/utils/chat/muCommands';
 import { useNativeEnabled } from '@/renderer/pages/native/hooks/useNativeConversations';
+import { useMuDefaultModel } from '@/renderer/hooks/agent/useMuDefaultModel';
 import styles from './index.module.css';
 
 type GuidNavigationState = {
@@ -292,6 +293,7 @@ const GuidPage: React.FC = () => {
   // The thinking level the person picked on this page: the native start sends only that, never the level the pill shows
   // by default. A model picked after it clears it (a level belongs to its model).
   const [pickedThoughtLevel, setPickedThoughtLevel] = useState('');
+  const muDefault = useMuDefaultModel();
   const nativeSend = useGuidNativeSend({
     input: guidInput.input,
     setInput: guidInput.setInput,
@@ -342,8 +344,10 @@ const GuidPage: React.FC = () => {
     [agentSelection.setSelectedAssistantId]
   );
 
-  // Typewriter placeholder
-  const typewriterPlaceholder = useTypewriterPlaceholder(t('conversation.welcome.placeholder'));
+  // Typewriter placeholder. With the native host on it is the conversation send box's own; the classic one also names
+  // features of the classic path, such as scheduled tasks made by chat.
+  const placeholderText = nativeHost ? t('mu.native.send.placeholder') : t('conversation.welcome.placeholder');
+  const typewriterPlaceholder = useTypewriterPlaceholder(placeholderText);
   const selectedAssistantRecord = useMemo(() => {
     if (!selectedAssistantId) return undefined;
     const selectedId = agentSelection.selectedAssistantId;
@@ -412,6 +416,7 @@ const GuidPage: React.FC = () => {
       },
       availableModes: agentSelection.currentAgentModeOptions.map((mode) => mode.value),
       availableThoughtLevels: agentSelection.currentThoughtLevelOption?.options.map((option) => option.value) ?? [],
+      muDefault: [muDefault.model ?? '', muDefault.level],
     });
     if (appliedAssistantDefaultsKeyRef.current === signature) {
       return;
@@ -419,7 +424,17 @@ const GuidPage: React.FC = () => {
     appliedAssistantDefaultsKeyRef.current = signature;
 
     const applyAssistantDefaults = async () => {
-      const resolvedDefaults = resolveGuidAssistantDefaults(selectedAssistantDetail);
+      // "The last one used" is whatever model the last conversation ended on. Once mu has a default model, a new
+      // conversation starts on that instead (and at its level), and a pick in a send box stays with its conversation.
+      const resolved = resolveGuidAssistantDefaults(selectedAssistantDetail);
+      const hasMuDefault = Boolean(muDefault.model);
+      const resolvedDefaults = {
+        ...resolved,
+        ...(hasMuDefault && selectedAssistantDetail.defaults.model.mode === 'auto' ? { modelId: undefined } : {}),
+        ...(hasMuDefault && (selectedAssistantDetail.defaults.thought_level?.mode ?? 'auto') === 'auto'
+          ? { thoughtLevel: undefined }
+          : {}),
+      };
       const effectiveBackend = agentSelection.selectedAssistantBackend;
       const shouldApplyDefaultModel = manualModelSelectionAssistantRef.current !== selectedAssistantId;
       const shouldApplyDefaultThoughtLevel = manualThoughtLevelSelectionAssistantRef.current !== selectedAssistantId;
@@ -497,6 +512,8 @@ const GuidPage: React.FC = () => {
     modelSelection.modelList,
     modelSelection.resetCurrentModel,
     modelSelection.setCurrentModel,
+    muDefault.level,
+    muDefault.model,
     selectedAssistantId,
     selectedAssistantDetail,
   ]);
@@ -617,7 +634,14 @@ const GuidPage: React.FC = () => {
   const isGeminiMode = PROVIDER_BASED_AGENTS.has(agentSelection.selectedAssistantBackend);
 
   // Build the mention dropdown node
-  // Build the model selector node
+  // Build the model selector node. A send with no model picked starts on mu's default model, at its default level when
+  // no level was picked either: that is what the chip shows until the person picks.
+  const shownThoughtLevelOption = useMemo(() => {
+    const option = agentSelection.currentThoughtLevelOption;
+    const level = muDefault.level;
+    if (!option || pickedThoughtLevel || agentSelection.selectedAcpModel || !level) return option;
+    return option.options.some((entry) => entry.value === level) ? { ...option, currentValue: level } : option;
+  }, [agentSelection.currentThoughtLevelOption, agentSelection.selectedAcpModel, muDefault.level, pickedThoughtLevel]);
   const modelSelectorNode = (
     <GuidModelSelector
       isGeminiMode={isGeminiMode}
@@ -627,8 +651,10 @@ const GuidPage: React.FC = () => {
       currentAcpCachedModelInfo={agentSelection.currentAcpCachedModelInfo}
       selectedAcpModel={agentSelection.selectedAcpModel}
       setSelectedAcpModel={setGuidSelectedAcpModel}
-      thoughtLevelOption={isGeminiMode ? null : agentSelection.currentThoughtLevelOption}
+      thoughtLevelOption={isGeminiMode ? null : shownThoughtLevelOption}
       onThoughtLevelSelect={setGuidSelectedThoughtLevel}
+      defaultModel={muDefault.model}
+      onMakeDefault={(model) => void muDefault.makeDefault(model, pickedThoughtLevel || undefined)}
     />
   );
 
@@ -645,7 +671,7 @@ const GuidPage: React.FC = () => {
       currentAcpCachedModelInfo={agentSelection.currentAcpCachedModelInfo}
       selectedAcpModel={agentSelection.selectedAcpModel}
       setSelectedAcpModel={setGuidSelectedAcpModel}
-      thoughtLevelOption={isGeminiMode ? null : agentSelection.currentThoughtLevelOption}
+      thoughtLevelOption={isGeminiMode ? null : shownThoughtLevelOption}
       onThoughtLevelSelect={setGuidSelectedThoughtLevel}
       modeBackend={agentSelection.selectedAssistantBackend}
       selectedMode={startMode}
@@ -715,7 +741,7 @@ const GuidPage: React.FC = () => {
             onPaste={guidInput.onPaste}
             onFocus={guidInput.handleTextareaFocus}
             onBlur={guidInput.handleTextareaBlur}
-            placeholder={typewriterPlaceholder || t('conversation.welcome.placeholder')}
+            placeholder={typewriterPlaceholder || placeholderText}
             isInputActive={guidInput.isInputFocused}
             isFileDragging={guidInput.isFileDragging}
             dragHandlers={guidInput.dragHandlers}

@@ -1417,6 +1417,14 @@
       "cache": "캐시 적중",
       "cacheHint": "캐시 적중: 최근 턴 {{turn}}, 대화 전체 {{session}}",
       "pending": "mu의 다음 답변 후에 표시됩니다"
+    },
+    "roles": {
+      "browser": "브라우저",
+      "investigator": "조사",
+      "planner": "계획",
+      "reviewer": "검토",
+      "scout": "정찰",
+      "worker": "작업"
     }
   },
   "menu": {

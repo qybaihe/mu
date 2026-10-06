@@ -27,8 +27,10 @@ import {
   summarizeToolActivity,
   toolActivityDenied,
   toolActivityErrors,
+  toolActivityParts,
   toolErrorLine,
   toolLabel,
+  shortPath,
   type ToolLabel,
 } from './toolActivity';
 
@@ -57,8 +59,8 @@ const statusLabelKey = (status: NormalizedToolStatus, denied?: boolean): string 
 const labelText = ({ verb, target }: ToolLabel): string => (target ? `${verb} ${target}` : verb);
 
 /**
- * What a call ran on, whole on hover. A path cut for a narrow row gives up the middle of its folders, never its own
- * name: `/Users/me/project/src/…/index.ts`, not `/Users/me/project/src/comp…`.
+ * What a call ran on, whole on hover. The home folder reads as `~`. A path cut for a narrow row gives up the middle of
+ * its folders, never its own name: `~/project/src/…/index.ts`, not `~/project/src/comp…`.
  */
 const CallTarget: React.FC<{ label: ToolLabel }> = ({ label }) => {
   const { target } = label;
@@ -69,11 +71,12 @@ const CallTarget: React.FC<{ label: ToolLabel }> = ({ label }) => {
         {target}
       </code>
     );
-  const cut = Math.max(target.lastIndexOf('/'), target.lastIndexOf('\\')) + 1;
+  const shown = shortPath(target);
+  const cut = Math.max(shown.lastIndexOf('/'), shown.lastIndexOf('\\')) + 1;
   return (
     <code className={`${styles.callPreview} ${styles.pathPreview}`} title={target} data-testid='tool-call-path'>
-      <span className={styles.pathHead}>{target.slice(0, cut)}</span>
-      <span className={styles.pathTail}>{target.slice(cut)}</span>
+      <span className={styles.pathHead}>{shown.slice(0, cut)}</span>
+      <span className={styles.pathTail}>{shown.slice(cut)}</span>
     </code>
   );
 };
@@ -279,12 +282,16 @@ const ToolActivityGroup: React.FC<{ tools: NormalizedToolCall[]; language?: stri
   const errors = useMemo(() => toolActivityErrors(tools), [tools]);
   const refused = useMemo(() => toolActivityDenied(tools), [tools]);
   const steps = formatNumber(summary.steps, language);
+  // What the stretch did, by kind: "read 3 files · ran 1 command".
+  const done = toolActivityParts(tools)
+    .map(({ kind, count }) => t(`tools.activity.parts.${kind}`, { count, n: formatNumber(count, language) }))
+    .join(t('tools.activity.separator'));
   const headline =
     summary.status === 'running'
       ? t('tools.activity.running', { steps, label: summary.running ? labelText(summary.running) : '' })
       : summary.failed > 0
-        ? t('tools.activity.summaryFailed', { steps, failed: formatNumber(summary.failed, language) })
-        : t('tools.activity.summary', { steps });
+        ? t('tools.activity.doneFailed', { done, failed: formatNumber(summary.failed, language) })
+        : done;
 
   return (
     <div className={styles.activity} data-testid='tool-activity-group'>

@@ -13,7 +13,9 @@ import ImportedHistoryModal from '@/renderer/pages/conversation/platforms/acp/Im
 
 type Answer<T> = { ok: true; data: T } | { ok: false; error: string };
 
-const { list, run, history, navigate, said } = vi.hoisted(() => ({
+const { list, run, history, navigate, said, native } = vi.hoisted(() => ({
+  /** Whether the app runs mu itself (the native host): imported sessions are then conversations of their own. */
+  native: { on: false, rereads: 0 },
   list: vi.fn<(request: { cwd?: string }) => Promise<Answer<ImportList>>>(),
   run: vi.fn<(request: { paths: string[]; locale: string }) => Promise<Answer<ImportOutcome[]>>>(),
   history: vi.fn<(request: { conversationId: string }) => Promise<Answer<ImportedHistory>>>(),
@@ -29,6 +31,12 @@ vi.mock('@/common/kyrn/bridge', () => ({
   },
 }));
 vi.mock('react-router-dom', () => ({ useNavigate: () => navigate }));
+vi.mock('@/renderer/pages/native/hooks/useNativeConversations', () => ({
+  useNativeEnabled: () => native.on,
+  rereadNativeConversations: () => {
+    native.rereads++;
+  },
+}));
 // The dialog frame (AionModal) sizes itself by the font scale.
 vi.mock('@/renderer/hooks/context/ThemeContext', () => ({ useThemeContext: () => ({ fontScale: 1 }) }));
 vi.mock('@arco-design/web-react', async (importOriginal) => {
@@ -102,7 +110,7 @@ describe('the import dialog', () => {
     expect(row('Fix the login form').textContent).toContain('app');
     expect(row('Fix the login form').textContent).toContain('2 KB');
     expect(row('Deploy script').textContent).toContain('Folder unknown');
-    expect(list).toHaveBeenCalledWith({});
+    expect(list).toHaveBeenCalledWith({ native: false });
   });
 
   it('offers a conversation already in the list to open, not to import again', async () => {
@@ -152,11 +160,59 @@ describe('the import dialog', () => {
     expect(screen.getByText('Chosen: 1')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('import-chats-start'));
     await settle();
-    expect(run).toHaveBeenCalledWith({ paths: ['/t/Fix-the-login-form.jsonl'], locale: 'en' });
+    expect(run).toHaveBeenCalledWith({ paths: ['/t/Fix-the-login-form.jsonl'], locale: 'en', native: false });
     expect(emit).toHaveBeenCalledWith('chat.history.refresh');
     expect(onClose).toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith('/conversation/new-1');
     expect(said).toEqual([['success', '1 conversation imported. It is in your conversation list.']]);
+  });
+
+  it('with the app running mu itself, opens the session an import became, and reads the native list again', async () => {
+    native.on = true;
+    native.rereads = 0;
+    try {
+      const emit = vi.spyOn(emitter, 'emit');
+      list.mockResolvedValue({
+        ok: true,
+        data: {
+          conversations: [
+            chat('claude-code', 'Fix the login form'),
+            chat('codex', 'Held one', { importedAs: '/s/held.jsonl', conversationId: 'session-held', native: true }),
+          ],
+        },
+      });
+      run.mockResolvedValue({
+        ok: true,
+        data: [
+          {
+            status: 'imported',
+            source: '/t/Fix-the-login-form.jsonl',
+            tool: 'claude-code',
+            conversationId: 'session-1',
+            name: 'Fix the login form',
+            native: true,
+          },
+        ],
+      });
+      const { unmount } = render(<Dialog />);
+      await settle();
+      expect(list).toHaveBeenCalledWith({ native: true });
+      fireEvent.click(within(row('Held one')).getByRole('button', { name: 'Open' }));
+      expect(navigate).toHaveBeenCalledWith('/conversation/native/session-held');
+      unmount();
+
+      render(<Dialog />);
+      await settle();
+      fireEvent.click(within(row('Fix the login form')).getByRole('checkbox'));
+      fireEvent.click(screen.getByTestId('import-chats-start'));
+      await settle();
+      expect(run).toHaveBeenCalledWith({ paths: ['/t/Fix-the-login-form.jsonl'], locale: 'en', native: true });
+      expect(native.rereads).toBe(1);
+      expect(emit).not.toHaveBeenCalledWith('chat.history.refresh');
+      expect(navigate).toHaveBeenLastCalledWith('/conversation/native/session-1');
+    } finally {
+      native.on = false;
+    }
   });
 
   it('keeps the dialog open with the reason under each one that failed', async () => {

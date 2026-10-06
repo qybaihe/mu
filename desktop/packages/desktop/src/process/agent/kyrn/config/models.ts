@@ -345,32 +345,38 @@ export function applyModels(
     for (const [id, value] of keys) change.env.set(providerKeyVariable(id), value);
   }
 
-  const defaults = desired.defaults;
-  const level = defaults.thinkingLevel;
-  const before = current.defaults;
-  if (before.provider !== defaults.provider || before.model !== defaults.model || before.thinkingLevel !== level) {
-    // Checked only when changed: a hand-written settings.json may name a model without a provider, and that is pi's to read.
-    limited(defaults.provider, 200, 'default provider');
-    limited(defaults.model, 200, 'default model');
-    if (Boolean(defaults.provider) !== Boolean(defaults.model))
-      throw new KyrnError('pickBoth', 'Choose a provider and a model together');
-    if (level !== '' && !THINKING_LEVELS.includes(level)) throw invalid('Invalid thinking level');
-    const put = (key: string, value: string) => {
-      if (value) pi[key] = value;
-      else delete pi[key];
-    };
-    put('defaultProvider', defaults.provider);
-    put('defaultModel', defaults.model);
-    put('defaultThinkingLevel', level);
-    // pi lets a per-model level win over the default one. Where one exists for this model, it follows along,
-    // so that what this screen shows is what a new session starts with.
-    const perModel = asRecord(pi.modelThinkingLevels);
-    const entry = `${defaults.provider}/${defaults.model}`;
-    if (level && defaults.model && entry in perModel && perModel[entry] !== level)
-      pi.modelThinkingLevels = { ...perModel, [entry]: level };
-    change.pi = true;
-  }
+  if (applyDefaults(pi, current.defaults, desired.defaults)) change.pi = true;
   return change;
+}
+
+/**
+ * Makes `defaults` the model new sessions start on, in pi's settings (`pi`, changed in memory), when it differs from
+ * `before`. Checked only when changed: a hand-written settings.json may name a model without a provider, and that is
+ * pi's to read. Says whether anything changed.
+ */
+export function applyDefaults(pi: JsonRecord, before: ModelDefaults, defaults: ModelDefaults): boolean {
+  const level = defaults.thinkingLevel;
+  if (before.provider === defaults.provider && before.model === defaults.model && before.thinkingLevel === level)
+    return false;
+  limited(defaults.provider, 200, 'default provider');
+  limited(defaults.model, 200, 'default model');
+  if (Boolean(defaults.provider) !== Boolean(defaults.model))
+    throw new KyrnError('pickBoth', 'Choose a provider and a model together');
+  if (level !== '' && !THINKING_LEVELS.includes(level)) throw invalid('Invalid thinking level');
+  const put = (key: string, value: string) => {
+    if (value) pi[key] = value;
+    else delete pi[key];
+  };
+  put('defaultProvider', defaults.provider);
+  put('defaultModel', defaults.model);
+  put('defaultThinkingLevel', level);
+  // pi lets a per-model level win over the default one. Where one exists for this model, it follows along,
+  // so that what this screen shows is what a new session starts with.
+  const perModel = asRecord(pi.modelThinkingLevels);
+  const entry = `${defaults.provider}/${defaults.model}`;
+  if (level && defaults.model && entry in perModel && perModel[entry] !== level)
+    pi.modelThinkingLevels = { ...perModel, [entry]: level };
+  return true;
 }
 
 /**

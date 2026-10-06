@@ -1417,6 +1417,14 @@
       "cache": "キャッシュヒット",
       "cacheHint": "キャッシュヒット：直近のターン {{turn}}、会話全体 {{session}}",
       "pending": "mu の次の返信のあとに表示されます"
+    },
+    "roles": {
+      "browser": "ブラウザー",
+      "investigator": "調査",
+      "planner": "計画",
+      "reviewer": "レビュー",
+      "scout": "偵察",
+      "worker": "作業"
     }
   },
   "menu": {

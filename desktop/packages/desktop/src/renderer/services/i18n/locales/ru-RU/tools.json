@@ -82,8 +82,34 @@
   },
   "activity": {
     "running": "{{steps}} шагов · выполняется {{label}}",
-    "summary": "{{steps}} шагов",
-    "summaryFailed": "{{steps}} шагов · {{failed}} с ошибкой"
+    "parts": {
+      "read_one": "Прочитан {{n}} файл",
+      "read_few": "Прочитано {{n}} файла",
+      "read_many": "Прочитано {{n}} файлов",
+      "read_other": "Прочитано {{n}} файла",
+      "look_one": "{{n}} поиск",
+      "look_few": "{{n}} поиска",
+      "look_many": "{{n}} поисков",
+      "look_other": "{{n}} поиска",
+      "edit_one": "Изменён {{n}} файл",
+      "edit_few": "Изменено {{n}} файла",
+      "edit_many": "Изменено {{n}} файлов",
+      "edit_other": "Изменено {{n}} файла",
+      "run_one": "Выполнена {{n}} команда",
+      "run_few": "Выполнено {{n}} команды",
+      "run_many": "Выполнено {{n}} команд",
+      "run_other": "Выполнено {{n}} команды",
+      "web_one": "{{n}} веб-запрос",
+      "web_few": "{{n}} веб-запроса",
+      "web_many": "{{n}} веб-запросов",
+      "web_other": "{{n}} веб-запроса",
+      "other_one": "Ещё {{n}} шаг",
+      "other_few": "Ещё {{n}} шага",
+      "other_many": "Ещё {{n}} шагов",
+      "other_other": "Ещё {{n}} шага"
+    },
+    "separator": " · ",
+    "doneFailed": "{{done}} · с ошибкой: {{failed}}"
   },
   "kind": {
     "edit": "Правка файла",

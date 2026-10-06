@@ -5,7 +5,14 @@ import type { ImportedHistory, ImportList, ImportOutcome } from './importChats';
 import type { LessonChange, LessonsView } from './lessons';
 import type { LocalJudgeAction, LocalJudgeState } from './localJudge';
 import type { LoginState, LoginStatus, SubscriptionProvider } from './login';
-import type { AvailableModels, ModelThinkingLevels, ProviderTestInput, ProviderTestResult } from './models';
+import type {
+  AvailableModels,
+  DefaultModelChange,
+  ModelDefaults,
+  ModelThinkingLevels,
+  ProviderTestInput,
+  ProviderTestResult,
+} from './models';
 import type { ActivityPage, KyrnCatalog, KyrnSettings, SaveSettings } from './types';
 
 export const kyrnBridge = {
@@ -14,6 +21,9 @@ export const kyrnBridge = {
   save: bridge.buildProvider<KyrnResult<KyrnSettings>, SaveSettings>('kyrn.save'),
   /** Models the running mu last reported as usable: a snapshot kept by the backend, not a live query. */
   availableModels: bridge.buildProvider<KyrnResult<AvailableModels>, void>('kyrn.availableModels'),
+  /** The model new sessions start on, and a send box's "make default", which changes only that. */
+  defaultModel: bridge.buildProvider<KyrnResult<ModelDefaults>, void>('kyrn.defaultModel'),
+  setDefaultModel: bridge.buildProvider<KyrnResult<ModelDefaults>, DefaultModelChange>('kyrn.setDefaultModel'),
   /** The backend checks mu again and keeps that snapshot anew; answers once it has. */
   recheck: bridge.buildProvider<KyrnResult<void>, void>('kyrn.recheck'),
   /** One minimal request to a provider's endpoint, made by the main process. */
@@ -31,14 +41,17 @@ export const kyrnBridge = {
   lessonsChange: bridge.buildProvider<KyrnResult<LessonsView>, LessonChange>('kyrn.lessons.change'),
   /**
    * Claude Code and Codex conversations on this computer (common/kyrn/importChats.ts); with `cwd`, only that project's.
-   * Each says whether an app conversation holds it already.
+   * Each says whether a conversation holds it already: with `native`, the mu session made from it.
    */
-  importList: bridge.buildProvider<KyrnResult<ImportList>, { cwd?: string }>('kyrn.import.list'),
+  importList: bridge.buildProvider<KyrnResult<ImportList>, { cwd?: string; native?: boolean }>('kyrn.import.list'),
   /**
    * Brings these transcripts into mu and makes each an app conversation in its project folder, created with the
-   * assistant snapshot in `locale`. One outcome per transcript; a failed one does not stop the others.
+   * assistant snapshot in `locale`; with `native`, the mu session each became is the conversation and none is made.
+   * One outcome per transcript; a failed one does not stop the others.
    */
-  importRun: bridge.buildProvider<KyrnResult<ImportOutcome[]>, { paths: string[]; locale: string }>('kyrn.import.run'),
+  importRun: bridge.buildProvider<KyrnResult<ImportOutcome[]>, { paths: string[]; locale: string; native?: boolean }>(
+    'kyrn.import.run'
+  ),
   /** What an imported conversation said before it came to mu, to read back. */
   importHistory: bridge.buildProvider<KyrnResult<ImportedHistory>, { conversationId: string }>('kyrn.import.history'),
   /** Signing in to a subscription with pi's OAuth flow; see common/kyrn/login.ts. */

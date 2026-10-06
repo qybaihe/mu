@@ -1,7 +1,8 @@
 /**
  * Picking Claude Code and Codex conversations to bring into mu (common/kyrn/importChats.ts): every one found on this
  * computer, under its tool, newest first, with its project folder, date and first message. The chosen ones become mu
- * conversations in the conversation list; one alone opens right away. The settings dialogs' frame (AionModal's
+ * conversations in the conversation list (with the native host on, the mu sessions themselves); one alone opens right
+ * away. The settings dialogs' frame (AionModal's
  * standard variant, as the theme and MCP import dialogs): the title at the start, hairlines between title, body and
  * buttons.
  */
@@ -17,8 +18,18 @@ import { emitter } from '@/renderer/utils/emitter';
 import { formatByteSize, formatDateTime } from '@/renderer/services/i18n/format';
 import { getWorkspaceDisplayName } from '@/renderer/utils/workspace/workspace';
 import { muErrorText, toMuError, type MuErrorText } from '@/renderer/pages/settings/KyrnSettings/fields/muError';
+import { rereadNativeConversations, useNativeEnabled } from '@/renderer/pages/native/hooks/useNativeConversations';
+import { nativeConversationPath } from '@/renderer/pages/native/utils/paths';
 
-type Props = { visible: boolean; onClose: () => void };
+type Props = {
+  visible: boolean;
+  onClose: () => void;
+  /**
+   * The page stays where it is (the first-run guide, whose choices are not saved yet): nothing opens after an import,
+   * and a conversation already imported offers no way to open it.
+   */
+  stay?: boolean;
+};
 
 type State = { phase: 'loading' } | { phase: 'ready'; chats: FoundChat[] } | { phase: 'failed'; error: MuErrorText };
 
@@ -42,7 +53,7 @@ const ChatRow: React.FC<{
   checked: boolean;
   failure?: string;
   onToggle: (path: string) => void;
-  onOpen: (conversationId: string) => void;
+  onOpen?: (target: { conversationId: string; native?: true }) => void;
 }> = ({ chat, checked, failure, onToggle, onOpen }) => {
   const { t, i18n } = useTranslation();
   const listed = Boolean(chat.conversationId);
@@ -81,18 +92,31 @@ const ChatRow: React.FC<{
       {listed && chat.conversationId ? (
         <span className='shrink-0 flex items-center gap-8px text-12px leading-22px text-t-tertiary'>
           {t('mu.importChats.dialog.inList')}
-          <Button type='text' size='mini' className='!px-0' onClick={() => onOpen(chat.conversationId as string)}>
-            {t('mu.importChats.dialog.open')}
-          </Button>
+          {onOpen ? (
+            <Button
+              type='text'
+              size='mini'
+              className='!px-0'
+              onClick={() => onOpen({ conversationId: chat.conversationId as string, native: chat.native })}
+            >
+              {t('mu.importChats.dialog.open')}
+            </Button>
+          ) : null}
         </span>
       ) : null}
     </div>
   );
 };
 
-const ImportChatsModal: React.FC<Props> = ({ visible, onClose }) => {
+/** Where a conversation that holds an import opens: a native one by its session's id, an app one by its own. */
+const routeOf = ({ conversationId, native }: { conversationId: string; native?: true }): string =>
+  native ? nativeConversationPath(conversationId) : `/conversation/${conversationId}`;
+
+const ImportChatsModal: React.FC<Props> = ({ visible, onClose, stay = false }) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  // With the native host on, the session an import writes is the conversation: no app conversation is made for it.
+  const native = useNativeEnabled() === true;
   const [state, setState] = useState<State>({ phase: 'loading' });
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
@@ -105,13 +129,13 @@ const ImportChatsModal: React.FC<Props> = ({ visible, onClose }) => {
     const asked = ++request.current;
     setState({ phase: 'loading' });
     try {
-      const { conversations } = unwrap(await kyrnBridge.importList.invoke({}));
+      const { conversations } = unwrap(await kyrnBridge.importList.invoke({ native }));
       if (asked === request.current) setState({ phase: 'ready', chats: conversations });
     } catch (error) {
       if (asked === request.current)
         setState({ phase: 'failed', error: muErrorText(t, i18n.language, toMuError(error)) });
     }
-  }, [t, i18n.language]);
+  }, [t, i18n.language, native]);
 
   useEffect(() => {
     if (!visible) {
@@ -138,9 +162,9 @@ const ImportChatsModal: React.FC<Props> = ({ visible, onClose }) => {
   }, []);
 
   const open = useCallback(
-    (conversationId: string) => {
+    (target: { conversationId: string; native?: true }) => {
       onClose();
-      void navigate(`/conversation/${conversationId}`);
+      void navigate(routeOf(target));
     },
     [navigate, onClose]
   );
@@ -149,16 +173,20 @@ const ImportChatsModal: React.FC<Props> = ({ visible, onClose }) => {
     if (selected.size === 0 || importing) return;
     setImporting(true);
     try {
-      const outcomes = unwrap(await kyrnBridge.importRun.invoke({ paths: [...selected], locale: i18n.language }));
+      const outcomes = unwrap(
+        await kyrnBridge.importRun.invoke({ paths: [...selected], locale: i18n.language, native })
+      );
       const done = outcomes.filter((outcome): outcome is Done => outcome.status !== 'failed');
       const failed = outcomes.filter((outcome): outcome is Failed => outcome.status === 'failed');
       if (done.length > 0) {
-        emitter.emit('chat.history.refresh');
+        // The sessions were written by `mu import`, not by the app: the native list is read again to show them.
+        if (native) rereadNativeConversations();
+        else emitter.emit('chat.history.refresh');
         Message.success(t('mu.importChats.done', { count: done.length }));
       }
       if (failed.length === 0) {
         onClose();
-        if (done.length === 1) void navigate(`/conversation/${done[0].conversationId}`);
+        if (done.length === 1 && !stay) void navigate(routeOf(done[0]));
         return;
       }
       Message.warning(t('mu.importChats.someFailed', { count: failed.length }));
@@ -266,7 +294,7 @@ const ImportChatsModal: React.FC<Props> = ({ visible, onClose }) => {
                     checked={selected.has(chat.path)}
                     failure={failures.get(chat.path)}
                     onToggle={toggle}
-                    onOpen={open}
+                    onOpen={stay ? undefined : open}
                   />
                 ))}
               </section>

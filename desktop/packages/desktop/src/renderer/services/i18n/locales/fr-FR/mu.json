@@ -2,8 +2,6 @@
   "title": "Paramètres de mu",
   "description": "Tout ce qu’on peut régler dans mu : juges, points de décision, fonctions, modèles et contexte. Partagé avec la ligne de commande mu.",
   "reload": "Recharger",
-  "search": "Rechercher décisions et fonctions",
-  "noMatch": "Rien ne correspond à la recherche.",
   "modified": "Modifié",
   "applyNote": "Les modifications s’appliquent aux nouvelles sessions. Une session en cours garde la configuration de son démarrage ; reconnectez-la pour les prendre en compte.",
   "apiKey": "Clé API",
@@ -12,36 +10,31 @@
   "endpointRule": "Utilisez HTTPS, ou HTTP uniquement vers cette machine (127.0.0.1, localhost) ou vers une adresse IP de réseau privé (comme 192.168.1.20). Pas de nom d’utilisateur, de mot de passe, de requête ni de fragment dans l’adresse.",
   "sections": {
     "judges": "Juges",
-    "judgeTiers": "Paliers de juges",
+    "judgeOrder": "Ordre des juges",
     "decisions": "Points de décision",
     "features": "Fonctions",
-    "moreFeatures": "Autres fonctions",
+    "coreFeatures": "Fonctions principales",
     "providers": "Fournisseurs",
     "defaultModel": "Modèle par défaut",
+    "boardModel": "Modèle du tableau en clair",
     "context": "Contexte"
   },
   "pages": {
-    "decisions": {
-      "input": "Points de décision : Entrée",
+    "details": {
+      "input": "Fonctions d’entrée",
       "context": "Contexte",
-      "memory": "Points de décision : Leçons",
-      "tools": "Points de décision : Outils et sécurité",
-      "turn": "Points de décision : Tour",
-      "team": "Points de décision : Travail d’équipe"
-    },
-    "features": {
-      "input": "Autres fonctions : Entrée",
-      "context": "Autres fonctions : Contexte",
-      "tools": "Autres fonctions : Outils et sécurité",
-      "turn": "Autres fonctions : Tour",
-      "other": "Autres fonctions : Autre"
+      "memory": "Leçons",
+      "tools": "Fonctions des outils",
+      "safety": "Fonctions de sécurité",
+      "turn": "Fonctions du tour",
+      "goal": "Objectif et tableau",
+      "team": "Fonctions de travail d’équipe",
+      "other": "Autres fonctions"
     }
   },
   "modes": {
     "active": "Activé",
-    "off": "Désactivé",
-    "activeHelp": "Le jugement prend effet.",
-    "offHelp": "Le jugement n’a aucun effet : cette étape se poursuit normalement."
+    "off": "Désactivé"
   },
   "harness": {
     "tooOld": "Cette version de mu est trop ancienne pour lister ses points de décision et ses fonctions. Mettez mu à jour pour les voir ici ; les paramètres de base fonctionnent toujours.",
@@ -76,41 +69,27 @@
     }
   },
   "decisions": {
-    "description": "Chaque point où le juge est interrogé. Un point suit le mode par défaut, sauf si vous lui en donnez un propre.",
-    "defaultMode": "Mode par défaut",
-    "defaultModeHelp": "Pour chaque point de décision sans mode propre.",
-    "useDefault": "Rétablir par défaut ({{mode}})",
-    "featureOff": "Fonction désactivée : non interrogé",
-    "groups": {
-      "input": "Entrée",
-      "context": "Contexte",
-      "memory": "Leçons",
-      "tools": "Outils et sécurité",
-      "turn": "Tour",
-      "team": "Travail d’équipe"
-    },
-    "otherGroup": "Autre",
-    "pageLead": "Un point suit le mode par défaut, sauf si vous lui en donnez un propre. Le mode par défaut et la recherche sont sur « {{page}} ».",
-    "none": "Aucun point de décision ici pour l’instant."
+    "useDefault": "Rétablir par défaut ({{mode}})"
   },
   "features": {
     "lead": "Ce que mu fait pour vous en arrière-plan. Désactivez une fonction et mu cesse de s’en charger.",
-    "moreLead": "Tout ce que mu sait faire d’autre, regroupé selon l’endroit où cela agit. Les options de chaque fonction sont à un clic.",
     "beta": "Bêta",
     "reset": "Rétablir les valeurs par défaut",
-    "boardModelElsewhere": "Le modèle qui rédige le tableau se choisit dans « Modèle par défaut ».",
+    "boardModelElsewhere": "Le modèle qui rédige le tableau se choisit dans « Modèle du tableau en clair ».",
     "options": "Options",
     "noOptions": "Rien d’autre à régler : il n’y a que l’interrupteur.",
     "noSuchFeature": "Cette version de mu n’a pas cette fonction.",
     "none": "Aucune fonction ici pour l’instant.",
     "part": "Options, page {{part}} sur {{parts}}",
     "previousPart": "Page précédente",
-    "nextPart": "Page suivante"
+    "nextPart": "Page suivante",
+    "details": "Paramètres détaillés"
   },
   "judges": {
     "tiersHelp": "Les juges sont essayés dans l’ordre. Un juge suivant ne voit que ce que les précédents ont laissé incertain.",
     "order": "Ordre",
-    "orderHelp": "Le premier est le juge choisi ci-dessus.",
+    "orderHelp": "Le premier est le juge choisi sur la page « Juges ».",
+    "firstTier": "Le juge choisi sur la page « Juges » : son service, son adresse et sa clé se règlent là-bas.",
     "tierTitle": "Palier {{index}} : {{name}}",
     "service": "Service",
     "services": {
@@ -170,8 +149,10 @@
       "classifierHelp": "Un modèle de classification du catalogue de mu : {{model}}. mu l'appelle avec la clé de son fournisseur."
     },
     "intro": "Pendant qu’il travaille, mu se pose beaucoup de petites questions : comment traiter ce message, si cette étape enfreint une règle que vous avez fixée. Le juge y répond. Choisissez-en un.",
+    "mode": "Appliquer les jugements",
+    "modeHelp": "Activé : les jugements du juge prennent effet. Désactivé : chaque étape se poursuit normalement. Les étapes sans réglage propre suivent celui-ci.",
     "choose": "Choisir un juge",
-    "custom": "Le premier juge est actuellement personnalisé : consultez-le et modifiez-le plus bas, dans « Paliers de juges ».",
+    "custom": "Le premier juge est actuellement personnalisé : consultez-le et modifiez-le sur la page « Ordre des juges ».",
     "keyPlaceholder": "Collez la clé",
     "choices": {
       "jev": {
@@ -270,7 +251,7 @@
     "limit": "Limite de contexte",
     "limitHelp": "0 suit la fenêtre du modèle moins la réserve. Sinon, de {{min}} à {{max}}. Vérifié avant la prochaine requête au modèle ; ce n’est pas une coupure stricte.",
     "limitProblem": "Saisissez 0 ou un nombre entier de {{min}} à {{max}}.",
-    "lead": "Quand la conversation est compactée, jusqu’où son contexte peut grandir, et les points de décision sur le contexte."
+    "lead": "Quand la conversation est compactée, jusqu’où son contexte peut grandir, et les fonctions qui agissent sur le contexte."
   },
   "permissions": {
     "modes": {
@@ -545,7 +526,8 @@
         "openai-completionsHint": "Fonctionne presque partout ; la plupart des services et relais le prennent en charge.",
         "openai-responsesHint": "L’API plus récente d’OpenAI ; seuls certains services la prennent en charge."
       },
-      "other": "Un autre service (saisir son adresse)"
+      "other": "Un autre service (saisir son adresse)",
+      "ready": "Déjà utilisable : {{provider}} · {{model}}. Cliquez sur « Suivant » ou choisissez une autre option ci-dessous."
     },
     "apiKey": {
       "title": "Coller une clé API",
@@ -639,7 +621,11 @@
     },
     "judge": {
       "title": "Choisir un juge",
-      "subtitle": "Le juge répond aux petites questions que mu se pose en travaillant. mu fonctionne sans juge, simplement sans ces contrôles."
+      "subtitle": "Le juge répond aux petites questions que mu se pose en travaillant. mu fonctionne sans juge, simplement sans ces contrôles.",
+      "readyFree": "Le Jev gratuit est prêt. Rien à faire ici.",
+      "readyKey": "Jev est prêt, avec la clé que vous avez définie.",
+      "more": "Changer de service ou utiliser votre propre clé",
+      "less": "Masquer"
     },
     "done": {
       "title": "Tout est prêt",
@@ -650,7 +636,11 @@
       "noKey": "Pas encore de clé : les jugements suivent les règles par défaut en attendant",
       "freeJev": "Pas encore de clé : Jev répond gratuitement sur OpenCode Zen pour l'instant (durée limitée)",
       "saveFailed": "L’enregistrement a échoué : {{reason}}",
-      "modelValue": "{{provider}} / {{model}}"
+      "modelValue": "{{provider}} / {{model}}",
+      "import": "Conversations",
+      "importOpen": "Choisir lesquelles…",
+      "importFound_one": "{{count}} conversation Claude Code ou Codex sur cet ordinateur peut être importée pour la poursuivre ici",
+      "importFound_other": "{{count}} conversations Claude Code ou Codex sur cet ordinateur peuvent être importées pour les poursuivre ici"
     },
     "intro": {
       "title": "Bienvenue dans mu",
@@ -763,7 +753,21 @@
     },
     "stopped": "Vous avez arrêté cette réponse.",
     "answerLost": "mu n’a pas reçu votre réponse et a continué comme si vous aviez refusé.",
-    "bashMissing": "mu a besoin de Git for Windows pour exécuter des commandes. Une fois qu’il est installé, renvoyez votre message. Téléchargez-le ici :"
+    "bashMissing": "mu a besoin de Git for Windows pour exécuter des commandes. Une fois qu’il est installé, renvoyez votre message. Téléchargez-le ici :",
+    "toModel": {
+      "nudge": "mu a rappelé au modèle que ce tour n'est pas encore terminé",
+      "goal": "L'objectif n'est pas encore atteint, mu a donc demandé au modèle de continuer",
+      "diagnostics": "mu a signalé au modèle les erreurs laissées par ses modifications",
+      "steer": "mu a demandé au modèle de changer d'approche",
+      "rewind": "mu a restauré les fichiers et en a expliqué la raison au modèle",
+      "hive": "mu a transmis au modèle de nouvelles découvertes de l'essaim",
+      "swarm": "mu a demandé au sous-agent de conclure et de faire son rapport",
+      "ttsr": "mu a rappelé au modèle l'une de vos règles",
+      "other": "mu a envoyé un rappel au modèle",
+      "show": "Ce qui a été envoyé",
+      "hide": "Masquer",
+      "imported": "Cette conversation a été importée de Claude Code ou Codex et continue ici ; le raisonnement et les images n'ont pas été importés"
+    }
   },
   "errors": {
     "credential": "La clé contient des caractères interdits, comme des espaces, des guillemets ou des sauts de ligne. Collez-la à nouveau.",
@@ -948,7 +952,7 @@
       "body": "mu travaille dans ce dossier. Dites ce que vous voulez faire."
     },
     "sider": {
-      "title": "Natif",
+      "title": "Récents",
       "new": "Nouvelle conversation dans un dossier",
       "empty": "Aucune conversation pour l’instant",
       "all": "Tout afficher ({{count}})",
@@ -992,6 +996,23 @@
     },
     "attach": {
       "failed": "Impossible de joindre {{name}}."
+    }
+  },
+  "details": {
+    "lead": "Un interrupteur par fonction, ses réglages sous « Options ». Les lignes en retrait sont les endroits où elle consulte Jev : désactivez-en une et cette étape se déroule comme d’habitude.",
+    "featureOff": "La fonction est désactivée",
+    "askJev": "Laisser Jev juger",
+    "askJevAbout": "Laisser Jev juger : {{point}}",
+    "areas": {
+      "input": "Entrée",
+      "context": "Contexte",
+      "memory": "Leçons",
+      "tools": "Outils",
+      "safety": "Sécurité",
+      "turn": "Tour",
+      "goal": "Objectif et tableau",
+      "team": "Travail d’équipe",
+      "other": "Autre"
     }
   }
 }

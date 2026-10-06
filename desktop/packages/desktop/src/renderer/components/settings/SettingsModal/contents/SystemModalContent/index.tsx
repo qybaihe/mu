@@ -15,14 +15,13 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useSWR from 'swr';
 import { useSettingsViewMode } from '../../settingsViewContext';
-import DevSettings from './DevSettings';
 import DirInputItem from './DirInputItem';
 import PreferenceRow from './PreferenceRow';
 
 /**
  * The machine underneath mu: whether it starts with the computer and where it goes when closed, the graphics
- * acceleration, notifications, and the folders it works and logs in (plus the developer tools in dev mode). What a
- * conversation waits for and may keep is the conversations page; the language is on the appearance page. Two quiet
+ * acceleration, notifications, and the folders it works and logs in. What a conversation waits for and may keep is the
+ * conversations page; the language is on the appearance page; the developer tools are a page of their own. Two quiet
  * lists: the switches, then the folders.
  */
 const SystemModalContent: React.FC = () => {
@@ -335,9 +334,6 @@ const SystemModalContent: React.FC = () => {
               }
             />
           )}
-
-          {/* Developer settings: DevTools + CDP (only visible in dev mode) */}
-          <DevSettings />
         </div>
       </AionScrollArea>
     </div>

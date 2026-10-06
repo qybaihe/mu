@@ -602,7 +602,11 @@
       "endLabel": "Terminer l’objectif"
     },
     "thinkingNote": "Changer le niveau de réflexion perd le cache du prompt ; gardez-le stable sur un même modèle",
-    "modelBusy": "Changez de modèle une fois cette réponse terminée."
+    "modelBusy": "Changez de modèle une fois cette réponse terminée.",
+    "defaultTag": "par défaut",
+    "makeDefault": "Utiliser par défaut pour les nouvelles conversations",
+    "madeDefault": "Les nouvelles conversations commenceront avec ce modèle.",
+    "makeDefaultFailed": "Impossible d'enregistrer le modèle par défaut."
   },
   "agentTip": {
     "codes": {

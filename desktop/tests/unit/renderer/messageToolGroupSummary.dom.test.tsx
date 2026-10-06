@@ -5,6 +5,7 @@ import { ipcBridge } from '@/common';
 import type { TMessage } from '@/common/chat/chatLib';
 import type { ToolMessage } from '@/common/chat/normalizeToolCall';
 import MessageToolGroupSummary from '@/renderer/pages/conversation/Messages/components/MessageToolGroupSummary';
+import { shortPath } from '@/renderer/pages/conversation/Messages/components/toolActivity';
 
 vi.mock('@/common', () => ({
   ipcBridge: {
@@ -23,8 +24,14 @@ vi.mock('react-i18next', () => ({
       const templates: Record<string, string> = {
         'tools.execution.callAria': '{{name}} · {{status}}',
         'tools.activity.running': '{{steps}} steps · running {{label}}',
-        'tools.activity.summary': '{{steps}} steps',
-        'tools.activity.summaryFailed': '{{steps}} steps · {{failed}} failed',
+        'tools.activity.parts.read': 'read {{n}}',
+        'tools.activity.parts.look': 'looked up {{n}}',
+        'tools.activity.parts.edit': 'edited {{n}}',
+        'tools.activity.parts.run': 'ran {{n}}',
+        'tools.activity.parts.web': 'web {{n}}',
+        'tools.activity.parts.other': '{{n}} other',
+        'tools.activity.separator': ' · ',
+        'tools.activity.doneFailed': '{{done}} · {{failed}} failed',
       };
       const template = templates[key] ?? key;
       return template.replace(/\{\{(\w+)\}\}/g, (match, name: string) =>
@@ -78,9 +85,20 @@ describe('MessageToolGroupSummary', () => {
 
     const shown = screen.getByTestId('tool-call-path');
     expect(shown).toHaveAttribute('title', path);
-    expect(shown).toHaveTextContent(path);
+    // The home folder reads as `~`; the whole path is the tooltip.
+    expect(shown).toHaveTextContent('~/.codex/skills/information-collection/scripts/init_info_library.py');
     expect(within(shown).getByText('init_info_library.py')).toBeInTheDocument();
-    expect(within(shown).getByText('/Users/me/.codex/skills/information-collection/scripts/')).toBeInTheDocument();
+    expect(within(shown).getByText('~/.codex/skills/information-collection/scripts/')).toBeInTheDocument();
+  });
+
+  it('reads a home folder as ~ on macOS, Linux and Windows, and leaves any other path alone', () => {
+    expect(shortPath('/Users/me/project/a.ts')).toBe('~/project/a.ts');
+    expect(shortPath('/home/me/project/a.ts')).toBe('~/project/a.ts');
+    expect(shortPath('C:\\Users\\me\\project\\a.ts')).toBe('~\\project\\a.ts');
+    expect(shortPath('/Users/me')).toBe('~');
+    expect(shortPath('/Users2/me/a.ts')).toBe('/Users2/me/a.ts');
+    expect(shortPath('/tmp/a.ts')).toBe('/tmp/a.ts');
+    expect(shortPath('src/a.ts')).toBe('src/a.ts');
   });
 
   it('keeps a command whole, cut at its end, with the whole of it on hover', () => {
@@ -114,7 +132,7 @@ describe('MessageToolGroupSummary', () => {
     expect(screen.getByRole('button', { name: 'bash · tools.status.executing' })).toHaveTextContent('npm test');
   });
 
-  it('keeps a finished run folded, and says how many steps failed', () => {
+  it('keeps a finished run folded, and says what it did and how many steps failed', () => {
     render(
       <MessageToolGroupSummary
         messages={[
@@ -124,9 +142,27 @@ describe('MessageToolGroupSummary', () => {
       />
     );
 
-    const header = screen.getByRole('button', { name: /2 steps/ });
-    expect(header).toHaveTextContent('2 steps · 1 failed');
+    const header = screen.getByRole('button', { name: /read 1/ });
+    expect(header).toHaveTextContent('read 1 · ran 1 · 1 failed');
     expect(header).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('says what a finished run did by kind, in a fixed order, whatever order the calls came in', () => {
+    render(
+      <MessageToolGroupSummary
+        messages={[
+          tool('bash', 'completed', { command: 'npm test' }),
+          tool('edit', 'completed', { path: 'src/a.ts' }),
+          tool('read', 'completed', { path: 'src/a.ts' }),
+          tool('grep', 'completed', { pattern: 'x' }),
+          tool('read', 'completed', { path: 'src/b.ts' }),
+          tool('hive_status', 'completed', {}),
+        ]}
+      />
+    );
+    expect(screen.getByTestId('tool-activity-group').querySelector('button')).toHaveTextContent(
+      'read 2 · looked up 1 · edited 1 · ran 1 · 1 other'
+    );
   });
 
   it('shows a failed step’s own words without asking for a click', () => {
@@ -343,7 +379,7 @@ describe('a call the person did not allow', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: /3 steps/ })).toHaveTextContent('3 steps · 1 failed');
+    expect(screen.getByRole('button', { name: /read 1/ })).toHaveTextContent('read 1 · ran 2 · 1 failed');
     expect(screen.getByTestId('tool-activity-denied')).toHaveTextContent('bash');
     expect(screen.getByTestId('tool-activity-denied')).toHaveTextContent('rm -rf build · tools.execution.denied');
     expect(screen.getAllByTestId('tool-activity-error')).toHaveLength(1);

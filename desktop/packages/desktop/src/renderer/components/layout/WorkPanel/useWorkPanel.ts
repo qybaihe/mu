@@ -16,12 +16,14 @@ import { boardSignature, createEditWatcher, hiveSignature, judgeSignature, lesso
 import {
   bumpWorkPanelNews,
   handPreviewToBrowser,
+  markWorkPanelUsed,
   noteWorkPanelSignature,
   readWorkPanelMemory,
   rememberWorkPanel,
   setWorkPanelViewing,
   useWorkPanelMemory,
   useWorkPanelUnread,
+  useWorkPanelUsed,
   type WorkPanelTab,
 } from './workPanelStore';
 
@@ -37,6 +39,7 @@ import {
 export function useWorkPanel(conversationId: string | null, kernel: { events: Activity[]; settled: boolean }) {
   const memory = useWorkPanelMemory(conversationId);
   const unread = useWorkPanelUnread(conversationId);
+  const used = useWorkPanelUsed(conversationId);
   const handOver = useBrowserHandOver();
   const [focus, setFocus] = useState<HiveFocusRequest>();
 
@@ -75,10 +78,11 @@ export function useWorkPanel(conversationId: string | null, kernel: { events: Ac
     if (conversationId) dispatchWorkspaceStateEvent(!memory.open);
   }, [conversationId, memory.open]);
 
-  // What the person looks at is seen as it arrives.
+  // What the person looks at is seen as it arrives, and the tab stays in the strip.
   const viewing = memory.open ? memory.tab : null;
   useEffect(() => {
     if (!conversationId) return undefined;
+    if (viewing) markWorkPanelUsed(conversationId, viewing);
     setWorkPanelViewing(conversationId, viewing);
     return () => setWorkPanelViewing(conversationId, null);
   }, [conversationId, viewing]);
@@ -121,5 +125,5 @@ export function useWorkPanel(conversationId: string | null, kernel: { events: Ac
     [conversationId]
   );
 
-  return { memory, unread, focus, select, close, resize };
+  return { memory, unread, used, focus, select, close, resize };
 }

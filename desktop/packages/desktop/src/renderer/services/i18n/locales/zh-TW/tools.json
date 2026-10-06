@@ -82,8 +82,22 @@
   },
   "activity": {
     "running": "{{steps}} 步 · 正在執行 {{label}}",
-    "summary": "{{steps}} 步",
-    "summaryFailed": "{{steps}} 步 · {{failed}} 步失敗"
+    "parts": {
+      "read_one": "讀了 {{n}} 個檔案",
+      "read_other": "讀了 {{n}} 個檔案",
+      "look_one": "查找 {{n}} 次",
+      "look_other": "查找 {{n}} 次",
+      "edit_one": "改了 {{n}} 個檔案",
+      "edit_other": "改了 {{n}} 個檔案",
+      "run_one": "執行 {{n}} 條指令",
+      "run_other": "執行 {{n}} 條指令",
+      "web_one": "上網 {{n}} 次",
+      "web_other": "上網 {{n}} 次",
+      "other_one": "其他 {{n}} 步",
+      "other_other": "其他 {{n}} 步"
+    },
+    "separator": " · ",
+    "doneFailed": "{{done}} · {{failed}} 步失敗"
   },
   "kind": {
     "edit": "編輯檔案",

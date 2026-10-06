@@ -4,6 +4,7 @@
     "preferences": "偏好",
     "models": "模型",
     "kernel": "内核",
+    "details": "细项",
     "capabilities": "能力",
     "system": "系统"
   },
@@ -367,13 +368,14 @@
   },
   "notification": "通知",
   "cronNotificationEnabled": "定时任务完成通知",
-  "promptTimeout": "模型请求超时时间（秒）",
+  "promptTimeout": "模型请求超时时间",
   "groupAiCore": "AI 核心",
   "groupApp": "应用",
   "groupAbout": "其他",
-  "agentIdleTimeout": "代理空闲超时（分钟）",
+  "agentIdleTimeout": "代理空闲超时",
   "agentIdleTimeoutDesc": "代理空闲超过这个时长就会停下，以释放内存。",
-  "previewTextSizeLimit": "预览大小上限（MB）",
+  "previewTextSizeLimit": "预览大小上限",
+  "previewTextSizeLimitUnit": "MB",
   "previewTextSizeLimitDesc": "超过该大小的文本文件只显示提示、不加载内容。仅对新打开的标签页生效。",
   "gemini": "Gemini CLI",
   "model": "模型",
@@ -623,7 +625,7 @@
   "closeDevTools": "关闭 DevTools",
   "restartNow": "立即重启",
   "cdp": {
-    "title": "应用内浏览器连接（开发者）",
+    "title": "应用内浏览器连接",
     "connection": "代理怎样操作应用内浏览器",
     "about": "通过本机上的一条连接（127.0.0.1，每次启动换一个端口），只通到那个浏览器视图，碰不到 mu 自己的窗口。本机其他程序也能用它，下面的配置就是这样连上的。代理可以使用应用内浏览器时它才运行，这个开关在应用内浏览器设置里。",
     "openBrowserSettings": "应用内浏览器设置",
@@ -1074,5 +1076,17 @@
   "appearanceDescription": "界面语言、主题、字体和缩放。",
   "systemDescription": "开机启动、关闭窗口后继续运行、通知，以及 mu 的工作目录和日志目录。",
   "conversationsDescription": "超时时间、预览大小上限、上传文件的去处，以及对话之间的消息。",
-  "aboutDescription": "当前的 mu 版本、更新，以及日志文件夹的入口。"
+  "aboutDescription": "当前的 mu 版本、更新，以及日志文件夹的入口。",
+  "developer": {
+    "title": "开发者",
+    "description": "开发者工具，以及外部工具连接应用内浏览器用的端口和 MCP 配置。",
+    "devOnly": "这些工具只在从源码运行的 mu 里提供。"
+  },
+  "search": {
+    "placeholder": "搜索设置",
+    "empty": "没有匹配的设置。",
+    "results": "搜索结果"
+  },
+  "learnMore": "了解更多",
+  "showLess": "收起"
 }

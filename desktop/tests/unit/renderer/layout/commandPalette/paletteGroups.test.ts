@@ -173,6 +173,7 @@ describe('buildPaletteGroups', () => {
       'settings.groups.models': '模型',
       'mu.sections.providers': '提供商',
       'mu.sections.defaultModel': '默认模型',
+      'mu.sections.boardModel': '人话模型',
     };
     const chinese = (key: string, options?: Record<string, unknown>) => words[key] ?? t(key, options);
 
@@ -192,6 +193,7 @@ describe('buildPaletteGroups', () => {
     // A page found by its name comes before one found by its group.
     expect(labels(buildPaletteGroups(sources({ query: '模型', t: chinese })), 'settings')).toEqual([
       '默认模型',
+      '人话模型',
       '提供商',
     ]);
 

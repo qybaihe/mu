@@ -1417,6 +1417,14 @@
       "cache": "Acertos de cache",
       "cacheHint": "Acertos de cache: {{turn}} na última rodada, {{session}} na conversa inteira",
       "pending": "Aparece depois da próxima resposta do mu"
+    },
+    "roles": {
+      "browser": "navegador",
+      "investigator": "investigador",
+      "planner": "planejador",
+      "reviewer": "revisor",
+      "scout": "explorador",
+      "worker": "executor"
     }
   },
   "menu": {

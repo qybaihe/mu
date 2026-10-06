@@ -603,7 +603,11 @@
       "endLabel": "Terminar el objetivo"
     },
     "thinkingNote": "Cambiar el nivel de razonamiento pierde la caché del prompt; mantenlo fijo en el mismo modelo",
-    "modelBusy": "Cambia el modelo cuando termine esta respuesta."
+    "modelBusy": "Cambia el modelo cuando termine esta respuesta.",
+    "defaultTag": "predeterminado",
+    "makeDefault": "Usar por defecto en conversaciones nuevas",
+    "madeDefault": "Las conversaciones nuevas empezarán con este modelo.",
+    "makeDefaultFailed": "No se pudo guardar el modelo predeterminado."
   },
   "agentTip": {
     "codes": {

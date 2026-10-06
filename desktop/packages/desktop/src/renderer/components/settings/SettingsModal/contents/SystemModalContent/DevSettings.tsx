@@ -14,9 +14,10 @@ import useSWR from 'swr';
 import PreferenceRow from './PreferenceRow';
 
 /**
- * The developer tools and the details of the agent's connection to the in-app browser (its address and the MCP
- * configurations that reach it), in a build run from its sources only. Whether that connection runs at all is the
- * in-app browser page's switch, the one switch for it, which every build shows.
+ * The developer page: the developer tools and the details of the agent's connection to the in-app browser (its address
+ * and the MCP configurations that reach it), in a build run from its sources only; an installed app says so instead.
+ * Whether that connection runs at all is the in-app browser page's switch, the one switch for it, which every build
+ * shows.
  */
 const DevSettings: React.FC = () => {
   const { t } = useTranslation();
@@ -112,8 +113,11 @@ const DevSettings: React.FC = () => {
     }
   };
 
-  // A build run from its sources only: while the status is loading, when it cannot be read, and in an installed app,
-  // nothing is shown.
+  // A build run from its sources only. While the status is loading or cannot be read nothing is shown; an installed app,
+  // which lists no developer page but can still be sent to it by a link, says why the page is empty.
+  if (status?.isDevMode === false) {
+    return <div className='text-13px leading-20px text-t-secondary'>{t('settings.developer.devOnly')}</div>;
+  }
   if (status?.isDevMode !== true) {
     return null;
   }

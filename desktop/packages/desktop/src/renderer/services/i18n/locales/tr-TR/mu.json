@@ -2,8 +2,6 @@
   "title": "mu ayarları",
   "description": "mu'ya verilebilecek tüm ayarlar: hakemler, karar noktaları, özellikler, modeller ve bağlam. mu komut satırıyla ortak kullanılır.",
   "reload": "Yeniden yükle",
-  "search": "Kararlarda ve özelliklerde ara",
-  "noMatch": "Aramayla eşleşen bir şey yok.",
   "modified": "Değiştirildi",
   "applyNote": "Değişiklikler yeni oturumlarda geçerli olur. Çalışan bir oturum başladığı yapılandırmayı korur; değişiklikleri alması için yeniden bağlayın.",
   "apiKey": "API anahtarı",
@@ -12,36 +10,31 @@
   "endpointRule": "HTTPS kullanın; HTTP yalnızca bu makine (127.0.0.1, localhost) veya özel ağdaki bir IP adresi (örneğin 192.168.1.20) için. Adreste kullanıcı adı, şifre, sorgu veya parça bulunmamalı.",
   "sections": {
     "judges": "Hakemler",
-    "judgeTiers": "Hakem kademeleri",
+    "judgeOrder": "Hakem sırası",
     "decisions": "Karar noktaları",
     "features": "Özellikler",
-    "moreFeatures": "Diğer özellikler",
+    "coreFeatures": "Temel özellikler",
     "providers": "Sağlayıcılar",
     "defaultModel": "Varsayılan model",
+    "boardModel": "Sade dil modeli",
     "context": "Bağlam"
   },
   "pages": {
-    "decisions": {
-      "input": "Karar noktaları: Girdi",
+    "details": {
+      "input": "Girdi özellikleri",
       "context": "Bağlam",
-      "memory": "Karar noktaları: Dersler",
-      "tools": "Karar noktaları: Araçlar ve güvenlik",
-      "turn": "Karar noktaları: Tur",
-      "team": "Karar noktaları: Ekip çalışması"
-    },
-    "features": {
-      "input": "Diğer özellikler: Girdi",
-      "context": "Diğer özellikler: Bağlam",
-      "tools": "Diğer özellikler: Araçlar ve güvenlik",
-      "turn": "Diğer özellikler: Tur",
-      "other": "Diğer özellikler: Diğer"
+      "memory": "Dersler",
+      "tools": "Araç özellikleri",
+      "safety": "Güvenlik özellikleri",
+      "turn": "Tur özellikleri",
+      "goal": "Hedef ve pano",
+      "team": "Ekip çalışması özellikleri",
+      "other": "Diğer özellikler"
     }
   },
   "modes": {
     "active": "Açık",
-    "off": "Kapalı",
-    "activeHelp": "Karar uygulanır.",
-    "offHelp": "Karar etkili olmaz: o adım her zamanki gibi devam eder."
+    "off": "Kapalı"
   },
   "harness": {
     "tooOld": "Bu mu sürümü, karar noktalarını ve özelliklerini listeleyemeyecek kadar eski. Bunları burada görmek için mu’yu güncelleyin; temel ayarlar yine de çalışır.",
@@ -76,41 +69,27 @@
     }
   },
   "decisions": {
-    "description": "Hakeme soru sorulan her nokta. Bir noktaya kendi modunu vermedikçe varsayılan modu izler.",
-    "defaultMode": "Varsayılan mod",
-    "defaultModeHelp": "Kendi modu olmayan her karar noktası için.",
-    "useDefault": "Varsayılana dön ({{mode}})",
-    "featureOff": "Özellik kapalı: soru sorulmaz",
-    "groups": {
-      "input": "Girdi",
-      "context": "Bağlam",
-      "memory": "Dersler",
-      "tools": "Araçlar ve güvenlik",
-      "turn": "Tur",
-      "team": "Ekip çalışması"
-    },
-    "otherGroup": "Diğer",
-    "pageLead": "Bir noktaya kendi modunu vermedikçe varsayılan modu izler. Varsayılan mod ve arama “{{page}}” sayfasında.",
-    "none": "Burada henüz karar noktası yok."
+    "useDefault": "Varsayılana dön ({{mode}})"
   },
   "features": {
     "lead": "mu'nun arka planda sizin için yaptıkları. Birini kapatırsanız mu onu yapmayı bırakır.",
-    "moreLead": "mu’nun yapabildiği diğer her şey, etki ettiği yere göre gruplandı. Her özelliğin seçenekleri bir tık uzakta.",
     "beta": "Beta",
     "reset": "Varsayılanlara dön",
-    "boardModelElsewhere": "Panoyu yazan model, Varsayılan model bölümünde seçilir.",
+    "boardModelElsewhere": "Panoyu yazan model, Sade dil modeli bölümünde seçilir.",
     "options": "Seçenekler",
     "noOptions": "Ayarlanacak başka bir şey yok: yalnızca anahtar var.",
     "noSuchFeature": "mu’nun bu sürümünde böyle bir özellik yok.",
     "none": "Burada henüz özellik yok.",
     "part": "Seçenekler, sayfa {{part}}/{{parts}}",
     "previousPart": "Önceki sayfa",
-    "nextPart": "Sonraki sayfa"
+    "nextPart": "Sonraki sayfa",
+    "details": "Ayrıntılı ayarlar"
   },
   "judges": {
     "tiersHelp": "Hakemler sırayla denenir. Sonraki hakem yalnızca öncekilerin emin olamadığı soruları görür.",
     "order": "Sıra",
-    "orderHelp": "İlki, yukarıda seçilen hakemdir.",
+    "orderHelp": "İlki, Hakemler sayfasında seçilen hakemdir.",
+    "firstTier": "Hakemler sayfasında seçilen hakem: hizmeti, adresi ve anahtarı orada ayarlanır.",
     "tierTitle": "{{index}}. kademe: {{name}}",
     "service": "Hizmet",
     "services": {
@@ -170,8 +149,10 @@
       "classifierHelp": "mu'nun model kataloğundan bir sınıflandırma modeli: {{model}}. mu onu sağlayıcısının anahtarıyla çağırır."
     },
     "intro": "mu çalışırken pek çok küçük soruyla karşılaşır: bu mesaj nasıl ele alınmalı, bu adım koyduğunuz bir kuralı çiğniyor mu? Bunları hakem yanıtlar. Birini seçin.",
+    "mode": "Kararları uygula",
+    "modeHelp": "Açık: hakemin kararları uygulanır. Kapalı: her adım her zamanki gibi devam eder. Kendi ayarı olmayan adımlar bunu izler.",
     "choose": "Bir hakem seçin",
-    "custom": "Şu an ilk sıradaki hakem özel bir hakem: aşağıda, Hakem kademeleri bölümünde görüp değiştirebilirsiniz.",
+    "custom": "Şu an ilk sıradaki hakem özel bir hakem: Hakem sırası sayfasında görüp değiştirebilirsiniz.",
     "keyPlaceholder": "Anahtarı yapıştırın",
     "choices": {
       "jev": {
@@ -270,7 +251,7 @@
     "limit": "Bağlam sınırı",
     "limitHelp": "0 ise modelin penceresi, ayrılan pay düşülerek kullanılır. Aksi hâlde {{min}} ile {{max}} arası. Sonraki model isteğinden önce kontrol edilir; kesin bir sınır değildir.",
     "limitProblem": "0 ya da {{min}} ile {{max}} arasında bir tam sayı girin.",
-    "lead": "Konuşmanın ne zaman sıkıştırılacağı, bağlamının ne kadar büyüyebileceği ve bağlamla ilgili karar noktaları."
+    "lead": "Konuşmanın ne zaman sıkıştırılacağı, bağlamının ne kadar büyüyebileceği ve bağlam üzerinde çalışan özellikler."
   },
   "permissions": {
     "modes": {
@@ -545,7 +526,8 @@
         "openai-completionsHint": "Neredeyse her yerde çalışır; çoğu hizmet ve aktarma hizmeti bunu destekler.",
         "openai-responsesHint": "OpenAI'ın daha yeni API'si; yalnızca bazı hizmetler destekler."
       },
-      "other": "Başka bir hizmet (adresini girin)"
+      "other": "Başka bir hizmet (adresini girin)",
+      "ready": "Kullanıma hazır: {{provider}} · {{model}}. \"İleri\"ye tıklayın veya aşağıdan başka bir yol seçin."
     },
     "apiKey": {
       "title": "API anahtarı yapıştırın",
@@ -639,7 +621,11 @@
     },
     "judge": {
       "title": "Bir hakem seçin",
-      "subtitle": "Hakem, mu'nun çalışırken sorduğu küçük soruları yanıtlar. mu hakemsiz de çalışır, yalnızca bu kontroller olmaz."
+      "subtitle": "Hakem, mu'nun çalışırken sorduğu küçük soruları yanıtlar. mu hakemsiz de çalışır, yalnızca bu kontroller olmaz.",
+      "readyFree": "Ücretsiz Jev hazır. Burada yapılacak bir şey yok.",
+      "readyKey": "Jev, belirlediğiniz anahtarla hazır.",
+      "more": "Hizmeti değiştir veya kendi anahtarını kullan",
+      "less": "Gizle"
     },
     "done": {
       "title": "Her şey hazır",
@@ -650,7 +636,11 @@
       "noKey": "Henüz anahtar yok: anahtar girilene kadar kararlar varsayılan kurallara göre verilir",
       "freeJev": "Henüz anahtar yok: şimdilik Jev, OpenCode Zen'de ücretsiz yanıt veriyor (sınırlı süre)",
       "saveFailed": "Kaydedilemedi: {{reason}}",
-      "modelValue": "{{provider}} / {{model}}"
+      "modelValue": "{{provider}} / {{model}}",
+      "import": "Sohbetler",
+      "importOpen": "Seç…",
+      "importFound_one": "Bu bilgisayarda burada sürdürmek için içe aktarılabilecek {{count}} Claude Code veya Codex sohbeti var",
+      "importFound_other": "Bu bilgisayarda burada sürdürmek için içe aktarılabilecek {{count}} Claude Code veya Codex sohbeti var"
     },
     "intro": {
       "title": "mu'ya hoş geldiniz",
@@ -763,7 +753,21 @@
     },
     "stopped": "Bu yanıtı durdurdunuz.",
     "answerLost": "mu yanıtınızı alamadı; reddetmişsiniz gibi devam etti.",
-    "bashMissing": "mu'nun komut çalıştırabilmesi için Git for Windows gerekiyor. Kurulduktan sonra mesajınızı tekrar gönderin. İndirme adresi:"
+    "bashMissing": "mu'nun komut çalıştırabilmesi için Git for Windows gerekiyor. Kurulduktan sonra mesajınızı tekrar gönderin. İndirme adresi:",
+    "toModel": {
+      "nudge": "mu, modele bu turun henüz bitmediğini hatırlattı",
+      "goal": "Hedefe henüz ulaşılmadı, bu yüzden mu modelden devam etmesini istedi",
+      "diagnostics": "mu, değişikliklerin bıraktığı hataları modele bildirdi",
+      "steer": "mu, modelden yaklaşımını değiştirmesini istedi",
+      "rewind": "mu dosyaları geri aldı ve nedenini modele açıkladı",
+      "hive": "mu, sürüdeki yeni bulguları modele iletti",
+      "swarm": "mu, alt ajandan işi toparlayıp rapor vermesini istedi",
+      "ttsr": "mu, kurallarınızdan birini modele hatırlattı",
+      "other": "mu modele bir hatırlatma gönderdi",
+      "show": "Gönderilen metin",
+      "hide": "Gizle",
+      "imported": "Bu sohbet Claude Code veya Codex’ten içe aktarıldı ve burada devam ediyor; düşünme adımları ve görseller aktarılmadı"
+    }
   },
   "errors": {
     "credential": "Anahtar, bir anahtarda bulunamayacak karakterler (boşluk, tırnak işareti veya satır sonu gibi) içeriyor. Yeniden yapıştırın.",
@@ -948,7 +952,7 @@
       "body": "mu bu klasörde çalışır. Ne yapılmasını istediğinizi söyleyin."
     },
     "sider": {
-      "title": "Yerel",
+      "title": "Son",
       "new": "Bir klasörde yeni konuşma",
       "empty": "Henüz konuşma yok",
       "all": "Tümünü göster ({{count}})",
@@ -992,6 +996,23 @@
     },
     "attach": {
       "failed": "{{name}} eklenemedi."
+    }
+  },
+  "details": {
+    "lead": "Her özelliğin bir anahtarı vardır, ayarları Seçenekler'dedir. Girintili satırlar Jev'e karar sorduğu yerlerdir: birini kapatırsanız o adım her zamanki gibi ilerler.",
+    "featureOff": "Özellik kapalı",
+    "askJev": "Jev karar versin",
+    "askJevAbout": "Jev karar versin: {{point}}",
+    "areas": {
+      "input": "Girdi",
+      "context": "Bağlam",
+      "memory": "Dersler",
+      "tools": "Araçlar",
+      "safety": "Güvenlik",
+      "turn": "Tur",
+      "goal": "Hedef ve pano",
+      "team": "Ekip çalışması",
+      "other": "Diğer"
     }
   }
 }

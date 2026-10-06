@@ -82,8 +82,34 @@
   },
   "activity": {
     "running": "{{steps}} кроків · виконується {{label}}",
-    "summary": "{{steps}} кроків",
-    "summaryFailed": "{{steps}} кроків · {{failed}} з помилкою"
+    "parts": {
+      "read_one": "Прочитано {{n}} файл",
+      "read_few": "Прочитано {{n}} файли",
+      "read_many": "Прочитано {{n}} файлів",
+      "read_other": "Прочитано {{n}} файлу",
+      "look_one": "{{n}} пошук",
+      "look_few": "{{n}} пошуки",
+      "look_many": "{{n}} пошуків",
+      "look_other": "{{n}} пошуку",
+      "edit_one": "Змінено {{n}} файл",
+      "edit_few": "Змінено {{n}} файли",
+      "edit_many": "Змінено {{n}} файлів",
+      "edit_other": "Змінено {{n}} файлу",
+      "run_one": "Виконано {{n}} команду",
+      "run_few": "Виконано {{n}} команди",
+      "run_many": "Виконано {{n}} команд",
+      "run_other": "Виконано {{n}} команди",
+      "web_one": "{{n}} веб-запит",
+      "web_few": "{{n}} веб-запити",
+      "web_many": "{{n}} веб-запитів",
+      "web_other": "{{n}} веб-запиту",
+      "other_one": "Ще {{n}} крок",
+      "other_few": "Ще {{n}} кроки",
+      "other_many": "Ще {{n}} кроків",
+      "other_other": "Ще {{n}} кроку"
+    },
+    "separator": " · ",
+    "doneFailed": "{{done}} · з помилкою: {{failed}}"
   },
   "kind": {
     "edit": "Редагування файлу",

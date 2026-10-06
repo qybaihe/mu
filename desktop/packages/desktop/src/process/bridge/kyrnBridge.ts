@@ -120,6 +120,8 @@ export function initKyrnBridge(): void {
   kyrnBridge.catalog.provider(() => result(catalog));
   kyrnBridge.settings.provider(() => result(() => settings.read()));
   kyrnBridge.save.provider((input) => result(() => settings.save(input)));
+  kyrnBridge.defaultModel.provider(() => result(() => settings.defaultModel()));
+  kyrnBridge.setDefaultModel.provider((input) => result(() => settings.setDefaultModel(input)));
   kyrnBridge.availableModels.provider(() =>
     result(async () => {
       const agents = await httpRequest<Parameters<typeof findRegistration>[0]>('GET', '/api/agents/management');
@@ -215,7 +217,9 @@ export function initKyrnBridge(): void {
       return assistant.id;
     },
   });
-  kyrnBridge.importList.provider(({ cwd }) => result(() => imports.list(cwd)));
-  kyrnBridge.importRun.provider(({ paths, locale }) => result(() => imports.run(paths, locale)));
+  kyrnBridge.importList.provider(({ cwd, native }) => result(() => imports.list(cwd, native === true)));
+  kyrnBridge.importRun.provider(({ paths, locale, native }) =>
+    result(() => imports.run(paths, locale, native === true))
+  );
   kyrnBridge.importHistory.provider(({ conversationId }) => result(() => imports.history(conversationId)));
 }

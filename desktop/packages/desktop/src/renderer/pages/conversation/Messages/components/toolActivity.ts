@@ -76,6 +76,12 @@ const inputTarget = (input?: string): { text: string; path: boolean } | undefine
   return undefined;
 };
 
+/** A home folder at the start of a path: macOS, Linux and Windows. */
+const HOME = /^(?:\/Users\/[^/]+|\/home\/[^/]+|[A-Za-z]:\\Users\\[^\\]+)(?=[/\\]|$)/;
+
+/** A path as a row shows it: the home folder as `~`, the rest as it is. The whole path stays in the row's tooltip. */
+export const shortPath = (path: string): string => path.replace(HOME, '~');
+
 /** What a call line shows: its verb and its target, else the call's own description. */
 export const toolLabel = (item: NormalizedToolCall): ToolLabel => {
   const named = inputTarget(item.input);
@@ -109,6 +115,56 @@ export function summarizeToolActivity(tools: NormalizedToolCall[]): ToolActivity
     ...(running ? { running: toolLabel(running) } : {}),
     failed,
   };
+}
+
+/** What kind of work a call was, for the folded line's count: files read, lookups, edits, commands, the web. */
+export type ToolActivityKind = 'read' | 'look' | 'edit' | 'run' | 'web' | 'other';
+
+/** The order the folded line names the kinds in. */
+export const TOOL_ACTIVITY_KINDS: readonly ToolActivityKind[] = ['read', 'look', 'edit', 'run', 'web', 'other'];
+
+/** Tool names by kind, as mu, pi and the agents the app imports from name them (case does not matter). */
+const KIND_OF: Readonly<Record<string, ToolActivityKind>> = {
+  read: 'read',
+  read_file: 'read',
+  view: 'read',
+  grep: 'look',
+  find: 'look',
+  ls: 'look',
+  glob: 'look',
+  locate: 'look',
+  find_skill: 'look',
+  write: 'edit',
+  edit: 'edit',
+  multiedit: 'edit',
+  apply_patch: 'edit',
+  bash: 'run',
+  shell: 'run',
+  exec_command: 'run',
+  bg_run: 'run',
+  web_search: 'web',
+  web_fetch: 'web',
+  websearch: 'web',
+  webfetch: 'web',
+  browse: 'web',
+};
+
+export const toolActivityKind = (name: string): ToolActivityKind => KIND_OF[name.toLowerCase()] ?? 'other';
+
+/**
+ * What a stretch did, counted by kind in a fixed order ("read 3 files · ran 1 command"), so a folded line says more than
+ * how many steps it holds. Kinds with no call are left out.
+ */
+export function toolActivityParts(tools: NormalizedToolCall[]): { kind: ToolActivityKind; count: number }[] {
+  const counts = new Map<ToolActivityKind, number>();
+  for (const item of tools) {
+    const kind = toolActivityKind(item.name);
+    counts.set(kind, (counts.get(kind) ?? 0) + 1);
+  }
+  return TOOL_ACTIVITY_KINDS.flatMap((kind) => {
+    const count = counts.get(kind);
+    return count ? [{ kind, count }] : [];
+  });
 }
 
 /** The failures of a stretch, one line each. These stay visible while the group is closed. */

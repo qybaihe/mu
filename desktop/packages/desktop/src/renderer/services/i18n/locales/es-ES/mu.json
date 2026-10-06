@@ -2,8 +2,6 @@
   "title": "Configuración de mu",
   "description": "Todo lo que se le puede indicar a mu: jueces, puntos de decisión, funciones, modelos y contexto. Compartido con la línea de comandos de mu.",
   "reload": "Recargar",
-  "search": "Buscar decisiones y funciones",
-  "noMatch": "Nada coincide con la búsqueda.",
   "modified": "Modificado",
   "applyNote": "Los cambios se aplican a las sesiones nuevas. Una sesión en curso mantiene la configuración con la que empezó; reconéctala para aplicarlos.",
   "apiKey": "Clave de API",
@@ -12,36 +10,31 @@
   "endpointRule": "Usa HTTPS, o HTTP solo hacia este ordenador (127.0.0.1, localhost) o hacia una dirección IP de red privada (como 192.168.1.20). Sin nombre de usuario, contraseña, consulta ni fragmento en la dirección.",
   "sections": {
     "judges": "Jueces",
-    "judgeTiers": "Niveles de jueces",
+    "judgeOrder": "Orden de los jueces",
     "decisions": "Puntos de decisión",
     "features": "Funciones",
-    "moreFeatures": "Más funciones",
+    "coreFeatures": "Funciones principales",
     "providers": "Proveedores",
     "defaultModel": "Modelo predeterminado",
+    "boardModel": "Modelo del tablero",
     "context": "Contexto"
   },
   "pages": {
-    "decisions": {
-      "input": "Puntos de decisión: Entrada",
+    "details": {
+      "input": "Funciones de entrada",
       "context": "Contexto",
-      "memory": "Puntos de decisión: Lecciones",
-      "tools": "Puntos de decisión: Herramientas y seguridad",
-      "turn": "Puntos de decisión: Turno",
-      "team": "Puntos de decisión: Trabajo en equipo"
-    },
-    "features": {
-      "input": "Más funciones: Entrada",
-      "context": "Más funciones: Contexto",
-      "tools": "Más funciones: Herramientas y seguridad",
-      "turn": "Más funciones: Turno",
-      "other": "Más funciones: Otros"
+      "memory": "Lecciones",
+      "tools": "Funciones de herramientas",
+      "safety": "Funciones de seguridad",
+      "turn": "Funciones del turno",
+      "goal": "Objetivo y tablero",
+      "team": "Funciones de trabajo en equipo",
+      "other": "Otras funciones"
     }
   },
   "modes": {
     "active": "Activado",
-    "off": "Desactivado",
-    "activeHelp": "El veredicto se aplica.",
-    "offHelp": "El veredicto no tiene efecto: ese paso sigue como siempre."
+    "off": "Desactivado"
   },
   "harness": {
     "tooOld": "Esta versión de mu es demasiado antigua para mostrar sus puntos de decisión y funciones. Actualiza mu para verlos aquí; la configuración básica sigue funcionando.",
@@ -76,41 +69,27 @@
     }
   },
   "decisions": {
-    "description": "Cada punto en el que se consulta al juez. Un punto sigue el modo predeterminado, salvo que le asignes uno propio.",
-    "defaultMode": "Modo predeterminado",
-    "defaultModeHelp": "Para todos los puntos de decisión sin modo propio.",
-    "useDefault": "Volver al predeterminado ({{mode}})",
-    "featureOff": "La función está desactivada: no se consulta",
-    "groups": {
-      "input": "Entrada",
-      "context": "Contexto",
-      "memory": "Lecciones",
-      "tools": "Herramientas y seguridad",
-      "turn": "Turno",
-      "team": "Trabajo en equipo"
-    },
-    "otherGroup": "Otros",
-    "pageLead": "Un punto sigue el modo predeterminado, salvo que le asignes uno propio. El modo predeterminado y la búsqueda están en «{{page}}».",
-    "none": "Aún no hay puntos de decisión aquí."
+    "useDefault": "Volver al predeterminado ({{mode}})"
   },
   "features": {
     "lead": "Lo que mu hace por ti en segundo plano. Si desactivas una función, mu deja de hacerla.",
-    "moreLead": "Todo lo demás que mu puede hacer, agrupado según dónde actúa. Las opciones de cada función están a un clic.",
     "beta": "Beta",
     "reset": "Restablecer valores",
-    "boardModelElsewhere": "El modelo que escribe el tablero se elige en «Modelo predeterminado».",
+    "boardModelElsewhere": "El modelo que escribe el tablero se elige en «Modelo del tablero».",
     "options": "Opciones",
     "noOptions": "No hay nada más que ajustar: solo está el interruptor.",
     "noSuchFeature": "Esta versión de mu no tiene esa función.",
     "none": "Aún no hay funciones aquí.",
     "part": "Opciones, página {{part}} de {{parts}}",
     "previousPart": "Página anterior",
-    "nextPart": "Página siguiente"
+    "nextPart": "Página siguiente",
+    "details": "Configuración detallada"
   },
   "judges": {
     "tiersHelp": "Los jueces se consultan en orden. Uno posterior solo ve lo que los anteriores dejaron sin resolver.",
     "order": "Orden",
-    "orderHelp": "El primero es el juez elegido arriba.",
+    "orderHelp": "El primero es el juez elegido en la página «Jueces».",
+    "firstTier": "El juez elegido en la página «Jueces»: su servicio, dirección y clave se configuran allí.",
     "tierTitle": "Nivel {{index}}: {{name}}",
     "service": "Servicio",
     "services": {
@@ -170,8 +149,10 @@
       "classifierHelp": "Un modelo de clasificación del catálogo de mu: {{model}}. mu lo llama con la clave de su proveedor."
     },
     "intro": "Mientras trabaja, mu hace muchas pequeñas valoraciones: cómo tratar este mensaje, si este paso rompe una regla que has fijado. El juez las responde. Elige uno.",
+    "mode": "Aplicar los veredictos",
+    "modeHelp": "Activado: los veredictos del juez se aplican. Desactivado: cada paso sigue como siempre. Los pasos sin ajuste propio siguen este.",
     "choose": "Elige un juez",
-    "custom": "Ahora el primer juez es uno personalizado: puedes verlo y cambiarlo abajo, en «Niveles de jueces».",
+    "custom": "Ahora el primer juez es uno personalizado: puedes verlo y cambiarlo en la página «Orden de los jueces».",
     "keyPlaceholder": "Pega la clave",
     "choices": {
       "jev": {
@@ -270,7 +251,7 @@
     "limit": "Límite de contexto",
     "limitHelp": "0 usa la ventana del modelo menos la reserva. Si no, entre {{min}} y {{max}}. Se comprueba antes de la siguiente solicitud al modelo; no es un corte estricto.",
     "limitProblem": "Usa 0 o un número entero de {{min}} a {{max}}.",
-    "lead": "Cuándo se compacta la conversación, cuánto puede crecer su contexto y los puntos de decisión sobre el contexto."
+    "lead": "Cuándo se compacta la conversación, cuánto puede crecer su contexto y las funciones que actúan sobre el contexto."
   },
   "permissions": {
     "modes": {
@@ -545,7 +526,8 @@
         "openai-completionsHint": "Funciona casi en todas partes; la mayoría de servicios e intermediarios lo usan.",
         "openai-responsesHint": "La API más reciente de OpenAI; solo algunos servicios la admiten."
       },
-      "other": "Otro servicio (introduce su dirección)"
+      "other": "Otro servicio (introduce su dirección)",
+      "ready": "Ya puedes usarlo: {{provider}} · {{model}}. Pulsa «Siguiente» o elige otra opción abajo."
     },
     "apiKey": {
       "title": "Pegar una clave de API",
@@ -639,7 +621,11 @@
     },
     "judge": {
       "title": "Elige un juez",
-      "subtitle": "El juez responde a las pequeñas valoraciones que mu hace mientras trabaja. mu funciona sin él, solo que sin estas comprobaciones."
+      "subtitle": "El juez responde a las pequeñas valoraciones que mu hace mientras trabaja. mu funciona sin él, solo que sin estas comprobaciones.",
+      "readyFree": "El Jev gratuito está listo. No hace falta hacer nada aquí.",
+      "readyKey": "Jev está listo, con la clave que configuraste.",
+      "more": "Cambiar de servicio o usar tu propia clave",
+      "less": "Ocultar"
     },
     "done": {
       "title": "Todo listo",
@@ -650,7 +636,11 @@
       "noKey": "Aún no hay clave: los veredictos siguen las reglas predeterminadas hasta que la haya",
       "freeJev": "Aún sin clave: por ahora Jev responde gratis en OpenCode Zen (por tiempo limitado)",
       "saveFailed": "No se pudo guardar: {{reason}}",
-      "modelValue": "{{provider}} / {{model}}"
+      "modelValue": "{{provider}} / {{model}}",
+      "import": "Conversaciones",
+      "importOpen": "Elegir cuáles…",
+      "importFound_one": "Hay {{count}} conversación de Claude Code o Codex en este equipo que puedes traer para seguirla aquí",
+      "importFound_other": "Hay {{count}} conversaciones de Claude Code o Codex en este equipo que puedes traer para seguirlas aquí"
     },
     "intro": {
       "title": "Bienvenido a mu",
@@ -763,7 +753,21 @@
     },
     "stopped": "Has detenido esta respuesta.",
     "answerLost": "mu no recibió tu respuesta y siguió como si la hubieras rechazado.",
-    "bashMissing": "mu necesita Git for Windows para ejecutar comandos. Cuando esté instalado, vuelve a enviar tu mensaje. Descárgalo aquí:"
+    "bashMissing": "mu necesita Git for Windows para ejecutar comandos. Cuando esté instalado, vuelve a enviar tu mensaje. Descárgalo aquí:",
+    "toModel": {
+      "nudge": "mu le recordó al modelo que este turno aún no ha terminado",
+      "goal": "El objetivo aún no se ha cumplido, así que mu le dijo al modelo que siguiera",
+      "diagnostics": "mu le contó al modelo los errores que dejaron sus cambios",
+      "steer": "mu le dijo al modelo que cambiara de enfoque",
+      "rewind": "mu restauró los archivos y le explicó el motivo al modelo",
+      "hive": "mu le pasó al modelo nuevos hallazgos del enjambre",
+      "swarm": "mu le pidió al subagente que terminara e informara",
+      "ttsr": "mu le recordó al modelo una de tus reglas",
+      "other": "mu le envió un recordatorio al modelo",
+      "show": "Lo que se envió",
+      "hide": "Ocultar",
+      "imported": "Esta conversación se importó de Claude Code o Codex y continúa aquí; el razonamiento y las imágenes no se importaron"
+    }
   },
   "errors": {
     "credential": "La clave contiene caracteres no permitidos, como espacios, comillas o saltos de línea. Vuelve a pegarla.",
@@ -948,7 +952,7 @@
       "body": "mu trabaja en esta carpeta. Di qué quieres que se haga."
     },
     "sider": {
-      "title": "Nativo",
+      "title": "Recientes",
       "new": "Nueva conversación en una carpeta",
       "empty": "Aún no hay conversaciones",
       "all": "Mostrar todas ({{count}})",
@@ -992,6 +996,23 @@
     },
     "attach": {
       "failed": "No se pudo adjuntar {{name}}."
+    }
+  },
+  "details": {
+    "lead": "Un interruptor por función, con sus ajustes en «Opciones». Las filas sangradas son donde consulta a Jev: si desactivas una, ese paso sigue como siempre.",
+    "featureOff": "La función está desactivada",
+    "askJev": "Que decida Jev",
+    "askJevAbout": "Que decida Jev: {{point}}",
+    "areas": {
+      "input": "Entrada",
+      "context": "Contexto",
+      "memory": "Lecciones",
+      "tools": "Herramientas",
+      "safety": "Seguridad",
+      "turn": "Turno",
+      "goal": "Objetivo y tablero",
+      "team": "Trabajo en equipo",
+      "other": "Otros"
     }
   }
 }

@@ -17,6 +17,7 @@ import Row from '../fields/Row';
 import fieldStyles from '../fields/fields.module.css';
 import { Card } from '../sections/SectionShell';
 import { providerLabel } from './endpoints';
+import { filterModelOption, modelNamesOf, modelOption } from './modelOptions';
 import styles from './providers.module.css';
 
 type DefaultModelCardProps = {
@@ -67,6 +68,7 @@ export default function DefaultModelCard({
   ];
   const models = custom?.models ?? reported?.models ?? account?.models ?? [];
   const modelIds = [...new Set([...models.map((m) => m.id), defaults.model])].filter(Boolean);
+  const names = modelNamesOf(models);
 
   // Only a custom model says what it can do; for a built-in one pi picks the nearest level it supports.
   const model = custom?.models.find((candidate) => candidate.id === defaults.model);
@@ -110,7 +112,8 @@ export default function DefaultModelCard({
           aria-label={t('mu.defaults.model')}
           placeholder={t('mu.defaults.notSet')}
           value={defaults.model || undefined}
-          options={modelIds}
+          options={modelIds.map((id) => modelOption(id, names.get(id) ?? ''))}
+          filterOption={filterModelOption}
           onChange={(value?: string) => onChange({ ...defaults, model: value ?? '' })}
         />
       </Row>

@@ -213,7 +213,7 @@ const ConversationPreferences: React.FC = () => {
           max={MAX_TEXT_PREVIEW_LIMIT_MB}
           step={0.5}
           style={{ width: 120 }}
-          suffix='MB'
+          suffix={t('settings.previewTextSizeLimitUnit')}
         />
       ),
     },

@@ -15,6 +15,7 @@ export const MU_NOTICE_CODES = [
   'free_jev',
   'free_jev_unavailable',
   'stopped',
+  'to_model',
 ] as const;
 export type MuNoticeCode = (typeof MU_NOTICE_CODES)[number];
 export type MuNoticeLevel = 'info' | 'warning' | 'error';
@@ -26,6 +27,9 @@ export type MuNotice = {
   /** Why checkpoints are off (`checkpoint_off`), or why the free Jev stopped (`free_jev_unavailable`): mu's code. */
   reason?: string;
   params?: Record<string, number>;
+  /** What mu told the model (`to_model`): the message's type (`kyrn.nudge`, …) and the words the model got. */
+  kind?: string;
+  sent?: string;
 };
 
 /** The i18n key of each notice's line. */
@@ -36,7 +40,28 @@ export const MU_NOTICE_KEYS: Readonly<Record<MuNoticeCode, string>> = {
   free_jev: 'mu.notices.freeJev',
   free_jev_unavailable: 'mu.notices.freeJevUnavailable.paid',
   stopped: 'mu.notices.stopped',
+  to_model: 'mu.notices.toModel.other',
 };
+
+/**
+ * What mu told the model, by the message's type: one line in the reader's language that says what mu did. The words
+ * the model got stay one click away, in the language mu wrote them in.
+ */
+export const TO_MODEL_KEYS: Readonly<Record<string, string>> = {
+  'kyrn.nudge': 'mu.notices.toModel.nudge',
+  'kyrn.goal': 'mu.notices.toModel.goal',
+  'kyrn.diagnostics': 'mu.notices.toModel.diagnostics',
+  'kyrn.steer': 'mu.notices.toModel.steer',
+  'kyrn.rewind': 'mu.notices.toModel.rewind',
+  'kyrn.hive': 'mu.notices.toModel.hive',
+  'kyrn.swarm': 'mu.notices.toModel.swarm',
+  'kyrn.ttsr': 'mu.notices.toModel.ttsr',
+  // What `mu import` put at the top of an imported conversation: where it came from, for the model too.
+  'mu.import': 'mu.notices.toModel.imported',
+};
+
+/** mu's own messages to the model: every custom message type the harness sends starts with this. */
+export const TO_MODEL_PREFIX = 'kyrn.';
 
 /** Why the free Jev stopped, by mu's reason (`paid`: it asks for a key or payment; `gone`: no longer offered). */
 export const FREE_JEV_UNAVAILABLE_KEYS: Readonly<Record<string, string>> = {
@@ -104,6 +129,7 @@ export function muNotice(message: TMessage): MuNotice | undefined {
   const level = str(input.level);
   const title = str(update.title);
   if (!isCode(code)) return { title, ...(LEVELS.has(level) ? { level: level as MuNoticeLevel } : {}) };
+  if (code === 'to_model') return { code, title, kind: str(input.kind), sent: str(input.text) };
   const reason = str(input.code);
   if (code === 'free_jev_unavailable') return { code, title, ...(reason ? { reason } : {}) };
   if (code !== 'checkpoint_off') return { code, title };

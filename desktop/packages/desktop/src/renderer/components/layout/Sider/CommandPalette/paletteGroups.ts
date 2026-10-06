@@ -8,7 +8,12 @@ import type { SlashCommandItem } from '@/common/chat/slash/types';
 import type { TChatConversation } from '@/common/config/storage';
 import type { NativeConversation } from '@/common/kyrn/nativeBridge';
 import { getFuzzyMatchIndices } from '@/renderer/hooks/chat/useSlashCommandController';
-import { SETTINGS_GROUPS, SETTINGS_HOME, SETTINGS_PAGES } from '@/renderer/pages/settings/settingsNav';
+import {
+  SETTINGS_GROUPS,
+  SETTINGS_HOME,
+  SETTINGS_PAGES,
+  isSettingsPageListed,
+} from '@/renderer/pages/settings/settingsNav';
 import { formatRelativeTime } from '@/renderer/utils/chat/relativeTime';
 import { commandDescription } from '@/renderer/utils/chat/muCommands';
 import { getActivityTime } from '@/renderer/utils/chat/timeline';
@@ -137,7 +142,7 @@ const GROUP_LABELS: ReadonlyMap<string, string> = new Map(SETTINGS_GROUPS.map((g
  */
 const settingsRows = ({ t }: PaletteSources, keyword: string): PaletteItem[] => {
   const settingsWord = t('common.settings');
-  const found = SETTINGS_PAGES.flatMap((page) => {
+  const found = SETTINGS_PAGES.filter(isSettingsPageListed).flatMap((page) => {
     const label = t(page.labelKey);
     const hits = getFuzzyMatchIndices(label, keyword);
     const railKey: string | undefined = 'railLabelKey' in page ? page.railLabelKey : undefined;

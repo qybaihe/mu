@@ -25,13 +25,13 @@ const rule = (css: string, selector: string): string => {
 };
 
 const PROSE: Record<string, string[]> = {
-  'pages/settings/KyrnSettings/fields/fields.module.css': ['.rowHelp'],
+  // The sentence under a setting's row, once it is opened from its one line.
+  'components/settings/OneLine.module.css': ['.open'],
   'pages/settings/KyrnSettings/sections/sections.module.css': [
     '.cardSummary',
     '.meta',
     '.choiceDescription',
     '.choiceHint',
-    '.plainSummary',
   ],
   'pages/settings/KyrnSettings/providers/providers.module.css': ['.hint'],
   'pages/welcome/Welcome.module.css': ['.lead', '.pointText', '.subtitle', '.note'],
@@ -45,10 +45,11 @@ describe('prose wrapping', () => {
     for (const selector of selectors) expect(rule(css, selector), selector).toContain('text-wrap: balance');
   });
 
-  it('does the same for the description under every settings page title and every preference row', () => {
+  it('does the same for the description under every settings page title, and every row says its own in one line', () => {
     expect(read('pages/settings/components/SettingsPageHeader.tsx')).toContain("style={{ textWrap: 'balance' }}");
     expect(read('components/settings/SettingsModal/contents/SystemModalContent/PreferenceRow.tsx')).toContain(
-      "style={{ textWrap: 'balance' }}"
+      '<OneLine text={description} />'
     );
+    expect(read('pages/settings/KyrnSettings/fields/Row.tsx')).toContain('<OneLine text={help} />');
   });
 });

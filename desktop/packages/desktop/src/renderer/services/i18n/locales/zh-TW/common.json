@@ -1417,6 +1417,14 @@
       "cache": "快取命中",
       "cacheHint": "最近一輪快取命中 {{turn}}，整個對話快取命中 {{session}}",
       "pending": "mu 下一次回覆後顯示"
+    },
+    "roles": {
+      "browser": "瀏覽器",
+      "investigator": "調查員",
+      "planner": "規劃",
+      "reviewer": "審查",
+      "scout": "偵察",
+      "worker": "執行"
     }
   },
   "menu": {

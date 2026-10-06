@@ -11,13 +11,17 @@ import { WelcomePage } from '@/renderer/pages/welcome/page';
 import { useFirstRunWelcome } from '@/renderer/pages/welcome/useFirstRunWelcome';
 import { MuSettingsProvider } from '@/renderer/pages/settings/KyrnSettings/useMuSettings';
 import {
+  DETAIL_AREAS,
   FEATURE_LIST_PAGES,
+  MOVED_FEATURE_LISTS,
   MOVED_SETTINGS_TABS,
   RETIRED_SETTINGS_PATHS,
   SETTINGS_HOME,
   SETTINGS_PAGES,
+  detailsPageOf,
   movedSettingsTab,
   retiredSettingsTarget,
+  type DetailsPageId,
   type SettingsPageId,
 } from '@/renderer/pages/settings/settingsNav';
 const Conversation = preloadablePage(() => import('@renderer/pages/conversation'));
@@ -38,6 +42,7 @@ const ConversationSettings = preloadablePage(
 );
 const BrowserSettings = preloadablePage(() => import('@renderer/pages/settings/SystemSettings/BrowserSettings'));
 const AboutSettings = preloadablePage(() => import('@renderer/pages/settings/SystemSettings/AboutSettings'));
+const DeveloperSettings = preloadablePage(() => import('@renderer/pages/settings/SystemSettings/DeveloperSettings'));
 const ArchivedSettings = preloadablePage(() => import('@renderer/pages/settings/ArchivedSettings'));
 const ExtensionSettingsPage = preloadablePage(() => import('@renderer/pages/settings/ExtensionSettingsPage'));
 const ComponentsShowcase = preloadablePage(() => import('@renderer/pages/TestShowcase'));
@@ -136,24 +141,20 @@ const SETTINGS_PAGE_ELEMENTS: Record<SettingsPageId, PreloadablePage> = {
   conversations: ConversationSettings,
   providers: MuSettings,
   'default-model': MuSettings,
+  'board-model': MuSettings,
   judges: MuSettings,
+  'judge-order': MuSettings,
   features: MuSettings,
-  'decisions-input': MuSettings,
-  'decisions-context': MuSettings,
-  'decisions-memory': MuSettings,
-  'decisions-tools': MuSettings,
-  'decisions-turn': MuSettings,
-  'decisions-team': MuSettings,
-  'more-features-input': MuSettings,
-  'more-features-context': MuSettings,
-  'more-features-tools': MuSettings,
-  'more-features-turn': MuSettings,
-  'more-features-other': MuSettings,
+  ...(Object.fromEntries(DETAIL_AREAS.map((area) => [detailsPageOf(area), MuSettings])) as Record<
+    DetailsPageId,
+    PreloadablePage
+  >),
   skills: SkillsSettings,
   tools: ToolsSettings,
   assistants: AssistantSettings,
   browser: BrowserSettings,
   archived: ArchivedSettings,
+  developer: DeveloperSettings,
   about: AboutSettings,
 };
 
@@ -238,8 +239,10 @@ const PanelRoute: React.FC<{ layout: React.ReactElement }> = ({ layout }) => {
             {FEATURE_LIST_PAGES.map((id) => (
               <Route key={id} path={`/settings/${id}/:feature/:part?`} element={withRouteFallback(MuSettings)} />
             ))}
-            {/* From when every other feature was one page: the page of the feature's group now. */}
-            <Route path='/settings/more-features/:feature/:part?' element={withRouteFallback(MovedFeatureOptions)} />
+            {/* A feature's options at a list that no longer exists: the page of the details its row is on now. */}
+            {MOVED_FEATURE_LISTS.map((list) => (
+              <Route key={list} path={`${list}/:feature/:part?`} element={withRouteFallback(MovedFeatureOptions)} />
+            ))}
             <Route path='/settings/skills/import-history' element={withRouteFallback(SkillsSettings)} />
             <Route path='/settings/skills/detail/:skillName' element={withRouteFallback(SkillDetailPage)} />
             <Route path='/settings/ext/:tabId' element={withRouteFallback(ExtensionSettingsPage)} />

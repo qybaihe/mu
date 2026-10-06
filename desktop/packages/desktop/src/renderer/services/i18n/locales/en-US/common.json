@@ -1417,6 +1417,14 @@
       "cache": "Cache hits",
       "cacheHint": "Cache hits: {{turn}} in the latest turn, {{session}} across the whole conversation",
       "pending": "Shown after mu’s next reply"
+    },
+    "roles": {
+      "browser": "browser",
+      "investigator": "investigator",
+      "planner": "planner",
+      "reviewer": "reviewer",
+      "scout": "scout",
+      "worker": "worker"
     }
   },
   "menu": {

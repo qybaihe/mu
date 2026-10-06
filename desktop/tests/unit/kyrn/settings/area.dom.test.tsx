@@ -2,9 +2,10 @@ import React from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Select } from '@arco-design/web-react';
 import { createInstance } from 'i18next';
 import { I18nextProvider } from 'react-i18next';
-import { Link, MemoryRouter, Outlet, Route, Routes, useLocation } from 'react-router-dom';
+import { Link, MemoryRouter, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { defaultFeatureState, parseManifest, type OptionInfo, type OptionValue } from '@/common/kyrn/manifest';
 import type { KyrnSettings, Result, SaveSettings } from '@/common/kyrn/types';
 import enCommon from '@/renderer/services/i18n/locales/en-US/common.json';
@@ -12,15 +13,10 @@ import enMu from '@/renderer/services/i18n/locales/en-US/mu.json';
 import zhMu from '@/renderer/services/i18n/locales/zh-CN/mu.json';
 import MuSettingsPage, { MovedFeatureOptions } from '@/renderer/pages/settings/KyrnSettings';
 import SettingsArea from '@/renderer/pages/settings/KyrnSettings/SettingsArea';
-import {
-  PAGE_ROWS,
-  decisionPageOf,
-  featurePageOf,
-  isFeatured,
-  isTerminalOnly,
-} from '@/renderer/pages/settings/KyrnSettings/draft';
-import { DECISION_PAGES, FEATURE_PAGES } from '@/renderer/pages/settings/settingsNav';
+import { PAGE_ROWS, isTerminalOnly } from '@/renderer/pages/settings/KyrnSettings/draft';
+import { DETAIL_AREAS, MOVED_FEATURE_LISTS } from '@/renderer/pages/settings/settingsNav';
 import OptionField, { inSeconds } from '@/renderer/pages/settings/KyrnSettings/fields/OptionField';
+import { filterModelOption } from '@/renderer/pages/settings/KyrnSettings/providers/modelOptions';
 import { MuSettingsProvider } from '@/renderer/pages/settings/KyrnSettings/useMuSettings';
 import { consumePendingDeepLink, offerAddProviderLink } from '@/renderer/hooks/system/useDeepLink';
 import manifestJson from './manifest.fixture.json';
@@ -202,10 +198,6 @@ async function open(section: string) {
 /** A harness text that reads the same in both of the harness's languages. */
 const bilingual = (words: string) => ({ zh: words, en: words });
 
-/** The rows of a list, in order: its direct children, each a row with the test id of its point or feature. */
-const rowsOf = (list: HTMLElement | null) =>
-  list ? [...list.children].map((row) => row.getAttribute('data-testid')) : [];
-
 /**
  * The settings of a harness shaped like the real one where it matters for the length of a page: thirteen points in the
  * context group, six of them the lessons', and the capability packs with eighteen options, a switch leading each set.
@@ -251,6 +243,9 @@ function realShaped() {
     ),
   });
 }
+
+/** A model's entry in a picker, as the picker's search sees it. */
+const modelChoice = (id: string, name: string) => <Select.Option value={id} extra={name} />;
 
 const option = (feature: string, key: string): OptionInfo =>
   manifest.features.find((item) => item.name === feature)!.options.find((item) => item.key === key)!;
@@ -309,103 +304,111 @@ describe('generic option fields', () => {
   });
 });
 
-describe('decision points and features from the manifest', () => {
-  it('lists every decision under its group and every feature, without knowing any of them', async () => {
-    await open('decisions');
-    for (const decision of manifest.decisions)
-      expect(screen.getByTestId(`mu-decision-${decision.id}`)).toBeInTheDocument();
-    // Alone, outside the rail, every point is listed under the name of the page it is on.
-    for (const page of new Set(manifest.decisions.map((decision) => decisionPageOf(decision))))
-      expect(screen.getByTestId(`mu-decision-group-${page}`)).toBeInTheDocument();
-    // Every feature is on one of the two features pages, and on one only.
-    fireEvent.click(screen.getByTestId('mu-nav-features'));
-    for (const feature of manifest.features.filter((each) => isFeatured(each.name)))
-      expect(screen.getByTestId(`mu-feature-${feature.name}`)).toBeInTheDocument();
-    for (const feature of manifest.features.filter((each) => !isFeatured(each.name)))
-      expect(screen.queryByTestId(`mu-feature-${feature.name}`)).not.toBeInTheDocument();
-    fireEvent.click(screen.getByTestId('mu-nav-moreFeatures'));
-    for (const feature of manifest.features.filter((each) => !isFeatured(each.name) && !isTerminalOnly(each.name)))
-      expect(screen.getByTestId(`mu-feature-${feature.name}`)).toBeInTheDocument();
-    for (const feature of manifest.features.filter((each) => isFeatured(each.name)))
-      expect(screen.queryByTestId(`mu-feature-${feature.name}`)).not.toBeInTheDocument();
-    // The terminal's welcome box is on neither: nothing in the app shows what it does.
-    expect(screen.queryByTestId('mu-feature-welcome')).not.toBeInTheDocument();
+describe('the details: every feature, with the decision points it asks under it', () => {
+  /** The switch of whether Jev's verdict at a point takes effect, by the point's name. */
+  const askJev = (row: HTMLElement, point: string) =>
+    within(row).getByRole('switch', { name: `Let Jev judge: ${point}` });
+
+  it('lists every feature on the page of its area, each point indented under its feature, each page within twelve rows', async () => {
+    await open('details-input');
+    const decisions: string[] = [];
+    const features: string[] = [];
+    for (const area of DETAIL_AREAS) {
+      fireEvent.click(screen.getByTestId(`mu-nav-details-${area}`));
+      const section = screen.getByTestId(`mu-section-details-${area}`);
+      const rows = within(section).queryAllByTestId(/^mu-feature-[a-zA-Z]+$/);
+      const points = within(section).queryAllByTestId(/^mu-decision-[a-z.-]+$/);
+      expect(rows.length + points.length, area).toBeLessThanOrEqual(PAGE_ROWS);
+      features.push(...rows.map((row) => row.dataset.testid!.replace('mu-feature-', '')));
+      decisions.push(...points.map((point) => point.dataset.testid!.replace('mu-decision-', '')));
+      // Every point is in the row of its own feature.
+      for (const point of points) {
+        const id = point.dataset.testid!.replace('mu-decision-', '');
+        const feature = manifest.decisions.find((decision) => decision.id === id)!.feature;
+        expect(point.closest(`[data-testid="mu-feature-${feature}"]`), id).not.toBeNull();
+      }
+    }
+    // Each point and each feature once, on one page; the terminal's welcome box on none.
+    expect(decisions.toSorted()).toEqual(manifest.decisions.map((decision) => decision.id).toSorted());
+    expect(features.toSorted()).toEqual(
+      manifest.features
+        .filter((feature) => !isTerminalOnly(feature.name))
+        .map((feature) => feature.name)
+        .toSorted()
+    );
+    // Tools and safety are two pages: the guard on the safety page, the file location on the tools page.
+    fireEvent.click(screen.getByTestId('mu-nav-details-safety'));
+    expect(screen.getByTestId('mu-feature-guard')).toBeInTheDocument();
+    expect(screen.queryByTestId('mu-feature-locate')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('mu-nav-details-context'));
     expect(within(screen.getByTestId('mu-feature-compaction')).getByText('Beta')).toBeInTheDocument();
   });
   it.each([
-    ['zh-CN', '消息预判', '开启'],
-    ['ja-JP', 'Message preflight', 'On'],
-    ['en-US', 'Message preflight', 'On'],
-  ])('reads the manifest in the language of %s', async (language, title, mode) => {
+    ['zh-CN', '消息预判', '让 Jev 判断', '让 Jev 判断：消息预判'],
+    ['ja-JP', 'Message preflight', 'Let Jev judge', 'Let Jev judge: Message preflight'],
+    ['en-US', 'Message preflight', 'Let Jev judge', 'Let Jev judge: Message preflight'],
+  ])('reads the manifest in the language of %s', async (language, title, ask, label) => {
     await i18n.changeLanguage(language);
-    await open('decisions');
-    const row = screen.getByTestId('mu-decision-input.preflight');
-    expect(row).toHaveTextContent(title);
-    expect(within(row).getByText(mode)).toBeInTheDocument();
+    await open('details-input');
+    const feature = screen.getByTestId('mu-feature-preflight');
+    expect(within(feature).getByRole('switch', { name: title })).toBeInTheDocument();
+    // The point named as its feature needs no name of its own under it: it is the judge's say in the feature.
+    const point = within(feature).getByTestId('mu-decision-input.preflight');
+    expect(point).toHaveTextContent(ask);
+    expect(point).not.toHaveTextContent(title);
+    expect(within(point).getByRole('switch', { name: label })).toBeInTheDocument();
   });
-  it('names a group the manifest leaves unnamed, and reads a harness text in the exact language it has', async () => {
+  it('names a point by itself where its name is not its feature’s, and lists a point without a feature alone', async () => {
     const preflight = manifestJson.decisions.find((decision) => decision.id === 'input.preflight')!;
     const custom = parseManifest({
       ...manifestJson,
       groups: {},
       decisions: [
         { ...preflight, title: { ...preflight.title, ja: 'メッセージ事前判定' } },
-        { ...preflight, id: 'misc.one', group: 'misc' },
+        { ...preflight, id: 'misc.one', group: 'misc', feature: 'gone' },
       ],
     });
     bridge.settings.mockResolvedValue({ ok: true, data: settings({ harness: custom }) });
-    await open('decisions');
-    // The desktop knows the harness's groups; one it does not know is "Other", never its raw id.
-    expect(screen.getByRole('heading', { name: 'Input' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Other' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'misc' })).not.toBeInTheDocument();
-    expect(screen.getByTestId('mu-decision-input.preflight')).toHaveTextContent('Message preflight');
+    await open('details-input');
+    expect(screen.getByTestId('mu-decision-input.preflight')).toHaveTextContent('Let Jev judge');
+    // The harness has Japanese for the point and not for its feature: the point reads in Japanese, by its name.
     await act(() => i18n.changeLanguage('ja-JP'));
-    expect(screen.getByTestId('mu-decision-input.preflight')).toHaveTextContent('メッセージ事前判定');
+    expect(screen.getByTestId('mu-decision-input.preflight')).toHaveTextContent('Let Jev judge: メッセージ事前判定');
+    // A group the desktop has no page for, and a feature the harness does not describe: a row of its own, on Other.
+    fireEvent.click(screen.getByTestId('mu-nav-details-other'));
+    const stray = screen.getByTestId('mu-decision-misc.one');
+    expect(stray.parentElement).toBe(screen.getByTestId('mu-feature-list-other'));
+    expect(stray).toHaveTextContent('Message preflight');
+    expect(stray).not.toHaveTextContent('misc');
   });
-  it('filters the decision points with a search, and leaves the features pages whole', async () => {
-    await open('decisions');
-    fireEvent.change(screen.getByPlaceholderText('Search decisions and features'), { target: { value: 'hive' } });
-    expect(screen.getByTestId('mu-decision-hive.deliver')).toBeInTheDocument();
-    expect(screen.queryByTestId('mu-decision-tool.risk')).not.toBeInTheDocument();
-    // Chinese finds it in an English screen too, and a miss says so.
-    fireEvent.change(screen.getByPlaceholderText('Search decisions and features'), { target: { value: '蜂群' } });
-    expect(screen.getByTestId('mu-decision-hive.deliver')).toBeInTheDocument();
-    fireEvent.change(screen.getByPlaceholderText('Search decisions and features'), { target: { value: 'zzzz' } });
-    expect(screen.getByText('Nothing matches the search.')).toBeInTheDocument();
-    // The features pages have no search: a query left on the decision points hides none of their switches.
-    fireEvent.click(screen.getByTestId('mu-nav-features'));
-    expect(screen.queryByPlaceholderText('Search decisions and features')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByTestId('mu-nav-moreFeatures'));
-    expect(screen.queryByPlaceholderText('Search decisions and features')).not.toBeInTheDocument();
-    for (const feature of manifest.features.filter((each) => !isFeatured(each.name) && !isTerminalOnly(each.name)))
-      expect(screen.getByTestId(`mu-feature-${feature.name}`)).toBeInTheDocument();
+  it('has no search of its own: the search at the top of the rail finds every setting', async () => {
+    await open('details-input');
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/search/i)).not.toBeInTheDocument();
   });
   it('shows each feature as a switch, and its options on a page of their own, never folded into the list', async () => {
-    await open('moreFeatures');
-    // Grouped by where they act, as the decision points are; one that acts at no decision point is under Other.
-    const input = screen.getByTestId('mu-feature-list-input');
-    const preflight = within(input).getByTestId('mu-feature-preflight');
+    await open('details-input');
+    const preflight = screen.getByTestId('mu-feature-preflight');
     expect(within(preflight).getByRole('switch', { name: 'Message preflight' })).toBeChecked();
-    expect(
-      within(screen.getByTestId('mu-feature-list-other')).getByTestId('mu-feature-background')
-    ).toBeInTheDocument();
     expect(screen.queryByTestId('mu-option-preflight-waitMs')).not.toBeInTheDocument();
     expect(screen.queryByText(/Advanced/)).not.toBeInTheDocument();
     // A feature without options has nothing to open.
+    fireEvent.click(screen.getByTestId('mu-nav-details-safety'));
     expect(screen.queryByTestId('mu-feature-open-guard')).not.toBeInTheDocument();
-    fireEvent.click(within(preflight).getByTestId('mu-feature-open-preflight'));
+    fireEvent.click(screen.getByTestId('mu-nav-details-input'));
+    fireEvent.click(within(screen.getByTestId('mu-feature-preflight')).getByTestId('mu-feature-open-preflight'));
     const page = screen.getByTestId('mu-section-feature-preflight');
     expect(within(page).getByRole('heading', { name: 'Message preflight' })).toBeInTheDocument();
     expect(within(page).getByTestId('mu-option-preflight-waitMs')).toBeInTheDocument();
-    // The switch is on this page too, next to the feature's name.
+    // The switch is on this page too, next to the feature's name; the way back names the page.
     expect(within(page).getByRole('switch', { name: 'Message preflight' })).toBeChecked();
+    expect(screen.getByTestId('mu-feature-back')).toHaveTextContent('Input features');
     fireEvent.click(screen.getByTestId('mu-feature-back'));
-    expect(screen.getByTestId('mu-section-moreFeatures')).toBeInTheDocument();
+    expect(screen.getByTestId('mu-section-details-input')).toBeInTheDocument();
     expect(screen.queryByTestId('mu-option-preflight-waitMs')).not.toBeInTheDocument();
   });
   it('marks what differs from the default and restores a feature', async () => {
-    await open('moreFeatures');
+    await open('details-input');
     fireEvent.click(screen.getByTestId('mu-feature-open-preflight'));
     const page = () => screen.getByTestId('mu-section-feature-preflight');
     expect(within(page()).queryByTestId('mu-modified')).not.toBeInTheDocument();
@@ -420,11 +423,12 @@ describe('decision points and features from the manifest', () => {
     expect(within(page()).queryByTestId('mu-modified')).not.toBeInTheDocument();
     expect(screen.queryByTestId('mu-save-bar')).not.toBeInTheDocument();
   });
-  it('says the harness is too old without a manifest, and keeps the default mode working', async () => {
+  it('says the harness is too old without a manifest, and keeps the judges’ switch working', async () => {
     bridge.settings.mockResolvedValue({ ok: true, data: settings({ harness: { status: 'missing' }, features: {} }) });
-    await open('decisions');
+    await open('details-input');
     expect(screen.getByText(/too old to list/)).toBeInTheDocument();
-    fireEvent.click(within(screen.getByTestId('mu-default-mode')).getByText('On'));
+    fireEvent.click(screen.getByTestId('mu-nav-judges'));
+    fireEvent.click(within(screen.getByTestId('mu-judge-mode')).getByRole('switch', { name: 'Verdicts take effect' }));
     fireEvent.click(screen.getByText('Save'));
     await waitFor(() => expect(bridge.save).toHaveBeenCalled());
     const sent = bridge.save.mock.calls[0][0] as SaveSettings;
@@ -432,50 +436,67 @@ describe('decision points and features from the manifest', () => {
     expect(sent).not.toHaveProperty('features');
     expect(sent).not.toHaveProperty('decisionModes');
   });
-  it('shows each point off or on: a stored shadow reads as off, and a change writes active or off', async () => {
+  it('shows each point as a switch: a stored shadow reads as off, and a change writes active or off', async () => {
     bridge.settings.mockResolvedValue({
       ok: true,
       data: settings({ mode: 'shadow', decisionModes: { 'tool.risk': 'shadow', 'input.preflight': 'active' } }),
     });
-    await open('decisions');
+    await open('details-safety');
     const risk = screen.getByTestId('mu-decision-tool.risk');
-    const byDefault = screen.getByTestId('mu-default-mode');
-    // Two states, off first; the harness's third mode is not offered, and is not named anywhere.
-    expect(
-      within(risk)
-        .getAllByRole('radio')
-        .map((radio) => radio.closest('label')?.textContent)
-    ).toEqual(['Off', 'On']);
-    expect(within(risk).getByRole('radio', { name: 'Off' })).toBeChecked();
-    expect(within(byDefault).getByRole('radio', { name: 'Off' })).toBeChecked();
-    expect(within(screen.getByTestId('mu-decision-input.preflight')).getByRole('radio', { name: 'On' })).toBeChecked();
+    // A switch, not a choice of modes; the harness's third mode is not offered, and is not named anywhere.
+    expect(within(risk).queryByRole('radio')).not.toBeInTheDocument();
+    expect(askJev(risk, 'Risky command guard')).not.toBeChecked();
     expect(screen.getByTestId('kyrn-settings')).not.toHaveTextContent(/shadow/i);
-    // Nothing is written until a state is picked: a shadow left alone stays as it is in the file.
+    fireEvent.click(screen.getByTestId('mu-nav-details-input'));
+    expect(askJev(screen.getByTestId('mu-decision-input.preflight'), 'Message preflight')).toBeChecked();
+    // The mode every point without its own follows is the judges page's switch, not a row of the details.
+    expect(screen.queryByTestId('mu-judge-mode')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('mu-nav-judges'));
+    const verdicts = within(screen.getByTestId('mu-judge-mode')).getByRole('switch', { name: 'Verdicts take effect' });
+    expect(verdicts).not.toBeChecked();
+    // Nothing is written until a switch is moved: a shadow left alone stays as it is in the file.
     expect(screen.queryByTestId('mu-save-bar')).not.toBeInTheDocument();
-    fireEvent.click(within(risk).getByText('On'));
-    fireEvent.click(within(byDefault).getByText('On'));
-    fireEvent.click(within(byDefault).getByText('Off'));
+    fireEvent.click(verdicts);
+    fireEvent.click(verdicts);
+    fireEvent.click(screen.getByTestId('mu-nav-details-safety'));
+    fireEvent.click(askJev(screen.getByTestId('mu-decision-tool.risk'), 'Risky command guard'));
+    expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Judges and Decision points');
     fireEvent.click(screen.getByText('Save'));
     await waitFor(() => expect(bridge.save).toHaveBeenCalled());
     const sent = bridge.save.mock.calls[0][0] as SaveSettings;
     expect(sent.mode).toBe('off');
     expect(sent.decisionModes).toEqual({ 'tool.risk': 'active', 'input.preflight': 'active' });
   });
+  it('greys the points of a feature that is off and says so, and gives them back once it is on', async () => {
+    await open('details-team');
+    const hive = screen.getByTestId('mu-feature-hive');
+    const deliver = () => screen.getByTestId('mu-decision-hive.deliver');
+    expect(askJev(deliver(), 'Hive: delivery')).toBeEnabled();
+    expect(deliver()).not.toHaveTextContent('The feature is off');
+    fireEvent.click(within(hive).getByRole('switch', { name: 'Hive' }));
+    for (const id of ['hive.publish', 'hive.deliver']) {
+      const point = screen.getByTestId(`mu-decision-${id}`);
+      expect(point).toHaveTextContent('The feature is off');
+      expect(within(point).getByRole('switch')).toBeDisabled();
+    }
+    // The sub-agents' point, under a feature that is on, is not touched.
+    expect(within(screen.getByTestId('mu-decision-swarm.routing')).getByRole('switch')).toBeEnabled();
+    fireEvent.click(within(hive).getByRole('switch', { name: 'Hive' }));
+    expect(askJev(deliver(), 'Hive: delivery')).toBeEnabled();
+    expect(screen.queryByText('The feature is off')).not.toBeInTheDocument();
+  });
 });
 
 describe('the save bar', () => {
   it('appears with the first change, names the sections, saves everything at once and goes away', async () => {
-    await open('decisions');
+    await open('details-safety');
     expect(screen.queryByTestId('mu-save-bar')).not.toBeInTheDocument();
-    fireEvent.click(within(screen.getByTestId('mu-decision-tool.risk')).getByText('On'));
-    fireEvent.click(screen.getByTestId('mu-nav-moreFeatures'));
+    fireEvent.click(within(screen.getByTestId('mu-decision-tool.risk')).getByRole('switch'));
     fireEvent.click(
-      within(screen.getByTestId('mu-feature-guard')).getByRole('switch', { name: 'Risky command guard' })
+      within(screen.getByTestId('mu-feature-guard')).getAllByRole('switch', { name: 'Risky command guard' })[0]
     );
-    expect(screen.getByTestId('mu-save-bar')).toHaveTextContent(
-      'Unsaved changes in: Decision points and More features'
-    );
-    expect(within(screen.getByTestId('mu-nav-decisions')).getByLabelText('Unsaved changes')).toBeInTheDocument();
+    expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Decision points and Features');
+    expect(within(screen.getByTestId('mu-nav-details-safety')).getByLabelText('Unsaved changes')).toBeInTheDocument();
     expect(within(screen.getByTestId('mu-nav-providers')).queryByLabelText('Unsaved changes')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByText('Save'));
@@ -492,7 +513,7 @@ describe('the save bar', () => {
     let checked!: (value: { ok: true; data: undefined }) => void;
     bridge.recheck.mockReturnValue(new Promise((resolve) => (checked = resolve)));
     bridge.save.mockResolvedValueOnce({ ok: false, code: 'backend', error: 'EACCES: permission denied' });
-    await open('context');
+    await open('details-context');
     fireEvent.click(screen.getByRole('switch', { name: 'Automatic compaction' }));
     fireEvent.click(screen.getByText('Save'));
     expect(await within(screen.getByTestId('mu-save-bar')).findByText(/EACCES/)).toBeInTheDocument();
@@ -509,14 +530,14 @@ describe('the save bar', () => {
   });
   it('going back to the default removes the override, and discard puts everything back', async () => {
     bridge.settings.mockResolvedValue({ ok: true, data: settings({ decisionModes: { 'tool.risk': 'off' } }) });
-    await open('decisions');
-    const row = screen.getByTestId('mu-decision-tool.risk');
-    expect(within(row).getByRole('radio', { name: 'Off' })).toBeChecked();
+    await open('details-safety');
+    const row = () => screen.getByTestId('mu-decision-tool.risk');
+    expect(within(row()).getByRole('switch')).not.toBeChecked();
     // A point without a mode of its own shows the default (a shadow, which reads as off) and offers nothing to undo.
-    expect(within(screen.getByTestId('mu-decision-input.preflight')).getByRole('radio', { name: 'Off' })).toBeChecked();
-    expect(screen.queryByTestId('mu-decision-default-input.preflight')).not.toBeInTheDocument();
-    fireEvent.click(within(row).getByText('Use the default (Off)'));
-    expect(within(row).getByRole('radio', { name: 'Off' })).toBeChecked();
+    expect(within(screen.getByTestId('mu-decision-tool.constraint')).getByRole('switch')).not.toBeChecked();
+    expect(screen.queryByTestId('mu-decision-default-tool.constraint')).not.toBeInTheDocument();
+    fireEvent.click(within(row()).getByText('Use the default (Off)'));
+    expect(within(row()).getByRole('switch')).not.toBeChecked();
     expect(screen.queryByTestId('mu-decision-default-tool.risk')).not.toBeInTheDocument();
     fireEvent.click(screen.getByText('Discard'));
     expect(screen.queryByTestId('mu-save-bar')).not.toBeInTheDocument();
@@ -527,10 +548,11 @@ describe('the save bar', () => {
       ok: true,
       data: settings({ features: { ...settings().features, guard: { enabled: false, options: {} } } }),
     });
-    await open('decisions');
+    await open('details-safety');
     const row = screen.getByTestId('mu-decision-tool.risk');
-    expect(row).toHaveTextContent('Its feature is off, so this point is not asked now.');
+    expect(row).toHaveTextContent('The feature is off');
     expect(row).not.toHaveTextContent('tool.risk');
+    expect(within(row).getByRole('switch')).toBeDisabled();
   });
   it('explains a stale revision and offers to reload; another failure shows its reason', async () => {
     bridge.save.mockResolvedValueOnce({
@@ -538,7 +560,7 @@ describe('the save bar', () => {
       code: 'stale',
       error: 'Configuration changed. Reload before saving.',
     });
-    await open('context');
+    await open('details-context');
     fireEvent.click(screen.getByRole('switch', { name: 'Automatic compaction' }));
     fireEvent.click(screen.getByText('Save'));
     expect(await screen.findByText(/Another program .* changed the configuration/)).toBeInTheDocument();
@@ -553,7 +575,7 @@ describe('the save bar', () => {
       params: { feature: 'preflight', option: 'waitMs', problem: 'range' },
       error: 'Invalid value for preflight.waitMs (range)',
     });
-    fireEvent.click(await screen.findByTestId('mu-nav-context'));
+    fireEvent.click(await screen.findByTestId('mu-nav-details-context'));
     fireEvent.click(screen.getByRole('switch', { name: 'Automatic compaction' }));
     fireEvent.click(screen.getByText('Save'));
     // The option is named in the reader's words, from the manifest; the store's English stays out.
@@ -569,7 +591,7 @@ describe('the save bar', () => {
       params: { providers: ['a-b', 'a.b'] },
       error: 'Providers a-b and a.b would share a key',
     });
-    await open('context');
+    await open('details-context');
     fireEvent.click(screen.getByRole('switch', { name: '自动压缩' }));
     // The common module is the English one in this setup.
     fireEvent.click(screen.getByText('Save'));
@@ -826,7 +848,7 @@ describe('providers and the default model', () => {
     fireEvent.click(screen.getByTestId('mu-provider-item-foreign-lab'));
     expect(screen.getByTestId('mu-provider-foreign')).toHaveTextContent('bedrock-converse · 1 model');
 
-    fireEvent.click(screen.getByTestId('mu-nav-defaultModel'));
+    fireEvent.click(screen.getByTestId('mu-nav-board-model'));
     await user.click(within(screen.getByTestId('mu-board-model')).getByLabelText('Provider'));
     await waitFor(() => expect(document.querySelectorAll('.arco-select-option').length).toBeGreaterThan(0));
     const offered = [...document.querySelectorAll('.arco-select-option')].map((choice) => choice.textContent);
@@ -887,7 +909,7 @@ describe('providers and the default model', () => {
     expect(within(levels).getByRole('checkbox', { name: 'Max 1' })).not.toBeChecked();
     fireEvent.click(within(levels).getByRole('checkbox', { name: 'Very high 1' }));
     fireEvent.click(within(levels).getByRole('checkbox', { name: 'Low 1' }));
-    fireEvent.click(screen.getByTestId('mu-nav-defaultModel'));
+    fireEvent.click(screen.getByTestId('mu-nav-default-model'));
     const thinking = screen.getByTestId('mu-thinking-level');
     expect(thinking).toHaveTextContent('Levels this model does not take are disabled.');
     expect(within(thinking).getByRole('radio', { name: 'Very high' })).toBeEnabled();
@@ -937,9 +959,10 @@ describe('providers and the default model', () => {
         thinkingLevels: [],
       },
     });
-    await open('defaultModel');
-    // On the same page as the model new sessions start with.
-    expect(screen.getByTestId('mu-defaults')).toBeInTheDocument();
+    await open('board-model');
+    // A page of its own, apart from the model new sessions start with; its header says what the model is for.
+    expect(screen.queryByTestId('mu-defaults')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Plain-language model' })).toBeInTheDocument();
     const card = screen.getByTestId('mu-board-model');
     expect(card).toHaveTextContent('None yet: mu asks the first time the board is switched on.');
     expect(card).toHaveTextContent('Pick a provider first');
@@ -952,8 +975,8 @@ describe('providers and the default model', () => {
     await waitFor(() => expect(document.querySelectorAll('.arco-select-option').length).toBeGreaterThan(1));
     const offered = [...document.querySelectorAll('.arco-select-option')].map((choice) => choice.textContent);
     expect(offered.slice(-2)).toEqual(['claude-opus-4-6 · recommended', 'gpt-5']);
-    fireEvent.click(screen.getByText('claude-opus-4-6 · recommended', { selector: '.arco-select-option' }));
-    expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Default model');
+    fireEvent.click(screen.getByText('claude-opus-4-6 · recommended', { selector: '.arco-select-option span' }));
+    expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Plain-language model');
     expect(card).not.toHaveTextContent('None yet');
 
     // The conversation's own model, then back to the one picked.
@@ -972,7 +995,7 @@ describe('providers and the default model', () => {
       ok: true,
       data: { providers: [{ id: 'corp-gateway', models: [{ id: 'gpt-5', name: '' }] }], thinkingLevels: [] },
     });
-    await open('defaultModel');
+    await open('default-model');
     const card = screen.getByTestId('mu-defaults');
     // Relay's model does not think, and the page says so instead of offering levels it would not take.
     expect(card).toHaveTextContent('This model does not think');
@@ -983,7 +1006,7 @@ describe('providers and the default model', () => {
     // A model belongs to its provider: another provider, and it is to be picked again.
     expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Default model');
     await user.click(within(card).getByLabelText('Model'));
-    fireEvent.click(await screen.findByText('gpt-5', { selector: '.arco-select-option' }));
+    fireEvent.click(await screen.findByText('gpt-5', { selector: '.arco-select-option span' }));
     fireEvent.click(within(card).getByRole('radio', { name: 'High' }));
     fireEvent.click(screen.getByText('Save'));
     await waitFor(() => expect(bridge.save).toHaveBeenCalled());
@@ -993,9 +1016,51 @@ describe('providers and the default model', () => {
       thinkingLevel: 'high',
     });
   });
+  it('offers models by their names, with the id in the tooltip, found by either, and saves the id', async () => {
+    bridge.availableModels.mockResolvedValue({
+      ok: true,
+      data: {
+        providers: [
+          {
+            id: 'corp-gateway',
+            models: [
+              { id: 'gpt-5-6-terra', name: 'GPT-5.6 Terra' },
+              { id: 'claude-opus-4-6', name: 'Claude Opus 4.6' },
+            ],
+          },
+        ],
+        thinkingLevels: [],
+      },
+    });
+    await open('default-model');
+    const card = screen.getByTestId('mu-defaults');
+    const user = userEvent.setup();
+    await user.click(within(card).getByLabelText('Provider'));
+    fireEvent.click(await screen.findByText('corp-gateway', { selector: '.arco-select-option' }));
+    await user.click(within(card).getByLabelText('Model'));
+    const terra = await screen.findByText('GPT-5.6 Terra');
+    expect(terra).toHaveAttribute('title', 'gpt-5-6-terra');
+    expect(screen.queryByText('gpt-5-6-terra')).not.toBeInTheDocument();
+    // The search finds a model by its id as well as by its name.
+    expect(filterModelOption('opus-4', modelChoice('claude-opus-4-6', 'Claude Opus 4.6'))).toBe(true);
+    expect(filterModelOption('terra', modelChoice('gpt-5-6-terra', 'GPT-5.6 Terra'))).toBe(true);
+    expect(filterModelOption('terra', modelChoice('claude-opus-4-6', 'Claude Opus 4.6'))).toBe(false);
+    fireEvent.click(screen.getByText('Claude Opus 4.6'));
+    fireEvent.click(screen.getByText('Save'));
+    await waitFor(() => expect(bridge.save).toHaveBeenCalled());
+    expect((bridge.save.mock.calls[0][0] as SaveSettings).models?.defaults.model).toBe('claude-opus-4-6');
+
+    // The board's picker names them the same way, the recommended one marked after its name.
+    fireEvent.click(screen.getByTestId('mu-nav-board-model'));
+    const board = screen.getByTestId('mu-board-model');
+    await user.click(within(board).getByLabelText('Provider'));
+    fireEvent.click(await screen.findByText('corp-gateway', { selector: '.arco-select-option' }));
+    await user.click(within(board).getByLabelText('Model'));
+    expect(await screen.findByText('Claude Opus 4.6 · recommended')).toHaveAttribute('title', 'claude-opus-4-6');
+  });
   it('says when this mu cannot be told which model writes the board', async () => {
     bridge.settings.mockResolvedValue({ ok: true, data: settings({ boardModel: { supported: false, model: '' } }) });
-    await open('defaultModel');
+    await open('board-model');
     const card = screen.getByTestId('mu-board-model');
     expect(card).toHaveTextContent('Update mu first.');
     expect(within(card).queryByRole('radio')).not.toBeInTheDocument();
@@ -1111,7 +1176,7 @@ describe('providers and the default model', () => {
     await waitFor(() => expect(screen.queryByTestId('mu-provider-item-foreign-lab-2')).not.toBeInTheDocument());
     expect(screen.queryByTestId('mu-provider-item-builtin-lab-2')).not.toBeInTheDocument();
     const user = userEvent.setup();
-    fireEvent.click(screen.getByTestId('mu-nav-defaultModel'));
+    fireEvent.click(screen.getByTestId('mu-nav-board-model'));
     await user.click(within(screen.getByTestId('mu-board-model')).getByLabelText('Provider'));
     await waitFor(() => expect(document.querySelectorAll('.arco-select-option').length).toBeGreaterThan(0));
     const offered = [...document.querySelectorAll('.arco-select-option')].map((choice) => choice.textContent);
@@ -1267,7 +1332,7 @@ describe('the permission modes and the board', () => {
 
   it('sets the mode a new conversation starts in on the permission feature’s own page, and never the picked one', async () => {
     bridge.settings.mockResolvedValue({ ok: true, data: withModes({ permissions: { mode: 'ask', from: 'picked' } }) });
-    await open('moreFeatures');
+    await open('details-safety');
     // There is no page of its own for it any more: the mode is the feature's option, one click from its row.
     expect(screen.queryByTestId('mu-nav-permissions')).not.toBeInTheDocument();
     const row = screen.getByTestId('mu-feature-permissions');
@@ -1279,7 +1344,7 @@ describe('the permission modes and the board', () => {
     const user = userEvent.setup();
     await user.click(within(mode).getByLabelText('Mode of a new conversation'));
     fireEvent.click(await screen.findByText('Full access', { selector: '.arco-select-option' }));
-    expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: More features');
+    expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Features');
     fireEvent.click(screen.getByText('Save'));
     await waitFor(() => expect(bridge.save).toHaveBeenCalled());
     const sent = bridge.save.mock.calls[0][0] as SaveSettings;
@@ -1291,17 +1356,17 @@ describe('the permission modes and the board', () => {
   it('still draws when an older main process sends no permission default and no board model', async () => {
     const { permissions: _permissions, boardModel: _boardModel, ...older } = withModes();
     bridge.settings.mockResolvedValue({ ok: true, data: older as KyrnSettings });
-    render(<SettingsArea section='defaultModel' />, { wrapper });
+    render(<SettingsArea page='board-model' />, { wrapper });
     expect(await screen.findByTestId('mu-board-model')).toHaveTextContent('Update mu');
     expect(screen.queryByTestId('mu-save-bar')).not.toBeInTheDocument();
   });
 
   it('points from the features to where the board’s model is set, and keeps the mode of a new conversation', async () => {
     bridge.settings.mockResolvedValue({ ok: true, data: withModes() });
-    await open('features');
+    await open('details-goal');
     fireEvent.click(screen.getByTestId('mu-feature-open-board'));
     const board = screen.getByTestId('mu-section-feature-board');
-    expect(board).toHaveTextContent('The model that writes the board is chosen under Default model.');
+    expect(board).toHaveTextContent('The model that writes the board is chosen under Plain-language model.');
     expect(within(board).queryByTestId('mu-option-board-model')).not.toBeInTheDocument();
     expect(within(board).getByTestId('mu-option-board-defaultOn')).toBeInTheDocument();
   });
@@ -1314,10 +1379,10 @@ describe('the permission modes and the board', () => {
       board: { ...base.features.board, options: { ...base.features.board.options, defaultOn: true, model: 'a/b' } },
     };
     bridge.settings.mockResolvedValue({ ok: true, data: { ...base, features } });
-    await open('moreFeatures');
+    await open('details-safety');
     // The mode differs from the feature's default, and it is this feature's option now.
     expect(within(screen.getByTestId('mu-feature-permissions')).getByTestId('mu-modified')).toBeInTheDocument();
-    fireEvent.click(screen.getByTestId('mu-nav-features'));
+    fireEvent.click(screen.getByTestId('mu-nav-details-goal'));
     fireEvent.click(screen.getByTestId('mu-feature-open-board'));
     const board = screen.getByTestId('mu-section-feature-board');
     fireEvent.click(within(board).getByText('Restore defaults'));
@@ -1333,12 +1398,12 @@ describe('the permission modes and the board', () => {
       ok: true,
       data: { providers: [{ id: 'corp-gateway', models: [{ id: 'gpt-5', name: '' }] }], thinkingLevels: [] },
     });
-    await open('defaultModel');
+    await open('board-model');
     const user = userEvent.setup();
     await user.click(within(screen.getByTestId('mu-board-model')).getByLabelText('Provider'));
     fireEvent.click(await screen.findByText('corp-gateway', { selector: '.arco-select-option' }));
     await user.click(within(screen.getByTestId('mu-board-model')).getByLabelText('Model'));
-    fireEvent.click(await screen.findByText('gpt-5', { selector: '.arco-select-option' }));
+    fireEvent.click(await screen.findByText('gpt-5', { selector: '.arco-select-option span' }));
     expect(screen.getByTestId('mu-save-bar')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Discard'));
     const card = screen.getByTestId('mu-board-model');
@@ -1348,40 +1413,56 @@ describe('the permission modes and the board', () => {
 });
 
 describe('the kernel pages', () => {
-  it('shows the judge choice first, and under it on the same page the order by name and what each judge needs', async () => {
-    bridge.settings.mockResolvedValue({ ok: true, data: settings({ tiers: ['jev', 'laya'] }) });
-    render(<SettingsArea section='judges' />, { wrapper });
-    const tiers = await screen.findByTestId('mu-section-judges');
+  it('starts the judges page with whether verdicts take effect, then the choice; the order is a page of its own', async () => {
+    bridge.settings.mockResolvedValue({ ok: true, data: settings({ tiers: ['jev', 'laya'], mode: 'active' }) });
+    render(<SettingsArea page='judges' />, { wrapper });
+    const page = await screen.findByTestId('mu-section-judges');
+    // The switch every step without a setting of its own follows, first, as a switch.
+    const verdicts = within(page).getByTestId('mu-judge-mode');
+    expect(within(verdicts).getByRole('switch', { name: enMu.judges.mode })).toBeChecked();
+    expect(verdicts).toHaveTextContent(enMu.judges.modeHelp);
     // The three choices, Jev, Laya and CLM, and no second way to pick a judge.
-    const choice = within(tiers).getByTestId('mu-judge-choice-jev');
-    expect(within(tiers).getByTestId('mu-judge-choice-local')).toBeInTheDocument();
-    expect(within(tiers).getByTestId('mu-judge-choice-clm')).toBeInTheDocument();
-    // The judge tiers are a group of this page, under the choice.
-    const order = within(tiers).getByTestId('mu-judge-tiers');
-    expect(choice.compareDocumentPosition(order) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(within(order).getByRole('heading', { name: enMu.sections.judgeTiers })).toBeInTheDocument();
+    const choice = within(page).getByTestId('mu-judge-choice-jev');
+    expect(verdicts.compareDocumentPosition(choice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(page).getByTestId('mu-judge-choice-local')).toBeInTheDocument();
+    expect(within(page).getByTestId('mu-judge-choice-clm')).toBeInTheDocument();
+    // The service and its long help once, in the choice; no order and no model id on this page.
+    expect(within(page).getAllByLabelText(enMu.judges.service)).toHaveLength(1);
+    expect(page.textContent?.split(enMu.judges.services.auto.help)).toHaveLength(2);
+    expect(within(page).queryByTestId('mu-judge-tiers')).not.toBeInTheDocument();
+    expect(within(page).queryByLabelText(enMu.judges.model)).not.toBeInTheDocument();
+    expect(within(choice).getByLabelText(enMu.judges.services.auto.key)).toBeInTheDocument();
+    // Nothing is folded away.
+    expect(within(page).queryByText(/Advanced/)).not.toBeInTheDocument();
+  });
+
+  it('lists the order by name, and asks of the first judge only what the judges page does not', async () => {
+    bridge.settings.mockResolvedValue({ ok: true, data: settings({ tiers: ['jev', 'laya'] }) });
+    render(<SettingsArea page='judge-order' />, { wrapper });
+    const page = await screen.findByTestId('mu-section-judgeOrder');
+    expect(within(page).getByRole('heading', { name: enMu.sections.judgeOrder })).toBeInTheDocument();
+    const order = within(page).getByTestId('mu-judge-tiers');
     expect(order).toHaveTextContent(enMu.judges.orderHelp);
     // The order says the judges' names, never the profiles' ids.
     const tags = [...order.querySelectorAll('.arco-tag')].map((tag) => tag.textContent);
     expect(tags).toEqual([enMu.judges.choices.jev.title, enMu.judges.choices.local.title]);
     expect(order).not.toHaveTextContent(/\bjev\b|\blaya\b/);
-    // Jev, first: its service and its model. Its key is asked for in the choice above, which chose it.
-    const jev = within(tiers).getByTestId('mu-judge-tier-0');
+    // Jev, first: its model. Its service, address and key are the judges page's.
+    const jev = within(page).getByTestId('mu-judge-tier-0');
     expect(jev).toHaveTextContent(`Tier 1: ${enMu.judges.choices.jev.title}`);
-    expect(within(jev).getByLabelText(enMu.judges.service)).toBeInTheDocument();
+    expect(jev).toHaveTextContent(enMu.judges.firstTier);
     expect(within(jev).getByLabelText(enMu.judges.model)).toHaveValue('jev-latest');
+    expect(within(jev).queryByLabelText(enMu.judges.service)).not.toBeInTheDocument();
     expect(within(jev).queryByLabelText(enMu.judges.services.auto.key)).not.toBeInTheDocument();
-    expect(within(choice).getByLabelText(enMu.judges.services.auto.key)).toBeInTheDocument();
+    expect(page).not.toHaveTextContent(enMu.judges.services.auto.help);
     // Laya: its name and nothing to fill in.
-    const laya = within(tiers).getByTestId('mu-judge-tier-1');
+    const laya = within(page).getByTestId('mu-judge-tier-1');
     expect(laya).toHaveTextContent(`Tier 2: ${enMu.judges.choices.local.title}`);
     expect(within(laya).queryByRole('textbox')).not.toBeInTheDocument();
     // No variable names, endpoints or timeouts: none of it is a person's decision.
-    expect(tiers).not.toHaveTextContent(/TYPESAFE_API_KEY|AI_GATEWAY_API_KEY|MU_JUDGE_|provider\/model-id/);
-    expect(within(tiers).queryByLabelText('Timeout')).not.toBeInTheDocument();
-    // Nothing is folded away.
-    expect(within(tiers).queryByText(/Advanced/)).not.toBeInTheDocument();
-    expect(within(tiers).queryByRole('button', { expanded: false })).not.toBeInTheDocument();
+    expect(page).not.toHaveTextContent(/TYPESAFE_API_KEY|AI_GATEWAY_API_KEY|MU_JUDGE_|provider\/model-id/);
+    expect(within(page).queryByLabelText('Timeout')).not.toBeInTheDocument();
+    expect(within(page).queryByRole('button', { expanded: false })).not.toBeInTheDocument();
   });
 
   it('keeps each of Jev’s services as a profile of its own: picking one puts that profile in the order', async () => {
@@ -1396,17 +1477,17 @@ describe('the kernel pages', () => {
       ok: true,
       data: settings({ judges: { ...settings().judges, 'jev-gateway': gateway } }),
     });
-    render(<SettingsArea section='judges' />, { wrapper });
-    const jev = await screen.findByTestId('mu-judge-tier-0');
-    fireEvent.click(within(jev).getByLabelText(enMu.judges.service));
+    await open('judges');
+    const choice = screen.getByTestId('mu-judge-choice-jev');
+    fireEvent.click(within(choice).getByLabelText(enMu.judges.service));
     fireEvent.click(await screen.findByText(enMu.judges.services.gateway.name, { selector: '.arco-select-option' }));
-    // The gateway's own model, and still one Jev in the order.
-    await waitFor(() =>
-      expect(within(screen.getByTestId('mu-judge-tier-0')).getByLabelText(enMu.judges.model)).toHaveValue(
-        'typesafe-ai/jev'
-      )
-    );
     expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Judges');
+    // The gateway's own model, and still one Jev in the order.
+    fireEvent.click(screen.getByTestId('mu-nav-judge-order'));
+    expect(within(screen.getByTestId('mu-judge-tier-0')).getByLabelText(enMu.judges.model)).toHaveValue(
+      'typesafe-ai/jev'
+    );
+    expect(screen.queryByTestId('mu-judge-tier-1')).not.toBeInTheDocument();
     fireEvent.click(screen.getByText('Save'));
     await waitFor(() => expect(bridge.save).toHaveBeenCalled());
     const sent = bridge.save.mock.calls[0][0] as SaveSettings;
@@ -1415,16 +1496,17 @@ describe('the kernel pages', () => {
 
   it('shows a base URL only for TypeSafe and a custom service, and accepts a private-network HTTP address', async () => {
     bridge.settings.mockResolvedValue({ ok: true, data: settings() });
-    render(<SettingsArea section='judges' />, { wrapper });
-    const jev = await screen.findByTestId('mu-judge-tier-0');
-    expect(within(jev).queryByLabelText(enMu.judges.baseUrl)).not.toBeInTheDocument();
-    fireEvent.click(within(jev).getByLabelText(enMu.judges.service));
+    render(<SettingsArea page='judges' />, { wrapper });
+    const choice = await screen.findByTestId('mu-judge-choice-jev');
+    expect(within(choice).queryByLabelText(enMu.judges.baseUrl)).not.toBeInTheDocument();
+    fireEvent.click(within(choice).getByLabelText(enMu.judges.service));
     fireEvent.click(await screen.findByText(enMu.judges.services.typesafe.name, { selector: '.arco-select-option' }));
-    const field = await within(screen.getByTestId('mu-judge-tier-0')).findByLabelText(enMu.judges.baseUrl);
+    const tile = () => screen.getByTestId('mu-judge-choice-jev');
+    const field = await within(tile()).findByLabelText(enMu.judges.baseUrl);
     fireEvent.change(field, { target: { value: 'http://example.com/v1' } });
-    expect(screen.getByTestId('mu-judge-tier-0')).toHaveTextContent(enMu.endpointRule);
+    expect(tile()).toHaveTextContent(enMu.endpointRule);
     fireEvent.change(field, { target: { value: 'http://192.168.31.124:8000/v1/systemone' } });
-    expect(screen.getByTestId('mu-judge-tier-0')).not.toHaveTextContent(enMu.endpointRule);
+    expect(tile()).not.toHaveTextContent(enMu.endpointRule);
     fireEvent.click(screen.getByText('Save'));
     await waitFor(() => expect(bridge.save).toHaveBeenCalled());
     const sent = bridge.save.mock.calls[0][0] as SaveSettings;
@@ -1437,15 +1519,16 @@ describe('the kernel pages', () => {
     expect(sent.judges.jev).toEqual(settings().judges.jev);
   });
 
-  it('asks for the key of a Jev further down the order, which the choice above does not show', async () => {
+  it('asks for the service, address and key of a Jev further down the order, which the judges page does not show', async () => {
     bridge.settings.mockResolvedValue({ ok: true, data: settings({ tiers: ['laya', 'jev'], keys: {} }) });
-    render(<SettingsArea section='judges' />, { wrapper });
+    render(<SettingsArea page='judge-order' />, { wrapper });
     const jev = await screen.findByTestId('mu-judge-tier-1');
+    expect(within(jev).getByLabelText(enMu.judges.service)).toBeInTheDocument();
     fireEvent.change(within(jev).getByLabelText(enMu.judges.services.auto.key), { target: { value: 'jev-key' } });
     expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Judges');
-    // Laya, first, is installed and started from the choice above: one panel for it on the page.
+    // Laya, first, is installed and started from the choice on the judges page: no panel for it here.
     expect(within(screen.getByTestId('mu-judge-tier-0')).queryByTestId('mu-laya')).not.toBeInTheDocument();
-    expect(screen.getAllByTestId('mu-laya')).toHaveLength(1);
+    expect(screen.queryAllByTestId('mu-laya')).toHaveLength(0);
   });
 
   it('reaches Jev through OpenRouter from the choice, with OpenRouter’s own key and nothing typed for another', async () => {
@@ -1464,8 +1547,8 @@ describe('the kernel pages', () => {
         keys: { TYPESAFE_API_KEY: false, MU_JUDGE_OPENROUTER_API_KEY: false },
       }),
     });
-    render(<SettingsArea section='judges' />, { wrapper });
-    const choice = await screen.findByTestId('mu-judge-choice-jev');
+    await open('judges');
+    const choice = screen.getByTestId('mu-judge-choice-jev');
     // Automatic, first: TypeSafe's key. A key typed there stays TypeSafe's.
     expect(within(choice).getByLabelText(enMu.judges.service)).toBeInTheDocument();
     expect(choice).toHaveTextContent(enMu.judges.services.auto.help);
@@ -1482,10 +1565,11 @@ describe('the kernel pages', () => {
     expect(
       within(screen.getByTestId('mu-judge-choice-jev')).queryByLabelText(enMu.judges.baseUrl)
     ).not.toBeInTheDocument();
+    fireEvent.change(key, { target: { value: 'openrouter-key' } });
+    fireEvent.click(screen.getByTestId('mu-nav-judge-order'));
     expect(within(screen.getByTestId('mu-judge-tier-0')).getByLabelText(enMu.judges.model)).toHaveValue(
       '~typesafe/jev-latest'
     );
-    fireEvent.change(key, { target: { value: 'openrouter-key' } });
     fireEvent.click(screen.getByText('Save'));
     await waitFor(() => expect(bridge.save).toHaveBeenCalled());
     const sent = bridge.save.mock.calls[0][0] as SaveSettings;
@@ -1497,16 +1581,15 @@ describe('the kernel pages', () => {
   });
 
   it('asks a custom service for its address, and says why it cannot be saved without one', async () => {
-    render(<SettingsArea section='judges' />, { wrapper });
+    render(<SettingsArea page='judges' />, { wrapper });
     const choice = await screen.findByTestId('mu-judge-choice-jev');
     fireEvent.click(within(choice).getByLabelText(enMu.judges.service));
     fireEvent.click(await screen.findByText(enMu.judges.services.custom.name, { selector: '.arco-select-option' }));
     const tile = screen.getByTestId('mu-judge-choice-jev');
     const address = await within(tile).findByLabelText(enMu.judges.baseUrl);
-    // Empty: the problem, in the choice and on the tier alike.
+    // Empty: the problem, in the choice, the one place the address is typed.
     expect(within(tile).getByRole('alert')).toHaveTextContent(enMu.judges.baseUrlNeeded);
     expect(address).toHaveClass('arco-input-error');
-    expect(screen.getByTestId('mu-judge-tier-0')).toHaveTextContent(enMu.judges.baseUrlNeeded);
     fireEvent.change(within(tile).getByLabelText(enMu.judges.services.custom.key), { target: { value: 'relay-key' } });
     // The store refuses it, and the save bar says so in words.
     bridge.save.mockResolvedValueOnce({
@@ -1555,8 +1638,8 @@ describe('the kernel pages', () => {
       ok: true,
       data: { status: 'ready', models: ['clm-latest', 'clm-raw'], mock: false, keyRequired: false, latencyMs: 12 },
     });
-    render(<SettingsArea section='judges' />, { wrapper });
-    fireEvent.click(await screen.findByTestId('mu-judge-choice-clm'));
+    await open('judges');
+    fireEvent.click(screen.getByTestId('mu-judge-choice-clm'));
     const tile = screen.getByTestId('mu-judge-choice-clm');
     expect(tile).toHaveAttribute('aria-checked', 'true');
     // Empty is clm-serve's own address on this machine, and the server there is asked.
@@ -1568,18 +1651,11 @@ describe('the kernel pages', () => {
     );
     expect(bridge.clmCheck).toHaveBeenCalledWith({ baseUrl: '' });
     expect(tile).toHaveTextContent(enMu.judges.clm.unmeasured);
-    // The tier: CLM by its name, its address and its model. Its key and its server are the choice's, above.
-    const tier = screen.getByTestId('mu-judge-tier-0');
-    expect(tier).toHaveTextContent(`Tier 1: ${enMu.judges.choices.clm.title}`);
-    expect(tier).toHaveTextContent(enMu.judges.types.clmHelp);
-    expect(within(tier).getByLabelText(enMu.judges.model)).toHaveValue('clm-latest');
-    expect(within(tier).queryByLabelText(enMu.judges.clm.key)).not.toBeInTheDocument();
     expect(screen.getAllByTestId('mu-clm-server')).toHaveLength(1);
     // A public address over plain HTTP breaks the rule, and is not asked.
     bridge.clmCheck.mockClear();
     fireEvent.change(address, { target: { value: 'http://example.com:8700' } });
     expect(within(tile).getByRole('alert')).toHaveTextContent(enMu.endpointRule);
-    expect(tier).toHaveTextContent(enMu.endpointRule);
     expect(screen.queryByTestId('mu-clm-server')).not.toBeInTheDocument();
     // A private-network one is fine, and asked.
     fireEvent.change(address, { target: { value: 'http://192.168.1.20:8700' } });
@@ -1587,6 +1663,15 @@ describe('the kernel pages', () => {
     await waitFor(() => expect(bridge.clmCheck).toHaveBeenCalledWith({ baseUrl: 'http://192.168.1.20:8700' }));
     expect(bridge.clmCheck).toHaveBeenCalledTimes(1);
     fireEvent.change(within(tile).getByLabelText(enMu.judges.clm.key), { target: { value: 'clm-key' } });
+    // The order: CLM by its name and its model. Its address, key and server are the choice's.
+    fireEvent.click(screen.getByTestId('mu-nav-judge-order'));
+    const tier = screen.getByTestId('mu-judge-tier-0');
+    expect(tier).toHaveTextContent(`Tier 1: ${enMu.judges.choices.clm.title}`);
+    expect(tier).toHaveTextContent(enMu.judges.firstTier);
+    expect(within(tier).getByLabelText(enMu.judges.model)).toHaveValue('clm-latest');
+    expect(within(tier).queryByLabelText(enMu.judges.clm.address)).not.toBeInTheDocument();
+    expect(within(tier).queryByLabelText(enMu.judges.clm.key)).not.toBeInTheDocument();
+    expect(screen.queryByTestId('mu-clm-server')).not.toBeInTheDocument();
     fireEvent.click(screen.getByText('Save'));
     await waitFor(() => expect(bridge.save).toHaveBeenCalled());
     const sent = bridge.save.mock.calls[0][0] as SaveSettings;
@@ -1595,32 +1680,33 @@ describe('the kernel pages', () => {
     expect(sent.credentials).toEqual([{ name: 'MU_JUDGE_CLM_API_KEY', value: 'clm-key' }]);
   });
 
-  it('puts the switches that carry the product on the features page, and every other feature on the next', async () => {
-    const { unmount } = render(<SettingsArea section='features' />, { wrapper });
-    const featured = await screen.findByTestId('mu-feature-list-features');
+  it('puts the switches that carry the product on the core features page, each with the way to its row', async () => {
+    await open('features');
+    const featured = screen.getByTestId('mu-feature-list-features');
     // The fixture harness has four of the six; the others simply are not there.
     expect(
       within(featured)
         .getAllByTestId(/^mu-feature-[a-z]+$/)
         .map((row) => row.dataset.testid)
     ).toEqual(['mu-feature-swarm', 'mu-feature-hive', 'mu-feature-memory', 'mu-feature-forgetting']);
-    unmount();
-    render(<SettingsArea section='moreFeatures' />, { wrapper });
-    await screen.findByTestId('mu-section-moreFeatures');
-    // Grouped as the decision points are; a group left empty by the features page is not shown.
-    expect(screen.getAllByTestId(/^mu-feature-list-/).map((list) => list.dataset.testid)).toEqual([
-      'mu-feature-list-input',
-      'mu-feature-list-context',
-      'mu-feature-list-tools',
-      'mu-feature-list-turn',
-      'mu-feature-list-other',
-    ]);
-    expect(screen.getByRole('heading', { name: 'Input' })).toBeInTheDocument();
-    expect(screen.queryByTestId('mu-feature-swarm')).not.toBeInTheDocument();
+    // A shortcut, not a second set: the options and the decision points are on the feature's row in the details.
+    expect(within(featured).queryByTestId(/^mu-feature-open-/)).not.toBeInTheDocument();
+    expect(within(featured).queryByTestId(/^mu-decision-/)).not.toBeInTheDocument();
+    const scroll = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(() => {});
+    try {
+      fireEvent.click(within(screen.getByTestId('mu-feature-hive')).getByRole('button', { name: 'Hive: Details' }));
+      const row = screen.getByTestId('mu-feature-hive');
+      expect(row.closest('[data-testid="mu-section-details-team"]')).not.toBeNull();
+      expect(row).toHaveAttribute('data-focused', 'true');
+      expect(scroll.mock.contexts).toContain(row);
+      expect(within(row).getByTestId('mu-decision-hive.deliver')).toBeInTheDocument();
+    } finally {
+      scroll.mockRestore();
+    }
   });
 
   it('writes a switch straight into the draft, and says which page is unsaved', async () => {
-    render(<SettingsArea section='features' />, { wrapper });
+    render(<SettingsArea page='features' />, { wrapper });
     const swarm = await screen.findByTestId('mu-feature-swarm');
     const control = within(swarm).getByRole('switch');
     const before = control.getAttribute('aria-checked');
@@ -1637,8 +1723,17 @@ describe('one draft across the settings pages', () => {
     return <React.Fragment key={pathname}>{children}</React.Fragment>;
   }
   function Where() {
-    const { pathname } = useLocation();
-    return <output data-testid='where'>{pathname}</output>;
+    const { pathname, search } = useLocation();
+    return <output data-testid='where'>{`${pathname}${search}`}</output>;
+  }
+  /** The browser's way back. */
+  function Back() {
+    const navigate = useNavigate();
+    return (
+      <button type='button' onClick={() => void navigate(-1)}>
+        back
+      </button>
+    );
   }
   function renderSettings(path: string) {
     const page = (
@@ -1650,9 +1745,9 @@ describe('one draft across the settings pages', () => {
       <MemoryRouter initialEntries={[path]}>
         <nav>
           <Link to='/settings/judges'>judges</Link>
-          <Link to='/settings/decisions-tools'>decisions</Link>
-          <Link to='/settings/more-features-input'>more features</Link>
+          <Link to='/settings/details-safety'>safety</Link>
           <Link to='/settings/appearance'>appearance</Link>
+          <Back />
         </nav>
         <Where />
         <Routes>
@@ -1664,7 +1759,9 @@ describe('one draft across the settings pages', () => {
             }
           >
             <Route path='/settings/appearance' element={<div data-testid='appearance'>appearance</div>} />
-            <Route path='/settings/more-features/:feature/:part?' element={<MovedFeatureOptions />} />
+            {MOVED_FEATURE_LISTS.map((list) => (
+              <Route key={list} path={`${list}/:feature/:part?`} element={<MovedFeatureOptions />} />
+            ))}
             <Route path='/settings/:page' element={page} />
             <Route path='/settings/:page/:feature' element={page} />
             <Route path='/settings/:page/:feature/:part' element={page} />
@@ -1680,11 +1777,11 @@ describe('one draft across the settings pages', () => {
     fireEvent.click(await screen.findByTestId('mu-judge-choice-local'));
     expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Judges');
 
-    fireEvent.click(screen.getByRole('link', { name: 'decisions' }));
+    fireEvent.click(screen.getByRole('link', { name: 'safety' }));
     // Another page, drawn afresh: the draft is the same one.
-    expect(await screen.findByTestId('mu-section-decisions-tools')).toBeInTheDocument();
+    expect(await screen.findByTestId('mu-section-details-safety')).toBeInTheDocument();
     expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Judges');
-    fireEvent.click(within(screen.getByTestId('mu-decision-tool.risk')).getByText('On'));
+    fireEvent.click(within(screen.getByTestId('mu-decision-tool.risk')).getByRole('switch'));
     expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Judges and Decision points');
 
     fireEvent.click(screen.getByRole('link', { name: 'appearance' }));
@@ -1700,124 +1797,105 @@ describe('one draft across the settings pages', () => {
     expect(sent.decisionModes).toEqual({ 'tool.risk': 'active' });
   });
 
-  it('opens a feature’s options at a route of its own, and goes back to the list', async () => {
-    renderSettings('/settings/more-features-input');
+  it('opens a feature’s options at a route of its own, and goes back to its page', async () => {
+    renderSettings('/settings/details-input');
     fireEvent.click(await screen.findByTestId('mu-feature-open-preflight'));
-    expect(screen.getByTestId('where')).toHaveTextContent('/settings/more-features-input/preflight');
+    expect(screen.getByTestId('where')).toHaveTextContent('/settings/details-input/preflight');
     const page = await screen.findByTestId('mu-section-feature-preflight');
     fireEvent.click(within(page).getByRole('switch', { name: 'Show the wait and the verdict' }));
     fireEvent.click(screen.getByTestId('mu-feature-back'));
-    expect(await screen.findByTestId('mu-section-moreFeatures-input')).toBeInTheDocument();
-    expect(screen.getByTestId('where')).toHaveTextContent(/^\/settings\/more-features-input$/);
-    expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: More features');
+    expect(await screen.findByTestId('mu-section-details-input')).toBeInTheDocument();
+    expect(screen.getByTestId('where')).toHaveTextContent(/^\/settings\/details-input$/);
+    expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Features');
   });
 
-  it('opens a feature’s page from a link as well, and its way back is the list', async () => {
-    renderSettings('/settings/features/swarm');
+  it('opens a feature’s page from a link as well, and its way back is the page its row is on', async () => {
+    renderSettings('/settings/details-team/swarm');
     const page = await screen.findByTestId('mu-section-feature-swarm');
     expect(within(page).getByRole('switch', { name: 'Sub-agents' })).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('mu-feature-back'));
-    expect(await screen.findByTestId('mu-section-features')).toBeInTheDocument();
-    expect(screen.getByTestId('where')).toHaveTextContent(/^\/settings\/features$/);
+    expect(await screen.findByTestId('mu-section-details-team')).toBeInTheDocument();
+    expect(screen.getByTestId('where')).toHaveTextContent(/^\/settings\/details-team$/);
   });
 
-  it.each(DECISION_PAGES)('shows the decision points of %s on a page of their own', async (page) => {
-    renderSettings(`/settings/decisions-${page}`);
-    const section = await screen.findByTestId(`mu-section-decisions-${page}`);
-    const expected = manifest.decisions
-      .filter((decision) => decisionPageOf(decision) === page)
-      .map((decision) => `mu-decision-${decision.id}`);
-    expect(rowsOf(within(section).queryByTestId(`mu-decision-page-${page}`))).toEqual(expected);
-    expect(expected.length).toBeLessThanOrEqual(PAGE_ROWS);
-    // What applies to every point, the default mode and the search, is on the first page; the others say so.
-    if (page === DECISION_PAGES[0]) {
-      expect(within(section).getByTestId('mu-default-mode')).toBeInTheDocument();
-      expect(within(section).getByPlaceholderText('Search decisions and features')).toBeInTheDocument();
-    } else {
-      expect(within(section).queryByTestId('mu-default-mode')).not.toBeInTheDocument();
-      expect(within(section).queryByPlaceholderText('Search decisions and features')).not.toBeInTheDocument();
-      expect(section).toHaveTextContent('The default mode and the search are on Decision points: Input.');
+  it('leads from a core feature to its row among the details, and back to the core features', async () => {
+    const scroll = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(() => {});
+    try {
+      renderSettings('/settings/features');
+      fireEvent.click(await screen.findByTestId('mu-feature-area-memory'));
+      expect(screen.getByTestId('where')).toHaveTextContent(/^\/settings\/details-memory\?feature=memory$/);
+      const row = await screen.findByTestId('mu-feature-memory');
+      expect(row).toHaveAttribute('data-focused', 'true');
+      expect(scroll.mock.contexts).toContain(row);
+      // The same switch on both pages: one setting.
+      fireEvent.click(within(row).getByRole('switch', { name: 'Lessons' }));
+      fireEvent.click(screen.getByRole('button', { name: 'back' }));
+      expect(await screen.findByTestId('mu-section-features')).toBeInTheDocument();
+      expect(
+        within(screen.getByTestId('mu-feature-memory')).getByRole('switch', { name: 'Lessons' })
+      ).not.toBeChecked();
+      expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Features');
+    } finally {
+      scroll.mockRestore();
     }
   });
 
-  it('searches the points of every page from the first one, under the name of the page each is on', async () => {
-    renderSettings('/settings/decisions-input');
-    const search = await screen.findByPlaceholderText('Search decisions and features');
-    expect(screen.queryByTestId('mu-decision-hive.deliver')).not.toBeInTheDocument();
-    fireEvent.change(search, { target: { value: 'hive' } });
-    expect(screen.getByTestId('mu-decision-hive.deliver')).toBeInTheDocument();
-    expect(within(screen.getByTestId('mu-decision-group-team')).getByTestId('mu-decision-hive.deliver')).toBeVisible();
-    expect(screen.getByRole('heading', { name: 'Teamwork' })).toBeInTheDocument();
-    fireEvent.change(search, { target: { value: '' } });
-    expect(screen.queryByTestId('mu-decision-hive.deliver')).not.toBeInTheDocument();
-    expect(screen.getByTestId('mu-decision-input.preflight')).toBeInTheDocument();
-  });
-
-  it('puts the compaction settings on top of the context page: one page for context, still within a page', async () => {
+  it('puts the compaction settings on top of the context page, then its features, still within a page', async () => {
     bridge.settings.mockResolvedValue({ ok: true, data: realShaped() });
-    renderSettings('/settings/decisions-context');
-    const section = await screen.findByTestId('mu-section-decisions-context');
+    renderSettings('/settings/details-context');
+    const section = await screen.findByTestId('mu-section-details-context');
     expect(within(section).getByRole('heading', { level: 1, name: 'Context' })).toBeInTheDocument();
     const compaction = within(section).getByTestId('mu-context-rows');
     const auto = within(compaction).getByRole('switch', { name: 'Automatic compaction' });
     expect(within(compaction).getByLabelText('Context cap')).toBeInTheDocument();
-    // Then the points, under a heading of their own, with the note on where their default is.
-    const points = within(section).getByTestId('mu-decision-page-context');
-    expect(compaction.compareDocumentPosition(points) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(within(section).getByRole('heading', { level: 3, name: 'Decision points' })).toBeInTheDocument();
-    expect(rowsOf(points).length + 2).toBeLessThanOrEqual(PAGE_ROWS);
+    const list = within(section).getByTestId('mu-feature-list-context');
+    expect(compaction.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const rows =
+      within(list).getAllByTestId(/^mu-feature-[a-z]+$/).length + within(list).getAllByTestId(/^mu-decision-/).length;
+    expect(rows + 2).toBeLessThanOrEqual(PAGE_ROWS);
     // A compaction change is the context's in the save bar; a point's is the decision points'.
     fireEvent.click(auto);
-    fireEvent.click(within(points).getAllByText('On')[0]);
+    fireEvent.click(within(screen.getByTestId('mu-decision-context.forget')).getByRole('switch'));
     expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Decision points and Context');
   });
 
-  it('gives the lessons a page of their own, so the context group stays within a page', async () => {
+  it('gives the lessons a page of their own, so the context page stays within a page', async () => {
     bridge.settings.mockResolvedValue({ ok: true, data: realShaped() });
-    renderSettings('/settings/decisions-context');
-    const context = await screen.findByTestId('mu-decision-page-context');
-    // Thirteen points in the context group: seven here, six on the lessons' page.
-    expect(rowsOf(context)).toHaveLength(7);
+    renderSettings('/settings/details-context');
+    const context = await screen.findByTestId('mu-feature-list-context');
     expect(within(context).queryByTestId('mu-decision-memory.recall')).not.toBeInTheDocument();
     cleanup();
-    renderSettings('/settings/decisions-memory');
-    const lessons = await screen.findByTestId('mu-decision-page-memory');
-    expect(rowsOf(lessons)).toHaveLength(6);
-    expect(screen.getByRole('heading', { name: 'Decision points: Lessons' })).toBeInTheDocument();
+    renderSettings('/settings/details-memory');
+    const lessons = await screen.findByTestId('mu-feature-memory');
+    expect(within(lessons).getAllByTestId(/^mu-decision-memory\./)).toHaveLength(6);
+    expect(screen.getByRole('heading', { level: 1, name: 'Lessons' })).toBeInTheDocument();
   });
 
   it('leaves the terminal’s welcome box off the Other page: nothing in the app shows what it changes', async () => {
-    renderSettings('/settings/more-features-other');
+    renderSettings('/settings/details-other');
     const other = await screen.findByTestId('mu-feature-list-other');
     expect(within(other).getByTestId('mu-feature-background')).toBeInTheDocument();
     expect(screen.queryByTestId('mu-feature-welcome')).not.toBeInTheDocument();
     expect(screen.queryByText('Welcome screen')).not.toBeInTheDocument();
   });
 
-  it.each(FEATURE_PAGES)(
-    'shows the other features of %s on a page of their own, never a featured one',
-    async (page) => {
-      renderSettings(`/settings/more-features-${page}`);
-      const list = await screen.findByTestId(`mu-feature-list-${page}`);
-      const expected = manifest.features
-        .filter(
-          (feature) =>
-            !isFeatured(feature.name) && !isTerminalOnly(feature.name) && featurePageOf(manifest, feature) === page
-        )
-        .map((feature) => `mu-feature-${feature.name}`);
-      expect(rowsOf(list)).toEqual(expected);
-      expect(expected.length).toBeLessThanOrEqual(PAGE_ROWS);
-      // One list, titled by its page: no group headings inside it.
-      expect(screen.getByTestId(`mu-section-moreFeatures-${page}`)).toBeInTheDocument();
-      expect(screen.queryAllByRole('heading', { level: 3 })).toHaveLength(0);
-    }
-  );
+  it.each(DETAIL_AREAS)('shows the features of %s on a page of its own, in one list, within a page', async (area) => {
+    renderSettings(`/settings/details-${area}`);
+    const section = await screen.findByTestId(`mu-section-details-${area}`);
+    const rows =
+      within(section).queryAllByTestId(/^mu-feature-[a-zA-Z]+$/).length +
+      within(section).queryAllByTestId(/^mu-decision-[a-z.-]+$/).length;
+    expect(rows).toBeLessThanOrEqual(PAGE_ROWS);
+    // One list, titled by its page: no group headings inside it; the mode the points follow is the judges page's.
+    expect(screen.queryAllByRole('heading', { level: 3 })).toHaveLength(0);
+    expect(within(section).queryByTestId('mu-judge-mode')).not.toBeInTheDocument();
+  });
 
-  it('puts the options of a feature with more than a page of them on pages, and the way back is the list', async () => {
+  it('puts the options of a feature with more than a page of them on pages, and the way back is its page', async () => {
     bridge.settings.mockResolvedValue({ ok: true, data: realShaped() });
-    renderSettings('/settings/more-features-tools');
+    renderSettings('/settings/details-tools');
     fireEvent.click(await screen.findByTestId('mu-feature-open-packs'));
-    expect(screen.getByTestId('where')).toHaveTextContent(/^\/settings\/more-features-tools\/packs$/);
+    expect(screen.getByTestId('where')).toHaveTextContent(/^\/settings\/details-tools\/packs$/);
     const first = await screen.findByTestId('mu-section-feature-packs');
     expect(within(first).getByTestId('mu-feature-parts')).toHaveTextContent('Options, page 1 of 2');
     expect(within(first).getAllByTestId(/^mu-option-packs-/)).toHaveLength(9);
@@ -1826,7 +1904,7 @@ describe('one draft across the settings pages', () => {
     expect(within(first).getByTestId('mu-feature-part-previous')).toBeDisabled();
 
     fireEvent.click(within(first).getByTestId('mu-feature-part-next'));
-    expect(screen.getByTestId('where')).toHaveTextContent('/settings/more-features-tools/packs/2');
+    expect(screen.getByTestId('where')).toHaveTextContent('/settings/details-tools/packs/2');
     const second = await screen.findByTestId('mu-section-feature-packs');
     expect(within(second).getByTestId('mu-feature-parts')).toHaveTextContent('Options, page 2 of 2');
     expect(within(second).getAllByTestId(/^mu-option-packs-/)).toHaveLength(9);
@@ -1835,22 +1913,28 @@ describe('one draft across the settings pages', () => {
 
     // The pages of options take each other's place: back leads to the list, not to the first page.
     fireEvent.click(screen.getByTestId('mu-feature-back'));
-    expect(await screen.findByTestId('mu-section-moreFeatures-tools')).toBeInTheDocument();
-    expect(screen.getByTestId('where')).toHaveTextContent(/^\/settings\/more-features-tools$/);
+    expect(await screen.findByTestId('mu-section-details-tools')).toBeInTheDocument();
+    expect(screen.getByTestId('where')).toHaveTextContent(/^\/settings\/details-tools$/);
   });
 
-  it('sends an old link to a feature’s options to the page of its group', async () => {
-    renderSettings('/settings/more-features/preflight');
-    expect(await screen.findByTestId('mu-section-feature-preflight')).toBeInTheDocument();
-    expect(screen.getByTestId('where')).toHaveTextContent(/^\/settings\/more-features-input\/preflight$/);
-    cleanup();
-    // A featured one's options are on the features page; one the harness does not have, the first other page.
-    renderSettings('/settings/more-features/swarm');
-    expect(await screen.findByTestId('mu-section-feature-swarm')).toBeInTheDocument();
-    expect(screen.getByTestId('where')).toHaveTextContent(/^\/settings\/features\/swarm$/);
-    cleanup();
-    renderSettings('/settings/more-features/gone');
-    expect(await screen.findByTestId('mu-section-moreFeatures-input')).toBeInTheDocument();
-    expect(screen.getByTestId('where')).toHaveTextContent(/^\/settings\/more-features-input$/);
+  it.each([
+    ['/settings/more-features/preflight', '/settings/details-input/preflight'],
+    ['/settings/more-features-input/preflight', '/settings/details-input/preflight'],
+    ['/settings/more-features-tools/locate', '/settings/details-tools/locate'],
+    ['/settings/more-features-turn/notify', '/settings/details-turn/notify'],
+    ['/settings/features/swarm', '/settings/details-team/swarm'],
+    ['/settings/more-features/swarm', '/settings/details-team/swarm'],
+    ['/settings/more-features-context/memory', '/settings/details-memory/memory'],
+  ])('sends the old link %s to the feature’s options on the page of its area', async (link, target) => {
+    renderSettings(link);
+    const feature = target.split('/').at(-1)!;
+    expect(await screen.findByTestId(`mu-section-feature-${feature}`)).toBeInTheDocument();
+    expect(screen.getByTestId('where')).toHaveTextContent(new RegExp(`^${target}$`));
+  });
+
+  it('sends an old link to a feature the harness no longer has to the first page of the details', async () => {
+    renderSettings('/settings/more-features/gone?x=1');
+    expect(await screen.findByTestId('mu-section-details-input')).toBeInTheDocument();
+    expect(screen.getByTestId('where')).toHaveTextContent(/^\/settings\/details-input\?x=1$/);
   });
 });

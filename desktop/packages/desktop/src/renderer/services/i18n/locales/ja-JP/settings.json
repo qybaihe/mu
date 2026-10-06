@@ -4,6 +4,7 @@
     "preferences": "環境設定",
     "models": "モデル",
     "kernel": "カーネル",
+    "details": "詳細",
     "capabilities": "能力",
     "system": "システム"
   },
@@ -367,13 +368,14 @@
   },
   "notification": "通知",
   "cronNotificationEnabled": "定期タスク完了通知",
-  "promptTimeout": "モデルへのリクエストのタイムアウト（秒）",
+  "promptTimeout": "モデルへのリクエストのタイムアウト",
   "groupAiCore": "AI コア",
   "groupApp": "アプリケーション",
   "groupAbout": "その他",
-  "agentIdleTimeout": "エージェントのアイドルタイムアウト（分）",
+  "agentIdleTimeout": "エージェントのアイドルタイムアウト",
   "agentIdleTimeoutDesc": "この時間アイドル状態が続いたエージェントは、メモリを空けるために停止します。",
-  "previewTextSizeLimit": "プレビューサイズ上限（MB）",
+  "previewTextSizeLimit": "プレビューサイズ上限",
+  "previewTextSizeLimitUnit": "MB",
   "previewTextSizeLimitDesc": "このサイズを超えるテキストファイルは内容を読み込まず、通知のみ表示します。新しく開いたタブにのみ適用されます。",
   "gemini": "Gemini",
   "model": "モデル",
@@ -612,7 +614,7 @@
   "closeDevTools": "開発者ツールを閉じる",
   "restartNow": "今すぐ再起動",
   "cdp": {
-    "title": "アプリ内ブラウザーへの接続（開発者向け）",
+    "title": "アプリ内ブラウザーへの接続",
     "connection": "エージェントがアプリ内ブラウザーを操作するしくみ",
     "about": "このコンピューター上の接続（127.0.0.1、起動のたびに新しいポート）を通じて、そのブラウザービューだけを操作します。mu 自身のウインドウには届きません。このコンピューターのほかのプログラムも、下の設定のようにこの接続を使えます。エージェントがアプリ内ブラウザーを使える間だけ動き、その切り替えはアプリ内ブラウザーの設定にあります。",
     "openBrowserSettings": "アプリ内ブラウザーの設定",
@@ -1074,5 +1076,17 @@
   "appearanceDescription": "言語、テーマ、フォント、ズーム。",
   "systemDescription": "起動時の自動起動、ウィンドウを閉じた後も動き続けること、通知、mu の作業フォルダとログフォルダ。",
   "conversationsDescription": "タイムアウト、プレビューのサイズ上限、アップロードの保存先、会話間メッセージ。",
-  "aboutDescription": "mu のバージョン、アップデート、ログフォルダへの入口。"
+  "aboutDescription": "mu のバージョン、アップデート、ログフォルダへの入口。",
+  "developer": {
+    "title": "開発者",
+    "description": "開発者ツールと、外部ツールがアプリ内ブラウザーに接続するためのポートと MCP 設定。",
+    "devOnly": "これらのツールは、ソースから実行した mu でのみ使えます。"
+  },
+  "search": {
+    "placeholder": "設定を検索",
+    "empty": "一致する設定はありません。",
+    "results": "検索結果"
+  },
+  "learnMore": "詳しく",
+  "showLess": "閉じる"
 }

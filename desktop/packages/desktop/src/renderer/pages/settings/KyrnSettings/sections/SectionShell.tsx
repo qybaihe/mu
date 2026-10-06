@@ -57,7 +57,3 @@ export function Card({ title, badges, extra, summary, dim, testId, children }: C
     </div>
   );
 }
-
-export function GroupTitle({ children }: { children: React.ReactNode }) {
-  return <h3 className={styles.groupTitle}>{children}</h3>;
-}

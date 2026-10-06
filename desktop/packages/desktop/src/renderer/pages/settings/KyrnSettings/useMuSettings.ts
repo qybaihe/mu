@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { mutate } from 'swr';
 import { kyrnBridge, unwrap } from '@/common/kyrn/bridge';
 import type { AvailableModels } from '@/common/kyrn/models';
 import type { KyrnSettings } from '@/common/kyrn/types';
@@ -84,11 +85,14 @@ export function useMuSettings(): MuSettings {
     if (!draft) return false;
     setSaving(true);
     setError(undefined);
+    // The send boxes show the model a new conversation starts with: they read it again once a new one is saved.
+    const newDefault = base ? dirtySections(base, draft).has('defaultModel') : false;
     try {
       const saved = completeSettings(unwrap(await kyrnBridge.save.invoke(toSave(draft, base))));
       setBase(saved);
       setDraft(newDraft(saved));
       void recheckMu();
+      if (newDefault) void mutate('mu.defaultModel');
       return true;
     } catch (cause) {
       const failure = toMuError(cause);

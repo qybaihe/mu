@@ -603,7 +603,11 @@
       "endLabel": "Ziel beenden"
     },
     "thinkingNote": "Ein Wechsel der Denkstufe verwirft den Prompt-Cache; beim selben Modell besser nicht wechseln",
-    "modelBusy": "Das Modell lässt sich wechseln, wenn diese Antwort fertig ist."
+    "modelBusy": "Das Modell lässt sich wechseln, wenn diese Antwort fertig ist.",
+    "defaultTag": "Standard",
+    "makeDefault": "Als Standard für neue Unterhaltungen festlegen",
+    "madeDefault": "Neue Unterhaltungen starten mit diesem Modell.",
+    "makeDefaultFailed": "Das Standardmodell konnte nicht gespeichert werden."
   },
   "agentTip": {
     "codes": {

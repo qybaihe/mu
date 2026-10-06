@@ -4,6 +4,7 @@
     "preferences": "Präferenzen",
     "models": "Modelle",
     "kernel": "Kern",
+    "details": "Details",
     "capabilities": "Fähigkeiten",
     "system": "System"
   },
@@ -357,13 +358,14 @@
   "hardwareAccelerationUpdateFailed": "Hardware-Beschleunigung konnte nicht aktualisiert werden",
   "notification": "Benachrichtigungen",
   "cronNotificationEnabled": "Geplante Aufgabe abgeschlossen",
-  "promptTimeout": "Zeitlimit für Modellanfragen (s)",
+  "promptTimeout": "Zeitlimit für Modellanfragen",
   "groupAiCore": "KI-Kern",
   "groupApp": "Anwendung",
   "groupAbout": "Sonstiges",
-  "agentIdleTimeout": "Agenten-Leerlaufzeitüberschreitung (Min.)",
+  "agentIdleTimeout": "Agenten-Leerlaufzeitüberschreitung",
   "agentIdleTimeoutDesc": "Ein untätiger Agent wird nach dieser Zeit beendet, um Speicher freizugeben.",
-  "previewTextSizeLimit": "Vorschau-Größenlimit (MB)",
+  "previewTextSizeLimit": "Vorschau-Größenlimit",
+  "previewTextSizeLimitUnit": "MB",
   "previewTextSizeLimitDesc": "Textdateien über dieser Größe werden mit einem Hinweis statt mit Inhalt geöffnet. Gilt nur für neu geöffnete Tabs.",
   "gemini": "Gemini CLI",
   "model": "Modell",
@@ -613,7 +615,7 @@
   "closeDevTools": "DevTools schließen",
   "restartNow": "Jetzt neu starten",
   "cdp": {
-    "title": "Verbindung zum integrierten Browser (für Entwickler)",
+    "title": "Verbindung zum integrierten Browser",
     "connection": "Wie der Agent den integrierten Browser steuert",
     "about": "Über eine Verbindung auf diesem Computer (127.0.0.1, bei jedem Start ein neuer Port), die nur zu dieser Browseransicht führt, nie zum Fenster von mu selbst. Andere Programme auf diesem Computer können sie ebenfalls nutzen, so wie die Konfigurationen unten. Sie läuft, solange der Agent den integrierten Browser nutzen darf; das wird in den Einstellungen des integrierten Browsers geschaltet.",
     "openBrowserSettings": "Einstellungen des integrierten Browsers",
@@ -1073,5 +1075,17 @@
   "appearanceDescription": "Sprache, Theme, Schriftarten und Skalierung.",
   "systemDescription": "Start mit dem Computer, Weiterlaufen nach dem Schließen des Fensters, Benachrichtigungen und die Ordner, in denen mu arbeitet und protokolliert.",
   "conversationsDescription": "Zeitlimits, die Größengrenze der Vorschau, der Ablageort für Uploads und Nachrichten zwischen Unterhaltungen.",
-  "aboutDescription": "Welche Version von mu das ist, ihre Updates und der Weg zu den Protokollen."
+  "aboutDescription": "Welche Version von mu das ist, ihre Updates und der Weg zu den Protokollen.",
+  "developer": {
+    "title": "Entwickler",
+    "description": "Die Entwickler-Tools sowie Port und MCP-Konfigurationen, mit denen andere Programme den integrierten Browser erreichen.",
+    "devOnly": "Diese Werkzeuge gibt es nur, wenn mu aus den Quellen läuft."
+  },
+  "search": {
+    "placeholder": "Einstellungen durchsuchen",
+    "empty": "Keine passende Einstellung.",
+    "results": "Suchergebnisse"
+  },
+  "learnMore": "Mehr erfahren",
+  "showLess": "Weniger"
 }

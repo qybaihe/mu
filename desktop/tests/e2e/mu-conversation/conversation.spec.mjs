@@ -81,7 +81,7 @@ const workPanelTab = (tab) => page().locator(`[role="tab"][data-tab="${tab}"]`);
 // A window with little room (a laptop's, a CI runner's 1024 x 768 screen) folds the sidebar to its rail of icons, and
 // a row's words are hidden then: the sidebar and the settings rail are reached by what stays, their icons' test ids.
 
-/** Opens a page of the settings (`providers`, `default-model`, `about`, ...) from the sidebar's 设置 and the rail. */
+/** Opens a page of the settings (`providers`, `board-model`, `about`, ...) from the sidebar's 设置 and the rail. */
 async function openSettings(path) {
   const p = page();
   if (!/#\/settings\//.test(p.url())) await p.getByTestId('sider-settings').click();
@@ -499,7 +499,7 @@ test('the files tab lists the written file, and the board is written by the fake
   });
 
   await test.step('the fake model is picked to write the board', async () => {
-    await openSettings('default-model');
+    await openSettings('board-model');
     const card = p.getByTestId('mu-board-model');
     await card.getByRole('combobox', { name: '提供商' }).click();
     await p.locator('.arco-select-popup:visible .arco-select-option', { hasText: PROVIDER_NAME }).click();

@@ -2,8 +2,6 @@
   "title": "mu settings",
   "description": "Everything mu can be told: judges, decision points, features, models and context. Shared with the mu command line.",
   "reload": "Reload",
-  "search": "Search decisions and features",
-  "noMatch": "Nothing matches the search.",
   "modified": "Changed",
   "applyNote": "Changes apply to new sessions. A running session keeps the configuration it started with; reconnect it to pick them up.",
   "apiKey": "API key",
@@ -12,36 +10,31 @@
   "endpointRule": "Use HTTPS, or HTTP to this machine (127.0.0.1, localhost) or to a private-network IP address (such as 192.168.1.20). No user name, password, query or fragment in the address.",
   "sections": {
     "judges": "Judges",
-    "judgeTiers": "Judge tiers",
+    "judgeOrder": "Judge order",
     "decisions": "Decision points",
     "features": "Features",
-    "moreFeatures": "More features",
+    "coreFeatures": "Core features",
     "providers": "Providers",
     "defaultModel": "Default model",
+    "boardModel": "Plain-language model",
     "context": "Context"
   },
   "pages": {
-    "decisions": {
-      "input": "Decision points: Input",
+    "details": {
+      "input": "Input features",
       "context": "Context",
-      "memory": "Decision points: Lessons",
-      "tools": "Decision points: Tools and safety",
-      "turn": "Decision points: Turn",
-      "team": "Decision points: Teamwork"
-    },
-    "features": {
-      "input": "More features: Input",
-      "context": "More features: Context",
-      "tools": "More features: Tools and safety",
-      "turn": "More features: Turn",
-      "other": "More features: Other"
+      "memory": "Lessons",
+      "tools": "Tool features",
+      "safety": "Safety features",
+      "turn": "Turn features",
+      "goal": "Goal and board",
+      "team": "Teamwork features",
+      "other": "Other features"
     }
   },
   "modes": {
     "active": "On",
-    "off": "Off",
-    "activeHelp": "The verdict takes effect.",
-    "offHelp": "The verdict has no effect: that step goes ahead as usual."
+    "off": "Off"
   },
   "harness": {
     "tooOld": "This version of mu is too old to list its decision points and features. Update mu to see them here; the basic settings still work.",
@@ -76,41 +69,27 @@
     }
   },
   "decisions": {
-    "description": "Each point where the judge is asked. A point follows the default mode unless you give it one of its own.",
-    "defaultMode": "Default mode",
-    "defaultModeHelp": "For every decision point without a mode of its own.",
-    "useDefault": "Use the default ({{mode}})",
-    "featureOff": "Its feature is off, so this point is not asked now.",
-    "groups": {
-      "input": "Input",
-      "context": "Context",
-      "memory": "Lessons",
-      "tools": "Tools and safety",
-      "turn": "Turn",
-      "team": "Teamwork"
-    },
-    "otherGroup": "Other",
-    "pageLead": "A point follows the default mode unless you give it one of its own. The default mode and the search are on {{page}}.",
-    "none": "No decision points here yet."
+    "useDefault": "Use the default ({{mode}})"
   },
   "features": {
     "lead": "What mu does for you in the background. Switch one off and mu stops doing it.",
-    "moreLead": "Everything else mu can do, grouped by where it acts. Each feature’s options are one click away.",
     "beta": "Beta",
     "reset": "Restore defaults",
-    "boardModelElsewhere": "The model that writes the board is chosen under Default model.",
+    "boardModelElsewhere": "The model that writes the board is chosen under Plain-language model.",
     "options": "Options",
     "noOptions": "Nothing else to set: the switch is all there is.",
     "noSuchFeature": "This version of mu has no such feature.",
     "none": "No features here yet.",
     "part": "Options, page {{part}} of {{parts}}",
     "previousPart": "Previous page",
-    "nextPart": "Next page"
+    "nextPart": "Next page",
+    "details": "Details"
   },
   "judges": {
     "tiersHelp": "Judges are tried in order. A later one only sees what the earlier ones left uncertain.",
     "order": "Order",
-    "orderHelp": "The first one is the judge chosen above.",
+    "orderHelp": "The first one is the judge chosen on the Judges page.",
+    "firstTier": "The judge chosen on the Judges page: its service, address and key are set there.",
     "tierTitle": "Tier {{index}}: {{name}}",
     "service": "Service",
     "services": {
@@ -170,8 +149,10 @@
       "classifierHelp": "A classifier model from mu's model catalog: {{model}}. mu reaches it with its provider's key."
     },
     "intro": "While it works, mu makes many small calls: how to handle this message, whether this step breaks a rule you set. The judge answers them. Pick one.",
+    "mode": "Verdicts take effect",
+    "modeHelp": "On: the judge's verdicts take effect. Off: every step goes ahead as usual. Steps without a setting of their own follow this.",
     "choose": "Choose a judge",
-    "custom": "The first judge right now is a custom one: see and change it under Judge tiers below.",
+    "custom": "The first judge right now is a custom one: see and change it on the Judge order page.",
     "keyPlaceholder": "Paste the key",
     "choices": {
       "jev": {
@@ -270,7 +251,7 @@
     "limit": "Context cap",
     "limitHelp": "0 follows the model's window minus the reserve. Otherwise {{min}} to {{max}}. Checked before the next model request; not a hard cut.",
     "limitProblem": "Use 0, or a whole number from {{min}} to {{max}}.",
-    "lead": "When the conversation is compacted, how large its context may grow, and the decision points about context."
+    "lead": "When the conversation is compacted, how large its context may grow, and the features that act on the context."
   },
   "permissions": {
     "modes": {
@@ -545,7 +526,8 @@
         "openai-completionsHint": "Works almost everywhere; most services and relays speak it.",
         "openai-responsesHint": "OpenAI's newer API; only some services support it."
       },
-      "other": "Another service (enter its address)"
+      "other": "Another service (enter its address)",
+      "ready": "Ready to use: {{provider}} · {{model}}. Click Next, or pick another way below."
     },
     "apiKey": {
       "title": "Paste an API key",
@@ -639,7 +621,11 @@
     },
     "judge": {
       "title": "Choose a judge",
-      "subtitle": "The judge answers the small calls mu makes while it works. mu runs without one, just without these checks."
+      "subtitle": "The judge answers the small calls mu makes while it works. mu runs without one, just without these checks.",
+      "readyFree": "The free Jev is ready. Nothing to do here.",
+      "readyKey": "Jev is ready, with the key you set.",
+      "more": "Change the service or use your own key",
+      "less": "Hide"
     },
     "done": {
       "title": "All set",
@@ -650,7 +636,11 @@
       "noKey": "No key yet: judgments follow the default rules until there is one",
       "freeJev": "No key yet: Jev answers for free on OpenCode Zen for now (for a limited time)",
       "saveFailed": "Saving did not work: {{reason}}",
-      "modelValue": "{{provider}} / {{model}}"
+      "modelValue": "{{provider}} / {{model}}",
+      "import": "Conversations",
+      "importOpen": "Choose which…",
+      "importFound_one": "{{count}} Claude Code or Codex conversation on this computer can come along, to go on with it here",
+      "importFound_other": "{{count}} Claude Code or Codex conversations on this computer can come along, to go on with them here"
     },
     "intro": {
       "title": "Welcome to mu",
@@ -763,7 +753,21 @@
     },
     "stopped": "You stopped this reply.",
     "answerLost": "mu did not get your answer, so it went on as if you had declined.",
-    "bashMissing": "mu needs Git for Windows to run commands. Once it is installed, send your message again. Download it here:"
+    "bashMissing": "mu needs Git for Windows to run commands. Once it is installed, send your message again. Download it here:",
+    "toModel": {
+      "nudge": "mu reminded the model that this turn isn't finished yet",
+      "goal": "The goal isn't met yet, so mu told the model to keep going",
+      "diagnostics": "mu told the model about errors its edits left behind",
+      "steer": "mu told the model to change course",
+      "rewind": "mu rolled the files back and told the model why",
+      "hive": "mu passed the model new findings from the hive",
+      "swarm": "mu asked the sub-agent to wrap up and report",
+      "ttsr": "mu reminded the model of one of your rules",
+      "other": "mu sent the model a reminder",
+      "show": "What was sent",
+      "hide": "Hide",
+      "imported": "This conversation was imported from Claude Code or Codex and continues here; thinking and images were not imported"
+    }
   },
   "errors": {
     "credential": "The key contains characters a key cannot have, such as spaces, quotes or line breaks. Paste it again.",
@@ -948,7 +952,7 @@
       "body": "mu works in this folder. Say what you want done."
     },
     "sider": {
-      "title": "Native",
+      "title": "Recent",
       "new": "New conversation in a folder",
       "empty": "No conversations yet",
       "all": "Show all ({{count}})",
@@ -992,6 +996,23 @@
     },
     "attach": {
       "failed": "{{name}} could not be attached."
+    }
+  },
+  "details": {
+    "lead": "One switch per feature, its settings under Options. The indented rows are where it asks Jev: switch one off and that step goes ahead as usual.",
+    "featureOff": "The feature is off",
+    "askJev": "Let Jev judge",
+    "askJevAbout": "Let Jev judge: {{point}}",
+    "areas": {
+      "input": "Input",
+      "context": "Context",
+      "memory": "Lessons",
+      "tools": "Tools",
+      "safety": "Safety",
+      "turn": "Turn",
+      "goal": "Goal and board",
+      "team": "Teamwork",
+      "other": "Other"
     }
   }
 }

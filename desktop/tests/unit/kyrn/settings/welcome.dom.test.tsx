@@ -28,6 +28,7 @@ const bridge = vi.hoisted(() => ({
   loginLogout: vi.fn(),
   localJudgeState: vi.fn(),
   localJudgeRun: vi.fn(),
+  importList: vi.fn(),
 }));
 vi.mock('@/common/kyrn/bridge', () => ({
   kyrnBridge: {
@@ -44,12 +45,18 @@ vi.mock('@/common/kyrn/bridge', () => ({
     loginLogout: { invoke: bridge.loginLogout },
     localJudgeState: { invoke: bridge.localJudgeState },
     localJudgeRun: { invoke: bridge.localJudgeRun },
+    importList: { invoke: bridge.importList },
   },
   // As the real one: a failure keeps the code the store gave it.
   unwrap: <T,>(result: Result<T>) => {
     if (!result.ok) throw Object.assign(new Error(result.error), result);
     return result.data;
   },
+}));
+// The import dialog's frame (AionModal) sizes itself by the font scale, which the app's theme provider gives.
+vi.mock('@/renderer/hooks/context/ThemeContext', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/renderer/hooks/context/ThemeContext')>()),
+  useThemeContext: () => ({ fontScale: 1 }),
 }));
 // The guide's code, which the first-run check loads before it opens the guide.
 const guideCode = vi.hoisted(() => ({ preload: vi.fn() }));
@@ -110,6 +117,7 @@ beforeEach(() => {
   bridge.settings.mockResolvedValue({ ok: true, data: newUser() });
   bridge.availableModels.mockResolvedValue({ ok: true, data: { providers: [], thinkingLevels: [] } });
   bridge.recheck.mockResolvedValue({ ok: true, data: undefined });
+  bridge.importList.mockResolvedValue({ ok: true, data: { conversations: [] } });
   bridge.loginStatus.mockResolvedValue({ ok: true, data: { signedIn: [] } });
   bridge.loginState.mockResolvedValue({ ok: true, data: { id: 0, phase: 'idle' } });
   bridge.localJudgeState.mockResolvedValue({
@@ -142,7 +150,7 @@ function at(path: string, element: React.ReactElement) {
 
 describe('a settings section as its own page', () => {
   it('has no second menu, and one click on a judge choice is saved as the one judge', async () => {
-    at('/settings/judges', <SettingsArea section='judges' />);
+    at('/settings/judges', <SettingsArea page='judges' />);
     fireEvent.click(await screen.findByTestId('mu-judge-choice-jev'));
     expect(screen.queryByTestId('mu-nav-judges')).not.toBeInTheDocument();
     expect(screen.getByTestId('mu-judge-choice-jev')).toHaveAttribute('aria-checked', 'true');
@@ -172,7 +180,7 @@ describe('a settings section as its own page', () => {
       ok: true,
       data: { support: 'ok', installed: false, running: false, url, task },
     });
-    at('/settings/judges', <SettingsArea section='judges' />);
+    at('/settings/judges', <SettingsArea page='judges' />);
     const panel = await screen.findByTestId('mu-laya');
     await waitFor(() => expect(panel).toHaveTextContent('Not installed yet.'));
     fireEvent.click(within(panel).getByTestId('mu-laya-install'));
@@ -199,7 +207,7 @@ describe('a settings section as its own page', () => {
       ok: true,
       data: { support: 'uv', installed: false, running: false, url },
     });
-    const { unmount } = at('/settings/judges', <SettingsArea section='judges' />);
+    const { unmount } = at('/settings/judges', <SettingsArea page='judges' />);
     const panel = await screen.findByTestId('mu-laya');
     await waitFor(() => expect(panel).toHaveTextContent('Installing needs uv'));
     expect(within(panel).getByTestId('mu-laya-uv')).toBeInTheDocument();
@@ -209,20 +217,20 @@ describe('a settings section as its own page', () => {
       ok: true,
       data: { support: 'platform', installed: false, running: false, url },
     });
-    at('/settings/judges', <SettingsArea section='judges' />);
+    at('/settings/judges', <SettingsArea page='judges' />);
     const other = await screen.findByTestId('mu-laya');
     await waitFor(() => expect(other).toHaveTextContent('or a Mac with Apple Silicon'));
     expect(within(other).queryByRole('button')).not.toBeInTheDocument();
   });
 
-  it('keeps the order of several judges under the choice, in the open, each judge by its name', async () => {
-    at('/settings/judges', <SettingsArea section='judges' />);
+  it('keeps the order of several judges on a page of its own, in the open, each judge by its name', async () => {
+    at('/settings/judge-order', <SettingsArea page='judge-order' />);
     const tiers = await screen.findByTestId('mu-judge-tiers');
-    expect(screen.getByRole('heading', { name: 'Judge tiers' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Judge order' })).toBeInTheDocument();
     expect(within(tiers).getByRole('combobox', { name: 'Order' })).toBeInTheDocument();
     // Its typing input, which takes the focus, says the same.
     expect(within(tiers).getByRole('textbox', { name: 'Order' })).toBeInTheDocument();
-    // Laya, the one judge here, needs nothing in the tiers: the choice above installs and starts it.
+    // Laya, the one judge here, needs nothing in the order: the choice on the judges page installs and starts it.
     const laya = within(tiers).getByTestId('mu-judge-tier-0');
     expect(laya).toHaveTextContent('Tier 1: Local Laya');
     expect(within(laya).queryByRole('textbox')).not.toBeInTheDocument();
@@ -259,6 +267,10 @@ describe('the first-run guide', () => {
 
     await screen.findByTestId('mu-welcome-step-judge');
     fireEvent.click(screen.getByTestId('mu-judge-choice-jev'));
+    // With no key the free Jev answers: the step says so, and the service and key wait behind one link.
+    expect(screen.getByTestId('mu-welcome-judge-ready')).toHaveTextContent('The free Jev is ready');
+    expect(screen.queryByLabelText('TypeSafe API key')).toBeNull();
+    fireEvent.click(screen.getByTestId('mu-welcome-judge-more'));
     fireEvent.change(screen.getByLabelText('TypeSafe API key'), { target: { value: 'jev-key' } });
     fireEvent.click(screen.getByTestId('mu-welcome-next'));
 
@@ -322,12 +334,32 @@ describe('the first-run guide', () => {
     expect(tile).not.toHaveTextContent('127.0.0.1');
   });
 
+  it('says what already works when the guide is opened again, so nothing reads as the first time', async () => {
+    bridge.settings.mockResolvedValue({
+      ok: true,
+      data: newUser({
+        models: { ...newUser().models, defaults: { provider: 'relay', model: 'relay-large', thinkingLevel: '' } },
+      }),
+    });
+    at('/welcome', <Welcome />);
+    fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
+    expect(await screen.findByTestId('mu-welcome-model-ready')).toHaveTextContent('relay-large');
+  });
+
+  it('asks nothing of someone who has no model yet', async () => {
+    at('/welcome', <Welcome />);
+    fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
+    await screen.findByTestId('mu-welcome-step-model');
+    expect(screen.queryByTestId('mu-welcome-model-ready')).toBeNull();
+  });
+
   it('picks the service Jev is reached through, and keeps its key under that service’s own name', async () => {
     at('/welcome', <Welcome />);
     fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
     fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
     await screen.findByTestId('mu-welcome-step-judge');
     fireEvent.click(screen.getByTestId('mu-judge-choice-jev'));
+    fireEvent.click(screen.getByTestId('mu-welcome-judge-more'));
     fireEvent.click(screen.getByLabelText('Service'));
     fireEvent.click(await screen.findByText('Vercel AI Gateway', { selector: '.arco-select-option' }));
     fireEvent.change(await screen.findByLabelText('Vercel AI Gateway API key'), { target: { value: 'gateway-key' } });
@@ -411,6 +443,39 @@ describe('the first-run guide', () => {
       )
     ).toBeInTheDocument();
     expect(screen.queryByText(/Invalid credential/)).not.toBeInTheDocument();
+  });
+
+  it('offers, at the end, the Claude Code and Codex conversations not brought in yet, and stays on the guide', async () => {
+    const chat = { tool: 'claude-code', cwd: '/work', title: 'Fix it', modified: '2026-10-01T00:00:00Z', size: 10 };
+    bridge.importList.mockResolvedValue({
+      ok: true,
+      data: {
+        conversations: [
+          { ...chat, path: '/t/a.jsonl' },
+          { ...chat, path: '/t/b.jsonl' },
+          { ...chat, path: '/t/c.jsonl', importedAs: '/s/c.jsonl', conversationId: 's-c', native: true },
+        ],
+      },
+    });
+    at('/welcome', <Welcome />);
+    fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
+    expect(await screen.findByTestId('mu-welcome-import')).toHaveTextContent('2 Claude Code or Codex conversations');
+    fireEvent.click(screen.getByTestId('mu-welcome-import-open'));
+    expect(await screen.findByTestId('import-chats-start')).toBeInTheDocument();
+    // A conversation imported before has no way out of the guide here.
+    expect(screen.queryByRole('button', { name: 'Open' })).toBeNull();
+  });
+
+  it('offers nothing to import when there is nothing new', async () => {
+    at('/welcome', <Welcome />);
+    fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
+    await screen.findByTestId('mu-welcome-step-done');
+    await waitFor(() => expect(bridge.importList).toHaveBeenCalled());
+    expect(screen.queryByTestId('mu-welcome-import')).toBeNull();
   });
 
   it('skips a step with a quiet text button, even after a way is picked', async () => {

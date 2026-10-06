@@ -125,6 +125,8 @@ export type ProviderSettings = {
 export type ForeignProvider = { id: string; name: string; api: string; baseUrl: string; modelCount: number };
 
 export type ModelDefaults = { provider: string; model: string; thinkingLevel: ThinkingLevel | '' };
+/** A send box's "make default": the model new sessions start on, and their thinking level when one comes with it. */
+export type DefaultModelChange = { provider: string; model: string; thinkingLevel?: ThinkingLevel };
 
 export type ModelsSettings = {
   providers: ProviderSettings[];

@@ -1417,6 +1417,14 @@
       "cache": "缓存命中",
       "cacheHint": "最近一轮缓存命中 {{turn}}，整个对话缓存命中 {{session}}",
       "pending": "mu 下一次回复后显示"
+    },
+    "roles": {
+      "browser": "浏览器",
+      "investigator": "调查员",
+      "planner": "规划",
+      "reviewer": "审查",
+      "scout": "侦察",
+      "worker": "执行"
     }
   },
   "menu": {

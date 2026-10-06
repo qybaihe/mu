@@ -3,12 +3,21 @@ import { join } from 'node:path';
 import { CLM_DEFAULT_MODEL, CLM_KEY_VARIABLE } from '../../../common/kyrn/clm';
 import { KyrnError } from '../../../common/kyrn/errors';
 import { DECISION_MODES, type DecisionMode, type FeatureState } from '../../../common/kyrn/manifest';
+import { THINKING_LEVELS, type DefaultModelChange, type ModelDefaults } from '../../../common/kyrn/models';
 import type { Credential, JudgeSettings, JudgeType, KyrnSettings, SaveSettings } from '../../../common/kyrn/types';
 import { configPath } from './naming';
 import { array, asRecord, text } from './piRpc';
 import { atomic, hasVariable, parseObject, readOptional, serialise, withVariables } from './config/files';
 import { applyDecisionModes, applyFeatures, loadManifest, readDecisionModes, readFeatures } from './config/features';
-import { applyModels, assertEndpoint, parseModels, readModels, storedKey } from './config/models';
+import {
+  applyDefaults,
+  applyModels,
+  assertEndpoint,
+  parseModels,
+  readDefaults,
+  readModels,
+  storedKey,
+} from './config/models';
 import {
   dropConfiguredBoardModel,
   isBoardModel,
@@ -331,6 +340,25 @@ export class SettingsStore {
     if (changed.pi) atomic(this.piPath, serialise(pi, files.piRaw));
     if (changed.models) atomic(this.modelsPath, serialise(files.models.doc, files.modelsRaw));
     return this.read();
+  }
+  /** The model new sessions start on: pi's defaults alone, without reading the rest of the settings. */
+  defaultModel(): ModelDefaults {
+    return readDefaults(parseObject(readOptional(this.piPath), this.piPath));
+  }
+  /**
+   * A send box's "make default": only pi's defaults change, so no revision has to match. The thinking default changes
+   * only when a level comes with the model.
+   */
+  setDefaultModel(input: DefaultModelChange): ModelDefaults {
+    const piRaw = readOptional(this.piPath);
+    const pi = parseObject(piRaw, this.piPath);
+    const before = readDefaults(pi);
+    const level = input?.thinkingLevel ?? before.thinkingLevel;
+    if (!input?.provider || !input.model || !(level === '' || THINKING_LEVELS.includes(level)))
+      throw new KyrnError('invalid', 'Invalid model');
+    if (applyDefaults(pi, before, { provider: input.provider, model: input.model, thinkingLevel: level }))
+      atomic(this.piPath, serialise(pi, piRaw));
+    return readDefaults(pi);
   }
   /** For the connection test: the saved key of a provider, which stays inside the main process. */
   storedKey(id: string): ReturnType<typeof storedKey> {

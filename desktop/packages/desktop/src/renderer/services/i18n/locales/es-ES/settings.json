@@ -4,6 +4,7 @@
     "preferences": "Preferencias",
     "models": "Modelos",
     "kernel": "Núcleo",
+    "details": "Detalles",
     "capabilities": "Capacidades",
     "system": "Sistema"
   },
@@ -355,13 +356,14 @@
   "hardwareAccelerationUpdateFailed": "Error al actualizar la configuración de aceleración de hardware",
   "notification": "Notificaciones",
   "cronNotificationEnabled": "Finalización de tarea programada",
-  "promptTimeout": "Tiempo de espera de las solicitudes al modelo (s)",
+  "promptTimeout": "Tiempo de espera de las solicitudes al modelo",
   "groupAiCore": "Núcleo de IA",
   "groupApp": "Aplicación",
   "groupAbout": "Otros",
-  "agentIdleTimeout": "Tiempo de inactividad del agente (min)",
+  "agentIdleTimeout": "Tiempo de inactividad del agente",
   "agentIdleTimeoutDesc": "Un agente inactivo se detiene pasado este tiempo para liberar memoria.",
-  "previewTextSizeLimit": "Límite de tamaño de vista previa (MB)",
+  "previewTextSizeLimit": "Límite de tamaño de vista previa",
+  "previewTextSizeLimitUnit": "MB",
   "previewTextSizeLimitDesc": "Los archivos de texto que superen este tamaño se abren con un aviso en lugar del contenido. Solo se aplica a las pestañas nuevas.",
   "gemini": "Gemini CLI",
   "model": "Modelo",
@@ -611,7 +613,7 @@
   "closeDevTools": "Cerrar DevTools",
   "restartNow": "Reiniciar ahora",
   "cdp": {
-    "title": "Conexión con el navegador integrado (para desarrolladores)",
+    "title": "Conexión con el navegador integrado",
     "connection": "Cómo maneja el agente el navegador integrado",
     "about": "Mediante una conexión en este equipo (127.0.0.1, un puerto nuevo en cada inicio) que llega solo a esa vista del navegador, nunca a la ventana de mu. Otros programas de este equipo también pueden usarla, como hacen las configuraciones de abajo. Funciona mientras el agente puede usar el navegador integrado, algo que se activa en los ajustes del navegador integrado.",
     "openBrowserSettings": "Ajustes del navegador integrado",
@@ -1073,5 +1075,17 @@
   "appearanceDescription": "El idioma, el tema, las fuentes y la escala.",
   "systemDescription": "El inicio con el equipo, seguir en marcha al cerrar la ventana, las notificaciones y las carpetas donde mu trabaja y guarda sus registros.",
   "conversationsDescription": "Los tiempos de espera, el límite de tamaño de la vista previa, dónde se guardan las subidas y los mensajes entre conversaciones.",
-  "aboutDescription": "Qué versión de mu es esta, sus actualizaciones y el acceso a sus registros."
+  "aboutDescription": "Qué versión de mu es esta, sus actualizaciones y el acceso a sus registros.",
+  "developer": {
+    "title": "Desarrollo",
+    "description": "Las herramientas de desarrollo, y el puerto y las configuraciones MCP con que otras herramientas llegan al navegador integrado.",
+    "devOnly": "Estas herramientas solo están disponibles cuando mu se ejecuta desde su código fuente."
+  },
+  "search": {
+    "placeholder": "Buscar en la configuración",
+    "empty": "Ninguna opción coincide.",
+    "results": "Resultados de la búsqueda"
+  },
+  "learnMore": "Más información",
+  "showLess": "Mostrar menos"
 }

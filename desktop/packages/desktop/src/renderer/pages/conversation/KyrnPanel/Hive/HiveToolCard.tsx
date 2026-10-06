@@ -49,9 +49,24 @@ export function beeModel(t: TFunction, bee: HiveBee, names?: ModelNames): string
     .join(' · ');
 }
 
+/** The roles that ship with mu (the harness's `packages/kyrn-judge/agents`): said in the reader's language. */
+const BUILT_IN_ROLES: ReadonlySet<string> = new Set([
+  'browser',
+  'investigator',
+  'planner',
+  'reviewer',
+  'scout',
+  'worker',
+]);
+
+/** A sub-agent's role as the reader says it: a built-in one in their language, one of the person's own as named. */
+export function beeRole(t: TFunction, role: string): string {
+  return BUILT_IN_ROLES.has(role) ? t(`common.kyrn.roles.${role}`) : role;
+}
+
 /** Who a sub-agent is: its role, in full, then its model and thinking level. Empty when the snapshot names none. */
 export function beeWho(t: TFunction, bee: HiveBee, names?: ModelNames): string {
-  return [bee.role, beeModel(t, bee, names)].filter(Boolean).join(' · ');
+  return [bee.role && beeRole(t, bee.role), beeModel(t, bee, names)].filter(Boolean).join(' · ');
 }
 
 /**
@@ -136,7 +151,7 @@ export default function HiveToolCard({
             >
               <BeeAvatar name={name} status={bee?.status} small />
               <span className={styles.agentName}>{name}</span>
-              {bee?.role && <span className={styles.agentRole}>{bee.role}</span>}
+              {bee?.role && <span className={styles.agentRole}>{beeRole(t, bee.role)}</span>}
               <span className={bee?.error ? styles.agentFailed : styles.agentDoing}>
                 {bee ? beeLine(t, bee, language) : t('common.kyrn.hiveView.pending')}
               </span>

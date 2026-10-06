@@ -82,8 +82,22 @@
   },
   "activity": {
     "running": "{{steps}} adım · çalışıyor {{label}}",
-    "summary": "{{steps}} adım",
-    "summaryFailed": "{{steps}} adım · {{failed}} başarısız"
+    "parts": {
+      "read_one": "{{n}} dosya okundu",
+      "read_other": "{{n}} dosya okundu",
+      "look_one": "{{n}} arama",
+      "look_other": "{{n}} arama",
+      "edit_one": "{{n}} dosya düzenlendi",
+      "edit_other": "{{n}} dosya düzenlendi",
+      "run_one": "{{n}} komut çalıştırıldı",
+      "run_other": "{{n}} komut çalıştırıldı",
+      "web_one": "{{n}} web isteği",
+      "web_other": "{{n}} web isteği",
+      "other_one": "{{n}} diğer adım",
+      "other_other": "{{n}} diğer adım"
+    },
+    "separator": " · ",
+    "doneFailed": "{{done}} · {{failed}} başarısız"
   },
   "kind": {
     "edit": "Dosya düzenleme",

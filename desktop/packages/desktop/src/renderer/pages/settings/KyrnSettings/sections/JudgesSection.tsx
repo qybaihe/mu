@@ -1,14 +1,16 @@
 import React from 'react';
-import { Input, Tag } from '@arco-design/web-react';
+import { Input, Switch, Tag } from '@arco-design/web-react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { CLM_DEFAULT_ADDRESS, CLM_DEFAULT_MODEL } from '@/common/kyrn/clm';
 import { isSafeEndpoint } from '@/common/kyrn/models';
 import type { JudgeSettings, KyrnSettings } from '@/common/kyrn/types';
 import AionSelect from '@/renderer/components/base/AionSelect';
+import OneLine from '@/renderer/components/settings/OneLine';
 import { formatNumber } from '@/renderer/services/i18n/format';
 import type { Draft } from '../draft';
 import ChoiceTile from '../fields/ChoiceTile';
+import { shownMode } from '../fields/mode';
 import Row from '../fields/Row';
 import fieldStyles from '../fields/fields.module.css';
 import {
@@ -29,7 +31,7 @@ import {
   withJevService,
 } from '../judgeChoice';
 import ClmServerCheck from './ClmServerCheck';
-import SectionShell, { Card, GroupTitle } from './SectionShell';
+import SectionShell, { Card } from './SectionShell';
 import LocalJudgePanel from './LocalJudgePanel';
 import styles from './sections.module.css';
 
@@ -41,16 +43,41 @@ type JudgesSectionProps = {
 };
 
 /**
- * The judges page. First the choice most people make once: which judge answers the small questions mu asks while it
- * works, and under it what that choice needs (Jev a service and its key, Laya the one-click panel, CLM its server's
- * address). Below it the judge tiers: the order in which several judges are asked, and what each one needs.
+ * The judges page. First whether the judge's verdicts take effect at all (the mode every decision point without one
+ * of its own follows), then the choice most people make once: which judge answers the small questions mu asks while
+ * it works, and under it what that choice needs (Jev a service and its key, Laya the one-click panel, CLM its server's
+ * address). The order of several judges is the next page.
  */
-export default function JudgesSection({ draft, base, onChange, onKey }: JudgesSectionProps) {
+export default function JudgesSection({ draft, onChange, onKey }: JudgesSectionProps) {
   const { t } = useTranslation();
+  const on = shownMode(draft.settings.mode) === 'active';
   return (
     <SectionShell id='judges' title={t('mu.sections.judges')} description={t('mu.judges.intro')}>
+      <Card testId='mu-judge-mode'>
+        <Row title={t('mu.judges.mode')} help={t('mu.judges.modeHelp')}>
+          {/* A stored shadow reads as off and stays in the file until the switch is turned. */}
+          <Switch
+            size='small'
+            aria-label={t('mu.judges.mode')}
+            checked={on}
+            onChange={(next: boolean) => onChange((now) => ({ ...now, mode: next ? 'active' : 'off' }))}
+          />
+        </Row>
+      </Card>
       <JudgeChoices draft={draft} onChange={onChange} onKey={onKey} />
-      <JudgeTiers draft={draft} base={base} onChange={onChange} onKey={onKey} />
+    </SectionShell>
+  );
+}
+
+/**
+ * The judge order page: the order in which several judges are asked, by their names, then a group per judge with
+ * what it needs that the judges page does not already ask for.
+ */
+export function JudgeOrderSection(props: JudgesSectionProps) {
+  const { t } = useTranslation();
+  return (
+    <SectionShell id='judgeOrder' title={t('mu.sections.judgeOrder')} description={t('mu.judges.tiersHelp')}>
+      <JudgeTiers {...props} />
     </SectionShell>
   );
 }
@@ -189,7 +216,7 @@ export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: Bo
             }
             options={serviceOptions(t)}
           />
-          <div className={styles.choiceHint}>{t(`mu.judges.services.${service}.help`)}</div>
+          <OneLine text={t(`mu.judges.services.${service}.help`)} />
         </div>
         {address && name ? (
           <div className={styles.choiceField}>
@@ -248,12 +275,12 @@ export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: Bo
 }
 
 /**
- * The judge tiers, under the choice: the order, by the judges' names (Jev, Laya, CLM), then a group per judge in that
- * order with what it needs. Jev: the service it is reached through, its model and the service's address where it has
- * one. CLM: its server's address and its model. The one thing a judge needs to run (Jev's key, Laya's install, CLM's
- * server) is asked for in the choice above when it is the judge chosen there, the first; a judge further down the
- * order needs it here, where it is the only place. A judge of another kind (a model as judge, a self-hosted HTTP
- * service) goes by the name it was given.
+ * The judge tiers: the order, by the judges' names (Jev, Laya, CLM), then a group per judge in that order with what it
+ * needs. The first judge is the one chosen on the judges page, which asks for its service, its address and its key
+ * (Laya's install, CLM's server): here it has only its model. A judge further down the order needs everything here,
+ * where it is the only place: Jev the service it is reached through, its model, the service's address where it has
+ * one and its key; CLM its server's address, its model and its key. A judge of another kind (a model as judge, a
+ * self-hosted HTTP service) goes by the name it was given.
  */
 function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
   const { t, i18n } = useTranslation();
@@ -277,10 +304,6 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
   ];
   return (
     <div className={styles.stack} data-testid='mu-judge-tiers'>
-      <div className={styles.groupHead}>
-        <GroupTitle>{t('mu.sections.judgeTiers')}</GroupTitle>
-        <div className={styles.groupHelp}>{t('mu.judges.tiersHelp')}</div>
-      </div>
       <Card>
         <Row
           title={t('mu.judges.order')}
@@ -302,16 +325,19 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
         const judge = settings.judges[name];
         const kind = kindOf(judge);
         const classifier = kind === undefined && judge?.type === 'classifier';
+        // The first of Jev, Laya and CLM is the one the judges page chose: what it needs is asked for there.
         const summary =
-          kind === 'local'
-            ? t('mu.judges.types.localHelp')
-            : kind === 'clm'
-              ? t('mu.judges.types.clmHelp')
-              : classifier
-                ? t('mu.judges.types.classifierHelp', { model: judge.model })
-                : kind === undefined
-                  ? t('mu.judges.customTier')
-                  : undefined;
+          index === 0 && kind !== undefined
+            ? t('mu.judges.firstTier')
+            : kind === 'local'
+              ? t('mu.judges.types.localHelp')
+              : kind === 'clm'
+                ? t('mu.judges.types.clmHelp')
+                : classifier
+                  ? t('mu.judges.types.classifierHelp', { model: judge.model })
+                  : kind === undefined
+                    ? t('mu.judges.customTier')
+                    : undefined;
         return (
           <Card
             key={`${index}:${name}`}
@@ -326,7 +352,7 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
             ) : classifier ? (
               <ClassifierFields draft={draft} index={index} onKey={onKey} />
             ) : kind === 'local' && index > 0 ? (
-              // The first judge is the one chosen above, whose choice installs and starts it.
+              // The first judge is the one chosen on the judges page, whose choice installs and starts it.
               <div className={styles.tierPanel}>
                 <LocalJudgePanel />
               </div>
@@ -415,8 +441,8 @@ const clmAddressProblem = (t: TFunction, baseUrl: string): string | undefined =>
   baseUrl && !isSafeEndpoint(baseUrl) ? t('mu.endpointRule') : undefined;
 
 /**
- * Jev in the order: the service it is reached through, its model and the service's address where it has one to set,
- * and the service's key when it is not the judge chosen on the judges page.
+ * Jev in the order: its model, and when it is not the judge chosen on the judges page (which asks for the rest), the
+ * service it is reached through, the service's address where it has one to set and the service's key.
  */
 function JevFields({ draft, base, index, onChange, onKey }: JudgesSectionProps & { index: number }) {
   const { t } = useTranslation();
@@ -427,24 +453,26 @@ function JevFields({ draft, base, index, onChange, onKey }: JudgesSectionProps &
   const before = base.judges[base.tiers[index] ?? ''];
   const saved = base.judges[name];
   const address = addressOf(t, service, judge.baseUrl);
-  // The first judge's key is asked for in the choice above.
-  const keyHere = index > 0;
+  // The first judge's service, address and key are asked for on the judges page.
+  const here = index > 0;
   return (
     <>
-      <Row
-        title={t('mu.judges.service')}
-        help={t(`mu.judges.services.${service}.help`)}
-        modified={before !== undefined && serviceOf(before) !== service}
-      >
-        <AionSelect
-          size='small'
-          className={fieldStyles.wide}
-          aria-label={t('mu.judges.service')}
-          value={service}
-          onChange={(next: JevService) => onChange((now) => withJevService(now, index, next))}
-          options={serviceOptions(t)}
-        />
-      </Row>
+      {here ? (
+        <Row
+          title={t('mu.judges.service')}
+          help={t(`mu.judges.services.${service}.help`)}
+          modified={before !== undefined && serviceOf(before) !== service}
+        >
+          <AionSelect
+            size='small'
+            className={fieldStyles.wide}
+            aria-label={t('mu.judges.service')}
+            value={service}
+            onChange={(next: JevService) => onChange((now) => withJevService(now, index, next))}
+            options={serviceOptions(t)}
+          />
+        </Row>
+      ) : null}
       {judge.type === 'classifier' ? null : (
         // A classifier model's id is its service: the free Jev and the paid one are two services.
         <Row title={t('mu.judges.model')} modified={saved !== undefined && saved.model !== judge.model}>
@@ -458,7 +486,7 @@ function JevFields({ draft, base, index, onChange, onKey }: JudgesSectionProps &
           />
         </Row>
       )}
-      {address ? (
+      {here && address ? (
         <Row
           title={t('mu.judges.baseUrl')}
           help={address.problem ? undefined : address.help}
@@ -476,7 +504,7 @@ function JevFields({ draft, base, index, onChange, onKey }: JudgesSectionProps &
           />
         </Row>
       ) : null}
-      {keyHere
+      {here
         ? jevVariables(judge).map((variable) => {
             const label = variableLabel(t, service, variable);
             return (
@@ -506,7 +534,7 @@ function JevFields({ draft, base, index, onChange, onKey }: JudgesSectionProps &
 
 /**
  * A classifier model in the order that is not Jev (Clef): the key of its provider where this page keeps it, asked for
- * here wherever it stands, since no choice above stands for it.
+ * here wherever it stands, since no choice on the judges page stands for it.
  */
 function ClassifierFields({ draft, index, onKey }: Pick<JudgesSectionProps, 'draft' | 'onKey'> & { index: number }) {
   const { t } = useTranslation();
@@ -542,8 +570,8 @@ function ClassifierFields({ draft, index, onKey }: Pick<JudgesSectionProps, 'dra
 }
 
 /**
- * CLM in the order: its server's address and the model it asks for, and, when it is not the judge chosen on the
- * judges page, the key of a server that asks for one and word from the server.
+ * CLM in the order: the model it asks for, and when it is not the judge chosen on the judges page (which asks for the
+ * rest), its server's address, the key of a server that asks for one and word from the server.
  */
 function ClmFields({ draft, base, index, onChange, onKey }: JudgesSectionProps & { index: number }) {
   const { t } = useTranslation();
@@ -554,26 +582,28 @@ function ClmFields({ draft, base, index, onChange, onKey }: JudgesSectionProps &
   const variable = clmKeyVariable(judge);
   const set = settings.keys[variable];
   const problem = clmAddressProblem(t, judge.baseUrl);
-  // The first judge's key and server are in the choice above.
+  // The first judge's address, key and server are on the judges page.
   const here = index > 0;
   return (
     <>
-      <Row
-        title={t('mu.judges.clm.address')}
-        help={problem ? undefined : t('mu.judges.clm.addressHelp', { address: CLM_DEFAULT_ADDRESS })}
-        problem={problem}
-        modified={saved !== undefined && saved.baseUrl !== judge.baseUrl}
-      >
-        <Input
-          size='small'
-          className={fieldStyles.wide}
-          aria-label={t('mu.judges.clm.address')}
-          placeholder={CLM_DEFAULT_ADDRESS}
-          status={problem ? 'error' : undefined}
-          value={judge.baseUrl}
-          onChange={(baseUrl) => onChange((now) => withProfile(now, name, { baseUrl }))}
-        />
-      </Row>
+      {here ? (
+        <Row
+          title={t('mu.judges.clm.address')}
+          help={problem ? undefined : t('mu.judges.clm.addressHelp', { address: CLM_DEFAULT_ADDRESS })}
+          problem={problem}
+          modified={saved !== undefined && saved.baseUrl !== judge.baseUrl}
+        >
+          <Input
+            size='small'
+            className={fieldStyles.wide}
+            aria-label={t('mu.judges.clm.address')}
+            placeholder={CLM_DEFAULT_ADDRESS}
+            status={problem ? 'error' : undefined}
+            value={judge.baseUrl}
+            onChange={(baseUrl) => onChange((now) => withProfile(now, name, { baseUrl }))}
+          />
+        </Row>
+      ) : null}
       <Row title={t('mu.judges.model')} modified={saved !== undefined && saved.model !== judge.model}>
         <Input
           size='small'

@@ -2,8 +2,6 @@
   "title": "mu 设置",
   "description": "mu 支持的各项控制都在这里：判定器、判定点、功能、模型与上下文。与命令行里的 mu 共用同一份配置。",
   "reload": "重新载入",
-  "search": "搜索判定点和功能",
-  "noMatch": "没有匹配的条目。",
   "modified": "已修改",
   "applyNote": "修改对新会话生效。正在运行的会话沿用启动时的配置，重新连接后才会使用新配置。",
   "apiKey": "API 密钥",
@@ -12,36 +10,31 @@
   "endpointRule": "请使用 HTTPS；只有本机（127.0.0.1、localhost）或局域网 IP 地址（例如 192.168.1.20）可以用 HTTP。地址里不能带用户名、密码、查询参数或片段。",
   "sections": {
     "judges": "判定器",
-    "judgeTiers": "判定层级",
+    "judgeOrder": "判定顺序",
     "decisions": "判定点",
     "features": "功能",
-    "moreFeatures": "更多功能",
+    "coreFeatures": "核心功能",
     "providers": "提供商",
     "defaultModel": "默认模型",
+    "boardModel": "人话模型",
     "context": "上下文"
   },
   "pages": {
-    "decisions": {
-      "input": "输入判定点",
-      "context": "上下文",
-      "memory": "经验库判定点",
-      "tools": "工具与安全判定点",
-      "turn": "回合判定点",
-      "team": "协作判定点"
-    },
-    "features": {
+    "details": {
       "input": "输入功能",
-      "context": "上下文功能",
-      "tools": "工具与安全功能",
+      "context": "上下文",
+      "memory": "经验库",
+      "tools": "工具功能",
+      "safety": "安全功能",
       "turn": "回合功能",
+      "goal": "目标与看板",
+      "team": "协作功能",
       "other": "其他功能"
     }
   },
   "modes": {
     "active": "开启",
-    "off": "关闭",
-    "activeHelp": "判定结果直接起作用。",
-    "offHelp": "判定不起作用，这一步照常进行。"
+    "off": "关闭"
   },
   "harness": {
     "tooOld": "当前的 mu 版本较旧，还不能列出自己的判定点和功能。更新 mu 后这里才会列出；基础设置仍可正常使用。",
@@ -76,41 +69,27 @@
     }
   },
   "decisions": {
-    "description": "判定器被提问的每一个环节。没有单独指定模式的判定点跟随默认模式。",
-    "defaultMode": "默认模式",
-    "defaultModeHelp": "没有单独指定模式的判定点都用它。",
-    "useDefault": "改回默认（{{mode}}）",
-    "featureOff": "所属功能已关闭，现在不会问这一项。",
-    "groups": {
-      "input": "输入",
-      "context": "上下文",
-      "memory": "经验库",
-      "tools": "工具与安全",
-      "turn": "回合",
-      "team": "协作"
-    },
-    "otherGroup": "其他",
-    "pageLead": "没有单独指定模式的判定点跟随默认模式；默认模式和搜索在「{{page}}」页。",
-    "none": "这里还没有判定点。"
+    "useDefault": "改回默认（{{mode}}）"
   },
   "features": {
     "lead": "mu 在后台替你做的事。关掉一项，mu 就不再做这件事。",
-    "moreLead": "mu 能做的其他事，按起作用的地方分组。每一项的选项点一下就能打开。",
     "beta": "测试版",
     "reset": "恢复默认",
-    "boardModelElsewhere": "写看板的模型在「默认模型」里选。",
+    "boardModelElsewhere": "写看板的模型在「人话模型」里选。",
     "options": "选项",
     "noOptions": "没有别的可设置：只有这个开关。",
     "noSuchFeature": "这个版本的 mu 没有这项功能。",
     "none": "这里还没有功能。",
     "part": "选项第 {{part}} 页，共 {{parts}} 页",
     "previousPart": "上一页",
-    "nextPart": "下一页"
+    "nextPart": "下一页",
+    "details": "详细设置"
   },
   "judges": {
     "tiersHelp": "判定器按顺序依次尝试；后一级只处理前面几级拿不准的问题。",
     "order": "顺序",
-    "orderHelp": "排在第一的就是上面选的那个。",
+    "orderHelp": "排在第一的就是「判定器」页选的那个。",
+    "firstTier": "就是「判定器」页选的那个：服务、地址和密钥在那里设置。",
     "tierTitle": "第 {{index}} 级：{{name}}",
     "service": "服务",
     "services": {
@@ -170,8 +149,10 @@
       "classifierHelp": "mu 模型目录里的分类模型：{{model}}。mu 用它所属服务商的密钥调用它。"
     },
     "intro": "mu 工作时要做很多小判断：这条消息该怎么处理、这一步会不会违反你定的规则……判定器负责回答。选一个就行。",
+    "mode": "判定生效",
+    "modeHelp": "开着时，判定器的结论直接起作用；关掉后每一步照常进行。没有单独设置的环节都跟着它。",
     "choose": "选择判定器",
-    "custom": "现在排在第一位的是自定义判定器，可以在下面的「判定层级」里查看和修改。",
+    "custom": "现在排在第一位的是自定义判定器，可以在「判定顺序」页查看和修改。",
     "keyPlaceholder": "粘贴密钥",
     "choices": {
       "jev": {
@@ -270,7 +251,7 @@
     "limit": "上下文上限",
     "limitHelp": "0 表示使用模型的上下文窗口减去预留量；否则填 {{min}} 到 {{max}}。在下一次请求模型之前检查，不是硬性截断。",
     "limitProblem": "请填 0，或 {{min}} 到 {{max}} 之间的整数。",
-    "lead": "对话何时压缩、上下文最多多大，以及和上下文有关的判定点。"
+    "lead": "对话何时压缩、上下文最多多大，以及作用于上下文的功能。"
   },
   "permissions": {
     "modes": {
@@ -545,7 +526,8 @@
         "openai-completionsHint": "兼容性最好，大多数服务和中转都用这个。",
         "openai-responsesHint": "OpenAI 的新接口，只有部分服务支持。"
       },
-      "other": "其他服务（需要填写接口地址）"
+      "other": "其他服务（需要填写接口地址）",
+      "ready": "已经可以用：{{provider}} · {{model}}。直接点“下一步”，或在下面换一种。"
     },
     "apiKey": {
       "title": "粘贴 API 密钥",
@@ -639,7 +621,11 @@
     },
     "judge": {
       "title": "选一个判定器",
-      "subtitle": "mu 工作时的各种小判断由判定器来回答。没有判定器也能运行，只是少了这些把关。"
+      "subtitle": "mu 工作时的各种小判断由判定器来回答。没有判定器也能运行，只是少了这些把关。",
+      "readyFree": "免费的 Jev 已经就绪，不用做任何事。",
+      "readyKey": "Jev 已经就绪，用的是你设置的密钥。",
+      "more": "换服务或用自己的密钥",
+      "less": "收起"
     },
     "done": {
       "title": "准备好了",
@@ -650,7 +636,11 @@
       "noKey": "还没有密钥，配好之前各判定点按默认规则处理",
       "freeJev": "还没有密钥：先用 OpenCode Zen 上限时免费的 Jev",
       "saveFailed": "保存没有成功：{{reason}}",
-      "modelValue": "{{provider}} / {{model}}"
+      "modelValue": "{{provider}} / {{model}}",
+      "import": "对话",
+      "importOpen": "选择要导入的…",
+      "importFound_one": "这台电脑上有 {{count}} 段 Claude Code 或 Codex 的对话，可以导进来接着聊",
+      "importFound_other": "这台电脑上有 {{count}} 段 Claude Code 或 Codex 的对话，可以导进来接着聊"
     },
     "intro": {
       "title": "欢迎使用 mu",
@@ -763,7 +753,21 @@
     },
     "stopped": "你停止了这次回复。",
     "answerLost": "mu 没有收到你的回答，已按不同意处理。",
-    "bashMissing": "mu 运行命令需要 Git for Windows，安装好后重新发送消息即可。下载地址："
+    "bashMissing": "mu 运行命令需要 Git for Windows，安装好后重新发送消息即可。下载地址：",
+    "toModel": {
+      "nudge": "mu 提醒模型：这一轮还没收尾，让它做完",
+      "goal": "目标还没达成，mu 让模型继续",
+      "diagnostics": "mu 把改动留下的报错告诉了模型",
+      "steer": "mu 提醒模型换个做法",
+      "rewind": "mu 回退了文件，并告诉模型原因",
+      "hive": "mu 把蜂群里的新发现转给了模型",
+      "swarm": "mu 让子代理收尾、交报告",
+      "ttsr": "mu 提醒模型遵守你定的一条规则",
+      "other": "mu 给模型发了一条提醒",
+      "show": "查看原文",
+      "hide": "收起",
+      "imported": "这段对话是从 Claude Code 或 Codex 导入的，在这里接着聊；思考过程和图片没有导入"
+    }
   },
   "errors": {
     "credential": "密钥中有不允许的字符（如空格、引号或换行），请重新粘贴。",
@@ -948,7 +952,7 @@
       "body": "mu 会在这个文件夹里工作。说说你想做什么。"
     },
     "sider": {
-      "title": "原生",
+      "title": "最近",
       "new": "在文件夹里新建对话",
       "empty": "还没有对话",
       "all": "显示全部（{{count}}）",
@@ -992,6 +996,23 @@
     },
     "attach": {
       "failed": "无法附加 {{name}}。"
+    }
+  },
+  "details": {
+    "lead": "每项功能一个开关，选项在「选项」里。缩进的几行是它请 Jev 判断的地方：关掉一处，那一步照常进行。",
+    "featureOff": "功能已关闭",
+    "askJev": "让 Jev 判断",
+    "askJevAbout": "让 Jev 判断：{{point}}",
+    "areas": {
+      "input": "输入",
+      "context": "上下文",
+      "memory": "经验库",
+      "tools": "工具",
+      "safety": "安全",
+      "turn": "回合",
+      "goal": "目标与看板",
+      "team": "协作",
+      "other": "其他"
     }
   }
 }

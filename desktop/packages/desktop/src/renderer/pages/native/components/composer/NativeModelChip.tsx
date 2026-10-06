@@ -3,7 +3,8 @@
  * (`model · level`), with the look and the menu of the chip in mu's other conversations (Composer/ComposerModelChip):
  * every model pi offers by provider, and a model that takes more than one level opens to its levels, so one pick sets
  * both. Opening it asks pi what it offers (which starts mu when it is not running); showing it starts nothing. A
- * switch waits for the run to end, as elsewhere.
+ * switch waits for the run to end, as elsewhere, and is for this conversation only: the menu's "make default" is how
+ * it becomes the model new conversations start on.
  */
 import { Dropdown, Menu, Tooltip } from '@arco-design/web-react';
 import { Brain, Down } from '@icon-park/react';
@@ -11,11 +12,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import RuntimeSelectorPill from '@/renderer/components/agent/RuntimeSelectorPill';
 import { composeRuntimeSelectorLabel } from '@/renderer/components/agent/runtimeSelectorOptions';
+import { useModelNames } from '@/renderer/hooks/agent/useModelNames';
+import { useMuDefaultModel } from '@/renderer/hooks/agent/useMuDefaultModel';
 import { useProviderNames } from '@/renderer/hooks/agent/useProviderNames';
 import { modelLevelMenu } from '@/renderer/pages/conversation/platforms/acp/Composer/ModelLevelMenu';
 import { filterModelMenu, modelMenu } from '@/renderer/pages/conversation/platforms/acp/Composer/modelMenu';
 import { iconColors } from '@/renderer/styles/colors';
-import { providerDisplayName } from '@/renderer/utils/model/providerName';
+import { modelDisplayName, providerDisplayName } from '@/renderer/utils/model/providerName';
 import type { NativeModels } from '../../hooks/useNativeModels';
 
 const NativeModelChip: React.FC<{
@@ -25,6 +28,8 @@ const NativeModelChip: React.FC<{
 }> = ({ models, busy }) => {
   const { t } = useTranslation();
   const names = useProviderNames();
+  const modelNames = useModelNames();
+  const muDefault = useMuDefaultModel();
   const [visible, setVisible] = useState(false);
   const [query, setQuery] = useState('');
   const { model, level, source, offer, loading, switching, load, pick } = models;
@@ -51,8 +56,9 @@ const NativeModelChip: React.FC<{
 
   // mu runs without a model: the chip says so and opens the list to pick one.
   const noModel = source === 'host' && !model;
+  // By name before the menu was ever opened too: what mu last reported names it.
   const modelLabel = model
-    ? offer?.options.find((option) => option.value === model)?.label || model.slice(model.indexOf('/') + 1)
+    ? offer?.options.find((option) => option.value === model)?.label || modelDisplayName(model, modelNames)
     : t('common.defaultModel');
   const label = noModel
     ? t('mu.noModel.chip')
@@ -87,6 +93,15 @@ const NativeModelChip: React.FC<{
           close();
           void pick(value, picked);
         },
+        defaultModel: muDefault.model,
+        ...(model
+          ? {
+              onMakeDefault: () => {
+                close();
+                void muDefault.makeDefault(model, level);
+              },
+            }
+          : {}),
       })
     );
 

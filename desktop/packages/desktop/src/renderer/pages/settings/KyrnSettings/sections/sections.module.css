@@ -60,39 +60,6 @@
   border-top: 1px solid var(--border-base);
 }
 
-/* The small title of a group of a page, sitting 8px above what it names (the page's rhythm is 16px). */
-.groupTitle,
-.groupLabel {
-  margin: 0 0 -8px;
-  color: var(--text-primary);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 20px;
-}
-
-/* A group of a page: its small title, and one line on what it holds. */
-.groupHead {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-bottom: -8px;
-}
-
-.groupHead .groupTitle {
-  margin: 0;
-}
-
-.groupHelp {
-  color: var(--text-secondary);
-  font-size: 12px;
-  line-height: 18px;
-  text-wrap: balance;
-}
-
-.search {
-  width: min(320px, 100%);
-}
-
 .empty {
   padding: 24px 0;
   color: var(--text-secondary);
@@ -325,8 +292,9 @@
   user-select: all;
 }
 
-/* Plain rows, laid out like the app's other settings pages: a quiet list of rows, each a readable title, one sentence
-   and its control (the features' switches, the decision points' modes). A feature's options are a page of their own. */
+/* Plain rows, laid out like the app's other settings pages: a quiet list of rows, each a readable title, one line
+   and its control (the features' switches, the decision points' under them). A feature's options are a page of their
+   own. */
 .plainList {
   display: flex;
   flex-direction: column;
@@ -371,18 +339,39 @@
   line-height: 18px;
 }
 
-.plainSummary {
-  margin-top: 2px;
-  color: var(--text-secondary);
-  font-size: 12px;
-  line-height: 18px;
-  text-wrap: balance;
-}
-
 .plainNote {
   color: var(--text-secondary);
   font-size: 12px;
   line-height: 18px;
+}
+
+/* The decision points a feature asks, under its row and indented: a hairline down their side ties them to it. */
+.nestedList {
+  display: flex;
+  flex-direction: column;
+  margin: -4px 0 12px;
+  padding-inline-start: 16px;
+  border-inline-start: 1px solid var(--border-base);
+}
+
+.nestedMain {
+  padding: 6px 0;
+}
+
+.nestedTitle {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+/* The row a link pointed to, marked for a moment in the app's neutral fill. */
+.plainRow {
+  transition: background-color 0.4s ease;
+}
+
+.focused {
+  background: var(--color-fill-1);
 }
 
 /* A feature's row: the way to its options page, then its switch. */

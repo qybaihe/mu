@@ -82,8 +82,22 @@
   },
   "activity": {
     "running": "{{steps}} étapes · en cours {{label}}",
-    "summary": "{{steps}} étapes",
-    "summaryFailed": "{{steps}} étapes · {{failed}} en échec"
+    "parts": {
+      "read_one": "{{n}} fichier lu",
+      "read_other": "{{n}} fichiers lus",
+      "look_one": "{{n}} recherche",
+      "look_other": "{{n}} recherches",
+      "edit_one": "{{n}} fichier modifié",
+      "edit_other": "{{n}} fichiers modifiés",
+      "run_one": "{{n}} commande exécutée",
+      "run_other": "{{n}} commandes exécutées",
+      "web_one": "{{n}} requête web",
+      "web_other": "{{n}} requêtes web",
+      "other_one": "{{n}} autre étape",
+      "other_other": "{{n}} autres étapes"
+    },
+    "separator": " · ",
+    "doneFailed": "{{done}} · {{failed}} en échec"
   },
   "kind": {
     "edit": "Modification de fichier",

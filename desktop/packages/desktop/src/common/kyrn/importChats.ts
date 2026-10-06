@@ -2,10 +2,11 @@
  * Conversations people had in Claude Code or Codex, brought into mu to go on with them here.
  *
  * The harness reads the transcripts and writes each one as a mu session (`mu import`, `packages/kyrn-judge/src/import`
- * in the MU repository). The main process runs that command and makes every imported session an app conversation
- * (`process/agent/kyrn/importChats.ts`); the adapter hands the session to its conversation the first time the
- * conversation starts (`KyrnAgent.newSession`). This module holds what the processes pass each other and the screens
- * show: no Node, no DOM.
+ * in the MU repository). With the native host on, that session is the conversation: the sidebar lists mu's sessions.
+ * Otherwise the main process makes every imported session an app conversation (`process/agent/kyrn/importChats.ts`)
+ * and the adapter hands the session to its conversation the first time the conversation starts
+ * (`KyrnAgent.newSession`). This module holds what the processes pass each other and the screens show: no Node, no
+ * DOM.
  */
 
 export const IMPORT_TOOLS = ['claude-code', 'codex'] as const;
@@ -32,6 +33,11 @@ export type FoundChat = {
   importedAs?: string;
   /** The app conversation that holds that session, if there is one. */
   conversationId?: string;
+  /**
+   * `conversationId` is a native conversation's (the session's own id): the app runs mu itself and every mu session
+   * is a conversation of its own, with no app conversation made for it.
+   */
+  native?: true;
 };
 
 export type ImportList = { conversations: FoundChat[] };
@@ -49,8 +55,8 @@ export type ImportFailure = (typeof IMPORT_FAILURES)[number];
  * out. `source` is the transcript's path.
  */
 export type ImportOutcome =
-  | { status: 'imported'; source: string; tool: ImportTool; conversationId: string; name: string }
-  | { status: 'listed'; source: string; conversationId: string; name: string }
+  | { status: 'imported'; source: string; tool: ImportTool; conversationId: string; name: string; native?: true }
+  | { status: 'listed'; source: string; conversationId: string; name: string; native?: true }
   | { status: 'failed'; source: string; reason: ImportFailure; detail: string };
 
 /** The key of `conversation.extra` an imported conversation carries its origin under. */

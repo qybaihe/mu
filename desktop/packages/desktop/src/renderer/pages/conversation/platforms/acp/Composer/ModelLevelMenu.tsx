@@ -27,6 +27,10 @@ type ModelLevelMenuProps = {
   current?: string | null;
   level?: string | null;
   onPick: (model: string, level?: string) => void;
+  /** The model new conversations start on: its row says so. */
+  defaultModel?: string | null;
+  /** Makes the model in use the default; offered under the list when it is not the default already. */
+  onMakeDefault?: () => void;
 };
 
 /**
@@ -39,13 +43,18 @@ type ModelLevelMenuProps = {
  */
 export function modelLevelMenu(
   t: TFunction,
-  { groups, total, query, onQuery, current, level, onPick }: ModelLevelMenuProps
+  { groups, total, query, onQuery, current, level, onPick, defaultModel, onMakeDefault }: ModelLevelMenuProps
 ): React.ReactElement {
   const row = (entry: MenuModel) => {
     const inUse = entry.value === current;
     const name = (
       <RuntimeSelectorCheckedItem selected={inUse} description={entry.description}>
         {entry.label}
+        {entry.value === defaultModel ? (
+          <span data-testid='composer-model-default' className='ml-6px text-11px text-t-tertiary'>
+            {t('conversation.composer.defaultTag')}
+          </span>
+        ) : null}
       </RuntimeSelectorCheckedItem>
     );
     if (entry.levels.length < 2) {
@@ -128,6 +137,13 @@ export function modelLevelMenu(
           )
         )}
       </div>
+      {onMakeDefault && current && current !== defaultModel ? (
+        <div className='mt-4px pt-4px border-0 border-t border-solid border-[var(--color-border-2)]'>
+          <Menu.Item key='make-default' data-testid='composer-make-default' onClick={onMakeDefault}>
+            <span className='pl-24px text-12px text-t-secondary'>{t('conversation.composer.makeDefault')}</span>
+          </Menu.Item>
+        </div>
+      ) : null}
     </Menu>
   );
 }

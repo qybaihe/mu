@@ -1417,6 +1417,14 @@
       "cache": "Succès de cache",
       "cacheHint": "Succès de cache : {{turn}} au dernier tour, {{session}} sur toute la conversation",
       "pending": "S’affiche après la prochaine réponse de mu"
+    },
+    "roles": {
+      "browser": "navigateur",
+      "investigator": "enquêteur",
+      "planner": "planificateur",
+      "reviewer": "relecteur",
+      "scout": "éclaireur",
+      "worker": "exécutant"
     }
   },
   "menu": {

@@ -249,6 +249,8 @@ export function listImportRecords(store: string): { conversationId: string; reco
 
 /** What the harness wrote at the top of an imported session: its folder, its name and what came along. */
 export type ImportedSession = {
+  /** The session's id (its header's), by which the native host knows the conversation. */
+  id: string;
   cwd: string;
   name: string;
   tool: ImportTool;
@@ -302,6 +304,7 @@ export function readImportedSession(file: string): ImportedSession | undefined {
   if (!isImportTool(origin.tool)) return undefined;
   const counts = asRecord(origin.counts);
   return {
+    id: text(header.id),
     cwd,
     name: info.type === 'session_info' ? text(info.name) : '',
     tool: origin.tool,
@@ -392,8 +395,9 @@ export type ImportServiceDeps = {
 };
 
 export type ImportService = {
-  list(cwd?: string): Promise<ImportList>;
-  run(paths: string[], locale: string): Promise<ImportOutcome[]>;
+  /** `native`: the app runs mu itself, and a mu session is a conversation of its own. */
+  list(cwd?: string, native?: boolean): Promise<ImportList>;
+  run(paths: string[], locale: string, native?: boolean): Promise<ImportOutcome[]>;
   history(conversationId: string): Promise<ImportedHistory>;
 };
 
@@ -457,13 +461,21 @@ export function importService(deps: ImportServiceDeps): ImportService {
     return { find, made };
   };
 
-  const list = async (cwd?: string): Promise<ImportList> => {
+  const list = async (cwd?: string, native = false): Promise<ImportList> => {
     if (cwd !== undefined && (typeof cwd !== 'string' || !path.isAbsolute(cwd)))
       throw new KyrnError('invalid', 'Invalid folder');
     const output = await deps.cli(['--list', '--json', ...(cwd ? ['--cwd', cwd] : [])], LIST_TIMEOUT);
     const conversations = cliList(output, 'conversations')
       .map(parseFound)
       .filter((chat): chat is FoundChat => chat !== undefined);
+    if (native) {
+      // The session made from it is the conversation, while its file is there.
+      for (const chat of conversations) {
+        const id = chat.importedAs ? readImportedSession(chat.importedAs)?.id : undefined;
+        if (id) Object.assign(chat, { conversationId: id, native: true });
+      }
+      return { conversations };
+    }
     const holder = holderOf(listImportRecords(deps.store));
     for (const chat of conversations) {
       if (!chat.importedAs) continue;
@@ -518,7 +530,22 @@ export function importService(deps: ImportServiceDeps): ImportService {
     return { outcome: { status: 'imported', source, tool: session.tool, conversationId, name }, record };
   };
 
-  const run = async (paths: string[], locale: string): Promise<ImportOutcome[]> => {
+  /**
+   * With the native host on, the session `mu import` wrote is the conversation: it is listed with mu's others, and no
+   * app conversation is made. Its folder must still exist, as a conversation runs in it.
+   */
+  const nativeOutcome = (result: Record<string, unknown>, source: string, file: string): ImportOutcome => {
+    const session = readImportedSession(file);
+    if (!session?.id)
+      return { status: 'failed', source, reason: 'other', detail: `mu import wrote no session at ${file}` };
+    if (!folder.exists(session.cwd)) return { status: 'failed', source, reason: 'folderMissing', detail: session.cwd };
+    const name = session.name || IMPORT_TOOL_NAMES[session.tool];
+    return result.status === 'already-imported'
+      ? { status: 'listed', source, conversationId: session.id, name, native: true }
+      : { status: 'imported', source, tool: session.tool, conversationId: session.id, name, native: true };
+  };
+
+  const run = async (paths: string[], locale: string, native = false): Promise<ImportOutcome[]> => {
     if (
       !Array.isArray(paths) ||
       paths.length === 0 ||
@@ -545,6 +572,10 @@ export function importService(deps: ImportServiceDeps): ImportService {
       const file = text(result.sessionFile);
       if (!file) {
         outcomes.push({ status: 'failed', source, reason: 'other', detail: 'mu import named no session' });
+        continue;
+      }
+      if (native) {
+        outcomes.push(nativeOutcome(result, source, file));
         continue;
       }
       try {

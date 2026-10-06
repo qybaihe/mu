@@ -1417,6 +1417,14 @@
       "cache": "Cache-Treffer",
       "cacheHint": "Cache-Treffer: {{turn}} in der letzten Runde, {{session}} im ganzen Gespräch",
       "pending": "Erscheint nach der nächsten Antwort von mu"
+    },
+    "roles": {
+      "browser": "Browser",
+      "investigator": "Ermittler",
+      "planner": "Planer",
+      "reviewer": "Prüfer",
+      "scout": "Kundschafter",
+      "worker": "Ausführer"
     }
   },
   "menu": {

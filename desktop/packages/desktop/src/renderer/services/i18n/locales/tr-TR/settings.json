@@ -4,6 +4,7 @@
     "preferences": "Tercihler",
     "models": "Modeller",
     "kernel": "Çekirdek",
+    "details": "Ayrıntılar",
     "capabilities": "Yetenekler",
     "system": "Sistem"
   },
@@ -367,13 +368,14 @@
   },
   "notification": "Bildirimler",
   "cronNotificationEnabled": "Zamanlanmış Görev Tamamlanma",
-  "promptTimeout": "Model İsteği Zaman Aşımı (sn)",
+  "promptTimeout": "Model İsteği Zaman Aşımı",
   "groupAiCore": "AI Çekirdek",
   "groupApp": "Uygulama",
   "groupAbout": "Diğer",
-  "agentIdleTimeout": "Aracı Boşta Kalma Süresi (dk)",
+  "agentIdleTimeout": "Aracı Boşta Kalma Süresi",
   "agentIdleTimeoutDesc": "Boşta kalan aracı, bellek boşaltmak için bu süre sonunda durdurulur.",
-  "previewTextSizeLimit": "Önizleme Boyut Sınırı (MB)",
+  "previewTextSizeLimit": "Önizleme Boyut Sınırı",
+  "previewTextSizeLimitUnit": "MB",
   "previewTextSizeLimitDesc": "Bu boyutu aşan metin dosyaları içerik yerine bir bildirimle açılır. Yalnızca yeni açılan sekmeler için geçerlidir.",
   "gemini": "Gemini",
   "model": "Model",
@@ -612,7 +614,7 @@
   "closeDevTools": "DevTools'u kapat",
   "restartNow": "Şimdi yeniden başlat",
   "cdp": {
-    "title": "Uygulama içi tarayıcı bağlantısı (geliştiriciler için)",
+    "title": "Uygulama içi tarayıcı bağlantısı",
     "connection": "Aracı uygulama içi tarayıcıyı nasıl kullanır",
     "about": "Bu bilgisayardaki bir bağlantı üzerinden (127.0.0.1, her başlatmada yeni bir port). Bu bağlantı yalnızca o tarayıcı görünümüne gider, mu'nun kendi penceresine asla. Bu bilgisayardaki başka programlar da aşağıdaki yapılandırmalar gibi onu kullanabilir. Aracı uygulama içi tarayıcıyı kullanabildiği sürece çalışır; bu, uygulama içi tarayıcı ayarlarından açılıp kapatılır.",
     "openBrowserSettings": "Uygulama içi tarayıcı ayarları",
@@ -1073,5 +1075,17 @@
   "appearanceDescription": "Dil, tema, yazı tipleri ve ölçek.",
   "systemDescription": "Açılışta başlatma, pencere kapandıktan sonra çalışmaya devam etme, bildirimler ve mu'nun çalıştığı ve günlük tuttuğu klasörler.",
   "conversationsDescription": "Zaman aşımları, önizleme boyut sınırı, yüklemelerin konumu ve sohbetler arası mesajlar.",
-  "aboutDescription": "mu'nun hangi sürümü olduğu, güncellemeleri ve günlüklerine giden yol."
+  "aboutDescription": "mu'nun hangi sürümü olduğu, güncellemeleri ve günlüklerine giden yol.",
+  "developer": {
+    "title": "Geliştirici",
+    "description": "Geliştirici araçları ile diğer araçların uygulama içi tarayıcıya bağlanmak için kullandığı bağlantı noktası ve MCP yapılandırmaları.",
+    "devOnly": "Bu araçlar yalnızca mu kaynak kodundan çalıştırıldığında sunulur."
+  },
+  "search": {
+    "placeholder": "Ayarlarda ara",
+    "empty": "Eşleşen ayar yok.",
+    "results": "Arama sonuçları"
+  },
+  "learnMore": "Daha fazla",
+  "showLess": "Daha az"
 }

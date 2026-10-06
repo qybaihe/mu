@@ -88,7 +88,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  flex-shrink: 0;
+  flex: 0 1 auto;
   min-width: 0;
 }
 
@@ -118,27 +118,27 @@
 
 /* The home composer's chips are the conversation's (.sendbox-tools / .sendbox-actions in sendbox.css): monochrome
    text in a hairline outline, no fill of their own; the send button is the only colour in the box. */
-.actionSubmit :global(.sendbox-model-btn),
-.actionSubmit :global(.sendbox-model-btn:hover),
-.actionSubmit :global(.sendbox-model-btn:active),
-.actionSubmit :global(.sendbox-model-btn:focus),
-.actionSubmit :global(.sendbox-model-btn:focus-visible) {
+.actionRow :global(.sendbox-model-btn),
+.actionRow :global(.sendbox-model-btn:hover),
+.actionRow :global(.sendbox-model-btn:active),
+.actionRow :global(.sendbox-model-btn:focus),
+.actionRow :global(.sendbox-model-btn:focus-visible) {
   background: transparent !important;
   border: 1px solid var(--color-border-2) !important;
   box-shadow: none !important;
   color: var(--text-secondary) !important;
 }
 
-.actionSubmit :global(.sendbox-model-btn:hover),
-.actionSubmit :global(.sendbox-model-btn:active),
-.actionSubmit :global(.sendbox-model-btn:focus),
-.actionSubmit :global(.sendbox-model-btn:focus-visible) {
+.actionRow :global(.sendbox-model-btn:hover),
+.actionRow :global(.sendbox-model-btn:active),
+.actionRow :global(.sendbox-model-btn:focus),
+.actionRow :global(.sendbox-model-btn:focus-visible) {
   border-color: var(--color-border-3) !important;
   color: var(--text-primary) !important;
 }
 
 /* A read-only pill states a fact; it is not a target, so it keeps no outline (as in the conversation). */
-.actionSubmit :global(.agent-mode-compact-pill--readonly) {
+.actionRow :global(.agent-mode-compact-pill--readonly) {
   border-color: transparent !important;
 }
 

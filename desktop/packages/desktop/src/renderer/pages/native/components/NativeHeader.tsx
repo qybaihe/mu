@@ -1,6 +1,6 @@
 /**
- * The top of a native conversation: its title, the project folder it works in, and how its mu is (not running,
- * starting, running, without a model, stopped).
+ * The top of a native conversation: its title, the project folder it works in, and how its mu is (starting, running,
+ * without a model, stopped). A mu that has not started yet says nothing: the next message starts it.
  *
  * The title is renamed where it stands, as a classic conversation's is: a click (or Enter) makes it a field, Enter or
  * leaving the field saves, Esc leaves it as it was. The new name comes back as the conversation's change, which the
@@ -150,7 +150,12 @@ const NativeHeader: React.FC<{
         ) : null}
       </div>
       <div className='shrink-0 flex items-center gap-10px text-12px leading-18px text-t-secondary'>
-        <span className='flex items-center gap-6px' data-testid='native-header-phase' data-phase={host.phase}>
+        {/* Before mu starts there is nothing to report: sending a message starts it. The words stay for screen readers. */}
+        <span
+          className={host.phase === 'idle' ? 'sr-only' : 'flex items-center gap-6px'}
+          data-testid='native-header-phase'
+          data-phase={host.phase}
+        >
           <span className='size-6px rd-full' style={{ background: DOT[host.phase] }} aria-hidden='true' />
           {t(PHASE_KEY[host.phase])}
         </span>

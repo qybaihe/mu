@@ -4,6 +4,7 @@
     "preferences": "Preferences",
     "models": "Models",
     "kernel": "Kernel",
+    "details": "Details",
     "capabilities": "Capabilities",
     "system": "System"
   },
@@ -367,13 +368,14 @@
   },
   "notification": "Notifications",
   "cronNotificationEnabled": "Scheduled Task Completion",
-  "promptTimeout": "Model Request Timeout (s)",
+  "promptTimeout": "Model Request Timeout",
   "groupAiCore": "AI Core",
   "groupApp": "Application",
   "groupAbout": "Other",
-  "agentIdleTimeout": "Agent Idle Timeout (min)",
+  "agentIdleTimeout": "Agent Idle Timeout",
   "agentIdleTimeoutDesc": "An idle agent stops after this long, to free memory.",
-  "previewTextSizeLimit": "Preview Size Limit (MB)",
+  "previewTextSizeLimit": "Preview Size Limit",
+  "previewTextSizeLimitUnit": "MB",
   "previewTextSizeLimitDesc": "Text files larger than this open with a notice instead of content. Applies to newly opened tabs only.",
   "gemini": "Gemini CLI",
   "model": "Model",
@@ -623,7 +625,7 @@
   "closeDevTools": "Close DevTools",
   "restartNow": "Restart Now",
   "cdp": {
-    "title": "In-app browser connection (for developers)",
+    "title": "In-app browser connection",
     "connection": "How the agent reaches the in-app browser",
     "about": "Through a connection on this computer (127.0.0.1, a new port at each start) to that browser view alone, never to mu's own window. Other programs on this computer can use it too, as the configurations below do. It runs while the agent may use the in-app browser, which is switched in the in-app browser settings.",
     "openBrowserSettings": "In-app browser settings",
@@ -1073,5 +1075,17 @@
   "appearanceDescription": "The language, the theme, the fonts and the scale.",
   "systemDescription": "Starting with the computer, running on after the window closes, notifications, and the folders mu works and logs in.",
   "conversationsDescription": "Time limits, the preview's size limit, where uploads go, and messages between conversations.",
-  "aboutDescription": "Which version of mu this is, its updates, and the way to its logs."
+  "aboutDescription": "Which version of mu this is, its updates, and the way to its logs.",
+  "developer": {
+    "title": "Developer",
+    "description": "The developer tools, and the port and MCP configurations other tools use to reach the in-app browser.",
+    "devOnly": "These tools are only offered when mu runs from its sources."
+  },
+  "search": {
+    "placeholder": "Search settings",
+    "empty": "No setting matches.",
+    "results": "Search results"
+  },
+  "learnMore": "Learn more",
+  "showLess": "Show less"
 }

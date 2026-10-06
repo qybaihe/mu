@@ -2,44 +2,37 @@ import {
   Book,
   Brain,
   Browser,
+  Code,
   Comments,
+  Communication,
   Cpu,
   DocDetail,
   Gavel,
-  History,
   Inbox,
   Info,
-  Keyboard,
   LinkCloud,
+  ListNumbers,
   Login,
   MoreApp,
-  Notes,
   Peoples,
   PeoplesTwo,
   Platte,
+  Protect,
   Refresh,
   SwitchButton,
   System,
-  Terminal,
+  Target,
   Tool,
   Toolkit,
 } from '@icon-park/react';
 
 /**
- * The settings rail: seven groups of short pages. No page holds more than twelve rows: a list that would run longer is
- * split into entries, and a group that would get too many entries hands the rest to a group of its own (the decision
- * points and the more features each have one). Never one long page, never a collapsed "advanced" part. Every entry is
- * its own route, `/settings/<id>`; pages that used to exist land on the one that holds their settings now (see
- * {@link RETIRED_SETTINGS_PATHS}).
+ * The settings rail: six groups of short pages. No page holds more than twelve rows: a list that would run longer is
+ * split into entries (the details are a page per area for that). Never one long page, never a collapsed "advanced"
+ * part. Every entry is its own route, `/settings/<id>`; pages that used to exist land on the one that holds their
+ * settings now (see {@link RETIRED_SETTINGS_PATHS}).
  */
-export type SettingsGroupId =
-  | 'preferences'
-  | 'models'
-  | 'kernel'
-  | 'decisions'
-  | 'more-features'
-  | 'capabilities'
-  | 'system';
+export type SettingsGroupId = 'preferences' | 'models' | 'kernel' | 'details' | 'capabilities' | 'system';
 
 export type SettingsGroup = {
   id: SettingsGroupId;
@@ -51,22 +44,20 @@ export const SETTINGS_GROUPS = [
   { id: 'preferences', labelKey: 'settings.groups.preferences' },
   { id: 'models', labelKey: 'settings.groups.models' },
   { id: 'kernel', labelKey: 'settings.groups.kernel' },
-  { id: 'decisions', labelKey: 'mu.sections.decisions' },
-  { id: 'more-features', labelKey: 'mu.sections.moreFeatures' },
+  { id: 'details', labelKey: 'settings.groups.details' },
   { id: 'capabilities', labelKey: 'settings.groups.capabilities' },
   { id: 'system', labelKey: 'settings.groups.system' },
 ] as const satisfies readonly SettingsGroup[];
 
 /**
- * The decision points' pages, one per group the harness puts them in. The experience library's points (the lessons)
- * are a page of their own: together with the rest of the context group they would run past twelve rows.
+ * The areas of the details: a page each, with every feature that acts there and, under each one, the decision points
+ * it asks the judge. Tools and safety are two pages, and the turn's goal and its board a page apart from the rest of
+ * the turn, so that none runs past twelve rows; `other` takes every feature that acts at no decision point.
  */
-export const DECISION_PAGES = ['input', 'context', 'memory', 'tools', 'turn', 'team'] as const;
-export type DecisionPage = (typeof DECISION_PAGES)[number];
+export const DETAIL_AREAS = ['input', 'context', 'memory', 'tools', 'safety', 'turn', 'goal', 'team', 'other'] as const;
+export type DetailArea = (typeof DETAIL_AREAS)[number];
 
-/** The pages of the features past the featured six, one per group; `other` takes every feature the others do not. */
-export const FEATURE_PAGES = ['input', 'context', 'tools', 'turn', 'other'] as const;
-export type FeaturePage = (typeof FEATURE_PAGES)[number];
+export type DetailsPageId = `details-${DetailArea}`;
 
 export type SettingsPageId =
   | 'appearance'
@@ -74,15 +65,17 @@ export type SettingsPageId =
   | 'conversations'
   | 'providers'
   | 'default-model'
+  | 'board-model'
   | 'judges'
+  | 'judge-order'
   | 'features'
-  | `decisions-${DecisionPage}`
-  | `more-features-${FeaturePage}`
+  | DetailsPageId
   | 'skills'
   | 'tools'
   | 'assistants'
   | 'browser'
   | 'archived'
+  | 'developer'
   | 'about';
 
 export type SettingsPage = {
@@ -100,47 +93,33 @@ export type SettingsPage = {
   /** i18n key of the shorter label the rail shows under its group's header, when the group already says the rest. */
   railLabelKey?: string;
   Icon: unknown;
+  /** A page for the people who build mu: in the rail and the palette of a development build only. */
+  devOnly?: boolean;
 };
 
-/** The rail's short name of a decision-point or more-features page: the group it shows. */
-export const pageGroupLabelKey = (page: DecisionPage | FeaturePage): string =>
-  page === 'other' ? 'mu.decisions.otherGroup' : `mu.decisions.groups.${page}`;
-
-const DECISION_ICONS: Record<DecisionPage, unknown> = {
+const DETAIL_ICONS: Record<DetailArea, unknown> = {
   input: Login,
   context: DocDetail,
   memory: Brain,
   tools: Tool,
+  safety: Protect,
   turn: Refresh,
+  goal: Target,
   team: PeoplesTwo,
-};
-
-const FEATURE_ICONS: Record<FeaturePage, unknown> = {
-  input: Keyboard,
-  context: Notes,
-  tools: Terminal,
-  turn: History,
   other: MoreApp,
 };
 
-const decisionsEntry = (page: DecisionPage): SettingsPage => ({
-  id: `decisions-${page}`,
-  group: 'decisions',
-  path: `decisions-${page}`,
-  route: `/settings/decisions-${page}`,
-  labelKey: `mu.pages.decisions.${page}`,
-  railLabelKey: pageGroupLabelKey(page),
-  Icon: DECISION_ICONS[page],
-});
+/** The page of one area of the details. */
+export const detailsPageOf = (area: DetailArea): DetailsPageId => `details-${area}`;
 
-const moreFeaturesEntry = (page: FeaturePage): SettingsPage => ({
-  id: `more-features-${page}`,
-  group: 'more-features',
-  path: `more-features-${page}`,
-  route: `/settings/more-features-${page}`,
-  labelKey: `mu.pages.features.${page}`,
-  railLabelKey: pageGroupLabelKey(page),
-  Icon: FEATURE_ICONS[page],
+const detailsEntry = (area: DetailArea): SettingsPage => ({
+  id: detailsPageOf(area),
+  group: 'details',
+  path: detailsPageOf(area),
+  route: `/settings/${detailsPageOf(area)}`,
+  labelKey: `mu.pages.details.${area}`,
+  railLabelKey: `mu.details.areas.${area}`,
+  Icon: DETAIL_ICONS[area],
 });
 
 /** Every entry of the rail, flat and in display order; `group` says which header it sits under. */
@@ -185,7 +164,16 @@ export const SETTINGS_PAGES = [
     labelKey: 'mu.sections.defaultModel',
     Icon: Cpu,
   },
-  // The judge to ask, and under it the order of several judges and every field of each.
+  // The model that writes the plain-language board.
+  {
+    id: 'board-model',
+    group: 'models',
+    path: 'board-model',
+    route: '/settings/board-model',
+    labelKey: 'mu.sections.boardModel',
+    Icon: Communication,
+  },
+  // Whether the judge's verdicts take effect, and the judge to ask; then the order of several judges and their fields.
   {
     id: 'judges',
     group: 'kernel',
@@ -195,16 +183,24 @@ export const SETTINGS_PAGES = [
     Icon: Gavel,
   },
   {
+    id: 'judge-order',
+    group: 'kernel',
+    path: 'judge-order',
+    route: '/settings/judge-order',
+    labelKey: 'mu.sections.judgeOrder',
+    Icon: ListNumbers,
+  },
+  // The switches that say what mu is; each leads to its row among the details.
+  {
     id: 'features',
     group: 'kernel',
     path: 'features',
     route: '/settings/features',
-    labelKey: 'mu.sections.features',
+    labelKey: 'mu.sections.coreFeatures',
     Icon: SwitchButton,
   },
-  // The decision points' context page holds the compaction settings too: one page for context.
-  ...DECISION_PAGES.map(decisionsEntry),
-  ...FEATURE_PAGES.map(moreFeaturesEntry),
+  // The context page holds the compaction settings too: one page for context.
+  ...DETAIL_AREAS.map(detailsEntry),
   {
     id: 'skills',
     group: 'capabilities',
@@ -245,6 +241,16 @@ export const SETTINGS_PAGES = [
     labelKey: 'settings.archived.navLabel',
     Icon: Inbox,
   },
+  // DevTools and the in-app browser's debugging port, for the people who build mu.
+  {
+    id: 'developer',
+    group: 'system',
+    path: 'developer',
+    route: '/settings/developer',
+    labelKey: 'settings.developer.title',
+    Icon: Code,
+    devOnly: true,
+  },
   { id: 'about', group: 'system', path: 'about', route: '/settings/about', labelKey: 'settings.about', Icon: Info },
 ] as const satisfies readonly SettingsPage[];
 
@@ -253,29 +259,41 @@ export const SETTINGS_HOME = '/settings/providers';
 
 /**
  * The options of the permission modes feature, which hold the mode a new conversation starts in. The feature acts at
- * the tools and safety decision points, so its switch is on that page of the more features.
+ * the safety decision points, so its row is on the safety page of the details.
  */
-const PERMISSION_MODE_PAGE = '/settings/more-features-tools/permissions';
+const PERMISSION_MODE_PAGE = '/settings/details-safety/permissions';
 
 /**
  * Every settings route that no longer exists, and the page that took it over. Old links — a deep link, a button
- * elsewhere in the app, the six pages of the previous settings — land here with their query string kept.
+ * elsewhere in the app, the pages of the previous settings — land here with their query string kept.
  */
 export const RETIRED_SETTINGS_PATHS: Record<string, string> = {
   // The six pages before the rail had groups.
   '/settings/models': '/settings/providers',
   '/settings/kernel': '/settings/judges',
-  // The decision points and the other features were one page each before they got a group of their own.
-  '/settings/decisions': '/settings/decisions-input',
-  '/settings/more-features': '/settings/more-features-input',
+  // The decision points and the other features were one page each, then a group of pages each; now both are the
+  // details, a page per area, where each feature's decision points sit under it.
+  '/settings/decisions': '/settings/details-input',
+  '/settings/more-features': '/settings/details-input',
+  '/settings/decisions-input': '/settings/details-input',
+  '/settings/decisions-context': '/settings/details-context',
+  '/settings/decisions-memory': '/settings/details-memory',
+  '/settings/decisions-tools': '/settings/details-tools',
+  '/settings/decisions-turn': '/settings/details-turn',
+  '/settings/decisions-team': '/settings/details-team',
+  '/settings/more-features-input': '/settings/details-input',
+  '/settings/more-features-context': '/settings/details-context',
+  '/settings/more-features-tools': '/settings/details-tools',
+  '/settings/more-features-turn': '/settings/details-turn',
+  '/settings/more-features-other': '/settings/details-other',
   // mu's own sections when they lived under /settings/kyrn.
   '/settings/kyrn': '/settings/providers',
   '/settings/kyrn/models': '/settings/providers',
   '/settings/kyrn/permissions': PERMISSION_MODE_PAGE,
   '/settings/kyrn/judges': '/settings/judges',
-  '/settings/kyrn/decisions': '/settings/decisions-input',
+  '/settings/kyrn/decisions': '/settings/details-input',
   '/settings/kyrn/features': '/settings/features',
-  '/settings/kyrn/context': '/settings/decisions-context',
+  '/settings/kyrn/context': '/settings/details-context',
   '/settings/kyrn/:section': '/settings/providers',
   '/settings/model': '/settings/providers',
   // Runtime agents and the top-level assistants page: the assistants.
@@ -286,16 +304,30 @@ export const RETIRED_SETTINGS_PATHS: Record<string, string> = {
   '/settings/capabilities': '/settings/skills',
   '/settings/capabilities/skills/import-history': '/settings/skills/import-history',
   '/settings/display': '/settings/appearance',
-  // Pages folded into others: the judge tiers are on the judges page, the compaction settings on the context page,
+  // Pages folded into others: the judge tiers are the judge order, the compaction settings are on the context page,
   // and the mode of a new conversation is an option of the permission modes feature.
-  '/settings/judge-tiers': '/settings/judges',
-  '/settings/context': '/settings/decisions-context',
+  '/settings/judge-tiers': '/settings/judge-order',
+  '/settings/context': '/settings/details-context',
   '/settings/permissions': PERMISSION_MODE_PAGE,
   // The web server mu no longer runs, the voice input and the desktop pet it no longer has: the page each sat next to.
   '/settings/webui': '/settings/system',
   '/settings/voice': '/settings/system',
   '/settings/pet': '/settings/appearance',
 };
+
+/**
+ * The lists a feature's options were opened from before the details: `<list>/<feature>` and `/<part>` after it. Where
+ * a feature is now depends on the harness's manifest, so these are sent on once the settings are read.
+ */
+export const MOVED_FEATURE_LISTS: readonly string[] = [
+  '/settings/features',
+  '/settings/more-features',
+  '/settings/more-features-input',
+  '/settings/more-features-context',
+  '/settings/more-features-tools',
+  '/settings/more-features-turn',
+  '/settings/more-features-other',
+];
 
 /**
  * Pages that used to hold other pages as tabs: `?tab=` names the page that holds that tab now. The skills page is
@@ -343,17 +375,28 @@ export function retiredSettingsTarget(from: string, search: string): string {
 export const SETTINGS_ANCHOR_REMAP: Record<string, SettingsPageId> = {
   models: 'providers',
   kernel: 'judges',
-  decisions: 'decisions-input',
-  'more-features': 'more-features-input',
+  decisions: 'details-input',
+  'more-features': 'details-input',
+  'decisions-input': 'details-input',
+  'decisions-context': 'details-context',
+  'decisions-memory': 'details-memory',
+  'decisions-tools': 'details-tools',
+  'decisions-turn': 'details-turn',
+  'decisions-team': 'details-team',
+  'more-features-input': 'details-input',
+  'more-features-context': 'details-context',
+  'more-features-tools': 'details-tools',
+  'more-features-turn': 'details-turn',
+  'more-features-other': 'details-other',
   'mu-models': 'providers',
-  'mu-permissions': 'more-features-tools',
+  'mu-permissions': 'details-safety',
   'mu-judges': 'judges',
-  'mu-decisions': 'decisions-input',
+  'mu-decisions': 'details-input',
   'mu-features': 'features',
-  'mu-context': 'decisions-context',
-  'judge-tiers': 'judges',
-  context: 'decisions-context',
-  permissions: 'more-features-tools',
+  'mu-context': 'details-context',
+  'judge-tiers': 'judge-order',
+  context: 'details-context',
+  permissions: 'details-safety',
   kyrn: 'providers',
   model: 'providers',
   agent: 'assistants',
@@ -366,10 +409,13 @@ export const SETTINGS_ANCHOR_REMAP: Record<string, SettingsPageId> = {
 };
 
 /** The entries whose sub-pages are one feature's options each: `<route>/<feature>`, and `/<part>` past the first. */
-export const FEATURE_LIST_PAGES: readonly SettingsPageId[] = [
-  'features',
-  ...FEATURE_PAGES.map((page): SettingsPageId => `more-features-${page}`),
-];
+export const FEATURE_LIST_PAGES: readonly SettingsPageId[] = DETAIL_AREAS.map(detailsPageOf);
+
+/** A development build: one run from its sources, where the pages for the people who build mu are listed. */
+const DEVELOPMENT_BUILD = process.env.NODE_ENV !== 'production';
+
+/** Whether a page is listed in the rail, the phone's row of chips and the palette of this build. */
+export const isSettingsPageListed = (page: SettingsPage): boolean => !page.devOnly || DEVELOPMENT_BUILD;
 
 /** Whether `pathname` is the page at `route` or one of its own sub-pages (a skill's detail, a feature's options). */
 export const isSettingsRouteActive = (pathname: string, route: string): boolean =>

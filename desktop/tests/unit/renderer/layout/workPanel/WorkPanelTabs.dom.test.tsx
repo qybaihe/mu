@@ -41,11 +41,29 @@ class RecordingResizeObserver {
 const strip = () => screen.getByRole('tablist');
 const tabs = () => screen.getAllByRole('tab');
 const labels = WORK_PANEL_TABS.map((tab) => common.workPanel.tabs[tab]);
+const shown = () => tabs().map((tab) => tab.getAttribute('data-tab'));
+/** The tabs listed under 更多, once it is opened. */
+const moreTabs = () => screen.queryAllByTestId('work-panel-more-tab').map((item) => item.getAttribute('data-tab'));
+const moreTab = (tab: WorkPanelTab) =>
+  screen.getAllByTestId('work-panel-more-tab').find((item) => item.getAttribute('data-tab') === tab) as HTMLElement;
 
-function show(unread: WorkPanelTab[] = []) {
+function show(
+  unread: WorkPanelTab[] = [],
+  {
+    used,
+    active = 'judge',
+    onSelect = () => {},
+  }: { used?: WorkPanelTab[]; active?: WorkPanelTab; onSelect?: (tab: WorkPanelTab) => void } = {}
+) {
   return render(
     <I18nextProvider i18n={i18n}>
-      <WorkPanelTabs active='judge' unread={new Set(unread)} onSelect={() => {}} onClose={() => {}} />
+      <WorkPanelTabs
+        active={active}
+        unread={new Set(unread)}
+        used={used ? new Set(used) : undefined}
+        onSelect={onSelect}
+        onClose={() => {}}
+      />
     </I18nextProvider>
   );
 }
@@ -135,5 +153,60 @@ describe('the work panel tab strip', () => {
     resize(380);
     expect(strip()).not.toHaveAttribute('data-icons');
     expect(tabs().map((tab) => tab.textContent)).toEqual(labels);
+  });
+});
+
+describe('the tabs a conversation uses', () => {
+  it('shows every tab, and no 更多, when it is not told which tabs were used', () => {
+    show();
+    expect(shown()).toEqual([...WORK_PANEL_TABS]);
+    expect(screen.queryByTestId('work-panel-more')).not.toBeInTheDocument();
+  });
+
+  it('keeps board, judge and files in the strip, and lists the rest under 更多, where choosing one opens it', () => {
+    const onSelect = vi.fn();
+    show([], { used: [], onSelect });
+    expect(shown()).toEqual(['board', 'judge', 'files']);
+    expect(moreTabs()).toEqual([]);
+
+    const more = screen.getByTestId('work-panel-more');
+    expect(more).toHaveTextContent(common.more);
+    fireEvent.click(more);
+    expect(moreTabs()).toEqual(['hive', 'lessons', 'preview', 'source', 'browser']);
+    fireEvent.click(moreTab('source'));
+    expect(onSelect).toHaveBeenCalledWith('source');
+  });
+
+  it('puts the tabs the conversation used in the strip, in their order', () => {
+    show([], { used: ['browser', 'hive'] });
+    expect(shown()).toEqual(['board', 'judge', 'hive', 'files', 'browser']);
+    fireEvent.click(screen.getByTestId('work-panel-more'));
+    expect(moreTabs()).toEqual(['lessons', 'preview', 'source']);
+  });
+
+  it('brings a tab with news into the strip, dot and all', () => {
+    show(['browser'], { used: [] });
+    expect(shown()).toEqual(['board', 'judge', 'files', 'browser']);
+    expect(screen.getByRole('tab', { name: `${common.workPanel.tabs.browser}, new` })).toBeInTheDocument();
+  });
+
+  it('shows the open tab even before it counts as used', () => {
+    show([], { used: [], active: 'lessons' });
+    expect(shown()).toEqual(['board', 'judge', 'lessons', 'files']);
+  });
+
+  it('leaves out 更多 once every tab is in the strip', () => {
+    show([], { used: ['hive', 'lessons', 'preview', 'source', 'browser'] });
+    expect(shown()).toEqual([...WORK_PANEL_TABS]);
+    expect(screen.queryByTestId('work-panel-more')).not.toBeInTheDocument();
+  });
+
+  it('moves with the arrow keys between the tabs shown only', () => {
+    const onSelect = vi.fn();
+    show([], { used: ['browser'], active: 'files', onSelect });
+    fireEvent.keyDown(screen.getByRole('tab', { selected: true }), { key: 'ArrowRight' });
+    expect(onSelect).toHaveBeenLastCalledWith('browser');
+    fireEvent.keyDown(screen.getByRole('tab', { selected: true }), { key: 'ArrowLeft' });
+    expect(onSelect).toHaveBeenLastCalledWith('judge');
   });
 });

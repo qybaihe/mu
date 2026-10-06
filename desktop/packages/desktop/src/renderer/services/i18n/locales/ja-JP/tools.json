@@ -82,8 +82,22 @@
   },
   "activity": {
     "running": "{{steps}} ステップ · 実行中 {{label}}",
-    "summary": "{{steps}} ステップ",
-    "summaryFailed": "{{steps}} ステップ · {{failed}} 件失敗"
+    "parts": {
+      "read_one": "ファイルを {{n}} 件読み込み",
+      "read_other": "ファイルを {{n}} 件読み込み",
+      "look_one": "{{n}} 回検索",
+      "look_other": "{{n}} 回検索",
+      "edit_one": "ファイルを {{n}} 件編集",
+      "edit_other": "ファイルを {{n}} 件編集",
+      "run_one": "コマンドを {{n}} 件実行",
+      "run_other": "コマンドを {{n}} 件実行",
+      "web_one": "Web に {{n}} 回アクセス",
+      "web_other": "Web に {{n}} 回アクセス",
+      "other_one": "その他 {{n}} ステップ",
+      "other_other": "その他 {{n}} ステップ"
+    },
+    "separator": " · ",
+    "doneFailed": "{{done}} · {{failed}} 件失敗"
   },
   "kind": {
     "edit": "ファイル編集",

@@ -26,14 +26,6 @@
   line-height: 22px;
 }
 
-.rowHelp {
-  margin-top: 2px;
-  color: var(--text-secondary);
-  font-size: 12px;
-  line-height: 18px;
-  text-wrap: balance;
-}
-
 .rowControl {
   display: flex;
   flex-wrap: wrap;

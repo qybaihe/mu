@@ -4,43 +4,74 @@ import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
 import { formatNameList } from '@/renderer/services/i18n/list';
 import SettingsPageHeader from '../components/SettingsPageHeader';
-import type { DecisionPage, FeaturePage } from '../settingsNav';
-import { SECTIONS, isDecisionPage, isFeaturePage, manifestOf, type SectionId } from './draft';
+import { DETAIL_AREAS, SETTINGS_PAGES, detailsPageOf, type DetailArea } from '../settingsNav';
+import { SECTIONS, areaOf, manifestOf, type SectionId } from './draft';
 import MuErrorMessage from './fields/MuErrorMessage';
-import ContextRows from './sections/ContextRows';
-import DecisionsSection from './sections/DecisionsSection';
-import FeaturesSection, { FeatureOptions } from './sections/FeaturesSection';
-import JudgesSection from './sections/JudgesSection';
-import ProvidersSection, { DefaultModelSection } from './sections/ModelsSection';
+import DetailsSection from './sections/DetailsSection';
+import CoreFeaturesSection, { FeatureOptions } from './sections/FeaturesSection';
+import JudgesSection, { JudgeOrderSection } from './sections/JudgesSection';
+import ProvidersSection, { BoardModelSection, DefaultModelSection } from './sections/ModelsSection';
 import { useMuSettings, useSharedMuSettings, type MuSettings } from './useMuSettings';
 import styles from './SettingsArea.module.css';
 
+/** mu's own entries of the settings rail, in the rail's order: each is a page of this area. */
+export const MU_PAGE_IDS = [
+  'providers',
+  'default-model',
+  'board-model',
+  'judges',
+  'judge-order',
+  'features',
+  ...DETAIL_AREAS.map(detailsPageOf),
+] as const;
+export type MuPageId = (typeof MU_PAGE_IDS)[number];
+
+export const isMuPage = (id: string): id is MuPageId => (MU_PAGE_IDS as readonly string[]).includes(id);
+
+/** The area of the details a page shows, for a page of the details. */
+const detailAreaOf = (page: MuPageId): DetailArea | undefined =>
+  DETAIL_AREAS.find((area) => detailsPageOf(area) === page);
+
+/** A page's name where it stands alone, as the rail's palette and title give it. */
+const pageLabelKey = (id: MuPageId): string => SETTINGS_PAGES.find((page) => page.id === id)?.labelKey ?? id;
+
+/** The parts of the draft each page edits: its dot in the list of pages when one of them has unsaved changes. */
+const pageSections = (page: MuPageId): SectionId[] => {
+  if (page === 'providers') return ['providers'];
+  if (page === 'default-model') return ['defaultModel'];
+  if (page === 'board-model') return ['boardModel'];
+  if (page === 'judges' || page === 'judge-order') return ['judges'];
+  if (page === 'features') return ['features'];
+  return page === 'details-context' ? ['decisions', 'features', 'context'] : ['decisions', 'features'];
+};
+
 /**
- * What the area shows: one section; for the decision points and the other features, the page of one group; on a
- * features page, the options of one feature, and which page of them (from 1) when they fill more than one.
+ * What the area shows: one page; on a page of the details, the options of one feature, and which page of them (from
+ * 1) when they fill more than one; or the row of one feature, scrolled to and marked for a moment.
  */
-export type AreaView = { section: SectionId; page?: DecisionPage | FeaturePage; feature?: string; part?: number };
+export type AreaView = { page: MuPageId; feature?: string; part?: number; focus?: string };
 
 type SettingsAreaProps = {
-  /** From the route: this section alone, with no list of sections (the settings rail is the list). */
-  section?: SectionId;
-  /** From the route, with the decision points or the other features: the page of one group. */
-  page?: DecisionPage | FeaturePage;
-  /** With a features section: the feature whose options are open. */
+  /** From the route: this page alone, with no list of pages (the settings rail is the list). */
+  page?: MuPageId;
+  /** On a page of the details: the feature whose options are open. */
   feature?: string;
   /** With a feature: the page of its options shown. */
   part?: number;
-  /** A move made inside a routed section: to a feature's options, or back to its list. */
+  /** On a page of the details: the feature whose row to scroll to. */
+  focus?: string;
+  /** A move made inside a routed page: to a feature's options, back to its page, to a feature's row elsewhere. */
   onView?: (view: AreaView) => void;
 };
 
 /**
- * Everything mu can be told: providers, the default model, judges and their tiers, decision points, features, context.
- * They share one draft and one save, because the files behind them share one revision.
+ * Everything mu can be told: providers, the default model, the board's model, the judges and their order, the core
+ * features and the details (every feature with the decision points it asks), the context. They share one draft and
+ * one save, because the files behind them share one revision.
  *
- * In the settings the section comes from the route, and the draft from {@link MuSettingsProvider} around every
- * settings page: a change typed on one page is still there, unsaved, on the next. Alone (no route), the area loads its
- * own draft and shows a list of its sections to pick from.
+ * In the settings the page comes from the route, and the draft from {@link MuSettingsProvider} around every settings
+ * page: a change typed on one page is still there, unsaved, on the next. Alone (no route), the area loads its own
+ * draft and shows a list of its pages to pick from.
  */
 export default function SettingsArea(props: SettingsAreaProps = {}) {
   const shared = useSharedMuSettings();
@@ -51,15 +82,13 @@ function OwnDraft(props: SettingsAreaProps) {
   return <Area {...props} mu={useMuSettings()} />;
 }
 
-function Area({ section: routed, page, feature, part, onView, mu }: SettingsAreaProps & { mu: MuSettings }) {
+function Area({ page: routed, feature, part, focus, onView, mu }: SettingsAreaProps & { mu: MuSettings }) {
   const { t, i18n } = useTranslation();
   // The hook form needs no global React adapter, unlike the static Message.
   const [message, messageHolder] = Message.useMessage();
-  const [picked, setPicked] = useState<AreaView>({ section: 'providers' });
-  const view: AreaView = routed ? { section: routed, page, feature, part } : picked;
+  const [picked, setPicked] = useState<AreaView>({ page: 'providers' });
+  const view: AreaView = routed ? { page: routed, feature, part, focus } : picked;
   const go = (next: AreaView) => (routed ? onView?.(next) : setPicked(next));
-  // The decision points' search. Kept here so it survives a visit to another section of the same area.
-  const [query, setQuery] = useState('');
   const { base, draft, dirty, error } = mu;
   const manifest = manifestOf(base);
 
@@ -70,58 +99,55 @@ function Area({ section: routed, page, feature, part, onView, mu }: SettingsArea
   let content: React.ReactNode = null;
   if (base && draft) {
     const { settings } = draft;
-    const { section } = view;
+    const { page } = view;
+    const area = detailAreaOf(page);
     const onKey = (variable: string, value: string) =>
       mu.edit((now) => ({ ...now, judgeKeys: { ...now.judgeKeys, [variable]: value } }));
-    if (section === 'providers')
+    if (page === 'providers')
       content = <ProvidersSection draft={draft} base={base} available={mu.available} onDraft={mu.edit} />;
-    else if (section === 'defaultModel')
+    else if (page === 'default-model')
       content = <DefaultModelSection draft={draft} base={base} available={mu.available} onDraft={mu.edit} />;
-    else if (section === 'judges')
+    else if (page === 'board-model')
+      content = <BoardModelSection draft={draft} base={base} available={mu.available} onDraft={mu.edit} />;
+    else if (page === 'judges')
       content = <JudgesSection draft={draft} base={base} onChange={mu.editSettings} onKey={onKey} />;
-    else if (section === 'decisions' || section === 'context') {
-      // The context settings are the top of the decision points' context page: one page for context.
-      const shown = section === 'context' ? 'context' : isDecisionPage(view.page) ? view.page : undefined;
+    else if (page === 'judge-order')
+      content = <JudgeOrderSection draft={draft} base={base} onChange={mu.editSettings} onKey={onKey} />;
+    else if (page === 'features')
       content = (
-        <DecisionsSection
-          page={shown}
+        <CoreFeaturesSection
           settings={settings}
           manifest={manifest}
-          query={query}
-          onQuery={setQuery}
           onChange={mu.editSettings}
-          lead={shown === 'context' ? <ContextRows settings={settings} base={base} onChange={mu.editSettings} /> : null}
+          onDetails={(name) => go({ page: detailsPageOf(areaOf(manifest, { name })), focus: name })}
         />
       );
-    } else if ((section === 'features' || section === 'moreFeatures') && view.feature) {
+    else if (area && view.feature) {
       const { feature: name } = view;
-      const group = section === 'moreFeatures' && isFeaturePage(view.page) ? view.page : undefined;
       content = (
         <FeatureOptions
-          list={section}
-          page={group}
+          backTitle={t(`mu.pages.details.${area}`)}
           name={name}
           part={view.part}
           settings={settings}
           manifest={manifest}
           onChange={mu.editSettings}
-          onBack={() => go({ section, page: group })}
-          onPart={(next) => go({ section, page: group, feature: name, part: next })}
+          onBack={() => go({ page })}
+          onPart={(next) => go({ page, feature: name, part: next })}
         />
       );
-    } else if (section === 'features' || section === 'moreFeatures') {
-      const group = section === 'moreFeatures' && isFeaturePage(view.page) ? view.page : undefined;
+    } else if (area)
       content = (
-        <FeaturesSection
-          list={section}
-          page={group}
+        <DetailsSection
+          area={area}
           settings={settings}
+          base={base}
           manifest={manifest}
           onChange={mu.editSettings}
-          onOpen={(name) => go({ section, page: group, feature: name })}
+          onOpen={(name) => go({ page, feature: name })}
+          focus={view.focus}
         />
       );
-    }
   }
 
   return (
@@ -147,26 +173,27 @@ function Area({ section: routed, page, feature, part, onView, mu }: SettingsArea
         <div className={classNames(styles.body, routed && styles.bodyRouted)}>
           {routed ? null : (
             <div className={styles.nav} role='tablist' aria-label={t('mu.title')}>
-              {SECTIONS.map((id) => (
+              {MU_PAGE_IDS.map((id) => (
                 <div
                   key={id}
                   role='tab'
                   tabIndex={0}
-                  aria-selected={view.section === id}
+                  aria-selected={view.page === id}
                   data-testid={`mu-nav-${id}`}
-                  className={classNames(styles.navItem, view.section === id && styles.navItemActive)}
-                  onClick={() => setPicked({ section: id })}
-                  onKeyDown={(event) => (event.key === 'Enter' || event.key === ' ') && setPicked({ section: id })}
+                  className={classNames(styles.navItem, view.page === id && styles.navItemActive)}
+                  onClick={() => setPicked({ page: id })}
+                  onKeyDown={(event) => (event.key === 'Enter' || event.key === ' ') && setPicked({ page: id })}
                 >
-                  <span className={styles.navLabel}>{t(`mu.sections.${id}`)}</span>
-                  {dirty.has(id) ? <span className={styles.dot} aria-label={t('mu.save.unsavedDot')} /> : null}
+                  <span className={styles.navLabel}>{t(pageLabelKey(id))}</span>
+                  {pageSections(id).some((section) => dirty.has(section)) ? (
+                    <span className={styles.dot} aria-label={t('mu.save.unsavedDot')} />
+                  ) : null}
                 </div>
               ))}
             </div>
           )}
           <div className={styles.content} role={routed ? undefined : 'tabpanel'}>
             <React.Fragment key={mu.generation}>{content}</React.Fragment>
-            <div className={styles.note}>{t('mu.applyNote')}</div>
             {dirty.size || error ? (
               <div className={styles.saveBar} data-testid='mu-save-bar'>
                 <span className={styles.saveText}>
@@ -178,6 +205,8 @@ function Area({ section: routed, page, feature, part, onView, mu }: SettingsArea
                         ),
                       })
                     : t('mu.save.nothing')}
+                  {/* When a change applies: said once, here, where a change is about to be saved. */}
+                  <span className={styles.saveNote}>{t('mu.applyNote')}</span>
                 </span>
                 {error?.stale ? (
                   <Button size='small' onClick={mu.reload}>

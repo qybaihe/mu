@@ -80,14 +80,21 @@ const body = (name) => page().locator(`#mu-work-panel-body-${name}`);
 const source = () => page().getByTestId('native-source');
 const row = (path) => source().locator(`[data-testid="native-source-file"][data-path="${path}"]`);
 
-/** Opens the work panel on a tab and waits until the tab is the one shown. */
+/**
+ * Opens the work panel on a tab and waits until the tab is the one shown. A tab the conversation has not used yet
+ * waits under 更多 and is opened from there, as a person would.
+ */
 async function showTab(name) {
   const p = page();
   if ((await p.getByTestId('work-panel').getAttribute('data-open')) !== 'true') {
     await p.getByRole('button', { name: '展开工作面板' }).click();
     await expect(p.getByTestId('work-panel')).toHaveAttribute('data-open', 'true');
   }
-  await tab(name).click();
+  if (await tab(name).count()) await tab(name).click();
+  else {
+    await p.getByTestId('work-panel-more').click();
+    await p.locator(`[data-testid="work-panel-more-tab"][data-tab="${name}"]`).click();
+  }
   await expect(tab(name)).toHaveAttribute('aria-selected', 'true');
 }
 

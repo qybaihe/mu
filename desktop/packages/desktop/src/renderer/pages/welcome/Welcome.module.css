@@ -149,14 +149,42 @@
   gap: 14px;
 }
 
+/* A check, not a dot: a dot in a column reads as a radio button. Pastel fill, dark mark. */
 .pointMark {
   flex: none;
-  width: 8px;
-  height: 8px;
-  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #f0c4fb, #9e93f2);
-  box-shadow: 0 0 0 4px rgb(205 182 250 / 22%);
+  background: linear-gradient(135deg, #f6dcfd, #d9d3fb);
+  color: #3b2f6b;
+}
+
+/* What already works on a step: one line with a check, quiet, no box. */
+.ready {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 14px;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.readyMark {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f6dcfd, #d9d3fb);
+  color: #3b2f6b;
 }
 
 .pointTitle {

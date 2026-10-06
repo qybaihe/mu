@@ -15,7 +15,9 @@ import { useCallback, useSyncExternalStore } from 'react';
  * open in a new conversation too.
  *
  * News is per conversation and per tab, in memory only. The panel never opens itself for news: a tab with something
- * the person has not seen gets a dot until they look at it.
+ * the person has not seen gets a dot until they look at it. Which tabs a conversation has used (news there, something
+ * to show, or the person opening it) is kept with its news: the strip shows the tabs every conversation needs, and
+ * the others once they are used (WorkPanelTabs).
  */
 
 /**
@@ -44,10 +46,14 @@ const DEFAULT_MEMORY: WorkPanelMemory = { open: false, tab: 'board', width: WORK
 /** One conversation's memory, and when it last changed. The memory object is kept as is while it holds. */
 type Remembered = { memory: WorkPanelMemory; at: number };
 type State = { last: WorkPanelMemory; conversations: Readonly<Record<string, Remembered>> };
-type News = { unread: ReadonlySet<WorkPanelTab>; signatures: Readonly<Partial<Record<WorkPanelTab, string>>> };
+type News = {
+  unread: ReadonlySet<WorkPanelTab>;
+  signatures: Readonly<Partial<Record<WorkPanelTab, string>>>;
+  used: ReadonlySet<WorkPanelTab>;
+};
 
 const NO_UNREAD: ReadonlySet<WorkPanelTab> = new Set();
-const NO_NEWS: News = { unread: NO_UNREAD, signatures: {} };
+const NO_NEWS: News = { unread: NO_UNREAD, signatures: {}, used: NO_UNREAD };
 
 let state: State | undefined;
 const news = new Map<string, News>();
@@ -154,11 +160,13 @@ const withTab = (tabs: ReadonlySet<WorkPanelTab>, tab: WorkPanelTab): ReadonlySe
   tabs.has(tab) ? tabs : new Set([...tabs, tab]);
 
 function markUnread(conversationId: string, tab: WorkPanelTab, entry: News): void {
+  const used = withTab(entry.used, tab);
   if (viewing.get(conversationId) === tab || entry.unread.has(tab)) {
-    news.set(conversationId, entry);
+    news.set(conversationId, { ...entry, used });
+    if (used !== entry.used) emit();
     return;
   }
-  news.set(conversationId, { ...entry, unread: withTab(entry.unread, tab) });
+  news.set(conversationId, { ...entry, used, unread: withTab(entry.unread, tab) });
   emit();
 }
 
@@ -181,8 +189,21 @@ export function noteWorkPanelSignature(conversationId: string, tab: WorkPanelTab
   const previous = entry.signatures[tab];
   if (previous === signature || (previous && !signature)) return;
   const next: News = { ...entry, signatures: { ...entry.signatures, [tab]: signature } };
-  if (previous === undefined) news.set(conversationId, next);
-  else markUnread(conversationId, tab, next);
+  if (previous !== undefined) markUnread(conversationId, tab, next);
+  else if (!signature) news.set(conversationId, next);
+  else {
+    // Where the conversation stands is not news, but the tab has something to show.
+    news.set(conversationId, { ...next, used: withTab(next.used, tab) });
+    if (!entry.used.has(tab)) emit();
+  }
+}
+
+/** The person opened a tab: it stays in the strip for this conversation. */
+export function markWorkPanelUsed(conversationId: string, tab: WorkPanelTab): void {
+  const entry = news.get(conversationId) ?? NO_NEWS;
+  if (entry.used.has(tab)) return;
+  news.set(conversationId, { ...entry, used: withTab(entry.used, tab) });
+  emit();
 }
 
 export function markWorkPanelSeen(conversationId: string, tab: WorkPanelTab): void {
@@ -207,6 +228,14 @@ export function setWorkPanelViewing(conversationId: string, tab: WorkPanelTab | 
 export function useWorkPanelUnread(conversationId: string | null): ReadonlySet<WorkPanelTab> {
   const snapshot = useCallback(
     () => (conversationId ? (news.get(conversationId)?.unread ?? NO_UNREAD) : NO_UNREAD),
+    [conversationId]
+  );
+  return useSyncExternalStore(subscribe, snapshot, snapshot);
+}
+
+export function useWorkPanelUsed(conversationId: string | null): ReadonlySet<WorkPanelTab> {
+  const snapshot = useCallback(
+    () => (conversationId ? (news.get(conversationId)?.used ?? NO_UNREAD) : NO_UNREAD),
     [conversationId]
   );
   return useSyncExternalStore(subscribe, snapshot, snapshot);

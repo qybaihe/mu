@@ -1417,6 +1417,14 @@
       "cache": "Önbellek isabeti",
       "cacheHint": "Önbellek isabeti: son turda {{turn}}, tüm konuşmada {{session}}",
       "pending": "mu’nun bir sonraki yanıtından sonra gösterilir"
+    },
+    "roles": {
+      "browser": "tarayıcı",
+      "investigator": "araştırmacı",
+      "planner": "planlayıcı",
+      "reviewer": "gözden geçiren",
+      "scout": "keşifçi",
+      "worker": "uygulayıcı"
     }
   },
   "menu": {

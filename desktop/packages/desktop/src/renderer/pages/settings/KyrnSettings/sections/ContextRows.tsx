@@ -18,9 +18,8 @@ type ContextRowsProps = {
 };
 
 /**
- * Automatic compaction and the context cap, shared with pi's settings.json: the top of the context page, above the
- * decision points about context. The summary-free compaction is a feature of the harness, on the more-features page
- * (上下文) with its options.
+ * Automatic compaction and the context cap, shared with pi's settings.json: the top of the context page of the details,
+ * above the features that act on the context. The summary-free compaction is one of those features, with its options.
  */
 export default function ContextRows({ settings, base, onChange }: ContextRowsProps) {
   const { t, i18n } = useTranslation();

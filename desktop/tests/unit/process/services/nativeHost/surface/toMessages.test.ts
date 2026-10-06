@@ -251,10 +251,33 @@ describe('rows written by hand', () => {
 
   it('shows what an extension shows the person, and nothing for an empty message', () => {
     const view = reduceAll([
-      ended({ role: 'custom', customType: 'kyrn.note', content: 'Saved a lesson', display: true, timestamp: 9 }),
-      ended({ role: 'custom', customType: 'kyrn.note', content: '  ', display: true, timestamp: 9 }),
+      ended({ role: 'custom', customType: 'note', content: 'Saved a lesson', display: true, timestamp: 9 }),
+      ended({ role: 'custom', customType: 'note', content: '  ', display: true, timestamp: 9 }),
     ]);
     expect(rows(view).map(brief)).toEqual(['mu: Saved a lesson']);
+  });
+
+  it('shows what mu told the model as a line of its own, never as a reply, with the words it sent', () => {
+    const sent = 'You edited a.ts and nothing has run since. Verify the change.';
+    const view = reduceAll([
+      ended(user('fix it')),
+      ended({ role: 'custom', customType: 'kyrn.nudge', content: sent, display: true, timestamp: 9 }),
+      ended({
+        role: 'custom',
+        customType: 'kyrn.goal',
+        content: [{ type: 'text', text: 'Keep going.' }],
+        display: true,
+        timestamp: 9,
+      }),
+      ended({ role: 'custom', customType: 'kyrn.steer', content: '  ', display: true, timestamp: 9 }),
+    ]);
+    const list = rows(view);
+    expect(list.map(brief)).toEqual(['person: fix it', 'notice: to_model', 'notice: to_model']);
+    expect(list.map((row) => muNotice(row))).toEqual([
+      undefined,
+      { code: 'to_model', title: sent, kind: 'kyrn.nudge', sent },
+      { code: 'to_model', title: 'Keep going.', kind: 'kyrn.goal', sent: 'Keep going.' },
+    ]);
   });
 
   it('says where the conversation was compacted, as a line of its own between the messages', () => {

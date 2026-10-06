@@ -608,7 +608,11 @@
       "endLabel": "Encerrar a meta"
     },
     "thinkingNote": "Mudar o nível de raciocínio descarta o cache do prompt; mantenha-o estável no mesmo modelo",
-    "modelBusy": "Troque o modelo quando esta resposta terminar."
+    "modelBusy": "Troque o modelo quando esta resposta terminar.",
+    "defaultTag": "padrão",
+    "makeDefault": "Usar como padrão em novas conversas",
+    "madeDefault": "Novas conversas vão começar com este modelo.",
+    "makeDefaultFailed": "Não foi possível salvar o modelo padrão."
   },
   "agentTip": {
     "codes": {

@@ -208,6 +208,40 @@ describe('GuidModelSelector', () => {
     expect(setSelectedAcpModel).toHaveBeenCalledWith('openai/gpt-5');
   });
 
+  it('names the default model while nothing is picked, not the one the agent reported last', () => {
+    const onMakeDefault = vi.fn();
+    const info = {
+      current_model_id: 'google-antigravity/gemini-3.8-flash',
+      current_model_label: 'Gemini 3.8 Flash',
+      available_models: [
+        { id: 'google-antigravity/gemini-3.8-flash', label: 'Gemini 3.8 Flash' },
+        { id: 'openai-codex/gpt-5.6-luna', label: 'GPT-5.6 Luna' },
+      ],
+    };
+    const chip = (selected: string | null) => (
+      <GuidModelSelector
+        isGeminiMode={false}
+        modelList={[]}
+        current_model={undefined}
+        setCurrentModel={vi.fn()}
+        currentAcpCachedModelInfo={info}
+        selectedAcpModel={selected}
+        setSelectedAcpModel={vi.fn()}
+        defaultModel='openai-codex/gpt-5.6-luna'
+        onMakeDefault={onMakeDefault}
+      />
+    );
+    const { rerender } = render(chip(null));
+    expect(screen.getByTestId('guid-model-selector')).toHaveTextContent('GPT-5.6 Luna');
+    // The default is in use: nothing to make default.
+    expect(screen.queryByText('conversation.composer.makeDefault')).not.toBeInTheDocument();
+
+    rerender(chip('google-antigravity/gemini-3.8-flash'));
+    expect(screen.getByTestId('guid-model-selector')).toHaveTextContent('Gemini 3.8 Flash');
+    fireEvent.click(screen.getByText('conversation.composer.makeDefault'));
+    expect(onMakeDefault).toHaveBeenCalledWith('google-antigravity/gemini-3.8-flash');
+  });
+
   it('does not add thought level options to the Aion CLI provider model menu', () => {
     render(
       <GuidModelSelector

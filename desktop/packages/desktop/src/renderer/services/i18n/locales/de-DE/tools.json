@@ -82,8 +82,22 @@
   },
   "activity": {
     "running": "{{steps}} Schritte · läuft {{label}}",
-    "summary": "{{steps}} Schritte",
-    "summaryFailed": "{{steps}} Schritte · {{failed}} fehlgeschlagen"
+    "parts": {
+      "read_one": "{{n}} Datei gelesen",
+      "read_other": "{{n}} Dateien gelesen",
+      "look_one": "{{n}} Suche",
+      "look_other": "{{n}} Suchen",
+      "edit_one": "{{n}} Datei bearbeitet",
+      "edit_other": "{{n}} Dateien bearbeitet",
+      "run_one": "{{n}} Befehl ausgeführt",
+      "run_other": "{{n}} Befehle ausgeführt",
+      "web_one": "{{n}} Webabruf",
+      "web_other": "{{n}} Webabrufe",
+      "other_one": "{{n}} weiterer Schritt",
+      "other_other": "{{n}} weitere Schritte"
+    },
+    "separator": " · ",
+    "doneFailed": "{{done}} · {{failed}} fehlgeschlagen"
   },
   "kind": {
     "edit": "Datei bearbeiten",

@@ -256,6 +256,15 @@ const tab = (name: string) => screen.getByRole('tab', { name: new RegExp(`^${nam
 const selected = () => screen.getByRole('tab', { selected: true });
 const dots = () =>
   screen.queryAllByTestId('work-panel-dot').map((dot) => dot.closest('[role="tab"]')?.getAttribute('data-tab'));
+/** The tabs listed under the strip's 更多, once it is opened. */
+const moreTabs = () => screen.queryAllByTestId('work-panel-more-tab').map((item) => item.getAttribute('data-tab'));
+const moreTab = (name: string) =>
+  screen.getAllByTestId('work-panel-more-tab').find((item) => item.getAttribute('data-tab') === name) as HTMLElement;
+/** A tab the conversation has not used yet, opened the way a person does: from 更多. */
+const fromMore = (name: string) => {
+  fireEvent.click(screen.getByTestId('work-panel-more'));
+  fireEvent.click(moreTab(name));
+};
 const shortcut = (key: string) => {
   const keydown = new KeyboardEvent('keydown', { key, metaKey: true, bubbles: true, cancelable: true });
   act(() => {
@@ -291,20 +300,28 @@ afterEach(() => {
 });
 
 describe('the work panel', () => {
-  it('shows its tabs in one strip, in order: board, judge, hive, lessons, files, preview, source, browser', async () => {
+  it('shows board, judge and files in one strip, the tabs the conversation used in their place, the rest under 更多', async () => {
     show();
     await settle();
-    expect(screen.getAllByRole('tab').map((item) => item.textContent)).toEqual([
-      'Board',
-      'Judge',
-      'Hive',
-      'Lessons',
-      'Files',
-      'Preview',
-      'Source',
-      'Browser',
-    ]);
+    const strip = () => screen.getAllByRole('tab').map((item) => item.textContent);
+    expect(strip()).toEqual(['Board', 'Judge', 'Files']);
     expect(screen.getByRole('tablist')).toHaveAccessibleName(common.workPanel.tabsLabel);
+    fireEvent.click(screen.getByTestId('work-panel-more'));
+    expect(moreTabs()).toEqual(['hive', 'lessons', 'preview', 'source', 'browser']);
+
+    // Opened from there, a tab joins the strip in its order, and stays once the person moves on.
+    fireEvent.click(moreTab('source'));
+    expect(selected()).toHaveTextContent('Source');
+    fireEvent.click(tab('Board'));
+    expect(strip()).toEqual(['Board', 'Judge', 'Files', 'Source']);
+    // So does a tab with news: a page the agent opened.
+    act(() => {
+      openBrowserPage('https://agent.test/', { by: 'agent' });
+    });
+    expect(strip()).toEqual(['Board', 'Judge', 'Files', 'Source', 'Browser']);
+    fromMore('hive');
+    fireEvent.click(tab('Board'));
+    expect(strip()).toEqual(['Board', 'Judge', 'Hive', 'Files', 'Source', 'Browser']);
   });
 
   it('is closed until asked, and then out of the way: no width, nothing to reach inside', async () => {
@@ -360,7 +377,7 @@ describe('the work panel', () => {
     await settle();
     expect(panel()).toHaveAttribute('data-open', 'true');
     expect(selected()).toHaveTextContent('Judge');
-    fireEvent.click(tab('Hive'));
+    fromMore('hive');
     fireEvent.click(screen.getByRole('button', { name: common.workPanel.close }));
 
     act(() => setCurrentConversation('conv-1'));
@@ -530,7 +547,7 @@ describe('the work panel', () => {
     expect(dots()).toEqual([]);
 
     // Elsewhere in the panel, the agent's page is news on the browser only.
-    fireEvent.click(tab('Preview'));
+    fromMore('preview');
     act(() => {
       openBrowserPage('https://agent.test/third', { by: 'agent' });
     });
@@ -609,7 +626,7 @@ describe('the work panel', () => {
     expect(screen.getByTestId('browser-panel')).toHaveAttribute('data-maximized', 'true');
 
     // The preview is not maximized: on its tab the panel is its usual width, and back on the browser it fills again.
-    fireEvent.click(tab('Preview'));
+    fromMore('preview');
     expect(panel()).not.toHaveAttribute('data-maximized');
     fireEvent.click(tab('Browser'));
     expect(panel()).toHaveAttribute('data-maximized', 'true');
@@ -654,7 +671,7 @@ describe('the work panel', () => {
     act(() => {
       dispatchWorkspaceToggleEvent();
     });
-    fireEvent.click(tab('Source'));
+    fromMore('source');
     expect(screen.getByTestId('explorer')).toHaveAttribute('data-view', 'changes');
     // The explorer asks for its files view itself (a search hit revealed): the files tab comes forward.
     fireEvent.click(screen.getByText('reveal in files'));
@@ -684,10 +701,24 @@ describe('the work panel', () => {
     fireEvent.keyDown(tab('Board'), { key: 'ArrowRight' });
     expect(selected()).toHaveTextContent('Judge');
     expect(document.activeElement).toBe(tab('Judge'));
-    fireEvent.keyDown(tab('Judge'), { key: 'End' });
-    expect(selected()).toHaveTextContent('Browser');
+    // Hive and lessons, not used here, wait under 更多: the next tab is files.
+    fireEvent.keyDown(tab('Judge'), { key: 'ArrowRight' });
+    expect(selected()).toHaveTextContent('Files');
+    expect(document.activeElement).toBe(tab('Files'));
+    fireEvent.keyDown(tab('Files'), { key: 'Home' });
+    expect(selected()).toHaveTextContent('Board');
+    fireEvent.keyDown(tab('Board'), { key: 'End' });
+    expect(selected()).toHaveTextContent('Files');
+
+    // A web page the person opened puts the browser in the strip, at its end.
+    act(() => {
+      openBrowserPage('https://person.test/', { by: 'user' });
+    });
     fireEvent.keyDown(tab('Browser'), { key: 'Home' });
     expect(selected()).toHaveTextContent('Board');
+    fireEvent.keyDown(tab('Board'), { key: 'End' });
+    expect(selected()).toHaveTextContent('Browser');
+    expect(document.activeElement).toBe(tab('Browser'));
   });
 
   it('is resized by its handle: live while dragging, remembered when the drag ends, within its bounds', async () => {
@@ -775,7 +806,7 @@ describe('beside a native conversation', () => {
     show();
     await settle();
     openPanel();
-    fireEvent.click(tab('Lessons'));
+    fromMore('lessons');
     await settle();
     expect(wires.folderLessonReads).toEqual(['/work/app']);
     expect(wires.lessonReads).toEqual([]);
@@ -797,7 +828,7 @@ describe('beside a native conversation', () => {
     show();
     await settle();
     openPanel();
-    fireEvent.click(tab('Lessons'));
+    fromMore('lessons');
     await settle();
     expect(screen.getByTestId('kernel-no-lessons')).toHaveTextContent(mu.native.panel.noLessons);
     expect(wires.folderLessonReads).toEqual([]);
@@ -843,7 +874,7 @@ describe('beside a native conversation', () => {
     await settle();
     openPanel();
     expect(wires.gitReads).toEqual([]);
-    fireEvent.click(tab('Source'));
+    fromMore('source');
     await settle();
     expect(screen.getByTestId('native-source')).toHaveAttribute('data-state', 'changes');
     expect(screen.getByTestId('native-source')).toHaveAccessibleName('Changes in app');
@@ -858,7 +889,7 @@ describe('beside a native conversation', () => {
     show();
     await settle();
     openPanel();
-    fireEvent.click(tab('Source'));
+    fromMore('source');
     await settle();
     expect(screen.getByTestId('explorer')).toHaveAttribute('data-view', 'changes');
     expect(screen.queryByTestId('native-source')).not.toBeInTheDocument();

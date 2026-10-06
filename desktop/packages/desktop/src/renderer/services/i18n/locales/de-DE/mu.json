@@ -2,8 +2,6 @@
   "title": "mu-Einstellungen",
   "description": "Alles, was du mu vorgeben kannst: Judges, Entscheidungspunkte, Funktionen, Modelle und Kontext. Gemeinsam mit der mu-Kommandozeile genutzt.",
   "reload": "Neu laden",
-  "search": "Entscheidungen und Funktionen suchen",
-  "noMatch": "Nichts passt zur Suche.",
   "modified": "Geändert",
   "applyNote": "Änderungen gelten für neue Sitzungen. Eine laufende Sitzung behält die Konfiguration, mit der sie gestartet wurde; verbinde sie neu, um die Änderungen zu übernehmen.",
   "apiKey": "API-Schlüssel",
@@ -12,36 +10,31 @@
   "endpointRule": "Verwende HTTPS; HTTP nur für diesen Rechner (127.0.0.1, localhost) oder eine IP-Adresse im privaten Netzwerk (etwa 192.168.1.20). Keine Benutzernamen, Passwörter, Abfrageparameter oder Fragmente in der Adresse.",
   "sections": {
     "judges": "Judges",
-    "judgeTiers": "Judge-Stufen",
+    "judgeOrder": "Reihenfolge der Judges",
     "decisions": "Entscheidungspunkte",
     "features": "Funktionen",
-    "moreFeatures": "Weitere Funktionen",
+    "coreFeatures": "Kernfunktionen",
     "providers": "Anbieter",
     "defaultModel": "Standardmodell",
+    "boardModel": "Klartext-Modell",
     "context": "Kontext"
   },
   "pages": {
-    "decisions": {
-      "input": "Entscheidungspunkte: Eingabe",
+    "details": {
+      "input": "Eingabe-Funktionen",
       "context": "Kontext",
-      "memory": "Entscheidungspunkte: Lektionen",
-      "tools": "Entscheidungspunkte: Tools und Sicherheit",
-      "turn": "Entscheidungspunkte: Runde",
-      "team": "Entscheidungspunkte: Teamarbeit"
-    },
-    "features": {
-      "input": "Weitere Funktionen: Eingabe",
-      "context": "Weitere Funktionen: Kontext",
-      "tools": "Weitere Funktionen: Tools und Sicherheit",
-      "turn": "Weitere Funktionen: Runde",
-      "other": "Weitere Funktionen: Sonstiges"
+      "memory": "Lektionen",
+      "tools": "Tool-Funktionen",
+      "safety": "Sicherheitsfunktionen",
+      "turn": "Runden-Funktionen",
+      "goal": "Ziel und Board",
+      "team": "Teamarbeit-Funktionen",
+      "other": "Weitere Funktionen"
     }
   },
   "modes": {
     "active": "An",
-    "off": "Aus",
-    "activeHelp": "Das Urteil wird angewendet.",
-    "offHelp": "Das Urteil wirkt sich nicht aus: Dieser Schritt läuft wie gewohnt weiter."
+    "off": "Aus"
   },
   "harness": {
     "tooOld": "Diese mu-Version ist zu alt, um ihre Entscheidungspunkte und Funktionen aufzulisten. Aktualisiere mu, um sie hier zu sehen; die Grundeinstellungen funktionieren weiterhin.",
@@ -76,41 +69,27 @@
     }
   },
   "decisions": {
-    "description": "Jede Stelle, an der der Judge gefragt wird. Ein Punkt folgt dem Standardmodus, außer du gibst ihm einen eigenen.",
-    "defaultMode": "Standardmodus",
-    "defaultModeHelp": "Für jeden Entscheidungspunkt ohne eigenen Modus.",
-    "useDefault": "Zurück zum Standard ({{mode}})",
-    "featureOff": "Funktion ist aus: wird nicht gefragt",
-    "groups": {
-      "input": "Eingabe",
-      "context": "Kontext",
-      "memory": "Lektionen",
-      "tools": "Tools und Sicherheit",
-      "turn": "Runde",
-      "team": "Teamarbeit"
-    },
-    "otherGroup": "Sonstiges",
-    "pageLead": "Ein Punkt folgt dem Standardmodus, außer du gibst ihm einen eigenen. Standardmodus und Suche findest du unter „{{page}}“.",
-    "none": "Hier gibt es noch keine Entscheidungspunkte."
+    "useDefault": "Zurück zum Standard ({{mode}})"
   },
   "features": {
     "lead": "Was mu im Hintergrund für dich erledigt. Schaltest du etwas aus, lässt mu es bleiben.",
-    "moreLead": "Alles Weitere, was mu kann, danach geordnet, wo es wirkt. Die Optionen jeder Funktion sind einen Klick entfernt.",
     "beta": "Beta",
     "reset": "Standard wiederherstellen",
-    "boardModelElsewhere": "Das Modell, das das Board schreibt, wählst du unter „Standardmodell“.",
+    "boardModelElsewhere": "Das Modell, das das Board schreibt, wählst du unter „Klartext-Modell“.",
     "options": "Optionen",
     "noOptions": "Sonst gibt es nichts einzustellen: Der Schalter ist alles.",
     "noSuchFeature": "Diese Version von mu hat keine solche Funktion.",
     "none": "Hier gibt es noch keine Funktionen.",
     "part": "Optionen, Seite {{part}} von {{parts}}",
     "previousPart": "Vorherige Seite",
-    "nextPart": "Nächste Seite"
+    "nextPart": "Nächste Seite",
+    "details": "Details"
   },
   "judges": {
     "tiersHelp": "Die Judges werden der Reihe nach gefragt. Ein späterer sieht nur, was die vorherigen offen gelassen haben.",
     "order": "Reihenfolge",
-    "orderHelp": "Der erste ist der Judge, der oben gewählt ist.",
+    "orderHelp": "Der erste ist der Judge, der auf der Seite „Judges“ gewählt ist.",
+    "firstTier": "Der auf der Seite „Judges“ gewählte Judge: Dienst, Adresse und Schlüssel werden dort eingestellt.",
     "tierTitle": "Stufe {{index}}: {{name}}",
     "service": "Dienst",
     "services": {
@@ -170,8 +149,10 @@
       "classifierHelp": "Ein Klassifikationsmodell aus mus Modellkatalog: {{model}}. mu erreicht es mit dem Schlüssel seines Anbieters."
     },
     "intro": "Während mu arbeitet, fallen viele kleine Fragen an: wie es mit dieser Nachricht umgehen soll, ob dieser Schritt gegen eine deiner Vorgaben verstößt. Der Judge beantwortet sie. Wähle einen aus.",
+    "mode": "Urteile wirken",
+    "modeHelp": "An: Die Urteile des Judges wirken. Aus: Jeder Schritt läuft wie gewohnt. Schritte ohne eigene Einstellung folgen dieser.",
     "choose": "Judge wählen",
-    "custom": "Der erste Judge ist gerade ein benutzerdefinierter: Unten unter „Judge-Stufen“ kannst du ihn ansehen und ändern.",
+    "custom": "Der erste Judge ist gerade ein benutzerdefinierter: Auf der Seite „Reihenfolge der Judges“ kannst du ihn ansehen und ändern.",
     "keyPlaceholder": "Schlüssel einfügen",
     "choices": {
       "jev": {
@@ -270,7 +251,7 @@
     "limit": "Kontextgrenze",
     "limitHelp": "0 folgt dem Kontextfenster des Modells abzüglich der Reserve. Sonst {{min}} bis {{max}}. Wird vor der nächsten Modellanfrage geprüft, kein harter Schnitt.",
     "limitProblem": "Gib 0 oder eine ganze Zahl von {{min}} bis {{max}} ein.",
-    "lead": "Wann das Gespräch verdichtet wird, wie groß sein Kontext werden darf, und die Entscheidungspunkte zum Kontext."
+    "lead": "Wann das Gespräch verdichtet wird, wie groß sein Kontext werden darf, und die Funktionen, die auf den Kontext wirken."
   },
   "permissions": {
     "modes": {
@@ -545,7 +526,8 @@
         "openai-completionsHint": "Funktioniert fast überall; die meisten Dienste und Proxys unterstützen es.",
         "openai-responsesHint": "Die neuere API von OpenAI; nur manche Dienste unterstützen sie."
       },
-      "other": "Ein anderer Dienst (Adresse eingeben)"
+      "other": "Ein anderer Dienst (Adresse eingeben)",
+      "ready": "Bereits nutzbar: {{provider}} · {{model}}. Klicke auf „Weiter“ oder wähle unten einen anderen Weg."
     },
     "apiKey": {
       "title": "API-Schlüssel einfügen",
@@ -639,7 +621,11 @@
     },
     "judge": {
       "title": "Judge wählen",
-      "subtitle": "Der Judge beantwortet die kleinen Fragen, die bei der Arbeit von mu anfallen. mu läuft auch ohne Judge, nur eben ohne diese Prüfungen."
+      "subtitle": "Der Judge beantwortet die kleinen Fragen, die bei der Arbeit von mu anfallen. mu läuft auch ohne Judge, nur eben ohne diese Prüfungen.",
+      "readyFree": "Der kostenlose Jev ist bereit. Hier ist nichts zu tun.",
+      "readyKey": "Jev ist bereit, mit dem Schlüssel, den du festgelegt hast.",
+      "more": "Dienst wechseln oder eigenen Schlüssel verwenden",
+      "less": "Ausblenden"
     },
     "done": {
       "title": "Alles bereit",
@@ -650,7 +636,11 @@
       "noKey": "Noch kein Schlüssel: Bis dahin gilt die Standardstrategie",
       "freeJev": "Noch kein Schlüssel: vorerst antwortet Jev kostenlos auf OpenCode Zen (für begrenzte Zeit)",
       "saveFailed": "Speichern fehlgeschlagen: {{reason}}",
-      "modelValue": "{{provider}} / {{model}}"
+      "modelValue": "{{provider}} / {{model}}",
+      "import": "Unterhaltungen",
+      "importOpen": "Auswählen…",
+      "importFound_one": "{{count}} Unterhaltung aus Claude Code oder Codex auf diesem Computer kann mitkommen, um sie hier fortzusetzen",
+      "importFound_other": "{{count}} Unterhaltungen aus Claude Code oder Codex auf diesem Computer können mitkommen, um sie hier fortzusetzen"
     },
     "intro": {
       "title": "Willkommen bei mu",
@@ -763,7 +753,21 @@
     },
     "stopped": "Du hast diese Antwort gestoppt.",
     "answerLost": "mu hat deine Antwort nicht erhalten und so weitergemacht, als hättest du abgelehnt.",
-    "bashMissing": "mu braucht Git for Windows, um Befehle auszuführen. Sobald es installiert ist, sende deine Nachricht erneut. Hier herunterladen:"
+    "bashMissing": "mu braucht Git for Windows, um Befehle auszuführen. Sobald es installiert ist, sende deine Nachricht erneut. Hier herunterladen:",
+    "toModel": {
+      "nudge": "mu hat das Modell daran erinnert, dass diese Runde noch nicht fertig ist",
+      "goal": "Das Ziel ist noch nicht erreicht, also hat mu das Modell weitermachen lassen",
+      "diagnostics": "mu hat dem Modell die Fehler gemeldet, die seine Änderungen hinterlassen haben",
+      "steer": "mu hat das Modell aufgefordert, anders vorzugehen",
+      "rewind": "mu hat die Dateien zurückgesetzt und dem Modell den Grund genannt",
+      "hive": "mu hat dem Modell neue Erkenntnisse aus dem Schwarm weitergegeben",
+      "swarm": "mu hat den Sub-Agenten gebeten, abzuschließen und zu berichten",
+      "ttsr": "mu hat das Modell an eine deiner Regeln erinnert",
+      "other": "mu hat dem Modell eine Erinnerung geschickt",
+      "show": "Gesendeter Text",
+      "hide": "Ausblenden",
+      "imported": "Diese Unterhaltung wurde aus Claude Code oder Codex importiert und geht hier weiter; Denkschritte und Bilder wurden nicht übernommen"
+    }
   },
   "errors": {
     "credential": "Der Schlüssel enthält Zeichen, die ein Schlüssel nicht haben darf, etwa Leerzeichen, Anführungszeichen oder Zeilenumbrüche. Füge ihn erneut ein.",
@@ -948,7 +952,7 @@
       "body": "mu arbeitet in diesem Ordner. Sag, was erledigt werden soll."
     },
     "sider": {
-      "title": "Nativ",
+      "title": "Zuletzt",
       "new": "Neue Unterhaltung in einem Ordner",
       "empty": "Noch keine Unterhaltungen",
       "all": "Alle anzeigen ({{count}})",
@@ -992,6 +996,23 @@
     },
     "attach": {
       "failed": "{{name}} konnte nicht angehängt werden."
+    }
+  },
+  "details": {
+    "lead": "Ein Schalter pro Funktion, ihre Einstellungen unter „Optionen“. Die eingerückten Zeilen sind die Stellen, an denen sie Jev fragt: Schaltest du eine aus, läuft dieser Schritt wie gewohnt.",
+    "featureOff": "Die Funktion ist aus",
+    "askJev": "Jev entscheiden lassen",
+    "askJevAbout": "Jev entscheiden lassen: {{point}}",
+    "areas": {
+      "input": "Eingabe",
+      "context": "Kontext",
+      "memory": "Lektionen",
+      "tools": "Tools",
+      "safety": "Sicherheit",
+      "turn": "Runde",
+      "goal": "Ziel und Board",
+      "team": "Teamarbeit",
+      "other": "Sonstiges"
     }
   }
 }
