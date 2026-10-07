@@ -1,6 +1,6 @@
 {
   "name": "mu-desktop",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "mu, the coding agent with Jev judgment, as a desktop app.",
   "keywords": [],
   "license": "Apache-2.0",
@@ -261,7 +261,7 @@
   "electronRebuild": {
     "electronVersion": "^37.3.1"
   },
-  "muAgentVersion": "0.1.7",
+  "muAgentVersion": "0.1.8",
   "patchedDependencies": {
     "7zip-bin@5.2.0": "patches/7zip-bin@5.2.0.patch"
   },
