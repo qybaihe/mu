@@ -2917,6 +2917,11 @@ async function generateModels() {
 			});
 		}
 
+		// mu: models.dev lists Sonnet 5.5 cache reads at $0.10/MTok; Anthropic bills $0.20, a tenth of input.
+		if (candidate.provider === "anthropic" && candidate.id === "claude-sonnet-5-5") {
+			candidate.cost = { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 2.5 };
+		}
+
 		if (
 			(candidate.provider === "anthropic" ||
 				candidate.provider === "opencode" ||
