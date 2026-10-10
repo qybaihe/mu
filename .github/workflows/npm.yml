@@ -27,10 +27,10 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -58,7 +58,7 @@ jobs:
           ls -l mu-agent-*.tgz
 
       - name: Upload the tarball
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mu-agent-tarball
           path: |
@@ -83,17 +83,17 @@ jobs:
           - { name: Windows on Arm, os: windows-11-arm, node: '24' }
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           sparse-checkout: kyrn/npm
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
 
       - name: Download the tarball
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: mu-agent-tarball
           path: tarball

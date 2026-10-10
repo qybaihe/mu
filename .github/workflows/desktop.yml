@@ -46,10 +46,10 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -64,7 +64,7 @@ jobs:
         run: node kyrn/npm/build.mjs --pack
 
       - name: Upload the tarball
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mu-agent-tarball
           path: .artifacts/npm/mu-agent-*.tgz
@@ -103,10 +103,10 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download mu
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: mu-agent-tarball
           path: ${{ runner.temp }}/mu-agent
@@ -116,7 +116,7 @@ jobs:
         run: echo "MU_HARNESS_TARBALL=$(ls "$RUNNER_TEMP"/mu-agent/mu-agent-*.tgz)" >> "$GITHUB_ENV"
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
 
@@ -126,12 +126,12 @@ jobs:
           bun-version: latest
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
       - name: Cache Electron downloads
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             .cache/electron
@@ -175,7 +175,7 @@ jobs:
 
       - name: Setup MSBuild
         if: startsWith(matrix.platform, 'windows')
-        uses: microsoft/setup-msbuild@v2
+        uses: microsoft/setup-msbuild@v3
         with:
           vs-version: '17.0'
 
@@ -382,7 +382,7 @@ jobs:
       # profile; the files that hold keys (.env, auth.json, models-store.json) stay out all the same.
       - name: Upload the conversation's report and logs
         if: failure() && steps.conversation.outcome == 'failure'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: conversation-${{ matrix.platform }}
           path: |
@@ -423,7 +423,7 @@ jobs:
 
       - name: Upload the native conversation's report and logs
         if: failure() && steps.native.outcome == 'failure'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: native-conversation-${{ matrix.platform }}
           path: |
@@ -470,7 +470,7 @@ jobs:
 
       - name: Upload the installed app's conversation report and logs
         if: failure() && steps.installed.outcome == 'failure'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: conversation-${{ matrix.platform }}-installed
           path: |
@@ -503,7 +503,7 @@ jobs:
 
       - name: Upload the installed app's native conversation report and logs
         if: failure() && steps.installed-native.outcome == 'failure'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: native-conversation-${{ matrix.platform }}-installed
           path: |
@@ -527,7 +527,7 @@ jobs:
 
       # On macOS the disk image and the zip are separate artifacts, so either can be downloaded alone.
       - name: Upload installers
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: desktop-${{ matrix.platform }}
           path: |
@@ -539,7 +539,7 @@ jobs:
 
       - name: Upload the macOS zip
         if: startsWith(matrix.platform, 'macos')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: desktop-${{ matrix.platform }}-zip
           path: desktop/out/*.zip
@@ -549,7 +549,7 @@ jobs:
       # This build's update feed (latest*.yml) and blockmaps, for the release job to merge and attach. An app
       # whose electron-builder.yml writes no feed only warns here; the release job reports the missing feed.
       - name: Upload the update feed
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: update-info-${{ matrix.platform }}
           path: |
@@ -574,15 +574,15 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 24
 
       - name: Download installers
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: desktop-*
           path: dist
@@ -591,7 +591,7 @@ jobs:
       # One folder per build (update-info/update-info-macos-arm64/latest-mac.yml, ...): the macOS and the
       # Windows builds write feeds of the same name.
       - name: Download the update feed
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: update-info-*
           path: update-info
