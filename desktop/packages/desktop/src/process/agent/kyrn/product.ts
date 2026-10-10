@@ -49,7 +49,12 @@ const needsFullAuto = (row: AgentRow): boolean => !row.yolo_id?.trim() || LEGACY
  * a registration holds runs the same launcher by another spelling. On Windows a launcher has several (any case, its 8.3
  * short path, the forwarder written for it: windows/launcherCommand.ts); a plain string is only itself.
  */
-export type OwnCommand = { command: string; sameFile: (registered: string) => boolean };
+export type OwnCommand = {
+  command: string;
+  sameFile: (registered: string) => boolean;
+  /** A missing packaged launcher left by an uninstalled copy of mu. Never a custom command or a live install. */
+  canRestore?: (registered: string) => boolean;
+};
 
 const ownCommand = (own: string | OwnCommand): OwnCommand =>
   typeof own === 'string' ? { command: own, sameFile: (registered) => registered === own } : own;
@@ -61,15 +66,24 @@ const ownCommand = (own: string | OwnCommand): OwnCommand =>
  *
  * A row under our name that runs our launcher by another spelling is ours too: an earlier start may have registered
  * another one (the path with a space, which AionCore cannot start; the short path; a forwarder), and `initializeKyrn`
- * gives it this start's. A row under our name that runs another file stays another mu's: it is never taken over.
+ * gives it this start's. After an uninstall, a single app-owned row whose packaged launcher is gone can be restored
+ * in place. Custom commands, live installations and ambiguous registrations are never taken over.
  */
 export function findRegistration(agents: AgentRow[], own: string | OwnCommand): AgentRow | undefined {
-  const { command, sameFile } = ownCommand(own);
+  const { command, sameFile, canRestore } = ownCommand(own);
   const ours = agents.find((row) => row.command === command);
   if (ours) return ours;
   const namesakes = agents.filter((row) => [AGENT_NAME, ...FORMER_NAMES].includes(row.name));
   const respelled = namesakes.find((row) => row.command !== undefined && sameFile(row.command));
   if (respelled) return respelled;
+  const stale = namesakes.length === 1 ? namesakes[0] : undefined;
+  if (
+    stale?.command &&
+    typeof stale.description === 'string' &&
+    OWN_DESCRIPTIONS.has(stale.description.toLowerCase()) &&
+    canRestore?.(stale.command)
+  )
+    return stale;
   if (namesakes.length > 0) throw new KyrnError('otherRegistration', 'A different mu command is already registered');
   return undefined;
 }
@@ -114,8 +128,8 @@ export function updated(row: AgentRow, command: string): Record<string, unknown>
 
 async function update(request: BackendRequest, before: AgentRow, command: string): Promise<AgentRow> {
   const record = await wholeRecord(request, before);
-  // Without the variables in hand the update would clear them. Keeping an old label costs less than that.
-  if (!record) return before;
+  // Updating a partial record would clear its variables. The caller may tolerate a label-only failure.
+  if (!record) throw new KyrnError('runtimeOffline', 'The backend did not return the complete mu registration');
   const path = `/api/agents/custom/${encodeURIComponent(before.id)}`;
   const saved = await request<AgentRow>('PUT', path, updated(record, command));
   return { ...before, ...saved, id: before.id };
@@ -123,7 +137,7 @@ async function update(request: BackendRequest, before: AgentRow, command: string
 
 /** Make mu the only enabled runtime, in the backend catalog as well as the picker. */
 export async function initializeKyrn(request: BackendRequest, own: string | OwnCommand): Promise<KyrnCatalog> {
-  const { command } = ownCommand(own);
+  const { command, sameFile } = ownCommand(own);
   const agents = await request<AgentRow[]>('GET', '/api/agents/management');
   let agent = findRegistration(agents, own);
   if (agent && (agent.command !== command || agent.name !== AGENT_NAME || needsFullAuto(agent))) {
@@ -131,7 +145,10 @@ export async function initializeKyrn(request: BackendRequest, own: string | OwnC
     // A label or the mode of scheduled runs must not keep the app from starting: the registration works without
     // them, and the next start tries again. The backend probes the agent before it saves, so a refusal is possible.
     // An older spelling of the command is kept the same way: the health check below then says whether it runs.
-    agent = await update(request, before, command).catch(() => before);
+    const restoring = before.command !== undefined && !sameFile(before.command);
+    agent = restoring
+      ? await update(request, before, command)
+      : await update(request, before, command).catch(() => before);
   }
   agent ??= await request<AgentRow>('POST', '/api/agents/custom', {
     name: AGENT_NAME,

@@ -222,6 +222,66 @@ describe('which registered commands run this launcher', () => {
   });
 });
 
+// https://github.com/qybaihe/mu/issues/14: only absent packaged launchers are eligible for restoration.
+describe('restoring an uninstalled launcher', () => {
+  it('recognizes missing Windows launchers, including old short paths, without probing arbitrary commands', async () => {
+    const checked: string[] = [];
+    const existing = 'D:\\other\\resources\\mu\\acp.cmd';
+    const { deps } = machine({ files: { [INSTALLED]: INSTALLED }, short: SHORT });
+    const own = await ownLauncher('C:\\mu\\resources\\mu\\acp.cmd', {
+      ...deps,
+      missing: (file) => {
+        checked.push(file);
+        return file !== existing;
+      },
+    });
+    for (const file of [INSTALLED, SHORT, 'c:/old/RESOURCES/mu/ACP.CMD']) expect(own.canRestore?.(file)).toBe(true);
+    expect(own.canRestore?.(existing)).toBe(false);
+    const before = checked.length;
+    for (const file of [
+      'npx mu-acp',
+      'resources\\mu\\acp.cmd',
+      'C:\\custom\\acp.cmd',
+      '\\\\server\\share\\resources\\mu\\acp.cmd',
+      'C:\\mu\\resources\\mu\\acp.cmd --flag',
+    ])
+      expect(own.canRestore?.(file), file).toBe(false);
+    expect(checked).toHaveLength(before);
+  });
+
+  it('never lets a development checkout restore a packaged registration', async () => {
+    const own = await ownLauncher('/checkout/desktop/scripts/kyrn/acp', {
+      platform: 'linux',
+      missing: () => {
+        throw new Error('must not probe');
+      },
+    });
+    expect(own.canRestore?.('/opt/mu/resources/mu/acp')).toBe(false);
+  });
+
+  it('checks actual file removal on the host platform before allowing restoration', async () => {
+    const platform = process.platform;
+    const root = mkdtempSync(join(tmpdir(), 'mu-reinstall-'));
+    try {
+      const filename = platform === 'win32' ? 'acp.cmd' : 'acp';
+      const old = join(root, 'old', platform === 'darwin' ? 'Resources' : 'resources', 'mu', filename);
+      mkdirSync(join(old, '..'), { recursive: true });
+      writeFileSync(old, '');
+      const current = join(root, 'new', 'resources', 'mu', filename);
+      mkdirSync(join(current, '..'), { recursive: true });
+      writeFileSync(current, '');
+      const own = await ownLauncher(current, { env: { ...process.env, LOCALAPPDATA: join(root, 'local') } });
+      expect(own.canRestore?.(old)).toBe(false);
+      rmSync(old);
+      expect(own.canRestore?.(old)).toBe(true);
+      expect(own.canRestore?.('//server/resources/mu/acp')).toBe(false);
+      expect(own.canRestore?.('/opt/custom/acp')).toBe(false);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('the forwarder', () => {
   it('goes to the user’s own local app data first, then ProgramData, then the public profile', () => {
     expect(forwarderFolders(ENV)).toEqual([

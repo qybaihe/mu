@@ -223,6 +223,7 @@
 /* ---- Startup gate ---- */
 
 .gate {
+  position: relative;
   display: flex;
   height: 100%;
   min-height: 320px;
@@ -233,6 +234,16 @@
   padding: 24px;
   background: var(--bg-1);
   color: var(--text-primary);
+}
+
+.gateTitlebar {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  display: flex;
+  justify-content: flex-end;
+  height: 42px;
+  -webkit-app-region: drag;
 }
 
 .gateTitle {

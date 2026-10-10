@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SettingsStore } from '../../../packages/desktop/src/process/agent/kyrn/settings';
 import {
+  AGENT_DESCRIPTION,
   findRegistration,
   initializeKyrn,
   recheckKyrn,
@@ -399,6 +400,92 @@ describe('mu-only backend catalog', () => {
     };
     return { calls, request };
   }
+
+  // https://github.com/qybaihe/mu/issues/14: uninstalling leaves the backend registration behind.
+  describe('reinstalling into a different folder', () => {
+    const old = 'C:\\old\\resources\\mu\\acp.cmd';
+    const current = 'D:\\mu\\resources\\mu\\acp.cmd';
+    const row = {
+      id: 'k',
+      name: 'mu',
+      command: old,
+      enabled: true,
+      description: AGENT_DESCRIPTION,
+      icon: 'icon.svg',
+      args: ['--flag'],
+      env: [{ name: 'A', value: 'b' }],
+      native_skills_dirs: ['/skills'],
+      behavior_policy: { supports_side_question: true },
+      yolo_id: 'jev',
+    };
+    const installed = () =>
+      ownLauncher(current, {
+        platform: 'win32',
+        env: {},
+        realPath: (file) => (file === current ? current : undefined),
+        missing: (file) => file === old,
+      });
+
+    it('repairs the command in place while retaining settings and assistant associations', async () => {
+      const { calls, request } = backend([row]);
+      const result = await initializeKyrn(request, await installed());
+      expect(result.agentId).toBe('k');
+      expect(result.assistants).toEqual([{ id: 'ak', agent_id: 'k', enabled: true }]);
+      expect(puts(calls)).toEqual([
+        {
+          method: 'PUT',
+          path: '/api/agents/custom/k',
+          body: {
+            name: 'mu',
+            command: current,
+            icon: row.icon,
+            args: row.args,
+            env: row.env,
+            advanced: {
+              description: row.description,
+              native_skills_dirs: row.native_skills_dirs,
+              behavior_policy: row.behavior_policy,
+              yolo_id: 'jev',
+            },
+          },
+        },
+      ]);
+      expect(calls.some((call) => call.path === '/api/agents/custom')).toBe(false);
+    });
+
+    it.each([
+      ['a custom description', [{ ...row, description: 'my own agent' }]],
+      ['no ownership marker', [{ ...row, description: undefined }]],
+      ['multiple namesakes', [row, { ...row, id: 'another' }]],
+    ])('refuses to overwrite %s', async (_what, rows) => {
+      const { calls, request } = backend(rows);
+      await expect(initializeKyrn(request, await installed())).rejects.toMatchObject({ code: 'otherRegistration' });
+      expect(calls).toHaveLength(1);
+    });
+
+    it('does not replace an existing installation', async () => {
+      const { calls, request } = backend([row]);
+      const own = await installed();
+      await expect(initializeKyrn(request, { ...own, canRestore: () => false })).rejects.toMatchObject({
+        code: 'otherRegistration',
+      });
+      expect(calls).toHaveLength(1);
+    });
+
+    it.each([
+      ['reading the full record', { wholeRecords: false }],
+      ['saving the repair', { fail: (call: Call) => call.method === 'PUT' }],
+    ])('stops before changing other agents when %s fails, then allows retry', async (_what, options) => {
+      const own = await installed();
+      const failed = backend([row, { id: 'other', enabled: true }], options);
+      await expect(initializeKyrn(failed.request, own)).rejects.toThrow();
+      expect(failed.calls.some((call) => call.path === '/api/agents/other/enabled')).toBe(false);
+      expect(failed.calls.some((call) => call.path.endsWith('/health-check'))).toBe(false);
+      expect(failed.calls.some((call) => call.path === '/api/agents/custom')).toBe(false);
+      const retry = backend([row]);
+      expect((await initializeKyrn(retry.request, own)).agentId).toBe('k');
+    });
+  });
 
   it('disables other runtimes and assistants before exposing the sole product engine', async () => {
     const { calls, request } = backend([

@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { mkdirSync, realpathSync, writeFileSync } from 'node:fs';
+import { mkdirSync, realpathSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { KyrnError } from '../../../../common/kyrn/errors.ts';
 import type { OwnCommand } from '../product.ts';
@@ -31,6 +31,8 @@ export type LauncherDeps = {
   shortPath: (file: string) => Promise<string | undefined>;
   /** The path as the file system knows it: links followed, every short name long. Undefined when there is none. */
   realPath: (file: string) => string | undefined;
+  /** True only when a path is absent, not when a permission or I/O error prevents reading it. */
+  missing: (file: string) => boolean;
   /** Writes a file, and the folder it is in; false when it cannot be written there. */
   write: (file: string, content: string) => boolean;
 };
@@ -183,6 +185,14 @@ const defaults = (): LauncherDeps => ({
       return undefined;
     }
   },
+  missing: (file) => {
+    try {
+      statSync(file);
+      return false;
+    } catch (error) {
+      return error instanceof Error && 'code' in error && (error.code === 'ENOENT' || error.code === 'ENOTDIR');
+    }
+  },
   write: (file, content) => {
     try {
       mkdirSync(path.dirname(file), { recursive: true });
@@ -202,7 +212,15 @@ const defaults = (): LauncherDeps => ({
  */
 export async function ownLauncher(launcher: string, patch: Partial<LauncherDeps> = {}): Promise<OwnCommand> {
   const deps = { ...defaults(), ...patch };
-  if (deps.platform !== 'win32') return { command: launcher, sameFile: (registered) => registered === launcher };
+  // Only packaged apps restore another packaged install. A development checkout must not adopt its registration.
+  const packaged = (file: string): boolean =>
+    deps.platform === 'win32'
+      ? DRIVE_PATH.test(file) && /\\resources\\mu\\acp\.cmd$/i.test(fold(file))
+      : file.startsWith('/') && !file.startsWith('//') && /\/[Rr]esources\/mu\/acp$/.test(file);
+  const canRestore = (registered: string): boolean =>
+    packaged(launcher) && packaged(registered) && deps.missing(registered);
+  if (deps.platform !== 'win32')
+    return { command: launcher, sameFile: (registered) => registered === launcher, canRestore };
   const real = deps.realPath(launcher) ?? launcher;
   const folders = forwarderFolders(deps.env);
   const asked = WHITESPACE.test(launcher) ? await deps.shortPath(launcher) : undefined;
@@ -220,10 +238,10 @@ export async function ownLauncher(launcher: string, patch: Partial<LauncherDeps>
     realPath: deps.realPath,
   });
   const plan = planCommand({ launcher, real, short, folders });
-  if ('use' in plan) return { command: plan.use, sameFile };
+  if ('use' in plan) return { command: plan.use, sameFile, canRestore };
   if ('forward' in plan) {
     const written = plan.forward.files.find((file) => deps.write(file, plan.forward.content));
-    if (written) return { command: written, sameFile };
+    if (written) return { command: written, sameFile, canRestore };
   }
   const why =
     'fail' in plan ? plan.fail : `${launcher} has spaces and no short name, and no forwarder could be written`;
