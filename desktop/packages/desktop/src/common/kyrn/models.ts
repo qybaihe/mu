@@ -198,8 +198,8 @@ export const RESERVED_PROVIDER_IDS: ReadonlySet<string> = new Set(
   (
     'amazon-bedrock ant-ling anthropic azure-openai-responses baseten cerebras cloudflare-ai-gateway ' +
     'cloudflare-workers-ai deepseek fireworks github-copilot google-vertex google groq huggingface kimi-coding ' +
-    'minimax-cn minimax mistral moonshotai-cn moonshotai nvidia openai-codex openai opencode-go opencode openrouter ' +
-    'qwen-token-plan-cn qwen-token-plan-individual qwen-token-plan radius together vercel-ai-gateway xai ' +
+    'minimax-cn minimax mistral moonshotai-cn moonshotai nebius nvidia openai-codex openai opencode-go opencode ' +
+    'openrouter qwen-token-plan-cn qwen-token-plan-individual qwen-token-plan radius together vercel-ai-gateway xai ' +
     'xiaomi-token-plan-ams xiaomi-token-plan-cn xiaomi-token-plan-sgp xiaomi zai-coding-cn zai llama-cpp'
   ).split(' ')
 );
@@ -231,6 +231,7 @@ export const BUILTIN_PROVIDER_NAMES: Readonly<Record<string, string>> = {
   mistral: 'Mistral',
   'moonshotai-cn': 'Moonshot AI CN',
   moonshotai: 'Moonshot AI',
+  nebius: 'Nebius Token Factory',
   nvidia: 'NVIDIA',
   'openai-codex': 'OpenAI Codex',
   openai: 'OpenAI',
