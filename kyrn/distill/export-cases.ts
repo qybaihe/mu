@@ -3,7 +3,10 @@
  * exactly as a logprob judge asks them (packages/kyrn-judge/src/providers/logprob.ts). A teacher labels these, and a
  * small judge is trained on them, so what it learns and what it is later asked are the same prompts.
  *
- *   node kyrn/distill/export-cases.ts <transcripts.jsonl> <cases.jsonl> [--seed 7]
+ *   node kyrn/distill/export-cases.ts <transcripts.jsonl> <cases.jsonl> [--seed 7] [--points a,b]
+ *
+ * --points keeps only those decision points, e.g. `--points input.preflight,memory.capture` for mu's own sessions:
+ * a benchmark transcript's one templated task says nothing about how people open a turn.
  *
  * A transcript is one JSON object per line: {id, source, repo?, resolved?, messages}, the messages in OpenAI chat
  * shape (user / assistant with tool_calls {id, name, arguments} / tool with tool_call_id), as written by
@@ -16,12 +19,16 @@
  * - turn.completion: where the run could end after an edit that nothing has run since (completion.ts).
  * - turn.continue: where the run could end on a message of the assistant (continuation.ts).
  * - tool.risk: shell commands the rules flag (guard.ts, permissions.ts).
+ * - input.preflight: each message of the person (preflight.ts); the task frame stands in as the first message.
+ * - memory.capture: each message of the person that follows a reply of the assistant (memory.ts).
  * "Could end" is any assistant message with text: a transcript only shows where its agent went on, so each such
  * message is also a place a model could have stopped, which is when mu asks.
  */
 import { createReadStream, createWriteStream } from "node:fs";
 import { createInterface } from "node:readline";
 import type { DecisionSpec } from "../../packages/kyrn-judge/src/decision.ts";
+import { inputPreflight } from "../../packages/kyrn-judge/src/decisions/input-preflight.ts";
+import { memoryCapture } from "../../packages/kyrn-judge/src/decisions/memory.ts";
 import { toolAdmission } from "../../packages/kyrn-judge/src/decisions/tool-admission.ts";
 import { toolRisk } from "../../packages/kyrn-judge/src/decisions/tool-risk.ts";
 import { turnCompletion } from "../../packages/kyrn-judge/src/decisions/turn-completion.ts";
@@ -29,7 +36,7 @@ import { turnContinue } from "../../packages/kyrn-judge/src/decisions/turn-conti
 import { turnDrift } from "../../packages/kyrn-judge/src/decisions/turn-drift.ts";
 import { chunkLines, describeCall } from "../../packages/kyrn-judge/src/extension/features/admission.ts";
 import { riskFlag } from "../../packages/kyrn-judge/src/extension/features/guard.ts";
-import { clip } from "../../packages/kyrn-judge/src/extension/runtime.ts";
+import { clip, userWords as withoutHostPreamble } from "../../packages/kyrn-judge/src/extension/runtime.ts";
 import { renderLabeledPrompt } from "../../packages/kyrn-judge/src/providers/logprob.ts";
 import type { JsonValue, Questions } from "../../packages/kyrn-judge/src/types.ts";
 
@@ -44,6 +51,8 @@ interface TranscriptMessage {
 	content: string;
 	tool_calls?: ToolCall[];
 	tool_call_id?: string;
+	/** Set by converters of sessions that record it (mu's own); otherwise read off the output. */
+	is_error?: boolean;
 }
 
 interface Transcript {
@@ -55,7 +64,16 @@ interface Transcript {
 }
 
 /** At most this many cases of each point per transcript, so long runs do not dominate. */
-const CAPS = { admissionOutputs: 2, admissionChunks: 4, drift: 4, completion: 2, continue: 3, risk: 3 };
+const CAPS = {
+	admissionOutputs: 2,
+	admissionChunks: 4,
+	drift: 4,
+	completion: 2,
+	continue: 3,
+	risk: 3,
+	preflight: 6,
+	capture: 6,
+};
 /** The runtime's own settings (admission.ts, monitor.ts). */
 const ADMISSION = { judgeMinChars: 6000, chunkChars: 1200, maxChunks: 48 };
 const MONITOR = { every: 6, window: 8 };
@@ -63,10 +81,10 @@ const MONITOR = { every: 6, window: 8 };
 /** Messages a harness sends to keep its agent going are not the person's words, as mu's own nudges are not. */
 const HARNESS_NUDGE = /^Please continue working on the task/;
 
-/** The task as a person would put it: OpenHands wraps the issue in a long template. */
+/** The task as a person would put it: OpenHands wraps the issue in a long template, mu's desktop app adds its rules. */
 function userWords(text: string, repo: string | undefined): string {
 	const issue = /<issue_description>\s*([\s\S]*?)\s*<\/issue_description>/.exec(text)?.[1];
-	if (!issue) return text;
+	if (!issue) return withoutHostPreamble(text);
 	return repo ? `In ${repo}, resolve this issue:\n\n${issue}` : `Resolve this issue:\n\n${issue}`;
 }
 
@@ -164,7 +182,12 @@ function replay(transcript: Transcript, seed: string): Case[] {
 	if (!firstUser) return [];
 	let userMessage = userWords(firstUser.content, transcript.repo);
 	const goal = clip(userMessage, 600);
+	const firstWords = userMessage;
 	const pending = new Map<string, { tool: string; input: Record<string, unknown> }>();
+	let userTurns = 0;
+	let toolResults = 0;
+	let lastAssistantText = "";
+	const said: string[] = [];
 	const actions: string[] = [];
 	const edited = new Set<string>();
 	let ranAfterEdit = false;
@@ -175,16 +198,38 @@ function replay(transcript: Transcript, seed: string): Case[] {
 	const completions: { finalMessage: string; editedFiles: number; ranCommandAfterLastEdit: boolean }[] = [];
 	const continues: string[] = [];
 	const risks: { command: string; flag: string; userMessage: string }[] = [];
+	const preflights: Parameters<typeof inputPreflight.buildState>[0][] = [];
+	const captures: Parameters<typeof memoryCapture.buildState>[0][] = [];
 
 	for (const [index, message] of transcript.messages.entries()) {
 		if (message.role === "user") {
-			if (index > 0 && !HARNESS_NUDGE.test(message.content)) userMessage = message.content;
+			if (HARNESS_NUDGE.test(message.content)) continue;
+			const words = index > 0 ? userWords(message.content, transcript.repo) : firstWords;
+			userMessage = words;
+			userTurns++;
+			// A slash command stands for what it does, which a transcript does not say: mu asks about its description.
+			if (!words.trimStart().startsWith("/")) {
+				preflights.push({
+					userMessage: words,
+					// recentTurnDigests: the last 4 messages of either side with text, before this one.
+					recentTurns: said.slice(-4),
+					// The frame's first version is the first message; later ones come from a writer model a transcript lacks.
+					taskFrame: userTurns > 1 ? { goal: clip(firstWords, 300) } : undefined,
+					sessionHasWork: toolResults > 0,
+				});
+				if (lastAssistantText) {
+					captures.push({ userMessage: clip(words, 400), previousAssistantMessage: clip(lastAssistantText, 400) });
+				}
+			}
+			said.push(`user: ${clip(words, 240)}`);
 			continue;
 		}
 		if (message.role === "assistant") {
 			const finish = message.tool_calls?.find((call) => call.name === "finish");
 			const text = (finish ? String(finish.arguments.message ?? "") : "") || message.content;
 			if (text.trim()) {
+				lastAssistantText = text;
+				said.push(`assistant: ${clip(text, 240)}`);
 				continues.push(text);
 				if (edited.size > 0 && !ranAfterEdit) {
 					completions.push({
@@ -209,7 +254,8 @@ function replay(transcript: Transcript, seed: string): Case[] {
 		const call = pending.get(message.tool_call_id ?? "");
 		if (!call) continue;
 		const output = message.content;
-		const isError = failed(call.tool, output);
+		const isError = message.is_error ?? failed(call.tool, output);
+		toolResults++;
 		const described = describeCall(call.tool, call.input);
 		actions.push(`${described} -> ${isError ? "error" : "ok"}`);
 		if (!isError && (call.tool === "edit" || call.tool === "write")) {
@@ -253,6 +299,12 @@ function replay(transcript: Transcript, seed: string): Case[] {
 			...casesFor(turnContinue, { userMessage: clip(userMessage, 400), finalMessage }, group(turnContinue.id, n), transcript, facts),
 		);
 	}
+	for (const [n, input] of sample(preflights, CAPS.preflight, next).entries()) {
+		cases.push(...casesFor(inputPreflight, input, group(inputPreflight.id, n), transcript, facts));
+	}
+	for (const [n, input] of sample(captures, CAPS.capture, next).entries()) {
+		cases.push(...casesFor(memoryCapture, input, group(memoryCapture.id, n), transcript, facts));
+	}
 	for (const [n, risk] of sample(risks, CAPS.risk, next).entries()) {
 		cases.push(
 			...casesFor(
@@ -270,11 +322,13 @@ function replay(transcript: Transcript, seed: string): Case[] {
 async function main(): Promise<void> {
 	const [input, output, ...rest] = process.argv.slice(2);
 	if (!input || !output) {
-		console.error("usage: node kyrn/distill/export-cases.ts <transcripts.jsonl> <cases.jsonl> [--seed 7]");
+		console.error("usage: node kyrn/distill/export-cases.ts <transcripts.jsonl> <cases.jsonl> [--seed 7] [--points a,b]");
 		process.exit(2);
 	}
 	const seedFlag = rest.indexOf("--seed");
 	const seed = seedFlag >= 0 ? (rest[seedFlag + 1] ?? "7") : "7";
+	const pointsFlag = rest.indexOf("--points");
+	const points = pointsFlag >= 0 ? new Set((rest[pointsFlag + 1] ?? "").split(",")) : undefined;
 	const out = createWriteStream(output);
 	const counts = new Map<string, number>();
 	let transcripts = 0;
@@ -282,6 +336,7 @@ async function main(): Promise<void> {
 		if (!line.trim()) continue;
 		transcripts++;
 		for (const item of replay(JSON.parse(line) as Transcript, seed)) {
+			if (points && !points.has(item.spec)) continue;
 			counts.set(item.spec, (counts.get(item.spec) ?? 0) + 1);
 			if (!out.write(`${JSON.stringify(item)}\n`)) await new Promise<void>((resolve) => out.once("drain", () => resolve()));
 		}
