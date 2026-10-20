@@ -70,6 +70,8 @@ Judges and modes:
 
 Keys for Jev, each used only by the service it belongs to ([Judges](judges.md#hosted-jev)): `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`, `MU_JUDGE_CLM_API_KEY`.
 
+`TAVILY_API_KEY` turns on [Tavily](https://tavily.com) for the web tools: `web_search` asks Tavily first and falls back to `features.web.search` and the built-in sources (on a bad key, a rate or plan limit, or a server error), and `web_fetch` asks Tavily's extract for a public page it could not reach or read itself. The key is read at each call, sent only to `api.tavily.com`, and never shown in results.
+
 The launcher:
 
 | Variable | Effect |

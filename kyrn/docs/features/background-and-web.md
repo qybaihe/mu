@@ -78,6 +78,14 @@ pi 故意不做后台 shell，mu 补上。三个工具：
 
 360 的结果偏中文社区（CSDN、掘金、博客园），英文技术查询很少出现 Stack Overflow、MDN、GitHub。这是现在的真实质量，不是解析问题。
 
+### Tavily（有密钥时）
+
+设置了环境变量 `TAVILY_API_KEY`（也可以写在 `.env` 里）时，`web_search` 先问 Tavily（`POST https://api.tavily.com/search`，`Authorization: Bearer <key>`，`search_depth: "basic"`），上面这些源作为后备：401（密钥无效）、429（限流）、432（套餐额度用完）、5xx 都记为 HTTP 错误，接着问下一个源。`features.web.search` 设为 `tavily` 而没有密钥时，记一条“TAVILY_API_KEY is not set”并改用内置源；设为 `tavily` 且 `searchFallback: false` 时只问 Tavily。Tavily 的结果不做诱饵检查（有密钥的 API 不会给机器人返回诱饵，而且中文查询可能得到切题的英文结果）。
+
+`web_fetch` 在本机读不到（超时、连接被重置等网络错误）或读不出（403、429、451、5xx，或页面要跑脚本才有文字）时，若有密钥，改用 Tavily 的 `/extract`（`extract_depth: "basic"`，`format: "markdown"`）读同一个网址，结果第一行写明“read through Tavily”。被地址策略拒绝的网址、localhost、内网字面地址、用户中断，以及开了 `allowPrivate` 时，一律不交给 Tavily。
+
+密钥每次调用时从环境读取，只放在请求头里，不出现在结果、展示事件或错误信息中（传输错误里若带了密钥会先替换掉）。
+
 ### 选项（`features.web`）
 
 `search` "so" · `searchFallback` true · `maxChars` 20000 · `timeoutMs` 20000 · `maxBytes` 2000000 · `maxRedirects` 5 · `allowLoopback` true · `allowPrivate` false。

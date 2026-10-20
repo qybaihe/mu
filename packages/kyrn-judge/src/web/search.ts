@@ -12,6 +12,11 @@ import { decodeEntities, type ElementNode, elementText, findElements, parseHtml 
  * default is `so`, and because any engine can start doing what Bing does, the
  * results are checked against the query: a page of results that share no word
  * with it is treated like a robot page, and the next source is tried.
+ *
+ * An API that wants more than one GET (Tavily, `tavily.ts`) brings its own
+ * `request`. Its results are not checked for decoys: a keyed API does not
+ * answer robots with them, and its results may share no word with the query
+ * (English pages for a Chinese query) and still be the right ones.
  */
 export interface SearchResult {
 	readonly title: string;
@@ -25,6 +30,8 @@ export interface SearchSource {
 	readonly own?: boolean;
 	url(query: string, count: number): string;
 	parse(body: string): SearchResult[];
+	/** Asks the source itself instead of a GET of `url`, and answers like that GET would: the body is read with `parse`. */
+	request?(query: string, count: number, signal: AbortSignal | undefined): Promise<SearchPage>;
 }
 
 const hasClass = (node: ElementNode, name: string): boolean => (node.attrs.class ?? "").split(/\s+/).includes(name);
@@ -156,11 +163,11 @@ export function parseSogou(body: string): SearchResult[] {
 	);
 }
 
-/** SearXNG's JSON, or for an unknown engine every heading that is a link, with the text that follows it. */
-export function parseGeneric(body: string, base: string): SearchResult[] {
+/** `{"results": [{title, url, content}]}`, which SearXNG and Tavily both answer with. Undefined for anything else. */
+export function parseResultsJson(body: string, base: string): SearchResult[] | undefined {
 	try {
-		const data = JSON.parse(body) as { results?: { title?: unknown; url?: unknown; content?: unknown }[] };
-		if (Array.isArray(data.results)) {
+		const data = JSON.parse(body) as { results?: { title?: unknown; url?: unknown; content?: unknown }[] } | null;
+		if (Array.isArray(data?.results)) {
 			return tidy(
 				data.results.map((entry) => ({
 					title: String(entry.title ?? ""),
@@ -171,8 +178,15 @@ export function parseGeneric(body: string, base: string): SearchResult[] {
 			);
 		}
 	} catch {
-		/* Not JSON: read it as a page. */
+		/* Not JSON. */
 	}
+	return undefined;
+}
+
+/** SearXNG's JSON, or for an unknown engine every heading that is a link, with the text that follows it. */
+export function parseGeneric(body: string, base: string): SearchResult[] {
+	const json = parseResultsJson(body, base);
+	if (json) return json;
 	const root = parseHtml(body);
 	const holders = findElements(
 		root,
@@ -298,6 +312,8 @@ export async function searchWeb(
 		sources: readonly SearchSource[];
 		count: number;
 		get: (url: string, source: SearchSource) => Promise<SearchPage>;
+		/** Passed to a source's own `request`; `get` brings its own. */
+		signal?: AbortSignal;
 	},
 ): Promise<SearchOutcome> {
 	const problems: string[] = [];
@@ -309,7 +325,9 @@ export async function searchWeb(
 	for (const source of options.sources) {
 		let page: SearchPage;
 		try {
-			page = await options.get(source.url(query, options.count), source);
+			page = source.request
+				? await source.request(query, options.count, options.signal)
+				: await options.get(source.url(query, options.count), source);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			passOver(`${source.id}: ${message}`, "source_failed", { source: source.id, message });
@@ -322,7 +340,8 @@ export async function searchWeb(
 			/* A parser that chokes has found nothing. */
 		}
 		if (results.length === 0) {
-			if (looksLikeRobotPage(page.url, page.body))
+			// An API's error body is JSON that may echo the query, and the query may say "captcha".
+			if (!source.request && looksLikeRobotPage(page.url, page.body))
 				passOver(
 					`${source.id} answered with a verification page: it takes this client for a robot`,
 					"source_robot_page",
@@ -341,7 +360,7 @@ export async function searchWeb(
 				);
 			continue;
 		}
-		if (!related(query, results)) {
+		if (!source.request && !related(query, results)) {
 			passOver(
 				`${source.id} returned results that have nothing to do with the query, as engines do for clients they take for robots`,
 				"source_unrelated",
