@@ -3,6 +3,7 @@ import { join } from "node:path";
 import type { JudgeProfile } from "./cascade.ts";
 import type { DecisionMode } from "./decision.ts";
 import { CONFIG_FILE, LEGACY_CONFIG_FILE, muEnv } from "./naming.ts";
+import type { JsonValue } from "./types.ts";
 
 /**
  * How one judge is reached. The decision points never see this: they ask
@@ -15,6 +16,8 @@ import { CONFIG_FILE, LEGACY_CONFIG_FILE, muEnv } from "./naming.ts";
  * - `llm`:     a generative model from the host's model registry, prompted to answer as JSON.
  * - `classifier`: a classifier model from the host's model catalog (Jev on OpenCode Zen or Cloudflare, Clef, the
  *              System One models on OpenRouter, a llama.cpp classifier), reached with the host's own credentials.
+ * - `logprob`: a chat model behind an OpenAI-compatible API (Nemotron on Nebius Token Factory, a vLLM server), its
+ *              probabilities read off the first answer token.
  * - `mock`:    neutral answers, for tests and offline work.
  */
 export interface JudgeConfig {
@@ -26,16 +29,18 @@ export interface JudgeConfig {
 	 * System One at `baseUrl` (TypeSafe's own, OpenRouter's, a relay's), `gateway` through the Vercel AI Gateway.
 	 * `clm` is CLM-8B (github.com/Contrastive-LM/CLM) at the address of a `clm-serve`, which speaks System One too.
 	 */
-	readonly type: "jev" | "typesafe" | "clm" | "gateway" | "local" | "http" | "llm" | "classifier" | "mock";
+	readonly type: "jev" | "typesafe" | "clm" | "gateway" | "local" | "http" | "llm" | "classifier" | "logprob" | "mock";
 	/**
 	 * jev, typesafe, gateway: judge model id. clm: a model the server serves, default "clm-latest". llm and
 	 * classifier: "provider/model-id", e.g. "opencode/jev-1.13" or "cloudflare-workers-ai/@cf/cloudflare/clef".
+	 * logprob: the model id the API takes, e.g. "nvidia/Nemotron-3_5-Lightning".
 	 */
 	readonly model?: string;
 	/**
-	 * gateway, local, http, clm, and the System One route (`typesafe`, or `jev` when a TypeSafe key is set).
+	 * gateway, local, http, clm, logprob, and the System One route (`typesafe`, or `jev` when a TypeSafe key is set).
 	 * For System One this is the endpoint URL; empty uses TypeSafe's own. For clm, the server's address
-	 * (`http://host:8700` is enough); empty is http://127.0.0.1:8700.
+	 * (`http://host:8700` is enough); empty is http://127.0.0.1:8700. For logprob, the OpenAI-compatible base URL
+	 * (`…/v1`).
 	 */
 	readonly baseUrl?: string;
 	/** http: request path, default "/evaluate". */
@@ -50,6 +55,8 @@ export interface JudgeConfig {
 	readonly apiKeyEnv?: string;
 	/** llm: thinking level for the judge model, default "off". */
 	readonly thinking?: string;
+	/** logprob: extra request fields, e.g. `{"chat_template_kwargs": {"enable_thinking": false}}`. */
+	readonly body?: Readonly<Record<string, JsonValue>>;
 	readonly timeoutMs?: number;
 	readonly profile?: JudgeProfile;
 }
@@ -99,6 +106,15 @@ export const BUILT_IN_JUDGES: Readonly<Record<string, JudgeConfig>> = {
 	"clef-flash": { type: "classifier", model: "cloudflare-workers-ai/@cf/cloudflare/clef-flash" },
 	// CLM-8B on this machine, where `clm-serve` listens by default. Its profile is not measured on mu's questions yet.
 	clm: { type: "clm" },
+	// NVIDIA Nemotron on Nebius Token Factory (NEBIUS_API_KEY), with thinking off so the first token is the answer.
+	// Not measured on mu's questions yet.
+	nemotron: {
+		type: "logprob",
+		baseUrl: "https://api.tokenfactory.nebius.com/v1",
+		model: "nvidia/Nemotron-3_5-Lightning",
+		apiKeyEnv: "NEBIUS_API_KEY",
+		body: { chat_template_kwargs: { enable_thinking: false } },
+	},
 	// Measured in kyrn/docs/03-local-judge.md: the base checkpoint classifies one text well, says "yes" to
 	// nearly every relational question, and cannot use a rubric or judge the request itself.
 	laya: { type: "local", profile: { capabilities: { relate: false, rate: false, meta: false } } },
@@ -125,6 +141,7 @@ const JUDGE_TYPES: readonly string[] = [
 	"http",
 	"llm",
 	"classifier",
+	"logprob",
 	"mock",
 ] satisfies JudgeConfig["type"][];
 
