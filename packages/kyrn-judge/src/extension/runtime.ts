@@ -211,6 +211,12 @@ export class KyrnRuntime {
 	 * sidecar answers one at a time, and there the work of a turn is best asked in order of importance.
 	 */
 	readonly judgeParallel: boolean;
+	/**
+	 * True when the configured judge answers many questions about one state in one request (Jev and its kin), so
+	 * chunks of one output are best asked together. A logprob judge sends each question as its own request with the
+	 * state in front: there a batch state would be sent once per question, and each chunk is asked alone instead.
+	 */
+	readonly judgeBatches: boolean;
 	private latestCtx: ExtensionContext | undefined;
 	private firstUserMessage = "";
 	private turnStartListeners: ((words: string) => void)[] = [];
@@ -226,7 +232,9 @@ export class KyrnRuntime {
 		this.pi = pi;
 		this.config = config;
 		if (problem) this.problems.push(problem);
-		this.judgeParallel = resolveJudgeConfig(config.tiers[0] ?? "", config)?.type !== "local";
+		const firstJudge = resolveJudgeConfig(config.tiers[0] ?? "", config)?.type;
+		this.judgeParallel = firstJudge !== "local";
+		this.judgeBatches = firstJudge !== "local" && firstJudge !== "logprob";
 		const sessionLedger: LedgerSink = {
 			append: (record: LedgerRecord) => {
 				pi.appendEntry(LEDGER_ENTRY_TYPE, record);
