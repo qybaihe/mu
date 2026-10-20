@@ -54,6 +54,7 @@ import { registerPacks } from "./features/packs.ts";
 import { registerPermissions } from "./features/permissions.ts";
 import { registerPreflight } from "./features/preflight.ts";
 import { registerProcedures } from "./features/procedures.ts";
+import { registerSandbox, type SandboxDeps } from "./features/sandbox.ts";
 import { registerSkills } from "./features/skills.ts";
 import { registerSwarm, type SwarmRunner } from "./features/swarm.ts";
 import { registerSwarmChild } from "./features/swarm-child.ts";
@@ -92,6 +93,8 @@ export interface KyrnJudgeExtensionOptions {
 	roots?: HarnessRoots;
 	/** For tests of the checkpoint feature: how git is run. */
 	checkpoint?: CheckpointDeps;
+	/** For tests of the sandbox feature: the HTTP client, the environment and how the project is packed. */
+	sandbox?: SandboxDeps;
 }
 
 export type FeatureName =
@@ -128,6 +131,7 @@ export type FeatureName =
 	| "inherit"
 	| "mcp"
 	| "background"
+	| "sandbox"
 	| "web"
 	| "packs"
 	| "googleLogin";
@@ -232,6 +236,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["inherit", (shared) => registerInherit(shared, roots)],
 		["mcp", (shared) => registerMcp(shared, roots)],
 		["background", registerBackground],
+		// Replaces bash, read, write and edit when switched on; off by default.
+		["sandbox", (shared) => registerSandbox(shared, options.sandbox)],
 		["web", registerWeb],
 		["packs", registerPacks],
 		["googleLogin", registerGoogleLogin],

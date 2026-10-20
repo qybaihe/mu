@@ -425,7 +425,7 @@ On by default: yes.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `search` | `so` | Search source. so (360), sogou, bing-cn, searxng:<base url>, or a URL with {query} in it. |
+| `search` | `so` | Search source. so (360), sogou, bing-cn, tavily, searxng:<base url>, or a URL with {query} in it. With TAVILY_API_KEY set in the environment, Tavily is asked first and this source is the fallback. |
 | `searchFallback` | `true` | Try the other built-in sources on failure. Applies to a verification page, no results, or results unrelated to the query. |
 | `maxChars` | `20000` chars | Most that one web_fetch returns. |
 | `timeoutMs` | `20000` ms | Time limit of one request. |
@@ -505,3 +505,20 @@ On by default: yes.
 | --- | --- | --- |
 | `geminiCli` | `true` | Gemini CLI sign-in. The Gemini models, on the free tier for a personal account or on a Code Assist licence. |
 | `antigravity` | `true` | Antigravity sign-in. Gemini, Claude and GPT-OSS; once signed in, the list follows what the account can use. |
+
+## sandbox
+
+**Nebius sandbox (experimental).** bash, read, write and edit run in a Nebius Token Factory sandbox VM instead of on this machine: the project is copied in at the start, and every command continues from the files the previous one left. Changes come back here only through /sandbox pull, after you have seen the diff and agreed. Needs NEBIUS_API_KEY and NEBIUS_PROJECT_ID; MU_SANDBOX=nebius also turns it on.
+
+On by default: no.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `image` | `tag:ubuntu:latest` | Base image. An image UUID, tag:<name>, or docker://<reference> (imported on first use). Needs bash and tar; pulling needs git, which apt-get or apk installs when missing. |
+| `baseUrl` | `https://api.tokenfactory.nebius.com/sandboxes/v1` | API address. |
+| `workdir` | `/workspace` | Project folder in the sandbox. |
+| `shell` | `/bin/bash` | Shell commands run in. |
+| `timeoutS` | `600` s | Time limit of a command that sets none. |
+| `seedTimeoutS` | `900` s | Time limit of copying the project in. |
+| `maxSeedMB` | `100` MB | Largest project copied in. |
+| `outputBytes` | `1048576` bytes | Output kept per command. For stdout and for stderr each, at most 10 MiB. Range 1024 to 10485760. |
