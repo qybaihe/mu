@@ -2,11 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 /**
- * The Node.js runtime that the bundled backend (aioncore) keeps for the agents and tools that run on Node (npx
+ * The Node.js runtime that the bundled backend keeps for the agents and tools that run on Node (npx
  * agents, MCP servers). Nothing is downloaded without the person's consent, and this is the large first-start
  * download:
  *
- * - A packaged app ships the runtime in `resources/bundled-aioncore/<platform>-<arch>/managed-resources/` (prepared
+ * - A packaged app ships the runtime in `resources/bundled-backend/<platform>-<arch>/managed-resources/` (prepared
  *   when the app is built) and starts the backend with `--managed-resources-mode bundled`, which copies it from there
  *   and never downloads. Nothing to ask.
  * - An unpackaged build starts the backend in its default download mode, which fetches the archive from nodejs.org
@@ -15,10 +15,10 @@ import path from 'node:path';
  *   fetched.
  */
 
-/** The runtime aioncore v0.2.2 installs: `MANAGED_NODE_VERSION` in AionCore's runtime crate (`node_runtime/managed.rs`). */
+/** The runtime the backend (v0.2.2) installs: `MANAGED_NODE_VERSION` in the backend's runtime crate (`node_runtime/managed.rs`). */
 export const MANAGED_NODE_VERSION = '24.11.0';
 
-/** The archive aioncore fetches on each platform, with its size on nodejs.org in bytes (checked 2026-09-23). */
+/** The archive the backend fetches on each platform, with its size on nodejs.org in bytes (checked 2026-09-23). */
 const ARCHIVES: Readonly<Record<string, { folder: string; bytes: number }>> = {
   'darwin-arm64': { folder: 'darwin-arm64', bytes: 51_168_984 },
   'darwin-x64': { folder: 'darwin-x64', bytes: 52_344_343 },
@@ -30,14 +30,14 @@ const ARCHIVES: Readonly<Record<string, { folder: string; bytes: number }>> = {
 
 export type ManagedNodeRuntime = {
   version: string;
-  /** Where aioncore keeps it: `<data>/runtime/node/node-v<version>-<platform>`. */
+  /** Where the backend keeps it: `<data>/runtime/node/node-v<version>-<platform>`. */
   dir: string;
   /** The archive's size in bytes. */
   bytes: number;
   url: string;
 };
 
-/** The runtime aioncore installs on this platform, or undefined on a platform it does not manage. */
+/** The runtime the backend installs on this platform, or undefined on a platform it does not manage. */
 export function managedNodeRuntime(
   dataDir: string,
   platform: NodeJS.Platform,
@@ -54,7 +54,7 @@ export function managedNodeRuntime(
   };
 }
 
-/** Whether the runtime's `node` is in place. aioncore checks the rest when it starts. */
+/** Whether the runtime's `node` is in place. The backend checks the rest when it starts. */
 export function hasManagedNodeRuntime(
   runtime: ManagedNodeRuntime,
   platform: NodeJS.Platform,
@@ -77,7 +77,7 @@ export async function planNodeRuntime(options: {
   isE2E: boolean;
   /** `MU_NODE_RUNTIME`: `download` or `later` answers without a dialog (scripts and tests); `ask` asks even there. */
   preset: string | undefined;
-  /** Undefined on a platform aioncore does not manage: it fails there without downloading. */
+  /** Undefined on a platform the backend does not manage: it fails there without downloading. */
   runtime: ManagedNodeRuntime | undefined;
   installed: boolean;
   ask: (runtime: ManagedNodeRuntime) => Promise<NodeRuntimeChoice>;

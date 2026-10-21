@@ -1,6 +1,6 @@
 /**
  * The home page's send while the native host is on (docs/native-host-ui.md): the message starts a conversation on the
- * native host, with no AionCore in its path, and the page opens it once pi took the message. The home page lists mu's
+ * native host, with no backend in its path, and the page opens it once pi took the message. The home page lists mu's
  * assistants only (initializeKyrn keeps mu's), so every send is mu's; the folder, the permission mode picked on the
  * page, the model the pill picked and the thinking level, when one was picked, go with it. A send that cannot start
  * one says why, in the native screens' words, and keeps what was typed. GuidPage uses useGuidSend instead while the

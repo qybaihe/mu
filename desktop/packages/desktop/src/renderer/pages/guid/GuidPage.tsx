@@ -287,7 +287,7 @@ const GuidPage: React.FC = () => {
     t,
     localeKey,
   });
-  // While the native host is on, the page starts a conversation on it instead: pi inside the app, no AionCore.
+  // While the native host is on, the page starts a conversation on it instead: pi inside the app, no backend.
   const nativeHost = useNativeEnabled() === true;
   // The thinking level the person picked on this page: the native start sends only that, never the level the pill shows
   // by default. A model picked after it clears it (a level belongs to its model).

@@ -16,7 +16,7 @@ import {
   type LauncherDeps,
 } from '../../../../packages/desktop/src/process/agent/kyrn/windows/launcherCommand.ts';
 
-// Issue #4: the installer's default folder, C:\Program Files\mu. AionCore started the launcher as `C:\Program`.
+// Issue #4: the installer's default folder, C:\Program Files\mu. The backend started the launcher as `C:\Program`.
 const INSTALLED = 'C:\\Program Files\\mu\\resources\\mu\\acp.cmd';
 const SHORT = 'C:\\PROGRA~1\\mu\\resources\\mu\\acp.cmd';
 const ENV: NodeJS.ProcessEnv = {
@@ -357,7 +357,7 @@ describe.runIf(process.platform === 'win32')('on Windows', () => {
     writeFileSync(launcher, ['@echo off', 'echo %*> "%~dp0args.txt"', 'exit /b 7', ''].join('\r\n'));
     return { root, launcher };
   }
-  /** Runs a command the way AionCore runs a .cmd: `cmd /d /c <command> <args>`. */
+  /** Runs a command the way the backend runs a .cmd: `cmd /d /c <command> <args>`. */
   const run = (command: string, args: string[]) =>
     spawnSync(process.env.ComSpec || 'cmd.exe', ['/d', '/c', command, ...args], {
       encoding: 'utf8',

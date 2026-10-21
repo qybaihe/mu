@@ -33,7 +33,7 @@ export const useBuiltinAgentModelSelection = ({
 
   const { providers: allProviders, getAvailableModels, formatModelLabel } = useModelProviderList();
 
-  // AionCore does not support Google Auth — filter it out
+  // The backend does not support Google Auth — filter it out
   const providers = useMemo(
     () => allProviders.filter((p) => !p.platform?.toLowerCase().includes('gemini-with-google-auth')),
     [allProviders]

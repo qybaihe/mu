@@ -4,7 +4,7 @@ import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 /**
- * A click on a system notification opens the conversation it came from: the AionCore conversation's page, or the
+ * A click on a system notification opens the conversation it came from: the backend conversation's page, or the
  * native page for a native conversation (`native: true` on the click).
  */
 
@@ -43,7 +43,7 @@ const shown = () => {
 };
 
 describe('a click on a notification', () => {
-  it('opens an AionCore conversation by its page', () => {
+  it('opens a backend conversation by its page', () => {
     shown();
     act(() => clicked?.({ conversation_id: 'c1' }));
     expect(screen.getByTestId('where')).toHaveTextContent('/conversation/c1');

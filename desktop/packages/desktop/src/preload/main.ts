@@ -40,7 +40,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openLogFolder: () => ipcRenderer.invoke('backend:open-log-folder'),
 });
 
-// Synchronously fetch the aioncore port and expose it to the renderer
+// Synchronously fetch the backend port and expose it to the renderer
 // via contextBridge (direct window assignment is invisible under contextIsolation).
 const backendPort = ipcRenderer.sendSync('get-backend-port') as number;
 const initialLanguage = ipcRenderer.sendSync('get-initial-language') as string | null;

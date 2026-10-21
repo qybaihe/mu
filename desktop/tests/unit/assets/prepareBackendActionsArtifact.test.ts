@@ -6,8 +6,8 @@ import { delimiter, dirname, join } from 'node:path';
 const {
   getActionsArtifactName,
   getActionsArtifactMissingMessage,
-  prepareAioncore,
-} = require('../../../packages/shared-scripts/src/prepare-aioncore');
+  prepareBackend,
+} = require('../../../packages/shared-scripts/src/prepare-backend');
 
 const posixFakeToolchainIt = process.platform === 'win32' ? it.skip : it;
 
@@ -99,11 +99,11 @@ chmod +x "$out/aioncore"
 afterEach(() => {
   delete process.env.MU_BACKEND_RUN_ID;
   delete process.env.MU_BACKEND_LOCAL_BINARY;
-  rmSync(join(tmpdir(), 'aioncore-prepare', 'v0.1.46'), { recursive: true, force: true });
-  rmSync(join(tmpdir(), 'aioncore-prepare-actions', '123'), { recursive: true, force: true });
+  rmSync(join(tmpdir(), 'backend-prepare', 'v0.1.46'), { recursive: true, force: true });
+  rmSync(join(tmpdir(), 'backend-prepare-actions', '123'), { recursive: true, force: true });
 });
 
-describe('prepare-aioncore GitHub Actions artifact resolver', () => {
+describe('prepare-backend GitHub Actions artifact resolver', () => {
   it.each([
     ['win32', 'x64', 'aioncore-manual-windows-x64'],
     ['win32', 'arm64', 'aioncore-manual-windows-arm64'],
@@ -115,7 +115,7 @@ describe('prepare-aioncore GitHub Actions artifact resolver', () => {
     expect(getActionsArtifactName(platform, arch)).toBe(artifactName);
   });
 
-  it('explains which AionCore manual artifact is missing for the requested platform', () => {
+  it('explains which manual build artifact is missing for the requested platform', () => {
     expect(
       getActionsArtifactMissingMessage({
         runId: '27319522909',
@@ -126,14 +126,14 @@ describe('prepare-aioncore GitHub Actions artifact resolver', () => {
       })
     ).toBe(
       [
-        'AionCore run 27319522909 does not contain artifact [ aioncore-manual-windows-x64 ] required for [ win32-x64 ].',
+        'Actions run 27319522909 does not contain artifact [ aioncore-manual-windows-x64 ] required for [ win32-x64 ].',
         'Available artifacts: aioncore-manual-macos-arm64, aioncore-manual-linux-x64.',
         'Re-run AionCore Manual Build with platform [ windows-x64 ] or all.',
       ].join(' ')
     );
   });
 
-  // These cases execute a temporary POSIX shell-script aioncore binary. Windows
+  // These cases run a temporary POSIX shell script as the backend binary. Windows
   // coverage for contract rejection lives in the verifier/local-bundle tests.
   posixFakeToolchainIt('hard fails Actions artifact input when prepared managed resources lack contract', () => {
     const tmp = mkdtempSync(join(tmpdir(), 'mu-actions-gate-'));
@@ -144,7 +144,7 @@ describe('prepare-aioncore GitHub Actions artifact resolver', () => {
 
     try {
       expect(() =>
-        prepareAioncore({
+        prepareBackend({
           projectRoot: join(tmp, 'project'),
           platform: 'linux',
           arch: 'x64',
@@ -166,7 +166,7 @@ describe('prepare-aioncore GitHub Actions artifact resolver', () => {
 
     try {
       expect(() =>
-        prepareAioncore({
+        prepareBackend({
           projectRoot: join(tmp, 'project'),
           platform: 'linux',
           arch: 'x64',
@@ -191,7 +191,7 @@ describe('prepare-aioncore GitHub Actions artifact resolver', () => {
 
     try {
       expect(() =>
-        prepareAioncore({
+        prepareBackend({
           projectRoot: join(tmp, 'project'),
           platform: 'linux',
           arch: 'x64',

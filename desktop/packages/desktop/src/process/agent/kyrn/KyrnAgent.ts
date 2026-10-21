@@ -574,7 +574,7 @@ export class KyrnAgent implements Agent {
       // A switch typed in the conversation, or made by the send box: the picker follows either way.
       if (session.opened && before !== modes.mode) {
         this.announce(id, session);
-        // AionCore sets the mode it last saw whenever it reopens a conversation; one that was never switched would
+        // The backend sets the mode it last saw whenever it reopens a conversation; one that was never switched would
         // otherwise come back in mu's current default, and that set would then switch it (and save it as mu's default).
         try {
           if (session.file) this.save(id, session);

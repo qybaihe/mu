@@ -260,7 +260,7 @@ describe('PermissionRequestPanel', () => {
   });
 
   it('drops the buttons and says so when the question no longer waits for an answer', async () => {
-    // What AionCore answers once the agent's question is gone, as the backend bridge raises it.
+    // What the backend answers once the agent's question is gone, as the backend bridge raises it.
     const gone = new BackendHttpError({
       method: 'POST',
       path: '/api/conversations/c/confirmations/permission%3Aui-1/confirm',

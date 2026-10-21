@@ -1,14 +1,14 @@
 import { inspect } from 'node:util';
 
 /**
- * The adapter's error output: AionCore logs it (each line under "CLI process stderr" in the app's log folder). It is a
+ * The adapter's error output: the backend logs it (each line under "CLI process stderr" in the app's log folder). It is a
  * log, nothing more: writing to it never throws and never ends the adapter.
  */
 
 let guarded = false;
 
 /**
- * Writes to the adapter's error output. AionCore stops reading that output at the first line that is not UTF-8 and
+ * Writes to the adapter's error output. The backend stops reading that output at the first line that is not UTF-8 and
  * closes it, and a write after that fails (EPIPE) with an error event that, unheard, would end the adapter.
  */
 export function log(line: string): void {

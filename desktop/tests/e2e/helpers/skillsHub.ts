@@ -16,7 +16,7 @@ export { invokeBridge };
  * All skills-related helpers drive the backend over HTTP (see `./httpBridge.ts`),
  * matching the renderer's post-migration call pattern (`ipcBridge.fs.*.invoke()` →
  * `fetch('/api/skills/*')`). Routes are defined in `src/common/adapter/ipcBridge.ts`
- * (lines ~317-363) and backed by AionCore's extension crate (`skill_routes.rs`).
+ * (lines ~317-363) and backed by the backend's extension crate (`skill_routes.rs`).
  */
 
 // ============================================================================

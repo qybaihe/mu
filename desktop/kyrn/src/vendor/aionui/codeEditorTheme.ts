@@ -2,7 +2,7 @@
  * @license
  * Copyright 2025 AionUi (aionui.com)
  * SPDX-License-Identifier: Apache-2.0
- * KYRN adaptation: standalone theme prop, no AionCore or settings bridge.
+ * KYRN adaptation: standalone theme prop, no backend or settings bridge.
  */
 
 import type { Extension } from '@codemirror/state';

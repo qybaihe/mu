@@ -508,7 +508,7 @@ const MessageList: React.FC<{
   const pagination = useMessagePaginationState();
   const artifacts = useConversationArtifacts();
   const conversationContext = useConversationContextSafe();
-  // A native conversation's list: its host says whether a run goes, and AionCore has no pages of it.
+  // A native conversation's list: its host says whether a run goes, and the backend has no pages of it.
   const run = useMessageListRun();
   const conversationId = run ? run.conversationId : conversationContext?.conversation_id;
   const rowWidthClass = getChatSurfaceWidthClass();

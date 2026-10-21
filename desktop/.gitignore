@@ -196,7 +196,7 @@ worktrees/
 .superpowers/
 docs/superpowers/
 resources/bundled-bun
-resources/bundled-aioncore
+resources/bundled-backend
 resources/harness
 resources/hub
 /resources/windows/support/_sentry-dsn.generated.nsh

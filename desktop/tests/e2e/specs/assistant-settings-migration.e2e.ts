@@ -83,7 +83,7 @@ function resolveBackendBinary(): string {
     }
   }
 
-  throw new Error('aioncore binary not found for migration e2e');
+  throw new Error('The backend binary not found for migration e2e');
 }
 
 function schemaPath(): string {

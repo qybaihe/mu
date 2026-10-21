@@ -1,6 +1,6 @@
 /**
  * The files tab of a native conversation: the folder it works in, as a tree read through the main process one
- * directory at a time (common/kyrn/folderBridge.ts). A native conversation has no AionCore project, so the project
+ * directory at a time (common/kyrn/folderBridge.ts). A native conversation has no backend project, so the project
  * explorer cannot show it. The tree is read when the tab comes into view, after every run of the conversation
  * (`refresh` changes) and when asked; a file opens in the preview, as a file named in a message does. The source
  * control view is the folder's repository, read with git by the main process (`NativeSource`).

@@ -10,7 +10,7 @@ function normalize(relativePath) {
 }
 
 function bundledPath(runtimeKey, ...parts) {
-  return normalize(path.join('bundled-aioncore', runtimeKey, ...parts));
+  return normalize(path.join('bundled-backend', runtimeKey, ...parts));
 }
 
 function isFile(filePath) {
@@ -326,9 +326,9 @@ function requireContractDirectory(baseDir, runtimeKey, cli, root, relativePath, 
   }
 }
 
-function verifyBundledAioncoreResources({ resourcesDir, electronPlatformName, targetArch }) {
+function verifyBundledBackendResources({ resourcesDir, electronPlatformName, targetArch }) {
   const runtimeKey = `${electronPlatformName}-${targetArch}`;
-  const baseDir = path.join(resourcesDir, 'bundled-aioncore', runtimeKey);
+  const baseDir = path.join(resourcesDir, 'bundled-backend', runtimeKey);
   const checked = [];
   const missing = [];
   const failures = [];
@@ -345,5 +345,5 @@ function verifyBundledAioncoreResources({ resourcesDir, electronPlatformName, ta
 }
 
 module.exports = {
-  verifyBundledAioncoreResources,
+  verifyBundledBackendResources,
 };

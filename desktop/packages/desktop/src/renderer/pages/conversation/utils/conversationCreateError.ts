@@ -31,7 +31,7 @@ const TEAM_BACKEND_ERROR_CODE_MAP: Record<string, TeamAssistantCreateErrorCode> 
   TEAM_ASSISTANT_FIELD_UNSUPPORTED: 'TEAM_ASSISTANT_FIELD_UNSUPPORTED',
 };
 
-// Temporary fallback for older AionCore builds that still return BAD_REQUEST
+// Temporary fallback for older backend builds that still return BAD_REQUEST
 // plus a human-readable message. Remove after the dedicated backend code has
 // shipped everywhere we support.
 const LEGACY_BACKEND_MESSAGE_PATTERNS: Array<{

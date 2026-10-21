@@ -8,7 +8,7 @@
  * IPC Bridge → HTTP/WS adapter.
  *
  * This file replaces the original IPC bridge calls with HTTP REST and WebSocket
- * calls routed to aioncore. Electron-native operations (window controls,
+ * calls routed to the backend. Electron-native operations (window controls,
  * native dialogs, auto-update, devtools, zoom, CDP, deep links) remain as IPC.
  */
 
@@ -1566,7 +1566,7 @@ export type INotificationOptions = {
   body: string;
   icon?: string;
   conversation_id?: string;
-  /** The conversation is a native one (its page is not an AionCore conversation's): a click opens that page. */
+  /** The conversation is a native one (its page is not a backend conversation's): a click opens that page. */
   native?: boolean;
 };
 
@@ -2272,7 +2272,7 @@ export const sidebar = {
         if (p.limit) params.set('limit', String(p.limit));
         for (const w of p.win ?? []) params.append('win', w);
         // Flip the read to the archive slice. The archived page reuses this same
-        // grouped read model — only the backend `archived_at` predicate changes.
+        // grouped read model — only the backend's `archived_at` predicate changes.
         if (p.archived) params.set('archived', 'true');
         const qs = params.toString();
         return `/api/sidebar${qs ? `?${qs}` : ''}`;

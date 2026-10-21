@@ -53,7 +53,7 @@ export const BUILTIN_BROWSER_MCP_NAME = BUILTIN_MCP_SERVER_NAMES.browser;
 export const FILES_MARKER = '[[AION_FILES]]';
 
 // ===== 跨会话消息相关常量 =====
-// 必须与 AionCore 的 common crate（constants.rs）中的值逐字一致。
+// 必须与后端的 common crate（constants.rs）中的值逐字一致。
 
 /** 发送侧：用户用 `@@` 引用其他会话后，后端追加到消息末尾的块 */
 export const SESSIONS_MARKER = '[[AION_SESSIONS]]';

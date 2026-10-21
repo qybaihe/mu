@@ -1,6 +1,6 @@
 /**
  * HTTP/WS bridge factory — drop-in replacement for bridge.buildProvider / bridge.buildEmitter
- * that routes calls to aioncore via REST API and WebSocket.
+ * that routes calls to the backend via REST API and WebSocket.
  *
  * Exported helpers produce objects with the same shape as the local IPC bridge,
  * so existing renderer code works without changes.
@@ -88,7 +88,7 @@ function getWsUrl(): string {
 export class BackendHttpError extends Error {
   readonly status: number;
   /**
-   * Machine-readable error code from the backend `ErrorResponse.code` by the app's name (`fromBackendCode`), or `''`
+   * Machine-readable error code from the backend's `ErrorResponse.code` by the app's name (`fromBackendCode`), or `''`
    * when parse failed.
    */
   readonly code: string;

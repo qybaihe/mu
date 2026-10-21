@@ -23,7 +23,7 @@ const conversation = (id: string, extra: TChatConversation['extra'], modified_at
 describe('buildGroupedHistory', () => {
   it('keeps scheduled-task conversations in the regular conversation timeline', () => {
     const result = buildGroupedHistory(
-      [conversation('cron-conversation', { backend: 'aioncore', cron_job_id: 'job-1' }, 100)],
+      [conversation('cron-conversation', { backend: 'claude', cron_job_id: 'job-1' }, 100)],
       t
     );
 
@@ -41,7 +41,7 @@ describe('buildGroupedHistory', () => {
         conversation(
           'cron-project-conversation',
           {
-            backend: 'aioncore',
+            backend: 'claude',
             cron_job_id: 'job-1',
             workspace: '/repo/mu',
             custom_workspace: true,
@@ -65,7 +65,7 @@ describe('buildGroupedHistory', () => {
 
   it('continues to hide team-owned conversations from the regular history', () => {
     const result = buildGroupedHistory(
-      [conversation('team-conversation', { backend: 'aioncore', team_id: 'team-1' }, 100)],
+      [conversation('team-conversation', { backend: 'claude', team_id: 'team-1' }, 100)],
       t
     );
 

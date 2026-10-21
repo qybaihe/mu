@@ -1,7 +1,7 @@
 /**
  * The native host in the app: pi running in an Electron utility process of its own, one per session, speaking pi's
  * RPC protocol with the main process (docs/native-host.md). On by default; MU_NATIVE_HOST=0 turns it off, and a mu too
- * old to run inside the app keeps the app on AionCore and the ACP adapter (`nativeHostReady`).
+ * old to run inside the app keeps the app on the backend and the ACP adapter (`nativeHostReady`).
  */
 import { homedir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
@@ -15,7 +15,7 @@ export { NativeHost, NativeHostError } from './NativeHost.ts';
 export type { HostLaunch, NativeHostErrorKind, NativeHostState } from './NativeHost.ts';
 
 /**
- * What MU_NATIVE_HOST says. `off` (0, false, off, no) is the kill switch: conversations run on AionCore as before.
+ * What MU_NATIVE_HOST says. `off` (0, false, off, no) is the kill switch: conversations run on the backend as before.
  * `on` (1, true, on, yes) forces the native host, whatever mu is found: a mu too old for it then fails where it is
  * used, which is what a developer wants to see. Anything else (unset) is `auto`: native when this machine's mu can run
  * inside the app, else the classic path without a word.
@@ -77,7 +77,7 @@ export type NativeHostReadyOptions = {
 /**
  * Whether the app runs conversations on the native host: not when MU_NATIVE_HOST=0, always when it is 1, and when it
  * is left alone only if the mu found on this machine can run inside the app (`checkHost`: its launcher has the
- * native host's functions and accepts a plan). An app whose mu is older keeps every conversation on AionCore, with
+ * native host's functions and accepts a plan). An app whose mu is older keeps every conversation on the backend, with
  * a line in the log saying why, instead of failing each one.
  */
 export async function nativeHostReady(options: NativeHostReadyOptions = {}): Promise<boolean> {

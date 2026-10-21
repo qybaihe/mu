@@ -1,7 +1,7 @@
 name: Windows permission check
 
 # mu's permission round trip on Windows, headless, as the desktop app runs it: the desktop's ACP adapter started the
-# way AionCore starts it (desktop/scripts/kyrn/acp.cmd through `cmd /d /c`), the harness from this checkout over RPC,
+# way the backend starts it (desktop/scripts/kyrn/acp.cmd through `cmd /d /c`), the harness from this checkout over RPC,
 # a stub model (a local OpenAI-style endpoint) and the mock judge. It answers mu's question as the app does (allow
 # once, don't allow, an answer that is none of the choices) and checks the conversation still works afterwards, on the
 # same adapter process. No key, no real model. The steps are desktop/scripts/kyrn/start-check/check.mjs.

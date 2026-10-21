@@ -2,7 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { join } from 'node:path';
 import { BACKEND_DATABASE_FILE } from '../../../common/platform/backendNames';
 
-/** AionCore v0.2.2 stores the resume anchor outside conversation.extra.
+/** The backend (v0.2.2) stores the resume anchor outside conversation.extra.
  * Read only that binding; the backend remains the sole database writer.
  */
 export function sessionBinding(dataDir: string, conversationId: string, agentId: string): string {

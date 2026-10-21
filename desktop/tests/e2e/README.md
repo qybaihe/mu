@@ -251,7 +251,7 @@ The fake model (`fakeModel.mjs`, Node's http only) answers by a marker in the la
 `node tests/e2e/mu-conversation/fakeModel.mjs --port 8765` runs it alone.
 
 Needs, for the checkout's build: the harness checkout beside this one (`../KYRN`) or `MU_ROOT`; the AionCore binary
-in `resources/bundled-aioncore/<platform>-<arch>/` (or `MU_BACKEND_BIN`); a Node 22.19 or newer on `PATH` or in
+in `resources/bundled-backend/<platform>-<arch>/` (or `MU_BACKEND_BIN`); a Node 22.19 or newer on `PATH` or in
 nvm (or `MU_E2E_NODE`); an Electron executable: `MU_E2E_ELECTRON`, else `ELECTRON_EXEC_PATH`, else the checkout's
 `electron` package, else `kyrn/node_modules/electron` (the one `scripts/kyrn/start` uses; a worktree looks in its main
 checkout too). A checkout installed without install scripts has no Electron in its `electron` package: the test then

@@ -1,6 +1,6 @@
 /**
  * A native conversation's view (common/utils/nativeHost/view.ts) as the rows the conversation's message list shows
- * (`TMessage`, the rows AionCore stores for a conversation), so the list and its row components are the ones every
+ * (`TMessage`, the rows the backend stores for a conversation), so the list and its row components are the ones every
  * conversation uses. Each row is shaped as the mu bridge's rows are (process/agent/kyrn/events.ts, KyrnAgent.ts):
  *
  * - the person's messages and mu's text as `text` rows (with the images the person sent as themselves), mu's thinking

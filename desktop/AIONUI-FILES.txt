@@ -1104,8 +1104,8 @@ packages/desktop/src/renderer/utils/workspace/workspaceEvents.ts
 packages/desktop/src/renderer/utils/workspace/workspaceHistory.ts
 packages/desktop/src/types.d.ts
 packages/shared-scripts/package.json
-packages/shared-scripts/src/prepare-aioncore.js
-packages/shared-scripts/src/verify-bundled-aioncore-resources.js
+packages/shared-scripts/src/prepare-backend.js
+packages/shared-scripts/src/verify-bundled-backend-resources.js
 packages/web-host/README.md
 packages/web-host/package.json
 packages/web-host/src/agent-process-registry.test.ts
@@ -1147,7 +1147,7 @@ resources/windows/installer-remove-registry.nsh
 resources/windows/installer-repair-heal.nsh
 resources/windows/installer-update-verify.nsh
 resources/windows/support/query-lockers.ps1
-resources/windows/support/verify-bundled-aioncore-install.ps1
+resources/windows/support/verify-bundled-backend-install.ps1
 resources/windows/windows-installer-arm64.nsh
 resources/windows/windows-installer-x64.nsh
 scripts/README.md
@@ -1165,10 +1165,10 @@ scripts/dev-bootstrap.mjs
 scripts/generate-i18n-types.js
 scripts/packaged-launch.mjs
 scripts/postinstall.js
-scripts/prepareAioncore.js
+scripts/prepareBackend.js
 scripts/prepareHubResources.js
 scripts/rebuildNativeModules.js
-scripts/resolveAioncoreVersion.js
+scripts/resolveBackendVersion.js
 scripts/run-benchmarks.ts
 scripts/smoke-installer-failure-messagebox.js
 scripts/smoke-installer-rstrtmgr-ui.js
@@ -1319,10 +1319,10 @@ tests/unit/acpConfigOptions.test.ts
 tests/unit/adapter/httpBridgeRefresh.dom.test.ts
 tests/unit/adapter/sessionRefresh.dom.test.ts
 tests/unit/assets/agentLogo.test.ts
-tests/unit/assets/prepareAioncoreActionsArtifact.test.ts
-tests/unit/assets/prepareAioncoreLocalBundle.test.ts
-tests/unit/assets/verifyBundledAioncoreInstallScript.test.ts
-tests/unit/assets/verifyBundledAioncoreResources.test.ts
+tests/unit/assets/prepareBackendActionsArtifact.test.ts
+tests/unit/assets/prepareBackendLocalBundle.test.ts
+tests/unit/assets/verifyBundledBackendInstallScript.test.ts
+tests/unit/assets/verifyBundledBackendResources.test.ts
 tests/unit/assistants/AssistantEditorSections.dom.test.tsx
 tests/unit/assistants/DeleteAssistantModal.dom.test.tsx
 tests/unit/assistants/SkillConfirmModals.dom.test.tsx

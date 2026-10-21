@@ -123,20 +123,20 @@ export function findHarnessSource(desktopRoot) {
   );
 }
 
-/** The AionCore binary: MU_BACKEND_BIN, the bundled one in this checkout or the main one, or `aioncore` on PATH. */
+/** The backend binary: MU_BACKEND_BIN, the bundled one in this checkout or the main one, or `aioncore` on PATH. */
 export function findBackend(desktopRoot) {
   if (process.env.MU_BACKEND_BIN) return resolve(process.env.MU_BACKEND_BIN);
   const name = process.platform === 'win32' ? 'aioncore.exe' : 'aioncore';
   const key = `${process.platform}-${process.arch}`;
   for (const root of [desktopRoot, mainCheckout(desktopRoot)]) {
-    const candidate = join(root, 'resources', 'bundled-aioncore', key, name);
+    const candidate = join(root, 'resources', 'bundled-backend', key, name);
     if (existsSync(candidate)) return candidate;
   }
   for (const dir of (process.env.PATH ?? '').split(delimiter).filter(Boolean)) {
     if (existsSync(join(dir, name))) return join(dir, name);
   }
   throw new Error(
-    'No aioncore binary found. Set MU_BACKEND_BIN, or put it in resources/bundled-aioncore/<platform>-<arch>/.'
+    'No backend binary found. Set MU_BACKEND_BIN, or put it in resources/bundled-backend/<platform>-<arch>/.'
   );
 }
 

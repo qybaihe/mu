@@ -78,7 +78,7 @@ export type PaletteSources = {
   now: number;
 };
 
-/** A conversation the palette can list: an AionCore one, or one on the native host (with its folder and page). */
+/** A conversation the palette can list: a backend one, or one on the native host (with its folder and page). */
 type Listed = { id: string; label: string; time: number; folder?: string; path?: string };
 
 const conversationRows = (

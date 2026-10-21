@@ -16,9 +16,9 @@ describe('classifyBackendStartupFailure — transient concurrent startup', () =>
       details: {
         backendBoundaryCode: 'BOOTSTRAP_PEER_ALREADY_RUNNING',
         backendBoundaryStage: 'instance_guard.acquire',
-        causeMessage: 'another aioncore already owns this data directory',
+        causeMessage: 'another the backend already owns this data directory',
       },
-      message: 'aioncore exited before health check passed',
+      message: 'The backend exited before health check passed',
       name: 'BackendStartupError',
     });
 
@@ -36,7 +36,7 @@ describe('classifyBackendStartupFailure — transient concurrent startup', () =>
         backendBoundaryStage: 'router.assistant.bootstrap.concurrency_contended',
         causeMessage: 'assistant storage bootstrap contended under concurrent startup',
       },
-      message: 'aioncore exited before health check passed',
+      message: 'The backend exited before health check passed',
       name: 'BackendStartupError',
     });
 
@@ -59,7 +59,7 @@ describe('classifyBackendStartupFailure — transient concurrent startup', () =>
         backendBoundaryStage: 'router.assistant.bootstrap',
         causeMessage: 'failed to bootstrap assistant storage',
       },
-      message: 'aioncore exited before health check passed',
+      message: 'The backend exited before health check passed',
       name: 'BackendStartupError',
     });
 
@@ -83,7 +83,7 @@ describe('classifyBackendStartupFailure — genuine data damage still severe', (
         stderrTail:
           'Failed to hydrate agent registry: Internal error: load agent_metadata: Database query failed: error occurred while decoding column "config_options": invalid utf-8 sequence of 1 bytes from index 793',
       },
-      message: 'aioncore exited before health check passed',
+      message: 'The backend exited before health check passed',
       name: 'BackendStartupError',
     });
 
@@ -104,7 +104,7 @@ describe('classifyBackendStartupFailure — genuine data damage still severe', (
         stderrTail:
           'BOOTSTRAP_DATA_INIT_FAILED stage=database.recoverable_corruption databasePath=/db/aionui-backend.db: failed to initialize application data',
       },
-      message: 'aioncore exited before health check passed',
+      message: 'The backend exited before health check passed',
       name: 'BackendStartupError',
     });
 
@@ -129,7 +129,7 @@ describe('classifyBackendStartupFailure — database newer than app (downgrade)'
         stderrTail:
           'BOOTSTRAP_DATA_INIT_FAILED stage=database.newer_than_app databasePath=/db/aionui-backend.db dbMigrationVersion=39 appMigrationVersion=37: failed to initialize application data',
       },
-      message: 'aioncore exited before health check passed',
+      message: 'The backend exited before health check passed',
       name: 'BackendStartupError',
     });
 
@@ -149,7 +149,7 @@ describe('classifyBackendStartupFailure — database newer than app (downgrade)'
         stderrTail:
           'BOOTSTRAP_DATA_INIT_FAILED stage=database.migration databasePath=/db/aionui-backend.db: failed to initialize application data',
       },
-      message: 'aioncore exited before health check passed',
+      message: 'The backend exited before health check passed',
       name: 'BackendStartupError',
     });
 
@@ -166,7 +166,7 @@ describe('classifyBackendStartupFailure — database newer than app (downgrade)'
         backendBoundaryCode: 'BOOTSTRAP_SERVICE_INIT_FAILED',
         backendBoundaryStage: 'database.newer_than_app',
       },
-      message: 'aioncore exited before health check passed',
+      message: 'The backend exited before health check passed',
       name: 'BackendStartupError',
     });
 
@@ -187,7 +187,7 @@ describe('classifyBackendStartupFailure — slow startup / exited', () => {
         serverListeningObserved: true,
         healthTimeoutKeptAlive: true,
       },
-      message: 'aioncore failed to start within timeout',
+      message: 'The backend failed to start within timeout',
       name: 'BackendStartupError',
     });
 
@@ -202,7 +202,7 @@ describe('classifyBackendStartupFailure — slow startup / exited', () => {
         stage: 'early_exit',
         serverListeningObserved: true,
       },
-      message: 'aioncore exited before health check passed',
+      message: 'The backend exited before health check passed',
       name: 'BackendStartupError',
     });
 
@@ -217,7 +217,7 @@ describe('classifyBackendStartupFailure — slow startup / exited', () => {
         stage: 'early_exit',
         serverListeningObserved: true,
       },
-      message: 'aioncore exited after startup health timeout',
+      message: 'The backend exited after startup health timeout',
       name: 'BackendStartupError',
     });
 
@@ -232,7 +232,7 @@ describe('classifyBackendStartupFailure — slow startup / exited', () => {
         stage: 'early_exit',
         serverListeningObserved: false,
       },
-      message: 'aioncore exited before health check passed',
+      message: 'The backend exited before health check passed',
       name: 'BackendStartupError',
     });
 
@@ -248,7 +248,7 @@ describe('classifyBackendStartupFailure — slow startup / exited', () => {
         serverListeningObserved: true,
         // healthTimeoutKeptAlive absent: the process was killed, not kept pending.
       },
-      message: 'aioncore failed to start within timeout',
+      message: 'The backend failed to start within timeout',
       name: 'BackendStartupError',
     });
 
@@ -263,7 +263,7 @@ describe('classifyBackendStartupFailure — slow startup / exited', () => {
         isPackaged: true,
         resourcesDirEntries: ['app.asar', 'app.asar.unpacked/', 'hub/', 'pwa/'],
       },
-      message: 'aioncore startup failed while resolving backend binary',
+      message: 'Backend startup failed while resolving backend binary',
       name: 'BackendStartupError',
     });
 
@@ -277,7 +277,7 @@ describe('classifyBackendStartupFailure — slow startup / exited', () => {
         serverListeningObserved: true,
         healthTimeoutKeptAlive: true,
       },
-      message: 'aioncore failed to start within timeout',
+      message: 'The backend failed to start within timeout',
       name: 'BackendStartupError',
     });
 
@@ -297,7 +297,7 @@ describe('classifyBackendStartupFailure — port report timeout (listen_timeout)
         stage: 'listen_timeout',
         serverListeningObserved: false,
       },
-      message: 'aioncore did not report its listening port before timeout',
+      message: 'The backend did not report its listening port before timeout',
       name: 'BackendStartupError',
     });
 
@@ -312,7 +312,7 @@ describe('classifyBackendStartupFailure — port report timeout (listen_timeout)
         backendBoundaryCode: 'SOME_BOUNDARY_CODE',
         backendBoundaryStage: 'some.stage',
       },
-      message: 'aioncore did not report its listening port before timeout',
+      message: 'The backend did not report its listening port before timeout',
       name: 'BackendStartupError',
     });
 
@@ -322,7 +322,7 @@ describe('classifyBackendStartupFailure — port report timeout (listen_timeout)
   it('keeps an unknown future stage in the generic backend_startup_failed bucket', () => {
     const result = classifyBackendStartupFailure({
       details: { stage: 'some_future_stage' },
-      message: 'aioncore failed in a new way',
+      message: 'The backend failed in a new way',
       name: 'BackendStartupError',
     });
 

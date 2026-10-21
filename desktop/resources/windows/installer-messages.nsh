@@ -27,10 +27,10 @@
 !define MU_MSG_EXTRACT_FAILED_ACTION_EN "Download a fresh installer and run it again. If it still fails, share the installer log shown below with the mu team."
 !define MU_MSG_EXTRACT_FAILED_ACTION_ZH "请重新下载安装器后再次运行。如果仍然失败，请将下方显示的安装日志提供给 mu 团队。"
 
-!define MU_MSG_BUNDLED_AIONCORE_INCOMPLETE_EN "mu installed, but the bundled local service resources are incomplete."
-!define MU_MSG_BUNDLED_AIONCORE_INCOMPLETE_ZH "mu 已安装部分文件，但内置的本地服务资源不完整。"
-!define MU_MSG_BUNDLED_AIONCORE_INCOMPLETE_ACTION_EN "Download a fresh installer and run it again. If it still fails, share the installer log shown below with the mu team."
-!define MU_MSG_BUNDLED_AIONCORE_INCOMPLETE_ACTION_ZH "请重新下载安装器后再次运行。如果仍然失败，请将下方显示的安装日志提供给 mu 团队。"
+!define MU_MSG_BUNDLED_BACKEND_INCOMPLETE_EN "mu installed, but the bundled local service resources are incomplete."
+!define MU_MSG_BUNDLED_BACKEND_INCOMPLETE_ZH "mu 已安装部分文件，但内置的本地服务资源不完整。"
+!define MU_MSG_BUNDLED_BACKEND_INCOMPLETE_ACTION_EN "Download a fresh installer and run it again. If it still fails, share the installer log shown below with the mu team."
+!define MU_MSG_BUNDLED_BACKEND_INCOMPLETE_ACTION_ZH "请重新下载安装器后再次运行。如果仍然失败，请将下方显示的安装日志提供给 mu 团队。"
 
 !define MU_MSG_ARCH_MISMATCH_EN "Installation package architecture mismatch."
 !define MU_MSG_ARCH_MISMATCH_ZH "安装包架构不匹配。"

@@ -5,7 +5,7 @@
   "description": "Shared build scripts for the mu desktop packages",
   "type": "commonjs",
   "exports": {
-    "./prepare-aioncore": "./src/prepare-aioncore.js"
+    "./prepare-backend": "./src/prepare-backend.js"
   },
   "scripts": {
     "test": "vitest run",

@@ -7,7 +7,7 @@ import type { OwnCommand } from '../product.ts';
 /**
  * What mu's registration carries as its command on this machine, and which other commands are the same launcher.
  *
- * AionCore starts a registration's `command` up to its first whitespace: quotes are kept as they are, the rest is
+ * The backend starts a registration's `command` up to its first whitespace: quotes are kept as they are, the rest is
  * dropped (arguments have a field of their own). The launcher of an app installed where the installer puts it by
  * default, `C:\Program Files\mu\resources\mu\acp.cmd`, started as `C:\Program` and failed at every start (issue #4). So
  * on Windows a launcher whose path has whitespace is registered by a spelling without it:
@@ -57,7 +57,7 @@ const fold = (file: string): string => file.replaceAll('/', '\\').toLowerCase();
 
 /**
  * Where a forwarder may go, most private first. The user's own local app data, which only this user can write: nobody
- * else can change what AionCore runs as this user. Its path holds the account's name, which can have a space; then
+ * else can change what the backend runs as this user. Its path holds the account's name, which can have a space; then
  * ProgramData, which has none on a standard Windows and where every user may add files; then the public profile, for a
  * machine where another account already wrote the ProgramData one (a file there is its owner's to change).
  */
@@ -70,13 +70,13 @@ export function forwarderFolders(env: NodeJS.ProcessEnv): string[] {
 /**
  * The forwarder for `target`, the launcher it hands over to. ASCII only (see PRINTABLE_ASCII), with Windows line ends.
  * It starts the launcher without `call`: `call` would read the line a second time, doubling carets and expanding
- * percent signs again. Started that way the launcher takes over this batch, so its `exit /b` is the exit code AionCore
+ * percent signs again. Started that way the launcher takes over this batch, so its `exit /b` is the exit code the backend
  * sees. A percent sign of the path is doubled, as a batch file says one; delayed expansion is off, so `!` is literal.
  */
 export function forwarderContent(target: string): string {
   return [
     '@echo off',
-    'rem mu: hands over to the launcher below, whose path has spaces, which a command AionCore runs cannot have.',
+    'rem mu: hands over to the launcher below, whose path has spaces, which a command the backend runs cannot have.',
     'rem Written by the mu app at each start, from resources\\mu\\acp.cmd of the app. Edits here are replaced.',
     'setlocal DisableDelayedExpansion',
     `"${target.replaceAll('%', '%%')}" %*`,

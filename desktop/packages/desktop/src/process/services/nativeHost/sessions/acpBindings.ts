@@ -3,7 +3,7 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
 /**
- * The pi session files AionCore's mu conversations already use (docs/native-host.md, M3), so the native list does not
+ * The pi session files the backend's mu conversations already use (docs/native-host.md, M3), so the native list does not
  * show them a second time. The ACP adapter keeps a record per conversation, `<mu home>/acp-sessions/<ACP session
  * id>.json` = `{ cwd, file, permissions }` (KyrnAgent.ts), and an imported chat has one in
  * `acp-sessions/imports/<conversation>.json` (importChats.ts). Nothing is changed: a record that goes away brings its

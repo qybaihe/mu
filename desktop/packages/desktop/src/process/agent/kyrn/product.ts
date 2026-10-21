@@ -36,11 +36,11 @@ const OWN_DESCRIPTIONS = new Set(
   ['KYRN', 'KYRN harness · local Codex login · Jev judgment', AGENT_DESCRIPTION].map((text) => text.toLowerCase())
 );
 /**
- * The permission mode of a run nobody watches: a scheduled task, a team's agents. AionCore gives them its "full auto",
+ * The permission mode of a run nobody watches: a scheduled task, a team's agents. The backend gives them its "full auto",
  * which it reads from the registration's `yolo_id`; nobody could answer a question there, so mu runs with full access.
  */
 export const FULL_AUTO_MODE = 'full';
-/** AionCore's words for full auto. mu has no such mode: a registration saying one of them is set to mu's. */
+/** The backend's words for full auto. mu has no such mode: a registration saying one of them is set to mu's. */
 const LEGACY_FULL_AUTO = new Set(['yolo', 'yoloNoSandbox']);
 const needsFullAuto = (row: AgentRow): boolean => !row.yolo_id?.trim() || LEGACY_FULL_AUTO.has(row.yolo_id.trim());
 
@@ -65,7 +65,7 @@ const ownCommand = (own: string | OwnCommand): OwnCommand =>
  * conversation on the first one. `scripts/kyrn/register.mjs` follows the same rules.
  *
  * A row under our name that runs our launcher by another spelling is ours too: an earlier start may have registered
- * another one (the path with a space, which AionCore cannot start; the short path; a forwarder), and `initializeKyrn`
+ * another one (the path with a space, which the backend cannot start; the short path; a forwarder), and `initializeKyrn`
  * gives it this start's. After an uninstall, a single app-owned row whose packaged launcher is gone can be restored
  * in place. Custom commands, live installations and ambiguous registrations are never taken over.
  */
@@ -94,7 +94,7 @@ export function findRegistration(agents: AgentRow[], own: string | OwnCommand): 
  *
  * An empty list is left out of the JSON, so in a whole record a missing `env` means there are none, while in
  * the agent list it means nothing at all. `available` tells the two apart. Checked against the bundled
- * AionCore v0.2.2; a backend that answers with anything else gives `undefined` here.
+ * backend (v0.2.2); a backend that answers with anything else gives `undefined` here.
  */
 async function wholeRecord(request: BackendRequest, row: AgentRow): Promise<AgentRow | undefined> {
   const path = `/api/agents/${encodeURIComponent(row.id)}/enabled`;

@@ -82,6 +82,8 @@ try {
       'Uninstall mu.exe',
       'resources\app.asar',
       'resources\app-update.yml',
+      'resources\bundled-backend\win32-x64\aioncore.exe',
+      # Where versions before 0.1.10 kept it: an update over one of them meets that process.
       'resources\bundled-aioncore\win32-x64\aioncore.exe'
     )
     $known = @(

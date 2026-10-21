@@ -46,7 +46,7 @@ function readJson(filePath) {
   }
 }
 
-/** Paths in the result are relative to the resources folder, with forward slashes, like the AionCore check's. */
+/** Paths in the result are relative to the resources folder, with forward slashes, like the backend check's. */
 function verifyBundledHarness({ resourcesDir, electronPlatformName, targetArch }) {
   const root = path.join(resourcesDir, 'harness');
   const checked = [];
@@ -73,7 +73,7 @@ function verifyBundledHarness({ resourcesDir, electronPlatformName, targetArch }
   }
 
   // The native host (docs/native-host.md) starts pi with two functions of the launcher. A mu without them would not
-  // fail: every conversation of the app would quietly stay on AionCore, so the build says so instead.
+  // fail: every conversation of the app would quietly stay on the backend, so the build says so instead.
   const launcher = readText(inPackage('kyrn/bin/mu.mjs'));
   if (launcher !== null) {
     for (const name of NATIVE_HOST_EXPORTS) {

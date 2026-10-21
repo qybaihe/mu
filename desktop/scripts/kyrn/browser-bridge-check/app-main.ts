@@ -1,6 +1,6 @@
 /**
  * Electron main of the browser bridge check: ONLY the bridge, plus one window whose page holds `<webview>` tabs.
- * No AionCore, no conversations, no real data: `HOME` is a throw-away directory, so the advert lands in a
+ * No backend, no conversations, no real data: `HOME` is a throw-away directory, so the advert lands in a
  * throw-away mu home. The product's renderer is not part of this check; `openTab` below stands in for it.
  *
  * Besides the bridge it serves a small loopback control endpoint for the driver: it plays the person at the app

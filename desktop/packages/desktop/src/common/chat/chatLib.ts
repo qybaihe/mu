@@ -645,7 +645,7 @@ export const normalizeAgentStreamError = (value: unknown): AgentStreamErrorInfo 
     return undefined;
   }
 
-  // The error came from AionCore: its own errors' code and ownership go by the app's names.
+  // The error came from the backend: its own errors' code and ownership go by the app's names.
   const code = typeof value.code === 'string' ? fromBackendCode(value.code) : undefined;
   const namedOwnership = typeof value.ownership === 'string' ? fromBackendOwnership(value.ownership) : undefined;
   const ownership =

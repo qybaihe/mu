@@ -78,11 +78,11 @@ export interface IConfigStorageRefer {
 }
 
 /**
- * Legacy config keys that may still exist on disk from the pre-aionCore era.
+ * Legacy config keys that may still exist on disk from before the backend stored the settings.
  *
  * New business truth must not be added here. Keep this surface migration-only:
  * renderer/process code may read these keys during one-shot imports into the
- * backend, but all current writes should go through aionCore-owned storage.
+ * backend, but all current writes should go through backend-owned storage.
  */
 export interface ILegacyConfigStorageRefer extends IConfigStorageRefer {
   'google.config'?: {
@@ -369,7 +369,7 @@ export type TChatConversation =
   // open historical rows with type='gemini' (message history is served
   // by the shared messages table). The backend factory rejects any
   // attempt to resume this conversation — see
-  // AionCore's common crate (enums.rs and factory.rs).
+  // the backend's common crate (enums.rs and factory.rs).
   // Every field is optional because legacy rows shape-varies across
   // several older Gemini-runtime versions.
   | Omit<

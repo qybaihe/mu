@@ -376,7 +376,7 @@ const switches = (calls: Call[], id: string) =>
 
 describe('mu-only backend catalog', () => {
   type Options = { fail?: (call: Call) => boolean; wholeRecords?: boolean };
-  /** Answers the way the bundled AionCore v0.2.2 was seen to, checked against a real one. */
+  /** Answers the way the bundled backend (v0.2.2) was seen to, checked against a real one. */
   function backend(records: Record<string, unknown>[], options: Options = {}) {
     const calls: Call[] = [];
     const request: BackendRequest = async <T>(method: string, path: string, body?: unknown): Promise<T> => {
@@ -536,7 +536,7 @@ describe('mu-only backend catalog', () => {
           args: ['--flag'],
           env: [{ name: 'A', value: 'b' }],
           advanced: {
-            // AionCore's own word for full auto, which mu does not know, becomes mu's full access.
+            // The backend's own word for full auto, which mu does not know, becomes mu's full access.
             yolo_id: 'full',
             native_skills_dirs: ['/skills'],
             behavior_policy: { supports_side_question: true },
@@ -618,7 +618,7 @@ describe('mu-only backend catalog', () => {
       { id: 'k', name: 'mu', command: '/kyrn/acp', enabled: true, env: [{ name: 'A', value: 'b' }] },
     ]);
     await initializeKyrn(request, '/kyrn/acp');
-    // A scheduled task asks AionCore for full auto: without it, the run would wait on a question nobody answers.
+    // A scheduled task asks the backend for full auto: without it, the run would wait on a question nobody answers.
     expect(puts(calls)).toEqual([
       {
         method: 'PUT',
@@ -657,7 +657,7 @@ describe('mu-only backend catalog', () => {
     expect(calls.map((call) => call.path)).toEqual(['/api/agents/management']);
   });
 
-  // #4: an app installed in C:\Program Files\mu registers its launcher's 8.3 short path, which AionCore can start. A
+  // #4: an app installed in C:\Program Files\mu registers its launcher's 8.3 short path, which the backend can start. A
   // registration an earlier start left may hold another spelling of the same launcher.
   describe('on Windows, where one launcher has several spellings', () => {
     const long = 'C:\\Program Files\\mu\\resources\\mu\\acp.cmd';

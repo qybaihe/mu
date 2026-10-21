@@ -82,7 +82,7 @@ export type AgentHandshake = {
   available_commands?: unknown;
 };
 
-/** Unified agent metadata persisted in the backend `agent_metadata` table. */
+/** Unified agent metadata persisted in the backend's `agent_metadata` table. */
 export type AgentMetadata = {
   id: string;
   icon?: string;
@@ -123,7 +123,7 @@ export type AgentMetadata = {
 
   behavior_policy?: BehaviorPolicy;
 
-  /** Native mode id that AionCore's legacy `yolo` / `yoloNoSandbox`
+  /** Native mode id that the backend's legacy `yolo` / `yoloNoSandbox`
    *  aliases resolve to before calling `session/set_mode`. Absent
    *  when the backend has no yolo equivalent. */
   yolo_id?: string;

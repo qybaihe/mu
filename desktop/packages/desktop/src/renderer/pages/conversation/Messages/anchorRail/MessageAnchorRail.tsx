@@ -63,7 +63,7 @@ const MessageAnchorRail: React.FC = () => {
   const messages = useMessageList();
   const conversationContext = useConversationContextSafe();
   // A native conversation's list holds the rows its screen draws (the latest, and the earlier ones once the reader has
-  // scrolled up to them), and AionCore has none of it to read.
+  // scrolled up to them), and the backend has none of it to read.
   const run = useMessageListRun();
   const conversationId = run ? run.conversationId : conversationContext?.conversation_id;
 
@@ -308,7 +308,7 @@ const MessageAnchorRail: React.FC = () => {
       {/* Search entry, sitting at the head of the stack so it reads as the first
           anchor. Lives outside the hover zone so hovering it cannot
           magnet-select a tick, and so a click never doubles as a jump. */}
-      {/* The search panel reads AionCore's copy of a conversation: a native one has none. */}
+      {/* The search panel reads the backend's copy of a conversation: a native one has none. */}
       {run ? null : (
         <button
           type='button'

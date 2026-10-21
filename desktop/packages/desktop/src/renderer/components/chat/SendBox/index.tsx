@@ -578,7 +578,7 @@ const SendBox: React.FC<{
       // carries a chatRef — the Explorer tree's add-to-chat builds a project
       // ref, and a pe ROOT is a folder whose relative_path is ''. The backend
       // resolves a directory ref to its absolute path (verified in
-      // AionCore's project crate (resolve_chat_file_ref): a project ref only requires the
+      // the backend's project crate (resolve_chat_file_ref): a project ref only requires the
       // target to exist, not to be a regular file). Only drop a non-file item
       // that has no ref identity at all.
       if (typeof item !== 'string' && !item.isFile && !item.chatRef) {

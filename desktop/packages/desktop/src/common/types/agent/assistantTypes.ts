@@ -6,7 +6,7 @@
 
 import { BUILTIN_AGENT } from '../../platform/backendNames';
 
-// Mirror of AionCore's api-types crate (assistant.rs).
+// Mirror of the backend's api-types crate (assistant.rs).
 // Any shape change on either side requires a same-PR update on the other.
 
 export type AssistantSource = 'builtin' | 'generated' | 'user';

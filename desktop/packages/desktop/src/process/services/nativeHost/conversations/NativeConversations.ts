@@ -41,7 +41,7 @@ export type NativeConversationsOptions = {
   /** Puts a removed conversation's session file away (the bin, in the app). */
   trash: (file: string) => Promise<void>;
   /**
-   * The session files AionCore's mu conversations use (sessions/acpBindings.ts): the list leaves them out, so no
+   * The session files the backend's mu conversations use (sessions/acpBindings.ts): the list leaves them out, so no
    * conversation is listed twice. None when left out.
    */
   bound?: () => Promise<ReadonlySet<string>>;
@@ -129,7 +129,7 @@ export class NativeConversations implements NativeConversationsApi {
     for (const session of sessions) {
       if (out.has(session.id)) continue;
       const known = this.byId.get(session.id);
-      // AionCore's conversation shows this session already, unless a native host runs it.
+      // The backend's conversation shows this session already, unless a native host runs it.
       if (!known?.live && elsewhere(session.file)) continue;
       known?.refresh(session);
       out.set(session.id, known ? known.describe() : listed(session));

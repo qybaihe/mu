@@ -22,7 +22,7 @@ function Write-VerifyLog {
     arch = $RuntimeKey
     updated = $false
     instDir = $InstallDir
-    event = 'verify-bundled-aioncore'
+    event = 'verify-bundled-backend'
     message = $Message
   }
   Add-Content -LiteralPath $LogPath -Encoding UTF8 -Value ($payload | ConvertTo-Json -Compress -Depth 8)
@@ -341,7 +341,7 @@ function Test-BundledResourcesOnce {
   $expectedPlatform = $runtimeParts[0]
   $expectedArch = $runtimeParts[1]
   $resourcesDir = Join-Path $InstallDir 'resources'
-  $baseDir = Join-Path $resourcesDir "bundled-aioncore\$RuntimeKey"
+  $baseDir = Join-Path $resourcesDir "bundled-backend\$RuntimeKey"
 
   if (-not (Test-Directory $failures 'aioncore' '' $baseDir)) {
     return $failures
@@ -350,16 +350,16 @@ function Test-BundledResourcesOnce {
   Test-NonEmptyFile $failures 'aioncore' '' (Join-Path $baseDir 'aioncore.exe') $true $baseDir | Out-Null
 
   $bundleManifestPath = Join-Path $baseDir 'manifest.json'
-  if (Test-NonEmptyFile $failures 'aioncore-manifest' '' $bundleManifestPath $false $baseDir) {
+  if (Test-NonEmptyFile $failures 'backend-manifest' '' $bundleManifestPath $false $baseDir) {
     $bundleManifest = Read-JsonFile $bundleManifestPath
     if (-not $bundleManifest) {
-      $failures.Add((New-Failure 'publish_or_install_missing' 'aioncore-manifest' '' $bundleManifestPath 'invalid_json')) | Out-Null
+      $failures.Add((New-Failure 'publish_or_install_missing' 'backend-manifest' '' $bundleManifestPath 'invalid_json')) | Out-Null
     } else {
       if ($bundleManifest.platform -ne $expectedPlatform) {
-        $failures.Add((New-Failure 'publish_or_install_missing' 'aioncore-manifest' '' $bundleManifestPath "platform_mismatch:$($bundleManifest.platform)")) | Out-Null
+        $failures.Add((New-Failure 'publish_or_install_missing' 'backend-manifest' '' $bundleManifestPath "platform_mismatch:$($bundleManifest.platform)")) | Out-Null
       }
       if ($bundleManifest.arch -ne $expectedArch) {
-        $failures.Add((New-Failure 'publish_or_install_missing' 'aioncore-manifest' '' $bundleManifestPath "arch_mismatch:$($bundleManifest.arch)")) | Out-Null
+        $failures.Add((New-Failure 'publish_or_install_missing' 'backend-manifest' '' $bundleManifestPath "arch_mismatch:$($bundleManifest.arch)")) | Out-Null
       }
     }
   }
@@ -375,16 +375,16 @@ function Test-BundledResourcesOnce {
 for ($attempt = 1; $attempt -le 5; $attempt++) {
   $failures = @(Test-BundledResourcesOnce)
   if ($failures.Count -eq 0) {
-    Write-VerifyLog "verify-bundled-aioncore result=ok runtime=$RuntimeKey attempts=$attempt"
+    Write-VerifyLog "verify-bundled-backend result=ok runtime=$RuntimeKey attempts=$attempt"
     exit 0
   }
 
   $summary = ($failures | ConvertTo-Json -Compress -Depth 5)
   if ($attempt -lt 5) {
-    Write-VerifyLog "verify-bundled-aioncore result=retry classification=resource_pending_landing runtime=$RuntimeKey attempt=$attempt failures=$summary"
+    Write-VerifyLog "verify-bundled-backend result=retry classification=resource_pending_landing runtime=$RuntimeKey attempt=$attempt failures=$summary"
     Start-Sleep -Milliseconds 500
   } else {
-    Write-VerifyLog "verify-bundled-aioncore result=fail runtime=$RuntimeKey failures=$summary"
+    Write-VerifyLog "verify-bundled-backend result=fail runtime=$RuntimeKey failures=$summary"
   }
 }
 

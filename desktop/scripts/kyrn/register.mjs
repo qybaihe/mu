@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 
-// Use the same public API as the app's Add Custom Agent form; never edit AionCore's database.
+// Use the same public API as the app's Add Custom Agent form; never edit the backend's database.
 // The lookup and update rules are the ones in packages/desktop/src/process/agent/kyrn/product.ts.
 if (!process.env.MU_BACKEND_URL) throw new Error('Set MU_BACKEND_URL to the running local backend URL');
 const base = new URL(process.env.MU_BACKEND_URL);
@@ -14,7 +14,7 @@ const DESCRIPTION = 'mu harness · local Codex login · Jev judgment';
 const OWN_DESCRIPTIONS = ['KYRN', 'KYRN harness · local Codex login · Jev judgment', DESCRIPTION].map((text) =>
   text.toLowerCase()
 );
-// Scheduled tasks and team agents run in AionCore's "full auto", read from `yolo_id`: mu's full access.
+// Scheduled tasks and team agents run in the backend's "full auto", read from `yolo_id`: mu's full access.
 const FULL_AUTO_MODE = 'full';
 const LEGACY_FULL_AUTO = ['yolo', 'yoloNoSandbox'];
 const needsFullAuto = (row) => !row.yolo_id?.trim() || LEGACY_FULL_AUTO.includes(row.yolo_id.trim());
@@ -35,9 +35,9 @@ async function request(path, body, method = body === undefined ? 'GET' : 'POST')
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     signal: AbortSignal.timeout(60000),
   });
-  if (!response.ok) throw new Error(`AionCore ${path}: HTTP ${response.status}`);
+  if (!response.ok) throw new Error(`The backend ${path}: HTTP ${response.status}`);
   const result = await response.json();
-  if (result.success === false) throw new Error('AionCore rejected registration');
+  if (result.success === false) throw new Error('The backend rejected registration');
   return result.data ?? result;
 }
 // The agent list does not return `env`, and no route reads a single record. Setting `enabled` to the value it

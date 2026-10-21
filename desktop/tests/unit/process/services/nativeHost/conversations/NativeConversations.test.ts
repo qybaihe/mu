@@ -742,10 +742,10 @@ describe('the list and the names (milestone 3)', () => {
       assistant(`${id}-a`, `${id}-u`, 'Hello', minute + 2),
     ]);
 
-  it('leaves out the sessions AionCore’s conversations run, until their record goes', async () => {
+  it('leaves out the sessions the backend’s conversations run, until their record goes', async () => {
     const bound = new Set<string>();
     const w = world({ bound: async () => bound });
-    const taken = cliSession(w, 'taken', 'Run by AionCore');
+    const taken = cliSession(w, 'taken', 'Run by the backend');
     cliSession(w, 'free', 'Only here', 5);
     bound.add(taken);
     await expect(w.conversations.list()).resolves.toMatchObject([{ id: 'free' }]);
