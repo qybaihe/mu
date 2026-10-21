@@ -8,7 +8,7 @@ import type { IProvider, TProviderWithModel } from '@/common/config/storage';
 import { useModelProviderList } from '@/renderer/hooks/agent/useModelProviderList';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-export type AionrsModelSelection = {
+export type BuiltinAgentModelSelection = {
   current_model?: TProviderWithModel;
   providers: IProvider[];
   getAvailableModels: (provider: IProvider) => string[];
@@ -16,15 +16,15 @@ export type AionrsModelSelection = {
   getDisplayModelName: (modelName?: string) => string;
 };
 
-export type UseAionrsModelSelectionOptions = {
+export type UseBuiltinAgentModelSelectionOptions = {
   initialModel: TProviderWithModel | undefined;
   onSelectModel: (provider: IProvider, modelName: string) => Promise<boolean>;
 };
 
-export const useAionrsModelSelection = ({
+export const useBuiltinAgentModelSelection = ({
   initialModel,
   onSelectModel,
-}: UseAionrsModelSelectionOptions): AionrsModelSelection => {
+}: UseBuiltinAgentModelSelectionOptions): BuiltinAgentModelSelection => {
   const [current_model, setCurrentModel] = useState<TProviderWithModel | undefined>(initialModel);
 
   useEffect(() => {

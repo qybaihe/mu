@@ -3,8 +3,8 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Message } from '@arco-design/web-react';
 import { BackendHttpError } from '@/common/adapter/httpBridge';
-import AionrsSendBox from '@/renderer/pages/conversation/platforms/aionrs/AionrsSendBox';
-import type { AionrsModelSelection } from '@/renderer/pages/conversation/platforms/aionrs/useAionrsModelSelection';
+import BuiltinAgentSendBox from '@/renderer/pages/conversation/platforms/builtinAgent/BuiltinAgentSendBox';
+import type { BuiltinAgentModelSelection } from '@/renderer/pages/conversation/platforms/builtinAgent/useBuiltinAgentModelSelection';
 import type { TeamSendBoxRuntime } from '@/renderer/pages/team/components/teamSendRuntime';
 
 const {
@@ -286,8 +286,8 @@ vi.mock('@icon-park/react', () => ({
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: translateMock }),
 }));
-vi.mock('@/renderer/pages/conversation/platforms/aionrs/useAionrsMessage', () => ({
-  useAionrsMessage: () => ({
+vi.mock('@/renderer/pages/conversation/platforms/builtinAgent/useBuiltinAgentMessage', () => ({
+  useBuiltinAgentMessage: () => ({
     thought: { subject: '', description: '' },
     running: false,
     setActiveMsgId: vi.fn(),
@@ -302,9 +302,9 @@ const modelSelection = {
     model: 'gpt-4.1',
     use_model: 'openai/gpt-4.1',
   },
-} as AionrsModelSelection;
+} as BuiltinAgentModelSelection;
 
-describe('AionrsSendBox', () => {
+describe('BuiltinAgentSendBox', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     ensureConversationRuntimeMock.mockResolvedValue({ recovered: false, config_options: [], runtime: null });
@@ -324,7 +324,7 @@ describe('AionrsSendBox', () => {
       warmupSession,
     });
 
-    render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
+    render(<BuiltinAgentSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
     await waitFor(() => {
       expect(warmupSession).toHaveBeenCalled();
     });
@@ -348,7 +348,7 @@ describe('AionrsSendBox', () => {
       warmupSession,
     });
 
-    render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
+    render(<BuiltinAgentSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
     await waitFor(() => {
       expect(warmupSession).toHaveBeenCalled();
     });
@@ -374,7 +374,7 @@ describe('AionrsSendBox', () => {
       warmupSession,
     });
 
-    render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
+    render(<BuiltinAgentSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
 
     await waitFor(() => {
       expect(warmupSession).toHaveBeenCalled();
@@ -383,7 +383,7 @@ describe('AionrsSendBox', () => {
   });
 
   it('uses runtime ensure instead of legacy warmup for standalone runtime preparation', async () => {
-    render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
+    render(<BuiltinAgentSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
 
     await waitFor(() => {
       expect(ensureConversationRuntimeMock).toHaveBeenCalledWith('conv-1');
@@ -400,7 +400,7 @@ describe('AionrsSendBox', () => {
       })
     );
 
-    render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
+    render(<BuiltinAgentSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
     await waitFor(() => expect(ensureConversationRuntimeMock).toHaveBeenCalledWith('conv-1'));
 
     await act(async () => {
@@ -419,7 +419,7 @@ describe('AionrsSendBox', () => {
   it('puts a translated headline before the raw error of an ordinary send failure', async () => {
     sendMessageInvokeMock.mockRejectedValue(new Error('socket hang up'));
 
-    render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
+    render(<BuiltinAgentSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
     await waitFor(() => expect(ensureConversationRuntimeMock).toHaveBeenCalledWith('conv-1'));
 
     await act(async () => {
@@ -433,7 +433,7 @@ describe('AionrsSendBox', () => {
   it('passes teamRuntime.isActive and onFocus down to SendBox as active/onFocused', () => {
     const onFocus = vi.fn();
     render(
-      <AionrsSendBox
+      <BuiltinAgentSendBox
         conversation_id='conv-1'
         modelSelection={modelSelection}
         teamRuntime={{ loading: false, startedAtMs: null, isActive: true, onFocus } as unknown as TeamSendBoxRuntime}
@@ -450,7 +450,7 @@ describe('AionrsSendBox', () => {
       runtimeViewIsProcessingRef.current = true;
       draftContentRef.current = 'hello world';
 
-      render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
+      render(<BuiltinAgentSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
       await waitFor(() => expect(ensureConversationRuntimeMock).toHaveBeenCalledWith('conv-1'));
 
       const props = sendBoxPropsSpy.mock.calls.at(-1)?.[0] as { sendDisabled?: boolean };
@@ -471,7 +471,7 @@ describe('AionrsSendBox', () => {
     it('sends normally while idle', async () => {
       runtimeViewIsProcessingRef.current = false;
 
-      render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
+      render(<BuiltinAgentSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
       await waitFor(() => expect(ensureConversationRuntimeMock).toHaveBeenCalledWith('conv-1'));
 
       const props = sendBoxPropsSpy.mock.calls.at(-1)?.[0] as { sendDisabled?: boolean };
@@ -492,7 +492,7 @@ describe('AionrsSendBox', () => {
       runtimeViewIsProcessingRef.current = true;
       draftContentRef.current = 'hello world';
 
-      render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
+      render(<BuiltinAgentSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
       await waitFor(() => expect(ensureConversationRuntimeMock).toHaveBeenCalledWith('conv-1'));
 
       const props = sendBoxPropsSpy.mock.calls.at(-1)?.[0] as { onAddToDraft?: () => void };
@@ -515,7 +515,7 @@ describe('AionrsSendBox', () => {
       runtimeViewIsProcessingRef.current = true;
       draftContentRef.current = 'hello world';
 
-      render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
+      render(<BuiltinAgentSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
       await waitFor(() => expect(ensureConversationRuntimeMock).toHaveBeenCalledWith('conv-1'));
 
       type SessionProps = {
@@ -544,7 +544,7 @@ describe('AionrsSendBox', () => {
       runtimeViewIsProcessingRef.current = false;
       draftContentRef.current = 'hello world';
 
-      render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
+      render(<BuiltinAgentSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
       await waitFor(() => expect(ensureConversationRuntimeMock).toHaveBeenCalledWith('conv-1'));
 
       const props = sendBoxPropsSpy.mock.calls.at(-1)?.[0] as { onAddToDraft?: () => void };
@@ -555,7 +555,7 @@ describe('AionrsSendBox', () => {
       runtimeViewIsProcessingRef.current = true;
       draftContentRef.current = '';
 
-      render(<AionrsSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
+      render(<BuiltinAgentSendBox conversation_id='conv-1' modelSelection={modelSelection} />);
       await waitFor(() => expect(ensureConversationRuntimeMock).toHaveBeenCalledWith('conv-1'));
 
       const props = sendBoxPropsSpy.mock.calls.at(-1)?.[0] as {

@@ -113,8 +113,8 @@
       "selectFolder": "选择文件夹",
       "clearFolder": "清除",
       "model": "模型",
-      "aionrsModelRequired": "请为内置 Agent 选择模型",
-      "aionrsNoProvider": "暂无可用模型",
+      "builtinAgentModelRequired": "请为内置 Agent 选择模型",
+      "builtinAgentNoProvider": "暂无可用模型",
       "assistantLockedExistingConversation": "持续会话任务必须保留原执行助手。如需更换助手，请新建任务。",
       "teamTaskExecutionModeLockedReason": "Team 定时任务必须在所属 Team 会话中持续执行，因此不能修改执行模式。"
     },

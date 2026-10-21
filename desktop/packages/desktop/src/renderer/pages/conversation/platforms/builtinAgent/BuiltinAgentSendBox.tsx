@@ -61,8 +61,9 @@ import { Brain, Lightning, MagicHat, Shield } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { classifyConversationBusyError } from '../conversationBusyError';
-import { useAionrsMessage } from './useAionrsMessage';
-import type { AionrsModelSelection } from './useAionrsModelSelection';
+import { useBuiltinAgentMessage } from './useBuiltinAgentMessage';
+import type { BuiltinAgentModelSelection } from './useBuiltinAgentModelSelection';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 const configErrorMessageKey = (error: unknown) => {
   const errorKind = classifyConfigSetError(error);
@@ -81,8 +82,8 @@ const toModeLabel = (value: string): string =>
 const modeOptionsFromCapabilities = (modes: string[]): AgentModeOption[] =>
   modes.map((value) => ({ value, label: toModeLabel(value) }));
 
-const useAionrsSendBoxDraft = getSendBoxDraftHook('aionrs', {
-  _type: 'aionrs',
+const useBuiltinAgentSendBoxDraft = getSendBoxDraftHook(BUILTIN_AGENT, {
+  _type: BUILTIN_AGENT,
   atPath: [],
   content: '',
   uploadFile: [],
@@ -92,7 +93,7 @@ const EMPTY_AT_PATH: Array<string | FileOrFolderItem> = [];
 const EMPTY_UPLOAD_FILES: string[] = [];
 
 const useSendBoxDraft = (conversation_id: string) => {
-  const { data, mutate } = useAionrsSendBoxDraft(conversation_id);
+  const { data, mutate } = useBuiltinAgentSendBoxDraft(conversation_id);
 
   const atPath = data?.atPath ?? EMPTY_AT_PATH;
   const uploadFile = data?.uploadFile ?? EMPTY_UPLOAD_FILES;
@@ -124,9 +125,9 @@ const useSendBoxDraft = (conversation_id: string) => {
   };
 };
 
-const AionrsSendBox: React.FC<{
+const BuiltinAgentSendBox: React.FC<{
   conversation_id: string;
-  modelSelection: AionrsModelSelection;
+  modelSelection: BuiltinAgentModelSelection;
   session_mode?: string;
   agent_name?: string;
   teamSendMessage?: (payload: { input: string; files: ChatFileRef[] }) => Promise<void>;
@@ -152,7 +153,7 @@ const AionrsSendBox: React.FC<{
   const teamPermission = useTeamPermission();
   const propagateMode = teamPermission?.propagateMode;
 
-  const { thought, running, turnStartedAtMs, setActiveMsgId, setWaitingResponse, resetState } = useAionrsMessage(
+  const { thought, running, turnStartedAtMs, setActiveMsgId, setWaitingResponse, resetState } = useBuiltinAgentMessage(
     conversation_id,
     {
       onConfigChanged: (capabilities) => {
@@ -215,7 +216,7 @@ const AionrsSendBox: React.FC<{
   }, [conversation_id, prepareRuntimeSync, t]);
 
   const slash_commands = useSlashCommands(conversation_id, {
-    conversation_type: 'aionrs',
+    conversation_type: BUILTIN_AGENT,
     agentStatus: agentWarmed ? 'active' : null,
     prepareRuntime: teamPermission ? prepareRuntimeSync : undefined,
   });
@@ -277,7 +278,7 @@ const AionrsSendBox: React.FC<{
           await teamSendMessage({ input, files });
           emitter.emit('chat.history.refresh');
           if (files.length > 0) {
-            emitter.emit('aionrs.workspace.refresh');
+            emitter.emit('builtinAgent.workspace.refresh');
           }
           return;
         }
@@ -296,7 +297,7 @@ const AionrsSendBox: React.FC<{
         markSendAccepted(res.turn_id, res.runtime, res.msg_id);
         emitter.emit('chat.history.refresh');
         if (files.length > 0) {
-          emitter.emit('aionrs.workspace.refresh');
+          emitter.emit('builtinAgent.workspace.refresh');
         }
       } catch (error) {
         const errorMessage =
@@ -366,8 +367,8 @@ const AionrsSendBox: React.FC<{
   useEffect(() => {
     if (!conversation_id || !current_model?.use_model) return;
 
-    const storageKey = `aionrs_initial_message_${conversation_id}`;
-    const processedKey = `aionrs_initial_processed_${conversation_id}`;
+    const storageKey = `builtin_agent_initial_message_${conversation_id}`;
+    const processedKey = `builtin_agent_initial_processed_${conversation_id}`;
 
     const processInitialMessage = async () => {
       if (sessionStorage.getItem(processedKey)) return;
@@ -387,7 +388,7 @@ const AionrsSendBox: React.FC<{
           : [];
         await executeCommand({ input, files: initialRefs });
       } catch (error) {
-        console.error('[AionrsSendBox] Failed to send initial message:', error);
+        console.error('[BuiltinAgentSendBox] Failed to send initial message:', error);
         sessionStorage.removeItem(processedKey);
       }
     };
@@ -400,7 +401,7 @@ const AionrsSendBox: React.FC<{
   const [selectedSessions, setSelectedSessions] = useState<SessionRef[]>([]);
   const { enabled: crossSessionEnabled } = useCrossSessionMessageEnabled();
 
-  // aionrs backends never support mid-turn delivery: while the agent is
+  // built-in agent backends never support mid-turn delivery: while the agent is
   // replying, sending is hard-blocked with a toast instead of implicitly
   // enqueuing. The only way to queue a message while busy is the explicit
   // "add to queue" entry (handleAddToQueue below).
@@ -419,7 +420,7 @@ const AionrsSendBox: React.FC<{
     const sessions = selectedSessions.length > 0 ? selectedSessions : undefined;
     clearFiles();
     setSelectedSessions([]);
-    emitter.emit('aionrs.selected.file.clear');
+    emitter.emit('builtinAgent.selected.file.clear');
     await executeCommand({ input: message, files: filesToSend, sessions });
   };
 
@@ -430,7 +431,7 @@ const AionrsSendBox: React.FC<{
     const input = content;
     setContent('');
     clearFiles();
-    emitter.emit('aionrs.selected.file.clear');
+    emitter.emit('builtinAgent.selected.file.clear');
     setInterrupting(true);
     try {
       await teamRuntime.onInterruptSend({ input, files });
@@ -459,7 +460,7 @@ const AionrsSendBox: React.FC<{
     setContent('');
     clearFiles();
     setSelectedSessions([]);
-    emitter.emit('aionrs.selected.file.clear');
+    emitter.emit('builtinAgent.selected.file.clear');
   }, [atPath, clearFiles, content, enqueue, selectedSessions, setContent, uploadFile]);
 
   const handleEditQueuedCommand = useCallback(
@@ -472,7 +473,7 @@ const AionrsSendBox: React.FC<{
       const { uploadFiles, atPath: restoredAtPath } = splitChatFileRefs(item.files);
       setUploadFile(uploadFiles);
       setAtPath(restoredAtPath);
-      emitter.emit('aionrs.selected.file.clear');
+      emitter.emit('builtinAgent.selected.file.clear');
     },
     [remove, setAtPath, setContent, setUploadFile]
   );
@@ -507,7 +508,7 @@ const AionrsSendBox: React.FC<{
         propagateMode?.(mode);
         Message.success(t('agentMode.switchSuccess'));
       } catch (error) {
-        console.error('[AionrsSendBox] Failed to switch mode via sheet:', error);
+        console.error('[BuiltinAgentSendBox] Failed to switch mode via sheet:', error);
         Message.error(t(configErrorMessageKey(error)));
       }
     },
@@ -685,14 +686,14 @@ const AionrsSendBox: React.FC<{
   // untargeted); stops same-type peers on the team route from receiving each
   // other's selections. See emitter EventTypes comment.
   useAddEventListener(
-    'aionrs.selected.file',
+    'builtinAgent.selected.file',
     (items: Array<string | FileOrFolderItem>, targetConversationId: string | undefined) => {
       if (targetConversationId === undefined || targetConversationId === conversation_id) setAtPath(items);
     },
     [conversation_id, setAtPath]
   );
   useAddEventListener(
-    'aionrs.selected.file.append',
+    'builtinAgent.selected.file.append',
     (selectedItems: Array<string | FileOrFolderItem>, targetConversationId: string | undefined) => {
       if (targetConversationId !== undefined && targetConversationId !== conversation_id) return;
       const merged = mergeFileSelectionItems(atPathRef.current, selectedItems);
@@ -718,7 +719,7 @@ const AionrsSendBox: React.FC<{
       const result = await ipcBridge.conversation.stop.invoke({ conversation_id, turn_id: turnId });
       runtimeView.markStopAcknowledged(turnId, result.runtime);
     } catch (error) {
-      console.warn('[AionrsSendBox] stop request failed', error);
+      console.warn('[BuiltinAgentSendBox] stop request failed', error);
       runtimeView.resetLocalGate('stop_failed');
     } finally {
       resetState();
@@ -768,13 +769,13 @@ const AionrsSendBox: React.FC<{
       />
       <CrossSessionDisabledBanner />
       <SendBox
-        data-testid='aionrs-sendbox'
+        data-testid='builtin-agent-sendbox'
         onMobilePlusClick={isMobile ? () => setIsMobileSheetOpen(true) : undefined}
         value={content}
         onChange={handleContentChange}
         selectedWorkspaceItems={atPath}
         onSelectedWorkspaceItemsChange={(items) => {
-          emitter.emit('aionrs.selected.file', items, conversation_id);
+          emitter.emit('builtinAgent.selected.file', items, conversation_id);
           setAtPath(items);
         }}
         selectedSessions={selectedSessions}
@@ -813,7 +814,7 @@ const AionrsSendBox: React.FC<{
         rightTools={
           <div className='flex items-center gap-8px min-w-0'>
             <AgentModeSelector
-              backend='aionrs'
+              backend={BUILTIN_AGENT}
               conversation_id={conversation_id}
               compact
               initialMode={session_mode}
@@ -836,7 +837,7 @@ const AionrsSendBox: React.FC<{
                 {uploadFile.map((path) => (
                   <FilePreview
                     key={path}
-                    data-testid={`aionrs-file-tag-${uploadFile.indexOf(path)}`}
+                    data-testid={`builtin-agent-file-tag-${uploadFile.indexOf(path)}`}
                     path={path}
                     onRemove={() => setUploadFile(uploadFile.filter((v) => v !== path))}
                   />
@@ -852,12 +853,12 @@ const AionrsSendBox: React.FC<{
                     return (
                       <Tag
                         key={item.path}
-                        data-testid={`aionrs-folder-tag-${folderIndex}`}
+                        data-testid={`builtin-agent-folder-tag-${folderIndex}`}
                         color='blue'
                         closable
                         onClose={() => {
                           const newAtPath = atPath.filter((v) => (typeof v === 'string' ? true : v.path !== item.path));
-                          emitter.emit('aionrs.selected.file', newAtPath, conversation_id);
+                          emitter.emit('builtinAgent.selected.file', newAtPath, conversation_id);
                           setAtPath(newAtPath);
                         }}
                       >
@@ -910,4 +911,4 @@ const AionrsSendBox: React.FC<{
   );
 };
 
-export default AionrsSendBox;
+export default BuiltinAgentSendBox;

@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildAssistantEditorBackends } from '@/renderer/pages/settings/AssistantSettings/assistantUtils';
 import type { ManagedAgent } from '@/renderer/utils/model/agentTypes';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 describe('buildAssistantEditorBackends', () => {
   it('derives editor backends from supported management agents and allows unchecked agents', () => {
@@ -58,9 +59,9 @@ describe('buildAssistantEditorBackends', () => {
   it('uses localized management names and falls back to agent_type when backend is empty', () => {
     const agents: ManagedAgent[] = [
       managedAgent({
-        id: 'agent-aionrs',
+        id: `agent-${BUILTIN_AGENT}`,
         backend: undefined,
-        agent_type: 'aionrs',
+        agent_type: BUILTIN_AGENT,
         name: 'Aion CLI',
         name_i18n: { 'zh-CN': 'Aion 命令行' },
         status: 'online',
@@ -69,9 +70,9 @@ describe('buildAssistantEditorBackends', () => {
 
     expect(buildAssistantEditorBackends(agents, 'zh-CN')).toEqual([
       {
-        id: 'agent-aionrs',
+        id: `agent-${BUILTIN_AGENT}`,
         name: 'Aion 命令行',
-        runtimeKey: 'aionrs',
+        runtimeKey: BUILTIN_AGENT,
         modelOptions: [],
       },
     ]);

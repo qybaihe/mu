@@ -17,6 +17,7 @@ import {
 } from '@/renderer/pages/settings/AssistantSettings/assistantUtils';
 import type { ManagedAgent } from '@/renderer/utils/model/agentTypes';
 import type { AssistantListItem } from '@/renderer/pages/settings/AssistantSettings/types';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 vi.mock('@/renderer/utils/platform', () => ({
   resolveExtensionAssetUrl: (url: string) => {
@@ -267,12 +268,12 @@ describe('buildAssistantEditorBackends', () => {
       [
         agent({ id: 'acp-1', agent_type: 'acp', name: 'Claude Code' }),
         agent({ id: 'a9f3c21e', agent_type: 'antigravity', backend: 'antigravity', name: 'Antigravity' }),
-        agent({ id: 'aionrs-1', agent_type: 'aionrs', backend: 'aionrs', name: 'Aion CLI' }),
+        agent({ id: 'builtin-agent-1', agent_type: BUILTIN_AGENT, backend: BUILTIN_AGENT, name: 'Aion CLI' }),
       ],
       'zh-CN'
     );
 
-    expect(backends.map((b) => b.id)).toEqual(['acp-1', 'a9f3c21e', 'aionrs-1']);
+    expect(backends.map((b) => b.id)).toEqual(['acp-1', 'a9f3c21e', 'builtin-agent-1']);
     const antigravity = backends.find((b) => b.id === 'a9f3c21e');
     expect(antigravity?.name).toBe('Antigravity');
     expect(antigravity?.runtimeKey).toBe('antigravity');

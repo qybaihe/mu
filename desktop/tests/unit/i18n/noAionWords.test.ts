@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { SUPPORTED_LANGUAGES } from '@/common/config/i18n';
 
 /**
- * mu is its own app: no text it shows names AionUi, AionCore, Aionrs or Aion CLI. Text that arrives at run time
+ * mu is its own app: no text it shows names AionUi, AionCore, BuiltinAgent or Aion CLI. Text that arrives at run time
  * from the bundled backend is rewritten by `showAsMu` (tests/unit/kyrn/displayName.test.ts); these tests keep the
  * app's own copy clean, so the rewriter has nothing to do for it.
  */
@@ -15,7 +15,7 @@ const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
 const localeRoot = join(repoRoot, 'packages/desktop/src/renderer/services/i18n/locales');
 const AION = /aion/i;
 
-/** Every string in a locale file, with its key path. Keys are identifiers (`aionrsNoProvider`) and stay. */
+/** Every string in a locale file, with its key path. Keys are identifiers (`builtinAgentNoProvider`) and stay. */
 function localeValues(node: unknown, path = ''): Array<[string, string]> {
   if (typeof node === 'string') return [[path, node]];
   if (Array.isArray(node)) return node.flatMap((item, index) => localeValues(item, `${path}[${index}]`));
@@ -50,7 +50,7 @@ const MAIN_PROCESS_FILES = [
 /**
  * Identifiers that keep an upstream name because data, the local service or older installs depend on them. The
  * names already on people's machines live in common/platform/legacyNames.ts and AionCore's in
- * common/platform/aioncoreNames.ts; these files only use them by their constants.
+ * common/platform/backendNames.ts; these files only use them by their constants.
  */
 const COMPATIBILITY_IDS = new Map<string, string>([['bundled-aioncore/', 'the folder the local service ships in']]);
 

@@ -18,13 +18,14 @@ import { beginConversationTurn, endConversationTurn } from '@/renderer/pages/con
 import i18next from 'i18next';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { processLocalCronResponse } from './localCronCommands';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 type TokenUsage = {
   input_tokens?: number;
   output_tokens?: number;
 };
 
-export const useAionrsMessage = (
+export const useBuiltinAgentMessage = (
   conversation_id: string,
   options?: {
     onError?: (message: IResponseMessage) => void;
@@ -267,8 +268,8 @@ export const useAionrsMessage = (
           break;
         case 'finish':
           {
-            logStreamTerminalObserved(conversation_id, message.turn_id, 'aionrs', message.type);
-            // aionrs stream_end carries usage in data field
+            logStreamTerminalObserved(conversation_id, message.turn_id, BUILTIN_AGENT, message.type);
+            // built-in agent stream_end carries usage in data field
             const usageData = message.data as TokenUsage | undefined;
             if (usageData && typeof usageData === 'object' && 'input_tokens' in usageData) {
               const newTokenUsage: TokenUsageData = {
@@ -349,7 +350,7 @@ export const useAionrsMessage = (
             setStreamRunning(true);
             streamRunningRef.current = true;
           }
-          // Backend aionrs emits wire type 'acp_permission' but the payload is
+          // The built-in agent emits wire type 'acp_permission' but the payload is
           // Confirmation-shaped (legacy), which matches MessagePermission, not
           // MessageAcpPermission. Re-tag so transformMessage routes it correctly.
           mergeLiveMessage(transformMessage({ ...message, type: 'permission' }));
@@ -359,7 +360,7 @@ export const useAionrsMessage = (
           break;
         default: {
           if (message.type === 'error') {
-            logStreamTerminalObserved(conversation_id, message.turn_id, 'aionrs', message.type);
+            logStreamTerminalObserved(conversation_id, message.turn_id, BUILTIN_AGENT, message.type);
             setStreamRunning(false);
             streamRunningRef.current = false;
             setWaitingResponse(false);
@@ -433,7 +434,7 @@ export const useAionrsMessage = (
       setWaitingResponse(isRunning);
       waitingResponseRef.current = isRunning;
       // Load persisted token usage stats
-      if (res.type === 'aionrs' && res.extra?.last_token_usage) {
+      if (res.type === BUILTIN_AGENT && res.extra?.last_token_usage) {
         const { last_token_usage } = res.extra;
         if (last_token_usage.total_tokens > 0) {
           setTokenUsage(last_token_usage);

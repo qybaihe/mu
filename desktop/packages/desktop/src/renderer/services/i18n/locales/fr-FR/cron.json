@@ -109,8 +109,8 @@
       "selectFolder": "Sélectionner un dossier",
       "clearFolder": "Effacer",
       "model": "Modèle",
-      "aionrsModelRequired": "Veuillez sélectionner un modèle pour l'agent intégré",
-      "aionrsNoProvider": "Aucun modèle disponible",
+      "builtinAgentModelRequired": "Veuillez sélectionner un modèle pour l'agent intégré",
+      "builtinAgentNoProvider": "Aucun modèle disponible",
       "assistantLockedExistingConversation": "Les tâches de conversation en cours doivent conserver leur assistant d'origine. Créez une nouvelle tâche pour utiliser un autre assistant.",
       "teamTaskExecutionModeLockedReason": "Les tâches planifiées par l'équipe doivent continuer à s'exécuter dans la conversation de l'équipe propriétaire, le mode d'exécution ne peut donc pas être modifié."
     },

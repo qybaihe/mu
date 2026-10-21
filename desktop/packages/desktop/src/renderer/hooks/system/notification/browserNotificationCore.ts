@@ -69,7 +69,7 @@ export type StreamMessage = {
 };
 
 // Stream `type` values that represent the agent blocking on the user: a tool
-// permission request (`acp_permission` from ACP; `permission` too from aionrs)
+// permission request (`acp_permission` from ACP; `permission` too from built-in agent)
 // or a structured question (`ask`, AskUserQuestion). All surface the same
 // "needs your input" notification.
 const CONFIRMATION_TYPES = new Set(['acp_permission', 'permission', 'ask']);

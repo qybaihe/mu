@@ -24,13 +24,14 @@ import { usePendingConfirmationsRecovery } from '@renderer/pages/conversation/Me
 import HOC from '@renderer/utils/ui/HOC';
 import React, { useMemo } from 'react';
 import type { TeamSendBoxRuntime } from '@/renderer/pages/team/components/teamSendRuntime';
-import AionrsSendBox from './AionrsSendBox';
-import type { AionrsModelSelection } from './useAionrsModelSelection';
+import BuiltinAgentSendBox from './BuiltinAgentSendBox';
+import type { BuiltinAgentModelSelection } from './useBuiltinAgentModelSelection';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
-const AionrsChat: React.FC<{
+const BuiltinAgentChat: React.FC<{
   conversation_id: string;
   workspace: string;
-  modelSelection: AionrsModelSelection;
+  modelSelection: BuiltinAgentModelSelection;
   session_mode?: string;
   cron_job_id?: string;
   emptySlot?: React.ReactNode;
@@ -65,7 +66,7 @@ const AionrsChat: React.FC<{
     return {
       conversation_id: conversation_id,
       workspace,
-      type: 'aionrs',
+      type: BUILTIN_AGENT,
       cron_job_id,
       loadedSkills,
       loadedMcpServers,
@@ -92,7 +93,7 @@ const AionrsChat: React.FC<{
             <MessageList className='flex-1' emptySlot={emptySlot} />
           </FlexFullContainer>
           <ConversationPlanBar conversation_id={conversation_id} />
-          <AionrsSendBox
+          <BuiltinAgentSendBox
             conversation_id={conversation_id}
             modelSelection={modelSelection}
             session_mode={session_mode}
@@ -106,4 +107,8 @@ const AionrsChat: React.FC<{
   );
 };
 
-export default HOC.Wrapper(MessageListProvider, MessageListLoadingProvider, MessagePaginationProvider)(AionrsChat);
+export default HOC.Wrapper(
+  MessageListProvider,
+  MessageListLoadingProvider,
+  MessagePaginationProvider
+)(BuiltinAgentChat);

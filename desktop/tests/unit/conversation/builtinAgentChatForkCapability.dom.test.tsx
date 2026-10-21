@@ -3,10 +3,10 @@
  * Copyright 2025 AionUi (aionui.com)
  * SPDX-License-Identifier: Apache-2.0
  *
- * AionrsChat must inject the conversation detail's `fork_capability` into
+ * BuiltinAgentChat must inject the conversation detail's `fork_capability` into
  * ConversationContext — that context value is the only thing gating the
  * shared message fork button (see MessageText + isForkEnabled). A dropped
- * prop silently hides the fork entry point for every aionrs conversation,
+ * prop silently hides the fork entry point for every built-in agent conversation,
  * which is exactly the bug this guards against.
  */
 
@@ -30,7 +30,7 @@ vi.mock('@renderer/pages/conversation/Messages/MessageList', async () => {
   return { __esModule: true, default: Probe };
 });
 
-vi.mock('@renderer/pages/conversation/platforms/aionrs/AionrsSendBox', () => ({
+vi.mock('@renderer/pages/conversation/platforms/builtinAgent/BuiltinAgentSendBox', () => ({
   __esModule: true,
   default: () => null,
 }));
@@ -68,22 +68,22 @@ vi.mock('@renderer/pages/conversation/Messages/artifacts', () => ({
   ConversationArtifactProvider: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }));
 
-import AionrsChat from '@renderer/pages/conversation/platforms/aionrs/AionrsChat';
-import type { AionrsModelSelection } from '@renderer/pages/conversation/platforms/aionrs/useAionrsModelSelection';
+import BuiltinAgentChat from '@renderer/pages/conversation/platforms/builtinAgent/BuiltinAgentChat';
+import type { BuiltinAgentModelSelection } from '@renderer/pages/conversation/platforms/builtinAgent/useBuiltinAgentModelSelection';
 
 const renderChat = (forkCapability?: { at_turn: boolean }) =>
   render(
-    <AionrsChat
-      conversation_id='conv-aionrs-1'
+    <BuiltinAgentChat
+      conversation_id='conv-builtin-agent-1'
       workspace='/workspace/demo'
-      modelSelection={{} as AionrsModelSelection}
+      modelSelection={{} as BuiltinAgentModelSelection}
       forkCapability={forkCapability}
     />
   );
 
 afterEach(cleanup);
 
-describe('AionrsChat fork capability wiring', () => {
+describe('BuiltinAgentChat fork capability wiring', () => {
   it('exposes the fork capability from the conversation detail to the message context', () => {
     renderChat({ at_turn: false });
     expect(screen.getByTestId('fork-capability-probe').textContent).toBe('{"at_turn":false}');

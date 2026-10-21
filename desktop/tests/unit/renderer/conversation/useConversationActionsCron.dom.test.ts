@@ -56,6 +56,7 @@ vi.mock('@/renderer/utils/ui/focus', () => ({
 }));
 
 import { useConversationActions } from '@/renderer/pages/conversation/GroupedHistory/hooks/useConversationActions';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 const makeConversation = (id: string, type: TChatConversation['type']): TChatConversation =>
   ({
@@ -99,7 +100,7 @@ describe('create scheduled task conversation action', () => {
     const onSessionClick = vi.fn();
     const { result } = renderActions(onSessionClick);
 
-    act(() => result.current.handleCreateCronTask(makeConversation('background-conversation', 'aionrs')));
+    act(() => result.current.handleCreateCronTask(makeConversation('background-conversation', BUILTIN_AGENT)));
 
     expect(requestPrefillMock).toHaveBeenCalledWith('background-conversation', 'Create with /cron in mu');
     expect(navigateMock).toHaveBeenCalledWith('/conversation/background-conversation');

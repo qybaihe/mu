@@ -72,7 +72,7 @@ import {
 import { readCloseToTraySetting } from './process/utils/closeToTraySetting';
 // @ts-expect-error - electron-squirrel-startup doesn't have types
 import electronSquirrelStartup from 'electron-squirrel-startup';
-import { AIONCORE_INTERNAL_HEADER } from '@/common/platform/aioncoreNames';
+import { BACKEND_INTERNAL_HEADER } from '@/common/platform/backendNames';
 
 // ============ Single Instance Lock ============
 // Acquire lock early so the second instance quits before doing unnecessary work.
@@ -301,7 +301,7 @@ function registerCronResumeBridge(backendPort: number): void {
     void fetch(`http://127.0.0.1:${backendPort}/api/cron/internal/system-resume`, {
       method: 'POST',
       headers: {
-        [AIONCORE_INTERNAL_HEADER]: '1',
+        [BACKEND_INTERNAL_HEADER]: '1',
       },
     }).catch((error) => {
       console.error('[mu] Failed to notify backend about system resume:', error);

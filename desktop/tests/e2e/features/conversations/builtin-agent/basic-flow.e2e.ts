@@ -1,5 +1,5 @@
 /**
- * Aionrs Chat E2E Tests - Basic Flow (P0 Priority)
+ * BuiltinAgent Chat E2E Tests - Basic Flow (P0 Priority)
  *
  * Test Cases Covered:
  * - TC-A-01: Minimal path (no attachments + default model + default permission)
@@ -7,44 +7,45 @@
  * - TC-A-03: Upload single file
  *
  * Prerequisites:
- * - aionrs binary available (via ipcBridge.fs.findAionrsBinary)
+ * - built-in agent binary available (via ipcBridge.fs.findBuiltinAgentBinary)
  * - User logged in
  * - At least 1 ACP model available (filtered Google Auth)
  *
  * Data-testid references:
- * - AgentPillBar: data-agent-backend="aionrs"
- * - AgentModeSelector: data-testid="agent-mode-selector-aionrs"
- * - AionrsSendBox: data-testid="aionrs-sendbox"
- * - FileAttachButton: data-testid="aionrs-attach-folder-btn"
+ * - AgentPillBar: data-agent-backend="<built-in agent id>"
+ * - AgentModeSelector: data-testid="agent-mode-selector-<built-in agent id>"
+ * - BuiltinAgentSendBox: data-testid="builtin-agent-sendbox"
+ * - FileAttachButton: data-testid="builtin-agent-attach-folder-btn"
  */
 
 import { test, expect } from '../../../fixtures';
 import {
-  resolveAionrsPreconditions,
-  cleanupE2EAionrsConversations,
-  createAionrsConversationViaBridge,
-  sendAionrsMessage,
-  getAionrsMessages,
-  waitForAionrsReply,
-  getAionrsConversationDB,
+  resolveBuiltinAgentPreconditions,
+  cleanupE2EBuiltinAgentConversations,
+  createBuiltinAgentConversationViaBridge,
+  sendBuiltinAgentMessage,
+  getBuiltinAgentMessages,
+  waitForBuiltinAgentReply,
+  getBuiltinAgentConversationDB,
   createTempWorkspace,
-  type AionrsTestModels,
+  type BuiltinAgentTestModels,
 } from '../../../helpers';
 import { takeScreenshot } from '../../../helpers/screenshots';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
-test.describe('Aionrs Chat - Basic Flow (P0)', () => {
-  // Set longer timeout for aionrs tests (binary calls can be slow)
-  test.setTimeout(240_000); // 4 minutes — allow 150s waitForAionrsReply + buffer
+test.describe('BuiltinAgent Chat - Basic Flow (P0)', () => {
+  // Set longer timeout for the built-in agent tests (binary calls can be slow)
+  test.setTimeout(240_000); // 4 minutes — allow 150s waitForBuiltinAgentReply + buffer
 
-  let preconditions: { binary: string | null; models: AionrsTestModels | null };
+  let preconditions: { binary: string | null; models: BuiltinAgentTestModels | null };
 
-  // Check aionrs binary and provider availability before all tests
+  // Check built-in agent binary and provider availability before all tests
   test.beforeAll(async ({ page }) => {
-    preconditions = await resolveAionrsPreconditions(page);
+    preconditions = await resolveBuiltinAgentPreconditions(page);
     if (!preconditions.binary || !preconditions.models) {
-      test.skip(true, 'No aionrs-compatible provider found, skipping E2E tests');
+      test.skip(true, 'No builtin-agent-compatible provider found, skipping E2E tests');
     }
   });
 
@@ -56,15 +57,18 @@ test.describe('Aionrs Chat - Basic Flow (P0)', () => {
     }
 
     // 2. Delete E2E conversations from DB (cascades to messages)
-    await cleanupE2EAionrsConversations(page);
+    await cleanupE2EBuiltinAgentConversations(page);
 
     // 3. Clear sessionStorage
     await page.evaluate(() => {
-      // Clear aionrs-specific sessionStorage keys
+      // Clear builtin-agent-specific sessionStorage keys
       const keysToRemove: string[] = [];
       for (let i = 0; i < sessionStorage.length; i++) {
         const key = sessionStorage.key(i);
-        if (key && (key.startsWith('aionrs_initial_message_') || key.startsWith('aionrs_initial_processed_'))) {
+        if (
+          key &&
+          (key.startsWith('builtin_agent_initial_message_') || key.startsWith('builtin_agent_initial_processed_'))
+        ) {
           keysToRemove.push(key);
         }
       }
@@ -78,40 +82,40 @@ test.describe('Aionrs Chat - Basic Flow (P0)', () => {
 
   test('TC-A-01: should complete minimal conversation with no attachments', async ({ page }) => {
     const timestamp = Date.now();
-    const conversationName = `E2E-aionrs-${timestamp}-minimal-path`;
+    const conversationName = `E2E-builtin-agent-${timestamp}-minimal-path`;
     const tempWorkspace = createTempWorkspace(`tc-a-01-${timestamp}`);
 
     try {
       // Step 1: Screenshot initial guid page
       await page.goto(`${page.url().split('#')[0]}#/guid`);
       await page.waitForLoadState('networkidle');
-      await takeScreenshot(page, `chat-aionrs/tc-a-01/01-guid-page-initial.png`);
+      await takeScreenshot(page, `chat-builtin-agent/tc-a-01/01-guid-page-initial.png`);
 
-      // Step 2: Create conversation via bridge (uses prioritized aionrs-compatible provider)
-      const conversationId = await createAionrsConversationViaBridge(page, {
+      // Step 2: Create conversation via bridge (uses prioritized builtin-agent-compatible provider)
+      const conversationId = await createBuiltinAgentConversationViaBridge(page, {
         name: conversationName,
         workspace: tempWorkspace.path,
         provider: preconditions.models!.modelA,
         sessionMode: 'default',
       });
-      await takeScreenshot(page, `chat-aionrs/tc-a-01/02-conversation-created.png`);
+      await takeScreenshot(page, `chat-builtin-agent/tc-a-01/02-conversation-created.png`);
 
       // Step 3: Send simple message
-      await sendAionrsMessage(page, conversationId, 'Say hi in one word.');
-      await takeScreenshot(page, `chat-aionrs/tc-a-01/03-message-sent.png`);
+      await sendBuiltinAgentMessage(page, conversationId, 'Say hi in one word.');
+      await takeScreenshot(page, `chat-builtin-agent/tc-a-01/03-message-sent.png`);
 
       // Step 4: Wait for AI reply
-      await waitForAionrsReply(page, conversationId);
-      await takeScreenshot(page, `chat-aionrs/tc-a-01/04-reply-completed.png`);
+      await waitForBuiltinAgentReply(page, conversationId);
+      await takeScreenshot(page, `chat-builtin-agent/tc-a-01/04-reply-completed.png`);
 
       // ============================================================================
       // DB Assertions
       // ============================================================================
 
       // 1. Verify conversation created
-      const conversation = await getAionrsConversationDB(page, conversationId);
+      const conversation = await getBuiltinAgentConversationDB(page, conversationId);
       expect(conversation).toBeDefined();
-      expect(conversation.type).toBe('aionrs');
+      expect(conversation.type).toBe(BUILTIN_AGENT);
 
       // Parse extra field
       const extra =
@@ -119,7 +123,7 @@ test.describe('Aionrs Chat - Basic Flow (P0)', () => {
       expect(['default', 'auto_edit', 'yolo']).toContain(extra.sessionMode);
 
       // 2. Verify user message
-      const messages = await getAionrsMessages(page, conversationId);
+      const messages = await getBuiltinAgentMessages(page, conversationId);
       expect(messages.length).toBeGreaterThanOrEqual(2); // At least user + AI
 
       const userMessages = messages.filter((m) => m.position === 'right');
@@ -135,7 +139,7 @@ test.describe('Aionrs Chat - Basic Flow (P0)', () => {
       expect(aiMessages.length).toBeGreaterThanOrEqual(1);
 
       const aiMsg = aiMessages[0];
-      // Note: message.status is not set to 'finish' for aionrs text messages (only conv.status matters)
+      // Note: message.status is not set to 'finish' for the built-in agent text messages (only conv.status matters)
       expect(aiMsg.createdAt).toBeGreaterThan(userMsg.createdAt);
 
       // 4. Verify message count
@@ -152,7 +156,7 @@ test.describe('Aionrs Chat - Basic Flow (P0)', () => {
 
   test('TC-A-02: should associate single folder and reference in message', async ({ page }) => {
     const timestamp = Date.now();
-    const conversationName = `E2E-aionrs-${timestamp}-folder-single`;
+    const conversationName = `E2E-builtin-agent-${timestamp}-folder-single`;
     const tempWorkspace = createTempWorkspace(`tc-a-02-${timestamp}`);
 
     try {
@@ -162,10 +166,10 @@ test.describe('Aionrs Chat - Basic Flow (P0)', () => {
       await fs.writeFile(path.join(testFolderPath, 'sample.txt'), 'sample content');
 
       // Screenshot 01: guid page initial
-      await takeScreenshot(page, `chat-aionrs/tc-a-02/01-guid-page-before-create.png`);
+      await takeScreenshot(page, `chat-builtin-agent/tc-a-02/01-guid-page-before-create.png`);
 
       // Step 2: Create conversation via bridge with workspace pre-configured
-      const conversationId = await createAionrsConversationViaBridge(page, {
+      const conversationId = await createBuiltinAgentConversationViaBridge(page, {
         name: conversationName,
         workspace: testFolderPath,
         provider: preconditions.models!.modelA,
@@ -173,22 +177,22 @@ test.describe('Aionrs Chat - Basic Flow (P0)', () => {
       });
 
       // Step 3: Send message asking about folder (via bridge, no UI interaction needed)
-      await sendAionrsMessage(page, conversationId, 'What files are in the attached folder?');
+      await sendBuiltinAgentMessage(page, conversationId, 'What files are in the attached folder?');
 
       // Screenshot 02: message sent
-      await takeScreenshot(page, `chat-aionrs/tc-a-02/02-message-sent.png`);
+      await takeScreenshot(page, `chat-builtin-agent/tc-a-02/02-message-sent.png`);
 
       // Step 4: Wait for AI reply
-      await waitForAionrsReply(page, conversationId);
+      await waitForBuiltinAgentReply(page, conversationId);
 
       // Screenshot 03: AI reply completed
-      await takeScreenshot(page, `chat-aionrs/tc-a-02/03-reply-completed.png`);
+      await takeScreenshot(page, `chat-builtin-agent/tc-a-02/03-reply-completed.png`);
 
       // ============================================================================
       // DB Assertions
       // ============================================================================
 
-      const messages = await getAionrsMessages(page, conversationId);
+      const messages = await getBuiltinAgentMessages(page, conversationId);
 
       // 1. Verify user message contains folder reference
       const userMessages = messages.filter((m) => m.position === 'right');
@@ -207,7 +211,7 @@ test.describe('Aionrs Chat - Basic Flow (P0)', () => {
       expect(userContent.content).toContain('What files are in the attached folder?');
 
       // 3. Verify AI reply exists
-      // Note: message.status is not set to 'finish' for aionrs text messages (only conv.status matters)
+      // Note: message.status is not set to 'finish' for the built-in agent text messages (only conv.status matters)
       const aiMessages = messages.filter((m) => m.position === 'left' && m.type === 'text');
       expect(aiMessages.length).toBeGreaterThanOrEqual(1);
     } finally {
@@ -221,21 +225,21 @@ test.describe('Aionrs Chat - Basic Flow (P0)', () => {
 
   test('TC-A-03: should upload single file and binary receives file parameter', async ({ page }) => {
     const timestamp = Date.now();
-    const conversationName = `E2E-aionrs-${timestamp}-file-single`;
+    const conversationName = `E2E-builtin-agent-${timestamp}-file-single`;
     const tempWorkspace = createTempWorkspace(`tc-a-03-${timestamp}`);
 
     try {
       // Step 1: Create test file in workspace
       const testFilePath = path.join(tempWorkspace.path, 'e2e-test-file.txt');
-      await fs.writeFile(testFilePath, 'Test file content for aionrs E2E');
+      await fs.writeFile(testFilePath, 'Test file content for the built-in agent E2E');
 
       // Screenshot 01: before creating conversation
-      await takeScreenshot(page, `chat-aionrs/tc-a-03/01-before-create.png`);
+      await takeScreenshot(page, `chat-builtin-agent/tc-a-03/01-before-create.png`);
 
       // Step 2: Create conversation via bridge (Electron mode)
       // Note: In real usage, file would be uploaded via UI. For E2E, we create conversation
-      // with workspace containing the test file, which aionrs can access
-      const conversationId = await createAionrsConversationViaBridge(page, {
+      // with workspace containing the test file, which built-in agent can access
+      const conversationId = await createBuiltinAgentConversationViaBridge(page, {
         name: conversationName,
         workspace: tempWorkspace.path,
         provider: preconditions.models!.modelA,
@@ -243,26 +247,26 @@ test.describe('Aionrs Chat - Basic Flow (P0)', () => {
       });
 
       // Step 3: Send message about file (via bridge)
-      await sendAionrsMessage(
+      await sendBuiltinAgentMessage(
         page,
         conversationId,
         'What is the content of the file e2e-test-file.txt in the workspace?'
       );
 
       // Screenshot 02: message sent
-      await takeScreenshot(page, `chat-aionrs/tc-a-03/02-message-sent.png`);
+      await takeScreenshot(page, `chat-builtin-agent/tc-a-03/02-message-sent.png`);
 
       // Step 4: Wait for AI reply
-      await waitForAionrsReply(page, conversationId);
+      await waitForBuiltinAgentReply(page, conversationId);
 
       // Screenshot 03: reply completed
-      await takeScreenshot(page, `chat-aionrs/tc-a-03/03-reply-completed.png`);
+      await takeScreenshot(page, `chat-builtin-agent/tc-a-03/03-reply-completed.png`);
 
       // ============================================================================
       // DB Assertions
       // ============================================================================
 
-      const messages = await getAionrsMessages(page, conversationId);
+      const messages = await getBuiltinAgentMessages(page, conversationId);
 
       // 1. Verify user message exists
       const userMessages = messages.filter((m) => m.position === 'right');
@@ -272,14 +276,14 @@ test.describe('Aionrs Chat - Basic Flow (P0)', () => {
       const userContent = userMsg.content;
       expect(userContent.content).toContain('e2e-test-file.txt');
 
-      // 2. Verify AI reply mentions file content (aionrs can read workspace files)
+      // 2. Verify AI reply mentions file content (built-in agent can read workspace files)
       const aiMessages = messages.filter((m) => m.position === 'left' && m.type === 'text');
       expect(aiMessages.length).toBeGreaterThanOrEqual(1);
 
       const aiMsg = aiMessages[0];
-      // Note: message.status is not set to 'finish' for aionrs text messages (only conv.status matters)
+      // Note: message.status is not set to 'finish' for the built-in agent text messages (only conv.status matters)
 
-      // Note: Since aionrs has workspace access, it should be able to read the file
+      // Note: Since built-in agent has workspace access, it should be able to read the file
       // and mention its content in the reply. This verifies file access works.
     } finally {
       await tempWorkspace.cleanup();

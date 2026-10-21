@@ -29,7 +29,7 @@ const RULE_FILE_RE = /^(.+?)\.([a-zA-Z-]+)\.md$/;
 
 /**
  * The legacy Electron build shipped `'gemini'` as the fallback agent type for
- * every assistant (built-in and user). The current backend ships `'aionrs'` as
+ * every assistant (built-in and user). The current backend ships the built-in agent's id as
  * the built-in default — the internal Gemini engine was removed, and what
  * remains with the name "gemini" is a distinct ACP backend the user must
  * install. Treat the legacy default as "no explicit choice" and promote it to
@@ -291,7 +291,7 @@ async function applyBuiltinOverrides(overrides: BuiltinOverride[]): Promise<numb
  *
  * `currentBuiltinAgentIds` is a `Map<builtin-id, agent_id>` sourced
  * from `GET /api/assistants` at migration time, so we stay aligned with
- * whatever manifest the running backend ships (e.g. current is `aionrs`, but
+ * whatever manifest the running backend ships (e.g. current is the built-in agent's id, but
  * a future manifest could pin a specific built-in back to `claude`).
  */
 function collectBuiltinAgentIdOverrides(
@@ -529,7 +529,7 @@ async function uploadLegacyAssistantRules(legacyAssistantIds: Set<string>): Prom
  *   3. PUT /api/assistants/{id} for each legacy built-in whose user-picked
  *      `presetAgentType` differs from the current manifest default — so a
  *      user who explicitly chose `claude`/`codex`/etc. keeps that choice
- *      across the 'gemini' → 'aionrs' default migration.
+ *      across the 'gemini' → built-in agent default migration.
  *   4. POST /api/skills/assistant-rule/write for each `<userData>/config/
  *      assistants/<id>.<locale>.md` belonging to a custom assistant — but
  *      only when the backend rule for that (id, locale) is currently empty,

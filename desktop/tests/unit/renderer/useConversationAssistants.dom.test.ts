@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ipcBridge } from '@/common';
 import { useConversationAssistants } from '@/renderer/pages/conversation/hooks/useConversationAssistants';
 import type { Assistant } from '@/common/types/agent/assistantTypes';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 vi.mock('@/common', () => ({
   ipcBridge: {
@@ -25,7 +26,7 @@ describe('useConversationAssistants', () => {
 
   it('loads only enabled assistants from the backend catalog', async () => {
     (ipcBridge.assistants.list.invoke as never as ReturnType<typeof vi.fn>).mockResolvedValue([
-      { id: 'bare-aionrs', name: 'Aion CLI', enabled: true, source: 'generated' },
+      { id: `bare-${BUILTIN_AGENT}`, name: 'Aion CLI', enabled: true, source: 'generated' },
       { id: 'disabled-writer', name: 'Writer', enabled: false, source: 'user' },
       { id: 'assistant-1', name: 'Researcher', source: 'user' },
     ] satisfies Partial<Assistant>[]);
@@ -34,12 +35,15 @@ describe('useConversationAssistants', () => {
 
     await waitFor(() => expect(result.current.presetAssistants).toHaveLength(2));
 
-    expect(result.current.presetAssistants.map((assistant) => assistant.id)).toEqual(['bare-aionrs', 'assistant-1']);
+    expect(result.current.presetAssistants.map((assistant) => assistant.id)).toEqual([
+      `bare-${BUILTIN_AGENT}`,
+      'assistant-1',
+    ]);
   });
 
   it('keeps the filtered assistant list stable across rerenders when SWR data is unchanged', async () => {
     const catalog = [
-      { id: 'bare-aionrs', name: 'Aion CLI', enabled: true, source: 'generated' },
+      { id: `bare-${BUILTIN_AGENT}`, name: 'Aion CLI', enabled: true, source: 'generated' },
       { id: 'assistant-1', name: 'Researcher', source: 'user' },
     ] satisfies Partial<Assistant>[];
 

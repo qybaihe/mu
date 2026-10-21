@@ -17,7 +17,7 @@ import {
 } from '@/common/chat/chatLib';
 import { createContext as createReactContext, useCallback, useContext, useEffect, useRef } from 'react';
 import { createContext } from '@renderer/utils/ui/createContext';
-import { fromAionCoreCode } from '@/common/platform/aioncoreNames';
+import { fromBackendCode } from '@/common/platform/backendNames';
 import {
   DEFAULT_MESSAGE_PAGE_LIMIT,
   loadConversationAnchorWindow,
@@ -620,7 +620,7 @@ const classifyPersistedSendFailure = (
   }
 
   // Stored as AionCore wrote it: its own errors' code goes by the app's name.
-  const persistedCode = typeof parsed.code === 'string' ? fromAionCoreCode(parsed.code) : undefined;
+  const persistedCode = typeof parsed.code === 'string' ? fromBackendCode(parsed.code) : undefined;
   const structuredContent = isRecord(parsed.structuredContent) ? parsed.structuredContent : undefined;
   const domainCode =
     typeof structuredContent?.domainCode === 'string'

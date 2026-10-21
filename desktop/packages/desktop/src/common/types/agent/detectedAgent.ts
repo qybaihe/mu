@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { BUILTIN_AGENT, BuiltinAgent } from '@/common/platform/backendNames';
+
 /**
  * Detection layer types — represents available execution engines in the system.
  *
@@ -24,7 +26,7 @@ export type RemoteAgentProtocol = 'openclaw' | 'zeroclaw' | 'acp';
 export type RemoteAgentAuthType = 'bearer' | 'password' | 'none';
 
 /** Execution engine kinds — each uses a different protocol or runtime */
-export type DetectedAgentKind = 'acp' | 'remote' | 'aionrs' | 'openclaw-gateway' | 'nanobot';
+export type DetectedAgentKind = 'acp' | 'remote' | BuiltinAgent | 'openclaw-gateway' | 'nanobot';
 
 /** Kind-specific fields mapping */
 type KindFields = {
@@ -52,7 +54,7 @@ type KindFields = {
     authType: RemoteAgentAuthType;
   };
 
-  aionrs: {
+  [BUILTIN_AGENT]: {
     /** Resolved CLI binary path */
     cli_path?: string;
     /** Binary version string */
@@ -90,7 +92,7 @@ export type DetectedAgent<K extends DetectedAgentKind = DetectedAgentKind> = {
 // Convenience aliases
 export type AcpDetectedAgent = DetectedAgent<'acp'>;
 export type RemoteDetectedAgent = DetectedAgent<'remote'>;
-export type AionrsDetectedAgent = DetectedAgent<'aionrs'>;
+export type BuiltinAgentDetectedAgent = DetectedAgent<BuiltinAgent>;
 export type NanobotDetectedAgent = DetectedAgent<'nanobot'>;
 export type OpenClawDetectedAgent = DetectedAgent<'openclaw-gateway'>;
 

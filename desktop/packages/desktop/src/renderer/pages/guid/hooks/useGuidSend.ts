@@ -16,6 +16,7 @@ import { type TFunction } from 'i18next';
 import type { NavigateFunction } from 'react-router-dom';
 import { mutate as swrMutate } from 'swr';
 import { getConversationCreateErrorMessage } from '@/renderer/pages/conversation/utils/conversationCreateError';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 export type GuidSendDeps = {
   // Input state
@@ -137,7 +138,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
             .filter((server) => (defaultSelectedMcpServerIds ?? []).includes(server.id))
             .map((server) => toSessionMcpServer(server));
 
-    // `current_model` is the aionrs provider selection and means nothing to a
+    // `current_model` is the built-in agent provider selection and means nothing to a
     // CLI agent, which owns its own model list. Used as a blanket fallback it
     // leaked into the FIRST turn of every CLI conversation: before the agent's
     // catalog has been probed the two preceding options are empty, so a brand
@@ -148,7 +149,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
     //
     // Omitting it lets the agent start on its own default, which is what a user
     // who has not picked a model means. The cron dialog already gates the same
-    // value this way (`resolvedBackend !== 'aionrs' → undefined`).
+    // value this way (`resolvedBackend !== BUILTIN_AGENT → undefined`).
     //
     // The cached `current_model_id` is NOT a fallback for the same reason, and it
     // used to defeat the very intent described above. It is whatever the LAST
@@ -160,7 +161,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
     // another). Omit it: no pick means no override, and the agent resolves the
     // model from the user's own config.
     const assistantOverrideModel =
-      selectedAcpModel || (assistantBackend === 'aionrs' ? current_model?.use_model : undefined) || undefined;
+      selectedAcpModel || (assistantBackend === BUILTIN_AGENT ? current_model?.use_model : undefined) || undefined;
     const assistantOverrides = {
       model: assistantOverrideModel,
       permission: selectedMode || undefined,
@@ -170,7 +171,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
       mcp_ids: assistantOverrideMcpIds,
     };
 
-    if (assistantBackend === 'aionrs') {
+    if (assistantBackend === BUILTIN_AGENT) {
       if (!current_model) {
         Message.warning(t('conversation.noModelConfigured'));
         return;
@@ -219,7 +220,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
             input,
             files: files.length > 0 ? files : undefined,
           };
-          sessionStorage.setItem(`aionrs_initial_message_${conversation.id}`, JSON.stringify(initialMessage));
+          sessionStorage.setItem(`builtin_agent_initial_message_${conversation.id}`, JSON.stringify(initialMessage));
         }
 
         await navigate(`/conversation/${conversation.id}`);

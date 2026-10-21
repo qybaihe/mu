@@ -30,7 +30,8 @@ import {
 import { resolveAssistantAvatar } from '@renderer/utils/model/assistantAvatar';
 import { resolveAssistantName } from '@renderer/utils/model/assistantDisplay';
 import { resolveCronAgentConfig } from './resolveCronAgentConfig';
-import { assistantRuntimeKey, isAionrsAssistant } from '@/common/types/agent/assistantTypes';
+import { assistantRuntimeKey, isBuiltinAgentAssistant } from '@/common/types/agent/assistantTypes';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 const FormItem = Form.Item;
 const TextArea = Input.TextArea;
@@ -374,31 +375,31 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     [managedAgentRuntimeCatalog]
   );
 
-  const isGeminiMode = resolvedBackend === 'gemini' || resolvedBackend === 'aionrs';
+  const isGeminiMode = resolvedBackend === 'gemini' || resolvedBackend === BUILTIN_AGENT;
 
-  // Providers compatible with aionrs (AionCLI does not support Google Auth).
+  // Providers compatible with the built-in agent (it does not support Google Auth).
   // Computed independent of the current selection so assistant options backed
-  // by aionrs can be disabled when no provider is configured.
-  const aionrsProviders = useMemo(
+  // by the built-in agent can be disabled when no provider is configured.
+  const builtinAgentProviders = useMemo(
     () => providers.filter((p) => !p.platform?.toLowerCase().includes('gemini-with-google-auth')),
     [providers]
   );
-  const hasAionrsProvider = aionrsProviders.length > 0;
+  const hasBuiltinAgentProvider = builtinAgentProviders.length > 0;
 
   const filteredProviders = useMemo(
-    () => (resolvedBackend === 'aionrs' ? aionrsProviders : providers),
-    [resolvedBackend, providers, aionrsProviders]
+    () => (resolvedBackend === BUILTIN_AGENT ? builtinAgentProviders : providers),
+    [resolvedBackend, providers, builtinAgentProviders]
   );
 
   // Build Gemini current_model from model_id for GuidModelSelector.
-  // For aionrs edit mode, prefer the exact provider_id stored in model —
+  // For built-in agent edit mode, prefer the exact provider_id stored in model —
   // the same model name may exist across multiple providers, so fuzzy match
   // would pick the wrong provider.
   const geminiCurrentModel = useMemo<TProviderWithModel | undefined>(() => {
-    if (resolvedBackend !== 'aionrs' || !model_id) return undefined;
+    if (resolvedBackend !== BUILTIN_AGENT || !model_id) return undefined;
 
     const editedProviderId =
-      resolvedBackend === 'aionrs' ? editJob?.metadata.agent_config?.model?.provider_id : undefined;
+      resolvedBackend === BUILTIN_AGENT ? editJob?.metadata.agent_config?.model?.provider_id : undefined;
     if (editedProviderId) {
       const byId = filteredProviders.find((p) => p.id === editedProviderId);
       if (byId && getAvailableModels(byId).includes(model_id)) {
@@ -429,23 +430,23 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   );
 
   const acpCachedModelInfo = useMemo<AcpModelInfo | null>(() => {
-    if (!resolvedBackend || resolvedBackend === 'gemini' || resolvedBackend === 'aionrs') return null;
+    if (!resolvedBackend || resolvedBackend === 'gemini' || resolvedBackend === BUILTIN_AGENT) return null;
     return buildAssistantModelInfo(selectedAssistantModels);
   }, [resolvedBackend, selectedAssistantModels]);
 
-  // Auto-pick the first available model from /api/providers when aionrs is
+  // Auto-pick the first available model from /api/providers when the built-in agent is
   // selected but none is set yet. Source of truth is the backend provider
   // list — do NOT read from any frontend-cached default.
   useEffect(() => {
-    if (resolvedBackend !== 'aionrs' || model_id) return;
-    for (const provider of aionrsProviders) {
+    if (resolvedBackend !== BUILTIN_AGENT || model_id) return;
+    for (const provider of builtinAgentProviders) {
       const models = getAvailableModels(provider);
       if (models.length > 0) {
         setModelId(models[0]);
         return;
       }
     }
-  }, [resolvedBackend, model_id, aionrsProviders, getAvailableModels]);
+  }, [resolvedBackend, model_id, builtinAgentProviders, getAvailableModels]);
 
   const showTimePicker = frequency === 'daily' || frequency === 'weekdays' || frequency === 'weekly';
   const showWeekdayPicker = frequency === 'weekly';
@@ -550,7 +551,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         agent_config = resolveCronAgentConfig({
           agentValue: assistantValue,
           presetAssistants,
-          selectedAionrsProvider: geminiCurrentModel
+          selectedBuiltinAgentProvider: geminiCurrentModel
             ? {
                 id: geminiCurrentModel.id as string | undefined,
                 name: geminiCurrentModel.name,
@@ -561,7 +562,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
           workspace,
           localeKey,
           getMode: resolveAutoApproveModeFromAgentMetadata,
-          aionrsModelRequiredMessage: t('cron.page.form.aionrsModelRequired'),
+          builtinAgentModelRequiredMessage: t('cron.page.form.builtinAgentModelRequired'),
         }).agent_config;
       }
 
@@ -683,12 +684,12 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
               {presetAssistants.map((assistant) => {
                 const name = resolveAssistantName(assistant, localeKey, assistant.name);
                 const avatar = resolveAssistantAvatar(assistant.avatar);
-                const disabled = isAionrsAssistant(assistant) && !hasAionrsProvider;
+                const disabled = isBuiltinAgentAssistant(assistant) && !hasBuiltinAgentProvider;
                 return (
                   <Option key={assistant.id} value={assistant.id} disabled={disabled}>
                     <div
                       className='flex items-center gap-8px'
-                      title={disabled ? t('cron.page.form.aionrsNoProvider') : undefined}
+                      title={disabled ? t('cron.page.form.builtinAgentNoProvider') : undefined}
                     >
                       {avatar.kind === 'image' ? (
                         <ThemedLogo src={avatar.value} alt={name} className='w-16px h-16px object-contain' />
@@ -699,7 +700,7 @@ const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                       )}
                       <span>{name}</span>
                       {disabled && (
-                        <span className='text-12px text-t-tertiary'>{t('cron.page.form.aionrsNoProvider')}</span>
+                        <span className='text-12px text-t-tertiary'>{t('cron.page.form.builtinAgentNoProvider')}</span>
                       )}
                     </div>
                   </Option>

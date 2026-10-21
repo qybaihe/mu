@@ -11,6 +11,7 @@ import {
   normalizeTeamStatus,
   toBackendAssistant,
 } from '@/common/adapter/teamMapper';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 const contextResetReady = {
   context_reset: { supported: true, availability: 'ready' },
@@ -124,7 +125,7 @@ describe('teamMapper', () => {
         slot_id: 'slot-1',
         conversation_id: 'conversation-1',
         role: 'teammate',
-        backend: 'aionrs',
+        backend: BUILTIN_AGENT,
         name: 'Worker',
         assistant_id: 'assistant-1',
       }).assistant_id
@@ -138,7 +139,7 @@ describe('teamMapper', () => {
         slot_id: 'slot-2',
         conversation_id: 'conversation-2',
         role: 'teammate',
-        backend: 'aionrs',
+        backend: BUILTIN_AGENT,
         name: 'Worker',
         custom_agent_id: 'assistant-legacy',
       }).assistant_id
@@ -149,7 +150,7 @@ describe('teamMapper', () => {
     expect(
       toBackendAssistant({
         role: 'leader',
-        assistant_backend: 'aionrs',
+        assistant_backend: BUILTIN_AGENT,
         assistant_name: 'Aion CLI',
         status: 'pending',
         assistant_id: 'assistant-1',

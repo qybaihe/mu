@@ -15,7 +15,7 @@ import {
   sendMessageFromGuid,
   waitForPermissionMessageCard,
 } from '../../../helpers';
-import { AIONCORE_DATABASE_FILE } from '@/common/platform/aioncoreNames';
+import { BACKEND_DATABASE_FILE } from '@/common/platform/backendNames';
 import { DATA_FOLDER } from '@/common/platform/legacyNames';
 
 const PREFERRED_ACP_BACKENDS = ['codex', 'claude', 'gemini'] as const;
@@ -301,7 +301,7 @@ test.describe('ACP cron busy handling', () => {
       expect(job.metadata.agent_config?.preset_agent_type).toBeUndefined();
 
       const userDataPath = await getUserDataPath(electronApp);
-      const dbPath = path.join(userDataPath, DATA_FOLDER, AIONCORE_DATABASE_FILE);
+      const dbPath = path.join(userDataPath, DATA_FOLDER, BACKEND_DATABASE_FILE);
 
       await expect
         .poll(() => queryCronRow(dbPath, job.id).conversation_id, {

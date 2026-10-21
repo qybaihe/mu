@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { AIONCORE_CONVERSATION_ID_ENV } from '@/common/platform/aioncoreNames';
+import { BACKEND_CONVERSATION_ID_ENV } from '@/common/platform/backendNames';
 import { KyrnAgent, MU_TURN_ERRORS } from '@/process/agent/kyrn/KyrnAgent';
 import { readImportRecord, writeImportRecord } from '@/process/agent/kyrn/importChats';
 import type { JsonRecord } from '@/process/agent/kyrn/piRpc';
@@ -61,7 +61,7 @@ describe('an imported conversation’s first session', () => {
     const { agent, store, started } = adapter();
     const project = temp('project');
     const file = imported(store, 'conv-1', project);
-    vi.stubEnv(AIONCORE_CONVERSATION_ID_ENV, 'conv-1');
+    vi.stubEnv(BACKEND_CONVERSATION_ID_ENV, 'conv-1');
     const first = await agent.newSession({ cwd: project, mcpServers: [] });
     expect(started).toEqual([file]);
     expect(readImportRecord(store, 'conv-1')?.session).toBe(first.sessionId);
@@ -81,9 +81,9 @@ describe('an imported conversation’s first session', () => {
     const { agent, store, started } = adapter();
     const project = temp('project');
     imported(store, 'conv-1', project);
-    vi.stubEnv(AIONCORE_CONVERSATION_ID_ENV, 'conv-2');
+    vi.stubEnv(BACKEND_CONVERSATION_ID_ENV, 'conv-2');
     await agent.newSession({ cwd: project, mcpServers: [] });
-    vi.stubEnv(AIONCORE_CONVERSATION_ID_ENV, '');
+    vi.stubEnv(BACKEND_CONVERSATION_ID_ENV, '');
     await agent.newSession({ cwd: project, mcpServers: [] });
     expect(started).toEqual([undefined, undefined]);
     expect(readImportRecord(store, 'conv-1')?.session).toBeUndefined();
@@ -95,13 +95,13 @@ describe('an imported conversation’s first session', () => {
     const project = temp('project');
     const elsewhere = temp('elsewhere');
     imported(store, 'conv-1', project);
-    vi.stubEnv(AIONCORE_CONVERSATION_ID_ENV, 'conv-1');
+    vi.stubEnv(BACKEND_CONVERSATION_ID_ENV, 'conv-1');
     await expect(agent.newSession({ cwd: elsewhere, mcpServers: [] })).rejects.toThrow(MU_TURN_ERRORS.wrongProject);
     expect(started).toEqual([]);
 
     const file = imported(store, 'conv-3', project);
     rmSync(file);
-    vi.stubEnv(AIONCORE_CONVERSATION_ID_ENV, 'conv-3');
+    vi.stubEnv(BACKEND_CONVERSATION_ID_ENV, 'conv-3');
     await agent.newSession({ cwd: project, mcpServers: [] });
     expect(started).toEqual([undefined]);
     agent.close();

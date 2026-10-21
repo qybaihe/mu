@@ -418,7 +418,7 @@ test('最小权限: a write asks once, 允许 writes the file, and the turn fini
   const p = page();
   await test.step('the conversation is switched to 最小权限', async () => {
     await p.getByTestId('mode-selector').click();
-    await p.getByTestId('aionrs-mode-option-ask').click();
+    await p.getByTestId('builtin-agent-mode-option-ask').click();
     await expect(p.getByTestId('mode-selector')).toHaveAttribute('data-current-mode', 'ask', { timeout: 20_000 });
   });
 

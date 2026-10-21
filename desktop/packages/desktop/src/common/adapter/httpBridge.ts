@@ -7,7 +7,7 @@
  */
 
 import { showAsMu } from '../kyrn/displayName';
-import { fromAionCoreCode } from '../platform/aioncoreNames';
+import { fromBackendCode } from '../platform/backendNames';
 import { refreshSession, WS_CLOSE_POLICY_VIOLATION } from './sessionRefresh';
 
 // ---------------------------------------------------------------------------
@@ -88,7 +88,7 @@ function getWsUrl(): string {
 export class BackendHttpError extends Error {
   readonly status: number;
   /**
-   * Machine-readable error code from the backend `ErrorResponse.code` by the app's name (`fromAionCoreCode`), or `''`
+   * Machine-readable error code from the backend `ErrorResponse.code` by the app's name (`fromBackendCode`), or `''`
    * when parse failed.
    */
   readonly code: string;
@@ -110,7 +110,7 @@ export class BackendHttpError extends Error {
     let details: unknown;
     if (body && typeof body === 'object') {
       const b = body as { code?: unknown; error?: unknown; details?: unknown };
-      if (typeof b.code === 'string') code = fromAionCoreCode(b.code);
+      if (typeof b.code === 'string') code = fromBackendCode(b.code);
       if (typeof b.error === 'string') backendMessage = b.error;
       details = b.details;
     } else if (typeof body === 'string') {

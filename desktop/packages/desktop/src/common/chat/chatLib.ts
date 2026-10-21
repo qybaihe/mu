@@ -8,7 +8,7 @@ import type { AcpPermissionRequest, PlanUpdate, ToolCallUpdate } from '@/common/
 import type { AcpAvailableCommand } from '@/common/chat/slash/types';
 import type { IResponseMessage } from '../adapter/ipcBridge';
 import { uuid } from '../utils';
-import { fromAionCoreCode, fromAionCoreOwnership } from '../platform/aioncoreNames';
+import { fromBackendCode, fromBackendOwnership } from '../platform/backendNames';
 import { sanitizeAcpToolCallContent, sanitizeAcpToolUpdate } from './acpToolCallOutput';
 
 export { sanitizeAcpToolCallContent } from './acpToolCallOutput';
@@ -646,8 +646,8 @@ export const normalizeAgentStreamError = (value: unknown): AgentStreamErrorInfo 
   }
 
   // The error came from AionCore: its own errors' code and ownership go by the app's names.
-  const code = typeof value.code === 'string' ? fromAionCoreCode(value.code) : undefined;
-  const namedOwnership = typeof value.ownership === 'string' ? fromAionCoreOwnership(value.ownership) : undefined;
+  const code = typeof value.code === 'string' ? fromBackendCode(value.code) : undefined;
+  const namedOwnership = typeof value.ownership === 'string' ? fromBackendOwnership(value.ownership) : undefined;
   const ownership =
     namedOwnership !== undefined && AGENT_ERROR_OWNERSHIPS.has(namedOwnership as AgentErrorOwnership)
       ? (namedOwnership as AgentErrorOwnership)

@@ -22,6 +22,7 @@ import {
   deleteConversation,
   startAutoApprovePermissionMessages,
 } from '../helpers';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 interface CronJob {
   id: string;
@@ -34,7 +35,7 @@ interface CronJob {
 }
 
 async function pickAvailableBackend(page: import('@playwright/test').Page): Promise<string | null> {
-  const preferredBackends = ['gemini', 'claude', 'codex', 'aionrs'];
+  const preferredBackends = ['gemini', 'claude', 'codex', BUILTIN_AGENT];
   for (const backend of preferredBackends) {
     const assistantId = await findAssistantIdForBackend(page, backend, { requireAvailable: true });
     if (assistantId) return backend;

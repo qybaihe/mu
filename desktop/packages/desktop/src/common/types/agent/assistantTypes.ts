@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { BUILTIN_AGENT } from '../../platform/backendNames';
+
 // Mirror of AionCore's api-types crate (assistant.rs).
 // Any shape change on either side requires a same-PR update on the other.
 
@@ -21,8 +23,8 @@ export function assistantRuntimeKey(assistant?: Pick<Assistant, 'agent'> | null)
   return assistant?.agent?.acp_backend || assistant?.agent?.type || '';
 }
 
-export function isAionrsAssistant(assistant?: Pick<Assistant, 'agent'> | null): boolean {
-  return assistant?.agent?.type === 'aionrs';
+export function isBuiltinAgentAssistant(assistant?: Pick<Assistant, 'agent'> | null): boolean {
+  return assistant?.agent?.type === BUILTIN_AGENT;
 }
 
 export interface Assistant {

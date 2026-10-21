@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { AionrsModelSelection } from './useAionrsModelSelection';
+import type { BuiltinAgentModelSelection } from './useBuiltinAgentModelSelection';
 import type { AcpConfigSetStatus, AcpDerivedOption } from '@/renderer/hooks/agent/useAcpConfigOptions';
 import {
   composeRuntimeSelectorLabel,
@@ -29,8 +29,8 @@ import classNames from 'classnames';
 /** Composite id for a provider+model pair, so the shared flat model list can track selection. */
 const compositeId = (providerId: string, modelName: string) => `${providerId}::${modelName}`;
 
-const AionrsModelSelector: React.FC<{
-  selection?: AionrsModelSelection;
+const BuiltinAgentModelSelector: React.FC<{
+  selection?: BuiltinAgentModelSelection;
   disabled?: boolean;
   thoughtLevel?: AcpDerivedOption | null;
   /** Kept for call-site compatibility; the two-level submenu no longer gates on set status here. */
@@ -84,7 +84,7 @@ const AionrsModelSelector: React.FC<{
     void onSetThoughtLevel(thoughtLevel.id, value);
   };
 
-  // aionrs models are grouped by provider. Use a composite id (see compositeId)
+  // built-in agent models are grouped by provider. Use a composite id (see compositeId)
   // so the shared model list can track selection, and map it back on select.
   const modelGroups: RuntimeSelectorModelGroup[] = [];
   const modelLookup = new Map<string, { provider: (typeof providers)[number]; modelName: string }>();
@@ -163,7 +163,7 @@ const AionrsModelSelector: React.FC<{
       }
     >
       <Button
-        data-testid='aionrs-model-selector'
+        data-testid='builtin-agent-model-selector'
         className={classNames(
           'sendbox-model-btn header-model-btn',
           compact && '!max-w-[120px]',
@@ -182,4 +182,4 @@ const AionrsModelSelector: React.FC<{
   );
 };
 
-export default AionrsModelSelector;
+export default BuiltinAgentModelSelector;

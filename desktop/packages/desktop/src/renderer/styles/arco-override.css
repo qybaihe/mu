@@ -658,7 +658,7 @@ body[arco-theme='dark'] .arco-message-error {
 
 /* Provider group titles pin to the top of the inner scroll container. It has no
  * top padding, so top:0 hugs the edge with no gap for items to peek through.
- * Only relevant for the grouped (aionrs) list; harmless for flat lists. */
+ * Only relevant for the grouped (built-in agent) list; harmless for flat lists. */
 .dropdown-search-scroll .arco-dropdown-menu-group-title {
   position: sticky;
   top: 0;

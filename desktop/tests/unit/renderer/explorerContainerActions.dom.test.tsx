@@ -360,7 +360,7 @@ describe('ExplorerContainer add-to-chat', () => {
     // matches consumes it (ids are unique), so same-type team peers don't leak.
     expect(emit).toHaveBeenCalledWith('acp.selected.file.append', payload, 'c1');
     expect(emit).toHaveBeenCalledWith('codex.selected.file.append', payload, 'c1');
-    expect(emit).toHaveBeenCalledWith('aionrs.selected.file.append', payload, 'c1');
+    expect(emit).toHaveBeenCalledWith('builtinAgent.selected.file.append', payload, 'c1');
   });
 });
 
