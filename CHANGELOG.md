@@ -9,6 +9,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 ### Fixed
 
 - **Hive and subagents work in the desktop app again.** Since conversations moved into the app's own process (0.1.6), every `/hive`, `delegate` and swarm run failed at once with "subagent exited with code 1 before it finished: The mu host needs a parent". A sub-agent is started by running mu's command line again, and inside the app that command line pointed at the app's host instead of mu. The host now gives mu the command line the terminal would have, so sub-agents start the same way they do from `mu`.
+- When the judge doesn't answer (the free Jev is rate limited, say) and mu asks you about a command instead, the line above the send box no longer keeps saying "The judge is reviewing" while it waits for you.
 - The Hive tab's map draws the notes the judge passed between bees in a conversation on the app's own process. It used to show the bees with no lines between them, because the lines came only from files that only the older connection read.
 
 ## [0.1.9] - 2026-10-21
