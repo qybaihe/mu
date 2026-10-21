@@ -6,6 +6,11 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ## [Unreleased]
 
+### Changed
+
+- Empty lists in the desktop app (the archive, the sidebar and its search, a scheduled task that's gone) say so in one line of text, like the rest of the app, without the UI library's stock inbox picture.
+- `/hive <question>` shows the question as you typed it in the chat and as the conversation's title, in the app and in the terminal. The request to start the hive goes to the model as a message only it reads.
+
 ### Fixed
 
 - **Hive and subagents work in the desktop app again.** Since conversations moved into the app's own process (0.1.6), every `/hive`, `delegate` and swarm run failed at once with "subagent exited with code 1 before it finished: The mu host needs a parent". A sub-agent is started by running mu's command line again, and inside the app that command line pointed at the app's host instead of mu. The host now gives mu the command line the terminal would have, so sub-agents start the same way they do from `mu`.
