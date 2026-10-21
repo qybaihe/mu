@@ -31,6 +31,11 @@
       </div>
     </div>
     <p class="meta intro" style="--d: 1200ms">{{ H.meta }}</p>
+    <figure class="app-shot intro" style="--d: 1350ms">
+      <img class="only-light" src="{{ root }}assets/app-light.{{ L.shots }}.webp" alt="{{ H.app_alt | e }}" width="1600" height="1200">
+      <img class="only-dark" src="{{ root }}assets/app-dark.{{ L.shots }}.webp" alt="{{ H.app_alt | e }}" width="1600" height="1200">
+      <figcaption>{{ H.app_caption }}</figcaption>
+    </figure>
     <a class="cue intro" style="--d: 1500ms" href="#how"><span class="down" aria-hidden="true">↓</span>{{ H.cue }}</a>
   </section>
 
@@ -47,7 +52,7 @@
           <div class="term">
             <div class="term-bar">
               <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
-              <span class="term-title">~/slugify — mu</span>
+              <span class="term-title">~/code/relay — mu</span>
               <span class="term-tools">
                 <span class="steps" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
                 <button class="replay" type="button" aria-label="{{ L.ui.replay_label | e }}">{{ L.ui.replay }}</button>
@@ -58,11 +63,11 @@
           <figcaption>{{ H.stage_caption }}</figcaption>
         </figure>
         <figure class="frame shot" data-frame="swarm">
-          <img src="{{ root }}assets/swarm.webp" alt="{{ H.swarm_alt | e }}" width="1600" height="1185" loading="lazy">
+          <img src="{{ root }}assets/swarm.{{ L.shots }}.webp" alt="{{ H.swarm_alt | e }}" width="1600" height="1184" loading="lazy">
           <figcaption>{{ H.swarm_caption }}</figcaption>
         </figure>
         <figure class="frame shot" data-frame="board">
-          <img src="{{ root }}assets/board.webp" alt="{{ H.board_alt | e }}" width="1600" height="1185" loading="lazy">
+          <img src="{{ root }}assets/board.{{ L.shots }}.webp" alt="{{ H.board_alt | e }}" width="1600" height="1184" loading="lazy">
           <figcaption>{{ H.board_caption }}</figcaption>
         </figure>
       </div>
@@ -76,7 +81,7 @@
         <h2 data-reveal style="--d: 60ms">{{ C.h2 }}</h2>
         {% for P in C.paras %}<p data-reveal style="--d: {{ 120 + loop.index0 * 60 }}ms">{{ P }}</p>
         {% endfor %}
-        {% if C.get('verdict') %}<div class="verdict" data-reveal style="--d: 180ms"><span class="d">◆</span> jev-1.13-free  <span class="k">multi-step task</span><span class="m"> · </span>full effort<span class="m"> · {{ rec.verdict_ms }} ms</span></div>
+        {% if C.get('verdict') %}<div class="verdict" data-reveal style="--d: 180ms"><span class="d">◆</span> Jev  <span class="k">multi-step task</span><span class="m"> · </span>full effort<span class="m"> · {{ rec.verdict_ms }} ms</span></div>
         {% for P in C.after %}<p data-reveal style="--d: 240ms">{{ P | replace("{prompt}", rec.prompt) }}</p>
         {% endfor %}{% endif %}
       </article>

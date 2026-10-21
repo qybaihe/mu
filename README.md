@@ -21,10 +21,10 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/run-dark.gif">
-    <img src="docs/readme/run-light.gif" alt="A run in the mu desktop app. The message: the tests are failing on main, find out why and fix it. Jev classifies it as a multi-step task (input.preflight, about 350 ms). The model runs the tests, which Jev lets through (tool.approval, about 200 ms), reads the parser, finds that a minute is defined as 1,000 ms, says it will change it to 60,000 and run the tests again, and stops without doing it. Jev answers that the run stopped short (turn.continue, about 200 ms), mu reminds the model that the turn isn't finished, and it changes the unit and runs the tests, which pass. The judge panel on the right fills with each verdict, its decision point and its latency.">
+    <img src="docs/readme/run-light.gif" alt="A run in the mu desktop app, in a job-queue project called relay. The message: jobs with a 1h30m timeout get killed after about an hour; find out why, fix it and make sure the tests pass. Jev classifies it as a multi-step task (input.preflight). The model runs the tests, which Jev lets through (tool.approval): one of 13 fails. It reads the duration parser, finds that a minute is defined as 1,000 ms, says it will change it to 60,000 and run the tests again, and stops without doing it. Jev answers that the run stopped short (turn.continue), mu reminds the model that the turn isn't finished, and it changes the unit and runs the tests: all 13 pass. The Judge tab on the right lists each verdict with its decision point and latency.">
   </picture>
   <br>
-  <sub>A recorded run in the desktop app. The coding model's replies are scripted for the recording (it's shown as GPT-6.1 Sol). The judge's verdicts, their timings and the recovery are real: the model stopped short, <code>turn.continue</code> caught it, and mu sent it back to finish.</sub>
+  <sub>A recorded run in the desktop app. The coding model's replies are scripted for the recording (it's shown as GPT-6.1 Sol), and the project and the earlier conversations in the sidebar were made up for it. The judge's verdicts, their timings and the recovery are real: the model stopped short, <code>turn.continue</code> caught it, and mu sent it back to finish.</sub>
 </p>
 
 A coding agent makes hundreds of decisions per session that aren't about the code: what goes into the context, whether a command is safe, whether a finding is worth passing to another agent, whether the work is really done. Handing these to the main model costs tokens, time and focus. Fixed rules get them wrong too often. mu hands them to a **judge**: a small, fast model that answers one bounded question at a time, at 40 decision points in the agent loop. The main model keeps its attention on the work.
@@ -269,7 +269,7 @@ A hive is two to six bees, each with its own focus. Bees read code, run commands
 
 Because the board is append-only, a later conclusion can overturn an earlier one: a bee reports that the tests won't run, then unsets an environment variable and they do. `hive.relate` decides how two notes relate: *supersedes*, *contradicts* or *supports*. A superseded conclusion turns into a correction, delivered to every bee that holds the old note. When two notes contradict each other, both stay, marked as a dispute; if nobody settles it within a minute, a bee is sent to verify.
 
-<p align="center"><img src="docs/readme/swarm.png" width="960" alt="The desktop app's Hive tab: what four bees are doing, a map of the deliveries between them and the text of each delivery"></p>
+<p align="center"><img src="docs/readme/swarm.png" width="960" alt="The desktop app's Hive tab after a /hive question: three bees, config, repro and tests, all done; a map of the findings they delivered to each other; and in the conversation, the answer with the line, the numbers and the failing test"></p>
 
 You can watch all of this in the desktop app's Hive tab. Each bee gets a row: its role, its model and what it's doing or has just said. The map shows who delivered findings to whom, and the more findings travel along a line, the thicker it gets. Corrections and disputes have their own marks, and a line lights up the moment a finding arrives. The information flow lists the text of every delivery, and every verdict is listed too. The hive card in the conversation shows a miniature of the map and opens this tab.
 
@@ -283,7 +283,7 @@ Frontier models keep getting better at the work and worse at talking about it. E
 
 With the board on (`/board`, or the switch on the desktop app's Board tab), each step the agent takes becomes one plain line on the board as soon as it finishes: a file changed, a check passed or failed, a command ran. Reading is folded into a single line with a running count. Whenever the agent says something mid-run, `board.read` asks the judge whether it's news. If it is, a model chosen only for plain writing (`/board model`) rewrites it for a person and keeps the board's status current: what's happening now, how many checklist items are done and what's waiting on you. When a run finishes, a summary becomes the last line, with the full account kept above it, so you see what was done, not just that it's done.
 
-<p align="center"><img src="docs/readme/board.png" width="960" alt="The desktop app's plain-language board: how far along the work is, what's happening now and what happened before, with context use and cache hit rate at the top"></p>
+<p align="center"><img src="docs/readme/board.png" width="960" alt="The desktop app's plain-language board after the hive answered: waiting for you to say whether to fix it, the one question that needs you and what happened before, with context use and cache hit rate at the top"></p>
 
 The working model keeps its own language for the work, and the board stays readable at a glance. The board follows the permission mode, the goal and the subagents, and when the agent changes course, the wording follows. The two numbers at the top are context use and cache hit rate, the direct result of the context and cache decision points above.
 
@@ -296,7 +296,7 @@ A desktop app with mu and its runtime built in: there's no Node.js to install an
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/app-dark.png">
-    <img src="docs/readme/app-light.png" width="880" alt="The mu desktop app after fixing a failing test in a small project. Jev classified the message as a multi-step task (input.preflight), the agent ran the tests, read the parser, fixed the minute unit and ran the tests again. The judge panel on the right lists each verdict with its decision point and latency, about 200 to 400 ms. The bar along the bottom shows the judge, 38 of 40 decision points active, 5 verdicts and the context in use.">
+    <img src="docs/readme/app-light.png" width="880" alt="The mu desktop app after a bug fix in relay, a job-queue project: jobs with a 1h30m timeout were killed after an hour because a minute was defined as 1,000 ms. Jev classified the message as a multi-step task (input.preflight), let both test runs through (tool.approval) and found the turn complete (turn.continue). The Judge tab on the right lists each verdict with its decision point and latency, about 60 to 120 ms. The sidebar holds earlier conversations in three projects, and the bar along the bottom shows the judge (Jev, through TypeSafe), 38 of 40 decision points active, 5 verdicts and the context in use.">
   </picture>
 </p>
 
@@ -315,7 +315,7 @@ mu doctor     # check the installation, the judges and the connections
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/cli-dark.png">
-    <img src="docs/readme/cli-light.png" width="720" alt="mu's welcome screen in a terminal: the μ mark, &quot;mu v0.1.9, judgment-first coding agent, built on pi 1.3.0&quot;, then the judge (Jev 1.13, free, answering in 428 ms, decision points active), the model and the working directory, and the keys worth knowing.">
+    <img src="docs/readme/cli-light.png" width="720" alt="mu's welcome screen in a terminal: the μ mark, &quot;mu v0.1.10, judgment-first coding agent, built on pi 1.3.0&quot;, then the judge (Jev, answering in 137 ms, decision points active), the model and the working directory, and the keys worth knowing.">
   </picture>
 </p>
 

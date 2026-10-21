@@ -3,6 +3,7 @@
   "label": "English",
   "path": "en/",
   "recording": "en",
+  "shots": "en",
   "meta": {
     "title": "mu · Only what's needed.",
     "description": "mu is a coding agent with a judgment kernel: a small, fast judge called Jev makes dozens of small decisions in every turn, so the task gets only the context it needs. Command line and desktop app, open source.",
@@ -51,12 +52,14 @@
     "dl_mac_intel": "Intel",
     "app_hint": "The macOS app is signed and notarized by Apple; the Windows app isn't signed yet, so SmartScreen shows a warning. The app carries mu inside it: no Node.js to install. Windows on Arm, Linux on Arm and every other download are under <a href=\"https://github.com/qybaihe/mu/releases\">Releases</a>.",
     "meta": "macOS · Windows · Linux · open source (MIT + Apache-2.0) · built on pi",
-    "cue": "Watch a real turn",
-    "story_label": "MU · A REAL TURN",
+    "app_alt": "The mu desktop app after a bug fix: the conversation in the middle, the Judge tab on the right listing each of Jev's verdicts with its decision point and time, and the kernel bar along the bottom",
+    "app_caption": "The desktop app: the Judge tab lists every verdict with its decision point and how long it took.",
+    "cue": "Watch a turn",
+    "story_label": "MU · ONE TURN",
     "story_h2": "Judge first, then act",
     "story_intro": "Ask for a plan, and most agents send every tool and skill description along with it. Models write better code every month, and their reports get harder to read. mu splits the work: Jev judges, the main model works and a model picked for plain speaking tells you where things stand.",
-    "stage_caption": "A real recording: mu 0.1.8, the free Jev as judge, Claude Sonnet 4.6 as the model.",
-    "swarm_alt": "The hive tab in the desktop app: four bees research in parallel; the arrows are findings Jev judged worth delivering",
+    "stage_caption": "Recorded in mu, with Jev as the judge. Jev's verdicts and timings are real; the coding model's replies are scripted, so the turn plays the same every time.",
+    "swarm_alt": "The hive tab in the desktop app: three bees investigate one bug at once; the arrows are findings Jev judged worth delivering",
     "swarm_caption": "The hive tab in the desktop app: each arrow is a finding Jev judged worth delivering.",
     "board_alt": "The plain-language board: what's being done, how far it got and the running account below",
     "board_caption": "The plain-language board: what it's doing, how far it got and the running account.",
@@ -71,14 +74,14 @@
         ],
         "verdict": true,
         "after": [
-          "This is a real turn. \"{prompt}\" comes in, and in under a second Jev answers: a multi-step task, full effort. Skills and MCP servers the task doesn't need stay out of the context until it does."
+          "In this turn, \"{prompt}\" comes in, and in under a second Jev answers: a multi-step task, full effort. Skills and MCP servers the task doesn't need stay out of the context until it does."
         ]
       },
       {
         "seg": "fail",
         "label": "When a tool answers",
         "h2": "Output goes through Jev first",
-        "caption": "The tests run: 2 of 4 fail.",
+        "caption": "The tests run: 1 of 13 fails.",
         "paras": [
           "A test run or a search easily returns hundreds of lines. Jev judges chunk by chunk what matters now; only that enters the context, and the rest is archived behind a pointer, ready when it's needed.",
           "In web pages and MCP results, instructions aimed at the model are withheld before it reads them."
@@ -88,7 +91,7 @@
         "seg": "edit",
         "label": "Before acting",
         "h2": "Block what's risky, ask only when it matters",
-        "caption": "It finds the cause and fixes one regular expression, without coming back to ask.",
+        "caption": "It finds the cause, a minute defined as one second, and fixes that line without coming back to ask.",
         "paras": [
           "Before a command runs, rules flag anything risky, and Jev checks that you asked for it and that it doesn't cross a constraint you stated. There are three permission modes, <b>Full access</b>, <b>Jev approves</b> and <b>Ask first</b>, and you can switch at any time. In Jev approves mode, Jev lets through what the task clearly needs and asks you about the rest."
         ]
@@ -97,7 +100,7 @@
         "seg": "done",
         "label": "When the turn ends",
         "h2": "Done means verified",
-        "caption": "It runs the tests again, all 4 pass and it says what it changed.",
+        "caption": "It runs the tests again, all 13 pass, and it says what it changed.",
         "paras": [
           "When the model says it's done, mu checks whether anything verified that, whether the turn drifted and whether to go back to a checkpoint.",
           "<code>/goal &lt;condition&gt;</code> keeps the agent working until the condition holds. The main model checks whether it does, with Jev as the fallback; when the same error comes back again and again, Jev judges whether the approach is a dead end."
@@ -130,7 +133,7 @@
       { "h3": "No toolbox in every prompt", "p": "Each message is judged: small talk, a follow-up or work to do. Skills and MCP servers that aren't needed stay out of the context." },
       { "h3": "Fewer summaries", "p": "When the context grows, stale tool results are dropped instead of summarized, and summary-free compaction is an option. Before the cache expires, mu judges whether a refresh is worth it." },
       { "h3": "No locked-in judge", "p": "{points} decision points, each with its own switch and its own judge: the free Jev, the local Laya or any LLM." },
-      { "h3": "No key needed to start", "p": "Without a judge key, the free Jev on OpenCode Zen answers, and mu says so once a day." },
+      { "h3": "No judge key needed to start", "p": "Without a judge key, the free Jev on OpenCode Zen answers, and mu says so once a day." },
       { "h3": "No new foundation", "p": "The command line is built on pi, with its models, extensions, skills and session tree; the desktop app is built on AionUi." }
     ],
     "principles_more": "What each of the {points} decision points asks and changes",
@@ -151,7 +154,7 @@
       { "h3": "Discussions", "p": "Questions, ideas and what you built with mu.", "href": "https://github.com/qybaihe/mu/discussions" },
       { "h3": "Contributing", "p": "Fix a bug, propose a decision point, measure a judge or translate; good first issues are labeled.", "href": "https://github.com/qybaihe/mu/blob/main/CONTRIBUTING.md" }
     ],
-    "key_note": "mu works without a key. To use your own TypeSafe key or another judge, see <a href=\"{decisions}#judges\">Judges</a>."
+    "key_note": "The judge works without a key: Jev is free to start. The model that writes the code uses your own subscription or API key. To use your own TypeSafe key or another judge, see <a href=\"{decisions}#judges\">Judges</a>."
   },
   "decisions": {
     "title": "Decision points",
