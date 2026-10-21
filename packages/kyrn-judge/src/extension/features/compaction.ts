@@ -166,7 +166,7 @@ export function registerCompaction(runtime: KyrnRuntime): void {
 			if (!planned.fits) {
 				if (ctx.hasUI)
 					ctx.ui.notify(
-						`compaction (beta): the messages alone exceed the budget, so pi writes its usual summary. ${report}`,
+						`compaction (beta): the messages alone exceed the budget, so mu writes its usual summary instead. ${report}`,
 						"warning",
 					);
 				return undefined;

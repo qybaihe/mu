@@ -1116,8 +1116,8 @@ class Setup {
 		}
 		choices.push({
 			label: this.t({
-				zh: "暂时不要：mu 就像 pi 一样工作，没有判定器回答",
-				en: "Not now: mu works like plain pi, with no judge",
+				zh: "暂时不要：mu 不用判定器，按默认规则工作",
+				en: "Not now: mu runs without a judge and uses its fallbacks",
 			}),
 			value: "none",
 		});
@@ -1315,7 +1315,7 @@ class Setup {
 			for (const secret of [target?.key, judge?.kind === "jev" ? judge.key : undefined]) {
 				if (secret) reason = reason.replaceAll(secret, "…");
 			}
-			this.io.warn(this.t({ zh: `mu setup：保存时出错：${reason}`, en: `mu setup: saving failed: ${reason}` }));
+			this.io.warn(this.t({ zh: `mu setup：保存时出错：${reason}`, en: `mu setup: couldn't save: ${reason}` }));
 			if (saved.length > 0) {
 				this.io.warn(this.t({ zh: "出错前已经保存的：", en: "Saved before the error:" }));
 				for (const entry of saved) this.io.warn(entry);

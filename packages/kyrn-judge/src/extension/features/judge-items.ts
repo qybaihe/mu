@@ -87,7 +87,7 @@ export function registerJudgeItems(runtime: KyrnRuntime): void {
 				...(decision.judged ?? batches[index].items.map(() => null)),
 			]);
 			if (answers.every((answer) => answer === null)) {
-				throw new Error("Jev did not answer (the judge is unreachable or switched off). Read the items yourself.");
+				throw new Error("The judge didn't answer (it's unreachable or switched off). Read the items yourself.");
 			}
 			const cut = params.items.length > items.length ? `\n(only the first ${items.length} items were asked)` : "";
 			return {

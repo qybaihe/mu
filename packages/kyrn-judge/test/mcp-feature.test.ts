@@ -237,7 +237,7 @@ describe("MCP servers in the capability catalog", () => {
 			fauxAssistantMessage("Stuck."),
 		]);
 		await harness.session.prompt("Use it.");
-		expect(toolResults(harness)[0]).toContain("did not answer within 1 s");
+		expect(toolResults(harness)[0]).toContain("didn't answer within 1 s");
 		expect(kinds(events, "mcp.failed")).toEqual([expect.objectContaining({ id: "mcp:stuck", code: "timeout" })]);
 		expect(mcpTools(harness)).toEqual([]);
 		// Not left running until its initialize request times out (on Windows it would also hold the folder).
@@ -433,14 +433,14 @@ describe("servers a project defines", () => {
 		});
 		openDb(refused.harness);
 		await refused.harness.session.prompt("Query the database.");
-		expect(toolResults(refused.harness)[0]).toContain("you did not allow");
+		expect(toolResults(refused.harness)[0]).toContain("you didn't allow");
 		expect(mcpTools(refused.harness)).toEqual([]);
 
 		// Print mode: no dialog can be shown, so the answer is no, with the way out spelled out.
 		const headless = await start({ roots: home(), projectFiles: projectFile, bind: false });
 		openDb(headless.harness);
 		await headless.harness.session.prompt("Query the database.");
-		expect(toolResults(headless.harness)[0]).toContain("has not been approved");
+		expect(toolResults(headless.harness)[0]).toContain("hasn't been approved");
 		expect(mcpTools(headless.harness)).toEqual([]);
 	});
 
