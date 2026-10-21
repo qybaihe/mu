@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- With a Jev key (TypeSafe), the welcome screen and each verdict line name the judge `Jev`, not its model id `jev-latest`. A versioned Jev on OpenCode Zen shows as `Jev 1.13`.
 - `planHost` names the script the command line runs pi with (`cli`: `dist/bundle/cli.js` in the package, `packages/coding-agent/src/cli.ts` in a checkout). The desktop app's host hands it to pi as `process.argv[1]`, so the sub-agents pi starts by running that script again (`hive`, `delegate`, the swarm) no longer fail with "The mu host needs a parent".
 - With no model connected, `mu -p` and the other no-key errors now say to run `mu setup`, instead of pointing to `/login` (which only exists inside a session) and two files inside the package.
 

@@ -90,10 +90,12 @@ export function judgeDisplayName(label: string): string {
 	return label
 		.split(/[>,]/)
 		.map((name) => {
-			if (name === "jev") return "Jev";
+			// TypeSafe's own model id for Jev is jev-latest; OpenCode Zen names a version, and its free one says so.
+			if (name === "jev" || name === "jev-latest") return "Jev";
 			if (name === "laya") return "Laya";
-			const free = /^jev-([\d.]+)-free$/.exec(name);
-			return free ? `Jev ${free[1]} (free)` : name;
+			const versioned = /^jev-([\d.]+)(-free)?$/.exec(name);
+			if (!versioned) return name;
+			return versioned[2] ? `Jev ${versioned[1]} (free)` : `Jev ${versioned[1]}`;
 		})
 		.join(", ");
 }

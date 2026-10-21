@@ -96,7 +96,7 @@ describe("preflight view", () => {
 	it("shows the verdict in the panel until the message reaches the chat", () => {
 		const verdict = verdictData(decision(), { by: "jev-latest", state: "applied" });
 		const lines = renderPending({ message: "hi", judge: "jev-latest", elapsedMs: 640, verdict }, 80, plain);
-		expect(lines[1]).toContain("◆ jev-latest  chat · answer directly · 640 ms");
+		expect(lines[1]).toContain("◆ Jev  chat · answer directly · 640 ms");
 		expect(lines[2]).toContain("preparing the turn");
 		expect(lines.join("\n")).not.toContain("reading your message");
 	});
@@ -125,7 +125,7 @@ describe("preflight view", () => {
 			hints: ["Write a short plan first."],
 		});
 		const collapsed = renderVerdict(data, false, 100, plain);
-		expect(collapsed).toEqual([" ◆ jev-latest  chat · answer directly · thinking medium → low · 640 ms"]);
+		expect(collapsed).toEqual([" ◆ Jev  chat · answer directly · thinking medium → low · 640 ms"]);
 
 		const expanded = renderVerdict(data, true, 100, plain);
 		expect(expanded).toHaveLength(1 + 10 + 1);
@@ -154,7 +154,7 @@ describe("preflight view", () => {
 		});
 		const none = verdictData(failed, { by: "jev-latest", state: "none" });
 		expect(renderVerdict(none, false, 120, plain)[0]).toContain(
-			"◇ jev-latest  no verdict (error:timeout) · using the fallback this turn",
+			"◇ Jev  no verdict (error:timeout) · using the fallback this turn",
 		);
 		const skipped = verdictData(undefined, { by: "jev-latest", state: "none", reason: "skipped", waitedMs: 1200 });
 		expect(renderVerdict(skipped, false, 120, plain)[0]).toContain("no verdict (skipped)");
