@@ -11,6 +11,7 @@ import {
 	hintsFor,
 	judgedText,
 	PREFLIGHT_HINTS,
+	statusLine,
 	verdictStateOf,
 } from "../src/extension/features/preflight.ts";
 import {
@@ -276,6 +277,25 @@ describe("preflight view", () => {
 			outcome: { ...chatOutcome, turnType: "unknown", gear: "standard" },
 		});
 		expect(verdictStateOf({ decision: nothing, turnStarted: true, applied: false })).toBe("none");
+	});
+
+	it("puts the verdict in the footer in the verdict line's words", () => {
+		expect(statusLine("jev-latest", decision())).toBe("Jev: chat · answer directly · 640 ms");
+		const heavy = { ...chatOutcome, turnType: "multi_step_task" as const, gear: "heavy" as const };
+		expect(statusLine("jev-1.13-free", decision({ outcome: heavy, judged: heavy, latencyMs: 71 }))).toBe(
+			"Jev 1.13 (free): multi-step task · full effort · 71 ms",
+		);
+		expect(statusLine("jev", decision({ mode: "shadow" }))).toBe(
+			"Jev: chat · answer directly · 640 ms · recorded only",
+		);
+		const nothing = decision({
+			source: "fallback",
+			judged: undefined,
+			reason: "error:timeout",
+			outcome: { ...chatOutcome, turnType: "unknown", gear: "standard" },
+			latencyMs: undefined,
+		});
+		expect(statusLine("laya>jev", nothing)).toBe("Laya, Jev: error:timeout");
 	});
 });
 
