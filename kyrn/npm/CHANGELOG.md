@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- With no model connected, `mu -p` and the other no-key errors now say to run `mu setup`, instead of pointing to `/login` (which only exists inside a session) and two files inside the package.
+
 ## [0.1.10] - 2026-10-21
 
 ### Changed
