@@ -27,7 +27,7 @@ mu setup               # connect a model and choose the judge
 mu                     # start a session in the current directory
 ```
 
-`mu setup` walks you through each step. `mu setup --help` shows the non-interactive forms for scripts (the key is read from stdin, never from the command line). If you skip setup, the first `mu` run without a model asks once.
+`mu setup` walks you through each step. `mu setup --help` shows the non-interactive forms for scripts (the key is read from stdin, never from the command line). If you skip setup, the first `mu` run without a model asks you to connect one.
 
 Some things to try:
 
@@ -65,7 +65,7 @@ You can also put individual points in shadow or turn them off; see [Configuratio
 The permission mode controls how much mu may do without asking. It's shown in the status line and in the app's composer. Switch it with `/permissions`:
 
 - **Full access**: everything runs.
-- **Jev approves** (the default): reads and edits inside the project run. Anything else runs only when Jev is sure the task needs it; otherwise mu asks you.
+- **Jev approves** (the default): reads and edits inside the project run without asking. Anything else runs only when Jev is sure the task needs it; otherwise mu asks you.
 - **Ask first**: only reads run without asking.
 
 Risky commands (`rm -rf`, force pushes, `sudo`, running a downloaded script…) can never be allowed for a whole conversation, and the constraints you state ("don't touch the migrations") hold in every mode. More in [the permissions design note](../kyrn/docs/features/permissions.md).

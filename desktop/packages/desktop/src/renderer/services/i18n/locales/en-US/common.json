@@ -106,7 +106,7 @@
       "description": "mu opened, but its local service stopped while preparing local data such as assistant and agent records. Reinstalling mu probably won't fix this. The app log shows which data couldn't be prepared."
     },
     "startupDirectory": {
-      "title": "Startup folder unavailable",
+      "title": "Work or log folder unavailable",
       "description": "mu opened, but its local service couldn't start because the configured work or log folder is missing, unavailable or blocked by permissions. Check that these folders exist and are writable, then restart mu."
     },
     "recoverableDatabaseCorruption": {
@@ -186,7 +186,7 @@
       "lastStep": "{{status}} · last step: {{step}}",
       "runs": "Hive runs",
       "graph": "Collaboration map",
-      "graphHint": "Thicker lines carried more. Select a bee to open its row; hover over a line to see what it carried.",
+      "graphHint": "Thicker lines carried more findings. Select a bee to open its row; hover over a line to see what it carried.",
       "map": "Map",
       "legend": "Legend",
       "legendDelivery": "delivery",
@@ -318,7 +318,7 @@
         "waitEnded": "The wait or task ended without a final verdict on record.",
         "recordedOnly": "Recorded, but no effect on execution was confirmed.",
         "mainGiven": "The recorded adjustment or hints below were applied to the main model.",
-        "allowPublish": "Allowed for publication. Check the shared board for what was actually published.",
+        "allowPublish": "Allowed for publication. Check Shared findings for what was actually published.",
         "denyPublish": "Not allowed to publish this candidate.",
         "allowDelivery": "Allowed for delivery, but no receipt is recorded yet.",
         "denyDelivery": "Not allowed to deliver this finding to this bee.",
@@ -359,10 +359,10 @@
         "patch": "Does the subagent's patch stay within its task?",
         "review": "How serious is each review finding?",
         "board": "Where does the work stand?",
-        "relate": "What does this finding do to an earlier one?",
+        "relate": "How does this finding affect an earlier one?",
         "approval": "Is this a step the task needs, done the way you would expect?",
         "injection": "Does this tool output carry instructions aimed at the agent?",
-        "continuation": "Did the run stop short of what it should do?",
+        "continuation": "Did the run stop short of what it should have done?",
         "items": "The agent's own question about each item"
       },
       "fields": {
@@ -397,7 +397,7 @@
         "priorities": "Priorities",
         "phase": "Phase",
         "focus": "Item in progress",
-        "needsUser": "Needs the user",
+        "needsUser": "Needs you",
         "update": "Rewrite the board",
         "relation": "Relation",
         "operation": "Next step",
@@ -442,7 +442,7 @@
         "passing": "Passed checks",
         "other": "Other",
         "allow": "No extra confirmation",
-        "confirm": "Ask the user first",
+        "confirm": "Check with you first",
         "now": "Deliver now",
         "next_turn": "Hold until the next turn",
         "drop": "Discard",
@@ -527,7 +527,7 @@
       "noAnswerAfter": "No answer after {{duration}}",
       "hints": {
         "answered": "This message answers the agent's own question: act on it and don't ask again.",
-        "resolve": "The request is loosely worded and may change files: look at the project, state the assumption and ask only for what can't be found here.",
+        "resolve": "The request is loosely worded and may change files: look at the project, state its assumptions and ask only for what can't be found here.",
         "clarify": "The request looks under-specified: ask one focused question first.",
         "side_question": "This is a side question: answer it briefly, then carry on with the main task.",
         "plan_first": "This looks large or risky: write a short plan, then carry it out; pause only before a step that can't be undone.",
@@ -875,7 +875,7 @@
             "stuck": "Seems stuck",
             "other": "Can't tell",
             "none": "None of them",
-            "key": "News worth telling",
+            "key": "Worth telling you",
             "routine": "A routine step",
             "unclear": "Can't tell"
           }
@@ -912,7 +912,7 @@
           "questions": {
             "promised": "Said what it would do next, then stopped",
             "asks_go_ahead": "Ends by asking whether to go ahead",
-            "work_requested": "The user asked for the work, not only an answer",
+            "work_requested": "You asked for the work, not only an answer",
             "irreversible": "The next step is hard to undo or reaches beyond this machine"
           }
         },
@@ -1069,7 +1069,7 @@
     "cacheHit": "Cache hits",
     "cachePending": "No cache usage reported yet",
     "cacheLabel": "Cache hit rate for this conversation: {{percent}}",
-    "cacheDetail": "Conversation total: {{read}} cached of {{total}} input tokens. Input counts uncached, cache-read and cache-write tokens, not output. Compaction doesn't reset the totals.",
+    "cacheDetail": "Conversation total: {{read}} cached of {{total}} input tokens. Input includes uncached, cache-read and cache-write tokens but not output. Compaction doesn't reset the totals.",
     "brand": {
       "tagline": "A coding agent with a judgment kernel",
       "judge": {
@@ -1164,10 +1164,10 @@
         "helpers_back_other": "{{count, number}} subagents reported back",
         "permission_allowed": "You allowed: {{summary}}",
         "permission_denied": "You didn't allow: {{summary}}",
-        "goal_round": "The goal isn't met yet; mu sent it back to work (round {{round, number}}){{reason}}",
+        "goal_round": "The goal isn't met yet; mu sent the agent back to work (round {{round, number}}){{reason}}",
         "goal_met": "Goal met: {{text}}",
         "goal_paused": "The goal is paused{{reason}}",
-        "trouble_loop": "mu noticed it repeating the same step: {{detail}}",
+        "trouble_loop": "mu noticed the agent repeating the same step: {{detail}}",
         "trouble": "mu noticed: {{detail}}",
         "did": "Used {{tool}}: {{what}}",
         "said_quote": "It said: {{text}}",
@@ -1489,12 +1489,12 @@
     "searchMessages": "Search messages for \"{{query}}\"",
     "empty": "No matches",
     "noConversations": "No conversations yet. Type to find settings and commands.",
-    "openSettings": "Open settings",
+    "openSettings": "Open Settings",
     "actions": {
       "newConversation": "Start a new conversation",
       "scheduledTasks": "Open scheduled tasks"
     },
-    "commandWaits": "Runs once this reply is done"
+    "commandWaits": "Runs after this reply is done"
   },
   "window": {
     "minimize": "Minimize",

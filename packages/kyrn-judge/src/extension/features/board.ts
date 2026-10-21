@@ -120,7 +120,7 @@ export function describeSwarmCall(name: string, input: Record<string, unknown>):
 	const parts = swarmParts(name, input);
 	if (!parts) return undefined;
 	if (name === "hive") return `${parts.count} investigator${parts.count === 1 ? "" : "s"} on: ${parts.titles}`;
-	return `${parts.count} sub-agent${parts.count === 1 ? "" : "s"}: ${parts.titles}`;
+	return `${parts.count} subagent${parts.count === 1 ? "" : "s"}: ${parts.titles}`;
 }
 
 /** The sub-agents at work, a line per run, for the judge and the writer: who is doing what, who is back. */
@@ -143,7 +143,7 @@ export function describeSwarms(snapshots: readonly SwarmSnapshot[]): string | un
 				return `${who}: ${doing}`;
 			});
 			const kind = snapshot.kind === "hive" ? "hive" : "delegate";
-			return `${kind}, ${bees.length} sub-agent${bees.length === 1 ? "" : "s"} (${finished} finished): ${each.join("; ")}`;
+			return `${kind}, ${bees.length} subagent${bees.length === 1 ? "" : "s"} (${finished} finished): ${each.join("; ")}`;
 		})
 		.join("\n");
 }
@@ -869,7 +869,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 			>;
 			calls.set(event.toolCallId, { name: event.toolName, input });
 			if (SWARM_TOOLS.has(event.toolName)) {
-				log({ kind: "step", text: `sent out ${describeSwarmCall(event.toolName, input) ?? "sub-agents"}` });
+				log({ kind: "step", text: `sent out ${describeSwarmCall(event.toolName, input) ?? "subagents"}` });
 				const parts = swarmParts(event.toolName, input);
 				tell("helpers", "helpers_sent", { count: parts?.count ?? 0, titles: parts?.titles ?? "" });
 				moment = true;

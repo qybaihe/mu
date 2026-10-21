@@ -191,7 +191,7 @@ describe("goal mode", () => {
 
 		const last = states(harness).at(-1);
 		expect(last?.status).toBe("paused");
-		expect(last?.reason).toContain("without doing anything");
+		expect(last?.reason).toContain("ended without the agent doing anything");
 		expect(sent(harness)).toHaveLength(2);
 	});
 

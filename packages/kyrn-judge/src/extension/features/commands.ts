@@ -291,7 +291,7 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 			});
 			const lines = [
 				`${ok(Boolean(ctx.model))}model      ${ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "none selected: run /login, then /model"}`,
-				`${ok(providers.length > 0)}login      ${providers.length > 0 ? providers.join(", ") : "no provider is signed in: run /login"}`,
+				`${ok(providers.length > 0)}login      ${providers.length > 0 ? providers.join(", ") : "not signed in to any provider: run /login"}`,
 				probe
 					? `${ok(probe.ok)}judge      ${engine.providerId} ${probe.ok ? `answers in ${probe.latencyMs} ms` : `isn't answering (${probe.error}). For laya, run mu judge start`}`
 					: "--  judge      off (MU_JUDGE=off)",

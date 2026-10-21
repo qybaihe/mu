@@ -215,7 +215,7 @@ describe("swarm run", () => {
 
 	const untilAborted = (signal: AbortSignal | undefined) =>
 		new Promise<string>((_resolve, reject) => {
-			signal?.addEventListener("abort", () => reject(new Error("the sub-agent was stopped")), { once: true });
+			signal?.addEventListener("abort", () => reject(new Error("the subagent was stopped")), { once: true });
 		});
 
 	const spec = (name: string) => ({ name, task: { title: name, instructions: name }, assignment: "a" });
@@ -549,7 +549,7 @@ describe("swarm run", () => {
 		const [outcome] = await finished;
 		expect(outcome.state).toMatchObject({
 			status: "stopped",
-			error: "the run was cancelled",
+			error: "the run was canceled",
 			errorCode: "cancelled",
 		});
 	});
@@ -557,13 +557,13 @@ describe("swarm run", () => {
 	it("reports a bee that could not run as failed, with the reason", async () => {
 		const run = new SwarmRun<string>({ kind: "delegate", title: "1 task", dir: tempDir(), bees: [spec("a")] });
 		const [outcome] = await run.run(async () => {
-			throw new Error("sub-agent exited with code 1 before it finished: No API key found");
+			throw new Error("subagent exited with code 1 before it finished: No API key found");
 		});
 		expect(outcome.state.status).toBe("failed");
-		expect(outcome.report).toContain("FAILED: sub-agent exited with code 1 before it finished: No API key found");
+		expect(outcome.report).toContain("FAILED: subagent exited with code 1 before it finished: No API key found");
 		expect(outcome.state).toMatchObject({
 			errorCode: "error",
-			errorParams: { message: "sub-agent exited with code 1 before it finished: No API key found" },
+			errorParams: { message: "subagent exited with code 1 before it finished: No API key found" },
 		});
 		// An error that says what it is keeps its code.
 		const [coded] = await new SwarmRun<string>({
@@ -572,7 +572,7 @@ describe("swarm run", () => {
 			dir: tempDir(),
 			bees: [spec("b")],
 		}).run(async () => {
-			throw codedError("sub-agent exited with code 2 before it finished", {
+			throw codedError("subagent exited with code 2 before it finished", {
 				code: "exited_early",
 				params: { exitCode: 2 },
 			});
@@ -613,7 +613,7 @@ describe("swarm run", () => {
 			}),
 		);
 		expect(web.state.withheld).toBe(2);
-		expect(web.report).toMatch(/^\(Warning: this sub-agent read outside text in which mu withheld 2 passages/);
+		expect(web.report).toMatch(/^\(Warning: this subagent read outside text in which mu withheld 2 passages/);
 		expect(web.report).toContain("FOUND: the parser crashes on empty input.");
 		expect(code.state.withheld).toBe(0);
 		expect(code.report).toBe("FOUND: src/parser.ts:41 throws on empty input.");
@@ -728,7 +728,7 @@ describe("swarm view", () => {
 
 	// https://github.com/qybaihe/mu/issues/7
 	it("cuts the status shown before the first snapshot to the terminal width", () => {
-		const status = "choosing a role, a model and a thinking level for 1 sub-agent…";
+		const status = "choosing a role, a model and a thinking level for 1 subagent…";
 		const result = renderSwarmResult(
 			{ content: [{ type: "text", text: `${status}\n${status}` }] },
 			{ expanded: false },

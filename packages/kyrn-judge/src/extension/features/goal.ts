@@ -427,7 +427,7 @@ export function registerGoal(runtime: KyrnRuntime): void {
 					ctx,
 					say({
 						zh: `代理连续 ${idle} 次什么都没做就停下了`,
-						en: `the agent stopped ${idle} runs in a row without doing anything`,
+						en: `${idle} runs in a row ended without the agent doing anything`,
 					}),
 					{ code: "idle", params: { runs: idle } },
 				);

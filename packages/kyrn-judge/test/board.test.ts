@@ -1024,7 +1024,7 @@ describe("board feature", () => {
 		expect(judged.at(-1)).toContain("the goal is paused");
 	});
 
-	it("looks at what the sub-agents do while they work, on a clock, and tells the person about them", async () => {
+	it("looks at what the subagents do while they work, on a clock, and tells the person about them", async () => {
 		const judged: JudgeRequest[] = [];
 		const dir = mkdtempSync(join(tmpdir(), "mu-board-swarm-"));
 		temporary.push(dir);
@@ -1078,14 +1078,14 @@ describe("board feature", () => {
 		const stateOf = (request: JudgeRequest | undefined) => (request?.state ?? {}) as Record<string, unknown>;
 		// A look while they worked, from the clock: the judge saw who was out and what each was doing.
 		const during = judged.find((request) => "sub_agents" in stateOf(request));
-		expect(String(stateOf(during).sub_agents)).toContain("delegate, 2 sub-agents");
+		expect(String(stateOf(during).sub_agents)).toContain("delegate, 2 subagents");
 		expect(String(stateOf(during).sub_agents)).toContain("scout (scout)");
 		const shown = boards(harness).find((update) => !update.ended && update.now.includes("Subagents"));
 		expect(shown?.now).toBe("Subagents are working on parts of it in parallel; waiting for them to finish.");
 		// Sending them out and their coming back are events, in a person's words, not the JSON of the call.
-		expect(String(stateOf(during).events)).toContain("sent out 2 sub-agents: scout, fixer");
+		expect(String(stateOf(during).events)).toContain("sent out 2 subagents: scout, fixer");
 		expect(judged.map((request) => String(stateOf(request).events)).join("\n")).toContain(
-			"delegate 2 sub-agents: scout, fixer -> ok",
+			"delegate 2 subagents: scout, fixer -> ok",
 		);
 	});
 
@@ -1243,10 +1243,10 @@ describe("board feature", () => {
 	});
 });
 
-describe("board and sub-agents", () => {
-	it("describes a delegation and the sub-agents at work as a person hears of them", () => {
+describe("board and subagents", () => {
+	it("describes a delegation and the subagents at work as a person hears of them", () => {
 		expect(describeSwarmCall("delegate", { tasks: [{ title: "scout" }, { title: " fixer " }, {}] })).toBe(
-			"3 sub-agents: scout, fixer, a task",
+			"3 subagents: scout, fixer, a task",
 		);
 		expect(describeSwarmCall("hive", { goal: "why the login fails", bees: [{ name: "repro" }] })).toBe(
 			"1 investigator on: why the login fails",
@@ -1272,7 +1272,7 @@ describe("board and sub-agents", () => {
 			],
 		};
 		expect(describeSwarms([snapshot])).toBe(
-			"delegate, 3 sub-agents (1 finished): scout (scout): read src/a.ts; fixer (scout): back, said: Fixed it.; tests (scout): waiting for a slot",
+			"delegate, 3 subagents (1 finished): scout (scout): read src/a.ts; fixer (scout): back, said: Fixed it.; tests (scout): waiting for a slot",
 		);
 		expect(describeSwarms([])).toBeUndefined();
 	});
@@ -1285,10 +1285,10 @@ describe("board and sub-agents", () => {
 			needsUser: false,
 			steps: [],
 			latest: "",
-			swarm: "delegate, 2 sub-agents (0 finished): a (scout): starting; b (scout): starting",
+			swarm: "delegate, 2 subagents (0 finished): a (scout): starting; b (scout): starting",
 		};
 		expect(narratorRequest(facts)).toContain(
-			"HELPERS IT SENT OUT TO WORK IN PARALLEL (what each one is doing):\ndelegate, 2 sub-agents",
+			"HELPERS IT SENT OUT TO WORK IN PARALLEL (what each one is doing):\ndelegate, 2 subagents",
 		);
 		expect(plainBoard(facts).now).toBe(
 			"Subagents are working on parts of it in parallel; waiting for them to finish.",

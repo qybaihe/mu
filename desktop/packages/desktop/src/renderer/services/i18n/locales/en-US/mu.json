@@ -8,7 +8,7 @@
   "keyHelp": "After you save the key, it isn't shown again. It stays on this computer, readable only by your user account.",
   "keyKeep": "Leave empty to keep the saved key",
   "endpointRule": "Enter an address that starts with https:// or http://. It can't include a user name, password, query or fragment.",
-  "endpointPlain": "This address uses plain http, so the key and your messages aren't encrypted. That's fine for a server on this computer or your own network, even one you reach by a name from your hosts file. Use https across the internet.",
+  "endpointPlain": "This address uses plain http, so the key and your messages aren't encrypted. That's fine for a server on this computer or your own network, even one you reach through a name in your hosts file. Use https over the internet.",
   "sections": {
     "judges": "Judges",
     "judgeOrder": "Judge order",
@@ -76,7 +76,7 @@
     "lead": "What mu does for you in the background. Turn a feature off and mu stops doing it.",
     "beta": "Beta",
     "reset": "Restore defaults",
-    "boardModelElsewhere": "Choose the model that writes the board under Board model.",
+    "boardModelElsewhere": "To choose the model that writes the board, go to Board model.",
     "options": "Options",
     "noOptions": "This feature has no other settings.",
     "noSuchFeature": "This version of mu doesn't have this feature.",
@@ -96,7 +96,7 @@
     "services": {
       "auto": {
         "name": "Automatic",
-        "help": "Uses the first service that has a key, in this order: TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare. With no key set, Jev 1.13 answers on OpenCode Zen, free for a limited time. OpenCode receives what Jev judges and doesn't train on it.",
+        "help": "Uses the first service that has a key, in this order: TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare. With no key set, Jev 1.13 runs on OpenCode Zen, free for a limited time. OpenCode receives what Jev judges and doesn't train on it.",
         "key": "TypeSafe API key"
       },
       "opencodeFree": {
@@ -147,9 +147,9 @@
     "types": {
       "localHelp": "Runs on this computer.",
       "clmHelp": "Runs on your own CLM server.",
-      "classifierHelp": "A classifier model from mu's model catalog: {{model}}. mu calls it with that provider's key."
+      "classifierHelp": "A classifier model from mu's model catalog: {{model}}. mu calls it with its provider's key."
     },
-    "intro": "While it works, mu has many small questions to settle: how to handle a message, or whether a step breaks a rule you set. The judge answers them. Choose one.",
+    "intro": "While it works, mu has many small questions to settle: how to handle a message, or whether a step breaks a rule you set. Choose the judge that answers them.",
     "mode": "Verdicts take effect",
     "modeHelp": "On: the judge's verdicts take effect. Off: every step runs as usual. Decision points without their own setting follow this one.",
     "choose": "Choose a judge",
@@ -164,7 +164,7 @@
       "local": {
         "title": "Local Laya",
         "tag": "Free · offline",
-        "description": "Runs on this computer with no network and no cost. Good at classifying; less reliable at relating and scoring."
+        "description": "Runs on this computer with no network and no cost. Good at classifying; less reliable at matching related items and at scoring."
       },
       "clm": {
         "title": "CLM",
@@ -252,7 +252,7 @@
     "limit": "Context limit",
     "limitHelp": "0 uses the model's context window minus the reserve. Otherwise, {{min}} to {{max}}. Checked before each model request; it's not a hard cutoff.",
     "limitProblem": "Use 0, or a whole number from {{min}} to {{max}}.",
-    "lead": "When to compact a conversation, how large its context can grow and the features that work on the context."
+    "lead": "When to compact a conversation, how large its context can grow and which features work on it."
   },
   "permissions": {
     "modes": {
@@ -295,7 +295,7 @@
       "force_push": "force push",
       "drops_database_objects": "drops database objects",
       "overwrites_device": "overwrites a device",
-      "opens_permissions_recursively": "opens permissions recursively",
+      "opens_permissions_recursively": "loosens permissions recursively",
       "runs_downloaded_script": "runs a downloaded script",
       "runs_as_administrator": "runs as administrator",
       "runs_as_root": "runs as root"
@@ -336,7 +336,7 @@
     "keyEnter": "Paste the API key",
     "keyReplace": "A key set by hand in models.json is in use. Entering a key here replaces it.",
     "authHeader": "Also send Authorization: Bearer (some proxies need it)",
-    "headers": "Custom headers from models.json are kept as is: {{names}}. Their values are secret, so edit them in models.json.",
+    "headers": "Custom headers from models.json are kept as is: {{names}}. Their values may be secret, so this page doesn't show them: edit them in models.json.",
     "pick": "Choose a provider on the left, or add one.",
     "manual": "Manual",
     "foreignHelp": "This entry reroutes a built-in provider or uses an API format this page can't edit. You can remove it here; to change it, edit models.json.",
@@ -381,7 +381,7 @@
     "instant": "Signing in or out takes effect immediately. No need to save.",
     "models": "Available models",
     "byKey": "Available (API key)",
-    "byKeyHelp": "You're not signed in to a subscription, but mu reported this provider as available the last time it connected, usually because its API key is set in your environment. Signing in switches it to the subscription.",
+    "byKeyHelp": "You're not signed in with a subscription, but mu reported this provider as available the last time it connected, usually because its API key is set in your environment. Signing in switches it to the subscription.",
     "otherRunning": "{{name}} sign-in is in progress. Only one sign-in can run at a time.",
     "showRunning": "Show"
   },
@@ -441,7 +441,7 @@
   },
   "test": {
     "run": "Test connection",
-    "hint": "Sends one small request from this app: it fetches the model list, or else asks the first model for a one-word reply.",
+    "hint": "Sends one small request from this app: it fetches the model list, or, if it can't, asks the first model for a one-word reply.",
     "okModels": "Connected ({{ms}} ms). The endpoint lists {{count, number}} models.",
     "okCompletion": "Connected ({{ms}} ms). The model answered.",
     "auth": "The key was rejected (HTTP {{status}}).",
@@ -626,7 +626,7 @@
     },
     "judge": {
       "title": "Choose a judge",
-      "subtitle": "The judge answers the small questions mu has while it works. mu runs without one, just without these checks.",
+      "subtitle": "The judge answers the small questions mu has while it works. mu still works without one; it just skips these checks.",
       "readyFree": "Jev is ready, free for now. Nothing to set up here.",
       "readyKey": "Jev is ready with your key.",
       "more": "Change the service or use your own key",
@@ -639,7 +639,7 @@
       "judge": "Judge",
       "none": "Not set",
       "noKey": "No key yet. Until you add one, mu uses its default rules instead of a judge.",
-      "freeJev": "No key yet. Jev answers for free on OpenCode Zen for a limited time.",
+      "freeJev": "No key yet. Jev is free on OpenCode Zen for a limited time.",
       "saveFailed": "Couldn't save: {{reason}}",
       "modelValue": "{{provider}} / {{model}}",
       "import": "Conversations",
@@ -715,7 +715,7 @@
       "risk": {
         "title": "Know the risk before you sign in",
         "text": "This signs in through the login Google built for {{tool}}, not one Google offers for mu. Google may consider this a violation of its terms and limit or suspend your account.",
-        "instead": "Use an account you can afford to lose access to. The official options are a Gemini API key, or Vertex AI with a gcloud sign-in.",
+        "instead": "Use an account you can afford to lose access to. The official options are a Gemini API key or Vertex AI with a gcloud sign-in.",
         "continue": "Sign in anyway",
         "cancel": "Don't sign in"
       },
@@ -883,7 +883,7 @@
     "frame": "Show the task frame: the goal, your constraints with their source, the current subgoal and the acceptance criteria",
     "remember": "Save a lesson for later work in this project: /remember <what to do>",
     "lessons": "List this project's lessons (id · kind · recalled/followed · lesson); /lessons all adds global and retired lessons",
-    "forget": "Retire a lesson so it's no longer recalled: /forget <id prefix> (find ids with /lessons)",
+    "forget": "Retire a lesson so it's no longer recalled: /forget <id prefix> (find IDs with /lessons)",
     "capabilities": "Show what's installed and what's turned on; /capabilities open <id> turns one on",
     "permissions": "Set how much mu can do without asking: /permissions full | jev | ask (no argument opens a picker); /permissions reset clears what you've allowed so far",
     "lsp": "Show the language servers: what's installed, what's running and the last error",

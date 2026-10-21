@@ -23,13 +23,13 @@ mu is built on [pi](https://github.com/earendil-works/pi). It hands the small qu
 
 - **Every decision is visible.** Each decision point is `off`, `shadow` (asked and logged, but not acted on) or `active`. `/ledger` and `mu ledger` show the verdicts.
 - **Every decision has a fallback.** When the judge is unsure, slow or unreachable, a plain rule decides, or pi's default behavior runs. For approvals, the fallback is to ask you.
-- **And more:** a task frame that keeps your constraints in your own words, three permission modes (`/permissions`), goal mode (`/goal`), a plain-language progress board (`/board`), checkpoints and `/rewind`, subagents that edit in their own git worktrees (`delegate`), read-only hives of investigators (`hive`), a judge-driven browser (`browse`), and the rules, skills and MCP servers you already set up in Claude Code, Cursor and Codex.
+- **And more:** a task frame that keeps your constraints in your own words, three permission modes (`/permissions`), goal mode (`/goal`), a plain-language progress board (`/board`), checkpoints and `/rewind`, subagents that edit in their own git worktrees (`delegate`), read-only hives of investigators (`hive`), a judge-driven browser (`browse`), and it picks up the rules, skills and MCP servers you already set up in Claude Code, Cursor and Codex.
 
 ## Choose a judge
 
 Out of the box, Jev 1.13 on OpenCode Zen answers for free (for a limited time) and needs no key. What it judges goes to OpenCode, which doesn't train on it, and mu reminds you of that once a day. To send nothing anywhere, start mu with `MU_JUDGE=off`, or use the local judge, Laya.
 
-- **Jev** (hosted): set `TYPESAFE_API_KEY` (TypeSafe), `MU_JUDGE_OPENROUTER_API_KEY` (Jev on OpenRouter), `AI_GATEWAY_API_KEY` (Vercel AI Gateway), `OPENCODE_API_KEY` (OpenCode Zen) or `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID` (Cloudflare Workers AI) in your environment, or add it to `~/.mu/.env` as `KEY=value`. `mu setup` asks for a key and writes it there. mu reads that file as data and never prints it, and starts using the key automatically.
+- **Jev** (hosted): set `TYPESAFE_API_KEY` (TypeSafe), `MU_JUDGE_OPENROUTER_API_KEY` (Jev on OpenRouter), `AI_GATEWAY_API_KEY` (Vercel AI Gateway), `OPENCODE_API_KEY` (OpenCode Zen) or `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID` (Cloudflare Workers AI) in your environment, or add it to `~/.mu/.env` as `KEY=value`. `mu setup` asks for a key and writes it there. mu reads that file as data, never prints it and starts using the key automatically.
 - **Another classifier** from pi's catalog: `/mu judge classifier:<provider>/<model>`, for example Cloudflare's Clef (`clef`, `clef-flash`) or a System One model on OpenRouter, with that provider's key.
 - **CLM** (self-hosted; its encoder needs a GPU): start `clm-serve` from [Contrastive-LM/CLM](https://github.com/Contrastive-LM/CLM), then run `/mu judge clm`. For a server on another machine, add `"judges": { "clm": { "type": "clm", "baseUrl": "http://<host>:8700" } }` to `~/.mu/agent/mu.json`. If the server was started with `CLM_API_KEY`, set the same value in `MU_JUDGE_CLM_API_KEY`. `mu doctor` checks the server.
 - **Laya** (local, macOS on Apple silicon): `mu judge setup` installs it into `~/.mu/local-judge`. It downloads about 930 MB, and only when you run that command.
@@ -58,7 +58,7 @@ Everything else goes to pi unchanged: `mu --help` also shows pi's options. mu ke
 
 ## Themes
 
-In the terminal, mu starts in its own themes, `mu-dark` or `mu-light` to match your terminal, until you pick a theme in `/settings`. Choose `system` there to use your terminal's own palette.
+In the terminal, mu uses its own themes, `mu-dark` or `mu-light` to match your terminal, until you pick a theme in `/settings`. Choose `system` there to use your terminal's own palette.
 
 ## Update and remove
 

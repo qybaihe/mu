@@ -279,7 +279,7 @@ export class Isolation {
 			name: "apply_patch_from",
 			label: "Apply patch",
 			description:
-				'Bring the patch of an isolated sub-agent into the working tree with git apply --3way: all of it or, on a conflict, none of it. Nothing is staged or committed. Look first with action "stat" (files) or "diff" (one file).',
+				'Bring the patch of an isolated subagent into the working tree with git apply --3way: all of it or, on a conflict, none of it. Nothing is staged or committed. Look first with action "stat" (files) or "diff" (one file).',
 			parameters: Type.Object({
 				id: Type.String({ description: "Patch id from a delegate result, e.g. p-3f9a2c" }),
 				action: Type.Optional(
@@ -303,7 +303,7 @@ export class Isolation {
 					return say(
 						known.length > 0
 							? `No patch has the id "${params.id}". Patches of this session:\n${known.join("\n")}`
-							: `No patch has the id "${params.id}": no isolated sub-agent has handed one back in this session.`,
+							: `No patch has the id "${params.id}": no isolated subagent has handed one back in this session.`,
 					);
 				}
 				const action = params.action ?? "apply";

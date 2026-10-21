@@ -214,7 +214,7 @@ describe("delegate with worktree isolation", () => {
 		const harness = await start(async (_task, assignment) => {
 			cwd = assignment.cwd ?? "";
 			writeFileSync(join(cwd, "half.txt"), "half done\n");
-			throw new Error("sub-agent exited with code 1 before it finished");
+			throw new Error("subagent exited with code 1 before it finished");
 		});
 		harness.setResponses([
 			delegate([{ title: "crash", instructions: "Write half.txt" }]),
@@ -224,7 +224,7 @@ describe("delegate with worktree isolation", () => {
 		await harness.session.prompt("Try.");
 
 		const [delegated] = resultTexts(harness);
-		expect(delegated).toContain("FAILED: sub-agent exited with code 1");
+		expect(delegated).toContain("FAILED: subagent exited with code 1");
 		expect(delegated).toContain("A half.txt +1 -0");
 		expect(existsSync(cwd)).toBe(false);
 		expect(existsSync(`${cwd}.json`)).toBe(false);
@@ -233,7 +233,7 @@ describe("delegate with worktree isolation", () => {
 	});
 
 	it("isolates only who edits, works in place where there is no repository, and says so", async () => {
-		// By title: an isolated sub-agent starts later than the others, its checkout has to be made first.
+		// By title: an isolated subagent starts later than the others, its checkout has to be made first.
 		const where = new Map<string, string | undefined>();
 		const runner: SwarmRunner = async (task, assignment) => {
 			where.set(task.title, assignment.cwd);
@@ -295,7 +295,7 @@ describe("delegate with worktree isolation", () => {
 		);
 	});
 
-	it("takes a running sub-agent's checkout down when the session shuts down", async () => {
+	it("takes a running subagent's checkout down when the session shuts down", async () => {
 		let cwd = "";
 		let started: () => void = () => {};
 		let release: () => void = () => {};
@@ -322,7 +322,7 @@ describe("delegate with worktree isolation", () => {
 		expect(existsSync(`${cwd}.json`)).toBe(false);
 		expect(sh(harness.repo, "branch", "--list", "mu/agent-*")).toBe("");
 		expect(sh(harness.repo, "worktree", "list", "--porcelain").match(/^worktree /gm)).toHaveLength(1);
-		// The sub-agent coming back afterwards finds its checkout gone, and that is not an error for anyone.
+		// The subagent coming back afterwards finds its checkout gone, and that is not an error for anyone.
 		release();
 		await prompt;
 		expect(resultTexts(harness)[0]).toContain("late");

@@ -585,7 +585,7 @@ class Setup {
 			this.io.say(
 				this.t({
 					zh: `订阅账号在 mu 里面登录：启动 mu，输入 /login，选 ChatGPT（OpenAI Codex）、Claude、Grok 或 Google，按提示在浏览器里完成。登录信息保存在 ${auth}。`,
-					en: `Subscriptions sign in from inside mu: start mu, type /login, choose ChatGPT (OpenAI Codex), Claude, Grok or Google, and finish in the browser. The sign-in is saved in ${auth}.`,
+					en: `To use a subscription, sign in from inside mu: start mu, type /login, choose ChatGPT (OpenAI Codex), Claude, Grok or Google, and finish in the browser. The sign-in is saved in ${auth}.`,
 				}),
 			);
 			return "subscription";
@@ -903,7 +903,7 @@ class Setup {
 			if (this.scripted) {
 				throw this.fail({
 					zh: `${this.name(service)} 已经用订阅账号登录了。要改存密钥，加上 --yes`,
-					en: `${this.name(service)} is signed in with a subscription. To use a key instead, add --yes`,
+					en: `You're signed in to ${this.name(service)} with a subscription. To use a key instead, add --yes`,
 				});
 			}
 			const replace = await this.confirm(

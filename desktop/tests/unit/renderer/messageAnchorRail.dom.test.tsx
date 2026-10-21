@@ -43,6 +43,6 @@ describe('the message anchor rail', () => {
     fireEvent.focus(screen.getAllByTestId('message-anchor-tick')[1]);
     const card = screen.getByTestId('message-anchor-preview');
     expect(card).toHaveTextContent('Question 2');
-    expect(screen.getByTestId('message-anchor-hint')).toHaveTextContent('Message 2 of 3 · click to jump here');
+    expect(screen.getByTestId('message-anchor-hint')).toHaveTextContent('Message 2 of 3 · Click to jump to it');
   });
 });

@@ -37,7 +37,7 @@ const parentFrame = () => ({
 	nextItem: 2,
 });
 
-describe("the brief a sub-agent is handed", () => {
+describe("the brief a subagent is handed", () => {
 	it("places the part in the parent's frame: its goal, the item it serves, and what done means", () => {
 		const brief = briefFor(
 			{ title: "find", instructions: "Find the slow query", done: ["The query is named", "  "], serves: "#A1" },
@@ -62,7 +62,7 @@ describe("the brief a sub-agent is handed", () => {
 		expect(parsed).toMatchObject({ goal: "g", done: ["x", "y"], serves: undefined });
 	});
 
-	it("becomes the sub-agent's first frame, with the criteria as items it cannot drop", () => {
+	it("becomes the subagent's first frame, with the criteria as items it cannot drop", () => {
 		const frame = briefFrame(briefFor({ title: "t", instructions: "i", done: ["one", "two"] }, undefined), 0);
 		expect(frame.goal).toBe("t: i");
 		expect(frame.acceptance).toEqual([
@@ -125,7 +125,7 @@ describe("the brief a sub-agent is handed", () => {
 	});
 });
 
-describe("delegate and the sub-agent's frame", () => {
+describe("delegate and the subagent's frame", () => {
 	const harnesses: Harness[] = [];
 	const dirs: string[] = [];
 	afterEach(() => {
@@ -138,7 +138,7 @@ describe("delegate and the sub-agent's frame", () => {
 		return dir;
 	};
 
-	it("hands each part its brief and reports the list the sub-agent left, not only its words", async () => {
+	it("hands each part its brief and reports the list the subagent left, not only its words", async () => {
 		const seen: { task: SwarmTask; env: Record<string, string> }[] = [];
 		const harness = await createHarness({
 			extensionFactories: [
@@ -200,7 +200,7 @@ describe("delegate and the sub-agent's frame", () => {
 		expect((result as { details?: { frames?: unknown[] } }).details?.frames).toHaveLength(1);
 	});
 
-	it("inside the sub-agent: the part is the goal, the criteria are its todo list, and the list is left for the parent", async () => {
+	it("inside the subagent: the part is the goal, the criteria are its todo list, and the list is left for the parent", async () => {
 		const dir = temp();
 		const out = join(dir, "frame.json");
 		vi.stubEnv("KYRN_SWARM_DEPTH", "1");
@@ -244,7 +244,7 @@ describe("delegate and the sub-agent's frame", () => {
 	});
 });
 
-describe("a chain of sub-agents", () => {
+describe("a chain of subagents", () => {
 	const assignment = { thinking: "low", routedBy: "default" } as SwarmAssignment;
 	const step = (title: string): SwarmTask => ({
 		title,
@@ -364,13 +364,13 @@ describe("workflow commands", () => {
 	});
 });
 
-describe("what the sub-agent tools say before a run starts", () => {
+describe("what the subagent tools say before a run starts", () => {
 	it("says it is choosing roles as a code too, for a client that translates", () => {
 		const updates: unknown[] = [];
 		announceRouting((partial) => updates.push(partial), 3);
 		expect(updates).toEqual([
 			{
-				content: [{ type: "text", text: "choosing a role, a model and a thinking level for 3 sub-agents…" }],
+				content: [{ type: "text", text: "choosing a role, a model and a thinking level for 3 subagents…" }],
 				details: { code: "choosing_roles", params: { count: 3 } },
 			},
 		]);

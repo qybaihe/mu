@@ -38,7 +38,7 @@ describe("hard constraints on tool calls", () => {
 	}
 
 	async function start(responder: MockResponder, mode: DecisionMode = "active"): Promise<Harness> {
-		// A sub-agent's frame starts with what its parent was told: the shortest way to a frame with a constraint.
+		// A subagent's frame starts with what its parent was told: the shortest way to a frame with a constraint.
 		process.env.KYRN_SWARM_CONSTRAINTS = JSON.stringify(["先别修改数据库相关的文件"]);
 		const harness = await createHarness({
 			tools: [tool("edit"), tool("read")],
@@ -110,7 +110,7 @@ describe("hard constraints on tool calls", () => {
 		expect(describeCall("write", { path: "b.md", content: "x".repeat(900) }).length).toBeLessThanOrEqual(500);
 	});
 
-	it("hands a parent's constraints to a sub-agent's frame once, and ignores anything that is not a list of sentences", () => {
+	it("hands a parent's constraints to a subagent's frame once, and ignores anything that is not a list of sentences", () => {
 		const frame = createFrame({ turn: 1, text: "Task: fix the flaky test" });
 		const inherited = inheritConstraints(frame, ["no new dependencies", "no new dependencies", " "]);
 		expect(inherited.constraints.map((constraint) => constraint.text)).toEqual(["no new dependencies"]);

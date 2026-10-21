@@ -171,7 +171,7 @@ export async function checkRepo(run: GitRun, cwd: string): Promise<RepoCheck> {
 	const where = await run(["rev-parse", "--show-toplevel", "--absolute-git-dir", "--show-prefix"], { cwd });
 	const head = await run(["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], { cwd });
 	if (where.code !== 0) return { ok: false, problem: "not-a-repo", message: lastLine(where.stderr) };
-	if (head.code !== 0) return { ok: false, problem: "no-commit", message: "the repository has no commit yet" };
+	if (head.code !== 0) return { ok: false, problem: "no-commit", message: "the repository has no commits yet" };
 	const [root, gitDir, prefix = ""] = text(where).replace(/\n$/, "").split("\n");
 	const busy = BUSY.find(([name]) => existsSync(join(gitDir, name)));
 	if (busy) return { ok: false, problem: "busy", message: `${busy[1]} is in progress in this repository` };

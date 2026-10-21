@@ -22,7 +22,7 @@
     "label": "Conversation message anchors",
     "tickAria": "Jump to message {{index}}",
     "searchAria": "Search conversation",
-    "jumpHint": "Message {{index}} of {{count}} · click to jump here"
+    "jumpHint": "Message {{index}} of {{count}} · Click to jump to it"
   },
   "availableCommands": "{{count}} available commands",
   "availableCommands_one": "{{count}} available command",
@@ -36,7 +36,7 @@
   "slash.title": "Commands",
   "slash.hint": "Type / to open the command menu",
   "slash.empty": "No commands found",
-  "export.commandDescription": "Export the current conversation to a file or clipboard",
+  "export.commandDescription": "Export the current conversation to a file or the clipboard",
   "export.conversationLabel": "Conversation",
   "export.conversationIdLabel": "Conversation ID",
   "export.exportedAtLabel": "Exported at",

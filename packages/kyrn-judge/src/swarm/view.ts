@@ -104,7 +104,7 @@ export function renderSwarm(snapshot: SwarmSnapshot, options: SwarmViewOptions, 
 	const running = snapshot.bees.filter((bee) => isRunning(bee.status)).length;
 	const done = snapshot.bees.filter((bee) => bee.status === "done").length;
 	const trouble = snapshot.bees.filter((bee) => isOver(bee.status) && bee.status !== "done").length;
-	const noun = snapshot.kind === "hive" ? "investigator" : "sub-agent";
+	const noun = snapshot.kind === "hive" ? "investigator" : "subagent";
 	const dot = paint.fg("dim", " · ");
 
 	const head = [

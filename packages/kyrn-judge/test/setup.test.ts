@@ -954,7 +954,7 @@ describe("mu setup in a script", () => {
 		const run = await stdinRun(["--service", "anthropic"], `${KEYS.anthropic}\n`, { pi });
 		expect(run.code).toBe(SETUP_EXIT.failed);
 		expect(run.warned.join("\n")).toContain(
-			"Anthropic is signed in with a subscription. To use a key instead, add --yes",
+			"You're signed in to Anthropic with a subscription. To use a key instead, add --yes",
 		);
 		expect(run.calls).toEqual([]);
 		const yes = await stdinRun(["--service", "anthropic", "--yes"], `${KEYS.anthropic}\n`, {

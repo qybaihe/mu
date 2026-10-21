@@ -293,7 +293,7 @@ describe('command palette', () => {
       openPalette();
 
       expect(groupsShown()).toEqual(['conversations', 'settings', 'commands']);
-      expect(labelsOf('settings')).toEqual(['Open settings']);
+      expect(labelsOf('settings')).toEqual(['Open Settings']);
       expect(labelsOf('conversations')).toEqual([
         'Refactor the auth flow',
         'Board copy review',
@@ -307,7 +307,7 @@ describe('command palette', () => {
     it('lists the settings pages once the person types, not before', () => {
       render(<Harness />);
       openPalette();
-      expect(labelsOf('settings')).toEqual(['Open settings']);
+      expect(labelsOf('settings')).toEqual(['Open Settings']);
 
       type('model');
       expect(labelsOf('settings')).toEqual(['Default model', 'Board model', 'Providers']);
@@ -337,7 +337,7 @@ describe('command palette', () => {
       type('sett');
 
       const found = labelsOf('settings');
-      expect(found[0]).toBe('Open settings');
+      expect(found[0]).toBe('Open Settings');
       expect(found).toHaveLength(8);
       expect(found).toEqual(expect.arrayContaining(['Appearance', 'Default model']));
       key('Enter');
@@ -556,7 +556,7 @@ describe('command palette', () => {
       type('comp');
       key('Enter');
       expect(info).toHaveBeenCalledTimes(1);
-      expect(info).toHaveBeenCalledWith('Runs once this reply is done');
+      expect(info).toHaveBeenCalledWith('Runs after this reply is done');
 
       outcome = 'sent';
       openPalette();

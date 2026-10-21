@@ -5,6 +5,7 @@
 ### Changed
 
 - The package's keywords add `pi-coding-agent`, `mcp` and `prompt-injection`, so directories that index pi coding agents and MCP clients find it.
+- English: a copy edit of what the command line and the kernel show, after `docs/writing-style.md`: "subagent" as one word, "canceled", "session" for what is allowed until the session ends ("Allow for this session"), and clearer wording in `mu setup`, `/browse`, the board's account and the settings' help. The `/browse` hint names `mu.json`, not `kyrn.json`. The Chinese text is unchanged.
 
 ### Fixed
 
