@@ -235,7 +235,7 @@ export async function readClaudeCode(path: string, options: ReadOptions = {}): P
 		if (inScope(item)) offBranch++;
 		else subAgent++;
 	}
-	builder.drop("sub-agent records", subAgent);
+	builder.drop("subagent records", subAgent);
 	builder.drop("records off the latest branch", offBranch);
 
 	// The file is written as things happen, so its order is the conversation's order.

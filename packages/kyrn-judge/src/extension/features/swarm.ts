@@ -61,7 +61,7 @@ export type SwarmRunner = BeeRunner<SwarmAssignment>;
 /** A sub-agent's process ended before its run did. Killed from outside, it has no exit code but the signal that ended it. */
 export function exitedEarly(code: number | null, signal: NodeJS.Signals | null, detail: string): Error {
 	const how = code !== null ? `exited with code ${code}` : `was ended by ${signal ?? "a signal"}`;
-	return codedError(`sub-agent ${how} before it finished${detail ? `: ${detail}` : ""}`, {
+	return codedError(`subagent ${how} before it finished${detail ? `: ${detail}` : ""}`, {
 		code: "exited_early",
 		params: code !== null ? { exitCode: code } : { signal: signal ?? "unknown" },
 	});
@@ -245,7 +245,7 @@ export const spawnRunner: SwarmRunner = async (task, assignment, signal, env, ob
 			};
 			const onAbort = () => {
 				terminate();
-				finish(new Error("the sub-agent was stopped"));
+				finish(new Error("the subagent was stopped"));
 			};
 			if (signal?.aborted) onAbort();
 			else signal?.addEventListener("abort", onAbort, { once: true });
@@ -322,7 +322,7 @@ export function announceRouting(
 		content: [
 			{
 				type: "text",
-				text: `choosing a role, a model and a thinking level for ${count} sub-agent${count === 1 ? "" : "s"}…`,
+				text: `choosing a role, a model and a thinking level for ${count} subagent${count === 1 ? "" : "s"}…`,
 			},
 		],
 		// No snapshot yet: a client that translates says the same from the code.
@@ -469,11 +469,11 @@ export function registerSwarm(runtime: KyrnRuntime, runner: SwarmRunner = spawnR
 	pi.registerTool({
 		name: "delegate",
 		label: "Delegate",
-		description: `Run tasks in fresh sub-agents, each with its own context window: in parallel for parts that do not depend on each other and for side work whose details you do not need (broad code search, web research), or with chain: true one after another, each step handed what the step before reported (scout, then plan, then implement). Each sub-agent sees only its own instructions, so make them self-contained. Give each part what must be true when it is done (done) and, when it is for an item of your todo list, that item's id (serves): the sub-agent works to that list, and you get back which criteria it met with its evidence. A fitting role, model and thinking level are chosen per task; name a role only when you want a specific one (${agents()
+		description: `Run tasks in fresh subagents, each with its own context window: in parallel for parts that do not depend on each other and for side work whose details you do not need (broad code search, web research), or with chain: true one after another, each step handed what the step before reported (scout, then plan, then implement). Each subagent sees only its own instructions, so make them self-contained. Give each part what must be true when it is done (done) and, when it is for an item of your todo list, that item's id (serves): the subagent works to that list, and you get back which criteria it met with its evidence. A fitting role, model and thinking level are chosen per task; name a role only when you want a specific one (${agents()
 			.map((agent) => agent.name)
 			.join(
 				", ",
-			)}). Returns each sub-agent's final report. In a git repository a sub-agent that edits files works in an isolated copy, and its changes come back as a patch that only apply_patch_from brings in.`,
+			)}). Returns each subagent's final report. In a git repository a subagent that edits files works in an isolated copy, and its changes come back as a patch that only apply_patch_from brings in.`,
 		parameters: Type.Object({
 			tasks: Type.Array(
 				Type.Object({

@@ -40,7 +40,7 @@ export const MU_COMMAND_WORDS: ReadonlyMap<string, readonly string[]> = new Map(
   [
     'forget',
     [
-      "Retire a lesson so it's no longer recalled: /forget <id prefix> (find ids with /lessons)",
+      "Retire a lesson so it's no longer recalled: /forget <id prefix> (find IDs with /lessons)",
       '让一条经验退役，以后不再召回：/forget <id 前几位>（id 见 /lessons）',
       'Retire a lesson so it is no longer recalled: /forget <id prefix> (the ids are in /lessons)',
     ],

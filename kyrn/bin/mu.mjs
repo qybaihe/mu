@@ -431,7 +431,7 @@ export function localJudgeSupport({ platform, env, wsl = false }) {
 		url,
 		message: [
 			`The local judge (Laya) is a Core ML sidecar that runs only on macOS on Apple silicon, not on ${where}.`,
-			"mu works without it: Jev answers by default (free on OpenCode Zen, or with your own key: mu setup), or set an LLM judge in mu.json.",
+			"mu works without it: Jev answers by default (free on OpenCode Zen, or with your own key via mu setup); you can also set an LLM judge in mu.json.",
 			"A local judge for the desktop app is in progress. Without a judge, decision points use their fallbacks.",
 			"To use a server that implements the same API (GET /health, POST /evaluate), set:",
 			"  MU_LOCAL_JUDGE_URL=http://host:port",
@@ -553,7 +553,7 @@ export function planLaunch({
 		if (support.runs) startJudge = true;
 		else if (!support.url) {
 			notes.push(
-				`mu: the configuration asks for the local judge (Laya), which runs on macOS only; on ${platformName({ platform, wsl })} its decision points use the next judge or their fallbacks (mu judge status)`,
+				`mu: the configuration asks for the local judge (Laya), which runs on macOS only; on ${platformName({ platform, wsl })}, the decision points it would answer use the next judge or their fallbacks (mu judge status)`,
 			);
 		}
 	}
@@ -1516,7 +1516,7 @@ export async function main(argv = process.argv.slice(2)) {
 		});
 	}
 	if ((command === "link" || command === "unlink") && layout === "package") {
-		out("This mu was installed with npm, which already put `mu` on your PATH (npm i -g mu-agent); nothing to link.");
+		out("This mu was installed with npm, which already put `mu` on your PATH (npm i -g mu-agent); nothing to do.");
 		return 0;
 	}
 	if (command === "link") {

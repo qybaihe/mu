@@ -1,6 +1,6 @@
 # How mu works
 
-mu is [pi](https://github.com/earendil-works/pi), the coding agent, with a judgment kernel loaded as an extension, plus a desktop app that runs both. This page is the map: what runs where, how a decision is made, and where to find the code.
+mu is [pi](https://github.com/earendil-works/pi), the coding agent, with a judgment kernel loaded as an extension, plus a desktop app that runs both. This page is the map: what runs where, how a decision is made and where to find the code.
 
 ## The pieces
 
@@ -11,10 +11,10 @@ mu is [pi](https://github.com/earendil-works/pi), the coding agent, with a judgm
   </picture>
 </p>
 
-- **The launcher**, `kyrn/bin/mu.mjs`, is the `mu` command. It handles mu's own commands (`setup`, `doctor`, `import`, `ledger`, `judge`, `auth`, `link`, `migrate`), reads the `.env` file, and starts pi with the kernel as an extension. pi's own commands (`install`, `list`, `config`, `mcp`…) are passed to pi unchanged.
+- **The launcher**, `kyrn/bin/mu.mjs`, is the `mu` command. It handles mu's own commands (`setup`, `doctor`, `import`, `ledger`, `judge`, `auth`, `link`, `migrate`), reads the `.env` file and starts pi with the kernel as an extension. pi's own commands (`install`, `list`, `config`, `mcp`…) are passed to pi unchanged.
 - **pi** does the agent's work: models and providers (`packages/ai`), the agent loop (`packages/agent`), and tools, sessions and the terminal UI (`packages/coding-agent`, `packages/tui`). mu changes pi as little as possible and marks each change, so pi's releases can be merged in.
 - **The judgment kernel**, `packages/kyrn-judge`, is a pi extension. Everything mu adds lives here.
-- **The desktop app**, `desktop/`, is an Electron app. It starts pi with the kernel in an Electron utility process and talks to it over pi's RPC protocol, using an in-process transport (`desktop/packages/desktop/src/process/services/nativeHost/`). The conversation list is pi's session files, so the app and the command line share sessions.
+- **The desktop app**, `desktop/`, is an Electron app. It starts pi with the kernel in an Electron utility process and talks to it over pi's RPC protocol, using an in-process transport (`desktop/packages/desktop/src/process/services/nativeHost/`). The conversation list is built from pi's session files, so the app and the command line share sessions.
 
 ## A decision, end to end
 
@@ -31,7 +31,7 @@ Take `tool.injection`, which screens web pages for prompt injection:
 2. **It asks a decision point.** `src/decisions/tool-injection.ts` defines the question with `defineDecision`: an id and a version, the questions (here, one yes/no question per passage), `buildState` (the small state the judge reads), `policy` (how answers map to an outcome) and `fallback` (what happens without a verdict).
 3. **The engine decides.** `runtime.engine.decide(spec, input)` (or `decideMany` for batches) checks the point's mode, picks its judges (`tiers`, or its `route`), sends the state and the questions, and applies the policy. If a judge is slow, down or unsure, the engine returns the fallback, along with the reason.
 4. **The verdict is recorded.** Every decision becomes a ledger record (`src/ledger.ts`): the outcome, whether it came from the judge or the fallback and why, the answers with their probabilities, the latency and the usage. Records are saved in the session file as `kyrn.decision` entries, which `mu ledger` and the app's Judge tab read.
-5. **The feature acts**, but only in `active` mode. Here it replaces the passages judged to contain instructions with a note. In `shadow` mode the verdict is recorded and nothing changes.
+5. **The feature acts**, but only in `active` mode. Here it withholds the passages judged to contain instructions and leaves a note in their place. In `shadow` mode the verdict is recorded and nothing changes.
 6. **The user sees it.** Features report what they did as presentation codes (`runtime.present`, documented in [kyrn/docs/features/presentation-codes.md](../kyrn/docs/features/presentation-codes.md)): a stable code with its parameters, plus English text. The desktop app renders each code in its 13 languages; the terminal shows the text.
 
 Every decision point follows these principles:
@@ -60,7 +60,7 @@ Every decision point follows these principles:
 | --- | --- |
 | `process/services/nativeHost/` | Runs pi and the kernel in a utility process; the reducer that turns pi's events into the conversation |
 | `common/kyrn/` | Types shared by the app's processes (the native bridge contract, hive and board types) |
-| `renderer/pages/conversation/KyrnPanel/` | The work panel: board, judgments, hive, lessons |
+| `renderer/pages/conversation/KyrnPanel/` | The work panel: the Board, Judge, Hive and Lessons tabs |
 | `renderer/pages/settings/KyrnSettings/` | Settings rendered from the kernel's manifest |
 | `renderer/services/i18n/locales/` | The app's 13 languages |
 

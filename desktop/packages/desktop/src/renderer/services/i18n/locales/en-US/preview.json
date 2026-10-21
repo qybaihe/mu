@@ -156,10 +156,10 @@
     "agentActiveTooltip": "The agent is using this tab",
     "tabLimitReached": "Browser tab limit reached ({{count}}). The oldest tab was reused.",
     "agentFirstUseTitle": "The agent is using the in-app browser",
-    "agentFirstUseContent": "It can open pages, click on them and read their content in this panel. Sites stay signed in after you restart mu.",
+    "agentFirstUseContent": "It can open pages, click on them and read their content in this panel. You stay signed in to sites after you restart mu.",
     "agentFirstUseAction": "Open settings"
   },
-  "saveConflict": "Couldn't save: this file changed on disk since you opened it. Reload to see the other changes — your edits are still here, unsaved.",
+  "saveConflict": "Couldn't save: this file has changed on disk since you opened it. Reload to see the other changes — your edits are still here, unsaved.",
   "persistQuotaExceeded": "Local storage is full, so open tabs can no longer be remembered for this project. Close some tabs or clear site data.",
   "save": {
     "tooltip": "Save changes (Ctrl/Cmd+S)",
@@ -168,7 +168,7 @@
   "refresh": {
     "label": "Refresh",
     "tooltip": "Reload from disk",
-    "hasUpdate": "This file changed on disk — reload to see it",
+    "hasUpdate": "This file changed on disk — reload to see the changes",
     "noSignalSource": "This file isn't in the project, so changes on disk aren't detected",
     "unavailable": "Can't find this file",
     "failed": "Couldn't reload this file",

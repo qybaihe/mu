@@ -337,7 +337,7 @@ export const MANIFEST: HarnessManifest = {
 			title: { zh: "文件定位", en: "File locator" },
 			summary: {
 				zh: "用一句话描述要找什么，判定器给候选文件排序，省去一次次搜索。",
-				en: "Describe what you're looking for, and the judge ranks candidate files, saving a string of greps.",
+				en: "The model describes what it's looking for and the judge ranks candidate files, saving a string of greps.",
 			},
 		},
 		{
@@ -447,7 +447,7 @@ export const MANIFEST: HarnessManifest = {
 			title: { zh: "人话看板：现在在干什么", en: "Plain-language board: where things stand" },
 			summary: {
 				zh: "打开人话看板的项目里，代理每说一段话、跑完检查或勾掉一条验收条件时、每做几步、以及每次停下时，用选择题读出它处在哪个阶段、在做哪条验收条件、是不是在等你，并把这段时间发生的事逐条分成「你会想知道的」和「例行步骤」。只有出现新情况，才把挑出来的要点交给会说人话的模型重写看板、并在流水里重讲一句；一轮结束时再挑一次整轮的要点，做个总结。",
-				en: "In a project with the board on, multiple-choice questions run whenever the agent says something, after a check or a ticked acceptance item, every few tool calls and whenever the agent stops. They read the agent's phase, the acceptance item it's working on and whether it's waiting for you, and sort what happened since the last update into news and routine. Only something new makes a plain-speaking model rewrite the board and retell the news in the running account. When a run ends, the news from the whole run is picked again for a summary.",
+				en: "In a project with the board on, multiple-choice questions are asked whenever the agent says something, after a check or a ticked acceptance item, every few tool calls and whenever the agent stops. They read the agent's phase, the acceptance item it's working on and whether it's waiting for you, and sort what happened since the last update into news and routine. Only something new makes a plain-speaking model rewrite the board and retell the news in the running account. When a run ends, the news from the whole run is picked again for a summary.",
 			},
 		},
 		{
@@ -1647,7 +1647,7 @@ export const MANIFEST: HarnessManifest = {
 					label: { zh: "写看板最多等多久", en: "Max wait for the writer" },
 					help: {
 						zh: "超时就用固定的句子说。",
-						en: "After that, fixed sentences are used.",
+						en: "After that, stock phrases are used.",
 					},
 				},
 			],
@@ -2405,7 +2405,7 @@ export const MANIFEST: HarnessManifest = {
 					label: { zh: "调试器（断点、单步、变量）", en: "Debugger: breakpoints, stepping, variables" },
 					help: {
 						zh: "在调试器里运行程序，停在断点或未捕获的异常处，看调用栈和变量。Python 用 debugpy，Go 用 delve，编译型程序用 lldb-dap，都要本机已装；也可以在设置文件里加自己的。一次只跑一个，随会话结束。",
-						en: "Runs a program under a debugger and stops at breakpoints or uncaught exceptions, showing the call stack and variables. Uses debugpy for Python, delve for Go and lldb-dap for compiled programs, if installed; add your own under debugAdapters in mu.json. One run at a time, ended with the session.",
+						en: "Runs a program under a debugger and stops at breakpoints or uncaught exceptions, showing the call stack and variables. Uses debugpy for Python, delve for Go and lldb-dap for compiled programs, if installed; add your own under debugAdapters in mu.json. One run at a time; it ends with the session.",
 					},
 				},
 				{

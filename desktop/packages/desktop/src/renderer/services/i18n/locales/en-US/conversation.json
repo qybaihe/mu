@@ -140,7 +140,7 @@
       "check_provider_credentials": "Check the provider's API key or account credentials in Settings.",
       "check_provider_billing": "Check your provider's balance, credits or quota.",
       "check_provider_base_url": "Check the provider's base URL, API path, proxy and API compatibility.",
-      "change_model": "Choose a model your account can use that supports this request.",
+      "change_model": "Choose a model that your account can use and that supports this request.",
       "reduce_context": "Shorten the message, reference fewer files or reduce the context, then try again.",
       "send_feedback": "Try again. If it keeps failing, check the app log."
     },
@@ -366,7 +366,7 @@
     "pasteConfirm_targetFolder": "Target folder",
     "pasteConfirm_multipleFiles": "{{count}} files",
     "empty": "No files yet",
-    "emptyDescription": "Upload files or open a folder to see them here",
+    "emptyDescription": "Add files or open a folder to see them here",
     "searchPlaceholder": "Search files…",
     "createNewConversation": "New conversation in this project",
     "search.empty": "No results",
@@ -396,7 +396,7 @@
       "renameEmpty": "Name can't be empty",
       "renameTimeout": "Rename timed out. Try again.",
       "addToChat": "Add to message",
-      "addedToChat": "Added to chat",
+      "addedToChat": "Added to message",
       "openFailed": "Couldn't open",
       "revealFailed": "Couldn't open the containing folder",
       "download": "Download",
@@ -414,7 +414,7 @@
       "tab": "Changes",
       "filesTab": "Files",
       "currentBranchLabel": "Current branch",
-      "summary": "{{count}} file(s) changed",
+      "summary": "Files changed: {{count}}",
       "insertions": "+{{count}} insertions",
       "deletions": "-{{count}} deletions",
       "empty": "No changes yet",
@@ -468,7 +468,7 @@
     "apiErrorSwitched": "API error. Switched to the {{cli}} CLI.",
     "confirmationLoadError": "Couldn't load the confirmation dialog",
     "tryAnotherAgent": "Try another agent:",
-    "switchAgentFailed": "Couldn't switch agent",
+    "switchAgentFailed": "Couldn't switch agents",
     "archivedCannotSend": "This conversation is archived and can't take new messages.",
     "awaitingConfirmation": "Waiting for your confirmation"
   },
@@ -493,7 +493,7 @@
     "clear": "Clear queue",
     "edit": "Edit",
     "editing": "Editing",
-    "editPlaceholder": "Edit the queued message before it sends.",
+    "editPlaceholder": "Edit the queued message before it's sent.",
     "cancelEdit": "Cancel",
     "saveEdit": "Save",
     "moreActions": "More actions",
@@ -565,7 +565,7 @@
     "history": "Thinking history",
     "thoughtFor": "Thought for {{time}}",
     "labelWithTime": "{{label}} · {{time}}",
-    "completeWithTime": "Thought complete · {{time}}",
+    "completeWithTime": "Done thinking · {{time}}",
     "elapsed": "({{time}})"
   },
   "skills": {
@@ -573,7 +573,7 @@
     "slashHint": "Skill"
   },
   "mcp": {
-    "loaded": "Loaded MCP",
+    "loaded": "Loaded MCP servers",
     "managementHint": "If an MCP server isn't working, its JSON config is usually the cause. Test it in Tools settings.",
     "openSettings": "Open Tools settings",
     "status": {
@@ -605,7 +605,7 @@
     "modelBusy": "You can switch models once this reply is done.",
     "defaultTag": "default",
     "makeDefault": "Make default for new conversations",
-    "madeDefault": "New conversations will start on this model.",
+    "madeDefault": "New conversations will start with this model.",
     "makeDefaultFailed": "Couldn't save the default model."
   },
   "agentTip": {
@@ -629,7 +629,7 @@
         "body": "The model refused this request before producing a visible reply."
       },
       "ANTIGRAVITY_STEPS_FAILED": {
-        "body": "{{count}} step(s) failed and didn't take effect. agy still reports these turns as successful, so check the result, not the reply."
+        "body": "Steps that failed and didn't take effect: {{count}}. agy still reports these turns as successful, so check the result, not the reply."
       },
       "CLI_VERSION_OLDER": {
         "body": "Your {{cli}} is older than the version mu was tested with, so some features may be missing. Consider upgrading {{cli}}. (Installed: {{reported}}. Tested: {{verified}}.)"
@@ -638,7 +638,7 @@
         "body": "Your {{cli}} is newer than the version mu was tested with. It should still work; report anything that behaves oddly. (Installed: {{reported}}. Tested: {{verified}}.)"
       },
       "CODEX_RETRYING": {
-        "body": "{{detail}} (attempt {{attempts}}, {{elapsed}} so far. The agent's provider keeps dropping the connection, so mu is waiting it out.)"
+        "body": "{{detail}} (attempt {{attempts}}, {{elapsed}} so far). The agent's provider keeps dropping the connection, so mu is waiting it out."
       }
     }
   },
@@ -672,7 +672,7 @@
     },
     "addedToChat": "Added {{name}} to your message",
     "imported": "Imported {{count}} files",
-    "importPartialFailed": "{{copied}} copied, {{failed}} failed (name conflicts or unsupported)",
+    "importPartialFailed": "{{copied}} copied, {{failed}} failed (name conflicts or unsupported files)",
     "importFailed": "Couldn't import files",
     "copyNodeFailed": "Couldn't copy",
     "moveNodeFailed": "Couldn't move",
@@ -782,7 +782,7 @@
     "truncated": "(earlier output truncated)"
   },
   "emptyState": {
-    "greeting": "Describe what you need to get started."
+    "greeting": "To get started, describe what you need."
   },
   "crossSession": {
     "mentionAgain": "Mention conversation {{name}} in the message box",

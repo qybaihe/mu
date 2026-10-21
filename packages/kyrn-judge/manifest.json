@@ -970,7 +970,7 @@
 			},
 			"summary": {
 				"zh": "用一句话描述要找什么，判定器给候选文件排序，省去一次次搜索。",
-				"en": "Describe what you're looking for, and the judge ranks candidate files, saving a string of greps.",
+				"en": "The model describes what it's looking for and the judge ranks candidate files, saving a string of greps.",
 				"zh-TW": "用一句話描述要找什麼，由判定器為候選檔案排序，省去一連串 grep。",
 				"ja-JP": "探しているものを説明すると、grep を何度も繰り返す代わりに、判定器が候補ファイルを順位付けします。",
 				"ko-KR": "찾는 대상을 설명하면, grep을 여러 번 실행하는 대신 판정기가 후보 파일의 순위를 매깁니다.",
@@ -1355,7 +1355,7 @@
 			},
 			"summary": {
 				"zh": "打开人话看板的项目里，代理每说一段话、跑完检查或勾掉一条验收条件时、每做几步、以及每次停下时，用选择题读出它处在哪个阶段、在做哪条验收条件、是不是在等你，并把这段时间发生的事逐条分成「你会想知道的」和「例行步骤」。只有出现新情况，才把挑出来的要点交给会说人话的模型重写看板、并在流水里重讲一句；一轮结束时再挑一次整轮的要点，做个总结。",
-				"en": "In a project with the board on, multiple-choice questions run whenever the agent says something, after a check or a ticked acceptance item, every few tool calls and whenever the agent stops. They read the agent's phase, the acceptance item it's working on and whether it's waiting for you, and sort what happened since the last update into news and routine. Only something new makes a plain-speaking model rewrite the board and retell the news in the running account. When a run ends, the news from the whole run is picked again for a summary.",
+				"en": "In a project with the board on, multiple-choice questions are asked whenever the agent says something, after a check or a ticked acceptance item, every few tool calls and whenever the agent stops. They read the agent's phase, the acceptance item it's working on and whether it's waiting for you, and sort what happened since the last update into news and routine. Only something new makes a plain-speaking model rewrite the board and retell the news in the running account. When a run ends, the news from the whole run is picked again for a summary.",
 				"zh-TW": "在開啟人話看板的專案裡，代理每說一段話、跑完檢查或勾掉一條驗收條件時、每做幾步、以及每次停下時，用選擇題讀出它處在哪個階段、在做哪條驗收條件、是不是在等你，並把這段時間發生的事逐條分成「你會想知道的」和「例行步驟」。只有出現新情況，才把挑出來的要點交給會講人話的模型重寫看板、並在流水裡重講一句；一輪結束時再挑一次整輪的要點，做個總結。",
 				"ja-JP": "ボードがオンのプロジェクトでは、エージェントが何か言うたび、検証や受け入れ条件の項目にチェックが入ったあと、数回のツール呼び出しごと、そしてエージェントが止まるたびに、選択式の質問でその段階、取り組んでいる受け入れ条件、あなたを待っているかどうかを読み取り、前回のボード以降に起きたことをニュースと日常の手順に分けます。新しいことがあったときだけ、わかりやすく話すモデルがボードを書き直し、そのニュースを記録の上で語り直します。実行が終わると、その実行全体のニュースをもう一度選び直してまとめます。",
 				"ko-KR": "보드를 켠 프로젝트에서는 에이전트가 무언가 말할 때마다, 검증을 하거나 인수 조건 항목에 체크한 뒤, 도구 호출 몇 번마다, 그리고 에이전트가 멈출 때마다 객관식 질문으로 지금 단계, 작업 중인 인수 조건 항목, 여러분을 기다리는지 여부를 읽어 내고, 지난 보드 이후 일어난 일을 새 소식과 일상적인 단계로 나눠요. 새로운 것이 있을 때만 쉽게 말하는 모델이 보드를 다시 쓰고 그 소식을 기록에 다시 말해 줘요. 실행이 끝나면 실행 전체의 소식을 다시 골라 요약해요.",
@@ -5778,7 +5778,7 @@
 					},
 					"help": {
 						"zh": "超时就用固定的句子说。",
-						"en": "After that, fixed sentences are used.",
+						"en": "After that, stock phrases are used.",
 						"zh-TW": "逾時就改用固定的句子。",
 						"ja-JP": "それを過ぎると、決まった文を使います。",
 						"ko-KR": "이 시간이 지나면 정해진 문장을 씁니다.",
@@ -8571,7 +8571,7 @@
 					},
 					"help": {
 						"zh": "在调试器里运行程序，停在断点或未捕获的异常处，看调用栈和变量。Python 用 debugpy，Go 用 delve，编译型程序用 lldb-dap，都要本机已装；也可以在设置文件里加自己的。一次只跑一个，随会话结束。",
-						"en": "Runs a program under a debugger and stops at breakpoints or uncaught exceptions, showing the call stack and variables. Uses debugpy for Python, delve for Go and lldb-dap for compiled programs, if installed; add your own under debugAdapters in mu.json. One run at a time, ended with the session.",
+						"en": "Runs a program under a debugger and stops at breakpoints or uncaught exceptions, showing the call stack and variables. Uses debugpy for Python, delve for Go and lldb-dap for compiled programs, if installed; add your own under debugAdapters in mu.json. One run at a time; it ends with the session.",
 						"zh-TW": "在偵錯工具下執行程式，停在中斷點或未攔截的例外處，查看呼叫堆疊和變數。Python 用 debugpy、Go 用 delve、編譯型程式用 lldb-dap，都需要本機已安裝；也可以在 mu.json 的 debugAdapters 下加入自己的。一次只執行一個，隨對話結束。",
 						"ja-JP": "デバッガーでプログラムを実行し、ブレークポイントや捕捉されていない例外で停止して、コールスタックと変数を確認します。Python には debugpy、Go には delve、コンパイル型のプログラムには lldb-dap を、それぞれインストールされていれば使います。独自のものは mu.json の debugAdapters に追加します。同時に実行できるのは 1 つだけで、セッションとともに終了します。",
 						"ko-KR": "프로그램을 디버거에서 실행해 중단점이나 처리되지 않은 예외에서 멈추고, 호출 스택과 변수를 보여 줍니다. Python은 debugpy, Go는 delve, 컴파일된 프로그램은 lldb-dap을 쓰며, 각각 설치되어 있어야 합니다. mu.json의 debugAdapters에 직접 추가할 수도 있습니다. 한 번에 하나만 실행하며, 세션과 함께 끝납니다.",

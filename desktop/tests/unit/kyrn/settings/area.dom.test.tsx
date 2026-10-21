@@ -1405,7 +1405,7 @@ describe('the permission modes and the board', () => {
     await open('details-goal');
     fireEvent.click(screen.getByTestId('mu-feature-open-board'));
     const board = screen.getByTestId('mu-section-feature-board');
-    expect(board).toHaveTextContent('Choose the model that writes the board under Board model.');
+    expect(board).toHaveTextContent('To choose the model that writes the board, go to Board model.');
     expect(within(board).queryByTestId('mu-option-board-model')).not.toBeInTheDocument();
     expect(within(board).getByTestId('mu-option-board-defaultOn')).toBeInTheDocument();
   });

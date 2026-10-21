@@ -386,7 +386,7 @@ describe("hive in a session", () => {
 		expect(new Board(dir).deliveries().map((delivery) => delivery.note)).toEqual(["late"]);
 	});
 
-	it("inside any sub-agent: a wrap-up request asks for the report and closes the tools", async () => {
+	it("inside any subagent: a wrap-up request asks for the report and closes the tools", async () => {
 		const dir = mkdtempSync(join(tmpdir(), "kyrn-hive-test-"));
 		const control = join(dir, "bee-0.json");
 		const harness = await bee(dir, { KYRN_SWARM_CONTROL: control });
@@ -418,7 +418,7 @@ describe("hive in a session", () => {
 		expect(harness.getPendingResponseCount()).toBe(0);
 	});
 
-	it("inside any sub-agent: a request that lands mid-step is answered by the very next tool call", async () => {
+	it("inside any subagent: a request that lands mid-step is answered by the very next tool call", async () => {
 		const dir = mkdtempSync(join(tmpdir(), "kyrn-hive-test-"));
 		const control = join(dir, "bee-0.json");
 		const harness = await bee(dir, { KYRN_SWARM_CONTROL: control });

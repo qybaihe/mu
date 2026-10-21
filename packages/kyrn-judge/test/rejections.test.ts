@@ -42,7 +42,7 @@ describe("a promise nothing handled, in RPC mode", () => {
 		error.stack = "Error: the board could not be written\n    at write (board.ts:1:1)\n    at look (board.ts:2:2)";
 		target.emit("unhandledRejection", error);
 		expect(written).toEqual([
-			"[mu] a promise failed and nothing handled it; mu goes on: Error: the board could not be written\n" +
+			"[mu] a promise failed and nothing handled it; mu keeps running: Error: the board could not be written\n" +
 				"[mu]     at write (board.ts:1:1)\n" +
 				"[mu]     at look (board.ts:2:2)\n",
 		]);
@@ -72,11 +72,15 @@ describe("a promise nothing handled, in RPC mode", () => {
 
 	it("describes what is not an error, too", () => {
 		expect(rejectionReport({ code: "EPIPE" })).toBe(
-			"[mu] a promise failed and nothing handled it; mu goes on: { code: 'EPIPE' }\n",
+			"[mu] a promise failed and nothing handled it; mu keeps running: { code: 'EPIPE' }\n",
 		);
-		expect(rejectionReport(undefined)).toBe("[mu] a promise failed and nothing handled it; mu goes on: undefined\n");
+		expect(rejectionReport(undefined)).toBe(
+			"[mu] a promise failed and nothing handled it; mu keeps running: undefined\n",
+		);
 		const bare = new Error("no stack");
 		bare.stack = undefined;
-		expect(rejectionReport(bare)).toBe("[mu] a promise failed and nothing handled it; mu goes on: Error: no stack\n");
+		expect(rejectionReport(bare)).toBe(
+			"[mu] a promise failed and nothing handled it; mu keeps running: Error: no stack\n",
+		);
 	});
 });

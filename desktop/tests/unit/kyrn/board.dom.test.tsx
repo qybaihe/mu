@@ -482,7 +482,7 @@ describe('the account under the board', () => {
     ]);
     expect(texts()).toEqual([
       'Stopped.',
-      "The goal isn't met yet; mu sent it back to work (round 2): the login test fails",
+      "The goal isn't met yet; mu sent the agent back to work (round 2): the login test fails",
       'Started 2 subagents: tests, docs',
       'Looked at 1 file or place',
       'Changed src/login.ts',

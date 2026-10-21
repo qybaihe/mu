@@ -16,7 +16,7 @@ A judge answers the bounded questions asked at mu's decision points: yes or no, 
 { "routes": { "browser.step": ["jev"], "memory.capture": ["llm:anthropic/claude-haiku-4-5"] } }
 ```
 
-In a session, use `/mu judge <tiers>` and `/mu route <point> <tiers|default>`. `/status` shows which judge answers what, and the desktop app's judges page sets the same things.
+In a session, use `/mu judge <tiers>` and `/mu route <point> <tiers|default>`. `/status` shows which judge answers what, and Settings → Judges in the desktop app sets the same things.
 
 If no judge answers in time, the decision point falls back to what it does without a verdict (usually, nothing changes), and the ledger records why.
 
@@ -33,7 +33,7 @@ Jev is a judgment model from TypeSafe, built for this kind of question. The buil
 | 5 | Cloudflare Workers AI | `CLOUDFLARE_API_KEY` and `CLOUDFLARE_ACCOUNT_ID` | `jev-cloudflare` |
 | none set | OpenCode Zen, free for a limited time | no key | `jev-opencode-free` |
 
-After these, mu falls back to a Vercel AI Gateway key that pi stored from `/login`. A key is only ever sent to the service it belongs to. To skip the order, name a route directly (`"tiers": ["jev-openrouter"]`).
+After these, mu falls back to a Vercel AI Gateway key that pi saved at `/login`. A key is only ever sent to the service it belongs to. To skip the order, name one directly by its built-in name (`"tiers": ["jev-openrouter"]`).
 
 **The free Jev.** With no key at all, Jev 1.13 on OpenCode Zen answers. What it judges goes to OpenCode, which doesn't train on it, and mu reminds you of this once a day. It's a limited-time offer from OpenCode: when it ends, mu tells you, and the decision points fall back until you set a key. `mu setup --judge free` chooses it explicitly.
 
@@ -49,7 +49,7 @@ mu judge start     # starts the sidecar
 mu judge status
 ```
 
-The desktop app sets it up in one step, also after asking. Laya is reliable on simple predicates (does this text describe an error?) and weak on questions about relationships or about the request itself. mu knows this and never sends it a question it can't answer well, so in a cascade such as `["laya", "jev"]` those questions go straight to the next judge. Run it in shadow mode alongside Jev and read the ledger before you give it a decision point of its own. The measurements are in [kyrn/docs/03-local-judge.md](../kyrn/docs/03-local-judge.md) (in Chinese).
+The desktop app also asks first, then sets it up in one step. Laya is reliable on simple predicates (does this text describe an error?) and weak on questions about relationships or about the request itself. mu knows this and never sends it a question it can't answer well, so in a cascade such as `["laya", "jev"]` those questions go straight to the next judge. Run it in shadow mode alongside Jev and read the ledger before you give it a decision point of its own. The measurements are in [kyrn/docs/03-local-judge.md](../kyrn/docs/03-local-judge.md) (in Chinese).
 
 ## Classifier models and LLMs
 
@@ -87,7 +87,7 @@ The key itself never goes in the file: `apiKeyEnv` names the environment variabl
 
 1. Put the decision point in `shadow` and route it to the judge you want to try, or run the whole kernel in shadow mode.
 2. Work as usual for a while.
-3. Read the verdicts: `mu ledger [n]` prints the last n sessions, `mu ledger --json` gives every record with its probabilities and timings, and the desktop app's Judge tab shows each verdict with its question.
+3. Read the verdicts: `mu ledger [n]` prints the verdicts from the last n sessions, `mu ledger --json` gives every record with its probabilities and timings, and the desktop app's Judge tab shows each verdict with its question.
 4. Switch the point to `active` once its verdicts look right.
 
 `"recordState": true` also keeps the judged state in the ledger, which you need to train or distill your own judge on your sessions. It's off by default because the states contain your content.

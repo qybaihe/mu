@@ -49,7 +49,7 @@ Question types: `boolean` (the probability of yes), `choice` (named answers, eac
 
 - One predicate per question, about what the state says, with the state's field names in backticks. No lists of conditions, no "and/or", no quantifiers.
 - Ask what's still needed given what will be kept, not whether something is on topic.
-- Split a compound question in two and combine the answers in `policy`. When `turn.continue` asked "asks for a go-ahead on work the user already asked for" as one question, it scored 0.79 on a "how would you fix it?" message. Split into `asks_go_ahead` and `work_requested`, it scored 0.29 and 0.38 on that message, and 0.95 where it should.
+- Split a compound question in two and combine the answers in `policy`. When `turn.continue` asked "asks for a go-ahead on work the user already asked for" as one question, it scored 0.79 on a "how would you fix it?" message. Split into `asks_go_ahead` and `work_requested`, it scored 0.29 and 0.38 on that message, and 0.95 on messages where yes was the right answer.
 - Boolean probabilities are compressed (clear cases land near 0.15 and 0.85), while choice distributions are sharp, so thresholds don't carry over between types. The kernel's usual bars are 0.8 or more for yes and 0.2 or less for no.
 - Try the wording against the judge on real examples before you write the feature, and keep the numbers for the pull request.
 
@@ -78,7 +78,7 @@ export function registerContinuation(runtime: KyrnRuntime): void {
 - Wrap handlers in `failOpen`: a kernel error must never break the agent.
 - Bound waits with `within`, so a slow judge yields the fallback instead of a stall. Batches go through `engine.decideMany`.
 - Register the feature in the table in `src/extension/kyrn-judge.ts`. Order matters when handlers for the same event modify the same thing (for example, injection screening runs before admission).
-- If the user should see what happened, present it with a code (`runtime.present`), add the kind to `src/extension/presentation.ts`, and document it in [presentation-codes.md](../kyrn/docs/features/presentation-codes.md).
+- If the user should see what happened, present it with a code (`runtime.present`), add the kind to `src/extension/presentation.ts` and document it in [presentation-codes.md](../kyrn/docs/features/presentation-codes.md).
 
 ## 3. Settings text
 
@@ -119,4 +119,4 @@ In `desktop/packages/desktop/src/renderer/pages/conversation/KyrnPanel/Judge/`:
 
 ## 7. The pull request
 
-Say what the point decides, show a few real examples with the judge's probabilities, and say which mode it should ship in. New points ship in shadow mode until real sessions show that the verdicts are right.
+Say what the point decides, show a few real examples with the judge's probabilities and say which mode it should ship in. New points ship in shadow mode until real sessions show that the verdicts are right.

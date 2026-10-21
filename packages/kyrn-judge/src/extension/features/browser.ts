@@ -226,7 +226,7 @@ export function registerBrowser(runtime: KyrnRuntime): void {
 			codeParams = result.params;
 			// The usual first-run failure: a small local judge that is rightly not trusted with pages.
 			const hint = result.reason?.includes("no judge could choose")
-				? `\nThe judge for browser.step (${runtime.engine.judgeFor(browserStep.id).id}) cannot relate a goal to a page. Give this one decision a capable judge: /mu route browser.step luna (any llm judge from kyrn.json), or jev once it is available.`
+				? `\nThe judge for browser.step (${runtime.engine.judgeFor(browserStep.id).id}) cannot relate a goal to a page. Give this one decision a capable judge: /mu route browser.step luna (any LLM judge in mu.json), or jev once it is available.`
 				: "";
 			const trace = result.history
 				.map(

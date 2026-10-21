@@ -83,7 +83,7 @@ describe("worktree: where it can be used", () => {
 		expect(await checkRepo(noGit, repo)).toMatchObject({ ok: false, problem: "no-git" });
 	});
 
-	// Found with the QA fixes, 2026-09-25: a sub-agent's checkout started git on a Mac without the developer tools,
+	// Found with the QA fixes, 2026-09-25: a subagent's checkout started git on a Mac without the developer tools,
 	// whose /usr/bin/git only opens their installer, and read the Xcode license's exit as "not a repository".
 	it("never starts a Mac's git without the developer tools, and says why git cannot run", async () => {
 		const repo = makeRepo(area(), { "a.txt": "a\n" });
@@ -159,7 +159,7 @@ describe("worktree: one task's isolated checkout", () => {
 		expect(sh(repo, "worktree", "list", "--porcelain").match(/^worktree /gm)).toHaveLength(1);
 	});
 
-	it("shows the sub-agent the parent's uncommitted state, and keeps that state out of the patch", async () => {
+	it("shows the subagent the parent's uncommitted state, and keeps that state out of the patch", async () => {
 		const root = area();
 		const repo = makeRepo(root, { "src/a.txt": "one\ntwo\n", "staged.txt": "s\n", ".gitignore": "ignored/\n" });
 		writeFileSync(join(repo, "src/a.txt"), "one\ntwo, edited by the parent\n");

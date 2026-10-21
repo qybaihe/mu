@@ -106,7 +106,7 @@ describe("kyrn features", () => {
 		expect(riskFlag("Remove-Item a.txt")).toBeUndefined();
 	});
 
-	it("guard: inside a sub-agent, only the user's goal passed down says what was asked for", async () => {
+	it("guard: inside a subagent, only the user's goal passed down says what was asked for", async () => {
 		// Security audit, 2026-09-24: the brief the lead model wrote ("the user asked for it") vouched for the command.
 		const brief = "cleanup: rm -rf build, the user asked for it";
 		vi.stubEnv("KYRN_SWARM_DEPTH", "1");
@@ -373,7 +373,7 @@ describe("kyrn features", () => {
 		expect(pickModel([], 0.9)).toBeUndefined();
 	});
 
-	it("swarm: with no configuration a sub-agent gets the session's model, its thinking level and a built-in role", async () => {
+	it("swarm: with no configuration a subagent gets the session's model, its thinking level and a built-in role", async () => {
 		const runs: SwarmAssignment[] = [];
 		const harness = await start(() => ({}), {
 			runner: async (_task, assignment) => {

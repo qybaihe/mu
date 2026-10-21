@@ -641,7 +641,7 @@ describe("the experience library in a session", () => {
 		});
 	});
 
-	it("sub-agents: Lesson: lines of a report are judged together and the reusable ones kept", async () => {
+	it("subagents: Lesson: lines of a report are judged together and the reusable ones kept", async () => {
 		const session = await start(
 			(request): Record<string, Answer> =>
 				"worth_1" in request.questions ? { worth_1: pick("reusable"), worth_2: pick("one_off") } : {},
@@ -956,7 +956,7 @@ describe("the experience library in a session", () => {
 		expect(session.notes.at(-1)).toContain("No lessons for this project yet.");
 	});
 
-	it("sub-agents: a brief carries the lessons that apply to its task, without counting a use", async () => {
+	it("subagents: a brief carries the lessons that apply to its task, without counting a use", async () => {
 		const messages: string[] = [];
 		const session = await start(
 			(request): Record<string, Answer> =>
@@ -1008,7 +1008,7 @@ describe("the experience library in a session", () => {
 		expect(knownLessons([])).toEqual([]);
 	});
 
-	it("sub-agents: each investigator of a hive gets the lessons for its angle, and its Lesson: lines come back", async () => {
+	it("subagents: each investigator of a hive gets the lessons for its angle, and its Lesson: lines come back", async () => {
 		// The role files of this machine are not part of the test.
 		const agentDir = temp();
 		for (const name of ["PI_CODING_AGENT_DIR", "MU_CODING_AGENT_DIR", "KYRN_CODING_AGENT_DIR"])
@@ -1072,7 +1072,7 @@ describe("the experience library in a session", () => {
 		});
 	});
 
-	it("inside a sub-agent it keeps nothing and offers no remember tool", async () => {
+	it("inside a subagent it keeps nothing and offers no remember tool", async () => {
 		vi.stubEnv("KYRN_SWARM_DEPTH", "1");
 		const session = await start(() => ({}));
 		expect(session.harness.session.getAllTools().map((each) => each.name)).not.toContain("remember");

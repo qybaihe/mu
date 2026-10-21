@@ -143,7 +143,7 @@ function branchingSession(): unknown[] {
 	];
 }
 
-/** A sub-agent run inside the main transcript, the way older versions wrote it. */
+/** A subagent run inside the main transcript, the way older versions wrote it. */
 function sidechainSession(): unknown[] {
 	const side = { isSidechain: true, agentId: "side1" };
 	return [
@@ -163,7 +163,7 @@ function sidechainSession(): unknown[] {
 	];
 }
 
-/** A sub-agent's own transcript: every record a sidechain. */
+/** A subagent's own transcript: every record a sidechain. */
 function subAgentTranscript(): unknown[] {
 	const side = { isSidechain: true, agentId: "abc123" };
 	return [
@@ -444,7 +444,7 @@ describe("Claude Code transcripts", () => {
 		expect(JSON.stringify(converted.entries)).not.toContain("Now add a test");
 	});
 
-	it("leaves a sub-agent's records out of the main conversation, and imports a sub-agent's own transcript", async () => {
+	it("leaves a subagent's records out of the main conversation, and imports a subagent's own transcript", async () => {
 		const main = await readClaudeCode(writeLines(join(temp(), "main.jsonl"), sidechainSession()));
 		expect(contextOf(main)).toEqual([
 			`custom ${IMPORT_MARKER}`,
@@ -453,7 +453,7 @@ describe("Claude Code transcripts", () => {
 			"result toolu_task: The config is loaded in src/config.ts",
 			"assistant: It is loaded in src/config.ts.",
 		]);
-		expect(main.counts.dropped["sub-agent records"]).toBe(2);
+		expect(main.counts.dropped["subagent records"]).toBe(2);
 
 		const own = await readClaudeCode(writeLines(join(temp(), "agent-abc123.jsonl"), subAgentTranscript()));
 		expect(own).toMatchObject({ sourceId: "agent-abc123", name: "List the test files" });
@@ -654,7 +654,7 @@ describe("importing into mu's sessions", () => {
 			join(claudeProjects, "-tmp-mu-import-fixture-project", `${CC_ID}.jsonl`),
 			branchingSession(),
 		);
-		// A sub-agent's transcript lives in a folder below and is not a conversation of its own in the list.
+		// A subagent's transcript lives in a folder below and is not a conversation of its own in the list.
 		writeLines(
 			join(claudeProjects, "-tmp-mu-import-fixture-project", CC_ID, "subagents", "agent-abc123.jsonl"),
 			subAgentTranscript(),

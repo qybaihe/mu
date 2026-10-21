@@ -703,7 +703,7 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 	pi.registerCommand("forget", {
 		description: say({
 			zh: "让一条经验退役，以后不再召回：/forget <id 前几位>（id 见 /lessons）",
-			en: "Retire a lesson so it's no longer recalled: /forget <id prefix> (find ids with /lessons)",
+			en: "Retire a lesson so it's no longer recalled: /forget <id prefix> (find IDs with /lessons)",
 		}),
 		handler: async (args, ctx) => {
 			runtime.touch(ctx);

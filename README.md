@@ -21,7 +21,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/run-dark.gif">
-    <img src="docs/readme/run-light.gif" alt="A run in the mu desktop app, in a job-queue project called relay. The message: jobs with a 1h30m timeout get killed after about an hour; find out why, fix it and make sure the tests pass. Jev classifies it as a multi-step task (input.preflight). The model runs the tests, which Jev lets through (tool.approval): one of 13 fails. It reads the duration parser, finds that a minute is defined as 1,000 ms, says it will change it to 60,000 and run the tests again, and stops without doing it. Jev answers that the run stopped short (turn.continue), mu reminds the model that the turn isn't finished, and it changes the unit and runs the tests: all 13 pass. The Judge tab on the right lists each verdict with its decision point and latency.">
+    <img src="docs/readme/run-light.gif" alt="A run in the mu desktop app, in a job-queue project called relay. The message: jobs with a 1h30m timeout get killed after about an hour; find out why, fix it and make sure the tests pass. Jev classifies it as a multi-step task (input.preflight). The model runs the tests, which Jev lets through (tool.approval): one of 13 fails. It reads the duration parser, finds that a minute is defined as 1,000 ms, says it will change it to 60,000 and run the tests again, and stops without doing it. Jev answers that the run stopped short (turn.continue), mu reminds the model that the turn isn't finished, and the model changes the unit and runs the tests: all 13 pass. The Judge tab on the right lists each verdict with its decision point and latency.">
   </picture>
   <br>
   <sub>A recorded run in the desktop app. The coding model's replies are scripted for the recording (it's shown as GPT-6.1 Sol), and the project and the earlier conversations in the sidebar were made up for it. The judge's verdicts, their timings and the recovery are real: the model stopped short, <code>turn.continue</code> caught it, and mu sent it back to finish.</sub>
@@ -33,7 +33,7 @@ mu comes as a command-line tool, `mu`, which does everything pi does and adds th
 
 What you get:
 
-- **A lean context and a warm cache.** In the authors' own sessions, the context rarely fills: long tool output is judged chunk by chunk so only what's needed enters, and stale results are dropped without writing a summary. Test-log trimming, off by default, folds exact repeats: on the longest failing test logs it cut 51% of the characters, losslessly (see [Measured](#measured)). Before the prompt cache expires, the kernel predicts whether you'll be back and refreshes the cache if you will.
+- **A lean context and a warm cache.** In the authors' own sessions, the context rarely fills: long tool output is judged chunk by chunk so only what's needed enters, and stale results are dropped without a summary. Test-log trimming, off by default, folds exact repeats: on the longest failing test logs it cut 51% of the characters, losslessly (see [Measured](#measured)). Before the prompt cache expires, the kernel predicts whether you'll be back and refreshes the cache if you will.
 - **Permission checks that don't stop you at every step.** In *Jev approves* mode, the default, Jev lets through what the task clearly needs and asks you about the rest. Rules catch risky commands first, and web pages and MCP output are screened for instructions aimed at the AI before the model sees them.
 - **Decisions you can audit.** Every verdict goes into a local ledger with its probabilities and timing (`mu ledger`, `/status` or the desktop app's Judge tab). Any decision point can run in shadow mode, asked and logged but changing nothing, so you can compare judges before you rely on one.
 
@@ -141,7 +141,7 @@ The 40 points fall into five groups:
 | `output.drift` | While the model is writing: does the tail of its output cross your constraints? | Experimental and off by default; corrected mid-stream |
 | `goal.met` | In goal mode, when the main model gives no answer: is the condition met? | The fallback for `/goal` |
 | `board.read` | Where do things stand? Asked as multiple choice | Feeds the plain-language board |
-| `notify.routing` | An event such as the context budget: tell the model now, later or never? | The model hears about it at the right time |
+| `notify.routing` | An event such as the context budget running low: tell the model now, later or never? | The model hears about it at the right time |
 
 </details>
 
@@ -164,11 +164,11 @@ Every point, with its feature switch and options: [docs/reference/decision-point
 
 - **Jev** (hosted) answers bounded questions with probabilities. mu reaches it through TypeSafe, OpenRouter, the Vercel AI Gateway, OpenCode Zen, Cloudflare Workers AI or any service that speaks the same protocol, each with its own key (`TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`). You can pick one in the desktop app under Settings → Judges; by default mu uses the first one whose key is set.
 
-  With no key set, Jev 1.13 on OpenCode Zen answers, free for a limited time. What it judges goes to OpenCode, which doesn't train on it, and mu reminds you of this once a day. Set a key (`mu setup`, or Settings → Judges in the app) and mu switches to it from the next question.
+  With no key set, Jev 1.13 on OpenCode Zen answers, free for a limited time. What it judges goes to OpenCode, which doesn't train on it, and mu reminds you of this once a day. Set a key (`mu setup`, or Settings → Judges in the app) and mu switches to it starting with the next question.
 
   Measured in the authors' own sessions: a warm question takes about 0.3 s over HTTP/2, and 16 chunks of tool output are judged in a single request in 0.44 s, with the shared state billed once. Verdicts, probabilities and timings go to the ledger: run `mu ledger`, or open the Judge tab in the desktop app.
 - **Laya** (local, macOS on Apple silicon) is a 322M-parameter judge that runs on your machine and never touches the network. Nothing is downloaded without your consent. It's reliable on simple predicates and weaker on meta-judgments, so run it in shadow alongside Jev and read the ledger before you give it a decision point.
-- **Any classifier model** in pi's catalog can serve as a tier: `classifier:<provider>/<model>`. For example, Cloudflare's Clef (`clef`, `clef-flash`), the System One models on OpenRouter and the Vercel AI Gateway, or a llama.cpp classifier.
+- **Any classifier model** in pi's catalog can serve as a tier: `classifier:<provider>/<model>`. Examples include Cloudflare's Clef (`clef`, `clef-flash`), the System One models on OpenRouter and the Vercel AI Gateway, or a llama.cpp classifier.
 - **Any LLM** can serve as a tier: `llm:<provider>/<model>`.
 
 Judges can be chained in tiers, cheapest first:
@@ -176,7 +176,7 @@ Judges can be chained in tiers, cheapest first:
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/tiers-dark.svg">
-    <img src="docs/readme/tiers-light.svg" width="880" alt="Judges in tiers, for a cascade such as laya,jev. All questions go to Laya first, local and free. What it is sure of becomes a verdict; a yes/no answer between 0.2 and 0.8 is unsure and goes on to Jev, hosted, about 0.3 seconds. What is still unsure, or what no judge answered, gets the fallback: what mu would do without a judge. The ledger records every answer and which judge gave it. Laya is not trusted on relating, scoring or meta-judgments, so those go on to Jev.">
+    <img src="docs/readme/tiers-light.svg" width="880" alt="Judges in tiers, for a cascade such as laya,jev. All questions go to Laya first, local and free. What it is sure of becomes a verdict; a yes/no answer between 0.2 and 0.8 is uncertain and goes on to Jev, hosted, about 0.3 seconds. What is still uncertain, or what no judge answered, gets the fallback: what mu would do without a judge. The ledger records every answer and which judge gave it. Laya is not trusted on relating, scoring or meta-judgments, so those go on to Jev.">
   </picture>
 </p>
 
@@ -189,7 +189,7 @@ Judges can be chained in tiers, cheapest first:
   </picture>
 </p>
 
-Everything mu adds to pi is one extension, the judgment kernel in `packages/kyrn-judge`, and mu's changes to pi itself are kept small and marked, so upstream pi changes merge cleanly; a workflow pulls them in every Monday. The `mu` command handles mu's own commands (`setup`, `ledger`, `import`…) and starts pi with the kernel. The desktop app runs the same pi and kernel in a utility process, so the app and the command line share their sessions.
+Everything mu adds to pi is one extension, the judgment kernel in `packages/kyrn-judge`. mu's changes to pi itself are kept small and marked, so upstream pi changes merge cleanly; a workflow pulls them in every Monday. The `mu` command handles mu's own commands (`setup`, `ledger`, `import`…) and starts pi with the kernel. The desktop app runs the same pi and kernel in a utility process, so the app and the command line share their sessions.
 
 Every decision point takes the same path, and a feature acts on a verdict only in `active` mode:
 
@@ -237,7 +237,7 @@ What these numbers don't show:
 - The repeats come from two days of one developer's sessions: 15 test logs, all from Vitest, of which the 7 over 4,000 characters are charted. Other test runners haven't been measured.
 - There's no end-to-end comparison with pi, Claude Code or Codex on the same tasks yet.
 
-`node kyrn/spikes/judge-bench/test-log-replay.ts` reruns every arm except Jev's in seconds, without a key. On the current code those arms come out 0.6 to 1.1 points above the chart, which was measured on 2026-09-21. The Jev arm needs `TYPESAFE_API_KEY`.
+`node kyrn/spikes/judge-bench/test-log-replay.ts` reruns every arm except Jev's in seconds, without a key. On the current code those arms come out 0.6 to 1.1 points higher than the charted numbers, which were measured on 2026-09-21. The Jev arm needs `TYPESAFE_API_KEY`.
 
 <details>
 <summary>The charts as tables</summary>
@@ -263,15 +263,15 @@ What these numbers don't show:
 
 ## The hive
 
-Every multi-agent system has to answer the same question: should what one agent knows be passed on to another? The usual answers are nothing (each agent reports only to the main agent), everything (the whole history, in a group chat or a handoff), whatever each agent's own large model decides, or fixed rules and the environment. In mu, the judge is the gate.
+Every multi-agent system has to answer the same question: should one agent tell another what it knows? The usual answers are nothing (each agent reports only to the main agent), everything (the whole history, in a group chat or a handoff), whatever each agent's own large model decides, or fixed rules and a shared environment. In mu, the judge is the gate.
 
 A hive is two to six bees, each with its own focus. Bees read code, run commands and browse the web, but never edit; the main model makes the changes. Each time a bee finishes a message, `hive.publish` asks once: is there a finding, a dead end, a decision or a blocker here worth sharing? If so, it goes on a shared, append-only board. For each new note, `hive.deliver` asks once per other bee: does this touch its focus? If it does, the note is delivered, marked *a finding, not an instruction*.
 
-Because the board is append-only, a later conclusion can overturn an earlier one: a bee reports that the tests won't run, then unsets an environment variable and they do. `hive.relate` decides how two notes relate: *supersedes*, *contradicts* or *supports*. A superseded conclusion turns into a correction, delivered to every bee that holds the old note. When two notes contradict each other, both stay, marked as a dispute; if nobody settles it within a minute, a bee is sent to verify.
+The board is append-only, so an earlier conclusion stays even after a later one overturns it: a bee reports that the tests won't run, then unsets an environment variable and they do. `hive.relate` decides how two notes relate: *supersedes*, *contradicts* or *supports*. When a conclusion is superseded, a correction goes to every bee that holds the old note. When two notes contradict each other, both stay, marked as a dispute; if nobody settles it within a minute, a bee is sent to verify.
 
 <p align="center"><img src="docs/readme/swarm.png" width="960" alt="The desktop app's Hive tab after a /hive question: three bees, config, repro and tests, all done; a map of the findings they delivered to each other; and in the conversation, the answer with the line, the numbers and the failing test"></p>
 
-You can watch all of this in the desktop app's Hive tab. Each bee gets a row: its role, its model and what it's doing or has just said. The map shows who delivered findings to whom, and the more findings travel along a line, the thicker it gets. Corrections and disputes have their own marks, and a line lights up the moment a finding arrives. The information flow lists the text of every delivery, and every verdict is listed too. The hive card in the conversation shows a miniature of the map and opens this tab.
+You can watch all of this in the desktop app's Hive tab. Each bee gets a row: its role, its model and what it's doing or has just said. The map shows who delivered findings to whom, and the more findings travel along a line, the thicker it gets. Corrections and disputes have their own marks, and a line lights up the moment a finding arrives. The *Information flow* list shows the text of every delivery, and every verdict is listed too. The hive card in the conversation shows a miniature of the map and opens this tab.
 
 One real run: 3 bees, 9 minutes, 117 candidates judged, 27 posted to the board and 16 delivered to the bees that needed them. Every verdict is in the run's log.
 
@@ -281,7 +281,7 @@ One real run: 3 bees, 9 minutes, 117 candidates judged, 27 posted to the board a
 
 Frontier models keep getting better at the work and worse at talking about it. Each generation's progress updates read more like output meant for another machine: denser, more opaque, less like a person talking. mu doesn't ask the working model to narrate itself.
 
-With the board on (`/board`, or the switch on the desktop app's Board tab), each step the agent takes becomes one plain line on the board as soon as it finishes: a file changed, a check passed or failed, a command ran. Reading is folded into a single line with a running count. Whenever the agent says something mid-run, `board.read` asks the judge whether it's news. If it is, a model chosen only for plain writing (`/board model`) rewrites it for a person and keeps the board's status current: what's happening now, how many checklist items are done and what's waiting on you. When a run finishes, a summary becomes the last line, with the full account kept above it, so you see what was done, not just that it's done.
+With the board on (`/board`, or the switch on the desktop app's Board tab), each step the agent takes becomes one plain line on the board as soon as it finishes: a file changed, a check passed or failed, a command ran. Consecutive file reads are folded into a single line with a running count. Whenever the agent says something mid-run, `board.read` asks the judge whether it's news. If it is, a model chosen only for plain writing (`/board model`) rewrites it for a person and keeps the board's status current: what's happening now, how many checklist items are done and what's waiting on you. When a run finishes, a summary becomes the last line, with the full account kept above it, so you see what was done, not just that it's done.
 
 <p align="center"><img src="docs/readme/board.png" width="960" alt="The desktop app's plain-language board after the hive answered: waiting for you to say whether to fix it, the one question that needs you and what happened before, with context use and cache hit rate at the top"></p>
 
@@ -300,7 +300,7 @@ A desktop app with mu and its runtime built in: there's no Node.js to install an
   </picture>
 </p>
 
-A bar along the bottom keeps the kernel in view: which judge answers and where it runs, how many decision points are active and, in a conversation, the verdicts so far, the latest judge latency and the context in use. The permission mode and the goal sit in the composer, and `⌘K` opens the command palette. You sign in to models inside the app: ChatGPT, Claude, Grok and Google (Gemini CLI / Antigravity) subscriptions, or an API key for any provider pi supports. You can import Claude Code and Codex CLI conversations and continue them.
+A bar along the bottom keeps the kernel in view: which judge answers and where it runs, how many decision points are active and, in a conversation, the verdicts so far, the latest judge latency and the context in use. The permission mode and the goal sit in the composer, and `⌘K` opens the command palette. You connect models inside the app: sign in with a ChatGPT, Claude, Grok or Google (Gemini CLI / Antigravity) subscription, or add an API key for any provider pi supports. You can import Claude Code and Codex CLI conversations and continue them.
 
 GitHub Actions builds the app for macOS (Apple silicon / Intel), Windows (x64 / Arm) and Linux (x64 / Arm) and publishes it under [Releases](https://github.com/qybaihe/mu/releases).
 
@@ -315,7 +315,7 @@ mu doctor     # check the installation, the judges and the connections
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/cli-dark.png">
-    <img src="docs/readme/cli-light.png" width="720" alt="mu's welcome screen in a terminal: the μ mark, &quot;mu v0.1.10, judgment-first coding agent, built on pi 1.3.0&quot;, then the judge (Jev, answering in 137 ms, decision points active), the model and the working directory, and the keys worth knowing.">
+    <img src="docs/readme/cli-light.png" width="720" alt="mu's welcome screen in a terminal: the μ mark, &quot;mu v0.1.10, judgment-first coding agent, built on pi 1.3.0&quot;, then the judge (Jev, answering in 137 ms, decision points active), the model and the working directory, and the key bindings worth knowing.">
   </picture>
 </p>
 
@@ -341,7 +341,7 @@ Requires Node.js 22.19 or newer. `mu -p "prompt"` runs a single prompt and print
 | `/import-chat` | Import a Claude Code or Codex conversation |
 | `/doctor` | Check the setup and the connections |
 
-pi's own commands (`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export` and the rest) work as before. `MU_JUDGE=laya,jev mu` overrides the judges for a single run.
+pi's own commands (`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export` and the rest) work as they do in pi. `MU_JUDGE=laya,jev mu` overrides the judges for a single run.
 
 ## Privacy
 
@@ -387,6 +387,6 @@ If mu is useful to you, a star helps others find it.
 
 ## Credits and license
 
-mu is under the MIT license ([LICENSE](LICENSE); the desktop app's is [desktop/LICENSE](desktop/LICENSE)). It is built on [pi](https://github.com/earendil-works/pi) (the coding agent, MIT), and we're grateful to its authors. Some decision points build on ideas from other projects: the wording of the prompt-injection screen comes from [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills), and the continuation check (`turn.continue`) and the bulk judging tool (`judge_items`) follow [oh-my-pi](https://github.com/can1357/oh-my-pi). Third-party code in the judgment kernel is listed in [THIRD_PARTY_NOTICES.md](packages/kyrn-judge/THIRD_PARTY_NOTICES.md).
+mu is under the MIT license ([LICENSE](LICENSE); the desktop app's is [desktop/LICENSE](desktop/LICENSE)). It is built on [pi](https://github.com/earendil-works/pi) (the coding agent, MIT), and we're grateful to its authors. Some decision points build on ideas from other projects: the wording of the prompt-injection screen comes from [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills), and the continuation check (`turn.continue`) and the bulk judging tool (`judge_items`) are based on [oh-my-pi](https://github.com/can1357/oh-my-pi). Third-party code in the judgment kernel is listed in [THIRD_PARTY_NOTICES.md](packages/kyrn-judge/THIRD_PARTY_NOTICES.md).
 
 The desktop app began as a fork of [AionUi](https://github.com/iOfficeAI/AionUi); the files it took from AionUi, listed in [desktop/APACHE-FILES.txt](desktop/APACHE-FILES.txt), stay under the Apache License 2.0 (see [desktop/NOTICE](desktop/NOTICE)).

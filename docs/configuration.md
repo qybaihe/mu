@@ -2,7 +2,7 @@
 
 mu reads pi's settings (models, sign-ins and preferences; see [pi's documentation](https://github.com/earendil-works/pi/tree/main/packages/coding-agent#readme)) and its own, in `~/.mu/agent/mu.json`. The desktop app's settings write to the same file, so anything you change there you can also change by hand, and vice versa.
 
-mu reads only your own `mu.json`. A project can't change the judge, its endpoint or its modes, because the judge reads your messages.
+mu reads only your own `mu.json`. A project can't change the judge, its endpoint or the modes, because the judge reads your messages.
 
 ## mu.json
 
@@ -50,7 +50,7 @@ If mu doesn't understand part of the file, that part falls back to its default a
 
 ## Modes in practice
 
-- All but two points act from the start (`context.compact` and `output.drift` are off until you turn them on). To try out a judge, or a point you're unsure of, put it in shadow mode, read the ledger (`mu ledger`, `/status` or the app's Judge tab), then set it back to active once its verdicts look right.
+- All but two points act from the start (`context.compact` and `output.drift` are off until you turn them on). To try out a judge, or a point you're unsure of, put the point in shadow mode, read the ledger (`mu ledger`, `/status` or the app's Judge tab), then set it back to active once its verdicts look right.
 - `/mu mode <point> <off|shadow|active>` switches one point for the current session, and `/mu mode default shadow` switches all of them. To make a mode stick, put it in `mu.json`; the app's settings turn points on or off.
 - `MU_JUDGE_MODE=shadow mu` sets the default mode for one run.
 
@@ -68,7 +68,7 @@ Judges and modes:
 | `MU_PERMISSIONS` | Permission mode for this run: `full`, `jev` or `ask`. |
 | `MU_LOCAL_JUDGE_URL` | Address of a local judge server, if it isn't the one `mu judge start` runs. |
 
-Keys for Jev, each sent only to the service it belongs to (see [Judges](judges.md#hosted-jev)): `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`, and `MU_JUDGE_CLM_API_KEY`.
+Keys for the hosted judges, each sent only to the service it belongs to (see [Judges](judges.md#hosted-jev)): `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`, and `MU_JUDGE_CLM_API_KEY`.
 
 The launcher:
 
@@ -86,11 +86,11 @@ mu also reads a `.env` file: `~/.mu/.env` for the npm package, or the repository
 
 ## Proxies
 
-mu follows `HTTPS_PROXY`, `HTTP_PROXY` and `NO_PROXY`. When `HTTPS_PROXY` isn't set, the desktop app also follows the system proxy (macOS network settings, Windows Internet settings). pi's `httpProxy` setting works as well.
+mu follows `HTTPS_PROXY`, `HTTP_PROXY` and `NO_PROXY`. When `HTTPS_PROXY` isn't set, the desktop app also uses the system proxy settings (macOS network settings, Windows Internet settings). pi's `httpProxy` setting works as well.
 
 ## Per-feature options
 
-Each feature's options, defaults and ranges are generated from the same manifest the app's settings use: [reference/features.md](reference/features.md). Some that people often change:
+Each feature's options, defaults and ranges are listed in a reference generated from the same manifest the app's settings use: [reference/features.md](reference/features.md). Some that people often change:
 
 | Setting | What it does |
 | --- | --- |

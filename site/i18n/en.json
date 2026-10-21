@@ -35,7 +35,7 @@
     "replay": "↻ Replay",
     "replay_label": "Replay this part",
     "term_label": "Recording of the mu command line",
-    "source_note": "This page follows the README on GitHub.",
+    "source_note": "This page is based on the README on GitHub.",
     "star_cta_h2": "If mu is useful to you, star it on GitHub",
     "star_cta_p": "A star helps more people find it. The code, the discussions and every release live in the repository.",
     "star_cta_button": "Star on GitHub",
@@ -47,22 +47,22 @@
     "lead": "mu is a coding agent. A small, fast judge called Jev makes dozens of small decisions for the main model in every turn: what stays in the context, whether a command is safe, whether the work is really done. The main model keeps its attention on the work.",
     "tab_cli": "Command line",
     "tab_app": "Desktop app",
-    "cli_hint": "Needs Node.js 22.19 or newer. Then run <code>mu</code> in a project folder; the first time, <code>mu setup</code> connects a model.",
+    "cli_hint": "Needs Node.js 22.19 or newer. Run <code>mu setup</code> once to connect a model, then <code>mu</code> in a project folder.",
     "dl_mac_arm": "Apple silicon",
     "dl_mac_intel": "Intel",
-    "app_hint": "The macOS app is signed and notarized by Apple; the Windows app isn't signed yet, so SmartScreen shows a warning. The app carries mu inside it: no Node.js to install. Windows on Arm, Linux on Arm and every other download are under <a href=\"https://github.com/qybaihe/mu/releases\">Releases</a>.",
+    "app_hint": "The macOS app is signed and notarized by Apple; the Windows app isn't signed yet, so SmartScreen shows a warning. mu is built into the app, so there's no Node.js to install. Windows on Arm, Linux on Arm and every other download are under <a href=\"https://github.com/qybaihe/mu/releases\">Releases</a>.",
     "meta": "macOS · Windows · Linux · open source (MIT + Apache-2.0) · built on pi",
     "app_alt": "The mu desktop app after a bug fix: the conversation in the middle, the Judge tab on the right listing each of Jev's verdicts with its decision point and time, and the kernel bar along the bottom",
     "app_caption": "The desktop app: the Judge tab lists every verdict with its decision point and how long it took.",
     "cue": "Watch a turn",
     "story_label": "MU · ONE TURN",
     "story_h2": "Judge first, then act",
-    "story_intro": "Ask for a plan, and most agents send every tool and skill description along with it. Models write better code every month, and their reports get harder to read. mu splits the work: Jev judges, the main model works and a model picked for plain speaking tells you where things stand.",
+    "story_intro": "Ask for a plan, and most agents send the model every tool and skill description along with it. Models write better code every month, and their reports get harder to read. mu splits the work: Jev judges, the main model works and a model picked for plain writing tells you where things stand.",
     "stage_caption": "Recorded in mu, with Jev as the judge. Jev's verdicts and timings are real; the coding model's replies are scripted, so the turn plays the same every time.",
-    "swarm_alt": "The hive tab in the desktop app: three bees investigate one bug at once; the arrows are findings Jev judged worth delivering",
-    "swarm_caption": "The hive tab in the desktop app: each arrow is a finding Jev judged worth delivering.",
+    "swarm_alt": "The Hive tab in the desktop app: three bees investigate one bug at once; the arrows are findings Jev judged worth delivering",
+    "swarm_caption": "The Hive tab in the desktop app: each arrow is a finding Jev judged worth delivering.",
     "board_alt": "The plain-language board: what's being done, how far it got and the running account below",
-    "board_caption": "The plain-language board: what it's doing, how far it got and the running account.",
+    "board_caption": "The plain-language board: what the agent is doing, how far it got and the running account.",
     "chapters": [
       {
         "seg": "start",
@@ -79,11 +79,11 @@
       },
       {
         "seg": "fail",
-        "label": "When a tool answers",
+        "label": "When a tool returns",
         "h2": "Output goes through Jev first",
         "caption": "The tests run: 1 of 13 fails.",
         "paras": [
-          "A test run or a search easily returns hundreds of lines. Jev judges chunk by chunk what matters now; only that enters the context, and the rest is archived behind a pointer, ready when it's needed.",
+          "A test run or a search can easily return hundreds of lines. Jev judges, chunk by chunk, what matters now; only that enters the context, and the rest is archived behind a pointer, ready when it's needed.",
           "In web pages and MCP results, instructions aimed at the model are withheld before it reads them."
         ]
       },
@@ -93,7 +93,7 @@
         "h2": "Block what's risky, ask only when it matters",
         "caption": "It finds the cause, a minute defined as one second, and fixes that line without coming back to ask.",
         "paras": [
-          "Before a command runs, rules flag anything risky, and Jev checks that you asked for it and that it doesn't cross a constraint you stated. There are three permission modes, <b>Full access</b>, <b>Jev approves</b> and <b>Ask first</b>, and you can switch at any time. In Jev approves mode, Jev lets through what the task clearly needs and asks you about the rest."
+          "Before a command runs, rules flag anything risky, and Jev checks that you asked for it and that it doesn't cross a constraint you stated. There are three permission modes (<b>Full access</b>, <b>Jev approves</b> and <b>Ask first</b>), and you can switch at any time. In Jev approves mode, Jev lets through what the task clearly needs and asks you about the rest."
         ]
       },
       {
@@ -112,7 +112,7 @@
         "h2": "Several bees at work, Jev in the middle",
         "paras": [
           "When several agents work on one hard problem, splitting up the work is easy; communication is hard. Say nothing, and each walks into the same dead end. Say everything, and every context fills with the others' chatter.",
-          "In mu's hive, Jev judges every finding: is it worth sharing, and does it matter to this bee? Only then does it reach another bee as context. When a later finding overturns an earlier one, the correction goes to every bee that heard it."
+          "In mu's hive, Jev judges every finding: is it worth sharing, and does it matter to a given bee? Only then does it reach that bee as context. When a later finding overturns an earlier one, the correction goes to every bee that heard it."
         ]
       },
       {
@@ -120,7 +120,7 @@
         "label": "The plain-language board",
         "h2": "Working and reporting are different jobs",
         "paras": [
-          "Models get stronger, and their reports read more and more like notes for a machine. In mu the working model keeps working its own way. Every few tool calls Jev checks what happened, picks what's really news and hands it to a model chosen for speaking plainly, which tells you where things stand.",
+          "Models get stronger, and their reports read more and more like notes for a machine. In mu the working model keeps working its own way. Every few tool calls, Jev checks what happened, picks what's really news and hands it to a model chosen for writing plainly, which tells you where things stand.",
           "When a run ends, you see not just \"done\" but what was actually done."
         ]
       }
@@ -141,7 +141,7 @@
     "more_h2": "One set of accounts, settings and lessons for the command line and the app",
     "more": [
       { "b": "Import conversations", "text": "Bring in your Codex and Claude Code conversations and carry on in mu." },
-      { "b": "Subscription sign-in", "text": "ChatGPT, Claude, Grok and Google, signed in inside the app, no keys to copy around." },
+      { "b": "Subscription sign-in", "text": "Sign in with ChatGPT, Claude, Grok or Google inside the app; no keys to copy around." },
       { "b": "Lessons", "text": "Your corrections and the traps the agent found a way around are kept; a lesson that is recalled and never followed retires itself." },
       { "b": "Built-in browser", "text": "Jev drives it step by step: look at the page, judge once, act; it stops to ask before submitting or paying." },
       { "b": "A ledger of verdicts", "text": "Every verdict and how long it took: <code>/status</code>, <code>mu ledger</code> and the app's Judge tab." },
@@ -154,7 +154,7 @@
       { "h3": "Discussions", "p": "Questions, ideas and what you built with mu.", "href": "https://github.com/qybaihe/mu/discussions" },
       { "h3": "Contributing", "p": "Fix a bug, propose a decision point, measure a judge or translate; good first issues are labeled.", "href": "https://github.com/qybaihe/mu/blob/main/CONTRIBUTING.md" }
     ],
-    "key_note": "The judge works without a key: Jev is free to start. The model that writes the code uses your own subscription or API key. To use your own TypeSafe key or another judge, see <a href=\"{decisions}#judges\">Judges</a>."
+    "key_note": "The judge works without a key: you can start with the free Jev. The model that writes the code uses your own subscription or API key. To use your own TypeSafe key or another judge, see <a href=\"{decisions}#judges\">Judges</a>."
   },
   "decisions": {
     "title": "Decision points",
@@ -163,7 +163,7 @@
   "docs": {
     "title": "Docs",
     "lead": "From installing to everyday use: the desktop app, the command line, the hive, the plain-language board and privacy.",
-    "more_h2": "More reference",
+    "more_h2": "More reference docs",
     "more_p": "These reference documents live in the GitHub repository:",
     "more": [
       { "text": "Getting started", "href": "https://github.com/qybaihe/mu/blob/main/docs/getting-started.md" },
@@ -176,13 +176,13 @@
   },
   "changelog": {
     "title": "Changelog",
-    "lead": "What changed in each release of mu, the desktop app and the command line together. Every desktop release bundles a mu-agent, and all of them are pre-releases while mu is in early development.",
+    "lead": "What changed in each release of mu: the desktop app and the command line together. Every desktop release bundles a specific mu-agent version, and all of them are pre-releases while mu is in early development.",
     "english_note": "",
     "agent_label": "Includes",
     "download": "Download this version",
     "full_agent": "Full mu-agent changelog",
     "headlines": {
-      "v0.1.9": "a new look, providers set up from their model list",
+      "v0.1.9": "a new look, model limits read from each provider's model list",
       "v0.1.8": "MCP tool descriptions screened for hidden instructions, long runs saved as draft skills"
     },
     "entries": []

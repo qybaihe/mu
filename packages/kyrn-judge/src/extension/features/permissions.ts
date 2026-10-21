@@ -74,7 +74,7 @@ const REASON_TEXT: Readonly<Record<Exclude<AskReason, "flagged">, { zh: string; 
 /** The answers, fixed so a client can draw them as buttons. */
 export const ANSWERS = {
 	once: { zh: "允许这一次", en: "Allow once" },
-	session: { zh: "这次对话都允许", en: "Allow for this conversation" },
+	session: { zh: "这次对话都允许", en: "Allow for this session" },
 	deny: { zh: "不允许", en: "Don't allow" },
 } as const;
 
@@ -242,7 +242,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 						: need.kind === "shell" || need.kind === "run"
 							? "a program run in the project folder"
 							: need.kind === "delegate"
-								? "sub-agents working on the project"
+								? "subagents working on the project"
 								: "an action outside this computer or program, such as a web page or a connected service",
 			},
 			{ signal: ctx.signal },
@@ -351,7 +351,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		} catch (error) {
 			if (mode === "full") return undefined;
 			const problem = error instanceof Error ? error.message : String(error);
-			if (ctx.signal?.aborted) return { block: true, reason: "Cancelled." };
+			if (ctx.signal?.aborted) return { block: true, reason: "Canceled." };
 			if (ctx.hasUI) {
 				const allowed = await ctx.ui
 					.confirm(say({ zh: "mu 需要你授权", en: "mu needs your permission" }), `${event.toolName}\n\n${problem}`)
@@ -385,7 +385,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 				ctx.ui.notify(
 					say({
 						zh: "已清空这次对话里“都允许”过的操作。",
-						en: "Cleared everything you allowed for this conversation.",
+						en: "Cleared everything you allowed for this session.",
 					}),
 					"info",
 				);
@@ -408,7 +408,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 						say({ zh: `权限：${modeLabel(mode)}`, en: `Permissions: ${modeLabel(mode)}` }),
 						say({ zh: MODE_TEXT[mode].zhDescription, en: MODE_TEXT[mode].enDescription }),
 						...(allowed
-							? [say({ zh: `这次对话都允许：${allowed}`, en: `Allowed for this conversation: ${allowed}` })]
+							? [say({ zh: `这次对话都允许：${allowed}`, en: `Allowed for this session: ${allowed}` })]
 							: []),
 						say({ zh: "切换：/permissions full | jev | ask", en: "To switch: /permissions full | jev | ask" }),
 					].join("\n"),
