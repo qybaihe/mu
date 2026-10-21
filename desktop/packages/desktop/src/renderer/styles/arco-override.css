@@ -668,3 +668,16 @@ body[arco-theme='dark'] .arco-message-error {
   padding-bottom: 2px;
   background-color: var(--color-bg-popup);
 }
+
+/*
+ * Empty states are one line of text, as mu's own lists say it (`.empty` in sections.module.css), not Arco's stock
+ * inbox picture: the Hive tab before a run, the sidebar and its search, the archive, a missing scheduled task.
+ */
+.arco-empty .arco-empty-wrapper .arco-empty-image {
+  display: none;
+}
+
+.arco-empty .arco-empty-description {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
