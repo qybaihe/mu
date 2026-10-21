@@ -20,6 +20,7 @@ const MODEL = { provider: 'e2e', id: 'e2e-fake-model' };
 
 const LAUNCH: HostLaunch = {
   module: '/mu/packages/coding-agent/src/index.ts',
+  cli: '/mu/packages/coding-agent/src/cli.ts',
   args: ['-e', '/mu/packages/kyrn-judge/src/extension/kyrn-judge.ts', '--mode', 'rpc'],
   execArgv: ['--import', '/mu/source-resolver.ts'],
   env: { HOME: '/home/someone' },
@@ -71,6 +72,7 @@ describe('NativeHost', () => {
     expect(child.posted[0]).toEqual({
       type: 'init',
       module: LAUNCH.module,
+      cli: LAUNCH.cli,
       args: LAUNCH.args,
       execArgv: LAUNCH.execArgv,
     });
@@ -467,6 +469,14 @@ describe('the envelope', () => {
       args: [],
       execArgv: [],
     });
+    // The script the command line runs pi with, when the launcher names one.
+    expect(readToHost({ type: 'init', module: '/pi.js', cli: '/cli.js', args: [], execArgv: [] })).toEqual({
+      type: 'init',
+      module: '/pi.js',
+      cli: '/cli.js',
+      args: [],
+      execArgv: [],
+    });
     expect(readToHost({ type: 'in', json: '{}' })).toEqual({ type: 'in', json: '{}' });
     expect(readToHost({ type: 'end', extra: 1 })).toEqual({ type: 'end' });
     for (const odd of [
@@ -475,6 +485,7 @@ describe('the envelope', () => {
       'end',
       { type: 'init', module: '/pi.js', args: [1] },
       { type: 'init', module: '/pi.js', args: [], execArgv: '--import /r.ts' },
+      { type: 'init', module: '/pi.js', cli: 7, args: [] },
       { type: 'init', args: [] },
       { type: 'in', json: {} },
     ])

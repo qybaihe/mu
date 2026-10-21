@@ -4,7 +4,13 @@ import { Check, Close } from '@icon-park/react';
 import classNames from 'classnames';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
-import { isBeeActive, parseSwarmSnapshot, type HiveBee, type HiveBeeStatus } from '@/common/kyrn/hive';
+import {
+  isBeeActive,
+  parseSwarmSnapshot,
+  type HiveBee,
+  type HiveBeeStatus,
+  type HiveBoardLine,
+} from '@/common/kyrn/hive';
 import type { Activity } from '@/common/kyrn/types';
 import { useModelNames } from '@/renderer/hooks/agent/useModelNames';
 import { list, record, str } from '../activity';
@@ -14,13 +20,24 @@ import { buildHiveRuns, endedRuns, type HiveRun } from './activity';
 import BeeActivityList from './BeeActivity';
 import { swarmTitleText } from './codes';
 import HiveGraph from './Graph';
-import { hiveLinks, isLive, reportLinks, type HiveLink } from './Graph/links';
+import { hiveLinks, isLive, reportLinks, snapshotLinks, type HiveLink } from './Graph/links';
 import { beeLine, beeWho, settledBee, swarmSummary } from './HiveToolCard';
 import Hive from './index';
 import styles from './Hive.module.css';
 
-/** One run of sub-agents as the tab lists it: a hive, or a delegate call's tasks. */
-type SwarmRun = { id: string; at: number; kind: 'hive' | 'delegate'; title: string; bees: HiveBee[]; asked: string[] };
+/**
+ * One run of sub-agents as the tab lists it: a hive, or a delegate call's tasks. `latest` is the board's last notes and
+ * whom each reached, as the latest snapshot sums them up.
+ */
+type SwarmRun = {
+  id: string;
+  at: number;
+  kind: 'hive' | 'delegate';
+  title: string;
+  bees: HiveBee[];
+  asked: string[];
+  latest: HiveBoardLine[];
+};
 
 /**
  * The runs of this conversation, newest first. Each snapshot is read by the parser the transcript's sub-agent card
@@ -32,7 +49,7 @@ function swarmRuns(t: TFunction, events: readonly Activity[]): SwarmRun[] {
   const runOf = (event: Activity & { run: string }): SwarmRun => {
     const known = runs.get(event.run);
     if (known) return known;
-    const run: SwarmRun = { id: event.run, at: event.at, kind: 'hive', title: '', bees: [], asked: [] };
+    const run: SwarmRun = { id: event.run, at: event.at, kind: 'hive', title: '', bees: [], asked: [], latest: [] };
     runs.set(event.run, run);
     return run;
   };
@@ -52,6 +69,7 @@ function swarmRuns(t: TFunction, events: readonly Activity[]): SwarmRun[] {
       run.kind = snapshot.kind;
       run.title = swarmTitleText(t, snapshot) || run.title;
       run.bees = snapshot.bees;
+      run.latest = snapshot.latest;
     }
   }
   return [...runs.values()].toSorted((a, b) => b.at - a.at);
@@ -81,10 +99,16 @@ function StatusMark({ status }: { status: HiveBeeStatus }) {
   );
 }
 
-/** The lines of a run's map: what the board recorded for a hive, the reports that came back for a delegate call. */
+/**
+ * The lines of a run's map: what the board recorded for a hive, the reports that came back for a delegate call. A
+ * conversation on the native host has no records of the board (its activity is the view's, which reads no files:
+ * native/utils/toActivity.ts), so its hive draws what the snapshots say: the latest notes and whom each reached.
+ */
 function linksOf(run: SwarmRun, detail: HiveRun | undefined): HiveLink[] {
   if (run.kind === 'delegate') return reportLinks(run.bees);
-  return detail ? hiveLinks(detail.deliveries, detail.notes, detail.relations) : [];
+  if (detail && (detail.deliveries.length > 0 || detail.notes.length > 0))
+    return hiveLinks(detail.deliveries, detail.notes, detail.relations);
+  return snapshotLinks('hive', run.bees, run.latest);
 }
 
 /**

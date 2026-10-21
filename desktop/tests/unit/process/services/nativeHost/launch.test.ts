@@ -37,6 +37,7 @@ vi.mock('../../../../../packages/desktop/src/process/agent/kyrn/harness.ts', () 
 
 const PLAN: HostPlan = {
   module: '/mu/packages/coding-agent/src/index.ts',
+  cli: '/mu/packages/coding-agent/src/cli.ts',
   execArgv: ['--import', '/mu/source-resolver.ts'],
   args: ['-e', '/mu/judge.ts', '--mode', 'rpc'],
   env: { HOME: '/home/someone', MU_AGENT_DIR: '/home/someone/.mu/agent' },
@@ -94,6 +95,7 @@ describe('prepareHost', () => {
     expect(note).toHaveBeenCalledWith(PLAN.notes[0]);
     expect(prepared).toEqual({
       module: PLAN.module,
+      cli: PLAN.cli,
       args: PLAN.args,
       execArgv: PLAN.execArgv,
       env: PLAN.env,
