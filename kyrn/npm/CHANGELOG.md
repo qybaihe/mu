@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.1.11] - 2026-10-21
+
 ### Changed
 
 - The package's keywords add `pi-coding-agent`, `mcp` and `prompt-injection`, so directories that index pi coding agents and MCP clients find it.
