@@ -83,13 +83,15 @@ behavior is unchanged.
 
 1. `startNativeHost({ cwd, session? })` checks the flag, finds the harness as the rest of the app does
    (`KYRN_ROOT` / `MU_ROOT` / `../KYRN` in dev, `resources/harness/mu-agent` packaged), and runs `prepareHost`. The
-   launcher plans `{ module, execArgv, args, env }` exactly as for the command line: same files, settings, sign-ins,
-   `.env` keys. `argv` is `--mode rpc` plus `--session <file or id>` to resume.
+   launcher plans `{ module, cli, execArgv, args, env }` exactly as for the command line: same files, settings,
+   sign-ins, `.env` keys. `argv` is `--mode rpc` plus `--session <file or id>` to resume. `cli` is the script the
+   command line runs pi with (see "Sub-agents" below).
 2. `utilityProcess.fork(entry, [], { env: { ...systemProxyEnv(), ...plan.env }, cwd, stdio: 'pipe', serviceName: 'mu' })`.
-3. The manager posts `init { module, args, execArgv }`, then a `get_state` (id `h1`). Records that arrive before pi
-   listens wait in the host.
-4. The host applies `execArgv` itself (see below), imports pi's module, calls `setupCli()`, posts `ready { importMs }`
-   and runs `main(args, { rpcTransport })`. The transport is the parent port.
+3. The manager posts `init { module, cli, args, execArgv }`, then a `get_state` (id `h1`). Records that arrive before
+   pi listens wait in the host.
+4. The host applies `execArgv` itself (see below), imports pi's module, sets `process.argv` to `[node, cli, ...args]`
+   and `process.execArgv` to `execArgv`, calls `setupCli()`, posts `ready { importMs }` and runs
+   `main(args, { rpcTransport })`. The transport is the parent port.
 5. pi answers `get_state`: the host is `running`, or `needs-model`.
 
 `dispose()` posts `end`, which is pi's stdin closing: pi shuts its session down and exits with 0. A host still there
@@ -104,6 +106,14 @@ without the resolver, pi's import failed (`@earendil-works/pi-ai` resolved to a 
 the host silences the named warnings and imports each `--import` module in order before pi; any other option is
 reported on stderr and left out. The Node fork starts the host without options too, so both run the same path. A
 package's plan has no options.
+
+**Sub-agents.** pi starts a sub-agent (`hive`, `delegate`, the swarm) by running `process.argv[1]` again with
+`process.execArgv`, the judgment layer's `-e` from `process.argv` and `ELECTRON_RUN_AS_NODE=1` on Electron
+(`packages/kyrn-judge/src/extension/features/swarm.ts`). In the host, `process.argv[1]` was the host's own file, which
+exits at once without a parent ("The mu host needs a parent"), so every sub-agent failed before it started. The host
+now gives pi the command line it would have had: the launcher's `cli` (`packages/coding-agent/src/cli.ts` in a
+checkout, `dist/bundle/cli.js` in the package) and the planned options, which take effect in the child as real ones.
+A launcher from before 2026-10-22 names no `cli`, and the command line is left as it was.
 
 ### The manager
 

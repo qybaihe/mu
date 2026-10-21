@@ -488,6 +488,7 @@ describe("pi inside another program (the desktop app's runtime host)", () => {
 		if (host.error !== undefined) throw new Error(host.error);
 		expect(host).toMatchObject({
 			module: `${WIN_PACKAGE}\\dist\\bundle\\index.js`,
+			cli: `${WIN_PACKAGE}\\dist\\bundle\\cli.js`,
 			execArgv: [],
 			args: ["-e", `${WIN_PACKAGE}\\judge\\mu\\index.js`, "--mode", "rpc"],
 			layout: "package",
@@ -511,6 +512,7 @@ describe("pi inside another program (the desktop app's runtime host)", () => {
 		if (host.error !== undefined) throw new Error(host.error);
 		expect(host).toMatchObject({
 			module: `${POSIX_ROOT}/packages/coding-agent/src/index.ts`,
+			cli: `${POSIX_ROOT}/packages/coding-agent/src/cli.ts`,
 			execArgv: POSIX_NATIVE,
 			args: ["-e", `${POSIX_ROOT}/packages/kyrn-judge/src/extension/kyrn-judge.ts`, "--mode", "rpc"],
 			layout: "repo",

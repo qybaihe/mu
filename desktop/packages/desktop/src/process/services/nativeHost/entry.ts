@@ -4,9 +4,10 @@
  * tests and scripts start the same file with Node's `child_process.fork`.
  *
  * The first message names pi's module and arguments (`init`, see protocol.ts). The host applies the Node options the
- * launcher planned (applyNodeOptions), imports that module, runs pi's CLI setup and then `main(args, { rpcTransport })`,
- * whose transport is the message channel to the parent. pi decides the rest, as it does on the command line:
- * `--mode rpc`, the judgment layer's `-e`, a `--session` to resume.
+ * launcher planned (applyNodeOptions), imports that module, gives pi the command line it would have had
+ * (asCommandLine), runs pi's CLI setup and then `main(args, { rpcTransport })`, whose transport is the message channel
+ * to the parent. pi decides the rest, as it does on the command line: `--mode rpc`, the judgment layer's `-e`, a
+ * `--session` to resume.
  *
  * The parent's `end` (or, under Node, its disconnect) ends pi's input: pi shuts down and the process exits with 0.
  * A host that cannot import pi or start it says `failed` and exits with 1; pi's own errors go to stderr, as ever.
@@ -179,6 +180,20 @@ async function applyNodeOptions(execArgv: readonly string[]): Promise<void> {
   }
 }
 
+/**
+ * The command line pi would have had, from inside the host: `process.argv` as `[node, cli, ...args]` and the planned
+ * Node options as `process.execArgv`. pi starts its sub-agents (swarm, hive, delegate) by running `process.argv[1]`
+ * again with `process.execArgv` and the judgment layer's `-e` from `process.argv`. Here `process.argv[1]` is this file,
+ * which exits at once without a parent, so every sub-agent failed before it started. A child of the utility process
+ * runs as Node (pi sets ELECTRON_RUN_AS_NODE for it), so the planned options take effect there as real ones.
+ * A launcher from before 2026-10-22 names no `cli`: the command line is left as it is.
+ */
+function asCommandLine(init: Extract<ToHost, { type: 'init' }>): void {
+  if (!init.cli) return;
+  process.argv = [process.argv[0], init.cli, ...init.args];
+  process.execArgv = [...init.execArgv];
+}
+
 async function start(init: Extract<ToHost, { type: 'init' }>): Promise<void> {
   let pi: PiModule;
   try {
@@ -190,6 +205,7 @@ async function start(init: Extract<ToHost, { type: 'init' }>): Promise<void> {
     return fail('import', error);
   }
   try {
+    asCommandLine(init);
     pi.setupCli();
     parent.post({ type: 'ready', importMs: Math.round(performance.now() - started) });
     await pi.main(init.args, { rpcTransport: transport });

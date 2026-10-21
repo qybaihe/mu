@@ -579,6 +579,9 @@ export function planLaunch({
  * Node flags that process starts with, pi's arguments (the judgment layer, then `argv`) and its whole environment.
  * The app's pi and the command line's are then one: the same files, settings, sign-ins and keys.
  *
+ * `cli` is the script the command line runs pi with. pi starts its sub-agents (swarm, hive, delegate) by running
+ * `process.argv[1]` again, which inside the host is the host's own file: the host hands pi this script there instead.
+ *
  * A checkout runs there as it runs on the command line (sourceRuntime). Returns { error } when pi cannot run.
  */
 export function planHost({ platform, env, argv, root, home, fs, wsl = false, stripsTypes = true }) {
@@ -598,6 +601,7 @@ export function planHost({ platform, env, argv, root, home, fs, wsl = false, str
 		return {
 			...common,
 			module: path.join(root, "dist", "bundle", "index.js"),
+			cli: packageEntries({ root, platform }).cli,
 			execArgv: [],
 			args: [...judgeArgs({ argv, layout: launch.layout, root, platform, agentDir: launch.agentDir, readFile: fs.readFile }), ...argv],
 		};
@@ -607,6 +611,7 @@ export function planHost({ platform, env, argv, root, home, fs, wsl = false, str
 	return {
 		...common,
 		module: path.join(root, "packages", "coding-agent", "src", "index.ts"),
+		cli: path.join(root, "packages", "coding-agent", "src", "cli.ts"),
 		execArgv: runtime.args,
 		args: [...judgeArgs({ argv, layout: launch.layout, root, platform, agentDir: launch.agentDir, readFile: fs.readFile }), ...argv],
 	};
