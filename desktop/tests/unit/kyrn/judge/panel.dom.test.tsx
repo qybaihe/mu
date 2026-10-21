@@ -311,7 +311,7 @@ describe('a judgment, opened', () => {
     ]);
 
     const card = within(cards()[0]);
-    // The counted answers are values ("Keep"), never a field's label ("Suggested retention") or the raw id.
+    // The counted answers are values ("Keep"), never a field's label ("Parts kept") or the raw id.
     expect(card.getByText(copy.values.keep).parentElement).toHaveTextContent(`${copy.values.keep}×2`);
     expect(card.getByText(copy.values.shrink).parentElement).toHaveTextContent(`${copy.values.shrink}×1`);
     expect(card.getByText(copy.values.now)).toBeInTheDocument();

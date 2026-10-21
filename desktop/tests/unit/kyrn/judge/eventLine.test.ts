@@ -457,7 +457,7 @@ describe('Browser run lines', () => {
       [
         'profile_no_windows_path',
         { profileDir: '/home/me/.mu/browser-profile' },
-        'The profile folder /home/me/.mu/browser-profile has no Windows path (WSL_DISTRO_NAME is not set).',
+        "The profile folder /home/me/.mu/browser-profile has no Windows path (WSL_DISTRO_NAME isn't set).",
         '浏览器配置文件夹 /home/me/.mu/browser-profile 没有对应的 Windows 路径（未设置 WSL_DISTRO_NAME）。',
       ],
       [
