@@ -13,6 +13,7 @@ import { _electron as electron, type ElectronApplication, type Page } from 'play
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
+import { DEV_PROFILE_NAMES } from '../packages/desktop/src/common/platform/legacyNames';
 
 // ── CLI args ────────────────────────────────────────────────────────────────
 
@@ -86,8 +87,8 @@ function agentPillByBackend(backend: string) {
 
 function getLogFilePath(): string {
   const today = new Date().toISOString().slice(0, 10);
-  // A development build logs under its profile name ("AionUi-Dev", kept from earlier versions), a packaged one under "mu"
-  const devPath = path.join(os.homedir(), 'Library', 'Logs', 'AionUi-Dev', `${today}.log`);
+  // A development build logs under its profile name (kept from earlier versions), a packaged one under "mu"
+  const devPath = path.join(os.homedir(), 'Library', 'Logs', DEV_PROFILE_NAMES.first, `${today}.log`);
   const prodPath = path.join(os.homedir(), 'Library', 'Logs', 'mu', `${today}.log`);
   return fs.existsSync(devPath) ? devPath : prodPath;
 }

@@ -6,6 +6,7 @@
 
 import type { IConversationMcpStatus } from '@/common/config/storage';
 import React, { createContext, useContext } from 'react';
+import { type BuiltinAgent } from '@/common/platform/backendNames';
 
 /**
  * Conversation context interface
@@ -28,7 +29,7 @@ export interface ConversationContextValue {
    * Conversation type
    * 会话类型
    */
-  type: 'acp' | 'codex' | 'aionrs';
+  type: 'acp' | 'codex' | BuiltinAgent;
 
   /**
    * Cron job ID (if this conversation was created by a scheduled task)

@@ -5,14 +5,14 @@ import { getInstallationIntegrityModalActions } from '@/renderer/components/layo
 
 describe('classifyBackendStartupFailure', () => {
   it('classifies missing GLIBC symbols as an incompatible backend runtime', () => {
-    const error = new Error('aioncore exited before health check passed') as Error & {
+    const error = new Error('The backend exited before health check passed') as Error & {
       details?: Record<string, unknown>;
     };
     error.details = {
       stage: 'early_exit',
       stderrTail:
-        "/opt/mu/resources/bundled-aioncore/linux-x64/aioncore.bin: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.34' not found\n" +
-        "/opt/mu/resources/bundled-aioncore/linux-x64/aioncore.bin: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.32' not found",
+        "/opt/mu/resources/bundled-backend/linux-x64/aioncore.bin: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.34' not found\n" +
+        "/opt/mu/resources/bundled-backend/linux-x64/aioncore.bin: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.32' not found",
     };
 
     expect(classifyBackendStartupFailure(error)).toEqual({
@@ -23,7 +23,7 @@ describe('classifyBackendStartupFailure', () => {
   });
 
   it('keeps unrelated startup failures in the generic bucket', () => {
-    const error = new Error('aioncore failed to start within timeout') as Error & {
+    const error = new Error('The backend failed to start within timeout') as Error & {
       details?: Record<string, unknown>;
     };
     error.details = {
@@ -37,7 +37,7 @@ describe('classifyBackendStartupFailure', () => {
   });
 
   it('classifies missing startup directory preparation as a startup directory failure', () => {
-    const error = new Error('aioncore startup directory preparation failed') as Error & {
+    const error = new Error('Backend startup directory preparation failed') as Error & {
       details?: Record<string, unknown>;
     };
     error.details = {
@@ -53,7 +53,7 @@ describe('classifyBackendStartupFailure', () => {
   });
 
   it('classifies startup directory permission failures separately from incomplete installs', () => {
-    const error = new Error('aioncore startup directory preparation failed') as Error & {
+    const error = new Error('Backend startup directory preparation failed') as Error & {
       details?: Record<string, unknown>;
     };
     error.details = {
@@ -69,13 +69,13 @@ describe('classifyBackendStartupFailure', () => {
   });
 
   it('does not classify post-resolution binary spawn ENOENT as a startup directory failure', () => {
-    const error = new Error('aioncore process emitted an error before startup') as Error & {
+    const error = new Error('Backend process emitted an error before startup') as Error & {
       details?: Record<string, unknown>;
     };
     error.details = {
       stage: 'spawn_error',
-      binaryPath: 'D:\\apps\\mu\\resources\\bundled-aioncore\\win32-x64\\aioncore.exe',
-      causeMessage: 'spawn D:\\apps\\mu\\resources\\bundled-aioncore\\win32-x64\\aioncore.exe ENOENT',
+      binaryPath: 'D:\\apps\\mu\\resources\\bundled-backend\\win32-x64\\aioncore.exe',
+      causeMessage: 'spawn D:\\apps\\mu\\resources\\bundled-backend\\win32-x64\\aioncore.exe ENOENT',
     };
 
     expect(classifyBackendStartupFailure(error)).toEqual({
@@ -86,7 +86,7 @@ describe('classifyBackendStartupFailure', () => {
   });
 
   it('preserves backend bootstrap code and stage for generic startup failures', () => {
-    const error = new Error('aioncore exited before health check passed') as Error & {
+    const error = new Error('The backend exited before health check passed') as Error & {
       details?: Record<string, unknown>;
     };
     error.details = {
@@ -104,7 +104,7 @@ describe('classifyBackendStartupFailure', () => {
   });
 
   it('classifies database migration boundary failures as local data migration failures', () => {
-    const error = new Error('aioncore exited before health check passed') as Error & {
+    const error = new Error('The backend exited before health check passed') as Error & {
       details?: Record<string, unknown>;
     };
     error.details = {
@@ -123,7 +123,7 @@ describe('classifyBackendStartupFailure', () => {
   });
 
   it('classifies recoverable database corruption boundary failures separately from data migration failures', () => {
-    const error = new Error('aioncore exited before health check passed') as Error & {
+    const error = new Error('The backend exited before health check passed') as Error & {
       details?: Record<string, unknown>;
     };
     error.details = {
@@ -142,7 +142,7 @@ describe('classifyBackendStartupFailure', () => {
   });
 
   it('classifies database schema repair boundary failures as local data migration failures', () => {
-    const error = new Error('aioncore exited before health check passed') as Error & {
+    const error = new Error('The backend exited before health check passed') as Error & {
       details?: Record<string, unknown>;
     };
     error.details = {
@@ -159,7 +159,7 @@ describe('classifyBackendStartupFailure', () => {
   });
 
   it('classifies agent metadata invalid utf8 during services init as local data repair failure', () => {
-    const error = new Error('aioncore exited before health check passed') as Error & {
+    const error = new Error('The backend exited before health check passed') as Error & {
       details?: Record<string, unknown>;
     };
     error.details = {
@@ -179,7 +179,7 @@ describe('classifyBackendStartupFailure', () => {
   });
 
   it('keeps unrelated services init failures in the generic bucket', () => {
-    const error = new Error('aioncore exited before health check passed') as Error & {
+    const error = new Error('The backend exited before health check passed') as Error & {
       details?: Record<string, unknown>;
     };
     error.details = {
@@ -197,7 +197,7 @@ describe('classifyBackendStartupFailure', () => {
   });
 
   it('does not classify vague invalid utf8 text without the agent metadata database-query signature', () => {
-    const error = new Error('aioncore exited before health check passed') as Error & {
+    const error = new Error('The backend exited before health check passed') as Error & {
       details?: Record<string, unknown>;
     };
     error.details = {
@@ -215,7 +215,7 @@ describe('classifyBackendStartupFailure', () => {
   });
 
   it('classifies packaged app resources missing from installation as incomplete installation', () => {
-    const error = new Error('aioncore startup failed while resolving backend binary') as Error & {
+    const error = new Error('Backend startup failed while resolving backend binary') as Error & {
       details?: Record<string, unknown>;
     };
     error.details = {
@@ -240,16 +240,16 @@ describe('classifyBackendStartupFailure', () => {
       reason: 'backend_incomplete_installation',
       incompleteInstallationKind: 'missing_directory_resources',
       missingBackendBinary: true,
-      missingBundledAioncoreDir: true,
+      missingBundledBackendDir: true,
       missingHubDir: true,
       missingPwaDir: true,
-      missingResources: ['bundled-aioncore/', 'bundled-aioncore/win32-x64/'],
+      missingResources: ['bundled-backend/', 'bundled-backend/win32-x64/'],
       missingRuntimeDir: true,
     });
   });
 
   it('classifies packaged runtime directories without the backend binary as incomplete installation', () => {
-    const error = new Error('aioncore startup failed while resolving backend binary') as Error & {
+    const error = new Error('Backend startup failed while resolving backend binary') as Error & {
       details?: Record<string, unknown>;
     };
     error.details = {
@@ -264,7 +264,7 @@ describe('classifyBackendStartupFailure', () => {
         'app.asar',
         'app.asar.unpacked/',
         'app.png',
-        'bundled-aioncore/',
+        'bundled-backend/',
         'elevate.exe',
         'hub/',
         'manifest.webmanifest',
@@ -278,10 +278,10 @@ describe('classifyBackendStartupFailure', () => {
       reason: 'backend_incomplete_installation',
       incompleteInstallationKind: 'missing_directory_resources',
       missingBackendBinary: true,
-      missingBundledAioncoreDir: false,
+      missingBundledBackendDir: false,
       missingHubDir: false,
       missingPwaDir: false,
-      missingResources: ['bundled-aioncore/win32-x64/managed-resources/', 'bundled-aioncore/win32-x64/aioncore.exe'],
+      missingResources: ['bundled-backend/win32-x64/managed-resources/', 'bundled-backend/win32-x64/aioncore.exe'],
       missingRuntimeDir: false,
     });
   });

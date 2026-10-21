@@ -57,5 +57,5 @@ On top of that, mu adds guards. They lower risk but aren't guarantees. Reports t
 - Commands you allowed, or that full access lets run, doing what they do.
 - A model or a judge simply being wrong, without a boundary being crossed.
 - Extensions, skills, packages and MCP servers you installed or approved yourself.
-- Vulnerabilities in pi or AionUi that mu doesn't change: please also report those [to pi](https://github.com/earendil-works/pi/security) or [to AionUi](https://github.com/iOfficeAI/AionUi/security); we'll pick up their fixes.
+- Vulnerabilities in pi that mu doesn't change: please also report those [to pi](https://github.com/earendil-works/pi/security); we'll pick up the fix.
 - Third-party services (model providers, TypeSafe, OpenCode, Cloudflare).

@@ -24,7 +24,8 @@ const MessageAgentStatus: React.FC<MessageAgentStatusProps> = ({ message }) => {
   const { t } = useTranslation();
   const { backend, status, agent_name } = message.content;
 
-  // Resolve display name: explicit agent_name > capitalized backend. The backend names its built-in agent "Aion CLI".
+  // Resolve display name: explicit agent_name > capitalized backend. showAsMu shows the backend's name for its
+  // built-in agent as mu's.
   const display_name = showAsMu(agent_name || backend.charAt(0).toUpperCase() + backend.slice(1));
 
   // Hide disconnected status from historical messages (no longer emitted but may exist in DB)

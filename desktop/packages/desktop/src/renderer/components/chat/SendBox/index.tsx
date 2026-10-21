@@ -67,6 +67,7 @@ import { allSupportedExts } from '@renderer/services/FileService';
 import { getConversationInputHistory, isCaretOnFirstLine } from '@/renderer/utils/chat/messageHistory';
 import { commandDescription } from '@/renderer/utils/chat/muCommands';
 import SendArrowIcon from './SendArrowIcon';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 import './sendbox.css';
 
 const constVoid = (): void => undefined;
@@ -577,7 +578,7 @@ const SendBox: React.FC<{
       // carries a chatRef — the Explorer tree's add-to-chat builds a project
       // ref, and a pe ROOT is a folder whose relative_path is ''. The backend
       // resolves a directory ref to its absolute path (verified in
-      // AionCore's project crate (resolve_chat_file_ref): a project ref only requires the
+      // the backend's project crate (resolve_chat_file_ref): a project ref only requires the
       // target to exist, not to be a regular file). Only drop a non-file item
       // that has no ref identity at all.
       if (typeof item !== 'string' && !item.isFile && !item.chatRef) {
@@ -1099,9 +1100,9 @@ const SendBox: React.FC<{
     targetConversationId === undefined || targetConversationId === conversationContext?.conversation_id;
 
   useAddEventListener(
-    'aionrs.selected.file.append',
+    'builtinAgent.selected.file.append',
     (items: FileSelectionItem[], targetConversationId: string | undefined) => {
-      if (conversationContext?.type === 'aionrs' && acceptsTarget(targetConversationId)) {
+      if (conversationContext?.type === BUILTIN_AGENT && acceptsTarget(targetConversationId)) {
         handleExternalSelectionAppend(items);
       }
     },
@@ -1132,8 +1133,8 @@ const SendBox: React.FC<{
       // here, not to same-type peers on the team route.
       const targetId = conversationContext?.conversation_id;
       switch (conversationContext?.type) {
-        case 'aionrs':
-          emitter.emit('aionrs.selected.file.append', [item], targetId);
+        case BUILTIN_AGENT:
+          emitter.emit('builtinAgent.selected.file.append', [item], targetId);
           break;
         case 'acp':
           emitter.emit('acp.selected.file.append', [item], targetId);

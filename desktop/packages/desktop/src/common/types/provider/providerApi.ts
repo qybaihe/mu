@@ -8,7 +8,7 @@
  * Wire-contract types for `/api/providers/*`.
  *
  * Direct mirror of the Rust types in
- * AionCore's api-types crate (`provider.rs`). Keep in sync with the
+ * the backend's api-types crate (`provider.rs`). Keep in sync with the
  * backend spec.
  */
 

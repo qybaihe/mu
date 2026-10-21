@@ -10,7 +10,7 @@ Notes for working on the desktop app. How to run it and where the code is: [../r
 | [theming/tokens.md](theming/tokens.md)                           | The colour, type and spacing tokens                                                               |
 | [contributing/development.md](contributing/development.md)       | Setting up, running, checking                                                                     |
 | [contributing/file-structure.md](contributing/file-structure.md) | Where new files go                                                                                |
-| [contributing/upstream-names.md](contributing/upstream-names.md) | Where AionUi's and AionCore's names remain, and why                                               |
+| [contributing/upstream-names.md](contributing/upstream-names.md) | The older names kept for compatibility, and why                                                   |
 | [guides/cdp.md](guides/cdp.md)                                   | Driving the app over the Chrome DevTools Protocol                                                 |
 | [guides/custom-theme.md](guides/custom-theme.md)                 | Custom CSS themes                                                                                 |
 

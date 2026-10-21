@@ -45,7 +45,7 @@ Jev 是当前主用判断模型，但不是不可替换的基础设施。保留 
 | --- | --- |
 | Harness | `/Users/baihe/Documents/KYRN`，分支 `kyrn` |
 | 判断内核与扩展 | `/Users/baihe/Documents/KYRN/packages/kyrn-judge` |
-| AionUi 桌面二开 | `/Users/baihe/Documents/KYRN-desktop`，分支 `codex/kyrn-desktop` |
+| 桌面端二开 | `/Users/baihe/Documents/KYRN-desktop`，分支 `codex/kyrn-desktop` |
 | 正式桌面开发入口 | `/Users/baihe/Documents/KYRN-desktop/scripts/kyrn/start` |
 | 早期独立桌面壳 | `/Users/baihe/Documents/KYRN-desktop/kyrn`，已暂停；不要误当产品入口 |
 | CLI | `/Users/baihe/Documents/KYRN/kyrn/bin/mu`（`mu link` 后即 `mu`）；`kyrn/bin/kyrn` 是转发到它的兼容脚本，桌面适配器仍调用这个旧路径 |
@@ -57,8 +57,8 @@ Jev 是当前主用判断模型，但不是不可替换的基础设施。保留 
 当前桌面架构：
 
 ```text
-AionUi 原有 UI
-  → AionCore 的 ACP 管理
+桌面端原有 UI
+  → 后端的 ACP 管理
   → KYRN ACP Adapter
   → mu --mode rpc（经 kyrn/bin/kyrn 转发）
   → pi + @kyrn/judge
@@ -154,7 +154,7 @@ Jev 显示的是实际问题、概率、判定与采取的动作，不是虚构�
 
 ### 3.7 原生桌面
 
-- 最大程度复用 AionUi 的项目、会话、编辑 / 文件展示、模型选择、工具卡片和审批 UI。
+- 最大程度复用桌面端原有的项目、会话、编辑 / 文件展示、模型选择、工具卡片和审批 UI。
 - KYRN 是唯一启用的代理入口；其他代理在后端禁用并从产品入口移除，原始源码和依赖未全面裁掉。
 - 模型和思考强度来自真实运行时，可切换并得到确认。
 - 模型公开的 thinking 增量及历史展示已接通。
@@ -181,7 +181,7 @@ Jev 显示的是实际问题、概率、判定与采取的动作，不是虚构�
 | 经验 | JSONL 与相关性召回已工作，缺少完善的去重、冲突消解、过期、修订和管理界面 | 错经验可撤回；旧偏好不覆盖新约束；项目边界清晰 |
 | 权限层 | 风险检查主要覆盖部分 bash 模式；“是否用户要求”仍会影响放行，不是覆盖所有工具的确定性权限系统 | 把硬规则与模型建议分开；不能把现有 guard 宣称为完整沙箱 |
 | 桌面交互 | 事件能看见，但部分内容仍是原始 JSON；原生每蜂停止 / 收尾按钮、统一时间线、执行阶段解释仍待完善 | 用户能判断是在归类、等模型、跑工具、等其他蜂还是在压缩 |
-| 桌面适配 | ACP 会话映射依赖 AionCore v0.2.2 的只读数据库表；客户端 MCP 未导入，自由文本扩展对话框尚未完整映射 | 升级兼容性测试、协议边界、恢复与错误提示 |
+| 桌面适配 | ACP 会话映射依赖后端 v0.2.2 的只读数据库表；客户端 MCP 未导入，自由文本扩展对话框尚未完整映射 | 升级兼容性测试、协议边界、恢复与错误提示 |
 | 性能与统计 | 有缓存 / 用量显示，但没有完整的主模型、判断层、Writer、各蜂成本归因和统一效果报告 | 区分当前上下文、累计输入、缓存命中和经济成本，避免混为一个数字 |
 | 工程发布 | 启动依赖本机路径；判断包仍为 private；根 build 顺序尚未包含新判断包，干净安装 / 打包分发未验收 | 从全新目录可安装、构建、启动；再做签名、升级和分发 |
 
@@ -247,7 +247,7 @@ Jev 显示的是实际问题、概率、判定与采取的动作，不是虚构�
 
 - 统一能力目录与发现入口。
 - 评估 MCP adapter、只读 LSP / 符号查询、AST 搜索、轻量搜索 / 抓取。
-- 优先复用现有 pi / AionUi 能力，不整体迁移底座，也不再造重复浏览器和蜂群。
+- 优先复用 pi 和桌面端现有的能力，不整体迁移底座，也不再造重复浏览器和蜂群。
 
 ### P3：形成可交付产品
 
@@ -310,9 +310,9 @@ Jev 显示的是实际问题、概率、判定与采取的动作，不是虚构�
 
 两个工作区：
 - /Users/baihe/Documents/KYRN，分支 kyrn：pi fork，核心新增包 packages/kyrn-judge。
-- /Users/baihe/Documents/KYRN-desktop，分支 codex/kyrn-desktop：AionUi 二开。
+- /Users/baihe/Documents/KYRN-desktop，分支 codex/kyrn-desktop：桌面端二开。
 
-桌面方向已经确定：最大程度复用原 AionUi 的项目、会话、模型/思考选择、工具和文件组件，通过 ACP → mu --mode rpc 原生接入。不要继续 /Users/baihe/Documents/KYRN-desktop/kyrn 中已暂停的独立桌面壳。其他代理入口已禁用，但源码没有彻底删除；不要把禁用写成物理裁剪完成。
+桌面方向已经确定：最大程度复用桌面端原有的项目、会话、模型/思考选择、工具和文件组件，通过 ACP → mu --mode rpc 原生接入。不要继续 /Users/baihe/Documents/KYRN-desktop/kyrn 中已暂停的独立桌面壳。其他代理入口已禁用，但源码没有彻底删除；不要把禁用写成物理裁剪完成。
 
 当前已经有：可插拔判断引擎、能力级联、决策账本、输入归类与可见等待、技能披露、经验捕获/召回、工具结果准入、主动遗忘、Beta 压缩、delegate/hive、蜂群运行状态/预算/收尾/停止、Jev 发布与投递闸、内置浏览器、原生 thinking、右侧协作面板、上下文占用/阈值/压缩效果、绿色缓存命中圆环。优先完善已有实现，不另起重复系统。
 

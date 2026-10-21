@@ -133,7 +133,7 @@ The 7 logs total 139,820 characters, with 71,296 saved net (**51.0%**). The othe
 
 **Where Jev might still help with real logs** (none of this is done; noted for later):
 
-- Environment noise unrelated to the failures. In real_9, 4 `stderr` blocks report a failure to parse `/api/settings/client`, which has nothing to do with the two failing assertions (text that changed from AionUi to KYRN). They contain error words, so they're always protected today. Letting Jev decide whether to keep them is risky, since an error in stderr is sometimes exactly the cause. One option is to ask in shadow only, without acting, and compare against whether those blocks are referenced later.
+- Environment noise unrelated to the failures. In real_9, 4 `stderr` blocks report a failure to parse `/api/settings/client`, which has nothing to do with the two failing assertions (text that changed from the upstream name to KYRN). They contain error words, so they're always protected today. Letting Jev decide whether to keep them is risky, since an error in stderr is sometimes exactly the cause. One option is to ask in shadow only, without acting, and compare against whether those blocks are referenced later.
 - The replay showed chains of reruns (real_3 → real_6: 5 failures → … → pass). That's the deterministic signal the automatic-rewind value function needs, and the parser can already report each run's failure count and failing test names.
 
 ## 5. Wiring

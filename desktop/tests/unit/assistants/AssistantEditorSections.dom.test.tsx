@@ -5,6 +5,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { MemoryRouter } from 'react-router-dom';
 import AssistantEditorSections from '@/renderer/pages/settings/AssistantSettings/AssistantEditorSections';
 import type { AssistantEditorViewModel } from '@/renderer/pages/settings/AssistantSettings/types';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 const mockUseModelProviderList = vi.fn(() => ({
   providers: [],
@@ -497,7 +498,7 @@ describe('AssistantEditorSections', () => {
     expect(within(defaultsCard).getByText('User MCP 和 Builtin MCP')).toBeInTheDocument();
   });
 
-  it('uses provider-backed models for aionrs even when detected agent metadata exposes model options', () => {
+  it('uses provider-backed models for the built-in agent even when detected agent metadata exposes model options', () => {
     mockUseModelProviderList.mockReturnValue({
       providers: [{ id: 'provider-a', name: 'Provider A', model: ['provider-model'], enabled: true }],
       getAvailableModels: () => ['provider-model'],
@@ -507,13 +508,13 @@ describe('AssistantEditorSections', () => {
       <AssistantEditorSections
         editor={createEditor({
           agent: {
-            value: 'agent-aionrs',
+            value: `agent-${BUILTIN_AGENT}`,
             setValue: vi.fn(),
             availableBackends: [
               {
-                id: 'agent-aionrs',
-                name: 'Aionrs',
-                runtimeKey: 'aionrs',
+                id: `agent-${BUILTIN_AGENT}`,
+                name: 'BuiltinAgent',
+                runtimeKey: BUILTIN_AGENT,
                 isExtension: false,
                 modelOptions: [{ value: 'handshake-model', label: 'Handshake Model' }],
               },
@@ -694,10 +695,10 @@ describe('AssistantEditorSections', () => {
     );
   });
 
-  it('uses aionrs runtime catalog for default permission options', async () => {
+  it('uses built-in agent runtime catalog for default permission options', async () => {
     mockManagedAgentRuntimeCatalog = [
       {
-        id: 'agent-aionrs',
+        id: `agent-${BUILTIN_AGENT}`,
         available_modes: {
           current_mode_id: 'default',
           available_modes: [
@@ -728,9 +729,9 @@ describe('AssistantEditorSections', () => {
       <AssistantEditorSections
         editor={createEditor({
           agent: {
-            value: 'agent-aionrs',
+            value: `agent-${BUILTIN_AGENT}`,
             setValue: vi.fn(),
-            availableBackends: [backendOption('agent-aionrs', 'aionrs', 'Aion CLI')],
+            availableBackends: [backendOption(`agent-${BUILTIN_AGENT}`, BUILTIN_AGENT, 'Built-in agent')],
           },
         })}
         activeAssistant={null}

@@ -51,7 +51,7 @@ type BackendWindow = Window & { __backendPort?: number };
 async function createProjectConversation(page: import('@playwright/test').Page, workspace: string): Promise<string> {
   const conversationId = await page.evaluate(async (ws) => {
     const port = (window as BackendWindow).__backendPort;
-    if (!port) throw new Error('window.__backendPort is not available — is aioncore running?');
+    if (!port) throw new Error('window.__backendPort is not available — is the backend running?');
 
     const created = await fetch(`http://127.0.0.1:${port}/api/conversations`, {
       method: 'POST',

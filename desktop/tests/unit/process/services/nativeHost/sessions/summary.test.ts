@@ -20,7 +20,7 @@ describe('clip', () => {
     expect(clip('   \n  ')).toBe('');
   });
 
-  it('leaves AionCore’s rules preamble out: the words after it are the title', () => {
+  it('leaves the backend’s rules preamble out: the words after it are the title', () => {
     expect(clip(`${PREAMBLE}Refactor the parser`)).toBe('Refactor the parser');
     expect(clip(`  [assistant rules]\nx\n[/assistant rules]\r\n\r\n先看一下这个服务`)).toBe('先看一下这个服务');
     // A message that is the preamble and nothing else has no words to title it by.

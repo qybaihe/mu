@@ -47,7 +47,7 @@ function readCodes(rawInput: unknown): MuPermissionCodes | undefined {
   const mu = rawInput && typeof rawInput === 'object' ? (rawInput as { mu?: unknown }).mu : undefined;
   if (!mu || typeof mu !== 'object' || Array.isArray(mu)) return undefined;
   const codes = mu as Record<string, unknown>;
-  // AionCore's relay snake-cases every key it passes on (`flag_code`); a stored card may have either spelling.
+  // The backend's relay snake-cases every key it passes on (`flag_code`); a stored card may have either spelling.
   return {
     kind: str(codes.kind),
     reason: str(codes.reason),

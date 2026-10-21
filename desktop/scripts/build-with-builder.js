@@ -748,15 +748,15 @@ try {
     return;
   }
 
-  // 5. Prepare aioncore binary (for packaged runtime usage)
-  const { prepareAioncore } = require('../packages/shared-scripts/src/prepare-aioncore.js');
-  const { resolveAioncoreVersion } = require('./resolveAioncoreVersion.js');
+  // 5. Prepare the backend binary (for packaged runtime usage)
+  const { prepareBackend } = require('../packages/shared-scripts/src/prepare-backend.js');
+  const { resolveBackendVersion } = require('./resolveBackendVersion.js');
   const projectRoot = path.resolve(__dirname, '..');
-  prepareAioncore({
+  prepareBackend({
     projectRoot,
     platform: process.platform,
     arch: targetArch,
-    version: resolveAioncoreVersion(projectRoot),
+    version: resolveBackendVersion(projectRoot),
   });
 
   // 6. Prepare hub resources (index.json + extension zips for offline fallback)
@@ -838,9 +838,9 @@ try {
     const winUnpackedDir = path.join(outDir, 'win-unpacked');
     let cleaned = tryRemoveDir(winUnpackedDir);
     if (!cleaned) {
-      const aionRunning = isProcessRunningWindows('mu.exe');
+      const muRunning = isProcessRunningWindows('mu.exe');
       const electronRunning = isProcessRunningWindows('electron.exe');
-      if (aionRunning || electronRunning) {
+      if (muRunning || electronRunning) {
         console.log('⚠️  Detected running mu/Electron process. Attempting to close...');
         killWindowsProcesses(['mu.exe', 'electron.exe']);
         cleaned = tryRemoveDir(winUnpackedDir);

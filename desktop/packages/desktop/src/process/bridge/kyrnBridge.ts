@@ -207,7 +207,7 @@ export function initKyrnBridge(): void {
   kyrnBridge.lessonsChange.provider((change) =>
     result(async () => lessons.change(await projectOf(change.conversationId), change))
   );
-  // A native conversation's panel reads by its folder: it has no AionCore conversation (common/kyrn/folderBridge.ts).
+  // A native conversation's panel reads by its folder: it has no backend conversation (common/kyrn/folderBridge.ts).
   const folderProject = (cwd: unknown): LessonsProject => lessonsProject(store, '', readFolder(cwd));
   kyrnFolderBridge.lessons.provider(({ cwd }) => result(() => lessons.view(folderProject(cwd))));
   kyrnFolderBridge.lessonsChange.provider(({ cwd, ...change }) =>

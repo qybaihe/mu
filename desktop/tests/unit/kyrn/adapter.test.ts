@@ -576,7 +576,7 @@ describe('KYRN ACP bridge', () => {
       const { configOptions } = await f.agent.loadSession({ sessionId, cwd: tmpdir(), mcpServers: [] });
       expect(f.launched).toEqual([undefined, 'ask']);
       expect(configOptions?.find((option) => option.id === 'mode')).toMatchObject({ currentValue: 'ask' });
-      // AionCore sets the mode it last saw when it reopens a conversation: the same one, so no command.
+      // The backend sets the mode it last saw when it reopens a conversation: the same one, so no command.
       await f.agent.setSessionConfigOption({ sessionId, configId: 'mode', value: 'ask' });
       expect(f.commands.filter((command) => command.type === 'prompt')).toHaveLength(1);
     } finally {
@@ -1442,7 +1442,7 @@ function adapterSources(file: string, seen = new Map<string, string>()): Map<str
   return seen;
 }
 
-describe('the adapter AionCore starts', () => {
+describe('the adapter the backend starts', () => {
   it('imports nothing by a path alias: scripts/kyrn/acp runs it with tsx, outside the app, where no alias resolves', () => {
     const entry = join(__dirname, '../../../packages/desktop/src/process/agent/kyrn/index.ts');
     const aliased = [...adapterSources(entry)].flatMap(([file, source]) =>

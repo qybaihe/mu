@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-// Checks, on this machine, the chain the desktop app uses to start mu, as the app and AionCore run it:
+// Checks, on this machine, the chain the desktop app uses to start mu, as the app and the backend run it:
 //
 //   1. the harness is found (MU_ROOT / KYRN_ROOT, a checkout beside the desktop, or mu-agent from npm; the copy a
 //      packaged app carries is found only inside one, by Electron's resources folder);
 //   2. PiRpc starts it as the adapter does (on Windows `node kyrn/bin/mu.mjs --mode rpc`, no shell), it answers
 //      get_commands, and closing it ends its whole process tree;
-//   3. the registration's command (scripts/kyrn/acp; on Windows acp.cmd through `cmd /d /c`, as AionCore wraps it)
+//   3. the registration's command (scripts/kyrn/acp; on Windows acp.cmd through `cmd /d /c`, as the backend wraps it)
 //      answers the ACP handshake and opens a session, which starts mu under the adapter, and ending the command's
-//      tree as AionCore does leaves nothing behind;
+//      tree as the backend does leaves nothing behind;
 //   4. with --packaged, step 3 for the packaged app: the adapter bundled by scripts/build-mcp-servers.js and
 //      resources/mu/acp(.cmd), laid out as in an installed app's resources folder. There is no app binary in that
 //      folder, so MU_NODE runs them on this Node instead of the app's own.
@@ -129,8 +129,8 @@ async function gone(procs, ms = 15000) {
   return !anyAlive(procs);
 }
 
-/** Ends a command's tree as AionCore does: taskkill /F /T on Windows, the process group elsewhere. */
-function endAsAionCore(child) {
+/** Ends a command's tree as the backend does: taskkill /F /T on Windows, the process group elsewhere. */
+function endAsTheBackendDoes(child) {
   if (windows)
     execFileSync('taskkill', ['/F', '/T', '/PID', String(child.pid)], { stdio: 'ignore', windowsHide: true });
   else process.kill(-child.pid, 'SIGTERM');
@@ -188,7 +188,7 @@ async function acp(name, command, args, extraEnv = {}) {
     report(`${name}`, false, error.message);
   }
   const procs = tree(child.pid);
-  endAsAionCore(child);
+  endAsTheBackendDoes(child);
   report(`${name}: ending it leaves nothing behind`, await gone(procs), `${procs.length} processes`);
 }
 
@@ -380,7 +380,7 @@ async function permissionRoundTrip(name, command, args, extraEnv = {}) {
     report(`${name}: permission round trip`, false, error.message);
   }
   const procs = tree(child.pid);
-  endAsAionCore(child);
+  endAsTheBackendDoes(child);
   server.close();
   report(`${name}: ending it leaves nothing behind`, await gone(procs), `${procs.length} processes`);
 }
@@ -407,7 +407,7 @@ try {
   rpc.close();
   report('closing mu ends its whole tree', await gone(procs), `${procs.length} processes`);
 
-  // 3. The registration's command, as AionCore runs it.
+  // 3. The registration's command, as the backend runs it.
   const scripts = join(desktop, 'scripts', 'kyrn');
   if (windows) await acp('scripts/kyrn/acp.cmd', 'cmd.exe', ['/d', '/c', join(scripts, 'acp.cmd')]);
   else await acp('scripts/kyrn/acp', join(scripts, 'acp'), []);

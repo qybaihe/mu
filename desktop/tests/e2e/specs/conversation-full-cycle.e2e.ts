@@ -28,8 +28,9 @@ import {
   httpGet,
   httpPost,
   httpDelete,
-  resolveAionrsPreconditions,
+  resolveBuiltinAgentPreconditions,
 } from '../helpers';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 // Generous timeout for AI responses
 test.describe.configure({ timeout: 180_000 });
@@ -205,7 +206,7 @@ async function selectPreferredCronDialogAgent(
 async function selectCronDialogAgentByPattern(
   page: import('@playwright/test').Page,
   dialog: import('@playwright/test').Locator,
-  preferredPatterns = [/Gemini/i, /Claude/i, /Codex/i, /Aion/i]
+  preferredPatterns = [/Gemini/i, /Claude/i, /Codex/i, /\bmu\b/i]
 ): Promise<string | null> {
   const agentSelect = dialog.locator('[data-testid="cron-assistant-select"]').first();
   await agentSelect.click();
@@ -905,7 +906,7 @@ test.describe('Conversation Full Cycle', () => {
 
     const assistantOptions = page
       .locator('.arco-select-option:not(.arco-select-option-disabled)')
-      .filter({ hasText: /Claude|Codex|Gemini|Aion/ });
+      .filter({ hasText: /Claude|Codex|Gemini|\bmu\b/ });
     if ((await assistantOptions.count()) === 0) {
       await page.keyboard.press('Escape');
       await page.keyboard.press('Escape');
@@ -1238,7 +1239,7 @@ test.describe('Conversation Full Cycle', () => {
     stopAutoApprove?.();
   });
 
-  const cronConversationAgents = ['claude', 'codex', 'gemini', 'aionrs', 'opencode'] as const;
+  const cronConversationAgents = ['claude', 'codex', 'gemini', BUILTIN_AGENT, 'opencode'] as const;
 
   for (const backend of cronConversationAgents) {
     test(`cron -- ${backend} conversation skill creates task with full-auto job mode`, async ({ page }) => {
@@ -1254,10 +1255,10 @@ test.describe('Conversation Full Cycle', () => {
         await page
           .waitForFunction(() => (document.body.textContent?.length ?? 0) > 200, { timeout: 15_000 })
           .catch(() => {});
-        if (backend === 'aionrs') {
-          const preconditions = await resolveAionrsPreconditions(page);
+        if (backend === BUILTIN_AGENT) {
+          const preconditions = await resolveBuiltinAgentPreconditions(page);
           if (!preconditions.binary || !preconditions.models) {
-            test.skip(true, 'No aionrs-compatible provider found, skipping E2E tests');
+            test.skip(true, 'No builtin-agent-compatible provider found, skipping E2E tests');
             return;
           }
         }

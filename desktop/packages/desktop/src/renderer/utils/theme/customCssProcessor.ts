@@ -20,7 +20,7 @@ import { LEGACY_CLASS_NAMES } from '@/common/platform/legacyNames';
  * （如 `.btn:hover`、`::before`、`:not()`、`::-webkit-scrollbar-thumb:hover`），
  * 也能覆盖块内最后一条没有结尾分号的声明。已带 !important 的声明保持不变。
  *
- * A selector that names a component class by its old name (`.aionui-modal`, `.aion-select`, see `LEGACY_CLASS_NAMES`) is given the
+ * A selector that names a component class by its old name (see `LEGACY_CLASS_NAMES`) is given the
  * class's mu name, so a theme written before the rename still applies.
  *
  * @param css - 原始 CSS 字符串

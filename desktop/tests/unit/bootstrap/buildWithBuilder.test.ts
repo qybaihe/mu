@@ -268,7 +268,7 @@ childProcess.execSync = function mockedExecSync(command) {
       expectedArch: 'x64',
       expectedPlatform: 'darwin',
     },
-  ])('prepares AionCore and mu for $expectedArch with args $args', ({ args, expectedArch, expectedPlatform }) => {
+  ])('prepares the backend and mu for $expectedArch with args $args', ({ args, expectedArch, expectedPlatform }) => {
     const tempDir = mkdtempSync(join(tmpdir(), 'mu-build-test-'));
     const hookPath = join(tempDir, 'hook.cjs');
     const callsPath = join(tempDir, 'prepare-calls.json');
@@ -291,20 +291,20 @@ function recordPrepareCall(options) {
   const calls = fs.existsSync(callsPath) ? JSON.parse(fs.readFileSync(callsPath, 'utf8')) : [];
   calls.push(options ?? null);
   fs.writeFileSync(callsPath, JSON.stringify(calls));
-  return { prepared: true, dir: 'mock-bundled-aioncore', sourceType: 'mock' };
+  return { prepared: true, dir: 'mock-bundled-backend', sourceType: 'mock' };
 }
 
 Module._load = function patchedLoad(request, parent, isMain) {
-  if (request === './prepareAioncore' || request.endsWith('/prepareAioncore')) {
+  if (request === './prepareBackend' || request.endsWith('/prepareBackend')) {
     return recordPrepareCall;
   }
 
-  if (request.endsWith('packages/shared-scripts/src/prepare-aioncore.js')) {
-    return { prepareAioncore: recordPrepareCall };
+  if (request.endsWith('packages/shared-scripts/src/prepare-backend.js')) {
+    return { prepareBackend: recordPrepareCall };
   }
 
-  if (request === './resolveAioncoreVersion.js' || request.endsWith('/resolveAioncoreVersion.js')) {
-    return { resolveAioncoreVersion: () => 'v-test' };
+  if (request === './resolveBackendVersion.js' || request.endsWith('/resolveBackendVersion.js')) {
+    return { resolveBackendVersion: () => 'v-test' };
   }
 
   return originalLoad.call(this, request, parent, isMain);

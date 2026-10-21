@@ -66,7 +66,7 @@ function resolveBackendBinary(): string {
   for (const c of candidates) {
     if (fs.existsSync(c)) return c;
   }
-  throw new Error(`aioncore binary not found. Set MU_BACKEND_BINARY or install to ~/.cargo/bin/aioncore.`);
+  throw new Error(`The backend binary not found. Set MU_BACKEND_BINARY or install to ~/.cargo/bin/aioncore.`);
 }
 
 // ── Backend HTTP contract (shared with renderer httpBridge) ──────────────────
@@ -394,7 +394,7 @@ test.describe('Assistant User Data Migration (T5)', () => {
 
     async function startBackend(): Promise<void> {
       const bin = resolveBackendBinary();
-      const logPath = path.join(dataDir, 'sibling-aioncore.log');
+      const logPath = path.join(dataDir, 'sibling-backend.log');
       const logFd = fs.openSync(logPath, 'a');
       // Scrub env vars that would drag the main Electron's backend state in.
       const parentEnv = { ...process.env };

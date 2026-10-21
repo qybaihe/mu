@@ -7,7 +7,7 @@
 // the longest, the ones with images, tool calls, thinking, a compaction, the newest, the oldest, and a few more) opens
 // and draws rows without an error; the longest reads back to its first message; the palette finds a session by its
 // title; and a message is sent to one session of each kind (imported from Codex, imported from Claude Code, made by
-// AionCore, made by mu, the biggest file), which must reach the fake model with the session's history and be answered
+// the backend, made by mu, the biggest file), which must reach the fake model with the session's history and be answered
 // in the same file. Those are pointed, in the COPY, at the test's own project folder first, so that continuing one never
 // touches a folder of the person's. Prints how long each takes. Off when the variable is not set (nobody else has these
 // files); keep the profile with MU_E2E_KEEP=1 to look at the screenshots, and remove it afterwards: it holds a copy of
@@ -146,7 +146,7 @@ function continuePicks(all) {
   add('imported from Codex', biggest(usable.filter((one) => one.imported === 'Codex' && modest(one))));
   add('imported from Claude Code', biggest(usable.filter((one) => one.imported === 'Claude Code' && modest(one))));
   add(
-    'made by AionCore',
+    'made by the backend',
     biggest(usable.filter((one) => one.firstUser.trimStart().startsWith('[Assistant Rules]') && modest(one)))
   );
   add('made by mu, with tool calls', biggest(usable.filter((one) => !one.imported && one.tools > 0 && modest(one))));

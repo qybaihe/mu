@@ -11,7 +11,7 @@ import { spawn, type ChildProcess, execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { AIONCORE_DATABASE_FILE } from '@/common/platform/aioncoreNames';
+import { BACKEND_DATABASE_FILE, BUILTIN_AGENT } from '@/common/platform/backendNames';
 import { LEGACY_DATABASE_FILE } from '@/common/platform/legacyNames';
 
 const MIGRATION_BACKEND_PORT = 25912;
@@ -83,7 +83,7 @@ function resolveBackendBinary(): string {
     }
   }
 
-  throw new Error('aioncore binary not found for migration e2e');
+  throw new Error('The backend binary not found for migration e2e');
 }
 
 function schemaPath(): string {
@@ -91,7 +91,7 @@ function schemaPath(): string {
 }
 
 function querySqliteValue(dataDir: string, sql: string): string {
-  const dbPath = path.join(dataDir, AIONCORE_DATABASE_FILE);
+  const dbPath = path.join(dataDir, BACKEND_DATABASE_FILE);
   return execFileSync('sqlite3', ['-readonly', dbPath, sql], { encoding: 'utf8' }).trim();
 }
 
@@ -111,7 +111,7 @@ function seedLegacyDatabase(dataDir: string): void {
       'Legacy Writer',
       'Migrated from legacy schema',
       '✍️',
-      'aionrs',
+      '${BUILTIN_AGENT}',
       '["officecli-data-dashboard","officecli"]',
       '[]',
       '["cron"]',
@@ -233,14 +233,14 @@ test.describe('Assistant Settings Migration', () => {
     expect(migrated?.description).toBe('Migrated from legacy schema');
     expect(migrated?.enabled).toBe(false);
     expect(migrated?.sort_order).toBe(7);
-    expect(migrated?.preset_agent_type).toBe('aionrs');
+    expect(migrated?.preset_agent_type).toBe(BUILTIN_AGENT);
 
     const detail = await httpJson<AssistantDetail>(baseUrl, 'GET', `/api/assistants/${LEGACY_USER_ID}?locale=en-US`);
     expect(detail.profile.name).toBe('Legacy Writer');
     expect(detail.profile.description).toBe('Migrated from legacy schema');
     expect(detail.state.enabled).toBe(false);
     expect(detail.state.sort_order).toBe(7);
-    expect(detail.engine.agent_backend).toBe('aionrs');
+    expect(detail.engine.agent_backend).toBe(BUILTIN_AGENT);
     expect(detail.rules.content).toBe(LEGACY_RULE);
     expect(detail.prompts.recommended).toEqual([LEGACY_PROMPT]);
     expect(detail.defaults.model.mode).toBe('auto');

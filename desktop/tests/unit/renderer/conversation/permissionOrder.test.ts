@@ -17,7 +17,7 @@ const call = (id: string, command: string, created: number): TMessage =>
     content: { update: { tool_call_id: id, title: 'bash', raw_input: { command } } },
   }) as unknown as TMessage;
 
-/** mu's card as AionCore relays it: its codes under `raw_input.mu`, snake-cased or not. */
+/** mu's card as the backend relays it: its codes under `raw_input.mu`, snake-cased or not. */
 const card = (id: string, command: string, created: number, mu: Record<string, string>): TMessage =>
   ({
     id,

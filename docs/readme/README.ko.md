@@ -315,7 +315,9 @@ npm run check                  # 포맷, 린트, 타입 검사
 
 ## 출처와 라이선스
 
-mu는 MIT 라이선스예요([LICENSE](../../LICENSE), 데스크톱 앱은 [desktop/LICENSE](../../desktop/LICENSE)). [pi](https://github.com/earendil-works/pi)(코딩 에이전트, MIT)와 [AionUi](https://github.com/iOfficeAI/AionUi)를 바탕으로 만들었어요. 두 프로젝트에 감사드려요. 데스크톱 앱은 AionUi의 포크에서 시작했고, AionUi에서 온 파일은 [desktop/AIONUI-FILES.txt](../../desktop/AIONUI-FILES.txt)에 정리되어 있으며 계속 Apache 2.0을 따라요([desktop/NOTICE](../../desktop/NOTICE)). 몇몇 판정 지점은 다른 프로젝트의 아이디어를 바탕으로 해요. 프롬프트 인젝션 검사의 질문 방식은 [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills)에서, 이어서 하기 검사와 일괄 판정 도구는 [oh-my-pi](https://github.com/can1357/oh-my-pi)를 따랐어요. 판정 커널에 쓰인 서드파티 코드는 [THIRD_PARTY_NOTICES.md](../../packages/kyrn-judge/THIRD_PARTY_NOTICES.md)에 정리되어 있어요.
+mu는 MIT 라이선스예요([LICENSE](../../LICENSE), 데스크톱 앱은 [desktop/LICENSE](../../desktop/LICENSE)). [pi](https://github.com/earendil-works/pi)(코딩 에이전트, MIT)를 바탕으로 만들었어요. pi의 작성자들에게 감사드려요. 몇몇 판정 지점은 다른 프로젝트의 아이디어를 바탕으로 해요. 프롬프트 인젝션 검사의 질문 방식은 [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills)에서, 이어서 하기 검사와 일괄 판정 도구는 [oh-my-pi](https://github.com/can1357/oh-my-pi)를 따랐어요. 판정 커널에 쓰인 서드파티 코드는 [THIRD_PARTY_NOTICES.md](../../packages/kyrn-judge/THIRD_PARTY_NOTICES.md)에 정리되어 있어요.
+
+데스크톱 앱은 [AionUi](https://github.com/iOfficeAI/AionUi)의 포크에서 시작했어요. AionUi에서 가져온 파일은 [desktop/APACHE-FILES.txt](../../desktop/APACHE-FILES.txt)에 정리되어 있고 계속 Apache License 2.0을 따라요([desktop/NOTICE](../../desktop/NOTICE) 참고).
 
 ## 커뮤니티
 

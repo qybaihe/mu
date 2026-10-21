@@ -112,8 +112,8 @@
       "selectFolder": "Select folder",
       "clearFolder": "Clear",
       "model": "Model",
-      "aionrsModelRequired": "Select a model for the built-in agent",
-      "aionrsNoProvider": "No models available",
+      "builtinAgentModelRequired": "Select a model for the built-in agent",
+      "builtinAgentNoProvider": "No models available",
       "assistantLockedExistingConversation": "A task that runs in an ongoing conversation keeps its original assistant. To use another assistant, create a new task.",
       "teamTaskExecutionModeLockedReason": "Team tasks always run in their team's conversation, so you can't change the execution mode."
     },

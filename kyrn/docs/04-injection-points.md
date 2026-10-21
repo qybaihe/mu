@@ -293,7 +293,7 @@ pi 只在代理启动时才把用户消息画进聊天区，而 `input` 处理�
   - `answered`（规则，不经判断模型）：上一轮代理没干活就停下提问（最后一条助手消息含问号、无工具调用），这条消息就是回答 → "把它当答案，现在就做，除非真做不下去否则不要再问"；同时压掉 `resolve`。
   - `plan_first` 改成"先写几行计划、说出来、然后做；只在不可撤销的一步前停下等用户"，不再"确认后再动手"。
   - 系统提示的 mu 段落加了同一条原则（`welcome.ts` IDENTITY），没有提示的轮次也管用。
-- **宿主前缀不算用户的话**：AionUi 内核（aioncore 二进制）会在每个会话第一条消息前面塞约 1,600 字的 `[Assistant Rules] … [/Assistant Rules]`（它的技能清单）。以前任务框架 v1 的 goal 就是这段规则文本，preflight 的 `user_message`、`recent_turns`、技能/能力披露、记忆捕获读到的也都是它。现在 `runtime.userWords()` 先剥掉这段（只剥开头的那一块，正文一字不改），所有判定输入和 frame 的 goal 都用剥完的；主模型仍收到完整消息。
+- **宿主前缀不算用户的话**：桌面端的后端会在每个会话第一条消息前面塞约 1,600 字的 `[Assistant Rules] … [/Assistant Rules]`（它的技能清单）。以前任务框架 v1 的 goal 就是这段规则文本，preflight 的 `user_message`、`recent_turns`、技能/能力披露、记忆捕获读到的也都是它。现在 `runtime.userWords()` 先剥掉这段（只剥开头的那一块，正文一字不改），所有判定输入和 frame 的 goal 都用剥完的；主模型仍收到完整消息。
 - **quick_lookup 不进 heavy 档**："你自己去找吧"被判 quick_lookup 但范围打 2.52 分，曾进 heavy 档并附 hive 提示；找东西再大也只到 standard。
 
 实测（Jev 直连）：闲聊 804 ms 出判定；"把整个项目从 callback 重构成 async/await…先别动手" → `multi-step task · heavy gear · thinking medium → high · 741 ms`，主模型给出计划并只问了一个范围问题；`/init` → `multi-step task · heavy gear`。

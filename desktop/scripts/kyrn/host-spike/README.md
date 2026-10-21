@@ -2,14 +2,14 @@
 
 Question: can the desktop stop bridging a CLI and run the agent itself?
 
-Today: renderer ⇄ AionCore (Rust) → ACP adapter → `kyrn --mode rpc` → pi + kyrn-judge, with judgment events
+Today: renderer ⇄ the backend (Rust) → ACP adapter → `kyrn --mode rpc` → pi + kyrn-judge, with judgment events
 on a side channel (status piggyback → `events.jsonl` → 1 s cursor polling). Four processes, three protocols, two
 channels that the front end re-joins by `runtimeId + turnId`.
 
 This spike runs pi's SDK (`createAgentSession`) and the KYRN judgment extension (`createKyrnJudgeExtension` with
 its in-process `onPresentation` hook) inside an Electron **utility process**, and sends the app ONE ordered,
 typed stream over a `MessagePort`. Everything is synthetic: faux model, mock judge, temp directories. It reads no
-real config, no credentials, and does not touch the running desktop app, AionCore or `~/.kyrn`.
+real config, no credentials, and does not touch the running desktop app, the backend or `~/.kyrn`.
 
 ## Files
 

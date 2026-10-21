@@ -47,7 +47,7 @@
   --border-radius-large: 12px;
 
   /* Tooltips, popovers and popconfirms (arco-override.css paints them from these). */
-  --aion-overlay-shadow: var(--mu-shadow-2);
+  --mu-overlay-shadow: var(--mu-shadow-2);
 }
 
 [data-color-scheme='mu'] body[arco-theme='dark'] {
@@ -76,7 +76,7 @@
   --danger-6: 255, 107, 129;
   --danger-7: 255, 148, 165;
 
-  --aion-overlay-shadow: var(--mu-shadow-2);
+  --mu-overlay-shadow: var(--mu-shadow-2);
 }
 
 /* ---- Component rules the tokens cannot reach ---- */

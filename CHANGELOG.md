@@ -10,6 +10,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 - Empty lists in the desktop app (the archive, the sidebar and its search, a scheduled task that's gone) say so in one line of text, like the rest of the app, without the UI library's stock inbox picture.
 - `/hive <question>` shows the question as you typed it in the chat and as the conversation's title, in the app and in the terminal. The request to start the hive goes to the model as a message only it reads.
+- The desktop app is mu's in its code and docs too, not only on screen: what still carried the names of the project it began from now has mu's own, and its local service (`resources/bundled-backend` in the app) is called the backend. The README credits that project, AionUi, in one line.
 
 ### Fixed
 

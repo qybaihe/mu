@@ -17,7 +17,7 @@ import {
 } from '@/common/chat/chatLib';
 import { createContext as createReactContext, useCallback, useContext, useEffect, useRef } from 'react';
 import { createContext } from '@renderer/utils/ui/createContext';
-import { fromAionCoreCode } from '@/common/platform/aioncoreNames';
+import { fromBackendCode } from '@/common/platform/backendNames';
 import {
   DEFAULT_MESSAGE_PAGE_LIMIT,
   loadConversationAnchorWindow,
@@ -31,15 +31,15 @@ const [useMessageListLoading, MessageListLoadingProvider, useUpdateMessageListLo
 const [useChatKey, ChatKeyProvider] = createContext('');
 
 /**
- * A list whose rows come from a host of its own (a native conversation) and not from AionCore: the conversation's id,
+ * A list whose rows come from a host of its own (a native conversation) and not from the backend: the conversation's id,
  * whether its run goes, whether its view has arrived, and its project folder. Inside it the list reads nothing from
- * AionCore for that id (no runtime state, no pages of history, no anchors of older turns), and a relative file link in
+ * the backend for that id (no runtime state, no pages of history, no anchors of older turns), and a relative file link in
  * a reply opens under the folder. `loadEarlier` is how the list pages back when the screen shows only the latest rows
  * of a long conversation (the pagination state says whether it has more): it asks the screen for the rows before, which
  * reach the list in its next render, and answers whether it did; the list keeps the reader's place through that render.
  * `fork`: for a text row, what its fork button does, where the host forks its own session (a native conversation's:
  * pi's `fork` and `clone`), or nothing for a row that has no fork point; the list has none while a run goes or a message
- * is on its way, and none at all where the backend forks (AionCore's), whose button the row decides itself.
+ * is on its way, and none at all where the backend forks (the backend's), whose button the row decides itself.
  */
 export type MessageListRun = {
   conversationId: string;
@@ -619,8 +619,8 @@ const classifyPersistedSendFailure = (
     return undefined;
   }
 
-  // Stored as AionCore wrote it: its own errors' code goes by the app's name.
-  const persistedCode = typeof parsed.code === 'string' ? fromAionCoreCode(parsed.code) : undefined;
+  // Stored as the backend wrote it: its own errors' code goes by the app's name.
+  const persistedCode = typeof parsed.code === 'string' ? fromBackendCode(parsed.code) : undefined;
   const structuredContent = isRecord(parsed.structuredContent) ? parsed.structuredContent : undefined;
   const domainCode =
     typeof structuredContent?.domainCode === 'string'

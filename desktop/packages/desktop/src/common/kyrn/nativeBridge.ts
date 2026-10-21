@@ -1,6 +1,6 @@
 /**
  * The native conversation bridge (docs/native-host.md, milestone 2): what the renderer asks the main process, and what
- * the main process pushes, so a conversation can run on the native host (pi in a process of its own) with no AionCore
+ * the main process pushes, so a conversation can run on the native host (pi in a process of its own) with no backend
  * and no ACP in its path. On unless the main process runs with MU_NATIVE_HOST=0, and only where the mu found on the
  * machine can run inside the app (`enabled`).
  *
@@ -149,7 +149,7 @@ export type NativeAttentionEvent = { id: string; kind: 'done' | 'error' | 'quest
 export const nativeBridge = {
   /**
    * Whether conversations run on the native host: on unless MU_NATIVE_HOST=0, and only with a mu that can run inside
-   * the app (an older one, which the packaged app may carry, leaves them on AionCore). Everything below fails with
+   * the app (an older one, which the packaged app may carry, leaves them on the backend). Everything below fails with
    * `off` when MU_NATIVE_HOST=0.
    */
   enabled: bridge.buildProvider<boolean, void>('mu.native.enabled'),

@@ -14,21 +14,21 @@ bunx electron-vite build
 > `bun run start` (`electron-vite dev`) uses Vite's HMR and hot-reloads automatically.
 > E2E tests do NOT use Vite dev server — they load static files from `out/`.
 
-### 2. Ensure `aioncore` is on PATH
+### 2. Make the backend binary reachable
 
-The Electron main process spawns the `aioncore` binary during startup and
-exposes its port to the renderer via `window.__backendPort`. The binary is
-located via `which aioncore`, so it must be reachable from the `PATH`
-inherited by the Playwright runner. If it isn't, `__backendPort` will be `0`
+The Electron main process starts the backend binary (`aioncore`) during startup
+and exposes its port to the renderer via `window.__backendPort`. Outside a
+packaged app the binary is found through `MU_BACKEND_BIN`, else on the `PATH`
+inherited by the Playwright runner. If it isn't found, `__backendPort` is `0`
 and every HTTP call from the renderer (or from e2e helpers that use
-`tests/e2e/helpers/httpBridge.ts`) will fail with `Failed to fetch`.
+`tests/e2e/helpers/httpBridge.ts`) fails with `Failed to fetch`.
 
 ```bash
-# Install the backend binary (builds to ~/.cargo/bin/aioncore)
-cd ../AionCore && cargo install --path crates/aionui-app
+# Download the pinned backend into resources/bundled-backend/<platform>-<arch>/
+node scripts/prepareBackend.js
 
-# Make sure it's on PATH when running tests
-export PATH="$HOME/.cargo/bin:$PATH"
+# Point the tests at it
+export MU_BACKEND_BIN="$PWD/resources/bundled-backend/darwin-arm64/aioncore"
 ```
 
 ### 3. Run Tests
@@ -200,7 +200,7 @@ account, no key and no network:
 ```bash
 bun run e2e:conversation                 # builds out/, then runs the test
 bun run e2e:conversation --skip-build    # out/ is already fresh
-bun run e2e:conversation --native        # the native host's tests (the default) instead of the conversation on AionCore (MU_NATIVE_HOST=0)
+bun run e2e:conversation --native        # the native host's tests (the default) instead of the conversation on the backend (MU_NATIVE_HOST=0)
 MU_E2E_KEEP=1 bun run e2e:conversation   # keep the profile after a pass too
 bun run e2e:conversation --app out --arch arm64   # the packaged app electron-builder left in out/
 MU_E2E_WINDOW=819x691 bun run e2e:conversation --skip-build   # the window a 1024 x 768 screen gives (Windows runner)
@@ -234,7 +234,7 @@ update checks.
 
 A packaged app (`--app`, or `MU_E2E_APP`) is the app electron-builder made: `--app` takes its executable, the app (a
 `.app`, or the unpacked folder on Windows and Linux) or the builder's output folder, where the app for this system and
-`--arch` is taken. It runs the mu and the backend it carries, on its own binary: no harness checkout, AionCore binary or
+`--arch` is taken. It runs the mu and the backend it carries, on its own binary: no harness checkout, backend binary or
 Node is named to it, and it starts from the profile's home, not the checkout. It checks for updates through
 electron-updater on macOS and Windows, whose GitHub feed the test answers in the app's own session for it. The public
 repository's `desktop.yml` runs it this way after every build, on Windows x64 and arm64, macOS arm64 and Linux x64 and
@@ -250,8 +250,8 @@ The fake model (`fakeModel.mjs`, Node's http only) answers by a marker in the la
 `E2E:WRITE <path>`, `E2E:BASH <command>`, `E2E:SLOW`, `E2E:ECHO <text>`) and records every request.
 `node tests/e2e/mu-conversation/fakeModel.mjs --port 8765` runs it alone.
 
-Needs, for the checkout's build: the harness checkout beside this one (`../KYRN`) or `MU_ROOT`; the AionCore binary
-in `resources/bundled-aioncore/<platform>-<arch>/` (or `MU_BACKEND_BIN`); a Node 22.19 or newer on `PATH` or in
+Needs, for the checkout's build: the harness checkout beside this one (`../KYRN`) or `MU_ROOT`; the backend binary
+in `resources/bundled-backend/<platform>-<arch>/` (or `MU_BACKEND_BIN`); a Node 22.19 or newer on `PATH` or in
 nvm (or `MU_E2E_NODE`); an Electron executable: `MU_E2E_ELECTRON`, else `ELECTRON_EXEC_PATH`, else the checkout's
 `electron` package, else `kyrn/node_modules/electron` (the one `scripts/kyrn/start` uses; a worktree looks in its main
 checkout too). A checkout installed without install scripts has no Electron in its `electron` package: the test then

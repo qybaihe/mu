@@ -12,7 +12,7 @@ import {
 } from '../../../packages/desktop/src/process/agent/kyrn/telemetry';
 import { mergeActivity } from '../../../packages/desktop/src/renderer/pages/conversation/KyrnPanel/activity';
 import { sessionBinding } from '../../../packages/desktop/src/process/agent/kyrn/sessionBinding';
-import { AIONCORE_DATABASE_FILE } from '@/common/platform/aioncoreNames';
+import { BACKEND_DATABASE_FILE } from '@/common/platform/backendNames';
 
 /** A KYRN presentation frame as pi's RPC status channel carries it. */
 const presentation = (frame: Record<string, unknown>) => ({
@@ -46,7 +46,7 @@ describe('KYRN durable activity', () => {
   it('resolves the backend resume anchor without mixing conversations or agents', () => {
     const dir = mkdtempSync(join(tmpdir(), 'kyrn-session-binding-'));
     try {
-      const db = new DatabaseSync(join(dir, AIONCORE_DATABASE_FILE));
+      const db = new DatabaseSync(join(dir, BACKEND_DATABASE_FILE));
       db.exec('CREATE TABLE acp_session(conversation_id TEXT, agent_id TEXT, session_id TEXT)');
       db.prepare('INSERT INTO acp_session VALUES (?, ?, ?)').run('a', 'kyrn', 'session-a');
       db.prepare('INSERT INTO acp_session VALUES (?, ?, ?)').run('b', 'kyrn', 'session-b');

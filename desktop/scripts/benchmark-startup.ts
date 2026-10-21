@@ -18,6 +18,7 @@ import { _electron as electron, type ElectronApplication, type Page } from 'play
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
+import { DEV_PROFILE_NAMES } from '../packages/desktop/src/common/platform/legacyNames';
 
 // ── CLI args ────────────────────────────────────────────────────────────────
 
@@ -141,7 +142,7 @@ function getLogFilePath(): string {
   const today = new Date().toISOString().slice(0, 10);
   const candidates: string[] = [];
   // An unpackaged build runs under the development name (getDevAppName), a packaged one under mu's own.
-  for (const name of ['AionUi-Dev', 'mu']) {
+  for (const name of [DEV_PROFILE_NAMES.first, 'mu']) {
     if (process.platform === 'darwin') {
       candidates.push(path.join(os.homedir(), 'Library', 'Logs', name, `${today}.log`));
     } else if (process.platform === 'win32') {

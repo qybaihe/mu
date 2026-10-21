@@ -44,7 +44,7 @@ export function clip(text: string, length: number): string {
 }
 
 /**
- * The person's own words. A host may put its instructions in front of what the person typed: AionCore,
+ * The person's own words. A host may put its instructions in front of what the person typed: the backend,
  * mu's desktop backend, prefixes the first message of a conversation with `[Assistant Rules] …
  * [/Assistant Rules]`, its skill list, some 1,600 characters. That text is for the main model. A judge asked about "the user's
  * message", and the task frame that takes the first message as the goal, must not read it as theirs.

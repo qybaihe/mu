@@ -96,6 +96,7 @@ import {
   setCurrentConversation,
 } from '@/renderer/pages/conversation/explorer/currentConversationStore';
 import { emitter } from '@/renderer/utils/emitter';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 const MINUTE = 60_000;
 const NOW = Date.now();
@@ -167,7 +168,7 @@ describe('command palette', () => {
       conversation('c5', 'Windows installer', 60 * 26),
       conversation('c6', 'Older idea', 60 * 24 * 3),
       conversation('c7', 'Oldest idea', 60 * 24 * 9),
-      conversation('c9', 'A local model chat', 60 * 24 * 20, 'aionrs'),
+      conversation('c9', 'A local model chat', 60 * 24 * 20, BUILTIN_AGENT),
     ];
     state.commands = [
       command('board', 'Show the plain-language board'),

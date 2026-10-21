@@ -8,7 +8,7 @@
  * IPC Bridge → HTTP/WS adapter.
  *
  * This file replaces the original IPC bridge calls with HTTP REST and WebSocket
- * calls routed to aioncore. Electron-native operations (window controls,
+ * calls routed to the backend. Electron-native operations (window controls,
  * native dialogs, auto-update, devtools, zoom, CDP, deep links) remain as IPC.
  */
 
@@ -271,7 +271,7 @@ export const auth = {
    * Which user id the backend attributes THIS client's requests to.
    *
    * Deliberately not `GET /api/auth/user`: the auth router builds its own
-   * `AuthState` whose identity mode is only ever `AionPro` or `UserSession`, so
+   * `AuthState` whose identity mode is only ever the hosted one or `UserSession`, so
    * in local identity mode that endpoint answers 401 while every ordinary route
    * is happily serving an injected default user. `/api/system/current-user`
    * sits behind the ORDINARY auth middleware, so it reports the same identity
@@ -293,12 +293,12 @@ export const conversation = {
   ),
   createWithConversation: withResponseMap(
     httpPost<TChatConversation, { conversation: TChatConversation }>('/api/conversations/clone', (p) => {
-      const isAionrs = p.conversation.type === 'aionrs';
+      const isBuiltinAgent = p.conversation.type === BUILTIN_AGENT;
       const { model: _rawModel, ...rest } = p.conversation as TChatConversation & {
         model?: TProviderWithModel;
       };
       const clonedConversation: Record<string, unknown> = { ...rest };
-      if (isAionrs) {
+      if (isBuiltinAgent) {
         const model = toApiModelOptional(_rawModel);
         if (model) clonedConversation.model = model;
       }
@@ -1040,7 +1040,7 @@ export const googleAuth = {
 };
 
 // ---------------------------------------------------------------------------
-// Google subscription status (Google OAuth provider path, used by aionrs)
+// Google subscription status (Google OAuth provider path, used by the built-in agent)
 // ---------------------------------------------------------------------------
 
 export const google = {
@@ -1566,7 +1566,7 @@ export type INotificationOptions = {
   body: string;
   icon?: string;
   conversation_id?: string;
-  /** The conversation is a native one (its page is not an AionCore conversation's): a click opens that page. */
+  /** The conversation is a native one (its page is not a backend conversation's): a click opens that page. */
   native?: boolean;
 };
 
@@ -1776,7 +1776,7 @@ export interface IConfirmMessageParams {
 }
 
 export interface ICreateConversationParams {
-  type?: 'acp' | 'aionrs';
+  type?: 'acp' | BuiltinAgent;
   id?: string;
   name?: string;
   model?: TProviderWithModel;
@@ -2067,6 +2067,7 @@ export const extensions = {
 // ---------------------------------------------------------------------------
 
 import type { HubExtensionStatus, IHubAgentItem } from '@/common/types/agent/hub';
+import { BUILTIN_AGENT, type BuiltinAgent } from '@/common/platform/backendNames';
 export const hub = {
   getExtensionList: httpGet<IHubAgentItem[], void>('/api/hub/extensions'),
   install: httpPost<void, { name: string }>('/api/hub/install'),
@@ -2271,7 +2272,7 @@ export const sidebar = {
         if (p.limit) params.set('limit', String(p.limit));
         for (const w of p.win ?? []) params.append('win', w);
         // Flip the read to the archive slice. The archived page reuses this same
-        // grouped read model — only the backend `archived_at` predicate changes.
+        // grouped read model — only the backend's `archived_at` predicate changes.
         if (p.archived) params.set('archived', 'true');
         const qs = params.toString();
         return `/api/sidebar${qs ? `?${qs}` : ''}`;

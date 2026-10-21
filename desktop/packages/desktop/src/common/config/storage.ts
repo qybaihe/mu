@@ -7,7 +7,8 @@
 import type { Theme, WindowAppearance } from '@/common/theme/types';
 import { buildStorage } from '@/common/platform/storage';
 import { BUILTIN_MCP_SERVER_NAMES, type DIRS_KEY, FIRST_IMAGE_GEN_SERVER_NAME } from '@/common/platform/legacyNames';
-import type { AIONCORE_APP_SOURCE } from '@/common/platform/aioncoreNames';
+import type { BACKEND_APP_SOURCE } from '@/common/platform/backendNames';
+import { type BuiltinAgent } from '@/common/platform/backendNames';
 
 // 系统配置存储
 export const ConfigStorage = buildStorage<IConfigStorageRefer>('agent.config');
@@ -77,11 +78,11 @@ export interface IConfigStorageRefer {
 }
 
 /**
- * Legacy config keys that may still exist on disk from the pre-aionCore era.
+ * Legacy config keys that may still exist on disk from before the backend stored the settings.
  *
  * New business truth must not be added here. Keep this surface migration-only:
  * renderer/process code may read these keys during one-shot imports into the
- * backend, but all current writes should go through aionCore-owned storage.
+ * backend, but all current writes should go through backend-owned storage.
  */
 export interface ILegacyConfigStorageRefer extends IConfigStorageRefer {
   'google.config'?: {
@@ -113,7 +114,7 @@ export interface IEnvStorageRefer {
  * 会话来源类型 - 标识会话创建的来源
  */
 export type ConversationSource =
-  | typeof AIONCORE_APP_SOURCE
+  | typeof BACKEND_APP_SOURCE
   | 'telegram'
   | 'lark'
   | 'dingtalk'
@@ -164,7 +165,7 @@ interface IChatConversation<T, Extra> {
   model: TProviderWithModel;
   status?: TChatConversationStatus | undefined;
   runtime?: TConversationRuntimeSummary;
-  /** Conversation source, defaults to the app's (`AIONCORE_APP_SOURCE`) */
+  /** Conversation source, defaults to the app's (`BACKEND_APP_SOURCE`) */
   source?: ConversationSource;
   /** Channel chat isolation ID (e.g. user:xxx, group:xxx) */
   channel_chat_id?: string;
@@ -368,7 +369,7 @@ export type TChatConversation =
   // open historical rows with type='gemini' (message history is served
   // by the shared messages table). The backend factory rejects any
   // attempt to resume this conversation — see
-  // AionCore's common crate (enums.rs and factory.rs).
+  // the backend's common crate (enums.rs and factory.rs).
   // Every field is optional because legacy rows shape-varies across
   // several older Gemini-runtime versions.
   | Omit<
@@ -441,7 +442,7 @@ export type TChatConversation =
       'model'
     >
   | IChatConversation<
-      'aionrs',
+      BuiltinAgent,
       {
         workspace: string;
         custom_workspace?: boolean;

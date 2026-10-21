@@ -60,12 +60,12 @@ const INSTALLER_ERROR_SCENARIOS = [
     diagnostics: 'scenario=disk-insufficient phase=preflight requiredMb=1024 availableMb=0',
   },
   {
-    id: 'bundled-aioncore-incomplete',
-    defineName: 'MU_E_BUNDLED_AIONCORE_INCOMPLETE',
+    id: 'bundled-backend-incomplete',
+    defineName: 'MU_E_BUNDLED_BACKEND_INCOMPLETE',
     code: 'E1030',
     message: 'mu installed, but the bundled local service resources are incomplete.',
     action: 'Download a fresh installer and run it again.',
-    diagnostics: 'scenario=bundled-aioncore-incomplete phase=verify-bundled-aioncore runtime=win32-x64 result=1',
+    diagnostics: 'scenario=bundled-backend-incomplete phase=verify-bundled-backend runtime=win32-x64 result=1',
   },
   {
     id: 'core-app-files-incomplete',

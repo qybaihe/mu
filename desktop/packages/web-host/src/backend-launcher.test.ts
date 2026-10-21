@@ -257,7 +257,7 @@ describe('buildSpawnEnv', () => {
     expect(env.PATH).toBe(process.env.PATH); // inherits
   });
 
-  it('hands AionCore the variables it reads under its own names', () => {
+  it('hands the backend the variables it reads under its own names', () => {
     const keys = ['MU_E2E_TEST', 'MU_EXTENSIONS_PATH', 'MU_EXTENSION_STATES_FILE', 'AIONUI_E2E_TEST'] as const;
     const saved = Object.fromEntries(keys.map((k) => [k, process.env[k]]));
     process.env.MU_E2E_TEST = '1';
@@ -277,7 +277,7 @@ describe('buildSpawnEnv', () => {
     }
   });
 
-  it('strips PREBUILDS_ONLY so agent CLIs spawned under aioncore can load their build/Release natives (#4070)', () => {
+  it('strips PREBUILDS_ONLY so agent CLIs spawned under the backend can load their build/Release natives (#4070)', () => {
     const prev = process.env.PREBUILDS_ONLY;
     process.env.PREBUILDS_ONLY = '1';
     try {
@@ -352,8 +352,8 @@ describe('findAvailablePort', () => {
 
       expect(port).toBe(40404);
       expect(createServer).toHaveBeenCalledTimes(2);
-      expect(infoSpy).toHaveBeenCalledWith('[aioncore] skipped fetch-blocked backend port 1720');
-      expect(infoSpy).toHaveBeenCalledWith('[aioncore] selected backend port 40404 after 2 attempts');
+      expect(infoSpy).toHaveBeenCalledWith('[backend] skipped fetch-blocked backend port 1720');
+      expect(infoSpy).toHaveBeenCalledWith('[backend] selected backend port 40404 after 2 attempts');
     } finally {
       infoSpy.mockRestore();
     }
@@ -385,7 +385,7 @@ describe('findAvailablePort', () => {
 });
 
 describe('BackendLifecycleManager.start (success path)', () => {
-  it('lets aioncore choose the backend port and waits for the reported listening event', async () => {
+  it('lets the backend choose the backend port and waits for the reported listening event', async () => {
     vi.mocked(createServer).mockImplementation(() => {
       throw new Error('launcher must not pre-bind backend ports');
     });
@@ -498,7 +498,7 @@ describe('BackendLifecycleManager.start (success path)', () => {
 
       expect(fetchSpy).toHaveBeenCalled();
       expect(infoSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[aioncore] health ready on port 55555 after 1 attempts, elapsed_ms=')
+        expect.stringContaining('[backend] health ready on port 55555 after 1 attempts, elapsed_ms=')
       );
     } finally {
       fetchSpy.mockRestore();
@@ -639,7 +639,7 @@ describe('BackendLifecycleManager.start (health timeout)', () => {
     });
   });
 
-  it('kills child and reports listen_timeout when aioncore never reports a port', async () => {
+  it('kills child and reports listen_timeout when the backend never reports a port', async () => {
     vi.useFakeTimers();
     const platformSpy = vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin');
     const child = makeFakeChild();
@@ -1340,7 +1340,7 @@ describe('BackendLifecycleManager crash restart', () => {
     (child1 as unknown as EventEmitter).emit('exit', 1, 'SIGABRT');
     await new Promise((r) => setTimeout(r, 1_200));
 
-    expect(warnSpy).toHaveBeenCalledWith('[aioncore] child exited unexpectedly; scheduling restart', {
+    expect(warnSpy).toHaveBeenCalledWith('[backend] child exited unexpectedly; scheduling restart', {
       exitCode: 1,
       signal: 'SIGABRT',
       port: 65303,
@@ -1428,7 +1428,7 @@ describe('BackendLifecycleManager crash restart', () => {
     mgr.handleCrash(1, 'SIGABRT');
 
     expect(mgr.status).toBe('error');
-    expect(errorSpy).toHaveBeenCalledWith('[aioncore] child exited unexpectedly; restart limit exceeded', {
+    expect(errorSpy).toHaveBeenCalledWith('[backend] child exited unexpectedly; restart limit exceeded', {
       exitCode: 1,
       signal: 'SIGABRT',
       port: 0,
@@ -1444,7 +1444,7 @@ describe('BackendLifecycleManager crash restart', () => {
 type AttemptStartSpyTarget = { attemptStart: (...args: unknown[]) => Promise<number> };
 
 function makePeerAlreadyRunningError(): BackendStartupError {
-  return new BackendStartupError('aioncore exited before health check passed', {
+  return new BackendStartupError('The backend exited before health check passed', {
     stage: 'early_exit',
     appVersion: APP_META.version,
     backendBoundaryCode: 'BOOTSTRAP_PEER_ALREADY_RUNNING',

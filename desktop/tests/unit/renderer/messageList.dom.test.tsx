@@ -22,6 +22,7 @@ import {
   useUpdateMessageList,
 } from '@/renderer/pages/conversation/Messages/hooks';
 import MessageList from '@/renderer/pages/conversation/Messages/MessageList';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 const { parseDiffMock, useTeamPermissionMock } = vi.hoisted(() => ({
   parseDiffMock: vi.fn(),
@@ -48,7 +49,7 @@ vi.mock('@arco-design/web-react', () => ({
 }));
 
 vi.mock('@/renderer/hooks/context/ConversationContext', () => ({
-  useConversationContextSafe: () => ({ conversation_id: 'conversation-1', type: 'aionrs' }),
+  useConversationContextSafe: () => ({ conversation_id: 'conversation-1', type: BUILTIN_AGENT }),
 }));
 
 vi.mock('@/renderer/pages/team/hooks/TeamPermissionContext', () => ({

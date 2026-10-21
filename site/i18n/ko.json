@@ -30,7 +30,7 @@
     "theme_light": "라이트",
     "theme_dark": "다크",
     "toc": "이 페이지의 내용",
-    "footer_credit": "명령줄은 <a href=\"https://github.com/earendil-works/pi\">pi</a>(MIT)를, 데스크톱 앱은 <a href=\"https://github.com/iOfficeAI/AionUi\">AionUi</a>(Apache-2.0)를 바탕으로 만들었어요. 두 프로젝트의 작성자들에게 감사드려요.",
+    "footer_credit": "mu는 <a href=\"https://github.com/earendil-works/pi\">pi</a>(MIT)를 바탕으로 만들었어요. pi의 작성자들에게 감사드려요.",
     "footer_license": "라이선스",
     "replay": "↻ 다시 보기",
     "replay_label": "이 부분 다시 보기",
@@ -134,7 +134,7 @@
       { "h3": "요약으로 압축하지 않아요", "p": "컨텍스트가 커지면 오래된 결과는 요약하지 않고 내려놓아요. 캐시가 만료되기 전에는 갱신할 가치가 있는지 mu가 판정해요." },
       { "h3": "판정기를 고정하지 않아요", "p": "판정 지점 {points}개, 지점마다 스위치와 판정기가 따로 있어요. 무료 Jev, 로컬 Laya, 또는 어떤 LLM이든 쓸 수 있어요." },
       { "h3": "판정기는 시작할 때 키가 필요 없어요", "p": "판정기 키가 없으면 OpenCode Zen의 무료 Jev가 답하고, mu가 하루에 한 번 그 사실을 알려 줘요." },
-      { "h3": "새 기반을 만들지 않아요", "p": "명령줄은 pi 위에 만들어서 pi의 모델, 확장, 스킬, 세션 트리가 그대로 있어요. 데스크톱 앱은 AionUi 위에 만들었어요." }
+      { "h3": "새 기반을 만들지 않아요", "p": "명령줄은 pi 위에 만들어서 pi의 모델, 확장, 스킬, 세션 트리가 그대로 있어요. 데스크톱 앱도 같은 세션으로 동작해요." }
     ],
     "principles_more": "판정 지점 {points}개가 각각 무엇을 묻고 무엇을 바꾸는지",
     "more_label": "그 밖에",

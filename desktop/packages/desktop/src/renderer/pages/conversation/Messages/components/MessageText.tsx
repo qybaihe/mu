@@ -169,7 +169,7 @@ const MessageText: React.FC<{
   const markdown = useMemo(() => (typeof data === 'string' ? closeOpenFence(data) : data), [data]);
   const shouldRenderPlainText = isUserMessage || Boolean(contextResetNotice);
   const conversationContext = useConversationContextSafe();
-  // A native conversation has no AionCore conversation around it: its project folder comes with its list.
+  // A native conversation has no backend conversation around it: its project folder comes with its list.
   const run = useMessageListRun();
   const workspace = conversationContext?.workspace ?? run?.workspace;
   const forkConversation = useForkConversation(conversationContext?.conversation_id);

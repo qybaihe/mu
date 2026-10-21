@@ -1,6 +1,6 @@
 /**
  * What the work panel reads by a project folder instead of by an app conversation: a native conversation
- * (docs/native-host-ui.md) has no AionCore conversation or project, only the folder its session works in (`cwd`). Its
+ * (docs/native-host-ui.md) has no backend conversation or project, only the folder its session works in (`cwd`). Its
  * lessons tab reads mu's experience library by that folder, as the classic tab reads it by the conversation's workspace
  * (common/kyrn/lessons.ts); its files tab lists that folder, one directory at a time. The main process answers both
  * (process/bridge/kyrnBridge.ts), with `KyrnResult` like every mu channel.

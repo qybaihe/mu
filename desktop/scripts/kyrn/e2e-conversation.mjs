@@ -5,12 +5,12 @@
 //   bun run e2e:conversation [--native] [--skip-build] [--app <app> [--arch arm64|x64]] [-- <playwright options>]
 //
 // --native runs the native host's test (tests/e2e/mu-conversation/native.spec.mjs: pi inside the app, the default)
-// instead of the conversation on AionCore (which the classic run reaches with MU_NATIVE_HOST=0).
+// instead of the conversation on the backend (which the classic run reaches with MU_NATIVE_HOST=0).
 //
 // --app runs a packaged app instead of the checkout's build, and builds nothing. <app> is the app's executable, the app
 // (a `.app` on macOS, the unpacked folder elsewhere), or electron-builder's output folder (out/), where the app for this
 // system and --arch (by default this Node's) is taken. A packaged app carries mu and the backend: no harness checkout,
-// AionCore binary or Node is needed for it.
+// backend binary or Node is needed for it.
 //
 // MU_E2E_KEEP=1 keeps the throwaway profile (logs, sessions, the project) after a pass too; after a failure it is
 // always kept, and its path is printed. MU_E2E_ROOT names the profile's folder (empty or missing), which is always

@@ -67,18 +67,18 @@
      it, so the code-region weight follows the selection for free. */
   --font-mono-weight: var(--code-font-weight, inherit);
   --code-font-size: 13px;
-  --aion-overlay-bg: #ffffff;
-  --aion-overlay-text: #1d2129;
-  --aion-overlay-border: #e5e6eb;
-  --aion-overlay-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --mu-overlay-bg: #ffffff;
+  --mu-overlay-text: #1d2129;
+  --mu-overlay-border: #e5e6eb;
+  --mu-overlay-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
 }
 
 html[data-theme='dark'],
 body[arco-theme='dark'] {
-  --aion-overlay-bg: #0e0e0e;
-  --aion-overlay-text: #f2f3f5;
-  --aion-overlay-border: #333333;
-  --aion-overlay-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --mu-overlay-bg: #0e0e0e;
+  --mu-overlay-text: #f2f3f5;
+  --mu-overlay-border: #333333;
+  --mu-overlay-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 
 /* Arco's arco.css puts 'Inter' first in font-family, which causes very thin
@@ -123,10 +123,10 @@ body {
 html body .arco-tooltip-content,
 html body .arco-popover-content,
 html body .arco-popconfirm-content {
-  background: var(--aion-overlay-bg) !important;
-  color: var(--aion-overlay-text) !important;
-  border: 1px solid var(--aion-overlay-border) !important;
-  box-shadow: var(--aion-overlay-shadow) !important;
+  background: var(--mu-overlay-bg) !important;
+  color: var(--mu-overlay-text) !important;
+  border: 1px solid var(--mu-overlay-border) !important;
+  box-shadow: var(--mu-overlay-shadow) !important;
 }
 
 html[data-theme='dark'] body .arco-tooltip-content,
@@ -135,10 +135,10 @@ html[data-theme='dark'] body .arco-popconfirm-content,
 body[arco-theme='dark'] .arco-tooltip-content,
 body[arco-theme='dark'] .arco-popover-content,
 body[arco-theme='dark'] .arco-popconfirm-content {
-  background: var(--aion-overlay-bg) !important;
-  color: var(--aion-overlay-text) !important;
-  border: 1px solid var(--aion-overlay-border) !important;
-  box-shadow: var(--aion-overlay-shadow) !important;
+  background: var(--mu-overlay-bg) !important;
+  color: var(--mu-overlay-text) !important;
+  border: 1px solid var(--mu-overlay-border) !important;
+  box-shadow: var(--mu-overlay-shadow) !important;
 }
 
 html body .arco-tooltip-content-inner,
@@ -146,14 +146,14 @@ html body .arco-popover-title,
 html body .arco-popover-inner-content,
 html body .arco-popconfirm-title,
 html body .arco-popconfirm-inner-content {
-  color: var(--aion-overlay-text) !important;
+  color: var(--mu-overlay-text) !important;
 }
 
 html body .arco-trigger-arrow.arco-tooltip-arrow,
 html body .arco-popover-arrow.arco-trigger-arrow,
 html body .arco-popconfirm-arrow.arco-trigger-arrow {
-  background: var(--aion-overlay-bg) !important;
-  border: 1px solid var(--aion-overlay-border) !important;
+  background: var(--mu-overlay-bg) !important;
+  border: 1px solid var(--mu-overlay-border) !important;
 }
 
 /* Override Arco Design component backgrounds to white in light mode */
@@ -658,7 +658,7 @@ body[arco-theme='dark'] .arco-message-error {
 
 /* Provider group titles pin to the top of the inner scroll container. It has no
  * top padding, so top:0 hugs the edge with no gap for items to peek through.
- * Only relevant for the grouped (aionrs) list; harmless for flat lists. */
+ * Only relevant for the grouped (built-in agent) list; harmless for flat lists. */
 .dropdown-search-scroll .arco-dropdown-menu-group-title {
   position: sticky;
   top: 0;

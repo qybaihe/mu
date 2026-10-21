@@ -10,7 +10,7 @@ Install the root dependencies first, so the app runs the mu in the same reposito
 npm install --ignore-scripts               # at the repository root
 cd desktop
 bun install
-node scripts/prepareAioncore.js            # once: the local service the app starts
+node scripts/prepareBackend.js            # once: the local service the app starts
 KYRN_ROOT="$(cd .. && pwd)" bun run start
 ```
 
@@ -40,4 +40,4 @@ The conventions for code, CSS and text are in [AGENTS.md](AGENTS.md). How mu fit
 
 ## Origin and license
 
-The app is under the MIT license ([LICENSE](LICENSE)). It began as a fork of [AionUi](https://github.com/iOfficeAI/AionUi); the files that came from it, listed in [AIONUI-FILES.txt](AIONUI-FILES.txt), stay under the Apache License 2.0 ([LICENSE-APACHE](LICENSE-APACHE)). [NOTICE](NOTICE) has the details.
+The app is under the MIT license ([LICENSE](LICENSE)). The files listed in [APACHE-FILES.txt](APACHE-FILES.txt) stay under the Apache License 2.0 ([LICENSE-APACHE](LICENSE-APACHE)). [NOTICE](NOTICE) has the details.

@@ -100,7 +100,7 @@ test.describe('Agent browser control (single-target CDP bridge)', () => {
      * is the difference between driving the in-app browser and driving a hidden Chrome the
      * user cannot see.
      *
-     * Note this only checks the *root* of the tree. The aioncore assertion below is what
+     * Note this only checks the *root* of the tree. The backend assertion below is what
      * verifies the values actually propagate — see the comment there.
      */
     const { port, token } = await readBridgeEnv(electronApp);
@@ -109,13 +109,13 @@ test.describe('Agent browser control (single-target CDP bridge)', () => {
     expect((token ?? '').length).toBeGreaterThanOrEqual(32);
   });
 
-  test('aioncore inherits the bridge port and token, so the browser MCP can start', async ({ electronApp }) => {
+  test('The backend inherits the bridge port and token, so the browser MCP can start', async ({ electronApp }) => {
     /**
      * Regression test for a bug that shipped past the whole rest of this file.
      *
-     * The port and token reach the agent purely by process inheritance: aioncore is spawned
-     * with `{ ...process.env }`, and the browser MCP is aioncore's child. Inheritance is a
-     * snapshot taken at spawn time, so if the bridge starts *after* aioncore, aioncore
+     * The port and token reach the agent purely by process inheritance: the backend is spawned
+     * with `{ ...process.env }`, and the browser MCP is the backend's child. Inheritance is a
+     * snapshot taken at spawn time, so if the bridge starts *after* the backend, the backend
      * inherits no token and a stale port, the MCP exits(1) for want of credentials, and
      * agent browser control is dead — while manual browsing, tabs and history all keep
      * working, so nothing looks broken.
@@ -132,7 +132,7 @@ test.describe('Agent browser control (single-target CDP bridge)', () => {
 
     // Match on --parent-pid so a separately installed copy of the app (or another dev instance)
     // cannot be mistaken for the backend this test launched.
-    const readOurAioncoreEnv = (): { token: string | null; activePort: string | null } | null => {
+    const readOurBackendEnv = (): { token: string | null; activePort: string | null } | null => {
       let listing = '';
       try {
         listing = execSync('ps -eo pid,args | grep -i aioncore | grep -v grep || true', { encoding: 'utf8' });
@@ -159,10 +159,10 @@ test.describe('Agent browser control (single-target CDP bridge)', () => {
 
     // The backend may still be coming up when this test starts.
     const deadline = Date.now() + 30_000;
-    let inherited = readOurAioncoreEnv();
+    let inherited = readOurBackendEnv();
     while (inherited === null && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 500));
-      inherited = readOurAioncoreEnv();
+      inherited = readOurBackendEnv();
     }
 
     // `ps -E` is not available on every platform; skip rather than fail where it is not.

@@ -97,7 +97,7 @@ describe('mu’s permission card', () => {
     expect(status).toHaveAttribute('data-outcome', outcome);
   });
 
-  it('reads mu’s codes as AionCore relays them, with the keys snake-cased', () => {
+  it('reads mu’s codes as the backend relays them, with the keys snake-cased', () => {
     render(
       <MessageAcpPermission
         message={card({ kind: 'shell', reason: 'flagged', flag_code: 'force_push', grant_label: 'git push' })}

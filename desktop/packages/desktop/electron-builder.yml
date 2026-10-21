@@ -112,12 +112,12 @@ extraResources:
     to: .
   - from: resources/app.png
     to: app.png
-  # aioncore binary (pre-compiled per platform/arch, ships its own bun runtime)
-  - from: resources/bundled-aioncore
-    to: bundled-aioncore
+  # The backend binary (pre-compiled per platform/arch, ships its own bun runtime)
+  - from: resources/bundled-backend
+    to: bundled-backend
   - from: resources/hub
     to: hub
-  # mu's ACP adapter launchers: AionCore runs resources/mu/acp (acp.cmd on Windows), which runs the bundled adapter
+  # mu's ACP adapter launchers: the backend runs resources/mu/acp (acp.cmd on Windows), which runs the bundled adapter
   # out/main/mu-acp.js (unpacked below) on the app's own binary as Node
   - from: resources/mu
     to: mu

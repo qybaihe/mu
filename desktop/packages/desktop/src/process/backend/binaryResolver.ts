@@ -1,5 +1,5 @@
 /**
- * Resolve the aioncore binary path.
+ * Resolve the backend binary path.
  *
  * Search order:
  *  1. MU_BACKEND_BIN env override (path, resolved to absolute)
@@ -65,7 +65,7 @@ function trimLookupText(text: string): string {
 }
 
 /**
- * Resolve the aioncore binary path.
+ * Resolve the backend binary path.
  * Returns the absolute path to the binary, or throws if not found.
  */
 export function resolveBinaryPath(): string {
@@ -118,7 +118,7 @@ function envOverridePath(diagnostics: BackendBinaryResolveDiagnostics): string |
 
 /**
  * Check bundled binary in resources directory.
- * Layout: bundled-aioncore/{platform}-{arch}/aioncore[.exe]
+ * Layout: bundled-backend/{platform}-{arch}/aioncore[.exe]
  */
 function bundledPath(
   runtimeKey: string,
@@ -129,7 +129,7 @@ function bundledPath(
   if (!resourcesPath) return null;
   diagnostics.resourcesPath = resourcesPath;
 
-  const bundledDir = join(resourcesPath, 'bundled-aioncore');
+  const bundledDir = join(resourcesPath, 'bundled-backend');
   const runtimeDir = join(bundledDir, runtimeKey);
   const candidate = join(runtimeDir, binaryName);
   diagnostics.checkedBundledPath = candidate;

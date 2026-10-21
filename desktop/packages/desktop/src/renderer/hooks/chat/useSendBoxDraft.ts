@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import useSWR from 'swr';
 import type { FileOrFolderItem } from '@/renderer/utils/file/fileTypes';
+import { BUILTIN_AGENT, type BuiltinAgent } from '@/common/platform/backendNames';
 export type { FileOrFolderItem } from '@/renderer/utils/file/fileTypes';
 
 type Draft =
@@ -17,7 +18,7 @@ type Draft =
       uploadFile: string[];
     }
   | {
-      _type: 'aionrs';
+      _type: BuiltinAgent;
       content: string;
       atPath: Array<string | FileOrFolderItem>;
       uploadFile: string[];
@@ -34,7 +35,7 @@ type SendBoxDraftStore = {
 const store: SendBoxDraftStore = {
   acp: new Map(),
   codex: new Map(),
-  aionrs: new Map(),
+  [BUILTIN_AGENT]: new Map(),
 };
 
 export type ConversationSendBoxPrefill = {
@@ -136,11 +137,11 @@ const setDraft = <K extends DraftConversationType>(
         store.codex.delete(conversation_id);
       }
       break;
-    case 'aionrs':
+    case BUILTIN_AGENT:
       if (draft) {
-        store.aionrs.set(conversation_id, draft as Extract<Draft, { _type: 'aionrs' }>);
+        store[BUILTIN_AGENT].set(conversation_id, draft as Extract<Draft, { _type: BuiltinAgent }>);
       } else {
-        store.aionrs.delete(conversation_id);
+        store[BUILTIN_AGENT].delete(conversation_id);
       }
       break;
     default:
@@ -158,8 +159,8 @@ const getDraft = <K extends DraftConversationType>(
       return store.acp.get(conversation_id) as Extract<Draft, { _type: K }>;
     case 'codex':
       return store.codex.get(conversation_id) as Extract<Draft, { _type: K }>;
-    case 'aionrs':
-      return store.aionrs.get(conversation_id) as Extract<Draft, { _type: K }>;
+    case BUILTIN_AGENT:
+      return store[BUILTIN_AGENT].get(conversation_id) as Extract<Draft, { _type: K }>;
     default:
       return undefined;
   }

@@ -14,7 +14,7 @@ The app runs the mu of the same repository, so install the root first:
 npm install --ignore-scripts               # at the repository root
 cd desktop
 bun install
-node scripts/prepareAioncore.js            # once: the local service the app starts (see below)
+node scripts/prepareBackend.js            # once: the local service the app starts (see below)
 KYRN_ROOT="$(cd .. && pwd)" bun run start
 ```
 
@@ -22,7 +22,7 @@ KYRN_ROOT="$(cd .. && pwd)" bun run start
 
 ### The local service
 
-The app also starts AionCore, a separate program it inherited from AionUi. `node scripts/prepareAioncore.js` downloads the version pinned in `package.json` (`aioncoreVersion`) into `resources/bundled-aioncore/`. To use a binary of your own, set `MU_BACKEND_BIN` to its path; failing both, the app looks for `aioncore` on `PATH`.
+The app also starts its backend, a separate local service (the `aioncore` binary). `node scripts/prepareBackend.js` downloads the version pinned in `package.json` (`backendVersion`) into `resources/bundled-backend/`. To use a binary of your own, set `MU_BACKEND_BIN` to its path; failing both, the app looks for `aioncore` on `PATH`.
 
 ## Checks
 

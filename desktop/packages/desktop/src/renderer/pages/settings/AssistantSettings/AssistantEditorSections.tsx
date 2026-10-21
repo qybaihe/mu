@@ -23,6 +23,7 @@ import IdentitySection from './editor/IdentitySection';
 import PromptsSection from './editor/PromptsSection';
 import DefaultsSection from './editor/DefaultsSection';
 import RulesSection from './editor/RulesSection';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 export type AssistantEditorSectionsProps = {
   editor: AssistantEditorViewModel;
@@ -162,7 +163,7 @@ const AssistantEditorSections: React.FC<AssistantEditorSectionsProps> = ({ edito
     [currentAgentRuntimeCatalog]
   );
   const modelOptions = useMemo(() => {
-    if (editAgentRuntimeKey === 'aionrs') {
+    if (editAgentRuntimeKey === BUILTIN_AGENT) {
       return providerModelOptions;
     }
 

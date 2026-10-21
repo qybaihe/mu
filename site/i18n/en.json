@@ -30,7 +30,7 @@
     "theme_light": "Light",
     "theme_dark": "Dark",
     "toc": "On this page",
-    "footer_credit": "The command line is built on <a href=\"https://github.com/earendil-works/pi\">pi</a> (MIT) and the desktop app on <a href=\"https://github.com/iOfficeAI/AionUi\">AionUi</a> (Apache-2.0). Thanks to the authors of both.",
+    "footer_credit": "mu is built on <a href=\"https://github.com/earendil-works/pi\">pi</a> (MIT). Thanks to its authors.",
     "footer_license": "License",
     "replay": "↻ Replay",
     "replay_label": "Replay this part",
@@ -134,7 +134,7 @@
       { "h3": "Fewer summaries", "p": "When the context grows, stale tool results are dropped instead of summarized, and summary-free compaction is an option. Before the cache expires, mu judges whether a refresh is worth it." },
       { "h3": "No locked-in judge", "p": "{points} decision points, each with its own switch and its own judge: the free Jev, the local Laya or any LLM." },
       { "h3": "No judge key needed to start", "p": "Without a judge key, the free Jev on OpenCode Zen answers, and mu says so once a day." },
-      { "h3": "No new foundation", "p": "The command line is built on pi, with its models, extensions, skills and session tree; the desktop app is built on AionUi." }
+      { "h3": "No new foundation", "p": "The command line is built on pi, with its models, extensions, skills and session tree. The desktop app runs the same sessions." }
     ],
     "principles_more": "What each of the {points} decision points asks and changes",
     "more_label": "ALSO",

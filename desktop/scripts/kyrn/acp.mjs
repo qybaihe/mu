@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Starts mu's ACP adapter (packages/desktop/src/process/agent/kyrn/index.ts) with Node alone: no bash.
 //
-// AionCore runs it as the command of mu's registration. On Windows that command is acp.cmd beside this file (a
-// registration command has to be something Windows can start: AionCore wraps a .cmd in `cmd /d /c`). macOS and
+// The backend runs it as the command of mu's registration. On Windows that command is acp.cmd beside this file (a
+// registration command has to be something Windows can start: the backend wraps a .cmd in `cmd /d /c`). macOS and
 // Linux keep the bash `acp`, whose path is the registration's key there: changing it would register mu a second time.
 //
 // The adapter finds the harness itself (process/agent/kyrn/harness.ts): KYRN_ROOT or MU_ROOT, a checkout beside the

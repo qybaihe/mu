@@ -197,7 +197,7 @@
   background: var(--color-bg-popup);
   /* Same elevation token the app's other overlays use, so the card matches them
      and picks up the dark-theme variant automatically. */
-  box-shadow: var(--aion-overlay-shadow);
+  box-shadow: var(--mu-overlay-shadow);
   pointer-events: auto;
   cursor: pointer;
 }

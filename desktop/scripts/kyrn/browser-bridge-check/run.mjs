@@ -6,7 +6,7 @@
  *
  * What runs: an Electron main with ONLY the bridge and one window of `<webview>` tabs (`app-main.ts`, bundled on
  * the fly with esbuild), and the harness's own client, session and loop (`driver.mts`, run by Node itself with the
- * harness's source resolver) with a scripted judge. No AionCore, no conversations, no model, no judge service.
+ * harness's source resolver) with a scripted judge. No backend, no conversations, no model, no judge service.
  * `HOME` is a throw-away directory for both, so the advert is written to and found in a throw-away mu home, and the
  * real `~/.mu` is never touched. Electron needs the window server: it cannot start inside a sandboxed shell.
  *

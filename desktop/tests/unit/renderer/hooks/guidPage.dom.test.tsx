@@ -22,48 +22,29 @@ const {
   sendMock,
   navigateMock,
   muStartMode,
-} = vi.hoisted(() => ({
-  /** The mode the settings say mu starts a new conversation in. */
-  muStartMode: { value: undefined as string | undefined },
-  modelSelectionMock: {
-    modelList: [],
-    isGoogleAuth: false,
-    current_model: undefined,
-    setCurrentModel: vi.fn(),
-    resetCurrentModel: vi.fn(),
-  },
-  agentSelectionMock: {
-    selectedAssistantId: 'bare-aionrs',
-    selectedAssistant: {
-      id: 'bare-aionrs',
-      source: 'generated',
-      name: 'Aion CLI',
-      name_i18n: {},
-      description_i18n: {},
-      enabled: true,
-      sort_order: 10,
-      preset_agent_type: 'aionrs',
-      enabled_skills: [],
-      custom_skill_names: [],
-      disabled_builtin_skills: [],
-      context_i18n: {},
-      prompts: [],
-      prompts_i18n: {},
-      models: [],
-      agent_status: 'online',
-      team_selectable: true,
-      deletable: false,
+} = await vi.hoisted(async () => {
+  const { BUILTIN_AGENT } = await import('@/common/platform/backendNames');
+  return {
+    /** The mode the settings say mu starts a new conversation in. */
+    muStartMode: { value: undefined as string | undefined },
+    modelSelectionMock: {
+      modelList: [],
+      isGoogleAuth: false,
+      current_model: undefined,
+      setCurrentModel: vi.fn(),
+      resetCurrentModel: vi.fn(),
     },
-    assistants: [
-      {
-        id: 'bare-aionrs',
+    agentSelectionMock: {
+      selectedAssistantId: `bare-${BUILTIN_AGENT}`,
+      selectedAssistant: {
+        id: `bare-${BUILTIN_AGENT}`,
         source: 'generated',
-        name: 'Aion CLI',
+        name: 'Built-in agent',
         name_i18n: {},
         description_i18n: {},
         enabled: true,
         sort_order: 10,
-        preset_agent_type: 'aionrs',
+        preset_agent_type: BUILTIN_AGENT,
         enabled_skills: [],
         custom_skill_names: [],
         disabled_builtin_skills: [],
@@ -75,59 +56,81 @@ const {
         team_selectable: true,
         deletable: false,
       },
-    ],
-    selectedAssistantBackend: 'aionrs',
-    selectedAssistantAvailable: true,
-    selectedMode: 'default',
-    setSelectedMode: vi.fn(),
-    selectedAcpModel: null,
-    setSelectedAcpModel: vi.fn(),
-    setSelectedThoughtLevelValue: vi.fn(),
-    currentAcpCachedModelInfo: null,
-    defaultAssistantId: 'bare-aionrs',
-    setSelectedAssistantId: vi.fn(),
-  },
-  guidInputMock: {
-    input: '',
-    setInput: vi.fn(),
-    files: [],
-    setFiles: vi.fn(),
-    dir: '',
-    setDir: vi.fn(),
-    loading: false,
-    setLoading: vi.fn(),
-    isInputFocused: false,
-    isFileDragging: false,
-    dragHandlers: {},
-    onPaste: vi.fn(),
-    handleTextareaFocus: vi.fn(),
-    handleTextareaBlur: vi.fn(),
-    handleFilesUploaded: vi.fn(),
-    handleRemoveFile: vi.fn(),
-  },
-  locationMock: {
-    state: null as unknown,
-    key: 'guid-location',
-    pathname: '/guid',
-    search: '',
-    hash: '',
-  },
-  capturedGuidActionRowProps: [] as Array<Record<string, unknown>>,
-  capturedAssistantSelectionAreaProps: [] as Array<Record<string, unknown>>,
-  capturedGuidInputCardProps: [] as Array<Record<string, unknown>>,
-  capturedGuidSendDeps: [] as Array<Record<string, unknown>>,
-  resolveGuidAssistantDefaultsMock: vi.fn(() => ({
-    disabledBuiltinSkillIds: [],
-    skillIds: [],
-    mcpIds: [],
-  })),
-  sendMock: {
-    handleSend: vi.fn(),
-    sendMessageHandler: vi.fn(),
-    isButtonDisabled: false,
-  },
-  navigateMock: vi.fn(),
-}));
+      assistants: [
+        {
+          id: `bare-${BUILTIN_AGENT}`,
+          source: 'generated',
+          name: 'Built-in agent',
+          name_i18n: {},
+          description_i18n: {},
+          enabled: true,
+          sort_order: 10,
+          preset_agent_type: BUILTIN_AGENT,
+          enabled_skills: [],
+          custom_skill_names: [],
+          disabled_builtin_skills: [],
+          context_i18n: {},
+          prompts: [],
+          prompts_i18n: {},
+          models: [],
+          agent_status: 'online',
+          team_selectable: true,
+          deletable: false,
+        },
+      ],
+      selectedAssistantBackend: BUILTIN_AGENT,
+      selectedAssistantAvailable: true,
+      selectedMode: 'default',
+      setSelectedMode: vi.fn(),
+      selectedAcpModel: null,
+      setSelectedAcpModel: vi.fn(),
+      setSelectedThoughtLevelValue: vi.fn(),
+      currentAcpCachedModelInfo: null,
+      defaultAssistantId: `bare-${BUILTIN_AGENT}`,
+      setSelectedAssistantId: vi.fn(),
+    },
+    guidInputMock: {
+      input: '',
+      setInput: vi.fn(),
+      files: [],
+      setFiles: vi.fn(),
+      dir: '',
+      setDir: vi.fn(),
+      loading: false,
+      setLoading: vi.fn(),
+      isInputFocused: false,
+      isFileDragging: false,
+      dragHandlers: {},
+      onPaste: vi.fn(),
+      handleTextareaFocus: vi.fn(),
+      handleTextareaBlur: vi.fn(),
+      handleFilesUploaded: vi.fn(),
+      handleRemoveFile: vi.fn(),
+    },
+    locationMock: {
+      state: null as unknown,
+      key: 'guid-location',
+      pathname: '/guid',
+      search: '',
+      hash: '',
+    },
+    capturedGuidActionRowProps: [] as Array<Record<string, unknown>>,
+    capturedAssistantSelectionAreaProps: [] as Array<Record<string, unknown>>,
+    capturedGuidInputCardProps: [] as Array<Record<string, unknown>>,
+    capturedGuidSendDeps: [] as Array<Record<string, unknown>>,
+    resolveGuidAssistantDefaultsMock: vi.fn(() => ({
+      disabledBuiltinSkillIds: [],
+      skillIds: [],
+      mcpIds: [],
+    })),
+    sendMock: {
+      handleSend: vi.fn(),
+      sendMessageHandler: vi.fn(),
+      isButtonDisabled: false,
+    },
+    navigateMock: vi.fn(),
+  };
+});
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -275,6 +278,7 @@ vi.mock('swr', async () => {
 });
 
 import GuidPage from '@/renderer/pages/guid/GuidPage';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 const guidInputCardProps = {
   input: 'Existing Guid draft\nCreate with /cron in mu',
@@ -320,19 +324,19 @@ describe('GuidPage', () => {
     nativeHost.enabled = undefined;
     nativeHost.deps.length = 0;
     agentSelectionMock.currentAcpCachedModelInfo = null;
-    agentSelectionMock.selectedAssistantBackend = 'aionrs';
+    agentSelectionMock.selectedAssistantBackend = BUILTIN_AGENT;
     agentSelectionMock.setSelectedAcpModel.mockReset();
     agentSelectionMock.setSelectedMode.mockReset();
     agentSelectionMock.assistants = [
       {
-        id: 'bare-aionrs',
+        id: `bare-${BUILTIN_AGENT}`,
         source: 'generated',
-        name: 'Aion CLI',
+        name: 'Built-in agent',
         name_i18n: {},
         description_i18n: {},
         enabled: true,
         sort_order: 10,
-        preset_agent_type: 'aionrs',
+        preset_agent_type: BUILTIN_AGENT,
         enabled_skills: [],
         custom_skill_names: [],
         disabled_builtin_skills: [],
@@ -356,7 +360,10 @@ describe('GuidPage', () => {
       view.unmount();
     }
     // The classic send got what it always got.
-    expect(capturedGuidSendDeps.at(-1)).toMatchObject({ selectedAssistantId: 'bare-aionrs', selectedMode: '' });
+    expect(capturedGuidSendDeps.at(-1)).toMatchObject({
+      selectedAssistantId: `bare-${BUILTIN_AGENT}`,
+      selectedMode: '',
+    });
   });
 
   it('starts a native conversation while the native host is on, with the page’s folder, mode and model', () => {
@@ -547,14 +554,14 @@ describe('GuidPage', () => {
   it('offers no example prompts under the input, even when the assistant suggests some', () => {
     agentSelectionMock.assistants = [
       {
-        id: 'bare-aionrs',
+        id: `bare-${BUILTIN_AGENT}`,
         source: 'generated',
-        name: 'Aion CLI',
+        name: 'Built-in agent',
         name_i18n: {},
         description_i18n: {},
         enabled: true,
         sort_order: 10,
-        preset_agent_type: 'aionrs',
+        preset_agent_type: BUILTIN_AGENT,
         enabled_skills: [],
         custom_skill_names: [],
         disabled_builtin_skills: [],
@@ -581,14 +588,14 @@ describe('GuidPage', () => {
   it('does not seed skill defaults from the assistant list while detail is loading', async () => {
     agentSelectionMock.assistants = [
       {
-        id: 'bare-aionrs',
+        id: `bare-${BUILTIN_AGENT}`,
         source: 'generated',
-        name: 'Aion CLI',
+        name: 'Built-in agent',
         name_i18n: {},
         description_i18n: {},
         enabled: true,
         sort_order: 10,
-        preset_agent_type: 'aionrs',
+        preset_agent_type: BUILTIN_AGENT,
         enabled_skills: ['stale-list-skill'],
         custom_skill_names: [],
         disabled_builtin_skills: ['stale-disabled-builtin'],
@@ -614,7 +621,7 @@ describe('GuidPage', () => {
     });
   });
 
-  it('applies an aionrs assistant default model after provider models load', async () => {
+  it('applies a built-in agent assistant default model after provider models load', async () => {
     swrMock.useSWRMock.mockReturnValue({ data: assistantDetailFixture });
     resolveGuidAssistantDefaultsMock.mockReturnValue({
       modelId: 'gpt-4.1',

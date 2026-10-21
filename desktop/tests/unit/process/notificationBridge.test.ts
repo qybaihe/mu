@@ -112,7 +112,7 @@ describe('showNotification', () => {
     expect(clickedEmit).toHaveBeenCalledWith({ conversation_id: 'c1' });
   });
 
-  it('says a click is on a native conversation, whose page is not an AionCore conversation’s', async () => {
+  it('says a click is on a native conversation, whose page is not a backend conversation’s', async () => {
     setNotificationMainWindow(makeWindow(false) as never);
     await showNotification({ title: 'mu', body: 'done', conversation_id: 'n1', native: true });
 

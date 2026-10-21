@@ -184,7 +184,7 @@ setTimeout(() => {}, 5000);
   });
 
   it('survives logging to an error output nobody reads any more', async () => {
-    // AionCore stops reading the adapter's error output at the first line that is not UTF-8, and closes it: a write
+    // The backend stops reading the adapter's error output at the first line that is not UTF-8, and closes it: a write
     // after that fails (EPIPE). The adapter runs in a process of its own here, whose error output is closed at once.
     const dir = mkdtempSync(join(tmpdir(), 'kyrn-rpc-'));
     dirs.push(dir);

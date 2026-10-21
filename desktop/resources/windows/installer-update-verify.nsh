@@ -191,28 +191,28 @@ Var /GLOBAL MuActiveMarkerResult
   !insertmacro MU_VERIFY_REQUIRED_FILE "$INSTDIR\resources\app.asar" "resources\app.asar"
 !macroend
 
-!macro MU_VERIFY_BUNDLED_AIONCORE_RESOURCES _RUNTIME_KEY
+!macro MU_VERIFY_BUNDLED_BACKEND_RESOURCES _RUNTIME_KEY
   InitPluginsDir
-  File "/oname=$PLUGINSDIR\verify-bundled-aioncore-install.ps1" "${PROJECT_DIR}\resources\windows\support\verify-bundled-aioncore-install.ps1"
-  nsExec::Exec `"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\verify-bundled-aioncore-install.ps1" -InstallDir "$INSTDIR" -RuntimeKey "${_RUNTIME_KEY}" -LogPath "$MuSessionLogPath"`
+  File "/oname=$PLUGINSDIR\verify-bundled-backend-install.ps1" "${PROJECT_DIR}\resources\windows\support\verify-bundled-backend-install.ps1"
+  nsExec::Exec `"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\verify-bundled-backend-install.ps1" -InstallDir "$INSTDIR" -RuntimeKey "${_RUNTIME_KEY}" -LogPath "$MuSessionLogPath"`
   Pop $MuVerifyResourceResult
 
   ${If} $MuVerifyResourceResult != 0
     !insertmacro MU_FAIL_UX \
-      "${MU_E_BUNDLED_AIONCORE_INCOMPLETE}" \
-      "event=session-end result=fail code=${MU_E_BUNDLED_AIONCORE_INCOMPLETE} detail=bundled-aioncore-incomplete runtime=${_RUNTIME_KEY} result=$MuVerifyResourceResult" \
-      "${MU_MSG_BUNDLED_AIONCORE_INCOMPLETE_ZH}" \
-      "${MU_MSG_BUNDLED_AIONCORE_INCOMPLETE_EN}" \
-      "${MU_MSG_BUNDLED_AIONCORE_INCOMPLETE_ACTION_ZH}" \
-      "${MU_MSG_BUNDLED_AIONCORE_INCOMPLETE_ACTION_EN}" \
-      "bundled-aioncore-incomplete runtime=${_RUNTIME_KEY} result=$MuVerifyResourceResult instDir=$INSTDIR" \
-      "bundled-aioncore-incomplete runtime=${_RUNTIME_KEY} result=$MuVerifyResourceResult instDir=$INSTDIR"
+      "${MU_E_BUNDLED_BACKEND_INCOMPLETE}" \
+      "event=session-end result=fail code=${MU_E_BUNDLED_BACKEND_INCOMPLETE} detail=bundled-backend-incomplete runtime=${_RUNTIME_KEY} result=$MuVerifyResourceResult" \
+      "${MU_MSG_BUNDLED_BACKEND_INCOMPLETE_ZH}" \
+      "${MU_MSG_BUNDLED_BACKEND_INCOMPLETE_EN}" \
+      "${MU_MSG_BUNDLED_BACKEND_INCOMPLETE_ACTION_ZH}" \
+      "${MU_MSG_BUNDLED_BACKEND_INCOMPLETE_ACTION_EN}" \
+      "bundled-backend-incomplete runtime=${_RUNTIME_KEY} result=$MuVerifyResourceResult instDir=$INSTDIR" \
+      "bundled-backend-incomplete runtime=${_RUNTIME_KEY} result=$MuVerifyResourceResult instDir=$INSTDIR"
   ${EndIf}
 !macroend
 
 !macro customInstall
   !insertmacro MU_VERIFY_CORE_APP_FILES
-  !insertmacro MU_VERIFY_BUNDLED_AIONCORE_RESOURCES "${MU_RUNTIME_KEY}"
+  !insertmacro MU_VERIFY_BUNDLED_BACKEND_RESOURCES "${MU_RUNTIME_KEY}"
   !insertmacro MU_LOG_EVENT "verify-install ok instDir=$INSTDIR"
   !insertmacro MU_CLEAR_ACTIVE_INSTALLER_MARKER
   !insertmacro MU_SESSION_SUCCESS

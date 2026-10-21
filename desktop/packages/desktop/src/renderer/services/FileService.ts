@@ -195,12 +195,12 @@ export function getFileExtension(file_name: string): string {
   return lastDotIndex > -1 ? file_name.substring(lastDotIndex).toLowerCase() : '';
 }
 
-import { AIONCORE_UPLOAD_SUFFIX } from '@/common/platform/aioncoreNames';
+import { BACKEND_UPLOAD_SUFFIX } from '@/common/platform/backendNames';
 import { formatByteSize } from '@/renderer/services/i18n/format';
 
-// The name a stored file was uploaded with: without the suffix AionCore adds to it.
+// The name a stored file was uploaded with: without the suffix the backend adds to it.
 export function cleanUploadTimestamp(file_name: string): string {
-  return file_name.replace(AIONCORE_UPLOAD_SUFFIX, '$1');
+  return file_name.replace(BACKEND_UPLOAD_SUFFIX, '$1');
 }
 
 // 从文件路径获取清理后的文件名（用于UI显示）
@@ -306,7 +306,7 @@ class FileServiceClass {
    * Every file is uploaded — even Electron OS drags that expose an absolute
    * `path`. The chat send contract sends attachments as `upload` refs, and the
    * backend rejects any upload path that is not under its managed upload
-   * directory (AionCore's temporary folder). Passing the raw device path (the old
+   * directory (the backend's temporary folder). Passing the raw device path (the old
    * behaviour) now fails with "uploaded file path is outside the managed upload
    * directory", so we always route through the upload endpoint to obtain a
    * managed path.

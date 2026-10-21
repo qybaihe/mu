@@ -1,13 +1,13 @@
 /**
  * HTTP/WS bridge factory — drop-in replacement for bridge.buildProvider / bridge.buildEmitter
- * that routes calls to aioncore via REST API and WebSocket.
+ * that routes calls to the backend via REST API and WebSocket.
  *
  * Exported helpers produce objects with the same shape as the local IPC bridge,
  * so existing renderer code works without changes.
  */
 
 import { showAsMu } from '../kyrn/displayName';
-import { fromAionCoreCode } from '../platform/aioncoreNames';
+import { fromBackendCode } from '../platform/backendNames';
 import { refreshSession, WS_CLOSE_POLICY_VIOLATION } from './sessionRefresh';
 
 // ---------------------------------------------------------------------------
@@ -88,7 +88,7 @@ function getWsUrl(): string {
 export class BackendHttpError extends Error {
   readonly status: number;
   /**
-   * Machine-readable error code from the backend `ErrorResponse.code` by the app's name (`fromAionCoreCode`), or `''`
+   * Machine-readable error code from the backend's `ErrorResponse.code` by the app's name (`fromBackendCode`), or `''`
    * when parse failed.
    */
   readonly code: string;
@@ -110,7 +110,7 @@ export class BackendHttpError extends Error {
     let details: unknown;
     if (body && typeof body === 'object') {
       const b = body as { code?: unknown; error?: unknown; details?: unknown };
-      if (typeof b.code === 'string') code = fromAionCoreCode(b.code);
+      if (typeof b.code === 'string') code = fromBackendCode(b.code);
       if (typeof b.error === 'string') backendMessage = b.error;
       details = b.details;
     } else if (typeof body === 'string') {
@@ -204,8 +204,8 @@ function isAuthEndpoint(path: string): boolean {
  * which enforces no CSRF check here — accepts the request unchanged.
  *
  * It exists as the single seam every state-changing request would call for its
- * token, so restoring CSRF in M7 (and the aionpro superset, whose backend does
- * enforce the double-submit check) only swaps this body — no caller changes.
+ * token, so restoring CSRF in M7 (and a hosted build, whose backend does enforce
+ * the double-submit check) only swaps this body — no caller changes.
  *
  * Returns '' — always, for now.
  */
