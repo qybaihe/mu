@@ -3,6 +3,7 @@
   "label": "简体中文",
   "path": "",
   "recording": "zh",
+  "shots": "zh",
   "meta": {
     "title": "mu · Only what's needed.",
     "description": "mu 是一个编码代理：小而快的判定模型 Jev 每一轮替大模型做几十个小决定，只给任务最需要的上下文。命令行和桌面端，开源。",
@@ -51,12 +52,14 @@
     "dl_mac_intel": "Intel",
     "app_hint": "macOS 版已签名并经 Apple 公证；Windows 版暂未签名，SmartScreen 会提示。应用自带 mu，不用另装 Node.js。ARM 版 Windows、Linux 和全部安装包见 <a href=\"https://github.com/qybaihe/mu/releases\">Releases</a>。",
     "meta": "macOS · Windows · Linux · 开源（MIT + Apache-2.0）· 基于 pi",
-    "cue": "看一轮真实的会话",
-    "story_label": "MU · 一轮真实的会话",
+    "app_alt": "修好一个 bug 之后的 mu 桌面端：中间是对话，右侧判定页逐条列出 Jev 的判定、判定点和耗时，底部是内核状态栏",
+    "app_caption": "桌面端：判定页列出每一次判定的判定点和耗时。",
+    "cue": "看一轮会话",
+    "story_label": "MU · 一轮会话",
     "story_h2": "先判断，再动手",
     "story_intro": "写个方案，上下文里却背着一整套工具；模型越来越会写代码，人却越来越看不懂它在说什么。mu 的办法是把「判断」和「干活」分开：判断交给 Jev，干活交给大模型，讲话交给会说人话的模型。",
-    "stage_caption": "真实录屏：mu 0.1.8，判定器是免费的 Jev，模型是 Claude Sonnet 4.6。",
-    "swarm_alt": "桌面端的蜂群页：四只蜂分头调研，箭头是 Jev 判定后确认送达的信息",
+    "stage_caption": "在 mu 里录制，判定器是 Jev。Jev 的判定和耗时都是真实的；写代码的模型按脚本回答，所以每次播放都一样。",
+    "swarm_alt": "桌面端的蜂群页：三只蜂同时调查一个 bug，箭头是 Jev 判定后确认送达的信息",
     "swarm_caption": "桌面端的蜂群页：箭头是 Jev 判过、确认送达的信息。",
     "board_alt": "人话看板：在做什么、做到哪了，下面是一行一行的流水",
     "board_caption": "人话看板：在做什么、做到哪了，下面是一行行流水。",
@@ -71,14 +74,14 @@
         ],
         "verdict": true,
         "after": [
-          "图里是一轮真实的会话。「{prompt}」进来，不到一秒 Jev 就给出判定：多步任务，全力投入。用不到的技能和 MCP 服务器不进上下文，需要时才打开。"
+          "这一轮里，「{prompt}」进来，不到一秒 Jev 就给出判定：多步任务，全力投入。用不到的技能和 MCP 服务器不进上下文，需要时才打开。"
         ]
       },
       {
         "seg": "fail",
         "label": "工具返回的时候",
         "h2": "输出先过一遍 Jev",
-        "caption": "跑测试：4 个用例挂了 2 个。",
+        "caption": "跑测试：13 个用例挂了 1 个。",
         "paras": [
           "一次测试、一次搜索，动辄几百行。Jev 逐块判断哪些现在有用：失败的用例留下，一遍遍刷屏的日志去掉。没进上下文的部分归档，留一个指针，需要时再取回。",
           "网页和 MCP 返回的内容里，冲着模型来的指令会先被拦下。"
@@ -88,7 +91,7 @@
         "seg": "edit",
         "label": "动手之前",
         "h2": "该停的停，不该问的不问",
-        "caption": "找到原因，改一行正则，没有回头问你。",
+        "caption": "找到原因：一分钟被定义成了一秒。改好这一行，没有回头问你。",
         "paras": [
           "每条命令执行之前，规则先标出有风险的操作，Jev 再确认这是你要的、没有越过你说过的限制。权限分三档：<b>完全访问</b>、<b>Jev 审批</b>、<b>最小权限</b>，随时切换。在「Jev 审批」下，任务明显需要的由 Jev 直接放行，其余的才来问你。"
         ]
@@ -97,7 +100,7 @@
         "seg": "done",
         "label": "一轮结束的时候",
         "h2": "说做完了，要有证据",
-        "caption": "重新跑一遍，4 个全过，再说清楚改了什么。",
+        "caption": "重新跑一遍，13 个全过，再说清楚改了什么。",
         "paras": [
           "模型说「好了」的时候，mu 会看这一轮有没有验证过，中途有没有跑偏，要不要退回检查点重来。",
           "用 <code>/goal &lt;条件&gt;</code> 给一个目标，它会一直干到条件成立才停。做没做完由大模型核对，Jev 兜底；同一个错反复出现时，Jev 判断这是不是一条死路。"
@@ -130,7 +133,7 @@
       { "h3": "不把工具全塞进上下文", "p": "开口第一句先判断：闲聊、追问，还是要动手的活。用不到的技能和 MCP 服务器不进上下文。" },
       { "h3": "不靠写摘要来压缩", "p": "上下文变长时，过期的结果直接丢，不用写摘要；缓存快过期时，判断值不值得续一次。" },
       { "h3": "不锁死判定器", "p": "{points} 个判定点，每个都能单独开关、单独换判定器：免费的 Jev、本地的 Laya，或任意一个大模型。" },
-      { "h3": "不要求先配 key", "p": "没配判定器的 key 时，默认由 OpenCode Zen 上免费的 Jev 回答，每天提醒一次。" },
+      { "h3": "判定器不要求先配 key", "p": "没配判定器的 key 时，默认由 OpenCode Zen 上免费的 Jev 回答，每天提醒一次。" },
       { "h3": "不另起炉灶", "p": "命令行基于 pi，pi 的模型、扩展、技能和会话树都在；桌面端基于 AionUi 改造。" }
     ],
     "principles_more": "{points} 个判定点各自问什么、改变什么",
@@ -151,7 +154,7 @@
       { "h3": "Discussions", "p": "用法、想法、你做的东西，都可以来聊。", "href": "https://github.com/qybaihe/mu/discussions" },
       { "h3": "参与贡献", "p": "修 bug、提新判定点、测判定器、做翻译，从 good first issue 开始。", "href": "https://github.com/qybaihe/mu/blob/main/CONTRIBUTING.md" }
     ],
-    "key_note": "不配 key 也能用；想换成自己的 TypeSafe key 或别的判定器，见<a href=\"{decisions}#judges\">判定器</a>。"
+    "key_note": "判定器不配 key 也能用：Jev 可以免费起步。写代码的模型用你自己的订阅或 API key。想换成自己的 TypeSafe key 或别的判定器，见<a href=\"{decisions}#judges\">判定器</a>。"
   },
   "decisions": {
     "title": "判定点",

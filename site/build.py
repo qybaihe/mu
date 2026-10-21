@@ -20,8 +20,8 @@ The site's own words and assets:
   content/decisions.<lang>.json    the decision point page: explanations and one example per point
   content/docs/<lang>/*.md         the documentation pages (a missing one falls back to English)
   content/docs-ui.<lang>.json      the words around the documentation
-  recording/                       the terminal replay on the home page: a real mu 0.1.8 session. Its verdict line
-                                   reads "full effort", the command line's current word (the capture said "heavy gear")
+  recording/                       the terminal replay on the home page: mu 0.1.10 in ~/code/relay with the free Jev.
+                                   Jev's verdicts and timings are real; the coding model's replies are scripted
   static/                          shared CSS and JS, _headers and _redirects
   assets/                          icons, the link preview image, screenshots and the folding video
 
@@ -74,14 +74,18 @@ for _slug, _ in DOCS:
 # Images the README links in docs/readme/, as the site publishes them. The charts are copied from the repository;
 # the screenshots are smaller WebP copies kept in assets/.
 README_ASSETS = {
-    "swarm.png": "assets/swarm.webp",
-    "board.png": "assets/board.webp",
+    "swarm.png": "assets/swarm.en.webp",
+    "board.png": "assets/board.en.webp",
+    "swarm.zh-CN.png": "assets/swarm.zh.webp",
+    "board.zh-CN.png": "assets/board.zh.webp",
     "bench-test-log-judge-light.svg": "assets/readme/bench-test-log-judge-light.svg",
     "bench-test-log-judge-dark.svg": "assets/readme/bench-test-log-judge-dark.svg",
     "bench-test-log-repeats-light.svg": "assets/readme/bench-test-log-repeats-light.svg",
     "bench-test-log-repeats-dark.svg": "assets/readme/bench-test-log-repeats-dark.svg",
 }
-SITE_ASSETS = ["icon-256.png", "favicon-64.png", "apple-touch-icon.png", "og.jpg", "swarm.webp", "board.webp"]
+# The desktop app's screenshots come in the app's English and Chinese (a language's "shots" picks one).
+SHOTS = [f"{name}.{shots}.webp" for name in ("app-light", "app-dark", "swarm", "board") for shots in ("en", "zh")]
+SITE_ASSETS = ["icon-256.png", "favicon-64.png", "apple-touch-icon.png", "og.jpg", *SHOTS]
 # The download buttons, by the end of an installer's name (mu-0.1.8-mac-arm64.dmg).
 DOWNLOADS = ["mac-arm64.dmg", "mac-x64.dmg", "win-x64.exe", "linux-amd64.deb"]
 md = MarkdownIt("commonmark", {"html": True}).enable("table")
@@ -223,9 +227,16 @@ def load_recording(name):
                 return i
         raise SystemExit(f"{name}: no frame contains {needle!r}")
 
-    verdict = first("◆ jev")
-    bash1 = first("$ cd", verdict)
-    edit = first("edit ~/", bash1)
+    def first_line(prefix, start=0):
+        """The first frame with a line that starts with prefix: a tool's own line, not prose that mentions it."""
+        for i in range(start, len(text)):
+            if any(line.lstrip().startswith(prefix) for line in text[i].split("\n")):
+                return i
+        raise SystemExit(f"{name}: no frame has a line starting with {prefix!r}")
+
+    verdict = first("◆ Jev")
+    bash1 = first("$ npm test", verdict)
+    edit = first_line("edit ", bash1)
     passed = first("fail 0", edit)
     segments = {
         "start": [replay["marks"]["welcome"], bash1 - 1],

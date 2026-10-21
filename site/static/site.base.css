@@ -161,7 +161,8 @@ h1, h2 { word-break: keep-all; overflow-wrap: anywhere; }
   text-wrap: balance;
 }
 .hero h1 em { font-style: normal; color: var(--judge); }
-.hero h1 .ch { display: inline-block; }
+/* Inline, not inline-block: text-wrap: balance over inline-block characters crashes Chrome once the headline wraps (phone widths). */
+.hero h1 .ch { position: relative; }
 .lead { max-width: 660px; margin: 22px auto 0; font-size: 18px; color: var(--muted); }
 .caret {
   display: inline-block; width: 0.55em; height: 1.1em; margin-left: 2px; vertical-align: -0.18em;
@@ -218,6 +219,10 @@ html:not(.js) .tab[aria-selected="true"]::after { content: ""; position: absolut
 .hint a { color: var(--text); text-underline-offset: 3px; text-decoration-color: var(--line-strong); }
 .downloads { display: flex; flex-wrap: wrap; gap: 10px; }
 .meta { margin: 22px 0 0; font-size: 13px; color: var(--faint); }
+/* The desktop app under the hero, in the page's theme */
+.app-shot { max-width: 1080px; margin: 56px auto 0; }
+.app-shot img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); box-shadow: var(--shadow-3); }
+.app-shot figcaption { margin-top: 14px; font-size: 13px; color: var(--faint); }
 
 /* Story: sticky stage on the left, chapters on the right */
 .story-head { padding-top: 96px; }
@@ -348,7 +353,7 @@ footer { margin-top: 112px; border-top: 1px solid var(--line); padding: 36px 0 4
 @keyframes rise { from { opacity: 0; transform: translateY(18px); } }
 @keyframes drop { from { opacity: 0; transform: translateY(-14px); } }
 @keyframes pop { from { opacity: 0; transform: translateY(14px) scale(0.82); filter: blur(6px); } }
-@keyframes char-rise { from { opacity: 0; transform: translateY(0.45em); filter: blur(8px); } }
+@keyframes char-rise { from { opacity: 0; top: 0.45em; filter: blur(8px); } }
 .motion .motion .cue .down { animation: bob 1.8s ease-in-out infinite; }
 @keyframes bob { 50% { transform: translateY(4px); } }
 .motion [data-reveal] { opacity: 0; transform: translateY(22px); transition: opacity 760ms var(--ease), transform 760ms var(--ease); transition-delay: var(--d, 0ms); }
@@ -362,7 +367,7 @@ footer { margin-top: 112px; border-top: 1px solid var(--line); padding: 36px 0 4
   html.js .chapter .inline-frame { display: block; margin: 24px 0 8px; }
   html.js .chapter .inline-frame .frame { opacity: 1; visibility: visible; transform: none; }
   .chapter { min-height: 0; padding-bottom: 56px; }
-  .motion .story .chapter:not(.is-current) { opacity: 1; }
+  .motion .story:not(.single) .chapter:not(.is-current) { opacity: 1; }
   .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 640px) {
@@ -370,6 +375,8 @@ footer { margin-top: 112px; border-top: 1px solid var(--line); padding: 36px 0 4
   .nav { padding: 10px 16px 0; top: 8px; }
   .announce a { justify-content: flex-start; text-align: left; }
   .hero { padding-top: 60px; padding-bottom: 28px; }
+  .app-shot { margin-top: 36px; }
+  .app-shot img { border-radius: 8px; }
   .hero-icon { width: 84px; height: 84px; margin-bottom: 24px; }
   .hero h1 { font-size: clamp(32px, 9.4vw, 40px); }
   .verdict { font-size: 12px; }
