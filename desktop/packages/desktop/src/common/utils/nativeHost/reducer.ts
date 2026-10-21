@@ -190,7 +190,8 @@ function liveWithout(live: ViewLive, key: 'classifying' | 'progress' | 'retry' |
 
 /**
  * What the judgment layer said it was working out (Jev reviewing a command, choosing skills) is over once the model
- * writes again or a tool starts: the line above the send box then says what happens now, not a review that ended.
+ * writes again, a tool starts or mu asks the person: the line above the send box then says what happens now, not a
+ * review that ended. A judge that failed (rate limited, say) ends its review with mu asking instead.
  */
 function stepOver(view: NativeView): NativeView {
   return view.live.progress ? withLive(view, liveWithout(view.live, 'progress')) : view;
@@ -456,7 +457,8 @@ function openDialog(view: NativeView, record: PiRecord, method: DialogMethod): N
     inRun: isRunning(view.status),
     ...(permission ? { permission } : {}),
   };
-  const live = permission ? liveWithout(view.live, 'permission') : view.live;
+  const asking = stepOver(view).live;
+  const live = permission ? liveWithout(asking, 'permission') : asking;
   return { ...view, live, dialogs: [...view.dialogs.filter((open) => open.id !== id), dialog] };
 }
 
@@ -496,7 +498,9 @@ function uiRequest(view: NativeView, record: PiRecord): NativeView {
     }
     case 'permissions.request': {
       const permission = readPermission(frame.payload);
-      return permission ? withLive(shown, { ...shown.live, permission }) : shown;
+      if (!permission) return shown;
+      const asking = stepOver(shown);
+      return withLive(asking, { ...asking.live, permission });
     }
     case 'permissions.resolved': {
       // Answered, or given up when the run was stopped (mu then says `deny` and pi says nothing of the dialog).

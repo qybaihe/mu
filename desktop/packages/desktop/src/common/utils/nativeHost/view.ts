@@ -163,8 +163,8 @@ export type ViewLive = {
   /** Jev classifies the message of this turn (`preflight.pending`), until its verdict or the end of the wait. */
   classifying?: { turn: number; judge: string };
   /**
-   * What the judgment layer says it is working out (`progress`), until the model writes again, a tool starts or the run
-   * settles: its English line, and its code and params for a screen to word it (`permission_review` names the command in
+   * What the judgment layer says it is working out (`progress`), until the model writes again, a tool starts, mu asks
+   * the person or the run settles: its English line, and its code and params for a screen to word it (`permission_review` names the command in
    * `summary`).
    */
   progress?: { turn?: number; step: string; code?: string; params?: JsonObject };
