@@ -151,12 +151,12 @@ describe('teamMapper', () => {
       toBackendAssistant({
         role: 'leader',
         assistant_backend: BUILTIN_AGENT,
-        assistant_name: 'Aion CLI',
+        assistant_name: 'Built-in agent',
         status: 'pending',
         assistant_id: 'assistant-1',
       })
     ).toMatchObject({
-      name: 'Aion CLI',
+      name: 'Built-in agent',
       role: 'lead',
       assistant_id: 'assistant-1',
     });

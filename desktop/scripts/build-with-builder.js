@@ -838,9 +838,9 @@ try {
     const winUnpackedDir = path.join(outDir, 'win-unpacked');
     let cleaned = tryRemoveDir(winUnpackedDir);
     if (!cleaned) {
-      const aionRunning = isProcessRunningWindows('mu.exe');
+      const muRunning = isProcessRunningWindows('mu.exe');
       const electronRunning = isProcessRunningWindows('electron.exe');
-      if (aionRunning || electronRunning) {
+      if (muRunning || electronRunning) {
         console.log('⚠️  Detected running mu/Electron process. Attempting to close...');
         killWindowsProcesses(['mu.exe', 'electron.exe']);
         cleaned = tryRemoveDir(winUnpackedDir);

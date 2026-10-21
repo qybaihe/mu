@@ -3,8 +3,8 @@
 Status: milestone 1 (2026-09-27) and milestone 2 (2026-09-29: the main process's side here, the renderer's in
 `docs/native-host-ui.md`), branch `claude/mu-native-host`. On by default since 2026-09-30 (see "On by default"
 below): the sidebar has a "Native" group whose conversations run on a host in a utility process of their own, with no
-AionCore and no ACP in their path; the main process answers the native conversation bridge (list, history, hosts on
-demand). With `MU_NATIVE_HOST=0`, every conversation goes through AionCore and the ACP adapter, as before. Checked in the
+backend and no ACP in their path; the main process answers the native conversation bridge (list, history, hosts on
+demand). With `MU_NATIVE_HOST=0`, every conversation goes through the backend and the ACP adapter, as before. Checked in the
 real app by `node scripts/kyrn/e2e-conversation.mjs --native` (see "In the running app" in `docs/native-host-ui.md`).
 
 ## On by default
@@ -14,7 +14,7 @@ The native host is what a new conversation runs on. `MU_NATIVE_HOST` has three s
 
 | Setting                                     | The native host                                                                                             |
 | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `0`, `false`, `off`, `no` (the kill switch) | Off. Every provider of the bridge but `enabled` answers `off`; every conversation is AionCore's.            |
+| `0`, `false`, `off`, `no` (the kill switch) | Off. Every provider of the bridge but `enabled` answers `off`; every conversation is the backend's.         |
 | unset (`auto`)                              | On when the mu found on this machine can run inside the app (`nativeHostReady`), else off, with a log line. |
 | `1`, `true`, `on`, `yes`                    | On whatever mu is found. A mu too old for it fails where it is used, with its own error (`old-harness`).    |
 
@@ -23,12 +23,12 @@ Problem: the packaged app carries its own mu (`<resources>/harness/mu-agent`), a
 host on by default, every conversation of such an app would have started, then failed with `old-harness`. Solution: in
 `auto`, the main process asks once at start-up whether a host could start (`checkHost`: the launcher loads, has both
 functions, and accepts a plan; nothing is written and no judge starts), and answers `enabled` from that. An older mu
-leaves the sidebar without the native group and the home page on AionCore, with `[mu] the native host stays off: …` in
+leaves the sidebar without the native group and the home page on the backend, with `[mu] the native host stays off: …` in
 the log. This is not optional complexity: without it the default would break every packaged app that is not rebuilt in
 step with the harness.
 
-Conversations AionCore already holds stay on the classic page; they are not migrated (the native list hides only the
-sessions AionCore's ACP adapter runs, so nothing shows twice). A browser on the WebUI is not offered the native host
+Conversations the backend already holds stay on the classic page; they are not migrated (the native list hides only the
+sessions the backend's ACP adapter runs, so nothing shows twice). A browser on the WebUI is not offered the native host
 (`bridgeClient.enabled` answers false without asking when there is no `window.electronAPI`): the native screens use
 the desktop's folder dialog, notifications and bin, and nothing has tested them over the WebUI. There is no settings
 switch: the variable is for a developer who needs the old path, and a person who never heard of it gets the native
@@ -40,7 +40,7 @@ The app should run the agent itself, the way the Claude and Codex apps do, inste
 one message crosses four processes and three protocols:
 
 ```text
-renderer ⇄ AionCore (Rust, owns conversations) ⇄ ACP adapter (process/agent/kyrn) ⇄ mu --mode rpc (pi + Jev)
+renderer ⇄ the backend (Rust, owns conversations) ⇄ ACP adapter (process/agent/kyrn) ⇄ mu --mode rpc (pi + Jev)
                                                                      events.jsonl ⇠ status piggyback (Jev)
 ```
 
@@ -59,7 +59,7 @@ renderer ⇄ Electron main (NativeHost) ⇄ one utility process per session: pi 
 ```
 
 One ordered stream per session carries pi's events, Jev's frames and the dialogs; the main process pairs commands with
-responses; one reducer turns the stream, or a session file read back, into what the screen shows. AionCore and ACP
+responses; one reducer turns the stream, or a session file read back, into what the screen shows. The backend and ACP
 leave the conversation path.
 
 ## Milestone 1: the headless host, the reducer, tests
@@ -403,22 +403,22 @@ it; the renderer's part is in `docs/native-host-ui.md`.
 
 - pi keeps each session as `<agent dir>/sessions/--<project path>--/<time>_<id>.jsonl`, and `SessionManager.list` /
   `listAll` read them (name, first message, message count, times, the session it was forked from). The list comes from
-  there, not from AionCore's database. Done in M2 without pi (`sessions/SessionStore.ts`); the message count and the
+  there, not from the backend's database. Done in M2 without pi (`sessions/SessionStore.ts`); the message count and the
   fork parent since (below); left: a name set in the middle of a large file (read only when the file is read afresh).
-- mu conversations in AionCore already have pi session files: the adapter's record
-  `<mu home>/acp-sessions/<ACP session id>.json` holds `{ cwd, file, permissions }`. Following AionCore conversation →
+- mu conversations in the backend already have pi session files: the adapter's record
+  `<mu home>/acp-sessions/<ACP session id>.json` holds `{ cwd, file, permissions }`. Following the backend conversation →
   its ACP session id → that record gives the file, which a native host opens with `--session`. Imported Claude Code and
   Codex chats are pi session files as well (`mu import` writes them; `importChats.ts` keeps its records in
   `acp-sessions/imports/`).
-- What happens to AionCore's rows needs a decision: hide the mu ones once the native list shows them, keep them read
+- What happens to the backend's rows needs a decision: hide the mu ones once the native list shows them, keep them read
   only for a release, or leave them. Conversations with other agents (Claude Code, Codex, Gemini over ACP) stay in
-  AionCore until M4 decides.
+  the backend until M4 decides.
 
 Done since (2026-09-29, branch `claude/mu-native-home`):
 
-- **A session AionCore uses is not listed twice.** Problem: an AionCore mu conversation runs on a pi session file, so
+- **A session the backend uses is not listed twice.** Problem: a backend mu conversation runs on a pi session file, so
   the native list would show it a second time. Example: `acp-sessions/0b5b…-1a01.json` holds
-  `{ "cwd": "/work/app", "file": "…/sessions/--work-app--/2026…_0b5b….jsonl" }`; that file is AionCore's row already.
+  `{ "cwd": "/work/app", "file": "…/sessions/--work-app--/2026…_0b5b….jsonl" }`; that file is the backend's row already.
   Solution: `sessions/acpBindings.ts` reads the adapter's records (`<mu home>/acp-sessions/<uuid>.json`) and the
   imports' (`acp-sessions/imports/<id>.json`), each again only when its time or size changed, and the list leaves out
   the files they name (as listed or through a linked folder) unless their conversation runs here. Only the list:
@@ -446,9 +446,9 @@ Done since (2026-09-30, branch `claude/mu-native-polish`):
   on screen (`useNativeAttention`, `docs/native-host-ui.md`). `NativeConversation.running` (left out when false) is
   true while a run goes; `changed` is sent when a run starts and when it settles, so the list shows it.
 
-### M4: the default, then AionCore out of the path
+### M4: the default, then the backend out of the path
 
-- Turn the flag on by default, with the adapter as the fallback for one release; then take AionCore and ACP out of the
+- Turn the flag on by default, with the adapter as the fallback for one release; then take the backend and ACP out of the
   conversation path.
 - Packaging: pi then runs on Electron's Node, and pi needs Node ≥ 22.19. The app builds with `electron ^37.10.3` while
   dev runs 44.4.3; the shipped Electron's Node has to be checked or raised. The package layout has to be exercised in a
@@ -509,7 +509,7 @@ when its `timeout` passes; a dialog without a timeout that pi stops waiting on (
   directory), so M1 starts one per session.
 - Presentation frames of kinds the view does not read yet (see M2) and pi events it ignores (`queue_update`,
   `session_info_changed`, `thinking_level_changed`, compaction results).
-- The WebUI and the web host reach AionCore over REST and WebSocket (`common/adapter/httpBridge.ts`), not Electron's
-  main process: native conversations need a path there too, or the WebUI keeps AionCore.
+- The WebUI and the web host reach the backend over REST and WebSocket (`common/adapter/httpBridge.ts`), not Electron's
+  main process: native conversations need a path there too, or the WebUI keeps the backend.
 - Where this document lives: the docs index (`docs/README.md`) puts design docs under `docs/architecture/`, which this
   tree does not have yet.

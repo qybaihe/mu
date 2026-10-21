@@ -1,24 +1,24 @@
-# KYRN Desktop: integrate into original AionUi first
+# KYRN Desktop: integrate into the existing desktop app first
 
-> 已于 2026-09-21 更名为 mu（命令 `mu`，标识 μ）。本文是更名前的记录，正文保持原样；新旧名对照见 [10-rename-to-mu.md](10-rename-to-mu.md)。
+> 已于 2026-09-21 更名为 mu（命令 `mu`，标识 μ）。本文是更名前的记录，正文基本保持原样；新旧名对照见 [10-rename-to-mu.md](10-rename-to-mu.md)。
 
 ## Current direction (2026-09-21)
 
-User feedback: maximize original AionUi reuse; integrate KYRN first, defer custom
-visual design. The independent `KYRN-desktop/kyrn` shell is a paused prototype,
+User feedback: reuse as much of the existing desktop app as possible; integrate
+KYRN first, defer custom visual design. The independent `KYRN-desktop/kyrn` shell is a paused prototype,
 not the product entry point.
 
 Current entry: `/Users/baihe/Documents/KYRN-desktop/scripts/kyrn/start`.
-The original AionUi components are reused, with native KYRN settings and a
+The desktop app's existing components are reused, with native KYRN settings and a
 collaboration view added to the existing project panel. The ACP adapter lives
 under `packages/desktop/src/process/agent/kyrn` in the desktop checkout.
 
-Original AionUi UI → AionCore's existing ACP management → KYRN ACP adapter →
-`kyrn --mode rpc`. AionUi owns project selection, conversations, model/thinking
+Existing desktop UI → the backend's existing ACP management → KYRN ACP adapter →
+`kyrn --mode rpc`. The desktop app owns project selection, conversations, model/thinking
 menus, code previews and approval UI. KYRN owns model execution, Jev and swarm
 orchestration. This avoids maintaining two independent settings and UI systems.
 
-Verified: registered KYRN agent reports online in AionUi's health check; real
+Verified: registered KYRN agent reports online in the desktop app's health check; real
 model menu exposes 256 authenticated models and seven supported thinking levels;
 the native project picker opens the KYRN checkout. Jev and tool progress use
 existing ACP tool cards. The sidebar/window identify the product as KYRN.
@@ -36,7 +36,7 @@ Native additions:
   records; Jev gates, accepted notes and confirmed deliveries; experience recall
   and capture; actual tool image artifacts. No fictitious image judging.
 - Durable presentation-only event stream, byte cursors and exact session
-  isolation. AionCore v0.2.2's ACP binding lives in its `acp_session` table; a
+  isolation. The backend (v0.2.2) keeps the ACP binding in its `acp_session` table; a
   read-only main-process lookup avoids the obsolete `extra.acp_session_id` field.
 
 Verification: 21 focused desktop tests, desktop typecheck/lint/i18n checks pass.
@@ -44,7 +44,7 @@ Native UI shows actual thinking and replays two real completed workers after
 restart. Older events from before the recorder was installed are not invented.
 
 ACP sessions map to persistent pi sessions under `~/.kyrn/acp-sessions`.
-Credentials still belong to the KYRN launcher; they are not copied into AionUi.
+Credentials still belong to the KYRN launcher; they are not copied into the desktop app.
 
 ### Context budget and cache display
 
@@ -70,8 +70,8 @@ compacted history. Output tokens are excluded; cache writes are not hits. Missin
 or zero total input renders an em dash, never a made-up cache rate. Statistics and
 all panel events remain outside the model context.
 
-Native end-to-end verification shows `KYRN connected` from Codex in the original
-AionUi conversation. The adapter waits for pi's `agent_settled`, not its early
+Native end-to-end verification shows `KYRN connected` from Codex in an existing
+desktop conversation. The adapter waits for pi's `agent_settled`, not its early
 prompt acknowledgement; a regression test covers this critical boundary.
 
 ## Earlier prototype (retained, paused)
@@ -79,14 +79,14 @@ prompt acknowledgement; a regression test covers this critical boundary.
 ## Locations
 
 - Harness: `/Users/baihe/Documents/KYRN`
-- AionUi checkout: `/Users/baihe/Documents/KYRN-desktop`
+- Desktop checkout: `/Users/baihe/Documents/KYRN-desktop`
 - Dedicated product: `/Users/baihe/Documents/KYRN-desktop/kyrn`
 - Start: `/Users/baihe/Documents/KYRN-desktop/kyrn/start.command`
 - Upstream baseline: `6744099b279b991c17e31c243f0920477bd31cb6`
 - Desktop branch: `codex/kyrn-desktop`. No commit or push performed.
 
-The dedicated target has no runtime dependency on AionCore or the upstream
-Agent integrations. Only selected Apache-2.0 editor components are adapted;
+The dedicated target has no runtime dependency on the backend or the desktop
+app's agent integrations. Only selected Apache-2.0 editor components are adapted;
 the product shell and host are KYRN-specific. Upstream reference source stays
 untouched outside the product target.
 

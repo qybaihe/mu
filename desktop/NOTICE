@@ -6,8 +6,8 @@ came from AionUi.
 This directory began as a fork of AionUi (https://github.com/iOfficeAI/AionUi),
 version 2.2.2 (6744099b), Copyright 2025 AionUi (aionui.com), licensed under the
 Apache License, Version 2.0 (LICENSE-APACHE). The files that came from it, and
-mu's changes to them, stay under that license. AIONUI-FILES.txt lists them;
-scripts/aionuiFiles.mjs regenerates the list. A file mu rewrites from scratch
+mu's changes to them, stay under that license. APACHE-FILES.txt lists them;
+scripts/apacheFiles.mjs regenerates the list. A file mu rewrites from scratch
 or deletes leaves the list.
 
 The app runs AionCore (https://github.com/iOfficeAI/AionCore), a separate
@@ -17,5 +17,5 @@ packages/desktop/src/process/services/localJudgeOnnx/laya/ contains code from
 laya-mlx (https://github.com/mizchi/laya-mlx), licensed under the Apache License,
 Version 2.0; see NOTICE.md in that folder.
 
-kyrn/src/vendor/aionui/ contains code adapted from AionUi; see
+kyrn/src/vendor/codeEditor/ contains code adapted from AionUi; see
 kyrn/THIRD_PARTY_NOTICES.md.

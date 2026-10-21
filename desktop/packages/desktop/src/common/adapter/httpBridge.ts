@@ -204,8 +204,8 @@ function isAuthEndpoint(path: string): boolean {
  * which enforces no CSRF check here — accepts the request unchanged.
  *
  * It exists as the single seam every state-changing request would call for its
- * token, so restoring CSRF in M7 (and the aionpro superset, whose backend does
- * enforce the double-submit check) only swaps this body — no caller changes.
+ * token, so restoring CSRF in M7 (and a hosted build, whose backend does enforce
+ * the double-submit check) only swaps this body — no caller changes.
  *
  * Returns '' — always, for now.
  */

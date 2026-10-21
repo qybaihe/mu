@@ -465,7 +465,7 @@ describe('useGuidAssistantSelection', () => {
       {
         id: 'bare:632f31d2',
         source: 'generated',
-        name: 'Aion CLI',
+        name: 'Built-in agent',
         name_i18n: {},
         description_i18n: {},
         enabled: true,

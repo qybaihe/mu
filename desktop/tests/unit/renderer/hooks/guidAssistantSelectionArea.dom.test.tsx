@@ -88,7 +88,7 @@ describe('AssistantSelectionArea', () => {
     // No stand-in robot icon.
     const pill = screen.getByTestId(`preset-pill-bare-${BUILTIN_AGENT}`);
     expect(pill.querySelector('svg')).toBeNull();
-    expect(pill).toHaveTextContent(/^Aion CLI$/);
+    expect(pill).toHaveTextContent(/^Built-in agent$/);
     expect(screen.getByTestId('preset-pill-builtin-writer')).toHaveTextContent('✍️');
   });
 
@@ -256,7 +256,7 @@ describe('AssistantSelectionArea', () => {
         .getAllByRole('button')
         .slice(0, 4)
         .map((node) => node.textContent?.trim())
-    ).toEqual(['Aion CLI', 'Early', 'Mid', 'Late']);
+    ).toEqual(['Built-in agent', 'Early', 'Mid', 'Late']);
   });
 
   it('keeps a selected overflow assistant visible in the top pill row', () => {
@@ -323,7 +323,7 @@ function assistants(): Assistant[] {
     {
       id: `bare-${BUILTIN_AGENT}`,
       source: 'generated',
-      name: 'Aion CLI',
+      name: 'Built-in agent',
       name_i18n: {},
       description_i18n: {},
       enabled: true,

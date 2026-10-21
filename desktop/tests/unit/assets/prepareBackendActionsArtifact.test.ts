@@ -128,7 +128,7 @@ describe('prepare-backend GitHub Actions artifact resolver', () => {
       [
         'Actions run 27319522909 does not contain artifact [ aioncore-manual-windows-x64 ] required for [ win32-x64 ].',
         'Available artifacts: aioncore-manual-macos-arm64, aioncore-manual-linux-x64.',
-        'Re-run AionCore Manual Build with platform [ windows-x64 ] or all.',
+        "Re-run the backend repository's Manual Build workflow with platform [ windows-x64 ] or all.",
       ].join(' ')
     );
   });

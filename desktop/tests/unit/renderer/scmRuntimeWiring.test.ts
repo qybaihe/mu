@@ -66,7 +66,7 @@ const repo: ScmRepository = {
   repo_id: 'scm:pe1',
   provider_id: 'git',
   root: { pe_id: 'pe1', relative_path: '' },
-  label: 'aion',
+  label: 'relay',
   capabilities: { staging: true, local_branches: true, history_graph: false, remote_ops: false },
   state: 'idle',
 };

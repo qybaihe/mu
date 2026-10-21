@@ -4,13 +4,13 @@
  * Reads environment variables and invokes the shared module.
  *
  * Version resolution order:
- *  1. MU_BACKEND_RUN_ID env (download from AionCore Manual Build artifact)
+ *  1. MU_BACKEND_RUN_ID env (download an artifact of the backend repository's Manual Build workflow)
  *  2. MU_BACKEND_VERSION env (for ad-hoc release overrides)
  *  3. "backendVersion" field in repo-root package.json (the pin)
  *  4. 'latest' (fallback; not recommended for reproducible builds)
  *
  * Environment variables:
- *  - MU_BACKEND_RUN_ID: AionCore Manual Build workflow run id
+ *  - MU_BACKEND_RUN_ID: the id of a run of that workflow
  *  - MU_BACKEND_VERSION: override the pinned version
  *  - MU_BACKEND_ARCH: target architecture (default: process.arch)
  *  - GH_TOKEN / GITHUB_TOKEN: GitHub API token (for rate limiting)

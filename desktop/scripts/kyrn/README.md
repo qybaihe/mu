@@ -15,8 +15,8 @@ and a refused rename never blocks startup. The backend's update replaces the who
 leaves the record's environment variables out, so the rename first reads the whole record (setting `enabled` to the
 value it already has answers with it) and sends everything back with only the name changed. If the whole record
 cannot be read, the old name stays: an old label costs less than a user's cleared variables. Checked against a real
-AionCore v0.2.2 on a throw-away data directory, not only against a mock: `node scripts/kyrn/registration-check/check.mjs`
-(19 checks; run it again after every AionCore upgrade, since none of this is a documented contract). Other agents and
+backend (v0.2.2) on a throw-away data directory, not only against a mock: `node scripts/kyrn/registration-check/check.mjs`
+(19 checks; run it again after every backend upgrade, since none of this is a documented contract). Other agents and
 assistants are disabled in the backend, not merely hidden. Their upstream source
 remains in the checkout; existing conversation history is not deleted.
 The adapter reuses
@@ -48,7 +48,7 @@ conversation ends the harness's whole process tree with `taskkill /T`. macOS and
 checkout's bash forwarder: the registration is found by its command, so that path must not change there. Not run on
 a real Windows machine yet.
 
-AionCore runs a registration's command only up to its first space, and the installer puts the app for all users in
+The backend runs a registration's command only up to its first space, and the installer puts the app for all users in
 `C:\Program Files\mu` (#4). So on Windows a launcher whose path has whitespace is registered by a spelling without it
 (`process/agent/kyrn/windows/launcherCommand.ts`): its real path when that has none, else its 8.3 short path
 (`C:\PROGRA~1\mu\resources\mu\acp.cmd`), else a forwarder: `mu-desktop\acp.cmd`, an ASCII batch file that hands over
@@ -86,7 +86,7 @@ Windows' loopback, which WSL reaches only in mirrored networking mode. The start
 of this has run on a real Windows machine with WSL yet.
 
 `node scripts/kyrn/start-check/check.mjs [--packaged]` checks this whole chain on the machine it runs on, the way the
-app and AionCore run it (on Windows: `acp.cmd` through `cmd /d /c`, the harness as `node mu.mjs`, `taskkill /T` at the
+app and the backend run it (on Windows: `acp.cmd` through `cmd /d /c`, the harness as `node mu.mjs`, `taskkill /T` at the
 end): the harness is found, mu answers over RPC, the registration's command answers the ACP handshake and opens a
 session, and ending each leaves no process behind. With `--packaged` it does the same for the bundled adapter and
 `resources/mu`. It uses a throwaway home, calls no model and needs no key, so CI can run it on Windows runners.
@@ -114,9 +114,9 @@ The earlier `kyrn/` prototype is paused. It is not the product UI direction.
   the user's configuration; settings persistence tests use temporary fixtures.
 
 Start the original app with `scripts/kyrn/start`. It uses the verified local
-Electron runtime and AionCore v0.2.2 ARM64 binary. The upstream dependencies are
+Electron runtime and the backend's v0.2.2 ARM64 binary. The upstream dependencies are
 installed from `bun.lock` with `--frozen-lockfile --ignore-scripts`; no npm
-lifecycle hooks were run. Agent registration is saved by AionCore itself.
+lifecycle hooks were run. Agent registration is saved by the backend itself.
 
 For a different local instance of the app, set
 `MU_BACKEND_URL` to that instance's loopback URL and run
@@ -148,7 +148,7 @@ never enter the model context. Canonical mu temp run directories (still named `k
 allowed source; external symlink targets are excluded. Observation failures never
 fail a model turn. Events before this recorder was installed are not fabricated.
 
-AionCore v0.2.2 stores the ACP resume anchor in `acp_session`, not in
+The backend (v0.2.2) stores the ACP resume anchor in `acp_session`, not in
 `conversation.extra.acp_session_id`. The main process reads only that binding via
 Node SQLite in read-only mode, keyed by conversation ID and agent ID. The backend
 remains the sole database writer. This version-specific seam should move to a

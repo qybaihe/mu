@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { TChatConversation } from '@/common/config/storage';
+import { BACKEND_APP_SOURCE } from '@/common/platform/backendNames';
 import ChatConversation from '@/renderer/pages/conversation/components/ChatConversation';
 
 const usePresetAssistantInfoMock = vi.fn();
@@ -80,7 +81,7 @@ function legacyConversation(type: 'gemini' | 'codex' | 'openclaw-gateway' | 'nan
     model: {},
     extra: { workspace: '/tmp/mu-history' },
     status: 'finished',
-    source: 'aionui',
+    source: BACKEND_APP_SOURCE,
     created_at: 1,
     modified_at: 1,
     pinned: false,
@@ -130,7 +131,7 @@ describe('ChatConversation legacy runtime rendering', () => {
             model: {},
             extra: { workspace: '/tmp/mu-history', backend: 'claude' },
             status: 'finished',
-            source: 'aionui',
+            source: BACKEND_APP_SOURCE,
             created_at: 1,
             modified_at: 1,
             pinned: false,
@@ -159,7 +160,7 @@ describe('ChatConversation legacy runtime rendering', () => {
       model: {},
       extra: { workspace: '/tmp/mu-history', backend: 'claude', current_model_id: 'model-1' },
       status: 'finished',
-      source: 'aionui',
+      source: BACKEND_APP_SOURCE,
       created_at: 1,
       modified_at: 1,
       pinned: false,

@@ -1,6 +1,6 @@
 # Files in desktop/ that came from AionUi (https://github.com/iOfficeAI/AionUi, v2.2.2, 6744099b).
 # They stay under the Apache License 2.0 (LICENSE-APACHE); every other file in desktop/ is under the MIT license
-# (LICENSE). Regenerate with: node scripts/aionuiFiles.mjs
+# (LICENSE). Regenerate with: node scripts/apacheFiles.mjs
 .codecov.yml
 .dockerignore
 .gitattributes
@@ -109,11 +109,11 @@ examples/hello-world-extension/themes/sunset-glow.css
 justfile
 kyrn/LICENSE
 kyrn/index.html
-kyrn/src/vendor/aionui/CodeEditor.tsx
-kyrn/src/vendor/aionui/codeEditorConfig.ts
-kyrn/src/vendor/aionui/codeEditorTheme.ts
-kyrn/src/vendor/aionui/constants.ts
-kyrn/src/vendor/aionui/languageLoader.ts
+kyrn/src/vendor/codeEditor/CodeEditor.tsx
+kyrn/src/vendor/codeEditor/codeEditorConfig.ts
+kyrn/src/vendor/codeEditor/codeEditorTheme.ts
+kyrn/src/vendor/codeEditor/constants.ts
+kyrn/src/vendor/codeEditor/languageLoader.ts
 kyrn/tsconfig.json
 package.json
 packages/desktop/electron-builder.yml

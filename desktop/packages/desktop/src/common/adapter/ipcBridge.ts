@@ -271,7 +271,7 @@ export const auth = {
    * Which user id the backend attributes THIS client's requests to.
    *
    * Deliberately not `GET /api/auth/user`: the auth router builds its own
-   * `AuthState` whose identity mode is only ever `AionPro` or `UserSession`, so
+   * `AuthState` whose identity mode is only ever the hosted one or `UserSession`, so
    * in local identity mode that endpoint answers 401 while every ordinary route
    * is happily serving an injected default user. `/api/system/current-user`
    * sits behind the ORDINARY auth middleware, so it reports the same identity

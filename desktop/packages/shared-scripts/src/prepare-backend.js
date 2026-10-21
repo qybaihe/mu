@@ -112,7 +112,7 @@ function getActionsArtifactMissingMessage({ runId, platform, arch, expectedArtif
   return [
     `Actions run ${runId} does not contain artifact [ ${expectedArtifactName} ] required for [ ${platform}-${arch} ].`,
     `Available artifacts: ${available}.`,
-    `Re-run AionCore Manual Build with platform [ ${getActionsManualPlatform(platform, arch)} ] or all.`,
+    `Re-run the backend repository's Manual Build workflow with platform [ ${getActionsManualPlatform(platform, arch)} ] or all.`,
   ].join(' ');
 }
 

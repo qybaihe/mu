@@ -26,7 +26,7 @@ describe('useConversationAssistants', () => {
 
   it('loads only enabled assistants from the backend catalog', async () => {
     (ipcBridge.assistants.list.invoke as never as ReturnType<typeof vi.fn>).mockResolvedValue([
-      { id: `bare-${BUILTIN_AGENT}`, name: 'Aion CLI', enabled: true, source: 'generated' },
+      { id: `bare-${BUILTIN_AGENT}`, name: 'Built-in agent', enabled: true, source: 'generated' },
       { id: 'disabled-writer', name: 'Writer', enabled: false, source: 'user' },
       { id: 'assistant-1', name: 'Researcher', source: 'user' },
     ] satisfies Partial<Assistant>[]);
@@ -43,7 +43,7 @@ describe('useConversationAssistants', () => {
 
   it('keeps the filtered assistant list stable across rerenders when SWR data is unchanged', async () => {
     const catalog = [
-      { id: `bare-${BUILTIN_AGENT}`, name: 'Aion CLI', enabled: true, source: 'generated' },
+      { id: `bare-${BUILTIN_AGENT}`, name: 'Built-in agent', enabled: true, source: 'generated' },
       { id: 'assistant-1', name: 'Researcher', source: 'user' },
     ] satisfies Partial<Assistant>[];
 

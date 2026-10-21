@@ -30,7 +30,7 @@
     "theme_light": "淺色",
     "theme_dark": "深色",
     "toc": "本頁內容",
-    "footer_credit": "命令列以 <a href=\"https://github.com/earendil-works/pi\">pi</a>（MIT）為基礎建構，桌面版以 <a href=\"https://github.com/iOfficeAI/AionUi\">AionUi</a>（Apache-2.0）為基礎改造，感謝兩個專案的作者。",
+    "footer_credit": "mu 以 <a href=\"https://github.com/earendil-works/pi\">pi</a>（MIT）為基礎建構，感謝 pi 的作者。",
     "footer_license": "授權條款",
     "replay": "↻ 重播",
     "replay_label": "重播這一段",
@@ -134,7 +134,7 @@
       { "h3": "不靠寫摘要來壓縮", "p": "上下文變長時，過期的結果直接丟掉，不用寫摘要；快取快過期時，判斷值不值得續一次。" },
       { "h3": "不鎖死判定器", "p": "{points} 個判定點，每個都能單獨開關、單獨換判定器：免費的 Jev、本機的 Laya，或任意一個大模型。" },
       { "h3": "判定器不要求先設定金鑰", "p": "沒設定判定器的金鑰時，預設由 OpenCode Zen 上免費的 Jev 回答，每天提醒一次。" },
-      { "h3": "不另起爐灶", "p": "命令列以 pi 為基礎，pi 的模型、擴充功能、技能和工作階段樹都在；桌面版以 AionUi 為基礎改造。" }
+      { "h3": "不另起爐灶", "p": "命令列以 pi 為基礎，pi 的模型、擴充功能、技能和工作階段樹都在；桌面版用的也是同一套工作階段。" }
     ],
     "principles_more": "{points} 個判定點各自問什麼、改變什麼",
     "more_label": "還有這些",

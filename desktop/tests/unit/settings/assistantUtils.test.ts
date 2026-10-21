@@ -268,7 +268,7 @@ describe('buildAssistantEditorBackends', () => {
       [
         agent({ id: 'acp-1', agent_type: 'acp', name: 'Claude Code' }),
         agent({ id: 'a9f3c21e', agent_type: 'antigravity', backend: 'antigravity', name: 'Antigravity' }),
-        agent({ id: 'builtin-agent-1', agent_type: BUILTIN_AGENT, backend: BUILTIN_AGENT, name: 'Aion CLI' }),
+        agent({ id: 'builtin-agent-1', agent_type: BUILTIN_AGENT, backend: BUILTIN_AGENT, name: 'Built-in agent' }),
       ],
       'zh-CN'
     );

@@ -62,8 +62,8 @@ describe('buildAssistantEditorBackends', () => {
         id: `agent-${BUILTIN_AGENT}`,
         backend: undefined,
         agent_type: BUILTIN_AGENT,
-        name: 'Aion CLI',
-        name_i18n: { 'zh-CN': 'Aion 命令行' },
+        name: 'Built-in agent',
+        name_i18n: { 'zh-CN': '内置智能体' },
         status: 'online',
       }),
     ];
@@ -71,7 +71,7 @@ describe('buildAssistantEditorBackends', () => {
     expect(buildAssistantEditorBackends(agents, 'zh-CN')).toEqual([
       {
         id: `agent-${BUILTIN_AGENT}`,
-        name: 'Aion 命令行',
+        name: '内置智能体',
         runtimeKey: BUILTIN_AGENT,
         modelOptions: [],
       },

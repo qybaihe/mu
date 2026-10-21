@@ -39,7 +39,7 @@ const {
       selectedAssistant: {
         id: `bare-${BUILTIN_AGENT}`,
         source: 'generated',
-        name: 'Aion CLI',
+        name: 'Built-in agent',
         name_i18n: {},
         description_i18n: {},
         enabled: true,
@@ -60,7 +60,7 @@ const {
         {
           id: `bare-${BUILTIN_AGENT}`,
           source: 'generated',
-          name: 'Aion CLI',
+          name: 'Built-in agent',
           name_i18n: {},
           description_i18n: {},
           enabled: true,
@@ -331,7 +331,7 @@ describe('GuidPage', () => {
       {
         id: `bare-${BUILTIN_AGENT}`,
         source: 'generated',
-        name: 'Aion CLI',
+        name: 'Built-in agent',
         name_i18n: {},
         description_i18n: {},
         enabled: true,
@@ -556,7 +556,7 @@ describe('GuidPage', () => {
       {
         id: `bare-${BUILTIN_AGENT}`,
         source: 'generated',
-        name: 'Aion CLI',
+        name: 'Built-in agent',
         name_i18n: {},
         description_i18n: {},
         enabled: true,
@@ -590,7 +590,7 @@ describe('GuidPage', () => {
       {
         id: `bare-${BUILTIN_AGENT}`,
         source: 'generated',
-        name: 'Aion CLI',
+        name: 'Built-in agent',
         name_i18n: {},
         description_i18n: {},
         enabled: true,

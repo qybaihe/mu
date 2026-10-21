@@ -116,7 +116,7 @@ function resolveLegacyRuntimeDisplayName(conversation: TChatConversation): strin
     backend?: unknown;
   };
   const agent_name = typeof extra?.agent_name === 'string' ? extra.agent_name.trim() : '';
-  // A conversation stored by the backend's built-in agent carries its name, "Aion CLI" (backend the built-in agent's id).
+  // A conversation of the backend's built-in agent carries the name the backend gives it, which showAsMu shows as mu's.
   if (agent_name) return showAsMu(agent_name);
 
   const backend = typeof extra?.backend === 'string' ? extra.backend.trim() : '';

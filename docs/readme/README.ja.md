@@ -315,7 +315,9 @@ npm run check                  # フォーマット、lint、型チェック
 
 ## クレジットとライセンス
 
-mu のライセンスは MIT です（[LICENSE](../../LICENSE)。デスクトップアプリは [desktop/LICENSE](../../desktop/LICENSE)）。[pi](https://github.com/earendil-works/pi)（コーディングエージェント、MIT）と [AionUi](https://github.com/iOfficeAI/AionUi) をもとに作られています。二つのプロジェクトに感謝します。デスクトップアプリは AionUi のフォークから始まり、AionUi から来たファイルは [desktop/AIONUI-FILES.txt](../../desktop/AIONUI-FILES.txt) に一覧があり、引き続き Apache 2.0 です（[desktop/NOTICE](../../desktop/NOTICE)）。いくつかの判定ポイントは他のプロジェクトのアイデアをもとにしています。プロンプトインジェクション検査の問い方は [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills) から、続行チェックと一括判定ツールは [oh-my-pi](https://github.com/can1357/oh-my-pi) にならっています。判定カーネルで使っているサードパーティのコードは [THIRD_PARTY_NOTICES.md](../../packages/kyrn-judge/THIRD_PARTY_NOTICES.md) に記載しています。
+mu のライセンスは MIT です（[LICENSE](../../LICENSE)。デスクトップアプリは [desktop/LICENSE](../../desktop/LICENSE)）。[pi](https://github.com/earendil-works/pi)（コーディングエージェント、MIT）をもとに作られています。pi の作者に感謝します。いくつかの判定ポイントは他のプロジェクトのアイデアをもとにしています。プロンプトインジェクション検査の問い方は [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills) から、続行チェックと一括判定ツールは [oh-my-pi](https://github.com/can1357/oh-my-pi) にならっています。判定カーネルで使っているサードパーティのコードは [THIRD_PARTY_NOTICES.md](../../packages/kyrn-judge/THIRD_PARTY_NOTICES.md) に記載しています。
+
+デスクトップアプリは [AionUi](https://github.com/iOfficeAI/AionUi) のフォークから始まりました。AionUi から受け継いだファイルは [desktop/APACHE-FILES.txt](../../desktop/APACHE-FILES.txt) に一覧があり、引き続き Apache License 2.0 です（[desktop/NOTICE](../../desktop/NOTICE) を参照）。
 
 ## コミュニティ
 

@@ -30,7 +30,7 @@
     "theme_light": "浅色",
     "theme_dark": "深色",
     "toc": "本页内容",
-    "footer_credit": "命令行基于 <a href=\"https://github.com/earendil-works/pi\">pi</a>（MIT）构建，桌面端基于 <a href=\"https://github.com/iOfficeAI/AionUi\">AionUi</a>（Apache-2.0）改造，感谢两个项目的作者。",
+    "footer_credit": "mu 基于 <a href=\"https://github.com/earendil-works/pi\">pi</a>（MIT）构建，感谢 pi 的作者。",
     "footer_license": "许可证",
     "replay": "↻ 重播",
     "replay_label": "重播这一段",
@@ -134,7 +134,7 @@
       { "h3": "不靠写摘要来压缩", "p": "上下文变长时，过期的结果直接丢，不用写摘要；缓存快过期时，判断值不值得续一次。" },
       { "h3": "不锁死判定器", "p": "{points} 个判定点，每个都能单独开关、单独换判定器：免费的 Jev、本地的 Laya，或任意一个大模型。" },
       { "h3": "判定器不要求先配 key", "p": "没配判定器的 key 时，默认由 OpenCode Zen 上免费的 Jev 回答，每天提醒一次。" },
-      { "h3": "不另起炉灶", "p": "命令行基于 pi，pi 的模型、扩展、技能和会话树都在；桌面端基于 AionUi 改造。" }
+      { "h3": "不另起炉灶", "p": "命令行基于 pi，pi 的模型、扩展、技能和会话树都在；桌面端用的也是同一套会话。" }
     ],
     "principles_more": "{points} 个判定点各自问什么、改变什么",
     "more_label": "还有这些",

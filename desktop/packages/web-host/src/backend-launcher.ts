@@ -221,8 +221,8 @@ export function buildSpawnArgs(config: SpawnConfig): string[] {
 }
 
 /**
- * The variables the backend reads, by the names the app and its tests set them under. The backend began as AionUi's backend
- * and reads AionUi's names; this launcher is the one place that speaks them.
+ * The variables the backend reads, by the names the app and its tests set them under. The backend reads them under
+ * names of its own (`AIONUI_…`); this launcher is the one place that speaks them.
  */
 const BACKEND_ENV_NAMES = {
   MU_E2E_TEST: 'AIONUI_E2E_TEST',
@@ -233,7 +233,7 @@ const BACKEND_ENV_NAMES = {
 /**
  * The backend's environment: the app's, with the variables the backend reads under its names (`BACKEND_ENV_NAMES`). It
  * reads its cache, work and log folders from AIONUI_{CACHE,WORK,LOG}_DIR to report them (the backend's
- * `crates/aionui-system/src/sysinfo.rs`); they are set from `dirs` so its `/api/system/info` matches what the
+ * `sysinfo.rs`); they are set from `dirs` so its `/api/system/info` matches what the
  * Electron main process keeps.
  */
 export function buildSpawnEnv(dirs?: BackendDirConfig): NodeJS.ProcessEnv {

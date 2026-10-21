@@ -14,7 +14,7 @@ mu is [pi](https://github.com/earendil-works/pi), the coding agent, with a judgm
 - **The launcher**, `kyrn/bin/mu.mjs`, is the `mu` command. It handles mu's own commands (`setup`, `doctor`, `import`, `ledger`, `judge`, `auth`, `link`, `migrate`), reads the `.env` file, and starts pi with the kernel as an extension. pi's own commands (`install`, `list`, `config`, `mcp`…) are passed to pi unchanged.
 - **pi** does the agent's work: models and providers (`packages/ai`), the agent loop (`packages/agent`), and tools, sessions and the terminal UI (`packages/coding-agent`, `packages/tui`). mu changes pi as little as possible and marks each change, so pi's releases can be merged in.
 - **The judgment kernel**, `packages/kyrn-judge`, is a pi extension. Everything mu adds lives here.
-- **The desktop app**, `desktop/`, is an Electron app built on AionUi. It starts pi with the kernel in an Electron utility process and talks to it over pi's RPC protocol, using an in-process transport (`desktop/packages/desktop/src/process/services/nativeHost/`). The conversation list is pi's session files, so the app and the command line share sessions.
+- **The desktop app**, `desktop/`, is an Electron app. It starts pi with the kernel in an Electron utility process and talks to it over pi's RPC protocol, using an in-process transport (`desktop/packages/desktop/src/process/services/nativeHost/`). The conversation list is pi's session files, so the app and the command line share sessions.
 
 ## A decision, end to end
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // Lists the files in desktop/ that came from AionUi, which stay under the Apache License 2.0 (see NOTICE); every
-// other file is mu's, under the MIT license. Writes AIONUI-FILES.txt next to package.json.
+// other file is mu's, under the MIT license. Writes APACHE-FILES.txt next to package.json.
 //
-//   node scripts/aionuiFiles.mjs                     fetches AionUi v2.2.2 into a temporary folder
-//   node scripts/aionuiFiles.mjs --upstream <repo>   uses a clone that has commit 6744099b
-//   node scripts/aionuiFiles.mjs --check             says whether AIONUI-FILES.txt is up to date
+//   node scripts/apacheFiles.mjs                     fetches AionUi v2.2.2 into a temporary folder
+//   node scripts/apacheFiles.mjs --upstream <repo>   uses a clone that has commit 6744099b
+//   node scripts/apacheFiles.mjs --check             says whether APACHE-FILES.txt is up to date
 //
 // A file came from AionUi when it has the same path as a file of AionUi v2.2.2 (6744099b, the version the fork is
 // based on), or when 15% or more of its distinctive lines (30 characters or more, with a letter) appear in AionUi's
@@ -18,7 +18,7 @@ import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const DESKTOP = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const LIST = join(DESKTOP, 'AIONUI-FILES.txt');
+const LIST = join(DESKTOP, 'APACHE-FILES.txt');
 const UPSTREAM = 'https://github.com/iOfficeAI/AionUi.git';
 const BASE = '6744099b279b991c17e31c243f0920477bd31cb6';
 const SHARED = 0.15;
@@ -45,20 +45,28 @@ const TEXT = new Set([
 ]);
 const TEXT_NAMES = new Set(['justfile', 'Makefile', 'LICENSE', '.gitignore']);
 /** The legal files say what the license is; they are not code from either side. */
-const LEGAL = new Set(['LICENSE', 'LICENSE-APACHE', 'NOTICE', 'AIONUI-FILES.txt']);
+const LEGAL = new Set(['LICENSE', 'LICENSE-APACHE', 'NOTICE', 'APACHE-FILES.txt']);
 
 const git = (cwd, args) => execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8', maxBuffer: 1 << 28 });
 const isText = (path) => TEXT.has(extname(path).toLowerCase()) || TEXT_NAMES.has(path.split('/').at(-1));
 
 /**
  * The lines that say something: whitespace evened out, 30 characters or more, with a letter. Each is kept in lower
- * case with AionUi's names as mu's, so a line that only had its names changed is still the same line.
+ * case with AionUi's names as mu's (AionCore as the backend, Aionrs as the built-in agent), so a line that only had
+ * its names changed is still the same line.
  */
 function distinctive(text) {
   const lines = new Set();
   for (const line of text.split('\n')) {
     const even = line.trim().split(/\s+/).join(' ');
-    if (even.length >= 30 && /\p{L}/u.test(even)) lines.add(even.toLowerCase().replace(/aion(?:ui)?/g, 'mu'));
+    if (even.length < 30 || !/\p{L}/u.test(even)) continue;
+    lines.add(
+      even
+        .toLowerCase()
+        .replace(/(?:the )?(?:aioncore|backend)/g, 'backend')
+        .replace(/aionrs|builtin[-_]?agent/g, 'builtinagent')
+        .replace(/aion(?:ui)?/g, 'mu')
+    );
   }
   return lines;
 }
@@ -66,13 +74,13 @@ function distinctive(text) {
 function upstreamRepo(args) {
   const at = args.indexOf('--upstream');
   if (at >= 0) return resolve(args[at + 1]);
-  const repo = mkdtempSync(join(tmpdir(), 'aionui-'));
+  const repo = mkdtempSync(join(tmpdir(), 'upstream-'));
   git(repo, ['init', '-q']);
   git(repo, ['fetch', '-q', '--depth', '1', UPSTREAM, BASE]);
   return repo;
 }
 
-function aionuiFiles(upstream) {
+function upstreamFiles(upstream) {
   const rows = git(upstream, ['ls-tree', '-r', BASE]).trim().split('\n');
   const paths = new Set();
   const linesByKind = new Map();
@@ -101,20 +109,20 @@ function aionuiFiles(upstream) {
 }
 
 const args = process.argv.slice(2);
-const files = aionuiFiles(upstreamRepo(args)).sort();
+const files = upstreamFiles(upstreamRepo(args)).sort();
 const text = `# Files in desktop/ that came from AionUi (https://github.com/iOfficeAI/AionUi, v2.2.2, ${BASE.slice(0, 8)}).
 # They stay under the Apache License 2.0 (LICENSE-APACHE); every other file in desktop/ is under the MIT license
-# (LICENSE). Regenerate with: node scripts/aionuiFiles.mjs
+# (LICENSE). Regenerate with: node scripts/apacheFiles.mjs
 ${files.join('\n')}
 `;
 if (args.includes('--check')) {
   const current = existsSync(LIST) ? readFileSync(LIST, 'utf8') : '';
   if (current !== text) {
-    console.error('AIONUI-FILES.txt is out of date: run node scripts/aionuiFiles.mjs');
+    console.error('APACHE-FILES.txt is out of date: run node scripts/apacheFiles.mjs');
     process.exit(1);
   }
-  console.log(`AIONUI-FILES.txt is up to date: ${files.length} files from AionUi.`);
+  console.log(`APACHE-FILES.txt is up to date: ${files.length} files from AionUi.`);
 } else {
   writeFileSync(LIST, text);
-  console.log(`Wrote AIONUI-FILES.txt: ${files.length} files from AionUi.`);
+  console.log(`Wrote APACHE-FILES.txt: ${files.length} files from AionUi.`);
 }

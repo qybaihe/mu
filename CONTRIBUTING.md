@@ -15,7 +15,7 @@ Thanks for helping. Bug reports, fixes, new decision points, judge measurements,
 - [Commits and pull requests](#commits-and-pull-requests)
 - [Larger changes](#larger-changes)
 - [Dependencies](#dependencies)
-- [Upstream: pi and AionUi](#upstream-pi-and-aionui)
+- [Upstream: pi](#upstream-pi)
 - [License of contributions](#license-of-contributions)
 
 ## Ways to contribute
@@ -39,7 +39,7 @@ Don't report security problems in public issues; see [SECURITY.md](SECURITY.md).
 
 ## The repository
 
-mu is a fork of [pi](https://github.com/earendil-works/pi)'s monorepo with a judgment kernel added, plus a desktop app built on [AionUi](https://github.com/iOfficeAI/AionUi).
+mu is a fork of [pi](https://github.com/earendil-works/pi)'s monorepo with a judgment kernel added, plus a desktop app.
 
 | Path | What's there |
 | --- | --- |
@@ -156,10 +156,10 @@ A new decision point needs a question a small judge can answer from a small stat
 - Install with `npm install --ignore-scripts`: lifecycle scripts don't run unless a maintainer decides they must.
 - A dependency with an install script needs an explicit allowlist entry (`scripts/generate-coding-agent-install-lock.mjs`).
 
-## Upstream: pi and AionUi
+## Upstream: pi
 
-mu merges pi's releases regularly. A bug that's also in pi is best fixed in [pi](https://github.com/earendil-works/pi) first (mention it in your mu issue). A bug in the desktop shell that mu shares with AionUi can go to [AionUi](https://github.com/iOfficeAI/AionUi). These issues get the `upstream` label.
+mu merges pi's releases regularly. A bug that's also in pi is best fixed in [pi](https://github.com/earendil-works/pi) first (mention it in your mu issue). These issues get the `upstream` label.
 
 ## License of contributions
 
-By contributing, you agree that your contribution is licensed under the MIT license ([LICENSE](LICENSE), and [desktop/LICENSE](desktop/LICENSE) for the desktop app). A change to a file listed in [desktop/AIONUI-FILES.txt](desktop/AIONUI-FILES.txt), which came from AionUi, is licensed under Apache 2.0 like the rest of that file.
+By contributing, you agree that your contribution is licensed under the MIT license ([LICENSE](LICENSE), and [desktop/LICENSE](desktop/LICENSE) for the desktop app). A change to a file listed in [desktop/APACHE-FILES.txt](desktop/APACHE-FILES.txt) is licensed under the Apache License 2.0, like the rest of that file.

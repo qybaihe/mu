@@ -206,7 +206,7 @@ async function selectPreferredCronDialogAgent(
 async function selectCronDialogAgentByPattern(
   page: import('@playwright/test').Page,
   dialog: import('@playwright/test').Locator,
-  preferredPatterns = [/Gemini/i, /Claude/i, /Codex/i, /Aion/i]
+  preferredPatterns = [/Gemini/i, /Claude/i, /Codex/i, /\bmu\b/i]
 ): Promise<string | null> {
   const agentSelect = dialog.locator('[data-testid="cron-assistant-select"]').first();
   await agentSelect.click();
@@ -906,7 +906,7 @@ test.describe('Conversation Full Cycle', () => {
 
     const assistantOptions = page
       .locator('.arco-select-option:not(.arco-select-option-disabled)')
-      .filter({ hasText: /Claude|Codex|Gemini|Aion/ });
+      .filter({ hasText: /Claude|Codex|Gemini|\bmu\b/ });
     if ((await assistantOptions.count()) === 0) {
       await page.keyboard.press('Escape');
       await page.keyboard.press('Escape');
