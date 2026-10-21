@@ -5,6 +5,7 @@ import { Type } from "typebox";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createHarness, getUserTexts, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import { parseConfig } from "../src/config.ts";
+import { HIVE_REQUEST_ENTRY } from "../src/extension/features/hive.ts";
 import type { SwarmRunner } from "../src/extension/features/swarm.ts";
 import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import { hiveRequest, parseHiveArgs } from "../src/hive/request.ts";
@@ -107,6 +108,14 @@ describe("/hive in a session", () => {
 		return notes;
 	}
 
+	/** The hive requests in the session that the chat does not show. */
+	const hiddenRequests = (harness: Harness) =>
+		harness.session.messages.flatMap((message) =>
+			message.role === "custom" && message.customType === HIVE_REQUEST_ENTRY && message.display === false
+				? [message.content]
+				: [],
+		);
+
 	const toolResult = (harness: Harness) =>
 		JSON.stringify(harness.session.messages.find((message) => message.role === "toolResult"));
 
@@ -125,7 +134,9 @@ describe("/hive in a session", () => {
 		await harness.session.prompt(`/hive ${QUESTION}`);
 
 		expect(harness.getPendingResponseCount()).toBe(0);
-		expect(getUserTexts(harness)).toEqual([hiveRequest(QUESTION)]);
+		// The chat shows what was typed; the request rides along as a message only the model reads.
+		expect(getUserTexts(harness)).toEqual([`/hive ${QUESTION}`]);
+		expect(hiddenRequests(harness)).toEqual([hiveRequest(QUESTION)]);
 		expect(asked).toContain("Question for a hive: Why does login fail only in CI?");
 		expect(bees).toEqual(["where", "config", "run"]);
 		expect(toolResult(harness)).toContain("where: found it");
@@ -149,7 +160,8 @@ describe("/hive in a session", () => {
 		release();
 		await vi.waitFor(() => expect(harness.getPendingResponseCount()).toBe(0));
 		await harness.session.waitForIdle();
-		expect(getUserTexts(harness)).toEqual([hiveRequest(QUESTION)]);
+		expect(getUserTexts(harness)).toEqual([`/hive ${QUESTION}`]);
+		expect(hiddenRequests(harness)).toEqual([hiveRequest(QUESTION)]);
 		expect(JSON.stringify(harness.session.messages.at(-1))).toContain("The answer.");
 		expect(notes).toEqual([]);
 	});

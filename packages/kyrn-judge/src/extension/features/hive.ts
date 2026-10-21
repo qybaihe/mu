@@ -640,20 +640,37 @@ export function registerHive(runtime: KyrnRuntime, runner: SwarmRunner = spawnRu
 /** How long `/hive` in print mode waits for the turn it asked for to start. It takes that long only when something is wrong. */
 const TURN_START_MS = 60_000;
 
+/** Custom message type of the request to start a hive: the model reads it, the chat does not show it. */
+export const HIVE_REQUEST_ENTRY = "kyrn.hive-request";
+
 /**
  * `/hive <question>`: a person asks for a hive. The command sends the question
  * with the request to put a hive on it at once (`hiveRequest`); the main model
  * plans the bees, because it knows the project and the angles. Without a
  * question, `/hive` is `/swarm`, as it always was.
  *
- * The request is a user message the command sends, so the turn runs as a typed
- * message's would. Print mode is the exception: it ends the process when the
- * command returns, so there the command waits for the turn it started to end.
+ * The command sends what was typed as a user message, so the turn runs as a
+ * typed message's would and the chat shows `/hive <question>`. The request goes
+ * with it as a hidden message of that turn: it is written for the model, in
+ * English, and would otherwise sit in the person's bubble. Print mode ends the
+ * process when the command returns, so there the command waits for the turn it
+ * started to end.
  */
 function registerHiveCommand(runtime: KyrnRuntime): void {
 	const { pi } = runtime;
 	/** The turn a waiting `/hive` asked for: whether it has started, and what to call when it is over. */
 	let waiting: { started: boolean; over: () => void } | undefined;
+	/** The request for the turn `/hive` is about to start, matched by what it sends as the user message. */
+	let request: { typed: string; text: string } | undefined;
+	pi.on(
+		"before_agent_start",
+		failOpen((event) => {
+			const pending = request;
+			request = undefined;
+			if (!pending || event.messageType !== "user" || event.prompt !== pending.typed) return undefined;
+			return { message: { customType: HIVE_REQUEST_ENTRY, content: pending.text, display: false } };
+		}),
+	);
 	pi.on(
 		"agent_start",
 		failOpen(() => {
@@ -716,9 +733,10 @@ function registerHiveCommand(runtime: KyrnRuntime): void {
 				refuse("No model is selected. Run /login, then /model.");
 				return;
 			}
-			const request = hiveRequest(asked.question);
 			if (!ctx.isIdle()) {
-				pi.sendUserMessage(request, { deliverAs: "followUp" });
+				// A queued message joins the running loop, which starts no new turn to attach the request to:
+				// the request goes in the message itself.
+				pi.sendUserMessage(hiveRequest(asked.question), { deliverAs: "followUp" });
 				ctx.ui.notify("The hive will start when the current turn ends.", "info");
 				return;
 			}
@@ -731,7 +749,8 @@ function registerHiveCommand(runtime: KyrnRuntime): void {
 			// Without credentials pi refuses the request with an error of its own; there is no turn to wait for.
 			const wait = (ctx.mode === "print" || ctx.mode === "json") && ctx.modelRegistry.hasConfiguredAuth(ctx.model);
 			const over = wait ? untilTurnEnds() : undefined;
-			pi.sendUserMessage(request);
+			request = { typed, text: hiveRequest(asked.question) };
+			pi.sendUserMessage(typed);
 			await over;
 		},
 	});
