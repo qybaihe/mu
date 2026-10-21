@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- The package's keywords add `pi-coding-agent`, `mcp` and `prompt-injection`, so directories that index pi coding agents and MCP clients find it.
+
 ### Fixed
 
 - With no model connected, `mu -p` and the other no-key errors now say to run `mu setup`, instead of pointing to `/login` (which only exists inside a session) and two files inside the package.

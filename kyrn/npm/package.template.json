@@ -10,7 +10,7 @@
 		"name": "mu",
 		"configDir": ".mu"
 	},
-	"keywords": ["coding-agent", "ai", "llm", "cli", "terminal", "agent", "judge", "pi"],
+	"keywords": ["coding-agent", "pi-coding-agent", "ai", "llm", "cli", "terminal", "agent", "judge", "pi", "mcp", "prompt-injection"],
 	"homepage": "https://github.com/qybaihe/mu",
 	"repository": {
 		"type": "git",
