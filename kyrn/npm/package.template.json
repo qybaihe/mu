@@ -1,7 +1,7 @@
 {
 	"name": "mu-agent",
 	"version": "0.1.10",
-	"description": "mu: a coding agent that hands its routine decisions to a small, fast judge model, so the main model can keep its attention on the work. Built on pi.",
+	"description": "mu: a coding agent that hands its routine decisions to a small, fast judge model, so the main model can keep its attention on the work. Built on the pi coding agent.",
 	"type": "module",
 	"bin": {
 		"mu": "kyrn/bin/mu.mjs"
