@@ -30,6 +30,16 @@ const GEAR_LABELS: Readonly<Record<Gear, string>> = {
 	heavy: "full effort",
 };
 
+/** A turn type in the words the verdict line uses: "multi_step_task" is "multi-step task". */
+export function turnLabel(turnType: string): string {
+	return TURN_LABELS[turnType] ?? turnType;
+}
+
+/** A gear in the words the verdict line uses: "heavy" is "full effort". */
+export function gearLabel(gear: Gear): string {
+	return GEAR_LABELS[gear];
+}
+
 /** What the judge is asked, in the words shown to the user, in the order it is shown. */
 const QUESTION_LABELS: readonly [string, string][] = [
 	["turn_type", "turn type"],

@@ -9,13 +9,16 @@ import {
 } from "../../decisions/input-preflight.ts";
 import { failOpen, judgedText, type KyrnRuntime, lastTurnStoppedToAsk, recentTurnDigests } from "../runtime.ts";
 import {
+	gearLabel,
 	renderPending,
 	renderVerdict,
+	turnLabel,
 	VERDICT_ENTRY,
 	type VerdictData,
 	type VerdictState,
 	verdictData,
 } from "./preflight-view.ts";
+import { judgeDisplayName } from "./welcome.ts";
 
 const LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh", "max"] as const;
 type Level = (typeof LEVELS)[number];
@@ -91,14 +94,21 @@ export function hintsFor(
 	return hintIdsFor(outcome, tools, flags).map((id) => PREFLIGHT_HINTS[id]);
 }
 
-function describe(label: string, decision: Decision<PreflightOutcome>): string {
-	const latency = decision.latencyMs === undefined ? "" : ` ${decision.latencyMs}ms`;
+/**
+ * The footer's line after a verdict, in the verdict line's words: "Jev: multi-step task · full effort · 71 ms".
+ * A verdict in shadow mode says it was only recorded, since it changed nothing.
+ */
+export function statusLine(label: string, decision: Decision<PreflightOutcome>): string {
+	const latency = decision.latencyMs === undefined ? "" : ` · ${decision.latencyMs} ms`;
 	const cut = decision.warnings?.length ? ` (${decision.warnings.length} warnings)` : "";
+	const recorded =
+		decision.mode === "active" ? "" : ` · ${decision.mode === "shadow" ? "recorded only" : decision.mode}`;
 	const shown = decision.mode === "active" ? decision.outcome : (decision.judged ?? decision.outcome);
-	if (shown.turnType === "unknown" && !decision.judged) {
-		return `${label} ${decision.mode}: ${decision.reason ?? "no verdict"}${latency}`;
-	}
-	return `${label} ${decision.mode}: ${shown.turnType} -> ${shown.gear}${latency}${cut}`;
+	const said =
+		shown.turnType === "unknown" && !decision.judged
+			? (decision.reason ?? "no verdict")
+			: `${turnLabel(shown.turnType)} · ${gearLabel(shown.gear)}`;
+	return `${judgeDisplayName(label)}: ${said}${latency}${cut}${recorded}`;
 }
 
 const PANEL = "kyrn.preflight";
@@ -327,7 +337,7 @@ export function registerPreflight(runtime: KyrnRuntime): void {
 				current.decision = decision;
 				runtime.present("preflight.verdict", data(current), turnId);
 				try {
-					runtime.status(describe(runtime.judgeLabel, decision));
+					runtime.status(statusLine(runtime.judgeLabel, decision));
 					// A verdict that outlived its turn has no message left to stand under.
 					if (staged === current) showEntry(current);
 				} catch {
