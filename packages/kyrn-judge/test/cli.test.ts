@@ -49,6 +49,8 @@ describe("welcome screen", () => {
 	it("names judges as people say them: the free Jev with its version, a cascade in order", () => {
 		expect(judgeDisplayName("jev")).toBe("Jev");
 		expect(judgeDisplayName("jev-1.13-free")).toBe("Jev 1.13 (free)");
+		expect(judgeDisplayName("jev-latest")).toBe("Jev");
+		expect(judgeDisplayName("jev-1.13")).toBe("Jev 1.13");
 		expect(judgeDisplayName("laya>jev")).toBe("Laya, Jev");
 		expect(judgeDisplayName("laya,jev")).toBe("Laya, Jev");
 		expect(judgeDisplayName("clef-flash")).toBe("clef-flash");
