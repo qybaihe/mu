@@ -661,7 +661,7 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 	pi.registerCommand("remember", {
 		description: say({
 			zh: "给这个项目记一条经验，以后的会话都会用上：/remember <该怎么做>",
-			en: "Save a lesson for future sessions in this project: /remember <what to do>",
+			en: "Save a lesson for later work in this project: /remember <what to do>",
 		}),
 		handler: async (args, ctx) => {
 			runtime.touch(ctx);

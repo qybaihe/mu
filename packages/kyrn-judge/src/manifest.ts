@@ -346,8 +346,8 @@ export const MANIFEST: HarnessManifest = {
 			feature: "judgeItems",
 			title: { zh: "批量判定（模型用的工具）", en: "Judging many items (a tool for the model)" },
 			summary: {
-				zh: "模型要从几百个文件、日志行或发现里挑东西时，把一个是非题交给 Jev 逐条回答，每条给一个概率，不用自己一条条读。只在任务用得上时出现。是模型自己问的，所以影子模式下也照常回答；关闭则不能用。",
-				en: "When the model has to sort through hundreds of files, log lines or findings, it gives Jev one yes/no question to answer for each item, with a probability for each, instead of reading them all. Available only when a task needs it. Since the model is the one asking, it's answered in shadow mode too; off disables it.",
+				zh: "模型要从几百个文件、日志行或发现里挑东西时，把一个是非题交给判定器逐条回答，每条给一个概率，不用自己一条条读。只在任务用得上时出现。是模型自己问的，所以影子模式下也照常回答；关闭则不能用。",
+				en: "When the model has to sort through hundreds of files, log lines or findings, it gives the judge one yes/no question to answer for each item, with a probability for each, instead of reading them all. Available only when a task needs it. Since the model is the one asking, it's answered in shadow mode too; off disables it.",
 			},
 		},
 		{
@@ -434,10 +434,10 @@ export const MANIFEST: HarnessManifest = {
 			id: "goal.met",
 			group: "turn",
 			feature: "goal",
-			title: { zh: "目标是否达成（Jev 兜底）", en: "Goal met (Jev fallback)" },
+			title: { zh: "目标是否达成（判定器兜底）", en: "Goal met (judge fallback)" },
 			summary: {
-				zh: "目标模式默认由大模型判断；这个判定点只在选了 Jev、或大模型没答上来时用：读结束语，判断目标是否达成、是否需要你拿主意。还有没勾掉的验收条件、或改完没跑过，一律算没达成。",
-				en: "In goal mode, a model decides by default whether the goal is met. This decision point is used only when Jev is chosen or the model doesn't answer: it reads the closing message to judge whether the goal is met and whether you're needed. An open acceptance item or an unverified edit always means not yet.",
+				zh: "目标模式默认由大模型判断；这个判定点只在选了判定器、或大模型没答上来时用：读结束语，判断目标是否达成、是否需要你拿主意。还有没勾掉的验收条件、或改完没跑过，一律算没达成。",
+				en: "In goal mode, a model decides by default whether the goal is met. This decision point is used only when the judge is chosen or the model doesn't answer: it reads the closing message to judge whether the goal is met and whether you're needed. An open acceptance item or an unverified edit always means not yet.",
 			},
 		},
 		{
@@ -576,7 +576,7 @@ export const MANIFEST: HarnessManifest = {
 			title: { zh: "技能披露", en: "Skill disclosure" },
 			summary: {
 				zh: "按任务决定提示词里带哪些技能说明。",
-				en: "Chooses which skill descriptions go into a session's prompt.",
+				en: "Chooses which skill descriptions go into the prompt.",
 			},
 			defaultEnabled: true,
 			options: [
@@ -658,7 +658,7 @@ export const MANIFEST: HarnessManifest = {
 					key: "show",
 					kind: "boolean",
 					default: true,
-					label: { zh: "在对话里显示任务帧更新", en: "Show frame updates in the chat" },
+					label: { zh: "在对话里显示任务帧更新", en: "Show frame updates in the conversation" },
 				},
 			],
 		},
@@ -739,7 +739,7 @@ export const MANIFEST: HarnessManifest = {
 					label: { zh: "从代理的脱困中学", en: "Learn from the agent getting unstuck" },
 					help: {
 						zh: "需要写作模型或当前对话模型把经验写成一句话。",
-						en: "Needs the writer model or the session's model to word the lesson.",
+						en: "Needs the writer model or the main model to word the lesson.",
 					},
 				},
 				{
@@ -1219,7 +1219,7 @@ export const MANIFEST: HarnessManifest = {
 					label: { zh: "一次快照最多的文件数", en: "Max files per snapshot" },
 					help: {
 						zh: "要拍的文件更多时，这个会话就不拍检查点，并说一次原因。你的主目录和 mu 自己的目录从来不拍。",
-						en: "With more files than this, the session runs without checkpoints and tells you once. Your home folder and mu's own folders are never snapshotted.",
+						en: "With more files than this, mu runs without checkpoints and tells you once. Your home folder and mu's own folders are never snapshotted.",
 					},
 					unit: { zh: "个", en: "files" },
 				},
@@ -1232,7 +1232,7 @@ export const MANIFEST: HarnessManifest = {
 					label: { zh: "一次快照最多的总大小", en: "Max total snapshot size" },
 					help: {
 						zh: "要拍的文件加起来更大时，这个会话就不拍检查点，并说一次原因。",
-						en: "Above this, the session runs without checkpoints and tells you once.",
+						en: "Above this, mu runs without checkpoints and tells you once.",
 					},
 					unit: { zh: "MB", en: "MB" },
 				},
@@ -1479,12 +1479,12 @@ export const MANIFEST: HarnessManifest = {
 					default: "model",
 					label: { zh: "谁来判断目标是否达成", en: "Who checks whether the goal is met" },
 					help: {
-						zh: "大模型读目标、这一轮做了什么、最后一次测试的结果和结束语，给出结论和下一步；它没答上来时才退回 Jev。无论哪种，没勾的验收条件、改完没跑都算没达成。",
-						en: "A model reads the goal, what the run did, the last test run and the closing message, then gives a verdict and the next step; Jev steps in only when the model doesn't answer. Either way, an open acceptance item or an unverified edit means not yet.",
+						zh: "大模型读目标、这一轮做了什么、最后一次测试的结果和结束语，给出结论和下一步；它没答上来时才退回判定器。无论哪种，没勾的验收条件、改完没跑都算没达成。",
+						en: "A model reads the goal, what the run did, the last test run and the closing message, then gives a verdict and the next step; the judge steps in only when the model doesn't answer. Either way, an open acceptance item or an unverified edit means not yet.",
 					},
 					choices: [
 						{ value: "model", label: { zh: "大模型（推荐）", en: "A model (recommended)" } },
-						{ value: "jev", label: { zh: "Jev 判定器", en: "Jev" } },
+						{ value: "jev", label: { zh: "判定器", en: "The judge" } },
 					],
 				},
 				{
@@ -1494,7 +1494,7 @@ export const MANIFEST: HarnessManifest = {
 					label: { zh: "判断用的模型", en: "Model for the check" },
 					help: {
 						zh: "写成「提供商/模型」。留空就用当前会话的模型。",
-						en: "As provider/model. Empty: the session's current model.",
+						en: "As provider/model. Empty: the current model.",
 					},
 				},
 				{
@@ -1519,8 +1519,8 @@ export const MANIFEST: HarnessManifest = {
 					unit: ms,
 					label: { zh: "判断最多等多久", en: "Max wait for the check" },
 					help: {
-						zh: "超时就退回 Jev 判定器，再退回只看事实。",
-						en: "If the check takes longer, Jev decides; if Jev can't, only the facts count.",
+						zh: "超时就退回判定器，再退回只看事实。",
+						en: "If the check takes longer, the judge decides; if the judge can't, only the facts count.",
 					},
 				},
 				{
@@ -1572,8 +1572,8 @@ export const MANIFEST: HarnessManifest = {
 			name: "board",
 			title: { zh: "人话看板", en: "Plain-language board" },
 			summary: {
-				zh: "用大白话告诉你项目推进到哪、现在在干什么、有什么要你确认，并记一份流水：代理每做一步就记一行，它说的话、发现的事由会说人话的模型当场重讲，Jev 决定什么值得讲；一轮做完再总结一遍，过程留在流水里。只给人看，不进模型的上下文。每个项目单独开关；第一次打开时选一个模型来讲，之后可以换。",
-				en: "Tells you in plain words how far along the work is, what's happening now and what's waiting on you. It keeps a running account: a line for each step as it happens, plus what the agent says or finds, retold right away by a plain-speaking model, with Jev deciding what's worth telling. A finished run gets a summary, and the account is kept. For you only; never in the model's context. Turned on per project (/board on, /board off); the first time, you pick the model that writes it (/board model changes it).",
+				zh: "用大白话告诉你项目推进到哪、现在在干什么、有什么要你确认，并记一份流水：代理每做一步就记一行，它说的话、发现的事由会说人话的模型当场重讲，判定器决定什么值得讲；一轮做完再总结一遍，过程留在流水里。只给人看，不进模型的上下文。每个项目单独开关；第一次打开时选一个模型来讲，之后可以换。",
+				en: "Tells you in plain words how far along the work is, what's happening now and what's waiting on you. It keeps a running account: a line for each step as it happens, plus what the agent says or finds, retold right away by a plain-speaking model, with the judge deciding what's worth telling. A finished run gets a summary, and the account is kept. For you only; never in the model's context. Turned on per project (/board on, /board off); the first time, you pick the model that writes it (/board model changes it).",
 			},
 			defaultEnabled: true,
 			options: [
@@ -1594,7 +1594,7 @@ export const MANIFEST: HarnessManifest = {
 					label: { zh: "写看板的模型", en: "Model that writes the board" },
 					help: {
 						zh: "写成「提供商/模型」，填了就不再问。留空：第一次打开看板时让你挑一个（推荐 Claude Opus 4.6，其次 Gemini 3.8 Flash），挑好的会记住。",
-						en: "As provider/model; if set here, you won't be asked. Empty: you pick one the first time you turn the board on (Claude Opus 4.6 recommended, then Gemini 3.8 Flash), saved in mu/board.json. If none is picked: the writer model, else the session's model.",
+						en: "As provider/model; if set here, you won't be asked. Empty: you pick one the first time you turn the board on (Claude Opus 4.6 recommended, then Gemini 3.8 Flash), saved in mu/board.json. If none is picked: the writer model, else the current model.",
 					},
 				},
 				{
@@ -1737,7 +1737,7 @@ export const MANIFEST: HarnessManifest = {
 			title: { zh: "判定连接保温", en: "Judge connection warm-up" },
 			summary: {
 				zh: "会话在用时每隔一会儿问判定器一个小问题，让连接一直热着：一轮开始前的判定省下 1–3 秒的建连。",
-				en: "While the session is in use, a tiny question keeps the judge's connection warm, so the questions before a turn skip 1–3 s of connection setup.",
+				en: "While mu is in use, a tiny question keeps the judge's connection warm, so the questions before a turn skip 1–3 s of connection setup.",
 			},
 			defaultEnabled: true,
 			options: [
@@ -1778,7 +1778,7 @@ export const MANIFEST: HarnessManifest = {
 					label: { zh: "模型梯队（从便宜到强）", en: "Model ladder (cheapest to strongest)" },
 					help: {
 						zh: "留空则子代理都用当前会话的模型。",
-						en: "Empty means every subagent uses the session's model.",
+						en: "Empty means every subagent uses the main agent's model.",
 					},
 				},
 				{

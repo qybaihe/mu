@@ -893,7 +893,7 @@ describe('signing in with a subscription', () => {
       data: { ...running, phase: 'failed', error: 'Token exchange request failed' },
     });
     fireEvent.click(screen.getByTestId('mu-login-openai-codex'));
-    const alert = await screen.findByText("Sign-in didn't finish. Try again.", {}, { timeout: 3000 });
+    const alert = await screen.findByText("Couldn't sign in. Try again.", {}, { timeout: 3000 });
     expect(alert).toHaveTextContent('Token exchange request failed');
     expect(screen.getByTestId('mu-login-openai-codex')).not.toBeDisabled();
   });

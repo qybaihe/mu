@@ -925,32 +925,32 @@
 			"fa-IR": "پیام‌های تشخیصی تازهٔ سرور زبان پس از یک ویرایش: همین حالا گفته شوند، وقتی مدل مکث می‌کند، یا هرگز (هشدارهای سبک کد). خطاهای تازه‌ای که در پایان نوبت هنوز باقی‌اند همیشه گفته می‌شوند."
 		},
 		"decisions[id=goal.met].title": {
-			"en": "Goal met (Jev fallback)",
-			"zh-TW": "目標是否達成（Jev 備援）",
-			"ja-JP": "目標の達成（Jev による予備判定）",
-			"ko-KR": "목표 달성(Jev 보조)",
-			"de-DE": "Ziel erreicht (Jev als Reserve)",
-			"fr-FR": "Objectif atteint (repli sur Jev)",
-			"es-ES": "Objetivo alcanzado (Jev de reserva)",
-			"pt-BR": "Objetivo alcançado (Jev como apoio)",
-			"ru-RU": "Достижение цели (Jev на подстраховке)",
-			"uk-UA": "Чи досягнуто мети (підстраховка Jev)",
-			"tr-TR": "Hedefe ulaşıldı mı (yedek olarak Jev)",
-			"fa-IR": "تحقق هدف (Jev در نقش پشتیبان)"
+			"en": "Goal met (judge fallback)",
+			"zh-TW": "目標是否達成（判定器備援）",
+			"ja-JP": "目標の達成（判定器による予備判定）",
+			"ko-KR": "목표 달성(판정기 보조)",
+			"de-DE": "Ziel erreicht (Judge als Reserve)",
+			"fr-FR": "Objectif atteint (repli sur le juge)",
+			"es-ES": "Objetivo alcanzado (juez de reserva)",
+			"pt-BR": "Objetivo alcançado (juiz como apoio)",
+			"ru-RU": "Достижение цели (судья на подстраховке)",
+			"uk-UA": "Чи досягнуто мети (підстраховка судді)",
+			"tr-TR": "Hedefe ulaşıldı mı (yedek olarak hakem)",
+			"fa-IR": "تحقق هدف (داور در نقش پشتیبان)"
 		},
 		"decisions[id=goal.met].summary": {
-			"en": "In goal mode, a model decides by default whether the goal is met. This decision point is used only when Jev is chosen or the model doesn't answer: it reads the closing message to judge whether the goal is met and whether you're needed. An open acceptance item or an unverified edit always means not yet.",
-			"zh-TW": "目標模式預設由大模型判斷；只有選了 Jev，或大模型沒給出答案時，才用這個判定點：讀最後的結束語，判斷目標是否達成、是否需要你。只要還有未完成的驗收項目，或有改動沒驗證過，一律算還沒達成。",
-			"ja-JP": "目標モードの達成チェックは、既定ではモデルが行います。この判定ポイントは、Jev を選んだ場合か、モデルが回答しなかった場合に使われます。最後のメッセージから、目標を達成したか、あなたの判断が必要かを読み取ります。未完了の受け入れ条件や未検証の編集が残っていれば、必ず未達成とします。",
-			"ko-KR": "목표 모드는 기본적으로 모델이 확인합니다. 이 판정 지점은 Jev를 선택했거나 모델이 답하지 않을 때 쓰이며, 마무리 메시지를 읽고 목표가 달성되었는지, 사용자가 나서야 하는지 판정합니다. 완료되지 않은 확인 항목이나 검증되지 않은 편집이 있으면 항상 아직 달성되지 않은 것으로 봅니다.",
-			"de-DE": "Im Zielmodus prüft standardmäßig ein Modell; dieser Entscheidungspunkt kommt zum Zug, wenn Jev gewählt ist oder das Modell keine Antwort gibt: Er liest aus der Abschlussnachricht, ob das Ziel erreicht ist und ob du gebraucht wirst. Ein offenes Abnahmekriterium oder eine nicht überprüfte Änderung heißt immer: noch nicht.",
-			"fr-FR": "Par défaut, le mode objectif est vérifié par un modèle ; ce point de décision sert quand Jev est choisi ou que le modèle ne répond pas : il lit le message de clôture pour savoir si l’objectif est atteint et si l’on a besoin de vous. Un critère d’acceptation encore ouvert ou une modification non vérifiée signifie toujours « pas encore ».",
-			"es-ES": "El modo objetivo lo comprueba un modelo de forma predeterminada; este punto de decisión se usa cuando se elige Jev o el modelo no responde: lee el mensaje final para ver si el objetivo se cumple y si te necesita. Un criterio de aceptación pendiente o una edición sin verificar siempre significa que aún no.",
-			"pt-BR": "Por padrão, o modo de objetivo é verificado por um modelo; este ponto de decisão é usado quando o Jev é escolhido ou o modelo não responde: ele lê a mensagem final para ver se o objetivo foi alcançado e se precisa de você. Um critério de aceitação em aberto ou uma edição não verificada sempre significa “ainda não”.",
-			"ru-RU": "В режиме цели проверку по умолчанию выполняет модель; эта точка решения используется, если выбран Jev или модель не ответила: Jev читает заключительное сообщение и решает, достигнута ли цель и нужно ли ваше участие. Невыполненный критерий приёмки или непроверенная правка всегда означают «ещё нет».",
-			"uk-UA": "У режимі мети перевірку типово виконує модель; ця точка рішення потрібна, коли вибрано Jev або модель не дала відповіді: тоді за заключним повідомленням визначається, чи досягнуто мети і чи потрібні ви. Невиконаний критерій приймання чи неперевірена правка завжди означають «ще ні».",
-			"tr-TR": "Hedef modunu varsayılan olarak bir model kontrol eder; bu karar noktası Jev seçildiğinde ya da model yanıt vermediğinde kullanılır: kapanış mesajını okuyarak hedefin karşılanıp karşılanmadığına ve size ihtiyaç olup olmadığına bakar. Açık bir kabul ölçütü ya da doğrulanmamış bir düzenleme her zaman “henüz değil” anlamına gelir.",
-			"fa-IR": "حالت هدف به‌طور پیش‌فرض با یک مدل بررسی می‌شود؛ این نقطهٔ تصمیم وقتی به کار می‌رود که Jev انتخاب شده باشد یا مدل پاسخی ندهد: پیام پایانی را می‌خواند تا ببیند هدف محقق شده است یا نه و آیا به شما نیاز هست. یک معیار پذیرشِ باز یا ویرایشی که راستی‌آزمایی نشده همیشه یعنی «هنوز نه»."
+			"en": "In goal mode, a model decides by default whether the goal is met. This decision point is used only when the judge is chosen or the model doesn't answer: it reads the closing message to judge whether the goal is met and whether you're needed. An open acceptance item or an unverified edit always means not yet.",
+			"zh-TW": "目標模式預設由大模型判斷；只有選了判定器，或大模型沒給出答案時，才用這個判定點：讀最後的結束語，判斷目標是否達成、是否需要你。只要還有未完成的驗收項目，或有改動沒驗證過，一律算還沒達成。",
+			"ja-JP": "目標モードの達成チェックは、既定ではモデルが行います。この判定ポイントは、判定器を選んだ場合か、モデルが回答しなかった場合に使われます。最後のメッセージから、目標を達成したか、あなたの判断が必要かを読み取ります。未完了の受け入れ条件や未検証の編集が残っていれば、必ず未達成とします。",
+			"ko-KR": "목표 모드는 기본적으로 모델이 확인합니다. 이 판정 지점은 판정기를 선택했거나 모델이 답하지 않을 때 쓰이며, 마무리 메시지를 읽고 목표가 달성되었는지, 사용자가 나서야 하는지 판정합니다. 완료되지 않은 확인 항목이나 검증되지 않은 편집이 있으면 항상 아직 달성되지 않은 것으로 봅니다.",
+			"de-DE": "Im Zielmodus prüft standardmäßig ein Modell; dieser Entscheidungspunkt kommt zum Zug, wenn der Judge gewählt ist oder das Modell keine Antwort gibt: Er liest aus der Abschlussnachricht, ob das Ziel erreicht ist und ob du gebraucht wirst. Ein offenes Abnahmekriterium oder eine nicht überprüfte Änderung heißt immer: noch nicht.",
+			"fr-FR": "Par défaut, le mode objectif est vérifié par un modèle ; ce point de décision sert quand le juge est choisi ou que le modèle ne répond pas : il lit le message de clôture pour savoir si l’objectif est atteint et si l’on a besoin de vous. Un critère d’acceptation encore ouvert ou une modification non vérifiée signifie toujours « pas encore ».",
+			"es-ES": "El modo objetivo lo comprueba un modelo de forma predeterminada; este punto de decisión se usa cuando se elige el juez o el modelo no responde: lee el mensaje final para ver si el objetivo se cumple y si te necesita. Un criterio de aceptación pendiente o una edición sin verificar siempre significa que aún no.",
+			"pt-BR": "Por padrão, o modo de objetivo é verificado por um modelo; este ponto de decisão é usado quando o juiz é escolhido ou o modelo não responde: ele lê a mensagem final para ver se o objetivo foi alcançado e se precisa de você. Um critério de aceitação em aberto ou uma edição não verificada sempre significa “ainda não”.",
+			"ru-RU": "В режиме цели проверку по умолчанию выполняет модель; эта точка решения используется, если выбран судья или модель не ответила: судья читает заключительное сообщение и решает, достигнута ли цель и нужно ли ваше участие. Невыполненный критерий приёмки или непроверенная правка всегда означают «ещё нет».",
+			"uk-UA": "У режимі мети перевірку типово виконує модель; ця точка рішення потрібна, коли вибрано суддю або модель не дала відповіді: тоді за заключним повідомленням визначається, чи досягнуто мети і чи потрібні ви. Невиконаний критерій приймання чи неперевірена правка завжди означають «ще ні».",
+			"tr-TR": "Hedef modunu varsayılan olarak bir model kontrol eder; bu karar noktası hakem seçildiğinde ya da model yanıt vermediğinde kullanılır: kapanış mesajını okuyarak hedefin karşılanıp karşılanmadığına ve size ihtiyaç olup olmadığına bakar. Açık bir kabul ölçütü ya da doğrulanmamış bir düzenleme her zaman “henüz değil” anlamına gelir.",
+			"fa-IR": "حالت هدف به‌طور پیش‌فرض با یک مدل بررسی می‌شود؛ این نقطهٔ تصمیم وقتی به کار می‌رود که داور انتخاب شده باشد یا مدل پاسخی ندهد: پیام پایانی را می‌خواند تا ببیند هدف محقق شده است یا نه و آیا به شما نیاز هست. یک معیار پذیرشِ باز یا ویرایشی که راستی‌آزمایی نشده همیشه یعنی «هنوز نه»."
 		},
 		"decisions[id=board.read].title": {
 			"en": "Plain-language board: where things stand",
@@ -1331,7 +1331,7 @@
 			"fa-IR": "نمایش گزینشی مهارت‌ها"
 		},
 		"features[name=skills].summary": {
-			"en": "Chooses which skill descriptions go into a session's prompt.",
+			"en": "Chooses which skill descriptions go into the prompt.",
 			"zh-TW": "決定一個對話帶上哪些技能說明。",
 			"ja-JP": "セッションに含めるスキルの説明を選びます。",
 			"ko-KR": "세션에 어떤 스킬 설명을 넣을지 고릅니다.",
@@ -1555,7 +1555,7 @@
 			"fa-IR": "اگر مهلت تمام شود یا پاسخ نادرست باشد، آخرین نسخه می‌ماند و کهنه علامت می‌خورد، فیلتر کردن بر اساس هدف متوقف می‌شود و پیام بعدی دوباره تلاش می‌کند."
 		},
 		"features[name=frame].options[key=show].label": {
-			"en": "Show frame updates in the chat",
+			"en": "Show frame updates in the conversation",
 			"zh-TW": "在對話裡顯示任務框架更新",
 			"ja-JP": "タスクフレームの更新を会話に表示",
 			"ko-KR": "대화에 프레임 업데이트 표시",
@@ -1779,7 +1779,7 @@
 			"fa-IR": "آموختن از راه گریزی که عامل پیدا می‌کند"
 		},
 		"features[name=memory].options[key=outcome].help": {
-			"en": "Needs the writer model or the session's model to word the lesson.",
+			"en": "Needs the writer model or the main model to word the lesson.",
 			"zh-TW": "需要 writer 模型或目前對話的模型，把經驗寫成一句話。",
 			"ja-JP": "教訓を文章にするには、writer モデルか会話のモデルが必要です。",
 			"ko-KR": "교훈을 글로 옮기려면 writer 모델이나 대화의 모델이 필요합니다.",
@@ -2745,7 +2745,7 @@
 			"fa-IR": "بیشترین تعداد فایل در هر تصویر لحظه‌ای"
 		},
 		"features[name=checkpoint].options[key=maxFiles].help": {
-			"en": "With more files than this, the session runs without checkpoints and tells you once. Your home folder and mu's own folders are never snapshotted.",
+			"en": "With more files than this, mu runs without checkpoints and tells you once. Your home folder and mu's own folders are never snapshotted.",
 			"zh-TW": "要拍的檔案更多時，這個對話就不建立檢查點，並說明一次原因。你的主目錄和 mu 自己的目錄從來不拍。",
 			"ja-JP": "これより多くのファイルを取り込む場合、そのセッションはチェックポイントなしで進み、その旨を一度だけ伝えます。ホームフォルダーと mu 自身のフォルダーはスナップショットの対象になりません。",
 			"ko-KR": "담을 파일이 이보다 많으면 해당 세션은 체크포인트 없이 진행되며, 그 사실을 한 번 알려 줍니다. 홈 폴더와 mu 자체 폴더는 스냅샷에 넣지 않습니다.",
@@ -2787,7 +2787,7 @@
 			"fa-IR": "بیشترین حجم کل هر تصویر لحظه‌ای"
 		},
 		"features[name=checkpoint].options[key=maxTotalMb].help": {
-			"en": "Above this, the session runs without checkpoints and tells you once.",
+			"en": "Above this, mu runs without checkpoints and tells you once.",
 			"zh-TW": "要拍的檔案加起來更大時，這個對話就不建立檢查點，並說明一次原因。",
 			"ja-JP": "これより多くを取り込む場合、そのセッションはチェックポイントなしで進み、その旨を一度だけ伝えます。",
 			"ko-KR": "담을 양이 이보다 많으면 해당 세션은 체크포인트 없이 진행되며, 그 사실을 한 번 알려 줍니다.",
@@ -3459,18 +3459,18 @@
 			"fa-IR": "بررسی‌کنندهٔ تحقق هدف"
 		},
 		"features[name=goal].options[key=checker].help": {
-			"en": "A model reads the goal, what the run did, the last test run and the closing message, then gives a verdict and the next step; Jev steps in only when the model doesn't answer. Either way, an open acceptance item or an unverified edit means not yet.",
-			"zh-TW": "大模型讀取目標、這次執行做了什麼、最後一次測試結果和結束語，給出結論和下一步；只有它沒給出答案時才改由 Jev 判斷。無論哪種，只要還有未完成的驗收項目，或有改動沒驗證過，都算還沒達成。",
-			"ja-JP": "モデルが目標、この実行で行ったこと、最後のテスト結果、最後のメッセージを読み、判断と次のステップを返します。Jev を使うのは、モデルが回答しなかった場合だけです。どちらの場合も、未完了の受け入れ条件や未検証の編集があれば未達成とします。",
-			"ko-KR": "모델이 목표, 이번 실행에서 한 일, 마지막 테스트 실행, 마무리 메시지를 읽고 결론과 다음 단계를 제시합니다. Jev는 모델이 답하지 않을 때만 씁니다. 어느 쪽이든 완료되지 않은 확인 항목이나 검증되지 않은 편집이 있으면 아직 달성되지 않은 것입니다.",
-			"de-DE": "Ein Modell liest das Ziel, was der Lauf getan hat, den letzten Testlauf und die Abschlussnachricht und gibt ein Urteil und den nächsten Schritt; Jev nur, wenn es keine Antwort gibt. In beiden Fällen heißt ein offenes Abnahmekriterium oder eine nicht überprüfte Änderung: noch nicht.",
-			"fr-FR": "Un modèle lit l’objectif, ce qu’a fait l’exécution, le dernier lancement des tests et le message de clôture, puis donne un jugement et l’étape suivante ; Jev seulement s’il ne répond pas. Dans les deux cas, un critère d’acceptation encore ouvert ou une modification non vérifiée signifie « pas encore ».",
-			"es-ES": "Un modelo lee el objetivo, lo que ha hecho la ejecución, la última ejecución de las pruebas y el mensaje final, y da un veredicto y el siguiente paso; Jev solo entra si el modelo no responde. En ambos casos, un criterio de aceptación pendiente o una edición sin verificar significa que aún no.",
-			"pt-BR": "Um modelo lê o objetivo, o que a execução fez, a última execução dos testes e a mensagem final, e dá um veredito e a próxima etapa; o Jev só entra quando o modelo não responde. De todo modo, um critério de aceitação em aberto ou uma edição não verificada significa “ainda não”.",
-			"ru-RU": "Модель читает цель, сделанное за запуск, результат последнего прогона тестов и заключительное сообщение, а затем выносит решение и называет следующий шаг; Jev — только если она не ответила. В обоих случаях невыполненный критерий приёмки или непроверенная правка означают «ещё нет».",
-			"uk-UA": "Модель читає мету, що зроблено під час запуску, останній запуск тестів і заключне повідомлення та дає рішення й наступний крок; Jev — лише коли вона не відповіла. В обох випадках невиконаний критерій приймання чи неперевірена правка означають «ще ні».",
-			"tr-TR": "Bir model hedefi, çalışmanın ne yaptığını, son test çalıştırmasını ve kapanış mesajını okur; bir karar verir ve sonraki adımı söyler. Jev yalnızca model yanıt vermediğinde devreye girer. Her iki durumda da açık bir kabul ölçütü ya da doğrulanmamış bir düzenleme “henüz değil” anlamına gelir.",
-			"fa-IR": "یک مدل هدف، کارهای انجام‌شده در این اجرا، آخرین اجرای آزمون و پیام پایانی را می‌خواند و نتیجه و گام بعدی را اعلام می‌کند؛ Jev فقط وقتی به کار می‌آید که مدل پاسخی ندهد. در هر دو حالت، یک معیار پذیرشِ باز یا ویرایشی که راستی‌آزمایی نشده یعنی «هنوز نه»."
+			"en": "A model reads the goal, what the run did, the last test run and the closing message, then gives a verdict and the next step; the judge steps in only when the model doesn't answer. Either way, an open acceptance item or an unverified edit means not yet.",
+			"zh-TW": "大模型讀取目標、這次執行做了什麼、最後一次測試結果和結束語，給出結論和下一步；只有它沒給出答案時才改由判定器判斷。無論哪種，只要還有未完成的驗收項目，或有改動沒驗證過，都算還沒達成。",
+			"ja-JP": "モデルが目標、この実行で行ったこと、最後のテスト結果、最後のメッセージを読み、判断と次のステップを返します。判定器を使うのは、モデルが回答しなかった場合だけです。どちらの場合も、未完了の受け入れ条件や未検証の編集があれば未達成とします。",
+			"ko-KR": "모델이 목표, 이번 실행에서 한 일, 마지막 테스트 실행, 마무리 메시지를 읽고 결론과 다음 단계를 제시합니다. 판정기는 모델이 답하지 않을 때만 씁니다. 어느 쪽이든 완료되지 않은 확인 항목이나 검증되지 않은 편집이 있으면 아직 달성되지 않은 것입니다.",
+			"de-DE": "Ein Modell liest das Ziel, was der Lauf getan hat, den letzten Testlauf und die Abschlussnachricht und gibt ein Urteil und den nächsten Schritt; der Judge nur, wenn es keine Antwort gibt. In beiden Fällen heißt ein offenes Abnahmekriterium oder eine nicht überprüfte Änderung: noch nicht.",
+			"fr-FR": "Un modèle lit l’objectif, ce qu’a fait l’exécution, le dernier lancement des tests et le message de clôture, puis donne un jugement et l’étape suivante ; le juge seulement s’il ne répond pas. Dans les deux cas, un critère d’acceptation encore ouvert ou une modification non vérifiée signifie « pas encore ».",
+			"es-ES": "Un modelo lee el objetivo, lo que ha hecho la ejecución, la última ejecución de las pruebas y el mensaje final, y da un veredicto y el siguiente paso; el juez solo entra si el modelo no responde. En ambos casos, un criterio de aceptación pendiente o una edición sin verificar significa que aún no.",
+			"pt-BR": "Um modelo lê o objetivo, o que a execução fez, a última execução dos testes e a mensagem final, e dá um veredito e a próxima etapa; o juiz só entra quando o modelo não responde. De todo modo, um critério de aceitação em aberto ou uma edição não verificada significa “ainda não”.",
+			"ru-RU": "Модель читает цель, сделанное за запуск, результат последнего прогона тестов и заключительное сообщение, а затем выносит решение и называет следующий шаг; судья — только если она не ответила. В обоих случаях невыполненный критерий приёмки или непроверенная правка означают «ещё нет».",
+			"uk-UA": "Модель читає мету, що зроблено під час запуску, останній запуск тестів і заключне повідомлення та дає рішення й наступний крок; суддя — лише коли вона не відповіла. В обох випадках невиконаний критерій приймання чи неперевірена правка означають «ще ні».",
+			"tr-TR": "Bir model hedefi, çalışmanın ne yaptığını, son test çalıştırmasını ve kapanış mesajını okur; bir karar verir ve sonraki adımı söyler. Hakem yalnızca model yanıt vermediğinde devreye girer. Her iki durumda da açık bir kabul ölçütü ya da doğrulanmamış bir düzenleme “henüz değil” anlamına gelir.",
+			"fa-IR": "یک مدل هدف، کارهای انجام‌شده در این اجرا، آخرین اجرای آزمون و پیام پایانی را می‌خواند و نتیجه و گام بعدی را اعلام می‌کند؛ داور فقط وقتی به کار می‌آید که مدل پاسخی ندهد. در هر دو حالت، یک معیار پذیرشِ باز یا ویرایشی که راستی‌آزمایی نشده یعنی «هنوز نه»."
 		},
 		"features[name=goal].options[key=checker].choices[value=model].label": {
 			"en": "A model (recommended)",
@@ -3487,18 +3487,18 @@
 			"fa-IR": "یک مدل (پیشنهادی)"
 		},
 		"features[name=goal].options[key=checker].choices[value=jev].label": {
-			"en": "Jev",
-			"zh-TW": "Jev 判定器",
-			"ja-JP": "Jev 判定器",
-			"ko-KR": "Jev 판정기",
-			"de-DE": "Der Jev-Judge",
-			"fr-FR": "Le juge Jev",
-			"es-ES": "El juez Jev",
-			"pt-BR": "O juiz Jev",
-			"ru-RU": "Судья Jev",
-			"uk-UA": "Суддя Jev",
-			"tr-TR": "Jev hakemi",
-			"fa-IR": "داور Jev"
+			"en": "The judge",
+			"zh-TW": "判定器",
+			"ja-JP": "判定器",
+			"ko-KR": "판정기",
+			"de-DE": "Der Judge",
+			"fr-FR": "Le juge",
+			"es-ES": "El juez",
+			"pt-BR": "O juiz",
+			"ru-RU": "Судья",
+			"uk-UA": "Суддя",
+			"tr-TR": "Hakem",
+			"fa-IR": "داور"
 		},
 		"features[name=goal].options[key=checkModel].label": {
 			"en": "Model for the check",
@@ -3515,7 +3515,7 @@
 			"fa-IR": "مدل بررسی"
 		},
 		"features[name=goal].options[key=checkModel].help": {
-			"en": "As provider/model. Empty: the session's current model.",
+			"en": "As provider/model. Empty: the current model.",
 			"zh-TW": "格式為 provider/model。留空則使用這個對話目前的模型。",
 			"ja-JP": "provider/model の形式で指定します。空欄の場合は、セッションの現在のモデルを使います。",
 			"ko-KR": "provider/model 형식입니다. 비워 두면 세션의 현재 모델을 씁니다.",
@@ -3641,18 +3641,18 @@
 			"fa-IR": "حداکثر انتظار برای بررسی"
 		},
 		"features[name=goal].options[key=checkTimeoutMs].help": {
-			"en": "If the check takes longer, Jev decides; if Jev can't, only the facts count.",
-			"zh-TW": "逾時就改由 Jev 判斷，Jev 也不行就只看事實。",
-			"ja-JP": "それを過ぎると Jev が判定し、それもできなければ事実だけで判断します。",
-			"ko-KR": "이 시간이 지나면 Jev가 판정하고, 그것도 안 되면 사실만 보고 정합니다.",
-			"de-DE": "Danach entscheidet Jev, und wenn auch das nicht klappt, allein die Fakten.",
-			"fr-FR": "Au-delà, Jev décide, et à défaut les faits seuls.",
-			"es-ES": "Después decide Jev y, si tampoco responde, solo los hechos.",
-			"pt-BR": "Depois disso, quem decide é o Jev e, se ele falhar, apenas os fatos.",
-			"ru-RU": "После этого решает Jev, а если и он не ответит — одни факты.",
-			"uk-UA": "Після цього вирішує Jev, а якщо не вийде й у нього — самі факти.",
-			"tr-TR": "Sonrasında Jev karar verir; o da olmazsa yalnızca olgulara bakılır.",
-			"fa-IR": "پس از آن Jev داوری می‌کند، و اگر آن هم نشد، فقط واقعیت‌ها ملاک است."
+			"en": "If the check takes longer, the judge decides; if the judge can't, only the facts count.",
+			"zh-TW": "逾時就改由判定器判斷，判定器也不行就只看事實。",
+			"ja-JP": "それを過ぎると 判定器が判定し、それもできなければ事実だけで判断します。",
+			"ko-KR": "이 시간이 지나면 판정기가 판정하고, 그것도 안 되면 사실만 보고 정합니다.",
+			"de-DE": "Danach entscheidet der Judge, und wenn auch das nicht klappt, allein die Fakten.",
+			"fr-FR": "Au-delà, le juge décide, et à défaut les faits seuls.",
+			"es-ES": "Después decide el juez y, si tampoco responde, solo los hechos.",
+			"pt-BR": "Depois disso, quem decide é o juiz e, se ele falhar, apenas os fatos.",
+			"ru-RU": "После этого решает судья, а если и он не ответит — одни факты.",
+			"uk-UA": "Після цього вирішує суддя, а якщо не вийде й у нього — самі факти.",
+			"tr-TR": "Sonrasında hakem karar verir; o da olmazsa yalnızca olgulara bakılır.",
+			"fa-IR": "پس از آن داور تصمیم می‌گیرد، و اگر آن هم نشد، فقط واقعیت‌ها ملاک است."
 		},
 		"features[name=goal].options[key=stallLimit].label": {
 			"en": "Runs without progress before pausing",
@@ -3781,18 +3781,18 @@
 			"fa-IR": "تابلوی ساده"
 		},
 		"features[name=board].summary": {
-			"en": "Tells you in plain words how far along the work is, what's happening now and what's waiting on you. It keeps a running account: a line for each step as it happens, plus what the agent says or finds, retold right away by a plain-speaking model, with Jev deciding what's worth telling. A finished run gets a summary, and the account is kept. For you only; never in the model's context. Turned on per project (/board on, /board off); the first time, you pick the model that writes it (/board model changes it).",
-			"zh-TW": "用大白話告訴你專案推進到哪、現在在做什麼、有什麼要你確認，並記一份流水：代理每做一步就記一行，它說的話、發現的事由會講人話的模型當場重講，Jev 決定什麼值得講；一輪做完再總結一遍，過程留在流水裡。只給人看，不進模型的上下文。每個專案單獨開關；第一次打開時選一個模型來講，之後可以換。",
-			"ja-JP": "作業がどこまで進んだか、いま何が起きているか、あなたの確認を待っているものは何かをわかりやすい言葉で伝え、さらに記録を付けます。一歩ごとにその場で一行、エージェントが言ったことや見つけたことはわかりやすく話すモデルがすぐに語り直し、何を語る価値があるかは Jev が決めます。実行が終わるともう一度まとめ、記録はそのまま残ります。あなたのためだけのもので、モデルのコンテキストには入りません。プロジェクトごとに切り替え（/board on、/board off）、最初に書き手のモデルを選びます（/board model で変更）。",
-			"ko-KR": "일이 어디까지 진행됐는지, 지금 무슨 일이 일어나는지, 무엇이 여러분을 기다리는지 쉬운 말로 알려 주고, 기록도 남겨요. 한 걸음마다 그 자리에서 한 줄, 에이전트가 말하거나 알아낸 것은 쉽게 말하는 모델이 바로 다시 말해 주고, 무엇이 말할 가치가 있는지는 Jev가 정해요. 실행이 끝나면 한 번 더 요약하고 기록은 그대로 남아요. 여러분만을 위한 것이며 모델의 컨텍스트에는 들어가지 않아요. 프로젝트별로 켜고 꺼요(/board on, /board off). 처음에는 글을 쓸 모델을 고르고(/board model로 바꿀 수 있어요).",
-			"de-DE": "Sagt dir in einfachen Worten, wie weit die Arbeit ist, was gerade passiert und was auf dich wartet, und führt ein laufendes Protokoll: eine Zeile für jeden Schritt, sobald er geschieht, und was der Agent sagt oder findet, sofort nacherzählt von einem Modell, das verständlich spricht, wobei Jev entscheidet, was erzählenswert ist; ein beendeter Lauf wird noch einmal zusammengefasst, das Protokoll bleibt erhalten. Nur für dich, nie im Kontext des Modells. Pro Projekt geschaltet (/board on, /board off); beim ersten Mal wählst du das Modell, das es schreibt (/board model ändert es).",
-			"fr-FR": "Vous dit en mots simples où en est le travail, ce qui se passe maintenant et ce qui vous attend, et tient un journal : une ligne pour chaque étape au moment où elle se produit, et ce que l'agent dit ou découvre, raconté aussitôt par un modèle qui parle simplement, Jev décidant de ce qui mérite d'être dit ; une exécution terminée est résumée une fois de plus, le journal est conservé. Pour vous seulement, jamais dans le contexte du modèle. Activé par projet (/board on, /board off) ; la première fois, vous choisissez le modèle qui l'écrit (/board model le change).",
-			"es-ES": "Te dice con palabras sencillas cuánto ha avanzado el trabajo, qué está pasando ahora y qué te espera, y lleva un registro: una línea por cada paso en el momento en que ocurre, y lo que el agente dice o descubre contado al instante por un modelo que habla claro, con Jev decidiendo qué merece contarse; una ejecución terminada se resume una vez más y el registro se conserva. Solo para ti, nunca en el contexto del modelo. Se activa por proyecto (/board on, /board off); la primera vez eliges el modelo que lo escribe (/board model lo cambia).",
-			"pt-BR": "Diz em palavras simples até onde o trabalho chegou, o que está acontecendo agora e o que espera por você, e mantém um registro: uma linha para cada passo no momento em que acontece, e o que o agente diz ou descobre, recontado na hora por um modelo que fala de forma simples, com o Jev decidindo o que vale a pena contar; uma execução concluída é resumida mais uma vez, e o registro fica. Só para você, nunca no contexto do modelo. Ligado por projeto (/board on, /board off); na primeira vez, você escolhe o modelo que o escreve (/board model troca).",
-			"ru-RU": "Простыми словами сообщает, как далеко продвинулась работа, что происходит сейчас и что ждёт вас, и ведёт журнал: строка на каждый шаг в момент, когда он происходит, а сказанное или найденное агентом сразу пересказывает модель, говорящая простым языком, при этом Jev решает, о чём стоит рассказать; завершённый запуск подытоживается ещё раз, журнал сохраняется. Только для вас, никогда не попадает в контекст модели. Включается для каждого проекта (/board on, /board off); в первый раз вы выбираете модель, которая пишет доску (/board model меняет её).",
-			"uk-UA": "Простими словами каже, як далеко просунулася робота, що відбувається зараз і що чекає на вас, і веде журнал: рядок на кожен крок у мить, коли він стається, а сказане чи знайдене агентом одразу переказує модель, що говорить простою мовою, причому Jev вирішує, про що варто розповісти; завершений запуск підсумовується ще раз, журнал зберігається. Лише для вас, ніколи не потрапляє в контекст моделі. Вмикається для кожного проєкту (/board on, /board off); першого разу ви обираєте модель, яка пише дошку (/board model змінює її).",
-			"tr-TR": "İşin ne kadar ilerlediğini, şu anda ne olduğunu ve sizi neyin beklediğini sade sözlerle anlatır ve bir kayıt tutar: her adım için olduğu anda bir satır, ajanın söylediği veya bulduğu şeyler ise sade konuşan bir model tarafından hemen yeniden anlatılır; neyin anlatmaya değer olduğuna Jev karar verir. Biten bir çalışma bir kez daha özetlenir, kayıt korunur. Yalnızca sizin için; asla modelin bağlamına girmez. Proje başına açılıp kapanır (/board on, /board off); ilk seferinde yazacak modeli siz seçersiniz (/board model değiştirir).",
-			"fa-IR": "به زبان ساده می‌گوید کار تا کجا پیش رفته، الان چه خبر است و چه چیزی منتظر شماست، و یک گزارش هم نگه می‌دارد: برای هر قدم همان لحظه یک خط، و آنچه عامل می‌گوید یا پیدا می‌کند را مدلی که ساده حرف می‌زند بلافاصله بازگو می‌کند و Jev تصمیم می‌گیرد چه چیزی ارزش گفتن دارد؛ اجرای تمام‌شده یک بار دیگر جمع‌بندی می‌شود و گزارش می‌ماند. فقط برای شما، هرگز در بستر مدل نیست. برای هر پروژه جداگانه روشن و خاموش می‌شود (/board on، /board off)؛ بار اول مدلی را که آن را می‌نویسد انتخاب می‌کنید (/board model آن را عوض می‌کند)."
+			"en": "Tells you in plain words how far along the work is, what's happening now and what's waiting on you. It keeps a running account: a line for each step as it happens, plus what the agent says or finds, retold right away by a plain-speaking model, with the judge deciding what's worth telling. A finished run gets a summary, and the account is kept. For you only; never in the model's context. Turned on per project (/board on, /board off); the first time, you pick the model that writes it (/board model changes it).",
+			"zh-TW": "用大白話告訴你專案推進到哪、現在在做什麼、有什麼要你確認，並記一份流水：代理每做一步就記一行，它說的話、發現的事由會講人話的模型當場重講，判定器決定什麼值得講；一輪做完再總結一遍，過程留在流水裡。只給人看，不進模型的上下文。每個專案單獨開關；第一次打開時選一個模型來講，之後可以換。",
+			"ja-JP": "作業がどこまで進んだか、いま何が起きているか、あなたの確認を待っているものは何かをわかりやすい言葉で伝え、さらに記録を付けます。一歩ごとにその場で一行、エージェントが言ったことや見つけたことはわかりやすく話すモデルがすぐに語り直し、何を語る価値があるかは判定器が決めます。実行が終わるともう一度まとめ、記録はそのまま残ります。あなたのためだけのもので、モデルのコンテキストには入りません。プロジェクトごとに切り替え（/board on、/board off）、最初に書き手のモデルを選びます（/board model で変更）。",
+			"ko-KR": "일이 어디까지 진행됐는지, 지금 무슨 일이 일어나는지, 무엇이 여러분을 기다리는지 쉬운 말로 알려 주고, 기록도 남겨요. 한 걸음마다 그 자리에서 한 줄, 에이전트가 말하거나 알아낸 것은 쉽게 말하는 모델이 바로 다시 말해 주고, 무엇이 말할 가치가 있는지는 판정기가 정해요. 실행이 끝나면 한 번 더 요약하고 기록은 그대로 남아요. 여러분만을 위한 것이며 모델의 컨텍스트에는 들어가지 않아요. 프로젝트별로 켜고 꺼요(/board on, /board off). 처음에는 글을 쓸 모델을 고르고(/board model로 바꿀 수 있어요).",
+			"de-DE": "Sagt dir in einfachen Worten, wie weit die Arbeit ist, was gerade passiert und was auf dich wartet, und führt ein laufendes Protokoll: eine Zeile für jeden Schritt, sobald er geschieht, und was der Agent sagt oder findet, sofort nacherzählt von einem Modell, das verständlich spricht, wobei der Judge entscheidet, was erzählenswert ist; ein beendeter Lauf wird noch einmal zusammengefasst, das Protokoll bleibt erhalten. Nur für dich, nie im Kontext des Modells. Pro Projekt geschaltet (/board on, /board off); beim ersten Mal wählst du das Modell, das es schreibt (/board model ändert es).",
+			"fr-FR": "Vous dit en mots simples où en est le travail, ce qui se passe maintenant et ce qui vous attend, et tient un journal : une ligne pour chaque étape au moment où elle se produit, et ce que l'agent dit ou découvre, raconté aussitôt par un modèle qui parle simplement, le juge décidant de ce qui mérite d'être dit ; une exécution terminée est résumée une fois de plus, le journal est conservé. Pour vous seulement, jamais dans le contexte du modèle. Activé par projet (/board on, /board off) ; la première fois, vous choisissez le modèle qui l'écrit (/board model le change).",
+			"es-ES": "Te dice con palabras sencillas cuánto ha avanzado el trabajo, qué está pasando ahora y qué te espera, y lleva un registro: una línea por cada paso en el momento en que ocurre, y lo que el agente dice o descubre contado al instante por un modelo que habla claro, con el juez decidiendo qué merece contarse; una ejecución terminada se resume una vez más y el registro se conserva. Solo para ti, nunca en el contexto del modelo. Se activa por proyecto (/board on, /board off); la primera vez eliges el modelo que lo escribe (/board model lo cambia).",
+			"pt-BR": "Diz em palavras simples até onde o trabalho chegou, o que está acontecendo agora e o que espera por você, e mantém um registro: uma linha para cada passo no momento em que acontece, e o que o agente diz ou descobre, recontado na hora por um modelo que fala de forma simples, com o juiz decidindo o que vale a pena contar; uma execução concluída é resumida mais uma vez, e o registro fica. Só para você, nunca no contexto do modelo. Ligado por projeto (/board on, /board off); na primeira vez, você escolhe o modelo que o escreve (/board model troca).",
+			"ru-RU": "Простыми словами сообщает, как далеко продвинулась работа, что происходит сейчас и что ждёт вас, и ведёт журнал: строка на каждый шаг в момент, когда он происходит, а сказанное или найденное агентом сразу пересказывает модель, говорящая простым языком, при этом судья решает, о чём стоит рассказать; завершённый запуск подытоживается ещё раз, журнал сохраняется. Только для вас, никогда не попадает в контекст модели. Включается для каждого проекта (/board on, /board off); в первый раз вы выбираете модель, которая пишет доску (/board model меняет её).",
+			"uk-UA": "Простими словами каже, як далеко просунулася робота, що відбувається зараз і що чекає на вас, і веде журнал: рядок на кожен крок у мить, коли він стається, а сказане чи знайдене агентом одразу переказує модель, що говорить простою мовою, причому суддя вирішує, про що варто розповісти; завершений запуск підсумовується ще раз, журнал зберігається. Лише для вас, ніколи не потрапляє в контекст моделі. Вмикається для кожного проєкту (/board on, /board off); першого разу ви обираєте модель, яка пише дошку (/board model змінює її).",
+			"tr-TR": "İşin ne kadar ilerlediğini, şu anda ne olduğunu ve sizi neyin beklediğini sade sözlerle anlatır ve bir kayıt tutar: her adım için olduğu anda bir satır, ajanın söylediği veya bulduğu şeyler ise sade konuşan bir model tarafından hemen yeniden anlatılır; neyin anlatmaya değer olduğuna hakem karar verir. Biten bir çalışma bir kez daha özetlenir, kayıt korunur. Yalnızca sizin için; asla modelin bağlamına girmez. Proje başına açılıp kapanır (/board on, /board off); ilk seferinde yazacak modeli siz seçersiniz (/board model değiştirir).",
+			"fa-IR": "به زبان ساده می‌گوید کار تا کجا پیش رفته، الان چه خبر است و چه چیزی منتظر شماست، و یک گزارش هم نگه می‌دارد: برای هر قدم همان لحظه یک خط، و آنچه عامل می‌گوید یا پیدا می‌کند را مدلی که ساده حرف می‌زند بلافاصله بازگو می‌کند و داور تصمیم می‌گیرد چه چیزی ارزش گفتن دارد؛ اجرای تمام‌شده یک بار دیگر جمع‌بندی می‌شود و گزارش می‌ماند. فقط برای شما، هرگز در بستر مدل نیست. برای هر پروژه جداگانه روشن و خاموش می‌شود (/board on، /board off)؛ بار اول مدلی را که آن را می‌نویسد انتخاب می‌کنید (/board model آن را عوض می‌کند)."
 		},
 		"features[name=board].options[key=defaultOn].label": {
 			"en": "On in projects you haven't set it for",
@@ -3837,7 +3837,7 @@
 			"fa-IR": "مدلی که تابلو را می‌نویسد"
 		},
 		"features[name=board].options[key=model].help": {
-			"en": "As provider/model; if set here, you won't be asked. Empty: you pick one the first time you turn the board on (Claude Opus 4.6 recommended, then Gemini 3.8 Flash), saved in mu/board.json. If none is picked: the writer model, else the session's model.",
+			"en": "As provider/model; if set here, you won't be asked. Empty: you pick one the first time you turn the board on (Claude Opus 4.6 recommended, then Gemini 3.8 Flash), saved in mu/board.json. If none is picked: the writer model, else the current model.",
 			"zh-TW": "格式為 provider/model；在這裡填了就不會再問。留空：第一次開啟看板時讓你挑一個（推薦 Claude Opus 4.6，其次 Gemini 3.8 Flash），記在 mu/board.json 裡；沒挑的話用 writer 模型，再沒有就用這個對話的模型。",
 			"ja-JP": "provider/model の形式で指定します。ここで指定すると、確認はしません。空欄の場合は、初めてボードをオンにしたときに選びます（おすすめは Claude Opus 4.6、次点は Gemini 3.8 Flash）。選んだモデルは mu/board.json に保存されます。選ばなかった場合は writer モデルを、それもなければセッションのモデルを使います。",
 			"ko-KR": "provider/model 형식이며, 여기서 정하면 묻지 않습니다. 비워 두면 보드를 처음 켤 때 고르게 되며(Claude Opus 4.6 추천, 다음은 Gemini 3.8 Flash), mu/board.json에 저장됩니다. 고르지 않으면 writer 모델을, 그것도 없으면 세션의 모델을 씁니다.",
@@ -4173,7 +4173,7 @@
 			"fa-IR": "گرم نگه‌داشتن اتصال داور"
 		},
 		"features[name=warmup].summary": {
-			"en": "While the session is in use, a tiny question keeps the judge's connection warm, so the questions before a turn skip 1–3 s of connection setup.",
+			"en": "While mu is in use, a tiny question keeps the judge's connection warm, so the questions before a turn skip 1–3 s of connection setup.",
 			"zh-TW": "對話使用中時，每隔一陣子問判定器一個小問題，讓連線一直保持熱的：一輪開始前的判定就能省下 1–3 秒的連線時間。",
 			"ja-JP": "セッションの使用中は、ときどきごく小さな問いを送って判定器との接続をウォームな状態に保ちます。これでターン開始前の判定は、接続にかかる 1〜3 秒を省けます。",
 			"ko-KR": "세션을 쓰는 동안 이따금 아주 작은 질문을 보내 판정기와의 연결을 웜 상태로 유지합니다. 그래서 턴이 시작되기 전의 판정은 연결에 드는 1~3초를 아낍니다.",
@@ -4299,7 +4299,7 @@
 			"fa-IR": "نردبان مدل‌ها (از ارزان‌ترین تا قوی‌ترین)"
 		},
 		"features[name=swarm].options[key=models].help": {
-			"en": "Empty means every subagent uses the session's model.",
+			"en": "Empty means every subagent uses the main agent's model.",
 			"zh-TW": "留空則所有子代理都使用這個對話的模型。",
 			"ja-JP": "空欄の場合、すべてのサブエージェントがセッションのモデルを使います。",
 			"ko-KR": "비워 두면 모든 하위 에이전트가 세션의 모델을 씁니다.",
@@ -6245,18 +6245,18 @@
 			"fa-IR": "داوری دربارهٔ موارد زیاد (ابزاری برای مدل)"
 		},
 		"decisions[id=judge.items].summary": {
-			"en": "When the model has to sort through hundreds of files, log lines or findings, it gives Jev one yes/no question to answer for each item, with a probability for each, instead of reading them all. Available only when a task needs it. Since the model is the one asking, it's answered in shadow mode too; off disables it.",
-			"zh-TW": "模型要從幾百個檔案、日誌行或發現裡挑東西時，把一個是非題交給 Jev 逐條回答，每條給一個機率，不用自己一條條讀。只在任務用得上時出現。是模型自己問的，所以影子模式下也照常回答；關閉則不能用。",
-			"ja-JP": "モデルが数百のファイル、ログ行、指摘から選び出す必要があるとき、はい/いいえの質問を 1 つ Jev に渡して項目ごとに答えさせ、それぞれに確率を付けます。すべてを自分で読む必要はありません。タスクで必要なときだけ現れます。モデル自身の質問なのでシャドーでも回答し、オフにすると使えません。",
-			"ko-KR": "모델이 수백 개의 파일, 로그 줄, 발견 사항 중에서 골라야 할 때, 예/아니오 질문 하나를 Jev에게 넘겨 항목마다 답하게 하고 각각 확률을 붙입니다. 하나하나 직접 읽을 필요가 없습니다. 작업에 필요할 때만 나타납니다. 모델이 직접 묻는 것이라 섀도 모드에서도 답하며, 끄면 쓸 수 없습니다.",
-			"de-DE": "Muss das Modell Hunderte Dateien, Logzeilen oder Befunde sortieren, übergibt es Jev eine Ja/Nein-Frage, die Jev für jeden Eintrag mit einer Wahrscheinlichkeit beantwortet, statt alle selbst zu lesen. Es erscheint nur, wenn eine Aufgabe es braucht. Das Modell hat gefragt, daher antwortet es auch im Schattenmodus; Aus weist es ab.",
-			"fr-FR": "Quand le modèle doit trier des centaines de fichiers, de lignes de journal ou de constats, il confie à Jev une question oui/non à laquelle Jev répond élément par élément, avec une probabilité pour chacun, au lieu de tout lire. Il n'apparaît que lorsqu'une tâche en a besoin. C'est le modèle qui demande, il répond donc aussi en mode fantôme ; désactivé, il est refusé.",
-			"es-ES": "Cuando el modelo tiene que clasificar cientos de archivos, líneas de registro o hallazgos, le pasa a Jev una pregunta de sí/no para que la responda elemento por elemento, con una probabilidad para cada uno, en lugar de leerlos todos. Solo aparece cuando una tarea lo necesita. Lo pide el modelo, así que también responde en modo sombra; desactivado, no se puede usar.",
-			"pt-BR": "Quando o modelo precisa separar centenas de arquivos, linhas de log ou achados, ele passa ao Jev uma pergunta de sim/não para responder item por item, com uma probabilidade para cada um, em vez de ler tudo. Só aparece quando uma tarefa precisa. Quem pergunta é o modelo, então responde também no modo sombra; desligado, não pode ser usado.",
-			"ru-RU": "Когда модели нужно разобрать сотни файлов, строк журнала или находок, она передаёт Jev один вопрос «да/нет», и Jev отвечает по каждому элементу с вероятностью, вместо того чтобы модель читала всё сама. Появляется только тогда, когда это нужно задаче. Спрашивает сама модель, поэтому отвечает и в теневом режиме; в выключенном недоступно.",
-			"uk-UA": "Коли моделі треба розібрати сотні файлів, рядків журналу чи знахідок, вона передає Jev одне питання «так/ні», і Jev відповідає щодо кожного елемента з імовірністю, замість того щоб модель читала все сама. З'являється лише тоді, коли це потрібно завданню. Питає сама модель, тож відповідає й у тіньовому режимі; у вимкненому недоступно.",
-			"tr-TR": "Model yüzlerce dosya, günlük satırı veya bulgu arasından seçim yapmak zorunda kaldığında, tek bir evet/hayır sorusunu Jev'e verir; Jev her öğeyi ayrı ayrı yanıtlar ve her birine bir olasılık verir, model hepsini kendisi okumaz. Yalnızca bir görev gerektirdiğinde görünür. Soran model olduğu için gölge modunda da yanıt verir; kapalıyken kullanılamaz.",
-			"fa-IR": "وقتی مدل باید از میان صدها فایل، خط گزارش یا یافته چیزی را جدا کند، یک پرسش بله/خیر را به Jev می‌سپارد تا برای هر مورد جداگانه با یک احتمال پاسخ دهد، به‌جای آنکه همه را خودش بخواند. فقط وقتی کاری به آن نیاز دارد ظاهر می‌شود. پرسش از خود مدل است، پس در حالت سایه هم پاسخ می‌دهد؛ خاموش که باشد قابل استفاده نیست."
+			"en": "When the model has to sort through hundreds of files, log lines or findings, it gives the judge one yes/no question to answer for each item, with a probability for each, instead of reading them all. Available only when a task needs it. Since the model is the one asking, it's answered in shadow mode too; off disables it.",
+			"zh-TW": "模型要從幾百個檔案、日誌行或發現裡挑東西時，把一個是非題交給判定器逐條回答，每條給一個機率，不用自己一條條讀。只在任務用得上時出現。是模型自己問的，所以影子模式下也照常回答；關閉則不能用。",
+			"ja-JP": "モデルが数百のファイル、ログ行、指摘から選び出す必要があるとき、はい/いいえの質問を 1 つ判定器に渡して項目ごとに答えさせ、それぞれに確率を付けます。すべてを自分で読む必要はありません。タスクで必要なときだけ現れます。モデル自身の質問なのでシャドーでも回答し、オフにすると使えません。",
+			"ko-KR": "모델이 수백 개의 파일, 로그 줄, 발견 사항 중에서 골라야 할 때, 예/아니오 질문 하나를 판정기에게 넘겨 항목마다 답하게 하고 각각 확률을 붙입니다. 하나하나 직접 읽을 필요가 없습니다. 작업에 필요할 때만 나타납니다. 모델이 직접 묻는 것이라 섀도 모드에서도 답하며, 끄면 쓸 수 없습니다.",
+			"de-DE": "Muss das Modell Hunderte Dateien, Logzeilen oder Befunde sortieren, übergibt es dem Judge eine Ja/Nein-Frage, die der Judge für jeden Eintrag mit einer Wahrscheinlichkeit beantwortet, statt alle selbst zu lesen. Es erscheint nur, wenn eine Aufgabe es braucht. Das Modell hat gefragt, daher antwortet es auch im Schattenmodus; Aus weist es ab.",
+			"fr-FR": "Quand le modèle doit trier des centaines de fichiers, de lignes de journal ou de constats, il confie au juge une question oui/non à laquelle le juge répond élément par élément, avec une probabilité pour chacun, au lieu de tout lire. Il n'apparaît que lorsqu'une tâche en a besoin. C'est le modèle qui demande, il répond donc aussi en mode fantôme ; désactivé, il est refusé.",
+			"es-ES": "Cuando el modelo tiene que clasificar cientos de archivos, líneas de registro o hallazgos, le pasa al juez una pregunta de sí/no para que la responda elemento por elemento, con una probabilidad para cada uno, en lugar de leerlos todos. Solo aparece cuando una tarea lo necesita. Lo pide el modelo, así que también responde en modo sombra; desactivado, no se puede usar.",
+			"pt-BR": "Quando o modelo precisa separar centenas de arquivos, linhas de log ou achados, ele passa ao juiz uma pergunta de sim/não para responder item por item, com uma probabilidade para cada um, em vez de ler tudo. Só aparece quando uma tarefa precisa. Quem pergunta é o modelo, então responde também no modo sombra; desligado, não pode ser usado.",
+			"ru-RU": "Когда модели нужно разобрать сотни файлов, строк журнала или находок, она передаёт судье один вопрос «да/нет», и судья отвечает по каждому элементу с вероятностью, вместо того чтобы модель читала всё сама. Появляется только тогда, когда это нужно задаче. Спрашивает сама модель, поэтому отвечает и в теневом режиме; в выключенном недоступно.",
+			"uk-UA": "Коли моделі треба розібрати сотні файлів, рядків журналу чи знахідок, вона передає судді одне питання «так/ні», і суддя відповідає щодо кожного елемента з імовірністю, замість того щоб модель читала все сама. З'являється лише тоді, коли це потрібно завданню. Питає сама модель, тож відповідає й у тіньовому режимі; у вимкненому недоступно.",
+			"tr-TR": "Model yüzlerce dosya, günlük satırı veya bulgu arasından seçim yapmak zorunda kaldığında, tek bir evet/hayır sorusunu hakeme verir; hakem her öğeyi ayrı ayrı yanıtlar ve her birine bir olasılık verir, model hepsini kendisi okumaz. Yalnızca bir görev gerektirdiğinde görünür. Soran model olduğu için gölge modunda da yanıt verir; kapalıyken kullanılamaz.",
+			"fa-IR": "وقتی مدل باید از میان صدها فایل، خط گزارش یا یافته چیزی را جدا کند، یک پرسش بله/خیر را به داور می‌سپارد تا برای هر مورد جداگانه با یک احتمال پاسخ دهد، به‌جای آنکه همه را خودش بخواند. فقط وقتی کاری به آن نیاز دارد ظاهر می‌شود. پرسش از خود مدل است، پس در حالت سایه هم پاسخ می‌دهد؛ خاموش که باشد قابل استفاده نیست."
 		},
 		"decisions[id=turn.continue].title": {
 			"en": "Stopped short",

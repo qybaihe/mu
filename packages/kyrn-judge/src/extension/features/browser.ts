@@ -308,7 +308,10 @@ export function registerBrowser(runtime: KyrnRuntime): void {
 				);
 				ctx.ui.notify(result.text, result.status === "done" || result.status === "read" ? "info" : "warning");
 			} catch (error) {
-				ctx.ui.notify(`Browsing failed: ${error instanceof Error ? error.message : String(error)}`, "error");
+				ctx.ui.notify(
+					`Couldn't finish browsing: ${error instanceof Error ? error.message : String(error)}`,
+					"error",
+				);
 			} finally {
 				ctx.ui.setStatus("kyrn.browse", undefined);
 			}

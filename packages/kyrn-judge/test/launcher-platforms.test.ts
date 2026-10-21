@@ -1247,7 +1247,7 @@ describe("mu migrate without pgrep", () => {
 		expect(busy).toMatchObject({ code: 1, done: [] });
 		expect(busy.said).toContain("mu sessions");
 		expect(busy.said).toContain("the mu browser (pid 9200)");
-		expect(busy.said).toContain("desktop app's backend (pid 7312)");
+		expect(busy.said).toContain("desktop app's local service (pid 7312)");
 
 		const blind = windowsHome(() => undefined);
 		expect(blind).toMatchObject({ code: 1, done: [] });

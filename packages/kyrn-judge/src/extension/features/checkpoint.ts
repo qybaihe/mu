@@ -172,8 +172,8 @@ export function offNotice(
 		case "git_missing":
 			return {
 				line: say({
-					zh: "mu：检查点已关闭，因为这台机器上找不到 git。",
-					en: "mu: checkpoints are off because git wasn't found on this machine.",
+					zh: "mu：检查点已关闭，因为这台电脑上找不到 git。装好 Git 后，新开一个会话就有检查点。",
+					en: "mu: checkpoints are off because git wasn't found on this computer. Install Git, then start a new session.",
 				}),
 				params: {},
 			};
@@ -837,7 +837,7 @@ export function registerCheckpoint(
 	pi.registerCommand("checkpoints", {
 		description: say({
 			zh: "这次对话的检查点：第几回合、什么时间、之后改了哪些文件",
-			en: "List this session's checkpoints: turn, time and files changed since",
+			en: "List the checkpoints so far: turn, time and the files changed since each",
 		}),
 		handler: async (_args, ctx) => {
 			runtime.touch(ctx);
@@ -916,7 +916,7 @@ export function registerCheckpoint(
 				giveUp(ctx, error);
 				if (!(error instanceof GitMissing || error instanceof GitUnusable))
 					ctx.ui.notify(
-						`The rewind failed: ${clip(error instanceof Error ? error.message : String(error), 300)}`,
+						`Couldn't rewind: ${clip(error instanceof Error ? error.message : String(error), 300)}`,
 						"error",
 					);
 			}

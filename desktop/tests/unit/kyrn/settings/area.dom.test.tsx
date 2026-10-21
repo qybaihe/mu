@@ -723,7 +723,7 @@ describe('providers and the default model', () => {
     fireEvent.click(buttons[buttons.length - 1]);
     const problem = await within(detail).findByTestId('mu-login-problem');
     // Its own headline, not the sign-in one; the call's words stay as a detail.
-    expect(problem).toHaveTextContent("Sign-out didn't finish. Try again.");
+    expect(problem).toHaveTextContent("Couldn't sign out. Try again.");
     expect(problem).toHaveTextContent('EACCES: permission denied');
 
     bridge.loginStart.mockResolvedValue({ ok: false, code: 'runtimeOffline', error: 'runtime offline' });
@@ -731,7 +731,7 @@ describe('providers and the default model', () => {
     const xai = screen.getByTestId('mu-account-xai');
     fireEvent.click(within(xai).getByTestId('mu-account-signin-xai'));
     const failed = await within(xai).findByTestId('mu-login-problem');
-    expect(failed).toHaveTextContent("Sign-in didn't finish. Try again.");
+    expect(failed).toHaveTextContent("Couldn't sign in. Try again.");
     expect(failed).toHaveTextContent("mu's agent isn't responding.");
     // A coded reason says all there is: the raw text is not repeated.
     expect(failed).not.toHaveTextContent('runtime offline');

@@ -1249,7 +1249,7 @@ export function migrate({ platform, home, argv, fs, run, alive, self, out, err }
 	}
 	if (found.browser.length > 0) busy.push(`  the mu browser (pid ${list(found.browser)}). Close it.`);
 	if (found.desktop.length > 0) {
-		busy.push(`  the desktop app's backend (pid ${list(found.desktop)}). Quit the desktop app.`);
+		busy.push(`  the desktop app's local service (pid ${list(found.desktop)}). Quit the desktop app.`);
 	}
 	if (busy.length > 0) {
 		err(`Nothing was moved, because these are still using ${old}:`);

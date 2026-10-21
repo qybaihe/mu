@@ -41,7 +41,7 @@ On by default: yes. Decision points: `input.interjection`.
 
 ## skills
 
-**Skill disclosure.** Chooses which skill descriptions go into a session's prompt.
+**Skill disclosure.** Chooses which skill descriptions go into the prompt.
 
 On by default: yes. Decision points: `skills.disclosure`.
 
@@ -70,7 +70,7 @@ On by default: yes. Decision points: `task.frame`.
 | --- | --- | --- |
 | `waitMs` | `3000` ms | Wait for the task frame at most `3000` ms. Counted from when the message arrives. A late update isn't dropped: the turn starts with the previous version plus the raw message, and the update applies when it's ready. Range 0 to 30000. |
 | `writerTimeoutMs` | `20000` ms | Time limit for writing a frame. On a timeout or malformed reply, the last version stays and is marked stale, goal-based filtering holds back, and the next message tries again. Range 1000 to 120000. |
-| `show` | `true` | Show frame updates in the chat. |
+| `show` | `true` | Show frame updates in the conversation. |
 
 ## memory
 
@@ -86,7 +86,7 @@ On by default: yes. Decision points: `memory.recall`, `memory.capture`, `memory.
 | `waitMs` | `4000` ms | Wait for recall at most `4000` ms. Counted from when the message arrives; picking lessons for subagents uses the same limit. Range 0 to 30000. |
 | `retireAfter` | `8` | Retire after this many recalls without being followed. 0 never retires lessons automatically. Range 0 to 100. |
 | `mergeNeighbours` | `6` | Compare with this many similar lessons. Chosen by shared words and judged in one request; 0 saves without merging. Range 0 to 16. |
-| `outcome` | `true` | Learn from the agent getting unstuck. Needs the writer model or the session's model to word the lesson. |
+| `outcome` | `true` | Learn from the agent getting unstuck. Needs the writer model or the main model to word the lesson. |
 | `applied` | `true` | Check at the end of a turn whether lessons were followed. |
 
 ## procedures
@@ -201,8 +201,8 @@ On by default: yes. Decision points: `turn.rewind`.
 | `keep` | `50` | Snapshots kept per project. Range 1 to 1000. |
 | `maxAgeDays` | `14` days | Days a snapshot is kept. Range 1 to 365. |
 | `maxFileMb` | `5` MB | Largest file in a snapshot. Larger files stay out of snapshots, and a rewind never touches them. Range 1 to 1024. |
-| `maxFiles` | `5000` files | Max files per snapshot. With more files than this, the session runs without checkpoints and tells you once. Your home folder and mu's own folders are never snapshotted. Range 100 to 1000000. |
-| `maxTotalMb` | `200` MB | Max total snapshot size. Above this, the session runs without checkpoints and tells you once. Range 1 to 100000. |
+| `maxFiles` | `5000` files | Max files per snapshot. With more files than this, mu runs without checkpoints and tells you once. Your home folder and mu's own folders are never snapshotted. Range 100 to 1000000. |
+| `maxTotalMb` | `200` MB | Max total snapshot size. Above this, mu runs without checkpoints and tells you once. Range 1 to 100000. |
 | `ignore` | none | Extra paths to ignore. gitignore patterns, one per line. The project's own .gitignore and the built-in list (node_modules, build outputs and so on) always apply. |
 | `timeoutMs` | `30000` ms | Max time for a snapshot. Past this, the turn runs without a checkpoint; the tool call still runs. Range 1000 to 600000. |
 | `propose` | `true` | Propose a rewind at a dead end. |
@@ -260,10 +260,10 @@ On by default: yes. Decision points: `goal.met`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `checker` | `model` | Who checks whether the goal is met. A model reads the goal, what the run did, the last test run and the closing message, then gives a verdict and the next step; Jev steps in only when the model doesn't answer. Either way, an open acceptance item or an unverified edit means not yet. One of `model` (A model (recommended)), `jev` (Jev). |
-| `checkModel` | empty | Model for the check. As provider/model. Empty: the session's current model. |
+| `checker` | `model` | Who checks whether the goal is met. A model reads the goal, what the run did, the last test run and the closing message, then gives a verdict and the next step; the judge steps in only when the model doesn't answer. Either way, an open acceptance item or an unverified edit means not yet. One of `model` (A model (recommended)), `jev` (The judge). |
+| `checkModel` | empty | Model for the check. As provider/model. Empty: the current model. |
 | `checkThinking` | `off` | Thinking level for the check. One of `off` (Off), `minimal` (Minimal), `low` (Low), `medium` (Medium), `high` (High). |
-| `checkTimeoutMs` | `90000` ms | Max wait for the check. If the check takes longer, Jev decides; if Jev can't, only the facts count. Range 5000 to 600000. |
+| `checkTimeoutMs` | `90000` ms | Max wait for the check. If the check takes longer, the judge decides; if the judge can't, only the facts count. Range 5000 to 600000. |
 | `stallLimit` | `2` | Runs without progress before pausing. Runs where the check finds the agent repeating itself. The first time, the agent is told to change course; at this count, the goal pauses for you. Range 1 to 10. |
 | `maxContinuations` | `20` | Max continuations. Counted from your last message. Range 1 to 200. |
 | `maxMinutes` | `180` min | Longest automatic run. Counted from your last message. Range 5 to 1440. |
@@ -271,14 +271,14 @@ On by default: yes. Decision points: `goal.met`.
 
 ## board
 
-**Plain-language board.** Tells you in plain words how far along the work is, what's happening now and what's waiting on you. It keeps a running account: a line for each step as it happens, plus what the agent says or finds, retold right away by a plain-speaking model, with Jev deciding what's worth telling. A finished run gets a summary, and the account is kept. For you only; never in the model's context. Turned on per project (/board on, /board off); the first time, you pick the model that writes it (/board model changes it).
+**Plain-language board.** Tells you in plain words how far along the work is, what's happening now and what's waiting on you. It keeps a running account: a line for each step as it happens, plus what the agent says or finds, retold right away by a plain-speaking model, with the judge deciding what's worth telling. A finished run gets a summary, and the account is kept. For you only; never in the model's context. Turned on per project (/board on, /board off); the first time, you pick the model that writes it (/board model changes it).
 
 On by default: yes. Decision points: `board.read`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `defaultOn` | `false` | On in projects you haven't set it for. Off by default: each board update costs a model call. |
-| `model` | empty | Model that writes the board. As provider/model; if set here, you won't be asked. Empty: you pick one the first time you turn the board on (Claude Opus 4.6 recommended, then Gemini 3.8 Flash), saved in mu/board.json. If none is picked: the writer model, else the session's model. |
+| `model` | empty | Model that writes the board. As provider/model; if set here, you won't be asked. Empty: you pick one the first time you turn the board on (Claude Opus 4.6 recommended, then Gemini 3.8 Flash), saved in mu/board.json. If none is picked: the writer model, else the current model. |
 | `language` | `auto` | Board language. One of `auto` (The one you write in), `zh` (Chinese), `en` (English). |
 | `everyTools` | `5` | Tool calls between checks. Range 1 to 100. |
 | `minIntervalMs` | `20000` ms | Minimum time between checks while it works. When the agent stops, the board always checks, regardless of this setting. Range 0 to 600000. |
@@ -324,7 +324,7 @@ On by default: yes. Decision points: `cache.warming`.
 
 ## warmup
 
-**Judge connection warm-up.** While the session is in use, a tiny question keeps the judge's connection warm, so the questions before a turn skip 1–3 s of connection setup.
+**Judge connection warm-up.** While mu is in use, a tiny question keeps the judge's connection warm, so the questions before a turn skip 1–3 s of connection setup.
 
 On by default: yes.
 
@@ -341,7 +341,7 @@ On by default: yes. Decision points: `swarm.routing`, `swarm.patch`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `models` | none | Model ladder (cheapest to strongest). Empty means every subagent uses the session's model. |
+| `models` | none | Model ladder (cheapest to strongest). Empty means every subagent uses the main agent's model. |
 | `maxTasks` | `6` | Max tasks per call. Range 1 to 32. |
 | `concurrency` | `3` | Running at once. Range 1 to 16. |
 | `defaultAgent` | `worker` | Default role. |

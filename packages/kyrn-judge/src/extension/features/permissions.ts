@@ -53,7 +53,10 @@ const KIND_TEXT: Readonly<Record<PermissionKind, { zh: string; en: string }>> = 
 };
 
 const REASON_TEXT: Readonly<Record<Exclude<AskReason, "flagged">, { zh: string; en: string }>> = {
-	ask: { zh: "最小权限模式：每一步都先问你。", en: "Ask first: mu asks before every step." },
+	ask: {
+		zh: "最小权限模式：改文件、跑命令、对外操作都先问你。",
+		en: "Ask first: mu asks you before every edit, command and action outside this computer.",
+	},
 	unsure: { zh: "Jev 拿不准这一步是不是你要的。", en: "Jev isn't sure this step is what you want." },
 	beyond: { zh: "Jev 认为这一步超出了你的要求。", en: "Jev thinks this goes beyond what you asked for." },
 	unrelated: { zh: "Jev 认为这一步和当前任务无关。", en: "Jev thinks this isn't part of the task." },
@@ -362,7 +365,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 	pi.registerCommand("permissions", {
 		description: say({
 			zh: "mu 不问你就能做多少事：/permissions full（完全访问）| jev（Jev 审批）| ask（最小权限），不带参数就弹出选择；/permissions reset 忘掉这次对话里允许过的操作",
-			en: "Set how much mu can do without asking: /permissions full | jev | ask (no argument opens a picker); /permissions reset clears what you allowed in this session",
+			en: "Set how much mu can do without asking: /permissions full | jev | ask (no argument opens a picker); /permissions reset clears what you've allowed so far",
 		}),
 		handler: async (args, ctx) => {
 			runtime.touch(ctx);
