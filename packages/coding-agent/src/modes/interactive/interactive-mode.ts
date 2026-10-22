@@ -2161,7 +2161,9 @@ export class InteractiveMode {
 	}
 
 	private crashReportInstructions(): string {
-		const resume = this.session.sessionFile ? `run \`${APP_NAME} -r\` to resume the session, then` : "start pi and";
+		const resume = this.session.sessionFile
+			? `run \`${APP_NAME} -r\` to resume the session, then`
+			: `start ${APP_NAME} and`;
 		return `To report this crash: ${resume} run /bug. The crash details are attached automatically.`;
 	}
 
