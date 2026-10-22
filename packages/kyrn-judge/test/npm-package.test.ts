@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
 	checkNativeImport,
 	exactVersion,
+	extensionBundle,
 	forbiddenFiles,
 	hostModulesChunk,
 	piHostPlugin,
@@ -133,6 +134,60 @@ describe("the judgment layer's bundle", () => {
 		// jiti names the file with forward slashes on Windows too.
 		expect(transpiled.map((name) => resolve(name))).toEqual([file]);
 		expect(() => checkNativeImport(file)).toThrow("Node cannot import");
+	});
+
+	// Node compiles every byte of the file pi imports, at every start and in every sub-agent: code the judgment layer
+	// runs only when used (the Google sign-in's requests, with Google's SDK) is split off and read only then.
+	it("leaves what the extension imports only when used out of the file pi imports at start", async () => {
+		const { root, hostImport } = fakePackage();
+		write(
+			join(root, "src/later.js"),
+			'import { Text } from "@earendil-works/pi-tui";\nexport const marker = "only when used";\nexport const LaterText = Text;\n',
+		);
+		const source = write(
+			join(root, "src/lazy-extension.js"),
+			'import { Text } from "@earendil-works/pi-tui";\nexport default function extension() {\n\treturn { Text, later: () => import("./later.js") };\n}\n',
+		);
+		const dir = join(root, "judge/mu");
+		const result = await build({
+			bundle: true,
+			format: "esm",
+			platform: "node",
+			target: "node22.19",
+			logLevel: "silent",
+			metafile: true,
+			plugins: [piHostPlugin({ provided: new Set(["@earendil-works/pi-tui"]), hostImport })],
+			...extensionBundle(source, dir),
+		});
+		const files = Object.keys(result.metafile.outputs).map((output) => resolve(output));
+		const index = join(dir, "index.js");
+		const chunks = files.filter((file) => file !== index);
+		expect(files).toContain(index);
+		expect(readFileSync(index, "utf8")).not.toContain("only when used");
+		expect(chunks.filter((file) => readFileSync(file, "utf8").includes("only when used"))).toHaveLength(1);
+		// Beside index.js: the rewritten import.meta.url of every source file counts judge/ as one folder up.
+		expect(chunks.every((file) => dirname(file) === dir)).toBe(true);
+
+		const transpiled: string[] = [];
+		const extension = (await loadLikePi(index, transpiled)) as () => {
+			Text: { from?: string };
+			later: () => Promise<{ marker: string; LaterText: { from?: string } }>;
+		};
+		const made = extension();
+		const later = await made.later();
+		expect(transpiled).toEqual([]);
+		expect(later.marker).toBe("only when used");
+		// The chunk gets pi's modules from pi's bundle too.
+		expect(later.LaterText).toBe(made.Text);
+		expect(later.LaterText.from).toBe("pi's bundle");
+		checkNativeImport(index, chunks);
+
+		// A chunk Node cannot import fails the build, not a user's first use of it.
+		const broken = write(
+			join(dir, "broken.js"),
+			'import { Text } from "@earendil-works/pi-tui";\nexport { Text };\n',
+		);
+		expect(() => checkNativeImport(index, [...chunks, broken])).toThrow("Node cannot import");
 	});
 
 	it("finds the one chunk of pi's bundle that exports VIRTUAL_MODULES", () => {
