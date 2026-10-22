@@ -30,8 +30,8 @@ mu                     # 現在のディレクトリで対話セッションを�
 | `mu setup` | モデルを接続し（API キー、または一覧からサービスを選ぶ）、判定器を選ぶ。`mu setup --help` でスクリプト向けの書き方を表示する。 |
 | `mu doctor` | インストール、モデル、判定器、各接続を確認し、何を直せばよいかを示す |
 | `mu ledger [n] [--json]` | 直近 n 回のセッションで判定器が下した判定。`--json` で、すべての記録を確率と所要時間付きで出力する。 |
-| `mu import --list` | Claude Code と Codex の会話を探す |
-| `mu import <file>…` | それらを mu に取り込み、そこで続ける |
+| `mu import --list` | Claude Code、Codex、ZCode の会話を探す |
+| `mu import <file>…` | それらを履歴ごと mu に取り込み、そこで続ける。あとでもう一度実行すると新しい内容が加わる |
 | `mu judge setup \| start \| stop \| status` | ローカルの判定器 Laya。`setup` はモデルをダウンロードする前に確認する。 |
 | `mu link` / `mu unlink` | `mu` コマンドを PATH（`~/.local/bin`）に置く、または取り除く |
 | `mu auth status \| login <provider> \| logout <provider>` | デスクトップアプリが使うサブスクリプションのサインイン |
@@ -57,7 +57,7 @@ mu                     # 現在のディレクトリで対話セッションを�
 | `/browse`、`/jobs` | 内蔵ブラウザ。バックグラウンドコマンド |
 | `/capabilities`、`/ledger` | インストール済みのケイパビリティとそのうち開いているもの。最新の判定 |
 | `/inherit` | Claude Code、Cursor、Codex から引き継いだものと、引き継がなかったもの |
-| `/import-chat` | Claude Code または Codex の会話をインポートする |
+| `/import-chat` | Claude Code、Codex または ZCode の会話をインポートする |
 | `/doctor` | 設定と接続を確認する |
 
 pi 自身のコマンド（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export`、`/mcp` など）はそのままです。

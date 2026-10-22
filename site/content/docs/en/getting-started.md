@@ -21,7 +21,7 @@ mu comes in two forms: a **desktop app** that carries everything it needs, and t
    - **Model.** Paste an API key, and mu recognizes the service from its shape (DeepSeek, Kimi, Qwen, GLM, SiliconFlow, OpenRouter, OpenAI, Anthropic, Google Gemini, xAI and more) and checks it with one request. Or sign in with a ChatGPT, Claude, Grok or Google subscription. A wrong key, an empty balance, an unsupported region or no connection is each explained with what to do.
    - **Permissions.** *Judge mode* is preselected; see [Permissions and safety](@docs/permissions).
    - **Judge.** With no key, Jev, TypeSafe's hosted judge model, answers for free through OpenCode Zen. You can come back to this any time.
-   - **Start.** If mu finds Claude Code or Codex conversations, it offers to import them.
+   - **Start.** If mu finds Claude Code, Codex or ZCode conversations, it offers to import them (the guide's first screen offers them too).
 3. Pick a folder and start a conversation.
 
 Nothing else needs installing: no Node.js, and nothing is downloaded at the first start. When a new release is out, the app tells you its version and size, downloads it only after you agree and installs it when you restart.
@@ -43,7 +43,7 @@ Some things to try:
 | `mu "fix the failing test in src/pager.test.ts"` | Start with a prompt |
 | `mu -p "summarize this repository"` | Answer once and exit |
 | `mu -c` / `mu -r` | Continue the last session / pick one to resume |
-| `mu import --list` | Find Claude Code and Codex conversations to bring in |
+| `mu import --list` | Find Claude Code, Codex and ZCode conversations to bring in |
 | `mu doctor` | Check the installation, the judges and the connections |
 | `mu ledger 3` | What the judge decided in the last three sessions |
 

@@ -264,7 +264,7 @@ mu doctor     # 설치, 판정기, 연결 상태 점검
   </picture>
 </p>
 
-Node 22.19 이상이 필요해요. `mu -p "prompt"`는 한 번 실행하고 결과를 출력하고, `mu -c`는 마지막 세션을 이어 가요. `mu import --list`는 Claude Code와 Codex 대화를 찾아 주고, `mu import <file>`은 그 대화를 가져와요. `mu ledger [n]`은 최근 n개 세션에서 판정기가 내린 판정을 출력해요. 명령줄과 데스크톱 앱은 계정, 설정, 교훈을 함께 써요. 터미널에서는 `/settings`에서 테마를 고르기 전까지 mu 전용 `mu-dark`와 `mu-light` 테마를 써요(`system`은 터미널 색 구성을 따라가요).
+Node 22.19 이상이 필요해요. `mu -p "prompt"`는 한 번 실행하고 결과를 출력하고, `mu -c`는 마지막 세션을 이어 가요. `mu import --list`는 Claude Code, Codex, ZCode 대화를 찾아 주고, `mu import <file>`은 그 대화를 기록 전체와 함께 가져와요. 나중에 다시 가져오면 그 뒤에 새로 생긴 내용이 더해져요. `mu ledger [n]`은 최근 n개 세션에서 판정기가 내린 판정을 출력해요. 명령줄과 데스크톱 앱은 계정, 설정, 교훈을 함께 써요. 터미널에서는 `/settings`에서 테마를 고르기 전까지 mu 전용 `mu-dark`와 `mu-light` 테마를 써요(`system`은 터미널 색 구성을 따라가요).
 
 | 명령어 | 하는 일 |
 | --- | --- |
@@ -283,7 +283,7 @@ Node 22.19 이상이 필요해요. `mu -p "prompt"`는 한 번 실행하고 결�
 | `/agents`, `/swarm` | 서브 에이전트 보내기, 일하는 비를 하나하나 지켜보기 |
 | `/browse`, `/jobs` | 내장 브라우저, 백그라운드 작업 |
 | `/capabilities`, `/ledger` | 설치된 기능 확장과 그중 열린 것, 최근 판정 |
-| `/import-chat` | Claude Code 또는 Codex 대화 가져오기 |
+| `/import-chat` | Claude Code, Codex 또는 ZCode 대화 가져오기 |
 | `/doctor` | 설정과 연결 점검하기 |
 
 pi의 자체 명령(`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export` 등)은 그대로예요. `MU_JUDGE=laya,jev mu`로 실행하면 그 실행에서만 판정기를 바꿀 수 있어요.

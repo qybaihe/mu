@@ -264,7 +264,7 @@ mu doctor     # インストール、判定器、各接続を確認する
   </picture>
 </p>
 
-Node 22.19 以降が必要です。`mu -p "prompt"` は 1 回だけ実行して結果を出力し、`mu -c` は前回のセッションを続けます。`mu import --list` は Claude Code と Codex の会話を探し、`mu import <file>` はそれを取り込みます。`mu ledger [n]` は直近 n 回のセッションで判定器が下した判定を出力します。コマンドラインとデスクトップアプリは、アカウント、設定、教訓を共有します。ターミナルでは、`/settings` でテーマを選ぶまで mu 独自の `mu-dark` と `mu-light` を使います（`system` はターミナルの配色に合わせます）。
+Node 22.19 以降が必要です。`mu -p "prompt"` は 1 回だけ実行して結果を出力し、`mu -c` は前回のセッションを続けます。`mu import --list` は Claude Code、Codex、ZCode の会話を探し、`mu import <file>` はそれを履歴ごと取り込みます。あとでもう一度取り込むと、その後の新しい内容が加わります。`mu ledger [n]` は直近 n 回のセッションで判定器が下した判定を出力します。コマンドラインとデスクトップアプリは、アカウント、設定、教訓を共有します。ターミナルでは、`/settings` でテーマを選ぶまで mu 独自の `mu-dark` と `mu-light` を使います（`system` はターミナルの配色に合わせます）。
 
 | コマンド | 内容 |
 | --- | --- |
@@ -283,7 +283,7 @@ Node 22.19 以降が必要です。`mu -p "prompt"` は 1 回だけ実行して�
 | `/agents`、`/swarm` | サブエージェントを送り出す、作業中の各ビーの様子を見る |
 | `/browse`、`/jobs` | 内蔵ブラウザ、バックグラウンドジョブ |
 | `/capabilities`、`/ledger` | インストール済みのケイパビリティとそのうち開いているもの、最新の判定 |
-| `/import-chat` | Claude Code または Codex の会話をインポートする |
+| `/import-chat` | Claude Code、Codex または ZCode の会話をインポートする |
 | `/doctor` | セットアップと接続を確認する |
 
 pi 自身のコマンド（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export` など）はそのままです。`MU_JUDGE=laya,jev mu` とすると、その 1 回の実行だけ判定器を上書きできます。

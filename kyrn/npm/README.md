@@ -47,7 +47,7 @@ mu -c | -r               continue the last session | pick a session to resume
 mu setup                 connect a model and choose a judge (see mu setup --help for scripting and services)
 mu judge <cmd>           manage the local judge, Laya (macOS on Apple silicon): setup | start | stop | status | run
 mu ledger [n] [--json]   print the judge's verdicts from the last n sessions
-mu import --list | <file>...   import Claude Code and Codex conversations (mu import --help)
+mu import --list | <file>...   import Claude Code, Codex and ZCode conversations (mu import --help)
 mu doctor                check the installation, the judges and the connections
 mu auth <cmd>            sign-in helper for the desktop app: status | login | logout
 mu link | unlink         put the mu command on your PATH | remove it
