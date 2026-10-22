@@ -1,6 +1,6 @@
 {
 	"name": "mu-agent",
-	"version": "0.1.12",
+	"version": "0.1.13",
 	"description": "mu: a coding agent that hands its routine decisions to a small, fast judge model, so the main model can keep its attention on the work. Built on pi.",
 	"type": "module",
 	"bin": {

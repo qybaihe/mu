@@ -6,6 +6,8 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ## [Unreleased]
 
+## [0.1.11] - 2026-10-22
+
 ### Added
 
 - **`MU_TIME_BUDGET_S` gives a run a deadline.** Set it to the seconds a run may take (benchmark harnesses set it from the task's timeout): a reply stuck thinking is cut early enough for its retry to finish, and the agent hears how much time is left at 50% and 80%, with a reminder to get the requested result in place first. Without it nothing changes.
