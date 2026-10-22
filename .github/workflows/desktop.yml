@@ -31,13 +31,21 @@ on:
       - 'desktop/**'
       - '.github/workflows/desktop.yml'
   workflow_dispatch:
+    inputs:
+      draft:
+        # A release that waits for a person: built from the branch or tag dispatched, attached to a draft with
+        # this tag, which GitHub creates at that commit only when the draft is published.
+        description: 'Also attach the installers to a draft release with this tag (e.g. v0.1.11); nothing is published'
+        required: false
+        default: ''
 
 permissions:
   contents: read
 
 concurrency:
-  group: desktop-${{ github.ref }}
-  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+  # A draft build has a group of its own: a push to the same branch doesn't cancel it.
+  group: desktop-${{ github.ref }}-${{ inputs.draft }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') && inputs.draft == '' }}
 
 jobs:
   harness:
@@ -260,9 +268,12 @@ jobs:
       # version, which its "check for updates" compares with the tags of this repository's releases.
       - name: Set the project homepage and version
         shell: bash
+        env:
+          DRAFT: ${{ inputs.draft }}
         run: |
           npm pkg set homepage="${{ github.server_url }}/${{ github.repository }}"
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then npm pkg set version="${GITHUB_REF_NAME#v}"; fi
+          if [ -n "${DRAFT}" ]; then npm pkg set version="${DRAFT#v}"; fi
 
       - name: Build installers
         shell: bash
@@ -567,9 +578,12 @@ jobs:
   release:
     name: Publish the release
     needs: build
-    # A tag publishes what was built, even when one platform failed; the notes say which is missing.
-    if: startsWith(github.ref, 'refs/tags/v') && !cancelled()
+    # A tag publishes what was built, even when one platform failed; the notes say which is missing. A dispatch
+    # with a draft tag makes the same release as a draft instead.
+    if: (startsWith(github.ref, 'refs/tags/v') || inputs.draft != '') && !cancelled()
     runs-on: ubuntu-latest
+    env:
+      DRAFT: ${{ inputs.draft }}
     permissions:
       contents: write
     steps:
@@ -599,7 +613,7 @@ jobs:
       - name: Source archive and checksums
         run: |
           set -euo pipefail
-          tag="${GITHUB_REF_NAME}"
+          tag="${DRAFT:-${GITHUB_REF_NAME}}"
           git archive --format=tar.gz --prefix="mu-${tag#v}/" -o "dist/mu-${tag#v}-source.tar.gz" HEAD
           cd dist
           sha256sum -- * > SHA256SUMS
@@ -663,7 +677,7 @@ jobs:
           MACOS_NOTARIZED: ${{ secrets.BUILD_CERTIFICATE_BASE64 != '' && secrets.APPLE_API_KEY_BASE64 != '' }}
         run: |
           set -euo pipefail
-          tag="${GITHUB_REF_NAME}"
+          tag="${DRAFT:-${GITHUB_REF_NAME}}"
           {
             echo "Preview build of mu ${tag}."
             echo
@@ -682,7 +696,11 @@ jobs:
           } > notes.md
           # The update feed goes along when there is one (SHA256SUMS covers the installers and the source only).
           shopt -s nullglob
-          gh release create "$tag" dist/* updates/* --title "mu ${tag}" --notes-file notes.md --prerelease --verify-tag
+          if [ -n "${DRAFT}" ]; then
+            gh release create "$tag" dist/* updates/* --title "mu ${tag}" --notes-file notes.md --prerelease --draft --target "${GITHUB_SHA}"
+          else
+            gh release create "$tag" dist/* updates/* --title "mu ${tag}" --notes-file notes.md --prerelease --verify-tag
+          fi
 
       - name: Report an incomplete update feed
         if: steps.feed.outcome == 'failure'
