@@ -28,8 +28,10 @@ import { ChoiceBody, JudgeChoiceTile } from '@/renderer/pages/settings/KyrnSetti
 import choiceStyles from '@/renderer/pages/settings/KyrnSettings/sections/sections.module.css';
 import { useMuSettings } from '@/renderer/pages/settings/KyrnSettings/useMuSettings';
 import ImportChatsModal from '@/renderer/pages/settings/SystemSettings/ImportChats/ImportChatsModal';
+import ImportSources from '@/renderer/pages/settings/SystemSettings/ImportChats/ImportSources';
 import { useNativeEnabled } from '@/renderer/pages/native/hooks/useNativeConversations';
 import { kyrnBridge, unwrap } from '@/common/kyrn/bridge';
+import { importableByTool, type FoundChat } from '@/common/kyrn/importChats';
 import { isPlainRemoteEndpoint, type ListedModel } from '@/common/kyrn/models';
 import { useModelNames } from '@/renderer/hooks/agent/useModelNames';
 import { modelDisplayName } from '@/renderer/utils/model/providerName';
@@ -84,8 +86,8 @@ function Ready({ text, testId }: { text: string; testId: string }) {
 /**
  * The first-run guide: what mu is, then connect a model, choose how much it does without asking, pick a judge, done. One question at a time, nothing that
  * can wait; all of it is written in one save at the end, and every step can be skipped. Everything here is also in
- * the settings. The last step also offers the Claude Code and Codex conversations on this computer, to go on with
- * them in mu.
+ * the settings. The first screen and the last step offer the Claude Code, Codex and ZCode conversations on this
+ * computer, under each tool's mark, to go on with them in mu.
  */
 export default function Welcome() {
   const { t } = useTranslation();
@@ -104,29 +106,40 @@ export default function Welcome() {
   // The judge's service and key, folded away while the judge answers as it is.
   const [judgeMore, setJudgeMore] = useState(false);
   const keys = useKeySetup();
-  // Claude Code and Codex conversations on this computer not brought in yet: the last step offers them.
+  // Claude Code, Codex and ZCode conversations on this computer not brought in yet: the first screen and the last
+  // step offer them.
   const native = useNativeEnabled() === true;
   // Models by the names the send box shows, not by their ids.
   const modelNames = useModelNames();
   const modelName = (provider: string, model: string) => modelDisplayName(`${provider}/${model}`, modelNames);
-  const [importable, setImportable] = useState(0);
+  const [found, setFound] = useState<FoundChat[]>([]);
   const [importing, setImporting] = useState(false);
   const [importRound, setImportRound] = useState(0);
   useEffect(() => {
-    if (step !== 'done') return undefined;
     let gone = false;
     kyrnBridge.importList
       .invoke({ native })
       .then(unwrap)
       .then(({ conversations }) => {
-        if (!gone) setImportable(conversations.filter((chat) => !chat.conversationId).length);
+        if (!gone) setFound(conversations);
       })
       // Nothing to offer is no failure of the guide.
       .catch(() => {});
     return () => {
       gone = true;
     };
-  }, [native, step, importRound]);
+  }, [native, importRound]);
+  const importable = importableByTool(found).reduce((sum, source) => sum + source.count, 0);
+  const importDialog = importing ? (
+    <ImportChatsModal
+      visible
+      stay
+      onClose={() => {
+        setImporting(false);
+        setImportRound((round) => round + 1);
+      }}
+    />
+  ) : null;
 
   const { base, draft } = mu;
   const chosenWay: Way | undefined = way;
@@ -241,6 +254,24 @@ export default function Welcome() {
         </div>
         <h1 className={styles.heroTitle}>{t('mu.welcome.intro.title')}</h1>
         <p className={styles.lead}>{t('mu.welcome.intro.lead')}</p>
+        {importable > 0 ? (
+          // Someone coming from another coding agent sees first that their conversations can come along.
+          <section className={styles.importOffer} data-testid='mu-welcome-intro-import'>
+            <div className={styles.importText}>
+              <div className={styles.pointTitle}>{t('mu.welcome.intro.import.title')}</div>
+              <div className={styles.pointText}>{t('mu.welcome.intro.import.text', { count: importable })}</div>
+            </div>
+            <ImportSources chats={found} />
+            <Button
+              className={styles.importButton}
+              data-testid='mu-welcome-intro-import-open'
+              onClick={() => setImporting(true)}
+            >
+              {t('mu.welcome.intro.import.open')}
+            </Button>
+            {importDialog}
+          </section>
+        ) : null}
         <figure className={styles.turn} data-testid='mu-welcome-turn'>
           <figcaption className={styles.turnLabel}>{t('mu.welcome.intro.turn.label')}</figcaption>
           <ol className={styles.turnRows}>
@@ -520,6 +551,7 @@ export default function Welcome() {
               <dt>{t('mu.welcome.done.import')}</dt>
               <dd>
                 {t('mu.welcome.done.importFound', { count: importable })}
+                <ImportSources chats={found} />
                 <Button size='mini' data-testid='mu-welcome-import-open' onClick={() => setImporting(true)}>
                   {t('mu.welcome.done.importOpen')}
                 </Button>
@@ -527,16 +559,7 @@ export default function Welcome() {
             </div>
           ) : null}
         </dl>
-        {importing ? (
-          <ImportChatsModal
-            visible
-            stay
-            onClose={() => {
-              setImporting(false);
-              setImportRound((round) => round + 1);
-            }}
-          />
-        ) : null}
+        {importDialog}
         {mu.error ? (
           <Alert
             type='error'

@@ -644,8 +644,8 @@
       "modelValue": "{{provider}} / {{model}}",
       "import": "Conversations",
       "importOpen": "Choose…",
-      "importFound_one": "Found {{count}} Claude Code or Codex conversation on this computer. You can continue it here.",
-      "importFound_other": "Found {{count}} Claude Code or Codex conversations on this computer. Choose the ones to continue here.",
+      "importFound_one": "Found {{count}} Claude Code, Codex or ZCode conversation on this computer. You can continue it here.",
+      "importFound_other": "Found {{count}} Claude Code, Codex or ZCode conversations on this computer. Choose the ones to continue here.",
       "permissions": "Permissions"
     },
     "intro": {
@@ -657,6 +657,13 @@
       },
       "title": "Welcome to mu",
       "lead": "mu is a coding agent that does the work: it reads your project, edits code, runs commands and tests, and keeps going until the job is done.",
+      "import": {
+        "title": "Bring your conversations along",
+        "text": "mu found {{count}} conversations from other coding agents on this computer. Import them with their whole history and keep going here.",
+        "text_one": "mu found {{count}} conversation from another coding agent on this computer. Import it with its whole history and keep going here.",
+        "text_other": "mu found {{count}} conversations from other coding agents on this computer. Import them with their whole history and keep going here.",
+        "open": "Choose conversations…"
+      },
       "points": {
         "judge": {
           "title": "A check at every step",
@@ -783,7 +790,8 @@
       "other": "mu sent the model a reminder",
       "show": "Show what was sent",
       "hide": "Hide",
-      "imported": "This conversation was imported from Claude Code or Codex and continues here; thinking and images weren't imported"
+      "imported": "This conversation was imported from {{tool}} and continues here",
+      "anotherTool": "another coding agent"
     }
   },
   "errors": {
@@ -829,18 +837,19 @@
   },
   "importChats": {
     "title": "Import conversations",
-    "description": "Bring your Claude Code or Codex conversations from this computer into mu and continue them here.",
+    "description": "Bring your Claude Code, Codex or ZCode conversations from this computer into mu, with their whole history, and continue them here.",
     "open": "Choose…",
     "dialog": {
       "title": "Import conversations",
-      "hint": "Each conversation you choose becomes a mu conversation in its project folder. mu reads the full transcript; thinking and images aren't imported.",
+      "hint": "Each conversation you choose becomes a mu conversation in its project folder, with its whole history: messages, tool calls, thinking and images. Choose one again later to bring over what's new.",
       "search": "Search by text or folder",
       "loading": "Looking for conversations…",
-      "empty": "No Claude Code or Codex conversations found on this computer.",
+      "empty": "No Claude Code, Codex or ZCode conversations found on this computer.",
       "noMatch": "No matching conversations.",
       "noTitle": "(no message)",
       "folderUnknown": "Unknown folder",
       "inList": "Already in your list",
+      "changed": "Changed since it was imported. Choose it to bring over what's new.",
       "open": "Open",
       "selected": "{{count}} selected",
       "import": "Import",
@@ -850,13 +859,16 @@
     "done": "Imported {{count}} conversations. They're in your conversation list.",
     "done_one": "Imported {{count}} conversation. It's in your conversation list.",
     "done_other": "Imported {{count}} conversations. They're in your conversation list.",
+    "updated": "Brought {{count}} conversations up to date.",
+    "updated_one": "Brought {{count}} conversation up to date.",
+    "updated_other": "Brought {{count}} conversations up to date.",
     "someFailed": "Couldn't import {{count}} conversations. The reason is shown under each one.",
     "someFailed_one": "Couldn't import {{count}} conversation. The reason is shown under it.",
     "someFailed_other": "Couldn't import {{count}} conversations. The reason is shown under each one.",
     "failure": {
       "missing": "The file no longer exists.",
       "notFile": "This isn't a file.",
-      "notTranscript": "This isn't a Claude Code or Codex conversation.",
+      "notTranscript": "This isn't a Claude Code, Codex or ZCode conversation.",
       "empty": "It has no messages.",
       "folderMissing": "Its project folder no longer exists: {{folder}}",
       "other": "Couldn't import it: {{detail}}"
@@ -864,7 +876,7 @@
     "notice": {
       "title": "Imported from {{tool}}",
       "counts": "Your messages: {{user}} · Replies: {{assistant}} · Tool calls: {{toolCalls}}",
-      "goOn": "mu has read the conversation, so just keep going below. Thinking and images weren't imported.",
+      "goOn": "mu has read the conversation, so just keep going below.",
       "read": "Read the earlier conversation"
     },
     "history": {
@@ -905,7 +917,7 @@
     "help": "Show what mu can do and the commands worth knowing",
     "ledger": "Show the last n verdicts and their latency: /ledger [n]",
     "doctor": "Check that the judge, model, browser and subagents are set up",
-    "import-chat": "Import a Claude Code or Codex conversation from this project and continue it here: /import-chat [file]",
+    "import-chat": "Import a Claude Code, Codex or ZCode conversation from this project and continue it here: /import-chat [file]",
     "llama": "Manage llama.cpp router models"
   },
   "native": {

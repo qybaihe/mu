@@ -45,7 +45,7 @@ export const KYRN_ERROR_CODES = [
   'installPath',
   /** The local backend answered with an HTTP error. Params: `status`. */
   'backend',
-  /** This mu cannot import Claude Code or Codex conversations: it is older than `mu import`. */
+  /** This mu cannot import Claude Code, Codex or ZCode conversations: it is older than `mu import`. */
   'importMissing',
   /** `mu import` failed or answered with something else than its JSON: the message says what it printed. */
   'importFailed',

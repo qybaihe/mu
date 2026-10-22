@@ -1,6 +1,8 @@
 import { Attention, Info, PauseOne, Remind } from '@icon-park/react';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { IMPORT_TOOL_NAMES, importToolOf } from '@/common/kyrn/importChats';
+import ImportToolMark from '@/renderer/components/brand/ImportToolMark';
 import { formatNumber } from '@/renderer/services/i18n/format';
 import { openExternalUrl } from '@/renderer/utils/platform';
 import {
@@ -19,6 +21,8 @@ import styles from './MessageJudgeLine.module.css';
  * the judge's diamond, as the judge's own lines do: the run picked up again because the judge said so.
  */
 function Mark({ notice }: { notice: MuNotice }) {
+  const imported = notice.kind === 'mu.import' ? importToolOf(notice.sent || notice.title) : undefined;
+  if (imported) return <ImportToolMark tool={imported} size={14} />;
   if (notice.code === 'to_model' && notice.kind === 'kyrn.nudge')
     return <span className={styles.dot} data-mark='judge' aria-hidden='true' />;
   if (notice.code === 'stopped')
@@ -54,11 +58,15 @@ function ToModelLine({ notice }: { notice: MuNotice }) {
   const [open, setOpen] = useState(false);
   const key = (notice.kind && TO_MODEL_KEYS[notice.kind]) || MU_NOTICE_KEYS.to_model;
   const sent = notice.sent || notice.title;
+  // An imported conversation's first line names the tool it came from.
+  const imported = notice.kind === 'mu.import' ? importToolOf(sent) : undefined;
   return (
     <div className='flex flex-col min-w-0' data-testid='mu-notice' data-code='to_model' data-kind={notice.kind ?? ''}>
       <div className={styles.line} role='status'>
         <Mark notice={notice} />
-        <span className='min-w-0 whitespace-normal'>{t(key)}</span>
+        <span className='min-w-0 whitespace-normal'>
+          {t(key, { tool: imported ? IMPORT_TOOL_NAMES[imported] : t('mu.notices.toModel.anotherTool') })}
+        </span>
         {sent && (
           <button
             type='button'

@@ -228,6 +228,8 @@ export const MU_COMMAND_WORDS: ReadonlyMap<string, readonly string[]> = new Map(
   [
     'import-chat',
     [
+      'Import a Claude Code, Codex or ZCode conversation from this project and continue it here: /import-chat [file]',
+      '导入这个项目在 Claude Code、Codex 或 ZCode 里的对话，接着在这里聊：/import-chat [文件]',
       'Import a Claude Code or Codex conversation from this project and continue it here: /import-chat [file]',
       '导入这个项目在 Claude Code 或 Codex 里的对话，接着在这里聊：/import-chat [文件]',
       'Bring a Claude Code or Codex conversation of this project into mu and continue it: /import-chat [file]',

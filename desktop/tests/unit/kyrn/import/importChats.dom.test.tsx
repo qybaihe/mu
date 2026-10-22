@@ -270,7 +270,7 @@ describe('the import dialog', () => {
     list.mockResolvedValue({ ok: true, data: { conversations: [] } });
     render(<Dialog />);
     await settle();
-    const empty = screen.getByText('No Claude Code or Codex conversations found on this computer.');
+    const empty = screen.getByText('No Claude Code, Codex or ZCode conversations found on this computer.');
     const hint = screen.getByText(/Each conversation you choose becomes a mu conversation/);
     // Both in the dialog's one column, the empty line not in the list that reaches past it.
     expect(empty.parentElement).toBe(hint.parentElement);

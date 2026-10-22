@@ -6,6 +6,7 @@
  */
 import type { IMessageText } from '@/common/chat/chatLib';
 import type { SlashCommandItem } from '@/common/chat/slash/types';
+import { isImportTool } from '@/common/kyrn/importChats';
 import { supportedThinkingLevels, UNOFFERED_PROVIDER_IDS, type ModelThinkingLevels } from '@/common/kyrn/models';
 import { FILES_MARKER } from '@/common/config/constants';
 import {
@@ -33,7 +34,7 @@ export type ModelInForce = {
 /**
  * The model and thinking level in force. A running host's own report comes first (it may say there is no model);
  * without one, what the session file said when the conversation was opened; without that, the model of the last
- * reply (pi resumes a session with it).
+ * reply (pi resumes a session with it). Without any (an imported conversation not yet answered in mu), mu's default.
  */
 export function modelInForce(view: NativeView, settings?: SessionSettings): ModelInForce {
   const session = view.host.session;
@@ -42,7 +43,9 @@ export function modelInForce(view: NativeView, settings?: SessionSettings): Mode
     return { model: settings.model, level: settings.thinkingLevel, source: 'file' };
   for (let index = view.messages.length - 1; index >= 0; index--) {
     const message = view.messages[index];
-    if (message.role === 'assistant' && message.model) return { model: message.model, source: 'reply' };
+    // A reply imported from another tool names the tool as its provider: not a model pi goes on with.
+    if (message.role === 'assistant' && message.model && !isImportTool(splitModel(message.model)?.provider))
+      return { model: message.model, source: 'reply' };
   }
   return { source: 'none' };
 }

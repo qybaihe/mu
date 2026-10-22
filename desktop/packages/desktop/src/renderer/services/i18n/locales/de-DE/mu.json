@@ -644,8 +644,8 @@
       "modelValue": "{{provider}} / {{model}}",
       "import": "Unterhaltungen",
       "importOpen": "Auswählen…",
-      "importFound_one": "{{count}} Unterhaltung aus Claude Code oder Codex auf diesem Computer kann mitkommen, um sie hier fortzusetzen",
-      "importFound_other": "{{count}} Unterhaltungen aus Claude Code oder Codex auf diesem Computer können mitkommen, um sie hier fortzusetzen",
+      "importFound_one": "{{count}} Unterhaltung aus Claude Code, Codex oder ZCode auf diesem Computer kann mitkommen, um sie hier fortzusetzen",
+      "importFound_other": "{{count}} Unterhaltungen aus Claude Code, Codex oder ZCode auf diesem Computer können mitkommen, um sie hier fortzusetzen",
       "permissions": "Berechtigungen"
     },
     "intro": {
@@ -657,6 +657,13 @@
       },
       "title": "Willkommen bei mu",
       "lead": "mu ist ein Programmierassistent, der selbst Hand anlegt: mu liest dein Projekt, bearbeitet Code, führt Befehle und Tests aus und macht weiter, bis die Aufgabe erledigt ist.",
+      "import": {
+        "title": "Nimm deine Unterhaltungen mit",
+        "text": "mu hat auf diesem Computer {{count}} Unterhaltungen mit anderen Programmierassistenten gefunden. Importiere sie mit ihrem ganzen Verlauf und mach hier weiter.",
+        "text_one": "mu hat auf diesem Computer {{count}} Unterhaltung mit einem anderen Programmierassistenten gefunden. Importiere sie mit ihrem ganzen Verlauf und mach hier weiter.",
+        "text_other": "mu hat auf diesem Computer {{count}} Unterhaltungen mit anderen Programmierassistenten gefunden. Importiere sie mit ihrem ganzen Verlauf und mach hier weiter.",
+        "open": "Unterhaltungen auswählen…"
+      },
       "points": {
         "judge": {
           "title": "Eine Prüfung bei jedem Schritt",
@@ -783,7 +790,8 @@
       "other": "mu hat dem Modell eine Erinnerung geschickt",
       "show": "Gesendeter Text",
       "hide": "Ausblenden",
-      "imported": "Diese Unterhaltung wurde aus Claude Code oder Codex importiert und geht hier weiter; Denkschritte und Bilder wurden nicht übernommen"
+      "imported": "Diese Unterhaltung wurde aus {{tool}} importiert und geht hier weiter",
+      "anotherTool": "einem anderen Programmierassistenten"
     }
   },
   "errors": {
@@ -829,18 +837,19 @@
   },
   "importChats": {
     "title": "Unterhaltungen importieren",
-    "description": "Hol Unterhaltungen, die du auf diesem Computer in Claude Code oder Codex geführt hast, in mu und führe sie hier fort.",
+    "description": "Hol Unterhaltungen, die du auf diesem Computer in Claude Code, Codex oder ZCode geführt hast, mit ihrem ganzen Verlauf in mu und führe sie hier fort.",
     "open": "Auswählen…",
     "dialog": {
       "title": "Unterhaltungen importieren",
-      "hint": "Jede ausgewählte Unterhaltung wird zu einer mu-Unterhaltung in ihrem Projektordner. mu liest alles, was gesagt wurde; Denkschritte und Bilder bleiben zurück.",
+      "hint": "Jede ausgewählte Unterhaltung wird zu einer mu-Unterhaltung in ihrem Projektordner, mit ihrem ganzen Verlauf: Nachrichten, Werkzeugaufrufe, Denkschritte und Bilder. Wähle sie später erneut aus, um Neues nachzuholen.",
       "search": "Nach Wörtern oder Ordner suchen",
       "loading": "Unterhaltungen werden gesucht…",
-      "empty": "Auf diesem Computer wurden keine Unterhaltungen aus Claude Code oder Codex gefunden.",
+      "empty": "Auf diesem Computer wurden keine Unterhaltungen aus Claude Code, Codex oder ZCode gefunden.",
       "noMatch": "Keine Unterhaltung passt.",
       "noTitle": "(keine Nachricht)",
       "folderUnknown": "Ordner unbekannt",
       "inList": "Schon in der Liste",
+      "changed": "Seit dem Import geändert. Wähle die Unterhaltung aus, um das Neue zu übernehmen.",
       "open": "Öffnen",
       "selected": "Ausgewählt: {{count}}",
       "import": "Importieren",
@@ -850,13 +859,16 @@
     "done": "{{count}} Unterhaltungen importiert. Sie stehen in deiner Unterhaltungsliste.",
     "done_one": "{{count}} Unterhaltung importiert. Sie steht in deiner Unterhaltungsliste.",
     "done_other": "{{count}} Unterhaltungen importiert. Sie stehen in deiner Unterhaltungsliste.",
+    "updated": "{{count}} Unterhaltungen auf den neuesten Stand gebracht.",
+    "updated_one": "{{count}} Unterhaltung auf den neuesten Stand gebracht.",
+    "updated_other": "{{count}} Unterhaltungen auf den neuesten Stand gebracht.",
     "someFailed": "{{count}} Unterhaltungen konnten nicht importiert werden. Der Grund steht jeweils darunter.",
     "someFailed_one": "{{count}} Unterhaltung konnte nicht importiert werden. Der Grund steht darunter.",
     "someFailed_other": "{{count}} Unterhaltungen konnten nicht importiert werden. Der Grund steht jeweils darunter.",
     "failure": {
       "missing": "Die Datei gibt es nicht mehr.",
       "notFile": "Das ist keine Datei.",
-      "notTranscript": "Das ist keine Unterhaltung aus Claude Code oder Codex.",
+      "notTranscript": "Das ist keine Unterhaltung aus Claude Code, Codex oder ZCode.",
       "empty": "Sie enthält keine Nachricht.",
       "folderMissing": "Ihr Projektordner existiert nicht mehr: {{folder}}",
       "other": "Import nicht möglich: {{detail}}"
@@ -864,7 +876,7 @@
     "notice": {
       "title": "Aus {{tool}} importiert",
       "counts": "Deine Nachrichten: {{user}} · Antworten: {{assistant}} · Werkzeugaufrufe: {{toolCalls}}",
-      "goOn": "Schreib einfach unten weiter: mu hat die Unterhaltung gelesen. Denkschritte und Bilder wurden nicht übernommen.",
+      "goOn": "Schreib einfach unten weiter: mu hat die Unterhaltung gelesen.",
       "read": "Frühere Unterhaltung lesen"
     },
     "history": {
@@ -905,7 +917,7 @@
     "help": "Was mu kann und alle wichtigen Befehle",
     "ledger": "Die letzten Urteile des Judges mit Dauer: /ledger [Anzahl]",
     "doctor": "Prüfen, ob Judge, Modell, Browser und Unteragenten richtig angebunden sind",
-    "import-chat": "Ein Gespräch dieses Projekts aus Claude Code oder Codex in mu holen und fortsetzen: /import-chat [Datei]",
+    "import-chat": "Ein Gespräch dieses Projekts aus Claude Code, Codex oder ZCode in mu holen und fortsetzen: /import-chat [Datei]",
     "llama": "Modelle des llama.cpp-Routers verwalten"
   },
   "native": {

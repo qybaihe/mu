@@ -644,8 +644,8 @@
       "modelValue": "{{provider}} / {{model}}",
       "import": "会話",
       "importOpen": "取り込む会話を選ぶ…",
-      "importFound_one": "このコンピューターに Claude Code または Codex の会話が {{count}} 件あります。取り込んで続けられます",
-      "importFound_other": "このコンピューターに Claude Code または Codex の会話が {{count}} 件あります。取り込んで続けられます",
+      "importFound_one": "このコンピューターに Claude Code、Codex または ZCode の会話が {{count}} 件あります。取り込んで続けられます",
+      "importFound_other": "このコンピューターに Claude Code、Codex または ZCode の会話が {{count}} 件あります。取り込んで続けられます",
       "permissions": "権限"
     },
     "intro": {
@@ -657,6 +657,13 @@
       },
       "title": "mu へようこそ",
       "lead": "mu は実際に手を動かすコーディングアシスタントです。プロジェクトを読み、コードを編集し、コマンドやテストを実行して、作業が終わるまで進め続けます。",
+      "import": {
+        "title": "これまでの会話を引き継ぐ",
+        "text": "このコンピューターで、ほかのコーディングアシスタントとの会話が {{count}} 件見つかりました。履歴ごと取り込んで、ここで続けられます。",
+        "text_one": "このコンピューターで、ほかのコーディングアシスタントとの会話が {{count}} 件見つかりました。履歴ごと取り込んで、ここで続けられます。",
+        "text_other": "このコンピューターで、ほかのコーディングアシスタントとの会話が {{count}} 件見つかりました。履歴ごと取り込んで、ここで続けられます。",
+        "open": "会話を選ぶ…"
+      },
       "points": {
         "judge": {
           "title": "すべてのステップでチェック",
@@ -783,7 +790,8 @@
       "other": "mu がモデルにリマインダーを送りました",
       "show": "送った内容",
       "hide": "閉じる",
-      "imported": "この会話は Claude Code または Codex から取り込まれ、ここで続きます。思考の過程と画像は取り込まれていません"
+      "imported": "この会話は {{tool}} から取り込まれ、ここで続きます",
+      "anotherTool": "別のコーディングアシスタント"
     }
   },
   "errors": {
@@ -829,18 +837,19 @@
   },
   "importChats": {
     "title": "会話を取り込む",
-    "description": "このコンピューターで Claude Code や Codex と交わした会話を mu に取り込み、ここで続けます。",
+    "description": "このコンピューターで Claude Code、Codex、ZCode と交わした会話を履歴ごと mu に取り込み、ここで続けます。",
     "open": "会話を選ぶ",
     "dialog": {
       "title": "会話を取り込む",
-      "hint": "選んだ会話はそれぞれ、元のプロジェクトフォルダーにある mu の会話になります。mu はそれまでのやり取りをすべて読みます。思考過程と画像は取り込まれません。",
+      "hint": "選んだ会話はそれぞれ、元のプロジェクトフォルダーにある mu の会話になります。メッセージ、ツール呼び出し、思考過程、画像まで、履歴をすべて引き継ぎます。あとでもう一度選ぶと、新しいやり取りを取り込めます。",
       "search": "内容やフォルダーで検索",
       "loading": "会話を探しています…",
-      "empty": "このコンピューターに Claude Code や Codex の会話は見つかりませんでした。",
+      "empty": "このコンピューターに Claude Code、Codex、ZCode の会話は見つかりませんでした。",
       "noMatch": "一致する会話はありません。",
       "noTitle": "（メッセージなし）",
       "folderUnknown": "フォルダー不明",
       "inList": "会話リストにあります",
+      "changed": "取り込んだ後に変更があります。選ぶと新しい内容を取り込めます。",
       "open": "開く",
       "selected": "選択中：{{count}}",
       "import": "取り込む",
@@ -850,13 +859,16 @@
     "done": "{{count}} 件の会話を取り込みました。会話リストにあります。",
     "done_one": "{{count}} 件の会話を取り込みました。会話リストにあります。",
     "done_other": "{{count}} 件の会話を取り込みました。会話リストにあります。",
+    "updated": "{{count}} 件の会話を最新の状態にしました。",
+    "updated_one": "{{count}} 件の会話を最新の状態にしました。",
+    "updated_other": "{{count}} 件の会話を最新の状態にしました。",
     "someFailed": "{{count}} 件の会話を取り込めませんでした。理由はそれぞれの下にあります。",
     "someFailed_one": "{{count}} 件の会話を取り込めませんでした。理由はそれぞれの下にあります。",
     "someFailed_other": "{{count}} 件の会話を取り込めませんでした。理由はそれぞれの下にあります。",
     "failure": {
       "missing": "ファイルがもうありません。",
       "notFile": "これはファイルではありません。",
-      "notTranscript": "これは Claude Code や Codex の会話ではありません。",
+      "notTranscript": "これは Claude Code、Codex、ZCode の会話ではありません。",
       "empty": "メッセージが入っていません。",
       "folderMissing": "プロジェクトフォルダーがもうありません：{{folder}}",
       "other": "取り込めませんでした：{{detail}}"
@@ -864,7 +876,7 @@
     "notice": {
       "title": "{{tool}} から取り込んだ会話",
       "counts": "あなたのメッセージ {{user}} 件 · 回答 {{assistant}} 件 · ツール呼び出し {{toolCalls}} 回",
-      "goOn": "下でそのまま続けてください。mu はここまでの会話を読んでいます。思考過程と画像は取り込まれていません。",
+      "goOn": "下でそのまま続けてください。mu はここまでの会話を読んでいます。",
       "read": "これまでの会話を見る"
     },
     "history": {
@@ -905,7 +917,7 @@
     "help": "mu にできることと、知っておきたいコマンドの一覧",
     "ledger": "判定器の最近の判定と所要時間：/ledger [件数]",
     "doctor": "判定器、モデル、ブラウザ、サブエージェントが正しくつながっているか確認します",
-    "import-chat": "このプロジェクトの Claude Code または Codex の会話を mu に取り込み、続きをここで話せます：/import-chat [ファイル]",
+    "import-chat": "このプロジェクトの Claude Code、Codex または ZCode の会話を mu に取り込み、続きをここで話せます：/import-chat [ファイル]",
     "llama": "llama.cpp ルーターのモデルを管理します"
   },
   "native": {

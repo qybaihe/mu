@@ -186,6 +186,32 @@
 }
 
 /*
+ * The conversations another coding agent left on this computer, offered on the first screen: what mu found, under
+ * each tool's mark, and the way into the import dialog. A hairline box like the turn below it, quieter.
+ */
+.importOffer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 0 22px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-base);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-2) 86%, transparent);
+}
+
+.importText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.importButton {
+  border-radius: 8px;
+}
+
+/*
  * One turn as the judge sees it: a small ledger in mono, each line a decision point, its verdict and its time, with the
  * judge's diamond. The lines come in one after another, as the verdicts would.
  */

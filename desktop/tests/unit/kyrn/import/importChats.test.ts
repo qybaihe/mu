@@ -3,7 +3,14 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { KyrnError } from '@/common/kyrn/errors';
-import { groupChats, importMarkOf, toolTally, type FoundChat } from '@/common/kyrn/importChats';
+import {
+  groupChats,
+  importableByTool,
+  importMarkOf,
+  importToolOf,
+  toolTally,
+  type FoundChat,
+} from '@/common/kyrn/importChats';
 import {
   HISTORY_ITEMS,
   importCli,
@@ -148,6 +155,34 @@ describe('the shared helpers', () => {
     expect(importMarkOf({ workspace: '/w' })).toBeUndefined();
     expect(importMarkOf({ mu_import: { tool: 'cursor', source: '/r' } })).toBeUndefined();
     expect(importMarkOf(null)).toBeUndefined();
+  });
+
+  it('counts, by tool, what an import would bring: what is not in the app yet, and what changed since', () => {
+    const held = { importedAs: '/s/x.jsonl', conversationId: 'c1' };
+    expect(
+      importableByTool([
+        chat('zcode', 'One'),
+        chat('claude-code', 'Two'),
+        chat('claude-code', 'Three'),
+        { ...chat('codex', 'Held'), ...held },
+        { ...chat('codex', 'Changed'), ...held, changed: true },
+      ])
+    ).toEqual([
+      { tool: 'claude-code', count: 2 },
+      { tool: 'codex', count: 1 },
+      { tool: 'zcode', count: 1 },
+    ]);
+  });
+
+  it('reads the tool an imported session came from in its English note, and no other', () => {
+    expect(
+      importToolOf('This conversation was imported from ZCode (/h/.zcode/cli/db/db.sqlite#s1) and continues here.')
+    ).toBe('zcode');
+    expect(importToolOf('This conversation was imported from Claude Code (/h/a.jsonl) and continues here.')).toBe(
+      'claude-code'
+    );
+    expect(importToolOf('This conversation was imported from Cursor (/x) and continues here.')).toBeUndefined();
+    expect(importToolOf('anything else')).toBeUndefined();
   });
 
   it('counts the tools of an answer once each', () => {
@@ -564,6 +599,50 @@ describe('the import service', () => {
       ['/t/deleted.jsonl', undefined, undefined],
     ]);
     expect(calls).toEqual([]);
+  });
+
+  it('says which conversations mu import brought up to date, and which changed since their import', async () => {
+    const store = temp('store');
+    const project = temp('project');
+    const file = session(temp('a'), project, conversationBody);
+    const { cli } = cliAnswering({
+      results: [{ status: 'updated', source: '/t/grown.jsonl', tool: 'zcode', sessionFile: file, sessionId: 's1' }],
+    });
+    const { request, calls } = backend();
+    const service = importService({ cli, request, store, assistant: async () => 'mu-assistant' });
+    expect(await service.run(['/t/grown.jsonl'], 'en-US', true)).toEqual([
+      {
+        status: 'updated',
+        source: '/t/grown.jsonl',
+        tool: 'claude-code',
+        conversationId: 's1',
+        name: 'Fix the login form',
+        native: true,
+      },
+    ]);
+    expect(calls).toEqual([]);
+
+    const listing = cliAnswering({
+      conversations: [
+        {
+          tool: 'zcode',
+          path: '/z/db.sqlite#s1',
+          title: 'Grown',
+          modified: at,
+          size: 1,
+          importedAs: file,
+          changed: true,
+        },
+        { tool: 'codex', path: '/t/fresh.jsonl', title: 'Fresh', modified: at, size: 1, changed: true },
+      ],
+    });
+    const lister = importService({ cli: listing.cli, request, store, assistant: async () => 'mu-assistant' });
+    const { conversations } = await lister.list(undefined, true);
+    // `changed` only for what was imported: anything else is new anyway.
+    expect(conversations.map((chat) => [chat.tool, chat.path, chat.changed])).toEqual([
+      ['zcode', '/z/db.sqlite#s1', true],
+      ['codex', '/t/fresh.jsonl', undefined],
+    ]);
   });
 
   it('refuses paths that are not absolute, and too many at once', async () => {

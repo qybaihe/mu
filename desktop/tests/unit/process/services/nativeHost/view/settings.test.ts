@@ -41,4 +41,18 @@ describe('sessionSettings', () => {
     expect(sessionSettings(entries, null)).toEqual({});
     expect(sessionSettings([])).toEqual({});
   });
+
+  it('does not take the model of a reply imported from another tool: mu goes on with its own', () => {
+    const imported = [
+      entry('i1', null, { type: 'custom_message', customType: 'mu.import', content: 'imported', display: true }),
+      reply('i2', 'i1', 'claude-code', 'claude-opus-4-5'),
+      reply('i3', 'i2', 'codex', 'gpt-5.1-codex'),
+    ];
+    expect(sessionSettings(imported)).toEqual({});
+    // Named by the import (mu's model then), or answered in mu since.
+    expect(
+      sessionSettings([...imported, entry('i4', 'i3', { type: 'model_change', provider: 'e2e', modelId: 'one' })])
+    ).toEqual({ model: 'e2e/one' });
+    expect(sessionSettings([...imported, reply('i4', 'i3', 'e2e', 'two')])).toEqual({ model: 'e2e/two' });
+  });
 });
