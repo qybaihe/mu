@@ -12,6 +12,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ### Changed
 
+- **Services in the order you'd look for them.** In English (and any language but Chinese), `mu setup`'s list and the desktop app's first-run guide start with OpenAI, Anthropic, Google, xAI and OpenRouter; in Chinese they keep starting with DeepSeek, Qwen and Kimi.
 - **A quieter start in the terminal.** mu's welcome is the whole first screen: the list of loaded skills, prompts and extensions that pi prints under it is left out; prompts and skills are still in the `/` menu. Problems loading them still show. `"quietStartup": false` in settings.json, or `--verbose`, brings the list back.
 - **The terminal's `/login` no longer offers a Claude subscription sign-in either**, so the command line matches the desktop app: Anthropic doesn't allow other apps to offer one. `/login anthropic` goes straight to the API key. A sign-in made before keeps working until `/logout`.
 - **A Claude subscription token is refused where an API key is asked for.** `mu setup` and the desktop app's first-run guide recognize a token from `claude setup-token` (`sk-ant-oat…`), send it nowhere and ask for an Anthropic API key instead.

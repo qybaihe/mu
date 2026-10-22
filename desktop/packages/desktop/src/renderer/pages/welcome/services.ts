@@ -160,6 +160,19 @@ export const MODEL_SERVICES: readonly ModelService[] = [
   },
 ];
 
+/** The services a list starts with outside Chinese, in this order: the ones best known outside China. */
+const FIRST_OUTSIDE_CHINESE: readonly ServiceId[] = ['openai', 'anthropic', 'google', 'xai', 'openrouter'];
+
+/**
+ * The services in the order the guide lists them for the app's language: the table's order in Chinese, and in any
+ * other language the best known ones first. Ollama stays last. `mu setup` orders its list the same way.
+ */
+export function servicesInOrder(language: string): readonly ModelService[] {
+  if (language.toLowerCase().startsWith('zh')) return MODEL_SERVICES;
+  const first = FIRST_OUTSIDE_CHINESE.flatMap((id) => MODEL_SERVICES.filter((service) => service.id === id));
+  return [...first, ...MODEL_SERVICES.filter((service) => !FIRST_OUTSIDE_CHINESE.includes(service.id))];
+}
+
 export const isServiceId = (value: unknown): value is ServiceId => (SERVICE_IDS as readonly unknown[]).includes(value);
 
 export const serviceById = (id: ServiceId): ModelService =>
