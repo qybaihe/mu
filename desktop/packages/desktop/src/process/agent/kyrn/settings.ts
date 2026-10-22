@@ -49,9 +49,26 @@ const defaults: Record<string, Partial<JudgeSettings>> = {
   'jev-cloudflare': { type: 'classifier', model: 'cloudflare-workers-ai/typesafe/jev' },
   clef: { type: 'classifier', model: 'cloudflare-workers-ai/@cf/cloudflare/clef' },
   'clef-flash': { type: 'classifier', model: 'cloudflare-workers-ai/@cf/cloudflare/clef-flash' },
+  // NVIDIA Nemotron on Nebius Token Factory (NEBIUS_API_KEY, or a key kept with mu setup): Nemotron 3 Ultra with
+  // thinking off and on, and a Nemotron 3 Nano 4B distilled from it, served on this machine over System One.
+  nemotron: { type: 'llm', model: 'nebius/nvidia/Nemotron-3-Ultra-550b-a55b' },
+  'nemotron-think': { type: 'llm', model: 'nebius/nvidia/Nemotron-3-Ultra-550b-a55b', timeoutMs: 60000 },
+  'nemotron-local': { type: 'systemone', baseUrl: 'http://127.0.0.1:8770', model: 'mu-judge-nemotron' },
   mock: { type: 'mock' },
 };
-const types = new Set(['jev', 'typesafe', 'clm', 'gateway', 'local', 'http', 'llm', 'classifier', 'mock']);
+const types = new Set([
+  'jev',
+  'typesafe',
+  'clm',
+  'systemone',
+  'gateway',
+  'local',
+  'http',
+  'llm',
+  'classifier',
+  'logprob',
+  'mock',
+]);
 const modes = new Set<string>(DECISION_MODES);
 /** What a judge may name as its credential. A provider's key is deliberately not among them. */
 const variable = /^(?:TYPESAFE_API_KEY|AI_GATEWAY_API_KEY|(?:MU|KYRN)_JUDGE_[A-Z0-9_]+)$/;

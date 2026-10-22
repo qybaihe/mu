@@ -4,7 +4,18 @@ import type { ModelsSettings } from './models';
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 /** `classifier`: a classifier model of mu's model catalog, `model` = "provider/model-id" (Jev on OpenCode Zen, Clef…). */
-export type JudgeType = 'jev' | 'typesafe' | 'clm' | 'gateway' | 'local' | 'http' | 'llm' | 'classifier' | 'mock';
+export type JudgeType =
+  | 'jev'
+  | 'typesafe'
+  | 'clm'
+  | 'systemone'
+  | 'gateway'
+  | 'local'
+  | 'http'
+  | 'llm'
+  | 'classifier'
+  | 'logprob'
+  | 'mock';
 export type JudgeSettings = {
   type: JudgeType;
   model: string;

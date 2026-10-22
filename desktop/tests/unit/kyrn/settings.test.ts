@@ -232,6 +232,39 @@ describe('native mu settings', () => {
       f.cleanup();
     }
   });
+  it("knows mu's Nemotron judges and the System One and logprob types, so a config naming them still saves", () => {
+    const f = fixture();
+    try {
+      // What `mu setup --judge nemotron` and docs/nebius.md write, and a logprob judge of one's own.
+      writeFileSync(
+        join(f.dir, 'kyrn.json'),
+        JSON.stringify({
+          tiers: ['nemotron-local', 'nemotron'],
+          routes: { 'tool.approval': ['nemotron-think'] },
+          judges: { lightning: { type: 'logprob', model: 'nebius/nvidia/Nemotron-3_5-Lightning' } },
+        })
+      );
+      const read = f.store.read();
+      expect(read.judges.nemotron).toEqual({
+        type: 'llm',
+        model: 'nebius/nvidia/Nemotron-3-Ultra-550b-a55b',
+        baseUrl: '',
+        apiKeyEnv: '',
+        timeoutMs: 10000,
+      });
+      expect(read.judges['nemotron-think'].timeoutMs).toBe(60000);
+      expect(read.judges['nemotron-local'].type).toBe('systemone');
+      expect(f.store.save({ ...read, mode: 'shadow' }).mode).toBe('shadow');
+      const raw = JSON.parse(readFileSync(join(f.dir, 'kyrn.json'), 'utf8'));
+      expect(raw.tiers).toEqual(['nemotron-local', 'nemotron']);
+      // Asked as they are, the built-ins stay out of the file: mu keeps their thinking settings.
+      expect(raw.judges.nemotron).toBeUndefined();
+      expect(raw.judges.lightning).toEqual({ type: 'logprob', model: 'nebius/nvidia/Nemotron-3_5-Lightning' });
+    } finally {
+      f.cleanup();
+    }
+  });
+
   it('leaves a judge the order already had as it is to whoever wrote it, and saves other changes', () => {
     const f = fixture();
     try {

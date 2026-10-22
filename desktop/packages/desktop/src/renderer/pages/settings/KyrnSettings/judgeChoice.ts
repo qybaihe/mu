@@ -21,7 +21,9 @@ const KIND_OF: Record<Exclude<JudgeType, 'classifier'>, JudgeChoice | undefined>
   gateway: 'jev',
   local: 'local',
   clm: 'clm',
+  systemone: undefined,
   llm: undefined,
+  logprob: undefined,
   http: undefined,
   mock: undefined,
 };
