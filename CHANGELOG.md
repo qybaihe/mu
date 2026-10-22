@@ -12,9 +12,12 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 - **Imported conversations come with their full history**: thinking (shown, never sent to the new model) and images, as well as messages and tool calls. A Claude Code conversation keeps the title Claude Code shows for it.
 - **Importing a conversation again brings over what's new in it.** If you kept going in Claude Code, Codex or ZCode after importing, mu updates the same conversation and keeps any name you gave it in mu; if you also continued in mu, the new import becomes a separate conversation next to it. The import list marks conversations that have changed since.
 - The first-run guide offers to import your conversations from other coding agents on its first screen, under each app's icon; the import dialog and settings show the icons too.
+- **A long-thinking watchdog.** A reply that has only been thinking for 10 minutes, with no text and no tool call yet, is cut and asked again at the same reasoning effort. The retry is told where the reasoning had gotten to and asked to act on it first; it is never cut itself.
 
 ### Changed
 
+- In an unattended run (`mu --print`, json mode), background jobs keep running after the run ends, so a server the task asked for is still up. Interactive and desktop sessions still stop them.
+- A failed model request is retried up to 8 times instead of 3, about four minutes of waiting in all.
 - **The permission mode `jev` is now `judge`**, shown as *Judge mode*: `/permissions judge`, `MU_PERMISSIONS=judge` (`jev` still works). mu's messages and docs say "the judge" instead of "Jev", which now names only TypeSafe's hosted judge model. Config names are unchanged: `"tiers": ["jev"]` and the `jev-*` routes work as before.
 - Empty lists in the desktop app (the archive, the sidebar and its search, a scheduled task that's gone) say so in one line of text, like the rest of the app, without the UI library's stock inbox picture.
 - `/hive <question>` shows the question as you typed it in the chat and as the conversation's title, in the app and in the terminal. The request to start the hive goes to the model as a message only it reads.
@@ -25,6 +28,8 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 - **A Claude Code conversation compacted more than once is imported whole.** Claude Code 2.1 writes compactions in a way that made the import stop at the latest one: an 87 MB conversation came in with 11 of its 24 messages. Import it again to get the rest.
 - **An imported conversation continues with mu's model**, not the one Claude Code, Codex or ZCode answered with: the desktop app showed that model (`claude-code/…`) on the conversation, and `mu` warned it could not restore it.
+- A run that ended on a reply with only thinking in it stopped without a word. mu now sends the agent back to the task.
+- A reply cut by the provider's content filter ended the run. mu now asks again, twice at most.
 - **Hive and subagents work in the desktop app again.** Since conversations moved into the app's own process (0.1.6), every `/hive`, `delegate` and swarm run failed at once with "subagent exited with code 1 before it finished: The mu host needs a parent". A subagent is started by running mu's command line again, and inside the app that command line pointed at the app's host instead of mu. The host now gives mu the command line the terminal would have, so subagents start the same way they do from `mu`.
 - When the judge doesn't answer (the free Jev is rate limited, say) and mu asks you about a command instead, the line above the send box no longer keeps saying "The judge is reviewing" while it waits for you.
 - The Hive tab's map draws the notes the judge passed between bees in a conversation on the app's own process. It used to show the bees with no lines between them, because the lines came only from files that only the older connection read.

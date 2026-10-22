@@ -4994,6 +4994,45 @@
 			]
 		},
 		{
+			"name": "watchdog",
+			"title": {
+				"zh": "长思考重试",
+				"en": "Long-thinking retry"
+			},
+			"summary": {
+				"zh": "一次回复只思考、迟迟不写字也不调用工具，到时限就打断，用同样的思考强度重问一次，并把它想到哪一步带给它，让它先动手再接着想。重问的那一次不再打断。",
+				"en": "When a reply has only been thinking for too long, with no text and no tool call yet, it is cut and asked again at the same reasoning effort. The retry is told where the reasoning had gotten to and asked to act on it first. The retry itself is never cut."
+			},
+			"defaultEnabled": true,
+			"options": [
+				{
+					"key": "thinkingMs",
+					"kind": "number",
+					"default": 600000,
+					"min": 60000,
+					"unit": {
+						"zh": "毫秒",
+						"en": "ms"
+					},
+					"label": {
+						"zh": "只思考多久后打断",
+						"en": "Cut a reply after thinking this long"
+					}
+				},
+				{
+					"key": "maxCuts",
+					"kind": "number",
+					"default": 3,
+					"min": 1,
+					"max": 10,
+					"label": {
+						"zh": "两次发言之间最多打断几次",
+						"en": "Max cuts between two of your messages"
+					}
+				}
+			]
+		},
+		{
 			"name": "goal",
 			"title": {
 				"zh": "目标模式",
@@ -7100,19 +7139,8 @@
 				"fa-IR": "دستورهای پس‌زمینه"
 			},
 			"summary": {
-				"zh": "开发服务器、长时间构建放到后台跑，不占用回合；结束时是否打断交给「通知分流」；会话结束时全部终止。",
-				"en": "bg_start / bg_output / bg_stop: run dev servers and long builds without blocking the turn. Notification routing decides whether a finished job interrupts; every job stops when the session ends.",
-				"zh-TW": "bg_start / bg_output / bg_stop：開發伺服器和長時間的建置不會卡住這一輪。工作結束時要不要打斷，交給「通知分流」決定；對話結束時，所有工作一起停止。",
-				"ja-JP": "bg_start / bg_output / bg_stop: 開発サーバーや長いビルドを、ターンをブロックせずに実行します。ジョブの終了時に割り込むかどうかは「通知の振り分け」が決めます。すべてのジョブはセッションとともに停止します。",
-				"ko-KR": "bg_start / bg_output / bg_stop: 개발 서버나 긴 빌드를 턴을 막지 않고 실행합니다. 작업이 끝났을 때 끼어들지는 알림 라우팅이 정하며, 모든 작업은 세션과 함께 중지됩니다.",
-				"de-DE": "bg_start / bg_output / bg_stop: Entwicklungsserver und lange Builds, ohne die Runde zu blockieren. Ob das Ende eines Jobs unterbricht, entscheidet die Zustellung von Benachrichtigungen; jeder Job endet mit der Sitzung.",
-				"fr-FR": "bg_start / bg_output / bg_stop : serveurs de développement et longues compilations sans bloquer le tour. L’aiguillage des notifications décide si la fin d’un processus interrompt ; chaque processus s’arrête avec la session.",
-				"es-ES": "bg_start / bg_output / bg_stop: servidores de desarrollo y compilaciones largas sin bloquear el turno. Si el final de una tarea interrumpe o no, lo decide el enrutamiento de notificaciones; todas las tareas se detienen con la sesión.",
-				"pt-BR": "bg_start / bg_output / bg_stop: servidores de desenvolvimento e compilações longas sem bloquear o turno. O “Roteamento de notificações” decide se o fim de uma tarefa interrompe; toda tarefa termina junto com a sessão.",
-				"ru-RU": "bg_start / bg_output / bg_stop: серверы разработки и долгие сборки без блокировки хода. Прерывает ли работу завершение задачи, решает маршрутизация уведомлений; все задачи останавливаются вместе с сеансом.",
-				"uk-UA": "bg_start / bg_output / bg_stop: сервери розробки й довгі збирання, які не блокують хід. Чи перериває роботу завершення процесу, вирішує маршрутизація сповіщень; усі процеси зупиняються разом із сеансом.",
-				"tr-TR": "bg_start / bg_output / bg_stop: turu engellemeden geliştirme sunucuları ve uzun derlemeler. Bir işin bitişinin araya girip girmeyeceğine bildirim yönlendirme karar verir; her iş oturumla birlikte durur.",
-				"fa-IR": "bg_start / bg_output / bg_stop: سرورهای توسعه و ساخت‌های طولانی، بی‌آنکه نوبت معطل بماند. اینکه پایان یک کار پس‌زمینه کار جاری را قطع کند یا نه، با «مسیریابی اعلان‌ها» تعیین می‌شود؛ همهٔ کارهای پس‌زمینه با پایان نشست متوقف می‌شوند."
+				"zh": "开发服务器、长时间构建放到后台跑，不占用回合；结束时是否打断交给「通知分流」；会话结束时全部终止，无人值守的单次运行除外。",
+				"en": "bg_start / bg_output / bg_stop: run dev servers and long builds without blocking the turn. Notification routing decides whether a finished job interrupts; every job stops when the session ends, except in an unattended one-shot run."
 			},
 			"defaultEnabled": true,
 			"options": [
@@ -7379,6 +7407,42 @@
 						"uk-UA": "Хід починає лише рішення «зараз»; коли вимкнено, сповіщення просто додається.",
 						"tr-TR": "Yalnızca “Şimdi ilet” kararı yeni bir tur başlatır; kapalıyken bildirim yalnızca konuşmaya eklenir.",
 						"fa-IR": "فقط داوریِ «اکنون» نوبتی را شروع می‌کند؛ وقتی خاموش باشد، اعلان فقط افزوده می‌شود."
+					}
+				},
+				{
+					"key": "keepOnExit",
+					"kind": "choice",
+					"default": "headless",
+					"choices": [
+						{
+							"value": "headless",
+							"label": {
+								"zh": "无人值守运行时保留",
+								"en": "Keep in unattended runs"
+							}
+						},
+						{
+							"value": "always",
+							"label": {
+								"zh": "总是保留",
+								"en": "Always keep"
+							}
+						},
+						{
+							"value": "never",
+							"label": {
+								"zh": "总是终止",
+								"en": "Always stop"
+							}
+						}
+					],
+					"label": {
+						"zh": "会话结束时仍在运行的任务",
+						"en": "Jobs still running when the session ends"
+					},
+					"help": {
+						"zh": "无人值守指 mu --print 和 json 模式的单次运行：任务要求的服务在运行结束后还得在。",
+						"en": "Unattended means a one-shot mu --print or json run, where a service the task asked for must still be up after the run."
 					}
 				}
 			]

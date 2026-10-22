@@ -1465,6 +1465,33 @@ export const MANIFEST: HarnessManifest = {
 			],
 		},
 		{
+			name: "watchdog",
+			title: { zh: "长思考重试", en: "Long-thinking retry" },
+			summary: {
+				zh: "一次回复只思考、迟迟不写字也不调用工具，到时限就打断，用同样的思考强度重问一次，并把它想到哪一步带给它，让它先动手再接着想。重问的那一次不再打断。",
+				en: "When a reply has only been thinking for too long, with no text and no tool call yet, it is cut and asked again at the same reasoning effort. The retry is told where the reasoning had gotten to and asked to act on it first. The retry itself is never cut.",
+			},
+			defaultEnabled: true,
+			options: [
+				{
+					key: "thinkingMs",
+					kind: "number",
+					default: 600000,
+					min: 60000,
+					unit: ms,
+					label: { zh: "只思考多久后打断", en: "Cut a reply after thinking this long" },
+				},
+				{
+					key: "maxCuts",
+					kind: "number",
+					default: 3,
+					min: 1,
+					max: 10,
+					label: { zh: "两次发言之间最多打断几次", en: "Max cuts between two of your messages" },
+				},
+			],
+		},
+		{
 			name: "goal",
 			title: { zh: "目标模式", en: "Goal mode" },
 			summary: {
@@ -2016,8 +2043,8 @@ export const MANIFEST: HarnessManifest = {
 			name: "background",
 			title: { zh: "后台命令", en: "Background commands" },
 			summary: {
-				zh: "开发服务器、长时间构建放到后台跑，不占用回合；结束时是否打断交给「通知分流」；会话结束时全部终止。",
-				en: "bg_start / bg_output / bg_stop: run dev servers and long builds without blocking the turn. Notification routing decides whether a finished job interrupts; every job stops when the session ends.",
+				zh: "开发服务器、长时间构建放到后台跑，不占用回合；结束时是否打断交给「通知分流」；会话结束时全部终止，无人值守的单次运行除外。",
+				en: "bg_start / bg_output / bg_stop: run dev servers and long builds without blocking the turn. Notification routing decides whether a finished job interrupts; every job stops when the session ends, except in an unattended one-shot run.",
 			},
 			defaultEnabled: true,
 			options: [
@@ -2089,6 +2116,21 @@ export const MANIFEST: HarnessManifest = {
 					help: {
 						zh: "只有判定为「立刻」时才会开始新回合；关闭时只留一条消息。",
 						en: 'Only a verdict of "now" starts a turn; when off, the notice is only appended.',
+					},
+				},
+				{
+					key: "keepOnExit",
+					kind: "choice",
+					default: "headless",
+					choices: [
+						{ value: "headless", label: { zh: "无人值守运行时保留", en: "Keep in unattended runs" } },
+						{ value: "always", label: { zh: "总是保留", en: "Always keep" } },
+						{ value: "never", label: { zh: "总是终止", en: "Always stop" } },
+					],
+					label: { zh: "会话结束时仍在运行的任务", en: "Jobs still running when the session ends" },
+					help: {
+						zh: "无人值守指 mu --print 和 json 模式的单次运行：任务要求的服务在运行结束后还得在。",
+						en: "Unattended means a one-shot mu --print or json run, where a service the task asked for must still be up after the run.",
 					},
 				},
 			],

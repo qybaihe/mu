@@ -11,16 +11,28 @@ const SAID: Readonly<Record<Exclude<ContinueOutcome, "end">, string>> = {
 		"The user already asked for this work: carry it out without asking for a go-ahead. Where there is a choice, take the one the request most plainly means and say which. Pause only before a step that is hard to undo or reaches beyond this machine.",
 };
 
-/** The message a run ended on, when it is one that could have stopped short: a plain end, no call, some text. */
-export function stoppedOn(event: AgentEndEvent): string | undefined {
+const EMPTY =
+	"Your last reply had no message and no tool call, so the run ended with nothing to show for it. Carry on with the task: take the next step, or, if the work is done, say what you did and what came of it.";
+
+/** The text of the message a run ended on, when it ended plainly and without a call; "" when that message has no text. */
+function plainEnd(event: AgentEndEvent): string | undefined {
 	const last = [...event.messages].reverse().find((message) => message.role === "assistant") as
 		| { content?: unknown; stopReason?: unknown }
 		| undefined;
 	if (!last || last.stopReason !== "stop") return undefined;
 	const parts = Array.isArray(last.content) ? last.content : [];
 	if (parts.some((part) => (part as { type?: unknown } | null)?.type === "toolCall")) return undefined;
-	const text = textOf(last.content).trim();
-	return text || undefined;
+	return textOf(last.content).trim();
+}
+
+/** The message a run ended on, when it is one that could have stopped short: a plain end, no call, some text. */
+export function stoppedOn(event: AgentEndEvent): string | undefined {
+	return plainEnd(event) || undefined;
+}
+
+/** A run that ended on a message with nothing in it but thinking, or nothing at all: it stopped without a word. */
+export function endedEmpty(event: AgentEndEvent): boolean {
+	return plainEnd(event) === "";
 }
 
 /**
@@ -29,6 +41,9 @@ export function stoppedOn(event: AgentEndEvent): string | undefined {
  * language servers' end-of-run report: when one of them already sent the agent back, this says nothing. At most
  * `maxNudges` times per message of the user, so a model that keeps stopping does not loop. With a goal running, its
  * own check sends the agent back.
+ *
+ * A run that ends on a message with no text and no call (the model thought, then stopped) is sent back by rule, with
+ * no judge to ask: there is nothing in it to judge, and nobody would notice the silence in an unattended run.
  */
 export function registerContinuation(runtime: KyrnRuntime): void {
 	const options = runtime.options("continuation", { enabled: true, waitMs: 3000, maxNudges: 2 });
@@ -42,6 +57,12 @@ export function registerContinuation(runtime: KyrnRuntime): void {
 			if (runtime.goalActive || runtime.harnessAbort || runtime.nudgedEnds.has(event)) return undefined;
 			const turn = runtime.turn;
 			if (turn.continued >= options.maxNudges) return undefined;
+			if (endedEmpty(event)) {
+				turn.continued += 1;
+				runtime.nudgedEnds.add(event);
+				pi.sendMessage({ customType: CONTINUE_MESSAGE, content: EMPTY, display: true }, { triggerTurn: true });
+				return undefined;
+			}
 			const finalMessage = stoppedOn(event);
 			if (!finalMessage) return undefined;
 			// Where a message stops short is its end, so the end is what the judge reads.

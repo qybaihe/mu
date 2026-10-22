@@ -1,5 +1,15 @@
 import { type ChildProcess, spawn } from "node:child_process";
-import { createWriteStream, mkdirSync, readdirSync, rmSync, statSync, type WriteStream } from "node:fs";
+import {
+	closeSync,
+	createWriteStream,
+	mkdirSync,
+	openSync,
+	readdirSync,
+	readSync,
+	rmSync,
+	statSync,
+	type WriteStream,
+} from "node:fs";
 import { constants as osConstants } from "node:os";
 import { join } from "node:path";
 import { OutputCleaner, RingBuffer } from "./ring-buffer.ts";
@@ -14,6 +24,10 @@ import { groupAlive, type KillStep, killPlan, runKillStep, type SpawnPlan } from
  * first SIGTERM and after a grace period SIGKILL. A command that backgrounds its
  * own child (`server &`) leaves the group alive after the shell exits; such a job
  * is reported as `lingering` and is still stopped with the rest.
+ *
+ * With `outputToFile` a job writes straight to its log file and the buffer is
+ * filled from there, so the job does not need this process to go on: `release`
+ * leaves such jobs running when a one-shot run ends.
  */
 export type StoppedBy = "model" | "user" | "shutdown";
 
@@ -55,6 +69,11 @@ export interface JobManagerOptions {
 	/** Finished jobs kept for `list` and late reads. */
 	readonly keepFinished?: number;
 	readonly platform?: NodeJS.Platform;
+	/**
+	 * The command writes to its log file, not to a pipe, and the output is read back from the file. Such a job can
+	 * outlive this process (see `release`); the log then has no size limit.
+	 */
+	readonly outputToFile?: boolean;
 	/** Resolves the shell for one command. Injected, because shell discovery reads the machine. */
 	readonly plan: (command: string) => SpawnPlan;
 	readonly env?: () => NodeJS.ProcessEnv;
@@ -85,6 +104,8 @@ const MAX_PATTERN = 300;
 const MAX_LINE = 2000;
 const EXIT_FLUSH_MS = 250;
 const FORCE_WAIT_MS = 2000;
+const TAIL_MS = 100;
+const TAIL_CHUNK = 65_536;
 
 /** A model's regex, or the same text as a plain substring when it does not compile. Case is ignored. */
 export function compilePattern(source: string): { test: (line: string) => boolean; literal: boolean } {
@@ -106,6 +127,8 @@ interface Job {
 	child: ChildProcess;
 	buffer: RingBuffer;
 	log: WriteStream | undefined;
+	/** Reads what the command wrote to its log file since the last call, with `outputToFile`. */
+	tail: { offset: number; timer: NodeJS.Timeout | undefined; pull: () => void } | undefined;
 	logPath: string;
 	logBytes: number;
 	startedAt: number;
@@ -151,13 +174,20 @@ export class JobManager {
 		const id = `bg-${++this.sequence}`;
 		mkdirSync(this.options.logDir, { recursive: true });
 		const logPath = join(this.options.logDir, `${id}.log`);
-		const child = spawn(plan.file, [...plan.args], {
-			cwd: request.cwd,
-			detached: plan.detached,
-			env: this.options.env?.() ?? process.env,
-			stdio: [plan.stdin === undefined ? "ignore" : "pipe", "pipe", "pipe"],
-			windowsHide: true,
-		});
+		// The command holds its own descriptor of the file; ours is closed once it has one.
+		const out = this.options.outputToFile ? openSync(logPath, "a") : undefined;
+		let child: ChildProcess;
+		try {
+			child = spawn(plan.file, [...plan.args], {
+				cwd: request.cwd,
+				detached: plan.detached,
+				env: this.options.env?.() ?? process.env,
+				stdio: [plan.stdin === undefined ? "ignore" : "pipe", out ?? "pipe", out ?? "pipe"],
+				windowsHide: true,
+			});
+		} finally {
+			if (out !== undefined) closeSync(out);
+		}
 		if (plan.stdin !== undefined) {
 			child.stdin?.on("error", () => {});
 			child.stdin?.end(plan.stdin);
@@ -170,7 +200,8 @@ export class JobManager {
 			cwd: request.cwd,
 			child,
 			buffer: new RingBuffer(this.options.bufferChars),
-			log: createWriteStream(logPath),
+			log: out === undefined ? createWriteStream(logPath) : undefined,
+			tail: out === undefined ? undefined : { offset: 0, timer: undefined, pull: () => {} },
 			logPath,
 			logBytes: 0,
 			startedAt: Date.now(),
@@ -210,6 +241,38 @@ export class JobManager {
 		};
 		child.stdout?.on("data", onData);
 		child.stderr?.on("data", onData);
+		const tail = job.tail;
+		if (tail) {
+			const chunk = Buffer.alloc(TAIL_CHUNK);
+			tail.pull = () => {
+				let fd: number;
+				try {
+					fd = openSync(job.logPath, "r");
+				} catch {
+					return;
+				}
+				try {
+					for (;;) {
+						const read = readSync(fd, chunk, 0, chunk.length, tail.offset);
+						if (read <= 0) break;
+						tail.offset += read;
+						append(cleaner.push(decoder.decode(chunk.subarray(0, read), { stream: true })));
+					}
+				} finally {
+					closeSync(fd);
+				}
+			};
+			tail.timer = setInterval(() => {
+				tail.pull();
+				// Nothing closes when the last process of a lingering group ends: look.
+				if (job.finished && job.lingering && child.pid !== undefined && !groupAlive(child.pid, this.platform)) {
+					job.lingering = false;
+					this.closeLog(job);
+				}
+			}, TAIL_MS);
+			// Reading a job's output never keeps this process alive.
+			tail.timer.unref();
+		}
 
 		let flushTimer: NodeJS.Timeout | undefined;
 		let finishing = false;
@@ -219,6 +282,7 @@ export class JobManager {
 			if (flushTimer) clearTimeout(flushTimer);
 			job.endedAt ??= Date.now();
 			job.exitCode ??= 1;
+			job.tail?.pull();
 			append(cleaner.push(decoder.decode()) + cleaner.flush());
 			job.lingering = child.pid !== undefined && groupAlive(child.pid, this.platform);
 			let announced = false;
@@ -252,7 +316,8 @@ export class JobManager {
 		});
 		child.once("close", () => {
 			finish();
-			this.closeLog(job);
+			// A file has no end to wait for: a lingering group may still write to it, and is read until it is stopped.
+			if (!job.tail || !job.lingering) this.closeLog(job);
 		});
 	}
 
@@ -271,6 +336,11 @@ export class JobManager {
 	private closeLog(job: Job): void {
 		job.log?.end();
 		job.log = undefined;
+		if (job.tail?.timer) {
+			clearInterval(job.tail.timer);
+			job.tail.timer = undefined;
+			job.tail.pull();
+		}
 	}
 
 	/** One notice per reading: a matching line disarms the watch until the output is read again. */
@@ -422,6 +492,23 @@ export class JobManager {
 			}),
 		);
 		return live.length;
+	}
+
+	/**
+	 * Leaves the jobs that are still running to go on after this process ends: stops reading them and lets the
+	 * process exit without waiting for them. Only jobs that write to their log file (`outputToFile`) are released; the
+	 * others would lose their output pipe, so they are stopped as on `shutdown`. Resolves to the jobs left running.
+	 */
+	async release(): Promise<JobInfo[]> {
+		const live = [...this.jobs.values()].filter((job) => !job.finished || job.lingering);
+		const kept = live.filter((job) => job.tail !== undefined && job.child.pid !== undefined);
+		for (const job of kept) {
+			this.closeLog(job);
+			job.child.unref();
+			this.jobs.delete(job.id);
+		}
+		if (kept.length < live.length) await this.shutdown();
+		return kept.map((job) => this.info(job));
 	}
 
 	/** The last resort, for a process that exits without a session shutdown. Synchronous on POSIX. */
