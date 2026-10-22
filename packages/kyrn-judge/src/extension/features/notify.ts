@@ -1,5 +1,6 @@
 import { type NotifyFn, type NotifyOutcome, notifyRouting } from "../../decisions/notify-routing.ts";
 import { clip, failOpen, type KyrnRuntime } from "../runtime.ts";
+import { offWhenUnattended } from "./unattended.ts";
 
 /**
  * B8: events from outside the conversation go through one router, which
@@ -11,6 +12,9 @@ import { clip, failOpen, type KyrnRuntime } from "../runtime.ts";
  * (`unjudged`) at once, without waiting for the verdict it records. A `next_turn`
  * notice is read only when another run starts, which a one-shot run never does:
  * the sources that matter (a job's end, the context budget) say `now`.
+ *
+ * An unattended run (`mu --print`, json mode) does not ask: the verdict, recorded in shadow, is read by nobody
+ * there, and each source's own rule delivers as it would anyway. `unattended: true` asks there too.
  */
 export function registerNotify(runtime: KyrnRuntime): NotifyFn {
 	const options = runtime.options("notify", {
@@ -18,6 +22,8 @@ export function registerNotify(runtime: KyrnRuntime): NotifyFn {
 		budgetThresholds: [70, 85],
 		/** When the model hears of a budget level without a verdict on it: "now", "next_turn" or "drop". */
 		unjudged: "now" as NotifyOutcome,
+		/** Ask the judge in a `mu --print` or json run too. */
+		unattended: false,
 	});
 	const { pi } = runtime;
 	const announced = new Set<number>();
@@ -58,6 +64,7 @@ export function registerNotify(runtime: KyrnRuntime): NotifyFn {
 	runtime.notify = notify;
 
 	if (options.enabled) {
+		if (!options.unattended) offWhenUnattended(runtime, notifyRouting.id);
 		pi.on(
 			"turn_end",
 			failOpen((_event, ctx) => {

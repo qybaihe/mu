@@ -37,6 +37,7 @@ import { muHome } from "../../naming.ts";
 import { clip, failOpen, type KyrnRuntime, textOf } from "../runtime.ts";
 import { describeCall } from "./admission.ts";
 import type { HarnessRoots } from "./inherit.ts";
+import { isUnattended } from "./unattended.ts";
 
 export const CHECKPOINT_ENTRY = "kyrn.checkpoint";
 export const REWOUND_ENTRY = "kyrn.rewound";
@@ -83,6 +84,8 @@ interface TurnTrack {
 	proposed: boolean;
 	steps: string[];
 	edits: number;
+	/** A call that can change files ran in this turn: where a checkpoint is taken, or would be in an attended run. */
+	changed: boolean;
 	lastCheckFailed?: boolean;
 }
 
@@ -111,6 +114,7 @@ const newTurn = (n: number): TurnTrack => ({
 	proposed: false,
 	steps: [],
 	edits: 0,
+	changed: false,
 });
 
 const listed = (paths: readonly string[]): string =>
@@ -256,6 +260,11 @@ Abandoned because: <why it did not work>`;
  * `maxFiles` / `maxTotalMb`. Copying only the files a turn touches is no way out: a checkpoint is taken
  * before the turn's first change, when nobody knows which files the turn will change (a shell command
  * names none), and a rewind would then claim to restore a state it never saw.
+ *
+ * An unattended run (`mu --print`, json mode; see `unattended.ts`) takes no checkpoint: nobody there can
+ * confirm a rewind or type `/rewind`, so no file is ever put back, and the snapshot before the first change
+ * and the scan after every one only held the agent up. A dead end is still asked about there, and the
+ * model is told to step back, as it always was without a UI. `unattended: true` takes them again.
  */
 export function registerCheckpoint(
 	runtime: KyrnRuntime,
@@ -285,6 +294,8 @@ export function registerCheckpoint(
 		propose: true,
 		/** How long a proposal waits for an answer before the run carries on. 0 waits forever. */
 		confirmSeconds: 120,
+		/** Take checkpoints in a `mu --print` or json run too, for a session resumed later in the terminal. */
+		unattended: false,
 	});
 	// A sub-agent works inside its parent's turn: the parent's checkpoint before `delegate` covers what it changes.
 	if (!options.enabled || process.env.KYRN_SWARM_DEPTH) return;
@@ -448,7 +459,10 @@ export function registerCheckpoint(
 			pending = undefined;
 			const mutating = isMutatingCall(event.toolName, event.input);
 			calls.set(event.toolCallId, { name: event.toolName, input: event.input, mutating });
+			if (mutating) turn.changed = true;
 			if (!mutating || off || turn.checkpoint || turn.snapshotFailed) return undefined;
+			// No snapshot, and so no scan after the call either: `tool_execution_end` scans only behind a checkpoint.
+			if (!options.unattended && isUnattended(ctx)) return undefined;
 			const place = placeOff(ctx.cwd);
 			if (place) {
 				switchOff(ctx, place);
@@ -751,7 +765,16 @@ export function registerCheckpoint(
 			const trigger = turn.trigger;
 			const triggerCode = turn.triggerCode;
 			const checkpoint = turn.checkpoint;
-			if (!trigger || !checkpoint || !options.propose || turn.proposed || turn.asked >= 2 || pending)
+			// An unattended run takes no checkpoint: a turn that changed files there is asked about all the same.
+			const uncheckpointed = !checkpoint && turn.changed && !options.unattended && isUnattended(ctx);
+			if (
+				!trigger ||
+				!(checkpoint || uncheckpointed) ||
+				!options.propose ||
+				turn.proposed ||
+				turn.asked >= 2 ||
+				pending
+			)
 				return undefined;
 			turn.trigger = undefined;
 			turn.triggerCode = undefined;
@@ -759,7 +782,7 @@ export function registerCheckpoint(
 			const decision = await runtime.engine.decide(
 				turnRewind,
 				{
-					goal: runtime.taskFrame()?.goal ?? checkpoint.label,
+					goal: runtime.taskFrame()?.goal ?? checkpoint?.label ?? turnStart(ctx).label,
 					recentSteps: turn.steps,
 					trigger,
 					editsSinceCheckpoint: turn.edits,
@@ -769,6 +792,21 @@ export function registerCheckpoint(
 			);
 			if (decision.source !== "judge" || decision.outcome !== "propose") return undefined;
 			turn.proposed = true;
+			// Nobody to ask, so nothing is undone: the model is told, and the choice of a new approach is its own.
+			const stepBack = () =>
+				pi.sendMessage(
+					{
+						customType: "kyrn.steer",
+						content: `This approach looks like a dead end (${trigger}). Step back: undo what this attempt changed and try a different approach.`,
+						display: true,
+					},
+					{ deliverAs: "steer" },
+				);
+			// Without a checkpoint there is no restore to plan, and nobody to show one to.
+			if (!checkpoint) {
+				stepBack();
+				return undefined;
+			}
 
 			const { opened, plan, byHand } = await exclusive(() => preview(ctx, checkpoint));
 			runtime.present("rewind.proposed", {
@@ -783,15 +821,7 @@ export function registerCheckpoint(
 				paths: [...plan.restore, ...plan.remove, ...plan.bringBack].slice(0, MAX_LISTED),
 			});
 			if (!ctx.hasUI) {
-				// Nobody to ask, so nothing is undone: the model is told, and the choice of a new approach is its own.
-				pi.sendMessage(
-					{
-						customType: "kyrn.steer",
-						content: `This approach looks like a dead end (${trigger}). Step back: undo what this attempt changed and try a different approach.`,
-						display: true,
-					},
-					{ deliverAs: "steer" },
-				);
+				stepBack();
 				return undefined;
 			}
 			const approved = await ctx.ui.confirm(

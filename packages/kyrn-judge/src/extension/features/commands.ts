@@ -303,7 +303,7 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 			`judge: ${runtime.enabled ? engine.providerId : "off"}`,
 			...[...engine.routes()].map(([specId, judge]) => `  ${specId} -> ${judge.id}`),
 			`mode: default=${engine.getMode("*")}${modes ? ` ${modes}` : ""}`,
-			`calls: ${stats.calls} | failures: ${stats.failures} | abstentions: ${stats.abstentions} | input tokens: ${stats.inputTokens}`,
+			`calls: ${stats.calls} | failures: ${stats.failures} | abstentions: ${stats.abstentions} | input tokens: ${stats.inputTokens} | probes: ${stats.probes} (${stats.probeInputTokens} input tokens)`,
 			`kept out of context: tool output ${savings.admissionOmittedChars} chars, skills ${savings.skillsHiddenChars} chars, forgotten ${savings.forgottenChars} chars, compacted ${savings.compactedChars} chars, diagnostics ${savings.diagnosticsWithheldChars} chars`,
 		];
 		if (stats.lastError) lines.push(`last error: ${stats.lastError.kind} - ${stats.lastError.message}`);
