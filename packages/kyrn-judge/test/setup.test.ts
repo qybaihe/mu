@@ -696,8 +696,8 @@ describe("mu setup, asking in a terminal", () => {
 		const pi = run.pi as FakePi;
 		expect(pi.stored).toEqual([{ provider: "qwen", key: KEYS.hex32 }]);
 		expect(pi.defaults).toEqual([{ provider: "qwen", model: "qwen3-coder-plus" }]);
-		// No judge: neither mu.json nor the .env was touched.
-		expect(run.read("mu.json")).toBeUndefined();
+		// No judge: mu.json turns every decision point off, so none asks a judge; the .env was not touched.
+		expect(run.json("mu.json")).toEqual({ modes: { default: "off" } });
 		expect(run.read(".env")).toBeUndefined();
 		expect(run.said).toContain("Done. mu will start on Qwen · qwen3-coder-plus. Judge: none for now.");
 	});
@@ -795,6 +795,23 @@ describe("mu setup, asking in a terminal", () => {
 		expect(run.said).toContain("Start mu and type /login to sign in.");
 		expect(run.calls).toEqual([]);
 		expect(run.read("auth.json")).toBeUndefined();
+		expect(run.json("mu.json")).toEqual({ modes: { default: "off" } });
+	});
+
+	it("turns the judge off for Not now, and on again when a judge is picked later", async () => {
+		const home = temp();
+		mkdirSync(join(home, "agent"));
+		writeFileSync(
+			join(home, "agent", "mu.json"),
+			JSON.stringify({ tiers: ["laya"], modes: { "turn.drift": "active" } }),
+		);
+		// Subscription; judge: not now; no session.
+		const off = await wizard({ home, answers: ["3", "3", "n"] });
+		expect(off.json("mu.json")).toEqual({ tiers: ["laya"], modes: { default: "off", "turn.drift": "active" } });
+		expect(off.printed).toContain("judge: off");
+		// Again, with the free Jev: the "off" goes, a point's own mode stays.
+		const on = await wizard({ home, answers: ["3", "1", "n"] });
+		expect(on.json("mu.json")).toEqual({ tiers: ["jev"], modes: { "turn.drift": "active" } });
 	});
 
 	it("asks which service a key of another shape is for, before sending it anywhere", async () => {

@@ -124,6 +124,11 @@ export interface DecisionEngineOptions {
 	ledger?: LedgerSink;
 	defaultMode?: DecisionMode;
 	modes?: Readonly<Record<string, DecisionMode>>;
+	/**
+	 * The modes single points start with (DEFAULT_CONFIG.modes, such as a point in shadow). They refine a judge that is
+	 * on: with the default mode "off", such a point is off too, so no judge is asked. A mode set to another value holds.
+	 */
+	builtInModes?: Readonly<Record<string, DecisionMode>>;
 	/** Store submitted states in the ledger. Needed for replay and calibration; off by default because states can hold user content. */
 	recordState?: boolean;
 	/**
@@ -161,6 +166,7 @@ export class DecisionEngine {
 	private readonly ledger: LedgerSink | undefined;
 	private defaultMode: DecisionMode;
 	private readonly modes: Map<string, DecisionMode>;
+	private readonly builtInModes: Readonly<Record<string, DecisionMode>>;
 	private readonly recordState: boolean;
 	private readonly origin: (() => JsonValue | undefined) | undefined;
 	private readonly knownSecrets: () => readonly string[];
@@ -170,6 +176,7 @@ export class DecisionEngine {
 		this.ledger = options.ledger;
 		this.defaultMode = options.defaultMode ?? "shadow";
 		this.modes = new Map(Object.entries(options.modes ?? {}));
+		this.builtInModes = options.builtInModes ?? {};
 		this.recordState = options.recordState ?? false;
 		this.origin = options.origin;
 		this.knownSecrets = options.knownSecrets ?? (() => environmentSecrets());
@@ -219,7 +226,15 @@ export class DecisionEngine {
 	}
 
 	getMode(specId: string): DecisionMode {
-		return this.modes.get(specId) ?? this.defaultMode;
+		const mode = this.modes.get(specId);
+		if (mode === undefined || (this.defaultMode === "off" && this.builtInModes[specId] === mode))
+			return this.defaultMode;
+		return mode;
+	}
+
+	/** Whether any decision point asks the judge: false when every one is off. */
+	asksJudge(): boolean {
+		return this.defaultMode !== "off" || [...this.modes.keys()].some((specId) => this.getMode(specId) !== "off");
 	}
 
 	setMode(specId: string, mode: DecisionMode): void {

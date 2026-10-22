@@ -23,7 +23,7 @@ export function registerWarmup(runtime: KyrnRuntime): void {
 	runtime.pi.on("session_start", () => {
 		stop();
 		timer = setInterval(() => {
-			if (Date.now() - runtime.lastActivityAt > options.idleMs) return;
+			if (Date.now() - runtime.lastActivityAt > options.idleMs || !runtime.engine.asksJudge()) return;
 			void runtime.engine.probe();
 		}, options.intervalMs);
 		// A timer must never keep a finished process alive: a sub-agent ends when its work does.

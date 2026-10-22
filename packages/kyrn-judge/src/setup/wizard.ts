@@ -6,10 +6,12 @@ import {
 	Backups,
 	existingProvider,
 	judgeConfigPath,
+	judgeOff,
 	readJsonFile,
 	readTextFile,
 	type SetupPaths,
 	tiersOf,
+	withJudge,
 	withModel,
 	withProvider,
 	withTiers,
@@ -1128,8 +1130,8 @@ class Setup {
 		}
 		choices.push({
 			label: this.t({
-				zh: "暂时不要：mu 不用判定器，按默认规则工作",
-				en: "Not now: mu runs without a judge and uses its fallbacks",
+				zh: "暂时不要：不问判定器，什么都不发给它，mu 按默认规则工作",
+				en: "Not now: no judge is asked and nothing is sent to one; mu uses its fallbacks",
 			}),
 			value: "none",
 		});
@@ -1319,7 +1321,8 @@ class Setup {
 					);
 				}
 			}
-			if (judge && judge.kind !== "none") this.writeJudge(judge, target, model, backups, saved, notes);
+			if (judge?.kind === "none") this.writeNoJudge(backups, saved, notes);
+			else if (judge) this.writeJudge(judge, target, model, backups, saved, notes);
 		} catch (error) {
 			if (error instanceof Stop) throw error;
 			// pi's messages name files and providers, never a key; the keys are taken out all the same.
@@ -1363,6 +1366,26 @@ class Setup {
 		return `  ${this.path(path).padEnd(30)} ${what}`;
 	}
 
+	/** "Not now": no decision point asks a judge (the default mode "off"), so nothing goes to one. */
+	private writeNoJudge(backups: Backups, saved: string[], notes: string[]): void {
+		const configPath = judgeConfigPath(this.deps.paths.agentDir);
+		const config = readJsonFile(configPath);
+		if (config.state === "unreadable") {
+			notes.push(
+				this.t({
+					zh: `${this.path(configPath)} 不是纯 JSON，没有改它。请手动加上 "modes": { "default": "off" }`,
+					en: `${this.path(configPath)} isn't plain JSON, so it was left unchanged. Add "modes": { "default": "off" } by hand.`,
+				}),
+			);
+			return;
+		}
+		const current = config.state === "ok" ? config.value : undefined;
+		if (judgeOff(current)) return;
+		backups.save(configPath);
+		writeJsonFile(configPath, withJudge(current ?? {}, false));
+		saved.push(this.savedLine(configPath, this.t({ zh: "判定器：关闭", en: "judge: off" })));
+	}
+
 	private writeJudge(
 		judge: Exclude<JudgeChoice, { kind: "none" }>,
 		target: Target | undefined,
@@ -1383,6 +1406,8 @@ class Setup {
 			// `jev` uses the free Jev while no key is set, and a key added later without another setup.
 			if (!tiersOf(current).some((tier) => tier === "jev" || tier === "jev-opencode-free")) tiers = ["jev"];
 		} else if (!tiersOf(current).some((tier) => JEV_TIERS.has(tier))) tiers = ["jev"];
+		// A judge picked after "Not now" is turned back on.
+		const turnOn = judgeOff(current);
 		if (tiers && config.state === "unreadable") {
 			notes.push(
 				this.t({
@@ -1390,11 +1415,13 @@ class Setup {
 					en: `${this.path(configPath)} isn't plain JSON, so it was left unchanged. Add "tiers": ${JSON.stringify(tiers)} by hand.`,
 				}),
 			);
-		} else if (tiers) {
+		} else if (tiers || turnOn) {
 			backups.save(configPath);
-			writeJsonFile(configPath, withTiers(current ?? {}, tiers));
+			const next = tiers ? withTiers(current ?? {}, tiers) : (current ?? {});
+			writeJsonFile(configPath, turnOn ? withJudge(next, true) : next);
+			const named = tiers ?? tiersOf(current);
 			saved.push(
-				this.savedLine(configPath, this.t({ zh: `判定器 ${tiers.join(", ")}`, en: `judge: ${tiers.join(", ")}` })),
+				this.savedLine(configPath, this.t({ zh: `判定器 ${named.join(", ")}`, en: `judge: ${named.join(", ")}` })),
 			);
 		}
 		if (judge.kind === "jev") {

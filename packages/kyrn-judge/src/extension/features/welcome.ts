@@ -233,7 +233,8 @@ export function registerWelcome(runtime: KyrnRuntime): void {
 							{
 								version: VERSIONS.mu,
 								piVersion: VERSIONS.pi,
-								judge: runtime.judgeLabel,
+								// Every decision point off: no judge is asked, so none is named.
+								judge: runtime.engine.asksJudge() ? runtime.judgeLabel : "off",
 								health,
 								mode: runtime.mode("*"),
 								model: modelRef(model),
@@ -252,7 +253,9 @@ export function registerWelcome(runtime: KyrnRuntime): void {
 					},
 				};
 			});
-			// Asked once per session start: a judge that is down is the first thing worth knowing.
+			// Asked once per session start: a judge that is down is the first thing worth knowing. Not when no decision
+			// point asks it: then nothing goes to the judge at all.
+			if (!runtime.engine.asksJudge()) return undefined;
 			health = "checking";
 			void runtime.engine.probe().then((result) => {
 				health = result;
