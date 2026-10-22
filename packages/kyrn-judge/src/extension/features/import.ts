@@ -31,10 +31,11 @@ import { count, say } from "../../language.ts";
 export const IMPORT_COMMAND = "import-chat";
 
 /** What the command needs from pi's command context; the whole context is one. */
-export type ImportContext = Pick<ExtensionCommandContext, "cwd" | "hasUI" | "isIdle" | "switchSession"> & {
-	ui: Pick<ExtensionUIContext, "select" | "confirm" | "notify">;
-	sessionManager: Pick<ExtensionCommandContext["sessionManager"], "getSessionDir">;
-};
+export type ImportContext = Pick<ExtensionCommandContext, "cwd" | "hasUI" | "isIdle" | "switchSession"> &
+	Partial<Pick<ExtensionCommandContext, "model">> & {
+		ui: Pick<ExtensionUIContext, "select" | "confirm" | "notify">;
+		sessionManager: Pick<ExtensionCommandContext["sessionManager"], "getSessionDir">;
+	};
 
 export interface ImportDeps {
 	agentDir: string;
@@ -156,7 +157,9 @@ export async function importChat(args: string, ctx: ImportContext, deps: ImportD
 		if (!picked) return;
 		path = picked.path;
 	}
-	const [result] = await importTranscripts([path], { ...store, cwd: ctx.cwd });
+	// The conversation goes on with the model of this session, not the one the other tool answered with.
+	const model = ctx.model ? { provider: ctx.model.provider, modelId: ctx.model.id } : undefined;
+	const [result] = await importTranscripts([path], { ...store, cwd: ctx.cwd, ...(model ? { model } : {}) });
 	await report(ctx, result);
 }
 

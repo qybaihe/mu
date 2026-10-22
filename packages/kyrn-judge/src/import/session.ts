@@ -24,6 +24,7 @@ import type {
 	CompactionEntry,
 	CustomMessageEntry,
 	FileEntry,
+	ModelChangeEntry,
 	SessionEntry,
 	SessionHeader,
 	SessionInfoEntry,
@@ -692,6 +693,7 @@ export class SessionBuilder {
 		name: string;
 		origin: Omit<ImportOrigin, "counts">;
 		note: string;
+		model?: SessionModel;
 	}): FileEntry[] {
 		this.settle();
 		this.budgetImages();
@@ -718,7 +720,7 @@ export class SessionBuilder {
 		this.items.forEach((item, index) => {
 			if (item.kind === "compaction") lastCompaction = index;
 		});
-		this.counts.entries = this.items.length + 2 + (lastCompaction >= 0 ? 1 : 0);
+		this.counts.entries = this.items.length + 2 + (lastCompaction >= 0 ? 1 : 0) + (input.model ? 1 : 0);
 		const digest = createHash("sha256").update(JSON.stringify(this.items)).digest("hex").slice(0, 32);
 
 		const header: SessionHeader = {
@@ -795,6 +797,18 @@ export class SessionBuilder {
 				parentId = again.id;
 			}
 		});
+		// pi resumes a session with the model of its last reply, here the other tool's: mu's own model is named after it.
+		if (input.model) {
+			const change: ModelChangeEntry = {
+				type: "model_change",
+				id: newId("model"),
+				parentId,
+				timestamp: input.origin.importedAt,
+				provider: input.model.provider,
+				modelId: input.model.modelId,
+			};
+			entries.push(change);
+		}
 		return [header, ...entries];
 	}
 }
@@ -809,7 +823,15 @@ export interface ReadOptions {
 	now?: Date;
 	/** The session's id: an import brought up to date keeps the one it had. Default: a new one. */
 	sessionId?: string;
+	/**
+	 * The model mu goes on with (its default, or the session's that imports): named after the imported replies, which
+	 * name the other tool's. Without one, mu takes its default when the conversation goes on.
+	 */
+	model?: SessionModel;
 }
+
+/** A model as pi's `model_change` names it. */
+export type SessionModel = { provider: string; modelId: string };
 
 /** A file as it is on disk now, to tell later whether it changed: its size and when it was last written. */
 export function fileStamp(path: string): string | undefined {
@@ -869,6 +891,7 @@ export function complete(
 		started,
 		name,
 		note: importNote(builder.tool, input.source),
+		...(input.options.model ? { model: input.options.model } : {}),
 		origin: {
 			version: 1,
 			tool: builder.tool,

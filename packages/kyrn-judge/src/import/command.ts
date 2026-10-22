@@ -20,7 +20,8 @@ import {
 	type SessionStore,
 	TOOL_NAMES,
 } from "./index.ts";
-import { absolute } from "./session.ts";
+import { record } from "./jsonl.ts";
+import { absolute, type SessionModel } from "./session.ts";
 
 export const USAGE = [
 	"mu import: import Claude Code, Codex and ZCode conversations so you can continue them in mu.",
@@ -90,16 +91,29 @@ export function storeFor(agentDirArg: string | undefined, io: Pick<Io, "env" | "
 	);
 	const fromEnv = io.env.MU_CODING_AGENT_SESSION_DIR;
 	if (fromEnv) return { agentDir, sessionDir: absolute(fromEnv, io.cwd) };
-	try {
-		const settings = JSON.parse(readFileSync(join(agentDir, "settings.json"), "utf8")) as unknown;
-		const sessionDir =
-			settings !== null && typeof settings === "object" && "sessionDir" in settings
-				? settings.sessionDir
-				: undefined;
-		if (typeof sessionDir === "string" && sessionDir.trim())
-			return { agentDir, sessionDir: absolute(sessionDir, io.cwd) };
-	} catch {}
+	const sessionDir = settingsOf(agentDir).sessionDir;
+	if (typeof sessionDir === "string" && sessionDir.trim())
+		return { agentDir, sessionDir: absolute(sessionDir, io.cwd) };
 	return { agentDir };
+}
+
+/** mu's settings.json in the agent folder, or nothing when there is none or it cannot be read. */
+function settingsOf(agentDir: string): Record<string, unknown> {
+	try {
+		return record(JSON.parse(readFileSync(join(agentDir, "settings.json"), "utf8")) as unknown) ?? {};
+	} catch {
+		return {};
+	}
+}
+
+/** The model mu starts conversations with (settings.json's default), which an imported one goes on with. */
+export function defaultModelOf(agentDir: string): SessionModel | undefined {
+	const settings = settingsOf(agentDir);
+	const provider = settings.defaultProvider;
+	const modelId = settings.defaultModel;
+	return typeof provider === "string" && provider && typeof modelId === "string" && modelId
+		? { provider, modelId }
+		: undefined;
 }
 
 export function formatSize(bytes: number): string {
@@ -219,7 +233,7 @@ export async function main(argv: readonly string[], io: Io): Promise<number> {
 	}
 	const results = await importTranscripts(
 		parsed.files.map((file) => absolute(file, io.cwd)),
-		{ ...store, cwd: io.cwd },
+		{ ...store, cwd: io.cwd, model: defaultModelOf(store.agentDir) },
 	);
 	io.out(
 		parsed.json

@@ -9,7 +9,7 @@
  *
  * Only node: built-ins at run time, so that `mu import` runs on a bare Node (cli.ts).
  */
-import { mkdirSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type { FileEntry } from "@earendil-works/pi-coding-agent";
@@ -314,8 +314,39 @@ export interface ListOptions {
 	subAgents?: boolean;
 }
 
+/**
+ * How each transcript looked when an import last found nothing new in it, by its source: a tool writes bookkeeping into
+ * a transcript too (Claude Code its titles), and a transcript checked once in that state is not offered again as changed.
+ */
+type Checks = Record<string, string>;
+
+const checksFile = (store: SessionStore): string => join(absolute(store.agentDir), "import-checks.json");
+
+function readChecks(store: SessionStore): Checks {
+	try {
+		const checks = record(JSON.parse(readFileSync(checksFile(store), "utf8")) as unknown) ?? {};
+		return Object.fromEntries(
+			Object.entries(checks).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
+		);
+	} catch {
+		return {};
+	}
+}
+
+function writeChecks(store: SessionStore, checks: Checks): void {
+	const file = checksFile(store);
+	try {
+		mkdirSync(absolute(store.agentDir), { recursive: true });
+		writeFileSync(`${file}.tmp`, `${JSON.stringify(checks, null, 1)}\n`, { mode: 0o600 });
+		renameSync(`${file}.tmp`, file);
+	} catch {
+		// Only a hint for the list: without it, a conversation may be offered as changed once more.
+	}
+}
+
 /** Whether a conversation changed after it was imported, from what it looks like now. */
-function changedSince(origin: ImportOrigin, stamp: string | undefined, modified: string): boolean {
+function changedSince(origin: ImportOrigin, stamp: string | undefined, modified: string, checked?: string): boolean {
+	if (stamp !== undefined && stamp === checked) return false;
 	if (origin.stamp !== undefined) return stamp !== undefined && stamp !== origin.stamp;
 	// Imported before stamps were kept: written to after the import.
 	return modified > origin.importedAt;
@@ -337,12 +368,15 @@ export function listConversations(options: ListOptions = {}): FoundConversation[
 	for (const path of jsonlFiles(codexSessions, 4)) candidates.push({ tool: "codex", path });
 
 	const imports = options.store ? findImports(options.store) : [];
+	const checks = options.store ? readChecks(options.store) : {};
 	const earlier = (tool: ImportTool, id: string, path: string) => findImport(imports, tool, id, path);
 	const mark = (found: ImportedSession | undefined, stamp: string | undefined, modified: string) =>
 		found
 			? {
 					importedAs: found.sessionFile,
-					...(changedSince(found.origin, stamp, modified) ? { changed: true as const } : {}),
+					...(changedSince(found.origin, stamp, modified, checks[found.origin.source])
+						? { changed: true as const }
+						: {}),
 				}
 			: {};
 
@@ -477,7 +511,12 @@ function sameAs(earlier: ImportOrigin, converted: ConvertedTranscript): boolean 
 	return before?.user === after.user && before.assistant === after.assistant && before.toolCalls === after.toolCalls;
 }
 
-async function importOne(path: string, options: ImportOptions, imports: ImportedSession[]): Promise<ImportResult> {
+async function importOne(
+	path: string,
+	options: ImportOptions,
+	imports: ImportedSession[],
+	checks: Checks,
+): Promise<ImportResult> {
 	const zcode = parseZcodeSource(path);
 	const source = zcode ? zcodeSource(zcode.database, zcode.id) : absolute(path);
 	const failed = (error: string): ImportResult => ({ status: "failed", source, error });
@@ -504,6 +543,7 @@ async function importOne(path: string, options: ImportOptions, imports: Imported
 		const readOptions = (keep?: ImportedSession): ReadOptions => ({
 			cwd: options.cwd,
 			now: options.now,
+			...(options.model ? { model: options.model } : {}),
 			...(keep ? { sessionId: keep.sessionId } : {}),
 		});
 		let converted = await read(tool, source, readOptions(earlier));
@@ -511,7 +551,11 @@ async function importOne(path: string, options: ImportOptions, imports: Imported
 			earlier = findImport(imports, tool, converted.sourceId, source);
 			if (earlier) converted = await read(tool, source, readOptions(earlier));
 		}
-		if (earlier && sameAs(earlier.origin, converted)) return already(tool, earlier);
+		if (earlier && sameAs(earlier.origin, converted)) {
+			const stamp = record(record(converted.entries[1])?.details)?.stamp;
+			if (typeof stamp === "string") checks[source] = stamp;
+			return already(tool, earlier);
+		}
 		if (!converted.hasConversation) return failed("no messages in this transcript");
 		const written: Written = {
 			source,
@@ -559,7 +603,10 @@ async function importOne(path: string, options: ImportOptions, imports: Imported
  */
 export async function importTranscripts(paths: readonly string[], options: ImportOptions): Promise<ImportResult[]> {
 	const imports = findImports(options);
+	const checks = readChecks(options);
+	const before = JSON.stringify(checks);
 	const results: ImportResult[] = [];
-	for (const path of paths) results.push(await importOne(path, options, imports));
+	for (const path of paths) results.push(await importOne(path, options, imports, checks));
+	if (JSON.stringify(checks) !== before) writeChecks(options, checks);
 	return results;
 }

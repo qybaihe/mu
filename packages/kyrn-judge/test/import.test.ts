@@ -883,6 +883,23 @@ describe("importing into mu's sessions", () => {
 		]);
 	});
 
+	it("goes on with mu's model, not the one the other tool answered with", async () => {
+		const s = stores();
+		const [bare] = await importTranscripts([s.cc], { agentDir: s.agentDir });
+		if (bare.status !== "imported") throw new Error(bare.status);
+		// Nothing to name: pi resumes it with its default, as it would a new conversation.
+		expect(readFile(bare.sessionFile).some((entry) => entry.type === "model_change")).toBe(false);
+
+		const other = stores();
+		const model = { provider: "anthropic", modelId: "claude-opus-4-5" };
+		const [named] = await importTranscripts([other.cc], { agentDir: other.agentDir, model });
+		if (named.status !== "imported") throw new Error(named.status);
+		const lines = readFile(named.sessionFile);
+		expect(lines.at(-1)).toMatchObject({ type: "model_change", ...model });
+		expect(named.counts.entries).toBe(lines.length - 1);
+		expect(SessionManager.open(named.sessionFile).buildSessionContext().model).toEqual(model);
+	});
+
 	it("refuses the same conversation twice, by its file or by its id", async () => {
 		const s = stores();
 		const [first] = await importTranscripts([s.cc], { agentDir: s.agentDir });
@@ -953,6 +970,13 @@ describe("importing into mu's sessions", () => {
 
 		const [same] = await importTranscripts([s.cc], options);
 		expect(same).toMatchObject({ status: "already-imported", sessionFile: first.sessionFile });
+
+		// Claude Code writes its own bookkeeping into the transcript: offered as changed until one look finds nothing new.
+		appendFileSync(s.cc, `${JSON.stringify({ type: "ai-title", aiTitle: "hello again", sessionId: CC_ID })}\n`);
+		expect(listConversations(list).find((one) => one.tool === "claude-code")?.changed).toBe(true);
+		const [checked] = await importTranscripts([s.cc], options);
+		expect(checked.status).toBe("already-imported");
+		expect(listConversations(list).find((one) => one.tool === "claude-code")?.changed).toBeUndefined();
 	});
 
 	it("imports a conversation that went on in mu and in the other tool as a new session beside the first", async () => {
@@ -1090,7 +1114,10 @@ describe("mu import on the command line", () => {
 		const agentDir = join(dir, "agent");
 		const file = writeLines(join(dir, "t.jsonl"), sidechainSession());
 		mkdirSync(agentDir, { recursive: true });
-		writeFileSync(join(agentDir, "settings.json"), JSON.stringify({ sessionDir: join(dir, "flat") }));
+		writeFileSync(
+			join(agentDir, "settings.json"),
+			JSON.stringify({ sessionDir: join(dir, "flat"), defaultProvider: "openai", defaultModel: "gpt-6" }),
+		);
 		const out: string[] = [];
 		const code = await importCommand(["--json", file], {
 			out: (line) => out.push(line),
@@ -1102,6 +1129,12 @@ describe("mu import on the command line", () => {
 		expect(code).toBe(0);
 		const [imported] = (JSON.parse(out.join("\n")) as { results: { sessionFile: string }[] }).results;
 		expect(dirname(imported.sessionFile)).toBe(join(dir, "flat"));
+		// mu's default model, which the conversation goes on with.
+		expect(readFile(imported.sessionFile).at(-1)).toMatchObject({
+			type: "model_change",
+			provider: "openai",
+			modelId: "gpt-6",
+		});
 	});
 });
 
@@ -1143,11 +1176,17 @@ describe("/import-chat", () => {
 
 	it("lists this project's conversations, imports the one picked and switches to it", async () => {
 		const { ctx, switched, notes, deps } = setup();
-		await importChat("", ctx, deps);
+		await importChat(
+			"",
+			{ ...ctx, model: { provider: "xiaomi", id: "mimo-v2.6-pro" } as ImportContext["model"] },
+			deps,
+		);
 		expect(ctx.ui.select).toHaveBeenCalledWith(expect.any(String), [expect.stringContaining("Claude Code")]);
 		expect(notes[0]).toContain('Imported "hello" from Claude Code');
 		expect(switched).toHaveLength(1);
 		expect(dirname(switched[0])).toBe(defaultSessionDir(CWD, deps.agentDir));
+		// It goes on with this session's model.
+		expect(readFile(switched[0]).at(-1)).toMatchObject({ type: "model_change", modelId: "mimo-v2.6-pro" });
 
 		// Picked again: it is not imported twice, the earlier session is offered instead.
 		await importChat("", ctx, deps);
