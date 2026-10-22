@@ -145,29 +145,29 @@
       "send_feedback": "Réessayez ; si l'échec persiste, consultez le journal de l'application."
     },
     "ownership": {
-      "aionui": "Application",
+      "mu": "Application",
       "user_agent": "Agent",
       "user_llm_provider": "Fournisseur de modèles",
       "unknown_upstream": "En amont"
     },
     "codes": {
-      "AIONUI_STREAM_BROKEN": {
+      "MU_STREAM_BROKEN": {
         "title": "Le flux de réponse a été interrompu",
         "body": "L'application a accepté votre message mais le flux de réponses s'est terminé de manière inattendue. Veuillez réessayer ; si cela se reproduit, consultez le journal de l'application."
       },
-      "AIONUI_STATE_INCONSISTENT": {
+      "MU_STATE_INCONSISTENT": {
         "title": "L'état de la conversation n'est pas synchronisé",
         "body": "L'état de la conversation n'est pas synchronisé. Redémarrez cette discussion ou rechargez l'application avant de réessayer."
       },
-      "AIONUI_PERMISSION_ERROR": {
+      "MU_PERMISSION_ERROR": {
         "title": "Impossible d'accéder à la ressource demandée",
         "body": "Une autorisation locale ou une vérification du système de fichiers a échoué. Vérifiez le chemin du projet et les autorisations de l'application, puis réessayez."
       },
-      "AIONUI_INTERNAL_ERROR": {
+      "MU_INTERNAL_ERROR": {
         "title": "La demande a échoué dans l'application",
         "body": "La demande a échoué pendant que l'application la traitait. Veuillez réessayer une fois ; si cela se répète, consultez le journal de l'application."
       },
-      "AIONUI_CONVERSATION_BUSY": {
+      "MU_CONVERSATION_BUSY": {
         "title": "La conversation est occupée",
         "body": "Une autre réponse est toujours en cours. Attendez qu'il soit terminé avant d'envoyer un nouveau message."
       },
@@ -592,7 +592,9 @@
     "hint": "Tapez / pour les commandes, @ pour référencer des fichiers, ↑/↓ pour l'historique des messages",
     "mediaPathFallback": "Cet agent ne prend pas en charge nativement ce type de fichier ; il sera envoyé sous forme de chemin de fichier.",
     "hintWithSessions": "/ pour les commandes, @ pour les fichiers, @@ pour les conversations, ↑/↓ pour l’historique",
-    "stop": "Arrêter la réponse"
+    "stop": "Arrêter la réponse",
+    "openCommand": "Joindre des fichiers de cet ordinateur",
+    "copyCommand": "Copier la dernière réponse"
   },
   "composer": {
     "goalLine": {

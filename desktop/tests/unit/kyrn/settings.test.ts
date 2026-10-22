@@ -102,16 +102,20 @@ describe('native mu settings', () => {
       f.cleanup();
     }
   });
-  it('accepts a private-network HTTP address for a TypeSafe judge and still refuses a public one', () => {
+  it('accepts a plain HTTP address for a TypeSafe judge, by IP or by name, and refuses a link-local one', () => {
     const f = fixture();
     try {
       const value = f.store.read();
       value.judges['jev-direct'].baseUrl = 'http://192.168.31.124:8000/v1/systemone';
       expect(f.store.save(value).judges['jev-direct'].baseUrl).toBe('http://192.168.31.124:8000/v1/systemone');
+      // A name may be a server the hosts file points at: the app cannot tell, so it takes it.
+      const named = f.store.read();
+      named.judges['jev-direct'].baseUrl = 'http://judge.lan:8000/v1/systemone';
+      expect(f.store.save(named).judges['jev-direct'].baseUrl).toBe('http://judge.lan:8000/v1/systemone');
       const again = f.store.read();
-      again.judges['jev-direct'].baseUrl = 'http://example.com/v1';
-      expect(() => f.store.save(again)).toThrow('private-network address');
-      expect(f.store.read().judges['jev-direct'].baseUrl).toBe('http://192.168.31.124:8000/v1/systemone');
+      again.judges['jev-direct'].baseUrl = 'http://169.254.169.254/v1';
+      expect(() => f.store.save(again)).toThrow('not link-local');
+      expect(f.store.read().judges['jev-direct'].baseUrl).toBe('http://judge.lan:8000/v1/systemone');
     } finally {
       f.cleanup();
     }
@@ -283,12 +287,10 @@ describe('native mu settings', () => {
       expect(saved.keys.MU_JUDGE_CLM_API_KEY).toBe(true);
       raw = JSON.parse(readFileSync(join(f.dir, 'kyrn.json'), 'utf8'));
       expect(raw.judges.clm).toMatchObject({ type: 'clm', baseUrl: address, apiKeyEnv: 'MU_JUDGE_CLM_API_KEY' });
-      // The questions hold what the person wrote: plain HTTP to the internet is refused.
+      // The questions hold what the person wrote: never to a link-local address (cloud metadata lives there).
       const later = f.store.read();
-      const exposed = { ...later.judges.clm, baseUrl: 'http://example.com:8700' };
-      expect(() => f.store.save({ ...later, judges: { ...later.judges, clm: exposed } })).toThrow(
-        'private-network address'
-      );
+      const exposed = { ...later.judges.clm, baseUrl: 'http://169.254.169.254:8700' };
+      expect(() => f.store.save({ ...later, judges: { ...later.judges, clm: exposed } })).toThrow('not link-local');
       // And the CLM key never reaches TypeSafe through a System One judge without an address.
       const stray = {
         type: 'typesafe' as const,
@@ -374,7 +376,7 @@ const switches = (calls: Call[], id: string) =>
 
 describe('mu-only backend catalog', () => {
   type Options = { fail?: (call: Call) => boolean; wholeRecords?: boolean };
-  /** Answers the way the bundled AionCore v0.2.2 was seen to, checked against a real one. */
+  /** Answers the way the bundled backend (v0.2.2) was seen to, checked against a real one. */
   function backend(records: Record<string, unknown>[], options: Options = {}) {
     const calls: Call[] = [];
     const request: BackendRequest = async <T>(method: string, path: string, body?: unknown): Promise<T> => {
@@ -416,7 +418,7 @@ describe('mu-only backend catalog', () => {
       env: [{ name: 'A', value: 'b' }],
       native_skills_dirs: ['/skills'],
       behavior_policy: { supports_side_question: true },
-      yolo_id: 'jev',
+      yolo_id: 'judge',
     };
     const installed = () =>
       ownLauncher(current, {
@@ -445,7 +447,7 @@ describe('mu-only backend catalog', () => {
               description: row.description,
               native_skills_dirs: row.native_skills_dirs,
               behavior_policy: row.behavior_policy,
-              yolo_id: 'jev',
+              yolo_id: 'judge',
             },
           },
         },
@@ -534,11 +536,11 @@ describe('mu-only backend catalog', () => {
           args: ['--flag'],
           env: [{ name: 'A', value: 'b' }],
           advanced: {
-            // AionUi's own word for full auto, which mu does not know, becomes mu's full access.
+            // The backend's own word for full auto, which mu does not know, becomes mu's full access.
             yolo_id: 'full',
             native_skills_dirs: ['/skills'],
             behavior_policy: { supports_side_question: true },
-            description: 'mu harness · local Codex login · Jev judgment',
+            description: 'mu harness · local Codex login · judge model',
           },
         },
       },
@@ -560,7 +562,7 @@ describe('mu-only backend catalog', () => {
     const put = puts(calls)[0]?.body as { advanced: { description: string } };
     expect(put.advanced.description).toBe('my own words');
   });
-  it('knows its own description in any capitalization, and writes it as the judge is spelled now', async () => {
+  it('knows its own description in any capitalization or wording, and writes the present one', async () => {
     const { calls, request } = backend([
       {
         id: 'k',
@@ -572,7 +574,7 @@ describe('mu-only backend catalog', () => {
     ]);
     await initializeKyrn(request, '/kyrn/acp');
     const put = puts(calls)[0]?.body as { advanced: { description: string } };
-    expect(put.advanced.description).toBe('mu harness · local Codex login · Jev judgment');
+    expect(put.advanced.description).toBe('mu harness · local Codex login · judge model');
   });
   it('keeps the old name rather than update a record it could not read whole', async () => {
     const { calls, request } = backend(
@@ -616,7 +618,7 @@ describe('mu-only backend catalog', () => {
       { id: 'k', name: 'mu', command: '/kyrn/acp', enabled: true, env: [{ name: 'A', value: 'b' }] },
     ]);
     await initializeKyrn(request, '/kyrn/acp');
-    // A scheduled task asks AionCore for full auto: without it, the run would wait on a question nobody answers.
+    // A scheduled task asks the backend for full auto: without it, the run would wait on a question nobody answers.
     expect(puts(calls)).toEqual([
       {
         method: 'PUT',
@@ -628,7 +630,7 @@ describe('mu-only backend catalog', () => {
         }),
       },
     ]);
-    const chosen = backend([{ id: 'k', name: 'mu', command: '/kyrn/acp', enabled: true, yolo_id: 'jev' }]);
+    const chosen = backend([{ id: 'k', name: 'mu', command: '/kyrn/acp', enabled: true, yolo_id: 'judge' }]);
     await initializeKyrn(chosen.request, '/kyrn/acp');
     expect(puts(chosen.calls)).toEqual([]);
   });
@@ -655,7 +657,7 @@ describe('mu-only backend catalog', () => {
     expect(calls.map((call) => call.path)).toEqual(['/api/agents/management']);
   });
 
-  // #4: an app installed in C:\Program Files\mu registers its launcher's 8.3 short path, which AionCore can start. A
+  // #4: an app installed in C:\Program Files\mu registers its launcher's 8.3 short path, which the backend can start. A
   // registration an earlier start left may hold another spelling of the same launcher.
   describe('on Windows, where one launcher has several spellings', () => {
     const long = 'C:\\Program Files\\mu\\resources\\mu\\acp.cmd';

@@ -13,8 +13,8 @@ export type BackendStartupFailureReason =
   | 'backend_incomplete_installation'
   | 'backend_package_architecture_mismatch'
   | 'backend_data_migration_failed'
-  // The local database was created by a newer AionUi version (downgrade).
-  // The data is intact; the fix is updating AionUi, not reinstalling or
+  // The local database was created by a newer version of the app (downgrade).
+  // The data is intact; the fix is updating the app, not reinstalling or
   // inspecting migrations (Sentry ELECTRON-31Z).
   | 'backend_database_newer_than_app'
   | 'backend_local_data_repair_failed'
@@ -45,7 +45,7 @@ export interface BackendStartupFailureInfo {
   localDataIssueKind?: BackendLocalDataIssueKind;
   startupDirectoryIssueKind?: BackendStartupDirectoryIssueKind;
   missingBackendBinary?: boolean;
-  missingBundledAioncoreDir?: boolean;
+  missingBundledBackendDir?: boolean;
   missingHubDir?: boolean;
   missingPwaDir?: boolean;
   reason: BackendStartupFailureReason;
@@ -59,7 +59,7 @@ export interface BackendStartupFailureInfo {
   deviceArch?: string;
   expectedDownloadArch?: string;
   isRosettaTranslated?: boolean;
-  /** Currently installed AionUi version, stamped by the main process when a
+  /** Currently installed app version, stamped by the main process when a
    * startup failure is recorded. Lets dialogs reference the user's version
    * (e.g. the downgrade dialog: "data needs something newer than vX.Y.Z"). */
   appVersion?: string;
@@ -69,7 +69,7 @@ declare global {
   interface Window {
     electronAPI?: ElectronBridgeAPI;
     __initialLanguage?: string | null;
-    __aionuiE2ETest?: boolean;
+    __muE2ETest?: boolean;
     __backendStartupFailed?: boolean;
     __backendStartupFailure?: BackendStartupFailureInfo | null;
     /** The person put the Node.js runtime download off at this start: see common/adapter/nodeRuntimeDeferral.ts. */

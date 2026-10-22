@@ -25,7 +25,7 @@ const MAX_STEPS = 16;
 
 export type GoalStatus = "active" | "paused" | "met" | "cleared";
 
-/** Who decided the last check: the model, the judge (Jev), or the facts alone. */
+/** Who decided the last check: the model, the judge (`"jev"`, as saved sessions spell it), or the facts alone. */
 export type GoalCheckedBy = "model" | "jev" | "rules";
 
 export interface GoalState {
@@ -85,17 +85,17 @@ export function describeGoal(goal: GoalState | undefined): string {
 	const n = goal.continuations;
 	const state =
 		goal.status === "active"
-			? say({ zh: `进行中（已续跑 ${n} 次）`, en: `working (sent back to work ${n} time${n === 1 ? "" : "s"})` })
+			? say({ zh: `进行中（已续跑 ${n} 次）`, en: `running (continued ${n} time${n === 1 ? "" : "s"})` })
 			: goal.status === "met"
 				? say({ zh: "已达成", en: "met" })
 				: say({
 						zh: `已暂停：${goal.reason ?? "在等你"}。你发下一条消息就会接着干`,
-						en: `paused: ${goal.reason ?? "waiting for you"}. Your next message picks it up again`,
+						en: `paused: ${goal.reason ?? "waiting for you"}. Your next message resumes it`,
 					});
 	const last =
 		goal.status === "active" && goal.reason ? say({ zh: "\n上次检查：", en: "\nlast check: " }) + goal.reason : "";
 	const next = goal.status === "active" && goal.next ? say({ zh: "\n下一步：", en: "\nnext: " }) + goal.next : "";
-	return `${say({ zh: "目标：", en: "goal: " })}${goal.text}\n${say({ zh: "状态：", en: "state: " })}${state}${last}${next}`;
+	return `${say({ zh: "目标：", en: "goal: " })}${goal.text}\n${say({ zh: "状态：", en: "status: " })}${state}${last}${next}`;
 }
 
 /** What one run did, oldest first, as the goal check reads it: "bash npm test -> error". */
@@ -144,7 +144,7 @@ type Outcome =
  *
  * The check is the session's model unless another is set: whether a goal
  * holds is a judgement of evidence, which the fast judge reads too thinly.
- * Jev is the fallback when no model answers, and the facts are the last word
+ * The judge is the fallback when no model answers, and the facts are the last word
  * either way: work that is provably unfinished goes on.
  *
  * It stops by itself when the agent needs the user, when the user interrupts,
@@ -379,7 +379,7 @@ export function registerGoal(runtime: KyrnRuntime): void {
 			};
 			const checked = goal;
 			// A model call at the end of the run: the person sees the agent stop and should know what the pause is.
-			runtime.progress(say({ zh: "正在检查目标是否达成", en: "checking whether the goal holds" }), "goal_check");
+			runtime.progress(say({ zh: "正在检查目标是否达成", en: "checking whether the goal is met" }), "goal_check");
 			const { outcome, by } = await check(ctx, evidence);
 			// The goal may have been cleared or replaced while the check was reading: that verdict was about another goal.
 			if (goal !== checked || goal?.status !== "active") return undefined;
@@ -415,7 +415,7 @@ export function registerGoal(runtime: KyrnRuntime): void {
 					ctx,
 					say({
 						zh: "没有判定器能读出目标是否达成，也没有能证明还没做完的事",
-						en: "no judge could read whether the goal holds, and nothing is provably unfinished",
+						en: "no judge could tell whether the goal is met, and nothing shows it's unfinished",
 					}),
 					{ code: "unjudged" },
 				);
@@ -427,7 +427,7 @@ export function registerGoal(runtime: KyrnRuntime): void {
 					ctx,
 					say({
 						zh: `代理连续 ${idle} 次什么都没做就停下了`,
-						en: `the agent ended ${idle} runs in a row without doing anything`,
+						en: `${idle} runs in a row ended without the agent doing anything`,
 					}),
 					{ code: "idle", params: { runs: idle } },
 				);
@@ -439,7 +439,7 @@ export function registerGoal(runtime: KyrnRuntime): void {
 					ctx,
 					say({
 						zh: `连续 ${stalls} 次没有进展${why}，告诉它接下来怎么做`,
-						en: `no progress in ${stalls} runs in a row${why}; say how to go on`,
+						en: `no progress in ${stalls} runs in a row${why}; tell it how to proceed`,
 					}),
 					{ code: "no_progress", params: { runs: stalls, ...(outcome.reason ? { detail: outcome.reason } : {}) } },
 				);
@@ -450,7 +450,7 @@ export function registerGoal(runtime: KyrnRuntime): void {
 					ctx,
 					say({
 						zh: `续跑次数（${options.maxContinuations} 次）用完了`,
-						en: `the allowance of ${options.maxContinuations} continuations is used up`,
+						en: `reached the limit of ${options.maxContinuations} continuation${options.maxContinuations === 1 ? "" : "s"}`,
 					}),
 					{ code: "continuations_used_up", params: { max: options.maxContinuations } },
 				);
@@ -461,7 +461,7 @@ export function registerGoal(runtime: KyrnRuntime): void {
 					ctx,
 					say({
 						zh: `时间额度（${options.maxMinutes} 分钟）用完了`,
-						en: `the allowance of ${options.maxMinutes} minutes is used up`,
+						en: `reached the ${options.maxMinutes}-minute time limit`,
 					}),
 					{ code: "minutes_used_up", params: { minutes: options.maxMinutes } },
 				);
@@ -518,7 +518,7 @@ export function registerGoal(runtime: KyrnRuntime): void {
 			ctx,
 			say({
 				zh: `mu 目标已设定：代理会一直干到它成立为止（最多续跑 ${options.maxContinuations} 次）。`,
-				en: `mu goal set. The agent keeps working until it holds (at most ${options.maxContinuations} continuations).`,
+				en: `mu goal set. The agent will keep working until it's met (up to ${options.maxContinuations} continuations).`,
 			}),
 		);
 		pi.sendMessage(
@@ -538,7 +538,7 @@ export function registerGoal(runtime: KyrnRuntime): void {
 	pi.registerCommand("goal", {
 		description: say({
 			zh: "目标模式：让代理一直干到某个条件成立。/goal <条件> 设定，/goal 查看（没有时会问你），/goal clear 结束",
-			en: "Goal mode: keep the agent working until a condition holds. /goal <condition>, /goal (show, or ask for one), /goal clear",
+			en: "Keep the agent working until a condition holds: /goal <condition> sets it, /goal shows it (or asks for one), /goal clear ends it",
 		}),
 		handler: async (args, ctx) => {
 			runtime.touch(ctx);
@@ -548,8 +548,11 @@ export function registerGoal(runtime: KyrnRuntime): void {
 				if ((!goal || goal.status === "cleared" || goal.status === "met") && ctx.hasUI) {
 					const asked = (
 						await ctx.ui.input(
-							say({ zh: "mu 目标：做完时什么必须成立？", en: "mu goal: what must hold when the work is done?" }),
-							say({ zh: "比如：packages/x 的测试全部通过", en: "e.g. every test in packages/x passes" }),
+							say({
+								zh: "mu 目标：做完时什么必须成立？",
+								en: "mu goal: what must be true when the work is done?",
+							}),
+							say({ zh: "比如：packages/x 的测试全部通过", en: "e.g. all tests in packages/x pass" }),
 						)
 					)?.trim();
 					if (asked) begin(ctx, asked);

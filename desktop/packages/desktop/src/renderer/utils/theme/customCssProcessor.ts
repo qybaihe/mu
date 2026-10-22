@@ -10,6 +10,7 @@
  */
 
 import { parse } from 'postcss';
+import { LEGACY_CLASS_NAMES } from '@/common/platform/legacyNames';
 
 /**
  * 自动为所有 CSS 声明添加 !important
@@ -18,6 +19,9 @@ import { parse } from 'postcss';
  * !important，绝不触碰选择器。这样可以正确处理伪类 / 伪元素选择器
  * （如 `.btn:hover`、`::before`、`:not()`、`::-webkit-scrollbar-thumb:hover`），
  * 也能覆盖块内最后一条没有结尾分号的声明。已带 !important 的声明保持不变。
+ *
+ * A selector that names a component class by its old name (see `LEGACY_CLASS_NAMES`) is given the
+ * class's mu name, so a theme written before the rename still applies.
  *
  * @param css - 原始 CSS 字符串
  * @returns 处理后的 CSS 字符串（所有声明都带 !important）
@@ -29,6 +33,9 @@ export const addImportantToAll = (css: string): string => {
 
   try {
     const root = parse(css);
+    root.walkRules((rule) => {
+      rule.selector = rule.selector.replace(LEGACY_CLASS_NAMES, '.mu-$1$2');
+    });
     root.walkDecls((decl) => {
       if (!decl.important) {
         decl.important = true;

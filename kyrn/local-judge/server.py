@@ -3,7 +3,7 @@
 
 Serves a Laya Core ML checkpoint (https://github.com/mizorewww/laya-coreml) over
 the same wire contract as the AI Gateway `evaluation-model` endpoint, so the
-mu kernel can swap Jev for a local model without translating anything:
+mu kernel can swap the hosted judge model for a local one without translating anything:
 
     POST /evaluate  {"state": ..., "questions": {id: {type, instructions, criteria?}}}
                  -> {"answers": {...}, "usage": {...}, "warnings": [...], "providerMetadata": {"laya": {...}}}

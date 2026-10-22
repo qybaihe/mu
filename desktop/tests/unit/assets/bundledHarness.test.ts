@@ -13,7 +13,7 @@ const DEPENDENCIES = { '@earendil-works/chord': '0.86.0', jiti: '2.7.0' };
 const PACKAGE_FILES = [
   'kyrn/bin/mu.mjs',
   'dist/bundle/cli.js',
-  'judge/dist/kyrn-judge.js',
+  'judge/mu/index.js',
   'judge/dist/auth.js',
   'judge/dist/import.js',
   'judge/manifest.json',
@@ -106,6 +106,17 @@ describe('verifyBundledHarness', () => {
     expect(result.version).toBe('0.1.1');
     expect(result.checked).toContain('harness/mu-agent/judge/dist/auth.js');
     expect(result.checked).toContain('harness/mu-agent/node_modules/@earendil-works/chord/package.json');
+  });
+
+  it('takes the judgment layer where mu-agent 0.1.8 and earlier put it, and names its current place when it is missing', () => {
+    const pkg = seedHarness(resourcesDir);
+    rmSync(join(pkg, 'judge', 'mu'), { recursive: true });
+    writeFile(join(pkg, 'judge', 'dist', 'kyrn-judge.js'));
+    const verify = () => verifyBundledHarness({ resourcesDir, electronPlatformName: 'darwin', targetArch: 'arm64' });
+    expect(verify().missing).toEqual([]);
+
+    rmSync(join(pkg, 'judge', 'dist', 'kyrn-judge.js'));
+    expect(verify().missing).toEqual(['harness/mu-agent/judge/mu/index.js']);
   });
 
   it('names every file the app would miss', () => {

@@ -145,29 +145,29 @@
       "send_feedback": "다시 시도하세요. 계속 실패하면 앱 로그를 확인하세요."
     },
     "ownership": {
-      "aionui": "앱",
+      "mu": "앱",
       "user_agent": "에이전트",
       "user_llm_provider": "모델 제공자",
       "unknown_upstream": "상위 서비스"
     },
     "codes": {
-      "AIONUI_STREAM_BROKEN": {
+      "MU_STREAM_BROKEN": {
         "title": "응답 스트림이 중단되었습니다",
         "body": "앱이 메시지를 받았지만 응답 스트림이 예기치 않게 종료되었습니다. 다시 시도하세요. 반복되면 앱 로그를 확인하세요."
       },
-      "AIONUI_STATE_INCONSISTENT": {
+      "MU_STATE_INCONSISTENT": {
         "title": "대화 상태가 동기화되지 않았습니다",
         "body": "대화 상태가 동기화되지 않았습니다. 이 채팅을 다시 시작하거나 앱을 새로고침한 뒤 재시도하세요."
       },
-      "AIONUI_PERMISSION_ERROR": {
+      "MU_PERMISSION_ERROR": {
         "title": "요청한 리소스에 접근할 수 없습니다",
         "body": "로컬 권한 또는 파일 시스템 확인에 실패했습니다. 프로젝트 경로와 앱 권한을 확인한 뒤 재시도하세요."
       },
-      "AIONUI_INTERNAL_ERROR": {
+      "MU_INTERNAL_ERROR": {
         "title": "앱에서 요청 처리에 실패했습니다",
         "body": "앱이 요청을 처리하는 동안 실패했습니다. 한 번 다시 시도하고, 반복되면 앱 로그를 확인하세요."
       },
-      "AIONUI_CONVERSATION_BUSY": {
+      "MU_CONVERSATION_BUSY": {
         "title": "대화가 처리 중입니다",
         "body": "다른 응답이 아직 실행 중입니다. 완료된 뒤 새 메시지를 보내세요."
       },
@@ -592,7 +592,9 @@
     "hint": "/ 로 명령, @ 로 파일 참조, ↑/↓ 로 메시지 기록 전환",
     "mediaPathFallback": "이 에이전트는 이 파일 형식을 기본적으로 지원하지 않으므로 파일 경로로 전송됩니다.",
     "hintWithSessions": "/ 로 명령, @ 로 파일, @@ 로 대화 참조, ↑/↓ 로 기록",
-    "stop": "응답 중지"
+    "stop": "응답 중지",
+    "openCommand": "이 컴퓨터에서 파일 첨부",
+    "copyCommand": "마지막 응답 복사"
   },
   "composer": {
     "goalLine": {

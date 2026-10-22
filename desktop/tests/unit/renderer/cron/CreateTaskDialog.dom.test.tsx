@@ -45,7 +45,7 @@ vi.mock('@/common', () => ({
   },
 }));
 
-vi.mock('@renderer/components/base/AionModal', () => ({
+vi.mock('@renderer/components/base/MuModal', () => ({
   __esModule: true,
   default: ({ visible, children, onOk }: { visible: boolean; children: React.ReactNode; onOk?: () => void }) =>
     visible ? (

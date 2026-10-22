@@ -1,13 +1,14 @@
 {
   "title": "mu settings",
-  "description": "Everything mu can be told: judges, decision points, features, models and context. Shared with the mu command line.",
+  "description": "Judges, decision points, features, models and context. The mu command line uses the same settings.",
   "reload": "Reload",
   "modified": "Changed",
-  "applyNote": "Changes apply to new sessions. A running session keeps the configuration it started with; reconnect it to pick them up.",
+  "applyNote": "Changes apply to new conversations. A running conversation keeps the settings it started with until you reconnect it.",
   "apiKey": "API key",
-  "keyHelp": "Once saved it is never shown again. It stays on this computer, readable only by your account.",
+  "keyHelp": "After you save the key, it isn't shown again. It stays on this computer, readable only by your user account.",
   "keyKeep": "Leave empty to keep the saved key",
-  "endpointRule": "Use HTTPS, or HTTP to this machine (127.0.0.1, localhost) or to a private-network IP address (such as 192.168.1.20). No user name, password, query or fragment in the address.",
+  "endpointRule": "Enter an address that starts with https:// or http://. It can't include a user name, password, query or fragment.",
+  "endpointPlain": "This address uses plain http, so the key and your messages aren't encrypted. That's fine for a server on this computer or your own network, even one you reach through a name in your hosts file. Use https over the internet.",
   "sections": {
     "judges": "Judges",
     "judgeOrder": "Judge order",
@@ -16,7 +17,7 @@
     "coreFeatures": "Core features",
     "providers": "Providers",
     "defaultModel": "Default model",
-    "boardModel": "Plain-language model",
+    "boardModel": "Board model",
     "context": "Context"
   },
   "pages": {
@@ -37,34 +38,34 @@
     "off": "Off"
   },
   "harness": {
-    "tooOld": "This version of mu is too old to list its decision points and features. Update mu to see them here; the basic settings still work.",
-    "unsupported": "mu describes itself in a format this app does not know (version {{version}}). Update the app to edit decision points and features."
+    "tooOld": "This version of mu is too old to list its decision points and features. Update mu to see them here. Basic settings still work.",
+    "unsupported": "mu describes its settings in a format this app doesn't recognize (version {{version}}). Update the app to edit decision points and features."
   },
   "load": {
-    "failed": "The settings could not be loaded"
+    "failed": "Couldn't load the settings"
   },
   "save": {
-    "saved": "Saved. New sessions use it; reconnect running ones.",
+    "saved": "Saved. New conversations use these settings; reconnect running ones to apply them.",
     "unsaved": "Unsaved changes in: {{sections}}",
     "nothing": "No unsaved changes",
     "unsavedDot": "Unsaved changes",
     "discard": "Discard",
-    "stale": "Another program (the mu command line, or a running session) changed the configuration after it was loaded here, so nothing was saved. Reload to see the current state; your unsaved edits will be lost.",
-    "failed": "Not saved: {{reason}}"
+    "stale": "The settings changed after this page loaded them (from the mu command line or a running conversation), so nothing was saved. Reload to see the current settings. Your unsaved edits will be lost.",
+    "failed": "Couldn't save: {{reason}}"
   },
   "units": {
     "s": "s",
     "tokens": "tokens"
   },
   "options": {
-    "range": "Range {{min}} – {{max}}.",
-    "emptyText": "Empty: use the default",
+    "range": "Range: {{min}}–{{max}}.",
+    "emptyText": "Leave empty to use the default",
     "addItem": "Type and press Enter",
     "addNumber": "Type a number and press Enter",
     "problem": {
       "type": "This value has the wrong type.",
       "range": "This value is outside the allowed range.",
-      "choice": "This is not one of the choices.",
+      "choice": "This isn't one of the allowed values.",
       "length": "Too long, or an entry is empty."
     }
   },
@@ -72,13 +73,13 @@
     "useDefault": "Use the default ({{mode}})"
   },
   "features": {
-    "lead": "What mu does for you in the background. Switch one off and mu stops doing it.",
+    "lead": "What mu does for you in the background. Turn a feature off and mu stops doing it.",
     "beta": "Beta",
     "reset": "Restore defaults",
-    "boardModelElsewhere": "The model that writes the board is chosen under Plain-language model.",
+    "boardModelElsewhere": "To choose the model that writes the board, go to Board model.",
     "options": "Options",
-    "noOptions": "Nothing else to set: the switch is all there is.",
-    "noSuchFeature": "This version of mu has no such feature.",
+    "noOptions": "This feature has no other settings.",
+    "noSuchFeature": "This version of mu doesn't have this feature.",
     "none": "No features here yet.",
     "part": "Options, page {{part}} of {{parts}}",
     "previousPart": "Previous page",
@@ -86,40 +87,40 @@
     "details": "Details"
   },
   "judges": {
-    "tiersHelp": "Judges are tried in order. A later one only sees what the earlier ones left uncertain.",
+    "tiersHelp": "mu asks the judges in order. A judge only sees the questions earlier judges weren't sure about.",
     "order": "Order",
-    "orderHelp": "The first one is the judge chosen on the Judges page.",
-    "firstTier": "The judge chosen on the Judges page: its service, address and key are set there.",
+    "orderHelp": "The first judge is the one you chose on the Judges page.",
+    "firstTier": "The judge you chose on the Judges page. Set its service, address and key there.",
     "tierTitle": "Tier {{index}}: {{name}}",
     "service": "Service",
     "services": {
       "auto": {
         "name": "Automatic",
-        "help": "The first service whose key is set, in this order: TypeSafe, OpenRouter, the Vercel AI Gateway, OpenCode Zen, Cloudflare. With none set, Jev 1.13 on OpenCode Zen answers, free for a limited time; what it judges goes to OpenCode, which does not train on it.",
+        "help": "Uses the first service that has a key, in this order: TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare. With no key set, Jev 1.13 runs on OpenCode Zen, free for a limited time. OpenCode receives what Jev judges and doesn't train on it.",
         "key": "TypeSafe API key"
       },
       "opencodeFree": {
         "name": "OpenCode Zen (free)",
-        "help": "Jev 1.13 on OpenCode Zen, free for a limited time: no key, no account. OpenCode does not train on what Jev reads."
+        "help": "Jev 1.13 on OpenCode Zen, free for a limited time. No key or account needed. OpenCode doesn't train on what Jev reads."
       },
       "typesafe": {
         "name": "TypeSafe",
-        "help": "Always TypeSafe directly.",
+        "help": "Always connects to TypeSafe directly.",
         "key": "TypeSafe API key"
       },
       "openrouter": {
         "name": "OpenRouter",
-        "help": "Always through OpenRouter, with an OpenRouter API key. It is saved for Jev alone: setting it leaves the key of OpenRouter's chat models as it is.",
+        "help": "Always connects through OpenRouter, with an OpenRouter API key. This key is used only for Jev; it doesn't change the key for OpenRouter's chat models.",
         "key": "OpenRouter API key"
       },
       "gateway": {
         "name": "Vercel AI Gateway",
-        "help": "Always through the Vercel AI Gateway.",
+        "help": "Always connects through the Vercel AI Gateway.",
         "key": "Vercel AI Gateway API key"
       },
       "opencode": {
         "name": "OpenCode Zen",
-        "help": "Jev 1.13 on OpenCode Zen, billed per call to your OpenCode account. The same key also opens OpenCode Zen's chat models in mu.",
+        "help": "Jev 1.13 on OpenCode Zen, billed per call to your OpenCode account. The same key also unlocks OpenCode Zen's chat models in mu.",
         "key": "OpenCode API key"
       },
       "cloudflare": {
@@ -127,63 +128,63 @@
         "help": "Jev on Cloudflare Workers AI, with a Cloudflare API token and your account ID.",
         "key": "Cloudflare API token",
         "account": "Cloudflare account ID",
-        "accountHelp": "Shown on the Workers AI page of the Cloudflare dashboard. Saved the same way as the token.",
+        "accountHelp": "Find it on the Workers AI page of the Cloudflare dashboard. It's stored the same way as the token.",
         "accountPlaceholder": "Paste the account ID"
       },
       "custom": {
         "name": "Custom service",
-        "help": "Any service that speaks TypeSafe's System One protocol: one you run yourself, a relay on your network, or another provider of Jev.",
-        "key": "API key of the service"
+        "help": "Any service that supports TypeSafe's System One protocol: one you run yourself, a relay on your network or another Jev provider.",
+        "key": "Service API key"
       }
     },
     "model": "Judge model",
     "baseUrl": "Base URL",
-    "baseUrlHelp": "Leave empty to use TypeSafe's own address.",
-    "customUrlHelp": "The service's System One address. Its key is sent there and nowhere else.",
-    "baseUrlNeeded": "A custom service needs its address.",
+    "baseUrlHelp": "Leave empty to use TypeSafe's default address.",
+    "customUrlHelp": "The service's System One address. Its key is sent only to this address.",
+    "baseUrlNeeded": "Enter the custom service's address.",
     "customTier": "A judge you added yourself. Change it in mu's settings file.",
-    "endpointDefault": "Default address of the service",
+    "endpointDefault": "The service's default address",
     "types": {
       "localHelp": "Runs on this computer.",
-      "clmHelp": "Runs on a CLM server of your own.",
-      "classifierHelp": "A classifier model from mu's model catalog: {{model}}. mu reaches it with its provider's key."
+      "clmHelp": "Runs on your own CLM server.",
+      "classifierHelp": "A classifier model from mu's model catalog: {{model}}. mu calls it with its provider's key."
     },
-    "intro": "While it works, mu makes many small calls: how to handle this message, whether this step breaks a rule you set. The judge answers them. Pick one.",
+    "intro": "While it works, mu has many small questions to settle: how to handle a message, or whether a step breaks a rule you set. Choose the judge that answers them.",
     "mode": "Verdicts take effect",
-    "modeHelp": "On: the judge's verdicts take effect. Off: every step goes ahead as usual. Steps without a setting of their own follow this.",
+    "modeHelp": "On: the judge's verdicts take effect. Off: every step runs as usual. Decision points without their own setting follow this one.",
     "choose": "Choose a judge",
-    "custom": "The first judge right now is a custom one: see and change it on the Judge order page.",
+    "custom": "Your first judge is a custom one. View or change it on the Judge order page.",
     "keyPlaceholder": "Paste the key",
     "choices": {
       "jev": {
         "title": "Jev",
         "tag": "Recommended",
-        "description": "Fast and accurate. Free on OpenCode Zen for a limited time, or billed per call with a key for TypeSafe, OpenRouter, the Vercel AI Gateway, OpenCode Zen, Cloudflare or a service of your own."
+        "description": "TypeSafe's hosted judge model. Fast and accurate. Free on OpenCode Zen for a limited time, or pay per call with a key for TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare or your own service."
       },
       "local": {
         "title": "Local Laya",
         "tag": "Free · offline",
-        "description": "Runs on this computer, no network, no cost. Good at classifying; relating and scoring are less reliable."
+        "description": "Runs on this computer with no network and no cost. Good at classifying; less reliable at matching related items and at scoring."
       },
       "clm": {
         "title": "CLM",
         "tag": "Self-hosted",
-        "description": "Answers the questions Jev does, on a server of your own (clm-serve). Its encoder needs a GPU; nothing is billed per call."
+        "description": "Answers the same questions as Jev, on your own server (clm-serve). Its encoder needs a GPU; there's no per-call cost."
       }
     },
     "localAddress": "Address: {{address}}",
     "laya": {
-      "running": "Running on this machine",
-      "stopped": "Installed, not running. mu starts it when it needs it.",
-      "missing": "Not installed yet.",
-      "platform": "Laya cannot run on this computer: it needs Windows or Linux (x64 or arm64) or a Mac with Apple Silicon.",
-      "needsUv": "Installing needs uv, a Python package manager. Install it, then come back here.",
+      "running": "Running on this computer",
+      "stopped": "Installed but not running. mu starts it when needed.",
+      "missing": "Not installed.",
+      "platform": "Laya can't run on this computer. It needs Windows or Linux (x64 or arm64), or a Mac with Apple silicon.",
+      "needsUv": "Installing Laya requires uv, a Python package manager. Install uv, then come back here.",
       "uvLink": "How to install uv",
       "install": "Install Laya",
       "start": "Start",
       "stop": "Stop",
       "confirmTitle": "Download and install Laya?",
-      "confirmText": "This downloads about {{size}} MB from PyPI and Hugging Face (Python packages and the model's weights) into mu's folder, and takes a few minutes. Laya starts once it is installed.",
+      "confirmText": "This downloads about {{size}} MB of Python packages and model weights from PyPI and Hugging Face into mu's folder, and takes a few minutes. Laya starts once it's installed.",
       "confirmOk": "Download and install",
       "working": {
         "setup": "Installing Laya…",
@@ -191,81 +192,81 @@
         "stop": "Stopping Laya…"
       },
       "failed": {
-        "setup": "Installing did not finish. You can try again.",
-        "start": "Laya did not start.",
-        "stop": "Laya did not stop."
+        "setup": "Couldn't install Laya. Try again.",
+        "start": "Couldn't start Laya. Try again.",
+        "stop": "Couldn't stop Laya. Try again."
       },
       "onnx": {
-        "missing": "Laya's model is not on this computer yet (about {{size}} MB). mu does not download it for you: get the files from Hugging Face, put them in the model folder, then press Check and start.",
-        "stopped": "The model is in place, and Laya is not running. When Laya is your judge, mu starts it by itself when the app opens.",
-        "starting": "Checking the model and starting Laya… The first check reads the whole model and takes a moment.",
+        "missing": "Laya's model isn't on this computer yet (about {{size}} MB). mu doesn't download it for you: get the files from Hugging Face, put them in the model folder, then click Check and start.",
+        "stopped": "The model is in place, but Laya isn't running. When Laya is your judge, mu starts it automatically when the app opens.",
+        "starting": "Checking the model and starting Laya. The first check reads the whole model, so it takes a moment.",
         "missingFiles": "Still missing: {{files}}",
-        "wrongFiles": "Not the version mu was tested with, download these again: {{files}}",
+        "wrongFiles": "These files don't match the version mu was tested with. Download them again: {{files}}",
         "folder": "Model folder: {{folder}}",
-        "command": "With the Hugging Face command line (hf), this one command fetches everything:",
+        "command": "With the Hugging Face CLI (hf), this command downloads everything:",
         "page": "Get it on Hugging Face",
         "openFolder": "Open the model folder",
         "check": "Check and start",
         "problem": {
           "missing": "Some model files are missing.",
-          "wrong": "Some model files are not the version mu was tested with. Download them again.",
-          "runtime": "This computer could not run the model.",
-          "port": "Another program already uses Laya's port ({{port}}).",
+          "wrong": "Some model files don't match the version mu was tested with. Download them again.",
+          "runtime": "This computer couldn't run the model.",
+          "port": "Another program is already using Laya's port ({{port}}).",
           "stopped": "Laya stopped before it was ready.",
-          "foreign": "A Laya that mu did not start is running here. Stop it where it was started."
+          "foreign": "A copy of Laya that mu didn't start is already running. Stop it from wherever it was started."
         }
       }
     },
     "clm": {
       "address": "Server address",
-      "addressHelp": "Where clm-serve listens, such as http://192.168.1.20:8700. Empty is this computer ({{address}}).",
+      "addressHelp": "Where clm-serve listens, such as http://192.168.1.20:8700. Leave empty for this computer ({{address}}).",
       "key": "Server key",
-      "keyPlaceholder": "Only if the server asks for one",
-      "keyHelp": "Only a server started with CLM_API_KEY asks for a key: enter the same value. Once saved it is never shown again.",
-      "check": "Check the server",
-      "unmeasured": "How well CLM makes mu's decisions has not been measured yet.",
+      "keyPlaceholder": "Only if the server requires one",
+      "keyHelp": "Only needed if the server was started with CLM_API_KEY. Enter the same value. After you save the key, it isn't shown again.",
+      "check": "Check server",
+      "unmeasured": "CLM's accuracy on mu's decisions hasn't been measured yet.",
       "status": {
-        "checking": "Asking the server…",
-        "ready": "Answering · {{models}} · {{ms}} ms",
-        "down": "Nothing answers at {{address}}. Start clm-serve there, or correct the address.",
-        "encoderDown": "The server answers, but its encoder does not: every question fails until its embedding server (vLLM) runs.",
-        "model": "The server does not serve {{model}}. It serves {{models}}.",
-        "keyNeeded": "The server asks for a key: enter the one it was started with (CLM_API_KEY).",
-        "keySaved": "The server asks for a key, and one is saved.",
-        "mock": "This server runs CLM's mock encoder: its answers are noise, not CLM's.",
-        "failed": "The server could not be asked."
+        "checking": "Contacting the server…",
+        "ready": "Online · {{models}} · {{ms}} ms",
+        "down": "Nothing is responding at {{address}}. Start clm-serve there, or fix the address.",
+        "encoderDown": "The server responds, but its encoder doesn't. Every question fails until its embedding server (vLLM) is running.",
+        "model": "The server doesn't serve {{model}}. It serves {{models}}.",
+        "keyNeeded": "The server requires a key. Enter the one it was started with (CLM_API_KEY).",
+        "keySaved": "The server requires a key, and one is saved.",
+        "mock": "This server runs CLM's mock encoder, so its answers are noise, not real CLM verdicts.",
+        "failed": "Couldn't contact the server."
       }
     }
   },
   "keyState": {
     "none": "Not set",
     "set": "Set",
-    "typed": "New key, not saved yet",
+    "typed": "New key, not saved",
     "empty": "Variable is empty",
     "managed": "Set",
     "manual": "Set (edited by hand)"
   },
   "context": {
     "auto": "Automatic compaction",
-    "autoHelp": "Compacts the history when the context is nearly full.",
-    "limit": "Context cap",
-    "limitHelp": "0 follows the model's window minus the reserve. Otherwise {{min}} to {{max}}. Checked before the next model request; not a hard cut.",
+    "autoHelp": "Compacts the conversation history when the context window is nearly full.",
+    "limit": "Context limit",
+    "limitHelp": "0 uses the model's context window minus the reserve. Otherwise, {{min}} to {{max}}. Checked before each model request; it's not a hard cutoff.",
     "limitProblem": "Use 0, or a whole number from {{min}} to {{max}}.",
-    "lead": "When the conversation is compacted, how large its context may grow, and the features that act on the context."
+    "lead": "When to compact a conversation, how large its context can grow and which features work on it."
   },
   "permissions": {
     "modes": {
       "full": {
         "title": "Full access",
-        "description": "Runs everything without asking. What you said not to do is still stopped."
+        "description": "Runs everything without asking. Anything you've told mu not to do is still blocked."
       },
-      "jev": {
-        "title": "Jev approves",
-        "description": "Reads and edits in the project go ahead; Jev approves commands, changes outside the project and outside actions for you, and asks you only when it is not sure."
+      "judge": {
+        "title": "Judge mode",
+        "description": "Reads and edits inside the project go ahead. The judge decides on commands, changes outside the project and actions outside this computer, and asks you only when it's unsure."
       },
       "ask": {
-        "title": "Minimal permissions",
-        "description": "Only reading goes ahead; every edit, command and outside action asks you first."
+        "title": "Ask first",
+        "description": "Only reads go ahead. mu asks you before every edit, command and action outside this computer."
       }
     }
   },
@@ -275,26 +276,26 @@
       "shell": "mu wants to run a command",
       "run": "mu wants to run a program",
       "outside": "mu wants to change a file outside the project",
-      "delegate": "mu wants to start sub-agents",
-      "other": "mu wants to act outside"
+      "delegate": "mu wants to start subagents",
+      "other": "mu wants to take an action outside this computer"
     },
     "reason": {
-      "ask": "Minimal permissions: every step asks you first.",
-      "unsure": "Jev is not sure this step is what you want.",
-      "beyond": "Jev thinks this goes beyond what you asked for.",
-      "unrelated": "Jev thinks this is not part of the task.",
-      "protected": "This touches mu’s own settings; only you can allow it.",
+      "ask": "Ask first: mu asks you before every edit, command and action outside this computer.",
+      "unsure": "The judge isn't sure this step is what you want.",
+      "beyond": "The judge thinks this goes beyond what you asked for.",
+      "unrelated": "The judge thinks this isn't part of the task.",
+      "protected": "This touches mu's own settings; only you can allow it.",
       "nojudge": "No judge is available yet, so mu asks you about each step.",
-      "judgedown": "The judge did not answer this time, so mu asks you."
+      "judgedown": "The judge didn't answer this time, so mu is asking you."
     },
     "flagged": "Risky: {{flag}}.",
     "flag": {
       "recursive_or_forced_delete": "recursive or forced delete",
-      "discards_git_work": "discards git work",
+      "discards_git_work": "discards Git work",
       "force_push": "force push",
       "drops_database_objects": "drops database objects",
       "overwrites_device": "overwrites a device",
-      "opens_permissions_recursively": "opens permissions recursively",
+      "opens_permissions_recursively": "loosens permissions recursively",
       "runs_downloaded_script": "runs a downloaded script",
       "runs_as_administrator": "runs as administrator",
       "runs_as_root": "runs as root"
@@ -303,20 +304,20 @@
       "once": "Allow once",
       "session": "Allow for this conversation",
       "sessionFor": "Allow for this conversation ({{grant}})",
-      "deny": "Don’t allow"
+      "deny": "Don't allow"
     },
     "decided": {
       "once": "You allowed this once: {{summary}}",
       "session": "Allowed for this conversation: {{summary}}",
-      "deny": "You did not allow: {{summary}}"
+      "deny": "You didn't allow: {{summary}}"
     }
   },
   "providers": {
-    "lead": "Where the models come from: subscriptions and endpoints. A conversation’s model and thinking level are picked in its send box.",
+    "lead": "Where your models come from: subscriptions and endpoints. Pick a conversation's model and thinking level in its message box.",
     "title": "Providers",
     "custom": "Custom providers",
-    "manualGroup": "Written by hand",
-    "builtinGroup": "Other built-in",
+    "manualGroup": "Added by hand",
+    "builtinGroup": "Other built-in providers",
     "add": "Add provider",
     "new": "New provider",
     "unsaved": "Not saved",
@@ -325,71 +326,75 @@
     "name": "Display name",
     "namePlaceholder": "e.g. My proxy",
     "id": "ID",
-    "idHelp": "Lowercase letters, digits and hyphens. It cannot change once saved.",
+    "idHelp": "Lowercase letters, digits and hyphens. Can't be changed after you save.",
     "idProblem": {
-      "format": "Use lowercase letters, digits and hyphens, starting with a letter or digit (at most 40).",
-      "reserved": "This is the id of a built-in provider. An entry under it would reroute that provider instead of adding one.",
-      "taken": "This id is already in use."
+      "format": "Use up to 40 lowercase letters, digits and hyphens, starting with a letter or digit.",
+      "reserved": "This ID belongs to a built-in provider. Using it would reroute that provider instead of adding a new one.",
+      "taken": "This ID is already in use."
     },
     "baseUrl": "Base URL",
     "keyEnter": "Paste the API key",
-    "keyReplace": "A key written by hand is in use. Typing one here replaces it.",
+    "keyReplace": "A key set by hand in models.json is in use. Entering a key here replaces it.",
     "authHeader": "Also send Authorization: Bearer (some proxies need it)",
-    "headers": "Extra headers written by hand are kept as they are: {{names}}. Their values are secrets and are edited in models.json.",
+    "headers": "Custom headers from models.json are kept as is: {{names}}. Their values may be secret, so this page doesn't show them: edit them in models.json.",
     "pick": "Choose a provider on the left, or add one.",
-    "manual": "Written by hand",
-    "foreignHelp": "This entry reroutes a built-in provider, or uses an API format this screen does not edit. It can be removed here but not edited: edit it in models.json.",
+    "manual": "Manual",
+    "foreignHelp": "This entry reroutes a built-in provider or uses an API format this page can't edit. You can remove it here; to change it, edit models.json.",
     "modelCount": "{{count, number}} models",
-    "usable": "Usable",
-    "builtinHelp": "mu reported it as usable at its last connection, usually because its API key is in the environment. It cannot be removed here: delete that key from the environment, and it is gone after mu connects again.",
+    "usable": "Available",
+    "builtinHelp": "mu reported this provider as available the last time it connected, usually because its API key is set in your environment. To remove it, delete that key from the environment; it disappears the next time mu connects.",
     "noneYet": "None yet",
-    "unreadable": "models.json could not be read, so providers are neither shown nor saved. Repair it by hand, then reload.",
-    "commented": "models.json contains comments. Saving from here would remove them, so providers are read-only. Remove the comments by hand to edit here.",
+    "unreadable": "Couldn't read models.json, so providers can't be shown or saved. Fix the file by hand, then reload.",
+    "commented": "models.json contains comments, and saving from here would remove them, so providers are read-only. Remove the comments by hand to edit providers here.",
     "modelCount_one": "{{count, number}} model",
     "modelCount_other": "{{count, number}} models",
     "summary": "Sign in with a subscription and use it right away, or connect any OpenAI-, Anthropic- or Gemini-compatible endpoint.",
     "subscriptions": "Subscriptions",
-    "manualShort": "By hand",
+    "manualShort": "Manual",
     "needsSetup": "Not set up yet",
     "more": "More actions",
     "removeProvider": "Remove provider",
     "removeTitle": "Remove {{name}}?",
-    "removeSaved": "When you save, it is deleted from models.json, and so is the key stored for it.",
-    "removeUnsaved": "It is not saved yet, so what you filled in here is discarded.",
-    "removeEntry": "When you save, this hand-written entry is deleted from models.json. If it overrides a built-in provider, that provider goes back to its defaults.",
-    "removeDefault": "New sessions start with it, so the default model is cleared too."
+    "removeSaved": "When you save, it's deleted from models.json along with its stored key.",
+    "removeUnsaved": "It hasn't been saved, so anything you entered here is discarded.",
+    "removeEntry": "When you save, this manual entry is deleted from models.json. If it overrides a built-in provider, that provider reverts to its defaults.",
+    "removeDefault": "It's the default for new conversations, so the default model is cleared too."
   },
   "defaults": {
-    "summary": "What a new session starts with. You can still switch inside a conversation.",
+    "summary": "What new conversations start with. You can still switch within a conversation.",
     "provider": "Provider",
     "model": "Model",
     "level": "Thinking level",
     "levelUnset": "Not set",
-    "levelHelp": "Levels this model does not take are disabled.",
-    "levelClamped": "Not set means medium. A level the model does not take becomes the nearest one it does.",
-    "noReasoning": "This model does not think, so a session with it always starts with thinking off.",
+    "levelHelp": "Levels this model doesn't support are disabled.",
+    "levelClamped": "Not set means Medium. If the model doesn't support a level, mu uses the nearest one it does.",
+    "noReasoning": "This model doesn't support thinking, so conversations with it always start with thinking off.",
     "notSet": "Not set",
     "pickProvider": "Choose a provider first."
   },
   "accounts": {
     "signIn": "Sign in",
     "signOut": "Sign out",
-    "signOutFailed": "Signing out did not finish. You can try again.",
-    "signOutConfirm": "Sign out of {{name}}? You will need to sign in again to use it.",
+    "signOutFailed": "Couldn't sign out. Try again.",
+    "signOutConfirm": "Sign out of {{name}}? You'll need to sign in again to use it.",
     "signedOut": "Not signed in",
-    "instant": "Signing in and out takes effect at once, without saving.",
-    "models": "Models you can use",
-    "byKey": "Usable (API key)",
-    "byKeyHelp": "No subscription is signed in, but mu reported it as usable at its last connection, usually because its API key is in the environment. Signing in switches it to the subscription.",
-    "otherRunning": "{{name}} is signing in, and one sign-in runs at a time.",
-    "showRunning": "Show it"
+    "instant": "Signing in or out takes effect immediately. No need to save.",
+    "models": "Available models",
+    "byKey": "Available (API key)",
+    "byKeyHelp": "You're not signed in with a subscription, but mu reported this provider as available the last time it connected, usually because its API key is set in your environment. Signing in switches it to the subscription.",
+    "otherRunning": "{{name}} sign-in is in progress. Only one sign-in can run at a time.",
+    "showRunning": "Show",
+    "legacy": {
+      "openai-codex": "This older sign-in goes through the Codex CLI's login. Sign out, then sign in with ChatGPT.",
+      "anthropic": "Anthropic doesn't allow other apps to sign in with a Claude subscription, so mu no longer offers it. Sign out and add an Anthropic API key instead."
+    }
   },
   "endpoints": {
     "openaiCompletions": {
-      "name": "OpenAI compatible (Chat Completions)",
+      "name": "OpenAI-compatible (Chat Completions)",
       "hint": "The most widely supported: proxies, Ollama, vLLM, LM Studio, DeepSeek…",
       "url": "Usually ends in /v1, e.g. https://api.example.com/v1 or http://localhost:11434/v1.",
-      "short": "OpenAI compatible"
+      "short": "OpenAI-compatible"
     },
     "openaiResponses": {
       "name": "OpenAI Responses",
@@ -398,10 +403,10 @@
       "short": "OpenAI Responses"
     },
     "anthropicMessages": {
-      "name": "Anthropic compatible (Messages)",
-      "hint": "For Claude and services that speak the Anthropic Messages format.",
-      "url": "Without /v1: the client adds /v1/messages itself, e.g. https://api.example.com.",
-      "short": "Anthropic compatible"
+      "name": "Anthropic-compatible (Messages)",
+      "hint": "For Claude and services that support the Anthropic Messages format.",
+      "url": "Without /v1, e.g. https://api.example.com. mu adds /v1/messages itself.",
+      "short": "Anthropic-compatible"
     },
     "googleGenerativeAi": {
       "name": "Google Generative AI",
@@ -419,12 +424,12 @@
     "reasoning": "Thinking",
     "image": "Images",
     "add": "Add model",
-    "none": "No models yet. Add one, or test the connection to pick from what the endpoint lists.",
+    "none": "No models yet. Add one, or test the connection to choose from the endpoint's list.",
     "problem": {
       "emptyId": "Every model needs an ID.",
       "duplicate": "Two models have the same ID."
     },
-    "idField": "Model ID · as the API expects it",
+    "idField": "Model ID, exactly as the API expects it",
     "rowField": "{{field}} {{n}}",
     "edit": "Edit {{name}}",
     "removeNamed": "Remove {{name}}",
@@ -440,36 +445,36 @@
   },
   "test": {
     "run": "Test connection",
-    "hint": "One minimal request from this app: the model list, or else a one-word reply from the first model.",
+    "hint": "Sends one small request from this app: it fetches the model list, or, if it can't, asks the first model for a one-word reply.",
     "okModels": "Connected ({{ms}} ms). The endpoint lists {{count, number}} models.",
     "okCompletion": "Connected ({{ms}} ms). The model answered.",
     "auth": "The key was rejected (HTTP {{status}}).",
-    "notFound": "Nothing at this address (HTTP 404). Check the base URL and the API format; add a model to test with a request.",
-    "http": "The endpoint answered HTTP {{status}}.",
-    "timeout": "No answer in time.",
-    "network": "Could not connect. Check the address and the network.",
-    "redirect": "The endpoint redirects elsewhere (HTTP {{status}}). Use the final address: a key is not sent along a redirect.",
-    "invalidResponse": "The answer is not in this API format. Is the format right?",
-    "keyUnavailable": "The saved key is a command or a composite value, which this app does not evaluate. Type a key to test.",
-    "urlChanged": "The address or API format was changed. A saved key is only sent where it was saved for: save first, or type the key again.",
+    "notFound": "Nothing found at this address (HTTP 404). Check the base URL and API format, or add a model to test with a real request.",
+    "http": "The endpoint returned HTTP {{status}}.",
+    "timeout": "The request timed out.",
+    "network": "Couldn't connect. Check the address and your network.",
+    "redirect": "The endpoint redirects elsewhere (HTTP {{status}}). Use the final address; keys aren't sent through redirects.",
+    "invalidResponse": "The response isn't in this API format. Check that you picked the right one.",
+    "keyUnavailable": "The saved key is a command or composite value, which this app doesn't evaluate. Enter a key to test.",
+    "urlChanged": "The address or API format changed. A saved key is only sent to the address it was saved for, so save first or enter the key again.",
     "detail": "The endpoint said: {{detail}}",
     "okModels_one": "Connected ({{ms}} ms). The endpoint lists {{count, number}} model.",
     "okModels_other": "Connected ({{ms}} ms). The endpoint lists {{count, number}} models."
   },
   "boardModel": {
-    "title": "Plain-language model",
-    "summary": "Writes the plain-language board: how the work is going, in everyday words. For you only, never in the conversation’s context; each update is one call.",
-    "pick": "A model of your choice",
-    "recommended": "Recommended: Claude Opus 4.6, the most natural and steady; then Gemini 3.8 Flash, faster and cheaper.",
+    "title": "Board model",
+    "summary": "Writes the board: a plain-language summary of how the work is going. It's for you only and never enters the conversation's context. Each update is one model call.",
+    "pick": "Choose a model",
+    "recommended": "Recommended: Claude Opus 4.6 for the most natural, consistent writing, or Gemini 3.8 Flash for speed and lower cost.",
     "recommendedTag": "recommended",
     "provider": "Provider",
     "model": "Model",
     "notSet": "Not set",
-    "pickProvider": "Pick a provider first",
-    "unset": "None yet: mu asks the first time the board is switched on.",
-    "session": "Whatever model the conversation uses",
-    "sessionHelp": "When the conversation switches model, the board follows.",
-    "update": "This version of mu cannot be told here which model writes the board. Update mu first."
+    "pickProvider": "Choose a provider first.",
+    "unset": "None yet. mu asks the first time you turn on the board.",
+    "session": "Same model as the conversation",
+    "sessionHelp": "If the conversation switches models, the board switches too.",
+    "update": "This version of mu doesn't let you choose the board's model here. Update mu first."
   },
   "levels": {
     "off": "Thinking off",
@@ -496,30 +501,30 @@
     "start": "Get started",
     "model": {
       "title": "Connect a model",
-      "subtitle": "mu uses it to write code and answer you. You can change all of it in Settings later.",
+      "subtitle": "mu uses it to write code and answer you. You can change any of this in Settings later.",
       "model": "Model",
       "baseUrl": "Base URL",
       "key": "API key",
-      "keyPlaceholder": "Paste the key; a service on this machine may need none",
+      "keyPlaceholder": "Paste the key (a service on this computer may not need one)",
       "modelId": "Model name",
       "signedIn": {
         "title": "Sign in with a subscription",
-        "tag": "No API key",
-        "description": "A ChatGPT, Claude, Grok or other plan"
+        "tag": "No API key needed",
+        "description": "ChatGPT, Grok and other subscriptions"
       },
       "openai": {
         "title": "OpenAI-compatible API",
         "tag": "Most common",
-        "description": "Relay services, and any other service with an OpenAI-compatible API",
+        "description": "Proxies, gateways and anything else with an OpenAI-compatible API",
         "modelPlaceholder": "e.g. deepseek-chat"
       },
       "anthropic": {
         "title": "Anthropic-compatible API",
-        "description": "Claude, and services that speak the Messages format",
+        "description": "Claude and services that support the Messages format",
         "modelPlaceholder": "e.g. claude-sonnet-5"
       },
       "problems": {
-        "baseUrl": "Enter an address that starts with https:// (http:// is allowed for this machine or a private-network address).",
+        "baseUrl": "Enter an address that starts with https:// or http://.",
         "key": "Enter the API key.",
         "model": "Enter the model name."
       },
@@ -527,49 +532,50 @@
         "label": "API format",
         "openai-completions": "Chat Completions",
         "openai-responses": "Responses",
-        "openai-completionsHint": "Works almost everywhere; most services and relays speak it.",
+        "openai-completionsHint": "Works almost everywhere; most services and proxies support it.",
         "openai-responsesHint": "OpenAI's newer API; only some services support it."
       },
       "other": "Another service (enter its address)",
-      "ready": "Ready to use: {{provider}} · {{model}}. Click Next, or pick another way below."
+      "ready": "Ready: {{provider}} · {{model}}. Click Next, or choose another option below."
     },
     "apiKey": {
       "title": "Paste an API key",
       "tag": "Easiest",
-      "description": "DeepSeek, Kimi, Qwen, GLM, OpenAI, Claude, Gemini and more: mu tells the service from the key and sets up the rest",
+      "description": "DeepSeek, Kimi, Qwen, GLM, OpenAI, Claude, Gemini and more. mu detects the service from the key and sets up the rest.",
       "placeholder": "Paste the key here",
       "service": "Service",
-      "servicePlaceholder": "Found from the key",
-      "serviceHint": "mu finds the service from the key. If it cannot, choose it here.",
-      "recognized": "Found from the key.",
-      "ambiguous": "Keys of more than one service look like this. Which one is it from?",
-      "unknown": "mu does not know this kind of key. Which service is it from?",
+      "servicePlaceholder": "Detected from the key",
+      "serviceHint": "mu detects the service from the key. If it can't, choose it here.",
+      "recognized": "Detected from the key.",
+      "ambiguous": "Several services use keys that look like this. Which one is it from?",
+      "unknown": "mu doesn't recognize this kind of key. Which service is it from?",
+      "subscriptionToken": "That's a Claude subscription token (from claude setup-token), not an API key. Anthropic doesn't allow other apps to use a Claude subscription, so mu can't use it. Paste an Anthropic API key (sk-ant-api…) instead.",
       "keyPage": "Where do I get a key?",
       "checking": "Checking the key with {{service}}…",
-      "lookingLocal": "Looking for {{service}} on this machine…",
+      "lookingLocal": "Looking for {{service}} on this computer…",
       "recheck": "Check again",
       "startsWith": "mu will start with",
-      "modelHint": "You can switch models at any time.",
+      "modelHint": "You can switch models anytime.",
       "outcome": {
         "ok": "The key works.",
-        "okLocal": "{{service}} is running on this machine.",
-        "openList": "{{service}} answered. Its model list is open to anyone, so the key itself is checked when mu first uses it.",
-        "empty": "The key works, but {{service}} lists no models for it.",
-        "emptyLocal": "{{service}} has no models yet. Download one first (for example: ollama pull qwen3), then check again.",
-        "unlisted": "{{service}} answered, but does not list its models, so the key is checked when mu first uses it.",
-        "wrongKey": "{{service}} did not accept this key. Check that it was copied whole and is still valid.",
-        "quota": "{{service}} says the account has no balance or quota left. Top it up, then check again.",
-        "unreachable": "Could not reach {{service}}. Check the network; if the service is blocked where you are, turn on a proxy and check again.",
-        "offline": "{{service}} is not answering on this machine. Start it, then check again.",
-        "region": "{{service}} is not available in your region. Connect through a proxy in a region it serves, or choose another service.",
-        "wrongAddress": "{{service}} did not answer as expected (HTTP {{status}}). Its address may have changed: enter it under “Another service” below.",
+        "okLocal": "{{service}} is running on this computer.",
+        "openList": "{{service}} responded. Its model list is public, so the key is checked when mu first uses it.",
+        "empty": "The key works, but {{service}} doesn't list any models for it.",
+        "emptyLocal": "{{service}} has no models yet. Download one first (for example, ollama pull qwen3), then check again.",
+        "unlisted": "{{service}} responded but doesn't list its models, so the key is checked when mu first uses it.",
+        "wrongKey": "{{service}} rejected this key. Check that you copied all of it and that it's still valid.",
+        "quota": "{{service}} says the account is out of credit or quota. Top it up, then check again.",
+        "unreachable": "Couldn't reach {{service}}. Check your network. If the service is blocked where you are, turn on a proxy and check again.",
+        "offline": "{{service}} isn't responding on this computer. Start it, then check again.",
+        "region": "{{service}} isn't available in your region. Connect through a proxy in a supported region, or choose another service.",
+        "wrongAddress": "{{service}} returned an unexpected response (HTTP {{status}}). Its address may have changed; enter the new one under \"Another service\" below.",
         "down": "{{service}} is having trouble right now (HTTP {{status}}). Try again in a moment."
       },
       "problems": {
         "key": "Paste the API key first.",
         "service": "Choose the service this key is from.",
-        "notWorking": "The key does not work yet. Fix it above, choose another way, or skip for now.",
-        "notReady": "{{service}} is not ready yet. Follow the note above, choose another way, or skip for now.",
+        "notWorking": "The key doesn't work yet. Fix it above, choose another option or skip for now.",
+        "notReady": "{{service}} isn't ready yet. Follow the note above, choose another option or skip for now.",
         "model": "Enter the model to start with."
       },
       "services": {
@@ -619,58 +625,75 @@
         },
         "ollama": {
           "name": "Ollama",
-          "label": "Ollama (this machine)"
+          "label": "Ollama (this computer)"
         }
       }
     },
     "judge": {
       "title": "Choose a judge",
-      "subtitle": "The judge answers the small calls mu makes while it works. mu runs without one, just without these checks.",
-      "readyFree": "The free Jev is ready. Nothing to do here.",
-      "readyKey": "Jev is ready, with the key you set.",
+      "subtitle": "The judge answers the small questions mu has while it works. mu still works without one; it just skips these checks.",
+      "readyFree": "Jev is ready, free for now. Nothing to set up here.",
+      "readyKey": "Jev is ready with your key.",
       "more": "Change the service or use your own key",
       "less": "Hide"
     },
     "done": {
       "title": "All set",
-      "subtitle": "Check it over, then start.",
+      "subtitle": "Review your choices, then get started.",
       "model": "Model",
       "judge": "Judge",
       "none": "Not set",
-      "noKey": "No key yet: judgments follow the default rules until there is one",
-      "freeJev": "No key yet: Jev answers for free on OpenCode Zen for now (for a limited time)",
-      "saveFailed": "Saving did not work: {{reason}}",
+      "noKey": "No key yet. Until you add one, mu uses its default rules instead of a judge.",
+      "freeJev": "No key yet. Jev is free on OpenCode Zen for a limited time.",
+      "saveFailed": "Couldn't save: {{reason}}",
       "modelValue": "{{provider}} / {{model}}",
       "import": "Conversations",
-      "importOpen": "Choose which…",
-      "importFound_one": "{{count}} Claude Code or Codex conversation on this computer can come along, to go on with it here",
-      "importFound_other": "{{count}} Claude Code or Codex conversations on this computer can come along, to go on with them here",
+      "importOpen": "Choose…",
+      "importFound_one": "Found {{count}} Claude Code, Codex or ZCode conversation on this computer. You can continue it here.",
+      "importFound_other": "Found {{count}} Claude Code, Codex or ZCode conversations on this computer. Choose the ones to continue here.",
       "permissions": "Permissions"
     },
     "intro": {
+      "turn": {
+        "label": "A turn, as the judge sees it",
+        "preflight": "Multi-step task: look first",
+        "approval": "npm test runs without asking",
+        "completion": "Tests pass, so the work is done"
+      },
       "title": "Welcome to mu",
-      "lead": "mu is a coding assistant that does the work: it reads your project, edits code, runs commands and tests, and keeps going until the job is done.",
+      "lead": "mu is a coding agent that does the work: it reads your project, edits code, runs commands and tests, and keeps going until the job is done.",
+      "import": {
+        "title": "Bring your conversations along",
+        "text": "mu found {{count}} conversations from other coding agents on this computer. Import them with their full history and keep going here.",
+        "text_one": "mu found {{count}} conversation from another coding agent on this computer. Import it with its full history and keep going here.",
+        "text_other": "mu found {{count}} conversations from other coding agents on this computer. Import them with their full history and keep going here.",
+        "open": "Choose conversations…"
+      },
       "points": {
         "judge": {
           "title": "A check at every step",
-          "text": "A built-in judge watches the key moments: think before acting, keep to the rules you set, never call it done unverified."
+          "text": "A built-in judge watches the key moments, so mu thinks before it acts, follows your rules and checks its work before calling a job done."
         },
         "control": {
           "title": "You see it, you steer it",
-          "text": "Any change can be rolled back; every step in the browser is in view, and you can pause or take over."
+          "text": "Checkpoints let you roll back changes. When mu uses the in-app browser, you can watch each step and pause or take over."
         },
         "ready": {
-          "title": "Ready out of the box",
-          "text": "It picks up the rules, skills and MCP servers you already set up in Claude Code, Cursor and Codex."
+          "title": "Works out of the box",
+          "text": "It picks up the rules, skills and MCP servers you've already set up in Claude Code, Cursor and Codex."
         }
       },
       "start": "Set up"
     },
     "login": {
       "providers": {
-        "openai-codex": {
+        "openai": {
           "name": "ChatGPT",
           "plan": "Plus / Pro plan"
+        },
+        "openai-codex": {
+          "name": "ChatGPT (Codex)",
+          "plan": "Older sign-in through Codex"
         },
         "anthropic": {
           "name": "Claude",
@@ -691,51 +714,51 @@
       },
       "signedIn": "Signed in",
       "inProgress": "Signing in…",
-      "waiting": "The {{name}} sign-in page is open in your browser. Sign in and allow access; this continues by itself.",
+      "waiting": "The {{name}} sign-in page is open in your browser. Sign in and allow access; this page continues automatically.",
       "deviceCode": "Code",
       "code": "Authorization code",
-      "codePlaceholder": "Paste the code the browser shows, or the address it ended on",
+      "codePlaceholder": "Paste the code shown in your browser, or the URL it ended on",
       "submit": "Submit",
-      "openAgain": "Open the page again",
+      "openAgain": "Reopen the page",
       "pasteCode": "Paste a code instead",
       "cancel": "Cancel",
-      "failed": "Signing in did not finish. You can try again.",
-      "asks": "{{name}} asks (in its own words):",
+      "failed": "Couldn't sign in. Try again.",
+      "asks": "{{name}} asks:",
       "needAccount": "Sign in to an account first, then pick a model.",
       "experimental": "Experimental",
-      "starting": "Getting the {{name}} sign-in ready…",
-      "waitingDevice": "The {{name}} verification page is open in your browser. Check that the code there matches this one (type it in if it is not filled in), approve, and this continues by itself.",
+      "starting": "Preparing {{name}} sign-in…",
+      "waitingDevice": "The {{name}} verification page is open in your browser. Check that its code matches this one (type it in if it isn't filled in), then approve. This page continues automatically.",
       "risk": {
         "title": "Know the risk before you sign in",
-        "text": "This signs in through the login Google made for {{tool}} itself, not one Google provides for mu. Google may treat that as against its terms and limit or suspend the account.",
-        "instead": "Use an account you can afford to lose access to. The official ways are a Gemini API key, or Vertex AI signed in with gcloud.",
-        "continue": "I understand the risk, sign in",
+        "text": "This signs in through the login Google built for {{tool}}, not one Google offers for mu. Google may consider this a violation of its terms and limit or suspend your account.",
+        "instead": "Use an account you can afford to lose access to. The official options are a Gemini API key or Vertex AI with a gcloud sign-in.",
+        "continue": "Sign in anyway",
         "cancel": "Don't sign in"
       },
-      "readingModels": "Signed in to {{name}}. Reading the models this account can use…"
+      "readingModels": "Signed in to {{name}}. Loading the models this account can use…"
     },
     "permissions": {
-      "title": "How much mu does on its own",
-      "subtitle": "New conversations start in the mode you pick here. Switch any time in the send box or with /permissions.",
+      "title": "How much mu can do on its own",
+      "subtitle": "New conversations start in the mode you choose here. Switch anytime from the message box or with /permissions.",
       "recommended": "Recommended"
     }
   },
   "turnErrors": {
-    "processExited": "mu stopped in the middle of the turn. Send the message again to restart it.",
-    "regionBlocked": "The model's service refused this network's region. Turn on a proxy (mu follows the system proxy) or pick another model.",
-    "unreachable": "Could not reach the model's service. Check the network or proxy, or pick another model.",
-    "modelFailed": "The model request failed.",
-    "turnRunning": "mu is still working on the previous message. Wait for it, or stop it first.",
+    "processExited": "mu stopped mid-turn. Send your message again to retry.",
+    "regionBlocked": "The model's service isn't available in your network's region. Turn on a proxy (mu uses the system proxy) or choose another model.",
+    "unreachable": "Couldn't reach the model's service. Check your network or proxy, or choose another model.",
+    "modelFailed": "The model request failed. Send your message again to retry.",
+    "turnRunning": "mu is still working on your previous message. Wait for it to finish, or stop it first.",
     "busyConfig": "Wait for the current turn to finish before changing the model or thinking level.",
-    "unsupportedValue": "mu does not offer this model, thinking level or permission mode.",
-    "permissionsNotSwitched": "mu did not switch the permission mode. Try again, or type /permissions in the conversation.",
-    "imageUnsupported": "Only PNG, JPEG, WebP or GIF images up to 12 MB can be sent.",
-    "contentUnsupported": "mu accepts only text, images and text files.",
+    "unsupportedValue": "mu doesn't support this model, thinking level or permission mode.",
+    "permissionsNotSwitched": "mu couldn't switch the permission mode. Try again, or type /permissions in the conversation.",
+    "imageUnsupported": "You can only send PNG, JPEG, WebP or GIF images up to 12 MB.",
+    "contentUnsupported": "mu only accepts text, images and text files.",
     "wrongProject": "This conversation belongs to another project folder.",
-    "notPersisted": "mu could not save this conversation.",
-    "startFailed": "mu could not start.",
-    "timeout": "mu did not answer in time.",
-    "processClosed": "mu has stopped. Send the message again to restart it.",
+    "notPersisted": "mu couldn't save this conversation.",
+    "startFailed": "Couldn't start mu. Restart the app, then try again.",
+    "timeout": "mu didn't respond in time. Send your message again to retry.",
+    "processClosed": "mu has stopped. Send your message again to restart it.",
     "noModel": "mu has no model to answer with."
   },
   "noModel": {
@@ -746,197 +769,204 @@
   },
   "notices": {
     "checkpointOff": "Checkpoints are off in this conversation.",
-    "freeJev": "No Jev key is set, so the judge uses Jev 1.13 on OpenCode Zen, free for a limited time. What it judges is sent to OpenCode, which does not train on it. To use a key of your own, fill one in under Settings → Judges.",
+    "freeJev": "No Jev key is set, so the judge is Jev 1.13 on OpenCode Zen, free for a limited time. OpenCode receives what Jev judges and doesn't train on it. To use your own key, add it under Settings → Judges.",
     "freeJevUnavailable": {
-      "paid": "The free Jev on OpenCode Zen now asks for a key or payment, so plain rules decide for now. Fill in a Jev key under Settings → Judges to get the judge back.",
-      "gone": "OpenCode Zen no longer offers the free Jev, so plain rules decide for now. Fill in a Jev key under Settings → Judges to get the judge back."
+      "paid": "Jev on OpenCode Zen now requires a key or payment, so mu is using its default rules for now. Add a Jev key under Settings → Judges to turn the judge back on.",
+      "gone": "OpenCode Zen no longer offers Jev for free, so mu is using its default rules for now. Add a Jev key under Settings → Judges to turn the judge back on."
     },
     "checkpointOffWhy": {
-      "gitMissing": "Checkpoints are off in this conversation: Git was not found on this computer. Install Git, then start a new conversation to get them.",
-      "xcodeLicense": "Checkpoints are off in this conversation: Git cannot run on this Mac until the Xcode license is accepted. Accept it with sudo xcodebuild -license in Terminal, then start a new conversation to get them.",
-      "developerToolsMissing": "Checkpoints are off in this conversation: this Mac has no command line developer tools, which Git needs. Install them with xcode-select --install in Terminal, then start a new conversation to get them.",
-      "homeFolder": "Checkpoints are off in this conversation: its folder is your home folder or holds it. Start a conversation in a project folder to get them.",
-      "muFolder": "Checkpoints are off in this conversation: its folder is inside mu’s own folder. Start a conversation in a project folder to get them.",
-      "tooManyFiles": "Checkpoints are off in this conversation: its folder has more than {{limit}} files. Start a conversation in a project folder to get them.",
-      "tooManyBytes": "Checkpoints are off in this conversation: its folder holds more than {{limitMb}} MB of files. Start a conversation in a project folder to get them.",
-      "tooSlow": "Checkpoints are off in this conversation: listing its folder’s files took longer than {{seconds}} seconds. Start a conversation in a project folder to get them."
+      "gitMissing": "Checkpoints are off in this conversation: Git wasn't found on this computer. Install Git, then start a new conversation to use them.",
+      "xcodeLicense": "Checkpoints are off in this conversation: Git can't run on this Mac until you accept the Xcode license. Run sudo xcodebuild -license in Terminal to accept it, then start a new conversation.",
+      "developerToolsMissing": "Checkpoints are off in this conversation: Git needs the command line developer tools, which aren't installed on this Mac. Run xcode-select --install in Terminal, then start a new conversation.",
+      "homeFolder": "Checkpoints are off in this conversation: its folder is your home folder or contains it. Start a conversation in a project folder to use them.",
+      "muFolder": "Checkpoints are off in this conversation: its folder is inside mu's own folder. Start a conversation in a project folder to use them.",
+      "tooManyFiles": "Checkpoints are off in this conversation: its folder has more than {{limit}} files. Start a conversation in a project folder to use them.",
+      "tooManyBytes": "Checkpoints are off in this conversation: its folder contains more than {{limitMb}} MB of files. Start a conversation in a project folder to use them.",
+      "tooSlow": "Checkpoints are off in this conversation: listing its folder's files took longer than {{seconds}} seconds. Start a conversation in a project folder to use them."
     },
     "stopped": "You stopped this reply.",
-    "answerLost": "mu did not get your answer, so it went on as if you had declined.",
-    "bashMissing": "mu needs Git for Windows to run commands. Once it is installed, send your message again. Download it here:",
+    "answerLost": "mu didn't receive your answer, so it continued as if you had declined.",
+    "bashMissing": "mu needs Git for Windows to run commands. Install it, then send your message again. Download it here:",
     "toModel": {
       "nudge": "mu reminded the model that this turn isn't finished yet",
       "goal": "The goal isn't met yet, so mu told the model to keep going",
-      "diagnostics": "mu told the model about errors its edits left behind",
+      "diagnostics": "mu told the model about errors its edits introduced",
       "steer": "mu told the model to change course",
       "rewind": "mu rolled the files back and told the model why",
       "hive": "mu passed the model new findings from the hive",
-      "swarm": "mu asked the sub-agent to wrap up and report",
+      "swarm": "mu asked the subagent to wrap up and report",
       "ttsr": "mu reminded the model of one of your rules",
       "other": "mu sent the model a reminder",
-      "show": "What was sent",
+      "show": "Show what was sent",
       "hide": "Hide",
-      "imported": "This conversation was imported from Claude Code or Codex and continues here; thinking and images were not imported"
+      "imported": "This conversation was imported from {{tool}} and continues here",
+      "anotherTool": "another coding agent"
     }
   },
   "errors": {
-    "credential": "The key contains characters a key cannot have, such as spaces, quotes or line breaks. Paste it again.",
-    "keyVariable": "{{name}} cannot hold a judge key. Use TYPESAFE_API_KEY, AI_GATEWAY_API_KEY, or a name that starts with MU_JUDGE_.",
-    "judgeEndpoint": "Jev's service has no address to send its key to. Enter the address, or pick another service.",
+    "credential": "The key contains characters that aren't allowed, such as spaces, quotes or line breaks. Paste it again.",
+    "keyVariable": "{{name}} can't hold a judge key. Use TYPESAFE_API_KEY, AI_GATEWAY_API_KEY or a name that starts with MU_JUDGE_.",
+    "judgeEndpoint": "Jev's service has no address to send the key to. Enter an address, or choose another service.",
     "sharedKey": "{{providers}} would share one key variable. Change one of the IDs.",
     "pickBoth": "Choose a provider and a model together.",
-    "modelsUnreadable": "models.json could not be read. Repair it by hand before saving providers.",
-    "modelsCommented": "models.json contains comments, which saving from here would remove. Edit providers by hand.",
+    "modelsUnreadable": "Couldn't read models.json. Fix it by hand before saving providers.",
+    "modelsCommented": "models.json contains comments that saving from here would remove. Edit providers by hand.",
     "option": {
-      "type": "“{{name}}” has a value of the wrong type.",
-      "range": "“{{name}}” is outside the allowed range.",
-      "choice": "“{{name}}” is not one of the choices.",
-      "length": "“{{name}}” is too long, or has an empty entry."
+      "type": "\"{{name}}\" has a value of the wrong type.",
+      "range": "\"{{name}}\" is outside the allowed range.",
+      "choice": "\"{{name}}\" isn't one of the allowed values.",
+      "length": "\"{{name}}\" is too long, or has an empty entry."
     },
-    "invalidJson": "{{file}} is not valid JSON. Fix it by hand, then reload.",
-    "unreadable": "{{file}} could not be read.",
-    "runtimeOffline": "The mu runtime is not online. Check the local launcher and the sign-in.",
+    "invalidJson": "{{file}} isn't valid JSON. Fix it by hand, then reload.",
+    "unreadable": "Couldn't read {{file}}.",
+    "runtimeOffline": "mu's agent isn't responding. Restart mu, then try again.",
     "otherRegistration": "Another mu command is already registered in the app.",
-    "installPath": "mu cannot start from the folder it is installed in: the folder’s path has spaces. Install mu again into a folder whose path has no spaces, such as C:\\mu.",
-    "backend": "The local service did not answer as expected (HTTP {{status}}).",
-    "invalid": "One of the values is not valid.",
-    "unknown": "Something went wrong in mu.",
-    "unwritable": "{{file}} could not be written.",
-    "contextLimit": "The context cap must be 0 or a whole number from {{min}} to {{max}}.",
-    "importMissing": "This version of mu cannot import conversations yet. Update mu first.",
-    "importFailed": "mu could not import the conversations.",
-    "skillInvalid": "This folder has no SKILL.md with a description, so it is not a skill.",
-    "skillName": "“{{name}}” cannot be a skill’s folder name: use lowercase letters, digits and hyphens.",
+    "installPath": "mu can't start because the path of its install folder contains spaces. Reinstall mu in a folder whose path has no spaces, such as C:\\mu.",
+    "backend": "The local service returned an unexpected response (HTTP {{status}}).",
+    "invalid": "One of the values isn't valid.",
+    "unknown": "Something went wrong in mu. Try again.",
+    "unwritable": "Couldn't write {{file}}.",
+    "contextLimit": "The context limit must be 0 or a whole number from {{min}} to {{max}}.",
+    "importMissing": "This version of mu can't import conversations. Update mu first.",
+    "importFailed": "Couldn't import the conversations. Try again.",
+    "skillInvalid": "This folder isn't a skill: it has no SKILL.md with a description.",
+    "skillName": "\"{{name}}\" isn't a valid skill folder name. Use lowercase letters, digits and hyphens.",
     "skillExists": "mu already has a skill named {{name}}.",
     "skillTooLarge": "This folder is too large to be a skill (over 2,000 files or 50 MB).",
-    "notFound": "{{name}} was not found. It may have been moved.",
-    "notMine": "{{name}} comes from {{source}}. mu does not change those files.",
-    "mcpName": "“{{name}}” cannot name a server: use letters, digits, _ and -.",
+    "notFound": "Couldn't find {{name}}. It may have been moved.",
+    "notMine": "{{name}} comes from {{source}}. mu doesn't change those files.",
+    "mcpName": "\"{{name}}\" isn't a valid server name. Use letters, digits, _ and -.",
     "mcpExists": "mu already has a server named {{name}}.",
     "mcpInvalid": {
-      "command": "The command cannot be used. Check it and try again.",
+      "command": "This command isn't valid. Check it and try again.",
       "url": "The URL must start with http:// or https://.",
-      "env": "A variable name may only have letters, digits and _, and must not start with a digit.",
-      "headers": "A header name or value cannot be used."
+      "env": "Variable names can only contain letters, digits and _, and can't start with a digit.",
+      "headers": "A header name or value isn't valid."
     }
   },
   "importChats": {
     "title": "Import conversations",
-    "description": "Bring conversations you had in Claude Code or Codex on this computer into mu, and continue them here.",
+    "description": "Bring your Claude Code, Codex or ZCode conversations from this computer into mu with their full history and continue them here.",
     "open": "Choose…",
     "dialog": {
       "title": "Import conversations",
-      "hint": "Each conversation you choose becomes a mu conversation in its project folder. mu reads everything that was said; thinking and images stay behind.",
-      "search": "Search by words or folder",
+      "hint": "Each conversation you choose becomes a mu conversation in its project folder, with its full history: messages, tool calls, thinking and images. Choose one again later to bring over what's new.",
+      "search": "Search by text or folder",
       "loading": "Looking for conversations…",
-      "empty": "No Claude Code or Codex conversations were found on this computer.",
-      "noMatch": "No conversation matches.",
+      "empty": "No Claude Code, Codex or ZCode conversations found on this computer.",
+      "noMatch": "No matching conversations.",
       "noTitle": "(no message)",
-      "folderUnknown": "Folder unknown",
-      "inList": "In your list",
+      "folderUnknown": "Unknown folder",
+      "inList": "Already in your list",
+      "changed": "Changed since it was imported. Choose it to bring over what's new.",
       "open": "Open",
-      "selected": "Chosen: {{count}}",
+      "selected": "{{count}} selected",
       "import": "Import",
       "importing": "Importing…",
       "retry": "Try again"
     },
-    "done": "{{count}} conversations imported. They are in your conversation list.",
-    "done_one": "{{count}} conversation imported. It is in your conversation list.",
-    "done_other": "{{count}} conversations imported. They are in your conversation list.",
-    "someFailed": "{{count}} conversations could not be imported. The reason is under each.",
-    "someFailed_one": "{{count}} conversation could not be imported. The reason is under it.",
-    "someFailed_other": "{{count}} conversations could not be imported. The reason is under each.",
+    "done": "Imported {{count}} conversations. They're in your conversation list.",
+    "done_one": "Imported {{count}} conversation. It's in your conversation list.",
+    "done_other": "Imported {{count}} conversations. They're in your conversation list.",
+    "updated": "Brought {{count}} conversations up to date.",
+    "updated_one": "Brought {{count}} conversation up to date.",
+    "updated_other": "Brought {{count}} conversations up to date.",
+    "someFailed": "Couldn't import {{count}} conversations. The reason is shown under each one.",
+    "someFailed_one": "Couldn't import {{count}} conversation. The reason is shown under it.",
+    "someFailed_other": "Couldn't import {{count}} conversations. The reason is shown under each one.",
     "failure": {
-      "missing": "The file is gone.",
-      "notFile": "This is not a file.",
-      "notTranscript": "This is not a Claude Code or Codex conversation.",
-      "empty": "There is no message in it.",
-      "folderMissing": "Its project folder is gone: {{folder}}",
-      "other": "It could not be imported: {{detail}}"
+      "missing": "The file no longer exists.",
+      "notFile": "This isn't a file.",
+      "notTranscript": "This isn't a Claude Code, Codex or ZCode conversation.",
+      "empty": "It has no messages.",
+      "folderMissing": "Its project folder no longer exists: {{folder}}",
+      "other": "Couldn't import it: {{detail}}"
     },
     "notice": {
       "title": "Imported from {{tool}}",
-      "counts": "Your messages: {{user}} · answers: {{assistant}} · tool calls: {{toolCalls}}",
-      "goOn": "Just keep going below: mu has read the conversation. Thinking and images were not brought along.",
+      "counts": "Your messages: {{user}} · Replies: {{assistant}} · Tool calls: {{toolCalls}}",
+      "goOn": "mu has read the conversation, so just keep going below.",
       "read": "Read the earlier conversation"
     },
     "history": {
-      "title": "Earlier, in {{tool}}",
+      "title": "Earlier in {{tool}}",
       "loading": "Reading the conversation…",
       "you": "You",
-      "summary": "Summary of what came before",
+      "summary": "Summary of earlier messages",
       "tools": "Used: {{tools}}",
-      "earlier": "{{count}} earlier steps are not shown.",
-      "earlier_one": "{{count}} earlier step is not shown.",
-      "earlier_other": "{{count}} earlier steps are not shown.",
-      "empty": "There is nothing to show."
+      "earlier": "{{count}} earlier steps aren't shown.",
+      "earlier_one": "{{count}} earlier step isn't shown.",
+      "earlier_other": "{{count}} earlier steps aren't shown.",
+      "empty": "Nothing to show."
     }
   },
   "commands": {
-    "frame": "The task frame: goal, your hard constraints and where you said them, subgoal, acceptance items",
-    "remember": "Store a lesson for future sessions in this project: /remember <what to do>",
-    "lessons": "This project's lessons: /lessons lists id · kind · recalled/followed · lesson, /lessons all adds the ones for everywhere and the retired ones",
-    "forget": "Retire a lesson so it is no longer recalled: /forget <id prefix> (the ids are in /lessons)",
-    "capabilities": "What is installed and what is open: /capabilities, /capabilities open <id>",
-    "permissions": "How much mu may do without asking: /permissions full | jev | ask, or a picker. /permissions reset forgets what you allowed for this conversation",
-    "lsp": "Language servers: which are installed, which are running, and the last error",
-    "goal": "Goal mode: keep the agent working until a condition holds. /goal <condition>, /goal (show, or ask for one), /goal clear",
-    "board": "The plain-language board: /board (show it), /board on, /board off (for this project), /board model (who writes it)",
-    "checkpoints": "The checkpoints of this conversation: turn, time, files changed since",
-    "rewind": "Go back to a checkpoint: /rewind [#] [both|files|conversation], /rewind undo",
-    "swarm": "Sub-agents at work: /swarm (what each one is doing), /swarm stop [name] (report now), /swarm kill [name]",
-    "agents": "List the sub-agent roles the delegate tool can use, and where to add your own",
-    "hive": "Put several investigators on one question at once: /hive <question>. Without one, the same as /swarm",
-    "browse": "Drive the built-in browser yourself: /browse <url> [goal]",
-    "inherit": "What mu took over from Claude Code, Cursor and Codex, and from where",
+    "frame": "Show the task frame: the goal, your constraints with their source, the current subgoal and the acceptance criteria",
+    "remember": "Save a lesson for later work in this project: /remember <what to do>",
+    "lessons": "List this project's lessons (id · kind · recalled/followed · lesson); /lessons all adds global and retired lessons",
+    "forget": "Retire a lesson so it's no longer recalled: /forget <id prefix> (find IDs with /lessons)",
+    "capabilities": "Show what's installed and what's turned on; /capabilities open <id> turns one on",
+    "permissions": "Set how much mu can do without asking: /permissions full | judge | ask (no argument opens a picker); /permissions reset clears what you've allowed so far",
+    "lsp": "Show the language servers: what's installed, what's running and the last error",
+    "goal": "Keep the agent working until a condition holds: /goal <condition> sets it, /goal shows it (or asks for one), /goal clear ends it",
+    "board": "Show the plain-language board; /board on|off turns it on or off for this project, /board model picks the model that writes it",
+    "checkpoints": "List the checkpoints so far: turn, time and the files changed since each",
+    "rewind": "Go back to a checkpoint: /rewind [#] [both|files|conversation]; /rewind undo reverses the last rewind",
+    "swarm": "Show what each subagent is doing; /swarm stop [name] asks it to report now, /swarm kill [name] stops it immediately",
+    "agents": "List the subagent roles the delegate tool can use, and where to add your own",
+    "hive": "Have several investigators work on one question at once: /hive <question>. With no question, it works like /swarm",
+    "browse": "Have the built-in browser open a page and do what you ask: /browse <url> [goal]",
+    "inherit": "Show what mu inherited from Claude Code, Cursor and Codex, and from which files",
     "mcp": "Manage MCP servers: sign in, reconnect, enable or disable, and change exposure",
-    "jobs": "Background jobs: /jobs, /jobs stop <id|all>",
-    "commit": "Split the uncommitted change into commits: shows the plan, commits only when you say yes, never pushes",
-    "review": "Review the uncommitted change, or what you name, with the reviewer sub-agent; findings sorted P0 to P3",
-    "mu": "mu status. Also: /mu judge <tiers> | /mu route <decision> <tiers|default> | /mu mode <decision|default> <off|shadow|active>",
-    "status": "Model, judge, decision modes, context savings and the latest verdicts",
-    "help": "What mu can do and every command worth knowing",
-    "ledger": "The last verdicts of the judge with timing: /ledger [n]",
-    "doctor": "Check that the judge, the model, the browser and the sub-agents are wired up",
-    "import-chat": "Bring a Claude Code or Codex conversation of this project into mu and continue it: /import-chat [file]",
+    "jobs": "List background jobs; /jobs stop <id|all> stops them",
+    "commit": "Split uncommitted changes into commits: shows the plan, commits only when you approve and never pushes",
+    "review": "Have the reviewer subagent review uncommitted changes, or whatever you name; the judge ranks findings from P0 to P3",
+    "mu": "Show mu's status. Also: /mu judge <judges> | /mu route <point> <judge|default> | /mu mode <point|default> <off|shadow|active>",
+    "status": "Show the model, the judge, each decision point's mode, context savings and recent verdicts",
+    "help": "Show what mu can do and the commands worth knowing",
+    "ledger": "Show the last n verdicts and their latency: /ledger [n]",
+    "doctor": "Check that the judge, model, browser and subagents are set up",
+    "import-chat": "Import a Claude Code, Codex or ZCode conversation from this project and continue it here: /import-chat [file]",
     "llama": "Manage llama.cpp router models"
   },
   "native": {
     "untitled": "New conversation",
     "retried": "Failed attempts before this reply: {{count}}",
-    "compacted": "Conversation compacted here to make room: {{tokens}} tokens of earlier messages were condensed.",
-    "compactedPlain": "Conversation compacted here to make room.",
+    "compacted": "Conversation compacted here to free up space: {{tokens}} tokens of earlier messages were summarized.",
+    "compactedPlain": "Conversation compacted here to free up space.",
     "sentImage": "Image {{index}}",
     "forkNoEntry": "the message has no session entry yet",
     "phase": {
       "idle": "Not running",
       "starting": "Starting",
       "running": "Running",
+      "working": "Working",
+      "ready": "Ready",
       "needsModel": "No model",
       "failed": "Stopped"
     },
     "status": {
       "starting": "Starting mu…",
-      "classifying": "Jev is reading your message…",
+      "classifying": "The judge is reading your message…",
       "compacting": "Compacting the conversation…",
-      "retrying": "The model request failed. Trying again ({{attempt}} of {{max}})…",
+      "retrying": "Model request failed. Retrying ({{attempt}} of {{max}})…",
       "thinking": "Thinking…",
       "working": "Working…",
       "sending": "Sending…"
     },
     "send": {
       "placeholder": "Message mu…",
-      "placeholderWorking": "Steer mu now, or leave a message for after this run…",
+      "placeholderWorking": "Steer mu now, or queue a message for when it's done…",
       "steer": "Now",
       "steerHint": "Reaches mu at its next step",
       "followUp": "After",
-      "followUpHint": "Waits until this run ends"
+      "followUpHint": "Sent when this run ends"
     },
     "queue": {
-      "title": "Waiting to be sent",
+      "title": "Queued",
       "steer": "Next step",
       "followUp": "After this run",
-      "takeBack": "Take back"
+      "takeBack": "Edit"
     },
     "dialog": {
       "yes": "Yes",
@@ -945,35 +975,35 @@
       "cancel": "Cancel",
       "submit": "Send",
       "save": "Save",
-      "countdown": "Closes in {{seconds}} s; mu then goes on without your answer.",
-      "more": "Waiting after this one: {{count}}"
+      "countdown": "Closes in {{seconds}}s, then mu continues without your answer.",
+      "more": "{{count}} more waiting"
     },
     "host": {
       "output": "mu's last output",
       "restartHint": "Send a message to start mu again."
     },
     "error": {
-      "off": "The native host is turned off (MU_NATIVE_HOST=0). Start the app without it to use it.",
-      "noHarness": "The app cannot find a mu to run.",
-      "oldHarness": "This mu is too old to run inside the app. Update mu, then try again.",
-      "plan": "The app could not work out how to start mu.",
+      "off": "The native host is off (MU_NATIVE_HOST=0). Restart the app without that setting to use it.",
+      "noHarness": "The app can't find mu to run.",
+      "oldHarness": "This version of mu is too old to run in the app. Update mu, then try again.",
+      "plan": "The app couldn't work out how to start mu.",
       "noModels": "mu stopped: it has no model to use.",
-      "failed": "mu stopped before it started.",
+      "failed": "mu stopped before it could start.",
       "crashed": "mu stopped unexpectedly.",
       "closed": "mu was closed for this conversation.",
-      "timeout": "mu did not answer in time.",
-      "command": "mu refused the request.",
-      "noFolder": "The project folder no longer exists, so mu cannot start in it.",
+      "timeout": "mu didn't respond in time.",
+      "command": "mu rejected the request.",
+      "noFolder": "The project folder no longer exists, so mu can't start there.",
       "unknownConversation": "This conversation no longer exists.",
-      "invalid": "The app sent a request mu cannot read."
+      "invalid": "The app sent a request mu couldn't read."
     },
     "open": {
       "home": "Home",
       "retry": "Try again"
     },
     "empty": {
-      "title": "A new conversation in {{folder}}",
-      "body": "mu works in this folder. Say what you want done."
+      "title": "New conversation in {{folder}}",
+      "body": "mu works in this folder. Tell it what you want done."
     },
     "sider": {
       "title": "Recent",
@@ -981,7 +1011,7 @@
       "empty": "No conversations yet",
       "all": "Show all ({{count}})",
       "fewer": "Show fewer",
-      "deleteConfirm": "Delete “{{title}}”? Its session file goes to the bin, where you can still restore it.",
+      "deleteConfirm": "Delete \"{{title}}\"? Its file moves to the trash, so you can still restore it.",
       "messages": "Messages: {{count}}",
       "unread": "New activity",
       "working": "Working"
@@ -998,10 +1028,10 @@
       "defaultPermissions": "mu's default"
     },
     "panel": {
-      "noLessons": "Lessons show once the conversation has opened.",
+      "noLessons": "Lessons appear once the conversation opens.",
       "source": {
         "label": "Changes in {{folder}}",
-        "noGit": "Git could not run here, so the changes cannot be shown.",
+        "noGit": "Git couldn't run here, so changes can't be shown.",
         "untracked": "Untracked",
         "detached": "Detached at {{commit}}",
         "noCommits": "No commits yet",
@@ -1011,22 +1041,22 @@
         "label": "Files in {{folder}}",
         "refresh": "Refresh",
         "empty": "This folder is empty.",
-        "failed": "This folder could not be read.",
-        "more": "Not shown: {{count}} more"
+        "failed": "Couldn't read this folder.",
+        "more": "{{count}} more not shown"
       }
     },
     "home": {
       "noFolder": "Choose a folder for mu to work in first."
     },
     "attach": {
-      "failed": "{{name}} could not be attached."
+      "failed": "Couldn't attach {{name}}."
     }
   },
   "details": {
-    "lead": "One switch per feature, its settings under Options. The indented rows are where it asks Jev: switch one off and that step goes ahead as usual.",
-    "featureOff": "The feature is off",
-    "askJev": "Let Jev judge",
-    "askJevAbout": "Let Jev judge: {{point}}",
+    "lead": "Each feature has one switch, with its settings under Options. Indented rows are the feature's decision points, where it asks the judge. Turn one off and that step runs as usual.",
+    "featureOff": "This feature is off",
+    "askJudge": "Ask the judge",
+    "askJudgeAbout": "Ask the judge: {{point}}",
     "areas": {
       "input": "Input",
       "context": "Context",
@@ -1043,7 +1073,7 @@
     "toolsClassic": "MCP and images",
     "remove": "Remove",
     "from": {
-      "mu": "mu’s skills folder",
+      "mu": "mu's skills folder",
       "agents": "the shared .agents folder",
       "builtin": "mu itself",
       "claude": "Claude Code",
@@ -1057,32 +1087,32 @@
       "add": "Add skill",
       "added": "Added {{name}}. New conversations can use it.",
       "removed": "Moved {{name}} to the trash.",
-      "removeTitle": "Remove the skill {{name}}?",
-      "removeContent": "Its folder goes to the trash, and new conversations no longer load it.",
+      "removeTitle": "Remove skill {{name}}?",
+      "removeContent": "Its folder moves to the trash, and new conversations won't load it.",
       "empty": "mu has no skills yet.",
-      "noMatch": "No skill matches.",
-      "failed": "mu’s skills could not be read.",
-      "project": "A project’s own skills (.mu/skills, .agents/skills, .claude/skills) load only in that project’s conversations and are not listed here.",
+      "noMatch": "No matching skills.",
+      "failed": "Couldn't read mu's skills.",
+      "project": "Project skills (.mu/skills, .agents/skills, .claude/skills) load only in that project's conversations and aren't listed here.",
       "groups": {
         "mu": {
-          "title": "mu’s skills",
-          "help": "In {{folder}}. Added skills go here, and only these can be removed."
+          "title": "mu's skills",
+          "help": "In {{folder}}. Skills you add go here, and only these can be removed."
         },
         "agents": {
           "title": "Shared skills",
-          "help": "In ~/.agents/skills, shared by several agents. mu reads them and never changes them."
+          "help": "In ~/.agents/skills, shared by several agents. mu reads them but never changes them."
         },
         "builtin": {
-          "title": "Comes with mu",
-          "help": "Shipped with mu. Each is on while the feature that brings it is on."
+          "title": "Built-in",
+          "help": "Shipped with mu. Each one is available while the feature it belongs to is on."
         },
         "claude": {
           "title": "From Claude Code",
-          "help": "From ~/.claude/skills. mu only reads them; features.inherit in mu.json stops taking them over."
+          "help": "From ~/.claude/skills. mu only reads them; turn off features.inherit in mu.json to stop using them."
         },
         "codex": {
           "title": "From Codex",
-          "help": "From ~/.codex/skills. mu only reads them; features.inherit in mu.json stops taking them over."
+          "help": "From ~/.codex/skills. mu only reads them; turn off features.inherit in mu.json to stop using them."
         }
       }
     },
@@ -1093,40 +1123,40 @@
       "add": "Add server",
       "added": "Added {{name}}. New conversations can use it.",
       "removed": "Removed {{name}}.",
-      "removeTitle": "Remove the server {{name}}?",
-      "removeContent": "Its entry is deleted from {{file}}.",
+      "removeTitle": "Remove server {{name}}?",
+      "removeContent": "This deletes its entry from {{file}}.",
       "use": "Use {{name}}",
-      "empty": "mu uses no MCP servers yet.",
-      "failed": "mu’s MCP servers could not be read.",
+      "empty": "mu isn't using any MCP servers yet.",
+      "failed": "Couldn't read mu's MCP servers.",
       "featureOff": "The MCP feature is off in mu.json: only the servers in mcp.json are used.",
-      "unreadable": "These files could not be read, so their servers are missing: {{files}}",
-      "project": "A project’s own servers (.mu/mcp.json, .mcp.json, .cursor/mcp.json) are used only in that project’s conversations and are not listed here.",
+      "unreadable": "Couldn't read these files, so their servers are missing: {{files}}",
+      "project": "Project servers (.mu/mcp.json, .mcp.json, .cursor/mcp.json) are used only in that project's conversations and aren't listed here.",
       "locked": {
         "offInSource": {
-          "label": "Off at its source",
-          "help": "It is switched off in its own tool’s settings. mu does not change other tools’ files: switch it on there."
+          "label": "Off in its source",
+          "help": "It's turned off in its own tool's settings. mu doesn't change other tools' files, so turn it on there."
         },
         "unsupported": {
           "label": "Not supported",
-          "help": "It uses the old HTTP+SSE transport, which mu does not support."
+          "help": "It uses the legacy HTTP+SSE transport, which mu doesn't support."
         }
       },
       "groups": {
         "mu": {
-          "title": "mu’s servers",
-          "help": "In mcp.json and mu.json. Added servers go into {{file}}, as with mu mcp add."
+          "title": "mu's servers",
+          "help": "In mcp.json and mu.json. Servers you add go into {{file}}, the same as with mu mcp add."
         },
         "claude": {
           "title": "From Claude Code",
-          "help": "From ~/.claude.json. Switching one off here writes only to mu.json, never to Claude Code’s file."
+          "help": "From ~/.claude.json. Turning one off here only writes to mu.json, never to Claude Code's file."
         },
         "cursor": {
           "title": "From Cursor",
-          "help": "From ~/.cursor/mcp.json. Switching one off here writes only to mu.json, never to Cursor’s file."
+          "help": "From ~/.cursor/mcp.json. Turning one off here only writes to mu.json, never to Cursor's file."
         },
         "codex": {
           "title": "From Codex",
-          "help": "From ~/.codex/config.toml. Switching one off here writes only to mu.json, never to Codex’s file."
+          "help": "From ~/.codex/config.toml. Turning one off here only writes to mu.json, never to Codex's file."
         }
       },
       "form": {
@@ -1136,7 +1166,7 @@
         "nameHelp": "Letters, digits, _ and -",
         "kind": "Connection",
         "command": "Command",
-        "commandHelp": "The program mu starts and its arguments, as you would type them in a terminal.",
+        "commandHelp": "The program mu starts and its arguments, as you'd type them in a terminal.",
         "env": "Environment variables",
         "envPlaceholder": "KEY=value, one per line (optional)",
         "url": "URL",
@@ -1145,8 +1175,8 @@
         "needName": "Enter a name.",
         "needCommand": "Enter a command.",
         "needUrl": "Enter a URL.",
-        "openQuote": "A quote in the command is not closed.",
-        "badLine": "Line {{line}} is not in the right form."
+        "openQuote": "The command has an unclosed quote.",
+        "badLine": "Line {{line}} isn't valid."
       }
     },
     "showAll": "Show all ({{count}})",

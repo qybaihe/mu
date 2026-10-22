@@ -29,15 +29,16 @@ import ChatSlider from './ChatSlider.tsx';
 import AcpRuntimeRestartButton from '@/renderer/components/agent/AcpRuntimeRestartButton';
 import { getConversationOrNull } from '@/renderer/pages/conversation/utils/conversationCache';
 import { getConversationCreateErrorMessage } from '@/renderer/pages/conversation/utils/conversationCreateError';
-import AionrsChat from '../platforms/aionrs/AionrsChat';
-import AionrsModelSelector from '../platforms/aionrs/AionrsModelSelector';
-import { useAionrsModelSelection } from '../platforms/aionrs/useAionrsModelSelection';
+import BuiltinAgentChat from '../platforms/builtinAgent/BuiltinAgentChat';
+import BuiltinAgentModelSelector from '../platforms/builtinAgent/BuiltinAgentModelSelector';
+import { useBuiltinAgentModelSelection } from '../platforms/builtinAgent/useBuiltinAgentModelSelection';
 import { useConversationRuntimeView } from '../runtime/useConversationRuntimeView';
 import { isLegacyReadOnlyConversationType } from '../utils/conversationRuntime';
 import { resolveConversationBackend } from '../utils/conversationAssistantIdentity';
 import LegacyReadOnlyConversation from '../platforms/legacy/LegacyReadOnlyConversation';
 import SingleChatEmptyState from './SingleChatEmptyState';
 import { useActiveLease } from '../hooks/useActiveLease';
+import { BUILTIN_AGENT, type BuiltinAgent } from '@/common/platform/backendNames';
 // import SkillRuleGenerator from './components/SkillRuleGenerator'; // Temporarily hidden
 
 const configErrorMessageKey = (error: unknown) => {
@@ -150,12 +151,12 @@ const _AddNewConversation: React.FC<{ conversation: TChatConversation }> = ({ co
   );
 };
 
-type AionrsConversation = Extract<TChatConversation, { type: 'aionrs' }>;
+type BuiltinAgentConversation = Extract<TChatConversation, { type: BuiltinAgent }>;
 
-const AionrsConversationPanel: React.FC<{ conversation: AionrsConversation; sliderTitle: React.ReactNode }> = ({
-  conversation,
-  sliderTitle,
-}) => {
+const BuiltinAgentConversationPanel: React.FC<{
+  conversation: BuiltinAgentConversation;
+  sliderTitle: React.ReactNode;
+}> = ({ conversation, sliderTitle }) => {
   const runtimeView = useConversationRuntimeView(conversation.id);
   const onSelectModel = useCallback(
     async (_provider: IProvider, modelName: string) => {
@@ -174,7 +175,7 @@ const AionrsConversationPanel: React.FC<{ conversation: AionrsConversation; slid
     [conversation.id, runtimeView]
   );
 
-  const modelSelection = useAionrsModelSelection({
+  const modelSelection = useBuiltinAgentModelSelection({
     initialModel: conversation.model,
     onSelectModel,
   });
@@ -184,7 +185,7 @@ const AionrsConversationPanel: React.FC<{ conversation: AionrsConversation; slid
   const workspaceEnabled = Boolean(conversation.extra?.workspace) && !conversation.project_id;
   const cronJobId = resolveCronJobId(conversation.extra);
   const { info: presetAssistantInfo } = usePresetAssistantInfo(conversation);
-  const aionrsAssistantId = presetAssistantInfo?.assistantId;
+  const builtinAgentAssistantId = presetAssistantInfo?.assistantId;
   const layout = useLayoutContext();
   // Mobile: model selection moved into the sendbox `+` action sheet to free up
   // header space; the dropdown stays available on desktop and tablets ≥768px.
@@ -216,7 +217,7 @@ const AionrsConversationPanel: React.FC<{ conversation: AionrsConversation; slid
       <div className='flex items-center gap-8px'>
         <CronJobManager conversation_id={conversation.id} cron_job_id={cronJobId} />
         {!isMobile && (
-          <AionrsModelSelector
+          <BuiltinAgentModelSelector
             selection={modelSelection}
             thoughtLevel={runtimeConfig.thoughtLevel}
             setStatus={runtimeConfig.setStatus}
@@ -237,8 +238,8 @@ const AionrsConversationPanel: React.FC<{ conversation: AionrsConversation; slid
     workspacePreferenceKey: conversation.project_id,
     isTemporaryWorkspace: (conversation.extra as { is_temporary_workspace?: boolean } | undefined)
       ?.is_temporary_workspace,
-    backend: 'aionrs' as const,
-    presetAssistant: presetAssistantInfo ? { ...presetAssistantInfo, id: aionrsAssistantId } : undefined,
+    backend: BUILTIN_AGENT,
+    presetAssistant: presetAssistantInfo ? { ...presetAssistantInfo, id: builtinAgentAssistantId } : undefined,
   };
 
   const emptySlot = (
@@ -251,7 +252,7 @@ const AionrsConversationPanel: React.FC<{ conversation: AionrsConversation; slid
 
   return (
     <ChatLayout {...chatLayoutProps} conversation_id={conversation.id}>
-      <AionrsChat
+      <BuiltinAgentChat
         conversation_id={conversation.id}
         workspace={conversation.extra.workspace}
         emptySlot={emptySlot}
@@ -264,7 +265,7 @@ const AionrsConversationPanel: React.FC<{ conversation: AionrsConversation; slid
           (conversation.extra as { mcp_statuses?: IConversationMcpStatus[] } | undefined)?.mcp_statuses
         }
         agent_name={presetAssistantInfo?.name}
-        assistantId={aionrsAssistantId}
+        assistantId={builtinAgentAssistantId}
         forkCapability={conversation.fork_capability}
       />
     </ChatLayout>
@@ -297,13 +298,13 @@ const ChatConversation: React.FC<{
   const layout = useLayoutContext();
   const isMobile = Boolean(layout?.isMobile);
 
-  const isAionrsConversation = conversation?.type === 'aionrs';
+  const isBuiltinAgentConversation = conversation?.type === BUILTIN_AGENT;
   const isLegacyReadOnlyConversation = isLegacyReadOnlyConversationType(conversation?.type);
   const resolvedHideSendBox = hideSendBox || isLegacyReadOnlyConversationType(conversation?.type);
 
   // 使用统一的 Hook 获取预设助手信息（ACP/Codex 会话）
   // Use unified hook for preset assistant info (ACP/Codex conversations)
-  const acpConversation = isAionrsConversation ? undefined : conversation;
+  const acpConversation = isBuiltinAgentConversation ? undefined : conversation;
   const { info: presetAssistantInfo, isLoading: isLoadingPreset } = usePresetAssistantInfo(acpConversation);
   const acpAssistantId = presetAssistantInfo?.assistantId;
   const resolvedConversationBackend = resolveConversationBackend(conversation, presetAssistantInfo?.backend);
@@ -312,9 +313,9 @@ const ChatConversation: React.FC<{
   const assistantDisplayName = presetAssistantInfo?.name || conversationAgentName;
 
   const conversationNode = useMemo(() => {
-    if (!conversation || isAionrsConversation) return null;
-    // A conversation made from a Claude Code or Codex transcript says so where a new one greets, then stays above its
-    // first message.
+    if (!conversation || isBuiltinAgentConversation) return null;
+    // A conversation made from a Claude Code, Codex or ZCode conversation says so where a new one greets, then stays
+    // above its first message.
     const imported = importMarkOf(conversation.extra);
     // Greeting shown while the conversation has no messages yet (freshly created
     // or cloned window). Each *Chat forwards it to MessageList's empty slot.
@@ -366,7 +367,7 @@ const ChatConversation: React.FC<{
     }
   }, [
     conversation,
-    isAionrsConversation,
+    isBuiltinAgentConversation,
     isLegacyReadOnlyConversation,
     resolvedConversationBackend,
     assistantDisplayName,
@@ -383,8 +384,10 @@ const ChatConversation: React.FC<{
     );
   }, [t]);
 
-  if (conversation && conversation.type === 'aionrs') {
-    return <AionrsConversationPanel key={conversation.id} conversation={conversation} sliderTitle={sliderTitle} />;
+  if (conversation && conversation.type === BUILTIN_AGENT) {
+    return (
+      <BuiltinAgentConversationPanel key={conversation.id} conversation={conversation} sliderTitle={sliderTitle} />
+    );
   }
 
   // 如果有预设助手信息，使用预设助手的 logo 和名称；加载中时不进入 fallback；否则使用 backend 的 logo

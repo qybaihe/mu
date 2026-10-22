@@ -145,29 +145,29 @@
       "send_feedback": "Vuelve a intentarlo; si sigue fallando, revisa el registro de la aplicación."
     },
     "ownership": {
-      "aionui": "Aplicación",
+      "mu": "Aplicación",
       "user_agent": "Agente",
       "user_llm_provider": "Proveedor de modelos",
       "unknown_upstream": "Upstream"
     },
     "codes": {
-      "AIONUI_STREAM_BROKEN": {
+      "MU_STREAM_BROKEN": {
         "title": "El flujo de respuesta fue interrumpido",
         "body": "La aplicación aceptó tu mensaje pero el flujo de respuesta terminó inesperadamente. Por favor reintenta; si ocurre de nuevo, revisa el registro de la aplicación."
       },
-      "AIONUI_STATE_INCONSISTENT": {
+      "MU_STATE_INCONSISTENT": {
         "title": "El estado de la conversación está desincronizado",
         "body": "El estado de la conversación está desincronizado. Reinicia este chat o recarga la aplicación antes de reintentar."
       },
-      "AIONUI_PERMISSION_ERROR": {
+      "MU_PERMISSION_ERROR": {
         "title": "No se pudo acceder al recurso solicitado",
         "body": "Falló una verificación de permisos o sistema de archivos local. Verifica la ruta del proyecto y los permisos de la aplicación, luego reintenta."
       },
-      "AIONUI_INTERNAL_ERROR": {
+      "MU_INTERNAL_ERROR": {
         "title": "La solicitud falló en la aplicación",
         "body": "La solicitud falló mientras la aplicación la procesaba. Por favor reintenta una vez; si se repite, revisa el registro de la aplicación."
       },
-      "AIONUI_CONVERSATION_BUSY": {
+      "MU_CONVERSATION_BUSY": {
         "title": "La conversación está ocupada",
         "body": "Otra respuesta aún está en ejecución. Espera a que termine antes de enviar un nuevo mensaje."
       },
@@ -593,7 +593,9 @@
     "hint": "Escribe / para comandos, @ para referenciar archivos y ↑/↓ para el historial de mensajes",
     "mediaPathFallback": "Este agente no admite este tipo de archivo de forma nativa; se enviará como ruta de archivo.",
     "hintWithSessions": "/ para comandos, @ para archivos, @@ para conversaciones, ↑/↓ para el historial",
-    "stop": "Detener la respuesta"
+    "stop": "Detener la respuesta",
+    "openCommand": "Adjuntar archivos de este ordenador",
+    "copyCommand": "Copiar la última respuesta"
   },
   "composer": {
     "goalLine": {

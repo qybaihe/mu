@@ -1,7 +1,7 @@
 {
 	"name": "mu-agent",
-	"version": "0.1.9",
-	"description": "mu: a coding agent that thinks before it acts. A small, fast judge makes the routine calls; the big model keeps its attention for the work. Built on pi.",
+	"version": "0.1.12",
+	"description": "mu: a coding agent that hands its routine decisions to a small, fast judge model, so the main model can keep its attention on the work. Built on pi.",
 	"type": "module",
 	"bin": {
 		"mu": "kyrn/bin/mu.mjs"
@@ -10,7 +10,7 @@
 		"name": "mu",
 		"configDir": ".mu"
 	},
-	"keywords": ["coding-agent", "ai", "llm", "cli", "terminal", "agent", "judge", "pi"],
+	"keywords": ["coding-agent", "pi-coding-agent", "ai", "llm", "cli", "terminal", "agent", "judge", "pi", "mcp", "prompt-injection"],
 	"homepage": "https://github.com/qybaihe/mu",
 	"repository": {
 		"type": "git",

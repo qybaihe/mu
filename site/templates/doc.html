@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ doc.title }} · mu{% endblock %}
+{% block description %}{{ doc.summary | striptags }}{% endblock %}
+{% block content %}
+  <div class="wrap docs">
+    <details class="docs-nav" open>
+      <summary>{{ U.index_label }}</summary>
+      <a class="docs-home{% if page.key == 'docs' %} on{% endif %}" href="{{ url(L, pages.docs) }}">{{ U.index_label }}</a>
+      {% for S in sidebar %}
+      <p class="docs-nav-title">{{ S.title }}</p>
+      {% for E in S.entries %}<a href="{{ url(L, E.page) }}"{% if E.slug == doc.slug %} class="on" aria-current="page"{% endif %}>{{ E.title }}</a>
+      {% endfor %}
+      {% endfor %}
+    </details>
+    <article class="docs-main">
+      <header class="docs-head">
+        <p class="label intro" style="--d: 120ms">{{ doc.section }}</p>
+        <h1 class="intro" style="--d: 180ms">{{ doc.title }}</h1>
+        <p class="page-lead intro" style="--d: 240ms">{{ doc.summary }}</p>
+      </header>
+      <div class="prose intro" style="--d: 300ms">
+{{ doc.body }}
+      </div>
+      <nav class="docs-pager" aria-label="{{ U.prev | e }} / {{ U.next | e }}">
+        {% if doc.prev %}<a class="prev" href="{{ url(L, doc.prev.page) }}"><span>{{ U.prev }}</span>{{ doc.prev.title }}</a>{% else %}<span></span>{% endif %}
+        {% if doc.next %}<a class="next" href="{{ url(L, doc.next.page) }}"><span>{{ U.next }}</span>{{ doc.next.title }}</a>{% endif %}
+      </nav>
+    </article>
+    {% if toc %}
+    <aside class="docs-toc">
+      <p class="toc-title">{{ L.ui.toc }}</p>
+      {% for T in toc %}<a href="#{{ T.id }}">{{ T.text }}</a>
+      {% endfor %}
+    </aside>
+    {% endif %}
+  </div>
+{% endblock %}

@@ -10,7 +10,7 @@
   <a href="https://github.com/qybaihe/mu/actions/workflows/desktop.yml"><img src="https://github.com/qybaihe/mu/actions/workflows/desktop.yml/badge.svg" alt="Desktop app"></a>
   <a href="https://www.npmjs.com/package/mu-agent"><img src="https://img.shields.io/npm/v/mu-agent?label=mu-agent" alt="npm"></a>
   <a href="https://github.com/qybaihe/mu/releases"><img src="https://img.shields.io/github/v/release/qybaihe/mu?include_prereleases&label=desktop" alt="Desktop release"></a>
-  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-MIT%20%2B%20Apache--2.0-blue" alt="License"></a>
+  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a>
   <a href="https://github.com/qybaihe/mu/discussions"><img src="https://img.shields.io/github/discussions/qybaihe/mu?label=discussions" alt="Discussions"></a>
 </p>
 
@@ -18,11 +18,20 @@
   <a href="../../README.md">English</a> · <a href="README.zh-CN.md">简体中文</a> · <b>繁體中文</b> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a>
 </p>
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="run-dark.gif">
+    <img src="run-light.gif" alt="桌面版裡的一次執行，專案是任務佇列 relay。訊息：relay.config.json 裡 timeout 設為 1h30m 的任務，跑一個小時左右就被終止，找出原因、修好，並確認測試都能通過。判定器把訊息判為多步驟任務（input.preflight）。模型跑測試，判定器放行（tool.approval）：13 個裡失敗了 1 個。模型讀時長解析器，發現一分鐘被定義成 1,000 毫秒，說要改成 60,000 再跑一次測試，然後沒做就停了。判定器認為這次執行半途而止（turn.continue），mu 提醒模型這一輪還沒完，模型改好單位、再跑測試：13 個全部通過。右側判定頁逐條列出每次判定、判定點和耗時。">
+  </picture>
+  <br>
+  <sub>在桌面版裡錄下的一次執行。程式設計模型的回覆是為錄製寫好的腳本（介面上顯示為 GPT-6.1 Sol），專案和側欄裡之前的對話也是為錄製準備的；判定器的裁決、耗時和那次復原都是真的：模型話說一半就停了，<code>turn.continue</code> 發現了，mu 讓它回去做完。</sub>
+</p>
+
 一個程式設計代理每個工作階段要做幾百個和程式碼無關的決定：什麼留在上下文裡，一條指令安不安全，一個發現值不值得告訴另一個代理，工作做完了沒有。交給大模型，花的是 token、延遲和注意力；交給寫死的規則，錯得太多。mu 把它們交給一個**判定器**：一個小而快的模型，每次只回答一個有邊界的問題，每一輪有 40 個判定點。大模型把注意力留給正事。
 
 - **mu**：命令列。pi 的全部能力，加上判定核心。
-- **mu 桌面版**：原生應用程式，內建 mu 和執行環境。下載，接上一個模型，開始。
-- **Jev**：判定器。是非題、選擇題、評分題，每個答案帶機率，每一次判定都記進判定帳本。本機判定器（Laya）或任何一個大模型都可以接管某個判定點。
+- **mu 桌面版**：內建 mu 和執行環境的桌面應用程式。下載，接上一個模型，開始。
+- **判定器**：預設的判定模型是 Jev，由 TypeSafe 託管。是非題、選擇題、評分題，每個答案帶機率，每一次判定都記進判定帳本。任何判定模型都可以取代它：本機的 Laya（審批除外）、你自己的 System One 服務，或任何一個大模型。
 
 > 還在早期開發。預發布版（0.1.x）在 npm 和 [Releases](https://github.com/qybaihe/mu/releases) 上，作者每天都在用。名稱、設定和格式都可能改變。
 
@@ -30,7 +39,7 @@
 
 ## 快速開始
 
-**桌面版。** 從 [Releases](https://github.com/qybaihe/mu/releases/latest) 下載 macOS、Windows 或 Linux 安裝檔，開啟後貼上一組 API 金鑰，或用 ChatGPT、Claude、Grok、Google 訂閱登入。不需要再安裝其他東西。
+**桌面版。** 從 [Releases](https://github.com/qybaihe/mu/releases/latest) 下載 macOS、Windows 或 Linux 安裝檔，開啟後貼上一組 API 金鑰，或用 ChatGPT、Grok、Google 訂閱登入。不需要再安裝其他東西。
 
 **命令列。**
 
@@ -40,7 +49,7 @@ mu setup            # 接上一個模型
 mu                  # 在目前目錄開一個工作階段
 ```
 
-開始使用不需要判定器的金鑰：設定之前，由 OpenCode Zen 上免費的 Jev 回答。所有判定點一開始就生效，每次判定都會記錄下來（`/status`、`mu ledger`、桌面版的判定分頁）。如果只想記錄判定器會怎麼做、不改變行為，在 `~/.mu/agent/mu.json` 寫入 `{"modes": {"default": "shadow"}}`。更多請見 [Getting started](../getting-started.md)（英文）。
+開始使用不需要判定器的金鑰：設定之前，由 OpenCode Zen 上免費的 Jev 回答。40 個判定點裡有 35 個一開始就生效（免摘要壓縮和寫偏即停要你開啟才執行，子代理修補的範圍檢查預設關閉，通知分流和中途插話只記錄），每次判定都會記錄下來（`/status`、`mu ledger`、桌面版的判定分頁）。如果只想記錄判定器會怎麼做、不改變行為，在 `~/.mu/agent/mu.json` 寫入 `{"modes": {"default": "shadow"}}`。更多請見 [Getting started](../getting-started.md)（英文）。
 
 ## 一輪是怎麼走的
 
@@ -58,7 +67,7 @@ mu                  # 在目前目錄開一個工作階段
  一輪結束 ──▶ turn.completion · turn.continue · turn.drift · turn.rewind · memory.applied · board.read · cache.warming
 ```
 
-每個名字都是一個判定點。每個判定點是一個關於一小段狀態的短問題；答案改變模型接下來做什麼，從不改變它要不要問你。規則是底線：看起來危險的指令先由規則攔下，判定器只負責確認這是你要的。
+每個名字都是一個判定點。每個判定點是一個關於一小段狀態的短問題；答案決定接下來怎麼走。規則是底線：看起來危險的指令先由規則攔下，判定器只負責確認這是你要的。
 
 ## 判定點
 
@@ -81,7 +90,7 @@ mu                  # 在目前目錄開一個工作階段
 | `tool.admission` | 一段長工具輸出的每一塊：現在重要嗎？ | 重要的進上下文；其餘封存，留一個指標 |
 | `tool.admission.test-log` | 測試記錄裡哪些是重複？ | 完全相同的重複只留一份，無損；也可以讓判定器從剩下的裡面挑 |
 | `context.forget` | 上下文超過門檻後，哪些工具結果已經過期？ | 每一條在送出的請求裡變成一行墓碑 |
-| `context.compact` | 這一段留還是刪？ | 依判定壓縮；不寫摘要 |
+| `context.compact` | 這一段留還是刪？ | 預設關閉。依判定壓縮；不寫摘要 |
 | `memory.recall` | 哪些經驗適用於這個任務？ | 帶進這一輪 |
 | `memory.capture` | 這則訊息是在糾正代理，還是在立一條規矩？ | 變成一條經驗 |
 | `memory.outcome` | 繞了圈子之後，最後走通的那條路值得記嗎？ | 從執行中學來的經驗，不是你教的 |
@@ -96,7 +105,7 @@ mu                  # 在目前目錄開一個工作階段
 | 判定點 | 問題 | 效果 |
 | --- | --- | --- |
 | `tool.risk` | 一條被規則標記的指令：是你要的嗎？ | 拿不準就問你 |
-| `tool.approval` | 在「Jev 審批」模式下：這條指令、這個專案外的變更、這個對外動作、這個子代理，任務明確需要嗎？ | 確定需要的直接放行；其餘問你 |
+| `tool.approval` | 在「判定模式」下：這條指令、這個專案外的變更、這個對外動作、這個子代理，任務明確需要嗎？ | 判定器確定需要的直接放行；其餘問你 |
 | `tool.constraint` | 在一個會改變東西的呼叫之前：它越過了你定下的約束嗎？ | 呼叫被攔下 |
 | `tool.injection` | 網頁、搜尋結果、MCP 伺服器的輸出，或指令從別的機器取回的內容（`curl`、`gh issue view`），一段一段看：裡面有沒有衝著 AI 來的指令？ | 這些段落不會到達模型，原處留一條說明。讀到過這種段落的子代理，報告交回時前面會附一句警告 |
 | `tool.description` | MCP 工具自己的說明，第一次出現或變了時：是不是要 AI 做呼叫這個工具以外的事（讀金鑰、把資料送到別處、瞞著你）？ | 這個工具從模型的工具列表裡拿掉，呼叫也會被拒絕，並告訴你 |
@@ -114,7 +123,7 @@ mu                  # 在目前目錄開一個工作階段
 | `turn.rewind` | 同一個失敗一次又一次：這條路是死路嗎？ | 退回到某個檢查點 |
 | `turn.completion` | 模型說做完了：有什麼東西驗證過嗎？ | 沒有就提醒一次 |
 | `turn.continue` | 一輪停在「接下來我跑一下測試」，或在你已經要它做的事上問「要我動手嗎」：是不是沒做完就停了？ | 讓它接著做，每則訊息最多兩次；難以撤銷的一步不會推它去做 |
-| `output.drift` | 模型正在寫的時候：輸出的末尾越過了你的約束嗎？ | 實驗性；邊寫邊糾正 |
+| `output.drift` | 模型正在寫的時候：輸出的末尾越過了你的約束嗎？ | 實驗性，預設關閉；邊寫邊糾正 |
 | `goal.met` | 目標模式下大模型給不出答案時：條件成立了嗎？ | `/goal` 的備援 |
 | `board.read` | 事情做到哪了，選擇題？ | 供人話看板使用 |
 | `notify.routing` | 上下文預算之類的事件：現在告訴模型，晚點，還是不說？ | 模型在合適的時候被告知 |
@@ -133,12 +142,12 @@ mu                  # 在目前目錄開一個工作階段
 
 ## 判定器
 
-- **Jev**（雲端）。有邊界的問題，答案帶機率。可以經 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI，或任何支援同一協定的服務呼叫，每個服務有自己的金鑰（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`）：在桌面版的「判定器」頁選一個，預設用第一個設定了金鑰的。一把金鑰都沒有時，預設由 OpenCode Zen 上限時免費的 Jev 1.13 回答：判定要讀的內容會送到 OpenCode，它不拿來訓練模型，mu 每天提示一次。設定金鑰（`mu setup`，或「判定器」頁）後，下一個問題起就用你的金鑰。在作者自己的工作階段裡實測：HTTP/2 上一個熱連線的問題約 0.3 秒；16 塊工具輸出併成一個請求判完 0.44 秒，狀態只計費一次。判定、機率和耗時都進判定帳本：`mu ledger`，或桌面版的「判定」頁。
-- **Laya**（本機）。一個 3.22 億參數的判定器，在你的機器上執行，不經過網路。未經你同意不下載任何東西。在簡單述詞上可靠，在後設判斷上偏弱：先讓它以影子模式和 Jev 並行執行，看過判定帳本再把判定點交給它。
+- **Jev**：TypeSafe 託管的判定模型，回答有邊界的問題，答案帶機率。可以經 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI，或任何支援同一協定的服務呼叫，每個服務有自己的金鑰（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`）：在桌面版的「判定器」頁選一個，預設用第一個設定了金鑰的。一把金鑰都沒有時，預設由 OpenCode Zen 上限時免費的 Jev 1.13 回答：判定要讀的內容會送到 OpenCode，它不拿來訓練模型，mu 每天提示一次。設定金鑰（`mu setup`，或「判定器」頁）後，下一個問題起就用你的金鑰。在作者自己的工作階段裡實測：HTTP/2 上一個熱連線的問題約 0.3 秒；16 塊工具輸出併成一個請求判完 0.44 秒，狀態只計費一次。判定、機率和耗時都進判定帳本：`mu ledger`，或桌面版的「判定」頁。
+- **Laya**（本機）。一個 3.22 億參數的判定器，在你的機器上執行，不經過網路。未經你同意不下載任何東西。在簡單述詞上可靠，在後設判斷上偏弱：先讓它以影子模式和你目前的判定器並行執行，看過判定帳本再把判定點交給它。
 - **pi 模型目錄裡的任何分類模型**，作為一個層級：`classifier:<provider>/<model>`。例如 Cloudflare 的 Clef（`clef`、`clef-flash`）、OpenRouter 和 Vercel AI Gateway 上的 System One 模型、llama.cpp 的分類模型。
 - **任何大模型**，作為一個層級：`llm:<provider>/<model>`。
 
-這換來什麼，以作者自己的工作階段為準：上下文從不填滿，因為工具輸出逐塊進入、過期結果不寫摘要直接放下；最長的幾份失敗測試記錄裡，折疊完全相同的重複省下 51% 的字元，一個字元也沒丟（見[實測](#實測)）；提示快取保持熱的，因為核心會猜你什麼時候回來。
+這換來什麼，以作者自己的工作階段為準：上下文很少填滿，因為工具輸出逐塊進入、過期結果不寫摘要直接放下；測試記錄精簡預設關閉，開啟後折疊完全相同的重複，在最長的幾份失敗測試記錄裡省下 51% 的字元，一個字元也沒丟（見[實測](#實測)）；提示快取過期之前，核心會判斷你會不會回來，會回來就提前續上。
 
 ## 實測
 
@@ -155,7 +164,7 @@ mu                  # 在目前目錄開一個工作階段
 
 <p align="center"><img src="test-log-folding.gif" width="960" alt="一次 338 行的 Vitest 失敗執行捲動而過，重複的 diff 段被標出。接著是模型讀到的同一次執行：135 行，每段折疊的重複只剩一行標記。7,686 字元變成 4,262 字元，沒有呼叫模型。"></p>
 
-**依目標挑選。** 使用詳細 reporter 時，該留什麼取決於你問的是什麼：除錯失敗時，通過的測試是雜訊；問哪些測試跑過時，它們就是證據。Jev 在一個請求裡，對每一塊通過記錄、每一塊測試輸出各問一次：目標還需要它嗎？摘要和每一個失敗從不參與提問。只有 Jev 給「不需要」的機率達到 0.9 以上，這一塊才會省掉。
+**依目標挑選。** 使用詳細 reporter 時，該留什麼取決於你問的是什麼：除錯失敗時，通過的測試是雜訊；問哪些測試跑過時，它們就是證據。判定器在一個請求裡，對每一塊通過記錄、每一塊測試輸出各問一次：目標還需要它嗎？摘要和每一個失敗從不參與提問。只有判定器給「不需要」的機率達到 0.9 以上，這一塊才會省掉。這些實測用的判定器是 Jev。
 
 <p align="center">
   <picture>
@@ -207,7 +216,7 @@ mu                  # 在目前目錄開一個工作階段
 
 因為板只增不刪，後來的結論會推翻早先的：一隻 bee 回報測試跑不起來，後來清掉一個環境變數就跑起來了。`hive.relate` 讀兩條筆記之間的關係：*推翻*、*矛盾*或*支持*。被推翻的結論變成一條更正，送給每一隻拿著舊結論的 bee。互相矛盾的兩條都留著，標成爭議；一分鐘內沒人解決，就派一隻核實 bee 去查。
 
-<p align="center"><img src="swarm.png" width="960" alt="桌面版的蜂群頁：四隻 bee 各自在做什麼，它們之間的投遞連接圖，和每一條送達的原文"></p>
+<p align="center"><img src="swarm.zh-CN.png" width="960" alt="桌面版的蜂群頁，/hive 提問之後：config、repro、tests 三隻 bee 都已完成；它們之間送達發現的連接圖；對話裡是回答，指出出問題的那一行、數字和失敗的測試"></p>
 
 桌面版的「蜂群」頁就是這一切的現場。每隻 bee 一行：角色、模型、此刻在做什麼或剛說了什麼。連接圖畫出誰把發現送給了誰：線越粗代表送達越多，更正和爭議各有自己的畫法，一條發現送到的那一刻會沿著線亮一下。資訊流裡是每一條送達的原文，判定記錄裡是每一次裁決。對話裡的蜂群卡片帶一張縮圖，點開就是這一頁。
 
@@ -219,17 +228,24 @@ mu                  # 在目前目錄開一個工作階段
 
 前沿模型一代比一代會做事，卻一代比一代不會講自己做了什麼：回報進度的文字越寫越像給另一台機器讀的輸出，更密、更晦澀，越來越不像人在說話。mu 不讓做事的模型自己回報。開啟看板（`/board`，或桌面版看板頁上的開關）後，代理每做完一步，看板上立刻多一行人話：改了哪個檔案、檢查過沒過、執行了什麼命令，連著讀檔案就折成一行「看了 N 個檔案」。代理做事途中每說一段話，`board.read` 都請判定器判一次這是不是新消息；是，就由一個只因為會講人話而被選中的模型（`/board model` 可換）當場重講給人聽，並同時更新看板的現況：現在在做什麼，清單上幾件事做完了幾件，有什麼在等你。一次執行結束時的總結是流水的最後一行，過程留在上面，所以你看到的不只是「做完了」，還有它到底做了什麼。
 
-<p align="center"><img src="board.png" width="960" alt="桌面版的人話看板：進展到哪、在做什麼、之前發生了什麼；頂端是上下文用量和快取命中率"></p>
+<p align="center"><img src="board.zh-CN.png" width="960" alt="桌面版的人話看板，蜂群回答之後：在等你決定要不要修，唯一需要你確認的問題，以及之前發生了什麼；頂端是上下文用量和快取命中率"></p>
 
 做事的模型照舊用自己的語言做事；看板上出現的字，始終一眼就讀得懂。看板跟著權限模式、目標和子代理走，代理換了做法，看板也換一種說法。頂端兩個數字是上下文用量和快取命中率，正是上面那些上下文和快取判定的直接結果。
 
 ## 桌面版
 
-原生應用程式，內建 mu 和執行環境：不用安裝 Node，第一次啟動不下載任何東西。命令列有的它都有，另外在對話旁邊加了一塊工作面板：
+桌面應用程式，內建 mu 和執行環境：不用安裝 Node，第一次啟動不下載任何東西。命令列有的它都有，另外在對話旁邊加了一塊工作面板：
 
 **看板** · **判定**（即時的判定帳本：每一次判定和它的問題） · **蜂群** · **經驗** · **檔案** · **預覽** · **原始碼** · **瀏覽器**（代理一步步操作的內建瀏覽器，帶目標、暫停和停止）
 
-權限模式和目標在傳送框裡；`⌘K` 開啟命令面板。模型登入在應用程式內完成：ChatGPT、Claude、Grok 和 Google（Gemini CLI / Antigravity）訂閱，或任何 pi 支援的供應商的 API 金鑰。Claude Code 和 Codex CLI 的對話可以匯入並接著聊。
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="app-dark.zh-CN.png">
+    <img src="app-light.zh-CN.png" width="880" alt="mu 桌面版在任務佇列專案 relay 裡修好一個 bug 之後：timeout 為 1h30m 的任務一小時就被終止，因為一分鐘被定義成了 1,000 毫秒。判定器把訊息判為多步驟任務（input.preflight），兩次跑測試都放行（tool.approval），並判定這一輪已經做完（turn.continue）。右側判定頁列出每次判定的判定點和耗時，約 70 到 120 毫秒。側欄裡是三個專案裡之前的對話，底部的列顯示判定器（Jev，經 TypeSafe）、40 個判定點裡啟用了 38 個、5 次判定和上下文用量。">
+  </picture>
+</p>
+
+底部的一條列讓核心一直在視線裡：哪個判定器在回答、跑在哪裡，啟用了多少個判定點；在對話裡，還有到目前為止的判定數、最近一次判定的耗時和上下文用量。權限模式和目標在傳送框裡；`⌘K` 開啟命令面板。模型登入在應用程式內完成：ChatGPT、Grok 和 Google（Gemini CLI / Antigravity）訂閱，或任何 pi 支援的供應商的 API 金鑰。Claude Code、Codex CLI 和 ZCode 的對話可以匯入並接著聊。
 
 macOS（Apple 晶片 / Intel）、Windows（x64 / Arm）、Linux（x64 / Arm）的安裝檔由 GitHub Actions 建置，發布在 [Releases](https://github.com/qybaihe/mu/releases)。
 
@@ -241,7 +257,14 @@ mu            # 在目前目錄開一個互動式工作階段
 mu doctor     # 檢查安裝、判定器和各項連線
 ```
 
-需要 Node 22.19 或更新版本。`mu -p "prompt"` 執行一次並印出結果；`mu -c` 接續上一個工作階段。`mu import --list` 找出你的 Claude Code 和 Codex 對話，`mu import <file>` 把它們匯入。`mu ledger [n]` 印出最近 n 個工作階段裡判定器的決定。命令列和桌面版共用帳號、設定和經驗。
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="cli-dark.png">
+    <img src="cli-light.png" width="720" alt="終端機裡 mu 的歡迎畫面：μ 標記，「mu v0.1.10, judgment-first coding agent, built on pi 1.3.0」，接著是判定器（Jev，137 毫秒回答，判定點已啟用）、模型和工作目錄，以及值得記住的幾個按鍵。">
+  </picture>
+</p>
+
+需要 Node 22.19 或更新版本。`mu -p "prompt"` 執行一次並印出結果；`mu -c` 接續上一個工作階段。`mu import --list` 找出你的 Claude Code、Codex 和 ZCode 對話，`mu import <file>` 連同完整歷史一起匯入；之後再匯入一次，會把新增的內容帶過來。`mu ledger [n]` 印出最近 n 個工作階段裡判定器的決定。命令列和桌面版共用帳號、設定和經驗。在終端機裡，mu 使用自己的 `mu-dark` 和 `mu-light` 主題，直到你在 `/settings` 裡另選一個（`system` 跟隨終端機的配色）。
 
 | 指令 | 做什麼 |
 | --- | --- |
@@ -251,7 +274,7 @@ mu doctor     # 檢查安裝、判定器和各項連線
 | `/mu mode <point> <off\|shadow\|active>` | 切換某一個判定點 |
 | `/frame` | 任務框架：目標、你的約束及其出處、驗收條件 |
 | `/goal <condition>` | 一直做到條件成立；`/goal clear` 結束 |
-| `/permissions` | 全部放行 / Jev 審批 / 最小權限 |
+| `/permissions` | 全部放行 / 判定模式 / 最小權限 |
 | `/board` | 開啟或關閉人話看板 |
 | `/remember`、`/lessons`、`/forget` | 記一條經驗、列出經驗、讓一條退役 |
 | `/skills` | mu 從執行裡起草的技能：查看、安裝或丟掉 |
@@ -260,10 +283,10 @@ mu doctor     # 檢查安裝、判定器和各項連線
 | `/agents`、`/swarm` | 派子代理；看正在工作的每一隻 |
 | `/browse`、`/jobs` | 內建瀏覽器；背景指令 |
 | `/capabilities`、`/ledger` | 裝了哪些能力、開啟了哪些；最近的判定 |
-| `/import-chat` | 匯入 Claude Code 或 Codex 的對話 |
+| `/import-chat` | 匯入 Claude Code、Codex 或 ZCode 的對話 |
 | `/doctor` | 檢查設定和連線 |
 
-pi 自己的指令（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export` 等）原樣保留。`MU_JUDGE=laya,jev mu` 只為這一次執行更換判定器。
+pi 自己的指令（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export` 等）原樣保留，只有一處不同：`/login` 不提供 Claude 訂閱登入（Anthropic 不允許其他應用程式提供），請改用 Anthropic API 金鑰。`MU_JUDGE=laya,jev mu` 只為這一次執行更換判定器。
 
 ## 隱私
 
@@ -292,7 +315,9 @@ npm run check                  # 格式、靜態檢查、型別
 
 ## 來源與授權
 
-mu 以 [pi](https://github.com/earendil-works/pi)（程式設計代理，MIT；根目錄的 [LICENSE](../../LICENSE) 涵蓋 `packages/` 和 `kyrn/`）和 [AionUi](https://github.com/iOfficeAI/AionUi)（桌面版，Apache 2.0；`desktop/` 保留它的 [LICENSE](../../desktop/LICENSE)）為基礎改造，感謝這兩個專案。有幾個判定點參考了其他專案：提示注入篩檢的問法來自 [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills)，續跑檢查和批次判定工具參考了 [oh-my-pi](https://github.com/can1357/oh-my-pi)。判定核心用到的第三方程式碼列在 [THIRD_PARTY_NOTICES.md](../../packages/kyrn-judge/THIRD_PARTY_NOTICES.md)。
+mu 採用 MIT 授權（[LICENSE](../../LICENSE)；桌面版見 [desktop/LICENSE](../../desktop/LICENSE)）。它以 [pi](https://github.com/earendil-works/pi)（程式設計代理，MIT）為基礎建構，感謝 pi 的作者。有幾個判定點參考了其他專案：提示注入篩檢的問法來自 [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills)，續跑檢查和批次判定工具參考了 [oh-my-pi](https://github.com/can1357/oh-my-pi)。判定核心用到的第三方程式碼列在 [THIRD_PARTY_NOTICES.md](../../packages/kyrn-judge/THIRD_PARTY_NOTICES.md)。
+
+桌面版最初 fork 自 [AionUi](https://github.com/iOfficeAI/AionUi)，從 AionUi 帶來的檔案列在 [desktop/APACHE-FILES.txt](../../desktop/APACHE-FILES.txt)，仍以 Apache License 2.0 授權（見 [desktop/NOTICE](../../desktop/NOTICE)）。
 
 ## 社群支援
 

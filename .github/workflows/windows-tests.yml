@@ -73,7 +73,7 @@ jobs:
 
       # As in CI's harness job: some tests start child processes that load the built packages.
       - name: Build
-        run: npm run build
+        run: npm run build:pinned
 
       - name: Judgment layer tests
         working-directory: packages/kyrn-judge

@@ -5,7 +5,7 @@
  */
 
 import type { TChatConversation } from '@/common/config/storage';
-import AionModal from '@/renderer/components/base/AionModal';
+import MuModal from '@/renderer/components/base/MuModal';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useRovingRows } from '@/renderer/hooks/ui/useRovingRows';
 import { useCronJobsMap } from '@/renderer/pages/cron';
@@ -348,8 +348,8 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
         </div>
       )}
 
-      {/* 归档项目确认弹窗 — 使用项目自家 AionModal + 圆角线框按钮（归档为非危险态，用主色） */}
-      <AionModal
+      {/* 归档项目确认弹窗 — 使用项目自家 MuModal + 圆角线框按钮（归档为非危险态，用主色） */}
+      <MuModal
         visible={archiveProjectTarget !== null}
         style={{ width: '400px' }}
         header={{
@@ -413,7 +413,7 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
             count: archiveProjectTarget?.conversations.length ?? 0,
           })}
         </div>
-      </AionModal>
+      </MuModal>
 
       <div ref={rowListRef} onFocus={onRowFocus} onKeyDown={onRowKeyDown}>
         {/* L1: Pinned section */}

@@ -1,3 +1,4 @@
+import { isImportTool } from '../../kyrn/importChats.ts';
 import { asObject, asText, type JsonObject } from './records.ts';
 
 /**
@@ -5,7 +6,8 @@ import { asObject, asText, type JsonObject } from './records.ts';
  * conversation whose host is not running, so the screen can say which model, thinking level and permission mode the
  * next message will meet without starting a host.
  *
- * - model: the latest `model_change` or assistant message on the branch (pi's `getSessionContextSettings`);
+ * - model: the latest `model_change` or assistant message on the branch (pi's `getSessionContextSettings`), apart
+ *   from a reply imported from another tool, which names the tool as its provider: pi cannot go on with that model;
  * - thinking level: the latest `thinking_level_change` on the branch (pi writes one when a session starts);
  * - permission mode: the latest `mu.permissions` entry on the branch (mu's permissions feature, `session_start`).
  *
@@ -15,14 +17,14 @@ export type SessionSettings = {
   /** `provider/id`. */
   model?: string;
   thinkingLevel?: string;
-  /** `full`, `jev` or `ask`. */
+  /** `full`, `judge` or `ask`. */
   permissions?: string;
 };
 
 /** The custom entry mu keeps a conversation's permission mode in (PERMISSIONS_ENTRY in the harness). */
 export const PERMISSIONS_ENTRY = 'mu.permissions';
 
-/** Permission modes are words (`full`, `jev`, `ask`). */
+/** Permission modes are words (`full`, `judge`, `ask`). */
 const MODE_ID = /^[a-z][a-z0-9-]{0,31}$/;
 
 const modelOf = (provider: unknown, id: unknown): string | undefined => {
@@ -49,13 +51,15 @@ export function sessionSettings(entries: readonly unknown[], leafId?: string | n
       settings.model = modelOf(entry.provider, entry.modelId) ?? settings.model;
     } else if (entry.type === 'message') {
       const message = asObject(entry.message);
-      if (message.role === 'assistant') settings.model = modelOf(message.provider, message.model) ?? settings.model;
+      if (message.role === 'assistant' && !isImportTool(message.provider))
+        settings.model = modelOf(message.provider, message.model) ?? settings.model;
     } else if (entry.type === 'thinking_level_change') {
       const level = asText(entry.thinkingLevel);
       if (level) settings.thinkingLevel = level;
     } else if (entry.type === 'custom' && entry.customType === PERMISSIONS_ENTRY) {
       const mode = asText(asObject(entry.data).mode);
-      if (MODE_ID.test(mode)) settings.permissions = mode;
+      // `jev` is Judge mode's name before mu 0.1.12, which conversations saved then still say.
+      if (MODE_ID.test(mode)) settings.permissions = mode === 'jev' ? 'judge' : mode;
     }
   }
   return settings;

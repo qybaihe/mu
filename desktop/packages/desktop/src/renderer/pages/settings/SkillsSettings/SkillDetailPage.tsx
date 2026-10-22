@@ -314,7 +314,7 @@ const SkillDetailPage: React.FC = () => {
                   onClick={editViaChat}
                   className='!h-24px !px-8px !text-12px !text-t-secondary hover:!text-t-primary'
                 >
-                  {t('settings.skillsHub.editViaChat.buttonLabel', { defaultValue: 'Edit via chat' })}
+                  {t('settings.skillsHub.editViaChat.buttonLabel', { defaultValue: 'Edit in a conversation' })}
                 </Button>
               }
             >

@@ -18,8 +18,8 @@ import { createFakeHost, type FakeHost } from './fakeClient';
 import { delta, ended, frame, reply, text, user } from './records';
 
 /**
- * The bottom of a native conversation against an in-memory host: the send box in each state (idle, a message Jev
- * reads, a run going), the queue, the status line, the notices about mu, and a panel's command. The shared send box
+ * The bottom of a native conversation against an in-memory host: the send box in each state (idle, a message the
+ * judge reads, a run going), the queue, the status line, the notices about mu, and a panel's command. The shared send box
  * is stood in for by its contract (value, send, stop, loading, sending while loading, tools, test ids), so the ids
  * found here are the ones the native screen gives the real box.
  */
@@ -131,7 +131,7 @@ const running = (host: FakeHost) =>
   });
 
 describe('the native send box', () => {
-  it('sends a prompt, holds the box while Jev reads it, and stops it there', async () => {
+  it('sends a prompt, holds the box while the judge reads it, and stops it there', async () => {
     const host = createFakeHost();
     host.add({ id: 'c1' });
     const gate: { release?: () => void } = {};
@@ -153,10 +153,10 @@ describe('the native send box', () => {
     // On its way: the run it starts has not begun, so the status is still the last run's.
     expect(status()).toHaveAttribute('data-sending', 'true');
     expect(status()).toHaveAttribute('data-status', 'idle');
-    // Jev reads the message: the box holds (no second prompt), says so, and offers to stop.
+    // The judge reads the message: the box holds (no second prompt), says so, and offers to stop.
     expect(box()).toHaveAttribute('data-loading', 'true');
     expect(box()).toHaveAttribute('data-send', 'false');
-    expect(status()).toHaveTextContent('Jev is reading your message…');
+    expect(status()).toHaveTextContent('The judge is reading your message…');
     await act(async () => {
       fireEvent.click(screen.getByTestId('native-abort'));
     });
@@ -177,7 +177,7 @@ describe('the native send box', () => {
     expect(screen.getByTestId('native-send-mode')).toBeInTheDocument();
     expect(box()).toHaveAttribute('data-loading', 'true');
     expect(box()).toHaveAttribute('data-send', 'true');
-    expect(input()).toHaveAttribute('placeholder', 'Steer mu now, or leave a message for after this run…');
+    expect(input()).toHaveAttribute('placeholder', "Steer mu now, or queue a message for when it's done…");
     type('also check the tests');
     await send();
     fireEvent.click(screen.getByText('After'));
@@ -248,7 +248,7 @@ describe('the native send box', () => {
     expect(stopped).toHaveTextContent('Send a message to start mu again.');
     type('hello');
     await send();
-    expect(screen.getByTestId('native-command-failed')).toHaveTextContent('mu did not answer in time.');
+    expect(screen.getByTestId('native-command-failed')).toHaveTextContent("mu didn't respond in time.");
     // What did not reach pi is back in the box.
     expect(input()).toHaveValue('hello');
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
@@ -264,7 +264,7 @@ describe('the native send box', () => {
     await send();
     const card = screen.getByTestId('native-command-failed');
     expect(card).toHaveAttribute('data-kind', 'no-folder');
-    expect(card).toHaveTextContent('The project folder no longer exists, so mu cannot start in it.');
+    expect(card).toHaveTextContent("The project folder no longer exists, so mu can't start there.");
     expect(card).toHaveTextContent('/work/gone');
     expect(input()).toHaveValue('go on');
   });
@@ -299,11 +299,11 @@ describe('the native send box', () => {
     act(() => {
       host.push('c1', frame('progress', { step: 'Checking lessons', code: 'lessons' }));
     });
-    expect(status()).toHaveTextContent('Checking lessons from earlier sessions');
+    expect(status()).toHaveTextContent('Checking lessons from earlier conversations');
     act(() => {
       host.push('c1', { type: 'auto_retry_start', attempt: 1, maxAttempts: 3, delayMs: 2000, errorMessage: '529' });
     });
-    expect(status()).toHaveTextContent('The model request failed. Trying again (1 of 3)…');
+    expect(status()).toHaveTextContent('Model request failed. Retrying (1 of 3)…');
     act(() => {
       host.play('c1', [
         { type: 'auto_retry_end', success: true },

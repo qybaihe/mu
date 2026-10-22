@@ -6,6 +6,21 @@
   overflow-y: auto;
   background: var(--bg-base);
   color: var(--text-primary);
+  isolation: isolate;
+}
+
+/* The same atmosphere as the home page: a glow from the top and a dot grid that fades out. Decoration only. */
+.screen::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 46% at 50% -6%, var(--mu-glow-violet, transparent), transparent 72%),
+    radial-gradient(34% 30% at 88% 4%, var(--mu-glow-pink, transparent), transparent 70%),
+    radial-gradient(circle at 1px 1px, var(--mu-grid-dot, transparent) 1px, transparent 1.4px) 0 0 / 22px 22px;
+  mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.55) 40%, transparent 75%);
 }
 
 /* The window has no title bar here: this strip is what it is moved by. */
@@ -25,7 +40,7 @@
 }
 
 .columnIntro {
-  margin-top: 10vh;
+  margin-top: 8vh;
 }
 
 .header {
@@ -53,12 +68,20 @@
   font-size: 12px;
 }
 
+/*
+ * Where the setup stands: one column per step, its number in mono and its name, over a bar that fills in violet as the
+ * steps are reached. The numbers are counters, so the list reads as the step names alone.
+ */
 .steps {
-  display: flex;
-  gap: 18px;
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 8px;
+  align-self: stretch;
   margin: 0;
   padding: 0;
   list-style: none;
+  counter-reset: step;
   color: var(--text-tertiary, var(--text-secondary));
   font-size: 12px;
   font-weight: 500;
@@ -66,28 +89,37 @@
 
 .stepItem {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 6px;
+  min-width: 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border-base);
+  white-space: nowrap;
+  counter-increment: step;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
 
-.stepDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-border-3);
-  transition: background-color 0.2s ease;
+.stepItem::before {
+  content: counter(step, decimal-leading-zero);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
 }
 
 .stepReached {
+  border-bottom-color: var(--mu-violet-6, rgb(var(--primary-6)));
   color: var(--text-secondary);
-}
-
-.stepReached .stepDot {
-  background: var(--mu-accent-dot, rgb(var(--primary-6)));
 }
 
 .stepItem[aria-current='step'] {
   color: var(--text-primary);
+}
+
+.stepItem[aria-current='step']::before {
+  color: var(--mu-violet-6, rgb(var(--primary-6)));
 }
 
 .body {
@@ -118,13 +150,31 @@
   letter-spacing: -0.01em;
 }
 
-/* The introduction: what mu is, in one sentence and three points. */
+/* The introduction: what mu is in one line, one turn as the judge sees it, and three points. */
+.eyebrow {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 8px;
+  height: 24px;
+  margin-bottom: 6px;
+  padding: 0 10px 0 6px;
+  border: 1px solid var(--border-base);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-1) 72%, transparent);
+  backdrop-filter: blur(8px);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
 .heroTitle {
   margin: 0;
-  font-size: 32px;
-  font-weight: 650;
-  line-height: 40px;
-  letter-spacing: -0.015em;
+  font-size: clamp(30px, 3.8vw, 38px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
 }
 
 .lead {
@@ -135,6 +185,131 @@
   text-wrap: balance;
 }
 
+/*
+ * The conversations another coding agent left on this computer, offered on the first screen: what mu found, under
+ * each tool's mark, and the way into the import dialog. A hairline box like the turn below it, quieter.
+ */
+.importOffer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 0 22px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-base);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-2) 86%, transparent);
+}
+
+.importText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.importButton {
+  border-radius: 8px;
+}
+
+/*
+ * One turn as the judge sees it: a small ledger in mono, each line a decision point, its verdict and its time, with the
+ * judge's diamond. The lines come in one after another, as the verdicts would.
+ */
+.turn {
+  margin: 0 0 22px;
+  border: 1px solid var(--border-base);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-2) 86%, transparent);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+}
+
+.turnLabel {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border-base);
+  color: var(--text-tertiary, var(--text-secondary));
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.turnRows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 10px 14px 12px;
+  list-style: none;
+}
+
+.turnRow {
+  display: grid;
+  grid-template-columns: 9.5em minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 12.5px;
+  line-height: 24px;
+  animation: verdict 0.36s ease both;
+}
+
+.turnRow:nth-child(2) {
+  animation-delay: 0.45s;
+}
+
+.turnRow:nth-child(3) {
+  animation-delay: 0.9s;
+}
+
+@keyframes verdict {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+}
+
+.turnPoint {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--mu-judge, var(--text-primary));
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+}
+
+.turnPoint::before,
+.judgeMark {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--mu-judge, currentColor);
+  transform: rotate(45deg);
+}
+
+.turnVerdict {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.turnMs {
+  color: var(--text-tertiary, var(--text-secondary));
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .turnRow {
+    animation: none;
+  }
+}
+
+/* The three points, numbered in mono like the steps: counters, so each reads as its title and text alone. */
 .points {
   display: flex;
   flex-direction: column;
@@ -142,49 +317,51 @@
   margin: 0;
   padding: 0;
   list-style: none;
+  counter-reset: point;
 }
 
 .point {
   display: flex;
   gap: 14px;
+  counter-increment: point;
 }
 
-/* A check, not a dot: a dot in a column reads as a radio button. Pastel fill, dark mark. */
-.pointMark {
+.point::before {
+  content: counter(point, decimal-leading-zero);
   flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  margin-top: 2px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #f6dcfd, #d9d3fb);
-  color: #3b2f6b;
+  width: 22px;
+  line-height: 24px;
+  color: var(--mu-violet-6, rgb(var(--primary-6)));
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
 }
 
-/* What already works on a step: one line with a check, quiet, no box. */
+/* What already works on a step: one quiet line in a hairline pill, with a green dot. */
 .ready {
-  display: flex;
+  display: inline-flex;
+  align-self: flex-start;
   align-items: flex-start;
-  gap: 8px;
+  gap: 9px;
   margin: 0 0 14px;
+  padding: 7px 12px;
+  border: 1px solid var(--border-base);
+  border-radius: 10px;
+  background: var(--bg-2);
   color: var(--text-primary);
   font-size: 13px;
   line-height: 20px;
 }
 
-.readyMark {
+.readyDot {
   flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  margin-top: 1px;
+  width: 7px;
+  height: 7px;
+  margin-top: 6.5px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #f6dcfd, #d9d3fb);
-  color: #3b2f6b;
+  background: rgb(var(--success-6));
+  box-shadow: 0 0 0 3px rgb(var(--success-6) / 16%);
 }
 
 .pointTitle {
@@ -227,6 +404,13 @@
   color: rgb(var(--danger-6));
   font-size: 12px;
   line-height: 18px;
+}
+
+.warning {
+  color: rgb(var(--warning-6));
+  font-size: 12px;
+  line-height: 18px;
+  text-wrap: pretty;
 }
 
 /* The ways that need an address typed in: a small title of their own in the list of ways, above its hairline. */
@@ -276,31 +460,48 @@
   margin-top: 5.5px;
 }
 
+/* What was chosen, as a readout: mono labels, the values beside them, the judge marked with its diamond. */
 .summary {
   display: flex;
   flex-direction: column;
   margin: 0;
-  border: 1px solid var(--color-border-2);
+  border: 1px solid var(--border-base);
   border-radius: 12px;
-  background: var(--bg-1);
+  background: var(--bg-2);
 }
 
 .summaryRow {
   display: flex;
+  align-items: baseline;
   gap: 16px;
-  padding: 14px 16px;
+  padding: 13px 16px;
   font-size: 14px;
   line-height: 22px;
 }
 
 .summaryRow + .summaryRow {
-  border-top: 1px solid var(--color-border-1);
+  border-top: 1px solid var(--border-base);
 }
 
 .summaryRow dt {
   flex: none;
-  width: 72px;
-  color: var(--text-secondary);
+  width: 124px;
+  color: var(--text-tertiary, var(--text-secondary));
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.judgeMark {
+  display: inline-block;
+  transform: translateY(-1px) rotate(45deg);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
 }
 
 .summaryRow dd {

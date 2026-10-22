@@ -14,7 +14,7 @@ import { useNativeClient } from '../utils/nativeClient';
 import { folderName } from '../utils/paths';
 
 /** mu's permission modes (MU_PERMISSIONS), named as the settings name them; '' is mu's own default. */
-const MODES = ['full', 'jev', 'ask'] as const;
+const MODES = ['full', 'judge', 'ask'] as const;
 
 const NativeNewConversation: React.FC<{ recent: string[]; onCreated: (conversation: NativeConversation) => void }> = ({
   recent,
@@ -72,7 +72,8 @@ const NativeNewConversation: React.FC<{ recent: string[]; onCreated: (conversati
       <Button
         long
         loading={busy}
-        icon={<FolderOpen theme='outline' size='14' fill={iconColors.secondary} />}
+        // An icon-park icon is a span, which Arco's own spacing (for an svg) misses.
+        icon={<FolderOpen theme='outline' size='14' fill={iconColors.secondary} className='mr-6px' />}
         data-testid='native-project'
         onClick={() => void client.pickFolder().then(start, () => {})}
       >

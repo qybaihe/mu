@@ -393,7 +393,7 @@ export function registerLsp(runtime: KyrnRuntime): void {
 	pi.registerCommand("lsp", {
 		description: say({
 			zh: "语言服务器：装了哪些、哪些在运行、最近一次出错",
-			en: "Language servers: which are installed, which are running, and the last error",
+			en: "Show the language servers: what's installed, what's running and the last error",
 		}),
 		handler: async (_args, ctx) => {
 			runtime.touch(ctx);
@@ -403,9 +403,9 @@ export function registerLsp(runtime: KyrnRuntime): void {
 					server.use === "missing"
 						? "not installed"
 						: server.use === "untrusted"
-							? `${server.executable} · named by this project, which is not trusted: not started`
+							? `${server.executable} · configured by this project, which isn't trusted, so not started`
 							: server.use === "alternative"
-								? `${server.executable} · installed, another server handles these files`
+								? `${server.executable} · installed, but another server handles these files`
 								: server.executable;
 				return [
 					`${server.use === "used" ? "ok  " : "--  "}${server.id.padEnd(28)} ${server.extensions.join(" ")} · ${where}${
@@ -421,13 +421,13 @@ export function registerLsp(runtime: KyrnRuntime): void {
 			});
 			if (known.ignoredProjectFile) {
 				lines.push(
-					`${join(CONFIG_DIR_NAME, PROJECT_SERVERS_FILE)} names servers for this project. It is ignored until the project is trusted (/trust).`,
+					`${join(CONFIG_DIR_NAME, PROJECT_SERVERS_FILE)} configures servers for this project. It's ignored until you trust the project (/trust).`,
 				);
 			}
 			for (const problem of known.problems) lines.push(`problem: ${problem}`);
 			const pending = tracker.all().length;
 			lines.push(
-				`${pending} new diagnostic${pending === 1 ? "" : "s"} tracked this turn · kept out of the context so far: ${runtime.savings.diagnosticsWithheldChars} chars`,
+				`${pending} new diagnostic${pending === 1 ? "" : "s"} tracked this turn · kept out of context so far: ${runtime.savings.diagnosticsWithheldChars} chars`,
 			);
 			ctx.ui.notify(lines.join("\n"), "info");
 		},

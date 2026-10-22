@@ -114,17 +114,11 @@ test('an image sent with a message shows in the person’s row; the context ring
   made.id = decodeURIComponent(p.url().split('/conversation/native/')[1] ?? '');
   expect(made.id).not.toBe('');
 
-  // After the run pi said how full the context is: the ring shows, against the model's window.
-  await expect(ring()).toBeVisible({ timeout: 15_000 });
-  expect(Number(await ring().getAttribute('data-tokens'))).toBeGreaterThan(0);
-  expect(Number(await ring().getAttribute('data-window'))).toBeGreaterThan(0);
-  await shots('image-and-ring');
-  // Its numbers on hover (the popover of mu's other conversations), for a look.
-  await ring().locator('.context-usage-indicator').hover();
-  await sleep(800);
-  await shot('ring-hovered');
-  await p.mouse.move(0, 0);
-  await sleep(600);
+  // After the run pi said how full the context is: the kernel bar along the bottom reads it. With room in the window
+  // the composer has no ring of its own (it shows one only when the window runs short).
+  await expect(p.getByTestId('mu-kernel-session')).toContainText(/\d+\s*%/, { timeout: 15_000 });
+  await expect(ring()).toHaveCount(0);
+  await shots('image-and-context');
   expectNoProblems();
 });
 

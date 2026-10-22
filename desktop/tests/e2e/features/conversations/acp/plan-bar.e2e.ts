@@ -4,7 +4,7 @@ import { test, expect } from '../../../fixtures';
 import { findAssistantIdForBackend, goToGuid } from '../../../helpers';
 import { httpDelete, httpPost } from '../../../helpers/httpBridge';
 
-const ENABLED_CONVERSATION_KEY = 'aionui:e2e-message-stream-conversation-id';
+const ENABLED_CONVERSATION_KEY = 'mu:e2e-message-stream-conversation-id';
 
 type PlanEntry = { content: string; status: 'pending' | 'in_progress' | 'completed' };
 
@@ -75,8 +75,8 @@ async function openConversationPage(page: Page, conversationId: string): Promise
 async function waitForController(page: Page, conversationId: string): Promise<void> {
   await page.waitForFunction(
     (id) => {
-      const registry = (window as typeof window & { __AIONUI_E2E_MESSAGE_STREAM__?: StreamRegistry })
-        .__AIONUI_E2E_MESSAGE_STREAM__;
+      const registry = (window as typeof window & { __MU_E2E_MESSAGE_STREAM__?: StreamRegistry })
+        .__MU_E2E_MESSAGE_STREAM__;
       return Boolean(registry?.controllers[id]);
     },
     conversationId,
@@ -87,8 +87,8 @@ async function waitForController(page: Page, conversationId: string): Promise<vo
 async function emitPlan(page: Page, conversationId: string, entries: PlanEntry[]): Promise<void> {
   await page.evaluate(
     async ({ id, injected }) => {
-      const registry = (window as typeof window & { __AIONUI_E2E_MESSAGE_STREAM__?: StreamRegistry })
-        .__AIONUI_E2E_MESSAGE_STREAM__;
+      const registry = (window as typeof window & { __MU_E2E_MESSAGE_STREAM__?: StreamRegistry })
+        .__MU_E2E_MESSAGE_STREAM__;
       const controller = registry?.controllers[id];
       if (!controller) throw new Error(`No E2E stream controller registered for conversation ${id}`);
       await controller.emitPlan(injected);
@@ -99,8 +99,8 @@ async function emitPlan(page: Page, conversationId: string, entries: PlanEntry[]
 
 async function endPlanTurn(page: Page, conversationId: string): Promise<void> {
   await page.evaluate(async (id) => {
-    const registry = (window as typeof window & { __AIONUI_E2E_MESSAGE_STREAM__?: StreamRegistry })
-      .__AIONUI_E2E_MESSAGE_STREAM__;
+    const registry = (window as typeof window & { __MU_E2E_MESSAGE_STREAM__?: StreamRegistry })
+      .__MU_E2E_MESSAGE_STREAM__;
     const controller = registry?.controllers[id];
     if (!controller) throw new Error(`No E2E stream controller registered for conversation ${id}`);
     await controller.endPlanTurn();

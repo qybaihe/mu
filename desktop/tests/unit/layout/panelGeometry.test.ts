@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { describe, expect, it } from 'vitest';
 import { MIN_TRANSCRIPT_PX, panelGeometry } from '@/renderer/components/layout/WorkPanel/panelGeometry';
 import { WORK_PANEL_MIN_WIDTH } from '@/renderer/components/layout/WorkPanel/workPanelStore';

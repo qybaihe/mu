@@ -51,7 +51,12 @@ describe("kyrn features", () => {
 
 	async function start(
 		responder: MockResponder,
-		extra: { tools?: AgentTool[]; features?: Record<string, unknown>; runner?: SwarmRunner } = {},
+		extra: {
+			tools?: AgentTool[];
+			features?: Record<string, unknown>;
+			modes?: Record<string, string>;
+			runner?: SwarmRunner;
+		} = {},
 	): Promise<Harness> {
 		const harness = await createHarness({
 			tools: extra.tools,
@@ -60,7 +65,10 @@ describe("kyrn features", () => {
 					provider: new MockJudgeProvider(responder),
 					mode: "active",
 					// Each test here is about one feature; asking permission is tested in permissions.test.ts.
-					config: parseConfig({ features: { memory: false, permissions: { mode: "full" }, ...extra.features } }),
+					config: parseConfig({
+						modes: extra.modes,
+						features: { memory: false, permissions: { mode: "full" }, ...extra.features },
+					}),
 					swarmRunner: extra.runner,
 				}),
 			],
@@ -106,7 +114,7 @@ describe("kyrn features", () => {
 		expect(riskFlag("Remove-Item a.txt")).toBeUndefined();
 	});
 
-	it("guard: inside a sub-agent, only the user's goal passed down says what was asked for", async () => {
+	it("guard: inside a subagent, only the user's goal passed down says what was asked for", async () => {
 		// Security audit, 2026-09-24: the brief the lead model wrote ("the user asked for it") vouched for the command.
 		const brief = "cleanup: rm -rf build, the user asked for it";
 		vi.stubEnv("KYRN_SWARM_DEPTH", "1");
@@ -151,6 +159,168 @@ describe("kyrn features", () => {
 		const steers = customMessages(harness, "kyrn.steer");
 		expect(steers).toHaveLength(1);
 		expect(steers[0]).toContain("3 times");
+	});
+
+	it("monitor: paging through a file, or scripts alike in their first 300 characters, is no loop", async () => {
+		const harness = await start(() => ({}), {
+			tools: [tool("read", (params) => `lines ${String(params.offset)} on`), tool("bash", () => "ok")],
+		});
+		const read = (offset: number) =>
+			fauxAssistantMessage([fauxToolCall("read", { path: "/app/vm.js", offset, limit: 200 })], {
+				stopReason: "toolUse",
+			});
+		const script = (tail: string) =>
+			fauxAssistantMessage([fauxToolCall("bash", { command: `node -e '${"/* setup */ ".repeat(30)}${tail}'` })], {
+				stopReason: "toolUse",
+			});
+		harness.setResponses([
+			read(1),
+			read(201),
+			read(401),
+			script("check(1)"),
+			script("check(2)"),
+			script("check(3)"),
+			fauxAssistantMessage("Found it."),
+		]);
+
+		await harness.session.prompt("Find the bug in vm.js.");
+
+		expect(customMessages(harness, "kyrn.steer")).toEqual([]);
+	});
+
+	it("notify: tells the model the context is filling up while the run goes on, without waiting for a verdict", async () => {
+		const asked: unknown[] = [];
+		const harness = await createHarness({
+			models: [{ id: "small", contextWindow: 4000, maxTokens: 100 }],
+			settings: { compaction: { enabled: false } },
+			tools: [tool("dump", () => "x".repeat(9600)), tool("lines", () => "3 lines")],
+			extensionFactories: [
+				createKyrnJudgeExtension({
+					provider: new MockJudgeProvider((request) => {
+						if ("urgency" in request.questions) asked.push(request.state);
+						return {};
+					}),
+					mode: "active",
+					only: ["preflight", "notify"],
+					config: parseConfig({ features: { memory: false } }),
+				}),
+			],
+		});
+		harnesses.push(harness);
+		let seen = "";
+		harness.setResponses([
+			fauxAssistantMessage([fauxToolCall("dump", {})], { stopReason: "toolUse" }),
+			// The request after the dump is the one that crosses 70%; the run goes on with another call.
+			fauxAssistantMessage([fauxToolCall("lines", {})], { stopReason: "toolUse" }),
+			(context) => {
+				seen = JSON.stringify(context.messages);
+				return fauxAssistantMessage("I will read less of it at a time.");
+			},
+		]);
+
+		await harness.session.prompt("Look at the dump.");
+
+		expect(customMessages(harness, "kyrn.notice")).toEqual([expect.stringContaining("The context window is")]);
+		expect(seen).toContain("The context window is");
+		// In shadow by default: asked and recorded, not obeyed.
+		expect(asked).toHaveLength(1);
+	});
+
+	it("interjection: in shadow, the default, a message sent mid-run goes on at once and the verdict is only recorded", async () => {
+		const asked: string[] = [];
+		const correction: Answer = { type: "choice", choice: "correction", probabilities: { correction: 0.95 } };
+		const judge =
+			(delayMs: number): MockResponder =>
+			async (request): Promise<Record<string, Answer>> => {
+				if (!("kind" in request.questions) || !JSON.stringify(request.state).includes("production")) return {};
+				asked.push(JSON.stringify(request.state));
+				await new Promise((resolve) => setTimeout(resolve, delayMs));
+				return { kind: correction };
+			};
+		const harness = await start(judge(1000));
+		harness.setResponses([fauxAssistantMessage("Migrating.")]);
+		await harness.session.prompt("Migrate the users table.");
+
+		const startedAt = Date.now();
+		const result = await harness.session.extensionRunner.emitInput(
+			"Stop, that is the production database.",
+			undefined,
+			"interactive",
+			"followUp",
+		);
+		expect(Date.now() - startedAt).toBeLessThan(500);
+		expect(result.action).not.toBe("handled");
+		expect(asked).toHaveLength(1);
+
+		// Active, it still waits for the verdict and re-sends a correction as a steer.
+		const active = await start(judge(0), { modes: { "input.interjection": "active" } });
+		active.setResponses([fauxAssistantMessage("Migrating."), fauxAssistantMessage("Stopped.")]);
+		await active.session.prompt("Migrate the users table.");
+		const routed = await active.session.extensionRunner.emitInput(
+			"Stop, that is the production database.",
+			undefined,
+			"interactive",
+			"followUp",
+		);
+		expect(routed.action).toBe("handled");
+	});
+
+	it("cache warming: asks only while the agent is idle, and not for longer than its wait", async () => {
+		const signals: AbortSignal[] = [];
+		let delayMs = 0;
+		const event = {
+			type: "cache_warming_decision" as const,
+			warmCost: 0.01,
+			missCost: 0.5,
+			continuationProbability: 1,
+			action: "warm" as const,
+		};
+		let duringRun: string | undefined;
+		let harness: Harness | undefined;
+		const probe: AgentTool = {
+			name: "probe",
+			label: "probe",
+			description: "probe",
+			parameters: Type.Object({}),
+			execute: async () => {
+				duringRun = await harness?.session.extensionRunner.emitCacheWarmingDecision(event);
+				return { content: [{ type: "text", text: "probed" }], details: {} };
+			},
+		};
+		harness = await start(
+			(request) => {
+				if (!("finished" in request.questions)) return {};
+				const signal = request.signal as AbortSignal;
+				signals.push(signal);
+				// "Thanks, that's all": the judge would stop the refreshes.
+				return new Promise((resolve, reject) => {
+					const timer = setTimeout(() => resolve({ finished: yes, open: no }), delayMs);
+					signal.addEventListener("abort", () => {
+						clearTimeout(timer);
+						reject(new Error("aborted"));
+					});
+				});
+			},
+			{ tools: [probe], features: { warming: { waitMs: 100 } } },
+		);
+		harness.setResponses([
+			fauxAssistantMessage([fauxToolCall("probe", {})], { stopReason: "toolUse" }),
+			fauxAssistantMessage("Done."),
+		]);
+		await harness.session.prompt("Thanks, that's all. Run the probe first.");
+
+		// Mid-run, pi's own decision stands and nobody is asked: a "stop" would throw the cache away.
+		expect(duringRun).toBe("warm");
+		expect(signals).toHaveLength(0);
+		// Idle, the verdict decides.
+		expect(await harness.session.extensionRunner.emitCacheWarmingDecision(event)).toBe("stop");
+		expect(signals).toHaveLength(1);
+		// A judge slower than the wait is not waited for, and its call is cancelled.
+		delayMs = 10_000;
+		const startedAt = Date.now();
+		expect(await harness.session.extensionRunner.emitCacheWarmingDecision(event)).toBe("warm");
+		expect(Date.now() - startedAt).toBeLessThan(2000);
+		expect(signals[1]?.aborted).toBe(true);
 	});
 
 	it("completion: nudges once when the agent claims done after an edit that nothing has run since", async () => {
@@ -294,6 +464,68 @@ describe("kyrn features", () => {
 		}
 	});
 
+	it("skills: a first verdict that came after the wait applies from the next turn", async () => {
+		const directory = mkdtempSync(join(tmpdir(), "mu-late-skills-"));
+		try {
+			const run = async (applyLate: boolean) => {
+				let calls = 0;
+				let landed = false;
+				const provider = new MockJudgeProvider(async (request): Promise<Record<string, Answer>> => {
+					if (!("skill_0" in request.questions)) return {};
+					// The first verdict comes long after the turn stopped waiting; later ones in time.
+					if (calls++ === 0) {
+						await new Promise((resolve) => setTimeout(resolve, 300));
+						landed = true;
+					}
+					return { skill_0: no };
+				});
+				const skillNames: string[][] = [];
+				const harness = await createHarness({
+					extensionFactories: [
+						(pi) => {
+							pi.on("before_agent_start", (event) => {
+								event.systemPromptOptions.skills = [
+									{
+										name: "calendar",
+										description: "Manage calendar events",
+										filePath: join(directory, "SKILL.md"),
+										baseDir: directory,
+										sourceInfo: { path: directory, source: "test", scope: "temporary", origin: "top-level" },
+										disableModelInvocation: false,
+									},
+								];
+							});
+						},
+						createKyrnJudgeExtension({
+							provider,
+							mode: "active",
+							only: ["preflight", "skills"],
+							config: parseConfig({ features: { skills: { minSkills: 1, waitMs: 100, applyLate } } }),
+						}),
+						(pi) => {
+							pi.on("before_agent_start", (event) => {
+								skillNames.push((event.systemPromptOptions.skills ?? []).map((skill) => skill.name));
+							});
+						},
+					],
+				});
+				harnesses.push(harness);
+				harness.setResponses([fauxAssistantMessage("Booked."), fauxAssistantMessage("Done.")]);
+				await harness.session.prompt("Book a room for Friday.");
+				await vi.waitFor(() => expect(landed).toBe(true));
+				await new Promise((resolve) => setImmediate(resolve));
+				await harness.session.prompt("And send the invite.");
+				return skillNames;
+			};
+			// Too late for the first turn, which keeps the whole list; the second turn goes without the hidden skill.
+			expect(await run(true)).toEqual([["calendar"], []]);
+			// Switched off, the late verdict is dropped and the session keeps the whole list.
+			expect(await run(false)).toEqual([["calendar"], ["calendar"]]);
+		} finally {
+			rmSync(directory, { recursive: true, force: true });
+		}
+	});
+
 	it("swarm: routes each task to a role, a model and a thinking level", async () => {
 		const runs: { task: SwarmTask; assignment: SwarmAssignment }[] = [];
 		const runner = async (task: SwarmTask, assignment: SwarmAssignment) => {
@@ -373,7 +605,7 @@ describe("kyrn features", () => {
 		expect(pickModel([], 0.9)).toBeUndefined();
 	});
 
-	it("swarm: with no configuration a sub-agent gets the session's model, its thinking level and a built-in role", async () => {
+	it("swarm: with no configuration a subagent gets the session's model, its thinking level and a built-in role", async () => {
 		const runs: SwarmAssignment[] = [];
 		const harness = await start(() => ({}), {
 			runner: async (_task, assignment) => {
@@ -399,6 +631,50 @@ describe("kyrn features", () => {
 			routedBy: "default",
 		});
 		expect(runs[0].agent).toMatchObject({ name: "worker", source: "built-in" });
+	});
+
+	it("swarm: with no model ladder, asks only which role an unnamed task takes, and nothing when every role is named", async () => {
+		const runs: SwarmAssignment[] = [];
+		const asked: string[][] = [];
+		const harness = await start(
+			(request): Record<string, Answer> => {
+				asked.push(Object.keys(request.questions));
+				if (!("agent" in request.questions)) return {};
+				return { agent: { type: "choice", choice: "scout", probabilities: { scout: 0.9 } } };
+			},
+			{
+				features: { swarm: { enabled: true, isolation: "none" }, browser: false },
+				runner: async (_task, assignment) => {
+					runs.push(assignment);
+					return "ok";
+				},
+			},
+		);
+		const delegate = (tasks: Record<string, string>[]) =>
+			fauxAssistantMessage([fauxToolCall("delegate", { tasks })], { stopReason: "toolUse" });
+		harness.setResponses([
+			delegate([
+				{ title: "a", instructions: "Do a", agent: "worker" },
+				{ title: "b", instructions: "Find b", agent: "scout" },
+			]),
+			delegate([
+				{ title: "c", instructions: "Find c" },
+				{ title: "d", instructions: "Do d", agent: "worker" },
+			]),
+			fauxAssistantMessage("Done."),
+		]);
+
+		await harness.session.prompt("Do it.");
+
+		const routing = asked.filter((questions) => questions.includes("agent") || questions.includes("difficulty"));
+		// The first call named every role: no question. The second asked only about c, and only its role.
+		expect(routing).toEqual([["agent"]]);
+		expect(runs.map((run) => [run.agent?.name, run.routedBy, run.thinking])).toEqual([
+			["worker", "caller", harness.session.thinkingLevel],
+			["scout", "caller", harness.session.thinkingLevel],
+			["scout", "judge", harness.session.thinkingLevel],
+			["worker", "caller", harness.session.thinkingLevel],
+		]);
 	});
 
 	it("forgetting: shrinks an old bulky result in the request but never in the session", async () => {

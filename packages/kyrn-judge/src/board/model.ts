@@ -21,7 +21,7 @@ export const RECOMMENDED_BOARD_MODELS: readonly RecommendedModel[] = [
 	{
 		name: "Claude Opus 4.6",
 		pattern: /claude-opus-4[.-]6/,
-		why: { zh: "讲得最自然、最稳", en: "the most natural and steady" },
+		why: { zh: "讲得最自然、最稳", en: "the most natural and consistent" },
 		from: { zh: "登录 Anthropic（/login）", en: "sign in to Anthropic (/login)" },
 	},
 	{
@@ -93,7 +93,7 @@ export function boardModelChoices(
 				label: pick(
 					{
 						zh: `推荐 · ${recommended.name}：${recommended.why.zh}（还没有，选它看怎么添加）`,
-						en: `Recommended · ${recommended.name}: ${recommended.why.en} (not set up yet: pick it to see how)`,
+						en: `Recommended · ${recommended.name}: ${recommended.why.en} (not set up yet; pick it to see how)`,
 					},
 					wording,
 				),
@@ -107,14 +107,17 @@ export function boardModelChoices(
 			? pick(
 					{
 						zh: `跟着对话用的模型（现在是 ${refOf(current)}）`,
-						en: `Whatever model the conversation uses (now ${refOf(current)})`,
+						en: `The session's model (currently ${refOf(current)})`,
 					},
 					wording,
 				)
-			: pick({ zh: "跟着对话用的模型", en: "Whatever model the conversation uses" }, wording),
+			: pick({ zh: "跟着对话用的模型", en: "The session's model" }, wording),
 	});
 	if (available.some((model) => !offered.has(refOf(model)))) {
-		choices.push({ kind: "other", label: pick({ zh: "从已有的模型里选…", en: "Another model you have…" }, wording) });
+		choices.push({
+			kind: "other",
+			label: pick({ zh: "从已有的模型里选…", en: "Pick another model you have…" }, wording),
+		});
 	}
 	choices.push({ kind: "add", label: pick({ zh: "添加一个模型…", en: "Add a model…" }, wording) });
 	return choices;
@@ -144,7 +147,7 @@ export function addModelHelp(wording: Wording, recommended?: RecommendedModel): 
 		pick(
 			{
 				zh: "添加模型：/login 登录 Anthropic、Google、OpenAI 等账号，或在设置里填一个 OpenAI / Anthropic 兼容的接口地址和密钥。加好之后用 /board model 选它；在那之前，看板先用这次对话的模型来写。",
-				en: "To add a model: /login signs in to Anthropic, Google, OpenAI and others, or add an OpenAI- or Anthropic-compatible endpoint and key in the settings. Then pick it with /board model; until then the board is written by this conversation's model.",
+				en: "To add a model, sign in to Anthropic, Google, OpenAI or another provider with /login, or add an OpenAI- or Anthropic-compatible endpoint and key in settings. Then pick it with /board model. Until then, the session's model writes the board.",
 			},
 			wording,
 		),

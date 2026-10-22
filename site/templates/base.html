@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="{{ L.lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ L.meta.title }}{% endblock %}</title>
+<meta name="description" content="{% block description %}{{ meta.description }}{% endblock %}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{ self.title() }}">
+<meta property="og:description" content="{{ meta.og_description }}">
+<meta property="og:locale" content="{{ og_locale }}">
+<meta property="og:url" content="{{ abs(L, page) }}">
+<meta property="og:image" content="{{ site }}assets/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="{{ abs(L, page) }}">
+{% for X in locales %}<link rel="alternate" hreflang="{{ X.lang }}" href="{{ abs(X, page) }}">
+{% endfor %}<link rel="alternate" hreflang="x-default" href="{{ abs(locales[0], page) }}">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e0e10" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/png" href="{{ root }}assets/favicon-64.png">
+<link rel="apple-touch-icon" href="{{ root }}assets/apple-touch-icon.png">
+<script>
+(function () {
+  var root = document.documentElement;
+  root.classList.add('js');
+  if (!window.matchMedia || !window.matchMedia('(prefers-reduced-motion: reduce)').matches) root.classList.add('motion');
+  try {
+    var mode = localStorage.getItem('mu:theme');
+    if (mode === 'light' || mode === 'dark') root.setAttribute('data-theme', mode);
+  } catch (e) {}
+{% if L.path == "" %}
+  // The Chinese pages live at the root: a visitor whose browser asks for another language we have is sent there once.
+  try {
+    var chosen = localStorage.getItem('mu:lang');
+    var langs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''];
+    var want = chosen;
+    if (!want) {
+      var first = String(langs[0] || '').toLowerCase();
+      want = /^zh-(tw|hk|mo)|^zh-hant/.test(first) ? 'zh-TW' : /^zh/.test(first) ? 'zh-CN' : /^ja/.test(first) ? 'ja' : /^ko/.test(first) ? 'ko' : first ? 'en' : 'zh-CN';
+    }
+    var paths = {{ lang_paths | tojson }};
+    // A language picked on this site always applies; the browser's language only on the first visit of a session.
+    if (want !== 'zh-CN' && paths[want] && (chosen || !sessionStorage.getItem('mu:lang-redirected'))) {
+      sessionStorage.setItem('mu:lang-redirected', '1');
+      location.replace({{ root | tojson }} + paths[want] + {{ page.path | tojson }} + location.hash);
+    }
+  } catch (e) {}
+{% endif %}
+})();
+</script>
+<link rel="stylesheet" href="{{ root }}assets/site.css?v={{ version }}">
+{% block head %}{% endblock %}
+</head>
+<body class="page-{{ page.key }}">
+
+<div class="announce intro" style="--d: 0ms">
+  <a href="{{ url(L, pages.changelog) }}#{{ banner.anchor }}"><span class="pill">{{ L.ui.announce_pill }}</span><span>{{ banner.text }}</span><span class="arrow" aria-hidden="true">→</span></a>
+</div>
+
+<header class="nav intro" style="--d: 80ms">
+  <div class="nav-box">
+    <a class="brand" href="{{ url(L, pages.home) }}"><img src="{{ root }}assets/icon-256.png" alt="">mu</a>
+    <nav class="links" aria-label="{{ L.ui.nav_site }}">
+      <a href="{{ url(L, pages.docs) }}"{% if page.key.startswith("docs") %} aria-current="page"{% endif %}>{{ L.ui.nav_docs }}</a>
+      <a href="{{ url(L, pages.decisions) }}"{% if page.key == "decisions" %} aria-current="page"{% endif %}>{{ L.ui.nav_decisions }}</a>
+      <a href="{{ url(L, pages.changelog) }}"{% if page.key == "changelog" %} aria-current="page"{% endif %}>{{ L.ui.nav_changelog }}</a>
+    </nav>
+    <div class="nav-right">
+      <details class="pop lang">
+        <summary aria-label="{{ L.ui.lang_menu }}">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.6" d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm-9 9h18M12 3c2.6 2.4 3.9 5.4 3.9 9S14.6 18.6 12 21M12 3C9.4 5.4 8.1 8.4 8.1 12s1.3 6.6 3.9 9"/></svg>
+          <span class="lang-name">{{ L.label }}</span>
+        </summary>
+        <div class="pop-menu" role="menu">
+          {% for X in locales %}<a role="menuitem" href="{{ url(X, page) }}" hreflang="{{ X.lang }}" lang="{{ X.lang }}" data-lang="{{ X.lang }}"{% if X.lang == L.lang %} aria-current="true"{% endif %}>{{ X.label }}</a>
+          {% endfor %}
+        </div>
+      </details>
+      <a class="star" href="https://github.com/qybaihe/mu" title="{{ L.ui.star_title }}" data-star>
+        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        <span class="star-label">{{ L.ui.star }}</span>
+        <span class="star-count" data-star-count>{{ stars_text }}</span>
+      </a>
+      <details class="pop menu">
+        <summary aria-label="{{ L.ui.nav_site }}">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </summary>
+        <div class="pop-menu" role="menu">
+          <a role="menuitem" href="{{ url(L, pages.home) }}">{{ L.ui.nav_home }}</a>
+          <a role="menuitem" href="{{ url(L, pages.docs) }}">{{ L.ui.nav_docs }}</a>
+          <a role="menuitem" href="{{ url(L, pages.decisions) }}">{{ L.ui.nav_decisions }}</a>
+          <a role="menuitem" href="{{ url(L, pages.changelog) }}">{{ L.ui.nav_changelog }}</a>
+          <a role="menuitem" href="{{ url(L, pages.home) }}#install">{{ L.ui.nav_install }}</a>
+        </div>
+      </details>
+      <a class="btn primary small install-btn" href="{{ url(L, pages.home) }}#install">{{ L.ui.nav_install }}</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+{% block content %}{% endblock %}
+
+  <section class="wrap star-cta" data-reveal>
+    <div class="star-cta-box">
+      <img src="{{ root }}assets/icon-256.png" alt="" width="56" height="56">
+      <div class="star-cta-text">
+        <h2>{{ L.ui.star_cta_h2 }}</h2>
+        <p>{{ L.ui.star_cta_p }}</p>
+      </div>
+      <a class="btn primary star-cta-btn" href="https://github.com/qybaihe/mu" data-star>
+        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 .25a.75.75 0 0 1 .67.42l1.88 3.8 4.2.61a.75.75 0 0 1 .41 1.28l-3.04 2.96.72 4.18a.75.75 0 0 1-1.09.79L8 12.33l-3.75 1.97a.75.75 0 0 1-1.09-.79l.72-4.18L.84 6.37a.75.75 0 0 1 .41-1.28l4.2-.61L7.33.67A.75.75 0 0 1 8 .25Z"/></svg>
+        {{ L.ui.star_cta_button }}<span class="star-count" data-star-count>{{ stars_text }}</span>
+      </a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div>
+      <div class="foot-brand"><img src="{{ root }}assets/icon-256.png" alt="">mu</div>
+      <p>{{ L.ui.footer_credit }}</p>
+      <p class="foot-langs">{% for X in locales %}<a href="{{ url(X, page) }}" hreflang="{{ X.lang }}" lang="{{ X.lang }}" data-lang="{{ X.lang }}"{% if X.lang == L.lang %} aria-current="true"{% endif %}>{{ X.label }}</a>{% endfor %}</p>
+    </div>
+    <div class="foot-right">
+      <div class="flinks">
+        <a href="{{ url(L, pages.docs) }}">{{ L.ui.nav_docs }}</a>
+        <a href="{{ url(L, pages.decisions) }}">{{ L.ui.nav_decisions }}</a>
+        <a href="{{ url(L, pages.changelog) }}">{{ L.ui.nav_changelog }}</a>
+        <a href="https://github.com/qybaihe/mu">GitHub</a>
+        <a href="https://www.npmjs.com/package/mu-agent">npm</a>
+        <a href="https://github.com/qybaihe/mu/blob/main/LICENSE">{{ L.ui.footer_license }}</a>
+      </div>
+      <div class="theme" role="group" aria-label="{{ L.ui.theme_group }}">
+        <button type="button" data-theme-set="auto">{{ L.ui.theme_auto }}</button>
+        <button type="button" data-theme-set="light">{{ L.ui.theme_light }}</button>
+        <button type="button" data-theme-set="dark">{{ L.ui.theme_dark }}</button>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>window.MU = {{ js_strings | tojson }};</script>
+{% block scripts %}{% endblock %}
+<script src="{{ root }}assets/site.js?v={{ version }}"></script>
+</body>
+</html>

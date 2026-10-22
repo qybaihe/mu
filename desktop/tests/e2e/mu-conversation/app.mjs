@@ -15,9 +15,9 @@ const execFileAsync = promisify(execFile);
 
 /** Lines of the main process's output and logs that mean an error nothing handled. */
 const MAIN_PROBLEMS = [
-  /\[AionUi\] (uncaughtException|unhandledRejection)/,
+  /\[mu\] (uncaughtException|unhandledRejection)/,
   /render-process-gone/,
-  /\[AionUi\] App initialization failed/,
+  /\[mu\] App initialization failed/,
   /Failed to initialize process/,
 ];
 /** Lines of the logs that mean the adapter or mu met an error nothing handled. */

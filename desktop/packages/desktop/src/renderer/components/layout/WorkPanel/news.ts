@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2025 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { isBeeActive, parseSwarmSnapshot, type HiveBeeStatus } from '@/common/kyrn/hive';
 import type { Activity } from '@/common/kyrn/types';
 import { boardView } from '@/renderer/pages/conversation/KyrnPanel/Board/board';

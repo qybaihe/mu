@@ -227,7 +227,7 @@
       "noteMissing": "Découverte non enregistrée.",
       "allFlow": "Toutes les transmissions",
       "beeFlow": "Transmissions pour {{name}}",
-      "audit": "Jugements de Jev",
+      "audit": "Jugements",
       "waitingRun": "En attente des événements enregistrés de cette ruche.",
       "recordedAt": "Enregistré à {{time}}",
       "beeMissing": "Cette abeille n’est pas dans l’instantané enregistré.",
@@ -959,7 +959,7 @@
       "auto_compaction_end": "Compactage terminé",
       "hive.note": "Découverte partagée",
       "hive.delivery": "Transmission confirmée",
-      "hive.gate": "Filtre Jev",
+      "hive.gate": "Filtre de la ruche",
       "hive.manifest": "Affectation de la ruche",
       "bee.event": "Événement d’abeille",
       "memory.recalled": "Expérience rappelée",
@@ -1076,24 +1076,6 @@
         "idle": "Juge en attente",
         "judging": "Juge au travail",
         "off": "Juge désactivé"
-      },
-      "starters": {
-        "hint": "Vous ne savez pas par où commencer ? Essayez l’une de ces pistes :",
-        "understand": {
-          "title": "Comprendre ce projet",
-          "desc": "Cartographier la structure, les points d’entrée et les modules clés",
-          "prompt": "Commencez par parcourir ce projet, puis expliquez-moi sa structure, ses principaux points d’entrée et ses modules essentiels. Indiquez les trois fichiers à lire en premier."
-        },
-        "fix": {
-          "title": "Trouver et corriger un problème",
-          "desc": "Partir d’une erreur ou d’un symptôme pour remonter à la cause",
-          "prompt": "J’ai rencontré un problème : <décrivez le symptôme ou collez l’erreur>. Reproduisez-le et trouvez d’abord la cause, puis apportez la correction la plus petite possible et lancez les tests concernés pour vérifier."
-        },
-        "plan": {
-          "title": "Planifier une modification",
-          "desc": "D’abord un plan, les modifications après votre accord",
-          "prompt": "Je souhaite réaliser : <décrivez votre besoin>. Proposez d’abord un plan de mise en œuvre et les fichiers concernés, et ne commencez à modifier qu’après ma confirmation."
-        }
       }
     },
     "toolStatus": {
@@ -1107,7 +1089,7 @@
       "switch": "Tableau en clair de ce projet",
       "switching": "Changement…",
       "afterTurn": "Change quand l’agent aura fini cette étape",
-      "unknown": "Pas encore de tableau dans cette conversation. Il apparaît dans les conversations mu tant que le tableau en clair est activé dans Fonctions.",
+      "unknown": "Pas encore de tableau dans cette conversation. Il apparaît dans les conversations mu tant que le tableau en clair est activé dans Paramètres → Fonctions principales.",
       "off": "Une fois activé, il dit en mots simples où en est le travail, ce que fait l’agent en ce moment et ce qui vous attend.",
       "cost": "Pour ce projet seulement. Chaque mise à jour coûte un appel au modèle.",
       "empty": "Laissez un moment à l’agent ; ici s’affichera en mots simples où il en est.",
@@ -1279,7 +1261,7 @@
     "compactionDropped": "{{count}} appels retirés",
     "compactionDropped_one": "{{count}} appel retiré",
     "compactionDropped_other": "{{count}} appels retirés",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}} classe le message…",
       "classified": "Classé par {{judge}} : {{type}}",
       "byRule": "Classé par règle : {{type}}",
@@ -1291,9 +1273,13 @@
       "setUp": "Configurer un juge",
       "skipped": "Classification ignorée",
       "off": "La classification est désactivée",
-      "firstHint": "Cette ligne est le jugement de Jev : Jev classe d’abord chaque message, puis mu décide comment continuer. Chaque jugement se trouve dans Jugements, à droite."
+      "firstHint": "Cette ligne est le jugement du juge : le juge classe d’abord chaque message, puis mu décide comment continuer. Chaque jugement se trouve dans Jugements, à droite."
     },
     "eventLine": {
+      "judgeNotice": {
+        "freeJev": "Aucune clé Jev : le Jev gratuit d’OpenCode Zen répond",
+        "freeJevUnavailable": "Le Jev gratuit ne répond plus : des règles fixes décident jusqu’à ce qu’une clé Jev soit définie"
+      },
       "detail": "Détails : {{detail}}",
       "progress": {
         "frame": "Mise à jour du cadre de la tâche",
@@ -1301,7 +1287,7 @@
         "skills": "Choix des compétences dont cette session a besoin",
         "capabilities": "Choix des capacités dont cette tâche a besoin",
         "goal_check": "Vérification de l'atteinte de l'objectif",
-        "permissionReview": "Jev examine : {{summary}}"
+        "permissionReview": "Le juge examine : {{summary}}"
       },
       "goal": {
         "paused": "En pause : {{reason}}",
@@ -1428,6 +1414,26 @@
       "reviewer": "relecteur",
       "scout": "éclaireur",
       "worker": "exécutant"
+    },
+    "kernel": {
+      "free": "gratuit",
+      "local": "local",
+      "judgeHint": "Le juge qui répond aux points de décision de mu. Cliquez pour le changer.",
+      "points": "{{active}}/{{total}} points de décision actifs",
+      "shadow_one": "· {{count}} en mode fantôme",
+      "shadow_other": "· {{count}} en mode fantôme",
+      "off": "Jugement désactivé",
+      "verdicts_one": "jugement",
+      "verdicts_other": "jugements",
+      "last": "dernier",
+      "context": "contexte",
+      "cache": "cache"
+    },
+    "hero": {
+      "kernel": "Noyau de jugement",
+      "judgeReady": "{{judge}} est prêt",
+      "judgeOff": "Jugement désactivé",
+      "title": "Sur quoi mu doit-il travailler ?"
     }
   },
   "menu": {
@@ -1517,7 +1523,7 @@
     "previewEmpty": "Rien à prévisualiser pour l’instant. Les fichiers ouverts depuis la conversation s’affichent ici.",
     "previewHidden": "L’aperçu est masqué.",
     "browserEmpty": "Aucune page ouverte. Saisissez une adresse ou une recherche ci-dessus. Les pages ouvertes depuis la conversation s’affichent aussi ici.",
-    "firstHint": "Tableau raconte l’avancement en mots simples, Jugements liste chaque jugement de Jev, Fichiers est le dossier de cette conversation. Les autres onglets apparaissent quand ils servent."
+    "firstHint": "Tableau raconte l’avancement en mots simples, Jugements liste chaque jugement, Fichiers est le dossier de cette conversation. Les autres onglets apparaissent quand ils servent."
   },
   "nodeRuntime": {
     "title": "Télécharger Node.js ?",

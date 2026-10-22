@@ -186,7 +186,9 @@ describe("procedures", () => {
 		expect(heard[0]).toContain("npm version patch");
 		const [draft] = session.drafts.list();
 		expect(draft).toMatchObject({ name: "release-to-npm", request: "cut a patch release" });
-		expect(session.notes.some((note) => note.includes('drafted a skill from this run, "release-to-npm"'))).toBe(true);
+		expect(session.notes.some((note) => note.includes('drafted the skill "release-to-npm" from this run'))).toBe(
+			true,
+		);
 		expect(session.events.some((event) => event.kind === "skill.drafted")).toBe(true);
 		// Waiting is not installed: nothing is where pi looks for skills.
 		expect(existsSync(join(session.agentDir, "skills"))).toBe(false);

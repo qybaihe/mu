@@ -69,7 +69,7 @@ const WIN_PACKAGE = "C:\\Users\\bai\\AppData\\Roaming\\npm\\node_modules\\mu-age
 const WIN_HOME = "C:\\Users\\bai";
 const winPackage = {
 	[`${WIN_PACKAGE}\\dist\\bundle\\cli.js`]: "",
-	[`${WIN_PACKAGE}\\judge\\dist\\kyrn-judge.js`]: "",
+	[`${WIN_PACKAGE}\\judge\\mu\\index.js`]: "",
 };
 
 const setupArgs = { env: {}, home: "/home/bai", execPath: "/usr/bin/node" };
@@ -168,7 +168,7 @@ describe("mu setup, as the launcher starts it", () => {
 			stripsTypes: false,
 			fs: disk(posixInstalled),
 		});
-		expect(unstripped.error).toContain("does not strip types");
+		expect(unstripped.error).toContain("doesn't strip types");
 		const moved = planSetup({
 			...setupArgs,
 			platform: "linux",

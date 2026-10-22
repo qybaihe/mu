@@ -106,7 +106,7 @@ const SkillConfirmModals: React.FC<SkillConfirmModalsProps> = ({
         <p>
           {t('settings.removeCustomSkillConfirm', {
             name: deleteCustomSkillName,
-            defaultValue: 'Are you sure you want to remove "{{name}}" from this assistant?',
+            defaultValue: 'Remove "{{name}}" from this assistant?',
           })}
         </p>
         <div className='mt-8px text-12px leading-18px text-t-secondary'>

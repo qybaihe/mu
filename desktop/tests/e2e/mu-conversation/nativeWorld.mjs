@@ -166,11 +166,11 @@ export function createNativeWorld({ desktopRoot, prepare }) {
     const p = page();
     const welcome = p.getByTestId('mu-welcome');
     const group = p.getByTestId('native-sidebar-group');
-    const unfold = p.getByRole('button', { name: '展开侧边栏' });
+    const unfold = p.getByRole('button', { name: run.profile.language === 'zh-CN' ? '展开侧边栏' : 'Expand sidebar' });
     // The guide and the sidebar can both be there (a start with no model shows the guide over the app).
     await expect(welcome.or(group).or(unfold).first()).toBeVisible({ timeout: 60_000 });
     if (await welcome.isVisible().catch(() => false)) {
-      await p.getByText('跳过引导', { exact: true }).click();
+      await p.getByTestId('mu-welcome-skip-all').click();
       await p.waitForURL(/#\/guid/);
     }
     if (await unfold.isVisible().catch(() => false)) await unfold.click();
@@ -182,7 +182,7 @@ export function createNativeWorld({ desktopRoot, prepare }) {
 
   /**
    * Types a message into the conversation's send box and sends it; returns once the person's row shows. (The row shows
-   * at once: the run it starts does not begin until Jev has read the message and pi took it.)
+   * at once: the run it starts does not begin until the judge has read the message and pi took it.)
    */
   async function send(text) {
     const rows = await userRows().count();
@@ -259,7 +259,9 @@ export function createNativeWorld({ desktopRoot, prepare }) {
     const app = named ? packagedApp(named) : undefined;
     if (named && !app)
       throw new Error(`MU_E2E_APP names no packaged app for ${process.platform}-${process.arch}: ${named}`);
-    run.profile = createProfile({ desktopRoot, root: process.env.MU_E2E_ROOT, app });
+    // MU_E2E_LANGUAGE=en-US: the app in English (the tests read test ids and data, not words), for screenshots in it.
+    const language = process.env.MU_E2E_LANGUAGE || undefined;
+    run.profile = createProfile({ desktopRoot, root: process.env.MU_E2E_ROOT, app, language });
     const { harness, paths: where } = run.profile;
     // Nothing names MU_NATIVE_HOST: the native host is on by itself, where the app finds a mu that can run inside it,
     // as it is for a person who never heard of the variable. mu has the fake model and no decision point on (each

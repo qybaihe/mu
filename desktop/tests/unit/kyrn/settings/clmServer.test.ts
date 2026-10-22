@@ -71,8 +71,8 @@ describe('asking a CLM server how it is', () => {
     expect(await checkClmServer(other.url)).toEqual({ status: 'down' });
   });
 
-  it('asks only addresses the questions may go to: HTTPS, or HTTP on this machine or a private network', async () => {
-    await expect(checkClmServer('http://example.com:8700')).rejects.toThrow('private-network address');
+  it('asks only addresses the questions may go to: HTTPS or HTTP, never link-local, never with credentials', async () => {
+    await expect(checkClmServer('http://169.254.169.254:8700')).rejects.toThrow('not link-local');
     await expect(checkClmServer('https://user:secret@example.com')).rejects.toThrow('without embedded credentials');
   });
 

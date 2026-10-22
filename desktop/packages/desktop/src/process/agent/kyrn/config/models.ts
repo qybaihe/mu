@@ -31,12 +31,12 @@ const printable = (value: string): boolean =>
 /** A value the screen never sends; the message says which, for the detail line. */
 const invalid = (message: string): KyrnError => new KyrnError('invalid', message);
 
-/** HTTPS, or plain HTTP to this machine or a private-network address; nothing that smuggles a credential or a second destination. */
+/** HTTPS, or plain HTTP to anything but a link-local address; nothing that smuggles a credential or a second destination. */
 export function assertEndpoint(value: string): void {
   if (!isSafeEndpoint(value))
     throw new KyrnError(
       'endpoint',
-      'Use HTTPS, or HTTP to loopback or a private-network address, without embedded credentials'
+      'Use an https:// or http:// address (not link-local) without embedded credentials, query or fragment'
     );
 }
 

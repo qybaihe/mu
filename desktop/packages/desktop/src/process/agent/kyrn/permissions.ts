@@ -66,7 +66,7 @@ export function presentation(event: JsonRecord): { kind: string; payload: JsonRe
   return frame ? { kind: frame.kind, payload: frame.payload } : undefined;
 }
 
-/** Mode ids are words (`full`, `jev`, `ask`): anything else is not sent on as a command. */
+/** Mode ids are words (`full`, `judge`, `ask`): anything else is not sent on as a command. */
 const MODE_ID = /^[a-z][a-z0-9-]{0,31}$/;
 export const isModeId = (value: string): boolean => MODE_ID.test(value);
 

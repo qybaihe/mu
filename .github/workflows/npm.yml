@@ -2,10 +2,12 @@ name: npm package
 
 # Builds the npm package mu-agent (kyrn/npm/build.mjs), then installs the tarball on Linux, macOS and Windows
 # and checks that the installed `mu` runs and loads the judgment layer (kyrn/npm/smoke.mjs). No model is called.
-# Publishing is not done here: whoever is logged in to npm publishes the checked tarball by hand.
+# A `mu-agent-vX.Y.Z` tag also publishes the tarball it checked (the publish job, at the end).
 on:
   push:
     branches: [main]
+    # Path filters don't apply to tags: every mu-agent tag runs.
+    tags: ['mu-agent-v*']
     paths:
       - 'kyrn/**'
       - 'packages/**'
@@ -44,7 +46,7 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Build pi
-        run: npm run build
+        run: npm run build:pinned
 
       - name: Build and pack mu-agent
         run: node kyrn/npm/build.mjs --pack
@@ -109,3 +111,64 @@ jobs:
       - name: Smoke test
         shell: bash
         run: node kyrn/npm/smoke.mjs mu
+
+  # npm's trusted publishing: npm trusts this workflow by its OIDC identity, so no npm token is stored anywhere.
+  # One-time setup on npmjs.com: mu-agent → Settings → Trusted publishing → GitHub Actions,
+  # organization or user qybaihe, repository mu, workflow filename npm.yml.
+  publish:
+    name: Publish to npm
+    if: startsWith(github.ref, 'refs/tags/mu-agent-v')
+    needs: [pack, smoke]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs npm 11.5.1 or newer.
+      - name: Update npm
+        run: npm install -g npm@^11.5.1
+
+      - name: Download the tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: mu-agent-tarball
+          path: tarball
+
+      - name: Check the tag against the tarball and the registry
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#mu-agent-v}"
+          # A path, not `tarball/…`: npm reads a bare `name/file` as a GitHub repository and tries to clone it.
+          tarball="./tarball/mu-agent-$version.tgz"
+          if [ ! -f "$tarball" ]; then
+            echo "::error::The tag says $version, but the package built here is $(ls tarball/*.tgz). Bump kyrn/npm/package.template.json, then tag that commit."
+            exit 1
+          fi
+          if [ -n "$(npm view "mu-agent@$version" version 2>/dev/null)" ]; then
+            echo "::error::mu-agent@$version is already on npm."
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "TARBALL=$tarball" >> "$GITHUB_ENV"
+
+      - name: Publish
+        run: npm publish "$TARBALL" --access public
+
+      - name: Check that npm serves this tarball
+        shell: bash
+        run: |
+          expected=$(shasum -a 1 "$TARBALL" | cut -d' ' -f1)
+          for attempt in 1 2 3 4 5 6; do
+            served=$(npm view "mu-agent@$VERSION" dist.shasum 2>/dev/null)
+            [ -n "$served" ] && break
+            sleep 10
+          done
+          echo "built $expected, served ${served:-nothing}"
+          [ "$served" = "$expected" ]

@@ -145,29 +145,29 @@
       "send_feedback": "Versuche es erneut; wenn es weiterhin fehlschlägt, prüfe das App-Protokoll."
     },
     "ownership": {
-      "aionui": "App",
+      "mu": "App",
       "user_agent": "Agent",
       "user_llm_provider": "Modellanbieter",
       "unknown_upstream": "Upstream"
     },
     "codes": {
-      "AIONUI_STREAM_BROKEN": {
+      "MU_STREAM_BROKEN": {
         "title": "Antwortstrom wurde unterbrochen",
         "body": "Die App hat deine Nachricht akzeptiert, aber der Antwortstrom endete unerwartet. Bitte versuche es erneut; wenn es wieder passiert, prüfe das App-Protokoll."
       },
-      "AIONUI_STATE_INCONSISTENT": {
+      "MU_STATE_INCONSISTENT": {
         "title": "Unterhaltungszustand ist nicht synchronisiert",
         "body": "Der Unterhaltungszustand ist nicht synchronisiert. Starte diesen Chat neu oder lade die App erneut, bevor du es nochmal versuchst."
       },
-      "AIONUI_PERMISSION_ERROR": {
+      "MU_PERMISSION_ERROR": {
         "title": "Zugriff auf die angeforderte Ressource konnte nicht erfolgen",
         "body": "Eine lokale Berechtigung oder Dateisystem-Überprüfung ist fehlgeschlagen. Überprüfe den Projektpfad und die App-Berechtigungen und versuche es erneut."
       },
-      "AIONUI_INTERNAL_ERROR": {
+      "MU_INTERNAL_ERROR": {
         "title": "Anfrage in der App fehlgeschlagen",
         "body": "Die Anfrage ist fehlgeschlagen, während die App sie verarbeitete. Bitte versuche es einmal erneut; wenn es wiederholt passiert, prüfe das App-Protokoll."
       },
-      "AIONUI_CONVERSATION_BUSY": {
+      "MU_CONVERSATION_BUSY": {
         "title": "Unterhaltung ist beschäftigt",
         "body": "Eine weitere Antwort wird noch verarbeitet. Warte, bis sie fertig ist, bevor du eine neue Nachricht sendest."
       },
@@ -593,7 +593,9 @@
     "hint": "Tippe / für Befehle, @ um Dateien zu referenzieren, ↑/↓ für den Nachrichtenverlauf",
     "mediaPathFallback": "Dieser Agent unterstützt diesen Dateityp nicht nativ; die Datei wird als Dateipfad gesendet.",
     "hintWithSessions": "/ für Befehle, @ für Dateien, @@ für Unterhaltungen, ↑/↓ für Verlauf",
-    "stop": "Antwort stoppen"
+    "stop": "Antwort stoppen",
+    "openCommand": "Dateien von diesem Computer anhängen",
+    "copyCommand": "Letzte Antwort kopieren"
   },
   "composer": {
     "goalLine": {

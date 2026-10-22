@@ -87,4 +87,4 @@ for (const file of files) {
 	}
 }
 
-if (!asJson) console.log(count === 0 ? `No decisions found under ${sessionsDir}` : `\n${count} decisions from ${files.length} sessions`);
+if (!asJson) console.log(count === 0 ? `No verdicts found under ${sessionsDir}` : `\n${count} ${count === 1 ? "verdict" : "verdicts"} from ${files.length} ${files.length === 1 ? "session" : "sessions"}`);

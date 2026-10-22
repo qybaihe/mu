@@ -1,6 +1,6 @@
 /**
  * The sidebar's native conversations, while the native host is on: mu's own sessions (the CLI's included, the ones
- * AionCore's conversations run left out), newest first and kept as they change, and a way to start one
+ * the backend's conversations run left out), newest first and kept as they change, and a way to start one
  * (NativeNewConversation). A row has the menu classic rows have where it applies: pin (a pinned row stays above the
  * others), mark as unread or read, rename, archive (the row leaves the list for an "Archived" fold under it, whose rows
  * offer to restore it; the session file is untouched), and delete (the session file goes to the bin, after a

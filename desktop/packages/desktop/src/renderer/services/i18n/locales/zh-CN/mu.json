@@ -7,7 +7,8 @@
   "apiKey": "API 密钥",
   "keyHelp": "保存后不再显示。只存在这台电脑上，只有你的账户能读。",
   "keyKeep": "留空则保留已保存的密钥",
-  "endpointRule": "请使用 HTTPS；只有本机（127.0.0.1、localhost）或局域网 IP 地址（例如 192.168.1.20）可以用 HTTP。地址里不能带用户名、密码、查询参数或片段。",
+  "endpointRule": "请填写以 https:// 或 http:// 开头的地址，不能包含用户名、密码、查询参数或片段。",
+  "endpointPlain": "这个地址用的是明文 http，密钥和消息都不加密。服务在本机或你自己的网络里（包括 hosts 文件指过去的域名）就没问题；走公网请用 https。",
   "sections": {
     "judges": "判定器",
     "judgeOrder": "判定顺序",
@@ -158,7 +159,7 @@
       "jev": {
         "title": "Jev",
         "tag": "推荐",
-        "description": "又快又准。在 OpenCode Zen 上限时免费；也可以用 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare 或你自己服务的密钥，按次计费。"
+        "description": "TypeSafe 托管的判定模型。又快又准。在 OpenCode Zen 上限时免费；也可以用 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare 或你自己服务的密钥，按次计费。"
       },
       "local": {
         "title": "本地 Laya",
@@ -259,9 +260,9 @@
         "title": "完全访问",
         "description": "什么都不问，直接执行。你明确说过不许做的事仍然会被拦下。"
       },
-      "jev": {
-        "title": "Jev 审批",
-        "description": "项目里的读和改直接做；命令、项目外的改动、对外操作由 Jev 替你审批，它拿不准的才问你。"
+      "judge": {
+        "title": "判定模式",
+        "description": "项目里的读和改直接做；命令、项目外的改动、对外操作由判定器替你审批，它拿不准的才问你。"
       },
       "ask": {
         "title": "最小权限",
@@ -279,10 +280,10 @@
       "other": "mu 想对外操作，需要你授权"
     },
     "reason": {
-      "ask": "最小权限模式：每一步都先问你。",
-      "unsure": "Jev 拿不准这一步是不是你要的。",
-      "beyond": "Jev 认为这一步超出了你的要求。",
-      "unrelated": "Jev 认为这一步和当前任务无关。",
+      "ask": "最小权限模式：改文件、跑命令、对外操作都先问你。",
+      "unsure": "判定器拿不准这一步是不是你要的。",
+      "beyond": "判定器认为这一步超出了你的要求。",
+      "unrelated": "判定器认为这一步和当前任务无关。",
       "protected": "这会动到 mu 自己的设置，只能由你决定。",
       "nojudge": "还没有可用的判定器，所以每一步都先问你。",
       "judgedown": "判定器这次没有回答，所以先问你。"
@@ -382,7 +383,11 @@
     "byKey": "可用（API 密钥）",
     "byKeyHelp": "没有登录订阅，但 mu 上次连接时报告它能用，通常是因为环境里有它的 API 密钥。登录订阅后改用订阅。",
     "otherRunning": "{{name}} 正在登录，同一时间只能进行一个登录。",
-    "showRunning": "去看看"
+    "showRunning": "去看看",
+    "legacy": {
+      "openai-codex": "这是经由 Codex CLI 的旧登录方式。请退出登录，再用 ChatGPT 登录。",
+      "anthropic": "Anthropic 不允许其他应用用 Claude 订阅登录，所以 mu 不再提供。请退出登录，改为添加 Anthropic API key。"
+    }
   },
   "endpoints": {
     "openaiCompletions": {
@@ -505,7 +510,7 @@
       "signedIn": {
         "title": "用订阅账号登录",
         "tag": "免 API 密钥",
-        "description": "ChatGPT、Claude、Grok 等订阅"
+        "description": "ChatGPT、Grok 等订阅"
       },
       "openai": {
         "title": "OpenAI 兼容接口",
@@ -519,7 +524,7 @@
         "modelPlaceholder": "例如 claude-sonnet-5"
       },
       "problems": {
-        "baseUrl": "请填写 https:// 开头的地址（本机或局域网地址可以用 http://）。",
+        "baseUrl": "请填写以 https:// 或 http:// 开头的地址。",
         "key": "请填写 API 密钥。",
         "model": "请填写模型名。"
       },
@@ -544,6 +549,7 @@
       "recognized": "已根据密钥识别。",
       "ambiguous": "好几家服务商的密钥都长这样，这是哪家的？",
       "unknown": "mu 认不出这种密钥，这是哪家的？",
+      "subscriptionToken": "这是 Claude 订阅令牌（claude setup-token 生成的），不是 API key。Anthropic 不允许其他应用使用 Claude 订阅，所以 mu 用不了它。请改为粘贴 Anthropic API key（sk-ant-api…）。",
       "keyPage": "去哪里获取密钥？",
       "checking": "正在向 {{service}} 验证密钥…",
       "lookingLocal": "正在本机查找 {{service}}…",
@@ -643,13 +649,26 @@
       "modelValue": "{{provider}} / {{model}}",
       "import": "对话",
       "importOpen": "选择要导入的…",
-      "importFound_one": "这台电脑上有 {{count}} 段 Claude Code 或 Codex 的对话，可以导进来接着聊",
-      "importFound_other": "这台电脑上有 {{count}} 段 Claude Code 或 Codex 的对话，可以导进来接着聊",
+      "importFound_one": "这台电脑上有 {{count}} 段 Claude Code、Codex 或 ZCode 的对话，可以导进来接着聊",
+      "importFound_other": "这台电脑上有 {{count}} 段 Claude Code、Codex 或 ZCode 的对话，可以导进来接着聊",
       "permissions": "权限方式"
     },
     "intro": {
+      "turn": {
+        "label": "判定器眼中的一轮",
+        "preflight": "多步任务：先看再动",
+        "approval": "npm test 无需询问即可运行",
+        "completion": "测试通过，工作完成"
+      },
       "title": "欢迎使用 mu",
       "lead": "mu 是一个会动手的编程助手：它读你的项目、改代码、跑命令和测试，直到把事情做完。",
+      "import": {
+        "title": "把对话一起带过来",
+        "text": "mu 在这台电脑上找到了 {{count}} 段在其他编程助手里聊过的对话，可以连同全部历史导进来，在这里接着聊。",
+        "text_one": "mu 在这台电脑上找到了 {{count}} 段在其他编程助手里聊过的对话，可以连同全部历史导进来，在这里接着聊。",
+        "text_other": "mu 在这台电脑上找到了 {{count}} 段在其他编程助手里聊过的对话，可以连同全部历史导进来，在这里接着聊。",
+        "open": "选择对话…"
+      },
       "points": {
         "judge": {
           "title": "每一步都有把关",
@@ -657,7 +676,7 @@
         },
         "control": {
           "title": "看得见，管得住",
-          "text": "改动随时可以回滚；浏览器里的每一步都在眼前，可以暂停，也可以接管。"
+          "text": "检查点让你可以回滚改动；mu 用应用内浏览器时，每一步都在眼前，可以暂停，也可以接管。"
         },
         "ready": {
           "title": "开箱即用",
@@ -668,9 +687,13 @@
     },
     "login": {
       "providers": {
-        "openai-codex": {
+        "openai": {
           "name": "ChatGPT",
           "plan": "Plus / Pro 订阅"
+        },
+        "openai-codex": {
+          "name": "ChatGPT (Codex)",
+          "plan": "经由 Codex 的旧登录方式"
         },
         "anthropic": {
           "name": "Claude",
@@ -776,7 +799,8 @@
       "other": "mu 给模型发了一条提醒",
       "show": "查看原文",
       "hide": "收起",
-      "imported": "这段对话是从 Claude Code 或 Codex 导入的，在这里接着聊；思考过程和图片没有导入"
+      "imported": "这段对话是从 {{tool}} 导入的，在这里接着聊",
+      "anotherTool": "另一个编程助手"
     }
   },
   "errors": {
@@ -795,7 +819,7 @@
     },
     "invalidJson": "{{file}} 不是有效的 JSON，请手动修正后重新载入。",
     "unreadable": "无法读取 {{file}}。",
-    "runtimeOffline": "mu 内核目前离线，请检查本机启动器和登录状态。",
+    "runtimeOffline": "mu 的 Agent 没有响应。请重启 mu 后再试。",
     "otherRegistration": "应用中已经注册了另一个 mu 命令。",
     "installPath": "mu 无法从它的安装文件夹启动：这个文件夹的路径里有空格。请把 mu 重新安装到路径里没有空格的文件夹，例如 C:\\mu。",
     "backend": "本地服务返回异常（HTTP {{status}}）。",
@@ -822,18 +846,19 @@
   },
   "importChats": {
     "title": "导入对话",
-    "description": "把这台电脑上在 Claude Code 或 Codex 里聊过的对话带进 mu，在这里接着聊。",
+    "description": "把这台电脑上在 Claude Code、Codex 或 ZCode 里聊过的对话连同全部历史带进 mu，在这里接着聊。",
     "open": "选择对话",
     "dialog": {
       "title": "导入对话",
-      "hint": "选中的每段对话都会变成 mu 里的一个对话，放在原来的项目文件夹下。mu 会读到之前说过的全部内容，思考过程和图片不会带过来。",
+      "hint": "选中的每段对话都会变成 mu 里的一个对话，放在原来的项目文件夹下，并带上全部历史：消息、工具调用、思考过程和图片。以后再选一次，就能把新增的内容带过来。",
       "search": "按内容或文件夹搜索",
       "loading": "正在找对话…",
-      "empty": "这台电脑上没有找到 Claude Code 或 Codex 的对话。",
+      "empty": "这台电脑上没有找到 Claude Code、Codex 或 ZCode 的对话。",
       "noMatch": "没有符合的对话。",
       "noTitle": "（没有消息）",
       "folderUnknown": "不知道在哪个文件夹",
       "inList": "已在对话列表里",
+      "changed": "导入之后有了变化，选中它就能把新内容带过来。",
       "open": "打开",
       "selected": "已选 {{count}} 段",
       "import": "导入",
@@ -843,13 +868,16 @@
     "done": "已导入 {{count}} 段对话，可以在对话列表里找到。",
     "done_one": "已导入 {{count}} 段对话，可以在对话列表里找到。",
     "done_other": "已导入 {{count}} 段对话，可以在对话列表里找到。",
+    "updated": "已把 {{count}} 段对话更新到最新。",
+    "updated_one": "已把 {{count}} 段对话更新到最新。",
+    "updated_other": "已把 {{count}} 段对话更新到最新。",
     "someFailed": "有 {{count}} 段对话没能导入，原因写在它下面。",
     "someFailed_one": "有 {{count}} 段对话没能导入，原因写在它下面。",
     "someFailed_other": "有 {{count}} 段对话没能导入，原因写在它下面。",
     "failure": {
       "missing": "文件已经不在了。",
       "notFile": "这不是一个文件。",
-      "notTranscript": "这不是 Claude Code 或 Codex 的对话。",
+      "notTranscript": "这不是 Claude Code、Codex 或 ZCode 的对话。",
       "empty": "里面没有消息。",
       "folderMissing": "它的项目文件夹已经不在了：{{folder}}",
       "other": "没能导入：{{detail}}"
@@ -857,7 +885,7 @@
     "notice": {
       "title": "从 {{tool}} 导入的对话",
       "counts": "你的消息 {{user}} 条 · 回答 {{assistant}} 条 · 工具调用 {{toolCalls}} 次",
-      "goOn": "在下面接着说就行，之前的内容 mu 都读过了。思考过程和图片没有带过来。",
+      "goOn": "在下面接着说就行，之前的内容 mu 都读过了。",
       "read": "查看之前的对话"
     },
     "history": {
@@ -878,7 +906,7 @@
     "lessons": "这个项目的经验：/lessons 列出 id · 类型 · 召回/照做次数 · 经验，/lessons all 连到处适用的和已退役的一起列",
     "forget": "让一条经验退役，以后不再召回：/forget <id 前几位>（id 见 /lessons）",
     "capabilities": "装了哪些能力、这次打开了哪些：/capabilities 查看，/capabilities open <ID> 打开",
-    "permissions": "mu 不问你就能做多少事：/permissions full（完全访问）| jev（Jev 审批）| ask（最小权限），不带参数就弹出选择；/permissions reset 忘掉这次对话里允许过的操作",
+    "permissions": "mu 不问你就能做多少事：/permissions full（完全访问）| judge（判定模式）| ask（最小权限），不带参数就弹出选择；/permissions reset 忘掉这次对话里允许过的操作",
     "lsp": "语言服务器：装了哪些、哪些在运行、最近一次出错",
     "goal": "目标模式：让代理一直干到某个条件成立。/goal <条件> 设定，/goal 查看（没有时会问你），/goal clear 结束",
     "board": "人话看板：/board 查看，/board on、/board off 为这个项目打开或关闭，/board model 换个模型来讲",
@@ -898,7 +926,7 @@
     "help": "mu 能做什么，以及常用命令一览",
     "ledger": "判定器最近的判定和用时：/ledger [条数]",
     "doctor": "检查判定器、模型、浏览器和子代理有没有接好",
-    "import-chat": "导入这个项目在 Claude Code 或 Codex 里的对话，接着在这里聊：/import-chat [文件]",
+    "import-chat": "导入这个项目在 Claude Code、Codex 或 ZCode 里的对话，接着在这里聊：/import-chat [文件]",
     "llama": "管理 llama.cpp 路由器上的模型"
   },
   "native": {
@@ -912,12 +940,14 @@
       "idle": "未运行",
       "starting": "启动中",
       "running": "运行中",
+      "working": "工作中",
+      "ready": "就绪",
       "needsModel": "没有模型",
       "failed": "已停止"
     },
     "status": {
       "starting": "正在启动 mu…",
-      "classifying": "Jev 正在读你的消息…",
+      "classifying": "判定器正在读你的消息…",
       "compacting": "正在压缩对话…",
       "retrying": "模型请求失败，正在重试（第 {{attempt}} 次，共 {{max}} 次）…",
       "thinking": "思考中…",
@@ -1023,10 +1053,10 @@
     }
   },
   "details": {
-    "lead": "每项功能一个开关，选项在「选项」里。缩进的几行是它请 Jev 判断的地方：关掉一处，那一步照常进行。",
+    "lead": "每项功能一个开关，选项在「选项」里。缩进的几行是它请判定器判断的地方：关掉一处，那一步照常进行。",
     "featureOff": "功能已关闭",
-    "askJev": "让 Jev 判断",
-    "askJevAbout": "让 Jev 判断：{{point}}",
+    "askJudge": "让判定器判断",
+    "askJudgeAbout": "让判定器判断：{{point}}",
     "areas": {
       "input": "输入",
       "context": "上下文",

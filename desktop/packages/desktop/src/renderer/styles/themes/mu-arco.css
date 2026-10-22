@@ -15,31 +15,31 @@
  */
 
 [data-color-scheme='mu'] body {
-  --arcoblue-1: 247, 245, 255;
-  --arcoblue-2: 239, 234, 254;
-  --arcoblue-3: 226, 217, 253;
-  --arcoblue-4: 205, 189, 251;
-  --arcoblue-5: 141, 116, 232;
-  --arcoblue-6: 110, 82, 218;
-  --arcoblue-7: 90, 64, 192;
-  --arcoblue-8: 71, 50, 156;
-  --arcoblue-9: 52, 37, 116;
-  --arcoblue-10: 34, 24, 77;
+  --arcoblue-1: 246, 244, 255;
+  --arcoblue-2: 237, 233, 255;
+  --arcoblue-3: 221, 213, 255;
+  --arcoblue-4: 196, 182, 255;
+  --arcoblue-5: 127, 106, 240;
+  --arcoblue-6: 91, 69, 219;
+  --arcoblue-7: 74, 54, 189;
+  --arcoblue-8: 58, 42, 150;
+  --arcoblue-9: 42, 31, 109;
+  --arcoblue-10: 27, 20, 70;
 
   --primary-5: 100, 114, 134;
   --primary-6: 78, 89, 105;
   --primary-7: 56, 64, 76;
 
   /* Status colours: still green, amber and red, a little deeper so their text reads on white. */
-  --success-5: 35, 150, 108;
-  --success-6: 8, 127, 88;
-  --success-7: 5, 104, 72;
-  --warning-5: 224, 131, 38;
-  --warning-6: 201, 106, 10;
-  --warning-7: 168, 86, 5;
-  --danger-5: 224, 82, 116;
-  --danger-6: 209, 47, 87;
-  --danger-7: 176, 32, 70;
+  --success-5: 42, 154, 110;
+  --success-6: 14, 127, 85;
+  --success-7: 10, 102, 68;
+  --warning-5: 207, 127, 18;
+  --warning-6: 178, 106, 8;
+  --warning-7: 143, 84, 5;
+  --danger-5: 222, 82, 116;
+  --danger-6: 204, 47, 85;
+  --danger-7: 169, 34, 69;
 
   /* One step rounder than Arco's 2 / 4 / 8. */
   --border-radius-small: 6px;
@@ -47,36 +47,36 @@
   --border-radius-large: 12px;
 
   /* Tooltips, popovers and popconfirms (arco-override.css paints them from these). */
-  --aion-overlay-shadow: var(--mu-shadow-2);
+  --mu-overlay-shadow: var(--mu-shadow-2);
 }
 
 [data-color-scheme='mu'] body[arco-theme='dark'] {
-  --arcoblue-1: 28, 26, 38;
-  --arcoblue-2: 38, 35, 58;
-  --arcoblue-3: 53, 48, 79;
-  --arcoblue-4: 77, 69, 112;
-  --arcoblue-5: 154, 134, 244;
-  --arcoblue-6: 180, 162, 250;
-  --arcoblue-7: 199, 185, 251;
-  --arcoblue-8: 216, 206, 252;
-  --arcoblue-9: 231, 224, 253;
-  --arcoblue-10: 244, 240, 254;
+  --arcoblue-1: 23, 20, 42;
+  --arcoblue-2: 32, 28, 58;
+  --arcoblue-3: 45, 39, 82;
+  --arcoblue-4: 65, 56, 122;
+  --arcoblue-5: 143, 124, 247;
+  --arcoblue-6: 173, 157, 255;
+  --arcoblue-7: 194, 182, 255;
+  --arcoblue-8: 214, 205, 255;
+  --arcoblue-9: 232, 227, 255;
+  --arcoblue-10: 245, 242, 255;
 
   --primary-5: 169, 174, 184;
   --primary-6: 206, 211, 218;
   --primary-7: 229, 232, 236;
 
-  --success-5: 52, 178, 128;
-  --success-6: 76, 211, 155;
-  --success-7: 120, 226, 181;
-  --warning-5: 232, 150, 58;
-  --warning-6: 255, 179, 90;
-  --warning-7: 255, 199, 133;
-  --danger-5: 232, 96, 120;
-  --danger-6: 255, 125, 146;
-  --danger-7: 255, 158, 174;
+  --success-5: 52, 196, 134;
+  --success-6: 74, 222, 155;
+  --success-7: 123, 232, 182;
+  --warning-5: 224, 157, 47;
+  --warning-6: 245, 181, 68;
+  --warning-7: 248, 201, 111;
+  --danger-5: 232, 90, 112;
+  --danger-6: 255, 107, 129;
+  --danger-7: 255, 148, 165;
 
-  --aion-overlay-shadow: var(--mu-shadow-2);
+  --mu-overlay-shadow: var(--mu-shadow-2);
 }
 
 /* ---- Component rules the tokens cannot reach ---- */
@@ -319,7 +319,7 @@
 }
 
 /* arco-override.css paints these two with upstream's pale blue. */
-[data-color-scheme='mu'] .aionui-steps .arco-steps-item-finish .arco-steps-item-icon {
+[data-color-scheme='mu'] .mu-steps .arco-steps-item-finish .arco-steps-item-icon {
   background-color: var(--mu-violet-2) !important;
   border-color: var(--mu-violet-2) !important;
 }

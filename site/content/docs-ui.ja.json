@@ -1,0 +1,25 @@
+{
+  "index_label": "ドキュメント",
+  "sections": { "start": "はじめに", "use": "mu を使う", "ref": "リファレンス" },
+  "prev": "前へ",
+  "next": "次へ",
+  "read": "読む",
+  "options_on": "既定でオン",
+  "options_off": "既定でオフ",
+  "options_beta": "実験的",
+  "options_points": "判定ポイント",
+  "options_option": "オプション",
+  "options_default": "既定値",
+  "options_meaning": "意味",
+  "options_range": "範囲は {min}〜{max} です。",
+  "options_none": "オプションはありません。",
+  "options_empty": "空",
+  "contrib_h2": "コントリビューター向け",
+  "contrib_p": "mu がどう作られているか、どう手を加えるか。これらはリポジトリにあり、英語で書かれています：",
+  "contrib": [
+    { "text": "mu の仕組み", "href": "https://github.com/qybaihe/mu/blob/main/docs/architecture.md" },
+    { "text": "判定ポイントの追加", "href": "https://github.com/qybaihe/mu/blob/main/docs/adding-a-decision-point.md" },
+    { "text": "翻訳", "href": "https://github.com/qybaihe/mu/blob/main/docs/translations.md" },
+    { "text": "コントリビュート", "href": "https://github.com/qybaihe/mu/blob/main/CONTRIBUTING.md" }
+  ]
+}

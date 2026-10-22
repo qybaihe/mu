@@ -1,5 +1,5 @@
 /**
- * A native conversation's view as the Jev panel's activity (`Activity`, what the panel's board, judge and hive tabs
+ * A native conversation's view as the work panel's activity (`Activity`, what the panel's board, judge and hive tabs
  * read), shaped as the mu bridge's telemetry writes it (process/agent/kyrn/telemetry.ts) so the tabs read it as they
  * read any mu conversation:
  *

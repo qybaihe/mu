@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SettingsStore } from '../../../../packages/desktop/src/process/agent/kyrn/settings';
 import {
+  isPlainRemoteEndpoint,
   isSafeEndpoint,
   providerKeyVariable,
   suggestProviderId,
@@ -322,7 +323,7 @@ describe('custom model providers in models.json', () => {
       expect(add('good-one-2')).not.toThrow();
     });
   });
-  it('validates the endpoint like a judge URL: HTTPS, or HTTP to this machine or a private network, without credentials', () => {
+  it('validates the endpoint like a judge URL: HTTPS or HTTP, never link-local, without credentials', () => {
     using(fixture(), (f) => {
       const read = f.store.read();
       const add = (patch: Partial<ProviderSettings>) => () =>
@@ -333,15 +334,14 @@ describe('custom model providers in models.json', () => {
         f.store.save({ ...now, models: { ...now.models, providers: [provider(patch)] } });
       };
       for (const baseUrl of [
-        'http://example.com/v1',
-        'http://8.8.8.8/v1',
-        'http://172.32.0.1/v1',
+        'http://169.254.169.254/v1',
+        'http://[fe80::1]/v1',
         'https://user:pw@example.com',
         'https://example.com/?key=1',
         'ftp://x',
         '',
       ])
-        expect(add({ baseUrl }), baseUrl).toThrow('private-network address');
+        expect(add({ baseUrl }), baseUrl).toThrow('not link-local');
       expect(add({ api: 'soap' as 'openai-responses' })).toThrow('Invalid endpoint type');
       expect(add({ models: [{ ...provider().models[0], id: ' ' }] })).toThrow('Invalid model id');
       expect(add({ models: [provider().models[0], provider().models[0]] })).toThrow('Invalid model id');
@@ -543,6 +543,14 @@ describe('one revision over the three files', () => {
 describe('isSafeEndpoint', () => {
   const allowed = [
     'https://api.example.com/v1',
+    // A name over HTTP may be a server the hosts file or a local DNS points at: the app cannot see where it leads.
+    'http://example.com/v1',
+    'http://llm.internal:8000/v1',
+    'http://8.8.8.8/v1',
+    'http://172.15.255.255/v1',
+    'http://172.32.0.1/v1',
+    'http://[2001:db8::1]/v1',
+    'http://[::ffff:8.8.8.8]/v1',
     'http://127.0.0.1:8080/v1',
     'http://localhost:11434/v1',
     'http://[::1]:11434/v1',
@@ -556,14 +564,10 @@ describe('isSafeEndpoint', () => {
     'https://192.168.1.1/v1',
   ];
   const refused = [
-    'http://example.com/v1',
-    'http://8.8.8.8/v1',
-    'http://172.15.255.255/v1',
-    'http://172.32.0.1/v1',
-    'http://11.0.0.1/v1',
     'http://169.254.169.254/',
-    'http://[2001:db8::1]/v1',
-    'http://[::ffff:8.8.8.8]/v1',
+    'http://169.254.0.1:8080/v1',
+    'http://[fe80::1]/v1',
+    'http://[::ffff:169.254.169.254]/',
     'http://192.168.1.1/?key=1',
     'http://user:pw@192.168.1.1/v1',
     'https://user:pw@example.com',
@@ -571,8 +575,23 @@ describe('isSafeEndpoint', () => {
     '',
     'not a url',
   ];
-  it('allows https, loopback http, and private-network http literals', () => {
+  it('allows https and http to any host but a link-local one, without credentials, query or fragment', () => {
     for (const url of allowed) expect(isSafeEndpoint(url), url).toBe(true);
     for (const url of refused) expect(isSafeEndpoint(url), url).toBe(false);
+  });
+
+  it('says which allowed addresses send the key unencrypted beyond this machine or a private-network literal', () => {
+    for (const url of ['http://example.com/v1', 'http://llm.internal:8000/v1', 'http://8.8.8.8/v1'])
+      expect(isPlainRemoteEndpoint(url), url).toBe(true);
+    for (const url of [
+      'https://api.example.com/v1',
+      'http://localhost:11434/v1',
+      'http://127.0.0.1:8080/v1',
+      'http://192.168.31.124:8000/v1',
+      'http://[fd00::1]:8000/v1',
+      'http://169.254.169.254/',
+      'not a url',
+    ])
+      expect(isPlainRemoteEndpoint(url), url).toBe(false);
   });
 });

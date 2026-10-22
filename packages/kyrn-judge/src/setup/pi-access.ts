@@ -23,14 +23,17 @@ export function piAccess(runtime: ModelRuntime, agentDir: string): PiAccess {
 			// A provider of mu's was just written into models.json: pi reads the file again before it knows the provider.
 			await runtime.refresh({ allowNetwork: false, providers: [provider] });
 			if (!runtime.getProvider(provider)) {
-				throw new Error(`pi has no provider ${provider}${runtime.getError() ? `: ${runtime.getError()}` : ""}`);
+				throw new Error(
+					`mu has no provider named ${provider}${runtime.getError() ? `: ${runtime.getError()}` : ""}`,
+				);
 			}
 			let asked = false;
 			try {
 				await runtime.login(provider, "api_key", {
 					// pi's key login asks one question, the key. Anything else is not answered, and nothing is guessed.
 					prompt: async (prompt) => {
-						if (asked || prompt.type !== "secret") throw new Error(`pi asked ${provider} for more than a key`);
+						if (asked || prompt.type !== "secret")
+							throw new Error(`the sign-in for ${provider} asked for more than a key`);
 						asked = true;
 						return key;
 					},

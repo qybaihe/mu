@@ -190,7 +190,7 @@ const applicationMenuActions: ApplicationMenuActions = {
   },
   openProjectPage: () => {
     void shell.openExternal(MU_PROJECT_URL).catch((error: unknown) => {
-      console.error('[AionUi] Failed to open the project page:', error);
+      console.error('[mu] Failed to open the project page:', error);
     });
   },
   zoom: zoomFromMenu,

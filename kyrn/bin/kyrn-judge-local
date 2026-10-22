@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Manage the mu local judge sidecar (Laya on Core ML, Apple Silicon only).
+# Manage the mu local judge sidecar (Laya on Core ML, Apple silicon only).
 #
 #   kyrn/bin/kyrn-judge-local setup    create the venv, install pinned deps, download the weights (~680 MB)
 #   kyrn/bin/kyrn-judge-local start    start in the background if it is not already running
@@ -41,7 +41,7 @@ require_setup() {
 
 cmd_setup() {
   if [[ "$(uname -s)-$(uname -m)" != "Darwin-arm64" ]]; then
-    echo "laya-coreml needs Apple Silicon and macOS 15+." >&2
+    echo "laya-coreml needs Apple silicon and macOS 15+." >&2
     exit 1
   fi
   command -v uv >/dev/null || { echo "uv is required: https://docs.astral.sh/uv/" >&2; exit 1; }

@@ -1,9 +1,9 @@
 {
   "name": "mu-desktop",
-  "version": "0.1.8",
-  "description": "mu, the coding agent with Jev judgment, as a desktop app.",
+  "version": "0.1.10",
+  "description": "mu, the coding agent with a judge model, as a desktop app.",
   "keywords": [],
-  "license": "Apache-2.0",
+  "license": "MIT AND Apache-2.0",
   "author": {
     "name": "mu"
   },
@@ -14,7 +14,7 @@
   "scripts": {
     "dev": "electron-vite dev --config packages/desktop/electron.vite.config.ts",
     "start": "electron-vite dev --config packages/desktop/electron.vite.config.ts",
-    "start:multi": "cross-env AIONUI_MULTI_INSTANCE=1 electron-vite dev --config packages/desktop/electron.vite.config.ts",
+    "start:multi": "cross-env MU_MULTI_INSTANCE=1 electron-vite dev --config packages/desktop/electron.vite.config.ts",
     "cli": "electron-vite dev --config packages/desktop/electron.vite.config.ts",
     "package": "electron-vite build --config packages/desktop/electron.vite.config.ts",
     "make": "electron-vite build --config packages/desktop/electron.vite.config.ts",
@@ -56,11 +56,6 @@
     "debug:custom-agent": "bunx tsx scripts/debug-custom-agent.ts",
     "test:e2e": "playwright test --config playwright.config.ts",
     "e2e:conversation": "node scripts/kyrn/e2e-conversation.mjs",
-    "test:e2e:team": "playwright test --config playwright.config.ts tests/e2e/cases/teams/*.e2e.ts --reporter=list",
-    "test:e2e:team:create": "playwright test --config playwright.config.ts tests/e2e/cases/teams/team-create.e2e.ts --reporter=list",
-    "test:e2e:team:lifecycle": "playwright test --config playwright.config.ts tests/e2e/cases/teams/team-agent-lifecycle.e2e.ts --reporter=list",
-    "test:e2e:team:whitelist": "playwright test --config playwright.config.ts tests/e2e/cases/teams/team-whitelist.e2e.ts --reporter=list",
-    "test:e2e:team:comm": "playwright test --config playwright.config.ts tests/e2e/cases/teams/team-communication.e2e.ts --reporter=list",
     "test:e2e:installer:error-codes": "node scripts/smoke-installer-failure-messagebox.js --all-scenarios --auto",
     "test:smoke:installer:failure-messagebox": "node scripts/smoke-installer-failure-messagebox.js",
     "test:smoke:installer:self-lock": "node scripts/smoke-installer-self-lock.js",
@@ -71,7 +66,6 @@
   },
   "dependencies": {
     "@agentclientprotocol/sdk": "^0.18.2",
-    "@aionui/web-host": "workspace:*",
     "@anthropic-ai/sdk": "^0.71.2",
     "@arco-design/web-react": "^2.66.1",
     "@aws-sdk/client-bedrock": "^3.987.0",
@@ -99,6 +93,7 @@
     "@lezer/highlight": "^1.2.3",
     "@modelcontextprotocol/sdk": "^1.20.0",
     "@monaco-editor/react": "^4.7.0",
+    "@mu/web-host": "workspace:*",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@uiw/codemirror-extensions-langs": "^4.25.1",
@@ -135,14 +130,12 @@
     "jsonrepair": "^3.13.0",
     "jsonwebtoken": "^9.0.2",
     "katex": "^0.16.22",
-    "mammoth": "^1.11.0",
     "mermaid": "^11.13.0",
     "multer": "^2.1.1",
     "officeparser": "^5.2.2",
     "onnxruntime-node": "1.30.0",
     "openai": "^5.12.2",
     "postcss": "^8.5.8",
-    "pptx2json": "^0.0.10",
     "process": "^0.11.10",
     "qrcode-terminal": "^0.12.0",
     "qrcode.react": "^4.2.0",
@@ -168,8 +161,6 @@
     "strip-json-comments": "^3.1.1",
     "swr": "^2.3.6",
     "tiny-csrf": "^1.1.6",
-    "turndown": "^7.2.2",
-    "turndown-plugin-gfm": "^1.0.2",
     "wavedrom": "^3.6.2",
     "web-tree-sitter": "^0.25.10",
     "ws": "^8.18.3",
@@ -198,7 +189,6 @@
     "@types/react-dom": "^19.1.6",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/semver": "^7.7.1",
-    "@types/turndown": "^5.0.6",
     "@types/ws": "^8.18.1",
     "@types/yauzl": "^2.10.3",
     "@vitest/coverage-v8": "^4.0.18",
@@ -257,11 +247,11 @@
   "engines": {
     "node": ">=22 <25"
   },
-  "aioncoreVersion": "v0.2.2",
+  "backendVersion": "v0.2.2",
   "electronRebuild": {
     "electronVersion": "^37.3.1"
   },
-  "muAgentVersion": "0.1.9",
+  "muAgentVersion": "0.1.12",
   "patchedDependencies": {
     "7zip-bin@5.2.0": "patches/7zip-bin@5.2.0.patch"
   },

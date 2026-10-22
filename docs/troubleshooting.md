@@ -1,43 +1,43 @@
 # Troubleshooting
 
-Start with `mu doctor` (or `/doctor` in a session): it checks the installation, the model, the judges and the connections, and says what to fix. The desktop app's logs are one click away in Settings → About.
+Start with `mu doctor` (or `/doctor` in a session). It checks the installation, the model, the judges and the connections, and tells you what to fix. In the desktop app, the logs are one click away in Settings → About.
 
-If none of this helps, [open an issue](https://github.com/qybaihe/mu/issues/new/choose) with the version, the platform and the `mu doctor` output.
+If that doesn't help, [open an issue](https://github.com/qybaihe/mu/issues/new/choose) with the version, the platform and the `mu doctor` output.
 
 ## Installing and starting
 
-**`mu needs Node >= 22.19 (found v20…)`.** The command line needs Node.js 22.19 or newer: `nvm install 24`, or your system's package. The desktop app carries its own and needs nothing.
+**`mu needs Node >= 22.19 (found v20…)`.** The command line needs Node.js 22.19 or newer: run `nvm install 24`, or install Node.js with your system's package manager. The desktop app bundles its own Node.js and needs nothing.
 
-**Windows shows a SmartScreen warning.** The Windows builds are not code-signed yet. Choose "More info" → "Run anyway". The checksums of every download are in `SHA256SUMS` on the release page.
+**Windows shows a SmartScreen warning.** The Windows builds aren't code-signed yet. Choose "More info" → "Run anyway". The checksums of every download are in `SHA256SUMS` on the release page.
 
-**Windows: the conversation says Git for Windows is missing.** mu runs commands in a POSIX shell on Windows; install [Git for Windows](https://git-scm.com/download/win) and start a new conversation.
+**Windows: the conversation says Git for Windows is missing.** mu runs commands in a POSIX shell on Windows. Install [Git for Windows](https://git-scm.com/download/win) and start a new conversation.
 
-**The app installed in `C:\Program Files\mu` cannot start mu.** Fixed in 0.1.5 ([#4](https://github.com/qybaihe/mu/issues/4)): install the latest release over the old one; your data stays.
+**The app installed in `C:\Program Files\mu` can't start mu.** Fixed in 0.1.5 ([#4](https://github.com/qybaihe/mu/issues/4)). Install the latest release over the old one; your data is kept.
 
-**`mu install`, `mu list` or `mu config` starts a session instead.** Fixed after 0.1.7 ([#8](https://github.com/qybaihe/mu/issues/8)), in the next release; a checkout of `main` has it now.
+**`mu install`, `mu list` or `mu config` starts a session instead.** Fixed in mu-agent 0.1.8 and the desktop app 0.1.7 ([#8](https://github.com/qybaihe/mu/issues/8)). Update to the latest release.
 
 ## Models and networks
 
-**No model is set up.** Run `mu setup`, or the app's first-run guide: paste an API key or sign in with a subscription.
+**No model is set up.** Run `mu setup`, or follow the app's first-run guide: paste an API key or sign in with a subscription.
 
-**"User location is not supported", or requests time out, in the app but not in a terminal.** The model's service refuses your network's region, or the app does not see your proxy. Since 0.1.5 the app follows the system proxy when `HTTPS_PROXY` is not set; check that the proxy is on, or set `HTTPS_PROXY` for mu.
+**"User location is not supported", or requests time out, in the app but not in a terminal.** Either the model's service doesn't serve your network's region, or the app can't see your proxy. Since 0.1.5 the app follows the system proxy when `HTTPS_PROXY` isn't set. Check that the proxy is on, or set `HTTPS_PROXY` for mu.
 
 ## The judge
 
-**The judge seems to do nothing.** A point in shadow records its verdicts and changes nothing, and one that is off is not asked. `/status` shows each point's mode; look for `"default": "shadow"` or `"off"` in `~/.mu/agent/mu.json`, or a `MU_JUDGE_MODE` in your environment. See [Getting started](getting-started.md#decisions-and-their-modes).
+**The judge seems to do nothing.** A point in shadow mode records its verdicts and changes nothing, and a point that's off isn't asked at all. `/status` shows each point's mode. Look for `"default": "shadow"` or `"off"` in `~/.mu/agent/mu.json`, or `MU_JUDGE_MODE` in your environment. See [Getting started](getting-started.md#decisions-and-their-modes).
 
-**"No judge is available yet, so mu asks about each step."** In the *Jev approves* permission mode, mu asks you about every step that needs approval when no judge can answer: no key and the free Jev unavailable, an exhausted account, or only a local judge, which is not trusted with approvals. Set a Jev key (`mu setup`), or switch the permission mode with `/permissions`.
+**"No judge is available yet, so mu asks about each step."** In *Judge mode*, mu asks you about every step that needs approval when no judge can answer. That happens when there's no key and the free Jev is unavailable, when your judge account has hit its limit, or when only a local judge is set up, since a local judge isn't trusted with approvals. Set a Jev key (`mu setup`), or switch the permission mode with `/permissions`.
 
-**The free Jev stopped answering.** It is OpenCode Zen's limited-time offer; mu says so when it ends. Set a key for one of the [Jev services](judges.md#hosted-jev), or choose another judge.
+**The free Jev stopped answering.** It's a limited-time offer from OpenCode Zen, and mu tells you when it ends. Set a key for one of the [Jev services](judges.md#hosted-jev), or choose another judge.
 
-**Verdicts are slow.** Every decision point has a wait limit, after which mu carries on without the verdict; nothing blocks for long. `mu ledger --json` shows each verdict's latency. A judge far away on the network, or a busy one, can be replaced per point with `routes`.
+**Verdicts are slow.** Every decision point has a time limit, after which mu carries on without the verdict, so nothing blocks for long. `mu ledger --json` shows each verdict's latency. If a judge is far away on the network or busy, you can replace it per point with `routes`.
 
-**The local judge wants to download a model.** Laya's model is several hundred megabytes; mu downloads it only after you agree, in `mu judge setup` or in the app.
+**The local judge wants to download a model.** Laya's model is about 930 MB. mu downloads it only after you agree, in `mu judge setup` or in the app.
 
 ## The terminal UI
 
-**The terminal UI crashes with "Rendered line … exceeds terminal width" when a sub-agent starts.** Fixed after 0.1.7 ([#7](https://github.com/qybaihe/mu/issues/7)). Until the next release, widen the terminal past the status line.
+**The terminal UI crashes with "Rendered line … exceeds terminal width" when a subagent starts.** Fixed in mu-agent 0.1.8 and the desktop app 0.1.7 ([#7](https://github.com/qybaihe/mu/issues/7)). Update to the latest release.
 
 ## Starting over
 
-`mu setup` copies every file it changes to `~/.mu/backups/<time>/` first. To reset mu's own settings, move `~/.mu/agent/mu.json` away; mu starts with its defaults. Sessions, sign-ins and lessons are separate files (see [Getting started](getting-started.md#where-things-live)) and stay.
+`mu setup` copies every file it changes to `~/.mu/backups/<time>/` first. To reset mu's own settings, move `~/.mu/agent/mu.json` out of the way, and mu starts with its defaults. Sessions, sign-ins and lessons live in separate files (see [Getting started](getting-started.md#where-things-live)) and aren't affected.

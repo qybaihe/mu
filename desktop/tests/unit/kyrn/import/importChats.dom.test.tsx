@@ -37,7 +37,7 @@ vi.mock('@/renderer/pages/native/hooks/useNativeConversations', () => ({
     native.rereads++;
   },
 }));
-// The dialog frame (AionModal) sizes itself by the font scale.
+// The dialog frame (MuModal) sizes itself by the font scale.
 vi.mock('@/renderer/hooks/context/ThemeContext', () => ({ useThemeContext: () => ({ fontScale: 1 }) }));
 vi.mock('@arco-design/web-react', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@arco-design/web-react')>();
@@ -109,7 +109,7 @@ describe('the import dialog', () => {
     expect(within(groups[0]).getByText('Claude Code')).toBeInTheDocument();
     expect(row('Fix the login form').textContent).toContain('app');
     expect(row('Fix the login form').textContent).toContain('2 KB');
-    expect(row('Deploy script').textContent).toContain('Folder unknown');
+    expect(row('Deploy script').textContent).toContain('Unknown folder');
     expect(list).toHaveBeenCalledWith({ native: false });
   });
 
@@ -118,7 +118,7 @@ describe('the import dialog', () => {
     render(<Dialog onClose={onClose} />);
     await settle();
     const held = row('Held one');
-    expect(held.textContent).toContain('In your list');
+    expect(held.textContent).toContain('Already in your list');
     expect(within(held).getByRole('checkbox')).toBeDisabled();
     fireEvent.click(within(held).getByRole('button', { name: 'Open' }));
     expect(onClose).toHaveBeenCalled();
@@ -128,14 +128,14 @@ describe('the import dialog', () => {
   it('finds conversations by the words of their first message or folder', async () => {
     render(<Dialog />);
     await settle();
-    fireEvent.change(screen.getByPlaceholderText('Search by words or folder'), { target: { value: 'deploy' } });
+    fireEvent.change(screen.getByPlaceholderText('Search by text or folder'), { target: { value: 'deploy' } });
     expect(screen.getAllByTestId('import-chat-row').map((each) => each.dataset.path)).toEqual([
       '/t/Deploy-script.jsonl',
     ]);
-    fireEvent.change(screen.getByPlaceholderText('Search by words or folder'), {
+    fireEvent.change(screen.getByPlaceholderText('Search by text or folder'), {
       target: { value: 'nothing like it' },
     });
-    expect(screen.getByText('No conversation matches.')).toBeInTheDocument();
+    expect(screen.getByText('No matching conversations.')).toBeInTheDocument();
   });
 
   it('imports the chosen one, refreshes the conversation list and opens it', async () => {
@@ -157,14 +157,14 @@ describe('the import dialog', () => {
     await settle();
     expect(screen.getByTestId('import-chats-start')).toBeDisabled();
     fireEvent.click(within(row('Fix the login form')).getByText('Fix the login form'));
-    expect(screen.getByText('Chosen: 1')).toBeInTheDocument();
+    expect(screen.getByText('1 selected')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('import-chats-start'));
     await settle();
     expect(run).toHaveBeenCalledWith({ paths: ['/t/Fix-the-login-form.jsonl'], locale: 'en', native: false });
     expect(emit).toHaveBeenCalledWith('chat.history.refresh');
     expect(onClose).toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith('/conversation/new-1');
-    expect(said).toEqual([['success', '1 conversation imported. It is in your conversation list.']]);
+    expect(said).toEqual([['success', "Imported 1 conversation. It's in your conversation list."]]);
   });
 
   it('with the app running mu itself, opens the session an import became, and reads the native list again', async () => {
@@ -227,9 +227,9 @@ describe('the import dialog', () => {
     fireEvent.click(screen.getByTestId('import-chats-start'));
     await settle();
     expect(onClose).not.toHaveBeenCalled();
-    expect(row('Deploy script').textContent).toContain('Its project folder is gone: /gone/app');
+    expect(row('Deploy script').textContent).toContain('Its project folder no longer exists: /gone/app');
     expect(navigate).not.toHaveBeenCalled();
-    expect(said).toEqual([['warning', '1 conversation could not be imported. The reason is under it.']]);
+    expect(said).toEqual([['warning', "Couldn't import 1 conversation. The reason is shown under it."]]);
     // The list is asked again, so what did come in shows as in the list.
     expect(list).toHaveBeenCalledTimes(2);
   });
@@ -239,7 +239,7 @@ describe('the import dialog', () => {
     render(<Dialog />);
     await settle();
     expect(screen.getByRole('alert').textContent).toContain('mu import did not start');
-    expect(screen.queryByPlaceholderText('Search by words or folder')).toBeNull();
+    expect(screen.queryByPlaceholderText('Search by text or folder')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await settle();
     expect(screen.getAllByTestId('import-chat-row')).toHaveLength(3);
@@ -250,7 +250,7 @@ describe('the import dialog', () => {
     render(<Dialog onClose={onClose} />);
     await settle();
     const title = screen.getByRole('heading', { name: 'Import conversations' });
-    expect(title.closest('.arco-modal')?.classList.contains('aionui-modal-standard')).toBe(true);
+    expect(title.closest('.arco-modal')?.classList.contains('mu-modal-standard')).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(onClose).toHaveBeenCalled();
   });
@@ -261,21 +261,21 @@ describe('the import dialog', () => {
     render(<Dialog />);
     await settle();
     expect(screen.getByText('Looking for conversations…')).toBeInTheDocument();
-    expect(screen.queryByPlaceholderText('Search by words or folder')).toBeNull();
+    expect(screen.queryByPlaceholderText('Search by text or folder')).toBeNull();
     await act(async () => answers[0]({ ok: true, data: { conversations: found } }));
-    expect(screen.getByPlaceholderText('Search by words or folder')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search by text or folder')).toBeInTheDocument();
   });
 
   it('says nothing was found on the line where the description starts, with no search box', async () => {
     list.mockResolvedValue({ ok: true, data: { conversations: [] } });
     render(<Dialog />);
     await settle();
-    const empty = screen.getByText('No Claude Code or Codex conversations were found on this computer.');
+    const empty = screen.getByText('No Claude Code, Codex or ZCode conversations found on this computer.');
     const hint = screen.getByText(/Each conversation you choose becomes a mu conversation/);
     // Both in the dialog's one column, the empty line not in the list that reaches past it.
     expect(empty.parentElement).toBe(hint.parentElement);
     expect(screen.queryByTestId('import-chats-list')).toBeNull();
-    expect(screen.queryByPlaceholderText('Search by words or folder')).toBeNull();
+    expect(screen.queryByPlaceholderText('Search by text or folder')).toBeNull();
   });
 });
 
@@ -292,11 +292,11 @@ describe('an imported conversation', () => {
     const notice = screen.getByTestId('imported-chat-notice');
     expect(notice.textContent).toContain('Imported from Claude Code');
     expect(notice.textContent).toContain('/t/0001.jsonl');
-    expect(notice.textContent).toContain('Your messages: 18 · answers: 204 · tool calls: 1,188');
-    expect(notice.textContent).toContain('Just keep going below');
+    expect(notice.textContent).toContain('Your messages: 18 · Replies: 204 · Tool calls: 1,188');
+    expect(notice.textContent).toContain('just keep going below');
     cleanup();
     render(<Notice inline />);
-    expect(screen.getByTestId('imported-chat-notice').textContent).not.toContain('Just keep going below');
+    expect(screen.getByTestId('imported-chat-notice').textContent).not.toContain('just keep going below');
   });
 
   it('reads the earlier conversation back: the person, the answers with their tools, the summaries', async () => {
@@ -322,7 +322,7 @@ describe('an imported conversation', () => {
     expect(steps[1].textContent).toContain('You');
     expect(steps[2].textContent).toContain('Claude Code');
     expect(steps[2].textContent).toContain('Used: Bash ×2 and Edit');
-    expect(screen.getByText('2 earlier steps are not shown.')).toBeInTheDocument();
+    expect(screen.getByText("2 earlier steps aren't shown.")).toBeInTheDocument();
   });
 
   it('reads it back in a dialog framed as the settings dialogs are: the title at the start and a close button', async () => {
@@ -337,8 +337,8 @@ describe('an imported conversation', () => {
       </I18nextProvider>
     );
     await settle();
-    const title = screen.getByRole('heading', { name: 'Earlier, in Claude Code' });
-    expect(title.closest('.arco-modal')?.classList.contains('aionui-modal-standard')).toBe(true);
+    const title = screen.getByRole('heading', { name: 'Earlier in Claude Code' });
+    expect(title.closest('.arco-modal')?.classList.contains('mu-modal-standard')).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(onClose).toHaveBeenCalled();
   });

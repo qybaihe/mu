@@ -1,5 +1,5 @@
 // @ts-check
-// One conversation on the native host, end to end: pi runs inside the app (native is the default) with no AionCore and no
+// One conversation on the native host, end to end: pi runs inside the app (native is the default) with no backend and no
 // ACP in the conversation's path, against the same local fake model as conversation.spec.mjs, in a throwaway profile
 // (profile.mjs, nativeWorld.mjs). Run it with `bun run e2e:conversation --native` (scripts/kyrn/e2e-conversation.mjs
 // builds the app first); tests/e2e/README.md says more.
@@ -248,7 +248,7 @@ test('the test stayed in its profile, and left nothing running', async () => {
   expect(existsSync(join(home, '.mu', 'agent')), 'nothing in the profile home ~/.mu/agent').toBe(false);
   const realMu = join(homedir(), '.mu');
   expect(existsSync(join(realMu, 'agent', 'sessions', slug)), "nothing in the person's ~/.mu/agent").toBe(false);
-  // A native conversation has no ACP record: AionCore never heard of it. (Its start-up health checks leave records of
+  // A native conversation has no ACP record: the backend never heard of it. (Its start-up health checks leave records of
   // their own, in the temporary folder; none of them names the conversation's project.)
   const records = join(home, '.mu', 'acp-sessions');
   const naming = existsSync(records)

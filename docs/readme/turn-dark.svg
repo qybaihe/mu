@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="560" viewBox="0 0 880 560" role="img" aria-labelledby="t d" font-family="-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif">
+<title id="t">How a turn works</title>
+<desc id="d">Four stages of a turn, each with the decision points it asks the judge. A message arrives, before the model reads it: input.preflight (what kind of task is this?), task.frame (does the task change?), input.interjection (interrupt now, or after?), skills.disclosure (which skills to load?), memory.recall (which lessons apply?). Before a tool runs, rules first, then the judge: tool.risk (flagged: did you ask?), tool.constraint (crosses your rule?), tool.approval (does the task need it?). What comes back, before the model sees it: tool.injection (orders aimed at the AI?), tool.admission (does this chunk matter?), context.forget (which results are stale?), context.compact (keep this passage?). The turn ends, before you hear it’s done: turn.completion (was it verified?), turn.continue (did it stop short?), turn.drift (still on the goal?), memory.capture (a lesson to keep?), cache.warming (back before it expires?). The model loops over stages 2 and 3: call a tool, run it, read what came back. Every stage asks the same judge: Jev, Laya, a classifier or any LLM, one bounded question in about 0.3 seconds, and every verdict goes to the ledger.</desc>
+<defs><marker id="a" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8b949e"/></marker><marker id="v" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#ad9dff"/></marker></defs>
+<text x="0" y="22" font-size="18" font-weight="600" fill="#f0f6fc">How a turn works</text>
+<text x="0" y="46" font-size="13.5" fill="#b7bdc8">At each step, a decision point asks the judge one short question. Its answer changes what happens next.</text>
+<line x1="0" x2="880" y1="66" y2="66" stroke="#30363d"/>
+<path d="M488,112 C488,88 264,88 264,108" fill="none" stroke="#ad9dff" stroke-width="1.4" marker-end="url(#v)"/>
+<text x="376" y="86" font-size="10.5" font-weight="600" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" letter-spacing="0.9" fill="#ad9dff">THE MODEL LOOPS: CALL · RUN · READ</text>
+<text x="0" y="130" font-size="10.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" letter-spacing="0.9" fill="#ad9dff">01</text>
+<text x="26" y="131" font-size="14.5" font-weight="600" fill="#f0f6fc">A message arrives</text>
+<text x="0" y="154" font-size="12.5" fill="#b7bdc8">before the model reads it</text>
+<path d="M194,126 L216,126" fill="none" stroke="#8b949e" stroke-width="1.4" marker-end="url(#a)"/>
+<rect x="0" y="180" width="208" height="248" rx="10" fill="#151b23" stroke="#3d444d"/>
+<rect x="15.25" y="198.25" width="5.5" height="5.5" rx="1" fill="#ff8ad8" stroke="rgba(255, 138, 216, 0.25)" stroke-width="2" transform="rotate(45 18 201)"/>
+<text x="30" y="205" font-size="12" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#ff8ad8">input.preflight</text>
+<text x="30" y="223" font-size="12.5" fill="#b7bdc8">what kind of task is this?</text>
+<line x1="12" x2="196" y1="232" y2="232" stroke="#30363d"/>
+<rect x="15.25" y="244.25" width="5.5" height="5.5" rx="1" fill="#ff8ad8" stroke="rgba(255, 138, 216, 0.25)" stroke-width="2" transform="rotate(45 18 247)"/>
+<text x="30" y="251" font-size="12" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#ff8ad8">task.frame</text>
+<text x="30" y="269" font-size="12.5" fill="#b7bdc8">does the task change?</text>
+<line x1="12" x2="196" y1="278" y2="278" stroke="#30363d"/>
+<rect x="15.25" y="290.25" width="5.5" height="5.5" rx="1" fill="#ff8ad8" stroke="rgba(255, 138, 216, 0.25)" stroke-width="2" transform="rotate(45 18 293)"/>
+<text x="30" y="297" font-size="12" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#ff8ad8">input.interjection</text>
+<text x="30" y="315" font-size="12.5" fill="#b7bdc8">interrupt now, or after?</text>
+<line x1="12" x2="196" y1="324" y2="324" stroke="#30363d"/>
+<rect x="15.25" y="336.25" width="5.5" height="5.5" rx="1" fill="#ff8ad8" stroke="rgba(255, 138, 216, 0.25)" stroke-width="2" transform="rotate(45 18 339)"/>
+<text x="30" y="343" font-size="12" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#ff8ad8">skills.disclosure</text>
+<text x="30" y="361" font-size="12.5" fill="#b7bdc8">which skills to load?</text>
+<line x1="12" x2="196" y1="370" y2="370" stroke="#30363d"/>
+<rect x="15.25" y="382.25" width="5.5" height="5.5" rx="1" fill="#ff8ad8" stroke="rgba(255, 138, 216, 0.25)" stroke-width="2" transform="rotate(45 18 385)"/>
+<text x="30" y="389" font-size="12" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#ff8ad8">memory.recall</text>
+<text x="30" y="407" font-size="12.5" fill="#b7bdc8">which lessons apply?</text>
+<path d="M104,430 L104,456" fill="none" stroke="rgba(255, 138, 216, 0.4)" stroke-width="1.4" stroke-dasharray="3 4"/>
+<text x="224" y="130" font-size="10.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" letter-spacing="0.9" fill="#ad9dff">02</text>
+<text x="250" y="131" font-size="14.5" font-weight="600" fill="#f0f6fc">Before a tool runs</text>
+<text x="224" y="154" font-size="12.5" fill="#b7bdc8">rules first, then the judge</text>
+<path d="M418,126 L440,126" fill="none" stroke="#8b949e" stroke-width="1.4" marker-end="url(#a)"/>
+<rect x="224" y="180" width="208" height="248" rx="10" fill="#151b23" stroke="#3d444d"/>
+<rect x="239.25" y="198.25" width="5.5" height="5.5" rx="1" fill="#ff8ad8" stroke="rgba(255, 138, 216, 0.25)" stroke-width="2" transform="rotate(45 242 201)"/>
+<text x="254" y="205" font-size="12" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#ff8ad8">tool.risk</text>
+<text x="254" y="223" font-size="12.5" fill="#b7bdc8">flagged: did you ask?</text>
+<line x1="236" x2="420" y1="232" y2="232" stroke="#30363d"/>
+<rect x="239.25" y="244.25" width="5.5" height="5.5" rx="1" fill="#ff8ad8" stroke="rgba(255, 138, 216, 0.25)" stroke-width="2" transform="rotate(45 242 247)"/>
+<text x="254" y="251" font-size="12" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#ff8ad8">tool.constraint</text>
+<text x="254" y="269" font-size="12.5" fill="#b7bdc8">crosses your rule?</text>
+<line x1="236" x2="420" y1="278" y2="278" stroke="#30363d"/>
+<rect x="239.25" y="290.25" width="5.5" height="5.5" rx="1" fill="#ff8ad8" stroke="rgba(255, 138, 216, 0.25)" stroke-width="2" transform="rotate(45 242 293)"/>
+<text x="254" y="297" font-size="12" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#ff8ad8">tool.approval</text>
+<text x="254" y="315" font-size="12.5" fill="#b7bdc8">does the task need it?</text>
+<text x="238" y="378" font-size="12" fill="#8b949e">Rules catch a risky command</text>
+<text x="238" y="396" font-size="12" fill="#8b949e">first; the judge can only</text>
+<text x="238" y="414" font-size="12" fill="#8b949e">vouch that you asked for it.</text>
+<path d="M328,430 L328,456" fill="none" stroke="rgba(255, 138, 216, 0.4)" stroke-width="1.4" stroke-dasharray="3 4"/>
+<text x="448" y="130" font-size="10.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" letter-spacing="0.9" fill="#ad9dff">03</text>
+<text x="474" y="131" font-size="14.5" font-weight="600" fill="#f0f6fc">What comes back</text>
+<text x="448" y="154" font-size="12.5" fill="#b7bdc8">before the model sees it</text>
+<path d="M642,126 L664,126" fill="none" stroke="#8b949e" stroke-width="1.4" marker-end="url(#a)"/>
+<rect x="448" y="180" width="208" height="248" rx="10" fill="#151b23" stroke="#3d444d"/>
+<rect x="463.25" y="198.25" width="5.5" height="5.5" rx="1" fill="#ff8ad8" stroke="rgba(255, 138, 216, 0.25)" stroke-width="2" transform="rotate(45 466 201)"/>
+<text x="478" y="205" font-size="12" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#ff8ad8">tool.injection</text>
+<text x="478" y="223" font-size="12.5" fill="#b7bdc8">orders aimed at the AI?</text>
+<line x1="460" x2="644" y1="232" y2="232" stroke="#30363d"/>
+<rect x="463.25" y="244.25" width="5.5" height="5.5" rx="1" fill="#ff8ad8" stroke="rgba(255, 138, 216, 0.25)" stroke-width="2" transform="rotate(45 466 247)"/>
+<text x="478" y="251" font-size="12" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#ff8ad8">tool.admission</text>
+<text x="478" y="269" font-size="12.5" fill="#b7bdc8">does this chunk matter?</text>
+<line x1="460" x2="644" y1="278" y2="278" stroke="#30363d"/>
+<rect x="463.25" y="290.25" width="5.5" height="5.5" rx="1" fill="#ff8ad8" stroke="rgba(255, 138, 216, 0.25)" stroke-width="2" transform="rotate(45 466 293)"/>
+<text x="478" y="297" font-size="12" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#ff8ad8">context.forget</text>
+<text x="478" y="315" font-size="12.5" fill="#b7bdc8">which results are stale?</text>
+<line x1="460" x2="644" y1="324" y2="324" stroke="#30363d"/>
+<rect x="463.25" y="336.25" width="5.5" height="5.5" rx="1" fill="#ff8ad8" stroke="rgba(255, 138, 216, 0.25)" stroke-width="2" transform="rotate(45 466 339)"/>
+<text x="478" y="343" font-size="12" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#ff8ad8">context.compact</text>
+<text x="478" y="361" font-size="12.5" fill="#b7bdc8">keep this passage?</text>
+<path d="M552,430 L552,456" fill="none" stroke="rgba(255, 138, 216, 0.4)" stroke-width="1.4" stroke-dasharray="3 4"/>
+<text x="672" y="130" font-size="10.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" letter-spacing="0.9" fill="#ad9dff">04</text>
+<text x="698" y="131" font-size="14.5" font-weight="600" fill="#f0f6fc">The turn ends</text>
+<text x="672" y="154" font-size="12.5" fill="#b7bdc8">before you hear it’s done</text>
+<rect x="672" y="180" width="208" height="248" rx="10" fill="#151b23" stroke="#3d444d"/>
+<rect x="687.25" y="198.25" width="5.5" height="5.5" rx="1" fill="#ff8ad8" stroke="rgba(255, 138, 216, 0.25)" stroke-width="2" transform="rotate(45 690 201)"/>
+<text x="702" y="205" font-size="12" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#ff8ad8">turn.completion</text>
+<text x="702" y="223" font-size="12.5" fill="#b7bdc8">was it verified?</text>
+<line x1="684" x2="868" y1="232" y2="232" stroke="#30363d"/>
+<rect x="687.25" y="244.25" width="5.5" height="5.5" rx="1" fill="#ff8ad8" stroke="rgba(255, 138, 216, 0.25)" stroke-width="2" transform="rotate(45 690 247)"/>
+<text x="702" y="251" font-size="12" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#ff8ad8">turn.continue</text>
+<text x="702" y="269" font-size="12.5" fill="#b7bdc8">did it stop short?</text>
+<line x1="684" x2="868" y1="278" y2="278" stroke="#30363d"/>
+<rect x="687.25" y="290.25" width="5.5" height="5.5" rx="1" fill="#ff8ad8" stroke="rgba(255, 138, 216, 0.25)" stroke-width="2" transform="rotate(45 690 293)"/>
+<text x="702" y="297" font-size="12" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#ff8ad8">turn.drift</text>
+<text x="702" y="315" font-size="12.5" fill="#b7bdc8">still on the goal?</text>
+<line x1="684" x2="868" y1="324" y2="324" stroke="#30363d"/>
+<rect x="687.25" y="336.25" width="5.5" height="5.5" rx="1" fill="#ff8ad8" stroke="rgba(255, 138, 216, 0.25)" stroke-width="2" transform="rotate(45 690 339)"/>
+<text x="702" y="343" font-size="12" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#ff8ad8">memory.capture</text>
+<text x="702" y="361" font-size="12.5" fill="#b7bdc8">a lesson to keep?</text>
+<line x1="684" x2="868" y1="370" y2="370" stroke="#30363d"/>
+<rect x="687.25" y="382.25" width="5.5" height="5.5" rx="1" fill="#ff8ad8" stroke="rgba(255, 138, 216, 0.25)" stroke-width="2" transform="rotate(45 690 385)"/>
+<text x="702" y="389" font-size="12" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#ff8ad8">cache.warming</text>
+<text x="702" y="407" font-size="12.5" fill="#b7bdc8">back before it expires?</text>
+<path d="M776,430 L776,456" fill="none" stroke="rgba(255, 138, 216, 0.4)" stroke-width="1.4" stroke-dasharray="3 4"/>
+<rect x="0" y="458" width="880" height="64" rx="12" fill="rgba(255, 138, 216, 0.07)" stroke="rgba(255, 138, 216, 0.4)"/>
+<rect x="20" y="478" width="8" height="8" rx="1" fill="#ff8ad8" stroke="rgba(255, 138, 216, 0.25)" stroke-width="2" transform="rotate(45 24 482)"/>
+<text x="40" y="487" font-size="14.5" font-weight="600" fill="#f0f6fc">The judge</text>
+<text x="122" y="487" font-size="13" fill="#b7bdc8">Jev (hosted), Laya (local), a classifier or any LLM: one bounded question, about 0.3 s.</text>
+<text x="40" y="507" font-size="12.5" fill="#8b949e">Every verdict goes to the ledger with its probabilities. Without one, mu does what it would do without a judge.</text>
+<text x="0" y="554" font-size="12" fill="#8b949e">18 of the 40 decision points. Each one is active, shadow (asked and logged only) or off.</text>
+</svg>

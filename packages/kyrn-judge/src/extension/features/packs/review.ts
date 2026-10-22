@@ -34,7 +34,7 @@ export function reviewPack(shared: PackShared, options: { maxFindings: number })
 	runtime.pi.registerCommand("review", {
 		description: say({
 			zh: "让评审子代理审查还没提交的改动（或你指定的内容），评审发现按轻重排成 P0 到 P3",
-			en: "Review the uncommitted change, or what you name, with the reviewer sub-agent; findings sorted P0 to P3",
+			en: "Have the reviewer subagent review uncommitted changes, or whatever you name; the judge ranks findings from P0 to P3",
 		}),
 		handler: async (args, ctx) => {
 			runtime.touch(ctx);

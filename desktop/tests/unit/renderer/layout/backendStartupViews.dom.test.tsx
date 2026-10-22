@@ -13,12 +13,12 @@ import React from 'react';
 const COPY: Record<string, string> = {
   'common.backendStartup.pendingSlow.title': 'Starting up',
   'common.backendStartup.pendingSlow.description':
-    "AionCore is starting up, please wait. If it doesn't respond after a while, you can quit and reopen the app.",
+    "The local service is starting up, please wait. If it doesn't respond after a while, you can quit and reopen the app.",
   'common.backendStartup.exited.title': "Startup didn't complete",
   'common.backendStartup.exited.description':
-    'AionCore could not finish starting and has exited. Please restart the app; if this keeps happening, check the log directory in Settings → System.',
+    'The local service could not finish starting and has exited. Please restart the app; if this keeps happening, check the log directory in Settings → System.',
   'common.backendStartup.incompleteInstallation.description':
-    'Your installation is missing required local resources. Please download and reinstall the latest AionUi; if it persists after reinstalling, check whether antivirus quarantined AionCore.',
+    'Your installation is missing required local resources. Please download and reinstall the latest mu; if it persists after reinstalling, check whether antivirus quarantined its files.',
 };
 
 vi.mock('react-i18next', () => ({

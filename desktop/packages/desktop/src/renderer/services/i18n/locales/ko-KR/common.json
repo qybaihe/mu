@@ -227,7 +227,7 @@
       "noteMissing": "발견이 기록되지 않았습니다.",
       "allFlow": "모든 전달",
       "beeFlow": "{{name}}의 전달",
-      "audit": "Jev 판정",
+      "audit": "판정",
       "waitingRun": "이 Hive의 기록된 이벤트를 기다리는 중입니다.",
       "recordedAt": "기록 시간 {{time}}",
       "beeMissing": "이 벌은 기록된 스냅샷에 없습니다.",
@@ -959,7 +959,7 @@
       "auto_compaction_end": "압축 완료",
       "hive.note": "공유된 발견",
       "hive.delivery": "전달 확인됨",
-      "hive.gate": "Jev 게이트",
+      "hive.gate": "Hive 게이트",
       "hive.manifest": "Hive 할당",
       "bee.event": "벌 이벤트",
       "memory.recalled": "참조한 경험",
@@ -1076,24 +1076,6 @@
         "idle": "판정기 대기 중",
         "judging": "판정기 판정 중",
         "off": "판정기 꺼짐"
-      },
-      "starters": {
-        "hint": "어디서 시작할지 모르겠다면 다음을 시도해 보세요:",
-        "understand": {
-          "title": "이 프로젝트 이해하기",
-          "desc": "구조, 진입점, 핵심 모듈 정리",
-          "prompt": "먼저 이 프로젝트를 전체적으로 읽고 전체 구조, 주요 진입점, 핵심 모듈을 알려 주세요. 먼저 읽어 볼 만한 파일 세 개도 짚어 주세요."
-        },
-        "fix": {
-          "title": "문제 찾아 고치기",
-          "desc": "오류나 증상에서 출발해 원인까지",
-          "prompt": "문제가 생겼습니다: <증상을 설명하거나 오류를 붙여넣으세요>. 먼저 재현하고 근본 원인을 찾은 뒤, 최소한의 수정만 하고 관련 테스트를 실행해 검증해 주세요."
-        },
-        "plan": {
-          "title": "변경 계획하기",
-          "desc": "계획 먼저, 확인 후 작업",
-          "prompt": "구현하고 싶은 것: <요구 사항을 설명하세요>. 먼저 구현 방안과 관련 파일을 제시하고, 제가 확인한 뒤에 수정을 시작해 주세요."
-        }
       }
     },
     "toolStatus": {
@@ -1107,7 +1089,7 @@
       "switch": "이 프로젝트의 쉬운 말 보드",
       "switching": "전환 중…",
       "afterTurn": "에이전트가 이 단계를 마치면 전환됩니다",
-      "unknown": "이 대화에는 아직 보드가 없습니다. 기능에서 쉬운 말 보드를 켜 두면 mu 대화에 나타납니다.",
+      "unknown": "이 대화에는 아직 보드가 없습니다. 설정 → 핵심 기능에서 쉬운 말 보드를 켜 두면 mu 대화에 나타납니다.",
       "off": "켜면 작업이 어디까지 왔는지, 에이전트가 지금 무엇을 하는지, 무엇을 확인해야 하는지 쉬운 말로 알려 줍니다.",
       "cost": "이 프로젝트에만 적용됩니다. 업데이트할 때마다 모델을 한 번 호출합니다.",
       "empty": "에이전트가 잠시 작업하면 여기에서 진행 상황을 쉬운 말로 알려 드립니다.",
@@ -1279,7 +1261,7 @@
     "compactionDropped": "호출 {{count}}개 제거됨",
     "compactionDropped_one": "호출 {{count}}개 제거됨",
     "compactionDropped_other": "호출 {{count}}개 제거됨",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}}에서 메시지를 분류하는 중…",
       "classified": "{{judge}} 분류: {{type}}",
       "byRule": "규칙으로 분류: {{type}}",
@@ -1291,9 +1273,13 @@
       "setUp": "판정기 설정",
       "skipped": "분류를 건너뜀",
       "off": "분류가 꺼져 있음",
-      "firstHint": "이 줄은 Jev의 판정입니다. Jev가 먼저 메시지를 분류하고, mu가 어떻게 이어갈지 정합니다. 모든 판정은 오른쪽 「판정」에 있습니다."
+      "firstHint": "이 줄은 판정기의 판정입니다. 판정기가 먼저 메시지를 분류하고, mu가 어떻게 이어갈지 정합니다. 모든 판정은 오른쪽 「판정」에 있습니다."
     },
     "eventLine": {
+      "judgeNotice": {
+        "freeJev": "Jev 키가 없어 OpenCode Zen의 무료 Jev를 사용 중",
+        "freeJevUnavailable": "무료 Jev가 응답하지 않습니다. Jev 키를 설정할 때까지 고정 규칙으로 판단합니다"
+      },
       "detail": "세부 정보: {{detail}}",
       "progress": {
         "frame": "작업 프레임 업데이트 중",
@@ -1301,7 +1287,7 @@
         "skills": "이 세션에 필요한 스킬을 고르는 중",
         "capabilities": "이 작업에 필요한 기능 확장을 고르는 중",
         "goal_check": "목표가 달성되었는지 확인하는 중",
-        "permissionReview": "Jev 검토 중: {{summary}}"
+        "permissionReview": "판정기 검토 중: {{summary}}"
       },
       "goal": {
         "paused": "일시정지됨: {{reason}}",
@@ -1428,6 +1414,26 @@
       "reviewer": "검토",
       "scout": "정찰",
       "worker": "작업"
+    },
+    "kernel": {
+      "free": "무료",
+      "local": "로컬",
+      "judgeHint": "mu의 판정 지점에 답하는 판정기입니다. 클릭해 변경하세요.",
+      "points": "판정 지점 {{active}}/{{total}}개 활성",
+      "shadow_one": "· {{count}}개 섀도 모드",
+      "shadow_other": "· {{count}}개 섀도 모드",
+      "off": "판정이 꺼져 있습니다",
+      "verdicts_one": "건의 판정",
+      "verdicts_other": "건의 판정",
+      "last": "최근",
+      "context": "컨텍스트",
+      "cache": "캐시"
+    },
+    "hero": {
+      "kernel": "판정 커널",
+      "judgeReady": "{{judge}} 준비 완료",
+      "judgeOff": "판정이 꺼져 있습니다",
+      "title": "mu에게 무엇을 맡길까요?"
     }
   },
   "menu": {
@@ -1517,7 +1523,7 @@
     "previewEmpty": "아직 미리 볼 내용이 없습니다. 대화에서 연 파일이 여기에 표시됩니다.",
     "previewHidden": "미리보기가 숨겨져 있습니다.",
     "browserEmpty": "열린 페이지가 없습니다. 위에 URL이나 검색어를 입력하세요. 대화에서 연 페이지도 여기에 표시됩니다.",
-    "firstHint": "보드는 진행 상황을 쉬운 말로 알려 주고, 판정은 Jev의 모든 판정을, 파일은 이 대화의 폴더를 보여 줍니다. 다른 탭은 쓰일 때 나타납니다."
+    "firstHint": "보드는 진행 상황을 쉬운 말로 알려 주고, 판정은 모든 판정을, 파일은 이 대화의 폴더를 보여 줍니다. 다른 탭은 쓰일 때 나타납니다."
   },
   "nodeRuntime": {
     "title": "Node.js를 다운로드할까요?",

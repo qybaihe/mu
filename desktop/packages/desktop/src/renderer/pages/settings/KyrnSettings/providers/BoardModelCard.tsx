@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import AionSelect from '@/renderer/components/base/AionSelect';
+import MuSelect from '@/renderer/components/base/MuSelect';
 import type { LoginStatus } from '@/common/kyrn/login';
 import type { AvailableModels } from '@/common/kyrn/models';
 import type { KyrnSettings } from '@/common/kyrn/types';
@@ -89,7 +89,7 @@ export default function BoardModelCard({ settings, available, accounts = [], hid
           >
             <div className={sectionStyles.choiceField}>
               <span className={sectionStyles.choiceLabel}>{t('mu.boardModel.provider')}</span>
-              <AionSelect
+              <MuSelect
                 size='small'
                 showSearch
                 allowClear
@@ -105,7 +105,7 @@ export default function BoardModelCard({ settings, available, accounts = [], hid
                 }}
               />
               <span className={sectionStyles.choiceLabel}>{t('mu.boardModel.model')}</span>
-              <AionSelect
+              <MuSelect
                 size='small'
                 showSearch
                 allowCreate

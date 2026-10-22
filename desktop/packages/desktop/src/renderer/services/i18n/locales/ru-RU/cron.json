@@ -109,8 +109,8 @@
       "selectFolder": "Выбрать папку",
       "clearFolder": "Очистить",
       "model": "Модель",
-      "aionrsModelRequired": "Выберите модель для встроенного агента",
-      "aionrsNoProvider": "Нет доступных моделей",
+      "builtinAgentModelRequired": "Выберите модель для встроенного агента",
+      "builtinAgentNoProvider": "Нет доступных моделей",
       "assistantLockedExistingConversation": "Задачи продолжающегося диалога должны сохранять исходного помощника. Чтобы использовать другого помощника, создайте новую задачу.",
       "teamTaskExecutionModeLockedReason": "Запланированные задачи Team должны продолжать выполняться в принадлежащем им диалоге Team, поэтому режим выполнения нельзя изменить."
     },

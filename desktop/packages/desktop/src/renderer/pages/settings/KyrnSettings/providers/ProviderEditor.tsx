@@ -1,8 +1,15 @@
 import React, { useId, useState } from 'react';
 import { Checkbox, Input, Tag } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
-import AionSelect from '@/renderer/components/base/AionSelect';
-import { ENDPOINT_TYPES, suggestProviderId, type EndpointType, type ProviderSettings } from '@/common/kyrn/models';
+import MuSelect from '@/renderer/components/base/MuSelect';
+import {
+  ENDPOINT_TYPES,
+  isPlainRemoteEndpoint,
+  suggestProviderId,
+  type EndpointType,
+  type ListedModel,
+  type ProviderSettings,
+} from '@/common/kyrn/models';
 import { formatNameList } from '@/renderer/services/i18n/list';
 import { ModifiedMark } from '../fields/Row';
 import ConnectionTest from './ConnectionTest';
@@ -36,7 +43,7 @@ export default function ProviderEditor(props: ProviderEditorProps) {
   const { t, i18n } = useTranslation();
   // Until somebody types an id, it follows the name.
   const [idTouched, setIdTouched] = useState(false);
-  const [listed, setListed] = useState<string[]>([]);
+  const [listed, setListed] = useState<{ ids: string[]; facts: Record<string, ListedModel> }>({ ids: [], facts: {} });
   const problems = providerProblems(provider, isNew, takenIds);
   const keyState = typedKey ? 'typed' : provider.key === 'managed' && !provider.keySet ? 'empty' : provider.key;
   const endpoint = camel(provider.api);
@@ -96,7 +103,7 @@ export default function ProviderEditor(props: ProviderEditorProps) {
           <span className={styles.label} id={formatLabel}>
             {t('mu.providers.endpointType')}
           </span>
-          <AionSelect
+          <MuSelect
             disabled={readOnly}
             aria-labelledby={formatLabel}
             data-testid='mu-endpoint-select'
@@ -117,9 +124,15 @@ export default function ProviderEditor(props: ProviderEditorProps) {
             value={provider.baseUrl}
             onChange={(baseUrl) => onChange({ ...provider, baseUrl })}
           />
-          <span className={problems.baseUrl === 'unsafe' ? styles.problem : styles.hint}>
-            {problems.baseUrl === 'unsafe' ? t('mu.endpointRule') : t(`mu.endpoints.${endpoint}.url`)}
-          </span>
+          {problems.baseUrl === 'unsafe' ? (
+            <span className={styles.problem}>{t('mu.endpointRule')}</span>
+          ) : isPlainRemoteEndpoint(provider.baseUrl.trim()) ? (
+            <span className={styles.warn} data-testid='mu-provider-plain-http'>
+              {t('mu.endpointPlain')}
+            </span>
+          ) : (
+            <span className={styles.hint}>{t(`mu.endpoints.${endpoint}.url`)}</span>
+          )}
         </label>
 
         <div className={styles.field}>
@@ -161,14 +174,15 @@ export default function ProviderEditor(props: ProviderEditorProps) {
             provider={provider}
             typedKey={typedKey}
             disabled={Boolean(problems.baseUrl) || Boolean(problems.id)}
-            onModels={setListed}
+            onModels={(ids, facts) => setListed({ ids, facts })}
           />
         </div>
 
         <div>
           <ModelRows
             models={provider.models}
-            suggestions={listed}
+            suggestions={listed.ids}
+            facts={listed.facts}
             disabled={readOnly}
             onChange={(models) => onChange({ ...provider, models })}
           />

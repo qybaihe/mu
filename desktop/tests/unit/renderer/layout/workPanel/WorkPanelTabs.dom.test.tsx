@@ -1,10 +1,4 @@
 /**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
  * The work panel's tab strip in a panel too narrow for its labels (eight tabs in the 279px a 900px window leaves):
  * one icon per tab, each named by its tooltip and for screen readers, and the labels back once they fit again. The
  * strip never keeps tabs out of sight behind a sideways scroll.

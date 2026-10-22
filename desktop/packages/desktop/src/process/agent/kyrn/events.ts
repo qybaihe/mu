@@ -17,7 +17,7 @@ export const messageThinking = (value: unknown): string =>
     .map((block) => text(block.thinking))
     .join('');
 
-/** Maps real mu events onto existing AionUi tool cards; no second renderer or synthetic reasoning. */
+/** Maps real mu events onto the app's existing tool cards; no second renderer or synthetic reasoning. */
 export function mapEvent(event: JsonRecord): SessionUpdate[] {
   if (event.type === 'message_update') {
     const delta = asRecord(event.assistantMessageEvent);
@@ -72,7 +72,8 @@ export function mapEvent(event: JsonRecord): SessionUpdate[] {
     const payload = asRecord(frame.payload);
     const id = `jev:${text(frame.runtimeId)}:${frame.turnId}`;
     // The titles are an English fallback for other clients. The desktop names the row in the reader's language from
-    // `rawOutput.preflight` and the verdict's turn type, so a stored conversation follows a later language switch.
+    // `rawOutput.preflight` and the verdict's turn type, so a stored conversation follows a later language switch. The
+    // `jev:` id prefix is the one stored conversations have always had.
     // The judge that was asked (`jev-latest`, `laya`, `laya>jev-latest`…) names the row until a verdict says who
     // answered.
     if (frame.kind === 'preflight.pending')
@@ -80,7 +81,7 @@ export function mapEvent(event: JsonRecord): SessionUpdate[] {
         {
           sessionUpdate: 'tool_call',
           toolCallId: id,
-          title: 'Jev · Classifying',
+          title: 'Judge · Classifying',
           kind: 'think',
           status: 'in_progress',
           rawOutput: { preflight: 'pending', ...(text(payload.judge) ? { judge: text(payload.judge) } : {}) },
@@ -91,7 +92,7 @@ export function mapEvent(event: JsonRecord): SessionUpdate[] {
         {
           sessionUpdate: 'tool_call_update',
           toolCallId: id,
-          title: `Jev · ${text(payload.turnType) || 'Default'}`,
+          title: `Judge · ${text(payload.turnType) || 'Default'}`,
           status: 'completed',
           content: content(JSON.stringify(payload, null, 2)),
           rawOutput: { ...payload, preflight: 'verdict' },
@@ -102,7 +103,7 @@ export function mapEvent(event: JsonRecord): SessionUpdate[] {
         {
           sessionUpdate: 'tool_call_update',
           toolCallId: id,
-          title: 'Jev · Fallback',
+          title: 'Judge · Fallback',
           status: 'completed',
           rawOutput: { preflight: 'fallback' },
         },

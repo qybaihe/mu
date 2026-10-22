@@ -1,6 +1,6 @@
-# 沿用已有配置 + MCP 客户端（Jev 披露）
+# 沿用已有配置 + MCP 客户端（判定器披露）
 
-更新日期：2026-10-05（MCP 改用 pi 自带的客户端，见第 1、4 节）；初版 2026-09-22。对应路线图第 1 节的两行：“沿用已有配置”和“MCP 客户端 + Jev 披露”。代码在 `packages/kyrn-judge/src/inherit/`、`src/mcp/`，两个功能是 `src/extension/features/inherit.ts` 和 `mcp.ts`。
+更新日期：2026-10-05（MCP 改用 pi 自带的客户端，见第 1、4 节）；初版 2026-09-22。对应路线图第 1 节的两行：“沿用已有配置”和“MCP 客户端 + 判定器披露”。代码在 `packages/kyrn-judge/src/inherit/`、`src/mcp/`，两个功能是 `src/extension/features/inherit.ts` 和 `mcp.ts`。
 
 ## 1. 它做什么
 
@@ -23,7 +23,7 @@ pi 自己已经会读的不重复：agent 目录和从当前目录往上每一�
 
 首次发现有可沿用的内容时提示一次（“Inherited 3 rules, 12 skills and 2 MCP servers from Claude Code and Cursor.”），并在 `<agentDir>/mu/inherit.json` 记下已提示。`/inherit` 列出找到了什么、来自哪里、哪些没用上以及原因。
 
-**MCP（feature `mcp`）。** 连接、登录、调用、重连都交给 pi 1.0 自带的 MCP 客户端（stdio 与 Streamable HTTP、OAuth 登录、`/mcp` 管理、`mu mcp add|list|login`），mu 只决定一个服务器什么时候出现。从 Claude Code、Cursor、Codex 和 `mu.json` 沿用来的每个服务器登记为能力目录里的 `mcp:<名字>`（`kind: "mcp"`，`exposure: "judged"`）：默认隐藏、进程不启动；`capability.disclosure` 认定任务需要，或模型用 `find_capability({ open })` 要，mu 才用 `pi.registerMcpServer` 把它交给 pi（`exposure: "direct"`），等 pi 连上，工具以 pi 的名字 `mcp__<服务器>__<工具>` 交给模型。工具名和描述缓存在 `<agentDir>/mu/mcp-cache.json`，所以服务器在本会话没跑过，Jev 读到的也是“Tools of the "github" MCP server: create_issue, …”而不只是个名字。
+**MCP（feature `mcp`）。** 连接、登录、调用、重连都交给 pi 1.0 自带的 MCP 客户端（stdio 与 Streamable HTTP、OAuth 登录、`/mcp` 管理、`mu mcp add|list|login`），mu 只决定一个服务器什么时候出现。从 Claude Code、Cursor、Codex 和 `mu.json` 沿用来的每个服务器登记为能力目录里的 `mcp:<名字>`（`kind: "mcp"`，`exposure: "judged"`）：默认隐藏、进程不启动；`capability.disclosure` 认定任务需要，或模型用 `find_capability({ open })` 要，mu 才用 `pi.registerMcpServer` 把它交给 pi（`exposure: "direct"`），等 pi 连上，工具以 pi 的名字 `mcp__<服务器>__<工具>` 交给模型。工具名和描述缓存在 `<agentDir>/mu/mcp-cache.json`，所以服务器在本会话没跑过，判定器读到的也是“Tools of the "github" MCP server: create_issue, …”而不只是个名字。
 
 - pi 自己的 `mcp.json`（`~/.mu/agent/mcp.json`、受信任项目的 `.mu/mcp.json`，`mu mcp add` 写的就是它）里的服务器归 pi 管：随会话连接，按那里写的 exposure 交给模型。`mu mcp add` 不写 `--exposure` 时启动器补上 `deferred`，工具由 `tool_search` 按需加载，而不是 pi 默认的 codemode。沿用来的服务器和它同名时让给它（`/inherit` 里说明）。
 - `mu.json` 里给服务器写 `"exposure": "always"` 就常开（会话开始就交给 pi）。只写 `{ "exposure": "always" }` 或 `{ "enabled": false }` 而不写 `command` / `url`，表示只调整沿用来的同名服务器。
@@ -86,7 +86,7 @@ Codex 的 `config.toml` 用一个只认 `[mcp_servers.<名字>]` 这一种形状
 - 没做：MCP 的 prompts / sampling / elicitation（pi 也没有）。
 - Windows 和 WSL 上的启动由 pi 负责，mu 这边没在真机上跑过。
 - 没在真实的 TUI / 桌面端里看过首次提示、确认框和 `/mcp`、`/inherit` 的显示效果；技能经 `resources_discover` 进入 pi 的那一步，测试里只断言了处理函数返回的路径（测试用的资源加载器不处理扩展资源）。
-- 没用真实 Jev 测过披露判断对 MCP 描述的效果；描述的写法（工具名在前）是按“Jev 只看前 220 个字符”设计的，未经测量。
+- 没用真实 Jev 测过披露判断对 MCP 描述的效果；描述的写法（工具名在前）是按“判定器只看前 220 个字符”设计的，未经测量。
 
 ## 8. 留给你决定的
 

@@ -94,26 +94,28 @@ export function platformName({ platform, wsl }) {
 export function usage(platform) {
 	const linkDir = platform === "win32" ? "%USERPROFILE%\\.local\\bin" : "~/.local/bin";
 	return [
-		"mu command line. (The project was called KYRN until 2026-09-21; the old spellings below still work.)",
+		"mu: a coding agent with a judgment kernel, built on pi.",
 		"",
-		"  mu                       interactive session in the current directory",
-		'  mu "prompt"              interactive, starting with this prompt',
-		'  mu -p "prompt"           one-shot: print the answer and exit',
-		"  mu -c | -r               continue the last session | pick one to resume",
-		"  mu setup                 connect a model (an API key, or a service from a list) and choose the judge",
-		"                           (mu setup --help: scripts, a key from stdin, the services it knows)",
-		"  mu judge <cmd>           the local judge (Laya): setup | start | stop | status | run",
-		"  mu ledger [n] [--json]   what the judge decided in the last n sessions",
-		"  mu import --list | <file>...   bring Claude Code and Codex conversations into mu (mu import --help)",
-		"  mu doctor                check the installation",
-		"  mu auth <cmd>            subscription sign-in for the desktop app, as JSON lines:",
+		"  mu                       start a session in the current directory",
+		'  mu "prompt"              start a session with this prompt',
+		'  mu -p "prompt"           run one prompt, print the answer and exit',
+		"  mu -c | -r               continue the last session | pick a session to resume",
+		"  mu setup                 connect a model (paste an API key or pick a service) and choose a judge",
+		"                           (see mu setup --help for scripting, reading a key from stdin and the supported services)",
+		"  mu judge <cmd>           manage the local judge, Laya (macOS on Apple silicon): setup | start | stop | status | run",
+		"  mu ledger [n] [--json]   print the judge's verdicts from the last n sessions",
+		"  mu import <file>...      import Claude Code, Codex and ZCode conversations; --list shows them (mu import --help)",
+		"  mu doctor                check the installation, the judges and the connections",
+		"  mu auth <cmd>            sign-in helper for the desktop app (JSON lines):",
 		"                           status | login <provider> | logout <provider>",
-		`  mu link | unlink         put the \`mu\` command on your PATH (${linkDir}) | remove it`,
-		"  mu migrate [--dry-run]   once: move the home from before the rename, ~/.kyrn, to ~/.mu",
-		"  mu help | version",
+		`  mu link | unlink         put the mu command on your PATH (${linkDir}) | remove it`,
+		"  mu migrate [--dry-run]   move the old home folder, ~/.kyrn, to ~/.mu (once)",
+		"  mu help | version        show this help | print the version",
 		"",
-		"Everything else goes to the agent unchanged: `mu --help` lists every flag,",
-		"and `mu install|remove|update|list|config` manage pi packages.",
+		"Everything else goes to pi unchanged: mu --help also shows pi's options,",
+		"and mu install|remove|update|list|config manage pi packages.",
+		"",
+		"Formerly KYRN: the kyrn commands still work.",
 	].join("\n");
 }
 
@@ -310,7 +312,7 @@ export function ensureAppView({ platform, app, upstream, fs = realFs }) {
 /**
  * Where this mu comes from: "repo", a checkout that runs the TypeScript sources (sourceRuntime), or "package", the
  * npm package mu-agent, which carries pi's bundle (dist/bundle/cli.js) and the judgment layer built to
- * JavaScript (judge/dist/kyrn-judge.js). A checkout without its dependencies is still a checkout.
+ * JavaScript (judge/mu/index.js). A checkout without its dependencies is still a checkout.
  */
 export function layoutOf({ root, platform, exists }) {
 	const path = pathFor(platform);
@@ -326,7 +328,7 @@ export function packageEntries({ root, platform }) {
 	const path = pathFor(platform);
 	return {
 		cli: path.join(root, "dist", "bundle", "cli.js"),
-		extension: path.join(root, "judge", "dist", "kyrn-judge.js"),
+		extension: path.join(root, "judge", "mu", "index.js"),
 		auth: path.join(root, "judge", "dist", "auth.js"),
 		import: path.join(root, "judge", "dist", "import.js"),
 		setup: path.join(root, "judge", "dist", "setup.js"),
@@ -356,13 +358,13 @@ export function installHint({ root, platform }) {
 	const steps = [`cd ${root}`, "npm ci --ignore-scripts", "npm run hydrate:model-data"];
 	// Windows PowerShell 5 has no `&&`.
 	return platform === "win32"
-		? `mu's dependencies are not installed. Run:\n${steps.map((step) => `  ${step}`).join("\n")}`
-		: `mu's dependencies are not installed. Run:  ${steps.join(" && ")}`;
+		? `mu's dependencies aren't installed. Run:\n${steps.map((step) => `  ${step}`).join("\n")}`
+		: `mu's dependencies aren't installed. Run:  ${steps.join(" && ")}`;
 }
 
 /** What mu says on a Node that does not strip TypeScript types, which a checkout cannot run on. */
 const NO_TYPE_STRIPPING =
-	"mu runs a checkout's TypeScript with Node's own type stripping (on by default from Node 22.18), and this Node does not strip types";
+	"mu runs a source checkout's TypeScript with Node's built-in type stripping (on by default since Node 22.18), but this Node doesn't strip types. Use Node 22.19 or newer.";
 
 /**
  * Node's arguments for running a checkout's TypeScript, up to the entry file. Node strips the types itself (on by
@@ -428,10 +430,10 @@ export function localJudgeSupport({ platform, env, wsl = false }) {
 		runs: false,
 		url,
 		message: [
-			`The local judge (Laya) is a Core ML sidecar: it runs on macOS with Apple Silicon only, not on ${where}.`,
-			"mu works without it: use Jev (TYPESAFE_API_KEY or AI_GATEWAY_API_KEY) or an llm judge in mu.json;",
-			"the desktop app's own local judge is being built. Decisions without a judge fall back to pi's behaviour.",
-			"A server that speaks the same contract (GET /health, POST /evaluate) can be used from here:",
+			`The local judge (Laya) is a Core ML sidecar that runs only on macOS on Apple silicon, not on ${where}.`,
+			"mu works without it: Jev, the default hosted judge, answers instead (free on OpenCode Zen, or with your own key via mu setup); you can also set an LLM judge in mu.json.",
+			"A local judge for the desktop app is in progress. Without a judge, decision points use their fallbacks.",
+			"To use a server that implements the same API (GET /health, POST /evaluate), set:",
 			"  MU_LOCAL_JUDGE_URL=http://host:port",
 		].join("\n"),
 	};
@@ -447,12 +449,39 @@ export function launchStrategy({ platform, env, canExec }) {
 /** How the judgment layer's extension joins pi's arguments: in front for a session, never in front of pi's own
  *  commands (PI_COMMANDS), which pi reads as its first argument — an -e before them would turn them into a prompt.
  *  The judgment layer never runs for them, so its extension stays out of their way. */
-function judgeArgs({ argv, layout, root, platform }) {
+function judgeArgs({ argv, layout, root, platform, agentDir, readFile }) {
 	if (PI_COMMANDS.has(argv[0])) return [];
-	const path = pathFor(platform);
+	return ["-e", judgeExtension({ layout, root, platform }), ...themeArgs({ argv, layout, root, platform, agentDir, readFile })];
+}
+
+/** The judgment layer's extension file: the package's build, or a checkout's source. */
+function judgeExtension({ layout, root, platform }) {
 	return layout === "package"
-		? ["-e", packageEntries({ root, platform }).extension]
-		: ["-e", path.join(root, "packages", "kyrn-judge", "src", "extension", "kyrn-judge.ts")];
+		? packageEntries({ root, platform }).extension
+		: pathFor(platform).join(root, "packages", "kyrn-judge", "src", "extension", "kyrn-judge.ts");
+}
+
+/** mu's own terminal themes, beside the judgment layer's files. */
+export function themesDir({ layout, root, platform }) {
+	const path = pathFor(platform);
+	return layout === "package" ? path.join(root, "judge", "themes") : path.join(root, "packages", "kyrn-judge", "themes");
+}
+
+/**
+ * An interactive session gets mu's themes (mu-light and mu-dark, which /settings then lists beside pi's) and, while the
+ * person has chosen no theme of their own, starts in them: light or dark as the terminal is. A theme chosen in
+ * /settings is saved in settings.json and wins; so does --use-theme. Print and RPC modes draw nothing and get neither.
+ */
+function themeArgs({ argv, layout, root, platform, agentDir, readFile }) {
+	if (argv.includes("--mode") || argv.includes("-p") || argv.includes("--print")) return [];
+	const args = ["--theme", themesDir({ layout, root, platform })];
+	if (argv.includes("--use-theme") || !agentDir || !readFile) return args;
+	let chosen = false;
+	try {
+		const settings = JSON.parse(readFile(pathFor(platform).join(agentDir, "settings.json")));
+		chosen = typeof settings?.theme === "string" && settings.theme !== "";
+	} catch {}
+	return chosen ? args : [...args, "--use-theme", "mu-light/mu-dark"];
 }
 
 /**
@@ -503,7 +532,7 @@ export function planLaunch({
 		const parsed = parseEnvFile(envText);
 		fromFile = envFileAdditions({ env, entries: parsed.entries, platform });
 		// Line numbers only: the text of a line that did not parse may well be a secret.
-		if (parsed.problems.length > 0) notes.push(`mu: .env: skipped line ${parsed.problems.join(", ")} (not KEY=VALUE)`);
+		if (parsed.problems.length > 0) notes.push(`mu: .env: skipped ${parsed.problems.length === 1 ? "line" : "lines"} ${parsed.problems.join(", ")} (expected KEY=VALUE)`);
 	}
 
 	const childEnv = {};
@@ -511,6 +540,8 @@ export function planLaunch({
 		if (typeof value === "string") childEnv[key] = value;
 	}
 	childEnv.PI_PACKAGE_DIR = appDir;
+	// The judgment layer is part of mu, not an extension loaded for this run: pi shows its commands without [t].
+	childEnv.PI_APP_EXTENSIONS = judgeExtension({ layout, root, platform });
 	childEnv.MU_CODING_AGENT_DIR = agentDir;
 	childEnv.KYRN_CODING_AGENT_DIR = agentDir;
 	childEnv.PI_CODING_AGENT_DIR = agentDir;
@@ -526,14 +557,14 @@ export function planLaunch({
 		if (support.runs) startJudge = true;
 		else if (!support.url) {
 			notes.push(
-				`mu: the configuration asks for the local judge (laya), which runs on macOS only; on ${platformName({ platform, wsl })} its decisions fall back to the next judge or to pi's behaviour (mu judge status)`,
+				`mu: the configuration asks for the local judge (Laya), which runs on macOS only; on ${platformName({ platform, wsl })}, the decision points it would answer use the next judge or their fallbacks (mu judge status)`,
 			);
 		}
 	}
 
 	return {
 		command: execPath,
-		args: [...entry, ...judgeArgs({ argv, layout, root, platform }), ...argv],
+		args: [...entry, ...judgeArgs({ argv, layout, root, platform, agentDir, readFile: fs.readFile }), ...argv],
 		env: childEnv,
 		strategy: launchStrategy({ platform, env, canExec }),
 		layout,
@@ -542,7 +573,7 @@ export function planLaunch({
 		agentDir,
 		startJudge,
 		notes,
-		preface: argv[0] === "-h" || argv[0] === "--help" ? `${usage(platform)}\n\nAgent flags:\n` : undefined,
+		preface: argv[0] === "-h" || argv[0] === "--help" ? `${usage(platform)}\n\npi's help (mu passes all of this through):\n` : undefined,
 	};
 }
 
@@ -551,6 +582,9 @@ export function planLaunch({
  * as planLaunch decides it and without touching anything: the module to import pi's `setupCli` and `main` from, the
  * Node flags that process starts with, pi's arguments (the judgment layer, then `argv`) and its whole environment.
  * The app's pi and the command line's are then one: the same files, settings, sign-ins and keys.
+ *
+ * `cli` is the script the command line runs pi with. pi starts its sub-agents (swarm, hive, delegate) by running
+ * `process.argv[1]` again, which inside the host is the host's own file: the host hands pi this script there instead.
  *
  * A checkout runs there as it runs on the command line (sourceRuntime). Returns { error } when pi cannot run.
  */
@@ -571,8 +605,9 @@ export function planHost({ platform, env, argv, root, home, fs, wsl = false, str
 		return {
 			...common,
 			module: path.join(root, "dist", "bundle", "index.js"),
+			cli: packageEntries({ root, platform }).cli,
 			execArgv: [],
-			args: [...judgeArgs({ argv, layout: launch.layout, root, platform }), ...argv],
+			args: [...judgeArgs({ argv, layout: launch.layout, root, platform, agentDir: launch.agentDir, readFile: fs.readFile }), ...argv],
 		};
 	}
 	const runtime = sourceRuntime({ root, platform, stripsTypes, exists: fs.exists });
@@ -580,14 +615,15 @@ export function planHost({ platform, env, argv, root, home, fs, wsl = false, str
 	return {
 		...common,
 		module: path.join(root, "packages", "coding-agent", "src", "index.ts"),
+		cli: path.join(root, "packages", "coding-agent", "src", "cli.ts"),
 		execArgv: runtime.args,
-		args: [...judgeArgs({ argv, layout: launch.layout, root, platform }), ...argv],
+		args: [...judgeArgs({ argv, layout: launch.layout, root, platform, agentDir: launch.agentDir, readFile: fs.readFile }), ...argv],
 	};
 }
 
 /** What mu says when the local judge does not come up. */
 const LOCAL_JUDGE_NOT_STARTED =
-	"mu: the local judge did not start (mu judge status); decisions fall back to pi's behaviour";
+	"mu: the local judge (Laya) didn't start; decision points use the next judge or their fallbacks. Run mu judge status for details.";
 
 /** The part of the preparation that is files: the app view of a checkout, mu's agent folder, the configuration's notes. */
 function prepareFiles({ plan, platform, root, err }) {
@@ -688,7 +724,7 @@ export function planJudge({ platform, env, argv, bin, wsl = false }) {
 // ---------------------------------------------------------------------------------------------------------
 
 /**
- * `mu import`: Claude Code and Codex conversations into mu's sessions (packages/kyrn-judge/src/import). The importer
+ * `mu import`: Claude Code, Codex and ZCode conversations into mu's sessions (packages/kyrn-judge/src/import). The importer
  * needs nothing but Node: the npm package runs its build, judge/dist/import.js, and a checkout its TypeScript with
  * Node's own type stripping (on by default from 22.18).
  */
@@ -1004,7 +1040,7 @@ export function planLink({ platform, env, home, bin, argv, fs }) {
 		return {
 			action: "refuse",
 			errors: [
-				`${link} already exists and is not this mu; it was left alone. Choose another folder: MU_LINK_DIR=<dir> mu link`,
+				`${link} already exists and is not this mu, so it was left alone. To use another folder: MU_LINK_DIR=<dir> mu link`,
 			],
 		};
 	}
@@ -1032,7 +1068,7 @@ export function planLink({ platform, env, home, bin, argv, fs }) {
 	if (windows && /[^\x00-\x7f]/.test(content)) {
 		notes.push(
 			"Note: the path from that folder to this repository has non-ASCII characters in it, and cmd reads a batch file in the",
-			"console's code page. If `mu` then cannot find its target, choose a folder on the same drive (MU_LINK_DIR), or put",
+			"console's code page. If mu then can't find its target, choose a folder on the same drive (MU_LINK_DIR), or put",
 			`${bin} on your PATH instead.`,
 		);
 	}
@@ -1201,8 +1237,8 @@ export function migrate({ platform, home, argv, fs, run, alive, self, out, err }
 		return 0;
 	}
 	if (fs.exists(next) || fs.isLink(next)) {
-		err(`${next} already exists, so nothing was moved. Two homes are never merged or overwritten here:`);
-		err("look at both folders and decide which one is the real one.");
+		err(`${next} already exists, so nothing was moved. mu never merges or overwrites two home folders:`);
+		err("look at both and decide which one to keep.");
 		return 1;
 	}
 	// Whatever is running would write into the gap between the rename and the link, and split the home in two.
@@ -1211,10 +1247,10 @@ export function migrate({ platform, home, argv, fs, run, alive, self, out, err }
 	try {
 		pid = Number.parseInt(fs.readFile(path.join(old, "local-judge", "judge.pid")).trim(), 10);
 	} catch {}
-	if (pid > 0 && alive(pid)) busy.push(`  the local judge (pid ${pid}). Stop it: mu judge stop`);
+	if (pid > 0 && alive(pid)) busy.push(`  the local judge (pid ${pid}). Stop it with mu judge stop`);
 	const found = findBusy({ platform, old, run, self });
 	if (!found) {
-		err("Nothing was moved: the list of running processes could not be read (tasklist, powershell), so it is not known whether mu is still running.");
+		err("Nothing was moved: mu couldn't read the list of running processes (tasklist, powershell), so it can't tell whether mu is still running.");
 		return 1;
 	}
 	const list = (pids) => pids.join(" ");
@@ -1223,7 +1259,7 @@ export function migrate({ platform, home, argv, fs, run, alive, self, out, err }
 	}
 	if (found.browser.length > 0) busy.push(`  the mu browser (pid ${list(found.browser)}). Close it.`);
 	if (found.desktop.length > 0) {
-		busy.push(`  the desktop app's backend (pid ${list(found.desktop)}). Quit the desktop app.`);
+		busy.push(`  the desktop app's local service (pid ${list(found.desktop)}). Quit the desktop app.`);
 	}
 	if (busy.length > 0) {
 		err(`Nothing was moved, because these are still using ${old}:`);
@@ -1248,7 +1284,7 @@ export function migrate({ platform, home, argv, fs, run, alive, self, out, err }
 		out(`renamed  ${path.join(next, config)} -> mu.json`);
 	}
 	out(`linked   ${old} -> ${next} (paths stored from before the rename keep working)`);
-	out("Check it: mu doctor");
+	out("To check it, run mu doctor");
 	return 0;
 }
 
@@ -1330,7 +1366,7 @@ function handOver({ command, args, env, strategy }) {
 		for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) process.on(signal, () => relay(signal));
 		if (process.platform === "win32") process.on("SIGBREAK", () => {});
 		child.on("error", (error) => {
-			err(`mu: could not start ${command}: ${error.message}`);
+			err(`mu: couldn't start ${command}: ${error.message}`);
 			resolve(1);
 		});
 		child.on("exit", (code, signal) => resolve(code ?? 128 + (osConstants.signals[signal] ?? 0)));
@@ -1427,7 +1463,7 @@ export async function main(argv = process.argv.slice(2)) {
 			out(await response.text());
 			return 0;
 		} catch {
-			out(`the judge server does not answer at ${plan.url}`);
+			out(`The local judge server isn't answering at ${plan.url}. Check that it's running.`);
 			return 1;
 		}
 	}
@@ -1485,7 +1521,7 @@ export async function main(argv = process.argv.slice(2)) {
 		});
 	}
 	if ((command === "link" || command === "unlink") && layout === "package") {
-		out("This mu was installed with npm, which already put `mu` on your PATH (npm i -g mu-agent); nothing to link.");
+		out("This mu was installed with npm, which already put `mu` on your PATH (npm i -g mu-agent); nothing to do.");
 		return 0;
 	}
 	if (command === "link") {

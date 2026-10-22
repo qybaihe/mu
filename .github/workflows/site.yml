@@ -1,0 +1,119 @@
+name: Site
+
+# Builds usemu.dev from site/ and publishes the build to the private repository qybaihe/mu-site, whose `main` a
+# Cloudflare Pages project serves (Git integration, no build command, the repository root as the output directory).
+#
+# The build reads its facts instead of repeating them (site/build.py says where each comes from): the decision points
+# and options from packages/kyrn-judge/manifest.json, the changelog from CHANGELOG.md, each point's question and the
+# measurements from the READMEs, and the version, the banner and the download links from the newest GitHub release.
+# So it runs when one of those changes: a push to main that touches them, a `v*` tag, a finished Desktop app run
+# (the run that publishes a release), and once a day in case a release was edited by hand. It always builds main.
+#
+# Publishing needs the repository secret MU_SITE_DEPLOY_KEY: the private half of a deploy key with write access to
+# qybaihe/mu-site. A commit is pushed only when the build changed. Deploying straight to the Pages project `usemu` with
+# wrangler instead needs CLOUDFLARE_API_TOKEN (Cloudflare Pages: Edit) and CLOUDFLARE_ACCOUNT_ID; leave those unset
+# while mu-site is the source, or both paths deploy. Without any of them the site is still built and kept as an
+# artifact, and a notice says it was not deployed. Pull requests that touch site/ are built, never deployed.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths:
+      - 'site/**'
+      - 'packages/kyrn-judge/manifest.json'
+      - 'CHANGELOG.md'
+      - 'README.md'
+      - 'docs/readme/**'
+      - 'desktop/packages/desktop/src/renderer/services/i18n/locales/*/agentMode.json'
+      - '.github/workflows/site.yml'
+  pull_request:
+    paths:
+      - 'site/**'
+      - '.github/workflows/site.yml'
+  workflow_run:
+    workflows: ['Desktop app']
+    types: [completed]
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: true
+
+jobs:
+  site:
+    name: Build and deploy
+    # After a Desktop app run, only a successful one can have published a release.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # GitHub's API gives the releases; the token only raises the rate limit.
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      MU_SITE_DEPLOY_KEY: ${{ secrets.MU_SITE_DEPLOY_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # A tag, a Desktop app run or the schedule deploys what main says now, not what the tag's commit said.
+          ref: ${{ github.event_name != 'pull_request' && 'main' || '' }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build
+        run: |
+          pip install -r site/requirements.txt
+          python site/build.py _site
+
+      - name: Keep the build
+        uses: actions/upload-artifact@v4
+        with:
+          name: usemu-site
+          path: _site
+          retention-days: 14
+
+      - name: Setup Node.js
+        if: github.event_name != 'pull_request' && env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Deploy to Cloudflare Pages
+        if: github.event_name != 'pull_request' && env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
+        env:
+          WRANGLER_SEND_METRICS: 'false'
+        run: npx --yes wrangler@4.112.0 pages deploy _site --project-name usemu --branch main --commit-dirty=true
+
+      # Cloudflare Pages builds nothing itself: its project is connected to qybaihe/mu-site and serves each commit there.
+      - name: Publish to qybaihe/mu-site
+        if: github.event_name != 'pull_request' && env.MU_SITE_DEPLOY_KEY != ''
+        run: |
+          key="$RUNNER_TEMP/mu-site-key"
+          printf '%s\n' "$MU_SITE_DEPLOY_KEY" > "$key"
+          chmod 600 "$key"
+          export GIT_SSH_COMMAND="ssh -i $key -o IdentitiesOnly=yes"
+          git clone --quiet --depth 1 git@github.com:qybaihe/mu-site.git "$RUNNER_TEMP/mu-site"
+          cd "$RUNNER_TEMP/mu-site"
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a "$GITHUB_WORKSPACE/_site/." .
+          git add --all
+          if git diff --cached --quiet; then
+            echo "The site is unchanged; nothing to publish."
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898299+github-actions[bot]@users.noreply.github.com' \
+            commit --quiet -m "Site build from qybaihe/mu@$(git -C "$GITHUB_WORKSPACE" rev-parse --short=9 HEAD)"
+          git push --quiet origin HEAD:main
+
+      - name: Explain a skipped deploy
+        if: github.event_name != 'pull_request' && env.MU_SITE_DEPLOY_KEY == '' && (env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == '')
+        run: echo "::notice title=Not deployed::Built, but not deployed. Add the repository secret MU_SITE_DEPLOY_KEY (a deploy key with write access to qybaihe/mu-site), or CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID to deploy with wrangler."

@@ -59,7 +59,7 @@ const base: KyrnSettings = {
     commented: false,
     problem: '',
   },
-  permissions: { mode: 'jev', from: 'default' },
+  permissions: { mode: 'judge', from: 'default' },
   boardModel: { supported: true, model: '' },
 };
 
@@ -158,7 +158,7 @@ describe('the draft of the settings area', () => {
     expect(toSave(moved, picked).permissions).toEqual({ mode: 'ask' });
     expect([...dirtySections(picked, moved)]).toEqual(['features']);
     // With no last pick there is nothing to move: the option holds the mode.
-    const configured = { ...base, permissions: { mode: 'jev', from: 'config' as const } };
+    const configured = { ...base, permissions: { mode: 'judge', from: 'config' as const } };
     const changed = newDraft({ ...configured, permissions: { mode: 'ask', from: 'config' } });
     expect(toSave(changed, configured)).not.toHaveProperty('permissions');
   });
@@ -174,7 +174,7 @@ describe('the draft of the settings area', () => {
 
 describe('provider form rules', () => {
   it('explains an id, an address and model ids the store would refuse', () => {
-    const provider = { ...blankProvider('Bad Id'), baseUrl: 'http://example.com/v1', models: [] };
+    const provider = { ...blankProvider('Bad Id'), baseUrl: 'http://169.254.169.254/v1', models: [] };
     expect(providerProblems(provider, true, new Set())).toEqual({ id: 'format', baseUrl: 'unsafe' });
     expect(providerProblems({ ...provider, id: 'openai' }, true, new Set()).id).toBe('reserved');
     expect(providerProblems({ ...provider, id: 'mine' }, true, new Set(['mine'])).id).toBe('taken');

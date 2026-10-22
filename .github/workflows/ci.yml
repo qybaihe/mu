@@ -39,9 +39,9 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      # Builds every package and refreshes the model catalog that the type check reads.
+      # Builds every package with the model catalog in packages/ai/model-catalog.json (see model-catalog.yml).
       - name: Build
-        run: npm run build
+        run: npm run build:pinned
 
       - name: Check (lint, format, types)
         run: npm run check
@@ -82,7 +82,7 @@ jobs:
       - name: Run postinstall
         run: bun run postinstall || true
 
-      # What AionUi checked before every commit (desktop/.pre-commit-config.yaml): oxlint's errors (its warnings stay
+      # What the desktop app checks before every commit (desktop/.pre-commit-config.yaml): oxlint's errors (its warnings stay
       # advisory), oxfmt's formatting, and the locale files against the generated i18n-keys.d.ts.
       - name: Lint
         run: bun run lint

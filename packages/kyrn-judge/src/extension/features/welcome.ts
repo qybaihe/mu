@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename } from "node:path";
 import { keyText, VERSION as PI_VERSION, type Theme } from "@earendil-works/pi-coding-agent";
-import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import { truncateToWidth } from "@earendil-works/pi-tui";
+import { appLanguage } from "../../language.ts";
 import { failOpen, type KyrnRuntime } from "../runtime.ts";
 
 /**
@@ -10,8 +11,6 @@ import { failOpen, type KyrnRuntime } from "../runtime.ts";
  * U+03BC has ambiguous width, and a terminal that renders it two cells wide would push the frame's right edge out.
  */
 const WORDMARK = ["█  █  ", "█▄▄█▄ ", "█     "];
-const MAX_BOX_WIDTH = 78;
-const MIN_BOX_WIDTH = 44;
 
 export interface Versions {
 	/** mu's own: what `npm i -g mu-agent` installed, or what this source tree is released as. */
@@ -78,49 +77,68 @@ export type Paint = Pick<Theme, "fg" | "bold">;
 
 /** Failures the user can act on, said as what to fix rather than as the error's name. */
 const HEALTH_ERROR: Readonly<Record<string, string>> = {
-	unreachable: "not reachable",
-	auth: "no usable key (mu setup)",
+	unreachable: "unreachable",
+	auth: "no usable key (run mu setup)",
 	payment_required: "out of credit",
 };
 
-function healthText(view: WelcomeView, paint: Paint): string {
-	if (view.judge === "off") return paint.fg("muted", "off · pi's stock behaviour everywhere");
-	if (view.health === "checking") return `${view.judge} ${paint.fg("dim", "· checking…")}`;
-	if (view.health.ok) {
-		return `${view.judge} ${paint.fg("success", `· answering in ${view.health.latencyMs} ms`)} ${paint.fg("dim", `· decisions ${view.mode}`)}`;
-	}
-	const why = HEALTH_ERROR[view.health.error ?? ""] ?? `failing (${view.health.error ?? "error"})`;
-	return `${view.judge} ${paint.fg("warning", `· ${why}, falling back to stock behaviour`)}`;
+/**
+ * A judge's label as people read it: "jev" is Jev, "jev-1.13-free" is "Jev 1.13 (free)", and a cascade ("laya>jev" or
+ * "laya,jev") is "Laya, Jev". Other labels stay as they are.
+ */
+export function judgeDisplayName(label: string): string {
+	return label
+		.split(/[>,]/)
+		.map((name) => {
+			// TypeSafe's own model id for Jev is jev-latest; OpenCode Zen names a version, and its free one says so.
+			if (name === "jev" || name === "jev-latest") return "Jev";
+			if (name === "laya") return "Laya";
+			const versioned = /^jev-([\d.]+)(-free)?$/.exec(name);
+			if (!versioned) return name;
+			return versioned[2] ? `Jev ${versioned[1]} (free)` : `Jev ${versioned[1]}`;
+		})
+		.join(", ");
 }
 
+function healthText(view: WelcomeView, paint: Paint): string {
+	if (view.judge === "off") return paint.fg("muted", "off · every decision point uses its fallback");
+	const judge = judgeDisplayName(view.judge);
+	if (view.health === "checking") return `${judge} ${paint.fg("dim", "· checking…")}`;
+	if (view.health.ok) {
+		return `${judge} ${paint.fg("success", `· answering in ${view.health.latencyMs} ms`)} ${paint.fg("dim", `· decision points ${view.mode === "shadow" ? "in shadow" : view.mode}`)}`;
+	}
+	const why = HEALTH_ERROR[view.health.error ?? ""] ?? `failing (${view.health.error ?? "error"})`;
+	return `${judge} ${paint.fg("warning", `· ${why}; using the fallbacks`)}`;
+}
+
+/** The rule under the header: as wide as the screen, up to the width the header itself takes. */
+const MAX_RULE_WIDTH = 76;
+
 /**
- * The welcome screen as lines no wider than `width`. Values are read at render
- * time, so switching the judge or the model shows up without any bookkeeping.
+ * The welcome screen as lines no wider than `width`: the μ beside what mu is, then the readout (the judge and how it
+ * answers, the model, the folder) and the keys worth knowing, over a hairline. No frame: it reads as the top of the
+ * session, not as a dialog. Values are read at render time, so switching the judge or the model shows up without any
+ * bookkeeping.
  */
 export function renderWelcome(view: WelcomeView, width: number, paint: Paint): string[] {
 	const home = homedir();
 	const cwd = view.cwd.startsWith(home) ? `~${view.cwd.slice(home.length)}` : view.cwd;
 	const model = view.model
 		? `${view.model}${view.thinking ? paint.fg("dim", ` · thinking ${view.thinking}`) : ""}`
-		: paint.fg("warning", "none yet · /login, or mu setup in a terminal");
-	const rows: [string, string][] = [
-		["judge", healthText(view, paint)],
-		["model", model],
-		["cwd", cwd],
-	];
+		: paint.fg("warning", "none yet · run /login, or mu setup in a terminal");
 	const beside = [
-		`${paint.bold(paint.fg("text", "mu"))}${paint.fg("text", " · judgment-first coding agent")}`,
-		paint.fg("dim", `v${view.version} · built on pi ${view.piVersion}`),
+		`${paint.bold(paint.fg("text", "mu"))}  ${paint.fg("dim", `v${view.version}`)}`,
+		paint.fg("text", "judgment-first coding agent"),
 		// μ is "micro" as a unit prefix, 微 in Chinese: see the small thing, know the large one.
-		paint.fg("dim", "见微知著"),
+		paint.fg("dim", `built on pi ${view.piVersion}${appLanguage()?.wording === "zh" ? " · 见微知著" : ""}`),
 	];
-	const title = WORDMARK.map((row, index) => `${paint.bold(paint.fg("accent", row))}  ${beside[index]}`);
-	const body = [
-		"",
-		...title,
-		"",
-		...rows.map(([label, value]) => `${paint.fg("muted", label.padEnd(8))}${value}`),
-		"",
+	// The letter fades from the judge's pink at the top to the accent at its stem, as the app's icon does.
+	const shades = ["customMessageLabel", "thinkingHigh", "accent"] as const;
+	const title = WORDMARK.map((row, index) => `${paint.bold(paint.fg(shades[index], row))}   ${beside[index]}`);
+	const readout: [string, string, string][] = [
+		[paint.fg("customMessageLabel", "◆"), "judge", healthText(view, paint)],
+		[" ", "model", model],
+		[" ", "cwd", cwd],
 	];
 
 	const dot = paint.fg("muted", " · ");
@@ -131,38 +149,33 @@ export function renderWelcome(view: WelcomeView, width: number, paint: Paint): s
 		`${paint.fg("dim", view.keys.thinking)} thinking`,
 		`${paint.fg("dim", view.keys.expand)} ${view.expanded ? "less" : "more"}`,
 	].join(dot);
-	const tryLine = `${paint.fg("dim", "Try")} /help${dot}/status${dot}/agents${dot}/browse <url> <goal>${dot}/init`;
+	const tryLine = `${paint.fg("dim", "Try")} /help${dot}/status${dot}/agents${dot}/browse <url> [goal]${dot}/init`;
 	const more = view.expanded
 		? [
 				"",
 				paint.fg("muted", "What the judge does here"),
-				"  reads every message first and sets the turn's gear (thinking level, hints)",
-				"  keeps noisy tool output, stale results and irrelevant skills out of the context",
-				'  vouches for risky commands, notices drift, loops and unverified "done"',
-				"  drives the browser click by click and routes sub-agents to a role and a model",
-				paint.fg("muted", "Switch it"),
+				"  reads every message first, sets the turn's thinking level and adds hints",
+				"  keeps noisy tool output, stale results and irrelevant skills out of context",
+				'  checks risky commands, and catches drift, loops and unverified "done"',
+				"  drives the browser click by click and gives each subagent a role and a model",
+				paint.fg("muted", "Change it"),
 				"  /mu judge laya,jev     which models answer, in order",
-				"  /mu mode default shadow     record verdicts without acting on them",
+				"  /mu mode default shadow     log verdicts without acting on them",
 			]
 		: [];
-
-	if (width < MIN_BOX_WIDTH) {
-		// Too narrow for a frame: plain lines, cut to fit.
-		return ["", ...body.slice(1, -1), "", hints, tryLine, ...more, ""].map((line) => truncateToWidth(line, width));
-	}
-	const boxWidth = Math.min(width, MAX_BOX_WIDTH);
-	const inner = boxWidth - 6;
-	const border = (text: string) => paint.fg("borderAccent", text);
-	const framed = body.map((line) => {
-		const cut = truncateToWidth(line, inner);
-		return `${border("│")}  ${cut}${" ".repeat(Math.max(0, inner - visibleWidth(cut)))}  ${border("│")}`;
-	});
+	const rule = paint.fg("borderMuted", "─".repeat(Math.max(0, Math.min(width - 2, MAX_RULE_WIDTH))));
 	return [
 		"",
-		border(`╭${"─".repeat(boxWidth - 2)}╮`),
-		...framed,
-		border(`╰${"─".repeat(boxWidth - 2)}╯`),
-		...[hints, tryLine, ...more].map((line) => truncateToWidth(`  ${line}`, width)),
+		...[
+			...title,
+			"",
+			...readout.map(([mark, label, value]) => `${mark} ${paint.fg("muted", label.padEnd(7))}${value}`),
+			"",
+			hints,
+			tryLine,
+			...more,
+		].map((line) => truncateToWidth(`  ${line}`, width)),
+		truncateToWidth(`  ${rule}`, width),
 		"",
 	];
 }
@@ -216,7 +229,11 @@ export function registerWelcome(runtime: KyrnRuntime): void {
 								judge: runtime.judgeLabel,
 								health,
 								mode: runtime.mode("*"),
-								model: model ? `${model.provider}/${model.id}` : undefined,
+								// With no model at all pi holds a placeholder, unknown/unknown: that is "none yet".
+								model:
+									model && !(model.provider === "unknown" && model.id === "unknown")
+										? `${model.provider}/${model.id}`
+										: undefined,
 								thinking: current?.thinkingLevel ?? runtime.pi.getThinkingLevel(),
 								cwd: current?.cwd ?? ctx.cwd,
 								expanded,

@@ -1,6 +1,6 @@
 /**
  * The home page's send while the native host is on (docs/native-host-ui.md): the message starts a conversation on the
- * native host, with no AionCore in its path, and the page opens it once pi took the message. The home page lists mu's
+ * native host, with no backend in its path, and the page opens it once pi took the message. The home page lists mu's
  * assistants only (initializeKyrn keeps mu's), so every send is mu's; the folder, the permission mode picked on the
  * page, the model the pill picked and the thinking level, when one was picked, go with it. A send that cannot start
  * one says why, in the native screens' words, and keeps what was typed. GuidPage uses useGuidSend instead while the
@@ -18,7 +18,7 @@ import { nativeConversationPath } from '@/renderer/pages/native/utils/paths';
 import { startNativeConversation, type ReadImage } from '../utils/nativeStart';
 import type { GuidSendResult } from './useGuidSend';
 
-/** Permission modes are words (`full`, `jev`, `ask`), as mu names them; anything else is not sent. */
+/** Permission modes are words (`full`, `judge`, `ask`), as mu names them; anything else is not sent. */
 const MODE_ID = /^[a-z][a-z0-9-]{0,31}$/;
 /** Thinking levels are words too (`off`, `low`, `high`, ...); pi refuses one it does not know. */
 const LEVEL_ID = /^[a-z][a-z0-9-]{0,15}$/;

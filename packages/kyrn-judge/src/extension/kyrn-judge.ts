@@ -62,6 +62,7 @@ import { registerTools } from "./features/tools.ts";
 import { registerTtsr } from "./features/ttsr.ts";
 import { registerWarming } from "./features/warming.ts";
 import { registerWarmup } from "./features/warmup.ts";
+import { registerWatchdog } from "./features/watchdog.ts";
 import { registerWeb } from "./features/web.ts";
 import { registerWelcome } from "./features/welcome.ts";
 import type { PresentationListener } from "./presentation.ts";
@@ -111,6 +112,7 @@ export type FeatureName =
 	| "goal"
 	| "board"
 	| "ttsr"
+	| "watchdog"
 	| "injection"
 	| "admission"
 	| "forgetting"
@@ -178,8 +180,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 	const roots: HarnessRoots | undefined =
 		options.roots ?? (options.config || options.provider ? undefined : { home: homedir(), agentDir: getAgentDir() });
 	if (loaded.disabled) {
-		// Asking the user needs no judge, so the permission mode the user chose holds with judging off too. In Jev
-		// approval, with no Jev to ask, what Jev would have decided goes to the user.
+		// Asking the user needs no judge, so the permission mode the user chose holds with judging off too. In judge
+		// mode, with no judge to ask, what the judge would have decided goes to the user.
 		if (!options.only || options.only.includes("permissions")) registerPermissions(runtime, roots);
 		registerCommands(runtime, roots);
 		registerImport(pi);
@@ -215,6 +217,7 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["compaction", registerCompaction],
 		["monitor", registerMonitor],
 		["ttsr", registerTtsr],
+		["watchdog", registerWatchdog],
 		// Before the goal and completion checks: errors an edit introduced are said before "verify your change" is.
 		["lsp", registerLsp],
 		["goal", registerGoal],

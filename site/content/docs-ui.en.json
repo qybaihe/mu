@@ -1,0 +1,25 @@
+{
+  "index_label": "Documentation",
+  "sections": { "start": "Start here", "use": "Using mu", "ref": "Reference" },
+  "prev": "Previous",
+  "next": "Next",
+  "read": "Read",
+  "options_on": "On by default",
+  "options_off": "Off by default",
+  "options_beta": "Experimental",
+  "options_points": "Decision points",
+  "options_option": "Option",
+  "options_default": "Default",
+  "options_meaning": "Meaning",
+  "options_range": "Range {min} to {max}.",
+  "options_none": "No options.",
+  "options_empty": "empty",
+  "contrib_h2": "For contributors",
+  "contrib_p": "How mu is built, and how to add to it. These live in the repository, in English:",
+  "contrib": [
+    { "text": "How mu works", "href": "https://github.com/qybaihe/mu/blob/main/docs/architecture.md" },
+    { "text": "Adding a decision point", "href": "https://github.com/qybaihe/mu/blob/main/docs/adding-a-decision-point.md" },
+    { "text": "Translations", "href": "https://github.com/qybaihe/mu/blob/main/docs/translations.md" },
+    { "text": "Contributing", "href": "https://github.com/qybaihe/mu/blob/main/CONTRIBUTING.md" }
+  ]
+}

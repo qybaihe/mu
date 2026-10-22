@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AgentTool } from "@earendil-works/pi-agent-core";
@@ -333,6 +333,25 @@ describe.skipIf(!posix)("background jobs", () => {
 		]);
 	});
 
+	it("marks a watched line as observed while a wait on the job runs", async () => {
+		const { manager, events } = create();
+		manager.start({
+			command: `sleep 0.2; echo "ERROR one"; sleep 1; echo "ERROR two"; sleep 5`,
+			cwd: tmpdir(),
+			watch: "^error",
+		});
+		const matches = () => events.filter((event) => event.type === "match");
+		// Nobody waits on the job: the line is news to whoever hears of it.
+		await vi.waitFor(() => expect(matches()).toHaveLength(1), { timeout: 5000 });
+		manager.read("bg-1", { maxChars: 1000 });
+		// A wait is running when the next one comes: its caller reads the line in its own output.
+		await manager.wait("bg-1", { timeoutMs: 8000, pattern: "ERROR two" });
+		expect(matches().map((event) => (event.type === "match" ? [event.line, event.observed] : []))).toEqual([
+			["ERROR one", false],
+			["ERROR two", true],
+		]);
+	});
+
 	it("stops every job on shutdown and as a last resort", async () => {
 		const { manager } = create();
 		const pids = [
@@ -347,6 +366,35 @@ describe.skipIf(!posix)("background jobs", () => {
 		const pid = last.manager.start({ command: "sleep 30", cwd: tmpdir() }).pid as number;
 		last.manager.killAllNow();
 		await vi.waitFor(() => expect(alive(pid)).toBe(false), { timeout: 3000 });
+	});
+
+	it("can have a job write straight to its log, read it from there, and leave it running on release", async () => {
+		const { manager } = create({ outputToFile: true });
+		manager.start({ command: "echo one; sleep 0.2; echo two >&2; exit 4", cwd: tmpdir() });
+		expect(await manager.wait("bg-1", { pattern: "two", timeoutMs: 5000, since: 0 })).toEqual({
+			reason: "match",
+			line: "two",
+		});
+		await manager.wait("bg-1", { timeoutMs: 5000 });
+		const done = manager.read("bg-1", { since: 0, maxChars: 1000 });
+		expect(done.text).toBe("one\ntwo\n");
+		expect(done.job).toMatchObject({ state: "exited", exitCode: 4 });
+		expect(readFileSync(done.job.logPath, "utf8")).toBe("one\ntwo\n");
+
+		const server = manager.start({
+			command: `${node} -e 'setInterval(() => console.log("tick"), 50)'`,
+			cwd: tmpdir(),
+		});
+		await manager.wait("bg-2", { pattern: "tick", timeoutMs: 5000 });
+		const kept = await manager.release();
+		expect(kept.map((job) => job.id)).toEqual(["bg-2"]);
+		const size = statSync(server.logPath).size;
+		try {
+			await vi.waitFor(() => expect(statSync(server.logPath).size).toBeGreaterThan(size), { timeout: 3000 });
+			expect(alive(server.pid as number)).toBe(true);
+		} finally {
+			process.kill(-(server.pid as number), "SIGKILL");
+		}
 	});
 
 	it("clears out the logs of sessions that ended long ago", () => {
@@ -390,7 +438,14 @@ describe.skipIf(!posix)("background feature", () => {
 
 	async function start(
 		responder: MockResponder,
-		extra: { mode?: DecisionMode; features?: Record<string, unknown>; tools?: AgentTool[] } = {},
+		extra: {
+			mode?: DecisionMode;
+			/** notify.routing's own mode; unset, it keeps its built-in default (shadow). */
+			routing?: DecisionMode;
+			features?: Record<string, unknown>;
+			background?: Record<string, unknown>;
+			tools?: AgentTool[];
+		} = {},
 	) {
 		const dir = mkdtempSync(join(tmpdir(), "mu-bg-feature-"));
 		dirs.push(dir);
@@ -402,9 +457,15 @@ describe.skipIf(!posix)("background feature", () => {
 					provider: new MockJudgeProvider(responder),
 					mode: extra.mode ?? "active",
 					config: parseConfig({
+						modes: extra.routing ? { "notify.routing": extra.routing } : {},
 						features: {
 							memory: false,
-							background: { logDir: join(dir, "logs"), inheritShell: false, killGraceMs: 200 },
+							background: {
+								logDir: join(dir, "logs"),
+								inheritShell: false,
+								killGraceMs: 200,
+								...extra.background,
+							},
 							...extra.features,
 						},
 					}),
@@ -493,7 +554,7 @@ describe.skipIf(!posix)("background feature", () => {
 	});
 
 	it("routes the end of a job the model is not waiting on: now steers the running turn", async () => {
-		const { harness } = await start(urgency("now"));
+		const { harness } = await start(urgency("now"), { routing: "active" });
 		let seen = "";
 		harness.setResponses([
 			call("bg_start", { command: "echo done; exit 1" }),
@@ -513,7 +574,7 @@ describe.skipIf(!posix)("background feature", () => {
 	});
 
 	it("routes it to the next turn, or nowhere", async () => {
-		const later = await start(urgency("next_turn"));
+		const later = await start(urgency("next_turn"), { routing: "active" });
 		let seen = "";
 		later.harness.setResponses([
 			call("bg_start", { command: "echo done" }),
@@ -529,7 +590,7 @@ describe.skipIf(!posix)("background feature", () => {
 		await later.harness.session.prompt("And the check?");
 		expect(seen).toContain("exited with code 0");
 
-		const never = await start(urgency("drop"));
+		const never = await start(urgency("drop"), { routing: "active" });
 		never.harness.setResponses([
 			call("bg_start", { command: "echo done" }),
 			call("pause", { ms: 900 }),
@@ -541,8 +602,31 @@ describe.skipIf(!posix)("background feature", () => {
 		expect(notices(never.harness)).toEqual([]);
 	});
 
-	it("tells the model at its next turn when no judge vouches for anything else", async () => {
-		const { harness } = await start(urgency("now"), { mode: "shadow" });
+	it("without a verdict (routing is in shadow by default) tells the model at once, within a single prompt", async () => {
+		const asked: string[] = [];
+		const { harness } = await start((request) => {
+			if ("urgency" in request.questions) asked.push(JSON.stringify(request.state));
+			// What the judge would say is recorded, not acted on.
+			return urgency("drop")(request);
+		});
+		let seen = "";
+		harness.setResponses([
+			call("bg_start", { command: "echo done; exit 3" }),
+			call("pause", { ms: 900 }),
+			(context) => {
+				seen = JSON.stringify(context.messages);
+				return fauxAssistantMessage("The check failed with code 3.");
+			},
+		]);
+		// One prompt and no other: a notice for the next turn would never be read.
+		await harness.session.prompt("Run the long check while you refactor.");
+		expect(notices(harness)).toHaveLength(1);
+		expect(seen).toContain("exited with code 3");
+		expect(asked).toHaveLength(1);
+	});
+
+	it("can still leave the notice for the next turn, as before", async () => {
+		const { harness } = await start(urgency("now"), { background: { unjudged: "next_turn" } });
 		harness.setResponses([
 			call("bg_start", { command: "echo done" }),
 			call("pause", { ms: 900 }),
@@ -553,6 +637,18 @@ describe.skipIf(!posix)("background feature", () => {
 		expect(notices(harness)).toEqual([]);
 		await harness.session.prompt("And the check?");
 		expect(notices(harness)).toHaveLength(1);
+	});
+
+	it("says nothing of a watched line or an end the model is already waiting for", async () => {
+		const { harness } = await start(urgency("now"), { routing: "active" });
+		harness.setResponses([
+			call("bg_start", { command: "sleep 0.3; echo ready; sleep 0.3", watch: "ready" }),
+			call("bg_output", { id: "bg-1", timeout: 10 }),
+			fauxAssistantMessage("It came up and finished."),
+		]);
+		await harness.session.prompt("Start it and wait until it is done.");
+		expect(results(harness)[1]).toContain("ready");
+		expect(notices(harness)).toEqual([]);
 	});
 
 	it("gives a long background test log the same admission treatment as a foreground one", async () => {
@@ -595,7 +691,8 @@ describe.skipIf(!posix)("background feature", () => {
 	});
 
 	it("stops its jobs when the session shuts down", async () => {
-		const { harness } = await start(() => ({}));
+		// The harness runs like `mu --print`, where jobs are left running by default (next test).
+		const { harness } = await start(() => ({}), { background: { keepOnExit: "never" } });
 		harness.setResponses([
 			call("bg_start", { command: `${node} -e 'console.log("pid", process.pid); setInterval(() => {}, 1000)'` }),
 			call("bg_output", { id: "bg-1", wait_for: "pid \\d+", timeout: 10 }),
@@ -608,5 +705,24 @@ describe.skipIf(!posix)("background feature", () => {
 		await harness.session.extensionRunner.emit({ type: "session_shutdown", reason: "reload" });
 
 		await vi.waitFor(() => expect(alive(pid)).toBe(false), { timeout: 3000 });
+	});
+
+	it("leaves its jobs running after an unattended run, and says so when it starts one", async () => {
+		const { harness } = await start(() => ({}));
+		harness.setResponses([
+			call("bg_start", { command: `${node} -e 'console.log("pid", process.pid); setInterval(() => {}, 1000)'` }),
+			call("bg_output", { id: "bg-1", wait_for: "pid \\d+", timeout: 10 }),
+			fauxAssistantMessage("Serving."),
+		]);
+		await harness.session.prompt("Serve it.");
+		expect(results(harness)[0]).toContain("keeps running after the run ends");
+		const pid = Number(/pid (\d+)/.exec(results(harness)[1])?.[1]);
+		try {
+			await harness.session.extensionRunner.emit({ type: "session_shutdown", reason: "quit" });
+			await new Promise((resolve) => setTimeout(resolve, 500));
+			expect(alive(pid)).toBe(true);
+		} finally {
+			process.kill(pid, "SIGKILL");
+		}
 	});
 });

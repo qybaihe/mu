@@ -78,7 +78,7 @@ describe('the store names what went wrong with a stable code', () => {
     });
     expect(
       failure(() =>
-        store.save({ ...read, judges: { ...read.judges, jev: { ...judge, baseUrl: 'http://example.com' } } })
+        store.save({ ...read, judges: { ...read.judges, jev: { ...judge, baseUrl: 'http://169.254.169.254' } } })
       )
     ).toMatchObject({ code: 'endpoint' });
     const custom = { ...judge, type: 'typesafe' as const, apiKeyEnv: 'MU_JUDGE_CUSTOM_API_KEY' };
@@ -175,7 +175,7 @@ describe('the store names what went wrong with a stable code', () => {
     await expect(testProvider({ ...input, apiKey: 'two words' }, undefined)).rejects.toMatchObject({
       code: 'credential',
     });
-    await expect(testProvider({ ...input, baseUrl: 'http://x.example.com' }, undefined)).rejects.toMatchObject({
+    await expect(testProvider({ ...input, baseUrl: 'http://169.254.169.254' }, undefined)).rejects.toMatchObject({
       code: 'endpoint',
     });
 
@@ -285,29 +285,29 @@ describe('the words a screen shows for a code', () => {
       text: 'a.b and a-b would share one key variable. Change one of the IDs.',
       detail: '',
     });
-    expect(word('contextLimit').text).toBe('The context cap must be 0 or a whole number from 8,192 to 10,000,000.');
-    expect(word('optionValue').text).toBe('“Wait at most” is outside the allowed range.');
+    expect(word('contextLimit').text).toBe('The context limit must be 0 or a whole number from 8,192 to 10,000,000.');
+    expect(word('optionValue').text).toBe('"Wait at most" is outside the allowed range.');
     expect(word('invalidJson', 'Unexpected end of JSON input')).toEqual({
-      text: '/home/me/.mu/agent/mu.json is not valid JSON. Fix it by hand, then reload.',
+      text: "/home/me/.mu/agent/mu.json isn't valid JSON. Fix it by hand, then reload.",
       detail: 'Unexpected end of JSON input',
     });
     expect(word('unwritable', 'EACCES: permission denied')).toEqual({
-      text: '/home/me/.mu/.env could not be written.',
+      text: "Couldn't write /home/me/.mu/.env.",
       detail: 'EACCES: permission denied',
     });
     expect(word('backend', 'database is locked')).toEqual({
-      text: 'The local service did not answer as expected (HTTP 500).',
+      text: 'The local service returned an unexpected response (HTTP 500).',
       detail: 'database is locked',
     });
-    expect(word('stale').text).toMatch(/^Another program/);
+    expect(word('stale').text).toMatch(/^The settings changed/);
     expect(word('notMine')).toEqual({
-      text: 'review comes from Claude Code. mu does not change those files.',
+      text: "review comes from Claude Code. mu doesn't change those files.",
       detail: '',
     });
     expect(word('mcpInvalid').text).toBe('The URL must start with http:// or https://.');
     // A command's arguments are part of the command.
     expect(muErrorText(t, 'en-US', { code: 'mcpInvalid', params: { field: 'args' }, message: '' }).text).toBe(
-      'The command cannot be used. Check it and try again.'
+      "This command isn't valid. Check it and try again."
     );
     await i18n.changeLanguage('zh-CN');
     expect(muErrorText(t, 'zh-CN', { code: 'sharedKey', params: params.sharedKey, message: '' }).text).toBe(

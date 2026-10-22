@@ -1,0 +1,25 @@
+{
+  "index_label": "文件",
+  "sections": { "start": "開始", "use": "使用 mu", "ref": "參考" },
+  "prev": "上一頁",
+  "next": "下一頁",
+  "read": "閱讀",
+  "options_on": "預設開啟",
+  "options_off": "預設關閉",
+  "options_beta": "實驗",
+  "options_points": "判定點",
+  "options_option": "選項",
+  "options_default": "預設",
+  "options_meaning": "說明",
+  "options_range": "範圍 {min} 到 {max}。",
+  "options_none": "沒有選項。",
+  "options_empty": "空",
+  "contrib_h2": "給貢獻者",
+  "contrib_p": "mu 是怎麼建構起來的，以及怎麼往裡面加東西。這些在儲存庫裡，英文：",
+  "contrib": [
+    { "text": "mu 是怎麼運作的", "href": "https://github.com/qybaihe/mu/blob/main/docs/architecture.md" },
+    { "text": "新增一個判定點", "href": "https://github.com/qybaihe/mu/blob/main/docs/adding-a-decision-point.md" },
+    { "text": "翻譯", "href": "https://github.com/qybaihe/mu/blob/main/docs/translations.md" },
+    { "text": "參與貢獻", "href": "https://github.com/qybaihe/mu/blob/main/CONTRIBUTING.md" }
+  ]
+}

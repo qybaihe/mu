@@ -26,11 +26,11 @@ const TITLE = "mu /commit";
 const CANNOT_RUN: Readonly<Record<GitUnusableReason, { zh: string; en: string }>> = {
 	developer_tools_missing: {
 		zh: "/commit 用不了：这台 Mac 没有安装 git 所需的命令行开发者工具。用 xcode-select --install 安装后再试。",
-		en: "/commit cannot run: this Mac has no command line developer tools, which git needs. Install them with xcode-select --install, then try again.",
+		en: "/commit can't run: git needs the command line developer tools, which aren't installed on this Mac. Install them with xcode-select --install, then try again.",
 	},
 	xcode_license: {
 		zh: "/commit 用不了：这台 Mac 还没有同意 Xcode 许可协议，git 无法运行。在终端里用 sudo xcodebuild -license 同意后再试。",
-		en: "/commit cannot run: git cannot run on this Mac until the Xcode license is accepted. Accept it with sudo xcodebuild -license in Terminal, then try again.",
+		en: "/commit can't run: git can't run on this Mac until you accept the Xcode license. Run sudo xcodebuild -license in Terminal to accept it, then try again.",
 	},
 };
 
@@ -46,7 +46,7 @@ export function registerCommit(shared: PackShared, options: { maxPlanChars: numb
 	runtime.pi.registerCommand("commit", {
 		description: say({
 			zh: "把还没提交的改动拆成几个提交：先给你看计划，你同意才提交，从不推送",
-			en: "Split the uncommitted change into commits: shows the plan, commits only when you say yes, never pushes",
+			en: "Split uncommitted changes into commits: shows the plan, commits only when you approve and never pushes",
 		}),
 		handler: async (args, ctx) => {
 			runtime.touch(ctx);
@@ -60,7 +60,7 @@ export function registerCommit(shared: PackShared, options: { maxPlanChars: numb
 							? installHint("git", shared.platform)
 							: say({
 									zh: `这里不是 git 仓库：${repo.message}`,
-									en: `Not a git repository here: ${repo.message}`,
+									en: `This isn't a git repository: ${repo.message}`,
 								});
 				ctx.ui.notify(why, "warning");
 				return;
@@ -69,7 +69,7 @@ export function registerCommit(shared: PackShared, options: { maxPlanChars: numb
 				ctx.ui.notify(
 					say({
 						zh: `有一个 ${repo.inProgress} 正在进行。先完成或放弃它：现在提交会打乱它。`,
-						en: `A ${repo.inProgress} is in progress. Finish or abort it first: new commits now would get in its way.`,
+						en: `A ${repo.inProgress} is in progress. Finish or abort it first; new commits now would interfere with it.`,
 					}),
 					"warning",
 				);
@@ -82,7 +82,7 @@ export function registerCommit(shared: PackShared, options: { maxPlanChars: numb
 					change.untracked.length > 0
 						? say({
 								zh: `没有可提交的：只有 git 没在跟踪的文件（${some}）。把该进去的 \`git add\` 上，再运行 /commit。`,
-								en: `Nothing to commit: only files git does not track (${some}). \`git add\` the ones that belong in, then run /commit again.`,
+								en: `Nothing to commit: there are only untracked files (${some}). \`git add\` the ones you want, then run /commit again.`,
 							})
 						: say({
 								zh: "没有可提交的：工作区和 HEAD 一样。",
@@ -99,7 +99,7 @@ export function registerCommit(shared: PackShared, options: { maxPlanChars: numb
 				ctx.ui.notify(
 					`${shown}\n\n${say({
 						zh: "没有提交：/commit 提交前要先问你，而这里没有人可问。",
-						en: "Not committed: /commit asks before it commits, and there is nobody to ask here.",
+						en: "Nothing committed: /commit asks before committing, and there's no one to ask here.",
 					})}`,
 					"info",
 				);
@@ -110,7 +110,7 @@ export function registerCommit(shared: PackShared, options: { maxPlanChars: numb
 				TITLE,
 				`${shown}\n\n${say({
 					zh: `${count === 1 ? "做这个提交" : `做这 ${count} 个提交`}？不会推送。`,
-					en: `Make ${count === 1 ? "this commit" : `these ${count} commits`}? Nothing is pushed.`,
+					en: `Make ${count === 1 ? "this commit" : `these ${count} commits`}? Nothing will be pushed.`,
 				})}`,
 			);
 			if (!agreed) {
@@ -140,9 +140,9 @@ async function propose(
 		runtime.writer() ?? (model ? runtime.llm(`${model.provider}/${model.id}`, { thinking: "off" }) : undefined);
 	const byRule = (why: string) => ({
 		plan: rulePlan(change),
-		note: say({ zh: `${why}：改为每个文件一个提交。`, en: `${why}: one commit per file instead.` }),
+		note: say({ zh: `${why}：改为每个文件一个提交。`, en: `${why}; using one commit per file instead.` }),
 	});
-	if (!complete) return byRule(say({ zh: "没有模型来提议怎么拆", en: "No model to propose a split" }));
+	if (!complete) return byRule(say({ zh: "没有模型来提议怎么拆", en: "No model is available to propose a split" }));
 
 	const request = planRequest(change, hint, maxChars);
 	let user = request;
@@ -153,7 +153,9 @@ async function propose(
 			reply = (await complete({ system: PLAN_SYSTEM, user, signal: ctx.signal })).text;
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
-			return byRule(say({ zh: `模型没有给出提议（${message}）`, en: `No proposal from the model (${message})` }));
+			return byRule(
+				say({ zh: `模型没有给出提议（${message}）`, en: `The model didn't propose a split (${message})` }),
+			);
 		}
 		const parsed = parsePlanReply(reply);
 		const problems = parsed.ok ? validatePlan(parsed.plan, change.units) : [parsed.problem];
@@ -161,9 +163,7 @@ async function propose(
 		problem = problems.slice(0, 3).join("; ");
 		user = `${request}\n\nYOUR LAST REPLY:\n${reply.slice(0, 4000)}\n\nIT CANNOT BE USED: ${problems.join("; ")}. Reply again with every unit in exactly one commit.`;
 	}
-	return byRule(
-		say({ zh: `模型的提议用不了（${problem}）`, en: `The model's proposal could not be used (${problem})` }),
-	);
+	return byRule(say({ zh: `模型的提议用不了（${problem}）`, en: `The model's proposal wasn't usable (${problem})` }));
 }
 
 function report(outcome: ApplyOutcome): string {
@@ -180,7 +180,7 @@ function report(outcome: ApplyOutcome): string {
 		say({ zh: `停在 ${outcome.step}：${outcome.reason}`, en: `Stopped at ${outcome.step}: ${outcome.reason}` }),
 		say({
 			zh: `计划里的都没有留下：HEAD 和 index 都和原来一样${undone > 0 ? `（停下前做的 ${undone} 个提交只在 reflog 里）` : ""}。工作区没有动过。`,
-			en: `Nothing of the plan remains: HEAD and the index are as they were${undone > 0 ? ` (the ${undone} commit${undone === 1 ? "" : "s"} made before the stop are only in the reflog)` : ""}. The working tree was not touched.`,
+			en: `None of the plan was kept: HEAD and the index are unchanged${undone > 0 ? ` (the ${undone} commit${undone === 1 ? "" : "s"} made before the stop ${undone === 1 ? "is" : "are"} only in the reflog)` : ""}. The working tree wasn't touched.`,
 		}),
 	].join("\n");
 }

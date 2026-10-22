@@ -7,7 +7,7 @@
 import { ipcBridge } from '@/common';
 import type { IGpuStatus, IStartOnBootStatus } from '@/common/adapter/ipcBridge';
 import { configService } from '@/common/config/configService';
-import AionScrollArea from '@/renderer/components/base/AionScrollArea';
+import MuScrollArea from '@/renderer/components/base/MuScrollArea';
 import { notifyManualRestartRequired } from '@/renderer/utils/appRestart';
 import { isElectronDesktop, isMacOS } from '@/renderer/utils/platform';
 import { Alert, Form, Message, Modal, Switch } from '@arco-design/web-react';
@@ -294,7 +294,7 @@ const SystemModalContent: React.FC = () => {
     <div className='flex flex-col h-full w-full'>
       {modalContextHolder}
 
-      <AionScrollArea className='flex-1 min-h-0 pb-16px' disableOverflow={isPageMode}>
+      <MuScrollArea className='flex-1 min-h-0 pb-16px' disableOverflow={isPageMode}>
         <div className='flex flex-col gap-16px'>
           <div className='settings-list'>
             {preferenceItems.map((item) => (
@@ -335,7 +335,7 @@ const SystemModalContent: React.FC = () => {
             />
           )}
         </div>
-      </AionScrollArea>
+      </MuScrollArea>
     </div>
   );
 };

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ P.title }} · mu{% endblock %}
+{% block description %}{{ P.lead | striptags }}{% endblock %}
+{% block content %}
+  <section class="wrap page-head">
+    <p class="label intro" style="--d: 120ms">mu · {{ P.title }}</p>
+    <h1 class="intro" style="--d: 180ms">{{ P.title }}</h1>
+    <p class="page-lead intro" style="--d: 260ms">{{ P.lead }}</p>
+  </section>
+  <div class="wrap releases">
+    {% for E in P.entries %}
+    <section class="release" id="{{ E.id }}"{% if loop.first %} data-reveal{% endif %}>
+      <div class="release-meta">
+        <h2 data-latest="{{ L.ui.announce_pill | e }}"><a href="#{{ E.id }}">{{ E.version }}</a></h2>
+        <time datetime="{{ E.date }}">{{ E.date }}</time>
+        {% if E.agent %}<span class="agent">{{ P.agent_label }} {{ E.agent }}</span><br>{% endif %}
+        <a class="dl" href="{{ E.href }}">{{ P.download }}<span aria-hidden="true">↗</span></a>
+      </div>
+      {% if E.html %}<div class="release-body"{% if E.lang %} lang="{{ E.lang }}"{% endif %}>
+        {% if E.lang %}<p class="release-note" lang="{{ L.lang }}">{{ P.english_note }}</p>
+        {% endif %}{{ E.html }}
+      </div>{% else %}<ul>
+        {% for I in E['items'] %}<li>{{ I }}</li>
+        {% endfor %}
+      </ul>{% endif %}
+    </section>
+    {% endfor %}
+    <p class="release-foot"><a href="https://github.com/qybaihe/mu/blob/main/kyrn/npm/CHANGELOG.md">{{ P.full_agent }}</a> · <a href="https://github.com/qybaihe/mu/releases">GitHub Releases</a></p>
+  </div>
+{% endblock %}

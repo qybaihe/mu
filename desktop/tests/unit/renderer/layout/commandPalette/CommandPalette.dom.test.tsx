@@ -1,10 +1,4 @@
 /**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
  * The command palette as a person meets it: Cmd/Ctrl+K opens it anywhere, one input finds conversations, settings
  * pages and the harness's slash commands, the arrow keys choose, Enter runs, Esc closes. Arco's modal, the app's
  * event bus, the shortcut hook and the palette's own hooks are real; the data sources are stubbed.
@@ -102,6 +96,7 @@ import {
   setCurrentConversation,
 } from '@/renderer/pages/conversation/explorer/currentConversationStore';
 import { emitter } from '@/renderer/utils/emitter';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 const MINUTE = 60_000;
 const NOW = Date.now();
@@ -173,7 +168,7 @@ describe('command palette', () => {
       conversation('c5', 'Windows installer', 60 * 26),
       conversation('c6', 'Older idea', 60 * 24 * 3),
       conversation('c7', 'Oldest idea', 60 * 24 * 9),
-      conversation('c9', 'A local model chat', 60 * 24 * 20, 'aionrs'),
+      conversation('c9', 'A local model chat', 60 * 24 * 20, BUILTIN_AGENT),
     ];
     state.commands = [
       command('board', 'Show the plain-language board'),
@@ -280,7 +275,7 @@ describe('command palette', () => {
       expect(groupsShown()).toEqual(['conversations', 'settings', 'commands', 'messages']);
       expect(labelsOf('conversations')).toEqual(['A local model chat']);
       // The pages named by the query first, then the one the rail puts under "Models".
-      expect(labelsOf('settings')).toEqual(['Default model', 'Plain-language model', 'Providers']);
+      expect(labelsOf('settings')).toEqual(['Default model', 'Board model', 'Providers']);
       expect(labelsOf('commands')).toEqual(['/model']);
     });
 
@@ -298,7 +293,7 @@ describe('command palette', () => {
       openPalette();
 
       expect(groupsShown()).toEqual(['conversations', 'settings', 'commands']);
-      expect(labelsOf('settings')).toEqual(['Open settings']);
+      expect(labelsOf('settings')).toEqual(['Open Settings']);
       expect(labelsOf('conversations')).toEqual([
         'Refactor the auth flow',
         'Board copy review',
@@ -312,10 +307,10 @@ describe('command palette', () => {
     it('lists the settings pages once the person types, not before', () => {
       render(<Harness />);
       openPalette();
-      expect(labelsOf('settings')).toEqual(['Open settings']);
+      expect(labelsOf('settings')).toEqual(['Open Settings']);
 
       type('model');
-      expect(labelsOf('settings')).toEqual(['Default model', 'Plain-language model', 'Providers']);
+      expect(labelsOf('settings')).toEqual(['Default model', 'Board model', 'Providers']);
     });
 
     it('with no conversation yet, shows the way into the settings and what the app can do, and says why', () => {
@@ -325,7 +320,7 @@ describe('command palette', () => {
       openPalette();
 
       expect(groupsShown()).toEqual(['settings', 'commands']);
-      expect(labelsOf('commands')).toEqual(['Start a new chat', 'Open scheduled tasks']);
+      expect(labelsOf('commands')).toEqual(['Start a new conversation', 'Open scheduled tasks']);
       expect(screen.getByTestId('command-palette-hint')).toHaveTextContent(
         'No conversations yet. Type to find settings and commands.'
       );
@@ -342,7 +337,7 @@ describe('command palette', () => {
       type('sett');
 
       const found = labelsOf('settings');
-      expect(found[0]).toBe('Open settings');
+      expect(found[0]).toBe('Open Settings');
       expect(found).toHaveLength(8);
       expect(found).toEqual(expect.arrayContaining(['Appearance', 'Default model']));
       key('Enter');
@@ -510,7 +505,7 @@ describe('command palette', () => {
       openPalette();
       type('deploy');
 
-      expect(chosen()).toBe('Search messages for “deploy”');
+      expect(chosen()).toBe('Search messages for "deploy"');
       key('Enter');
 
       expect(opened).toHaveBeenCalledWith('deploy');
@@ -525,7 +520,7 @@ describe('command palette', () => {
       expect(onNavigate).toHaveBeenCalledTimes(1);
 
       openPalette();
-      type('new chat');
+      type('new conversation');
       key('Enter');
       expect(navigate).toHaveBeenLastCalledWith('/guid', { state: { resetAssistant: true } });
     });
@@ -561,7 +556,7 @@ describe('command palette', () => {
       type('comp');
       key('Enter');
       expect(info).toHaveBeenCalledTimes(1);
-      expect(info).toHaveBeenCalledWith('Runs once this reply is done');
+      expect(info).toHaveBeenCalledWith('Runs after this reply is done');
 
       outcome = 'sent';
       openPalette();

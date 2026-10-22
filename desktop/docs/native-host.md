@@ -3,8 +3,8 @@
 Status: milestone 1 (2026-09-27) and milestone 2 (2026-09-29: the main process's side here, the renderer's in
 `docs/native-host-ui.md`), branch `claude/mu-native-host`. On by default since 2026-09-30 (see "On by default"
 below): the sidebar has a "Native" group whose conversations run on a host in a utility process of their own, with no
-AionCore and no ACP in their path; the main process answers the native conversation bridge (list, history, hosts on
-demand). With `MU_NATIVE_HOST=0`, every conversation goes through AionCore and the ACP adapter, as before. Checked in the
+backend and no ACP in their path; the main process answers the native conversation bridge (list, history, hosts on
+demand). With `MU_NATIVE_HOST=0`, every conversation goes through the backend and the ACP adapter, as before. Checked in the
 real app by `node scripts/kyrn/e2e-conversation.mjs --native` (see "In the running app" in `docs/native-host-ui.md`).
 
 ## On by default
@@ -14,7 +14,7 @@ The native host is what a new conversation runs on. `MU_NATIVE_HOST` has three s
 
 | Setting                                     | The native host                                                                                             |
 | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `0`, `false`, `off`, `no` (the kill switch) | Off. Every provider of the bridge but `enabled` answers `off`; every conversation is AionCore's.            |
+| `0`, `false`, `off`, `no` (the kill switch) | Off. Every provider of the bridge but `enabled` answers `off`; every conversation is the backend's.         |
 | unset (`auto`)                              | On when the mu found on this machine can run inside the app (`nativeHostReady`), else off, with a log line. |
 | `1`, `true`, `on`, `yes`                    | On whatever mu is found. A mu too old for it fails where it is used, with its own error (`old-harness`).    |
 
@@ -23,12 +23,12 @@ Problem: the packaged app carries its own mu (`<resources>/harness/mu-agent`), a
 host on by default, every conversation of such an app would have started, then failed with `old-harness`. Solution: in
 `auto`, the main process asks once at start-up whether a host could start (`checkHost`: the launcher loads, has both
 functions, and accepts a plan; nothing is written and no judge starts), and answers `enabled` from that. An older mu
-leaves the sidebar without the native group and the home page on AionCore, with `[mu] the native host stays off: …` in
+leaves the sidebar without the native group and the home page on the backend, with `[mu] the native host stays off: …` in
 the log. This is not optional complexity: without it the default would break every packaged app that is not rebuilt in
 step with the harness.
 
-Conversations AionCore already holds stay on the classic page; they are not migrated (the native list hides only the
-sessions AionCore's ACP adapter runs, so nothing shows twice). A browser on the WebUI is not offered the native host
+Conversations the backend already holds stay on the classic page; they are not migrated (the native list hides only the
+sessions the backend's ACP adapter runs, so nothing shows twice). A browser on the WebUI is not offered the native host
 (`bridgeClient.enabled` answers false without asking when there is no `window.electronAPI`): the native screens use
 the desktop's folder dialog, notifications and bin, and nothing has tested them over the WebUI. There is no settings
 switch: the variable is for a developer who needs the old path, and a person who never heard of it gets the native
@@ -40,13 +40,13 @@ The app should run the agent itself, the way the Claude and Codex apps do, inste
 one message crosses four processes and three protocols:
 
 ```text
-renderer ⇄ AionCore (Rust, owns conversations) ⇄ ACP adapter (process/agent/kyrn) ⇄ mu --mode rpc (pi + Jev)
-                                                                     events.jsonl ⇠ status piggyback (Jev)
+renderer ⇄ the backend (Rust, owns conversations) ⇄ ACP adapter (process/agent/kyrn) ⇄ mu --mode rpc (pi + judge)
+                                                                     events.jsonl ⇠ status piggyback (judge)
 ```
 
 What that costs, concretely:
 
-- Jev's judgments travel a side channel: a status line → `events.jsonl` → the panel polls it every second.
+- The judge's judgments travel a side channel: a status line → `events.jsonl` → the panel polls it every second.
 - ACP has no "thinking ended" and no "turn settled", so the adapter and the message list guess where a turn ends
   (`MessageList.tsx` keeps "stale" thoughts and calls for turns that ended without their end).
 - Extension dialogs of type `input` and `editor` are cancelled.
@@ -55,11 +55,11 @@ What that costs, concretely:
 The target:
 
 ```text
-renderer ⇄ Electron main (NativeHost) ⇄ one utility process per session: pi + Jev, pi's own RPC protocol
+renderer ⇄ Electron main (NativeHost) ⇄ one utility process per session: pi + judge, pi's own RPC protocol
 ```
 
-One ordered stream per session carries pi's events, Jev's frames and the dialogs; the main process pairs commands with
-responses; one reducer turns the stream, or a session file read back, into what the screen shows. AionCore and ACP
+One ordered stream per session carries pi's events, the judge's frames and the dialogs; the main process pairs commands with
+responses; one reducer turns the stream, or a session file read back, into what the screen shows. The backend and ACP
 leave the conversation path.
 
 ## Milestone 1: the headless host, the reducer, tests
@@ -74,22 +74,24 @@ leave the conversation path.
 | `…/nativeHost/NativeHost.ts`                                | The manager: start, typed requests, the ordered subscription, dialogs, dispose, states and errors. No Electron import: it takes a `fork` function.                                                               |
 | `…/nativeHost/index.ts`                                     | The Electron part: the `MU_NATIVE_HOST` setting and `nativeHostReady`, `findHarness`, `utilityProcess.fork` with the system proxy (`startNativeHost`).                                                           |
 | `…/nativeHost/nodeFork.ts`                                  | The same host under `child_process.fork`.                                                                                                                                                                        |
-| `packages/desktop/src/common/utils/nativeHost/`             | No Node APIs, for main now and the renderer later: `records.ts` (pi's RPC types and readers), `presentation.ts` (Jev's frames), `view.ts`, `reducer.ts`.                                                         |
+| `packages/desktop/src/common/utils/nativeHost/`             | No Node APIs, for main now and the renderer later: `records.ts` (pi's RPC types and readers), `presentation.ts` (the judge's frames), `view.ts`, `reducer.ts`.                                                   |
 
-The ACP adapter's `telemetry.ts` and `permissions.ts` now decode Jev's frames with the same `readPresentation`; their
+The ACP adapter's `telemetry.ts` and `permissions.ts` now decode the judge's frames with the same `readPresentation`; their
 behavior is unchanged.
 
 ### How a host starts
 
 1. `startNativeHost({ cwd, session? })` checks the flag, finds the harness as the rest of the app does
    (`KYRN_ROOT` / `MU_ROOT` / `../KYRN` in dev, `resources/harness/mu-agent` packaged), and runs `prepareHost`. The
-   launcher plans `{ module, execArgv, args, env }` exactly as for the command line: same files, settings, sign-ins,
-   `.env` keys. `argv` is `--mode rpc` plus `--session <file or id>` to resume.
+   launcher plans `{ module, cli, execArgv, args, env }` exactly as for the command line: same files, settings,
+   sign-ins, `.env` keys. `argv` is `--mode rpc` plus `--session <file or id>` to resume. `cli` is the script the
+   command line runs pi with (see "Sub-agents" below).
 2. `utilityProcess.fork(entry, [], { env: { ...systemProxyEnv(), ...plan.env }, cwd, stdio: 'pipe', serviceName: 'mu' })`.
-3. The manager posts `init { module, args, execArgv }`, then a `get_state` (id `h1`). Records that arrive before pi
-   listens wait in the host.
-4. The host applies `execArgv` itself (see below), imports pi's module, calls `setupCli()`, posts `ready { importMs }`
-   and runs `main(args, { rpcTransport })`. The transport is the parent port.
+3. The manager posts `init { module, cli, args, execArgv }`, then a `get_state` (id `h1`). Records that arrive before
+   pi listens wait in the host.
+4. The host applies `execArgv` itself (see below), imports pi's module, sets `process.argv` to `[node, cli, ...args]`
+   and `process.execArgv` to `execArgv`, calls `setupCli()`, posts `ready { importMs }` and runs
+   `main(args, { rpcTransport })`. The transport is the parent port.
 5. pi answers `get_state`: the host is `running`, or `needs-model`.
 
 `dispose()` posts `end`, which is pi's stdin closing: pi shuts its session down and exits with 0. A host still there
@@ -104,6 +106,14 @@ without the resolver, pi's import failed (`@earendil-works/pi-ai` resolved to a 
 the host silences the named warnings and imports each `--import` module in order before pi; any other option is
 reported on stderr and left out. The Node fork starts the host without options too, so both run the same path. A
 package's plan has no options.
+
+**Sub-agents.** pi starts a sub-agent (`hive`, `delegate`, the swarm) by running `process.argv[1]` again with
+`process.execArgv`, the judgment layer's `-e` from `process.argv` and `ELECTRON_RUN_AS_NODE=1` on Electron
+(`packages/kyrn-judge/src/extension/features/swarm.ts`). In the host, `process.argv[1]` was the host's own file, which
+exits at once without a parent ("The mu host needs a parent"), so every sub-agent failed before it started. The host
+now gives pi the command line it would have had: the launcher's `cli` (`packages/coding-agent/src/cli.ts` in a
+checkout, `dist/bundle/cli.js` in the package) and the planned options, which take effect in the child as real ones.
+A launcher from before 2026-10-22 names no `cli`, and the command line is left as it was.
 
 ### The manager
 
@@ -136,10 +146,10 @@ give equal views (the fixture test checks it with `toStrictEqual`).
 
 ```ts
 type NativeView = {
-  messages: ViewMessage[]; // user (+ Jev's verdict line), assistant (text, thinking, tool calls with results), custom, compaction (where pi compacted: a `compaction` entry in a file, `compaction_end` with a result live)
+  messages: ViewMessage[]; // user (+ the judge's verdict line), assistant (text, thinking, tool calls with results), custom, compaction (where pi compacted: a `compaction` entry in a file, `compaction_end` with a result live)
   status: 'idle' | 'working' | 'thinking' | 'settled' | 'aborted' | 'error';
   error?: string;
-  judgments: { id: string; turn?: number; record: JsonObject }[]; // Jev's ledger records, by the turn that asked
+  judgments: { id: string; turn?: number; record: JsonObject }[]; // the judge's ledger records, by the turn that asked
   dialogs: ViewDialog[]; // select / confirm / input / editor that pi waits on
   live: ViewLive; // classifying, progress, retry, compacting: only while a run goes, none after a reload
 };
@@ -152,7 +162,7 @@ type NativeView = {
 - The status comes from pi's events only: `agent_start` … `agent_settled` is a run, a thinking block is `thinking`, and
   how the run ended is its last assistant message's stop reason. A prompt pi refused (no model, no key) runs nothing;
   only its response says so, and the view shows it as a failed run.
-- Jev's judgments are the ledger's `kyrn.decision` records: live they arrive twice (the entry and the `decision`
+- The judge's judgments are the ledger's `kyrn.decision` records: live they arrive twice (the entry and the `decision`
   frame), in the file once; they count once by record id and are filed under `origin.turn`, so a verdict that lands
   during turn 4 still says turn 3 asked. `kyrn.verdict` attaches to the user message it follows.
 - A dialog closes when the app answers it (the manager hands the answer to the subscribers) or, if pi opened it during
@@ -373,7 +383,7 @@ it; the renderer's part is in `docs/native-host-ui.md`.
 - Map the view onto the existing `renderer/pages/conversation/Messages/` components instead of new ones: `MessageList`
   reads `TMessage[]` from `MessageListProvider`, so the view becomes text, thinking, tool-call and permission rows
   (`MessageText`, `MessageThinking`, `MessageToolCall` / `MessageToolGroup`, `MessagePermission`), the verdict line
-  (`MessageJevLine`) and the status row. The list's guesses about stale thoughts and calls are not needed: the status
+  (`MessageJudgeLine`) and the status row. The list's guesses about stale thoughts and calls are not needed: the status
   is explicit.
 - All four dialog types, `input` and `editor` included; steer and follow-up while a run goes (`queue_update` is not in
   the view yet).
@@ -393,22 +403,22 @@ it; the renderer's part is in `docs/native-host-ui.md`.
 
 - pi keeps each session as `<agent dir>/sessions/--<project path>--/<time>_<id>.jsonl`, and `SessionManager.list` /
   `listAll` read them (name, first message, message count, times, the session it was forked from). The list comes from
-  there, not from AionCore's database. Done in M2 without pi (`sessions/SessionStore.ts`); the message count and the
+  there, not from the backend's database. Done in M2 without pi (`sessions/SessionStore.ts`); the message count and the
   fork parent since (below); left: a name set in the middle of a large file (read only when the file is read afresh).
-- mu conversations in AionCore already have pi session files: the adapter's record
-  `<mu home>/acp-sessions/<ACP session id>.json` holds `{ cwd, file, permissions }`. Following AionCore conversation →
-  its ACP session id → that record gives the file, which a native host opens with `--session`. Imported Claude Code and
-  Codex chats are pi session files as well (`mu import` writes them; `importChats.ts` keeps its records in
+- mu conversations in the backend already have pi session files: the adapter's record
+  `<mu home>/acp-sessions/<ACP session id>.json` holds `{ cwd, file, permissions }`. Following the backend conversation →
+  its ACP session id → that record gives the file, which a native host opens with `--session`. Imported Claude Code,
+  Codex and ZCode chats are pi session files as well (`mu import` writes them; `importChats.ts` keeps its records in
   `acp-sessions/imports/`).
-- What happens to AionCore's rows needs a decision: hide the mu ones once the native list shows them, keep them read
+- What happens to the backend's rows needs a decision: hide the mu ones once the native list shows them, keep them read
   only for a release, or leave them. Conversations with other agents (Claude Code, Codex, Gemini over ACP) stay in
-  AionCore until M4 decides.
+  the backend until M4 decides.
 
 Done since (2026-09-29, branch `claude/mu-native-home`):
 
-- **A session AionCore uses is not listed twice.** Problem: an AionCore mu conversation runs on a pi session file, so
+- **A session the backend uses is not listed twice.** Problem: a backend mu conversation runs on a pi session file, so
   the native list would show it a second time. Example: `acp-sessions/0b5b…-1a01.json` holds
-  `{ "cwd": "/work/app", "file": "…/sessions/--work-app--/2026…_0b5b….jsonl" }`; that file is AionCore's row already.
+  `{ "cwd": "/work/app", "file": "…/sessions/--work-app--/2026…_0b5b….jsonl" }`; that file is the backend's row already.
   Solution: `sessions/acpBindings.ts` reads the adapter's records (`<mu home>/acp-sessions/<uuid>.json`) and the
   imports' (`acp-sessions/imports/<id>.json`), each again only when its time or size changed, and the list leaves out
   the files they name (as listed or through a linked folder) unless their conversation runs here. Only the list:
@@ -436,9 +446,9 @@ Done since (2026-09-30, branch `claude/mu-native-polish`):
   on screen (`useNativeAttention`, `docs/native-host-ui.md`). `NativeConversation.running` (left out when false) is
   true while a run goes; `changed` is sent when a run starts and when it settles, so the list shows it.
 
-### M4: the default, then AionCore out of the path
+### M4: the default, then the backend out of the path
 
-- Turn the flag on by default, with the adapter as the fallback for one release; then take AionCore and ACP out of the
+- Turn the flag on by default, with the adapter as the fallback for one release; then take the backend and ACP out of the
   conversation path.
 - Packaging: pi then runs on Electron's Node, and pi needs Node ≥ 22.19. The app builds with `electron ^37.10.3` while
   dev runs 44.4.3; the shipped Electron's Node has to be checked or raised. The package layout has to be exercised in a
@@ -460,7 +470,7 @@ when its `timeout` passes; a dialog without a timeout that pi stops waiting on (
    (3 attempts, 2 / 4 / 8 s) and appends a `context_edit` that hides each failed attempt from the model, but live and
    reloaded views alike still show all four error messages, because the edits name entry ids the live messages do not
    have. Ask: the persisted entry's id on `message_end` (or an `entry_appended` for message entries).
-2. **Which message a Jev turn belongs to, in the file.** Judgments carry `origin.turn` and live frames carry
+2. **Which message a judged turn belongs to, in the file.** Judgments carry `origin.turn` and live frames carry
    `correlation.turnId`, but `kyrn.verdict` entries have no turn number, so a reloaded view can file judgments by turn
    but cannot tie turn N to the message that started it (goal continuations and follow-ups make "Nth user message"
    wrong). Ask: `turn` in `kyrn.verdict`, or an entry at each judged turn's start.
@@ -499,7 +509,7 @@ when its `timeout` passes; a dialog without a timeout that pi stops waiting on (
   directory), so M1 starts one per session.
 - Presentation frames of kinds the view does not read yet (see M2) and pi events it ignores (`queue_update`,
   `session_info_changed`, `thinking_level_changed`, compaction results).
-- The WebUI and the web host reach AionCore over REST and WebSocket (`common/adapter/httpBridge.ts`), not Electron's
-  main process: native conversations need a path there too, or the WebUI keeps AionCore.
+- The WebUI and the web host reach the backend over REST and WebSocket (`common/adapter/httpBridge.ts`), not Electron's
+  main process: native conversations need a path there too, or the WebUI keeps the backend.
 - Where this document lives: the docs index (`docs/README.md`) puts design docs under `docs/architecture/`, which this
   tree does not have yet.

@@ -209,12 +209,10 @@ describe('a conversation recorded from a real host', () => {
     ]);
     expect(open.live.permission).toBeUndefined();
     expect(viewAt(asked - 1).live.permission).toMatchObject({ summary: 'sleep 0.2; echo asked-ok' });
-    expect(open.live.progress).toEqual({
-      turn: 4,
-      step: 'Jev is reviewing: sleep 0.2; echo asked-ok',
-      code: 'permission_review',
-      params: { summary: 'sleep 0.2; echo asked-ok' },
-    });
+    // The judge answered (it is not sure), so its review is over: the line above the send box no longer says it reviews.
+    const review = records.findLastIndex((record, index) => index < asked && frameKind(record) === 'progress');
+    expect(viewAt(review).live.progress).toMatchObject({ code: 'permission_review' });
+    expect(open.live.progress).toBeUndefined();
     const answered = find((record) => record.type === 'extension_ui_response', asked);
     expect(records[answered]).toMatchObject({ id: records[asked].id, value: 'Allow once' });
     expect(viewAt(answered).dialogs).toEqual([]);
@@ -257,7 +255,7 @@ describe('a conversation recorded from a real host', () => {
     });
   });
 
-  it('files each of Jev’s judgments once, under the turn that asked, without the state it was shown', () => {
+  it('files each of the judge’s judgments once, under the turn that asked, without the state it was shown', () => {
     const view = reduceAll(records);
     const ledger = session.filter((entry) => entry.type === 'custom' && entry.customType === DECISION_ENTRY);
     expect(ledger.length).toBeGreaterThan(0);
@@ -282,7 +280,7 @@ describe('a conversation recorded from a real host', () => {
     expect(session.filter((entry) => entry.customType === VERDICT_ENTRY)).toHaveLength(6);
   });
 
-  it('shows that Jev classifies a message only until its verdict', () => {
+  it('shows that the judge classifies a message only until its verdict', () => {
     const pending = find((record) => frameKind(record) === 'preflight.pending');
     expect(viewAt(pending).live.classifying).toEqual({ turn: 1, judge: 'mock' });
     const verdict = find((record) => frameKind(record) === 'preflight.verdict', pending);
@@ -379,6 +377,49 @@ describe('reduce', () => {
     ]);
   });
 
+  it('drops what the judge was reviewing once the command runs, and a step once the model writes again', () => {
+    const review = frame('progress', {
+      step: 'The judge is reviewing: npm test',
+      code: 'permission_review',
+      params: { summary: 'npm test' },
+    });
+    const call = {
+      type: 'message_end',
+      message: assistant([{ type: 'toolCall', id: 'call_1', name: 'bash', arguments: { command: 'npm test' } }], {
+        stopReason: 'toolUse',
+      }),
+    };
+    const reviewing = reduceAll([{ type: 'agent_start' }, call, review]);
+    expect(reviewing.live.progress).toMatchObject({ code: 'permission_review' });
+    // Approved: the command runs, and the line above the send box no longer says the judge is reviewing it.
+    const running = reduceAll([{ type: 'tool_execution_start', toolCallId: 'call_1' }], reviewing);
+    expect(running.live.progress).toBeUndefined();
+    // The judge did not answer (rate limited) and mu asks the person instead: the review is over too.
+    const asked = reduceAll(
+      [
+        frame('permissions.request', {
+          kind: 'shell',
+          summary: 'npm test',
+          answers: ['Allow once', 'Don’t allow'],
+          toolCallId: 'call_1',
+        }),
+      ],
+      reviewing
+    );
+    expect(asked.live.progress).toBeUndefined();
+    expect(asked.live.permission).toMatchObject({ summary: 'npm test' });
+    const dialog = { type: 'extension_ui_request', id: 'd1', method: 'confirm', title: 'Run npm test?', message: '' };
+    expect(reduceAll([dialog], reviewing).live.progress).toBeUndefined();
+    // A step before the model's next words ends with them; a message of the person's does not end it.
+    const choosing = reduceAll([frame('progress', { step: 'Choosing skills', code: 'skills' })], running);
+    expect(reduceAll([{ type: 'message_start', message: user('more') }], choosing).live.progress).toMatchObject({
+      code: 'skills',
+    });
+    expect(
+      reduceAll([{ type: 'message_start', message: assistant([], { stopReason: 'pending' }) }], choosing).live.progress
+    ).toBeUndefined();
+  });
+
   it('leaves the thinking status when a message ends inside its thinking block', () => {
     const run: PiRecord[] = [
       { type: 'agent_start' },
@@ -404,7 +445,7 @@ describe('reduce', () => {
     expect(next).not.toHaveProperty('error');
   });
 
-  it('shows what the person said, without the rules AionUi puts in front of a conversation’s first message', () => {
+  it('shows what the person said, without the rules the backend puts in front of a conversation’s first message', () => {
     const rules = '[Assistant Rules]\n## Available Skills\n\n- **cron**: Scheduled tasks\n[/Assistant Rules]\n\n';
     const said = (content: string) =>
       reduceAll([{ type: 'message_end', message: user(content) }]).messages.map((message) =>

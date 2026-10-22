@@ -1,12 +1,18 @@
 /**
- * Signing in to a model provider's subscription (ChatGPT, Claude, Grok, and a Google account through Gemini CLI or
- * Antigravity) with pi's own OAuth flows, from the app. The main process runs the flow in a child process and opens
+ * Signing in to a model provider's subscription (ChatGPT, Grok, and a Google account through Gemini CLI or
+ * Antigravity) with pi's own OAuth flows, from the app. A Claude subscription is no longer offered: Anthropic doesn't
+ * allow other apps to sign in with one (an account signed in before can still be signed out). The main process runs the flow in a child process and opens
  * the browser; the screen polls the state and answers what a flow asks (a code to paste, a choice). No credential
  * ever comes back to the screen.
  */
 
-/** Every subscription the app knows how to sign in to, by pi's provider id, in the order they are shown. */
+/**
+ * Every subscription the app knows how to sign in to, by pi's provider id, in the order they are shown. ChatGPT is
+ * OpenAI's own Sign in with ChatGPT on the `openai` provider; `openai-codex` is the Codex CLI's login it replaces, shown
+ * only for an account signed in with it before.
+ */
 export const SUBSCRIPTION_PROVIDERS = [
+  'openai',
   'openai-codex',
   'anthropic',
   'xai',
@@ -27,12 +33,23 @@ export const isGoogleProvider = (provider: SubscriptionProvider | undefined) =>
   provider !== undefined && GOOGLE_PROVIDERS.includes(provider);
 
 /** What every harness can sign in to: pi's own flows. The rest is only offered when the runner says so. */
-export const BUILT_IN_PROVIDERS: readonly SubscriptionProvider[] = ['openai-codex', 'anthropic', 'xai'];
+export const BUILT_IN_PROVIDERS: readonly SubscriptionProvider[] = ['openai', 'xai'];
 /**
- * Subscriptions whose provider id also takes an API key (pi reads ANTHROPIC_API_KEY and XAI_API_KEY): mu can report
- * them as usable while nobody is signed in. The others are usable only signed in.
+ * Sign-ins no longer offered: an account signed in with one is shown (and can sign out), never a new one. ChatGPT
+ * through the Codex CLI's login, which Sign in with ChatGPT replaces; a Claude subscription, which Anthropic doesn't
+ * allow other apps to sign in with.
  */
-export const KEY_PROVIDERS: readonly SubscriptionProvider[] = ['anthropic', 'xai'];
+export const LEGACY_PROVIDERS: readonly SubscriptionProvider[] = ['openai-codex', 'anthropic'];
+/**
+ * Subscriptions whose provider id also takes an API key (pi reads OPENAI_API_KEY, ANTHROPIC_API_KEY and XAI_API_KEY):
+ * mu can report them as usable while nobody is signed in. The others are usable only signed in.
+ */
+export const KEY_PROVIDERS: readonly SubscriptionProvider[] = ['openai', 'anthropic', 'xai'];
+/**
+ * Subscriptions named by their maker outside the sign-in screens: an OpenAI API key's models are not ChatGPT's, so
+ * the model picker says OpenAI, while the sign-in says ChatGPT.
+ */
+export const MAKER_NAMED: readonly SubscriptionProvider[] = ['openai'];
 
 export type LoginModel = { id: string; name: string };
 
@@ -74,9 +91,16 @@ export type LoginStatus = {
   offered?: SubscriptionProvider[];
 };
 
-/** The providers to show: what the runner offers, or pi's own ones until it has said. Always in the app's order. */
+/**
+ * The providers to show: what the runner offers (or pi's own ones until it has said), and any other one an account is
+ * signed in to (a login no longer offered), so it can still be seen and signed out. Always in the app's order.
+ */
 export const offeredProviders = (status: LoginStatus): SubscriptionProvider[] =>
-  SUBSCRIPTION_PROVIDERS.filter((provider) => (status.offered ?? BUILT_IN_PROVIDERS).includes(provider));
+  SUBSCRIPTION_PROVIDERS.filter(
+    (provider) =>
+      (status.offered ?? BUILT_IN_PROVIDERS).includes(provider) ||
+      status.signedIn.some((account) => account.provider === provider)
+  );
 
 /** The risk question of a Google sign-in: a choice to go on or not, asked before any browser or port is opened. */
 export const isRiskConsent = (provider: SubscriptionProvider | undefined, prompt: LoginPrompt | undefined) =>

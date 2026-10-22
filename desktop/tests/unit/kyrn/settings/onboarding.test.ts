@@ -382,7 +382,7 @@ describe('the first-run guide', () => {
     expect(added.draft.settings.models.providers[0]).toMatchObject({ id: 'local', name: 'localhost:11434' });
   });
 
-  it('asks for https, a key unless the service is on this machine, and a model name', () => {
+  it('asks for an http or https address, a key unless the service is on this machine, and a model name', () => {
     const input = {
       api: 'openai-completions' as const,
       baseUrl: 'https://relay.example.com/v1',
@@ -390,13 +390,35 @@ describe('the first-run guide', () => {
       model: 'm',
     };
     expect(apiModelProblem(input)).toBeUndefined();
-    expect(apiModelProblem({ ...input, baseUrl: 'http://relay.example.com/v1' })).toBe('baseUrl');
-    expect(apiModelProblem({ ...input, baseUrl: 'http://8.8.8.8/v1' })).toBe('baseUrl');
+    // A name over plain HTTP may be a server the hosts file points at; only link-local is refused.
+    expect(apiModelProblem({ ...input, baseUrl: 'http://relay.example.com/v1' })).toBeUndefined();
+    expect(apiModelProblem({ ...input, baseUrl: 'http://8.8.8.8/v1' })).toBeUndefined();
+    expect(apiModelProblem({ ...input, baseUrl: 'http://169.254.169.254/v1' })).toBe('baseUrl');
     expect(apiModelProblem({ ...input, baseUrl: 'http://192.168.31.124:8000/v1' })).toBeUndefined();
     expect(apiModelProblem({ ...input, baseUrl: 'http://192.168.31.124:8000/v1', key: '' })).toBe('key');
     expect(apiModelProblem({ ...input, key: ' ' })).toBe('key');
     expect(apiModelProblem({ ...input, baseUrl: 'http://127.0.0.1:11434/v1', key: '' })).toBeUndefined();
     expect(apiModelProblem({ ...input, model: '' })).toBe('model');
+  });
+
+  it('starts the model from what its list stated, where a connection test read one (#23)', () => {
+    const { draft } = withApiModel(newDraft(settings()), {
+      api: 'openai-completions',
+      baseUrl: 'http://llm.internal:8000/v1',
+      key: 'sk-1',
+      model: 'big-local',
+      facts: { name: 'Big Local', contextWindow: 262144, maxTokens: 32768, reasoning: true, imageInput: true },
+    });
+    const [model] = draft.settings.models.providers[0].models;
+    expect(model).toMatchObject({
+      id: 'big-local',
+      name: 'Big Local',
+      contextWindow: 262144,
+      maxTokens: 32768,
+      reasoning: true,
+      imageInput: true,
+    });
+    expect(model.thinkingLevels.length).toBeGreaterThan(1);
   });
 
   it('adds the typed endpoint as the startup model, and replaces it when the guide is walked again', () => {

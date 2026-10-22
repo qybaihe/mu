@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% set H = L.home %}
+{% block content %}
+  <section class="wrap hero">
+    <img class="hero-icon intro" style="--d: 120ms" src="{{ root }}assets/icon-256.png" alt="mu" width="104" height="104">
+    <p class="kicker" data-type="{{ H.kicker | e }}">{{ H.kicker }}</p>
+    <h1 data-split>{{ H.h1 }}</h1>
+    <p class="lead intro" style="--d: 900ms">{{ H.lead }}</p>
+
+    <div class="install intro" style="--d: 1050ms" id="install">
+      <div class="tabs" role="tablist" aria-label="{{ L.ui.nav_install | e }}">
+        <button class="tab" id="tab-cli" role="tab" aria-selected="true" aria-controls="panel-cli" data-tab="cli">{{ H.tab_cli }}<span class="sub">npm</span></button>
+        <button class="tab" id="tab-app" role="tab" aria-selected="false" aria-controls="panel-app" data-tab="app" tabindex="-1">{{ H.tab_app }}<span class="sub">macOS · Windows · Linux</span></button>
+        <span class="tab-ink" aria-hidden="true"></span>
+      </div>
+      <div class="panel" id="panel-cli" role="tabpanel" aria-labelledby="tab-cli">
+        <div class="cmd">
+          <code><span class="prompt">$ </span><span data-type="npm i -g mu-agent" data-type-delay="1500">npm i -g mu-agent</span></code>
+          <button class="copy" type="button" data-copy="npm i -g mu-agent">{{ L.ui['copy'] }}</button>
+        </div>
+        <p class="hint">{{ H.cli_hint }}</p>
+      </div>
+      <div class="panel" id="panel-app" role="tabpanel" aria-labelledby="tab-app" hidden>
+        <div class="downloads">
+          <a class="btn primary" data-os="mac" data-asset="mac-arm64.dmg" href="{{ release.downloads['mac-arm64.dmg'] }}">macOS <small>{{ H.dl_mac_arm }}</small></a>
+          <a class="btn" data-os="mac" data-asset="mac-x64.dmg" href="{{ release.downloads['mac-x64.dmg'] }}">macOS <small>{{ H.dl_mac_intel }}</small></a>
+          <a class="btn" data-os="win" data-asset="win-x64.exe" href="{{ release.downloads['win-x64.exe'] }}">Windows <small>x64</small></a>
+          <a class="btn" data-os="linux" data-asset="linux-amd64.deb" href="{{ release.downloads['linux-amd64.deb'] }}">Linux <small>.deb x64</small></a>
+        </div>
+        <p class="hint"><span data-version>{{ release.tag }}</span> · {{ H.app_hint }}</p>
+      </div>
+    </div>
+    <p class="meta intro" style="--d: 1200ms">{{ H.meta }}</p>
+    <figure class="app-shot intro" style="--d: 1350ms">
+      <img class="only-light" src="{{ root }}assets/app-light.{{ L.shots }}.webp" alt="{{ H.app_alt | e }}" width="1600" height="1200">
+      <img class="only-dark" src="{{ root }}assets/app-dark.{{ L.shots }}.webp" alt="{{ H.app_alt | e }}" width="1600" height="1200">
+      <figcaption>{{ H.app_caption }}</figcaption>
+    </figure>
+    <a class="cue intro" style="--d: 1500ms" href="#how"><span class="down" aria-hidden="true">↓</span>{{ H.cue }}</a>
+  </section>
+
+  <section class="wrap story-head" id="how">
+    <p class="label" data-reveal>{{ H.story_label }}</p>
+    <h2 data-reveal style="--d: 80ms">{{ H.story_h2 }}</h2>
+    <p class="section-intro" data-reveal style="--d: 160ms">{{ H.story_intro }}</p>
+  </section>
+
+  <div class="wrap story">
+    <div class="stage">
+      <div class="stage-inner">
+        <figure class="frame" data-frame="term">
+          <div class="term">
+            <div class="term-bar">
+              <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="term-title">~/code/relay — mu</span>
+              <span class="term-tools">
+                <span class="steps" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+                <button class="replay" type="button" aria-label="{{ L.ui.replay_label | e }}">{{ L.ui.replay }}</button>
+              </span>
+            </div>
+            <pre class="term-body" aria-label="{{ L.ui.term_label | e }}">{{ rec.final }}</pre>
+          </div>
+          <figcaption>{{ H.stage_caption }}</figcaption>
+        </figure>
+        <figure class="frame shot" data-frame="swarm">
+          <img src="{{ root }}assets/swarm.{{ L.shots }}.webp" alt="{{ H.swarm_alt | e }}" width="1600" height="1184" loading="lazy">
+          <figcaption>{{ H.swarm_caption }}</figcaption>
+        </figure>
+        <figure class="frame shot" data-frame="board">
+          <img src="{{ root }}assets/board.{{ L.shots }}.webp" alt="{{ H.board_alt | e }}" width="1600" height="1184" loading="lazy">
+          <figcaption>{{ H.board_caption }}</figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <div class="chapters">
+      {% for C in H.chapters %}
+      <article class="chapter" data-frame="{{ C.get('frame', 'term') }}"{% if C.get('seg') %} data-seg="{{ C.seg }}" data-caption="{{ C.caption | e }}"{% else %} id="{{ C.frame }}"{% endif %}>
+        <div class="inline-frame"></div>
+        <p class="label" data-reveal>{{ C.label }}</p>
+        <h2 data-reveal style="--d: 60ms">{{ C.h2 }}</h2>
+        {% for P in C.paras %}<p data-reveal style="--d: {{ 120 + loop.index0 * 60 }}ms">{{ P }}</p>
+        {% endfor %}
+        {% if C.get('verdict') %}<div class="verdict" data-reveal style="--d: 180ms"><span class="d">◆</span> Jev  <span class="k">multi-step task</span><span class="m"> · </span>full effort<span class="m"> · {{ rec.verdict_ms }} ms</span></div>
+        {% for P in C.after %}<p data-reveal style="--d: 240ms">{{ P | replace("{prompt}", rec.prompt) }}</p>
+        {% endfor %}{% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+
+  <section class="wrap callout" id="principles">
+    <p class="label" data-reveal>{{ H.principles_label }}</p>
+    <h2 data-reveal style="--d: 60ms">{{ H.principles_h2 }}</h2>
+    <p class="section-intro" data-reveal style="--d: 120ms">{{ H.principles_intro }}</p>
+    <div class="grid">
+      {% for P in H.principles %}<div class="card" data-reveal style="--d: {{ (loop.index0 % 3) * 80 }}ms"><span class="num">{{ "%02d" | format(loop.index) }}</span><h3>{{ P.h3 }}</h3><p>{{ P.p }}</p></div>
+      {% endfor %}
+    </div>
+    <a class="principles-more" data-reveal href="{{ url(L, pages.decisions) }}">{{ H.principles_more }}<span aria-hidden="true">→</span></a>
+  </section>
+
+  <section class="wrap callout" id="more">
+    <p class="label" data-reveal>{{ H.more_label }}</p>
+    <h2 data-reveal style="--d: 60ms">{{ H.more_h2 }}</h2>
+    <div class="list">
+      {% for M in H.more %}<div data-reveal style="--d: {{ (loop.index0 % 2) * 80 }}ms"><b>{{ M.b }}</b>{{ M.text }}</div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="wrap callout" id="community">
+    <p class="label" data-reveal>{{ H.community_label }}</p>
+    <h2 data-reveal style="--d: 60ms">{{ H.community_h2 }}</h2>
+    <div class="grid">
+      {% for C in H.community %}<a class="card" data-reveal style="--d: {{ loop.index0 * 80 }}ms" href="{{ C.href }}"><span class="go" aria-hidden="true">↗</span><h3>{{ C.h3 }}</h3><p>{{ C.p }}</p></a>
+      {% endfor %}
+    </div>
+    <p class="note" id="key" data-reveal>{{ H.key_note | replace("{decisions}", url(L, pages.decisions)) }}</p>
+  </section>
+{% endblock %}
+{% block scripts %}<script type="application/json" id="replay-data">{{ rec.blob }}</script>
+{% endblock %}

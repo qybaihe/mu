@@ -1,10 +1,4 @@
 /**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
  * The update state machine of the main process, driven through electron-updater (mocked): a check finds a version and
  * offers it with its size, nothing downloads until the person chooses 下载, the update is then ready, and 重启并更新
  * hands it to the installer; and when a check, the download or the install fails, the release's installer is offered

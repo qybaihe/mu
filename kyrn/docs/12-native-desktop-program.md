@@ -1,7 +1,7 @@
 # 12. 原生桌面端计划：PI-Desktop 对照与交付路线
 
 2026-09-23。本文是 `/goal` 交付计划的总纲：对照 [vastsa/PI-Desktop](https://github.com/vastsa/PI-Desktop)
-（Electron + Rust host core + pi harness + 插件平台，LGPL-3.0，0.15.x 早期预览）与 mu 桌面端（AionUi 分叉，
+（Electron + Rust host core + pi harness + 插件平台，LGPL-3.0，0.15.x 早期预览）与 mu 桌面端（
 `/Users/baihe/Documents/KYRN-desktop`，分支 `codex/kyrn-desktop`），列出差距、决定取舍、分阶段派工。
 
 许可提醒：PI-Desktop 是 LGPL-3.0，mu 桌面端是 Apache-2.0 分叉。只学它的交互与信息架构，**不复制它的代码**。
@@ -24,7 +24,7 @@
 | 项目归档 / PR 页 / 导入 / 云同步 / 远程主机 | 有 | 无 | 不做（超出"开箱即用的本地 harness"） |
 | 插件平台 | `.piplug` 市场、面板、悬浮窗、主题 | 无；有能力包（catalog）与技能 | 不做插件平台；能力包走自己的路 |
 | 网络代理 | System / Direct / Custom，含旁路列表 | 无 | P2 在"系统"里补一个代理设置（用户网络 TLS 冷连接 1.4 s，值得） |
-| 命名 | PI-Desktop 全链一致 | electron-builder 已是 mu（appId、协议、产物）；`packages/desktop` 包名仍是 `@aionui/desktop` 0.0.0；界面残留 AionUi 文案 | 统一为 mu：包名、窗口标题、About、Dock 名、文案 |
+| 命名 | PI-Desktop 全链一致 | electron-builder 已是 mu（appId、协议、产物）；`packages/desktop` 包名仍是上游的旧名（0.0.0）；界面残留上游文案 | 统一为 mu：包名、窗口标题、About、Dock 名、文案 |
 
 ## 2. 设计红线（来自用户）
 
@@ -77,7 +77,7 @@
 桌面端 `codex/kyrn-desktop`（每项都是 Opus 5.5 子代理在独立 worktree 完成、组织者 ff 合并）：
 
 - A 原生外壳 `c4d1e13`，WebUI 产品整体移除 `25e9f77`；C 调用流畅 `5cd78fc`；B 侧栏与设置 `3e1131c`，随后按用户要求复原首屏淡粉 μ（`14b6f3c`）和左上角 app 图标（`3c04626`）；D 命令面板 `5515694`；E 输入框 `3a1ee0c`（模式芯片、模型 · 思考强度芯片，遵守不切换规则）。
-- G 去 Aion 字眼 `110436f`：13 种语言 999 处文案，后端文字到屏幕前统一改写为 mu，守卫测试 `tests/unit/i18n/noAionWords.test.ts`。
+- G 去上游名字 `110436f`：13 种语言 999 处文案，后端文字到屏幕前统一改写为 mu，守卫测试 `tests/unit/i18n/noUpstreamNames.test.ts`。
 - B2 设置分组 `e57e8f7`：7 组 28 个短页（偏好 / 模型 / 内核 / 判定点 ×6 / 更多功能 ×5 / 能力 / 系统），旧路径全部重定向，没有超过 12 行的选项页。
 - F 工作面板 `f76a321`：右侧一个面板，看板 · 判定 · 蜂群 · 文件 · 预览 · 源码六个标签，Cmd+J，按会话记忆，标签上的小圆点代替弹出。
 - 进行中：打磨（全局边框 token 缺失、输入框与命令面板遗留项、设置链接、启动时的 wecom 请求）；经验面板 v2（第七个标签"经验"，四个新判定 id 的翻译）。
@@ -105,6 +105,6 @@ P3 现状：首启流程已有（引导 → 模型 → 判定器，含一键 Lay
 
 内核 `refs/heads/kyrn`（本分支哈希 / kyrn 哈希）：清单中文统一 Jev 与「」 `88052c4d3` / `d3937151f`；清单描述人话化 `8ed00b791` / `797ad450a`；关闭模式的说明 `291973bfd` / `c9016c1d6`。
 
-事件：QA 用干净数据目录首次启动时，内置后端自行从 nodejs.org 下载了约 194 MB 的 Node 运行时（`crates/aionui-runtime` 的 managed runtime），开发构建还装了 React DevTools。这违反"下载须同意"的规则，也是打包版的产品问题；外壳修正里的同意对话框是对策，但对话框本身还没有在真实启动里验证过（Playwright 不能应答原生对话框，只有单元测试）。
+事件：QA 用干净数据目录首次启动时，内置后端自行从 nodejs.org 下载了约 194 MB 的 Node 运行时（后端 runtime crate 的 managed runtime），开发构建还装了 React DevTools。这违反"下载须同意"的规则，也是打包版的产品问题；外壳修正里的同意对话框是对策，但对话框本身还没有在真实启动里验证过（Playwright 不能应答原生对话框，只有单元测试）。
 
 还没做：Windows / Linux 真机打包核对；README 与发布说明（公开仓库会话）；更新器仍用分叉的 2.2.2 版本号；自定义提供商 id 在模型菜单里仍是原始 id；用户用新内核跑几轮后核对真实台账。

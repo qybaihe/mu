@@ -7,11 +7,9 @@ import { SWRConfig } from 'swr';
 import common from '@/renderer/services/i18n/locales/zh-CN/common.json';
 import mu from '@/renderer/services/i18n/locales/zh-CN/mu.json';
 import JudgePulse from '@/renderer/components/brand/JudgePulse';
-import MuBackdrop from '@/renderer/components/brand/MuBackdrop';
 import { MU_GLYPH_PATH } from '@/renderer/components/brand/glyph';
 import MuMark from '@/renderer/components/brand/MuMark';
 
-import MuStarters, { MU_STARTERS } from '@/renderer/components/brand/MuStarters';
 import StartupGate from '@/renderer/pages/settings/KyrnSettings/StartupGate';
 
 const { catalog, closeWindow, minimize, maximize, isDesktop, isMac } = vi.hoisted(() => ({
@@ -88,28 +86,6 @@ describe('MuMark', () => {
   });
 });
 
-describe('MuBackdrop', () => {
-  it('draws the icon’s glyph as decoration, each with its own gradients, and fades on the way out', () => {
-    const { container, rerender } = render(
-      <>
-        <MuBackdrop />
-        <MuBackdrop />
-      </>
-    );
-    for (const backdrop of screen.getAllByTestId('mu-backdrop')) {
-      expect(backdrop).toHaveAttribute('aria-hidden', 'true');
-      expect(backdrop).toHaveAttribute('data-state', 'shown');
-    }
-    // The fill and the rim are the same glyph as the icon.
-    const paths = [...container.querySelectorAll('path')].map((node) => node.getAttribute('d'));
-    expect(new Set(paths)).toEqual(new Set([MU_GLYPH_PATH]));
-    const ids = [...container.querySelectorAll('linearGradient, mask')].map((node) => node.id);
-    expect(new Set(ids).size).toBe(ids.length);
-    rerender(<MuBackdrop leaving />);
-    expect(screen.getByTestId('mu-backdrop')).toHaveAttribute('data-state', 'leaving');
-  });
-});
-
 describe('JudgePulse', () => {
   it('says exactly the state it is given, idle by default', () => {
     const { rerender } = view(<JudgePulse />);
@@ -128,21 +104,6 @@ describe('JudgePulse', () => {
       </I18nextProvider>
     );
     expect(screen.getByRole('status')).toHaveAccessibleName(copy.brand.judge.off);
-  });
-});
-
-describe('MuStarters', () => {
-  it('offers three starting points in Chinese and only hands the prompt over', () => {
-    const onPick = vi.fn();
-    view(<MuStarters onPick={onPick} />);
-    expect(MU_STARTERS).toHaveLength(3);
-    for (const { key } of MU_STARTERS) {
-      expect(screen.getByText(copy.brand.starters[key].title)).toBeInTheDocument();
-      expect(screen.getByText(copy.brand.starters[key].desc)).toBeInTheDocument();
-    }
-    fireEvent.click(screen.getByTestId('mu-starter-fix'));
-    expect(onPick).toHaveBeenCalledTimes(1);
-    expect(onPick).toHaveBeenCalledWith(copy.brand.starters.fix.prompt);
   });
 });
 

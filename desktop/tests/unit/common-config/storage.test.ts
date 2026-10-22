@@ -31,6 +31,7 @@ vi.mock('@/common/platform/storage', () => {
 
 // Import after mock is registered
 import { ConfigStorage, EnvStorage, BUILTIN_IMAGE_GEN_ID } from '@/common/config/storage';
+import { DIRS_KEY } from '@/common/platform/legacyNames';
 
 describe('storage runtime exports', () => {
   describe('BUILTIN_IMAGE_GEN_ID', () => {
@@ -64,7 +65,7 @@ describe('storage runtime exports', () => {
       expect(EnvStorage.namespace).toBe('agent.env');
     });
 
-    it('set/get roundtrip with aionui.dir object', async () => {
+    it('set/get roundtrip with the folders object', async () => {
       const dirs = {
         workDir: '/a',
         cacheDir: '/b',
@@ -76,8 +77,8 @@ describe('storage runtime exports', () => {
         backupDir: '/h',
       };
 
-      await EnvStorage.set('aionui.dir', dirs);
-      const result = await EnvStorage.get('aionui.dir');
+      await EnvStorage.set(DIRS_KEY, dirs);
+      const result = await EnvStorage.get(DIRS_KEY);
 
       expect(result).toEqual(dirs);
     });
@@ -89,7 +90,7 @@ describe('storage runtime exports', () => {
       await ConfigStorage.set('language', 'en');
 
       // Set a different key in EnvStorage
-      await EnvStorage.set('aionui.dir', {
+      await EnvStorage.set(DIRS_KEY, {
         workDir: '/x',
         cacheDir: '/y',
         dataDir: '/z',
@@ -102,7 +103,7 @@ describe('storage runtime exports', () => {
 
       // Verify values are isolated
       const configLang = await ConfigStorage.get('language');
-      const envDir = await EnvStorage.get('aionui.dir');
+      const envDir = await EnvStorage.get(DIRS_KEY);
 
       expect(configLang).toBe('en');
       expect(envDir?.workDir).toBe('/x');

@@ -10,7 +10,7 @@ import MyAssistantsList from './MyAssistantsList';
 import OfficialAssistantsGrid from './OfficialAssistantsGrid';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import TalkToButlerButton from '@/renderer/components/base/TalkToButlerButton';
-import { AionSearchInput } from '@/renderer/components/base';
+import { MuSearchInput } from '@/renderer/components/base';
 import SettingsPageHeader from '../../components/SettingsPageHeader';
 import { SETTINGS_PAGE_COLUMN, SETTINGS_PAGE_GUTTER, SETTINGS_PAGE_TOP } from '../../components/SettingsPageWrapper';
 import classNames from 'classnames';
@@ -114,7 +114,7 @@ const AssistantHomeTabs: React.FC<AssistantHomeTabsProps> = ({
             actions={
               <>
                 {!isMobile && (
-                  <AionSearchInput
+                  <MuSearchInput
                     className='shrink-0 w-[200px] hidden md:flex'
                     data-testid='input-search-assistants'
                     placeholder={t('settings.searchAssistants', {

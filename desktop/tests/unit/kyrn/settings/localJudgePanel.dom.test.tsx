@@ -82,7 +82,7 @@ describe('Laya on Windows and Linux, where the app runs the ONNX model itself', 
     bridge.localJudgeState.mockResolvedValue(onnx());
     const view = await panel();
     await waitFor(() => expect(view).toHaveTextContent('about 681 MB'));
-    expect(view).toHaveTextContent('mu does not download it for you');
+    expect(view).toHaveTextContent("mu doesn't download it for you");
     expect(view).toHaveTextContent(`Model folder: ${FOLDER}`);
     // Every file is missing: no list of five names, the folder says it.
     expect(view).not.toHaveTextContent('Still missing');
@@ -109,7 +109,7 @@ describe('Laya on Windows and Linux, where the app runs the ONNX model itself', 
     );
     const view = await panel();
     await waitFor(() => expect(view).toHaveTextContent('Still missing: model.onnx'));
-    expect(view).toHaveTextContent('download these again: tokenizer/tokenizer.json');
+    expect(view).toHaveTextContent('Download them again: tokenizer/tokenizer.json');
   });
 
   it('checks and starts the model, can stop a start that takes long, and words why it failed', async () => {
@@ -119,7 +119,7 @@ describe('Laya on Windows and Linux, where the app runs the ONNX model itself', 
     const view = await panel();
     fireEvent.click(await within(view).findByTestId('mu-laya-check'));
     await waitFor(() => expect(bridge.localJudgeRun).toHaveBeenCalledWith({ action: 'start', consent: false }));
-    await waitFor(() => expect(view).toHaveTextContent('Checking the model and starting Laya…'));
+    await waitFor(() => expect(view).toHaveTextContent('Checking the model and starting Laya.'));
     expect(within(view).getByTestId('mu-laya-stop')).toBeInTheDocument();
 
     bridge.localJudgeState.mockResolvedValue(onnx({ task: { ...task, phase: 'failed', problem: 'port' } }));
@@ -133,7 +133,7 @@ describe('Laya on Windows and Linux, where the app runs the ONNX model itself', 
       onnx({ installed: true, model: { folder: FOLDER, missing: [], wrong: [] } })
     );
     const view = await panel();
-    await waitFor(() => expect(view).toHaveTextContent('mu starts it by itself when the app opens'));
+    await waitFor(() => expect(view).toHaveTextContent('mu starts it automatically when the app opens'));
     expect(within(view).getByTestId('mu-laya-start')).toBeInTheDocument();
     expect(within(view).queryByTestId('mu-laya-model')).not.toBeInTheDocument();
   });

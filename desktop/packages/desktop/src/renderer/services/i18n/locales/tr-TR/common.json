@@ -227,7 +227,7 @@
       "noteMissing": "Bulgu kaydedilmedi.",
       "allFlow": "Tüm teslimler",
       "beeFlow": "{{name}} için teslimler",
-      "audit": "Jev kararları",
+      "audit": "Kararlar",
       "waitingRun": "Bu Hive'ın kaydedilmiş etkinlikleri bekleniyor.",
       "recordedAt": "{{time}} tarihinde kaydedildi",
       "beeMissing": "Bu arı, kaydedilmiş anlık görüntüde yok.",
@@ -959,7 +959,7 @@
       "auto_compaction_end": "Sıkıştırma tamamlandı",
       "hive.note": "Paylaşılan bulgu",
       "hive.delivery": "Teslim onaylandı",
-      "hive.gate": "Jev kapısı",
+      "hive.gate": "Hive kapısı",
       "hive.manifest": "Hive görevi",
       "bee.event": "Arı olayı",
       "memory.recalled": "Hatırlanan deneyim",
@@ -1076,24 +1076,6 @@
         "idle": "Hakem beklemede",
         "judging": "Hakem değerlendiriyor",
         "off": "Hakem kapalı"
-      },
-      "starters": {
-        "hint": "Nereden başlayacağınızı bilmiyor musunuz? Şunlardan birini deneyin:",
-        "understand": {
-          "title": "Bu projeyi anla",
-          "desc": "Yapıyı, giriş noktalarını ve ana modülleri çıkar",
-          "prompt": "Önce bu projeyi baştan sona oku; genel yapısını, ana giriş noktalarını ve en önemli modüllerini anlat. İlk okunması gereken üç dosyayı belirt."
-        },
-        "fix": {
-          "title": "Bir sorunu bul ve düzelt",
-          "desc": "Hatadan veya belirtiden kök nedene",
-          "prompt": "Bir sorunla karşılaştım: <belirtiyi anlatın veya hatayı yapıştırın>. Önce sorunu yeniden üret ve kök nedeni bul, ardından en küçük düzeltmeyi yap ve doğrulamak için ilgili testleri çalıştır."
-        },
-        "plan": {
-          "title": "Bir değişiklik planla",
-          "desc": "Önce plan, onayınızdan sonra düzenleme",
-          "prompt": "Şunu gerçekleştirmek istiyorum: <ihtiyacınızı anlatın>. Önce bir uygulama planı ve ilgili dosyaları sun; düzenlemeye ancak ben onayladıktan sonra başla."
-        }
       }
     },
     "toolStatus": {
@@ -1107,7 +1089,7 @@
       "switch": "Bu projenin sade dildeki panosu",
       "switching": "Değiştiriliyor…",
       "afterTurn": "Ajan bu adımı bitirince değişir",
-      "unknown": "Bu konuşmada henüz pano yok. Özellikler bölümünde sade dildeki pano açıkken mu konuşmalarında görünür.",
+      "unknown": "Bu konuşmada henüz pano yok. Ayarlar → Temel özellikler bölümünde sade dildeki pano açıkken mu konuşmalarında görünür.",
       "off": "Açıldığında işin nasıl gittiğini, ajanın şu an ne yaptığını ve sizden neyin beklendiğini sade bir dille anlatır.",
       "cost": "Yalnızca bu proje için. Her güncelleme bir model çağrısına mal olur.",
       "empty": "Ajana biraz zaman tanıyın; nasıl gittiği burada sade bir dille yazacak.",
@@ -1279,7 +1261,7 @@
     "compactionDropped": "{{count}} çağrı kaldırıldı",
     "compactionDropped_one": "{{count}} çağrı kaldırıldı",
     "compactionDropped_other": "{{count}} çağrı kaldırıldı",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}} mesajı sınıflandırıyor…",
       "classified": "{{judge}} sınıflandırması: {{type}}",
       "byRule": "Kuralla sınıflandırıldı: {{type}}",
@@ -1291,9 +1273,13 @@
       "setUp": "Hakem ayarla",
       "skipped": "Sınıflandırma atlandı",
       "off": "Sınıflandırma kapalı",
-      "firstHint": "Bu satır Jev’in kararı: Jev önce her mesajı sınıflandırır, sonra mu nasıl devam edeceğine karar verir. Tüm kararlar sağdaki Kararlar sekmesinde."
+      "firstHint": "Bu satır hakemin kararı: hakem önce her mesajı sınıflandırır, sonra mu nasıl devam edeceğine karar verir. Tüm kararlar sağdaki Kararlar sekmesinde."
     },
     "eventLine": {
+      "judgeNotice": {
+        "freeJev": "Jev anahtarı yok: OpenCode Zen'deki ücretsiz Jev yanıtlıyor",
+        "freeJevUnavailable": "Ücretsiz Jev yanıt vermeyi bıraktı: Bir Jev anahtarı ayarlanana kadar sabit kurallar karar veriyor"
+      },
       "detail": "Ayrıntılar: {{detail}}",
       "progress": {
         "frame": "Görev çerçevesi güncelleniyor",
@@ -1301,7 +1287,7 @@
         "skills": "Bu oturum için gereken beceriler seçiliyor",
         "capabilities": "Bu görev için gereken yetenekler seçiliyor",
         "goal_check": "Hedefe ulaşılıp ulaşılmadığı kontrol ediliyor",
-        "permissionReview": "Jev inceliyor: {{summary}}"
+        "permissionReview": "Hakem inceliyor: {{summary}}"
       },
       "goal": {
         "paused": "Duraklatıldı: {{reason}}",
@@ -1428,6 +1414,26 @@
       "reviewer": "gözden geçiren",
       "scout": "keşifçi",
       "worker": "uygulayıcı"
+    },
+    "kernel": {
+      "free": "ücretsiz",
+      "local": "yerel",
+      "judgeHint": "mu'nun karar noktalarını yanıtlayan hakem. Değiştirmek için tıklayın.",
+      "points": "{{active}}/{{total}} karar noktası etkin",
+      "shadow_one": "· {{count}} gölge modunda",
+      "shadow_other": "· {{count}} gölge modunda",
+      "off": "Hakem kapalı",
+      "verdicts_one": "karar",
+      "verdicts_other": "karar",
+      "last": "son",
+      "context": "bağlam",
+      "cache": "önbellek"
+    },
+    "hero": {
+      "kernel": "Karar çekirdeği",
+      "judgeReady": "{{judge}} hazır",
+      "judgeOff": "Hakem kapalı",
+      "title": "mu ne üzerinde çalışsın?"
     }
   },
   "menu": {
@@ -1517,7 +1523,7 @@
     "previewEmpty": "Henüz önizlenecek bir şey yok. Konuşmadan açılan dosyalar burada görünür.",
     "previewHidden": "Önizleme gizli.",
     "browserEmpty": "Açık sayfa yok. Yukarıya bir adres ya da arama yazın. Konuşmadan açılan sayfalar da burada görünür.",
-    "firstHint": "Pano ilerlemeyi sade bir dille anlatır, Kararlar Jev’in her kararını listeler, Dosyalar bu konuşmanın klasörüdür. Diğer sekmeler kullanıldıklarında görünür."
+    "firstHint": "Pano ilerlemeyi sade bir dille anlatır, Kararlar her kararı listeler, Dosyalar bu konuşmanın klasörüdür. Diğer sekmeler kullanıldıklarında görünür."
   },
   "nodeRuntime": {
     "title": "Node.js indirilsin mi?",

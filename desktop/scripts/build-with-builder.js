@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Simplified build script for AionUi
+ * Simplified build script for the mu desktop app
  * Coordinates electron-vite (bundling) and electron-builder (packaging)
  *
  * Features:
@@ -26,7 +26,41 @@ const DMG_RETRY_DELAY_SEC = 30;
 
 // Incremental build: hash of source files to detect changes
 const INCREMENTAL_CACHE_FILE = 'out/.build-hash';
-const DEBUG_AUTO_UPDATE_CURRENT_VERSION_ENV = 'AIONUI_DEBUG_AUTO_UPDATE_CURRENT_VERSION';
+const DEBUG_AUTO_UPDATE_CURRENT_VERSION_ENV = 'MU_DEBUG_AUTO_UPDATE_CURRENT_VERSION';
+
+// The installer's session variables (resources/windows/installer-observability.nsh) that the
+// patched uninstaller ExecWait lines pass on, so the uninstaller logs into the same session.
+const NSIS_SESSION_LOG_PATH_VAR = '$MuSessionLogPath';
+const NSIS_SESSION_ID_VAR = '$MuSessionId';
+// Legacy names: before the rename to mu these variables had the names below, and a
+// node_modules patched back then keeps them until it is reinstalled. They are only matched,
+// so that such a template is patched again with the names above.
+const LEGACY_NSIS_SESSION_LOG_PATH_VAR = '$AionUiSessionLogPath';
+const LEGACY_NSIS_SESSION_ID_VAR = '$AionUiSessionId';
+
+function patchUninstallerExecWait(template, uninstallerVar, label) {
+  const execWait = (logArgs) => `ExecWait '"${uninstallerVar}" /S /KEEP_APP_DATA $0 ${logArgs}_?=$installationDir' $R0`;
+  const patchedExecWait = execWait(
+    `--installer-log="${NSIS_SESSION_LOG_PATH_VAR}" --installer-session="${NSIS_SESSION_ID_VAR}" `
+  );
+  if (template.includes(patchedExecWait)) {
+    return template;
+  }
+  const earlierExecWaits = [
+    // electron-builder's own line.
+    execWait(''),
+    // Earlier patches, with the legacy variable names: log only, then log and session.
+    execWait(`--installer-log="${LEGACY_NSIS_SESSION_LOG_PATH_VAR}" `),
+    execWait(
+      `--installer-log="${LEGACY_NSIS_SESSION_LOG_PATH_VAR}" --installer-session="${LEGACY_NSIS_SESSION_ID_VAR}" `
+    ),
+  ];
+  const earlier = earlierExecWaits.find((line) => template.includes(line));
+  if (!earlier) {
+    throw new Error(`electron-builder ${label} ExecWait template changed; update patchElectronBuilderNsisInstaller.`);
+  }
+  return template.replace(earlier, () => patchedExecWait);
+}
 
 function patchElectronBuilderNsisInstaller() {
   const rootDir = path.resolve(__dirname, '..');
@@ -94,24 +128,7 @@ function patchElectronBuilderNsisInstaller() {
     patched = patched.replace(oneMoreAttemptLabel, '');
   }
 
-  const copiedUninstallerExec = `ExecWait '"$uninstallerFileNameTemp" /S /KEEP_APP_DATA $0 _?=$installationDir' $R0`;
-  const copiedUninstallerExecWithLog = `ExecWait '"$uninstallerFileNameTemp" /S /KEEP_APP_DATA $0 --installer-log="$AionUiSessionLogPath" --installer-session="$AionUiSessionId" _?=$installationDir' $R0`;
-  if (patched.includes(copiedUninstallerExec)) {
-    patched = patched.replace(copiedUninstallerExec, copiedUninstallerExecWithLog);
-  } else if (
-    patched.includes(
-      `ExecWait '"$uninstallerFileNameTemp" /S /KEEP_APP_DATA $0 --installer-log="$AionUiSessionLogPath" _?=$installationDir' $R0`
-    )
-  ) {
-    patched = patched.replace(
-      `ExecWait '"$uninstallerFileNameTemp" /S /KEEP_APP_DATA $0 --installer-log="$AionUiSessionLogPath" _?=$installationDir' $R0`,
-      copiedUninstallerExecWithLog
-    );
-  } else if (!patched.includes(copiedUninstallerExecWithLog)) {
-    throw new Error(
-      'electron-builder copied-uninstaller ExecWait template changed; update patchElectronBuilderNsisInstaller.'
-    );
-  }
+  patched = patchUninstallerExecWait(patched, '$uninstallerFileNameTemp', 'copied-uninstaller');
 
   const uninstallerCopySource = [
     '  StrCpy $uninstallerFileNameTemp "$PLUGINSDIR\\old-uninstaller.exe"',
@@ -147,24 +164,7 @@ function patchElectronBuilderNsisInstaller() {
     );
   }
 
-  const inPlaceUninstallerExec = `ExecWait '"$uninstallerFileName" /S /KEEP_APP_DATA $0 _?=$installationDir' $R0`;
-  const inPlaceUninstallerExecWithLog = `ExecWait '"$uninstallerFileName" /S /KEEP_APP_DATA $0 --installer-log="$AionUiSessionLogPath" --installer-session="$AionUiSessionId" _?=$installationDir' $R0`;
-  if (patched.includes(inPlaceUninstallerExec)) {
-    patched = patched.replace(inPlaceUninstallerExec, inPlaceUninstallerExecWithLog);
-  } else if (
-    patched.includes(
-      `ExecWait '"$uninstallerFileName" /S /KEEP_APP_DATA $0 --installer-log="$AionUiSessionLogPath" _?=$installationDir' $R0`
-    )
-  ) {
-    patched = patched.replace(
-      `ExecWait '"$uninstallerFileName" /S /KEEP_APP_DATA $0 --installer-log="$AionUiSessionLogPath" _?=$installationDir' $R0`,
-      inPlaceUninstallerExecWithLog
-    );
-  } else if (!patched.includes(inPlaceUninstallerExecWithLog)) {
-    throw new Error(
-      'electron-builder in-place uninstaller ExecWait template changed; update patchElectronBuilderNsisInstaller.'
-    );
-  }
+  patched = patchUninstallerExecWait(patched, '$uninstallerFileName', 'in-place uninstaller');
 
   if (patched !== original) {
     fs.writeFileSync(installUtilPath, patched);
@@ -748,15 +748,15 @@ try {
     return;
   }
 
-  // 5. Prepare aioncore binary (for packaged runtime usage)
-  const { prepareAioncore } = require('../packages/shared-scripts/src/prepare-aioncore.js');
-  const { resolveAioncoreVersion } = require('./resolveAioncoreVersion.js');
+  // 5. Prepare the backend binary (for packaged runtime usage)
+  const { prepareBackend } = require('../packages/shared-scripts/src/prepare-backend.js');
+  const { resolveBackendVersion } = require('./resolveBackendVersion.js');
   const projectRoot = path.resolve(__dirname, '..');
-  prepareAioncore({
+  prepareBackend({
     projectRoot,
     platform: process.platform,
     arch: targetArch,
-    version: resolveAioncoreVersion(projectRoot),
+    version: resolveBackendVersion(projectRoot),
   });
 
   // 6. Prepare hub resources (index.json + extension zips for offline fallback)
@@ -838,9 +838,9 @@ try {
     const winUnpackedDir = path.join(outDir, 'win-unpacked');
     let cleaned = tryRemoveDir(winUnpackedDir);
     if (!cleaned) {
-      const aionRunning = isProcessRunningWindows('mu.exe');
+      const muRunning = isProcessRunningWindows('mu.exe');
       const electronRunning = isProcessRunningWindows('electron.exe');
-      if (aionRunning || electronRunning) {
+      if (muRunning || electronRunning) {
         console.log('⚠️  Detected running mu/Electron process. Attempting to close...');
         killWindowsProcesses(['mu.exe', 'electron.exe']);
         cleaned = tryRemoveDir(winUnpackedDir);

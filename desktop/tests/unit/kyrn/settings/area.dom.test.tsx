@@ -137,7 +137,7 @@ function settings(patch: Partial<KyrnSettings> = {}): KyrnSettings {
       commented: false,
       problem: '',
     },
-    permissions: { mode: 'jev', from: 'default' },
+    permissions: { mode: 'judge', from: 'default' },
     boardModel: { supported: true, model: '' },
     ...patch,
   };
@@ -267,7 +267,7 @@ describe('generic option fields', () => {
   it('draws a number with its unit and range, and says when a value is out of range', () => {
     const { onChange, row } = field(option('admission', 'minChars'), 100);
     // The bounds are numbers in the app language, and the range is a line of its own under the harness's help.
-    expect(row).toHaveTextContent('Range 500 – 200,000.');
+    expect(row).toHaveTextContent('Range: 500–200,000.');
     expect(row).toHaveTextContent('chars');
     expect(within(row).getByRole('alert')).toHaveTextContent('outside the allowed range');
     expect(within(row).getByTestId('mu-modified')).toBeInTheDocument();
@@ -276,7 +276,7 @@ describe('generic option fields', () => {
   });
   it('shows a wait kept in milliseconds in seconds, and saves milliseconds', () => {
     const { onChange, row } = field(option('preflight', 'waitMs'), 6000);
-    expect(row).toHaveTextContent('Range 0.5 – 30.');
+    expect(row).toHaveTextContent('Range: 0.5–30.');
     expect(row).toHaveTextContent('s');
     expect(row).not.toHaveTextContent('ms');
     expect(within(row).getByRole('spinbutton')).toHaveValue('6');
@@ -305,9 +305,9 @@ describe('generic option fields', () => {
 });
 
 describe('the details: every feature, with the decision points it asks under it', () => {
-  /** The switch of whether Jev's verdict at a point takes effect, by the point's name. */
-  const askJev = (row: HTMLElement, point: string) =>
-    within(row).getByRole('switch', { name: `Let Jev judge: ${point}` });
+  /** The switch of whether the judge's verdict at a point takes effect, by the point's name. */
+  const askJudge = (row: HTMLElement, point: string) =>
+    within(row).getByRole('switch', { name: `Ask the judge: ${point}` });
 
   it('lists every feature on the page of its area, each point indented under its feature, each page within twelve rows', async () => {
     await open('details-input');
@@ -344,9 +344,9 @@ describe('the details: every feature, with the decision points it asks under it'
     expect(within(screen.getByTestId('mu-feature-compaction')).getByText('Beta')).toBeInTheDocument();
   });
   it.each([
-    ['zh-CN', '消息预判', '让 Jev 判断', '让 Jev 判断：消息预判'],
-    ['ja-JP', 'Message preflight', 'Let Jev judge', 'Let Jev judge: Message preflight'],
-    ['en-US', 'Message preflight', 'Let Jev judge', 'Let Jev judge: Message preflight'],
+    ['zh-CN', '消息预判', '让判定器判断', '让判定器判断：消息预判'],
+    ['ja-JP', 'Message preflight', 'Ask the judge', 'Ask the judge: Message preflight'],
+    ['en-US', 'Message preflight', 'Ask the judge', 'Ask the judge: Message preflight'],
   ])('reads the manifest in the language of %s', async (language, title, ask, label) => {
     await i18n.changeLanguage(language);
     await open('details-input');
@@ -370,10 +370,10 @@ describe('the details: every feature, with the decision points it asks under it'
     });
     bridge.settings.mockResolvedValue({ ok: true, data: settings({ harness: custom }) });
     await open('details-input');
-    expect(screen.getByTestId('mu-decision-input.preflight')).toHaveTextContent('Let Jev judge');
+    expect(screen.getByTestId('mu-decision-input.preflight')).toHaveTextContent('Ask the judge');
     // The harness has Japanese for the point and not for its feature: the point reads in Japanese, by its name.
     await act(() => i18n.changeLanguage('ja-JP'));
-    expect(screen.getByTestId('mu-decision-input.preflight')).toHaveTextContent('Let Jev judge: メッセージ事前判定');
+    expect(screen.getByTestId('mu-decision-input.preflight')).toHaveTextContent('Ask the judge: メッセージ事前判定');
     // A group the desktop has no page for, and a feature the harness does not describe: a row of its own, on Other.
     fireEvent.click(screen.getByTestId('mu-nav-details-other'));
     const stray = screen.getByTestId('mu-decision-misc.one');
@@ -445,10 +445,10 @@ describe('the details: every feature, with the decision points it asks under it'
     const risk = screen.getByTestId('mu-decision-tool.risk');
     // A switch, not a choice of modes; the harness's third mode is not offered, and is not named anywhere.
     expect(within(risk).queryByRole('radio')).not.toBeInTheDocument();
-    expect(askJev(risk, 'Risky command guard')).not.toBeChecked();
+    expect(askJudge(risk, 'Risky command guard')).not.toBeChecked();
     expect(screen.getByTestId('kyrn-settings')).not.toHaveTextContent(/shadow/i);
     fireEvent.click(screen.getByTestId('mu-nav-details-input'));
-    expect(askJev(screen.getByTestId('mu-decision-input.preflight'), 'Message preflight')).toBeChecked();
+    expect(askJudge(screen.getByTestId('mu-decision-input.preflight'), 'Message preflight')).toBeChecked();
     // The mode every point without its own follows is the judges page's switch, not a row of the details.
     expect(screen.queryByTestId('mu-judge-mode')).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId('mu-nav-judges'));
@@ -459,7 +459,7 @@ describe('the details: every feature, with the decision points it asks under it'
     fireEvent.click(verdicts);
     fireEvent.click(verdicts);
     fireEvent.click(screen.getByTestId('mu-nav-details-safety'));
-    fireEvent.click(askJev(screen.getByTestId('mu-decision-tool.risk'), 'Risky command guard'));
+    fireEvent.click(askJudge(screen.getByTestId('mu-decision-tool.risk'), 'Risky command guard'));
     expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Judges and Decision points');
     fireEvent.click(screen.getByText('Save'));
     await waitFor(() => expect(bridge.save).toHaveBeenCalled());
@@ -471,19 +471,19 @@ describe('the details: every feature, with the decision points it asks under it'
     await open('details-team');
     const hive = screen.getByTestId('mu-feature-hive');
     const deliver = () => screen.getByTestId('mu-decision-hive.deliver');
-    expect(askJev(deliver(), 'Hive: delivery')).toBeEnabled();
-    expect(deliver()).not.toHaveTextContent('The feature is off');
+    expect(askJudge(deliver(), 'Hive: delivery')).toBeEnabled();
+    expect(deliver()).not.toHaveTextContent('This feature is off');
     fireEvent.click(within(hive).getByRole('switch', { name: 'Hive' }));
     for (const id of ['hive.publish', 'hive.deliver']) {
       const point = screen.getByTestId(`mu-decision-${id}`);
-      expect(point).toHaveTextContent('The feature is off');
+      expect(point).toHaveTextContent('This feature is off');
       expect(within(point).getByRole('switch')).toBeDisabled();
     }
     // The sub-agents' point, under a feature that is on, is not touched.
     expect(within(screen.getByTestId('mu-decision-swarm.routing')).getByRole('switch')).toBeEnabled();
     fireEvent.click(within(hive).getByRole('switch', { name: 'Hive' }));
-    expect(askJev(deliver(), 'Hive: delivery')).toBeEnabled();
-    expect(screen.queryByText('The feature is off')).not.toBeInTheDocument();
+    expect(askJudge(deliver(), 'Hive: delivery')).toBeEnabled();
+    expect(screen.queryByText('This feature is off')).not.toBeInTheDocument();
   });
 });
 
@@ -550,7 +550,7 @@ describe('the save bar', () => {
     });
     await open('details-safety');
     const row = screen.getByTestId('mu-decision-tool.risk');
-    expect(row).toHaveTextContent('The feature is off');
+    expect(row).toHaveTextContent('This feature is off');
     expect(row).not.toHaveTextContent('tool.risk');
     expect(within(row).getByRole('switch')).toBeDisabled();
   });
@@ -563,7 +563,9 @@ describe('the save bar', () => {
     await open('details-context');
     fireEvent.click(screen.getByRole('switch', { name: 'Automatic compaction' }));
     fireEvent.click(screen.getByText('Save'));
-    expect(await screen.findByText(/Another program .* changed the configuration/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/The settings changed after this page loaded them .* so nothing was saved/)
+    ).toBeInTheDocument();
     bridge.settings.mockResolvedValue({ ok: true, data: settings({ revision: 'r9', autoCompaction: true }) });
     fireEvent.click(within(screen.getByTestId('mu-save-bar')).getByText('Reload'));
     await waitFor(() => expect(bridge.settings).toHaveBeenCalledTimes(2));
@@ -579,7 +581,7 @@ describe('the save bar', () => {
     fireEvent.click(screen.getByRole('switch', { name: 'Automatic compaction' }));
     fireEvent.click(screen.getByText('Save'));
     // The option is named in the reader's words, from the manifest; the store's English stays out.
-    expect(await screen.findByText('Not saved: “Wait at most” is outside the allowed range.')).toBeInTheDocument();
+    expect(await screen.findByText('Couldn\'t save: "Wait at most" is outside the allowed range.')).toBeInTheDocument();
     expect(screen.queryByText(/Invalid value/)).not.toBeInTheDocument();
     expect(within(screen.getByTestId('mu-save-bar')).queryByText('Reload')).not.toBeInTheDocument();
   });
@@ -618,9 +620,9 @@ describe('the save bar', () => {
     });
     render(<SettingsArea />, { wrapper });
     // A sentence the reader can act on, naming the file; the parser's own words only as the detail under it.
-    expect(await screen.findByText('The settings could not be loaded')).toBeInTheDocument();
+    expect(await screen.findByText("Couldn't load the settings")).toBeInTheDocument();
     expect(
-      screen.getByText('/home/me/.mu/agent/mu.json is not valid JSON. Fix it by hand, then reload.')
+      screen.getByText("/home/me/.mu/agent/mu.json isn't valid JSON. Fix it by hand, then reload.")
     ).toBeInTheDocument();
     expect(screen.getByTestId('mu-error-detail')).toHaveTextContent('at position 1 (line 1 column 2)');
     fireEvent.click(screen.getByText('Reload'));
@@ -635,31 +637,34 @@ describe('providers and the default model', () => {
     const names = within(list)
       .getAllByRole('option')
       .map((item) => item.textContent);
-    expect(names).toEqual(['ChatGPT', 'Claude', 'Grok', 'Relay', 'corp-gateway']);
+    // A Claude subscription is no longer offered: Anthropic doesn't allow other apps to sign in with one.
+    expect(names).toEqual(['ChatGPT', 'Grok', 'Relay', 'corp-gateway']);
     expect(screen.getByTestId('mu-provider-editor')).toHaveTextContent('Relay');
-    // mu reported openai-codex too: it is the subscription above, not another built-in provider.
+    // mu reported the older ChatGPT sign-in (openai-codex, through Codex) too: with nobody signed in to it, it is
+    // neither an account nor a built-in provider.
     expect(screen.queryByTestId('mu-provider-item-builtin-openai-codex')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('mu-provider-item-account-openai-codex')).not.toBeInTheDocument();
     const relay = screen.getByTestId('mu-provider-item-custom-0');
-    expect(within(relay).getByRole('img', { name: 'Usable' })).toBeInTheDocument();
+    expect(within(relay).getByRole('img', { name: 'Available' })).toBeInTheDocument();
   });
 
   it('signs in to a subscription at once, outside the save bar', async () => {
     await open('providers');
-    fireEvent.click(await screen.findByTestId('mu-provider-item-account-openai-codex'));
-    const detail = screen.getByTestId('mu-account-openai-codex');
+    fireEvent.click(await screen.findByTestId('mu-provider-item-account-openai'));
+    const detail = screen.getByTestId('mu-account-openai');
     expect(detail).toHaveTextContent('Plus / Pro plan');
     expect(within(detail).getByTestId('mu-account-state')).toHaveTextContent('Not signed in');
     const running = {
       id: 1,
-      provider: 'openai-codex',
+      provider: 'openai',
       phase: 'running',
       url: 'https://auth.openai.com/oauth/authorize',
     };
     bridge.loginStart.mockResolvedValue({ ok: true, data: running });
     bridge.loginState.mockResolvedValue({ ok: true, data: running });
-    fireEvent.click(within(detail).getByTestId('mu-account-signin-openai-codex'));
+    fireEvent.click(within(detail).getByTestId('mu-account-signin-openai'));
     expect(await screen.findByTestId('mu-login-waiting')).toHaveTextContent('ChatGPT');
-    const item = screen.getByTestId('mu-provider-item-account-openai-codex');
+    const item = screen.getByTestId('mu-provider-item-account-openai');
     expect(within(item).getByRole('img', { name: 'Signing in…' })).toBeInTheDocument();
 
     bridge.loginState.mockResolvedValue({
@@ -671,7 +676,7 @@ describe('providers and the default model', () => {
     });
     expect(detail).toHaveTextContent('GPT-5.5');
     expect(within(item).getByRole('img', { name: 'Signed in' })).toBeInTheDocument();
-    expect(within(detail).getByTestId('mu-account-signout-openai-codex')).toBeInTheDocument();
+    expect(within(detail).getByTestId('mu-account-signout-openai')).toBeInTheDocument();
     expect(screen.queryByTestId('mu-save-bar')).not.toBeInTheDocument();
     expect(bridge.save).not.toHaveBeenCalled();
     // The account's models reach the home page's pill without a new start of the app.
@@ -682,23 +687,47 @@ describe('providers and the default model', () => {
   it('signs out only after asking, and shows who is still signed in', async () => {
     bridge.loginStatus.mockResolvedValue({
       ok: true,
-      data: { signedIn: [{ provider: 'anthropic', models: [{ id: 'claude-opus-4-8', name: 'Claude Opus 4.8' }] }] },
+      data: { signedIn: [{ provider: 'xai', models: [{ id: 'grok-5', name: 'Grok 5' }] }] },
     });
     bridge.loginLogout.mockResolvedValue({ ok: true, data: { signedIn: [] } });
     await open('providers');
-    fireEvent.click(await screen.findByTestId('mu-provider-item-account-anthropic'));
-    const detail = screen.getByTestId('mu-account-anthropic');
+    fireEvent.click(await screen.findByTestId('mu-provider-item-account-xai'));
+    const detail = screen.getByTestId('mu-account-xai');
     await waitFor(() => expect(within(detail).getByTestId('mu-account-state')).toHaveTextContent('Signed in'));
-    fireEvent.click(within(detail).getByTestId('mu-account-signout-anthropic'));
+    fireEvent.click(within(detail).getByTestId('mu-account-signout-xai'));
     expect(bridge.loginLogout).not.toHaveBeenCalled();
-    const confirm = await screen.findByText('Sign out of Claude? You will need to sign in again to use it.');
+    const confirm = await screen.findByText("Sign out of Grok? You'll need to sign in again to use it.");
     expect(confirm).toBeInTheDocument();
     const buttons = screen.getAllByRole('button', { name: 'Sign out' });
     fireEvent.click(buttons[buttons.length - 1]);
-    await waitFor(() => expect(bridge.loginLogout).toHaveBeenCalledWith({ provider: 'anthropic' }));
+    await waitFor(() => expect(bridge.loginLogout).toHaveBeenCalledWith({ provider: 'xai' }));
     await waitFor(() => expect(within(detail).getByTestId('mu-account-state')).toHaveTextContent('Not signed in'));
-    expect(within(detail).getByTestId('mu-account-signin-anthropic')).toBeInTheDocument();
+    expect(within(detail).getByTestId('mu-account-signin-xai')).toBeInTheDocument();
     await waitFor(() => expect(bridge.recheck).toHaveBeenCalledTimes(1));
+  });
+
+  it('shows a Claude subscription signed in before only to sign it out, and says to use an API key', async () => {
+    bridge.loginStatus.mockResolvedValue({
+      ok: true,
+      data: {
+        signedIn: [{ provider: 'anthropic', models: [{ id: 'claude-opus-4-8', name: 'Claude Opus 4.8' }] }],
+        offered: ['openai', 'xai'],
+      },
+    });
+    bridge.loginLogout.mockResolvedValue({ ok: true, data: { signedIn: [], offered: ['openai', 'xai'] } });
+    await open('providers');
+    fireEvent.click(await screen.findByTestId('mu-provider-item-account-anthropic'));
+    const detail = screen.getByTestId('mu-account-anthropic');
+    expect(within(detail).getByTestId('mu-account-legacy')).toHaveTextContent(
+      "Anthropic doesn't allow other apps to sign in with a Claude subscription"
+    );
+    fireEvent.click(within(detail).getByTestId('mu-account-signout-anthropic'));
+    const buttons = await screen.findAllByRole('button', { name: 'Sign out' });
+    fireEvent.click(buttons[buttons.length - 1]);
+    await waitFor(() => expect(bridge.loginLogout).toHaveBeenCalledWith({ provider: 'anthropic' }));
+    // Signed out, it is gone: there is no Claude sign-in to offer.
+    await waitFor(() => expect(screen.queryByTestId('mu-provider-item-account-anthropic')).not.toBeInTheDocument());
+    expect(screen.queryByTestId('mu-account-signin-anthropic')).not.toBeInTheDocument();
   });
 
   it('says in the app language when signing out or in did not work, with the raw reason under it', async () => {
@@ -721,7 +750,7 @@ describe('providers and the default model', () => {
     fireEvent.click(buttons[buttons.length - 1]);
     const problem = await within(detail).findByTestId('mu-login-problem');
     // Its own headline, not the sign-in one; the call's words stay as a detail.
-    expect(problem).toHaveTextContent('Signing out did not finish. You can try again.');
+    expect(problem).toHaveTextContent("Couldn't sign out. Try again.");
     expect(problem).toHaveTextContent('EACCES: permission denied');
 
     bridge.loginStart.mockResolvedValue({ ok: false, code: 'runtimeOffline', error: 'runtime offline' });
@@ -729,8 +758,8 @@ describe('providers and the default model', () => {
     const xai = screen.getByTestId('mu-account-xai');
     fireEvent.click(within(xai).getByTestId('mu-account-signin-xai'));
     const failed = await within(xai).findByTestId('mu-login-problem');
-    expect(failed).toHaveTextContent('Signing in did not finish. You can try again.');
-    expect(failed).toHaveTextContent('The mu runtime is not online.');
+    expect(failed).toHaveTextContent("Couldn't sign in. Try again.");
+    expect(failed).toHaveTextContent("mu's agent isn't responding.");
     // A coded reason says all there is: the raw text is not repeated.
     expect(failed).not.toHaveTextContent('runtime offline');
   });
@@ -740,10 +769,10 @@ describe('providers and the default model', () => {
     const editor = screen.getByTestId('mu-provider-editor');
     expect(within(editor).getByTestId('mu-key-state')).toHaveTextContent('Set');
     await user.click(within(editor).getByTestId('mu-endpoint-select'));
-    fireEvent.click(await screen.findByText('Anthropic compatible (Messages)'));
+    fireEvent.click(await screen.findByText('Anthropic-compatible (Messages)'));
     expect(editor).toHaveTextContent('Without /v1');
     fireEvent.change(within(editor).getByLabelText('API key'), { target: { value: 'sk-typed' } });
-    expect(within(editor).getByTestId('mu-key-state')).toHaveTextContent('New key, not saved yet');
+    expect(within(editor).getByTestId('mu-key-state')).toHaveTextContent('New key, not saved');
     expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Providers');
 
     fireEvent.click(screen.getByText('Save'));
@@ -766,7 +795,7 @@ describe('providers and the default model', () => {
     expect(within(editor).getByLabelText('Display name')).toHaveValue('Team Relay');
     expect(within(editor).getByLabelText('ID')).toHaveValue('team-relay');
     expect(within(editor).getByLabelText('Base URL')).toHaveValue('https://team.example.com/v1');
-    expect(within(editor).getByTestId('mu-key-state')).toHaveTextContent('New key, not saved yet');
+    expect(within(editor).getByTestId('mu-key-state')).toHaveTextContent('New key, not saved');
     expect(consumePendingDeepLink()).toBeNull();
     expect(bridge.save).not.toHaveBeenCalled();
 
@@ -803,7 +832,7 @@ describe('providers and the default model', () => {
     fireEvent.change(within(editor).getByLabelText('Display name'), { target: { value: 'My Proxy (EU)' } });
     expect(within(editor).getByLabelText('ID')).toHaveValue('my-proxy-eu');
     for (const [id, message] of [
-      ['openai', 'id of a built-in provider'],
+      ['openai', 'belongs to a built-in provider'],
       ['corp-gateway', 'already in use'],
       ['relay', 'already in use'],
       ['Bad Id', 'lowercase letters'],
@@ -842,7 +871,7 @@ describe('providers and the default model', () => {
 
     fireEvent.click(screen.getByTestId('mu-provider-item-foreign-anthropic'));
     expect(screen.getByTestId('mu-provider-foreign')).toHaveTextContent(
-      'Anthropic compatible · https://p.example.com · 1,234 models'
+      'Anthropic-compatible · https://p.example.com · 1,234 models'
     );
     // An API format this screen does not know goes by what models.json says.
     fireEvent.click(screen.getByTestId('mu-provider-item-foreign-lab'));
@@ -852,7 +881,8 @@ describe('providers and the default model', () => {
     await user.click(within(screen.getByTestId('mu-board-model')).getByLabelText('Provider'));
     await waitFor(() => expect(document.querySelectorAll('.arco-select-option').length).toBeGreaterThan(0));
     const offered = [...document.querySelectorAll('.arco-select-option')].map((choice) => choice.textContent);
-    expect(offered).toEqual(expect.arrayContaining(['Relay', 'ChatGPT', 'corp-gateway']));
+    // A provider mu reported models for, by its name: the older ChatGPT sign-in by its own.
+    expect(offered).toEqual(expect.arrayContaining(['Relay', 'ChatGPT (Codex)', 'corp-gateway']));
     expect(offered).not.toContain('openai-codex');
   });
   it('tests the connection through the main process and offers the models it listed', async () => {
@@ -877,6 +907,43 @@ describe('providers and the default model', () => {
     fireEvent.click(offer);
     expect(screen.getByTestId('mu-model-1')).toHaveTextContent('fresh-model');
     expect(screen.queryByTestId('mu-model-offer-fresh-model')).not.toBeInTheDocument();
+  });
+  it('adds a listed model with what the list said about it: context, output, images, thinking (#23)', async () => {
+    bridge.testProvider.mockResolvedValue({
+      ok: true,
+      data: {
+        ok: true,
+        code: 'ok-models',
+        status: 200,
+        latencyMs: 12,
+        detail: '',
+        models: ['plain', 'big-vision'],
+        facts: {
+          'big-vision': {
+            name: 'Big Vision',
+            contextWindow: 1048576,
+            maxTokens: 65536,
+            imageInput: true,
+            reasoning: true,
+          },
+        },
+      },
+    });
+    await open('providers');
+    fireEvent.click(screen.getByText('Test connection'));
+    const offer = await screen.findByTestId('mu-model-offer-big-vision');
+    // The size it comes with shows beside the id before it is added.
+    expect(offer).toHaveTextContent('big-vision1M');
+    fireEvent.click(offer);
+    const row = screen.getByTestId('mu-model-1');
+    expect(row).toHaveTextContent('big-vision');
+    expect(row).toHaveTextContent('Big Vision');
+    expect(row).toHaveTextContent('1M');
+    expect(row).toHaveTextContent(enMu.models.tagReasoning);
+    expect(row).toHaveTextContent(enMu.models.tagImage);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit big-vision' }));
+    expect(screen.getByLabelText('Max output 2')).toHaveValue('65536');
+    expect(screen.getByTestId('mu-model-levels-1')).toBeInTheDocument();
   });
   it('shows each model on one line and opens one to edit; a model without an id stays open', async () => {
     await open('providers');
@@ -911,7 +978,7 @@ describe('providers and the default model', () => {
     fireEvent.click(within(levels).getByRole('checkbox', { name: 'Low 1' }));
     fireEvent.click(screen.getByTestId('mu-nav-default-model'));
     const thinking = screen.getByTestId('mu-thinking-level');
-    expect(thinking).toHaveTextContent('Levels this model does not take are disabled.');
+    expect(thinking).toHaveTextContent("Levels this model doesn't support are disabled.");
     expect(within(thinking).getByRole('radio', { name: 'Very high' })).toBeEnabled();
     expect(within(thinking).getByRole('radio', { name: 'Low' })).toBeDisabled();
     expect(within(thinking).getByRole('radio', { name: 'Max' })).toBeDisabled();
@@ -928,11 +995,11 @@ describe('providers and the default model', () => {
     await open('providers');
     // The model id field has one placeholder sentence, not two glued ones.
     fireEvent.click(screen.getByRole('button', { name: 'Edit plain' }));
-    expect(screen.getByPlaceholderText('Model ID · as the API expects it')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Model ID, exactly as the API expects it')).toBeInTheDocument();
     bridge.testProvider.mockResolvedValueOnce({ ok: false, code: 'credential', error: 'Invalid credential' });
     fireEvent.click(screen.getByText('Test connection'));
     const failed = await screen.findByTestId('mu-test-failure');
-    expect(failed).toHaveTextContent('The key contains characters a key cannot have');
+    expect(failed).toHaveTextContent("The key contains characters that aren't allowed");
     expect(failed).not.toHaveTextContent('Invalid credential');
     bridge.testProvider.mockResolvedValueOnce({
       ok: true,
@@ -962,10 +1029,10 @@ describe('providers and the default model', () => {
     await open('board-model');
     // A page of its own, apart from the model new sessions start with; its header says what the model is for.
     expect(screen.queryByTestId('mu-defaults')).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Plain-language model' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Board model' })).toBeInTheDocument();
     const card = screen.getByTestId('mu-board-model');
-    expect(card).toHaveTextContent('None yet: mu asks the first time the board is switched on.');
-    expect(card).toHaveTextContent('Pick a provider first');
+    expect(card).toHaveTextContent('None yet. mu asks the first time you turn on the board.');
+    expect(card).toHaveTextContent('Choose a provider first.');
     const user = userEvent.setup();
     await user.click(within(card).getByLabelText('Provider'));
     fireEvent.click(await screen.findByText('corp-gateway', { selector: '.arco-select-option' }));
@@ -976,7 +1043,7 @@ describe('providers and the default model', () => {
     const offered = [...document.querySelectorAll('.arco-select-option')].map((choice) => choice.textContent);
     expect(offered.slice(-2)).toEqual(['claude-opus-4-6 · recommended', 'gpt-5']);
     fireEvent.click(screen.getByText('claude-opus-4-6 · recommended', { selector: '.arco-select-option span' }));
-    expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Plain-language model');
+    expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Board model');
     expect(card).not.toHaveTextContent('None yet');
 
     // The conversation's own model, then back to the one picked.
@@ -998,7 +1065,7 @@ describe('providers and the default model', () => {
     await open('default-model');
     const card = screen.getByTestId('mu-defaults');
     // Relay's model does not think, and the page says so instead of offering levels it would not take.
-    expect(card).toHaveTextContent('This model does not think');
+    expect(card).toHaveTextContent("This model doesn't support thinking");
     expect(within(card).getByRole('radio', { name: 'High' })).toBeDisabled();
     const user = userEvent.setup();
     await user.click(within(card).getByLabelText('Provider'));
@@ -1073,12 +1140,12 @@ describe('providers and the default model', () => {
     fireEvent.click(within(editor).getByTestId('mu-provider-more'));
     fireEvent.click(await screen.findByText('Remove provider'));
     expect(await screen.findByText('Remove Relay?')).toBeInTheDocument();
-    expect(screen.getByText(/deleted from models.json, and so is the key/)).toBeInTheDocument();
+    expect(screen.getByText(/deleted from models.json along with its stored key/)).toBeInTheDocument();
     expect(screen.getByText(/the default model is cleared too/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
     await waitFor(() => expect(screen.queryByTestId('mu-provider-item-custom-0')).not.toBeInTheDocument());
     // With no endpoint left, the first subscription is shown.
-    expect(screen.getByTestId('mu-account-openai-codex')).toBeInTheDocument();
+    expect(screen.getByTestId('mu-account-openai')).toBeInTheDocument();
     expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Providers');
 
     fireEvent.click(screen.getByText('Save'));
@@ -1095,7 +1162,7 @@ describe('providers and the default model', () => {
     const more = () => within(screen.getByTestId('mu-provider-editor')).getByTestId('mu-provider-more');
     fireEvent.click(more());
     fireEvent.click(await screen.findByText('Remove provider'));
-    expect(await screen.findByText(/not saved yet, so what you filled in here is discarded/)).toBeInTheDocument();
+    expect(await screen.findByText(/hasn't been saved, so anything you entered here is discarded/)).toBeInTheDocument();
     expect(screen.queryByText(/the default model is cleared too/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.getByTestId('mu-provider-item-custom-1')).toBeInTheDocument();
@@ -1127,7 +1194,7 @@ describe('providers and the default model', () => {
     fireEvent.click(screen.getByTestId('mu-provider-item-foreign-lab'));
     fireEvent.click(within(screen.getByTestId('mu-provider-foreign')).getByTestId('mu-provider-more'));
     fireEvent.click(await screen.findByText('Remove provider'));
-    expect(await screen.findByText(/this hand-written entry is deleted from models.json/)).toBeInTheDocument();
+    expect(await screen.findByText(/this manual entry is deleted from models.json/)).toBeInTheDocument();
     expect(screen.getByText(/the default model is cleared too/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
     await waitFor(() => expect(screen.queryByTestId('mu-provider-item-foreign-lab')).not.toBeInTheDocument());
@@ -1187,27 +1254,37 @@ describe('providers and the default model', () => {
     expect(offered).not.toContain('Lab 2');
   });
 
-  it('shows Claude as usable through an API key when mu reported it and nobody is signed in', async () => {
+  it('shows OpenAI as usable through an API key when mu reported it and nobody is signed in', async () => {
+    bridge.availableModels.mockResolvedValue({
+      ok: true,
+      data: { providers: [{ id: 'openai', models: [{ id: 'gpt-x', name: 'GPT X' }] }], thinkingLevels: [] },
+    });
+    await open('providers');
+    const item = await screen.findByTestId('mu-provider-item-account-openai');
+    await waitFor(() => expect(within(item).getByRole('img', { name: 'Available (API key)' })).toBeInTheDocument());
+    expect(screen.queryByTestId('mu-provider-item-builtin-openai')).not.toBeInTheDocument();
+    fireEvent.click(item);
+    const detail = screen.getByTestId('mu-account-openai');
+    expect(within(detail).getByTestId('mu-account-state')).toHaveTextContent('Available (API key)');
+    expect(detail).toHaveTextContent('its API key is set in your environment');
+    expect(detail).toHaveTextContent('GPT X');
+    expect(within(detail).getByTestId('mu-account-signin-openai')).toBeInTheDocument();
+  });
+
+  it('shows an Anthropic API key mu reported as a provider of its own, not as a Claude sign-in', async () => {
     bridge.availableModels.mockResolvedValue({
       ok: true,
       data: { providers: [{ id: 'anthropic', models: [{ id: 'claude-x', name: 'Claude X' }] }], thinkingLevels: [] },
     });
     await open('providers');
-    const item = await screen.findByTestId('mu-provider-item-account-anthropic');
-    await waitFor(() => expect(within(item).getByRole('img', { name: 'Usable (API key)' })).toBeInTheDocument());
-    expect(screen.queryByTestId('mu-provider-item-builtin-anthropic')).not.toBeInTheDocument();
-    fireEvent.click(item);
-    const detail = screen.getByTestId('mu-account-anthropic');
-    expect(within(detail).getByTestId('mu-account-state')).toHaveTextContent('Usable (API key)');
-    expect(detail).toHaveTextContent('its API key is in the environment');
-    expect(detail).toHaveTextContent('Claude X');
-    expect(within(detail).getByTestId('mu-account-signin-anthropic')).toBeInTheDocument();
+    expect(await screen.findByTestId('mu-provider-item-builtin-anthropic')).toHaveTextContent('Claude');
+    expect(screen.queryByTestId('mu-provider-item-account-anthropic')).not.toBeInTheDocument();
   });
 
   it('shows a failed sign-in under its own subscription only, not under the one signed out next', async () => {
     bridge.loginStatus.mockResolvedValue({
       ok: true,
-      data: { signedIn: [{ provider: 'anthropic', models: [] }] },
+      data: { signedIn: [{ provider: 'openai', models: [] }] },
     });
     bridge.loginStart.mockResolvedValue({ ok: false, error: 'Timed out' });
     bridge.loginLogout.mockResolvedValue({ ok: true, data: { signedIn: [] } });
@@ -1216,15 +1293,15 @@ describe('providers and the default model', () => {
     fireEvent.click(screen.getByTestId('mu-account-signin-xai'));
     await waitFor(() => expect(screen.getByTestId('mu-account-xai')).toHaveTextContent('Timed out'));
 
-    fireEvent.click(screen.getByTestId('mu-provider-item-account-anthropic'));
-    const claude = screen.getByTestId('mu-account-anthropic');
-    await waitFor(() => expect(within(claude).getByTestId('mu-account-state')).toHaveTextContent('Signed in'));
-    fireEvent.click(within(claude).getByTestId('mu-account-signout-anthropic'));
+    fireEvent.click(screen.getByTestId('mu-provider-item-account-openai'));
+    const chatgpt = screen.getByTestId('mu-account-openai');
+    await waitFor(() => expect(within(chatgpt).getByTestId('mu-account-state')).toHaveTextContent('Signed in'));
+    fireEvent.click(within(chatgpt).getByTestId('mu-account-signout-openai'));
     const buttons = await screen.findAllByRole('button', { name: 'Sign out' });
     fireEvent.click(buttons[buttons.length - 1]);
     await waitFor(() => expect(bridge.loginLogout).toHaveBeenCalled());
-    await waitFor(() => expect(within(claude).getByTestId('mu-account-state')).toHaveTextContent('Not signed in'));
-    expect(claude).not.toHaveTextContent('Timed out');
+    await waitFor(() => expect(within(chatgpt).getByTestId('mu-account-state')).toHaveTextContent('Not signed in'));
+    expect(chatgpt).not.toHaveTextContent('Timed out');
   });
 
   it('opens a sign-in that is running, and points to it from another subscription', async () => {
@@ -1241,11 +1318,11 @@ describe('providers and the default model', () => {
     await open('providers');
     const grok = await screen.findByTestId('mu-account-xai');
     expect(within(grok).getByTestId('mu-login-waiting')).toHaveTextContent('ABCD-1234');
-    fireEvent.click(screen.getByTestId('mu-provider-item-account-openai-codex'));
-    expect(screen.getByTestId('mu-account-signin-openai-codex')).toBeDisabled();
+    fireEvent.click(screen.getByTestId('mu-provider-item-account-openai'));
+    expect(screen.getByTestId('mu-account-signin-openai')).toBeDisabled();
     const hint = screen.getByTestId('mu-account-other');
-    expect(hint).toHaveTextContent('Grok is signing in');
-    fireEvent.click(within(hint).getByRole('button', { name: 'Show it' }));
+    expect(hint).toHaveTextContent('Grok sign-in is in progress');
+    fireEvent.click(within(hint).getByRole('button', { name: 'Show' }));
     expect(screen.getByTestId('mu-account-xai')).toBeInTheDocument();
   });
 
@@ -1265,7 +1342,7 @@ describe('providers and the default model', () => {
     fireEvent.click(screen.getByTestId('mu-provider-item-foreign-google-gemini-cli'));
     fireEvent.click(within(screen.getByTestId('mu-provider-foreign')).getByTestId('mu-provider-more'));
     fireEvent.click(await screen.findByText('Remove provider'));
-    await screen.findByText(/this hand-written entry is deleted from models.json/);
+    await screen.findByText(/this manual entry is deleted from models.json/);
     expect(screen.queryByText(/the default model is cleared too/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
     fireEvent.click(await screen.findByText('Save'));
@@ -1306,7 +1383,7 @@ describe('providers and the default model', () => {
     expect(within(screen.getByTestId('mu-provider-editor')).getByTestId('mu-provider-more')).toBeDisabled();
     fireEvent.click(screen.getByTestId('mu-provider-item-foreign-anthropic'));
     const entry = screen.getByTestId('mu-provider-foreign');
-    expect(entry).toHaveTextContent('can be removed here but not edited');
+    expect(entry).toHaveTextContent('You can remove it here');
     expect(within(entry).getByTestId('mu-provider-more')).toBeDisabled();
     // A read-only model line still opens, to show what it leaves out.
     fireEvent.click(screen.getByTestId('mu-provider-item-custom-0'));
@@ -1314,7 +1391,7 @@ describe('providers and the default model', () => {
     expect(screen.getByLabelText('Max output 1')).toBeDisabled();
     fireEvent.click(await screen.findByTestId('mu-provider-item-builtin-corp-gateway'));
     const reported = screen.getByTestId('mu-provider-builtin');
-    expect(reported).toHaveTextContent('cannot be removed here');
+    expect(reported).toHaveTextContent('To remove it, delete that key from the environment');
     expect(within(reported).queryByTestId('mu-provider-more')).not.toBeInTheDocument();
   });
 });
@@ -1366,7 +1443,7 @@ describe('the permission modes and the board', () => {
     await open('details-goal');
     fireEvent.click(screen.getByTestId('mu-feature-open-board'));
     const board = screen.getByTestId('mu-section-feature-board');
-    expect(board).toHaveTextContent('The model that writes the board is chosen under Plain-language model.');
+    expect(board).toHaveTextContent('To choose the model that writes the board, go to Board model.');
     expect(within(board).queryByTestId('mu-option-board-model')).not.toBeInTheDocument();
     expect(within(board).getByTestId('mu-option-board-defaultOn')).toBeInTheDocument();
   });
@@ -1408,7 +1485,7 @@ describe('the permission modes and the board', () => {
     fireEvent.click(screen.getByText('Discard'));
     const card = screen.getByTestId('mu-board-model');
     expect(within(card).queryByText('corp-gateway')).not.toBeInTheDocument();
-    expect(card).toHaveTextContent('Pick a provider first');
+    expect(card).toHaveTextContent('Choose a provider first.');
   });
 });
 
@@ -1494,7 +1571,7 @@ describe('the kernel pages', () => {
     expect(sent.tiers).toEqual(['jev-gateway']);
   });
 
-  it('shows a base URL only for TypeSafe and a custom service, and accepts a private-network HTTP address', async () => {
+  it('shows a base URL only for TypeSafe and a custom service, takes plain HTTP with a warning, and refuses link-local', async () => {
     bridge.settings.mockResolvedValue({ ok: true, data: settings() });
     render(<SettingsArea page='judges' />, { wrapper });
     const choice = await screen.findByTestId('mu-judge-choice-jev');
@@ -1503,10 +1580,15 @@ describe('the kernel pages', () => {
     fireEvent.click(await screen.findByText(enMu.judges.services.typesafe.name, { selector: '.arco-select-option' }));
     const tile = () => screen.getByTestId('mu-judge-choice-jev');
     const field = await within(tile()).findByLabelText(enMu.judges.baseUrl);
-    fireEvent.change(field, { target: { value: 'http://example.com/v1' } });
+    fireEvent.change(field, { target: { value: 'http://169.254.169.254/v1' } });
     expect(tile()).toHaveTextContent(enMu.endpointRule);
+    // A name over plain HTTP is taken, with a word on what that means for the key.
+    fireEvent.change(field, { target: { value: 'http://judge.lan:8000/v1/systemone' } });
+    expect(tile()).not.toHaveTextContent(enMu.endpointRule);
+    expect(tile()).toHaveTextContent(enMu.endpointPlain);
     fireEvent.change(field, { target: { value: 'http://192.168.31.124:8000/v1/systemone' } });
     expect(tile()).not.toHaveTextContent(enMu.endpointRule);
+    expect(tile()).not.toHaveTextContent(enMu.endpointPlain);
     fireEvent.click(screen.getByText('Save'));
     await waitFor(() => expect(bridge.save).toHaveBeenCalled());
     const sent = bridge.save.mock.calls[0][0] as SaveSettings;
@@ -1599,9 +1681,9 @@ describe('the kernel pages', () => {
       error: 'Judge jev-custom has no base URL, and its key is not sent to TypeSafe',
     });
     fireEvent.click(screen.getByText('Save'));
-    expect(await screen.findByText(`Not saved: ${enMu.errors.judgeEndpoint}`)).toBeInTheDocument();
+    expect(await screen.findByText(`Couldn't save: ${enMu.errors.judgeEndpoint}`)).toBeInTheDocument();
     // An address a key must not go to is the other problem; a private-network one is fine.
-    fireEvent.change(address, { target: { value: 'http://relay.example.com/v1/systemone' } });
+    fireEvent.change(address, { target: { value: 'http://169.254.169.254/v1/systemone' } });
     expect(within(tile).getByRole('alert')).toHaveTextContent(enMu.endpointRule);
     fireEvent.change(address, { target: { value: 'http://192.168.1.20:8000/v1/systemone' } });
     expect(within(tile).queryByRole('alert')).not.toBeInTheDocument();
@@ -1645,16 +1727,16 @@ describe('the kernel pages', () => {
     // Empty is clm-serve's own address on this machine, and the server there is asked.
     const address = within(tile).getByLabelText(enMu.judges.clm.address);
     expect(address).toHaveValue('');
-    expect(tile).toHaveTextContent('Empty is this computer (http://127.0.0.1:8700).');
+    expect(tile).toHaveTextContent('Leave empty for this computer (http://127.0.0.1:8700).');
     await waitFor(() =>
-      expect(within(tile).getByTestId('mu-clm-status')).toHaveTextContent('Answering · clm-latest and clm-raw · 12 ms')
+      expect(within(tile).getByTestId('mu-clm-status')).toHaveTextContent('Online · clm-latest and clm-raw · 12 ms')
     );
     expect(bridge.clmCheck).toHaveBeenCalledWith({ baseUrl: '' });
     expect(tile).toHaveTextContent(enMu.judges.clm.unmeasured);
     expect(screen.getAllByTestId('mu-clm-server')).toHaveLength(1);
     // A public address over plain HTTP breaks the rule, and is not asked.
     bridge.clmCheck.mockClear();
-    fireEvent.change(address, { target: { value: 'http://example.com:8700' } });
+    fireEvent.change(address, { target: { value: 'http://169.254.169.254:8700' } });
     expect(within(tile).getByRole('alert')).toHaveTextContent(enMu.endpointRule);
     expect(screen.queryByTestId('mu-clm-server')).not.toBeInTheDocument();
     // A private-network one is fine, and asked.
@@ -1809,6 +1891,25 @@ describe('one draft across the settings pages', () => {
     expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Features');
   });
 
+  it('marks the group of the page above its title, and each point’s id beside it, outside their text', async () => {
+    renderSettings('/settings/details-input');
+    const section = await screen.findByTestId('mu-section-details-input');
+    const group = within(section).getByTestId('settings-page-group');
+    // The rail's name of the group (this test loads no settings texts, so the key stands in for it).
+    expect(group).toHaveAttribute('data-group', 'details');
+    expect(group).toHaveAttribute('data-label', 'settings.groups.details');
+    expect(group).toHaveAttribute('aria-hidden', 'true');
+    expect(group).toBeEmptyDOMElement();
+    const row = screen.getByTestId('mu-decision-input.preflight');
+    expect(row.querySelector('[data-point]')).toHaveAttribute('data-point', 'input.preflight');
+    expect(row.querySelector('[data-point]')).toHaveAttribute('aria-hidden', 'true');
+    expect(row).not.toHaveTextContent('input.preflight');
+
+    fireEvent.click(screen.getByTestId('mu-feature-open-preflight'));
+    const page = await screen.findByTestId('mu-section-feature-preflight');
+    expect(within(page).getByTestId('settings-page-group')).toHaveAttribute('data-group', 'details');
+  });
+
   it('opens a feature’s page from a link as well, and its way back is the page its row is on', async () => {
     renderSettings('/settings/details-team/swarm');
     const page = await screen.findByTestId('mu-section-feature-swarm');
@@ -1847,7 +1948,7 @@ describe('one draft across the settings pages', () => {
     expect(within(section).getByRole('heading', { level: 1, name: 'Context' })).toBeInTheDocument();
     const compaction = within(section).getByTestId('mu-context-rows');
     const auto = within(compaction).getByRole('switch', { name: 'Automatic compaction' });
-    expect(within(compaction).getByLabelText('Context cap')).toBeInTheDocument();
+    expect(within(compaction).getByLabelText('Context limit')).toBeInTheDocument();
     const list = within(section).getByTestId('mu-feature-list-context');
     expect(compaction.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     const rows =
@@ -1925,7 +2026,7 @@ describe('one draft across the settings pages', () => {
     ['/settings/features/swarm', '/settings/details-team/swarm'],
     ['/settings/more-features/swarm', '/settings/details-team/swarm'],
     ['/settings/more-features-context/memory', '/settings/details-memory/memory'],
-  ])('sends the old link %s to the feature’s options on the page of its area', async (link, target) => {
+  ])("sends the old link %s to the feature's options on the page of its area", async (link, target) => {
     renderSettings(link);
     const feature = target.split('/').at(-1)!;
     expect(await screen.findByTestId(`mu-section-feature-${feature}`)).toBeInTheDocument();

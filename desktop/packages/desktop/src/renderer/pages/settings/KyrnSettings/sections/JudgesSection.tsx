@@ -3,9 +3,9 @@ import { Input, Switch, Tag } from '@arco-design/web-react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { CLM_DEFAULT_ADDRESS, CLM_DEFAULT_MODEL } from '@/common/kyrn/clm';
-import { isSafeEndpoint } from '@/common/kyrn/models';
+import { isPlainRemoteEndpoint, isSafeEndpoint } from '@/common/kyrn/models';
 import type { JudgeSettings, KyrnSettings } from '@/common/kyrn/types';
-import AionSelect from '@/renderer/components/base/AionSelect';
+import MuSelect from '@/renderer/components/base/MuSelect';
 import OneLine from '@/renderer/components/settings/OneLine';
 import { formatNumber } from '@/renderer/services/i18n/format';
 import type { Draft } from '../draft';
@@ -206,7 +206,7 @@ export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: Bo
       <div className={styles.choiceFields}>
         <div className={styles.choiceField}>
           <label className={styles.choiceLabel}>{t('mu.judges.service')}</label>
-          <AionSelect
+          <MuSelect
             className={styles.choiceInput}
             aria-label={t('mu.judges.service')}
             value={service}
@@ -310,7 +310,7 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
           help={t('mu.judges.orderHelp')}
           modified={base.tiers.join() !== settings.tiers.join()}
         >
-          <AionSelect
+          <MuSelect
             mode='multiple'
             size='small'
             className={fieldStyles.wide}
@@ -342,6 +342,7 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
           <Card
             key={`${index}:${name}`}
             testId={`mu-judge-tier-${index}`}
+            judge
             title={t('mu.judges.tierTitle', { index: formatNumber(index + 1, i18n.language), name: nameOf(name) })}
             summary={summary}
           >
@@ -386,7 +387,10 @@ function addressOf(t: TFunction, service: JevService, baseUrl: string) {
   else if (custom) problem = t('mu.judges.baseUrlNeeded');
   return {
     placeholder: custom ? CUSTOM_ENDPOINT : TYPESAFE_ENDPOINT,
-    help: t(custom ? 'mu.judges.customUrlHelp' : 'mu.judges.baseUrlHelp'),
+    help:
+      baseUrl && isPlainRemoteEndpoint(baseUrl)
+        ? t('mu.endpointPlain')
+        : t(custom ? 'mu.judges.customUrlHelp' : 'mu.judges.baseUrlHelp'),
     problem,
   };
 }
@@ -463,7 +467,7 @@ function JevFields({ draft, base, index, onChange, onKey }: JudgesSectionProps &
           help={t(`mu.judges.services.${service}.help`)}
           modified={before !== undefined && serviceOf(before) !== service}
         >
-          <AionSelect
+          <MuSelect
             size='small'
             className={fieldStyles.wide}
             aria-label={t('mu.judges.service')}

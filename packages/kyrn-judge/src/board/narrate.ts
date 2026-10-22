@@ -136,13 +136,13 @@ const NOW: Record<BoardLanguage, Record<BoardPhase | "unclear", string>> = {
 	},
 	en: {
 		understanding: "Reading the code and notes to work out what to do.",
-		planning: "Working out how to do it; nothing is changed yet.",
-		changing: "Changing the code.",
+		planning: "Working out how to do it; nothing has changed yet.",
+		changing: "Editing the code.",
 		checking: "Running the tests or checks to see whether the change works.",
 		fixing: "A check found a problem; fixing it.",
-		waiting: "Stopped, waiting for your reply.",
+		waiting: "Stopped and waiting for your reply.",
 		wrapping_up: "The work is done; wrapping up.",
-		stuck: "Seems to be going in circles; it may need a hint from you.",
+		stuck: "It seems to be going in circles and may need a hint from you.",
 		unclear: "Working.",
 	},
 };
@@ -160,17 +160,17 @@ export function plainBoard(facts: BoardFacts): BoardText {
 			: done === total
 				? zh
 					? `清单上的 ${total} 件事都做完了。`
-					: `All ${total} things on the checklist are done.`
+					: `All ${total} checklist items are done.`
 				: zh
 					? `清单上 ${total} 件事，做完了 ${done} 件。`
-					: `${done} of ${total} things on the checklist are done.`;
+					: `${done} of ${total} checklist items are done.`;
 	const base =
 		facts.swarm && !facts.ended
 			? zh
 				? "派了几个助手分头干，在等它们回来。"
-				: "Sent helpers to work on parts of it in parallel; waiting for them to come back."
+				: "Subagents are working on parts of it in parallel; waiting for them to finish."
 			: NOW[facts.language][facts.phase ?? "unclear"];
-	const now = facts.focus ? `${base}${zh ? `（在做：${facts.focus}）` : ` (On: ${facts.focus})`}` : base;
+	const now = facts.focus ? `${base}${zh ? `（在做：${facts.focus}）` : ` (Working on: ${facts.focus})`}` : base;
 	const question = facts.latest.trim();
 	const confirm = facts.needsUser
 		? [
@@ -178,7 +178,7 @@ export function plainBoard(facts: BoardFacts): BoardText {
 					? clip(question.split("\n").pop() ?? question, 300)
 					: zh
 						? "它在等你回复。"
-						: "It waits for your reply.",
+						: "It's waiting for your reply.",
 			]
 		: [];
 	return { progress, now, confirm, confirmCodes: facts.needsUser ? [question ? null : "waiting_reply"] : [] };

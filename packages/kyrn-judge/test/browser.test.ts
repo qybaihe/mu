@@ -149,6 +149,54 @@ describe("browser.step", () => {
 		expect(decision.judged).toBeUndefined();
 		expect(decision.outcome.operation).toBe("BLOCKED");
 	});
+
+	it("records a step taken in shadow mode as the judge's: the judge is the actor whatever the mode", async () => {
+		const provider = new MockJudgeProvider(() => ({ operation: choose("CLICK"), click_target: choose("3") }));
+		const ledger = new MemoryLedger();
+		const engine = new DecisionEngine({ judge: new Judge({ provider }), defaultMode: "shadow", ledger });
+
+		const decision = await engine.decide(browserStep, stepInput());
+
+		expect(decision).toMatchObject({ source: "judge", outcome: { operation: "CLICK", target: "3" } });
+		expect(ledger.records[0]).toMatchObject({ mode: "shadow", source: "judge", outcome: { operation: "CLICK" } });
+	});
+
+	it("browse tool: refuses a goal up front when the judge for browser.step cannot relate a goal to a page", async () => {
+		const provider = new MockJudgeProvider(() => ({}));
+		const harness = await createHarness({
+			extensionFactories: [
+				createKyrnJudgeExtension({
+					provider,
+					mode: "active",
+					config: parseConfig({
+						routes: { "browser.step": ["laya"] },
+						features: { memory: false, permissions: { mode: "full" }, browser: { enabled: true } },
+					}),
+				}),
+			],
+		});
+		let seen = "";
+		harness.setResponses([
+			fauxAssistantMessage(
+				[fauxToolCall("browse", { url: "https://developer.mozilla.org", goal: "Search for WeakMap" })],
+				{ stopReason: "toolUse" },
+			),
+			(context) => {
+				seen = JSON.stringify(context.messages);
+				return fauxAssistantMessage("The browser needs another judge.");
+			},
+		]);
+		try {
+			await harness.session.prompt("Look up WeakMap on MDN.");
+		} finally {
+			harness.cleanup();
+		}
+
+		// Before any step, and before a browser is started: not "blocked at step 1" after a wasted look.
+		expect(seen).toContain("the judge for browser.step (local:laya) is not trusted to relate a goal to a page");
+		expect(seen).toContain("/mu route browser.step");
+		expect(provider.calls.filter((call) => "operation" in call.questions)).toHaveLength(0);
+	});
 });
 
 const PAGE = `<!doctype html><html><head><title>Shop search</title></head><body>

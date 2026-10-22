@@ -41,7 +41,7 @@ export const kyrnBridge = {
   /** A new text or the retirement of one lesson, appended to the file as a line; answers with the lessons after it. */
   lessonsChange: bridge.buildProvider<KyrnResult<LessonsView>, LessonChange>('kyrn.lessons.change'),
   /**
-   * Claude Code and Codex conversations on this computer (common/kyrn/importChats.ts); with `cwd`, only that project's.
+   * Claude Code, Codex and ZCode conversations on this computer (common/kyrn/importChats.ts); with `cwd`, only that project's.
    * Each says whether a conversation holds it already: with `native`, the mu session made from it.
    */
   importList: bridge.buildProvider<KyrnResult<ImportList>, { cwd?: string; native?: boolean }>('kyrn.import.list'),

@@ -34,12 +34,16 @@
   border-right: 1px solid var(--color-border-2);
 }
 
+/* A part of the list (subscriptions, endpoints): a mono label, as the rail's and the readouts' are. */
 .listTitle {
   padding: 14px 10px 4px;
-  color: var(--text-secondary);
-  font-size: 12px;
-  font-weight: 600;
+  color: var(--bg-6);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
   line-height: 18px;
+  text-transform: uppercase;
 }
 
 .listTitle:first-child {
@@ -247,6 +251,14 @@
   line-height: 18px;
 }
 
+/* Allowed, but worth knowing: an address the key travels to unencrypted. */
+.warn {
+  color: rgb(var(--warning-6));
+  font-size: 12px;
+  line-height: 18px;
+  text-wrap: pretty;
+}
+
 .danger {
   color: rgb(var(--danger-6));
 }
@@ -374,6 +386,14 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+/* The context window a listed model comes with, beside its id. */
+.offerSize {
+  margin-left: 6px;
+  color: var(--text-tertiary, var(--text-secondary));
+  font-family: var(--font-mono);
+  font-size: 10.5px;
 }
 
 .test {

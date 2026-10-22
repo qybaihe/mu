@@ -30,6 +30,8 @@ export default function SectionShell({ id, title, description, actions, back, ch
 
 type CardProps = {
   title?: React.ReactNode;
+  /** The group is one judge (a tier of the judge order): its title gets the judge's diamond. */
+  judge?: boolean;
   badges?: React.ReactNode;
   /** Right end of the card head: a switch, a reset button. */
   extra?: React.ReactNode;
@@ -40,12 +42,13 @@ type CardProps = {
 };
 
 /** A group of rows: an optional small title, a line under it, then the rows between hairlines. No box around them. */
-export function Card({ title, badges, extra, summary, dim, testId, children }: CardProps) {
+export function Card({ title, judge, badges, extra, summary, dim, testId, children }: CardProps) {
   const hasBody = React.Children.toArray(children).length > 0;
   return (
     <div className={styles.card} data-testid={testId}>
       {title ? (
         <div className={styles.cardHead}>
+          {judge ? <span className={styles.judgeMark} aria-hidden='true' /> : null}
           <span className={styles.cardTitle}>{title}</span>
           {badges}
           <span className={styles.cardSpacer} />

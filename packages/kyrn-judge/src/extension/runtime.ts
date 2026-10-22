@@ -44,9 +44,9 @@ export function clip(text: string, length: number): string {
 }
 
 /**
- * The person's own words. A host may put its instructions in front of what the person typed: AionUi's
- * core prefixes the first message of a conversation with `[Assistant Rules] … [/Assistant Rules]`, its
- * skill list, some 1,600 characters. That text is for the main model. A judge asked about "the user's
+ * The person's own words. A host may put its instructions in front of what the person typed: the backend,
+ * mu's desktop backend, prefixes the first message of a conversation with `[Assistant Rules] …
+ * [/Assistant Rules]`, its skill list, some 1,600 characters. That text is for the main model. A judge asked about "the user's
  * message", and the task frame that takes the first message as the goal, must not read it as theirs.
  */
 export function userWords(text: string): string {
@@ -200,7 +200,7 @@ export class KyrnRuntime {
 	 * Set by the permissions feature: the mode this conversation runs in. Undefined while that feature is
 	 * off, and then the guard alone looks at risky commands, as before there were modes.
 	 */
-	permissionMode?: () => "full" | "jev" | "ask";
+	permissionMode?: () => "full" | "judge" | "ask";
 	/**
 	 * Set by the memory feature: for each sub-agent task, the lessons of this project that apply to it,
 	 * one line each, for the "known lessons" of its brief. Undefined while that feature is off.
@@ -596,6 +596,19 @@ export function within<T>(work: Promise<T>, waitMs: number): Promise<T | undefin
 	]).finally(() => {
 		if (timer) clearTimeout(timer);
 	});
+}
+
+/**
+ * A judge call that is only worth having within `waitMs`, or undefined. Unlike `within`, the call does not carry on:
+ * `ask` gets a signal, aborted when the time is up. A verdict nobody waits for any more must not keep the judge busy,
+ * nor keep a one-shot run (`mu --print`) from exiting until the judge's own timeout. The engine records the call as
+ * aborted.
+ */
+export async function askWithin<T>(ask: (signal: AbortSignal) => Promise<T>, waitMs: number): Promise<T | undefined> {
+	const controller = new AbortController();
+	const result = await within(ask(controller.signal), waitMs);
+	if (result === undefined) controller.abort();
+	return result;
 }
 
 /** Wraps a handler so a bug in a feature can never block a tool or a prompt: pi treats a throw as a veto. */

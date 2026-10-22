@@ -411,7 +411,7 @@ describe('native conversations', () => {
     expect(w.events.replaced).toHaveLength(before + 1);
     const snapshot = await w.conversations.open(id);
     expect(snapshot.view.messages.map((message) => message.role)).toEqual(['user', 'assistant']);
-    // Rebuilt from the file; what only the live host said (the Jev panel's activity) stays.
+    // Rebuilt from the file; what only the live host said (the work panel's activity) stays.
     expect(durable(snapshot.view)).toEqual(fromEntries(w.pi.last.session.entries, kept));
     expect(snapshot.view.host.activity.map((line) => line.kind)).toContain('agent_settled');
     expect(w.events.replaced.at(-1)).toMatchObject({ id, seq: snapshot.seq });
@@ -573,9 +573,9 @@ describe('native conversations', () => {
 
   it('starts mu in the conversation’s permission mode, and again in the one it last switched to', async () => {
     const w = world();
-    const draft = await w.conversations.create({ cwd: w.project, permissions: 'jev' });
+    const draft = await w.conversations.create({ cwd: w.project, permissions: 'judge' });
     await turn(w, draft.id, 'hello');
-    expect(w.pi.last.input.env.MU_PERMISSIONS).toBe('jev');
+    expect(w.pi.last.input.env.MU_PERMISSIONS).toBe('judge');
     const id = w.pi.last.session.id;
     await w.conversations.request(id, { type: 'prompt', message: '/permissions ask --here' });
     await w.conversations.close(id);
@@ -742,10 +742,10 @@ describe('the list and the names (milestone 3)', () => {
       assistant(`${id}-a`, `${id}-u`, 'Hello', minute + 2),
     ]);
 
-  it('leaves out the sessions AionCore’s conversations run, until their record goes', async () => {
+  it('leaves out the sessions the backend’s conversations run, until their record goes', async () => {
     const bound = new Set<string>();
     const w = world({ bound: async () => bound });
-    const taken = cliSession(w, 'taken', 'Run by AionCore');
+    const taken = cliSession(w, 'taken', 'Run by the backend');
     cliSession(w, 'free', 'Only here', 5);
     bound.add(taken);
     await expect(w.conversations.list()).resolves.toMatchObject([{ id: 'free' }]);

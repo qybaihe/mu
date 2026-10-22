@@ -39,8 +39,8 @@ type DetailsSectionProps = {
 
 /**
  * One area of the details: every feature that acts there, one row each with its switch and the way to its options,
- * and under it, indented, each decision point it asks the judge, with a switch for whether Jev's verdict there takes
- * effect. A point of a feature that is off is not asked: its row is greyed and says so. A point whose feature the
+ * and under it, indented, each decision point it asks the judge, with a switch for whether the judge's verdict there
+ * takes effect. A point of a feature that is off is not asked: its row is greyed and says so. A point whose feature the
  * harness does not describe is a row of its own. The context page starts with the compaction settings.
  */
 export default function DetailsSection({
@@ -82,8 +82,8 @@ export default function DetailsSection({
     const own = settings.decisionModes[decision.id];
     // Under its feature the row needs no name when the point is the feature's own: it is the judge's say in it.
     const title =
-      feature && say(feature.title) === point ? t('mu.details.askJev') : t('mu.details.askJevAbout', { point });
-    const label = t('mu.details.askJevAbout', { point });
+      feature && say(feature.title) === point ? t('mu.details.askJudge') : t('mu.details.askJudgeAbout', { point });
+    const label = t('mu.details.askJudgeAbout', { point });
     return (
       <div
         key={decision.id}
@@ -92,7 +92,14 @@ export default function DetailsSection({
       >
         <div className={classNames(styles.plainMain, feature && styles.nestedMain, off && styles.plainMuted)}>
           <div className={styles.plainText}>
-            <div className={feature ? styles.nestedTitle : styles.plainTitle}>{feature ? title : point}</div>
+            <div className={feature ? styles.nestedTitle : styles.plainTitle}>
+              <span>{feature ? title : point}</span>
+              {/* The point as the judge's lines in a conversation name it: the diamond, then its id in mono. Drawn from an
+              attribute, so the row still reads, and is named, by its plain sentence. */}
+              <span className={styles.point} data-point={decision.id} aria-hidden='true'>
+                <span className={styles.judgeMark} />
+              </span>
+            </div>
             <OneLine text={say(decision.summary)} />
             {off ? <div className={styles.plainNote}>{t('mu.details.featureOff')}</div> : null}
           </div>

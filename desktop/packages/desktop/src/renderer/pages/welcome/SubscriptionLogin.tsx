@@ -2,7 +2,7 @@ import React from 'react';
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
 import type { SubscriptionProvider } from '@/common/kyrn/login';
-import AionSelect from '@/renderer/components/base/AionSelect';
+import MuSelect from '@/renderer/components/base/MuSelect';
 import ProviderMark from '@renderer/components/brand/ProviderMark';
 import LoginWaiting, {
   ExperimentalTag,
@@ -89,7 +89,7 @@ export default function SubscriptionLogin({ value, onChange }: Props) {
       {account && account.models.length ? (
         <div className={choiceStyles.choiceField}>
           <label className={choiceStyles.choiceLabel}>{t('mu.welcome.model.model')}</label>
-          <AionSelect
+          <MuSelect
             showSearch
             aria-label={t('mu.welcome.model.model')}
             value={value}

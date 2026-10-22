@@ -209,7 +209,7 @@ describe('the home page’s send on the native host', () => {
       create: async () => ({ ok: false, kind: 'no-harness', message: 'no mu at /opt/mu' }),
     });
     await send();
-    expect(Message.error).toHaveBeenCalledWith('The app cannot find a mu to run. no mu at /opt/mu');
+    expect(Message.error).toHaveBeenCalledWith("The app can't find mu to run. no mu at /opt/mu");
     expect(setters.navigate).not.toHaveBeenCalled();
     expect(setters.setInput).not.toHaveBeenCalled();
     expect(setters.setLoading).toHaveBeenLastCalledWith(false);
@@ -220,7 +220,7 @@ describe('the home page’s send on the native host', () => {
     host.answer(() => ({ ok: false, kind: 'failed', message: 'spawn ENOENT' }));
     const { setters, send } = home(host.client);
     await send();
-    expect(Message.error).toHaveBeenCalledWith('mu stopped before it started. spawn ENOENT');
+    expect(Message.error).toHaveBeenCalledWith('mu stopped before it could start. spawn ENOENT');
     expect(host.calls.map((call) => call.method)).toEqual(['create', 'request', 'remove']);
     expect(host.calls.at(-1)).toEqual({ method: 'remove', id: 'draft-1' });
     expect(setters.navigate).not.toHaveBeenCalled();

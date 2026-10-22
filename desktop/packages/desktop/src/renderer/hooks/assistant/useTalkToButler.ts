@@ -11,9 +11,10 @@ import { Message } from '@arco-design/web-react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { mutate as swrMutate } from 'swr';
+import { BACKEND_BUTLER_ASSISTANT_ID } from '@/common/platform/backendNames';
 
-/** Backend manifest id of the built-in AionUi Butler assistant. */
-const BUTLER_ASSISTANT_ID = 'aionui-assistant';
+/** Backend manifest id of the built-in Butler assistant. */
+const BUTLER_ASSISTANT_ID = BACKEND_BUTLER_ASSISTANT_ID;
 
 export type TalkToButlerArgs = {
   /** Prompt pre-filled into the home chat input. */
@@ -35,7 +36,7 @@ const findButler = (assistants: Assistant[]): Assistant | undefined => {
 
 /**
  * Shared entry point behind every "via chat" action: jump to the home page,
- * select the AionUi Butler, and pre-fill the chat input with a ready-made
+ * select the Butler, and pre-fill the chat input with a ready-made
  * prompt (and optional attachments). Auto-enables the Butler if the user has
  * disabled it, since clicking the action is an explicit intent to use it.
  *

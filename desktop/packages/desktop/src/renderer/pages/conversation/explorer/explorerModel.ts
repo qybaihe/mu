@@ -448,7 +448,7 @@ export function buildCreateFileRequest(peId: string, parentDir: string, rawName:
 export type TransferOp = 'copy' | 'move';
 
 /** Custom drag MIME carrying an internal pe-ref (vs an OS `Files` drop). */
-export const PE_REF_DRAG_MIME = 'application/x-aionui-pe-ref';
+export const PE_REF_DRAG_MIME = 'application/x-mu-pe-ref';
 
 /** The dragged node's identity + display facts, serialized onto the drag MIME. */
 export type DragPeRef = {

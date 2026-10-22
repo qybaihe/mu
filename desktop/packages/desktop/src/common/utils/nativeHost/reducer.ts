@@ -9,7 +9,7 @@
  * - A failed attempt that pi retries is hidden from the model by a `context_edit` naming its entry: the view folds it
  *   into the attempt that follows (`retries`). Nothing else a `context_edit` hides or replaces leaves the view:
  *   extensions edit what the model reads, not what the person saw.
- * - Jev's judgments are the ledger's `kyrn.decision` records: live they come twice (the `entry_appended` and the
+ * - The judge's judgments are the ledger's `kyrn.decision` records: live they come twice (the `entry_appended` and the
  *   `decision` presentation frame), once in the file, and count once by record id. Each is filed under the turn that
  *   asked (`origin.turn`), not the turn during which it arrived.
  * - The verdict line of a message (`kyrn.verdict`) follows its user message, live and in the file.
@@ -186,6 +186,15 @@ function withLive(view: NativeView, live: ViewLive): NativeView {
 function liveWithout(live: ViewLive, key: 'classifying' | 'progress' | 'retry' | 'permission'): ViewLive {
   const { [key]: _dropped, ...rest } = live;
   return rest;
+}
+
+/**
+ * What the judgment layer said it was working out (the judge reviewing a command, choosing skills) is over once the
+ * model writes again, a tool starts or mu asks the person: the line above the send box then says what happens now, not
+ * a review that ended. A judge that failed (rate limited, say) ends its review with mu asking instead.
+ */
+function stepOver(view: NativeView): NativeView {
+  return view.live.progress ? withLive(view, liveWithout(view.live, 'progress')) : view;
 }
 
 function withStatus(view: NativeView, status: TurnStatus, error?: string): NativeView {
@@ -448,7 +457,8 @@ function openDialog(view: NativeView, record: PiRecord, method: DialogMethod): N
     inRun: isRunning(view.status),
     ...(permission ? { permission } : {}),
   };
-  const live = permission ? liveWithout(view.live, 'permission') : view.live;
+  const asking = stepOver(view).live;
+  const live = permission ? liveWithout(asking, 'permission') : asking;
   return { ...view, live, dialogs: [...view.dialogs.filter((open) => open.id !== id), dialog] };
 }
 
@@ -488,7 +498,9 @@ function uiRequest(view: NativeView, record: PiRecord): NativeView {
     }
     case 'permissions.request': {
       const permission = readPermission(frame.payload);
-      return permission ? withLive(shown, { ...shown.live, permission }) : shown;
+      if (!permission) return shown;
+      const asking = stepOver(shown);
+      return withLive(asking, { ...asking.live, permission });
     }
     case 'permissions.resolved': {
       // Answered, or given up when the run was stopped (mu then says `deny` and pi says nothing of the dialog).
@@ -555,14 +567,16 @@ export function reduce(view: NativeView, record: PiRecord): NativeView {
       return addRunEvent(withStatus(view, 'working'), record);
     case 'agent_settled':
       return addRunEvent(settle(view), record);
-    case 'message_start':
-      return startMessage(view, asObject(record.message));
+    case 'message_start': {
+      const message = asObject(record.message);
+      return startMessage(message.role === 'assistant' ? stepOver(view) : view, message);
+    }
     case 'message_update':
       return streamInto(view, asObject(record.assistantMessageEvent));
     case 'message_end':
       return endMessage(view, asObject(record.message), entryIdOf(record.entryId));
     case 'tool_execution_start':
-      return updateTool(view, asText(record.toolCallId), (tool) => ({ ...tool, status: 'running' }));
+      return updateTool(stepOver(view), asText(record.toolCallId), (tool) => ({ ...tool, status: 'running' }));
     case 'tool_execution_update':
       return updateTool(view, asText(record.toolCallId), (tool) => ({
         ...tool,

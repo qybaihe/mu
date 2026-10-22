@@ -26,41 +26,41 @@
 /* Light */
 [data-color-scheme='mu'] {
   /* Lavender. 1-4 are tints, 5 is a focus outline, 6 is accent text (links, checked marks), 7-10 deeper. */
-  --mu-violet-1: #f7f5ff;
-  --mu-violet-2: #efeafe;
-  --mu-violet-3: #e2d9fd;
-  --mu-violet-4: #cdbdfb;
-  --mu-violet-5: #8d74e8;
-  --mu-violet-6: #6e52da;
-  --mu-violet-7: #5a40c0;
-  --mu-violet-8: #47329c;
-  --mu-violet-9: #342574;
-  --mu-violet-10: #22184d;
+  --mu-violet-1: #f6f4ff;
+  --mu-violet-2: #ede9ff;
+  --mu-violet-3: #ddd5ff;
+  --mu-violet-4: #c4b6ff;
+  --mu-violet-5: #7f6af0;
+  --mu-violet-6: #5b45db;
+  --mu-violet-7: #4a36bd;
+  --mu-violet-8: #3a2a96;
+  --mu-violet-9: #2a1f6d;
+  --mu-violet-10: #1b1446;
 
   /* Pink: the judge's mark and the warm end of the accent wash. */
-  --mu-pink-1: #fff5fe;
-  --mu-pink-2: #fde9fb;
-  --mu-pink-3: #fcd9f9;
-  --mu-pink-4: #f0c4fb;
-  --mu-pink-5: #e29bee;
-  --mu-pink-6: #c55fd3;
-  --mu-pink-7: #a23bb2;
-  --mu-pink-8: #7f2c8d;
-  --mu-pink-9: #5c1f67;
-  --mu-pink-10: #3a1342;
+  --mu-pink-1: #fff4fb;
+  --mu-pink-2: #ffe5f5;
+  --mu-pink-3: #ffcceb;
+  --mu-pink-4: #fba8da;
+  --mu-pink-5: #ee6fbf;
+  --mu-pink-6: #d63fa2;
+  --mu-pink-7: #b42d86;
+  --mu-pink-8: #8c2268;
+  --mu-pink-9: #63184a;
+  --mu-pink-10: #3d0f2e;
 
-  --mu-periwinkle: #948bef;
+  --mu-periwinkle: #8a7cf2;
 
   /* The accent fill: primary buttons. Light lavender with dark text, never white text. */
-  --mu-accent-fill: #d8cbfd;
-  --mu-accent-fill-hover: #cdbdfb;
-  --mu-accent-fill-active: #c1aef8;
-  --mu-accent-on: #1d1b22;
-  --mu-accent-on-disabled: #9ea3ae;
+  --mu-accent-fill: #141417;
+  --mu-accent-fill-hover: #2b2b31;
+  --mu-accent-fill-active: #000000;
+  --mu-accent-on: #ffffff;
+  --mu-accent-on-disabled: #9e9ea6;
   /* The accent wash: the send button, pink into lavender, with the same dark text. */
-  --mu-accent-from: #f8d3ef;
-  --mu-accent-via: #dccdfd;
-  --mu-accent-to: #cdc5fb;
+  --mu-accent-from: #ffcceb;
+  --mu-accent-via: #ddd5ff;
+  --mu-accent-to: #c4b6ff;
   --mu-accent-gradient: linear-gradient(
     135deg,
     var(--mu-accent-from) 0%,
@@ -69,44 +69,49 @@
   );
   /* Small marks: the selected row's bar, a waiting dot, the border and faint tint of a chosen card. */
   --mu-accent-bar: linear-gradient(180deg, #f0b0e2 0%, #b39cf6 100%);
-  --mu-accent-dot: #b39cf6;
-  --mu-accent-border: #c1aef8;
-  --mu-accent-tint: #fcfbff;
+  --mu-accent-dot: #7f6af0;
+  --mu-accent-border: #a99bf7;
+  --mu-accent-tint: #fbfaff;
 
   /* For white text on a violet fill, where a component insists on it. The buttons do not use it. */
   --mu-primary-fill: var(--mu-violet-6);
-  --mu-primary-fill-hover: #7356de;
+  --mu-primary-fill-hover: #6550e3;
   --mu-primary-fill-active: var(--mu-violet-7);
 
-  /* The judge (Jev): pink text on a tint that is nearly white, so a judgment never reads as a button. */
+  /* The judge: pink text on a tint that is nearly white, so a judgment never reads as a button. */
   --mu-judge: var(--mu-pink-7);
-  --mu-judge-bg-flat: #fdf4fc;
+  --mu-judge-bg-flat: #fff6fc;
   --mu-judge-bg: var(--mu-judge-bg-flat);
-  --mu-judge-border: #f4d6f1;
-  --mu-judge-dot: #e29bee;
-  --mu-judge-dot-ring: rgba(226, 155, 238, 0.22);
+  --mu-judge-border: #f6d2ea;
+  --mu-judge-dot: #ee6fbf;
+  --mu-judge-dot-ring: rgba(238, 111, 191, 0.22);
 
   /* The pastel gradient is decoration only (the loading bar); never put text on it. */
   --mu-gradient: linear-gradient(135deg, #fcd9f9 0%, #c3a2fb 52%, #948bef 100%);
   --mu-gradient-soft: linear-gradient(135deg, #fdf1fb 0%, #f4f1fe 100%);
 
+  /* The home page's atmosphere: a glow from the top and a faint dot grid. Decoration only. */
+  --mu-glow-violet: rgba(127, 106, 240, 0.1);
+  --mu-glow-pink: rgba(238, 111, 191, 0.07);
+  --mu-grid-dot: rgba(17, 17, 20, 0.08);
+
   /* Focus ring and selection. */
-  --mu-ring: rgba(167, 139, 245, 0.26);
-  --mu-selection: rgba(205, 189, 251, 0.5);
+  --mu-ring: rgba(127, 106, 240, 0.24);
+  --mu-selection: rgba(196, 182, 255, 0.45);
 
   /* The veil under the command palette: the page's own white, so what lies under it recedes without turning grey. */
   --mu-scrim: rgba(255, 255, 255, 0.72);
 
   /* The message input (send box and the new-conversation card): its surface and a grey hairline. */
   --mu-composer-bg: #ffffff;
-  --mu-input-border: #e5e6eb;
+  --mu-input-border: #e3e3de;
   --mu-input-border-active: var(--mu-accent-border);
-  --mu-input-shadow-active: 0 0 0 3px rgba(201, 184, 251, 0.24), 0 6px 20px rgba(0, 0, 0, 0.05);
+  --mu-input-shadow-active: 0 0 0 3px rgba(127, 106, 240, 0.14), 0 10px 30px rgba(17, 17, 20, 0.06);
 
   /* Soft, layered, neutral shadows. */
-  --mu-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.05), 0 1px 1px rgba(0, 0, 0, 0.03);
-  --mu-shadow-2: 0 2px 6px rgba(0, 0, 0, 0.06), 0 8px 20px rgba(0, 0, 0, 0.05);
-  --mu-shadow-3: 0 4px 12px rgba(0, 0, 0, 0.08), 0 18px 44px rgba(0, 0, 0, 0.1);
+  --mu-shadow-1: 0 1px 2px rgba(17, 17, 20, 0.05), 0 1px 1px rgba(17, 17, 20, 0.03);
+  --mu-shadow-2: 0 2px 6px rgba(17, 17, 20, 0.06), 0 10px 24px rgba(17, 17, 20, 0.06);
+  --mu-shadow-3: 0 4px 12px rgba(17, 17, 20, 0.08), 0 22px 48px rgba(17, 17, 20, 0.12);
 
   /* Radius, one step rounder than upstream (2/4/8). */
   --mu-radius-sm: 6px;
@@ -119,15 +124,15 @@
   --mu-duration: 160ms;
 
   /* Code: a neutral block, five hues that stay apart (components/Markdown/muCodeTheme.ts). */
-  --mu-code-bg-flat: #f7f8fa;
-  --mu-code-text: #1d2129;
-  --mu-code-comment: #676e7b;
-  --mu-code-keyword: #6a4fd3;
-  --mu-code-string: #a23bb2;
-  --mu-code-number: #a3540a;
+  --mu-code-bg-flat: #f7f7f5;
+  --mu-code-text: #1a1a1f;
+  --mu-code-comment: #6a6a73;
+  --mu-code-keyword: #5b45db;
+  --mu-code-string: #b42d86;
+  --mu-code-number: #9a5208;
   --mu-code-type: #3f4dc0;
   --mu-code-attr: #0b767c;
-  --mu-code-meta: #4e5969;
+  --mu-code-meta: #4e4e57;
   --mu-code-add: #0a7a4b;
   --mu-code-add-bg: rgba(10, 122, 75, 0.1);
   --mu-code-del: #c4294f;
@@ -136,102 +141,102 @@
   /* ---- The upstream contract: upstream's neutral values, with readable secondary greys ---- */
 
   /* AOU scale: upstream's cool greys, a shade more neutral. aou-2 is the user's message bubble. */
-  --aou-1: #f4f5f8;
-  --aou-2: #eceef3;
-  --aou-3: #dcdfe8;
-  --aou-4: #c3c8d6;
-  --aou-5: #a3aabd;
-  --aou-6: #7d859c;
-  --aou-7: #5f667b;
-  --aou-8: #444a5b;
-  --aou-9: #282c38;
-  --aou-10: #0f1118;
+  --aou-1: #f5f5f3;
+  --aou-2: #efefec;
+  --aou-3: #e0e0dc;
+  --aou-4: #c8c8c3;
+  --aou-5: #a6a6a1;
+  --aou-6: #7e7e85;
+  --aou-7: #5f5f67;
+  --aou-8: #45454c;
+  --aou-9: #29292e;
+  --aou-10: #111114;
 
   --bg-base: #ffffff;
   --bg-1: #ffffff;
-  --bg-2: #f7f7f8;
-  --bg-3: #e5e6eb;
-  --bg-4: #c9cdd4;
-  --bg-5: #adb4c1;
+  --bg-2: #f7f7f5;
+  --bg-3: #e6e6e2;
+  --bg-4: #cfcfca;
+  --bg-5: #adada8;
   /* Upstream's #86909c is 3.3:1 on white; tertiary text needs 4.5. */
-  --bg-6: #646a73;
-  --bg-8: #4e5969;
-  --bg-9: #1d2129;
-  --bg-10: #0c0e12;
+  --bg-6: #63636b;
+  --bg-8: #4e4e57;
+  --bg-9: #1e1e23;
+  --bg-10: #0e0e11;
 
-  --bg-hover: #f3f4f6;
-  --bg-active: #e5e6eb;
+  --bg-hover: #f1f1ee;
+  --bg-active: #e8e8e4;
 
-  --text-primary: #000000;
-  --color-text-1: #000000;
-  --text-secondary: #454d5f;
-  --text-disabled: #c9cdd4;
+  --text-primary: #111114;
+  --color-text-1: #111114;
+  --text-secondary: #4b4b55;
+  --text-disabled: #bdbdc4;
 
   --primary: var(--mu-violet-6);
-  --success: #087f58;
-  --warning: #c96a0a;
-  --danger: #d12f57;
+  --success: #0e7f55;
+  --warning: #b26a08;
+  --danger: #cc2f55;
   --info: #4f5fd6;
 
-  --border-base: #e5e6eb;
-  --border-light: #f2f3f5;
+  --border-base: #e7e7e3;
+  --border-light: #f0f0ed;
 
   /* Brand: a quiet lavender grey for icons and marks, not the accent. */
-  --brand: #716aa8;
-  --brand-light: #f3f2f8;
-  --brand-hover: #c9c6de;
+  --brand: #6a6492;
+  --brand-light: #f3f2f7;
+  --brand-hover: #cac6de;
 
-  --message-user-bg: var(--aou-2);
-  --message-tips-bg: #f5f6f8;
-  --workspace-btn-bg: #eff0f1;
+  --message-user-bg: #f3f3f0;
+  --message-tips-bg: #f6f6f4;
+  --workspace-btn-bg: #efefec;
   --thought-gradient: linear-gradient(90deg, #f5f6f8 0%, #f7f7f8 100%);
 
-  --fill: #f7f8fa;
+  --fill: #f7f7f5;
   --inverse: #ffffff;
 
   --dialog-fill-0: #ffffff;
-  --text-0: #000000;
+  --text-0: #111114;
   --text-white: #ffffff;
   --fill-0: #ffffff;
   --fill-white-to-black: #ffffff;
   --border-special: var(--bg-3);
-  --color-guid-agent-bar: #eff0f4;
+  --color-guid-agent-bar: #efefec;
 }
 
 /* Dark: upstream's near-black greys; the accent stays light, with dark text on it */
 [data-color-scheme='mu'][data-theme='dark'] {
-  --mu-violet-1: #1c1a26;
-  --mu-violet-2: #26233a;
-  --mu-violet-3: #35304f;
-  --mu-violet-4: #4d4570;
-  --mu-violet-5: #9a86f4;
-  --mu-violet-6: #b4a2fa;
-  --mu-violet-7: #c7b9fb;
-  --mu-violet-8: #d8cefc;
-  --mu-violet-9: #e7e0fd;
-  --mu-violet-10: #f4f0fe;
+  --mu-violet-1: #17142a;
+  --mu-violet-2: #201c3a;
+  --mu-violet-3: #2d2752;
+  --mu-violet-4: #41387a;
+  --mu-violet-5: #8f7cf7;
+  --mu-violet-6: #ad9dff;
+  --mu-violet-7: #c2b6ff;
+  --mu-violet-8: #d6cdff;
+  --mu-violet-9: #e8e3ff;
+  --mu-violet-10: #f5f2ff;
 
-  --mu-pink-1: #2a1530;
-  --mu-pink-2: #3d1d46;
-  --mu-pink-3: #57275f;
-  --mu-pink-4: #7a3584;
-  --mu-pink-5: #a64db3;
-  --mu-pink-6: #d982e3;
-  --mu-pink-7: #eaa6f1;
-  --mu-pink-8: #f3c5f7;
-  --mu-pink-9: #f9defb;
-  --mu-pink-10: #fdf1fe;
+  --mu-pink-1: #2a1124;
+  --mu-pink-2: #3d1835;
+  --mu-pink-3: #57204b;
+  --mu-pink-4: #7a2b69;
+  --mu-pink-5: #b8449b;
+  --mu-pink-6: #f06bc9;
+  --mu-pink-7: #ff8ad8;
+  --mu-pink-8: #ffb0e6;
+  --mu-pink-9: #ffd3f1;
+  --mu-pink-10: #ffedf9;
 
-  --mu-periwinkle: #9e93f2;
+  --mu-periwinkle: #9d93ff;
 
-  --mu-accent-fill: #c9b8fb;
-  --mu-accent-fill-hover: #d4c6fc;
-  --mu-accent-fill-active: #bca9f5;
-  --mu-accent-on: #17151d;
-  --mu-accent-on-disabled: #6b6f78;
-  --mu-accent-from: #eec3e6;
-  --mu-accent-via: #cdbdfb;
-  --mu-accent-to: #bdb4f7;
+  --mu-accent-fill: #ededf2;
+  --mu-accent-fill-hover: #ffffff;
+  --mu-accent-fill-active: #d6d6de;
+  --mu-accent-on: #0b0b0e;
+  --mu-accent-on-disabled: #5c5c66;
+  --mu-accent-from: #ff8ad8;
+  --mu-accent-via: #ad9dff;
+  --mu-accent-to: #8fa2ff;
   --mu-accent-gradient: linear-gradient(
     135deg,
     var(--mu-accent-from) 0%,
@@ -239,110 +244,114 @@
     var(--mu-accent-to) 100%
   );
   --mu-accent-bar: linear-gradient(180deg, #eaa6de 0%, #a994f5 100%);
-  --mu-accent-dot: #a994f5;
-  --mu-accent-border: #8f7fd6;
-  --mu-accent-tint: rgba(180, 162, 250, 0.05);
+  --mu-accent-dot: #ad9dff;
+  --mu-accent-border: #5f52b8;
+  --mu-accent-tint: rgba(173, 157, 255, 0.06);
 
   /* White text needs a deeper fill than the light accent text of this appearance. */
-  --mu-primary-fill: #6f55db;
-  --mu-primary-fill-hover: #765ce1;
-  --mu-primary-fill-active: #5f46c6;
+  --mu-primary-fill: #6a55e0;
+  --mu-primary-fill-hover: #7461e6;
+  --mu-primary-fill-active: #5b47cc;
 
   --mu-judge: var(--mu-pink-7);
-  --mu-judge-bg-flat: #221a24;
-  --mu-judge-bg: rgba(240, 196, 251, 0.07);
-  --mu-judge-border: rgba(240, 196, 251, 0.2);
-  --mu-judge-dot: #e29bee;
-  --mu-judge-dot-ring: rgba(226, 155, 238, 0.2);
+  --mu-judge-bg-flat: #1c1119;
+  --mu-judge-bg: rgba(255, 138, 216, 0.07);
+  --mu-judge-border: rgba(255, 138, 216, 0.22);
+  --mu-judge-dot: #ff8ad8;
+  --mu-judge-dot-ring: rgba(255, 138, 216, 0.25);
 
   --mu-gradient: linear-gradient(135deg, #f0c4fb 0%, #b79cf7 52%, #8e86ee 100%);
   --mu-gradient-soft: linear-gradient(135deg, #2a2230 0%, #24222e 100%);
 
-  --mu-ring: rgba(180, 162, 250, 0.3);
-  --mu-selection: rgba(180, 162, 250, 0.34);
+  --mu-glow-violet: rgba(143, 124, 247, 0.17);
+  --mu-glow-pink: rgba(255, 138, 216, 0.08);
+  --mu-grid-dot: rgba(255, 255, 255, 0.06);
+
+  --mu-ring: rgba(173, 157, 255, 0.3);
+  --mu-selection: rgba(173, 157, 255, 0.3);
 
   --mu-scrim: rgba(0, 0, 0, 0.6);
 
   /* The page's own surface, whatever colour the page takes; the hairline marks the field. */
   --mu-composer-bg: var(--bg-1);
-  --mu-input-border: #333333;
+  --mu-input-border: #2a2a33;
   --mu-input-border-active: var(--mu-accent-border);
-  --mu-input-shadow-active: 0 0 0 3px rgba(180, 162, 250, 0.18), 0 8px 28px rgba(0, 0, 0, 0.5);
+  --mu-input-shadow-active: 0 0 0 3px rgba(173, 157, 255, 0.14), 0 14px 44px rgba(0, 0, 0, 0.55);
 
-  --mu-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 1px rgba(0, 0, 0, 0.28);
-  --mu-shadow-2: 0 2px 8px rgba(0, 0, 0, 0.45), 0 10px 26px rgba(0, 0, 0, 0.4);
-  --mu-shadow-3: 0 6px 16px rgba(0, 0, 0, 0.55), 0 22px 52px rgba(0, 0, 0, 0.55);
+  --mu-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 1px rgba(0, 0, 0, 0.3);
+  --mu-shadow-2: 0 2px 8px rgba(0, 0, 0, 0.5), 0 12px 30px rgba(0, 0, 0, 0.45);
+  --mu-shadow-3: 0 6px 16px rgba(0, 0, 0, 0.6), 0 24px 56px rgba(0, 0, 0, 0.6);
 
-  --mu-code-bg-flat: #1a1a1a;
-  --mu-code-text: #e6e6e6;
-  --mu-code-comment: #9a9ea6;
-  --mu-code-keyword: #b3a1f9;
-  --mu-code-string: #eaa6f1;
-  --mu-code-number: #ffb877;
-  --mu-code-type: #9ba8ff;
+  --mu-code-bg-flat: #101015;
+  --mu-code-text: #e6e6ec;
+  --mu-code-comment: #8f8f9a;
+  --mu-code-keyword: #b9abff;
+  --mu-code-string: #ff9fdf;
+  --mu-code-number: #ffbd7a;
+  --mu-code-type: #9fb0ff;
   --mu-code-attr: #6fd6d0;
-  --mu-code-meta: #c9cdd4;
+  --mu-code-meta: #c4c4cc;
   --mu-code-add: #4cd39b;
   --mu-code-add-bg: rgba(76, 211, 155, 0.14);
   --mu-code-del: #ff7d92;
   --mu-code-del-bg: rgba(255, 125, 146, 0.14);
 
-  --aou-1: #232325;
-  --aou-2: #2e2f33;
+  --aou-1: #16161b;
+  --aou-2: #1d1d23;
   --color-guid-agent-bar: var(--aou-2);
-  --aou-3: #3d3f45;
-  --aou-4: #53565e;
-  --aou-5: #6e727c;
-  --aou-6: #9a9fab;
-  --aou-7: #b4b8c2;
-  --aou-8: #cfd2d9;
-  --aou-9: #e4e6ea;
-  --aou-10: #f0f1f4;
+  --aou-3: #2a2a32;
+  --aou-4: #3d3d47;
+  --aou-5: #5a5a65;
+  --aou-6: #8e8e99;
+  --aou-7: #adadb7;
+  --aou-8: #cacad2;
+  --aou-9: #e2e2e8;
+  --aou-10: #f2f2f5;
 
-  --bg-base: #0e0e0e;
-  --bg-1: #111111;
-  --bg-2: #1a1a1a;
-  --bg-3: #333333;
-  --bg-4: #404040;
-  --bg-5: #4d4d4d;
+  --bg-base: #0b0b0e;
+  --bg-1: #0b0b0e;
+  --bg-2: #0f0f13;
+  --bg-3: #25252d;
+  --bg-4: #33333c;
+  --bg-5: #44444e;
   /* Upstream's #5a5a5a is 2.9:1 on the page; tertiary text needs 4.5. */
-  --bg-6: #9a9a9a;
-  --bg-8: #737373;
-  --bg-9: #a6a6a6;
-  --bg-10: #d9d9d9;
+  --bg-6: #8e8e99;
+  --bg-8: #6e6e79;
+  --bg-9: #b4b4be;
+  --bg-10: #e4e4ea;
 
-  --bg-hover: #1f1f1f;
-  --bg-active: #2d2d2d;
+  --bg-hover: #17171d;
+  --bg-active: #202028;
 
-  --text-primary: #ffffff;
-  --color-text-1: #ffffff;
-  --text-secondary: #ced3da;
-  --text-disabled: #737373;
+  --text-primary: #ededf2;
+  --color-text-1: #ededf2;
+  --text-secondary: #a9a9b4;
+  --text-disabled: #5c5c66;
 
   --primary: var(--mu-violet-6);
-  --success: #4cd39b;
-  --warning: #ffb35a;
-  --danger: #ff7d92;
-  --info: #9ba8ff;
+  --success: #4ade9b;
+  --warning: #f5b544;
+  --danger: #ff6b81;
+  --info: #8fa2ff;
 
-  --border-base: #333333;
-  --border-light: #262626;
+  --border-base: #23232b;
+  --border-light: #19191f;
 
-  --brand: #aaa4d6;
-  --brand-light: #2a2930;
-  --brand-hover: #55526a;
+  --brand: #a8a2d8;
+  --brand-light: #1d1b29;
+  --brand-hover: #4f4a6e;
 
-  --message-user-bg: var(--aou-2);
-  --message-tips-bg: #1f1f21;
-  --workspace-btn-bg: #1f1f1f;
+  --message-user-bg: #16161c;
+  --message-tips-bg: #121217;
+  --workspace-btn-bg: #16161b;
   --thought-gradient: linear-gradient(135deg, #2a2a2e 0%, #232323 100%);
 
-  --fill: #1a1a1a;
+  --fill: #121217;
   --inverse: #ffffff;
 
   /* The card surface, a shade above the page; arco-override.css draws the hairline round it. */
-  --dialog-fill-0: #1a1a1a;
-  --text-0: #ffffff;
+  --dialog-fill-0: #121217;
+  --text-0: #ededf2;
   --text-white: #ffffff;
   --fill-0: rgba(255, 255, 255, 0.08);
   --fill-white-to-black: #000000;

@@ -45,12 +45,19 @@ describe('mu colour scheme', () => {
     expect(failing).toEqual([]);
   });
 
-  it('never uses a pastel step where white text sits', () => {
-    // The icon's lavender and pink are for tints and for fills with dark text. White on them is about 2:1.
+  it('keeps primary actions monochrome and the pastel steps for tints only', () => {
+    // Primary buttons are ink on paper and paper on ink. The lavender and pink tints never carry white text: about 2:1.
+    const cast = (hex: string) => {
+      const [r, g, b] = rgb(hex);
+      return Math.max(r, g, b) - Math.min(r, g, b);
+    };
+    for (const mode of ['light', 'dark'] as const) {
+      const vars = tokens(scheme, mode);
+      expect(cast(vars['--mu-accent-fill']), `${mode} accent fill`).toBeLessThanOrEqual(12);
+    }
     const light = tokens(scheme, 'light');
     expect(contrast('#ffffff', light['--mu-violet-4'])).toBeLessThan(3);
     expect(contrast('#ffffff', light['--mu-pink-4'])).toBeLessThan(3);
-    expect(contrast('#ffffff', light['--mu-accent-fill'])).toBeLessThan(3);
     expect(light['--mu-primary-fill']).toBe('var(--mu-violet-6)');
   });
 

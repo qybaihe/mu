@@ -49,7 +49,7 @@ test.describe('Antigravity Chat - Basic Flow', () => {
       (a) => (a.agent?.acp_backend || a.agent?.type) === 'antigravity' && a.enabled !== false
     );
     if (!agy) {
-      test.skip(true, 'No Antigravity assistant in the catalog — is this aioncore built with Antigravity support?');
+      test.skip(true, 'No Antigravity assistant in the catalog — is this the backend built with Antigravity support?');
       return;
     }
 

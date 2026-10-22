@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2025 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { createInstance, type i18n as I18n } from 'i18next';
 import React from 'react';

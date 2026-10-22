@@ -1,7 +1,7 @@
 # KYRN Desktop — development preview
 
-A dedicated KYRN product target inside an AionUi source checkout. The upstream
-application remains reference source only: **do not run its root `npm start`**.
+A dedicated KYRN product target inside the desktop app's source tree. The
+surrounding app is reference source only here: **do not run its root `npm start`**.
 This target has its own entry point, lockfile and dependency graph.
 
 ## Start
@@ -25,9 +25,10 @@ a signed/notarized distributable.
 
 ## Product boundary
 
-- AionUi's CodeMirror editor/theme/language loader are reused under Apache-2.0.
+- The desktop app's CodeMirror editor, theme and language loader
+  (`src/vendor/codeEditor/`) are reused under Apache-2.0.
 - KYRN owns the conversation UI, judgment timeline, swarm cards and RPC host.
-- No AionCore, ACP backend, external coding-agent integration, Team MCP server,
+- No local backend service, ACP backend, external coding-agent integration, Team MCP server,
   office assistant catalog, bot/channel adapter, provider SDK, analytics or
   promotional entry is installed or imported by this target.
 - Only the KYRN launcher starts agents. Its existing model configuration and
@@ -40,7 +41,7 @@ a signed/notarized distributable.
 - Project selection; desktop task history and restart/resume of its pi session.
 - Real model list from the local CLI; streaming chat, tool results, Queue/Steer,
   abort and extension approval dialogs.
-- Native Jev pending / verdict / late / fallback cards and decision timeline.
+- Native judge pending / verdict / late / fallback cards and decision timeline.
   These are actual typed outputs, not inferred chain-of-thought.
 - Hive/delegate snapshots as per-bee cards, shared findings and wrap-up/kill.
 - Git file listing, code editing with stale-revision protection, worktree/staged

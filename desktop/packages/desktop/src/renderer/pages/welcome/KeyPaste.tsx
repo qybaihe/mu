@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button, Input, Link } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
-import AionSelect from '@/renderer/components/base/AionSelect';
+import MuSelect from '@/renderer/components/base/MuSelect';
 import MuErrorMessage from '@/renderer/pages/settings/KyrnSettings/fields/MuErrorMessage';
 import { camel } from '@/renderer/pages/settings/KyrnSettings/providers/endpoints';
 import { StatusDot, type DotState } from '@/renderer/pages/settings/KyrnSettings/providers/parts';
@@ -66,13 +66,20 @@ export default function KeyPaste({ setup, tried }: KeyPasteProps) {
   const offered = candidates.length > 1 ? candidates : MODEL_SERVICES;
   let serviceHint = t('mu.welcome.apiKey.serviceHint');
   if (service) serviceHint = setup.recognized ? t('mu.welcome.apiKey.recognized') : '';
+  else if (setup.refused) serviceHint = '';
   else if (typed) serviceHint = t(candidates.length > 1 ? 'mu.welcome.apiKey.ambiguous' : 'mu.welcome.apiKey.unknown');
 
   return (
     <div className={styles.fields}>
       <Field
         label={t('mu.welcome.model.key')}
-        problem={tried && !typed && !service?.keyless ? t('mu.welcome.apiKey.problems.key') : undefined}
+        problem={
+          setup.refused
+            ? t('mu.welcome.apiKey.subscriptionToken')
+            : tried && !typed && !service?.keyless
+              ? t('mu.welcome.apiKey.problems.key')
+              : undefined
+        }
       >
         <Input.Password
           autoFocus
@@ -85,9 +92,9 @@ export default function KeyPaste({ setup, tried }: KeyPasteProps) {
       </Field>
       <Field
         label={t('mu.welcome.apiKey.service')}
-        problem={tried && typed && !service ? t('mu.welcome.apiKey.problems.service') : undefined}
+        problem={tried && typed && !service && !setup.refused ? t('mu.welcome.apiKey.problems.service') : undefined}
       >
-        <AionSelect
+        <MuSelect
           aria-label={t('mu.welcome.apiKey.service')}
           data-testid='mu-welcome-key-service'
           value={service?.id}
@@ -172,7 +179,7 @@ export default function KeyPaste({ setup, tried }: KeyPasteProps) {
           problem={tried && !setup.model.trim() ? t('mu.welcome.apiKey.problems.model') : undefined}
         >
           {check.outcome === 'ok' ? (
-            <AionSelect
+            <MuSelect
               showSearch
               aria-label={t('mu.welcome.apiKey.startsWith')}
               data-testid='mu-welcome-key-model'

@@ -30,7 +30,7 @@ const lines = (...values: Array<string | undefined>): string[] => values.filter(
 
 const PROGRESS_STEPS = new Set(['frame', 'lessons', 'skills', 'capabilities', 'goal_check']);
 
-/** The step being worked out before a turn ("choosing skills"); a permission review names what Jev looks at. */
+/** The step being worked out before a turn ("choosing skills"); a permission review names what the judge looks at. */
 function progressStep(t: TFunction, coded: Coded | undefined): string | undefined {
   if (!coded) return undefined;
   if (PROGRESS_STEPS.has(coded.code)) return t(`${KEY}.progress.${coded.code}`);
@@ -354,7 +354,7 @@ function browserLines(t: TFunction, payload: Record<string, unknown>): string[] 
 // ── permissions.mode ────────────────────────────────────────────────────────
 
 /** The harness's permission modes, named as the send box's permission menu names them. */
-const PERMISSION_MODES: ReadonlySet<string> = new Set(['full', 'jev', 'ask']);
+const PERMISSION_MODES: ReadonlySet<string> = new Set(['full', 'judge', 'ask']);
 
 /** The mode the conversation runs in; a mode this build does not know goes by the harness's own label for it. */
 function permissionsLine(t: TFunction, payload: Record<string, unknown>): string[] {
@@ -383,12 +383,19 @@ function permissionAnswerLine(t: TFunction, payload: Record<string, unknown>): s
   return lines(summary ? t(`${KEY}.permissions.about`, { answer: said, summary }) : said);
 }
 
+/** Who let a call through without asking, by the harness's `by`: an older harness names the judge `jev`. */
+const APPROVERS: ReadonlyMap<string, 'judge' | 'grant'> = new Map([
+  ['judge', 'judge'],
+  ['jev', 'judge'],
+  ['grant', 'grant'],
+]);
+
 /** A call that ran without asking: the judge let it through, or the person had allowed it for this conversation. */
 function permissionApprovedLine(t: TFunction, payload: Record<string, unknown>): string[] | undefined {
   const summary = str(payload.summary);
-  const by = str(payload.by);
-  if (!summary || (by !== 'jev' && by !== 'grant')) return undefined;
-  return lines(t(`${KEY}.permissions.approved.${by === 'jev' ? 'judge' : 'grant'}`, { summary }));
+  const by = APPROVERS.get(str(payload.by));
+  if (!summary || !by) return undefined;
+  return lines(t(`${KEY}.permissions.approved.${by}`, { summary }));
 }
 
 // ── checkpoint.off ──────────────────────────────────────────────────────────
@@ -431,6 +438,16 @@ function injectionLines(t: TFunction, payload: Record<string, unknown>): string[
 const boardLine = (t: TFunction, payload: Record<string, unknown>): string[] | undefined =>
   typeof payload.on === 'boolean' ? [t(`${KEY}.board.${payload.on ? 'on' : 'off'}`)] : undefined;
 
+/** A notice about the judge itself, by its code: the free Jev answering, or no longer answering. */
+const JUDGE_NOTICES: Readonly<Record<string, string>> = {
+  free_jev: 'freeJev',
+  free_jev_unavailable: 'freeJevUnavailable',
+};
+const judgeNoticeLine = (t: TFunction, payload: Record<string, unknown>): string[] | undefined => {
+  const words = JUDGE_NOTICES[str(payload.code)];
+  return words ? [t(`${KEY}.judgeNotice.${words}`)] : undefined;
+};
+
 // ── entry ───────────────────────────────────────────────────────────────────
 
 /**
@@ -472,6 +489,8 @@ export function eventLines(
       return boardLine(t, payload);
     case 'tool.injection':
       return injectionLines(t, payload);
+    case 'judge.notice':
+      return judgeNoticeLine(t, payload);
     default:
       return undefined;
   }

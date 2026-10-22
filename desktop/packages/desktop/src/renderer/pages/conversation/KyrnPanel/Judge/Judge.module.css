@@ -139,6 +139,27 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Under a verdict's sentence: the decision point in mono, after the judge's diamond, and the time it took. */
+.readout {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  color: var(--bg-6);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.readoutMark {
+  width: 5px;
+  height: 5px;
+  border-radius: 1px;
+  background: var(--mu-judge-dot, var(--text-secondary));
+  transform: rotate(45deg);
+}
+
 /* The sentence wraps rather than hiding behind the chips; the chips follow it and wrap with it. */
 .body {
   min-width: 0;

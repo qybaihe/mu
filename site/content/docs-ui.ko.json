@@ -1,0 +1,25 @@
+{
+  "index_label": "문서",
+  "sections": { "start": "여기서 시작", "use": "mu 사용하기", "ref": "참고" },
+  "prev": "이전",
+  "next": "다음",
+  "read": "읽기",
+  "options_on": "기본으로 켜짐",
+  "options_off": "기본으로 꺼짐",
+  "options_beta": "실험",
+  "options_points": "판정 지점",
+  "options_option": "옵션",
+  "options_default": "기본값",
+  "options_meaning": "의미",
+  "options_range": "범위는 {min}부터 {max}까지예요.",
+  "options_none": "옵션이 없어요.",
+  "options_empty": "비어 있음",
+  "contrib_h2": "기여자용",
+  "contrib_p": "mu가 어떻게 만들어졌는지, 그리고 어떻게 더할 수 있는지. 저장소에 영어로 있어요:",
+  "contrib": [
+    { "text": "mu의 동작 방식", "href": "https://github.com/qybaihe/mu/blob/main/docs/architecture.md" },
+    { "text": "판정 지점 추가하기", "href": "https://github.com/qybaihe/mu/blob/main/docs/adding-a-decision-point.md" },
+    { "text": "번역", "href": "https://github.com/qybaihe/mu/blob/main/docs/translations.md" },
+    { "text": "기여하기", "href": "https://github.com/qybaihe/mu/blob/main/CONTRIBUTING.md" }
+  ]
+}

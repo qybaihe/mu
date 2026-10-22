@@ -212,6 +212,16 @@ function LineText({ item, count = 1 }: { item: LogItem; count?: number }) {
             {t('common.kyrn.judgeView.log.times', { times: formatNumber(count, i18n.language) })}
           </span>
         ) : null}
+        {/* A verdict's readout: the decision point that asked, and how long the judge took. */}
+        {item.type === 'judgment' ? (
+          <span className={styles.readout} dir='ltr' data-testid='judge-line-readout'>
+            <span className={styles.readoutMark} aria-hidden='true' />
+            {item.card.specId}
+            {typeof item.card.latencyMs === 'number'
+              ? ` · ${formatNumber(Math.round(item.card.latencyMs), i18n.language)} ms`
+              : ''}
+          </span>
+        ) : null}
       </span>
     </>
   );

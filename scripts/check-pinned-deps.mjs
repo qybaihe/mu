@@ -4,7 +4,7 @@ import { join } from "node:path";
 const dependencySections = ["dependencies", "devDependencies", "optionalDependencies"];
 const exactVersionPattern = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 const ignoredDirectories = new Set([".claude", ".git", "dist", "node_modules"]);
-// mu's desktop app (an AionUi fork) keeps its own dependency rules and lockfile (bun).
+// mu's desktop app keeps its own dependency rules and lockfile (bun).
 const ignoredPaths = new Set(["desktop"]);
 const packageJsonFiles = [];
 

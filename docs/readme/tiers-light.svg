@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="330" viewBox="0 0 880 330" role="img" aria-labelledby="t d" font-family="-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif">
+<title id="t">Judges in tiers</title>
+<desc id="d">A cascade such as laya,jev. All questions go to Laya first: local, offline and free, trusted on classifying. What Laya is sure of becomes a verdict; a yes/no answer is unsure when its probability is between 0.2 and 0.8, and unsure questions go on to Jev, hosted, about 0.3 seconds. What Jev is sure of becomes a verdict; what is still unsure, or what no judge answered, gets the fallback: what mu would do without a judge. The ledger records every answer, which judge gave it or why the fallback was used, and the time. Laya is not trusted on relating, scoring or meta-judgments, so those questions go on to Jev.</desc>
+<defs><marker id="a" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#818b98"/></marker><marker id="p" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#d6409f"/></marker></defs>
+<text x="0" y="22" font-size="18" font-weight="600" fill="#1f2328">Judges in tiers</text>
+<text x="0" y="46" font-size="13.5" fill="#59636e">A cascade such as laya,jev: each judge only sees the questions the one before it wasn’t sure about.</text>
+<line x1="0" x2="880" y1="66" y2="66" stroke="#d1d9e0"/>
+<rect x="0" y="104" width="150" height="84" rx="10" fill="#f6f8fa" stroke="#d1d9e0"/>
+<text x="16" y="133" font-size="14.5" font-weight="600" fill="#1f2328">Questions</text>
+<text x="16" y="156" font-size="12.5" fill="#59636e">one or many,</text>
+<text x="16" y="174" font-size="12.5" fill="#59636e">from a decision point</text>
+<rect x="214" y="104" width="190" height="84" rx="10" fill="rgba(238, 111, 191, 0.07)" stroke="rgba(214, 64, 159, 0.4)"/>
+<rect x="229" y="125" width="6" height="6" rx="1" fill="#d6409f" stroke="rgba(238, 111, 191, 0.22)" stroke-width="2" transform="rotate(45 232 128)"/>
+<text x="246" y="133" font-size="14.5" font-weight="600" fill="#1f2328">Laya</text>
+<text x="230" y="156" font-size="12.5" fill="#59636e">local, offline, no cost</text>
+<text x="230" y="174" font-size="12.5" fill="#59636e">trusted on classifying</text>
+<rect x="468" y="104" width="190" height="84" rx="10" fill="rgba(238, 111, 191, 0.07)" stroke="rgba(214, 64, 159, 0.4)"/>
+<rect x="483" y="125" width="6" height="6" rx="1" fill="#d6409f" stroke="rgba(238, 111, 191, 0.22)" stroke-width="2" transform="rotate(45 486 128)"/>
+<text x="500" y="133" font-size="14.5" font-weight="600" fill="#1f2328">Jev</text>
+<text x="484" y="156" font-size="12.5" fill="#59636e">hosted, about 0.3 s</text>
+<text x="484" y="174" font-size="12.5" fill="#59636e">trusted on every kind</text>
+<rect x="722" y="104" width="158" height="84" rx="10" fill="#f6f8fa" stroke="#d1d9e0"/>
+<text x="738" y="133" font-size="14.5" font-weight="600" fill="#1f2328">The fallback</text>
+<text x="738" y="156" font-size="12.5" fill="#59636e">what mu would do</text>
+<text x="738" y="174" font-size="12.5" fill="#59636e">without a judge</text>
+<path d="M154,146 L209,146" fill="none" stroke="#818b98" stroke-width="1.4" marker-end="url(#a)"/>
+<text x="182" y="138" font-size="11.5" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#818b98">all</text>
+<path d="M408,146 L463,146" fill="none" stroke="#818b98" stroke-width="1.4" marker-end="url(#a)"/>
+<text x="436" y="138" font-size="11.5" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#818b98">unsure</text>
+<path d="M662,146 L717,146" fill="none" stroke="#818b98" stroke-width="1.4" marker-end="url(#a)"/>
+<text x="690" y="138" font-size="11.5" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#818b98">unsure</text>
+<path d="M309,192 L309,246" fill="none" stroke="#d6409f" stroke-width="1.4" marker-end="url(#p)"/>
+<text x="317" y="224" font-size="12" fill="#d6409f">sure: a verdict</text>
+<path d="M563,192 L563,246" fill="none" stroke="#d6409f" stroke-width="1.4" marker-end="url(#p)"/>
+<text x="571" y="224" font-size="12" fill="#d6409f">sure: a verdict</text>
+<path d="M801,192 L801,246" fill="none" stroke="#818b98" stroke-width="1.4" marker-end="url(#a)"/>
+<rect x="200" y="252" width="680" height="34" rx="8" fill="#f6f8fa" stroke="#d1d9e0"/>
+<text x="216" y="274" font-size="12.5" fill="#59636e">The ledger: every answer, which judge gave it or why the fallback was used, and the time.</text>
+<text x="0" y="258" font-size="10.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" letter-spacing="0.9" fill="#818b98">UNSURE MEANS</text>
+<rect x="0" y="268" width="170" height="8" rx="4" fill="#f6f8fa" stroke="#d1d9e0"/>
+<rect x="34" y="268" width="102" height="8" rx="0" fill="rgba(238, 111, 191, 0.07)" stroke="rgba(214, 64, 159, 0.4)"/>
+<text x="34" y="290" font-size="11" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#818b98">0.2</text>
+<text x="136" y="290" font-size="11" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#818b98">0.8</text>
+<text x="0" y="324" font-size="12" fill="#818b98">A judge’s known weakness never decides: Laya isn’t trusted on relating, scoring or meta-judgments, so those go on to Jev.</text>
+</svg>

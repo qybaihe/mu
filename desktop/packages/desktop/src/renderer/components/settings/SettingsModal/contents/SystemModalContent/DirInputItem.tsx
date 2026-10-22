@@ -53,7 +53,7 @@ const DirInputItem: React.FC<{
           <div className='flex flex-col gap-8px py-12px md:flex-row md:items-center md:justify-between md:gap-24px'>
             <div className='min-w-0 text-14px font-500 leading-22px text-t-primary'>{label}</div>
             <div
-              className='aion-dir-input box-border h-32px w-full md:w-360px md:shrink-0 flex items-center overflow-hidden rounded-6px border border-solid border-[var(--border-base)] hover:border-[var(--bg-4)] ps-12px bg-base cursor-pointer transition-colors'
+              className='mu-dir-input box-border h-32px w-full md:w-360px md:shrink-0 flex items-center overflow-hidden rounded-6px border border-solid border-[var(--border-base)] hover:border-[var(--bg-4)] ps-12px bg-base cursor-pointer transition-colors'
               tabIndex={0}
               onClick={handlePick}
               onKeyDown={handleKeyDown}

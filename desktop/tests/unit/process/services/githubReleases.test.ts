@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 /** The fallback's view of mu's releases: GitHub's API, the newest release, and the installer for this system. */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';

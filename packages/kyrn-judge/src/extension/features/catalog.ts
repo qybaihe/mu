@@ -177,7 +177,7 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 	pi.registerCommand("capabilities", {
 		description: say({
 			zh: "装了哪些能力、这次打开了哪些：/capabilities 查看，/capabilities open <ID> 打开",
-			en: "What is installed and what is open: /capabilities, /capabilities open <id>",
+			en: "Show what's installed and what's turned on; /capabilities open <id> turns one on",
 		}),
 		handler: async (args, ctx) => {
 			runtime.touch(ctx);
@@ -186,7 +186,9 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 				const capability = await open(id, "user").catch(() => undefined);
 				applyLoadout();
 				ctx.ui.notify(
-					capability ? `${capability.title} is open.` : `"${id}" is unknown, already open, or did not start.`,
+					capability
+						? `${capability.title} is now open.`
+						: `"${id}" is unknown, already open, or failed to start.`,
 					capability ? "info" : "warning",
 				);
 				return;
@@ -197,7 +199,7 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 				const state = capability.exposure === "always" ? "always" : record ? `open (${record.by})` : "hidden";
 				return `${state.padEnd(16)} ${capability.id} · ${capability.title}`;
 			});
-			ctx.ui.notify(rows.length > 0 ? rows.join("\n") : "Nothing is registered in the catalog yet.", "info");
+			ctx.ui.notify(rows.length > 0 ? rows.join("\n") : "No capabilities registered yet.", "info");
 		},
 	});
 }

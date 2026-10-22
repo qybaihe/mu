@@ -1,7 +1,7 @@
 /**
  * Preview panel + office document E2E.
  *
- * Covers the user-visible preview flows that run against aioncore
+ * Covers the user-visible preview flows that run against the backend
  * in --local mode (no auth, no CSRF):
  *   1. Document conversion API (/api/document/convert)
  *   2. Preview panel rendering inside a conversation
@@ -25,14 +25,14 @@ const EXTERNAL_WORKSPACE_ROOT = '/Users/Shared';
 
 /** Write a temp file we can feed to preview/convert APIs. */
 function makeTempFile(ext: string, body: string): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aionui-preview-e2e-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mu-preview-e2e-'));
   const file = path.join(dir, `sample.${ext}`);
   fs.writeFileSync(file, body);
   return file;
 }
 
 function makeExternalWorkspaceFile(ext: string, body: string): { filePath: string; workspace: string } {
-  const dir = fs.mkdtempSync(path.join(EXTERNAL_WORKSPACE_ROOT, 'aionui-preview-e2e-'));
+  const dir = fs.mkdtempSync(path.join(EXTERNAL_WORKSPACE_ROOT, 'mu-preview-e2e-'));
   const file = path.join(dir, `sample.${ext}`);
   fs.writeFileSync(file, body);
   return { filePath: file, workspace: dir };

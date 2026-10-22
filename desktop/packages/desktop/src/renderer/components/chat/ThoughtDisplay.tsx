@@ -142,7 +142,7 @@ const ThoughtDisplay: React.FC<ThoughtDisplayProps> = ({
         </span>
         {onRetryStart && (
           <Button className='flex-shrink-0' size='mini' type='text' onClick={onRetryStart}>
-            {t('team.work.retryStart', { defaultValue: 'Retry start' })}
+            {t('team.work.retryStart', { defaultValue: 'Try starting again' })}
           </Button>
         )}
       </div>

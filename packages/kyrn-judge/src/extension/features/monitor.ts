@@ -1,6 +1,18 @@
+import { createHash } from "node:crypto";
 import { turnDrift } from "../../decisions/turn-drift.ts";
-import { failOpen, type KyrnRuntime } from "../runtime.ts";
+import { failOpen, type KyrnRuntime, textOf } from "../runtime.ts";
 import { describeCall } from "./admission.ts";
+
+/**
+ * Which call this was and what came of it, for the loop rule. `describeCall` is for reading: it keeps the path of a
+ * read and drops its offset, and cuts a script after 300 characters, so a file paged through and two scripts that
+ * differ only further down would look like one call made three times. The key holds all of the input and the result.
+ */
+function callKey(toolName: string, input: unknown, isError: boolean, content: unknown): string {
+	return createHash("sha1")
+		.update(JSON.stringify([toolName, input ?? null, isError, textOf(content)]))
+		.digest("hex");
+}
 
 /**
  * B5: a loop is a fact (the same call with the same result, three times), so a
@@ -11,7 +23,10 @@ export function registerMonitor(runtime: KyrnRuntime): void {
 	const options = runtime.options("monitor", { enabled: true, every: 6, repeats: 3, window: 8 });
 	if (!options.enabled) return;
 	const { pi } = runtime;
+	/** The recent calls as the drift judge and the steer read them. */
 	let actions: string[] = [];
+	/** The last `repeats` calls as the loop rule compares them. */
+	let keys: string[] = [];
 	let warnedLoops = new Set<string>();
 	let sinceCheck = 0;
 
@@ -24,6 +39,7 @@ export function registerMonitor(runtime: KyrnRuntime): void {
 		failOpen((event) => {
 			if (event.source !== "extension" && !event.streamingBehavior) {
 				actions = [];
+				keys = [];
 				warnedLoops = new Set();
 				sinceCheck = 0;
 			}
@@ -37,13 +53,14 @@ export function registerMonitor(runtime: KyrnRuntime): void {
 			runtime.touch(ctx);
 			const toolName = "toolName" in event ? String(event.toolName) : "tool";
 			const action = `${describeCall(toolName, event.input)} -> ${event.isError ? "error" : "ok"}`;
+			const key = callKey(toolName, event.input, event.isError, event.content);
 			actions.push(action);
+			keys = [...keys, key].slice(-options.repeats);
 			sinceCheck++;
 
-			const tail = actions.slice(-options.repeats);
-			const looping = tail.length === options.repeats && tail.every((entry) => entry === action);
-			if (looping && !warnedLoops.has(action)) {
-				warnedLoops.add(action);
+			const looping = keys.length === options.repeats && keys.every((entry) => entry === key);
+			if (looping && !warnedLoops.has(key)) {
+				warnedLoops.add(key);
 				pi.appendEntry("kyrn.monitor", { kind: "loop", action });
 				runtime.trouble("loop", action);
 				steer(

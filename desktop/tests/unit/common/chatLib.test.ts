@@ -253,7 +253,7 @@ describe('normalizeAgentStreamError', () => {
       })
     ).toEqual({
       message: 'Something went wrong, please try again.',
-      code: 'AIONUI_INTERNAL_ERROR',
+      code: 'MU_INTERNAL_ERROR',
       rawError: {
         name: 'Error',
         message: 'connect ECONNREFUSED',
@@ -278,7 +278,7 @@ describe('normalizeAgentStreamError', () => {
       })
     ).toEqual({
       message: 'Something went wrong, please try again.',
-      code: 'AIONUI_INTERNAL_ERROR',
+      code: 'MU_INTERNAL_ERROR',
       rawError: {
         name: 'Error',
       },
@@ -294,7 +294,7 @@ describe('normalizeAgentStreamError', () => {
       })
     ).toEqual({
       message: 'Something went wrong, please try again.',
-      code: 'AIONUI_INTERNAL_ERROR',
+      code: 'MU_INTERNAL_ERROR',
     });
   });
 });
@@ -525,8 +525,8 @@ describe('transformMessage', () => {
     expect(transformed.type).toBe('tips');
     expect(transformed.content.error).toEqual({
       message: 'AionUI failed while sending the message',
-      code: 'AIONUI_INTERNAL_ERROR',
-      ownership: 'aionui',
+      code: 'MU_INTERNAL_ERROR',
+      ownership: 'mu',
       detail: 'Failed to write Codex sandbox config',
       retryable: true,
       feedback_recommended: true,

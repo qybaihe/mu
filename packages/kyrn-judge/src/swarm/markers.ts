@@ -24,6 +24,15 @@ export function conflictLine(aBee: string, aText: string, bBee: string, bText: s
 export const CHECKPOINT =
 	"Checkpoint for the other investigators: in one or two sentences, state what you have established or ruled out so far, with the file and line or the command that shows it. Start with FOUND: or DEAD END:. Then carry on with your work.";
 
+/**
+ * The kind of note a bee's words make when they start the way the checkpoint asks: FOUND: is a finding, DEAD END:
+ * one. Markdown around the mark (`**FOUND:**`) is allowed; anything else is not marked.
+ */
+export function markOf(text: string): "finding" | "dead_end" | undefined {
+	const mark = /^[\s*_>#]*(FOUND|DEAD END)[*_]*\s*:/.exec(text)?.[1];
+	return mark === "FOUND" ? "finding" : mark === "DEAD END" ? "dead_end" : undefined;
+}
+
 /** What a bee answers to a last call when the late notes change nothing. */
 export const NO_CHANGE = "NO CHANGE";
 

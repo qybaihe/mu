@@ -1,6 +1,6 @@
 // The conversation E2E tests' own Playwright configuration: one serial file, one app, generous but bounded times.
 // Run through `bun run e2e:conversation` (scripts/kyrn/e2e-conversation.mjs), which builds the app first. MU_E2E_SPEC=native
-// (`--native`) runs the native host's file instead of the conversation on AionCore.
+// (`--native`) runs the native host's file instead of the conversation on the backend.
 import { defineConfig } from '@playwright/test';
 
 const native = process.env.MU_E2E_SPEC === 'native';

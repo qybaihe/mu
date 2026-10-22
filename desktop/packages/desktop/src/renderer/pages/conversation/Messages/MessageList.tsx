@@ -26,8 +26,8 @@ import MessageQuestion from './MessageQuestion';
 import MessagePermission from './components/MessagePermission';
 import MessageAcpTerminalOutput from '@renderer/pages/conversation/Messages/acp/MessageAcpTerminalOutput';
 import MessageAcpToolCall from '@renderer/pages/conversation/Messages/acp/MessageAcpToolCall';
-import MessageJevLine from '@renderer/pages/conversation/Messages/acp/MessageJevLine';
-import { jevLine } from '@renderer/pages/conversation/Messages/acp/jevLine';
+import MessageJudgeLine from '@renderer/pages/conversation/Messages/acp/MessageJudgeLine';
+import { judgeLine } from '@renderer/pages/conversation/Messages/acp/judgeLine';
 import MessageMuNotice from '@renderer/pages/conversation/Messages/acp/MessageMuNotice';
 import { muNotice } from '@renderer/pages/conversation/Messages/acp/muNotice';
 import { questionsBeforeCalls } from './permissionOrder';
@@ -444,8 +444,8 @@ const MessageItem: React.FC<{
         case 'ask':
           return <MessageQuestion message={message}></MessageQuestion>;
         case 'acp_tool_call': {
-          const jev = jevLine(message);
-          if (jev) return <MessageJevLine line={jev} />;
+          const verdict = judgeLine(message);
+          if (verdict) return <MessageJudgeLine line={verdict} />;
           const notice = muNotice(message);
           return notice ? (
             <MessageMuNotice notice={notice} />
@@ -508,7 +508,7 @@ const MessageList: React.FC<{
   const pagination = useMessagePaginationState();
   const artifacts = useConversationArtifacts();
   const conversationContext = useConversationContextSafe();
-  // A native conversation's list: its host says whether a run goes, and AionCore has no pages of it.
+  // A native conversation's list: its host says whether a run goes, and the backend has no pages of it.
   const run = useMessageListRun();
   const conversationId = run ? run.conversationId : conversationContext?.conversation_id;
   const rowWidthClass = getChatSurfaceWidthClass();
@@ -729,12 +729,12 @@ const MessageList: React.FC<{
         continue;
       }
       if (message.type === 'acp_tool_call') {
-        const jev = jevLine(message);
+        const verdict = judgeLine(message);
         // A classification switched off or skipped says nothing; a missing judge is said at its first message only.
-        if (jev?.stage === 'quiet' || (jev?.stage === 'noJudge' && saidNoJudge)) continue;
-        if (jev?.stage === 'noJudge') saidNoJudge = true;
-        // Jev's class for the message and the bridge's notices are lines of their own, not calls in the tool box.
-        if (hasRenderableAcpDiff(message) || jev || muNotice(message)) {
+        if (verdict?.stage === 'quiet' || (verdict?.stage === 'noJudge' && saidNoJudge)) continue;
+        if (verdict?.stage === 'noJudge') saidNoJudge = true;
+        // The judge's class for the message and the bridge's notices are lines of their own, not calls in the tool box.
+        if (hasRenderableAcpDiff(message) || verdict || muNotice(message)) {
           pushStandaloneMessage(message);
           continue;
         }

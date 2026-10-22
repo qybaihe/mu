@@ -11,6 +11,7 @@ import {
 	hintsFor,
 	judgedText,
 	PREFLIGHT_HINTS,
+	statusLine,
 	verdictStateOf,
 } from "../src/extension/features/preflight.ts";
 import {
@@ -96,7 +97,7 @@ describe("preflight view", () => {
 	it("shows the verdict in the panel until the message reaches the chat", () => {
 		const verdict = verdictData(decision(), { by: "jev-latest", state: "applied" });
 		const lines = renderPending({ message: "hi", judge: "jev-latest", elapsedMs: 640, verdict }, 80, plain);
-		expect(lines[1]).toContain("◆ jev-latest  chat · answer directly · 640 ms");
+		expect(lines[1]).toContain("◆ Jev  chat · answer directly · 640 ms");
 		expect(lines[2]).toContain("preparing the turn");
 		expect(lines.join("\n")).not.toContain("reading your message");
 	});
@@ -125,7 +126,7 @@ describe("preflight view", () => {
 			hints: ["Write a short plan first."],
 		});
 		const collapsed = renderVerdict(data, false, 100, plain);
-		expect(collapsed).toEqual([" ◆ jev-latest  chat · answer directly · thinking medium → low · 640 ms"]);
+		expect(collapsed).toEqual([" ◆ Jev  chat · answer directly · thinking medium → low · 640 ms"]);
 
 		const expanded = renderVerdict(data, true, 100, plain);
 		expect(expanded).toHaveLength(1 + 10 + 1);
@@ -154,14 +155,14 @@ describe("preflight view", () => {
 		});
 		const none = verdictData(failed, { by: "jev-latest", state: "none" });
 		expect(renderVerdict(none, false, 120, plain)[0]).toContain(
-			"◇ jev-latest  no verdict (error:timeout) · stock behaviour for this turn",
+			"◇ Jev  no verdict (error:timeout) · using the fallback this turn",
 		);
 		const skipped = verdictData(undefined, { by: "jev-latest", state: "none", reason: "skipped", waitedMs: 1200 });
 		expect(renderVerdict(skipped, false, 120, plain)[0]).toContain("no verdict (skipped)");
 
 		const shadow = verdictData(decision({ mode: "shadow", source: "fallback" }), { by: "laya", state: "shadow" });
 		expect(renderVerdict(shadow, false, 120, plain)[0]).toContain(
-			"◇ laya  chat · answer directly · 640 ms · shadow, not applied",
+			"◇ Laya  chat · answer directly · 640 ms · shadow, not applied",
 		);
 
 		const late = verdictData(decision(), { by: "jev-latest", state: "late" });
@@ -276,6 +277,25 @@ describe("preflight view", () => {
 			outcome: { ...chatOutcome, turnType: "unknown", gear: "standard" },
 		});
 		expect(verdictStateOf({ decision: nothing, turnStarted: true, applied: false })).toBe("none");
+	});
+
+	it("puts the verdict in the footer in the verdict line's words", () => {
+		expect(statusLine("jev-latest", decision())).toBe("Jev: chat · answer directly · 640 ms");
+		const heavy = { ...chatOutcome, turnType: "multi_step_task" as const, gear: "heavy" as const };
+		expect(statusLine("jev-1.13-free", decision({ outcome: heavy, judged: heavy, latencyMs: 71 }))).toBe(
+			"Jev 1.13 (free): multi-step task · full effort · 71 ms",
+		);
+		expect(statusLine("jev", decision({ mode: "shadow" }))).toBe(
+			"Jev: chat · answer directly · 640 ms · recorded only",
+		);
+		const nothing = decision({
+			source: "fallback",
+			judged: undefined,
+			reason: "error:timeout",
+			outcome: { ...chatOutcome, turnType: "unknown", gear: "standard" },
+			latencyMs: undefined,
+		});
+		expect(statusLine("laya>jev", nothing)).toBe("Laya, Jev: error:timeout");
 	});
 });
 

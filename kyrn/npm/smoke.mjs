@@ -45,14 +45,18 @@ const version = spawnSync(mu, ["version"], options);
 check("mu version", version.status === 0 && /^mu \d+\.\d+\.\d+ \(pi \d/.test(version.stdout), version.stdout.trim() || version.stderr.trim());
 
 const help = spawnSync(mu, ["--help"], options);
-check("mu --help", help.status === 0 && help.stdout.includes("mu command line") && help.stdout.includes("Agent flags"));
+check(
+	"mu --help",
+	help.status === 0 && help.stdout.includes("a coding agent with a judgment kernel") && help.stdout.includes("pi's help"),
+);
 
 // Without a login, doctor has something to fix and says so with exit code 1; the package row must be fine.
 const doctor = spawnSync(mu, ["doctor"], options);
 console.log(doctor.stdout.trimEnd().replace(/^/gm, "     "));
 check("mu doctor", /^\s*ok\s+package\s/m.test(doctor.stdout), doctor.stderr.trim());
 
-// The desktop app's sign-in: one JSON line that offers pi's own subscriptions, and nobody signed in yet.
+// The desktop app's sign-in: one JSON line that offers pi's own subscriptions, and nobody signed in yet. ChatGPT is
+// OpenAI's Sign in with ChatGPT (`openai`); the Codex CLI's login and a Claude subscription are no longer offered.
 const auth = spawnSync(mu, ["auth", "status"], options);
 let status;
 try {
@@ -62,7 +66,8 @@ check(
 	"mu auth status",
 	auth.status === 0 &&
 		status?.type === "status" &&
-		["openai-codex", "anthropic", "xai"].every((provider) => status.offered.includes(provider)) &&
+		["openai", "xai"].every((provider) => status.offered.includes(provider)) &&
+		!["openai-codex", "anthropic"].some((provider) => status.offered.includes(provider)) &&
 		status.signedIn.length === 0,
 	auth.stdout.trim() || auth.stderr.trim(),
 );
@@ -149,7 +154,7 @@ check(
 );
 // mu 0.1.3 said "mu 0.1.0 · …, built on pi 0.1.3": its judgment layer's own version, and pi's, read from mu-agent's folder.
 const versions = /^mu (\S+) \(pi ([^,)]+)/.exec(version.stdout.trim());
-const greeting = versions ? `mu ${versions[1]} · judgment-first coding agent, built on pi ${versions[2]}` : undefined;
+const greeting = versions ? `mu ${versions[1]} · a judgment-first coding agent, built on pi ${versions[2]}` : undefined;
 check("/help names mu's version and pi's, as mu version does", greeting !== undefined && rpc.help === greeting, rpc.help ?? rpc.error);
 
 try {

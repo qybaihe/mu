@@ -227,7 +227,7 @@
       "noteMissing": "Erkenntnis nicht aufgezeichnet.",
       "allFlow": "Alle Übergaben",
       "beeFlow": "Übergaben für {{name}}",
-      "audit": "Jev-Entscheidungen",
+      "audit": "Entscheidungen",
       "waitingRun": "Warte auf aufgezeichnete Ereignisse dieses Hive.",
       "recordedAt": "Aufgezeichnet um {{time}}",
       "beeMissing": "Diese Biene ist nicht im aufgezeichneten Snapshot.",
@@ -959,7 +959,7 @@
       "auto_compaction_end": "Verdichtung abgeschlossen",
       "hive.note": "Geteilte Erkenntnis",
       "hive.delivery": "Übergabe bestätigt",
-      "hive.gate": "Jev-Schleuse",
+      "hive.gate": "Hive-Schleuse",
       "hive.manifest": "Hive-Zuweisung",
       "bee.event": "Bienen-Ereignis",
       "memory.recalled": "Abgerufene Erfahrung",
@@ -1076,24 +1076,6 @@
         "idle": "Judge in Bereitschaft",
         "judging": "Judge urteilt gerade",
         "off": "Judge ist aus"
-      },
-      "starters": {
-        "hint": "Nicht sicher, wo du anfangen sollst? Probier eines davon:",
-        "understand": {
-          "title": "Dieses Projekt verstehen",
-          "desc": "Struktur, Einstiegspunkte und Kernmodule erfassen",
-          "prompt": "Lies dieses Projekt zuerst durch und erkläre mir dann seinen Aufbau, die wichtigsten Einstiegspunkte und die zentralen Module. Nenne die drei Dateien, die man zuerst lesen sollte."
-        },
-        "fix": {
-          "title": "Ein Problem finden und beheben",
-          "desc": "Vom Fehler oder Symptom zur Ursache",
-          "prompt": "Ich habe ein Problem: <Symptom beschreiben oder Fehlermeldung einfügen>. Reproduziere es zuerst und finde die Ursache, nimm dann die kleinste Korrektur vor und führe die zugehörigen Tests zur Überprüfung aus."
-        },
-        "plan": {
-          "title": "Eine Änderung planen",
-          "desc": "Erst der Plan, Änderungen nach deiner Bestätigung",
-          "prompt": "Ich möchte Folgendes umsetzen: <Anforderung beschreiben>. Gib mir zuerst einen Umsetzungsplan mit den betroffenen Dateien und beginne erst nach meiner Bestätigung mit den Änderungen."
-        }
       }
     },
     "toolStatus": {
@@ -1107,7 +1089,7 @@
       "switch": "Klartext-Board für dieses Projekt",
       "switching": "Wird umgeschaltet…",
       "afterTurn": "Schaltet um, sobald der Agent diesen Schritt beendet hat",
-      "unknown": "In dieser Unterhaltung gibt es noch kein Board. Es erscheint in mu-Unterhaltungen, solange das Klartext-Board unter Funktionen eingeschaltet ist.",
+      "unknown": "In dieser Unterhaltung gibt es noch kein Board. Es erscheint in mu-Unterhaltungen, solange das Klartext-Board unter Einstellungen → Kernfunktionen eingeschaltet ist.",
       "off": "Sobald es eingeschaltet ist, steht hier in einfachen Worten, wie die Arbeit vorangeht, was der Agent gerade tut und wo du gebraucht wirst.",
       "cost": "Nur für dieses Projekt. Jede Aktualisierung kostet einen Modellaufruf.",
       "empty": "Gib dem Agenten einen Moment; hier steht dann in einfachen Worten, wie es läuft.",
@@ -1279,7 +1261,7 @@
     "compactionDropped": "{{count}} Aufrufe entfernt",
     "compactionDropped_one": "{{count}} Aufruf entfernt",
     "compactionDropped_other": "{{count}} Aufrufe entfernt",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}} ordnet die Nachricht ein…",
       "classified": "Von {{judge}} eingeordnet: {{type}}",
       "byRule": "Per Regel eingeordnet: {{type}}",
@@ -1291,9 +1273,13 @@
       "setUp": "Judge einrichten",
       "skipped": "Einordnung übersprungen",
       "off": "Einordnung ist aus",
-      "firstHint": "Diese Zeile ist Jevs Urteil: Jev ordnet jede Nachricht zuerst ein, dann entscheidet mu, wie es weitergeht. Jedes Urteil steht rechts unter Urteile."
+      "firstHint": "Diese Zeile ist das Urteil des Judges: Der Judge ordnet jede Nachricht zuerst ein, dann entscheidet mu, wie es weitergeht. Jedes Urteil steht rechts unter Urteile."
     },
     "eventLine": {
+      "judgeNotice": {
+        "freeJev": "Kein Jev-Schlüssel gesetzt: Der kostenlose Jev auf OpenCode Zen antwortet",
+        "freeJevUnavailable": "Der kostenlose Jev antwortet nicht mehr: Bis ein Jev-Schlüssel gesetzt ist, entscheiden feste Regeln"
+      },
       "detail": "Details: {{detail}}",
       "progress": {
         "frame": "Aufgabenrahmen wird aktualisiert",
@@ -1301,7 +1287,7 @@
         "skills": "Benötigte Skills für diese Sitzung werden ausgewählt",
         "capabilities": "Benötigte Fähigkeiten für diese Aufgabe werden ausgewählt",
         "goal_check": "Es wird geprüft, ob das Ziel erreicht ist",
-        "permissionReview": "Jev prüft: {{summary}}"
+        "permissionReview": "Der Judge prüft: {{summary}}"
       },
       "goal": {
         "paused": "Pausiert: {{reason}}",
@@ -1428,6 +1414,26 @@
       "reviewer": "Prüfer",
       "scout": "Kundschafter",
       "worker": "Ausführer"
+    },
+    "kernel": {
+      "free": "kostenlos",
+      "local": "lokal",
+      "judgeHint": "Der Judge, der die Entscheidungspunkte von mu beantwortet. Zum Ändern klicken.",
+      "points": "{{active}}/{{total}} Entscheidungspunkte aktiv",
+      "shadow_one": "· {{count}} im Schattenmodus",
+      "shadow_other": "· {{count}} im Schattenmodus",
+      "off": "Urteile sind aus",
+      "verdicts_one": "Urteil",
+      "verdicts_other": "Urteile",
+      "last": "zuletzt",
+      "context": "Kontext",
+      "cache": "Cache"
+    },
+    "hero": {
+      "kernel": "Urteilskern",
+      "judgeReady": "{{judge}} ist bereit",
+      "judgeOff": "Urteile sind aus",
+      "title": "Woran soll mu arbeiten?"
     }
   },
   "menu": {
@@ -1517,7 +1523,7 @@
     "previewEmpty": "Noch nichts zur Vorschau. Dateien, die aus der Unterhaltung geöffnet werden, erscheinen hier.",
     "previewHidden": "Die Vorschau ist ausgeblendet.",
     "browserEmpty": "Keine Seiten geöffnet. Oben eine Adresse oder einen Suchbegriff eingeben. Seiten, die aus der Unterhaltung geöffnet werden, erscheinen ebenfalls hier.",
-    "firstHint": "Klartext erzählt den Fortschritt in einfachen Worten, Urteile listet jedes Urteil von Jev, Dateien ist der Ordner dieser Unterhaltung. Weitere Tabs erscheinen, sobald sie gebraucht werden."
+    "firstHint": "Klartext erzählt den Fortschritt in einfachen Worten, Urteile listet jedes Urteil, Dateien ist der Ordner dieser Unterhaltung. Weitere Tabs erscheinen, sobald sie gebraucht werden."
   },
   "nodeRuntime": {
     "title": "Node.js herunterladen?",

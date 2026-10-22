@@ -1,8 +1,9 @@
 /**
- * Picking Claude Code and Codex conversations to bring into mu (common/kyrn/importChats.ts): every one found on this
- * computer, under its tool, newest first, with its project folder, date and first message. The chosen ones become mu
- * conversations in the conversation list (with the native host on, the mu sessions themselves); one alone opens right
- * away. The settings dialogs' frame (AionModal's
+ * Picking Claude Code, Codex and ZCode conversations to bring into mu (common/kyrn/importChats.ts): every one found on
+ * this computer, under its tool's mark, newest first, with its project folder, date and title. The chosen ones become
+ * mu conversations in the conversation list (with the native host on, the mu sessions themselves); one alone opens
+ * right away. One imported before that went on in its tool since can be chosen again: it is brought up to date. The
+ * settings dialogs' frame (MuModal's
  * standard variant, as the theme and MCP import dialogs): the title at the start, hairlines between title, body and
  * buttons.
  */
@@ -13,7 +14,8 @@ import { useNavigate } from 'react-router-dom';
 import type { TFunction } from 'i18next';
 import { kyrnBridge, unwrap } from '@/common/kyrn/bridge';
 import { groupChats, IMPORT_TOOL_NAMES, type FoundChat, type ImportOutcome } from '@/common/kyrn/importChats';
-import AionModal from '@/renderer/components/base/AionModal';
+import MuModal from '@/renderer/components/base/MuModal';
+import ImportToolMark from '@/renderer/components/brand/ImportToolMark';
 import { emitter } from '@/renderer/utils/emitter';
 import { formatByteSize, formatDateTime } from '@/renderer/services/i18n/format';
 import { getWorkspaceDisplayName } from '@/renderer/utils/workspace/workspace';
@@ -56,7 +58,8 @@ const ChatRow: React.FC<{
   onOpen?: (target: { conversationId: string; native?: true }) => void;
 }> = ({ chat, checked, failure, onToggle, onOpen }) => {
   const { t, i18n } = useTranslation();
-  const listed = Boolean(chat.conversationId);
+  // In the app already and nothing new in it: nothing to choose. One that changed since can be brought up to date.
+  const listed = Boolean(chat.conversationId) && !chat.changed;
   const modified = Date.parse(chat.modified);
   const details = [
     chat.cwd ? getWorkspaceDisplayName(chat.cwd, false) : t('mu.importChats.dialog.folderUnknown'),
@@ -87,11 +90,16 @@ const ChatRow: React.FC<{
           {chat.title || t('mu.importChats.dialog.noTitle')}
         </div>
         <div className='truncate text-12px leading-18px text-t-tertiary'>{details.join(' · ')}</div>
+        {chat.changed && chat.conversationId ? (
+          <div className='text-12px leading-18px text-t-secondary' data-testid='import-chat-changed'>
+            {t('mu.importChats.dialog.changed')}
+          </div>
+        ) : null}
         {failure ? <div className='text-12px leading-18px text-t-secondary break-words'>{failure}</div> : null}
       </div>
-      {listed && chat.conversationId ? (
+      {chat.conversationId ? (
         <span className='shrink-0 flex items-center gap-8px text-12px leading-22px text-t-tertiary'>
-          {t('mu.importChats.dialog.inList')}
+          {listed ? t('mu.importChats.dialog.inList') : null}
           {onOpen ? (
             <Button
               type='text'
@@ -182,7 +190,9 @@ const ImportChatsModal: React.FC<Props> = ({ visible, onClose, stay = false }) =
         // The sessions were written by `mu import`, not by the app: the native list is read again to show them.
         if (native) rereadNativeConversations();
         else emitter.emit('chat.history.refresh');
-        Message.success(t('mu.importChats.done', { count: done.length }));
+        const updated = done.filter((outcome) => outcome.status === 'updated').length;
+        if (done.length > updated) Message.success(t('mu.importChats.done', { count: done.length - updated }));
+        if (updated > 0) Message.success(t('mu.importChats.updated', { count: updated }));
       }
       if (failed.length === 0) {
         onClose();
@@ -233,7 +243,7 @@ const ImportChatsModal: React.FC<Props> = ({ visible, onClose, stay = false }) =
   const searchable = state.phase === 'ready' && state.chats.length > 0;
 
   return (
-    <AionModal
+    <MuModal
       variant='standard'
       header={{ title: t('mu.importChats.dialog.title'), showClose: true }}
       visible={visible}
@@ -283,9 +293,10 @@ const ImportChatsModal: React.FC<Props> = ({ visible, onClose, stay = false }) =
                 data-testid='import-chat-group'
                 data-tool={group.tool}
               >
-                <h3 className='m-0 px-8px pt-12px pb-4px text-12px font-600 leading-18px text-t-secondary'>
+                <h3 className='m-0 px-8px pt-12px pb-4px flex items-center gap-6px text-12px font-600 leading-18px text-t-secondary'>
+                  <ImportToolMark tool={group.tool} size={14} />
                   {IMPORT_TOOL_NAMES[group.tool]}
-                  <span className='ms-6px font-400 text-t-tertiary'>{group.chats.length}</span>
+                  <span className='font-400 text-t-tertiary'>{group.chats.length}</span>
                 </h3>
                 {group.chats.map((chat) => (
                   <ChatRow
@@ -302,7 +313,7 @@ const ImportChatsModal: React.FC<Props> = ({ visible, onClose, stay = false }) =
           </div>
         )}
       </div>
-    </AionModal>
+    </MuModal>
   );
 };
 

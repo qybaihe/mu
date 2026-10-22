@@ -58,7 +58,7 @@ describe('the two seams agent tabs need in the shared webview host', () => {
 describe('the seam for an owner that draws the navigation itself (the in-app browser)', () => {
   it('draws its own bar when asked and nobody else draws one', () => {
     const { container } = render(<WebviewHost url='https://example.com/' showNavBar />);
-    expect(container.querySelector('.aion-url-viewer-toolbar')).not.toBeNull();
+    expect(container.querySelector('.mu-url-viewer-toolbar')).not.toBeNull();
   });
 
   it('draws no bar, never hides the page while it loads, and tells the owner where the page is and what it can do', async () => {
@@ -66,7 +66,7 @@ describe('the seam for an owner that draws the navigation itself (the in-app bro
     const { container } = render(
       <WebviewHost url='https://example.com/' showNavBar onNavigationChange={(state) => states.push(state)} />
     );
-    expect(container.querySelector('.aion-url-viewer-toolbar')).toBeNull();
+    expect(container.querySelector('.mu-url-viewer-toolbar')).toBeNull();
     expect((container.querySelector('webview') as HTMLElement).style.opacity).toBe('1');
     expect(states.at(-1)).toEqual({
       url: 'https://example.com/',

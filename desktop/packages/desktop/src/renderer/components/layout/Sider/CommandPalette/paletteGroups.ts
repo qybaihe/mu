@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import type { SlashCommandItem } from '@/common/chat/slash/types';
 import type { TChatConversation } from '@/common/config/storage';
 import type { NativeConversation } from '@/common/kyrn/nativeBridge';
@@ -84,7 +78,7 @@ export type PaletteSources = {
   now: number;
 };
 
-/** A conversation the palette can list: an AionCore one, or one on the native host (with its folder and page). */
+/** A conversation the palette can list: a backend one, or one on the native host (with its folder and page). */
 type Listed = { id: string; label: string; time: number; folder?: string; path?: string };
 
 const conversationRows = (

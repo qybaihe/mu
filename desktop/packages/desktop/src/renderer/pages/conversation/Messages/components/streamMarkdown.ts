@@ -1,10 +1,4 @@
 /**
- * @license
- * Copyright 2025 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
  * A reply is rendered while it is still being written, so its Markdown is regularly half-finished. The one shape that
  * shows is a code fence: between the ``` that opens a block and the ``` that closes it, the reader sees the raw
  * backticks and the code as prose, and then the whole paragraph jumps into a code block when the closing fence

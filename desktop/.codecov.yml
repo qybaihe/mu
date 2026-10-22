@@ -28,6 +28,5 @@ ignore:
   - '**/*.lock'
   - 'docs/'
   - 'examples/'
-  - 'mobile/'
   - 'scripts/'
   - 'tests/'

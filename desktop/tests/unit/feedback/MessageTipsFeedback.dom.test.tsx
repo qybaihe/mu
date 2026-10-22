@@ -66,7 +66,7 @@ import MessageTips from '@/renderer/pages/conversation/Messages/components/Messa
 import type { AgentStreamErrorInfo, IMessageTips } from '@/common/chat/chatLib';
 
 const requiredAgentErrorCodes = [
-  'AIONUI_CONVERSATION_BUSY',
+  'MU_CONVERSATION_BUSY',
   'USER_AGENT_HANDSHAKE_FAILED',
   'USER_AGENT_HANDSHAKE_TIMEOUT',
   'USER_AGENT_ACP_INIT_FAILED',
@@ -187,7 +187,7 @@ describe('MessageTips — error chips', () => {
       />
     );
 
-    expect(screen.getByText('This request produced no visible reply.')).toBeInTheDocument();
+    expect(screen.getByText('This request got no visible reply.')).toBeInTheDocument();
     expect(screen.queryByText(REPORT_CHIP)).not.toBeInTheDocument();
     expect(container.querySelector('svg')).not.toBeInTheDocument();
   });
@@ -201,7 +201,7 @@ describe('MessageTips — error chips', () => {
       />
     );
 
-    expect(screen.getByText('This request produced no visible reply.')).toBeInTheDocument();
+    expect(screen.getByText('This request got no visible reply.')).toBeInTheDocument();
   });
 
   it('renders localized warning tips from code-only payloads', () => {
@@ -214,7 +214,7 @@ describe('MessageTips — error chips', () => {
     );
 
     expect(
-      screen.getByText("This request hit the model's output token limit before any visible reply was produced.")
+      screen.getByText('The model hit its output token limit before producing a visible reply.')
     ).toBeInTheDocument();
   });
 
@@ -235,7 +235,7 @@ describe('MessageTips — error chips', () => {
     expect(screen.getByText('Model provider authentication failed')).toBeInTheDocument();
     expect(screen.getByText(/rejected the API key or account credentials/)).toBeInTheDocument();
     expect(screen.getByText('Model provider')).toBeInTheDocument();
-    expect(screen.getByText('Needs configuration')).toBeInTheDocument();
+    expect(screen.getByText('Needs setup')).toBeInTheDocument();
     expect(screen.queryByText(REPORT_CHIP)).not.toBeInTheDocument();
   });
 
@@ -282,7 +282,7 @@ describe('MessageTips — error chips', () => {
       />
     );
 
-    expect(screen.getByText('Suggestion: Check the model provider balance, credits, or quota.')).toBeInTheDocument();
+    expect(screen.getByText("Suggestion: Check your provider's balance, credits or quota.")).toBeInTheDocument();
   });
 
   it('renders billing-required provider errors from i18n instead of backend fallback text', () => {
@@ -299,8 +299,8 @@ describe('MessageTips — error chips', () => {
       />
     );
 
-    expect(screen.getByText('Model provider billing is required')).toBeInTheDocument();
-    expect(screen.getByText(/needs active billing, credits, or quota/)).toBeInTheDocument();
+    expect(screen.getByText('The provider needs billing or credits')).toBeInTheDocument();
+    expect(screen.getByText(/needs active billing, credits or quota/)).toBeInTheDocument();
     expect(screen.queryByText('backend billing required fallback')).not.toBeInTheDocument();
   });
 
@@ -323,14 +323,14 @@ describe('MessageTips — error chips', () => {
       />
     );
 
-    expect(screen.getByText('OpenClaw Gateway is not reachable')).toBeInTheDocument();
+    expect(screen.getByText("Can't reach OpenClaw Gateway")).toBeInTheDocument();
     expect(screen.getAllByText(/OpenClaw Gateway is not running/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/openclaw gateway status/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/openclaw gateway start/).length).toBeGreaterThan(0);
     expect(screen.getByText('Agent')).toBeInTheDocument();
-    expect(screen.getByText('Retryable')).toBeInTheDocument();
+    expect(screen.getByText('Can retry')).toBeInTheDocument();
     expect(
-      screen.getByText('Suggestion: Check the agent installation and local command configuration.')
+      screen.getByText("Suggestion: Check the agent's installation and its local command settings.")
     ).toBeInTheDocument();
     expect(screen.queryByText('backend fallback should not be primary copy')).not.toBeInTheDocument();
   });
@@ -353,8 +353,8 @@ describe('MessageTips — error chips', () => {
       />
     );
 
-    expect(screen.getByText('The selected agent failed to start')).toBeInTheDocument();
-    expect(screen.queryByText('OpenClaw Gateway is not reachable')).not.toBeInTheDocument();
+    expect(screen.getByText("The selected agent couldn't start")).toBeInTheDocument();
+    expect(screen.queryByText("Can't reach OpenClaw Gateway")).not.toBeInTheDocument();
     expect(screen.queryByText(/openclaw gateway start/)).not.toBeInTheDocument();
   });
 
@@ -373,8 +373,8 @@ describe('MessageTips — error chips', () => {
     );
 
     expect(screen.getByText('Agent')).toBeInTheDocument();
-    expect(screen.getByText('Agent reported a protocol parse error')).toBeInTheDocument();
-    expect(screen.getByText(/reported that an ACP\/JSON-RPC message could not be parsed/)).toBeInTheDocument();
+    expect(screen.getByText('The agent reported a protocol parse error')).toBeInTheDocument();
+    expect(screen.getByText(/couldn't parse an ACP\/JSON-RPC message/)).toBeInTheDocument();
     expect(screen.queryByText(/Suggestion:/)).not.toBeInTheDocument();
     expect(screen.queryByText(REPORT_CHIP)).not.toBeInTheDocument();
     expect(screen.getByText(/USER_AGENT_PROTOCOL_PARSE_ERROR/)).toBeInTheDocument();
@@ -412,14 +412,14 @@ describe('MessageTips — error chips', () => {
       <MessageTips
         message={buildTips('error', 'Model request failed: 429 rate limited', {
           message: 'Model request failed: 429 rate limited',
-          code: 'AIONUI_INTERNAL_ERROR',
-          ownership: 'aionui',
+          code: 'MU_INTERNAL_ERROR',
+          ownership: 'mu',
         })}
       />
     );
 
     expect(screen.getByText('mu.turnErrors.modelFailed')).toBeInTheDocument();
-    expect(screen.getByText(/Error code: AIONUI_INTERNAL_ERROR/)).toBeInTheDocument();
+    expect(screen.getByText(/Error code: MU_INTERNAL_ERROR/)).toBeInTheDocument();
     expect(screen.getByText(/429 rate limited/)).toBeInTheDocument();
   });
 
@@ -435,7 +435,7 @@ describe('MessageTips — error chips', () => {
       <MessageTips
         message={buildTips('error', 'fallback', {
           message: 'AionUI lost its Agent protocol connection',
-          ownership: 'aionui',
+          ownership: 'mu',
         })}
       />
     );
@@ -480,34 +480,34 @@ describe('agent error locale copy', () => {
   it('keeps agent error copy localized outside English and Chinese locales', () => {
     const localeDir = path.join(process.cwd(), 'packages/desktop/src/renderer/services/i18n/locales');
     const localeNames = supportedLocaleNames.filter((localeName) => !['en-US', 'zh-CN', 'zh-TW'].includes(localeName));
+    const english = JSON.parse(readFileSync(path.join(localeDir, 'en-US', 'conversation.json'), 'utf8')).agentError;
 
     for (const localeName of localeNames) {
       const locale = JSON.parse(readFileSync(path.join(localeDir, localeName, 'conversation.json'), 'utf8'));
       const agentError = locale.agentError;
 
-      expect(agentError.fallbackTitle, localeName).not.toBe('The agent could not reply');
-      expect(agentError.errorCodeValue, localeName).not.toBe('Error code: {{code}}');
-      expect(agentError.resolutionPrefix, localeName).not.toBe('Suggestion: ');
+      expect(agentError.fallbackTitle, localeName).not.toBe(english.fallbackTitle);
+      expect(agentError.resolutionPrefix, localeName).not.toBe(english.resolutionPrefix);
       expect(agentError.codes.USER_AGENT_ACP_INIT_FAILED.title, localeName).not.toBe(
-        'Agent protocol initialization failed'
+        english.codes.USER_AGENT_ACP_INIT_FAILED.title
       );
       expect(agentError.codes.USER_LLM_PROVIDER_BILLING_REQUIRED.title, localeName).not.toBe(
-        'Model provider billing is required'
+        english.codes.USER_LLM_PROVIDER_BILLING_REQUIRED.title
       );
     }
   });
 
-  it('does not label app-side errors as direct AionUi ownership', () => {
+  it('does not name AionUi in the copy of the app’s own errors', () => {
     const localeDir = path.join(process.cwd(), 'packages/desktop/src/renderer/services/i18n/locales');
 
     for (const localeName of supportedLocaleNames) {
       const locale = JSON.parse(readFileSync(path.join(localeDir, localeName, 'conversation.json'), 'utf8'));
       const agentError = locale.agentError;
 
-      expect(agentError.ownership.aionui, localeName).not.toMatch(/AionUi/);
+      expect(agentError.ownership.mu, localeName).not.toMatch(/AionUi/);
 
       for (const [code, copy] of Object.entries<Record<string, string>>(agentError.codes)) {
-        if (!code.startsWith('AIONUI_')) continue;
+        if (!code.startsWith('MU_')) continue;
 
         expect(copy.title, `${localeName} ${code} title`).not.toMatch(/AionUi/);
         expect(copy.body, `${localeName} ${code} body`).not.toMatch(/AionUi/);

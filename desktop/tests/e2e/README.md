@@ -14,21 +14,21 @@ bunx electron-vite build
 > `bun run start` (`electron-vite dev`) uses Vite's HMR and hot-reloads automatically.
 > E2E tests do NOT use Vite dev server — they load static files from `out/`.
 
-### 2. Ensure `aioncore` is on PATH
+### 2. Make the backend binary reachable
 
-The Electron main process spawns the `aioncore` binary during startup and
-exposes its port to the renderer via `window.__backendPort`. The binary is
-located via `which aioncore`, so it must be reachable from the `PATH`
-inherited by the Playwright runner. If it isn't, `__backendPort` will be `0`
+The Electron main process starts the backend binary (`aioncore`) during startup
+and exposes its port to the renderer via `window.__backendPort`. Outside a
+packaged app the binary is found through `MU_BACKEND_BIN`, else on the `PATH`
+inherited by the Playwright runner. If it isn't found, `__backendPort` is `0`
 and every HTTP call from the renderer (or from e2e helpers that use
-`tests/e2e/helpers/httpBridge.ts`) will fail with `Failed to fetch`.
+`tests/e2e/helpers/httpBridge.ts`) fails with `Failed to fetch`.
 
 ```bash
-# Install the backend binary (builds to ~/.cargo/bin/aioncore)
-cd ../AionCore && cargo install --path crates/aionui-app
+# Download the pinned backend into resources/bundled-backend/<platform>-<arch>/
+node scripts/prepareBackend.js
 
-# Make sure it's on PATH when running tests
-export PATH="$HOME/.cargo/bin:$PATH"
+# Point the tests at it
+export MU_BACKEND_BIN="$PWD/resources/bundled-backend/darwin-arm64/aioncore"
 ```
 
 ### 3. Run Tests
@@ -38,7 +38,7 @@ export PATH="$HOME/.cargo/bin:$PATH"
 bun run test:e2e
 
 # Specific test file
-npx playwright test --config playwright.config.ts tests/e2e/specs/team-workspace-migration.e2e.ts --reporter=list
+npx playwright test --config playwright.config.ts tests/e2e/specs/app-launch.e2e.ts --reporter=list
 ```
 
 ### 3. View Results
@@ -91,13 +91,10 @@ tests/e2e/
 │   ├── assertions.ts   # Custom assertions (expectBodyContainsAny, error collector)
 │   ├── extensions.ts   # Extension snapshot helpers
 │   ├── assistantSettings.ts # Assistant CRUD helpers
-│   ├── teamConfig.ts   # TEAM_SUPPORTED_BACKENDS whitelist
 │   └── screenshots.ts  # Manual screenshot helper
 ├── specs/
-│   ├── README.md       # Team E2E spec (rules for team tests)
 │   ├── app-launch.e2e.ts
-│   ├── team-create.e2e.ts
-│   ├── team-workspace-migration.e2e.ts
+│   ├── navigation.e2e.ts
 │   └── ...             # ~30+ test files
 ├── results/            # Test artifacts (gitignored)
 ├── report/             # HTML report (gitignored)
@@ -149,21 +146,19 @@ test.describe('Feature Name', () => {
 
 ### invokeBridge Rules
 
-| Allowed                                                 | Forbidden                                         |
-| ------------------------------------------------------- | ------------------------------------------------- |
-| **Setup:** read initial state (`team.list`, `team.get`) | **Trigger operations** (add member, send message) |
-| **Assert:** verify backend matches UI                   | Operations MUST go through UI interaction         |
-| **Cleanup:** delete test data (`team.remove`)           |                                                   |
+| Allowed                                                           | Forbidden                                 |
+| ----------------------------------------------------------------- | ----------------------------------------- |
+| **Setup:** read initial state (`database.get-user-conversations`) | **Trigger operations** (send a message)   |
+| **Assert:** verify backend matches UI                             | Operations MUST go through UI interaction |
+| **Cleanup:** delete test data (`remove-conversation`)             |                                           |
 
 ### Timeout Guidelines
 
-| Operation                                | Timeout            |
-| ---------------------------------------- | ------------------ |
-| UI element visibility                    | 5,000 - 15,000ms   |
-| Navigation + settle                      | 10,000ms           |
-| AI response (single model)               | 120,000ms          |
-| Team operations (leader inference + MCP) | 60,000 - 120,000ms |
-| Member initialization                    | 60,000ms           |
+| Operation                  | Timeout          |
+| -------------------------- | ---------------- |
+| UI element visibility      | 5,000 - 15,000ms |
+| Navigation + settle        | 10,000ms         |
+| AI response (single model) | 120,000ms        |
 
 ### Mocking Native Dialogs (Electron)
 
@@ -205,8 +200,9 @@ account, no key and no network:
 ```bash
 bun run e2e:conversation                 # builds out/, then runs the test
 bun run e2e:conversation --skip-build    # out/ is already fresh
-bun run e2e:conversation --native        # the native host's tests (the default) instead of the conversation on AionCore (MU_NATIVE_HOST=0)
+bun run e2e:conversation --native        # the native host's tests (the default) instead of the conversation on the backend (MU_NATIVE_HOST=0)
 MU_E2E_KEEP=1 bun run e2e:conversation   # keep the profile after a pass too
+MU_E2E_LANGUAGE=en-US bun run e2e:conversation --native   # the app in English instead of Chinese (native host tests)
 bun run e2e:conversation --app out --arch arm64   # the packaged app electron-builder left in out/
 MU_E2E_WINDOW=819x691 bun run e2e:conversation --skip-build   # the window a 1024 x 768 screen gives (Windows runner)
 ```
@@ -221,7 +217,7 @@ process's and the adapter's reports):
 4. A `bash` call answered 不允许 reaches the model as a refusal; the conversation goes on.
 5. A reply stopped halfway stays stopped; the next message works.
 6. 文件 lists the written file; 看板, switched on for the project with the fake model as its writer, shows its lines
-   (no Jev needed).
+   (no judge needed).
 7. After a quit and a new start the conversation opens with its history, and a new message works.
 8. 关于 shows the app's version (the checkout's `package.json`, or a packaged app's own); 检查更新 (against a canned
    GitHub answer offering a newer version) downloads nothing.
@@ -230,7 +226,7 @@ process's and the adapter's reports):
 How it stays apart from your own setup: everything lives in one temporary folder (`$TMPDIR/mu-e2e-*`, or
 `MU_E2E_ROOT`): a home folder (`HOME`; on Windows `USERPROFILE` too, with `APPDATA` and `LOCALAPPDATA` inside it, and
 the user's own folders, Documents, Downloads and the rest, which Windows looks for there and must find),
-Electron's user data (`AIONUI_E2E_USER_DATA_DIR`), mu's agent folder (`MU_AGENT_DIR`, with the offline mock judge and
+Electron's user data (`MU_E2E_USER_DATA_DIR`), mu's agent folder (`MU_AGENT_DIR`, with the offline mock judge and
 every decision point off), the project, and for the checkout's build a linked view of the harness checkout with its own
 `.env` (symlinks; on Windows junctions and copies). The environment is built from a short list, so no key of yours
 reaches the app; PATH is the system's own folders. The backend's Node.js runtime is declined (`MU_NODE_RUNTIME=later`),
@@ -239,7 +235,7 @@ update checks.
 
 A packaged app (`--app`, or `MU_E2E_APP`) is the app electron-builder made: `--app` takes its executable, the app (a
 `.app`, or the unpacked folder on Windows and Linux) or the builder's output folder, where the app for this system and
-`--arch` is taken. It runs the mu and the backend it carries, on its own binary: no harness checkout, AionCore binary or
+`--arch` is taken. It runs the mu and the backend it carries, on its own binary: no harness checkout, backend binary or
 Node is named to it, and it starts from the profile's home, not the checkout. It checks for updates through
 electron-updater on macOS and Windows, whose GitHub feed the test answers in the app's own session for it. The public
 repository's `desktop.yml` runs it this way after every build, on Windows x64 and arm64, macOS arm64 and Linux x64 and
@@ -255,8 +251,8 @@ The fake model (`fakeModel.mjs`, Node's http only) answers by a marker in the la
 `E2E:WRITE <path>`, `E2E:BASH <command>`, `E2E:SLOW`, `E2E:ECHO <text>`) and records every request.
 `node tests/e2e/mu-conversation/fakeModel.mjs --port 8765` runs it alone.
 
-Needs, for the checkout's build: the harness checkout beside this one (`../KYRN`) or `MU_ROOT`; the AionCore binary
-in `resources/bundled-aioncore/<platform>-<arch>/` (or `AIONUI_BACKEND_BIN`); a Node 22.19 or newer on `PATH` or in
+Needs, for the checkout's build: the harness checkout beside this one (`../KYRN`) or `MU_ROOT`; the backend binary
+in `resources/bundled-backend/<platform>-<arch>/` (or `MU_BACKEND_BIN`); a Node 22.19 or newer on `PATH` or in
 nvm (or `MU_E2E_NODE`); an Electron executable: `MU_E2E_ELECTRON`, else `ELECTRON_EXEC_PATH`, else the checkout's
 `electron` package, else `kyrn/node_modules/electron` (the one `scripts/kyrn/start` uses; a worktree looks in its main
 checkout too). A checkout installed without install scripts has no Electron in its `electron` package: the test then
@@ -272,34 +268,28 @@ log), `home/Library/Logs/` (the main process's log on macOS, the only one a pack
 
 ## Environment Variables
 
-| Variable         | Default                     | Purpose                      |
-| ---------------- | --------------------------- | ---------------------------- |
-| `E2E_PACKAGED=1` | unset (dev mode)            | Use packaged app from `out/` |
-| `E2E_DEV=1`      | unset                       | Force dev mode               |
-| `TEAM_AGENT`     | all (`claude,codex,gemini`) | Filter team leader types     |
-| `CI`             | unset                       | Auto-selects packaged mode   |
+| Variable         | Default          | Purpose                      |
+| ---------------- | ---------------- | ---------------------------- |
+| `E2E_PACKAGED=1` | unset (dev mode) | Use packaged app from `out/` |
+| `E2E_DEV=1`      | unset            | Force dev mode               |
+| `CI`             | unset            | Auto-selects packaged mode   |
 
 Variables set automatically during test launch:
 
-| Variable                     | Value | Purpose                  |
-| ---------------------------- | ----- | ------------------------ |
-| `AIONUI_E2E_TEST`            | `1`   | App recognizes test mode |
-| `AIONUI_DISABLE_AUTO_UPDATE` | `1`   | No update checks         |
-| `AIONUI_DISABLE_DEVTOOLS`    | `1`   | No DevTools windows      |
-| `AIONUI_CDP_PORT`            | `0`   | CDP disabled             |
+| Variable                 | Value | Purpose                  |
+| ------------------------ | ----- | ------------------------ |
+| `MU_E2E_TEST`            | `1`   | App recognizes test mode |
+| `MU_DISABLE_AUTO_UPDATE` | `1`   | No update checks         |
+| `MU_DISABLE_DEVTOOLS`    | `1`   | No DevTools windows      |
+| `MU_CDP_PORT`            | `0`   | CDP disabled             |
 
 ---
 
 ## NPM Scripts
 
-| Command                           | Scope                    |
-| --------------------------------- | ------------------------ |
-| `bun run test:e2e`                | All E2E tests            |
-| `bun run test:e2e:team`           | All `team-*.e2e.ts`      |
-| `bun run test:e2e:team:create`    | Team creation only       |
-| `bun run test:e2e:team:lifecycle` | Add + fire members       |
-| `bun run test:e2e:team:whitelist` | Agent whitelist dropdown |
-| `bun run test:e2e:team:comm`      | Message sending          |
+| Command            | Scope         |
+| ------------------ | ------------- |
+| `bun run test:e2e` | All E2E tests |
 
 ### Examples
 
@@ -307,14 +297,8 @@ Variables set automatically during test launch:
 # Run all E2E locally (dev mode, requires build first)
 bunx electron-vite build && bun run test:e2e
 
-# Run only team tests with list reporter
-bun run test:e2e:team
-
 # Run specific test file
 npx playwright test --config playwright.config.ts tests/e2e/specs/app-launch.e2e.ts
-
-# Only test gemini leader type
-TEAM_AGENT=gemini bun run test:e2e:team
 
 # Run in packaged mode (CI-like)
 E2E_PACKAGED=1 bun run test:e2e
@@ -337,7 +321,7 @@ bunx electron-vite build
 **Cause:** The IPC provider for `xxx` doesn't exist or wasn't registered.
 
 - Check `src/common/adapter/ipcBridge.ts` for the endpoint definition
-- Check the corresponding bridge file (e.g., `src/process/bridge/teamBridge.ts`) for `.provider()` registration
+- Check the corresponding bridge file (e.g., `src/process/bridge/applicationBridge.ts`) for `.provider()` registration
 - Rebuild: `bunx electron-vite build`
 
 ### App launches but page is blank
@@ -356,19 +340,13 @@ bunx electron-vite build
 
 ### Leftover test data in sidebar
 
-```bash
-# Clean via database
-sqlite3 "~/Library/Application Support/AionUi-Dev/aionui/aionui.db" \
-  "DELETE FROM teams WHERE name LIKE 'E2E%';"
-```
-
-Or add cleanup at test start:
+Add cleanup at test start:
 
 ```ts
-const teams = await invokeBridge(page, 'team.list', { userId: 'system_default_user' });
-for (const t of teams) {
-  if (t.name.startsWith('E2E')) {
-    await invokeBridge(page, 'team.remove', { id: t.id }).catch(() => {});
+const conversations = await invokeBridge(page, 'database.get-user-conversations', { page: 0, pageSize: 1000 });
+for (const c of conversations) {
+  if (c.name?.startsWith('E2E')) {
+    await invokeBridge(page, 'remove-conversation', { id: c.id }).catch(() => {});
   }
 }
 ```

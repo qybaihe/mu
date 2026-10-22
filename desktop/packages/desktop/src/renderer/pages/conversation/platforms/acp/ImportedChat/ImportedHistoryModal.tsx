@@ -1,7 +1,7 @@
 /**
  * What an imported conversation said before it came to mu, read back from mu's session: the person's messages, the
  * answers with the tools they called, and the summaries compactions left (common/kyrn/importChats.ts). Plain text: the
- * words as they were written. The settings dialogs' frame (AionModal's standard variant, as the import dialog): the
+ * words as they were written. The settings dialogs' frame (MuModal's standard variant, as the import dialog): the
  * title at the start and a close button.
  */
 import { Spin } from '@arco-design/web-react';
@@ -9,7 +9,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { kyrnBridge, unwrap } from '@/common/kyrn/bridge';
 import { toolTally, type ImportedHistory, type ImportedHistoryItem } from '@/common/kyrn/importChats';
-import AionModal from '@/renderer/components/base/AionModal';
+import MuModal from '@/renderer/components/base/MuModal';
 import { formatNameList } from '@/renderer/services/i18n/list';
 import { muErrorText, toMuError, type MuErrorText } from '@/renderer/pages/settings/KyrnSettings/fields/muError';
 
@@ -76,7 +76,7 @@ const ImportedHistoryModal: React.FC<Props> = ({ conversationId, tool, visible, 
   }, [visible, conversationId, t, i18n.language]);
 
   return (
-    <AionModal
+    <MuModal
       variant='standard'
       header={{ title: t('mu.importChats.history.title', { tool }), showClose: true }}
       visible={visible}
@@ -113,7 +113,7 @@ const ImportedHistoryModal: React.FC<Props> = ({ conversationId, tool, visible, 
           </div>
         )}
       </div>
-    </AionModal>
+    </MuModal>
   );
 };
 

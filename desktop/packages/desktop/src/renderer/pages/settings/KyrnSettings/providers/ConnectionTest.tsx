@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import { kyrnBridge, unwrap } from '@/common/kyrn/bridge';
-import type { ProviderSettings, ProviderTestResult } from '@/common/kyrn/models';
+import type { ListedModel, ProviderSettings, ProviderTestResult } from '@/common/kyrn/models';
 import { formatNumber } from '@/renderer/services/i18n/format';
 import MuErrorMessage from '../fields/MuErrorMessage';
 import { toMuError, type MuError } from '../fields/muError';
@@ -14,7 +14,8 @@ type ConnectionTestProps = {
   /** The key typed but not saved, if any. Otherwise the main process uses the saved one, against the saved address only. */
   typedKey: string;
   disabled: boolean;
-  onModels: (ids: string[]) => void;
+  /** The ids the endpoint listed, and what the list stated about each (context, output, images, thinking). */
+  onModels: (ids: string[], facts: Record<string, ListedModel>) => void;
 };
 
 /** One minimal request, made by the main process. What comes back is a code; the words are ours. */
@@ -40,7 +41,7 @@ export default function ConnectionTest({ provider, typedKey, disabled, onModels 
         })
       );
       setResult(answer);
-      if (answer.models.length) onModels(answer.models);
+      if (answer.models.length) onModels(answer.models, answer.facts ?? {});
     } catch (cause) {
       setFailure(toMuError(cause));
     } finally {

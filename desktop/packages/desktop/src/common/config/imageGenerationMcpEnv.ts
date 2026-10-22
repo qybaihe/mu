@@ -6,14 +6,39 @@
 
 import type { ImageGenerationModelSetting } from './clientSettings';
 import type { IProvider } from './storage';
+import { LEGACY_IMAGE_GEN_ENV_KEYS } from '@/common/platform/legacyNames';
 
 export const IMAGE_GEN_ENV_KEYS = {
-  providerId: 'AIONUI_IMG_PROVIDER_ID',
-  platform: 'AIONUI_IMG_PLATFORM',
-  baseUrl: 'AIONUI_IMG_BASE_URL',
-  apiKey: 'AIONUI_IMG_API_KEY',
-  model: 'AIONUI_IMG_MODEL',
+  providerId: 'MU_IMG_PROVIDER_ID',
+  platform: 'MU_IMG_PLATFORM',
+  baseUrl: 'MU_IMG_BASE_URL',
+  apiKey: 'MU_IMG_API_KEY',
+  model: 'MU_IMG_MODEL',
 } as const;
+
+/** The proxy the image generation server uses, when its settings name one (the app does not write it). */
+export const IMAGE_GEN_PROXY_ENV_KEY = 'MU_IMG_PROXY';
+
+const CURRENT_IMAGE_GEN_ENV_KEYS: Record<keyof typeof LEGACY_IMAGE_GEN_ENV_KEYS, string> = {
+  ...IMAGE_GEN_ENV_KEYS,
+  proxy: IMAGE_GEN_PROXY_ENV_KEY,
+};
+
+/**
+ * The server's settings with what an earlier version stored under its old names moved to the current ones (a
+ * current name that has a value keeps it). The same object when there was nothing to move.
+ */
+export function withCurrentImageGenerationEnvKeys(env: Record<string, string>): Record<string, string> {
+  const legacy = Object.entries(LEGACY_IMAGE_GEN_ENV_KEYS).filter(([, name]) => name in env);
+  if (legacy.length === 0) return env;
+  const next = { ...env };
+  for (const [field, name] of legacy) {
+    const current = CURRENT_IMAGE_GEN_ENV_KEYS[field as keyof typeof LEGACY_IMAGE_GEN_ENV_KEYS];
+    if (!(current in next)) next[current] = env[name];
+    delete next[name];
+  }
+  return next;
+}
 
 type ImageGenerationSelection = Partial<ImageGenerationModelSetting>;
 
@@ -71,8 +96,9 @@ function normalizeBaseUrl(value?: string): string {
 
 function getLegacyField(
   selection: ImageGenerationSelection | undefined,
-  existingEnv: Record<string, string> | undefined
+  storedEnv: Record<string, string> | undefined
 ) {
+  const existingEnv = storedEnv && withCurrentImageGenerationEnvKeys(storedEnv);
   return {
     providerId: selection?.id || existingEnv?.[IMAGE_GEN_ENV_KEYS.providerId],
     platform: selection?.platform || existingEnv?.[IMAGE_GEN_ENV_KEYS.platform],
@@ -187,8 +213,12 @@ export function resolveImageGenerationMcpEnv(
   };
 }
 
+/**
+ * The server's settings without the image generation ones the app writes, under their current or old names; a proxy
+ * stored under its old name stays, under its current one.
+ */
 export function removeImageGenerationEnvKeys(env: Record<string, string>): Record<string, string> {
-  const next = { ...env };
+  const next = { ...withCurrentImageGenerationEnvKeys(env) };
   Object.values(IMAGE_GEN_ENV_KEYS).forEach((key) => {
     delete next[key];
   });

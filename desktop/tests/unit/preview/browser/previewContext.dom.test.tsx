@@ -61,6 +61,7 @@ import {
   type OpenedIn,
   type PreviewOpener,
 } from '@/renderer/pages/conversation/Preview/context/previewOpeners';
+import { BUILTIN_MCP_SERVER_NAMES } from '@/common/platform/legacyNames';
 
 let ctx: PreviewContextValue;
 
@@ -195,7 +196,11 @@ describe('PreviewContext and the browser', () => {
     act(() => ctx.openBrowserTab('https://example.com'));
     const tool = (status: string) =>
       act(() =>
-        wires.stream?.({ type: 'tool_group', conversation_id: 'c1', data: [{ name: 'aionui-browser__click', status }] })
+        wires.stream?.({
+          type: 'tool_group',
+          conversation_id: 'c1',
+          data: [{ name: `${BUILTIN_MCP_SERVER_NAMES.browser}__click`, status }],
+        })
       );
 
     tool('Executing');

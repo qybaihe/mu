@@ -123,7 +123,7 @@ export function piHostPlugin({ provided, hostImport }) {
 /**
  * The judgment layer finds its prompts, skills and agents from where each source file is. One bundle is one
  * file, so every `import.meta.url` becomes the URL its source file would have: the same path, taken from the
- * judge folder, which is one level above the bundle (judge/dist/kyrn-judge.js).
+ * judge folder, which is one level above each bundle (judge/mu/index.js, judge/dist/auth.js).
  */
 export function rewriteMetaUrl(source, relativePath) {
 	if (!source.includes("import.meta.url")) return source;
@@ -197,8 +197,9 @@ async function buildJudge(out) {
 	const results = [
 		await build({
 			...common,
-			entryPoints: { "kyrn-judge": join(judgeSource, "src/extension/kyrn-judge.ts") },
-			outdir: join(judgeRoot, "dist"),
+			// pi lists an extension by its file name, or by the folder of an index file: judge/mu/index.js is `mu`.
+			entryPoints: { index: join(judgeSource, "src/extension/kyrn-judge.ts") },
+			outdir: join(judgeRoot, "mu"),
 		}),
 		// `mu doctor` looks for a browser with the same code the browser feature uses.
 		await build({ ...common, entryPoints: { chrome: join(judgeSource, "src/browser/chrome.ts") }, outdir: join(judgeRoot, "dist") }),
@@ -278,7 +279,7 @@ async function buildJudge(out) {
 		}
 	}
 	// manifest.json is what the desktop app draws its settings from, also for an mu that came from npm.
-	for (const name of ["agents", "prompts", "skills", "manifest.json", "THIRD_PARTY_NOTICES.md"]) {
+	for (const name of ["agents", "prompts", "skills", "themes", "manifest.json", "THIRD_PARTY_NOTICES.md"]) {
 		cpSync(join(judgeSource, name), join(judgeRoot, name), { recursive: true });
 	}
 	const judgePackage = readJson(join(judgeSource, "package.json"));
@@ -377,7 +378,7 @@ export async function main(argv = process.argv.slice(2)) {
 
 	const pi = copyPi(out);
 	const judgeVersion = await buildJudge(out);
-	checkNativeImport(join(out, "judge", "dist", "kyrn-judge.js"));
+	checkNativeImport(join(out, "judge", "mu", "index.js"));
 	copyLauncher(out);
 	cpSync(join(repo, "LICENSE"), join(out, "LICENSE"));
 	cpSync(join(here, "README.md"), join(out, "README.md"));

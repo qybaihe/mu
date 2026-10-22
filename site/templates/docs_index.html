@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ L.docs.title }} · mu{% endblock %}
+{% block description %}{{ L.docs.lead | striptags }}{% endblock %}
+{% block content %}
+  <section class="wrap page-head">
+    <p class="label intro" style="--d: 120ms">mu · {{ L.docs.title }}</p>
+    <h1 class="intro" style="--d: 180ms">{{ L.docs.title }}</h1>
+    <p class="page-lead intro" style="--d: 260ms">{{ L.docs.lead }}</p>
+  </section>
+  {% for S in sidebar %}
+  <section class="wrap docs-section">
+    <h2 data-reveal>{{ S.title }}</h2>
+    <div class="grid">
+      {% for E in S.entries %}<a class="card" data-reveal style="--d: {{ (loop.index0 % 3) * 70 }}ms" href="{{ url(L, E.page) }}"><span class="go" aria-hidden="true">→</span><h3>{{ E.title }}</h3><p>{{ E.summary }}</p></a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+  <section class="wrap docs-section">
+    <h2 data-reveal>{{ U.contrib_h2 }}</h2>
+    <p class="section-intro" data-reveal>{{ U.contrib_p }}</p>
+    <ul class="ref-list wide" data-reveal>
+      {% for R in U.contrib %}<li><a href="{{ R.href }}">{{ R.text }}<span aria-hidden="true">↗</span></a></li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endblock %}

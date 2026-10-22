@@ -227,7 +227,7 @@
       "noteMissing": "Descoberta não registrada.",
       "allFlow": "Todas as entregas",
       "beeFlow": "Entregas para {{name}}",
-      "audit": "Vereditos do Jev",
+      "audit": "Vereditos",
       "waitingRun": "Aguardando eventos registrados deste Hive.",
       "recordedAt": "Registrado em {{time}}",
       "beeMissing": "Esta abelha não está no instantâneo registrado.",
@@ -959,7 +959,7 @@
       "auto_compaction_end": "Compactação concluída",
       "hive.note": "Descoberta compartilhada",
       "hive.delivery": "Entrega confirmada",
-      "hive.gate": "Portão do Jev",
+      "hive.gate": "Portão do Hive",
       "hive.manifest": "Atribuição do Hive",
       "bee.event": "Evento de abelha",
       "memory.recalled": "Experiência recuperada",
@@ -1076,24 +1076,6 @@
         "idle": "Juiz de prontidão",
         "judging": "Juiz avaliando",
         "off": "Juiz desativado"
-      },
-      "starters": {
-        "hint": "Não sabe por onde começar? Experimente uma destas opções:",
-        "understand": {
-          "title": "Entender este projeto",
-          "desc": "Mapear a estrutura, os pontos de entrada e os módulos principais",
-          "prompt": "Primeiro leia este projeto e me explique a estrutura geral, os principais pontos de entrada e os módulos mais importantes. Indique os três arquivos que vale a pena ler primeiro."
-        },
-        "fix": {
-          "title": "Encontrar e corrigir um problema",
-          "desc": "Partir de um erro ou sintoma até chegar à causa",
-          "prompt": "Encontrei um problema: <descreva o sintoma ou cole o erro>. Primeiro reproduza e encontre a causa raiz, depois faça a menor correção possível e execute os testes relacionados para verificar."
-        },
-        "plan": {
-          "title": "Planejar uma mudança",
-          "desc": "Primeiro o plano; as alterações, depois da sua confirmação",
-          "prompt": "Quero implementar: <descreva o que você precisa>. Primeiro apresente um plano de implementação e os arquivos envolvidos, e só comece a editar depois que eu confirmar."
-        }
       }
     },
     "toolStatus": {
@@ -1107,7 +1089,7 @@
       "switch": "Painel em linguagem simples deste projeto",
       "switching": "Alternando…",
       "afterTurn": "Alterna quando o agente terminar esta etapa",
-      "unknown": "Esta conversa ainda não tem painel. Ele aparece nas conversas do mu enquanto o painel em linguagem simples está ativado em Recursos.",
+      "unknown": "Esta conversa ainda não tem painel. Ele aparece nas conversas do mu enquanto o painel em linguagem simples está ativado em Configurações → Recursos principais.",
       "off": "Quando ativado, ele diz em palavras simples como o trabalho está indo, o que o agente está fazendo agora e o que precisa de você.",
       "cost": "Só para este projeto. Cada atualização custa uma chamada ao modelo.",
       "empty": "Dê um momento ao agente; aqui aparecerá em palavras simples como está indo.",
@@ -1279,7 +1261,7 @@
     "compactionDropped": "{{count}} chamadas removidas",
     "compactionDropped_one": "{{count}} chamada removida",
     "compactionDropped_other": "{{count}} chamadas removidas",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}} está classificando a mensagem…",
       "classified": "Classificado por {{judge}}: {{type}}",
       "byRule": "Classificado por regra: {{type}}",
@@ -1291,9 +1273,13 @@
       "setUp": "Configurar um juiz",
       "skipped": "Classificação pulada",
       "off": "A classificação está desativada",
-      "firstHint": "Esta linha é o veredito do Jev: o Jev classifica cada mensagem primeiro e depois o mu decide como seguir. Todos os vereditos ficam em Vereditos, à direita."
+      "firstHint": "Esta linha é o veredito do juiz: o juiz classifica cada mensagem primeiro e depois o mu decide como seguir. Todos os vereditos ficam em Vereditos, à direita."
     },
     "eventLine": {
+      "judgeNotice": {
+        "freeJev": "Nenhuma chave do Jev definida: o Jev gratuito do OpenCode Zen responde",
+        "freeJevUnavailable": "O Jev gratuito parou de responder: regras fixas decidem até que uma chave do Jev seja definida"
+      },
       "detail": "Detalhes: {{detail}}",
       "progress": {
         "frame": "Atualizando a definição da tarefa",
@@ -1301,7 +1287,7 @@
         "skills": "Escolhendo as habilidades de que esta sessão precisa",
         "capabilities": "Escolhendo as capacidades de que esta tarefa precisa",
         "goal_check": "Verificando se o objetivo foi alcançado",
-        "permissionReview": "O Jev está avaliando: {{summary}}"
+        "permissionReview": "O juiz está avaliando: {{summary}}"
       },
       "goal": {
         "paused": "Pausado: {{reason}}",
@@ -1428,6 +1414,26 @@
       "reviewer": "revisor",
       "scout": "explorador",
       "worker": "executor"
+    },
+    "kernel": {
+      "free": "grátis",
+      "local": "local",
+      "judgeHint": "O juiz que responde aos pontos de decisão do mu. Clique para trocar.",
+      "points": "{{active}}/{{total}} pontos de decisão ativos",
+      "shadow_one": "· {{count}} em modo sombra",
+      "shadow_other": "· {{count}} em modo sombra",
+      "off": "Juiz desativado",
+      "verdicts_one": "veredito",
+      "verdicts_other": "vereditos",
+      "last": "último",
+      "context": "contexto",
+      "cache": "cache"
+    },
+    "hero": {
+      "kernel": "Núcleo de julgamento",
+      "judgeReady": "{{judge}} está pronto",
+      "judgeOff": "Juiz desativado",
+      "title": "No que o mu deve trabalhar?"
     }
   },
   "menu": {
@@ -1517,7 +1523,7 @@
     "previewEmpty": "Nada para pré-visualizar ainda. Arquivos abertos na conversa aparecem aqui.",
     "previewHidden": "A prévia está oculta.",
     "browserEmpty": "Nenhuma página aberta. Digite um endereço ou uma pesquisa acima. As páginas abertas na conversa também aparecem aqui.",
-    "firstHint": "Painel conta o progresso em palavras simples, Vereditos lista cada veredito do Jev e Arquivos é a pasta desta conversa. As outras abas aparecem quando são usadas."
+    "firstHint": "Painel conta o progresso em palavras simples, Vereditos lista cada veredito e Arquivos é a pasta desta conversa. As outras abas aparecem quando são usadas."
   },
   "nodeRuntime": {
     "title": "Baixar o Node.js?",

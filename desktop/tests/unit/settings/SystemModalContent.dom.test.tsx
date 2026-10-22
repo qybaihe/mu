@@ -41,7 +41,7 @@ vi.mock('@/renderer/utils/platform', () => ({
   isMacOS: platformMocks.isMacOS,
 }));
 
-vi.mock('@/renderer/components/base/AionScrollArea', () => ({
+vi.mock('@/renderer/components/base/MuScrollArea', () => ({
   default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
@@ -207,7 +207,7 @@ describe('SystemModalContent directory settings', () => {
     await screen.findByText('/work');
     const workDirItem = screen.getByText('settings.workDir').closest('.arco-form-item');
     expect(workDirItem).not.toBeNull();
-    const fieldBody = (workDirItem as HTMLElement).querySelector('.aion-dir-input');
+    const fieldBody = (workDirItem as HTMLElement).querySelector('.mu-dir-input');
     expect(fieldBody).not.toBeNull();
 
     await user.click(fieldBody as HTMLElement);

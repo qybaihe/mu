@@ -5,7 +5,7 @@
  */
 
 /**
- * Regression for AIONUI-22 (React #185 "Maximum update depth exceeded"): the arco
+ * Regression for React #185 "Maximum update depth exceeded"): the arco
  * `loadMore` handler must be IDEMPOTENT. arco fires loadMore for any non-leaf node
  * lacking a `children` array — which includes an already-expanded dir whose WS
  * listing has not arrived yet (buildChildren returns undefined until the snapshot
@@ -84,7 +84,7 @@ beforeEach(() => {
 });
 afterEach(() => cleanup());
 
-describe('ExplorerPanel loadMore idempotency (AIONUI-22 #185 loop guard)', () => {
+describe('ExplorerPanel loadMore idempotency (#185 loop guard)', () => {
   it('a loadMore on an already-expanded key is a no-op — no new expand, no new subscribe', async () => {
     const rootKey = peKey('pe1', '');
     const h = makePort({ [rootKey]: [dir('sub'), file('a.ts')], [peKey('pe1', 'sub')]: [file('deep.ts')] });

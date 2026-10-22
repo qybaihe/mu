@@ -2,7 +2,7 @@
  * A native conversation on screen: its header, its transcript in the message list every conversation uses (its view
  * as the list's rows, the latest ones of a long conversation and the earlier ones once the reader scrolls up to them),
  * and its send box. The route follows a draft's id once its session gives it its own. The work panel beside it shows
- * this conversation, its Jev tabs fed from the view. With no transcript yet, the screen says where mu will work; a
+ * this conversation, its judgment tabs fed from the view. With no transcript yet, the screen says where mu will work; a
  * conversation that cannot be opened says why, and can be tried again.
  */
 import { Button, Message } from '@arco-design/web-react';
@@ -207,6 +207,7 @@ const NativeConversationScreen: React.FC<{ id: string }> = ({ id }) => {
         key={conversation.key}
         conversation={conversation.conversation}
         host={conversation.host}
+        working={isWorking(view)}
         onRename={conversation.rename}
       />
       <div className={`${CHAT_SURFACE_CONTAINER_CLASS} flex-1 flex flex-col px-20px min-h-0`}>

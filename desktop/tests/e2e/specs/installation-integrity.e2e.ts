@@ -27,11 +27,11 @@ test.describe('Installation integrity failure dialog', () => {
       cwd: projectRoot,
       env: {
         ...process.env,
-        AIONUI_DEBUG_BACKEND_STARTUP_FAILURE: 'backend_incomplete_installation',
-        AIONUI_DISABLE_AUTO_UPDATE: '1',
-        AIONUI_DISABLE_DEVTOOLS: '1',
-        AIONUI_E2E_TEST: '1',
-        AIONUI_CDP_PORT: '0',
+        MU_DEBUG_BACKEND_STARTUP_FAILURE: 'backend_incomplete_installation',
+        MU_DISABLE_AUTO_UPDATE: '1',
+        MU_DISABLE_DEVTOOLS: '1',
+        MU_E2E_TEST: '1',
+        MU_CDP_PORT: '0',
         NODE_ENV: 'development',
       },
       timeout: 60_000,
@@ -41,7 +41,7 @@ test.describe('Installation integrity failure dialog', () => {
       const page = await resolveMainWindow(electronApp);
 
       await expect(page.getByTestId('installation-integrity-dialog')).toBeVisible();
-      await expect(page.getByTestId('installation-integrity-description')).toContainText(/AionUi/);
+      await expect(page.getByTestId('installation-integrity-description')).toContainText(/mu/);
       await expect(page.getByTestId('installation-integrity-download')).toBeVisible();
       await expect(page.getByTestId('installation-integrity-report')).toHaveCount(0);
     } finally {

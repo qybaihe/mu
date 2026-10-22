@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2025 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
@@ -163,8 +157,8 @@ export default function WorkPanelHost({ rowWidth, isMobile }: { rowWidth: number
   const { t } = useTranslation();
   const conversationId = useCurrentConversation();
   const projectId = useCurrentProject();
-  // A native conversation's Jev tabs read its view, which its page publishes; any other conversation's are polled. It
-  // has no AionCore project: its lessons and files are read by the folder it works in.
+  // A native conversation's judgment tabs read its view, which its page publishes; any other conversation's are polled.
+  // It has no backend project: its lessons and files are read by the folder it works in.
   const native = useNativeActivity(conversationId);
   const nativeFolder = useNativeFolder(conversationId);
   const polled = useKyrnActivity(native ? null : conversationId);

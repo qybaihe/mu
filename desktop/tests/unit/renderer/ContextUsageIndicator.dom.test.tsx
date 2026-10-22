@@ -99,7 +99,7 @@ describe('ContextUsageIndicator', () => {
     );
 
     const popover = getByTestId('popover-content').textContent ?? '';
-    expect(popover).toContain('Session cost');
+    expect(popover).toContain('Conversation cost');
     expect(popover).toContain('$0.42');
     expect(popover).toContain('Input 14.1K');
     expect(popover).toContain('Output 30');
@@ -164,7 +164,7 @@ describe('ContextUsageIndicator', () => {
     );
 
     const popover = getByTestId('popover-content').textContent ?? '';
-    expect(popover).not.toContain('Session cost');
+    expect(popover).not.toContain('Conversation cost');
     expect(popover).not.toContain('Input');
   });
 });

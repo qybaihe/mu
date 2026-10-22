@@ -33,6 +33,7 @@ import {
   type ConversationRuntimeViewLogEntry,
   type ConversationRuntimeSendFailure,
 } from './conversationRuntimeViewStore';
+import { type BuiltinAgent } from '@/common/platform/backendNames';
 
 type UseConversationRuntimeViewReturn = {
   view: ConversationRuntimeView;
@@ -237,7 +238,7 @@ export const useConversationRuntimeView = (conversation_id: string): UseConversa
 export const logStreamTerminalObserved = (
   conversation_id: string,
   turn_id: string | undefined,
-  platform: 'acp' | 'aionrs',
+  platform: 'acp' | BuiltinAgent,
   stream_type: string
 ): void => {
   const rendererLogger = ipcBridge.application?.writeRendererLog;

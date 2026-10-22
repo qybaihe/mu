@@ -1,5 +1,5 @@
 /**
- * Records `aioncore` WebSocket notifications inside the renderer so tests can
+ * Records the backend's WebSocket notifications inside the renderer so tests can
  * assert on the backend→frontend signal path.
  *
  * Why this exists as a helper rather than inline in one spec: the renderer is
@@ -52,7 +52,7 @@ export async function installMonitorRecorder(page: Page): Promise<void> {
 
     const port = win.__backendPort;
     if (!port) {
-      throw new Error('window.__backendPort is not available — is aioncore running?');
+      throw new Error('window.__backendPort is not available — is the backend running?');
     }
 
     const store: { status: MonitorRecorderStatus; events: MonitorEvent[] } = {

@@ -6,7 +6,7 @@
 
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import AionSelect from '@/renderer/components/base/AionSelect';
+import MuSelect from '@/renderer/components/base/MuSelect';
 import { FONT_WEIGHT_TIERS, SYSTEM_FONT_WEIGHT } from '@/common/config/fontWeights';
 
 type FontWeightSelectProps = {
@@ -36,7 +36,7 @@ const FontWeightSelect: React.FC<FontWeightSelectProps> = ({ value, onChange }) 
   }, [t]);
 
   return (
-    <AionSelect
+    <MuSelect
       // As wide as its label and longest name, from 170px up to the row's width: "Systemstandard" is not cut.
       className='w-max min-w-170px max-w-full'
       prefix={<span className='text-t-secondary'>{t('settings.fontWeightLabel')}</span>}

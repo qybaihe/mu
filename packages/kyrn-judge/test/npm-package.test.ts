@@ -109,7 +109,7 @@ describe("the judgment layer's bundle", () => {
 	// every start. That took more than 500 MB of heap, and V8 aborted before the first frame.
 	it("is imported by pi's loader as it is, with pi's own modules, and never transpiled", async () => {
 		const { root, hostImport, source } = fakePackage();
-		const file = join(root, "judge/dist/kyrn-judge.js");
+		const file = join(root, "judge/mu/index.js");
 		const provided = new Set(["@earendil-works/pi-tui"]);
 		expect(await bundle(source, file, piHostPlugin({ provided, hostImport }))).toEqual([hostImport]);
 		expect(readFileSync(file, "utf8")).not.toContain('from "@earendil-works/');
@@ -126,7 +126,7 @@ describe("the judgment layer's bundle", () => {
 
 	it("was transpiled when pi's modules were left as bare imports, as in 0.1.3", async () => {
 		const { root, source } = fakePackage();
-		const file = join(root, "judge/dist/kyrn-judge.js");
+		const file = join(root, "judge/mu/index.js");
 		expect(await bundle(source, file, leftToJiti)).toEqual(["@earendil-works/pi-tui"]);
 		const transpiled: string[] = [];
 		await expect(loadLikePi(file, transpiled)).rejects.toThrow("transpiled with Babel");
@@ -175,8 +175,8 @@ describe("the npm package", () => {
 		expect(rewritten).toBe(
 			'const PROMPTS_DIR = fileURLToPath(new URL("../../../prompts", new URL("src/extension/features/commands.ts", new URL("../", import.meta.url)).href));',
 		);
-		// From judge/dist/kyrn-judge.js that is judge/prompts, where the build copies them.
-		const bundle = "file:///usr/lib/node_modules/mu-agent/judge/dist/kyrn-judge.js";
+		// From judge/mu/index.js that is judge/prompts, where the build copies them.
+		const bundle = "file:///usr/lib/node_modules/mu-agent/judge/mu/index.js";
 		const at = new URL("src/extension/features/commands.ts", new URL("../", bundle)).href;
 		expect(new URL("../../../prompts", at).href).toBe("file:///usr/lib/node_modules/mu-agent/judge/prompts");
 		expect(rewriteMetaUrl("export const x = 1;", "src/x.ts")).toBe("export const x = 1;");
@@ -185,7 +185,7 @@ describe("the npm package", () => {
 	it("never packs a file that could hold a credential", () => {
 		expect(
 			forbiddenFiles([
-				"judge/dist/kyrn-judge.js",
+				"judge/mu/index.js",
 				".env",
 				"kyrn/.env.local",
 				"kyrn/.env.example",

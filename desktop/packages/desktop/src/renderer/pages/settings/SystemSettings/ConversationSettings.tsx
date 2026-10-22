@@ -12,7 +12,7 @@ import ImportChats from './ImportChats';
 
 /**
  * What a conversation may wait for and keep: its time limits, the preview's size limit, uploads, cross-talk. Below
- * them, the way to bring in conversations had in Claude Code or Codex.
+ * them, the way to bring in conversations had in Claude Code, Codex or ZCode.
  */
 const ConversationSettings: React.FC = () => {
   const { t } = useTranslation();

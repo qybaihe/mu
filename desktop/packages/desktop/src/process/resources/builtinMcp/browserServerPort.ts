@@ -29,12 +29,12 @@ const toBrowserUrl = (port: number): string | null => {
 /**
  * 只认自己进程树继承下来的端口。
  *
- * 端口由 Electron 主进程写进 AIONUI_CDP_ACTIVE_PORT，经 aioncore 继承到这里，所以
+ * 端口由 Electron 主进程写进 MU_CDP_ACTIVE_PORT，经后端继承到这里，所以
  * 「拿不到」只有两种情况：CDP 被用户关掉了，或者不是从应用里启动的。两种情况都应当
  * 拒绝启动，而不是去猜一个端口——猜错会把 Agent 连到另一个实例的浏览器上。
  *
  * Only trust the port inherited down this process tree. The Electron main process
- * writes it into AIONUI_CDP_ACTIVE_PORT and aioncore passes it down, so failing to
+ * writes it into MU_CDP_ACTIVE_PORT and the backend passes it down, so failing to
  * read it means one of two things: the user disabled CDP, or this was not launched by
  * the app. Both must refuse to start rather than guess a port — guessing wrong
  * connects the agent to a *different* instance's browser.
@@ -42,7 +42,7 @@ const toBrowserUrl = (port: number): string | null => {
 export const resolveBrowserUrl = (deps: ResolveBrowserUrlDeps): string | null => {
   const { env } = deps;
 
-  const rawPort = env.AIONUI_CDP_ACTIVE_PORT?.trim();
+  const rawPort = env.MU_CDP_ACTIVE_PORT?.trim();
   if (rawPort) {
     const fromEnv = toBrowserUrl(Number(rawPort));
     if (fromEnv) return fromEnv;
@@ -74,7 +74,7 @@ export const resolveBrowserUrl = (deps: ResolveBrowserUrlDeps): string | null =>
  * fall back to spawning a separate Chrome the user cannot see.
  */
 export const resolveBridgeToken = (deps: ResolveBrowserUrlDeps): string | null => {
-  const raw = deps.env.AIONUI_CDP_BRIDGE_TOKEN?.trim();
+  const raw = deps.env.MU_CDP_BRIDGE_TOKEN?.trim();
   return raw ? raw : null;
 };
 

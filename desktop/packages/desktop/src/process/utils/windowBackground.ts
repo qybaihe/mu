@@ -1,8 +1,4 @@
 /**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- *
  * The window's own background: what shows before the page paints its first frame and while it reloads. It follows
  * the theme in effect, so a dark app never flashes white. The page says which theme that is (and whether it follows
  * the system's appearance) each time it applies one; the answer is kept for the next start, when the window is
@@ -64,7 +60,7 @@ export function setWindowAppearance(value: unknown, persist: (hint: WindowAppear
   trackPersistedWrite(
     Promise.resolve()
       .then(() => persist(hint))
-      .catch((error: unknown) => console.error('[AionUi] Failed to keep the window appearance:', error))
+      .catch((error: unknown) => console.error('[mu] Failed to keep the window appearance:', error))
   );
 }
 

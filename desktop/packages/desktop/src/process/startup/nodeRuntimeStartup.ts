@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { app, dialog, nativeImage } from 'electron';
 import type { TFunction } from 'i18next';
 import path from 'node:path';
@@ -55,7 +49,7 @@ export function planStartupNodeRuntime(options: {
   const runtime = managedNodeRuntime(options.dataDir, process.platform, process.arch);
   return planNodeRuntime({
     isPackaged: options.isPackaged,
-    isE2E: process.env.AIONUI_E2E_TEST === '1',
+    isE2E: process.env.MU_E2E_TEST === '1',
     preset: process.env.MU_NODE_RUNTIME,
     runtime,
     installed: runtime ? hasManagedNodeRuntime(runtime, process.platform) : false,

@@ -2,7 +2,7 @@
 	"name": "@kyrn/judge",
 	"version": "0.1.0",
 	"private": true,
-	"description": "KYRN judgment kernel: typed decisions backed by a System One judge model (Jev), with fail-open fallbacks and a decision ledger",
+	"description": "KYRN judgment kernel: typed decisions backed by a judge model, with fail-open fallbacks and a decision ledger",
 	"keywords": [
 		"pi-package",
 		"pi-extension",

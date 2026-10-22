@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { describe, expect, it } from 'vitest';
 import { classifyUpdateError, UpdateError, updateErrorDetail } from '@/common/update/updateErrors';
 
@@ -15,7 +9,7 @@ describe('classifyUpdateError', () => {
   });
 
   it('finds a network failure in the cause Node fetch hides it in', () => {
-    const cause = Object.assign(new Error('getaddrinfo ENOTFOUND static.aionui.com'), { code: 'ENOTFOUND' });
+    const cause = Object.assign(new Error('getaddrinfo ENOTFOUND updates.example.com'), { code: 'ENOTFOUND' });
     expect(classifyUpdateError(new TypeError('fetch failed', { cause }), 'checkFailed')).toEqual({ code: 'network' });
   });
 

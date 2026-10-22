@@ -43,7 +43,7 @@ describe("describeAnswers", () => {
 			[0.01, 0.9, 0.02, 0.1, 0.5, 0.97, null],
 		);
 		expect(text.split("\n")).toEqual([
-			"Jev answered 6 of 7 items: Is this test about login?",
+			"The judge answered 6 of 7 items: Is this test about login?",
 			"yes (p >= 0.8): 2",
 			"#6  0.97  login ok",
 			"#2  0.90  login fails",

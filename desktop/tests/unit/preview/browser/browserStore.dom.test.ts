@@ -1,10 +1,4 @@
 /**
- * @license
- * Copyright 2025 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
  * The in-app browser's pages (the work panel's 浏览器 tab): what opens where, the cap, what a page writes back, what is
  * kept per project across restarts, and how the pages an older build kept among the preview's tabs come over.
  */

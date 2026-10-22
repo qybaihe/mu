@@ -4,7 +4,7 @@
  * sends them: an image as pi's `images`, every other file as its path under the message (the `[[AION_FILES]]` block
  * the message list shows as chips).
  */
-import { AIONUI_FILES_MARKER } from '@/common/config/constants';
+import { FILES_MARKER } from '@/common/config/constants';
 import type { NativeFailure } from '@/common/kyrn/nativeBridge';
 import { chatFileRefPath, type ChatFileRef } from '@/common/types/chatFile';
 import type { PiImage } from '@/common/utils/nativeHost';
@@ -22,7 +22,7 @@ const IMAGE_LIMIT = 16 * 1024 * 1024;
 
 export type NativeStart = {
   cwd: string;
-  /** A permission mode as mu names them (`full`, `jev`, `ask`); mu's own default when left out. */
+  /** A permission mode as mu names them (`full`, `judge`, `ask`); mu's own default when left out. */
   permissions?: string;
   /** The model the pill picked, as mu names its models to the pickers: `<provider>/<model id>`. */
   model?: string;
@@ -71,7 +71,7 @@ export async function promptOf(
   );
   const images = read.flatMap(({ image }) => (image ? [image] : []));
   const paths = read.flatMap(({ path, image }) => (image ? [] : [path]));
-  return { message: paths.length > 0 ? `${input}\n\n${AIONUI_FILES_MARKER}\n${paths.join('\n')}` : input, images };
+  return { message: paths.length > 0 ? `${input}\n\n${FILES_MARKER}\n${paths.join('\n')}` : input, images };
 }
 
 /**

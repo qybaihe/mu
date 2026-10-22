@@ -1,7 +1,7 @@
 // @ts-check
 // Interjecting in a run, end to end, in the real app on the native host (on by default): a message sent while a run
 // goes is not lost and does not start a second run. It waits in pi's queue, above the send box, as a steer (at the run's
-// next step) or a follow-up (after the run); "Take back" puts the queued texts into the box, and the run goes on as it
+// next step) or a follow-up (after the run); "Edit" puts the queued texts into the box, and the run goes on as it
 // was. A steer left in the queue is delivered when the run ends, and answered. The slow reply of the fake model
 // (`E2E:SLOW`, one chunk every 200 ms) keeps the run going long enough to type into. Run with
 // `bun run e2e:conversation --native` (every native*.spec.mjs).
@@ -54,7 +54,7 @@ async function slowReplyReaches(chunk) {
   await expect(status()).toHaveAttribute('data-status', /^(working|thinking)$/);
 }
 
-test('a steer and a follow-up wait in the queue while the run goes, and "Take back" puts them in the box', async () => {
+test('a steer and a follow-up wait in the queue while the run goes, and "Edit" puts them in the box', async () => {
   await start();
   await reachSidebar();
   await newConversation();

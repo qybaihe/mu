@@ -26,7 +26,7 @@ import { ended, frame, reply, text, user } from './records';
 
 /**
  * The native conversation page and the sidebar group against an in-memory host: the page in each state of its host,
- * one that cannot be opened, a flag that is off, a draft whose session gives it its id, the Jev panel's feed, and the
+ * one that cannot be opened, a flag that is off, a draft whose session gives it its id, the work panel's feed, and the
  * sidebar's list and new conversation. The message list runs for real; its text rows and tool box are stood in for.
  */
 
@@ -130,12 +130,13 @@ describe('the native conversation page', () => {
     await opened();
     expect(screen.getByRole('heading')).toHaveTextContent('New conversation');
     expect(screen.getByTestId('native-header-folder')).toHaveTextContent('alpha');
-    expect(screen.getByTestId('native-empty')).toHaveTextContent('A new conversation in alpha');
+    expect(screen.getByTestId('native-empty')).toHaveTextContent('New conversation in alpha');
     expect(phase()).toHaveAttribute('data-phase', 'idle');
     expect(phase()).toHaveTextContent('Not running');
     const steps: Array<[NativeHostStatus, string]> = [
       [{ phase: 'starting' }, 'Starting'],
-      [{ phase: 'running' }, 'Running'],
+      // Up and waiting for a message: nothing to see, as before it starts; screen readers still hear it.
+      [{ phase: 'running' }, 'Ready'],
       [{ phase: 'needs-model' }, 'No model'],
       [{ phase: 'failed', error: { kind: 'failed', message: 'spawn ENOENT', stderr: '' } }, 'Stopped'],
     ];
@@ -143,7 +144,24 @@ describe('the native conversation page', () => {
       act(() => host.setStatus('c1', status));
       expect(phase()).toHaveTextContent(words);
     }
-    expect(screen.getByTestId('native-failed')).toHaveTextContent('mu stopped before it started.');
+    expect(screen.getByTestId('native-failed')).toHaveTextContent('mu stopped before it could start.');
+  });
+
+  it('says Working only while a turn runs, and nothing once it has ended', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1', title: 'Fix the build' });
+    page(host.client);
+    await opened();
+    act(() => host.setStatus('c1', { phase: 'running' }));
+    expect(phase()).toHaveClass('sr-only');
+    act(() => host.play('c1', [{ type: 'agent_start' }, ended(user('fix the build'))]));
+    await waitFor(() => expect(phase()).toHaveTextContent('Working'));
+    expect(phase()).toHaveAttribute('data-working', 'true');
+    expect(phase()).not.toHaveClass('sr-only');
+    act(() => host.play('c1', [{ type: 'agent_settled' }]));
+    await waitFor(() => expect(phase()).toHaveTextContent('Ready'));
+    expect(phase()).toHaveClass('sr-only');
+    expect(phase()).toHaveAttribute('data-phase', 'running');
   });
 
   it('shows the transcript as the host plays it, in the shared message list', async () => {
@@ -324,7 +342,7 @@ describe('the native conversation page', () => {
     expect(screen.queryAllByTestId('row-fork')).toEqual([]);
   });
 
-  it('makes itself the current conversation and feeds the Jev panel from its view', async () => {
+  it('makes itself the current conversation and feeds the work panel from its view', async () => {
     const host = createFakeHost();
     host.add({ id: 'c1' });
     // The conversation shown before had a project: the explorer must not keep showing it.
@@ -358,7 +376,7 @@ describe('the native conversation page', () => {
         </MemoryRouter>
       </I18nextProvider>
     );
-    expect(screen.getByTestId('kernel-no-lessons')).toHaveTextContent('Lessons show once the conversation has opened.');
+    expect(screen.getByTestId('kernel-no-lessons')).toHaveTextContent('Lessons appear once the conversation opens.');
   });
 });
 
@@ -440,7 +458,7 @@ describe('the sidebar’s native group', () => {
     await waitFor(() => expect(shownIds()).toContain('draft-4'));
     expect(items().find((item) => item.dataset.id === 'draft-4')).toHaveTextContent('gamma');
 
-    // Again, in a recent folder, with Jev approving what mu does.
+    // Again, in a recent folder, with the judge approving what mu does.
     await openNew();
     const mode = screen.getByTestId('native-permissions');
     expect(mode).toHaveTextContent("mu's default");
@@ -448,13 +466,13 @@ describe('the sidebar’s native group', () => {
       fireEvent.click(mode);
     });
     await act(async () => {
-      fireEvent.click(within(mode.parentElement ?? document.body).getByRole('option', { name: 'Jev approves' }));
+      fireEvent.click(within(mode.parentElement ?? document.body).getByRole('option', { name: 'Judge mode' }));
     });
-    expect(mode).toHaveTextContent('Jev approves');
+    expect(mode).toHaveTextContent('Judge mode');
     await act(async () => {
       fireEvent.click(screen.getAllByTestId('native-recent-folder')[1]);
     });
-    expect(creates(host).at(-1)).toEqual({ method: 'create', cwd: '/work/alpha', permissions: 'jev' });
+    expect(creates(host).at(-1)).toEqual({ method: 'create', cwd: '/work/alpha', permissions: 'judge' });
     await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/conversation/native/draft-5'));
   });
 
@@ -468,7 +486,7 @@ describe('the sidebar’s native group', () => {
       fireEvent.click(screen.getByTestId('native-project'));
     });
     expect(screen.getByTestId('native-create-failed')).toHaveTextContent(
-      'The app cannot find a mu to run. no mu at /opt/mu'
+      "The app can't find mu to run. no mu at /opt/mu"
     );
     expect(screen.getByTestId('where')).toHaveTextContent('/guid');
   });
@@ -701,7 +719,7 @@ describe('the sidebar’s native group', () => {
       fireEvent.click(within(archived).getByTestId('native-sidebar-item-menu'));
     });
     await waitFor(() => expect(screen.getByTestId('native-sidebar-restore')).toBeVisible());
-    expect(screen.getByTestId('native-sidebar-restore')).toHaveTextContent('Unarchive');
+    expect(screen.getByTestId('native-sidebar-restore')).toHaveTextContent('Restore');
     expect(screen.getByTestId('native-sidebar-rename')).toBeVisible();
     expect(screen.getByTestId('native-sidebar-delete')).toBeVisible();
     for (const gone of ['pin', 'mark', 'archive']) expect(screen.queryByTestId(`native-sidebar-${gone}`)).toBeNull();
@@ -759,7 +777,7 @@ describe('the sidebar’s native group', () => {
     await waitFor(() => expect(shownIds()).toEqual(['g', 'f', 'p']));
     const [g, f, p] = items();
     expect(p.getAttribute('title')).toBe('The plan\n/work/app\nMessages: 4');
-    expect(f.getAttribute('title')).toBe('Try B\n/work/app\nMessages: 6\nForked from “The plan”');
+    expect(f.getAttribute('title')).toBe('Try B\n/work/app\nMessages: 6\nForked from "The plan"');
     // The parent is not in the list; how many messages is not known.
     expect(g.getAttribute('title')).toBe('New conversation\n/work/app\nForked conversation');
   });
@@ -786,7 +804,7 @@ describe('the sidebar’s native group', () => {
       { method: 'rename', id: 'a', name: 'Login work' },
     ]);
     await waitFor(() => expect(items()[0]).toHaveTextContent('Login work'));
-    expect(success).toHaveBeenCalledWith('Renamed successfully');
+    expect(success).toHaveBeenCalledWith('Renamed');
     // Opening the menu did not open the conversation.
     expect(screen.getByTestId('where')).toHaveTextContent('/guid');
     success.mockRestore();
@@ -809,7 +827,7 @@ describe('the sidebar’s native group', () => {
     await act(async () => {
       fireEvent.click(screen.getByTestId('native-rename-save'));
     });
-    expect(error).toHaveBeenCalledWith('mu refused the request. Session name cannot be empty');
+    expect(error).toHaveBeenCalledWith('mu rejected the request. Session name cannot be empty');
     expect(screen.getByTestId('native-rename-input')).toHaveValue('New');
     error.mockRestore();
   });
@@ -826,7 +844,7 @@ describe('the sidebar’s native group', () => {
       fireEvent.click(screen.getByTestId('native-sidebar-delete'));
     });
     expect(await screen.findByTestId('native-delete')).toHaveTextContent(
-      'Delete “Fix the build”? Its session file goes to the bin, where you can still restore it.'
+      'Delete "Fix the build"? Its file moves to the trash, so you can still restore it.'
     );
     // Cancelled: nothing goes.
     await act(async () => {
@@ -845,7 +863,7 @@ describe('the sidebar’s native group', () => {
     expect(host.calls.filter((call) => call.method === 'remove')).toEqual([{ method: 'remove', id: 'b' }]);
     await waitFor(() => expect(shownIds()).toEqual(['a']));
     expect(screen.getByTestId('where')).toHaveTextContent('/guid');
-    expect(success).toHaveBeenCalledWith('Deleted successfully');
+    expect(success).toHaveBeenCalledWith('Deleted');
     success.mockRestore();
   });
 

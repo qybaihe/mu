@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { describe, expect, it } from 'vitest';
 import { createInstance, type TFunction } from 'i18next';
 import enSettings from '@/renderer/services/i18n/locales/en-US/settings.json';

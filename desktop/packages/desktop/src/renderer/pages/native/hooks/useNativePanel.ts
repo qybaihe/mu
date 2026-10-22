@@ -1,8 +1,8 @@
 /**
  * The work panel beside a native conversation: the conversation is the current one (the panel follows it), and the
- * panel's Jev tabs read what the view holds instead of the mu bridge's telemetry, which a native conversation does not
- * have. They read it at most twice a second while a reply streams: a text delta changes nothing they show, and the
- * bridge's record was read once a second. A native conversation has no AionCore project, so the explorer shows none
+ * panel's judgment tabs read what the view holds instead of the mu bridge's telemetry, which a native conversation does
+ * not have. They read it at most twice a second while a reply streams: a text delta changes nothing they show, and the
+ * bridge's record was read once a second. A native conversation has no backend project, so the explorer shows none
  * (not the project of the conversation shown before); the panel reads the conversation's folder instead (`cwd`).
  *
  * `epoch` is the conversation state's (hooks/useNativeConversation.ts): which view this is, new each time the whole view
@@ -66,7 +66,7 @@ export function useNativePanel(
     };
   }, [id]);
 
-  // The preview belongs to a folder, as a conversation without an AionCore project has it: another folder's closes.
+  // The preview belongs to a folder, as a conversation without a backend project has it: another folder's closes.
   const closePreviewIfScopeChanged = useOptionalPreviewContext()?.closePreviewIfScopeChanged;
   useEffect(() => {
     if (cwd) closePreviewIfScopeChanged?.(previewScopeKey(null, cwd));

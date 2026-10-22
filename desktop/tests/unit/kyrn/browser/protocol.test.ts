@@ -128,7 +128,7 @@ describe('the method router', () => {
   });
 
   it('only navigates to web pages', () => {
-    for (const url of ['file:///etc/passwd', 'chrome://gpu', 'javascript:alert(1)', 'aionui://x', '', undefined, 7]) {
+    for (const url of ['file:///etc/passwd', 'chrome://gpu', 'javascript:alert(1)', 'app://x', '', undefined, 7]) {
       expect(route('Page.navigate', true, { url }).kind).toBe('refuse');
     }
     expect(webAddress('http://127.0.0.1:3000/a')).toBe(true);

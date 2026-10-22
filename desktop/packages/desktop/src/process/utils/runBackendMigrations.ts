@@ -12,6 +12,7 @@ import { BUILTIN_BROWSER_MCP_NAME } from '@/common/config/constants';
 import {
   removeImageGenerationEnvKeys,
   resolveImageGenerationMcpEnv,
+  withCurrentImageGenerationEnvKeys,
   type ImageGenerationMcpEnvResolveResult,
 } from '@/common/config/imageGenerationMcpEnv';
 import { BUILTIN_IMAGE_GEN_NAME, type IMcpServer, type IProvider } from '@/common/config/storage';
@@ -222,6 +223,23 @@ function buildDefaultMcpServers(): McpImportServer[] {
   ];
 }
 
+/** The image generation server's `original_json`, the form the MCP settings page edits. */
+function imageServerOriginalJson(transport: {
+  command: string;
+  args?: string[];
+  env?: Record<string, string>;
+}): string {
+  return JSON.stringify(
+    {
+      mcpServers: {
+        [BUILTIN_IMAGE_GEN_NAME]: { command: transport.command, args: transport.args || [], env: transport.env || {} },
+      },
+    },
+    null,
+    2
+  );
+}
+
 function buildOriginalJsonFromTransport(server: Pick<IMcpServer, 'name' | 'description' | 'transport'>): string {
   const transport_config =
     server.transport.type === 'stdio'
@@ -308,19 +326,7 @@ async function ensureBootstrapMcpServersInDb(configFile: ConfigFile): Promise<vo
       ...imageServer.transport,
       env: mergedEnv,
     };
-    const original_json = JSON.stringify(
-      {
-        mcpServers: {
-          [BUILTIN_IMAGE_GEN_NAME]: {
-            command: updatedTransport.command,
-            args: updatedTransport.args || [],
-            env: mergedEnv,
-          },
-        },
-      },
-      null,
-      2
-    );
+    const original_json = imageServerOriginalJson(updatedTransport);
     const imageTransportChanged = !isSameStdioTransport(existingImageServer.transport, updatedTransport);
     const imageOriginalJsonChanged = existingImageServer.original_json !== original_json;
     const imageServerChanged = imageTransportChanged || imageOriginalJsonChanged;
@@ -347,6 +353,20 @@ async function ensureBootstrapMcpServersInDb(configFile: ConfigFile): Promise<vo
       existingImageServer.id,
       imageEnvResolution.reason
     );
+    // The settings stay as they are; only those an earlier version stored under its old names move to the current
+    // ones, which the server reads.
+    if (existingImageServer.transport.type === 'stdio') {
+      const storedEnv = existingImageServer.transport.env || {};
+      const renamedEnv = withCurrentImageGenerationEnvKeys(storedEnv);
+      if (renamedEnv !== storedEnv) {
+        const renamedTransport = { ...existingImageServer.transport, env: renamedEnv };
+        await mcpService.updateServer.invoke({
+          id: existingImageServer.id,
+          data: { transport: renamedTransport, original_json: imageServerOriginalJson(renamedTransport) },
+        });
+        imageServerUpdated = true;
+      }
+    }
   }
 
   /**
@@ -438,10 +458,7 @@ async function syncBuiltinMcpConfig(configFile: ConfigFile): Promise<void> {
   }
 
   await httpRequest<void>('PUT', '/api/settings/client', { 'mcp.config': mergedMcpConfig });
-  console.info(
-    '[AionUi] Synced builtin MCP config to backend settings (%d builtin servers)',
-    localBuiltinServers.length
-  );
+  console.info('[mu] Synced builtin MCP config to backend settings (%d builtin servers)', localBuiltinServers.length);
 }
 
 export async function runBackendMigrations(configFile: ConfigFile): Promise<void> {
@@ -450,9 +467,9 @@ export async function runBackendMigrations(configFile: ConfigFile): Promise<void
     const start = Date.now();
     try {
       await step.run();
-      console.info(`[AionUi] Backend migration step completed: ${step.name} (${Date.now() - start}ms)`);
+      console.info(`[mu] Backend migration step completed: ${step.name} (${Date.now() - start}ms)`);
     } catch (error) {
-      console.error(`[AionUi] Backend migration step failed: ${step.name} (${Date.now() - start}ms)`, error);
+      console.error(`[mu] Backend migration step failed: ${step.name} (${Date.now() - start}ms)`, error);
     }
   }, Promise.resolve());
 
@@ -463,21 +480,21 @@ export async function runBackendMigrations(configFile: ConfigFile): Promise<void
       const completed = await step.run(configFile);
       const elapsed = Date.now() - start;
       if (!completed) {
-        console.warn(`[AionUi] Backend migration step incomplete: ${step.name} (${elapsed}ms)`);
+        console.warn(`[mu] Backend migration step incomplete: ${step.name} (${elapsed}ms)`);
         return;
       }
-      console.info(`[AionUi] Backend migration step completed: ${step.name} (${elapsed}ms)`);
+      console.info(`[mu] Backend migration step completed: ${step.name} (${elapsed}ms)`);
     } catch (error) {
       const elapsed = Date.now() - start;
-      console.error(`[AionUi] Backend migration step failed: ${step.name} (${elapsed}ms)`, error);
+      console.error(`[mu] Backend migration step failed: ${step.name} (${elapsed}ms)`, error);
     }
   }, Promise.resolve());
 
   const syncStart = Date.now();
   try {
     await syncBuiltinMcpConfig(configFile);
-    console.info(`[AionUi] Backend migration step completed: syncBuiltinMcpConfig (${Date.now() - syncStart}ms)`);
+    console.info(`[mu] Backend migration step completed: syncBuiltinMcpConfig (${Date.now() - syncStart}ms)`);
   } catch (error) {
-    console.error(`[AionUi] Backend migration step failed: syncBuiltinMcpConfig (${Date.now() - syncStart}ms)`, error);
+    console.error(`[mu] Backend migration step failed: syncBuiltinMcpConfig (${Date.now() - syncStart}ms)`, error);
   }
 }

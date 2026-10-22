@@ -25,7 +25,9 @@ import {
 } from '../helpers';
 import { CHAT_INPUT } from '../helpers/selectors';
 import { goToNewChat, waitForAiReply } from '../helpers/conversation';
-import { getAionrsTestModels, type TProviderWithModel } from '../helpers/chatAionrs';
+import { getBuiltinAgentTestModels, type TProviderWithModel } from '../helpers/chatBuiltinAgent';
+import { BACKEND_DATABASE_FILE, BUILTIN_AGENT } from '@/common/platform/backendNames';
+import { DATA_FOLDER } from '@/common/platform/legacyNames';
 
 type AssistantDetail = {
   id: string;
@@ -94,7 +96,7 @@ type ConversationCreatePayload = {
   };
 };
 
-type EnsuredAionrsModels = {
+type EnsuredBuiltinAgentModels = {
   cleanupProviderId: string | null;
   modelA: TProviderWithModel;
   modelB: TProviderWithModel | null;
@@ -118,8 +120,8 @@ async function findAssistantIdByName(page: Page, name: string): Promise<string |
   return null;
 }
 
-async function ensureAionrsTestModels(page: Page): Promise<EnsuredAionrsModels> {
-  const existing = await getAionrsTestModels(page);
+async function ensureBuiltinAgentTestModels(page: Page): Promise<EnsuredBuiltinAgentModels> {
+  const existing = await getBuiltinAgentTestModels(page);
   if (existing?.modelA) {
     return {
       cleanupProviderId: null,
@@ -406,7 +408,7 @@ function locateConversationModelButton(page: Page) {
   // An ACP conversation's model sits in the composer's chip; the header no longer carries a picker.
   return page
     .locator(
-      '[data-testid="aionrs-model-selector"], [data-testid="chat-model-selector"], [data-testid="composer-model-pill"]'
+      '[data-testid="builtin-agent-model-selector"], [data-testid="chat-model-selector"], [data-testid="composer-model-pill"]'
     )
     .first();
 }
@@ -543,7 +545,7 @@ test.describe('Assistant Settings Conversation Defaults', () => {
       expect(payload.assistant?.conversation_overrides?.mcp_ids).toContain(firstMcp.id);
 
       const userDataPath = await getUserDataPath(electronApp);
-      const dbPath = path.join(userDataPath, 'aionui', 'aionui-backend.db');
+      const dbPath = path.join(userDataPath, DATA_FOLDER, BACKEND_DATABASE_FILE);
       const snapshot = querySnapshotByConversationId(dbPath, conversationId);
 
       expect(snapshot.default_model_mode).toBe('fixed');
@@ -613,7 +615,7 @@ test.describe('Assistant Settings Conversation Defaults', () => {
       expect(payload.assistant?.conversation_overrides?.mcp_ids).toContain(firstMcp.id);
 
       const userDataPath = await getUserDataPath(electronApp);
-      const dbPath = path.join(userDataPath, 'aionui', 'aionui-backend.db');
+      const dbPath = path.join(userDataPath, DATA_FOLDER, BACKEND_DATABASE_FILE);
       const snapshot = querySnapshotByConversationId(dbPath, conversationId);
       const preferences = queryPreferencesByAssistantKey(dbPath, assistantId);
 
@@ -669,7 +671,7 @@ test.describe('Assistant Settings Conversation Defaults', () => {
     await waitForAiReply(page);
 
     const userDataPath = await getUserDataPath(electronApp);
-    const dbPath = path.join(userDataPath, 'aionui', 'aionui-backend.db');
+    const dbPath = path.join(userDataPath, DATA_FOLDER, BACKEND_DATABASE_FILE);
 
     try {
       const beforeSwitch = querySnapshotByConversationId(dbPath, conversationId);
@@ -745,7 +747,7 @@ test.describe('Assistant Settings Conversation Defaults', () => {
     await waitForAiReply(page);
 
     const userDataPath = await getUserDataPath(electronApp);
-    const dbPath = path.join(userDataPath, 'aionui', 'aionui-backend.db');
+    const dbPath = path.join(userDataPath, DATA_FOLDER, BACKEND_DATABASE_FILE);
 
     try {
       const beforeSwitch = querySnapshotByConversationId(dbPath, conversationId);
@@ -783,7 +785,7 @@ test.describe('Assistant Settings Conversation Defaults', () => {
     electronApp,
   }) => {
     const assistantName = `Auto Fixed Switch ${Date.now()}`;
-    const aionrsModels = await ensureAionrsTestModels(page);
+    const builtinAgentModels = await ensureBuiltinAgentTestModels(page);
 
     await goToAssistantSettings(page);
     const skills = await httpGet<SkillRecord[]>(page, '/api/skills');
@@ -805,15 +807,15 @@ test.describe('Assistant Settings Conversation Defaults', () => {
     if (!assistantId) return;
 
     const userDataPath = await getUserDataPath(electronApp);
-    const dbPath = path.join(userDataPath, 'aionui', 'aionui-backend.db');
+    const dbPath = path.join(userDataPath, DATA_FOLDER, BACKEND_DATABASE_FILE);
     try {
       await httpInvoke(page, 'PUT', `/api/assistants/${assistantId}`, {
         id: assistantId,
-        preset_agent_type: 'aionrs',
+        preset_agent_type: BUILTIN_AGENT,
         defaults: {
           model: {
             mode: 'fixed',
-            value: aionrsModels.modelA.useModel,
+            value: builtinAgentModels.modelA.useModel,
           },
           permission: {
             mode: 'fixed',
@@ -856,8 +858,8 @@ test.describe('Assistant Settings Conversation Defaults', () => {
       await httpDelete(page, `/api/conversations/${fixedConversationId}`).catch(() => {});
     } finally {
       await httpDelete(page, `/api/assistants/${assistantId}`).catch(() => {});
-      if (aionrsModels.cleanupProviderId) {
-        await httpDelete(page, `/api/providers/${aionrsModels.cleanupProviderId}`).catch(() => {});
+      if (builtinAgentModels.cleanupProviderId) {
+        await httpDelete(page, `/api/providers/${builtinAgentModels.cleanupProviderId}`).catch(() => {});
       }
     }
   });
@@ -867,7 +869,7 @@ test.describe('Assistant Settings Conversation Defaults', () => {
     electronApp,
   }) => {
     const assistantName = `Fixed Auto Switch ${Date.now()}`;
-    const aionrsModels = await ensureAionrsTestModels(page);
+    const builtinAgentModels = await ensureBuiltinAgentTestModels(page);
 
     await goToAssistantSettings(page);
     const skills = await httpGet<SkillRecord[]>(page, '/api/skills');
@@ -889,16 +891,16 @@ test.describe('Assistant Settings Conversation Defaults', () => {
     if (!assistantId) return;
 
     const userDataPath = await getUserDataPath(electronApp);
-    const dbPath = path.join(userDataPath, 'aionui', 'aionui-backend.db');
+    const dbPath = path.join(userDataPath, DATA_FOLDER, BACKEND_DATABASE_FILE);
 
     try {
       await httpInvoke(page, 'PUT', `/api/assistants/${assistantId}`, {
         id: assistantId,
-        preset_agent_type: 'aionrs',
+        preset_agent_type: BUILTIN_AGENT,
         defaults: {
           model: {
             mode: 'fixed',
-            value: aionrsModels.modelA.useModel,
+            value: builtinAgentModels.modelA.useModel,
           },
           permission: {
             mode: 'fixed',
@@ -974,8 +976,8 @@ test.describe('Assistant Settings Conversation Defaults', () => {
       await httpDelete(page, `/api/conversations/${autoConversationId}`).catch(() => {});
     } finally {
       await httpDelete(page, `/api/assistants/${assistantId}`).catch(() => {});
-      if (aionrsModels.cleanupProviderId) {
-        await httpDelete(page, `/api/providers/${aionrsModels.cleanupProviderId}`).catch(() => {});
+      if (builtinAgentModels.cleanupProviderId) {
+        await httpDelete(page, `/api/providers/${builtinAgentModels.cleanupProviderId}`).catch(() => {});
       }
     }
   });

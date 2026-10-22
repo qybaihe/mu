@@ -29,10 +29,11 @@ export function parseHiveArgs(args: string): HiveArgs {
 }
 
 /**
- * The user message `/hive <question>` sends. The model reads it; the person sees it in the chat, so it starts
- * with the question. Three bees is the default because two rarely have anything to pass each other and more
- * than four mostly repeat each other; the angles are ones whose findings bear on each other, since that is
- * what a hive is for (independent parts are `delegate`'s job).
+ * What `/hive <question>` asks of the model. It goes with the person's `/hive <question>` as a hidden message of
+ * that turn; only a `/hive` queued behind a running turn sends it as the message itself, so it starts with the
+ * question. Three bees is the default because two rarely have anything to pass each other and more than four
+ * mostly repeat each other; the angles are ones whose findings bear on each other, since that is what a hive is
+ * for (independent parts are `delegate`'s job).
  */
 export function hiveRequest(question: string): string {
 	return [

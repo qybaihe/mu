@@ -73,7 +73,7 @@ const stripInlineMaxWidth = (svg: string): string =>
  *
  * Interaction follows the classic lightbox pattern: wheel zooms around the fit
  * scale (0.1x-10x), dragging pans, ESC / backdrop click / the close button close
- * it. Visuals stick to AionUi tokens: Arco mask, --bg-* panels and icon-park icons
+ * it. Visuals stick to the app's tokens: Arco mask, --bg-* panels and icon-park icons
  * in the same order as the inline block header (zoom out / zoom in / reset), plus
  * a close action.
  *

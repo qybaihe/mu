@@ -34,7 +34,7 @@ import {
 } from './cdpTargetProtocol';
 
 const HOST = '127.0.0.1';
-const WS_PATH = '/aionui-cdp';
+const WS_PATH = '/mu-cdp';
 
 export type CdpBridgeHandle = {
   port: number;

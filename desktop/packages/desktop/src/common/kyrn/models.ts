@@ -175,6 +175,14 @@ export type ProviderTestCode =
   | 'key-unavailable'
   | 'url-changed';
 
+/**
+ * What an endpoint's model list states about one model: its display name, context window, output limit, whether it
+ * reads images and whether it thinks. Only what the list states; a row starts from these, the rest from its defaults.
+ */
+export type ListedModel = Partial<
+  Pick<ProviderModel, 'name' | 'contextWindow' | 'maxTokens' | 'imageInput' | 'reasoning'>
+>;
+
 export type ProviderTestResult = {
   ok: boolean;
   code: ProviderTestCode;
@@ -182,6 +190,8 @@ export type ProviderTestResult = {
   latencyMs: number;
   /** Model ids the endpoint listed, for filling in the model table. */
   models: string[];
+  /** What the list stated about each listed model, by id, for the ones it stated anything about. */
+  facts?: Record<string, ListedModel>;
   /** A short message from the endpoint, with the key removed. */
   detail: string;
 };
@@ -255,10 +265,10 @@ export const BUILTIN_PROVIDER_NAMES: Readonly<Record<string, string>> = {
 };
 
 /**
- * Built-in providers pi reports as usable that nobody set up to talk to. The judge (Jev) takes its key from
- * `AI_GATEWAY_API_KEY`, which is also the variable pi reads for the Vercel AI Gateway, so with the judge set up that
- * way pi lists the gateway and its models. The key has to stay (the judge needs it), so the app does not offer the
- * gateway: not as another built-in provider, not as a model to start with or switch to.
+ * Built-in providers pi reports as usable that nobody set up to talk to. The judge (Jev through the Vercel AI Gateway)
+ * takes its key from `AI_GATEWAY_API_KEY`, which is also the variable pi reads for the Vercel AI Gateway, so with the
+ * judge set up that way pi lists the gateway and its models. The key has to stay (the judge needs it), so the app does
+ * not offer the gateway: not as another built-in provider, not as a model to start with or switch to.
  */
 export const UNOFFERED_PROVIDER_IDS: ReadonlySet<string> = new Set(['vercel-ai-gateway']);
 
@@ -291,12 +301,13 @@ export function suggestProviderId(name: string): string {
 }
 
 /**
- * The rule for every address this app sends a key to: HTTPS, or plain HTTP to this machine or a private-network
- * address, and nothing that smuggles a credential or a second destination. Shared by the store (which enforces it)
- * and the screen (which explains it).
+ * The rule for every address this app sends a key to: HTTPS or plain HTTP, and nothing that smuggles a credential or a
+ * second destination. Shared by the store (which enforces it) and the screen (which explains it).
  *
- * Private-network HTTP is a literal address only (10/8, 172.16/12, 192.168/16, IPv6 unique-local fc00::/7, and an
- * IPv4-mapped form of those). A name is not accepted over HTTP: this check does not resolve DNS.
+ * Plain HTTP goes to any host but a link-local one (169.254/16, fe80::/10: cloud metadata lives there, never a model).
+ * A name over HTTP is often a server on this machine or the network that the hosts file or a local DNS points at,
+ * which the app cannot see, so it is allowed; the screen says the key travels unencrypted unless the address is this
+ * machine or a private-network literal (isPlainRemoteEndpoint).
  */
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
 
@@ -350,14 +361,43 @@ export function isPrivateNetworkHost(hostname: string): boolean {
   return (parts[0] & 0xfe00) === 0xfc00;
 }
 
-export function isSafeEndpoint(value: string): boolean {
-  let url: URL;
+/** A literal link-local host: 169.254/16, fe80::/10, or an IPv4-mapped form of the first. */
+export function isLinkLocalHost(hostname: string): boolean {
+  const host = hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  const v4 = parseIpv4(host);
+  if (v4) return v4[0] === 169 && v4[1] === 254;
+  const parts = ipv6Groups(host.split('%')[0]);
+  if (!parts) return false;
+  if (parts.slice(0, 5).every((part) => part === 0) && parts[5] === 0xffff)
+    return parts[6] >> 8 === 169 && (parts[6] & 0xff) === 254;
+  return (parts[0] & 0xffc0) === 0xfe80;
+}
+
+const parsed = (value: string): URL | undefined => {
   try {
-    url = new URL(value);
+    return new URL(value);
   } catch {
-    return false;
+    return undefined;
   }
-  const httpAllowed =
-    url.protocol === 'http:' && (LOOPBACK_HOSTS.has(url.hostname) || isPrivateNetworkHost(url.hostname));
-  return !url.username && !url.password && !url.search && !url.hash && (url.protocol === 'https:' || httpAllowed);
+};
+
+export function isSafeEndpoint(value: string): boolean {
+  const url = parsed(value);
+  if (!url || url.username || url.password || url.search || url.hash) return false;
+  return url.protocol === 'https:' || (url.protocol === 'http:' && !isLinkLocalHost(url.hostname));
+}
+
+/**
+ * An allowed address the key travels to unencrypted, wherever the name leads: plain HTTP to anything but this machine
+ * or a private-network literal. The screen says so beside the field, and leaves the choice to the person.
+ */
+export function isPlainRemoteEndpoint(value: string): boolean {
+  const url = parsed(value);
+  return Boolean(
+    url &&
+    isSafeEndpoint(value) &&
+    url.protocol === 'http:' &&
+    !LOOPBACK_HOSTS.has(url.hostname) &&
+    !isPrivateNetworkHost(url.hostname)
+  );
 }

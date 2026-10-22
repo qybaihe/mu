@@ -10,9 +10,9 @@
  * `Intl.NumberFormat(undefined, …)`, `Intl.DateTimeFormat(undefined, …)` and the
  * bare `toLocaleString()` / `toLocaleDateString()` / `toLocaleTimeString()` family
  * all resolve to the *host OS* locale, which has nothing to do with the language
- * the user picked inside AionUi. A German desktop running AionUi in English used
+ * the user picked inside the app. A German desktop running the app in English used
  * to render `0,42 $` and `17.8.2025` next to English labels, and the same app on
- * a `zh-HK` desktop rendered a locale AionUi does not even ship.
+ * a `zh-HK` desktop rendered a locale the app does not even ship.
  *
  * Every user-visible number or date must therefore be formatted against the app
  * language, passed in explicitly from `useTranslation().i18n.language`. Reading
@@ -36,7 +36,7 @@ const DATE_TIME_DEFAULTS: Intl.DateTimeFormatOptions = {
 };
 
 /**
- * Reduce any language hint to a locale AionUi actually ships, so formatting is
+ * Reduce any language hint to a locale the app actually ships, so formatting is
  * deterministic and never depends on the host OS.
  */
 export function resolveFormatLocale(language?: string | null): SupportedLanguage {

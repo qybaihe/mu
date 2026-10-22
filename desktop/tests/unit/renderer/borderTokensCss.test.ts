@@ -1,10 +1,4 @@
 /**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
  * The theme colour classes, checked where it matters: in the CSS UnoCSS generates.
  *
  * A class whose colour the theme does not have emits no rule at all, and nothing fails. `border-border-2` and its

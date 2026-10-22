@@ -10,9 +10,9 @@ const path = require('path');
 const HARNESS_FILES = [
   // The launcher the adapter and the sign-in start.
   'kyrn/bin/mu.mjs',
-  // pi, the judgment layer, and `mu auth` (the subscription sign-in).
+  // pi, the judgment layer (judge/dist/kyrn-judge.js up to mu-agent 0.1.8), and `mu auth` (the subscription sign-in).
   'dist/bundle/cli.js',
-  'judge/dist/kyrn-judge.js',
+  ['judge/mu/index.js', 'judge/dist/kyrn-judge.js'],
   'judge/dist/auth.js',
   'judge/dist/import.js',
   // What the settings draw their decision points and features from.
@@ -46,7 +46,7 @@ function readJson(filePath) {
   }
 }
 
-/** Paths in the result are relative to the resources folder, with forward slashes, like the AionCore check's. */
+/** Paths in the result are relative to the resources folder, with forward slashes, like the backend check's. */
 function verifyBundledHarness({ resourcesDir, electronPlatformName, targetArch }) {
   const root = path.join(resourcesDir, 'harness');
   const checked = [];
@@ -60,13 +60,20 @@ function verifyBundledHarness({ resourcesDir, electronPlatformName, targetArch }
 
   const manifest = readJson(inPackage('package.json'));
   need('mu-agent/package.json', manifest?.name === 'mu-agent');
-  for (const file of HARNESS_FILES) need(`mu-agent/${file}`, isFile(inPackage(file)));
+  for (const entry of HARNESS_FILES) {
+    // A list is one file at the paths it has had: any of them will do.
+    const files = [entry].flat();
+    need(
+      `mu-agent/${files[0]}`,
+      files.some((file) => isFile(inPackage(file)))
+    );
+  }
   for (const name of Object.keys(manifest?.dependencies ?? {})) {
     need(`mu-agent/node_modules/${name}/package.json`, isFile(inPackage(`node_modules/${name}/package.json`)));
   }
 
   // The native host (docs/native-host.md) starts pi with two functions of the launcher. A mu without them would not
-  // fail: every conversation of the app would quietly stay on AionCore, so the build says so instead.
+  // fail: every conversation of the app would quietly stay on the backend, so the build says so instead.
   const launcher = readText(inPackage('kyrn/bin/mu.mjs'));
   if (launcher !== null) {
     for (const name of NATIVE_HOST_EXPORTS) {

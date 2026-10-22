@@ -49,7 +49,7 @@ const repo = (over: Partial<ScmRepository> = {}): ScmRepository => ({
   repo_id: 'scm:pe1',
   provider_id: 'git',
   root: { pe_id: 'pe1', relative_path: '' },
-  label: 'aion',
+  label: 'relay',
   head: { name: 'main' },
   capabilities: { staging: true, local_branches: true, history_graph: false, remote_ops: false },
   state: 'idle',
@@ -427,7 +427,7 @@ describe('ScmPanel multi-repo (top list + click to switch, D2丙)', () => {
     // The list carries one item per repo, and it is a list — not two stacked sections.
     await waitFor(() => expect(document.querySelectorAll('[data-scm-repo-item]')).toHaveLength(2));
     expect(document.querySelector('[data-scm-repo-list]')).not.toBeNull();
-    expect(screen.getByText('aion')).toBeInTheDocument();
+    expect(screen.getByText('relay')).toBeInTheDocument();
     expect(screen.getByText('shared-lib')).toBeInTheDocument();
 
     // Body shows only the first repo's changes — the second repo's file is not rendered.
@@ -474,13 +474,13 @@ describe('ScmPanel multi-repo (top list + click to switch, D2丙)', () => {
     await screen.findByText('a.ts');
     expect(document.querySelector('[data-scm-repo-list]')).toBeNull();
     // The repo's own name is not shown anywhere for a single repo (no list, no header).
-    expect(screen.queryByText('aion')).not.toBeInTheDocument();
+    expect(screen.queryByText('relay')).not.toBeInTheDocument();
   });
 
   it('labels a repo by its pe_name when present, falling back to label otherwise', async () => {
     installPort({
       repositories: [
-        repo({ pe_name: 'My Frontend' }), // pe_name present → wins over label 'aion'
+        repo({ pe_name: 'My Frontend' }), // pe_name present → wins over label 'relay'
         repo({ repo_id: 'scm:pe2', label: 'shared-lib', root: { pe_id: 'pe2', relative_path: '' } }), // no pe_name → label
         // Empty-string pe_name must ALSO fall back to label. This is the second half
         // of the double-insurance: the backend promises never to emit Some(""), but
@@ -498,7 +498,7 @@ describe('ScmPanel multi-repo (top list + click to switch, D2丙)', () => {
 
     await waitFor(() => expect(document.querySelectorAll('[data-scm-repo-item]')).toHaveLength(3));
     expect(screen.getByText('My Frontend')).toBeInTheDocument(); // pe_name shown
-    expect(screen.queryByText('aion')).not.toBeInTheDocument(); // bare label hidden when pe_name exists
+    expect(screen.queryByText('relay')).not.toBeInTheDocument(); // bare label hidden when pe_name exists
     expect(screen.getByText('shared-lib')).toBeInTheDocument(); // missing pe_name → fallback to label
     expect(screen.getByText('empty-name-repo')).toBeInTheDocument(); // empty-string pe_name → fallback to label
   });

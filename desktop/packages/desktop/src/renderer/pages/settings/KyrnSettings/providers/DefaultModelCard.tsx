@@ -1,7 +1,7 @@
 import React from 'react';
 import { Radio } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
-import AionSelect from '@/renderer/components/base/AionSelect';
+import MuSelect from '@/renderer/components/base/MuSelect';
 import type { LoginStatus } from '@/common/kyrn/login';
 import {
   THINKING_LEVELS,
@@ -83,7 +83,7 @@ export default function DefaultModelCard({
   return (
     <Card testId='mu-defaults'>
       <Row title={t('mu.defaults.provider')} modified={defaults.provider !== base.models.defaults.provider}>
-        <AionSelect
+        <MuSelect
           size='small'
           showSearch
           allowClear
@@ -102,7 +102,7 @@ export default function DefaultModelCard({
         help={defaults.provider ? undefined : t('mu.defaults.pickProvider')}
         modified={defaults.model !== base.models.defaults.model}
       >
-        <AionSelect
+        <MuSelect
           size='small'
           showSearch
           allowCreate

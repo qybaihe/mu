@@ -162,7 +162,7 @@ describe('the board panel', () => {
     const sent = vi.fn();
     emitter.on('sendbox.command', sent);
     showBoard([]);
-    expect(screen.getByTestId('mu-board-unknown')).toHaveTextContent('under Features');
+    expect(screen.getByTestId('mu-board-unknown')).toHaveTextContent('Core features');
     expect(screen.queryByTestId('mu-board-off')).not.toBeInTheDocument();
     expect(screen.getByTestId('mu-board-switch')).toBeDisabled();
     fireEvent.click(screen.getByTestId('mu-board-switch'));
@@ -482,8 +482,8 @@ describe('the account under the board', () => {
     ]);
     expect(texts()).toEqual([
       'Stopped.',
-      'The goal is not met yet; mu sent it back to work (round 2): the login test fails',
-      'Sent out 2 helpers: tests, docs',
+      "The goal isn't met yet; mu sent the agent back to work (round 2): the login test fails",
+      'Started 2 subagents: tests, docs',
       'Looked at 1 file or place',
       'Changed src/login.ts',
     ]);

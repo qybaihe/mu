@@ -10,6 +10,7 @@ import { CdpConnection } from "../../browser/cdp.ts";
 import { type LaunchedChrome, launchChrome } from "../../browser/chrome.ts";
 import { EmbeddedBrowser, findEmbeddedEndpoint } from "../../browser/embedded.ts";
 import { BrowserSession } from "../../browser/session.ts";
+import { CascadeJudge } from "../../cascade.ts";
 import { browserStep } from "../../decisions/browser-step.ts";
 import { codeOf, say } from "../../language.ts";
 import { failOpen, type KyrnRuntime } from "../runtime.ts";
@@ -131,6 +132,16 @@ export function registerBrowser(runtime: KyrnRuntime): void {
 		if (!/^https?:\/\//i.test(params.url)) {
 			return { text: "Only http and https pages can be opened.", status: "refused", url: params.url };
 		}
+		// A goal needs a judge that can relate it to a page. A small local one (Laya) is rightly not trusted with
+		// that: every step would get a neutral answer, and the run would end blocked after its first look.
+		const judge = runtime.engine.judgeFor(browserStep.id);
+		if (params.goal?.trim() && judge instanceof CascadeJudge && !judge.trusts("relate")) {
+			return {
+				text: `The browser can't carry out a goal here: the judge for browser.step (${judge.id}) is not trusted to relate a goal to a page, so it would block at the first step. Give this one decision a capable judge: /mu route browser.step luna (any LLM judge in mu.json), or jev. Without a goal, browse still returns the page text.`,
+				status: "refused",
+				url: params.url,
+			};
+		}
 		let connection: CdpConnection;
 		try {
 			connection = await connect();
@@ -226,7 +237,7 @@ export function registerBrowser(runtime: KyrnRuntime): void {
 			codeParams = result.params;
 			// The usual first-run failure: a small local judge that is rightly not trusted with pages.
 			const hint = result.reason?.includes("no judge could choose")
-				? `\nThe judge for browser.step (${runtime.engine.judgeFor(browserStep.id).id}) cannot relate a goal to a page. Give this one decision a capable judge: /mu route browser.step luna (any llm judge from kyrn.json), or jev once it is available.`
+				? `\nThe judge for browser.step (${runtime.engine.judgeFor(browserStep.id).id}) cannot relate a goal to a page. Give this one decision a capable judge: /mu route browser.step luna (any LLM judge in mu.json), or jev once it is available.`
 				: "";
 			const trace = result.history
 				.map(
@@ -284,7 +295,7 @@ export function registerBrowser(runtime: KyrnRuntime): void {
 	pi.registerCommand("browse", {
 		description: say({
 			zh: "让内置浏览器打开网址，照你说的去做：/browse <网址> [要做的事]",
-			en: "Drive the built-in browser yourself: /browse <url> [goal]",
+			en: "Have the built-in browser open a page and do what you ask: /browse <url> [goal]",
 		}),
 		handler: async (args, ctx) => {
 			const [url, ...rest] = args.trim().split(/\s+/);
@@ -296,7 +307,7 @@ export function registerBrowser(runtime: KyrnRuntime): void {
 				return;
 			}
 			const target = /^https?:\/\//i.test(url) ? url : `https://${url}`;
-			ctx.ui.setStatus("kyrn.browse", `browsing ${target}…`);
+			ctx.ui.setStatus("kyrn.browse", `Browsing ${target}…`);
 			try {
 				// A person wants to see where it ended up, not four thousand characters of page.
 				const result = await browse(
@@ -308,7 +319,10 @@ export function registerBrowser(runtime: KyrnRuntime): void {
 				);
 				ctx.ui.notify(result.text, result.status === "done" || result.status === "read" ? "info" : "warning");
 			} catch (error) {
-				ctx.ui.notify(`browse failed: ${error instanceof Error ? error.message : String(error)}`, "error");
+				ctx.ui.notify(
+					`Couldn't finish browsing: ${error instanceof Error ? error.message : String(error)}`,
+					"error",
+				);
 			} finally {
 				ctx.ui.setStatus("kyrn.browse", undefined);
 			}

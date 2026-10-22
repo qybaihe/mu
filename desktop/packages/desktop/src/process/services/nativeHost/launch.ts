@@ -26,6 +26,8 @@ export type LauncherFs = {
 export type HostPlan = {
   error?: undefined;
   module: string;
+  /** The script the command line runs pi with. A launcher from before 2026-10-22 has none. */
+  cli?: string;
   execArgv: string[];
   args: string[];
   env: Record<string, string>;
@@ -186,6 +188,7 @@ export async function prepareHost(options: PrepareOptions): Promise<PreparedHost
   }
   return {
     module: plan.module,
+    ...(plan.cli ? { cli: plan.cli } : {}),
     args: plan.args,
     execArgv: plan.execArgv,
     env: plan.env,

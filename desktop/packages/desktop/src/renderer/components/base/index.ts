@@ -5,7 +5,7 @@
  */
 
 /**
- * AionUi 基础组件库统一导出 / AionUi base components unified exports
+ * 基础组件库统一导出 / Base components unified exports
  *
  * 提供所有基础组件和类型的统一导出入口
  * Provides unified export entry for all base components and types
@@ -13,37 +13,31 @@
 
 // ==================== 组件导出 / Component Exports ====================
 
-export { default as AionModal } from './AionModal';
-export { default as AionCollapse } from './AionCollapse';
-export { default as AionSelect } from './AionSelect';
-export { default as AionScrollArea } from './AionScrollArea';
-export { default as AionSteps } from './AionSteps';
-export { default as AionSearchInput } from './AionSearchInput';
-export { default as AionInlineSearchInput } from './AionInlineSearchInput';
+export { default as MuModal } from './MuModal';
+export { default as MuCollapse } from './MuCollapse';
+export { default as MuSelect } from './MuSelect';
+export { default as MuScrollArea } from './MuScrollArea';
+export { default as MuSteps } from './MuSteps';
+export { default as MuSearchInput } from './MuSearchInput';
+export { default as MuInlineSearchInput } from './MuInlineSearchInput';
 
 // ==================== 类型导出 / Type Exports ====================
 
-// AionModal 类型 / AionModal types
-export type {
-  ModalSize,
-  ModalHeaderConfig,
-  ModalFooterConfig,
-  ModalContentStyleConfig,
-  AionModalProps,
-} from './AionModal';
-export { MODAL_SIZES } from './AionModal';
+// MuModal 类型 / MuModal types
+export type { ModalSize, ModalHeaderConfig, ModalFooterConfig, ModalContentStyleConfig, MuModalProps } from './MuModal';
+export { MODAL_SIZES } from './MuModal';
 
-// AionCollapse 类型 / AionCollapse types
-export type { AionCollapseProps, AionCollapseItemProps } from './AionCollapse';
+// MuCollapse 类型 / MuCollapse types
+export type { MuCollapseProps, MuCollapseItemProps } from './MuCollapse';
 
-// AionSelect 类型 / AionSelect types
-export type { AionSelectProps } from './AionSelect';
+// MuSelect 类型 / MuSelect types
+export type { MuSelectProps } from './MuSelect';
 
-// AionSteps 类型 / AionSteps types
-export type { AionStepsProps } from './AionSteps';
+// MuSteps 类型 / MuSteps types
+export type { MuStepsProps } from './MuSteps';
 
-// AionSearchInput 类型 / AionSearchInput types
-export type { AionSearchInputProps } from './AionSearchInput';
+// MuSearchInput 类型 / MuSearchInput types
+export type { MuSearchInputProps } from './MuSearchInput';
 
-// AionInlineSearchInput 类型 / AionInlineSearchInput types
-export type { AionInlineSearchInputProps } from './AionInlineSearchInput';
+// MuInlineSearchInput 类型 / MuInlineSearchInput types
+export type { MuInlineSearchInputProps } from './MuInlineSearchInput';

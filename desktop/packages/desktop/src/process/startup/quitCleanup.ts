@@ -34,7 +34,7 @@ async function runWithTimeout(
   const timeout = new Promise<void>((resolve) => {
     timeoutId = setTimeout(() => {
       timedOut = true;
-      logWarn('[AionUi] Cleanup timed out after 10s, forcing quit');
+      logWarn('[mu] Cleanup timed out after 10s, forcing quit');
       resolve();
     }, timeoutMs);
   });
@@ -46,7 +46,7 @@ async function runWithTimeout(
 }
 
 async function runQuitCleanup(deps: QuitCleanupDeps): Promise<void> {
-  deps.logInfo('[AionUi] before-quit');
+  deps.logInfo('[mu] before-quit');
   deps.setIsQuitting(true);
   deps.markExplicitQuit();
   deps.destroyTray();

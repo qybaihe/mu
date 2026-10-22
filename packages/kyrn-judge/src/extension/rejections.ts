@@ -43,7 +43,8 @@ export function rejectionReport(reason: unknown): string {
 		.split(/\r?\n/)
 		.filter((line) => line.trim())
 		.map(
-			(line, index) => `[mu] ${index === 0 ? `a promise failed and nothing handled it; mu goes on: ${line}` : line}`,
+			(line, index) =>
+				`[mu] ${index === 0 ? `a promise failed and nothing handled it; mu keeps running: ${line}` : line}`,
 		)
 		.join("\n")
 		.concat("\n");

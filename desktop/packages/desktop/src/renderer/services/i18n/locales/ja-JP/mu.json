@@ -7,7 +7,8 @@
   "apiKey": "API キー",
   "keyHelp": "保存後は二度と表示されません。このコンピューターにだけ保存され、あなたのアカウントしか読めません。",
   "keyKeep": "空欄のままにすると保存済みのキーを保持します",
-  "endpointRule": "HTTPS を使用してください。HTTP はこのマシン（127.0.0.1、localhost）またはプライベートネットワークの IP アドレス（例: 192.168.1.20）宛てにのみ使えます。アドレスにユーザー名、パスワード、クエリ、フラグメントは含められません。",
+  "endpointRule": "https:// または http:// で始まるアドレスを入力してください。ユーザー名、パスワード、クエリ、フラグメントは含められません。",
+  "endpointPlain": "このアドレスは平文の http なので、キーとメッセージは暗号化されません。このコンピューターや自分のネットワーク上のサーバー（hosts ファイルで向けた名前を含む）なら問題ありません。インターネット越しには https を使ってください。",
   "sections": {
     "judges": "判定器",
     "judgeOrder": "判定器の順序",
@@ -158,7 +159,7 @@
       "jev": {
         "title": "Jev",
         "tag": "おすすめ",
-        "description": "高速かつ正確です。OpenCode Zen では期間限定で無料。TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare、または自前のサービスのキーを使えば呼び出しごとに課金されます。"
+        "description": "TypeSafe がホストする判定モデルです。高速かつ正確です。OpenCode Zen では期間限定で無料。TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare、または自前のサービスのキーを使えば呼び出しごとに課金されます。"
       },
       "local": {
         "title": "ローカル Laya",
@@ -259,9 +260,9 @@
         "title": "フルアクセス",
         "description": "何も確認せずに実行します。やらないでと伝えたことは引き続き止められます。"
       },
-      "jev": {
-        "title": "Jev が承認",
-        "description": "プロジェクト内の読み取りと編集はそのまま進めます。コマンド、プロジェクト外の変更、外部への操作は Jev があなたの代わりに承認し、判断に迷うときだけあなたに確認します。"
+      "judge": {
+        "title": "判定モード",
+        "description": "プロジェクト内の読み取りと編集はそのまま進めます。コマンド、プロジェクト外の変更、外部への操作は判定器があなたの代わりに承認し、判断に迷うときだけあなたに確認します。"
       },
       "ask": {
         "title": "最小権限",
@@ -279,10 +280,10 @@
       "other": "mu が外部への操作を行おうとしています"
     },
     "reason": {
-      "ask": "最小権限：どの操作も事前にあなたに確認します。",
-      "unsure": "Jev は、この操作があなたの意図どおりか確信が持てません。",
-      "beyond": "Jev の判定では、この操作はあなたの依頼の範囲を超えています。",
-      "unrelated": "Jev の判定では、この操作はタスクと関係ありません。",
+      "ask": "最小権限：編集、コマンド、外部への操作はすべて事前にあなたに確認します。",
+      "unsure": "判定器は、この操作があなたの意図どおりか確信が持てません。",
+      "beyond": "判定器は、この操作があなたの依頼の範囲を超えていると判断しました。",
+      "unrelated": "判定器は、この操作がタスクと関係ないと判断しました。",
       "protected": "mu 自身の設定に触れる操作のため、許可できるのはあなただけです。",
       "nojudge": "まだ使える判定器がないため、mu はステップごとにあなたに確認します。",
       "judgedown": "今回は判定器から応答がなかったため、mu があなたに確認します。"
@@ -382,7 +383,11 @@
     "byKey": "利用可能（API キー）",
     "byKeyHelp": "サブスクリプションにはログインしていませんが、前回の接続時に mu が利用可能と報告しました。通常は、その API キーが環境変数にあるためです。ログインするとサブスクリプションに切り替わります。",
     "otherRunning": "{{name}} のログインが進行中です。ログインは一度に 1 つしか実行できません。",
-    "showRunning": "表示する"
+    "showRunning": "表示する",
+    "legacy": {
+      "openai-codex": "この旧サインインは Codex CLI のログインを経由します。サインアウトしてから、ChatGPT でサインインしてください。",
+      "anthropic": "Anthropic は他のアプリが Claude のサブスクリプションでサインインすることを認めていないため、mu では提供を終了しました。サインアウトして、代わりに Anthropic の API キーを追加してください。"
+    }
   },
   "endpoints": {
     "openaiCompletions": {
@@ -505,7 +510,7 @@
       "signedIn": {
         "title": "サブスクリプションでログイン",
         "tag": "API キー不要",
-        "description": "ChatGPT、Claude、Grok などのプラン"
+        "description": "ChatGPT、Grok などのプラン"
       },
       "openai": {
         "title": "OpenAI 互換 API",
@@ -519,7 +524,7 @@
         "modelPlaceholder": "例: claude-sonnet-5"
       },
       "problems": {
-        "baseUrl": "https:// で始まるアドレスを入力してください（http:// はこのマシンまたはプライベートネットワークのアドレスのみ）。",
+        "baseUrl": "https:// または http:// で始まるアドレスを入力してください。",
         "key": "API キーを入力してください。",
         "model": "モデル名を入力してください。"
       },
@@ -544,6 +549,7 @@
       "recognized": "キーから判別しました。",
       "ambiguous": "この形のキーを使うサービスが複数あります。どのサービスのキーですか？",
       "unknown": "mu はこの種類のキーを知りません。どのサービスのキーですか？",
+      "subscriptionToken": "これは Claude サブスクリプションのトークン（claude setup-token で発行したもの）で、API キーではありません。Anthropic は他のアプリが Claude サブスクリプションを使うことを認めていないため、mu では使えません。代わりに Anthropic の API キー（sk-ant-api…）を貼り付けてください。",
       "keyPage": "キーはどこで取得できますか？",
       "checking": "{{service}} でキーを確認しています…",
       "lookingLocal": "このマシンで {{service}} を探しています…",
@@ -643,13 +649,26 @@
       "modelValue": "{{provider}} / {{model}}",
       "import": "会話",
       "importOpen": "取り込む会話を選ぶ…",
-      "importFound_one": "このコンピューターに Claude Code または Codex の会話が {{count}} 件あります。取り込んで続けられます",
-      "importFound_other": "このコンピューターに Claude Code または Codex の会話が {{count}} 件あります。取り込んで続けられます",
+      "importFound_one": "このコンピューターに Claude Code、Codex または ZCode の会話が {{count}} 件あります。取り込んで続けられます",
+      "importFound_other": "このコンピューターに Claude Code、Codex または ZCode の会話が {{count}} 件あります。取り込んで続けられます",
       "permissions": "権限"
     },
     "intro": {
+      "turn": {
+        "label": "判定器から見たひとつのターン",
+        "preflight": "複数ステップのタスク：まず調べる",
+        "approval": "npm test は確認なしで実行",
+        "completion": "テストが通ったので作業完了"
+      },
       "title": "mu へようこそ",
       "lead": "mu は実際に手を動かすコーディングアシスタントです。プロジェクトを読み、コードを編集し、コマンドやテストを実行して、作業が終わるまで進め続けます。",
+      "import": {
+        "title": "これまでの会話を引き継ぐ",
+        "text": "このコンピューターで、ほかのコーディングアシスタントとの会話が {{count}} 件見つかりました。履歴ごと取り込んで、ここで続けられます。",
+        "text_one": "このコンピューターで、ほかのコーディングアシスタントとの会話が {{count}} 件見つかりました。履歴ごと取り込んで、ここで続けられます。",
+        "text_other": "このコンピューターで、ほかのコーディングアシスタントとの会話が {{count}} 件見つかりました。履歴ごと取り込んで、ここで続けられます。",
+        "open": "会話を選ぶ…"
+      },
       "points": {
         "judge": {
           "title": "すべてのステップでチェック",
@@ -657,7 +676,7 @@
         },
         "control": {
           "title": "すべて見えて、操作できる",
-          "text": "どの変更も元に戻せます。ブラウザーでの操作はすべて見えるので、一時停止したり、操作を引き継いだりできます。"
+          "text": "チェックポイントで変更を元に戻せます。mu がアプリ内ブラウザーを使うときは、操作が一つずつ見えるので、一時停止したり、操作を引き継いだりできます。"
         },
         "ready": {
           "title": "すぐに使える",
@@ -668,9 +687,13 @@
     },
     "login": {
       "providers": {
-        "openai-codex": {
+        "openai": {
           "name": "ChatGPT",
           "plan": "Plus / Pro プラン"
+        },
+        "openai-codex": {
+          "name": "ChatGPT (Codex)",
+          "plan": "Codex 経由の旧サインイン"
         },
         "anthropic": {
           "name": "Claude",
@@ -776,7 +799,8 @@
       "other": "mu がモデルにリマインダーを送りました",
       "show": "送った内容",
       "hide": "閉じる",
-      "imported": "この会話は Claude Code または Codex から取り込まれ、ここで続きます。思考の過程と画像は取り込まれていません"
+      "imported": "この会話は {{tool}} から取り込まれ、ここで続きます",
+      "anotherTool": "別のコーディングアシスタント"
     }
   },
   "errors": {
@@ -801,7 +825,7 @@
     },
     "invalidJson": "{{file}} は有効な JSON ではありません。手動で修正してから再読み込みしてください。",
     "unreadable": "{{file}} を読み取れませんでした。",
-    "runtimeOffline": "mu のランタイムがオフラインです。ローカルのランチャーとログイン状態を確認してください。",
+    "runtimeOffline": "mu のエージェントが応答しません。mu を再起動してから、もう一度お試しください。",
     "sharedKey": "{{providers}} が同じキー変数を共有することになります。いずれかの ID を変更してください。",
     "importMissing": "このバージョンの mu はまだ会話を取り込めません。先に mu を更新してください。",
     "importFailed": "mu は会話を取り込めませんでした。",
@@ -822,18 +846,19 @@
   },
   "importChats": {
     "title": "会話を取り込む",
-    "description": "このコンピューターで Claude Code や Codex と交わした会話を mu に取り込み、ここで続けます。",
+    "description": "このコンピューターで Claude Code、Codex、ZCode と交わした会話を履歴ごと mu に取り込み、ここで続けます。",
     "open": "会話を選ぶ",
     "dialog": {
       "title": "会話を取り込む",
-      "hint": "選んだ会話はそれぞれ、元のプロジェクトフォルダーにある mu の会話になります。mu はそれまでのやり取りをすべて読みます。思考過程と画像は取り込まれません。",
+      "hint": "選んだ会話はそれぞれ、元のプロジェクトフォルダーにある mu の会話になります。メッセージ、ツール呼び出し、思考過程、画像まで、履歴をすべて引き継ぎます。あとでもう一度選ぶと、新しいやり取りを取り込めます。",
       "search": "内容やフォルダーで検索",
       "loading": "会話を探しています…",
-      "empty": "このコンピューターに Claude Code や Codex の会話は見つかりませんでした。",
+      "empty": "このコンピューターに Claude Code、Codex、ZCode の会話は見つかりませんでした。",
       "noMatch": "一致する会話はありません。",
       "noTitle": "（メッセージなし）",
       "folderUnknown": "フォルダー不明",
       "inList": "会話リストにあります",
+      "changed": "取り込んだ後に変更があります。選ぶと新しい内容を取り込めます。",
       "open": "開く",
       "selected": "選択中：{{count}}",
       "import": "取り込む",
@@ -843,13 +868,16 @@
     "done": "{{count}} 件の会話を取り込みました。会話リストにあります。",
     "done_one": "{{count}} 件の会話を取り込みました。会話リストにあります。",
     "done_other": "{{count}} 件の会話を取り込みました。会話リストにあります。",
+    "updated": "{{count}} 件の会話を最新の状態にしました。",
+    "updated_one": "{{count}} 件の会話を最新の状態にしました。",
+    "updated_other": "{{count}} 件の会話を最新の状態にしました。",
     "someFailed": "{{count}} 件の会話を取り込めませんでした。理由はそれぞれの下にあります。",
     "someFailed_one": "{{count}} 件の会話を取り込めませんでした。理由はそれぞれの下にあります。",
     "someFailed_other": "{{count}} 件の会話を取り込めませんでした。理由はそれぞれの下にあります。",
     "failure": {
       "missing": "ファイルがもうありません。",
       "notFile": "これはファイルではありません。",
-      "notTranscript": "これは Claude Code や Codex の会話ではありません。",
+      "notTranscript": "これは Claude Code、Codex、ZCode の会話ではありません。",
       "empty": "メッセージが入っていません。",
       "folderMissing": "プロジェクトフォルダーがもうありません：{{folder}}",
       "other": "取り込めませんでした：{{detail}}"
@@ -857,7 +885,7 @@
     "notice": {
       "title": "{{tool}} から取り込んだ会話",
       "counts": "あなたのメッセージ {{user}} 件 · 回答 {{assistant}} 件 · ツール呼び出し {{toolCalls}} 回",
-      "goOn": "下でそのまま続けてください。mu はここまでの会話を読んでいます。思考過程と画像は取り込まれていません。",
+      "goOn": "下でそのまま続けてください。mu はここまでの会話を読んでいます。",
       "read": "これまでの会話を見る"
     },
     "history": {
@@ -878,7 +906,7 @@
     "lessons": "このプロジェクトの教訓：/lessons で id · 種類 · 参照/守られた回数 · 教訓 を一覧表示、/lessons all でどこでも使う教訓と廃止した教訓も表示します",
     "forget": "教訓を廃止し、今後は参照しないようにします：/forget <id の先頭部分>（id は /lessons で確認）",
     "capabilities": "インストール済みのケイパビリティと、今開いているもの：/capabilities で表示、/capabilities open <ID> で開く",
-    "permissions": "mu が確認なしでどこまで行えるか：/permissions full（フルアクセス）| jev（Jev が承認）| ask（最小権限）、引数なしで選択肢を表示。/permissions reset でこの会話で許可した操作を忘れます",
+    "permissions": "mu が確認なしでどこまで行えるか：/permissions full（フルアクセス）| judge（判定モード）| ask（最小権限）、引数なしで選択肢を表示。/permissions reset でこの会話で許可した操作を忘れます",
     "lsp": "言語サーバー：インストール済みのもの、実行中のもの、直近のエラー",
     "goal": "目標モード：条件が満たされるまでエージェントに作業を続けさせます。/goal <条件> で設定、/goal で表示（未設定なら尋ねます）、/goal clear で終了",
     "board": "わかりやすいボード：/board で表示、/board on・/board off でこのプロジェクトのオン/オフ、/board model で書くモデルを変更",
@@ -898,7 +926,7 @@
     "help": "mu にできることと、知っておきたいコマンドの一覧",
     "ledger": "判定器の最近の判定と所要時間：/ledger [件数]",
     "doctor": "判定器、モデル、ブラウザ、サブエージェントが正しくつながっているか確認します",
-    "import-chat": "このプロジェクトの Claude Code または Codex の会話を mu に取り込み、続きをここで話せます：/import-chat [ファイル]",
+    "import-chat": "このプロジェクトの Claude Code、Codex または ZCode の会話を mu に取り込み、続きをここで話せます：/import-chat [ファイル]",
     "llama": "llama.cpp ルーターのモデルを管理します"
   },
   "native": {
@@ -912,12 +940,14 @@
       "idle": "未起動",
       "starting": "起動中",
       "running": "実行中",
+      "working": "作業中",
+      "ready": "待機中",
       "needsModel": "モデルなし",
       "failed": "停止"
     },
     "status": {
       "starting": "mu を起動しています…",
-      "classifying": "Jev がメッセージを読んでいます…",
+      "classifying": "判定器がメッセージを読んでいます…",
       "compacting": "会話を圧縮しています…",
       "retrying": "モデルへのリクエストが失敗しました。再試行しています（{{attempt}} / {{max}}）…",
       "thinking": "考えています…",
@@ -1023,10 +1053,10 @@
     }
   },
   "details": {
-    "lead": "機能ごとにスイッチが一つあり、設定は「オプション」にあります。字下げされた行は Jev に判断を求める箇所です。オフにすると、その段階はそのまま進みます。",
+    "lead": "機能ごとにスイッチが一つあり、設定は「オプション」にあります。字下げされた行は判定器に判断を求める箇所です。オフにすると、その段階はそのまま進みます。",
     "featureOff": "機能はオフです",
-    "askJev": "Jev に判断させる",
-    "askJevAbout": "Jev に判断させる：{{point}}",
+    "askJudge": "判定器に判断させる",
+    "askJudgeAbout": "判定器に判断させる：{{point}}",
     "areas": {
       "input": "入力",
       "context": "コンテキスト",

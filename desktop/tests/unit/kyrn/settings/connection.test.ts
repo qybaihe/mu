@@ -53,6 +53,22 @@ const input = (api: EndpointType, baseUrl: string, patch: Partial<ProviderTestIn
 });
 
 describe('testing a provider connection from the main process', () => {
+  it('passes on what the model list states about each model, by id (#23)', async () => {
+    const { baseUrl } = await endpoint({
+      'GET /v1/models': {
+        status: 200,
+        body: {
+          data: [
+            { id: 'plain' },
+            { id: 'wide', context_length: 1048576, architecture: { input_modalities: ['text', 'image'] } },
+          ],
+        },
+      },
+    });
+    const result = await testProvider(input('openai-completions', `${baseUrl}/v1`), undefined);
+    expect(result).toMatchObject({ ok: true, code: 'ok-models', models: ['plain', 'wide'] });
+    expect(result.facts).toEqual({ wide: { contextWindow: 1048576, imageInput: true } });
+  });
   it('lists models on an OpenAI-compatible endpoint with a bearer token', async () => {
     const { baseUrl, seen } = await endpoint({
       'GET /v1/models': { status: 200, body: { data: [{ id: 'a' }, { id: 'b' }] } },
@@ -169,7 +185,7 @@ describe('testing a provider connection from the main process', () => {
   it('validates before it connects: endpoint rules, wire format and the shape of a typed key', async () => {
     const bad = (patch: Partial<ProviderTestInput>) =>
       testProvider(input('openai-completions', 'https://example.com/v1', patch), undefined);
-    await expect(bad({ baseUrl: 'http://example.com/v1' })).rejects.toThrow('private-network address');
+    await expect(bad({ baseUrl: 'http://169.254.169.254/v1' })).rejects.toThrow('not link-local');
     await expect(bad({ baseUrl: 'https://user:pw@example.com/v1' })).rejects.toThrow('embedded credentials');
     await expect(bad({ api: 'soap' as EndpointType })).rejects.toThrow('Invalid endpoint type');
     await expect(bad({ apiKey: 'two words' })).rejects.toThrow('Invalid credential');

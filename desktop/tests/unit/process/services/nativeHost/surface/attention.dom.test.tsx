@@ -124,7 +124,7 @@ describe('a conversation that wants its person', () => {
     expect(shown).toHaveBeenCalledTimes(1);
     expect(shown).toHaveBeenCalledWith({
       title: 'mu',
-      body: '"Beta" has finished responding',
+      body: '"Beta" finished replying',
       conversation_id: 'c2',
       native: true,
     });
@@ -155,9 +155,9 @@ describe('a conversation that wants its person', () => {
     expect(bodies()).toEqual([
       '"Beta" is waiting for your confirmation',
       '"Beta" stopped with an error',
-      'The agent has finished responding',
+      'The agent finished replying',
       'A run stopped with an error',
-      '"A conversation with …" has finished responding',
+      '"A conversation with …" finished replying',
     ]);
   });
 

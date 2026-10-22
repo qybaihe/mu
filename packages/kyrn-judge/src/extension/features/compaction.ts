@@ -150,7 +150,7 @@ export function registerCompaction(runtime: KyrnRuntime): void {
 			const planned = plan(items, facts, verdicts, { ...options, targetChars });
 			const count = (action: string) => planned.plans.filter((entry) => entry.action === action).length;
 			const byRule = planned.plans.filter((entry) => entry.action === "prune" && entry.score === 0).length;
-			const report = `${count("keep")} tool results kept word for word, ${count("prune")} pruned (${byRule} by rule), ${count("drop")} calls dropped · ${before.toLocaleString()} -> ~${planned.chars.toLocaleString()} chars`;
+			const report = `${count("keep")} tool results kept verbatim, ${count("prune")} pruned (${byRule} by rule), ${count("drop")} calls dropped · ${before.toLocaleString()} -> ~${planned.chars.toLocaleString()} chars`;
 			runtime.present("compaction.plan", {
 				mode,
 				fits: planned.fits,
@@ -166,13 +166,17 @@ export function registerCompaction(runtime: KyrnRuntime): void {
 			if (!planned.fits) {
 				if (ctx.hasUI)
 					ctx.ui.notify(
-						`compaction (beta): what was said alone exceeds the budget, so pi's summary runs. ${report}`,
+						`compaction (beta): the messages alone exceed the budget, so mu writes its usual summary instead. ${report}`,
 						"warning",
 					);
 				return undefined;
 			}
 			if (mode !== "active") {
-				if (ctx.hasUI) ctx.ui.notify(`compaction (beta, shadow): would have written no summary. ${report}`, "info");
+				if (ctx.hasUI)
+					ctx.ui.notify(
+						`compaction (beta, shadow): would have pruned the history instead of summarizing it. ${report}`,
+						"info",
+					);
 				return undefined;
 			}
 
@@ -189,7 +193,8 @@ export function registerCompaction(runtime: KyrnRuntime): void {
 			});
 			const summary = serializeHistory(pruned);
 			runtime.savings.compactedChars += Math.max(0, before - summary.length);
-			if (ctx.hasUI) ctx.ui.notify(`compaction (beta): no summary written. ${report}`, "info");
+			if (ctx.hasUI)
+				ctx.ui.notify(`compaction (beta): pruned the history instead of summarizing it. ${report}`, "info");
 			const actualKept = pruned.filter((item) => item.kind === "call" && item.state === "full").length;
 			const details: KyrnCompactionDetails = {
 				kyrn: {

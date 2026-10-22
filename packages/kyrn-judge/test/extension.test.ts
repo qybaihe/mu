@@ -279,7 +279,7 @@ describe("kyrn judge extension", () => {
 			},
 			fauxAssistantMessage("Done."),
 		]);
-		// What AionUi's core puts in front of the first message of a conversation.
+		// What the backend puts in front of the first message of a conversation.
 		const preamble =
 			"[Assistant Rules]\n## Available Skills\n\n- **aionui-config**: Configure AionUi itself with the bundled aioncore CLI.\n[/Assistant Rules]\n\n";
 

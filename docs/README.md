@@ -2,10 +2,10 @@
 
 ## Using mu
 
-- [Getting started](getting-started.md): install the desktop app or the command line, connect a model, watch or switch off the decisions.
-- [Configuration](configuration.md): `mu.json`, modes, environment variables, proxies.
-- [Judges](judges.md): hosted Jev, the free Jev, the local judge, classifier models and LLMs; comparing them.
-- [Troubleshooting](troubleshooting.md): when something does not work.
+- [Getting started](getting-started.md): install the desktop app or the command line, connect a model, and watch or turn off the judge's decisions.
+- [Configuration](configuration.md): `mu.json`, modes, environment variables and proxies.
+- [Judges](judges.md): hosted Jev, the free Jev, the local judge, classifier models and LLMs, and how to compare them.
+- [Troubleshooting](troubleshooting.md): what to do when something doesn't work.
 
 ## Reference
 
@@ -16,13 +16,14 @@
 
 ## Contributing
 
-- [Contributing guide](../CONTRIBUTING.md): setup, checks, commits, pull requests.
-- [How mu works](architecture.md): the pieces, a decision end to end, the code map.
+- [Contributing guide](../CONTRIBUTING.md): setup, checks, commits and pull requests.
+- [How mu works](architecture.md): the pieces, a decision from end to end and a map of the code.
 - [Adding a decision point](adding-a-decision-point.md): from the question to the pull request.
-- [Translations](translations.md): the app's 13 languages, the kernel's catalog, the README.
+- [Translations](translations.md): the app's 13 languages, the kernel's catalog and the README.
+- [Writing style](writing-style.md): voice, rules of thumb and the glossary for mu's English.
 - [Releasing](releasing.md): for maintainers.
 
 ## Project
 
 - [Code of Conduct](../CODE_OF_CONDUCT.md) · [Security policy](../SECURITY.md) · [Getting help](../SUPPORT.md) · [Governance](../GOVERNANCE.md)
-- Design notes and measurements: [kyrn/docs/](../kyrn/docs/) (mostly in Chinese).
+- Design notes and measurements: [kyrn/docs/](../kyrn/docs/) (mostly in Chinese; the test-log study is also [in English](../kyrn/docs/09-test-log-admission.en.md)).

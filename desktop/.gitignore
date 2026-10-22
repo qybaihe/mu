@@ -105,12 +105,8 @@ out/
 **/.claude/settings.json
 .qwen/
 .qwen/*/
-.specify/scripts/
 .gemini/
 .gemini/*/
-
-# Keep important project documentation
-!.specify/memory/constitution.md
 
 # Temporary and backup files
 *.tmp
@@ -146,9 +142,6 @@ test-*.js
 !examples/**/test-*.js
 diagnose-*.js
 
-# Keep .gemini config for AI code review (but ignore local cache)
-!.gemini/
-.gemini/cache/
 gha-creds-*.json
 
 # Spec-Kit working files
@@ -203,7 +196,7 @@ worktrees/
 .superpowers/
 docs/superpowers/
 resources/bundled-bun
-resources/bundled-aioncore
+resources/bundled-backend
 resources/harness
 resources/hub
 /resources/windows/support/_sentry-dsn.generated.nsh
@@ -215,7 +208,7 @@ dist-server/
 .claude/teams/
 
 # Locally auto-injected agent skills: these are SYMLINKS into a developer's own
-# machine (e.g. ~/.aionui-dev/builtin-skills/...), so committing them gives
+# machine (into the data folder's builtin-skills/...), so committing them gives
 # everyone else broken links. The repo's own skills live in real directories
 # next to them (.claude/skills/architecture/, /testing/, ...) and stay tracked.
 .aionrs/skills/

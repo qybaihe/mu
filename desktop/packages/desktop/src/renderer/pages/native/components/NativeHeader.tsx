@@ -1,6 +1,7 @@
 /**
- * The top of a native conversation: its title, the project folder it works in, and how its mu is (starting, running,
- * without a model, stopped). A mu that has not started yet says nothing: the next message starts it.
+ * The top of a native conversation: its title, the project folder it works in, and how its mu is (starting, working,
+ * without a model, stopped). A mu that has not started yet says nothing: the next message starts it. Nor does a mu that
+ * is up and waiting for the next message: "Running" there read as if the turn were still going.
  *
  * The title is renamed where it stands, as a classic conversation's is: a click (or Enter) makes it a field, Enter or
  * leaving the field saves, Esc leaves it as it was. The new name comes back as the conversation's change, which the
@@ -127,10 +128,16 @@ const Title: React.FC<{ name: string; onRename?: (name: string) => Promise<Nativ
 const NativeHeader: React.FC<{
   conversation?: NativeConversation;
   host: NativeHostStatus;
+  /** A turn is running in this conversation. */
+  working?: boolean;
   /** Renames the conversation; without it the title is not renamed here. */
   onRename?: (name: string) => Promise<NativeResult<void>>;
-}> = ({ conversation, host, onRename }) => {
+}> = ({ conversation, host, working = false, onRename }) => {
   const { t } = useTranslation();
+  const up = host.phase === 'running';
+  // What there is to report: nothing before mu starts or while it waits for a message; the words stay for screen readers.
+  const quiet = host.phase === 'idle' || (up && !working);
+  const words = up ? (working ? 'mu.native.phase.working' : 'mu.native.phase.ready') : PHASE_KEY[host.phase];
   return (
     <header
       className='shrink-0 min-h-44px flex items-center justify-between gap-16px px-16px pt-8px pb-10px bg-1'
@@ -150,14 +157,18 @@ const NativeHeader: React.FC<{
         ) : null}
       </div>
       <div className='shrink-0 flex items-center gap-10px text-12px leading-18px text-t-secondary'>
-        {/* Before mu starts there is nothing to report: sending a message starts it. The words stay for screen readers. */}
         <span
-          className={host.phase === 'idle' ? 'sr-only' : 'flex items-center gap-6px'}
+          className={quiet ? 'sr-only' : 'flex items-center gap-6px'}
           data-testid='native-header-phase'
           data-phase={host.phase}
+          data-working={up ? String(working) : undefined}
         >
-          <span className='size-6px rd-full' style={{ background: DOT[host.phase] }} aria-hidden='true' />
-          {t(PHASE_KEY[host.phase])}
+          <span
+            className={up ? 'size-6px rd-full animate-pulse' : 'size-6px rd-full'}
+            style={{ background: DOT[host.phase] }}
+            aria-hidden='true'
+          />
+          {t(words)}
         </span>
       </div>
     </header>

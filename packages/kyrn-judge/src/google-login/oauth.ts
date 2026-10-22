@@ -455,7 +455,7 @@ async function login(config: GoogleLoginConfig, interaction: ProviderAuthInterac
 
 async function refresh(config: GoogleLoginConfig, credential: OAuthCredential, signal: AbortSignal) {
 	const projectId = (credential as Partial<GoogleCredential>).projectId;
-	if (!projectId) throw new Error(`${config.title} credential has no project; sign in again`);
+	if (!projectId) throw new Error(`The ${config.title} credential has no project; sign in again`);
 	const tokens = await tokenRequest(
 		config,
 		{ refresh_token: credential.refresh, grant_type: "refresh_token" },

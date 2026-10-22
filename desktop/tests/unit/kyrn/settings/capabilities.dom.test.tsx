@@ -102,7 +102,7 @@ describe('mu’s skills while mu runs inside the app', () => {
       group.getAttribute('data-testid')
     );
     expect(groups).toEqual(['mu-skills-mu', 'mu-skills-agents', 'mu-skills-builtin', 'mu-skills-claude']);
-    expect(own).toHaveTextContent('mu’s skills');
+    expect(own).toHaveTextContent("mu's skills");
     expect(own).toHaveTextContent(`In ${FOLDER}.`);
     expect(within(own).getByTestId('mu-skill-review')).toHaveTextContent('What review does.');
     expect(within(own).getByRole('button', { name: 'review: Remove' })).toBeInTheDocument();
@@ -112,7 +112,7 @@ describe('mu’s skills while mu runs inside the app', () => {
     for (const id of ['mu-skills-agents', 'mu-skills-builtin', 'mu-skills-claude'])
       expect(within(screen.getByTestId(id)).queryByRole('button', { name: /Remove/ })).not.toBeInTheDocument();
     // A project's own skills are not mu's to list here: the page says so.
-    expect(screen.getByText(/load only in that project’s conversations/)).toBeInTheDocument();
+    expect(screen.getByText(/load only in that project's conversations/)).toBeInTheDocument();
   });
 
   it('finds a skill by its name or what it does, group by group', async () => {
@@ -123,7 +123,7 @@ describe('mu’s skills while mu runs inside the app', () => {
     expect(screen.getByTestId('mu-skill-release-notes')).toBeInTheDocument();
     expect(screen.getByTestId('mu-skill-shared-notes')).toBeInTheDocument();
     expect(screen.queryByTestId('mu-skill-review')).not.toBeInTheDocument();
-    expect(within(screen.getByTestId('mu-skills-claude')).getByText('No skill matches.')).toBeInTheDocument();
+    expect(within(screen.getByTestId('mu-skills-claude')).getByText('No matching skills.')).toBeInTheDocument();
   });
 
   it('shows five skills of a long group, the rest on 显示全部, and all that match a search', async () => {
@@ -176,7 +176,7 @@ describe('mu’s skills while mu runs inside the app', () => {
     await screen.findByTestId('mu-skills-mu');
     fireEvent.click(screen.getByRole('button', { name: 'review: Remove' }));
     const dialog = await screen.findByRole('dialog');
-    expect(dialog).toHaveTextContent('Remove the skill review?');
+    expect(dialog).toHaveTextContent('Remove skill review?');
     expect(bridge.skillRemove).not.toHaveBeenCalled();
     bridge.skillRemove.mockResolvedValue(ok({ ...SKILLS, skills: SKILLS.skills.slice(1) }));
     fireEvent.click(within(dialog).getByRole('button', { name: 'Remove' }));
@@ -189,8 +189,8 @@ describe('mu’s skills while mu runs inside the app', () => {
     bridge.skills.mockResolvedValue(failed('unreadable', { file: FOLDER }));
     bridge.capabilityReveal.mockResolvedValue(ok(undefined));
     draw(<MuSkillsPage />);
-    expect(await screen.findByText('mu’s skills could not be read.')).toBeInTheDocument();
-    expect(screen.getByText(`${FOLDER} could not be read.`)).toBeInTheDocument();
+    expect(await screen.findByText("Couldn't read mu's skills.")).toBeInTheDocument();
+    expect(screen.getByText(`Couldn't read ${FOLDER}.`)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Open folder' }));
     expect(bridge.capabilityReveal).toHaveBeenCalledWith({ what: 'skills' });
   });
@@ -239,7 +239,7 @@ describe('mu’s MCP servers while mu runs inside the app', () => {
     draw(<MuMcpPage />);
     const own = await screen.findByTestId('mu-mcp-mu');
     expect(screen.getByRole('heading', { name: 'MCP servers' })).toBeInTheDocument();
-    expect(own).toHaveTextContent(`Added servers go into ${MCP_FILE}`);
+    expect(own).toHaveTextContent(`Servers you add go into ${MCP_FILE}`);
     expect(within(own).getByTestId('mu-mcp-filesystem')).toHaveTextContent('npx -y filesystem');
     expect(within(own).getByTestId('mu-mcp-github')).toHaveTextContent('https://api.example.com/mcp');
     expect(within(own).getByRole('switch', { name: 'Use github' })).toBeChecked();
@@ -250,10 +250,10 @@ describe('mu’s MCP servers while mu runs inside the app', () => {
     expect(within(claude).getByRole('switch', { name: 'Use sentry' })).toBeInTheDocument();
     expect(within(claude).queryByRole('button', { name: /Remove/ })).not.toBeInTheDocument();
     // Off in Cursor's own file, or of a kind mu cannot speak to: it says so, with no switch.
-    expect(screen.getByTestId('mu-mcp-lock-linear')).toHaveTextContent('Off at its source');
+    expect(screen.getByTestId('mu-mcp-lock-linear')).toHaveTextContent('Off in its source');
     expect(screen.getByTestId('mu-mcp-lock-legacy')).toHaveTextContent('Not supported');
     expect(screen.queryByRole('switch', { name: 'Use linear' })).not.toBeInTheDocument();
-    expect(screen.getByText(/are used only in that project’s conversations/)).toBeInTheDocument();
+    expect(screen.getByText(/are used only in that project's conversations/)).toBeInTheDocument();
   });
 
   it('switches a server off and shows the list the main process answered with', async () => {
@@ -268,7 +268,7 @@ describe('mu’s MCP servers while mu runs inside the app', () => {
 
     bridge.mcpSwitch.mockResolvedValue(failed('unwritable', { file: '/home/me/.mu/agent/mu.json' }));
     fireEvent.click(screen.getByRole('switch', { name: 'Use filesystem' }));
-    expect(await screen.findByText('/home/me/.mu/agent/mu.json could not be written.')).toBeInTheDocument();
+    expect(await screen.findByText("Couldn't write /home/me/.mu/agent/mu.json.")).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: 'Use filesystem' })).toBeChecked();
   });
 
@@ -278,7 +278,7 @@ describe('mu’s MCP servers while mu runs inside the app', () => {
     await screen.findByTestId('mu-mcp-mu');
     fireEvent.click(screen.getByRole('button', { name: 'github: Remove' }));
     const dialog = await screen.findByRole('dialog');
-    expect(dialog).toHaveTextContent(`Its entry is deleted from ${MCP_FILE}.`);
+    expect(dialog).toHaveTextContent(`This deletes its entry from ${MCP_FILE}.`);
     bridge.mcpRemove.mockResolvedValue(ok({ ...SERVERS, servers: SERVERS.servers.filter((e) => e.name !== 'github') }));
     fireEvent.click(within(dialog).getByRole('button', { name: 'Remove' }));
     expect(await screen.findByText('Removed github.')).toBeInTheDocument();
@@ -293,7 +293,7 @@ describe('mu’s MCP servers while mu runs inside the app', () => {
     draw(<MuMcpPage />);
     expect(await screen.findByText(/The MCP feature is off in mu.json/)).toBeInTheDocument();
     expect(screen.getByText(/so their servers are missing: \/home\/me\/.claude.json/)).toBeInTheDocument();
-    expect(screen.getByText('mu uses no MCP servers yet.')).toBeInTheDocument();
+    expect(screen.getByText("mu isn't using any MCP servers yet.")).toBeInTheDocument();
   });
 });
 
@@ -315,17 +315,17 @@ describe('adding an MCP server', () => {
     expect(within(dialog).getByRole('alert')).toHaveTextContent('Enter a name.');
     type(dialog, 'Name', 'my server');
     submit(dialog);
-    expect(within(dialog).getByRole('alert')).toHaveTextContent('“my server” cannot name a server');
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('"my server" isn\'t a valid server name');
     type(dialog, 'Name', 'files');
     submit(dialog);
     expect(within(dialog).getByRole('alert')).toHaveTextContent('Enter a command.');
     type(dialog, 'Command', 'node "server.js');
     submit(dialog);
-    expect(within(dialog).getByRole('alert')).toHaveTextContent('A quote in the command is not closed.');
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('The command has an unclosed quote.');
     type(dialog, 'Command', 'node server.js');
     type(dialog, 'Environment variables', 'TOKEN=1\nnot a pair');
     submit(dialog);
-    expect(within(dialog).getByRole('alert')).toHaveTextContent('Line 2 is not in the right form.');
+    expect(within(dialog).getByRole('alert')).toHaveTextContent("Line 2 isn't valid.");
     expect(bridge.mcpAdd).not.toHaveBeenCalled();
   });
 

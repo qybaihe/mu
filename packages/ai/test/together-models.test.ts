@@ -71,10 +71,8 @@ describe("Together models", () => {
 			thinkingFormat: "together",
 		});
 
-		const minimax = getModel("together", "MiniMaxAI/MiniMax-M2.7");
-		expect(minimax.thinkingLevelMap).toEqual({ off: null, minimal: null, low: null, medium: null });
-		expect(minimax.compat?.thinkingFormat).toBeUndefined();
-		expect(minimax.compat?.supportsReasoningEffort).toBe(false);
+		// The reasoning-only models (TOGETHER_REASONING_ONLY_MODELS: DeepSeek R1, MiniMax M2.7) are no longer in
+		// Together's catalog, so there is none to check here.
 	});
 
 	it("resolves TOGETHER_API_KEY from the environment", () => {

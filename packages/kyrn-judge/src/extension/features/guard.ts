@@ -23,7 +23,7 @@ const RULES: readonly (readonly [RegExp, string])[] = [
 	[/\bgit\s+push\b[^|;&\n]*\s(?:\+\S|--mirror\b|--delete\b|-d\b|:\S)/, "force push"],
 	[/\b(drop|truncate)\s+(table|database|schema)\b/i, "drops database objects"],
 	[/\bmkfs\b|\bdd\b.*\bof=\/dev\//, "overwrites a device"],
-	[/\bchmod\s+-R\s+0?777\b/, "opens permissions recursively"],
+	[/\bchmod\s+-R\s+0?777\b/, "loosens permissions recursively"],
 	// The same deeds in PowerShell and cmd.
 	[
 		/\b(Remove-Item|rm|ri|del|erase|rd|rmdir)\b[^|;\n]*(-Recurse|-Force|-r\b|-rf\b|\/s\b|\/q\b)/i,
@@ -56,7 +56,7 @@ export const FLAG_ZH: Readonly<Record<string, string>> = {
 	"force push": "强制推送",
 	"drops database objects": "删除数据库对象",
 	"overwrites a device": "覆盖整个设备",
-	"opens permissions recursively": "递归放开权限",
+	"loosens permissions recursively": "递归放开权限",
 	"runs a downloaded script": "运行下载来的脚本",
 	"runs as administrator": "以管理员身份运行",
 	"runs as root": "以 root 身份运行",
@@ -69,7 +69,7 @@ export const FLAG_CODES: Readonly<Record<string, string>> = {
 	"force push": "force_push",
 	"drops database objects": "drops_database_objects",
 	"overwrites a device": "overwrites_device",
-	"opens permissions recursively": "opens_permissions_recursively",
+	"loosens permissions recursively": "opens_permissions_recursively",
 	"runs a downloaded script": "runs_downloaded_script",
 	"runs as administrator": "runs_as_administrator",
 	"runs as root": "runs_as_root",

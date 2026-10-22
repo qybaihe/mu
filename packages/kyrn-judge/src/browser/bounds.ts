@@ -44,7 +44,7 @@ export interface Refusal {
 
 /** A refusal as the model and the log read it. */
 export function refusalReason(refused: Refusal): string {
-	return `a page sent the browser to ${refused.where} (${refused.what}), where it goes only when asked to open it there; nothing of that page was read`;
+	return `a page sent the browser to ${refused.where} (${refused.what}), which it opens only when asked to directly; nothing from that page was read`;
 }
 
 /**

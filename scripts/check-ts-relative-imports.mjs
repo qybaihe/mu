@@ -13,7 +13,7 @@ import {
 import { API } from "typescript/unstable/sync";
 
 const ignoredDirectories = new Set([".claude", ".git", "coverage", "dist", "node_modules"]);
-// mu's desktop app (an AionUi fork) has its own TypeScript setup, with .js import specifiers.
+// mu's desktop app has its own TypeScript setup, with .js import specifiers.
 const ignoredPaths = new Set(["desktop"]);
 const files = [];
 

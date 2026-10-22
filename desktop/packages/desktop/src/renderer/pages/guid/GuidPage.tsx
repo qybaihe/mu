@@ -18,8 +18,7 @@ import AssistantSelectionArea from './components/AssistantSelectionArea';
 import GuidActionRow from './components/GuidActionRow';
 import GuidInputCard from './components/GuidInputCard';
 import GuidModelSelector from './components/GuidModelSelector';
-import MuBackdrop from '@renderer/components/brand/MuBackdrop';
-import MuStarters from '@renderer/components/brand/MuStarters';
+import MuHero from '@renderer/components/kernel/MuHero';
 import { useGuidAssistantSelection } from './hooks/useGuidAssistantSelection';
 import { useGuidInput } from './hooks/useGuidInput';
 import { useGuidModelSelection } from './hooks/useGuidModelSelection';
@@ -31,8 +30,7 @@ import { ensureBackendMcpCatalog } from '@/renderer/hooks/mcp/catalog';
 import { resolveGuidAssistantDefaults } from './utils/assistantDefaults';
 import { chatFileRefPath, uploadFileRef } from '@/common/types/chatFile';
 import { useOpenFileSelector } from '@/renderer/hooks/file/useOpenFileSelector';
-import { ArrowRightUp } from '@icon-park/react';
-import { Button, ConfigProvider } from '@arco-design/web-react';
+import { ConfigProvider } from '@arco-design/web-react';
 import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -41,6 +39,7 @@ import { commandDescription } from '@/renderer/utils/chat/muCommands';
 import { useNativeEnabled } from '@/renderer/pages/native/hooks/useNativeConversations';
 import { useMuDefaultModel } from '@/renderer/hooks/agent/useMuDefaultModel';
 import styles from './index.module.css';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 type GuidNavigationState = {
   resetAssistant?: boolean;
@@ -122,9 +121,9 @@ const GuidPage: React.FC = () => {
   }, []);
 
   // --- Hooks ---
-  // Only aionrs uses this provider-based model picker now (Gemini runs as a
+  // Only the built-in agent uses this provider-based model picker now (Gemini runs as a
   // regular ACP backend with its own model selector).
-  const modelSelection = useGuidModelSelection('aionrs');
+  const modelSelection = useGuidModelSelection(BUILTIN_AGENT);
 
   const navState = location.state as GuidNavigationState | null;
   const resetAssistantRequested = navState?.resetAssistant === true;
@@ -200,7 +199,7 @@ const GuidPage: React.FC = () => {
     () => [
       {
         name: 'open',
-        description: t('conversation.workspace.addFile', { defaultValue: 'Add File' }),
+        description: t('conversation.sendbox.openCommand'),
         kind: 'builtin',
         source: 'builtin',
       },
@@ -288,7 +287,7 @@ const GuidPage: React.FC = () => {
     t,
     localeKey,
   });
-  // While the native host is on, the page starts a conversation on it instead: pi inside the app, no AionCore.
+  // While the native host is on, the page starts a conversation on it instead: pi inside the app, no backend.
   const nativeHost = useNativeEnabled() === true;
   // The thinking level the person picked on this page: the native start sends only that, never the level the pill shows
   // by default. A model picked after it clears it (a level belongs to its model).
@@ -348,30 +347,6 @@ const GuidPage: React.FC = () => {
   // features of the classic path, such as scheduled tasks made by chat.
   const placeholderText = nativeHost ? t('mu.native.send.placeholder') : t('conversation.welcome.placeholder');
   const typewriterPlaceholder = useTypewriterPlaceholder(placeholderText);
-  const selectedAssistantRecord = useMemo(() => {
-    if (!selectedAssistantId) return undefined;
-    const selectedId = agentSelection.selectedAssistantId;
-    const strippedId = selectedId.replace(/^builtin-/, '');
-    const candidates = new Set([selectedId, `builtin-${strippedId}`, strippedId]);
-    return agentSelection.assistants.find((item) => candidates.has(item.id));
-  }, [agentSelection.assistants, selectedAssistantId, agentSelection.selectedAssistantId]);
-  const selectedAssistantPrompts = useMemo(() => {
-    if (!selectedAssistantId) return [];
-    const resolvedPrompts =
-      selectedAssistantDetail?.prompts.recommended_i18n?.[localeKey] ||
-      selectedAssistantDetail?.prompts.recommended_i18n?.['en-US'] ||
-      selectedAssistantDetail?.prompts.recommended ||
-      selectedAssistantRecord?.prompts_i18n?.[localeKey] ||
-      selectedAssistantRecord?.prompts_i18n?.['en-US'] ||
-      selectedAssistantRecord?.prompts ||
-      [];
-
-    if (resolvedPrompts.length > 0) {
-      return resolvedPrompts;
-    }
-
-    return [t('guid.defaultPrompts.understand'), t('guid.defaultPrompts.cleanup'), t('guid.defaultPrompts.create')];
-  }, [localeKey, selectedAssistantDetail, selectedAssistantRecord, selectedAssistantId, t]);
 
   // Sync disabledBuiltinSkills + enabledSkills from assistant detail defaults.
   useEffect(() => {
@@ -409,7 +384,7 @@ const GuidPage: React.FC = () => {
       },
       availableModels: {
         acp: agentSelection.currentAcpCachedModelInfo?.available_models.map((model) => model.id) ?? [],
-        aionrs: modelSelection.modelList.map((provider) => ({
+        [BUILTIN_AGENT]: modelSelection.modelList.map((provider) => ({
           id: provider.id,
           models: provider.models,
         })),
@@ -439,7 +414,7 @@ const GuidPage: React.FC = () => {
       const shouldApplyDefaultModel = manualModelSelectionAssistantRef.current !== selectedAssistantId;
       const shouldApplyDefaultThoughtLevel = manualThoughtLevelSelectionAssistantRef.current !== selectedAssistantId;
 
-      if (shouldApplyDefaultModel && effectiveBackend === 'aionrs') {
+      if (shouldApplyDefaultModel && effectiveBackend === BUILTIN_AGENT) {
         if (resolvedDefaults.modelId) {
           const matchedProvider = modelSelection.modelList.find((provider) =>
             provider.models.includes(resolvedDefaults.modelId!)
@@ -629,8 +604,8 @@ const GuidPage: React.FC = () => {
   }, [resetAssistantRequested, preselectAssistantId, location.pathname, location.search, location.hash, navigate]);
 
   // Agents that use configured model providers instead of ACP probe-based models.
-  // Only aionrs now — Gemini runs as a regular ACP backend with ACP-cached models.
-  const PROVIDER_BASED_AGENTS = new Set(['aionrs']);
+  // Only the built-in agent now — Gemini runs as a regular ACP backend with ACP-cached models.
+  const PROVIDER_BASED_AGENTS = new Set([BUILTIN_AGENT]);
   const isGeminiMode = PROVIDER_BASED_AGENTS.has(agentSelection.selectedAssistantBackend);
 
   // Build the mention dropdown node
@@ -718,13 +693,7 @@ const GuidPage: React.FC = () => {
     >
       <div ref={guidContainerRef} className={styles.guidContainer}>
         <div className={styles.guidLayout}>
-          <div className={styles.heroHeader}>
-            {/* The mark above the greeting is the home page's alone: a conversation starts without it. */}
-            <MuBackdrop className={styles.heroBackdrop} leaving={guidInput.loading} />
-            <p className={`${styles.heroTitle} text-18px font-500 mb-0 text-t-primary text-center`}>
-              {t('conversation.welcome.title')}
-            </p>
-          </div>
+          <MuHero leaving={guidInput.loading} />
 
           <AssistantSelectionArea
             selectedAssistantId={agentSelection.selectedAssistantId}
@@ -753,41 +722,6 @@ const GuidPage: React.FC = () => {
             onSelectWorkspace={(dir) => guidInput.setDir(dir)}
             onClearWorkspace={() => guidInput.setDir('')}
           />
-
-          {selectedAssistantPrompts.length > 0 ? (
-            <div className='mt-18px w-full animate-fade-in ps-20px'>
-              <div className={`${styles.assistantPromptHint} mb-10px text-start`}>
-                {t('guid.promptExamplesHint', { defaultValue: 'Try these example prompts:' })}
-              </div>
-              <div className='flex flex-col gap-9px'>
-                {selectedAssistantPrompts.map((prompt, index) => (
-                  <Button
-                    key={`${index}-${prompt}`}
-                    type='text'
-                    className='group !h-auto !w-full !border-none !bg-transparent !px-0 !py-6px !text-start !text-12.5px !text-t-secondary !whitespace-normal !break-words transition-colors hover:!bg-transparent hover:!text-t-primary'
-                    onClick={() => {
-                      guidInput.setInput(prompt);
-                      guidInput.handleTextareaFocus();
-                    }}
-                  >
-                    <span>{prompt}</span>
-                    <ArrowRightUp
-                      theme='outline'
-                      size='13'
-                      className='ms-6px inline-flex flex-shrink-0 align-[-1px] text-t-primary opacity-0 transition-opacity group-hover:opacity-100'
-                    />
-                  </Button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <MuStarters
-              onPick={(prompt) => {
-                guidInput.setInput(prompt);
-                guidInput.handleTextareaFocus();
-              }}
-            />
-          )}
         </div>
       </div>
     </ConfigProvider>

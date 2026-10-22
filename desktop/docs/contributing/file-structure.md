@@ -10,7 +10,7 @@ Rules for organizing files and directories across the entire Electron project.
 - **Guide documents** (deployment, testing, CDP, etc.) belong in `docs/guides/`
 - **Contributor documentation** (dev setup, code style, file structure, PR workflow) belongs in `docs/contributing/`
 - **Architecture documentation** belongs in `docs/architecture/` (research notes under `docs/architecture/research/`)
-- **Feature specs / PRDs / design drafts** belong in `docs/specs/` (or `docs/prds/` for formal PRDs maintained by the product team)
+- **Feature specs and design drafts** belong in `docs/`, one page per subject, listed in `docs/README.md`
 - **Config files** (`tsconfig.json`, `package.json`, etc.) stay at root — Node.js/Electron ecosystem convention
 - **New documentation** should be placed under the appropriate `docs/` subdirectory, not at project root
 
@@ -22,7 +22,7 @@ Rules for organizing files and directories across the entire Electron project.
 
 ## Project Layout (`src/`)
 
-AionUi is a multi-process Electron app with three core layers: **renderer**, **main process**, and **preload/shared**.
+The app is a multi-process Electron app with three core layers: **renderer**, **main process**, and **preload/shared**.
 
 ### Target Structure
 
@@ -245,7 +245,7 @@ src/renderer/
 
 ```
 src/renderer/components/
-├── base/           # UI primitives — AionModal, AionSelect, FlexFullContainer, etc.
+├── base/           # UI primitives — MuModal, MuSelect, FlexFullContainer, etc.
 ├── chat/           # Conversation/message domain (example, not exhaustive)
 ├── agent/          # Agent selection/configuration domain
 ├── settings/       # Settings domain

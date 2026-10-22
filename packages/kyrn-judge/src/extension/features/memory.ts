@@ -630,7 +630,7 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 	const describe = (lesson: StoredLesson): string => {
 		const marks = [
 			...(lesson.status === "active" ? [] : [say(STATUS_WORDS[lesson.status])]),
-			...(lesson.scope.cwd === undefined ? [say({ zh: "到处适用", en: "everywhere" })] : []),
+			...(lesson.scope.cwd === undefined ? [say({ zh: "到处适用", en: "global" })] : []),
 		];
 		const said = `${lesson.id.slice(0, 8)} · ${say(KIND_WORDS[lesson.kind])} · ${lesson.uses.recalled}/${lesson.uses.applied} · ${lesson.lesson}`;
 		return marks.length > 0 ? `${said} (${marks.join(", ")})` : said;
@@ -651,7 +651,7 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 				? say({ zh: "这个项目没有经验。", en: "No lessons for this project." })
 				: say({
 						zh: "这个项目还没有经验。/lessons all 连到处适用的和已退役的一起看。",
-						en: "No lessons for this project yet. /lessons all also shows the ones for everywhere and the retired ones.",
+						en: "No lessons for this project yet. /lessons all also shows global and retired lessons.",
 					});
 		}
 		const header = say({ zh: "id · 类型 · 召回/照做 · 经验", en: "id · kind · recalled/followed · lesson" });
@@ -661,7 +661,7 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 	pi.registerCommand("remember", {
 		description: say({
 			zh: "给这个项目记一条经验，以后的会话都会用上：/remember <该怎么做>",
-			en: "Store a lesson for future sessions in this project: /remember <what to do>",
+			en: "Save a lesson for later work in this project: /remember <what to do>",
 		}),
 		handler: async (args, ctx) => {
 			runtime.touch(ctx);
@@ -676,14 +676,14 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 				const replaced = kept.replaced.map((old) => `- ${old.lesson}`);
 				ctx.ui.notify(
 					replaced.length > 0
-						? `${say({ zh: "记下了，它替代了：", en: "Stored. It replaces:" })}\n${replaced.join("\n")}`
-						: say({ zh: "记下了。", en: "Stored." }),
+						? `${say({ zh: "记下了，它替代了：", en: "Saved. It replaces:" })}\n${replaced.join("\n")}`
+						: say({ zh: "记下了。", en: "Saved." }),
 					"info",
 				);
 				return;
 			}
 			ctx.ui.notify(
-				say({ zh: `已经记着了：${kept.existing.lesson}`, en: `Already kept: ${kept.existing.lesson}` }),
+				say({ zh: `已经记着了：${kept.existing.lesson}`, en: `Already saved: ${kept.existing.lesson}` }),
 				"info",
 			);
 		},
@@ -692,7 +692,7 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 	pi.registerCommand("lessons", {
 		description: say({
 			zh: "这个项目的经验：/lessons 列出 id · 类型 · 召回/照做次数 · 经验，/lessons all 连到处适用的和已退役的一起列",
-			en: "This project's lessons: /lessons lists id · kind · recalled/followed · lesson, /lessons all adds the ones for everywhere and the retired ones",
+			en: "List this project's lessons (id · kind · recalled/followed · lesson); /lessons all adds global and retired lessons",
 		}),
 		handler: async (args, ctx) => {
 			runtime.touch(ctx);
@@ -703,7 +703,7 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 	pi.registerCommand("forget", {
 		description: say({
 			zh: "让一条经验退役，以后不再召回：/forget <id 前几位>（id 见 /lessons）",
-			en: "Retire a lesson so it is no longer recalled: /forget <id prefix> (the ids are in /lessons)",
+			en: "Retire a lesson so it's no longer recalled: /forget <id prefix> (find IDs with /lessons)",
 		}),
 		handler: async (args, ctx) => {
 			runtime.touch(ctx);
@@ -726,7 +726,7 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 				ctx.ui.notify(
 					say({
 						zh: `这个项目没有以 ${prefix} 开头的经验。`,
-						en: `No lesson of this project starts with ${prefix}.`,
+						en: `No lesson in this project starts with ${prefix}.`,
 					}),
 					"warning",
 				);
@@ -734,14 +734,14 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 			}
 			if (matches.length > 1) {
 				ctx.ui.notify(
-					`${say({ zh: `有 ${matches.length} 条以 ${prefix} 开头，多给几位：`, en: `${matches.length} lessons start with ${prefix}; give more of the id:` })}\n${matches.map(describe).join("\n")}`,
+					`${say({ zh: `有 ${matches.length} 条以 ${prefix} 开头，多给几位：`, en: `${matches.length} lessons start with ${prefix}; type more of the id:` })}\n${matches.map(describe).join("\n")}`,
 					"warning",
 				);
 				return;
 			}
 			if (only.status !== "active") {
 				ctx.ui.notify(
-					say({ zh: `它已经不在用了：${describe(only)}`, en: `It is not in use already: ${describe(only)}` }),
+					say({ zh: `它已经不在用了：${describe(only)}`, en: `That lesson isn't active: ${describe(only)}` }),
 					"info",
 				);
 				return;

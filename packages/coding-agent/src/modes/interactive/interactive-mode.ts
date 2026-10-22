@@ -63,6 +63,7 @@ import {
 	getAuthPath,
 	getDebugLogPath,
 	getDocsPath,
+	isAppExtension,
 	VERSION,
 } from "../../config.ts";
 import { type AgentSession, type AgentSessionEvent, parseSkillBlock } from "../../core/agent-session.ts";
@@ -674,8 +675,8 @@ export class InteractiveMode {
 	}
 
 	private getAutocompleteSourceTag(sourceInfo?: SourceInfo): string | undefined {
-		// Built-in extension commands are untagged, like built-in commands.
-		if (!sourceInfo || sourceInfo.source === "builtin") {
+		// Built-in extension commands are untagged, like built-in commands, and so are the app's own.
+		if (!sourceInfo || sourceInfo.source === "builtin" || isAppExtension(sourceInfo.path)) {
 			return undefined;
 		}
 
@@ -2161,7 +2162,9 @@ export class InteractiveMode {
 	}
 
 	private crashReportInstructions(): string {
-		const resume = this.session.sessionFile ? `run \`${APP_NAME} -r\` to resume the session, then` : "start pi and";
+		const resume = this.session.sessionFile
+			? `run \`${APP_NAME} -r\` to resume the session, then`
+			: `start ${APP_NAME} and`;
 		return `To report this crash: ${resume} run /bug. The crash details are attached automatically.`;
 	}
 
@@ -2718,7 +2721,12 @@ export class InteractiveMode {
 					this.hideExtensionSelector();
 					resolve(undefined);
 				},
-				{ tui: this.ui, timeout: opts?.timeout, onToggleToolsExpanded: () => this.toggleToolOutputExpansion() },
+				{
+					tui: this.ui,
+					timeout: opts?.timeout,
+					initialIndex: opts?.initialIndex,
+					onToggleToolsExpanded: () => this.toggleToolOutputExpansion(),
+				},
 			);
 
 			this.disposeActiveSelector();
@@ -5803,6 +5811,13 @@ export class InteractiveMode {
 		}
 	}
 
+	/**
+	 * Under another name than pi (mu), no Claude subscription sign-in: Anthropic's terms don't let other apps offer
+	 * Claude.ai login (code.claude.com/docs/en/legal-and-compliance). An Anthropic API key is still offered, and a
+	 * sign-in made before stays until /logout.
+	 */
+	private static readonly HIDDEN_SIGN_INS: ReadonlySet<string> = new Set(APP_NAME === "pi" ? [] : ["anthropic"]);
+
 	private getLoginProviderOptions(authType?: "oauth" | "api_key"): AuthSelectorProvider[] {
 		const options: AuthSelectorProvider[] = [];
 		for (const provider of this.session.modelRuntime.getProviders()) {
@@ -5814,7 +5829,11 @@ export class InteractiveMode {
 					}
 				: undefined;
 			const subscription = provider.auth.oauth?.isSubscription === true;
-			if ((!authType || authType === "oauth") && provider.auth.oauth) {
+			if (
+				(!authType || authType === "oauth") &&
+				provider.auth.oauth &&
+				!InteractiveMode.HIDDEN_SIGN_INS.has(provider.id)
+			) {
 				options.push({
 					id: provider.id,
 					name: provider.name,
@@ -6346,7 +6365,11 @@ export class InteractiveMode {
 					prompt: (prompt) => this.showAuthPrompt(dialog, prompt, providerId),
 					notify: (event) => this.notifyAuthDialog(dialog, event),
 				},
-				{ getDeviceId: () => this.settingsManager.getOrCreateDeviceId() },
+				{
+					getDeviceId: () => this.settingsManager.getOrCreateDeviceId(),
+					// A build under another name (piConfig.name) signs in as itself; pi keeps the flows' default name.
+					...(APP_NAME !== "pi" ? { agentName: APP_NAME } : {}),
+				},
 			);
 		} finally {
 			this.programStatus.setBlocked("login", undefined);

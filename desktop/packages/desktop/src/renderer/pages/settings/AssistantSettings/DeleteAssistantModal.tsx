@@ -39,7 +39,7 @@ const DeleteAssistantModal: React.FC<DeleteAssistantModalProps> = ({
     >
       <p>
         {t('settings.deleteAssistantConfirm', {
-          defaultValue: 'Are you sure you want to delete this assistant? This action cannot be undone.',
+          defaultValue: "Delete this assistant? This can't be undone.",
         })}
       </p>
       {activeAssistant && (

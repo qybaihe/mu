@@ -2,6 +2,76 @@
 
 ## [Unreleased]
 
+### Changed
+
+- `/login` offers no Claude subscription sign-in under mu's name (Anthropic doesn't allow other apps to offer one); an Anthropic API key is still offered, and an earlier sign-in stays until `/logout`. `mu setup` refuses a Claude subscription token (`sk-ant-oat…`) given as a key, pasted or with `--key-stdin`, and sends it nowhere.
+- The plain-language board runs only where someone watches it, the terminal and the desktop app, not in `mu --print` or json mode (`features.board.unattended` brings it back). While subagents work, it looks again only when one of them starts, finishes or fails, not every 20 seconds (`followAlways`). An unsure "has anything changed?" with nothing new no longer rewrites the board, and "is it waiting for you?" is asked only once the agent stopped. Replayed on 82 judged looks, the change gate alone cuts the writer calls from 82 to 29.
+- `delegate` and `hive` ask the judge how hard a task is only when a model ladder is set (`features.swarm.models`) or a role pins a model of its own: without one, a delegation that names every role asks nothing, and one that doesn't asks only which role. Hive bees get their thinking level the way delegate's subagents do: on the session's model, the session's level, which keeps the parent's prompt cache warm.
+- Hive: what a bee says starting with `FOUND:` or `DEAD END:` goes on the board without asking the judge (`features.hive.publishMarked`), and tool output is no longer put to the judge as a possible note (`publishToolOutputs`). When the judge can't answer, notes go to every bee up to `maxDeliveriesPerBee` instead of to none. A new note is held against at most 2 earlier ones (`maxRelatedPerNote`, was 6).
+- `swarm.patch` is off by default: the delegate result already lists every changed file with its line counts. `"modes": { "swarm.patch": "active" }` in `mu.json` turns it back on.
+- `browse` with a goal refuses up front when the judge for `browser.step` can't relate a goal to a page (Laya alone), and says how to route it to another judge; before, it opened the page and blocked after the first look.
+- In shadow mode, the decisions mu acts on anyway (`browser.step`, `swarm.routing`, `judge.items`) are recorded as the judge's, not as the fallback's (`actsInShadow`).
+- `notify.routing` and `input.interjection` are in shadow by default: the verdict is recorded and nothing waits for it. Without a verdict, a background job's end or watched line and the 70% and 85% context-budget notices reach the model at once, as a steer (`features.background.unjudged` and `features.notify.unjudged`: `now`, `next_turn` or `drop`); before, a job's end waited for a next turn that a one-shot run never has, and the budget notice was dropped. A watched line is not routed while `bg_output` waits on its job. A message sent mid-run goes on at once instead of after up to 1.5 s.
+- `turn.continue` (v2) asks whether what the closing message offers is more than the user asked for (`beyond_request`). Only a go-ahead on the requested work sends the agent back; an offer of extra work no longer does. The local judge (Laya) is not asked this question, so on Laya alone no stop counts as a go-ahead.
+- `cache.warming` is asked only while the agent is idle and waits at most 3 s (`features.warming.waitMs`). During a run pi's own decision stands, so a message that reads like a sign-off can no longer stop warming in the middle of the run.
+- `skills.disclosure`: a verdict on the session's first message that arrives after the 4 s wait is applied from the next turn, instead of the session keeping every skill description (`features.skills.applyLate`).
+- `tool.injection` asks the judge only about passages with prose in them: six words in a row on a line, or eight characters in a row of a script written without spaces (`features.injection.proseWords`, 0 judges every passage). Directory listings, link lists, response headers and short grep hits get the rules alone. On Terminal-Bench 2.1 that is about half of all screened passages, and half of the screened results need no request at all.
+- `tool.injection` and `tool.admission` ask for a new judge capability, `screen`, which the built-in `laya` profile sets to false. With `laya,jev` they go straight to Jev; with Laya alone, injection is left to the rules and long output goes in whole. On Terminal-Bench 2.1 every passage Laya withheld was clean, its one admission drop was wrong, and most of its calls on both failed or came too late.
+- A cascade's stand-in answer (`judge: "untrusted"` or `"unavailable"`, a probability of 0.5 nobody gave) is no verdict for `tool.injection`: the rules read the passage, where before it passed unread. Such a call, and an admission call answered only by stand-ins, is recorded as a fallback (`abstain`).
+- `tool.admission` no longer judges `web_fetch` results (added to `passThrough`, whose listed default now also shows `delegate` and `hive`) or a bash or PowerShell command that only prints files (`features.admission.printCommands`: `cat`, `sed -n`, `head`, `tail`, `nl`, `less`, `bat`, `grep`, `rg`, `od`, `xxd`, `git show`, `git diff`, `readelf`, `objdump`, with `cd` and `echo` between them). A redirect, a here document, `$(…)`, `&&` into another program or `tail -f` makes it more than a print. On Terminal-Bench 2.1 this skips 46 of 89 admission calls; every drop the judge got right there was in background-job or script output, which is still judged.
+
+### Fixed
+
+- The loop rule ("the same call 3 times with the same outcome") compares the whole input and the result text. Paging through a file with `read` at different offsets, or two scripts whose first 300 characters match, no longer counts as a loop.
+- The end-of-run checks (`turn.completion`, `turn.continue`) cancel their judge call when their 3 s wait runs out. A late verdict no longer keeps `mu --print` from exiting until the judge's own timeout: with a slow local judge, runs ended 7-13 s after their last message. Notification verdicts still on their way are cancelled when the session ends.
+
+## [0.1.12] - 2026-10-22
+
+### Added
+
+- A long-thinking watchdog: a reply that has only been thinking for 10 minutes, with no text and no tool call yet, is cut and asked again at the same reasoning effort, with the end of its reasoning so far and a request to act on it first. The retry is never cut. At most 3 cuts per message (`features.watchdog`: `thinkingMs`, `maxCuts`).
+- `mu import` reads ZCode conversations too (`~/.zcode/cli/db/db.sqlite`), beside Claude Code and Codex, with rewinds, compactions, sub-agent threads and forks.
+- Imported conversations keep their whole history: thinking (shown, never sent to the new model) and images, as well as messages and tool calls. A Claude Code conversation keeps the title Claude Code shows for it.
+- Importing a conversation again brings over what's new in it, into the same conversation; if you also went on in mu, the new import is a conversation of its own. `mu import --list` marks conversations that changed since.
+
+### Changed
+
+- The permission mode `jev` ("Jev approves") is now `judge` ("Judge mode"): `/permissions full | judge | ask`, `MU_PERMISSIONS=judge`. A saved `jev` falls back to the default, which is judge mode. The kernel's and the command line's messages say "the judge" where they meant mu's judge in general, and keep "Jev" for TypeSafe's hosted model.
+- Background jobs started with `bg_start` keep running after an unattended run (`mu --print`, json mode) ends, so a server a task asked for is still up afterwards. Such jobs write to their log file instead of a pipe to mu. Interactive and desktop sessions still stop their jobs at the end (`features.background.keepOnExit`: `headless`, `always` or `never`).
+- A failed model request is retried up to 8 times instead of 3 (`retry.maxRetries`). With the 60-second cap on each wait, a provider that stops answering for about four minutes no longer ends the run.
+
+### Fixed
+
+- A run that ended on a reply with only thinking in it, no text and no tool call, stopped there without a word. mu now sends the agent back to the task, up to the same limit as its other nudges.
+- A reply cut by the provider's content filter (`finish_reason: content_filter`) ended the run. It is now asked again, twice at most.
+- A Claude Code conversation compacted more than once is imported whole; before, the import stopped at the latest compaction.
+- An imported conversation goes on with mu's model, not the one Claude Code, Codex or ZCode answered with, so `mu` no longer warns that it can't restore that model.
+
+## [0.1.11] - 2026-10-21
+
+### Changed
+
+- The package's keywords add `pi-coding-agent`, `mcp` and `prompt-injection`, so directories that index pi coding agents and MCP clients find it.
+- English: a copy edit of what the command line and the kernel show, after `docs/writing-style.md`: "subagent" as one word, "canceled", "session" for what is allowed until the session ends ("Allow for this session"), and clearer wording in `mu setup`, `/browse`, the board's account and the settings' help. The `/browse` hint names `mu.json`, not `kyrn.json`. The Chinese text is unchanged.
+
+### Fixed
+
+- With a Jev key (TypeSafe), the welcome screen and each verdict line name the judge `Jev`, not its model id `jev-latest`. A versioned Jev on OpenCode Zen shows as `Jev 1.13`.
+- `/hive <question>` shows what you typed in the chat and as the conversation's title. The request to start a hive at once, written for the model in English, goes with it as a message only the model reads; before, it filled your message, also in a Chinese session. A `/hive` sent while a turn runs still sends the request as its message.
+- The footer's line after each message reads like the verdict line, `Jev: multi-step task · full effort · 71 ms`, instead of `jev-latest active: multi_step_task -> heavy 71ms`. A verdict in shadow mode ends with `recorded only`.
+- `planHost` names the script the command line runs pi with (`cli`: `dist/bundle/cli.js` in the package, `packages/coding-agent/src/cli.ts` in a checkout). The desktop app's host hands it to pi as `process.argv[1]`, so the sub-agents pi starts by running that script again (`hive`, `delegate`, the swarm) no longer fail with "The mu host needs a parent".
+- With no model connected, `mu -p` and the other no-key errors now say to run `mu setup`, instead of pointing to `/login` (which only exists inside a session) and two files inside the package.
+
+## [0.1.10] - 2026-10-21
+
+### Changed
+
+- English: the kernel's messages (the `en` side of `say({ zh, en })`), the manifest's titles and summaries, `mu --help`, `mu doctor` and `mu ledger` were rewritten after `docs/writing-style.md`. The Chinese text is unchanged.
+- Themes: the package ships `judge/themes/mu-dark.json` and `mu-light.json`. An interactive `mu` passes `--theme <judge/themes>`, and `--use-theme mu-light/mu-dark` unless the command line has `--use-theme` or `settings.json` names a theme. `-p`, `--print` and `--mode` get neither. `system` is still pi's theme.
+- pi's startup list names the judgment layer `mu`, not `kyrn-judge.js`: its bundle in the package is `judge/mu/index.js` (it was `judge/dist/kyrn-judge.js`).
+- The package's description and README say what mu does by default: 38 of the 40 decision points act from the start, and approvals fall back to asking you.
+- The welcome screen drops its box: the wordmark, the version, pi's version, then the judge, the model and the working directory, and a closing rule. Judge names show as `Jev` and `Laya`; a verdict's mark is a pink `◆`.
+
 ## [0.1.9] - 2026-10-19
 
 ### Added

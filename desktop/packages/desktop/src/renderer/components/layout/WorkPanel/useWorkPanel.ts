@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2025 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { useCallback, useEffect, useState } from 'react';
 import { ipcBridge } from '@/common';
 import type { Activity } from '@/common/kyrn/types';

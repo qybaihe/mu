@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>404 · mu</title>
+<link rel="icon" href="/assets/favicon-64.png">
+<link rel="stylesheet" href="/assets/site.css?v={{ version }}">
+</head>
+<body>
+<main class="wrap page-head">
+  <a class="brand" href="/"><img src="/assets/icon-256.png" alt="">mu</a>
+  <p class="label">404</p>
+  <h1>页面未找到</h1>
+  <p class="page-lead" lang="en">This page could not be found. Choose a language to return home.</p>
+  <p>{% for X in locales %}<a class="btn" href="/{{ X.path }}" lang="{{ X.lang }}">{{ X.label }}</a> {% endfor %}</p>
+</main>
+</body>
+</html>

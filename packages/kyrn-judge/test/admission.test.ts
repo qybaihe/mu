@@ -4,9 +4,13 @@ import { fauxAssistantMessage, fauxText, fauxToolCall } from "@earendil-works/pi
 import { Type } from "typebox";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
-import { parseConfig } from "../src/config.ts";
-import { chunkLines, describeCall } from "../src/extension/features/admission.ts";
+import { CascadeJudge } from "../src/cascade.ts";
+import { BUILT_IN_JUDGES, parseConfig } from "../src/config.ts";
+import { DecisionEngine } from "../src/decision.ts";
+import { toolAdmission, toolAdmissionBatch } from "../src/decisions/tool-admission.ts";
+import { chunkLines, describeCall, printsFile } from "../src/extension/features/admission.ts";
 import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
+import { Judge } from "../src/judge.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
 import type { Answer } from "../src/types.ts";
 
@@ -30,6 +34,17 @@ const runTests: AgentTool = {
 	parameters: Type.Object({ command: Type.String() }),
 	execute: async () => ({ content: [{ type: "text", text: output }], details: {} }),
 };
+
+/** A tool that prints the same long output whatever it is asked: a shell, or a page fetch. */
+function printing(name: string): AgentTool {
+	return {
+		name,
+		label: name,
+		description: name,
+		parameters: Type.Object({ command: Type.Optional(Type.String()), url: Type.Optional(Type.String()) }),
+		execute: async () => ({ content: [{ type: "text", text: output }], details: {} }),
+	};
+}
 
 /** Calls a chunk a repeated warning unless it shows the failing test: one chunk per request (`chunk`), or many (`c1`… asked by `k1`…). */
 function kindJudge(): MockJudgeProvider {
@@ -69,11 +84,12 @@ describe("tool output admission", () => {
 		mode: "shadow" | "active",
 		provider = kindJudge(),
 		config: Record<string, unknown> = {},
+		call: { tool: AgentTool; args: Record<string, string> } = { tool: runTests, args: { command: "npm test" } },
 	): Promise<Harness> {
 		// About what a result keeps, not about who allows the command that made it.
 		vi.stubEnv("MU_PERMISSIONS", "full");
 		const harness = await createHarness({
-			tools: [runTests],
+			tools: [call.tool],
 			extensionFactories: [
 				createKyrnJudgeExtension({
 					provider,
@@ -85,10 +101,7 @@ describe("tool output admission", () => {
 		harnesses.push(harness);
 		harness.setResponses([
 			fauxAssistantMessage(
-				[
-					fauxText("Running the suite to find the failing test."),
-					fauxToolCall("run_tests", { command: "npm test" }),
-				],
+				[fauxText("Running the suite to find the failing test."), fauxToolCall(call.tool.name, call.args)],
 				{
 					stopReason: "toolUse",
 				},
@@ -172,12 +185,107 @@ describe("tool output admission", () => {
 		const harness = await run("active", new MockJudgeProvider());
 		expect(toolResultText(harness)).toBe(output);
 	});
+
+	it("does not judge a file the agent printed or a page it fetched, and still judges a build log", async () => {
+		const bash = printing("bash");
+		const prints: { tool: AgentTool; args: Record<string, string> }[] = [
+			{ tool: bash, args: { command: "cd /app && cat build.log" } },
+			{ tool: bash, args: { command: "sed -n 1,400p build.log | grep -v '^$'" } },
+			{ tool: printing("web_fetch"), args: { url: "https://example.com/build.log" } },
+		];
+		for (const call of prints) {
+			const provider = kindJudge();
+			// mu's own web_fetch would go to the network: this one stands in for it.
+			const harness = await run("active", provider, { features: { web: false } }, call);
+			expect(toolResultText(harness), JSON.stringify(call.args)).toBe(output);
+			expect(admissionCalls(provider)).toEqual([]);
+		}
+
+		const build = kindJudge();
+		const text = toolResultText(
+			await run("active", build, {}, { tool: bash, args: { command: "cd /app && make 2>&1 | tail -400" } }),
+		);
+		expect(text).toContain("of warning output omitted");
+		expect(admissionCalls(build)).toHaveLength(1);
+
+		// With no print commands listed, a cat is judged like anything else.
+		const every = kindJudge();
+		const config = { features: { admission: { printCommands: [] } } };
+		await run("active", every, config, { tool: bash, args: { command: "cat build.log" } });
+		expect(admissionCalls(every)).toHaveLength(1);
+	});
+});
+
+describe("who judges admission", () => {
+	const laya = BUILT_IN_JUDGES.laya.profile;
+	const call = "bash: make";
+	const chunks = chunkLines(output, 1200).slice(1, -1);
+
+	it("is never the local judge: the next tier answers, and with none behind it everything is kept", async () => {
+		const local = kindJudge();
+		const hosted = kindJudge();
+		const engine = new DecisionEngine({
+			judge: new CascadeJudge([
+				{ judge: new Judge({ provider: local }), profile: laya },
+				{ judge: new Judge({ provider: hosted }) },
+			]),
+			defaultMode: "active",
+		});
+		const [batch] = await engine.decideMany(toolAdmissionBatch, [{ call, chunks }]);
+		expect(batch.source).toBe("judge");
+		expect(batch.outcome.some((outcome) => outcome.drop)).toBe(true);
+		expect(hosted.calls).toHaveLength(1);
+
+		const alone = new DecisionEngine({
+			judge: new CascadeJudge([{ judge: new Judge({ provider: local }), profile: laya }]),
+			defaultMode: "active",
+		});
+		expect(await alone.decide(toolAdmission, { call, chunk: chunks[0] })).toMatchObject({
+			source: "fallback",
+			outcome: { kind: "unknown", drop: false },
+			reason: "abstain",
+		});
+		const [kept] = await alone.decideMany(toolAdmissionBatch, [{ call, chunks }]);
+		expect(kept.source).toBe("fallback");
+		expect(kept.outcome.every((outcome) => !outcome.drop)).toBe(true);
+		expect(local.calls).toEqual([]);
+	});
 });
 
 describe("admission helpers", () => {
 	it("chunks on line boundaries and splits a line that is too long on its own", () => {
 		expect(chunkLines("aa\nbb\ncc", 5)).toEqual(["aa\nbb", "cc"]);
 		expect(chunkLines("abcdefgh", 3)).toEqual(["abc", "def", "gh"]);
+	});
+
+	it("tells a command that only prints files from one that does more", () => {
+		for (const command of [
+			"cat src/main.c",
+			"cd /app && cat hi.c && readelf -lS a.out",
+			'cd "/my dir" && head -50 notes.txt',
+			"cat a.patch; echo ===; sed -n 1,80p b.c",
+			'grep -nE "error|warning" -r src 2>/dev/null | head -40',
+			"nl -ba f.py | sed -n '100,200p'",
+			"tail -n 200 build.log",
+			"git show HEAD~1",
+		]) {
+			expect(printsFile(command), command).toBe(true);
+		}
+		for (const command of [
+			"npm test",
+			"make 2>&1 | tail -100",
+			"cat setup.py && python3 setup.py build",
+			"cat > main.c <<'EOF'\nint main(void) { return 0; }\nEOF\ngcc main.c && ./a.out",
+			"tail -f build.log",
+			"sed -i s/a/b/ f.c",
+			"cat $(ls *.c)",
+			"cat a.txt > b.txt",
+			"head -100 x.log || true",
+			"echo done",
+		]) {
+			expect(printsFile(command), command).toBe(false);
+		}
+		expect(printsFile("cat src/main.c", [])).toBe(false);
 	});
 
 	it("describes a call by its command, pattern or path", () => {

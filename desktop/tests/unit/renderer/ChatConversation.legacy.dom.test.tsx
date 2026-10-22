@@ -3,11 +3,11 @@ import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { TChatConversation } from '@/common/config/storage';
+import { BACKEND_APP_SOURCE } from '@/common/platform/backendNames';
 import ChatConversation from '@/renderer/pages/conversation/components/ChatConversation';
 
 const usePresetAssistantInfoMock = vi.fn();
 const acpChatMock = vi.fn(() => <div data-testid='mock-acp-chat'>acp chat</div>);
-const acpModelSelectorMock = vi.fn(() => <div data-testid='mock-acp-model-selector'>model selector</div>);
 const runtimeReady = vi.hoisted(() => ({ current: false }));
 
 vi.mock('@/renderer/pages/conversation/Messages/MessageList', () => ({
@@ -37,11 +37,6 @@ vi.mock('@/renderer/pages/conversation/components/ChatLayout', () => ({
 vi.mock('@/renderer/pages/conversation/platforms/acp/AcpChat', () => ({
   __esModule: true,
   default: (props: unknown) => acpChatMock(props),
-}));
-
-vi.mock('@/renderer/components/agent/AcpModelSelector', () => ({
-  __esModule: true,
-  default: (props: unknown) => acpModelSelectorMock(props),
 }));
 
 vi.mock('@/renderer/components/agent/AcpRuntimeRestartButton', () => ({
@@ -84,9 +79,9 @@ function legacyConversation(type: 'gemini' | 'codex' | 'openclaw-gateway' | 'nan
     name: `${type} history`,
     type,
     model: {},
-    extra: { workspace: '/tmp/aionui-history' },
+    extra: { workspace: '/tmp/mu-history' },
     status: 'finished',
-    source: 'aionui',
+    source: BACKEND_APP_SOURCE,
     created_at: 1,
     modified_at: 1,
     pinned: false,
@@ -97,7 +92,6 @@ describe('ChatConversation legacy runtime rendering', () => {
   beforeEach(() => {
     usePresetAssistantInfoMock.mockReset();
     acpChatMock.mockClear();
-    acpModelSelectorMock.mockClear();
     runtimeReady.current = false;
     usePresetAssistantInfoMock.mockReturnValue({ info: undefined, isLoading: false });
   });
@@ -135,9 +129,9 @@ describe('ChatConversation legacy runtime rendering', () => {
             name: 'ACP history',
             type: 'acp',
             model: {},
-            extra: { workspace: '/tmp/aionui-history', backend: 'claude' },
+            extra: { workspace: '/tmp/mu-history', backend: 'claude' },
             status: 'finished',
-            source: 'aionui',
+            source: BACKEND_APP_SOURCE,
             created_at: 1,
             modified_at: 1,
             pinned: false,
@@ -164,16 +158,15 @@ describe('ChatConversation legacy runtime rendering', () => {
       name: 'ACP history',
       type: 'acp',
       model: {},
-      extra: { workspace: '/tmp/aionui-history', backend: 'claude', current_model_id: 'model-1' },
+      extra: { workspace: '/tmp/mu-history', backend: 'claude', current_model_id: 'model-1' },
       status: 'finished',
-      source: 'aionui',
+      source: BACKEND_APP_SOURCE,
       created_at: 1,
       modified_at: 1,
       pinned: false,
     } as TChatConversation;
 
     const { rerender } = render(<ChatConversation conversation={acpConversation} />);
-    expect(acpModelSelectorMock).not.toHaveBeenCalled();
     expect(screen.getByTestId('mock-runtime-restart').getAttribute('data-availability')).toBe('initializing');
 
     runtimeReady.current = true;

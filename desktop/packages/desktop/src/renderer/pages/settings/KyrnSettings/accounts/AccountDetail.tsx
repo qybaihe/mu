@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button, Popconfirm, Tag } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
-import type { SubscriptionProvider } from '@/common/kyrn/login';
+import { LEGACY_PROVIDERS, type SubscriptionProvider } from '@/common/kyrn/login';
 import ProviderMark from '@renderer/components/brand/ProviderMark';
 import { ProviderHead } from '../providers/parts';
 import providerStyles from '../providers/providers.module.css';
@@ -11,7 +11,7 @@ import type { SubscriptionLoginFlow } from './useSubscriptionLogin';
 type AccountDetailProps = {
   provider: SubscriptionProvider;
   flow: SubscriptionLoginFlow;
-  /** What mu reported for this id while nobody is signed in: usable through an API key (Claude, Grok). */
+  /** What mu reported for this id while nobody is signed in: usable through an API key (OpenAI, Grok). */
   byKey?: { models: { id: string; name: string }[] };
   /** Opens the provider whose sign-in is running, when it is another one. */
   onShow: (provider: SubscriptionProvider) => void;
@@ -29,6 +29,8 @@ export default function AccountDetail({ provider, flow, byKey, onShow }: Account
   // One sign-in runs at a time: another one's question or code is on its own pane.
   const other = flow.running && login?.provider && login.provider !== provider ? login.provider : undefined;
   const name = providerName(t, provider);
+  // A sign-in mu no longer offers: shown while an account is signed in with it, to be signed out.
+  const legacy = LEGACY_PROVIDERS.includes(provider);
   const state = busy
     ? 'mu.welcome.login.inProgress'
     : account
@@ -62,7 +64,7 @@ export default function AccountDetail({ provider, flow, byKey, onShow }: Account
                 {t('mu.accounts.signOut')}
               </Button>
             </Popconfirm>
-          ) : (
+          ) : legacy ? null : (
             <Button
               size='small'
               type='primary'
@@ -81,6 +83,11 @@ export default function AccountDetail({ provider, flow, byKey, onShow }: Account
           <div className={providerStyles.value}>{t(`mu.welcome.login.providers.${provider}.plan`)}</div>
           <div className={providerStyles.hint}>{t('mu.accounts.instant')}</div>
           {byKey ? <div className={providerStyles.hint}>{t('mu.accounts.byKeyHelp')}</div> : null}
+          {legacy ? (
+            <div className={providerStyles.hint} data-testid='mu-account-legacy'>
+              {t(`mu.accounts.legacy.${provider}`)}
+            </div>
+          ) : null}
         </div>
         {other ? (
           <div className={providerStyles.hint} data-testid='mu-account-other'>

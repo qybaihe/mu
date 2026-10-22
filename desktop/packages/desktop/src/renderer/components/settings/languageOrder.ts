@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { SUPPORTED_LANGUAGES, normalizeLanguageCode } from '@/common/config/i18n';
 
 /** Every app language under its own name, as the language list shows it. */

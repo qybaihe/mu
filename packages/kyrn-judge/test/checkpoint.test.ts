@@ -325,7 +325,7 @@ describe("checkpoints and the judged rewind", () => {
 		await harness.session.prompt("/rewind 1 both");
 
 		expect(file("app.ts")).toBe("v1\n");
-		expect(ui.notes.at(-1)).toContain('/tree, then pick the message "Break it."');
+		expect(ui.notes.at(-1)).toContain('run /tree and pick the message "Break it."');
 		expect(userTexts(harness).join()).toContain("Break it.");
 	});
 
@@ -455,7 +455,7 @@ describe("checkpoints and the judged rewind", () => {
 
 		expect(file("app.ts")).toBe("v3\n");
 		expect(entries(CHECKPOINT_ENTRY)).toEqual([]);
-		expect(ui.notes.filter((note) => note.includes("git was not found"))).toHaveLength(1);
+		expect(ui.notes.filter((note) => note.includes("git wasn't found"))).toHaveLength(1);
 		await harness.session.prompt("/rewind");
 		expect(ui.notes.at(-1)).toContain("checkpoints are off");
 	});
@@ -489,7 +489,7 @@ describe("checkpoints and the judged rewind", () => {
 			const ui = scriptedUi({});
 			const off = await twoTurnsAndRewind(await start({ ui, navigation: true, git }));
 			const line =
-				"mu: checkpoints are off, because git cannot run on this Mac until the Xcode license is accepted. Accept it with sudo xcodebuild -license in Terminal, then start a new session to get them.";
+				"mu: checkpoints are off because git can't run on this Mac until you accept the Xcode license. Run sudo xcodebuild -license in Terminal to accept it, then start a new session.";
 			// Once for the session's first change; /rewind says it again because it was asked.
 			expect(ui.notes).toEqual([line, line]);
 			expect(off).toEqual([{ code: "xcode_license", params: {}, message: line }]);
@@ -503,7 +503,7 @@ describe("checkpoints and the judged rewind", () => {
 		const run = spawnGit("mu-test-no-such-git-binary", 30_000, probe);
 		const off = await twoTurnsAndRewind(await start({ ui, navigation: true, run }));
 		const line =
-			"mu: checkpoints are off, because this Mac has no command line developer tools, which git needs. Install them with xcode-select --install, then start a new session to get them.";
+			"mu: checkpoints are off because git needs the command line developer tools, which aren't installed on this Mac. Install them with xcode-select --install, then start a new session.";
 		expect(ui.notes).toEqual([line, line]);
 		expect(off).toEqual([{ code: "developer_tools_missing", params: {}, message: line }]);
 	});
@@ -534,7 +534,7 @@ describe("checkpoints and the judged rewind", () => {
 		expect(entries(CHECKPOINT_ENTRY)).toEqual([]);
 		expect(readdirSync(shadow)).toEqual([]);
 		const line =
-			"mu: checkpoints are off in this session, because this folder is your home folder or holds it. Start mu in a project folder to get them.";
+			"mu: checkpoints are off for this session because this folder is, or contains, your home folder. Start mu in a project folder to use checkpoints.";
 		// Once for the session's first change; /checkpoints and /rewind say it again because they were asked.
 		expect(ui.notes).toEqual([line, line, line]);
 		expect(events.filter((event) => event.kind === "checkpoint.off").map((event) => event.payload)).toEqual([
@@ -581,7 +581,7 @@ describe("checkpoints and the judged rewind", () => {
 			else process.env.MU_LANG = saved;
 		}
 		expect(offNotice("too_slow", limits).line).toBe(
-			"mu: checkpoints are off in this session, because listing this folder's files took longer than 30 s. Start mu in a project folder to get them.",
+			"mu: checkpoints are off for this session because listing this folder's files took more than 30 s. Start mu in a project folder to use checkpoints.",
 		);
 	});
 });

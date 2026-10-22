@@ -169,7 +169,7 @@
         },
         "maxRetries": {
           "type": "number",
-          "default": 3
+          "default": 8
         },
         "baseDelayMs": {
           "type": "number",

@@ -1,10 +1,4 @@
 /**
- * @license
- * Copyright 2025 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
  * The work panel's 浏览器 tab as the person uses it: its pages as tabs, one address field for the page in front (an
  * address or words to search for), back, forward and reload, a new blank page, closing, each tab's right-click menu,
  * and filling the page.
@@ -72,6 +66,7 @@ import {
   updateBrowserTab,
 } from '@/renderer/pages/conversation/Preview/browser/browserStore';
 import { MAX_BROWSER_TABS } from '@/renderer/pages/conversation/Preview/browser/constants';
+import { BROWSER_PARTITION } from '@/common/platform/legacyNames';
 
 const i18n = createInstance();
 beforeAll(async () => {
@@ -278,7 +273,7 @@ describe('the browser’s pages', () => {
       openBrowserPage('https://run.test/', { by: 'agent', muRun: 'r1' });
     });
     show();
-    expect(pages.byUrl.get('https://person.test/')?.partition).toBe('persist:aionui-browser');
+    expect(pages.byUrl.get('https://person.test/')?.partition).toBe(BROWSER_PARTITION);
     expect(pages.byUrl.get('https://run.test/')?.partition).toBe('persist:mu-browser');
   });
 

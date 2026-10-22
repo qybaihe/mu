@@ -1,6 +1,6 @@
 /**
  * Source control by a project folder, for the 源码 tab beside a native conversation (docs/native-host-ui.md). Such a
- * conversation has no AionCore project, so the classic source control (the backend's, by project entry, over the
+ * conversation has no backend project, so the classic source control (the backend's, by project entry, over the
  * `scm` lane) has nothing to read. The main process runs git itself in the conversation's folder instead
  * (process/services/folderGit/), read only, with `KyrnResult` like every mu channel.
  *

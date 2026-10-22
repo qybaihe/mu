@@ -145,29 +145,29 @@
       "send_feedback": "请重试；如果仍然失败，请查看应用日志。"
     },
     "ownership": {
-      "aionui": "应用",
+      "mu": "应用",
       "user_agent": "Agent",
       "user_llm_provider": "模型服务商",
       "unknown_upstream": "上游"
     },
     "codes": {
-      "AIONUI_STREAM_BROKEN": {
+      "MU_STREAM_BROKEN": {
         "title": "响应流异常中断",
         "body": "消息已发送，但响应流异常结束。请先重试；如果反复出现，请查看应用日志。"
       },
-      "AIONUI_STATE_INCONSISTENT": {
+      "MU_STATE_INCONSISTENT": {
         "title": "会话状态不一致",
         "body": "当前对话状态和后台记录不同步。请重新打开应用或新建会话后再试。"
       },
-      "AIONUI_PERMISSION_ERROR": {
+      "MU_PERMISSION_ERROR": {
         "title": "无法访问所需资源",
         "body": "本地权限或文件访问检查失败。请确认项目路径和应用权限后重试。"
       },
-      "AIONUI_INTERNAL_ERROR": {
+      "MU_INTERNAL_ERROR": {
         "title": "应用处理失败",
         "body": "本次请求在应用处理过程中失败。请先重试一次；如果仍然出现，请查看应用日志。"
       },
-      "AIONUI_CONVERSATION_BUSY": {
+      "MU_CONVERSATION_BUSY": {
         "title": "会话正在处理上一条消息",
         "body": "当前会话还有回复未结束。请等待本次回复完成后再发送新的消息。"
       },
@@ -592,7 +592,9 @@
     "hint": "输入 / 唤起命令，@ 引用文件，↑/↓ 切换历史消息",
     "mediaPathFallback": "该 Agent 不原生支持此文件类型，将以文件路径形式发送。",
     "hintWithSessions": "输入 / 唤起命令，@ 引用文件，@@ 引用会话，↑/↓ 切换历史消息",
-    "stop": "停止回复"
+    "stop": "停止回复",
+    "openCommand": "从这台电脑附加文件",
+    "copyCommand": "复制最后一条回复"
   },
   "composer": {
     "goalLine": {

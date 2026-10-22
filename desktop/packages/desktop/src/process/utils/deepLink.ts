@@ -8,8 +8,8 @@ import type { BrowserWindow } from 'electron';
 import { ipcBridge } from '@/common';
 
 /**
- * mu's own link scheme (electron-builder.yml `protocols`). mu does not answer AionUi's `aionui://`: that scheme belongs
- * to AionUi, which may be installed beside mu.
+ * mu's own link scheme (electron-builder.yml `protocols`). mu answers no other: the scheme of the app it was forked
+ * from belongs to that app, which may be installed beside mu.
  */
 export const PROTOCOL_SCHEME = 'mu';
 

@@ -271,7 +271,7 @@ export function explainProblem(problem: Problem, context: ExplainContext, langua
 				? `这次请求走了代理（${context.proxy}），确认代理正在运行。`
 				: "如果需要代理：设置 HTTPS_PROXY，或在 ~/.mu/agent/settings.json 里写 httpProxy，然后重新运行 mu setup。"
 			: context.proxy
-				? `The request went through your proxy (${context.proxy}): check that it is running.`
+				? `The request went through your proxy (${context.proxy}). Check that it's running.`
 				: "If you need a proxy, set HTTPS_PROXY (or httpProxy in ~/.mu/agent/settings.json) and run mu setup again.";
 	const said = problem.said
 		? language === "zh"
@@ -283,15 +283,15 @@ export function explainProblem(problem: Problem, context: ExplainContext, langua
 		case "key":
 			return zh
 				? `${service} 不接受这个密钥。检查是否完整复制，以及它确实是 ${service} 的密钥。`
-				: `${service} does not accept this key. Check that you copied all of it, and that it is ${article(service)} key.`;
+				: `${service} didn't accept this key. Check that you copied all of it and that it's ${article(service)} key.`;
 		case "refused":
 			return zh
 				? `${service} 拒绝了这个密钥（HTTP 403）：可能是密钥不对，或它没有访问权限。${said}`
-				: `${service} refused this key (HTTP 403): it may be wrong, or not allowed access.${said}`;
+				: `${service} refused this key (HTTP 403). The key may be wrong or lack access.${said}`;
 		case "permission":
 			return zh
 				? "这个密钥有效，但没有读取模型列表的权限（受限密钥）。给它读取模型的权限，或换一个密钥。"
-				: "The key works, but may not read the list of models (a restricted key). Allow it to read models, or use another key.";
+				: "The key works but can't list models (it's a restricted key). Give it permission to read models, or use another key.";
 		case "balance":
 			return zh
 				? `${service} 的账户没有余额或额度了。充值后重新运行 mu setup。`
@@ -299,46 +299,46 @@ export function explainProblem(problem: Problem, context: ExplainContext, langua
 		case "region":
 			return zh
 				? `${service} 不向你所在的地区提供服务。需要一个位于支持地区的代理或 VPN。${proxyHint}`
-				: `${service} does not serve the region this request came from. A proxy or VPN in a supported region is needed. ${proxyHint}`;
+				: `${service} isn't available in the region this request came from. You need a proxy or VPN in a supported region. ${proxyHint}`;
 		case "rate":
 			return zh
 				? `${service} 说请求太频繁。等一分钟再试。`
-				: `${service} says there were too many requests. Wait a minute and try again.`;
+				: `${service} is getting too many requests from you. Wait a minute and try again.`;
 		case "address":
 			return zh
 				? `${problem.url} 这个地址不存在（HTTP 404）：地址填错了。`
-				: `Nothing answers at ${problem.url} (HTTP 404): the address is wrong.`;
+				: `Nothing was found at ${problem.url} (HTTP 404). Check the address.`;
 		case "server":
 			return zh
 				? `${service} 自己出错了（HTTP ${problem.status}）。过一会儿再试。`
-				: `${service} had an error of its own (HTTP ${problem.status}). Try again in a while.`;
+				: `${service} returned a server error (HTTP ${problem.status}). Try again later.`;
 		case "response":
 			return zh
 				? `${problem.url} 有回应，但不是模型列表：检查地址和接口类型。`
-				: `${problem.url} answered, but not with a list of models: check the address and the API type.`;
+				: `${problem.url} responded, but not with a list of models. Check the address and the API type.`;
 		case "timeout":
 			return zh
 				? `${seconds} 秒内 ${host} 没有回应。网络可能不通：有些地区要用代理或 VPN 才能访问。${proxyHint}`
-				: `No answer from ${host} within ${seconds} s. The network may block it: in some regions a proxy or VPN is needed. ${proxyHint}`;
+				: `No response from ${host} within ${seconds} s. The network may be blocking it; some regions need a proxy or VPN. ${proxyHint}`;
 		case "dns":
 			return zh
 				? `找不到 ${host}：没有联网，或这里解析不了这个域名。${proxyHint}`
-				: `Could not find ${host}: there is no internet connection, or the name cannot be resolved here. ${proxyHint}`;
+				: `Couldn't resolve ${host}. Check your internet connection and DNS. ${proxyHint}`;
 		case "connection":
 			if (local) {
 				return zh
 					? `${host} 上没有服务在监听：它启动了吗？`
-					: `Nothing is listening at ${host}: is the service running?`;
+					: `Nothing is listening at ${host}. Is the service running?`;
 			}
-			return zh ? `连不上 ${host}。${proxyHint}` : `Could not connect to ${host}. ${proxyHint}`;
+			return zh ? `连不上 ${host}。${proxyHint}` : `Couldn't connect to ${host}. ${proxyHint}`;
 		case "tls":
 			return zh
 				? `和 ${host} 的安全连接失败了：可能有代理或防火墙在拦截 HTTPS。`
-				: `The secure connection to ${host} failed: a proxy or firewall may be intercepting HTTPS.`;
+				: `The secure connection to ${host} failed. A proxy or firewall may be intercepting HTTPS.`;
 		default:
 			return zh
 				? `${service} 拒绝了这次检查（HTTP ${problem.status ?? "?"}）。${said}`
-				: `${service} refused the check (HTTP ${problem.status ?? "?"}).${said}`;
+				: `${service} rejected the check (HTTP ${problem.status ?? "?"}).${said}`;
 	}
 }
 

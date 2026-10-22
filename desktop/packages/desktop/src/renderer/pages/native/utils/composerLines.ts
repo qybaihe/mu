@@ -67,3 +67,17 @@ export function contextUsageOf(view: NativeView): ContextUsageShown | undefined 
     contextLimit: window > 0 ? window : 0,
   };
 }
+
+/** The share of the window, in percent, above which the context ring shows beside the kernel bar: it turns amber there. */
+export const CONTEXT_RING_FROM = 70;
+
+/**
+ * Whether the composer shows the context ring. The kernel bar along the bottom of the window reads the context all the
+ * time, so beside it the ring shows only when the window runs short, as a warning where you type. Without the bar (a
+ * narrow window) the ring is the only reading, and always shows.
+ */
+export function showsContextRing(usage: ContextUsageShown, kernelBar: boolean): boolean {
+  if (!kernelBar) return true;
+  const { contextLimit } = usage;
+  return contextLimit > 0 && (usage.tokenUsage.total_tokens / contextLimit) * 100 > CONTEXT_RING_FROM;
+}

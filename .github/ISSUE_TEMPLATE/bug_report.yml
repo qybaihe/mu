@@ -1,13 +1,13 @@
 name: Bug report
-description: Something in mu or the desktop app does not work as it should. 报告 bug。
+description: Something in mu or the desktop app doesn't work as it should. 报告 bug。
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time. A short report that someone else can reproduce is the most useful kind. English or Chinese, both fine. 中英文都可以。
+        Thanks for taking the time. The most useful report is a short one that someone else can reproduce. English or Chinese is fine. 中英文都可以。
 
-        Search [existing issues](https://github.com/qybaihe/mu/issues?q=is%3Aissue) first. Security problems go to the [private report form](https://github.com/qybaihe/mu/security/advisories/new), not here.
+        Please search [existing issues](https://github.com/qybaihe/mu/issues?q=is%3Aissue) first. Report security problems through the [private report form](https://github.com/qybaihe/mu/security/advisories/new), not here.
 
   - type: dropdown
     id: part
@@ -44,7 +44,7 @@ body:
     id: what
     attributes:
       label: What happened
-      description: What you saw, including error messages. What did you expect instead?
+      description: What you saw, including any error messages, and what you expected instead.
     validations:
       required: true
 
@@ -55,7 +55,7 @@ body:
       description: The fewest steps that make it happen.
       placeholder: |
         1. Start mu in a 24-column terminal
-        2. Ask for a sub-agent
+        2. Ask for a subagent
         3. ...
     validations:
       required: true
@@ -65,7 +65,7 @@ body:
     attributes:
       label: Model, judge and settings
       description: |
-        The model, the judge (`/status` shows it; "free Jev", Jev with a key, Laya…), the permission mode, and any setting you changed. Never paste keys.
+        The model, the judge (`/status` shows it: "free Jev", Jev with a key, Laya…), the permission mode, and any settings you changed. Never paste keys.
     validations:
       required: false
 
@@ -74,7 +74,7 @@ body:
     attributes:
       label: Logs and output
       description: |
-        `mu doctor` output, the relevant part of a log, or a screenshot. The desktop app's log folder is under Settings → About. Remove anything private.
+        `mu doctor` output, the relevant part of a log, or a screenshot. You can find the desktop app's log folder under Settings → About. Remove anything private.
       render: text
     validations:
       required: false

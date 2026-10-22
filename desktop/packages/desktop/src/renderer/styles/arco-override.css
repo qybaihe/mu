@@ -67,18 +67,18 @@
      it, so the code-region weight follows the selection for free. */
   --font-mono-weight: var(--code-font-weight, inherit);
   --code-font-size: 13px;
-  --aion-overlay-bg: #ffffff;
-  --aion-overlay-text: #1d2129;
-  --aion-overlay-border: #e5e6eb;
-  --aion-overlay-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --mu-overlay-bg: #ffffff;
+  --mu-overlay-text: #1d2129;
+  --mu-overlay-border: #e5e6eb;
+  --mu-overlay-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
 }
 
 html[data-theme='dark'],
 body[arco-theme='dark'] {
-  --aion-overlay-bg: #0e0e0e;
-  --aion-overlay-text: #f2f3f5;
-  --aion-overlay-border: #333333;
-  --aion-overlay-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --mu-overlay-bg: #0e0e0e;
+  --mu-overlay-text: #f2f3f5;
+  --mu-overlay-border: #333333;
+  --mu-overlay-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 
 /* Arco's arco.css puts 'Inter' first in font-family, which causes very thin
@@ -123,10 +123,10 @@ body {
 html body .arco-tooltip-content,
 html body .arco-popover-content,
 html body .arco-popconfirm-content {
-  background: var(--aion-overlay-bg) !important;
-  color: var(--aion-overlay-text) !important;
-  border: 1px solid var(--aion-overlay-border) !important;
-  box-shadow: var(--aion-overlay-shadow) !important;
+  background: var(--mu-overlay-bg) !important;
+  color: var(--mu-overlay-text) !important;
+  border: 1px solid var(--mu-overlay-border) !important;
+  box-shadow: var(--mu-overlay-shadow) !important;
 }
 
 html[data-theme='dark'] body .arco-tooltip-content,
@@ -135,10 +135,10 @@ html[data-theme='dark'] body .arco-popconfirm-content,
 body[arco-theme='dark'] .arco-tooltip-content,
 body[arco-theme='dark'] .arco-popover-content,
 body[arco-theme='dark'] .arco-popconfirm-content {
-  background: var(--aion-overlay-bg) !important;
-  color: var(--aion-overlay-text) !important;
-  border: 1px solid var(--aion-overlay-border) !important;
-  box-shadow: var(--aion-overlay-shadow) !important;
+  background: var(--mu-overlay-bg) !important;
+  color: var(--mu-overlay-text) !important;
+  border: 1px solid var(--mu-overlay-border) !important;
+  box-shadow: var(--mu-overlay-shadow) !important;
 }
 
 html body .arco-tooltip-content-inner,
@@ -146,14 +146,14 @@ html body .arco-popover-title,
 html body .arco-popover-inner-content,
 html body .arco-popconfirm-title,
 html body .arco-popconfirm-inner-content {
-  color: var(--aion-overlay-text) !important;
+  color: var(--mu-overlay-text) !important;
 }
 
 html body .arco-trigger-arrow.arco-tooltip-arrow,
 html body .arco-popover-arrow.arco-trigger-arrow,
 html body .arco-popconfirm-arrow.arco-trigger-arrow {
-  background: var(--aion-overlay-bg) !important;
-  border: 1px solid var(--aion-overlay-border) !important;
+  background: var(--mu-overlay-bg) !important;
+  border: 1px solid var(--mu-overlay-border) !important;
 }
 
 /* Override Arco Design component backgrounds to white in light mode */
@@ -227,24 +227,24 @@ body[arco-theme='dark'] .arco-tag-checked.arco-tag-gray {
   color: rgb(209, 213, 219) !important;
 }
 
-/* AionUi Steps wrapper styles */
-.aionui-steps .arco-steps-item-process .arco-steps-item-icon {
+/* Steps wrapper styles */
+.mu-steps .arco-steps-item-process .arco-steps-item-icon {
   background-color: var(--aou-6-brand) !important;
   border-color: var(--aou-6-brand) !important;
 }
 
-.aionui-steps .arco-steps-item-finish .arco-steps-item-icon {
+.mu-steps .arco-steps-item-finish .arco-steps-item-icon {
   background-color: #e8f3ff !important;
   border-color: #e8f3ff !important;
   border-radius: 50% !important;
 }
 
-.aionui-steps .arco-steps-item-finish .arco-steps-item-icon .arco-steps-icon {
+.mu-steps .arco-steps-item-finish .arco-steps-item-icon .arco-steps-icon {
   line-height: 28px !important;
 }
 
-/* AionUi Modal wrapper styles */
-.aionui-modal .arco-modal-content {
+/* Modal wrapper styles */
+.mu-modal .arco-modal-content {
   background: var(--dialog-fill-0) !important;
   border: 1px solid var(--border-base) !important;
   border-radius: 16px !important;
@@ -254,8 +254,8 @@ body[arco-theme='dark'] .arco-tag-checked.arco-tag-gray {
    分隔线得以贯穿全宽，三段背景统一、无“盒子”割裂感。
    注意：内边距清零后不能在此处 overflow:hidden —— Select/下拉等 popup 会挂在
    .arco-modal-content 下（在内层 wrapper 之外），一旦这里裁剪就会遮住下拉。
-   圆角裁剪改到内层 .aionui-modal-wrapper 上（见下），popup 作为其兄弟节点不受影响。 */
-.aionui-modal-standard .arco-modal-content {
+   圆角裁剪改到内层 .mu-modal-wrapper 上（见下），popup 作为其兄弟节点不受影响。 */
+.mu-modal-standard .arco-modal-content {
   padding: 0 !important;
 }
 
@@ -264,7 +264,7 @@ body[arco-theme='dark'] .arco-tag-checked.arco-tag-gray {
    同时给内层 wrapper 设视口上限并裁掉溢出：内容过多时，标题区/按钮区固定，
    中间内容区（flex-1 + overflow-y:auto）自动缩短并滚动，整窗不会超出屏幕。
    弹窗自身不设固定高度时按内容自适应，因此短内容不会留白、长内容会滚动。 */
-.aionui-modal-standard .aionui-modal-wrapper {
+.mu-modal-standard .mu-modal-wrapper {
   overflow: hidden !important;
   border-radius: 16px !important;
   max-height: calc(100vh - 64px);
@@ -272,19 +272,19 @@ body[arco-theme='dark'] .arco-tag-checked.arco-tag-gray {
 
 /* 三段只保留一条分隔线：标题区仅下边线、按钮区仅上边线，其余边框一律清零，
    避免外部样式给这些容器叠加多余边框而形成“盒子”。 */
-.aionui-modal-standard .aionui-modal-wrapper > * {
+.mu-modal-standard .mu-modal-wrapper > * {
   border: 0 !important;
 }
-.aionui-modal-standard .aionui-modal-std-header {
+.mu-modal-standard .mu-modal-std-header {
   border-bottom: 1px solid var(--bg-3) !important;
 }
-.aionui-modal-standard .aionui-modal-std-footer {
+.mu-modal-standard .mu-modal-std-footer {
   border-top: 1px solid var(--bg-3) !important;
 }
 
 /* Dark dialogs sit on the card surface inside a hairline. The hairline goes round the whole dialog: the body of a
-   plain Arco modal is only the part between its title and its buttons. An AionModal's body is the whole dialog,
-   and it draws its own (.aionui-modal .arco-modal-content above). */
+   plain Arco modal is only the part between its title and its buttons. An MuModal's body is the whole dialog,
+   and it draws its own (.mu-modal .arco-modal-content above). */
 body[arco-theme='dark'] .arco-modal-content {
   background-color: var(--dialog-fill-0) !important;
 }
@@ -293,7 +293,7 @@ body[arco-theme='dark'] .arco-modal {
   background-color: var(--dialog-fill-0) !important;
 }
 
-body[arco-theme='dark'] .arco-modal:not(.aionui-modal) {
+body[arco-theme='dark'] .arco-modal:not(.mu-modal) {
   border: 1px solid var(--border-base) !important;
 }
 
@@ -397,21 +397,21 @@ body[arco-theme='dark'] .arco-modal-confirm-icon {
   border-color: var(--bg-4) !important;
 }
 
-.aionui-modal-header {
+.mu-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px 16px;
 }
 
-.aionui-modal-title {
+.mu-modal-title {
   font-size: 18px;
   font-weight: 500;
   color: var(--text-primary);
   margin: 0;
 }
 
-.aionui-modal-close-btn {
+.mu-modal-close-btn {
   width: 32px;
   height: 32px;
   display: flex;
@@ -425,7 +425,7 @@ body[arco-theme='dark'] .arco-modal-confirm-icon {
   padding: 0;
 }
 
-.aionui-modal-close-btn:hover {
+.mu-modal-close-btn:hover {
   background: var(--color-fill-1);
 }
 
@@ -658,7 +658,7 @@ body[arco-theme='dark'] .arco-message-error {
 
 /* Provider group titles pin to the top of the inner scroll container. It has no
  * top padding, so top:0 hugs the edge with no gap for items to peek through.
- * Only relevant for the grouped (aionrs) list; harmless for flat lists. */
+ * Only relevant for the grouped (built-in agent) list; harmless for flat lists. */
 .dropdown-search-scroll .arco-dropdown-menu-group-title {
   position: sticky;
   top: 0;
@@ -667,4 +667,17 @@ body[arco-theme='dark'] .arco-message-error {
   padding-top: 6px;
   padding-bottom: 2px;
   background-color: var(--color-bg-popup);
+}
+
+/*
+ * Empty states are one line of text, as mu's own lists say it (`.empty` in sections.module.css), not Arco's stock
+ * inbox picture: the Hive tab before a run, the sidebar and its search, the archive, a missing scheduled task.
+ */
+.arco-empty .arco-empty-wrapper .arco-empty-image {
+  display: none;
+}
+
+.arco-empty .arco-empty-description {
+  color: var(--text-secondary);
+  font-size: 13px;
 }

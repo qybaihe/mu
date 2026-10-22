@@ -4,8 +4,8 @@ import os from 'os';
 import path from 'path';
 import { goToSettings, invokeBridge, settingsSiderItemById } from '../helpers';
 
-const emptyExtensionsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'aionui-e2e-no-extensions-'));
-const stateSandboxDir = fs.mkdtempSync(path.join(os.tmpdir(), 'aionui-e2e-no-extensions-state-'));
+const emptyExtensionsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mu-e2e-no-extensions-'));
+const stateSandboxDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mu-e2e-no-extensions-state-'));
 const extensionStatesFile = path.join(stateSandboxDir, 'extension-states.json');
 
 function isDevToolsWindow(page: Page): boolean {
@@ -43,12 +43,12 @@ async function launchAppWithoutExtensions(): Promise<ElectronApplication> {
     cwd: projectRoot,
     env: {
       ...process.env,
-      AIONUI_EXTENSIONS_PATH: emptyExtensionsDir,
-      AIONUI_EXTENSION_STATES_FILE: extensionStatesFile,
-      AIONUI_DISABLE_AUTO_UPDATE: '1',
-      AIONUI_DISABLE_DEVTOOLS: '1',
-      AIONUI_E2E_TEST: '1',
-      AIONUI_CDP_PORT: '0',
+      MU_EXTENSIONS_PATH: emptyExtensionsDir,
+      MU_EXTENSION_STATES_FILE: extensionStatesFile,
+      MU_DISABLE_AUTO_UPDATE: '1',
+      MU_DISABLE_DEVTOOLS: '1',
+      MU_E2E_TEST: '1',
+      MU_CDP_PORT: '0',
       NODE_ENV: 'development',
     },
     timeout: 60_000,

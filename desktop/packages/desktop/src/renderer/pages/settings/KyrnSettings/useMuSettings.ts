@@ -10,6 +10,8 @@ import {
 } from 'react';
 import { mutate } from 'swr';
 import { kyrnBridge, unwrap } from '@/common/kyrn/bridge';
+import { summarize } from '@/renderer/components/kernel/kernelSummary';
+import { KERNEL_SUMMARY_KEY } from '@/renderer/components/kernel/useKernelSummary';
 import type { AvailableModels } from '@/common/kyrn/models';
 import type { KyrnSettings } from '@/common/kyrn/types';
 import { completeSettings, dirtySections, isStale, newDraft, toSave, type Draft, type SectionId } from './draft';
@@ -93,6 +95,8 @@ export function useMuSettings(): MuSettings {
       setDraft(newDraft(saved));
       void recheckMu();
       if (newDefault) void mutate('mu.defaultModel');
+      // The kernel bar names the judge and counts the decision points that act.
+      void mutate(KERNEL_SUMMARY_KEY, summarize(saved), { revalidate: false });
       return true;
     } catch (cause) {
       const failure = toMuError(cause);

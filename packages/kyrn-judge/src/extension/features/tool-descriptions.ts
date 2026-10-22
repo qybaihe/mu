@@ -84,7 +84,7 @@ export function registerToolDescriptions(runtime: KyrnRuntime, options: Descript
 		ctx.ui.notify(
 			say({
 				zh: `mu：MCP 工具 ${name} 的说明里有写给 AI 的额外指令（不只是怎么用这个工具），已从工具列表里拿掉，调用也会被拒绝。如果你信任这个服务器：/mu mode tool.description shadow`,
-				en: `mu: the description of the MCP tool ${name} carries orders to the AI beyond using the tool. It is off the tool list, and calls to it are refused. If you trust this server: /mu mode tool.description shadow`,
+				en: `mu: the MCP tool ${name} has instructions to the AI in its description that go beyond how to use the tool. mu removed it from the tool list and will refuse calls to it. If you trust this server, run /mu mode tool.description shadow`,
 			}),
 			"warning",
 		);

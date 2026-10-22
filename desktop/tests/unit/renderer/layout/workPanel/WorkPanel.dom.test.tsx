@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2025 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
@@ -189,6 +183,7 @@ import {
   WORKSPACE_STATE_EVENT,
   type WorkspaceStateDetail,
 } from '@/renderer/utils/workspace/workspaceEvents';
+import { BUILTIN_MCP_SERVER_NAMES } from '@/common/platform/legacyNames';
 
 const i18n = createInstance();
 beforeAll(async () => {
@@ -569,7 +564,7 @@ describe('the work panel', () => {
         wires.stream?.({
           type: 'tool_group',
           conversation_id: conversation,
-          data: [{ name: 'aionui-browser__navigate_page', status }],
+          data: [{ name: `${BUILTIN_MCP_SERVER_NAMES.browser}__navigate_page`, status }],
         })
       );
     browse('conv-2', 'Executing');
@@ -948,7 +943,7 @@ describe('where the panel sits', () => {
       expect(screen.queryByTestId('work-panel-resize')).not.toBeInTheDocument();
 
       const back = screen.getByTestId('work-panel-back');
-      expect(back).toHaveTextContent('Back to Chat');
+      expect(back).toHaveTextContent('Back');
       fireEvent.click(back);
       expect(panel()).toHaveAttribute('data-open', 'false');
     });

@@ -39,6 +39,18 @@
   line-height: 20px;
 }
 
+/* The judge's mark, as in a conversation's judge lines: a small pink diamond with a faint ring. */
+.judgeMark {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-inline: 1px 2px;
+  border-radius: 1px;
+  background: var(--mu-judge-dot, var(--text-secondary));
+  box-shadow: 0 0 0 2px var(--mu-judge-dot-ring, transparent);
+  transform: rotate(45deg);
+}
+
 .cardSpacer {
   flex: 1;
 }
@@ -345,13 +357,14 @@
   line-height: 18px;
 }
 
-/* The decision points a feature asks, under its row and indented: a hairline down their side ties them to it. */
+/* The decision points a feature asks, under its row and indented: a line in the judge's pink down their side ties them
+   to it, and to the judge. */
 .nestedList {
   display: flex;
   flex-direction: column;
   margin: -4px 0 12px;
   padding-inline-start: 16px;
-  border-inline-start: 1px solid var(--border-base);
+  border-inline-start: 1px solid var(--mu-judge-border, var(--border-base));
 }
 
 .nestedMain {
@@ -359,10 +372,37 @@
 }
 
 .nestedTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 10px;
   color: var(--text-primary);
   font-size: 13px;
   font-weight: 400;
   line-height: 20px;
+}
+
+/* A decision point's id, as the judge's lines in a conversation name it: the diamond, then the id in mono. */
+.point {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--bg-6);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  line-height: 16px;
+  letter-spacing: 0.01em;
+}
+
+.point::after {
+  content: attr(data-point);
+}
+
+.point .judgeMark {
+  width: 5px;
+  height: 5px;
+  margin: 0;
 }
 
 /* The row a link pointed to, marked for a moment in the app's neutral fill. */

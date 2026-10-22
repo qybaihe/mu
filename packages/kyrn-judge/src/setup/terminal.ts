@@ -66,14 +66,46 @@ function askSecret(
 	});
 }
 
+/** Columns a character takes in a terminal: two for the wide CJK ones, one for the rest. */
+const columnsOf = (char: string): number =>
+	/[\u1100-\u115f\u2e80-\ua4cf\uac00-\ud7a3\uf900-\ufaff\ufe30-\ufe4f\uff00-\uff60\uffe0-\uffe6]/u.test(char) ? 2 : 1;
+const widthOf = (text: string): number => Array.from(text).reduce((sum, char) => sum + columnsOf(char), 0);
+
+/**
+ * Text as lines no wider than `width`, broken between words, so a sentence never splits mid-word at the screen's
+ * edge. A line's continuation is indented as far as its text starts: under the words of `  2) Choose…`, not under
+ * its number. A word wider than the screen, or text without spaces (Chinese), is left to the terminal.
+ */
+export function wrapToWidth(text: string, width: number | undefined): string {
+	if (!width || width < 20) return text;
+	return text
+		.split("\n")
+		.map((line) => {
+			if (widthOf(line) <= width) return line;
+			const indent = " ".repeat(/^\s*(?:\d+\)\s+)?/.exec(line)?.[0].length ?? 0);
+			const out: string[] = [];
+			let current = "";
+			for (const word of line.trimEnd().split(/(?<=\S) (?=\S)/)) {
+				const next = current ? `${current} ${word}` : word;
+				if (current && widthOf(next) > width) {
+					out.push(current);
+					current = `${indent}${word.trimStart()}`;
+				} else current = next;
+			}
+			out.push(current);
+			return out.join("\n");
+		})
+		.join("\n");
+}
+
 export function terminalPrompter(
 	input: NodeJS.ReadStream = process.stdin,
 	output: NodeJS.WriteStream = process.stdout,
 	errors: NodeJS.WriteStream = process.stderr,
 ): Prompter {
 	return {
-		say: (text) => output.write(`${text}\n`),
-		warn: (text) => errors.write(`${text}\n`),
+		say: (text) => output.write(`${wrapToWidth(text, output.isTTY ? output.columns : undefined)}\n`),
+		warn: (text) => errors.write(`${wrapToWidth(text, errors.isTTY ? errors.columns : undefined)}\n`),
 		ask: (question) => askLine(input, output, question),
 		secret: (question) => askSecret(input, output, question),
 	};

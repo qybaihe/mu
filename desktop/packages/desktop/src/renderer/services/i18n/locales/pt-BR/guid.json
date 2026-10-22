@@ -1,10 +1,4 @@
 {
-  "promptExamplesHint": "Experimente estas instruções",
-  "defaultPrompts": {
-    "understand": "Conheça este projeto e explique em palavras simples o que ele faz e por onde começar",
-    "cleanup": "Encontre arquivos duplicados e inúteis nesta pasta e liste-os para minha confirmação",
-    "create": "Crie uma página pessoal bonita para mim e abra-a quando estiver pronta"
-  },
   "selectAssistantHint": "Selecione um assistente para iniciar uma tarefa",
   "workspace": {
     "workInProject": "Trabalhar em um projeto",

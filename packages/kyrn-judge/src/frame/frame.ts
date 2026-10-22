@@ -304,9 +304,11 @@ export function renderFrameNote(state: FrameState): string {
 /** Everything about the frame, for `/frame`. */
 export function describeFrame(state: FrameState): string {
 	const frame = state.frame;
-	if (!frame) return "No task frame yet: the first message of the session creates it.";
+	if (!frame) return "No task frame yet. mu creates one from the session's first message.";
 	const by = frame.change ? `${frame.source}, ${frame.change}` : frame.source;
-	const stale = isStale(state) ? " · STALE: what was said since is not merged, goal-based filters hold back" : "";
+	const stale = isStale(state)
+		? " · STALE: later messages aren't merged yet, so goal-based filters are holding back"
+		: "";
 	const lines = [`task frame v${frame.version} · updated at turn ${frame.updatedTurn} · ${by}${stale}`];
 	lines.push(`goal: ${frame.goal}`);
 	lines.push(frame.constraints.length > 0 ? "constraints:" : "constraints: none");
@@ -330,7 +332,7 @@ export function describeFrame(state: FrameState): string {
 		lines.push("said since, not in the frame:");
 		for (const said of state.unmerged) {
 			const what =
-				said.reason === "failed" ? "update failed" : said.reason === "late" ? "update running" : "not judged";
+				said.reason === "failed" ? "update failed" : said.reason === "late" ? "update in progress" : "not judged";
 			lines.push(`  - (turn ${said.turn}, ${said.change ?? "unclassified"}, ${what}) "${flat(said.text, 200)}"`);
 		}
 	}

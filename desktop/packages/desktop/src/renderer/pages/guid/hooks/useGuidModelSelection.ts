@@ -9,6 +9,7 @@ import { useGoogleAuthModels } from '@/renderer/hooks/agent/useGoogleAuthModels'
 import { useProvidersQuery } from '@/renderer/hooks/agent/useModelProviderList';
 import { hasAvailableModels } from '../utils/modelUtils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { BUILTIN_AGENT, type BuiltinAgent } from '@/common/platform/backendNames';
 
 /**
  * Build a unique key for a provider/model pair.
@@ -30,7 +31,7 @@ const isModelKeyAvailable = (key: string | null, providers?: IProvider[]) => {
 };
 
 /** Provider-based agent keys that share the model list UI */
-type ProviderAgentKey = 'aionrs';
+type ProviderAgentKey = BuiltinAgent;
 
 export type GuidModelSelectionResult = {
   modelList: IProvider[];
@@ -45,9 +46,9 @@ export type GuidModelSelectionResult = {
  * Hook that manages the provider-backed model selection state for the Guid page.
  * Assistant-driven defaults are applied by the caller; this hook only owns the
  * transient in-page selection.
- * @param agentKey - current provider-based agent (currently only 'aionrs')
+ * @param agentKey - current provider-based agent (currently only the built-in agent)
  */
-export const useGuidModelSelection = (agentKey: ProviderAgentKey = 'aionrs'): GuidModelSelectionResult => {
+export const useGuidModelSelection = (agentKey: ProviderAgentKey = BUILTIN_AGENT): GuidModelSelectionResult => {
   const { isGoogleAuth } = useGoogleAuthModels();
   const { data: modelConfig } = useProvidersQuery();
 

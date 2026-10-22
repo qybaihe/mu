@@ -1,0 +1,1 @@
+[{"wait":4},{"until":"answering in|failing","timeout":30},{"wait":2.5},{"mark":"welcome"},{"type":"relay.config.json 里 `timeout: \"1h30m\"` 的任务，跑一个小时左右就被杀掉了。查一下原因，修好它，并确认测试都能通过。","delay":0.045},{"wait":0.8},{"mark":"typed"},{"key":"\r"},{"until":"13 个测试全部通过","timeout":180},{"idle":4},{"mark":"end"}]

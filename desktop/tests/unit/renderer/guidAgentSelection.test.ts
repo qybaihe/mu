@@ -5,11 +5,12 @@ import {
   pickDefaultAssistantSelectionKey,
   resolveAssistantSelectionKey,
 } from '@/renderer/pages/guid/hooks/useGuidAssistantSelection';
+import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 
 describe('guid assistant selection helpers', () => {
   const assistants: Assistant[] = [
     assistant({ id: 'builtin-writer', source: 'builtin', runtimeKey: 'claude', sort_order: 20 }),
-    assistant({ id: 'bare-aionrs', source: 'generated', runtimeKey: 'aionrs', sort_order: 10 }),
+    assistant({ id: `bare-${BUILTIN_AGENT}`, source: 'generated', runtimeKey: BUILTIN_AGENT, sort_order: 10 }),
     assistant({ id: 'user-research', source: 'user', runtimeKey: 'gemini', sort_order: 30 }),
   ];
 
@@ -19,11 +20,11 @@ describe('guid assistant selection helpers', () => {
 
   it('does not accept legacy backend keys as assistant selection ids', () => {
     expect(resolveAssistantSelectionKey('claude', assistants)).toBeUndefined();
-    expect(resolveAssistantSelectionKey('aionrs', assistants)).toBeUndefined();
+    expect(resolveAssistantSelectionKey(BUILTIN_AGENT, assistants)).toBeUndefined();
   });
 
-  it('defaults to the generated aionrs assistant when available', () => {
-    expect(pickDefaultAssistantSelectionKey(assistants)).toBe('bare-aionrs');
+  it('defaults to the generated built-in agent assistant when available', () => {
+    expect(pickDefaultAssistantSelectionKey(assistants)).toBe(`bare-${BUILTIN_AGENT}`);
   });
 
   it('returns null when no assistants are available', () => {
@@ -35,7 +36,7 @@ function assistant(
   overrides: Partial<Assistant> & { id: string; source: Assistant['source']; runtimeKey: string }
 ): Assistant {
   const agentId = `agent-${overrides.runtimeKey}`;
-  const isAionrs = overrides.runtimeKey === 'aionrs';
+  const isBuiltinAgent = overrides.runtimeKey === BUILTIN_AGENT;
   return {
     id: overrides.id,
     source: overrides.source,
@@ -45,8 +46,8 @@ function assistant(
     enabled: true,
     sort_order: overrides.sort_order ?? 0,
     agent_id: agentId,
-    agent: isAionrs
-      ? { type: 'aionrs', source: 'internal' }
+    agent: isBuiltinAgent
+      ? { type: BUILTIN_AGENT, source: 'internal' }
       : { type: 'acp', source: 'builtin', acp_backend: overrides.runtimeKey },
     enabled_skills: [],
     custom_skill_names: [],

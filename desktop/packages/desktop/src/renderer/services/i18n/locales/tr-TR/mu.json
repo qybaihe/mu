@@ -7,7 +7,8 @@
   "apiKey": "API anahtarı",
   "keyHelp": "Kaydedildikten sonra bir daha gösterilmez. Yalnızca bu bilgisayarda kalır ve yalnızca sizin hesabınız okuyabilir.",
   "keyKeep": "Kayıtlı anahtarı korumak için boş bırakın",
-  "endpointRule": "HTTPS kullanın; HTTP yalnızca bu makine (127.0.0.1, localhost) veya özel ağdaki bir IP adresi (örneğin 192.168.1.20) için. Adreste kullanıcı adı, şifre, sorgu veya parça bulunmamalı.",
+  "endpointRule": "https:// veya http:// ile başlayan bir adres girin. Adreste kullanıcı adı, şifre, sorgu veya parça bulunmamalı.",
+  "endpointPlain": "Bu adres şifresiz http kullanıyor: anahtar ve mesajlarınız şifrelenmez. Bu bilgisayardaki ya da kendi ağınızdaki bir sunucu için sorun değil; hosts dosyanızın oraya yönlendirdiği bir ad da olur. İnternet üzerinden https kullanın.",
   "sections": {
     "judges": "Hakemler",
     "judgeOrder": "Hakem sırası",
@@ -158,7 +159,7 @@
       "jev": {
         "title": "Jev",
         "tag": "Önerilen",
-        "description": "Hızlı ve doğru. OpenCode Zen'de sınırlı bir süre ücretsiz; ya da TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare veya kendi hizmetinizin anahtarıyla çağrı başına ücretli."
+        "description": "TypeSafe'in barındırdığı hakem modeli. Hızlı ve doğru. OpenCode Zen'de sınırlı bir süre ücretsiz; ya da TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare veya kendi hizmetinizin anahtarıyla çağrı başına ücretli."
       },
       "local": {
         "title": "Yerel Laya",
@@ -259,9 +260,9 @@
         "title": "Tam erişim",
         "description": "Hiçbir şey sormadan her şeyi çalıştırır. Yapma dediğiniz şeyler yine durdurulur."
       },
-      "jev": {
-        "title": "Jev onaylar",
-        "description": "Proje içinde okuma ve düzenleme doğrudan yapılır; komutları, proje dışındaki değişiklikleri ve dışarıya dönük işlemleri sizin yerinize Jev onaylar, yalnızca emin olmadığında size sorar."
+      "judge": {
+        "title": "Hakem modu",
+        "description": "Proje içinde okuma ve düzenleme doğrudan yapılır; komutları, proje dışındaki değişiklikleri ve dışarıya dönük işlemleri sizin yerinize hakem onaylar, yalnızca emin olmadığında size sorar."
       },
       "ask": {
         "title": "En az izin",
@@ -279,10 +280,10 @@
       "other": "mu bir dış işlem yapmak istiyor"
     },
     "reason": {
-      "ask": "En az izin: her adımda önce size sorulur.",
-      "unsure": "Jev bu adımın istediğiniz şey olduğundan emin değil.",
-      "beyond": "Jev bunun istediğiniz şeyin ötesine geçtiğini düşünüyor.",
-      "unrelated": "Jev bunun görevin bir parçası olmadığını düşünüyor.",
+      "ask": "En az izin: her düzenleme, komut ve dışarıya dönük işlem önce size sorulur.",
+      "unsure": "Hakem bu adımın istediğiniz şey olduğundan emin değil.",
+      "beyond": "Hakem bunun istediğiniz şeyin ötesine geçtiğini düşünüyor.",
+      "unrelated": "Hakem bunun görevin bir parçası olmadığını düşünüyor.",
       "protected": "Bu, mu'nun kendi ayarlarına dokunuyor; buna yalnızca siz izin verebilirsiniz.",
       "nojudge": "Henüz kullanılabilir bir hakem yok, bu yüzden mu her adımda size soruyor.",
       "judgedown": "Hakem bu kez yanıt vermedi, bu yüzden mu size soruyor."
@@ -382,7 +383,11 @@
     "byKey": "Kullanılabilir (API anahtarı)",
     "byKeyHelp": "Giriş yapılmış bir abonelik yok, ancak mu son bağlantısında bunu kullanılabilir olarak bildirdi; genellikle API anahtarı ortamda olduğu için. Giriş yaparsanız abonelik kullanılır.",
     "otherRunning": "{{name}} için giriş yapılıyor; aynı anda yalnızca bir giriş yapılabilir.",
-    "showRunning": "Göster"
+    "showRunning": "Göster",
+    "legacy": {
+      "openai-codex": "Bu eski giriş, Codex CLI'nin girişinden geçiyor. Çıkış yapın, ardından ChatGPT ile giriş yapın.",
+      "anthropic": "Anthropic, diğer uygulamaların Claude aboneliğiyle giriş yapmasına izin vermiyor; bu yüzden mu artık bunu sunmuyor. Çıkış yapın ve bunun yerine bir Anthropic API anahtarı ekleyin."
+    }
   },
   "endpoints": {
     "openaiCompletions": {
@@ -505,7 +510,7 @@
       "signedIn": {
         "title": "Abonelikle giriş yap",
         "tag": "API anahtarı gerekmez",
-        "description": "ChatGPT, Claude, Grok ve diğer abonelikler"
+        "description": "ChatGPT, Grok ve diğer abonelikler"
       },
       "openai": {
         "title": "OpenAI uyumlu API",
@@ -519,7 +524,7 @@
         "modelPlaceholder": "örn. claude-sonnet-5"
       },
       "problems": {
-        "baseUrl": "https:// ile başlayan bir adres girin (http:// yalnızca bu bilgisayar veya özel ağ adresi için).",
+        "baseUrl": "https:// veya http:// ile başlayan bir adres girin.",
         "key": "API anahtarını girin.",
         "model": "Model adını girin."
       },
@@ -544,6 +549,7 @@
       "recognized": "Anahtardan bulundu.",
       "ambiguous": "Birden fazla hizmetin anahtarı böyle görünür. Bu anahtar hangisinin?",
       "unknown": "mu bu tür anahtarı tanımıyor. Hangi hizmetin anahtarı?",
+      "subscriptionToken": "Bu bir API anahtarı değil, Claude abonelik belirteci (claude setup-token ile oluşturulmuş). Anthropic, başka uygulamaların Claude aboneliği kullanmasına izin vermiyor; bu yüzden mu bunu kullanamaz. Bunun yerine bir Anthropic API anahtarı (sk-ant-api…) yapıştırın.",
       "keyPage": "Anahtarı nereden alırım?",
       "checking": "Anahtar {{service}} ile denetleniyor…",
       "lookingLocal": "Bu bilgisayarda {{service}} aranıyor…",
@@ -643,13 +649,26 @@
       "modelValue": "{{provider}} / {{model}}",
       "import": "Sohbetler",
       "importOpen": "Seç…",
-      "importFound_one": "Bu bilgisayarda burada sürdürmek için içe aktarılabilecek {{count}} Claude Code veya Codex sohbeti var",
-      "importFound_other": "Bu bilgisayarda burada sürdürmek için içe aktarılabilecek {{count}} Claude Code veya Codex sohbeti var",
+      "importFound_one": "Bu bilgisayarda burada sürdürmek için içe aktarılabilecek {{count}} Claude Code, Codex veya ZCode sohbeti var",
+      "importFound_other": "Bu bilgisayarda burada sürdürmek için içe aktarılabilecek {{count}} Claude Code, Codex veya ZCode sohbeti var",
       "permissions": "İzinler"
     },
     "intro": {
+      "turn": {
+        "label": "Hakemin gözünden bir tur",
+        "preflight": "Çok adımlı görev: önce bak",
+        "approval": "npm test sormadan çalışır",
+        "completion": "Testler geçiyor, iş bitti"
+      },
       "title": "mu'ya hoş geldiniz",
       "lead": "mu işi kendisi yapan bir kodlama asistanıdır: projenizi okur, kodu düzenler, komutları ve testleri çalıştırır, iş bitene kadar devam eder.",
+      "import": {
+        "title": "Sohbetlerinizi de getirin",
+        "text": "mu bu bilgisayarda başka kodlama asistanlarıyla yapılmış {{count}} sohbet buldu. Tüm geçmişleriyle içe aktarın ve burada devam edin.",
+        "text_one": "mu bu bilgisayarda başka bir kodlama asistanıyla yapılmış {{count}} sohbet buldu. Tüm geçmişiyle içe aktarın ve burada devam edin.",
+        "text_other": "mu bu bilgisayarda başka kodlama asistanlarıyla yapılmış {{count}} sohbet buldu. Tüm geçmişleriyle içe aktarın ve burada devam edin.",
+        "open": "Sohbetleri seç…"
+      },
       "points": {
         "judge": {
           "title": "Her adımda bir kontrol",
@@ -657,7 +676,7 @@
         },
         "control": {
           "title": "Görürsünüz, yönetirsiniz",
-          "text": "Her değişiklik geri alınabilir; tarayıcıdaki her adım gözünüzün önündedir, duraklatabilir ya da devralabilirsiniz."
+          "text": "Kontrol noktaları değişiklikleri geri almanızı sağlar; mu uygulama içi tarayıcıyı kullanırken her adım gözünüzün önündedir, duraklatabilir ya da devralabilirsiniz."
         },
         "ready": {
           "title": "Hemen kullanıma hazır",
@@ -668,9 +687,13 @@
     },
     "login": {
       "providers": {
-        "openai-codex": {
+        "openai": {
           "name": "ChatGPT",
           "plan": "Plus / Pro planı"
+        },
+        "openai-codex": {
+          "name": "ChatGPT (Codex)",
+          "plan": "Codex üzerinden eski giriş"
         },
         "anthropic": {
           "name": "Claude",
@@ -776,7 +799,8 @@
       "other": "mu modele bir hatırlatma gönderdi",
       "show": "Gönderilen metin",
       "hide": "Gizle",
-      "imported": "Bu sohbet Claude Code veya Codex’ten içe aktarıldı ve burada devam ediyor; düşünme adımları ve görseller aktarılmadı"
+      "imported": "{{tool}} ile yapılan bu sohbet içe aktarıldı ve burada devam ediyor",
+      "anotherTool": "başka bir kodlama asistanı"
     }
   },
   "errors": {
@@ -795,7 +819,7 @@
     },
     "invalidJson": "{{file}} geçerli bir JSON değil. Elle düzeltip yeniden yükleyin.",
     "unreadable": "{{file}} okunamadı.",
-    "runtimeOffline": "mu çalışma zamanı çevrimiçi değil. Yerel başlatıcıyı ve giriş durumunu kontrol edin.",
+    "runtimeOffline": "mu ajanı yanıt vermiyor. mu'yu yeniden başlatıp tekrar deneyin.",
     "otherRegistration": "Uygulamada zaten başka bir mu komutu kayıtlı.",
     "installPath": "mu kurulu olduğu klasörden başlatılamıyor: Klasörün yolunda boşluk var. mu'yu yolunda boşluk olmayan bir klasöre, örneğin C:\\mu klasörüne yeniden kurun.",
     "backend": "Yerel hizmet beklendiği gibi yanıt vermedi (HTTP {{status}}).",
@@ -822,18 +846,19 @@
   },
   "importChats": {
     "title": "Konuşmaları içe aktar",
-    "description": "Bu bilgisayarda Claude Code veya Codex ile yaptığınız konuşmaları mu’ya getirin ve burada sürdürün.",
+    "description": "Bu bilgisayarda Claude Code, Codex veya ZCode ile yaptığınız konuşmaları tüm geçmişleriyle mu’ya getirin ve burada sürdürün.",
     "open": "Seç…",
     "dialog": {
       "title": "Konuşmaları içe aktar",
-      "hint": "Seçtiğiniz her konuşma, kendi proje klasöründe bir mu konuşması olur. mu söylenen her şeyi okur; düşünme adımları ve görseller aktarılmaz.",
+      "hint": "Seçtiğiniz her konuşma, tüm geçmişiyle birlikte kendi proje klasöründe bir mu konuşması olur: mesajlar, araç çağrıları, düşünme adımları ve görseller. Yeni eklenenleri getirmek için daha sonra yeniden seçebilirsiniz.",
       "search": "Sözcüğe veya klasöre göre ara",
       "loading": "Konuşmalar aranıyor…",
-      "empty": "Bu bilgisayarda Claude Code veya Codex konuşması bulunamadı.",
+      "empty": "Bu bilgisayarda Claude Code, Codex veya ZCode konuşması bulunamadı.",
       "noMatch": "Eşleşen konuşma yok.",
       "noTitle": "(mesaj yok)",
       "folderUnknown": "Klasör bilinmiyor",
       "inList": "Listenizde",
+      "changed": "İçe aktarıldıktan sonra değişti. Yeni eklenenleri getirmek için seçin.",
       "open": "Aç",
       "selected": "Seçilen: {{count}}",
       "import": "İçe aktar",
@@ -843,13 +868,16 @@
     "done": "{{count}} konuşma içe aktarıldı. Konuşma listenizdeler.",
     "done_one": "{{count}} konuşma içe aktarıldı. Konuşma listenizde.",
     "done_other": "{{count}} konuşma içe aktarıldı. Konuşma listenizdeler.",
+    "updated": "{{count}} konuşma güncellendi.",
+    "updated_one": "{{count}} konuşma güncellendi.",
+    "updated_other": "{{count}} konuşma güncellendi.",
     "someFailed": "{{count}} konuşma içe aktarılamadı. Nedeni her birinin altında yazıyor.",
     "someFailed_one": "{{count}} konuşma içe aktarılamadı. Nedeni altında yazıyor.",
     "someFailed_other": "{{count}} konuşma içe aktarılamadı. Nedeni her birinin altında yazıyor.",
     "failure": {
       "missing": "Dosya artık yok.",
       "notFile": "Bu bir dosya değil.",
-      "notTranscript": "Bu bir Claude Code veya Codex konuşması değil.",
+      "notTranscript": "Bu bir Claude Code, Codex veya ZCode konuşması değil.",
       "empty": "İçinde hiç mesaj yok.",
       "folderMissing": "Proje klasörü artık yok: {{folder}}",
       "other": "İçe aktarılamadı: {{detail}}"
@@ -857,7 +885,7 @@
     "notice": {
       "title": "İçe aktarılan konuşma · {{tool}}",
       "counts": "Mesajlarınız: {{user}} · yanıtlar: {{assistant}} · araç çağrıları: {{toolCalls}}",
-      "goOn": "Aşağıda devam etmeniz yeterli: mu konuşmayı okudu. Düşünme adımları ve görseller aktarılmadı.",
+      "goOn": "Aşağıda devam etmeniz yeterli: mu konuşmayı okudu.",
       "read": "Önceki konuşmayı oku"
     },
     "history": {
@@ -878,7 +906,7 @@
     "lessons": "Bu projenin dersleri: /lessons id · tür · hatırlanma/uyulma · ders listesini verir, /lessons all her yerde geçerli olanları ve devre dışı bırakılanları da ekler",
     "forget": "Bir dersi devre dışı bırakır, artık hatırlanmaz: /forget <id başlangıcı> (id’ler /lessons içinde)",
     "capabilities": "Hangi yeteneklerin kurulu, hangilerinin açık olduğu: /capabilities, /capabilities open <id>",
-    "permissions": "mu’nun sormadan ne kadarını yapabileceği: /permissions full (Tam erişim) | jev (Jev onaylar) | ask (En az izin), bağımsız değişken olmadan bir seçici açılır. /permissions reset bu konuşmada izin verdiklerinizi unutur",
+    "permissions": "mu’nun sormadan ne kadarını yapabileceği: /permissions full (Tam erişim) | judge (Hakem modu) | ask (En az izin), bağımsız değişken olmadan bir seçici açılır. /permissions reset bu konuşmada izin verdiklerinizi unutur",
     "lsp": "Dil sunucuları: hangileri kurulu, hangileri çalışıyor ve son hata",
     "goal": "Hedef modu: ajan bir koşul sağlanana kadar çalışmaya devam eder. /goal <koşul>, /goal (gösterir ya da bir hedef sorar), /goal clear",
     "board": "Sade dilde pano: /board (gösterir), /board on, /board off (bu proje için), /board model (kimin yazdığı)",
@@ -898,7 +926,7 @@
     "help": "mu’nun neler yapabildiği ve bilinmeye değer tüm komutlar",
     "ledger": "Hakemin son kararları ve süreleri: /ledger [n]",
     "doctor": "Hakemin, modelin, tarayıcının ve alt ajanların bağlı olup olmadığını denetler",
-    "import-chat": "Bu projenin Claude Code ya da Codex konuşmasını mu’ya getirip sürdürür: /import-chat [dosya]",
+    "import-chat": "Bu projenin Claude Code, Codex ya da ZCode konuşmasını mu’ya getirip sürdürür: /import-chat [dosya]",
     "llama": "llama.cpp yönlendiricisinin modellerini yönetir"
   },
   "native": {
@@ -912,12 +940,14 @@
       "idle": "Çalışmıyor",
       "starting": "Başlatılıyor",
       "running": "Çalışıyor",
+      "working": "Çalışıyor",
+      "ready": "Hazır",
       "needsModel": "Model yok",
       "failed": "Durdu"
     },
     "status": {
       "starting": "mu başlatılıyor…",
-      "classifying": "Jev mesajınızı okuyor…",
+      "classifying": "Hakem mesajınızı okuyor…",
       "compacting": "Konuşma sıkıştırılıyor…",
       "retrying": "Model isteği başarısız oldu. Yeniden deneniyor ({{attempt}}/{{max}})…",
       "thinking": "Düşünüyor…",
@@ -1023,10 +1053,10 @@
     }
   },
   "details": {
-    "lead": "Her özelliğin bir anahtarı vardır, ayarları Seçenekler'dedir. Girintili satırlar Jev'e karar sorduğu yerlerdir: birini kapatırsanız o adım her zamanki gibi ilerler.",
+    "lead": "Her özelliğin bir anahtarı vardır, ayarları Seçenekler'dedir. Girintili satırlar hakeme karar sorduğu yerlerdir: birini kapatırsanız o adım her zamanki gibi ilerler.",
     "featureOff": "Özellik kapalı",
-    "askJev": "Jev karar versin",
-    "askJevAbout": "Jev karar versin: {{point}}",
+    "askJudge": "Hakem karar versin",
+    "askJudgeAbout": "Hakem karar versin: {{point}}",
     "areas": {
       "input": "Girdi",
       "context": "Bağlam",

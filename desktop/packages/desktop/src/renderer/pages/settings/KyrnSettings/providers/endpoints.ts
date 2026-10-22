@@ -3,7 +3,9 @@ import {
   PROVIDER_ID,
   RESERVED_PROVIDER_IDS,
   isSafeEndpoint,
+  supportedThinkingLevels,
   type EndpointType,
+  type ListedModel,
   type ModelsSettings,
   type ProviderModel,
   type ProviderSettings,
@@ -28,6 +30,15 @@ export const blankModel = (id = ''): ProviderModel => ({
   thinkingLevelMap: {},
   thinkingLevels: ['off'],
 });
+
+/**
+ * A new model row for a model an endpoint listed: what the list stated about it (#23), the defaults for the rest. A
+ * model the list says thinks offers the thinking levels a thinking model does.
+ */
+export function listedModel(id: string, facts: ListedModel = {}): ProviderModel {
+  const model = { ...blankModel(id), ...facts };
+  return { ...model, thinkingLevels: supportedThinkingLevels(model.reasoning, model.thinkingLevelMap) };
+}
 
 export const blankProvider = (id: string): ProviderSettings => ({
   id,

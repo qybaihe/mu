@@ -1,0 +1,106 @@
+---
+title: 判定器
+summary: 谁来回答判定点，怎样选择、串联和比较判定器，以及每个判定器的成本。
+---
+
+判定器回答 mu 的[判定点](@decisions)提出的有边界的问题：是或否、几个固定答案里选一个，或者打分，每个答案都带概率。判定点从来不知道是哪个判定器回答的。由你来选，可以整个安装统一选，也可以每个判定点单独选；切换之前，还可以在你自己的会话上比较判定器。
+
+## 由哪个判定器回答 {#tiers}
+
+`~/.mu/agent/mu.json` 里的 `tiers` 按顺序列出判定器。后一个判定器只看到前面几个拿不准的问题，所以可以让便宜的本地判定器先答，云端的判定器接住剩下的：
+
+```json
+{ "tiers": ["laya", "jev"] }
+```
+
+`routes` 让一个判定点用自己的判定器：
+
+```json
+{ "routes": { "browser.step": ["jev"], "memory.capture": ["llm:anthropic/claude-haiku-4-5"] } }
+```
+
+在会话里，`/mu judge <judges>` 和 `/mu route <point> <judges|default>` 做同样的事；`MU_JUDGE=laya,jev mu` 只为一次运行指定判定器。`/status` 显示哪个判定器回答什么，桌面端的「判定器」页也能设置这些。
+
+没有判定器按时回答时，每个判定点就照没有判定时那样做（通常是什么都不变），流水里记下原因。不会等太久：每个判定点都有时限。
+
+## Jev（云端） {#jev}
+
+Jev 是 TypeSafe 做的判定模型，专门回答这类问题。内置的 `jev` 判定器通过第一个设置了密钥的服务调用它：
+
+| 顺序 | 服务 | 密钥 | 内置名称 |
+| --- | --- | --- | --- |
+| 1 | TypeSafe | `TYPESAFE_API_KEY` | `jev-direct` |
+| 2 | OpenRouter（只给 Jev 用的密钥） | `MU_JUDGE_OPENROUTER_API_KEY` | `jev-openrouter` |
+| 3 | Vercel AI Gateway | `AI_GATEWAY_API_KEY` | `jev-gateway` |
+| 4 | OpenCode Zen | `OPENCODE_API_KEY` | `jev-opencode` |
+| 5 | Cloudflare Workers AI | `CLOUDFLARE_API_KEY` 和 `CLOUDFLARE_ACCOUNT_ID` | `jev-cloudflare` |
+| 都没设置 | OpenCode Zen，限时免费 | 不需要密钥 | `jev-opencode-free` |
+
+密钥只会发给它所属的服务。直接指定一条线路，比如 `"tiers": ["jev-openrouter"]`，就会跳过这个顺序。`mu setup` 或桌面端的「判定器」页会替你写好密钥。
+
+**免费的 Jev。** 一个密钥都没有时，由 OpenCode Zen 上的 Jev 1.13 回答。它判定的内容会发给 OpenCode，OpenCode 不拿这些内容训练模型；mu 每天提示一次。这是 OpenCode 的限时活动：活动结束时 mu 会告诉你，各判定点退回没有判定器时的做法，直到你设置一个密钥。`mu setup --judge free` 明确选用它。
+
+**速度和成本。** 在作者自己的会话里实测：热连接上一个问题约 0.3 秒；16 块工具输出在一个请求里判完用 0.44 秒，状态只计费一次。会话在用时，每 50 秒问一个很小的问题让连接保持热的，所以一轮开始前的提问能省掉 1 到 3 秒的建连。
+
+## Laya（本地） {#laya}
+
+一个 3.22 亿参数的判定器，在你的机器上运行，从不连网。
+
+```bash
+mu judge setup     # 下载模型前会先问你
+mu judge start     # 启动它
+mu judge status
+```
+
+桌面端一步就能装好它，同样会先问你。Laya 在简单谓词上可靠（这段文字是不是在描述一个错误？），在关于关系或关于请求本身的问题上偏弱。mu 知道这一点，从不把它答不好的问题交给它，所以在 `["laya", "jev"]` 这样的链里，这些问题直接交给下一个判定器。在「判定模式」下，审批不交给 Laya。先让它以影子模式和你当前的判定器并行跑，看过流水，再把某个判定点单独交给它。
+
+## 分类模型和大模型 {#other-judges}
+
+- **`classifier:<provider>/<model>`**：pi 模型目录里的任何分类模型，用你已有的该提供商的登录或密钥访问。Cloudflare 的 Clef 内置为 `clef` 和 `clef-flash`；OpenRouter 和 Vercel AI Gateway 上的 System One 模型，以及 llama.cpp 的分类模型，也都能用。
+- **`llm:<provider>/<model>`**：任何聊天模型，要求它以 JSON 回答。更慢，每次判定都花 token，但除了你已经在用的模型之外什么都不需要。`mu setup --judge model` 把会话的模型设为判定器。
+- **`clm`**：跑在 `clm-serve` 后面的 CLM-8B（默认 `http://127.0.0.1:8700`）。还没有在 mu 的问题上测过。
+
+## 你自己的判定器 {#custom}
+
+在 `mu.json` 的 `judges` 下，给一个名字和一个类型：
+
+```json
+{
+  "judges": {
+    "relay": { "type": "typesafe", "baseUrl": "https://relay.example.com/v1/systemone", "apiKeyEnv": "RELAY_KEY" },
+    "lab": { "type": "http", "baseUrl": "http://10.0.0.5:9000", "path": "/evaluate", "apiKeyEnv": "LAB_KEY" },
+    "fast": { "type": "llm", "model": "anthropic/claude-haiku-4-5", "thinking": "off", "timeoutMs": 4000 }
+  },
+  "tiers": ["relay", "jev"]
+}
+```
+
+| 类型 | 连接的对象 |
+| --- | --- |
+| `typesafe` | 任何在 `baseUrl` 上讲 TypeSafe System One 协议的服务 |
+| `http` | 任何接收 `{ state, questions }`、返回 `{ answers }` 的端点 |
+| `llm` | pi 模型注册表里的一个聊天模型 |
+| `classifier` | pi 模型目录里的一个分类模型 |
+| `local` | 一个兼容 Laya 的本地服务器 |
+| `clm` | 一个 `clm-serve` |
+
+密钥从不写进文件：`apiKeyEnv` 写的是存放密钥的环境变量名，这个变量设在你的环境里，或 mu 的 `.env` 里。
+
+## 模式：生效、影子、关闭 {#modes}
+
+每个判定点都有一个模式：
+
+- **active**（生效，默认）：判定结果起作用。
+- **shadow**（影子）：照常问判定器并记录判定，但不改变任何东西。
+- **off**（关闭）：不问这个判定点。
+
+可以在 `mu.json` 的 `modes` 下设置（一个 `default`，加上每个判定点一项），用 `/mu mode` 只对一个会话设置，或者在桌面端的设置里设置，那里处于影子模式的判定点显示为关闭。有两样东西不管模式如何都起作用：你选的权限模式（选「判定模式」本身就是对 `tool.approval` 的同意），以及模型主动调用的 `judge_items` 工具。
+
+## 比较判定器 {#compare}
+
+1. 把判定点设成影子模式，并把它路由到你想试的判定器；或者让所有判定点都以影子模式运行。
+2. 照常工作一段时间。
+3. 读判定结果：`mu ledger [n]` 打印最近 n 个会话，`mu ledger --json` 给出每条记录及其概率和耗时，桌面端的「判定」页显示每次判定和它的问题。
+4. 判定结果看起来对了，就把这个判定点切回生效。
+
+`"recordState": true` 还会把被判定的状态存进流水，训练或蒸馏你自己的判定器时需要它。默认关闭，因为这些状态里有你的内容。

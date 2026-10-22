@@ -7,7 +7,8 @@
   "apiKey": "Clé API",
   "keyHelp": "Une fois enregistrée, la clé n’est plus jamais affichée. Elle reste sur cet ordinateur, lisible uniquement par votre compte.",
   "keyKeep": "Laisser vide pour conserver la clé enregistrée",
-  "endpointRule": "Utilisez HTTPS, ou HTTP uniquement vers cette machine (127.0.0.1, localhost) ou vers une adresse IP de réseau privé (comme 192.168.1.20). Pas de nom d’utilisateur, de mot de passe, de requête ni de fragment dans l’adresse.",
+  "endpointRule": "Saisissez une adresse qui commence par https:// ou http://. Elle ne peut contenir ni nom d’utilisateur, ni mot de passe, ni requête, ni fragment.",
+  "endpointPlain": "Cette adresse utilise http en clair : la clé et vos messages ne sont pas chiffrés. C’est sans souci pour un serveur sur cet ordinateur ou sur votre réseau, y compris un nom que votre fichier hosts y dirige. Sur Internet, utilisez https.",
   "sections": {
     "judges": "Juges",
     "judgeOrder": "Ordre des juges",
@@ -158,7 +159,7 @@
       "jev": {
         "title": "Jev",
         "tag": "Recommandé",
-        "description": "Rapide et précis. Gratuit sur OpenCode Zen pour une durée limitée, ou facturé à l'appel avec une clé TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare ou d'un service à vous."
+        "description": "Le modèle juge hébergé par TypeSafe. Rapide et précis. Gratuit sur OpenCode Zen pour une durée limitée, ou facturé à l'appel avec une clé TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare ou d'un service à vous."
       },
       "local": {
         "title": "Laya local",
@@ -259,9 +260,9 @@
         "title": "Accès complet",
         "description": "Exécute tout sans demander. Ce que vous avez interdit reste bloqué."
       },
-      "jev": {
-        "title": "Jev approuve",
-        "description": "Lire et modifier dans le projet se fait directement ; Jev approuve pour vous les commandes, les changements hors du projet et les actions vers l’extérieur, et ne vous demande que s’il a un doute."
+      "judge": {
+        "title": "Mode juge",
+        "description": "Lire et modifier dans le projet se fait directement ; le juge approuve pour vous les commandes, les changements hors du projet et les actions vers l’extérieur, et ne vous demande que s’il a un doute."
       },
       "ask": {
         "title": "Autorisations minimales",
@@ -279,10 +280,10 @@
       "other": "mu veut effectuer une action extérieure"
     },
     "reason": {
-      "ask": "Autorisations minimales : chaque étape vous est d’abord soumise.",
-      "unsure": "Jev n’est pas sûr que cette étape corresponde à ce que vous voulez.",
-      "beyond": "Jev estime que cela dépasse ce que vous avez demandé.",
-      "unrelated": "Jev estime que cela ne fait pas partie de la tâche.",
+      "ask": "Autorisations minimales : chaque modification, commande ou action vers l’extérieur vous est d’abord soumise.",
+      "unsure": "Le juge n’est pas sûr que cette étape corresponde à ce que vous voulez.",
+      "beyond": "Le juge estime que cela dépasse ce que vous avez demandé.",
+      "unrelated": "Le juge estime que cela ne fait pas partie de la tâche.",
       "protected": "Cela touche aux paramètres de mu ; l’autorisation ne peut venir que de vous.",
       "nojudge": "Aucun juge n’est encore disponible, donc mu vous demande à chaque étape.",
       "judgedown": "Le juge n’a pas répondu cette fois, donc mu vous demande."
@@ -382,7 +383,11 @@
     "byKey": "Utilisable (clé API)",
     "byKeyHelp": "Aucun abonnement n’est connecté, mais à sa dernière connexion mu a signalé ce fournisseur comme utilisable, généralement parce que sa clé API se trouve dans l’environnement. Une connexion le fait passer sur l’abonnement.",
     "otherRunning": "Connexion à {{name}} en cours ; une seule connexion à la fois.",
-    "showRunning": "Afficher"
+    "showRunning": "Afficher",
+    "legacy": {
+      "openai-codex": "Cette ancienne connexion passe par celle de la CLI Codex. Déconnectez-vous, puis connectez-vous avec ChatGPT.",
+      "anthropic": "Anthropic n'autorise pas les autres applications à se connecter avec un abonnement Claude : mu ne le propose donc plus. Déconnectez-vous et ajoutez plutôt une clé API Anthropic."
+    }
   },
   "endpoints": {
     "openaiCompletions": {
@@ -505,7 +510,7 @@
       "signedIn": {
         "title": "Se connecter avec un abonnement",
         "tag": "Sans clé API",
-        "description": "Une formule ChatGPT, Claude, Grok ou autre"
+        "description": "Une formule ChatGPT, Grok ou autre"
       },
       "openai": {
         "title": "API compatible OpenAI",
@@ -519,7 +524,7 @@
         "modelPlaceholder": "ex. claude-sonnet-5"
       },
       "problems": {
-        "baseUrl": "Saisissez une adresse commençant par https:// (http:// uniquement pour cette machine ou une adresse de réseau privé).",
+        "baseUrl": "Saisissez une adresse qui commence par https:// ou http://.",
         "key": "Saisissez la clé API.",
         "model": "Saisissez le nom du modèle."
       },
@@ -544,6 +549,7 @@
       "recognized": "Reconnu à la clé.",
       "ambiguous": "Les clés de plusieurs services ont cette forme. De quel service vient celle-ci ?",
       "unknown": "mu ne connaît pas ce type de clé. De quel service vient-elle ?",
+      "subscriptionToken": "Ceci est un jeton d’abonnement Claude (issu de claude setup-token), pas une clé API. Anthropic n’autorise pas d’autres applications à utiliser un abonnement Claude, donc mu ne peut pas s’en servir. Collez plutôt une clé API Anthropic (sk-ant-api…).",
       "keyPage": "Où obtenir une clé ?",
       "checking": "Vérification de la clé auprès de {{service}}…",
       "lookingLocal": "Recherche de {{service}} sur cette machine…",
@@ -643,13 +649,26 @@
       "modelValue": "{{provider}} / {{model}}",
       "import": "Conversations",
       "importOpen": "Choisir lesquelles…",
-      "importFound_one": "{{count}} conversation Claude Code ou Codex sur cet ordinateur peut être importée pour la poursuivre ici",
-      "importFound_other": "{{count}} conversations Claude Code ou Codex sur cet ordinateur peuvent être importées pour les poursuivre ici",
+      "importFound_one": "{{count}} conversation Claude Code, Codex ou ZCode sur cet ordinateur peut être importée pour la poursuivre ici",
+      "importFound_other": "{{count}} conversations Claude Code, Codex ou ZCode sur cet ordinateur peuvent être importées pour les poursuivre ici",
       "permissions": "Autorisations"
     },
     "intro": {
+      "turn": {
+        "label": "Un tour, vu par le juge",
+        "preflight": "Tâche en plusieurs étapes : regarder d’abord",
+        "approval": "npm test s’exécute sans demander",
+        "completion": "Les tests passent : le travail est fini"
+      },
       "title": "Bienvenue dans mu",
       "lead": "mu est un assistant de code qui fait le travail : il lit votre projet, modifie le code, lance des commandes et des tests, et continue jusqu’à ce que la tâche soit terminée.",
+      "import": {
+        "title": "Reprenez vos conversations",
+        "text": "mu a trouvé sur cet ordinateur {{count}} conversations menées avec d’autres assistants de code. Importez-les avec tout leur historique et continuez ici.",
+        "text_one": "mu a trouvé sur cet ordinateur {{count}} conversation menée avec un autre assistant de code. Importez-la avec tout son historique et continuez ici.",
+        "text_other": "mu a trouvé sur cet ordinateur {{count}} conversations menées avec d’autres assistants de code. Importez-les avec tout leur historique et continuez ici.",
+        "open": "Choisir des conversations…"
+      },
       "points": {
         "judge": {
           "title": "Un contrôle à chaque étape",
@@ -657,7 +676,7 @@
         },
         "control": {
           "title": "Vous voyez, vous pilotez",
-          "text": "Toute modification peut être annulée ; chaque étape dans le navigateur reste visible, et vous pouvez mettre en pause ou prendre la main."
+          "text": "Les points de restauration permettent d’annuler les modifications ; quand mu utilise le navigateur intégré, chaque étape reste visible, et vous pouvez mettre en pause ou prendre la main."
         },
         "ready": {
           "title": "Prêt à l’emploi",
@@ -668,9 +687,13 @@
     },
     "login": {
       "providers": {
-        "openai-codex": {
+        "openai": {
           "name": "ChatGPT",
           "plan": "Formule Plus / Pro"
+        },
+        "openai-codex": {
+          "name": "ChatGPT (Codex)",
+          "plan": "Ancienne connexion via Codex"
         },
         "anthropic": {
           "name": "Claude",
@@ -776,7 +799,8 @@
       "other": "mu a envoyé un rappel au modèle",
       "show": "Ce qui a été envoyé",
       "hide": "Masquer",
-      "imported": "Cette conversation a été importée de Claude Code ou Codex et continue ici ; le raisonnement et les images n'ont pas été importés"
+      "imported": "Cette conversation a été importée depuis {{tool}} et continue ici",
+      "anotherTool": "un autre assistant de code"
     }
   },
   "errors": {
@@ -795,7 +819,7 @@
     },
     "invalidJson": "{{file}} n’est pas un JSON valide. Corrigez-le à la main, puis rechargez.",
     "unreadable": "Impossible de lire {{file}}.",
-    "runtimeOffline": "L’environnement d’exécution de mu n’est pas en ligne. Vérifiez le lanceur local et la connexion.",
+    "runtimeOffline": "L’agent de mu ne répond pas. Redémarrez mu, puis réessayez.",
     "otherRegistration": "Une autre commande mu est déjà enregistrée dans l’application.",
     "installPath": "mu ne peut pas démarrer depuis le dossier où il est installé : le chemin du dossier contient des espaces. Réinstallez mu dans un dossier dont le chemin ne contient pas d’espace, par exemple C:\\mu.",
     "backend": "Le service local n’a pas répondu comme prévu (HTTP {{status}}).",
@@ -822,18 +846,19 @@
   },
   "importChats": {
     "title": "Importer des conversations",
-    "description": "Faites entrer dans mu les conversations menées dans Claude Code ou Codex sur cet ordinateur, et poursuivez-les ici.",
+    "description": "Faites entrer dans mu les conversations menées dans Claude Code, Codex ou ZCode sur cet ordinateur, avec tout leur historique, et poursuivez-les ici.",
     "open": "Choisir…",
     "dialog": {
       "title": "Importer des conversations",
-      "hint": "Chaque conversation choisie devient une conversation mu dans son dossier de projet. mu lit tout ce qui a été dit ; le raisonnement et les images restent de côté.",
+      "hint": "Chaque conversation choisie devient une conversation mu dans son dossier de projet, avec tout son historique : messages, appels d’outils, raisonnement et images. Choisissez-la de nouveau plus tard pour récupérer ce qui est nouveau.",
       "search": "Rechercher par mots ou par dossier",
       "loading": "Recherche des conversations…",
-      "empty": "Aucune conversation Claude Code ou Codex n’a été trouvée sur cet ordinateur.",
+      "empty": "Aucune conversation Claude Code, Codex ou ZCode n’a été trouvée sur cet ordinateur.",
       "noMatch": "Aucune conversation ne correspond.",
       "noTitle": "(aucun message)",
       "folderUnknown": "Dossier inconnu",
       "inList": "Déjà dans la liste",
+      "changed": "Modifiée depuis l’import. Choisissez-la pour récupérer ce qui est nouveau.",
       "open": "Ouvrir",
       "selected": "Choisies : {{count}}",
       "import": "Importer",
@@ -843,13 +868,16 @@
     "done": "{{count}} conversations importées. Elles sont dans votre liste de conversations.",
     "done_one": "{{count}} conversation importée. Elle est dans votre liste de conversations.",
     "done_other": "{{count}} conversations importées. Elles sont dans votre liste de conversations.",
+    "updated": "{{count}} conversations mises à jour.",
+    "updated_one": "{{count}} conversation mise à jour.",
+    "updated_other": "{{count}} conversations mises à jour.",
     "someFailed": "{{count}} conversations n’ont pas pu être importées. La raison est indiquée sous chacune.",
     "someFailed_one": "{{count}} conversation n’a pas pu être importée. La raison est indiquée en dessous.",
     "someFailed_other": "{{count}} conversations n’ont pas pu être importées. La raison est indiquée sous chacune.",
     "failure": {
       "missing": "Le fichier n’existe plus.",
       "notFile": "Ce n’est pas un fichier.",
-      "notTranscript": "Ce n’est pas une conversation Claude Code ou Codex.",
+      "notTranscript": "Ce n’est pas une conversation Claude Code, Codex ou ZCode.",
       "empty": "Elle ne contient aucun message.",
       "folderMissing": "Son dossier de projet n’existe plus : {{folder}}",
       "other": "Import impossible : {{detail}}"
@@ -857,7 +885,7 @@
     "notice": {
       "title": "Importée depuis {{tool}}",
       "counts": "Vos messages : {{user}} · réponses : {{assistant}} · appels d’outils : {{toolCalls}}",
-      "goOn": "Continuez simplement ci-dessous : mu a lu la conversation. Le raisonnement et les images n’ont pas été repris.",
+      "goOn": "Continuez simplement ci-dessous : mu a lu la conversation.",
       "read": "Lire la conversation précédente"
     },
     "history": {
@@ -878,7 +906,7 @@
     "lessons": "Les leçons de ce projet : /lessons liste id · type · rappelée/suivie · leçon, /lessons all ajoute celles valables partout et celles retirées",
     "forget": "Retirer une leçon pour qu’elle ne soit plus rappelée : /forget <début de l’id> (les id sont dans /lessons)",
     "capabilities": "Les capacités installées et celles ouvertes : /capabilities, /capabilities open <id>",
-    "permissions": "Ce que mu peut faire sans demander : /permissions full (Accès complet) | jev (Jev approuve) | ask (Autorisations minimales), ou un sélecteur sans argument. /permissions reset oublie ce que vous avez autorisé dans cette conversation",
+    "permissions": "Ce que mu peut faire sans demander : /permissions full (Accès complet) | judge (Mode juge) | ask (Autorisations minimales), ou un sélecteur sans argument. /permissions reset oublie ce que vous avez autorisé dans cette conversation",
     "lsp": "Serveurs de langage : lesquels sont installés, lesquels tournent, et la dernière erreur",
     "goal": "Mode objectif : l’agent continue jusqu’à ce qu’une condition soit remplie. /goal <condition>, /goal (afficher, ou en demander un), /goal clear",
     "board": "Le tableau en clair : /board (l’afficher), /board on, /board off (pour ce projet), /board model (qui le rédige)",
@@ -898,7 +926,7 @@
     "help": "Ce que mu sait faire et toutes les commandes utiles",
     "ledger": "Les derniers verdicts du juge avec leur durée : /ledger [n]",
     "doctor": "Vérifier que le juge, le modèle, le navigateur et les sous-agents sont bien branchés",
-    "import-chat": "Importer dans mu une conversation Claude Code ou Codex de ce projet et la poursuivre : /import-chat [fichier]",
+    "import-chat": "Importer dans mu une conversation Claude Code, Codex ou ZCode de ce projet et la poursuivre : /import-chat [fichier]",
     "llama": "Gérer les modèles du routeur llama.cpp"
   },
   "native": {
@@ -912,12 +940,14 @@
       "idle": "Arrêté",
       "starting": "Démarrage",
       "running": "En cours",
+      "working": "Au travail",
+      "ready": "Prêt",
       "needsModel": "Aucun modèle",
       "failed": "Interrompu"
     },
     "status": {
       "starting": "Démarrage de mu…",
-      "classifying": "Jev lit votre message…",
+      "classifying": "Le juge lit votre message…",
       "compacting": "Compactage de la conversation…",
       "retrying": "La requête au modèle a échoué. Nouvelle tentative ({{attempt}} sur {{max}})…",
       "thinking": "Réflexion…",
@@ -1023,10 +1053,10 @@
     }
   },
   "details": {
-    "lead": "Un interrupteur par fonction, ses réglages sous « Options ». Les lignes en retrait sont les endroits où elle consulte Jev : désactivez-en une et cette étape se déroule comme d’habitude.",
+    "lead": "Un interrupteur par fonction, ses réglages sous « Options ». Les lignes en retrait sont les endroits où elle consulte le juge : désactivez-en une et cette étape se déroule comme d’habitude.",
     "featureOff": "La fonction est désactivée",
-    "askJev": "Laisser Jev juger",
-    "askJevAbout": "Laisser Jev juger : {{point}}",
+    "askJudge": "Laisser le juge décider",
+    "askJudgeAbout": "Laisser le juge décider : {{point}}",
     "areas": {
       "input": "Entrée",
       "context": "Contexte",

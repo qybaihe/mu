@@ -116,8 +116,12 @@ export const BUILT_IN_JUDGES: Readonly<Record<string, JudgeConfig>> = {
 		body: { chat_template_kwargs: { enable_thinking: false } },
 	},
 	// Measured in kyrn/docs/03-local-judge.md: the base checkpoint classifies one text well, says "yes" to
-	// nearly every relational question, and cannot use a rubric or judge the request itself.
-	laya: { type: "local", profile: { capabilities: { relate: false, rate: false, meta: false } } },
+	// nearly every relational question, and cannot use a rubric or judge the request itself. Measured on
+	// Terminal-Bench 2.1 (Oct 2026): on tool output it is wrong or late. All 15 passages it withheld as injections were
+	// clean (directory listings, href lists, headers, JSON), its one admission drop was a makefile, and most of its
+	// calls on both failed or came too late. So screening tool output (`screen`) goes to the next tier, or to the
+	// rules.
+	laya: { type: "local", profile: { capabilities: { relate: false, rate: false, meta: false, screen: false } } },
 	mock: { type: "mock" },
 };
 
@@ -125,7 +129,16 @@ export const DEFAULT_CONFIG: KyrnConfig = {
 	tiers: ["jev"],
 	judges: {},
 	// Verdicts take effect out of the box; a point that should only watch is set to "shadow" on its own.
-	modes: { default: "active" },
+	modes: {
+		default: "active",
+		// swarm.patch is off: it sees only paths and line counts, which the delegate result already lists, and it held
+		// up every delegate call that brought back a patch.
+		"swarm.patch": "off",
+		// Its rules deliver what matters; in single-prompt runs a "next_turn" verdict never reached anyone.
+		"notify.routing": "shadow",
+		// About a second on every mid-run message, and no verdict has changed anything yet.
+		"input.interjection": "shadow",
+	},
 	routes: {},
 	features: {},
 	recordState: false,

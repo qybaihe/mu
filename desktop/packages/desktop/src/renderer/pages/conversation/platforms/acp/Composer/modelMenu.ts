@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2025 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import type { ModelThinkingLevels } from '@/common/kyrn/models';
 import type { AcpConfigOptionDto } from '@/common/types/platform/acpTypes';
 import {

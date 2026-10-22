@@ -8,9 +8,9 @@
  * Decide whether this process is allowed to register the backend startup flow
  * (whenReady -> handleAppReady -> startBackendOrExit).
  *
- * Only the instance that owns the single-instance lock may spawn aioncore. A
+ * Only the instance that owns the single-instance lock may spawn the backend. A
  * lock-losing instance must never register backend startup; otherwise it races
- * the first instance's aioncore over the same data directory, which produced
+ * the first instance's backend over the same data directory, which produced
  * the "local data repair failed" false alarm in Sentry 135525166.
  *
  * Extracted as a pure function so the gating decision is unit-testable without

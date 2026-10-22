@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2025 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import type { Activity } from '@/common/kyrn/types';
 
 /** The harness's own goal states, as `goal.state` reports them. */

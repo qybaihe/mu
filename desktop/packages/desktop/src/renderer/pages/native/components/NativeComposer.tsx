@@ -1,8 +1,8 @@
 /**
  * The bottom of a native conversation: what mu has queued, what the screen says about mu, a dialog pi waits on, the
  * status line and the send box. While a run goes, a message either steers it (it reaches the model at its next step)
- * or waits for its end, as the person picks, and the stop button stops the run (or the message Jev is still reading).
- * A command another panel sends to this conversation (the board's switch: `/board on`) goes to pi as it is.
+ * or waits for its end, as the person picks, and the stop button stops the run (or the message the judge is still
+ * reading). A command another panel sends to this conversation (the board's switch: `/board on`) goes to pi as it is.
  *
  * The send box carries what mu's other conversations have (docs/native-host-ui.md): files and images attached
  * (picked, dropped or pasted), mu's permission mode, the model and its thinking level, pi's slash commands in the `/`
@@ -28,7 +28,7 @@ import { useNativeAttachments } from '../hooks/useNativeAttachments';
 import { useNativeCommands } from '../hooks/useNativeCommands';
 import type { NativeConversationApi, NativeConversationState, SendMode } from '../hooks/useNativeConversation';
 import { useNativeModels } from '../hooks/useNativeModels';
-import { contextUsageOf, goalOnScreen } from '../utils/composerLines';
+import { contextUsageOf, goalOnScreen, showsContextRing } from '../utils/composerLines';
 import { useNativeClient } from '../utils/nativeClient';
 import { isWorking } from '../utils/statusRow';
 import { mentionPath, permissionState, runsCommand, sendBoxMessages, withFiles } from './composer/composerModel';
@@ -138,7 +138,7 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
   const permissions = useMemo(() => permissionState(view, settings), [settings, view]);
   const commands = useNativeCommands(host, draft, request);
   const working = isWorking(view);
-  // A message on its way (Jev reads it) or a compaction holds the box: pi takes no other prompt then.
+  // A message on its way (the judge reads it) or a compaction holds the box: pi takes no other prompt then.
   const held = Boolean(outgoing) || view.live.compacting;
   const dialogs = view.dialogs.filter((dialog) => !closed.has(dialog.id));
   const { steering, followUp } = view.host.queue;
@@ -315,8 +315,9 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
             }
             rightTools={<NativeModelChip models={models} busy={working || held} />}
             sendButtonPrefix={
-              // The context's fill against its window, once pi has said it (a host ran); nothing before.
-              usage ? (
+              // The context's fill against its window, once pi has said it (a host ran); nothing before. Beside the kernel
+              // bar, which shows it too, only when the window runs short.
+              usage && showsContextRing(usage, !isMobile) ? (
                 <span
                   className='flex'
                   data-testid='native-context-usage'

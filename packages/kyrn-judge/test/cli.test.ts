@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { parseConfig } from "../src/config.ts";
 import { DecisionEngine, defineDecision } from "../src/decision.ts";
 import {
+	judgeDisplayName,
 	type Paint,
 	readVersions,
 	renderWelcome,
@@ -38,22 +39,33 @@ describe("welcome screen", () => {
 		const text = renderWelcome(view, 100, plain).join("\n");
 
 		expect(text).toContain("judgment-first coding agent");
-		expect(text).toContain("laya · answering in 95 ms · decisions active");
+		expect(text).toContain("Laya · answering in 95 ms · decision points active");
 		expect(text).toContain("openai-codex/gpt-5.6-sol · thinking medium");
 		expect(text).toContain("/help");
 		expect(text).not.toContain("What the judge does here");
 		expect(renderWelcome({ ...view, expanded: true }, 100, plain).join("\n")).toContain("What the judge does here");
 	});
 
-	it("never renders a line wider than the terminal, framed or not, with wide characters", () => {
+	it("names judges as people say them: the free Jev with its version, a cascade in order", () => {
+		expect(judgeDisplayName("jev")).toBe("Jev");
+		expect(judgeDisplayName("jev-1.13-free")).toBe("Jev 1.13 (free)");
+		expect(judgeDisplayName("jev-latest")).toBe("Jev");
+		expect(judgeDisplayName("jev-1.13")).toBe("Jev 1.13");
+		expect(judgeDisplayName("laya>jev")).toBe("Laya, Jev");
+		expect(judgeDisplayName("laya,jev")).toBe("Laya, Jev");
+		expect(judgeDisplayName("clef-flash")).toBe("clef-flash");
+	});
+
+	it("never renders a line wider than the terminal, with wide characters", () => {
 		for (const width of [20, 43, 44, 60, 78, 79, 140]) {
 			for (const line of renderWelcome({ ...view, expanded: true }, width, plain)) {
 				expect(visibleWidth(line)).toBeLessThanOrEqual(width);
 			}
 		}
-		// The frame closes: every framed row is exactly as wide as the border.
-		const framed = renderWelcome(view, 60, plain).filter((line) => line.startsWith("│"));
-		expect(new Set(framed.map((line) => visibleWidth(line)))).toEqual(new Set([60]));
+		// No frame: the header ends on a hairline as wide as the screen allows, never a box.
+		const lines = renderWelcome(view, 60, plain);
+		expect(lines.some((line) => /[│╭╰]/.test(line))).toBe(false);
+		expect(lines.at(-2)).toBe(`  ${"─".repeat(58)}`);
 	});
 
 	it("tells the truth when the judge is down, off, or no model is logged in", () => {
@@ -63,11 +75,11 @@ describe("welcome screen", () => {
 		const off = renderWelcome({ ...view, judge: "off" }, 100, plain);
 		const fresh = renderWelcome({ ...view, model: undefined, health: "checking" }, 100, plain);
 
-		expect(down.join("\n")).toContain("not reachable, falling back to stock behaviour");
-		expect(keyless.join("\n")).toContain("no usable key (mu setup), falling back to stock behaviour");
-		expect(broken.join("\n")).toContain("failing (server), falling back to stock behaviour");
-		expect(off.join("\n")).toContain("off · pi's stock behaviour everywhere");
-		expect(fresh.join("\n")).toContain("none yet · /login, or mu setup in a terminal");
+		expect(down.join("\n")).toContain("unreachable; using the fallbacks");
+		expect(keyless.join("\n")).toContain("no usable key (run mu setup); using the fallbacks");
+		expect(broken.join("\n")).toContain("failing (server); using the fallbacks");
+		expect(off.join("\n")).toContain("off · every decision point uses its fallback");
+		expect(fresh.join("\n")).toContain("none yet · run /login, or mu setup in a terminal");
 		expect(fresh.join("\n")).toContain("checking");
 	});
 
@@ -83,7 +95,7 @@ describe("welcome screen", () => {
 			mkdirSync(join(pkg, "judge", "dist"), { recursive: true });
 			writeFileSync(join(pkg, "judge", "package.json"), JSON.stringify({ name: "@kyrn/judge", version: "0.1.0" }));
 			// Where the bundled welcome.ts looks from: the build rewrites import.meta.url to its source's place in judge/.
-			const bundle = pathToFileURL(join(pkg, "judge", "dist", "kyrn-judge.js")).href;
+			const bundle = pathToFileURL(join(pkg, "judge", "mu", "index.js")).href;
 			const source = new URL("src/extension/features/welcome.ts", new URL("../", bundle));
 			// pi's own VERSION in the package is mu's: it must not be taken for pi's.
 			expect(readVersions(new URL("../../../", source), "0.1.4")).toEqual({ mu: "0.1.4", pi: "0.86.0" });
@@ -98,9 +110,9 @@ describe("welcome screen", () => {
 			mu: versionOf("kyrn/npm/package.template.json"),
 			pi: versionOf("packages/coding-agent/package.json"),
 		});
-		expect(renderWelcome({ ...view, version: "0.1.4", piVersion: "0.86.0" }, 100, plain).join("\n")).toContain(
-			"v0.1.4 · built on pi 0.86.0",
-		);
+		const header = renderWelcome({ ...view, version: "0.1.4", piVersion: "0.86.0" }, 100, plain).join("\n");
+		expect(header).toContain("mu  v0.1.4");
+		expect(header).toContain("built on pi 0.86.0");
 	});
 });
 

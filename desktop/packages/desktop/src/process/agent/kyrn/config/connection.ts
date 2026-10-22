@@ -7,6 +7,7 @@ import {
 } from '../../../../common/kyrn/models';
 import { KyrnError } from '../../../../common/kyrn/errors';
 import { asRecord, text } from '../piRpc';
+import { listedModels } from './modelFacts';
 import { assertEndpoint } from './models';
 
 /** The saved key of a provider and where it may be sent: `SettingsStore.storedKey`. */
@@ -71,17 +72,6 @@ export function attempts(input: Pick<ProviderTestInput, 'api' | 'baseUrl' | 'mod
           body: { model, messages: ping, max_tokens: 1 },
         };
   return [{ method: 'GET', url: join(baseUrl, '/models'), kind: 'models' }, completion];
-}
-
-/** Model ids from the three list shapes: OpenAI and Anthropic `{data:[{id}]}`, Google `{models:[{name:"models/x"}]}`. */
-function listedModels(body: unknown): string[] | undefined {
-  const record = asRecord(body);
-  const rows = Array.isArray(record.data) ? record.data : Array.isArray(record.models) ? record.models : undefined;
-  if (!rows) return undefined;
-  return rows
-    .map((row) => text(asRecord(row).id) || text(asRecord(row).name).replace(/^models\//, ''))
-    .filter(Boolean)
-    .slice(0, 500);
 }
 
 /** What the endpoint said went wrong, shortened, and with the key cut out should a server echo it. */
@@ -165,8 +155,8 @@ export async function testProvider(
         return body === undefined
           ? done(false, 'invalid-response', { status })
           : done(true, 'ok-completion', { status });
-      const models = listedModels(body);
-      if (models) return done(true, 'ok-models', { status, models });
+      const listed = listedModels(body);
+      if (listed) return done(true, 'ok-models', { status, models: listed.ids, facts: listed.facts });
       last = done(false, 'invalid-response', { status });
       continue;
     }

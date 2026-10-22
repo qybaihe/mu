@@ -1,7 +1,7 @@
 // @ts-check
 // The home page and the sidebar on the native host (on by default), end to end, in a throwaway profile
 // (nativeWorld.mjs): the home page's send starts a native conversation in the folder picked there, its row is pinned,
-// renamed and deleted from the sidebar (into a bin of the test's own), and the session files AionCore's conversations
+// renamed and deleted from the sidebar (into a bin of the test's own), and the session files the backend's conversations
 // use are left out of the native list. The level picked on the home page is native-home-level.spec.mjs's. Run with
 // `bun run e2e:conversation --native` (every native*.spec.mjs); the test ids read are the ones docs/native-host-ui.md
 // lists.
@@ -19,7 +19,7 @@ const desktopRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..',
 const FIRST_MESSAGE = 'E2E:PLAIN 从首页开始的原生会话';
 const NEW_NAME = '改过名字的会话';
 const OLD_TITLE = 'E2E 别处的旧会话';
-const BOUND_TITLE = 'E2E AionCore 在用的会话';
+const BOUND_TITLE = 'E2E 后端在用的会话';
 const IMPORTED_TITLE = 'E2E 导入的会话';
 const CLI_TITLE = 'E2E 命令行刚做的会话';
 
@@ -45,7 +45,7 @@ const slug = (cwd) => `--${cwd.replace(/^[/\\]/, '').replace(/[/\\:]/g, '-')}--`
 
 /**
  * The files this spec made before the start, and the conversation the home page makes: `bound` and `imported` are used
- * by AionCore's conversations (an adapter record, an import record), `free` is mu's own, in a folder of its own.
+ * by the backend's conversations (an adapter record, an import record), `free` is mu's own, in a folder of its own.
  * @type {{ elsewhere: string, free: { id: string, file: string }, bound: { id: string, file: string }, imported: { id: string, file: string }, records: string[], id: string, file: string, bin: string }}
  */
 const made = {
@@ -116,7 +116,7 @@ async function openMenu(id) {
   await expect(menuItem('rename')).toBeVisible();
 }
 
-test('the native list leaves out the sessions AionCore’s conversations use', async () => {
+test('the native list leaves out the sessions the backend’s conversations use', async () => {
   const { project, root, home } = paths();
   made.elsewhere = join(root, 'elsewhere');
   mkdirSync(made.elsewhere, { recursive: true });
@@ -145,7 +145,7 @@ test('the native list leaves out the sessions AionCore’s conversations use', a
   await start();
   const p = page();
   await reachSidebar();
-  // mu's own session is listed; the two AionCore uses are not (they would show twice: here and as its conversations).
+  // mu's own session is listed; the two backend uses are not (they would show twice: here and as its conversations).
   await expect(rows()).toHaveCount(1);
   await expect(row(made.free.id)).toContainText(OLD_TITLE);
   // Its tooltip: the title, the folder, how many messages (the profile's language is Chinese).
@@ -287,7 +287,7 @@ test('a row’s menu deletes the conversation after a confirmation: its session 
   expect(trashed, 'the one file the bin was handed').toEqual([made.file]);
   expect(existsSync(made.file)).toBe(false);
   expect(existsSync(join(made.bin, basename(made.file)))).toBe(true);
-  // The other sessions and AionCore's records are as they were.
+  // The other sessions and the backend's records are as they were.
   for (const { path, before } of run.untouched) expect(stamp(path), `${path} left alone`).toBe(before);
   expectNoProblems();
 });

@@ -145,29 +145,29 @@
       "send_feedback": "請重試；如果仍然失敗，請查看應用程式日誌。"
     },
     "ownership": {
-      "aionui": "應用",
+      "mu": "應用",
       "user_agent": "Agent",
       "user_llm_provider": "模型服務商",
       "unknown_upstream": "上游"
     },
     "codes": {
-      "AIONUI_STREAM_BROKEN": {
+      "MU_STREAM_BROKEN": {
         "title": "回應流異常中斷",
         "body": "訊息已送出，但回應流異常結束。請先重試；如果反覆出現，請查看應用程式日誌。"
       },
-      "AIONUI_STATE_INCONSISTENT": {
+      "MU_STATE_INCONSISTENT": {
         "title": "會話狀態不一致",
         "body": "目前對話狀態和後台記錄不同步。請重新開啟應用程式或建立新對話後再試。"
       },
-      "AIONUI_PERMISSION_ERROR": {
+      "MU_PERMISSION_ERROR": {
         "title": "無法存取所需資源",
         "body": "本機權限或檔案存取檢查失敗。請確認專案路徑和應用程式權限後重試。"
       },
-      "AIONUI_INTERNAL_ERROR": {
+      "MU_INTERNAL_ERROR": {
         "title": "應用處理失敗",
         "body": "本次請求在應用程式處理過程中失敗。請先重試一次；如果仍然出現，請查看應用程式日誌。"
       },
-      "AIONUI_CONVERSATION_BUSY": {
+      "MU_CONVERSATION_BUSY": {
         "title": "會話正在處理上一則訊息",
         "body": "目前會話還有回覆尚未結束。請等待本次回覆完成後再傳送新的訊息。"
       },
@@ -592,7 +592,9 @@
     "hint": "輸入 / 喚起命令，@ 引用檔案，↑/↓ 切換歷史訊息",
     "mediaPathFallback": "該 Agent 不原生支援此檔案類型，將以檔案路徑形式傳送。",
     "hintWithSessions": "輸入 / 喚起命令，@ 引用檔案，@@ 引用對話，↑/↓ 切換歷史訊息",
-    "stop": "停止回覆"
+    "stop": "停止回覆",
+    "openCommand": "從這台電腦附加檔案",
+    "copyCommand": "複製最後一則回覆"
   },
   "composer": {
     "goalLine": {

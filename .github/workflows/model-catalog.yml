@@ -1,0 +1,68 @@
+name: Model catalog
+
+# Weekly: regenerate packages/ai/model-catalog.json with mu's generator, from live sources, and open a pull request.
+# CI builds from that snapshot (npm run build:pinned), so a model added, renamed or dropped upstream reaches mu here,
+# in one pull request whose diff and checks show what it changes, instead of failing unrelated pull requests.
+
+on:
+  schedule:
+    - cron: '47 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: model-catalog
+  cancel-in-progress: false
+
+env:
+  BRANCH: chore/model-catalog
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      # The generator is TypeScript that Node 24 runs as it is, with no dependencies installed.
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
+      # Fails, and changes nothing, when a source is down or the new catalog can't build this checkout.
+      - name: Regenerate the catalog
+        id: catalog
+        run: |
+          node scripts/update-model-catalog.mjs
+          if git diff --quiet -- packages/ai/model-catalog.json; then echo "changed=false" >> "$GITHUB_OUTPUT"; else echo "changed=true" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Open the pull request
+        if: steps.catalog.outputs.changed == 'true'
+        run: |
+          day=$(date -u +%F)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git add packages/ai/model-catalog.json
+          git commit -m "chore: model catalog $day"
+          git push --force origin "$BRANCH"
+          # A pull request opened with GITHUB_TOKEN starts no workflows, so start the checks on the branch.
+          for workflow in ci.yml windows-tests.yml npm.yml; do
+            gh workflow run "$workflow" --ref "$BRANCH"
+          done
+          body="The model catalog as mu's generator makes it from live sources on $day. The diff shows which models were added, changed or dropped.
+
+          The checks were started on this branch. If a test fails, a model it names changed upstream: update the test, or mu's default for that provider, on this branch, then merge."
+          if gh pr view "$BRANCH" --json state --jq .state 2>/dev/null | grep -q OPEN; then
+            gh pr edit "$BRANCH" --title "chore: model catalog $day" --body "$body"
+          else
+            gh pr create --base main --head "$BRANCH" --title "chore: model catalog $day" --body "$body"
+          fi

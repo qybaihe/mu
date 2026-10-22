@@ -50,6 +50,8 @@ describe("delegate with worktree isolation", () => {
 		extra: {
 			responder?: MockResponder;
 			mode?: DecisionMode;
+			/** swarm.patch is off by default; the tests of what it says switch it on. */
+			patchReview?: DecisionMode;
 			swarm?: Record<string, unknown>;
 			files?: Record<string, string> | null;
 			events?: KyrnPresentationEvent[];
@@ -61,6 +63,7 @@ describe("delegate with worktree isolation", () => {
 					provider: new MockJudgeProvider(extra.responder ?? review()),
 					mode: extra.mode ?? "active",
 					config: parseConfig({
+						...(extra.patchReview ? { modes: { "swarm.patch": extra.patchReview } } : {}),
 						features: { memory: false, browser: false, swarm: { enabled: true, ...extra.swarm } },
 					}),
 					swarmRunner: runner,
@@ -95,7 +98,7 @@ describe("delegate with worktree isolation", () => {
 				writeFileSync(join(cwd, "package-lock.json"), "{}\n");
 				return "**Done** src/a.txt:2";
 			},
-			{ responder: review("package-lock.json"), events },
+			{ responder: review("package-lock.json"), events, patchReview: "active" },
 		);
 		// The parent is in the middle of something: the worker has to see it, the patch must not contain it.
 		writeFileSync(join(harness.repo, "src/a.txt"), lines(12).replace("line 11\n", "line 11, parent's edit\n"));
@@ -214,7 +217,7 @@ describe("delegate with worktree isolation", () => {
 		const harness = await start(async (_task, assignment) => {
 			cwd = assignment.cwd ?? "";
 			writeFileSync(join(cwd, "half.txt"), "half done\n");
-			throw new Error("sub-agent exited with code 1 before it finished");
+			throw new Error("subagent exited with code 1 before it finished");
 		});
 		harness.setResponses([
 			delegate([{ title: "crash", instructions: "Write half.txt" }]),
@@ -224,7 +227,7 @@ describe("delegate with worktree isolation", () => {
 		await harness.session.prompt("Try.");
 
 		const [delegated] = resultTexts(harness);
-		expect(delegated).toContain("FAILED: sub-agent exited with code 1");
+		expect(delegated).toContain("FAILED: subagent exited with code 1");
 		expect(delegated).toContain("A half.txt +1 -0");
 		expect(existsSync(cwd)).toBe(false);
 		expect(existsSync(`${cwd}.json`)).toBe(false);
@@ -233,7 +236,7 @@ describe("delegate with worktree isolation", () => {
 	});
 
 	it("isolates only who edits, works in place where there is no repository, and says so", async () => {
-		// By title: an isolated sub-agent starts later than the others, its checkout has to be made first.
+		// By title: an isolated subagent starts later than the others, its checkout has to be made first.
 		const where = new Map<string, string | undefined>();
 		const runner: SwarmRunner = async (task, assignment) => {
 			where.set(task.title, assignment.cwd);
@@ -295,7 +298,7 @@ describe("delegate with worktree isolation", () => {
 		);
 	});
 
-	it("takes a running sub-agent's checkout down when the session shuts down", async () => {
+	it("takes a running subagent's checkout down when the session shuts down", async () => {
 		let cwd = "";
 		let started: () => void = () => {};
 		let release: () => void = () => {};
@@ -322,10 +325,33 @@ describe("delegate with worktree isolation", () => {
 		expect(existsSync(`${cwd}.json`)).toBe(false);
 		expect(sh(harness.repo, "branch", "--list", "mu/agent-*")).toBe("");
 		expect(sh(harness.repo, "worktree", "list", "--porcelain").match(/^worktree /gm)).toHaveLength(1);
-		// The sub-agent coming back afterwards finds its checkout gone, and that is not an error for anyone.
+		// The subagent coming back afterwards finds its checkout gone, and that is not an error for anyone.
 		release();
 		await prompt;
 		expect(resultTexts(harness)[0]).toContain("late");
+	});
+
+	it("asks nothing about scope by default: the result already lists every changed file", async () => {
+		const provider = review("b.txt");
+		const asked: string[] = [];
+		const harness = await start(
+			async (_task, assignment) => {
+				writeFileSync(join(assignment.cwd ?? "", "b.txt"), "b\n");
+				return "done";
+			},
+			{
+				responder: (request) => {
+					asked.push(...Object.keys(request.questions));
+					return provider(request);
+				},
+			},
+		);
+		harness.setResponses([delegate([{ title: "add", instructions: "Add b.txt" }]), fauxAssistantMessage("ok")]);
+		await harness.session.prompt("Go.");
+		const [delegated] = resultTexts(harness);
+		expect(delegated).toContain("A b.txt +1 -0");
+		expect(delegated).not.toContain("Scope check");
+		expect(asked).not.toContain("within_task");
 	});
 
 	it("says nothing about scope in shadow mode, and answers an unknown patch id with the ones it has", async () => {
@@ -334,7 +360,7 @@ describe("delegate with worktree isolation", () => {
 				writeFileSync(join(assignment.cwd ?? "", "b.txt"), "b\n");
 				return "done";
 			},
-			{ responder: review("b.txt"), mode: "shadow" },
+			{ responder: review("b.txt"), mode: "shadow", patchReview: "shadow" },
 		);
 		harness.setResponses([
 			delegate([{ title: "add", instructions: "Add b.txt" }]),

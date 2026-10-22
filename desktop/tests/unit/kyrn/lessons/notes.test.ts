@@ -112,7 +112,7 @@ describe('the quiet notes above the lessons', () => {
 
   it('names the task when the lessons went into a sub-agent’s brief', () => {
     const events = [event('memory.recalled', { ids: [c], turn: 3, task: 'Fix the login test' })];
-    expect(texts(en, events)).toEqual(['A sub-agent’s brief carried 1 lesson: Fix the login test']);
+    expect(texts(en, events)).toEqual(["A subagent's brief carried 1 lesson: Fix the login test"]);
   });
 
   it('adds nothing for a stored lesson, a recall without ids or a followed list that is empty', () => {
@@ -149,7 +149,7 @@ describe('the quiet notes above the lessons', () => {
     ]);
     // A model's lesson outranked by a kept one: it was never stored.
     expect(texts(en, [event('memory.merged', { id: fresh, into: a, how: 'contradicts' })])).toEqual([
-      'Not kept, it contradicts: Use ./test.sh.',
+      'Not kept; it contradicts: Use ./test.sh.',
     ]);
     // The user's newer word: the merge line and then the retirement of the old lesson, said once.
     expect(
@@ -157,7 +157,7 @@ describe('the quiet notes above the lessons', () => {
         event('memory.merged', { id: a, into: fresh, how: 'contradicts' }),
         event('memory.retired', { id: a, reason: 'contradicted' }),
       ])
-    ).toEqual(['Retired: Use ./test.sh. (your newer word contradicts it)']);
+    ).toEqual(['Retired: Use ./test.sh. (a newer instruction from you contradicts it)']);
   });
 
   it('names a lesson the file does not hold by the start of its id', () => {

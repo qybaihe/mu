@@ -54,7 +54,7 @@ describe("user-facing words follow MU_LANG", () => {
 		const goal = { status: "paused" as const, text: "测试全部通过", continuations: 2, reason: "代理在等你回复" };
 		delete process.env.MU_LANG;
 		expect(describeGoal(goal)).toBe(
-			"goal: 测试全部通过\nstate: paused: 代理在等你回复. Your next message picks it up again",
+			"goal: 测试全部通过\nstatus: paused: 代理在等你回复. Your next message resumes it",
 		);
 		process.env.MU_LANG = "zh-CN";
 		expect(describeGoal(goal)).toBe("目标：测试全部通过\n状态：已暂停：代理在等你回复。你发下一条消息就会接着干");

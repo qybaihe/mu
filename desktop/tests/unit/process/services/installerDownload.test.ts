@@ -63,7 +63,7 @@ describe('downloadInstaller', () => {
 
   it('refuses any host but GitHub, redirects included, before asking it', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) =>
-      String(input) === ASSET_URL ? redirect('https://static.aionui.com/fake.deb') : new Response('evil')
+      String(input) === ASSET_URL ? redirect('https://static.example.com/fake.deb') : new Response('evil')
     );
     vi.stubGlobal('fetch', fetchMock);
     await expect(

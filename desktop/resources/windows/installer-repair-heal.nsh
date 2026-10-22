@@ -1,18 +1,18 @@
-!ifndef AIONUI_INSTALLER_REPAIR_HEAL_NSH
-!define AIONUI_INSTALLER_REPAIR_HEAL_NSH
+!ifndef MU_INSTALLER_REPAIR_HEAL_NSH
+!define MU_INSTALLER_REPAIR_HEAL_NSH
 
-Var /GLOBAL AionUiRegistryInstallIsValid
-Var /GLOBAL AionUiInnerFailureSummary
-Var /GLOBAL AionUiInnerRootCode
-Var /GLOBAL AionUiInnerFailureReadResult
+Var /GLOBAL MuRegistryInstallIsValid
+Var /GLOBAL MuInnerFailureSummary
+Var /GLOBAL MuInnerRootCode
+Var /GLOBAL MuInnerFailureReadResult
 
-!macro AIONUI_READ_LAST_INNER_FAILURE
+!macro MU_READ_LAST_INNER_FAILURE
   InitPluginsDir
-  StrCpy $AionUiInnerRootCode ""
-  StrCpy $AionUiInnerFailureSummary "No specific locking process was identified. Close mu, terminals, editors, and file managers opened in the install folder."
+  StrCpy $MuInnerRootCode ""
+  StrCpy $MuInnerFailureSummary "No specific locking process was identified. Close mu, terminals, editors, and file managers opened in the install folder."
   nsExec::ExecToStack `"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command "& { \
     $$ErrorActionPreference = 'SilentlyContinue'; \
-    $$logPath = '$AionUiSessionLogPath'; \
+    $$logPath = '$MuSessionLogPath'; \
     $$summary = 'No specific locking process was identified. Close mu, terminals, editors, and file managers opened in the install folder.'; \
     $$code = ''; \
     if ($$logPath -and (Test-Path -LiteralPath $$logPath)) { \
@@ -37,161 +37,161 @@ Var /GLOBAL AionUiInnerFailureReadResult
     if (-not $$code) { $$code = '-----' }; \
     [Console]::Out.Write($$code + '|' + $$summary) \
   }"`
-  Pop $AionUiInnerFailureReadResult
-  Pop $AionUiInnerFailureReadResult
-  StrCpy $AionUiInnerRootCode $AionUiInnerFailureReadResult 5
-  ${If} $AionUiInnerRootCode == "-----"
-    StrCpy $AionUiInnerRootCode ""
+  Pop $MuInnerFailureReadResult
+  Pop $MuInnerFailureReadResult
+  StrCpy $MuInnerRootCode $MuInnerFailureReadResult 5
+  ${If} $MuInnerRootCode == "-----"
+    StrCpy $MuInnerRootCode ""
   ${EndIf}
-  StrCpy $AionUiInnerFailureSummary $AionUiInnerFailureReadResult 4096 6
+  StrCpy $MuInnerFailureSummary $MuInnerFailureReadResult 4096 6
 !macroend
 
-!macro AIONUI_LOG_UNINSTALLER_REPAIR _PHASE
+!macro MU_LOG_UNINSTALLER_REPAIR _PHASE
   nsExec::Exec `"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command "& { \
     $$ErrorActionPreference = 'SilentlyContinue'; \
-    $$log = '$AionUiSessionLogPath'; \
-    if (-not $$log) { $$log = Join-Path $$env:TEMP '${AIONUI_FALLBACK_LOG}' }; \
+    $$log = '$MuSessionLogPath'; \
+    if (-not $$log) { $$log = Join-Path $$env:TEMP '${MU_FALLBACK_LOG}' }; \
     $$path = '$INSTDIR\${UNINSTALL_FILENAME}'; \
     $$item = Get-Item -LiteralPath $$path -ErrorAction SilentlyContinue; \
     $$version = if ($$item) { $$item.VersionInfo.ProductVersion } else { '' }; \
     $$length = if ($$item) { $$item.Length } else { '' }; \
-    $$payload = [ordered]@{ schemaVersion = 1; ts = (Get-Date -Format o); session = '$AionUiSessionId'; version = '${VERSION}'; arch = '${AIONUI_TARGET_ARCH}'; updated = ('$AionUiIsUpdated' -eq '1'); instDir = '$INSTDIR'; event = 'uninstaller-repair'; phase = '${_PHASE}'; path = $$path; exists = [bool]$$item; productVersion = $$version; length = $$length }; \
+    $$payload = [ordered]@{ schemaVersion = 1; ts = (Get-Date -Format o); session = '$MuSessionId'; version = '${VERSION}'; arch = '${MU_TARGET_ARCH}'; updated = ('$MuIsUpdated' -eq '1'); instDir = '$INSTDIR'; event = 'uninstaller-repair'; phase = '${_PHASE}'; path = $$path; exists = [bool]$$item; productVersion = $$version; length = $$length }; \
     Add-Content -LiteralPath $$log -Encoding UTF8 -Value ($$payload | ConvertTo-Json -Compress -Depth 8) \
   }"`
-  Pop $AionUiRepairLogResult
+  Pop $MuRepairLogResult
 !macroend
 
-!macro AIONUI_REPAIR_INSTALLED_UNINSTALLER
-  Var /GLOBAL AionUiInstalledUninstaller
-  Var /GLOBAL AionUiBundledUninstaller
-  Var /GLOBAL AionUiRepairLogResult
+!macro MU_REPAIR_INSTALLED_UNINSTALLER
+  Var /GLOBAL MuInstalledUninstaller
+  Var /GLOBAL MuBundledUninstaller
+  Var /GLOBAL MuRepairLogResult
 
-  !insertmacro AIONUI_LOG_UNINSTALLER_REPAIR "before"
-  StrCpy $AionUiInstalledUninstaller "$INSTDIR\${UNINSTALL_FILENAME}"
+  !insertmacro MU_LOG_UNINSTALLER_REPAIR "before"
+  StrCpy $MuInstalledUninstaller "$INSTDIR\${UNINSTALL_FILENAME}"
 
   InitPluginsDir
-  StrCpy $AionUiBundledUninstaller "$PLUGINSDIR\mu-fixed-uninstaller.exe"
+  StrCpy $MuBundledUninstaller "$PLUGINSDIR\mu-fixed-uninstaller.exe"
   SetOverwrite on
   File "/oname=$PLUGINSDIR\mu-fixed-uninstaller.exe" "${UNINSTALLER_OUT_FILE}"
 
-  ${If} ${FileExists} "$AionUiInstalledUninstaller"
+  ${If} ${FileExists} "$MuInstalledUninstaller"
     ClearErrors
-    CopyFiles /SILENT "$AionUiBundledUninstaller" "$AionUiInstalledUninstaller"
+    CopyFiles /SILENT "$MuBundledUninstaller" "$MuInstalledUninstaller"
     ${If} ${Errors}
-      !insertmacro AIONUI_LOG_UNINSTALLER_REPAIR "copy-failed-retry"
-      !insertmacro AIONUI_STOP_APP_PROCESSES
+      !insertmacro MU_LOG_UNINSTALLER_REPAIR "copy-failed-retry"
+      !insertmacro MU_STOP_APP_PROCESSES
       Sleep 1000
 
       ClearErrors
-      CopyFiles /SILENT "$AionUiBundledUninstaller" "$AionUiInstalledUninstaller"
+      CopyFiles /SILENT "$MuBundledUninstaller" "$MuInstalledUninstaller"
       ${If} ${Errors}
-        ${If} ${FileExists} "$AionUiBundledUninstaller"
-          !insertmacro AIONUI_LOG_UNINSTALLER_REPAIR "copy-failed-using-bundled"
-          !insertmacro AIONUI_LOG_EVENT "event=uninstaller-repair phase=copy-failed-using-bundled"
+        ${If} ${FileExists} "$MuBundledUninstaller"
+          !insertmacro MU_LOG_UNINSTALLER_REPAIR "copy-failed-using-bundled"
+          !insertmacro MU_LOG_EVENT "event=uninstaller-repair phase=copy-failed-using-bundled"
         ${Else}
-          !insertmacro AIONUI_FAIL_REPORTABLE_BILINGUAL ${AIONUI_E_UNINSTALLER_COPY_OR_REBUILD_FAILED} "uninstaller-repair copy-failed-retry-bundled-missing" "${AIONUI_MSG_UNINSTALLER_COPY_LOCKED_EN}" "${AIONUI_MSG_UNINSTALLER_COPY_LOCKED_ZH}" "${AIONUI_MSG_UNINSTALLER_REPAIR_ACTION_EN}" "${AIONUI_MSG_UNINSTALLER_REPAIR_ACTION_ZH}"
+          !insertmacro MU_FAIL_REPORTABLE_BILINGUAL ${MU_E_UNINSTALLER_COPY_OR_REBUILD_FAILED} "uninstaller-repair copy-failed-retry-bundled-missing" "${MU_MSG_UNINSTALLER_COPY_LOCKED_EN}" "${MU_MSG_UNINSTALLER_COPY_LOCKED_ZH}" "${MU_MSG_UNINSTALLER_REPAIR_ACTION_EN}" "${MU_MSG_UNINSTALLER_REPAIR_ACTION_ZH}"
         ${EndIf}
       ${Else}
-        !insertmacro AIONUI_LOG_UNINSTALLER_REPAIR "after-copy-retry"
+        !insertmacro MU_LOG_UNINSTALLER_REPAIR "after-copy-retry"
       ${EndIf}
     ${Else}
-      !insertmacro AIONUI_LOG_UNINSTALLER_REPAIR "after-copy"
+      !insertmacro MU_LOG_UNINSTALLER_REPAIR "after-copy"
     ${EndIf}
   ${Else}
     ClearErrors
-    CopyFiles /SILENT "$AionUiBundledUninstaller" "$AionUiInstalledUninstaller"
+    CopyFiles /SILENT "$MuBundledUninstaller" "$MuInstalledUninstaller"
     ${If} ${Errors}
-      !insertmacro AIONUI_FAIL_REPORTABLE_BILINGUAL ${AIONUI_E_UNINSTALLER_COPY_OR_REBUILD_FAILED} "uninstaller-repair rebuild-failed" "${AIONUI_MSG_UNINSTALLER_REBUILD_FAILED_EN}" "${AIONUI_MSG_UNINSTALLER_REBUILD_FAILED_ZH}" "${AIONUI_MSG_UNINSTALLER_REPAIR_ACTION_EN}" "${AIONUI_MSG_UNINSTALLER_REPAIR_ACTION_ZH}"
+      !insertmacro MU_FAIL_REPORTABLE_BILINGUAL ${MU_E_UNINSTALLER_COPY_OR_REBUILD_FAILED} "uninstaller-repair rebuild-failed" "${MU_MSG_UNINSTALLER_REBUILD_FAILED_EN}" "${MU_MSG_UNINSTALLER_REBUILD_FAILED_ZH}" "${MU_MSG_UNINSTALLER_REPAIR_ACTION_EN}" "${MU_MSG_UNINSTALLER_REPAIR_ACTION_ZH}"
     ${EndIf}
 
-    ${IfNot} ${FileExists} "$AionUiInstalledUninstaller"
-      !insertmacro AIONUI_FAIL_REPORTABLE_BILINGUAL ${AIONUI_E_UNINSTALLER_COPY_OR_REBUILD_FAILED} "uninstaller-repair rebuild-missing-after-copy" "${AIONUI_MSG_UNINSTALLER_REBUILD_MISSING_EN}" "${AIONUI_MSG_UNINSTALLER_REBUILD_MISSING_ZH}" "${AIONUI_MSG_UNINSTALLER_REPAIR_ACTION_EN}" "${AIONUI_MSG_UNINSTALLER_REPAIR_ACTION_ZH}"
+    ${IfNot} ${FileExists} "$MuInstalledUninstaller"
+      !insertmacro MU_FAIL_REPORTABLE_BILINGUAL ${MU_E_UNINSTALLER_COPY_OR_REBUILD_FAILED} "uninstaller-repair rebuild-missing-after-copy" "${MU_MSG_UNINSTALLER_REBUILD_MISSING_EN}" "${MU_MSG_UNINSTALLER_REBUILD_MISSING_ZH}" "${MU_MSG_UNINSTALLER_REPAIR_ACTION_EN}" "${MU_MSG_UNINSTALLER_REPAIR_ACTION_ZH}"
     ${EndIf}
 
-    !insertmacro AIONUI_LOG_UNINSTALLER_REPAIR "rebuilt"
-    !insertmacro AIONUI_LOG_EVENT "event=uninstaller-repair phase=rebuilt"
+    !insertmacro MU_LOG_UNINSTALLER_REPAIR "rebuilt"
+    !insertmacro MU_LOG_EVENT "event=uninstaller-repair phase=rebuilt"
   ${EndIf}
 !macroend
 
-!macro AIONUI_HEAL_INSTALL_REGISTRY
-  Var /GLOBAL AionUiRegInstallLocation
-  Var /GLOBAL AionUiRegUninstallString
-  Var /GLOBAL AionUiRegInstallExe
+!macro MU_HEAL_INSTALL_REGISTRY
+  Var /GLOBAL MuRegInstallLocation
+  Var /GLOBAL MuRegUninstallString
+  Var /GLOBAL MuRegInstallExe
 
-  StrCpy $AionUiRegistryInstallIsValid "0"
+  StrCpy $MuRegistryInstallIsValid "0"
 
-  ReadRegStr $AionUiRegInstallLocation SHCTX "${INSTALL_REGISTRY_KEY}" "InstallLocation"
-  ReadRegStr $AionUiRegUninstallString SHCTX "${UNINSTALL_REGISTRY_KEY}" "UninstallString"
+  ReadRegStr $MuRegInstallLocation SHCTX "${INSTALL_REGISTRY_KEY}" "InstallLocation"
+  ReadRegStr $MuRegUninstallString SHCTX "${UNINSTALL_REGISTRY_KEY}" "UninstallString"
 
-  ${If} $AionUiRegInstallLocation == ""
-    !insertmacro AIONUI_LOG_EVENT "event=registry-heal phase=missing-install-location uninstallString=$AionUiRegUninstallString"
-    !insertmacro AIONUI_CLEAR_INSTALL_REGISTRY "missing-install-location"
+  ${If} $MuRegInstallLocation == ""
+    !insertmacro MU_LOG_EVENT "event=registry-heal phase=missing-install-location uninstallString=$MuRegUninstallString"
+    !insertmacro MU_CLEAR_INSTALL_REGISTRY "missing-install-location"
   ${Else}
-    StrCpy $AionUiRegInstallExe "$AionUiRegInstallLocation\${AIONUI_APP_EXECUTABLE_FILENAME}"
-    ${If} ${FileExists} "$AionUiRegInstallExe"
-      StrCpy $INSTDIR "$AionUiRegInstallLocation"
-      StrCpy $AionUiRegistryInstallIsValid "1"
-      !insertmacro AIONUI_LOG_EVENT "event=registry-heal phase=valid-install-location instDir=$INSTDIR uninstallString=$AionUiRegUninstallString"
+    StrCpy $MuRegInstallExe "$MuRegInstallLocation\${MU_APP_EXECUTABLE_FILENAME}"
+    ${If} ${FileExists} "$MuRegInstallExe"
+      StrCpy $INSTDIR "$MuRegInstallLocation"
+      StrCpy $MuRegistryInstallIsValid "1"
+      !insertmacro MU_LOG_EVENT "event=registry-heal phase=valid-install-location instDir=$INSTDIR uninstallString=$MuRegUninstallString"
     ${Else}
-      !insertmacro AIONUI_LOG_EVENT "event=registry-heal phase=stale-install-location installLocation=$AionUiRegInstallLocation uninstallString=$AionUiRegUninstallString"
-      !insertmacro AIONUI_CLEAR_INSTALL_REGISTRY "stale-install-location"
+      !insertmacro MU_LOG_EVENT "event=registry-heal phase=stale-install-location installLocation=$MuRegInstallLocation uninstallString=$MuRegUninstallString"
+      !insertmacro MU_CLEAR_INSTALL_REGISTRY "stale-install-location"
     ${EndIf}
   ${EndIf}
 !macroend
 
-!macro AIONUI_LOG_UNINSTALL_RESULT _ROOT_KEY _HAD_ERRORS
+!macro MU_LOG_UNINSTALL_RESULT _ROOT_KEY _HAD_ERRORS
   nsExec::Exec `"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command "& { \
     $$ErrorActionPreference = 'SilentlyContinue'; \
-    $$log = '$AionUiSessionLogPath'; \
-    if (-not $$log) { $$log = Join-Path $$env:TEMP '${AIONUI_FALLBACK_LOG}' }; \
-    $$payload = [ordered]@{ schemaVersion = 1; ts = (Get-Date -Format o); session = '$AionUiSessionId'; version = '${VERSION}'; arch = '${AIONUI_TARGET_ARCH}'; updated = ('$AionUiIsUpdated' -eq '1'); instDir = '$INSTDIR'; event = 'uninstall-result'; root = '${_ROOT_KEY}'; launchErrors = '${_HAD_ERRORS}'; exitCode = '$R0' }; \
+    $$log = '$MuSessionLogPath'; \
+    if (-not $$log) { $$log = Join-Path $$env:TEMP '${MU_FALLBACK_LOG}' }; \
+    $$payload = [ordered]@{ schemaVersion = 1; ts = (Get-Date -Format o); session = '$MuSessionId'; version = '${VERSION}'; arch = '${MU_TARGET_ARCH}'; updated = ('$MuIsUpdated' -eq '1'); instDir = '$INSTDIR'; event = 'uninstall-result'; root = '${_ROOT_KEY}'; launchErrors = '${_HAD_ERRORS}'; exitCode = '$R0' }; \
     Add-Content -LiteralPath $$log -Encoding UTF8 -Value ($$payload | ConvertTo-Json -Compress -Depth 8) \
   }"`
-  Pop $AionUiUninstallLogResult
+  Pop $MuUninstallLogResult
 !macroend
 
-!macro AIONUI_HANDLE_UNINSTALL_RESULT _ROOT_KEY _LABEL_PREFIX
+!macro MU_HANDLE_UNINSTALL_RESULT _ROOT_KEY _LABEL_PREFIX
   ${If} ${Errors}
-    StrCpy $AionUiUninstallHadErrors "1"
+    StrCpy $MuUninstallHadErrors "1"
   ${Else}
-    StrCpy $AionUiUninstallHadErrors "0"
+    StrCpy $MuUninstallHadErrors "0"
   ${EndIf}
 
-  !insertmacro AIONUI_LOG_UNINSTALL_RESULT "${_ROOT_KEY}" "$AionUiUninstallHadErrors"
+  !insertmacro MU_LOG_UNINSTALL_RESULT "${_ROOT_KEY}" "$MuUninstallHadErrors"
 
-  ${If} $AionUiUninstallHadErrors == "1"
+  ${If} $MuUninstallHadErrors == "1"
     DetailPrint `Uninstall was not successful. Not able to launch uninstaller!`
     Return
   ${EndIf}
 
   ${If} $R0 != 0
       DetailPrint `Uninstall was not successful. Uninstaller error code: $R0.`
-      !insertmacro AIONUI_READ_LAST_INNER_FAILURE
-      ${If} $AionUiLockerList != ""
-        StrCpy $AionUiInnerFailureSummary "- Failure: previous uninstaller failed with exit code $R0$\r$\n- File or folder: $INSTDIR$\r$\n- Blocking process: $AionUiLockerList"
+      !insertmacro MU_READ_LAST_INNER_FAILURE
+      ${If} $MuLockerList != ""
+        StrCpy $MuInnerFailureSummary "- Failure: previous uninstaller failed with exit code $R0$\r$\n- File or folder: $INSTDIR$\r$\n- Blocking process: $MuLockerList"
       ${EndIf}
-      !insertmacro AIONUI_LOG_EVENT "event=old-uninstaller-failed action=report exitCode=$R0 lockers=$AionUiLockerList uninstallerDetail=$AionUiInnerFailureSummary"
-      ${If} $AionUiInnerRootCode != ""
-        !insertmacro AIONUI_FAIL_REPORTABLE_ROOTED_BILINGUAL_DIAGNOSTICS "$AionUiInnerRootCode" ${AIONUI_E_OLD_UNINSTALL_FAILED} "old-uninstaller exitCode=$R0 lockers=$AionUiLockerList uninstallerDetail=$AionUiInnerFailureSummary" "${AIONUI_MSG_OLD_UNINSTALL_FAILED_EN}" "${AIONUI_MSG_OLD_UNINSTALL_FAILED_ZH}" "${AIONUI_MSG_OLD_UNINSTALL_ACTION_EN}" "${AIONUI_MSG_OLD_UNINSTALL_ACTION_ZH}" "$AionUiInnerFailureSummary" "$AionUiInnerFailureSummary"
+      !insertmacro MU_LOG_EVENT "event=old-uninstaller-failed action=report exitCode=$R0 lockers=$MuLockerList uninstallerDetail=$MuInnerFailureSummary"
+      ${If} $MuInnerRootCode != ""
+        !insertmacro MU_FAIL_REPORTABLE_ROOTED_BILINGUAL_DIAGNOSTICS "$MuInnerRootCode" ${MU_E_OLD_UNINSTALL_FAILED} "old-uninstaller exitCode=$R0 lockers=$MuLockerList uninstallerDetail=$MuInnerFailureSummary" "${MU_MSG_OLD_UNINSTALL_FAILED_EN}" "${MU_MSG_OLD_UNINSTALL_FAILED_ZH}" "${MU_MSG_OLD_UNINSTALL_ACTION_EN}" "${MU_MSG_OLD_UNINSTALL_ACTION_ZH}" "$MuInnerFailureSummary" "$MuInnerFailureSummary"
       ${Else}
-        !insertmacro AIONUI_FAIL_REPORTABLE_BILINGUAL_DIAGNOSTICS ${AIONUI_E_OLD_UNINSTALL_FAILED} "old-uninstaller exitCode=$R0 lockers=$AionUiLockerList uninstallerDetail=$AionUiInnerFailureSummary" "${AIONUI_MSG_OLD_UNINSTALL_FAILED_EN}" "${AIONUI_MSG_OLD_UNINSTALL_FAILED_ZH}" "${AIONUI_MSG_OLD_UNINSTALL_ACTION_EN}" "${AIONUI_MSG_OLD_UNINSTALL_ACTION_ZH}" "$AionUiInnerFailureSummary" "$AionUiInnerFailureSummary"
+        !insertmacro MU_FAIL_REPORTABLE_BILINGUAL_DIAGNOSTICS ${MU_E_OLD_UNINSTALL_FAILED} "old-uninstaller exitCode=$R0 lockers=$MuLockerList uninstallerDetail=$MuInnerFailureSummary" "${MU_MSG_OLD_UNINSTALL_FAILED_EN}" "${MU_MSG_OLD_UNINSTALL_FAILED_ZH}" "${MU_MSG_OLD_UNINSTALL_ACTION_EN}" "${MU_MSG_OLD_UNINSTALL_ACTION_ZH}" "$MuInnerFailureSummary" "$MuInnerFailureSummary"
       ${EndIf}
   ${EndIf}
 !macroend
 
 !macro customInit
-  !insertmacro AIONUI_HEAL_INSTALL_REGISTRY
-  ${If} $AionUiRegistryInstallIsValid == "1"
-    !insertmacro AIONUI_REPAIR_INSTALLED_UNINSTALLER
+  !insertmacro MU_HEAL_INSTALL_REGISTRY
+  ${If} $MuRegistryInstallIsValid == "1"
+    !insertmacro MU_REPAIR_INSTALLED_UNINSTALLER
   ${EndIf}
 !macroend
 
 !macro customUnInstallCheck
-  !insertmacro AIONUI_HANDLE_UNINSTALL_RESULT "SHELL_CONTEXT" "shctx"
+  !insertmacro MU_HANDLE_UNINSTALL_RESULT "SHELL_CONTEXT" "shctx"
 !macroend
 
 !macro customUnInstallCheckCurrentUser
-  !insertmacro AIONUI_HANDLE_UNINSTALL_RESULT "HKEY_CURRENT_USER" "hkcu"
+  !insertmacro MU_HANDLE_UNINSTALL_RESULT "HKEY_CURRENT_USER" "hkcu"
 !macroend
 
 !endif

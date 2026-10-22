@@ -1,5 +1,6 @@
 import { Type } from "typebox";
-import { type SkillCandidate, skillDisclosure } from "../../decisions/skill-disclosure.ts";
+import type { Decision } from "../../decision.ts";
+import { type SkillCandidate, type SkillDisclosureOutcome, skillDisclosure } from "../../decisions/skill-disclosure.ts";
 import { failOpen, type KyrnRuntime, userWords } from "../runtime.ts";
 
 interface HiddenSkill {
@@ -19,22 +20,44 @@ interface PromptSkill extends SkillCandidate {
  * system prompt carries, and that set then stays fixed so the cached prefix
  * survives. A hidden skill that becomes relevant later is announced in a
  * message instead of being put back into the prompt.
+ *
+ * A first verdict that arrives after the turn stopped waiting for it is applied
+ * when the next turn starts (`applyLate`): one change of the prompt prefix, where
+ * dropping it would carry every skill description on every request of the session.
  */
 export function registerSkills(runtime: KyrnRuntime): void {
-	const options = runtime.options("skills", { enabled: true, minSkills: 4, waitMs: 4000 });
+	const options = runtime.options("skills", { enabled: true, minSkills: 4, waitMs: 4000, applyLate: true });
 	if (!options.enabled) return;
 	const { pi } = runtime;
 	const hidden = new Map<string, HiddenSkill>();
 	let decided = false;
+	/** The first verdict, when it came too late for its turn: the skills it was asked about, and what it said once it came. */
+	let late: { skills: readonly PromptSkill[]; decision?: Decision<SkillDisclosureOutcome> } | undefined;
 
 	const visibleOf = (all: readonly PromptSkill[]) => all.filter((skill) => !skill.disableModelInvocation);
 	const disclose = (words: string, skills: readonly SkillCandidate[], signal?: AbortSignal) =>
 		runtime.engine.decide(skillDisclosure, { userMessage: words, skills }, { signal });
 	const candidatesToAnnounce = () => [...hidden.values()].filter((skill) => !skill.announced);
+	const hide = (decision: Decision<SkillDisclosureOutcome>, skills: readonly PromptSkill[]) => {
+		if (decision.source !== "judge") return;
+		for (const skill of skills) {
+			if (!decision.outcome.hide.includes(skill.name)) continue;
+			hidden.set(skill.name, { ...skill, announced: false });
+			runtime.savings.skillsHiddenChars += skill.name.length + skill.description.length + skill.filePath.length;
+		}
+	};
+	/** Applies a late first verdict once it has come; until then the full list stays. */
+	const applyLate = () => {
+		if (!late?.decision) return;
+		hide(late.decision, late.skills);
+		late = undefined;
+	};
 	/** The question asked the moment the message arrived, alongside preflight: the first pick, or the later announcements. */
 	let early: { turn: number; first: boolean; decision: ReturnType<typeof disclose> } | undefined;
 	runtime.atTurnStart((words) => {
 		if (runtime.mode(skillDisclosure.id) === "off") return;
+		// Before asking which hidden skills to announce: a late first verdict decides which ones are hidden.
+		applyLate();
 		// The prompt's skill list before the turn is built: pi exposes it on the context where it can.
 		const ctx = runtime.ctx as { getSystemPromptOptions?: () => { skills?: readonly PromptSkill[] } } | undefined;
 		let all: readonly PromptSkill[] = [];
@@ -58,6 +81,7 @@ export function registerSkills(runtime: KyrnRuntime): void {
 		failOpen(async (event, ctx) => {
 			runtime.touch(ctx);
 			const mode = runtime.mode(skillDisclosure.id);
+			if (mode === "active") applyLate();
 			if (event.messageType === "custom") {
 				if (mode !== "off") {
 					event.systemPromptOptions.skills = (event.systemPromptOptions.skills ?? []).filter(
@@ -82,17 +106,18 @@ export function registerSkills(runtime: KyrnRuntime): void {
 			if (!decided) {
 				decided = true;
 				runtime.progress("choosing which skills this session needs", "skills");
-				const decision = await settle(
-					started?.first ? started.decision : disclose(userWords(event.prompt), visible, ctx.signal),
-				);
-				if (decision?.source === "judge") {
-					for (const skill of visible) {
-						if (decision.outcome.hide.includes(skill.name)) {
-							hidden.set(skill.name, { ...skill, announced: false });
-							runtime.savings.skillsHiddenChars +=
-								skill.name.length + skill.description.length + skill.filePath.length;
-						}
-					}
+				const work = started?.first ? started.decision : disclose(userWords(event.prompt), visible, ctx.signal);
+				const decision = await settle(work);
+				if (decision) hide(decision, visible);
+				else if (mode === "active" && options.applyLate) {
+					const pending: NonNullable<typeof late> = { skills: visible };
+					late = pending;
+					work.then(
+						(settled) => {
+							pending.decision = settled;
+						},
+						() => {},
+					);
 				}
 			}
 			if (hidden.size === 0) return undefined;

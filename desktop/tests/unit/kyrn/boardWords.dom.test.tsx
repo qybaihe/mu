@@ -92,10 +92,10 @@ describe('a fixed board in the app’s language', () => {
     await i18n.changeLanguage('en-US');
     try {
       show([fixed({ done: 1, total: 1 })]);
-      expect(screen.getByTestId('mu-board-progress')).toHaveTextContent('The 1 thing on the checklist is done.');
+      expect(screen.getByTestId('mu-board-progress')).toHaveTextContent('The only checklist item is done.');
       cleanup();
       show([fixed({ done: 4, total: 4 })]);
-      expect(screen.getByTestId('mu-board-progress')).toHaveTextContent('All 4 things on the checklist are done.');
+      expect(screen.getByTestId('mu-board-progress')).toHaveTextContent('All 4 checklist items are done.');
     } finally {
       await i18n.changeLanguage('zh-CN');
     }

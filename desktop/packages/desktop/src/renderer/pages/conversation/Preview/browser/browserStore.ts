@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2025 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { useSyncExternalStore } from 'react';
 import { announcePreviewOpened, type PreviewOpener } from '../context/previewOpeners';
 import { BROWSER_SCOPE_KEY_PREFIX, browserScopeStorageKey, previewScopeStorageKey } from '../context/previewScope';

@@ -131,7 +131,7 @@ export function registerProcedures(runtime: KyrnRuntime, roots?: HarnessRoots): 
 			shown.ui.notify(
 				say({
 					zh: `mu：把这次的做法起草成了技能「${draft.name}」：${draft.description}\n/skills show ${draft.name} 看全文，/skills accept ${draft.name} 安装，/skills reject ${draft.name} 丢掉。`,
-					en: `mu: drafted a skill from this run, "${draft.name}": ${draft.description}\n/skills show ${draft.name} to read it, /skills accept ${draft.name} to install it, /skills reject ${draft.name} to drop it.`,
+					en: `mu: drafted the skill "${draft.name}" from this run: ${draft.description}\n/skills show ${draft.name} to read it, /skills accept ${draft.name} to install it, /skills reject ${draft.name} to discard it.`,
 				}),
 				"info",
 			);
@@ -176,23 +176,23 @@ export function registerProcedures(runtime: KyrnRuntime, roots?: HarnessRoots): 
 		if (all.length === 0) {
 			return say({
 				zh: "没有待审的技能草稿。一次步骤多、以成功结束的运行被判定为可复用的做法时，mu 会起草一个。",
-				en: "No skill drafts are waiting. mu drafts one when a long run that ended well is judged a reusable procedure.",
+				en: "No skill drafts to review. mu drafts one when the judge finds that a long, successful run is a reusable procedure.",
 			});
 		}
 		const lines = all.map(
 			(draft) =>
 				`${draft.name} · ${basename(draft.cwd)} · ${draft.created.slice(0, 10)}\n  ${clip(draft.description, 200)}`,
 		);
-		return `${say({ zh: "待审的技能草稿：", en: "Skill drafts waiting for you:" })}\n${lines.join("\n")}\n${say({
+		return `${say({ zh: "待审的技能草稿：", en: "Skill drafts to review:" })}\n${lines.join("\n")}\n${say({
 			zh: "/skills show <名字> 看全文 · /skills accept <名字> [--project] 安装 · /skills reject <名字> 丢掉",
-			en: "/skills show <name> to read · /skills accept <name> [--project] to install · /skills reject <name> to drop",
+			en: "/skills show <name> to read · /skills accept <name> [--project] to install · /skills reject <name> to discard",
 		})}`;
 	};
 
 	pi.registerCommand("skills", {
 		description: say({
 			zh: "mu 从运行里起草的技能：/skills 列出草稿，/skills show|accept|reject <名字>；accept 加 --project 装进这个项目",
-			en: "Skills mu drafted from runs: /skills lists the drafts, /skills show|accept|reject <name>; accept --project installs into this project",
+			en: "Review skills mu drafted from past runs: /skills lists drafts, /skills show|accept|reject <name>; accept --project installs into this project",
 		}),
 		handler: async (args, ctx) => {
 			runtime.touch(ctx);
@@ -207,8 +207,8 @@ export function registerProcedures(runtime: KyrnRuntime, roots?: HarnessRoots): 
 			if (!draft) {
 				ctx.ui.notify(
 					say({
-						zh: `没有叫「${name}」的草稿。${name ? "" : "要给出名字。"}/skills 列出草稿。`,
-						en: `No draft is called "${name}".${name ? "" : " Give a name."} /skills lists the drafts.`,
+						zh: `${name ? `没有叫「${name}」的草稿。` : "要给出草稿的名字。"}/skills 列出草稿。`,
+						en: `${name ? `No draft named "${name}".` : "Name a draft."} /skills lists the drafts.`,
 					}),
 					"warning",
 				);
@@ -221,7 +221,7 @@ export function registerProcedures(runtime: KyrnRuntime, roots?: HarnessRoots): 
 			if (verb === "reject") {
 				drafts.remove(draft.name);
 				ctx.ui.notify(
-					say({ zh: `已丢掉草稿「${draft.name}」。`, en: `Dropped the draft "${draft.name}".` }),
+					say({ zh: `已丢掉草稿「${draft.name}」。`, en: `Discarded the draft "${draft.name}".` }),
 					"info",
 				);
 				return;
@@ -235,9 +235,9 @@ export function registerProcedures(runtime: KyrnRuntime, roots?: HarnessRoots): 
 						result.error === "exists"
 							? say({
 									zh: `${target} 里已经有叫「${draft.name}」的技能，没有覆盖。`,
-									en: `A skill called "${draft.name}" is already in ${target}; it was not replaced.`,
+									en: `A skill named "${draft.name}" already exists in ${target}; it wasn't replaced.`,
 								})
-							: say({ zh: `草稿「${draft.name}」不见了。`, en: `The draft "${draft.name}" is gone.` }),
+							: say({ zh: `草稿「${draft.name}」不见了。`, en: `The draft "${draft.name}" no longer exists.` }),
 						"warning",
 					);
 					return;
@@ -246,7 +246,7 @@ export function registerProcedures(runtime: KyrnRuntime, roots?: HarnessRoots): 
 				ctx.ui.notify(
 					say({
 						zh: `已安装技能「${draft.name}」：${result.path}。下次会话起生效（或 /reload 之后）。`,
-						en: `Installed the skill "${draft.name}": ${result.path}. It loads from the next session (or after /reload).`,
+						en: `Installed the skill "${draft.name}" at ${result.path}. It takes effect in the next session (or after /reload).`,
 					}),
 					"info",
 				);

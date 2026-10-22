@@ -52,7 +52,7 @@ import { appLanguage, say } from "../../language.ts";
 import type { LlmCompletion } from "../../providers/llm.ts";
 import { environmentSecrets, redactSecrets } from "../../redact.ts";
 import { activeRuns, type SwarmSnapshot } from "../../swarm/run.ts";
-import { isOver } from "../../swarm/state.ts";
+import { type BeeState, type BeeStatus, isOver, isRunning } from "../../swarm/state.ts";
 import { clip, failOpen, type KyrnRuntime, textOf } from "../runtime.ts";
 import { isShellTool } from "../shell-tools.ts";
 import { describeCall } from "./constraints.ts";
@@ -93,8 +93,8 @@ const PERMISSION_KINDS: Readonly<Record<string, { zh: string; en: string }>> = {
 	shell: { zh: "运行命令", en: "run a command" },
 	run: { zh: "运行程序", en: "run a program" },
 	outside: { zh: "改动项目外的文件", en: "change a file outside the project" },
-	delegate: { zh: "派出子代理", en: "start sub-agents" },
-	other: { zh: "对外操作", en: "act outside" },
+	delegate: { zh: "派出子代理", en: "start subagents" },
+	other: { zh: "对外操作", en: "act outside this computer" },
 };
 
 /** How many sub-agents a delegation sends out, and for what: the task titles, or the hive's goal. */
@@ -120,7 +120,7 @@ export function describeSwarmCall(name: string, input: Record<string, unknown>):
 	const parts = swarmParts(name, input);
 	if (!parts) return undefined;
 	if (name === "hive") return `${parts.count} investigator${parts.count === 1 ? "" : "s"} on: ${parts.titles}`;
-	return `${parts.count} sub-agent${parts.count === 1 ? "" : "s"}: ${parts.titles}`;
+	return `${parts.count} subagent${parts.count === 1 ? "" : "s"}: ${parts.titles}`;
 }
 
 /** The sub-agents at work, a line per run, for the judge and the writer: who is doing what, who is back. */
@@ -143,9 +143,18 @@ export function describeSwarms(snapshots: readonly SwarmSnapshot[]): string | un
 				return `${who}: ${doing}`;
 			});
 			const kind = snapshot.kind === "hive" ? "hive" : "delegate";
-			return `${kind}, ${bees.length} sub-agent${bees.length === 1 ? "" : "s"} (${finished} finished): ${each.join("; ")}`;
+			return `${kind}, ${bees.length} subagent${bees.length === 1 ? "" : "s"} (${finished} finished): ${each.join("; ")}`;
 		})
 		.join("\n");
+}
+
+/**
+ * Where each sub-agent stands, as one string: waiting for a slot, at work, wrapping up, or how it ended. What it
+ * is doing at work (thinking, a tool, a retry) is left out.
+ */
+export function swarmState(runs: readonly { readonly bees: readonly BeeState[] }[] = activeRuns()): string {
+	const stand = (status: BeeStatus) => (isRunning(status) && status !== "wrapping-up" ? "working" : status);
+	return runs.map((run) => run.bees.map((bee) => `${bee.name}:${stand(bee.status)}`).join(",")).join("|");
 }
 
 interface LoggedEvent extends BoardEvent {
@@ -212,7 +221,7 @@ export function boardWidget(board: BoardUpdate, language: BoardLanguage, latest?
 	return [
 		`${zh ? "\u03bc 看板" : "\u03bc board"} · ${board.progress}`,
 		`  ${board.now}`,
-		...board.confirm.map((item) => `  ${zh ? "要你确认" : "For you"}: ${item}`),
+		...board.confirm.map((item) => `  ${zh ? "要你确认" : "Needs you"}: ${item}`),
 		...(latest ? [`  · ${latest.text}`] : []),
 	];
 }
@@ -282,6 +291,16 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		/** Tool calls the judge sees, for what the agent is doing now. */
 		maxSteps: 10,
 		narrateTimeoutMs: 60000,
+		/**
+		 * Also in one-shot runs (`--print`, json mode). Off: nobody watches a board there, the terminal shows none and
+		 * the summing up is cut off when the process exits, so every look would only cost judge and writer calls.
+		 */
+		unattended: false,
+		/**
+		 * While sub-agents work, look every `minIntervalMs` even when none of them started, finished or failed since
+		 * the last look.
+		 */
+		followAlways: false,
 	});
 	if (!options.enabled || process.env.KYRN_SWARM_CONTROL) return;
 	const { pi } = runtime;
@@ -314,6 +333,8 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 	let reading: BoardNote | undefined;
 	/** The clock the board looks by while sub-agents work. */
 	let following: ReturnType<typeof setInterval> | undefined;
+	/** The sub-agents' states (`swarmState`) at the last look. */
+	let swarmSeen = "";
 	/** The person's turn the current run belongs to: a run mu starts itself (a goal continuation, a nudge) carries it on. */
 	let turnSeen = -1;
 	/** A permission the agent is waiting for, shown the moment it is asked. */
@@ -331,7 +352,9 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		again = undefined;
 	};
 
-	const on = (ctx: ExtensionContext) => projects.get(ctx.cwd) ?? options.defaultOn;
+	/** On here: switched on for the project, in a run someone watches (the terminal, the desktop app). */
+	const on = (ctx: ExtensionContext) =>
+		(options.unattended || ctx.mode === "tui" || ctx.mode === "rpc") && (projects.get(ctx.cwd) ?? options.defaultOn);
 	/** The model named in kyrn.json, else the one the person picked: "provider/id", or "session". */
 	const chosen = (): string | undefined => options.model || projects.model();
 	const usable = (ctx: ExtensionContext, ref: string): boolean => {
@@ -400,7 +423,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 				ctx.ui.notify(
 					words({
 						zh: `看板选的模型 ${picked} 现在用不了，先用 ${writerRef(ctx) ?? "对话的模型"} 来写。/board model 可以换一个。`,
-						en: `The board's model ${picked} cannot be used here, so ${writerRef(ctx) ?? "the conversation's model"} writes it for now. /board model picks another.`,
+						en: `The board's model ${picked} isn't available here, so ${writerRef(ctx) ?? "the session's model"} is writing it for now. Use /board model to pick another.`,
 					}),
 					"warning",
 				);
@@ -417,7 +440,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		if (picked && picked !== SESSION_MODEL && ref === picked) return ref;
 		return words({
 			zh: `对话用的模型${ref ? `（现在是 ${ref}）` : ""}`,
-			en: `the conversation's model${ref ? ` (now ${ref})` : ""}`,
+			en: `the session's model${ref ? ` (currently ${ref})` : ""}`,
 		});
 	};
 
@@ -431,7 +454,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		const answer = await ctx.ui.select(
 			words({
 				zh: "人话看板请哪个模型来讲？每次更新调用它一次。",
-				en: "Which model should write the plain-language board? Each update is one call to it.",
+				en: "Which model should write the plain-language board? Each update costs one call.",
 			}),
 			choices.map((choice) => choice.label),
 		);
@@ -588,6 +611,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		const gone = retired.signal;
 		const upTo = sequence;
 		moment = false;
+		swarmSeen = swarmState();
 		const weighed = candidates(ended);
 		const frame = runtime.frame;
 		const items = (frame?.acceptance ?? []).map((item) => ({ id: item.id, text: item.text, done: item.done }));
@@ -697,7 +721,12 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		if (following) clearInterval(following);
 		following = undefined;
 	};
-	/** While sub-agents work, a look every interval at what they are doing, until they are back. */
+	/**
+	 * While sub-agents work, a look every interval at what they are doing, until they are back: only when one of
+	 * them started, finished or failed since the last look. What a bee is doing at the moment (its tool line)
+	 * changes all the time and is no news: in a 45-minute run, 65 of 77 looks came from this clock with nothing
+	 * new, and each cost a writer call.
+	 */
 	const follow = (ctx: ExtensionContext) => {
 		if (following) return;
 		following = setInterval(
@@ -706,7 +735,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 					unfollow();
 					return;
 				}
-				if (on(ctx)) schedule(ctx, false);
+				if (on(ctx) && (options.followAlways || swarmState() !== swarmSeen)) schedule(ctx, false);
 			},
 			Math.max(options.minIntervalMs, 1000),
 		);
@@ -754,7 +783,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		const kind = PERMISSION_KINDS[String(ask.kind)] ?? PERMISSION_KINDS.other;
 		const line = words({
 			zh: `mu 想${kind.zh}：${ask.summary}。在等你允许。`,
-			en: `mu wants to ${kind.en}: ${ask.summary}. It waits for your permission.`,
+			en: `mu wants to ${kind.en}: ${ask.summary}. It's waiting for your permission.`,
 		});
 		sayNow({ ...(board ?? emptyBoard()), confirm: [line], confirmCodes: [null], needsUser: true, ended: false });
 	});
@@ -869,7 +898,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 			>;
 			calls.set(event.toolCallId, { name: event.toolName, input });
 			if (SWARM_TOOLS.has(event.toolName)) {
-				log({ kind: "step", text: `sent out ${describeSwarmCall(event.toolName, input) ?? "sub-agents"}` });
+				log({ kind: "step", text: `sent out ${describeSwarmCall(event.toolName, input) ?? "subagents"}` });
 				const parts = swarmParts(event.toolName, input);
 				tell("helpers", "helpers_sent", { count: parts?.count ?? 0, titles: parts?.titles ?? "" });
 				moment = true;
@@ -952,7 +981,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 	pi.registerCommand("board", {
 		description: say({
 			zh: "人话看板：/board 查看，/board on、/board off 为这个项目打开或关闭，/board model 换个模型来讲",
-			en: "The plain-language board: /board (show it), /board on, /board off (for this project), /board model (who writes it)",
+			en: "Show the plain-language board; /board on|off turns it on or off for this project, /board model picks the model that writes it",
 		}),
 		handler: async (args, ctx) => {
 			runtime.touch(ctx);
@@ -965,7 +994,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 					if (ref !== SESSION_MODEL && !usable(ctx, ref)) {
 						if (ctx.hasUI) {
 							ctx.ui.notify(
-								`${words({ zh: `${ref} 现在用不了。`, en: `${ref} cannot be used here.` })}\n${addModelHelp(language())}`,
+								`${words({ zh: `${ref} 现在用不了。`, en: `${ref} isn't available here.` })}\n${addModelHelp(language())}`,
 								"warning",
 							);
 						}
@@ -999,7 +1028,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 						word === "on"
 							? zh
 								? `这个项目的人话看板已打开：代理每做一步，看板就记一行；它说的话、发现的事，由 ${writerName(ctx)} 用大白话讲给你。每讲一次调用一次模型。`
-								: `The plain-language board is on for this project: every step is a line on it, and what the agent says or finds is retold by ${writerName(ctx)}. Each telling costs one model call.`
+								: `The plain-language board is on for this project. Each step adds a line, and ${writerName(ctx)} retells what the agent says or finds in plain words. Each retelling costs one model call.`
 							: zh
 								? "这个项目的人话看板已关闭。"
 								: "The plain-language board is off for this project.",
@@ -1008,13 +1037,16 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 				}
 				// Switched on in the middle of things: the first board need not wait for the next tool call. Switched on
 				// once the agent stopped (the desktop's switch waits for that), it sums the run up as ended.
-				if (word === "on" && (steps.length > 0 || latest)) schedule(ctx, ctx.isIdle() && !runtime.goalActive);
+				if (word === "on" && on(ctx) && (steps.length > 0 || latest))
+					schedule(ctx, ctx.isIdle() && !runtime.goalActive);
 				return;
 			}
 			if (!ctx.hasUI) return;
 			if (!on(ctx)) {
 				ctx.ui.notify(
-					zh ? "这个项目没有打开人话看板。/board on 打开。" : "The board is off for this project: /board on.",
+					zh
+						? "这个项目没有打开人话看板。/board on 打开。"
+						: "The board is off for this project. Turn it on with /board on.",
 					"info",
 				);
 				return;

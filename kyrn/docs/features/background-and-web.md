@@ -32,10 +32,10 @@ pi 故意不做后台 shell，mu 补上。三个工具：
 
 - `now`：作为 steer 消息插进当前回合；`next_turn`：随下一条用户消息送达；`drop`：不说。
 - 送给判定器的 `event` 只有一行事实（任务 id、命令、退出码、时长），不含输出。送给模型的消息同样只有事实加“用 `bg_output` 读”；`watch` 命中时附上那一行（截到 300 字符，标明不可信）。
-- 两种情况不通知：任务是模型或用户自己停的；任务结束时模型正阻塞在这个任务的 `bg_output` 里。
+- 两种情况不通知：任务是模型或用户自己停的；任务结束或 `watch` 命中时模型正阻塞在这个任务的 `bg_output` 里（那一行会出现在它自己的输出里）。
 - `watch` 命中一次后解除，模型读过输出再重新生效，所以一个 `error` 正则不会刷屏。
 
-为此对路由器做了最小扩展（`notify.ts`，通过 `runtime.notify` 暴露）：调用方可以给出 `content`（模型读到的文字）、`unjudged`（没有判定时怎么办）、`wake`。预算提醒保持原样：没有判定就不说。后台任务传 `unjudged: "next_turn"`：判定关闭、shadow 或判定器不可用时，下一回合告诉模型，永不打断。这是“没有判定器时的确定性行为”。
+为此对路由器做了最小扩展（`notify.ts`，通过 `runtime.notify` 暴露）：调用方可以给出 `content`（模型读到的文字）、`unjudged`（没有判定时怎么办）、`wake`。`notify.routing` 默认是 shadow：判定照问照记，但不等它，由事件源自己的规则投递。后台任务和预算提醒都传 `unjudged: "now"`（选项 `features.background.unjudged`、`features.notify.unjudged`）：判定关闭、shadow 或判定器不可用时，立刻作为 steer 告诉模型。原来的 `next_turn` 要等下一次运行开始才读到，单次运行（`mu --print`）里永远读不到：评测里 22 次 Jev 判定有 18 次就这样落空了。这是“没有判定器时的确定性行为”。
 
 ### 选项（`features.background`）
 

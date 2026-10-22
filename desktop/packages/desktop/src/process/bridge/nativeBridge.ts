@@ -143,7 +143,7 @@ export function readAnswer(value: unknown): DialogAnswer {
   throw invalid('Invalid dialog answer');
 }
 
-/** Permission modes are words (`full`, `jev`, `ask`), as mu names them. */
+/** Permission modes are words (`full`, `judge`, `ask`), as mu names them. */
 const MODE_ID = /^[a-z][a-z0-9-]{0,31}$/;
 
 function readCreate(value: unknown): { cwd: string; permissions?: string } {
@@ -170,7 +170,7 @@ const params = (value: unknown): Record<string, unknown> => (isObject(value) ? v
 /**
  * Answers every provider of the bridge from `conversations`, or with `off` for all but `enabled` when there are none
  * (MU_NATIVE_HOST=0). `ready` is the rest of `enabled`: whether the mu on this machine can run inside the app (the
- * screens show the native host only when it can, and an older mu leaves every conversation on AionCore).
+ * screens show the native host only when it can, and an older mu leaves every conversation on the backend).
  */
 export function registerNativeBridge(
   conversations: NativeConversationsApi | undefined,
@@ -248,7 +248,7 @@ export function initNativeBridge(): void {
     env: (conversation) => hostEnv(conversation),
     // A removed conversation's session goes to the bin, where the person can still get it back.
     trash: (file) => shell.trashItem(file),
-    // Sessions AionCore's mu conversations run (the ACP adapter's records) are listed there, not here as well.
+    // Sessions the backend's mu conversations run (the ACP adapter's records) are listed there, not here as well.
     bound: () => bindings.files(),
   });
   conversations = native;

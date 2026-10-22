@@ -4,7 +4,7 @@
 
 mu's harness layer for [pi](https://github.com/earendil-works/pi): a small, fast judgment model makes the routine calls (what kind of turn is this, which tool output matters, which sub-agent and model fit a task, what to click next on a web page), code carries them out, and the main model keeps its context for thinking.
 
-The judgment model is pluggable: Jev through the Vercel AI Gateway, a local Laya sidecar, any HTTP server that speaks `{state, questions}` → `{answers}`, or any generative model pi can reach. Features never know which one answers. Every decision fails open to pi's stock behaviour and is written to a ledger.
+The judgment model is pluggable: Jev (TypeSafe's hosted judge model) through the Vercel AI Gateway, a local Laya sidecar, any HTTP server that speaks `{state, questions}` → `{answers}`, or any generative model pi can reach. Features never know which one answers. Every decision fails open to pi's stock behaviour and is written to a ledger.
 
 ## Use it
 

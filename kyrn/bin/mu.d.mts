@@ -90,6 +90,11 @@ export interface HostPlan {
 	error?: undefined;
 	/** The module to import pi's `setupCli` and `main` from: pi's bundle in the package, its sources in a checkout. */
 	module: string;
+	/**
+	 * The script the command line runs pi with. The host gives it to pi as `process.argv[1]`, so that the sub-agents pi
+	 * starts by running that script again (swarm, hive, delegate) start as they do on the command line.
+	 */
+	cli: string;
 	/** The Node flags the host process starts with: a checkout's source resolver and compile cache, none for the package. */
 	execArgv: string[];
 	/** pi's arguments: the judgment layer, then the ones asked for. */

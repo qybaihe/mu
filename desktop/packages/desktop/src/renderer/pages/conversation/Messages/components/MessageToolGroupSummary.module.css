@@ -26,7 +26,7 @@
   text-align: start;
 }
 .callButton:global(.arco-btn:hover) {
-  background: var(--color-fill-2);
+  background: var(--bg-hover);
 }
 .callButton > :global(.i-icon) {
   flex-shrink: 0;
@@ -44,7 +44,10 @@
   max-width: 35%;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-family: var(--font-mono);
+  font-size: 12px;
   font-weight: 500;
+  letter-spacing: 0.01em;
 }
 .callPreview {
   min-width: 0;
@@ -116,7 +119,7 @@
   text-align: start;
 }
 .activityHeader:global(.arco-btn:hover) {
-  background: var(--color-fill-2);
+  background: var(--bg-hover);
   color: var(--text-primary);
 }
 .activityHeader > :global(.i-icon) {

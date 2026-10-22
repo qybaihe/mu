@@ -40,7 +40,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openLogFolder: () => ipcRenderer.invoke('backend:open-log-folder'),
 });
 
-// Synchronously fetch the aioncore port and expose it to the renderer
+// Synchronously fetch the backend port and expose it to the renderer
 // via contextBridge (direct window assignment is invisible under contextIsolation).
 const backendPort = ipcRenderer.sendSync('get-backend-port') as number;
 const initialLanguage = ipcRenderer.sendSync('get-initial-language') as string | null;
@@ -49,7 +49,7 @@ const backendStartupFailure = ipcRenderer.sendSync('get-backend-startup-failure'
 const nodeRuntimeDeferred = ipcRenderer.sendSync('get-node-runtime-deferred') as boolean;
 contextBridge.exposeInMainWorld('__backendPort', backendPort > 0 ? backendPort : 0);
 contextBridge.exposeInMainWorld('__initialLanguage', initialLanguage ?? null);
-contextBridge.exposeInMainWorld('__aionuiE2ETest', process.env.AIONUI_E2E_TEST === '1');
+contextBridge.exposeInMainWorld('__muE2ETest', process.env.MU_E2E_TEST === '1');
 contextBridge.exposeInMainWorld('__backendStartupFailed', backendStartupFailed === true);
 contextBridge.exposeInMainWorld('__backendStartupFailure', backendStartupFailure ?? null);
 // The person put the Node.js runtime download off at this start: see common/adapter/nodeRuntimeDeferral.ts.

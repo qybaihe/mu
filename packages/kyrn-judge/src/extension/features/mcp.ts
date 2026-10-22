@@ -189,18 +189,18 @@ export function registerMcp(runtime: KyrnRuntime, roots: HarnessRoots | undefine
 		const ctx = runtime.ctx;
 		const definition = entry.definition;
 		if (!ctx?.isProjectTrusted())
-			throw codedError("the project is not trusted, and this server is defined by the project", {
+			throw codedError("the project isn't trusted, and this server is defined by the project", {
 				code: "project_untrusted",
 			});
 		if (!store.isApproved(ctx.cwd, definition)) {
 			if (!ctx.hasUI) {
 				throw codedError(
-					`it is defined by the project (${definition.source}) and has not been approved. Start mu in this folder interactively and open it once, or define it in mu.json`,
+					`it's defined by the project (${definition.source}) and hasn't been approved. Start mu in this folder interactively and open it once, or define it in mu.json`,
 					{ code: "needs_approval", params: { source: definition.source } },
 				);
 			}
 			const allowed = await ctx.ui.confirm("mu MCP", approvalText(definition));
-			if (!allowed) throw codedError("you did not allow this project's server to start", { code: "denied" });
+			if (!allowed) throw codedError("you didn't allow this project's server to start", { code: "denied" });
 			store.approve(ctx.cwd, definition);
 		}
 		entry.needsApproval = false;
@@ -243,7 +243,7 @@ export function registerMcp(runtime: KyrnRuntime, roots: HarnessRoots | undefine
 		}
 		unregister(entry);
 		if (!event) {
-			throw codedError(`it did not answer within ${Math.round(options.startTimeoutMs / 1000)} s`, {
+			throw codedError(`it didn't answer within ${Math.round(options.startTimeoutMs / 1000)} s`, {
 				code: "timeout",
 			});
 		}

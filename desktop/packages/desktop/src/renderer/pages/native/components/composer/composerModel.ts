@@ -6,8 +6,9 @@
  */
 import type { IMessageText } from '@/common/chat/chatLib';
 import type { SlashCommandItem } from '@/common/chat/slash/types';
+import { isImportTool } from '@/common/kyrn/importChats';
 import { supportedThinkingLevels, UNOFFERED_PROVIDER_IDS, type ModelThinkingLevels } from '@/common/kyrn/models';
-import { AIONUI_FILES_MARKER } from '@/common/config/constants';
+import { FILES_MARKER } from '@/common/config/constants';
 import {
   asList,
   asObject,
@@ -33,7 +34,7 @@ export type ModelInForce = {
 /**
  * The model and thinking level in force. A running host's own report comes first (it may say there is no model);
  * without one, what the session file said when the conversation was opened; without that, the model of the last
- * reply (pi resumes a session with it).
+ * reply (pi resumes a session with it). Without any (an imported conversation not yet answered in mu), mu's default.
  */
 export function modelInForce(view: NativeView, settings?: SessionSettings): ModelInForce {
   const session = view.host.session;
@@ -42,7 +43,9 @@ export function modelInForce(view: NativeView, settings?: SessionSettings): Mode
     return { model: settings.model, level: settings.thinkingLevel, source: 'file' };
   for (let index = view.messages.length - 1; index >= 0; index--) {
     const message = view.messages[index];
-    if (message.role === 'assistant' && message.model) return { model: message.model, source: 'reply' };
+    // A reply imported from another tool names the tool as its provider: not a model pi goes on with.
+    if (message.role === 'assistant' && message.model && !isImportTool(splitModel(message.model)?.provider))
+      return { model: message.model, source: 'reply' };
   }
   return { source: 'none' };
 }
@@ -51,7 +54,7 @@ export function modelInForce(view: NativeView, settings?: SessionSettings): Mode
 export type PermissionModeOption = { id: string; label: string; description: string };
 
 /** mu's permission modes, in its order: what a conversation offers before mu has said anything. */
-export const PERMISSION_MODES = ['full', 'jev', 'ask'] as const;
+export const PERMISSION_MODES = ['full', 'judge', 'ask'] as const;
 
 /** The mode a conversation is in and the modes it offers, from mu's latest `permissions.mode` frame. */
 export type PermissionState = { mode?: string; modes: PermissionModeOption[] };
@@ -167,7 +170,7 @@ export function runsCommand(text: string, names: ReadonlySet<string>): boolean {
 export function withFiles(text: string, paths: readonly string[]): string {
   const files = [...new Set(paths.filter(Boolean))];
   if (!files.length) return text;
-  return `${text.trimEnd()}\n\n${AIONUI_FILES_MARKER}\n${files.join('\n')}`;
+  return `${text.trimEnd()}\n\n${FILES_MARKER}\n${files.join('\n')}`;
 }
 
 /**

@@ -27,6 +27,65 @@ export function chunkLines(text: string, size: number): string[] {
 	return chunks;
 }
 
+/**
+ * Programs that print a file, or part of one, as it is. What they print is what the agent asked to read, as with the
+ * `read` tool. In Terminal-Bench 2.1 such prints and fetched pages were half of what the judge was asked, it found
+ * nothing worth dropping in any of them, and the one chunk it did drop from a `cat` (a makefile, as "passing") was
+ * wrong.
+ */
+export const PRINT_COMMANDS: readonly string[] = [
+	"cat",
+	"sed -n",
+	"head",
+	"tail",
+	"nl",
+	"less",
+	"bat",
+	"grep",
+	"rg",
+	"od",
+	"xxd",
+	"git show",
+	"git diff",
+	"readelf",
+	"objdump",
+];
+
+/** Tools whose `command` is a shell command line. */
+const SHELLS: readonly string[] = ["bash", "powershell"];
+
+/** Commands that may stand between the prints without printing anything long of their own: `cd dir`, `echo ===`. */
+const BETWEEN = /^(?:cd|echo|printf)(?:\s|$)/;
+
+/**
+ * Whether a shell command only prints files: every command in it, split at `;`, `&&`, `||`, `|` and line breaks,
+ * starts with one of `programs` (`sed -n` counts, `sed -i` does not), apart from a `cd` or an `echo` between them.
+ * A command that can do more than print is not one: a redirect or a here document, `$(…)`, a job sent to the
+ * background, `tail -f`. So `cat > main.c <<EOF … EOF && make` still has its build output judged.
+ */
+export function printsFile(command: string, programs: readonly string[] = PRINT_COMMANDS): boolean {
+	if (programs.length === 0 || /`|\$\(/.test(command)) return false;
+	const names = programs.map((name) =>
+		name
+			.trim()
+			.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+			.replace(/\s+/g, "\\s+"),
+	);
+	const start = new RegExp(`^(?:${names.join("|")})(?=\\s|$)`);
+	const bare = command
+		// What is quoted is an argument, whatever characters it holds: `grep -E "a|b"`.
+		.replace(/'[^']*'|"(?:[^"\\]|\\.)*"/g, "''")
+		// Error output thrown away or merged changes nothing about what is printed.
+		.replace(/(^|\s)2>(?:\s*\/dev\/null|&1)(?=\s|[;&|]|$)/g, "$1");
+	const parts = bare
+		.split(/&&|\|\||[;|\n]/)
+		.map((part) => part.trim())
+		.filter(Boolean);
+	if (parts.some((part) => /[<>&]/.test(part) || !(BETWEEN.test(part) || start.test(part)))) return false;
+	if (parts.some((part) => /^tail\b.*\s(?:-[a-zA-Z]*[fF]|--follow)\b/.test(part))) return false;
+	return parts.some((part) => !BETWEEN.test(part));
+}
+
 /** A compact description of a tool call for the judge: the command, pattern or path that produced the output. */
 export function describeCall(toolName: string, input: Record<string, unknown>): string {
 	const value = input.command ?? input.pattern ?? input.path ?? input.query;
@@ -38,7 +97,9 @@ export function describeCall(toolName: string, input: Record<string, unknown>): 
  * context, and confident noise (progress, repeated warnings, passing checks)
  * is archived instead. Rules come first: errors, short output, images and
  * source reads always pass, and the first and last chunk always stay because
- * that is where commands put their summary and exit status.
+ * that is where commands put their summary and exit status. A shell command
+ * that only prints a file (`printsFile`) passes like a `read` does, and so does
+ * a fetched page: what the agent asked to read is not judged.
  *
  * `testLog` (off by default) gives test-runner output its own path, see
  * admission/test-log.ts. It also takes failing runs, which the chunk path skips:
@@ -59,8 +120,13 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 		concurrency: 4,
 		/** A verdict later than this is not worth holding the result for: the output goes in whole, the verdict is only recorded. */
 		waitMs: 4000,
-		/** Tools whose output is never judged: file contents the model asked for, and sub-agent reports the bees already shaped. */
-		passThrough: ["read", "edit", "write", "delegate", "hive"],
+		/**
+		 * Tools whose output is never judged: file contents and pages the model asked for, and sub-agent reports the bees
+		 * already shaped.
+		 */
+		passThrough: ["read", "edit", "write", "delegate", "hive", "web_fetch"],
+		/** Shell commands made of these programs only print files, and are not judged either (`printsFile`). Empty: all are. */
+		printCommands: [...PRINT_COMMANDS],
 		/** "rules" omits exact repeats in test-runner output; "jev" also asks the judge about what is left. */
 		testLog: "off" as TestLogStrategy | "off",
 		/** Tell test runners an agent is reading: Vitest then prints failures and the summary only. */
@@ -120,6 +186,10 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 			runtime.touch(ctx);
 			const toolName = "toolName" in event ? String(event.toolName) : "";
 			if (options.passThrough.includes(toolName)) return undefined;
+			const command = event.input.command;
+			if (SHELLS.includes(toolName) && typeof command === "string" && printsFile(command, options.printCommands)) {
+				return undefined;
+			}
 			if (event.content.some((block) => block.type !== "text")) return undefined;
 			const text = textOf(event.content);
 			if (text.length < options.minChars) return undefined;

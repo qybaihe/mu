@@ -73,6 +73,24 @@ describe("AgentSession retry and event characterization", () => {
 		expect(harness.faux.state.callCount).toBe(3);
 	});
 
+	it("asks again after a content filter cut a reply, but only twice", async () => {
+		const filtered = () =>
+			fauxAssistantMessage("", { stopReason: "error", errorMessage: "Provider finish_reason: content_filter" });
+		const harness = await createHarness({ settings: { retry: { enabled: true, maxRetries: 8, baseDelayMs: 1 } } });
+		harnesses.push(harness);
+		harness.setResponses([filtered(), fauxAssistantMessage("went through")]);
+		await harness.session.prompt("test");
+		expect(harness.faux.state.callCount).toBe(2);
+		expect(harness.session.messages.at(-1)).toMatchObject({ role: "assistant", stopReason: "stop" });
+
+		const stubborn = await createHarness({ settings: { retry: { enabled: true, maxRetries: 8, baseDelayMs: 1 } } });
+		harnesses.push(stubborn);
+		stubborn.setResponses([filtered(), filtered(), filtered(), fauxAssistantMessage("unused")]);
+		await stubborn.session.prompt("test");
+		expect(stubborn.faux.state.callCount).toBe(3);
+		expect(stubborn.session.messages.at(-1)).toMatchObject({ role: "assistant", stopReason: "error" });
+	});
+
 	// Regression test for #9340.
 	it("finalizes retry state when abort is requested after a retry attempt fails", async () => {
 		const harness = await createHarness({ settings: { retry: { enabled: true, maxRetries: 3, baseDelayMs: 0 } } });

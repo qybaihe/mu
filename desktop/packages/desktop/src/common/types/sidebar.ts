@@ -10,8 +10,8 @@
  * One request renders the whole left panel: the backend classifies every
  * conversation/team into its group (pinned / project / pseudo-dir / chats),
  * windows each group, and hydrates items. The front-end renders in the given
- * order and runs no classification. These shapes mirror the backend
- * `aionui-api-types/sidebar` DTOs 1:1 (including the flat team variant, see
+ * order and runs no classification. These shapes mirror the
+ * backend's api-types `sidebar` DTOs 1:1 (including the flat team variant, see
  * `SidebarItem` below), except conversation items carry the mapped
  * `TChatConversation` (the wire `ConversationResponse` is mapped by the
  * ipcBridge response mapper, matching `getUserConversations`).
@@ -54,7 +54,7 @@ export type SidebarTeamItem = {
  * or an aggregated team row. A conversation's `pinned` flag is derived from
  * `user_order` row existence, not any table column.
  *
- * The team variant is **flat** on the wire: the backend `SidebarItem::Team`
+ * The team variant is **flat** on the wire: the backend's `SidebarItem::Team`
  * is a newtype variant on an internally-tagged (`#[serde(tag = "type")]`) enum,
  * so `SidebarTeamItem`'s fields sit alongside `type` rather than nested under a
  * `team` key (contract §4 example: `{ "type": "team", "team_id": …, … }`). The
@@ -125,7 +125,7 @@ export type RemoveProjectItem = {
 
 /**
  * `DELETE /api/sidebar/archived` result — counts what was hard-deleted when the
- * archive was emptied. Mirrors the backend `ArchiveDeleteResult`. `teams_deleted`
+ * archive was emptied. Mirrors the backend's `ArchiveDeleteResult`. `teams_deleted`
  * and `conversations_deleted` are disjoint: a team's member conversations are
  * removed via the team cascade and counted only under `teams_deleted`, while
  * `conversations_deleted` counts the independent archived conversations.

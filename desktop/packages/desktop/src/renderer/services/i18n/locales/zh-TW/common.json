@@ -227,7 +227,7 @@
       "noteMissing": "未記錄發現。",
       "allFlow": "所有送達",
       "beeFlow": "{{name}} 的送達",
-      "audit": "Jev 判定",
+      "audit": "判定",
       "waitingRun": "正在等待這次蜂群執行的紀錄。",
       "recordedAt": "記錄時間 {{time}}",
       "beeMissing": "此蜂群成員不在已記錄的快照中。",
@@ -959,7 +959,7 @@
       "auto_compaction_end": "壓縮結束",
       "hive.note": "共享發現",
       "hive.delivery": "送達已確認",
-      "hive.gate": "Jev 閘門",
+      "hive.gate": "蜂群閘門",
       "hive.manifest": "蜂群任務分配",
       "bee.event": "執行步驟",
       "memory.recalled": "引用經驗",
@@ -1076,24 +1076,6 @@
         "idle": "判定器待命",
         "judging": "判定器正在判定",
         "off": "判定器未啟用"
-      },
-      "starters": {
-        "hint": "不知道從哪裡開始？試試這些：",
-        "understand": {
-          "title": "讀懂這個專案",
-          "desc": "梳理結構、進入點和關鍵模組",
-          "prompt": "請先通讀這個專案，告訴我它的整體結構、主要進入點和關鍵模組，再指出最值得先看的三個檔案。"
-        },
-        "fix": {
-          "title": "定位並修復問題",
-          "desc": "從錯誤訊息或現象出發，找到根因",
-          "prompt": "我遇到了一個問題：<在這裡描述現象或貼上錯誤訊息>。請先重現並定位根因，再提出最小修復，改完後執行相關測試驗證。"
-        },
-        "plan": {
-          "title": "規劃一項改動",
-          "desc": "先出方案，確認後再動手",
-          "prompt": "我想實作：<在這裡描述需求>。請先提出實作方案和涉及的檔案，等我確認後再開始修改。"
-        }
       }
     },
     "toolStatus": {
@@ -1107,7 +1089,7 @@
       "switch": "這個專案的人話看板",
       "switching": "正在切換…",
       "afterTurn": "代理這一步做完就切換",
-      "unknown": "這個對話還沒有人話看板。它只在 mu 的對話裡、而且「功能」裡開著人話看板時出現。",
+      "unknown": "這個對話還沒有人話看板。它只在 mu 的對話裡、而且「設定 → 核心功能」裡開著人話看板時出現。",
       "off": "開啟後，代理每做一段，這裡就用白話告訴你：進展到哪了、正在做什麼、哪些需要你確認。",
       "cost": "只對這個專案生效。每次更新會呼叫一次模型。",
       "empty": "等代理做一會兒，這裡會用白話告訴你進展",
@@ -1279,7 +1261,7 @@
     "compactionDropped": "移除 {{count}} 次呼叫",
     "compactionDropped_one": "移除 {{count}} 次呼叫",
     "compactionDropped_other": "移除 {{count}} 次呼叫",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}} 正在分類這則訊息…",
       "classified": "{{judge}} 分類為{{type}}",
       "byRule": "依規則分類為{{type}}",
@@ -1291,9 +1273,13 @@
       "setUp": "設定判定器",
       "skipped": "已略過分類",
       "off": "分類已關閉",
-      "firstHint": "這一行是 Jev 的判斷：每則訊息先由 Jev 快速分類，mu 再決定怎麼接。每次判斷都在右側「判定」裡。"
+      "firstHint": "這一行是判定器的判斷：每則訊息先由判定器快速分類，mu 再決定怎麼接。每次判斷都在右側「判定」裡。"
     },
     "eventLine": {
+      "judgeNotice": {
+        "freeJev": "未設定 Jev 金鑰，使用 OpenCode Zen 上的免費 Jev",
+        "freeJevUnavailable": "免費 Jev 已停止回答：設定 Jev 金鑰之前由固定規則決定"
+      },
       "detail": "詳細資訊：{{detail}}",
       "progress": {
         "frame": "正在更新任務框架",
@@ -1301,7 +1287,7 @@
         "skills": "正在挑選這個工作階段需要的技能",
         "capabilities": "正在挑選這個任務需要的能力",
         "goal_check": "正在檢查目標是否達成",
-        "permissionReview": "Jev 正在審批：{{summary}}"
+        "permissionReview": "判定器正在審批：{{summary}}"
       },
       "goal": {
         "paused": "已暫停：{{reason}}",
@@ -1428,6 +1414,26 @@
       "reviewer": "審查",
       "scout": "偵察",
       "worker": "執行"
+    },
+    "kernel": {
+      "free": "免費",
+      "local": "本機",
+      "judgeHint": "回答 mu 各判定點的判定器。點擊可更換。",
+      "points": "{{active}}/{{total}} 個判定點生效",
+      "shadow_one": "· {{count}} 個影子模式",
+      "shadow_other": "· {{count}} 個影子模式",
+      "off": "判定已關閉",
+      "verdicts_one": "次判定",
+      "verdicts_other": "次判定",
+      "last": "上次",
+      "context": "上下文",
+      "cache": "快取"
+    },
+    "hero": {
+      "kernel": "判定核心",
+      "judgeReady": "{{judge}} 已就緒",
+      "judgeOff": "判定已關閉",
+      "title": "讓 mu 做點什麼？"
     }
   },
   "menu": {
@@ -1517,7 +1523,7 @@
     "previewEmpty": "還沒有可預覽的內容。從對話中開啟的檔案會顯示在這裡。",
     "previewHidden": "預覽已隱藏。",
     "browserEmpty": "還沒有開啟的網頁。在上方輸入網址或搜尋內容；從對話中開啟的網頁也會顯示在這裡。",
-    "firstHint": "看板用白話說進度，判定列出 Jev 的每次判斷，檔案是這次對話的資料夾。其他分頁用到時才出現。"
+    "firstHint": "看板用白話說進度，判定列出每次判斷，檔案是這次對話的資料夾。其他分頁用到時才出現。"
   },
   "nodeRuntime": {
     "title": "下載 Node.js？",

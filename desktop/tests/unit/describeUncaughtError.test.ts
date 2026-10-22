@@ -5,7 +5,7 @@
  *
  * Unit tests for process/utils/describeUncaughtError — covers the attribution fields the
  * global uncaughtException / unhandledRejection handlers log so that Node-internal stacks
- * (e.g. TCP.onStreamRead / ECONNRESET) stay triageable (AIONUI-128).
+ * (e.g. TCP.onStreamRead / ECONNRESET) stay triageable.
  */
 
 import { describe, expect, it } from 'vitest';

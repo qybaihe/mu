@@ -1,4 +1,4 @@
-import type { AuthInteraction, AuthPrompt, Provider } from "@earendil-works/pi-ai";
+import type { AuthInteraction, AuthPrompt, LoginOptions, Provider } from "@earendil-works/pi-ai";
 
 /**
  * `mu auth`: signing in to a provider's subscription outside any session, for the desktop app, with pi's own
@@ -17,7 +17,7 @@ import type { AuthInteraction, AuthPrompt, Provider } from "@earendil-works/pi-a
 
 /** What of pi's model runtime a sign-in uses. */
 export interface AuthRuntime {
-	login(providerId: string, type: "oauth", interaction: AuthInteraction): Promise<unknown>;
+	login(providerId: string, type: "oauth", interaction: AuthInteraction, options?: LoginOptions): Promise<unknown>;
 	logout(providerId: string): Promise<void>;
 	getModels(providerId?: string): readonly { readonly id: string; readonly name?: string }[];
 	listCredentials(): Promise<readonly { readonly providerId: string; readonly type: string }[]>;
@@ -41,12 +41,20 @@ export interface AuthOptions {
 	readonly io: AuthIo;
 	/** How long reading an account's models may take once it is signed in. */
 	readonly modelsReadMs?: number;
+	/** What a flow is told about this mu: its name, and the stable id of this installation (Sign in with ChatGPT). */
+	readonly login?: LoginOptions;
 }
 
 export type AuthModel = { id: string; name: string };
 
-/** pi's own subscription flows, in every mu. */
-export const BUILT_IN_PROVIDERS: readonly string[] = ["openai-codex", "anthropic", "xai"];
+/** pi's own subscription flows, in every mu. ChatGPT is OpenAI's own Sign in with ChatGPT, on the `openai` provider. */
+export const BUILT_IN_PROVIDERS: readonly string[] = ["openai", "xai"];
+/**
+ * Sign-ins no longer offered: an account signed in with one is listed and can be signed out, never signed in anew.
+ * ChatGPT through the Codex CLI's own login (`openai-codex`), which Sign in with ChatGPT replaces, and a Claude
+ * subscription (`anthropic`), which Anthropic doesn't allow other apps to sign in with.
+ */
+export const LEGACY_PROVIDERS: readonly string[] = ["openai-codex", "anthropic"];
 /** A provider whose list of models comes from the account: read again once it is signed in. */
 const LISTED_BY_ACCOUNT = new Set(["google-antigravity"]);
 /** The sign-in itself is done by then, and the list the account had stands. */
@@ -93,11 +101,12 @@ export async function runAuth(argv: readonly string[], options: AuthOptions): Pr
 			await runtime.refresh({ allowNetwork: false, providers: options.extra.map((extra) => extra.id) });
 		}
 		const offered = [...BUILT_IN_PROVIDERS, ...options.extra.map((extra) => extra.id)];
+		const known = [...offered, ...LEGACY_PROVIDERS];
 		const status = async () => ({
 			type: "status",
 			offered,
 			signedIn: (await runtime.listCredentials())
-				.filter((credential) => credential.type === "oauth" && offered.includes(credential.providerId))
+				.filter((credential) => credential.type === "oauth" && known.includes(credential.providerId))
 				.map((credential) => ({
 					provider: credential.providerId,
 					models: modelsOf(runtime, credential.providerId, preferred),
@@ -109,7 +118,9 @@ export async function runAuth(argv: readonly string[], options: AuthOptions): Pr
 			return 0;
 		}
 		if (!provider) throw new Error(USAGE);
-		if (!offered.includes(provider)) throw new Error(`Signing in to ${provider} is not available in this mu`);
+		if (!(mode === "login" ? offered : known).includes(provider)) {
+			throw new Error(`This version of mu can't sign in to ${provider}`);
+		}
 		if (mode === "logout") {
 			// Only a subscription sign-in is signed out here: a key stored for the same provider is left alone.
 			const stored = (await runtime.listCredentials()).find((credential) => credential.providerId === provider);
@@ -125,7 +136,7 @@ export async function runAuth(argv: readonly string[], options: AuthOptions): Pr
 	}
 }
 
-async function signIn(provider: string, { runtime, preferred, io, modelsReadMs }: AuthOptions): Promise<void> {
+async function signIn(provider: string, { runtime, preferred, io, modelsReadMs, login }: AuthOptions): Promise<void> {
 	const controller = new AbortController();
 	let pending: { resolve(value: string): void; reject(error: Error): void } | undefined;
 	io.listen(
@@ -149,29 +160,34 @@ async function signIn(provider: string, { runtime, preferred, io, modelsReadMs }
 		() => controller.abort(),
 	);
 
-	await runtime.login(provider, "oauth", {
-		signal: controller.signal,
-		notify: (event) => io.say({ type: "event", event }),
-		prompt: (prompt) =>
-			isBrowserChoice(prompt)
-				? Promise.resolve(BROWSER_METHOD)
-				: new Promise<string>((resolve, reject) => {
-						const entry = { resolve, reject };
-						pending = entry;
-						// A prompt raced against the browser callback is withdrawn when the callback wins.
-						prompt.signal?.addEventListener(
-							"abort",
-							() => {
-								if (pending !== entry) return;
-								pending = undefined;
-								reject(new Error("withdrawn"));
-								io.say({ type: "prompt_done" });
-							},
-							{ once: true },
-						);
-						io.say({ type: "prompt", prompt: shown(prompt) });
-					}),
-	});
+	await runtime.login(
+		provider,
+		"oauth",
+		{
+			signal: controller.signal,
+			notify: (event) => io.say({ type: "event", event }),
+			prompt: (prompt) =>
+				isBrowserChoice(prompt)
+					? Promise.resolve(BROWSER_METHOD)
+					: new Promise<string>((resolve, reject) => {
+							const entry = { resolve, reject };
+							pending = entry;
+							// A prompt raced against the browser callback is withdrawn when the callback wins.
+							prompt.signal?.addEventListener(
+								"abort",
+								() => {
+									if (pending !== entry) return;
+									pending = undefined;
+									reject(new Error("withdrawn"));
+									io.say({ type: "prompt_done" });
+								},
+								{ once: true },
+							);
+							io.say({ type: "prompt", prompt: shown(prompt) });
+						}),
+		},
+		login,
+	);
 	// The credential is stored: whatever happens next, the person is signed in.
 	io.say({ type: "signed_in" });
 	if (LISTED_BY_ACCOUNT.has(provider)) {

@@ -67,7 +67,7 @@ describe('ThoughtDisplay runtime-failed retry layout', () => {
 
     // The retry button renders no matter how long the status text is, and is
     // marked non-shrinking so it cannot be pushed out of a narrow column.
-    const button = screen.getByRole('button', { name: 'Retry start' });
+    const button = screen.getByRole('button', { name: 'Try starting again' });
     expect(button.className).toContain('flex-shrink-0');
 
     // The status takes the remaining width and truncates; the full text stays

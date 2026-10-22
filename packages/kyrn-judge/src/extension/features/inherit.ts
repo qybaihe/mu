@@ -145,7 +145,7 @@ export function registerInherit(runtime: KyrnRuntime, roots: HarnessRoots | unde
 			if (!ctx.hasUI || process.env.KYRN_SWARM_DEPTH) return undefined;
 			const summary = inheritanceSummary(found);
 			if (!summary || readInheritState(roots.agentDir).noticeShownAt) return undefined;
-			ctx.ui.notify(`${summary} /inherit lists them; features.inherit in mu.json switches sources off.`, "info");
+			ctx.ui.notify(`${summary} /inherit lists them; turn sources off with features.inherit in mu.json.`, "info");
 			writeInheritState(roots.agentDir, { noticeShownAt: new Date().toISOString() });
 			return undefined;
 		}),
@@ -211,7 +211,7 @@ export function registerInherit(runtime: KyrnRuntime, roots: HarnessRoots | unde
 	pi.registerCommand("inherit", {
 		description: say({
 			zh: "mu 从 Claude Code、Cursor 和 Codex 沿用了什么，各来自哪个文件",
-			en: "What mu took over from Claude Code, Cursor and Codex, and from where",
+			en: "Show what mu inherited from Claude Code, Cursor and Codex, and from which files",
 		}),
 		handler: async (_args, ctx) => {
 			runtime.touch(ctx);
@@ -225,10 +225,11 @@ export function registerInherit(runtime: KyrnRuntime, roots: HarnessRoots | unde
 			if (found.skills.length > 0) lines.push("", "Skills:");
 			for (const skill of found.skills) lines.push(`  ${skill.name}  ${skill.dir}`);
 			const servers = found.servers.filter((server) => server.tool !== "mu");
-			if (servers.length > 0) lines.push("", "MCP servers (each a capability: /capabilities; once open, /mcp):");
+			if (servers.length > 0)
+				lines.push("", "MCP servers (each is a capability: see /capabilities, and /mcp once it's open):");
 			for (const server of servers)
 				lines.push(`  ${server.name}  ${server.source}${server.scope === "project" ? "  (project)" : ""}`);
-			if (found.skipped.length > 0) lines.push("", "Not used:");
+			if (found.skipped.length > 0) lines.push("", "Skipped:");
 			for (const entry of found.skipped) lines.push(`  ${entry.name}  ${entry.source}: ${entry.reason}`);
 			if (found.problems.length > 0) lines.push("", "Problems:");
 			for (const problem of found.problems) lines.push(`  ${problem.source}: ${problem.message}`);

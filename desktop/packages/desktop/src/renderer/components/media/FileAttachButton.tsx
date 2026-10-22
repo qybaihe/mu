@@ -109,7 +109,7 @@ const FileAttachButton: React.FC<FileAttachButtonProps> = ({ openFileSelector, l
         shape='circle'
         icon={plusIcon}
         onClick={openFileSelector}
-        data-testid='aionrs-attach-folder-btn'
+        data-testid='builtin-agent-attach-folder-btn'
         aria-label={t('common.fileAttach.addFiles')}
       />
     );
@@ -275,7 +275,7 @@ const FileAttachButton: React.FC<FileAttachButtonProps> = ({ openFileSelector, l
         type='secondary'
         shape='circle'
         icon={plusIcon}
-        data-testid='aionrs-attach-folder-btn'
+        data-testid='builtin-agent-attach-folder-btn'
         aria-label={t('common.add')}
       />
     </Trigger>

@@ -169,7 +169,7 @@ const MessageText: React.FC<{
   const markdown = useMemo(() => (typeof data === 'string' ? closeOpenFence(data) : data), [data]);
   const shouldRenderPlainText = isUserMessage || Boolean(contextResetNotice);
   const conversationContext = useConversationContextSafe();
-  // A native conversation has no AionCore conversation around it: its project folder comes with its list.
+  // A native conversation has no backend conversation around it: its project folder comes with its list.
   const run = useMessageListRun();
   const workspace = conversationContext?.workspace ?? run?.workspace;
   const forkConversation = useForkConversation(conversationContext?.conversation_id);
@@ -331,13 +331,13 @@ const MessageText: React.FC<{
         {!images || renderedText.trim() ? (
           <div
             className={classNames('min-w-0 [&>p:first-child]:mt-0px [&>p:last-child]:mb-0px', {
-              'bg-aou-2 p-6px md:p-8px': isUserMessage || cronMeta,
+              'message-user-bubble bg-aou-2 px-10px py-6px md:px-12px md:py-8px': isUserMessage || cronMeta,
               'bg-3 p-6px md:p-8px': isTeammateMessage,
               'w-full': !(isUserMessage || cronMeta || isTeammateMessage),
             })}
             style={{
               ...(isUserMessage || cronMeta
-                ? { borderRadius: '8px 0 8px 8px', color: 'var(--text-primary)' }
+                ? { borderRadius: '12px 12px 4px 12px', color: 'var(--text-primary)' }
                 : isTeammateMessage
                   ? {
                       borderRadius: '0 8px 8px 8px',

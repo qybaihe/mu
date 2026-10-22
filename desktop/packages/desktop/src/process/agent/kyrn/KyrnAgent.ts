@@ -16,6 +16,7 @@ import {
   type SessionConfigOption,
   type SessionUpdate,
 } from '@agentclientprotocol/sdk';
+import { BACKEND_CONVERSATION_ID_ENV } from '../../../common/platform/backendNames.ts';
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
 import { realpath } from 'node:fs/promises';
@@ -188,20 +189,20 @@ export function readDefaultModel(home?: string): { provider: string; id: string 
  */
 export const MU_NOTICES = {
   /** A question of mu's got no usable answer (the app failed to ask, or answered with none of the choices). */
-  answer_lost: 'mu did not get your answer, so it went on as if you had declined.',
+  answer_lost: "mu didn't receive your answer, so it continued as if you had declined.",
   /** A command failed because mu found no bash on Windows: Git for Windows is missing (see `bashMissing`). */
   bash_missing:
-    'mu needs Git for Windows to run commands. Once it is installed, send your message again. Download it here: https://git-scm.com/download/win',
+    'mu needs Git for Windows to run commands. Install it, then send your message again. Download it here: https://git-scm.com/download/win',
   /**
    * The conversation goes without checkpoints (mu's `checkpoint.off`). The input carries mu's reason code and what it
    * names (`code`, `params`); the title is mu's own line, already in the app's language, and this only its stand-in.
    */
-  checkpoint_off: 'mu: checkpoints are off in this session.',
+  checkpoint_off: 'mu: checkpoints are off in this conversation.',
   /**
    * No Jev key is set, so the judge answers with the free Jev on OpenCode Zen (mu's `judge.notice`). The title is mu's
    * own line, already in the app's language, and this only its stand-in.
    */
-  free_jev: 'mu: no Jev key is set, so the judge uses the free Jev on OpenCode Zen for now.',
+  free_jev: 'mu: no Jev key is set, so the judge is the free Jev on OpenCode Zen for now.',
   /**
    * The free Jev stopped answering (mu's `judge.notice`); the input's `code` says why: `paid` (it asks for a key or
    * payment) or `gone` (no longer offered). Plain rules decide until a Jev key is set.
@@ -256,7 +257,7 @@ const CONFIRM_OPTIONS = [
   { optionId: 'reject', name: 'Reject', kind: 'reject_once' },
 ] as const;
 
-/** ACP adapter only: AionUi owns the UI and projects; mu owns all execution and judgment. */
+/** ACP adapter only: the app owns the UI and projects; mu owns all execution and judgment. */
 export class KyrnAgent implements Agent {
   private connection: Connection;
   private store: string;
@@ -573,7 +574,7 @@ export class KyrnAgent implements Agent {
       // A switch typed in the conversation, or made by the send box: the picker follows either way.
       if (session.opened && before !== modes.mode) {
         this.announce(id, session);
-        // AionCore sets the mode it last saw whenever it reopens a conversation; one that was never switched would
+        // The backend sets the mode it last saw whenever it reopens a conversation; one that was never switched would
         // otherwise come back in mu's current default, and that set would then switch it (and save it as mu's default).
         try {
           if (session.file) this.save(id, session);
@@ -718,12 +719,12 @@ export class KyrnAgent implements Agent {
     return { sessionId: id, configOptions };
   }
   /**
-   * The session a conversation the app made from a Claude Code or Codex transcript goes on with, until an adapter
-   * session has opened it (process/agent/kyrn/importChats.ts). The backend starts an adapter for each conversation and
-   * names the conversation in the adapter's environment (`AIONUI_CONVERSATION_ID`, the backend's own variable).
+   * The session a conversation the app made from a Claude Code, Codex or ZCode conversation goes on with, until an
+   * adapter session has opened it (process/agent/kyrn/importChats.ts). The backend starts an adapter for each conversation and
+   * names the conversation in the adapter's environment (`BACKEND_CONVERSATION_ID_ENV`).
    */
   private async importFor(cwd: string): Promise<{ conversationId: string; record: ImportRecord } | undefined> {
-    const conversationId = process.env.AIONUI_CONVERSATION_ID;
+    const conversationId = process.env[BACKEND_CONVERSATION_ID_ENV];
     if (!isConversationId(conversationId)) return undefined;
     const record = readImportRecord(this.store, conversationId);
     if (!record || record.session || !existsSync(record.file)) return undefined;

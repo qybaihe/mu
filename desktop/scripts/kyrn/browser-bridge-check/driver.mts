@@ -487,7 +487,7 @@ try {
     intruder.close();
     check('F. another connection cannot attach to or drive this tab', stolen && peeked);
 
-    // ── G. the debugger is taken away from outside (as AionUi's own single-target bridge does on a tab switch) ───
+    // ── G. the debugger is taken away from outside (as the app's own single-target bridge does on a tab switch) ───
     // Informational first: on current Electron, DevTools attaches beside the debugger instead of replacing it.
     await ask('devtools', { tabId });
     await sleep(600);

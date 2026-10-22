@@ -366,7 +366,7 @@ describe("/commit: a change split into commits", () => {
 			expect(request).toContain("keep the bottom apart");
 			expect(ui.asked).toHaveLength(1);
 			expect(ui.asked[0]).toContain("1. feat: change the bottom of a");
-			expect(ui.asked[0]).toContain("Nothing is pushed");
+			expect(ui.asked[0]).toContain("Nothing will be pushed");
 			expect(log(repo)).toEqual(["fix: change the top of a and b", "feat: change the bottom of a", "init"]);
 			expect(ui.notes.at(-1)).toContain("Made 2 commits");
 		});
@@ -380,7 +380,7 @@ describe("/commit: a change split into commits", () => {
 			await harness.session.prompt("/commit");
 
 			expect(harness.getPendingResponseCount()).toBe(0);
-			expect(ui.asked[0]).toContain("could not be used (not in any commit: u3)");
+			expect(ui.asked[0]).toContain("wasn't usable (not in any commit: u3)");
 			expect(log(repo)).toEqual(["b.txt", "a.txt", "init"]);
 		});
 
@@ -416,7 +416,7 @@ describe("/commit: a change split into commits", () => {
 					vi.unstubAllEnvs();
 				}
 				expect(ui.notes).toEqual([
-					"/commit cannot run: git cannot run on this Mac until the Xcode license is accepted. Accept it with sudo xcodebuild -license in Terminal, then try again.",
+					"/commit can't run: git can't run on this Mac until you accept the Xcode license. Run sudo xcodebuild -license in Terminal to accept it, then try again.",
 				]);
 				expect(ui.asked).toEqual([]);
 				expect(log(repo)).toEqual(["init"]);

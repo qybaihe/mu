@@ -54,8 +54,6 @@ export {
   runConversationCycle,
 } from './conversation';
 export { startAutoApprovePermissionMessages, waitForPermissionMessageCard } from './permissions';
-export { TEAM_SUPPORTED_BACKENDS } from './teamConfig';
-export { createTeam, ensureTeam, deleteTeam, cleanupTeamsByName } from './teamHelpers';
 export {
   goToAssistantSettings,
   openAssistantEditor,
@@ -98,23 +96,23 @@ export {
   SKILLS_INDICATOR_COUNT,
 } from './selectors';
 export {
-  resolveAionrsBinary,
-  getAionrsTestModels,
-  resolveAionrsPreconditions,
-  createAionrsConversationViaBridge,
-  sendAionrsMessage,
-  waitForAionrsReply,
-  getAionrsConversationDB,
-  getAionrsMessages,
-  cleanupE2EAionrsConversations,
+  resolveBuiltinAgentBinary,
+  getBuiltinAgentTestModels,
+  resolveBuiltinAgentPreconditions,
+  createBuiltinAgentConversationViaBridge,
+  sendBuiltinAgentMessage,
+  waitForBuiltinAgentReply,
+  getBuiltinAgentConversationDB,
+  getBuiltinAgentMessages,
+  cleanupE2EBuiltinAgentConversations,
   createTempWorkspace,
-  selectAionrsAgent,
-  selectAionrsModel,
-  selectAionrsMode,
-  attachAionrsFolder,
+  selectBuiltinAgentAgent,
+  selectBuiltinAgentModel,
+  selectBuiltinAgentMode,
+  attachBuiltinAgentFolder,
   type TProviderWithModel,
-  type AionrsTestModels,
-} from './chatAionrs';
+  type BuiltinAgentTestModels,
+} from './chatBuiltinAgent';
 export {
   installMonitorRecorder,
   monitorRecorderStatus,

@@ -1,10 +1,4 @@
 /**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
  * Why an update step failed. The main process puts this code in the update state (the raw message goes to the log);
  * the renderer shows the translated `update.errors.*` sentence for it, in the current app language.
  */

@@ -1,57 +1,57 @@
 {
   "unknownFile": "Unknown file",
-  "newFile": "New File",
-  "deletedFile": "Deleted File",
+  "newFile": "New file",
+  "deletedFile": "Deleted file",
   "modified": "Modified",
-  "fileChanges": "File Changes",
+  "fileChanges": "File changes",
   "shell": {
-    "displayName": "Shell Command",
-    "description": "Execute shell commands"
+    "displayName": "Shell command",
+    "description": "Run shell commands"
   },
   "fileOps": {
-    "displayName": "File Operations",
-    "description": "File read, write and modification"
+    "displayName": "File operations",
+    "description": "Read, write and edit files"
   },
   "webSearch": {
-    "displayName": "Web Search",
-    "description": "Search web content"
+    "displayName": "Web search",
+    "description": "Search the web"
   },
   "mcp": {
     "generic": {
-      "displayName": "MCP Tool: {{toolName}}",
+      "displayName": "MCP tool: {{toolName}}",
       "description": "MCP tool call: {{toolName}}"
     }
   },
   "unknown": {
-    "displayName": "Unknown Tool",
+    "displayName": "Unknown tool",
     "description": "Unknown tool type"
   },
   "status": {
     "pending": "Pending",
-    "executing": "Executing",
+    "executing": "Running",
     "success": "Success",
     "error": "Error",
     "canceled": "Canceled",
     "denied": "Not allowed"
   },
   "titles": {
-    "web_search_started": "Web Search Started",
-    "web_search_completed": "Web Search Completed",
-    "web_search": "Web Search",
-    "applying_patch": "Applying Patch",
-    "patch_applied": "Patch Applied",
-    "file_patch": "File Patch",
-    "mcp_tool_starting": "MCP Tool: {{toolName}} (starting)",
-    "mcp_tool": "MCP Tool: {{toolName}}",
-    "execute_command": "Execute: {{command}}",
-    "command_output": "Command Output",
-    "command_completed": "Command Completed",
-    "shell_command": "Shell Command"
+    "web_search_started": "Web search started",
+    "web_search_completed": "Web search completed",
+    "web_search": "Web search",
+    "applying_patch": "Applying patch",
+    "patch_applied": "Patch applied",
+    "file_patch": "File patch",
+    "mcp_tool_starting": "MCP tool: {{toolName}} (starting)",
+    "mcp_tool": "MCP tool: {{toolName}}",
+    "execute_command": "Run: {{command}}",
+    "command_output": "Command output",
+    "command_completed": "Command completed",
+    "shell_command": "Shell command"
   },
   "labels": {
-    "search_query": "Search Query:",
-    "file_changes": "File Changes:",
-    "tool_details": "Tool Details:",
+    "search_query": "Search query:",
+    "file_changes": "File changes:",
+    "tool_details": "Tool details:",
     "tool": "Tool",
     "arguments": "Arguments:",
     "result": "Result:",
@@ -73,10 +73,10 @@
     "input": "Input",
     "output": "Output",
     "loading": "Loading full output…",
-    "loadError": "Could not load full output.",
+    "loadError": "Couldn't load the full output.",
     "retry": "Retry",
     "callAria": "{{name}} · {{status}}",
-    "denied": "Not run: you did not allow it.",
+    "denied": "Not run: you didn't allow it.",
     "showMore": "Show more",
     "showLess": "Show less"
   },

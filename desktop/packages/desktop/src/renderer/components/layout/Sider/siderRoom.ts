@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { MIN_TRANSCRIPT_PX } from '../WorkPanel/panelGeometry';
 import { WORK_PANEL_MIN_WIDTH } from '../WorkPanel/workPanelStore';
 

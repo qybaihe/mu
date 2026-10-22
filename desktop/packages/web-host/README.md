@@ -1,17 +1,17 @@
-# @aionui/web-host
+# @mu/web-host
 
-WebUI host package for AionUi - zero Electron dependency.
+WebUI host package for mu - zero Electron dependency.
 
 ## Responsibilities
 
-- **backend-launcher**: spawn or reuse existing aioncore process
+- **backend-launcher**: spawn or reuse an existing backend process
 - **static-server**: serve out/renderer SPA + reverse proxy /api and /ws to backend
 - **auth**: password reset, change, verify, config I/O (bcrypt + session)
 
 ## Usage
 
 ```ts
-import { startWebHost } from '@aionui/web-host';
+import { startWebHost } from '@mu/web-host';
 
 const handle = await startWebHost({
   app: {
@@ -23,7 +23,7 @@ const handle = await startWebHost({
   staticDir: '/path/to/out/renderer',
   backend: {
     kind: 'ownBackend',
-    resolveBackend: () => '/path/to/aioncore',
+    resolveBackend: () => '/path/to/backend-binary',
   },
 });
 

@@ -5,7 +5,6 @@
  */
 
 import { ipcBridge } from '@/common';
-import { TEAM_MODE_ENABLED } from '@/common/config/constants';
 import Titlebar from '@/renderer/components/layout/Titlebar';
 import MuMark from '@renderer/components/brand/MuMark';
 import { Layout as ArcoLayout, Message, Tooltip } from '@arco-design/web-react';
@@ -43,6 +42,7 @@ import { useConversationShortcuts } from '@renderer/hooks/ui/useConversationShor
 import { isElectronDesktop } from '@renderer/utils/platform';
 import { deferredRuntimeNeeds } from '@renderer/services/runtime/deferredNodeRuntime';
 import { SETTINGS_HOME } from '@renderer/pages/settings/settingsNav';
+import KernelBar from '@renderer/components/kernel/KernelBar';
 import '@renderer/styles/layout.css';
 
 const SidebarIcon: React.FC<{ size?: number; strokeWidth?: number }> = ({ size = 18, strokeWidth = 4 }) => (
@@ -149,8 +149,7 @@ const Layout: React.FC<{
   useNativeAttention();
   const navigate = useNavigate();
   const location = useLocation();
-  const workspaceAvailable =
-    location.pathname.startsWith('/conversation/') || (TEAM_MODE_ENABLED && location.pathname.startsWith('/team/'));
+  const workspaceAvailable = location.pathname.startsWith('/conversation/');
   // The person folding or opening the sidebar: the titlebar button, ⌘B, dragging or double-clicking its edge.
   const setSiderCollapsed = useCallback((next: boolean) => setSiderChoice(next ? 'folded' : 'open'), []);
   const toggleSider = useCallback(() => setSiderCollapsed(!collapsed), [collapsed, setSiderCollapsed]);
@@ -179,7 +178,7 @@ const Layout: React.FC<{
     // Mirror Titlebar's handleBackToChat convention: return to the last non-settings path.
     let target: string | null = null;
     try {
-      target = sessionStorage.getItem('aion:last-non-settings-path');
+      target = sessionStorage.getItem('mu:last-non-settings-path');
     } catch {
       // ignore
     }
@@ -445,15 +444,15 @@ const Layout: React.FC<{
               >
                 {/* The mark keeps upstream's hidden devtools click; its size follows the collapsed rail. */}
                 <div className='shrink-0 line-height-0' data-testid='sider-brand-mark' onClick={onClick}>
-                  <MuMark size={collapsed ? 24 : 32} />
+                  <MuMark size={collapsed ? 24 : 26} />
                 </div>
                 {isSettingsRoute ? (
-                  <Tooltip content={t('common.back', { defaultValue: 'Back to Chat' })} position='bottom'>
+                  <Tooltip content={t('common.back', { defaultValue: 'Back' })} position='bottom'>
                     <div
                       className='text-16px text-t-primary collapsed-hidden font-semibold cursor-pointer'
                       role='button'
                       tabIndex={0}
-                      aria-label={t('common.back', { defaultValue: 'Back to Chat' })}
+                      aria-label={t('common.back', { defaultValue: 'Back' })}
                       onClick={handleBrandHome}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter' || event.key === ' ') {
@@ -529,6 +528,7 @@ const Layout: React.FC<{
               {workspaceAvailable && <WorkPanelHost rowWidth={panelRowWidth} isMobile={isMobile} />}
             </div>
           </ArcoLayout>
+          {!isMobile && <KernelBar />}
         </div>
       </NavigationHistoryProvider>
     </LayoutContext.Provider>

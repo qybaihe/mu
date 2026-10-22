@@ -276,7 +276,7 @@ describe('a repository with changes', () => {
     wires.answers = [repository(changes.slice(0, 1), { more: 5 })];
     show();
     await settle();
-    expect(screen.getByTestId('native-source-more')).toHaveTextContent('Not shown: 5 more');
+    expect(screen.getByTestId('native-source-more')).toHaveTextContent('5 more not shown');
     cleanup();
     wires.answers = [repository(changes.slice(0, 1), { truncated: true })];
     show();

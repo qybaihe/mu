@@ -75,3 +75,26 @@
     transition: none;
   }
 }
+
+/* ---- The instrument look: mono micro-labels, hairlines, quiet surfaces ---- */
+
+/* Section labels in the sidebars read as instrument labels: small mono capitals. */
+[data-color-scheme='mu'] .settings-sider__group-header,
+[data-color-scheme='mu'] .sider-section-title {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+/* The person's message: a hairline card on the page's quietest tint, the corner nearest the author squared. */
+[data-color-scheme='mu'] .message-user-bubble {
+  border: 1px solid var(--border-base);
+}
+
+/* The titlebar and the sidebar are one surface; the content sits a shade apart in dark. */
+[data-color-scheme='mu'] .app-titlebar--desktop {
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border-base);
+}

@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}{{ L.decisions.title }} · mu{% endblock %}
+{% block description %}{{ L.decisions.lead | striptags }}{% endblock %}
+{% block content %}
+  <section class="wrap page-head">
+    <p class="label intro" style="--d: 120ms">mu · {{ L.decisions.title }}</p>
+    <h1 class="intro" style="--d: 180ms">{{ L.decisions.title }}</h1>
+    <p class="page-lead intro" style="--d: 260ms">{{ L.decisions.lead }}</p>
+  </section>
+
+  <section class="wrap dp-how" id="how">
+    <p class="label" data-reveal>{{ D.how_label }}</p>
+    <h2 data-reveal style="--d: 60ms">{{ D.how_h2 }}</h2>
+    <p class="section-intro" data-reveal style="--d: 120ms">{{ D.how_intro }}</p>
+    <ol class="dp-steps">
+      {% for S in D.steps %}
+      <li class="dp-step" data-reveal style="--d: {{ loop.index0 * 90 }}ms">
+        <span class="num">{{ "%02d" | format(loop.index) }}</span>
+        <h3>{{ S.h3 }}</h3>
+        <p>{{ S.p }}</p>
+        <div class="dp-step-demo">
+          {% if loop.index == 1 %}<span class="demo-msg">{{ demo.scene }}</span>
+          {% elif loop.index == 2 %}<span class="demo-verdict"><span class="d">◆</span> {{ demo.verdict }}<span class="m"> · {{ rec.verdict_ms }} ms</span></span>
+          {% else %}<span class="demo-result">{{ demo.result }}</span>{% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+    <div class="dp-modes" data-reveal>
+      <h3>{{ D.modes_h3 }}</h3>
+      <div class="dp-mode-list">
+        {% for M in modes %}<div class="dp-mode"><span class="dp-mode-name mode-{{ M.value }}">{{ M.label }}</span><code>{{ M.value }}</code><p>{{ M.help }}</p></div>
+        {% endfor %}
+      </div>
+      <p class="dp-rules">{{ D.rules_note }}</p>
+    </div>
+  </section>
+
+  <section class="wrap dp-map" id="map">
+    <p class="label" data-reveal>{{ D.map_label }}</p>
+    <h2 data-reveal style="--d: 60ms">{{ D.map_h2 }}</h2>
+    <p class="section-intro" data-reveal style="--d: 120ms">{{ D.map_intro }}</p>
+    <div class="lanes">
+      {% for G in groups %}
+      <div class="lane" data-reveal style="--d: {{ loop.index0 * 70 }}ms">
+        <div class="lane-head">
+          <span class="lane-step">{{ loop.index }}</span>
+          <h3><span class="gdot g-{{ G.key }}"></span>{{ G.name }}</h3>
+          <span class="lane-count">{{ G.points | length }}</span>
+        </div>
+        <p>{{ G.blurb }}</p>
+        <div class="chips">
+          {% for X in G.points %}<a class="chip" href="#{{ X.id }}" data-jump="{{ X.id }}">{{ X.title }}</a>{% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="wrap dp-catalog" id="catalog">
+    <p class="label" data-reveal>{{ D.catalog_label }}</p>
+    <h2 data-reveal style="--d: 60ms">{{ D.catalog_h2 }}</h2>
+    <p class="section-intro" data-reveal style="--d: 120ms">{{ D.catalog_intro }}</p>
+    <div class="dp-bar">
+      <div class="dp-filters" role="group" aria-label="{{ D.filter_label | e }}">
+        <button type="button" class="dp-filter" data-filter="all" aria-pressed="true">{{ D.filter_all }}<span>{{ total }}</span></button>
+        {% for G in groups %}<button type="button" class="dp-filter" data-filter="{{ G.key }}" aria-pressed="false"><span class="gdot g-{{ G.key }}"></span>{{ G.name }}<span>{{ G.points | length }}</span></button>
+        {% endfor %}
+      </div>
+      <label class="dp-search">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="m20 20-4.2-4.2M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg>
+        <input type="search" placeholder="{{ D.search_placeholder | e }}" aria-label="{{ D.search_placeholder | e }}" data-dp-search>
+      </label>
+    </div>
+    {% for G in groups %}
+    <div class="dp-group" data-group="{{ G.key }}">
+      <h3 class="dp-group-title"><span class="gdot g-{{ G.key }}"></span>{{ G.name }}</h3>
+      {% for X in G.points %}
+      <article class="dp" id="{{ X.id }}" data-group="{{ G.key }}" data-text="{{ X.search | e }}">
+        <div class="dp-main">
+          <header class="dp-head">
+            <h4><a href="#{{ X.id }}">{{ X.title }}</a></h4>
+            <code class="dp-id">{{ X.id }}</code>
+            {% if X.flag %}<span class="dp-flag">{{ X.flag }}</span>{% endif %}
+          </header>
+          <p class="dp-ask"><span class="dp-ask-k"><span class="d">◆</span> {{ D.ask_label }}</span>{{ X.question }}</p>
+          <p class="dp-sum">{{ X.summary }}</p>
+          <p class="dp-meta">{{ D.feature_label }} <a href="{{ url(L, docs_options) }}#feature-{{ X.feature }}"><code>features.{{ X.feature }}</code></a></p>
+        </div>
+        {% if X.ex %}<div class="dp-ex">
+          <div class="ex-row"><span class="ex-k">{{ D.scene_label }}</span><p>{{ X.ex.scene }}</p></div>
+          <div class="ex-row ex-verdict"><span class="ex-k">{{ D.verdict_label }}</span><p><span class="vchip"><span class="d">◆</span> {{ X.ex.verdict }}</span></p></div>
+          <div class="ex-row ex-result"><span class="ex-k">{{ D.result_label }}</span><p>{{ X.ex.result }}</p></div>
+        </div>{% endif %}
+      </article>
+      {% endfor %}
+    </div>
+    {% endfor %}
+    <p class="dp-empty" hidden>{{ D.no_match }}</p>
+  </section>
+
+  <section class="wrap dp-judges" id="judges">
+    <p class="label" data-reveal>{{ D.judges_label }}</p>
+    <h2 data-reveal style="--d: 60ms">{{ D.judges_h2 }}</h2>
+    <p class="section-intro" data-reveal style="--d: 120ms">{{ D.judges_intro }}</p>
+    <div class="grid four">
+      {% for J in D.judges %}<div class="card" data-reveal style="--d: {{ loop.index0 * 70 }}ms"><h3>{{ J.h3 }}</h3><p>{{ J.p }}</p><code class="card-code">{{ J.code | e }}</code></div>
+      {% endfor %}
+    </div>
+    <a class="principles-more" data-reveal href="{{ url(L, docs_judges) }}">{{ D.judges_more }}<span aria-hidden="true">→</span></a>
+  </section>
+
+  <section class="wrap dp-measured" id="measured">
+    <div class="prose">
+{{ measured }}
+    </div>
+  </section>
+{% endblock %}

@@ -1,37 +1,24 @@
 .guidLayout {
-  width: clamp(var(--app-min-width, 360px), calc(100% - 32px), 800px);
+  position: relative;
+  width: clamp(var(--app-min-width, 360px), calc(100% - 32px), 760px);
   max-width: 100%;
   padding: 0 16px;
   box-sizing: border-box;
   margin: 0 auto;
 }
 
-.heroHeader {
-  /* The glyph's height: smaller on a short window, so the input stays in view. */
-  --mu-hero-glyph: clamp(150px, 31vh, 290px);
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* Room above the input, which follows directly when there is no assistant picker (mu alone). */
-  margin-bottom: 28px;
-  /* The greeting sits over the lower part of the glyph. */
-  padding-top: calc(var(--mu-hero-glyph) * 0.7);
-}
-
-.heroBackdrop {
+/* The home page's atmosphere: a violet glow from the top, a little pink to the right, and a dot grid that fades out
+   before the input. Decoration only, behind everything. */
+.guidContainer::before {
+  content: '';
   position: absolute;
-  top: 0;
-  /* Centred without a transform: the glyph's entrance animates its transform. */
-  left: 0;
-  right: 0;
-  margin-inline: auto;
-  width: calc(var(--mu-hero-glyph) * 45 / 56);
-  height: var(--mu-hero-glyph);
-}
-
-.heroTitle {
-  position: relative;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 46% at 50% -6%, var(--mu-glow-violet, transparent), transparent 72%),
+    radial-gradient(34% 30% at 88% 4%, var(--mu-glow-pink, transparent), transparent 70%),
+    radial-gradient(circle at 1px 1px, var(--mu-grid-dot, transparent) 1px, transparent 1.4px) 0 0 / 22px 22px;
+  mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.55) 42%, transparent 78%);
 }
 
 .assistantPromptHint {

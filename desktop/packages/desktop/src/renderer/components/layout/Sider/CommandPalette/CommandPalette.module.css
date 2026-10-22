@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 /*
  * The command palette: one white (or black) surface with a hairline, 8px corners and a faint shadow; monochrome
  * text. The only colour is the thin bar on the chosen row's leading edge. No gradients.

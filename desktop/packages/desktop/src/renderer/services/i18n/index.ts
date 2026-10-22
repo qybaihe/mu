@@ -134,7 +134,7 @@ i18n
     fallbackLng: DEFAULT_LANGUAGE,
     debug: false,
     interpolation: { escapeValue: false },
-    // The upstream strings name the product AionUi: shown as mu (see common/kyrn/displayName.ts).
+    // The upstream strings may name the upstream product: shown as mu (see common/kyrn/displayName.ts).
     postProcess: [MU_NAME_POST_PROCESSOR],
   })
   .catch((error: Error) => {

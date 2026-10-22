@@ -166,6 +166,12 @@ export const serviceById = (id: ServiceId): ModelService =>
   MODEL_SERVICES.find((service) => service.id === id) ?? MODEL_SERVICES[0];
 
 /**
+ * A Claude subscription token (`claude setup-token`, sk-ant-oat…), not an API key. Anthropic's terms don't let other
+ * apps use a Claude subscription, so the guide takes an Anthropic API key instead and sends the token nowhere.
+ */
+export const isClaudeSubscriptionToken = (key: string): boolean => key.trim().startsWith('sk-ant-oat');
+
+/**
  * The services a key has the shape of, in the table's order: none for a key no shape fits, two for a key that fits
  * two vendors alike (`sk-` and 32 hex digits: DeepSeek or Qwen). Such a key is sent nowhere until the person says
  * which service it is from.

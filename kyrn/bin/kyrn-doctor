@@ -87,13 +87,13 @@ if (layout === "package") {
 	row(
 		linked ? "ok" : "--",
 		"command",
-		linked ? linked.replaceAll(homedir(), "~") : `not on PATH yet: ${join(root, "kyrn", "bin", process.platform === "win32" ? "mu.cmd" : "mu")} link`,
+		linked ? linked.replaceAll(homedir(), "~") : `not on your PATH yet: run ${join(root, "kyrn", "bin", process.platform === "win32" ? "mu.cmd" : "mu")} link`,
 	);
 }
 
 row("--", "home", tilde(agentDir));
 if (home === ".kyrn" && agentDir.startsWith(join(homedir(), ".kyrn"))) {
-	row("--", "", "this home is from before the rename: `mu migrate` moves it to ~/.mu (`--dry-run` to look first)");
+	row("--", "", "this home folder predates the rename: `mu migrate` moves it to ~/.mu (add `--dry-run` to preview)");
 }
 // Only the size is looked at: pi writes an empty `{}` at its first start, and any stored login is far longer.
 let authBytes = 0;
@@ -112,23 +112,23 @@ row(
 	"model",
 	settings.defaultModel
 		? `${settings.defaultProvider ?? "?"}/${settings.defaultModel}${settings.defaultThinkingLevel ? ` · thinking ${settings.defaultThinkingLevel}` : ""}`
-		: "no default: the first provider with credentials is used. Pick one with /model, save with ctrl+s",
+		: "no default: mu uses the first provider with credentials. Pick one with /model and save it with ctrl+s",
 );
 
 const config = readJson(join(agentDir, "mu.json")) ?? readJson(join(agentDir, "kyrn.json"));
 const tiers = (env("JUDGE") ? env("JUDGE").split(",") : (config?.tiers ?? ["jev"])).map((tier) => tier.trim());
 const mode = env("JUDGE_MODE") ?? config?.modes?.default ?? "active";
-row("--", "judges", `${tiers.join(" > ")} · decisions ${mode}${env("JUDGE") ? " (from MU_JUDGE)" : ""}`);
+row("--", "judges", `${tiers.join(" > ")} · default mode ${mode}${env("JUDGE") ? " (from MU_JUDGE)" : ""}`);
 const overrides = Object.entries(config?.modes ?? {}).filter(([id]) => id !== "default");
 if (overrides.length > 0) row("--", "modes", overrides.map(([id, value]) => `${id}=${value}`).join(" "));
 const ladder = config?.features?.swarm?.models ?? [];
-row("--", "sub-agents", ladder.length > 0 ? `model ladder ${ladder.join(" < ")}` : "use the session's model (no ladder configured)");
+row("--", "subagents", ladder.length > 0 ? `model ladder ${ladder.join(" < ")}` : "use the session's model (no ladder configured)");
 
 const judgeSupport = localJudgeSupport({ platform: process.platform, env: process.env, wsl });
 if (tiers.some((tier) => tier.startsWith("laya")) && !judgeSupport.runs && !judgeSupport.url) {
 	// Not a failure of this installation: the sidecar is Core ML, and there is none for this platform.
-	row("--", "local judge", `not available on ${platformName({ platform: process.platform, wsl })}: the Laya sidecar is Core ML (macOS, Apple Silicon).`);
-	row("--", "", "laya's decisions fall back to the next judge or to pi's behaviour. Use jev, an llm judge, or MU_LOCAL_JUDGE_URL=<a server with the same contract>");
+	row("--", "local judge", `not available on ${platformName({ platform: process.platform, wsl })}: the Laya sidecar needs Core ML (macOS on Apple silicon)`);
+	row("--", "", "Laya's decision points use the next judge or their fallbacks. Use Jev, an LLM judge or MU_LOCAL_JUDGE_URL=<a server with the same API>");
 } else if (tiers.some((tier) => tier.startsWith("laya"))) {
 	const base = env("LOCAL_JUDGE_URL") ?? `http://127.0.0.1:${env("LOCAL_JUDGE_PORT") ?? 47823}`;
 	const startedAt = performance.now();
@@ -142,8 +142,8 @@ if (tiers.some((tier) => tier.startsWith("laya")) && !judgeSupport.runs && !judg
 			"fix",
 			"local judge",
 			judgeSupport.runs
-				? `${base} does not answer: mu judge start   (first time: mu judge setup)`
-				: `${base} (MU_LOCAL_JUDGE_URL) does not answer`,
+				? `${base} isn't answering: run mu judge start   (first time: mu judge setup)`
+				: `${base} (MU_LOCAL_JUDGE_URL) isn't answering`,
 		);
 	}
 }
@@ -192,7 +192,7 @@ if (jevTier) {
 			"jev key",
 			route
 				? `${route[0]} is set: ${route[1]} (value not shown)`
-				: `none set: Jev 1.13 on OpenCode Zen answers, free for a limited time (what it judges goes to OpenCode). For your own key, add TYPESAFE_API_KEY (or MU_JUDGE_OPENROUTER_API_KEY, AI_GATEWAY_API_KEY, OPENCODE_API_KEY) ${where}`,
+				: `none set: using Jev 1.13 on OpenCode Zen, free for a limited time (what the judge reads goes to OpenCode). To use your own key, add TYPESAFE_API_KEY (or MU_JUDGE_OPENROUTER_API_KEY, AI_GATEWAY_API_KEY, OPENCODE_API_KEY) ${where}`,
 		);
 	} else {
 		const name = judge.apiKeyEnv ?? (judge.type === "gateway" ? "AI_GATEWAY_API_KEY" : "TYPESAFE_API_KEY");
@@ -207,7 +207,7 @@ if (jevTier) {
 			has(name) && !unsent ? "ok" : "fix",
 			"jev key",
 			unsent
-				? `${jevTier} has no baseUrl: its key ${name} is only sent to the address it was set up for`
+				? `${jevTier} has no baseUrl, so its key ${name} isn't sent anywhere: add the address the key is for`
 				: has(name)
 					? `${name} is set: Jev is called ${via} (value not shown)`
 					: `missing: add ${name} ${where} (Jev is called ${via})`,
@@ -229,9 +229,9 @@ for (const model of new Set(askedTiers.map(classifierOf).filter((judge) => judge
 	// OpenCode's free models answer without a key (the client sends "public", as OpenCode's own does).
 	const names = provider === "opencode" && String(model).endsWith("-free") ? [] : CLASSIFIER_KEYS[provider];
 	if (!model?.includes("/")) {
-		row("fix", "classifier", `${model ?? "a classifier judge"} needs a model written "provider/model-id"`);
+		row("fix", "classifier", `${model ?? "a classifier judge"} needs a model in the form provider/model-id`);
 	} else if (!names) {
-		row("--", "classifier", `${model}: a provider of your own; its key is the one models.json names`);
+		row("--", "classifier", `${model}: a provider of your own: mu uses the key models.json names for it`);
 	} else if (names.every(has)) {
 		row("ok", "classifier", `${model}: ${names.length > 0 ? `${names.join(", ")} set (value not shown)` : "no key needed"}`);
 	} else {
@@ -268,15 +268,15 @@ for (const endpoint of new Set(clmJudges.map((judge) => clmEndpoint(judge.baseUr
 	} catch {}
 	const ms = Math.round(performance.now() - startedAt);
 	if (health?.ok !== true) {
-		row("fix", "clm", `${base} does not answer: start clm-serve there, or point the judge's baseUrl in mu.json at one`);
+		row("fix", "clm", `${base} isn't answering: start clm-serve there, or point the judge's baseUrl in mu.json at a running one`);
 		continue;
 	}
 	const served = Array.isArray(health.models) ? health.models : [];
 	const missing = [...new Set(judges.map((judge) => judge.model || "clm-latest"))].filter((model) => !served.includes(model));
 	if (health.embedder === false) {
-		row("fix", "clm", `${host} answers, but its encoder does not: every question fails until the embedding server is up`);
+		row("fix", "clm", `${host} answers, but its encoder doesn't: every question fails until the embedding server is up`);
 	} else if (missing.length > 0) {
-		row("fix", "clm", `${host} does not serve ${missing.join(", ")} (it serves ${served.join(", ")})`);
+		row("fix", "clm", `${host} doesn't serve ${missing.join(", ")} (it serves ${served.join(", ")})`);
 	} else {
 		row("ok", "clm", `${host} · ${served.join(", ")} · ${ms} ms`);
 	}
@@ -330,7 +330,7 @@ row(
 	"browse",
 	[browseTiers].flat().some(canRelate)
 		? `driven by ${[browseTiers].flat().join(" > ")}`
-		: 'needs a judge that can relate a goal to a page. In mu.json: "routes": { "browser.step": ["luna"] }',
+		: 'needs a judge that can match a goal to a page. In mu.json: "routes": { "browser.step": ["llm:openai-codex/gpt-5.6-luna"] }',
 );
 
 const marks = { ok: "\x1b[32m ok\x1b[0m", fix: "\x1b[33mfix\x1b[0m", "--": "\x1b[2m  ·\x1b[0m" };

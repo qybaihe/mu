@@ -68,7 +68,7 @@ The launch codes:
 | `lessons` | | checking lessons from earlier sessions |
 | `skills` | | choosing which skills this session needs |
 | `capabilities` | | choosing which capabilities this task needs |
-| `permission_review` | `summary` (a command or path, data) | Jev is reviewing: … (already localized) |
+| `permission_review` | `summary` (a command or path, data) | The judge is reviewing: … (already localized) |
 
 ## decision (the judge's reason)
 
@@ -209,7 +209,7 @@ These fields are added:
 - `answerIds`, in the order of `answers`: `once`, `session` (when offered) and `deny`. These are the same ids `permissions.resolved` reports.
 - `toolCallId`, here and in `permissions.resolved`: the tool call the question is about. Show the answer on that call's row in your own words. The call's tool result keeps the English reason the model reads.
 
-`reason` is itself a code. Two values were added on 2026-09-25 for Jev mode without a verdict:
+`reason` is itself a code. Two values were added on 2026-09-25 for Judge mode without a verdict:
 
 | reason | English |
 | --- | --- |

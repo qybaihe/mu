@@ -17,6 +17,7 @@ import {
   initSchema,
   setDatabaseVersion,
 } from '@process/services/database/schema';
+import { LEGACY_DATABASE_FILE } from '@/common/platform/legacyNames';
 
 const DEFAULT_USER_ID = 'system_default_user';
 const DEFAULT_PASSWORD_PLACEHOLDER = '';
@@ -31,7 +32,7 @@ export type LegacyDatabaseMigrationResult = {
 };
 
 export function resolveLegacyDatabasePath(dataDir = getDataPath()): string {
-  return path.join(dataDir, 'aionui.db');
+  return path.join(dataDir, LEGACY_DATABASE_FILE);
 }
 
 function ensureSystemUser(db: ISqliteDriver): void {

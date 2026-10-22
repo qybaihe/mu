@@ -210,7 +210,7 @@ const modes = (mode: string) =>
     conversationSwitch: true,
     modes: [
       { id: 'full', label: '完全访问', description: 'runs everything' },
-      { id: 'jev', label: 'Jev 审批', description: 'Jev approves' },
+      { id: 'judge', label: '判定模式', description: 'the judge approves' },
       { id: 'ask', label: '最小权限', description: 'asks first' },
     ],
   });
@@ -225,7 +225,7 @@ describe('the native send box’s model, thinking level and permission mode', ()
     expect(chip()).toHaveAttribute('data-source', 'file');
     expect(chip()).toHaveTextContent('thinker · High');
     expect(pill()).toHaveAttribute('data-mode', 'ask');
-    expect(pill()).toHaveTextContent('Permission · Minimal permissions');
+    expect(pill()).toHaveTextContent('Permission · Ask first');
     expect(commands(host)).toEqual([]);
 
     // A running host says what it runs with, and mu what mode it is in: they count from then on.
@@ -253,6 +253,17 @@ describe('the native send box’s model, thinking level and permission mode', ()
     });
     expect(chip()).toHaveAttribute('data-model', '');
     expect(chip()).toHaveTextContent('Choose a model');
+  });
+
+  it('goes on with mu’s default model in a conversation imported from another tool, not the tool’s', async () => {
+    const host = createFakeHost();
+    const imported = { api: 'claude-code', provider: 'claude-code', model: 'claude-opus-4-5' };
+    host.add({ id: 'c1' }, reduceAll([ended(user('hi')), ended(reply([text('hello')], imported))]));
+    await mount(host);
+    expect(chip()).toHaveAttribute('data-model', '');
+    expect(chip()).toHaveAttribute('data-source', 'none');
+    expect(chip()).toHaveTextContent('Default model');
+    expect(commands(host)).toEqual([]);
   });
 
   it('lists pi’s models when the chip opens, and switches the model, then the level the person picked', async () => {
@@ -324,7 +335,7 @@ describe('the native send box’s model, thinking level and permission mode', ()
     await mount(host);
     fireEvent.click(screen.getByTestId('native-permission'));
     const options = screen.getAllByTestId('native-permission-option');
-    expect(options.map((each) => each.getAttribute('data-mode'))).toEqual(['full', 'jev', 'ask']);
+    expect(options.map((each) => each.getAttribute('data-mode'))).toEqual(['full', 'judge', 'ask']);
     await act(async () => {
       fireEvent.click(options[0]);
     });
@@ -434,7 +445,7 @@ describe('the native send box’s commands, mentions and attachments', () => {
           clipboardData: { files: [new File(['x'], 'blob.bin', { type: 'application/octet-stream' })] },
         });
       });
-      await waitFor(() => expect(warning).toHaveBeenCalledWith('blob.bin could not be attached.'));
+      await waitFor(() => expect(warning).toHaveBeenCalledWith("Couldn't attach blob.bin."));
       expect(chips()).toHaveLength(3);
       fireEvent.click(within(chips()[2]).getByTestId('native-attachment-remove'));
       expect(chips()).toHaveLength(2);

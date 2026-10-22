@@ -54,7 +54,7 @@ export type NativeConversationState = {
    * sessions both have an `m161`.
    */
   epoch: number;
-  /** A prompt the person sent that is not in the conversation yet: pi takes it once Jev has classified it. */
+  /** A prompt the person sent that is not in the conversation yet: pi takes it once the judge has classified it. */
   outgoing?: OutgoingMessage & { users: number };
   /** The last command that failed for a reason the view cannot show (the host could not start, a timeout, …). */
   commandFailure?: NativeFailure;
@@ -88,7 +88,7 @@ export type NativeConversationApi = {
     images?: PiImage[],
     options?: { command?: boolean }
   ) => Promise<NativeResult<unknown>>;
-  /** Stops the run, or the prompt Jev is still classifying. */
+  /** Stops the run, or the prompt the judge is still classifying. */
   abort: () => Promise<NativeResult<unknown>>;
   respond: (dialogId: string, answer: DialogAnswer) => Promise<NativeResult<void>>;
   /** A dialog whose time ran out: pi took its default, and says nothing of it. */
@@ -273,7 +273,7 @@ export function useNativeConversation(requestedId: string): NativeConversationSt
     void open();
   }, [commit]);
 
-  // A prompt stopped while Jev classified it may still start its run once pi takes it: stop that run too.
+  // A prompt stopped while the judge classified it may still start its run once pi takes it: stop that run too.
   const stopTaken = useRef(false);
 
   const fail = useCallback(

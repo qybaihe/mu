@@ -251,7 +251,7 @@ test.beforeAll(async () => {
     throw new Error(`MU_E2E_APP names no packaged app for ${process.platform}-${process.arch}: ${named}`);
   run.profile = createProfile({ desktopRoot, root: process.env.MU_E2E_ROOT, app });
   const { harness } = run.profile;
-  // The conversation on AionCore is the kill switch's path: the native host is on by default, and this test is of the
+  // The conversation on the backend is the kill switch's path: the native host is on by default, and this test is of the
   // other one.
   run.profile.env.MU_NATIVE_HOST = '0';
   // The harness's keys (a checkout's own .env; none beside the mu a packaged app carries): stamped (never read)
@@ -382,7 +382,7 @@ test('a plain reply streams in, in several pieces', async () => {
     await box.press('Enter');
     await p.waitForURL(/#\/conversation\//, { timeout: 60_000 });
     run.conversationUrl = p.url();
-    // MU_NATIVE_HOST=0: the conversation is AionCore's, and the sidebar has no group of the native host's.
+    // MU_NATIVE_HOST=0: the conversation is the backend's, and the sidebar has no group of the native host's.
     expect(run.conversationUrl).not.toContain('/conversation/native/');
     await expect(p.getByTestId('native-sidebar-group')).toHaveCount(0);
     const reply = replies().last();
@@ -418,7 +418,7 @@ test('最小权限: a write asks once, 允许 writes the file, and the turn fini
   const p = page();
   await test.step('the conversation is switched to 最小权限', async () => {
     await p.getByTestId('mode-selector').click();
-    await p.getByTestId('aionrs-mode-option-ask').click();
+    await p.getByTestId('builtin-agent-mode-option-ask').click();
     await expect(p.getByTestId('mode-selector')).toHaveAttribute('data-current-mode', 'ask', { timeout: 20_000 });
   });
 
@@ -517,7 +517,7 @@ test('the files tab lists the written file, and the board is written by the fake
     await expect(p.getByTestId('sendbox-input')).toBeVisible({ timeout: 30_000 });
   });
 
-  await test.step('看板 on for this project shows the plain lines, without Jev', async () => {
+  await test.step('看板 on for this project shows the plain lines, without a judge', async () => {
     const expand = p.getByRole('button', { name: '展开工作面板' });
     if (await expand.isVisible().catch(() => false)) await expand.click();
     await workPanelTab('board').click();

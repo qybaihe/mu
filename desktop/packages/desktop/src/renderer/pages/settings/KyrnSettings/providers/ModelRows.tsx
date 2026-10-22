@@ -6,11 +6,12 @@ import {
   THINKING_LEVELS,
   supportedThinkingLevels,
   withThinkingLevel,
+  type ListedModel,
   type ProviderModel,
   type ThinkingLevel,
 } from '@/common/kyrn/models';
 import { formatNumber } from '@/renderer/services/i18n/format';
-import { blankModel } from './endpoints';
+import { blankModel, listedModel } from './endpoints';
 import { tokenSize } from './parts';
 import styles from './providers.module.css';
 
@@ -19,6 +20,8 @@ type ModelRowsProps = {
   onChange: (models: ProviderModel[]) => void;
   /** Model ids the endpoint listed in the last connection test, offered as one-click additions. */
   suggestions: string[];
+  /** What the list stated about those models, by id: a model added from it starts with these (#23). */
+  facts?: Record<string, ListedModel>;
   disabled?: boolean;
 };
 
@@ -26,7 +29,7 @@ type ModelRowsProps = {
  * The models of a custom provider, one line each: its id and what it can do (context window, thinking, images).
  * A line opens for editing; a model without an id stays open, since it cannot be saved like that.
  */
-export default function ModelRows({ models, onChange, suggestions, disabled }: ModelRowsProps) {
+export default function ModelRows({ models, onChange, suggestions, facts = {}, disabled }: ModelRowsProps) {
   const { t, i18n } = useTranslation();
   // Rows have no identity other than their position, so the open one is an index that follows removals.
   const [open, setOpen] = useState<number>();
@@ -46,7 +49,7 @@ export default function ModelRows({ models, onChange, suggestions, disabled }: M
     setOpen((now) => (now === undefined || now === index ? undefined : now > index ? now - 1 : now));
   };
   const add = (id?: string) => {
-    onChange([...models, blankModel(id)]);
+    onChange([...models, id ? listedModel(id, facts[id]) : blankModel()]);
     if (!id) setOpen(models.length);
   };
   const offered = suggestions.filter((id) => !models.some((model) => model.id === id)).slice(0, 24);
@@ -216,6 +219,9 @@ export default function ModelRows({ models, onChange, suggestions, disabled }: M
               onClick={() => add(id)}
             >
               {id}
+              {facts[id]?.contextWindow ? (
+                <span className={styles.offerSize}>{tokenSize(facts[id].contextWindow, i18n.language)}</span>
+              ) : null}
             </Tag>
           ))}
         </div>

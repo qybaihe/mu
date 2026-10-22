@@ -125,10 +125,10 @@ export function describePlan(plan: RestorePlan): string {
 		plan.remove.length > 0 ? `remove ${plan.remove.length} created since: ${listed(plan.remove)}` : "",
 		plan.bringBack.length > 0 ? `bring back ${plan.bringBack.length} deleted since: ${listed(plan.bringBack)}` : "",
 		plan.leftAlone.length > 0
-			? `left alone ${plan.leftAlone.length}: ${listed(plan.leftAlone.map((entry) => `${entry.path} (${entry.why})`))}`
+			? `leave alone ${plan.leftAlone.length}: ${listed(plan.leftAlone.map((entry) => `${entry.path} (${entry.why})`))}`
 			: "",
 	].filter(Boolean);
-	return lines.length > 0 ? lines.join("\n") : "no file differs from the checkpoint";
+	return lines.length > 0 ? lines.join("\n") : "no files differ from the checkpoint";
 }
 
 const describeResult = (result: RestoreResult): string =>
@@ -166,14 +166,14 @@ export function offNotice(
 	code: CheckpointsOff,
 	limits: { readonly maxFiles: number; readonly maxTotalMb: number; readonly timeoutMs: number },
 ): { line: string; params: Record<string, number> } {
-	const start = { zh: "在项目文件夹里启动 mu 就有检查点", en: "Start mu in a project folder to get them" };
+	const start = { zh: "在项目文件夹里启动 mu 就有检查点", en: "Start mu in a project folder to use checkpoints" };
 	const seconds = Math.round(limits.timeoutMs / 1000);
 	switch (code) {
 		case "git_missing":
 			return {
 				line: say({
-					zh: "mu：检查点已关闭，因为这台机器上找不到 git。",
-					en: "mu: checkpoints are off, because git was not found on this machine.",
+					zh: "mu：检查点已关闭，因为这台电脑上找不到 git。装好 Git 后，新开一个会话就有检查点。",
+					en: "mu: checkpoints are off because git wasn't found on this computer. Install Git, then start a new session.",
 				}),
 				params: {},
 			};
@@ -181,7 +181,7 @@ export function offNotice(
 			return {
 				line: say({
 					zh: "mu：检查点已关闭，因为这台 Mac 还没有同意 Xcode 许可协议，git 无法运行。在终端里用 sudo xcodebuild -license 同意后，新开一个会话就有检查点。",
-					en: "mu: checkpoints are off, because git cannot run on this Mac until the Xcode license is accepted. Accept it with sudo xcodebuild -license in Terminal, then start a new session to get them.",
+					en: "mu: checkpoints are off because git can't run on this Mac until you accept the Xcode license. Run sudo xcodebuild -license in Terminal to accept it, then start a new session.",
 				}),
 				params: {},
 			};
@@ -189,7 +189,7 @@ export function offNotice(
 			return {
 				line: say({
 					zh: "mu：检查点已关闭，因为这台 Mac 没有安装 git 所需的命令行开发者工具。用 xcode-select --install 安装后，新开一个会话就有检查点。",
-					en: "mu: checkpoints are off, because this Mac has no command line developer tools, which git needs. Install them with xcode-select --install, then start a new session to get them.",
+					en: "mu: checkpoints are off because git needs the command line developer tools, which aren't installed on this Mac. Install them with xcode-select --install, then start a new session.",
 				}),
 				params: {},
 			};
@@ -197,7 +197,7 @@ export function offNotice(
 			return {
 				line: say({
 					zh: `mu：本次会话不拍检查点，因为这个文件夹是你的主目录，或者包含它。${start.zh}。`,
-					en: `mu: checkpoints are off in this session, because this folder is your home folder or holds it. ${start.en}.`,
+					en: `mu: checkpoints are off for this session because this folder is, or contains, your home folder. ${start.en}.`,
 				}),
 				params: {},
 			};
@@ -205,7 +205,7 @@ export function offNotice(
 			return {
 				line: say({
 					zh: "mu：本次会话不拍检查点，因为这个文件夹在 mu 自己的目录里。",
-					en: "mu: checkpoints are off in this session, because this folder is inside mu's own folder.",
+					en: "mu: checkpoints are off for this session because this folder is inside mu's own folder.",
 				}),
 				params: {},
 			};
@@ -213,7 +213,7 @@ export function offNotice(
 			return {
 				line: say({
 					zh: `mu：本次会话不拍检查点，因为这个文件夹要拍的文件超过 ${limits.maxFiles} 个。${start.zh}，或者调高 features.checkpoint.maxFiles。`,
-					en: `mu: checkpoints are off in this session, because this folder has more than ${limits.maxFiles} files to snapshot. ${start.en}, or raise features.checkpoint.maxFiles.`,
+					en: `mu: checkpoints are off for this session because this folder has more than ${limits.maxFiles} files to snapshot. ${start.en}, or raise features.checkpoint.maxFiles.`,
 				}),
 				params: { limit: limits.maxFiles },
 			};
@@ -221,7 +221,7 @@ export function offNotice(
 			return {
 				line: say({
 					zh: `mu：本次会话不拍检查点，因为这个文件夹要拍的文件加起来超过 ${limits.maxTotalMb} MB。${start.zh}，或者调高 features.checkpoint.maxTotalMb。`,
-					en: `mu: checkpoints are off in this session, because this folder has more than ${limits.maxTotalMb} MB of files to snapshot. ${start.en}, or raise features.checkpoint.maxTotalMb.`,
+					en: `mu: checkpoints are off for this session because this folder has more than ${limits.maxTotalMb} MB of files to snapshot. ${start.en}, or raise features.checkpoint.maxTotalMb.`,
 				}),
 				params: { limitMb: limits.maxTotalMb },
 			};
@@ -229,7 +229,7 @@ export function offNotice(
 			return {
 				line: say({
 					zh: `mu：本次会话不拍检查点，因为列出这个文件夹里要拍的文件用了超过 ${seconds} 秒。${start.zh}。`,
-					en: `mu: checkpoints are off in this session, because listing this folder's files took longer than ${seconds} s. ${start.en}.`,
+					en: `mu: checkpoints are off for this session because listing this folder's files took more than ${seconds} s. ${start.en}.`,
 				}),
 				params: { seconds },
 			};
@@ -523,8 +523,8 @@ export function registerCheckpoint(
 	): Promise<Set<string> | undefined> => {
 		if (byHand.length === 0) return new Set();
 		const choice = await ctx.ui.select(
-			`mu: ${byHand.length} of these files changed after the agent's last action, probably by your hand: ${listed(byHand)}`,
-			["Keep those files as they are", "Rewind them too (the snapshot taken now can bring them back)", "Cancel"],
+			`mu: ${byHand.length} of these files changed after the agent's last action, probably edited by you: ${listed(byHand)}`,
+			["Keep those files as they are", "Rewind them too (a snapshot taken now can bring them back)", "Cancel"],
 		);
 		if (choice?.startsWith("Keep")) return new Set(byHand);
 		return choice?.startsWith("Rewind") ? new Set() : undefined;
@@ -659,14 +659,14 @@ export function registerCheckpoint(
 		);
 		const said = [
 			files
-				? `Files are back at checkpoint #${checkpoint.id}: ${describeResult(files.result)}. /rewind undo takes this back.`
+				? `Files are back at checkpoint #${checkpoint.id}: ${describeResult(files.result)}. /rewind undo reverses this.`
 				: "",
 			scope === "files"
 				? ""
 				: moved
-					? "The conversation is back to before that request; it is in the editor to send again."
+					? "The conversation is back to before that request, which is in the editor so you can send it again."
 					: // pi lets only a command move the leaf, and it refused or is not bound here: one step is left to the user.
-						`The conversation could not be moved from here. One step is left to you: /tree, then pick the message "${checkpoint.label}".`,
+						`mu couldn't move the conversation from here. To finish, run /tree and pick the message "${checkpoint.label}".`,
 		].filter(Boolean);
 		ctx.ui.notify(said.join("\n"), "info");
 	};
@@ -681,7 +681,7 @@ export function registerCheckpoint(
 		if (!last) return ctx.ui.notify("No rewind to undo on this branch of the conversation.", "info");
 		const opened = await exclusive(() => open(ctx));
 		if (last.undo && !(await hasCommit(opened, last.undo)))
-			return ctx.ui.notify("The snapshot taken before that rewind is gone (pruned).", "warning");
+			return ctx.ui.notify("The snapshot taken before that rewind was pruned.", "warning");
 		const fromLeaf = ctx.sessionManager.getLeafId();
 		let files: { undo: string; result: RestoreResult } | undefined;
 		if (last.undo) {
@@ -702,7 +702,7 @@ export function registerCheckpoint(
 		});
 		runtime.present("rewind.undone", { conversationMoved: moved, ...counts(files?.result) });
 		ctx.ui.notify(
-			`The rewind was undone${files ? `: ${describeResult(files.result)}` : ""}.${last.fromLeaf && !moved ? " The conversation could not be moved back: use /tree." : ""}`,
+			`The rewind was undone${files ? `: ${describeResult(files.result)}` : ""}.${last.fromLeaf && !moved ? " mu couldn't move the conversation back; use /tree." : ""}`,
 			"info",
 		);
 	};
@@ -796,7 +796,7 @@ export function registerCheckpoint(
 			}
 			const approved = await ctx.ui.confirm(
 				`mu: this looks like a dead end. Go back to checkpoint #${checkpoint.id}, before "${checkpoint.label}"?`,
-				`${trigger}\n\n${describePlan(plan)}\n\nThe agent then starts over from your request with a note about what did not work. /rewind undo takes it back.`,
+				`${trigger}\n\n${describePlan(plan)}\n\nThe agent will then start over from your request, with a note about what didn't work. /rewind undo reverses this.`,
 				options.confirmSeconds > 0 ? { timeout: options.confirmSeconds * 1000 } : undefined,
 			);
 			const keep = approved ? await askAboutHandEdits(ctx, byHand) : undefined;
@@ -837,7 +837,7 @@ export function registerCheckpoint(
 	pi.registerCommand("checkpoints", {
 		description: say({
 			zh: "这次对话的检查点：第几回合、什么时间、之后改了哪些文件",
-			en: "The checkpoints of this conversation: turn, time, files changed since",
+			en: "List the checkpoints so far: turn, time and the files changed since each",
 		}),
 		handler: async (_args, ctx) => {
 			runtime.touch(ctx);
@@ -845,7 +845,7 @@ export function registerCheckpoint(
 			const refused = refusal(ctx.cwd);
 			if (entries.length === 0 || refused) {
 				return ctx.ui.notify(
-					refused ?? off?.line ?? "No checkpoints yet: one is taken before the first change to a file in a turn.",
+					refused ?? off?.line ?? "No checkpoints yet. mu takes one before the first file change in each turn.",
 					"info",
 				);
 			}
@@ -862,7 +862,7 @@ export function registerCheckpoint(
 					);
 				}
 				ctx.ui.notify(
-					`${rows.join("\n")}\n/rewind [#] goes back to one, /rewind undo takes the last rewind back.`,
+					`${rows.join("\n")}\n/rewind [#] goes back to one; /rewind undo reverses the last rewind.`,
 					"info",
 				);
 			} catch (error) {
@@ -874,7 +874,7 @@ export function registerCheckpoint(
 	pi.registerCommand("rewind", {
 		description: say({
 			zh: "回到一个检查点：/rewind [序号] [both|files|conversation]，/rewind undo 撤销回退；both 文件和对话都退，files 只退文件，conversation 只退对话",
-			en: "Go back to a checkpoint: /rewind [#] [both|files|conversation], /rewind undo",
+			en: "Go back to a checkpoint: /rewind [#] [both|files|conversation]; /rewind undo reverses the last rewind",
 		}),
 		getArgumentCompletions: (prefix) => {
 			const matches = ["undo", "files", "conversation", "both"].filter((value) => value.startsWith(prefix));
@@ -890,7 +890,7 @@ export function registerCheckpoint(
 				const refused = refusal(ctx.cwd);
 				if (refused) return ctx.ui.notify(refused, "warning");
 				if (!ctx.hasUI)
-					return ctx.ui.notify("A rewind needs somebody to confirm it, and this mode cannot ask.", "warning");
+					return ctx.ui.notify("A rewind needs confirmation, and this mode can't ask for it.", "warning");
 				if (words[0] === "undo") return await undoLast(ctx);
 				const entries = checkpointsOn(ctx);
 				const wanted = words.find((word) => /^#?\d+$/.test(word))?.replace("#", "");
@@ -905,7 +905,7 @@ export function registerCheckpoint(
 						"info",
 					);
 				if (!(await hasCommit(await exclusive(() => open(ctx)), checkpoint.commit))) {
-					return ctx.ui.notify(`The snapshot of checkpoint #${checkpoint.id} is gone (pruned).`, "warning");
+					return ctx.ui.notify(`The snapshot for checkpoint #${checkpoint.id} was pruned.`, "warning");
 				}
 				const scope = words.find(
 					(word): word is RewindScope => word === "both" || word === "files" || word === "conversation",
@@ -916,7 +916,7 @@ export function registerCheckpoint(
 				giveUp(ctx, error);
 				if (!(error instanceof GitMissing || error instanceof GitUnusable))
 					ctx.ui.notify(
-						`The rewind stopped: ${clip(error instanceof Error ? error.message : String(error), 300)}`,
+						`Couldn't rewind: ${clip(error instanceof Error ? error.message : String(error), 300)}`,
 						"error",
 					);
 			}

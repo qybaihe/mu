@@ -15,12 +15,17 @@
     <title>mu</title>
     <script>
       // Synchronously restore theme appearance to prevent theme flash: the cached one, or the system's while the
-      // theme follows it (also before any theme was applied, as on a first start).
+      // theme follows it (also before any theme was applied, as on a first start). This runs before the renderer
+      // moves the keys of an earlier version to their mu names (common/platform/legacyNames.ts), so it reads those too.
       (function () {
         var theme = null;
         try {
-          theme = localStorage.getItem('__aionui_theme');
-          if (localStorage.getItem('__aionui_theme_follows_system') === '1') theme = null;
+          var read = function (key, legacy) {
+            var value = localStorage.getItem(key);
+            return value === null ? localStorage.getItem(legacy) : value;
+          };
+          theme = read('__mu_theme', '__aionui_theme');
+          if (read('__mu_theme_follows_system', '__aionui_theme_follows_system') === '1') theme = null;
         } catch (e) {}
         try {
           if (!theme && window.matchMedia) {

@@ -6,7 +6,7 @@
  * IPC bridge data correctness (agents included: there is no agent settings
  * page to show them any more).
  *
- * Requires: e2e-full-extension loaded (via AIONUI_EXTENSIONS_PATH=examples/).
+ * Requires: e2e-full-extension loaded (via MU_EXTENSIONS_PATH=examples/).
  */
 import { test, expect } from '../fixtures';
 import {

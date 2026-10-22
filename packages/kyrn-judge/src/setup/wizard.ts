@@ -21,6 +21,7 @@ import {
 	chatModels,
 	checkKindOf,
 	cleanKey,
+	isClaudeSubscriptionToken,
 	namedModel,
 	SETUP_SERVICES,
 	type SetupApi,
@@ -78,6 +79,12 @@ const JEV_TIERS = new Set([
 /** Where OpenCode Zen's key is, for Jev there: the variable pi reads it from. */
 const OPENCODE_KEY = "OPENCODE_API_KEY";
 const JEV_PAGE = "https://typesafe.ai";
+/** What mu says to a Claude subscription token given as a key. */
+const CLAUDE_TOKEN: Text = {
+	zh: "这是 Claude 订阅令牌（claude setup-token 生成的），不是 API 密钥。Anthropic 不允许其他应用使用 Claude 订阅，所以 mu 用不了它。请改用 Anthropic API 密钥（sk-ant-api…），在这里创建：https://platform.claude.com/settings/keys",
+	en: "That's a Claude subscription token (from claude setup-token), not an API key. Anthropic doesn't allow other apps to use a Claude subscription, so mu can't use it. Use an Anthropic API key (sk-ant-api…) instead; create one at https://platform.claude.com/settings/keys",
+};
+
 /** Services whose keys carry the vendor's own mark: a key of theirs pasted as the Jev key is a mistake. */
 const BRANDED = new Set(["openai", "anthropic", "openrouter", "google", "xai"]);
 
@@ -88,7 +95,7 @@ const OTHER: Text = {
 /** A local service that does not answer, or lists no model, is not ready yet; a key has nothing to do with it. */
 const NOT_READY: Text = {
 	zh: "Ollama 还没准备好（用 `ollama serve` 启动它，再拉取一个模型）。",
-	en: "Ollama is not ready yet (start it with `ollama serve`, pull a model).",
+	en: "Ollama isn't ready yet. Start it with `ollama serve`, then pull a model.",
 };
 
 type Env = Readonly<Record<string, string | undefined>>;
@@ -181,14 +188,14 @@ export function parseSetupArgs(argv: readonly string[]): SetupArgs | { readonly 
 	}
 	const api = values.get("--api");
 	if (api !== undefined && api !== "openai" && api !== "anthropic") {
-		return { error: { zh: "--api 只能是 openai 或 anthropic", en: "--api is openai or anthropic" } };
+		return { error: { zh: "--api 只能是 openai 或 anthropic", en: "--api must be openai or anthropic" } };
 	}
 	const judge = values.get("--judge");
 	if (judge !== undefined && !["jev", "opencode", "free", "model", "none"].includes(judge)) {
 		return {
 			error: {
 				zh: "--judge 只能是 jev、opencode、free、model 或 none",
-				en: "--judge is jev, opencode, free, model or none",
+				en: "--judge must be jev, opencode, free, model or none",
 			},
 		};
 	}
@@ -197,11 +204,11 @@ export function parseSetupArgs(argv: readonly string[]): SetupArgs | { readonly 
 		return {
 			error: {
 				zh: `没有叫 ${service} 的服务（mu setup --list 列出全部）`,
-				en: `there is no service called ${service} (mu setup --list shows them)`,
+				en: `no service named ${service} (mu setup --list shows them all)`,
 			},
 		};
 	}
-	if (words.length > 1) return { error: { zh: "只能给一个密钥", en: "give one key at most" } };
+	if (words.length > 1) return { error: { zh: "只能给一个密钥", en: "give at most one key" } };
 	return {
 		help: flags.has("help"),
 		list: flags.has("list"),
@@ -245,29 +252,29 @@ export function setupUsage(language: SetupLanguage): string {
 		].join("\n");
 	}
 	return [
-		"mu setup: connect a model for mu to work with, and choose its judge.",
+		"mu setup: connect a model for mu to work with, and choose a judge.",
 		"",
-		"  mu setup                 asks step by step, in a terminal",
-		"  mu setup <key>           starts from an API key: mu tells by its shape which service it belongs to",
+		"  mu setup                 walks you through it, one question at a time",
+		"  mu setup <key>           starts from an API key and detects its service from the key's format",
 		"  mu setup --service <id> --key-stdin [--model <id>] [--base-url <url>] [--judge <judge>] [--yes]",
-		"                           for scripts: the key is read from stdin",
-		"  mu setup --list          the services mu knows, with their ids",
+		"                           for scripts: reads the key from stdin",
+		"  mu setup --list          lists the services mu knows and their ids",
 		"",
-		"Why stdin for scripts: a key on the command line stays in your shell's history, and every program on this",
-		"computer that lists processes can read it. `mu setup <key>` is there for a quick start; paste the key at the",
-		"prompt when you can.",
+		"Why stdin for scripts: a key on the command line stays in your shell history, and any program on this",
+		"computer that lists processes can read it. `mu setup <key>` is a shortcut for getting started; paste the key",
+		"at the prompt when you can.",
 		"",
-		"  --judge jev     the Jev key (TypeSafe) is the second line of stdin, unless TYPESAFE_API_KEY is set already",
-		"  --judge opencode  Jev on OpenCode Zen, with OpenCode's key (--service opencode, or OPENCODE_API_KEY)",
-		"  --judge free    Jev on OpenCode Zen, free for a limited time, with no key (what jev uses while no key is set)",
-		"  --judge model   the model just set up answers as the judge (slower, and every decision costs tokens)",
-		"  --judge none    leaves the judge as it is, as leaving out --judge does",
+		"  --judge jev     read the Jev key (TypeSafe) from stdin's second line, unless TYPESAFE_API_KEY is already set",
+		"  --judge opencode  use Jev on OpenCode Zen with an OpenCode key (--service opencode or OPENCODE_API_KEY)",
+		"  --judge free    use the free Jev on OpenCode Zen (limited time, no key; the default while no key is set)",
+		"  --judge model   use the model you just set up as the judge (slower, and every verdict costs tokens)",
+		"  --judge none    leave the judge unchanged (the same as omitting --judge)",
 		"  --api, --name   for the service `other`: its API (openai or anthropic) and its name in mu",
-		"  --yes           no questions; replaces what is set up already (a subscription sign-in, a provider's",
-		"                  address, the Jev key)",
+		"  --yes           don't ask; replace what's already set up (a subscription sign-in, a provider's address,",
+		"                  the Jev key)",
 		"",
-		"Files: auth.json (keys), models.json, settings.json and mu.json in ~/.mu/agent, and the .env mu reads",
-		"(the Jev key). Each is copied to ~/.mu/backups/<time>/ before it changes.",
+		"Files it changes: auth.json (keys), models.json, settings.json and mu.json in ~/.mu/agent, and the .env",
+		"mu reads (the Jev key). Each one is backed up to ~/.mu/backups/<time>/ before it changes.",
 	].join("\n");
 }
 
@@ -441,10 +448,14 @@ class Setup {
 		}
 	}
 
-	private pasteKey(): Promise<string> {
-		return this.secret(
-			this.t({ zh: "粘贴 API 密钥（不会显示出来）：", en: "Paste the API key (it is not shown): " }),
-		);
+	private async pasteKey(): Promise<string> {
+		for (;;) {
+			const key = await this.secret(
+				this.t({ zh: "粘贴 API 密钥（不会显示出来）：", en: "Paste the API key (it won't be shown): " }),
+			);
+			if (!isClaudeSubscriptionToken(key)) return key;
+			this.io.warn(this.t(CLAUDE_TOKEN));
+		}
 	}
 
 	private async choose<T>(question: string, choices: readonly Choice<T>[]): Promise<T> {
@@ -456,7 +467,7 @@ class Setup {
 			if (answer === "") return choices[0].value;
 			const number = Number(answer);
 			if (Number.isInteger(number) && number >= 1 && number <= choices.length) return choices[number - 1].value;
-			this.io.say(this.t({ zh: `请输入 ${range} 之间的数字。`, en: `Type a number from ${range}.` }));
+			this.io.say(this.t({ zh: `请输入 ${range} 之间的数字。`, en: `Type a number from 1 to ${choices.length}.` }));
 		}
 	}
 
@@ -478,7 +489,7 @@ class Setup {
 				throw this.fail(
 					{
 						zh: "--key-stdin 从管道读密钥。在终端里请直接运行 mu setup，在提示里粘贴密钥（不会显示）。",
-						en: "--key-stdin reads the key from a pipe. In a terminal, run mu setup and paste the key at its prompt (it is not shown).",
+						en: "--key-stdin reads the key from a pipe. In a terminal, run mu setup and paste the key at the prompt (it won't be shown).",
 					},
 					SETUP_EXIT.usage,
 				);
@@ -490,13 +501,14 @@ class Setup {
 			key = modelKey;
 			this.jevFromStdin = jevKey;
 		}
+		if (key !== undefined && isClaudeSubscriptionToken(key)) throw this.fail(CLAUDE_TOKEN, SETUP_EXIT.usage);
 		if (this.scripted && key === undefined && args.service === undefined) {
 			throw this.fail(
 				deps.interactive
-					? { zh: "没有密钥，也没有 --service", en: "no key and no --service were given" }
+					? { zh: "没有密钥，也没有 --service", en: "no key or --service given" }
 					: {
 							zh: "问题要在终端里回答。脚本里用：mu setup --service <id> --key-stdin（见 mu setup --help）",
-							en: "its questions need a terminal. For a script: mu setup --service <id> --key-stdin (see mu setup --help)",
+							en: "no terminal to ask in. In a script, use mu setup --service <id> --key-stdin (see mu setup --help)",
 						},
 				SETUP_EXIT.usage,
 			);
@@ -505,7 +517,7 @@ class Setup {
 			this.io.say(
 				this.t({
 					zh: "mu setup：给 mu 接上一个干活的模型，再选一个判定器。",
-					en: "mu setup: connect a model for mu to work with, and choose its judge.",
+					en: "mu setup: connect a model for mu to work with, and choose a judge.",
 				}),
 			);
 		}
@@ -545,7 +557,7 @@ class Setup {
 		this.io.say(
 			this.t({
 				zh: "好的，以后不再问了。需要时运行 mu setup，或在 mu 里输入 /login。",
-				en: "OK, mu will not ask again. Run mu setup when you want, or type /login inside mu.",
+				en: "OK, mu won't ask again. Run mu setup whenever you're ready, or type /login inside mu.",
 			}),
 		);
 		return false;
@@ -559,30 +571,33 @@ class Setup {
 		const named = this.args.service === undefined ? undefined : serviceById(this.args.service);
 		if (named) return this.keyFor(named, key);
 		if (key !== undefined) return { service: await this.serviceOf(key), key };
-		const route = await this.choose(this.t({ zh: "mu 用什么方式连接模型？", en: "How should mu reach a model?" }), [
-			{
-				label: this.t({
-					zh: "粘贴 API 密钥（mu 会认出它属于哪个服务）",
-					en: "Paste an API key (mu tells which service it belongs to)",
-				}),
-				value: "key",
-			},
-			{ label: this.t({ zh: "从列表里选一个服务", en: "Choose a service from the list" }), value: "list" },
-			{
-				label: this.t({
-					zh: "用订阅账号登录：ChatGPT、Claude、Grok 或 Google",
-					en: "Sign in with a subscription: ChatGPT, Claude, Grok or Google",
-				}),
-				value: "subscription",
-			},
-		] as const);
+		const route = await this.choose(
+			this.t({ zh: "mu 用什么方式连接模型？", en: "How should mu connect to a model?" }),
+			[
+				{
+					label: this.t({
+						zh: "粘贴 API 密钥（mu 会认出它属于哪个服务）",
+						en: "Paste an API key (mu detects which service it belongs to)",
+					}),
+					value: "key",
+				},
+				{ label: this.t({ zh: "从列表里选一个服务", en: "Choose a service from the list" }), value: "list" },
+				{
+					label: this.t({
+						zh: "用订阅账号登录：ChatGPT、Grok 或 Google",
+						en: "Sign in with a subscription: ChatGPT, Grok or Google",
+					}),
+					value: "subscription",
+				},
+			] as const,
+		);
 		if (route === "subscription") {
 			// pi's /login already does every sign-in: the browser, device codes, a pasted redirect. mu leaves it to pi.
 			const auth = this.path(join(this.deps.paths.agentDir, "auth.json"));
 			this.io.say(
 				this.t({
-					zh: `订阅账号在 mu 里面登录：启动 mu，输入 /login，选 ChatGPT（OpenAI Codex）、Claude、Grok 或 Google，按提示在浏览器里完成。登录信息保存在 ${auth}。`,
-					en: `A subscription signs in inside mu: start mu, type /login, choose ChatGPT (OpenAI Codex), Claude, Grok or Google, and finish in the browser. The sign-in is kept in ${auth}.`,
+					zh: `订阅账号在 mu 里面登录：启动 mu，输入 /login，选 OpenAI (ChatGPT subscription)、Grok 或 Google，按提示在浏览器里完成。登录信息保存在 ${auth}。`,
+					en: `To use a subscription, sign in from inside mu: start mu, type /login, choose OpenAI (ChatGPT subscription), Grok or Google, and finish in the browser. The sign-in is saved in ${auth}.`,
 				}),
 			);
 			return "subscription";
@@ -619,11 +634,11 @@ class Setup {
 				matches.length > 1
 					? {
 							zh: `${this.names(matches)} 的密钥长得一样。用 --service 说明是哪家：${matches.map((service) => service.id).join(" 或 ")}`,
-							en: `keys of ${this.names(matches)} look the same. Say which with --service ${matches.map((service) => service.id).join(" or ")}`,
+							en: `${this.names(matches)} keys look the same. Choose one with --service ${matches.map((service) => service.id).join(" or ")}`,
 						}
 					: {
 							zh: "认不出这个密钥属于哪个服务。用 --service <id> 说明（mu setup --list 列出全部）",
-							en: "this key's shape names no service mu knows. Say which with --service <id> (mu setup --list)",
+							en: "mu doesn't recognize this key's format. Say which service it's for with --service <id> (mu setup --list)",
 						},
 				SETUP_EXIT.usage,
 			);
@@ -633,7 +648,7 @@ class Setup {
 				matches,
 				this.t({
 					zh: `${this.names(matches)} 的密钥长得一样。这个密钥是哪家的？mu 只把密钥发给它所属的服务。`,
-					en: `Keys of ${this.names(matches)} look the same. Which service is this key for? mu sends a key only to the service it belongs to.`,
+					en: `${this.names(matches)} keys look the same. Which service is this key for? mu only sends a key to the service it belongs to.`,
 				}),
 			);
 		}
@@ -641,7 +656,7 @@ class Setup {
 			SETUP_SERVICES.filter((service) => !service.keyless),
 			this.t({
 				zh: "mu 认不出这个密钥。它是哪个服务的？",
-				en: "mu does not recognise this key. Which service is it for?",
+				en: "mu doesn't recognize this key. Which service is it for?",
 			}),
 		);
 	}
@@ -657,9 +672,7 @@ class Setup {
 		let key = given;
 		if (key === undefined && !this.scripted) {
 			if (service.keyPage) {
-				this.io.say(
-					this.t({ zh: `密钥在这里创建：${service.keyPage}`, en: `Keys are made at ${service.keyPage}` }),
-				);
+				this.io.say(this.t({ zh: `密钥在这里创建：${service.keyPage}`, en: `Create a key at ${service.keyPage}` }));
 			}
 			key = await this.pasteKey();
 		}
@@ -679,7 +692,7 @@ class Setup {
 			this.io.warn(
 				this.t({
 					zh: `注意：这个密钥看起来是 ${this.names(matches)} 的；按 --service 发给 ${this.name(service)}。`,
-					en: `Note: this key looks like ${article(this.names(matches))} key; it goes to ${this.name(service)}, as --service says.`,
+					en: `Note: this key looks like ${article(this.names(matches))} key; sending it to ${this.name(service)}, as --service says.`,
 				}),
 			);
 			return { service, key };
@@ -728,7 +741,10 @@ class Setup {
 				);
 				if (/^https?:\/\/[^\s/]+/i.test(baseUrl)) break;
 				this.io.say(
-					this.t({ zh: "地址以 http:// 或 https:// 开头。", en: "The address starts with http:// or https://." }),
+					this.t({
+						zh: "地址以 http:// 或 https:// 开头。",
+						en: "The address must start with http:// or https://.",
+					}),
 				);
 			}
 		}
@@ -737,7 +753,7 @@ class Setup {
 				? "anthropic-messages"
 				: args.api === "openai" || this.scripted
 					? "openai-completions"
-					: await this.choose(this.t({ zh: "它用哪种接口？", en: "Which API does it speak?" }), [
+					: await this.choose(this.t({ zh: "它用哪种接口？", en: "Which API does it use?" }), [
 							{
 								label: this.t({
 									zh: "OpenAI 兼容（chat completions）",
@@ -761,7 +777,7 @@ class Setup {
 			const typed = await this.ask(
 				this.t({
 					zh: `给它起个简短的名字（字母、数字、-）[${provider}]：`,
-					en: `A short name for it in mu (letters, digits, -) [${provider}]: `,
+					en: `A short name for it in mu (letters, digits and -) [${provider}]: `,
 				}),
 			);
 			if (typed) provider = typed.toLowerCase().replace(/[^a-z0-9-]+/g, "-");
@@ -794,7 +810,7 @@ class Setup {
 				(await this.secret(
 					this.t({
 						zh: "粘贴它的 API 密钥；不需要密钥就直接回车（不会显示）：",
-						en: "Paste its API key, or press Enter if it takes none (not shown): ",
+						en: "Paste its API key, or press Enter if it doesn't need one (it won't be shown): ",
 					}),
 					true,
 				)) || undefined;
@@ -815,15 +831,15 @@ class Setup {
 			choices.push({ label: this.t({ zh: "再试一次", en: "Try again" }), value: "again" });
 			if (result.problem.kind !== "key") {
 				choices.push({
-					label: this.t({ zh: "不检查了，照样保存", en: "Save it without the check" }),
+					label: this.t({ zh: "不检查了，照样保存", en: "Save it without checking" }),
 					value: "unchecked",
 				});
 			}
 			choices.push({
-				label: this.t({ zh: "到此为止（什么都不改）", en: "Stop here (nothing is changed)" }),
+				label: this.t({ zh: "到此为止（什么都不改）", en: "Stop here (change nothing)" }),
 				value: "stop",
 			});
-			const next = await this.choose(this.t({ zh: "接下来怎么办？", en: "What now?" }), choices);
+			const next = await this.choose(this.t({ zh: "接下来怎么办？", en: "What next?" }), choices);
 			if (next === "stop") throw this.cancelled();
 			if (next === "unchecked") return { service, reach: reaches[0], key };
 			if (next === "key") key = await this.pasteKey();
@@ -845,11 +861,11 @@ class Setup {
 				key
 					? this.t({
 							zh: `正在用 ${where}检查密钥……`,
-							en: `Checking the key with ${this.name(service)} (${hostOf(reach.baseUrl)})...`,
+							en: `Checking the key with ${this.name(service)} (${hostOf(reach.baseUrl)})…`,
 						})
 					: this.t({
 							zh: `正在检查 ${where}……`,
-							en: `Checking ${this.name(service)} (${hostOf(reach.baseUrl)})...`,
+							en: `Checking ${this.name(service)} (${hostOf(reach.baseUrl)})…`,
 						}),
 			);
 			const result = await checkKey({
@@ -866,7 +882,7 @@ class Setup {
 						? this.t({ zh: "密钥可以用。", en: "The key works." })
 						: this.t({
 								zh: `可以用：列出了 ${count} 个模型。`,
-								en: `It works: ${count} model${count === 1 ? "" : "s"} listed.`,
+								en: `It works: ${count} model${count === 1 ? "" : "s"} available.`,
 							}),
 				);
 				return { ok: true, reach, listed: result.models };
@@ -899,13 +915,13 @@ class Setup {
 			if (this.scripted) {
 				throw this.fail({
 					zh: `${this.name(service)} 已经用订阅账号登录了。要改存密钥，加上 --yes`,
-					en: `${this.name(service)} is signed in with a subscription. To store a key instead, add --yes`,
+					en: `You're signed in to ${this.name(service)} with a subscription. To use a key instead, add --yes`,
 				});
 			}
 			const replace = await this.confirm(
 				this.t({
 					zh: `你已经用订阅账号登录了 ${this.name(service)}。改用这个密钥吗？登录会被替换（留有备份）。[y/N] `,
-					en: `You are signed in to ${this.name(service)} with a subscription. Use this key instead? The sign-in is replaced (a copy is kept). [y/N] `,
+					en: `You're signed in to ${this.name(service)} with a subscription. Use this key instead? It replaces the sign-in (a backup is kept). [y/N] `,
 				}),
 				false,
 			);
@@ -919,7 +935,7 @@ class Setup {
 		if (readJsonFile(path).state !== "unreadable") return;
 		throw this.fail({
 			zh: `${this.path(path)} 不是纯 JSON（也许有注释或写错了），mu setup 不改写它。先修好它，或手动把服务加进去。`,
-			en: `${this.path(path)} is not plain JSON (it may have comments, or a typo), and mu setup does not rewrite it. Fix it, or add the service by hand.`,
+			en: `${this.path(path)} isn't plain JSON (it may have comments or a typo), so mu setup won't rewrite it. Fix it, or add the service by hand.`,
 		});
 	}
 
@@ -934,7 +950,7 @@ class Setup {
 				this.io.say(
 					this.t({
 						zh: `注意：${this.name(service)} 没有列出 ${this.args.model}，照样使用。`,
-						en: `Note: ${this.name(service)} does not list ${this.args.model}; it is used anyway.`,
+						en: `Note: ${this.name(service)} doesn't list ${this.args.model}; using it anyway.`,
 					}),
 				);
 			}
@@ -953,14 +969,14 @@ class Setup {
 				? NOT_READY
 				: {
 						zh: `${this.name(service)} 没有列出模型。`,
-						en: `${this.name(service)} lists no models.`,
+						en: `${this.name(service)} doesn't list any models.`,
 					};
 			if (this.scripted) {
-				throw this.fail({ zh: `${none.zh}可以用 --model 指定一个。`, en: `${none.en} Name one with --model.` });
+				throw this.fail({ zh: `${none.zh}可以用 --model 指定一个。`, en: `${none.en} Specify one with --model.` });
 			}
 			this.io.say(this.t(none));
 			for (;;) {
-				const typed = await this.ask(this.t({ zh: "要用的模型名：", en: "The name of the model to use: " }));
+				const typed = await this.ask(this.t({ zh: "要用的模型名：", en: "Name of the model to use: " }));
 				if (typed) return typed;
 			}
 		}
@@ -976,7 +992,7 @@ class Setup {
 			this.io.say(
 				this.t({
 					zh: `  （还有 ${more} 个，输入名字也可以）`,
-					en: `  (${more} more: type a name to use one of them)`,
+					en: `  (${more} more; type a name to use one of them)`,
 				}),
 			);
 		}
@@ -995,7 +1011,7 @@ class Setup {
 			this.io.say(
 				this.t({
 					zh: `请输入 1-${shown.length} 之间的数字，或模型名。`,
-					en: `Type a number from 1-${shown.length}, or a model name.`,
+					en: `Type a number from 1 to ${shown.length}, or a model name.`,
 				}),
 			);
 		}
@@ -1012,13 +1028,13 @@ class Setup {
 		if (this.scripted) {
 			throw this.fail({
 				zh: `models.json 里的 ${target.reach.provider} 指向 ${old}。要改成 ${target.reach.baseUrl}，加上 --yes`,
-				en: `models.json has ${target.reach.provider} at ${old}. To point it at ${target.reach.baseUrl}, add --yes`,
+				en: `models.json already points ${target.reach.provider} at ${old}. To point it at ${target.reach.baseUrl}, add --yes`,
 			});
 		}
 		const move = await this.confirm(
 			this.t({
 				zh: `models.json 里已经有 ${target.reach.provider}，地址是 ${old}。改成 ${target.reach.baseUrl} 吗？[y/N] `,
-				en: `models.json already has ${target.reach.provider}, at ${old}. Point it at ${target.reach.baseUrl}? [y/N] `,
+				en: `models.json already points ${target.reach.provider} at ${old}. Point it at ${target.reach.baseUrl} instead? [y/N] `,
 			}),
 			false,
 		);
@@ -1055,7 +1071,7 @@ class Setup {
 			choices.push({
 				label: this.t({
 					zh: "Jev 免费版（推荐），在 OpenCode Zen 上：不用密钥，限时免费；以后加了密钥自动换用",
-					en: "Jev for free (recommended) on OpenCode Zen: no key, free for a limited time; a key added later takes over",
+					en: "Free Jev on OpenCode Zen (recommended): no key needed, free for a limited time; a key you add later takes over",
 				}),
 				value: "free",
 			});
@@ -1064,7 +1080,7 @@ class Setup {
 			choices.push({
 				label: this.t({
 					zh: "Jev（推荐），在 OpenCode Zen 上，用你的 OpenCode 密钥，按次计费",
-					en: "Jev (recommended) on OpenCode Zen, with your OpenCode key, billed per call",
+					en: "Jev on OpenCode Zen with your OpenCode key (recommended), billed per call",
 				}),
 				value: "opencode",
 			});
@@ -1073,22 +1089,22 @@ class Setup {
 			choices.push({
 				label: this.t({
 					zh: `Jev（推荐），用已经设置的密钥（${where}）`,
-					en: `Jev (recommended), with the key already set (${where})`,
+					en: `Jev with the key that's already set (recommended): ${where}`,
 				}),
 				value: "keep",
 			});
 		}
 		choices.push({
 			label: where
-				? this.t({ zh: "Jev，换一个新密钥", en: "Jev, with a new key" })
+				? this.t({ zh: "Jev，换一个新密钥", en: "Jev with a new key" })
 				: opencode
 					? this.t({
 							zh: `Jev，用 TypeSafe 的密钥：${JEV_PAGE}`,
 							en: `Jev with a TypeSafe key: ${JEV_PAGE}`,
 						})
 					: this.t({
-							zh: `Jev，用自己的密钥：又快又准，按次计费。密钥在 TypeSafe 申请：${JEV_PAGE}`,
-							en: `Jev with a key of your own: fast and accurate, billed per call. Get a key from TypeSafe: ${JEV_PAGE}`,
+							zh: `Jev，用自己的密钥：每个问题约 0.3 秒，按次计费。密钥在 TypeSafe 申请：${JEV_PAGE}`,
+							en: `Jev with your own key: about 0.3 s per question, billed per call. Get a key from TypeSafe: ${JEV_PAGE}`,
 						}),
 			value: "jev",
 		});
@@ -1096,7 +1112,7 @@ class Setup {
 			choices.push({
 				label: this.t({
 					zh: "Jev 免费版，在 OpenCode Zen 上：不用密钥，限时免费",
-					en: "Jev for free on OpenCode Zen: no key, free for a limited time",
+					en: "Free Jev on OpenCode Zen: no key needed, free for a limited time",
 				}),
 				value: "free",
 			});
@@ -1105,22 +1121,22 @@ class Setup {
 			choices.push({
 				label: this.t({
 					zh: `刚设置的模型（${model.provider}/${model.model}）：更慢，而且每次判断都要花 token`,
-					en: `The model you just set up (${model.provider}/${model.model}): slower, and every decision costs tokens`,
+					en: `The model you just set up (${model.provider}/${model.model}): slower, and every verdict costs tokens`,
 				}),
 				value: "model",
 			});
 		}
 		choices.push({
 			label: this.t({
-				zh: "暂时不要：mu 就像 pi 一样工作，没有判定器回答",
-				en: "Not now: mu then works like pi, with no judge answering",
+				zh: "暂时不要：mu 不用判定器，按默认规则工作",
+				en: "Not now: mu runs without a judge and uses its fallbacks",
 			}),
 			value: "none",
 		});
 		const picked = await this.choose(
 			this.t({
 				zh: "mu 工作时要做很多小判断：这条消息该怎么处理、这一步会不会违反你定的规则……判定器负责回答。选哪个判定器？",
-				en: "mu makes many small decisions as it works: how to take a message, whether a step breaks your rules. A judge answers them. Which judge?",
+				en: "As it works, mu faces many small decisions: how to handle a message, whether a step breaks your rules. A judge answers them. Which judge do you want?",
 			}),
 			choices,
 		);
@@ -1140,7 +1156,7 @@ class Setup {
 					throw this.fail(
 						{
 							zh: "--judge opencode 需要 OpenCode 的密钥：用 --service opencode 设置它，或先设置 OPENCODE_API_KEY",
-							en: "--judge opencode needs an OpenCode key: set it up with --service opencode, or set OPENCODE_API_KEY first",
+							en: "--judge opencode needs an OpenCode key: set one up with --service opencode, or set OPENCODE_API_KEY first",
 						},
 						SETUP_EXIT.usage,
 					);
@@ -1155,14 +1171,14 @@ class Setup {
 					throw this.fail(
 						{
 							zh: "--judge jev 需要 Jev 密钥：写在标准输入的第二行，或先设置 TYPESAFE_API_KEY",
-							en: "--judge jev needs a Jev key: the second line of stdin, or TYPESAFE_API_KEY set beforehand",
+							en: "--judge jev needs a Jev key: put it on the second line of stdin, or set TYPESAFE_API_KEY first",
 						},
 						SETUP_EXIT.usage,
 					);
 				}
 				if (key === this.modelKey) {
 					throw this.fail(
-						{ zh: "Jev 密钥和模型的密钥是同一个", en: "the Jev key is the same as the model's key" },
+						{ zh: "Jev 密钥和模型的密钥是同一个", en: "the Jev key is the same as the model key" },
 						SETUP_EXIT.usage,
 					);
 				}
@@ -1170,7 +1186,7 @@ class Setup {
 				if (current && current !== key && !this.args.yes) {
 					throw this.fail({
 						zh: `${this.path(this.deps.paths.envFile)} 里已经有 TYPESAFE_API_KEY。要替换它，加上 --yes`,
-						en: `${this.path(this.deps.paths.envFile)} has a TYPESAFE_API_KEY already. To replace it, add --yes`,
+						en: `${this.path(this.deps.paths.envFile)} already has a TYPESAFE_API_KEY. To replace it, add --yes`,
 					});
 				}
 				return { kind: "jev", key };
@@ -1188,14 +1204,14 @@ class Setup {
 			const key = await this.secret(
 				this.t({
 					zh: "粘贴 Jev 密钥（TYPESAFE_API_KEY，不会显示）：",
-					en: "Paste the Jev key (TYPESAFE_API_KEY, not shown): ",
+					en: "Paste the Jev key (TYPESAFE_API_KEY; it won't be shown): ",
 				}),
 			);
 			if (key === this.modelKey) {
 				this.io.say(
 					this.t({
 						zh: `这是刚才给模型的密钥。Jev 的密钥在 TypeSafe 申请：${JEV_PAGE}`,
-						en: `That is the key you gave for the model. A Jev key comes from TypeSafe: ${JEV_PAGE}`,
+						en: `That's the key you gave for the model. Get a Jev key from TypeSafe: ${JEV_PAGE}`,
 					}),
 				);
 				continue;
@@ -1271,7 +1287,7 @@ class Setup {
 							modelsPath,
 							custom || moved
 								? this.t({ zh: `${provider}：${reach.baseUrl}`, en: `${provider} at ${reach.baseUrl}` })
-								: this.t({ zh: `给 ${provider} 加上 ${model}`, en: `${model} added to ${provider}` }),
+								: this.t({ zh: `给 ${provider} 加上 ${model}`, en: `added ${model} to ${provider}` }),
 						),
 					);
 				}
@@ -1291,14 +1307,14 @@ class Setup {
 					saved.push(
 						this.savedLine(
 							settingsPath,
-							this.t({ zh: `默认模型 ${provider}/${model}`, en: `start on ${provider}/${model}` }),
+							this.t({ zh: `默认模型 ${provider}/${model}`, en: `default model ${provider}/${model}` }),
 						),
 					);
 				} catch {
 					notes.push(
 						this.t({
 							zh: `${this.path(settingsPath)} 读不了，默认模型没有保存。在 mu 里用 /model 选它。`,
-							en: `${this.path(settingsPath)} could not be read, so the default model was not saved. Choose it inside mu with /model.`,
+							en: `Couldn't read ${this.path(settingsPath)}, so the default model wasn't saved. Choose it inside mu with /model.`,
 						}),
 					);
 				}
@@ -1311,16 +1327,16 @@ class Setup {
 			for (const secret of [target?.key, judge?.kind === "jev" ? judge.key : undefined]) {
 				if (secret) reason = reason.replaceAll(secret, "…");
 			}
-			this.io.warn(this.t({ zh: `mu setup：保存时出错：${reason}`, en: `mu setup: saving failed: ${reason}` }));
+			this.io.warn(this.t({ zh: `mu setup：保存时出错：${reason}`, en: `mu setup: couldn't save: ${reason}` }));
 			if (saved.length > 0) {
-				this.io.warn(this.t({ zh: "出错前已经保存的：", en: "Saved before that:" }));
+				this.io.warn(this.t({ zh: "出错前已经保存的：", en: "Saved before the error:" }));
 				for (const entry of saved) this.io.warn(entry);
 			}
 			if (backups.path) {
 				this.io.warn(
 					this.t({
 						zh: `原来的文件在 ${this.path(backups.path)}`,
-						en: `The earlier versions are in ${this.path(backups.path)}`,
+						en: `The previous versions are in ${this.path(backups.path)}`,
 					}),
 				);
 			}
@@ -1334,7 +1350,7 @@ class Setup {
 			this.io.say(
 				this.t({
 					zh: `改动前的文件已复制到 ${this.path(backups.path)}`,
-					en: `The files as they were are copied to ${this.path(backups.path)}`,
+					en: `Backed up the previous files to ${this.path(backups.path)}`,
 				}),
 			);
 		}
@@ -1371,7 +1387,7 @@ class Setup {
 			notes.push(
 				this.t({
 					zh: `${this.path(configPath)} 不是纯 JSON，没有改它。请手动加上 "tiers": ${JSON.stringify(tiers)}`,
-					en: `${this.path(configPath)} is not plain JSON and was left as it is. Add "tiers": ${JSON.stringify(tiers)} by hand.`,
+					en: `${this.path(configPath)} isn't plain JSON, so it was left unchanged. Add "tiers": ${JSON.stringify(tiers)} by hand.`,
 				}),
 			);
 		} else if (tiers) {
@@ -1394,7 +1410,7 @@ class Setup {
 				notes.push(
 					this.t({
 						zh: `注意：环境变量里也有 TYPESAFE_API_KEY，它比 ${this.path(paths.envFile)} 优先。到设置它的地方（例如 ~/.zshrc）改掉或删掉。`,
-						en: `Note: TYPESAFE_API_KEY is also set in your environment, and it wins over ${this.path(paths.envFile)}. Change or remove it where it is set (~/.zshrc, for example).`,
+						en: `Note: TYPESAFE_API_KEY is also set in your environment and takes precedence over ${this.path(paths.envFile)}. Change or remove it where it's set (~/.zshrc, for example).`,
 					}),
 				);
 			}
@@ -1404,7 +1420,7 @@ class Setup {
 			notes.push(
 				this.t({
 					zh: `注意：环境变量 MU_JUDGE=${override} 比 mu.json 优先，由它决定判定器。`,
-					en: `Note: MU_JUDGE=${override} is set in your environment; it decides the judge over mu.json.`,
+					en: `Note: MU_JUDGE=${override} is set in your environment and takes precedence over mu.json for the judge.`,
 				}),
 			);
 		}
@@ -1415,7 +1431,7 @@ class Setup {
 			target && model
 				? this.t({
 						zh: `完成。mu 会用 ${this.name(target.service)} · ${model} 开始工作。`,
-						en: `Done. mu starts on ${this.name(target.service)} · ${model}.`,
+						en: `Done. mu will start on ${this.name(target.service)} · ${model}.`,
 					})
 				: this.t({ zh: "完成。", en: "Done." });
 		const judged =
@@ -1430,7 +1446,7 @@ class Setup {
 							: judge.kind === "free"
 								? this.t({
 										zh: "判定器：Jev，加密钥之前用 OpenCode Zen 上限时免费的版本。",
-										en: " Judge: Jev, free on OpenCode Zen for a limited time until you add a key.",
+										en: " Judge: Jev, using the free version on OpenCode Zen until you add a key.",
 									})
 								: this.t({ zh: "判定器：Jev。", en: " Judge: Jev." });
 		this.io.say("");
@@ -1439,7 +1455,7 @@ class Setup {
 			target
 				? this.t({
 						zh: "在 mu 里用 /model 换模型；随时可以再运行 mu setup。",
-						en: "Switch models inside mu with /model; run mu setup again any time.",
+						en: "Switch models inside mu with /model, and run mu setup again any time.",
 					})
 				: this.t({ zh: "启动 mu 后输入 /login 登录。", en: "Start mu and type /login to sign in." }),
 		);

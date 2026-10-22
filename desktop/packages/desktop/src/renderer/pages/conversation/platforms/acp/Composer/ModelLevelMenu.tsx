@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import AionInlineSearchInput from '@/renderer/components/base/AionInlineSearchInput';
+import MuInlineSearchInput from '@/renderer/components/base/MuInlineSearchInput';
 import {
   DROPDOWN_SEARCH_THRESHOLD,
   RUNTIME_SUBMENU_TRIGGER_PROPS,
@@ -114,7 +114,7 @@ export function modelLevelMenu(
     <Menu>
       {total > DROPDOWN_SEARCH_THRESHOLD ? (
         <div className='px-6px pt-4px pb-6px' style={{ background: 'var(--color-bg-popup)' }}>
-          <AionInlineSearchInput
+          <MuInlineSearchInput
             value={query}
             onChange={onQuery}
             placeholder={t('agent.model.searchPlaceholder')}

@@ -7,7 +7,7 @@ import { basename, join } from "node:path";
 import { getAgentDir, type Theme } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
-import { swarmRouting } from "../../decisions/swarm-routing.ts";
+import { type RoutingInput, type RoutingOutcome, swarmRouting } from "../../decisions/swarm-routing.ts";
 import { say } from "../../language.ts";
 import { stopPlan } from "../../platform.ts";
 import {
@@ -61,7 +61,7 @@ export type SwarmRunner = BeeRunner<SwarmAssignment>;
 /** A sub-agent's process ended before its run did. Killed from outside, it has no exit code but the signal that ended it. */
 export function exitedEarly(code: number | null, signal: NodeJS.Signals | null, detail: string): Error {
 	const how = code !== null ? `exited with code ${code}` : `was ended by ${signal ?? "a signal"}`;
-	return codedError(`sub-agent ${how} before it finished${detail ? `: ${detail}` : ""}`, {
+	return codedError(`subagent ${how} before it finished${detail ? `: ${detail}` : ""}`, {
 		code: "exited_early",
 		params: code !== null ? { exitCode: code } : { signal: signal ?? "unknown" },
 	});
@@ -95,6 +95,41 @@ export function thinkingForRoute(route: {
 		return route.sessionThinking as AgentThinking;
 	}
 	return route.judged;
+}
+
+/**
+ * Whether the judge's difficulty and reasoning ratings can change anything for a task: with a model ladder they
+ * pick its rung, and they set the thinking of a role that runs on a model of its own without a thinking pin
+ * (`thinkingForRoute`). `roles` are the roles that may take the task. Otherwise the call would be wasted.
+ */
+export function ratingMatters(ladder: readonly string[], roles: readonly (AgentDefinition | undefined)[]): boolean {
+	return ladder.length > 0 || roles.some((agent) => agent?.model !== undefined && agent.thinking === undefined);
+}
+
+/**
+ * Routes the tasks that need the judge, in one batch, and gives the others the fallback without a call: a task
+ * whose role is settled and whose ratings could change nothing has nothing to ask.
+ */
+export async function routeTasks(
+	runtime: KyrnRuntime,
+	inputs: readonly RoutingInput[],
+	signal: AbortSignal | undefined,
+): Promise<RoutingOutcome[]> {
+	const asks = (input: RoutingInput) => Object.keys(swarmRouting.questionsFor?.(input) ?? {}).length > 0;
+	const asked = inputs.flatMap((input, index) => (asks(input) ? [index] : []));
+	const routes =
+		asked.length > 0
+			? await runtime.engine.decideMany(
+					swarmRouting,
+					asked.map((index) => inputs[index]),
+					{ signal },
+				)
+			: [];
+	return inputs.map((input, index) => {
+		const at = asked.indexOf(index);
+		// The verdict whatever the mode: swarm.routing acts in shadow too (`actsInShadow`).
+		return at >= 0 ? routes[at].outcome : swarmRouting.fallback(input);
+	});
 }
 
 function piInvocation(args: string[]): { command: string; args: string[] } {
@@ -245,7 +280,7 @@ export const spawnRunner: SwarmRunner = async (task, assignment, signal, env, ob
 			};
 			const onAbort = () => {
 				terminate();
-				finish(new Error("the sub-agent was stopped"));
+				finish(new Error("the subagent was stopped"));
 			};
 			if (signal?.aborted) onAbort();
 			else signal?.addEventListener("abort", onAbort, { once: true });
@@ -322,7 +357,7 @@ export function announceRouting(
 		content: [
 			{
 				type: "text",
-				text: `choosing a role, a model and a thinking level for ${count} sub-agent${count === 1 ? "" : "s"}…`,
+				text: `choosing a role, a model and a thinking level for ${count} subagent${count === 1 ? "" : "s"}…`,
 			},
 		],
 		// No snapshot yet: a client that translates says the same from the code.
@@ -469,11 +504,11 @@ export function registerSwarm(runtime: KyrnRuntime, runner: SwarmRunner = spawnR
 	pi.registerTool({
 		name: "delegate",
 		label: "Delegate",
-		description: `Run tasks in fresh sub-agents, each with its own context window: in parallel for parts that do not depend on each other and for side work whose details you do not need (broad code search, web research), or with chain: true one after another, each step handed what the step before reported (scout, then plan, then implement). Each sub-agent sees only its own instructions, so make them self-contained. Give each part what must be true when it is done (done) and, when it is for an item of your todo list, that item's id (serves): the sub-agent works to that list, and you get back which criteria it met with its evidence. A fitting role, model and thinking level are chosen per task; name a role only when you want a specific one (${agents()
+		description: `Run tasks in fresh subagents, each with its own context window: in parallel for parts that do not depend on each other and for side work whose details you do not need (broad code search, web research), or with chain: true one after another, each step handed what the step before reported (scout, then plan, then implement). Each subagent sees only its own instructions, so make them self-contained. Give each part what must be true when it is done (done) and, when it is for an item of your todo list, that item's id (serves): the subagent works to that list, and you get back which criteria it met with its evidence. A fitting role, model and thinking level are chosen per task; name a role only when you want a specific one (${agents()
 			.map((agent) => agent.name)
 			.join(
 				", ",
-			)}). Returns each sub-agent's final report. In a git repository a sub-agent that edits files works in an isolated copy, and its changes come back as a patch that only apply_patch_from brings in.`,
+			)}). Returns each subagent's final report. In a git repository a subagent that edits files works in an isolated copy, and its changes come back as a patch that only apply_patch_from brings in.`,
 		parameters: Type.Object({
 			tasks: Type.Array(
 				Type.Object({
@@ -533,14 +568,18 @@ export function registerSwarm(runtime: KyrnRuntime, runner: SwarmRunner = spawnR
 				tasks.map((task) => `${task.title}: ${task.instructions}`),
 				signal,
 			);
-			const routes = await runtime.engine.decideMany(
-				swarmRouting,
-				tasks.map((task) => ({
-					task: clip(`${task.title}: ${task.instructions}`, 600),
-					// A role the caller named is settled, so the judge is only asked how hard the task is.
-					agents: task.agent && byName.has(task.agent) ? undefined : menu,
-				})),
-				{ signal },
+			const routes = await routeTasks(
+				runtime,
+				tasks.map((task) => {
+					const named = task.agent ? byName.get(task.agent) : undefined;
+					return {
+						task: clip(`${task.title}: ${task.instructions}`, 600),
+						// A role the caller named is settled, so the judge is only asked how hard the task is, if that matters.
+						agents: named ? undefined : menu,
+						rate: ratingMatters(options.models, named ? [named] : roles),
+					};
+				}),
+				signal,
 			);
 			const known = (await lessons?.catch(() => undefined)) ?? [];
 			tasks.forEach((task, index) => {
@@ -549,12 +588,10 @@ export function registerSwarm(runtime: KyrnRuntime, runner: SwarmRunner = spawnR
 			});
 			const current = ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined;
 			const sessionThinking = pi.getThinkingLevel();
-			const assignments: SwarmAssignment[] = routes.map((route, index) => {
+			const assignments: SwarmAssignment[] = routes.map((verdict, index) => {
 				const named = tasks[index].agent ? byName.get(tasks[index].agent ?? "") : undefined;
-				// The judge routes whatever the decision mode: a delegated task has no "unchanged behaviour" to fall back to.
-				const judged = route.judged?.agent ? byName.get(route.judged.agent) : undefined;
+				const judged = verdict.agent ? byName.get(verdict.agent) : undefined;
 				const agent = named ?? judged ?? byName.get(options.defaultAgent);
-				const verdict = route.judged ?? route.outcome;
 				const model = agent?.model ?? pickModel(options.models, verdict.strength) ?? current;
 				return {
 					agent,
@@ -664,7 +701,7 @@ export function registerSwarm(runtime: KyrnRuntime, runner: SwarmRunner = spawnR
 	pi.registerCommand("agents", {
 		description: say({
 			zh: "列出 delegate 工具能用的子代理角色，以及在哪里加你自己的",
-			en: "List the sub-agent roles the delegate tool can use, and where to add your own",
+			en: "List the subagent roles the delegate tool can use, and where to add your own",
 		}),
 		handler: async (_args, ctx) => {
 			const dir = options.agentsDir || join(getAgentDir(), "agents");
@@ -674,7 +711,7 @@ export function registerSwarm(runtime: KyrnRuntime, runner: SwarmRunner = spawnR
 					...agents().map(describeAgent),
 					"",
 					`models: ${ladder}`,
-					`Add or override a role with a markdown file in ${dir} (frontmatter: name, description, tools, model, thinking).`,
+					`Add or override a role with a Markdown file in ${dir} (frontmatter: name, description, tools, model, thinking).`,
 				].join("\n"),
 				"info",
 			);
@@ -699,10 +736,10 @@ export function controlSwarm(runtime: KyrnRuntime, args: string, ctx: SwarmComma
 	const runs = activeRuns();
 	// What isolated sub-agents handed back stays listed after they are gone: it is waiting for a decision.
 	const patches = patchesOf(runtime).map((record) => `  ${describeRecord(record)}`);
-	const patchList = patches.length > 0 ? `patches (apply_patch_from brings one in)\n${patches.join("\n")}` : "";
+	const patchList = patches.length > 0 ? `patches (apply_patch_from applies one)\n${patches.join("\n")}` : "";
 	if (runs.length === 0) {
 		ctx.ui.notify(
-			[patchList || "No sub-agents are running. They start when the agent uses its delegate or hive tool.", idle]
+			[patchList || "No subagents are running. They start when the agent uses its delegate or hive tool.", idle]
 				.filter(Boolean)
 				.join("\n"),
 			"info",
@@ -720,10 +757,10 @@ export function controlSwarm(runtime: KyrnRuntime, args: string, ctx: SwarmComma
 		);
 		ctx.ui.notify(
 			reached === 0
-				? `Nothing to ${verb}${name ? ` named "${name}"` : ""}. Running: ${runs.flatMap((run) => run.bees.map((bee) => bee.name)).join(", ")}`
+				? `${name ? `No running subagent is named "${name}"` : `Nothing to ${verb}`}. Running: ${runs.flatMap((run) => run.bees.map((bee) => bee.name)).join(", ")}`
 				: verb === "stop"
-					? `Asked ${reached} sub-agent${reached === 1 ? "" : "s"} to stop and report. Anything that has not reported in time is ended.`
-					: `Ended ${reached} sub-agent${reached === 1 ? "" : "s"}. What they had found is kept.`,
+					? `Asked ${reached} subagent${reached === 1 ? "" : "s"} to stop and report. Any that don't report in time will be stopped.`
+					: `Stopped ${reached} subagent${reached === 1 ? "" : "s"}. Their findings so far are kept.`,
 			reached === 0 ? "warning" : "info",
 		);
 		return;
@@ -750,7 +787,7 @@ export function registerSwarmCommand(runtime: KyrnRuntime): void {
 	runtime.pi.registerCommand("swarm", {
 		description: say({
 			zh: "正在干活的子代理：/swarm 看每个在做什么，/swarm stop [名字] 让它现在交报告，/swarm kill [名字] 立刻结束它",
-			en: "Sub-agents at work: /swarm (what each one is doing), /swarm stop [name] (report now), /swarm kill [name]",
+			en: "Show what each subagent is doing; /swarm stop [name] asks it to report now, /swarm kill [name] stops it immediately",
 		}),
 		// No argument completions on purpose: with them the first Enter picks a completion and only the
 		// second one runs the command, and "stop" is typed by someone who wants it to happen now.

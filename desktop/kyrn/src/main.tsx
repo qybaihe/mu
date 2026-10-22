@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import CodeEditor from './vendor/aionui/CodeEditor';
+import CodeEditor from './vendor/codeEditor/CodeEditor';
 import {
   contentText,
   foldEvents,
@@ -304,7 +304,7 @@ function App() {
           <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
             {theme === 'light' ? '切换深色外观' : '切换浅色外观'}
           </button>
-          <small>KYRN 0.1 · 基于 AionUi 界面组件</small>
+          <small>KYRN 0.1</small>
         </div>
       </aside>
       <main className='conversation'>
@@ -329,7 +329,7 @@ function App() {
                 交给清晰的判断。
               </h1>
               <p>
-                Jev 判断任务，KYRN 组织执行。
+                判定器判断任务，KYRN 组织执行。
                 <br />
                 每一次路由、工具调用和蜂群进展，都在眼前。
               </p>

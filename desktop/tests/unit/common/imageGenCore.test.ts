@@ -13,7 +13,7 @@ import { processImageUri, saveGeneratedImage, executeImageGeneration } from '@/c
 let cleanupDirs: string[] = [];
 
 function createWorkspace(): string {
-  const dir = mkdtempSync(join(tmpdir(), 'aionui-image-gen-test-'));
+  const dir = mkdtempSync(join(tmpdir(), 'mu-image-gen-test-'));
   cleanupDirs.push(dir);
   return dir;
 }

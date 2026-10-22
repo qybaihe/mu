@@ -1,9 +1,3 @@
-/**
- * @license
- * Copyright 2026 AionUi (aionui.com)
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { describe, expect, it } from 'vitest';
 import { truncateMenuLabel } from '@/process/utils/tray';
 import i18n, { changeLanguage } from '@/process/services/i18n';

@@ -1,5 +1,6 @@
 import { DESCRIPTION_THRESHOLD } from "../../decisions/tool-description.ts";
 import {
+	holdsProse,
 	INJECTION_THRESHOLD,
 	type InjectionOutcome,
 	looksInjected,
@@ -90,9 +91,10 @@ export function screenedFrom(text: string): number {
  * in front of the screened result.
  *
  * Passages that a phrase only an injection uses already raised are judged in requests of their own, so text written
- * to steer a model cannot reach the request that judges the rest (as hermes-jev-skills does). A passage the judge did
- * not answer (an outage, a timeout, past the passage limit) is withheld when such a phrase is in it: rules are the
- * floor. In shadow the verdicts are only recorded.
+ * to steer a model cannot reach the request that judges the rest (as hermes-jev-skills does). A passage with no
+ * prose in it (`holdsProse`: a listing, links, headers) is not put to the judge at all. A passage the judge did not
+ * answer (no prose, an outage, a timeout, past the passage limit, no judge trusted to screen) is withheld when such a
+ * phrase is in it: rules are the floor. In shadow the verdicts are only recorded.
  */
 export function registerInjection(runtime: KyrnRuntime): void {
 	const options = runtime.options("injection", {
@@ -107,6 +109,8 @@ export function registerInjection(runtime: KyrnRuntime): void {
 		passageChars: 900,
 		/** Passages judged per result; the rest get the rules only. */
 		maxPassages: 96,
+		/** Words in a row a passage needs to be put to the judge (`holdsProse`); one without gets the rules only. 0: all. */
+		proseWords: 6,
 		concurrency: 4,
 		/** A verdict later than this leaves the result to the rules: a page is not held longer than that. */
 		waitMs: 6000,
@@ -167,11 +171,16 @@ export function registerInjection(runtime: KyrnRuntime): void {
 		);
 	};
 
-	/** The plain passages and the ones a phrase raised, each set in requests of its own; verdicts back in order. */
+	/**
+	 * The plain passages and the ones a phrase raised, each set in requests of its own; verdicts back in order. A plain
+	 * passage with no prose in it is not asked about: its verdict stays null, and the rules read it.
+	 */
 	const judgeAll = async (source: string, pieces: readonly string[], signal: AbortSignal | undefined) => {
 		const asked = pieces.slice(0, Math.max(0, options.maxPassages));
 		const raised = asked.map(looksInjected);
-		const plain = asked.flatMap((_, index) => (raised[index] ? [] : [index]));
+		const plain = asked.flatMap((piece, index) =>
+			raised[index] || !holdsProse(piece, options.proseWords) ? [] : [index],
+		);
 		const flagged = asked.flatMap((_, index) => (raised[index] ? [index] : []));
 		const [plainAnswers, flaggedAnswers] = await Promise.all([
 			judge(
