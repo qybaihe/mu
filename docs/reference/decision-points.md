@@ -60,7 +60,7 @@ The feature column names the switch in `features` that turns the whole behavior 
 
 | Decision point | Name | What it decides | Feature |
 | --- | --- | --- | --- |
-| `turn.drift` | Drift monitor | Every few steps, checks that the work still serves the goal; rules catch the agent going in circles. | [`monitor`](features.md#monitor) |
+| `turn.drift` | Drift monitor | Every few steps or minutes, checks that the run still moves toward the goal, reading exit codes, times and how long since the last progress; rules catch the agent going in circles. | [`monitor`](features.md#monitor) |
 | `turn.rewind` | Judged rewind | When the monitor sees the agent going in circles or the same command failing again and again, judges whether the approach is a dead end. Only a confident dead end with no progress makes mu propose going back to the turn's checkpoint; it never rewinds on its own. | [`checkpoint`](features.md#checkpoint) |
 | `turn.completion` | Completion check | When the model says it's done, checks whether anything verified the work; if not, nudges it once. | [`completion`](features.md#completion) |
 | `turn.continue` | Stopped short | When a run ends on "next I'll run the tests" without doing it, or asks permission for work you already asked for, sends the agent back to it. Never nudges a step that is hard to undo or reaches beyond this machine (push, publish, delete, pay). At most twice per message. | [`continuation`](features.md#continuation) |

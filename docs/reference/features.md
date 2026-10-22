@@ -227,6 +227,10 @@ On by default: yes. Decision points: `turn.drift`.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `every` | `6` | Tool calls between checks. Range 1 to 100. |
+| `minMinutes` | `3` min | At least this long between checks. A check needs both: the tool calls above, and this long since the last check. Range 0 to 60. |
+| `maxMinutes` | `10` min | Check at least this often. A check comes after this long whatever happened, so a long reply with no tool call is checked too. Range 1 to 120. |
+| `stuckMinutes` | `10` min | No progress for this long before a drift steer. It also takes two drift readings in a row, each at least 90% sure. Progress is a new file written, more tests passing, a different error, a command of a minute or more that succeeds, or an item ticked. Range 0 to 120. |
+| `cooldownMinutes` | `15` min | At least this long between two steers. The judge's steers, on drift or a loop, wait this long after the monitor's last steer, the loop rule's included. Range 0 to 240. |
 | `repeats` | `3` | Repeats that count as a loop. Only the same input with the same result counts as the same call; paging through a file does not. Range 2 to 20. |
 | `window` | `8` | Recent calls checked. Range 2 to 100. |
 | `unattended` | `false` | Also check for drift in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default. The rule that catches going in circles still applies. |
