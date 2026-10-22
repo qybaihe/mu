@@ -41,6 +41,7 @@
 - In `mu --print`, json mode and sub-agents the system prompt is about 375 tokens shorter per request (9.1k to 7.7k characters on a faux-provider print session): pi's `<docs>` list of its guides becomes one line with the path to the docs, and the `<mu>` section leaves out the commands to type, the reply to act on, the hints before a turn and the `browse` tool. In Terminal-Bench runs the docs were never read in 286 trials. Interactive and desktop sessions keep both (`features.welcome.unattended` brings them back elsewhere).
 - `web_fetch`'s description, its note on a page that needs JavaScript and `web_search`'s advice when no source answers name the `browse` tool only when the model has it; before, an unattended run, which leaves `browse` out, was told to use it.
 - The settings texts added in this release for the drift monitor's timing options, sub-agents taking the session's skills and capabilities, and the unattended-run options of checkpoints, notification routing, judge warm-up and the welcome note are in all eleven extra languages.
+- The judgment layer's bundle is split: code it imports only when used (the Google sign-in providers' request code with Google's SDK, 1.2 MB) moves from `judge/mu/index.js` (3.5 MB to 2.4 MB) to chunks beside it, which Node reads and compiles only on first use. Importing the extension takes about 9 ms less on a cold compile cache (48 to 40 ms on an Apple M6), at every start and in every sub-agent. The build imports every chunk once to check that Node can.
 
 ### Fixed
 
