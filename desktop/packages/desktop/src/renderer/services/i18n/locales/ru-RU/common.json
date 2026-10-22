@@ -1313,7 +1313,7 @@
     "compactionDropped_other": "Удалено {{count}} вызова",
     "compactionDropped_few": "Удалено {{count}} вызова",
     "compactionDropped_many": "Удалено {{count}} вызовов",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}} определяет тип сообщения…",
       "classified": "Тип по оценке {{judge}}: {{type}}",
       "byRule": "Тип определён правилом: {{type}}",

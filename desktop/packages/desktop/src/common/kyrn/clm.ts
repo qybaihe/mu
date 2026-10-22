@@ -1,6 +1,6 @@
 /**
- * CLM-8B (github.com/Contrastive-LM/CLM) served by `clm-serve`: a judge that answers the questions mu asks Jev, over
- * the same System One protocol. The harness calls it (the `clm` judge type of kyrn-judge's registry); the app keeps
+ * CLM-8B (github.com/Contrastive-LM/CLM) served by `clm-serve`: a judge that answers the same questions as Jev,
+ * TypeSafe's hosted judge model, over the same System One protocol. The harness calls it (the `clm` judge type of kyrn-judge's registry); the app keeps
  * its address and key, and asks the server how it is.
  */
 

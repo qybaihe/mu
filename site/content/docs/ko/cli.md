@@ -47,7 +47,7 @@ mu                     # 현재 디렉터리에서 대화형 세션 시작
 | `/mu mode <point> <off\|shadow\|active>` | 이 세션에서 판정 지점 하나, 또는 `default`로 전부를 전환하기 |
 | `/frame` | 작업 프레임: 목표, 여러분의 제약과 그 출처, 인수 조건 |
 | `/goal <condition>` | 조건이 충족될 때까지 계속 작업하기. `/goal clear`로 끝내기 |
-| `/permissions` | 전체 접근, *Jev 승인*, 최소 권한 |
+| `/permissions` | 전체 접근, *판정 모드*, 최소 권한 |
 | `/board` | 이 프로젝트에서 쉬운 말 보드 켜고 끄기. `/board model`로 보드의 모델 고르기 |
 | `/remember <text>`, `/lessons`, `/forget <id>` | 교훈 하나 남기기, 교훈 목록 보기, 하나 사용 중지하기 |
 | `/review`, `/commit` | 변경 사항을 리뷰하고 지적 사항을 P0부터 P3까지 나누기, 변경 사항을 커밋으로 나누기 |
@@ -72,7 +72,7 @@ pi의 자체 명령어는 그대로예요: `/model`, `/thinking`, `/login`, `/re
 | --- | --- |
 | `MU_JUDGE=laya,jev mu` | 이번 실행에서만 쓸 판정기. `MU_JUDGE=off`는 커널을 꺼요. |
 | `MU_JUDGE_MODE=shadow mu` | 이번 실행에서 모든 판정 지점을 섀도로 |
-| `MU_PERMISSIONS=ask mu` | 이번 실행의 권한 모드: `full`, `jev`, `ask` |
+| `MU_PERMISSIONS=ask mu` | 이번 실행의 권한 모드: `full`, `judge`, `ask` |
 | `MU_LANG=zh-CN mu` | mu 자체 메시지를 중국어(`zh`)나 영어(그 밖의 값)로 |
 
 전체 목록은 [설정](@docs/configuration#env)에 있어요.

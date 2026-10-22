@@ -59,10 +59,10 @@ mu 看不懂的部分会退回默认值，而不是让 mu 停下。完全无法�
 | `MU_JUDGE` | 这次运行用的判定器，用逗号分隔：`laya`、`laya,jev`、`jev-opencode-free`、`classifier:<provider>/<model>`、`llm:<provider>/<model>`。`off` 关掉判定内核。 |
 | `MU_JUDGE_MODE` | 这次运行的默认模式：`off`、`shadow` 或 `active` |
 | `MU_WRITER` | 写作模型的 `provider/model` |
-| `MU_PERMISSIONS` | 这次运行的权限模式：`full`、`jev` 或 `ask` |
+| `MU_PERMISSIONS` | 这次运行的权限模式：`full`、`judge` 或 `ask` |
 | `MU_LOCAL_JUDGE_URL` | 本地判定器服务器的地址，用于 `mu judge start` 启动的那个之外的服务器 |
 
-Jev 的密钥，每个只发给它自己的服务：`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`、`MU_JUDGE_CLM_API_KEY`。
+托管判定器的密钥，每个只发给它自己的服务：`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`、`MU_JUDGE_CLM_API_KEY`。
 
 启动器：
 

@@ -49,7 +49,7 @@ There were no recorded forgetting or compaction operations in this sample.
   is separate from prompt caching: changing top-level options can disable delta
   continuation without proving a cache miss on the subsequent full request.
 - Codex reasoning changes remain a hypothesis to measure, not a reason to disable
-  Jev routing globally. The short-gap miss above had no recorded effort change.
+  judge routing globally. The short-gap miss above had no recorded effort change.
 
 ## Fixed: stable forgetting epochs
 

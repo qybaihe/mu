@@ -29,7 +29,7 @@ If none of this helps, [open an issue](https://github.com/qybaihe/mu/issues/new/
 
 **The judge seems to do nothing.** A point in shadow records its verdicts and changes nothing, and one that is off isn't asked. `/status` shows each point's mode; look for `"default": "shadow"` or `"off"` in `~/.mu/agent/mu.json`, or a `MU_JUDGE_MODE` in your environment.
 
-**"No judge is available yet, so mu asks about each step."** In *Jev approves* mode, mu asks about every step that needs approval when no judge can answer: no key and the free Jev unavailable, an exhausted account or only a local judge, which isn't trusted with approvals. Set a Jev key (`mu setup`), or switch the mode with `/permissions`.
+**"No judge is available yet, so mu asks about each step."** In *Judge mode*, mu asks about every step that needs approval when no judge can answer: no key and the free Jev unavailable, an exhausted account or only a local judge, which isn't trusted with approvals. Set a Jev key (`mu setup`), or switch the mode with `/permissions`.
 
 **The free Jev stopped answering.** It is OpenCode Zen's limited-time offer, and mu says so when it ends. Set a key for one of the [Jev services](@docs/judges#jev), or choose another judge.
 

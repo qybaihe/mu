@@ -19,8 +19,8 @@ mu comes in two forms: a **desktop app** that carries everything it needs, and t
    `SHA256SUMS` on the release page lists the checksum of every file. The macOS builds are signed and notarized by Apple. The Windows builds aren't code-signed yet, so SmartScreen warns the first time: choose **More info**, then **Run anyway**.
 2. Open it. The first-run guide walks through four steps: a model, a permission mode, a judge and a start.
    - **Model.** Paste an API key, and mu recognizes the service from its shape (DeepSeek, Kimi, Qwen, GLM, SiliconFlow, OpenRouter, OpenAI, Anthropic, Google Gemini, xAI and more) and checks it with one request. Or sign in with a ChatGPT, Claude, Grok or Google subscription. A wrong key, an empty balance, an unsupported region or no connection is each explained with what to do.
-   - **Permissions.** *Jev approves* is preselected; see [Permissions and safety](@docs/permissions).
-   - **Judge.** With no key, the free Jev answers. You can come back to this any time.
+   - **Permissions.** *Judge mode* is preselected; see [Permissions and safety](@docs/permissions).
+   - **Judge.** With no key, Jev, TypeSafe's hosted judge model, answers for free through OpenCode Zen. You can come back to this any time.
    - **Start.** If mu finds Claude Code or Codex conversations, it offers to import them.
 3. Pick a folder and start a conversation.
 
@@ -53,15 +53,15 @@ Inside a session, `/status` shows the judge, each decision point's mode and the 
 
 Open a project folder and say what you want done, in your own words. What happens next:
 
-1. **Jev reads your message first** and shows a one-line verdict, such as *multi-step task · full effort*. This takes well under a second; press <kbd>Esc</kbd> to skip it.
-2. **The model works.** Long tool output is filtered before it reaches the model; in *Jev approves* mode, anything Jev isn't sure the task needs waits for you.
+1. **The judge reads your message first** and shows a one-line verdict, such as *multi-step task · full effort*. This takes well under a second; press <kbd>Esc</kbd> to skip it.
+2. **The model works.** Long tool output is filtered before it reaches the model; in *Judge mode*, anything the judge isn't sure the task needs waits for you.
 3. **When it says it's done**, mu checks whether anything verified the work and nudges it once if not.
 
 To keep it going until a condition holds, use [goal mode](@docs/goal): `/goal all tests in packages/api pass`.
 
 ## The judge {#judge}
 
-mu asks a small, fast judge the routine questions of a session. You don't have to set one up: with no Jev key, the free Jev on OpenCode Zen answers, and mu says so once a day. To use your own key, a local judge or another model, see [Judges](@docs/judges).
+mu asks a small, fast judge model the routine questions of a session. You don't have to set one up: with no Jev key, the free Jev on OpenCode Zen answers, and mu says so once a day. To use your own key, a local judge or another model, see [Judges](@docs/judges).
 
 {points_active} of the {points} decision points act on their verdicts from the start (`context.compact` and `output.drift` are off until you turn them on), and each verdict is logged: `/status`, `mu ledger` or the Judge tab in the app. To watch the judge before trusting it, put the decisions in shadow mode: they are still asked and logged, but change nothing.
 

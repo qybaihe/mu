@@ -3,7 +3,7 @@ title: The plain-language board
 summary: A board that tells you in plain words how far the work is, written by a model chosen for speaking plainly.
 ---
 
-Models keep getting better at the work and harder to follow: their progress reports read like notes for another machine. mu doesn't ask the working model to report. With the board on, a second model, chosen only because it speaks plainly, tells you what is going on, and Jev decides what is worth telling.
+Models keep getting better at the work and harder to follow: their progress reports read like notes for another machine. mu doesn't ask the working model to report. With the board on, a second model, chosen only because it speaks plainly, tells you what is going on, and the judge decides what is worth telling.
 
 ## What the board shows {#shows}
 

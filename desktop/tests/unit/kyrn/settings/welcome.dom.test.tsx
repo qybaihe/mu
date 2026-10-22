@@ -606,7 +606,7 @@ describe('the first-run guide', () => {
 
 describe('the permission step', () => {
   /** Someone new on a mu with permission modes, in `permissions`, the feature on or off. */
-  function withModes(permissions: KyrnSettings['permissions'] = { mode: 'jev', from: 'default' }, enabled = true) {
+  function withModes(permissions: KyrnSettings['permissions'] = { mode: 'judge', from: 'default' }, enabled = true) {
     const parsed = parseManifest(withOwnPlaces(manifestJson));
     if (parsed.status !== 'ok') throw new Error('manifest with permission modes is not readable');
     const features = Object.fromEntries(
@@ -632,13 +632,13 @@ describe('the permission step', () => {
     return bridge.save.mock.calls[0][0] as SaveSettings;
   }
 
-  it('comes after the model, starts on Jev approves, and saves a pick as the feature’s option', async () => {
+  it('comes after the model, starts on judge mode, and saves a pick as the feature’s option', async () => {
     bridge.settings.mockResolvedValue({ ok: true, data: withModes() });
     await toPermissions();
     expect(screen.getByRole('list', { name: 'Setup progress' })).toHaveTextContent('ModelPermissionsJudgeDone');
-    const jev = screen.getByTestId('mu-welcome-permission-jev');
-    expect(jev).toHaveAttribute('aria-checked', 'true');
-    expect(jev).toHaveTextContent('Recommended');
+    const judge = screen.getByTestId('mu-welcome-permission-judge');
+    expect(judge).toHaveAttribute('aria-checked', 'true');
+    expect(judge).toHaveTextContent('Recommended');
     // A mode is always chosen: there is nothing to skip.
     expect(screen.queryByTestId('mu-welcome-skip')).toBeNull();
     fireEvent.click(screen.getByTestId('mu-welcome-permission-full'));
@@ -654,15 +654,15 @@ describe('the permission step', () => {
     bridge.settings.mockResolvedValue({ ok: true, data: withModes({ mode: 'ask', from: 'picked' }) });
     await toPermissions();
     expect(screen.getByTestId('mu-welcome-permission-ask')).toHaveAttribute('aria-checked', 'true');
-    fireEvent.click(screen.getByTestId('mu-welcome-permission-jev'));
+    fireEvent.click(screen.getByTestId('mu-welcome-permission-judge'));
     fireEvent.click(screen.getByTestId('mu-welcome-next'));
     fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
-    expect(await screen.findByTestId('mu-welcome-step-done')).toHaveTextContent('PermissionsJev approves');
+    expect(await screen.findByTestId('mu-welcome-step-done')).toHaveTextContent('PermissionsJudge mode');
     fireEvent.click(screen.getByTestId('mu-welcome-start'));
     await waitFor(() => expect(bridge.save).toHaveBeenCalledTimes(1));
     const saved = bridge.save.mock.calls[0][0] as SaveSettings;
-    expect(saved.permissions).toEqual({ mode: 'jev' });
-    expect(saved.features?.permissions.options).toEqual({ mode: 'jev' });
+    expect(saved.permissions).toEqual({ mode: 'judge' });
+    expect(saved.features?.permissions.options).toEqual({ mode: 'judge' });
   });
 
   it('saves nothing for a mode left as it was', async () => {

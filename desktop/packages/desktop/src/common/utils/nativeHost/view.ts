@@ -55,7 +55,7 @@ export type ViewUserMessage = {
   text: string;
   images: ViewImage[];
   timestamp: number;
-  /** Jev's verdict line on this message (`kyrn.verdict`), when the preflight ran for it. */
+  /** The judge's verdict line on this message (`kyrn.verdict`), when the preflight ran for it. */
   verdict?: JsonObject;
 };
 
@@ -105,8 +105,8 @@ export type ViewCompaction = { id: string; role: 'compaction'; tokensBefore: num
 export type ViewMessage = ViewUserMessage | ViewAssistantMessage | ViewCustomMessage | ViewCompaction;
 
 /**
- * One of Jev's judgments: a decision ledger record, without the state the judge was shown, filed under the turn that
- * asked (the ledger's `origin.turn`, which a late verdict keeps). `turn` is missing only for records of a mu from
+ * One of the judge's judgments: a decision ledger record, without the state the judge was shown, filed under the turn
+ * that asked (the ledger's `origin.turn`, which a late verdict keeps). `turn` is missing only for records of a mu from
  * before `origin`.
  */
 export type ViewJudgment = { id: string; turn?: number; record: JsonObject };
@@ -160,7 +160,7 @@ export type ViewDialog = {
 
 /** What only a live run has, gone once it settles: a reloaded view has none of it. */
 export type ViewLive = {
-  /** Jev classifies the message of this turn (`preflight.pending`), until its verdict or the end of the wait. */
+  /** The judge classifies the message of this turn (`preflight.pending`), until its verdict or the end of the wait. */
   classifying?: { turn: number; judge: string };
   /**
    * What the judgment layer says it is working out (`progress`), until the model writes again, a tool starts, mu asks
@@ -176,7 +176,7 @@ export type ViewLive = {
 };
 
 /**
- * One line of what the judgment layer and the run did, as the Jev panel reads it (the panel's `Activity`, by the same
+ * One line of what the judgment layer and the run did, as the work panel reads it (the panel's `Activity`, by the same
  * names): one of the judgment layer's presentation frames (`permissions.request`, `board.update`, `memory.recalled`,
  * `goal.state`, `preflight.verdict`, …), or one of pi's events (`agent_start`, `agent_settled`, `compaction_start`,
  * `compaction_end`). A `decision` frame keeps only its record's id: the record is in `judgments`.

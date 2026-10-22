@@ -3,6 +3,8 @@
 > English translation of [09-test-log-admission.md](09-test-log-admission.md); the Chinese original is authoritative.
 >
 > The project was renamed mu on 2026-09-21 (command `mu`, logo μ). This note was written before the rename and its text is left as it was; [10-rename-to-mu.md](10-rename-to-mu.md) maps the old names to the new ones.
+>
+> 2026-10-21: mu now has more than one judge. Where "Jev" meant the judge in general, the text now says "the judge"; Jev names only TypeSafe's hosted judge model, so the measurements and the config value `jev` keep the name.
 
 Date: 2026-09-21. Status: **wired in as an optional strategy, off by default** (`features.admission.testLog`, one of `off`, `rules` or `jev`).
 
@@ -16,11 +18,11 @@ Date: 2026-09-21. Status: **wired in as an optional strategy, off by default** (
 1. **In real sessions, the redundancy in test logs isn't in passing-test records. It's in repeated failure details.** KYRN's own history (2 days, 32 session files) holds 15 test logs. 7 are over 4,000 characters, and **all 7 are failing runs**. The agent almost always ran specific files with the default reporter, so there were no long stretches of passing tests. 58% of the characters in these 7 logs are runs of 6 or more consecutive lines that are byte-for-byte identical to earlier text: the same diff, DOM dump or stack trace, printed once per failed test.
 2. **One deterministic rule captures this gain.** Replacing each repeated run with a one-line back-reference marker (the first copy is always kept) saves a net **51.0%** across the 7 long real logs (86% on the largest, at 37.8K). Expanding the markers restores the original byte for byte, and all 15 logs pass that check. No judge is called, and no real history leaves the machine.
 3. **The old path never looked at these logs.** It let any result with `isError` through untouched, and a failing test run is exactly an `isError` result.
-4. **Jev's goal-aware selection works on synthetic verbose logs, but has nothing to do in this real history.** On synthetic samples (verbose reporter, stdout from passing tests) it kept 72/72 required evidence lines, wrongly removed 0 and saved a net 40.2%. On held-out samples not used for tuning it kept 19/19 and saved 46.4% (a perfect judge: 46.5%). On the real logs the parser produces 0 candidates for the judge, so Jev is never called.
-5. **`AI_AGENT=1` solves most of Jev's share at the source.** Measured on Vitest 4.1.9: the default reporter's output drops from 5,336 to 2,134 characters. Only the failing tests' own stdout is kept, and the failure details are intact; an explicit `--reporter=verbose` still takes precedence. It's now set by default in the bash environment.
+4. **Jev's goal-aware selection works on synthetic verbose logs, but has nothing to do in this real history.** On synthetic samples (verbose reporter, stdout from passing tests) it kept 72/72 required evidence lines, wrongly removed 0 and saved a net 40.2%. On held-out samples not used for tuning it kept 19/19 and saved 46.4% (a perfect judge: 46.5%). On the real logs the parser produces 0 candidates, so the judge is never called.
+5. **`AI_AGENT=1` solves most of the judge's share at the source.** Measured on Vitest 4.1.9: the default reporter's output drops from 5,336 to 2,134 characters. Only the failing tests' own stdout is kept, and the failure details are intact; an explicit `--reporter=verbose` still takes precedence. It's now set by default in the bash environment.
 6. Goal-blind "keep failures only" (the strategy rtk and tokf share) saves 61.9% on the synthetic samples, but loses 9 required evidence lines across 4 goals.
 
-So the division of labor is: **rules first (free and lossless) → silence the runner at the source → only the verbose output that's left goes to Jev.** My first synthetic benchmark measured a distribution that never shows up in this user's real usage, and that has to be said up front.
+So the division of labor is: **rules first (free and lossless) → silence the runner at the source → only the verbose output that's left goes to the judge.** My first synthetic benchmark measured a distribution that never shows up in this user's real usage, and that has to be said up front.
 
 The synthetic part is real runner output from synthetic projects plus hand-written labels. It is **not a measure of real task success**. The real part measures only characters and losslessness, not how the main model performs with the trimmed text. In all there were 282 live Jev calls and about 398K input tokens, roughly $0.017 at list price, and only synthetic samples were sent.
 
@@ -50,7 +52,7 @@ The common gap: these projects are either goal-blind or rely on lexical matching
 
 1. **Units of information, not character chunks.** Split by line syntax and block structure: each file's passing-test records, progress, exact duplicate warnings, and a single test's stdout/stderr block. Look only at the marker at the start of a line, never at words in test names (`✓ handles error responses` is a passing record).
 2. **Protect what isn't recognized.** Failure blocks (with their diff and stack trace, up to the next status line at the same level), the failure-detail section through to the end, the summary and unknown lines never become candidates. Four more deterministic protections: the failing test's own output, output blocks with warning or error words (first occurrence), slow tests (≥300ms), and lines that share identifiers or quoted phrases with the goal (anchors).
-3. **Jev only selects.** Each candidate gets one `needed / not_needed / unclear` choice question, all in one request. The shared state is `goal`, `intent`, `call`, `run` (the summary and the list of failures) and the candidate texts. Long candidates are shown as head and tail only. A candidate is omitted only when P(not_needed) ≥ 0.9. No probability, an unknown id, an error, a cancellation, shadow mode or off mode all mean "keep".
+3. **The judge only selects.** Each candidate gets one `needed / not_needed / unclear` choice question, all in one request. The shared state is `goal`, `intent`, `call`, `run` (the summary and the list of failures) and the candidate texts. Long candidates are shown as head and tail only. A candidate is omitted only when P(not_needed) ≥ 0.9. No probability, an unknown id, an error, a cancellation, shadow mode or off mode all mean "keep".
 4. **Rebuild from the original.** Kept bytes are identical to the original, ANSI codes and CRLF included. Each omitted run leaves a one-line marker (line count and kind), and the last line is a pointer to the archive.
 5. **Net-saving guard.** A run shorter than its own marker isn't omitted. If the total net saving is below max(300 characters, 10%), the original is returned unchanged.
 6. **Budget.** At most 24 questions and a 14K-character state, asking about the largest candidates first. Candidates that don't fit are kept.
@@ -60,7 +62,7 @@ The common gap: these projects are either goal-blind or rely on lexical matching
 
 **Why omitting repeated runs isn't deleting failure evidence.** Every failure's title, error message and unique lines stay. Only text identical to what's above is omitted, and the marker says which lines and how many times. The first implementation merged 38 adjacent identical references into a single "identical to lines 25–35" and lost the count. The check that expanding the markers must restore the original byte for byte caught it, and that check is now a test.
 
-**Injection.** Logs are untrusted text. Jev can only vote on recognized status lines, and failure evidence never goes through it. A judge that always answers "omit" can't remove any protected text in any of the 38 cases (there's a test for this).
+**Injection.** Logs are untrusted text. The judge can only vote on recognized status lines, and failure evidence never goes through it. A judge that always answers "omit" can't remove any protected text in any of the 38 cases (there's a test for this).
 
 ## 3. Jev validation on synthetic samples
 
@@ -131,9 +133,9 @@ The 7 logs total 139,820 characters, with 71,296 saved net (**51.0%**). The othe
 
 **Why there are 0 judge candidates.** These runs all used the default reporter on specific files: a passing file gets one line, and only failing files are expanded. The passing records and passing-test stdout I targeted with the synthetic samples barely exist here. The sample is only 15 logs from two days of one person's development, so it can't be extrapolated to other projects. It is enough to show that the synthetic benchmark and real usage have different distributions.
 
-**Where Jev might still help with real logs** (none of this is done; noted for later):
+**Where the judge might still help with real logs** (none of this is done; noted for later):
 
-- Environment noise unrelated to the failures. In real_9, 4 `stderr` blocks report a failure to parse `/api/settings/client`, which has nothing to do with the two failing assertions (text that changed from the upstream name to KYRN). They contain error words, so they're always protected today. Letting Jev decide whether to keep them is risky, since an error in stderr is sometimes exactly the cause. One option is to ask in shadow only, without acting, and compare against whether those blocks are referenced later.
+- Environment noise unrelated to the failures. In real_9, 4 `stderr` blocks report a failure to parse `/api/settings/client`, which has nothing to do with the two failing assertions (text that changed from the upstream name to KYRN). They contain error words, so they're always protected today. Letting the judge decide whether to keep them is risky, since an error in stderr is sometimes exactly the cause. One option is to ask in shadow only, without acting, and compare against whether those blocks are referenced later.
 - The replay showed chains of reruns (real_3 → real_6: 5 failures → … → pass). That's the deterministic signal the automatic-rewind value function needs, and the parser can already report each run's failure count and failing test names.
 
 ## 5. Wiring

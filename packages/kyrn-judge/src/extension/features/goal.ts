@@ -25,7 +25,7 @@ const MAX_STEPS = 16;
 
 export type GoalStatus = "active" | "paused" | "met" | "cleared";
 
-/** Who decided the last check: the model, the judge (Jev), or the facts alone. */
+/** Who decided the last check: the model, the judge (`"jev"`, as saved sessions spell it), or the facts alone. */
 export type GoalCheckedBy = "model" | "jev" | "rules";
 
 export interface GoalState {
@@ -144,7 +144,7 @@ type Outcome =
  *
  * The check is the session's model unless another is set: whether a goal
  * holds is a judgement of evidence, which the fast judge reads too thinly.
- * Jev is the fallback when no model answers, and the facts are the last word
+ * The judge is the fallback when no model answers, and the facts are the last word
  * either way: work that is provably unfinished goes on.
  *
  * It stops by itself when the agent needs the user, when the user interrupts,

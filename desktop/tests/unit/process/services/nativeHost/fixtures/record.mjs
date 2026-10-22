@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Records the conversation the native host's reducer tests read (reducer.test.ts): a real host (entry.ts, started
 // with Node's child_process.fork, through the NativeHost manager) running a mu checkout against the E2E fake model,
-// with the offline `mock` judge in shadow mode, so Jev's decisions and verdict lines are recorded but change nothing.
+// with the offline `mock` judge in shadow mode, so its decisions and verdict lines are recorded but change nothing.
 //
 //   node tests/unit/process/services/nativeHost/fixtures/record.mjs [harness root] [--out <folder>]
 //
@@ -15,7 +15,7 @@
 //   E2E:PLAIN                           a streamed reply
 //   E2E:WRITE notes/hello.txt           the write tool, then a reply
 //   E2E:BASH echo native-host-bash-ok   the bash tool, then a reply
-//   E2E:BASH sleep 0.2; echo asked-ok   mu asks first (Jev approves, the mock judge abstains); answered Allow once
+//   E2E:BASH sleep 0.2; echo asked-ok   mu asks first (judge mode, the mock judge abstains); answered Allow once
 //   E2E:BASH sleep 0.2; echo asked-ok   mu asks again (the answer allowed that call only); stopped with abort instead
 //   E2E:SLOW                            stopped with abort once its third line streamed
 //

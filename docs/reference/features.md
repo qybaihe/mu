@@ -109,13 +109,13 @@ On by default: yes. Decision points: `tool.risk`.
 
 ## permissions
 
-**Permission modes.** Full access, Jev approves or Ask first; switch any time with /permissions. When a step needs your permission, the status bar asks; allow it once or for the whole conversation. While this feature is on, it also takes over the risky command guard.
+**Permission modes.** Full access, Judge mode or Ask first; switch any time with /permissions. When a step needs your permission, the status bar asks; allow it once or for the whole conversation. While this feature is on, it also takes over the risky command guard.
 
 On by default: yes. Decision points: `tool.approval`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `mode` | `jev` | Mode for new conversations. Once you pick a mode with /permissions, your latest choice is used. One of `full` (Full access), `jev` (Jev approves), `ask` (Ask first). |
+| `mode` | `judge` | Mode for new conversations. Once you pick a mode with /permissions, your latest choice is used. One of `full` (Full access), `judge` (Judge mode), `ask` (Ask first). |
 
 ## constraints
 
@@ -283,7 +283,7 @@ On by default: yes. Decision points: `board.read`.
 | `everyTools` | `5` | Tool calls between checks. Range 1 to 100. |
 | `minIntervalMs` | `20000` ms | Minimum time between checks while it works. When the agent stops, the board always checks, regardless of this setting. Range 0 to 600000. |
 | `maxSteps` | `10` | Latest tool calls read each time. Range 3 to 50. |
-| `narrateTimeoutMs` | `60000` ms | Max wait for the writer. After that, fixed sentences are used. Range 5000 to 300000. |
+| `narrateTimeoutMs` | `60000` ms | Max wait for the writer. After that, stock phrases are used. Range 5000 to 300000. |
 
 ## completion
 
@@ -489,7 +489,7 @@ On by default: yes. Decision points: `review.triage`.
 | `maxSideLines` | `80` | Lines shown per side of a conflict block. Range 10 to 1000. |
 | `maxConflictChars` | `20000` | Max characters of conflicts shown per file. Range 2000 to 200000. |
 | `maxFindings` | `40` | Max findings ranked per triage. The rest are still reported, just not ranked. Range 5 to 200. |
-| `debugger` | `true` | Debugger: breakpoints, stepping, variables. Runs a program under a debugger and stops at breakpoints or uncaught exceptions, showing the call stack and variables. Uses debugpy for Python, delve for Go and lldb-dap for compiled programs, if installed; add your own under debugAdapters in mu.json. One run at a time, ended with the session. |
+| `debugger` | `true` | Debugger: breakpoints, stepping, variables. Runs a program under a debugger and stops at breakpoints or uncaught exceptions, showing the call stack and variables. Uses debugpy for Python, delve for Go and lldb-dap for compiled programs, if installed; add your own under debugAdapters in mu.json. One run at a time; it ends with the session. |
 | `maxFrames` | `20` | Frames shown at a stop. Range 1 to 200. |
 | `maxVariables` | `50` | Variables listed per scope. Range 5 to 1000. |
 | `debugOutputChars` | `4000` chars | Max program output per result. When there's more, only the end is kept. Range 500 to 100000. |

@@ -10,15 +10,15 @@ import { isShellTool } from "../extension/shell-tools.ts";
  *
  * - `full`: nothing is asked. What the user said not to do still stops a call
  *   (the constraint gate is about the user's words, not about permission).
- * - `jev`: Jev approves for the user. Reading and editing inside the project
- *   go ahead, as the task itself; a command, a change outside the project, an
- *   action on the outside world or a sub-agent goes to Jev, and only what Jev
- *   does not approve reaches the user.
+ * - `judge`: the judge approves for the user. Reading and editing inside the
+ *   project go ahead, as the task itself; a command, a change outside the
+ *   project, an action on the outside world or a sub-agent goes to the judge,
+ *   and only what the judge does not approve reaches the user.
  * - `ask`: minimal permissions. Reading goes ahead; everything else asks.
  */
-export type PermissionMode = "full" | "jev" | "ask";
+export type PermissionMode = "full" | "judge" | "ask";
 
-export const PERMISSION_MODES: readonly PermissionMode[] = ["full", "jev", "ask"];
+export const PERMISSION_MODES: readonly PermissionMode[] = ["full", "judge", "ask"];
 
 export const MODE_TEXT: Readonly<
 	Record<PermissionMode, { zh: string; en: string; zhDescription: string; enDescription: string }>
@@ -29,12 +29,12 @@ export const MODE_TEXT: Readonly<
 		zhDescription: "什么都不问，直接执行。你明确说过不许做的事仍然会被拦下。",
 		enDescription: "Runs everything without asking. Anything you told mu not to do is still blocked.",
 	},
-	jev: {
-		zh: "Jev 审批",
-		en: "Jev approves",
-		zhDescription: "项目里的读和改直接做；命令、项目外的改动、对外操作由 Jev 替你审批，它拿不准的才问你。",
+	judge: {
+		zh: "判定模式",
+		en: "Judge mode",
+		zhDescription: "项目里的读和改直接做；命令、项目外的改动、对外操作由判定器替你审批，它拿不准的才问你。",
 		enDescription:
-			"Reads and edits in the project go ahead. Jev decides on commands, changes outside the project and external actions, and asks you when it isn't sure.",
+			"Reads and edits in the project go ahead. The judge decides on commands, changes outside the project and external actions, and asks you when it isn't sure.",
 	},
 	ask: {
 		zh: "最小权限",
@@ -49,10 +49,10 @@ const ALIASES: Readonly<Record<string, PermissionMode>> = {
 	"full-access": "full",
 	yolo: "full",
 	完全访问: "full",
-	jev: "jev",
-	auto: "jev",
-	judge: "jev",
-	审批: "jev",
+	judge: "judge",
+	auto: "judge",
+	审批: "judge",
+	判定模式: "judge",
 	ask: "ask",
 	minimal: "ask",
 	"read-only": "ask",
@@ -73,9 +73,9 @@ export interface PermissionNeed {
 	readonly summary: string;
 	/** What an "allow for this conversation" covers. Undefined: this call can only be allowed once. */
 	readonly grant?: { readonly key: string; readonly label: string };
-	/** Never approved by Jev or a grant: the user decides, every time. */
+	/** Never approved by the judge or a grant: the user decides, every time. */
 	readonly protected?: string;
-	/** In the project folder (edits) — the one thing Jev mode lets through without a judgment. */
+	/** In the project folder (edits) — the one thing judge mode lets through without a judgment. */
 	readonly inProject?: boolean;
 }
 
@@ -198,7 +198,7 @@ export function insideProject(cwd: string, path: string): boolean {
 }
 
 /**
- * A file of the project, which Jev mode edits without asking: inside the folder, and not git's own. Git runs its
+ * A file of the project, which judge mode edits without asking: inside the folder, and not git's own. Git runs its
  * hooks and reads its config on the user's next git command, and a checkpoint never holds them.
  */
 function projectFile(cwd: string, target: string | undefined): boolean {

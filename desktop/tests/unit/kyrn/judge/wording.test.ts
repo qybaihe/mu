@@ -38,7 +38,7 @@ const HINTS = {
   plan_first: 'This looks like a large or risky change. Write a short plan and confirm the approach before editing.',
 };
 
-describe('Jev card wording: the judge’s reason', () => {
+describe('Judge card wording: the judge’s reason', () => {
   it('names every judge error kind and keeps an unknown kind as recorded', () => {
     for (const kind of JUDGE_ERROR_KINDS) {
       const label = (copy.values as Record<string, string>)[kind];
@@ -79,7 +79,7 @@ describe('Jev card wording: the judge’s reason', () => {
   });
 });
 
-describe('Jev card wording: hints and answers', () => {
+describe('Judge card wording: hints and answers', () => {
   it('says each hint by its id and keeps the recorded sentence where there is none', () => {
     expect(hintLines(en, [HINTS.clarify, HINTS.plan_first], ['clarify', 'plan_first'])).toEqual([
       copy.hints.clarify,
@@ -152,7 +152,7 @@ describe('Jev card wording: hints and answers', () => {
   });
 });
 
-describe('Jev hint chips', () => {
+describe('Judge hint chips', () => {
   it('names each hint the harness sends in a word or two, and keeps an unknown code as recorded', () => {
     expect(hintChips(en, ['answered', 'resolve', 'try_hive'])).toEqual([
       { id: 'answered', label: copy.hintChips.answered },

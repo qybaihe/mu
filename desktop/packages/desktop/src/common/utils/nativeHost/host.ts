@@ -1,6 +1,6 @@
 /**
  * What only a live host says, folded into a view's `host` part (view.ts `ViewHost`) and never into what a session file
- * gives: the judgment layer's presentation frames and the run's edges for the Jev panel (`activity`), what extensions
+ * gives: the judgment layer's presentation frames and the run's edges for the work panel (`activity`), what extensions
  * notify (`notices`), pi's queue of steering and follow-up messages, and the session as pi describes it when asked.
  * Also the permission question mu announces before it opens the dialog that asks it.
  *

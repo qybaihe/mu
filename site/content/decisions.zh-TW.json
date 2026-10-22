@@ -27,7 +27,7 @@
     "filter_all": "全部",
     "search_placeholder": "搜尋名稱或代號",
     "no_match": "沒有符合的判定點。",
-    "ask_label": "Jev 問",
+    "ask_label": "問判定器",
     "scene_label": "情境",
     "verdict_label": "判定",
     "result_label": "結果",
@@ -39,7 +39,7 @@
     "judges_intro": "判定點不在乎是哪個判定器回答的。判定器可以串接起來：便宜的先答，拿不準的再交給下一個。",
     "judges": [
       { "h3": "Jev（雲端）", "p": "不設定金鑰也能用，透過 OpenCode Zen 免費回答。設定了自己的金鑰，可以走 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode 或 Cloudflare。", "code": "mu setup" },
-      { "h3": "Laya（本機）", "p": "3.22 億參數，在你的機器上執行，不走網路。簡單的是非題很可靠；先以影子模式和 Jev 平行執行一段時間，再交給它。", "code": "mu judge setup" },
+      { "h3": "Laya（本機）", "p": "3.22 億參數，在你的機器上執行，不走網路。簡單的是非題很可靠；先以影子模式和你目前的判定器平行執行一段時間，再交給它。", "code": "mu judge setup" },
       { "h3": "分類模型", "p": "pi 模型目錄裡的任何分類模型，例如 Cloudflare 的 Clef，用你已有的登入或金鑰。", "code": "classifier:<供應商>/<模型>" },
       { "h3": "任何大模型", "p": "就用你正在用的模型，讓它以 JSON 回答。慢一些，每次判定都花 token。", "code": "llm:<供應商>/<模型>" }
     ],
@@ -137,7 +137,7 @@
       "result": "指令先停住，問你。被規則標出的指令只能允許這一次，不能整個對話都允許。"
     },
     "tool.approval": {
-      "scene": "「Jev 審批」模式下，為了你要的參數驗證，代理想執行 `npm install zod`。",
+      "scene": "「判定模式」下，為了你要的參數驗證，代理想執行 `npm install zod`。",
       "verdict": "任務需要",
       "result": "直接執行，不打擾你。同一個任務裡的 `git push` 超出了你的要求，狀態列會問你，並寫明原因。"
     },
@@ -209,7 +209,7 @@
     "goal.met": {
       "scene": "在 `/goal`「測試全部通過」下，負責核對目標的大模型沒有給出答案。",
       "verdict": "還沒有：有一個驗收項目沒完成",
-      "result": "代理繼續做。只有核對的大模型沒答上來時，才輪到 Jev 回答。"
+      "result": "代理繼續做。只有核對的大模型沒答上來時，才輪到判定器回答。"
     },
     "board.read": {
       "scene": "代理說：「找到了：快取的 key 沒算上語言。」",

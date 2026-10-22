@@ -15,7 +15,7 @@ The desktop app runs on macOS, Windows and Linux and bundles mu and its runtime.
 
 ## The send box {#send-box}
 
-- **Permission mode.** Full access, *Jev approves* or *Ask first*, switched per conversation. See [Permissions and safety](@docs/permissions).
+- **Permission mode.** Full access, *Judge mode* or *Ask first*, switched per conversation. See [Permissions and safety](@docs/permissions).
 - **Goal.** Set a goal, and the agent keeps working until it holds. While a goal runs, a goal line above the box shows its state. See [Goal mode](@docs/goal).
 - **Context ring.** How full the context is, at a glance.
 - **Queued messages.** A message sent while the agent works waits in a queue and can be taken back before it is used.

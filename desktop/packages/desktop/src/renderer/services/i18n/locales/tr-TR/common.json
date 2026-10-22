@@ -1261,7 +1261,7 @@
     "compactionDropped": "{{count}} çağrı kaldırıldı",
     "compactionDropped_one": "{{count}} çağrı kaldırıldı",
     "compactionDropped_other": "{{count}} çağrı kaldırıldı",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}} mesajı sınıflandırıyor…",
       "classified": "{{judge}} sınıflandırması: {{type}}",
       "byRule": "Kuralla sınıflandırıldı: {{type}}",

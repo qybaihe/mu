@@ -15,14 +15,14 @@ export type SessionSettings = {
   /** `provider/id`. */
   model?: string;
   thinkingLevel?: string;
-  /** `full`, `jev` or `ask`. */
+  /** `full`, `judge` or `ask`. */
   permissions?: string;
 };
 
 /** The custom entry mu keeps a conversation's permission mode in (PERMISSIONS_ENTRY in the harness). */
 export const PERMISSIONS_ENTRY = 'mu.permissions';
 
-/** Permission modes are words (`full`, `jev`, `ask`). */
+/** Permission modes are words (`full`, `judge`, `ask`). */
 const MODE_ID = /^[a-z][a-z0-9-]{0,31}$/;
 
 const modelOf = (provider: unknown, id: unknown): string | undefined => {

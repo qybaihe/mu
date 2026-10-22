@@ -159,7 +159,7 @@
       "jev": {
         "title": "Jev",
         "tag": "Recommended",
-        "description": "Fast and accurate. Free on OpenCode Zen for a limited time, or pay per call with a key for TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare or your own service."
+        "description": "TypeSafe's hosted judge model. Fast and accurate. Free on OpenCode Zen for a limited time, or pay per call with a key for TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare or your own service."
       },
       "local": {
         "title": "Local Laya",
@@ -260,9 +260,9 @@
         "title": "Full access",
         "description": "Runs everything without asking. Anything you've told mu not to do is still blocked."
       },
-      "jev": {
-        "title": "Jev approves",
-        "description": "Reads and edits inside the project go ahead. Jev decides on commands, changes outside the project and actions outside this computer, and asks you only when it's unsure."
+      "judge": {
+        "title": "Judge mode",
+        "description": "Reads and edits inside the project go ahead. The judge decides on commands, changes outside the project and actions outside this computer, and asks you only when it's unsure."
       },
       "ask": {
         "title": "Ask first",
@@ -281,9 +281,9 @@
     },
     "reason": {
       "ask": "Ask first: mu asks you before every edit, command and action outside this computer.",
-      "unsure": "Jev isn't sure this step is what you want.",
-      "beyond": "Jev thinks this goes beyond what you asked for.",
-      "unrelated": "Jev thinks this isn't part of the task.",
+      "unsure": "The judge isn't sure this step is what you want.",
+      "beyond": "The judge thinks this goes beyond what you asked for.",
+      "unrelated": "The judge thinks this isn't part of the task.",
       "protected": "This touches mu's own settings; only you can allow it.",
       "nojudge": "No judge is available yet, so mu asks you about each step.",
       "judgedown": "The judge didn't answer this time, so mu is asking you."
@@ -885,7 +885,7 @@
     "lessons": "List this project's lessons (id · kind · recalled/followed · lesson); /lessons all adds global and retired lessons",
     "forget": "Retire a lesson so it's no longer recalled: /forget <id prefix> (find IDs with /lessons)",
     "capabilities": "Show what's installed and what's turned on; /capabilities open <id> turns one on",
-    "permissions": "Set how much mu can do without asking: /permissions full | jev | ask (no argument opens a picker); /permissions reset clears what you've allowed so far",
+    "permissions": "Set how much mu can do without asking: /permissions full | judge | ask (no argument opens a picker); /permissions reset clears what you've allowed so far",
     "lsp": "Show the language servers: what's installed, what's running and the last error",
     "goal": "Keep the agent working until a condition holds: /goal <condition> sets it, /goal shows it (or asks for one), /goal clear ends it",
     "board": "Show the plain-language board; /board on|off turns it on or off for this project, /board model picks the model that writes it",
@@ -1034,8 +1034,8 @@
   "details": {
     "lead": "Each feature has one switch, with its settings under Options. Indented rows are the feature's decision points, where it asks the judge. Turn one off and that step runs as usual.",
     "featureOff": "This feature is off",
-    "askJev": "Ask the judge",
-    "askJevAbout": "Ask the judge: {{point}}",
+    "askJudge": "Ask the judge",
+    "askJudgeAbout": "Ask the judge: {{point}}",
     "areas": {
       "input": "Input",
       "context": "Context",

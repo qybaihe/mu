@@ -1,7 +1,7 @@
 /**
- * The line above the send box while something happens: mu starting, Jev reading the message, the model thinking or
- * working (what the judgment layer works out, in the reader's language), a request tried again, a compaction. With the
- * time it has taken since the message that started it. No line when nothing happens: how a run ended is in the
+ * The line above the send box while something happens: mu starting, the judge reading the message, the model thinking
+ * or working (what the judgment layer works out, in the reader's language), a request tried again, a compaction. With
+ * the time it has taken since the message that started it. No line when nothing happens: how a run ended is in the
  * transcript. The element itself is always there and carries the view's status (`data-status`), and whether a message
  * is on its way to pi (`data-sending`): the message shows at once, but the run it starts has not begun yet.
  */

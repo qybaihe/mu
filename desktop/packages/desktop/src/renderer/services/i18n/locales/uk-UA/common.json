@@ -1314,7 +1314,7 @@
     "compactionDropped_other": "{{count}} виклику вилучено",
     "compactionDropped_few": "{{count}} виклики вилучено",
     "compactionDropped_many": "{{count}} викликів вилучено",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}} визначає тип повідомлення…",
       "classified": "Тип за оцінкою {{judge}}: {{type}}",
       "byRule": "Тип визначено правилом: {{type}}",

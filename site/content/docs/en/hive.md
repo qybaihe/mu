@@ -1,6 +1,6 @@
 ---
 title: Subagents and the hive
-summary: Delegating to subagents with roles, isolated edits that come back as patches, and the hive, where Jev decides what passes between bees.
+summary: Delegating to subagents with roles, isolated edits that come back as patches, and the hive, where the judge decides what passes between bees.
 ---
 
 mu can hand work to other agents in two ways: **subagents** take separate tasks, and a **hive** puts several bees on one hard problem at once.

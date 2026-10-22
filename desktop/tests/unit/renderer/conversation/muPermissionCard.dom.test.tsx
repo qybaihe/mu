@@ -13,7 +13,7 @@ const { acpInvoke, words } = vi.hoisted(() => ({
   words: {
     value: {
       'mu.permissionsCard.kind.shell': '[ja] run a command',
-      'mu.permissionsCard.reason.unsure': '[ja] Jev is not sure',
+      'mu.permissionsCard.reason.unsure': '[ja] the judge is not sure',
       'mu.permissionsCard.flagged': '[ja] risky: {{flag}}',
       'mu.permissionsCard.flag.force_push': '[ja] force push',
       'mu.permissionsCard.answer.once': '[ja] once',
@@ -135,7 +135,7 @@ describe('the wording of mu’s permission card', () => {
   it('says why mu asks by the reason, or by the flag for a risky command', () => {
     expect(muPermissionWording({ mu: { kind: 'shell', reason: 'unsure' } }, translate, has)).toMatchObject({
       title: '[ja] run a command',
-      description: '[ja] Jev is not sure',
+      description: '[ja] the judge is not sure',
     });
     // A flagged call without a known flag keeps mu's reason; so does a reason the app has no word for.
     expect(
@@ -173,7 +173,7 @@ describe('the wording of mu’s permission card in the app’s own languages', (
   // Every code the harness sends (its presentation-codes.md, permissions.request), in the three languages that must
   // not lag: the English fallback would otherwise stand in for mu's own Chinese.
   const KINDS = ['edit', 'shell', 'run', 'outside', 'delegate', 'other'];
-  // `nojudge` and `judgedown`: Jev mode without a verdict (no judge could answer, or the judge did not this time).
+  // `nojudge` and `judgedown`: judge mode without a verdict (no judge could answer, or the judge did not this time).
   const REASONS = ['ask', 'unsure', 'beyond', 'unrelated', 'protected', 'nojudge', 'judgedown'];
   const FLAGS = [
     'recursive_or_forced_delete',

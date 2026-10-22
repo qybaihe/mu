@@ -479,10 +479,10 @@ describe('GuidPage', () => {
   });
 
   it('sends a permission mode only once the person picked one, and shows the mode mu will start in', async () => {
-    const modes = ['full', 'jev', 'ask'].map((value) => ({ value, label: value }));
+    const modes = ['full', 'judge', 'ask'].map((value) => ({ value, label: value }));
     agentSelectionMock.currentAgentModeOptions = modes as never;
     // The catalog remembers the last session's mode; the settings say new conversations start in full access.
-    agentSelectionMock.selectedMode = 'jev';
+    agentSelectionMock.selectedMode = 'judge';
     muStartMode.value = 'full';
     const { rerender } = render(<GuidPage />);
     expect(capturedGuidActionRowProps.at(-1)).toMatchObject({ selectedMode: 'full' });

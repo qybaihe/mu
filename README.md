@@ -21,7 +21,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/run-dark.gif">
-    <img src="docs/readme/run-light.gif" alt="A run in the mu desktop app, in a job-queue project called relay. The message: jobs with a 1h30m timeout get killed after about an hour; find out why, fix it and make sure the tests pass. Jev classifies it as a multi-step task (input.preflight). The model runs the tests, which Jev lets through (tool.approval): one of 13 fails. It reads the duration parser, finds that a minute is defined as 1,000 ms, says it will change it to 60,000 and run the tests again, and stops without doing it. Jev answers that the run stopped short (turn.continue), mu reminds the model that the turn isn't finished, and the model changes the unit and runs the tests: all 13 pass. The Judge tab on the right lists each verdict with its decision point and latency.">
+    <img src="docs/readme/run-light.gif" alt="A run in the mu desktop app, in a job-queue project called relay. The message: jobs with a 1h30m timeout get killed after about an hour; find out why, fix it and make sure the tests pass. The judge classifies it as a multi-step task (input.preflight). The model runs the tests, which the judge lets through (tool.approval): one of 13 fails. It reads the duration parser, finds that a minute is defined as 1,000 ms, says it will change it to 60,000 and run the tests again, and stops without doing it. The judge answers that the run stopped short (turn.continue), mu reminds the model that the turn isn't finished, and the model changes the unit and runs the tests: all 13 pass. The Judge tab on the right lists each verdict with its decision point and latency.">
   </picture>
   <br>
   <sub>A recorded run in the desktop app. The coding model's replies are scripted for the recording (it's shown as GPT-6.1 Sol), and the project and the earlier conversations in the sidebar were made up for it. The judge's verdicts, their timings and the recovery are real: the model stopped short, <code>turn.continue</code> caught it, and mu sent it back to finish.</sub>
@@ -29,12 +29,12 @@
 
 A coding agent makes hundreds of decisions per session that aren't about the code: what goes into the context, whether a command is safe, whether a finding is worth passing to another agent, whether the work is really done. Handing these to the main model costs tokens, time and focus. Fixed rules get them wrong too often. mu hands them to a **judge**: a small, fast model that answers one bounded question at a time, at 40 decision points in the agent loop. The main model keeps its attention on the work.
 
-mu comes as a command-line tool, `mu`, which does everything pi does and adds the judgment kernel, and as a desktop app that bundles mu and its runtime. The default judge is Jev, a hosted model that answers yes/no, choice and score questions with a probability for each answer. A local judge (Laya) or any LLM can take over any decision point except approvals, which only Jev decides.
+mu comes as a command-line tool, `mu`, which does everything pi does and adds the judgment kernel, and as a desktop app that bundles mu and its runtime. The default judge model is Jev, hosted by TypeSafe. It answers yes/no, choice and score questions with a probability for each answer. Any judge model can take its place: the local Laya, your own System One server or any LLM.
 
 What you get:
 
 - **A lean context and a warm cache.** In the authors' own sessions, the context rarely fills: long tool output is judged chunk by chunk so only what's needed enters, and stale results are dropped without a summary. Test-log trimming, off by default, folds exact repeats: on the longest failing test logs it cut 51% of the characters, losslessly (see [Measured](#measured)). Before the prompt cache expires, the kernel predicts whether you'll be back and refreshes the cache if you will.
-- **Permission checks that don't stop you at every step.** In *Jev approves* mode, the default, Jev lets through what the task clearly needs and asks you about the rest. Rules catch risky commands first, and web pages and MCP output are screened for instructions aimed at the AI before the model sees them.
+- **Permission checks that don't stop you at every step.** In *Judge mode*, the default, the judge lets through what the task clearly needs and asks you about the rest. Rules catch risky commands first, and web pages and MCP output are screened for instructions aimed at the AI before the model sees them.
 - **Decisions you can audit.** Every verdict goes into a local ledger with its probabilities and timing (`mu ledger`, `/status` or the desktop app's Judge tab). Any decision point can run in shadow mode, asked and logged but changing nothing, so you can compare judges before you rely on one.
 
 > mu is in early development (0.1.x). See [Status and limitations](#status-and-limitations).
@@ -117,7 +117,7 @@ The 40 points fall into five groups:
 | Decision point | Question | Effect |
 | --- | --- | --- |
 | `tool.risk` | The rules flagged a command: did you ask for it? | If the judge is unsure, mu asks you |
-| `tool.approval` | In *Jev approves* mode: does the task clearly need this command, this change outside the project, this external action or this subagent? | Only what Jev is sure of runs; everything else asks you |
+| `tool.approval` | In *Judge mode*: does the task clearly need this command, this change outside the project, this external action or this subagent? | Only what the judge is sure of runs; everything else asks you |
 | `tool.constraint` | Before a call that changes something: does it cross a constraint you stated? | The call is stopped |
 | `tool.injection` | Passage by passage, in a web page, a search result, an MCP server's output or something a command fetched from another machine (`curl`, `gh issue view`): is there an instruction aimed at the AI? | Those passages never reach the model; a note marks where each one was. A subagent that read such passages hands back its report under a warning |
 | `tool.description` | When an MCP tool's description first appears or changes: does it ask the AI for more than calling the tool (reading secrets, sending data elsewhere, hiding something from you)? | The tool is removed from the model's list, calls to it are refused, and you're told |
@@ -162,12 +162,12 @@ Every point, with its feature switch and options: [docs/reference/decision-point
 
 ## Judges
 
-- **Jev** (hosted) answers bounded questions with probabilities. mu reaches it through TypeSafe, OpenRouter, the Vercel AI Gateway, OpenCode Zen, Cloudflare Workers AI or any service that speaks the same protocol, each with its own key (`TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`). You can pick one in the desktop app under Settings → Judges; by default mu uses the first one whose key is set.
+- **Jev**, TypeSafe's hosted judge model, answers bounded questions with probabilities. mu reaches it through TypeSafe, OpenRouter, the Vercel AI Gateway, OpenCode Zen, Cloudflare Workers AI or any service that speaks the same protocol, each with its own key (`TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`). You can pick one in the desktop app under Settings → Judges; by default mu uses the first one whose key is set.
 
   With no key set, Jev 1.13 on OpenCode Zen answers, free for a limited time. What it judges goes to OpenCode, which doesn't train on it, and mu reminds you of this once a day. Set a key (`mu setup`, or Settings → Judges in the app) and mu switches to it starting with the next question.
 
   Measured in the authors' own sessions: a warm question takes about 0.3 s over HTTP/2, and 16 chunks of tool output are judged in a single request in 0.44 s, with the shared state billed once. Verdicts, probabilities and timings go to the ledger: run `mu ledger`, or open the Judge tab in the desktop app.
-- **Laya** (local, macOS on Apple silicon) is a 322M-parameter judge that runs on your machine and never touches the network. Nothing is downloaded without your consent. It's reliable on simple predicates and weaker on meta-judgments, so run it in shadow alongside Jev and read the ledger before you give it a decision point.
+- **Laya** (local, macOS on Apple silicon) is a 322M-parameter judge that runs on your machine and never touches the network. Nothing is downloaded without your consent. It's reliable on simple predicates and weaker on meta-judgments, so run it in shadow alongside your current judge and read the ledger before you give it a decision point.
 - **Any classifier model** in pi's catalog can serve as a tier: `classifier:<provider>/<model>`. Examples include Cloudflare's Clef (`clef`, `clef-flash`), the System One models on OpenRouter and the Vercel AI Gateway, or a llama.cpp classifier.
 - **Any LLM** can serve as a tier: `llm:<provider>/<model>`.
 
@@ -217,7 +217,7 @@ The numbers below come from the repository's own replay script, [`kyrn/spikes/ju
 
 <p align="center"><img src="docs/readme/test-log-folding.gif" width="960" alt="A failing Vitest run of 338 lines scrolls past with its repeated diff blocks highlighted, then the same run as the model sees it: 135 lines, with one marker line for each folded block. 7,686 characters become 4,262, with no model call."></p>
 
-**Goal-aware selection.** With a verbose reporter, what's worth keeping depends on what you asked for. Passing tests are noise when you're debugging a failure, and evidence when you ask which tests ran. In a single request, Jev is asked about each block of passing tests and each block of test output: does the goal still need it? The summary and the failures are never put to the judge. A block is left out only when Jev gives "not needed" a probability of 0.9 or higher.
+**Goal-aware selection.** With a verbose reporter, what's worth keeping depends on what you asked for. Passing tests are noise when you're debugging a failure, and evidence when you ask which tests ran. In a single request, the judge is asked about each block of passing tests and each block of test output: does the goal still need it? The summary and the failures are never put to the judge. A block is left out only when the judge gives "not needed" a probability of 0.9 or higher. In these measurements, the judge is Jev.
 
 <p align="center">
   <picture>
@@ -296,7 +296,7 @@ A desktop app with mu and its runtime built in: there's no Node.js to install an
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/app-dark.png">
-    <img src="docs/readme/app-light.png" width="880" alt="The mu desktop app after a bug fix in relay, a job-queue project: jobs with a 1h30m timeout were killed after an hour because a minute was defined as 1,000 ms. Jev classified the message as a multi-step task (input.preflight), let both test runs through (tool.approval) and found the turn complete (turn.continue). The Judge tab on the right lists each verdict with its decision point and latency, about 60 to 120 ms. The sidebar holds earlier conversations in three projects, and the bar along the bottom shows the judge (Jev, through TypeSafe), 38 of 40 decision points active, 5 verdicts and the context in use.">
+    <img src="docs/readme/app-light.png" width="880" alt="The mu desktop app after a bug fix in relay, a job-queue project: jobs with a 1h30m timeout were killed after an hour because a minute was defined as 1,000 ms. The judge classified the message as a multi-step task (input.preflight), let both test runs through (tool.approval) and found the turn complete (turn.continue). The Judge tab on the right lists each verdict with its decision point and latency, about 60 to 120 ms. The sidebar holds earlier conversations in three projects, and the bar along the bottom shows the judge (Jev, through TypeSafe), 38 of 40 decision points active, 5 verdicts and the context in use.">
   </picture>
 </p>
 
@@ -329,7 +329,7 @@ Requires Node.js 22.19 or newer. `mu -p "prompt"` runs a single prompt and print
 | `/mu mode <point> <off\|shadow\|active>` | Switch one decision point's mode |
 | `/frame` | Show the task frame: the goal, your constraints with their source and the acceptance criteria |
 | `/goal <condition>` | Keep working until the condition holds; `/goal clear` ends it |
-| `/permissions` | Choose Full access, Jev approves or Ask first |
+| `/permissions` | Choose Full access, Judge mode or Ask first |
 | `/board` | Turn the plain-language board on or off |
 | `/remember`, `/lessons`, `/forget` | Keep a lesson, list lessons, retire one |
 | `/skills` | Show the skills mu drafted from runs, and accept or reject each |

@@ -404,7 +404,7 @@ export default function Welcome() {
               key={mode}
               testId={`mu-welcome-permission-${mode}`}
               title={t(`mu.permissions.modes.${mode}.title`)}
-              tag={mode === 'jev' ? t('mu.welcome.permissions.recommended') : undefined}
+              tag={mode === 'judge' ? t('mu.welcome.permissions.recommended') : undefined}
               description={t(`mu.permissions.modes.${mode}.description`)}
               active={settings.permissions.mode === mode}
               onPick={() => mu.editSettings((now) => withPermissionMode(now, mode))}

@@ -210,7 +210,7 @@ const modes = (mode: string) =>
     conversationSwitch: true,
     modes: [
       { id: 'full', label: '完全访问', description: 'runs everything' },
-      { id: 'jev', label: 'Jev 审批', description: 'Jev approves' },
+      { id: 'judge', label: '判定模式', description: 'the judge approves' },
       { id: 'ask', label: '最小权限', description: 'asks first' },
     ],
   });
@@ -324,7 +324,7 @@ describe('the native send box’s model, thinking level and permission mode', ()
     await mount(host);
     fireEvent.click(screen.getByTestId('native-permission'));
     const options = screen.getAllByTestId('native-permission-option');
-    expect(options.map((each) => each.getAttribute('data-mode'))).toEqual(['full', 'jev', 'ask']);
+    expect(options.map((each) => each.getAttribute('data-mode'))).toEqual(['full', 'judge', 'ask']);
     await act(async () => {
       fireEvent.click(options[0]);
     });

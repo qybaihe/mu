@@ -209,7 +209,7 @@ describe('a conversation recorded from a real host', () => {
     ]);
     expect(open.live.permission).toBeUndefined();
     expect(viewAt(asked - 1).live.permission).toMatchObject({ summary: 'sleep 0.2; echo asked-ok' });
-    // Jev answered (it is not sure), so its review is over: the line above the send box no longer says it reviews.
+    // The judge answered (it is not sure), so its review is over: the line above the send box no longer says it reviews.
     const review = records.findLastIndex((record, index) => index < asked && frameKind(record) === 'progress');
     expect(viewAt(review).live.progress).toMatchObject({ code: 'permission_review' });
     expect(open.live.progress).toBeUndefined();
@@ -255,7 +255,7 @@ describe('a conversation recorded from a real host', () => {
     });
   });
 
-  it('files each of Jev’s judgments once, under the turn that asked, without the state it was shown', () => {
+  it('files each of the judge’s judgments once, under the turn that asked, without the state it was shown', () => {
     const view = reduceAll(records);
     const ledger = session.filter((entry) => entry.type === 'custom' && entry.customType === DECISION_ENTRY);
     expect(ledger.length).toBeGreaterThan(0);
@@ -280,7 +280,7 @@ describe('a conversation recorded from a real host', () => {
     expect(session.filter((entry) => entry.customType === VERDICT_ENTRY)).toHaveLength(6);
   });
 
-  it('shows that Jev classifies a message only until its verdict', () => {
+  it('shows that the judge classifies a message only until its verdict', () => {
     const pending = find((record) => frameKind(record) === 'preflight.pending');
     expect(viewAt(pending).live.classifying).toEqual({ turn: 1, judge: 'mock' });
     const verdict = find((record) => frameKind(record) === 'preflight.verdict', pending);
@@ -377,9 +377,9 @@ describe('reduce', () => {
     ]);
   });
 
-  it('drops what Jev was reviewing once the command runs, and a step once the model writes again', () => {
+  it('drops what the judge was reviewing once the command runs, and a step once the model writes again', () => {
     const review = frame('progress', {
-      step: 'Jev is reviewing: npm test',
+      step: 'The judge is reviewing: npm test',
       code: 'permission_review',
       params: { summary: 'npm test' },
     });
@@ -391,7 +391,7 @@ describe('reduce', () => {
     };
     const reviewing = reduceAll([{ type: 'agent_start' }, call, review]);
     expect(reviewing.live.progress).toMatchObject({ code: 'permission_review' });
-    // Approved: the command runs, and the line above the send box no longer says Jev is reviewing it.
+    // Approved: the command runs, and the line above the send box no longer says the judge is reviewing it.
     const running = reduceAll([{ type: 'tool_execution_start', toolCallId: 'call_1' }], reviewing);
     expect(running.live.progress).toBeUndefined();
     // The judge did not answer (rate limited) and mu asks the person instead: the review is over too.

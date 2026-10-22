@@ -23,7 +23,7 @@ const noop = (): void => {};
 
 const MODES = [
   { id: 'full', label: 'Full access', description: 'Everything runs without asking.' },
-  { id: 'jev', label: 'Jev approves', description: 'Jev approves what the task needs.' },
+  { id: 'judge', label: 'Judge mode', description: 'The judge approves what the task needs.' },
   { id: 'ask', label: 'Minimal permissions', description: 'Reading only; the rest asks.' },
 ];
 /** A presentation event the way mu sends it: JSON on its status channel. */
@@ -489,7 +489,7 @@ describe('KYRN ACP bridge', () => {
     }
   });
   it('puts mu’s permission modes in the send box and switches them with mu’s own command', async () => {
-    const f = fixture({ mode: 'jev' });
+    const f = fixture({ mode: 'judge' });
     try {
       const { sessionId, configOptions } = await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       expect(configOptions?.find((option) => option.id === 'mode')).toEqual({
@@ -497,7 +497,7 @@ describe('KYRN ACP bridge', () => {
         category: 'mode',
         name: 'Permissions',
         type: 'select',
-        currentValue: 'jev',
+        currentValue: 'judge',
         options: MODES.map(({ id, label, description }) => ({ value: id, name: label, description })),
       });
       const changed = await f.agent.setSessionConfigOption({ sessionId, configId: 'mode', value: 'ask' });
@@ -522,7 +522,7 @@ describe('KYRN ACP bridge', () => {
     }
   });
   it('switches this conversation only when mu can, so the default for new ones stays the settings’', async () => {
-    const f = fixture({ mode: 'jev', here: true });
+    const f = fixture({ mode: 'judge', here: true });
     try {
       const { sessionId } = await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       const changed = await f.agent.setSessionConfigOption({ sessionId, configId: 'mode', value: 'full' });
@@ -537,7 +537,7 @@ describe('KYRN ACP bridge', () => {
     }
   });
   it('switches permissions during a turn, and follows a switch typed in the conversation', async () => {
-    const f = fixture({ mode: 'jev' });
+    const f = fixture({ mode: 'judge' });
     try {
       const { sessionId } = await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       const running = f.agent.prompt({ sessionId, prompt: [{ type: 'text', text: 'Test' }] });
@@ -563,7 +563,7 @@ describe('KYRN ACP bridge', () => {
     }
   });
   it('reopens a conversation in the mode it was last in, so the app setting it again switches nothing', async () => {
-    const f = fixture({ mode: 'jev' });
+    const f = fixture({ mode: 'judge' });
     try {
       const { sessionId } = await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       await f.agent.setSessionConfigOption({ sessionId, configId: 'mode', value: 'ask' });
@@ -584,7 +584,7 @@ describe('KYRN ACP bridge', () => {
     }
   });
   it('shows mu’s permission question as a card whose buttons say what each answer does', async () => {
-    const f = fixture({ mode: 'jev' });
+    const f = fixture({ mode: 'judge' });
     try {
       await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       const answers = ['Allow once', 'Allow for this conversation（npm test）', 'Don’t allow'];
@@ -592,7 +592,7 @@ describe('KYRN ACP bridge', () => {
       f.emit(
         shown('permissions.request', {
           id: 'permission-1',
-          mode: 'jev',
+          mode: 'judge',
           tool: 'bash',
           kind: 'shell',
           summary: 'npm test\n  -- --watch=false',
@@ -605,7 +605,8 @@ describe('KYRN ACP bridge', () => {
         type: 'extension_ui_request',
         id: 'ui-1',
         method: 'select',
-        title: 'mu wants to run a command\nnpm test\n  -- --watch=false\nJev is not sure this step is what you want.',
+        title:
+          "mu wants to run a command\nnpm test\n  -- --watch=false\nThe judge isn't sure this step is what you want.",
         options: answers,
       });
       await tick();
@@ -615,7 +616,7 @@ describe('KYRN ACP bridge', () => {
         kind: 'execute',
         rawInput: {
           command: 'npm test\n  -- --watch=false',
-          description: 'Jev is not sure this step is what you want.',
+          description: "The judge isn't sure this step is what you want.",
         },
       });
       expect(f.permissions[0].options.map((option) => option.kind)).toEqual([
@@ -640,7 +641,7 @@ describe('KYRN ACP bridge', () => {
     }
   });
   it('gives the card mu’s codes and its answers by id, so the desktop words them in any language', async () => {
-    const f = fixture({ mode: 'jev' });
+    const f = fixture({ mode: 'judge' });
     try {
       await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       const answers = ['允许这一次', '这次对话都允许（git push）', '不允许'];
@@ -649,7 +650,7 @@ describe('KYRN ACP bridge', () => {
         f.emit(
           shown('permissions.request', {
             id: `permission-${id}`,
-            mode: 'jev',
+            mode: 'judge',
             tool: 'bash',
             kind: 'shell',
             summary: 'git push --force',
@@ -961,7 +962,7 @@ describe('KYRN ACP bridge', () => {
   });
 
   it('answers mu exactly once, and says so in the conversation when the app could not ask or no choice came back', async () => {
-    const f = fixture({ mode: 'jev' });
+    const f = fixture({ mode: 'judge' });
     try {
       const { sessionId } = await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       const answers = ['允许这一次', '不允许'];
@@ -969,7 +970,7 @@ describe('KYRN ACP bridge', () => {
         f.emit(
           shown('permissions.request', {
             id: `permission-${id}`,
-            mode: 'jev',
+            mode: 'judge',
             tool: 'bash',
             kind: 'shell',
             summary: 'rm -rf build',
@@ -1023,7 +1024,7 @@ describe('KYRN ACP bridge', () => {
   });
 
   it('lets an answer to a mu that stopped meanwhile go nowhere, with nothing else to say', async () => {
-    const f = fixture({ mode: 'jev' });
+    const f = fixture({ mode: 'judge' });
     try {
       await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       let release: (value: RequestPermissionResponse) => void = noop;
@@ -1325,7 +1326,7 @@ const ask = (f: ReturnType<typeof fixture>, toolCallId: string, reason: string) 
     shown('permissions.request', {
       id: `permission-${toolCallId}`,
       toolCallId,
-      mode: 'jev',
+      mode: 'judge',
       tool: 'bash',
       kind: 'shell',
       summary: 'rm -rf build',
@@ -1361,7 +1362,7 @@ const ended = (f: ReturnType<typeof fixture>, toolCallId: string) =>
 
 describe('answers to mu’s permission questions', () => {
   it('gives the card the call it asks about, and a reason the judge left open', async () => {
-    const f = fixture({ mode: 'jev' });
+    const f = fixture({ mode: 'judge' });
     try {
       await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       ask(f, 'call-1', 'nojudge');
@@ -1378,7 +1379,7 @@ describe('answers to mu’s permission questions', () => {
   });
 
   it('marks the row of a call the person did not allow, and only that one', async () => {
-    const f = fixture({ mode: 'jev' });
+    const f = fixture({ mode: 'judge' });
     try {
       const { sessionId } = await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       const running = f.agent.prompt({ sessionId, prompt: [{ type: 'text', text: 'Test' }] });

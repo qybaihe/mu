@@ -1261,7 +1261,7 @@
     "compactionDropped": "{{count}} chamadas removidas",
     "compactionDropped_one": "{{count}} chamada removida",
     "compactionDropped_other": "{{count}} chamadas removidas",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}} está classificando a mensagem…",
       "classified": "Classificado por {{judge}}: {{type}}",
       "byRule": "Classificado por regra: {{type}}",

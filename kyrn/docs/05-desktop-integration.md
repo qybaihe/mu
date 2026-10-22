@@ -15,12 +15,12 @@ under `packages/desktop/src/process/agent/kyrn` in the desktop checkout.
 
 Existing desktop UI → the backend's existing ACP management → KYRN ACP adapter →
 `kyrn --mode rpc`. The desktop app owns project selection, conversations, model/thinking
-menus, code previews and approval UI. KYRN owns model execution, Jev and swarm
+menus, code previews and approval UI. KYRN owns model execution, the judge and swarm
 orchestration. This avoids maintaining two independent settings and UI systems.
 
 Verified: registered KYRN agent reports online in the desktop app's health check; real
 model menu exposes 256 authenticated models and seven supported thinking levels;
-the native project picker opens the KYRN checkout. Jev and tool progress use
+the native project picker opens the KYRN checkout. Judge and tool progress use
 existing ACP tool cards. The sidebar/window identify the product as KYRN.
 Other agent/assistant entries are disabled in the backend and removed from the
 product navigation, while upstream source and saved history remain intact.
@@ -33,7 +33,7 @@ Native additions:
   provider/model/endpoint/timeout/key configuration. Existing CLI config is the
   source of truth. Keys are write-only; changes require new session/reconnect.
 - Right collaboration panel: live per-bee state and paginated execution
-  records; Jev gates, accepted notes and confirmed deliveries; experience recall
+  records; judge gates, accepted notes and confirmed deliveries; experience recall
   and capture; actual tool image artifacts. No fictitious image judging.
 - Durable presentation-only event stream, byte cursors and exact session
   isolation. The backend (v0.2.2) keeps the ACP binding in its `acp_session` table; a

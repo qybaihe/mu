@@ -57,6 +57,9 @@ export const MU_COMMAND_WORDS: ReadonlyMap<string, readonly string[]> = new Map(
   [
     'permissions',
     [
+      "Set how much mu can do without asking: /permissions full | judge | ask (no argument opens a picker); /permissions reset clears what you've allowed so far",
+      'mu 不问你就能做多少事：/permissions full（完全访问）| judge（判定模式）| ask（最小权限），不带参数就弹出选择；/permissions reset 忘掉这次对话里允许过的操作',
+      // An older mu named judge mode `jev`; it takes `judge` as well.
       "Set how much mu can do without asking: /permissions full | jev | ask (no argument opens a picker); /permissions reset clears what you've allowed so far",
       'mu 不问你就能做多少事：/permissions full（完全访问）| jev（Jev 审批）| ask（最小权限），不带参数就弹出选择；/permissions reset 忘掉这次对话里允许过的操作',
       'How much mu can do without asking: /permissions full | jev | ask, or no argument for a picker. /permissions reset clears what you allowed for this conversation',

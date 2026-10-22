@@ -75,7 +75,7 @@ bun install
 KYRN_ROOT="$(cd .. && pwd)" bun run start
 ```
 
-On first start without a model, mu asks you to set one up (`mu setup`). With no Jev key set, the free Jev on OpenCode Zen answers the judge's questions; see [docs/judges.md](docs/judges.md).
+On first start without a model, mu asks you to set one up (`mu setup`). The default judge model is Jev, hosted by TypeSafe; with no key set, the free Jev on OpenCode Zen answers. See [docs/judges.md](docs/judges.md).
 
 ## Checks and tests
 

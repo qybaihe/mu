@@ -40,13 +40,13 @@ The app should run the agent itself, the way the Claude and Codex apps do, inste
 one message crosses four processes and three protocols:
 
 ```text
-renderer ⇄ the backend (Rust, owns conversations) ⇄ ACP adapter (process/agent/kyrn) ⇄ mu --mode rpc (pi + Jev)
-                                                                     events.jsonl ⇠ status piggyback (Jev)
+renderer ⇄ the backend (Rust, owns conversations) ⇄ ACP adapter (process/agent/kyrn) ⇄ mu --mode rpc (pi + judge)
+                                                                     events.jsonl ⇠ status piggyback (judge)
 ```
 
 What that costs, concretely:
 
-- Jev's judgments travel a side channel: a status line → `events.jsonl` → the panel polls it every second.
+- The judge's judgments travel a side channel: a status line → `events.jsonl` → the panel polls it every second.
 - ACP has no "thinking ended" and no "turn settled", so the adapter and the message list guess where a turn ends
   (`MessageList.tsx` keeps "stale" thoughts and calls for turns that ended without their end).
 - Extension dialogs of type `input` and `editor` are cancelled.
@@ -55,10 +55,10 @@ What that costs, concretely:
 The target:
 
 ```text
-renderer ⇄ Electron main (NativeHost) ⇄ one utility process per session: pi + Jev, pi's own RPC protocol
+renderer ⇄ Electron main (NativeHost) ⇄ one utility process per session: pi + judge, pi's own RPC protocol
 ```
 
-One ordered stream per session carries pi's events, Jev's frames and the dialogs; the main process pairs commands with
+One ordered stream per session carries pi's events, the judge's frames and the dialogs; the main process pairs commands with
 responses; one reducer turns the stream, or a session file read back, into what the screen shows. The backend and ACP
 leave the conversation path.
 
@@ -74,9 +74,9 @@ leave the conversation path.
 | `…/nativeHost/NativeHost.ts`                                | The manager: start, typed requests, the ordered subscription, dialogs, dispose, states and errors. No Electron import: it takes a `fork` function.                                                               |
 | `…/nativeHost/index.ts`                                     | The Electron part: the `MU_NATIVE_HOST` setting and `nativeHostReady`, `findHarness`, `utilityProcess.fork` with the system proxy (`startNativeHost`).                                                           |
 | `…/nativeHost/nodeFork.ts`                                  | The same host under `child_process.fork`.                                                                                                                                                                        |
-| `packages/desktop/src/common/utils/nativeHost/`             | No Node APIs, for main now and the renderer later: `records.ts` (pi's RPC types and readers), `presentation.ts` (Jev's frames), `view.ts`, `reducer.ts`.                                                         |
+| `packages/desktop/src/common/utils/nativeHost/`             | No Node APIs, for main now and the renderer later: `records.ts` (pi's RPC types and readers), `presentation.ts` (the judge's frames), `view.ts`, `reducer.ts`.                                                   |
 
-The ACP adapter's `telemetry.ts` and `permissions.ts` now decode Jev's frames with the same `readPresentation`; their
+The ACP adapter's `telemetry.ts` and `permissions.ts` now decode the judge's frames with the same `readPresentation`; their
 behavior is unchanged.
 
 ### How a host starts
@@ -146,10 +146,10 @@ give equal views (the fixture test checks it with `toStrictEqual`).
 
 ```ts
 type NativeView = {
-  messages: ViewMessage[]; // user (+ Jev's verdict line), assistant (text, thinking, tool calls with results), custom, compaction (where pi compacted: a `compaction` entry in a file, `compaction_end` with a result live)
+  messages: ViewMessage[]; // user (+ the judge's verdict line), assistant (text, thinking, tool calls with results), custom, compaction (where pi compacted: a `compaction` entry in a file, `compaction_end` with a result live)
   status: 'idle' | 'working' | 'thinking' | 'settled' | 'aborted' | 'error';
   error?: string;
-  judgments: { id: string; turn?: number; record: JsonObject }[]; // Jev's ledger records, by the turn that asked
+  judgments: { id: string; turn?: number; record: JsonObject }[]; // the judge's ledger records, by the turn that asked
   dialogs: ViewDialog[]; // select / confirm / input / editor that pi waits on
   live: ViewLive; // classifying, progress, retry, compacting: only while a run goes, none after a reload
 };
@@ -162,7 +162,7 @@ type NativeView = {
 - The status comes from pi's events only: `agent_start` … `agent_settled` is a run, a thinking block is `thinking`, and
   how the run ended is its last assistant message's stop reason. A prompt pi refused (no model, no key) runs nothing;
   only its response says so, and the view shows it as a failed run.
-- Jev's judgments are the ledger's `kyrn.decision` records: live they arrive twice (the entry and the `decision`
+- The judge's judgments are the ledger's `kyrn.decision` records: live they arrive twice (the entry and the `decision`
   frame), in the file once; they count once by record id and are filed under `origin.turn`, so a verdict that lands
   during turn 4 still says turn 3 asked. `kyrn.verdict` attaches to the user message it follows.
 - A dialog closes when the app answers it (the manager hands the answer to the subscribers) or, if pi opened it during
@@ -383,7 +383,7 @@ it; the renderer's part is in `docs/native-host-ui.md`.
 - Map the view onto the existing `renderer/pages/conversation/Messages/` components instead of new ones: `MessageList`
   reads `TMessage[]` from `MessageListProvider`, so the view becomes text, thinking, tool-call and permission rows
   (`MessageText`, `MessageThinking`, `MessageToolCall` / `MessageToolGroup`, `MessagePermission`), the verdict line
-  (`MessageJevLine`) and the status row. The list's guesses about stale thoughts and calls are not needed: the status
+  (`MessageJudgeLine`) and the status row. The list's guesses about stale thoughts and calls are not needed: the status
   is explicit.
 - All four dialog types, `input` and `editor` included; steer and follow-up while a run goes (`queue_update` is not in
   the view yet).
@@ -470,7 +470,7 @@ when its `timeout` passes; a dialog without a timeout that pi stops waiting on (
    (3 attempts, 2 / 4 / 8 s) and appends a `context_edit` that hides each failed attempt from the model, but live and
    reloaded views alike still show all four error messages, because the edits name entry ids the live messages do not
    have. Ask: the persisted entry's id on `message_end` (or an `entry_appended` for message entries).
-2. **Which message a Jev turn belongs to, in the file.** Judgments carry `origin.turn` and live frames carry
+2. **Which message a judged turn belongs to, in the file.** Judgments carry `origin.turn` and live frames carry
    `correlation.turnId`, but `kyrn.verdict` entries have no turn number, so a reloaded view can file judgments by turn
    but cannot tie turn N to the message that started it (goal continuations and follow-ups make "Nth user message"
    wrong). Ask: `turn` in `kyrn.verdict`, or an entry at each judged turn's start.

@@ -6,7 +6,7 @@ import enMu from '@/renderer/services/i18n/locales/en-US/mu.json';
 import zhMu from '@/renderer/services/i18n/locales/zh-CN/mu.json';
 import twMu from '@/renderer/services/i18n/locales/zh-TW/mu.json';
 import { MU_TURN_ERRORS } from '@/process/agent/kyrn/KyrnAgent';
-import { readJevPreflightRow } from '@/renderer/utils/chat/jevPreflight';
+import { readJudgePreflightRow } from '@/renderer/utils/chat/judgePreflight';
 import { findMuTurnError, muTurnErrorKey, noModelDetail } from '@/renderer/utils/chat/muTurnErrors';
 import { isDefaultConversationName } from '@/renderer/utils/chat/defaultConversationName';
 import { buildConversationExportText } from '@/renderer/utils/chat/conversationExport';
@@ -24,31 +24,41 @@ const translator = (language: 'en-US' | 'zh-CN' | 'zh-TW', resources: Record<str
   return i18n.t;
 };
 
-describe('Jev preflight row', () => {
+describe('the judge’s preflight row', () => {
   it('reads the state and turn type the bridge sends', () => {
-    expect(readJevPreflightRow('jev:r:1', 'Jev · Classifying', { preflight: 'pending' })).toEqual({ state: 'pending' });
+    expect(readJudgePreflightRow('jev:r:1', 'Judge · Classifying', { preflight: 'pending' })).toEqual({
+      state: 'pending',
+    });
     expect(
-      readJevPreflightRow('jev:r:1', 'Jev · multi_step_task', { turnType: 'multi_step_task', preflight: 'verdict' })
+      readJudgePreflightRow('jev:r:1', 'Jev · multi_step_task', { turnType: 'multi_step_task', preflight: 'verdict' })
     ).toEqual({ state: 'verdict', turnType: 'multi_step_task' });
     // A relay that snake_cases keys.
-    expect(readJevPreflightRow('jev:r:1', '', { turn_type: 'chat', preflight: 'verdict' })).toEqual({
+    expect(readJudgePreflightRow('jev:r:1', '', { turn_type: 'chat', preflight: 'verdict' })).toEqual({
       state: 'verdict',
       turnType: 'chat',
     });
-    expect(readJevPreflightRow('jev:r:1', 'Jev · Fallback', { preflight: 'fallback' })).toEqual({ state: 'fallback' });
+    expect(readJudgePreflightRow('jev:r:1', 'Jev · Fallback', { preflight: 'fallback' })).toEqual({
+      state: 'fallback',
+    });
   });
 
   it('reads the English title of conversations recorded before the bridge sent that data', () => {
-    expect(readJevPreflightRow('jev:r:1', 'Jev · chat', { turnType: 'chat', state: 'applied' })).toEqual({
+    expect(readJudgePreflightRow('jev:r:1', 'Jev · chat', { turnType: 'chat', state: 'applied' })).toEqual({
       state: 'verdict',
       turnType: 'chat',
     });
-    expect(readJevPreflightRow('jev:r:1', 'Jev · Classifying', undefined)).toEqual({ state: 'pending' });
-    expect(readJevPreflightRow('jev:r:1', 'Jev · research', {})).toEqual({ state: 'verdict', turnType: 'research' });
-    expect(readJevPreflightRow('jev:r:1', 'Jev · Default', {})).toEqual({ state: 'verdict' });
-    expect(readJevPreflightRow('jev:r:1', 'Jev · Fallback', {})).toEqual({ state: 'fallback' });
-    expect(readJevPreflightRow('jev:r:1', 'Something else', {})).toBeUndefined();
-    expect(readJevPreflightRow('call-1', 'Jev · Classifying', { preflight: 'pending' })).toBeUndefined();
+    expect(readJudgePreflightRow('jev:r:1', 'Jev · Classifying', undefined)).toEqual({ state: 'pending' });
+    expect(readJudgePreflightRow('jev:r:1', 'Jev · research', {})).toEqual({ state: 'verdict', turnType: 'research' });
+    expect(readJudgePreflightRow('jev:r:1', 'Jev · Default', {})).toEqual({ state: 'verdict' });
+    expect(readJudgePreflightRow('jev:r:1', 'Jev · Fallback', {})).toEqual({ state: 'fallback' });
+    // The bridge's later titles name the judge, not Jev.
+    expect(readJudgePreflightRow('jev:r:1', 'Judge · research', {})).toEqual({
+      state: 'verdict',
+      turnType: 'research',
+    });
+    expect(readJudgePreflightRow('jev:r:1', 'Judge · Fallback', {})).toEqual({ state: 'fallback' });
+    expect(readJudgePreflightRow('jev:r:1', 'Something else', {})).toBeUndefined();
+    expect(readJudgePreflightRow('call-1', 'Jev · Classifying', { preflight: 'pending' })).toBeUndefined();
   });
 });
 

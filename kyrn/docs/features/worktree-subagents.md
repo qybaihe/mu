@@ -29,7 +29,7 @@
 
 ## 决策点 `swarm.patch`
 
-延续蜂群的思路（Jev 把关蜂与蜂之间传什么）：补丁回来时问判定器，只给任务文字、改动的路径和行数，**不给 diff**。
+延续蜂群的思路（判定器把关蜂与蜂之间传什么）：补丁回来时问判定器，只给任务文字、改动的路径和行数，**不给 diff**。
 
 - `within_task`（boolean）：Does `change` stay within what `task` asks for?
 - 每个文件一问，最多 12 个（boolean）：Does `task` call for changing this file? `<路径>` (`<状态> +x -y`)

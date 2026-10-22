@@ -112,7 +112,7 @@ describe('the native page, playing a recorded conversation', () => {
       'E2E:BASH sleep 0.2; echo asked-ok',
       'E2E:SLOW',
     ]);
-    // mu's replies, the calls it made, Jev's class for each message, and mu's notices.
+    // mu's replies, the calls it made, the judge's class for each message, and mu's notices.
     const view = host.viewOf('c1');
     const replies = view.messages.filter(
       (message) => message.role === 'assistant' && message.blocks.some((block) => block.type === 'text' && block.text)
@@ -129,7 +129,7 @@ describe('the native page, playing a recorded conversation', () => {
     ]);
     const verdicts = view.messages.filter((message) => message.role === 'user' && message.verdict).length;
     expect(verdicts).toBeGreaterThan(0);
-    expect(screen.getAllByTestId('mu-jev-line')).toHaveLength(verdicts);
+    expect(screen.getAllByTestId('mu-judge-line')).toHaveLength(verdicts);
     const notices = screen.getAllByTestId('mu-notice');
     expect(notices.map((notice) => notice.dataset.code)).toEqual(expect.arrayContaining(['checkpoint_off', 'stopped']));
     expect(screen.getByText(/Checkpoints are off in this conversation/)).toBeInTheDocument();

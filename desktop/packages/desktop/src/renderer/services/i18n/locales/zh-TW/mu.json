@@ -159,7 +159,7 @@
       "jev": {
         "title": "Jev",
         "tag": "推薦",
-        "description": "又快又準。在 OpenCode Zen 上限時免費；也可以用 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare 或你自己服務的金鑰，按次計費。"
+        "description": "TypeSafe 託管的判定模型。又快又準。在 OpenCode Zen 上限時免費；也可以用 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare 或你自己服務的金鑰，按次計費。"
       },
       "local": {
         "title": "本機 Laya",
@@ -260,9 +260,9 @@
         "title": "完全存取",
         "description": "什麼都不問，直接執行。你明確說過不許做的事仍然會被攔下。"
       },
-      "jev": {
-        "title": "Jev 審批",
-        "description": "專案裡的讀取和修改直接進行；指令、專案外的改動、對外操作由 Jev 替你審批，它拿不準的才問你。"
+      "judge": {
+        "title": "判定模式",
+        "description": "專案裡的讀取和修改直接進行；指令、專案外的改動、對外操作由判定器替你審批，它拿不準的才問你。"
       },
       "ask": {
         "title": "最小權限",
@@ -281,9 +281,9 @@
     },
     "reason": {
       "ask": "最小權限模式：改檔案、執行指令、對外操作都先問你。",
-      "unsure": "Jev 拿不準這一步是不是你要的。",
-      "beyond": "Jev 認為這一步超出了你的要求。",
-      "unrelated": "Jev 認為這一步和目前的任務無關。",
+      "unsure": "判定器拿不準這一步是不是你要的。",
+      "beyond": "判定器認為這一步超出了你的要求。",
+      "unrelated": "判定器認為這一步和目前的任務無關。",
       "protected": "這會動到 mu 自己的設定，只能由你決定。",
       "nojudge": "還沒有可用的判定器，所以每一步都先問你。",
       "judgedown": "判定器這次沒有回答，所以先問你。"
@@ -885,7 +885,7 @@
     "lessons": "這個專案的經驗：/lessons 列出 id · 類型 · 召回/照做次數 · 經驗，/lessons all 連同到處適用的和已退役的一起列出",
     "forget": "讓一條經驗退役，之後不再召回：/forget <id 前幾碼>（id 見 /lessons）",
     "capabilities": "裝了哪些能力、這次開啟了哪些：/capabilities 查看，/capabilities open <ID> 開啟",
-    "permissions": "mu 不問你就能做多少事：/permissions full（完全存取）| jev（Jev 審批）| ask（最小權限），不帶參數就跳出選擇；/permissions reset 忘掉這次對話裡允許過的操作",
+    "permissions": "mu 不問你就能做多少事：/permissions full（完全存取）| judge（判定模式）| ask（最小權限），不帶參數就跳出選擇；/permissions reset 忘掉這次對話裡允許過的操作",
     "lsp": "語言伺服器：裝了哪些、哪些在執行、最近一次出錯",
     "goal": "目標模式：讓代理一直做到某個條件成立。/goal <條件> 設定，/goal 查看（沒有時會問你），/goal clear 結束",
     "board": "人話看板：/board 查看，/board on、/board off 為這個專案開啟或關閉，/board model 換個模型來講",
@@ -1034,8 +1034,8 @@
   "details": {
     "lead": "每項功能一個開關，選項在「選項」裡。縮排的幾行是它請判定器判斷的地方：關掉一處，那一步照常進行。",
     "featureOff": "功能已關閉",
-    "askJev": "讓判定器判斷",
-    "askJevAbout": "讓判定器判斷：{{point}}",
+    "askJudge": "讓判定器判斷",
+    "askJudgeAbout": "讓判定器判斷：{{point}}",
     "areas": {
       "input": "輸入",
       "context": "上下文",

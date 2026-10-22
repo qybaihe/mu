@@ -1261,7 +1261,7 @@
     "compactionDropped": "호출 {{count}}개 제거됨",
     "compactionDropped_one": "호출 {{count}}개 제거됨",
     "compactionDropped_other": "호출 {{count}}개 제거됨",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}}에서 메시지를 분류하는 중…",
       "classified": "{{judge}} 분류: {{type}}",
       "byRule": "규칙으로 분류: {{type}}",

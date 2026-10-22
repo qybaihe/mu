@@ -159,7 +159,7 @@
       "jev": {
         "title": "Jev",
         "tag": "Recommandé",
-        "description": "Rapide et précis. Gratuit sur OpenCode Zen pour une durée limitée, ou facturé à l'appel avec une clé TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare ou d'un service à vous."
+        "description": "Le modèle juge hébergé par TypeSafe. Rapide et précis. Gratuit sur OpenCode Zen pour une durée limitée, ou facturé à l'appel avec une clé TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare ou d'un service à vous."
       },
       "local": {
         "title": "Laya local",
@@ -260,9 +260,9 @@
         "title": "Accès complet",
         "description": "Exécute tout sans demander. Ce que vous avez interdit reste bloqué."
       },
-      "jev": {
-        "title": "Jev approuve",
-        "description": "Lire et modifier dans le projet se fait directement ; Jev approuve pour vous les commandes, les changements hors du projet et les actions vers l’extérieur, et ne vous demande que s’il a un doute."
+      "judge": {
+        "title": "Mode juge",
+        "description": "Lire et modifier dans le projet se fait directement ; le juge approuve pour vous les commandes, les changements hors du projet et les actions vers l’extérieur, et ne vous demande que s’il a un doute."
       },
       "ask": {
         "title": "Autorisations minimales",
@@ -281,9 +281,9 @@
     },
     "reason": {
       "ask": "Autorisations minimales : chaque modification, commande ou action vers l’extérieur vous est d’abord soumise.",
-      "unsure": "Jev n’est pas sûr que cette étape corresponde à ce que vous voulez.",
-      "beyond": "Jev estime que cela dépasse ce que vous avez demandé.",
-      "unrelated": "Jev estime que cela ne fait pas partie de la tâche.",
+      "unsure": "Le juge n’est pas sûr que cette étape corresponde à ce que vous voulez.",
+      "beyond": "Le juge estime que cela dépasse ce que vous avez demandé.",
+      "unrelated": "Le juge estime que cela ne fait pas partie de la tâche.",
       "protected": "Cela touche aux paramètres de mu ; l’autorisation ne peut venir que de vous.",
       "nojudge": "Aucun juge n’est encore disponible, donc mu vous demande à chaque étape.",
       "judgedown": "Le juge n’a pas répondu cette fois, donc mu vous demande."
@@ -885,7 +885,7 @@
     "lessons": "Les leçons de ce projet : /lessons liste id · type · rappelée/suivie · leçon, /lessons all ajoute celles valables partout et celles retirées",
     "forget": "Retirer une leçon pour qu’elle ne soit plus rappelée : /forget <début de l’id> (les id sont dans /lessons)",
     "capabilities": "Les capacités installées et celles ouvertes : /capabilities, /capabilities open <id>",
-    "permissions": "Ce que mu peut faire sans demander : /permissions full (Accès complet) | jev (Jev approuve) | ask (Autorisations minimales), ou un sélecteur sans argument. /permissions reset oublie ce que vous avez autorisé dans cette conversation",
+    "permissions": "Ce que mu peut faire sans demander : /permissions full (Accès complet) | judge (Mode juge) | ask (Autorisations minimales), ou un sélecteur sans argument. /permissions reset oublie ce que vous avez autorisé dans cette conversation",
     "lsp": "Serveurs de langage : lesquels sont installés, lesquels tournent, et la dernière erreur",
     "goal": "Mode objectif : l’agent continue jusqu’à ce qu’une condition soit remplie. /goal <condition>, /goal (afficher, ou en demander un), /goal clear",
     "board": "Le tableau en clair : /board (l’afficher), /board on, /board off (pour ce projet), /board model (qui le rédige)",
@@ -1034,8 +1034,8 @@
   "details": {
     "lead": "Un interrupteur par fonction, ses réglages sous « Options ». Les lignes en retrait sont les endroits où elle consulte le juge : désactivez-en une et cette étape se déroule comme d’habitude.",
     "featureOff": "La fonction est désactivée",
-    "askJev": "Laisser le juge décider",
-    "askJevAbout": "Laisser le juge décider : {{point}}",
+    "askJudge": "Laisser le juge décider",
+    "askJudgeAbout": "Laisser le juge décider : {{point}}",
     "areas": {
       "input": "Entrée",
       "context": "Contexte",

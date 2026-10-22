@@ -137,7 +137,7 @@ function settings(patch: Partial<KyrnSettings> = {}): KyrnSettings {
       commented: false,
       problem: '',
     },
-    permissions: { mode: 'jev', from: 'default' },
+    permissions: { mode: 'judge', from: 'default' },
     boardModel: { supported: true, model: '' },
     ...patch,
   };

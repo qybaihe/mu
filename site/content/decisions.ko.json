@@ -27,7 +27,7 @@
     "filter_all": "전체",
     "search_placeholder": "이름이나 id로 검색",
     "no_match": "맞는 판정 지점이 없어요.",
-    "ask_label": "Jev의 질문",
+    "ask_label": "판정기에 묻는 질문",
     "scene_label": "상황",
     "verdict_label": "판정",
     "result_label": "결과",
@@ -39,7 +39,7 @@
     "judges_intro": "판정 지점은 어떤 판정기가 답했는지 전혀 몰라요. 판정기는 이어 붙일 수 있어서, 값싼 판정기가 먼저 답하고 다음 판정기는 앞에서 확신하지 못한 것만 받아요.",
     "judges": [
       { "h3": "Jev, 클라우드", "p": "키가 없으면 OpenCode Zen을 통해 무료로 답해요. 직접 가진 키로는 TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode, Cloudflare를 쓸 수 있어요.", "code": "mu setup" },
-      { "h3": "Laya, 여러분의 컴퓨터에서", "p": "322M 파라미터, 네트워크 없음. 단순한 술어에는 믿을 만해요. 믿고 맡기기 전에 섀도 모드로 Jev와 나란히 돌려 보세요.", "code": "mu judge setup" },
+      { "h3": "Laya, 여러분의 컴퓨터에서", "p": "322M 파라미터, 네트워크 없음. 단순한 술어에는 믿을 만해요. 믿고 맡기기 전에 섀도 모드로 지금 쓰는 판정기와 나란히 돌려 보세요.", "code": "mu judge setup" },
       { "h3": "분류 모델", "p": "pi 모델 카탈로그의 어떤 분류 모델이든(예: Cloudflare의 Clef) 이미 가진 로그인으로 쓸 수 있어요.", "code": "classifier:<provider>/<model>" },
       { "h3": "어떤 LLM이든", "p": "이미 쓰는 모델에게 JSON으로 답하게 해요. 더 느리고, 판정마다 토큰이 들어요.", "code": "llm:<provider>/<model>" }
     ],
@@ -137,7 +137,7 @@
       "result": "명령은 기다리고, 여러분에게 물어요. 표시된 명령은 한 번만 허용할 수 있고, 대화 전체에 대해서는 허용할 수 없어요."
     },
     "tool.approval": {
-      "scene": "Jev 승인 모드에서, 여러분이 요청한 검증 기능 때문에 에이전트가 `npm install zod`를 실행하려고 해요.",
+      "scene": "판정 모드에서, 여러분이 요청한 검증 기능 때문에 에이전트가 `npm install zod`를 실행하려고 해요.",
       "verdict": "작업에 필요함",
       "result": "여러분에게 묻지 않고 실행돼요. 같은 작업에서 `git push`는 요청을 넘어서기 때문에, 상태 표시줄에서 여러분에게 묻고 그 이유를 알려 줘요."
     },
@@ -209,7 +209,7 @@
     "goal.met": {
       "scene": "`/goal` \"모든 테스트 통과\" 아래에서, 목표를 확인하는 모델이 답을 내지 않아요.",
       "verdict": "아직: 인수 조건 하나가 열려 있음",
-      "result": "에이전트가 계속 일해요. Jev는 확인하는 모델이 답하지 않을 때만 여기서 답해요."
+      "result": "에이전트가 계속 일해요. 판정기는 확인하는 모델이 답하지 않을 때만 여기서 답해요."
     },
     "board.read": {
       "scene": "에이전트가 \"찾았어요: 캐시 키가 로캘을 무시해요.\"라고 해요.",

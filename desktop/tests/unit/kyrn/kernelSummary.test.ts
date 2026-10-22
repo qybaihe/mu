@@ -38,7 +38,7 @@ function settings(overrides: Partial<KyrnSettings> = {}): KyrnSettings {
       board: { enabled: false, options: {} },
     },
     models: {} as KyrnSettings['models'],
-    permissions: { mode: 'jev', from: 'default' },
+    permissions: { mode: 'judge', from: 'default' },
     boardModel: { supported: true, model: '' },
     ...overrides,
   };

@@ -200,7 +200,7 @@ export class KyrnRuntime {
 	 * Set by the permissions feature: the mode this conversation runs in. Undefined while that feature is
 	 * off, and then the guard alone looks at risky commands, as before there were modes.
 	 */
-	permissionMode?: () => "full" | "jev" | "ask";
+	permissionMode?: () => "full" | "judge" | "ask";
 	/**
 	 * Set by the memory feature: for each sub-agent task, the lessons of this project that apply to it,
 	 * one line each, for the "known lessons" of its brief. Undefined while that feature is off.

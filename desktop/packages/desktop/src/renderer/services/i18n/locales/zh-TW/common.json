@@ -1261,7 +1261,7 @@
     "compactionDropped": "移除 {{count}} 次呼叫",
     "compactionDropped_one": "移除 {{count}} 次呼叫",
     "compactionDropped_other": "移除 {{count}} 次呼叫",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}} 正在分類這則訊息…",
       "classified": "{{judge}} 分類為{{type}}",
       "byRule": "依規則分類為{{type}}",

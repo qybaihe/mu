@@ -78,7 +78,7 @@
   --mu-primary-fill-hover: #6550e3;
   --mu-primary-fill-active: var(--mu-violet-7);
 
-  /* The judge (Jev): pink text on a tint that is nearly white, so a judgment never reads as a button. */
+  /* The judge: pink text on a tint that is nearly white, so a judgment never reads as a button. */
   --mu-judge: var(--mu-pink-7);
   --mu-judge-bg-flat: #fff6fc;
   --mu-judge-bg: var(--mu-judge-bg-flat);

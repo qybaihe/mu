@@ -159,7 +159,7 @@
       "jev": {
         "title": "Jev",
         "tag": "추천",
-        "description": "빠르고 정확합니다. OpenCode Zen에서는 기간 한정 무료이고, TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare 또는 직접 운영하는 서비스의 키를 쓰면 호출마다 과금됩니다."
+        "description": "TypeSafe가 호스팅하는 판정 모델입니다. 빠르고 정확합니다. OpenCode Zen에서는 기간 한정 무료이고, TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare 또는 직접 운영하는 서비스의 키를 쓰면 호출마다 과금됩니다."
       },
       "local": {
         "title": "로컬 Laya",
@@ -260,9 +260,9 @@
         "title": "전체 접근",
         "description": "묻지 않고 모두 실행합니다. 하지 말라고 한 일은 여전히 막습니다."
       },
-      "jev": {
-        "title": "Jev 승인",
-        "description": "프로젝트 안의 읽기와 편집은 바로 진행합니다. 명령, 프로젝트 밖의 변경, 외부 작업은 Jev가 대신 승인하고, 확신이 없을 때만 묻습니다."
+      "judge": {
+        "title": "판정 모드",
+        "description": "프로젝트 안의 읽기와 편집은 바로 진행합니다. 명령, 프로젝트 밖의 변경, 외부 작업은 판정기가 대신 승인하고, 확신이 없을 때만 묻습니다."
       },
       "ask": {
         "title": "최소 권한",
@@ -281,9 +281,9 @@
     },
     "reason": {
       "ask": "최소 권한: 모든 편집, 명령, 외부 작업은 먼저 사용자에게 묻습니다.",
-      "unsure": "Jev는 이 단계가 사용자가 원하는 작업인지 확신하지 못합니다.",
-      "beyond": "Jev는 이 단계가 요청한 범위를 벗어난다고 봅니다.",
-      "unrelated": "Jev는 이 단계가 작업에 포함되지 않는다고 봅니다.",
+      "unsure": "판정기는 이 단계가 사용자가 원하는 작업인지 확신하지 못합니다.",
+      "beyond": "판정기는 이 단계가 요청한 범위를 벗어난다고 봅니다.",
+      "unrelated": "판정기는 이 단계가 작업에 포함되지 않는다고 봅니다.",
       "protected": "mu 자체 설정을 건드리는 단계이므로 사용자만 허용할 수 있습니다.",
       "nojudge": "아직 사용할 수 있는 판정기가 없어 mu가 단계마다 사용자에게 묻습니다.",
       "judgedown": "이번에는 판정기가 응답하지 않아 mu가 사용자에게 묻습니다."
@@ -885,7 +885,7 @@
     "lessons": "이 프로젝트의 교훈: /lessons는 id · 종류 · 참조/따른 횟수 · 교훈을 나열하고, /lessons all은 모든 곳에 적용되는 교훈과 사용 중지된 교훈도 함께 보여 줍니다",
     "forget": "교훈을 사용 중지해 더 이상 참조하지 않게 합니다: /forget <id 앞부분> (id는 /lessons에서 확인)",
     "capabilities": "설치된 기능 확장과 지금 열린 것: /capabilities로 보기, /capabilities open <ID>로 열기",
-    "permissions": "mu가 묻지 않고 할 수 있는 범위: /permissions full(전체 접근) | jev(Jev 승인) | ask(최소 권한), 인수 없이 입력하면 선택 창이 열립니다. /permissions reset은 이 대화에서 허용한 작업을 잊습니다",
+    "permissions": "mu가 묻지 않고 할 수 있는 범위: /permissions full(전체 접근) | judge(판정 모드) | ask(최소 권한), 인수 없이 입력하면 선택 창이 열립니다. /permissions reset은 이 대화에서 허용한 작업을 잊습니다",
     "lsp": "언어 서버: 설치된 것, 실행 중인 것, 마지막 오류",
     "goal": "목표 모드: 조건이 충족될 때까지 에이전트가 계속 작업합니다. /goal <조건>으로 설정, /goal로 보기(없으면 물어봄), /goal clear로 종료",
     "board": "쉬운 말 보드: /board로 보기, /board on·/board off로 이 프로젝트에서 켜기/끄기, /board model로 작성 모델 변경",
@@ -1034,8 +1034,8 @@
   "details": {
     "lead": "기능마다 스위치가 하나 있고, 설정은 옵션에 있습니다. 들여 쓴 줄은 판정기에게 판단을 맡기는 곳입니다. 끄면 그 단계는 그대로 진행됩니다.",
     "featureOff": "기능이 꺼져 있습니다",
-    "askJev": "판정기가 판단",
-    "askJevAbout": "판정기가 판단: {{point}}",
+    "askJudge": "판정기가 판단",
+    "askJudgeAbout": "판정기가 판단: {{point}}",
     "areas": {
       "input": "입력",
       "context": "컨텍스트",

@@ -102,10 +102,10 @@ describe('a classification in the judge log', () => {
   });
 
   it('says why a classification came to nothing: no judge, no answer, switched off, skipped, or no clear class', () => {
-    expect(noClass('error:auth')).toBe(common.kyrn.jevLine.noJudge);
+    expect(noClass('error:auth')).toBe(common.kyrn.judgeLine.noJudge);
     expect(noClass('error:unreachable')).toBe("Jev didn't answer this time; continuing as usual");
-    expect(noClass('off')).toBe(common.kyrn.jevLine.off);
-    expect(noClass('skipped')).toBe(common.kyrn.jevLine.skipped);
+    expect(noClass('off')).toBe(common.kyrn.judgeLine.off);
+    expect(noClass('skipped')).toBe(common.kyrn.judgeLine.skipped);
     expect(noClass('abstain')).toBe('Jev gave no clear answer this time; continuing as usual');
     // A wait that ran out is the judge not answering in time.
     expect(

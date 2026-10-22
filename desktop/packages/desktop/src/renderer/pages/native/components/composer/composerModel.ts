@@ -51,7 +51,7 @@ export function modelInForce(view: NativeView, settings?: SessionSettings): Mode
 export type PermissionModeOption = { id: string; label: string; description: string };
 
 /** mu's permission modes, in its order: what a conversation offers before mu has said anything. */
-export const PERMISSION_MODES = ['full', 'jev', 'ask'] as const;
+export const PERMISSION_MODES = ['full', 'judge', 'ask'] as const;
 
 /** The mode a conversation is in and the modes it offers, from mu's latest `permissions.mode` frame. */
 export type PermissionState = { mode?: string; modes: PermissionModeOption[] };

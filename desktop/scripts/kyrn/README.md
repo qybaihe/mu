@@ -23,7 +23,7 @@ The adapter reuses
 the local mu login and judgment configuration; do not put API keys in the app.
 The model and thinking choices come from the live mu process, not a hardcoded
 list. Changes are confirmed through ACP and persisted in the pi session.
-Jev classification and tools appear in the app's existing tool cards. Actual model
+The judge's classification and tools appear in the app's existing tool cards. Actual model
 thinking streams through ACP thought chunks, including history replay; encrypted
 signatures and redacted placeholders are not shown.
 
@@ -102,11 +102,11 @@ The earlier `kyrn/` prototype is paused. It is not the product UI direction.
 - In the original UI: KYRN is the sole enabled agent. Native project folder
   picker and original combined model/thinking menu remain in place.
 - Focused adapter tests cover streaming, cancellation, invalid configuration,
-  session replay and real-shaped Jev/hive events. No model tokens in unit tests.
+  session replay and real-shaped judge/hive events. No model tokens in unit tests.
 - pi's prompt response acknowledges preflight only. The adapter waits for
   `agent_settled` before completing the ACP turn; otherwise the app stops accepting
   text too early. A regression test guards this boundary.
-- Native end-to-end check: the original UI shows Jev classification and the actual
+- Native end-to-end check: the original UI shows the judge's classification and the actual
   Codex response `KYRN connected`. After the native additions, 21 focused tests,
   full TypeScript check, focused lint and i18n validation pass.
 - Native UI shows actual thinking and replays two real completed delegate workers
@@ -136,7 +136,7 @@ The original resizable project panel has Collaboration and Files views:
 
 - Swarm: per-bee state, model/thinking, tool/turn counters, progress and errors;
   durable execution records, accepted/rejected gates and confirmed deliveries.
-- Jev: classification and decision probabilities, outcomes, fallback and timing;
+- Judge: classification and decision probabilities, outcomes, fallback and timing;
   these are decisions, not invented reasoning text.
 - Memory: actual recall, capture decisions and stored lessons.
 - Images: actual tool-returned raster images with run/bee provenance, not image
@@ -165,7 +165,7 @@ Raw evidence. Other tools and delegate runs retain their existing views.
 
 The Hive panel has a run selector, clickable bee map, execution inspector and
 information feed. Directed map edges come only from confirmed `hive.delivery`
-records joined to notes in the same run. Jev gate approval is not a delivery;
+records joined to notes in the same run. The judge's gate approval is not a delivery;
 gates and shared findings have separate disclosures. Unknown sources do not
 create an inferred edge. Selecting a bee pins its run while newer runs arrive.
 

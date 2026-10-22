@@ -41,7 +41,7 @@ a signed/notarized distributable.
 - Project selection; desktop task history and restart/resume of its pi session.
 - Real model list from the local CLI; streaming chat, tool results, Queue/Steer,
   abort and extension approval dialogs.
-- Native Jev pending / verdict / late / fallback cards and decision timeline.
+- Native judge pending / verdict / late / fallback cards and decision timeline.
   These are actual typed outputs, not inferred chain-of-thought.
 - Hive/delegate snapshots as per-bee cards, shared findings and wrap-up/kill.
 - Git file listing, code editing with stale-revision protection, worktree/staged

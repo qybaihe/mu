@@ -143,7 +143,7 @@ export function readAnswer(value: unknown): DialogAnswer {
   throw invalid('Invalid dialog answer');
 }
 
-/** Permission modes are words (`full`, `jev`, `ask`), as mu names them. */
+/** Permission modes are words (`full`, `judge`, `ask`), as mu names them. */
 const MODE_ID = /^[a-z][a-z0-9-]{0,31}$/;
 
 function readCreate(value: unknown): { cwd: string; permissions?: string } {

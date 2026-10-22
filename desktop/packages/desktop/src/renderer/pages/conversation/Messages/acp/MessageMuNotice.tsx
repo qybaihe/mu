@@ -11,7 +11,7 @@ import {
   TO_MODEL_KEYS,
   type MuNotice,
 } from './muNotice';
-import styles from './MessageJevLine.module.css';
+import styles from './MessageJudgeLine.module.css';
 
 /**
  * The mark before a line: a warning says something went wrong, a stop mark ends a stopped reply, an answer is quiet. A
@@ -36,8 +36,8 @@ function Mark({ notice }: { notice: MuNotice }) {
 
 /**
  * A notice of the mu bridge as one line in the reader's language, such as an answer to mu's question that did not reach
- * it. Quiet like Jev's lines, with a mark: it says what mu did in the person's place, or what the person has to do
- * (ending with the page to do it on). What mu notified itself (a command's answer, a warning) is shown as mu wrote it,
+ * it. Quiet like the judge's lines, with a mark: it says what mu did in the person's place, or what the person has to
+ * do (ending with the page to do it on). What mu notified itself (a command's answer, a warning) is shown as mu wrote it,
  * line breaks kept.
  */
 export default function MessageMuNotice({ notice }: { notice: MuNotice }) {

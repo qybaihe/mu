@@ -160,7 +160,7 @@ export const nativeBridge = {
   list: bridge.buildProvider<NativeResult<NativeConversation[]>, void>('mu.native.list'),
   /**
    * A new conversation in a project folder. No host starts until a command needs pi. `permissions`: the permission
-   * mode its mu starts in (`full`, `jev`, `ask`: MU_PERMISSIONS), mu's own default when left out.
+   * mode its mu starts in (`full`, `judge`, `ask`: MU_PERMISSIONS), mu's own default when left out.
    */
   create: bridge.buildProvider<NativeResult<NativeConversation>, { cwd: string; permissions?: string }>(
     'mu.native.create'

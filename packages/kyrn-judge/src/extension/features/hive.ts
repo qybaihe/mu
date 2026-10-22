@@ -742,7 +742,7 @@ function registerHiveCommand(runtime: KyrnRuntime): void {
 			}
 			// The request is sent by the command, and what an extension sends is not counted as the user speaking.
 			// This one is the user's: the task frame, the lessons and the permission judge read it as what they typed,
-			// as they do for /goal. Otherwise Jev would be asked to approve a hive against the turn before.
+			// as they do for /goal. Otherwise the judge would be asked to approve a hive against the turn before.
 			const typed = `/hive ${asked.question}`;
 			runtime.beginTurn(typed);
 			runtime.startTurnWork(typed);

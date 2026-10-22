@@ -9,11 +9,15 @@ if (base.protocol !== 'http:' || !['127.0.0.1', 'localhost', '[::1]'].includes(b
 }
 const NAME = 'mu';
 const FORMER_NAMES = ['KYRN'];
-const DESCRIPTION = 'mu harness · local Codex login · Jev judgment';
-// Compared case-insensitively: a record written before the judge's name took its present capitalization is ours.
-const OWN_DESCRIPTIONS = ['KYRN', 'KYRN harness · local Codex login · Jev judgment', DESCRIPTION].map((text) =>
-  text.toLowerCase()
-);
+const DESCRIPTION = 'mu harness · local Codex login · judge model';
+// Compared case-insensitively: a record written before the judge's name took its present capitalization, or while the
+// description named the judge Jev, is ours.
+const OWN_DESCRIPTIONS = [
+  'KYRN',
+  'KYRN harness · local Codex login · Jev judgment',
+  'mu harness · local Codex login · Jev judgment',
+  DESCRIPTION,
+].map((text) => text.toLowerCase());
 // Scheduled tasks and team agents run in the backend's "full auto", read from `yolo_id`: mu's full access.
 const FULL_AUTO_MODE = 'full';
 const LEGACY_FULL_AUTO = ['yolo', 'yoloNoSandbox'];

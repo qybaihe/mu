@@ -203,7 +203,7 @@ describe('useNativeConversation', () => {
     expect(result.current.view.host.notices.map((notice) => notice.text)).toEqual(['No lessons yet.']);
   });
 
-  it('stops a prompt Jev still classifies, and the run it starts after all', async () => {
+  it('stops a prompt the judge still classifies, and the run it starts after all', async () => {
     const host = createFakeHost();
     host.add({ id: 'c1' });
     const { result } = mount(host);

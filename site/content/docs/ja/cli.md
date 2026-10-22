@@ -47,7 +47,7 @@ mu                     # 現在のディレクトリで対話セッションを�
 | `/mu mode <point> <off\|shadow\|active>` | このセッションで、一つの判定ポイント（`default` ならすべて）を切り替える |
 | `/frame` | タスクフレーム：目標、あなたの制約とその出どころ、受け入れ条件 |
 | `/goal <condition>` | 条件が満たされるまで作業を続ける。`/goal clear` で終了 |
-| `/permissions` | フルアクセス、「Jev が承認」、最小権限 |
+| `/permissions` | フルアクセス、判定モード、最小権限 |
 | `/board` | このプロジェクトでわかりやすいボードをオン・オフする。`/board model` でそのモデルを選ぶ |
 | `/remember <text>`、`/lessons`、`/forget <id>` | 教訓を一つ残す、一覧する、一つを廃止する |
 | `/review`、`/commit` | 変更をレビューし、指摘を P0〜P3 で並べる。変更を複数のコミットに分ける |
@@ -72,7 +72,7 @@ pi 自身のコマンド（`/model`、`/thinking`、`/login`、`/resume`、`/tre
 | --- | --- |
 | `MU_JUDGE=laya,jev mu` | この実行だけの判定器。`MU_JUDGE=off` でカーネルをオフにする。 |
 | `MU_JUDGE_MODE=shadow mu` | この実行では、すべての判定ポイントをシャドーにする |
-| `MU_PERMISSIONS=ask mu` | この実行の権限モード：`full`、`jev`、`ask` |
+| `MU_PERMISSIONS=ask mu` | この実行の権限モード：`full`、`judge`、`ask` |
 | `MU_LANG=zh-CN mu` | mu 自身のメッセージを中国語（`zh`）か英語（それ以外）にする |
 
 完全な一覧は[設定](@docs/configuration#env)にあります。
