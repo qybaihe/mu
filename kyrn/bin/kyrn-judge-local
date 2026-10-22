@@ -34,17 +34,17 @@ is_up() { [[ "$(health)" == *'"status"'* ]]; }
 
 require_setup() {
   if [[ ! -x "$PYTHON" || ! -f "$MODEL_DIR/coreml_config.json" ]]; then
-    echo "The local judge is not installed. Run: mu judge setup" >&2
+    echo "The local judge isn't installed yet. Run: mu judge setup" >&2
     exit 1
   fi
 }
 
 cmd_setup() {
   if [[ "$(uname -s)-$(uname -m)" != "Darwin-arm64" ]]; then
-    echo "laya-coreml needs Apple silicon and macOS 15+." >&2
+    echo "The local judge needs a Mac with Apple silicon and macOS 15 or later." >&2
     exit 1
   fi
-  command -v uv >/dev/null || { echo "uv is required: https://docs.astral.sh/uv/" >&2; exit 1; }
+  command -v uv >/dev/null || { echo "mu judge setup needs uv: https://docs.astral.sh/uv/" >&2; exit 1; }
   mkdir -p "$STATE_DIR"
   [[ -x "$PYTHON" ]] || uv venv --python 3.12 "$STATE_DIR/.venv"
   # The official index on purpose: mirrors lag behind new releases.
@@ -72,7 +72,7 @@ from laya_coreml.artifacts import verify_files
 directory = Path(sys.argv[1])
 manifest = json.loads((directory / "coreml_config.json").read_text())
 verify_files(directory, manifest["files"])
-print(f"weights verified against the bundle manifest ({len(manifest['files'])} files)")
+print(f"Weights checked against the bundle's manifest ({len(manifest['files'])} files).")
 PY
 }
 
@@ -84,7 +84,7 @@ cmd_run() {
 cmd_start() {
   require_setup
   if is_up; then
-    echo "local judge already running at $URL"
+    echo "The local judge is already running at $URL."
     return 0
   fi
   mkdir -p "$RUN_DIR"
@@ -92,25 +92,25 @@ cmd_start() {
   echo $! >"$PID_FILE"
   for _ in $(seq 1 120); do
     if is_ready; then
-      echo "local judge ready at $URL (pid $(cat "$PID_FILE"), log $LOG_FILE)"
+      echo "The local judge is ready at $URL (pid $(cat "$PID_FILE"), log $LOG_FILE)."
       return 0
     fi
     if ! kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
-      echo "local judge exited during startup; see $LOG_FILE" >&2
+      echo "The local judge stopped while starting; see $LOG_FILE" >&2
       tail -5 "$LOG_FILE" >&2 || true
       return 1
     fi
     sleep 0.5
   done
-  echo "local judge is still warming up; see $LOG_FILE" >&2
+  echo "The local judge is still warming up; see $LOG_FILE" >&2
 }
 
 cmd_stop() {
   if [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
     kill "$(cat "$PID_FILE")"
-    echo "stopped local judge (pid $(cat "$PID_FILE"))"
+    echo "Stopped the local judge (pid $(cat "$PID_FILE"))."
   else
-    echo "local judge is not running"
+    echo "The local judge isn't running."
   fi
   rm -f "$PID_FILE"
 }
@@ -118,7 +118,35 @@ cmd_stop() {
 cmd_status() {
   local body
   body="$(health)"
-  if [[ -n "$body" ]]; then echo "$body"; else echo "local judge is not running at $URL"; return 1; fi
+  if [[ -z "$body" ]]; then echo "The local judge isn't running at $URL."; return 1; fi
+  # --json: the server's own answer, for scripts.
+  if [[ "${1:-}" == "--json" ]]; then echo "$body"; return 0; fi
+  URL="$URL" node -e '
+    let text = "";
+    process.stdin.on("data", (chunk) => (text += chunk)).on("end", () => {
+      let health;
+      try { health = JSON.parse(text); } catch { console.log(text.trim()); return; }
+      const up = Math.round((health.uptimeSeconds ?? 0) / 60);
+      const uptime = up < 60 ? `${up} min` : `${Math.floor(up / 60)} h ${up % 60} min`;
+      const state = health.status === "ok" ? "running" : `starting (${health.status})`;
+      const model = String(health.model ?? "").split("/").pop();
+      console.log(`The local judge is ${state} at ${process.env.URL}: ${model} on ${health.computeUnits}, pid ${health.pid}, up ${uptime}, ${health.requests} requests.`);
+    });' <<<"$body"
+}
+
+usage() {
+  cat <<'USAGE'
+mu judge: the local judge, Laya, on Core ML (macOS on Apple silicon).
+
+  mu judge setup           install it: a Python environment and the weights (about 680 MB)
+  mu judge start           start it in the background, unless it's already running
+  mu judge stop            stop it
+  mu judge status [--json] whether it's running, and what it serves
+  mu judge run             run it in the foreground
+
+One local judge serves every mu session on this machine. To have mu ask it, add "laya" to "tiers" in
+mu.json, or start mu with MU_JUDGE=laya.
+USAGE
 }
 
 case "${1:-status}" in
@@ -126,6 +154,7 @@ case "${1:-status}" in
   run) shift; cmd_run "$@" ;;
   start) cmd_start ;;
   stop) cmd_stop ;;
-  status) cmd_status ;;
-  *) echo "usage: mu judge setup|start|stop|status|run" >&2; exit 2 ;;
+  status) shift; cmd_status "$@" ;;
+  help | -h | --help) usage ;;
+  *) usage >&2; exit 2 ;;
 esac

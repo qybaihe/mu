@@ -30,6 +30,7 @@
 
 ### Fixed
 
+- `mu judge` (kyrn-judge-local): `help`/`--help` prints a usage, an unknown command prints it to stderr and exits 2, `status` prints one readable line (`status --json` the server's JSON), and its messages are sentence case. `mu ledger --help` prints a usage instead of reading the sessions. `mu auth --help` (or a bare `mu auth`) prints mu's `status | login | logout` before pi's auth help. `mu import --help` names `MU_AGENT_DIR`, the variable the docs use.
 - The loop rule ("the same call 3 times with the same outcome") compares the whole input and the result text. Paging through a file with `read` at different offsets, or two scripts whose first 300 characters match, no longer counts as a loop.
 - The end-of-run checks (`turn.completion`, `turn.continue`) cancel their judge call when their 3 s wait runs out. A late verdict no longer keeps `mu --print` from exiting until the judge's own timeout: with a slow local judge, runs ended 7-13 s after their last message. Notification verdicts still on their way are cancelled when the session ends.
 - The `remember` tool dropped a lesson when the judge gave no verdict (a timeout, no judge, shadow mode) or could not tell. It now stores it; only a judge that reads it as one-off or known already turns it down. Sub-agents' `Lesson:` lines still need a verdict.
