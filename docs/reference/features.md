@@ -347,6 +347,9 @@ On by default: yes. Decision points: `turn.continue`.
 | --- | --- | --- |
 | `maxNudges` | `2` | Max nudges per message. Range 1 to 5. |
 | `waitMs` | `3000` ms | Wait at most `3000` ms. After this, there's no nudge, and the judge call is cancelled so it doesn't hold up the end of a one-shot run. Range 500 to 30000. |
+| `unattendedPromised` | `1` | Unattended: nudges for work it said it would do. Unattended means a one-shot mu --print or json-mode run. There, a run is sent back for work it said it would do at most this many times per message; Max nudges per message still caps all nudges together. When the judge mistook a finished "Done. Created …" for a promise, the second nudge cost a benchmark run 4 more requests. Range 0 to 5. |
+| `promisedAfterToolless` | `false` | Unattended: nudge again after an answer without a tool call. Off by default: when the agent answered the last nudge without calling a tool ("The work is already complete"), it answered by stopping, and isn't told again that it said it would do more. A run that stops without a message is still sent back. |
+| `localPromised` | `false` | Let the local judge decide whether work was left undone. Off by default: this question goes to the next judge in your list, and with the local judge (Laya) alone no such nudge is sent. In a benchmark run Laya twice read a finished "Done. Created …" as a promise of more work. |
 
 ## notify
 

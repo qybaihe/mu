@@ -10,6 +10,10 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 - **Session files count what subagents and cut replies spent.** A reply stopped for thinking too long, and each subagent, leave a `kyrn.usage` entry with their tokens and cost, so a cost report or benchmark can include them. The model never sees these entries.
 
+### Changed
+
+- In `mu --print` and json-mode runs, mu tells the agent at most once per message that it said it would do more and stopped, and not again after the agent answered without doing anything. The local judge no longer decides this: it took a finished "Done. Created …" for a promise.
+
 ### Fixed
 
 - **A flagged script keeps its line breaks for the judge and in the confirmation.** They were run into one line, which in a script joins separate commands into one: `echo done` and an `rm -rf build` on the next line read as a single echo. Runs of spaces still collapse.
