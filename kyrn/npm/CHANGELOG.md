@@ -2,12 +2,18 @@
 
 ## [Unreleased]
 
+## [0.1.12] - 2026-10-22
+
 ### Added
 
 - A long-thinking watchdog: a reply that has only been thinking for 10 minutes, with no text and no tool call yet, is cut and asked again at the same reasoning effort, with the end of its reasoning so far and a request to act on it first. The retry is never cut. At most 3 cuts per message (`features.watchdog`: `thinkingMs`, `maxCuts`).
+- `mu import` reads ZCode conversations too (`~/.zcode/cli/db/db.sqlite`), beside Claude Code and Codex, with rewinds, compactions, sub-agent threads and forks.
+- Imported conversations keep their whole history: thinking (shown, never sent to the new model) and images, as well as messages and tool calls. A Claude Code conversation keeps the title Claude Code shows for it.
+- Importing a conversation again brings over what's new in it, into the same conversation; if you also went on in mu, the new import is a conversation of its own. `mu import --list` marks conversations that changed since.
 
 ### Changed
 
+- The permission mode `jev` ("Jev approves") is now `judge` ("Judge mode"): `/permissions full | judge | ask`, `MU_PERMISSIONS=judge`. A saved `jev` falls back to the default, which is judge mode. The kernel's and the command line's messages say "the judge" where they meant mu's judge in general, and keep "Jev" for TypeSafe's hosted model.
 - Background jobs started with `bg_start` keep running after an unattended run (`mu --print`, json mode) ends, so a server a task asked for is still up afterwards. Such jobs write to their log file instead of a pipe to mu. Interactive and desktop sessions still stop their jobs at the end (`features.background.keepOnExit`: `headless`, `always` or `never`).
 - A failed model request is retried up to 8 times instead of 3 (`retry.maxRetries`). With the 60-second cap on each wait, a provider that stops answering for about four minutes no longer ends the run.
 
@@ -15,12 +21,8 @@
 
 - A run that ended on a reply with only thinking in it, no text and no tool call, stopped there without a word. mu now sends the agent back to the task, up to the same limit as its other nudges.
 - A reply cut by the provider's content filter (`finish_reason: content_filter`) ended the run. It is now asked again, twice at most.
-
-## [0.1.12] - 2026-10-22
-
-### Changed
-
-- The permission mode `jev` ("Jev approves") is now `judge` ("Judge mode"): `/permissions full | judge | ask`, `MU_PERMISSIONS=judge`. A saved `jev` falls back to the default, which is judge mode. The kernel's and the command line's messages say "the judge" where they meant mu's judge in general, and keep "Jev" for TypeSafe's hosted model.
+- A Claude Code conversation compacted more than once is imported whole; before, the import stopped at the latest compaction.
+- An imported conversation goes on with mu's model, not the one Claude Code, Codex or ZCode answered with, so `mu` no longer warns that it can't restore that model.
 
 ## [0.1.11] - 2026-10-21
 
