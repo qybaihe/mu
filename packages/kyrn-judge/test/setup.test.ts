@@ -46,6 +46,7 @@ import {
 	type SetupService,
 	serviceById,
 	servicesForKey,
+	servicesInOrder,
 	tableModel,
 } from "../src/setup/services.ts";
 import { wrapToWidth } from "../src/setup/terminal.ts";
@@ -825,8 +826,8 @@ describe("mu setup, asking in a terminal", () => {
 
 	it("asks which service a key of another shape is for, before sending it anywhere", async () => {
 		const run = await wizard({
-			// From the list: DeepSeek; the pasted key looks like Anthropic's: it is Anthropic's.
-			answers: ["2", "1", "2", "4", "n"],
+			// From the list: DeepSeek (7th in English); the pasted key looks like Anthropic's: it is Anthropic's.
+			answers: ["2", "7", "2", "4", "n"],
 			secrets: [KEYS.anthropic],
 			respond: (url) => (url.startsWith("https://api.anthropic.com/") ? answer(200, { data: [] }) : new Error(url)),
 		});
@@ -1101,7 +1102,7 @@ describe("mu setup in a script", () => {
 		expect(run.said).toContain("Done. mu will start on OpenCode Zen · kimi-k2.6. Judge: Jev on OpenCode Zen.");
 
 		// In a terminal, Jev on OpenCode Zen comes first once there is an OpenCode key.
-		const asked = await wizard({ answers: ["2", "9", "", "", "n"], secrets: [good], respond });
+		const asked = await wizard({ answers: ["2", "6", "", "", "n"], secrets: [good], respond });
 		expect(asked.printed).toContain("1) Jev on OpenCode Zen with your OpenCode key (recommended), billed per call");
 		expect(asked.json("mu.json")).toEqual({ tiers: ["jev-opencode"] });
 	});
@@ -1255,6 +1256,18 @@ describe("mu setup with pi's own files", () => {
 		const { pi } = await realPi(home);
 		await expect(pi.setDefaultModel("deepseek", "deepseek-chat")).rejects.toThrow("settings.json cannot be read");
 		expect(readFileSync(join(home, "agent", "settings.json"), "utf8")).toBe("{ not json");
+	});
+});
+
+describe("the list of services", () => {
+	it("starts with the best known services in English, keeps the table's order in Chinese, and ends with Ollama", () => {
+		const ids = (language: "zh" | "en") => servicesInOrder(language).map((service) => service.id);
+		expect(ids("en").slice(0, 6)).toEqual(["openai", "anthropic", "google", "xai", "openrouter", "opencode"]);
+		expect(ids("zh")).toEqual(SETUP_SERVICES.map((service) => service.id));
+		for (const language of ["zh", "en"] as const) {
+			expect(ids(language).slice(-2)).toEqual(["ollama", "other"]);
+			expect([...ids(language)].sort()).toEqual(SETUP_SERVICES.map((service) => service.id).sort());
+		}
 	});
 });
 

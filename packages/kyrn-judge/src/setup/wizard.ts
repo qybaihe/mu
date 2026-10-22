@@ -30,6 +30,7 @@ import {
 	type SetupService,
 	serviceById,
 	servicesForKey,
+	servicesInOrder,
 	tableModel,
 } from "./services.ts";
 
@@ -289,7 +290,9 @@ function label(service: SetupService, language: SetupLanguage): string {
 
 export function serviceList(language: SetupLanguage): string {
 	const width = Math.max(...SETUP_SERVICES.map((service) => service.id.length));
-	return SETUP_SERVICES.map((service) => `  ${service.id.padEnd(width)}  ${label(service, language)}`).join("\n");
+	return servicesInOrder(language)
+		.map((service) => `  ${service.id.padEnd(width)}  ${label(service, language)}`)
+		.join("\n");
 }
 
 /** A provider id for an address of one's own: a plain word that pi and the /model picker take as it is. */
@@ -606,7 +609,7 @@ class Setup {
 			);
 			return "subscription";
 		}
-		if (route === "list") return this.keyFor(await this.pickService(SETUP_SERVICES), undefined);
+		if (route === "list") return this.keyFor(await this.pickService(servicesInOrder(this.language)), undefined);
 		const pasted = await this.pasteKey();
 		return { service: await this.serviceOf(pasted), key: pasted };
 	}
@@ -657,7 +660,7 @@ class Setup {
 			);
 		}
 		return this.pickService(
-			SETUP_SERVICES.filter((service) => !service.keyless),
+			servicesInOrder(this.language).filter((service) => !service.keyless),
 			this.t({
 				zh: "mu 认不出这个密钥。它是哪个服务的？",
 				en: "mu doesn't recognize this key. Which service is it for?",
