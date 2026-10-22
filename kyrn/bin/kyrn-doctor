@@ -350,10 +350,17 @@ function wrap(text, size) {
 	}
 	return [...lines, line];
 }
+// In a terminal, what needs doing comes first, as in /doctor inside mu; piped, every line is a row.
+const fixes = rows.filter(([state]) => state === "fix").length;
+if (!plain) {
+	console.log(
+		fixes > 0 ? `mu doctor found ${fixes} ${fixes === 1 ? "thing" : "things"} to fix` : "mu doctor: everything is set up",
+	);
+}
 for (const [state, name, text] of rows) {
 	// In a terminal, a long row continues under its own text rather than at the left edge.
 	const [first, ...rest] = wrap(text, plain ? undefined : process.stdout.columns - TEXT_COLUMN - 1);
 	console.log(`${plain ? state.padStart(3) : marks[state]}  ${name.padEnd(13)}${first}`);
 	for (const line of rest) console.log(`${" ".repeat(TEXT_COLUMN)}${line}`);
 }
-process.exit(rows.some(([state]) => state === "fix") ? 1 : 0);
+process.exit(fixes > 0 ? 1 : 0);
