@@ -5813,10 +5813,13 @@ export class InteractiveMode {
 
 	/**
 	 * Under another name than pi (mu), no Claude subscription sign-in: Anthropic's terms don't let other apps offer
-	 * Claude.ai login (code.claude.com/docs/en/legal-and-compliance). An Anthropic API key is still offered, and a
-	 * sign-in made before stays until /logout.
+	 * Claude.ai login (code.claude.com/docs/en/legal-and-compliance). An Anthropic API key is still offered. Nor the
+	 * Codex CLI's login (openai-codex): ChatGPT signs in through the openai provider's Sign in with ChatGPT. A sign-in
+	 * made before stays until /logout.
 	 */
-	private static readonly HIDDEN_SIGN_INS: ReadonlySet<string> = new Set(APP_NAME === "pi" ? [] : ["anthropic"]);
+	private static readonly HIDDEN_SIGN_INS: ReadonlySet<string> = new Set(
+		APP_NAME === "pi" ? [] : ["anthropic", "openai-codex"],
+	);
 
 	private getLoginProviderOptions(authType?: "oauth" | "api_key"): AuthSelectorProvider[] {
 		const options: AuthSelectorProvider[] = [];

@@ -23,6 +23,7 @@ function fakeThis() {
 	const providers = [
 		provider("anthropic", "Anthropic", { oauth: true, apiKey: true }),
 		provider("openai", "OpenAI", { oauth: true, apiKey: true }),
+		provider("openai-codex", "OpenAI Codex (legacy)", { oauth: true }),
 		provider("xai", "xAI", { oauth: true }),
 	];
 	return {
@@ -46,6 +47,13 @@ describe("/login under mu's name", () => {
 		expect(offered).not.toContain("anthropic:oauth");
 		expect(offered).toContain("anthropic:api_key");
 		expect(offered).toEqual(expect.arrayContaining(["openai:oauth", "openai:api_key", "xai:oauth"]));
+	});
+
+	test("offers no Codex CLI login: ChatGPT signs in through OpenAI", () => {
+		const options = (InteractiveMode as any).prototype.getLoginProviderOptions.call(fakeThis()) as Array<{
+			id: string;
+		}>;
+		expect(options.map((option) => option.id)).not.toContain("openai-codex");
 	});
 
 	test("/login anthropic finds only the API key", () => {
