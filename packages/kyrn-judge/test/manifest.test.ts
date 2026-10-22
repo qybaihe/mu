@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { DEFAULT_CONFIG } from "../src/config.ts";
 import { MANIFEST } from "../src/manifest.ts";
 import { localizeManifest, type ManifestTranslations, manifestTexts } from "../src/manifest-locales.ts";
 
@@ -56,6 +57,16 @@ describe("harness manifest", () => {
 				expect(text, `${feature.name}.${option.key}`).toMatch(new RegExp(`\\b${option.key}:`));
 			}
 		}
+	});
+
+	it("gives a point the built-in mode config.ts sets for it, and config.ts sets modes only for points that exist", () => {
+		const ids = new Set(MANIFEST.decisions.map((decision) => decision.id));
+		for (const id of Object.keys(DEFAULT_CONFIG.modes)) if (id !== "default") expect(ids, id).toContain(id);
+		for (const decision of MANIFEST.decisions) {
+			expect(decision.defaultMode, decision.id).toBe(DEFAULT_CONFIG.modes[decision.id]);
+		}
+		// A point without one follows `modes.default`, so the field is left out rather than spelling that default.
+		expect(MANIFEST.decisions.some((decision) => decision.defaultMode === undefined)).toBe(true);
 	});
 
 	it("says everything in both languages", () => {

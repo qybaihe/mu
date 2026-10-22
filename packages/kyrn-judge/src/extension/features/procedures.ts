@@ -10,6 +10,7 @@ import { clip, failOpen, type KyrnRuntime, textOf, userWords } from "../runtime.
 import { isShellTool } from "../shell-tools.ts";
 import { describeCall } from "./admission.ts";
 import type { HarnessRoots } from "./inherit.ts";
+import { isUnattended } from "./unattended.ts";
 
 const SKILL_PROMPT = `You turn a coding agent's successful run into a reusable skill: a SKILL.md file that another agent will follow the next time a task of the same kind comes up.
 
@@ -41,6 +42,9 @@ interface PromptSkill {
  * Asked at most once per user turn, and only for a run that took `minSteps` steps or more, ran commands, and ended
  * without an error in its last step: an ordinary turn costs nothing. Drafts stop at `maxPending` per project until
  * the user has looked at them.
+ *
+ * An unattended run (`mu --print`, json mode) drafts nothing: a draft waits for a person, and the run would stay
+ * alive while a writer drafts it.
  */
 export function registerProcedures(runtime: KyrnRuntime, roots?: HarnessRoots): void {
 	const options = runtime.options("procedures", {
@@ -53,6 +57,8 @@ export function registerProcedures(runtime: KyrnRuntime, roots?: HarnessRoots): 
 		minCommands: 2,
 		/** Drafts of one project waiting for the user, after which no more are made. */
 		maxPending: 3,
+		/** Draft in a `mu --print` or json run too. */
+		unattended: false,
 	});
 	// A sub-agent drafts nothing: its run is part of its parent's.
 	if (!options.enabled || process.env.KYRN_SWARM_DEPTH) return;
@@ -101,6 +107,7 @@ export function registerProcedures(runtime: KyrnRuntime, roots?: HarnessRoots): 
 		(ctx.model ? runtime.llm(`${ctx.model.provider}/${ctx.model.id}`, { thinking: "off" }) : undefined);
 
 	const consider = (finalMessage: string, ctx: ExtensionContext): void => {
+		if (!options.unattended && isUnattended(ctx)) return;
 		if (asked || steps.length + dropped < options.minSteps || commands < options.minCommands || lastFailed) return;
 		const pending = drafts.list().filter((draft) => draft.cwd === ctx.cwd).length;
 		if (pending >= options.maxPending) return;

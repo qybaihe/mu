@@ -33,6 +33,7 @@
     "result_label": "結果",
     "feature_label": "機能スイッチ",
     "default_off": "既定でオフ",
+    "default_shadow": "既定でシャドー",
     "needs_option": "オプションが必要",
     "judges_label": "誰が答えるか",
     "judges_h2": "判定器は、インストール全体でも判定ポイントごとにも選べる",

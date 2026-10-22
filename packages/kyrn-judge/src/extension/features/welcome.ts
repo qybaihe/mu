@@ -54,6 +54,13 @@ export function readVersions(judgeRoot: URL, fallbackPi = PI_VERSION): Versions 
 }
 
 /** The judgment layer's folder, from `src/` and from the bundle alike: the build rewrites `import.meta.url`. */
+/** A model as provider/id. None for no model, and for pi's placeholder when there is no model at all, unknown/unknown. */
+export function modelRef(model: { readonly provider: string; readonly id: string } | undefined): string | undefined {
+	return model && !(model.provider === "unknown" && model.id === "unknown")
+		? `${model.provider}/${model.id}`
+		: undefined;
+}
+
 export const VERSIONS = readVersions(new URL("../../../", import.meta.url));
 
 export type JudgeHealth = "checking" | { ok: boolean; latencyMs: number; error?: string };
@@ -229,11 +236,7 @@ export function registerWelcome(runtime: KyrnRuntime): void {
 								judge: runtime.judgeLabel,
 								health,
 								mode: runtime.mode("*"),
-								// With no model at all pi holds a placeholder, unknown/unknown: that is "none yet".
-								model:
-									model && !(model.provider === "unknown" && model.id === "unknown")
-										? `${model.provider}/${model.id}`
-										: undefined,
+								model: modelRef(model),
 								thinking: current?.thinkingLevel ?? runtime.pi.getThinkingLevel(),
 								cwd: current?.cwd ?? ctx.cwd,
 								expanded,

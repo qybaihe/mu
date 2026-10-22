@@ -28,6 +28,7 @@ On by default: yes. Decision points: `input.preflight`.
 | `hints` | `true` | Give the model a one-line hint. |
 | `show` | `true` | Show the wait and the verdict. |
 | `waitMs` | `4000` ms | Wait at most `4000` ms. After this, the turn starts without the verdict. Range 500 to 30000. |
+| `unattended` | `false` | Also judge messages in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: nobody reads the hint there, and every message would wait for the judge and pay for it. |
 
 ## interjection
 
@@ -60,6 +61,8 @@ On by default: yes. Decision points: `capability.disclosure`.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `waitMs` | `4000` ms | Wait at most `4000` ms. Range 500 to 30000. |
+| `askUnattended` | `false` | Also choose capabilities in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: capabilities stay hidden, and the turn doesn't wait. |
+| `unattendedHidden` | `delegate`, `apply_patch_from`, `browse`, `locate`, `remember`, `find_skill`, `find_capability`, `hive`, `mu-browser` | Tools and skills left out of unattended runs. By name. One-shot runs almost never use them, and each one is in every request. One you call for by its command (such as /hive) stays. Empty keeps them all. |
 
 ## frame
 
@@ -89,6 +92,7 @@ On by default: yes. Decision points: `memory.recall`, `memory.capture`, `memory.
 | `mergeNeighbours` | `6` | Compare with this many similar lessons. Chosen by shared words and judged in one request; 0 saves without merging. Range 0 to 16. |
 | `outcome` | `true` | Learn from the agent getting unstuck. Needs the writer model or the main model to word the lesson. |
 | `applied` | `true` | Check at the end of a turn whether lessons were followed. |
+| `unattendedWrites` | `false` | Also learn new lessons in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: kept lessons are still read, but nothing is learned from corrections, ways out or subagent reports. The capability catalog leaves out the remember tool. |
 
 ## procedures
 
@@ -101,6 +105,7 @@ On by default: yes. Decision points: `skill.capture`.
 | `minSteps` | `6` | Minimum steps. Runs with fewer steps aren't considered. Range 2 to 100. |
 | `minCommands` | `2` | Minimum commands. Runs with fewer shell commands aren't considered: a procedure has to do something. Range 0 to 50. |
 | `maxPending` | `3` | Max pending drafts per project. Once a project has this many pending drafts, no more are made until you review them. Range 1 to 20. |
+| `unattended` | `false` | Also draft skills in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: a draft needs someone to review it, and writing one keeps the run going for another model call. |
 
 ## guard
 
@@ -117,6 +122,7 @@ On by default: yes. Decision points: `tool.approval`.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `mode` | `judge` | Mode for new conversations. Once you pick a mode with /permissions, your latest choice is used. One of `full` (Full access), `judge` (Judge mode), `ask` (Ask first). |
+| `readOnlyChains` | `true` | Read-only command chains go ahead. Commands made only of read-only commands joined by ;, &&, \|\| or \| (such as pwd && ls -la; git status) run without asking the judge or you, like a single read-only command. They may throw output away with 2>/dev/null or 2>&1; a redirect that writes a file, sed -i, tee or find with -exec or -delete is not read-only. Off: only a single read-only command or pipeline goes ahead. |
 
 ## constraints
 
@@ -128,6 +134,7 @@ On by default: yes. Decision points: `tool.constraint`.
 | --- | --- | --- |
 | `maxConstraints` | `6` | Max constraints checked per call. The newest ones are used. Range 1 to 20. |
 | `waitMs` | `5000` ms | Wait at most `5000` ms. Range 500 to 30000. |
+| `skipReadOnly` | `true` | Skip read-only commands. Read-only shell commands (ls, git status, cat … \| grep …, and chains of them) aren't checked against your constraints, just like the read and grep tools. |
 
 ## injection
 
@@ -222,6 +229,7 @@ On by default: yes. Decision points: `turn.drift`.
 | `every` | `6` | Tool calls between checks. Range 1 to 100. |
 | `repeats` | `3` | Repeats that count as a loop. Only the same input with the same result counts as the same call; paging through a file does not. Range 2 to 20. |
 | `window` | `8` | Recent calls checked. Range 2 to 100. |
+| `unattended` | `false` | Also check for drift in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default. The rule that catches going in circles still applies. |
 
 ## lsp
 

@@ -13,6 +13,9 @@
  * (src/manifest-locales.ts): a text whose English changes shows in English there until it is
  * translated again, and the script lists those.
  */
+import { DEFAULT_CONFIG } from "./config.ts";
+import type { DecisionMode } from "./decision.ts";
+
 export interface Localized {
 	readonly zh: string;
 	readonly en: string;
@@ -28,6 +31,12 @@ export interface DecisionInfo {
 	readonly feature: string;
 	readonly title: Localized;
 	readonly summary: Localized;
+	/**
+	 * The point's own built-in mode, from `DEFAULT_CONFIG.modes` in config.ts, when it has one: it keeps that mode
+	 * whatever `modes.default` says, until `modes.<id>` in mu.json sets another. Absent: the point follows
+	 * `modes.default`, which is `active` unless mu.json changes it.
+	 */
+	readonly defaultMode?: DecisionMode;
 }
 
 interface OptionBase {
@@ -80,7 +89,8 @@ export interface HarnessManifest {
 const ms: Localized = { zh: "毫秒", en: "ms" };
 const chars: Localized = { zh: "字符", en: "chars" };
 
-export const MANIFEST: HarnessManifest = {
+/** The manifest as written here; MANIFEST adds each point's built-in mode from config.ts. */
+const DESCRIBED: HarnessManifest = {
 	version: 1,
 	groups: {
 		input: { zh: "输入", en: "Input" },
@@ -552,6 +562,16 @@ export const MANIFEST: HarnessManifest = {
 					label: { zh: "最多等待", en: "Wait at most" },
 					help: { zh: "超时就不等了，按原样开始。", en: "After this, the turn starts without the verdict." },
 				},
+				{
+					key: "unattended",
+					kind: "boolean",
+					default: false,
+					label: { zh: "无人值守的运行也预判", en: "Also judge messages in unattended runs" },
+					help: {
+						zh: "无人值守指 mu --print 和 json 模式的一次性运行。默认不问：那里没人看提示，每条消息却要多等判定、多花判定的钱。",
+						en: "Unattended means a one-shot mu --print or json-mode run. Off by default: nobody reads the hint there, and every message would wait for the judge and pay for it.",
+					},
+				},
 			],
 		},
 		{
@@ -626,6 +646,39 @@ export const MANIFEST: HarnessManifest = {
 					max: 30000,
 					unit: ms,
 					label: { zh: "最多等待", en: "Wait at most" },
+				},
+				{
+					key: "askUnattended",
+					kind: "boolean",
+					default: false,
+					label: { zh: "无人值守的运行也判定要开哪些能力", en: "Also choose capabilities in unattended runs" },
+					help: {
+						zh: "无人值守指 mu --print 和 json 模式的一次性运行。默认不问：能力照样隐藏，开工前也不等。",
+						en: "Unattended means a one-shot mu --print or json-mode run. Off by default: capabilities stay hidden, and the turn doesn't wait.",
+					},
+				},
+				{
+					key: "unattendedHidden",
+					kind: "list",
+					default: [
+						"delegate",
+						"apply_patch_from",
+						"browse",
+						"locate",
+						"remember",
+						"find_skill",
+						"find_capability",
+						"hive",
+						"mu-browser",
+					],
+					label: {
+						zh: "无人值守的运行里不放进请求的工具和技能",
+						en: "Tools and skills left out of unattended runs",
+					},
+					help: {
+						zh: "按名字写。这些在一次性运行里几乎没人用，却每次请求都要带上。用命令点名的（比如 /hive）照样保留；清空就全带上。",
+						en: "By name. One-shot runs almost never use them, and each one is in every request. One you call for by its command (such as /hive) stays. Empty keeps them all.",
+					},
 				},
 			],
 		},
@@ -761,6 +814,16 @@ export const MANIFEST: HarnessManifest = {
 						en: "Check at the end of a turn whether lessons were followed",
 					},
 				},
+				{
+					key: "unattendedWrites",
+					kind: "boolean",
+					default: false,
+					label: { zh: "无人值守的运行也学新经验", en: "Also learn new lessons in unattended runs" },
+					help: {
+						zh: "无人值守指 mu --print 和 json 模式的一次性运行。默认只读已有的经验，不从纠正、脱困和子代理报告里学；remember 工具由能力目录拿掉。",
+						en: "Unattended means a one-shot mu --print or json-mode run. Off by default: kept lessons are still read, but nothing is learned from corrections, ways out or subagent reports. The capability catalog leaves out the remember tool.",
+					},
+				},
 			],
 		},
 		{
@@ -808,6 +871,16 @@ export const MANIFEST: HarnessManifest = {
 						en: "Once a project has this many pending drafts, no more are made until you review them.",
 					},
 				},
+				{
+					key: "unattended",
+					kind: "boolean",
+					default: false,
+					label: { zh: "无人值守的运行也起草技能", en: "Also draft skills in unattended runs" },
+					help: {
+						zh: "无人值守指 mu --print 和 json 模式的一次性运行。默认不起草：草稿要有人审，起草还会让运行结束后多等一次模型调用。",
+						en: "Unattended means a one-shot mu --print or json-mode run. Off by default: a draft needs someone to review it, and writing one keeps the run going for another model call.",
+					},
+				},
 			],
 		},
 		{
@@ -841,6 +914,16 @@ export const MANIFEST: HarnessManifest = {
 						en: "Once you pick a mode with /permissions, your latest choice is used.",
 					},
 				},
+				{
+					key: "readOnlyChains",
+					kind: "boolean",
+					default: true,
+					label: { zh: "只读命令串直接执行", en: "Read-only command chains go ahead" },
+					help: {
+						zh: "只由只读命令用 ;、&&、|| 或 | 连起来的命令（如 pwd && ls -la; git status），和单条只读命令一样直接执行，不问判定器也不问你。可以带 2>/dev/null、2>&1 这类丢掉输出的重定向；写文件的重定向、sed -i、tee、带 -exec 或 -delete 的 find 都不算只读。关掉后只有单条只读命令或管道直接执行。",
+						en: "Commands made only of read-only commands joined by ;, &&, || or | (such as pwd && ls -la; git status) run without asking the judge or you, like a single read-only command. They may throw output away with 2>/dev/null or 2>&1; a redirect that writes a file, sed -i, tee or find with -exec or -delete is not read-only. Off: only a single read-only command or pipeline goes ahead.",
+					},
+				},
 			],
 		},
 		{
@@ -869,6 +952,16 @@ export const MANIFEST: HarnessManifest = {
 					max: 30000,
 					unit: ms,
 					label: { zh: "最多等待", en: "Wait at most" },
+				},
+				{
+					key: "skipReadOnly",
+					kind: "boolean",
+					default: true,
+					label: { zh: "只读命令不对照", en: "Skip read-only commands" },
+					help: {
+						zh: "只读的 shell 命令（ls、git status、cat … | grep …，以及它们连成的命令串）不拿去对照约束，和 read、grep 工具一样。",
+						en: "Read-only shell commands (ls, git status, cat … | grep …, and chains of them) aren't checked against your constraints, just like the read and grep tools.",
+					},
 				},
 			],
 		},
@@ -1361,6 +1454,16 @@ export const MANIFEST: HarnessManifest = {
 					min: 2,
 					max: 100,
 					label: { zh: "观察窗口", en: "Recent calls checked" },
+				},
+				{
+					key: "unattended",
+					kind: "boolean",
+					default: false,
+					label: { zh: "无人值守的运行也判断跑偏", en: "Also check for drift in unattended runs" },
+					help: {
+						zh: "无人值守指 mu --print 和 json 模式的一次性运行。默认不问；发现原地打转的规则照常生效。",
+						en: "Unattended means a one-shot mu --print or json-mode run. Off by default. The rule that catches going in circles still applies.",
+					},
 				},
 			],
 		},
@@ -2737,4 +2840,12 @@ export const MANIFEST: HarnessManifest = {
 			],
 		},
 	],
+};
+
+export const MANIFEST: HarnessManifest = {
+	...DESCRIBED,
+	decisions: DESCRIBED.decisions.map((decision) => {
+		const mode = DEFAULT_CONFIG.modes[decision.id];
+		return mode ? { ...decision, defaultMode: mode } : decision;
+	}),
 };

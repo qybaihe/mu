@@ -5,6 +5,7 @@ import type { DecisionMode } from "../src/decision.ts";
 import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import { MockJudgeProvider, type MockResponder } from "../src/providers/mock.ts";
 import type { Answer } from "../src/types.ts";
+import { attended } from "./attended.ts";
 
 export const yes: Answer = { type: "boolean", probability: 0.96 };
 export const no: Answer = { type: "boolean", probability: 0.03 };
@@ -33,7 +34,7 @@ export async function startPacks(
 			createKyrnJudgeExtension({
 				provider,
 				mode: options.mode ?? "active",
-				config: parseConfig({ features: { memory: false, packs: options.packs ?? {} } }),
+				config: parseConfig({ features: attended({ memory: false, packs: options.packs ?? {} }) }),
 				// Preflight is what counts user turns.
 				only: ["preflight", "catalog", "packs"],
 			}),

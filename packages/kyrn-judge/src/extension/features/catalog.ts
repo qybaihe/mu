@@ -3,9 +3,27 @@ import type { Capability, OpenedBy } from "../../catalog/catalog.ts";
 import { capabilityDisclosure } from "../../decisions/capability-disclosure.ts";
 import { say } from "../../language.ts";
 import { failOpen, type KyrnRuntime, userWords } from "../runtime.ts";
+import { isUnattended } from "./unattended.ts";
 
 export const CAPABILITY_ENTRY = "kyrn.capability";
 const CAPABILITY_MESSAGE = "kyrn.capabilities";
+
+/**
+ * Left out of the request in an unattended run (`unattended.ts`): sub-agents and their patches, the browser and its
+ * skill, file location by the judge, lessons for a later session, and the ways into what is hidden. In benchmark runs
+ * they were next to never called, and each one is in every request.
+ */
+export const UNATTENDED_HIDDEN: readonly string[] = [
+	"delegate",
+	"apply_patch_from",
+	"browse",
+	"locate",
+	"remember",
+	"find_skill",
+	"find_capability",
+	"hive",
+	"mu-browser",
+];
 
 interface FindDetails {
 	opened: string | undefined;
@@ -23,17 +41,34 @@ function line(capability: Capability): string {
  *
  * With the decision `off` nothing is hidden. In `shadow` the verdicts are only
  * recorded, so capabilities stay hidden and `find_capability` is the way in.
+ *
+ * An unattended run (`mu --print`, json mode) asks nothing: what is hidden stays hidden. It also leaves the tools and
+ * skills of `unattendedHidden` out of the request, except one the person called for by its command (`/hive …`).
  */
 export function registerCatalog(runtime: KyrnRuntime): void {
-	const options = runtime.options("catalog", { enabled: true, waitMs: 4000 });
+	const options = runtime.options("catalog", {
+		enabled: true,
+		waitMs: 4000,
+		/** Ask which capabilities a task needs in a `mu --print` or json run too. Off: they stay hidden, and nothing waits. */
+		askUnattended: false,
+		/** Tools and skills, by name, left out of the request in a `mu --print` or json run. */
+		unattendedHidden: UNATTENDED_HIDDEN,
+	});
 	if (!options.enabled) return;
 	const { pi, catalog } = runtime;
+	const unattendedHidden = Array.isArray(options.unattendedHidden)
+		? options.unattendedHidden.filter((name): name is string => typeof name === "string")
+		: [];
+	/** What this run leaves out of every request: set before each run of an unattended session. */
+	const leftOut = new Set<string>();
+	/** Whether to ask the judge: never in an unattended run, unless `askUnattended` says so. */
+	const asks = (): boolean => options.askUnattended || !isUnattended(runtime.ctx);
 	const disclose = (words: string, candidates: readonly Capability[], signal?: AbortSignal) =>
 		runtime.engine.decide(capabilityDisclosure, { userMessage: words, capabilities: candidates }, { signal });
 	/** The question asked the moment the message arrived, alongside preflight. */
 	let early: { turn: number; decision: ReturnType<typeof disclose> } | undefined;
 	runtime.atTurnStart((words) => {
-		if (runtime.mode(capabilityDisclosure.id) === "off") return;
+		if (runtime.mode(capabilityDisclosure.id) === "off" || !asks()) return;
 		const candidates = catalog.hidden();
 		if (candidates.length === 0) return;
 		const decision = disclose(words, candidates);
@@ -42,9 +77,12 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 	});
 	// Only tools this feature switched off are ever switched back on: what the user pinned with --tools stays as it is.
 	const withheld = new Set<string>();
+	/** Left-out names the person called for by their command in this session. */
+	const released = new Set<string>();
 
 	const applyLoadout = (hideNothing = false): void => {
-		const hidden = hideNothing ? new Set<string>() : catalog.hiddenTools();
+		const hidden = new Set(hideNothing ? [] : catalog.hiddenTools());
+		for (const name of leftOut) hidden.add(name);
 		const active = new Set(pi.getActiveTools());
 		for (const tool of hidden) {
 			if (active.delete(tool)) withheld.add(tool);
@@ -70,6 +108,19 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 		"before_agent_start",
 		failOpen(async (event, ctx) => {
 			runtime.touch(ctx);
+			if (isUnattended(ctx)) {
+				// A tool called for by its command stays for the session: `mu -p "/hive …"` needs its hive.
+				const called = event.messageType === "user" ? /^\/([^\s:]+)/.exec(event.prompt)?.[1] : undefined;
+				if (called && unattendedHidden.includes(called)) released.add(called);
+				leftOut.clear();
+				for (const name of unattendedHidden) if (!released.has(name)) leftOut.add(name);
+				// Rebuilt from the base list before every run, so this is done on every one.
+				if (event.systemPromptOptions.skills) {
+					event.systemPromptOptions.skills = event.systemPromptOptions.skills.filter(
+						(skill) => !leftOut.has(skill.name),
+					);
+				}
+			}
 			if (runtime.mode(capabilityDisclosure.id) === "off") {
 				applyLoadout(true);
 				return undefined;
@@ -82,7 +133,7 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 			early = undefined;
 			const candidates = catalog.hidden();
 			const opened: Capability[] = [];
-			if (candidates.length > 0) {
+			if (candidates.length > 0 && asks()) {
 				const pending = started?.decision ?? disclose(userWords(event.prompt), candidates, ctx.signal);
 				// Shadow records the verdict; only an active one is worth holding the turn for.
 				let decision: Awaited<typeof pending> | undefined;

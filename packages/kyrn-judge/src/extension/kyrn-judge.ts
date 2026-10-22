@@ -15,6 +15,7 @@
  * never surface as an exception.
  */
 import { homedir } from "node:os";
+import { join } from "node:path";
 import { type ExtensionAPI, getAgentDir } from "@earendil-works/pi-coding-agent";
 import type { Capability } from "../catalog/catalog.ts";
 import { DEFAULT_CONFIG, type KyrnConfig, loadConfig } from "../config.ts";
@@ -60,6 +61,7 @@ import { registerSwarm, type SwarmRunner } from "./features/swarm.ts";
 import { registerSwarmChild } from "./features/swarm-child.ts";
 import { registerTools } from "./features/tools.ts";
 import { registerTtsr } from "./features/ttsr.ts";
+import { registerUnattendedDrift } from "./features/unattended.ts";
 import { registerWarming } from "./features/warming.ts";
 import { registerWarmup } from "./features/warmup.ts";
 import { registerWatchdog } from "./features/watchdog.ts";
@@ -179,6 +181,7 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 	// Whoever injected a provider or a config owns the setup, and that includes not reading the user's home folder.
 	const roots: HarnessRoots | undefined =
 		options.roots ?? (options.config || options.provider ? undefined : { home: homedir(), agentDir: getAgentDir() });
+	runtime.stateDir = roots ? join(roots.agentDir, "mu") : undefined;
 	if (loaded.disabled) {
 		// Asking the user needs no judge, so the permission mode the user chose holds with judging off too. In judge
 		// mode, with no judge to ask, what the judge would have decided goes to the user.
@@ -206,16 +209,24 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["skills", registerSkills],
 		// Registered before the features that add capabilities, and that is fine: it reads the catalog when a turn starts.
 		["catalog", registerCatalog],
+		// Before admission, which then archives the screened text, and before the MCP feature, whose label goes in front of it.
+		// Before the guard and the gates too: a call to an MCP tool taken off the list for its description (tool.description)
+		// is refused before anyone is asked to allow it.
+		["injection", registerInjection],
 		["guard", registerGuard],
 		["constraints", registerConstraints],
 		// After the constraint gate: a call the user ruled out is stopped before anyone is asked to allow it.
 		["permissions", (shared) => registerPermissions(shared, roots)],
-		// Before admission, which then archives the screened text, and before the MCP feature, whose label goes in front of it.
-		["injection", registerInjection],
 		["admission", registerAdmission],
 		["forgetting", registerForgetting],
 		["compaction", registerCompaction],
-		["monitor", registerMonitor],
+		[
+			"monitor",
+			(shared) => {
+				registerMonitor(shared);
+				registerUnattendedDrift(shared);
+			},
+		],
 		["ttsr", registerTtsr],
 		["watchdog", registerWatchdog],
 		// Before the goal and completion checks: errors an edit introduced are said before "verify your change" is.

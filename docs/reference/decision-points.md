@@ -10,7 +10,7 @@ Each point has a mode:
 - `shadow`: Asked and logged, but changes nothing. Use it to see how well the judge does before relying on it.
 - `off`: Not asked; this decision point is off.
 
-The built-in default is `"modes": { "default": "active" }`. `context.compact` and `output.drift` belong to features that are off by default, so they don't run until you turn those features on. Out of the box, `input.interjection` and `notify.routing` are in `shadow` and `swarm.patch` is `off`. So 35 of the 40 points act on their verdicts from the start. Set `"default": "shadow"`, or a point's own mode, in `~/.mu/agent/mu.json` to only record verdicts; the desktop app's settings switch a point on or off; `/mu mode <point|default> <off|shadow|active>` switches one for the current session. See [Configuration](../configuration.md).
+The built-in default is `"modes": { "default": "active" }`. `context.compact` and `output.drift` belong to features that are off by default, so they don't run until you turn those features on. Out of the box, `input.interjection`, `notify.routing` and `turn.drift` are in `shadow` and `swarm.patch` is `off`. So 34 of the 40 points act on their verdicts from the start. Set `"default": "shadow"`, or a point's own mode, in `~/.mu/agent/mu.json` to only record verdicts; the desktop app's settings switch a point on or off; `/mu mode <point|default> <off|shadow|active>` switches one for the current session. See [Configuration](../configuration.md).
 
 The feature column names the switch in `features` that turns the whole behavior off; its options are in [Features](features.md).
 

@@ -13,13 +13,14 @@ import { cacheWarming } from "../src/decisions/cache-warming.ts";
 import { fileLocate } from "../src/decisions/file-locate.ts";
 import { inputInterjection } from "../src/decisions/interjection.ts";
 import { skillDisclosure } from "../src/decisions/skill-disclosure.ts";
-import { riskFlag } from "../src/extension/features/guard.ts";
+import { RISK_COMMAND_CHARS, riskExcerpt, riskFlag } from "../src/extension/features/guard.ts";
 import { pickModel, type SwarmAssignment, type SwarmRunner, type SwarmTask } from "../src/extension/features/swarm.ts";
 import { lexicalRank } from "../src/extension/features/tools.ts";
 import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import { Judge } from "../src/judge.ts";
 import { MockJudgeProvider, type MockResponder } from "../src/providers/mock.ts";
 import type { Answer } from "../src/types.ts";
+import { attended } from "./attended.ts";
 
 const yes: Answer = { type: "boolean", probability: 0.96 };
 const no: Answer = { type: "boolean", probability: 0.03 };
@@ -67,7 +68,7 @@ describe("kyrn features", () => {
 					// Each test here is about one feature; asking permission is tested in permissions.test.ts.
 					config: parseConfig({
 						modes: extra.modes,
-						features: { memory: false, permissions: { mode: "full" }, ...extra.features },
+						features: attended({ memory: false, permissions: { mode: "full" }, ...extra.features }),
 					}),
 					swarmRunner: extra.runner,
 				}),
@@ -112,6 +113,44 @@ describe("kyrn features", () => {
 		expect(riskFlag("Format-Volume -DriveLetter D")).toBe("overwrites a device");
 		expect(riskFlag("Get-ChildItem -Recurse src")).toBeUndefined();
 		expect(riskFlag("Remove-Item a.txt")).toBeUndefined();
+	});
+
+	it("guard: a long flagged command reaches the judge with the parts its flag is about", async () => {
+		const steps = (from: number, count: number) =>
+			Array.from({ length: count }, (_, i) => `echo step-${from + i}`).join(" && ");
+		const short = `${steps(0, 5)} && rm -rf build`;
+		expect(riskExcerpt(short)).toBe(short);
+		// Cut at 400 characters, this read as a run of echoes: the delete at the end never reached the judge.
+		const late = `${steps(0, 1500)} && rm -rf build && ${steps(1500, 50)}`;
+		expect(late.length).toBeGreaterThan(RISK_COMMAND_CHARS);
+		const excerpt = riskExcerpt(late);
+		expect(excerpt.startsWith("echo step-0 && ")).toBe(true);
+		expect(excerpt).toContain("rm -rf build");
+		expect(excerpt.length).toBeLessThanOrEqual(RISK_COMMAND_CHARS + 100);
+		// Every rule that matched keeps a part, however many matches do not fit.
+		const deletes = Array.from({ length: 60 }, (_, i) => `rm -rf out-${i} && ${steps(i * 40, 40)}`).join(" && ");
+		const many = riskExcerpt(`${steps(0, 1500)} && ${deletes} && git push --force origin main`);
+		expect(many).toContain("rm -rf out-0");
+		expect(many).toContain("git push --force origin main");
+		expect(many).toMatch(/\(\d+ more flagged parts left out\)$/);
+		// Flagged only as the shell reads its words: the excerpt shows those words.
+		expect(riskExcerpt(`${steps(0, 1500)} && r''m -rf build`)).toContain("rm -rf build");
+
+		const seen: string[] = [];
+		const harness = await start(
+			(request): Record<string, Answer> => {
+				if (!("requested" in request.questions)) return {};
+				seen.push(String((request.state as { command: unknown }).command));
+				return { destructive: yes, requested: no };
+			},
+			{ tools: [tool("bash", () => "ok")], features: { permissions: false } },
+		);
+		harness.setResponses([
+			fauxAssistantMessage([fauxToolCall("bash", { command: late })], { stopReason: "toolUse" }),
+			fauxAssistantMessage("I could not clean up."),
+		]);
+		await harness.session.prompt("Why is the build slow?");
+		expect(seen).toEqual([excerpt]);
 	});
 
 	it("guard: inside a subagent, only the user's goal passed down says what was asked for", async () => {
@@ -421,10 +460,10 @@ describe("kyrn features", () => {
 						mode: "active",
 						only: ["preflight", "skills", "catalog", "memory"],
 						config: parseConfig({
-							features: {
+							features: attended({
 								skills: { minSkills: 1 },
 								memory: { path, applied: false, outcome: false },
-							},
+							}),
 						}),
 						capabilities: [
 							{

@@ -33,6 +33,7 @@ import { clip, failOpen, type KyrnRuntime, textOf, userWords, within } from "../
 import { isShellTool } from "../shell-tools.ts";
 import { describeCall } from "./admission.ts";
 import type { HarnessRoots } from "./inherit.ts";
+import { isUnattended } from "./unattended.ts";
 
 const CORRECTION_PROMPT = `You turn a user's correction into one reusable lesson for a coding agent.
 Reply with one JSON object and nothing else: {"trigger": "<the situation in which the lesson applies, one short sentence>", "lesson": "<what to do, one imperative sentence>"}`;
@@ -118,6 +119,10 @@ function reportsOf(event: { content: unknown; details?: unknown }): string[] {
  *
  * The judge never writes: the configured writer model phrases a correction (without one the user's
  * own words are kept), and a way out is phrased by the writer or the conversation's model.
+ *
+ * An unattended run (`mu --print`, json mode) reads the kept lessons and learns nothing new: no one-shot run on a
+ * machine that may be thrown away should pay for lessons nobody will read. The `remember` tool is left out of its
+ * request by the catalog (`catalog.unattendedHidden`).
  */
 export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void {
 	const options = runtime.options("memory", {
@@ -135,10 +140,14 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 		outcome: true,
 		/** Ask at the end of a turn whether the lessons brought into it were followed. */
 		applied: true,
+		/** Learn from corrections, ways out and sub-agents' reports in a `mu --print` or json run too. */
+		unattendedWrites: false,
 	});
 	// A sub-agent keeps no lessons: its brief brings the ones that apply, and what it learned goes back in its report.
 	if (!options.enabled || process.env.KYRN_SWARM_DEPTH) return;
 	const { pi } = runtime;
+	/** Whether this run may learn new lessons: not an unattended one, unless `unattendedWrites` says so. */
+	const learns = (ctx: ExtensionContext | undefined): boolean => options.unattendedWrites || !isUnattended(ctx);
 	// A caller that owns the setup and named no home gets a store that lasts as long as the session.
 	const store = new LessonStore(options.path || (roots ? join(roots.agentDir, "mu", "lessons.jsonl") : undefined));
 	const now = () => new Date().toISOString();
@@ -431,7 +440,7 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 			runtime.touch(ctx);
 			if (event.source === "extension" || event.streamingBehavior || !event.text.trim()) return undefined;
 			const previous = runtime.lastAssistantText;
-			if (!previous) return undefined;
+			if (!previous || !learns(ctx)) return undefined;
 			// What the person typed, without a host's preamble: that is what a lesson in their words keeps.
 			const words = userWords(event.text);
 			const place = placeOf(ctx);
@@ -453,6 +462,8 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 	// Write side: the agent's own way out -----------------------------------------------------------------
 
 	runtime.onTrouble((kind, detail) => {
+		// Drift is a judge's guess about the course and names no failing call: there is no way out of it to learn.
+		if (kind === "drift") return;
 		sync();
 		trouble ??= { detail: [], step: stepCount };
 		// The latest trouble counts: a check that passed before it is no way out of it.
@@ -467,7 +478,7 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 
 	/** At most once per turn, and only after trouble that the turn got out of. Adds nothing to an ordinary turn. */
 	const learnFromOutcome = (ctx: ExtensionContext): void => {
-		if (!options.outcome || outcomeAsked || !trouble || !lastRun) return;
+		if (!options.outcome || outcomeAsked || !trouble || !lastRun || !learns(ctx)) return;
 		const phrase = phraser(ctx);
 		// Nobody could write the lesson down, so there is nothing to ask about.
 		if (!phrase) return;
@@ -521,7 +532,7 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 			}
 			const command = isShellTool(toolName) ? String(input.command ?? "") : "";
 			if (command && isCheckCommand(command)) lastCheck = { step: stepCount, failed: event.isError };
-			if ((toolName === "delegate" || toolName === "hive") && !event.isError) {
+			if ((toolName === "delegate" || toolName === "hive") && !event.isError && learns(ctx)) {
 				learnFromReports(reportsOf(event), placeOf(ctx));
 			}
 			return undefined;
@@ -556,19 +567,16 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 
 	// Write side: the model -------------------------------------------------------------------------------
 
-	const notKept = (verdict: WorthVerdict, judged: boolean): string => {
-		if (!judged) return "Not stored: there is no verdict on whether it is worth keeping.";
-		if (verdict === "one_off") return "Not stored: the judge read it as mattering for this task only.";
-		if (verdict === "already_known")
-			return "Not stored: the judge read it as known already, from the project's instructions or as common practice.";
-		return "Not stored: the judge could not tell whether it will help again.";
-	};
+	const notKept = (verdict: "one_off" | "already_known"): string =>
+		verdict === "one_off"
+			? "Not stored: the judge read it as mattering for this task only."
+			: "Not stored: the judge read it as known already, from the project's instructions or as common practice.";
 
 	pi.registerTool({
 		name: "remember",
 		label: "Remember",
 		description:
-			"Keep a lesson for later sessions in this project: something you learned that will help again, such as a trap and the way around it, or a fact about the project that is written down nowhere. Say when it applies (trigger) and what to do then (lesson), one sentence each. A judgment model keeps it only if it will help again and is not known already, and folds it into a kept lesson that says the same.",
+			"Keep a lesson for later sessions in this project: something you learned that will help again, such as a trap and the way around it, or a fact about the project that is written down nowhere. Say when it applies (trigger) and what to do then (lesson), one sentence each. A judgment model turns it down when it only matters for this task or is known already, and folds it into a kept lesson that says the same.",
 		parameters: Type.Object({
 			trigger: Type.String({ description: "When the lesson applies: the situation or the error, one sentence" }),
 			lesson: Type.String({ description: "What to do then: one imperative sentence" }),
@@ -590,9 +598,12 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 				{ lessons: [candidate], projectInstructions: instructions },
 				{ signal },
 			);
-			const judged = decision.source === "judge";
-			const verdict: WorthVerdict = judged ? (decision.outcome[0] ?? "unclear") : "unclear";
-			if (verdict !== "reusable") return answer(notKept(verdict, judged), { stored: false, verdict });
+			const verdict: WorthVerdict = decision.source === "judge" ? (decision.outcome[0] ?? "unclear") : "unclear";
+			// The model's call is a vote already: only a judge that read the lesson as not worth keeping turns it down.
+			// Without a verdict, or with "cannot tell", it is kept; the merge and the retire rule clean up after it.
+			if (verdict === "one_off" || verdict === "already_known") {
+				return answer(notKept(verdict), { stored: false, verdict });
+			}
 			const kept = await keep({ ...candidate, kind: "fact", origin: "model" }, placeOf(ctx), signal);
 			if (kept.kind === "same") {
 				return answer(`Already kept: a lesson says the same. ${kept.existing.lesson}`, {

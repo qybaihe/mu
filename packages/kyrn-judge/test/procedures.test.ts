@@ -128,7 +128,7 @@ describe("procedures", () => {
 			return agent.shift() ?? fauxAssistantMessage("no more agent replies");
 		};
 
-	async function start(kind: "procedure" | "one_off") {
+	async function start(kind: "procedure" | "one_off", sure = 0.95) {
 		const agentDir = temp();
 		const events: KyrnPresentationEvent[] = [];
 		const provider = new MockJudgeProvider((request: JudgeRequest): Record<string, Answer> => {
@@ -138,8 +138,8 @@ describe("procedures", () => {
 					type: "choice",
 					choice: kind,
 					probabilities: {
-						procedure: kind === "procedure" ? 0.9 : 0.1,
-						one_off: kind === "procedure" ? 0.1 : 0.9,
+						procedure: kind === "procedure" ? sure : 1 - sure,
+						one_off: kind === "procedure" ? 1 - sure : sure,
 					},
 				},
 			};
@@ -210,6 +210,19 @@ describe("procedures", () => {
 		]);
 		await session.harness.session.prompt("cut a patch release");
 		expect(session.asked()).toEqual([]);
+	});
+
+	it("pays no writer for a run the judge is not sure was a procedure", async () => {
+		// 0.85: what the drafts of runs that failed their checks scored in the October review.
+		const session = await start("procedure", 0.85);
+		const heard: string[] = [];
+		const agent = [...RELEASE.map(run), fauxAssistantMessage("Released v1.4.1 and published it.")];
+		session.harness.setResponses(Array.from({ length: 12 }, () => router(agent, heard)));
+		await session.harness.session.prompt("cut a patch release");
+		await vi.waitFor(() => expect(session.asked()).toHaveLength(1));
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		expect(heard).toEqual([]);
+		expect(session.drafts.list()).toEqual([]);
 	});
 
 	it("leaves a one-off run alone, and the writer is never called", async () => {
