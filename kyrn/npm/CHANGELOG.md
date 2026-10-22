@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.1.12] - 2026-10-22
+
 ### Changed
 
 - The permission mode `jev` ("Jev approves") is now `judge` ("Judge mode"): `/permissions full | judge | ask`, `MU_PERMISSIONS=judge`. A saved `jev` falls back to the default, which is judge mode. The kernel's and the command line's messages say "the judge" where they meant mu's judge in general, and keep "Jev" for TypeSafe's hosted model.
