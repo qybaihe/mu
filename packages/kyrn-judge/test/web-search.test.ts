@@ -1,7 +1,9 @@
 import { readFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
+import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { fauxAssistantMessage, fauxToolCall } from "@earendil-works/pi-ai";
+import { Type } from "typebox";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import { parseConfig } from "../src/config.ts";
@@ -266,9 +268,10 @@ describe("web feature", () => {
 		while (harnesses.length > 0) harnesses.pop()?.cleanup();
 	});
 
-	async function start(web: Record<string, unknown>) {
+	async function start(web: Record<string, unknown>, tools?: AgentTool[]) {
 		const presented: KyrnPresentationEvent[] = [];
 		const harness = await createHarness({
+			tools,
 			extensionFactories: [
 				createKyrnJudgeExtension({
 					provider: new MockJudgeProvider(() => ({})),
@@ -355,14 +358,23 @@ describe("web feature", () => {
 		});
 	});
 
-	it("web_search says what went wrong and what to try when no source answers", async () => {
-		const { harness } = await start({ search: `${origin}/missing?q={query}`, searchFallback: false });
-		harness.setResponses([call("web_search", { query: "anything" }), fauxAssistantMessage("Nothing.")]);
-		await harness.session.prompt("Search.");
-		const [failed] = results(harness);
-		expect(failed.isError).toBe(true);
-		expect(failed.text).toContain("answered with HTTP 404");
-		expect(failed.text).toContain("features.web.search");
-		expect(failed.text).toContain("browse tool");
+	it("web_search says what went wrong and what to try when no source answers, the browse tool only when there is one", async () => {
+		const browse: AgentTool = {
+			name: "browse",
+			label: "browse",
+			description: "browse",
+			parameters: Type.Object({}),
+			execute: async () => ({ content: [{ type: "text", text: "ok" }], details: {} }),
+		};
+		for (const tools of [[browse], undefined]) {
+			const { harness } = await start({ search: `${origin}/missing?q={query}`, searchFallback: false }, tools);
+			harness.setResponses([call("web_search", { query: "anything" }), fauxAssistantMessage("Nothing.")]);
+			await harness.session.prompt("Search.");
+			const [failed] = results(harness);
+			expect(failed.isError).toBe(true);
+			expect(failed.text).toContain("answered with HTTP 404");
+			expect(failed.text).toContain("features.web.search");
+			expect(failed.text.includes("browse tool")).toBe(tools !== undefined);
+		}
 	});
 });

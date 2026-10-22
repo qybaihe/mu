@@ -29,6 +29,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 - **The drift check is reworked.** It looks at exit codes, times and how long since anything got better, checks every few minutes even while a reply takes long, and would steer only after two confident readings in a row and 10 minutes without progress. It still only records until a benchmark shows it helps.
 - **`mu --print` and json-mode runs take no checkpoints and send the judge no warm-up questions**: nobody there can rewind, yet every change waited for git to record the folder. That saves several seconds a run. They also no longer ask the judge how to route notices. Interactive and desktop sessions keep checkpoints; warm-up skips a judge on your own machine or network, and pauses while real questions keep the connection warm.
 - Subagents and hive bees start faster: they use the skills and capabilities their session already chose instead of asking the judge again, and never see a skill the session hid.
+- `mu --print`, json-mode runs and subagents send about 375 fewer tokens in every request: pi's documentation list is one line there, mu's note about itself is shorter, and no tool description points at the browser tool those runs don't have.
 
 ### Fixed
 

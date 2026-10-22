@@ -14,6 +14,7 @@ import { failOpen, type KyrnRuntime } from "../runtime.ts";
  * - no skill drafts (`procedures.unattended`) and no new lessons (`memory.unattendedWrites`). Kept lessons are still read;
  * - no checkpoints (`checkpoint.unattended`): nobody can confirm a rewind, so no file is ever put back;
  * - no warm-up questions to the judge (`warmup.unattended`).
+ * - the prompt's `<mu>` section is shorter and its `<docs>` section one line (`welcome.unattended`), in a sub-agent too.
  *
  * A sub-agent runs in json mode too, but it is not unattended: its parent reads every step and chose its tools.
  */
