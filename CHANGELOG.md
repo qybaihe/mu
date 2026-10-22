@@ -30,7 +30,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 - **`/permissions` opens on the current mode**, so pressing Enter keeps it; before, the cursor started on Full access. A long option in mu's pickers wraps under its own text.
 - A lesson the model asked to `remember` is kept when the judge gives no verdict, instead of being dropped.
 - **mu's own commands no longer show `[t]` in the terminal's slash menu.** pi tagged them as an extension loaded for this run only; they come with mu.
-- **The terminal's `/login` no longer offers the Codex CLI's login ("OpenAI Codex (legacy)").** ChatGPT signs in through OpenAI, as in the desktop app and `mu setup`; a sign-in made before keeps working until `/logout`. `mu setup` now names the entries `/login` shows: Sign in with an account, then OpenAI for ChatGPT, xAI for Grok, or a Google sign-in.
+- **The terminal's `/login` no longer offers the Codex CLI's login ("OpenAI Codex (legacy)").** ChatGPT signs in through OpenAI, as in the desktop app and `mu setup`; a sign-in made before keeps working until `/logout`. Its first menu also drops "Sign in with Radius", pi's own service, which stays in the list of accounts. `mu setup` now names the entries `/login` shows: Sign in with an account, then OpenAI for ChatGPT, xAI for Grok, or a Google sign-in.
 - With no model connected, the status line says "no model" instead of "unknown".
 
 ## [0.1.10] - 2026-10-22

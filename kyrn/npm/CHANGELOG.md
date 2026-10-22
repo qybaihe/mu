@@ -26,7 +26,7 @@
 
 ### Fixed
 
-- `/login` hides the `openai-codex` sign-in under mu's name, as `mu auth` and the desktop app do; `openai` (Sign in with ChatGPT) replaces it. A stored `openai-codex` sign-in still works and shows in `/logout`. `mu setup`'s subscription hint names `/login`'s actual entries.
+- `/login` hides the `openai-codex` sign-in under mu's name, as `mu auth` and the desktop app do; `openai` (Sign in with ChatGPT) replaces it. A stored `openai-codex` sign-in still works and shows in `/logout`. The first `/login` menu leaves out the "Sign in with Radius" shortcut under mu's name; Radius is still under Sign in with an account. `mu setup`'s subscription hint names `/login`'s actual entries.
 - The footer shows "no model" for the agent's `unknown/unknown` placeholder.
 - The loop rule ("the same call 3 times with the same outcome") compares the whole input and the result text. Paging through a file with `read` at different offsets, or two scripts whose first 300 characters match, no longer counts as a loop.
 - The end-of-run checks (`turn.completion`, `turn.continue`) cancel their judge call when their 3 s wait runs out. A late verdict no longer keeps `mu --print` from exiting until the judge's own timeout: with a slow local judge, runs ended 7-13 s after their last message. Notification verdicts still on their way are cancelled when the session ends.
