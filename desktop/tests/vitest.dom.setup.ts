@@ -66,6 +66,42 @@ class IntersectionObserverMock {
 
 global.IntersectionObserver = IntersectionObserverMock as unknown as typeof IntersectionObserver;
 
+// A WebSocket that never dials. The renderer's realtime channel (common/adapter/httpBridge.ts, ensureWs) opens its socket
+// as soon as a component subscribes to it, and jsdom's own WebSocket really connects to ws://localhost:3000/ws. Nothing
+// listens there: the attempt fails, the channel logs "[ensureWs] ERROR" and "CLOSED code=1006" and arms a timer that
+// dials again after 1 s, 2 s, 4 s, ... When that failure came while the worker was finishing a file, its log was still
+// on its way to vitest, and vitest failed the run with "EnvironmentTeardownError: Closing rpc while "onUserConsoleLog"
+// was pending" although every test had passed. This socket stays CONNECTING and fires no event, so nothing is logged or
+// scheduled after a test. A test of the channel itself installs its own fake with vi.stubGlobal; unstubbing brings
+// back this one.
+class InertWebSocket extends EventTarget {
+  static readonly CONNECTING = 0;
+  static readonly OPEN = 1;
+  static readonly CLOSING = 2;
+  static readonly CLOSED = 3;
+  readonly CONNECTING = 0;
+  readonly OPEN = 1;
+  readonly CLOSING = 2;
+  readonly CLOSED = 3;
+  readonly url: string;
+  readyState: number = InertWebSocket.CONNECTING;
+
+  constructor(url: string | URL) {
+    super();
+    this.url = String(url);
+  }
+
+  send(): void {
+    throw new DOMException('The WebSocket is still connecting.', 'InvalidStateError');
+  }
+
+  close(): void {
+    this.readyState = InertWebSocket.CLOSED;
+  }
+}
+
+global.WebSocket = InertWebSocket as unknown as typeof WebSocket;
+
 // Mock requestAnimationFrame
 global.requestAnimationFrame = (callback: FrameRequestCallback) => {
   return setTimeout(() => callback(Date.now()), 0) as unknown as number;
