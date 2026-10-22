@@ -13,7 +13,7 @@ mu
 
 You need Node.js 22.19 or newer. The package is `mu-agent`; the command is `mu`. It runs on macOS, Linux, Windows and WSL.
 
-`mu setup` connects a model from your shell. Paste an API key and mu detects the service from the key's format (DeepSeek, Qwen, Kimi, GLM, SiliconFlow, StepFun, OpenRouter, OpenCode Zen, OpenAI, Anthropic, Google Gemini, xAI), or pick Ollama or your own endpoint. It checks the key with one request, picks a starting model and sets up the judge. If no model is set up yet, the first `mu` run offers to start setup.
+`mu setup` connects a model from your shell. Paste an API key and mu detects the service from the key's format (OpenAI, Anthropic, Google Gemini, xAI, OpenRouter, OpenCode Zen, DeepSeek, Qwen, Kimi, GLM, SiliconFlow, StepFun), or pick Ollama or your own endpoint. It checks the key with one request, picks a starting model and sets up the judge. To use a ChatGPT, Grok or Google subscription instead, choose it there and mu starts on `/login`. If no model is set up yet, the first `mu` run offers to start setup.
 
 Inside mu, `/login` signs in to a provider or a subscription and `/model` switches models. `/help` lists everything. `mu doctor` checks your setup from the shell.
 
