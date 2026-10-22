@@ -31,6 +31,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 - A late skill selection on the first message now takes effect from the next message, instead of every skill staying in the prompt for the whole conversation.
 - **`/help` fits the terminal.** Its English was laid out for a wide window, so in a narrower one the terminal broke lines again and left single words at the left edge. Each description now wraps in its own column at the terminal's width. It also names ZCode for `/import-chat`, and its `/mu route` example uses `openai` rather than the Codex sign-in.
 - **`/doctor` and `/status` inside mu no longer report pi's placeholder `unknown/unknown` as your model.** With no model they say "none yet", and `/doctor` marks it to fix. `/doctor` starts with how many things need fixing, and its rows wrap like `/help`'s.
+- **The local judge Laya no longer crashes when the disk is nearly full**, and no longer stalls for seconds when a request is longer or shorter than the one before.
 - **`/permissions` opens on the current mode**, so pressing Enter keeps it; before, the cursor started on Full access. A long option in mu's pickers wraps under its own text.
 - A lesson the model asked to `remember` is kept when the judge gives no verdict, instead of being dropped.
 - **mu's own commands no longer show `[t]` in the terminal's slash menu.** pi tagged them as an extension loaded for this run only; they come with mu.

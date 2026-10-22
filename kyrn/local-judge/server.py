@@ -27,9 +27,16 @@ from pathlib import Path
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 47823
 MAX_BODY_BYTES = 1024 * 1024
-# Measured on an M3 Max with 10-question preflights: no floor p50 411 ms (one shape switch per request),
-# 256 -> 124 ms, 384 -> 155 ms. Requests longer than the floor still work; they just pay the switch.
-DEFAULT_MIN_LENGTH = 256
+# Every request is padded to at least this many tokens; by default (None) to the checkpoint's whole window, so that
+# after warm-up the input length never changes. A change of length is what crashed the sidecar: Core ML re-specializes
+# the GPU program from its compiled copy of the model in ~/Library/Caches/<process>/com.apple.e5rt.e5bundlecache,
+# which it marks APFS-purgeable, and macOS deletes those files whenever the disk runs low. The next change of length
+# then recompiles the model (3-36 s, 644 MB written again) or, when the purge lands mid-load, aborts the process with
+# "MPSGraphTensorData.mm: failed assertion `shape.count = 0 != strides.count = 2'". Measured on an M6 under load:
+# 1024 tokens cost ~34 ms a question at a steady length against ~23-32 ms for 384-768, while a change of length
+# cost 0.4-1.1 s at p50 and up to 18 s at p90. A lower floor (MU_LOCAL_JUDGE_MIN_LENGTH=256) is faster for short
+# requests and brings the changes of length back.
+DEFAULT_MIN_LENGTH = None
 DEFAULT_MODEL_DIR = Path(__file__).resolve().parent / "models" / "laya-multilingual-coreml"
 
 
@@ -88,11 +95,10 @@ def from_laya_answer(answer):
 
 
 class LocalJudge:
-    def __init__(self, model_dir, compute_units=None, min_length=0):
+    def __init__(self, model_dir, compute_units=None, min_length=DEFAULT_MIN_LENGTH):
         import laya_coreml as laya
 
         self.model_dir = Path(model_dir)
-        self.min_length = min_length
         started = time.perf_counter()
         self.agent = laya.load(str(self.model_dir), local_files_only=True, compute_units=compute_units)
         self.load_seconds = time.perf_counter() - started
@@ -103,15 +109,19 @@ class LocalJudge:
         manifest = getattr(self.agent, "manifest", {})
         self.model_id = "laya:" + str(manifest.get("repository") or self.model_dir.name)
         self.shape = getattr(self.agent, "shape", {})
+        if min_length is None:
+            min_length = getattr(self.agent, "cfg", {}).get("max_len") or self.shape.get("max_length") or 0
+        self.min_length = int(min_length)
 
     def uniform_shape(self, state, laya_questions):
         """Pad every question of a request to one input length.
 
         Core ML re-specializes the GPU program whenever the enumerated length
-        changes (about 350 ms on an M3 Max, against 40 ms for a steady shape),
-        and the questions of one request differ in length because their
-        options do. One bucket per request removes those switches; the floor
-        keeps consecutive requests on the same bucket too.
+        changes (0.3-1 s, against ~30 ms for a steady shape), reading the
+        compiled model back from a cache macOS may have purged (see
+        DEFAULT_MIN_LENGTH). The questions of one request differ in length
+        because their options do, so one bucket per request removes the
+        changes within it; the floor keeps every request in the same bucket.
         """
         lengths = self.agent.shape.get("lengths")
         if not lengths:
@@ -199,9 +209,10 @@ class LocalJudge:
     def warm_up(self):
         """Core ML compiles each enumerated input length on first use (seconds). Pay that before real traffic."""
         lengths = list(self.shape.get("lengths") or [self.shape.get("default_length", 128)])
-        # Finish on the bucket real traffic starts in, so the first request does not pay a shape switch.
+        # Requests are padded to at least the floor's bucket, so no request uses a shorter one: warm only the lengths
+        # traffic can reach, and finish on the floor's bucket, so the first request does not pay a shape switch.
         resting = next((n for n in lengths if n >= self.min_length), lengths[-1])
-        lengths = [n for n in lengths if n != resting] + [resting]
+        lengths = [n for n in lengths if n > resting] + [resting]
         question = {"warm": {"type": "noul", "instructions": "Is this a warm-up request?"}}
         started = time.perf_counter()
         for length in lengths:
@@ -299,8 +310,9 @@ def main():
     parser.add_argument(
         "--min-length",
         type=int,
-        default=int(setting("LOCAL_JUDGE_MIN_LENGTH", DEFAULT_MIN_LENGTH)),
-        help="Smallest input length to pad to. A floor above the usual request size avoids shape switches between requests.",
+        default=setting("LOCAL_JUDGE_MIN_LENGTH", DEFAULT_MIN_LENGTH),
+        help="Smallest input length to pad to. Default: the checkpoint's window, so the length never changes after "
+        "warm-up; a change of length is slow and, when macOS has purged Core ML's cache, can crash the sidecar.",
     )
     args = parser.parse_args()
 
