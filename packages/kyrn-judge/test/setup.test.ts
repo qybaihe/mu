@@ -390,6 +390,12 @@ describe("the files", () => {
 		const first = new Backups(home, now);
 		first.save(join(home, "agent", "missing.json"));
 		expect(first.path).toBeUndefined();
+		// The `{}` pi writes at its first start, or an empty file, holds nothing to keep.
+		writeFileSync(join(home, "agent", "settings.json"), "{}\n");
+		writeFileSync(join(home, "agent", "models.json"), "");
+		first.save(join(home, "agent", "settings.json"));
+		first.save(join(home, "agent", "models.json"));
+		expect(first.path).toBeUndefined();
 		first.save(file);
 		writeFileSync(file, '{"changed":true}');
 		first.save(file);
