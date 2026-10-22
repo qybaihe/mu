@@ -60,7 +60,7 @@ mu                     # an interactive session in the current directory
 | `/import-chat` | Import a Claude Code, Codex or ZCode conversation |
 | `/doctor` | Check the configuration and the connections |
 
-pi's own commands stay as they are: `/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export`, `/mcp` and the rest.
+pi's own commands stay as they are: `/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export`, `/mcp` and the rest. One difference: `/login` offers no Claude subscription sign-in, because Anthropic doesn't allow other apps to offer one; use an Anthropic API key.
 
 ## The verdict line {#verdict-line}
 

@@ -341,7 +341,7 @@ Requires Node.js 22.19 or newer. `mu -p "prompt"` runs a single prompt and print
 | `/import-chat` | Import a Claude Code, Codex or ZCode conversation |
 | `/doctor` | Check the setup and the connections |
 
-pi's own commands (`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export` and the rest) work as they do in pi. `MU_JUDGE=laya,jev mu` overrides the judges for a single run.
+pi's own commands (`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export` and the rest) work as they do in pi, except that `/login` offers no Claude subscription sign-in: Anthropic doesn't allow other apps to offer one, so use an Anthropic API key. `MU_JUDGE=laya,jev mu` overrides the judges for a single run.
 
 ## Privacy
 

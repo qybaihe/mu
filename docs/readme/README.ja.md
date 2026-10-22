@@ -286,7 +286,7 @@ Node 22.19 以降が必要です。`mu -p "prompt"` は 1 回だけ実行して�
 | `/import-chat` | Claude Code、Codex または ZCode の会話をインポートする |
 | `/doctor` | セットアップと接続を確認する |
 
-pi 自身のコマンド（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export` など）はそのままです。`MU_JUDGE=laya,jev mu` とすると、その 1 回の実行だけ判定器を上書きできます。
+pi 自身のコマンド（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export` など）はそのままです。ただし `/login` には Claude サブスクリプションのサインインがありません（Anthropic が他のアプリによる提供を認めていないため）。Anthropic の API キーを使ってください。`MU_JUDGE=laya,jev mu` とすると、その 1 回の実行だけ判定器を上書きできます。
 
 ## プライバシー
 

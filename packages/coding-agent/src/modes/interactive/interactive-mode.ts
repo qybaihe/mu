@@ -5803,6 +5803,13 @@ export class InteractiveMode {
 		}
 	}
 
+	/**
+	 * Under another name than pi (mu), no Claude subscription sign-in: Anthropic's terms don't let other apps offer
+	 * Claude.ai login (code.claude.com/docs/en/legal-and-compliance). An Anthropic API key is still offered, and a
+	 * sign-in made before stays until /logout.
+	 */
+	private static readonly HIDDEN_SIGN_INS: ReadonlySet<string> = new Set(APP_NAME === "pi" ? [] : ["anthropic"]);
+
 	private getLoginProviderOptions(authType?: "oauth" | "api_key"): AuthSelectorProvider[] {
 		const options: AuthSelectorProvider[] = [];
 		for (const provider of this.session.modelRuntime.getProviders()) {
@@ -5814,7 +5821,11 @@ export class InteractiveMode {
 					}
 				: undefined;
 			const subscription = provider.auth.oauth?.isSubscription === true;
-			if ((!authType || authType === "oauth") && provider.auth.oauth) {
+			if (
+				(!authType || authType === "oauth") &&
+				provider.auth.oauth &&
+				!InteractiveMode.HIDDEN_SIGN_INS.has(provider.id)
+			) {
 				options.push({
 					id: provider.id,
 					name: provider.name,
