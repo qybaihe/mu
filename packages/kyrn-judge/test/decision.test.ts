@@ -204,16 +204,23 @@ describe("DecisionEngine modes", () => {
 		expect(engine.getMode("test.keep_chunk")).toBe("off");
 		expect(engine.getMode("test.other")).toBe("active");
 		expect(engine.asksJudge()).toBe(true);
+		// /status lists what differs from the default as it takes effect: not the shadow that gave way.
+		expect([...engine.overrides()]).toEqual([["test.other", "active"]]);
 		const decision = await engine.decide(keepChunk, input);
 		expect(decision).toMatchObject({ outcome: "keep", source: "fallback" });
 		expect(provider.calls).toHaveLength(0);
 
 		engine.setMode("test.other", "off");
 		expect(engine.asksJudge()).toBe(false);
+		expect(engine.overrides().size).toBe(0);
 		// Turned on again, the built-in shadow comes back.
 		engine.setDefaultMode("active");
 		expect(engine.getMode("test.keep_chunk")).toBe("shadow");
 		expect(engine.asksJudge()).toBe(true);
+		expect([...engine.overrides()]).toEqual([
+			["test.keep_chunk", "shadow"],
+			["test.other", "off"],
+		]);
 	});
 });
 

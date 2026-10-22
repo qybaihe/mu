@@ -294,13 +294,14 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 	const status = (ctx: ExtensionCommandContext): string => {
 		const { stats } = engine;
 		const { savings } = runtime;
-		const modes = [...engine.explicitModes()].map(([specId, mode]) => `${specId}=${mode}`).join(" ");
+		const modes = [...engine.overrides()].map(([specId, mode]) => `${specId}=${mode}`).join(" ");
 		const usage = ctx.getContextUsage();
 		const lines = [
 			`model: ${modelRef(ctx.model) ?? "none yet"} · thinking ${pi.getThinkingLevel()}${
 				usage?.percent === undefined || usage.percent === null ? "" : ` · context ${Math.round(usage.percent)}%`
 			}`,
-			`judge: ${runtime.enabled ? engine.providerId : "off"}`,
+			// With every point off no judge is asked, whichever is set up: say so, as the welcome does.
+			`judge: ${!runtime.enabled ? "off" : engine.asksJudge() ? engine.providerId : "off · every decision point uses its fallback"}`,
 			...[...engine.routes()].map(([specId, judge]) => `  ${specId} -> ${judge.id}`),
 			`mode: default=${engine.getMode("*")}${modes ? ` ${modes}` : ""}`,
 			`calls: ${stats.calls} | failures: ${stats.failures} | abstentions: ${stats.abstentions} | input tokens: ${stats.inputTokens} | probes: ${stats.probes} (${stats.probeInputTokens} input tokens)`,

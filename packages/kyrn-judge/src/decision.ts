@@ -265,9 +265,16 @@ export class DecisionEngine {
 		this.defaultMode = mode;
 	}
 
-	/** Spec ids with an explicit mode, for status displays. */
-	explicitModes(): ReadonlyMap<string, DecisionMode> {
-		return this.modes;
+	/**
+	 * The points whose mode, as it takes effect, differs from the default: what a status display lists after it. A
+	 * built-in shadow that gives way to a default of off is not one.
+	 */
+	overrides(): ReadonlyMap<string, DecisionMode> {
+		return new Map(
+			[...this.modes.keys()]
+				.map((specId): [string, DecisionMode] => [specId, this.getMode(specId)])
+				.filter(([, mode]) => mode !== this.defaultMode),
+		);
 	}
 
 	private async evaluate<In, const Qs extends Questions, Out extends JsonValue>(
