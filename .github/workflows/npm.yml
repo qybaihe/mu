@@ -145,7 +145,8 @@ jobs:
         shell: bash
         run: |
           version="${GITHUB_REF_NAME#mu-agent-v}"
-          tarball="tarball/mu-agent-$version.tgz"
+          # A path, not `tarball/…`: npm reads a bare `name/file` as a GitHub repository and tries to clone it.
+          tarball="./tarball/mu-agent-$version.tgz"
           if [ ! -f "$tarball" ]; then
             echo "::error::The tag says $version, but the package built here is $(ls tarball/*.tgz). Bump kyrn/npm/package.template.json, then tag that commit."
             exit 1
