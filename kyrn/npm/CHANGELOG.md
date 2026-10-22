@@ -29,6 +29,7 @@
 - The loop rule ("the same call 3 times with the same outcome") compares the whole input and the result text. Paging through a file with `read` at different offsets, or two scripts whose first 300 characters match, no longer counts as a loop.
 - The end-of-run checks (`turn.completion`, `turn.continue`) cancel their judge call when their 3 s wait runs out. A late verdict no longer keeps `mu --print` from exiting until the judge's own timeout: with a slow local judge, runs ended 7-13 s after their last message. Notification verdicts still on their way are cancelled when the session ends.
 - The `remember` tool dropped a lesson when the judge gave no verdict (a timeout, no judge, shadow mode) or could not tell. It now stores it; only a judge that reads it as one-off or known already turns it down. Sub-agents' `Lesson:` lines still need a verdict.
+- `manifest.json` gives a decision point its built-in mode (`defaultMode`) when `DEFAULT_CONFIG.modes` sets one for it: `swarm.patch` off, `notify.routing`, `input.interjection` and `turn.drift` in shadow. Without it the desktop app's settings and kernel bar showed these points at the default mode, as active, and usemu.dev counted 38 of the 40 points as acting from the start instead of 34. `scripts/write-docs-reference.mjs` reads the modes from the manifest too.
 
 ## [0.1.12] - 2026-10-22
 
