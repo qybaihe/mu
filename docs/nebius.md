@@ -96,13 +96,13 @@ With `TAVILY_API_KEY` set, `web_search` asks [Tavily](https://tavily.com) first 
 
 ## Measured
 
-Every Nemotron model on Token Factory was put in the judge's seat on 1,367 held-out judge requests from mu's own sessions (decision points across permissions, context, memory, turn control and multi-agent work), scored by what mu then did, relative to having no judge (0 = no better than mu's fallbacks, 100 = every decision right):
+Every Nemotron model on Token Factory was put in the judge's seat on 1,353 held-out judge requests from mu's own sessions (decision points across permissions, context, memory, turn control and multi-agent work), scored by what mu then did, relative to having no judge (0 = no better than mu's fallbacks, 100 = every decision right):
 
 | Judge (thinking off) | Real requests | Constructed cases | Answer format errors |
 | --- | --- | --- | --- |
-| Nemotron 3 Ultra | **47.5** | **48.9** | 0.2% |
-| Nemotron 3 Super | 1.1 | −11.4 | 4% |
-| Nemotron 3.5 Lightning, read off first-token logprobs | 14.9 | −11.3 | none (one token) |
+| Nemotron 3 Ultra | **47.3** | **47.7** | 0.2% |
+| Nemotron 3 Super | 2.7 | −12.7 | 4% |
+| Nemotron 3.5 Lightning, read off first-token logprobs | 15.4 | −12.5 | none (one token) |
 | Nemotron 3.5 Lightning, JSON | — | — | 55% of 40 tried |
 
-On 4,887 further held-out requests, run once, Nemotron 3 Ultra scored 54.4 on real requests (95% interval 44.7–63.3) and 49.3 on constructed ones, with the highest accuracy of every judge measured (92.9%) but costlier mistakes than judges trained for mu. With thinking on (`reasoning_effort: "high"`), its score on the decision points where it was weakest rose from 15.3 to 23.0 on real requests and from 55.9 to 88.3 on constructed ones, at about three times the cost per request.
+On 4,838 further held-out requests, scored once, Nemotron 3 Ultra scored 54.7 on real requests (95% interval 44.6–64.0) and 48.4 on constructed ones: its answers are mostly right (92.7% of checks on constructed cases), but its mistakes cost more than those of judges trained for mu. Thinking on four decision points raised those test scores to 57.9 and 55.9 ([Thinking where it pays](#thinking-where-it-pays)).
