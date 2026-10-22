@@ -18,7 +18,7 @@ mu 有兩種用法：內建所需一切的**桌面版**，和 **`mu` 命令列**
 
    發行頁面上的 `SHA256SUMS` 列出每個檔案的總和檢查碼。macOS 版已簽署，並經過 Apple 公證。Windows 版還沒有程式碼簽署，所以第一次執行時 SmartScreen 會警告：選**其他資訊**，再選**仍要執行**。
 2. 開啟它。新手引導分四步：模型、權限模式、判定器、開始。
-   - **模型。** 貼上一組 API 金鑰，mu 會從格式認出是哪家服務（DeepSeek、Kimi、Qwen、GLM、SiliconFlow、OpenRouter、OpenAI、Anthropic、Google Gemini、xAI 等），並用一次請求檢查它。也可以用 ChatGPT、Claude、Grok 或 Google 訂閱登入。金鑰不對、餘額為零、地區不支援或連不上網路，每一種都會說明該怎麼辦。
+   - **模型。** 貼上一組 API 金鑰，mu 會從格式認出是哪家服務（DeepSeek、Kimi、Qwen、GLM、SiliconFlow、OpenRouter、OpenAI、Anthropic、Google Gemini、xAI 等），並用一次請求檢查它。也可以用 ChatGPT、Grok 或 Google 訂閱登入。金鑰不對、餘額為零、地區不支援或連不上網路，每一種都會說明該怎麼辦。
    - **權限。** 預設選取「判定模式」；請見[權限與安全](@docs/permissions)。
    - **判定器。** 沒有金鑰時，由免費的 Jev 回答（TypeSafe 託管的判定模型，透過 OpenCode Zen 提供）。之後隨時可以回來修改。
    - **開始。** 如果 mu 找到 Claude Code、Codex 或 ZCode 的對話，會提議幫你匯入（引導的第一個畫面也會提議）。

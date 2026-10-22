@@ -14,7 +14,7 @@ mu comes in two forms: a desktop app that bundles everything it needs, and the `
    | Linux x64 / Arm (Debian, Ubuntu) | `mu-<version>-linux-amd64.deb` / `mu-<version>-linux-arm64.deb` |
 
    `SHA256SUMS` lists the checksum of every file. The macOS builds are signed and notarized by Apple. The Windows builds aren't code-signed yet, so SmartScreen shows a warning the first time ("More info" → "Run anyway").
-2. Open the app. The first-run guide asks for a model: paste an API key (mu detects the service from the key's format and checks the key with one request), or sign in with a ChatGPT, Claude, Grok or Google subscription.
+2. Open the app. The first-run guide asks for a model: paste an API key (mu detects the service from the key's format and checks the key with one request), or sign in with a ChatGPT, Grok or Google subscription.
 3. Pick a folder and start a conversation.
 
 There's nothing else to install: no Node.js, and no download on first launch. When a new release is out, the app offers it and downloads it only after you agree.

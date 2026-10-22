@@ -18,7 +18,7 @@ mu는 두 가지로 쓸 수 있어요. 필요한 것을 모두 담은 **데스�
 
    릴리스 페이지의 `SHA256SUMS`에 모든 파일의 체크섬이 있어요. macOS 빌드는 Apple의 서명과 공증을 받았어요. Windows 빌드는 아직 코드 서명이 없어서 처음 실행할 때 SmartScreen이 경고를 띄워요. **추가 정보**를 누른 다음 **실행**을 누르세요.
 2. 앱을 여세요. 처음 실행하면 설정 가이드가 모델, 권한 모드, 판정기, 시작의 네 단계를 안내해요.
-   - **모델.** API 키를 붙여 넣으면 mu가 키의 형식으로 서비스를 알아보고(DeepSeek, Kimi, Qwen, GLM, SiliconFlow, OpenRouter, OpenAI, Anthropic, Google Gemini, xAI 등) 요청 하나로 확인해요. ChatGPT, Claude, Grok, Google 구독으로 로그인할 수도 있어요. 키가 틀렸거나, 잔액이 없거나, 지원하지 않는 지역이거나, 연결이 안 되면 각각 어떻게 하면 되는지 알려 줘요.
+   - **모델.** API 키를 붙여 넣으면 mu가 키의 형식으로 서비스를 알아보고(DeepSeek, Kimi, Qwen, GLM, SiliconFlow, OpenRouter, OpenAI, Anthropic, Google Gemini, xAI 등) 요청 하나로 확인해요. ChatGPT, Grok, Google 구독으로 로그인할 수도 있어요. 키가 틀렸거나, 잔액이 없거나, 지원하지 않는 지역이거나, 연결이 안 되면 각각 어떻게 하면 되는지 알려 줘요.
    - **권한.** *판정 모드*가 미리 선택되어 있어요. [권한과 안전](@docs/permissions)을 보세요.
    - **판정기.** 키가 없으면 OpenCode Zen을 통해 무료 Jev(TypeSafe가 호스팅하는 판정 모델)가 답해요. 언제든 다시 와서 바꿀 수 있어요.
    - **시작.** mu가 Claude Code, Codex, ZCode 대화를 찾으면 가져오기를 제안해요(가이드 첫 화면에서도 제안해요).
