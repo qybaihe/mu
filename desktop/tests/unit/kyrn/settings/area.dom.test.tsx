@@ -543,6 +543,26 @@ describe('the save bar', () => {
     expect(screen.queryByTestId('mu-save-bar')).not.toBeInTheDocument();
     expect(screen.getByTestId('mu-decision-default-tool.risk')).toBeInTheDocument();
   });
+  it('shows a point with a built-in mode by that mode, not the default, and goes back to it', async () => {
+    // As the harness keeps swarm.patch off out of the box while the default mode is active.
+    const decisions = manifest.decisions.map((decision) =>
+      decision.id === 'tool.constraint' ? { ...decision, defaultMode: 'off' as const } : decision
+    );
+    bridge.settings.mockResolvedValue({
+      ok: true,
+      data: settings({ mode: 'active', harness: { status: 'ok', manifest: { ...manifest, decisions } } }),
+    });
+    await open('details-safety');
+    const row = () => screen.getByTestId('mu-decision-tool.constraint');
+    expect(within(row()).getByRole('switch')).not.toBeChecked();
+    expect(within(screen.getByTestId('mu-decision-tool.risk')).getByRole('switch')).toBeChecked();
+    expect(screen.queryByTestId('mu-decision-default-tool.constraint')).not.toBeInTheDocument();
+    fireEvent.click(within(row()).getByRole('switch'));
+    expect(within(row()).getByRole('switch')).toBeChecked();
+    fireEvent.click(within(row()).getByText('Use the default (Off)'));
+    expect(within(row()).getByRole('switch')).not.toBeChecked();
+    expect(screen.queryByTestId('mu-save-bar')).not.toBeInTheDocument();
+  });
   it('shows a point whose feature is off as muted, with a plain sentence instead of a code name', async () => {
     bridge.settings.mockResolvedValue({
       ok: true,

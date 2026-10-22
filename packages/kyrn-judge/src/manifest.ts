@@ -13,6 +13,9 @@
  * (src/manifest-locales.ts): a text whose English changes shows in English there until it is
  * translated again, and the script lists those.
  */
+import { DEFAULT_CONFIG } from "./config.ts";
+import type { DecisionMode } from "./decision.ts";
+
 export interface Localized {
 	readonly zh: string;
 	readonly en: string;
@@ -28,6 +31,12 @@ export interface DecisionInfo {
 	readonly feature: string;
 	readonly title: Localized;
 	readonly summary: Localized;
+	/**
+	 * The point's own built-in mode, from `DEFAULT_CONFIG.modes` in config.ts, when it has one: it keeps that mode
+	 * whatever `modes.default` says, until `modes.<id>` in mu.json sets another. Absent: the point follows
+	 * `modes.default`, which is `active` unless mu.json changes it.
+	 */
+	readonly defaultMode?: DecisionMode;
 }
 
 interface OptionBase {
@@ -80,7 +89,8 @@ export interface HarnessManifest {
 const ms: Localized = { zh: "毫秒", en: "ms" };
 const chars: Localized = { zh: "字符", en: "chars" };
 
-export const MANIFEST: HarnessManifest = {
+/** The manifest as written here; MANIFEST adds each point's built-in mode from config.ts. */
+const DESCRIBED: HarnessManifest = {
 	version: 1,
 	groups: {
 		input: { zh: "输入", en: "Input" },
@@ -2753,4 +2763,12 @@ export const MANIFEST: HarnessManifest = {
 			],
 		},
 	],
+};
+
+export const MANIFEST: HarnessManifest = {
+	...DESCRIBED,
+	decisions: DESCRIBED.decisions.map((decision) => {
+		const mode = DEFAULT_CONFIG.modes[decision.id];
+		return mode ? { ...decision, defaultMode: mode } : decision;
+	}),
 };

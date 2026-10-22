@@ -33,6 +33,7 @@
     "result_label": "结果",
     "feature_label": "功能开关",
     "default_off": "默认关闭",
+    "default_shadow": "默认影子模式",
     "needs_option": "需要打开选项",
     "judges_label": "谁来回答",
     "judges_h2": "判定器可以整体选，也可以每个判定点单独选",

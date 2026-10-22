@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 // Writes docs/reference/decision-points.md and docs/reference/features.md from the judgment kernel's manifest
-// (packages/kyrn-judge/manifest.json), the same file the desktop app's settings read, and the built-in modes in its
-// config.ts. Run it with Node 24 after either changes: node scripts/write-docs-reference.mjs (or --check to fail when
-// the pages are out of date).
+// (packages/kyrn-judge/manifest.json), the same file the desktop app's settings read; it carries each point's built-in
+// mode from the kernel's config.ts. Run it with Node 24 after the manifest changes: node scripts/write-docs-reference.mjs
+// (or --check to fail when the pages are out of date).
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { DEFAULT_CONFIG } from "../packages/kyrn-judge/src/config.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const manifest = JSON.parse(readFileSync(join(root, "packages/kyrn-judge/manifest.json"), "utf8"));
@@ -23,9 +22,9 @@ const featureOff = manifest.decisions
 	.map((decision) => decision.id);
 /** Points with a built-in mode of their own, by that mode. */
 const builtIn = (mode) =>
-	Object.entries(DEFAULT_CONFIG.modes)
-		.filter(([id, value]) => id !== "default" && value === mode)
-		.map(([id]) => id)
+	manifest.decisions
+		.filter((decision) => decision.defaultMode === mode)
+		.map((decision) => decision.id)
 		.sort();
 const list = (ids) => {
 	const names = ids.map((id) => `\`${id}\``);

@@ -34,6 +34,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 - **`/permissions` opens on the current mode**, so pressing Enter keeps it; before, the cursor started on Full access. A long option in mu's pickers wraps under its own text.
 - A lesson the model asked to `remember` is kept when the judge gives no verdict, instead of being dropped.
 - **mu's own commands no longer show `[t]` in the terminal's slash menu.** pi tagged them as an extension loaded for this run only; they come with mu.
+- The desktop app's settings and kernel bar show the drift check, notification routing, mid-run messages and the subagent patch scope check as they are out of the box, only recording or off, instead of as active. usemu.dev says 34 of the 40 decision points act from the start, not 38.
 - **"Not now" for the judge in `mu setup` now means no judge.** It said mu would run without one, but wrote nothing, so the free Jev answered anyway and what it reads went to OpenCode. It now turns every decision point off in `mu.json` (`"modes": { "default": "off" }`), the welcome line says the judge is off, and nothing is sent to a judge. Picking a judge in a later `mu setup` turns it back on. With the default mode off, the points that start in shadow (`notify.routing`, `input.interjection`, `turn.drift`) are off too.
 
 ## [0.1.10] - 2026-10-22
