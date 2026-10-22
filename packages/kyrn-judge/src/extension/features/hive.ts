@@ -42,6 +42,7 @@ import {
 	SWARM_LIMIT_DEFAULTS,
 	type SwarmAssignment,
 	type SwarmRunner,
+	settledEnv,
 	spawnRunner,
 	streamUpdates,
 	thinkingForRoute,
@@ -518,6 +519,8 @@ export function registerHive(runtime: KyrnRuntime, runner: SwarmRunner = spawnRu
 					thinking: member.assignment.thinking,
 					env: {
 						...permissionEnv(runtime),
+						// The skills and capabilities this session settled on: the bee does not ask again.
+						...settledEnv(runtime),
 						// The angle is the bee's goal; what the user asked for is what its calls are weighed against.
 						[BRIEF_ENV]: briefEnv(
 							briefFor(

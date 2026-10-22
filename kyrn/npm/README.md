@@ -27,7 +27,7 @@ mu is built on [pi](https://github.com/earendil-works/pi). It hands the small qu
 
 ## Choose a judge
 
-Out of the box, the judge is Jev 1.13, TypeSafe's hosted judge model, free on OpenCode Zen for a limited time and with no key needed. What it judges goes to OpenCode, which doesn't train on it, and mu reminds you of that once a day. To send nothing anywhere, start mu with `MU_JUDGE=off`, or use the local judge, Laya.
+Out of the box, the judge is Jev 1.13, TypeSafe's hosted judge model, free on OpenCode Zen for a limited time and with no key needed. What it judges goes to OpenCode, which doesn't train on it, and mu reminds you of that once a day. To send nothing anywhere, run `mu setup --judge off` (or choose "Not now" when `mu setup` asks): no decision point asks a judge, and mu's features keep working on their rules. Or use the local judge, Laya.
 
 - **Jev** (hosted): set `TYPESAFE_API_KEY` (TypeSafe), `MU_JUDGE_OPENROUTER_API_KEY` (Jev on OpenRouter), `AI_GATEWAY_API_KEY` (Vercel AI Gateway), `OPENCODE_API_KEY` (OpenCode Zen) or `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID` (Cloudflare Workers AI) in your environment, or add it to `~/.mu/.env` as `KEY=value`. `mu setup` asks for a key and writes it there. mu reads that file as data, never prints it and starts using the key automatically.
 - **Another classifier** from pi's catalog: `/mu judge classifier:<provider>/<model>`, for example Cloudflare's Clef (`clef`, `clef-flash`) or a System One model on OpenRouter, with that provider's key.

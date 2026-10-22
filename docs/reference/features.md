@@ -51,6 +51,7 @@ On by default: yes. Decision points: `skills.disclosure`.
 | `minSkills` | `4` | Don't filter below this many skills. Range 1 to 100. |
 | `waitMs` | `4000` ms | Wait at most `4000` ms. Range 500 to 30000. |
 | `applyLate` | `true` | Apply a late first verdict from the next turn. When the verdict on the session's first message comes after the wait, skills are hidden from the next turn on, which changes the prompt prefix once. Off: the session keeps every skill description. |
+| `subagentsInherit` | `true` | Subagents take this session's choice. A subagent hides the skills this session hides and doesn't ask the judge again. While this session hasn't settled yet, a subagent asks for itself as before. |
 
 ## catalog
 
@@ -63,6 +64,7 @@ On by default: yes. Decision points: `capability.disclosure`.
 | `waitMs` | `4000` ms | Wait at most `4000` ms. Range 500 to 30000. |
 | `askUnattended` | `false` | Also choose capabilities in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: capabilities stay hidden, and the turn doesn't wait. |
 | `unattendedHidden` | `delegate`, `apply_patch_from`, `browse`, `locate`, `remember`, `find_skill`, `find_capability`, `hive`, `mu-browser` | Tools and skills left out of unattended runs. By name. One-shot runs almost never use them, and each one is in every request. One you call for by its command (such as /hive) stays. Empty keeps them all. |
+| `subagentsInherit` | `true` | Subagents take this session's capabilities. A subagent opens the capabilities this session has open and doesn't ask the judge again; what's hidden here stays hidden there. Before this session has chosen, a subagent asks for itself as before. |
 
 ## frame
 
@@ -217,6 +219,7 @@ On by default: yes. Decision points: `turn.rewind`.
 | `timeoutMs` | `30000` ms | Max time for a snapshot. Past this, the turn runs without a checkpoint; the tool call still runs. Range 1000 to 600000. |
 | `propose` | `true` | Propose a rewind at a dead end. |
 | `confirmSeconds` | `120` s | How long a proposal waits for you. If you don't answer, the run continues. 0 waits forever. Range 0 to 3600. |
+| `unattended` | `false` | Also take checkpoints in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: nobody there can confirm a rewind, so no file is ever put back, while the snapshot and the scan after every change hold up each step. At a dead end the model is still told to step back. |
 
 ## monitor
 
@@ -227,6 +230,10 @@ On by default: yes. Decision points: `turn.drift`.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `every` | `6` | Tool calls between checks. Range 1 to 100. |
+| `minMinutes` | `3` min | At least this long between checks. A check needs both: the tool calls above, and this long since the last check. Range 0 to 60. |
+| `maxMinutes` | `10` min | Check at least this often. A check comes after this long whatever happened, so a long reply with no tool call is checked too. Range 1 to 120. |
+| `stuckMinutes` | `10` min | No progress for this long before a drift steer. It also takes two drift readings in a row, each at least 90% sure. Progress is a new file written, more tests passing, a different error, a command of a minute or more that succeeds, or an item ticked. Range 0 to 120. |
+| `cooldownMinutes` | `15` min | At least this long between two steers. The judge's steers, on drift or a loop, wait this long after the monitor's last steer, the loop rule's included. Range 0 to 240. |
 | `repeats` | `3` | Repeats that count as a loop. Only the same input with the same result counts as the same call; paging through a file does not. Range 2 to 20. |
 | `window` | `8` | Recent calls checked. Range 2 to 100. |
 | `unattended` | `false` | Also check for drift in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default. The rule that catches going in circles still applies. |
@@ -351,6 +358,7 @@ On by default: yes. Decision points: `notify.routing`.
 | --- | --- | --- |
 | `budgetThresholds` | `70`, `85` | Context budget notices (%). |
 | `unjudged` | `now` | Without a verdict, context budget notices. Notification routing is in shadow by default, and then this decides. A next-turn notice is read only when another run starts, which never happens in a one-shot run. One of `now` (Now), `next_turn` (Next turn), `drop` (Never). |
+| `unattended` | `false` | Also ask the judge about notices in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: notices go by their own rules, as they do in shadow, the default, where the verdict is only recorded. |
 
 ## warming
 
@@ -372,6 +380,8 @@ On by default: yes.
 | --- | --- | --- |
 | `intervalMs` | `50000` ms | Every `50000` ms. The server drops connections idle for about 90 s; stay below that. Range 10000 to 85000. |
 | `idleMs` | `900000` ms | Stop after this much inactivity. Range 60000 to 7200000. |
+| `nearby` | `false` | Also keep a judge on this machine or network warm. Off by default for a judge at localhost, 127.0.0.1, a local network address or host.docker.internal: a new connection there costs next to nothing, and on a server that answers one question at a time a probe would queue in front of real ones. |
+| `unattended` | `false` | Also keep the connection warm in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: there a probe every 50 s costs more than the connection setup it saves, under a tenth of a second on a short route. |
 
 ## swarm
 
@@ -483,6 +493,10 @@ On by default: yes.
 **Welcome screen.** The terminal's welcome screen and the identity note for the model.
 
 On by default: yes.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `unattended` | `false` | Full identity note in unattended runs and subagents. Unattended means a one-shot mu --print or json-mode run. Off by default: there and in subagents the note leaves out commands to type and tools the run may not have, and pi's list of docs becomes one line with the path. That saves about 375 tokens per request. |
 
 ## inherit
 

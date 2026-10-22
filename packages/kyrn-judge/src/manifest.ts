@@ -376,8 +376,8 @@ const DESCRIBED: HarnessManifest = {
 			feature: "monitor",
 			title: { zh: "跑偏监测", en: "Drift monitor" },
 			summary: {
-				zh: "每隔几步判断当前工作是否还在为目标服务，并用规则发现原地打转。",
-				en: "Every few steps, checks that the work still serves the goal; rules catch the agent going in circles.",
+				zh: "每隔几步或几分钟，看退出码、耗时和离上次进展多久，判断这次运行是否还在朝目标推进；原地打转由规则发现。",
+				en: "Every few steps or minutes, checks that the run still moves toward the goal, reading exit codes, times and how long since the last progress; rules catch the agent going in circles.",
 			},
 		},
 		{
@@ -627,6 +627,16 @@ const DESCRIBED: HarnessManifest = {
 						en: "When the verdict on the session's first message comes after the wait, skills are hidden from the next turn on, which changes the prompt prefix once. Off: the session keeps every skill description.",
 					},
 				},
+				{
+					key: "subagentsInherit",
+					kind: "boolean",
+					default: true,
+					label: { zh: "子代理沿用这里的选择", en: "Subagents take this session's choice" },
+					help: {
+						zh: "子代理隐藏主会话隐藏的技能，不再问判定器。主会话还没定下来时，子代理照旧自己问。",
+						en: "A subagent hides the skills this session hides and doesn't ask the judge again. While this session hasn't settled yet, a subagent asks for itself as before.",
+					},
+				},
 			],
 		},
 		{
@@ -678,6 +688,16 @@ const DESCRIBED: HarnessManifest = {
 					help: {
 						zh: "按名字写。这些在一次性运行里几乎没人用，却每次请求都要带上。用命令点名的（比如 /hive）照样保留；清空就全带上。",
 						en: "By name. One-shot runs almost never use them, and each one is in every request. One you call for by its command (such as /hive) stays. Empty keeps them all.",
+					},
+				},
+				{
+					key: "subagentsInherit",
+					kind: "boolean",
+					default: true,
+					label: { zh: "子代理沿用这里打开的能力", en: "Subagents take this session's capabilities" },
+					help: {
+						zh: "子代理打开主会话已经打开的能力，不再问判定器；主会话隐藏的照样隐藏。主会话还没选过时，子代理照旧自己问。",
+						en: "A subagent opens the capabilities this session has open and doesn't ask the judge again; what's hidden here stays hidden there. Before this session has chosen, a subagent asks for itself as before.",
 					},
 				},
 			],
@@ -1419,6 +1439,16 @@ const DESCRIBED: HarnessManifest = {
 					},
 					unit: { zh: "秒", en: "s" },
 				},
+				{
+					key: "unattended",
+					kind: "boolean",
+					default: false,
+					label: { zh: "无人值守的运行也拍检查点", en: "Also take checkpoints in unattended runs" },
+					help: {
+						zh: "无人值守指 mu --print 和 json 模式的一次性运行。默认不拍：那里没人能确认回退，文件从不会被放回去，拍快照和每次改动后的扫描却让每一步都多等。遇到死路照样提醒模型退一步。",
+						en: "Unattended means a one-shot mu --print or json-mode run. Off by default: nobody there can confirm a rewind, so no file is ever put back, while the snapshot and the scan after every change hold up each step. At a dead end the model is still told to step back.",
+					},
+				},
 			],
 		},
 		{
@@ -1434,6 +1464,58 @@ const DESCRIBED: HarnessManifest = {
 					min: 1,
 					max: 100,
 					label: { zh: "每隔几次工具调用检查", en: "Tool calls between checks" },
+				},
+				{
+					key: "minMinutes",
+					kind: "number",
+					default: 3,
+					min: 0,
+					max: 60,
+					unit: { zh: "分钟", en: "min" },
+					label: { zh: "两次检查至少间隔", en: "At least this long between checks" },
+					help: {
+						zh: "攒够上面的工具调用次数，并且离上次检查过了这么久，才再检查。",
+						en: "A check needs both: the tool calls above, and this long since the last check.",
+					},
+				},
+				{
+					key: "maxMinutes",
+					kind: "number",
+					default: 10,
+					min: 1,
+					max: 120,
+					unit: { zh: "分钟", en: "min" },
+					label: { zh: "最长隔多久检查一次", en: "Check at least this often" },
+					help: {
+						zh: "到时间就检查，不管有没有新的工具调用，所以很久没有动静的回复也照看得到。",
+						en: "A check comes after this long whatever happened, so a long reply with no tool call is checked too.",
+					},
+				},
+				{
+					key: "stuckMinutes",
+					kind: "number",
+					default: 10,
+					min: 0,
+					max: 120,
+					unit: { zh: "分钟", en: "min" },
+					label: { zh: "多久没有进展才提醒跑偏", en: "No progress for this long before a drift steer" },
+					help: {
+						zh: "还要连续两次检查都判断为跑偏，且把握至少九成。进展指：写出新文件、通过的测试变多、出现不同的报错、跑了一分钟以上的命令成功结束、勾掉一项待办。",
+						en: "It also takes two drift readings in a row, each at least 90% sure. Progress is a new file written, more tests passing, a different error, a command of a minute or more that succeeds, or an item ticked.",
+					},
+				},
+				{
+					key: "cooldownMinutes",
+					kind: "number",
+					default: 15,
+					min: 0,
+					max: 240,
+					unit: { zh: "分钟", en: "min" },
+					label: { zh: "两次提醒至少间隔", en: "At least this long between two steers" },
+					help: {
+						zh: "判定器的提醒（跑偏或原地打转）离监测的上一次提醒至少隔这么久，规则发现的打转也算一次。",
+						en: "The judge's steers, on drift or a loop, wait this long after the monitor's last steer, the loop rule's included.",
+					},
 				},
 				{
 					key: "repeats",
@@ -1974,6 +2056,16 @@ const DESCRIBED: HarnessManifest = {
 						en: "Notification routing is in shadow by default, and then this decides. A next-turn notice is read only when another run starts, which never happens in a one-shot run.",
 					},
 				},
+				{
+					key: "unattended",
+					kind: "boolean",
+					default: false,
+					label: { zh: "无人值守的运行也判定通知分流", en: "Also ask the judge about notices in unattended runs" },
+					help: {
+						zh: "无人值守指 mu --print 和 json 模式的一次性运行。默认不问：通知照样按各自的规则投递，和默认的影子模式一样，那里的判定本来也只记录、不生效。",
+						en: "Unattended means a one-shot mu --print or json-mode run. Off by default: notices go by their own rules, as they do in shadow, the default, where the verdict is only recorded.",
+					},
+				},
 			],
 		},
 		{
@@ -2030,6 +2122,26 @@ const DESCRIBED: HarnessManifest = {
 					max: 7200000,
 					unit: ms,
 					label: { zh: "多久没动静就停", en: "Stop after this much inactivity" },
+				},
+				{
+					key: "nearby",
+					kind: "boolean",
+					default: false,
+					label: { zh: "本机和局域网的判定器也保温", en: "Also keep a judge on this machine or network warm" },
+					help: {
+						zh: "判定器地址是 localhost、127.0.0.1、局域网地址或 host.docker.internal 时，默认不保温：在那里建连几乎不花时间，而在一次只答一个问题的服务器上，保温的问题会排在真正的判定前面。",
+						en: "Off by default for a judge at localhost, 127.0.0.1, a local network address or host.docker.internal: a new connection there costs next to nothing, and on a server that answers one question at a time a probe would queue in front of real ones.",
+					},
+				},
+				{
+					key: "unattended",
+					kind: "boolean",
+					default: false,
+					label: { zh: "无人值守的运行也保温", en: "Also keep the connection warm in unattended runs" },
+					help: {
+						zh: "无人值守指 mu --print 和 json 模式的一次性运行。默认不保温：那里每 50 秒一个的小问题，花的比省下的建连时间还多；线路近时省下的不到 0.1 秒。",
+						en: "Unattended means a one-shot mu --print or json-mode run. Off by default: there a probe every 50 s costs more than the connection setup it saves, under a tenth of a second on a short route.",
+					},
 				},
 			],
 		},
@@ -2502,7 +2614,21 @@ const DESCRIBED: HarnessManifest = {
 				en: "The terminal's welcome screen and the identity note for the model.",
 			},
 			defaultEnabled: true,
-			options: [],
+			options: [
+				{
+					key: "unattended",
+					kind: "boolean",
+					default: false,
+					label: {
+						zh: "无人值守的运行和子代理也用完整的身份说明",
+						en: "Full identity note in unattended runs and subagents",
+					},
+					help: {
+						zh: "无人值守指 mu --print 和 json 模式的一次性运行。默认那里和子代理里只说必要的：不提要人输入的命令、可能没有的工具，pi 的文档目录缩成一行路径。每次请求约省 375 个词元。",
+						en: "Unattended means a one-shot mu --print or json-mode run. Off by default: there and in subagents the note leaves out commands to type and tools the run may not have, and pi's list of docs becomes one line with the path. That saves about 375 tokens per request.",
+					},
+				},
+			],
 		},
 		{
 			name: "inherit",

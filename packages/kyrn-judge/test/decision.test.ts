@@ -208,6 +208,31 @@ describe("DecisionEngine", () => {
 	});
 });
 
+describe("DecisionEngine modes", () => {
+	it("with the default off, a point in shadow only by default asks no judge; one set otherwise still does", async () => {
+		const provider = new MockJudgeProvider(() => ({ relevant: { type: "boolean", probability: 0.03 } }));
+		const engine = new DecisionEngine({
+			judge: new Judge({ provider }),
+			defaultMode: "off",
+			modes: { "test.keep_chunk": "shadow", "test.other": "active" },
+			builtInModes: { "test.keep_chunk": "shadow" },
+		});
+		expect(engine.getMode("test.keep_chunk")).toBe("off");
+		expect(engine.getMode("test.other")).toBe("active");
+		expect(engine.asksJudge()).toBe(true);
+		const decision = await engine.decide(keepChunk, input);
+		expect(decision).toMatchObject({ outcome: "keep", source: "fallback" });
+		expect(provider.calls).toHaveLength(0);
+
+		engine.setMode("test.other", "off");
+		expect(engine.asksJudge()).toBe(false);
+		// Turned on again, the built-in shadow comes back.
+		engine.setDefaultMode("active");
+		expect(engine.getMode("test.keep_chunk")).toBe("shadow");
+		expect(engine.asksJudge()).toBe(true);
+	});
+});
+
 describe("defineDecision", () => {
 	const base = {
 		id: "test.route",

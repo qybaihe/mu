@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import type { Skill } from "../src/core/skills.ts";
 import { createSyntheticSourceInfo } from "../src/core/source-info.ts";
-import { buildSystemPrompt } from "../src/core/system-prompt.ts";
+import { buildSystemPrompt, buildSystemPromptSections } from "../src/core/system-prompt.ts";
 
 const testSkill: Skill = {
 	name: "test-skill",
@@ -71,6 +71,15 @@ describe("buildSystemPrompt", () => {
 				'<project_context>\nProject-specific instructions and guidelines:\n\n<project_instructions path="/tmp/AGENTS.md">',
 			);
 			expect(prompt).toContain("<cwd>\n/tmp\n</cwd>");
+		});
+
+		test("a custom section named like a built-in one replaces it in place; an empty one leaves it", () => {
+			const base = { cwd: "/tmp", selectedTools: [], contextFiles: [], skills: [] };
+			const replaced = buildSystemPromptSections({ ...base, sections: { docs: "Docs: /pkg/README.md" } });
+			expect(replaced.docs).toBe("<docs>\nDocs: /pkg/README.md\n</docs>");
+			expect(Object.keys(replaced)).toEqual(["preamble", "tools", "rules", "docs", "cwd"]);
+			const kept = buildSystemPromptSections({ ...base, sections: { docs: "" } });
+			expect(kept.docs).toContain("Pi documentation");
 		});
 	});
 

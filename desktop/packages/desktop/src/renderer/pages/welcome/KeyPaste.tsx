@@ -9,7 +9,7 @@ import choiceStyles from '@/renderer/pages/settings/KyrnSettings/sections/sectio
 import { formatNumber } from '@/renderer/services/i18n/format';
 import { openExternalUrl } from '@/renderer/utils/platform';
 import Field from './Field';
-import { isServiceId, MODEL_SERVICES, type ModelService } from './services';
+import { isServiceId, type ModelService, servicesInOrder } from './services';
 import type { KeyCheck, KeySetup } from './useKeySetup';
 import styles from './Welcome.module.css';
 
@@ -58,12 +58,13 @@ function useCheckWords(service: ModelService | undefined, check: KeyCheck, works
  * the key with that service alone, and starts on a model the service lists. No address, no wire format.
  */
 export default function KeyPaste({ setup, tried }: KeyPasteProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { service, candidates, check } = setup;
   const typed = setup.key.trim();
   const said = useCheckWords(service, check, setup.works);
-  // A key several services' shapes fit is asked about with just those; any other key with every service.
-  const offered = candidates.length > 1 ? candidates : MODEL_SERVICES;
+  // A key several services' shapes fit is asked about with just those; any other key with every service, in the order
+  // for the app's language.
+  const offered = candidates.length > 1 ? candidates : servicesInOrder(i18n.language);
   let serviceHint = t('mu.welcome.apiKey.serviceHint');
   if (service) serviceHint = setup.recognized ? t('mu.welcome.apiKey.recognized') : '';
   else if (setup.refused) serviceHint = '';

@@ -10,8 +10,11 @@ import { failOpen, type KyrnRuntime } from "../runtime.ts";
  * - capability disclosure is not asked, and packs stay hidden as always (`catalog.askUnattended`);
  * - tools and skills that need a person, a later session or a sub-agent are left out of the request
  *   (`catalog.unattendedHidden`);
- * - the drift check is not asked (`monitor.unattended`, below);
- * - no skill drafts (`procedures.unattended`) and no new lessons (`memory.unattendedWrites`). Kept lessons are still read.
+ * - the drift check is not asked (`monitor.unattended`, below), nor notification routing (`notify.unattended`);
+ * - no skill drafts (`procedures.unattended`) and no new lessons (`memory.unattendedWrites`). Kept lessons are still read;
+ * - no checkpoints (`checkpoint.unattended`): nobody can confirm a rewind, so no file is ever put back;
+ * - no warm-up questions to the judge (`warmup.unattended`).
+ * - the prompt's `<mu>` section is shorter and its `<docs>` section one line (`welcome.unattended`), in a sub-agent too.
  *
  * A sub-agent runs in json mode too, but it is not unattended: its parent reads every step and chose its tools.
  */
@@ -26,7 +29,11 @@ export function isUnattended(ctx: Pick<ExtensionContext, "mode"> | undefined): b
  */
 export function registerUnattendedDrift(runtime: KyrnRuntime): void {
 	const options = runtime.options("monitor", { enabled: true, unattended: false });
-	if (!options.enabled || options.unattended) return;
+	if (options.enabled && !options.unattended) offWhenUnattended(runtime, turnDrift.id);
+}
+
+/** Switches a decision point off for the session when it turns out to be an unattended run. */
+export function offWhenUnattended(runtime: KyrnRuntime, specId: string): void {
 	// Once, before the first tool result: a mode set later by hand (`/mu mode`) is not undone on the next turn.
 	let settled = false;
 	runtime.pi.on(
@@ -34,7 +41,7 @@ export function registerUnattendedDrift(runtime: KyrnRuntime): void {
 		failOpen((_event, ctx) => {
 			if (settled) return undefined;
 			settled = true;
-			if (isUnattended(ctx)) runtime.engine.setMode(turnDrift.id, "off");
+			if (isUnattended(ctx)) runtime.engine.setMode(specId, "off");
 			return undefined;
 		}),
 	);

@@ -109,11 +109,19 @@ export function registerWeb(runtime: KyrnRuntime): void {
 		}
 	};
 
+	const fetchDescription =
+		"Read one web page or file by URL as plain text (HTML becomes readable text; JSON and text pass through). No JavaScript, no login";
+	/** What these tools say never names a tool the model does not have: browse is left out of an unattended run, and the browser feature may be off. */
+	const canBrowse = () => pi.getActiveTools().includes("browse");
+
 	pi.registerTool({
 		name: "web_fetch",
 		label: "Web fetch",
-		description:
-			"Read one web page or file by URL as plain text (HTML becomes readable text; JSON and text pass through). No JavaScript, no login: use browse for pages that need either.",
+		description: `${fetchDescription}: use browse for pages that need either.`,
+		prepareLoadout: (loadout) =>
+			loadout.declared.some((tool) => tool.name === "browse")
+				? undefined
+				: { descriptions: { web_fetch: `${fetchDescription}.` } },
 		parameters: Type.Object({
 			url: Type.String({ description: "http(s) URL" }),
 			max_length: Type.Optional(Type.Number({ description: "Most characters to return" })),
@@ -175,7 +183,7 @@ export function registerWeb(runtime: KyrnRuntime): void {
 				page.title,
 				`${page.url} (${facts.join(", ")})`,
 				page.needsJavaScript
-					? "[This page has almost no text until its scripts run. Read it with the browse tool instead.]"
+					? `[This page has almost no text until its scripts run.${canBrowse() ? " Read it with the browse tool instead." : ""}]`
 					: "",
 				typeof rescue === "string" ? `[Tavily could not read it either: ${rescue}]` : "",
 			].filter(Boolean);
@@ -256,7 +264,7 @@ export function registerWeb(runtime: KyrnRuntime): void {
 			runtime.present("web.search", details);
 			if (outcome.results.length === 0) {
 				throw new Error(
-					`No search results.\n${problems.map((problem) => `- ${problem}`).join("\n")}\nTry other words, another source (features.web.search in mu.json: ${Object.keys(SOURCES).join(", ")}, searxng:<url>, or tavily with TAVILY_API_KEY set), or search with the browse tool.`,
+					`No search results.\n${problems.map((problem) => `- ${problem}`).join("\n")}\nTry other words, another source (features.web.search in mu.json: ${Object.keys(SOURCES).join(", ")}, searxng:<url>, or tavily with TAVILY_API_KEY set)${canBrowse() ? ", or search with the browse tool" : ""}.`,
 				);
 			}
 			const lines = outcome.results.map(

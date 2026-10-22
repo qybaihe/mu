@@ -36,6 +36,7 @@ import {
   namedModel,
   serviceById,
   servicesForKey,
+  servicesInOrder,
   startModel,
   type ServiceId,
 } from '@/renderer/pages/welcome/services';
@@ -517,6 +518,20 @@ describe('the service a key belongs to', () => {
       for (const baseUrl of service.baseUrls) expect(isSafeEndpoint(baseUrl), baseUrl).toBe(true);
     }
     expect(serviceById('kimi').baseUrls).toEqual(['https://api.moonshot.cn/v1', 'https://api.moonshot.ai/v1']);
+  });
+});
+
+describe('the order the guide lists services in', () => {
+  it('starts with the best known services outside Chinese, keeps the table order in Chinese, and ends with Ollama', () => {
+    const ids = (language: string) => servicesInOrder(language).map((service) => service.id);
+    expect(ids('en-US').slice(0, 5)).toEqual(['openai', 'anthropic', 'google', 'xai', 'openrouter']);
+    expect(ids('ja-JP').slice(0, 5)).toEqual(['openai', 'anthropic', 'google', 'xai', 'openrouter']);
+    expect(ids('zh-CN')).toEqual(MODEL_SERVICES.map((service) => service.id));
+    expect(ids('zh-TW')).toEqual(MODEL_SERVICES.map((service) => service.id));
+    for (const language of ['en-US', 'zh-CN']) {
+      expect(ids(language).at(-1)).toBe('ollama');
+      expect([...ids(language)].sort()).toEqual(MODEL_SERVICES.map((service) => service.id).sort());
+    }
   });
 });
 

@@ -266,6 +266,19 @@ export const SETUP_SERVICES: readonly SetupService[] = [
 	},
 ];
 
+/** The services an English list starts with, in this order: the ones best known outside China. */
+const FIRST_IN_ENGLISH: readonly string[] = ["openai", "anthropic", "google", "xai", "openrouter", "opencode"];
+
+/**
+ * The services in the order a list shows them in `language`: the table's order in Chinese, and in English the best
+ * known ones first. Ollama and a service of one's own stay last in both.
+ */
+export function servicesInOrder(language: "zh" | "en"): readonly SetupService[] {
+	if (language === "zh") return SETUP_SERVICES;
+	const first = FIRST_IN_ENGLISH.flatMap((id) => SETUP_SERVICES.filter((service) => service.id === id));
+	return [...first, ...SETUP_SERVICES.filter((service) => !FIRST_IN_ENGLISH.includes(service.id))];
+}
+
 export function serviceById(id: string): SetupService | undefined {
 	return SETUP_SERVICES.find((service) => service.id === id);
 }

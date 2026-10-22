@@ -1303,7 +1303,10 @@ describe("the launcher, run for real on this machine", () => {
 		if (!windows) expect(lstatSync(linked).isSymbolicLink()).toBe(true);
 		// Through the link, as a user would call it.
 		expect(runScript(linked, ["help"], { HOME: dir }).out).toContain("mu link | unlink");
-		expect(run(["unlink"], { HOME: dir, MU_LINK_DIR: links }).out).toContain("removed");
+		// --help explains, and links nothing.
+		expect(run(["unlink", "--help"], { HOME: dir, MU_LINK_DIR: links }).out).toContain("mu link --force");
+		expect(existsSync(linked)).toBe(true);
+		expect(run(["unlink"], { HOME: dir, MU_LINK_DIR: links }).out).toContain("Removed ");
 		expect(existsSync(linked)).toBe(false);
 		writeFileSync(linked, "a file");
 		expect(run(["unlink"], { HOME: dir, MU_LINK_DIR: links }).out).toContain(
@@ -1335,11 +1338,13 @@ describe("the launcher, run for real on this machine", () => {
 		"starts pi as a child too, the way Windows has to, and passes its exit code on",
 		() => {
 			const dir = temp();
-			const child = run(["--version"], { HOME: dir, MU_LAUNCH: "spawn" });
-			const replaced = run(["--version"], { HOME: dir });
+			// --help reaches pi (the launcher answers --version itself).
+			const child = run(["--help"], { HOME: dir, MU_LAUNCH: "spawn" });
+			const replaced = run(["--help"], { HOME: dir });
 
 			expect(child).toMatchObject({ code: 0, out: replaced.out });
-			expect(child.out).toMatch(/^\d+\.\d+\.\d+/);
+			expect(child.out).toContain("pi's help (mu passes all of this through)");
+			expect(child.out).toContain("--print, -p");
 			// An exit code that is not zero comes through as well: a home without a login makes the doctor exit with 1.
 			const doctor = run(["doctor"], { HOME: dir, MU_LAUNCH: "spawn" });
 			expect(doctor.out).toContain("login");

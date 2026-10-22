@@ -1,10 +1,11 @@
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename } from "node:path";
-import { keyText, VERSION as PI_VERSION, type Theme } from "@earendil-works/pi-coding-agent";
+import { getReadmePath, keyText, VERSION as PI_VERSION, type Theme } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth } from "@earendil-works/pi-tui";
 import { appLanguage } from "../../language.ts";
 import { failOpen, type KyrnRuntime } from "../runtime.ts";
+import { isUnattended } from "./unattended.ts";
 
 /**
  * The letter μ, three rows tall so its stem can drop below the line. Drawn in blocks rather than typed:
@@ -194,18 +195,61 @@ Work like a careful colleague. When a request is loosely worded, look at the wor
 Commands the user can type: /help, /status, /doctor.`;
 
 /**
+ * Who the model is told it is in a run nobody types into: an unattended `mu --print` or json run, or a sub-agent.
+ * It leaves out what only an interactive session has: commands to type, a reply to act on, hints before a turn
+ * (preflight is not asked there) and the `browse` tool, which such a run may not have. `pointer`: the admission
+ * feature is on, so tool output may come back as a pointer to the full text.
+ */
+export function leanIdentity(pointer: boolean): string {
+	return [
+		"This harness is mu (written μ), a judgment-first coding agent built on pi. If asked what you are or where you run, say mu.",
+		...(pointer
+			? [
+					"A small judgment model works beside you. It may replace noisy tool output with a one-line pointer to the full text.",
+				]
+			: []),
+		"Work like a careful colleague. When a request is loosely worded, look at the workspace and take the most plausible reading instead of asking; say the assumption in one line and go on. Ask the user only for what cannot be found here, after doing what does not depend on it.",
+	].join("\n");
+}
+
+/**
+ * pi's documentation section, in a run nobody types into: one line in place of pi's list of its guides. In
+ * Terminal-Bench runs it was never read, in 286 trials of mu and pi; a task about mu itself still has the paths.
+ */
+export function leanDocs(): string {
+	return `Docs of mu and pi, for a task about them only: ${getReadmePath()} (more in docs/ beside it)`;
+}
+
+/**
  * The first thing the user sees: what mu is, which judge is answering and
  * how fast, which model is thinking, and the handful of commands worth knowing.
  */
 export function registerWelcome(runtime: KyrnRuntime): void {
-	const options = runtime.options("welcome", { enabled: true });
+	const options = runtime.options("welcome", {
+		enabled: true,
+		/** The full identity and pi's docs list in unattended runs and sub-agents too. */
+		unattended: false,
+	});
 	if (!options.enabled) return;
 	let health: JudgeHealth = "checking";
+	/** Settled on the first run: the prompt's prefix must not move once it has been cached. */
+	let lean: boolean | undefined;
 
 	runtime.pi.on(
 		"before_agent_start",
-		failOpen((event) => {
-			event.systemPromptOptions.sections = { ...event.systemPromptOptions.sections, mu: IDENTITY };
+		failOpen((event, ctx) => {
+			lean ??= !options.unattended && (isUnattended(ctx) || Boolean(process.env.KYRN_SWARM_DEPTH));
+			if (!lean) {
+				event.systemPromptOptions.sections = { ...event.systemPromptOptions.sections, mu: IDENTITY };
+				return undefined;
+			}
+			const pointer = runtime.enabled && runtime.options("admission", { enabled: true }).enabled;
+			event.systemPromptOptions.sections = {
+				...event.systemPromptOptions.sections,
+				mu: leanIdentity(pointer),
+				// Replaces pi's own section of that name. A prompt of the user's own has none, and gets none.
+				...(event.systemPromptOptions.customPrompt ? {} : { docs: leanDocs() }),
+			};
 			return undefined;
 		}),
 	);
@@ -233,7 +277,8 @@ export function registerWelcome(runtime: KyrnRuntime): void {
 							{
 								version: VERSIONS.mu,
 								piVersion: VERSIONS.pi,
-								judge: runtime.judgeLabel,
+								// Every decision point off: no judge is asked, so none is named.
+								judge: runtime.engine.asksJudge() ? runtime.judgeLabel : "off",
 								health,
 								mode: runtime.mode("*"),
 								model: modelRef(model),
@@ -252,7 +297,9 @@ export function registerWelcome(runtime: KyrnRuntime): void {
 					},
 				};
 			});
-			// Asked once per session start: a judge that is down is the first thing worth knowing.
+			// Asked once per session start: a judge that is down is the first thing worth knowing. Not when no decision
+			// point asks it: then nothing goes to the judge at all.
+			if (!runtime.engine.asksJudge()) return undefined;
 			health = "checking";
 			void runtime.engine.probe().then((result) => {
 				health = result;

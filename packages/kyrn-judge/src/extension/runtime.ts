@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { ClassifierQuestion, JsonObject } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { CapabilityCatalog } from "../catalog/catalog.ts";
-import { featureOptions, type KyrnConfig } from "../config.ts";
+import { DEFAULT_CONFIG, featureOptions, type KyrnConfig } from "../config.ts";
 import { DecisionEngine, type DecisionMode } from "../decision.ts";
 import type { PreflightOutcome, TaskFrame } from "../decisions/input-preflight.ts";
 import type { NotifyFn } from "../decisions/notify-routing.ts";
@@ -217,6 +217,16 @@ export class KyrnRuntime {
 	 */
 	knownLessons?: (tasks: readonly string[], signal?: AbortSignal) => Promise<readonly (readonly string[])[]>;
 	/**
+	 * Set by the skills feature: the skills this session keeps out of the prompt, which a sub-agent takes instead of
+	 * asking again. Undefined while nothing is settled (the first verdict is still on its way, or the decision is off).
+	 */
+	skillsHidden?: () => readonly string[] | undefined;
+	/**
+	 * Set by the catalog feature: the capabilities this session has opened, which a sub-agent opens instead of asking
+	 * again. Undefined before a turn has chosen, or while the decision is off.
+	 */
+	capabilitiesOpen?: () => readonly string[] | undefined;
+	/**
 	 * True when the configured judge answers concurrent calls concurrently (a hosted model). The local
 	 * sidecar answers one at a time, and there the work of a turn is best asked in order of importance.
 	 */
@@ -259,6 +269,9 @@ export class KyrnRuntime {
 			ledger: new CompositeLedger([this.memory, sessionLedger]),
 			defaultMode: config.modes.default ?? "active",
 			modes: Object.fromEntries(Object.entries(config.modes).filter(([specId]) => specId !== "default")),
+			builtInModes: Object.fromEntries(
+				Object.entries(DEFAULT_CONFIG.modes).filter(([specId]) => specId !== "default"),
+			),
 			recordState: config.recordState,
 			// Which turn asked, and under which version of the task: a verdict about "the goal" is only as good as that goal.
 			origin: () => ({ turn: this.userTurns, frame: this.frameState?.frame?.version ?? 0 }),

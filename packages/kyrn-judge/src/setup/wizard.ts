@@ -6,10 +6,12 @@ import {
 	Backups,
 	existingProvider,
 	judgeConfigPath,
+	judgeOff,
 	readJsonFile,
 	readTextFile,
 	type SetupPaths,
 	tiersOf,
+	withJudge,
 	withModel,
 	withProvider,
 	withTiers,
@@ -28,6 +30,7 @@ import {
 	type SetupService,
 	serviceById,
 	servicesForKey,
+	servicesInOrder,
 	tableModel,
 } from "./services.ts";
 
@@ -163,7 +166,7 @@ export interface SetupArgs {
 	readonly baseUrl?: string;
 	readonly api?: "openai" | "anthropic";
 	readonly name?: string;
-	readonly judge?: "jev" | "opencode" | "free" | "nemotron" | "model" | "none";
+	readonly judge?: "jev" | "opencode" | "free" | "nemotron" | "model" | "off" | "none";
 	/** What is not an option: a key, when the entry is started without the launcher. */
 	readonly words: readonly string[];
 }
@@ -192,11 +195,11 @@ export function parseSetupArgs(argv: readonly string[]): SetupArgs | { readonly 
 		return { error: { zh: "--api 只能是 openai 或 anthropic", en: "--api must be openai or anthropic" } };
 	}
 	const judge = values.get("--judge");
-	if (judge !== undefined && !["jev", "opencode", "free", "nemotron", "model", "none"].includes(judge)) {
+	if (judge !== undefined && !["jev", "opencode", "free", "nemotron", "model", "off", "none"].includes(judge)) {
 		return {
 			error: {
-				zh: "--judge 只能是 jev、opencode、free、nemotron、model 或 none",
-				en: "--judge must be jev, opencode, free, nemotron, model or none",
+				zh: "--judge 只能是 jev、opencode、free、nemotron、model、off 或 none",
+				en: "--judge must be jev, opencode, free, nemotron, model, off or none",
 			},
 		};
 	}
@@ -240,14 +243,15 @@ export function setupUsage(language: SetupLanguage): string {
 			"为什么脚本要从标准输入给密钥：写在命令行上的密钥会留在 shell 的历史记录里，",
 			"这台电脑上能列出进程的程序也都看得到它。mu setup <密钥> 只是为了上手快；能在提示里粘贴就粘贴。",
 			"",
-			"  --judge jev     Jev 密钥（TypeSafe）写在标准输入的第二行；已经设置了 TYPESAFE_API_KEY 就不用",
+			"  --judge jev       Jev 密钥（TypeSafe）写在标准输入的第二行；已经设置了 TYPESAFE_API_KEY 就不用",
 			"  --judge opencode  OpenCode Zen 上的 Jev，用 OpenCode 的密钥（--service opencode 或 OPENCODE_API_KEY）",
-			"  --judge free    OpenCode Zen 上限时免费的 Jev，不用密钥（没有密钥时本来就用它）",
+			"  --judge free      OpenCode Zen 上限时免费的 Jev，不用密钥（没有密钥时本来就用它）",
 			"  --judge nemotron  Nebius Token Factory 上的 Nemotron 3 Ultra，用 Nebius 的密钥（--service nebius 或 NEBIUS_API_KEY）",
-			"  --judge model   用刚设置的模型当判定器（更慢，每次判断都花 token）",
-			"  --judge none    不改判定器；不写 --judge 时也不改",
-			"  --api, --name   服务 other 的接口（openai 或 anthropic）和它在 mu 里的名字",
-			"  --yes           不提问；替换已有的设置（订阅登录、同名服务的地址、Jev 密钥）",
+			"  --judge model     用刚设置的模型当判定器（更慢，每次判断都花 token）",
+			"  --judge off       不用判定器：所有判定点关闭，什么都不发给判定器",
+			"  --judge none      不改判定器；不写 --judge 时也不改",
+			"  --api, --name     服务 other 的接口（openai 或 anthropic）和它在 mu 里的名字",
+			"  --yes             不提问；替换已有的设置（订阅登录、同名服务的地址、Jev 密钥）",
 			"",
 			"会改动的文件：~/.mu/agent 里的 auth.json（密钥）、models.json、settings.json、mu.json，",
 			"以及 mu 读取的 .env（Jev 密钥）。每个文件改动前都会先复制到 ~/.mu/backups/<时间>/。",
@@ -266,16 +270,17 @@ export function setupUsage(language: SetupLanguage): string {
 		"computer that lists processes can read it. `mu setup <key>` is a shortcut for getting started; paste the key",
 		"at the prompt when you can.",
 		"",
-		"  --judge jev     read the Jev key (TypeSafe) from stdin's second line, unless TYPESAFE_API_KEY is already set",
+		"  --judge jev       read the Jev key (TypeSafe) from stdin's second line, unless TYPESAFE_API_KEY is already set",
 		"  --judge opencode  use Jev on OpenCode Zen with an OpenCode key (--service opencode or OPENCODE_API_KEY)",
-		"  --judge free    use the free Jev on OpenCode Zen (limited time, no key; the default while no key is set)",
+		"  --judge free      use the free Jev on OpenCode Zen (limited time, no key; the default while no key is set)",
 		"  --judge nemotron  use Nemotron 3 Ultra on Nebius Token Factory with a Nebius key (--service nebius or",
-		"                  NEBIUS_API_KEY)",
-		"  --judge model   use the model you just set up as the judge (slower, and every verdict costs tokens)",
-		"  --judge none    leave the judge unchanged (the same as omitting --judge)",
-		"  --api, --name   for the service `other`: its API (openai or anthropic) and its name in mu",
-		"  --yes           don't ask; replace what's already set up (a subscription sign-in, a provider's address,",
-		"                  the Jev key)",
+		"                    NEBIUS_API_KEY)",
+		"  --judge model     use the model you just set up as the judge (slower, and every verdict costs tokens)",
+		"  --judge off       no judge: every decision point is off, and nothing is sent to a judge",
+		"  --judge none      leave the judge unchanged (the same as omitting --judge)",
+		"  --api, --name     for the service `other`: its API (openai or anthropic) and its name in mu",
+		"  --yes             don't ask; replace what's already set up (a subscription sign-in, a provider's",
+		"                    address, the Jev key)",
 		"",
 		"Files it changes: auth.json (keys), models.json, settings.json and mu.json in ~/.mu/agent, and the .env",
 		"mu reads (the Jev key). Each one is backed up to ~/.mu/backups/<time>/ before it changes.",
@@ -289,7 +294,9 @@ function label(service: SetupService, language: SetupLanguage): string {
 
 export function serviceList(language: SetupLanguage): string {
 	const width = Math.max(...SETUP_SERVICES.map((service) => service.id.length));
-	return SETUP_SERVICES.map((service) => `  ${service.id.padEnd(width)}  ${label(service, language)}`).join("\n");
+	return servicesInOrder(language)
+		.map((service) => `  ${service.id.padEnd(width)}  ${label(service, language)}`)
+		.join("\n");
 }
 
 /** A provider id for an address of one's own: a plain word that pi and the /model picker take as it is. */
@@ -608,7 +615,7 @@ class Setup {
 			);
 			return "subscription";
 		}
-		if (route === "list") return this.keyFor(await this.pickService(SETUP_SERVICES), undefined);
+		if (route === "list") return this.keyFor(await this.pickService(servicesInOrder(this.language)), undefined);
 		const pasted = await this.pasteKey();
 		return { service: await this.serviceOf(pasted), key: pasted };
 	}
@@ -659,7 +666,7 @@ class Setup {
 			);
 		}
 		return this.pickService(
-			SETUP_SERVICES.filter((service) => !service.keyless),
+			servicesInOrder(this.language).filter((service) => !service.keyless),
 			this.t({
 				zh: "mu 认不出这个密钥。它是哪个服务的？",
 				en: "mu doesn't recognize this key. Which service is it for?",
@@ -1149,8 +1156,8 @@ class Setup {
 		}
 		choices.push({
 			label: this.t({
-				zh: "暂时不要：mu 不用判定器，按默认规则工作",
-				en: "Not now: mu runs without a judge and uses its fallbacks",
+				zh: "暂时不要：不问判定器，什么都不发给它，mu 按默认规则工作",
+				en: "Not now: no judge is asked and nothing is sent to one; mu uses its fallbacks",
 			}),
 			value: "none",
 		});
@@ -1197,6 +1204,8 @@ class Setup {
 					);
 				}
 				return { kind: "nemotron" };
+			case "off":
+				return { kind: "none" };
 			case "jev": {
 				const key = this.jevFromStdin;
 				if (!key) {
@@ -1352,7 +1361,8 @@ class Setup {
 					);
 				}
 			}
-			if (judge && judge.kind !== "none") this.writeJudge(judge, target, model, backups, saved, notes);
+			if (judge?.kind === "none") this.writeNoJudge(backups, saved, notes);
+			else if (judge) this.writeJudge(judge, target, model, backups, saved, notes);
 		} catch (error) {
 			if (error instanceof Stop) throw error;
 			// pi's messages name files and providers, never a key; the keys are taken out all the same.
@@ -1396,6 +1406,26 @@ class Setup {
 		return `  ${this.path(path).padEnd(30)} ${what}`;
 	}
 
+	/** "Not now": no decision point asks a judge (the default mode "off"), so nothing goes to one. */
+	private writeNoJudge(backups: Backups, saved: string[], notes: string[]): void {
+		const configPath = judgeConfigPath(this.deps.paths.agentDir);
+		const config = readJsonFile(configPath);
+		if (config.state === "unreadable") {
+			notes.push(
+				this.t({
+					zh: `${this.path(configPath)} 不是纯 JSON，没有改它。请手动加上 "modes": { "default": "off" }`,
+					en: `${this.path(configPath)} isn't plain JSON, so it was left unchanged. Add "modes": { "default": "off" } by hand.`,
+				}),
+			);
+			return;
+		}
+		const current = config.state === "ok" ? config.value : undefined;
+		if (judgeOff(current)) return;
+		backups.save(configPath);
+		writeJsonFile(configPath, withJudge(current ?? {}, false));
+		saved.push(this.savedLine(configPath, this.t({ zh: "判定器：关闭", en: "judge: off" })));
+	}
+
 	private writeJudge(
 		judge: Exclude<JudgeChoice, { kind: "none" }>,
 		target: Target | undefined,
@@ -1417,6 +1447,8 @@ class Setup {
 			// `jev` uses the free Jev while no key is set, and a key added later without another setup.
 			if (!tiersOf(current).some((tier) => tier === "jev" || tier === "jev-opencode-free")) tiers = ["jev"];
 		} else if (!tiersOf(current).some((tier) => JEV_TIERS.has(tier))) tiers = ["jev"];
+		// A judge picked after "Not now" is turned back on.
+		const turnOn = judgeOff(current);
 		if (tiers && config.state === "unreadable") {
 			notes.push(
 				this.t({
@@ -1424,11 +1456,13 @@ class Setup {
 					en: `${this.path(configPath)} isn't plain JSON, so it was left unchanged. Add "tiers": ${JSON.stringify(tiers)} by hand.`,
 				}),
 			);
-		} else if (tiers) {
+		} else if (tiers || turnOn) {
 			backups.save(configPath);
-			writeJsonFile(configPath, withTiers(current ?? {}, tiers));
+			const next = tiers ? withTiers(current ?? {}, tiers) : (current ?? {});
+			writeJsonFile(configPath, turnOn ? withJudge(next, true) : next);
+			const named = tiers ?? tiersOf(current);
 			saved.push(
-				this.savedLine(configPath, this.t({ zh: `判定器 ${tiers.join(", ")}`, en: `judge: ${tiers.join(", ")}` })),
+				this.savedLine(configPath, this.t({ zh: `判定器 ${named.join(", ")}`, en: `judge: ${named.join(", ")}` })),
 			);
 		}
 		if (judge.kind === "jev") {

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import type { AuthInteraction, LoginOptions, ModelsStore, Provider } from "@earendil-works/pi-ai";
 import * as pi from "@earendil-works/pi-coding-agent";
 import { afterEach, describe, expect, it } from "vitest";
-import { AUTH_COMMANDS as LAUNCHER_COMMANDS } from "../../../kyrn/bin/mu.mjs";
+import { AUTH_USAGE, AUTH_COMMANDS as LAUNCHER_COMMANDS } from "../../../kyrn/bin/mu.mjs";
 import { exitWhenUnlocked, holdLocksUntilExit } from "../src/auth/exit.ts";
 import {
 	AUTH_COMMANDS,
@@ -315,6 +315,8 @@ describe("mu auth", () => {
 
 	it("answers the same subcommands the launcher sends it, and finds its starting models in pi's own index", () => {
 		expect(LAUNCHER_COMMANDS).toEqual(AUTH_COMMANDS);
+		// mu auth --help names them before pi's own auth commands.
+		for (const command of AUTH_COMMANDS) expect(AUTH_USAGE).toContain(`mu auth ${command}`);
 		// The npm package runs `mu auth` on pi's bundle, whose index must carry both.
 		expect(typeof pi.ModelRuntime.create).toBe("function");
 		expect(pi.defaultModelPerProvider["openai-codex"]).toEqual(expect.any(String));

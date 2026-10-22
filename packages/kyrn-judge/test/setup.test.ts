@@ -46,6 +46,7 @@ import {
 	type SetupService,
 	serviceById,
 	servicesForKey,
+	servicesInOrder,
 	tableModel,
 } from "../src/setup/services.ts";
 import { wrapToWidth } from "../src/setup/terminal.ts";
@@ -698,8 +699,8 @@ describe("mu setup, asking in a terminal", () => {
 		const pi = run.pi as FakePi;
 		expect(pi.stored).toEqual([{ provider: "qwen", key: KEYS.hex32 }]);
 		expect(pi.defaults).toEqual([{ provider: "qwen", model: "qwen3-coder-plus" }]);
-		// No judge: neither mu.json nor the .env was touched.
-		expect(run.read("mu.json")).toBeUndefined();
+		// No judge: mu.json turns every decision point off, so none asks a judge; the .env was not touched.
+		expect(run.json("mu.json")).toEqual({ modes: { default: "off" } });
 		expect(run.read(".env")).toBeUndefined();
 		expect(run.said).toContain("Done. mu will start on Qwen · qwen3-coder-plus. Judge: none for now.");
 	});
@@ -797,6 +798,23 @@ describe("mu setup, asking in a terminal", () => {
 		expect(run.said).toContain("Next, sign in with /login in mu.");
 		expect(run.calls).toEqual([]);
 		expect(run.read("auth.json")).toBeUndefined();
+		expect(run.json("mu.json")).toEqual({ modes: { default: "off" } });
+	});
+
+	it("turns the judge off for Not now, and on again when a judge is picked later", async () => {
+		const home = temp();
+		mkdirSync(join(home, "agent"));
+		writeFileSync(
+			join(home, "agent", "mu.json"),
+			JSON.stringify({ tiers: ["laya"], modes: { "turn.drift": "active" } }),
+		);
+		// Subscription; judge: not now; no session.
+		const off = await wizard({ home, answers: ["3", "3", "n"] });
+		expect(off.json("mu.json")).toEqual({ tiers: ["laya"], modes: { default: "off", "turn.drift": "active" } });
+		expect(off.printed).toContain("judge: off");
+		// Again, with the free Jev: the "off" goes, a point's own mode stays.
+		const on = await wizard({ home, answers: ["3", "1", "n"] });
+		expect(on.json("mu.json")).toEqual({ tiers: ["jev"], modes: { "turn.drift": "active" } });
 	});
 
 	it("after a subscription, starts the session on /login", async () => {
@@ -810,8 +828,8 @@ describe("mu setup, asking in a terminal", () => {
 
 	it("asks which service a key of another shape is for, before sending it anywhere", async () => {
 		const run = await wizard({
-			// From the list: DeepSeek; the pasted key looks like Anthropic's: it is Anthropic's.
-			answers: ["2", "1", "2", "4", "n"],
+			// From the list: DeepSeek (7th in English); the pasted key looks like Anthropic's: it is Anthropic's.
+			answers: ["2", "7", "2", "4", "n"],
 			secrets: [KEYS.anthropic],
 			respond: (url) => (url.startsWith("https://api.anthropic.com/") ? answer(200, { data: [] }) : new Error(url)),
 		});
@@ -966,6 +984,18 @@ describe("mu setup in a script", () => {
 		expect(run.json("mu.json")).toEqual({ tiers: ["llm:deepseek/deepseek-v4-pro"] });
 	});
 
+	it("turns the judge off with --judge off, and leaves it alone with --judge none", async () => {
+		const off = await stdinRun(["--service", "deepseek", "--judge", "off"], `${KEYS.hex32}\n`, {
+			respond: () => listing("deepseek-v4-pro"),
+		});
+		expect(off.code).toBe(SETUP_EXIT.done);
+		expect(off.json("mu.json")).toEqual({ modes: { default: "off" } });
+		const none = await stdinRun(["--service", "deepseek", "--judge", "none"], `${KEYS.hex32}\n`, {
+			respond: () => listing("deepseek-v4-pro"),
+		});
+		expect(none.read("mu.json")).toBeUndefined();
+	});
+
 	it("fails with the reason when the check fails, and changes nothing", async () => {
 		const run = await stdinRun(["--service", "openai"], `${KEYS.openaiProject}\n`, {
 			respond: () =>
@@ -1074,7 +1104,7 @@ describe("mu setup in a script", () => {
 		expect(run.said).toContain("Done. mu will start on OpenCode Zen · kimi-k2.6. Judge: Jev on OpenCode Zen.");
 
 		// In a terminal, Jev on OpenCode Zen comes first once there is an OpenCode key.
-		const asked = await wizard({ answers: ["2", "9", "", "", "n"], secrets: [good], respond });
+		const asked = await wizard({ answers: ["2", "6", "", "", "n"], secrets: [good], respond });
 		expect(asked.printed).toContain("1) Jev on OpenCode Zen with your OpenCode key (recommended), billed per call");
 		expect(asked.json("mu.json")).toEqual({ tiers: ["jev-opencode"] });
 	});
@@ -1249,6 +1279,18 @@ describe("mu setup with pi's own files", () => {
 		const { pi } = await realPi(home);
 		await expect(pi.setDefaultModel("deepseek", "deepseek-chat")).rejects.toThrow("settings.json cannot be read");
 		expect(readFileSync(join(home, "agent", "settings.json"), "utf8")).toBe("{ not json");
+	});
+});
+
+describe("the list of services", () => {
+	it("starts with the best known services in English, keeps the table's order in Chinese, and ends with Ollama", () => {
+		const ids = (language: "zh" | "en") => servicesInOrder(language).map((service) => service.id);
+		expect(ids("en").slice(0, 6)).toEqual(["openai", "anthropic", "google", "xai", "openrouter", "opencode"]);
+		expect(ids("zh")).toEqual(SETUP_SERVICES.map((service) => service.id));
+		for (const language of ["zh", "en"] as const) {
+			expect(ids(language).slice(-2)).toEqual(["ollama", "other"]);
+			expect([...ids(language)].sort()).toEqual(SETUP_SERVICES.map((service) => service.id).sort());
+		}
 	});
 });
 
