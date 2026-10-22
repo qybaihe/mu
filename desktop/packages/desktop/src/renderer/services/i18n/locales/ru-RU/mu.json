@@ -545,7 +545,7 @@
     "apiKey": {
       "title": "Вставить API-ключ",
       "tag": "Проще всего",
-      "description": "DeepSeek, Kimi, Qwen, GLM, OpenAI, Claude, Gemini и другие: mu узнаёт сервис по ключу и настраивает остальное",
+      "description": "OpenAI, Claude, Gemini, DeepSeek, Kimi, Qwen, GLM и другие: mu узнаёт сервис по ключу и настраивает остальное",
       "placeholder": "Вставьте ключ сюда",
       "service": "Сервис",
       "servicePlaceholder": "Определяется по ключу",

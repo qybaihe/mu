@@ -541,7 +541,7 @@
     "apiKey": {
       "title": "API-Schlüssel einfügen",
       "tag": "Am einfachsten",
-      "description": "DeepSeek, Kimi, Qwen, GLM, OpenAI, Claude, Gemini und mehr: mu erkennt den Dienst am Schlüssel und richtet den Rest ein",
+      "description": "OpenAI, Claude, Gemini, DeepSeek, Kimi, Qwen, GLM und mehr: mu erkennt den Dienst am Schlüssel und richtet den Rest ein",
       "placeholder": "Schlüssel hier einfügen",
       "service": "Dienst",
       "servicePlaceholder": "Am Schlüssel erkannt",

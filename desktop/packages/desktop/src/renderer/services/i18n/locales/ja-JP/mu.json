@@ -541,7 +541,7 @@
     "apiKey": {
       "title": "API キーを貼り付け",
       "tag": "いちばん簡単",
-      "description": "DeepSeek、Kimi、Qwen、GLM、OpenAI、Claude、Gemini など。キーからサービスを見分けて、残りは mu が設定します",
+      "description": "OpenAI、Claude、Gemini、DeepSeek、Kimi、Qwen、GLM など。キーからサービスを見分けて、残りは mu が設定します",
       "placeholder": "ここにキーを貼り付け",
       "service": "サービス",
       "servicePlaceholder": "キーから判別",

@@ -541,7 +541,7 @@
     "apiKey": {
       "title": "API 키 붙여넣기",
       "tag": "가장 간단함",
-      "description": "DeepSeek, Kimi, Qwen, GLM, OpenAI, Claude, Gemini 등: mu가 키를 보고 서비스를 알아내고 나머지를 설정합니다",
+      "description": "OpenAI, Claude, Gemini, DeepSeek, Kimi, Qwen, GLM 등: mu가 키를 보고 서비스를 알아내고 나머지를 설정합니다",
       "placeholder": "여기에 키를 붙여넣으세요",
       "service": "서비스",
       "servicePlaceholder": "키에서 찾음",

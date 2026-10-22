@@ -541,7 +541,7 @@
     "apiKey": {
       "title": "جای‌گذاری کلید API",
       "tag": "ساده‌ترین",
-      "description": "DeepSeek، Kimi، Qwen، GLM، OpenAI، Claude، Gemini و موارد دیگر: mu سرویس را از روی کلید می‌شناسد و بقیه را خودش تنظیم می‌کند",
+      "description": "OpenAI، Claude، Gemini، DeepSeek، Kimi، Qwen، GLM و موارد دیگر: mu سرویس را از روی کلید می‌شناسد و بقیه را خودش تنظیم می‌کند",
       "placeholder": "کلید را اینجا جای‌گذاری کنید",
       "service": "سرویس",
       "servicePlaceholder": "از روی کلید شناخته می‌شود",

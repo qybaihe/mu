@@ -541,7 +541,7 @@
     "apiKey": {
       "title": "Coller une clé API",
       "tag": "Le plus simple",
-      "description": "DeepSeek, Kimi, Qwen, GLM, OpenAI, Claude, Gemini et d’autres : mu reconnaît le service à la clé et règle le reste",
+      "description": "OpenAI, Claude, Gemini, DeepSeek, Kimi, Qwen, GLM et d’autres : mu reconnaît le service à la clé et règle le reste",
       "placeholder": "Collez la clé ici",
       "service": "Service",
       "servicePlaceholder": "Reconnu à la clé",
