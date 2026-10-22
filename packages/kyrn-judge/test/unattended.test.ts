@@ -148,6 +148,8 @@ describe("an unattended run (mu --print, json mode)", () => {
 							procedures: { path: temp() },
 							memory: { path: setup.lessons ?? join(temp(), "lessons.jsonl") },
 							swarm: { isolation: "none", agentsDir: temp() },
+							// The drift check waits 3 minutes between checks; this run takes a second.
+							monitor: { minMinutes: 0 },
 							...setup.features,
 						},
 					}),
@@ -228,7 +230,7 @@ describe("an unattended run (mu --print, json mode)", () => {
 			features: {
 				preflight: { unattended: true },
 				catalog: { askUnattended: true, unattendedHidden: ["browse"] },
-				monitor: { unattended: true },
+				monitor: { unattended: true, minMinutes: 0 },
 				procedures: { path: temp(), unattended: true },
 			},
 		});

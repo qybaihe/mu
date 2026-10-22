@@ -771,18 +771,18 @@
 			"fa-IR": "پایش انحراف"
 		},
 		"decisions[id=turn.drift].summary": {
-			"en": "Every few steps, checks that the work still serves the goal; rules catch the agent going in circles.",
-			"zh-TW": "每隔幾步判斷目前的工作是否還在為目標服務，並用規則發現原地打轉。",
-			"ja-JP": "数ステップごとに、作業がまだ目標に沿っているかを確認します。堂々巡りはルールで検出します。",
-			"ko-KR": "몇 단계마다 작업이 아직 목표에 도움이 되는지 확인하고, 제자리를 맴도는 것은 규칙으로 잡아냅니다.",
-			"de-DE": "Prüft alle paar Schritte, ob die Arbeit noch dem Ziel dient; Regeln erkennen, wenn sie sich im Kreis dreht.",
-			"fr-FR": "À intervalles de quelques étapes, vérifie que le travail sert toujours l’objectif ; des règles repèrent quand il tourne en rond.",
-			"es-ES": "Cada pocos pasos, comprueba que el trabajo sigue sirviendo al objetivo; las reglas detectan cuándo da vueltas en círculos.",
-			"pt-BR": "A cada poucas etapas, verifica se o trabalho ainda serve ao objetivo; regras detectam quando ele anda em círculos.",
-			"ru-RU": "Каждые несколько шагов проверяет, что работа всё ещё ведёт к цели; зацикливание выявляют правила.",
-			"uk-UA": "Кожні кілька кроків перевіряє, чи робота досі веде до мети; правила виявляють зациклення.",
-			"tr-TR": "Birkaç adımda bir, işin hâlâ hedefe hizmet edip etmediğini kontrol eder; döngüye girmeyi kurallar yakalar.",
-			"fa-IR": "هر چند گام بررسی می‌کند که کار هنوز در خدمت هدف باشد؛ قوانین دور خود چرخیدن را تشخیص می‌دهند."
+			"en": "Every few steps or minutes, checks that the run still moves toward the goal, reading exit codes, times and how long since the last progress; rules catch the agent going in circles.",
+			"zh-TW": "每隔幾步或幾分鐘，看結束代碼、耗時和距上次進展多久，判斷這次執行是否還在朝目標推進；原地打轉由規則發現。",
+			"ja-JP": "数ステップまたは数分ごとに、終了コード、所要時間、最後の進展からの経過時間を見て、実行がまだ目標に向かって進んでいるかを確認します。堂々巡りはルールで検出します。",
+			"ko-KR": "몇 단계나 몇 분마다 종료 코드, 소요 시간, 마지막 진척 이후 경과 시간을 보고 실행이 아직 목표를 향해 나아가는지 확인합니다. 제자리를 맴도는 것은 규칙으로 잡아냅니다.",
+			"de-DE": "Prüft alle paar Schritte oder Minuten anhand von Exit-Codes, Laufzeiten und der Zeit seit dem letzten Fortschritt, ob der Lauf noch auf das Ziel zugeht; Regeln erkennen, wenn er sich im Kreis dreht.",
+			"fr-FR": "Toutes les quelques étapes ou minutes, vérifie que l’exécution avance encore vers l’objectif, d’après les codes de sortie, les durées et le temps écoulé depuis le dernier progrès ; des règles repèrent quand elle tourne en rond.",
+			"es-ES": "Cada pocos pasos o minutos, comprueba que la ejecución sigue avanzando hacia el objetivo, según los códigos de salida, los tiempos y el tiempo desde el último avance; las reglas detectan cuándo da vueltas en círculos.",
+			"pt-BR": "A cada poucas etapas ou minutos, verifica se a execução ainda avança rumo ao objetivo, pelos códigos de saída, pelos tempos e pelo tempo desde o último progresso; regras detectam quando ela anda em círculos.",
+			"ru-RU": "Каждые несколько шагов или минут проверяет по кодам выхода, времени выполнения и времени с последнего продвижения, что запуск всё ещё движется к цели; зацикливание выявляют правила.",
+			"uk-UA": "Кожні кілька кроків або хвилин перевіряє за кодами виходу, часом виконання й часом від останнього поступу, чи запуск досі рухається до мети; правила виявляють зациклення.",
+			"tr-TR": "Birkaç adımda ya da birkaç dakikada bir, çıkış kodlarına, sürelere ve son ilerlemeden bu yana geçen zamana bakarak çalışmanın hâlâ hedefe ilerleyip ilerlemediğini kontrol eder; döngüye girmeyi kurallar yakalar.",
+			"fa-IR": "هر چند گام یا چند دقیقه، از روی کدهای خروج، زمان‌ها و مدتی که از آخرین پیشرفت گذشته بررسی می‌کند که اجرا هنوز به سوی هدف پیش می‌رود؛ قوانین دور خود چرخیدن را تشخیص می‌دهند."
 		},
 		"decisions[id=turn.rewind].title": {
 			"en": "Judged rewind",
