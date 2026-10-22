@@ -11,6 +11,14 @@ mu can run end to end on [Nebius Token Factory](https://tokenfactory.nebius.com)
 
 ## Set up
 
+Until the next release of the npm package, run mu from source (Node.js 22.19 or newer):
+
+```bash
+git clone https://github.com/qybaihe/mu && cd mu
+npm ci && npm run generate:models   # the model catalog is generated, not committed
+./kyrn/bin/mu setup                 # then ./kyrn/bin/mu wherever `mu` appears below
+```
+
 Create an API key in [Token Factory](https://tokenfactory.nebius.com), run `mu setup` and paste it: mu recognises a Token Factory key, checks it, starts you on Nemotron 3 Super and offers Nemotron 3 Ultra as the judge. In a script, the key comes from stdin:
 
 ```bash
