@@ -6,6 +6,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+	afterSetup,
 	dependenciesInstalled,
 	MODEL_KEY_VARIABLES,
 	mcpAddDefaults,
@@ -13,6 +14,7 @@ import {
 	planSetup,
 	SETUP_DECLINED_FILE,
 	SETUP_EXIT_CANCELLED,
+	SETUP_EXIT_SIGN_IN,
 	SETUP_EXIT_START,
 	SETUP_VALUE_FLAGS,
 	usage,
@@ -193,9 +195,20 @@ describe("mu setup, as the launcher starts it", () => {
 	it("keeps the same names and codes as the wizard, and is in mu's usage", () => {
 		expect(SETUP_DECLINED_FILE).toBe(WIZARD_DECLINED_FILE);
 		expect(SETUP_EXIT_START).toBe(SETUP_EXIT.start);
+		expect(SETUP_EXIT_SIGN_IN).toBe(SETUP_EXIT.signIn);
 		expect(SETUP_EXIT_CANCELLED).toBe(SETUP_EXIT.cancelled);
 		expect([...SETUP_VALUE_FLAGS]).toEqual([...WIZARD_VALUE_FLAGS]);
 		expect(usage("linux")).toContain("mu setup                 connect a model");
+	});
+
+	it("opens the session on /login after a subscription, unless the command line says what to do", () => {
+		expect(afterSetup(SETUP_EXIT_SIGN_IN, [])).toEqual(["/login"]);
+		expect(afterSetup(SETUP_EXIT_SIGN_IN, ["--model", "openai/gpt-5.6-luna"])).toEqual([
+			"--model",
+			"openai/gpt-5.6-luna",
+		]);
+		expect(afterSetup(SETUP_EXIT_START, [])).toEqual([]);
+		expect(afterSetup(SETUP_EXIT.done, [])).toEqual([]);
 	});
 });
 
