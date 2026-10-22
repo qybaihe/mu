@@ -122,7 +122,7 @@ export function registerWatchdog(runtime: KyrnRuntime): void {
 					customType: WATCHDOG_MESSAGE,
 					content: [
 						`Your last reply was stopped after ${minutes(was.ms)} of thinking without a message or a tool call.`,
-						...(tail ? ["Its reasoning had got this far:", `"""\n…${tail}\n"""`] : []),
+						...(tail ? ["Its reasoning had gotten this far:", `"""\n…${tail}\n"""`] : []),
 						"Do not start that reasoning over. Act on what it found: take the next concrete step now (run a command, write the file, test one idea), then reason further on what the result shows.",
 					].join("\n"),
 					display: true,

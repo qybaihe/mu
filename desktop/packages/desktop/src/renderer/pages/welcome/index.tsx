@@ -611,7 +611,7 @@ export default function Welcome() {
         </section>
         <footer className={styles.footer}>
           {step === 'intro' ? (
-            <button type='button' className={styles.textButton} onClick={leave}>
+            <button type='button' className={styles.textButton} data-testid='mu-welcome-skip-all' onClick={leave}>
               {t('mu.welcome.skipAll')}
             </button>
           ) : (

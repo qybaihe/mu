@@ -194,7 +194,7 @@ export async function readCodex(path: string, options: ReadOptions = {}): Promis
 						.filter((text): text is string => Boolean(text));
 				const content = read(payload.content);
 				const text = content.length > 0 ? content : read(payload.summary);
-				if (text.length === 0) builder.drop("thinking that cannot be read");
+				if (text.length === 0) builder.drop("unreadable thinking");
 				else answer().blocks.push({ type: "thinking", thinking: text.join("\n\n") });
 				return;
 			}
@@ -261,7 +261,7 @@ export async function readCodex(path: string, options: ReadOptions = {}): Promis
 				return;
 			}
 			default:
-				builder.drop("records not understood");
+				builder.drop("unrecognized records");
 		}
 	};
 
@@ -290,7 +290,7 @@ export async function readCodex(path: string, options: ReadOptions = {}): Promis
 		}
 		const data = record(line.value);
 		if (!data) {
-			builder.drop("records not understood");
+			builder.drop("unrecognized records");
 			continue;
 		}
 		const payload = record(data.payload);
@@ -317,7 +317,7 @@ export async function readCodex(path: string, options: ReadOptions = {}): Promis
 					if (typeof input === "number") tokens = input;
 				}
 				builder.drop("Codex events and state");
-			} else builder.drop("records not understood");
+			} else builder.drop("unrecognized records");
 			continue;
 		}
 		// The older shape.
@@ -338,7 +338,7 @@ export async function readCodex(path: string, options: ReadOptions = {}): Promis
 			if (!Number.isNaN(time)) at = time;
 			continue;
 		}
-		builder.drop("records not understood");
+		builder.drop("unrecognized records");
 	}
 	flush();
 

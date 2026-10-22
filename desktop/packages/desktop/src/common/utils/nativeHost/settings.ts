@@ -58,7 +58,8 @@ export function sessionSettings(entries: readonly unknown[], leafId?: string | n
       if (level) settings.thinkingLevel = level;
     } else if (entry.type === 'custom' && entry.customType === PERMISSIONS_ENTRY) {
       const mode = asText(asObject(entry.data).mode);
-      if (MODE_ID.test(mode)) settings.permissions = mode;
+      // `jev` is Judge mode's name before mu 0.1.12, which conversations saved then still say.
+      if (MODE_ID.test(mode)) settings.permissions = mode === 'jev' ? 'judge' : mode;
     }
   }
   return settings;

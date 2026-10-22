@@ -659,9 +659,9 @@
       "lead": "mu is a coding agent that does the work: it reads your project, edits code, runs commands and tests, and keeps going until the job is done.",
       "import": {
         "title": "Bring your conversations along",
-        "text": "mu found {{count}} conversations from other coding agents on this computer. Import them with their whole history and keep going here.",
-        "text_one": "mu found {{count}} conversation from another coding agent on this computer. Import it with its whole history and keep going here.",
-        "text_other": "mu found {{count}} conversations from other coding agents on this computer. Import them with their whole history and keep going here.",
+        "text": "mu found {{count}} conversations from other coding agents on this computer. Import them with their full history and keep going here.",
+        "text_one": "mu found {{count}} conversation from another coding agent on this computer. Import it with its full history and keep going here.",
+        "text_other": "mu found {{count}} conversations from other coding agents on this computer. Import them with their full history and keep going here.",
         "open": "Choose conversations…"
       },
       "points": {
@@ -841,11 +841,11 @@
   },
   "importChats": {
     "title": "Import conversations",
-    "description": "Bring your Claude Code, Codex or ZCode conversations from this computer into mu, with their whole history, and continue them here.",
+    "description": "Bring your Claude Code, Codex or ZCode conversations from this computer into mu with their full history and continue them here.",
     "open": "Choose…",
     "dialog": {
       "title": "Import conversations",
-      "hint": "Each conversation you choose becomes a mu conversation in its project folder, with its whole history: messages, tool calls, thinking and images. Choose one again later to bring over what's new.",
+      "hint": "Each conversation you choose becomes a mu conversation in its project folder, with its full history: messages, tool calls, thinking and images. Choose one again later to bring over what's new.",
       "search": "Search by text or folder",
       "loading": "Looking for conversations…",
       "empty": "No Claude Code, Codex or ZCode conversations found on this computer.",

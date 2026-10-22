@@ -157,7 +157,7 @@ export async function readClaudeCode(path: string, options: ReadOptions = {}): P
 		const data = record(line.value);
 		const type = str(data?.type);
 		if (!data || !type) {
-			builder.drop("records not understood");
+			builder.drop("unrecognized records");
 			continue;
 		}
 		sessionId ??= str(data.sessionId);
@@ -165,7 +165,7 @@ export async function readClaudeCode(path: string, options: ReadOptions = {}): P
 		if (title) titles.set(type, title);
 		const uuid = str(data.uuid);
 		if (!TREE_TYPES.has(type) || !uuid) {
-			builder.drop(uuid ? "records not understood" : "Claude Code bookkeeping (titles, queue, file history)");
+			builder.drop(uuid ? "unrecognized records" : "Claude Code bookkeeping (titles, queue, file history)");
 			continue;
 		}
 		if (byUuid.has(uuid)) {

@@ -34,7 +34,7 @@ export const USAGE = [
 	"",
 	"Looks in ~/.claude/projects (CLAUDE_CONFIG_DIR), ~/.codex/sessions (CODEX_HOME) and ~/.zcode/cli/db/db.sqlite.",
 	"A ZCode conversation is named <database>#<id>, as --list shows it.",
-	"Importing a conversation again brings over what is new in it; one that didn't change is skipped.",
+	"Importing a conversation again brings over what's new; one that hasn't changed is skipped.",
 ].join("\n");
 
 export interface ParsedArgs {
@@ -177,13 +177,14 @@ export function formatResult(result: ImportResult, home: string): string {
 	if (result.status === "failed") return `Couldn't import ${tilde(result.source, home)}: ${result.error}`;
 	if (result.status === "already-imported")
 		return [
-			`Already imported, and nothing new since: ${tilde(result.source, home)}`,
+			`Already imported and unchanged: ${tilde(result.source, home)}`,
 			`  as session ${tilde(result.sessionFile, home)}`,
 		].join("\n");
 	const { counts } = result;
-	const left = Object.entries(counts.dropped)
-		.sort((a, b) => b[1] - a[1])
-		.map(([reason, count]) => `${reason} ${count}`);
+	// What was left out, most first, one line each with its count in front: `    3  repeated records`.
+	const skipped = Object.entries(counts.dropped).sort((a, b) => b[1] - a[1]);
+	const width = Math.max(0, ...skipped.map(([, count]) => String(count).length));
+	const left = skipped.map(([reason, count]) => `    ${String(count).padStart(width)}  ${reason}`);
 	const kept = [
 		...(counts.thinking > 0 ? [plural(counts.thinking, "thinking block")] : []),
 		...(counts.images > 0 ? [plural(counts.images, "image")] : []),
@@ -200,13 +201,15 @@ export function formatResult(result: ImportResult, home: string): string {
 					`Imported from ${TOOL_NAMES[result.tool]}: "${result.name}"`,
 					`  ${tilde(result.sessionFile, home)}`,
 					...(result.earlier
-						? [`  the earlier import went on in mu, so it was left as it was: ${tilde(result.earlier, home)}`]
+						? [
+								`  the earlier import was continued in mu, so it was left untouched: ${tilde(result.earlier, home)}`,
+							]
 						: []),
 				];
 	return [
 		...head,
 		`  ${plural(counts.user, "message")} from you, ${plural(counts.assistant, "reply", "replies")}, ${plural(counts.toolCalls, "tool call")}${kept.length > 0 ? `, ${kept.join(", ")}` : ""}`,
-		...(left.length > 0 ? [`  skipped: ${left.join(", ")}`] : []),
+		...(left.length > 0 ? ["  skipped:", ...left] : []),
 		`  to continue: mu --session ${result.sessionFile}`,
 	].join("\n");
 }

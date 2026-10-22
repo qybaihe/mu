@@ -80,7 +80,7 @@ async function report(ctx: ImportContext, result: ImportResult): Promise<void> {
 		ctx.ui.notify(
 			say({
 				zh: `这段对话之前已经导入过，之后也没有新内容，在 ${result.sessionFile}`,
-				en: `This conversation was already imported, and nothing is new in it since: ${result.sessionFile}`,
+				en: `This conversation was already imported and hasn't changed since: ${result.sessionFile}`,
 			}),
 			"info",
 		);

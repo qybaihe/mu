@@ -27,20 +27,20 @@ export const MODE_TEXT: Readonly<
 		zh: "完全访问",
 		en: "Full access",
 		zhDescription: "什么都不问，直接执行。你明确说过不许做的事仍然会被拦下。",
-		enDescription: "Runs everything without asking. Anything you told mu not to do is still blocked.",
+		enDescription: "Runs everything without asking. Anything you've told mu not to do is still blocked.",
 	},
 	judge: {
 		zh: "判定模式",
 		en: "Judge mode",
 		zhDescription: "项目里的读和改直接做；命令、项目外的改动、对外操作由判定器替你审批，它拿不准的才问你。",
 		enDescription:
-			"Reads and edits in the project go ahead. The judge decides on commands, changes outside the project and external actions, and asks you when it isn't sure.",
+			"Reads and edits inside the project go ahead. The judge decides on commands, changes outside the project and actions outside this computer, and asks you only when it's unsure.",
 	},
 	ask: {
 		zh: "最小权限",
 		en: "Ask first",
 		zhDescription: "只读操作直接做；改文件、跑命令、对外操作都先问你。",
-		enDescription: "Only reads go ahead. mu asks you before every edit, command and external action.",
+		enDescription: "Only reads go ahead. mu asks you before every edit, command and action outside this computer.",
 	},
 };
 
@@ -50,6 +50,8 @@ const ALIASES: Readonly<Record<string, PermissionMode>> = {
 	yolo: "full",
 	完全访问: "full",
 	judge: "judge",
+	// The mode's name before 0.1.12: settings, MU_PERMISSIONS and saved conversations may still say it.
+	jev: "judge",
 	auto: "judge",
 	审批: "judge",
 	判定模式: "judge",

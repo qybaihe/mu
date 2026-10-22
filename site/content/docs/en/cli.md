@@ -31,7 +31,7 @@ mu                     # an interactive session in the current directory
 | `mu doctor` | Check the installation, the model, the judges and the connections, and say what to fix |
 | `mu ledger [n] [--json]` | What the judge decided in the last n sessions. `--json` gives every record with its probabilities and timings. |
 | `mu import --list` | Find your Claude Code, Codex and ZCode conversations |
-| `mu import <file>…` | Bring them into mu with their whole history, to continue there; again later, to bring over what's new |
+| `mu import <file>…` | Bring them into mu with their full history and continue there; run it again later to bring over what's new |
 | `mu judge setup \| start \| stop \| status` | The local judge, Laya. `setup` asks before downloading the model. |
 | `mu link` / `mu unlink` | Put the `mu` command on your PATH (`~/.local/bin`), or remove it |
 | `mu auth status \| login <provider> \| logout <provider>` | Subscription sign-in, as used by the desktop app |
