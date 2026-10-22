@@ -33,7 +33,7 @@ From this repository, `kyrn/bin/mu` (on Windows `kyrn\bin\mu.cmd`; the launcher 
 }
 ```
 
-Environment: `MU_JUDGE=laya,llm:provider/model` (or `off`), `MU_JUDGE_MODE=active`; the `KYRN_` spellings still work. In a session: `/mu`, `/mu judge laya,jev`, `/mu mode tool.admission active`, `/agents`, `/remember`.
+Environment: `MU_JUDGE=laya,llm:provider/model` (or `off`), `MU_JUDGE_MODE=active`, `MU_TIME_BUDGET_S=900` (the run's time budget in seconds from mu's start: the watchdog cuts a thinking-only reply in time for its retry, and the model hears the time left at 50% and 80%; `features.deadline`); the `KYRN_` spellings still work. In a session: `/mu`, `/mu judge laya,jev`, `/mu mode tool.admission active`, `/agents`, `/remember`.
 
 ## What the main model gets
 

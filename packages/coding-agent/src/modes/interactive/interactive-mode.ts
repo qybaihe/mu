@@ -69,6 +69,7 @@ import {
 import { type AgentSession, type AgentSessionEvent, parseSkillBlock } from "../../core/agent-session.ts";
 import { type AgentSessionRuntime, SessionImportFileNotFoundError } from "../../core/agent-session-runtime.ts";
 import type { AgentSessionRuntimeDiagnostic } from "../../core/agent-session-services.ts";
+import { formatNoModelsAvailableMessage } from "../../core/auth-guidance.ts";
 import {
 	CACHE_TTL_MS,
 	type CacheMiss,
@@ -1215,7 +1216,12 @@ export class InteractiveMode {
 		}
 
 		if (modelFallbackMessage) {
-			this.showWarning(modelFallbackMessage);
+			// With no model at all, the way to add one from here is /login.
+			this.showWarning(
+				modelFallbackMessage === formatNoModelsAvailableMessage()
+					? formatNoModelsAvailableMessage({ inSession: true })
+					: modelFallbackMessage,
+			);
 		}
 
 		const crash = takeUnnotifiedCrash();
@@ -1228,8 +1234,11 @@ export class InteractiveMode {
 
 		void this.maybeWarnAboutAnthropicSubscriptionAuth();
 
-		// Process initial messages
-		if (initialMessage) {
+		// Process initial messages. A first message "/login" (mu setup starts the session that way once a subscription
+		// was chosen) opens the sign-in, as when typed in the editor.
+		if (initialMessage === "/login" || initialMessage?.startsWith("/login ")) {
+			await this.handleLoginCommand(initialMessage.slice("/login".length).trim() || undefined);
+		} else if (initialMessage) {
 			try {
 				await this.session.prompt(initialMessage, { images: initialImages });
 			} catch (error: unknown) {
@@ -5813,10 +5822,13 @@ export class InteractiveMode {
 
 	/**
 	 * Under another name than pi (mu), no Claude subscription sign-in: Anthropic's terms don't let other apps offer
-	 * Claude.ai login (code.claude.com/docs/en/legal-and-compliance). An Anthropic API key is still offered, and a
-	 * sign-in made before stays until /logout.
+	 * Claude.ai login (code.claude.com/docs/en/legal-and-compliance). An Anthropic API key is still offered. Nor the
+	 * Codex CLI's login (openai-codex): ChatGPT signs in through the openai provider's Sign in with ChatGPT. A sign-in
+	 * made before stays until /logout.
 	 */
-	private static readonly HIDDEN_SIGN_INS: ReadonlySet<string> = new Set(APP_NAME === "pi" ? [] : ["anthropic"]);
+	private static readonly HIDDEN_SIGN_INS: ReadonlySet<string> = new Set(
+		APP_NAME === "pi" ? [] : ["anthropic", "openai-codex"],
+	);
 
 	private getLoginProviderOptions(authType?: "oauth" | "api_key"): AuthSelectorProvider[] {
 		const options: AuthSelectorProvider[] = [];
@@ -5920,10 +5932,12 @@ export class InteractiveMode {
 	}
 
 	private showLoginAuthTypeSelector(providerOptions?: AuthSelectorProvider[]): void {
-		// The top-level selector offers Radius directly, as its last option.
-		const radiusOption = providerOptions
-			? undefined
-			: this.getLoginProviderOptions("oauth").find((provider) => provider.id === RADIUS_PROVIDER_ID);
+		// The top-level selector offers Radius directly, as its last option. Radius is pi's own service: under another
+		// name (mu) it stays in the account list only.
+		const radiusOption =
+			providerOptions || APP_NAME !== "pi"
+				? undefined
+				: this.getLoginProviderOptions("oauth").find((provider) => provider.id === RADIUS_PROVIDER_ID);
 		const radiusText = radiusOption ? `Sign in with ${radiusOption.name}` : undefined;
 		const radiusLabel = radiusOption ? `${radiusText}${formatAuthSelectorProviderStatus(radiusOption)}` : undefined;
 		const oauthProvider = providerOptions?.find((provider) => provider.authType === "oauth");
