@@ -6417,7 +6417,8 @@ export class InteractiveMode {
 				this.showError(
 					`Logged in to ${providerName}, but local model state could not be synchronized: ${errorMsg}`,
 				);
-			} else if (errorMsg === "Login cancelled") {
+			} else if (errorMsg === "Login cancelled" || dialog.signal.aborted) {
+				// Cancelled with Escape: a flow waiting on a request (GitHub Copilot's) rejects with the abort itself.
 				onBack?.();
 			} else {
 				this.showError(`Failed to login to ${providerName}: ${errorMsg}`);

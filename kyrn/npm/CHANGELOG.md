@@ -10,6 +10,10 @@
 
 - `turn.continue` in an unattended run (`mu --print`, json mode): a "you said you would" verdict (`promised`) sends the agent back at most once per user message (`features.continuation.unattendedPromised`, default 1; `maxNudges` still caps all nudges together), and not at all when the run that just ended was the agent's answer to a nudge and called no tool (`promisedAfterToolless`, default false). The ending-with-no-message rule and go-ahead nudges are unchanged, and so is an interactive session. `promised` needs a new judge capability, `intent`, which the built-in `laya` profile sets to false: with `laya,jev` it goes to Jev, and with Laya alone no `promised` nudge is sent (`continuation.localPromised: true` asks Laya again). On Terminal-Bench 2.1 (constraints-scheduling) Laya read "Done. Created `/app/meeting_scheduled.ics` …" as a promise twice; the second nudge sent the model searching `/` for test files: 4 extra requests and 51k input tokens.
 
+### Fixed
+
+- `/login`: a sign-in cancelled with Escape goes back quietly also when the flow rejects with the dialog's abort (GitHub Copilot's), not only with "Login cancelled".
+
 ## [0.1.13] - 2026-10-22
 
 ### Added
