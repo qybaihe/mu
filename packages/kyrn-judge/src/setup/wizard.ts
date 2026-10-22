@@ -584,8 +584,8 @@ class Setup {
 			const auth = this.path(join(this.deps.paths.agentDir, "auth.json"));
 			this.io.say(
 				this.t({
-					zh: `订阅账号在 mu 里面登录：启动 mu，输入 /login，选 ChatGPT（OpenAI Codex）、Claude、Grok 或 Google，按提示在浏览器里完成。登录信息保存在 ${auth}。`,
-					en: `To use a subscription, sign in from inside mu: start mu, type /login, choose ChatGPT (OpenAI Codex), Claude, Grok or Google, and finish in the browser. The sign-in is saved in ${auth}.`,
+					zh: `订阅账号在 mu 里面登录：启动 mu，输入 /login，选 OpenAI (ChatGPT subscription)、Claude、Grok 或 Google，按提示在浏览器里完成。登录信息保存在 ${auth}。`,
+					en: `To use a subscription, sign in from inside mu: start mu, type /login, choose OpenAI (ChatGPT subscription), Claude, Grok or Google, and finish in the browser. The sign-in is saved in ${auth}.`,
 				}),
 			);
 			return "subscription";
