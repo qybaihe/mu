@@ -104,7 +104,7 @@ export function usage(platform) {
 		"                           (see mu setup --help for scripting, reading a key from stdin and the supported services)",
 		"  mu judge <cmd>           manage the local judge, Laya (macOS on Apple silicon): setup | start | stop | status | run",
 		"  mu ledger [n] [--json]   print the judge's verdicts from the last n sessions",
-		"  mu import --list | <file>...   import Claude Code, Codex and ZCode conversations (mu import --help)",
+		"  mu import <file>...      import Claude Code, Codex and ZCode conversations; --list shows them (mu import --help)",
 		"  mu doctor                check the installation, the judges and the connections",
 		"  mu auth <cmd>            sign-in helper for the desktop app (JSON lines):",
 		"                           status | login <provider> | logout <provider>",
