@@ -45,20 +45,21 @@ Super fixed the bug and ran the tests twice; Ultra made 8 decisions on the way. 
 
 ### Thinking where it pays
 
-Nemotron 3 Ultra decides much better with thinking on for a few decision points, at about three times the tokens and 2.5 s instead of 0.9 s at the median. `nemotron-think` is Ultra with `reasoning_effort: "high"`; give it those decision points and keep the fast judge for the rest:
+On four decision points Nemotron 3 Ultra decides clearly better with thinking on: reading a new message (`input.preflight`), approving a command (`tool.approval`), keeping a memory (`memory.capture`) and offering skills (`skills.disclosure`). `nemotron-think` is Ultra with `reasoning_effort: "high"`; route those four to it and keep the fast judge for the rest:
 
 ```json
 {
   "tiers": ["nemotron"],
   "routes": {
+    "input.preflight": ["nemotron-think"],
+    "tool.approval": ["nemotron-think"],
     "memory.capture": ["nemotron-think"],
-    "tool.constraint": ["nemotron-think"],
-    "board.read": ["nemotron-think"],
-    "skills.disclosure": ["nemotron-think"],
-    "capability.disclosure": ["nemotron-think"]
+    "skills.disclosure": ["nemotron-think"]
   }
 }
 ```
+
+On held-out test requests this raised Ultra's score from 54.7 to 57.9 on real requests and from 48.4 to 55.9 on constructed ones, and both gains hold at 95% confidence (paired bootstrap: +0.9 to +6.5 and +3.1 to +12.8). The four were chosen on the development split, where thinking made two other decision points worse (`board.read`, `capability.disclosure`): thinking everywhere is not better. The price: those decisions cost about twice as much (about a fifth more for the judge as a whole) and take about 2.5 s instead of 0.9 s at the median, so a command waits a little longer for its approval.
 
 ## The judge on your machine
 
