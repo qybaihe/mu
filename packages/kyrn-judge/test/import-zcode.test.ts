@@ -384,7 +384,13 @@ describe("ZCode conversations", () => {
 		const run = (args: string[]) => {
 			const child = spawnSync(process.execPath, [CLI, ...args], {
 				encoding: "utf8",
-				env: { PATH: process.env.PATH ?? "", HOME: z.dir },
+				// Node takes the home folder from USERPROFILE on Windows, and needs SystemRoot there.
+				env: {
+					PATH: process.env.PATH ?? "",
+					HOME: z.dir,
+					USERPROFILE: z.dir,
+					...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}),
+				},
 				timeout: 60_000,
 			});
 			return { code: child.status, out: child.stdout, err: child.stderr };
