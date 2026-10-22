@@ -3104,6 +3104,8 @@ export type I18nKey =
   | 'mu.welcome.login.providers.google-gemini-cli.plan'
   | 'mu.welcome.login.providers.openai-codex.name'
   | 'mu.welcome.login.providers.openai-codex.plan'
+  | 'mu.welcome.login.providers.openai.name'
+  | 'mu.welcome.login.providers.openai.plan'
   | 'mu.welcome.login.providers.xai.name'
   | 'mu.welcome.login.providers.xai.plan'
   | 'mu.welcome.login.readingModels'

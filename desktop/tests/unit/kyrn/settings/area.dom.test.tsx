@@ -639,29 +639,31 @@ describe('providers and the default model', () => {
       .map((item) => item.textContent);
     expect(names).toEqual(['ChatGPT', 'Claude', 'Grok', 'Relay', 'corp-gateway']);
     expect(screen.getByTestId('mu-provider-editor')).toHaveTextContent('Relay');
-    // mu reported openai-codex too: it is the subscription above, not another built-in provider.
+    // mu reported the older ChatGPT sign-in (openai-codex, through Codex) too: with nobody signed in to it, it is
+    // neither an account nor a built-in provider.
     expect(screen.queryByTestId('mu-provider-item-builtin-openai-codex')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('mu-provider-item-account-openai-codex')).not.toBeInTheDocument();
     const relay = screen.getByTestId('mu-provider-item-custom-0');
     expect(within(relay).getByRole('img', { name: 'Available' })).toBeInTheDocument();
   });
 
   it('signs in to a subscription at once, outside the save bar', async () => {
     await open('providers');
-    fireEvent.click(await screen.findByTestId('mu-provider-item-account-openai-codex'));
-    const detail = screen.getByTestId('mu-account-openai-codex');
+    fireEvent.click(await screen.findByTestId('mu-provider-item-account-openai'));
+    const detail = screen.getByTestId('mu-account-openai');
     expect(detail).toHaveTextContent('Plus / Pro plan');
     expect(within(detail).getByTestId('mu-account-state')).toHaveTextContent('Not signed in');
     const running = {
       id: 1,
-      provider: 'openai-codex',
+      provider: 'openai',
       phase: 'running',
       url: 'https://auth.openai.com/oauth/authorize',
     };
     bridge.loginStart.mockResolvedValue({ ok: true, data: running });
     bridge.loginState.mockResolvedValue({ ok: true, data: running });
-    fireEvent.click(within(detail).getByTestId('mu-account-signin-openai-codex'));
+    fireEvent.click(within(detail).getByTestId('mu-account-signin-openai'));
     expect(await screen.findByTestId('mu-login-waiting')).toHaveTextContent('ChatGPT');
-    const item = screen.getByTestId('mu-provider-item-account-openai-codex');
+    const item = screen.getByTestId('mu-provider-item-account-openai');
     expect(within(item).getByRole('img', { name: 'Signing in…' })).toBeInTheDocument();
 
     bridge.loginState.mockResolvedValue({
@@ -673,7 +675,7 @@ describe('providers and the default model', () => {
     });
     expect(detail).toHaveTextContent('GPT-5.5');
     expect(within(item).getByRole('img', { name: 'Signed in' })).toBeInTheDocument();
-    expect(within(detail).getByTestId('mu-account-signout-openai-codex')).toBeInTheDocument();
+    expect(within(detail).getByTestId('mu-account-signout-openai')).toBeInTheDocument();
     expect(screen.queryByTestId('mu-save-bar')).not.toBeInTheDocument();
     expect(bridge.save).not.toHaveBeenCalled();
     // The account's models reach the home page's pill without a new start of the app.
@@ -854,7 +856,8 @@ describe('providers and the default model', () => {
     await user.click(within(screen.getByTestId('mu-board-model')).getByLabelText('Provider'));
     await waitFor(() => expect(document.querySelectorAll('.arco-select-option').length).toBeGreaterThan(0));
     const offered = [...document.querySelectorAll('.arco-select-option')].map((choice) => choice.textContent);
-    expect(offered).toEqual(expect.arrayContaining(['Relay', 'ChatGPT', 'corp-gateway']));
+    // A provider mu reported models for, by its name: the older ChatGPT sign-in by its own.
+    expect(offered).toEqual(expect.arrayContaining(['Relay', 'ChatGPT (Codex)', 'corp-gateway']));
     expect(offered).not.toContain('openai-codex');
   });
   it('tests the connection through the main process and offers the models it listed', async () => {
@@ -1117,7 +1120,7 @@ describe('providers and the default model', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
     await waitFor(() => expect(screen.queryByTestId('mu-provider-item-custom-0')).not.toBeInTheDocument());
     // With no endpoint left, the first subscription is shown.
-    expect(screen.getByTestId('mu-account-openai-codex')).toBeInTheDocument();
+    expect(screen.getByTestId('mu-account-openai')).toBeInTheDocument();
     expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Providers');
 
     fireEvent.click(screen.getByText('Save'));
@@ -1280,8 +1283,8 @@ describe('providers and the default model', () => {
     await open('providers');
     const grok = await screen.findByTestId('mu-account-xai');
     expect(within(grok).getByTestId('mu-login-waiting')).toHaveTextContent('ABCD-1234');
-    fireEvent.click(screen.getByTestId('mu-provider-item-account-openai-codex'));
-    expect(screen.getByTestId('mu-account-signin-openai-codex')).toBeDisabled();
+    fireEvent.click(screen.getByTestId('mu-provider-item-account-openai'));
+    expect(screen.getByTestId('mu-account-signin-openai')).toBeDisabled();
     const hint = screen.getByTestId('mu-account-other');
     expect(hint).toHaveTextContent('Grok sign-in is in progress');
     fireEvent.click(within(hint).getByRole('button', { name: 'Show' }));

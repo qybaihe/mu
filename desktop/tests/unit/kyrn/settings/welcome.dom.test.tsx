@@ -727,7 +727,7 @@ describe('the permission step', () => {
 });
 
 describe('signing in with a subscription', () => {
-  const running = { id: 1, provider: 'openai-codex', phase: 'running', url: 'https://auth.openai.com/oauth/authorize' };
+  const running = { id: 1, provider: 'openai', phase: 'running', url: 'https://auth.openai.com/oauth/authorize' };
   const toSubscriptions = async () => {
     at('/welcome', <Welcome />);
     fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
@@ -746,8 +746,8 @@ describe('signing in with a subscription', () => {
       ok: true,
       data: { ...running, prompt: { type: 'manual_code', message: 'Paste the code' } },
     });
-    fireEvent.click(await screen.findByTestId('mu-login-openai-codex'));
-    expect(bridge.loginStart).toHaveBeenCalledWith({ provider: 'openai-codex' });
+    fireEvent.click(await screen.findByTestId('mu-login-openai'));
+    expect(bridge.loginStart).toHaveBeenCalledWith({ provider: 'openai' });
     expect(await screen.findByTestId('mu-login-waiting')).toHaveTextContent('ChatGPT');
 
     // The browser finishes it by itself; the code field is the way out, not the first thing shown.
@@ -768,17 +768,18 @@ describe('signing in with a subscription', () => {
         ],
       },
     });
-    await waitFor(() => expect(screen.getByTestId('mu-login-openai-codex')).toHaveTextContent('Signed in'), {
+    await waitFor(() => expect(screen.getByTestId('mu-login-openai')).toHaveTextContent('Signed in'), {
       timeout: 3000,
     });
     expect(screen.queryByTestId('mu-login-waiting')).not.toBeInTheDocument();
 
     await toSummary();
-    expect(screen.getByText('ChatGPT / gpt-5.5')).toBeInTheDocument();
+    // The model is OpenAI's, as the model picker names it; the sign-in above said ChatGPT.
+    expect(screen.getByText('OpenAI / gpt-5.5')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('mu-welcome-start'));
     await waitFor(() => expect(bridge.save).toHaveBeenCalledTimes(1));
     const saved = bridge.save.mock.calls[0][0] as SaveSettings;
-    expect(saved.models?.defaults).toMatchObject({ provider: 'openai-codex', model: 'gpt-5.5' });
+    expect(saved.models?.defaults).toMatchObject({ provider: 'openai', model: 'gpt-5.5' });
     expect(saved.models?.providers ?? []).toEqual([]);
     expect(saved.credentials ?? []).toEqual([]);
   });
@@ -806,7 +807,7 @@ describe('signing in with a subscription', () => {
 
     bridge.loginStatus.mockResolvedValue({
       ok: true,
-      data: { signedIn: [], offered: ['openai-codex', 'anthropic', 'xai', 'google-gemini-cli', 'google-antigravity'] },
+      data: { signedIn: [], offered: ['openai', 'anthropic', 'xai', 'google-gemini-cli', 'google-antigravity'] },
     });
     await toSubscriptions();
     const google = await screen.findByTestId('mu-login-google-gemini-cli');
@@ -845,7 +846,7 @@ describe('signing in with a subscription', () => {
   it('turns a no to the risk into a cancelled sign-in', async () => {
     bridge.loginStatus.mockResolvedValue({
       ok: true,
-      data: { signedIn: [], offered: ['openai-codex', 'anthropic', 'xai', 'google-antigravity'] },
+      data: { signedIn: [], offered: ['openai', 'anthropic', 'xai', 'google-antigravity'] },
     });
     const asking = {
       id: 4,
@@ -892,7 +893,7 @@ describe('signing in with a subscription', () => {
   it('says the account is signed in while its models are still being read', async () => {
     bridge.loginStatus.mockResolvedValue({
       ok: true,
-      data: { signedIn: [], offered: ['openai-codex', 'anthropic', 'xai', 'google-antigravity'] },
+      data: { signedIn: [], offered: ['openai', 'anthropic', 'xai', 'google-antigravity'] },
     });
     const reading = {
       id: 6,
@@ -916,7 +917,7 @@ describe('signing in with a subscription', () => {
     const asking = { ...running, prompt: { type: 'text', message: 'Enter your workspace id:' } };
     bridge.loginStart.mockResolvedValue({ ok: true, data: asking });
     bridge.loginState.mockResolvedValue({ ok: true, data: asking });
-    fireEvent.click(screen.getByTestId('mu-login-openai-codex'));
+    fireEvent.click(screen.getByTestId('mu-login-openai'));
     const waiting = await screen.findByTestId('mu-login-waiting');
     expect(waiting).toHaveTextContent('ChatGPT asks:');
     expect(waiting).toHaveTextContent('Enter your workspace id:');
@@ -932,10 +933,10 @@ describe('signing in with a subscription', () => {
       ok: true,
       data: { ...running, phase: 'failed', error: 'Token exchange request failed' },
     });
-    fireEvent.click(screen.getByTestId('mu-login-openai-codex'));
+    fireEvent.click(screen.getByTestId('mu-login-openai'));
     const alert = await screen.findByText("Couldn't sign in. Try again.", {}, { timeout: 3000 });
     expect(alert).toHaveTextContent('Token exchange request failed');
-    expect(screen.getByTestId('mu-login-openai-codex')).not.toBeDisabled();
+    expect(screen.getByTestId('mu-login-openai')).not.toBeDisabled();
   });
 });
 
