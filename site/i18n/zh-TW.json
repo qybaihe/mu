@@ -181,12 +181,26 @@
     "download": "下載這個版本",
     "full_agent": "mu-agent 的完整更新紀錄（英文）",
     "headlines": {
+      "v0.1.11": "在 mu setup 裡直接訂閱登入，判定器說關就關，終端機更安靜，執行可以設時限",
       "v0.1.10": "匯入 ZCode 對話，英文校訂，無人值守的執行留住伺服器",
       "v0.1.9": "介面換了新樣子，新加的服務商依模型列表填好參數",
       "v0.1.8": "檢查 MCP 工具描述裡藏的指令，跑通的長任務可以存成技能"
     },
     "english_note": "這個版本的說明還沒有中文版，下面是英文原文。",
     "entries": [
+      {
+        "version": "v0.1.11",
+        "date": "2026-10-22",
+        "agent": "mu-agent 0.1.13",
+        "items": [
+          "<b>在 <code>mu setup</code> 選訂閱帳號，接著就是登入。</b><code>mu setup</code> 會寫明該選哪一項：Sign in with an account，再選 OpenAI（ChatGPT）、xAI（Grok）或 Google；它啟動的工作階段（還有第一次啟動 <code>mu</code>）會直接開啟 <code>/login</code>，不用自己輸入。終端機的 <code>/login</code> 和桌面版一致了：不再提供 Codex CLI 的登入，ChatGPT 透過 OpenAI 登入；也不再提供 Claude 訂閱登入（Anthropic 不允許其他應用程式這麼做），<code>/login anthropic</code> 會直接要 API 金鑰；第一個選單也拿掉了「Sign in with Radius」。之前的登入在 <code>/logout</code> 之前照常可用。把 Claude 訂閱權杖（<code>sk-ant-oat…</code>）貼到要填 API 金鑰的地方，<code>mu setup</code> 和首次引導會認出來，不送到任何地方，並請你改填 API 金鑰。",
+          "<b>判定器選「暫時不要」，就真的不用判定器。</b>以前選它什麼都沒寫入，免費的 Jev 照樣回答，它讀到的內容也照樣送到了 OpenCode。現在它會在 <code>mu.json</code> 裡關閉所有判定點（<code>\"modes\": { \"default\": \"off\" }</code>），歡迎訊息寫明判定器已關閉，什麼都不會送給判定器；之後在 <code>mu setup</code> 選一個判定器就會重新開啟，指令碼裡用 <code>mu setup --judge off</code>。原本處於影子模式的通知分流、中途插話和偏離監控也隨之關閉，所以在桌面版關掉「判定生效」，對判定器的每次呼叫都會停止；桌面版的設定和核心列也依出廠狀態把這些判定點顯示為只記錄或關閉，不再顯示為生效中。",
+          "<b>終端機更安靜，命令列說明更清楚。</b>歡迎畫面就是整個第一個畫面，pi 列出的已載入技能、提示詞和擴充功能不再顯示（它們仍在 <code>/</code> 選單裡；<code>--verbose</code> 或 <code>\"quietStartup\": false</code> 能讓列表回來）。<code>/help</code> 依終端機寬度分欄換行；<code>mu doctor</code> 和 <code>/doctor</code> 先說有幾項要修正；沒有模型時，<code>/status</code> 和狀態列不再顯示 pi 的預留值 <code>unknown</code>。<code>mu judge --help</code> 說明每個指令，<code>mu judge status</code> 用一行說明本機判定器的狀態；<code>mu ledger --help</code>、<code>mu link --help</code> 和 <code>mu unlink --help</code> 只顯示說明、不再真的執行；<code>mu auth --help</code> 先列出 mu 自己的登入指令；從原始碼執行時，<code>mu --version</code> 顯示 mu 的版本，不是 pi 的。",
+          "<b>執行可以設時限。</b>把 <code>MU_TIME_BUDGET_S</code> 設成一次執行最多能用的秒數（基準測試會依任務的逾時時間設定）：一直在思考的回覆會提早截斷，讓重試來得及完成；時間用掉 50% 和 80% 時，代理會得知還剩多少時間，並被提醒先把要求的結果做出來。不設定就什麼都不變。偏離監控也重新設計了：它看結束代碼、耗時和距離上次有進展多久，回覆很長時也每隔幾分鐘看一次，要連續兩次有把握、而且 10 分鐘沒有進展才會修正方向。不過在基準測試證明它有用之前，它預設只記錄。",
+          "<b>無人值守的執行更精簡，子代理啟動更快。</b><code>mu --print</code> 和 json 模式跳過執行前的預檢、偏離監控、檢查點、判定器預熱、技能起草和新教訓，也拿掉了一次性執行幾乎用不到的工具（子代理、蜂群、瀏覽器等）：每次請求少約 1.9k token，每次執行快幾秒。每一項都能在 <code>mu.json</code> 裡重新開啟，互動式工作階段和桌面版不變。子代理和蜂沿用工作階段已選好的技能和能力，不再重新問判定器，蜂之間的 <code>FOUND:</code> 和 <code>DEAD END:</code> 筆記也不等判定器。篩檢工具輸出時少問判定器：目錄列表、連結這類沒有句子的文字不做注入檢查，本機判定器 Laya 不再篩檢工具輸出。",
+          "<b>修正。</b>被標為有風險的長指令（<code>rm -rf</code>、<code>DROP TABLE</code>、強制推送……）以前只把前 400 個字元交給判定器，長指令碼裡危險的部分可能被截掉而放行；現在判定器能看到最多 8,000 個字元的完整指令，更長時會看到開頭和每個被標出的部分。只由唯讀指令串起來的指令（例如 <code>pwd &amp;&amp; ls -la; git status</code>）不再詢問權限，<code>rm -f 檔案</code> 也不再算有風險。<code>/permissions</code> 開啟時停在目前的模式上，不再停在「完全存取」。代理順口提議做你沒要求的事時，mu 不再當成你同意了。代理工作時你傳的訊息不再為了等判定器延遲最多 1.5 秒；分頁讀檔案不會再被說成在原地打轉；本機判定器 Laya 在磁碟快滿時不再當掉。"
+        ]
+      },
       {
         "version": "v0.1.10",
         "date": "2026-10-22",
