@@ -96,6 +96,8 @@ async function start(options: {
 				provider: new MockJudgeProvider(options.responder ?? (() => ({}))),
 				mode: options.mode ?? "active",
 				config: parseConfig({
+					// Capability disclosure is off out of the box; these tests open servers by its verdict too.
+					modes: { "capability.disclosure": options.mode ?? "active" },
 					features: { memory: false, ...options.features },
 					mcp: options.servers ? { servers: options.servers } : undefined,
 				}),
@@ -334,17 +336,24 @@ describe("MCP servers in the capability catalog", () => {
 		expect(JSON.stringify([results, events])).not.toContain(SECRET);
 	});
 
-	it("starts a pinned server with the session, and every server when nothing is hidden", async () => {
+	it("starts a pinned server with the session, and every server when the catalog hides nothing", async () => {
 		const pinned = await start({ servers: { pinned: { ...fake(), exposure: "always" }, other: fake() } });
 		pinned.harness.setResponses([fauxAssistantMessage("hi")]);
 		await pinned.harness.session.prompt("Hello.");
 		expect(mcpTools(pinned.harness)).toContain("mcp__pinned__echo");
 		expect(mcpTools(pinned.harness)).not.toContain("mcp__other__echo");
 
-		const open = await start({ servers: { one: fake(), two: fake() }, mode: "off" });
+		const open = await start({ servers: { one: fake(), two: fake() }, features: { catalog: false } });
 		open.harness.setResponses([fauxAssistantMessage("hi")]);
 		await open.harness.session.prompt("Hello.");
 		expect(mcpTools(open.harness)).toEqual(expect.arrayContaining(["mcp__one__echo", "mcp__two__echo"]));
+
+		// With the decision off nobody is asked, and the servers stay hidden as when the judge says no.
+		const off = await start({ servers: { one: fake() }, mode: "off", responder: disclose(yes) });
+		off.harness.setResponses([fauxAssistantMessage("hi")]);
+		await off.harness.session.prompt("Echo.");
+		expect(mcpTools(off.harness)).toEqual([]);
+		expect(active(off.harness)).toContain("find_capability");
 
 		const shadow = await start({ servers: { one: fake() }, mode: "shadow", responder: disclose(yes) });
 		shadow.harness.setResponses([fauxAssistantMessage("hi")]);

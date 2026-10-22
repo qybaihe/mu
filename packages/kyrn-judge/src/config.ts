@@ -123,6 +123,9 @@ export const DEFAULT_CONFIG: KyrnConfig = {
 		// swarm.patch is off: it sees only paths and line counts, which the delegate result already lists, and it held
 		// up every delegate call that brought back a patch.
 		"swarm.patch": "off",
+		// capability.disclosure is off: asked on every message, it opened nothing in 162 benchmark questions and 34 in
+		// real sessions, while it held up the start of the turn. Packs stay hidden, and find_capability opens one.
+		"capability.disclosure": "off",
 		// Its rules deliver what matters; in single-prompt runs a "next_turn" verdict never reached anyone.
 		"notify.routing": "shadow",
 		// About a second on every mid-run message, and no verdict has changed anything yet.

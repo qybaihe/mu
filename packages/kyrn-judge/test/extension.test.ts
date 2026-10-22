@@ -16,6 +16,8 @@ import { attended } from "./attended.ts";
 
 /** The harness runs in print mode; these tests are about preflight as an interactive session asks it. */
 const config = parseConfig({ features: attended() });
+/** The same, with capability disclosure on (it is off out of the box): a second question at the start of a turn. */
+const withCapabilities = parseConfig({ modes: { "capability.disclosure": "active" }, features: attended() });
 
 const yes: Answer = { type: "boolean", probability: 0.95 };
 const no: Answer = { type: "boolean", probability: 0.04 };
@@ -42,8 +44,8 @@ function ledgerRecords(harness: Harness): LedgerRecord[] {
 }
 
 /**
- * The records of the decision these tests are about. A default session holds hidden capability packs,
- * so every message is also asked which of them it needs (`capability.disclosure`).
+ * The records of the decision these tests are about. A session may ask other questions about the same message
+ * (`skills.disclosure`, and `capability.disclosure` where a test turns it on).
  */
 function preflightRecords(harness: Harness): LedgerRecord[] {
 	return ledgerRecords(harness).filter((record) => record.specId === inputPreflight.id);
@@ -122,7 +124,7 @@ describe("kyrn judge extension", () => {
 			return chatVerdict;
 		});
 		const harness = await createHarness({
-			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "active", config })],
+			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "active", config: withCapabilities })],
 		});
 		harnesses.push(harness);
 		harness.setResponses([fauxAssistantMessage("Sure.")]);
@@ -152,7 +154,11 @@ describe("kyrn judge extension", () => {
 				createKyrnJudgeExtension({
 					provider,
 					mode: "active",
-					config: parseConfig({ tiers: ["laya"], features: attended() }),
+					config: parseConfig({
+						tiers: ["laya"],
+						modes: { "capability.disclosure": "active" },
+						features: attended(),
+					}),
 				}),
 			],
 		});

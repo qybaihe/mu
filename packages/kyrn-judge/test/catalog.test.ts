@@ -80,6 +80,7 @@ describe("capability disclosure", () => {
 		pack("tool:web", ["web_fetch"], { exposure: "always" }),
 	];
 
+	/** `mode` is the decision's own: it is off out of the box, so these tests about its verdicts set it. */
 	async function start(responder: MockResponder, mode: DecisionMode = "active"): Promise<Harness> {
 		const harness = await createHarness({
 			tools: [tool("debug_start"), tool("sg_search"), tool("web_fetch")],
@@ -87,7 +88,7 @@ describe("capability disclosure", () => {
 				createKyrnJudgeExtension({
 					provider: new MockJudgeProvider(responder),
 					mode,
-					config: parseConfig({ features: attended({ memory: false }) }),
+					config: parseConfig({ modes: { "capability.disclosure": mode }, features: attended({ memory: false }) }),
 					// Preflight is what counts user turns.
 					only: ["preflight", "catalog"],
 					capabilities,
@@ -165,16 +166,55 @@ describe("capability disclosure", () => {
 		expect(JSON.stringify(notes[0])).toContain("debug_start");
 	});
 
-	it("only records the verdict in shadow mode, and hides nothing when the decision is off", async () => {
+	it("only records the verdict in shadow mode, and with the decision off asks nothing and still hides", async () => {
 		const shadow = await start(disclose(yes, yes), "shadow");
 		shadow.setResponses([fauxAssistantMessage("ok")]);
 		await shadow.session.prompt("Debug it.");
 		expect(active(shadow)).not.toContain("debug_start");
 		expect(active(shadow)).toContain("find_capability");
 
-		const off = await start(disclose(no, no), "off");
-		off.setResponses([fauxAssistantMessage("ok")]);
+		const off = await start(disclose(yes, yes), "off");
+		off.setResponses([
+			fauxAssistantMessage([fauxToolCall("find_capability", { open: "pack:debugger" })], { stopReason: "toolUse" }),
+			fauxAssistantMessage("ok"),
+		]);
 		await off.session.prompt("Debug it.");
-		expect(active(off)).toEqual(expect.arrayContaining(["debug_start", "sg_search", "web_fetch"]));
+		// Hidden as when the judge finds nothing needed; the model's own way in still works.
+		expect(active(off)).toEqual(expect.arrayContaining(["debug_start", "web_fetch", "find_capability"]));
+		expect(active(off)).not.toContain("sg_search");
+	});
+
+	it("asks no capability question by default, so nothing waits for one, and keeps the packs hidden", async () => {
+		const provider = new MockJudgeProvider(disclose(yes, yes));
+		const steps: unknown[] = [];
+		const harness = await createHarness({
+			tools: [tool("debug_start"), tool("sg_search"), tool("web_fetch")],
+			extensionFactories: [
+				createKyrnJudgeExtension({
+					provider,
+					config: parseConfig({ features: attended({ memory: false }) }),
+					only: ["preflight", "catalog"],
+					capabilities,
+					onPresentation: (event) => {
+						if (event.kind === "progress") steps.push(event.payload);
+					},
+				}),
+			],
+		});
+		harnesses.push(harness);
+		harness.setResponses([fauxAssistantMessage("Stepping through it."), fauxAssistantMessage("Still on it.")]);
+
+		await harness.session.prompt("The server crashes on startup, step through it.");
+		await harness.session.prompt("Now debug the worker too.");
+
+		const asked = provider.calls.flatMap((call) => Object.keys(call.questions));
+		// The judge is on and answers preflight; capability.disclosure is off out of the box.
+		expect(asked).toContain("turn_type");
+		expect(asked.filter((id) => id.startsWith("capability_"))).toEqual([]);
+		// The turn never held for a capability verdict.
+		expect(steps).not.toContainEqual(expect.objectContaining({ code: "capabilities" }));
+		expect(active(harness)).not.toContain("debug_start");
+		expect(active(harness)).not.toContain("sg_search");
+		expect(active(harness)).toEqual(expect.arrayContaining(["web_fetch", "find_capability"]));
 	});
 });

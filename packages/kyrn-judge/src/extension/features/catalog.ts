@@ -35,13 +35,20 @@ function line(capability: Capability): string {
 	return `- ${capability.id} · ${capability.title}: ${capability.description}`;
 }
 
+/** With the catalog switched off nothing is hidden, so packs and MCP servers are there from the start of a session. */
+export function hidesNothing(runtime: KyrnRuntime): boolean {
+	return !runtime.options("catalog", { enabled: true }).enabled;
+}
+
 /**
  * Keeps the tools of hidden capabilities out of the model's tool list, lets the
  * judge open the ones a task needs, and gives the model a way to find and open
  * the rest itself (see `../../catalog/catalog.ts`).
  *
- * With the decision `off` nothing is hidden. In `shadow` the verdicts are only
- * recorded, so capabilities stay hidden and `find_capability` is the way in.
+ * The decision is `off` by default (config.ts): nobody is asked and nothing waits, capabilities stay hidden as when
+ * the judge finds none needed, and `find_capability`, `/capabilities open` and a pack's own commands are the way in.
+ * In `shadow` the verdicts are only recorded, with the same result. Only `active` opens what the judge is sure of.
+ * With the feature switched off (`features.catalog: false`) nothing is hidden: see `hidesNothing`.
  *
  * An unattended run (`mu --print`, json mode) asks nothing: what is hidden stays hidden. It also leaves the tools and
  * skills of `unattendedHidden` out of the request, except one the person called for by its command (`/hive …`).
@@ -71,22 +78,25 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 	/** Inside a sub-agent: the capabilities its parent has open. They are opened once, and nothing is asked. */
 	const inherited = inheritedNames(CAPABILITIES_OPEN_ENV);
 	let inheritedOpened = false;
-	/** Whether to ask the judge: never in a sub-agent that took its parent's answer, nor in an unattended run unless `askUnattended` says so. */
-	const asks = (): boolean => !inherited && (options.askUnattended || !isUnattended(runtime.ctx));
+	/**
+	 * Whether to ask the judge: never with the decision off, nor in a sub-agent that took its parent's answer, nor in an
+	 * unattended run unless `askUnattended` says so.
+	 */
+	const asks = (): boolean =>
+		runtime.mode(capabilityDisclosure.id) !== "off" &&
+		!inherited &&
+		(options.askUnattended || !isUnattended(runtime.ctx));
 	/** A turn has chosen what it opens: from then on a sub-agent can take this session's answer. */
 	let chosen = false;
 	if (options.subagentsInherit) {
-		runtime.capabilitiesOpen = () =>
-			chosen && runtime.mode(capabilityDisclosure.id) !== "off"
-				? catalog.history().map((record) => record.id)
-				: undefined;
+		runtime.capabilitiesOpen = () => (chosen ? catalog.history().map((record) => record.id) : undefined);
 	}
 	const disclose = (words: string, candidates: readonly Capability[], signal?: AbortSignal) =>
 		runtime.engine.decide(capabilityDisclosure, { userMessage: words, capabilities: candidates }, { signal });
 	/** The question asked the moment the message arrived, alongside preflight. */
 	let early: { turn: number; decision: ReturnType<typeof disclose> } | undefined;
 	runtime.atTurnStart((words) => {
-		if (runtime.mode(capabilityDisclosure.id) === "off" || !asks()) return;
+		if (!asks()) return;
 		const candidates = catalog.hidden();
 		if (candidates.length === 0) return;
 		const decision = disclose(words, candidates);
@@ -98,8 +108,8 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 	/** Left-out names the person called for by their command in this session. */
 	const released = new Set<string>();
 
-	const applyLoadout = (hideNothing = false): void => {
-		const hidden = new Set(hideNothing ? [] : catalog.hiddenTools());
+	const applyLoadout = (): void => {
+		const hidden = new Set(catalog.hiddenTools());
 		for (const name of leftOut) hidden.add(name);
 		const active = new Set(pi.getActiveTools());
 		for (const tool of hidden) {
@@ -146,10 +156,6 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 					for (const id of inherited) await open(id, "parent").catch(() => undefined);
 				}
 				applyLoadout();
-				return undefined;
-			}
-			if (runtime.mode(capabilityDisclosure.id) === "off") {
-				applyLoadout(true);
 				return undefined;
 			}
 			if (event.messageType === "custom") {

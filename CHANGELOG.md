@@ -14,6 +14,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 - **Replies start sooner in the terminal and the desktop app.** The questions mu asks the judge about a new message go out together instead of one after another, and a turn waits at most 3 s for them instead of 4 s. A long command output waits at most 2 s for its check instead of 4 s. In the authors' own sessions the wait before the model starts fell from a median 2.7 s to 1.7 s. Checks that guard a command (permission, risk, your constraints, prompt injection) wait as before.
 - In `mu --print` and json-mode runs, mu tells the agent at most once per message that it said it would do more and stopped, and not again after the agent answered without doing anything. The local judge no longer decides this: it took a finished "Done. Created …" for a promise.
+- **The judge no longer picks which packs and MCP servers a message needs.** Asked 196 times on benchmarks and in real sessions, it never opened one, and each turn waited for its answer. They stay hidden as before: the agent opens one with `find_capability` when a task needs it, and you can with `/capabilities open`. `"modes": { "capability.disclosure": "active" }` in `~/.mu/agent/mu.json`, or the desktop app's settings, bring the question back; `"features": { "catalog": false }` shows everything from the start.
 
 ### Fixed
 

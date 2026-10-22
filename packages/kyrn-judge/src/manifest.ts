@@ -166,8 +166,8 @@ const DESCRIBED: HarnessManifest = {
 			feature: "catalog",
 			title: { zh: "能力披露", en: "Capability disclosure" },
 			summary: {
-				zh: "能力包、MCP 服务器等装着但默认不露，任务需要时才打开，对应的进程也到那时才启动。",
-				en: "Packs and MCP servers stay installed but hidden until a task needs them; their processes start only then.",
+				zh: "能力包、MCP 服务器等装着但默认不露，任务需要时才打开，对应的进程也到那时才启动。默认关闭：能力照样隐藏，模型用 find_capability 自己打开要用的；每条消息都问一次判定器，实际用下来它一个也没打开过。",
+				en: "Packs and MCP servers stay installed but hidden until a task needs them; their processes start only then. Off by default: they stay hidden all the same, and the model opens what it needs with find_capability. Asked on every message, the judge opened none in practice.",
 			},
 		},
 		{
