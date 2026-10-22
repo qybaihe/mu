@@ -27,6 +27,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ### Fixed
 
+- **mu's own commands no longer show `[t]` in the terminal's slash menu.** pi tagged them as an extension loaded for this run only; they come with mu.
 - **`/permissions` opens on the current mode**, so pressing Enter keeps it; before, the cursor started on Full access. A long option in mu's pickers wraps under its own text.
 
 ## [0.1.10] - 2026-10-22
