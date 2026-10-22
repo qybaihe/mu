@@ -21,7 +21,7 @@ import {
 	createReadToolDefinition,
 	type ExtensionUIContext,
 } from "@earendil-works/pi-coding-agent";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createHarness, getToolResult, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import { parseConfig } from "../src/config.ts";
 import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
@@ -33,6 +33,26 @@ import { SandboxSession, type SandboxSessionOptions } from "../src/sandbox/sessi
 import { createTar } from "../src/sandbox/tar.ts";
 import { FakeContree } from "./fixtures/fake-contree.ts";
 import { sh } from "./fixtures/git-repo.ts";
+
+/** Windows has no exec bit to read or set, so a script's 0755 only survives where files have POSIX modes. */
+const posix = process.platform !== "win32";
+
+// The code under test runs git itself, also outside a repository; keep the machine's line-ending conversion out of it
+// (GitHub's Windows runners have core.autocrlf=true, which would check a pulled "two\n" out as "two\r\n").
+const gitEnv = { GIT_CONFIG_COUNT: "1", GIT_CONFIG_KEY_0: "core.autocrlf", GIT_CONFIG_VALUE_0: "false" };
+const savedEnv: Record<string, string | undefined> = {};
+beforeAll(() => {
+	for (const [key, value] of Object.entries(gitEnv)) {
+		savedEnv[key] = process.env[key];
+		process.env[key] = value;
+	}
+});
+afterAll(() => {
+	for (const [key, value] of Object.entries(savedEnv)) {
+		if (value === undefined) delete process.env[key];
+		else process.env[key] = value;
+	}
+});
 
 const dirs: string[] = [];
 function tempDir(prefix = "mu-sandbox-"): string {
@@ -216,7 +236,7 @@ describe("project archive", () => {
 		mkdirSync(join(out, "x"));
 		execFileSync("tar", ["-xf", join(out, "a.tar"), "-C", join(out, "x")]);
 		expect(readFileSync(join(out, "x", "run.sh"), "utf8")).toBe("#!/bin/sh\necho hi\n");
-		expect(statSync(join(out, "x", "run.sh")).mode & 0o777).toBe(0o755);
+		if (posix) expect(statSync(join(out, "x", "run.sh")).mode & 0o777).toBe(0o755);
 		expect(readFileSync(join(out, "x", long), "utf8")).toBe("deep\n");
 		expect(readFileSync(join(out, "x", "名前.txt"), "utf8")).toBe("utf8\n");
 		expect(lstatSync(join(out, "x", "link")).isSymbolicLink()).toBe(true);
@@ -311,7 +331,7 @@ describe("sandbox session and tool operations", () => {
 		expect(status.cost).toBe(0.5);
 		const files = fake.image(status.head as string).files;
 		expect(files.get("/workspace/src/app.ts")?.data.toString()).toBe("export const v = 1;\n");
-		expect(files.get("/workspace/run.sh")?.mode).toBe(0o755);
+		if (posix) expect(files.get("/workspace/run.sh")?.mode).toBe(0o755);
 		expect(files.get("/workspace/link")?.link).toBe("src/app.ts");
 		expect(files.has("/tmp/mu-sandbox-seed.tgz")).toBe(false);
 	});
@@ -402,7 +422,7 @@ describe("sandbox session and tool operations", () => {
 		await ops.bash.exec("true", root, { onData: () => {} });
 		const files = (fake.spawns.at(-1) as { files: Record<string, { uuid: string; mode: string }> }).files;
 		expect(Object.keys(files).sort()).toEqual(["/workspace/notes/new.md", "/workspace/run.sh"]);
-		expect(files["/workspace/run.sh"]?.mode).toBe("0755");
+		if (posix) expect(files["/workspace/run.sh"]?.mode).toBe("0755");
 		expect(files["/workspace/notes/new.md"]?.mode).toBe("0644");
 		expect(sandbox.status().staged).toBe(0);
 		const head = sandbox.status().head as string;

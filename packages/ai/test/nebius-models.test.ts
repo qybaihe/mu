@@ -56,8 +56,17 @@ describe("Nebius Token Factory models", () => {
 		expect(off.reasoning_effort).toBe("none");
 	});
 
-	it("sends no reasoning parameter to models without models.dev effort values", async () => {
+	it("sends Nemotron 3 Super the reasoning efforts measured on Token Factory", async () => {
 		const model = getModel("nebius", "nvidia/nemotron-3-super-120b-a12b");
+		expect(model.compat?.supportsReasoningEffort).toBe(true);
+		expect(getSupportedThinkingLevels(model)).toEqual(["off", "low", "medium", "high"]);
+
+		expect((await capturePayload(model, "medium")).reasoning_effort).toBe("medium");
+		expect((await capturePayload(model)).reasoning_effort).toBe("none");
+	});
+
+	it("sends no reasoning parameter to models without models.dev effort values", async () => {
+		const model = getModel("nebius", "Qwen/Qwen3.5-397B-A17B");
 		expect(model.reasoning).toBe(true);
 		expect(model.compat?.supportsReasoningEffort).toBe(false);
 
