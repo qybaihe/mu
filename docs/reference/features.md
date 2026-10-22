@@ -27,7 +27,7 @@ On by default: yes. Decision points: `input.preflight`.
 | `thinking` | `false` | Set the thinking level from the verdict (changing it invalidates the prompt cache). |
 | `hints` | `true` | Give the model a one-line hint. |
 | `show` | `true` | Show the wait and the verdict. |
-| `waitMs` | `4000` ms | Wait at most `4000` ms. After this, the turn starts without the verdict. Range 500 to 30000. |
+| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, the turn starts without the verdict. Counted from when the message arrives, like the waits of the skill, capability and lesson questions, which are asked alongside. Range 500 to 30000. |
 | `unattended` | `false` | Also judge messages in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: nobody reads the hint there, and every message would wait for the judge and pay for it. |
 
 ## interjection
@@ -49,9 +49,10 @@ On by default: yes. Decision points: `skills.disclosure`.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `minSkills` | `4` | Don't filter below this many skills. Range 1 to 100. |
-| `waitMs` | `4000` ms | Wait at most `4000` ms. Range 500 to 30000. |
+| `waitMs` | `3000` ms | Wait at most `3000` ms. Range 500 to 30000. |
 | `applyLate` | `true` | Apply a late first verdict from the next turn. When the verdict on the session's first message comes after the wait, skills are hidden from the next turn on, which changes the prompt prefix once. Off: the session keeps every skill description. |
 | `subagentsInherit` | `true` | Subagents take this session's choice. A subagent hides the skills this session hides and doesn't ask the judge again. While this session hasn't settled yet, a subagent asks for itself as before. |
+| `askEarly` | `true` | Ask as soon as the message arrives. Asked alongside preflight, so the turn doesn't wait for two verdicts in a row. Off: asked once preflight is done. |
 
 ## catalog
 
@@ -61,7 +62,7 @@ On by default: yes. Decision points: `capability.disclosure`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `waitMs` | `4000` ms | Wait at most `4000` ms. Range 500 to 30000. |
+| `waitMs` | `3000` ms | Wait at most `3000` ms. Range 500 to 30000. |
 | `askUnattended` | `false` | Also choose capabilities in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: capabilities stay hidden, and the turn doesn't wait. |
 | `unattendedHidden` | `delegate`, `apply_patch_from`, `browse`, `locate`, `remember`, `find_skill`, `find_capability`, `hive`, `mu-browser` | Tools and skills left out of unattended runs. By name. One-shot runs almost never use them, and each one is in every request. One you call for by its command (such as /hive) stays. Empty keeps them all. |
 | `subagentsInherit` | `true` | Subagents take this session's capabilities. A subagent opens the capabilities this session has open and doesn't ask the judge again; what's hidden here stays hidden there. Before this session has chosen, a subagent asks for itself as before. |
@@ -89,7 +90,7 @@ On by default: yes. Decision points: `memory.recall`, `memory.capture`, `memory.
 | `path` | empty | Lessons file. Leave empty for the default location. |
 | `maxCandidates` | `24` | Judge at most `24`. The most followed come first, then the most recently saved or confirmed. Range 1 to 200. |
 | `maxInjected` | `5` | Bring in at most `5`. Range 0 to 20. |
-| `waitMs` | `4000` ms | Wait for recall at most `4000` ms. Counted from when the message arrives; picking lessons for subagents uses the same limit. Range 0 to 30000. |
+| `waitMs` | `3000` ms | Wait for recall at most `3000` ms. Counted from when the message arrives; picking lessons for subagents uses the same limit. Range 0 to 30000. |
 | `retireAfter` | `8` | Retire after this many recalls without being followed. 0 never retires lessons automatically. Range 0 to 100. |
 | `mergeNeighbours` | `6` | Compare with this many similar lessons. Chosen by shared words and judged in one request; 0 saves without merging. Range 0 to 16. |
 | `outcome` | `true` | Learn from the agent getting unstuck. Needs the writer model or the main model to word the lesson. |
@@ -165,7 +166,7 @@ On by default: yes. Decision points: `tool.admission`, `tool.admission.test-log`
 | `chunkChars` | `1200` chars | Chunk size. Range 200 to 20000. |
 | `maxChunks` | `48` | Judge at most this many chunks. Range 4 to 400. |
 | `batchChunks` | `16` | Chunks per request. A hosted judge takes many chunks in one request, with the shared context billed once; the local judge takes one at a time. Range 1 to 32. |
-| `waitMs` | `4000` ms | Wait at most `4000` ms. After this, the full output goes in; the verdict is only recorded. Range 500 to 30000. |
+| `waitMs` | `2000` ms | Wait at most `2000` ms. After this, the full output goes in; the verdict is only recorded. Range 500 to 30000. |
 | `passThrough` | `read`, `edit`, `write`, `delegate`, `hive`, `web_fetch` | Never filter these tools. |
 | `printCommands` | `cat`, `sed -n`, `head`, `tail`, `nl`, `less`, `bat`, `grep`, `rg`, `od`, `xxd`, `git show`, `git diff`, `readelf`, `objdump` | Never filter file prints. When a bash command only prints a file with these programs (after a cd, or piped through them), its output goes in whole, as with read: the model asked to see that file. Build, test, background-job and other output is still judged. Empty: all of it is judged. |
 | `testLog` | `off` | Test log trimming. One of `off` (Off), `rules` (Drop exact repeats only (lossless)), `jev` (Also let the judge pick from the rest). |

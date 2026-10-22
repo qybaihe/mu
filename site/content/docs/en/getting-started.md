@@ -18,7 +18,7 @@ mu comes in two forms: a **desktop app** that carries everything it needs, and t
 
    `SHA256SUMS` on the release page lists the checksum of every file. The macOS builds are signed and notarized by Apple. The Windows builds aren't code-signed yet, so SmartScreen warns the first time: choose **More info**, then **Run anyway**.
 2. Open it. The first-run guide walks through four steps: a model, a permission mode, a judge and a start.
-   - **Model.** Paste an API key, and mu recognizes the service from its shape (DeepSeek, Kimi, Qwen, GLM, SiliconFlow, OpenRouter, OpenAI, Anthropic, Google Gemini, xAI and more) and checks it with one request. Or sign in with a ChatGPT, Grok or Google subscription. A wrong key, an empty balance, an unsupported region or no connection is each explained with what to do.
+   - **Model.** Paste an API key, and mu recognizes the service from its shape (OpenAI, Anthropic, Google Gemini, xAI, OpenRouter, DeepSeek, Kimi, Qwen, GLM, SiliconFlow and more) and checks it with one request. Or sign in with a ChatGPT, Grok or Google subscription. A wrong key, an empty balance, an unsupported region or no connection is each explained with what to do.
    - **Permissions.** *Judge mode* is preselected; see [Permissions and safety](@docs/permissions).
    - **Judge.** With no key, Jev (TypeSafe's hosted judge model) answers for free through OpenCode Zen. You can come back to this any time.
    - **Start.** If mu finds Claude Code, Codex or ZCode conversations, it offers to import them (the guide's first screen offers them too).
@@ -34,7 +34,7 @@ mu setup               # connect a model and choose the judge
 mu                     # a session in the current directory
 ```
 
-`mu setup` asks step by step, in Chinese or English. If you skip it, the first `mu` with no model asks once whether to set one up now. For scripts, `mu setup --help` shows the non-interactive forms; a key is read from standard input, never from the command line.
+`mu setup` asks step by step, in Chinese or English. To use a ChatGPT, Grok or Google subscription instead of a key, choose it there: mu then starts on `/login`, and you finish signing in in the browser. If you skip it, the first `mu` with no model asks once whether to set one up now. For scripts, `mu setup --help` shows the non-interactive forms; a key is read from standard input, never from the command line.
 
 Some things to try:
 

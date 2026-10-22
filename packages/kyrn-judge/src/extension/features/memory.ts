@@ -130,8 +130,8 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 		path: "",
 		maxCandidates: 24,
 		maxInjected: 5,
-		/** How long the turn waits for the recall verdict, counted from the arrival of the message. */
-		waitMs: 4000,
+		/** How long the turn waits for the recall verdict, counted from the arrival of the message, as preflight's wait is. */
+		waitMs: 3000,
 		/** A lesson recalled this many times that the judge never saw followed is retired. 0 keeps every lesson. */
 		retireAfter: 8,
 		/** Kept lessons a new one is compared with before it is stored: those sharing the most words with it. */

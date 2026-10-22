@@ -118,8 +118,13 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 		batchChunks: 16,
 		/** Requests in flight at once: batches for a hosted judge, chunks for the local sidecar. */
 		concurrency: 4,
-		/** A verdict later than this is not worth holding the result for: the output goes in whole, the verdict is only recorded. */
-		waitMs: 4000,
+		/**
+		 * A verdict later than this is not worth holding the result for: the output goes in whole, the verdict is only
+		 * recorded. In the owner's sessions 35 of 42 verdicts came within 2 s, the one that dropped anything in 0.4 s,
+		 * and the 3 that came between 2 and 4 s dropped nothing, while 19 of 57 results waited the whole 4 s for a
+		 * verdict that came later or never.
+		 */
+		waitMs: 2000,
 		/**
 		 * Tools whose output is never judged: file contents and pages the model asked for, and sub-agent reports the bees
 		 * already shaped.

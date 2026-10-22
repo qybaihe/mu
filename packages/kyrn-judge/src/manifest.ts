@@ -555,12 +555,15 @@ const DESCRIBED: HarnessManifest = {
 				{
 					key: "waitMs",
 					kind: "number",
-					default: 4000,
+					default: 3000,
 					min: 500,
 					max: 30000,
 					unit: ms,
 					label: { zh: "最多等待", en: "Wait at most" },
-					help: { zh: "超时就不等了，按原样开始。", en: "After this, the turn starts without the verdict." },
+					help: {
+						zh: "超时就不等了，按原样开始。从消息到达算起；技能、能力和经验的判定同时在问，各自的等待也从这时算起。",
+						en: "After this, the turn starts without the verdict. Counted from when the message arrives, like the waits of the skill, capability and lesson questions, which are asked alongside.",
+					},
 				},
 				{
 					key: "unattended",
@@ -611,7 +614,7 @@ const DESCRIBED: HarnessManifest = {
 				{
 					key: "waitMs",
 					kind: "number",
-					default: 4000,
+					default: 3000,
 					min: 500,
 					max: 30000,
 					unit: ms,
@@ -637,6 +640,16 @@ const DESCRIBED: HarnessManifest = {
 						en: "A subagent hides the skills this session hides and doesn't ask the judge again. While this session hasn't settled yet, a subagent asks for itself as before.",
 					},
 				},
+				{
+					key: "askEarly",
+					kind: "boolean",
+					default: true,
+					label: { zh: "消息一到就问", en: "Ask as soon as the message arrives" },
+					help: {
+						zh: "和预判同时问，不等预判问完，回合开始前不用接连等两个判定。关掉则等预判之后再问。",
+						en: "Asked alongside preflight, so the turn doesn't wait for two verdicts in a row. Off: asked once preflight is done.",
+					},
+				},
 			],
 		},
 		{
@@ -651,7 +664,7 @@ const DESCRIBED: HarnessManifest = {
 				{
 					key: "waitMs",
 					kind: "number",
-					default: 4000,
+					default: 3000,
 					min: 500,
 					max: 30000,
 					unit: ms,
@@ -784,7 +797,7 @@ const DESCRIBED: HarnessManifest = {
 				{
 					key: "waitMs",
 					kind: "number",
-					default: 4000,
+					default: 3000,
 					min: 0,
 					max: 30000,
 					unit: ms,
@@ -1125,7 +1138,7 @@ const DESCRIBED: HarnessManifest = {
 				{
 					key: "waitMs",
 					kind: "number",
-					default: 4000,
+					default: 2000,
 					min: 500,
 					max: 30000,
 					unit: ms,
