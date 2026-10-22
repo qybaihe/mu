@@ -188,9 +188,12 @@ export function parseManifest(value: unknown): HarnessState {
   return { status: 'ok', manifest: { version: 1, groups, modes, decisions, features } };
 }
 
-/** The mode a decision point has when mu.json sets none for it: its built-in one, else the default mode. */
+/**
+ * The mode a decision point has when mu.json sets none for it: its built-in one, else the default mode. With the
+ * default mode off, the built-in one gives way too (the kernel's DecisionEngine.getMode): no point asks the judge.
+ */
 export function defaultModeOf(decision: DecisionInfo, mode: DecisionMode): DecisionMode {
-  return decision.defaultMode ?? mode;
+  return mode === 'off' ? 'off' : (decision.defaultMode ?? mode);
 }
 
 /**

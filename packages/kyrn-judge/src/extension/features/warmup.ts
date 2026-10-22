@@ -82,7 +82,8 @@ export function registerWarmup(runtime: KyrnRuntime): void {
 			wait(options.intervalMs - quiet);
 			return;
 		}
-		if (!probing && Date.now() - runtime.lastActivityAt <= options.idleMs) {
+		// No judge to keep warm when none is asked (`mu setup --judge off`).
+		if (!probing && Date.now() - runtime.lastActivityAt <= options.idleMs && engine.asksJudge()) {
 			const controller = new AbortController();
 			probing = controller;
 			void engine.probe(controller.signal).finally(() => {

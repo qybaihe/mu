@@ -14,7 +14,7 @@ summary: What stays on your machine, what the judge sees and how to keep everyth
 
 A judge only sees the fields one question needs: a message, a chunk of output, a command, a short summary of the run. Credentials are masked before anything reaches the judge or the board.
 
-With no judge key, these fields go to the free Jev on OpenCode Zen (Jev is TypeSafe's hosted judge model, the default). OpenCode doesn't train on them, and mu says so once a day. With your own key, they go to the service you chose. To keep everything on your machine, use the local judge (`MU_JUDGE=laya`) or turn the kernel off (`MU_JUDGE=off`).
+With no judge key, these fields go to the free Jev on OpenCode Zen (Jev is TypeSafe's hosted judge model, the default). OpenCode doesn't train on them, and mu says so once a day. With your own key, they go to the service you chose. To keep everything on your machine, use the local judge (`MU_JUDGE=laya`), turn the judge off (`mu setup --judge off`, or "Not now" when `mu setup` asks; mu's features keep working on their rules), or turn the whole kernel off (`MU_JUDGE=off`).
 
 ## The ledger {#ledger}
 

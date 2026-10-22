@@ -5,7 +5,7 @@ import { randomUUID } from "crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 import lockfile from "proper-lockfile";
-import { CONFIG_DIR_NAME, getAgentDir } from "../config.ts";
+import { APP_NAME, CONFIG_DIR_NAME, getAgentDir } from "../config.ts";
 import { normalizePath, resolvePath } from "../utils/paths.ts";
 import { stripBom } from "../utils/text.ts";
 import { DEFAULT_HTTP_IDLE_TIMEOUT_MS, parseHttpIdleTimeoutMs } from "./http-dispatcher.ts";
@@ -1000,7 +1000,10 @@ export class SettingsManager {
 
 	getQuietStartup(): QuietStartup {
 		const value = this.settings.quietStartup;
-		return value === true || value === "header" ? value : SETTINGS_DEFAULTS.quietStartup;
+		if (value === true || value === false || value === "header") return value;
+		// Under another name (mu), the app's own header says what the session starts with, so by default only it shows:
+		// no listing of loaded resources under it. Problems loading them still show.
+		return APP_NAME === "pi" ? SETTINGS_DEFAULTS.quietStartup : "header";
 	}
 
 	setQuietStartup(quiet: QuietStartup): void {

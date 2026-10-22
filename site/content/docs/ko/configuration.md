@@ -49,6 +49,7 @@ mu가 이해하지 못하는 부분은 mu를 멈추지 않고 기본값으로 �
 - 판정 지점 {points}개 중 {points_active}개는 처음부터 판정을 반영해요(`context.compact`와 `output.drift`는 기본으로 꺼져 있고, `swarm.patch`도 꺼져 있으며, `notify.routing`, `input.interjection`, `turn.drift`는 섀도라서 판정을 기록만 해요). 판정기나 확신이 없는 판정 지점을 시험하려면 섀도로 두고, 판정 장부(`mu ledger`, `/status`, 앱의 판정 탭)를 읽은 다음, 다시 active로 돌려요.
 - `/mu mode <point> <off|shadow|active>`는 현재 세션에서 판정 지점 하나를 바꾸고, `/mu mode default shadow`는 전부를 바꿔요. 모드를 계속 유지하려면 `mu.json`에 넣으세요.
 - `MU_JUDGE_MODE=shadow mu`는 한 번 실행의 기본 모드를 정해요.
+- `"modes": { "default": "off" }`로 두면 판정기에 아무것도 묻지 않아요. 기본이 섀도인 판정 지점도 함께 꺼져요(`mu.json`에서 따로 모드를 준 지점은 제외). `mu setup`에서 판정기를 "Not now"로 고르면 이렇게 기록돼요.
 
 ## 환경 변수 {#env}
 

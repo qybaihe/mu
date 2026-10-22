@@ -12,6 +12,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ### Changed
 
+- **A quieter start in the terminal.** mu's welcome is the whole first screen: the list of loaded skills, prompts and extensions that pi prints under it is left out; prompts and skills are still in the `/` menu. Problems loading them still show. `"quietStartup": false` in settings.json, or `--verbose`, brings the list back.
 - **The terminal's `/login` no longer offers a Claude subscription sign-in either**, so the command line matches the desktop app: Anthropic doesn't allow other apps to offer one. `/login anthropic` goes straight to the API key. A sign-in made before keeps working until `/logout`.
 - **A Claude subscription token is refused where an API key is asked for.** `mu setup` and the desktop app's first-run guide recognize a token from `claude setup-token` (`sk-ant-oat…`), send it nowhere and ask for an Anthropic API key instead.
 - The plain-language board makes fewer model calls: it isn't written in `mu --print` or json mode, where nobody sees it, and while subagents work it updates only when one of them starts, finishes or fails.
@@ -33,6 +34,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ### Fixed
 
+- `mu doctor` in a terminal starts with how many things need fixing, as `/doctor` inside mu does.
 - **The judge sees the risky part of a long command.** A flagged command (`rm -rf`, `DROP TABLE`, a force push, …) reached the judge cut to its first 400 characters, so in a long script the part the flag was about could be missing, and the judge could let it run as harmless. The judge now gets the whole command up to 8,000 characters; past that, its start and every flagged part with the text around it. The confirmation you are asked shows the flagged parts too.
 - Reading a file page by page, or running scripts that only differ further down, no longer gets the agent told it is going in circles.
 - `mu --print` no longer stays up to 10 s after the run for a judge answer nobody waits for any more.
@@ -47,6 +49,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 - **The terminal's `/login` no longer offers the Codex CLI's login ("OpenAI Codex (legacy)").** ChatGPT signs in through OpenAI, as in the desktop app and `mu setup`; a sign-in made before keeps working until `/logout`. Its first menu also drops "Sign in with Radius", pi's own service, which stays in the list of accounts. `mu setup` now names the entries `/login` shows: Sign in with an account, then OpenAI for ChatGPT, xAI for Grok, or a Google sign-in.
 - **Choosing a subscription in `mu setup` now opens the sign-in.** The session it starts (and the first start of `mu`) opens on `/login`, instead of leaving you to type it. With no model connected, the session's warning points to `/login` rather than back to `mu setup`, and the status line says "no model" instead of "unknown".
 - **Clearer `mu judge`, `mu ledger` and `mu auth` in a terminal.** `mu judge --help` explains each command and how to have mu ask the local judge, `mu judge status` says in one line whether it's running and what it serves (`--json` gives the server's answer), and its messages, also shown in the desktop app's local judge panel, are full sentences. `mu ledger --help` no longer runs the ledger. `mu auth --help` lists mu's own sign-in commands before pi's. `mu link --help` and `mu unlink --help` explain instead of linking or unlinking, and `mu --version` in a checkout prints mu's version, as the npm package does, rather than pi's.
+- **"Not now" for the judge in `mu setup` now means no judge.** It said mu would run without one, but wrote nothing, so the free Jev answered anyway and what it reads went to OpenCode. It now turns every decision point off in `mu.json` (`"modes": { "default": "off" }`), the welcome line says the judge is off, and nothing is sent to a judge. Picking a judge in a later `mu setup` turns it back on, and `mu setup --judge off` does the same as "Not now" in a script. With the default mode off, the points that start in shadow (`notify.routing`, `input.interjection`, `turn.drift`) are off too, so turning "Verdicts take effect" off in the desktop app stops every call to the judge, and its settings show those points off.
 
 ## [0.1.10] - 2026-10-22
 
