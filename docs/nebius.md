@@ -11,22 +11,23 @@ mu can run end to end on [Nebius Token Factory](https://tokenfactory.nebius.com)
 
 ## Set up
 
-Create an API key in Token Factory and put it in your environment (or in `~/.mu/.env`):
+Create an API key in [Token Factory](https://tokenfactory.nebius.com), run `mu setup` and paste it: mu recognises a Token Factory key, checks it, starts you on Nemotron 3 Super and offers Nemotron 3 Ultra as the judge. In a script, the key comes from stdin:
 
 ```bash
-export NEBIUS_API_KEY=...
+mu setup --service nebius --key-stdin --judge nemotron
 ```
 
-Run mu with Nemotron 3 Super as the coding model and Nemotron 3 Ultra as the judge:
-
-```bash
-MU_JUDGE=nemotron mu --provider nebius --model nvidia/nemotron-3-super-120b-a12b
-```
-
-To keep these settings, put the judge in `~/.mu/agent/mu.json` and pick the model with `/model` once:
+This keeps the key in `~/.mu/agent/auth.json`, makes Super the default model and writes the judge to `~/.mu/agent/mu.json`:
 
 ```json
 { "tiers": ["nemotron"] }
+```
+
+Then run `mu`. Without setup, the environment works too (or put the key in `~/.mu/.env`):
+
+```bash
+export NEBIUS_API_KEY=...
+MU_JUDGE=nemotron mu --provider nebius --model nvidia/nemotron-3-super-120b-a12b
 ```
 
 In Judge mode (the default permission mode) Nemotron 3 Ultra approves what the task clearly needs and asks you about the rest. Every verdict goes to the ledger with its latency: `mu ledger`, `/status`, or the Judge tab in the desktop app. A typical run, fixing a failing test in a small Python project:
