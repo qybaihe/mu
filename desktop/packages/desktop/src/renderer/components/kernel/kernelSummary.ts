@@ -2,7 +2,7 @@
  * What the kernel bar and the home page say about the judgment kernel, read from mu's settings: which judge answers,
  * through which service, and how many decision points act on its verdicts.
  */
-import type { DecisionMode } from '@/common/kyrn/manifest';
+import { defaultModeOf, type DecisionMode } from '@/common/kyrn/manifest';
 import type { KyrnSettings } from '@/common/kyrn/types';
 
 export type KernelSummary = {
@@ -14,7 +14,7 @@ export type KernelSummary = {
   free: boolean;
   /** How many more judges follow the first in the cascade. */
   fallbacks: number;
-  /** The default mode of every decision point. */
+  /** The default mode: the mode of every decision point without one of its own, in mu.json or built into the harness. */
   mode: DecisionMode;
   /** Decision points whose verdicts change what happens: active, with their feature on. */
   active: number;
@@ -72,7 +72,7 @@ export function summarize(settings: KyrnSettings): KernelSummary {
   for (const decision of decisions) {
     const feature = decision.feature ? settings.features[decision.feature] : undefined;
     if (feature && !feature.enabled) continue;
-    const mode = settings.decisionModes[decision.id] ?? settings.mode;
+    const mode = settings.decisionModes[decision.id] ?? defaultModeOf(decision, settings.mode);
     if (mode === 'active') active += 1;
     else if (mode === 'shadow') shadow += 1;
   }
