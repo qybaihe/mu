@@ -1,6 +1,7 @@
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { count } from "../language.ts";
+import type { UsageEntry } from "../usage.ts";
 import type { SwarmBrief } from "./brief.ts";
 import {
 	applyEvent,
@@ -166,6 +167,32 @@ const setError = (bee: BeeState, reason: string, coded: Coded | undefined) => {
 	bee.errorParams = coded?.params;
 };
 
+/**
+ * What a bee that ran spent, as a `kyrn.usage` entry for the parent's session: the child keeps no session of its own.
+ * Undefined for a bee that never started. One that did not finish is `partial`: a request it was in the middle of
+ * when it was stopped, or that failed, reports no usage.
+ */
+export function subagentUsage(kind: "hive" | "delegate", bee: BeeState): UsageEntry | undefined {
+	if (bee.startedAt === undefined) return undefined;
+	const { input, output, cacheRead, cacheWrite, cost, estimatedOutput } = bee.usage;
+	return {
+		source: "subagent",
+		kind,
+		name: bee.name,
+		...(bee.role ? { role: bee.role } : {}),
+		...(bee.model ? { model: bee.model } : {}),
+		input,
+		output,
+		cacheRead,
+		cacheWrite,
+		cost,
+		...(estimatedOutput ? { estimated: true as const, estimatedOutput } : {}),
+		...(bee.status === "done" ? {} : { partial: true as const }),
+		status: bee.status,
+		turns: bee.turns,
+	};
+}
+
 /** File a bee's control requests are written to; the child watches it. */
 export function controlPath(dir: string, index: number): string {
 	return join(dir, "control", `bee-${index}.json`);
@@ -198,6 +225,8 @@ export class SwarmRun<Assignment> {
 	onChange?: () => void;
 	/** Hive only: the state of the shared board, read fresh for every snapshot. */
 	board?: () => BoardSummary;
+	/** Called once for each bee that started, when it has ended however it ended. */
+	onBeeEnd?: (bee: BeeState) => void;
 	private readonly specs: BeeSpec<Assignment>[];
 	private readonly limits: SwarmLimits;
 	private readonly controllers: (AbortController | undefined)[];
@@ -461,6 +490,11 @@ export class SwarmRun<Assignment> {
 				failure = error;
 			}
 			this.outcomes[index] = this.outcome(index, returned, failure);
+			try {
+				this.onBeeEnd?.(bee);
+			} catch {
+				// Bookkeeping; the run never fails over it.
+			}
 			this.busy--;
 			this.onChange?.();
 		}

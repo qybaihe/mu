@@ -36,6 +36,7 @@ import {
 	permissionEnv,
 	pickModel,
 	ratingMatters,
+	recordBeeUsage,
 	registerSwarmCommand,
 	renderSwarmResult,
 	routeTasks,
@@ -547,6 +548,7 @@ export function registerHive(runtime: KyrnRuntime, runner: SwarmRunner = spawnRu
 			// The board is part of the live view: what the judge let through, whom it reached, how much it has ruled on.
 			run.board = () => summarizeBoard(board);
 			streamUpdates(run, onUpdate);
+			recordBeeUsage(runtime, run);
 
 			// A dispute nobody settles gets a verifier of its own, while the hive still runs: one more bee whose
 			// angle is the two notes. What it finds goes through the same gates, so the losing side is corrected
