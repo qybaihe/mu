@@ -677,6 +677,18 @@ export async function prepareLaunchAsync({ plan, platform, root, bin, err }) {
 /** What `mu auth` answers itself. Every other `auth` command (check, print-api-key, ...) is pi's own. */
 export const AUTH_COMMANDS = ["status", "login", "logout"];
 
+/** `mu link --help` and `mu unlink --help`. */
+export const LINK_USAGE = [
+	"mu link: put this mu on your PATH, as a link in ~/.local/bin (on Windows, a small mu.cmd there). MU_LINK_DIR",
+	"names another folder.",
+	"",
+	"  mu link            link this mu, unless another mu is already on your PATH",
+	"  mu link --force    link it anyway (it comes first only if its folder comes first on your PATH)",
+	"  mu unlink          remove the link mu link made",
+	"",
+	"A mu installed with npm is already on your PATH and needs neither.",
+].join("\n");
+
 /** What `mu auth --help` (or a bare `mu auth`) says before pi's own auth commands. */
 export const AUTH_USAGE = [
 	"mu's sign-in, which the desktop app runs (JSON lines on stdout):",
@@ -1093,12 +1105,12 @@ export function planUnlink({ platform, env, home, fs }) {
 			text = fs.readFile(link);
 		} catch {}
 		return text?.includes(SHIM_MARK)
-			? { remove: link, message: `removed ${link}` }
-			: { message: `${link} is not a shim written by mu link; nothing removed` };
+			? { remove: link, message: `Removed ${link}.` }
+			: { message: `${link} is not a shim written by mu link; nothing removed.` };
 	}
 	return fs.isLink(link)
-		? { remove: link, message: `removed ${link}` }
-		: { message: `${link} is not a link; nothing removed` };
+		? { remove: link, message: `Removed ${link}.` }
+		: { message: `${link} is not a link; nothing removed.` };
 }
 
 /** What `mu doctor` says about the command. */
@@ -1532,6 +1544,10 @@ export async function main(argv = process.argv.slice(2)) {
 			strategy,
 		});
 	}
+	if ((command === "link" || command === "unlink") && (rest[0] === "--help" || rest[0] === "-h")) {
+		out(LINK_USAGE);
+		return 0;
+	}
 	if ((command === "link" || command === "unlink") && layout === "package") {
 		out("This mu was installed with npm, which already put `mu` on your PATH (npm i -g mu-agent); nothing to do.");
 		return 0;
@@ -1576,10 +1592,12 @@ export async function main(argv = process.argv.slice(2)) {
 		err(installHint({ root, platform }));
 		return 1;
 	}
-	if (command === "version") {
+	if (command === "version" || command === "--version" || command === "-v") {
 		// mu's version is the one this tree is released as; the judgment layer's own package.json is never released.
 		const version = (file) => JSON.parse(readText(path.join(root, ...file.split("/")))).version;
-		out(`mu ${version("kyrn/npm/package.template.json")} (pi ${version("packages/coding-agent/package.json")})`);
+		const mu = version("kyrn/npm/package.template.json");
+		// --version is the bare number, as the npm package's pi bundle prints it; pi's own here would be pi's version.
+		out(command === "version" ? `mu ${mu} (pi ${version("packages/coding-agent/package.json")})` : mu);
 		return 0;
 	}
 

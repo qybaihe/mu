@@ -150,6 +150,7 @@ export function sourceRuntime(input: {
 
 export const AUTH_COMMANDS: readonly string[];
 export const AUTH_USAGE: string;
+export const LINK_USAGE: string;
 export interface AuthPlan {
 	error?: undefined;
 	command: string;

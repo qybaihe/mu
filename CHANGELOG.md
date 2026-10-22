@@ -35,7 +35,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 - A lesson the model asked to `remember` is kept when the judge gives no verdict, instead of being dropped.
 - **mu's own commands no longer show `[t]` in the terminal's slash menu.** pi tagged them as an extension loaded for this run only; they come with mu.
 - The desktop app's settings and kernel bar show the drift check, notification routing, mid-run messages and the subagent patch scope check as they are out of the box, only recording or off, instead of as active. usemu.dev says 34 of the 40 decision points act from the start, not 38.
-- **Clearer `mu judge`, `mu ledger` and `mu auth` in a terminal.** `mu judge --help` explains each command and how to have mu ask the local judge, `mu judge status` says in one line whether it's running and what it serves (`--json` gives the server's answer), and its messages, also shown in the desktop app's local judge panel, are full sentences. `mu ledger --help` no longer runs the ledger. `mu auth --help` lists mu's own sign-in commands before pi's.
+- **Clearer `mu judge`, `mu ledger` and `mu auth` in a terminal.** `mu judge --help` explains each command and how to have mu ask the local judge, `mu judge status` says in one line whether it's running and what it serves (`--json` gives the server's answer), and its messages, also shown in the desktop app's local judge panel, are full sentences. `mu ledger --help` no longer runs the ledger. `mu auth --help` lists mu's own sign-in commands before pi's. `mu link --help` and `mu unlink --help` explain instead of linking or unlinking, and `mu --version` in a checkout prints mu's version, as the npm package does, rather than pi's.
 
 ## [0.1.10] - 2026-10-22
 
