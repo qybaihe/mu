@@ -460,6 +460,8 @@ describe.skipIf(!posix)("background feature", () => {
 						modes: extra.routing ? { "notify.routing": extra.routing } : {},
 						features: {
 							memory: false,
+							// The harness runs like `mu --print`, where routing is not asked unless told to.
+							notify: { unattended: true },
 							background: {
 								logDir: join(dir, "logs"),
 								inheritShell: false,

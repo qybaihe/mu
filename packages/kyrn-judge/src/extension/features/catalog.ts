@@ -2,6 +2,7 @@ import { Type } from "typebox";
 import type { Capability, OpenedBy } from "../../catalog/catalog.ts";
 import { capabilityDisclosure } from "../../decisions/capability-disclosure.ts";
 import { say } from "../../language.ts";
+import { CAPABILITIES_OPEN_ENV, inheritedNames } from "../../swarm/brief.ts";
 import { failOpen, type KyrnRuntime, userWords } from "../runtime.ts";
 import { isUnattended } from "./unattended.ts";
 
@@ -44,6 +45,9 @@ function line(capability: Capability): string {
  *
  * An unattended run (`mu --print`, json mode) asks nothing: what is hidden stays hidden. It also leaves the tools and
  * skills of `unattendedHidden` out of the request, except one the person called for by its command (`/hive …`).
+ *
+ * A sub-agent opens what its parent has open and asks nothing (`subagentsInherit`). What its parent keeps hidden
+ * stays hidden in it, and `find_capability` is its way in, as it is the parent's.
  */
 export function registerCatalog(runtime: KyrnRuntime): void {
 	const options = runtime.options("catalog", {
@@ -53,6 +57,8 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 		askUnattended: false,
 		/** Tools and skills, by name, left out of the request in a `mu --print` or json run. */
 		unattendedHidden: UNATTENDED_HIDDEN,
+		/** Sub-agents open the capabilities this session has open instead of asking the judge again. */
+		subagentsInherit: true,
 	});
 	if (!options.enabled) return;
 	const { pi, catalog } = runtime;
@@ -61,8 +67,19 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 		: [];
 	/** What this run leaves out of every request: set before each run of an unattended session. */
 	const leftOut = new Set<string>();
-	/** Whether to ask the judge: never in an unattended run, unless `askUnattended` says so. */
-	const asks = (): boolean => options.askUnattended || !isUnattended(runtime.ctx);
+	/** Inside a sub-agent: the capabilities its parent has open. They are opened once, and nothing is asked. */
+	const inherited = inheritedNames(CAPABILITIES_OPEN_ENV);
+	let inheritedOpened = false;
+	/** Whether to ask the judge: never in a sub-agent that took its parent's answer, nor in an unattended run unless `askUnattended` says so. */
+	const asks = (): boolean => !inherited && (options.askUnattended || !isUnattended(runtime.ctx));
+	/** A turn has chosen what it opens: from then on a sub-agent can take this session's answer. */
+	let chosen = false;
+	if (options.subagentsInherit) {
+		runtime.capabilitiesOpen = () =>
+			chosen && runtime.mode(capabilityDisclosure.id) !== "off"
+				? catalog.history().map((record) => record.id)
+				: undefined;
+	}
 	const disclose = (words: string, candidates: readonly Capability[], signal?: AbortSignal) =>
 		runtime.engine.decide(capabilityDisclosure, { userMessage: words, capabilities: candidates }, { signal });
 	/** The question asked the moment the message arrived, alongside preflight. */
@@ -121,6 +138,15 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 					);
 				}
 			}
+			if (inherited) {
+				// Whatever this process's own mode: a sub-agent shows nothing its parent kept hidden.
+				if (!inheritedOpened) {
+					inheritedOpened = true;
+					for (const id of inherited) await open(id, "parent").catch(() => undefined);
+				}
+				applyLoadout();
+				return undefined;
+			}
 			if (runtime.mode(capabilityDisclosure.id) === "off") {
 				applyLoadout(true);
 				return undefined;
@@ -149,6 +175,7 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 					}
 				}
 			}
+			chosen = true;
 			applyLoadout();
 			// On the first turn the tools are simply there. Later the model has to be told its tool list grew.
 			if (opened.length === 0 || runtime.userTurns <= 1) return undefined;

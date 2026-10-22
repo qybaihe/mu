@@ -26,6 +26,26 @@ export interface SwarmBrief {
 
 export const BRIEF_ENV = "KYRN_SWARM_BRIEF";
 export const FRAME_OUT_ENV = "KYRN_SWARM_FRAME_OUT";
+/** The parent's settled answers, as JSON lists of names: the skills it kept out of the prompt, the capabilities it has open. */
+export const SKILLS_HIDDEN_ENV = "KYRN_SKILLS_HIDDEN";
+export const CAPABILITIES_OPEN_ENV = "KYRN_CAPABILITIES_OPEN";
+
+/**
+ * Inside a sub-agent, a list of names its parent passed down in `name` (`SKILLS_HIDDEN_ENV`, `CAPABILITIES_OPEN_ENV`).
+ * Undefined outside a sub-agent, when nothing came down, or for anything that is not a list of names: the
+ * sub-agent then decides for itself, as it did before parents passed their answers on.
+ */
+export function inheritedNames(name: string, env: NodeJS.ProcessEnv = process.env): ReadonlySet<string> | undefined {
+	const raw = env[name];
+	if (!env.KYRN_SWARM_DEPTH || raw === undefined) return undefined;
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (!Array.isArray(parsed) || !parsed.every((each) => typeof each === "string")) return undefined;
+		return new Set(parsed);
+	} catch {
+		return undefined;
+	}
+}
 
 const GOAL_CHARS = 600;
 const ITEM_CHARS = 300;

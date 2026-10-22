@@ -115,6 +115,9 @@ export interface EngineStats {
 	failures: number;
 	abstentions: number;
 	inputTokens: number;
+	/** Trivial questions that only check the judge answers or keep its connection warm (`probe`), and what they cost. */
+	probes: number;
+	probeInputTokens: number;
 	lastError?: { kind: string; message: string; at: string };
 }
 
@@ -159,7 +162,19 @@ interface Evaluation<Out> {
 }
 
 export class DecisionEngine {
-	readonly stats: EngineStats = { calls: 0, failures: 0, abstentions: 0, inputTokens: 0 };
+	readonly stats: EngineStats = {
+		calls: 0,
+		failures: 0,
+		abstentions: 0,
+		inputTokens: 0,
+		probes: 0,
+		probeInputTokens: 0,
+	};
+	/**
+	 * When the shared judge was last asked anything, a probe included, or last answered (`Date.now()`; 0 before the
+	 * first). Its connection is warm while this is recent, and whoever keeps it warm needs no probe of its own then.
+	 */
+	lastUsedAt = 0;
 	private judge: JudgeLike;
 	/** Decisions that are answered by their own judge instead of the shared one. */
 	private readonly routed = new Map<string, JudgeLike>();
@@ -186,23 +201,27 @@ export class DecisionEngine {
 		return this.judge.id;
 	}
 
-	/** Swap the decision model without touching any decision point. */
 	/**
 	 * One trivial question straight to the judge: is anyone answering, and how fast?
-	 * Not a decision, so it is neither counted nor written to the ledger.
+	 * Not a decision, so it is not written to the ledger; `stats.probes` counts it apart from the decisions.
 	 */
 	async probe(signal?: AbortSignal): Promise<{ ok: boolean; latencyMs: number; error?: string }> {
 		const startedAt = performance.now();
+		this.stats.probes++;
+		this.lastUsedAt = Date.now();
 		try {
-			await this.judge.evaluate({
+			const result = await this.judge.evaluate({
 				state: { text: "ping" },
 				questions: { ready: { type: "boolean", instructions: "Is `text` the word ping?" } },
 				signal,
 			});
+			this.stats.probeInputTokens += result.usage.inputTokens ?? 0;
 			return { ok: true, latencyMs: Math.round(performance.now() - startedAt) };
 		} catch (error) {
 			const kind = isJudgeError(error) ? error.kind : "error";
 			return { ok: false, latencyMs: Math.round(performance.now() - startedAt), error: kind };
+		} finally {
+			this.lastUsedAt = Date.now();
 		}
 	}
 
@@ -221,6 +240,7 @@ export class DecisionEngine {
 		return this.routed;
 	}
 
+	/** Swap the decision model without touching any decision point. */
 	setJudge(judge: JudgeLike): void {
 		this.judge = judge;
 	}
@@ -265,6 +285,8 @@ export class DecisionEngine {
 				: (declared as Record<string, Capability> | undefined);
 
 		this.stats.calls++;
+		const shared = !this.routed.has(spec.id);
+		if (shared) this.lastUsedAt = Date.now();
 		try {
 			// A judge weighs what a call does, never the key it does it with.
 			const known = this.knownSecrets();
@@ -297,6 +319,8 @@ export class DecisionEngine {
 			this.stats.failures++;
 			this.stats.lastError = { kind, message, at: new Date().toISOString() };
 			return { failure: `error:${kind}` };
+		} finally {
+			if (shared) this.lastUsedAt = Date.now();
 		}
 	}
 

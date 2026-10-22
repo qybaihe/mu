@@ -614,14 +614,14 @@ describe("the experience library in a session", () => {
 		let checks = 0;
 		const session = await start(
 			(request): Record<string, Answer> => {
-				// Drift at the first check only: a check passes after it.
-				if ("course" in request.questions) return { course: pick(++checks === 1 ? "drift" : "on_track") };
+				// Drift at the first two checks only, which makes a steer: a check passes after it.
+				if ("course" in request.questions) return { course: pick(++checks <= 2 ? "drift" : "on_track") };
 				return "way_out" in request.questions ? { way_out: yes } : {};
 			},
 			{
 				tools: [bash()],
 				only: ["monitor"],
-				features: { monitor: { every: 1 } },
+				features: { monitor: { every: 1, minMinutes: 0, stuckMinutes: 0 } },
 				modes: { "turn.drift": "active" },
 			},
 		);

@@ -1,6 +1,7 @@
 import { Type } from "typebox";
 import type { Decision } from "../../decision.ts";
 import { type SkillCandidate, type SkillDisclosureOutcome, skillDisclosure } from "../../decisions/skill-disclosure.ts";
+import { inheritedNames, SKILLS_HIDDEN_ENV } from "../../swarm/brief.ts";
 import { failOpen, type KyrnRuntime, userWords } from "../runtime.ts";
 
 interface HiddenSkill {
@@ -24,13 +25,25 @@ interface PromptSkill extends SkillCandidate {
  * A first verdict that arrives after the turn stopped waiting for it is applied
  * when the next turn starts (`applyLate`): one change of the prompt prefix, where
  * dropping it would carry every skill description on every request of the session.
+ *
+ * A sub-agent takes its parent's verdict (`subagentsInherit`): the parent passes the skills it keeps out of the
+ * prompt, and the sub-agent hides those and asks nothing. A sub-agent never shows a skill its parent hid.
  */
 export function registerSkills(runtime: KyrnRuntime): void {
-	const options = runtime.options("skills", { enabled: true, minSkills: 4, waitMs: 4000, applyLate: true });
+	const options = runtime.options("skills", {
+		enabled: true,
+		minSkills: 4,
+		waitMs: 4000,
+		applyLate: true,
+		/** Sub-agents take the skills this session hides instead of asking the judge again. */
+		subagentsInherit: true,
+	});
 	if (!options.enabled) return;
 	const { pi } = runtime;
 	const hidden = new Map<string, HiddenSkill>();
 	let decided = false;
+	/** Inside a sub-agent: the skills its parent hides. Its first verdict, so nothing is asked. */
+	const inherited = inheritedNames(SKILLS_HIDDEN_ENV);
 	/** The first verdict, when it came too late for its turn: the skills it was asked about, and what it said once it came. */
 	let late: { skills: readonly PromptSkill[]; decision?: Decision<SkillDisclosureOutcome> } | undefined;
 
@@ -38,13 +51,15 @@ export function registerSkills(runtime: KyrnRuntime): void {
 	const disclose = (words: string, skills: readonly SkillCandidate[], signal?: AbortSignal) =>
 		runtime.engine.decide(skillDisclosure, { userMessage: words, skills }, { signal });
 	const candidatesToAnnounce = () => [...hidden.values()].filter((skill) => !skill.announced);
-	const hide = (decision: Decision<SkillDisclosureOutcome>, skills: readonly PromptSkill[]) => {
-		if (decision.source !== "judge") return;
+	const hideNamed = (names: ReadonlySet<string>, skills: readonly PromptSkill[]) => {
 		for (const skill of skills) {
-			if (!decision.outcome.hide.includes(skill.name)) continue;
+			if (!names.has(skill.name)) continue;
 			hidden.set(skill.name, { ...skill, announced: false });
 			runtime.savings.skillsHiddenChars += skill.name.length + skill.description.length + skill.filePath.length;
 		}
+	};
+	const hide = (decision: Decision<SkillDisclosureOutcome>, skills: readonly PromptSkill[]) => {
+		if (decision.source === "judge") hideNamed(new Set(decision.outcome.hide), skills);
 	};
 	/** Applies a late first verdict once it has come; until then the full list stays. */
 	const applyLate = () => {
@@ -54,8 +69,21 @@ export function registerSkills(runtime: KyrnRuntime): void {
 	};
 	/** The question asked the moment the message arrived, alongside preflight: the first pick, or the later announcements. */
 	let early: { turn: number; first: boolean; decision: ReturnType<typeof disclose> } | undefined;
+	if (options.subagentsInherit) {
+		runtime.skillsHidden = () => {
+			if (!decided || runtime.mode(skillDisclosure.id) === "off") return undefined;
+			// A first verdict still on its way is no answer yet; one that came, but waits for the next turn, is.
+			if (late && !late.decision) return undefined;
+			const names = new Set(hidden.keys());
+			const verdict = late?.decision;
+			if (late && verdict?.source === "judge") {
+				for (const skill of late.skills) if (verdict.outcome.hide.includes(skill.name)) names.add(skill.name);
+			}
+			return [...names];
+		};
+	}
 	runtime.atTurnStart((words) => {
-		if (runtime.mode(skillDisclosure.id) === "off") return;
+		if (inherited || runtime.mode(skillDisclosure.id) === "off") return;
 		// Before asking which hidden skills to announce: a late first verdict decides which ones are hidden.
 		applyLate();
 		// The prompt's skill list before the turn is built: pi exposes it on the context where it can.
@@ -80,6 +108,16 @@ export function registerSkills(runtime: KyrnRuntime): void {
 		"before_agent_start",
 		failOpen(async (event, ctx) => {
 			runtime.touch(ctx);
+			if (inherited) {
+				// Whatever this process's own mode or skill count: a sub-agent shows no skill its parent hid.
+				const all = event.systemPromptOptions.skills ?? [];
+				if (!decided) {
+					decided = true;
+					hideNamed(inherited, visibleOf(all));
+				}
+				if (hidden.size > 0) event.systemPromptOptions.skills = all.filter((skill) => !hidden.has(skill.name));
+				return undefined;
+			}
 			const mode = runtime.mode(skillDisclosure.id);
 			if (mode === "active") applyLate();
 			if (event.messageType === "custom") {
