@@ -9,8 +9,11 @@ import { SHELL_TOOLS } from "../shell-tools.ts";
  * code works on, not a script it runs. Perl's and Ruby's `-ne`, `-pe` are inline code too; Perl's `-p` alone is not.
  */
 const INLINE_CODE = String.raw`(?:python[\d.]*\s+-[a-zA-Z]*c|perl\s+-[a-zA-Z]*[eE]|ruby\s+-[a-zA-Z]*e|node\s+(?:-[a-zA-Z]*[ep]|--eval|--print))\s`;
-/** What in inline code would run what it reads after all: `exec(sys.stdin.read())`, `os.system`, a backtick. */
-const RUNS_INPUT = String.raw`[\s\S]*(?:\b(?:exec|eval|system|popen|spawn|subprocess|child_process|runpy|pickle|marshal|Function|qx)|\x60|%x)`;
+/**
+ * What in inline code would run what it reads after all: `exec(sys.stdin.read())`, `os.system`, Ruby's `instance_eval`,
+ * Node's `vm` or `import()`, a file read as `/dev/stdin`, or the input made into the code itself, as `"$(cat)"` does.
+ */
+const RUNS_INPUT = String.raw`[\s\S]*(?:\b(?:exec|system|popen|spawn|subprocess|child_process|runpy|pickle|marshal|Function|qx|vm\b|import\s*\()|eval|\/dev\/(?:stdin|fd\/)|\$\(|\x60|%x)`;
 
 const RULES: readonly (readonly [RegExp, string])[] = [
 	// Recursive only: `rm -f file` removes no more than `rm file`. `-r` may come after a file name, and GNU takes `--rec`
