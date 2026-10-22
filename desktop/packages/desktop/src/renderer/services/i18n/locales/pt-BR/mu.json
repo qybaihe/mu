@@ -541,7 +541,7 @@
     "apiKey": {
       "title": "Colar uma chave de API",
       "tag": "Mais fácil",
-      "description": "DeepSeek, Kimi, Qwen, GLM, OpenAI, Claude, Gemini e outros: o mu reconhece o serviço pela chave e configura o resto",
+      "description": "OpenAI, Claude, Gemini, DeepSeek, Kimi, Qwen, GLM e outros: o mu reconhece o serviço pela chave e configura o resto",
       "placeholder": "Cole a chave aqui",
       "service": "Serviço",
       "servicePlaceholder": "Reconhecido pela chave",

@@ -541,7 +541,7 @@
     "apiKey": {
       "title": "API anahtarı yapıştırın",
       "tag": "En kolayı",
-      "description": "DeepSeek, Kimi, Qwen, GLM, OpenAI, Claude, Gemini ve diğerleri: mu hizmeti anahtardan tanır, gerisini kendisi ayarlar",
+      "description": "OpenAI, Claude, Gemini, DeepSeek, Kimi, Qwen, GLM ve diğerleri: mu hizmeti anahtardan tanır, gerisini kendisi ayarlar",
       "placeholder": "Anahtarı buraya yapıştırın",
       "service": "Hizmet",
       "servicePlaceholder": "Anahtardan bulunur",

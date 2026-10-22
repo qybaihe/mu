@@ -541,7 +541,7 @@
     "apiKey": {
       "title": "Paste an API key",
       "tag": "Easiest",
-      "description": "DeepSeek, Kimi, Qwen, GLM, OpenAI, Claude, Gemini and more. mu detects the service from the key and sets up the rest.",
+      "description": "OpenAI, Claude, Gemini, DeepSeek, Kimi, Qwen, GLM and more. mu detects the service from the key and sets up the rest.",
       "placeholder": "Paste the key here",
       "service": "Service",
       "servicePlaceholder": "Detected from the key",

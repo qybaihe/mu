@@ -541,7 +541,7 @@
     "apiKey": {
       "title": "Pegar una clave de API",
       "tag": "Lo más fácil",
-      "description": "DeepSeek, Kimi, Qwen, GLM, OpenAI, Claude, Gemini y más: mu reconoce el servicio por la clave y configura el resto",
+      "description": "OpenAI, Claude, Gemini, DeepSeek, Kimi, Qwen, GLM y más: mu reconoce el servicio por la clave y configura el resto",
       "placeholder": "Pega la clave aquí",
       "service": "Servicio",
       "servicePlaceholder": "Se reconoce por la clave",
