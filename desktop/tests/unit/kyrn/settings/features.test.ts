@@ -83,6 +83,19 @@ describe('the harness manifest', () => {
     const state = parseManifest({ ...manifest, features: [odd] });
     expect(state.status === 'ok' && state.manifest.features[0].options).toEqual([]);
   });
+  it("reads a point's built-in mode, and leaves out one that is not a mode", () => {
+    const [first, second, third] = manifest.decisions;
+    const state = parseManifest({
+      ...manifest,
+      decisions: [{ ...first, defaultMode: 'shadow' }, { ...second, defaultMode: 'loud' }, third],
+    });
+    expect(state.status === 'ok' && state.manifest.decisions.map((decision) => decision.defaultMode)).toEqual([
+      'shadow',
+      undefined,
+      undefined,
+    ]);
+    expect(state.status === 'ok' && state.manifest.decisions[1]).not.toHaveProperty('defaultMode');
+  });
   it('speaks Chinese to every Chinese locale and English to all others, when that is all the harness has', () => {
     const text = { zh: '生效', en: 'Active' };
     expect(['zh-CN', 'zh-TW', 'zh'].map((language) => localized(text, language))).toEqual(['生效', '生效', '生效']);

@@ -33,6 +33,7 @@
     "result_label": "결과",
     "feature_label": "기능 스위치",
     "default_off": "기본으로 꺼짐",
+    "default_shadow": "기본으로 섀도",
     "needs_option": "옵션을 켜야 함",
     "judges_label": "누가 답하는가",
     "judges_h2": "판정기는 설치 전체로도, 판정 지점마다도 고를 수 있어요",

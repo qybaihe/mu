@@ -73,4 +73,18 @@ describe('kernel summary', () => {
     expect(summarize(settings({ tiers: ['laya', 'jev'] }))).toMatchObject({ judge: 'Laya', fallbacks: 1 });
     expect(summarize(settings({ harness: { status: 'missing' } }))).toMatchObject({ active: 0, total: 0 });
   });
+
+  it('counts a point with a built-in mode by that mode, whatever the default, until mu.json sets one for it', () => {
+    const harness = settings().harness;
+    if (harness.status !== 'ok') throw new Error('no manifest');
+    const decisions = harness.manifest.decisions.map((item) =>
+      item.id === 'turn.drift' ? { ...item, defaultMode: 'shadow' as const } : item
+    );
+    const shadowed = (overrides: Partial<KyrnSettings> = {}) =>
+      settings({ harness: { status: 'ok', manifest: { ...harness.manifest, decisions } }, ...overrides });
+    expect(summarize(shadowed())).toMatchObject({ active: 1, shadow: 1, total: 3 });
+    // The default mode does not reach it: the harness keeps its own mode whatever the default says.
+    expect(summarize(shadowed({ mode: 'off' }))).toMatchObject({ active: 0, shadow: 1 });
+    expect(summarize(shadowed({ decisionModes: { 'turn.drift': 'active' } }))).toMatchObject({ active: 2, shadow: 0 });
+  });
 });
