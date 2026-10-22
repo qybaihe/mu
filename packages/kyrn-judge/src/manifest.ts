@@ -317,7 +317,7 @@ export const MANIFEST: HarnessManifest = {
 			title: { zh: "外来内容里的指令", en: "Instructions in outside content" },
 			summary: {
 				zh: "网页、搜索结果、MCP 服务器返回的内容，以及 shell 命令从别的机器取回的内容（curl、gh issue view），模型读到之前先过一遍：哪一段是写给 AI 的指令（让它忽略规则、交出数据、跑命令，或借一个链接把对话带出去）。这样的段落被扣下，换成一行说明。判定器没答上来时，只扣下明显的注入用语。子代理读到的内容里有段落被扣下时，它的报告交回时前面带一句警告。",
-				en: "Before the model reads a web page, search results, an MCP server's response or what a shell command fetched from another machine (curl, gh issue view), checks which passages carry instructions aimed at an AI (to ignore rules, hand over data, run commands or leak the conversation through a link). Those passages are withheld and replaced with a one-line note. When the judge doesn't answer, only obvious injection phrases are withheld. If a subagent had passages withheld from what it read, its report comes back with a warning.",
+				en: "Before the model reads a web page, search results, an MCP server's response or what a shell command fetched from another machine (curl, gh issue view), the judge checks which passages carry instructions aimed at an AI (to ignore rules, hand over data, run commands or leak the conversation through a link). Those passages are withheld and replaced with a one-line note. When the judge doesn't answer, only obvious injection phrases are withheld. If a subagent had passages withheld from what it read, its report comes back with a warning.",
 			},
 		},
 		{
