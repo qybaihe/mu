@@ -20,6 +20,7 @@ import { codeOf } from "../src/language.ts";
 import { MemoryLedger } from "../src/ledger.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
 import type { Answer, JudgeRequest } from "../src/types.ts";
+import { attended } from "./attended.ts";
 
 const ACTIONS: PageAction[] = [
 	{ id: "e1", kind: "fill", node: 1, role: "textbox", label: "Search products", value: "" },
@@ -428,7 +429,11 @@ describe.skipIf(!findChrome())("runBrowserTask (real Chrome, local fixture)", ()
 					mode: "active",
 					// The same throwaway profile, so the tool attaches to the browser this suite already started.
 					config: parseConfig({
-						features: { memory: false, permissions: { mode: "full" }, browser: { enabled: true, profileDir } },
+						features: attended({
+							memory: false,
+							permissions: { mode: "full" },
+							browser: { enabled: true, profileDir },
+						}),
 					}),
 				}),
 			],
@@ -466,7 +471,11 @@ describe.skipIf(!findChrome())("runBrowserTask (real Chrome, local fixture)", ()
 					provider: new MockJudgeProvider(),
 					mode: "active",
 					config: parseConfig({
-						features: { memory: false, permissions: { mode: "full" }, browser: { enabled: true, profileDir } },
+						features: attended({
+							memory: false,
+							permissions: { mode: "full" },
+							browser: { enabled: true, profileDir },
+						}),
 					}),
 					onPresentation: (event) => events.push(event),
 				}),
