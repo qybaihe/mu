@@ -35,6 +35,7 @@
 
 ### Fixed
 
+- `mu doctor` (kyrn-doctor) prints "mu doctor found N things to fix" or "mu doctor: everything is set up" first when stdout is a terminal; piped output is still one row per line.
 - `/login` hides the `openai-codex` sign-in under mu's name, as `mu auth` and the desktop app do; `openai` (Sign in with ChatGPT) replaces it. A stored `openai-codex` sign-in still works and shows in `/logout`. The first `/login` menu leaves out the "Sign in with Radius" shortcut under mu's name; Radius is still under Sign in with an account. `mu setup`'s subscription hint names `/login`'s actual entries.
 - The footer shows "no model" for the agent's `unknown/unknown` placeholder.
 - `mu setup` ends with exit code 4 (`SETUP_EXIT.signIn`) when a subscription was chosen and a session follows; the launcher then starts the session with `/login` as its first message, which opens the sign-in like the typed command (`afterSetup`). Inside a session, "No models available" leads with `/login` (`formatNoModelsAvailableMessage({ inSession: true })`).
