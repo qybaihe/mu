@@ -122,6 +122,7 @@ On by default: yes. Decision points: `tool.approval`.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `mode` | `judge` | Mode for new conversations. Once you pick a mode with /permissions, your latest choice is used. One of `full` (Full access), `judge` (Judge mode), `ask` (Ask first). |
+| `readOnlyChains` | `true` | Read-only command chains go ahead. Commands made only of read-only commands joined by ;, &&, \|\| or \| (such as pwd && ls -la; git status) run without asking the judge or you, like a single read-only command. They may throw output away with 2>/dev/null or 2>&1; a redirect that writes a file, sed -i, tee or find with -exec or -delete is not read-only. Off: only a single read-only command or pipeline goes ahead. |
 
 ## constraints
 
@@ -133,6 +134,7 @@ On by default: yes. Decision points: `tool.constraint`.
 | --- | --- | --- |
 | `maxConstraints` | `6` | Max constraints checked per call. The newest ones are used. Range 1 to 20. |
 | `waitMs` | `5000` ms | Wait at most `5000` ms. Range 500 to 30000. |
+| `skipReadOnly` | `true` | Skip read-only commands. Read-only shell commands (ls, git status, cat … \| grep …, and chains of them) aren't checked against your constraints, just like the read and grep tools. |
 
 ## injection
 

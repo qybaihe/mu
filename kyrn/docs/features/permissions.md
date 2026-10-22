@@ -11,7 +11,7 @@ How much mu may do without asking. There are three modes, and you can switch bet
 Some things hold in every mode:
 
 - **Hard constraints still apply.** What you said not to do is stopped by the constraint gate, even in full access. That gate is about your words, not about permission.
-- **Reading is never asked about.** This covers `read`, `grep`, `find`, `ls`, `todo`, `web_search`, `web_fetch`, background output, `sg_search`, the debugger's inspect/step/stop, and shell commands made only of read-only programs (`git status`, `cat … | grep … | head`).
+- **Reading is never asked about.** This covers `read`, `grep`, `find`, `ls`, `todo`, `web_search`, `web_fetch`, background output, `sg_search`, the debugger's inspect/step/stop, and shell commands made only of read-only programs (`git status`, `cat … | grep … | head`), also joined by `;`, `&&`, `||` or line breaks (`pwd && find . -name '*.ts' | sort | head`, `git status --short; git log --oneline -5`). They may throw output away (`2>/dev/null`, `&>/dev/null`) or join outputs (`2>&1`). A redirect that writes a file, `sed -i`, `tee`, `find` with `-exec`, `-delete` or `-fprint`, a substitution, a subshell, or `cd` followed by `git` (a repository found elsewhere may carry a config that runs programs) makes the whole command one that asks. `features.permissions.readOnlyChains: false` goes back to single commands and pipelines only.
 - **Unlisted tools are asked about.** A tool mu does not know (an MCP tool, for example) needs permission. A command counts as read-only only when every part of it is on the short read-only list.
 - **mu's own settings are always yours to decide.** Any call that touches the agent folder (`~/.mu/agent`, spelled as a path, with `~` or with `$HOME`) is asked every time. The judge cannot approve it, and "allow for this conversation" is not offered.
 
@@ -35,7 +35,7 @@ Judge mode puts one choice question, `tool.approval`, to the judge model: what i
 
 The judge's verdict counts even when the decision's own mode is `shadow`, because choosing Judge mode is the opt-in.
 
-Commands that the risk rules flag work differently: `rm -rf`, force push, `sudo`, running a downloaded script and the rest of the guard's rules. In Judge mode they use the guard's `tool.risk` question and run only when the judge is sure you asked for them. In minimal mode the flag is shown in the question. A flagged command can only be allowed once, never for the whole conversation.
+Commands that the risk rules flag work differently: a recursive `rm` (`rm -f file` alone is not flagged), force push, `sudo`, running a downloaded script (piped into a shell or an interpreter, or saved and then run; `curl … | python3 -c '…'` reads the download as data and is not flagged) and the rest of the guard's rules. In Judge mode they use the guard's `tool.risk` question and run only when the judge is sure you asked for them. In minimal mode the flag is shown in the question. A flagged command can only be allowed once, never for the whole conversation.
 
 With permission modes on (the default), they take over the old guard. With `features.permissions: false` in mu.json, the guard works on its own as before.
 

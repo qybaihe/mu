@@ -1,3 +1,6 @@
+import { createHash } from "node:crypto";
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import {
 	type BeforeAgentStartEvent,
 	MCP_CONNECTION_EVENT,
@@ -33,6 +36,64 @@ interface Verdict {
 	readonly excerpt?: string;
 }
 
+/** The newest verdicts kept on disk; a tool whose verdict was dropped is screened again when it comes back. */
+const STORE_LIMIT = 2000;
+
+/**
+ * The judge's verdicts on MCP tools, kept on disk for the next process: every `mu --print`, every sub-agent and every
+ * restart would otherwise screen the same servers again, and wait up to `waitMs` for it. Keyed by a hash of all a
+ * verdict depends on (`storedKey` below), so a changed description, threshold or judge is screened again. Only the
+ * judge's own verdicts are kept, answered for every passage: what the rules decided while the judge did not answer is
+ * asked again next time. A file that cannot be read or written only means screening again.
+ */
+class VerdictStore {
+	readonly file: string;
+
+	constructor(dir: string) {
+		this.file = join(dir, "tool-descriptions.json");
+	}
+
+	/** By key: the verdict, and when it was kept. */
+	read(): Map<string, { readonly verdict: Verdict; readonly at: number }> {
+		const kept = new Map<string, { readonly verdict: Verdict; readonly at: number }>();
+		try {
+			const parsed = JSON.parse(readFileSync(this.file, "utf8")) as { version?: unknown; verdicts?: unknown };
+			if (parsed.version !== 1 || typeof parsed.verdicts !== "object" || parsed.verdicts === null) return kept;
+			for (const [key, value] of Object.entries(parsed.verdicts as Record<string, Record<string, unknown>>)) {
+				if (typeof value?.poisoned !== "boolean" || typeof value.at !== "number") continue;
+				const verdict: Verdict = {
+					poisoned: value.poisoned,
+					source: "judge",
+					...(typeof value.probability === "number" ? { probability: value.probability } : {}),
+					...(typeof value.excerpt === "string" ? { excerpt: value.excerpt } : {}),
+				};
+				kept.set(key, { verdict, at: value.at });
+			}
+		} catch {
+			// Nothing kept yet, or nothing readable: screened again.
+		}
+		return kept;
+	}
+
+	add(verdicts: ReadonlyMap<string, Verdict>): void {
+		if (verdicts.size === 0) return;
+		const all = this.read();
+		const at = Date.now();
+		for (const [key, verdict] of verdicts) all.set(key, { verdict, at });
+		const newest = [...all].sort(([, a], [, b]) => b.at - a.at).slice(0, STORE_LIMIT);
+		const flat = Object.fromEntries(newest.map(([key, entry]) => [key, { ...entry.verdict, at: entry.at }]));
+		try {
+			mkdirSync(dirname(this.file), { recursive: true });
+			// Another process may write at the same time: each writes a whole file and renames it into place.
+			const temp = `${this.file}.${process.pid}.tmp`;
+			writeFileSync(temp, `${JSON.stringify({ version: 1, verdicts: flat })}\n`, { mode: 0o600 });
+			renameSync(temp, this.file);
+		} catch {
+			// Not kept: the next process screens again.
+		}
+	}
+}
+
 /** The server a tool came from, as the model knows it (`mcp__github`); undefined for a tool that is not an MCP server's. */
 function serverOf(tool: ToolInfo): string | undefined {
 	const namespace = tool.namespace?.name;
@@ -59,8 +120,24 @@ export function registerToolDescriptions(runtime: KyrnRuntime, options: Descript
 	/** Tools this feature took off the list: only those are put back when a new description is judged clean. */
 	const removed = new Set<string>();
 	let screening: Promise<void> | undefined;
+	const store = runtime.stateDir ? new VerdictStore(runtime.stateDir) : undefined;
 
 	const keyOf = (tool: ToolInfo) => `${tool.name}\n${describeTool(tool)}`;
+	/** What the judge's verdict on a tool depends on, hashed: the judge, the decision, how it is read, and the tool. */
+	const storedKey = (server: string, tool: ToolInfo) =>
+		createHash("sha256")
+			.update(
+				JSON.stringify([
+					runtime.engine.judgeFor(toolDescription.id).id,
+					toolDescription.version,
+					options.threshold,
+					options.passageChars,
+					server,
+					tool.name,
+					describeTool(tool),
+				]),
+			)
+			.digest("hex");
 
 	const enforce = (): void => {
 		const active = pi.getActiveTools();
@@ -118,7 +195,26 @@ export function registerToolDescriptions(runtime: KyrnRuntime, options: Descript
 		);
 	};
 
-	const screenServer = async (server: string, tools: readonly ToolInfo[], signal: AbortSignal | undefined) => {
+	/** Records a verdict and, when the screen is active, acts on it. */
+	const apply = (server: string, tool: ToolInfo, verdict: Verdict, active: boolean): void => {
+		verdicts.set(keyOf(tool), verdict);
+		if (!active) return;
+		if (!verdict.poisoned) {
+			quarantined.delete(tool.name);
+			return;
+		}
+		const held = { ...verdict, server };
+		const news = !quarantined.has(tool.name);
+		quarantined.set(tool.name, held);
+		if (news) tell(tool.name, held);
+	};
+
+	/** Judges the tools of one server; returns the verdicts worth keeping on disk, by `storedKey`. */
+	const screenServer = async (
+		server: string,
+		tools: readonly ToolInfo[],
+		signal: AbortSignal | undefined,
+	): Promise<Map<string, Verdict>> => {
 		const owned = tools.map((tool) => ({
 			tool,
 			pieces: passages(describeTool(tool), options.passageChars).map((piece) => `${tool.name}: ${piece}`),
@@ -129,6 +225,7 @@ export function registerToolDescriptions(runtime: KyrnRuntime, options: Descript
 			signal,
 		);
 		const active = runtime.mode(toolDescription.id) === "active";
+		const keep = new Map<string, Verdict>();
 		let at = 0;
 		for (const { tool, pieces } of owned) {
 			const mine = answers.slice(at, at + pieces.length);
@@ -145,32 +242,33 @@ export function registerToolDescriptions(runtime: KyrnRuntime, options: Descript
 				...(known.length > 0 ? { probability: Math.max(...known) } : {}),
 				...(flagged >= 0 ? { excerpt: clip(pieces[flagged], 200) } : {}),
 			};
-			verdicts.set(keyOf(tool), verdict);
-			if (!active) continue;
-			if (!verdict.poisoned) {
-				quarantined.delete(tool.name);
-				continue;
-			}
-			const held = { ...verdict, server };
-			const news = !quarantined.has(tool.name);
-			quarantined.set(tool.name, held);
-			if (news) tell(tool.name, held);
+			apply(server, tool, verdict, active);
+			if (known.length === pieces.length && pieces.length > 0) keep.set(storedKey(server, tool), verdict);
 		}
+		return keep;
 	};
 
-	/** Every MCP tool not judged in its present form, judged per server; one screening at a time. */
+	/**
+	 * Every MCP tool not judged in its present form, judged per server; one screening at a time. A verdict an earlier
+	 * process kept is taken as it is (only an active screen keeps or takes them: shadow is there to record verdicts).
+	 */
 	const screen = (signal?: AbortSignal): Promise<void> => {
 		const run = async () => {
-			if (runtime.mode(toolDescription.id) === "off") return;
+			const mode = runtime.mode(toolDescription.id);
+			if (mode === "off") return;
 			const fresh = pi.getAllTools().filter((tool) => serverOf(tool) && !verdicts.has(keyOf(tool)));
 			if (fresh.length === 0) return;
+			const kept = mode === "active" ? store?.read() : undefined;
 			const servers = new Map<string, ToolInfo[]>();
 			for (const tool of fresh) {
 				const server = serverOf(tool) ?? "";
-				servers.set(server, [...(servers.get(server) ?? []), tool]);
+				const known = kept?.get(storedKey(server, tool));
+				if (known) apply(server, tool, known.verdict, true);
+				else servers.set(server, [...(servers.get(server) ?? []), tool]);
 			}
-			await Promise.all([...servers].map(([server, tools]) => screenServer(server, tools, signal)));
+			const judged = await Promise.all([...servers].map(([server, tools]) => screenServer(server, tools, signal)));
 			enforce();
+			if (mode === "active") store?.add(new Map(judged.flatMap((each) => [...each])));
 		};
 		const next = (screening ?? Promise.resolve()).then(run, run);
 		screening = next;

@@ -129,6 +129,8 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		enabled: true,
 		/** The mode of a new conversation until the user picks one with /permissions. */
 		mode: "judge",
+		/** A chain of read-only commands (`pwd && ls; git status`) only looks, as one read-only command does. */
+		readOnlyChains: true,
 	});
 	if (!options.enabled) return;
 	const { pi } = runtime;
@@ -223,8 +225,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 				{ signal: ctx.signal },
 			);
 			// The user chose the judge to decide, so its verdict counts in shadow too; no verdict means asking. A rule
-			// flagged the call, so only the judge being sure the user asked for it runs it: "not destructive" is read
-			// from the command itself, which can say anything about itself.
+			// flagged the call, so only the judge being sure the user asked for it runs it.
 			const requested = decision.answers?.requested;
 			const asked = requested?.type === "boolean" && threeZone(requested) === "yes";
 			return { approved: asked && (decision.judged ?? decision.outcome) === "allow", reason: "flagged" };
@@ -330,7 +331,13 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 	const gate = async (event: ToolCallEvent, ctx: ExtensionContext): Promise<ToolCallEventResult | undefined> => {
 		if (mode === "full") return undefined;
 		const input = event.input as Record<string, unknown>;
-		const need = permissionNeed(event.toolName, input, ctx.cwd, [...guarded, ...projectSettings(ctx.cwd)]);
+		const need = permissionNeed(
+			event.toolName,
+			input,
+			ctx.cwd,
+			[...guarded, ...projectSettings(ctx.cwd)],
+			options.readOnlyChains,
+		);
 		if (!need) return undefined;
 		const command = isShellTool(event.toolName) || event.toolName === "bg_start" ? String(input.command ?? "") : "";
 		const flag = command ? riskFlag(command) : undefined;
