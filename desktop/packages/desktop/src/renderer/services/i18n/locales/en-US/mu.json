@@ -549,6 +549,7 @@
       "recognized": "Detected from the key.",
       "ambiguous": "Several services use keys that look like this. Which one is it from?",
       "unknown": "mu doesn't recognize this kind of key. Which service is it from?",
+      "subscriptionToken": "That's a Claude subscription token (from claude setup-token), not an API key. Anthropic doesn't allow other apps to use a Claude subscription, so mu can't use it. Paste an Anthropic API key (sk-ant-api…) instead.",
       "keyPage": "Where do I get a key?",
       "checking": "Checking the key with {{service}}…",
       "lookingLocal": "Looking for {{service}} on this computer…",

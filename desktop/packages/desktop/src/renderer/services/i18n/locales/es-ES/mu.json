@@ -549,6 +549,7 @@
       "recognized": "Reconocido por la clave.",
       "ambiguous": "Las claves de varios servicios tienen este aspecto. ¿De cuál es esta?",
       "unknown": "mu no conoce este tipo de clave. ¿De qué servicio es?",
+      "subscriptionToken": "Esto es un token de suscripción de Claude (de claude setup-token), no una clave de API. Anthropic no permite que otras aplicaciones usen una suscripción de Claude, así que mu no puede usarlo. Pega en su lugar una clave de API de Anthropic (sk-ant-api…).",
       "keyPage": "¿Dónde consigo una clave?",
       "checking": "Comprobando la clave con {{service}}…",
       "lookingLocal": "Buscando {{service}} en este ordenador…",

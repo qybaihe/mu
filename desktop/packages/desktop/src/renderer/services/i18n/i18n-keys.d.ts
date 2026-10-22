@@ -3045,6 +3045,7 @@ export type I18nKey =
   | 'mu.welcome.apiKey.services.xai.label'
   | 'mu.welcome.apiKey.services.xai.name'
   | 'mu.welcome.apiKey.startsWith'
+  | 'mu.welcome.apiKey.subscriptionToken'
   | 'mu.welcome.apiKey.tag'
   | 'mu.welcome.apiKey.title'
   | 'mu.welcome.apiKey.unknown'

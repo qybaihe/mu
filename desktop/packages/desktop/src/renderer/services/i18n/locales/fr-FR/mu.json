@@ -549,6 +549,7 @@
       "recognized": "Reconnu à la clé.",
       "ambiguous": "Les clés de plusieurs services ont cette forme. De quel service vient celle-ci ?",
       "unknown": "mu ne connaît pas ce type de clé. De quel service vient-elle ?",
+      "subscriptionToken": "Ceci est un jeton d’abonnement Claude (issu de claude setup-token), pas une clé API. Anthropic n’autorise pas d’autres applications à utiliser un abonnement Claude, donc mu ne peut pas s’en servir. Collez plutôt une clé API Anthropic (sk-ant-api…).",
       "keyPage": "Où obtenir une clé ?",
       "checking": "Vérification de la clé auprès de {{service}}…",
       "lookingLocal": "Recherche de {{service}} sur cette machine…",
