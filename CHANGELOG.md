@@ -12,6 +12,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ### Changed
 
+- **A quieter start in the terminal.** mu's welcome is the whole first screen: the list of loaded skills, prompts and extensions that pi prints under it is left out; prompts and skills are still in the `/` menu. Problems loading them still show. `"quietStartup": false` in settings.json, or `--verbose`, brings the list back.
 - **The terminal's `/login` no longer offers a Claude subscription sign-in either**, so the command line matches the desktop app: Anthropic doesn't allow other apps to offer one. `/login anthropic` goes straight to the API key. A sign-in made before keeps working until `/logout`.
 - **A Claude subscription token is refused where an API key is asked for.** `mu setup` and the desktop app's first-run guide recognize a token from `claude setup-token` (`sk-ant-oat…`), send it nowhere and ask for an Anthropic API key instead.
 - The plain-language board makes fewer model calls: it isn't written in `mu --print` or json mode, where nobody sees it, and while subagents work it updates only when one of them starts, finishes or fails.
