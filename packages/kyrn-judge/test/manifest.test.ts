@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { DEFAULT_CONFIG } from "../src/config.ts";
 import { MANIFEST } from "../src/manifest.ts";
 import { localizeManifest, type ManifestTranslations, manifestTexts } from "../src/manifest-locales.ts";
 
@@ -74,6 +75,16 @@ describe("harness manifest", () => {
 			expect(text.en.trim().length, JSON.stringify(text)).toBeGreaterThan(0);
 			expect(/[一-鿿]/.test(text.zh), text.zh).toBe(true);
 		}
+	});
+
+	it("says which decisions start other than active, as the kernel's defaults do", () => {
+		const listed = Object.fromEntries(
+			MANIFEST.decisions
+				.filter((decision) => decision.defaultMode)
+				.map((decision) => [decision.id, decision.defaultMode]),
+		);
+		const defaults = Object.fromEntries(Object.entries(DEFAULT_CONFIG.modes).filter(([id]) => id !== "default"));
+		expect(listed).toEqual(defaults);
 	});
 
 	it("keeps manifest.json, which the desktop app reads, identical to the source and its translations", () => {

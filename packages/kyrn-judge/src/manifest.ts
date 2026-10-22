@@ -13,6 +13,8 @@
  * (src/manifest-locales.ts): a text whose English changes shows in English there until it is
  * translated again, and the script lists those.
  */
+
+import { DEFAULT_CONFIG } from "./config.ts";
 export interface Localized {
 	readonly zh: string;
 	readonly en: string;
@@ -28,6 +30,8 @@ export interface DecisionInfo {
 	readonly feature: string;
 	readonly title: Localized;
 	readonly summary: Localized;
+	/** The mode it starts in, when that isn't active: set in DEFAULT_CONFIG.modes. */
+	readonly defaultMode?: "off" | "shadow";
 }
 
 interface OptionBase {
@@ -80,6 +84,14 @@ export interface HarnessManifest {
 const ms: Localized = { zh: "毫秒", en: "ms" };
 const chars: Localized = { zh: "字符", en: "chars" };
 
+/** Each decision with the mode it starts in, when the kernel's defaults start it other than active. */
+function startModes(decisions: readonly DecisionInfo[]): DecisionInfo[] {
+	return decisions.map((decision) => {
+		const mode = DEFAULT_CONFIG.modes[decision.id];
+		return mode === "off" || mode === "shadow" ? { ...decision, defaultMode: mode } : decision;
+	});
+}
+
 export const MANIFEST: HarnessManifest = {
 	version: 1,
 	groups: {
@@ -109,7 +121,7 @@ export const MANIFEST: HarnessManifest = {
 			help: { zh: "不提问，这个判定点关闭。", en: "Not asked; this decision point is off." },
 		},
 	],
-	decisions: [
+	decisions: startModes([
 		{
 			id: "input.preflight",
 			group: "input",
@@ -510,7 +522,7 @@ export const MANIFEST: HarnessManifest = {
 				en: "How a new finding relates to an earlier one on the board: it replaces it, contradicts it, supports it or is unrelated. A replaced finding is withdrawn and every bee that heard it is told; a contradiction keeps both sides for a bee to settle.",
 			},
 		},
-	],
+	]),
 	features: [
 		{
 			name: "preflight",

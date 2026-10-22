@@ -26,7 +26,7 @@ The site's own words and assets:
   assets/                          icons, the link preview image, screenshots and the folding video
 
 In any of the site's own text, {points} is the number of decision points and {points_active} the number that act
-from the start (their feature is on by default).
+from the start (their feature is on by default, and they start active rather than in shadow or off).
 
 usage: python3 build.py <outdir> [--repo <mu checkout>]      (pip install -r requirements.txt first)
   The repository defaults to $MU_REPO, then to the folder above this one (site/ inside mu).
@@ -620,7 +620,7 @@ def main():
     features = {f["name"]: f for f in manifest["features"]}
     facts = {
         "points": len(manifest["decisions"]),
-        "points_active": sum(1 for d in manifest["decisions"] if features[d["feature"]].get("defaultEnabled", True)),
+        "points_active": sum(1 for d in manifest["decisions"] if features[d["feature"]].get("defaultEnabled", True) and "defaultMode" not in d),
     }
     locales = [fill(json.loads((here / "i18n" / f"{lang}.json").read_text()), facts) for lang in LOCALES]
     en = locales[LOCALES.index("en")]
