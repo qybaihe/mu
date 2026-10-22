@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AgentTool } from "@earendil-works/pi-agent-core";
@@ -349,6 +349,35 @@ describe.skipIf(!posix)("background jobs", () => {
 		await vi.waitFor(() => expect(alive(pid)).toBe(false), { timeout: 3000 });
 	});
 
+	it("can have a job write straight to its log, read it from there, and leave it running on release", async () => {
+		const { manager } = create({ outputToFile: true });
+		manager.start({ command: "echo one; sleep 0.2; echo two >&2; exit 4", cwd: tmpdir() });
+		expect(await manager.wait("bg-1", { pattern: "two", timeoutMs: 5000, since: 0 })).toEqual({
+			reason: "match",
+			line: "two",
+		});
+		await manager.wait("bg-1", { timeoutMs: 5000 });
+		const done = manager.read("bg-1", { since: 0, maxChars: 1000 });
+		expect(done.text).toBe("one\ntwo\n");
+		expect(done.job).toMatchObject({ state: "exited", exitCode: 4 });
+		expect(readFileSync(done.job.logPath, "utf8")).toBe("one\ntwo\n");
+
+		const server = manager.start({
+			command: `${node} -e 'setInterval(() => console.log("tick"), 50)'`,
+			cwd: tmpdir(),
+		});
+		await manager.wait("bg-2", { pattern: "tick", timeoutMs: 5000 });
+		const kept = await manager.release();
+		expect(kept.map((job) => job.id)).toEqual(["bg-2"]);
+		const size = statSync(server.logPath).size;
+		try {
+			await vi.waitFor(() => expect(statSync(server.logPath).size).toBeGreaterThan(size), { timeout: 3000 });
+			expect(alive(server.pid as number)).toBe(true);
+		} finally {
+			process.kill(-(server.pid as number), "SIGKILL");
+		}
+	});
+
 	it("clears out the logs of sessions that ended long ago", () => {
 		const { dir } = create();
 		const old = join(dir, "old-session");
@@ -390,7 +419,12 @@ describe.skipIf(!posix)("background feature", () => {
 
 	async function start(
 		responder: MockResponder,
-		extra: { mode?: DecisionMode; features?: Record<string, unknown>; tools?: AgentTool[] } = {},
+		extra: {
+			mode?: DecisionMode;
+			features?: Record<string, unknown>;
+			background?: Record<string, unknown>;
+			tools?: AgentTool[];
+		} = {},
 	) {
 		const dir = mkdtempSync(join(tmpdir(), "mu-bg-feature-"));
 		dirs.push(dir);
@@ -404,7 +438,12 @@ describe.skipIf(!posix)("background feature", () => {
 					config: parseConfig({
 						features: {
 							memory: false,
-							background: { logDir: join(dir, "logs"), inheritShell: false, killGraceMs: 200 },
+							background: {
+								logDir: join(dir, "logs"),
+								inheritShell: false,
+								killGraceMs: 200,
+								...extra.background,
+							},
 							...extra.features,
 						},
 					}),
@@ -595,7 +634,8 @@ describe.skipIf(!posix)("background feature", () => {
 	});
 
 	it("stops its jobs when the session shuts down", async () => {
-		const { harness } = await start(() => ({}));
+		// The harness runs like `mu --print`, where jobs are left running by default (next test).
+		const { harness } = await start(() => ({}), { background: { keepOnExit: "never" } });
 		harness.setResponses([
 			call("bg_start", { command: `${node} -e 'console.log("pid", process.pid); setInterval(() => {}, 1000)'` }),
 			call("bg_output", { id: "bg-1", wait_for: "pid \\d+", timeout: 10 }),
@@ -608,5 +648,24 @@ describe.skipIf(!posix)("background feature", () => {
 		await harness.session.extensionRunner.emit({ type: "session_shutdown", reason: "reload" });
 
 		await vi.waitFor(() => expect(alive(pid)).toBe(false), { timeout: 3000 });
+	});
+
+	it("leaves its jobs running after an unattended run, and says so when it starts one", async () => {
+		const { harness } = await start(() => ({}));
+		harness.setResponses([
+			call("bg_start", { command: `${node} -e 'console.log("pid", process.pid); setInterval(() => {}, 1000)'` }),
+			call("bg_output", { id: "bg-1", wait_for: "pid \\d+", timeout: 10 }),
+			fauxAssistantMessage("Serving."),
+		]);
+		await harness.session.prompt("Serve it.");
+		expect(results(harness)[0]).toContain("keeps running after the run ends");
+		const pid = Number(/pid (\d+)/.exec(results(harness)[1])?.[1]);
+		try {
+			await harness.session.extensionRunner.emit({ type: "session_shutdown", reason: "quit" });
+			await new Promise((resolve) => setTimeout(resolve, 500));
+			expect(alive(pid)).toBe(true);
+		} finally {
+			process.kill(pid, "SIGKILL");
+		}
 	});
 });

@@ -17,7 +17,9 @@ export const SETTINGS_DEFAULTS = {
 	},
 	retry: {
 		enabled: true,
-		maxRetries: 3,
+		// With the 60-second cap, about four minutes of backoff: a provider that stops answering for a minute or
+		// two does not end an unattended run.
+		maxRetries: 8,
 		baseDelayMs: 2000,
 		maxAgentDelayMs: DEFAULT_MAX_AGENT_RETRY_DELAY_MS,
 		provider: {

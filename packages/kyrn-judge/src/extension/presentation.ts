@@ -51,6 +51,8 @@ export interface KyrnPresentationEvent {
 		| "background.exit"
 		| "background.stop"
 		| "background.match"
+		| "background.kept"
+		| "watchdog.cut"
 		| "web.fetch"
 		| "web.search"
 		| "tool.injection"

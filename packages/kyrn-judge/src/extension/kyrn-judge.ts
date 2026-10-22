@@ -61,6 +61,7 @@ import { registerTools } from "./features/tools.ts";
 import { registerTtsr } from "./features/ttsr.ts";
 import { registerWarming } from "./features/warming.ts";
 import { registerWarmup } from "./features/warmup.ts";
+import { registerWatchdog } from "./features/watchdog.ts";
 import { registerWeb } from "./features/web.ts";
 import { registerWelcome } from "./features/welcome.ts";
 import type { PresentationListener } from "./presentation.ts";
@@ -108,6 +109,7 @@ export type FeatureName =
 	| "goal"
 	| "board"
 	| "ttsr"
+	| "watchdog"
 	| "injection"
 	| "admission"
 	| "forgetting"
@@ -211,6 +213,7 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["compaction", registerCompaction],
 		["monitor", registerMonitor],
 		["ttsr", registerTtsr],
+		["watchdog", registerWatchdog],
 		// Before the goal and completion checks: errors an edit introduced are said before "verify your change" is.
 		["lsp", registerLsp],
 		["goal", registerGoal],

@@ -57,7 +57,11 @@ export function describeJob(job: JobInfo): string {
  * - A job that ends (or prints a watched line) while nobody waits on it is an
  *   event for the existing `notify.routing` decision: now, next turn, or never.
  *   Without a verdict the model hears of it at its next turn.
- * - Every job is stopped when the session shuts down, for whatever reason.
+ * - Every job is stopped when the session shuts down, except in a one-shot run
+ *   (`mu --print`, json mode): nobody is left there to start a server again, and
+ *   a task such as "start the service" means it should still be up when the run
+ *   is over. Such jobs write to their log file and are left running at the end
+ *   (`keepOnExit`: "headless", the default, "always" or "never").
  */
 export function registerBackground(runtime: KyrnRuntime): void {
 	const options = runtime.options("background", {
@@ -72,11 +76,17 @@ export function registerBackground(runtime: KyrnRuntime): void {
 		inheritShell: true,
 		/** Let a `now` verdict on a job's end start a turn when the agent is idle. */
 		wakeWhenIdle: false,
+		/** Leave running jobs running when the session ends: "headless" (print and json runs), "always" or "never". */
+		keepOnExit: "headless",
 	});
 	if (!options.enabled) return;
 	const { pi } = runtime;
 	let manager: JobManager | undefined;
 	let shell: ShellSettings = {};
+	/** Decided when the first job starts, from the mode the session runs in. */
+	let keep = false;
+	const keepsJobs = (mode: string): boolean =>
+		options.keepOnExit === "always" || (options.keepOnExit === "headless" && (mode === "print" || mode === "json"));
 
 	const refreshStatus = (): void => {
 		const ctx = runtime.ctx;
@@ -122,8 +132,9 @@ export function registerBackground(runtime: KyrnRuntime): void {
 			.catch(() => undefined);
 	};
 
-	const start = (): JobManager => {
+	const start = (mode: string): JobManager => {
 		if (manager) return manager;
+		keep = keepsJobs(mode);
 		let logDir = options.logDir;
 		if (!logDir) {
 			// The home is only looked at when no directory was given, which is what tests rely on.
@@ -147,8 +158,9 @@ export function registerBackground(runtime: KyrnRuntime): void {
 			},
 			env: () => shellEnv(process.env, agentBinDir(), platform),
 			onEvent,
+			outputToFile: keep,
 		});
-		process.once("exit", killAllNow);
+		if (!keep) process.once("exit", killAllNow);
 		return manager;
 	};
 	const killAllNow = (): void => manager?.killAllNow();
@@ -157,7 +169,7 @@ export function registerBackground(runtime: KyrnRuntime): void {
 		name: "bg_start",
 		label: "Background start",
 		description:
-			"Start a long-running shell command (dev server, watcher, long build or test run) in the background and get its job id at once. Read it with bg_output, end it with bg_stop. Jobs end with the session.",
+			"Start a long-running shell command (dev server, watcher, long build or test run) in the background and get its job id at once. Read it with bg_output, end it with bg_stop. Jobs end with the session, except in an unattended run, where they keep running after it.",
 		parameters: Type.Object({
 			command: Type.String({ description: "Shell command" }),
 			name: Type.Optional(Type.String({ description: "Short label" })),
@@ -169,12 +181,20 @@ export function registerBackground(runtime: KyrnRuntime): void {
 			if (options.inheritShell) shell = readShellSettings(ctx.cwd, undefined, ctx.isProjectTrusted());
 			const cwd = params.cwd ? (isAbsolute(params.cwd) ? params.cwd : resolve(ctx.cwd, params.cwd)) : ctx.cwd;
 			try {
-				const job = start().start({ command: params.command, cwd, name: params.name, watch: params.watch });
+				const job = start(ctx.mode).start({
+					command: params.command,
+					cwd,
+					name: params.name,
+					watch: params.watch,
+				});
+				const after = keep
+					? "\nThis run is unattended: the job keeps running after the run ends. Stop it with bg_stop if it should not."
+					: "";
 				return {
 					content: [
 						{
 							type: "text",
-							text: `Started ${job.id} (pid ${job.pid ?? "unknown"}): ${clip(job.command, 200)}\nRead its output with bg_output({ id: "${job.id}" }); give wait_for or timeout to wait instead of polling.`,
+							text: `Started ${job.id} (pid ${job.pid ?? "unknown"}): ${clip(job.command, 200)}\nRead its output with bg_output({ id: "${job.id}" }); give wait_for or timeout to wait instead of polling.${after}`,
 						},
 					],
 					details: { id: job.id, command: job.command, state: job.state } satisfies OutputDetails as OutputDetails,
@@ -327,6 +347,12 @@ export function registerBackground(runtime: KyrnRuntime): void {
 		"session_shutdown",
 		failOpen<SessionShutdownEvent, undefined>(async (event, ctx) => {
 			process.off("exit", killAllNow);
+			if (keep && manager) {
+				const left = await manager.release();
+				manager = undefined;
+				if (left.length > 0) runtime.present("background.kept", { jobs: left.map(describeJob) });
+				return undefined;
+			}
 			const stopped = (await manager?.shutdown()) ?? 0;
 			manager = undefined;
 			// Never silently: on a reload or a session switch the user is still there to be told.

@@ -10,11 +10,13 @@
 
 - Changed the default GitHub Copilot model to GPT-6.1 Sol (`gpt-6.1-sol`): GPT-5.4 is no longer in Copilot's model catalog.
 - `generateSummary()` and `generateSummaryWithUsage()` now ignore their `reserveTokens` parameter. Summary requests use the model's output limit instead.
+- Changed the default `retry.maxRetries` from 3 to 8: with the 60-second cap per wait, about four minutes of backoff before a failed request ends the run.
 
 ### Fixed
 
 - Fixed compaction and branch summaries failing with "generation hit the token cap" when reasoning used most of the fixed summary output limit. Summaries now use the model's output limit, and `compaction.reserveTokens` only controls when compaction starts ([#9512](https://github.com/earendil-works/pi/issues/9512), [#9075](https://github.com/earendil-works/pi/issues/9075)).
 - Fixed `models.schema.json` missing descriptions for provider and model fields, so editors showed no hints for them ([#10790](https://github.com/earendil-works/pi/issues/10790))
+- A reply cut by the provider's content filter (`finish_reason: content_filter`) is retried, at most twice, instead of ending the run.
 
 ## [1.3.0] - 2026-10-15
 
