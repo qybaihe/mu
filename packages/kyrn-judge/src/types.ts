@@ -92,8 +92,10 @@ export interface JudgeUsage {
  * - `meta`:     judge a property of the request itself (vague? decomposable?).
  * - `screen`:   read raw text from a tool (a fetched page, a listing, a build log) for what is buried in it: an
  *               instruction aimed at an AI, noise to leave out. The verdict decides what the model gets to read.
+ * - `intent`:   read the agent's own closing message for whether it says it will do more ("Let me run the tests
+ *               next.") or reports what is done ("Done. Created …"). The verdict sends the agent back to work.
  */
-export type Capability = "classify" | "relate" | "rate" | "meta" | "screen";
+export type Capability = "classify" | "relate" | "rate" | "meta" | "screen" | "intent";
 
 /** Something the provider did that the caller did not ask for, such as truncating the state. */
 export interface JudgeWarning {

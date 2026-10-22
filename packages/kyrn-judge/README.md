@@ -47,6 +47,8 @@ Environment: `MU_JUDGE=laya,llm:provider/model` (or `off`), `MU_JUDGE_MODE=activ
 
 `delegate` and `hive` run on one swarm runtime (`src/swarm/`): every sub-agent streams its steps back, so the terminal shows for each one whether it is alive, what it is doing this second and what it last said. A watchdog ends a sub-agent that shows no sign of life, a time budget asks it for its report before ending it, and `/swarm stop [name]` or `/swarm kill [name]` does the same by hand without throwing away what was found. Limits: `features.swarm` / `features.hive` → `concurrency`, `beeMinutes`, `graceSeconds`, `stallSeconds`, `toolStallSeconds`.
 
+A sub-agent keeps no session of its own, and a reply the watchdog cut reports no usage: both are recorded in the session as `kyrn.usage` entries, never sent to the model, so a session's totals can include them. Format: [`kyrn/docs/features/usage-accounting.md`](../../kyrn/docs/features/usage-accounting.md).
+
 Everything else (turn preflight, tool-output admission, context forgetting, risk guard, drift and completion checks, memory, cache warming) runs on pi's extension events. The map of every decision point is in [`kyrn/docs/04-injection-points.md`](../../kyrn/docs/04-injection-points.md).
 
 ## Browser safety

@@ -2,11 +2,11 @@ import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { fauxAssistantMessage, fauxThinking, fauxToolCall } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
+import { createHarness, createTestUiContext, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import { CascadeJudge } from "../src/cascade.ts";
 import { BUILT_IN_JUDGES, parseConfig } from "../src/config.ts";
 import { DecisionEngine } from "../src/decision.ts";
-import { turnContinue } from "../src/decisions/turn-continue.ts";
+import { turnContinue, turnContinueLocalPromised } from "../src/decisions/turn-continue.ts";
 import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import { Judge } from "../src/judge.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
@@ -51,7 +51,7 @@ describe("carrying on after stopping short", () => {
 		provider: MockJudgeProvider,
 		replies: string[],
 		mode: "active" | "shadow" = "active",
-		extra: { features?: Record<string, unknown>; tools?: AgentTool[] } = {},
+		extra: { features?: Record<string, unknown>; tools?: AgentTool[]; session?: "tui" } = {},
 	): Promise<Harness> {
 		const harness = await createHarness({
 			tools: extra.tools,
@@ -64,6 +64,9 @@ describe("carrying on after stopping short", () => {
 			],
 		});
 		harnesses.push(harness);
+		// The harness runs as `mu --print`, an unattended run; "tui" makes it an interactive session.
+		if (extra.session)
+			await harness.session.bindExtensions({ uiContext: createTestUiContext(), mode: extra.session });
 		harness.setResponses([...replies.map((reply) => fauxAssistantMessage(reply)), fauxAssistantMessage("unused")]);
 		return harness;
 	}
@@ -138,11 +141,127 @@ describe("carrying on after stopping short", () => {
 		await vi.waitFor(() => expect(pushed.getPendingResponseCount()).toBe(1));
 		expect(nudges(pushed)).toEqual([]);
 
+		// Interactive, where `maxNudges` is the only limit (an unattended run has a lower one, tested below).
 		const stuck = "Let me run the tests next.";
-		const looping = await start(stopJudge(), [stuck, stuck, stuck]);
+		const looping = await start(stopJudge(), [stuck, stuck, stuck], "active", { session: "tui" });
 		await looping.session.prompt("Fix the flaky login test.");
 		await vi.waitFor(() => expect(looping.getPendingResponseCount()).toBe(1));
 		expect(nudges(looping)).toHaveLength(2);
+	});
+
+	describe("a finished reply the judge mistakes for a promise (TB 2.1, constraints-scheduling)", () => {
+		const done = "Done. Created `/app/meeting_scheduled.ics` with the meeting on Tuesday at 10:00.";
+		const answered = "The work is already complete: nothing was left pending.";
+		/** Laya's mistake: every closing message read as a promise of more work. */
+		const mistaken = () =>
+			new MockJudgeProvider((request: JudgeRequest): Record<string, Answer> => {
+				if (!("promised" in request.questions)) return {};
+				return { promised: yes, asks_go_ahead: no, work_requested: yes, beyond_request: no, irreversible: no };
+			});
+		const ls = (): AgentTool => ({
+			name: "bash",
+			label: "bash",
+			description: "bash",
+			parameters: Type.Object({}, { additionalProperties: true }),
+			execute: async () => ({ content: [{ type: "text", text: "meeting_scheduled.ics" }], details: {} }),
+		});
+
+		it("gets one nudge in an unattended run, and none after the agent answered it without a tool call", async () => {
+			const provider = mistaken();
+			const harness = await start(provider, [done, answered]);
+			await harness.session.prompt("Schedule the meeting and write it to /app/meeting_scheduled.ics.");
+			await vi.waitFor(() => expect(continueCalls(provider)).toHaveLength(2));
+			expect(nudges(harness)).toEqual([expect.stringContaining("Do it now")]);
+			// The answer to the nudge ended the run: the reply after it was never asked for.
+			expect(harness.getPendingResponseCount()).toBe(1);
+		});
+
+		it("gets one nudge in an unattended run even when the answer called a tool", async () => {
+			const harness = await start(mistaken(), [], "active", { tools: [ls()] });
+			harness.setResponses([
+				fauxAssistantMessage(done),
+				fauxAssistantMessage([fauxToolCall("bash", { command: "ls /app" })], { stopReason: "toolUse" }),
+				fauxAssistantMessage(done),
+				fauxAssistantMessage("unused"),
+			]);
+			await harness.session.prompt("Schedule the meeting and write it to /app/meeting_scheduled.ics.");
+			await vi.waitFor(() => expect(harness.getPendingResponseCount()).toBe(1));
+			expect(nudges(harness)).toHaveLength(1);
+		});
+
+		it("follows the options that turn each limit back", async () => {
+			// Two promised nudges allowed: the toolless answer alone still ends it.
+			const two = await start(mistaken(), [done, answered, done], "active", {
+				features: { continuation: { unattendedPromised: 2 } },
+			});
+			await two.session.prompt("Schedule the meeting.");
+			await vi.waitFor(() => expect(two.getPendingResponseCount()).toBe(2));
+			expect(nudges(two)).toHaveLength(1);
+
+			const both = await start(mistaken(), [done, answered, done], "active", {
+				features: { continuation: { unattendedPromised: 2, promisedAfterToolless: true } },
+			});
+			await both.session.prompt("Schedule the meeting.");
+			await vi.waitFor(() => expect(both.getPendingResponseCount()).toBe(1));
+			expect(nudges(both)).toHaveLength(2);
+		});
+
+		it("is nudged up to maxNudges as before in an interactive session", async () => {
+			const harness = await start(mistaken(), [done, answered, done], "active", { session: "tui" });
+			await harness.session.prompt("Schedule the meeting and write it to /app/meeting_scheduled.ics.");
+			await vi.waitFor(() => expect(harness.getPendingResponseCount()).toBe(1));
+			expect(nudges(harness)).toHaveLength(2);
+		});
+
+		it("still sends back a run that then stops without a word", async () => {
+			const harness = await start(mistaken(), []);
+			harness.setResponses([
+				fauxAssistantMessage(done),
+				fauxAssistantMessage([fauxThinking("Nothing left to do.")]),
+				fauxAssistantMessage("The file is in place."),
+				fauxAssistantMessage("unused"),
+			]);
+			await harness.session.prompt("Schedule the meeting.");
+			await vi.waitFor(() => expect(harness.getPendingResponseCount()).toBe(1));
+			expect(nudges(harness)).toEqual([
+				expect.stringContaining("Do it now"),
+				expect.stringContaining("no message and no tool call"),
+			]);
+		});
+	});
+
+	it("leaves whether work was promised to a judge other than the local one, unless told otherwise", async () => {
+		const input = { userMessage: "Schedule the meeting.", finalMessage: "Done. Created /app/meeting_scheduled.ics." };
+		const promised = (request: JudgeRequest): Record<string, Answer> =>
+			Object.fromEntries(Object.keys(request.questions).map((id) => [id, id === "promised" ? yes : no]));
+		const decide = async (spec: typeof turnContinue, tiers: (typeof BUILT_IN_JUDGES)["laya"]["profile"][]) => {
+			const providers = tiers.map(() => new MockJudgeProvider(promised));
+			const engine = new DecisionEngine({
+				judge: new CascadeJudge(
+					providers.map((provider, at) => ({ judge: new Judge({ provider }), profile: tiers[at] })),
+				),
+				defaultMode: "active",
+			});
+			const decision = await engine.decide(spec, input);
+			return {
+				outcome: decision.outcome,
+				asked: providers.map((provider) => Object.keys(provider.calls[0]?.questions ?? {})),
+			};
+		};
+		const laya = BUILT_IN_JUDGES.laya.profile;
+		// Laya alone: not asked, so its mistake sends nobody back.
+		const alone = await decide(turnContinue, [laya]);
+		expect(alone.asked[0]).not.toContain("promised");
+		expect(alone.outcome).toBe("end");
+		// Laya, then Jev: the question goes straight to Jev.
+		const cascade = await decide(turnContinue, [laya, undefined]);
+		expect(cascade.asked[0]).not.toContain("promised");
+		expect(cascade.asked[1]).toContain("promised");
+		expect(cascade.outcome).toBe("promised");
+		// continuation.localPromised: Laya answers it again.
+		const trusted = await decide(turnContinueLocalPromised, [laya]);
+		expect(trusted.asked[0]).toContain("promised");
+		expect(trusted.outcome).toBe("promised");
 	});
 
 	it("sends a run that ended on thinking alone back to work, without a judge, and not forever", async () => {

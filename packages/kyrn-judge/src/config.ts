@@ -104,8 +104,13 @@ export const BUILT_IN_JUDGES: Readonly<Record<string, JudgeConfig>> = {
 	// Terminal-Bench 2.1 (Oct 2026): on tool output it is wrong or late. All 15 passages it withheld as injections were
 	// clean (directory listings, href lists, headers, JSON), its one admission drop was a makefile, and most of its
 	// calls on both failed or came too late. So screening tool output (`screen`) goes to the next tier, or to the
-	// rules.
-	laya: { type: "local", profile: { capabilities: { relate: false, rate: false, meta: false, screen: false } } },
+	// rules. It also read a finished "Done. Created /app/meeting_scheduled.ics …" as a promise of more work, twice in one
+	// run (constraints-scheduling): 4 extra requests and the model searching / for test files. So whether a closing
+	// message promised more (`intent`, turn.continue) goes to the next tier too; `continuation.localPromised` asks it.
+	laya: {
+		type: "local",
+		profile: { capabilities: { relate: false, rate: false, meta: false, screen: false, intent: false } },
+	},
 	mock: { type: "mock" },
 };
 
