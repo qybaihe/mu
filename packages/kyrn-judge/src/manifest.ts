@@ -617,6 +617,16 @@ export const MANIFEST: HarnessManifest = {
 						en: "When the verdict on the session's first message comes after the wait, skills are hidden from the next turn on, which changes the prompt prefix once. Off: the session keeps every skill description.",
 					},
 				},
+				{
+					key: "subagentsInherit",
+					kind: "boolean",
+					default: true,
+					label: { zh: "子代理沿用这里的选择", en: "Subagents take this session's choice" },
+					help: {
+						zh: "子代理隐藏主会话隐藏的技能，不再问判定器。主会话还没定下来时，子代理照旧自己问。",
+						en: "A subagent hides the skills this session hides and doesn't ask the judge again. While this session hasn't settled yet, a subagent asks for itself as before.",
+					},
+				},
 			],
 		},
 		{
@@ -668,6 +678,16 @@ export const MANIFEST: HarnessManifest = {
 					help: {
 						zh: "按名字写。这些在一次性运行里几乎没人用，却每次请求都要带上。用命令点名的（比如 /hive）照样保留；清空就全带上。",
 						en: "By name. One-shot runs almost never use them, and each one is in every request. One you call for by its command (such as /hive) stays. Empty keeps them all.",
+					},
+				},
+				{
+					key: "subagentsInherit",
+					kind: "boolean",
+					default: true,
+					label: { zh: "子代理沿用这里打开的能力", en: "Subagents take this session's capabilities" },
+					help: {
+						zh: "子代理打开主会话已经打开的能力，不再问判定器；主会话隐藏的照样隐藏。主会话还没选过时，子代理照旧自己问。",
+						en: "A subagent opens the capabilities this session has open and doesn't ask the judge again; what's hidden here stays hidden there. Before this session has chosen, a subagent asks for itself as before.",
 					},
 				},
 			],

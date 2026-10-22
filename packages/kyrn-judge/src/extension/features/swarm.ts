@@ -15,12 +15,14 @@ import {
 	briefEnv,
 	briefFor,
 	briefMessage,
+	CAPABILITIES_OPEN_ENV,
 	describeFrameOut,
 	FRAME_OUT_ENV,
 	type FrameOut,
 	MAX_DONE,
 	PREVIOUS_CHARS,
 	parseFrameOut,
+	SKILLS_HIDDEN_ENV,
 } from "../../swarm/brief.ts";
 import { describeRecord } from "../../swarm/patches.ts";
 import {
@@ -195,6 +197,19 @@ export function chainRunner(runner: SwarmRunner): SwarmRunner {
 export function permissionEnv(runtime: KyrnRuntime): Record<string, string> {
 	const mode = runtime.permissionMode?.();
 	return mode ? { MU_PERMISSIONS: mode } : {};
+}
+
+/**
+ * What this session has settled and a sub-agent takes instead of asking the judge again: the skills kept out of the
+ * prompt and the capabilities open. An answer not settled yet is left out, and the sub-agent asks for itself.
+ */
+export function settledEnv(runtime: KyrnRuntime): Record<string, string> {
+	const env: Record<string, string> = {};
+	const hidden = runtime.skillsHidden?.();
+	if (hidden) env[SKILLS_HIDDEN_ENV] = JSON.stringify(hidden);
+	const open = runtime.capabilitiesOpen?.();
+	if (open) env[CAPABILITIES_OPEN_ENV] = JSON.stringify(open);
+	return env;
 }
 
 /** Where a sub-agent leaves its acceptance list for the parent. */
@@ -656,6 +671,8 @@ export function registerSwarm(runtime: KyrnRuntime, runner: SwarmRunner = spawnR
 						...inheritedConstraints,
 						// So does how much it may do without asking.
 						...permissionEnv(runtime),
+						// And which skills and capabilities this session settled on: the sub-agent does not ask again.
+						...settledEnv(runtime),
 						...(task.brief
 							? { [BRIEF_ENV]: briefEnv(task.brief), [FRAME_OUT_ENV]: frameOutPath(runDir, index) }
 							: {}),
