@@ -18,6 +18,7 @@ import { MockJudgeProvider, type MockResponder } from "../src/providers/mock.ts"
 import { BRIEF_ENV, parseBrief, type SwarmBrief } from "../src/swarm/brief.ts";
 import { markOf } from "../src/swarm/markers.ts";
 import type { Answer } from "../src/types.ts";
+import { attended } from "./attended.ts";
 
 const yes: Answer = { type: "boolean", probability: 0.95 };
 const no: Answer = { type: "boolean", probability: 0.04 };
@@ -304,7 +305,9 @@ describe("hive in a session", () => {
 						return {};
 					}),
 					mode: "active",
-					config: parseConfig({ features: { memory: false, admission: false, permissions: { mode: "full" } } }),
+					config: parseConfig({
+						features: attended({ memory: false, admission: false, permissions: { mode: "full" } }),
+					}),
 				}),
 			],
 		});
@@ -571,7 +574,9 @@ describe("hive in a session", () => {
 						return {};
 					}),
 					mode: "active",
-					config: parseConfig({ features: { memory: false, admission: false, permissions: { mode: "full" } } }),
+					config: parseConfig({
+						features: attended({ memory: false, admission: false, permissions: { mode: "full" } }),
+					}),
 				}),
 			],
 		});
@@ -645,7 +650,9 @@ describe("hive in a session", () => {
 						return {};
 					}),
 					mode: "active",
-					config: parseConfig({ features: { memory: false, admission: false, permissions: { mode: "full" } } }),
+					config: parseConfig({
+						features: attended({ memory: false, admission: false, permissions: { mode: "full" } }),
+					}),
 				}),
 			],
 		});
@@ -824,7 +831,7 @@ describe("hive in a session", () => {
 				createKyrnJudgeExtension({
 					provider: new MockJudgeProvider(() => ({})),
 					mode: "active",
-					config: parseConfig({ features: { memory: false, permissions: { mode: "full" } } }),
+					config: parseConfig({ features: attended({ memory: false, permissions: { mode: "full" } }) }),
 					swarmRunner: runner,
 				}),
 			],
@@ -879,7 +886,7 @@ describe("hive in a session", () => {
 				createKyrnJudgeExtension({
 					provider: new MockJudgeProvider(() => ({})),
 					mode: "active",
-					config: parseConfig({ features: { memory: false, permissions: { mode: "full" } } }),
+					config: parseConfig({ features: attended({ memory: false, permissions: { mode: "full" } }) }),
 					swarmRunner: runner,
 				}),
 			],
@@ -930,7 +937,7 @@ describe("hive in a session", () => {
 				createKyrnJudgeExtension({
 					provider: new MockJudgeProvider(() => ({})),
 					mode: "active",
-					config: parseConfig({ features: { memory: false, permissions: { mode: "full" } } }),
+					config: parseConfig({ features: attended({ memory: false, permissions: { mode: "full" } }) }),
 					swarmRunner: runner,
 				}),
 			],
@@ -995,7 +1002,7 @@ describe("hive in a session", () => {
 				createKyrnJudgeExtension({
 					provider: new MockJudgeProvider(() => ({})),
 					mode: "active",
-					config: parseConfig({ features: { memory: false, permissions: { mode: "full" } } }),
+					config: parseConfig({ features: attended({ memory: false, permissions: { mode: "full" } }) }),
 					swarmRunner: runner,
 				}),
 			],
@@ -1069,7 +1076,7 @@ describe("hive in a session", () => {
 					provider: new MockJudgeProvider(() => ({})),
 					mode: "active",
 					config: parseConfig({
-						features: { memory: false, permissions: { mode: "full" }, hive: { verifyAfterSeconds: 0 } },
+						features: attended({ memory: false, permissions: { mode: "full" }, hive: { verifyAfterSeconds: 0 } }),
 					}),
 					swarmRunner: runner,
 				}),

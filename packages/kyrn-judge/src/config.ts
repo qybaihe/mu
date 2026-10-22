@@ -122,6 +122,8 @@ export const DEFAULT_CONFIG: KyrnConfig = {
 		"notify.routing": "shadow",
 		// About a second on every mid-run message, and no verdict has changed anything yet.
 		"input.interjection": "shadow",
+		// Its steers were mostly wrong where it flagged anything at all, so it only records until it is reworked.
+		"turn.drift": "shadow",
 	},
 	routes: {},
 	features: {},

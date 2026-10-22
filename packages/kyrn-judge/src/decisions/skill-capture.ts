@@ -19,8 +19,11 @@ export interface CaptureInput {
 
 export type CaptureVerdict = "draft" | "skip";
 
-/** How sure the judge has to be that the run is a procedure before a writer is paid to draft it. */
-export const DRAFT_AT = 0.7;
+/**
+ * How sure the judge has to be that the run is a procedure before a writer is paid to draft it. In the October
+ * review, 3 of the 4 wrong drafts scored between .73 and .85, two of them from runs that failed their checks.
+ */
+export const DRAFT_AT = 0.9;
 
 export const skillCapture = defineDecision({
 	id: "skill.capture",

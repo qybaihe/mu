@@ -12,6 +12,10 @@ import { userWords } from "../src/extension/runtime.ts";
 import type { LedgerRecord } from "../src/ledger.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
 import type { Answer, JudgeProvider } from "../src/types.ts";
+import { attended } from "./attended.ts";
+
+/** The harness runs in print mode; these tests are about preflight as an interactive session asks it. */
+const config = parseConfig({ features: attended() });
 
 const yes: Answer = { type: "boolean", probability: 0.95 };
 const no: Answer = { type: "boolean", probability: 0.04 };
@@ -55,7 +59,7 @@ describe("kyrn judge extension", () => {
 	it("judges each user message in shadow mode without changing what the model sees", async () => {
 		const provider = new MockJudgeProvider(() => chatVerdict);
 		const harness = await createHarness({
-			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "shadow" })],
+			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "shadow", config })],
 		});
 		harnesses.push(harness);
 		harness.setResponses([fauxAssistantMessage("It refreshes the access token.")]);
@@ -88,7 +92,7 @@ describe("kyrn judge extension", () => {
 
 	it("passes recent turns to the judge as short digests", async () => {
 		const provider = new MockJudgeProvider(() => chatVerdict);
-		const harness = await createHarness({ extensionFactories: [createKyrnJudgeExtension({ provider })] });
+		const harness = await createHarness({ extensionFactories: [createKyrnJudgeExtension({ provider, config })] });
 		harnesses.push(harness);
 		harness.setResponses([fauxAssistantMessage("First answer."), fauxAssistantMessage("Second answer.")]);
 
@@ -118,7 +122,7 @@ describe("kyrn judge extension", () => {
 			return chatVerdict;
 		});
 		const harness = await createHarness({
-			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "active" })],
+			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "active", config })],
 		});
 		harnesses.push(harness);
 		harness.setResponses([fauxAssistantMessage("Sure.")]);
@@ -145,7 +149,11 @@ describe("kyrn judge extension", () => {
 		});
 		const harness = await createHarness({
 			extensionFactories: [
-				createKyrnJudgeExtension({ provider, mode: "active", config: parseConfig({ tiers: ["laya"] }) }),
+				createKyrnJudgeExtension({
+					provider,
+					mode: "active",
+					config: parseConfig({ tiers: ["laya"], features: attended() }),
+				}),
 			],
 		});
 		harnesses.push(harness);
@@ -208,7 +216,7 @@ describe("kyrn judge extension", () => {
 			};
 		});
 		const harness = await createHarness({
-			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "active" })],
+			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "active", config })],
 		});
 		harnesses.push(harness);
 		const seen: string[] = [];
@@ -247,7 +255,7 @@ describe("kyrn judge extension", () => {
 		};
 		const harness = await createHarness({
 			extensionFactories: [
-				createKyrnJudgeExtension({ provider: new MockJudgeProvider(() => vague), mode: "active" }),
+				createKyrnJudgeExtension({ provider: new MockJudgeProvider(() => vague), mode: "active", config }),
 			],
 		});
 		harnesses.push(harness);
@@ -268,7 +276,7 @@ describe("kyrn judge extension", () => {
 	it("judges the person's own words past a host's preamble, while the model still gets the whole message", async () => {
 		const provider = new MockJudgeProvider(() => chatVerdict);
 		const harness = await createHarness({
-			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "active" })],
+			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "active", config })],
 		});
 		harnesses.push(harness);
 		let promptSeen = "";
@@ -311,11 +319,15 @@ describe("kyrn judge extension", () => {
 	};
 
 	/** A heavy turn in active mode: what reasoning level the model was called with, and what it was told. */
-	async function heavyTurn(config?: ReturnType<typeof parseConfig>) {
+	async function heavyTurn(turnConfig = config) {
 		const harness = await createHarness({
 			models: [{ id: "faux-reasoner", reasoning: true }],
 			extensionFactories: [
-				createKyrnJudgeExtension({ provider: new MockJudgeProvider(() => heavyVerdict), mode: "active", config }),
+				createKyrnJudgeExtension({
+					provider: new MockJudgeProvider(() => heavyVerdict),
+					mode: "active",
+					config: turnConfig,
+				}),
 			],
 		});
 		harnesses.push(harness);
@@ -341,7 +353,7 @@ describe("kyrn judge extension", () => {
 	});
 
 	it("raises thinking for a heavy turn only when asked to, then restores the user's level", async () => {
-		const turn = await heavyTurn(parseConfig({ features: { preflight: { thinking: true } } }));
+		const turn = await heavyTurn(parseConfig({ features: attended({ preflight: { thinking: true } }) }));
 		expect(turn.reasoningSent).toBe("high");
 		expect(turn.promptSeen).toContain("Write a short plan");
 		expect(turn.levelAfter).toBe("low");
@@ -357,7 +369,7 @@ describe("kyrn judge extension", () => {
 			},
 		};
 		const harness = await createHarness({
-			extensionFactories: [createKyrnJudgeExtension({ provider: down, mode: "active" })],
+			extensionFactories: [createKyrnJudgeExtension({ provider: down, mode: "active", config })],
 		});
 		harnesses.push(harness);
 		harness.setResponses([fauxAssistantMessage("hello")]);

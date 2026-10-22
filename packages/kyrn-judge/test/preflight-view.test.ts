@@ -486,6 +486,8 @@ describe("preflight on screen", () => {
 					provider: new MockJudgeProvider(() => chatAnswers),
 					mode: "active",
 					only: ["preflight"],
+					// A print run asks no preflight unless told to; asked, it shows as it always did.
+					config: parseConfig({ features: { preflight: { unattended: true } } }),
 				}),
 			],
 		});

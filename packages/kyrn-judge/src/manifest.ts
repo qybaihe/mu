@@ -552,6 +552,16 @@ export const MANIFEST: HarnessManifest = {
 					label: { zh: "最多等待", en: "Wait at most" },
 					help: { zh: "超时就不等了，按原样开始。", en: "After this, the turn starts without the verdict." },
 				},
+				{
+					key: "unattended",
+					kind: "boolean",
+					default: false,
+					label: { zh: "无人值守的运行也预判", en: "Also judge messages in unattended runs" },
+					help: {
+						zh: "无人值守指 mu --print 和 json 模式的一次性运行。默认不问：那里没人看提示，每条消息却要多等判定、多花判定的钱。",
+						en: "Unattended means a one-shot mu --print or json-mode run. Off by default: nobody reads the hint there, and every message would wait for the judge and pay for it.",
+					},
+				},
 			],
 		},
 		{
@@ -626,6 +636,39 @@ export const MANIFEST: HarnessManifest = {
 					max: 30000,
 					unit: ms,
 					label: { zh: "最多等待", en: "Wait at most" },
+				},
+				{
+					key: "askUnattended",
+					kind: "boolean",
+					default: false,
+					label: { zh: "无人值守的运行也判定要开哪些能力", en: "Also choose capabilities in unattended runs" },
+					help: {
+						zh: "无人值守指 mu --print 和 json 模式的一次性运行。默认不问：能力照样隐藏，开工前也不等。",
+						en: "Unattended means a one-shot mu --print or json-mode run. Off by default: capabilities stay hidden, and the turn doesn't wait.",
+					},
+				},
+				{
+					key: "unattendedHidden",
+					kind: "list",
+					default: [
+						"delegate",
+						"apply_patch_from",
+						"browse",
+						"locate",
+						"remember",
+						"find_skill",
+						"find_capability",
+						"hive",
+						"mu-browser",
+					],
+					label: {
+						zh: "无人值守的运行里不放进请求的工具和技能",
+						en: "Tools and skills left out of unattended runs",
+					},
+					help: {
+						zh: "按名字写。这些在一次性运行里几乎没人用，却每次请求都要带上。用命令点名的（比如 /hive）照样保留；清空就全带上。",
+						en: "By name. One-shot runs almost never use them, and each one is in every request. One you call for by its command (such as /hive) stays. Empty keeps them all.",
+					},
 				},
 			],
 		},
@@ -761,6 +804,16 @@ export const MANIFEST: HarnessManifest = {
 						en: "Check at the end of a turn whether lessons were followed",
 					},
 				},
+				{
+					key: "unattendedWrites",
+					kind: "boolean",
+					default: false,
+					label: { zh: "无人值守的运行也学新经验", en: "Also learn new lessons in unattended runs" },
+					help: {
+						zh: "无人值守指 mu --print 和 json 模式的一次性运行。默认只读已有的经验，不从纠正、脱困和子代理报告里学；remember 工具由能力目录拿掉。",
+						en: "Unattended means a one-shot mu --print or json-mode run. Off by default: kept lessons are still read, but nothing is learned from corrections, ways out or subagent reports. The capability catalog leaves out the remember tool.",
+					},
+				},
 			],
 		},
 		{
@@ -806,6 +859,16 @@ export const MANIFEST: HarnessManifest = {
 					help: {
 						zh: "一个项目的草稿攒到这么多，就不再起草，等你先看。",
 						en: "Once a project has this many pending drafts, no more are made until you review them.",
+					},
+				},
+				{
+					key: "unattended",
+					kind: "boolean",
+					default: false,
+					label: { zh: "无人值守的运行也起草技能", en: "Also draft skills in unattended runs" },
+					help: {
+						zh: "无人值守指 mu --print 和 json 模式的一次性运行。默认不起草：草稿要有人审，起草还会让运行结束后多等一次模型调用。",
+						en: "Unattended means a one-shot mu --print or json-mode run. Off by default: a draft needs someone to review it, and writing one keeps the run going for another model call.",
 					},
 				},
 			],
@@ -1361,6 +1424,16 @@ export const MANIFEST: HarnessManifest = {
 					min: 2,
 					max: 100,
 					label: { zh: "观察窗口", en: "Recent calls checked" },
+				},
+				{
+					key: "unattended",
+					kind: "boolean",
+					default: false,
+					label: { zh: "无人值守的运行也判断跑偏", en: "Also check for drift in unattended runs" },
+					help: {
+						zh: "无人值守指 mu --print 和 json 模式的一次性运行。默认不问；发现原地打转的规则照常生效。",
+						en: "Unattended means a one-shot mu --print or json-mode run. Off by default. The rule that catches going in circles still applies.",
+					},
 				},
 			],
 		},

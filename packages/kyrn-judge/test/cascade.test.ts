@@ -268,6 +268,8 @@ describe("judge configuration", () => {
 		expect(config.modes).toEqual({ ...DEFAULT_CONFIG.modes, default: "active", "tool.admission": "active" });
 		expect(config.modes["swarm.patch"]).toBe("off");
 		expect(parseConfig({ modes: { "swarm.patch": "active" } }).modes["swarm.patch"]).toBe("active");
+		// turn.drift only records by default.
+		expect(config.modes["turn.drift"]).toBe("shadow");
 		expect(config.judges).toEqual({});
 	});
 
