@@ -678,6 +678,8 @@ jobs:
         run: |
           set -euo pipefail
           tag="${DRAFT:-${GITHUB_REF_NAME}}"
+          # What's new: this version's section of CHANGELOG.md, without its heading.
+          changes="$(awk -v heading="## [${tag#v}]" 'index($0, heading) == 1 { found = 1; next } /^## \[/ { if (found) exit } found' CHANGELOG.md)"
           {
             echo "Preview build of mu ${tag}."
             echo
@@ -693,7 +695,15 @@ jobs:
               echo
               echo "⚠️ Not every platform built for this tag; the missing installers are not attached. See the workflow run."
             fi
+            if [ -n "${changes//[[:space:]]/}" ]; then
+              echo
+              echo "## What's new"
+              printf '%s\n' "$changes"
+            fi
           } > notes.md
+          if [ -z "${changes//[[:space:]]/}" ]; then
+            echo "::warning::CHANGELOG.md has no section for ${tag#v}; the release notes only say what to download."
+          fi
           # The update feed goes along when there is one (SHA256SUMS covers the installers and the source only).
           shopt -s nullglob
           if [ -n "${DRAFT}" ]; then
