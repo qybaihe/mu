@@ -182,6 +182,7 @@
     "download": "Download this version",
     "full_agent": "Full mu-agent changelog",
     "headlines": {
+      "v0.1.11": "sign in with a subscription straight from mu setup, a judge you can really turn off, a quieter terminal, run deadlines",
       "v0.1.10": "conversations imported from ZCode, a copy edit of the English, unattended runs that keep their servers",
       "v0.1.9": "a new look, model limits read from each provider's model list",
       "v0.1.8": "MCP tool descriptions screened for hidden instructions, long runs saved as draft skills"
