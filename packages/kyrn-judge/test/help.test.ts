@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { renderHelpEn } from "../src/extension/features/commands.ts";
+import { modelRef } from "../src/extension/features/welcome.ts";
 
 const sections = [
 	{
@@ -48,5 +49,13 @@ describe("the English /help", () => {
 		expect(lines).toContain(
 			"  The judge reads every message first. While it reads, your message waits above the editor.",
 		);
+	});
+});
+
+describe("the model in /status and the welcome", () => {
+	it("is provider/id, and none for pi's placeholder when there is no model at all", () => {
+		expect(modelRef({ provider: "openai", id: "gpt-5.5" })).toBe("openai/gpt-5.5");
+		expect(modelRef({ provider: "unknown", id: "unknown" })).toBeUndefined();
+		expect(modelRef(undefined)).toBeUndefined();
 	});
 });

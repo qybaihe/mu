@@ -10,7 +10,7 @@ import { loadAgents } from "../agents.ts";
 import { promptsFor } from "../localized-prompts.ts";
 import { failOpen, type KyrnRuntime } from "../runtime.ts";
 import type { HarnessRoots } from "./inherit.ts";
-import { VERSIONS } from "./welcome.ts";
+import { modelRef, VERSIONS } from "./welcome.ts";
 
 const MODES: readonly string[] = ["off", "shadow", "active"];
 
@@ -271,7 +271,7 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 		const modes = [...engine.explicitModes()].map(([specId, mode]) => `${specId}=${mode}`).join(" ");
 		const usage = ctx.getContextUsage();
 		const lines = [
-			`model: ${ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "none"} · thinking ${pi.getThinkingLevel()}${
+			`model: ${modelRef(ctx.model) ?? "none yet"} · thinking ${pi.getThinkingLevel()}${
 				usage?.percent === undefined || usage.percent === null ? "" : ` · context ${Math.round(usage.percent)}%`
 			}`,
 			`judge: ${runtime.enabled ? engine.providerId : "off"}`,
