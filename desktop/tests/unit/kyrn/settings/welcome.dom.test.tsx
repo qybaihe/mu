@@ -536,6 +536,65 @@ describe('the first-run guide', () => {
     expect(bridge.save).not.toHaveBeenCalled();
   });
 
+  it('offers no judge at all, which turns every decision point off so nothing is sent to one', async () => {
+    at('/welcome', <Welcome />);
+    fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
+    await screen.findByTestId('mu-welcome-step-judge');
+    fireEvent.click(screen.getByTestId('mu-judge-choice-jev'));
+    expect(screen.getByTestId('mu-welcome-judge-ready')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('mu-welcome-judge-none'));
+    expect(screen.getByTestId('mu-welcome-judge-none')).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByTestId('mu-judge-choice-jev')).toHaveAttribute('aria-checked', 'false');
+    // Nothing answers, so nothing says Jev is ready, and the judges' fields are not offered.
+    expect(screen.queryByTestId('mu-welcome-judge-ready')).toBeNull();
+    expect(screen.queryByTestId('mu-welcome-judge-more')).toBeNull();
+    fireEvent.click(screen.getByTestId('mu-welcome-next'));
+
+    await screen.findByTestId('mu-welcome-step-done');
+    expect(screen.getByTestId('mu-welcome-done-judge')).toHaveTextContent('No judge');
+    expect(screen.queryByTestId('mu-welcome-kernel')).toBeNull();
+    fireEvent.click(screen.getByTestId('mu-welcome-start'));
+    await waitFor(() => expect(bridge.save).toHaveBeenCalledTimes(1));
+    expect((bridge.save.mock.calls[0][0] as SaveSettings).mode).toBe('off');
+  });
+
+  it('turns the verdicts back on when a judge is picked after none, and leaves a stored shadow alone', async () => {
+    bridge.settings.mockResolvedValue({ ok: true, data: newUser({ mode: 'off' }) });
+    at('/welcome', <Welcome />);
+    fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
+    await screen.findByTestId('mu-welcome-step-judge');
+    // Set up before without a judge (mu setup's "Not now"): the guide says so.
+    expect(screen.getByTestId('mu-welcome-judge-none')).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(screen.getByTestId('mu-judge-choice-jev'));
+    expect(screen.getByTestId('mu-welcome-judge-none')).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByTestId('mu-judge-choice-jev')).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(screen.getByTestId('mu-welcome-next'));
+    await screen.findByTestId('mu-welcome-step-done');
+    fireEvent.click(screen.getByTestId('mu-welcome-start'));
+    await waitFor(() => expect(bridge.save).toHaveBeenCalledTimes(1));
+    expect((bridge.save.mock.calls[0][0] as SaveSettings).mode).toBe('active');
+
+    // The new user's settings record shadow: picking a judge keeps it.
+    cleanup();
+    bridge.save.mockClear();
+    localStorage.clear();
+    bridge.settings.mockResolvedValue({ ok: true, data: newUser() });
+    at('/welcome', <Welcome />);
+    fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
+    await screen.findByTestId('mu-welcome-step-judge');
+    expect(screen.getByTestId('mu-welcome-judge-none')).toHaveAttribute('aria-checked', 'false');
+    fireEvent.click(screen.getByTestId('mu-judge-choice-jev'));
+    fireEvent.click(screen.getByTestId('mu-welcome-next'));
+    await screen.findByTestId('mu-welcome-step-done');
+    fireEvent.click(screen.getByTestId('mu-welcome-start'));
+    await waitFor(() => expect(bridge.save).toHaveBeenCalledTimes(1));
+    expect((bridge.save.mock.calls[0][0] as SaveSettings).mode).toBe('shadow');
+  });
+
   it('shows a turn as the judge sees it, and ends on what the kernel bar will say', async () => {
     const parsed = parseManifest(withOwnPlaces(manifestJson));
     if (parsed.status !== 'ok') throw new Error('the manifest fixture is not readable');

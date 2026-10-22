@@ -635,7 +635,12 @@
       "readyFree": "Le Jev gratuit est prêt. Rien à faire ici.",
       "readyKey": "Jev est prêt, avec la clé que vous avez définie.",
       "more": "Changer de service ou utiliser votre propre clé",
-      "less": "Masquer"
+      "less": "Masquer",
+      "none": {
+        "title": "Pas de juge",
+        "tag": "Rien n’est envoyé",
+        "description": "Aucun point de décision ne consulte de juge : rien ne lui est donc envoyé. mu décide selon ses règles par défaut. Vous pourrez choisir un juge plus tard dans les Paramètres."
+      }
     },
     "done": {
       "title": "Tout est prêt",

@@ -20,7 +20,7 @@ mu comes in two forms: a **desktop app** that carries everything it needs, and t
 2. Open it. The first-run guide walks through four steps: a model, a permission mode, a judge and a start.
    - **Model.** Paste an API key, and mu recognizes the service from its shape (OpenAI, Anthropic, Google Gemini, xAI, OpenRouter, DeepSeek, Kimi, Qwen, GLM, SiliconFlow and more) and checks it with one request. Or sign in with a ChatGPT, Grok or Google subscription. A wrong key, an empty balance, an unsupported region or no connection is each explained with what to do.
    - **Permissions.** *Judge mode* is preselected; see [Permissions and safety](@docs/permissions).
-   - **Judge.** With no key, Jev (TypeSafe's hosted judge model) answers for free through OpenCode Zen. You can come back to this any time.
+   - **Judge.** With no key, Jev (TypeSafe's hosted judge model) answers for free through OpenCode Zen. To send nothing to a judge, choose **No judge**. You can come back to this any time.
    - **Start.** If mu finds Claude Code, Codex or ZCode conversations, it offers to import them (the guide's first screen offers them too).
 3. Pick a folder and start a conversation.
 

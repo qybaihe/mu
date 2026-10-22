@@ -635,7 +635,12 @@
       "readyFree": "Der kostenlose Jev ist bereit. Hier ist nichts zu tun.",
       "readyKey": "Jev ist bereit, mit dem Schlüssel, den du festgelegt hast.",
       "more": "Dienst wechseln oder eigenen Schlüssel verwenden",
-      "less": "Ausblenden"
+      "less": "Ausblenden",
+      "none": {
+        "title": "Kein Judge",
+        "tag": "Nichts wird gesendet",
+        "description": "Kein Entscheidungspunkt fragt einen Judge, also wird auch nichts an einen gesendet. mu entscheidet nach seinen Standardregeln. Einen Judge kannst du später in den Einstellungen wählen."
+      }
     },
     "done": {
       "title": "Alles bereit",
