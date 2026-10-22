@@ -682,9 +682,13 @@
     },
     "login": {
       "providers": {
-        "openai-codex": {
+        "openai": {
           "name": "ChatGPT",
           "plan": "Formule Plus / Pro"
+        },
+        "openai-codex": {
+          "name": "ChatGPT (Codex)",
+          "plan": "Ancienne connexion via Codex"
         },
         "anthropic": {
           "name": "Claude",

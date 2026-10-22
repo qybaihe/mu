@@ -682,9 +682,13 @@
     },
     "login": {
       "providers": {
-        "openai-codex": {
+        "openai": {
           "name": "ChatGPT",
           "plan": "Plus / Pro 订阅"
+        },
+        "openai-codex": {
+          "name": "ChatGPT (Codex)",
+          "plan": "经由 Codex 的旧登录方式"
         },
         "anthropic": {
           "name": "Claude",

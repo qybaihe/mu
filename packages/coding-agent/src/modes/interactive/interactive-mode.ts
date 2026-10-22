@@ -6346,7 +6346,11 @@ export class InteractiveMode {
 					prompt: (prompt) => this.showAuthPrompt(dialog, prompt, providerId),
 					notify: (event) => this.notifyAuthDialog(dialog, event),
 				},
-				{ getDeviceId: () => this.settingsManager.getOrCreateDeviceId() },
+				{
+					getDeviceId: () => this.settingsManager.getOrCreateDeviceId(),
+					// A build under another name (piConfig.name) signs in as itself; pi keeps the flows' default name.
+					...(APP_NAME !== "pi" ? { agentName: APP_NAME } : {}),
+				},
 			);
 		} finally {
 			this.programStatus.setBlocked("login", undefined);

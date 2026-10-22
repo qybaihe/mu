@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, mkdtempSync, rmdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { AuthInteraction, ModelsStore, Provider } from "@earendil-works/pi-ai";
+import type { AuthInteraction, LoginOptions, ModelsStore, Provider } from "@earendil-works/pi-ai";
 import * as pi from "@earendil-works/pi-coding-agent";
 import { afterEach, describe, expect, it } from "vitest";
 import { AUTH_COMMANDS as LAUNCHER_COMMANDS } from "../../../kyrn/bin/mu.mjs";
@@ -29,6 +29,8 @@ class FakeRuntime implements AuthRuntime {
 	registered: string[] = [];
 	refreshed: { providers?: string[]; allowNetwork?: boolean }[] = [];
 	loggedOut: string[] = [];
+	/** What each sign-in told the flow about this mu. */
+	loginOptions: (LoginOptions | undefined)[] = [];
 	models: Record<string, { id: string; name?: string }[]> = {
 		"openai-codex": [{ id: "gpt-5.4", name: "GPT-5.4" }, { id: "gpt-5.5", name: "GPT-5.5" }, { id: "gpt-5.5-mini" }],
 		anthropic: [{ id: "claude-opus-4-8", name: "Claude Opus 4.8" }],
@@ -36,7 +38,13 @@ class FakeRuntime implements AuthRuntime {
 	};
 	flow: (interaction: AuthInteraction) => Promise<void> = async () => {};
 
-	async login(providerId: string, type: "oauth", interaction: AuthInteraction): Promise<unknown> {
+	async login(
+		providerId: string,
+		type: "oauth",
+		interaction: AuthInteraction,
+		options?: LoginOptions,
+	): Promise<unknown> {
+		this.loginOptions.push(options);
 		await this.flow(interaction);
 		this.credentials.push({ providerId, type });
 		// What pi hands back is the credential itself: it must stay inside the runner.
@@ -90,6 +98,8 @@ const googleish = (id: string) => ({ id }) as Provider;
 
 describe("mu auth", () => {
 	it("says who is signed in with a subscription, and what this mu can sign in to", async () => {
+		// ChatGPT is offered through Sign in with ChatGPT (`openai`); an account signed in through the Codex CLI's login
+		// before still shows, works and signs out, but that login is no longer offered.
 		const runtime = new FakeRuntime();
 		runtime.credentials = [
 			{ providerId: "openai-codex", type: "oauth" },
@@ -103,7 +113,7 @@ describe("mu auth", () => {
 		expect(said).toEqual([
 			{
 				type: "status",
-				offered: ["openai-codex", "anthropic", "xai"],
+				offered: ["openai", "anthropic", "xai"],
 				signedIn: [
 					{
 						provider: "openai-codex",
@@ -196,6 +206,16 @@ describe("mu auth", () => {
 			},
 		]);
 		expect(JSON.stringify(app.said)).not.toContain(SECRET);
+	});
+
+	it("signs in with ChatGPT as mu, with this installation's id", async () => {
+		const runtime = new FakeRuntime();
+		const login: LoginOptions = { agentName: "mu", getDeviceId: () => "device-1" };
+		const app = pipe();
+		expect(await runAuth(["login", "openai"], { runtime, preferred, extra: [], io: app.io, login })).toBe(0);
+		expect(runtime.loginOptions).toEqual([login]);
+		expect(runtime.credentials).toEqual([{ providerId: "openai", type: "oauth" }]);
+		expect(app.said.at(-1)).toMatchObject({ type: "done", provider: "openai" });
 	});
 
 	it("reads what an account can use once it is signed in, where the account decides that", async () => {

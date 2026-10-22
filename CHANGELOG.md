@@ -18,6 +18,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ### Changed
 
+- **Signing in with ChatGPT uses OpenAI's own Sign in with ChatGPT**, in the desktop app, `mu auth` and `/login` (choose OpenAI). mu introduces itself as "mu", so your ChatGPT settings show what mu uses and let you cap or disconnect it. It replaces the Codex CLI's login: an account signed in that way keeps working and can still be signed out, and signing in again with ChatGPT switches it over. The model picker calls these models OpenAI's, as it does an OpenAI API key's.
 - In an unattended run (`mu --print`, json mode), background jobs keep running after the run ends, so a server the task asked for is still up. Interactive and desktop sessions still stop them.
 - A failed model request is retried up to 8 times instead of 3, about four minutes of waiting in all.
 - **The permission mode `jev` is now `judge`**, shown as *Judge mode*: `/permissions judge`, `MU_PERMISSIONS=judge` (`jev` still works). mu's messages and docs say "the judge" instead of "Jev", which now names only TypeSafe's hosted judge model. Config names are unchanged: `"tiers": ["jev"]` and the `jev-*` routes work as before.

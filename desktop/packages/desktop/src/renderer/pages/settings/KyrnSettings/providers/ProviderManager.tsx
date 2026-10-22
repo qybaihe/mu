@@ -3,7 +3,12 @@ import { Button, Modal, Tag } from '@arco-design/web-react';
 import { Plus } from '@icon-park/react';
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
-import { KEY_PROVIDERS, isSubscriptionProvider, type SubscriptionProvider } from '@/common/kyrn/login';
+import {
+  KEY_PROVIDERS,
+  LEGACY_PROVIDERS,
+  isSubscriptionProvider,
+  type SubscriptionProvider,
+} from '@/common/kyrn/login';
 import {
   ENDPOINT_TYPES,
   PROVIDER_ID,
@@ -86,8 +91,14 @@ export default function ProviderManager(props: ProviderManagerProps) {
   const shown = available.providers.filter((provider) => !hidden.has(provider.id));
   // Whatever the running mu reported that is neither a subscription listed above nor an entry of models.json:
   // mostly providers whose API key is in the environment. A subscription id reported that way (Claude or Grok with
-  // an API key) is shown on its subscription row.
-  const builtin = shown.filter((provider) => !own.has(provider.id) && !offered.has(provider.id));
+  // an API key) is shown on its subscription row. A sign-in no longer offered (ChatGPT through Codex) shows as an
+  // account while it is signed in, never as a provider of its own.
+  const builtin = shown.filter(
+    (provider) =>
+      !own.has(provider.id) &&
+      !offered.has(provider.id) &&
+      !LEGACY_PROVIDERS.includes(provider.id as SubscriptionProvider)
+  );
   const reported = available.providers.map((entry) => entry.id).filter((id) => !saved.has(id));
   // A subscription-only id reported while signed out is a snapshot from before a sign-out: not usable.
   const byKey = (provider: SubscriptionProvider) =>
