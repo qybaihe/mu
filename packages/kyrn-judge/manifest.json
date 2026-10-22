@@ -1652,6 +1652,19 @@
 						"tr-TR": "Bu süreden sonra tur, karar beklenmeden başlar.",
 						"fa-IR": "پس از این مدت، نوبت بدون نتیجهٔ داوری شروع می‌شود."
 					}
+				},
+				{
+					"key": "unattended",
+					"kind": "boolean",
+					"default": false,
+					"label": {
+						"zh": "无人值守的运行也预判",
+						"en": "Also judge messages in unattended runs"
+					},
+					"help": {
+						"zh": "无人值守指 mu --print 和 json 模式的一次性运行。默认不问：那里没人看提示，每条消息却要多等判定、多花判定的钱。",
+						"en": "Unattended means a one-shot mu --print or json-mode run. Off by default: nobody reads the hint there, and every message would wait for the judge and pay for it."
+					}
 				}
 			]
 		},
@@ -1905,6 +1918,42 @@
 						"uk-UA": "Чекати щонайбільше",
 						"tr-TR": "En fazla bekleme",
 						"fa-IR": "حداکثر انتظار"
+					}
+				},
+				{
+					"key": "askUnattended",
+					"kind": "boolean",
+					"default": false,
+					"label": {
+						"zh": "无人值守的运行也判定要开哪些能力",
+						"en": "Also choose capabilities in unattended runs"
+					},
+					"help": {
+						"zh": "无人值守指 mu --print 和 json 模式的一次性运行。默认不问：能力照样隐藏，开工前也不等。",
+						"en": "Unattended means a one-shot mu --print or json-mode run. Off by default: capabilities stay hidden, and the turn doesn't wait."
+					}
+				},
+				{
+					"key": "unattendedHidden",
+					"kind": "list",
+					"default": [
+						"delegate",
+						"apply_patch_from",
+						"browse",
+						"locate",
+						"remember",
+						"find_skill",
+						"find_capability",
+						"hive",
+						"mu-browser"
+					],
+					"label": {
+						"zh": "无人值守的运行里不放进请求的工具和技能",
+						"en": "Tools and skills left out of unattended runs"
+					},
+					"help": {
+						"zh": "按名字写。这些在一次性运行里几乎没人用，却每次请求都要带上。用命令点名的（比如 /hive）照样保留；清空就全带上。",
+						"en": "By name. One-shot runs almost never use them, and each one is in every request. One you call for by its command (such as /hive) stays. Empty keeps them all."
 					}
 				}
 			]
@@ -2377,6 +2426,19 @@
 						"tr-TR": "Tur sonunda deneyimlerin dikkate alınıp alınmadığını kontrol et",
 						"fa-IR": "بررسی در پایان نوبت که آیا به تجربه‌ها عمل شده است"
 					}
+				},
+				{
+					"key": "unattendedWrites",
+					"kind": "boolean",
+					"default": false,
+					"label": {
+						"zh": "无人值守的运行也学新经验",
+						"en": "Also learn new lessons in unattended runs"
+					},
+					"help": {
+						"zh": "无人值守指 mu --print 和 json 模式的一次性运行。默认只读已有的经验，不从纠正、脱困和子代理报告里学；remember 工具由能力目录拿掉。",
+						"en": "Unattended means a one-shot mu --print or json-mode run. Off by default: kept lessons are still read, but nothing is learned from corrections, ways out or subagent reports. The capability catalog leaves out the remember tool."
+					}
 				}
 			]
 		},
@@ -2523,6 +2585,19 @@
 						"uk-UA": "Коли у проєкту стільки чернеток в очікуванні, нові не створюються, доки ви їх не переглянете.",
 						"tr-TR": "Bir projede bu kadar taslak beklediğinde, siz bakana kadar yenisi yapılmaz.",
 						"fa-IR": "وقتی یک پروژه این تعداد پیش‌نویس منتظر داشته باشد، تا وقتی آن‌ها را نبینید پیش‌نویس تازه‌ای ساخته نمی‌شود."
+					}
+				},
+				{
+					"key": "unattended",
+					"kind": "boolean",
+					"default": false,
+					"label": {
+						"zh": "无人值守的运行也起草技能",
+						"en": "Also draft skills in unattended runs"
+					},
+					"help": {
+						"zh": "无人值守指 mu --print 和 json 模式的一次性运行。默认不起草：草稿要有人审，起草还会让运行结束后多等一次模型调用。",
+						"en": "Unattended means a one-shot mu --print or json-mode run. Off by default: a draft needs someone to review it, and writing one keeps the run going for another model call."
 					}
 				}
 			]
@@ -2686,6 +2761,41 @@
 						"tr-TR": "/permissions ile bir mod seçtiğinizde son seçiminiz kullanılır.",
 						"fa-IR": "وقتی با /permissions حالتی انتخاب کنید، آخرین انتخابتان به کار می‌رود."
 					}
+				},
+				{
+					"key": "readOnlyChains",
+					"kind": "boolean",
+					"default": true,
+					"label": {
+						"zh": "只读命令串直接执行",
+						"en": "Read-only command chains go ahead",
+						"zh-TW": "唯讀命令串直接執行",
+						"ja-JP": "読み取り専用コマンドの連結はそのまま実行",
+						"ko-KR": "읽기 전용 명령 묶음은 바로 실행",
+						"de-DE": "Ketten von Nur-Lese-Befehlen laufen ohne Rückfrage",
+						"fr-FR": "Les chaînes de commandes en lecture seule s’exécutent",
+						"es-ES": "Las cadenas de comandos de solo lectura se ejecutan",
+						"pt-BR": "Cadeias de comandos somente leitura seguem adiante",
+						"ru-RU": "Цепочки команд только для чтения выполняются сразу",
+						"uk-UA": "Ланцюжки команд лише для читання виконуються одразу",
+						"tr-TR": "Salt okunur komut zincirleri sorulmadan çalışır",
+						"fa-IR": "زنجیره‌های فرمان فقط‌خواندنی بی‌پرسش اجرا می‌شوند"
+					},
+					"help": {
+						"zh": "只由只读命令用 ;、&&、|| 或 | 连起来的命令（如 pwd && ls -la; git status），和单条只读命令一样直接执行，不问判定器也不问你。可以带 2>/dev/null、2>&1 这类丢掉输出的重定向；写文件的重定向、sed -i、tee、带 -exec 或 -delete 的 find 都不算只读。关掉后只有单条只读命令或管道直接执行。",
+						"en": "Commands made only of read-only commands joined by ;, &&, || or | (such as pwd && ls -la; git status) run without asking the judge or you, like a single read-only command. They may throw output away with 2>/dev/null or 2>&1; a redirect that writes a file, sed -i, tee or find with -exec or -delete is not read-only. Off: only a single read-only command or pipeline goes ahead.",
+						"zh-TW": "只由唯讀命令用 ;、&&、|| 或 | 連起來的命令（如 pwd && ls -la; git status），和單條唯讀命令一樣直接執行，不問判定器也不問你。可以帶 2>/dev/null、2>&1 這類丟掉輸出的重導向；寫檔案的重導向、sed -i、tee、帶 -exec 或 -delete 的 find 都不算唯讀。關掉後只有單條唯讀命令或管線直接執行。",
+						"ja-JP": "読み取り専用コマンドだけを ;、&&、|| や | でつないだコマンド（pwd && ls -la; git status など）は、単独の読み取り専用コマンドと同じく、判定器にもあなたにも聞かずに実行します。2>/dev/null や 2>&1 のように出力を捨てるリダイレクトは使えます。ファイルに書くリダイレクト、sed -i、tee、-exec や -delete 付きの find は読み取り専用ではありません。オフ：単独の読み取り専用コマンドかパイプラインだけがそのまま実行されます。",
+						"ko-KR": "읽기 전용 명령만 ;, &&, || 또는 |로 이은 명령(예: pwd && ls -la; git status)은 단일 읽기 전용 명령처럼 판정기에도 당신에게도 묻지 않고 실행합니다. 2>/dev/null, 2>&1처럼 출력을 버리는 리디렉션은 괜찮습니다. 파일에 쓰는 리디렉션, sed -i, tee, -exec나 -delete가 붙은 find는 읽기 전용이 아닙니다. 끄면: 단일 읽기 전용 명령이나 파이프라인만 바로 실행됩니다.",
+						"de-DE": "Befehle, die nur aus Nur-Lese-Befehlen bestehen, verbunden mit ;, &&, || oder | (etwa pwd && ls -la; git status), laufen wie ein einzelner Nur-Lese-Befehl, ohne den Judge oder dich zu fragen. Sie dürfen Ausgaben mit 2>/dev/null oder 2>&1 verwerfen; eine Umleitung, die eine Datei schreibt, sed -i, tee oder find mit -exec oder -delete ist nicht nur lesend. Aus: Nur ein einzelner Nur-Lese-Befehl oder eine Pipeline läuft ohne Rückfrage.",
+						"fr-FR": "Les commandes faites uniquement de commandes en lecture seule reliées par ;, &&, || ou | (comme pwd && ls -la; git status) s’exécutent sans demander au juge ni à vous, comme une seule commande en lecture seule. Elles peuvent jeter la sortie avec 2>/dev/null ou 2>&1 ; une redirection qui écrit un fichier, sed -i, tee ou find avec -exec ou -delete n’est pas en lecture seule. Désactivé : seule une commande ou un pipeline en lecture seule s’exécute.",
+						"es-ES": "Los comandos formados solo por comandos de solo lectura unidos con ;, &&, || o | (como pwd && ls -la; git status) se ejecutan sin preguntar al juez ni a ti, igual que un único comando de solo lectura. Pueden descartar la salida con 2>/dev/null o 2>&1; una redirección que escribe un archivo, sed -i, tee o find con -exec o -delete no es de solo lectura. Desactivado: solo se ejecuta sin preguntar un único comando o pipeline de solo lectura.",
+						"pt-BR": "Comandos feitos só de comandos somente leitura ligados por ;, &&, || ou | (como pwd && ls -la; git status) rodam sem perguntar ao juiz nem a você, como um único comando somente leitura. Podem descartar a saída com 2>/dev/null ou 2>&1; um redirecionamento que grava um arquivo, sed -i, tee ou find com -exec ou -delete não é somente leitura. Desligado: só um único comando ou pipeline somente leitura segue sem perguntar.",
+						"ru-RU": "Команды, составленные только из команд для чтения и соединённые через ;, &&, || или | (например, pwd && ls -la; git status), выполняются без вопроса судье и вам, как одна команда только для чтения. Они могут отбрасывать вывод через 2>/dev/null или 2>&1; перенаправление в файл, sed -i, tee или find с -exec или -delete не считаются чтением. Выключено: без вопроса выполняется только одна команда или конвейер только для чтения.",
+						"uk-UA": "Команди, складені лише з команд для читання і з’єднані через ;, &&, || або | (наприклад, pwd && ls -la; git status), виконуються без питання до судді й до вас, як одна команда лише для читання. Вони можуть відкидати вивід через 2>/dev/null або 2>&1; перенаправлення у файл, sed -i, tee чи find з -exec або -delete не вважаються читанням. Вимкнено: без питання виконується лише одна команда або конвеєр лише для читання.",
+						"tr-TR": "Yalnızca salt okunur komutlardan oluşan ve ;, &&, || ya da | ile bağlanan komutlar (ör. pwd && ls -la; git status), tek bir salt okunur komut gibi hakeme de size de sorulmadan çalışır. Çıktıyı 2>/dev/null veya 2>&1 ile atabilirler; dosyaya yazan bir yönlendirme, sed -i, tee ya da -exec veya -delete içeren find salt okunur sayılmaz. Kapalı: yalnızca tek bir salt okunur komut ya da boru hattı sorulmadan çalışır.",
+						"fa-IR": "فرمان‌هایی که فقط از فرمان‌های فقط‌خواندنی ساخته شده‌اند و با ; یا && یا || یا | به هم وصل‌اند (مثل pwd && ls -la; git status)، مثل یک فرمان فقط‌خواندنی، بی‌پرسش از داور یا شما اجرا می‌شوند. می‌توانند خروجی را با 2>/dev/null یا 2>&1 دور بریزند؛ تغییر مسیری که در فایل می‌نویسد، sed -i، tee یا find با -exec یا -delete فقط‌خواندنی نیست. خاموش: فقط یک فرمان یا خط لوله‌ی فقط‌خواندنی بی‌پرسش اجرا می‌شود."
+					}
 				}
 			]
 		},
@@ -2795,6 +2905,41 @@
 						"uk-UA": "Чекати щонайбільше",
 						"tr-TR": "En fazla bekleme",
 						"fa-IR": "حداکثر انتظار"
+					}
+				},
+				{
+					"key": "skipReadOnly",
+					"kind": "boolean",
+					"default": true,
+					"label": {
+						"zh": "只读命令不对照",
+						"en": "Skip read-only commands",
+						"zh-TW": "唯讀命令不對照",
+						"ja-JP": "読み取り専用コマンドは照合しない",
+						"ko-KR": "읽기 전용 명령은 대조하지 않음",
+						"de-DE": "Nur-Lese-Befehle überspringen",
+						"fr-FR": "Ignorer les commandes en lecture seule",
+						"es-ES": "Omitir los comandos de solo lectura",
+						"pt-BR": "Pular comandos somente leitura",
+						"ru-RU": "Пропускать команды только для чтения",
+						"uk-UA": "Пропускати команди лише для читання",
+						"tr-TR": "Salt okunur komutları atla",
+						"fa-IR": "از فرمان‌های فقط‌خواندنی بگذر"
+					},
+					"help": {
+						"zh": "只读的 shell 命令（ls、git status、cat … | grep …，以及它们连成的命令串）不拿去对照约束，和 read、grep 工具一样。",
+						"en": "Read-only shell commands (ls, git status, cat … | grep …, and chains of them) aren't checked against your constraints, just like the read and grep tools.",
+						"zh-TW": "唯讀的 shell 命令（ls、git status、cat … | grep …，以及它們連成的命令串）不拿去對照約束，和 read、grep 工具一樣。",
+						"ja-JP": "読み取り専用のシェルコマンド（ls、git status、cat … | grep …、それらの連結）は、read や grep ツールと同じく、制約と照合しません。",
+						"ko-KR": "읽기 전용 셸 명령(ls, git status, cat … | grep …, 그리고 이들의 묶음)은 read, grep 도구처럼 제약 조건과 대조하지 않습니다.",
+						"de-DE": "Nur lesende Shell-Befehle (ls, git status, cat … | grep … und Ketten davon) werden nicht gegen deine Vorgaben geprüft, genau wie die Werkzeuge read und grep.",
+						"fr-FR": "Les commandes shell en lecture seule (ls, git status, cat … | grep …, et leurs chaînes) ne sont pas vérifiées contre vos contraintes, comme les outils read et grep.",
+						"es-ES": "Los comandos de shell de solo lectura (ls, git status, cat … | grep … y sus cadenas) no se comprueban contra tus restricciones, igual que las herramientas read y grep.",
+						"pt-BR": "Comandos de shell somente leitura (ls, git status, cat … | grep … e cadeias deles) não são conferidos com suas restrições, assim como as ferramentas read e grep.",
+						"ru-RU": "Команды оболочки только для чтения (ls, git status, cat … | grep … и их цепочки) не сверяются с вашими ограничениями, как и инструменты read и grep.",
+						"uk-UA": "Команди оболонки лише для читання (ls, git status, cat … | grep … та їхні ланцюжки) не звіряються з вашими обмеженнями, як і інструменти read і grep.",
+						"tr-TR": "Salt okunur kabuk komutları (ls, git status, cat … | grep … ve bunların zincirleri), read ve grep araçları gibi kısıtlarınıza karşı denetlenmez.",
+						"fa-IR": "فرمان‌های پوسته‌ی فقط‌خواندنی (ls، git status، cat … | grep … و زنجیره‌هایشان) مثل ابزارهای read و grep با محدودیت‌های شما سنجیده نمی‌شوند."
 					}
 				}
 			]
@@ -4439,6 +4584,19 @@
 						"uk-UA": "Вікно спостереження",
 						"tr-TR": "Gözlem penceresi",
 						"fa-IR": "پنجرهٔ مشاهده"
+					}
+				},
+				{
+					"key": "unattended",
+					"kind": "boolean",
+					"default": false,
+					"label": {
+						"zh": "无人值守的运行也判断跑偏",
+						"en": "Also check for drift in unattended runs"
+					},
+					"help": {
+						"zh": "无人值守指 mu --print 和 json 模式的一次性运行。默认不问；发现原地打转的规则照常生效。",
+						"en": "Unattended means a one-shot mu --print or json-mode run. Off by default. The rule that catches going in circles still applies."
 					}
 				}
 			]

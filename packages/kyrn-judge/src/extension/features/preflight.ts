@@ -18,6 +18,7 @@ import {
 	type VerdictState,
 	verdictData,
 } from "./preflight-view.ts";
+import { isUnattended } from "./unattended.ts";
 import { judgeDisplayName } from "./welcome.ts";
 
 const LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh", "max"] as const;
@@ -164,6 +165,8 @@ export function verdictStateOf(staged: {
  * the judge reads it, the verdict shows there the moment it lands, and only
  * then does the message move into the chat, with the verdict as a line under
  * it that expands to every answer the judge gave.
+ *
+ * An unattended run (`mu --print`, json mode; see `unattended.ts`) is not asked about.
  */
 export function registerPreflight(runtime: KyrnRuntime): void {
 	const options = runtime.options("preflight", {
@@ -174,6 +177,11 @@ export function registerPreflight(runtime: KyrnRuntime): void {
 		/** Show the wait and the verdict in the terminal UI. */
 		show: true,
 		waitMs: 4000,
+		/**
+		 * Ask in a `mu --print` or json run too. Off by default: there the verdict buys a hint that is rarely
+		 * followed, for judge tokens and up to `waitMs` before every prompt.
+		 */
+		unattended: false,
 	});
 	if (!options.enabled) return;
 	const { pi } = runtime;
@@ -297,6 +305,11 @@ export function registerPreflight(runtime: KyrnRuntime): void {
 			// Whatever the last message left on screen or in flight is no longer about the current one.
 			closePanel(ctx);
 			staged = undefined;
+			if (!options.unattended && isUnattended(ctx)) {
+				// The turn is still counted, and what else is asked about the message is asked now.
+				runtime.startTurnWork(event.text);
+				return { action: "continue" as const };
+			}
 			const judged = judgedText(event.text, pi.getCommands());
 			if (judged === undefined) return { action: "continue" as const };
 			const input: PreflightInput = {

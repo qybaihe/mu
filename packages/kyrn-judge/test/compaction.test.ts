@@ -11,6 +11,7 @@ import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import type { KyrnPresentationEvent } from "../src/extension/presentation.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
 import type { Answer } from "../src/types.ts";
+import { attended } from "./attended.ts";
 
 const long = (label: string, lines = 60) =>
 	Array.from({ length: lines }, (_, index) => `${label} line ${index}`).join("\n");
@@ -185,7 +186,7 @@ describe("summary-free compaction in a session", () => {
 					provider,
 					onPresentation: (event) => presentation.push(event),
 					mode: "active",
-					config: parseConfig({ features: { memory: false, admission: false, compaction: true } }),
+					config: parseConfig({ features: attended({ memory: false, admission: false, compaction: true }) }),
 				}),
 			],
 		});
