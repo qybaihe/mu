@@ -73,8 +73,8 @@ The feature column names the switch in `features` that turns the whole behavior 
 
 | Decision point | Name | What it decides | Feature |
 | --- | --- | --- | --- |
-| `swarm.routing` | Subagent routing | Picks a role for each delegated task, and a model tier and thinking level based on difficulty. | [`swarm`](features.md#swarm) |
-| `swarm.patch` | Subagent patch scope check | When an isolated subagent hands back a patch, judges from the task, the changed paths and the line counts whether it stays within scope and which files look unrelated. Gives the main agent one line of advice; it never blocks. | [`swarm`](features.md#swarm) |
-| `hive.publish` | Hive: publishing findings | Decides whether a bee's finding is worth putting on the board for the others. | [`hive`](features.md#hive) |
-| `hive.deliver` | Hive: delivery | Decides whether a finding on the board matters to a bee's current work; only then is it delivered. | [`hive`](features.md#hive) |
+| `swarm.routing` | Subagent routing | Picks a role for each delegated task that doesn't name one. With a model ladder set, it also picks a model tier and thinking level based on difficulty. When every role is named and there's no ladder, nothing is asked. | [`swarm`](features.md#swarm) |
+| `swarm.patch` | Subagent patch scope check | When an isolated subagent hands back a patch, judges from the task, the changed paths and the line counts whether it stays within scope and which files look unrelated. Gives the main agent one line of advice; it never blocks. Off by default: the result already lists every changed file with its line counts. | [`swarm`](features.md#swarm) |
+| `hive.publish` | Hive: publishing findings | Decides whether what a bee said is worth putting on the board for the others. A finding that starts with FOUND: or DEAD END: is published without asking. | [`hive`](features.md#hive) |
+| `hive.deliver` | Hive: delivery | Decides whether a finding on the board matters to a bee's current work; only then is it delivered. When the judge can't answer, it's delivered anyway, up to each bee's limit. | [`hive`](features.md#hive) |
 | `hive.relate` | Hive: corrections | How a new finding relates to an earlier one on the board: it replaces it, contradicts it, supports it or is unrelated. A replaced finding is withdrawn and every bee that heard it is told; a contradiction keeps both sides for a bee to settle. | [`hive`](features.md#hive) |

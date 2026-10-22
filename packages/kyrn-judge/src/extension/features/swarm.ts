@@ -7,7 +7,7 @@ import { basename, join } from "node:path";
 import { getAgentDir, type Theme } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
-import { swarmRouting } from "../../decisions/swarm-routing.ts";
+import { type RoutingInput, type RoutingOutcome, swarmRouting } from "../../decisions/swarm-routing.ts";
 import { say } from "../../language.ts";
 import { stopPlan } from "../../platform.ts";
 import {
@@ -95,6 +95,41 @@ export function thinkingForRoute(route: {
 		return route.sessionThinking as AgentThinking;
 	}
 	return route.judged;
+}
+
+/**
+ * Whether the judge's difficulty and reasoning ratings can change anything for a task: with a model ladder they
+ * pick its rung, and they set the thinking of a role that runs on a model of its own without a thinking pin
+ * (`thinkingForRoute`). `roles` are the roles that may take the task. Otherwise the call would be wasted.
+ */
+export function ratingMatters(ladder: readonly string[], roles: readonly (AgentDefinition | undefined)[]): boolean {
+	return ladder.length > 0 || roles.some((agent) => agent?.model !== undefined && agent.thinking === undefined);
+}
+
+/**
+ * Routes the tasks that need the judge, in one batch, and gives the others the fallback without a call: a task
+ * whose role is settled and whose ratings could change nothing has nothing to ask.
+ */
+export async function routeTasks(
+	runtime: KyrnRuntime,
+	inputs: readonly RoutingInput[],
+	signal: AbortSignal | undefined,
+): Promise<RoutingOutcome[]> {
+	const asks = (input: RoutingInput) => Object.keys(swarmRouting.questionsFor?.(input) ?? {}).length > 0;
+	const asked = inputs.flatMap((input, index) => (asks(input) ? [index] : []));
+	const routes =
+		asked.length > 0
+			? await runtime.engine.decideMany(
+					swarmRouting,
+					asked.map((index) => inputs[index]),
+					{ signal },
+				)
+			: [];
+	return inputs.map((input, index) => {
+		const at = asked.indexOf(index);
+		// The verdict whatever the mode: swarm.routing acts in shadow too (`actsInShadow`).
+		return at >= 0 ? routes[at].outcome : swarmRouting.fallback(input);
+	});
 }
 
 function piInvocation(args: string[]): { command: string; args: string[] } {
@@ -533,14 +568,18 @@ export function registerSwarm(runtime: KyrnRuntime, runner: SwarmRunner = spawnR
 				tasks.map((task) => `${task.title}: ${task.instructions}`),
 				signal,
 			);
-			const routes = await runtime.engine.decideMany(
-				swarmRouting,
-				tasks.map((task) => ({
-					task: clip(`${task.title}: ${task.instructions}`, 600),
-					// A role the caller named is settled, so the judge is only asked how hard the task is.
-					agents: task.agent && byName.has(task.agent) ? undefined : menu,
-				})),
-				{ signal },
+			const routes = await routeTasks(
+				runtime,
+				tasks.map((task) => {
+					const named = task.agent ? byName.get(task.agent) : undefined;
+					return {
+						task: clip(`${task.title}: ${task.instructions}`, 600),
+						// A role the caller named is settled, so the judge is only asked how hard the task is, if that matters.
+						agents: named ? undefined : menu,
+						rate: ratingMatters(options.models, named ? [named] : roles),
+					};
+				}),
+				signal,
 			);
 			const known = (await lessons?.catch(() => undefined)) ?? [];
 			tasks.forEach((task, index) => {
@@ -549,12 +588,10 @@ export function registerSwarm(runtime: KyrnRuntime, runner: SwarmRunner = spawnR
 			});
 			const current = ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined;
 			const sessionThinking = pi.getThinkingLevel();
-			const assignments: SwarmAssignment[] = routes.map((route, index) => {
+			const assignments: SwarmAssignment[] = routes.map((verdict, index) => {
 				const named = tasks[index].agent ? byName.get(tasks[index].agent ?? "") : undefined;
-				// The judge routes whatever the decision mode: a delegated task has no "unchanged behaviour" to fall back to.
-				const judged = route.judged?.agent ? byName.get(route.judged.agent) : undefined;
+				const judged = verdict.agent ? byName.get(verdict.agent) : undefined;
 				const agent = named ?? judged ?? byName.get(options.defaultAgent);
-				const verdict = route.judged ?? route.outcome;
 				const model = agent?.model ?? pickModel(options.models, verdict.strength) ?? current;
 				return {
 					agent,

@@ -140,7 +140,8 @@ export function phaseByRule(input: BoardInput): BoardPhase {
 export const boardRead = defineDecision({
 	id: "board.read",
 	// 2: the judge also picks, among what happened, the news the writer is given. 3: it sees the sub-agents at work.
-	version: 3,
+	// 4: needs_user only once the agent stopped; unsure about a change with nothing new is no change.
+	version: 4,
 	cacheImpact: "none",
 	latency: "background",
 	capabilities: "relate",
@@ -154,11 +155,15 @@ export const boardRead = defineDecision({
 					"What is the agent doing right now, judging by `steps`, `latest` and, when present, `sub_agents`?",
 				criteria: PHASES,
 			},
-			needs_user: {
+		};
+		// Only once the agent stopped: a wait in the middle of a run is a permission request, and that is on the
+		// board by rule the moment it is asked. Mid-run, the judge never put it above 0.3 in 82 looks.
+		if (input.ended) {
+			questions.needs_user = {
 				type: "boolean",
 				instructions: "Is the agent waiting for the user to confirm, decide or provide something?",
-			},
-		};
+			};
+		}
 		if (open.length > 1) {
 			questions.focus = {
 				type: "choice",
@@ -207,12 +212,16 @@ export const boardRead = defineDecision({
 		const picked = choiceOf(answers.phase) as BoardPhase | undefined;
 		const open = input.items.filter((item) => !item.done);
 		const focus = open.length === 1 ? open[0].id : (choiceOf(answers.focus) ?? null);
-		const needsUser = verdict(answers.needs_user) === "yes";
+		const needsUser = input.ended && verdict(answers.needs_user) === "yes";
 		const last = input.last;
-		// Unsure counts as changed: a board one update late is worse than one update too many.
+		const told = verdict(answers.changed);
+		// Unsure counts as changed when something happened or the run ended: a board one update late is worse than
+		// one update too many. With nothing new it does not: a look on the clock while sub-agents worked wrote the
+		// same board again every 20 s (unsure on 67 of 77 looks, 2026-10).
 		const changed =
 			!last ||
-			verdict(answers.changed) !== "no" ||
+			told === "yes" ||
+			(told === "unsure" && ((input.events?.length ?? 0) > 0 || input.ended)) ||
 			(picked !== undefined && picked !== last.phase) ||
 			focus !== (last.focus ?? null);
 		const events = (input.events ?? []).slice(-MAX_EVENTS);

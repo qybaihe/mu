@@ -10,6 +10,9 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 - **The terminal's `/login` no longer offers a Claude subscription sign-in either**, so the command line matches the desktop app: Anthropic doesn't allow other apps to offer one. `/login anthropic` goes straight to the API key. A sign-in made before keeps working until `/logout`.
 - **A Claude subscription token is refused where an API key is asked for.** `mu setup` and the desktop app's first-run guide recognize a token from `claude setup-token` (`sk-ant-oat…`), send it nowhere and ask for an Anthropic API key instead.
+- The plain-language board makes fewer model calls: it isn't written in `mu --print` or json mode, where nobody sees it, and while subagents work it updates only when one of them starts, finishes or fails.
+- Subagents and hives ask the judge less: no difficulty questions without a model ladder, and none at all when every role is named. Hive bees think at the session's level like other subagents, share their `FOUND:` and `DEAD END:` notes without waiting for the judge, and still hear from each other when the judge can't answer. The subagent patch scope check is off by default.
+- `browse` with a goal says up front when the configured judge can't drive the browser, instead of stopping after the first step.
 
 ## [0.1.10] - 2026-10-22
 

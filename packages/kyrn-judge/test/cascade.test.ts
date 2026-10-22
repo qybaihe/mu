@@ -264,7 +264,9 @@ describe("judge configuration", () => {
 			judges: [1],
 		});
 		expect(config.tiers).toEqual(["jev"]);
-		expect(config.modes).toEqual({ default: "active", "tool.admission": "active" });
+		// swarm.patch is off unless mu.json says otherwise.
+		expect(config.modes).toEqual({ default: "active", "swarm.patch": "off", "tool.admission": "active" });
+		expect(parseConfig({ modes: { "swarm.patch": "active" } }).modes["swarm.patch"]).toBe("active");
 		expect(config.judges).toEqual({});
 	});
 });

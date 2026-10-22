@@ -466,8 +466,8 @@ export const MANIFEST: HarnessManifest = {
 			feature: "swarm",
 			title: { zh: "子代理分派", en: "Subagent routing" },
 			summary: {
-				zh: "为每个委派任务挑选角色，并按难度选择模型档位和思考等级。",
-				en: "Picks a role for each delegated task, and a model tier and thinking level based on difficulty.",
+				zh: "为每个没指定角色的委派任务挑选角色；设了模型梯队时，再按难度选择模型档位和思考等级。角色都已指定、又没有梯队时不提问。",
+				en: "Picks a role for each delegated task that doesn't name one. With a model ladder set, it also picks a model tier and thinking level based on difficulty. When every role is named and there's no ladder, nothing is asked.",
 			},
 		},
 		{
@@ -476,8 +476,8 @@ export const MANIFEST: HarnessManifest = {
 			feature: "swarm",
 			title: { zh: "子代理补丁的范围检查", en: "Subagent patch scope check" },
 			summary: {
-				zh: "隔离的子代理交回补丁时，只看任务、改动的路径和行数，判断改动是否超出任务、哪些文件与任务无关；只给主代理一句提示，从不拦截。",
-				en: "When an isolated subagent hands back a patch, judges from the task, the changed paths and the line counts whether it stays within scope and which files look unrelated. Gives the main agent one line of advice; it never blocks.",
+				zh: "隔离的子代理交回补丁时，只看任务、改动的路径和行数，判断改动是否超出任务、哪些文件与任务无关；只给主代理一句提示，从不拦截。默认关闭：交回的结果本来就列出了每个改动的文件和行数。",
+				en: "When an isolated subagent hands back a patch, judges from the task, the changed paths and the line counts whether it stays within scope and which files look unrelated. Gives the main agent one line of advice; it never blocks. Off by default: the result already lists every changed file with its line counts.",
 			},
 		},
 		{
@@ -486,8 +486,8 @@ export const MANIFEST: HarnessManifest = {
 			feature: "hive",
 			title: { zh: "蜂群：发布发现", en: "Hive: publishing findings" },
 			summary: {
-				zh: "一只蜂的发现值不值得放到公告板上给其他蜂看。",
-				en: "Decides whether a bee's finding is worth putting on the board for the others.",
+				zh: "一只蜂说的话值不值得放到公告板上给其他蜂看。以 FOUND: 或 DEAD END: 开头的发现直接发布，不用问。",
+				en: "Decides whether what a bee said is worth putting on the board for the others. A finding that starts with FOUND: or DEAD END: is published without asking.",
 			},
 		},
 		{
@@ -496,8 +496,8 @@ export const MANIFEST: HarnessManifest = {
 			feature: "hive",
 			title: { zh: "蜂群：投递", en: "Hive: delivery" },
 			summary: {
-				zh: "公告板上的一条发现与某只蜂手头的工作有没有关系，有关系才送达。",
-				en: "Decides whether a finding on the board matters to a bee's current work; only then is it delivered.",
+				zh: "公告板上的一条发现与某只蜂手头的工作有没有关系，有关系才送达。判定器答不上来时照样送达（不超过每只蜂的上限）。",
+				en: "Decides whether a finding on the board matters to a bee's current work; only then is it delivered. When the judge can't answer, it's delivered anyway, up to each bee's limit.",
 			},
 		},
 		{
@@ -1677,6 +1677,26 @@ export const MANIFEST: HarnessManifest = {
 						en: "After that, stock phrases are used.",
 					},
 				},
+				{
+					key: "unattended",
+					kind: "boolean",
+					default: false,
+					label: { zh: "一次性运行里也写看板", en: "Also in one-shot runs" },
+					help: {
+						zh: "mu --print 和 json 模式里没人看看板，默认不写，省下判定器和写看板模型的调用。",
+						en: "Nobody watches the board in mu --print or json mode, so by default it isn't written there, saving the judge and writer calls.",
+					},
+				},
+				{
+					key: "followAlways",
+					kind: "boolean",
+					default: false,
+					label: { zh: "子代理干活时按时查看", en: "Check on subagents on a timer" },
+					help: {
+						zh: "默认只在有子代理开始、做完或出错时才查看；打开后不管有没有变化，每隔一段时间都看一次。",
+						en: "By default the board checks only when a subagent starts, finishes or fails. On: it checks at every interval, changed or not.",
+					},
+				},
 			],
 		},
 		{
@@ -1916,13 +1936,33 @@ export const MANIFEST: HarnessManifest = {
 				{
 					key: "maxRelatedPerNote",
 					kind: "number",
-					default: 6,
+					default: 2,
 					min: 0,
 					max: 30,
 					label: { zh: "一条新发现最多对照几条旧发现", en: "Max earlier findings to compare a new one against" },
 					help: {
 						zh: "只对照有共同词的旧发现。0 表示不做纠正。",
 						en: "Only those sharing words with it. 0 turns corrections off.",
+					},
+				},
+				{
+					key: "publishMarked",
+					kind: "boolean",
+					default: true,
+					label: { zh: "带标记的发现直接发布", en: "Publish marked findings directly" },
+					help: {
+						zh: "蜂以 FOUND: 或 DEAD END: 开头说的话直接上公告板，不问判定器。",
+						en: "What a bee says starting with FOUND: or DEAD END: goes on the board without asking the judge.",
+					},
+				},
+				{
+					key: "publishToolOutputs",
+					kind: "boolean",
+					default: false,
+					label: { zh: "工具输出也拿去问要不要发布", en: "Consider tool output for the board too" },
+					help: {
+						zh: "默认只看蜂自己说的话。",
+						en: "By default only what a bee says is considered.",
 					},
 				},
 				{
