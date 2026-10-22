@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { ClassifierQuestion, JsonObject } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { CapabilityCatalog } from "../catalog/catalog.ts";
-import { featureOptions, type KyrnConfig } from "../config.ts";
+import { DEFAULT_CONFIG, featureOptions, type KyrnConfig } from "../config.ts";
 import { DecisionEngine, type DecisionMode } from "../decision.ts";
 import type { PreflightOutcome, TaskFrame } from "../decisions/input-preflight.ts";
 import type { NotifyFn } from "../decisions/notify-routing.ts";
@@ -251,6 +251,9 @@ export class KyrnRuntime {
 			ledger: new CompositeLedger([this.memory, sessionLedger]),
 			defaultMode: config.modes.default ?? "active",
 			modes: Object.fromEntries(Object.entries(config.modes).filter(([specId]) => specId !== "default")),
+			builtInModes: Object.fromEntries(
+				Object.entries(DEFAULT_CONFIG.modes).filter(([specId]) => specId !== "default"),
+			),
 			recordState: config.recordState,
 			// Which turn asked, and under which version of the task: a verdict about "the goal" is only as good as that goal.
 			origin: () => ({ turn: this.userTurns, frame: this.frameState?.frame?.version ?? 0 }),

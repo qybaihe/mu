@@ -74,7 +74,7 @@ describe('kernel summary', () => {
     expect(summarize(settings({ harness: { status: 'missing' } }))).toMatchObject({ active: 0, total: 0 });
   });
 
-  it('counts a point with a built-in mode by that mode, whatever the default, until mu.json sets one for it', () => {
+  it('counts a point with a built-in mode by that mode until mu.json sets one for it, and off with the default off', () => {
     const harness = settings().harness;
     if (harness.status !== 'ok') throw new Error('no manifest');
     const decisions = harness.manifest.decisions.map((item) =>
@@ -83,8 +83,8 @@ describe('kernel summary', () => {
     const shadowed = (overrides: Partial<KyrnSettings> = {}) =>
       settings({ harness: { status: 'ok', manifest: { ...harness.manifest, decisions } }, ...overrides });
     expect(summarize(shadowed())).toMatchObject({ active: 1, shadow: 1, total: 3 });
-    // The default mode does not reach it: the harness keeps its own mode whatever the default says.
-    expect(summarize(shadowed({ mode: 'off' }))).toMatchObject({ active: 0, shadow: 1 });
+    // With the default off, the built-in mode gives way as in the kernel: no point asks the judge.
+    expect(summarize(shadowed({ mode: 'off' }))).toMatchObject({ active: 0, shadow: 0 });
     expect(summarize(shadowed({ decisionModes: { 'turn.drift': 'active' } }))).toMatchObject({ active: 2, shadow: 0 });
   });
 });

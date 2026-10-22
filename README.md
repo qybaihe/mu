@@ -345,7 +345,7 @@ pi's own commands (`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`,
 
 ## Privacy
 
-Your keys stay on your machine. mu never downloads a model or a runtime on its own; anything that needs a download asks first. The judge sees only the fields a question needs. With no key set, those fields go to the free Jev on OpenCode Zen; `MU_JUDGE=off` or Laya keeps everything on your machine. Every verdict is logged locally, and you can read all of them. The desktop app sends no telemetry or crash reports. Details are in [SECURITY.md](SECURITY.md#what-leaves-your-machine).
+Your keys stay on your machine. mu never downloads a model or a runtime on its own; anything that needs a download asks first. The judge sees only the fields a question needs. With no key set, those fields go to the free Jev on OpenCode Zen; `mu setup --judge off` (no judge is asked; mu's features keep working on their rules), `MU_JUDGE=off` or Laya keeps everything on your machine. Every verdict is logged locally, and you can read all of them. The desktop app sends no telemetry or crash reports. Details are in [SECURITY.md](SECURITY.md#what-leaves-your-machine).
 
 ## Status and limitations
 

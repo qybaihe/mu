@@ -235,6 +235,20 @@ export function withTiers(config: Record<string, unknown>, tiers: readonly strin
 	return { ...config, tiers: [...tiers] };
 }
 
+/** Whether `mu.json` turns the judge off: the default mode "off", with which no decision point asks it. */
+export function judgeOff(config: Record<string, unknown> | undefined): boolean {
+	return isRecord(config?.modes) && config.modes.default === "off";
+}
+
+/** `config` with the judge off (`modes.default` "off"), or on again: that "off" taken out, the default back to active. */
+export function withJudge(config: Record<string, unknown>, on: boolean): Record<string, unknown> {
+	const { default: _default, ...modes } = isRecord(config.modes) ? config.modes : {};
+	if (!on) return { ...config, modes: { default: "off", ...modes } };
+	if (!judgeOff(config)) return config;
+	const { modes: _modes, ...rest } = config;
+	return Object.keys(modes).length > 0 ? { ...rest, modes } : rest;
+}
+
 // ---------------------------------------------------------------------------------------------------------------
 // .env
 // ---------------------------------------------------------------------------------------------------------------
