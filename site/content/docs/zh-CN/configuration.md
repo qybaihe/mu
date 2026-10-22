@@ -64,6 +64,12 @@ mu 看不懂的部分会退回默认值，而不是让 mu 停下。完全无法�
 
 托管判定器的密钥，每个只发给它自己的服务：`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`、`MU_JUDGE_CLM_API_KEY`。
 
+时间：
+
+| 变量 | 效果 |
+| --- | --- |
+| `MU_TIME_BUDGET_S` | 这次运行的时间预算，单位秒，从 mu 启动时算起。设了它，只思考的回复会及时打断、留出重试的时间，时间用掉 50% 和 80% 时模型会知道还剩几分钟（`features.deadline`）。评测框架按任务的超时来设；不设就什么都不变。 |
+
 启动器：
 
 | 变量 | 效果 |

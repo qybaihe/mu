@@ -33,6 +33,7 @@ import { registerCompaction } from "./features/compaction.ts";
 import { registerCompletion } from "./features/completion.ts";
 import { registerConstraints } from "./features/constraints.ts";
 import { registerContinuation } from "./features/continuation.ts";
+import { registerDeadline } from "./features/deadline.ts";
 import { registerForgetting } from "./features/forgetting.ts";
 import { registerFrame } from "./features/frame.ts";
 import { registerFreeJevNotice } from "./features/free-jev.ts";
@@ -110,6 +111,7 @@ export type FeatureName =
 	| "goal"
 	| "board"
 	| "ttsr"
+	| "deadline"
 	| "watchdog"
 	| "injection"
 	| "admission"
@@ -220,6 +222,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 			},
 		],
 		["ttsr", registerTtsr],
+		// Before the watchdog, which cuts sooner when the run has a deadline.
+		["deadline", registerDeadline],
 		["watchdog", registerWatchdog],
 		// Before the goal and completion checks: errors an edit introduced are said before "verify your change" is.
 		["lsp", registerLsp],

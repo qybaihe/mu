@@ -70,6 +70,12 @@ Judges and modes:
 
 Keys for the hosted judges, each sent only to the service it belongs to (see [Judges](judges.md#hosted-jev)): `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`, and `MU_JUDGE_CLM_API_KEY`.
 
+Time:
+
+| Variable | Effect |
+| --- | --- |
+| `MU_TIME_BUDGET_S` | The run's time budget in seconds, counted from when mu starts. With it, a reply that only thinks is cut in time for a retry, and the model is told how many minutes are left at 50% and 80% of the budget ([`features.deadline`](reference/features.md#deadline)). Benchmark harnesses set it from the task's timeout. Without it, nothing changes. |
+
 The launcher:
 
 | Variable | Effect |

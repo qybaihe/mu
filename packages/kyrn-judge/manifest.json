@@ -5069,6 +5069,51 @@
 			]
 		},
 		{
+			"name": "deadline",
+			"title": {
+				"zh": "运行时限",
+				"en": "Run deadline"
+			},
+			"summary": {
+				"zh": "知道这次运行什么时候必须结束时：只思考的回复会更早打断（见长思考重试），时间用掉 50% 和 80% 时各告诉模型还剩几分钟，第二次还提醒它先把要交的结果做好（文件写好、服务跑起来）再打磨。不问判定器。没有设时间预算就什么都不变。",
+				"en": "When mu knows when the run has to be done, a reply that only thinks is cut sooner (see Long-thinking retry), and the model is told how many minutes are left when 50% and 80% of the time has passed; the second time it is also asked to get the requested result in place (files written, services running) before polishing. No judge is asked. Without a time budget, nothing changes."
+			},
+			"defaultEnabled": true,
+			"options": [
+				{
+					"key": "budgetS",
+					"kind": "number",
+					"default": 0,
+					"min": 0,
+					"unit": {
+						"zh": "秒",
+						"en": "s"
+					},
+					"label": {
+						"zh": "一次运行的时间预算",
+						"en": "Time budget for a run"
+					},
+					"help": {
+						"zh": "从 mu 进程启动时算起，0 表示不设。环境变量 MU_TIME_BUDGET_S 优先，评测框架用它按任务的超时来设。子代理不用这个预算。",
+						"en": "Counted from when the mu process starts; 0 means none. The environment variable MU_TIME_BUDGET_S takes precedence, and a benchmark harness sets it from the task's timeout. Sub-agents ignore the budget."
+					}
+				},
+				{
+					"key": "notices",
+					"kind": "boolean",
+					"default": true,
+					"label": {
+						"zh": "告诉模型还剩多少时间",
+						"en": "Tell the model how much time is left"
+					},
+					"help": {
+						"zh": "用掉 50% 和 80% 时各说一句。正在跑的工具调用不受打扰，模型在下一步之前读到。",
+						"en": "One line at 50% and one at 80%. Tool calls under way are not interrupted; the model reads it before its next step."
+					}
+				}
+			]
+		},
+		{
 			"name": "watchdog",
 			"title": {
 				"zh": "长思考重试",
@@ -5136,6 +5181,10 @@
 						"uk-UA": "Переривати відповідь, якщо вона міркує довше",
 						"tr-TR": "Bu kadar düşündükten sonra yanıtı kes",
 						"fa-IR": "قطع پاسخ پس از این مدت فکر کردن"
+					},
+					"help": {
+						"zh": "运行有时限时（见运行时限、MU_TIME_BUDGET_S）会更早：最多等回复开始时剩余时间的一半，至少 1 分钟。",
+						"en": "With a run deadline (see Run deadline, MU_TIME_BUDGET_S) the cut can come sooner: after at most half the time left when the reply started, and never under a minute."
 					}
 				},
 				{
