@@ -18,17 +18,17 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 - Cache warming no longer asks the judge while the agent is running, so it can't drop the prompt cache in the middle of a run.
 - **Screening tool output asks the judge less.** Injection screening no longer asks about text with no sentence in it (directory listings, links, response headers), and long-output filtering no longer judges a file the agent printed (`cat`, `sed -n`, `head`…) or a page it fetched. Build and test logs are still filtered.
 - **The local judge Laya no longer screens tool output.** It was slow there and its verdicts were wrong; the next judge, or mu's rules, do it instead.
+- **`mu --print` and json-mode runs are leaner.** They skip the preflight and capability questions before the run and the drift check during it, draft no skills and learn no new lessons, and leave out tools that one-shot runs almost never use (subagents, hive, the browser, `locate`, `remember`, `find_skill`, `find_capability`): about 1.9k fewer tokens in every request. Each part can be turned back on in `mu.json`. Interactive and desktop sessions are unchanged.
+- The drift check only records by default, since its steers were mostly wrong. Skills are drafted only when the judge is at least 90% sure.
 
 ### Fixed
 
 - Reading a file page by page, or running scripts that only differ further down, no longer gets the agent told it is going in circles.
 - `mu --print` no longer stays up to 10 s after the run for a judge answer nobody waits for any more.
 - A late skill selection on the first message now takes effect from the next message, instead of every skill staying in the prompt for the whole conversation.
-
-### Fixed
-
-- **mu's own commands no longer show `[t]` in the terminal's slash menu.** pi tagged them as an extension loaded for this run only; they come with mu.
 - **`/permissions` opens on the current mode**, so pressing Enter keeps it; before, the cursor started on Full access. A long option in mu's pickers wraps under its own text.
+- A lesson the model asked to `remember` is kept when the judge gives no verdict, instead of being dropped.
+- **mu's own commands no longer show `[t]` in the terminal's slash menu.** pi tagged them as an extension loaded for this run only; they come with mu.
 
 ## [0.1.10] - 2026-10-22
 

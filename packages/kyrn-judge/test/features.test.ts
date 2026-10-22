@@ -20,6 +20,7 @@ import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import { Judge } from "../src/judge.ts";
 import { MockJudgeProvider, type MockResponder } from "../src/providers/mock.ts";
 import type { Answer } from "../src/types.ts";
+import { attended } from "./attended.ts";
 
 const yes: Answer = { type: "boolean", probability: 0.96 };
 const no: Answer = { type: "boolean", probability: 0.03 };
@@ -67,7 +68,7 @@ describe("kyrn features", () => {
 					// Each test here is about one feature; asking permission is tested in permissions.test.ts.
 					config: parseConfig({
 						modes: extra.modes,
-						features: { memory: false, permissions: { mode: "full" }, ...extra.features },
+						features: attended({ memory: false, permissions: { mode: "full" }, ...extra.features }),
 					}),
 					swarmRunner: extra.runner,
 				}),
@@ -421,10 +422,10 @@ describe("kyrn features", () => {
 						mode: "active",
 						only: ["preflight", "skills", "catalog", "memory"],
 						config: parseConfig({
-							features: {
+							features: attended({
 								skills: { minSkills: 1 },
 								memory: { path, applied: false, outcome: false },
-							},
+							}),
 						}),
 						capabilities: [
 							{
