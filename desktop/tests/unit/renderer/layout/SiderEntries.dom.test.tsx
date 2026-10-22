@@ -42,6 +42,11 @@ vi.mock('@renderer/pages/conversation/GroupedHistory', () => ({
     <div data-testid='history' data-hide-empty={String(hideEmptyState === true)} />
   ),
 }));
+// The real settings navigation loads its extension tabs over HTTP; their failures were logged after the file ended,
+// which vitest reports as an unhandled error during teardown.
+vi.mock('@renderer/pages/settings/components/SettingsSider', () => ({
+  default: () => <nav data-testid='settings-sider' />,
+}));
 vi.mock('@renderer/pages/native/components/NativeSiderGroup', () => ({ default: () => null }));
 vi.mock('@renderer/pages/native/hooks/useNativeConversations', () => ({ useNativeEnabled: () => nativeOn }));
 vi.mock('@renderer/components/layout/Sider/CommandPalette', () => ({
@@ -111,13 +116,14 @@ describe('sidebar entries', () => {
     expect(navigate).toHaveBeenCalledWith('/settings/providers');
   });
 
-  it('turns the footer button into a way back out while in the settings', () => {
+  it('turns the footer button into a way back out while in the settings', async () => {
     pathname = '/settings/judges';
     renderSider();
     expect(screen.getByTestId('sider-settings')).toHaveTextContent('common.back');
     // A plain row with its icon: filled, it would look like a second selected page beside the settings rail's.
     expect(screen.getByTestId('sider-settings').className.split(/\s+/)).not.toContain('bg-fill-2');
     // The conversations give way to the settings navigation, which loads on its own.
+    expect(await screen.findByTestId('settings-sider')).toBeInTheDocument();
     expect(screen.queryByTestId('history')).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId('sider-settings'));
     expect(navigate).toHaveBeenCalledWith('/guid');
@@ -181,9 +187,10 @@ describe('sidebar entries', () => {
     expect(setTheme).toHaveBeenCalledWith('dark');
   });
 
-  it('keeps the palette mounted in the settings, where the search row gives way', () => {
+  it('keeps the palette mounted in the settings, where the search row gives way', async () => {
     pathname = '/settings/kernel';
     renderSider();
+    expect(await screen.findByTestId('settings-sider')).toBeInTheDocument();
     expect(screen.queryByTestId('sider-search')).not.toBeInTheDocument();
     expect(screen.getByTestId('command-palette-host')).toBeInTheDocument();
   });
