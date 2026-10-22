@@ -2150,6 +2150,41 @@
 					}
 				},
 				{
+					"key": "unattendedFindWithMcp",
+					"kind": "boolean",
+					"default": true,
+					"label": {
+						"zh": "装了 MCP 服务器时，无人值守的运行保留 find_capability",
+						"en": "Keep find_capability in unattended runs when an MCP server is installed",
+						"zh-TW": "裝了 MCP 伺服器時，無人值守執行保留 find_capability",
+						"ja-JP": "MCP サーバーがあるとき、無人実行でも find_capability を残す",
+						"ko-KR": "MCP 서버가 설치되어 있으면 무인 실행에서도 find_capability 유지",
+						"de-DE": "find_capability in unbeaufsichtigten Läufen behalten, wenn ein MCP-Server installiert ist",
+						"fr-FR": "Garder find_capability lors des exécutions sans surveillance quand un serveur MCP est installé",
+						"es-ES": "Mantener find_capability en las ejecuciones desatendidas si hay un servidor MCP instalado",
+						"pt-BR": "Manter find_capability nas execuções sem supervisão quando houver um servidor MCP instalado",
+						"ru-RU": "Оставлять find_capability при запусках без присмотра, если установлен MCP-сервер",
+						"uk-UA": "Лишати find_capability в запусках без нагляду, якщо встановлено MCP-сервер",
+						"tr-TR": "Bir MCP sunucusu kuruluysa gözetimsiz çalıştırmalarda find_capability'yi tut",
+						"fa-IR": "نگه داشتن find_capability در اجراهای بی‌نظارت وقتی سرور MCP نصب است"
+					},
+					"help": {
+						"zh": "无人值守指 mu --print 和 json 模式的一次性运行。那里不问判定器，find_capability 又不在请求里，没设成常开的 MCP 服务器就用不上。开着时，只要装了这样的服务器，find_capability 就留着，说明里列出装了哪些，模型能自己打开；只有能力包时照样拿掉，请求和以前一样。",
+						"en": "Unattended means a one-shot mu --print or json-mode run. Nobody asks the judge there, so without find_capability an MCP server that isn't always open can't be reached. On: with such a server installed, find_capability stays, lists what's installed, and the model opens what it needs. With packs alone it's left out, and requests stay as they were.",
+						"zh-TW": "無人值守指 mu --print 或 json 模式的單次執行。那裡不問判定器，find_capability 又不在請求裡，沒設成常開的 MCP 伺服器就用不上。開啟時，只要裝了這樣的伺服器，find_capability 就留著，說明裡列出裝了哪些，模型能自己開啟；只有能力包時照樣拿掉，請求和以前一樣。",
+						"ja-JP": "無人実行とは mu --print や json モードの単発実行のことです。そこでは判定器に問い合わせないので、find_capability がないと、常時オープンにしていない MCP サーバーには届きません。オンにすると、そうしたサーバーがあるときは find_capability を残し、インストール済みのものを説明に列挙して、モデルが必要なものを開けるようにします。パックだけのときは従来どおり除外し、リクエストは変わりません。",
+						"ko-KR": "무인 실행은 mu --print 또는 json 모드의 단발 실행을 말합니다. 거기서는 판정기에 묻지 않으므로, find_capability가 없으면 항상 열어 두지 않은 MCP 서버에 닿을 수 없습니다. 켜 두면 그런 서버가 설치되어 있을 때 find_capability를 남기고, 설치된 것을 설명에 나열해 모델이 필요한 것을 열 수 있게 합니다. 팩만 있을 때는 전처럼 빼고, 요청도 그대로입니다.",
+						"de-DE": "Unbeaufsichtigt heißt: ein einmaliger Lauf mit mu --print oder im json-Modus. Dort wird der Judge nicht gefragt, also ist ein MCP-Server, der nicht immer offen ist, ohne find_capability nicht erreichbar. An: Ist ein solcher Server installiert, bleibt find_capability, nennt, was installiert ist, und das Modell öffnet, was es braucht. Mit Paketen allein bleibt es weg, und die Anfragen bleiben, wie sie waren.",
+						"fr-FR": "Sans surveillance désigne une exécution unique de mu --print ou en mode json. Le juge n’y est pas consulté : sans find_capability, un serveur MCP qui n’est pas toujours ouvert reste hors d’atteinte. Activé : quand un tel serveur est installé, find_capability reste, liste ce qui est installé, et le modèle ouvre ce dont il a besoin. Avec des packs seulement, il est omis et les requêtes restent les mêmes.",
+						"es-ES": "Desatendida significa una ejecución única de mu --print o en modo json. Allí no se consulta al juez, así que sin find_capability no se puede llegar a un servidor MCP que no esté siempre abierto. Activado: con un servidor así instalado, find_capability se queda, enumera lo instalado y el modelo abre lo que necesita. Con solo paquetes se excluye y las solicitudes siguen como antes.",
+						"pt-BR": "Sem supervisão significa uma execução única de mu --print ou no modo json. Lá o juiz não é consultado, então sem find_capability um servidor MCP que não esteja sempre ativo fica inalcançável. Ativado: com um servidor assim instalado, find_capability fica, lista o que está instalado, e o modelo ativa o que precisa. Só com pacotes, ele fica de fora e as solicitações continuam como antes.",
+						"ru-RU": "Без присмотра — это разовый запуск mu --print или в режиме json. Судью там не спрашивают, поэтому без find_capability до MCP-сервера, который не подключён всегда, не добраться. Включено: если такой сервер установлен, find_capability остаётся, перечисляет установленное, и модель подключает нужное. Если есть только пакеты, он исключается, и запросы остаются прежними.",
+						"uk-UA": "Без нагляду — це разовий запуск mu --print або в режимі json. Суддю там не запитують, тож без find_capability до MCP-сервера, який не відкритий завжди, не дістатися. Увімкнено: якщо такий сервер встановлено, find_capability лишається, перелічує встановлене, і модель відкриває потрібне. Якщо є лише пакети, його виключено, і запити лишаються такими, як були.",
+						"tr-TR": "Gözetimsiz, mu --print veya json modundaki tek seferlik bir çalıştırmadır. Orada hakeme sorulmaz; bu yüzden find_capability olmadan her zaman açık olmayan bir MCP sunucusuna ulaşılamaz. Açık: böyle bir sunucu kuruluysa find_capability kalır, kurulu olanları listeler ve model ihtiyaç duyduğunu açar. Yalnızca paketler varsa dışarıda bırakılır ve istekler eskisi gibi kalır.",
+						"fa-IR": "بی‌نظارت یعنی یک اجرای یک‌بارهٔ mu --print یا در حالت json. آنجا از داور پرسیده نمی‌شود، پس بدون find_capability به سرور MCPی که همیشه باز نیست نمی‌توان رسید. روشن: اگر چنین سروری نصب باشد، find_capability می‌ماند، نصب‌شده‌ها را فهرست می‌کند و مدل هرچه لازم دارد را باز می‌کند. وقتی فقط بسته‌ها هستند کنار گذاشته می‌شود و درخواست‌ها مثل قبل می‌مانند."
+					}
+				},
+				{
 					"key": "subagentsInherit",
 					"kind": "boolean",
 					"default": true,

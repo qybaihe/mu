@@ -65,6 +65,7 @@ On by default: yes. Decision points: `capability.disclosure`.
 | `waitMs` | `3000` ms | Wait at most `3000` ms. Range 500 to 30000. |
 | `askUnattended` | `false` | Also choose capabilities in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: capabilities stay hidden, and the turn doesn't wait. |
 | `unattendedHidden` | `delegate`, `apply_patch_from`, `browse`, `locate`, `remember`, `find_skill`, `find_capability`, `hive`, `mu-browser` | Tools and skills left out of unattended runs. By name. One-shot runs almost never use them, and each one is in every request. One you call for by its command (such as /hive) stays. Empty keeps them all. |
+| `unattendedFindWithMcp` | `true` | Keep find_capability in unattended runs when an MCP server is installed. Unattended means a one-shot mu --print or json-mode run. Nobody asks the judge there, so without find_capability an MCP server that isn't always open can't be reached. On: with such a server installed, find_capability stays, lists what's installed, and the model opens what it needs. With packs alone it's left out, and requests stay as they were. |
 | `subagentsInherit` | `true` | Subagents take this session's capabilities. A subagent opens the capabilities this session has open and doesn't ask the judge again; what's hidden here stays hidden there. Before this session has chosen, a subagent asks for itself as before. |
 
 ## frame

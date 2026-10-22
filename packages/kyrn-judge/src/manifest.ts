@@ -704,6 +704,19 @@ const DESCRIBED: HarnessManifest = {
 					},
 				},
 				{
+					key: "unattendedFindWithMcp",
+					kind: "boolean",
+					default: true,
+					label: {
+						zh: "装了 MCP 服务器时，无人值守的运行保留 find_capability",
+						en: "Keep find_capability in unattended runs when an MCP server is installed",
+					},
+					help: {
+						zh: "无人值守指 mu --print 和 json 模式的一次性运行。那里不问判定器，find_capability 又不在请求里，没设成常开的 MCP 服务器就用不上。开着时，只要装了这样的服务器，find_capability 就留着，说明里列出装了哪些，模型能自己打开；只有能力包时照样拿掉，请求和以前一样。",
+						en: "Unattended means a one-shot mu --print or json-mode run. Nobody asks the judge there, so without find_capability an MCP server that isn't always open can't be reached. On: with such a server installed, find_capability stays, lists what's installed, and the model opens what it needs. With packs alone it's left out, and requests stay as they were.",
+					},
+				},
+				{
 					key: "subagentsInherit",
 					kind: "boolean",
 					default: true,

@@ -153,6 +153,7 @@ describe("an unattended run (mu --print, json mode)", () => {
 			modes?: Record<string, string>;
 			runner?: SwarmRunner;
 			lessons?: string;
+			capabilities?: Capability[];
 		} = {},
 	) {
 		const provider = new MockJudgeProvider(responder);
@@ -188,7 +189,7 @@ describe("an unattended run (mu --print, json mode)", () => {
 						},
 					}),
 					only: EVERYTHING,
-					capabilities: [debuggerPack],
+					capabilities: setup.capabilities ?? [debuggerPack],
 					swarmRunner: setup.runner,
 				}),
 			],
@@ -425,8 +426,12 @@ describe("an unattended run (mu --print, json mode)", () => {
 	});
 
 	/** The first request of a run that does nothing but answer. */
-	async function firstRequest(mode: Mode, features?: Record<string, unknown>): Promise<readonly Message[]> {
-		const { harness } = await start(mode, () => ({}), { features });
+	async function firstRequest(
+		mode: Mode,
+		features?: Record<string, unknown>,
+		capabilities?: Capability[],
+	): Promise<readonly Message[]> {
+		const { harness } = await start(mode, () => ({}), { features, capabilities });
 		let first: readonly Message[] = [];
 		harness.setResponses([
 			(context) => {
@@ -457,6 +462,33 @@ describe("an unattended run (mu --print, json mode)", () => {
 		expect(section(child, "docs")).toBe(leanDocs());
 		// A sub-agent keeps the browse tool, and web_fetch still points at it.
 		expect(description(child, "web_fetch")).toContain("use browse");
+	});
+
+	it("keeps find_capability when an MCP server is installed, and still names no other tool it left out", async () => {
+		const linear: Capability = {
+			id: "mcp:linear",
+			kind: "mcp",
+			title: "linear (MCP)",
+			description: "Tools of the linear MCP server: list_issues",
+			tools: ["mcp__linear__list_issues"],
+			exposure: "judged",
+		};
+		for (const mode of ["print", "json"] as const) {
+			const first = await firstRequest(mode, undefined, [debuggerPack, linear]);
+			expect(declared(first), mode).toContain("find_capability");
+			expect(description(first, "find_capability"), mode).toContain("mcp:linear (MCP server)");
+			for (const name of LEFT_OUT.filter((name) => name !== "find_capability")) {
+				expect(declared(first), `${mode}: ${name}`).not.toContain(name);
+				expect(told(first), `${mode}: ${name}`).not.toMatch(new RegExp(`\\b${name}\\b`));
+			}
+		}
+		// A pack alone doesn't keep it: the request is as lean as before, and nothing names the tool.
+		const packs = await firstRequest("print");
+		expect(declared(packs)).not.toContain("find_capability");
+		expect(told(packs)).not.toMatch(/\bfind_capability\b/);
+		const off = await firstRequest("print", { catalog: { unattendedFindWithMcp: false } }, [debuggerPack, linear]);
+		expect(declared(off)).not.toContain("find_capability");
+		expect(told(off)).not.toMatch(/\bfind_capability\b/);
 	});
 
 	it("keeps the full identity and pi's docs in an interactive or desktop session, and with welcome.unattended", async () => {
