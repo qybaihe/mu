@@ -677,6 +677,17 @@ export async function prepareLaunchAsync({ plan, platform, root, bin, err }) {
 /** What `mu auth` answers itself. Every other `auth` command (check, print-api-key, ...) is pi's own. */
 export const AUTH_COMMANDS = ["status", "login", "logout"];
 
+/** What `mu auth --help` (or a bare `mu auth`) says before pi's own auth commands. */
+export const AUTH_USAGE = [
+	"mu's sign-in, which the desktop app runs (JSON lines on stdout):",
+	"  mu auth status",
+	"  mu auth login <provider>",
+	"  mu auth logout <provider>",
+	"In a terminal, /login inside mu signs in the same way.",
+	"",
+	"pi's auth commands:",
+].join("\n");
+
 /**
  * `mu auth status | login <provider> | logout <provider>`: the sign-in the desktop app runs, with pi's own OAuth
  * flows and credential store (packages/kyrn-judge/src/auth). It is pi's code, so it runs the way pi does here:
@@ -1399,6 +1410,8 @@ export async function main(argv = process.argv.slice(2)) {
 		out(usage(platform));
 		return 0;
 	}
+	// mu's own auth commands first; pi prints its own after them.
+	if (command === "auth" && (rest.length === 0 || rest[0] === "--help" || rest[0] === "-h")) out(AUTH_USAGE);
 	if (command === "auth" && AUTH_COMMANDS.includes(rest[0])) {
 		const plan = planAuth({
 			platform,

@@ -149,6 +149,7 @@ export function sourceRuntime(input: {
 }): { error?: undefined; args: string[] } | { error: string };
 
 export const AUTH_COMMANDS: readonly string[];
+export const AUTH_USAGE: string;
 export interface AuthPlan {
 	error?: undefined;
 	command: string;
