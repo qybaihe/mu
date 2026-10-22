@@ -296,6 +296,10 @@ describe("preflight view", () => {
 			latencyMs: undefined,
 		});
 		expect(statusLine("laya>jev", nothing)).toBe("Laya, Jev: error:timeout");
+		// Off asks no judge: the footer must not name one (it read "Jev 1.13 (free): chat · answer directly · off").
+		expect(
+			statusLine("jev-1.13-free", decision({ mode: "off", source: "fallback", judged: undefined })),
+		).toBeUndefined();
 	});
 });
 

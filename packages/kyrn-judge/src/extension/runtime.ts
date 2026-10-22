@@ -494,7 +494,8 @@ export class KyrnRuntime {
 		return { goal, currentSubgoal: current && current !== goal ? current : undefined };
 	}
 
-	status(text: string): void {
+	/** Sets mu's line in the footer; undefined takes it down. */
+	status(text: string | undefined): void {
 		const ctx = this.latestCtx;
 		if (ctx?.hasUI) ctx.ui.setStatus(STATUS_KEY, text);
 	}

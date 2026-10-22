@@ -97,13 +97,14 @@ export function hintsFor(
 
 /**
  * The footer's line after a verdict, in the verdict line's words: "Jev: multi-step task · full effort · 71 ms".
- * A verdict in shadow mode says it was only recorded, since it changed nothing.
+ * A verdict in shadow mode says it was only recorded, since it changed nothing. With the point off no judge was asked
+ * and the chat shows no verdict, so the footer says nothing either: naming the judge there read as if it had answered.
  */
-export function statusLine(label: string, decision: Decision<PreflightOutcome>): string {
+export function statusLine(label: string, decision: Decision<PreflightOutcome>): string | undefined {
+	if (decision.mode === "off") return undefined;
 	const latency = decision.latencyMs === undefined ? "" : ` · ${decision.latencyMs} ms`;
 	const cut = decision.warnings?.length ? ` (${decision.warnings.length} warnings)` : "";
-	const recorded =
-		decision.mode === "active" ? "" : ` · ${decision.mode === "shadow" ? "recorded only" : decision.mode}`;
+	const recorded = decision.mode === "shadow" ? " · recorded only" : "";
 	const shown = decision.mode === "active" ? decision.outcome : (decision.judged ?? decision.outcome);
 	const said =
 		shown.turnType === "unknown" && !decision.judged

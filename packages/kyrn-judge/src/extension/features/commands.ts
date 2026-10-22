@@ -294,13 +294,14 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 	const status = (ctx: ExtensionCommandContext): string => {
 		const { stats } = engine;
 		const { savings } = runtime;
-		const modes = [...engine.explicitModes()].map(([specId, mode]) => `${specId}=${mode}`).join(" ");
+		const modes = [...engine.overrides()].map(([specId, mode]) => `${specId}=${mode}`).join(" ");
 		const usage = ctx.getContextUsage();
 		const lines = [
 			`model: ${modelRef(ctx.model) ?? "none yet"} · thinking ${pi.getThinkingLevel()}${
 				usage?.percent === undefined || usage.percent === null ? "" : ` · context ${Math.round(usage.percent)}%`
 			}`,
-			`judge: ${runtime.enabled ? engine.providerId : "off"}`,
+			// With every point off no judge is asked, whichever is set up: say so, as the welcome does.
+			`judge: ${!runtime.enabled ? "off" : engine.asksJudge() ? engine.providerId : "off · every decision point uses its fallback"}`,
 			...[...engine.routes()].map(([specId, judge]) => `  ${specId} -> ${judge.id}`),
 			`mode: default=${engine.getMode("*")}${modes ? ` ${modes}` : ""}`,
 			`calls: ${stats.calls} | failures: ${stats.failures} | abstentions: ${stats.abstentions} | input tokens: ${stats.inputTokens} | probes: ${stats.probes} (${stats.probeInputTokens} input tokens)`,
@@ -414,7 +415,9 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 		handler: async (_args, ctx) => {
 			runtime.touch(ctx);
 			const ok = (good: boolean) => (good ? "ok  " : "FIX ");
-			const probe = runtime.enabled ? await engine.probe() : undefined;
+			// With every decision point off nothing is sent to a judge, and the check must not send anything either.
+			const asks = runtime.enabled && engine.asksJudge();
+			const probe = asks ? await engine.probe() : undefined;
 			const browserHost = thisBrowserHost();
 			const chrome = findBrowser(browserHost)?.executable;
 			const available = ctx.modelRegistry.getAvailable();
@@ -439,7 +442,13 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 							"judge",
 							`${engine.providerId} ${probe.ok ? `answers in ${probe.latencyMs} ms` : `isn't answering (${probe.error}). For laya, run mu judge start`}`,
 						]
-					: ["--  ", "judge", "off (MU_JUDGE=off)"],
+					: [
+							"--  ",
+							"judge",
+							runtime.enabled
+								? "off: no decision point asks one, so nothing is sent to a judge"
+								: "off (MU_JUDGE=off)",
+						],
 				[
 					"--  ",
 					"decisions",
@@ -449,7 +458,9 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 				[
 					"--  ",
 					"browse",
-					`driven by ${engine.judgeFor("browser.step").id}. It needs a judge that can match a goal to a page (Jev or an LLM judge), e.g. /mu route browser.step llm:openai/gpt-5.6-luna`,
+					runtime.mode("browser.step") === "off"
+						? "off: mu's browser runs on the judge, and browser.step is off"
+						: `driven by ${engine.judgeFor("browser.step").id}. It needs a judge that can match a goal to a page (Jev or an LLM judge), e.g. /mu route browser.step llm:openai/gpt-5.6-luna`,
 				],
 				[
 					ok(roles.length > 0),
