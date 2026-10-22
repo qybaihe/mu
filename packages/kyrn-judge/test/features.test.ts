@@ -241,7 +241,8 @@ describe("kyrn features", () => {
 					}),
 					mode: "active",
 					only: ["preflight", "notify"],
-					config: parseConfig({ features: { memory: false } }),
+					// The harness runs like `mu --print`, where routing is not asked unless told to.
+					config: parseConfig({ features: { memory: false, notify: { unattended: true } } }),
 				}),
 			],
 		});

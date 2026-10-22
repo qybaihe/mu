@@ -217,6 +217,7 @@ On by default: yes. Decision points: `turn.rewind`.
 | `timeoutMs` | `30000` ms | Max time for a snapshot. Past this, the turn runs without a checkpoint; the tool call still runs. Range 1000 to 600000. |
 | `propose` | `true` | Propose a rewind at a dead end. |
 | `confirmSeconds` | `120` s | How long a proposal waits for you. If you don't answer, the run continues. 0 waits forever. Range 0 to 3600. |
+| `unattended` | `false` | Also take checkpoints in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: nobody there can confirm a rewind, so no file is ever put back, while the snapshot and the scan after every change hold up each step. At a dead end the model is still told to step back. |
 
 ## monitor
 
@@ -340,6 +341,7 @@ On by default: yes. Decision points: `notify.routing`.
 | --- | --- | --- |
 | `budgetThresholds` | `70`, `85` | Context budget notices (%). |
 | `unjudged` | `now` | Without a verdict, context budget notices. Notification routing is in shadow by default, and then this decides. A next-turn notice is read only when another run starts, which never happens in a one-shot run. One of `now` (Now), `next_turn` (Next turn), `drop` (Never). |
+| `unattended` | `false` | Also ask the judge about notices in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: notices go by their own rules, as they do in shadow, the default, where the verdict is only recorded. |
 
 ## warming
 
@@ -361,6 +363,8 @@ On by default: yes.
 | --- | --- | --- |
 | `intervalMs` | `50000` ms | Every `50000` ms. The server drops connections idle for about 90 s; stay below that. Range 10000 to 85000. |
 | `idleMs` | `900000` ms | Stop after this much inactivity. Range 60000 to 7200000. |
+| `nearby` | `false` | Also keep a judge on this machine or network warm. Off by default for a judge at localhost, 127.0.0.1, a local network address or host.docker.internal: a new connection there costs next to nothing, and on a server that answers one question at a time a probe would queue in front of real ones. |
+| `unattended` | `false` | Also keep the connection warm in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: there a probe every 50 s costs more than the connection setup it saves, under a tenth of a second on a short route. |
 
 ## swarm
 

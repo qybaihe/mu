@@ -4480,6 +4480,19 @@
 						"tr-TR": "sn",
 						"fa-IR": "ثانیه"
 					}
+				},
+				{
+					"key": "unattended",
+					"kind": "boolean",
+					"default": false,
+					"label": {
+						"zh": "无人值守的运行也拍检查点",
+						"en": "Also take checkpoints in unattended runs"
+					},
+					"help": {
+						"zh": "无人值守指 mu --print 和 json 模式的一次性运行。默认不拍：那里没人能确认回退，文件从不会被放回去，拍快照和每次改动后的扫描却让每一步都多等。遇到死路照样提醒模型退一步。",
+						"en": "Unattended means a one-shot mu --print or json-mode run. Off by default: nobody there can confirm a rewind, so no file is ever put back, while the snapshot and the scan after every change hold up each step. At a dead end the model is still told to step back."
+					}
 				}
 			]
 		},
@@ -6331,6 +6344,19 @@
 						"zh": "通知分流默认是影子模式，这时就按这里投递。「下一回合」要等下一次运行开始才读到，单次运行里读不到。",
 						"en": "Notification routing is in shadow by default, and then this decides. A next-turn notice is read only when another run starts, which never happens in a one-shot run."
 					}
+				},
+				{
+					"key": "unattended",
+					"kind": "boolean",
+					"default": false,
+					"label": {
+						"zh": "无人值守的运行也判定通知分流",
+						"en": "Also ask the judge about notices in unattended runs"
+					},
+					"help": {
+						"zh": "无人值守指 mu --print 和 json 模式的一次性运行。默认不问：通知照样按各自的规则投递，和默认的影子模式一样，那里的判定本来也只记录、不生效。",
+						"en": "Unattended means a one-shot mu --print or json-mode run. Off by default: notices go by their own rules, as they do in shadow, the default, where the verdict is only recorded."
+					}
 				}
 			]
 		},
@@ -6510,6 +6536,32 @@
 						"uk-UA": "Зупинити після такого затишшя",
 						"tr-TR": "Bu kadar sessizlikten sonra dur",
 						"fa-IR": "توقف پس از این مدت بی‌تحرکی"
+					}
+				},
+				{
+					"key": "nearby",
+					"kind": "boolean",
+					"default": false,
+					"label": {
+						"zh": "本机和局域网的判定器也保温",
+						"en": "Also keep a judge on this machine or network warm"
+					},
+					"help": {
+						"zh": "判定器地址是 localhost、127.0.0.1、局域网地址或 host.docker.internal 时，默认不保温：在那里建连几乎不花时间，而在一次只答一个问题的服务器上，保温的问题会排在真正的判定前面。",
+						"en": "Off by default for a judge at localhost, 127.0.0.1, a local network address or host.docker.internal: a new connection there costs next to nothing, and on a server that answers one question at a time a probe would queue in front of real ones."
+					}
+				},
+				{
+					"key": "unattended",
+					"kind": "boolean",
+					"default": false,
+					"label": {
+						"zh": "无人值守的运行也保温",
+						"en": "Also keep the connection warm in unattended runs"
+					},
+					"help": {
+						"zh": "无人值守指 mu --print 和 json 模式的一次性运行。默认不保温：那里每 50 秒一个的小问题，花的比省下的建连时间还多；线路近时省下的不到 0.1 秒。",
+						"en": "Unattended means a one-shot mu --print or json-mode run. Off by default: there a probe every 50 s costs more than the connection setup it saves, under a tenth of a second on a short route."
 					}
 				}
 			]

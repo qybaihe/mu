@@ -14,7 +14,7 @@ import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { fauxAssistantMessage, fauxToolCall } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { ExtensionUIContext } from "../../coding-agent/src/core/extensions/types.ts";
+import type { ExtensionMode, ExtensionUIContext } from "../../coding-agent/src/core/extensions/types.ts";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import { findOnPath, GitMissing, type GitProbe, type GitRun, spawnGit } from "../src/checkpoint/git.ts";
 import { isCheckCommand, isMutatingCall, isReadOnlyCommand } from "../src/checkpoint/mutating.ts";
@@ -102,6 +102,8 @@ describe("checkpoints and the judged rewind", () => {
 			mode?: DecisionMode;
 			ui?: Ui;
 			navigation?: boolean;
+			/** How mu runs. Unset: like the desktop app ("rpc") with a UI, else like `mu --print`, the harness's own. */
+			runMode?: ExtensionMode;
 			git?: string;
 			run?: GitRun;
 			options?: Record<string, unknown>;
@@ -164,10 +166,10 @@ describe("checkpoints and the judged rewind", () => {
 		root = harness.tempDir;
 		writeFileSync(join(root, "app.ts"), "v1\n");
 		writeFileSync(join(root, "notes.md"), "notes\n");
-		if (extra.ui || extra.navigation) {
+		if (extra.ui || extra.navigation || extra.runMode) {
 			await harness.session.bindExtensions({
 				uiContext: extra.ui?.context,
-				mode: "rpc",
+				mode: extra.runMode ?? "rpc",
 				commandContextActions:
 					extra.navigation === false
 						? undefined
@@ -217,7 +219,8 @@ describe("checkpoints and the judged rewind", () => {
 			);
 
 	it("takes one checkpoint before the first change of a turn, and none in a turn that only reads", async () => {
-		const { harness, shadow, entries, events } = await start();
+		// The harness runs like `mu --print`, which takes none by default (below).
+		const { harness, shadow, entries, events } = await start({ options: { unattended: true } });
 		harness.setResponses([
 			call("read", { path: "app.ts" }),
 			call("bash", { command: "git status" }),
@@ -405,7 +408,8 @@ describe("checkpoints and the judged rewind", () => {
 	});
 
 	it("active with nobody to ask: undoes nothing and tells the model to step back", async () => {
-		const { harness, file, messages, entries } = await start({ responder: deadEnd });
+		// With a checkpoint, as `mu --print` takes them when told to.
+		const { harness, file, messages, entries } = await start({ responder: deadEnd, options: { unattended: true } });
 		harness.setResponses([...failingRun(), fauxAssistantMessage("I will try something else.")]);
 
 		await harness.session.prompt("Make the tests pass.");
@@ -415,6 +419,88 @@ describe("checkpoints and the judged rewind", () => {
 		expect(steers).toHaveLength(1);
 		expect(steers[0]).toContain("try a different approach");
 		expect(entries(REWOUND_ENTRY)).toEqual([]);
+	});
+
+	/** git as the machine has it, with every command it is asked to run written down. */
+	const logged = (commands: string[][]): GitRun => {
+		const git = spawnGit("git");
+		return (args, env, input, limit) => {
+			commands.push([...args]);
+			return git(args, env, input, limit);
+		};
+	};
+
+	it("an unattended run (mu --print, json mode) runs no git at all, and at a dead end still tells the model to step back", async () => {
+		for (const runMode of ["print", "json"] as const) {
+			const git: string[][] = [];
+			const { harness, shadow, file, entries, messages, provider, events } = await start({
+				responder: deadEnd,
+				run: logged(git),
+				runMode,
+			});
+			harness.setResponses([...failingRun(), fauxAssistantMessage("I will try something else.")]);
+
+			await harness.session.prompt("Make the tests pass.");
+
+			// No snapshot before the first change, and no scan after any of the four.
+			expect(git, runMode).toEqual([]);
+			expect(entries(CHECKPOINT_ENTRY)).toEqual([]);
+			expect(readdirSync(shadow)).toEqual([]);
+			// The dead end is still asked about, with the request as the goal, and a yes reaches the model as a steer.
+			const asked = provider.calls.filter((request) => "dead_end" in request.questions);
+			expect(asked).toHaveLength(1);
+			expect(asked[0].state).toMatchObject({
+				goal: "Make the tests pass.",
+				edits_since_checkpoint: 1,
+				last_check_failed: true,
+			});
+			const steers = messages("kyrn.steer").filter((text) => text.includes("dead end"));
+			expect(steers).toEqual([expect.stringContaining("Step back: undo what this attempt changed")]);
+			// Nothing was put back, and nothing says so.
+			expect(file("app.ts")).toBe("attempt\n");
+			expect(messages(REWIND_MESSAGE)).toEqual([]);
+			expect(entries(REWOUND_ENTRY)).toEqual([]);
+			expect(events.map((event) => event.kind).filter((kind) => /^(checkpoint|rewind)\./.test(kind))).toEqual([]);
+		}
+	});
+
+	it("an unattended run asks about a dead end only in a turn that ran a call that can change files", async () => {
+		const asked = async (command: string) => {
+			const { harness, provider } = await start({ responder: deadEnd });
+			harness.setResponses([
+				...Array.from({ length: 3 }, () => call("bash", { command })),
+				fauxAssistantMessage("Stuck."),
+			]);
+			await harness.session.prompt("Make the tests pass.");
+			return provider.calls.filter((request) => "dead_end" in request.questions).length;
+		};
+		// Where a terminal session would have taken its checkpoint, and only there.
+		expect(await asked("npm test")).toBe(1);
+		expect(await asked("cat test-output.txt")).toBe(0);
+	});
+
+	it("a terminal or desktop session still snapshots before the first change and scans after each one", async () => {
+		for (const runMode of ["tui", "rpc"] as const) {
+			const git: string[][] = [];
+			const { harness, entries } = await start({ ui: scriptedUi({}), run: logged(git), runMode });
+			harness.setResponses([
+				call("write", { path: "app.ts", content: "v2\n" }),
+				call("write", { path: "b.ts", content: "b\n" }),
+				call("bash", { command: "npm run build" }),
+				fauxAssistantMessage("Done."),
+			]);
+			await harness.session.prompt("Change it.");
+			expect(entries(CHECKPOINT_ENTRY), runMode).toHaveLength(1);
+			// One tree for the snapshot, and one more after each of the three calls.
+			expect(
+				git.filter((args) => args[0] === "write-tree"),
+				runMode,
+			).toHaveLength(4);
+			expect(
+				git.filter((args) => args[0] === "commit-tree"),
+				runMode,
+			).toHaveLength(1);
+		}
 	});
 
 	it("shadow only records the verdict, off does not ask, and an unsure judge changes nothing", async () => {

@@ -7,6 +7,7 @@ import { Type } from "typebox";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHarness, createTestUiContext, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import type { Capability } from "../src/catalog/catalog.ts";
+import { type GitRun, spawnGit } from "../src/checkpoint/git.ts";
 import { parseConfig } from "../src/config.ts";
 import { UNATTENDED_HIDDEN } from "../src/extension/features/catalog.ts";
 import type { SwarmRunner } from "../src/extension/features/swarm.ts";
@@ -323,6 +324,72 @@ describe("an unattended run (mu --print, json mode)", () => {
 		// The recall was counted on the kept lesson; no other lesson was written.
 		const lines = readFileSync(lessons, "utf8").trim().split("\n");
 		expect(new Set(lines.map((line) => (JSON.parse(line) as { id: string }).id))).toEqual(new Set(["kept"]));
+	});
+
+	it("takes no checkpoint, sends no warm-up probe and asks no notice routing; a terminal or the app does all three", async () => {
+		const pause: AgentTool = {
+			name: "pause",
+			label: "pause",
+			description: "pause",
+			parameters: Type.Object({ ms: Type.Number() }),
+			execute: async (_id, params) => {
+				await new Promise((resolve) => setTimeout(resolve, (params as { ms: number }).ms));
+				return { content: [{ type: "text", text: "paused" }], details: {} };
+			},
+		};
+		const seen: Record<string, { git: number; probes: number; routing: number }> = {};
+		for (const mode of ["print", "json", "tui", "rpc"] as const) {
+			const git: string[][] = [];
+			const real = spawnGit("git");
+			const logged: GitRun = (args, env, input, limit) => {
+				git.push([...args]);
+				return real(args, env, input, limit);
+			};
+			const provider = new MockJudgeProvider();
+			const harness = await createHarness({
+				tools: [bash(), pause],
+				extensionFactories: [
+					createKyrnJudgeExtension({
+						provider,
+						mode: "active",
+						config: parseConfig({
+							features: {
+								checkpoint: { dir: temp() },
+								// Short enough for a few probes while the agent waits.
+								warmup: { intervalMs: 100 },
+								background: { logDir: temp(), inheritShell: false },
+							},
+						}),
+						only: ["checkpoint", "notify", "background", "warmup"],
+						checkpoint: { run: logged },
+					}),
+				],
+			});
+			harnesses.push(harness);
+			await harness.session.bindExtensions(
+				mode === "print" || mode === "json" ? { mode } : { uiContext: createTestUiContext(), mode },
+			);
+			harness.setResponses([
+				fauxAssistantMessage([fauxToolCall("bg_start", { command: "echo built" })], { stopReason: "toolUse" }),
+				// The job ends while the agent waits on something else: its end is routed.
+				fauxAssistantMessage([fauxToolCall("pause", { ms: 700 })], { stopReason: "toolUse" }),
+				run("sed -i s/a/b/ app.ts"),
+				fauxAssistantMessage("Done."),
+			]);
+			await harness.session.prompt("Build it in the background and fix app.ts.");
+			await harness.session.extensionRunner.emit({ type: "session_shutdown", reason: "quit" });
+			seen[mode] = {
+				git: git.length,
+				probes: provider.calls.filter((call) => "ready" in call.questions).length,
+				routing: provider.calls.filter((call) => "urgency" in call.questions).length,
+			};
+		}
+		for (const mode of ["print", "json"]) expect(seen[mode], mode).toEqual({ git: 0, probes: 0, routing: 0 });
+		for (const mode of ["tui", "rpc"]) {
+			expect(seen[mode].git, mode).toBeGreaterThan(0);
+			expect(seen[mode].probes, mode).toBeGreaterThan(0);
+			expect(seen[mode].routing, mode).toBe(1);
+		}
 	});
 
 	it("is not what a sub-agent runs, though it runs in json mode", () => {
