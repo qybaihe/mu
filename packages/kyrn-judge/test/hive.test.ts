@@ -763,7 +763,9 @@ describe("hive in a session", () => {
 					createKyrnJudgeExtension({
 						provider,
 						mode: "active",
-						config: parseConfig({ features: { memory: false, permissions: { mode: "full" }, ...features } }),
+						config: parseConfig({
+							features: attended({ memory: false, permissions: { mode: "full" }, ...features }),
+						}),
 						swarmRunner: runner,
 					}),
 				],

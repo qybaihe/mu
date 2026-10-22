@@ -171,7 +171,7 @@ describe("browser.step", () => {
 					mode: "active",
 					config: parseConfig({
 						routes: { "browser.step": ["laya"] },
-						features: { memory: false, permissions: { mode: "full" }, browser: { enabled: true } },
+						features: attended({ memory: false, permissions: { mode: "full" }, browser: { enabled: true } }),
 					}),
 				}),
 			],
