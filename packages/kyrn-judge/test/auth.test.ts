@@ -33,6 +33,7 @@ class FakeRuntime implements AuthRuntime {
 	loginOptions: (LoginOptions | undefined)[] = [];
 	models: Record<string, { id: string; name?: string }[]> = {
 		"openai-codex": [{ id: "gpt-5.4", name: "GPT-5.4" }, { id: "gpt-5.5", name: "GPT-5.5" }, { id: "gpt-5.5-mini" }],
+		openai: [{ id: "gpt-5.4", name: "GPT-5.4" }, { id: "gpt-5.5", name: "GPT-5.5" }, { id: "gpt-5.5-mini" }],
 		anthropic: [{ id: "claude-opus-4-8", name: "Claude Opus 4.8" }],
 		"google-antigravity": [{ id: "gemini-3.1-pro", name: "Gemini 3.1 Pro" }],
 	};
@@ -93,18 +94,19 @@ function pipe() {
 	};
 }
 
-const preferred = { "openai-codex": "gpt-5.5", anthropic: "claude-opus-4-8" };
+const preferred = { "openai-codex": "gpt-5.5", openai: "gpt-5.5", anthropic: "claude-opus-4-8" };
 const googleish = (id: string) => ({ id }) as Provider;
 
 describe("mu auth", () => {
 	it("says who is signed in with a subscription, and what this mu can sign in to", async () => {
-		// ChatGPT is offered through Sign in with ChatGPT (`openai`); an account signed in through the Codex CLI's login
-		// before still shows, works and signs out, but that login is no longer offered.
+		// ChatGPT is offered through Sign in with ChatGPT (`openai`). An account signed in before through the Codex CLI's
+		// login or with a Claude subscription still shows and signs out, but neither sign-in is offered any more.
 		const runtime = new FakeRuntime();
 		runtime.credentials = [
 			{ providerId: "openai-codex", type: "oauth" },
+			{ providerId: "anthropic", type: "oauth" },
 			// A key is not a subscription sign-in, and an unknown provider is not the app's business.
-			{ providerId: "anthropic", type: "api_key" },
+			{ providerId: "xai", type: "api_key" },
 			{ providerId: "openrouter", type: "oauth" },
 		];
 		const { io, said } = pipe();
@@ -113,7 +115,7 @@ describe("mu auth", () => {
 		expect(said).toEqual([
 			{
 				type: "status",
-				offered: ["openai", "anthropic", "xai"],
+				offered: ["openai", "xai"],
 				signedIn: [
 					{
 						provider: "openai-codex",
@@ -124,6 +126,7 @@ describe("mu auth", () => {
 							{ id: "gpt-5.5-mini", name: "gpt-5.5-mini" },
 						],
 					},
+					{ provider: "anthropic", models: [{ id: "claude-opus-4-8", name: "Claude Opus 4.8" }] },
 				],
 			},
 		]);
@@ -179,7 +182,7 @@ describe("mu auth", () => {
 			);
 		};
 		const app = pipe();
-		const running = runAuth(["login", "openai-codex"], { runtime, preferred, extra: [], io: app.io });
+		const running = runAuth(["login", "openai"], { runtime, preferred, extra: [], io: app.io });
 		await new Promise((resolve) => setTimeout(resolve, 0));
 		// The method question never reaches the app: from the app it is always the browser on this machine.
 		expect(app.said).toEqual([
@@ -197,7 +200,7 @@ describe("mu auth", () => {
 			{ type: "signed_in" },
 			{
 				type: "done",
-				provider: "openai-codex",
+				provider: "openai",
 				models: [
 					{ id: "gpt-5.5", name: "GPT-5.5" },
 					{ id: "gpt-5.4", name: "GPT-5.4" },
@@ -243,7 +246,7 @@ describe("mu auth", () => {
 				await interaction.prompt({ type: "text", message: "Your e-mail" });
 			};
 			const app = pipe();
-			const running = runAuth(["login", "anthropic"], { runtime, preferred, extra: [], io: app.io });
+			const running = runAuth(["login", "xai"], { runtime, preferred, extra: [], io: app.io });
 			await new Promise((resolve) => setTimeout(resolve, 0));
 			if (stop === "cancel") app.send({ type: "cancel" });
 			else app.close();
@@ -282,6 +285,9 @@ describe("mu auth", () => {
 			[["login"], "usage: mu auth status | mu auth login <provider> | mu auth logout <provider>"],
 			[["login", "google-gemini-cli"], "This version of mu can't sign in to google-gemini-cli"],
 			[["logout", "openrouter"], "This version of mu can't sign in to openrouter"],
+			// No longer offered: signed out, never signed in anew.
+			[["login", "anthropic"], "This version of mu can't sign in to anthropic"],
+			[["login", "openai-codex"], "This version of mu can't sign in to openai-codex"],
 		];
 		for (const [argv, message] of cases) {
 			const app = pipe();
@@ -293,7 +299,7 @@ describe("mu auth", () => {
 			throw new Error("Login cancelled");
 		};
 		const app = pipe();
-		expect(await runAuth(["login", "openai-codex"], { runtime: failing, preferred, extra: [], io: app.io })).toBe(1);
+		expect(await runAuth(["login", "openai"], { runtime: failing, preferred, extra: [], io: app.io })).toBe(1);
 		expect(app.said).toEqual([{ type: "error", message: "Login cancelled" }]);
 	});
 
