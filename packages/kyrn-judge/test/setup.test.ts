@@ -972,6 +972,18 @@ describe("mu setup in a script", () => {
 		expect(run.json("mu.json")).toEqual({ tiers: ["llm:deepseek/deepseek-v4-pro"] });
 	});
 
+	it("turns the judge off with --judge off, and leaves it alone with --judge none", async () => {
+		const off = await stdinRun(["--service", "deepseek", "--judge", "off"], `${KEYS.hex32}\n`, {
+			respond: () => listing("deepseek-v4-pro"),
+		});
+		expect(off.code).toBe(SETUP_EXIT.done);
+		expect(off.json("mu.json")).toEqual({ modes: { default: "off" } });
+		const none = await stdinRun(["--service", "deepseek", "--judge", "none"], `${KEYS.hex32}\n`, {
+			respond: () => listing("deepseek-v4-pro"),
+		});
+		expect(none.read("mu.json")).toBeUndefined();
+	});
+
 	it("fails with the reason when the check fails, and changes nothing", async () => {
 		const run = await stdinRun(["--service", "openai"], `${KEYS.openaiProject}\n`, {
 			respond: () =>

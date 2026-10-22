@@ -164,7 +164,7 @@ export interface SetupArgs {
 	readonly baseUrl?: string;
 	readonly api?: "openai" | "anthropic";
 	readonly name?: string;
-	readonly judge?: "jev" | "opencode" | "free" | "model" | "none";
+	readonly judge?: "jev" | "opencode" | "free" | "model" | "off" | "none";
 	/** What is not an option: a key, when the entry is started without the launcher. */
 	readonly words: readonly string[];
 }
@@ -193,11 +193,11 @@ export function parseSetupArgs(argv: readonly string[]): SetupArgs | { readonly 
 		return { error: { zh: "--api 只能是 openai 或 anthropic", en: "--api must be openai or anthropic" } };
 	}
 	const judge = values.get("--judge");
-	if (judge !== undefined && !["jev", "opencode", "free", "model", "none"].includes(judge)) {
+	if (judge !== undefined && !["jev", "opencode", "free", "model", "off", "none"].includes(judge)) {
 		return {
 			error: {
-				zh: "--judge 只能是 jev、opencode、free、model 或 none",
-				en: "--judge must be jev, opencode, free, model or none",
+				zh: "--judge 只能是 jev、opencode、free、model、off 或 none",
+				en: "--judge must be jev, opencode, free, model, off or none",
 			},
 		};
 	}
@@ -241,13 +241,14 @@ export function setupUsage(language: SetupLanguage): string {
 			"为什么脚本要从标准输入给密钥：写在命令行上的密钥会留在 shell 的历史记录里，",
 			"这台电脑上能列出进程的程序也都看得到它。mu setup <密钥> 只是为了上手快；能在提示里粘贴就粘贴。",
 			"",
-			"  --judge jev     Jev 密钥（TypeSafe）写在标准输入的第二行；已经设置了 TYPESAFE_API_KEY 就不用",
+			"  --judge jev       Jev 密钥（TypeSafe）写在标准输入的第二行；已经设置了 TYPESAFE_API_KEY 就不用",
 			"  --judge opencode  OpenCode Zen 上的 Jev，用 OpenCode 的密钥（--service opencode 或 OPENCODE_API_KEY）",
-			"  --judge free    OpenCode Zen 上限时免费的 Jev，不用密钥（没有密钥时本来就用它）",
-			"  --judge model   用刚设置的模型当判定器（更慢，每次判断都花 token）",
-			"  --judge none    不改判定器；不写 --judge 时也不改",
-			"  --api, --name   服务 other 的接口（openai 或 anthropic）和它在 mu 里的名字",
-			"  --yes           不提问；替换已有的设置（订阅登录、同名服务的地址、Jev 密钥）",
+			"  --judge free      OpenCode Zen 上限时免费的 Jev，不用密钥（没有密钥时本来就用它）",
+			"  --judge model     用刚设置的模型当判定器（更慢，每次判断都花 token）",
+			"  --judge off       不用判定器：所有判定点关闭，什么都不发给判定器",
+			"  --judge none      不改判定器；不写 --judge 时也不改",
+			"  --api, --name     服务 other 的接口（openai 或 anthropic）和它在 mu 里的名字",
+			"  --yes             不提问；替换已有的设置（订阅登录、同名服务的地址、Jev 密钥）",
 			"",
 			"会改动的文件：~/.mu/agent 里的 auth.json（密钥）、models.json、settings.json、mu.json，",
 			"以及 mu 读取的 .env（Jev 密钥）。每个文件改动前都会先复制到 ~/.mu/backups/<时间>/。",
@@ -266,14 +267,15 @@ export function setupUsage(language: SetupLanguage): string {
 		"computer that lists processes can read it. `mu setup <key>` is a shortcut for getting started; paste the key",
 		"at the prompt when you can.",
 		"",
-		"  --judge jev     read the Jev key (TypeSafe) from stdin's second line, unless TYPESAFE_API_KEY is already set",
+		"  --judge jev       read the Jev key (TypeSafe) from stdin's second line, unless TYPESAFE_API_KEY is already set",
 		"  --judge opencode  use Jev on OpenCode Zen with an OpenCode key (--service opencode or OPENCODE_API_KEY)",
-		"  --judge free    use the free Jev on OpenCode Zen (limited time, no key; the default while no key is set)",
-		"  --judge model   use the model you just set up as the judge (slower, and every verdict costs tokens)",
-		"  --judge none    leave the judge unchanged (the same as omitting --judge)",
-		"  --api, --name   for the service `other`: its API (openai or anthropic) and its name in mu",
-		"  --yes           don't ask; replace what's already set up (a subscription sign-in, a provider's address,",
-		"                  the Jev key)",
+		"  --judge free      use the free Jev on OpenCode Zen (limited time, no key; the default while no key is set)",
+		"  --judge model     use the model you just set up as the judge (slower, and every verdict costs tokens)",
+		"  --judge off       no judge: every decision point is off, and nothing is sent to a judge",
+		"  --judge none      leave the judge unchanged (the same as omitting --judge)",
+		"  --api, --name     for the service `other`: its API (openai or anthropic) and its name in mu",
+		"  --yes             don't ask; replace what's already set up (a subscription sign-in, a provider's",
+		"                    address, the Jev key)",
 		"",
 		"Files it changes: auth.json (keys), models.json, settings.json and mu.json in ~/.mu/agent, and the .env",
 		"mu reads (the Jev key). Each one is backed up to ~/.mu/backups/<time>/ before it changes.",
@@ -1166,6 +1168,8 @@ class Setup {
 				return { kind: "opencode" };
 			case "free":
 				return { kind: "free" };
+			case "off":
+				return { kind: "none" };
 			case "jev": {
 				const key = this.jevFromStdin;
 				if (!key) {
