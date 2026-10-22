@@ -135,6 +135,10 @@ describe("kyrn features", () => {
 		expect(many).toMatch(/\(\d+ more flagged parts left out\)$/);
 		// Flagged only as the shell reads its words: the excerpt shows those words.
 		expect(riskExcerpt(`${steps(0, 1500)} && r''m -rf build`)).toContain("rm -rf build");
+		// Line breaks stay, short script or long: run into one line, the delete read as words for echo to print.
+		expect(riskExcerpt("echo done\n\n   rm  -rf\tbuild\r\n")).toBe("echo done\nrm -rf build");
+		const script = `${steps(0, 1500).replaceAll(" && ", "\n")}\necho done\nrm -rf build\n${steps(1500, 50).replaceAll(" && ", "\n")}`;
+		expect(riskExcerpt(script)).toContain("echo done\nrm -rf build\necho step-1500");
 
 		const seen: string[] = [];
 		const harness = await start(

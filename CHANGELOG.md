@@ -37,6 +37,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 - `mu doctor` in a terminal starts with how many things need fixing, as `/doctor` inside mu does.
 - **The judge sees the risky part of a long command.** A flagged command (`rm -rf`, `DROP TABLE`, a force push, …) reached the judge cut to its first 400 characters, so in a long script the part the flag was about could be missing, and the judge could let it run as harmless. The judge now gets the whole command up to 8,000 characters; past that, its start and every flagged part with the text around it. The confirmation you are asked shows the flagged parts too.
+- **A flagged script keeps its line breaks for the judge and in the confirmation.** They were run into one line, which in a script joins separate commands into one: `echo done` and an `rm -rf build` on the next line read as a single echo. Runs of spaces still collapse.
 - Reading a file page by page, or running scripts that only differ further down, no longer gets the agent told it is going in circles.
 - `mu --print` no longer stays up to 10 s after the run for a judge answer nobody waits for any more.
 - A late skill selection on the first message now takes effect from the next message, instead of every skill staying in the prompt for the whole conversation.
