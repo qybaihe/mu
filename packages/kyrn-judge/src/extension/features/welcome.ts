@@ -229,7 +229,11 @@ export function registerWelcome(runtime: KyrnRuntime): void {
 								judge: runtime.judgeLabel,
 								health,
 								mode: runtime.mode("*"),
-								model: model ? `${model.provider}/${model.id}` : undefined,
+								// With no model at all pi holds a placeholder, unknown/unknown: that is "none yet".
+								model:
+									model && !(model.provider === "unknown" && model.id === "unknown")
+										? `${model.provider}/${model.id}`
+										: undefined,
 								thinking: current?.thinkingLevel ?? runtime.pi.getThinkingLevel(),
 								cwd: current?.cwd ?? ctx.cwd,
 								expanded,
