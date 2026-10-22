@@ -48,6 +48,7 @@ import {
 	servicesForKey,
 	tableModel,
 } from "../src/setup/services.ts";
+import { wrapToWidth } from "../src/setup/terminal.ts";
 import {
 	jevKeyAt,
 	type PiAccess,
@@ -1193,5 +1194,27 @@ describe("mu setup with pi's own files", () => {
 		const { pi } = await realPi(home);
 		await expect(pi.setDefaultModel("deepseek", "deepseek-chat")).rejects.toThrow("settings.json cannot be read");
 		expect(readFileSync(join(home, "agent", "settings.json"), "utf8")).toBe("{ not json");
+	});
+});
+
+describe("the wizard's text in a terminal", () => {
+	it("breaks long lines between words, under the text of a numbered choice, and leaves short ones alone", () => {
+		const hint =
+			"To use a subscription, sign in from inside mu: start mu, type /login, choose OpenAI (ChatGPT subscription).";
+		expect(wrapToWidth(hint, 40).split("\n")).toEqual([
+			"To use a subscription, sign in from",
+			"inside mu: start mu, type /login, choose",
+			"OpenAI (ChatGPT subscription).",
+		]);
+		expect(wrapToWidth("  1) Free Jev on OpenCode Zen (recommended): no key needed", 34).split("\n")).toEqual([
+			"  1) Free Jev on OpenCode Zen",
+			"     (recommended): no key needed",
+		]);
+		expect(wrapToWidth("Short line.\nAnother.", 40)).toBe("Short line.\nAnother.");
+		// Not a terminal, or one too narrow to help: as written.
+		expect(wrapToWidth(hint, undefined)).toBe(hint);
+		// No spaces to break at (Chinese): the terminal wraps it.
+		const zh = "订阅账号在 mu 里面登录：启动mu，输入/login，按提示在浏览器里完成。登录信息保存在这里。";
+		expect(wrapToWidth(zh, 30).split("\n").length).toBeLessThanOrEqual(3);
 	});
 });
