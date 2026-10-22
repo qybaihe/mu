@@ -139,6 +139,7 @@ On by default: yes. Decision points: `tool.injection`, `tool.description`.
 | --- | --- | --- |
 | `tools` | `web_fetch`, `web_search`, `browse`, `mcp__*` | Tools screened. Tool names, or a prefix ending in *; mcp__* covers every MCP server. |
 | `fetchCommands` | `curl`, `wget`, `gh`, `glab`, `lynx`, `w3m`, `Invoke-WebRequest`, `Invoke-RestMethod`, `iwr`, `irm` | Fetching commands. When a bash or PowerShell command runs one of these programs, its output is screened unless every address it's given is on this machine (localhost); gh and glab output is always screened. Empty: no shell output is screened. |
+| `proseWords` | `6` | Words in a row to ask the judge. A passage without this many words in a row (8 characters in a row for Chinese, Japanese and other scripts written without spaces) isn't put to the judge; rules alone read it. Directory listings, link lists, response headers and short grep hits can't hold an instruction. 0: every passage is judged. Range 0 to 50. |
 | `waitMs` | `6000` ms | Wait at most `6000` ms. After this, rules withhold only obvious injection phrases; the verdict is still recorded. Range 500 to 30000. |
 | `descriptions` | `true` | Screen MCP tool descriptions. MCP tools whose descriptions ask the AI to do more than use the tool are removed from the list (tool.description). |
 | `descriptionWaitMs` | `8000` ms | Wait for tool description verdicts at most `8000` ms. How long a turn waits for verdicts on MCP tools it hasn't seen before. After this, rules decide until the verdict arrives. Range 500 to 30000. |
@@ -156,7 +157,8 @@ On by default: yes. Decision points: `tool.admission`, `tool.admission.test-log`
 | `maxChunks` | `48` | Judge at most this many chunks. Range 4 to 400. |
 | `batchChunks` | `16` | Chunks per request. A hosted judge takes many chunks in one request, with the shared context billed once; the local judge takes one at a time. Range 1 to 32. |
 | `waitMs` | `4000` ms | Wait at most `4000` ms. After this, the full output goes in; the verdict is only recorded. Range 500 to 30000. |
-| `passThrough` | `read`, `edit`, `write` | Never filter these tools. |
+| `passThrough` | `read`, `edit`, `write`, `delegate`, `hive`, `web_fetch` | Never filter these tools. |
+| `printCommands` | `cat`, `sed -n`, `head`, `tail`, `nl`, `less`, `bat`, `grep`, `rg`, `od`, `xxd`, `git show`, `git diff`, `readelf`, `objdump` | Never filter file prints. When a bash command only prints a file with these programs (after a cd, or piped through them), its output goes in whole, as with read: the model asked to see that file. Build, test, background-job and other output is still judged. Empty: all of it is judged. |
 | `testLog` | `off` | Test log trimming. One of `off` (Off), `rules` (Drop exact repeats only (lossless)), `jev` (Also let the judge pick from the rest). |
 | `agentEnv` | `true` | Tell test runners an agent is reading. Vitest and other runners then print only failures and the summary. |
 
