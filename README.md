@@ -172,7 +172,7 @@ Every point, with its feature switch and options: [docs/reference/decision-point
 - **Laya** (local, macOS on Apple silicon) is a 322M-parameter judge that runs on your machine and never touches the network. Nothing is downloaded without your consent. It's reliable on simple predicates and weaker on meta-judgments, so run it in shadow alongside your current judge and read the ledger before you give it a decision point.
 - **Any classifier model** in pi's catalog can serve as a tier: `classifier:<provider>/<model>`. Examples include Cloudflare's Clef (`clef`, `clef-flash`), the System One models on OpenRouter and the Vercel AI Gateway, or a llama.cpp classifier.
 - **Any LLM** can serve as a tier: `llm:<provider>/<model>`.
-- **NVIDIA Nemotron on Nebius Token Factory**: `nemotron` is Nemotron 3 Ultra with thinking off, and `nemotron-local` is Nemotron 3 Nano 4B distilled from it, served on your machine. With Nemotron 3 Super as the coding model and Token Factory Sandboxes to run commands in, mu runs end to end on Nebius: see [docs/nebius.md](docs/nebius.md).
+- **NVIDIA Nemotron on Nebius Token Factory**: `nemotron` is Nemotron 3 Ultra with thinking off, and `nemotron-local` is Nemotron 3 Nano 4B distilled from it, served on your machine. With Nemotron 3 Super as the coding model, both of mu's model roles run on Token Factory: see [docs/nebius.md](docs/nebius.md), which also covers running commands in Token Factory Sandboxes (new, and so far tested only against a stand-in for the Sandboxes API).
 
 Judges can be chained in tiers, cheapest first:
 

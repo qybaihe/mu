@@ -83,6 +83,8 @@ A yes/no answer between 0.2 and 0.8, or a choice below 0.6, goes on to Ultra; ev
 
 With the sandbox on, `bash`, `read`, `write` and `edit` run in a Token Factory sandbox instead of on your machine. The project is copied in when the session starts, and every command continues from the files the previous one left. Nothing changes on your machine until you run `/sandbox pull`, see the diff and agree.
 
+This is new. Sandboxes must be enabled for your Token Factory project, and so far mu's sandbox client is tested only against a stand-in for the Sandboxes API that follows its documentation, not yet against the live service.
+
 ```bash
 export NEBIUS_PROJECT_ID=...   # Token Factory → Project settings
 MU_SANDBOX=nebius mu --provider nebius --model nvidia/nemotron-3-super-120b-a12b
@@ -92,7 +94,7 @@ MU_SANDBOX=nebius mu --provider nebius --model nvidia/nemotron-3-super-120b-a12b
 
 ## Web search with Tavily
 
-With `TAVILY_API_KEY` set, `web_search` asks [Tavily](https://tavily.com) first and `web_fetch` falls back to Tavily's extract for pages it cannot read itself. See [Configuration](configuration.md).
+With `TAVILY_API_KEY` set, `web_search` asks [Tavily](https://tavily.com) first and `web_fetch` falls back to Tavily's extract for pages it cannot read itself. See [Configuration](configuration.md). Like the sandbox, this is new and tested so far with mocked responses rather than live calls.
 
 ## Measured
 
