@@ -1,4 +1,6 @@
+import type { Api, AssistantMessage, Model } from "@earendil-works/pi-ai";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { estimateReasoningTokens, USAGE_ENTRY, type UsageEntry } from "../../usage.ts";
 import { failOpen, type KyrnRuntime } from "../runtime.ts";
 
 export const WATCHDOG_MESSAGE = "kyrn.watchdog";
@@ -25,6 +27,41 @@ export function cutAfterMs(thinkingMs: number, remainingMs: number | undefined):
 }
 
 /**
+ * What a cut reply cost beyond what its message reports. The aborted request usually reports no usage at all (an
+ * OpenAI-compatible stream sends it in its last chunk, which never comes), so the reasoning that had streamed is
+ * estimated (`REASONING_CHARS_PER_TOKEN`); whatever output the provider did report is subtracted, so nothing is counted
+ * twice. The request's prompt is not estimated: it is mostly a cache read. Undefined when there is nothing to add.
+ */
+export function cutUsage(
+	message: AssistantMessage,
+	streamedChars: number,
+	thinkingMs: number,
+	model: Model<Api> | undefined,
+): UsageEntry | undefined {
+	const kept = message.content.reduce(
+		(sum, block) => sum + (block.type === "thinking" ? block.thinking.length : 0),
+		0,
+	);
+	const chars = Math.max(streamedChars, kept);
+	const output = Math.max(0, estimateReasoningTokens(chars) - (message.usage?.output ?? 0));
+	if (output === 0) return undefined;
+	const priced = model?.provider === message.provider && model.id === message.model ? model : undefined;
+	return {
+		source: "watchdog-cut",
+		model: `${message.provider}/${message.model}`,
+		input: 0,
+		output,
+		cacheRead: 0,
+		cacheWrite: 0,
+		...(priced ? { cost: (priced.cost.output / 1_000_000) * output } : {}),
+		estimated: true,
+		estimatedOutput: output,
+		thoughtChars: chars,
+		thinkingMs,
+	};
+}
+
+/**
  * A reply that does nothing but think for `thinkingMs` (10 minutes by default) is cut and asked again, at the same
  * reasoning effort. Some models write 30,000 to 70,000 reasoning tokens in a single reply, which can take most of a
  * run's time budget before anything is done. The retry is told where the cut reasoning had got to and asked to act
@@ -34,6 +71,7 @@ export function cutAfterMs(thinkingMs: number, remainingMs: number | undefined):
  * - When the run has a deadline (`runtime.deadlineAt`, see deadline.ts), the cut can come sooner: see `cutAfterMs`.
  * - The retry itself is never cut: a reply that really needs longer gets all the time it needs the second time.
  * - At most `maxCuts` cuts between two messages of the user.
+ * - What the cut reply spent is recorded as a `kyrn.usage` entry (`cutUsage`): no message of the session carries it.
  */
 export function registerWatchdog(runtime: KyrnRuntime): void {
 	const options = runtime.options("watchdog", { enabled: true, thinkingMs: 600_000, maxCuts: 3 });
@@ -45,10 +83,12 @@ export function registerWatchdog(runtime: KyrnRuntime): void {
 	let timer: NodeJS.Timeout | undefined;
 	let acted = false;
 	let thought = "";
+	/** All of the reasoning streamed in the reply being written; `thought` keeps only its end. */
+	let thoughtChars = 0;
 	let cuts = 0;
 	/** The next reply is the retry of a cut one. */
 	let spare = false;
-	let cut: { ms: number; tail: string } | undefined;
+	let cut: { about: number; ms: number; tail: string; usage?: UsageEntry } | undefined;
 
 	const stopTimer = (): void => {
 		if (timer) clearTimeout(timer);
@@ -64,9 +104,9 @@ export function registerWatchdog(runtime: KyrnRuntime): void {
 			timer = undefined;
 			if (message !== about || acted || cut !== undefined) return;
 			cuts++;
-			cut = { ms: Date.now() - startedAt, tail: thought.slice(-TAIL_CHARS) };
+			cut = { about, ms: Date.now() - startedAt, tail: thought.slice(-TAIL_CHARS) };
 			runtime.harnessAbort = true;
-			runtime.present("watchdog.cut", { thinkingMs: cut.ms, thoughtChars: thought.length });
+			runtime.present("watchdog.cut", { thinkingMs: cut.ms, thoughtChars });
 			ctx.abort();
 		}, after);
 		// A watchdog never keeps the process alive.
@@ -95,6 +135,7 @@ export function registerWatchdog(runtime: KyrnRuntime): void {
 			stopTimer();
 			acted = false;
 			thought = "";
+			thoughtChars = 0;
 			if (spare) {
 				spare = false;
 				return undefined;
@@ -109,6 +150,7 @@ export function registerWatchdog(runtime: KyrnRuntime): void {
 			const update = event.assistantMessageEvent;
 			if (update.type === "thinking_delta") {
 				thought += update.delta;
+				thoughtChars += update.delta.length;
 				// Only the end is ever sent back.
 				if (thought.length > 4 * TAIL_CHARS) thought = thought.slice(-TAIL_CHARS);
 			} else if (update.type === "text_delta" || update.type === "toolcall_start") {
@@ -120,8 +162,12 @@ export function registerWatchdog(runtime: KyrnRuntime): void {
 	);
 	pi.on(
 		"message_end",
-		failOpen((event) => {
-			if (event.message.role === "assistant") stopTimer();
+		failOpen((event, ctx) => {
+			if (event.message.role !== "assistant") return undefined;
+			stopTimer();
+			if (cut?.about === message && cut.usage === undefined) {
+				cut.usage = cutUsage(event.message, thoughtChars, cut.ms, ctx.model);
+			}
 			return undefined;
 		}),
 	);
@@ -134,6 +180,7 @@ export function registerWatchdog(runtime: KyrnRuntime): void {
 			stopTimer();
 			if (was === undefined) return undefined;
 			spare = true;
+			if (was.usage) pi.appendEntry<UsageEntry>(USAGE_ENTRY, was.usage);
 			const tail = was.tail.trim();
 			pi.sendMessage(
 				{

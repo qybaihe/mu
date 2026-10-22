@@ -33,9 +33,11 @@ import {
 	type SwarmLimits,
 	SwarmRun,
 	type SwarmSnapshot,
+	subagentUsage,
 } from "../../swarm/run.ts";
 import { type BeeEvent, codedError } from "../../swarm/state.ts";
 import { renderSwarm, swarmText } from "../../swarm/view.ts";
+import { USAGE_ENTRY, type UsageEntry } from "../../usage.ts";
 import { type AgentDefinition, type AgentThinking, loadAgents, THINKING_LEVELS } from "../agents.ts";
 import { clip, type KyrnRuntime, userWords } from "../runtime.ts";
 import { Isolation, type IsolationOutcome, type Placement, patchesOf } from "./swarm-isolation.ts";
@@ -459,6 +461,17 @@ export function renderSwarmResult(
 	};
 }
 
+/**
+ * Each sub-agent's spend goes into this session as a `kyrn.usage` entry when it ends: the child keeps no session of
+ * its own, so without it its tokens are in no session file at all.
+ */
+export function recordBeeUsage(runtime: KyrnRuntime, run: SwarmRun<SwarmAssignment>): void {
+	run.onBeeEnd = (bee) => {
+		const entry = subagentUsage(run.kind, bee);
+		if (entry) runtime.pi.appendEntry<UsageEntry>(USAGE_ENTRY, entry);
+	};
+}
+
 /** A snapshot small enough to keep in the session: what each bee came to, without its activity log or its words. */
 export function compactSnapshot(snapshot: SwarmSnapshot): SwarmSnapshot {
 	return {
@@ -680,6 +693,7 @@ export function registerSwarm(runtime: KyrnRuntime, runner: SwarmRunner = spawnR
 				})),
 			});
 			streamUpdates(run, onUpdate);
+			recordBeeUsage(runtime, run);
 			const outcomes = await run.run(placedRunner, signal);
 			const reports = outcomes.map((outcome) => outcome.report);
 			const frames = await Promise.all(tasks.map((_task, index) => readFrameOut(frameOutPath(runDir, index))));
