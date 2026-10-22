@@ -1,4 +1,5 @@
 import { defineDecision } from "../decision.ts";
+import { isStandIn } from "../policy.ts";
 import type { Answer, Question, Questions } from "../types.ts";
 import { looksInjected } from "./tool-injection.ts";
 
@@ -46,12 +47,16 @@ function descriptionQuestion(field: string): Question {
 	};
 }
 
+/**
+ * A judge's own answer. A cascade's stand-in (`isStandIn`) is no verdict: the rules decide that passage, and it is not
+ * kept on disk.
+ */
 const probabilityOf = (answer: Answer | undefined): DescriptionOutcome =>
-	answer?.type === "boolean" ? answer.probability : null;
+	answer?.type === "boolean" && !isStandIn(answer) ? answer.probability : null;
 
 export const toolDescription = defineDecision({
 	id: "tool.description",
-	version: 1,
+	version: 2,
 	cacheImpact: "none",
 	latency: "inline",
 	questions: {} as Questions,

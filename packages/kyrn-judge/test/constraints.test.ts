@@ -37,16 +37,20 @@ describe("hard constraints on tool calls", () => {
 		};
 	}
 
-	async function start(responder: MockResponder, mode: DecisionMode = "active"): Promise<Harness> {
+	async function start(
+		responder: MockResponder,
+		mode: DecisionMode = "active",
+		constraints: Record<string, unknown> = {},
+	): Promise<Harness> {
 		// A subagent's frame starts with what its parent was told: the shortest way to a frame with a constraint.
 		process.env.KYRN_SWARM_CONSTRAINTS = JSON.stringify(["先别修改数据库相关的文件"]);
 		const harness = await createHarness({
-			tools: [tool("edit"), tool("read")],
+			tools: [tool("edit"), tool("read"), tool("bash")],
 			extensionFactories: [
 				createKyrnJudgeExtension({
 					provider: new MockJudgeProvider(responder),
 					mode,
-					config: parseConfig({ features: { memory: false } }),
+					config: parseConfig({ features: { memory: false, constraints } }),
 					only: ["preflight", "frame", "constraints"],
 				}),
 			],
@@ -102,6 +106,35 @@ describe("hard constraints on tool calls", () => {
 
 		expect(asked).toBe(0);
 		expect(ran).toHaveLength(1);
+	});
+
+	// Review of the decision points, 2026-10-22: `bash` was checked whatever the command, `ls` included.
+	it("never asks about a shell command that only looks, and still asks about one part that writes", async () => {
+		const asked: string[] = [];
+		const responder: MockResponder = (request) => {
+			if ("constraint_0" in request.questions)
+				asked.push(String((request.state as { tool_call: string }).tool_call));
+			return {};
+		};
+		const look = (command: string) =>
+			fauxAssistantMessage([fauxToolCall("bash", { command })], { stopReason: "toolUse" });
+		const harness = await start(responder);
+		harness.setResponses([
+			look("ls -la db; git status --short"),
+			look("cat db/schema.sql | grep -n users 2>/dev/null"),
+			look("ls db && sed -i s/a/b/ db/schema.sql"),
+			fauxAssistantMessage("Looked."),
+		]);
+		await harness.session.prompt("What is in the schema?");
+		expect(asked).toEqual(["bash: ls db && sed -i s/a/b/ db/schema.sql"]);
+		expect(ran).toHaveLength(3);
+
+		// Switched off, every command is checked as before.
+		asked.length = 0;
+		const all = await start(responder, "active", { skipReadOnly: false });
+		all.setResponses([look("ls -la db"), fauxAssistantMessage("Looked.")]);
+		await all.session.prompt("What is in the schema?");
+		expect(asked).toEqual(["bash: ls -la db"]);
 	});
 
 	it("describes a call briefly: where, and the beginning of what", () => {

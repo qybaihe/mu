@@ -63,7 +63,7 @@ mu                     # 在当前目录开一个会话
 
 mu 把一次会话里的例行问题交给一个小而快的判定模型。你不需要专门设置：没有 Jev 密钥时，由 OpenCode Zen 上免费的 Jev 回答，mu 每天提示一次。要用自己的密钥、本地判定器或别的模型，见[判定器](@docs/judges)。
 
-{points} 个判定点里有 {points_active} 个从一开始就按判定结果行事（`context.compact` 和 `output.drift` 默认关闭），每次判定都会记录下来：`/status`、`mu ledger`，或桌面端的「判定」页。想先观察判定器、再决定信不信它，就把判定点设成影子模式：照常提问并记录，但不改变任何东西。
+{points} 个判定点里有 {points_active} 个从一开始就按判定结果行事（`context.compact`、`output.drift` 和 `swarm.patch` 默认关闭，`notify.routing`、`input.interjection` 和 `turn.drift` 默认只记录），每次判定都会记录下来：`/status`、`mu ledger`，或桌面端的「判定」页。想先观察判定器、再决定信不信它，就把判定点设成影子模式：照常提问并记录，但不改变任何东西。
 
 ```json
 { "modes": { "default": "shadow" } }

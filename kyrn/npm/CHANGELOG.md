@@ -23,6 +23,10 @@
 - `turn.drift` only records by default (`modes: { "turn.drift": "shadow" }`): in benchmark runs Jev never flagged drift, and about 9 in 10 of another judge's drift steers were wrong. Set it to `active` to have it steer again.
 - `skill.capture` drafts a skill only when the judge is at least 90% sure the run was a procedure (was 70%).
 - `memory.outcome` learns only from a loop the turn got out of, not from drift, which names no failing call.
+- Permission modes: a command made only of read-only commands joined by `;`, `&&`, `||` or `|` (`pwd && find . -name '*.ts' | sort | head`, `git status --short; git log --oneline -5`), throwing output away with `2>/dev/null` or `2>&1`, runs without asking the judge or you, like a single read-only command, and the constraint gate no longer checks it. A redirect that writes a file, `sed -i`, `tee`, `find` with `-exec`, `-delete` or `-fprint`, a substitution, or `cd` followed by `git` still asks. Quoting is read the way the shell reads it, so `rg '--pre=./x'` and `sort --out=f` no longer pass as read-only (`features.permissions.readOnlyChains`, `features.constraints.skipReadOnly`).
+- The risk rules flag `rm` only when it deletes recursively (`-r`, `-R`, `-rf`, `--recursive`, also after a file name); `rm -f file` and `docker run --rm` are not flagged. `curl … | python3 -c '…'` (and `node -e`, `perl -e`, `ruby -e`) reads the download as data and is no longer "runs a downloaded script", unless the code runs what it reads (`exec`, `eval`, `system`, …). A download saved and then run in the same command (`curl -o i.sh … && sh i.sh`) is flagged now.
+- `tool.risk` (v2) asks only whether you asked for the command. Its "destructive" question never changed a verdict in Judge mode; with permission modes off, a "not destructive" no longer lets the guard run a flagged command.
+- `tool.description` (v2) keeps the judge's verdicts in `~/.mu/agent/mu/tool-descriptions.json`, so the next `mu --print`, subagent or restart doesn't screen an unchanged MCP server again or wait up to 8 seconds for it. A call to an MCP tool taken off the list is refused before anyone is asked to allow it, and a cascade's stand-in answer is no verdict here either: the rules read that passage, and nothing is kept.
 
 ### Fixed
 
@@ -32,6 +36,7 @@
 - The loop rule ("the same call 3 times with the same outcome") compares the whole input and the result text. Paging through a file with `read` at different offsets, or two scripts whose first 300 characters match, no longer counts as a loop.
 - The end-of-run checks (`turn.completion`, `turn.continue`) cancel their judge call when their 3 s wait runs out. A late verdict no longer keeps `mu --print` from exiting until the judge's own timeout: with a slow local judge, runs ended 7-13 s after their last message. Notification verdicts still on their way are cancelled when the session ends.
 - The `remember` tool dropped a lesson when the judge gave no verdict (a timeout, no judge, shadow mode) or could not tell. It now stores it; only a judge that reads it as one-off or known already turns it down. Sub-agents' `Lesson:` lines still need a verdict.
+- `manifest.json` gives a decision point its built-in mode (`defaultMode`) when `DEFAULT_CONFIG.modes` sets one for it: `swarm.patch` off, `notify.routing`, `input.interjection` and `turn.drift` in shadow. Without it the desktop app's settings and kernel bar showed these points at the default mode, as active, and usemu.dev counted 38 of the 40 points as acting from the start instead of 34. `scripts/write-docs-reference.mjs` reads the modes from the manifest too.
 
 ## [0.1.12] - 2026-10-22
 
