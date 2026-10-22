@@ -411,6 +411,7 @@ describe("the experience library in a session", () => {
 		only?: FeatureName[];
 		features?: Record<string, unknown>;
 		memory?: Record<string, unknown>;
+		modes?: Record<string, string>;
 		runner?: SwarmRunner;
 	}
 
@@ -424,7 +425,10 @@ describe("the experience library in a session", () => {
 				createKyrnJudgeExtension({
 					provider,
 					mode: "active",
-					config: parseConfig({ features: { memory: { path, ...setup.memory }, ...setup.features } }),
+					config: parseConfig({
+						modes: setup.modes,
+						features: { memory: { path, ...setup.memory }, ...setup.features },
+					}),
 					only: ["preflight", "memory", ...(setup.only ?? [])],
 					onPresentation: (event) => events.push(event),
 					swarmRunner: setup.runner,
@@ -606,6 +610,40 @@ describe("the experience library in a session", () => {
 		expect(session.stored()).toEqual([]);
 	});
 
+	it("outcome: drift is no trouble to learn a way out of: it names no failing call", async () => {
+		let checks = 0;
+		const session = await start(
+			(request): Record<string, Answer> => {
+				// Drift at the first check only: a check passes after it.
+				if ("course" in request.questions) return { course: pick(++checks === 1 ? "drift" : "on_track") };
+				return "way_out" in request.questions ? { way_out: yes } : {};
+			},
+			{
+				tools: [bash()],
+				only: ["monitor"],
+				features: { monitor: { every: 1 } },
+				modes: { "turn.drift": "active" },
+			},
+		);
+		const agent = [
+			run("ls"),
+			run("cat package.json"),
+			run("npx vitest --run"),
+			fauxAssistantMessage("The tests pass."),
+		];
+		session.harness.setResponses(Array.from({ length: 6 }, () => router(agent, WAY_OUT, [])));
+		await session.harness.session.prompt("Make the tests pass.");
+		// The monitor did flag drift and steer, after which a check passed.
+		await vi.waitFor(() => expect(session.asked("course").length).toBeGreaterThan(0));
+		const steers = session.harness.session.messages.filter(
+			(message) => message.role === "custom" && (message as { customType?: string }).customType === "kyrn.steer",
+		);
+		expect(steers.length).toBeGreaterThan(0);
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		expect(session.asked("way_out")).toEqual([]);
+		expect(session.stored()).toEqual([]);
+	});
+
 	it("model: remember keeps what the judge reads as reusable, and says why it keeps nothing else", async () => {
 		const verdicts = [pick("reusable"), pick("one_off")];
 		const session = await start(
@@ -639,6 +677,35 @@ describe("the experience library in a session", () => {
 				"When: the dev server does not start because port 5173 is taken\nDo: Start it with PORT=5174 npm run dev.",
 			project_instructions: "(none)",
 		});
+	});
+
+	it("model: remember keeps a lesson the judge gave no verdict on, or could not tell about", async () => {
+		// The model's call is a vote already. Only a judge that reads the lesson as not worth keeping turns it down.
+		const verdicts: (Answer | undefined)[] = [undefined, pick("unclear")];
+		const session = await start((request): Record<string, Answer> => {
+			if (!("worth_1" in request.questions)) return {};
+			const verdict = verdicts.shift();
+			// No answer at all: the judge abstains, and the decision falls back.
+			return verdict ? { worth_1: verdict } : {};
+		});
+		const remember = (trigger: string, text: string) =>
+			fauxAssistantMessage([fauxToolCall("remember", { trigger, lesson: text })], { stopReason: "toolUse" });
+		session.harness.setResponses([
+			remember("the dev server does not start because port 5173 is taken", "Start it with PORT=5174 npm run dev."),
+			remember("a migration fails with a lock timeout", "Stop the worker queue before migrating."),
+			fauxAssistantMessage("Noted."),
+		]);
+		await session.harness.session.prompt("Start the dev server.");
+
+		expect(session.stored().map((lesson) => lesson.lesson)).toEqual([
+			"Start it with PORT=5174 npm run dev.",
+			"Stop the worker queue before migrating.",
+		]);
+		const results = session.harness.session.messages
+			.filter((message) => message.role === "toolResult")
+			.map((message) => JSON.stringify(message));
+		expect(results[0]).toContain("Stored: Start it with PORT=5174 npm run dev.");
+		expect(results[1]).toContain("Stored: Stop the worker queue before migrating.");
 	});
 
 	it("subagents: Lesson: lines of a report are judged together and the reusable ones kept", async () => {

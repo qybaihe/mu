@@ -84,6 +84,64 @@ export function riskFlag(command: string): string | undefined {
 	return RULES.find(([pattern]) => pattern.test(command) || pattern.test(plain))?.[1];
 }
 
+/** How much of a flagged command the judge reads: all of it up to here, past here its start and every flagged part. */
+export const RISK_COMMAND_CHARS = 8000;
+/** The same for the person asked to confirm it. */
+export const RISK_CONFIRM_CHARS = 1500;
+
+/**
+ * A flagged command as the judge, or the person asked to confirm it, reads it: whole when it fits in `limit`, else its
+ * start and every part a rule matched, with some text on each side, in order and joined by "…". Cut at a fixed length
+ * instead, a long script whose `rm -rf` came late read as harmless: the judge cannot weigh a flag it cannot see. Each
+ * rule that matched keeps at least one part even past `limit`. A rule that only matches the command as the shell
+ * reads its words (`r''m -rf`) has the excerpt taken from those words.
+ */
+export function riskExcerpt(command: string, limit = RISK_COMMAND_CHARS): string {
+	const flat = (text: string) => text.replace(/\s+/g, " ").trim();
+	if (flat(command).length <= limit) return flat(command);
+	const plain = unquoted(command);
+	const source = RULES.some(([pattern]) => !pattern.test(command) && pattern.test(plain)) ? plain : command;
+	const around = Math.floor(limit / 12);
+	const clamp = ([start, end]: readonly [number, number]): [number, number] => [
+		Math.max(start, 0),
+		Math.min(end, source.length),
+	];
+	// Per rule, the parts around its matches in order; a long match (find … -delete) shows both its ends.
+	const byRule = RULES.map(([pattern]) =>
+		[...source.matchAll(new RegExp(pattern.source, `${pattern.flags.replace("g", "")}g`))].flatMap((match) => {
+			const start = match.index;
+			const end = start + match[0].length;
+			return end - start > 4 * around
+				? [clamp([start - around, start + around]), clamp([end - around, end + around])]
+				: [clamp([start - around, end + around])];
+		}),
+	);
+	const size = ([start, end]: [number, number]) => end - start;
+	// The start of the command and the first part of each rule always stay; the others while they fit, in order.
+	const kept = [clamp([0, 2 * around]), ...byRule.flatMap((parts) => parts.slice(0, 1))];
+	let used = kept.reduce((sum, part) => sum + size(part), 0);
+	const rest = byRule.flatMap((parts) => parts.slice(1)).sort((a, b) => a[0] - b[0]);
+	let left = 0;
+	for (const part of rest) {
+		if (used + size(part) > limit) left++;
+		else {
+			kept.push(part);
+			used += size(part);
+		}
+	}
+	const spans = kept
+		.sort((a, b) => a[0] - b[0])
+		.reduce<[number, number][]>((merged, span) => {
+			const last = merged[merged.length - 1];
+			if (last && span[0] <= last[1]) last[1] = Math.max(last[1], span[1]);
+			else merged.push([...span]);
+			return merged;
+		}, []);
+	const text = spans.map(([start, end]) => `${start > 0 ? "… " : ""}${flat(source.slice(start, end))}`).join(" ");
+	const tail = spans[spans.length - 1][1] < source.length ? " …" : "";
+	return `${text}${tail}${left > 0 ? ` (${left} more flagged parts left out)` : ""}`;
+}
+
 /**
  * B3: rules pick the commands, the judge says whether the user asked for it,
  * and only an unvouched-for command reaches the user as a confirmation. The
@@ -108,7 +166,7 @@ export function registerGuard(runtime: KyrnRuntime): void {
 			const asked = subAgentUserGoal() ?? runtime.turn.userMessage;
 			const decision = await runtime.engine.decide(
 				toolRisk,
-				{ command: clip(command, 400), userMessage: clip(asked, 400), flag },
+				{ command: riskExcerpt(command), userMessage: clip(asked, 400), flag },
 				{ signal: ctx.signal },
 			);
 			// Off and shadow leave pi's own behavior alone; only an active gate may stop a command.
@@ -117,7 +175,7 @@ export function registerGuard(runtime: KyrnRuntime): void {
 				return { block: true, reason: `mu: "${flag}" needs confirmation, which this mode cannot ask for.` };
 			const approved = await ctx.ui.confirm(
 				`mu: ${say({ zh: FLAG_ZH[flag] ?? flag, en: flag })}`,
-				`${say({ zh: "要运行这条命令吗？", en: "Run this command?" })}\n\n${clip(command, 600)}`,
+				`${say({ zh: "要运行这条命令吗？", en: "Run this command?" })}\n\n${riskExcerpt(command, RISK_CONFIRM_CHARS)}`,
 			);
 			return approved ? undefined : { block: true, reason: `The user declined this command (${flag}).` };
 		}),

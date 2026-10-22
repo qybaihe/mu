@@ -59,6 +59,7 @@ import { registerSwarm, type SwarmRunner } from "./features/swarm.ts";
 import { registerSwarmChild } from "./features/swarm-child.ts";
 import { registerTools } from "./features/tools.ts";
 import { registerTtsr } from "./features/ttsr.ts";
+import { registerUnattendedDrift } from "./features/unattended.ts";
 import { registerWarming } from "./features/warming.ts";
 import { registerWarmup } from "./features/warmup.ts";
 import { registerWatchdog } from "./features/watchdog.ts";
@@ -211,7 +212,13 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["admission", registerAdmission],
 		["forgetting", registerForgetting],
 		["compaction", registerCompaction],
-		["monitor", registerMonitor],
+		[
+			"monitor",
+			(shared) => {
+				registerMonitor(shared);
+				registerUnattendedDrift(shared);
+			},
+		],
 		["ttsr", registerTtsr],
 		["watchdog", registerWatchdog],
 		// Before the goal and completion checks: errors an edit introduced are said before "verify your change" is.

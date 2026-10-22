@@ -10,6 +10,7 @@ import { CAPABILITY_ENTRY } from "../src/extension/features/catalog.ts";
 import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import { MockJudgeProvider, type MockResponder } from "../src/providers/mock.ts";
 import type { Answer } from "../src/types.ts";
+import { attended } from "./attended.ts";
 
 const yes: Answer = { type: "boolean", probability: 0.96 };
 const no: Answer = { type: "boolean", probability: 0.03 };
@@ -86,7 +87,7 @@ describe("capability disclosure", () => {
 				createKyrnJudgeExtension({
 					provider: new MockJudgeProvider(responder),
 					mode,
-					config: parseConfig({ features: { memory: false } }),
+					config: parseConfig({ features: attended({ memory: false }) }),
 					// Preflight is what counts user turns.
 					only: ["preflight", "catalog"],
 					capabilities,

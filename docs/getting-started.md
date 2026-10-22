@@ -48,7 +48,7 @@ mu asks a small, fast judge model the routine questions that come up in a sessio
 
 ## Decisions and their modes
 
-35 of the 40 decision points are **active** from the start: mu asks the judge and acts on its verdicts. `context.compact` and `output.drift` are off until you turn them on, `swarm.patch` is off, and `notify.routing` and `input.interjection` are in shadow: asked and logged, while their own rules decide. Every verdict is logged, so you can see what the judge decided (`/status`, `mu ledger` or the Judge tab in the app).
+34 of the 40 decision points are **active** from the start: mu asks the judge and acts on its verdicts. `context.compact` and `output.drift` are off until you turn them on, `swarm.patch` is off, and `notify.routing`, `input.interjection` and `turn.drift` are in shadow: asked and logged, while their own rules decide. Every verdict is logged, so you can see what the judge decided (`/status`, `mu ledger` or the Judge tab in the app).
 
 To watch the judge before you trust it, set the default mode to **shadow**. The judge is still asked and its verdicts are logged, but they change nothing. In `~/.mu/agent/mu.json`:
 
