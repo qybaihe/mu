@@ -28,13 +28,13 @@ const helpZh = () => `mu ${VERSIONS.mu} · 先判断再动手的编程代理，�
   /doctor：检查判定器、模型、浏览器、子代理有没有接好
   /init：让代理为这个项目写一份 AGENTS.md
   /clear：开始一段新对话（同 /new）
-  /import-chat [文件]：把这个项目在 Claude Code 或 Codex 里的对话导入进来，接着在这里聊
+  /import-chat [文件]：把这个项目在 Claude Code、Codex 或 ZCode 里的对话导入进来，接着在这里聊
 
 判断层
   你的每条消息都先交给判定器读：读的时候消息停在输入框上方（按 esc 可跳过等待），
   判定结果留在对话里这条消息下面。${keyText("app.tools.expand")} 可以看每个判定背后的全部回答。
   /mu judge <判定器>：由哪些模型来判定、按什么顺序，比如 laya | laya,jev | jev-opencode-free | clm | classifier:<提供商>/<模型> | llm:<提供商>/<模型>
-  /mu route <判定点> <判定器|default>：让某一个判定点用自己的判定器，比如 browser.step llm:openai-codex/gpt-5.6-luna
+  /mu route <判定点> <判定器|default>：让某一个判定点用自己的判定器，比如 browser.step llm:openai/gpt-5.6-luna
   /mu mode <判定点|default> <off|shadow|active>：off 关闭，shadow 影子（只记录，不起作用），active 生效
   /frame：查看任务帧，也就是 mu 记住的目标、你的硬约束（原话加出处）和验收条件
   /goal <条件>：让代理一直干到大模型判断条件成立；只输入 /goal 会问你条件（或显示正在进行的目标），
@@ -72,59 +72,170 @@ const helpZh = () => `mu ${VERSIONS.mu} · 先判断再动手的编程代理，�
 
 输入时：! 运行一条 shell 命令 · !! 运行但不放进上下文 · @ 附上一个文件`;
 
-const helpEn = () => `mu ${VERSIONS.mu} · a judgment-first coding agent, built on pi ${VERSIONS.pi}
+/** A row of the English help: a command and what it does. An empty command continues the row above. */
+type HelpRow = readonly [command: string, description: string];
 
-Start here
-  /status                  show the model, the judge, each decision point's mode, what was kept out of context and recent verdicts
-  /doctor                  check that the judge, model, browser and subagents are set up
-  /init                    have the agent write an AGENTS.md for this project
-  /clear                   start a new session (same as /new)
-  /import-chat [file]      import a Claude Code or Codex conversation from this project and continue it here
+interface HelpSection {
+	readonly title: string;
+	readonly intro?: string;
+	readonly rows: readonly HelpRow[];
+}
 
-Judgment kernel
-  The judge reads every message first. While it reads, your message waits above the editor (esc skips the wait);
-  the verdict then appears under your message. ${keyText("app.tools.expand")} shows the full answers behind a verdict.
-  /mu judge <judges>       set which judges answer, in order: laya | laya,jev | jev-opencode-free | clm | classifier:<provider>/<model> | llm:<provider>/<model>
-  /mu route <point> <judge|default>   give one decision point its own judge, e.g. browser.step llm:openai-codex/gpt-5.6-luna
-  /mu mode <point|default> <off|shadow|active>
-                           off; shadow (asked and logged, changes nothing); active (the verdict takes effect)
-  /frame                   show the current task: the goal, your constraints with their source and the checklist
-  /goal <condition>        keep the agent working until a model judges the condition met; /goal alone asks
-                           for one (or shows the current goal) and /goal clear ends it
-  /board on|off            turn the plain-language board on or off for this project: progress, what's happening,
-                           what's waiting on you; /board shows it, /board model picks the model that writes it
-  /permissions [mode]      set how much mu can do without asking: full (Full access), judge (Judge mode: the judge
-                           allows what the task clearly needs and asks you about the rest), ask (Ask first: asks
-                           before anything but reading)
-  /capabilities            show what's installed and what the judge turned on for this task
-  /ledger [n]              show the last n verdicts and their latency
-  /remember <lesson>       save a lesson for future sessions
-  /lessons [all]           list this project's lessons and how often each was recalled and followed; all adds
-                           global and retired lessons
-  /forget <id>             retire a lesson so it's no longer recalled
+const helpSectionsEn = (): HelpSection[] => [
+	{
+		title: "Start here",
+		rows: [
+			[
+				"/status",
+				"show the model, the judge, each decision point's mode, what was kept out of context and recent verdicts",
+			],
+			["/doctor", "check that the judge, model, browser and subagents are set up"],
+			["/init", "have the agent write an AGENTS.md for this project"],
+			["/clear", "start a new session (same as /new)"],
+			[
+				"/import-chat [file]",
+				"import a Claude Code, Codex or ZCode conversation from this project and continue it here",
+			],
+		],
+	},
+	{
+		title: "Judgment kernel",
+		intro: `The judge reads every message first. While it reads, your message waits above the editor (esc skips the wait); the verdict then appears under your message. ${keyText("app.tools.expand")} shows the full answers behind a verdict.`,
+		rows: [
+			[
+				"/mu judge <judges>",
+				"set which judges answer, in order: laya | laya,jev | jev-opencode-free | clm | classifier:<provider>/<model> | llm:<provider>/<model>",
+			],
+			[
+				"/mu route <point> <judge|default>",
+				"give one decision point its own judge, e.g. browser.step llm:openai/gpt-5.6-luna",
+			],
+			["/mu mode <point|default> <off|shadow|active>", ""],
+			["", "off; shadow (asked and logged, changes nothing); active (the verdict takes effect)"],
+			["/frame", "show the current task: the goal, your constraints with their source and the checklist"],
+			[
+				"/goal <condition>",
+				"keep the agent working until a model judges the condition met; /goal alone asks for one (or shows the current goal) and /goal clear ends it",
+			],
+			[
+				"/board on|off",
+				"turn the plain-language board on or off for this project: progress, what's happening, what's waiting on you; /board shows it, /board model picks the model that writes it",
+			],
+			[
+				"/permissions [mode]",
+				"set how much mu can do without asking: full (Full access), judge (Judge mode: the judge allows what the task clearly needs and asks you about the rest), ask (Ask first: asks before anything but reading)",
+			],
+			["/capabilities", "show what's installed and what the judge turned on for this task"],
+			["/ledger [n]", "show the last n verdicts and their latency"],
+			["/remember <lesson>", "save a lesson for future sessions"],
+			[
+				"/lessons [all]",
+				"list this project's lessons and how often each was recalled and followed; all adds global and retired lessons",
+			],
+			["/forget <id>", "retire a lesson so it's no longer recalled"],
+		],
+	},
+	{
+		title: "Tools the agent can use (and you can ask for)",
+		rows: [
+			["/browse <url> [goal]", "drive the built-in browser yourself; the agent uses it through the browse tool"],
+			[
+				"/agents",
+				"list the subagent roles for delegate (independent tasks or a chain of steps) and hive (several investigators on one hard problem, with the judge passing findings between them)",
+			],
+			["/implement <task>", "scout, plan, implement: a chain of subagents, each working through its own checklist"],
+			["/scout-and-plan <task>", "scout, then plan; changes nothing"],
+			["/implement-and-review <task>", "implement, review, fix"],
+			[
+				"/hive <question>",
+				"several investigators take on one question at once, each from its own angle; the judge passes each finding to whoever needs it, and the answer draws on all of them",
+			],
+			[
+				"/swarm",
+				"show what each running subagent is doing; /swarm stop [name] asks it to report now and keeps its findings, /swarm kill [name] stops it immediately",
+			],
+			[
+				"/review [what]",
+				"have the reviewer subagent review your changes (or what you name); the judge ranks its findings from P0 to P3",
+			],
+			["/commit [guidance]", "split uncommitted changes into commits; shows the plan first and never pushes"],
+		],
+	},
+	{
+		title: "Session and model (from pi)",
+		rows: [
+			["/model  /thinking  /login  /logout  /settings  /hotkeys", ""],
+			[
+				"",
+				"/login also signs in to Grok, and to a Google account through Gemini CLI or Antigravity (experimental: explains the risk and asks before opening the browser)",
+			],
+			["/new  /resume  /tree  /fork  /clone  /compact  /name  /session", ""],
+			["/copy  /export  /import  /share  /reload  /changelog  /quit", ""],
+		],
+	},
+];
 
-Tools the agent can use (and you can ask for)
-  /browse <url> [goal]     drive the built-in browser yourself; the agent uses it through the browse tool
-  /agents                  list the subagent roles for delegate (independent tasks or a chain of steps) and hive
-                           (several investigators on one hard problem, with the judge passing findings between them)
-  /implement <task>        scout, plan, implement: a chain of subagents, each working through its own checklist
-  /scout-and-plan <task>   scout, then plan; changes nothing
-  /implement-and-review <task>   implement, review, fix
-  /hive <question>         several investigators take on one question at once, each from its own angle; the judge
-                           passes each finding to whoever needs it, and the answer draws on all of them
-  /swarm                   show what each running subagent is doing; /swarm stop [name] asks it to report now
-                           and keeps its findings, /swarm kill [name] stops it immediately
-  /review [what]           have the reviewer subagent review your changes (or what you name); the judge ranks its findings from P0 to P3
-  /commit [guidance]       split uncommitted changes into commits; shows the plan first and never pushes
+/** Where the English help's descriptions start: two spaces, then a column for the command. */
+const HELP_COLUMN = 27;
 
-Session and model (from pi)
-  /model  /thinking  /login  /logout  /settings  /hotkeys
-                           /login also signs in to Grok, and to a Google account through Gemini CLI or
-                           Antigravity (experimental: explains the risk and asks before opening the browser)
-  /new  /resume  /tree  /fork  /clone  /compact  /name  /session
-  /copy  /export  /import  /share  /reload  /changelog  /quit
+/** `text` broken between words: the first line at most `first` wide, the rest `rest`; no width, one line. */
+function wrapWords(text: string, first: number | undefined, rest: number | undefined): string[] {
+	if (first === undefined || rest === undefined) return [text];
+	const lines: string[] = [];
+	let line = "";
+	for (const word of text.split(" ")) {
+		const limit = lines.length === 0 ? first : rest;
+		if (line && line.length + 1 + word.length > limit) {
+			lines.push(line);
+			line = word;
+		} else line = line ? `${line} ${word}` : word;
+	}
+	return [...lines, line];
+}
 
-While typing:  ! runs a shell command · !! runs it without adding the output to context · @ attaches a file`;
+/**
+ * The English help at a width: a command column, and each description wrapped so it continues under itself, never
+ * under the command. Without a width (no terminal: the desktop app shows it in its own font), each row is one line.
+ */
+export function renderHelpEn(head: string, sections: readonly HelpSection[], foot: string, width?: number): string {
+	const out = [head];
+	for (const section of sections) {
+		out.push("", section.title);
+		if (section.intro)
+			out.push(...wrapWords(section.intro, width && width - 2, width && width - 2).map((line) => `  ${line}`));
+		for (const [command, description] of section.rows) {
+			const lead = command ? `  ${command}` : "";
+			if (!description) {
+				out.push(lead);
+				continue;
+			}
+			const start = Math.max(HELP_COLUMN, lead.length + 3);
+			const lines = wrapWords(
+				description,
+				width && Math.max(20, width - start),
+				width && Math.max(20, width - HELP_COLUMN),
+			);
+			out.push(
+				`${lead.padEnd(start)}${lines[0]}`,
+				...lines.slice(1).map((line) => `${" ".repeat(HELP_COLUMN)}${line}`),
+			);
+		}
+	}
+	out.push("", ...wrapWords(foot, width, width));
+	return out.join("\n");
+}
+
+/** The width the help is shown at: the terminal's, less the margin pi's notice keeps on each side. */
+const helpWidth = (): number | undefined =>
+	process.stdout.isTTY && process.stdout.columns ? Math.max(40, process.stdout.columns - 2) : undefined;
+
+const helpEn = () =>
+	renderHelpEn(
+		`mu ${VERSIONS.mu} · a judgment-first coding agent, built on pi ${VERSIONS.pi}`,
+		helpSectionsEn(),
+		"While typing: ! runs a shell command · !! runs it without adding the output to context · @ attaches a file",
+		helpWidth(),
+	);
 
 function describeRecord(record: LedgerRecord): string[] {
 	const verdict = record.judged === undefined ? (record.reason ?? "no verdict") : JSON.stringify(record.judged);
@@ -297,7 +408,7 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 					: "--  judge      off (MU_JUDGE=off)",
 				`--  decisions  default mode ${engine.getMode("*")}. Change it with /mu mode default <off|shadow|active>`,
 				`${ok(Boolean(chrome))}browser    ${chrome ?? browserAdvice(browserHost)}`,
-				`--  browse     driven by ${engine.judgeFor("browser.step").id}. It needs a judge that can match a goal to a page (Jev or an LLM judge), e.g. /mu route browser.step llm:openai-codex/gpt-5.6-luna`,
+				`--  browse     driven by ${engine.judgeFor("browser.step").id}. It needs a judge that can match a goal to a page (Jev or an LLM judge), e.g. /mu route browser.step llm:openai/gpt-5.6-luna`,
 				`${ok(roles.length > 0)}subagents  ${roles.map((role) => role.name).join(", ")} · add your own in ${agentsDir}`,
 				`${ok(missing.length === 0)}ladder     ${ladder.length === 0 ? "none: subagents use the session's model" : ladder.join(" < ")}${
 					missing.length > 0 ? ` · unavailable: ${missing.join(", ")}` : ""

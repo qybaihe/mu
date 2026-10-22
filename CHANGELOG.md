@@ -27,6 +27,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ### Fixed
 
+- **`/help` fits the terminal.** Its English was laid out for a wide window, so in a narrower one the terminal broke lines again and left single words at the left edge. Each description now wraps in its own column at the terminal's width. It also names ZCode for `/import-chat`, and its `/mu route` example uses `openai` rather than the Codex sign-in.
 - **mu's own commands no longer show `[t]` in the terminal's slash menu.** pi tagged them as an extension loaded for this run only; they come with mu.
 - **`/permissions` opens on the current mode**, so pressing Enter keeps it; before, the cursor started on Full access. A long option in mu's pickers wraps under its own text.
 
