@@ -223,7 +223,9 @@ describe("sandbox client", () => {
 });
 
 describe("project archive", () => {
-	it("writes a tar that the system's tar extracts with modes, long paths and symlinks", () => {
+	// The sandbox's tar is Linux's. Windows' own tar (bsdtar) reads a name's bytes in the console code page and may not
+	// make symlinks, so this checks nothing the sandbox depends on there.
+	it.skipIf(!posix)("writes a tar that the system's tar extracts with modes, long paths and symlinks", () => {
 		const out = tempDir();
 		const long = `${"deep/".repeat(25)}file.txt`;
 		const tar = createTar([
@@ -236,7 +238,7 @@ describe("project archive", () => {
 		mkdirSync(join(out, "x"));
 		execFileSync("tar", ["-xf", join(out, "a.tar"), "-C", join(out, "x")]);
 		expect(readFileSync(join(out, "x", "run.sh"), "utf8")).toBe("#!/bin/sh\necho hi\n");
-		if (posix) expect(statSync(join(out, "x", "run.sh")).mode & 0o777).toBe(0o755);
+		expect(statSync(join(out, "x", "run.sh")).mode & 0o777).toBe(0o755);
 		expect(readFileSync(join(out, "x", long), "utf8")).toBe("deep\n");
 		expect(readFileSync(join(out, "x", "名前.txt"), "utf8")).toBe("utf8\n");
 		expect(lstatSync(join(out, "x", "link")).isSymbolicLink()).toBe(true);

@@ -95,7 +95,9 @@ export async function seedArchive(cwd: string, maxBytes: number): Promise<SeedAr
 		if (!stat) continue;
 		const mtime = Math.floor(stat.mtimeMs / 1000);
 		if (stat.isSymbolicLink()) {
-			entries.push({ path, mode: 0o777, mtime, linkTarget: await readlink(absolute) });
+			// Windows hands back a link's target with its own separator; the sandbox is Linux.
+			const target = await readlink(absolute);
+			entries.push({ path, mode: 0o777, mtime, linkTarget: sep === "\\" ? target.split(sep).join("/") : target });
 		} else if (stat.isFile()) {
 			bytes += stat.size;
 			if (bytes > maxBytes) throw new ProjectTooLarge(bytes, maxBytes);
