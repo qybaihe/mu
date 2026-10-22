@@ -104,7 +104,7 @@ export function usage(platform) {
 		"                           (see mu setup --help for scripting, reading a key from stdin and the supported services)",
 		"  mu judge <cmd>           manage the local judge, Laya (macOS on Apple silicon): setup | start | stop | status | run",
 		"  mu ledger [n] [--json]   print the judge's verdicts from the last n sessions",
-		"  mu import --list | <file>...   import Claude Code and Codex conversations (mu import --help)",
+		"  mu import --list | <file>...   import Claude Code, Codex and ZCode conversations (mu import --help)",
 		"  mu doctor                check the installation, the judges and the connections",
 		"  mu auth <cmd>            sign-in helper for the desktop app (JSON lines):",
 		"                           status | login <provider> | logout <provider>",
@@ -720,7 +720,7 @@ export function planJudge({ platform, env, argv, bin, wsl = false }) {
 // ---------------------------------------------------------------------------------------------------------
 
 /**
- * `mu import`: Claude Code and Codex conversations into mu's sessions (packages/kyrn-judge/src/import). The importer
+ * `mu import`: Claude Code, Codex and ZCode conversations into mu's sessions (packages/kyrn-judge/src/import). The importer
  * needs nothing but Node: the npm package runs its build, judge/dist/import.js, and a checkout its TypeScript with
  * Node's own type stripping (on by default from 22.18).
  */
