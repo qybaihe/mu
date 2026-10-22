@@ -865,6 +865,23 @@ describe("permission modes in a session", () => {
 		expect(seen[1].state.task).toBe("Why does the login test fail?");
 	});
 
+	it("Judge mode: the judge reads a long flagged command with the part its flag is about", async () => {
+		const seen: string[] = [];
+		const { harness } = await start(
+			(request): Record<string, Answer> => {
+				if (!("requested" in request.questions)) return {};
+				seen.push(String((request.state as { command: unknown }).command));
+				return { destructive: yes, requested: no };
+			},
+			{ mode: "judge" },
+		);
+		const steps = Array.from({ length: 1000 }, (_, i) => `echo step-${i}`).join(" && ");
+		harness.setResponses([call("bash", { command: `${steps} && rm -rf build` }), fauxAssistantMessage("Could not.")]);
+		await harness.session.prompt("Why is the build slow?");
+		expect(seen).toHaveLength(1);
+		expect(seen[0]).toContain("rm -rf build");
+	});
+
 	it("inside a subagent with no goal of the user's passed down, no words vouch for its calls", async () => {
 		vi.stubEnv("KYRN_SWARM_DEPTH", "1");
 		const seen: Record<string, unknown>[] = [];

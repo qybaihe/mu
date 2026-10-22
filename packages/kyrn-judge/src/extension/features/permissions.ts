@@ -28,7 +28,7 @@ import { subAgentUserGoal } from "../../swarm/brief.ts";
 import { clip, type KyrnRuntime } from "../runtime.ts";
 import { isShellTool } from "../shell-tools.ts";
 import { describeCall } from "./constraints.ts";
-import { FLAG_CODES, FLAG_ZH, riskFlag } from "./guard.ts";
+import { FLAG_CODES, FLAG_ZH, RISK_CONFIRM_CHARS, riskExcerpt, riskFlag } from "./guard.ts";
 import type { HarnessRoots } from "./inherit.ts";
 
 /** Session entry: the mode this conversation was switched to. A reopened conversation keeps it. */
@@ -219,7 +219,8 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		if (flag) {
 			const decision = await runtime.engine.decide(
 				toolRisk,
-				{ command: clip(describeCall(event.toolName, event.input), 400), userMessage, flag },
+				// The whole command, or every part a rule flagged: the judge cannot weigh what it cannot see.
+				{ command: riskExcerpt(String((event.input as { command?: unknown }).command ?? "")), userMessage, flag },
 				{ signal: ctx.signal },
 			);
 			// The user chose the judge to decide, so its verdict counts in shadow too; no verdict means asking. A rule
@@ -308,7 +309,10 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 			picked = await ctx.ui.select(
 				[
 					say({ zh: `mu 想${KIND_TEXT[need.kind].zh}，需要你授权`, en: `mu wants to ${KIND_TEXT[need.kind].en}` }),
-					need.summary,
+					// A flagged command shows the parts its flag is about, which a summary cut at a fixed length can leave out.
+					flag
+						? riskExcerpt(String((event.input as { command?: unknown }).command ?? ""), RISK_CONFIRM_CHARS)
+						: need.summary,
 					why,
 				].join("\n"),
 				[once, ...(session ? [session] : []), deny],
