@@ -170,6 +170,7 @@ Every point, with its feature switch and options: [docs/reference/decision-point
 - **Laya** (local, macOS on Apple silicon) is a 322M-parameter judge that runs on your machine and never touches the network. Nothing is downloaded without your consent. It's reliable on simple predicates and weaker on meta-judgments, so run it in shadow alongside your current judge and read the ledger before you give it a decision point.
 - **Any classifier model** in pi's catalog can serve as a tier: `classifier:<provider>/<model>`. Examples include Cloudflare's Clef (`clef`, `clef-flash`), the System One models on OpenRouter and the Vercel AI Gateway, or a llama.cpp classifier.
 - **Any LLM** can serve as a tier: `llm:<provider>/<model>`.
+- **NVIDIA Nemotron on Nebius Token Factory**: `nemotron` is Nemotron 3 Ultra with thinking off, and `nemotron-local` is Nemotron 3 Nano 4B distilled from it, served on your machine. With Nemotron 3 Super as the coding model and Token Factory Sandboxes to run commands in, mu runs end to end on Nebius: see [docs/nebius.md](docs/nebius.md).
 
 Judges can be chained in tiers, cheapest first:
 
@@ -358,7 +359,7 @@ Your keys stay on your machine. mu never downloads a model or a runtime on its o
 
 ## Documentation
 
-- [Getting started](docs/getting-started.md) · [Configuration](docs/configuration.md) · [Judges](docs/judges.md) · [Troubleshooting](docs/troubleshooting.md)
+- [Getting started](docs/getting-started.md) · [Configuration](docs/configuration.md) · [Judges](docs/judges.md) · [Nebius and NVIDIA Nemotron](docs/nebius.md) · [Troubleshooting](docs/troubleshooting.md)
 - Reference: [every decision point](docs/reference/decision-points.md) · [every feature and option](docs/reference/features.md) · [Changelog](CHANGELOG.md)
 - For contributors: [How mu works](docs/architecture.md) · [Adding a decision point](docs/adding-a-decision-point.md) · [Translations](docs/translations.md) · [Writing style](docs/writing-style.md)
 
