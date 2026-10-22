@@ -1,4 +1,4 @@
-# LSP 诊断：只说这次改动新引入的，由 Jev 决定什么时候说
+# LSP 诊断：只说这次改动新引入的，由判定器决定什么时候说
 
 更新日期：2026-09-22。对应路线图 `11-out-of-the-box-roadmap.md` 第 1 节“LSP 诊断”。代码在 `packages/kyrn-judge`：协议与纯逻辑 `src/lsp/`，决策 `src/decisions/diagnostics-delivery.ts`，功能 `src/extension/features/lsp.ts`。没有新增依赖。
 

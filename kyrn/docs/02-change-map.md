@@ -94,7 +94,7 @@ npm run check                                                                  #
 | D2–D4 经验写入 / 遗忘 / 反馈 | `agent_settled`、下一个 `input` | 够 | 经验库本身 |
 | E1 压缩方式 | `session_before_compact` | 够 | 处理器完全控制摘要和 `firstKeptEntryId`（不校验）；但保留区间只能是**一段连续后缀**，不能挖洞 |
 | E2 旁支隔离 | `navigateTree(anchor, {summarize:true})` | 部分 | 只在命令上下文可用（`ET:356-390`），流式输出时会抛错。从事件处理器触发要绕：`agent_settled` 里 `pi.sendUserMessage("/cmd", {expandPromptTemplates:true})` |
-| E3 缓存保温 | `cache_warming_decision` 事件 | 够 | 空闲时的续聊概率是**写死的常数 0.15**（`cache-warmer.ts:26,372`），直接用 Jev 的估计覆盖 |
+| E3 缓存保温 | `cache_warming_decision` 事件 | 够 | 空闲时的续聊概率是**写死的常数 0.15**（`cache-warmer.ts:26,372`），直接用判定器的估计覆盖 |
 | E4 代码定位 | `pi.registerTool("locate")` | 够 | — |
 | E5 / E6 测试选择、提交检查 | 自定义工具 / `tool_call` 拦 `git commit` | 够 | — |
 | F `judge` 工具 | `pi.registerTool` | 够 | — |
