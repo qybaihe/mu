@@ -63,6 +63,7 @@ import {
 	getAuthPath,
 	getDebugLogPath,
 	getDocsPath,
+	isAppExtension,
 	VERSION,
 } from "../../config.ts";
 import { type AgentSession, type AgentSessionEvent, parseSkillBlock } from "../../core/agent-session.ts";
@@ -674,8 +675,8 @@ export class InteractiveMode {
 	}
 
 	private getAutocompleteSourceTag(sourceInfo?: SourceInfo): string | undefined {
-		// Built-in extension commands are untagged, like built-in commands.
-		if (!sourceInfo || sourceInfo.source === "builtin") {
+		// Built-in extension commands are untagged, like built-in commands, and so are the app's own.
+		if (!sourceInfo || sourceInfo.source === "builtin" || isAppExtension(sourceInfo.path)) {
 			return undefined;
 		}
 

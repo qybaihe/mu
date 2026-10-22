@@ -451,12 +451,14 @@ export function launchStrategy({ platform, env, canExec }) {
  *  The judgment layer never runs for them, so its extension stays out of their way. */
 function judgeArgs({ argv, layout, root, platform, agentDir, readFile }) {
 	if (PI_COMMANDS.has(argv[0])) return [];
-	const path = pathFor(platform);
-	const extension =
-		layout === "package"
-			? ["-e", packageEntries({ root, platform }).extension]
-			: ["-e", path.join(root, "packages", "kyrn-judge", "src", "extension", "kyrn-judge.ts")];
-	return [...extension, ...themeArgs({ argv, layout, root, platform, agentDir, readFile })];
+	return ["-e", judgeExtension({ layout, root, platform }), ...themeArgs({ argv, layout, root, platform, agentDir, readFile })];
+}
+
+/** The judgment layer's extension file: the package's build, or a checkout's source. */
+function judgeExtension({ layout, root, platform }) {
+	return layout === "package"
+		? packageEntries({ root, platform }).extension
+		: pathFor(platform).join(root, "packages", "kyrn-judge", "src", "extension", "kyrn-judge.ts");
 }
 
 /** mu's own terminal themes, beside the judgment layer's files. */
@@ -538,6 +540,8 @@ export function planLaunch({
 		if (typeof value === "string") childEnv[key] = value;
 	}
 	childEnv.PI_PACKAGE_DIR = appDir;
+	// The judgment layer is part of mu, not an extension loaded for this run: pi shows its commands without [t].
+	childEnv.PI_APP_EXTENSIONS = judgeExtension({ layout, root, platform });
 	childEnv.MU_CODING_AGENT_DIR = agentDir;
 	childEnv.KYRN_CODING_AGENT_DIR = agentDir;
 	childEnv.PI_CODING_AGENT_DIR = agentDir;
