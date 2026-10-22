@@ -154,11 +154,17 @@ export const RISK_CONFIRM_CHARS = 1500;
  * start and every part a rule matched, with some text on each side, in order and joined by "…". Cut at a fixed length
  * instead, a long script whose `rm -rf` came late read as harmless: the judge cannot weigh a flag it cannot see. Each
  * rule that matched keeps at least one part even past `limit`. A rule that only matches the command as the shell
- * reads its words (`r''m -rf`) has the excerpt taken from those words.
+ * reads its words (`r''m -rf`) has the excerpt taken from those words. Spaces run together but line breaks stay: in a
+ * script each one ends a command, and run into one line `echo done` and the `rm -rf build` under it read as one echo.
  */
 export function riskExcerpt(command: string, limit = RISK_COMMAND_CHARS): string {
-	const flat = (text: string) => text.replace(/\s+/g, " ").trim();
-	if (flat(command).length <= limit) return flat(command);
+	const tidy = (text: string) =>
+		text
+			.split(/\r\n?|\n/)
+			.map((line) => line.replace(/\s+/g, " ").trim())
+			.filter(Boolean)
+			.join("\n");
+	if (tidy(command).length <= limit) return tidy(command);
 	const plain = unquoted(command);
 	const source = RULES.some(([pattern]) => !pattern.test(command) && pattern.test(plain)) ? plain : command;
 	const around = Math.floor(limit / 12);
@@ -197,7 +203,7 @@ export function riskExcerpt(command: string, limit = RISK_COMMAND_CHARS): string
 			else merged.push([...span]);
 			return merged;
 		}, []);
-	const text = spans.map(([start, end]) => `${start > 0 ? "… " : ""}${flat(source.slice(start, end))}`).join(" ");
+	const text = spans.map(([start, end]) => `${start > 0 ? "… " : ""}${tidy(source.slice(start, end))}`).join(" ");
 	const tail = spans[spans.length - 1][1] < source.length ? " …" : "";
 	return `${text}${tail}${left > 0 ? ` (${left} more flagged parts left out)` : ""}`;
 }
