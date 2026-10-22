@@ -12,6 +12,20 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 const args = process.argv.slice(2);
+if (args.includes("--help") || args.includes("-h")) {
+	console.log(
+		[
+			"mu ledger: the judge's verdicts from your recent sessions, each with the message it judged.",
+			"",
+			"  mu ledger            verdicts from the 5 most recent sessions",
+			"  mu ledger <n>        from the n most recent",
+			"  mu ledger --json     one JSON object per verdict, for scripts",
+			"",
+			"It reads the session files mu keeps on this machine; nothing is sent anywhere.",
+		].join("\n"),
+	);
+	process.exit(0);
+}
 const asJson = args.includes("--json");
 const limit = Number(args.find((arg) => /^\d+$/.test(arg)) ?? 5);
 /** `MU_<name>`, or the `KYRN_<name>` spelling from before the rename. */
@@ -87,4 +101,5 @@ for (const file of files) {
 	}
 }
 
-if (!asJson) console.log(count === 0 ? `No verdicts found under ${sessionsDir}` : `\n${count} ${count === 1 ? "verdict" : "verdicts"} from ${files.length} ${files.length === 1 ? "session" : "sessions"}`);
+const tilde = (path) => (path.startsWith(homedir()) ? `~${path.slice(homedir().length)}` : path);
+if (!asJson) console.log(count === 0 ? `No verdicts found under ${tilde(sessionsDir)}` : `\n${count} ${count === 1 ? "verdict" : "verdicts"} from ${files.length} ${files.length === 1 ? "session" : "sessions"}`);

@@ -111,6 +111,13 @@ describe("the mu launcher", () => {
 		180_000,
 	);
 
+	it.skipIf(!installed)("answers --version with mu's version, as the npm package does, not pi's", () => {
+		const dir = home();
+		const released = JSON.parse(readFileSync(join(root, "kyrn/npm/package.template.json"), "utf8")).version;
+		for (const flag of ["--version", "-v"]) expect(run("mu", [flag], { HOME: dir }).out.trim()).toBe(released);
+		expect(run("mu", ["version"], { HOME: dir }).out).toContain(`mu ${released} (pi `);
+	});
+
 	// These start pi, through tsx: on GitHub's Windows runners that takes over ten seconds.
 	it.skipIf(!installed)(
 		"rebuilds an app view that still carries the old name, keeping pi's package name",
@@ -123,9 +130,10 @@ describe("the mu launcher", () => {
 			// Newer than upstream's package.json, so the age check alone would keep it.
 			utimesSync(join(app, "package.json"), new Date("2030-01-01"), new Date("2030-01-01"));
 
-			const version = run("mu", ["--version"], { HOME: dir });
+			// --help starts pi (the launcher answers --version itself).
+			const help = run("mu", ["--help"], { HOME: dir });
 
-			expect(version.code).toBe(0);
+			expect(help.code).toBe(0);
 			const rebuilt = JSON.parse(readFileSync(join(app, "package.json"), "utf8"));
 			expect(rebuilt.piConfig).toEqual({ name: "mu", configDir: ".mu" });
 			expect(rebuilt.name).toBe("@earendil-works/pi-coding-agent");
@@ -140,7 +148,7 @@ describe("the mu launcher", () => {
 			const dir = home();
 			mkdirSync(join(dir, ".kyrn/agent"), { recursive: true });
 
-			expect(run("mu", ["--version"], { HOME: dir }).code).toBe(0);
+			expect(run("mu", ["--help"], { HOME: dir }).code).toBe(0);
 
 			expect(existsSync(join(dir, ".mu"))).toBe(false);
 			expect(JSON.parse(readFileSync(join(dir, ".kyrn/app/package.json"), "utf8")).piConfig.name).toBe("mu");
