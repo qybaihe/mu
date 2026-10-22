@@ -63,7 +63,7 @@ To keep it going until a condition holds, use [goal mode](@docs/goal): `/goal al
 
 mu asks a small, fast judge model the routine questions of a session. You don't have to set one up: with no Jev key, the free Jev on OpenCode Zen answers, and mu says so once a day. To use your own key, a local judge or another model, see [Judges](@docs/judges).
 
-{points_active} of the {points} decision points act on their verdicts from the start (`context.compact` and `output.drift` are off until you turn them on, `swarm.patch` is off, and `notify.routing` and `input.interjection` start in shadow), and each verdict is logged: `/status`, `mu ledger` or the Judge tab in the app. To watch the judge before trusting it, put the decisions in shadow mode: they are still asked and logged, but change nothing.
+{points_active} of the {points} decision points act on their verdicts from the start (`context.compact` and `output.drift` are off until you turn them on, `swarm.patch` is off, and `notify.routing`, `input.interjection` and `turn.drift` start in shadow), and each verdict is logged: `/status`, `mu ledger` or the Judge tab in the app. To watch the judge before trusting it, put the decisions in shadow mode: they are still asked and logged, but change nothing.
 
 ```json
 { "modes": { "default": "shadow" } }

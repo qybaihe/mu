@@ -1066,7 +1066,8 @@
 				"uk-UA": "Кожні кілька кроків перевіряє, чи робота досі веде до мети; правила виявляють зациклення.",
 				"tr-TR": "Birkaç adımda bir, işin hâlâ hedefe hizmet edip etmediğini kontrol eder; döngüye girmeyi kurallar yakalar.",
 				"fa-IR": "هر چند گام بررسی می‌کند که کار هنوز در خدمت هدف باشد؛ قوانین دور خود چرخیدن را تشخیص می‌دهند."
-			}
+			},
+			"defaultMode": "shadow"
 		},
 		{
 			"id": "turn.rewind",

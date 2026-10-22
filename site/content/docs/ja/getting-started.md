@@ -63,7 +63,7 @@ mu                     # 現在のディレクトリでセッションを始め�
 
 mu は、セッション中の定型の問いを、小さくて速い判定モデルに尋ねます。自分で設定する必要はありません。Jev のキーがなければ OpenCode Zen の無料の Jev が答え、mu はそのことを 1 日 1 回知らせます。自分のキー、ローカルの判定器、別のモデルを使うには、[判定器](@docs/judges)を参照してください。
 
-{points} の判定ポイントのうち {points_active} は最初から判定を反映し（`context.compact`、`output.drift`、`swarm.patch` は既定でオフ、`notify.routing` と `input.interjection` は既定でシャドー）、判定はすべて記録されます（`/status`、`mu ledger`、アプリの判定タブ）。判定器を信頼する前に様子を見たい場合は、判定ポイントをシャドーモードにします。問い合わせと記録は続きますが、何も変わりません。
+{points} の判定ポイントのうち {points_active} は最初から判定を反映し（`context.compact`、`output.drift`、`swarm.patch` は既定でオフ、`notify.routing`、`input.interjection`、`turn.drift` は既定でシャドー）、判定はすべて記録されます（`/status`、`mu ledger`、アプリの判定タブ）。判定器を信頼する前に様子を見たい場合は、判定ポイントをシャドーモードにします。問い合わせと記録は続きますが、何も変わりません。
 
 ```json
 { "modes": { "default": "shadow" } }

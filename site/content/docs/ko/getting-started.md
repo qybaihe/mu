@@ -63,7 +63,7 @@ mu                     # 현재 디렉터리에서 세션 시작
 
 mu는 세션의 일상적인 질문을 작고 빠른 판정 모델에게 물어요. 따로 설정할 필요는 없어요. Jev 키가 없으면 OpenCode Zen의 무료 Jev가 답하고, mu가 하루에 한 번 그 사실을 알려 줘요. 직접 가진 키, 로컬 판정기, 다른 모델을 쓰려면 [판정기](@docs/judges)를 보세요.
 
-판정 지점 {points}개 중 {points_active}개는 처음부터 판정을 반영하고(`context.compact`, `output.drift`, `swarm.patch`는 기본으로 꺼져 있고, `notify.routing`과 `input.interjection`은 섀도로 시작해요), 판정은 모두 기록돼요. `/status`, `mu ledger`, 앱의 판정 탭에서 볼 수 있어요. 판정기를 믿기 전에 지켜보고 싶다면 판정 지점들을 섀도 모드로 두세요. 질문과 기록은 그대로 하지만, 아무것도 바꾸지 않아요.
+판정 지점 {points}개 중 {points_active}개는 처음부터 판정을 반영하고(`context.compact`, `output.drift`, `swarm.patch`는 기본으로 꺼져 있고, `notify.routing`, `input.interjection`, `turn.drift`는 섀도로 시작해요), 판정은 모두 기록돼요. `/status`, `mu ledger`, 앱의 판정 탭에서 볼 수 있어요. 판정기를 믿기 전에 지켜보고 싶다면 판정 지점들을 섀도 모드로 두세요. 질문과 기록은 그대로 하지만, 아무것도 바꾸지 않아요.
 
 ```json
 { "modes": { "default": "shadow" } }

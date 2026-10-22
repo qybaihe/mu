@@ -63,7 +63,7 @@ mu                     # 在目前目錄開啟一個工作階段
 
 mu 把一次工作階段裡的例行問題交給一個小而快的判定模型。你不需要特別設定：沒有 Jev 金鑰時，由 OpenCode Zen 上免費的 Jev 回答，mu 每天提示一次。要用自己的金鑰、本機判定器或別的模型，請見[判定器](@docs/judges)。
 
-{points} 個判定點裡有 {points_active} 個從一開始就依判定結果行事（`context.compact`、`output.drift` 和 `swarm.patch` 預設關閉，`notify.routing` 和 `input.interjection` 預設是影子模式），每次判定都會記錄下來：`/status`、`mu ledger`，或桌面版的「判定」頁。想先觀察判定器、再決定信不信任它，就把判定點設成影子模式：照常提問並記錄，但不改變任何東西。
+{points} 個判定點裡有 {points_active} 個從一開始就依判定結果行事（`context.compact`、`output.drift` 和 `swarm.patch` 預設關閉，`notify.routing`、`input.interjection` 和 `turn.drift` 預設是影子模式），每次判定都會記錄下來：`/status`、`mu ledger`，或桌面版的「判定」頁。想先觀察判定器、再決定信不信任它，就把判定點設成影子模式：照常提問並記錄，但不改變任何東西。
 
 ```json
 { "modes": { "default": "shadow" } }

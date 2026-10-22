@@ -46,7 +46,7 @@ mu 看不懂的部分會退回預設值，而不是讓 mu 停下。完全無法�
 
 ## 實際使用中的模式 {#modes}
 
-- {points} 個判定點裡有 {points_active} 個從一開始就生效（`context.compact` 和 `output.drift` 要你自己開啟，`swarm.patch` 預設關閉，`notify.routing` 和 `input.interjection` 預設是影子模式）。想試一個判定器，或者對某個判定點沒把握，就把它設成影子模式，讀帳本（`mu ledger`、`/status` 或桌面版的「判定」頁），再把它設回生效。
+- {points} 個判定點裡有 {points_active} 個從一開始就生效（`context.compact` 和 `output.drift` 要你自己開啟，`swarm.patch` 預設關閉，`notify.routing`、`input.interjection` 和 `turn.drift` 預設是影子模式）。想試一個判定器，或者對某個判定點沒把握，就把它設成影子模式，讀帳本（`mu ledger`、`/status` 或桌面版的「判定」頁），再把它設回生效。
 - `/mu mode <point> <off|shadow|active>` 在目前的工作階段裡切換一個判定點；`/mu mode default shadow` 切換全部。想保留一個模式，就寫進 `mu.json`。
 - `MU_JUDGE_MODE=shadow mu` 為一次執行設定預設模式。
 
