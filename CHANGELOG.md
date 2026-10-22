@@ -14,6 +14,10 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 - Subagents and hives ask the judge less: no difficulty questions without a model ladder, and none at all when every role is named. Hive bees think at the session's level like other subagents, share their `FOUND:` and `DEAD END:` notes without waiting for the judge, and still hear from each other when the judge can't answer. The subagent patch scope check is off by default.
 - `browse` with a goal says up front when the configured judge can't drive the browser, instead of stopping after the first step.
 
+### Fixed
+
+- **`/permissions` opens on the current mode**, so pressing Enter keeps it; before, the cursor started on Full access. A long option in mu's pickers wraps under its own text.
+
 ## [0.1.10] - 2026-10-22
 
 ### Added

@@ -4,6 +4,7 @@
 
 ### Added
 
+- `ctx.ui.select()` takes `initialIndex` in its options: the option the cursor starts on, such as the current choice. In the selector, an option too long for one line continues under its text instead of under the arrow.
 - Added a Models Configuration reference generated from the `models.json` schema, listing all provider, model, model override, and compatibility fields ([#10790](https://github.com/earendil-works/pi/issues/10790))
 
 ### Changed

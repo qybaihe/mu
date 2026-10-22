@@ -3,7 +3,15 @@
  * Displays a list of string options with keyboard navigation.
  */
 
-import { Container, getKeybindings, Spacer, Text, type TUI } from "@earendil-works/pi-tui";
+import {
+	type Component,
+	Container,
+	getKeybindings,
+	Spacer,
+	Text,
+	type TUI,
+	wrapTextWithAnsi,
+} from "@earendil-works/pi-tui";
 import { theme } from "../theme/theme.ts";
 import { CountdownTimer } from "./countdown-timer.ts";
 import { DynamicBorder } from "./dynamic-border.ts";
@@ -14,6 +22,28 @@ export interface ExtensionSelectorOptions {
 	timeout?: number;
 	onToggleToolsExpanded?: () => void;
 	description?: string;
+	/** The option the cursor starts on. Defaults to the first. */
+	initialIndex?: number;
+}
+
+/** One option: its marker, then its text, wrapped so that a long option continues under its text, not its marker. */
+class OptionLine implements Component {
+	private readonly marker: string;
+	private readonly text: string;
+
+	constructor(marker: string, text: string) {
+		this.marker = marker;
+		this.text = text;
+	}
+
+	render(width: number): string[] {
+		const indent = " ".repeat(1 + 2);
+		return wrapTextWithAnsi(this.text, Math.max(1, width - indent.length - 1)).map(
+			(line, i) => `${i === 0 ? ` ${this.marker}` : indent}${line}`,
+		);
+	}
+
+	invalidate(): void {}
 }
 
 export class ExtensionSelectorComponent extends Container {
@@ -37,6 +67,10 @@ export class ExtensionSelectorComponent extends Container {
 		super();
 
 		this.options = options;
+		const initial = opts?.initialIndex;
+		if (initial !== undefined && Number.isInteger(initial) && initial >= 0 && initial < options.length) {
+			this.selectedIndex = initial;
+		}
 		this.onSelectCallback = onSelect;
 		this.onCancelCallback = onCancel;
 		this.onToggleToolsExpanded = opts?.onToggleToolsExpanded;
@@ -86,10 +120,11 @@ export class ExtensionSelectorComponent extends Container {
 		this.listContainer.clear();
 		for (let i = 0; i < this.options.length; i++) {
 			const isSelected = i === this.selectedIndex;
-			const text = isSelected
-				? theme.fg("accent", "→ ") + theme.fg("accent", this.options[i])
-				: `  ${theme.fg("text", this.options[i])}`;
-			this.listContainer.addChild(new Text(text, 1, 0));
+			this.listContainer.addChild(
+				isSelected
+					? new OptionLine(theme.fg("accent", "→ "), theme.fg("accent", this.options[i]))
+					: new OptionLine("  ", theme.fg("text", this.options[i])),
+			);
 		}
 	}
 
