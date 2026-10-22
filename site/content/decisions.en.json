@@ -33,6 +33,7 @@
     "result_label": "Result",
     "feature_label": "Feature switch",
     "default_off": "Off by default",
+    "default_shadow": "Shadow by default",
     "needs_option": "Needs an option",
     "judges_label": "Who answers",
     "judges_h2": "Pick the judge, per installation or per point",

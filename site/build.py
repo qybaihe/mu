@@ -26,7 +26,8 @@ The site's own words and assets:
   assets/                          icons, the link preview image, screenshots and the folding video
 
 In any of the site's own text, {points} is the number of decision points and {points_active} the number that act
-from the start (their feature is on by default).
+from the start: their feature is on by default, and no built-in mode of their own (`defaultMode` in the manifest) puts
+them in shadow or off.
 
 usage: python3 build.py <outdir> [--repo <mu checkout>]      (pip install -r requirements.txt first)
   The repository defaults to $MU_REPO, then to the folder above this one (site/ inside mu).
@@ -105,6 +106,14 @@ def readme_repo_path(lang):
 def load_json(name, lang):
     path = here / "content" / f"{name}.{lang}.json"
     return json.loads((path if path.exists() else here / "content" / f"{name}.en.json").read_text())
+
+
+def default_modes(manifest):
+    """Each decision point's mode out of the box: off when its feature is off by default, else its own built-in mode
+    (`defaultMode` in the manifest, from the kernel's config.ts), else the default mode, active."""
+    features = {f["name"]: f for f in manifest["features"]}
+    return {d["id"]: d.get("defaultMode", "active") if features[d["feature"]].get("defaultEnabled", True) else "off"
+            for d in manifest["decisions"]}
 
 
 def fill(value, facts):
@@ -499,7 +508,7 @@ def render_options(manifest, lang, ctx, U, toc):
 
 def decision_groups(manifest, lang, D, questions, D_en):
     ml = MANIFEST_LANG[lang]
-    features = {f["name"]: f for f in manifest["features"]}
+    modes = default_modes(manifest)
     groups = []
     for key, names in manifest["groups"].items():
         points = []
@@ -507,8 +516,10 @@ def decision_groups(manifest, lang, D, questions, D_en):
             if d["group"] != key:
                 continue
             flag = None
-            if not features[d["feature"]].get("defaultEnabled", True):
+            if modes[d["id"]] == "off":
                 flag = D["page"]["default_off"]
+            elif modes[d["id"]] == "shadow":
+                flag = D["page"]["default_shadow"]
             elif d["id"] == "tool.admission.test-log":
                 flag = D["page"]["needs_option"]
             title = d["title"].get(ml) or d["title"]["en"]
@@ -590,9 +601,8 @@ def check_anchors(outdir, written):
 
 def check_facts(outdir, locales, modes, manifest):
     """What the pages say against the product: the permission modes by the app's names, and the decision points that
-    are off by default named where the configuration is explained."""
-    features = {f["name"]: f for f in manifest["features"]}
-    off = [d["id"] for d in manifest["decisions"] if not features[d["feature"]].get("defaultEnabled", True)]
+    don't act from the start (off, or only recording in shadow) named where the configuration is explained."""
+    idle = {pid: mode for pid, mode in default_modes(manifest).items() if mode != "active"}
     for L in locales:
         lang = L["lang"]
         permissions = (outdir / L["path"] / "docs/permissions/index.html").read_text()
@@ -600,9 +610,9 @@ def check_facts(outdir, locales, modes, manifest):
             if html.escape(name, quote=False) not in permissions:
                 warn(f"{lang}: the permissions page never names the {key} mode as the app does ({name!r})")
         configuration = (outdir / L["path"] / "docs/configuration/index.html").read_text()
-        for pid in off:
+        for pid, mode in idle.items():
             if f"<code>{pid}</code>" not in configuration:
-                warn(f"{lang}: {pid} is off by default, and the configuration page doesn't say so")
+                warn(f"{lang}: {pid} is {mode} by default, and the configuration page doesn't say so")
 
 
 def main():
@@ -617,10 +627,9 @@ def main():
     outdir.mkdir(parents=True, exist_ok=True)
 
     manifest = json.loads((repo / "packages/kyrn-judge/manifest.json").read_text())
-    features = {f["name"]: f for f in manifest["features"]}
     facts = {
         "points": len(manifest["decisions"]),
-        "points_active": sum(1 for d in manifest["decisions"] if features[d["feature"]].get("defaultEnabled", True)),
+        "points_active": sum(1 for mode in default_modes(manifest).values() if mode == "active"),
     }
     locales = [fill(json.loads((here / "i18n" / f"{lang}.json").read_text()), facts) for lang in LOCALES]
     en = locales[LOCALES.index("en")]

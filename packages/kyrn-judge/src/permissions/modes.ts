@@ -2,7 +2,7 @@ import { lstatSync, mkdirSync, readFileSync, readlinkSync, realpathSync, renameS
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { isReadOnlyCommand } from "../checkpoint/mutating.ts";
+import { isReadOnlyChain, isReadOnlyCommand } from "../checkpoint/mutating.ts";
 import { isShellTool } from "../extension/shell-tools.ts";
 
 /**
@@ -240,13 +240,16 @@ const clip = (value: string, length: number) => {
 /**
  * Whether a call needs permission, and what it is. Wrong in the safe direction
  * only: a tool nobody listed needs permission, and a command counts as only
- * looking when every part of it is on the short read-only list.
+ * looking when every part of it is on the short read-only list. `chains`: a
+ * chain of read-only commands (`pwd && ls -la; git status`) only looks too
+ * (`isReadOnlyChain`); without it, only a single command or pipeline does.
  */
 export function permissionNeed(
 	toolName: string,
 	input: Readonly<Record<string, unknown>>,
 	cwd: string,
 	protectedPaths: readonly string[] = [],
+	chains = true,
 ): PermissionNeed | undefined {
 	// Without regard to case: Windows and macOS name a folder in any case, and more protection is the safe direction.
 	const touches = (value: string) => {
@@ -260,7 +263,7 @@ export function permissionNeed(
 		// PowerShell where that is the one shell tool. pi's bash tool runs bash on Windows too (Git Bash), where a quoted
 		// parenthesis, as in `rg 'useState\(' src`, is only text.
 		const powershell = toolName === "powershell" || (toolName === "bg_start" && process.platform === "win32");
-		if (isReadOnlyCommand(command, powershell)) return undefined;
+		if (chains ? isReadOnlyChain(command, powershell) : isReadOnlyCommand(command, powershell)) return undefined;
 		const guarded = touches(command);
 		const prefix = commandPrefix(command);
 		return {

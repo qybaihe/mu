@@ -4,6 +4,7 @@ import { Right } from '@icon-park/react';
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
 import {
+  defaultModeOf,
   localized,
   type DecisionInfo,
   type DecisionMode,
@@ -80,6 +81,8 @@ export default function DetailsSection({
   const decisionRow = (decision: DecisionInfo, feature: FeatureInfo | undefined, off: boolean) => {
     const point = say(decision.title);
     const own = settings.decisionModes[decision.id];
+    // What the point does without a setting of its own: a built-in mode of its own, else the default mode.
+    const fallback = defaultModeOf(decision, settings.mode);
     // Under its feature the row needs no name when the point is the feature's own: it is the judge's say in it.
     const title =
       feature && say(feature.title) === point ? t('mu.details.askJudge') : t('mu.details.askJudgeAbout', { point });
@@ -108,7 +111,7 @@ export default function DetailsSection({
               size='small'
               aria-label={label}
               disabled={off}
-              checked={shownMode(own ?? settings.mode) === 'active'}
+              checked={shownMode(own ?? fallback) === 'active'}
               onChange={(on) => setMode(decision.id, on ? 'active' : 'off')}
             />
             {own ? (
@@ -120,7 +123,7 @@ export default function DetailsSection({
                 onClick={() => setMode(decision.id, undefined)}
               >
                 {t('mu.decisions.useDefault', {
-                  mode: t(shownMode(settings.mode) === 'active' ? 'mu.modes.active' : 'mu.modes.off'),
+                  mode: t(shownMode(fallback) === 'active' ? 'mu.modes.active' : 'mu.modes.off'),
                 })}
               </Button>
             ) : null}

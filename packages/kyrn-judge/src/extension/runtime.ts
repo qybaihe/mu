@@ -182,6 +182,11 @@ export class KyrnRuntime {
 	lastActivityAt = Date.now();
 	/** The task frame as the frame feature keeps it. Undefined while that feature is off: the stand-in answers then. */
 	frameState: FrameState | undefined;
+	/**
+	 * Where mu keeps its own state, `<agent dir>/mu`. Undefined when whoever embeds mu owns the setup (tests, an
+	 * injected provider or config): nothing is written to the user's folder then.
+	 */
+	stateDir: string | undefined;
 	/** A goal is set and running: deciding whether the agent may stop is the goal feature's job, nobody else's. */
 	goalActive = false;
 	/** The harness itself cut the run that is ending (mid-stream correction), and will start the next one. Not the user's Esc. */

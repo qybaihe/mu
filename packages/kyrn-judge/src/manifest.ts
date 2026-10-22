@@ -13,6 +13,9 @@
  * (src/manifest-locales.ts): a text whose English changes shows in English there until it is
  * translated again, and the script lists those.
  */
+import { DEFAULT_CONFIG } from "./config.ts";
+import type { DecisionMode } from "./decision.ts";
+
 export interface Localized {
 	readonly zh: string;
 	readonly en: string;
@@ -28,6 +31,12 @@ export interface DecisionInfo {
 	readonly feature: string;
 	readonly title: Localized;
 	readonly summary: Localized;
+	/**
+	 * The point's own built-in mode, from `DEFAULT_CONFIG.modes` in config.ts, when it has one: it keeps that mode
+	 * whatever `modes.default` says, until `modes.<id>` in mu.json sets another. Absent: the point follows
+	 * `modes.default`, which is `active` unless mu.json changes it.
+	 */
+	readonly defaultMode?: DecisionMode;
 }
 
 interface OptionBase {
@@ -80,7 +89,8 @@ export interface HarnessManifest {
 const ms: Localized = { zh: "毫秒", en: "ms" };
 const chars: Localized = { zh: "字符", en: "chars" };
 
-export const MANIFEST: HarnessManifest = {
+/** The manifest as written here; MANIFEST adds each point's built-in mode from config.ts. */
+const DESCRIBED: HarnessManifest = {
 	version: 1,
 	groups: {
 		input: { zh: "输入", en: "Input" },
@@ -904,6 +914,16 @@ export const MANIFEST: HarnessManifest = {
 						en: "Once you pick a mode with /permissions, your latest choice is used.",
 					},
 				},
+				{
+					key: "readOnlyChains",
+					kind: "boolean",
+					default: true,
+					label: { zh: "只读命令串直接执行", en: "Read-only command chains go ahead" },
+					help: {
+						zh: "只由只读命令用 ;、&&、|| 或 | 连起来的命令（如 pwd && ls -la; git status），和单条只读命令一样直接执行，不问判定器也不问你。可以带 2>/dev/null、2>&1 这类丢掉输出的重定向；写文件的重定向、sed -i、tee、带 -exec 或 -delete 的 find 都不算只读。关掉后只有单条只读命令或管道直接执行。",
+						en: "Commands made only of read-only commands joined by ;, &&, || or | (such as pwd && ls -la; git status) run without asking the judge or you, like a single read-only command. They may throw output away with 2>/dev/null or 2>&1; a redirect that writes a file, sed -i, tee or find with -exec or -delete is not read-only. Off: only a single read-only command or pipeline goes ahead.",
+					},
+				},
 			],
 		},
 		{
@@ -932,6 +952,16 @@ export const MANIFEST: HarnessManifest = {
 					max: 30000,
 					unit: ms,
 					label: { zh: "最多等待", en: "Wait at most" },
+				},
+				{
+					key: "skipReadOnly",
+					kind: "boolean",
+					default: true,
+					label: { zh: "只读命令不对照", en: "Skip read-only commands" },
+					help: {
+						zh: "只读的 shell 命令（ls、git status、cat … | grep …，以及它们连成的命令串）不拿去对照约束，和 read、grep 工具一样。",
+						en: "Read-only shell commands (ls, git status, cat … | grep …, and chains of them) aren't checked against your constraints, just like the read and grep tools.",
+					},
 				},
 			],
 		},
@@ -2733,4 +2763,12 @@ export const MANIFEST: HarnessManifest = {
 			],
 		},
 	],
+};
+
+export const MANIFEST: HarnessManifest = {
+	...DESCRIBED,
+	decisions: DESCRIBED.decisions.map((decision) => {
+		const mode = DEFAULT_CONFIG.modes[decision.id];
+		return mode ? { ...decision, defaultMode: mode } : decision;
+	}),
 };

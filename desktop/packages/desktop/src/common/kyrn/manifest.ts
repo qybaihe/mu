@@ -22,6 +22,11 @@ export type DecisionInfo = {
   feature: string;
   title: Localized;
   summary: Localized;
+  /**
+   * The point's own built-in mode, when the harness gives it one: it keeps that mode whatever the default mode says,
+   * until mu.json sets one for the point. Absent (and in a harness from before it): the point follows the default mode.
+   */
+  defaultMode?: DecisionMode;
 };
 
 type OptionBase = { key: string; label: Localized; help?: Localized };
@@ -153,13 +158,18 @@ export function parseManifest(value: unknown): HarnessState {
         isLocalized(decision.title) &&
         isLocalized(decision.summary)
     )
-    .map((decision) => ({
-      id: decision.id,
-      group: decision.group,
-      feature: decision.feature,
-      title: readLocalized(decision.title),
-      summary: readLocalized(decision.summary),
-    }));
+    .map((decision) => {
+      const read: DecisionInfo = {
+        id: decision.id,
+        group: decision.group,
+        feature: decision.feature,
+        title: readLocalized(decision.title),
+        summary: readLocalized(decision.summary),
+      };
+      if (decision.defaultMode && DECISION_MODES.includes(decision.defaultMode))
+        read.defaultMode = decision.defaultMode;
+      return read;
+    });
   const features: FeatureInfo[] = [];
   for (const feature of Array.isArray(value.features) ? value.features : []) {
     if (!isRecord(feature) || typeof feature.name !== 'string' || !feature.name) continue;
@@ -176,6 +186,11 @@ export function parseManifest(value: unknown): HarnessState {
     });
   }
   return { status: 'ok', manifest: { version: 1, groups, modes, decisions, features } };
+}
+
+/** The mode a decision point has when mu.json sets none for it: its built-in one, else the default mode. */
+export function defaultModeOf(decision: DecisionInfo, mode: DecisionMode): DecisionMode {
+  return decision.defaultMode ?? mode;
 }
 
 /**

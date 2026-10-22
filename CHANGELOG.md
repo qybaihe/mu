@@ -20,6 +20,8 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 - **The local judge Laya no longer screens tool output.** It was slow there and its verdicts were wrong; the next judge, or mu's rules, do it instead.
 - **`mu --print` and json-mode runs are leaner.** They skip the preflight and capability questions before the run and the drift check during it, draft no skills and learn no new lessons, and leave out tools that one-shot runs almost never use (subagents, hive, the browser, `locate`, `remember`, `find_skill`, `find_capability`): about 1.9k fewer tokens in every request. Each part can be turned back on in `mu.json`. Interactive and desktop sessions are unchanged.
 - The drift check only records by default, since its steers were mostly wrong. Skills are drafted only when the judge is at least 90% sure.
+- **Fewer permission questions while exploring.** A command made only of read-only commands joined by `;`, `&&`, `||` or `|` (such as `pwd && ls -la; git status`) runs without asking, like a single read-only command. `rm -f file` and `curl … | python3 -c '…'` are no longer flagged as risky; a recursive `rm` and a downloaded script that is run still are.
+- MCP tool description checks are remembered between runs, so `mu --print` and subagents don't wait to check the same servers again.
 
 ### Fixed
 
@@ -32,6 +34,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 - **`/permissions` opens on the current mode**, so pressing Enter keeps it; before, the cursor started on Full access. A long option in mu's pickers wraps under its own text.
 - A lesson the model asked to `remember` is kept when the judge gives no verdict, instead of being dropped.
 - **mu's own commands no longer show `[t]` in the terminal's slash menu.** pi tagged them as an extension loaded for this run only; they come with mu.
+- The desktop app's settings and kernel bar show the drift check, notification routing, mid-run messages and the subagent patch scope check as they are out of the box, only recording or off, instead of as active. usemu.dev says 34 of the 40 decision points act from the start, not 38.
 
 ## [0.1.10] - 2026-10-22
 
