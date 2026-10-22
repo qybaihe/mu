@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- A run deadline: `MU_TIME_BUDGET_S` (or `features.deadline.budgetS`) is the run's time budget in seconds, counted from when the mu process started. With a budget, the watchdog cuts a reply that has only been thinking after `min(thinkingMs, max(60 s, half the time left when the reply started))` instead of after `thinkingMs`, and the model gets a one-line steer when 50% and 80% of the budget have passed: the minutes left and, at 80%, to get the requested result in place (files written, services running) before polishing (`features.deadline.notices`). No judge is asked, a sub-agent ignores the budget, and without one nothing changes. On Terminal-Bench 2.1 all 3 watchdog cuts came 788-886 s into a 900 s budget, too late for the retry to finish.
+
 ### Changed
 
 - `/login` offers no Claude subscription sign-in under mu's name (Anthropic doesn't allow other apps to offer one); an Anthropic API key is still offered, and an earlier sign-in stays until `/logout`. `mu setup` refuses a Claude subscription token (`sk-ant-oat…`) given as a key, pasted or with `--key-stdin`, and sends it nowhere.
