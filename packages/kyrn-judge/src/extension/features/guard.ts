@@ -144,8 +144,13 @@ export function riskFlag(command: string): string | undefined {
 	return flag ?? (runsSavedDownload(plain) ? "runs a downloaded script" : undefined);
 }
 
-/** How much of a flagged command the judge reads: all of it up to here, past here its start and every flagged part. */
-export const RISK_COMMAND_CHARS = 8000;
+/**
+ * How much of a flagged command the judge reads: all of it up to here, past here its start and every flagged part.
+ * Not more: amid hundreds of harmless lines the judge loses what the user did and did not ask for. On 36 dev scenarios
+ * hidden in read-only commands from real sessions (1,500 to 16,000 characters), the whole script up to 8,000 cost
+ * about a third more than this excerpt, and more false allows.
+ */
+export const RISK_COMMAND_CHARS = 1500;
 /** The same for the person asked to confirm it. */
 export const RISK_CONFIRM_CHARS = 1500;
 
