@@ -1968,6 +1968,19 @@
 						"tr-TR": "Oturumun ilk mesajına ilişkin karar bekleme süresinden sonra gelirse, beceriler sonraki turdan itibaren gizlenir; bu, istem önekini bir kez değiştirir. Kapalı: oturum tüm beceri açıklamalarını korur.",
 						"fa-IR": "اگر نتیجهٔ داوری دربارهٔ نخستین پیام نشست پس از زمان انتظار برسد، مهارت‌ها از نوبت بعد پنهان می‌شوند و این کار پیشوند پرامپت را یک بار تغییر می‌دهد. خاموش: نشست توضیح همهٔ مهارت‌ها را نگه می‌دارد."
 					}
+				},
+				{
+					"key": "subagentsInherit",
+					"kind": "boolean",
+					"default": true,
+					"label": {
+						"zh": "子代理沿用这里的选择",
+						"en": "Subagents take this session's choice"
+					},
+					"help": {
+						"zh": "子代理隐藏主会话隐藏的技能，不再问判定器。主会话还没定下来时，子代理照旧自己问。",
+						"en": "A subagent hides the skills this session hides and doesn't ask the judge again. While this session hasn't settled yet, a subagent asks for itself as before."
+					}
 				}
 			]
 		},
@@ -2120,6 +2133,19 @@
 						"uk-UA": "За назвою. Разові запуски майже ніколи ними не користуються, а кожен із них потрапляє в кожен запит. Той, що викликано його командою (наприклад, /hive), лишається. Якщо порожньо — лишаються всі.",
 						"tr-TR": "Ada göre. Tek seferlik çalıştırmalar bunları neredeyse hiç kullanmaz, ama her biri her istekte yer alır. Komutuyla çağırdığınız (örneğin /hive) kalır. Boş: hepsi kalır.",
 						"fa-IR": "بر اساس نام. اجراهای یک‌باره تقریباً هرگز از آن‌ها استفاده نمی‌کنند، ولی هر کدام در هر درخواست هست. آنچه با فرمانش فرا بخوانید (مثل /hive) می‌ماند. خالی: همه می‌مانند."
+					}
+				},
+				{
+					"key": "subagentsInherit",
+					"kind": "boolean",
+					"default": true,
+					"label": {
+						"zh": "子代理沿用这里打开的能力",
+						"en": "Subagents take this session's capabilities"
+					},
+					"help": {
+						"zh": "子代理打开主会话已经打开的能力，不再问判定器；主会话隐藏的照样隐藏。主会话还没选过时，子代理照旧自己问。",
+						"en": "A subagent opens the capabilities this session has open and doesn't ask the judge again; what's hidden here stays hidden there. Before this session has chosen, a subagent asks for itself as before."
 					}
 				}
 			]

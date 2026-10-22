@@ -217,6 +217,16 @@ export class KyrnRuntime {
 	 */
 	knownLessons?: (tasks: readonly string[], signal?: AbortSignal) => Promise<readonly (readonly string[])[]>;
 	/**
+	 * Set by the skills feature: the skills this session keeps out of the prompt, which a sub-agent takes instead of
+	 * asking again. Undefined while nothing is settled (the first verdict is still on its way, or the decision is off).
+	 */
+	skillsHidden?: () => readonly string[] | undefined;
+	/**
+	 * Set by the catalog feature: the capabilities this session has opened, which a sub-agent opens instead of asking
+	 * again. Undefined before a turn has chosen, or while the decision is off.
+	 */
+	capabilitiesOpen?: () => readonly string[] | undefined;
+	/**
 	 * True when the configured judge answers concurrent calls concurrently (a hosted model). The local
 	 * sidecar answers one at a time, and there the work of a turn is best asked in order of importance.
 	 */

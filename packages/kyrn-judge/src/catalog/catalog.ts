@@ -29,8 +29,11 @@ export interface Capability {
 	readonly activate?: () => Promise<void> | void;
 }
 
-/** How a capability came to be open. `requested` is a miss of the disclosure decision. */
-export type OpenedBy = "always" | "judge" | "requested" | "user";
+/**
+ * How a capability came to be open. `requested` is a miss of the disclosure decision. `parent`: a sub-agent opened
+ * what its parent has open.
+ */
+export type OpenedBy = "always" | "judge" | "requested" | "user" | "parent";
 
 export interface OpenRecord {
 	readonly id: string;
