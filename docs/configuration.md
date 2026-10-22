@@ -43,7 +43,7 @@ mu reads only your own `mu.json`. A project can't change the judge, its endpoint
 | `judges` | Your own named judges, added to the built-in ones. See [Judges](judges.md#your-own-judge). | none |
 | `features` | Per-feature switches and options: `false` turns a feature off, and an object overrides its options. Every feature and option is listed in [reference/features.md](reference/features.md). | Each feature's defaults |
 | `writer` | `provider/model-id` of a small generative model for the things a judge can't do: writing the task frame and lessons. If empty, the session's model is used. | none |
-| `recordState` | Keep the judged state in the ledger, not just the verdict. You need this to train a local judge on your sessions. Off by default because the states contain your content. | `false` |
+| `recordState` | Keep each judge request in the ledger (the state and the questions, secrets redacted), not just the verdict. You need this to train a local judge on your sessions. Off by default because the states contain your content. | `false` |
 | `mcp` | mu's own MCP servers: `{ "servers": { "<name>": { "command": … } } }`. Servers configured for Claude Code, Cursor and Codex are picked up too (`features.inherit`). | none |
 
 If mu doesn't understand part of the file, that part falls back to its default and mu keeps running. If the file can't be parsed at all, mu reports it when a session starts and uses the defaults. An older `kyrn.json` is read only when there's no `mu.json`.

@@ -299,6 +299,20 @@ export class DecisionEngine {
 		}
 	}
 
+	/** The request as the judge receives it, secrets redacted: what `recordState` keeps for distilling a judge. */
+	private requestAsSent<In, const Qs extends Questions, Out extends JsonValue>(
+		spec: DecisionSpec<In, Qs, Out>,
+		input: In,
+		state: JudgeInput,
+	): { state: JsonValue; questions: JsonValue } {
+		const known = this.knownSecrets();
+		const questions: Questions = spec.questionsFor ? spec.questionsFor(input) : spec.questions;
+		return {
+			state: redactJson(state, known) as JsonValue,
+			questions: redactJson(questions, known) as unknown as JsonValue,
+		};
+	}
+
 	private async record(record: LedgerRecord): Promise<void> {
 		try {
 			await this.ledger?.append(record);
@@ -318,6 +332,7 @@ export class DecisionEngine {
 
 		const origin = this.asked();
 		const state = spec.buildState(input);
+		const asked = this.recordState ? this.requestAsSent(spec, input, state) : undefined;
 		const evaluation = await this.evaluate(spec, input, state, options.signal);
 		const { judged } = evaluation;
 		const useJudged = this.applies(spec, mode) && judged !== undefined;
@@ -344,7 +359,8 @@ export class DecisionEngine {
 			warnings: evaluation.warnings,
 			tiers: evaluation.tiers,
 			stateDigest: createHash("sha256").update(JSON.stringify(state)).digest("hex"),
-			state: this.recordState ? (state as JsonValue) : undefined,
+			state: asked?.state,
+			questions: asked?.questions,
 		};
 		await this.record(record);
 

@@ -142,7 +142,23 @@ describe("DecisionEngine", () => {
 		expect(quiet.records[0].stateDigest).toMatch(/^[0-9a-f]{64}$/);
 		expect(quiet.records[0].state).toBeUndefined();
 		expect(verbose.records[0].state).toEqual({ intent: input.intent, chunk: input.chunk });
+		expect(verbose.records[0].questions).toEqual(keepChunk.questions);
+		expect(quiet.records[0].questions).toBeUndefined();
 		expect(verbose.records[0].stateDigest).toBe(quiet.records[0].stateDigest);
+	});
+
+	it("keeps the recorded request as the judge saw it, with known secrets redacted", async () => {
+		const ledger = new MemoryLedger();
+		const secret = "sk-test-0123456789abcdef";
+		await new DecisionEngine({
+			judge: new Judge({ provider: new MockJudgeProvider() }),
+			ledger,
+			recordState: true,
+			knownSecrets: () => [secret],
+		}).decide(keepChunk, { intent: "deploy", chunk: `export KEY=${secret}` });
+
+		expect(JSON.stringify(ledger.records[0].state)).not.toContain(secret);
+		expect(ledger.records[0].questions).toEqual(keepChunk.questions);
 	});
 
 	it("records where the caller was when it asked, not where it is when a slow judge answers", async () => {

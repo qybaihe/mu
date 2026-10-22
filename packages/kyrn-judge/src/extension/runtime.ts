@@ -239,7 +239,7 @@ export class KyrnRuntime {
 			append: (record: LedgerRecord) => {
 				pi.appendEntry(LEDGER_ENTRY_TYPE, record);
 				// Raw judge inputs are not part of the UI protocol, even when the diagnostic ledger records them.
-				const { state: _state, ...visible } = record;
+				const { state: _state, questions: _questions, ...visible } = record;
 				// A judge that answers after the next message began still belongs to the turn that asked.
 				this.present("decision", visible, askedTurn(record) ?? this.userTurns);
 			},

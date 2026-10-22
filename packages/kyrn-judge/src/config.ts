@@ -92,7 +92,10 @@ export interface KyrnConfig {
 	readonly mcp?: unknown;
 	/** "provider/model-id" of a small generative model for the things a judge cannot do: task frames, lessons. */
 	readonly writer?: string;
-	/** Store judged states in the ledger (needed to distil a local judge). Off by default: states hold user content. */
+	/**
+	 * Store each judge request (state and questions, secrets redacted) in the ledger, to distil a local judge from.
+	 * Off by default: states hold user content.
+	 */
 	readonly recordState: boolean;
 }
 
