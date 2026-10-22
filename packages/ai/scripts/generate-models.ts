@@ -241,6 +241,11 @@ const NVIDIA_OPENAI_COMPAT: OpenAICompletionsCompat = {
 // "developer", and strict tool schemas and prompt_cache_retention are not verified.
 // https://docs.tokenfactory.nebius.com/api-reference/inference/create-chat-completion
 const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1";
+// Effort values models.dev does not list yet, measured on Token Factory (2026-10-22): Nemotron 3 Super answers
+// directly with "none", and thinks longer from "low" to "medium"; "high" thinks as long as "medium".
+const NEBIUS_MEASURED_REASONING_OPTIONS: Record<string, ModelsDevReasoningOption[]> = {
+	"nvidia/nemotron-3-super-120b-a12b": [{ type: "effort", values: ["none", "low", "medium", "high"] }],
+};
 const NVIDIA_NIM_UNSUPPORTED_MODELS = new Set([
 	"abacusai/dracarys-llama-3.1-70b-instruct",
 	"bytedance/seed-oss-36b-instruct",
@@ -1995,8 +2000,12 @@ async function loadModelsDevData(): Promise<Model<any>[]> {
 				// (Nemotron 3.5: none/high; GLM 5.3: low/high/max). Send it only to models with
 				// models.dev effort values; applyModelsDevReasoningOptionMetadata maps the levels.
 				// Other reasoning models get no reasoning parameter and use their default.
+				const reasoningOptions = m.reasoning_options?.length
+					? m.reasoning_options
+					: NEBIUS_MEASURED_REASONING_OPTIONS[modelId];
+				if (reasoningOptions !== m.reasoning_options) m.reasoning_options = reasoningOptions;
 				const supportsReasoningEffort =
-					m.reasoning === true && getEffortThinkingLevelMap(m.reasoning_options ?? []) !== undefined;
+					m.reasoning === true && getEffortThinkingLevelMap(reasoningOptions ?? []) !== undefined;
 
 				models.push({
 					id: modelId,
