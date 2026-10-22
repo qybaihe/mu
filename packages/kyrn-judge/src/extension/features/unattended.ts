@@ -11,7 +11,8 @@ import { failOpen, type KyrnRuntime } from "../runtime.ts";
  * - tools and skills that need a person, a later session or a sub-agent are left out of the request
  *   (`catalog.unattendedHidden`);
  * - the drift check is not asked (`monitor.unattended`, below);
- * - no skill drafts (`procedures.unattended`) and no new lessons (`memory.unattendedWrites`). Kept lessons are still read.
+ * - no skill drafts (`procedures.unattended`) and no new lessons (`memory.unattendedWrites`). Kept lessons are still read;
+ * - the prompt's `<mu>` section is shorter and its `<docs>` section one line (`welcome.unattended`), in a sub-agent too.
  *
  * A sub-agent runs in json mode too, but it is not unattended: its parent reads every step and chose its tools.
  */

@@ -22,6 +22,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 - The drift check only records by default, since its steers were mostly wrong. Skills are drafted only when the judge is at least 90% sure.
 - **Fewer permission questions while exploring.** A command made only of read-only commands joined by `;`, `&&`, `||` or `|` (such as `pwd && ls -la; git status`) runs without asking, like a single read-only command. `rm -f file` and `curl … | python3 -c '…'` are no longer flagged as risky; a recursive `rm` and a downloaded script that is run still are.
 - MCP tool description checks are remembered between runs, so `mu --print` and subagents don't wait to check the same servers again.
+- `mu --print`, json-mode runs and subagents send about 375 fewer tokens in every request: pi's documentation list is one line there, mu's note about itself is shorter, and no tool description points at the browser tool those runs don't have.
 
 ### Fixed
 

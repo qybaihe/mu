@@ -2465,7 +2465,21 @@ const DESCRIBED: HarnessManifest = {
 				en: "The terminal's welcome screen and the identity note for the model.",
 			},
 			defaultEnabled: true,
-			options: [],
+			options: [
+				{
+					key: "unattended",
+					kind: "boolean",
+					default: false,
+					label: {
+						zh: "无人值守的运行和子代理也用完整的身份说明",
+						en: "Full identity note in unattended runs and subagents",
+					},
+					help: {
+						zh: "无人值守指 mu --print 和 json 模式的一次性运行。默认那里和子代理里只说必要的：不提要人输入的命令、可能没有的工具，pi 的文档目录缩成一行路径。每次请求约省 375 个词元。",
+						en: "Unattended means a one-shot mu --print or json-mode run. Off by default: there and in subagents the note leaves out commands to type and tools the run may not have, and pi's list of docs becomes one line with the path. That saves about 375 tokens per request.",
+					},
+				},
+			],
 		},
 		{
 			name: "inherit",

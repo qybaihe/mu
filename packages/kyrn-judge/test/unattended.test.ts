@@ -11,6 +11,7 @@ import { parseConfig } from "../src/config.ts";
 import { UNATTENDED_HIDDEN } from "../src/extension/features/catalog.ts";
 import type { SwarmRunner } from "../src/extension/features/swarm.ts";
 import { isUnattended } from "../src/extension/features/unattended.ts";
+import { IDENTITY, leanDocs, leanIdentity } from "../src/extension/features/welcome.ts";
 import { createKyrnJudgeExtension, type FeatureName } from "../src/extension/kyrn-judge.ts";
 import { MANIFEST } from "../src/manifest.ts";
 import type { StoredLesson } from "../src/memory/store.ts";
@@ -67,6 +68,32 @@ function declared(messages: readonly Message[]): string[] {
 	}
 	return [...tools];
 }
+
+/** A section of the request's system prompt, without its tags. */
+function section(messages: readonly Message[], name: string): string | undefined {
+	for (const message of messages) {
+		if (message.role !== "system") continue;
+		const text = message.sections?.[name];
+		if (text) return text.slice(`<${name}>\n`.length, -`\n</${name}>`.length);
+	}
+	return undefined;
+}
+
+/** What a request tells the model about itself: the system prompt's sections and each tool's description. */
+function told(messages: readonly Message[]): string {
+	const parts: string[] = [];
+	for (const message of messages) {
+		if (message.role !== "system") continue;
+		parts.push(...Object.values(message.sections ?? {}).filter((text): text is string => typeof text === "string"));
+		for (const tool of message.toolsAdded ?? []) parts.push(`${tool.name}: ${tool.description}`);
+	}
+	return parts.join("\n");
+}
+
+const description = (messages: readonly Message[], name: string) =>
+	messages
+		.flatMap((message) => (message.role === "system" ? (message.toolsAdded ?? []) : []))
+		.find((tool) => tool.name === name)?.description;
 
 /** The judge's questions, one name per request: what it was asked about. */
 function asked(calls: readonly JudgeRequest[]): Set<string> {
@@ -323,6 +350,53 @@ describe("an unattended run (mu --print, json mode)", () => {
 		// The recall was counted on the kept lesson; no other lesson was written.
 		const lines = readFileSync(lessons, "utf8").trim().split("\n");
 		expect(new Set(lines.map((line) => (JSON.parse(line) as { id: string }).id))).toEqual(new Set(["kept"]));
+	});
+
+	/** The first request of a run that does nothing but answer. */
+	async function firstRequest(mode: Mode, features?: Record<string, unknown>): Promise<readonly Message[]> {
+		const { harness } = await start(mode, () => ({}), { features });
+		let first: readonly Message[] = [];
+		harness.setResponses([
+			(context) => {
+				first = context.messages;
+				return fauxAssistantMessage("Done.");
+			},
+		]);
+		await harness.session.prompt("Make the tests pass.");
+		return first;
+	}
+
+	it("tells the model less about mu, points at the docs in one line and names no tool it left out, in a sub-agent too", async () => {
+		for (const mode of ["print", "json"] as const) {
+			const first = await firstRequest(mode);
+			expect(section(first, "mu"), mode).toBe(leanIdentity(true));
+			expect(section(first, "docs"), mode).toBe(leanDocs());
+			expect(description(first, "web_fetch"), mode).not.toContain("browse");
+			// Nothing in the prompt or in a tool's description sends the model to a tool it does not have.
+			for (const name of LEFT_OUT) expect(told(first), `${mode}: ${name}`).not.toMatch(new RegExp(`\\b${name}\\b`));
+		}
+		// No commands to type, no reply to act on, no hints before a turn.
+		expect(leanIdentity(true)).not.toMatch(/\/help|replies|hints/);
+		expect(leanIdentity(false)).not.toContain("tool output");
+
+		vi.stubEnv("KYRN_SWARM_DEPTH", "1");
+		const child = await firstRequest("json");
+		expect(section(child, "mu")).toBe(leanIdentity(true));
+		expect(section(child, "docs")).toBe(leanDocs());
+		// A sub-agent keeps the browse tool, and web_fetch still points at it.
+		expect(description(child, "web_fetch")).toContain("use browse");
+	});
+
+	it("keeps the full identity and pi's docs in an interactive or desktop session, and with welcome.unattended", async () => {
+		for (const mode of ["tui", "rpc"] as const) {
+			const first = await firstRequest(mode);
+			expect(section(first, "mu"), mode).toBe(IDENTITY);
+			expect(section(first, "docs"), mode).toContain("Pi documentation");
+			expect(description(first, "web_fetch"), mode).toContain("use browse");
+		}
+		const full = await firstRequest("print", { welcome: { unattended: true } });
+		expect(section(full, "mu")).toBe(IDENTITY);
+		expect(section(full, "docs")).toContain("Pi documentation");
 	});
 
 	it("is not what a sub-agent runs, though it runs in json mode", () => {

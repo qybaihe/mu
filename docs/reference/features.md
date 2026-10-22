@@ -473,6 +473,10 @@ On by default: yes.
 
 On by default: yes.
 
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `unattended` | `false` | Full identity note in unattended runs and subagents. Unattended means a one-shot mu --print or json-mode run. Off by default: there and in subagents the note leaves out commands to type and tools the run may not have, and pi's list of docs becomes one line with the path. That saves about 375 tokens per request. |
+
 ## inherit
 
 **Inherit existing setup.** Uses the rules, skills and MCP servers you've already set up for Claude Code, Cursor and Codex, read-only. Always-on rules join the prompt; a rule scoped to file patterns is passed along once, with the result of the first tool that touches a matching file; the rest are listed by description. Project content is used only in trusted projects.

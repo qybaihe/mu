@@ -241,7 +241,8 @@ describe("kyrn features", () => {
 					}),
 					mode: "active",
 					only: ["preflight", "notify"],
-					config: parseConfig({ features: { memory: false } }),
+					// The dump is sized to the full system prompt, which a print run otherwise shortens.
+					config: parseConfig({ features: { memory: false, welcome: { unattended: true } } }),
 				}),
 			],
 		});
