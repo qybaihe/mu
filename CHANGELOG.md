@@ -6,6 +6,11 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ## [Unreleased]
 
+### Changed
+
+- **The terminal's `/login` no longer offers a Claude subscription sign-in either**, so the command line matches the desktop app: Anthropic doesn't allow other apps to offer one. `/login anthropic` goes straight to the API key. A sign-in made before keeps working until `/logout`.
+- **A Claude subscription token is refused where an API key is asked for.** `mu setup` and the desktop app's first-run guide recognize a token from `claude setup-token` (`sk-ant-oat…`), send it nowhere and ask for an Anthropic API key instead.
+
 ## [0.1.10] - 2026-10-22
 
 ### Added

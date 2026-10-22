@@ -549,6 +549,7 @@
       "recognized": "キーから判別しました。",
       "ambiguous": "この形のキーを使うサービスが複数あります。どのサービスのキーですか？",
       "unknown": "mu はこの種類のキーを知りません。どのサービスのキーですか？",
+      "subscriptionToken": "これは Claude サブスクリプションのトークン（claude setup-token で発行したもの）で、API キーではありません。Anthropic は他のアプリが Claude サブスクリプションを使うことを認めていないため、mu では使えません。代わりに Anthropic の API キー（sk-ant-api…）を貼り付けてください。",
       "keyPage": "キーはどこで取得できますか？",
       "checking": "{{service}} でキーを確認しています…",
       "lookingLocal": "このマシンで {{service}} を探しています…",

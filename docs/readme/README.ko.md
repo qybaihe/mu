@@ -286,7 +286,7 @@ Node 22.19 이상이 필요해요. `mu -p "prompt"`는 한 번 실행하고 결�
 | `/import-chat` | Claude Code, Codex 또는 ZCode 대화 가져오기 |
 | `/doctor` | 설정과 연결 점검하기 |
 
-pi의 자체 명령(`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export` 등)은 그대로예요. `MU_JUDGE=laya,jev mu`로 실행하면 그 실행에서만 판정기를 바꿀 수 있어요.
+pi의 자체 명령(`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export` 등)은 그대로예요. 다만 `/login`에는 Claude 구독 로그인이 없어요(Anthropic이 다른 앱의 제공을 허용하지 않아서요). Anthropic API 키를 쓰세요. `MU_JUDGE=laya,jev mu`로 실행하면 그 실행에서만 판정기를 바꿀 수 있어요.
 
 ## 프라이버시
 

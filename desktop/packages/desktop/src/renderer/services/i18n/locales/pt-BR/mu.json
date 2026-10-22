@@ -549,6 +549,7 @@
       "recognized": "Reconhecido pela chave.",
       "ambiguous": "Chaves de mais de um serviço têm esta forma. De qual deles é esta?",
       "unknown": "O mu não conhece este tipo de chave. De qual serviço ela é?",
+      "subscriptionToken": "Isto é um token de assinatura do Claude (gerado por claude setup-token), não uma chave de API. A Anthropic não permite que outros apps usem uma assinatura do Claude, então o mu não pode usá-lo. Cole uma chave de API da Anthropic (sk-ant-api…) no lugar.",
       "keyPage": "Onde consigo uma chave?",
       "checking": "Verificando a chave com {{service}}…",
       "lookingLocal": "Procurando {{service}} nesta máquina…",

@@ -3,7 +3,15 @@ import { kyrnBridge, unwrap } from '@/common/kyrn/bridge';
 import type { ListedModel, ProviderTestResult } from '@/common/kyrn/models';
 import { toMuError, type MuError } from '@/renderer/pages/settings/KyrnSettings/fields/muError';
 import { keyOutcome, type KeyOutcome } from './onboarding';
-import { namedModel, serviceById, servicesForKey, startModel, type ModelService, type ServiceId } from './services';
+import {
+  isClaudeSubscriptionToken,
+  namedModel,
+  serviceById,
+  servicesForKey,
+  startModel,
+  type ModelService,
+  type ServiceId,
+} from './services';
 
 /** How long a key stays as it is before it is checked: a key typed by hand is not sent letter by letter. */
 export const SETTLE_MS = 400;
@@ -33,6 +41,8 @@ export type KeySetup = {
   candidates: ModelService[];
   /** The service the key is for: the one picked, else the one service its shape fits. */
   service?: ModelService;
+  /** The key is a Claude subscription token: no service, nothing sent. */
+  refused: boolean;
   /** The service is the one the key's shape fits. */
   recognized: boolean;
   choose: (id: ServiceId) => void;
@@ -99,8 +109,15 @@ export function useKeySetup(): KeySetup {
   const asked = useRef(0);
 
   const typed = key.trim();
-  const candidates = servicesForKey(typed);
-  const service = picked ? serviceById(picked) : candidates.length === 1 ? candidates[0] : undefined;
+  const refused = isClaudeSubscriptionToken(typed);
+  const candidates = refused ? [] : servicesForKey(typed);
+  const service = refused
+    ? undefined
+    : picked
+      ? serviceById(picked)
+      : candidates.length === 1
+        ? candidates[0]
+        : undefined;
   const serviceId = service?.id;
   const sendable = Boolean(service && (typed || service.keyless));
 
@@ -147,6 +164,7 @@ export function useKeySetup(): KeySetup {
     setKey,
     candidates,
     service,
+    refused,
     recognized: Boolean(service) && candidates.length === 1 && candidates[0] === service,
     choose: setPicked,
     check,

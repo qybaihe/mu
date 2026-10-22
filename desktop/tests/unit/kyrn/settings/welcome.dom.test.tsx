@@ -1064,6 +1064,20 @@ describe('pasting an API key', () => {
     expect(settings.credentials).toEqual([{ name: 'MU_PROVIDER_DEEPSEEK_CUSTOM_API_KEY', value: sharedShape }]);
   });
 
+  it('refuses a Claude subscription token and sends it nowhere; an Anthropic API key in its place is checked', async () => {
+    await toKeyTile();
+    paste(`sk-ant-oat01-${'t'.repeat(40)}`);
+    expect(screen.getByText(/That's a Claude subscription token/)).toBeInTheDocument();
+    await new Promise((resolve) => setTimeout(resolve, SETTLE_MS + 200));
+    expect(bridge.testProvider).not.toHaveBeenCalled();
+
+    bridge.testProvider.mockResolvedValue(listing(['claude-opus-4-8']));
+    paste(`sk-ant-api03-${'k'.repeat(40)}`);
+    expect(screen.queryByText(/Claude subscription token/)).not.toBeInTheDocument();
+    await said('The key works.');
+    expect(hosts()).toEqual(['api.anthropic.com']);
+  });
+
   it('tries a Kimi key at Moonshot’s other address and nowhere else, and keeps the address that took it', async () => {
     bridge.testProvider.mockResolvedValue(refused);
     await toKeyTile();

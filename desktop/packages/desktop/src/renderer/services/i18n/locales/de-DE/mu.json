@@ -549,6 +549,7 @@
       "recognized": "Am Schlüssel erkannt.",
       "ambiguous": "So sehen die Schlüssel mehrerer Dienste aus. Von welchem ist dieser?",
       "unknown": "mu kennt diese Art Schlüssel nicht. Von welchem Dienst ist er?",
+      "subscriptionToken": "Das ist ein Claude-Abo-Token (aus claude setup-token), kein API-Schlüssel. Anthropic erlaubt anderen Apps nicht, ein Claude-Abo zu nutzen, deshalb kann mu es nicht verwenden. Füge stattdessen einen Anthropic-API-Schlüssel (sk-ant-api…) ein.",
       "keyPage": "Wo bekomme ich einen Schlüssel?",
       "checking": "Schlüssel wird bei {{service}} geprüft…",
       "lookingLocal": "{{service}} wird auf diesem Rechner gesucht…",

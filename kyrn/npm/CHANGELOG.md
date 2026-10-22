@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- `/login` offers no Claude subscription sign-in under mu's name (Anthropic doesn't allow other apps to offer one); an Anthropic API key is still offered, and an earlier sign-in stays until `/logout`. `mu setup` refuses a Claude subscription token (`sk-ant-oat…`) given as a key, pasted or with `--key-stdin`, and sends it nowhere.
+
 ## [0.1.12] - 2026-10-22
 
 ### Added

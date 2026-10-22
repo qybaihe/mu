@@ -549,6 +549,7 @@
       "recognized": "已根据密钥识别。",
       "ambiguous": "好几家服务商的密钥都长这样，这是哪家的？",
       "unknown": "mu 认不出这种密钥，这是哪家的？",
+      "subscriptionToken": "这是 Claude 订阅令牌（claude setup-token 生成的），不是 API key。Anthropic 不允许其他应用使用 Claude 订阅，所以 mu 用不了它。请改为粘贴 Anthropic API key（sk-ant-api…）。",
       "keyPage": "去哪里获取密钥？",
       "checking": "正在向 {{service}} 验证密钥…",
       "lookingLocal": "正在本机查找 {{service}}…",

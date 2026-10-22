@@ -286,7 +286,7 @@ mu doctor     # 檢查安裝、判定器和各項連線
 | `/import-chat` | 匯入 Claude Code、Codex 或 ZCode 的對話 |
 | `/doctor` | 檢查設定和連線 |
 
-pi 自己的指令（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export` 等）原樣保留。`MU_JUDGE=laya,jev mu` 只為這一次執行更換判定器。
+pi 自己的指令（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export` 等）原樣保留，只有一處不同：`/login` 不提供 Claude 訂閱登入（Anthropic 不允許其他應用程式提供），請改用 Anthropic API 金鑰。`MU_JUDGE=laya,jev mu` 只為這一次執行更換判定器。
 
 ## 隱私
 

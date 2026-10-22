@@ -549,6 +549,7 @@
       "recognized": "Anahtardan bulundu.",
       "ambiguous": "Birden fazla hizmetin anahtarı böyle görünür. Bu anahtar hangisinin?",
       "unknown": "mu bu tür anahtarı tanımıyor. Hangi hizmetin anahtarı?",
+      "subscriptionToken": "Bu bir API anahtarı değil, Claude abonelik belirteci (claude setup-token ile oluşturulmuş). Anthropic, başka uygulamaların Claude aboneliği kullanmasına izin vermiyor; bu yüzden mu bunu kullanamaz. Bunun yerine bir Anthropic API anahtarı (sk-ant-api…) yapıştırın.",
       "keyPage": "Anahtarı nereden alırım?",
       "checking": "Anahtar {{service}} ile denetleniyor…",
       "lookingLocal": "Bu bilgisayarda {{service}} aranıyor…",

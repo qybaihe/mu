@@ -267,6 +267,14 @@ export function cleanKey(raw: string): string {
 }
 
 /**
+ * A Claude subscription token (`claude setup-token`, sk-ant-oat…), not an API key. Anthropic's terms don't let other
+ * apps use a Claude subscription (code.claude.com/docs/en/legal-and-compliance), so mu takes an API key instead.
+ */
+export function isClaudeSubscriptionToken(key: string): boolean {
+	return cleanKey(key).startsWith("sk-ant-oat");
+}
+
+/**
  * The services whose keys have this shape, in the table's order. Several: the person says which (the key is never
  * tried on each). None: the shape is not known, and the person picks the service.
  */

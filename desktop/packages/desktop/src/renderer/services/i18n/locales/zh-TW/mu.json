@@ -549,6 +549,7 @@
       "recognized": "已依金鑰辨識。",
       "ambiguous": "好幾家服務商的金鑰都長這樣，這是哪家的？",
       "unknown": "mu 認不出這種金鑰，這是哪家的？",
+      "subscriptionToken": "這是 Claude 訂閱權杖（claude setup-token 產生的），不是 API 金鑰。Anthropic 不允許其他應用程式使用 Claude 訂閱，所以 mu 無法使用。請改貼上 Anthropic API 金鑰（sk-ant-api…）。",
       "keyPage": "去哪裡取得金鑰？",
       "checking": "正在向 {{service}} 驗證金鑰…",
       "lookingLocal": "正在本機尋找 {{service}}…",
