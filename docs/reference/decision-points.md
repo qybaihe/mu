@@ -10,7 +10,7 @@ Each point has a mode:
 - `shadow`: Asked and logged, but changes nothing. Use it to see how well the judge does before relying on it.
 - `off`: Not asked; this decision point is off.
 
-Every point is `active` unless set otherwise (`"modes": { "default": "active" }` is the built-in default). `context.compact` and `output.drift` belong to features that are off by default, so they don't run until you turn those features on. Set `"default": "shadow"`, or a point's own mode, in `~/.mu/agent/mu.json` to only record verdicts; the desktop app's settings switch a point on or off; `/mu mode <point|default> <off|shadow|active>` switches one for the current session. See [Configuration](../configuration.md).
+The built-in default is `"modes": { "default": "active" }`. `context.compact` and `output.drift` belong to features that are off by default, so they don't run until you turn those features on. Out of the box, `input.interjection` and `notify.routing` are in `shadow` and `swarm.patch` is `off`. So 35 of the 40 points act on their verdicts from the start. Set `"default": "shadow"`, or a point's own mode, in `~/.mu/agent/mu.json` to only record verdicts; the desktop app's settings switch a point on or off; `/mu mode <point|default> <off|shadow|active>` switches one for the current session. See [Configuration](../configuration.md).
 
 The feature column names the switch in `features` that turns the whole behavior off; its options are in [Features](features.md).
 
@@ -20,7 +20,7 @@ The feature column names the switch in `features` that turns the whole behavior 
 | --- | --- | --- | --- |
 | `input.preflight` | Message preflight | Classifies each message and how much thinking it needs, then gives the model a one-line hint; it can also set the turn's thinking level. | [`preflight`](features.md#preflight) |
 | `task.frame` | Task frame update | Classifies each message as a new task, a new hard constraint, a correction, a new subgoal or no change. Only a change makes a model rewrite the task frame. | [`frame`](features.md#frame) |
-| `input.interjection` | Mid-run messages | For a message that arrives while the agent is working: interrupt now, or handle it after the current step. | [`interjection`](features.md#interjection) |
+| `input.interjection` | Mid-run messages | For a message that arrives while the agent is working: interrupt now, or handle it after the current step. In shadow by default: the verdict is only logged, and the message goes the way of the key you pressed without waiting for it. | [`interjection`](features.md#interjection) |
 
 ## Context
 
@@ -39,7 +39,7 @@ The feature column names the switch in `features` that turns the whole behavior 
 | `memory.merge` | Lesson merging | Before saving a new lesson, compares it with the most similar existing ones: a duplicate isn't saved twice, a more precise lesson replaces the older one, and when two contradict, your latest word wins. | [`memory`](features.md#memory) |
 | `memory.applied` | Lesson followed | At the end of a turn, judges whether the lessons brought into it were followed. A lesson recalled many times and never followed is retired. | [`memory`](features.md#memory) |
 | `skill.capture` | Drafting a procedure as a skill | After a long, successful run that ran commands, judges whether it was a reusable procedure (the same steps would handle the next task of its kind), a one-off, or already covered by an installed skill. The writer model drafts a procedure as a skill, which waits until you install it with /skills accept. Asked at most once per turn, and never for an ordinary turn. | [`procedures`](features.md#procedures) |
-| `cache.warming` | Cache warming | Guesses whether you'll be back soon, to decide whether to refresh the prompt cache before it expires. | [`warming`](features.md#warming) |
+| `cache.warming` | Cache warming | Guesses whether you'll be back soon, to decide whether to refresh the prompt cache before it expires. Asked only while the agent is idle, so a run never loses its cache to it. | [`warming`](features.md#warming) |
 
 ## Tools and safety
 
@@ -67,14 +67,14 @@ The feature column names the switch in `features` that turns the whole behavior 
 | `output.drift` | Mid-stream correction (experimental) | While the model writes, the judge checks the latest output against your hard constraints and the configured rules every few hundred characters. On a confident violation, the output is cut off, the rule is named, and the model continues from there. Runs only when the feature is turned on. | [`ttsr`](features.md#ttsr) |
 | `goal.met` | Goal met (judge fallback) | In goal mode, a model decides by default whether the goal is met. This decision point is used only when the judge is chosen or the model doesn't answer: it reads the closing message to judge whether the goal is met and whether you're needed. An open acceptance item or an unverified edit always means not yet. | [`goal`](features.md#goal) |
 | `board.read` | Plain-language board: where things stand | In a project with the board on, multiple-choice questions are asked whenever the agent says something, after a check or a ticked acceptance item, every few tool calls and whenever the agent stops. They read the agent's phase, the acceptance item it's working on and whether it's waiting for you, and sort what happened since the last update into news and routine. Only something new makes a plain-speaking model rewrite the board and retell the news in the running account. When a run ends, the news from the whole run is picked again for a summary. | [`board`](features.md#board) |
-| `notify.routing` | Notification routing | For events such as the context budget: tell the model now, later or not at all. | [`notify`](features.md#notify) |
+| `notify.routing` | Notification routing | For events such as the context budget or a background job's end: tell the model now, later or not at all. In shadow by default: the verdict is only logged and each event is delivered by its own rule, which for a job's end and the context budget is now. | [`notify`](features.md#notify) |
 
 ## Teamwork
 
 | Decision point | Name | What it decides | Feature |
 | --- | --- | --- | --- |
-| `swarm.routing` | Subagent routing | Picks a role for each delegated task, and a model tier and thinking level based on difficulty. | [`swarm`](features.md#swarm) |
-| `swarm.patch` | Subagent patch scope check | When an isolated subagent hands back a patch, judges from the task, the changed paths and the line counts whether it stays within scope and which files look unrelated. Gives the main agent one line of advice; it never blocks. | [`swarm`](features.md#swarm) |
-| `hive.publish` | Hive: publishing findings | Decides whether a bee's finding is worth putting on the board for the others. | [`hive`](features.md#hive) |
-| `hive.deliver` | Hive: delivery | Decides whether a finding on the board matters to a bee's current work; only then is it delivered. | [`hive`](features.md#hive) |
+| `swarm.routing` | Subagent routing | Picks a role for each delegated task that doesn't name one. With a model ladder set, it also picks a model tier and thinking level based on difficulty. When every role is named and there's no ladder, nothing is asked. | [`swarm`](features.md#swarm) |
+| `swarm.patch` | Subagent patch scope check | When an isolated subagent hands back a patch, judges from the task, the changed paths and the line counts whether it stays within scope and which files look unrelated. Gives the main agent one line of advice; it never blocks. Off by default: the result already lists every changed file with its line counts. | [`swarm`](features.md#swarm) |
+| `hive.publish` | Hive: publishing findings | Decides whether what a bee said is worth putting on the board for the others. A finding that starts with FOUND: or DEAD END: is published without asking. | [`hive`](features.md#hive) |
+| `hive.deliver` | Hive: delivery | Decides whether a finding on the board matters to a bee's current work; only then is it delivered. When the judge can't answer, it's delivered anyway, up to each bee's limit. | [`hive`](features.md#hive) |
 | `hive.relate` | Hive: corrections | How a new finding relates to an earlier one on the board: it replaces it, contradicts it, supports it or is unrelated. A replaced finding is withdrawn and every bee that heard it is told; a contradiction keeps both sides for a bee to settle. | [`hive`](features.md#hive) |

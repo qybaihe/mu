@@ -39,7 +39,7 @@
 
 ## 快速开始
 
-**桌面端。** 从 [Releases](https://github.com/qybaihe/mu/releases/latest) 下载 macOS、Windows 或 Linux 安装包，打开后粘贴一个 API key，或用 ChatGPT、Claude、Grok、Google 订阅登录。不用再装别的。
+**桌面端。** 从 [Releases](https://github.com/qybaihe/mu/releases/latest) 下载 macOS、Windows 或 Linux 安装包，打开后粘贴一个 API key，或用 ChatGPT、Grok、Google 订阅登录。不用再装别的。
 
 **命令行。**
 
@@ -49,7 +49,7 @@ mu setup            # 接入一个模型
 mu                  # 在当前目录开一个会话
 ```
 
-开始用不需要判定器的 key：没设置之前，由 OpenCode Zen 上免费的 Jev 回答。所有判定点一开始就生效，每次判定都会记录下来（`/status`、`mu ledger`、桌面端的判定页）。如果只想记录判定器会怎么做、不改变行为，在 `~/.mu/agent/mu.json` 里写 `{"modes": {"default": "shadow"}}`。更多见 [Getting started](../getting-started.md)（英文）。
+开始用不需要判定器的 key：没设置之前，由 OpenCode Zen 上免费的 Jev 回答。40 个判定点里有 35 个一开始就生效（免摘要压缩和写偏即停要你打开才运行，子代理补丁的范围检查默认关闭，通知分流和中途插话只记录），每次判定都会记录下来（`/status`、`mu ledger`、桌面端的判定页）。如果只想记录判定器会怎么做、不改变行为，在 `~/.mu/agent/mu.json` 里写 `{"modes": {"default": "shadow"}}`。更多见 [Getting started](../getting-started.md)（英文）。
 
 ## 一轮是怎么走的
 
@@ -245,7 +245,7 @@ mu                  # 在当前目录开一个会话
   </picture>
 </p>
 
-底部的一条栏让内核一直在视线里：哪个判定器在回答、跑在哪里，启用了多少个判定点；在对话里，还有到目前为止的判定数、最近一次判定的耗时和上下文占用。权限模式和目标在发送框里；`⌘K` 打开命令面板。模型登录在应用内完成：ChatGPT、Claude、Grok 和 Google（Gemini CLI / Antigravity）订阅，或任何 pi 支持的提供商的 API 密钥。Claude Code、Codex CLI 和 ZCode 的对话可以导入并接着聊。
+底部的一条栏让内核一直在视线里：哪个判定器在回答、跑在哪里，启用了多少个判定点；在对话里，还有到目前为止的判定数、最近一次判定的耗时和上下文占用。权限模式和目标在发送框里；`⌘K` 打开命令面板。模型登录在应用内完成：ChatGPT、Grok 和 Google（Gemini CLI / Antigravity）订阅，或任何 pi 支持的提供商的 API 密钥。Claude Code、Codex CLI 和 ZCode 的对话可以导入并接着聊。
 
 macOS（Apple 芯片 / Intel）、Windows（x64 / Arm）、Linux（x64 / Arm）的安装包由 GitHub Actions 构建，发布在 [Releases](https://github.com/qybaihe/mu/releases)。
 
@@ -286,7 +286,7 @@ mu doctor     # 检查安装、判定器和各项连接
 | `/import-chat` | 导入 Claude Code、Codex 或 ZCode 的对话 |
 | `/doctor` | 检查配置和连接 |
 
-pi 自己的命令（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export` 等）原样保留。`MU_JUDGE=laya,jev mu` 只为这一次运行改判定器。
+pi 自己的命令（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export` 等）原样保留，只有一处不同：`/login` 不提供 Claude 订阅登录（Anthropic 不允许其他应用提供），请改用 Anthropic API key。`MU_JUDGE=laya,jev mu` 只为这一次运行改判定器。
 
 ## 隐私
 

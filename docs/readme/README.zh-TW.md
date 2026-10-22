@@ -39,7 +39,7 @@
 
 ## 快速開始
 
-**桌面版。** 從 [Releases](https://github.com/qybaihe/mu/releases/latest) 下載 macOS、Windows 或 Linux 安裝檔，開啟後貼上一組 API 金鑰，或用 ChatGPT、Claude、Grok、Google 訂閱登入。不需要再安裝其他東西。
+**桌面版。** 從 [Releases](https://github.com/qybaihe/mu/releases/latest) 下載 macOS、Windows 或 Linux 安裝檔，開啟後貼上一組 API 金鑰，或用 ChatGPT、Grok、Google 訂閱登入。不需要再安裝其他東西。
 
 **命令列。**
 
@@ -49,7 +49,7 @@ mu setup            # 接上一個模型
 mu                  # 在目前目錄開一個工作階段
 ```
 
-開始使用不需要判定器的金鑰：設定之前，由 OpenCode Zen 上免費的 Jev 回答。所有判定點一開始就生效，每次判定都會記錄下來（`/status`、`mu ledger`、桌面版的判定分頁）。如果只想記錄判定器會怎麼做、不改變行為，在 `~/.mu/agent/mu.json` 寫入 `{"modes": {"default": "shadow"}}`。更多請見 [Getting started](../getting-started.md)（英文）。
+開始使用不需要判定器的金鑰：設定之前，由 OpenCode Zen 上免費的 Jev 回答。40 個判定點裡有 35 個一開始就生效（免摘要壓縮和寫偏即停要你開啟才執行，子代理修補的範圍檢查預設關閉，通知分流和中途插話只記錄），每次判定都會記錄下來（`/status`、`mu ledger`、桌面版的判定分頁）。如果只想記錄判定器會怎麼做、不改變行為，在 `~/.mu/agent/mu.json` 寫入 `{"modes": {"default": "shadow"}}`。更多請見 [Getting started](../getting-started.md)（英文）。
 
 ## 一輪是怎麼走的
 
@@ -245,7 +245,7 @@ mu                  # 在目前目錄開一個工作階段
   </picture>
 </p>
 
-底部的一條列讓核心一直在視線裡：哪個判定器在回答、跑在哪裡，啟用了多少個判定點；在對話裡，還有到目前為止的判定數、最近一次判定的耗時和上下文用量。權限模式和目標在傳送框裡；`⌘K` 開啟命令面板。模型登入在應用程式內完成：ChatGPT、Claude、Grok 和 Google（Gemini CLI / Antigravity）訂閱，或任何 pi 支援的供應商的 API 金鑰。Claude Code、Codex CLI 和 ZCode 的對話可以匯入並接著聊。
+底部的一條列讓核心一直在視線裡：哪個判定器在回答、跑在哪裡，啟用了多少個判定點；在對話裡，還有到目前為止的判定數、最近一次判定的耗時和上下文用量。權限模式和目標在傳送框裡；`⌘K` 開啟命令面板。模型登入在應用程式內完成：ChatGPT、Grok 和 Google（Gemini CLI / Antigravity）訂閱，或任何 pi 支援的供應商的 API 金鑰。Claude Code、Codex CLI 和 ZCode 的對話可以匯入並接著聊。
 
 macOS（Apple 晶片 / Intel）、Windows（x64 / Arm）、Linux（x64 / Arm）的安裝檔由 GitHub Actions 建置，發布在 [Releases](https://github.com/qybaihe/mu/releases)。
 
@@ -286,7 +286,7 @@ mu doctor     # 檢查安裝、判定器和各項連線
 | `/import-chat` | 匯入 Claude Code、Codex 或 ZCode 的對話 |
 | `/doctor` | 檢查設定和連線 |
 
-pi 自己的指令（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export` 等）原樣保留。`MU_JUDGE=laya,jev mu` 只為這一次執行更換判定器。
+pi 自己的指令（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export` 等）原樣保留，只有一處不同：`/login` 不提供 Claude 訂閱登入（Anthropic 不允許其他應用程式提供），請改用 Anthropic API 金鑰。`MU_JUDGE=laya,jev mu` 只為這一次執行更換判定器。
 
 ## 隱私
 

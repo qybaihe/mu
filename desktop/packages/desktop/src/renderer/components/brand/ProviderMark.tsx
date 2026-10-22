@@ -50,7 +50,7 @@ const mono = (path: string, size: number, fillRule?: 'evenodd') => (
 );
 
 export default function ProviderMark({ provider, size = 20 }: { provider: SubscriptionProvider; size?: number }) {
-  if (provider === 'openai-codex') return mono(OPENAI_PATH, size);
+  if (provider === 'openai' || provider === 'openai-codex') return mono(OPENAI_PATH, size);
   if (provider === 'xai') return mono(GROK_PATH, size, 'evenodd');
   if (provider === 'google-gemini-cli') return <GeminiCliMark size={size} />;
   if (provider === 'google-antigravity') return mono(ANTIGRAVITY_PATH, size, 'evenodd');

@@ -21,6 +21,7 @@ import {
 	chatModels,
 	checkKindOf,
 	cleanKey,
+	isClaudeSubscriptionToken,
 	namedModel,
 	SETUP_SERVICES,
 	type SetupApi,
@@ -78,6 +79,12 @@ const JEV_TIERS = new Set([
 /** Where OpenCode Zen's key is, for Jev there: the variable pi reads it from. */
 const OPENCODE_KEY = "OPENCODE_API_KEY";
 const JEV_PAGE = "https://typesafe.ai";
+/** What mu says to a Claude subscription token given as a key. */
+const CLAUDE_TOKEN: Text = {
+	zh: "这是 Claude 订阅令牌（claude setup-token 生成的），不是 API 密钥。Anthropic 不允许其他应用使用 Claude 订阅，所以 mu 用不了它。请改用 Anthropic API 密钥（sk-ant-api…），在这里创建：https://platform.claude.com/settings/keys",
+	en: "That's a Claude subscription token (from claude setup-token), not an API key. Anthropic doesn't allow other apps to use a Claude subscription, so mu can't use it. Use an Anthropic API key (sk-ant-api…) instead; create one at https://platform.claude.com/settings/keys",
+};
+
 /** Services whose keys carry the vendor's own mark: a key of theirs pasted as the Jev key is a mistake. */
 const BRANDED = new Set(["openai", "anthropic", "openrouter", "google", "xai"]);
 
@@ -441,10 +448,14 @@ class Setup {
 		}
 	}
 
-	private pasteKey(): Promise<string> {
-		return this.secret(
-			this.t({ zh: "粘贴 API 密钥（不会显示出来）：", en: "Paste the API key (it won't be shown): " }),
-		);
+	private async pasteKey(): Promise<string> {
+		for (;;) {
+			const key = await this.secret(
+				this.t({ zh: "粘贴 API 密钥（不会显示出来）：", en: "Paste the API key (it won't be shown): " }),
+			);
+			if (!isClaudeSubscriptionToken(key)) return key;
+			this.io.warn(this.t(CLAUDE_TOKEN));
+		}
 	}
 
 	private async choose<T>(question: string, choices: readonly Choice<T>[]): Promise<T> {
@@ -490,6 +501,7 @@ class Setup {
 			key = modelKey;
 			this.jevFromStdin = jevKey;
 		}
+		if (key !== undefined && isClaudeSubscriptionToken(key)) throw this.fail(CLAUDE_TOKEN, SETUP_EXIT.usage);
 		if (this.scripted && key === undefined && args.service === undefined) {
 			throw this.fail(
 				deps.interactive
@@ -572,8 +584,8 @@ class Setup {
 				{ label: this.t({ zh: "从列表里选一个服务", en: "Choose a service from the list" }), value: "list" },
 				{
 					label: this.t({
-						zh: "用订阅账号登录：ChatGPT、Claude、Grok 或 Google",
-						en: "Sign in with a subscription: ChatGPT, Claude, Grok or Google",
+						zh: "用订阅账号登录：ChatGPT、Grok 或 Google",
+						en: "Sign in with a subscription: ChatGPT, Grok or Google",
 					}),
 					value: "subscription",
 				},
@@ -584,8 +596,8 @@ class Setup {
 			const auth = this.path(join(this.deps.paths.agentDir, "auth.json"));
 			this.io.say(
 				this.t({
-					zh: `订阅账号在 mu 里面登录：启动 mu，输入 /login，选 ChatGPT（OpenAI Codex）、Claude、Grok 或 Google，按提示在浏览器里完成。登录信息保存在 ${auth}。`,
-					en: `To use a subscription, sign in from inside mu: start mu, type /login, choose ChatGPT (OpenAI Codex), Claude, Grok or Google, and finish in the browser. The sign-in is saved in ${auth}.`,
+					zh: `订阅账号在 mu 里面登录：启动 mu，输入 /login，选 OpenAI (ChatGPT subscription)、Grok 或 Google，按提示在浏览器里完成。登录信息保存在 ${auth}。`,
+					en: `To use a subscription, sign in from inside mu: start mu, type /login, choose OpenAI (ChatGPT subscription), Grok or Google, and finish in the browser. The sign-in is saved in ${auth}.`,
 				}),
 			);
 			return "subscription";

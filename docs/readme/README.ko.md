@@ -39,7 +39,7 @@
 
 ## 빠른 시작
 
-**데스크톱 앱.** [Releases](https://github.com/qybaihe/mu/releases/latest)에서 macOS, Windows, Linux용 설치 파일을 내려받아 열고, API 키를 붙여 넣거나 ChatGPT, Claude, Grok, Google 구독으로 로그인하세요. 따로 설치할 것은 없어요.
+**데스크톱 앱.** [Releases](https://github.com/qybaihe/mu/releases/latest)에서 macOS, Windows, Linux용 설치 파일을 내려받아 열고, API 키를 붙여 넣거나 ChatGPT, Grok, Google 구독으로 로그인하세요. 따로 설치할 것은 없어요.
 
 **명령줄.**
 
@@ -49,7 +49,7 @@ mu setup            # 모델 연결
 mu                  # 현재 디렉터리에서 세션 시작
 ```
 
-시작할 때 판정기 키는 필요 없어요. 키를 설정하기 전까지는 OpenCode Zen의 무료 Jev가 답해요. 모든 판정 지점은 처음부터 판정을 반영하고, 판정은 모두 기록돼요(`/status`, `mu ledger`, 데스크톱 앱의 판정 탭). 판정기가 어떻게 할지 기록만 하고 싶다면 `~/.mu/agent/mu.json`에 `{"modes": {"default": "shadow"}}`를 적으세요. 자세한 내용은 [Getting started](../getting-started.md)(영어).
+시작할 때 판정기 키는 필요 없어요. 키를 설정하기 전까지는 OpenCode Zen의 무료 Jev가 답해요. 판정 지점 40개 중 35개가 처음부터 판정을 반영하고(요약 없는 압축과 출력 중 교정은 켜야 동작하고, 하위 에이전트 패치 범위 검사는 기본으로 꺼져 있고, 알림 분류와 작업 중 메시지는 기록만 해요), 판정은 모두 기록돼요(`/status`, `mu ledger`, 데스크톱 앱의 판정 탭). 판정기가 어떻게 할지 기록만 하고 싶다면 `~/.mu/agent/mu.json`에 `{"modes": {"default": "shadow"}}`를 적으세요. 자세한 내용은 [Getting started](../getting-started.md)(영어).
 
 ## 한 턴의 흐름
 
@@ -245,7 +245,7 @@ mu와 런타임이 들어 있는 데스크톱 앱이에요. Node를 설치할 �
   </picture>
 </p>
 
-아래쪽 막대에서 커널 상태를 늘 볼 수 있어요. 어떤 판정기가 답하고 어디서 도는지, 켜진 판정 지점이 몇 개인지, 대화 중이라면 지금까지의 판정 수, 마지막 판정에 걸린 시간, 사용 중인 컨텍스트까지 보여 줘요. 권한 모드와 목표는 입력창에 있고, `⌘K`로 명령어 팔레트를 열어요. 모델 로그인은 앱 안에서 해요. ChatGPT, Claude, Grok, Google(Gemini CLI / Antigravity) 구독이나, pi가 지원하는 어떤 프로바이더의 API 키든 쓸 수 있어요. Claude Code, Codex CLI, ZCode의 대화는 가져와서 이어 갈 수 있어요.
+아래쪽 막대에서 커널 상태를 늘 볼 수 있어요. 어떤 판정기가 답하고 어디서 도는지, 켜진 판정 지점이 몇 개인지, 대화 중이라면 지금까지의 판정 수, 마지막 판정에 걸린 시간, 사용 중인 컨텍스트까지 보여 줘요. 권한 모드와 목표는 입력창에 있고, `⌘K`로 명령어 팔레트를 열어요. 모델 로그인은 앱 안에서 해요. ChatGPT, Grok, Google(Gemini CLI / Antigravity) 구독이나, pi가 지원하는 어떤 프로바이더의 API 키든 쓸 수 있어요. Claude Code, Codex CLI, ZCode의 대화는 가져와서 이어 갈 수 있어요.
 
 macOS(Apple 실리콘 / Intel), Windows(x64 / Arm), Linux(x64 / Arm)용 빌드는 GitHub Actions에서 만들어 [Releases](https://github.com/qybaihe/mu/releases)에 올려요.
 
@@ -286,7 +286,7 @@ Node 22.19 이상이 필요해요. `mu -p "prompt"`는 한 번 실행하고 결�
 | `/import-chat` | Claude Code, Codex 또는 ZCode 대화 가져오기 |
 | `/doctor` | 설정과 연결 점검하기 |
 
-pi의 자체 명령(`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export` 등)은 그대로예요. `MU_JUDGE=laya,jev mu`로 실행하면 그 실행에서만 판정기를 바꿀 수 있어요.
+pi의 자체 명령(`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export` 등)은 그대로예요. 다만 `/login`에는 Claude 구독 로그인이 없어요(Anthropic이 다른 앱의 제공을 허용하지 않아서요). Anthropic API 키를 쓰세요. `MU_JUDGE=laya,jev mu`로 실행하면 그 실행에서만 판정기를 바꿀 수 있어요.
 
 ## 프라이버시
 

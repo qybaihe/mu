@@ -383,7 +383,11 @@
     "byKey": "Nutzbar (API-Schlüssel)",
     "byKeyHelp": "Es ist kein Abo angemeldet, aber mu hat diesen Anbieter bei der letzten Verbindung als nutzbar gemeldet, meist weil sein API-Schlüssel in der Umgebung gesetzt ist. Nach der Anmeldung wird das Abo verwendet.",
     "otherRunning": "Die {{name}}-Anmeldung läuft gerade; es ist immer nur eine Anmeldung gleichzeitig möglich.",
-    "showRunning": "Anzeigen"
+    "showRunning": "Anzeigen",
+    "legacy": {
+      "openai-codex": "Diese ältere Anmeldung läuft über das Login der Codex CLI. Melde dich ab und dann mit ChatGPT an.",
+      "anthropic": "Anthropic erlaubt anderen Apps keine Anmeldung mit einem Claude-Abo, daher bietet mu sie nicht mehr an. Melde dich ab und füge stattdessen einen Anthropic-API-Schlüssel hinzu."
+    }
   },
   "endpoints": {
     "openaiCompletions": {
@@ -506,7 +510,7 @@
       "signedIn": {
         "title": "Mit Abo anmelden",
         "tag": "Kein API-Schlüssel",
-        "description": "Ein Abo von ChatGPT, Claude, Grok und anderen"
+        "description": "Ein Abo von ChatGPT, Grok und anderen"
       },
       "openai": {
         "title": "OpenAI-kompatible API",
@@ -545,6 +549,7 @@
       "recognized": "Am Schlüssel erkannt.",
       "ambiguous": "So sehen die Schlüssel mehrerer Dienste aus. Von welchem ist dieser?",
       "unknown": "mu kennt diese Art Schlüssel nicht. Von welchem Dienst ist er?",
+      "subscriptionToken": "Das ist ein Claude-Abo-Token (aus claude setup-token), kein API-Schlüssel. Anthropic erlaubt anderen Apps nicht, ein Claude-Abo zu nutzen, deshalb kann mu es nicht verwenden. Füge stattdessen einen Anthropic-API-Schlüssel (sk-ant-api…) ein.",
       "keyPage": "Wo bekomme ich einen Schlüssel?",
       "checking": "Schlüssel wird bei {{service}} geprüft…",
       "lookingLocal": "{{service}} wird auf diesem Rechner gesucht…",
@@ -682,9 +687,13 @@
     },
     "login": {
       "providers": {
-        "openai-codex": {
+        "openai": {
           "name": "ChatGPT",
           "plan": "Plus-/Pro-Abo"
+        },
+        "openai-codex": {
+          "name": "ChatGPT (Codex)",
+          "plan": "Ältere Anmeldung über Codex"
         },
         "anthropic": {
           "name": "Claude",

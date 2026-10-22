@@ -269,19 +269,8 @@
 				"fa-IR": "پیام‌های حین کار"
 			},
 			"summary": {
-				"zh": "任务进行中你又发来一句话：判断是要立刻打断，还是等这一步做完再处理。",
-				"en": "For a message that arrives while the agent is working: interrupt now, or handle it after the current step.",
-				"zh-TW": "代理工作時你又傳來一則訊息：判斷是要立刻打斷，還是等這一步做完再處理。",
-				"ja-JP": "エージェントの作業中に届いたメッセージについて、すぐに中断するか、現在のステップが終わってから対応するかを判定します。",
-				"ko-KR": "에이전트가 작업하는 중에 메시지가 도착하면, 지금 바로 작업을 중단할지 현재 단계를 마친 뒤 처리할지 판정합니다.",
-				"de-DE": "Eine Nachricht, die eintrifft, während der Agent arbeitet: sofort unterbrechen oder nach dem aktuellen Schritt bearbeiten.",
-				"fr-FR": "Un message arrive pendant que l’agent travaille : interrompre tout de suite, ou le traiter après l’étape en cours.",
-				"es-ES": "Un mensaje que llega mientras el agente trabaja: interrumpir ahora o atenderlo al terminar el paso actual.",
-				"pt-BR": "Uma mensagem que chega enquanto o agente trabalha: interromper agora ou tratá-la depois da etapa atual.",
-				"ru-RU": "Сообщение, пришедшее во время работы агента: прервать работу сразу или обработать его после текущего шага.",
-				"uk-UA": "Повідомлення, що надходить, поки агент працює: перервати роботу зараз чи обробити його після поточного кроку.",
-				"tr-TR": "Ajan çalışırken gelen bir mesaj: iş hemen kesilsin mi, yoksa mesaj mevcut adımdan sonra mı ele alınsın?",
-				"fa-IR": "پیامی که هنگام کار عامل می‌رسد: همین حالا کار را قطع کند، یا پس از گام فعلی به آن بپردازد."
+				"zh": "任务进行中你又发来一句话：判断是要立刻打断，还是等这一步做完再处理。默认是影子模式：判定只记录，消息按你按的键投递，不用等判定。",
+				"en": "For a message that arrives while the agent is working: interrupt now, or handle it after the current step. In shadow by default: the verdict is only logged, and the message goes the way of the key you pressed without waiting for it."
 			}
 		},
 		{
@@ -759,19 +748,8 @@
 				"fa-IR": "گرم نگه‌داشتن حافظهٔ نهان"
 			},
 			"summary": {
-				"zh": "判断你是否很快会回来，以决定要不要在提示词缓存过期前续一下。",
-				"en": "Guesses whether you'll be back soon, to decide whether to refresh the prompt cache before it expires.",
-				"zh-TW": "判斷你是否很快會回來，以決定要不要在提示快取過期前先續上。",
-				"ja-JP": "あなたがすぐに戻ってくるかを予測し、期限が切れる前にプロンプトキャッシュを更新するかを決めます。",
-				"ko-KR": "사용자가 곧 돌아올지 추측해, 프롬프트 캐시가 만료되기 전에 갱신할지 정합니다.",
-				"de-DE": "Schätzt, ob du bald zurückkommst, um zu entscheiden, ob der Prompt-Cache vor dem Ablaufen aufgefrischt wird.",
-				"fr-FR": "Devine si vous allez bientôt revenir, pour décider de rafraîchir le cache du prompt avant qu’il n’expire.",
-				"es-ES": "Estima si volverás pronto para decidir si se renueva la caché del prompt antes de que caduque.",
-				"pt-BR": "Estima se você vai voltar logo, para decidir se renova o cache do prompt antes que ele expire.",
-				"ru-RU": "Прикидывает, скоро ли вы вернётесь, чтобы решить, обновить ли кэш промпта до истечения его срока.",
-				"uk-UA": "Оцінює, чи ви скоро повернетеся, щоб вирішити, чи оновлювати кеш промпту, перш ніж він застаріє.",
-				"tr-TR": "İstem önbelleğini süresi dolmadan yenileyip yenilememeye karar vermek için yakında geri dönüp dönmeyeceğinizi tahmin eder.",
-				"fa-IR": "حدس می‌زند که به‌زودی برمی‌گردید یا نه، تا معلوم شود حافظهٔ نهان پرامپت پیش از منقضی شدن تازه شود یا نه."
+				"zh": "判断你是否很快会回来，以决定要不要在提示词缓存过期前续一下。只在代理空闲时问：运行中从不丢掉缓存。",
+				"en": "Guesses whether you'll be back soon, to decide whether to refresh the prompt cache before it expires. Asked only while the agent is idle, so a run never loses its cache to it."
 			}
 		},
 		{
@@ -1389,19 +1367,8 @@
 				"fa-IR": "مسیریابی اعلان‌ها"
 			},
 			"summary": {
-				"zh": "上下文预算等事件出现时，判断该现在告诉模型、稍后再说，还是不必说。",
-				"en": "For events such as the context budget: tell the model now, later or not at all.",
-				"zh-TW": "上下文預算這類事件出現時，判斷該現在告訴模型、晚點再說，還是不必說。",
-				"ja-JP": "コンテキスト予算などのイベントを、モデルにすぐ伝えるか、後で伝えるか、伝えないかを判定します。",
-				"ko-KR": "컨텍스트 예산 같은 이벤트를 모델에게 지금 알릴지, 나중에 알릴지, 알리지 않을지 정합니다.",
-				"de-DE": "Bei Ereignissen wie dem Kontextbudget: dem Modell jetzt, später oder gar nicht Bescheid geben.",
-				"fr-FR": "Pour des événements comme le budget de contexte : prévenir le modèle maintenant, plus tard, ou pas du tout.",
-				"es-ES": "Para eventos como el presupuesto de contexto: avisar al modelo ahora, más tarde o nunca.",
-				"pt-BR": "Para eventos como o orçamento de contexto: informar o modelo agora, mais tarde ou nunca.",
-				"ru-RU": "Для таких событий, как расход бюджета контекста: сообщить модели сейчас, позже или не сообщать вовсе.",
-				"uk-UA": "Для подій на кшталт бюджету контексту: повідомити модель зараз, пізніше чи не повідомляти зовсім.",
-				"tr-TR": "Bağlam bütçesi gibi olaylar için: modele şimdi mi, sonra mı iletilsin, yoksa hiç mi iletilmesin?",
-				"fa-IR": "برای رویدادهایی مانند بودجهٔ زمینه: همین حالا به مدل گفته شود، بعداً، یا اصلاً گفته نشود."
+				"zh": "上下文预算、后台命令结束等事件出现时，判断该现在告诉模型、稍后再说，还是不必说。默认是影子模式：判定只记录，事件按各自的规则投递，后台命令结束和上下文预算都是立刻告知。",
+				"en": "For events such as the context budget or a background job's end: tell the model now, later or not at all. In shadow by default: the verdict is only logged and each event is delivered by its own rule, which for a job's end and the context budget is now."
 			}
 		},
 		{
@@ -1424,19 +1391,8 @@
 				"fa-IR": "واگذاری به عامل‌های فرعی"
 			},
 			"summary": {
-				"zh": "为每个委派任务挑选角色，并按难度选择模型档位和思考等级。",
-				"en": "Picks a role for each delegated task, and a model tier and thinking level based on difficulty.",
-				"zh-TW": "為每個委派的任務挑選角色，並依難度選擇模型等級和思考強度。",
-				"ja-JP": "委任する各タスクの役割を選び、難しさに応じてモデルの階層と思考レベルを選びます。",
-				"ko-KR": "위임된 각 작업에 역할을 고르고, 난이도에 따라 모델 등급과 사고 수준을 정합니다.",
-				"de-DE": "Wählt für jede delegierte Aufgabe eine Rolle sowie je nach Schwierigkeit eine Modellstufe und eine Denkstufe.",
-				"fr-FR": "Choisit un rôle pour chaque tâche déléguée, ainsi qu’un palier de modèle et un niveau de réflexion selon la difficulté.",
-				"es-ES": "Elige un rol para cada tarea delegada, y un nivel de modelo y de razonamiento según la dificultad.",
-				"pt-BR": "Escolhe um papel para cada tarefa delegada e, conforme a dificuldade, a força do modelo e o nível de raciocínio.",
-				"ru-RU": "Выбирает роль для каждой поручаемой задачи, а по сложности — силу модели и уровень размышлений.",
-				"uk-UA": "Вибирає роль для кожного делегованого завдання, а також силу моделі й рівень міркування залежно від складності.",
-				"tr-TR": "Devredilen her görev için bir rol, zorluğa göre de bir model kademesi ve düşünme düzeyi seçer.",
-				"fa-IR": "برای هر وظیفهٔ واگذارشده یک نقش، و بر اساس دشواری آن ردهٔ مدل و سطح تفکر را انتخاب می‌کند."
+				"zh": "为每个没指定角色的委派任务挑选角色；设了模型梯队时，再按难度选择模型档位和思考等级。角色都已指定、又没有梯队时不提问。",
+				"en": "Picks a role for each delegated task that doesn't name one. With a model ladder set, it also picks a model tier and thinking level based on difficulty. When every role is named and there's no ladder, nothing is asked."
 			}
 		},
 		{
@@ -1459,19 +1415,8 @@
 				"fa-IR": "بررسی محدودهٔ پچ عامل فرعی"
 			},
 			"summary": {
-				"zh": "隔离的子代理交回补丁时，只看任务、改动的路径和行数，判断改动是否超出任务、哪些文件与任务无关；只给主代理一句提示，从不拦截。",
-				"en": "When an isolated subagent hands back a patch, judges from the task, the changed paths and the line counts whether it stays within scope and which files look unrelated. Gives the main agent one line of advice; it never blocks.",
-				"zh-TW": "隔離執行的子代理交回修補程式時，只根據任務、改動的路徑和行數，判斷改動有沒有超出任務、哪些檔案看起來與任務無關。只給主代理一句建議，從不攔截。",
-				"ja-JP": "分離されたサブエージェントがパッチを返すと、タスク、変更されたパス、行数から、変更がタスクの範囲内か、どのファイルが無関係に見えるかを判定します。メインのエージェントに 1 行の助言を伝えるだけで、ブロックはしません。",
-				"ko-KR": "격리된 하위 에이전트가 패치를 돌려주면, 작업 내용과 변경된 경로, 줄 수를 보고 작업 범위 안에 있는지, 어떤 파일이 무관해 보이는지 판정합니다. 메인 에이전트에게 한 줄 조언을 줄 뿐 막지는 않습니다.",
-				"de-DE": "Gibt ein isolierter Unteragent einen Patch zurück, wird anhand der Aufgabe, der geänderten Pfade und der Zeilenzahlen beurteilt, ob er im Rahmen der Aufgabe bleibt und welche Dateien nichts damit zu tun haben. Der Hauptagent bekommt einen einzeiligen Rat; blockiert wird nie.",
-				"fr-FR": "Quand un sous-agent isolé rend un patch, juge d’après la tâche, les chemins modifiés et le nombre de lignes s’il reste dans le périmètre de la tâche et quels fichiers semblent sans rapport. Une ligne de conseil pour l’agent principal ; jamais de blocage.",
-				"es-ES": "Cuando un subagente aislado devuelve un parche, evalúa, a partir de la tarea, las rutas cambiadas y el número de líneas, si se ciñe a la tarea y qué archivos parecen no tener relación. Da una línea de consejo al agente principal; nunca bloquea.",
-				"pt-BR": "Quando um subagente isolado devolve um patch, avalia, pela tarefa, pelos caminhos alterados e pela contagem de linhas, se ele fica dentro da tarefa e quais arquivos parecem não relacionados. Dá uma linha de orientação ao agente principal; nunca bloqueia.",
-				"ru-RU": "Когда изолированный субагент возвращает патч, судья по задаче, изменённым путям и числу строк оценивает, не выходит ли патч за рамки задачи и какие файлы выглядят посторонними. Основной агент получает совет в одну строку; ничего не блокируется.",
-				"uk-UA": "Коли ізольований субагент повертає патч, оцінює за завданням, зміненими шляхами й кількістю рядків, чи не виходить він за межі завдання і які файли виглядають сторонніми. Основний агент отримує однорядкову пораду; нічого не блокується.",
-				"tr-TR": "Yalıtılmış bir alt ajan bir yama döndürdüğünde; görevden, değişen yollardan ve satır sayılarından yamanın görev kapsamında kalıp kalmadığına ve hangi dosyaların ilgisiz göründüğüne karar verir. Ana ajana tek satırlık bir öneri verir; asla engellemez.",
-				"fa-IR": "وقتی یک عامل فرعی جداشده پچی را برمی‌گرداند، از روی وظیفه، مسیرهای تغییرکرده و شمار خطوط داوری می‌کند که آیا پچ در محدودهٔ وظیفه می‌ماند و کدام فایل‌ها نامرتبط به نظر می‌رسند. فقط یک خط توصیه برای عامل اصلی؛ هرگز جلوی چیزی را نمی‌گیرد."
+				"zh": "隔离的子代理交回补丁时，只看任务、改动的路径和行数，判断改动是否超出任务、哪些文件与任务无关；只给主代理一句提示，从不拦截。默认关闭：交回的结果本来就列出了每个改动的文件和行数。",
+				"en": "When an isolated subagent hands back a patch, judges from the task, the changed paths and the line counts whether it stays within scope and which files look unrelated. Gives the main agent one line of advice; it never blocks. Off by default: the result already lists every changed file with its line counts."
 			}
 		},
 		{
@@ -1494,19 +1439,8 @@
 				"fa-IR": "Hive: انتشار یافته‌ها"
 			},
 			"summary": {
-				"zh": "一只蜂的发现值不值得放到公告板上给其他蜂看。",
-				"en": "Decides whether a bee's finding is worth putting on the board for the others.",
-				"zh-TW": "一個蜂群成員的發現，值不值得放到共享看板上給其他成員看。",
-				"ja-JP": "ビーの発見を、ほかのビーのために共有ボードへ載せる価値があるかを判定します。",
-				"ko-KR": "비(bee)의 발견이 다른 비들을 위해 공유 보드에 올릴 가치가 있는지 판정합니다.",
-				"de-DE": "Ob die Erkenntnis einer Biene es wert ist, für die anderen aufs gemeinsame Board zu kommen.",
-				"fr-FR": "Décide si la découverte d’une abeille mérite d’être placée sur le tableau partagé pour les autres.",
-				"es-ES": "Si merece la pena poner el hallazgo de una abeja en el tablero compartido para las demás.",
-				"pt-BR": "Se a descoberta de uma abelha vale ir para o quadro compartilhado, para as outras verem.",
-				"ru-RU": "Стоит ли выложить находку пчелы на общую доску для остальных.",
-				"uk-UA": "Чи варто виставити знахідку бджоли на спільну дошку для інших.",
-				"tr-TR": "Bir arının bulgusunun, diğerleri için paylaşılan panoya konmaya değip değmediği.",
-				"fa-IR": "اینکه یافتهٔ یک زنبور ارزش دارد روی تختهٔ مشترک گذاشته شود تا دیگران ببینند یا نه."
+				"zh": "一只蜂说的话值不值得放到公告板上给其他蜂看。以 FOUND: 或 DEAD END: 开头的发现直接发布，不用问。",
+				"en": "Decides whether what a bee said is worth putting on the board for the others. A finding that starts with FOUND: or DEAD END: is published without asking."
 			}
 		},
 		{
@@ -1529,19 +1463,8 @@
 				"fa-IR": "Hive: تحویل"
 			},
 			"summary": {
-				"zh": "公告板上的一条发现与某只蜂手头的工作有没有关系，有关系才送达。",
-				"en": "Decides whether a finding on the board matters to a bee's current work; only then is it delivered.",
-				"zh-TW": "共享看板上的一則發現和某個蜂群成員手上的工作有沒有關係；有關係才送達。",
-				"ja-JP": "共有ボード上の発見が、あるビーの現在の作業に関係するかを判定し、関係する場合にだけ配信します。",
-				"ko-KR": "공유 보드의 발견이 어떤 비의 현재 작업에 중요한지 판정하고, 중요할 때만 전달합니다.",
-				"de-DE": "Ob eine Erkenntnis auf dem Board für die aktuelle Arbeit einer Biene wichtig ist; nur dann wird sie übergeben.",
-				"fr-FR": "Décide si une découverte du tableau partagé compte pour le travail en cours d’une abeille ; elle ne lui est transmise que dans ce cas.",
-				"es-ES": "Si un hallazgo del tablero compartido importa para el trabajo actual de una abeja; solo entonces se le entrega.",
-				"pt-BR": "Se uma descoberta do quadro compartilhado importa para o trabalho atual de uma abelha; só então ela é entregue.",
-				"ru-RU": "Важна ли находка с общей доски для текущей работы пчелы; передаётся она только в этом случае.",
-				"uk-UA": "Чи важлива знахідка зі спільної дошки для поточної роботи бджоли; лише тоді її передають.",
-				"tr-TR": "Paylaşılan panodaki bir bulgunun bir arının mevcut işiyle ilgili olup olmadığı; yalnızca ilgiliyse teslim edilir.",
-				"fa-IR": "اینکه یافته‌ای روی تختهٔ مشترک به کار فعلی یک زنبور مربوط است یا نه؛ فقط در این صورت تحویل داده می‌شود."
+				"zh": "公告板上的一条发现与某只蜂手头的工作有没有关系，有关系才送达。判定器答不上来时照样送达（不超过每只蜂的上限）。",
+				"en": "Decides whether a finding on the board matters to a bee's current work; only then is it delivered. When the judge can't answer, it's delivered anyway, up to each bee's limit."
 			}
 		},
 		{
@@ -1893,6 +1816,19 @@
 						"uk-UA": "Чекати щонайбільше",
 						"tr-TR": "En fazla bekleme",
 						"fa-IR": "حداکثر انتظار"
+					}
+				},
+				{
+					"key": "applyLate",
+					"kind": "boolean",
+					"default": true,
+					"label": {
+						"zh": "首次判定晚到时下一回合补上",
+						"en": "Apply a late first verdict from the next turn"
+					},
+					"help": {
+						"zh": "会话第一条消息的判定超过等待时间才到时，从下一回合起照它隐藏技能，提示词前缀只变这一次；关掉则整个会话都带着全部技能说明。",
+						"en": "When the verdict on the session's first message comes after the wait, skills are hidden from the next turn on, which changes the prompt prefix once. Off: the session keeps every skill description."
 					}
 				}
 			]
@@ -2981,6 +2917,21 @@
 					}
 				},
 				{
+					"key": "proseWords",
+					"kind": "number",
+					"default": 6,
+					"min": 0,
+					"max": 50,
+					"label": {
+						"zh": "几个词连成句才送判",
+						"en": "Words in a row to ask the judge"
+					},
+					"help": {
+						"zh": "一段里没有这么多个连着的词（中文、日文这类不空格的文字算连着 8 个字），就不问判定器，只按规则看：目录列表、链接列表、响应头、几个字的 grep 结果里放不下一条指令。0：每段都问。",
+						"en": "A passage without this many words in a row (8 characters in a row for Chinese, Japanese and other scripts written without spaces) isn't put to the judge; rules alone read it. Directory listings, link lists, response headers and short grep hits can't hold an instruction. 0: every passage is judged."
+					}
+				},
+				{
 					"key": "waitMs",
 					"kind": "number",
 					"default": 6000,
@@ -3346,7 +3297,10 @@
 					"default": [
 						"read",
 						"edit",
-						"write"
+						"write",
+						"delegate",
+						"hive",
+						"web_fetch"
 					],
 					"label": {
 						"zh": "这些工具的输出不筛",
@@ -3362,6 +3316,35 @@
 						"uk-UA": "Ніколи не фільтрувати ці інструменти",
 						"tr-TR": "Bu araçları hiç filtreleme",
 						"fa-IR": "ابزارهای بدون فیلتر"
+					}
+				},
+				{
+					"key": "printCommands",
+					"kind": "list",
+					"default": [
+						"cat",
+						"sed -n",
+						"head",
+						"tail",
+						"nl",
+						"less",
+						"bat",
+						"grep",
+						"rg",
+						"od",
+						"xxd",
+						"git show",
+						"git diff",
+						"readelf",
+						"objdump"
+					],
+					"label": {
+						"zh": "只打印文件的命令不筛",
+						"en": "Never filter file prints"
+					},
+					"help": {
+						"zh": "bash 命令只用这些程序打印文件（前面可以 cd，可以用管道接这些程序）时，输出整段放行，和 read 一样：模型要看的就是这个文件。构建、测试、后台任务和别的命令的输出照常判断。留空：都判断。",
+						"en": "When a bash command only prints a file with these programs (after a cd, or piped through them), its output goes in whole, as with read: the model asked to see that file. Build, test, background-job and other output is still judged. Empty: all of it is judged."
 					}
 				},
 				{
@@ -4427,6 +4410,10 @@
 						"uk-UA": "Повторів, що вважаються зацикленням",
 						"tr-TR": "Döngü sayılan tekrar",
 						"fa-IR": "تکرارهایی که حلقه به شمار می‌آیند"
+					},
+					"help": {
+						"zh": "输入完全相同、结果也完全相同才算同一调用；分段读同一个文件不算。",
+						"en": "Only the same input with the same result counts as the same call; paging through a file does not."
 					}
 				},
 				{
@@ -4997,11 +4984,33 @@
 			"name": "watchdog",
 			"title": {
 				"zh": "长思考重试",
-				"en": "Long-thinking retry"
+				"en": "Long-thinking retry",
+				"zh-TW": "長思考重試",
+				"ja-JP": "長考の再試行",
+				"ko-KR": "긴 생각 재시도",
+				"de-DE": "Neuversuch nach langem Nachdenken",
+				"fr-FR": "Relance après une longue réflexion",
+				"es-ES": "Reintento tras pensar demasiado",
+				"pt-BR": "Nova tentativa após raciocínio longo",
+				"ru-RU": "Повтор после долгих размышлений",
+				"uk-UA": "Повтор після довгих міркувань",
+				"tr-TR": "Uzun düşünmede yeniden deneme",
+				"fa-IR": "تلاش دوباره پس از فکر طولانی"
 			},
 			"summary": {
 				"zh": "一次回复只思考、迟迟不写字也不调用工具，到时限就打断，用同样的思考强度重问一次，并把它想到哪一步带给它，让它先动手再接着想。重问的那一次不再打断。",
-				"en": "When a reply has only been thinking for too long, with no text and no tool call yet, it is cut and asked again at the same reasoning effort. The retry is told where the reasoning had gotten to and asked to act on it first. The retry itself is never cut."
+				"en": "When a reply has only been thinking for too long, with no text and no tool call yet, it is cut and asked again at the same reasoning effort. The retry is told where the reasoning had gotten to and asked to act on it first. The retry itself is never cut.",
+				"zh-TW": "一次回覆只顧著思考太久，還沒寫字也沒呼叫工具，就會被打斷，以同樣的思考強度重問一次。重問時會告訴它原本想到哪一步，請它先動手再接著想。重問的那一次不會再被打斷。",
+				"ja-JP": "返信が考えるばかりで長くかかり、まだテキストもツール呼び出しもない場合は、打ち切って同じ思考レベルで聞き直します。聞き直すときは推論がどこまで進んでいたかを伝え、まずそれをもとに手を動かすよう求めます。聞き直した返信は打ち切りません。",
+				"ko-KR": "응답이 텍스트도 도구 호출도 없이 너무 오래 생각만 하고 있으면 중단하고 같은 사고 수준으로 다시 묻습니다. 다시 물을 때는 추론이 어디까지 갔는지 알려 주고, 먼저 그에 따라 행동하라고 요청합니다. 다시 묻는 응답은 중단하지 않습니다.",
+				"de-DE": "Denkt eine Antwort zu lange nur nach, ohne Text und ohne Tool-Aufruf, wird sie abgebrochen und mit derselben Denkstufe neu angefragt. Der Neuversuch erfährt, wie weit die Überlegung gekommen war, und soll zuerst danach handeln. Der Neuversuch selbst wird nie abgebrochen.",
+				"fr-FR": "Quand une réponse ne fait que réfléchir trop longtemps, sans texte ni appel d’outil, elle est interrompue et redemandée au même niveau de réflexion. La relance apprend où en était le raisonnement et doit d’abord agir en conséquence. La relance elle-même n’est jamais interrompue.",
+				"es-ES": "Si una respuesta pasa demasiado tiempo solo pensando, sin texto ni llamadas a herramientas, se corta y se vuelve a pedir con el mismo nivel de razonamiento. Al reintento se le dice hasta dónde había llegado el razonamiento y se le pide que actúe primero en consecuencia. El reintento nunca se corta.",
+				"pt-BR": "Quando uma resposta passa tempo demais só pensando, sem texto nem chamada de ferramenta, ela é interrompida e pedida de novo com o mesmo nível de raciocínio. A nova tentativa fica sabendo até onde o raciocínio tinha chegado e deve agir com base nisso primeiro. A nova tentativa nunca é interrompida.",
+				"ru-RU": "Если ответ слишком долго только размышляет, не написав текста и не вызвав инструмент, он прерывается и запрашивается заново с тем же уровнем размышлений. Повтору сообщают, до чего дошли размышления, и просят сначала действовать исходя из этого. Сам повтор никогда не прерывается.",
+				"uk-UA": "Якщо відповідь надто довго лише міркує, не написавши тексту й не викликавши інструмент, її переривають і запитують знову з тим самим рівнем міркування. Повтору повідомляють, до чого дійшли міркування, і просять спершу діяти відповідно. Сам повтор ніколи не переривається.",
+				"tr-TR": "Bir yanıt metin yazmadan ve araç çağırmadan çok uzun süre yalnızca düşünürse kesilir ve aynı düşünme düzeyiyle yeniden sorulur. Yeniden denemeye akıl yürütmenin nereye vardığı söylenir ve önce buna göre harekete geçmesi istenir. Yeniden denemenin kendisi asla kesilmez.",
+				"fa-IR": "اگر پاسخی بیش از حد فقط فکر کند و هنوز نه متنی نوشته باشد و نه ابزاری فراخوانده باشد، قطع می‌شود و با همان سطح تفکر دوباره پرسیده می‌شود. به تلاش دوباره گفته می‌شود استدلال تا کجا پیش رفته بود و از آن خواسته می‌شود اول بر همان اساس اقدام کند. خودِ تلاش دوباره هرگز قطع نمی‌شود."
 			},
 			"defaultEnabled": true,
 			"options": [
@@ -5012,11 +5021,33 @@
 					"min": 60000,
 					"unit": {
 						"zh": "毫秒",
-						"en": "ms"
+						"en": "ms",
+						"zh-TW": "毫秒",
+						"ja-JP": "ミリ秒",
+						"ko-KR": "밀리초",
+						"de-DE": "ms",
+						"fr-FR": "ms",
+						"es-ES": "ms",
+						"pt-BR": "ms",
+						"ru-RU": "мс",
+						"uk-UA": "мс",
+						"tr-TR": "ms",
+						"fa-IR": "میلی‌ثانیه"
 					},
 					"label": {
 						"zh": "只思考多久后打断",
-						"en": "Cut a reply after thinking this long"
+						"en": "Cut a reply after thinking this long",
+						"zh-TW": "只思考多久後打斷",
+						"ja-JP": "考えるだけの状態がこの時間続いたら打ち切る",
+						"ko-KR": "생각만 하는 시간이 이만큼 지나면 중단",
+						"de-DE": "Antwort abbrechen nach so langem Nachdenken",
+						"fr-FR": "Interrompre une réponse après cette durée de réflexion",
+						"es-ES": "Cortar una respuesta tras pensar este tiempo",
+						"pt-BR": "Interromper uma resposta depois de pensar por este tempo",
+						"ru-RU": "Прерывать ответ, если он размышляет дольше",
+						"uk-UA": "Переривати відповідь, якщо вона міркує довше",
+						"tr-TR": "Bu kadar düşündükten sonra yanıtı kes",
+						"fa-IR": "قطع پاسخ پس از این مدت فکر کردن"
 					}
 				},
 				{
@@ -5027,7 +5058,18 @@
 					"max": 10,
 					"label": {
 						"zh": "两次发言之间最多打断几次",
-						"en": "Max cuts between two of your messages"
+						"en": "Max cuts between two of your messages",
+						"zh-TW": "你的兩則訊息之間最多打斷幾次",
+						"ja-JP": "自分のメッセージ 2 つの間で打ち切る最大回数",
+						"ko-KR": "내 메시지 두 개 사이의 최대 중단 횟수",
+						"de-DE": "Höchstens so viele Abbrüche zwischen zwei deiner Nachrichten",
+						"fr-FR": "Interruptions max. entre deux de vos messages",
+						"es-ES": "Máximo de cortes entre dos mensajes tuyos",
+						"pt-BR": "Máximo de interrupções entre duas mensagens suas",
+						"ru-RU": "Максимум прерываний между двумя вашими сообщениями",
+						"uk-UA": "Максимум переривань між двома вашими повідомленнями",
+						"tr-TR": "İki mesajınız arasında en fazla kesme sayısı",
+						"fa-IR": "حداکثر دفعات قطع بین دو پیام شما"
 					}
 				}
 			]
@@ -5830,6 +5872,32 @@
 						"tr-TR": "Sonrasında sabit cümleler kullanılır.",
 						"fa-IR": "پس از آن، جمله‌های ثابت به کار می‌روند."
 					}
+				},
+				{
+					"key": "unattended",
+					"kind": "boolean",
+					"default": false,
+					"label": {
+						"zh": "一次性运行里也写看板",
+						"en": "Also in one-shot runs"
+					},
+					"help": {
+						"zh": "mu --print 和 json 模式里没人看看板，默认不写，省下判定器和写看板模型的调用。",
+						"en": "Nobody watches the board in mu --print or json mode, so by default it isn't written there, saving the judge and writer calls."
+					}
+				},
+				{
+					"key": "followAlways",
+					"kind": "boolean",
+					"default": false,
+					"label": {
+						"zh": "子代理干活时按时查看",
+						"en": "Check on subagents on a timer"
+					},
+					"help": {
+						"zh": "默认只在有子代理开始、做完或出错时才查看；打开后不管有没有变化，每隔一段时间都看一次。",
+						"en": "By default the board checks only when a subagent starts, finishes or fails. On: it checks at every interval, changed or not."
+					}
 				}
 			]
 		},
@@ -5904,19 +5972,8 @@
 						"fa-IR": "حداکثر انتظار"
 					},
 					"help": {
-						"zh": "超时就不催了，判定只记账。",
-						"en": "After this, there's no nudge; the verdict is only recorded.",
-						"zh-TW": "超過這個時間就不再提醒，判定結果只記錄下來。",
-						"ja-JP": "これを過ぎると促しはせず、判定は記録だけします。",
-						"ko-KR": "이 시간이 지나면 알려 주지 않고, 판정은 기록만 합니다.",
-						"de-DE": "Danach gibt es keine Erinnerung; das Urteil wird nur aufgezeichnet.",
-						"fr-FR": "Au-delà, pas de rappel ; le jugement est seulement enregistré.",
-						"es-ES": "Pasado este tiempo no hay recordatorio; el veredicto solo se registra.",
-						"pt-BR": "Depois disso não há lembrete; o veredito só é registrado.",
-						"ru-RU": "После этого напоминания нет, а решение только записывается.",
-						"uk-UA": "Після цього нагадування немає, а рішення лише записується.",
-						"tr-TR": "Bu süreden sonra hatırlatma yapılmaz; karar yalnızca kaydedilir.",
-						"fa-IR": "پس از این مدت یادآوری‌ای در کار نیست؛ نتیجهٔ داوری فقط ثبت می‌شود."
+						"zh": "超时就不催了，这次判定也随之取消，不拖住单次运行的退出。",
+						"en": "After this, there's no nudge, and the judge call is cancelled so it doesn't hold up the end of a one-shot run."
 					}
 				}
 			]
@@ -6014,19 +6071,8 @@
 						"fa-IR": "حداکثر انتظار"
 					},
 					"help": {
-						"zh": "超时就不催了，判定只记账。",
-						"en": "After this, there's no nudge; the verdict is only recorded.",
-						"zh-TW": "超過這個時間就不再提醒，判定結果只記錄下來。",
-						"ja-JP": "これを過ぎると促しはせず、判定は記録だけします。",
-						"ko-KR": "이 시간이 지나면 알려 주지 않고, 판정은 기록만 합니다.",
-						"de-DE": "Danach gibt es keine Erinnerung; das Urteil wird nur aufgezeichnet.",
-						"fr-FR": "Au-delà, pas de rappel ; le jugement est seulement enregistré.",
-						"es-ES": "Pasado este tiempo no hay recordatorio; el veredicto solo se registra.",
-						"pt-BR": "Depois disso não há lembrete; o veredito só é registrado.",
-						"ru-RU": "После этого напоминания нет, а решение только записывается.",
-						"uk-UA": "Після цього нагадування немає, а рішення лише записується.",
-						"tr-TR": "Bu süreden sonra hatırlatma yapılmaz; karar yalnızca kaydedilir.",
-						"fa-IR": "پس از این مدت یادآوری‌ای در کار نیست؛ نتیجهٔ داوری فقط ثبت می‌شود."
+						"zh": "超时就不催了，这次判定也随之取消，不拖住单次运行的退出。",
+						"en": "After this, there's no nudge, and the judge call is cancelled so it doesn't hold up the end of a one-shot run."
 					}
 				}
 			]
@@ -6087,6 +6133,42 @@
 						"tr-TR": "Bağlam bütçesi bildirimleri (%)",
 						"fa-IR": "اعلان‌های بودجهٔ زمینه (%)"
 					}
+				},
+				{
+					"key": "unjudged",
+					"kind": "choice",
+					"default": "now",
+					"choices": [
+						{
+							"value": "now",
+							"label": {
+								"zh": "立刻告知",
+								"en": "Now"
+							}
+						},
+						{
+							"value": "next_turn",
+							"label": {
+								"zh": "下一回合",
+								"en": "Next turn"
+							}
+						},
+						{
+							"value": "drop",
+							"label": {
+								"zh": "不说",
+								"en": "Never"
+							}
+						}
+					],
+					"label": {
+						"zh": "没有判定时，上下文预算提醒",
+						"en": "Without a verdict, context budget notices"
+					},
+					"help": {
+						"zh": "通知分流默认是影子模式，这时就按这里投递。「下一回合」要等下一次运行开始才读到，单次运行里读不到。",
+						"en": "Notification routing is in shadow by default, and then this decides. A next-turn notice is read only when another run starts, which never happens in a one-shot run."
+					}
 				}
 			]
 		},
@@ -6123,7 +6205,27 @@
 				"fa-IR": "وقتی به‌صرفه باشد، حافظهٔ نهان پرامپت را پیش از منقضی شدن تازه می‌کند."
 			},
 			"defaultEnabled": true,
-			"options": []
+			"options": [
+				{
+					"key": "waitMs",
+					"kind": "number",
+					"default": 3000,
+					"min": 500,
+					"max": 30000,
+					"unit": {
+						"zh": "毫秒",
+						"en": "ms"
+					},
+					"label": {
+						"zh": "最多等待",
+						"en": "Wait at most"
+					},
+					"help": {
+						"zh": "超时就按 pi 自己的算法决定，这次判定也随之取消。",
+						"en": "After this, pi's own estimate decides, and the judge call is cancelled."
+					}
+				}
+			]
 		},
 		{
 			"name": "warmup",
@@ -6703,7 +6805,7 @@
 				{
 					"key": "maxRelatedPerNote",
 					"kind": "number",
-					"default": 6,
+					"default": 2,
 					"min": 0,
 					"max": 30,
 					"label": {
@@ -6735,6 +6837,32 @@
 						"uk-UA": "Лише ті, що мають із нею спільні слова. 0 вимикає виправлення.",
 						"tr-TR": "Yalnızca onunla ortak kelimeleri olanlar. 0 düzeltmeleri kapatır.",
 						"fa-IR": "فقط آن‌هایی که با آن واژهٔ مشترک دارند. 0 اصلاح‌ها را خاموش می‌کند."
+					}
+				},
+				{
+					"key": "publishMarked",
+					"kind": "boolean",
+					"default": true,
+					"label": {
+						"zh": "带标记的发现直接发布",
+						"en": "Publish marked findings directly"
+					},
+					"help": {
+						"zh": "蜂以 FOUND: 或 DEAD END: 开头说的话直接上公告板，不问判定器。",
+						"en": "What a bee says starting with FOUND: or DEAD END: goes on the board without asking the judge."
+					}
+				},
+				{
+					"key": "publishToolOutputs",
+					"kind": "boolean",
+					"default": false,
+					"label": {
+						"zh": "工具输出也拿去问要不要发布",
+						"en": "Consider tool output for the board too"
+					},
+					"help": {
+						"zh": "默认只看蜂自己说的话。",
+						"en": "By default only what a bee says is considered."
 					}
 				},
 				{
@@ -7139,8 +7267,8 @@
 				"fa-IR": "دستورهای پس‌زمینه"
 			},
 			"summary": {
-				"zh": "开发服务器、长时间构建放到后台跑，不占用回合；结束时是否打断交给「通知分流」；会话结束时全部终止，无人值守的单次运行除外。",
-				"en": "bg_start / bg_output / bg_stop: run dev servers and long builds without blocking the turn. Notification routing decides whether a finished job interrupts; every job stops when the session ends, except in an unattended one-shot run."
+				"zh": "开发服务器、长时间构建放到后台跑，不占用回合；任务结束时立刻告诉代理；会话结束时全部终止，无人值守的单次运行除外。",
+				"en": "bg_start / bg_output / bg_stop: run dev servers and long builds without blocking the turn. The agent hears of a finished job right away; every job stops when the session ends, except in an unattended one-shot run."
 			},
 			"defaultEnabled": true,
 			"options": [
@@ -7394,19 +7522,44 @@
 						"fa-IR": "پایان یک کار می‌تواند عامل بیکار را بیدار کند"
 					},
 					"help": {
-						"zh": "只有判定为「立刻」时才会开始新回合；关闭时只留一条消息。",
-						"en": "Only a verdict of \"now\" starts a turn; when off, the notice is only appended.",
-						"zh-TW": "只有判定為「立刻」時才會開始新的一輪；關閉時只附上一則通知。",
-						"ja-JP": "判定が「すぐに届ける」の場合だけ新しいターンを始めます。オフの場合は、通知を追加するだけです。",
-						"ko-KR": "“지금”으로 판정될 때만 턴을 시작합니다. 끄면 알림을 덧붙이기만 합니다.",
-						"de-DE": "Nur das Urteil „jetzt“ startet eine Runde; ist die Option aus, wird der Hinweis nur angehängt.",
-						"fr-FR": "Seul un jugement « maintenant » démarre un tour. Si cette option est désactivée, l’avis est seulement ajouté.",
-						"es-ES": "Solo un veredicto de «ahora» inicia un turno; si está desactivado, solo se deja el aviso.",
-						"pt-BR": "Só um veredito “agora” inicia um turno; quando desativado, o aviso só é acrescentado.",
-						"ru-RU": "Ход начинается, только если решение — «сейчас»; когда выключено, уведомление просто добавляется.",
-						"uk-UA": "Хід починає лише рішення «зараз»; коли вимкнено, сповіщення просто додається.",
-						"tr-TR": "Yalnızca “Şimdi ilet” kararı yeni bir tur başlatır; kapalıyken bildirim yalnızca konuşmaya eklenir.",
-						"fa-IR": "فقط داوریِ «اکنون» نوبتی را شروع می‌کند؛ وقتی خاموش باشد، اعلان فقط افزوده می‌شود."
+						"zh": "只有「立刻」告知的才会开始新回合；关闭时只留一条消息。",
+						"en": "Only a notice delivered \"now\" starts a turn; when off, the notice is only appended."
+					}
+				},
+				{
+					"key": "unjudged",
+					"kind": "choice",
+					"default": "now",
+					"choices": [
+						{
+							"value": "now",
+							"label": {
+								"zh": "立刻告知",
+								"en": "Now"
+							}
+						},
+						{
+							"value": "next_turn",
+							"label": {
+								"zh": "下一回合",
+								"en": "Next turn"
+							}
+						},
+						{
+							"value": "drop",
+							"label": {
+								"zh": "不说",
+								"en": "Never"
+							}
+						}
+					],
+					"label": {
+						"zh": "没有判定时，任务结束或匹配行",
+						"en": "Without a verdict, a job's end or watched line"
+					},
+					"help": {
+						"zh": "通知分流默认是影子模式，这时就按这里投递。「下一回合」要等下一次运行开始才读到，单次运行里读不到。",
+						"en": "Notification routing is in shadow by default, and then this decides. A next-turn notice is read only when another run starts, which never happens in a one-shot run."
 					}
 				},
 				{
@@ -7418,31 +7571,86 @@
 							"value": "headless",
 							"label": {
 								"zh": "无人值守运行时保留",
-								"en": "Keep in unattended runs"
+								"en": "Keep in unattended runs",
+								"zh-TW": "無人值守執行時保留",
+								"ja-JP": "無人実行では残す",
+								"ko-KR": "무인 실행에서는 유지",
+								"de-DE": "In unbeaufsichtigten Läufen behalten",
+								"fr-FR": "Garder lors des exécutions sans surveillance",
+								"es-ES": "Mantener en ejecuciones desatendidas",
+								"pt-BR": "Manter em execuções sem supervisão",
+								"ru-RU": "Оставлять при запуске без присмотра",
+								"uk-UA": "Залишати під час запуску без нагляду",
+								"tr-TR": "Gözetimsiz çalıştırmalarda koru",
+								"fa-IR": "نگه‌داشتن در اجراهای بی‌نظارت"
 							}
 						},
 						{
 							"value": "always",
 							"label": {
 								"zh": "总是保留",
-								"en": "Always keep"
+								"en": "Always keep",
+								"zh-TW": "總是保留",
+								"ja-JP": "常に残す",
+								"ko-KR": "항상 유지",
+								"de-DE": "Immer behalten",
+								"fr-FR": "Toujours garder",
+								"es-ES": "Mantener siempre",
+								"pt-BR": "Sempre manter",
+								"ru-RU": "Всегда оставлять",
+								"uk-UA": "Завжди залишати",
+								"tr-TR": "Her zaman koru",
+								"fa-IR": "همیشه نگه‌داشتن"
 							}
 						},
 						{
 							"value": "never",
 							"label": {
 								"zh": "总是终止",
-								"en": "Always stop"
+								"en": "Always stop",
+								"zh-TW": "總是終止",
+								"ja-JP": "常に停止",
+								"ko-KR": "항상 중지",
+								"de-DE": "Immer beenden",
+								"fr-FR": "Toujours arrêter",
+								"es-ES": "Detener siempre",
+								"pt-BR": "Sempre encerrar",
+								"ru-RU": "Всегда останавливать",
+								"uk-UA": "Завжди зупиняти",
+								"tr-TR": "Her zaman durdur",
+								"fa-IR": "همیشه متوقف کردن"
 							}
 						}
 					],
 					"label": {
 						"zh": "会话结束时仍在运行的任务",
-						"en": "Jobs still running when the session ends"
+						"en": "Jobs still running when the session ends",
+						"zh-TW": "對話結束時仍在執行的工作",
+						"ja-JP": "セッション終了時にまだ実行中のジョブ",
+						"ko-KR": "세션이 끝날 때 아직 실행 중인 작업",
+						"de-DE": "Jobs, die beim Ende der Sitzung noch laufen",
+						"fr-FR": "Processus encore actifs à la fin de la session",
+						"es-ES": "Tareas que siguen en marcha al terminar la sesión",
+						"pt-BR": "Tarefas ainda em execução quando a sessão termina",
+						"ru-RU": "Задачи, которые ещё работают при завершении сеанса",
+						"uk-UA": "Процеси, що ще працюють, коли сеанс завершується",
+						"tr-TR": "Oturum bittiğinde hâlâ çalışan işler",
+						"fa-IR": "کارهایی که هنگام پایان نشست هنوز در حال اجرا هستند"
 					},
 					"help": {
 						"zh": "无人值守指 mu --print 和 json 模式的单次运行：任务要求的服务在运行结束后还得在。",
-						"en": "Unattended means a one-shot mu --print or json run, where a service the task asked for must still be up after the run."
+						"en": "Unattended means a one-shot mu --print or json run, where a service the task asked for must still be up after the run.",
+						"zh-TW": "無人值守指 mu --print 或 json 模式的單次執行：任務要求的服務在執行結束後還得在。",
+						"ja-JP": "無人実行とは mu --print や json モードの単発実行のことです。タスクが求めたサービスは、実行が終わった後も動いている必要があります。",
+						"ko-KR": "무인 실행은 mu --print 또는 json 모드의 단발 실행을 말합니다. 이때 작업이 요청한 서비스는 실행이 끝난 뒤에도 계속 떠 있어야 합니다.",
+						"de-DE": "Unbeaufsichtigt heißt: ein einmaliger Lauf mit mu --print oder im JSON-Modus, nach dem ein Dienst, den die Aufgabe verlangt hat, noch laufen muss.",
+						"fr-FR": "Sans surveillance désigne une exécution unique de mu --print ou en mode json, après laquelle un service demandé par la tâche doit encore tourner.",
+						"es-ES": "Desatendida significa una ejecución única de mu --print o en modo json, tras la cual un servicio que pidió la tarea debe seguir en marcha.",
+						"pt-BR": "Sem supervisão significa uma execução única de mu --print ou no modo json, depois da qual um serviço pedido pela tarefa ainda precisa estar no ar.",
+						"ru-RU": "Без присмотра — это разовый запуск mu --print или в режиме json, после которого сервис, нужный задаче, должен продолжать работать.",
+						"uk-UA": "Без нагляду — це разовий запуск mu --print або в режимі json, після якого сервіс, потрібний завданню, має й далі працювати.",
+						"tr-TR": "Gözetimsiz, mu --print veya json modundaki tek seferlik bir çalıştırmadır; görevin istediği bir hizmet, çalıştırma bittikten sonra da ayakta olmalıdır.",
+						"fa-IR": "بی‌نظارت یعنی یک اجرای یک‌بارهٔ mu --print یا در حالت json، که پس از آن سرویسی که کار خواسته بود هنوز باید در حال اجرا باشد."
 					}
 				}
 			]

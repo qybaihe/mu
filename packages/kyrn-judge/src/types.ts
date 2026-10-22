@@ -90,8 +90,10 @@ export interface JudgeUsage {
  * - `relate`:   say how two pieces of text relate (is this skill relevant to that message?).
  * - `rate`:     place the state on an ordinal rubric.
  * - `meta`:     judge a property of the request itself (vague? decomposable?).
+ * - `screen`:   read raw text from a tool (a fetched page, a listing, a build log) for what is buried in it: an
+ *               instruction aimed at an AI, noise to leave out. The verdict decides what the model gets to read.
  */
-export type Capability = "classify" | "relate" | "rate" | "meta";
+export type Capability = "classify" | "relate" | "rate" | "meta" | "screen";
 
 /** Something the provider did that the caller did not ask for, such as truncating the state. */
 export interface JudgeWarning {

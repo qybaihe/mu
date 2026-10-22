@@ -199,7 +199,7 @@ const GuidPage: React.FC = () => {
     () => [
       {
         name: 'open',
-        description: t('conversation.workspace.addFile', { defaultValue: 'Add File' }),
+        description: t('conversation.sendbox.openCommand'),
         kind: 'builtin',
         source: 'builtin',
       },

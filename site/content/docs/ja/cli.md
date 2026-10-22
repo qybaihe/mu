@@ -60,7 +60,7 @@ mu                     # 現在のディレクトリで対話セッションを�
 | `/import-chat` | Claude Code、Codex または ZCode の会話をインポートする |
 | `/doctor` | 設定と接続を確認する |
 
-pi 自身のコマンド（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export`、`/mcp` など）はそのままです。
+pi 自身のコマンド（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export`、`/mcp` など）はそのままです。違いは 1 つだけで、`/login` には Claude サブスクリプションのサインインがありません。Anthropic が他のアプリによる提供を認めていないためです。Anthropic の API キーを使ってください。
 
 ## 判定の行 {#verdict-line}
 

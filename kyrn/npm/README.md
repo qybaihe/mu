@@ -35,7 +35,7 @@ Out of the box, the judge is Jev 1.13, TypeSafe's hosted judge model, free on Op
 - **Laya** (local, macOS on Apple silicon): `mu judge setup` installs it into `~/.mu/local-judge`. It downloads about 930 MB, and only when you run that command.
 - **Any model you already use:** `/mu judge llm:<provider>/<model>`.
 
-38 of the 40 decision points act on their verdicts from the start (`active`); `context.compact` and `output.drift` belong to features that are off until you turn them on. To only record what the judge would do, run `/mu mode default shadow`, or put `"modes": { "default": "shadow" }` in `~/.mu/agent/mu.json`.
+35 of the 40 decision points act on their verdicts from the start (`active`); `context.compact` and `output.drift` belong to features that are off until you turn them on, `swarm.patch` is `off`, and `notify.routing` and `input.interjection` are in `shadow`. To only record what the judge would do, run `/mu mode default shadow`, or put `"modes": { "default": "shadow" }` in `~/.mu/agent/mu.json`.
 
 ## Commands
 
@@ -47,7 +47,7 @@ mu -c | -r               continue the last session | pick a session to resume
 mu setup                 connect a model and choose a judge (see mu setup --help for scripting and services)
 mu judge <cmd>           manage the local judge, Laya (macOS on Apple silicon): setup | start | stop | status | run
 mu ledger [n] [--json]   print the judge's verdicts from the last n sessions
-mu import --list | <file>...   import Claude Code, Codex and ZCode conversations (mu import --help)
+mu import <file>...      import Claude Code, Codex and ZCode conversations; --list shows them (mu import --help)
 mu doctor                check the installation, the judges and the connections
 mu auth <cmd>            sign-in helper for the desktop app: status | login | logout
 mu link | unlink         put the mu command on your PATH | remove it

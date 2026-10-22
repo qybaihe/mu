@@ -16,6 +16,7 @@ import { Board, foldRelations, isDuplicate, type Note, overlapping, type Relatio
 import { Judge } from "../src/judge.ts";
 import { MockJudgeProvider, type MockResponder } from "../src/providers/mock.ts";
 import { BRIEF_ENV, parseBrief, type SwarmBrief } from "../src/swarm/brief.ts";
+import { markOf } from "../src/swarm/markers.ts";
 import type { Answer } from "../src/types.ts";
 
 const yes: Answer = { type: "boolean", probability: 0.95 };
@@ -133,26 +134,38 @@ describe("hive board", () => {
 		expect(isDuplicate("the session cookie is dropped in refresh() at src/session.ts:88", known)).toBe(false);
 	});
 
-	it("takes what a bee said and the beginning of what its tools returned as candidates", () => {
-		const candidates = candidatesOf(
-			{
-				content: [
-					{ type: "text", text: "The cookie is dropped in refresh(): it never copies the Set-Cookie header." },
-					{ type: "toolCall", id: "c1", name: "bash", arguments: { command: "npm test -- login" } },
-				],
-			},
-			[
-				{
-					toolCallId: "c1",
-					toolName: "bash",
-					content: [{ type: "text", text: `FAIL login.test.ts\n${"x".repeat(900)}` }],
-				},
-				{ toolCallId: "c2", toolName: "ls", content: [{ type: "text", text: "a.ts" }] },
+	it("takes what a bee said as a candidate, and the beginning of what its tools returned only when asked to", () => {
+		const message = {
+			content: [
+				{ type: "text", text: "The cookie is dropped in refresh(): it never copies the Set-Cookie header." },
+				{ type: "toolCall", id: "c1", name: "bash", arguments: { command: "npm test -- login" } },
 			],
-		);
+		};
+		const results = [
+			{
+				toolCallId: "c1",
+				toolName: "bash",
+				content: [{ type: "text", text: `FAIL login.test.ts\n${"x".repeat(900)}` }],
+			},
+			{ toolCallId: "c2", toolName: "ls", content: [{ type: "text", text: "a.ts" }] },
+		];
+		// In 7 hives none of 32 tool outputs put to the judge was published.
+		expect(candidatesOf(message, results).map((candidate) => candidate.source)).toEqual(["said"]);
 
+		const candidates = candidatesOf(message, results, { toolOutputs: true });
 		expect(candidates.map((candidate) => candidate.source)).toEqual(["said", 'bash {"command":"npm test -- login"}']);
 		expect(candidates[1].text).toHaveLength(600);
+	});
+
+	it("reads the mark a bee starts its note with, as the checkpoint asks", () => {
+		expect(markOf("FOUND: refresh() drops the cookie at src/session.ts:88")).toBe("finding");
+		expect(markOf("**FOUND:** refresh() drops the cookie")).toBe("finding");
+		expect(markOf("  **FOUND**: refresh() drops the cookie")).toBe("finding");
+		expect(markOf("DEAD END: the TZ theory, login passes with TZ=UTC")).toBe("dead_end");
+		// Not marked: lower case, a mark further in, or no colon.
+		expect(markOf("Found: it was the env.")).toBeUndefined();
+		expect(markOf("Reading on. FOUND: maybe")).toBeUndefined();
+		expect(markOf("**Found** - refresh() drops the cookie")).toBeUndefined();
 	});
 });
 
@@ -177,6 +190,17 @@ describe("hive gates", () => {
 		const engine = engineWith(() => ({ useful: no }));
 		expect((await engine.decide(hiveDeliver, { ...deliver, kind: "decision" })).outcome.deliver).toBe(true);
 		expect((await engine.decide(hiveDeliver, { ...deliver, kind: "finding" })).outcome.deliver).toBe(false);
+	});
+
+	it("delivers without a judge rather than cutting the bees off from each other", async () => {
+		const deliver = { focus: "read the auth code", note: "login fails only with TZ=UTC", from: "repro" };
+		const down = engineWith(() => {
+			throw new Error("judge down");
+		});
+		expect(await down.decide(hiveDeliver, { ...deliver, kind: "finding" })).toMatchObject({
+			source: "fallback",
+			outcome: { deliver: true },
+		});
 	});
 
 	it("relates a later note to an earlier one, and lets a worker replace its own words without a vote", async () => {
@@ -656,6 +680,122 @@ describe("hive in a session", () => {
 			expect(second).toContain("fails only when TZ=UTC");
 			expect(second).not.toContain("uses vitest");
 		}
+	});
+
+	it("inside a bee: a note it marks as the checkpoint asks is published by rule, the rest is put to the judge", async () => {
+		const posted = async (hive: Record<string, unknown>) => {
+			const dir = mkdtempSync(join(tmpdir(), "kyrn-hive-test-"));
+			Object.assign(process.env, {
+				KYRN_HIVE_DIR: dir,
+				KYRN_HIVE_BEE: "auth-code",
+				KYRN_HIVE_GOAL: "fix the flaky login",
+				KYRN_HIVE_FOCUS: "read the session code",
+			});
+			// A judge that would hold everything back, as it held back 14 of 45 marked findings in 7 hives.
+			const provider = new MockJudgeProvider((request): Record<string, Answer> => {
+				if ("share_worthy" in request.questions) return { share_worthy: no, kind: kind("other") };
+				return {};
+			});
+			const harness = await createHarness({
+				tools: [readTool],
+				extensionFactories: [
+					createKyrnJudgeExtension({
+						provider,
+						mode: "active",
+						config: parseConfig({
+							features: { memory: false, admission: false, permissions: { mode: "full" }, hive },
+						}),
+					}),
+				],
+			});
+			harnesses.push(harness);
+			harness.setResponses([
+				step(
+					"FOUND: refresh() never copies the Set-Cookie header, so the session cookie is lost at src/session.ts:88",
+				),
+				step("DEAD END: the cookie domain is right; login.test.ts sets it to localhost as the server does"),
+				step("Reading the refresh path in the same file once more, to see where the header goes."),
+				fauxAssistantMessage("Report: refresh() drops the cookie."),
+			]);
+			await harness.session.prompt("Investigate your angle.");
+			await vi.waitFor(() => expect(new Board(dir).judged()).toBeGreaterThanOrEqual(3));
+			const asked = provider.calls
+				.filter((call) => "share_worthy" in call.questions)
+				.map((call) => String((call.state as { note?: string }).note));
+			return { notes: new Board(dir).all(), asked };
+		};
+
+		const { notes, asked } = await posted({});
+		expect(notes.map((entry) => [entry.kind, entry.score, entry.text.slice(0, 10)])).toEqual([
+			["finding", 1, "FOUND: ref"],
+			["dead_end", 1, "DEAD END: "],
+		]);
+		// Only the unmarked words went to the judge.
+		expect(asked).toEqual(["Reading the refresh path in the same file once more, to see where the header goes."]);
+
+		const judged = await posted({ publishMarked: false });
+		expect(judged.notes).toEqual([]);
+		expect(judged.asked).toHaveLength(3);
+	});
+
+	it("the queen: with no model ladder asks the judge nothing, and every bee keeps the session's thinking", async () => {
+		const seen: { bee: string; thinking: string; model?: string }[] = [];
+		const runner: SwarmRunner = async (task, assignment, _signal, env) => {
+			seen.push({ bee: env?.KYRN_HIVE_BEE ?? "", thinking: assignment.thinking, model: assignment.model });
+			return `${task.title}: done`;
+		};
+		const hard = (): Record<string, Answer> => ({
+			difficulty: { type: "score", score: 3 },
+			reasoning: { type: "score", score: 0 },
+		});
+		const queen = async (features: Record<string, unknown>) => {
+			seen.length = 0;
+			const provider = new MockJudgeProvider(hard);
+			const harness = await createHarness({
+				extensionFactories: [
+					createKyrnJudgeExtension({
+						provider,
+						mode: "active",
+						config: parseConfig({ features: { memory: false, permissions: { mode: "full" }, ...features } }),
+						swarmRunner: runner,
+					}),
+				],
+			});
+			harnesses.push(harness);
+			harness.setResponses([
+				fauxAssistantMessage(
+					[
+						fauxToolCall("hive", {
+							goal: "Login is flaky in CI only.",
+							bees: [
+								{ name: "repro", focus: "Reproduce the failure locally" },
+								{ name: "history", focus: "Find the commit that introduced it" },
+							],
+						}),
+					],
+					{ stopReason: "toolUse" },
+				),
+				fauxAssistantMessage("It is the timezone."),
+			]);
+			await harness.session.prompt("Why is login flaky?");
+			return {
+				routing: provider.calls.filter((call) => "difficulty" in call.questions).length,
+				session: harness.session.thinkingLevel,
+			};
+		};
+
+		const plain = await queen({});
+		expect(plain.routing).toBe(0);
+		expect(seen.map((bee) => bee.thinking)).toEqual([plain.session, plain.session]);
+
+		// With a ladder the judge rates each angle: the hardest takes the strongest model, at the level it judged,
+		// since that model is not the session's.
+		const laddered = await queen({ hive: { models: ["p/cheap", "p/strong"] } });
+		expect(laddered.routing).toBe(2);
+		expect(seen).toEqual([
+			{ bee: "repro", thinking: "low", model: "p/strong" },
+			{ bee: "history", thinking: "low", model: "p/strong" },
+		]);
 	});
 
 	it("the queen: gives every bee its angle and the others', and brings back reports plus the board", async () => {

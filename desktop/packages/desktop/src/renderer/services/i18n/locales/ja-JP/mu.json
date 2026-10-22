@@ -383,7 +383,11 @@
     "byKey": "利用可能（API キー）",
     "byKeyHelp": "サブスクリプションにはログインしていませんが、前回の接続時に mu が利用可能と報告しました。通常は、その API キーが環境変数にあるためです。ログインするとサブスクリプションに切り替わります。",
     "otherRunning": "{{name}} のログインが進行中です。ログインは一度に 1 つしか実行できません。",
-    "showRunning": "表示する"
+    "showRunning": "表示する",
+    "legacy": {
+      "openai-codex": "この旧サインインは Codex CLI のログインを経由します。サインアウトしてから、ChatGPT でサインインしてください。",
+      "anthropic": "Anthropic は他のアプリが Claude のサブスクリプションでサインインすることを認めていないため、mu では提供を終了しました。サインアウトして、代わりに Anthropic の API キーを追加してください。"
+    }
   },
   "endpoints": {
     "openaiCompletions": {
@@ -506,7 +510,7 @@
       "signedIn": {
         "title": "サブスクリプションでログイン",
         "tag": "API キー不要",
-        "description": "ChatGPT、Claude、Grok などのプラン"
+        "description": "ChatGPT、Grok などのプラン"
       },
       "openai": {
         "title": "OpenAI 互換 API",
@@ -545,6 +549,7 @@
       "recognized": "キーから判別しました。",
       "ambiguous": "この形のキーを使うサービスが複数あります。どのサービスのキーですか？",
       "unknown": "mu はこの種類のキーを知りません。どのサービスのキーですか？",
+      "subscriptionToken": "これは Claude サブスクリプションのトークン（claude setup-token で発行したもの）で、API キーではありません。Anthropic は他のアプリが Claude サブスクリプションを使うことを認めていないため、mu では使えません。代わりに Anthropic の API キー（sk-ant-api…）を貼り付けてください。",
       "keyPage": "キーはどこで取得できますか？",
       "checking": "{{service}} でキーを確認しています…",
       "lookingLocal": "このマシンで {{service}} を探しています…",
@@ -682,9 +687,13 @@
     },
     "login": {
       "providers": {
-        "openai-codex": {
+        "openai": {
           "name": "ChatGPT",
           "plan": "Plus / Pro プラン"
+        },
+        "openai-codex": {
+          "name": "ChatGPT (Codex)",
+          "plan": "Codex 経由の旧サインイン"
         },
         "anthropic": {
           "name": "Claude",

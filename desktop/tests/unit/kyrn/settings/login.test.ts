@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { offeredProviders } from '../../../../packages/desktop/src/common/kyrn/login';
 import {
   LoginManager,
   openable,
@@ -250,6 +251,23 @@ describe('signing in to a subscription', () => {
 });
 
 describe('who is signed in', () => {
+  it('offers ChatGPT and Grok, and shows a Codex or Claude sign-in only while an account is signed in with it', () => {
+    const offered = ['openai', 'xai'] as const;
+    expect(offeredProviders({ signedIn: [], offered: [...offered] })).toEqual(['openai', 'xai']);
+    const before = [
+      { provider: 'openai-codex' as const, models: [] },
+      { provider: 'anthropic' as const, models: [] },
+    ];
+    expect(offeredProviders({ signedIn: before, offered: [...offered] })).toEqual([
+      'openai',
+      'openai-codex',
+      'anthropic',
+      'xai',
+    ]);
+    // Before the runner has said: pi's own sign-ins.
+    expect(offeredProviders({ signedIn: [] })).toEqual(['openai', 'xai']);
+  });
+
   it('reads the accounts and the sign-ins the runner reports, and only the ones the app knows', async () => {
     const { manager, runners } = setup();
     const status = manager.status();

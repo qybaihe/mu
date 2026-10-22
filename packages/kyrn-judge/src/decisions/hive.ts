@@ -73,7 +73,8 @@ export type DeliverOutcome = { readonly deliver: boolean; readonly score: number
 
 export const hiveDeliver = defineDecision({
 	id: "hive.deliver",
-	version: 1,
+	// 2: the fallback delivers.
+	version: 2,
 	// A delivered note is appended to the receiving bee's context, nothing before it changes.
 	cacheImpact: "append-only",
 	latency: "background",
@@ -89,8 +90,11 @@ export const hiveDeliver = defineDecision({
 		if (input.kind === "decision") return { deliver: true, score: 1 };
 		return { deliver: threeZone(answers.useful) === "yes", score: answers.useful.probability };
 	},
+	// Without a judge every note goes to every bee, up to the delivery cap: they all work on one problem, and a
+	// hive whose bees hear nothing from each other is only isolated sub-agents (51 of 58 notes were delivered when
+	// the judge was asked).
 	fallback(): DeliverOutcome {
-		return { deliver: false, score: 0 };
+		return { deliver: true, score: 0 };
 	},
 });
 

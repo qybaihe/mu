@@ -384,6 +384,8 @@ describe("starting pi", () => {
 		expect(plan.strategy).toBe("spawn");
 		expect(plan.env).toMatchObject({
 			PI_PACKAGE_DIR: "C:\\Users\\bai\\.mu\\app",
+			// The judgment layer is the app's own extension: pi lists its commands untagged.
+			PI_APP_EXTENSIONS: `${WIN_ROOT}\\packages\\kyrn-judge\\src\\extension\\kyrn-judge.ts`,
 			MU_CODING_AGENT_DIR: "C:\\Users\\bai\\.mu\\agent",
 			KYRN_CODING_AGENT_DIR: "C:\\Users\\bai\\.mu\\agent",
 			PI_CODING_AGENT_DIR: "C:\\Users\\bai\\.mu\\agent",
@@ -664,6 +666,7 @@ describe("the npm package (mu-agent)", () => {
 		expect(plan.strategy).toBe("spawn");
 		expect(plan.env).toMatchObject({
 			PI_PACKAGE_DIR: WIN_PACKAGE,
+			PI_APP_EXTENSIONS: `${WIN_PACKAGE}\\judge\\mu\\index.js`,
 			MU_CODING_AGENT_DIR: "C:\\Users\\bai\\.mu\\agent",
 			PI_SKIP_VERSION_CHECK: "1",
 			// pi's install report goes to pi.dev; mu-agent is not a pi install.

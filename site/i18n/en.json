@@ -141,7 +141,7 @@
     "more_h2": "One set of accounts, settings and lessons for the command line and the app",
     "more": [
       { "b": "Import conversations", "text": "Bring in your Claude Code, Codex and ZCode conversations and carry on in mu." },
-      { "b": "Subscription sign-in", "text": "Sign in with ChatGPT, Claude, Grok or Google inside the app; no keys to copy around." },
+      { "b": "Subscription sign-in", "text": "Sign in with ChatGPT, Grok or Google inside the app; no keys to copy around." },
       { "b": "Lessons", "text": "Your corrections and the traps the agent found a way around are kept; a lesson that is recalled and never followed retires itself." },
       { "b": "Built-in browser", "text": "The judge drives it step by step: look at the page, decide once, act; it stops to ask before submitting or paying." },
       { "b": "A ledger of verdicts", "text": "Every verdict and how long it took: <code>/status</code>, <code>mu ledger</code> and the app's Judge tab." },

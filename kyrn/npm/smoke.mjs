@@ -55,7 +55,8 @@ const doctor = spawnSync(mu, ["doctor"], options);
 console.log(doctor.stdout.trimEnd().replace(/^/gm, "     "));
 check("mu doctor", /^\s*ok\s+package\s/m.test(doctor.stdout), doctor.stderr.trim());
 
-// The desktop app's sign-in: one JSON line that offers pi's own subscriptions, and nobody signed in yet.
+// The desktop app's sign-in: one JSON line that offers pi's own subscriptions, and nobody signed in yet. ChatGPT is
+// OpenAI's Sign in with ChatGPT (`openai`); the Codex CLI's login and a Claude subscription are no longer offered.
 const auth = spawnSync(mu, ["auth", "status"], options);
 let status;
 try {
@@ -65,7 +66,8 @@ check(
 	"mu auth status",
 	auth.status === 0 &&
 		status?.type === "status" &&
-		["openai-codex", "anthropic", "xai"].every((provider) => status.offered.includes(provider)) &&
+		["openai", "xai"].every((provider) => status.offered.includes(provider)) &&
+		!["openai-codex", "anthropic"].some((provider) => status.offered.includes(provider)) &&
 		status.signedIn.length === 0,
 	auth.stdout.trim() || auth.stderr.trim(),
 );

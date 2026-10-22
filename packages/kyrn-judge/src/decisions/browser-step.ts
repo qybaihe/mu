@@ -86,6 +86,8 @@ export const browserStep = defineDecision({
 	version: 1,
 	cacheImpact: "none",
 	latency: "inline",
+	// The judge is the actor: there is no rule that could take the next step instead.
+	actsInShadow: true,
 	capabilities: "relate",
 	questions: {} as Questions,
 	questionsFor(input: BrowserStepInput): Questions {

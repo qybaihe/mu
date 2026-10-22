@@ -372,14 +372,18 @@ describe("permission modes in a session", () => {
 			],
 		});
 		harnesses.push(harness);
-		const asked: { title: string; options: string[] }[] = [];
+		const asked: { title: string; options: string[]; initialIndex?: number }[] = [];
 		const status: (string | undefined)[] = [];
 		const notes: string[] = [];
 		if (setup.pick) {
 			const pick = setup.pick;
 			const known: Record<string, unknown> = {
-				select: async (title: string, options: string[]) => {
-					asked.push({ title, options });
+				select: async (title: string, options: string[], opts?: { initialIndex?: number }) => {
+					asked.push({
+						title,
+						options,
+						...(opts?.initialIndex !== undefined ? { initialIndex: opts.initialIndex } : {}),
+					});
 					return pick(options, title);
 				},
 				setStatus: (key: string, text: string | undefined) => {
@@ -794,6 +798,14 @@ describe("permission modes in a session", () => {
 		// A new conversation starts in the last mode chosen.
 		const second = await start(() => ({}), { agentDir: dir, pick: () => undefined });
 		expect(second.of("permissions.mode")[0]).toMatchObject({ mode: "full" });
+	});
+
+	it("/permissions with no mode opens the picker on the current mode", async () => {
+		const { harness, asked } = await start(() => ({}), { mode: "judge", pick: () => undefined });
+		await harness.session.prompt("/permissions");
+		expect(asked).toHaveLength(1);
+		expect(asked[0].initialIndex).toBe(1);
+		expect(asked[0].options[1]).toContain("Judge mode (current)");
 	});
 
 	it("/permissions <mode> --here switches this conversation only, quietly, and not when it already is so", async () => {

@@ -12,6 +12,11 @@ export interface RoutingInput {
 	readonly task: string;
 	/** Roles to choose from: name -> what kind of task it takes. Empty or absent means the role is already settled. */
 	readonly agents?: Readonly<Record<string, string>>;
+	/**
+	 * Ask how hard the task is and how much reasoning it needs. False when the answer could change nothing: with no
+	 * model ladder every sub-agent runs on the session's model with the session's thinking. Absent means ask.
+	 */
+	readonly rate?: boolean;
 }
 
 export type RoutingOutcome = {
@@ -42,21 +47,25 @@ const SCORES = {
 
 export const swarmRouting = defineDecision({
 	id: "swarm.routing",
-	version: 2,
+	// 3: the ratings are asked only when they can pick a model or a thinking level.
+	version: 3,
 	cacheImpact: "none",
 	latency: "inline",
+	// A delegated task has no "unchanged behaviour" to fall back to: the judge routes in shadow too.
+	actsInShadow: true,
 	// "What kind of task is this" is a classification of one text, which even a small judge does well.
 	capabilities: { agent: "classify", difficulty: "rate", reasoning: "rate" },
 	questions: SCORES as Questions,
 	questionsFor(input: RoutingInput): Questions {
-		if (!input.agents || Object.keys(input.agents).length === 0) return SCORES;
+		const scores = input.rate === false ? {} : SCORES;
+		if (!input.agents || Object.keys(input.agents).length === 0) return scores;
 		return {
 			agent: {
 				type: "choice",
 				instructions: "What kind of work is `task`?",
 				criteria: { ...input.agents, other: "None of these" },
 			},
-			...SCORES,
+			...scores,
 		};
 	},
 	buildState(input: RoutingInput) {

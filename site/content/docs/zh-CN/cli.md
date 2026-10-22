@@ -60,7 +60,7 @@ mu                     # 在当前目录开一个交互会话
 | `/import-chat` | 导入 Claude Code、Codex 或 ZCode 的对话 |
 | `/doctor` | 检查配置和连接 |
 
-pi 自己的命令原样保留：`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export`、`/mcp` 等等。
+pi 自己的命令原样保留：`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export`、`/mcp` 等等。只有一处不同：`/login` 不提供 Claude 订阅登录，因为 Anthropic 不允许其他应用提供；请改用 Anthropic API key。
 
 ## 判定行 {#verdict-line}
 

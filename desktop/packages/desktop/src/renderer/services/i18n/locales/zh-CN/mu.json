@@ -383,7 +383,11 @@
     "byKey": "可用（API 密钥）",
     "byKeyHelp": "没有登录订阅，但 mu 上次连接时报告它能用，通常是因为环境里有它的 API 密钥。登录订阅后改用订阅。",
     "otherRunning": "{{name}} 正在登录，同一时间只能进行一个登录。",
-    "showRunning": "去看看"
+    "showRunning": "去看看",
+    "legacy": {
+      "openai-codex": "这是经由 Codex CLI 的旧登录方式。请退出登录，再用 ChatGPT 登录。",
+      "anthropic": "Anthropic 不允许其他应用用 Claude 订阅登录，所以 mu 不再提供。请退出登录，改为添加 Anthropic API key。"
+    }
   },
   "endpoints": {
     "openaiCompletions": {
@@ -506,7 +510,7 @@
       "signedIn": {
         "title": "用订阅账号登录",
         "tag": "免 API 密钥",
-        "description": "ChatGPT、Claude、Grok 等订阅"
+        "description": "ChatGPT、Grok 等订阅"
       },
       "openai": {
         "title": "OpenAI 兼容接口",
@@ -545,6 +549,7 @@
       "recognized": "已根据密钥识别。",
       "ambiguous": "好几家服务商的密钥都长这样，这是哪家的？",
       "unknown": "mu 认不出这种密钥，这是哪家的？",
+      "subscriptionToken": "这是 Claude 订阅令牌（claude setup-token 生成的），不是 API key。Anthropic 不允许其他应用使用 Claude 订阅，所以 mu 用不了它。请改为粘贴 Anthropic API key（sk-ant-api…）。",
       "keyPage": "去哪里获取密钥？",
       "checking": "正在向 {{service}} 验证密钥…",
       "lookingLocal": "正在本机查找 {{service}}…",
@@ -682,9 +687,13 @@
     },
     "login": {
       "providers": {
-        "openai-codex": {
+        "openai": {
           "name": "ChatGPT",
           "plan": "Plus / Pro 订阅"
+        },
+        "openai-codex": {
+          "name": "ChatGPT (Codex)",
+          "plan": "经由 Codex 的旧登录方式"
         },
         "anthropic": {
           "name": "Claude",

@@ -593,7 +593,9 @@
     "hint": "Escribe / para comandos, @ para referenciar archivos y ↑/↓ para el historial de mensajes",
     "mediaPathFallback": "Este agente no admite este tipo de archivo de forma nativa; se enviará como ruta de archivo.",
     "hintWithSessions": "/ para comandos, @ para archivos, @@ para conversaciones, ↑/↓ para el historial",
-    "stop": "Detener la respuesta"
+    "stop": "Detener la respuesta",
+    "openCommand": "Adjuntar archivos de este ordenador",
+    "copyCommand": "Copiar la última respuesta"
   },
   "composer": {
     "goalLine": {

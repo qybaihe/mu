@@ -1,6 +1,6 @@
 import type { AgentEndEvent } from "@earendil-works/pi-coding-agent";
 import { type ContinueOutcome, turnContinue } from "../../decisions/turn-continue.ts";
-import { clip, failOpen, type KyrnRuntime, textOf, within } from "../runtime.ts";
+import { askWithin, clip, failOpen, type KyrnRuntime, textOf } from "../runtime.ts";
 
 export const CONTINUE_MESSAGE = "kyrn.nudge";
 
@@ -71,11 +71,15 @@ export function registerContinuation(runtime: KyrnRuntime): void {
 				userMessage: clip(turn.userMessage, 400),
 				finalMessage: flat.length <= 600 ? flat : `…${flat.slice(-599)}`,
 			};
+			// A verdict later than the wait is not worth having, in shadow either: the call is aborted then, so it does
+			// not keep a one-shot run from exiting.
+			const ask = () =>
+				askWithin((signal) => runtime.engine.decide(turnContinue, input, { signal }), options.waitMs);
 			if (runtime.mode(turnContinue.id) !== "active") {
-				void runtime.engine.decide(turnContinue, input).catch(() => {});
+				void ask().catch(() => {});
 				return undefined;
 			}
-			const decision = await within(runtime.engine.decide(turnContinue, input), options.waitMs);
+			const decision = await ask();
 			if (decision?.source !== "judge" || decision.outcome === "end") return undefined;
 			// The user may have stopped it, or another check sent it back, while the verdict was on its way.
 			if (runtime.harnessAbort || runtime.nudgedEnds.has(event)) return undefined;

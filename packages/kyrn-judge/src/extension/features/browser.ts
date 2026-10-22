@@ -10,6 +10,7 @@ import { CdpConnection } from "../../browser/cdp.ts";
 import { type LaunchedChrome, launchChrome } from "../../browser/chrome.ts";
 import { EmbeddedBrowser, findEmbeddedEndpoint } from "../../browser/embedded.ts";
 import { BrowserSession } from "../../browser/session.ts";
+import { CascadeJudge } from "../../cascade.ts";
 import { browserStep } from "../../decisions/browser-step.ts";
 import { codeOf, say } from "../../language.ts";
 import { failOpen, type KyrnRuntime } from "../runtime.ts";
@@ -130,6 +131,16 @@ export function registerBrowser(runtime: KyrnRuntime): void {
 		}
 		if (!/^https?:\/\//i.test(params.url)) {
 			return { text: "Only http and https pages can be opened.", status: "refused", url: params.url };
+		}
+		// A goal needs a judge that can relate it to a page. A small local one (Laya) is rightly not trusted with
+		// that: every step would get a neutral answer, and the run would end blocked after its first look.
+		const judge = runtime.engine.judgeFor(browserStep.id);
+		if (params.goal?.trim() && judge instanceof CascadeJudge && !judge.trusts("relate")) {
+			return {
+				text: `The browser can't carry out a goal here: the judge for browser.step (${judge.id}) is not trusted to relate a goal to a page, so it would block at the first step. Give this one decision a capable judge: /mu route browser.step luna (any LLM judge in mu.json), or jev. Without a goal, browse still returns the page text.`,
+				status: "refused",
+				url: params.url,
+			};
 		}
 		let connection: CdpConnection;
 		try {

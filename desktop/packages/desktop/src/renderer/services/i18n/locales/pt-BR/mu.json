@@ -383,7 +383,11 @@
     "byKey": "Disponível (chave de API)",
     "byKeyHelp": "Nenhuma assinatura está conectada, mas o mu o informou como disponível na última conexão, geralmente porque a chave de API dele está no ambiente. Ao entrar, ele passa a usar a assinatura.",
     "otherRunning": "O login em {{name}} está em andamento, e só um login é feito por vez.",
-    "showRunning": "Mostrar"
+    "showRunning": "Mostrar",
+    "legacy": {
+      "openai-codex": "Este login antigo passa pelo login da CLI do Codex. Saia e depois entre com o ChatGPT.",
+      "anthropic": "A Anthropic não permite que outros apps entrem com uma assinatura do Claude, então o mu não oferece mais essa opção. Saia e adicione uma chave de API da Anthropic."
+    }
   },
   "endpoints": {
     "openaiCompletions": {
@@ -506,7 +510,7 @@
       "signedIn": {
         "title": "Entrar com uma assinatura",
         "tag": "Sem chave de API",
-        "description": "Um plano do ChatGPT, Claude, Grok ou outros"
+        "description": "Um plano do ChatGPT, Grok ou outros"
       },
       "openai": {
         "title": "API compatível com OpenAI",
@@ -545,6 +549,7 @@
       "recognized": "Reconhecido pela chave.",
       "ambiguous": "Chaves de mais de um serviço têm esta forma. De qual deles é esta?",
       "unknown": "O mu não conhece este tipo de chave. De qual serviço ela é?",
+      "subscriptionToken": "Isto é um token de assinatura do Claude (gerado por claude setup-token), não uma chave de API. A Anthropic não permite que outros apps usem uma assinatura do Claude, então o mu não pode usá-lo. Cole uma chave de API da Anthropic (sk-ant-api…) no lugar.",
       "keyPage": "Onde consigo uma chave?",
       "checking": "Verificando a chave com {{service}}…",
       "lookingLocal": "Procurando {{service}} nesta máquina…",
@@ -682,9 +687,13 @@
     },
     "login": {
       "providers": {
-        "openai-codex": {
+        "openai": {
           "name": "ChatGPT",
           "plan": "Plano Plus / Pro"
+        },
+        "openai-codex": {
+          "name": "ChatGPT (Codex)",
+          "plan": "Login antigo pelo Codex"
         },
         "anthropic": {
           "name": "Claude",

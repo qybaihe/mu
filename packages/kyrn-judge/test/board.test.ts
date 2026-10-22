@@ -43,6 +43,7 @@ import {
 	describeSwarmCall,
 	describeSwarms,
 	parseBoardEntry,
+	swarmState,
 } from "../src/extension/features/board.ts";
 import { createKyrnJudgeExtension, type FeatureName } from "../src/extension/kyrn-judge.ts";
 import type { KyrnPresentationEvent } from "../src/extension/presentation.ts";
@@ -89,9 +90,13 @@ describe("board reading", () => {
 		expect(asksSomething("It works.")).toBe(false);
 	});
 
-	it("asks about the focus only among several open items, and about change only after a first board", () => {
+	it("asks about the focus only among several open items, about change only after a first board, and whether the user is needed only once the agent stopped", () => {
 		const one = boardRead.questionsFor?.(input({ items: [{ id: "A1", text: "skips empty files", done: false }] }));
-		expect(Object.keys(one ?? {}).sort()).toEqual(["needs_user", "phase"]);
+		expect(Object.keys(one ?? {}).sort()).toEqual(["phase"]);
+		const stopped = boardRead.questionsFor?.(
+			input({ items: [{ id: "A1", text: "skips empty files", done: false }], ended: true }),
+		);
+		expect(Object.keys(stopped ?? {}).sort()).toEqual(["needs_user", "phase"]);
 		const many = boardRead.questionsFor?.(
 			input({
 				items: [
@@ -102,7 +107,7 @@ describe("board reading", () => {
 				last: { phase: "changing", now: "Changing the code." },
 			}),
 		);
-		expect(Object.keys(many ?? {}).sort()).toEqual(["changed", "focus", "needs_user", "phase"]);
+		expect(Object.keys(many ?? {}).sort()).toEqual(["changed", "focus", "phase"]);
 		const focus = many?.focus;
 		expect(focus?.type === "choice" ? Object.keys(focus.criteria) : []).toEqual(["A1", "A2", "none"]);
 	});
@@ -121,13 +126,24 @@ describe("board reading", () => {
 			update: true,
 		});
 		expect(read({ phase: choice("changing"), focus: choice("A2"), needs_user: no, changed: no }).update).toBe(true);
-		// Unsure means write it: a board one update late is worse than one update too many.
-		expect(read({ phase: choice("changing"), focus: choice("A1"), needs_user: no, changed: unsure }).update).toBe(
-			true,
-		);
-		expect(read({ phase: choice("changing"), focus: choice("A1"), needs_user: yes, changed: no })).toMatchObject({
+		// Unsure means write it when something happened or the run ended: a board one update late is worse than one
+		// update too many.
+		const unsureNow = { phase: choice("changing"), focus: choice("A1"), changed: unsure };
+		expect(read(unsureNow, { events: [{ kind: "step", text: "edit a.ts -> ok" }] }).update).toBe(true);
+		expect(read({ ...unsureNow, needs_user: no }, { ended: true }).update).toBe(true);
+		// With nothing new (a look on the clock while sub-agents work), unsure is no reason to write the same board.
+		expect(read(unsureNow).update).toBe(false);
+		expect(read({ ...unsureNow, changed: yes }).update).toBe(true);
+		expect(
+			read({ phase: choice("changing"), focus: choice("A1"), needs_user: yes, changed: no }, { ended: true }),
+		).toMatchObject({
 			needsUser: true,
 			update: true,
+		});
+		// Mid-run a wait is a permission request, on the board by rule: the judge's word is not taken for it.
+		expect(read({ phase: choice("changing"), focus: choice("A1"), needs_user: yes, changed: no })).toMatchObject({
+			needsUser: false,
+			update: false,
 		});
 		// A phase nobody could tell falls back to the rule.
 		expect(read({ phase: choice("other"), needs_user: no, changed: no }, { steps: [step("edit", "a")] }).phase).toBe(
@@ -442,7 +458,12 @@ describe("board feature", () => {
 		board: Record<string, unknown> = {},
 		agentDir?: string,
 		overrides: Record<string, unknown> = {},
-		extra: { tools?: AgentTool[]; only?: FeatureName[]; features?: Record<string, unknown> } = {},
+		extra: {
+			tools?: AgentTool[];
+			only?: FeatureName[];
+			features?: Record<string, unknown>;
+			mode?: "tui" | "rpc" | "print" | "json";
+		} = {},
 	): Promise<{ harness: Harness; events: KyrnPresentationEvent[]; notes: string[] }> {
 		const events: KyrnPresentationEvent[] = [];
 		const harness = await createHarness({
@@ -472,7 +493,7 @@ describe("board feature", () => {
 		const ui = new Proxy(known, {
 			get: (target, key) => (key in target ? target[key as string] : () => undefined),
 		}) as unknown as ExtensionUIContext;
-		await harness.session.bindExtensions({ uiContext: ui, mode: "rpc" });
+		await harness.session.bindExtensions({ uiContext: ui, mode: extra.mode ?? "rpc" });
 		return { harness, events, notes };
 	}
 
@@ -1087,6 +1108,101 @@ describe("board feature", () => {
 		expect(judged.map((request) => String(stateOf(request).events)).join("\n")).toContain(
 			"delegate 2 subagents: scout, fixer -> ok",
 		);
+	});
+
+	/** A delegate whose two subagents work for `ms`, standing in the same place all along. */
+	const slowDelegate = (dir: string, ms: number): AgentTool => ({
+		name: "delegate",
+		label: "delegate",
+		description: "delegate",
+		parameters: Type.Object({ tasks: Type.Array(Type.Object({ title: Type.String() })) }),
+		execute: async (_id, params) => {
+			const run = new SwarmRun<object>({
+				kind: "delegate",
+				title: "2 tasks",
+				dir,
+				bees: (params as { tasks: { title: string }[] }).tasks.map((task) => ({
+					name: task.title,
+					task: { title: task.title, instructions: "look" },
+					assignment: {},
+					role: "scout",
+				})),
+			});
+			await run.run(async () => {
+				await new Promise((resolve) => setTimeout(resolve, ms));
+				return "found it";
+			});
+			return { content: [{ type: "text", text: "found it" }], details: {} };
+		},
+	});
+
+	it("while subagents work, looks on the clock only when one of them started, finished or failed", async () => {
+		const looks = async (board: Record<string, unknown>): Promise<number> => {
+			const judged: JudgeRequest[] = [];
+			const dir = mkdtempSync(join(tmpdir(), "mu-board-follow-"));
+			temporary.push(dir);
+			const { harness } = await start(
+				(request) => {
+					if ("phase" in request.questions) judged.push(request);
+					return reading(() => ({ phase: choice("understanding"), needs_user: no, changed: yes }))(request);
+				},
+				board,
+				undefined,
+				{},
+				{ tools: [slowDelegate(dir, 3500)] },
+			);
+			await harness.session.prompt("/board on");
+			const agent = [
+				fauxAssistantMessage([fauxToolCall("delegate", { tasks: [{ title: "scout" }, { title: "fixer" }] })], {
+					stopReason: "toolUse",
+				}),
+				fauxAssistantMessage("They found it."),
+			];
+			harness.setResponses(Array.from({ length: 6 }, () => router(agent, [], [])));
+			await harness.session.prompt("Find the bug.");
+			await vi.waitFor(() => expect(boards(harness).at(-1)?.ended).toBe(true), { timeout: 10000 });
+			return judged.filter((request) => "sub_agents" in ((request.state ?? {}) as Record<string, unknown>)).length;
+		};
+		// A tick a second for 3.5 s: the first sees them at work, the others see the same and ask nothing.
+		expect(await looks({})).toBe(1);
+		expect(await looks({ followAlways: true })).toBeGreaterThan(1);
+	}, 20_000);
+
+	it("sums up where each subagent stands, not what it is doing at the moment", () => {
+		const bee = (name: string, status: BeeState["status"]): BeeState => ({ ...newBee(name, 0), status });
+		const run = (...bees: BeeState[]) => ({ bees });
+		expect(swarmState([run(bee("a", "thinking"), bee("b", "queued"))])).toBe("a:working,b:queued");
+		// Thinking, a tool, a retry: still at work.
+		expect(swarmState([run(bee("a", "tool"), bee("b", "queued"))])).toBe(
+			swarmState([run(bee("a", "retrying"), bee("b", "queued"))]),
+		);
+		expect(swarmState([run(bee("a", "wrapping-up")), run(bee("c", "done"))])).toBe("a:wrapping-up|c:done");
+	});
+
+	it("stays off in a one-shot run, where nobody watches it, unless told otherwise", async () => {
+		const run = async (board: Record<string, unknown>, mode: "print" | "json") => {
+			const count = { reads: 0 };
+			const asked: string[] = [];
+			const { harness } = await start(
+				reading(() => ({ phase: choice("changing"), needs_user: no, changed: yes }), count),
+				{ everyTools: 1, ...board },
+				undefined,
+				{},
+				{ mode },
+			);
+			await harness.session.prompt("/board on");
+			const agent = [work("edit", { path: "a.ts" }), fauxAssistantMessage("Edited a.ts.")];
+			const writer = () => JSON.stringify({ progress: "Done.", now: "It changed a.ts.", confirm: [] });
+			harness.setResponses(Array.from({ length: 6 }, () => router(agent, writer, asked)));
+			await harness.session.prompt("Change a.ts.");
+			await new Promise((resolve) => setTimeout(resolve, 200));
+			return { reads: count.reads, boards: boards(harness).length, writer: asked.length };
+		};
+		expect(await run({}, "print")).toEqual({ reads: 0, boards: 0, writer: 0 });
+		expect(await run({}, "json")).toEqual({ reads: 0, boards: 0, writer: 0 });
+		const unattended = await run({ unattended: true }, "print");
+		expect(unattended.reads).toBeGreaterThan(0);
+		expect(unattended.boards).toBeGreaterThan(0);
 	});
 
 	it("hears from the monitor that the agent goes in circles, and looks at once", async () => {

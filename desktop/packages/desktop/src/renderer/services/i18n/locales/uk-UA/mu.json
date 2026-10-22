@@ -385,7 +385,11 @@
     "byKey": "Доступний (API-ключ)",
     "byKeyHelp": "Вхід через підписку не виконано, але під час останнього підключення mu повідомив, що провайдер доступний: зазвичай тому, що його API-ключ задано в середовищі. Після входу буде використано підписку.",
     "otherRunning": "Триває вхід у {{name}}, а одночасно може виконуватися лише один вхід.",
-    "showRunning": "Показати"
+    "showRunning": "Показати",
+    "legacy": {
+      "openai-codex": "Цей старий вхід іде через вхід Codex CLI. Вийдіть, а потім увійдіть через ChatGPT.",
+      "anthropic": "Anthropic не дозволяє іншим застосункам входити з підпискою Claude, тому mu більше не пропонує цей вхід. Вийдіть і додайте ключ API Anthropic."
+    }
   },
   "endpoints": {
     "openaiCompletions": {
@@ -510,7 +514,7 @@
       "signedIn": {
         "title": "Увійти через підписку",
         "tag": "Без API-ключа",
-        "description": "Підписка ChatGPT, Claude, Grok та інших"
+        "description": "Підписка ChatGPT, Grok та інших"
       },
       "openai": {
         "title": "API, сумісний з OpenAI",
@@ -549,6 +553,7 @@
       "recognized": "Визначено за ключем.",
       "ambiguous": "Так виглядають ключі кількох сервісів. Від якого цей ключ?",
       "unknown": "mu не знає такого виду ключа. Від якого він сервісу?",
+      "subscriptionToken": "Це токен підписки Claude (із claude setup-token), а не API-ключ. Anthropic не дозволяє іншим застосункам використовувати підписку Claude, тому mu не може з ним працювати. Вставте натомість API-ключ Anthropic (sk-ant-api…).",
       "keyPage": "Де взяти ключ?",
       "checking": "Перевіряємо ключ у {{service}}…",
       "lookingLocal": "Шукаємо {{service}} на цьому комп’ютері…",
@@ -690,9 +695,13 @@
     },
     "login": {
       "providers": {
-        "openai-codex": {
+        "openai": {
           "name": "ChatGPT",
           "plan": "Підписка Plus / Pro"
+        },
+        "openai-codex": {
+          "name": "ChatGPT (Codex)",
+          "plan": "Старий вхід через Codex"
         },
         "anthropic": {
           "name": "Claude",

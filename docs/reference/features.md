@@ -49,6 +49,7 @@ On by default: yes. Decision points: `skills.disclosure`.
 | --- | --- | --- |
 | `minSkills` | `4` | Don't filter below this many skills. Range 1 to 100. |
 | `waitMs` | `4000` ms | Wait at most `4000` ms. Range 500 to 30000. |
+| `applyLate` | `true` | Apply a late first verdict from the next turn. When the verdict on the session's first message comes after the wait, skills are hidden from the next turn on, which changes the prompt prefix once. Off: the session keeps every skill description. |
 
 ## catalog
 
@@ -138,6 +139,7 @@ On by default: yes. Decision points: `tool.injection`, `tool.description`.
 | --- | --- | --- |
 | `tools` | `web_fetch`, `web_search`, `browse`, `mcp__*` | Tools screened. Tool names, or a prefix ending in *; mcp__* covers every MCP server. |
 | `fetchCommands` | `curl`, `wget`, `gh`, `glab`, `lynx`, `w3m`, `Invoke-WebRequest`, `Invoke-RestMethod`, `iwr`, `irm` | Fetching commands. When a bash or PowerShell command runs one of these programs, its output is screened unless every address it's given is on this machine (localhost); gh and glab output is always screened. Empty: no shell output is screened. |
+| `proseWords` | `6` | Words in a row to ask the judge. A passage without this many words in a row (8 characters in a row for Chinese, Japanese and other scripts written without spaces) isn't put to the judge; rules alone read it. Directory listings, link lists, response headers and short grep hits can't hold an instruction. 0: every passage is judged. Range 0 to 50. |
 | `waitMs` | `6000` ms | Wait at most `6000` ms. After this, rules withhold only obvious injection phrases; the verdict is still recorded. Range 500 to 30000. |
 | `descriptions` | `true` | Screen MCP tool descriptions. MCP tools whose descriptions ask the AI to do more than use the tool are removed from the list (tool.description). |
 | `descriptionWaitMs` | `8000` ms | Wait for tool description verdicts at most `8000` ms. How long a turn waits for verdicts on MCP tools it hasn't seen before. After this, rules decide until the verdict arrives. Range 500 to 30000. |
@@ -155,7 +157,8 @@ On by default: yes. Decision points: `tool.admission`, `tool.admission.test-log`
 | `maxChunks` | `48` | Judge at most this many chunks. Range 4 to 400. |
 | `batchChunks` | `16` | Chunks per request. A hosted judge takes many chunks in one request, with the shared context billed once; the local judge takes one at a time. Range 1 to 32. |
 | `waitMs` | `4000` ms | Wait at most `4000` ms. After this, the full output goes in; the verdict is only recorded. Range 500 to 30000. |
-| `passThrough` | `read`, `edit`, `write` | Never filter these tools. |
+| `passThrough` | `read`, `edit`, `write`, `delegate`, `hive`, `web_fetch` | Never filter these tools. |
+| `printCommands` | `cat`, `sed -n`, `head`, `tail`, `nl`, `less`, `bat`, `grep`, `rg`, `od`, `xxd`, `git show`, `git diff`, `readelf`, `objdump` | Never filter file prints. When a bash command only prints a file with these programs (after a cd, or piped through them), its output goes in whole, as with read: the model asked to see that file. Build, test, background-job and other output is still judged. Empty: all of it is judged. |
 | `testLog` | `off` | Test log trimming. One of `off` (Off), `rules` (Drop exact repeats only (lossless)), `jev` (Also let the judge pick from the rest). |
 | `agentEnv` | `true` | Tell test runners an agent is reading. Vitest and other runners then print only failures and the summary. |
 
@@ -217,7 +220,7 @@ On by default: yes. Decision points: `turn.drift`.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `every` | `6` | Tool calls between checks. Range 1 to 100. |
-| `repeats` | `3` | Repeats that count as a loop. Range 2 to 20. |
+| `repeats` | `3` | Repeats that count as a loop. Only the same input with the same result counts as the same call; paging through a file does not. Range 2 to 20. |
 | `window` | `8` | Recent calls checked. Range 2 to 100. |
 
 ## lsp
@@ -252,6 +255,17 @@ On by default: no. Decision points: `output.drift`.
 | `maxRules` | `4` | Rules checked per call at most `4`. When there are more, the most recent ones are used. Range 1 to 12. |
 | `maxInterrupts` | `2` | Max cuts between two of your messages. Range 1 to 10. |
 
+## watchdog
+
+**Long-thinking retry.** When a reply has only been thinking for too long, with no text and no tool call yet, it is cut and asked again at the same reasoning effort. The retry is told where the reasoning had gotten to and asked to act on it first. The retry itself is never cut.
+
+On by default: yes.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `thinkingMs` | `600000` ms | Cut a reply after thinking this long. |
+| `maxCuts` | `3` | Max cuts between two of your messages. Range 1 to 10. |
+
 ## goal
 
 **Goal mode.** After /goal <condition>, the agent keeps working until the condition holds (/goal alone asks for one). Each time it wants to stop, a model reads the evidence and decides: met, or the next step. It pauses on its own when you interrupt, a model call fails, it idles or goes in circles, or it reaches its limits; your next message resumes it.
@@ -284,6 +298,8 @@ On by default: yes. Decision points: `board.read`.
 | `minIntervalMs` | `20000` ms | Minimum time between checks while it works. When the agent stops, the board always checks, regardless of this setting. Range 0 to 600000. |
 | `maxSteps` | `10` | Latest tool calls read each time. Range 3 to 50. |
 | `narrateTimeoutMs` | `60000` ms | Max wait for the writer. After that, stock phrases are used. Range 5000 to 300000. |
+| `unattended` | `false` | Also in one-shot runs. Nobody watches the board in mu --print or json mode, so by default it isn't written there, saving the judge and writer calls. |
+| `followAlways` | `false` | Check on subagents on a timer. By default the board checks only when a subagent starts, finishes or fails. On: it checks at every interval, changed or not. |
 
 ## completion
 
@@ -293,7 +309,7 @@ On by default: yes. Decision points: `turn.completion`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, there's no nudge; the verdict is only recorded. Range 500 to 30000. |
+| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, there's no nudge, and the judge call is cancelled so it doesn't hold up the end of a one-shot run. Range 500 to 30000. |
 
 ## continuation
 
@@ -304,7 +320,7 @@ On by default: yes. Decision points: `turn.continue`.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `maxNudges` | `2` | Max nudges per message. Range 1 to 5. |
-| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, there's no nudge; the verdict is only recorded. Range 500 to 30000. |
+| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, there's no nudge, and the judge call is cancelled so it doesn't hold up the end of a one-shot run. Range 500 to 30000. |
 
 ## notify
 
@@ -315,12 +331,17 @@ On by default: yes. Decision points: `notify.routing`.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `budgetThresholds` | `70`, `85` | Context budget notices (%). |
+| `unjudged` | `now` | Without a verdict, context budget notices. Notification routing is in shadow by default, and then this decides. A next-turn notice is read only when another run starts, which never happens in a one-shot run. One of `now` (Now), `next_turn` (Next turn), `drop` (Never). |
 
 ## warming
 
 **Cache warming.** Refreshes the prompt cache before it expires, when that pays off.
 
 On by default: yes. Decision points: `cache.warming`.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, pi's own estimate decides, and the judge call is cancelled. Range 500 to 30000. |
 
 ## warmup
 
@@ -362,7 +383,9 @@ On by default: yes. Decision points: `hive.publish`, `hive.deliver`, `hive.relat
 | `maxDeliveriesPerBee` | `10` | Max deliveries per bee. Range 1 to 100. |
 | `checkpointEvery` | `4` | Ask for findings after this many silent tool calls. 0 turns this off. Range 0 to 50. |
 | `lastCall` | `true` | Deliver findings once more while writing the report. |
-| `maxRelatedPerNote` | `6` | Max earlier findings to compare a new one against. Only those sharing words with it. 0 turns corrections off. Range 0 to 30. |
+| `maxRelatedPerNote` | `2` | Max earlier findings to compare a new one against. Only those sharing words with it. 0 turns corrections off. Range 0 to 30. |
+| `publishMarked` | `true` | Publish marked findings directly. What a bee says starting with FOUND: or DEAD END: goes on the board without asking the judge. |
+| `publishToolOutputs` | `false` | Consider tool output for the board too. By default only what a bee says is considered. |
 | `verifyConflicts` | `1` | Max verifier bees for unsettled disputes. 0 adds none; both sides stay in the report. Range 0 to 3. |
 | `verifyAfterSeconds` | `60` | Seconds before a verifier joins an open dispute. Range 0 to 600. |
 
@@ -403,7 +426,7 @@ On by default: yes. Decision points: `browser.step`.
 
 ## background
 
-**Background commands.** bg_start / bg_output / bg_stop: run dev servers and long builds without blocking the turn. Notification routing decides whether a finished job interrupts; every job stops when the session ends.
+**Background commands.** bg_start / bg_output / bg_stop: run dev servers and long builds without blocking the turn. The agent hears of a finished job right away; every job stops when the session ends, except in an unattended one-shot run.
 
 On by default: yes.
 
@@ -415,7 +438,9 @@ On by default: yes.
 | `killGraceMs` | `3000` ms | Wait before force-killing a job. SIGTERM first (taskkill without /F on Windows), then force after this long. |
 | `logDir` | empty | Log directory. Empty means ~/.mu/jobs/<session id>, cleared after 7 days. |
 | `inheritShell` | `true` | Use the foreground shell settings. Reads shellPath and shellCommandPrefix from settings.json, like the bash tool. |
-| `wakeWhenIdle` | `false` | A finished job may wake an idle agent. Only a verdict of "now" starts a turn; when off, the notice is only appended. |
+| `wakeWhenIdle` | `false` | A finished job may wake an idle agent. Only a notice delivered "now" starts a turn; when off, the notice is only appended. |
+| `unjudged` | `now` | Without a verdict, a job's end or watched line. Notification routing is in shadow by default, and then this decides. A next-turn notice is read only when another run starts, which never happens in a one-shot run. One of `now` (Now), `next_turn` (Next turn), `drop` (Never). |
+| `keepOnExit` | `headless` | Jobs still running when the session ends. Unattended means a one-shot mu --print or json run, where a service the task asked for must still be up after the run. One of `headless` (Keep in unattended runs), `always` (Always keep), `never` (Always stop). |
 
 ## web
 

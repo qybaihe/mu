@@ -383,7 +383,11 @@
     "byKey": "Disponible (clave de API)",
     "byKeyHelp": "No hay ninguna suscripción con sesión iniciada, pero mu lo indicó como disponible en su última conexión, normalmente porque su clave de API está en el entorno. Al iniciar sesión pasa a usar la suscripción.",
     "otherRunning": "Se está iniciando sesión en {{name}}; solo puede haber un inicio de sesión a la vez.",
-    "showRunning": "Ver"
+    "showRunning": "Ver",
+    "legacy": {
+      "openai-codex": "Este inicio de sesión anterior pasa por el de la CLI de Codex. Cierra la sesión y luego inicia sesión con ChatGPT.",
+      "anthropic": "Anthropic no permite que otras apps inicien sesión con una suscripción de Claude, así que mu ya no lo ofrece. Cierra la sesión y añade una clave de API de Anthropic."
+    }
   },
   "endpoints": {
     "openaiCompletions": {
@@ -506,7 +510,7 @@
       "signedIn": {
         "title": "Iniciar sesión con una suscripción",
         "tag": "Sin clave de API",
-        "description": "Un plan de ChatGPT, Claude, Grok u otros"
+        "description": "Un plan de ChatGPT, Grok u otros"
       },
       "openai": {
         "title": "API compatible con OpenAI",
@@ -545,6 +549,7 @@
       "recognized": "Reconocido por la clave.",
       "ambiguous": "Las claves de varios servicios tienen este aspecto. ¿De cuál es esta?",
       "unknown": "mu no conoce este tipo de clave. ¿De qué servicio es?",
+      "subscriptionToken": "Esto es un token de suscripción de Claude (de claude setup-token), no una clave de API. Anthropic no permite que otras aplicaciones usen una suscripción de Claude, así que mu no puede usarlo. Pega en su lugar una clave de API de Anthropic (sk-ant-api…).",
       "keyPage": "¿Dónde consigo una clave?",
       "checking": "Comprobando la clave con {{service}}…",
       "lookingLocal": "Buscando {{service}} en este ordenador…",
@@ -682,9 +687,13 @@
     },
     "login": {
       "providers": {
-        "openai-codex": {
+        "openai": {
           "name": "ChatGPT",
           "plan": "Plan Plus / Pro"
+        },
+        "openai-codex": {
+          "name": "ChatGPT (Codex)",
+          "plan": "Inicio de sesión anterior mediante Codex"
         },
         "anthropic": {
           "name": "Claude",

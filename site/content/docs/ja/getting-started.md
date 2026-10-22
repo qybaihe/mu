@@ -18,7 +18,7 @@ mu には 2 つの形があります。必要なものをすべて内蔵した**
 
    リリースページの `SHA256SUMS` に、すべてのファイルのチェックサムが載っています。macOS 版は Apple の署名と公証を受けています。Windows 版はまだコード署名がないため、初回は SmartScreen が警告します。**詳細情報**を選び、**実行**を選んでください。
 2. アプリを開きます。初回ガイドが 4 つのステップを案内します。モデル、権限モード、判定器、開始です。
-   - **モデル。** API キーを貼り付けると、mu はキーの形からサービスを見分け（DeepSeek、Kimi、Qwen、GLM、SiliconFlow、OpenRouter、OpenAI、Anthropic、Google Gemini、xAI など）、1 回のリクエストで確かめます。または ChatGPT、Claude、Grok、Google のサブスクリプションでサインインします。キーの誤り、残高不足、対応していない地域、接続できない場合には、それぞれどうすればよいかを説明します。
+   - **モデル。** API キーを貼り付けると、mu はキーの形からサービスを見分け（DeepSeek、Kimi、Qwen、GLM、SiliconFlow、OpenRouter、OpenAI、Anthropic、Google Gemini、xAI など）、1 回のリクエストで確かめます。または ChatGPT、Grok、Google のサブスクリプションでサインインします。キーの誤り、残高不足、対応していない地域、接続できない場合には、それぞれどうすればよいかを説明します。
    - **権限。** 最初から判定モードが選ばれています。[権限と安全性](@docs/permissions)を参照してください。
    - **判定器。** キーがなければ、無料の Jev（TypeSafe がホストする判定モデル。OpenCode Zen 経由）が答えます。この設定にはいつでも戻れます。
    - **開始。** Claude Code、Codex、ZCode の会話が見つかると、インポートを提案します（ガイドの最初の画面でも提案します）。

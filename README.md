@@ -43,7 +43,7 @@ What you get:
 
 ## Quick start
 
-**Desktop app.** Download the installer for macOS, Windows or Linux from [Releases](https://github.com/qybaihe/mu/releases/latest), open it and paste an API key or sign in with a ChatGPT, Claude, Grok or Google subscription. There's nothing else to install.
+**Desktop app.** Download the installer for macOS, Windows or Linux from [Releases](https://github.com/qybaihe/mu/releases/latest), open it and paste an API key or sign in with a ChatGPT, Grok or Google subscription. There's nothing else to install.
 
 **Command line.**
 
@@ -53,7 +53,7 @@ mu setup            # connect a model
 mu                  # start a session in the current directory
 ```
 
-You don't need a judge key to start: until you set one, the free Jev on OpenCode Zen answers. From the start, 38 of the 40 decision points act on their verdicts (summary-free compaction and mid-stream correction are off until you turn them on), and every verdict is logged (`/status`, `mu ledger` or the app's Judge tab). To record what the judge would do without acting on it, put `{"modes": {"default": "shadow"}}` in `~/.mu/agent/mu.json`. More in [Getting started](docs/getting-started.md).
+You don't need a judge key to start: until you set one, the free Jev on OpenCode Zen answers. From the start, 35 of the 40 decision points act on their verdicts (summary-free compaction and mid-stream correction are off until you turn them on, the subagent patch scope check is off, and notification routing and mid-run messages are only recorded), and every verdict is logged (`/status`, `mu ledger` or the app's Judge tab). To record what the judge would do without acting on it, put `{"modes": {"default": "shadow"}}` in `~/.mu/agent/mu.json`. More in [Getting started](docs/getting-started.md).
 
 ## How a turn works
 
@@ -300,7 +300,7 @@ A desktop app with mu and its runtime built in: there's no Node.js to install an
   </picture>
 </p>
 
-A bar along the bottom keeps the kernel in view: which judge answers and where it runs, how many decision points are active and, in a conversation, the verdicts so far, the latest judge latency and the context in use. The permission mode and the goal sit in the composer, and `⌘K` opens the command palette. You connect models inside the app: sign in with a ChatGPT, Claude, Grok or Google (Gemini CLI / Antigravity) subscription, or add an API key for any provider pi supports. You can import Claude Code, Codex CLI and ZCode conversations and continue them.
+A bar along the bottom keeps the kernel in view: which judge answers and where it runs, how many decision points are active and, in a conversation, the verdicts so far, the latest judge latency and the context in use. The permission mode and the goal sit in the composer, and `⌘K` opens the command palette. You connect models inside the app: sign in with a ChatGPT, Grok or Google (Gemini CLI / Antigravity) subscription, or add an API key for any provider pi supports. You can import Claude Code, Codex CLI and ZCode conversations and continue them.
 
 GitHub Actions builds the app for macOS (Apple silicon / Intel), Windows (x64 / Arm) and Linux (x64 / Arm) and publishes it under [Releases](https://github.com/qybaihe/mu/releases).
 
@@ -341,7 +341,7 @@ Requires Node.js 22.19 or newer. `mu -p "prompt"` runs a single prompt and print
 | `/import-chat` | Import a Claude Code, Codex or ZCode conversation |
 | `/doctor` | Check the setup and the connections |
 
-pi's own commands (`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export` and the rest) work as they do in pi. `MU_JUDGE=laya,jev mu` overrides the judges for a single run.
+pi's own commands (`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export` and the rest) work as they do in pi, except that `/login` offers no Claude subscription sign-in: Anthropic doesn't allow other apps to offer one, so use an Anthropic API key. `MU_JUDGE=laya,jev mu` overrides the judges for a single run.
 
 ## Privacy
 

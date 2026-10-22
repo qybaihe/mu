@@ -383,7 +383,11 @@
     "byKey": "사용 가능(API 키)",
     "byKeyHelp": "로그인된 구독은 없지만, 마지막 연결 때 mu가 사용 가능하다고 보고했습니다. 보통 해당 API 키가 환경 변수에 있기 때문입니다. 로그인하면 구독으로 전환됩니다.",
     "otherRunning": "{{name}} 로그인이 진행 중입니다. 로그인은 한 번에 하나만 진행할 수 있습니다.",
-    "showRunning": "보기"
+    "showRunning": "보기",
+    "legacy": {
+      "openai-codex": "이 이전 로그인은 Codex CLI의 로그인을 거쳐요. 로그아웃한 다음 ChatGPT로 로그인하세요.",
+      "anthropic": "Anthropic은 다른 앱이 Claude 구독으로 로그인하는 것을 허용하지 않아 mu에서 더 이상 제공하지 않아요. 로그아웃하고 Anthropic API 키를 추가하세요."
+    }
   },
   "endpoints": {
     "openaiCompletions": {
@@ -506,7 +510,7 @@
       "signedIn": {
         "title": "구독으로 로그인",
         "tag": "API 키 불필요",
-        "description": "ChatGPT, Claude, Grok 등의 플랜"
+        "description": "ChatGPT, Grok 등의 플랜"
       },
       "openai": {
         "title": "OpenAI 호환 API",
@@ -545,6 +549,7 @@
       "recognized": "키에서 찾았습니다.",
       "ambiguous": "이런 형태의 키를 쓰는 서비스가 여럿 있습니다. 어느 서비스의 키인가요?",
       "unknown": "mu가 모르는 형태의 키입니다. 어느 서비스의 키인가요?",
+      "subscriptionToken": "이것은 API 키가 아니라 Claude 구독 토큰(claude setup-token으로 만든 것)입니다. Anthropic은 다른 앱이 Claude 구독을 사용하는 것을 허용하지 않으므로 mu에서는 쓸 수 없습니다. 대신 Anthropic API 키(sk-ant-api…)를 붙여넣으세요.",
       "keyPage": "키는 어디서 받나요?",
       "checking": "{{service}}에서 키를 확인하는 중…",
       "lookingLocal": "이 컴퓨터에서 {{service}}을(를) 찾는 중…",
@@ -682,9 +687,13 @@
     },
     "login": {
       "providers": {
-        "openai-codex": {
+        "openai": {
           "name": "ChatGPT",
           "plan": "Plus / Pro 플랜"
+        },
+        "openai-codex": {
+          "name": "ChatGPT (Codex)",
+          "plan": "Codex를 통한 이전 로그인"
         },
         "anthropic": {
           "name": "Claude",

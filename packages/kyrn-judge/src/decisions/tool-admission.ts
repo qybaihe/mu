@@ -1,5 +1,5 @@
-import { defineDecision } from "../decision.ts";
-import { pickChoice } from "../policy.ts";
+import { ABSTAIN, defineDecision } from "../decision.ts";
+import { isStandIn, pickChoice } from "../policy.ts";
 import type { Answer, Question, Questions } from "../types.ts";
 
 /**
@@ -14,6 +14,10 @@ import type { Answer, Question, Questions } from "../types.ts";
  *
  * Only a confident noise class drops a chunk. The caller archives whatever it
  * drops and leaves a one-line pointer, which keeps a wrong verdict recoverable.
+ *
+ * The capability is `screen`: a judge that is not trusted to screen tool output
+ * (the local Laya) leaves the chunks to the next tier, and with none left, the
+ * output goes in whole.
  */
 export interface AdmissionInput {
 	/** The call that produced the output, e.g. the shell command. */
@@ -47,7 +51,9 @@ function kindQuestion(field: string): Question {
 	};
 }
 
-function outcomeOf(answer: Answer | undefined): AdmissionOutcome {
+/** What a chunk is, or undefined where no judge said: the cascade's stand-in for a question nobody capable answered. */
+function outcomeOf(answer: Answer | undefined): AdmissionOutcome | undefined {
+	if (isStandIn(answer)) return undefined;
 	if (answer?.type !== "choice") return { kind: "unknown", drop: false };
 	const picked = pickChoice(answer);
 	const kind = KINDS.find((known) => known === picked) ?? "unknown";
@@ -59,13 +65,14 @@ export const toolAdmission = defineDecision({
 	version: 2,
 	cacheImpact: "none",
 	latency: "inline",
+	capabilities: "screen",
 	questions: { kind: kindQuestion("chunk") },
 	// The chunk is the long field, so it goes last: a bounded-window judge cuts the tail.
 	buildState(input: AdmissionInput) {
 		return { call: input.call, chunk: input.chunk };
 	},
-	policy(answers): AdmissionOutcome {
-		return outcomeOf(answers.kind);
+	policy(answers): AdmissionOutcome | typeof ABSTAIN {
+		return outcomeOf(answers.kind) ?? ABSTAIN;
 	},
 	fallback(): AdmissionOutcome {
 		return { kind: "unknown", drop: false };
@@ -98,6 +105,7 @@ export const toolAdmissionBatch = defineDecision({
 	version: 3,
 	cacheImpact: "none",
 	latency: "inline",
+	capabilities: "screen",
 	questions: {} as Questions,
 	questionsFor(input: AdmissionBatchInput): Questions {
 		return Object.fromEntries(
@@ -111,8 +119,10 @@ export const toolAdmissionBatch = defineDecision({
 		});
 		return state;
 	},
-	policy(answers, input): readonly AdmissionOutcome[] {
-		return input.chunks.map((_, index) => outcomeOf(answers[chunkQuestionId(index)]));
+	policy(answers, input): readonly AdmissionOutcome[] | typeof ABSTAIN {
+		const outcomes = input.chunks.map((_, index) => outcomeOf(answers[chunkQuestionId(index)]));
+		if (outcomes.every((outcome) => outcome === undefined)) return ABSTAIN;
+		return outcomes.map((outcome) => outcome ?? { kind: "unknown", drop: false });
 	},
 	fallback(input): readonly AdmissionOutcome[] {
 		return input.chunks.map(() => ({ kind: "unknown", drop: false }));

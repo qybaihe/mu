@@ -6,9 +6,30 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ## [Unreleased]
 
+### Changed
+
+- **The terminal's `/login` no longer offers a Claude subscription sign-in either**, so the command line matches the desktop app: Anthropic doesn't allow other apps to offer one. `/login anthropic` goes straight to the API key. A sign-in made before keeps working until `/logout`.
+- **A Claude subscription token is refused where an API key is asked for.** `mu setup` and the desktop app's first-run guide recognize a token from `claude setup-token` (`sk-ant-oat…`), send it nowhere and ask for an Anthropic API key instead.
+- The plain-language board makes fewer model calls: it isn't written in `mu --print` or json mode, where nobody sees it, and while subagents work it updates only when one of them starts, finishes or fails.
+- Subagents and hives ask the judge less: no difficulty questions without a model ladder, and none at all when every role is named. Hive bees think at the session's level like other subagents, share their `FOUND:` and `DEAD END:` notes without waiting for the judge, and still hear from each other when the judge can't answer. The subagent patch scope check is off by default.
+- `browse` with a goal says up front when the configured judge can't drive the browser, instead of stopping after the first step.
+- A background job that ends, and the context-budget warnings, now reach the agent during the run, also in `mu --print`; a message you send while the agent works is no longer held up to 1.5 s for the judge. The judge only records what it would have done for these two points.
+- When the agent offers extra work you didn't ask for ("want me to do the same for the others?"), mu no longer takes that as a go-ahead and sends it back to work.
+- Cache warming no longer asks the judge while the agent is running, so it can't drop the prompt cache in the middle of a run.
+- **Screening tool output asks the judge less.** Injection screening no longer asks about text with no sentence in it (directory listings, links, response headers), and long-output filtering no longer judges a file the agent printed (`cat`, `sed -n`, `head`…) or a page it fetched. Build and test logs are still filtered.
+- **The local judge Laya no longer screens tool output.** It was slow there and its verdicts were wrong; the next judge, or mu's rules, do it instead.
+
 ### Fixed
 
 - **The judge sees the risky part of a long command.** A flagged command (`rm -rf`, `DROP TABLE`, a force push, …) reached the judge cut to its first 400 characters, so in a long script the part the flag was about could be missing, and the judge could let it run as harmless. The judge now gets the whole command up to 8,000 characters; past that, its start and every flagged part with the text around it. The confirmation you are asked shows the flagged parts too.
+- Reading a file page by page, or running scripts that only differ further down, no longer gets the agent told it is going in circles.
+- `mu --print` no longer stays up to 10 s after the run for a judge answer nobody waits for any more.
+- A late skill selection on the first message now takes effect from the next message, instead of every skill staying in the prompt for the whole conversation.
+
+### Fixed
+
+- **mu's own commands no longer show `[t]` in the terminal's slash menu.** pi tagged them as an extension loaded for this run only; they come with mu.
+- **`/permissions` opens on the current mode**, so pressing Enter keeps it; before, the cursor started on Full access. A long option in mu's pickers wraps under its own text.
 
 ## [0.1.10] - 2026-10-22
 
@@ -22,6 +43,8 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ### Changed
 
+- **Signing in with ChatGPT uses OpenAI's own Sign in with ChatGPT**, in the desktop app, `mu auth` and `/login` (choose OpenAI). mu introduces itself as "mu", so your ChatGPT settings show what mu uses and let you cap or disconnect it. It replaces the Codex CLI's login: an account signed in that way keeps working and can still be signed out, and signing in again with ChatGPT switches it over. The model picker calls these models OpenAI's, as it does an OpenAI API key's.
+- **The desktop app no longer offers signing in with a Claude subscription.** Anthropic doesn't allow other apps to sign in with a Claude Free, Pro or Max plan or to send requests on one ([Claude Code's legal and compliance page](https://code.claude.com/docs/en/legal-and-compliance)). Use an Anthropic API key instead. An account signed in before shows in Settings → Models with a note until you sign it out.
 - In an unattended run (`mu --print`, json mode), background jobs keep running after the run ends, so a server the task asked for is still up. Interactive and desktop sessions still stop them.
 - A failed model request is retried up to 8 times instead of 3, about four minutes of waiting in all.
 - **The permission mode `jev` is now `judge`**, shown as *Judge mode*: `/permissions judge`, `MU_PERMISSIONS=judge` (`jev` still works). mu's messages and docs say "the judge" instead of "Jev", which now names only TypeSafe's hosted judge model. Config names are unchanged: `"tiers": ["jev"]` and the `jev-*` routes work as before.

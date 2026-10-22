@@ -66,13 +66,20 @@ export default function KeyPaste({ setup, tried }: KeyPasteProps) {
   const offered = candidates.length > 1 ? candidates : MODEL_SERVICES;
   let serviceHint = t('mu.welcome.apiKey.serviceHint');
   if (service) serviceHint = setup.recognized ? t('mu.welcome.apiKey.recognized') : '';
+  else if (setup.refused) serviceHint = '';
   else if (typed) serviceHint = t(candidates.length > 1 ? 'mu.welcome.apiKey.ambiguous' : 'mu.welcome.apiKey.unknown');
 
   return (
     <div className={styles.fields}>
       <Field
         label={t('mu.welcome.model.key')}
-        problem={tried && !typed && !service?.keyless ? t('mu.welcome.apiKey.problems.key') : undefined}
+        problem={
+          setup.refused
+            ? t('mu.welcome.apiKey.subscriptionToken')
+            : tried && !typed && !service?.keyless
+              ? t('mu.welcome.apiKey.problems.key')
+              : undefined
+        }
       >
         <Input.Password
           autoFocus
@@ -85,7 +92,7 @@ export default function KeyPaste({ setup, tried }: KeyPasteProps) {
       </Field>
       <Field
         label={t('mu.welcome.apiKey.service')}
-        problem={tried && typed && !service ? t('mu.welcome.apiKey.problems.service') : undefined}
+        problem={tried && typed && !service && !setup.refused ? t('mu.welcome.apiKey.problems.service') : undefined}
       >
         <MuSelect
           aria-label={t('mu.welcome.apiKey.service')}

@@ -48,6 +48,7 @@ import {
 	servicesForKey,
 	tableModel,
 } from "../src/setup/services.ts";
+import { wrapToWidth } from "../src/setup/terminal.ts";
 import {
 	jevKeyAt,
 	type PiAccess,
@@ -647,6 +648,22 @@ async function wizard(run: Run) {
 }
 
 describe("mu setup, asking in a terminal", () => {
+	it("refuses a Claude subscription token, and asks for an API key instead", async () => {
+		const token = `sk-ant-oat01-${"t".repeat(40)}`;
+		const run = await wizard({
+			// Paste a key: a token from claude setup-token first, then an Anthropic API key.
+			answers: ["1"],
+			secrets: [token, KEYS.anthropic],
+			respond: () => listing("claude-opus-4-8"),
+		});
+		const refused = run.at("warn", "That's a Claude subscription token (from claude setup-token), not an API key.");
+		expect(refused).toBeGreaterThan(-1);
+		expect(run.events.filter((event) => event.kind === "secret")).toHaveLength(2);
+		expect(run.at("say", "This is an Anthropic key.")).toBeGreaterThan(refused);
+		for (const call of run.calls) expect(JSON.stringify(call.headers)).not.toContain(token);
+		expect((run.pi as FakePi).stored.map((stored) => stored.key)).not.toContain(token);
+	});
+
 	it("asks whose key it is when two vendors share its shape, and sends it to that one only", async () => {
 		const run = await wizard({
 			// Paste a key; it is Qwen's; no judge for now; no session now.
@@ -904,6 +921,13 @@ describe("mu setup in a script", () => {
 		expect(run.warned.join("\n")).toContain(
 			"DeepSeek and Qwen keys look the same. Choose one with --service deepseek or qwen",
 		);
+		expect(run.calls).toEqual([]);
+	});
+
+	it("refuses a Claude subscription token, and sends it nowhere", async () => {
+		const run = await stdinRun(["--service", "anthropic"], `sk-ant-oat01-${"t".repeat(40)}\n`);
+		expect(run.code).toBe(SETUP_EXIT.usage);
+		expect(run.warned.join("\n")).toContain("mu setup: That's a Claude subscription token");
 		expect(run.calls).toEqual([]);
 	});
 
@@ -1193,5 +1217,27 @@ describe("mu setup with pi's own files", () => {
 		const { pi } = await realPi(home);
 		await expect(pi.setDefaultModel("deepseek", "deepseek-chat")).rejects.toThrow("settings.json cannot be read");
 		expect(readFileSync(join(home, "agent", "settings.json"), "utf8")).toBe("{ not json");
+	});
+});
+
+describe("the wizard's text in a terminal", () => {
+	it("breaks long lines between words, under the text of a numbered choice, and leaves short ones alone", () => {
+		const hint =
+			"To use a subscription, sign in from inside mu: start mu, type /login, choose OpenAI (ChatGPT subscription).";
+		expect(wrapToWidth(hint, 40).split("\n")).toEqual([
+			"To use a subscription, sign in from",
+			"inside mu: start mu, type /login, choose",
+			"OpenAI (ChatGPT subscription).",
+		]);
+		expect(wrapToWidth("  1) Free Jev on OpenCode Zen (recommended): no key needed", 34).split("\n")).toEqual([
+			"  1) Free Jev on OpenCode Zen",
+			"     (recommended): no key needed",
+		]);
+		expect(wrapToWidth("Short line.\nAnother.", 40)).toBe("Short line.\nAnother.");
+		// Not a terminal, or one too narrow to help: as written.
+		expect(wrapToWidth(hint, undefined)).toBe(hint);
+		// No spaces to break at (Chinese): the terminal wraps it.
+		const zh = "订阅账号在 mu 里面登录：启动mu，输入/login，按提示在浏览器里完成。登录信息保存在这里。";
+		expect(wrapToWidth(zh, 30).split("\n").length).toBeLessThanOrEqual(3);
 	});
 });

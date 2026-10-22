@@ -56,7 +56,8 @@ export type JobEvent =
 	/** `observed`: a `wait` on this job was in flight, so its caller is being told already. */
 	| { readonly type: "exit"; readonly job: JobInfo; readonly observed: boolean }
 	| { readonly type: "stop"; readonly job: JobInfo }
-	| { readonly type: "match"; readonly job: JobInfo; readonly line: string };
+	/** `observed` as for `exit`: the waiting call returns with this line in its output. */
+	| { readonly type: "match"; readonly job: JobInfo; readonly line: string; readonly observed: boolean };
 
 export interface JobManagerOptions {
 	readonly logDir: string;
@@ -356,7 +357,12 @@ export class JobManager {
 			if (!watch.test(lines[index])) continue;
 			watch.from = offset;
 			watch.armed = false;
-			this.emit({ type: "match", job: this.info(job), line: lines[index].slice(0, MAX_LINE) });
+			this.emit({
+				type: "match",
+				job: this.info(job),
+				line: lines[index].slice(0, MAX_LINE),
+				observed: job.waiting > 0,
+			});
 			return;
 		}
 		watch.from = offset;

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { CascadeJudge, isUncertain } from "../src/cascade.ts";
-import { loadConfig, parseConfig } from "../src/config.ts";
+import { DEFAULT_CONFIG, loadConfig, parseConfig } from "../src/config.ts";
 import { DecisionEngine, defineDecision } from "../src/decision.ts";
 import { JudgeError } from "../src/errors.ts";
 import { Judge } from "../src/judge.ts";
@@ -264,8 +264,17 @@ describe("judge configuration", () => {
 			judges: [1],
 		});
 		expect(config.tiers).toEqual(["jev"]);
-		expect(config.modes).toEqual({ default: "active", "tool.admission": "active" });
+		// swarm.patch is off unless mu.json says otherwise.
+		expect(config.modes).toEqual({ ...DEFAULT_CONFIG.modes, default: "active", "tool.admission": "active" });
+		expect(config.modes["swarm.patch"]).toBe("off");
+		expect(parseConfig({ modes: { "swarm.patch": "active" } }).modes["swarm.patch"]).toBe("active");
 		expect(config.judges).toEqual({});
+	});
+
+	it("keeps the points that only watch by default in shadow, unless mu.json says otherwise", () => {
+		expect(parseConfig({}).modes).toMatchObject({ "notify.routing": "shadow", "input.interjection": "shadow" });
+		const chosen = parseConfig({ modes: { default: "shadow", "notify.routing": "active" } }).modes;
+		expect(chosen).toMatchObject({ default: "shadow", "notify.routing": "active", "input.interjection": "shadow" });
 	});
 });
 

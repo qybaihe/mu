@@ -136,8 +136,8 @@ export const MANIFEST: HarnessManifest = {
 			feature: "interjection",
 			title: { zh: "中途插话", en: "Mid-run messages" },
 			summary: {
-				zh: "任务进行中你又发来一句话：判断是要立刻打断，还是等这一步做完再处理。",
-				en: "For a message that arrives while the agent is working: interrupt now, or handle it after the current step.",
+				zh: "任务进行中你又发来一句话：判断是要立刻打断，还是等这一步做完再处理。默认是影子模式：判定只记录，消息按你按的键投递，不用等判定。",
+				en: "For a message that arrives while the agent is working: interrupt now, or handle it after the current step. In shadow by default: the verdict is only logged, and the message goes the way of the key you pressed without waiting for it.",
 			},
 		},
 		{
@@ -276,8 +276,8 @@ export const MANIFEST: HarnessManifest = {
 			feature: "warming",
 			title: { zh: "缓存保温", en: "Cache warming" },
 			summary: {
-				zh: "判断你是否很快会回来，以决定要不要在提示词缓存过期前续一下。",
-				en: "Guesses whether you'll be back soon, to decide whether to refresh the prompt cache before it expires.",
+				zh: "判断你是否很快会回来，以决定要不要在提示词缓存过期前续一下。只在代理空闲时问：运行中从不丢掉缓存。",
+				en: "Guesses whether you'll be back soon, to decide whether to refresh the prompt cache before it expires. Asked only while the agent is idle, so a run never loses its cache to it.",
 			},
 		},
 		{
@@ -456,8 +456,8 @@ export const MANIFEST: HarnessManifest = {
 			feature: "notify",
 			title: { zh: "通知分流", en: "Notification routing" },
 			summary: {
-				zh: "上下文预算等事件出现时，判断该现在告诉模型、稍后再说，还是不必说。",
-				en: "For events such as the context budget: tell the model now, later or not at all.",
+				zh: "上下文预算、后台命令结束等事件出现时，判断该现在告诉模型、稍后再说，还是不必说。默认是影子模式：判定只记录，事件按各自的规则投递，后台命令结束和上下文预算都是立刻告知。",
+				en: "For events such as the context budget or a background job's end: tell the model now, later or not at all. In shadow by default: the verdict is only logged and each event is delivered by its own rule, which for a job's end and the context budget is now.",
 			},
 		},
 		{
@@ -466,8 +466,8 @@ export const MANIFEST: HarnessManifest = {
 			feature: "swarm",
 			title: { zh: "子代理分派", en: "Subagent routing" },
 			summary: {
-				zh: "为每个委派任务挑选角色，并按难度选择模型档位和思考等级。",
-				en: "Picks a role for each delegated task, and a model tier and thinking level based on difficulty.",
+				zh: "为每个没指定角色的委派任务挑选角色；设了模型梯队时，再按难度选择模型档位和思考等级。角色都已指定、又没有梯队时不提问。",
+				en: "Picks a role for each delegated task that doesn't name one. With a model ladder set, it also picks a model tier and thinking level based on difficulty. When every role is named and there's no ladder, nothing is asked.",
 			},
 		},
 		{
@@ -476,8 +476,8 @@ export const MANIFEST: HarnessManifest = {
 			feature: "swarm",
 			title: { zh: "子代理补丁的范围检查", en: "Subagent patch scope check" },
 			summary: {
-				zh: "隔离的子代理交回补丁时，只看任务、改动的路径和行数，判断改动是否超出任务、哪些文件与任务无关；只给主代理一句提示，从不拦截。",
-				en: "When an isolated subagent hands back a patch, judges from the task, the changed paths and the line counts whether it stays within scope and which files look unrelated. Gives the main agent one line of advice; it never blocks.",
+				zh: "隔离的子代理交回补丁时，只看任务、改动的路径和行数，判断改动是否超出任务、哪些文件与任务无关；只给主代理一句提示，从不拦截。默认关闭：交回的结果本来就列出了每个改动的文件和行数。",
+				en: "When an isolated subagent hands back a patch, judges from the task, the changed paths and the line counts whether it stays within scope and which files look unrelated. Gives the main agent one line of advice; it never blocks. Off by default: the result already lists every changed file with its line counts.",
 			},
 		},
 		{
@@ -486,8 +486,8 @@ export const MANIFEST: HarnessManifest = {
 			feature: "hive",
 			title: { zh: "蜂群：发布发现", en: "Hive: publishing findings" },
 			summary: {
-				zh: "一只蜂的发现值不值得放到公告板上给其他蜂看。",
-				en: "Decides whether a bee's finding is worth putting on the board for the others.",
+				zh: "一只蜂说的话值不值得放到公告板上给其他蜂看。以 FOUND: 或 DEAD END: 开头的发现直接发布，不用问。",
+				en: "Decides whether what a bee said is worth putting on the board for the others. A finding that starts with FOUND: or DEAD END: is published without asking.",
 			},
 		},
 		{
@@ -496,8 +496,8 @@ export const MANIFEST: HarnessManifest = {
 			feature: "hive",
 			title: { zh: "蜂群：投递", en: "Hive: delivery" },
 			summary: {
-				zh: "公告板上的一条发现与某只蜂手头的工作有没有关系，有关系才送达。",
-				en: "Decides whether a finding on the board matters to a bee's current work; only then is it delivered.",
+				zh: "公告板上的一条发现与某只蜂手头的工作有没有关系，有关系才送达。判定器答不上来时照样送达（不超过每只蜂的上限）。",
+				en: "Decides whether a finding on the board matters to a bee's current work; only then is it delivered. When the judge can't answer, it's delivered anyway, up to each bee's limit.",
 			},
 		},
 		{
@@ -596,6 +596,16 @@ export const MANIFEST: HarnessManifest = {
 					max: 30000,
 					unit: ms,
 					label: { zh: "最多等待", en: "Wait at most" },
+				},
+				{
+					key: "applyLate",
+					kind: "boolean",
+					default: true,
+					label: { zh: "首次判定晚到时下一回合补上", en: "Apply a late first verdict from the next turn" },
+					help: {
+						zh: "会话第一条消息的判定超过等待时间才到时，从下一回合起照它隐藏技能，提示词前缀只变这一次；关掉则整个会话都带着全部技能说明。",
+						en: "When the verdict on the session's first message comes after the wait, skills are hidden from the next turn on, which changes the prompt prefix once. Off: the session keeps every skill description.",
+					},
 				},
 			],
 		},
@@ -903,6 +913,18 @@ export const MANIFEST: HarnessManifest = {
 					},
 				},
 				{
+					key: "proseWords",
+					kind: "number",
+					default: 6,
+					min: 0,
+					max: 50,
+					label: { zh: "几个词连成句才送判", en: "Words in a row to ask the judge" },
+					help: {
+						zh: "一段里没有这么多个连着的词（中文、日文这类不空格的文字算连着 8 个字），就不问判定器，只按规则看：目录列表、链接列表、响应头、几个字的 grep 结果里放不下一条指令。0：每段都问。",
+						en: "A passage without this many words in a row (8 characters in a row for Chinese, Japanese and other scripts written without spaces) isn't put to the judge; rules alone read it. Directory listings, link lists, response headers and short grep hits can't hold an instruction. 0: every passage is judged.",
+					},
+				},
+				{
 					key: "waitMs",
 					kind: "number",
 					default: 6000,
@@ -1003,8 +1025,34 @@ export const MANIFEST: HarnessManifest = {
 				{
 					key: "passThrough",
 					kind: "list",
-					default: ["read", "edit", "write"],
+					default: ["read", "edit", "write", "delegate", "hive", "web_fetch"],
 					label: { zh: "这些工具的输出不筛", en: "Never filter these tools" },
+				},
+				{
+					key: "printCommands",
+					kind: "list",
+					default: [
+						"cat",
+						"sed -n",
+						"head",
+						"tail",
+						"nl",
+						"less",
+						"bat",
+						"grep",
+						"rg",
+						"od",
+						"xxd",
+						"git show",
+						"git diff",
+						"readelf",
+						"objdump",
+					],
+					label: { zh: "只打印文件的命令不筛", en: "Never filter file prints" },
+					help: {
+						zh: "bash 命令只用这些程序打印文件（前面可以 cd，可以用管道接这些程序）时，输出整段放行，和 read 一样：模型要看的就是这个文件。构建、测试、后台任务和别的命令的输出照常判断。留空：都判断。",
+						en: "When a bash command only prints a file with these programs (after a cd, or piped through them), its output goes in whole, as with read: the model asked to see that file. Build, test, background-job and other output is still judged. Empty: all of it is judged.",
+					},
 				},
 				{
 					key: "testLog",
@@ -1301,6 +1349,10 @@ export const MANIFEST: HarnessManifest = {
 					min: 2,
 					max: 20,
 					label: { zh: "同一调用重复几次算打转", en: "Repeats that count as a loop" },
+					help: {
+						zh: "输入完全相同、结果也完全相同才算同一调用；分段读同一个文件不算。",
+						en: "Only the same input with the same result counts as the same call; paging through a file does not.",
+					},
 				},
 				{
 					key: "window",
@@ -1677,6 +1729,26 @@ export const MANIFEST: HarnessManifest = {
 						en: "After that, stock phrases are used.",
 					},
 				},
+				{
+					key: "unattended",
+					kind: "boolean",
+					default: false,
+					label: { zh: "一次性运行里也写看板", en: "Also in one-shot runs" },
+					help: {
+						zh: "mu --print 和 json 模式里没人看看板，默认不写，省下判定器和写看板模型的调用。",
+						en: "Nobody watches the board in mu --print or json mode, so by default it isn't written there, saving the judge and writer calls.",
+					},
+				},
+				{
+					key: "followAlways",
+					kind: "boolean",
+					default: false,
+					label: { zh: "子代理干活时按时查看", en: "Check on subagents on a timer" },
+					help: {
+						zh: "默认只在有子代理开始、做完或出错时才查看；打开后不管有没有变化，每隔一段时间都看一次。",
+						en: "By default the board checks only when a subagent starts, finishes or fails. On: it checks at every interval, changed or not.",
+					},
+				},
 			],
 		},
 		{
@@ -1697,8 +1769,8 @@ export const MANIFEST: HarnessManifest = {
 					unit: ms,
 					label: { zh: "最多等待", en: "Wait at most" },
 					help: {
-						zh: "超时就不催了，判定只记账。",
-						en: "After this, there's no nudge; the verdict is only recorded.",
+						zh: "超时就不催了，这次判定也随之取消，不拖住单次运行的退出。",
+						en: "After this, there's no nudge, and the judge call is cancelled so it doesn't hold up the end of a one-shot run.",
 					},
 				},
 			],
@@ -1729,8 +1801,8 @@ export const MANIFEST: HarnessManifest = {
 					unit: ms,
 					label: { zh: "最多等待", en: "Wait at most" },
 					help: {
-						zh: "超时就不催了，判定只记账。",
-						en: "After this, there's no nudge; the verdict is only recorded.",
+						zh: "超时就不催了，这次判定也随之取消，不拖住单次运行的退出。",
+						en: "After this, there's no nudge, and the judge call is cancelled so it doesn't hold up the end of a one-shot run.",
 					},
 				},
 			],
@@ -1747,6 +1819,21 @@ export const MANIFEST: HarnessManifest = {
 					default: [70, 85],
 					label: { zh: "上下文预算提醒（%）", en: "Context budget notices (%)" },
 				},
+				{
+					key: "unjudged",
+					kind: "choice",
+					default: "now",
+					choices: [
+						{ value: "now", label: { zh: "立刻告知", en: "Now" } },
+						{ value: "next_turn", label: { zh: "下一回合", en: "Next turn" } },
+						{ value: "drop", label: { zh: "不说", en: "Never" } },
+					],
+					label: { zh: "没有判定时，上下文预算提醒", en: "Without a verdict, context budget notices" },
+					help: {
+						zh: "通知分流默认是影子模式，这时就按这里投递。「下一回合」要等下一次运行开始才读到，单次运行里读不到。",
+						en: "Notification routing is in shadow by default, and then this decides. A next-turn notice is read only when another run starts, which never happens in a one-shot run.",
+					},
+				},
 			],
 		},
 		{
@@ -1757,7 +1844,21 @@ export const MANIFEST: HarnessManifest = {
 				en: "Refreshes the prompt cache before it expires, when that pays off.",
 			},
 			defaultEnabled: true,
-			options: [],
+			options: [
+				{
+					key: "waitMs",
+					kind: "number",
+					default: 3000,
+					min: 500,
+					max: 30000,
+					unit: ms,
+					label: { zh: "最多等待", en: "Wait at most" },
+					help: {
+						zh: "超时就按 pi 自己的算法决定，这次判定也随之取消。",
+						en: "After this, pi's own estimate decides, and the judge call is cancelled.",
+					},
+				},
+			],
 		},
 		{
 			name: "warmup",
@@ -1916,13 +2017,33 @@ export const MANIFEST: HarnessManifest = {
 				{
 					key: "maxRelatedPerNote",
 					kind: "number",
-					default: 6,
+					default: 2,
 					min: 0,
 					max: 30,
 					label: { zh: "一条新发现最多对照几条旧发现", en: "Max earlier findings to compare a new one against" },
 					help: {
 						zh: "只对照有共同词的旧发现。0 表示不做纠正。",
 						en: "Only those sharing words with it. 0 turns corrections off.",
+					},
+				},
+				{
+					key: "publishMarked",
+					kind: "boolean",
+					default: true,
+					label: { zh: "带标记的发现直接发布", en: "Publish marked findings directly" },
+					help: {
+						zh: "蜂以 FOUND: 或 DEAD END: 开头说的话直接上公告板，不问判定器。",
+						en: "What a bee says starting with FOUND: or DEAD END: goes on the board without asking the judge.",
+					},
+				},
+				{
+					key: "publishToolOutputs",
+					kind: "boolean",
+					default: false,
+					label: { zh: "工具输出也拿去问要不要发布", en: "Consider tool output for the board too" },
+					help: {
+						zh: "默认只看蜂自己说的话。",
+						en: "By default only what a bee says is considered.",
 					},
 				},
 				{
@@ -2043,8 +2164,8 @@ export const MANIFEST: HarnessManifest = {
 			name: "background",
 			title: { zh: "后台命令", en: "Background commands" },
 			summary: {
-				zh: "开发服务器、长时间构建放到后台跑，不占用回合；结束时是否打断交给「通知分流」；会话结束时全部终止，无人值守的单次运行除外。",
-				en: "bg_start / bg_output / bg_stop: run dev servers and long builds without blocking the turn. Notification routing decides whether a finished job interrupts; every job stops when the session ends, except in an unattended one-shot run.",
+				zh: "开发服务器、长时间构建放到后台跑，不占用回合；任务结束时立刻告诉代理；会话结束时全部终止，无人值守的单次运行除外。",
+				en: "bg_start / bg_output / bg_stop: run dev servers and long builds without blocking the turn. The agent hears of a finished job right away; every job stops when the session ends, except in an unattended one-shot run.",
 			},
 			defaultEnabled: true,
 			options: [
@@ -2114,8 +2235,23 @@ export const MANIFEST: HarnessManifest = {
 					default: false,
 					label: { zh: "空闲时任务结束可唤醒代理", en: "A finished job may wake an idle agent" },
 					help: {
-						zh: "只有判定为「立刻」时才会开始新回合；关闭时只留一条消息。",
-						en: 'Only a verdict of "now" starts a turn; when off, the notice is only appended.',
+						zh: "只有「立刻」告知的才会开始新回合；关闭时只留一条消息。",
+						en: 'Only a notice delivered "now" starts a turn; when off, the notice is only appended.',
+					},
+				},
+				{
+					key: "unjudged",
+					kind: "choice",
+					default: "now",
+					choices: [
+						{ value: "now", label: { zh: "立刻告知", en: "Now" } },
+						{ value: "next_turn", label: { zh: "下一回合", en: "Next turn" } },
+						{ value: "drop", label: { zh: "不说", en: "Never" } },
+					],
+					label: { zh: "没有判定时，任务结束或匹配行", en: "Without a verdict, a job's end or watched line" },
+					help: {
+						zh: "通知分流默认是影子模式，这时就按这里投递。「下一回合」要等下一次运行开始才读到，单次运行里读不到。",
+						en: "Notification routing is in shadow by default, and then this decides. A next-turn notice is read only when another run starts, which never happens in a one-shot run.",
 					},
 				},
 				{

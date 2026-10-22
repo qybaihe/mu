@@ -39,7 +39,7 @@
 
 ## クイックスタート
 
-**デスクトップアプリ。** [Releases](https://github.com/qybaihe/mu/releases/latest) から macOS、Windows、Linux 用のインストーラーをダウンロードして開き、API キーを貼り付けるか、ChatGPT、Claude、Grok、Google のサブスクリプションでサインインします。ほかにインストールするものはありません。
+**デスクトップアプリ。** [Releases](https://github.com/qybaihe/mu/releases/latest) から macOS、Windows、Linux 用のインストーラーをダウンロードして開き、API キーを貼り付けるか、ChatGPT、Grok、Google のサブスクリプションでサインインします。ほかにインストールするものはありません。
 
 **コマンドライン。**
 
@@ -49,7 +49,7 @@ mu setup            # モデルを接続する
 mu                  # 現在のディレクトリでセッションを始める
 ```
 
-始めるのに判定器のキーは要りません。キーを設定するまでは、OpenCode Zen の無料の Jev が答えます。すべての判定ポイントは最初から判定を反映し、判定はすべて記録されます（`/status`、`mu ledger`、デスクトップアプリの判定タブ）。判定器がどうするかを記録するだけにしたい場合は、`~/.mu/agent/mu.json` に `{"modes": {"default": "shadow"}}` と書きます。詳しくは [Getting started](../getting-started.md)（英語）。
+始めるのに判定器のキーは要りません。キーを設定するまでは、OpenCode Zen の無料の Jev が答えます。40 の判定ポイントのうち 35 が最初から判定を反映し（要約なしの圧縮と出力途中の修正はオンにするまで動かず、サブエージェントのパッチ範囲チェックは既定でオフ、通知の振り分けと作業中のメッセージは記録だけです）、判定はすべて記録されます（`/status`、`mu ledger`、デスクトップアプリの判定タブ）。判定器がどうするかを記録するだけにしたい場合は、`~/.mu/agent/mu.json` に `{"modes": {"default": "shadow"}}` と書きます。詳しくは [Getting started](../getting-started.md)（英語）。
 
 ## 1 ターンの流れ
 
@@ -245,7 +245,7 @@ mu とそのランタイムを内蔵したデスクトップアプリです。No
   </picture>
 </p>
 
-画面下部のバーで、カーネルの状態をいつでも確認できます。どの判定器が答えていてどこで動いているか、有効な判定ポイントの数、会話中ならそれまでの判定数、直近の判定の所要時間、コンテキストの使用量です。権限モードと目標は入力欄にあり、`⌘K` でコマンドパレットが開きます。モデルへのログインはアプリの中で行います。ChatGPT、Claude、Grok、Google（Gemini CLI / Antigravity）のサブスクリプションか、pi が対応する任意のプロバイダーの API キーを使えます。Claude Code、Codex CLI、ZCode の会話は、インポートして続きから話せます。
+画面下部のバーで、カーネルの状態をいつでも確認できます。どの判定器が答えていてどこで動いているか、有効な判定ポイントの数、会話中ならそれまでの判定数、直近の判定の所要時間、コンテキストの使用量です。権限モードと目標は入力欄にあり、`⌘K` でコマンドパレットが開きます。モデルへのログインはアプリの中で行います。ChatGPT、Grok、Google（Gemini CLI / Antigravity）のサブスクリプションか、pi が対応する任意のプロバイダーの API キーを使えます。Claude Code、Codex CLI、ZCode の会話は、インポートして続きから話せます。
 
 macOS（Apple シリコン / Intel）、Windows（x64 / Arm）、Linux（x64 / Arm）向けのビルドは GitHub Actions で作成し、[Releases](https://github.com/qybaihe/mu/releases) で公開しています。
 
@@ -286,7 +286,7 @@ Node 22.19 以降が必要です。`mu -p "prompt"` は 1 回だけ実行して�
 | `/import-chat` | Claude Code、Codex または ZCode の会話をインポートする |
 | `/doctor` | セットアップと接続を確認する |
 
-pi 自身のコマンド（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export` など）はそのままです。`MU_JUDGE=laya,jev mu` とすると、その 1 回の実行だけ判定器を上書きできます。
+pi 自身のコマンド（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export` など）はそのままです。ただし `/login` には Claude サブスクリプションのサインインがありません（Anthropic が他のアプリによる提供を認めていないため）。Anthropic の API キーを使ってください。`MU_JUDGE=laya,jev mu` とすると、その 1 回の実行だけ判定器を上書きできます。
 
 ## プライバシー
 

@@ -1,7 +1,7 @@
 import type { AgentEndEvent } from "@earendil-works/pi-coding-agent";
 import { turnCompletion } from "../../decisions/turn-completion.ts";
 import { openItems } from "../../frame/frame.ts";
-import { clip, failOpen, type KyrnRuntime, textOf, within } from "../runtime.ts";
+import { askWithin, clip, failOpen, type KyrnRuntime, textOf } from "../runtime.ts";
 import { isShellTool } from "../shell-tools.ts";
 
 const EDIT_TOOLS = ["edit", "write"];
@@ -53,13 +53,16 @@ export function registerCompletion(runtime: KyrnRuntime): void {
 				ranCommandAfterLastEdit: turn.ranCommandAfterLastEdit,
 				openItems: open.length,
 			};
+			// The run is over as far as the user can see; a nudge that comes later than the wait is not worth having, so
+			// the call is aborted then and does not keep a one-shot run from exiting.
+			const ask = () =>
+				askWithin((signal) => runtime.engine.decide(turnCompletion, input, { signal }), options.waitMs);
 			// Shadow records what it would have said; only an active verdict is worth holding the end of the run for.
 			if (runtime.mode(turnCompletion.id) !== "active") {
-				void runtime.engine.decide(turnCompletion, input).catch(() => {});
+				void ask().catch(() => {});
 				return undefined;
 			}
-			// The run is over as far as the user can see; a nudge that comes later than this is not worth the wait.
-			const decision = await within(runtime.engine.decide(turnCompletion, input), options.waitMs);
+			const decision = await ask();
 			if (decision?.source !== "judge" || decision.outcome !== "nudge") return undefined;
 			turn.nudgedForCompletion = true;
 			runtime.nudgedEnds.add(event);
