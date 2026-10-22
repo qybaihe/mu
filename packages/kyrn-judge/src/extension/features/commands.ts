@@ -415,7 +415,9 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 		handler: async (_args, ctx) => {
 			runtime.touch(ctx);
 			const ok = (good: boolean) => (good ? "ok  " : "FIX ");
-			const probe = runtime.enabled ? await engine.probe() : undefined;
+			// With every decision point off nothing is sent to a judge, and the check must not send anything either.
+			const asks = runtime.enabled && engine.asksJudge();
+			const probe = asks ? await engine.probe() : undefined;
 			const browserHost = thisBrowserHost();
 			const chrome = findBrowser(browserHost)?.executable;
 			const available = ctx.modelRegistry.getAvailable();
@@ -440,7 +442,13 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 							"judge",
 							`${engine.providerId} ${probe.ok ? `answers in ${probe.latencyMs} ms` : `isn't answering (${probe.error}). For laya, run mu judge start`}`,
 						]
-					: ["--  ", "judge", "off (MU_JUDGE=off)"],
+					: [
+							"--  ",
+							"judge",
+							runtime.enabled
+								? "off: no decision point asks one, so nothing is sent to a judge"
+								: "off (MU_JUDGE=off)",
+						],
 				[
 					"--  ",
 					"decisions",
@@ -450,7 +458,9 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 				[
 					"--  ",
 					"browse",
-					`driven by ${engine.judgeFor("browser.step").id}. It needs a judge that can match a goal to a page (Jev or an LLM judge), e.g. /mu route browser.step llm:openai/gpt-5.6-luna`,
+					runtime.mode("browser.step") === "off"
+						? "off: mu's browser runs on the judge, and browser.step is off"
+						: `driven by ${engine.judgeFor("browser.step").id}. It needs a judge that can match a goal to a page (Jev or an LLM judge), e.g. /mu route browser.step llm:openai/gpt-5.6-luna`,
 				],
 				[
 					ok(roles.length > 0),

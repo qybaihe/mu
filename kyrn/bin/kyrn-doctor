@@ -118,14 +118,32 @@ row(
 const config = readJson(join(agentDir, "mu.json")) ?? readJson(join(agentDir, "kyrn.json"));
 const tiers = (env("JUDGE") ? env("JUDGE").split(",") : (config?.tiers ?? ["jev"])).map((tier) => tier.trim());
 const mode = env("JUDGE_MODE") ?? config?.modes?.default ?? "active";
-row("--", "judges", `${tiers.join(" > ")} · default mode ${mode}${env("JUDGE") ? " (from MU_JUDGE)" : ""}`);
 const overrides = Object.entries(config?.modes ?? {}).filter(([id]) => id !== "default");
+// The modes mu sets out of the box besides the default, as packages/kyrn-judge/src/config.ts has them: one of these in
+// mu.json gives way to a default of off (DecisionEngine.getMode).
+const BUILT_IN_MODES = {
+	"swarm.patch": "off",
+	"capability.disclosure": "off",
+	"notify.routing": "shadow",
+	"input.interjection": "shadow",
+	"turn.drift": "shadow",
+};
+// Whether any decision point asks a judge (DecisionEngine.asksJudge). With none, nothing is sent to one, and the rows
+// about keys and judges that answer would only mislead.
+const asksJudge = mode !== "off" || overrides.some(([id, value]) => value !== "off" && BUILT_IN_MODES[id] !== value);
+row(
+	"--",
+	"judges",
+	`${tiers.join(" > ")} · default mode ${mode}${env("JUDGE") ? " (from MU_JUDGE)" : ""}${asksJudge ? "" : " · no decision point asks a judge, so nothing is sent to one"}`,
+);
 if (overrides.length > 0) row("--", "modes", overrides.map(([id, value]) => `${id}=${value}`).join(" "));
 const ladder = config?.features?.swarm?.models ?? [];
 row("--", "subagents", ladder.length > 0 ? `model ladder ${ladder.join(" < ")}` : "use the session's model (no ladder configured)");
 
 const judgeSupport = localJudgeSupport({ platform: process.platform, env: process.env, wsl });
-if (tiers.some((tier) => tier.startsWith("laya")) && !judgeSupport.runs && !judgeSupport.url) {
+if (!asksJudge) {
+	// Nothing asks the local judge either: whether it is up does not matter.
+} else if (tiers.some((tier) => tier.startsWith("laya")) && !judgeSupport.runs && !judgeSupport.url) {
 	// Not a failure of this installation: the sidecar is Core ML, and there is none for this platform.
 	row("--", "local judge", `not available on ${platformName({ platform: process.platform, wsl })}: the Laya sidecar needs Core ML (macOS on Apple silicon)`);
 	row("--", "", "Laya's decision points use the next judge or their fallbacks. Use Jev, an LLM judge or MU_LOCAL_JUDGE_URL=<a server with the same API>");
@@ -175,7 +193,7 @@ const fromFile = existsSync(envFile) ? parseEnvFile(readFileSync(envFile, "utf8"
 const has = (name) => Boolean(process.env[name]) || fromFile.some(([key, value]) => key === name && value !== "");
 const where = `to ${tilde(envFile)} or to your environment`;
 const jevTier = tiers.find((tier) => ["jev", "typesafe", "gateway"].includes((config?.judges?.[tier] ?? JEV_ROUTES[tier])?.type));
-if (jevTier) {
+if (jevTier && asksJudge) {
 	const judge = config?.judges?.[jevTier] ?? JEV_ROUTES[jevTier];
 	if (judge.type === "jev") {
 		// The order the registry tries: TypeSafe directly, Jev on OpenRouter, the Vercel AI Gateway, OpenCode Zen,
@@ -220,10 +238,12 @@ const classifierOf = (tier) =>
 	tier.startsWith("classifier:")
 		? { type: "classifier", model: tier.slice("classifier:".length) }
 		: (config?.judges?.[tier] ?? JEV_ROUTES[tier]);
-const askedTiers = [
-	...tiers,
-	...Object.values(config?.routes ?? {}).flatMap((value) => (Array.isArray(value) ? value : String(value).split(","))),
-].map((tier) => String(tier).trim());
+const askedTiers = asksJudge
+	? [
+			...tiers,
+			...Object.values(config?.routes ?? {}).flatMap((value) => (Array.isArray(value) ? value : String(value).split(","))),
+		].map((tier) => String(tier).trim())
+	: [];
 for (const model of new Set(askedTiers.map(classifierOf).filter((judge) => judge?.type === "classifier").map((judge) => judge.model))) {
 	const provider = String(model ?? "").split("/")[0];
 	// OpenCode's free models answer without a key (the client sends "public", as OpenCode's own does).
@@ -325,12 +345,16 @@ const canRelate = (tier) =>
 const browseTiers = config?.routes?.["browser.step"] ?? tiers;
 const routed = Object.entries(config?.routes ?? {});
 if (routed.length > 0) row("--", "routes", routed.map(([id, value]) => `${id} -> ${[value].flat().join(" > ")}`).join(" · "));
+// mu's browser runs on the judge: with browser.step off it is switched off (src/extension/features/browser.ts).
+const browseMode = config?.modes?.["browser.step"] ?? mode;
 row(
-	[browseTiers].flat().some(canRelate) ? "ok" : "--",
+	browseMode !== "off" && [browseTiers].flat().some(canRelate) ? "ok" : "--",
 	"browse",
-	[browseTiers].flat().some(canRelate)
-		? `driven by ${[browseTiers].flat().join(" > ")}`
-		: 'needs a judge that can match a goal to a page. In mu.json: "routes": { "browser.step": ["llm:openai/gpt-5.6-luna"] }',
+	browseMode === "off"
+		? "off: mu's browser runs on the judge, and browser.step is off"
+		: [browseTiers].flat().some(canRelate)
+			? `driven by ${[browseTiers].flat().join(" > ")}`
+			: 'needs a judge that can match a goal to a page. In mu.json: "routes": { "browser.step": ["llm:openai/gpt-5.6-luna"] }',
 );
 
 const marks = { ok: "\x1b[32m ok\x1b[0m", fix: "\x1b[33mfix\x1b[0m", "--": "\x1b[2m  ·\x1b[0m" };

@@ -1,6 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
+import { parseConfig } from "../src/config.ts";
+import type { DecisionMode } from "../src/decision.ts";
 import { renderDoctor, renderHelpEn } from "../src/extension/features/commands.ts";
 import { modelRef } from "../src/extension/features/welcome.ts";
+import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
+import { MockJudgeProvider } from "../src/providers/mock.ts";
 
 const sections = [
 	{
@@ -81,5 +86,56 @@ describe("/doctor in a terminal", () => {
 		for (const line of lines) expect(line.length).toBeLessThanOrEqual(60);
 		const browse = lines.findIndex((line) => line.startsWith("--  browse     driven by"));
 		expect(lines[browse + 1]).toMatch(/^ {15}\S/);
+	});
+});
+
+describe("/doctor and /status with the judge off", () => {
+	const harnesses: Harness[] = [];
+	afterEach(() => {
+		while (harnesses.length > 0) harnesses.pop()?.cleanup();
+	});
+
+	/** Runs a command of a session whose default mode is `mode`, and returns what it showed and what reached the judge. */
+	async function run(command: "doctor" | "status", mode: DecisionMode) {
+		const provider = new MockJudgeProvider(() => ({}));
+		const harness = await createHarness({
+			extensionFactories: [
+				createKyrnJudgeExtension({
+					provider,
+					mode,
+					only: [],
+					config: parseConfig({ features: { memory: false } }),
+				}),
+			],
+		});
+		harnesses.push(harness);
+		const shown: string[] = [];
+		await harness.session.extensionRunner.getCommand(command)?.handler("", {
+			cwd: harness.tempDir,
+			hasUI: true,
+			model: harness.getModel(),
+			modelRegistry: { getAvailable: () => [], find: () => undefined },
+			getContextUsage: () => undefined,
+			ui: { notify: (message: string) => shown.push(message), setStatus: () => {} },
+		} as never);
+		return { text: shown.join("\n"), calls: provider.calls.length };
+	}
+
+	it("sends the judge nothing, and says it is off, where mu setup's Not now left every point off", async () => {
+		const doctor = await run("doctor", "off");
+		expect(doctor.calls).toBe(0);
+		expect(doctor.text).toContain("off: no decision point asks one, so nothing is sent to a judge");
+		expect(doctor.text).toContain("off: mu's browser runs on the judge, and browser.step is off");
+		const status = await run("status", "off");
+		expect(status.text).toContain("judge: off · every decision point uses its fallback");
+		// The points that only record by default are off with it, and not listed as shadow.
+		expect(status.text).toMatch(/^mode: default=off$/m);
+	});
+
+	it("still checks a judge that is asked", async () => {
+		const doctor = await run("doctor", "active");
+		expect(doctor.calls).toBeGreaterThan(0);
+		const status = await run("status", "active");
+		expect(status.text).toContain("notify.routing=shadow");
 	});
 });
