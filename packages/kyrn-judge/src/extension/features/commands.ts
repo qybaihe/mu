@@ -229,6 +229,32 @@ export function renderHelpEn(head: string, sections: readonly HelpSection[], foo
 const helpWidth = (): number | undefined =>
 	process.stdout.isTTY && process.stdout.columns ? Math.max(40, process.stdout.columns - 2) : undefined;
 
+/**
+ * /doctor's rows under a line that says how many need fixing (pi puts "Warning:" in front of the first line of a
+ * warning), each row wrapped so it continues under its own text.
+ */
+export function renderDoctor(
+	rows: readonly (readonly [state: string, name: string, text: string])[],
+	width?: number,
+): string {
+	const fixes = rows.filter(([state]) => state === "FIX ").length;
+	const lines = [
+		fixes > 0
+			? `mu doctor found ${fixes} ${fixes === 1 ? "thing" : "things"} to fix`
+			: "mu doctor: everything is set up",
+	];
+	for (const [state, name, text] of rows) {
+		const lead = `${state}${name.padEnd(11)}`;
+		const wrapped = wrapWords(
+			text,
+			width && Math.max(20, width - lead.length),
+			width && Math.max(20, width - lead.length),
+		);
+		lines.push(...wrapped.map((line, i) => `${i === 0 ? lead : " ".repeat(lead.length)}${line}`));
+	}
+	return lines.join("\n");
+}
+
 const helpEn = () =>
 	renderHelpEn(
 		`mu ${VERSIONS.mu} · a judgment-first coding agent, built on pi ${VERSIONS.pi}`,
@@ -400,23 +426,52 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 				const slash = ref.indexOf("/");
 				return slash < 1 || !ctx.modelRegistry.find(ref.slice(0, slash), ref.slice(slash + 1));
 			});
-			const lines = [
-				`${ok(Boolean(ctx.model))}model      ${ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "none selected: run /login, then /model"}`,
-				`${ok(providers.length > 0)}login      ${providers.length > 0 ? providers.join(", ") : "not signed in to any provider: run /login"}`,
+			const rows: (readonly [state: string, name: string, text: string])[] = [
+				[ok(Boolean(modelRef(ctx.model))), "model", modelRef(ctx.model) ?? "none yet: run /login, then /model"],
+				[
+					ok(providers.length > 0),
+					"login",
+					providers.length > 0 ? providers.join(", ") : "not signed in to any provider: run /login",
+				],
 				probe
-					? `${ok(probe.ok)}judge      ${engine.providerId} ${probe.ok ? `answers in ${probe.latencyMs} ms` : `isn't answering (${probe.error}). For laya, run mu judge start`}`
-					: "--  judge      off (MU_JUDGE=off)",
-				`--  decisions  default mode ${engine.getMode("*")}. Change it with /mu mode default <off|shadow|active>`,
-				`${ok(Boolean(chrome))}browser    ${chrome ?? browserAdvice(browserHost)}`,
-				`--  browse     driven by ${engine.judgeFor("browser.step").id}. It needs a judge that can match a goal to a page (Jev or an LLM judge), e.g. /mu route browser.step llm:openai/gpt-5.6-luna`,
-				`${ok(roles.length > 0)}subagents  ${roles.map((role) => role.name).join(", ")} · add your own in ${agentsDir}`,
-				`${ok(missing.length === 0)}ladder     ${ladder.length === 0 ? "none: subagents use the session's model" : ladder.join(" < ")}${
-					missing.length > 0 ? ` · unavailable: ${missing.join(", ")}` : ""
-				}`,
-				`--  writer     ${runtime.config.writer ?? "none: the session's model writes task frames, browser form text and lessons"}`,
-				...runtime.problems.map((problem) => `FIX problem    ${problem}`),
+					? [
+							ok(probe.ok),
+							"judge",
+							`${engine.providerId} ${probe.ok ? `answers in ${probe.latencyMs} ms` : `isn't answering (${probe.error}). For laya, run mu judge start`}`,
+						]
+					: ["--  ", "judge", "off (MU_JUDGE=off)"],
+				[
+					"--  ",
+					"decisions",
+					`default mode ${engine.getMode("*")}. Change it with /mu mode default <off|shadow|active>`,
+				],
+				[ok(Boolean(chrome)), "browser", chrome ?? browserAdvice(browserHost)],
+				[
+					"--  ",
+					"browse",
+					`driven by ${engine.judgeFor("browser.step").id}. It needs a judge that can match a goal to a page (Jev or an LLM judge), e.g. /mu route browser.step llm:openai/gpt-5.6-luna`,
+				],
+				[
+					ok(roles.length > 0),
+					"subagents",
+					`${roles.map((role) => role.name).join(", ")} · add your own in ${agentsDir}`,
+				],
+				[
+					ok(missing.length === 0),
+					"ladder",
+					`${ladder.length === 0 ? "none: subagents use the session's model" : ladder.join(" < ")}${
+						missing.length > 0 ? ` · unavailable: ${missing.join(", ")}` : ""
+					}`,
+				],
+				[
+					"--  ",
+					"writer",
+					runtime.config.writer ?? "none: the session's model writes task frames, browser form text and lessons",
+				],
+				...runtime.problems.map((problem) => ["FIX ", "problem", problem] as const),
 			];
-			ctx.ui.notify(lines.join("\n"), lines.some((line) => line.startsWith("FIX")) ? "warning" : "info");
+			const fixes = rows.filter(([state]) => state === "FIX ").length;
+			ctx.ui.notify(renderDoctor(rows, helpWidth()), fixes > 0 ? "warning" : "info");
 		},
 	});
 

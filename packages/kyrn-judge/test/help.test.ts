@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { renderHelpEn } from "../src/extension/features/commands.ts";
+import { renderDoctor, renderHelpEn } from "../src/extension/features/commands.ts";
 import { modelRef } from "../src/extension/features/welcome.ts";
 
 const sections = [
@@ -57,5 +57,29 @@ describe("the model in /status and the welcome", () => {
 		expect(modelRef({ provider: "openai", id: "gpt-5.5" })).toBe("openai/gpt-5.5");
 		expect(modelRef({ provider: "unknown", id: "unknown" })).toBeUndefined();
 		expect(modelRef(undefined)).toBeUndefined();
+	});
+});
+
+describe("/doctor in a terminal", () => {
+	const rows = [
+		["FIX ", "model", "none yet: run /login, then /model"],
+		["ok  ", "judge", "classifier:opencode/jev-1.13-free answers in 175 ms"],
+		[
+			"--  ",
+			"browse",
+			"driven by the judge. It needs a judge that can match a goal to a page (Jev or an LLM judge), e.g. /mu route browser.step llm:openai/gpt-5.6-luna",
+		],
+	] as const;
+
+	it("says first how many rows need fixing, so pi's Warning: reads as a sentence", () => {
+		expect(renderDoctor(rows).split("\n")[0]).toBe("mu doctor found 1 thing to fix");
+		expect(renderDoctor([["ok  ", "judge", "fine"]]).split("\n")[0]).toBe("mu doctor: everything is set up");
+	});
+
+	it("wraps a long row under its own text", () => {
+		const lines = renderDoctor(rows, 60).split("\n");
+		for (const line of lines) expect(line.length).toBeLessThanOrEqual(60);
+		const browse = lines.findIndex((line) => line.startsWith("--  browse     driven by"));
+		expect(lines[browse + 1]).toMatch(/^ {15}\S/);
 	});
 });
