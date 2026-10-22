@@ -9,6 +9,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 ### Added
 
 - **Session files count what subagents and cut replies spent.** A reply stopped for thinking too long, and each subagent, leave a `kyrn.usage` entry with their tokens and cost, so a cost report or benchmark can include them. The model never sees these entries.
+- **The desktop app's first-run guide offers "No judge".** It is the third choice on the judge step, beside Jev and Laya: every decision point is off and nothing is sent to a judge, like `mu setup`'s "Not now". Skipping the step still keeps the judge it shows. Picking a judge afterwards turns the verdicts back on.
 
 ### Changed
 
@@ -23,6 +24,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 - Pressing Escape during a sign-in in the terminal goes back to the list, instead of reporting "Failed to login to GitHub Copilot: This operation was aborted".
 - Choosing a subscription in `mu setup` no longer tells you to start mu and type `/login`: when setup starts mu, `/login` is already open.
 - **`mu --print` can reach your MCP servers again.** In a one-shot run nothing opened an MCP server, and the tool to open one was left out, so the agent couldn't use it. With a server installed, the agent now sees which ones are there and opens the one it needs; runs without one are unchanged.
+- The desktop app's first-run guide names OpenAI, Claude and Gemini first under "Paste an API key" in every language but Chinese, as its list of services already does.
 
 ## [0.1.11] - 2026-10-22
 

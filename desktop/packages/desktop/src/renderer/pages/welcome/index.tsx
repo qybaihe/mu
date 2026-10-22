@@ -237,8 +237,11 @@ export default function Welcome() {
           model: modelName(saved.provider, saved.model),
         })
       : undefined;
-  const judgeFree = judge === 'jev' && answersFree(judgeProfile, settings.keys, draft.judgeKeys);
+  // No judge: every decision point off, as the settings' switch sets it, so nothing is sent to a judge.
+  const judgeOff = settings.mode === 'off';
+  const judgeFree = !judgeOff && judge === 'jev' && answersFree(judgeProfile, settings.keys, draft.judgeKeys);
   const judgeKeyed =
+    !judgeOff &&
     judge === 'jev' &&
     !judgeFree &&
     jevVariables(judgeProfile).every((variable) => Boolean(settings.keys[variable] || draft.judgeKeys[variable]));
@@ -469,10 +472,13 @@ export default function Welcome() {
               <JudgeChoiceTile
                 key={choice}
                 choice={choice}
-                active={judge === choice}
-                onPick={() => mu.editSettings((now) => choose(now, choice))}
+                active={!judgeOff && judge === choice}
+                // Picking a judge after "No judge" turns the verdicts back on; a stored shadow stays as it is.
+                onPick={() =>
+                  mu.editSettings((now) => ({ ...choose(now, choice), mode: now.mode === 'off' ? 'active' : now.mode }))
+                }
               >
-                {folded ? (
+                {judgeOff ? null : folded ? (
                   <>
                     <button
                       type='button'
@@ -491,6 +497,14 @@ export default function Welcome() {
               </JudgeChoiceTile>
             );
           })}
+          <ChoiceTile
+            testId='mu-welcome-judge-none'
+            title={t('mu.welcome.judge.none.title')}
+            tag={t('mu.welcome.judge.none.tag')}
+            description={t('mu.welcome.judge.none.description')}
+            active={judgeOff}
+            onPick={() => mu.editSettings((now) => ({ ...now, mode: 'off' }))}
+          />
         </div>
       </>
     );
@@ -528,17 +542,23 @@ export default function Welcome() {
           ) : null}
           <div className={styles.summaryRow}>
             <dt>{t('mu.welcome.done.judge')}</dt>
-            <dd>
-              {judge ? <span className={styles.judgeMark} aria-hidden='true' /> : null}
-              {judge ? t(`mu.judges.choices.${judge}.title`) : t('mu.welcome.done.none')}
-              {free ? (
-                <span className={styles.note}>{t('mu.welcome.done.freeJev')}</span>
-              ) : judge === 'jev' && !keyReady ? (
-                <span className={styles.warn}>{t('mu.welcome.done.noKey')}</span>
-              ) : null}
+            <dd data-testid='mu-welcome-done-judge'>
+              {judgeOff ? (
+                t('mu.welcome.judge.none.title')
+              ) : (
+                <>
+                  {judge ? <span className={styles.judgeMark} aria-hidden='true' /> : null}
+                  {judge ? t(`mu.judges.choices.${judge}.title`) : t('mu.welcome.done.none')}
+                  {free ? (
+                    <span className={styles.note}>{t('mu.welcome.done.freeJev')}</span>
+                  ) : judge === 'jev' && !keyReady ? (
+                    <span className={styles.warn}>{t('mu.welcome.done.noKey')}</span>
+                  ) : null}
+                </>
+              )}
             </dd>
           </div>
-          {judge && kernel.total > 0 ? (
+          {judge && !judgeOff && kernel.total > 0 ? (
             <div className={styles.summaryRow} data-testid='mu-welcome-kernel'>
               <dt>{t('common.kyrn.hero.kernel')}</dt>
               <dd className={styles.mono}>

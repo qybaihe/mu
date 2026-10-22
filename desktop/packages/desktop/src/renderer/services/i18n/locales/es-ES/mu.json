@@ -541,7 +541,7 @@
     "apiKey": {
       "title": "Pegar una clave de API",
       "tag": "Lo más fácil",
-      "description": "DeepSeek, Kimi, Qwen, GLM, OpenAI, Claude, Gemini y más: mu reconoce el servicio por la clave y configura el resto",
+      "description": "OpenAI, Claude, Gemini, DeepSeek, Kimi, Qwen, GLM y más: mu reconoce el servicio por la clave y configura el resto",
       "placeholder": "Pega la clave aquí",
       "service": "Servicio",
       "servicePlaceholder": "Se reconoce por la clave",
@@ -635,7 +635,12 @@
       "readyFree": "El Jev gratuito está listo. No hace falta hacer nada aquí.",
       "readyKey": "Jev está listo, con la clave que configuraste.",
       "more": "Cambiar de servicio o usar tu propia clave",
-      "less": "Ocultar"
+      "less": "Ocultar",
+      "none": {
+        "title": "Sin juez",
+        "tag": "No se envía nada",
+        "description": "Ningún punto de decisión consulta a un juez, así que no se le envía nada. mu decide con sus reglas predeterminadas. Puedes elegir un juez más tarde en Configuración."
+      }
     },
     "done": {
       "title": "Todo listo",

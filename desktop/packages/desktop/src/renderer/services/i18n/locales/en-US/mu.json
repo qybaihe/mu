@@ -541,7 +541,7 @@
     "apiKey": {
       "title": "Paste an API key",
       "tag": "Easiest",
-      "description": "DeepSeek, Kimi, Qwen, GLM, OpenAI, Claude, Gemini and more. mu detects the service from the key and sets up the rest.",
+      "description": "OpenAI, Claude, Gemini, DeepSeek, Kimi, Qwen, GLM and more. mu detects the service from the key and sets up the rest.",
       "placeholder": "Paste the key here",
       "service": "Service",
       "servicePlaceholder": "Detected from the key",
@@ -635,7 +635,12 @@
       "readyFree": "Jev is ready, free for now. Nothing to set up here.",
       "readyKey": "Jev is ready with your key.",
       "more": "Change the service or use your own key",
-      "less": "Hide"
+      "less": "Hide",
+      "none": {
+        "title": "No judge",
+        "tag": "Nothing sent",
+        "description": "No decision point asks a judge, so nothing is sent to one. mu decides by its default rules. You can choose a judge later in Settings."
+      }
     },
     "done": {
       "title": "All set",

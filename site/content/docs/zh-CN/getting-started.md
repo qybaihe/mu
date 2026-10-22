@@ -20,7 +20,7 @@ mu 有两种用法：自带所需一切的**桌面端**，和 **`mu` 命令行**
 2. 打开它。新手引导分四步：模型、权限模式、判定器、开始。
    - **模型。** 粘贴一个 API key，mu 会从格式认出是哪家服务（DeepSeek、Kimi、Qwen、GLM、SiliconFlow、OpenRouter、OpenAI、Anthropic、Google Gemini、xAI 等），并用一次请求检查它。也可以用 ChatGPT、Grok 或 Google 订阅登录。密钥不对、余额为零、地区不支持或连不上网，每一种都会说明该怎么办。
    - **权限。** 默认选中「判定模式」；见[权限与安全](@docs/permissions)。
-   - **判定器。** 没有密钥时，由免费的 Jev 回答（TypeSafe 托管的判定模型，经 OpenCode Zen）。之后随时可以回来改。
+   - **判定器。** 没有密钥时，由免费的 Jev 回答（TypeSafe 托管的判定模型，经 OpenCode Zen）。不想给判定器发送任何内容，就选**不用判定器**。之后随时可以回来改。
    - **开始。** 如果 mu 找到 Claude Code、Codex 或 ZCode 的对话，会提出帮你导入（引导的第一屏也会提）。
 3. 选一个文件夹，开始对话。
 
