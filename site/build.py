@@ -43,7 +43,9 @@ import posixpath
 import re
 import shutil
 import subprocess
+import time
 import unicodedata
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -120,6 +122,9 @@ def fill(value, facts):
 
 # ---- GitHub ----
 
+RELEASE_ATTEMPTS = 4
+RELEASE_RETRY_SECONDS = 5
+
 def github(path):
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
     headers = {"Accept": "application/vnd.github+json", "User-Agent": "usemu-site-build"}
@@ -134,9 +139,25 @@ def version_key(number):
 
 
 def mu_releases():
-    """Published desktop releases, newest first: tags vX.Y.Z with mu's installers. Drafts and other tags are left out."""
+    """Published desktop releases, newest first: tags vX.Y.Z with mu's installers. Drafts and other tags are left out.
+    GitHub's API sometimes answers a build with no releases at all for a moment; it is asked again before the build
+    gives up."""
+    for attempt in range(RELEASE_ATTEMPTS):
+        try:
+            out = read_releases(github("/releases?per_page=100"))
+        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as error:
+            print(f"GitHub's releases could not be read ({error}); asking again")
+            out = []
+        if out:
+            return out
+        if attempt + 1 < RELEASE_ATTEMPTS:
+            time.sleep(RELEASE_RETRY_SECONDS * (attempt + 1))
+    raise SystemExit("GitHub lists no mu release")
+
+
+def read_releases(listed):
     out = []
-    for r in github("/releases?per_page=100"):
+    for r in listed:
         m = re.fullmatch(r"v(\d+\.\d+\.\d+)", r["tag_name"])
         if r.get("draft") or not m:
             continue
@@ -146,8 +167,6 @@ def mu_releases():
             continue
         out.append({"tag": r["tag_name"], "number": number, "date": (r.get("published_at") or "")[:10],
                     "url": r["html_url"], "assets": assets, "body": r.get("body") or ""})
-    if not out:
-        raise SystemExit("GitHub lists no mu release")
     return sorted(out, key=lambda r: version_key(r["number"]), reverse=True)
 
 
