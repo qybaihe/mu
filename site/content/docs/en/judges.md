@@ -52,7 +52,7 @@ mu judge start     # starts it
 mu judge status
 ```
 
-The desktop app sets it up in one step, also only after asking. Laya is reliable on simple predicates (does this text describe an error?) and weak on questions about relations or about the request itself. mu knows this and never sends it a question it can't answer well, so in a chain such as `["laya", "jev"]` those go straight to the next judge. Laya isn't trusted with approvals in *Jev approves* mode. Run it in shadow next to Jev and read the ledger before giving it a decision point of its own.
+The desktop app sets it up in one step, also only after asking. Laya is reliable on simple predicates (does this text describe an error?) and weak on questions about relations or about the request itself. mu knows this and never sends it a question it can't answer well, so in a chain such as `["laya", "jev"]` those go straight to the next judge. Laya isn't trusted with approvals in *Judge mode*. Run it in shadow next to your current judge and read the ledger before giving it a decision point of its own.
 
 ## Classifier models and LLMs {#other-judges}
 
@@ -94,7 +94,7 @@ Every decision point has a mode:
 - **shadow**: the judge is asked and the verdict is logged, but nothing changes.
 - **off**: the point isn't asked.
 
-Set them in `mu.json` under `modes` (a `default` plus one entry per point), for one session with `/mu mode` or in the app's settings, where a point in shadow shows as off. Two things work whatever the mode: the permission mode you choose (*Jev approves* is itself the opt-in for `tool.approval`), and the `judge_items` tool when the model calls it.
+Set them in `mu.json` under `modes` (a `default` plus one entry per point), for one session with `/mu mode` or in the app's settings, where a point in shadow shows as off. Two things work whatever the mode: the permission mode you choose (*Judge mode* is itself the opt-in for `tool.approval`), and the `judge_items` tool when the model calls it.
 
 ## Comparing judges {#compare}
 

@@ -202,11 +202,11 @@ def changelog_sections(repo):
 
 
 def mode_labels(repo, lang):
-    """The permission modes' names in the desktop app: full, jev, ask."""
+    """The permission modes' names in the desktop app: full, judge, ask."""
     path = repo / "desktop/packages/desktop/src/renderer/services/i18n/locales" / APP_LOCALE[lang] / "agentMode.json"
     try:
         data = json.loads(path.read_text())
-        return {k: data[k] for k in ("full", "jev", "ask")}
+        return {k: data[k] for k in ("full", "judge", "ask")}
     except (OSError, ValueError, KeyError):
         warn(f"{lang}: no permission mode names in {path.relative_to(repo)}")
         return {}

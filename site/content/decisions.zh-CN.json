@@ -27,7 +27,7 @@
     "filter_all": "全部",
     "search_placeholder": "搜名字或代号",
     "no_match": "没有匹配的判定点。",
-    "ask_label": "Jev 问",
+    "ask_label": "问判定器",
     "scene_label": "情景",
     "verdict_label": "判定",
     "result_label": "结果",
@@ -39,7 +39,7 @@
     "judges_intro": "判定点不关心是哪个判定器回答的。判定器可以串起来：便宜的先答，拿不准的再交给下一个。",
     "judges": [
       { "h3": "Jev（云端）", "p": "不配 key 也能用，经 OpenCode Zen 免费回答。配了自己的 key，可以走 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode 或 Cloudflare。", "code": "mu setup" },
-      { "h3": "Laya（本地）", "p": "3.22 亿参数，在你的机器上跑，不走网络。简单的是非题很可靠；先以影子模式和 Jev 并行跑一段，再交给它。", "code": "mu judge setup" },
+      { "h3": "Laya（本地）", "p": "3.22 亿参数，在你的机器上跑，不走网络。简单的是非题很可靠；先以影子模式和你当前的判定器并行跑一段，再交给它。", "code": "mu judge setup" },
       { "h3": "分类模型", "p": "pi 模型目录里的任何分类模型，比如 Cloudflare 的 Clef，用你已有的登录或 key。", "code": "classifier:<提供商>/<模型>" },
       { "h3": "任何大模型", "p": "就用你正在用的模型，让它以 JSON 回答。慢一些，每次判定都花 token。", "code": "llm:<提供商>/<模型>" }
     ],
@@ -137,7 +137,7 @@
       "result": "命令先停住，问你。被规则标出的命令只能允许这一次，不能整个对话都允许。"
     },
     "tool.approval": {
-      "scene": "「Jev 审批」模式下，为了你要的参数校验，代理想执行 `npm install zod`。",
+      "scene": "「判定模式」下，为了你要的参数校验，代理想执行 `npm install zod`。",
       "verdict": "任务需要",
       "result": "直接执行，不打扰你。同一个任务里的 `git push` 超出了你的要求，状态栏会问你，并写明原因。"
     },
@@ -209,7 +209,7 @@
     "goal.met": {
       "scene": "在 `/goal`「测试全部通过」下，负责核对目标的大模型没有给出答案。",
       "verdict": "还没有：有一条验收条件没完成",
-      "result": "代理继续干。只有核对的大模型没答上来时，才轮到 Jev 回答。"
+      "result": "代理继续干。只有核对的大模型没答上来时，才轮到判定器回答。"
     },
     "board.read": {
       "scene": "代理说：「找到了：缓存的 key 没算上语言。」",

@@ -47,7 +47,7 @@ mu                     # 在目前目錄開啟一個互動式工作階段
 | `/mu mode <point> <off\|shadow\|active>` | 在這個工作階段裡切換某一個判定點，或用 `default` 切換全部 |
 | `/frame` | 任務框架：目標、你的約束及你在哪裡說的、驗收項目 |
 | `/goal <condition>` | 一直做到條件成立；`/goal clear` 結束 |
-| `/permissions` | 完全存取、Jev 審批或最小權限 |
+| `/permissions` | 完全存取、判定模式或最小權限 |
 | `/board` | 為這個專案開啟或關閉人話看板；`/board model` 選擇寫看板的模型 |
 | `/remember <text>`、`/lessons`、`/forget <id>` | 記一條經驗、列出經驗、讓一條退役 |
 | `/review`、`/commit` | 審查改動，發現依 P0 到 P3 分級；把改動拆成多個提交 |
@@ -72,7 +72,7 @@ pi 自己的指令原樣保留：`/model`、`/thinking`、`/login`、`/resume`�
 | --- | --- |
 | `MU_JUDGE=laya,jev mu` | 只為這次執行指定判定器。`MU_JUDGE=off` 關掉判定核心。 |
 | `MU_JUDGE_MODE=shadow mu` | 這次執行裡所有判定點都用影子模式 |
-| `MU_PERMISSIONS=ask mu` | 這次執行的權限模式：`full`、`jev` 或 `ask` |
+| `MU_PERMISSIONS=ask mu` | 這次執行的權限模式：`full`、`judge` 或 `ask` |
 | `MU_LANG=zh-CN mu` | mu 自己的訊息用中文（`zh`）或英文（其他任何值） |
 
 完整清單請見[設定](@docs/configuration#env)。

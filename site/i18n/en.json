@@ -6,8 +6,8 @@
   "shots": "en",
   "meta": {
     "title": "mu · Only what's needed.",
-    "description": "mu is a coding agent with a judgment kernel: a small, fast judge called Jev makes dozens of small decisions in every turn, so the task gets only the context it needs. Command line and desktop app, open source.",
-    "og_description": "A coding agent that gives the task only the context it needs. Built on pi, with Jev as its judge."
+    "description": "mu is a coding agent with a judgment kernel: a small, fast judge model makes dozens of small decisions in every turn, so the task gets only the context it needs. Command line and desktop app, open source.",
+    "og_description": "A coding agent that gives the task only the context it needs. Built on pi, with a small, fast judge model for the routine decisions."
   },
   "ui": {
     "announce_pill": "New",
@@ -44,7 +44,7 @@
   "home": {
     "kicker": "μ · Only what's needed.",
     "h1": "Only the context<wbr> the task <em>needs</em>",
-    "lead": "mu is a coding agent. A small, fast judge called Jev makes dozens of small decisions for the main model in every turn: what stays in the context, whether a command is safe, whether the work is really done. The main model keeps its attention on the work.",
+    "lead": "mu is a coding agent. A small, fast judge model makes dozens of small decisions for the main model in every turn: what stays in the context, whether a command is safe, whether the work is really done. The main model keeps its attention on the work.",
     "tab_cli": "Command line",
     "tab_app": "Desktop app",
     "cli_hint": "Needs Node.js 22.19 or newer. Run <code>mu setup</code> once to connect a model, then <code>mu</code> in a project folder.",
@@ -52,38 +52,38 @@
     "dl_mac_intel": "Intel",
     "app_hint": "The macOS app is signed and notarized by Apple; the Windows app isn't signed yet, so SmartScreen shows a warning. mu is built into the app, so there's no Node.js to install. Windows on Arm, Linux on Arm and every other download are under <a href=\"https://github.com/qybaihe/mu/releases\">Releases</a>.",
     "meta": "macOS · Windows · Linux · open source (MIT + Apache-2.0) · built on pi",
-    "app_alt": "The mu desktop app after a bug fix: the conversation in the middle, the Judge tab on the right listing each of Jev's verdicts with its decision point and time, and the kernel bar along the bottom",
+    "app_alt": "The mu desktop app after a bug fix: the conversation in the middle, the Judge tab on the right listing each of the judge's verdicts with its decision point and time, and the kernel bar along the bottom",
     "app_caption": "The desktop app: the Judge tab lists every verdict with its decision point and how long it took.",
     "cue": "Watch a turn",
     "story_label": "MU · ONE TURN",
     "story_h2": "Judge first, then act",
-    "story_intro": "Ask for a plan, and most agents send the model every tool and skill description along with it. Models write better code every month, and their reports get harder to read. mu splits the work: Jev judges, the main model works and a model picked for plain writing tells you where things stand.",
-    "stage_caption": "Recorded in mu, with Jev as the judge. Jev's verdicts and timings are real; the coding model's replies are scripted, so the turn plays the same every time.",
-    "swarm_alt": "The Hive tab in the desktop app: three bees investigate one bug at once; the arrows are findings Jev judged worth delivering",
-    "swarm_caption": "The Hive tab in the desktop app: each arrow is a finding Jev judged worth delivering.",
+    "story_intro": "Ask for a plan, and most agents send the model every tool and skill description along with it. Models write better code every month, and their reports get harder to read. mu splits the work: a judge model decides, the main model works and a model picked for plain writing tells you where things stand.",
+    "stage_caption": "Recorded in mu with TypeSafe's hosted judge model, Jev. Jev's verdicts and timings are real; the coding model's replies are scripted, so the turn plays the same every time.",
+    "swarm_alt": "The Hive tab in the desktop app: three bees investigate one bug at once; the arrows are findings the judge found worth delivering",
+    "swarm_caption": "The Hive tab in the desktop app: each arrow is a finding the judge found worth delivering.",
     "board_alt": "The plain-language board: what's being done, how far it got and the running account below",
     "board_caption": "The plain-language board: what the agent is doing, how far it got and the running account.",
     "chapters": [
       {
         "seg": "start",
         "label": "When you send a message",
-        "h2": "Jev reads it first",
-        "caption": "A message comes in; Jev gives a one-line verdict before the main model starts.",
+        "h2": "The judge reads it first",
+        "caption": "A message comes in; the judge gives a one-line verdict before the main model starts.",
         "paras": [
           "Is this a new task, a follow-up or a correction? Should a message that arrives mid-run interrupt now? Does it need skills and tools, or will a one-line answer do?"
         ],
         "verdict": true,
         "after": [
-          "In this turn, \"{prompt}\" comes in, and in under a second Jev answers: a multi-step task, full effort. Skills and MCP servers the task doesn't need stay out of the context until it does."
+          "In this turn, \"{prompt}\" comes in, and in under a second the judge answers: a multi-step task, full effort. Skills and MCP servers the task doesn't need stay out of the context until it does."
         ]
       },
       {
         "seg": "fail",
         "label": "When a tool returns",
-        "h2": "Output goes through Jev first",
+        "h2": "Output goes through the judge first",
         "caption": "The tests run: 1 of 13 fails.",
         "paras": [
-          "A test run or a search can easily return hundreds of lines. Jev judges, chunk by chunk, what matters now; only that enters the context, and the rest is archived behind a pointer, ready when it's needed.",
+          "A test run or a search can easily return hundreds of lines. The judge decides, chunk by chunk, what matters now; only that enters the context, and the rest is archived behind a pointer, ready when it's needed.",
           "In web pages and MCP results, instructions aimed at the model are withheld before it reads them."
         ]
       },
@@ -93,7 +93,7 @@
         "h2": "Block what's risky, ask only when it matters",
         "caption": "It finds the cause, a minute defined as one second, and fixes that line without coming back to ask.",
         "paras": [
-          "Before a command runs, rules flag anything risky, and Jev checks that you asked for it and that it doesn't cross a constraint you stated. There are three permission modes (<b>Full access</b>, <b>Jev approves</b> and <b>Ask first</b>), and you can switch at any time. In Jev approves mode, Jev lets through what the task clearly needs and asks you about the rest."
+          "Before a command runs, rules flag anything risky, and the judge checks that you asked for it and that it doesn't cross a constraint you stated. There are three permission modes (<b>Full access</b>, <b>Judge mode</b> and <b>Ask first</b>), and you can switch at any time. In Judge mode, the judge lets through what the task clearly needs and asks you about the rest."
         ]
       },
       {
@@ -103,16 +103,16 @@
         "caption": "It runs the tests again, all 13 pass, and it says what it changed.",
         "paras": [
           "When the model says it's done, mu checks whether anything verified that, whether the turn drifted and whether to go back to a checkpoint.",
-          "<code>/goal &lt;condition&gt;</code> keeps the agent working until the condition holds. The main model checks whether it does, with Jev as the fallback; when the same error comes back again and again, Jev judges whether the approach is a dead end."
+          "<code>/goal &lt;condition&gt;</code> keeps the agent working until the condition holds. The main model checks whether it does, with the judge as the fallback; when the same error comes back again and again, the judge decides whether the approach is a dead end."
         ]
       },
       {
         "frame": "swarm",
         "label": "The hive",
-        "h2": "Several bees at work, Jev in the middle",
+        "h2": "Several bees at work, the judge in the middle",
         "paras": [
           "When several agents work on one hard problem, splitting up the work is easy; communication is hard. Say nothing, and each walks into the same dead end. Say everything, and every context fills with the others' chatter.",
-          "In mu's hive, Jev judges every finding: is it worth sharing, and does it matter to a given bee? Only then does it reach that bee as context. When a later finding overturns an earlier one, the correction goes to every bee that heard it."
+          "In mu's hive, the judge weighs every finding: is it worth sharing, and does it matter to a given bee? Only then does it reach that bee as context. When a later finding overturns an earlier one, the correction goes to every bee that heard it."
         ]
       },
       {
@@ -120,7 +120,7 @@
         "label": "The plain-language board",
         "h2": "Working and reporting are different jobs",
         "paras": [
-          "Models get stronger, and their reports read more and more like notes for a machine. In mu the working model keeps working its own way. Every few tool calls, Jev checks what happened, picks what's really news and hands it to a model chosen for writing plainly, which tells you where things stand.",
+          "Models get stronger, and their reports read more and more like notes for a machine. In mu the working model keeps working its own way. Every few tool calls, the judge checks what happened, picks what's really news and hands it to a model chosen for writing plainly, which tells you where things stand.",
           "When a run ends, you see not just \"done\" but what was actually done."
         ]
       }
@@ -129,7 +129,7 @@
     "principles_h2": "What mu doesn't do",
     "principles_intro": "A model's attention is limited, and so is its context. These are the things mu chose not to do, or chose to do differently.",
     "principles": [
-      { "h3": "Fewer interruptions", "p": "In Jev approves mode, Jev lets through what the task clearly needs and asks you about the rest." },
+      { "h3": "Fewer interruptions", "p": "In Judge mode, the judge lets through what the task clearly needs and asks you about the rest." },
       { "h3": "No toolbox in every prompt", "p": "Each message is judged: small talk, a follow-up or work to do. Skills and MCP servers that aren't needed stay out of the context." },
       { "h3": "Fewer summaries", "p": "When the context grows, stale tool results are dropped instead of summarized, and summary-free compaction is an option. Before the cache expires, mu judges whether a refresh is worth it." },
       { "h3": "No locked-in judge", "p": "{points} decision points, each with its own switch and its own judge: the free Jev, the local Laya or any LLM." },
@@ -143,7 +143,7 @@
       { "b": "Import conversations", "text": "Bring in your Codex and Claude Code conversations and carry on in mu." },
       { "b": "Subscription sign-in", "text": "Sign in with ChatGPT, Claude, Grok or Google inside the app; no keys to copy around." },
       { "b": "Lessons", "text": "Your corrections and the traps the agent found a way around are kept; a lesson that is recalled and never followed retires itself." },
-      { "b": "Built-in browser", "text": "Jev drives it step by step: look at the page, judge once, act; it stops to ask before submitting or paying." },
+      { "b": "Built-in browser", "text": "The judge drives it step by step: look at the page, decide once, act; it stops to ask before submitting or paying." },
       { "b": "A ledger of verdicts", "text": "Every verdict and how long it took: <code>/status</code>, <code>mu ledger</code> and the app's Judge tab." },
       { "b": "13 interface languages", "text": "The desktop app speaks English, 简体中文, 繁體中文, 日本語, 한국어 and 8 more." }
     ],

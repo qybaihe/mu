@@ -27,7 +27,7 @@
     "filter_all": "All",
     "search_placeholder": "Search a name or id",
     "no_match": "No decision point matches.",
-    "ask_label": "Jev asks",
+    "ask_label": "The judge is asked",
     "scene_label": "Situation",
     "verdict_label": "Verdict",
     "result_label": "Result",
@@ -39,7 +39,7 @@
     "judges_intro": "The decision points never know which judge answered. Judges can be chained, so a cheap one goes first and the next only sees what it left uncertain.",
     "judges": [
       { "h3": "Jev, hosted", "p": "Free with no key, through OpenCode Zen. With your own key: TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode or Cloudflare.", "code": "mu setup" },
-      { "h3": "Laya, on your machine", "p": "322 million parameters, no network. Reliable on simple predicates; run it in shadow next to Jev before trusting it.", "code": "mu judge setup" },
+      { "h3": "Laya, on your machine", "p": "322 million parameters, no network. Reliable on simple predicates; run it in shadow next to your current judge before trusting it.", "code": "mu judge setup" },
       { "h3": "A classifier model", "p": "Any classifier in pi's model catalog, such as Cloudflare's Clef, with the sign-in you already have.", "code": "classifier:<provider>/<model>" },
       { "h3": "Any LLM", "p": "The model you already use, asked to answer as JSON. Slower, and every verdict costs tokens.", "code": "llm:<provider>/<model>" }
     ],
@@ -137,7 +137,7 @@
       "result": "The command waits and you are asked. A flagged command can be allowed once, never for the whole conversation."
     },
     "tool.approval": {
-      "scene": "In Jev approves mode, the agent wants to run `npm install zod` for the validation you asked for.",
+      "scene": "In Judge mode, the agent wants to run `npm install zod` for the validation you asked for.",
       "verdict": "needed by the task",
       "result": "It runs without asking you. A `git push` in the same task goes beyond the request, so the status bar asks you and says why."
     },
@@ -209,7 +209,7 @@
     "goal.met": {
       "scene": "Under `/goal` \"all tests pass\", the model that checks the goal gives no answer.",
       "verdict": "not yet: an acceptance item is open",
-      "result": "The agent keeps working. Jev answers here only when the checking model doesn't."
+      "result": "The agent keeps working. The judge answers here only when the checking model doesn't."
     },
     "board.read": {
       "scene": "The agent says \"Found it: the cache key ignores the locale.\"",

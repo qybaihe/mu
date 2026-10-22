@@ -42,7 +42,7 @@ Product terms. Use these spellings and meanings everywhere; don't invent synonym
 | --- | --- | --- |
 | mu | The product: the CLI and the desktop app. | Lowercase. "μ" only as the logo. |
 | judge | A small, fast model that answers one bounded question. | Not "judger", "arbiter", "classifier" (a classifier is one kind of judge). |
-| Jev | The hosted judge. | A name; never "the Jev". |
+| Jev | TypeSafe's hosted judge model, the default judge. | A name; never "the Jev". Use it only for that model; when you describe how mu works, say "the judge". |
 | Laya | The local judge. | |
 | decision point | A place in the agent loop where mu asks the judge. | Written as an id in code font: `tool.risk`. Not "judgment point", "hook". |
 | verdict | The judge's answer at a decision point. | Not "judgment", "ruling", "result". |
@@ -54,7 +54,7 @@ Product terms. Use these spellings and meanings everywhere; don't invent synonym
 | board | The plain-language progress board. | "the board" after first mention. |
 | hive, bee | A group of read-only investigator subagents and one member. | Keep the metaphor light. |
 | subagent | A helper agent the main agent starts. | One word. Not "sub-agent", "helper". |
-| permission mode | Full access, Jev approves or Ask first. | |
+| permission mode | Full access, Judge mode or Ask first. | |
 | provider, model | Where models come from, and the model itself. | "Sign in with ChatGPT", "add an API key". |
 | session, conversation | CLI: session. Desktop: conversation. | |
 

@@ -31,7 +31,7 @@ mu is a coding agent that runs on your machine, as you. Like pi, which it's buil
 
 On top of that, mu adds guards. They lower risk but aren't guarantees. Reports that one of them can be talked around are welcome, and are judged by their impact:
 
-- **Permission modes.** *Full access*, *Jev approves* and *Ask first* decide what runs without asking ([details](kyrn/docs/features/permissions.md)). Commands flagged by the risk rules (`rm -rf`, force pushes, `sudo`, running a downloaded script, and others) can never be allowed for a whole conversation, and calls that touch mu's own settings folder are asked about every time.
+- **Permission modes.** *Full access*, *Judge mode* and *Ask first* decide what runs without asking ([details](kyrn/docs/features/permissions.md)). Commands flagged by the risk rules (`rm -rf`, force pushes, `sudo`, running a downloaded script, and others) can never be allowed for a whole conversation, and calls that touch mu's own settings folder are asked about every time.
 - **Your constraints.** What you said not to do is checked before every call that changes something, in every mode.
 - **Prompt-injection screening.** Web pages, search results and MCP output are screened passage by passage (`tool.injection`), and passages containing instructions aimed at the AI are withheld from the model. A judge can miss one: this is defense in depth, not a filter to rely on by itself.
 - **Projects are untrusted by default.** MCP servers defined by a project aren't started until you approve them, and a project can't point the judge at an endpoint of its choosing.
@@ -40,7 +40,7 @@ On top of that, mu adds guards. They lower risk but aren't guarantees. Reports t
 ### What leaves your machine
 
 - Your conversation goes to the model provider you chose, as with any coding agent.
-- The judge sees only the fields each question needs. With no judge key, those questions go to the free Jev on OpenCode Zen; with a key, to the service the key belongs to. `MU_JUDGE=off`, or the local judge (Laya), keeps them on your machine.
+- The judge sees only the fields each question needs. With no judge key, those questions go to the free Jev on OpenCode Zen (Jev is TypeSafe's hosted judge model, the default); with a key, to the service the key belongs to. `MU_JUDGE=off`, or the local judge (Laya), keeps them on your machine.
 - Nothing is downloaded without your consent: the local judge's model, browser runtimes and app updates all ask first.
 - The desktop app sends no telemetry and no crash reports.
 

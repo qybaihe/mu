@@ -44,7 +44,7 @@ Inside a session, `/status` shows the judge, each decision point's mode and the 
 
 ## The judge
 
-mu asks a small, fast judge the routine questions that come up in a session. You don't have to set one up: without a Jev key, the free Jev on OpenCode Zen answers, and mu reminds you of this once a day. To use your own key, a local judge or another model, see [Judges](judges.md).
+mu asks a small, fast judge model the routine questions that come up in a session. You don't have to set one up: the default is Jev, TypeSafe's hosted judge model, and without a key the free Jev on OpenCode Zen answers. mu reminds you of this once a day. To use your own key, a local judge or another model, see [Judges](judges.md).
 
 ## Decisions and their modes
 
@@ -58,14 +58,14 @@ To watch the judge before you trust it, set the default mode to **shadow**. The 
 
 Or run `/mu mode default shadow` for the current session. In the app, Settings → Decision points has a switch for each point and for the default; a point in shadow mode shows as off there.
 
-You can also put individual points in shadow or turn them off; see [Configuration](configuration.md). Two things work regardless of the mode: the permission mode you choose (*Jev approves* is how you opt in to `tool.approval`), and the `judge_items` tool when the model calls it.
+You can also put individual points in shadow or turn them off; see [Configuration](configuration.md). Two things work regardless of the mode: the permission mode you choose (*Judge mode* is how you opt in to `tool.approval`), and the `judge_items` tool when the model calls it.
 
 ## Permissions
 
 The permission mode controls how much mu may do without asking. It's shown in the status line and in the app's composer. Switch it with `/permissions`:
 
 - **Full access**: everything runs.
-- **Jev approves** (the default): reads and edits inside the project run without asking. Anything else runs only when Jev is sure the task needs it; otherwise mu asks you.
+- **Judge mode** (the default): reads and edits inside the project run without asking. Anything else runs only when the judge is sure the task needs it; otherwise mu asks you.
 - **Ask first**: only reads run without asking.
 
 Risky commands (`rm -rf`, force pushes, `sudo`, running a downloaded script…) can never be allowed for a whole conversation, and the constraints you state ("don't touch the migrations") hold in every mode. More in [the permissions design note](../kyrn/docs/features/permissions.md).

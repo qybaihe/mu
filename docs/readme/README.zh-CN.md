@@ -21,7 +21,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="run-dark.gif">
-    <img src="run-light.gif" alt="桌面端里的一次运行，项目是任务队列 relay。消息：relay.config.json 里 timeout 设为 1h30m 的任务，跑一个小时左右就被杀掉，查原因、修好，并确认测试都能通过。Jev 把消息判为多步任务（input.preflight）。模型跑测试，Jev 放行（tool.approval）：13 个里挂了 1 个。模型读时长解析器，发现一分钟被定义成 1,000 毫秒，说要改成 60,000 再跑一遍测试，然后没做就停了。Jev 判定这次运行半途而止（turn.continue），mu 提醒模型这一轮还没完，模型改好单位、再跑测试：13 个全部通过。右侧判定页逐条列出每次判定、判定点和耗时。">
+    <img src="run-light.gif" alt="桌面端里的一次运行，项目是任务队列 relay。消息：relay.config.json 里 timeout 设为 1h30m 的任务，跑一个小时左右就被杀掉，查原因、修好，并确认测试都能通过。判定器把消息判为多步任务（input.preflight）。模型跑测试，判定器放行（tool.approval）：13 个里挂了 1 个。模型读时长解析器，发现一分钟被定义成 1,000 毫秒，说要改成 60,000 再跑一遍测试，然后没做就停了。判定器判定这次运行半途而止（turn.continue），mu 提醒模型这一轮还没完，模型改好单位、再跑测试：13 个全部通过。右侧判定页逐条列出每次判定、判定点和耗时。">
   </picture>
   <br>
   <sub>在桌面端里录下的一次运行。编码模型的回复是为录制写好的脚本（界面上显示为 GPT-6.1 Sol），项目和侧栏里之前的对话也是为录制准备的；判定器的裁决、耗时和那次恢复都是真的：模型话说一半就停了，<code>turn.continue</code> 发现了，mu 让它回去做完。</sub>
@@ -31,7 +31,7 @@
 
 - **mu**：命令行。pi 的全部能力，加上判定内核。
 - **mu 桌面端**：自带 mu 和运行时的桌面应用。下载，接一个模型，开始。
-- **Jev**：判定器。是非题、选择题、打分题，每个答案带概率，每一次判定都进流水。除了审批只由 Jev 决定，任何判定点都可以交给本地判定器（Laya）或任何一个大模型。
+- **判定模型**：默认是 TypeSafe 托管的 Jev。是非题、选择题、打分题，每个答案带概率，每一次判定都进流水。任何判定模型都可以替代它：本地的 Laya、你自己的 System One 服务或任意 LLM。
 
 > 还在早期开发。预发布版（0.1.x）在 npm 和 [Releases](https://github.com/qybaihe/mu/releases) 上，作者每天在用。名字、设置和格式都可能变。
 
@@ -105,7 +105,7 @@ mu                  # 在当前目录开一个会话
 | 判定点 | 问题 | 效果 |
 | --- | --- | --- |
 | `tool.risk` | 一条被规则标记的命令：是你要的吗？ | 拿不准就问你 |
-| `tool.approval` | 在「Jev 审批」模式下：这条命令、这个项目外的改动、这个对外动作、这个子代理，任务明确需要吗？ | Jev 确定需要的直接过；其余问你 |
+| `tool.approval` | 在「判定模式」下：这条命令、这个项目外的改动、这个对外动作、这个子代理，任务明确需要吗？ | 判定器确定需要的直接过；其余问你 |
 | `tool.constraint` | 在一个会改变东西的调用之前：它越过了你定下的约束吗？ | 调用被拦下 |
 | `tool.injection` | 网页、搜索结果、MCP 服务器的输出，或命令从别的机器取回的内容（`curl`、`gh issue view`），一段一段看：里面有没有冲着 AI 来的指令？ | 这些段落不会到达模型，原处留一条说明。读到过这种段落的子代理，报告交回时前面带一句警告 |
 | `tool.description` | MCP 工具自己的说明，第一次出现或变了时：是不是要 AI 做调用这个工具以外的事（读密钥、把数据发到别处、瞒着你）？ | 这个工具从模型的工具列表里拿掉，调用也被拒绝，并告诉你 |
@@ -142,8 +142,8 @@ mu                  # 在当前目录开一个会话
 
 ## 判定器
 
-- **Jev**（云端）。有边界的问题，答案带概率。可以经 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI，或任何支持同一协议的服务调用，每个服务有自己的密钥（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`）：在桌面端的「判定器」页选一个，默认用第一个设置了密钥的。一个密钥都没有时，默认由 OpenCode Zen 上限时免费的 Jev 1.13 回答：判定要读的内容会发给 OpenCode，它不拿来训练模型，mu 每天提示一次。配上密钥（`mu setup`，或「判定器」页）后，下一个问题起就用你的密钥。在作者自己的会话里实测：HTTP/2 上一个热连接的问题约 0.3 秒；16 块工具输出并成一个请求判完 0.44 秒，状态只计费一次。判定、概率和耗时都进流水：`mu ledger`，或桌面端的「判定」页。
-- **Laya**（本地）。一个 3.22 亿参数的判定器，在你的机器上跑，不走网络。未经你同意不下载任何东西。简单谓词上可靠，元判断上偏弱：先让它以影子模式和 Jev 并行跑，看过流水再把判定点交给它。
+- **Jev**：TypeSafe 托管的判定模型。有边界的问题，答案带概率。可以经 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI，或任何支持同一协议的服务调用，每个服务有自己的密钥（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`）：在桌面端的「判定器」页选一个，默认用第一个设置了密钥的。一个密钥都没有时，默认由 OpenCode Zen 上限时免费的 Jev 1.13 回答：判定要读的内容会发给 OpenCode，它不拿来训练模型，mu 每天提示一次。配上密钥（`mu setup`，或「判定器」页）后，下一个问题起就用你的密钥。在作者自己的会话里实测：HTTP/2 上一个热连接的问题约 0.3 秒；16 块工具输出并成一个请求判完 0.44 秒，状态只计费一次。判定、概率和耗时都进流水：`mu ledger`，或桌面端的「判定」页。
+- **Laya**（本地）。一个 3.22 亿参数的判定器，在你的机器上跑，不走网络。未经你同意不下载任何东西。简单谓词上可靠，元判断上偏弱：先让它以影子模式和你当前的判定器并行跑，看过流水再把判定点交给它。
 - **pi 模型目录里的任何分类模型**，作为一级：`classifier:<提供商>/<模型>`。比如 Cloudflare 的 Clef（`clef`、`clef-flash`）、OpenRouter 和 Vercel AI Gateway 上的 System One 模型、llama.cpp 的分类模型。
 - **任何大模型**，作为一级：`llm:<提供商>/<模型>`。
 
@@ -164,7 +164,7 @@ mu                  # 在当前目录开一个会话
 
 <p align="center"><img src="test-log-folding.gif" width="960" alt="一次 338 行的 Vitest 失败运行滚动而过，重复的 diff 段被标出。然后是模型读到的同一次运行：135 行，每段折叠的重复只剩一行标记。7,686 字符变成 4,262 字符，没有调用模型。"></p>
 
-**按目标挑选。** 用详细 reporter 时，该留什么取决于你问的是什么：调试失败时，通过的测试是噪音；问哪些测试跑过时，它们就是证据。Jev 在一个请求里，对每一块通过记录、每一块测试输出各问一次：目标还需要它吗？汇总和每一个失败从不参与提问。只有 Jev 给"不需要"的概率达到 0.9 或以上，这一块才会省掉。
+**按目标挑选。** 用详细 reporter 时，该留什么取决于你问的是什么：调试失败时，通过的测试是噪音；问哪些测试跑过时，它们就是证据。判定器在一个请求里，对每一块通过记录、每一块测试输出各问一次：目标还需要它吗？汇总和每一个失败从不参与提问。只有判定器给"不需要"的概率达到 0.9 或以上，这一块才会省掉。这些测量里的判定器是 Jev。
 
 <p align="center">
   <picture>
@@ -241,7 +241,7 @@ mu                  # 在当前目录开一个会话
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="app-dark.zh-CN.png">
-    <img src="app-light.zh-CN.png" width="880" alt="mu 桌面端在任务队列项目 relay 里修好一个 bug 之后：timeout 为 1h30m 的任务一小时就被杀掉，因为一分钟被定义成了 1,000 毫秒。Jev 把消息判为多步任务（input.preflight），两次跑测试都放行（tool.approval），并判定这一轮已经做完（turn.continue）。右侧判定页列出每次判定的判定点和耗时，约 70 到 120 毫秒。侧栏里是三个项目里之前的对话，底部的栏显示判定器（Jev，经 TypeSafe）、40 个判定点里启用了 38 个、5 次判定和上下文占用。">
+    <img src="app-light.zh-CN.png" width="880" alt="mu 桌面端在任务队列项目 relay 里修好一个 bug 之后：timeout 为 1h30m 的任务一小时就被杀掉，因为一分钟被定义成了 1,000 毫秒。判定器把消息判为多步任务（input.preflight），两次跑测试都放行（tool.approval），并判定这一轮已经做完（turn.continue）。右侧判定页列出每次判定的判定点和耗时，约 70 到 120 毫秒。侧栏里是三个项目里之前的对话，底部的栏显示判定器（Jev，经 TypeSafe）、40 个判定点里启用了 38 个、5 次判定和上下文占用。">
   </picture>
 </p>
 
@@ -274,7 +274,7 @@ mu doctor     # 检查安装、判定器和各项连接
 | `/mu mode <判定点> <off\|shadow\|active>` | 切换某一个判定点 |
 | `/frame` | 任务帧：目标、你的约束及其出处、验收条件 |
 | `/goal <条件>` | 一直干到条件成立；`/goal clear` 结束 |
-| `/permissions` | 全部放行 / Jev 审批 / 最小权限 |
+| `/permissions` | 全部放行 / 判定模式 / 最小权限 |
 | `/board` | 打开或关闭人话看板 |
 | `/remember`、`/lessons`、`/forget` | 记一条经验、列出经验、让一条退役 |
 | `/skills` | mu 从运行里起草的技能：查看、安装或丢掉 |
