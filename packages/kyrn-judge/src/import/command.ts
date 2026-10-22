@@ -29,7 +29,7 @@ export const USAGE = [
 	"  mu import --list [--json] [--cwd <dir>]   list conversations on this machine (with --cwd, only <dir>'s)",
 	"  mu import <file>... [--json]              import these conversations; each becomes a mu session",
 	"",
-	"  --agent-dir <dir>   mu's agent folder (default: MU_CODING_AGENT_DIR, else ~/.mu/agent)",
+	"  --agent-dir <dir>   mu's agent folder (default: MU_AGENT_DIR, else ~/.mu/agent)",
 	"  --sub-agents        also list subagent threads",
 	"",
 	"Looks in ~/.claude/projects (CLAUDE_CONFIG_DIR), ~/.codex/sessions (CODEX_HOME) and ~/.zcode/cli/db/db.sqlite.",
