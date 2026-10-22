@@ -400,7 +400,9 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 					(each) =>
 						`${modeLabel(each)}${each === mode ? say({ zh: "（当前）", en: " (current)" }) : ""} — ${say({ zh: MODE_TEXT[each].zhDescription, en: MODE_TEXT[each].enDescription })}`,
 				);
-				const picked = await ctx.ui.select(say({ zh: "权限模式", en: "Permission mode" }), labels);
+				const picked = await ctx.ui.select(say({ zh: "权限模式", en: "Permission mode" }), labels, {
+					initialIndex: PERMISSION_MODES.indexOf(mode),
+				});
 				next = picked === undefined ? undefined : PERMISSION_MODES[labels.indexOf(picked)];
 				if (!next) return;
 			}

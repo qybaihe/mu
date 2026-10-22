@@ -2720,7 +2720,12 @@ export class InteractiveMode {
 					this.hideExtensionSelector();
 					resolve(undefined);
 				},
-				{ tui: this.ui, timeout: opts?.timeout, onToggleToolsExpanded: () => this.toggleToolOutputExpansion() },
+				{
+					tui: this.ui,
+					timeout: opts?.timeout,
+					initialIndex: opts?.initialIndex,
+					onToggleToolsExpanded: () => this.toggleToolOutputExpansion(),
+				},
 			);
 
 			this.disposeActiveSelector();
