@@ -644,8 +644,8 @@
       "modelValue": "{{provider}} / {{model}}",
       "import": "Conversaciones",
       "importOpen": "Elegir cuáles…",
-      "importFound_one": "Hay {{count}} conversación de Claude Code o Codex en este equipo que puedes traer para seguirla aquí",
-      "importFound_other": "Hay {{count}} conversaciones de Claude Code o Codex en este equipo que puedes traer para seguirlas aquí",
+      "importFound_one": "Hay {{count}} conversación de Claude Code, Codex o ZCode en este equipo que puedes traer para seguirla aquí",
+      "importFound_other": "Hay {{count}} conversaciones de Claude Code, Codex o ZCode en este equipo que puedes traer para seguirlas aquí",
       "permissions": "Permisos"
     },
     "intro": {
@@ -657,6 +657,13 @@
       },
       "title": "Bienvenido a mu",
       "lead": "mu es un asistente de programación que hace el trabajo: lee tu proyecto, edita código, ejecuta comandos y pruebas, y sigue hasta terminar la tarea.",
+      "import": {
+        "title": "Trae tus conversaciones",
+        "text": "mu ha encontrado en este equipo {{count}} conversaciones con otros asistentes de programación. Impórtalas con todo su historial y sigue aquí.",
+        "text_one": "mu ha encontrado en este equipo {{count}} conversación con otro asistente de programación. Impórtala con todo su historial y sigue aquí.",
+        "text_other": "mu ha encontrado en este equipo {{count}} conversaciones con otros asistentes de programación. Impórtalas con todo su historial y sigue aquí.",
+        "open": "Elegir conversaciones…"
+      },
       "points": {
         "judge": {
           "title": "Una comprobación en cada paso",
@@ -783,7 +790,8 @@
       "other": "mu le envió un recordatorio al modelo",
       "show": "Lo que se envió",
       "hide": "Ocultar",
-      "imported": "Esta conversación se importó de Claude Code o Codex y continúa aquí; el razonamiento y las imágenes no se importaron"
+      "imported": "Esta conversación se importó de {{tool}} y continúa aquí",
+      "anotherTool": "otro asistente de programación"
     }
   },
   "errors": {
@@ -829,18 +837,19 @@
   },
   "importChats": {
     "title": "Importar conversaciones",
-    "description": "Trae a mu las conversaciones que tuviste en Claude Code o Codex en este ordenador y continúalas aquí.",
+    "description": "Trae a mu, con todo su historial, las conversaciones que tuviste en Claude Code, Codex o ZCode en este ordenador y continúalas aquí.",
     "open": "Elegir…",
     "dialog": {
       "title": "Importar conversaciones",
-      "hint": "Cada conversación que elijas se convierte en una conversación de mu en su carpeta de proyecto. mu lee todo lo que se dijo; el razonamiento y las imágenes se quedan fuera.",
+      "hint": "Cada conversación que elijas se convierte en una conversación de mu en su carpeta de proyecto, con todo su historial: mensajes, llamadas a herramientas, razonamiento e imágenes. Si la vuelves a elegir más adelante, se trae lo nuevo.",
       "search": "Buscar por palabras o carpeta",
       "loading": "Buscando conversaciones…",
-      "empty": "No se encontraron conversaciones de Claude Code ni de Codex en este ordenador.",
+      "empty": "No se encontraron conversaciones de Claude Code, Codex ni ZCode en este ordenador.",
       "noMatch": "Ninguna conversación coincide.",
       "noTitle": "(sin mensajes)",
       "folderUnknown": "Carpeta desconocida",
       "inList": "Ya está en la lista",
+      "changed": "Ha cambiado desde que se importó. Elígela para traer lo nuevo.",
       "open": "Abrir",
       "selected": "Elegidas: {{count}}",
       "import": "Importar",
@@ -850,13 +859,16 @@
     "done": "Se importaron {{count}} conversaciones. Están en tu lista de conversaciones.",
     "done_one": "Se importó {{count}} conversación. Está en tu lista de conversaciones.",
     "done_other": "Se importaron {{count}} conversaciones. Están en tu lista de conversaciones.",
+    "updated": "Se pusieron al día {{count}} conversaciones.",
+    "updated_one": "Se puso al día {{count}} conversación.",
+    "updated_other": "Se pusieron al día {{count}} conversaciones.",
     "someFailed": "No se pudieron importar {{count}} conversaciones. El motivo aparece debajo de cada una.",
     "someFailed_one": "No se pudo importar {{count}} conversación. El motivo aparece debajo.",
     "someFailed_other": "No se pudieron importar {{count}} conversaciones. El motivo aparece debajo de cada una.",
     "failure": {
       "missing": "El archivo ya no existe.",
       "notFile": "Esto no es un archivo.",
-      "notTranscript": "Esto no es una conversación de Claude Code ni de Codex.",
+      "notTranscript": "Esto no es una conversación de Claude Code, Codex ni ZCode.",
       "empty": "No contiene ningún mensaje.",
       "folderMissing": "Su carpeta de proyecto ya no existe: {{folder}}",
       "other": "No se pudo importar: {{detail}}"
@@ -864,7 +876,7 @@
     "notice": {
       "title": "Importada de {{tool}}",
       "counts": "Tus mensajes: {{user}} · respuestas: {{assistant}} · llamadas a herramientas: {{toolCalls}}",
-      "goOn": "Sigue escribiendo abajo: mu ya leyó la conversación. El razonamiento y las imágenes no se trajeron.",
+      "goOn": "Sigue escribiendo abajo: mu ya leyó la conversación.",
       "read": "Leer la conversación anterior"
     },
     "history": {
@@ -905,7 +917,7 @@
     "help": "Lo que mu puede hacer y todos los comandos que vale la pena conocer",
     "ledger": "Los últimos veredictos del juez con su duración: /ledger [n]",
     "doctor": "Comprobar que el juez, el modelo, el navegador y los subagentes están bien conectados",
-    "import-chat": "Traer a mu una conversación de Claude Code o Codex de este proyecto y continuarla: /import-chat [archivo]",
+    "import-chat": "Traer a mu una conversación de Claude Code, Codex o ZCode de este proyecto y continuarla: /import-chat [archivo]",
     "llama": "Gestionar los modelos del router de llama.cpp"
   },
   "native": {

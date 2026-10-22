@@ -30,8 +30,8 @@ mu                     # an interactive session in the current directory
 | `mu setup` | Connect a model (an API key, or a service from a list) and choose the judge. `mu setup --help` shows the forms for scripts. |
 | `mu doctor` | Check the installation, the model, the judges and the connections, and say what to fix |
 | `mu ledger [n] [--json]` | What the judge decided in the last n sessions. `--json` gives every record with its probabilities and timings. |
-| `mu import --list` | Find your Claude Code and Codex conversations |
-| `mu import <file>…` | Bring them into mu, to continue there |
+| `mu import --list` | Find your Claude Code, Codex and ZCode conversations |
+| `mu import <file>…` | Bring them into mu with their whole history, to continue there; again later, to bring over what's new |
 | `mu judge setup \| start \| stop \| status` | The local judge, Laya. `setup` asks before downloading the model. |
 | `mu link` / `mu unlink` | Put the `mu` command on your PATH (`~/.local/bin`), or remove it |
 | `mu auth status \| login <provider> \| logout <provider>` | Subscription sign-in, as used by the desktop app |
@@ -57,7 +57,7 @@ mu                     # an interactive session in the current directory
 | `/browse`, `/jobs` | The built-in browser; background commands |
 | `/capabilities`, `/ledger` | Which capabilities are installed and which are open; the latest verdicts |
 | `/inherit` | What was taken over from Claude Code, Cursor and Codex, and what wasn't |
-| `/import-chat` | Import a Claude Code or Codex conversation |
+| `/import-chat` | Import a Claude Code, Codex or ZCode conversation |
 | `/doctor` | Check the configuration and the connections |
 
 pi's own commands stay as they are: `/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export`, `/mcp` and the rest.

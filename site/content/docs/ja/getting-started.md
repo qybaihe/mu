@@ -21,7 +21,7 @@ mu には 2 つの形があります。必要なものをすべて内蔵した**
    - **モデル。** API キーを貼り付けると、mu はキーの形からサービスを見分け（DeepSeek、Kimi、Qwen、GLM、SiliconFlow、OpenRouter、OpenAI、Anthropic、Google Gemini、xAI など）、1 回のリクエストで確かめます。または ChatGPT、Claude、Grok、Google のサブスクリプションでサインインします。キーの誤り、残高不足、対応していない地域、接続できない場合には、それぞれどうすればよいかを説明します。
    - **権限。** 最初から判定モードが選ばれています。[権限と安全性](@docs/permissions)を参照してください。
    - **判定器。** キーがなければ、無料の Jev（TypeSafe がホストする判定モデル。OpenCode Zen 経由）が答えます。この設定にはいつでも戻れます。
-   - **開始。** Claude Code や Codex の会話が見つかると、インポートを提案します。
+   - **開始。** Claude Code、Codex、ZCode の会話が見つかると、インポートを提案します（ガイドの最初の画面でも提案します）。
 3. フォルダを選んで会話を始めます。
 
 ほかにインストールするものはありません。Node.js は不要で、初回起動時にも何もダウンロードしません。新しいリリースが出ると、アプリはそのバージョンとサイズを知らせ、あなたが同意してからダウンロードし、再起動時にインストールします。
@@ -43,7 +43,7 @@ mu                     # 現在のディレクトリでセッションを始め�
 | `mu "fix the failing test in src/pager.test.ts"` | プロンプトを指定して始める |
 | `mu -p "summarize this repository"` | 1 回だけ答えて終了する |
 | `mu -c` / `mu -r` | 前回のセッションを続ける / 再開するセッションを選ぶ |
-| `mu import --list` | 取り込める Claude Code と Codex の会話を探す |
+| `mu import --list` | 取り込める Claude Code、Codex、ZCode の会話を探す |
 | `mu doctor` | インストール、判定器、各接続を確認する |
 | `mu ledger 3` | 直近 3 回のセッションで判定器が下した判定 |
 

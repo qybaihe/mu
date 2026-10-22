@@ -314,8 +314,8 @@ const ChatConversation: React.FC<{
 
   const conversationNode = useMemo(() => {
     if (!conversation || isBuiltinAgentConversation) return null;
-    // A conversation made from a Claude Code or Codex transcript says so where a new one greets, then stays above its
-    // first message.
+    // A conversation made from a Claude Code, Codex or ZCode conversation says so where a new one greets, then stays
+    // above its first message.
     const imported = importMarkOf(conversation.extra);
     // Greeting shown while the conversation has no messages yet (freshly created
     // or cloned window). Each *Chat forwards it to MessageList's empty slot.

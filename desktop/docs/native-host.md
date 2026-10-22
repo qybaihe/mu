@@ -407,8 +407,8 @@ it; the renderer's part is in `docs/native-host-ui.md`.
   fork parent since (below); left: a name set in the middle of a large file (read only when the file is read afresh).
 - mu conversations in the backend already have pi session files: the adapter's record
   `<mu home>/acp-sessions/<ACP session id>.json` holds `{ cwd, file, permissions }`. Following the backend conversation →
-  its ACP session id → that record gives the file, which a native host opens with `--session`. Imported Claude Code and
-  Codex chats are pi session files as well (`mu import` writes them; `importChats.ts` keeps its records in
+  its ACP session id → that record gives the file, which a native host opens with `--session`. Imported Claude Code,
+  Codex and ZCode chats are pi session files as well (`mu import` writes them; `importChats.ts` keeps its records in
   `acp-sessions/imports/`).
 - What happens to the backend's rows needs a decision: hide the mu ones once the native list shows them, keep them read
   only for a release, or leave them. Conversations with other agents (Claude Code, Codex, Gemini over ACP) stay in

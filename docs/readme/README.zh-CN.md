@@ -264,7 +264,7 @@ mu doctor     # 检查安装、判定器和各项连接
   </picture>
 </p>
 
-需要 Node 22.19 或更新。`mu -p "提示"` 跑一次并打印；`mu -c` 接着上一个会话。`mu import --list` 找出你的 Claude Code 和 Codex 对话，`mu import <文件>` 导入。`mu ledger [n]` 打印最近 n 个会话里判定器的决定。命令行和桌面端共用账号、设置和经验。在终端里，mu 用自己的 `mu-dark` 和 `mu-light` 主题，直到你在 `/settings` 里另选一个（`system` 跟随终端的配色）。
+需要 Node 22.19 或更新。`mu -p "提示"` 跑一次并打印；`mu -c` 接着上一个会话。`mu import --list` 找出你的 Claude Code、Codex 和 ZCode 对话，`mu import <文件>` 连同完整历史一起导入；之后再导入一次，会把新增的内容带过来。`mu ledger [n]` 打印最近 n 个会话里判定器的决定。命令行和桌面端共用账号、设置和经验。在终端里，mu 用自己的 `mu-dark` 和 `mu-light` 主题，直到你在 `/settings` 里另选一个（`system` 跟随终端的配色）。
 
 | 命令 | 做什么 |
 | --- | --- |
@@ -283,7 +283,7 @@ mu doctor     # 检查安装、判定器和各项连接
 | `/agents`、`/swarm` | 派子代理；看正在干活的每一只 |
 | `/browse`、`/jobs` | 内置浏览器；后台命令 |
 | `/capabilities`、`/ledger` | 装了哪些能力、打开了哪些；最近的判定 |
-| `/import-chat` | 导入 Claude Code 或 Codex 的对话 |
+| `/import-chat` | 导入 Claude Code、Codex 或 ZCode 的对话 |
 | `/doctor` | 检查配置和连接 |
 
 pi 自己的命令（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export` 等）原样保留。`MU_JUDGE=laya,jev mu` 只为这一次运行改判定器。

@@ -21,7 +21,7 @@ mu 有两种用法：自带所需一切的**桌面端**，和 **`mu` 命令行**
    - **模型。** 粘贴一个 API key，mu 会从格式认出是哪家服务（DeepSeek、Kimi、Qwen、GLM、SiliconFlow、OpenRouter、OpenAI、Anthropic、Google Gemini、xAI 等），并用一次请求检查它。也可以用 ChatGPT、Claude、Grok 或 Google 订阅登录。密钥不对、余额为零、地区不支持或连不上网，每一种都会说明该怎么办。
    - **权限。** 默认选中「判定模式」；见[权限与安全](@docs/permissions)。
    - **判定器。** 没有密钥时，由免费的 Jev 回答（TypeSafe 托管的判定模型，经 OpenCode Zen）。之后随时可以回来改。
-   - **开始。** 如果 mu 找到 Claude Code 或 Codex 的对话，会提出帮你导入。
+   - **开始。** 如果 mu 找到 Claude Code、Codex 或 ZCode 的对话，会提出帮你导入（引导的第一屏也会提）。
 3. 选一个文件夹，开始对话。
 
 其他什么都不用装：不用 Node.js，第一次启动也不下载任何东西。有新版本时，桌面端会告诉你版本号和大小，你同意后才下载，重启时安装。
@@ -43,7 +43,7 @@ mu                     # 在当前目录开一个会话
 | `mu "fix the failing test in src/pager.test.ts"` | 带着一条提示开始 |
 | `mu -p "summarize this repository"` | 回答一次就退出 |
 | `mu -c` / `mu -r` | 接着上一个会话 / 选一个会话恢复 |
-| `mu import --list` | 找出可以导入的 Claude Code 和 Codex 对话 |
+| `mu import --list` | 找出可以导入的 Claude Code、Codex 和 ZCode 对话 |
 | `mu doctor` | 检查安装、判定器和各项连接 |
 | `mu ledger 3` | 最近三个会话里判定器做了哪些决定 |
 

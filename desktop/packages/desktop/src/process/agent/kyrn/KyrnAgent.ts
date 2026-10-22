@@ -719,8 +719,8 @@ export class KyrnAgent implements Agent {
     return { sessionId: id, configOptions };
   }
   /**
-   * The session a conversation the app made from a Claude Code or Codex transcript goes on with, until an adapter
-   * session has opened it (process/agent/kyrn/importChats.ts). The backend starts an adapter for each conversation and
+   * The session a conversation the app made from a Claude Code, Codex or ZCode conversation goes on with, until an
+   * adapter session has opened it (process/agent/kyrn/importChats.ts). The backend starts an adapter for each conversation and
    * names the conversation in the adapter's environment (`BACKEND_CONVERSATION_ID_ENV`).
    */
   private async importFor(cwd: string): Promise<{ conversationId: string; record: ImportRecord } | undefined> {

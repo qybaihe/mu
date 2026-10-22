@@ -644,8 +644,8 @@
       "modelValue": "{{provider}} / {{model}}",
       "import": "Conversations",
       "importOpen": "Choisir lesquelles…",
-      "importFound_one": "{{count}} conversation Claude Code ou Codex sur cet ordinateur peut être importée pour la poursuivre ici",
-      "importFound_other": "{{count}} conversations Claude Code ou Codex sur cet ordinateur peuvent être importées pour les poursuivre ici",
+      "importFound_one": "{{count}} conversation Claude Code, Codex ou ZCode sur cet ordinateur peut être importée pour la poursuivre ici",
+      "importFound_other": "{{count}} conversations Claude Code, Codex ou ZCode sur cet ordinateur peuvent être importées pour les poursuivre ici",
       "permissions": "Autorisations"
     },
     "intro": {
@@ -657,6 +657,13 @@
       },
       "title": "Bienvenue dans mu",
       "lead": "mu est un assistant de code qui fait le travail : il lit votre projet, modifie le code, lance des commandes et des tests, et continue jusqu’à ce que la tâche soit terminée.",
+      "import": {
+        "title": "Reprenez vos conversations",
+        "text": "mu a trouvé sur cet ordinateur {{count}} conversations menées avec d’autres assistants de code. Importez-les avec tout leur historique et continuez ici.",
+        "text_one": "mu a trouvé sur cet ordinateur {{count}} conversation menée avec un autre assistant de code. Importez-la avec tout son historique et continuez ici.",
+        "text_other": "mu a trouvé sur cet ordinateur {{count}} conversations menées avec d’autres assistants de code. Importez-les avec tout leur historique et continuez ici.",
+        "open": "Choisir des conversations…"
+      },
       "points": {
         "judge": {
           "title": "Un contrôle à chaque étape",
@@ -783,7 +790,8 @@
       "other": "mu a envoyé un rappel au modèle",
       "show": "Ce qui a été envoyé",
       "hide": "Masquer",
-      "imported": "Cette conversation a été importée de Claude Code ou Codex et continue ici ; le raisonnement et les images n'ont pas été importés"
+      "imported": "Cette conversation a été importée depuis {{tool}} et continue ici",
+      "anotherTool": "un autre assistant de code"
     }
   },
   "errors": {
@@ -829,18 +837,19 @@
   },
   "importChats": {
     "title": "Importer des conversations",
-    "description": "Faites entrer dans mu les conversations menées dans Claude Code ou Codex sur cet ordinateur, et poursuivez-les ici.",
+    "description": "Faites entrer dans mu les conversations menées dans Claude Code, Codex ou ZCode sur cet ordinateur, avec tout leur historique, et poursuivez-les ici.",
     "open": "Choisir…",
     "dialog": {
       "title": "Importer des conversations",
-      "hint": "Chaque conversation choisie devient une conversation mu dans son dossier de projet. mu lit tout ce qui a été dit ; le raisonnement et les images restent de côté.",
+      "hint": "Chaque conversation choisie devient une conversation mu dans son dossier de projet, avec tout son historique : messages, appels d’outils, raisonnement et images. Choisissez-la de nouveau plus tard pour récupérer ce qui est nouveau.",
       "search": "Rechercher par mots ou par dossier",
       "loading": "Recherche des conversations…",
-      "empty": "Aucune conversation Claude Code ou Codex n’a été trouvée sur cet ordinateur.",
+      "empty": "Aucune conversation Claude Code, Codex ou ZCode n’a été trouvée sur cet ordinateur.",
       "noMatch": "Aucune conversation ne correspond.",
       "noTitle": "(aucun message)",
       "folderUnknown": "Dossier inconnu",
       "inList": "Déjà dans la liste",
+      "changed": "Modifiée depuis l’import. Choisissez-la pour récupérer ce qui est nouveau.",
       "open": "Ouvrir",
       "selected": "Choisies : {{count}}",
       "import": "Importer",
@@ -850,13 +859,16 @@
     "done": "{{count}} conversations importées. Elles sont dans votre liste de conversations.",
     "done_one": "{{count}} conversation importée. Elle est dans votre liste de conversations.",
     "done_other": "{{count}} conversations importées. Elles sont dans votre liste de conversations.",
+    "updated": "{{count}} conversations mises à jour.",
+    "updated_one": "{{count}} conversation mise à jour.",
+    "updated_other": "{{count}} conversations mises à jour.",
     "someFailed": "{{count}} conversations n’ont pas pu être importées. La raison est indiquée sous chacune.",
     "someFailed_one": "{{count}} conversation n’a pas pu être importée. La raison est indiquée en dessous.",
     "someFailed_other": "{{count}} conversations n’ont pas pu être importées. La raison est indiquée sous chacune.",
     "failure": {
       "missing": "Le fichier n’existe plus.",
       "notFile": "Ce n’est pas un fichier.",
-      "notTranscript": "Ce n’est pas une conversation Claude Code ou Codex.",
+      "notTranscript": "Ce n’est pas une conversation Claude Code, Codex ou ZCode.",
       "empty": "Elle ne contient aucun message.",
       "folderMissing": "Son dossier de projet n’existe plus : {{folder}}",
       "other": "Import impossible : {{detail}}"
@@ -864,7 +876,7 @@
     "notice": {
       "title": "Importée depuis {{tool}}",
       "counts": "Vos messages : {{user}} · réponses : {{assistant}} · appels d’outils : {{toolCalls}}",
-      "goOn": "Continuez simplement ci-dessous : mu a lu la conversation. Le raisonnement et les images n’ont pas été repris.",
+      "goOn": "Continuez simplement ci-dessous : mu a lu la conversation.",
       "read": "Lire la conversation précédente"
     },
     "history": {
@@ -905,7 +917,7 @@
     "help": "Ce que mu sait faire et toutes les commandes utiles",
     "ledger": "Les derniers verdicts du juge avec leur durée : /ledger [n]",
     "doctor": "Vérifier que le juge, le modèle, le navigateur et les sous-agents sont bien branchés",
-    "import-chat": "Importer dans mu une conversation Claude Code ou Codex de ce projet et la poursuivre : /import-chat [fichier]",
+    "import-chat": "Importer dans mu une conversation Claude Code, Codex ou ZCode de ce projet et la poursuivre : /import-chat [fichier]",
     "llama": "Gérer les modèles du routeur llama.cpp"
   },
   "native": {

@@ -644,8 +644,8 @@
       "modelValue": "{{provider}} / {{model}}",
       "import": "对话",
       "importOpen": "选择要导入的…",
-      "importFound_one": "这台电脑上有 {{count}} 段 Claude Code 或 Codex 的对话，可以导进来接着聊",
-      "importFound_other": "这台电脑上有 {{count}} 段 Claude Code 或 Codex 的对话，可以导进来接着聊",
+      "importFound_one": "这台电脑上有 {{count}} 段 Claude Code、Codex 或 ZCode 的对话，可以导进来接着聊",
+      "importFound_other": "这台电脑上有 {{count}} 段 Claude Code、Codex 或 ZCode 的对话，可以导进来接着聊",
       "permissions": "权限方式"
     },
     "intro": {
@@ -657,6 +657,13 @@
       },
       "title": "欢迎使用 mu",
       "lead": "mu 是一个会动手的编程助手：它读你的项目、改代码、跑命令和测试，直到把事情做完。",
+      "import": {
+        "title": "把对话一起带过来",
+        "text": "mu 在这台电脑上找到了 {{count}} 段在其他编程助手里聊过的对话，可以连同全部历史导进来，在这里接着聊。",
+        "text_one": "mu 在这台电脑上找到了 {{count}} 段在其他编程助手里聊过的对话，可以连同全部历史导进来，在这里接着聊。",
+        "text_other": "mu 在这台电脑上找到了 {{count}} 段在其他编程助手里聊过的对话，可以连同全部历史导进来，在这里接着聊。",
+        "open": "选择对话…"
+      },
       "points": {
         "judge": {
           "title": "每一步都有把关",
@@ -783,7 +790,8 @@
       "other": "mu 给模型发了一条提醒",
       "show": "查看原文",
       "hide": "收起",
-      "imported": "这段对话是从 Claude Code 或 Codex 导入的，在这里接着聊；思考过程和图片没有导入"
+      "imported": "这段对话是从 {{tool}} 导入的，在这里接着聊",
+      "anotherTool": "另一个编程助手"
     }
   },
   "errors": {
@@ -829,18 +837,19 @@
   },
   "importChats": {
     "title": "导入对话",
-    "description": "把这台电脑上在 Claude Code 或 Codex 里聊过的对话带进 mu，在这里接着聊。",
+    "description": "把这台电脑上在 Claude Code、Codex 或 ZCode 里聊过的对话连同全部历史带进 mu，在这里接着聊。",
     "open": "选择对话",
     "dialog": {
       "title": "导入对话",
-      "hint": "选中的每段对话都会变成 mu 里的一个对话，放在原来的项目文件夹下。mu 会读到之前说过的全部内容，思考过程和图片不会带过来。",
+      "hint": "选中的每段对话都会变成 mu 里的一个对话，放在原来的项目文件夹下，并带上全部历史：消息、工具调用、思考过程和图片。以后再选一次，就能把新增的内容带过来。",
       "search": "按内容或文件夹搜索",
       "loading": "正在找对话…",
-      "empty": "这台电脑上没有找到 Claude Code 或 Codex 的对话。",
+      "empty": "这台电脑上没有找到 Claude Code、Codex 或 ZCode 的对话。",
       "noMatch": "没有符合的对话。",
       "noTitle": "（没有消息）",
       "folderUnknown": "不知道在哪个文件夹",
       "inList": "已在对话列表里",
+      "changed": "导入之后有了变化，选中它就能把新内容带过来。",
       "open": "打开",
       "selected": "已选 {{count}} 段",
       "import": "导入",
@@ -850,13 +859,16 @@
     "done": "已导入 {{count}} 段对话，可以在对话列表里找到。",
     "done_one": "已导入 {{count}} 段对话，可以在对话列表里找到。",
     "done_other": "已导入 {{count}} 段对话，可以在对话列表里找到。",
+    "updated": "已把 {{count}} 段对话更新到最新。",
+    "updated_one": "已把 {{count}} 段对话更新到最新。",
+    "updated_other": "已把 {{count}} 段对话更新到最新。",
     "someFailed": "有 {{count}} 段对话没能导入，原因写在它下面。",
     "someFailed_one": "有 {{count}} 段对话没能导入，原因写在它下面。",
     "someFailed_other": "有 {{count}} 段对话没能导入，原因写在它下面。",
     "failure": {
       "missing": "文件已经不在了。",
       "notFile": "这不是一个文件。",
-      "notTranscript": "这不是 Claude Code 或 Codex 的对话。",
+      "notTranscript": "这不是 Claude Code、Codex 或 ZCode 的对话。",
       "empty": "里面没有消息。",
       "folderMissing": "它的项目文件夹已经不在了：{{folder}}",
       "other": "没能导入：{{detail}}"
@@ -864,7 +876,7 @@
     "notice": {
       "title": "从 {{tool}} 导入的对话",
       "counts": "你的消息 {{user}} 条 · 回答 {{assistant}} 条 · 工具调用 {{toolCalls}} 次",
-      "goOn": "在下面接着说就行，之前的内容 mu 都读过了。思考过程和图片没有带过来。",
+      "goOn": "在下面接着说就行，之前的内容 mu 都读过了。",
       "read": "查看之前的对话"
     },
     "history": {
@@ -905,7 +917,7 @@
     "help": "mu 能做什么，以及常用命令一览",
     "ledger": "判定器最近的判定和用时：/ledger [条数]",
     "doctor": "检查判定器、模型、浏览器和子代理有没有接好",
-    "import-chat": "导入这个项目在 Claude Code 或 Codex 里的对话，接着在这里聊：/import-chat [文件]",
+    "import-chat": "导入这个项目在 Claude Code、Codex 或 ZCode 里的对话，接着在这里聊：/import-chat [文件]",
     "llama": "管理 llama.cpp 路由器上的模型"
   },
   "native": {

@@ -319,7 +319,7 @@ mu doctor     # check the installation, the judges and the connections
   </picture>
 </p>
 
-Requires Node.js 22.19 or newer. `mu -p "prompt"` runs a single prompt and prints the answer; `mu -c` continues the last session. `mu import --list` finds your Claude Code and Codex conversations, and `mu import <file>` brings one in. `mu ledger [n]` prints what the judge decided in the last n sessions. The command line and the desktop app share accounts, settings and lessons. In the terminal, mu uses its own `mu-dark` and `mu-light` themes until you choose one in `/settings` (`system` follows your terminal's palette).
+Requires Node.js 22.19 or newer. `mu -p "prompt"` runs a single prompt and prints the answer; `mu -c` continues the last session. `mu import --list` finds your Claude Code, Codex and ZCode conversations, and `mu import <file>` brings one in with its whole history; importing it again later brings over what's new. `mu ledger [n]` prints what the judge decided in the last n sessions. The command line and the desktop app share accounts, settings and lessons. In the terminal, mu uses its own `mu-dark` and `mu-light` themes until you choose one in `/settings` (`system` follows your terminal's palette).
 
 | Command | What it does |
 | --- | --- |
@@ -338,7 +338,7 @@ Requires Node.js 22.19 or newer. `mu -p "prompt"` runs a single prompt and print
 | `/agents`, `/swarm` | List subagent roles; watch running subagents |
 | `/browse`, `/jobs` | Open the built-in browser; list background jobs |
 | `/capabilities`, `/ledger` | Show installed capabilities and which are turned on; show the latest verdicts |
-| `/import-chat` | Import a Claude Code or Codex conversation |
+| `/import-chat` | Import a Claude Code, Codex or ZCode conversation |
 | `/doctor` | Check the setup and the connections |
 
 pi's own commands (`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export` and the rest) work as they do in pi. `MU_JUDGE=laya,jev mu` overrides the judges for a single run.

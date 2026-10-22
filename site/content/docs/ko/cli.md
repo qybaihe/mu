@@ -30,8 +30,8 @@ mu                     # 현재 디렉터리에서 대화형 세션 시작
 | `mu setup` | 모델 연결(API 키, 또는 목록에서 고른 서비스)과 판정기 선택. `mu setup --help`는 스크립트용 형식을 보여 줘요. |
 | `mu doctor` | 설치, 모델, 판정기, 연결 상태를 점검하고 무엇을 고칠지 알려 줌 |
 | `mu ledger [n] [--json]` | 최근 n개 세션에서 판정기가 내린 판정. `--json`은 모든 기록을 확률, 소요 시간과 함께 내보내요. |
-| `mu import --list` | Claude Code와 Codex 대화 찾기 |
-| `mu import <file>…` | 그 대화를 mu로 가져와 이어 가기 |
+| `mu import --list` | Claude Code, Codex, ZCode 대화 찾기 |
+| `mu import <file>…` | 그 대화를 기록 전체와 함께 mu로 가져와 이어 가기. 나중에 다시 하면 새로 생긴 내용이 더해져요 |
 | `mu judge setup \| start \| stop \| status` | 로컬 판정기 Laya. `setup`은 모델을 내려받기 전에 물어요. |
 | `mu link` / `mu unlink` | `mu` 명령을 PATH(`~/.local/bin`)에 넣거나 빼기 |
 | `mu auth status \| login <provider> \| logout <provider>` | 데스크톱 앱이 쓰는 구독 로그인 |
@@ -57,7 +57,7 @@ mu                     # 현재 디렉터리에서 대화형 세션 시작
 | `/browse`, `/jobs` | 내장 브라우저, 백그라운드 명령 |
 | `/capabilities`, `/ledger` | 설치된 기능 확장과 그중 열린 것, 최근 판정 |
 | `/inherit` | Claude Code, Cursor, Codex에서 물려받은 것과 물려받지 않은 것 |
-| `/import-chat` | Claude Code 또는 Codex 대화 가져오기 |
+| `/import-chat` | Claude Code, Codex 또는 ZCode 대화 가져오기 |
 | `/doctor` | 설정과 연결 점검하기 |
 
 pi의 자체 명령어는 그대로예요: `/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export`, `/mcp` 등.

@@ -255,6 +255,17 @@ describe('the native send box’s model, thinking level and permission mode', ()
     expect(chip()).toHaveTextContent('Choose a model');
   });
 
+  it('goes on with mu’s default model in a conversation imported from another tool, not the tool’s', async () => {
+    const host = createFakeHost();
+    const imported = { api: 'claude-code', provider: 'claude-code', model: 'claude-opus-4-5' };
+    host.add({ id: 'c1' }, reduceAll([ended(user('hi')), ended(reply([text('hello')], imported))]));
+    await mount(host);
+    expect(chip()).toHaveAttribute('data-model', '');
+    expect(chip()).toHaveAttribute('data-source', 'none');
+    expect(chip()).toHaveTextContent('Default model');
+    expect(commands(host)).toEqual([]);
+  });
+
   it('lists pi’s models when the chip opens, and switches the model, then the level the person picked', async () => {
     const host = createFakeHost();
     host.add({ id: 'c1' });

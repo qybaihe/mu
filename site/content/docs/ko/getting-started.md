@@ -21,7 +21,7 @@ mu는 두 가지로 쓸 수 있어요. 필요한 것을 모두 담은 **데스�
    - **모델.** API 키를 붙여 넣으면 mu가 키의 형식으로 서비스를 알아보고(DeepSeek, Kimi, Qwen, GLM, SiliconFlow, OpenRouter, OpenAI, Anthropic, Google Gemini, xAI 등) 요청 하나로 확인해요. ChatGPT, Claude, Grok, Google 구독으로 로그인할 수도 있어요. 키가 틀렸거나, 잔액이 없거나, 지원하지 않는 지역이거나, 연결이 안 되면 각각 어떻게 하면 되는지 알려 줘요.
    - **권한.** *판정 모드*가 미리 선택되어 있어요. [권한과 안전](@docs/permissions)을 보세요.
    - **판정기.** 키가 없으면 OpenCode Zen을 통해 무료 Jev(TypeSafe가 호스팅하는 판정 모델)가 답해요. 언제든 다시 와서 바꿀 수 있어요.
-   - **시작.** mu가 Claude Code나 Codex 대화를 찾으면 가져오기를 제안해요.
+   - **시작.** mu가 Claude Code, Codex, ZCode 대화를 찾으면 가져오기를 제안해요(가이드 첫 화면에서도 제안해요).
 3. 폴더를 고르고 대화를 시작하세요.
 
 따로 설치할 것은 없어요. Node.js도 필요 없고, 처음 시작할 때 아무것도 내려받지 않아요. 새 릴리스가 나오면 앱이 그 버전과 크기를 알려 주고, 여러분이 동의한 뒤에만 내려받고, 다시 시작할 때 설치해요.
@@ -43,7 +43,7 @@ mu                     # 현재 디렉터리에서 세션 시작
 | `mu "fix the failing test in src/pager.test.ts"` | 프롬프트와 함께 시작 |
 | `mu -p "summarize this repository"` | 한 번 답하고 종료 |
 | `mu -c` / `mu -r` | 마지막 세션 이어 가기 / 이어 갈 세션 고르기 |
-| `mu import --list` | 가져올 Claude Code와 Codex 대화 찾기 |
+| `mu import --list` | 가져올 Claude Code, Codex, ZCode 대화 찾기 |
 | `mu doctor` | 설치, 판정기, 연결 상태 점검 |
 | `mu ledger 3` | 최근 세션 3개에서 판정기가 내린 판정 |
 

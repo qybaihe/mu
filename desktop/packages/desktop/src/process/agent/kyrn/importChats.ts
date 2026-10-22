@@ -1,5 +1,5 @@
 /**
- * Bringing Claude Code and Codex conversations into the app (see common/kyrn/importChats.ts).
+ * Bringing Claude Code, Codex and ZCode conversations into the app (see common/kyrn/importChats.ts).
  *
  * The harness does the reading and the writing: `mu import --list --json` finds the transcripts on this computer and
  * `mu import --json <file>…` writes each one as a mu session. This module runs that command the way the app runs mu
@@ -164,6 +164,7 @@ export function parseFound(value: unknown): FoundChat | undefined {
     modified: text(row.modified),
     size: typeof row.size === 'number' && Number.isFinite(row.size) ? row.size : 0,
     ...(importedAs ? { importedAs } : {}),
+    ...(importedAs && row.changed === true ? { changed: true as const } : {}),
   };
 }
 
@@ -171,6 +172,8 @@ export function parseFound(value: unknown): FoundChat | undefined {
 const HARNESS_FAILURES: Record<string, ImportFailure> = {
   'no such file': 'missing',
   'not a file': 'notFile',
+  'not a Claude Code, Codex or ZCode transcript': 'notTranscript',
+  // As a mu from before ZCode said it.
   'not a Claude Code or Codex transcript': 'notTranscript',
   'no messages in this transcript': 'empty',
 };
@@ -540,9 +543,11 @@ export function importService(deps: ImportServiceDeps): ImportService {
       return { status: 'failed', source, reason: 'other', detail: `mu import wrote no session at ${file}` };
     if (!folder.exists(session.cwd)) return { status: 'failed', source, reason: 'folderMissing', detail: session.cwd };
     const name = session.name || IMPORT_TOOL_NAMES[session.tool];
-    return result.status === 'already-imported'
-      ? { status: 'listed', source, conversationId: session.id, name, native: true }
-      : { status: 'imported', source, tool: session.tool, conversationId: session.id, name, native: true };
+    if (result.status === 'already-imported')
+      return { status: 'listed', source, conversationId: session.id, name, native: true };
+    // Brought up to date in place: the same session, so the same conversation.
+    const status = result.status === 'updated' ? 'updated' : 'imported';
+    return { status, source, tool: session.tool, conversationId: session.id, name, native: true };
   };
 
   const run = async (paths: string[], locale: string, native = false): Promise<ImportOutcome[]> => {
@@ -583,7 +588,13 @@ export function importService(deps: ImportServiceDeps): ImportService {
         // eslint-disable-next-line no-await-in-loop
         const held = await holder.find(file);
         if (held) {
-          outcomes.push({ status: 'listed', source, ...held });
+          // A session brought up to date in place stays with the conversation that holds it.
+          const tool = isImportTool(result.tool) ? result.tool : undefined;
+          outcomes.push(
+            result.status === 'updated' && tool
+              ? { status: 'updated', source, tool, ...held }
+              : { status: 'listed', source, ...held }
+          );
           continue;
         }
         // eslint-disable-next-line no-await-in-loop

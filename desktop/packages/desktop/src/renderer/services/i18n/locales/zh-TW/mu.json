@@ -644,8 +644,8 @@
       "modelValue": "{{provider}} / {{model}}",
       "import": "對話",
       "importOpen": "選擇要匯入的…",
-      "importFound_one": "這台電腦上有 {{count}} 段 Claude Code 或 Codex 的對話，可以匯入後接著聊",
-      "importFound_other": "這台電腦上有 {{count}} 段 Claude Code 或 Codex 的對話，可以匯入後接著聊",
+      "importFound_one": "這台電腦上有 {{count}} 段 Claude Code、Codex 或 ZCode 的對話，可以匯入後接著聊",
+      "importFound_other": "這台電腦上有 {{count}} 段 Claude Code、Codex 或 ZCode 的對話，可以匯入後接著聊",
       "permissions": "權限方式"
     },
     "intro": {
@@ -657,6 +657,13 @@
       },
       "title": "歡迎使用 mu",
       "lead": "mu 是一個會動手的程式助手：它讀你的專案、改程式碼、跑指令和測試，直到把事情做完。",
+      "import": {
+        "title": "把對話一起帶過來",
+        "text": "mu 在這台電腦上找到了 {{count}} 段在其他程式助手裡聊過的對話，可以連同全部歷史匯入，在這裡接著聊。",
+        "text_one": "mu 在這台電腦上找到了 {{count}} 段在其他程式助手裡聊過的對話，可以連同全部歷史匯入，在這裡接著聊。",
+        "text_other": "mu 在這台電腦上找到了 {{count}} 段在其他程式助手裡聊過的對話，可以連同全部歷史匯入，在這裡接著聊。",
+        "open": "選擇對話…"
+      },
       "points": {
         "judge": {
           "title": "每一步都有把關",
@@ -783,7 +790,8 @@
       "other": "mu 給模型發了一則提醒",
       "show": "查看原文",
       "hide": "收起",
-      "imported": "這段對話是從 Claude Code 或 Codex 匯入的，在這裡接著聊；思考過程和圖片沒有匯入"
+      "imported": "這段對話是從 {{tool}} 匯入的，在這裡接著聊",
+      "anotherTool": "另一個程式助手"
     }
   },
   "errors": {
@@ -829,18 +837,19 @@
   },
   "importChats": {
     "title": "匯入對話",
-    "description": "把這台電腦上在 Claude Code 或 Codex 裡聊過的對話帶進 mu，在這裡接著聊。",
+    "description": "把這台電腦上在 Claude Code、Codex 或 ZCode 裡聊過的對話連同全部歷史帶進 mu，在這裡接著聊。",
     "open": "選擇對話",
     "dialog": {
       "title": "匯入對話",
-      "hint": "選取的每段對話都會變成 mu 裡的一個對話，放在原本的專案資料夾下。mu 會讀到之前說過的全部內容，思考過程和圖片不會帶過來。",
+      "hint": "選取的每段對話都會變成 mu 裡的一個對話，放在原本的專案資料夾下，並帶上全部歷史：訊息、工具呼叫、思考過程和圖片。之後再選一次，就能把新增的內容帶過來。",
       "search": "依內容或資料夾搜尋",
       "loading": "正在尋找對話…",
-      "empty": "這台電腦上沒有找到 Claude Code 或 Codex 的對話。",
+      "empty": "這台電腦上沒有找到 Claude Code、Codex 或 ZCode 的對話。",
       "noMatch": "沒有符合的對話。",
       "noTitle": "（沒有訊息）",
       "folderUnknown": "不知道在哪個資料夾",
       "inList": "已在對話列表裡",
+      "changed": "匯入之後有了變化，選取它就能把新內容帶過來。",
       "open": "開啟",
       "selected": "已選 {{count}} 段",
       "import": "匯入",
@@ -850,13 +859,16 @@
     "done": "已匯入 {{count}} 段對話，可以在對話列表裡找到。",
     "done_one": "已匯入 {{count}} 段對話，可以在對話列表裡找到。",
     "done_other": "已匯入 {{count}} 段對話，可以在對話列表裡找到。",
+    "updated": "已把 {{count}} 段對話更新到最新。",
+    "updated_one": "已把 {{count}} 段對話更新到最新。",
+    "updated_other": "已把 {{count}} 段對話更新到最新。",
     "someFailed": "有 {{count}} 段對話沒能匯入，原因寫在它下面。",
     "someFailed_one": "有 {{count}} 段對話沒能匯入，原因寫在它下面。",
     "someFailed_other": "有 {{count}} 段對話沒能匯入，原因寫在它下面。",
     "failure": {
       "missing": "檔案已經不在了。",
       "notFile": "這不是一個檔案。",
-      "notTranscript": "這不是 Claude Code 或 Codex 的對話。",
+      "notTranscript": "這不是 Claude Code、Codex 或 ZCode 的對話。",
       "empty": "裡面沒有訊息。",
       "folderMissing": "它的專案資料夾已經不在了：{{folder}}",
       "other": "沒能匯入：{{detail}}"
@@ -864,7 +876,7 @@
     "notice": {
       "title": "從 {{tool}} 匯入的對話",
       "counts": "你的訊息 {{user}} 則 · 回答 {{assistant}} 則 · 工具呼叫 {{toolCalls}} 次",
-      "goOn": "在下面接著說就好，之前的內容 mu 都讀過了。思考過程和圖片沒有帶過來。",
+      "goOn": "在下面接著說就好，之前的內容 mu 都讀過了。",
       "read": "查看之前的對話"
     },
     "history": {
@@ -905,7 +917,7 @@
     "help": "mu 能做什麼，以及常用指令一覽",
     "ledger": "判定器最近的判定和用時：/ledger [筆數]",
     "doctor": "檢查判定器、模型、瀏覽器和子代理有沒有接好",
-    "import-chat": "匯入這個專案在 Claude Code 或 Codex 裡的對話，接著在這裡聊：/import-chat [檔案]",
+    "import-chat": "匯入這個專案在 Claude Code、Codex 或 ZCode 裡的對話，接著在這裡聊：/import-chat [檔案]",
     "llama": "管理 llama.cpp 路由器上的模型"
   },
   "native": {

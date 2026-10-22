@@ -58,7 +58,7 @@ Google 的这两种登录，是 Google 给自家工具用的登录。从别的�
 
 ## 导入对话 {#import}
 
-Claude Code 和 Codex CLI 的对话可以导入 mu 并接着聊。新手引导发现这些对话时会提出导入；命令行用 `mu import --list` 和 `mu import <file>`。
+Claude Code、Codex CLI 和 ZCode 的对话可以连同完整历史导入 mu 并接着聊：消息、工具调用、思考过程和图片都在。新手引导发现这些对话时，会在第一屏用各个应用的图标提出导入，设置里也能导入。同一段对话再导入一次，会把之后新增的内容带过来。命令行用 `mu import --list` 和 `mu import <file>`。
 
 ## 更新、网络代理和日志 {#updates}
 

@@ -2,7 +2,7 @@
  * Reading JSON-lines transcripts that can be very large: a Codex rollout reaches gigabytes (screenshots inline as
  * base64), a single line tens of megabytes. Only node: built-ins here, so that `mu import` runs on a bare Node.
  */
-import { closeSync, createReadStream, openSync, readSync } from "node:fs";
+import { closeSync, createReadStream, fstatSync, openSync, readSync } from "node:fs";
 
 /** One line of a transcript: the parsed value, or why there is none. */
 export type JsonLine = { value: unknown; bytes: number } | { problem: "malformed" | "oversized"; bytes: number };
@@ -92,6 +92,32 @@ export function readHead(path: string, visit: (value: unknown) => boolean, limit
 			}
 			pending = pending.subarray(start);
 		}
+	} finally {
+		closeSync(fd);
+	}
+}
+
+/** The last lines of a file, for a listing: each whole line in the last `limit` bytes, parsed, in order. */
+export function readTail(path: string, limit = 256 * 1024): unknown[] {
+	const fd = openSync(path, "r");
+	try {
+		const size = fstatSync(fd).size;
+		const start = Math.max(0, size - limit);
+		const buffer = Buffer.allocUnsafe(size - start);
+		const count = readSync(fd, buffer, 0, buffer.length, start);
+		let text = buffer.subarray(0, count);
+		// The first line is cut unless the read began at the start of the file or of a line.
+		if (start > 0) {
+			const newline = text.indexOf(10);
+			text = newline === -1 ? Buffer.alloc(0) : text.subarray(newline + 1);
+		}
+		const values: unknown[] = [];
+		for (const line of text.toString("utf8").split("\n")) {
+			if (!line.trim()) continue;
+			const parsed = parse(Buffer.from(line));
+			if ("value" in parsed) values.push(parsed.value);
+		}
+		return values;
 	} finally {
 		closeSync(fd);
 	}

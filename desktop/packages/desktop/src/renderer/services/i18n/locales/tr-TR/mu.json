@@ -644,8 +644,8 @@
       "modelValue": "{{provider}} / {{model}}",
       "import": "Sohbetler",
       "importOpen": "Seç…",
-      "importFound_one": "Bu bilgisayarda burada sürdürmek için içe aktarılabilecek {{count}} Claude Code veya Codex sohbeti var",
-      "importFound_other": "Bu bilgisayarda burada sürdürmek için içe aktarılabilecek {{count}} Claude Code veya Codex sohbeti var",
+      "importFound_one": "Bu bilgisayarda burada sürdürmek için içe aktarılabilecek {{count}} Claude Code, Codex veya ZCode sohbeti var",
+      "importFound_other": "Bu bilgisayarda burada sürdürmek için içe aktarılabilecek {{count}} Claude Code, Codex veya ZCode sohbeti var",
       "permissions": "İzinler"
     },
     "intro": {
@@ -657,6 +657,13 @@
       },
       "title": "mu'ya hoş geldiniz",
       "lead": "mu işi kendisi yapan bir kodlama asistanıdır: projenizi okur, kodu düzenler, komutları ve testleri çalıştırır, iş bitene kadar devam eder.",
+      "import": {
+        "title": "Sohbetlerinizi de getirin",
+        "text": "mu bu bilgisayarda başka kodlama asistanlarıyla yapılmış {{count}} sohbet buldu. Tüm geçmişleriyle içe aktarın ve burada devam edin.",
+        "text_one": "mu bu bilgisayarda başka bir kodlama asistanıyla yapılmış {{count}} sohbet buldu. Tüm geçmişiyle içe aktarın ve burada devam edin.",
+        "text_other": "mu bu bilgisayarda başka kodlama asistanlarıyla yapılmış {{count}} sohbet buldu. Tüm geçmişleriyle içe aktarın ve burada devam edin.",
+        "open": "Sohbetleri seç…"
+      },
       "points": {
         "judge": {
           "title": "Her adımda bir kontrol",
@@ -783,7 +790,8 @@
       "other": "mu modele bir hatırlatma gönderdi",
       "show": "Gönderilen metin",
       "hide": "Gizle",
-      "imported": "Bu sohbet Claude Code veya Codex’ten içe aktarıldı ve burada devam ediyor; düşünme adımları ve görseller aktarılmadı"
+      "imported": "{{tool}} ile yapılan bu sohbet içe aktarıldı ve burada devam ediyor",
+      "anotherTool": "başka bir kodlama asistanı"
     }
   },
   "errors": {
@@ -829,18 +837,19 @@
   },
   "importChats": {
     "title": "Konuşmaları içe aktar",
-    "description": "Bu bilgisayarda Claude Code veya Codex ile yaptığınız konuşmaları mu’ya getirin ve burada sürdürün.",
+    "description": "Bu bilgisayarda Claude Code, Codex veya ZCode ile yaptığınız konuşmaları tüm geçmişleriyle mu’ya getirin ve burada sürdürün.",
     "open": "Seç…",
     "dialog": {
       "title": "Konuşmaları içe aktar",
-      "hint": "Seçtiğiniz her konuşma, kendi proje klasöründe bir mu konuşması olur. mu söylenen her şeyi okur; düşünme adımları ve görseller aktarılmaz.",
+      "hint": "Seçtiğiniz her konuşma, tüm geçmişiyle birlikte kendi proje klasöründe bir mu konuşması olur: mesajlar, araç çağrıları, düşünme adımları ve görseller. Yeni eklenenleri getirmek için daha sonra yeniden seçebilirsiniz.",
       "search": "Sözcüğe veya klasöre göre ara",
       "loading": "Konuşmalar aranıyor…",
-      "empty": "Bu bilgisayarda Claude Code veya Codex konuşması bulunamadı.",
+      "empty": "Bu bilgisayarda Claude Code, Codex veya ZCode konuşması bulunamadı.",
       "noMatch": "Eşleşen konuşma yok.",
       "noTitle": "(mesaj yok)",
       "folderUnknown": "Klasör bilinmiyor",
       "inList": "Listenizde",
+      "changed": "İçe aktarıldıktan sonra değişti. Yeni eklenenleri getirmek için seçin.",
       "open": "Aç",
       "selected": "Seçilen: {{count}}",
       "import": "İçe aktar",
@@ -850,13 +859,16 @@
     "done": "{{count}} konuşma içe aktarıldı. Konuşma listenizdeler.",
     "done_one": "{{count}} konuşma içe aktarıldı. Konuşma listenizde.",
     "done_other": "{{count}} konuşma içe aktarıldı. Konuşma listenizdeler.",
+    "updated": "{{count}} konuşma güncellendi.",
+    "updated_one": "{{count}} konuşma güncellendi.",
+    "updated_other": "{{count}} konuşma güncellendi.",
     "someFailed": "{{count}} konuşma içe aktarılamadı. Nedeni her birinin altında yazıyor.",
     "someFailed_one": "{{count}} konuşma içe aktarılamadı. Nedeni altında yazıyor.",
     "someFailed_other": "{{count}} konuşma içe aktarılamadı. Nedeni her birinin altında yazıyor.",
     "failure": {
       "missing": "Dosya artık yok.",
       "notFile": "Bu bir dosya değil.",
-      "notTranscript": "Bu bir Claude Code veya Codex konuşması değil.",
+      "notTranscript": "Bu bir Claude Code, Codex veya ZCode konuşması değil.",
       "empty": "İçinde hiç mesaj yok.",
       "folderMissing": "Proje klasörü artık yok: {{folder}}",
       "other": "İçe aktarılamadı: {{detail}}"
@@ -864,7 +876,7 @@
     "notice": {
       "title": "İçe aktarılan konuşma · {{tool}}",
       "counts": "Mesajlarınız: {{user}} · yanıtlar: {{assistant}} · araç çağrıları: {{toolCalls}}",
-      "goOn": "Aşağıda devam etmeniz yeterli: mu konuşmayı okudu. Düşünme adımları ve görseller aktarılmadı.",
+      "goOn": "Aşağıda devam etmeniz yeterli: mu konuşmayı okudu.",
       "read": "Önceki konuşmayı oku"
     },
     "history": {
@@ -905,7 +917,7 @@
     "help": "mu’nun neler yapabildiği ve bilinmeye değer tüm komutlar",
     "ledger": "Hakemin son kararları ve süreleri: /ledger [n]",
     "doctor": "Hakemin, modelin, tarayıcının ve alt ajanların bağlı olup olmadığını denetler",
-    "import-chat": "Bu projenin Claude Code ya da Codex konuşmasını mu’ya getirip sürdürür: /import-chat [dosya]",
+    "import-chat": "Bu projenin Claude Code, Codex ya da ZCode konuşmasını mu’ya getirip sürdürür: /import-chat [dosya]",
     "llama": "llama.cpp yönlendiricisinin modellerini yönetir"
   },
   "native": {

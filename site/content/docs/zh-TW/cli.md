@@ -30,8 +30,8 @@ mu                     # 在目前目錄開啟一個互動式工作階段
 | `mu setup` | 接上一個模型（一組 API 金鑰，或從清單裡選一個服務），並選擇判定器。`mu setup --help` 列出指令碼用的形式。 |
 | `mu doctor` | 檢查安裝、模型、判定器和各項連線，並告訴你要修什麼 |
 | `mu ledger [n] [--json]` | 最近 n 個工作階段裡判定器做了哪些決定。`--json` 給出每筆紀錄及其機率和耗時。 |
-| `mu import --list` | 找出你的 Claude Code 和 Codex 對話 |
-| `mu import <file>…` | 把它們匯入 mu，在這裡接著聊 |
+| `mu import --list` | 找出你的 Claude Code、Codex 和 ZCode 對話 |
+| `mu import <file>…` | 把它們連同完整歷史匯入 mu，在這裡接著聊；之後再執行一次會帶來新增的內容 |
 | `mu judge setup \| start \| stop \| status` | 本機判定器 Laya。`setup` 下載模型前會先問你。 |
 | `mu link` / `mu unlink` | 把 `mu` 指令放進 PATH（`~/.local/bin`），或移除 |
 | `mu auth status \| login <provider> \| logout <provider>` | 訂閱登入，和桌面版用的一樣 |
@@ -57,7 +57,7 @@ mu                     # 在目前目錄開啟一個互動式工作階段
 | `/browse`、`/jobs` | 內建瀏覽器；背景指令 |
 | `/capabilities`、`/ledger` | 裝了哪些能力、開啟了哪些；最近的判定 |
 | `/inherit` | 從 Claude Code、Cursor 和 Codex 沿用了什麼，沒沿用什麼 |
-| `/import-chat` | 匯入 Claude Code 或 Codex 的對話 |
+| `/import-chat` | 匯入 Claude Code、Codex 或 ZCode 的對話 |
 | `/doctor` | 檢查設定和連線 |
 
 pi 自己的指令原樣保留：`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export`、`/mcp` 等等。

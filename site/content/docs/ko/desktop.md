@@ -58,7 +58,7 @@ Google의 두 로그인은 Google이 자사 도구용으로 만든 로그인이�
 
 ## 대화 가져오기 {#import}
 
-Claude Code와 Codex CLI의 대화는 가져와서 mu에서 이어 갈 수 있어요. 설정 가이드는 그런 대화를 찾으면 가져오기를 제안하고, 명령줄에서는 `mu import --list`와 `mu import <file>`로 해요.
+Claude Code, Codex CLI, ZCode의 대화는 메시지, 도구 호출, 생각, 이미지까지 기록 전체를 가져와서 mu에서 이어 갈 수 있어요. 설정 가이드는 그런 대화를 찾으면 첫 화면에서 각 앱의 아이콘과 함께 가져오기를 제안하고, 설정에서도 할 수 있어요. 같은 대화를 다시 가져오면 그 뒤에 새로 생긴 내용이 더해져요. 명령줄에서는 `mu import --list`와 `mu import <file>`로 해요.
 
 ## 업데이트, 프록시, 로그 {#updates}
 

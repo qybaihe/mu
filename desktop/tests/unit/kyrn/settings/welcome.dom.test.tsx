@@ -451,7 +451,45 @@ describe('the first-run guide', () => {
     expect(screen.queryByText(/Invalid credential/)).not.toBeInTheDocument();
   });
 
-  it('offers, at the end, the Claude Code and Codex conversations not brought in yet, and stays on the guide', async () => {
+  it('offers, on the first screen, the conversations of other coding agents under their marks', async () => {
+    const chat = { cwd: '/work', title: 'Fix it', modified: '2026-10-01T00:00:00Z', size: 10 };
+    bridge.importList.mockResolvedValue({
+      ok: true,
+      data: {
+        conversations: [
+          { ...chat, tool: 'claude-code', path: '/t/a.jsonl' },
+          { ...chat, tool: 'claude-code', path: '/t/b.jsonl' },
+          { ...chat, tool: 'zcode', path: '/z/db.sqlite#sess_1' },
+          // In the app already, nothing new: not counted. Changed since: counted, to bring it up to date.
+          { ...chat, tool: 'codex', path: '/t/c.jsonl', importedAs: '/s/c.jsonl', conversationId: 's-c', native: true },
+          {
+            ...chat,
+            tool: 'codex',
+            path: '/t/d.jsonl',
+            importedAs: '/s/d.jsonl',
+            conversationId: 's-d',
+            native: true,
+            changed: true,
+          },
+        ],
+      },
+    });
+    at('/welcome', <Welcome />);
+    const offer = await screen.findByTestId('mu-welcome-intro-import');
+    expect(offer).toHaveTextContent('mu found 4 conversations from other coding agents on this computer');
+    const sources = within(offer).getByTestId('import-sources');
+    expect([...sources.querySelectorAll('li')].map((li) => [li.dataset.tool, li.textContent])).toEqual([
+      ['claude-code', 'Claude Code2'],
+      ['codex', 'Codex1'],
+      ['zcode', 'ZCode1'],
+    ]);
+    fireEvent.click(within(offer).getByTestId('mu-welcome-intro-import-open'));
+    expect(await screen.findByTestId('import-chats-start')).toBeInTheDocument();
+    // Still on the first screen of the guide.
+    expect(screen.getByTestId('mu-welcome-step-intro')).toBeInTheDocument();
+  });
+
+  it('offers, at the end, the conversations not brought in yet, and stays on the guide', async () => {
     const chat = { tool: 'claude-code', cwd: '/work', title: 'Fix it', modified: '2026-10-01T00:00:00Z', size: 10 };
     bridge.importList.mockResolvedValue({
       ok: true,
@@ -467,7 +505,9 @@ describe('the first-run guide', () => {
     fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
     fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
     fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
-    expect(await screen.findByTestId('mu-welcome-import')).toHaveTextContent('2 Claude Code or Codex conversations');
+    expect(await screen.findByTestId('mu-welcome-import')).toHaveTextContent(
+      '2 Claude Code, Codex or ZCode conversations'
+    );
     fireEvent.click(screen.getByTestId('mu-welcome-import-open'));
     expect(await screen.findByTestId('import-chats-start')).toBeInTheDocument();
     // A conversation imported before has no way out of the guide here.

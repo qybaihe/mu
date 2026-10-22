@@ -36,7 +36,7 @@ Some things to try:
 | `mu "fix the failing test in src/pager.test.ts"` | Start with a prompt |
 | `mu -p "summarize this repository"` | Answer once and exit |
 | `mu -c` / `mu -r` | Continue the last session / pick one to resume |
-| `mu import --list` | Find Claude Code and Codex conversations to bring in |
+| `mu import --list` | Find Claude Code, Codex and ZCode conversations to bring in |
 | `mu doctor` | Check the installation, the judges and the connections |
 | `mu ledger 3` | Show what the judge decided in the last three sessions |
 

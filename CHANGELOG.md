@@ -6,6 +6,13 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ## [Unreleased]
 
+### Added
+
+- **Import ZCode conversations**, beside Claude Code and Codex: `mu import --list`, `/import-chat` and the desktop app find them in ZCode's database (`~/.zcode/cli/db/db.sqlite`), with its rewinds, compactions, sub-agent threads and forks.
+- **Imported conversations come with their whole history**: thinking (shown, never sent to the new model) and images, as well as messages and tool calls. A Claude Code conversation keeps the title Claude Code shows for it.
+- **Importing a conversation again brings over what's new in it.** When you went on in Claude Code, Codex or ZCode after importing, mu updates the same conversation, keeping a name you gave it in mu; if you went on in mu as well, the new import is a conversation of its own beside it. The import list marks conversations that changed since.
+- The first-run guide offers your conversations from other coding agents on its first screen, under each app's icon, and the import dialog and settings show the icons too.
+
 ### Changed
 
 - **The permission mode `jev` is now `judge`**, shown as *Judge mode*: `/permissions judge`, `MU_PERMISSIONS=judge`. mu's text calls the judge "the judge model" instead of "Jev", a name that now means only TypeSafe's hosted judge model. Config names are unchanged: `"tiers": ["jev"]` and the `jev-*` routes work as before.
@@ -16,6 +23,8 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ### Fixed
 
+- **A Claude Code conversation compacted more than once is imported whole.** Claude Code 2.1 writes compactions in a way that made the import stop at the latest one: an 87 MB conversation came in with 11 of its 24 messages. Import it again to get the rest.
+- **An imported conversation goes on with mu's model**, not the one Claude Code, Codex or ZCode answered with: the desktop app showed that model (`claude-code/…`) on the conversation, and `mu` warned it could not restore it.
 - **Hive and subagents work in the desktop app again.** Since conversations moved into the app's own process (0.1.6), every `/hive`, `delegate` and swarm run failed at once with "subagent exited with code 1 before it finished: The mu host needs a parent". A sub-agent is started by running mu's command line again, and inside the app that command line pointed at the app's host instead of mu. The host now gives mu the command line the terminal would have, so sub-agents start the same way they do from `mu`.
 - When the judge doesn't answer (the free Jev is rate limited, say) and mu asks you about a command instead, the line above the send box no longer keeps saying "The judge is reviewing" while it waits for you.
 - The Hive tab's map draws the notes the judge passed between bees in a conversation on the app's own process. It used to show the bees with no lines between them, because the lines came only from files that only the older connection read.

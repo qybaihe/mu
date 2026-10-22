@@ -1,3 +1,4 @@
+import { isImportTool } from '../../kyrn/importChats.ts';
 import { asObject, asText, type JsonObject } from './records.ts';
 
 /**
@@ -5,7 +6,8 @@ import { asObject, asText, type JsonObject } from './records.ts';
  * conversation whose host is not running, so the screen can say which model, thinking level and permission mode the
  * next message will meet without starting a host.
  *
- * - model: the latest `model_change` or assistant message on the branch (pi's `getSessionContextSettings`);
+ * - model: the latest `model_change` or assistant message on the branch (pi's `getSessionContextSettings`), apart
+ *   from a reply imported from another tool, which names the tool as its provider: pi cannot go on with that model;
  * - thinking level: the latest `thinking_level_change` on the branch (pi writes one when a session starts);
  * - permission mode: the latest `mu.permissions` entry on the branch (mu's permissions feature, `session_start`).
  *
@@ -49,7 +51,8 @@ export function sessionSettings(entries: readonly unknown[], leafId?: string | n
       settings.model = modelOf(entry.provider, entry.modelId) ?? settings.model;
     } else if (entry.type === 'message') {
       const message = asObject(entry.message);
-      if (message.role === 'assistant') settings.model = modelOf(message.provider, message.model) ?? settings.model;
+      if (message.role === 'assistant' && !isImportTool(message.provider))
+        settings.model = modelOf(message.provider, message.model) ?? settings.model;
     } else if (entry.type === 'thinking_level_change') {
       const level = asText(entry.thinkingLevel);
       if (level) settings.thinkingLevel = level;

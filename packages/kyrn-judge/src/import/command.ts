@@ -2,7 +2,7 @@
  * What `mu import` does and prints (cli.ts only starts it):
  *
  *   mu import --list [--json] [--cwd <dir>] [--sub-agents] [--agent-dir <dir>]
- *   mu import <file>... [--json] [--agent-dir <dir>]
+ *   mu import <file>... [--json] [--agent-dir <dir>]   (a ZCode conversation: <database>#<id>, as --list names it)
  *
  * mu's agent folder comes from --agent-dir, else MU_CODING_AGENT_DIR (the launcher sets it), else ~/.mu/agent.
  * Sessions go where pi puts them: MU_CODING_AGENT_SESSION_DIR, else `sessionDir` in the agent folder's
@@ -20,19 +20,21 @@ import {
 	type SessionStore,
 	TOOL_NAMES,
 } from "./index.ts";
-import { absolute } from "./session.ts";
+import { record } from "./jsonl.ts";
+import { absolute, type SessionModel } from "./session.ts";
 
 export const USAGE = [
-	"mu import: import Claude Code and Codex conversations so you can continue them in mu.",
+	"mu import: import Claude Code, Codex and ZCode conversations so you can continue them in mu.",
 	"",
 	"  mu import --list [--json] [--cwd <dir>]   list conversations on this machine (with --cwd, only <dir>'s)",
-	"  mu import <file>... [--json]              import these transcripts; each becomes a mu session",
+	"  mu import <file>... [--json]              import these conversations; each becomes a mu session",
 	"",
 	"  --agent-dir <dir>   mu's agent folder (default: MU_CODING_AGENT_DIR, else ~/.mu/agent)",
 	"  --sub-agents        also list subagent threads",
 	"",
-	"Looks in ~/.claude/projects (CLAUDE_CONFIG_DIR) and ~/.codex/sessions (CODEX_HOME).",
-	"Conversations that were already imported are skipped.",
+	"Looks in ~/.claude/projects (CLAUDE_CONFIG_DIR), ~/.codex/sessions (CODEX_HOME) and ~/.zcode/cli/db/db.sqlite.",
+	"A ZCode conversation is named <database>#<id>, as --list shows it.",
+	"Importing a conversation again brings over what is new in it; one that didn't change is skipped.",
 ].join("\n");
 
 export interface ParsedArgs {
@@ -89,16 +91,29 @@ export function storeFor(agentDirArg: string | undefined, io: Pick<Io, "env" | "
 	);
 	const fromEnv = io.env.MU_CODING_AGENT_SESSION_DIR;
 	if (fromEnv) return { agentDir, sessionDir: absolute(fromEnv, io.cwd) };
-	try {
-		const settings = JSON.parse(readFileSync(join(agentDir, "settings.json"), "utf8")) as unknown;
-		const sessionDir =
-			settings !== null && typeof settings === "object" && "sessionDir" in settings
-				? settings.sessionDir
-				: undefined;
-		if (typeof sessionDir === "string" && sessionDir.trim())
-			return { agentDir, sessionDir: absolute(sessionDir, io.cwd) };
-	} catch {}
+	const sessionDir = settingsOf(agentDir).sessionDir;
+	if (typeof sessionDir === "string" && sessionDir.trim())
+		return { agentDir, sessionDir: absolute(sessionDir, io.cwd) };
 	return { agentDir };
+}
+
+/** mu's settings.json in the agent folder, or nothing when there is none or it cannot be read. */
+function settingsOf(agentDir: string): Record<string, unknown> {
+	try {
+		return record(JSON.parse(readFileSync(join(agentDir, "settings.json"), "utf8")) as unknown) ?? {};
+	} catch {
+		return {};
+	}
+}
+
+/** The model mu starts conversations with (settings.json's default), which an imported one goes on with. */
+export function defaultModelOf(agentDir: string): SessionModel | undefined {
+	const settings = settingsOf(agentDir);
+	const provider = settings.defaultProvider;
+	const modelId = settings.defaultModel;
+	return typeof provider === "string" && provider && typeof modelId === "string" && modelId
+		? { provider, modelId }
+		: undefined;
 }
 
 export function formatSize(bytes: number): string {
@@ -126,7 +141,7 @@ export function tilde(path: string, home: string): string {
 }
 
 export function formatList(conversations: readonly FoundConversation[], home: string): string {
-	if (conversations.length === 0) return "No Claude Code or Codex conversations found.";
+	if (conversations.length === 0) return "No Claude Code, Codex or ZCode conversations found.";
 	// Grouped by project, the project with the latest conversation first (the list comes newest first).
 	const groups = new Map<string, FoundConversation[]>();
 	for (const conversation of conversations) {
@@ -142,7 +157,11 @@ export function formatList(conversations: readonly FoundConversation[], home: st
 		lines.push(cwd ? tilde(cwd, home) : "(unknown folder)");
 		for (const conversation of group) {
 			const title = conversation.title || "(no message found)";
-			const mark = conversation.importedAs ? "  (imported)" : "";
+			const mark = !conversation.importedAs
+				? ""
+				: conversation.changed
+					? "  (imported, changed since)"
+					: "  (imported)";
 			lines.push(
 				`  ${formatDate(conversation.modified)}  ${TOOL_NAMES[conversation.tool].padEnd(toolWidth)}  ${formatSize(conversation.size).padStart(7)}  ${title}${mark}`,
 			);
@@ -158,17 +177,35 @@ export function formatResult(result: ImportResult, home: string): string {
 	if (result.status === "failed") return `Couldn't import ${tilde(result.source, home)}: ${result.error}`;
 	if (result.status === "already-imported")
 		return [
-			`Already imported: ${tilde(result.source, home)}`,
+			`Already imported, and nothing new since: ${tilde(result.source, home)}`,
 			`  as session ${tilde(result.sessionFile, home)}`,
 		].join("\n");
 	const { counts } = result;
 	const left = Object.entries(counts.dropped)
 		.sort((a, b) => b[1] - a[1])
 		.map(([reason, count]) => `${reason} ${count}`);
+	const kept = [
+		...(counts.thinking > 0 ? [plural(counts.thinking, "thinking block")] : []),
+		...(counts.images > 0 ? [plural(counts.images, "image")] : []),
+		...(counts.compactions > 0 ? [plural(counts.compactions, "compaction")] : []),
+	];
+	const head =
+		result.status === "updated"
+			? [
+					`Brought up to date from ${TOOL_NAMES[result.tool]}: "${result.name}"`,
+					`  ${tilde(result.sessionFile, home)}`,
+					`  new since the last import: ${plural(Math.max(0, counts.user - (result.before?.user ?? 0)), "message")} from you, ${plural(Math.max(0, counts.assistant - (result.before?.assistant ?? 0)), "reply", "replies")}`,
+				]
+			: [
+					`Imported from ${TOOL_NAMES[result.tool]}: "${result.name}"`,
+					`  ${tilde(result.sessionFile, home)}`,
+					...(result.earlier
+						? [`  the earlier import went on in mu, so it was left as it was: ${tilde(result.earlier, home)}`]
+						: []),
+				];
 	return [
-		`Imported from ${TOOL_NAMES[result.tool]}: "${result.name}"`,
-		`  ${tilde(result.sessionFile, home)}`,
-		`  ${plural(counts.user, "message")} from you, ${plural(counts.assistant, "reply", "replies")}, ${plural(counts.toolCalls, "tool call")}${counts.compactions > 0 ? `, ${plural(counts.compactions, "compaction")}` : ""}`,
+		...head,
+		`  ${plural(counts.user, "message")} from you, ${plural(counts.assistant, "reply", "replies")}, ${plural(counts.toolCalls, "tool call")}${kept.length > 0 ? `, ${kept.join(", ")}` : ""}`,
 		...(left.length > 0 ? [`  skipped: ${left.join(", ")}`] : []),
 		`  to continue: mu --session ${result.sessionFile}`,
 	].join("\n");
@@ -196,7 +233,7 @@ export async function main(argv: readonly string[], io: Io): Promise<number> {
 	}
 	const results = await importTranscripts(
 		parsed.files.map((file) => absolute(file, io.cwd)),
-		{ ...store, cwd: io.cwd },
+		{ ...store, cwd: io.cwd, model: defaultModelOf(store.agentDir) },
 	);
 	io.out(
 		parsed.json
