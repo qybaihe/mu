@@ -635,7 +635,12 @@
       "readyFree": "Ücretsiz Jev hazır. Burada yapılacak bir şey yok.",
       "readyKey": "Jev, belirlediğiniz anahtarla hazır.",
       "more": "Hizmeti değiştir veya kendi anahtarını kullan",
-      "less": "Gizle"
+      "less": "Gizle",
+      "none": {
+        "title": "Hakem yok",
+        "tag": "Hiçbir şey gönderilmez",
+        "description": "Hiçbir karar noktası hakeme sormaz, bu yüzden hakeme hiçbir şey gönderilmez. mu varsayılan kurallarıyla karar verir. Bir hakemi daha sonra Ayarlar'dan seçebilirsiniz."
+      }
     },
     "done": {
       "title": "Her şey hazır",

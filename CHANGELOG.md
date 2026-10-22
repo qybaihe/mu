@@ -9,6 +9,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 ### Added
 
 - **Session files count what subagents and cut replies spent.** A reply stopped for thinking too long, and each subagent, leave a `kyrn.usage` entry with their tokens and cost, so a cost report or benchmark can include them. The model never sees these entries.
+- **The desktop app's first-run guide offers "No judge".** It is the third choice on the judge step, beside Jev and Laya: every decision point is off and nothing is sent to a judge, like `mu setup`'s "Not now". Skipping the step still keeps the judge it shows. Picking a judge afterwards turns the verdicts back on.
 
 ### Changed
 
