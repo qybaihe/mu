@@ -401,6 +401,50 @@ describe("kyrn features", () => {
 		expect(runs[0].agent).toMatchObject({ name: "worker", source: "built-in" });
 	});
 
+	it("swarm: with no model ladder, asks only which role an unnamed task takes, and nothing when every role is named", async () => {
+		const runs: SwarmAssignment[] = [];
+		const asked: string[][] = [];
+		const harness = await start(
+			(request): Record<string, Answer> => {
+				asked.push(Object.keys(request.questions));
+				if (!("agent" in request.questions)) return {};
+				return { agent: { type: "choice", choice: "scout", probabilities: { scout: 0.9 } } };
+			},
+			{
+				features: { swarm: { enabled: true, isolation: "none" }, browser: false },
+				runner: async (_task, assignment) => {
+					runs.push(assignment);
+					return "ok";
+				},
+			},
+		);
+		const delegate = (tasks: Record<string, string>[]) =>
+			fauxAssistantMessage([fauxToolCall("delegate", { tasks })], { stopReason: "toolUse" });
+		harness.setResponses([
+			delegate([
+				{ title: "a", instructions: "Do a", agent: "worker" },
+				{ title: "b", instructions: "Find b", agent: "scout" },
+			]),
+			delegate([
+				{ title: "c", instructions: "Find c" },
+				{ title: "d", instructions: "Do d", agent: "worker" },
+			]),
+			fauxAssistantMessage("Done."),
+		]);
+
+		await harness.session.prompt("Do it.");
+
+		const routing = asked.filter((questions) => questions.includes("agent") || questions.includes("difficulty"));
+		// The first call named every role: no question. The second asked only about c, and only its role.
+		expect(routing).toEqual([["agent"]]);
+		expect(runs.map((run) => [run.agent?.name, run.routedBy, run.thinking])).toEqual([
+			["worker", "caller", harness.session.thinkingLevel],
+			["scout", "caller", harness.session.thinkingLevel],
+			["scout", "judge", harness.session.thinkingLevel],
+			["worker", "caller", harness.session.thinkingLevel],
+		]);
+	});
+
 	it("forgetting: shrinks an old bulky result in the request but never in the session", async () => {
 		const bulky = Array.from({ length: 120 }, (_, index) => `line ${index} of a long listing`).join("\n");
 		const harness = await start(

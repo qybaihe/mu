@@ -52,7 +52,7 @@ import { appLanguage, say } from "../../language.ts";
 import type { LlmCompletion } from "../../providers/llm.ts";
 import { environmentSecrets, redactSecrets } from "../../redact.ts";
 import { activeRuns, type SwarmSnapshot } from "../../swarm/run.ts";
-import { isOver } from "../../swarm/state.ts";
+import { type BeeState, type BeeStatus, isOver, isRunning } from "../../swarm/state.ts";
 import { clip, failOpen, type KyrnRuntime, textOf } from "../runtime.ts";
 import { isShellTool } from "../shell-tools.ts";
 import { describeCall } from "./constraints.ts";
@@ -146,6 +146,15 @@ export function describeSwarms(snapshots: readonly SwarmSnapshot[]): string | un
 			return `${kind}, ${bees.length} subagent${bees.length === 1 ? "" : "s"} (${finished} finished): ${each.join("; ")}`;
 		})
 		.join("\n");
+}
+
+/**
+ * Where each sub-agent stands, as one string: waiting for a slot, at work, wrapping up, or how it ended. What it
+ * is doing at work (thinking, a tool, a retry) is left out.
+ */
+export function swarmState(runs: readonly { readonly bees: readonly BeeState[] }[] = activeRuns()): string {
+	const stand = (status: BeeStatus) => (isRunning(status) && status !== "wrapping-up" ? "working" : status);
+	return runs.map((run) => run.bees.map((bee) => `${bee.name}:${stand(bee.status)}`).join(",")).join("|");
 }
 
 interface LoggedEvent extends BoardEvent {
@@ -282,6 +291,16 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		/** Tool calls the judge sees, for what the agent is doing now. */
 		maxSteps: 10,
 		narrateTimeoutMs: 60000,
+		/**
+		 * Also in one-shot runs (`--print`, json mode). Off: nobody watches a board there, the terminal shows none and
+		 * the summing up is cut off when the process exits, so every look would only cost judge and writer calls.
+		 */
+		unattended: false,
+		/**
+		 * While sub-agents work, look every `minIntervalMs` even when none of them started, finished or failed since
+		 * the last look.
+		 */
+		followAlways: false,
 	});
 	if (!options.enabled || process.env.KYRN_SWARM_CONTROL) return;
 	const { pi } = runtime;
@@ -314,6 +333,8 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 	let reading: BoardNote | undefined;
 	/** The clock the board looks by while sub-agents work. */
 	let following: ReturnType<typeof setInterval> | undefined;
+	/** The sub-agents' states (`swarmState`) at the last look. */
+	let swarmSeen = "";
 	/** The person's turn the current run belongs to: a run mu starts itself (a goal continuation, a nudge) carries it on. */
 	let turnSeen = -1;
 	/** A permission the agent is waiting for, shown the moment it is asked. */
@@ -331,7 +352,9 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		again = undefined;
 	};
 
-	const on = (ctx: ExtensionContext) => projects.get(ctx.cwd) ?? options.defaultOn;
+	/** On here: switched on for the project, in a run someone watches (the terminal, the desktop app). */
+	const on = (ctx: ExtensionContext) =>
+		(options.unattended || ctx.mode === "tui" || ctx.mode === "rpc") && (projects.get(ctx.cwd) ?? options.defaultOn);
 	/** The model named in kyrn.json, else the one the person picked: "provider/id", or "session". */
 	const chosen = (): string | undefined => options.model || projects.model();
 	const usable = (ctx: ExtensionContext, ref: string): boolean => {
@@ -588,6 +611,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		const gone = retired.signal;
 		const upTo = sequence;
 		moment = false;
+		swarmSeen = swarmState();
 		const weighed = candidates(ended);
 		const frame = runtime.frame;
 		const items = (frame?.acceptance ?? []).map((item) => ({ id: item.id, text: item.text, done: item.done }));
@@ -697,7 +721,12 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		if (following) clearInterval(following);
 		following = undefined;
 	};
-	/** While sub-agents work, a look every interval at what they are doing, until they are back. */
+	/**
+	 * While sub-agents work, a look every interval at what they are doing, until they are back: only when one of
+	 * them started, finished or failed since the last look. What a bee is doing at the moment (its tool line)
+	 * changes all the time and is no news: in a 45-minute run, 65 of 77 looks came from this clock with nothing
+	 * new, and each cost a writer call.
+	 */
 	const follow = (ctx: ExtensionContext) => {
 		if (following) return;
 		following = setInterval(
@@ -706,7 +735,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 					unfollow();
 					return;
 				}
-				if (on(ctx)) schedule(ctx, false);
+				if (on(ctx) && (options.followAlways || swarmState() !== swarmSeen)) schedule(ctx, false);
 			},
 			Math.max(options.minIntervalMs, 1000),
 		);
@@ -1008,7 +1037,8 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 				}
 				// Switched on in the middle of things: the first board need not wait for the next tool call. Switched on
 				// once the agent stopped (the desktop's switch waits for that), it sums the run up as ended.
-				if (word === "on" && (steps.length > 0 || latest)) schedule(ctx, ctx.isIdle() && !runtime.goalActive);
+				if (word === "on" && on(ctx) && (steps.length > 0 || latest))
+					schedule(ctx, ctx.isIdle() && !runtime.goalActive);
 				return;
 			}
 			if (!ctx.hasUI) return;

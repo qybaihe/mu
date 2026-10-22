@@ -50,6 +50,8 @@ describe("delegate with worktree isolation", () => {
 		extra: {
 			responder?: MockResponder;
 			mode?: DecisionMode;
+			/** swarm.patch is off by default; the tests of what it says switch it on. */
+			patchReview?: DecisionMode;
 			swarm?: Record<string, unknown>;
 			files?: Record<string, string> | null;
 			events?: KyrnPresentationEvent[];
@@ -61,6 +63,7 @@ describe("delegate with worktree isolation", () => {
 					provider: new MockJudgeProvider(extra.responder ?? review()),
 					mode: extra.mode ?? "active",
 					config: parseConfig({
+						...(extra.patchReview ? { modes: { "swarm.patch": extra.patchReview } } : {}),
 						features: { memory: false, browser: false, swarm: { enabled: true, ...extra.swarm } },
 					}),
 					swarmRunner: runner,
@@ -95,7 +98,7 @@ describe("delegate with worktree isolation", () => {
 				writeFileSync(join(cwd, "package-lock.json"), "{}\n");
 				return "**Done** src/a.txt:2";
 			},
-			{ responder: review("package-lock.json"), events },
+			{ responder: review("package-lock.json"), events, patchReview: "active" },
 		);
 		// The parent is in the middle of something: the worker has to see it, the patch must not contain it.
 		writeFileSync(join(harness.repo, "src/a.txt"), lines(12).replace("line 11\n", "line 11, parent's edit\n"));
@@ -328,13 +331,36 @@ describe("delegate with worktree isolation", () => {
 		expect(resultTexts(harness)[0]).toContain("late");
 	});
 
+	it("asks nothing about scope by default: the result already lists every changed file", async () => {
+		const provider = review("b.txt");
+		const asked: string[] = [];
+		const harness = await start(
+			async (_task, assignment) => {
+				writeFileSync(join(assignment.cwd ?? "", "b.txt"), "b\n");
+				return "done";
+			},
+			{
+				responder: (request) => {
+					asked.push(...Object.keys(request.questions));
+					return provider(request);
+				},
+			},
+		);
+		harness.setResponses([delegate([{ title: "add", instructions: "Add b.txt" }]), fauxAssistantMessage("ok")]);
+		await harness.session.prompt("Go.");
+		const [delegated] = resultTexts(harness);
+		expect(delegated).toContain("A b.txt +1 -0");
+		expect(delegated).not.toContain("Scope check");
+		expect(asked).not.toContain("within_task");
+	});
+
 	it("says nothing about scope in shadow mode, and answers an unknown patch id with the ones it has", async () => {
 		const harness = await start(
 			async (_task, assignment) => {
 				writeFileSync(join(assignment.cwd ?? "", "b.txt"), "b\n");
 				return "done";
 			},
-			{ responder: review("b.txt"), mode: "shadow" },
+			{ responder: review("b.txt"), mode: "shadow", patchReview: "shadow" },
 		);
 		harness.setResponses([
 			delegate([{ title: "add", instructions: "Add b.txt" }]),

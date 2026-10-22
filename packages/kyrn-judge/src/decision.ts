@@ -60,6 +60,12 @@ export interface DecisionSpec<In, Qs extends Questions, Out extends JsonValue> {
 	readonly latency: LatencyClass;
 	/** Set only when every choice question's option set is truly closed. */
 	readonly allowChoicesWithoutEscape?: boolean;
+	/**
+	 * The caller acts on the judge's verdict in shadow mode too, because it has no behaviour of its own to keep
+	 * (the browser's next click, a sub-agent's role, the model's own question). In shadow its verdict is then the
+	 * outcome, and the ledger says it came from the judge, not from the fallback. `off` still never asks.
+	 */
+	readonly actsInShadow?: boolean;
 	/** Digest the input into a small state. The judge has a 32K window: send summaries and metadata, not bulk text. */
 	buildState(input: In): JudgeInput;
 	policy(answers: AnswersFor<Qs>, input: In): Out | Abstain;
@@ -279,6 +285,11 @@ export class DecisionEngine {
 		}
 	}
 
+	/** Whether a verdict is what the caller acts on in this mode. */
+	private applies(spec: { readonly actsInShadow?: boolean }, mode: DecisionMode): boolean {
+		return mode === "active" || (mode === "shadow" && spec.actsInShadow === true);
+	}
+
 	private asked(): JsonValue | undefined {
 		try {
 			return this.origin?.();
@@ -309,7 +320,7 @@ export class DecisionEngine {
 		const state = spec.buildState(input);
 		const evaluation = await this.evaluate(spec, input, state, options.signal);
 		const { judged } = evaluation;
-		const useJudged = mode === "active" && judged !== undefined;
+		const useJudged = this.applies(spec, mode) && judged !== undefined;
 		const outcome = useJudged && judged !== undefined ? judged : fallback;
 		const reason = useJudged ? undefined : (evaluation.failure ?? "shadow");
 		const source = useJudged ? "judge" : "fallback";
@@ -395,7 +406,7 @@ export class DecisionEngine {
 		const ledgerId = randomUUID();
 		const decisions = inputs.map((input, index): Decision<Out> => {
 			const evaluation = evaluations[index];
-			const useJudged = mode === "active" && evaluation.judged !== undefined;
+			const useJudged = this.applies(spec, mode) && evaluation.judged !== undefined;
 			return {
 				specId: spec.id,
 				mode,
@@ -424,7 +435,8 @@ export class DecisionEngine {
 			modelId: evaluations.find((evaluation) => evaluation.modelId)?.modelId,
 			outcome: decisions.map((decision) => decision.outcome),
 			source: decisions.some((decision) => decision.source === "judge") ? "judge" : "fallback",
-			reason: mode === "shadow" ? "shadow" : failures === inputs.length ? "error:all" : undefined,
+			reason:
+				mode === "shadow" && !spec.actsInShadow ? "shadow" : failures === inputs.length ? "error:all" : undefined,
 			judged: evaluations.map((evaluation) => evaluation.judged ?? null),
 			latencyMs: Math.round(performance.now() - startedAt),
 			usage: { inputTokens, outputTokens: 0 },

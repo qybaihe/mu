@@ -5,6 +5,12 @@
 ### Changed
 
 - `/login` offers no Claude subscription sign-in under mu's name (Anthropic doesn't allow other apps to offer one); an Anthropic API key is still offered, and an earlier sign-in stays until `/logout`. `mu setup` refuses a Claude subscription token (`sk-ant-oat…`) given as a key, pasted or with `--key-stdin`, and sends it nowhere.
+- The plain-language board runs only where someone watches it, the terminal and the desktop app, not in `mu --print` or json mode (`features.board.unattended` brings it back). While subagents work, it looks again only when one of them starts, finishes or fails, not every 20 seconds (`followAlways`). An unsure "has anything changed?" with nothing new no longer rewrites the board, and "is it waiting for you?" is asked only once the agent stopped. Replayed on 82 judged looks, the change gate alone cuts the writer calls from 82 to 29.
+- `delegate` and `hive` ask the judge how hard a task is only when a model ladder is set (`features.swarm.models`) or a role pins a model of its own: without one, a delegation that names every role asks nothing, and one that doesn't asks only which role. Hive bees get their thinking level the way delegate's subagents do: on the session's model, the session's level, which keeps the parent's prompt cache warm.
+- Hive: what a bee says starting with `FOUND:` or `DEAD END:` goes on the board without asking the judge (`features.hive.publishMarked`), and tool output is no longer put to the judge as a possible note (`publishToolOutputs`). When the judge can't answer, notes go to every bee up to `maxDeliveriesPerBee` instead of to none. A new note is held against at most 2 earlier ones (`maxRelatedPerNote`, was 6).
+- `swarm.patch` is off by default: the delegate result already lists every changed file with its line counts. `"modes": { "swarm.patch": "active" }` in `mu.json` turns it back on.
+- `browse` with a goal refuses up front when the judge for `browser.step` can't relate a goal to a page (Laya alone), and says how to route it to another judge; before, it opened the page and blocked after the first look.
+- In shadow mode, the decisions mu acts on anyway (`browser.step`, `swarm.routing`, `judge.items`) are recorded as the judge's, not as the fallback's (`actsInShadow`).
 
 ## [0.1.12] - 2026-10-22
 

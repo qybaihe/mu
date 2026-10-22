@@ -53,6 +53,33 @@ describe("DecisionEngine", () => {
 		expect(ledger.records[0]).toMatchObject({ outcome: "keep", judged: "drop", mode: "shadow" });
 	});
 
+	it("in shadow mode, records a verdict the caller acts on anyway as the judge's, not as the fallback", async () => {
+		// The browser's next click, a sub-agent's role: there is no rule to keep, so the verdict is used in shadow too.
+		const acting = { ...keepChunk, actsInShadow: true };
+		const ledger = new MemoryLedger();
+		const { engine } = engineWith(0.03, "shadow", ledger);
+
+		const decision = await engine.decide(acting, input);
+		expect(decision).toMatchObject({ outcome: "drop", source: "judge", judged: "drop", mode: "shadow" });
+		expect(decision.reason).toBeUndefined();
+		expect(ledger.records[0]).toMatchObject({ outcome: "drop", source: "judge", judged: "drop", mode: "shadow" });
+		expect(ledger.records[0].reason).toBeUndefined();
+
+		const many = await engine.decideMany(acting, [input, input]);
+		expect(many.map((one) => [one.outcome, one.source])).toEqual([
+			["drop", "judge"],
+			["drop", "judge"],
+		]);
+		expect(ledger.records[1]).toMatchObject({ outcome: ["drop", "drop"], source: "judge", mode: "shadow" });
+		expect(ledger.records[1].reason).toBeUndefined();
+
+		// With no verdict there is nothing to act on: the fallback, and why.
+		const unsure = await engineWith(0.5, "shadow").engine.decide(acting, input);
+		expect(unsure).toMatchObject({ outcome: "keep", source: "fallback", reason: "abstain" });
+		const off = await engineWith(0.03, "off").engine.decide(acting, input);
+		expect(off).toMatchObject({ outcome: "keep", source: "fallback", reason: "off" });
+	});
+
 	it("does not call the judge when the decision is off", async () => {
 		const { engine, provider } = engineWith(0.03, "off");
 

@@ -1424,19 +1424,8 @@
 				"fa-IR": "واگذاری به عامل‌های فرعی"
 			},
 			"summary": {
-				"zh": "为每个委派任务挑选角色，并按难度选择模型档位和思考等级。",
-				"en": "Picks a role for each delegated task, and a model tier and thinking level based on difficulty.",
-				"zh-TW": "為每個委派的任務挑選角色，並依難度選擇模型等級和思考強度。",
-				"ja-JP": "委任する各タスクの役割を選び、難しさに応じてモデルの階層と思考レベルを選びます。",
-				"ko-KR": "위임된 각 작업에 역할을 고르고, 난이도에 따라 모델 등급과 사고 수준을 정합니다.",
-				"de-DE": "Wählt für jede delegierte Aufgabe eine Rolle sowie je nach Schwierigkeit eine Modellstufe und eine Denkstufe.",
-				"fr-FR": "Choisit un rôle pour chaque tâche déléguée, ainsi qu’un palier de modèle et un niveau de réflexion selon la difficulté.",
-				"es-ES": "Elige un rol para cada tarea delegada, y un nivel de modelo y de razonamiento según la dificultad.",
-				"pt-BR": "Escolhe um papel para cada tarefa delegada e, conforme a dificuldade, a força do modelo e o nível de raciocínio.",
-				"ru-RU": "Выбирает роль для каждой поручаемой задачи, а по сложности — силу модели и уровень размышлений.",
-				"uk-UA": "Вибирає роль для кожного делегованого завдання, а також силу моделі й рівень міркування залежно від складності.",
-				"tr-TR": "Devredilen her görev için bir rol, zorluğa göre de bir model kademesi ve düşünme düzeyi seçer.",
-				"fa-IR": "برای هر وظیفهٔ واگذارشده یک نقش، و بر اساس دشواری آن ردهٔ مدل و سطح تفکر را انتخاب می‌کند."
+				"zh": "为每个没指定角色的委派任务挑选角色；设了模型梯队时，再按难度选择模型档位和思考等级。角色都已指定、又没有梯队时不提问。",
+				"en": "Picks a role for each delegated task that doesn't name one. With a model ladder set, it also picks a model tier and thinking level based on difficulty. When every role is named and there's no ladder, nothing is asked."
 			}
 		},
 		{
@@ -1459,19 +1448,8 @@
 				"fa-IR": "بررسی محدودهٔ پچ عامل فرعی"
 			},
 			"summary": {
-				"zh": "隔离的子代理交回补丁时，只看任务、改动的路径和行数，判断改动是否超出任务、哪些文件与任务无关；只给主代理一句提示，从不拦截。",
-				"en": "When an isolated subagent hands back a patch, judges from the task, the changed paths and the line counts whether it stays within scope and which files look unrelated. Gives the main agent one line of advice; it never blocks.",
-				"zh-TW": "隔離執行的子代理交回修補程式時，只根據任務、改動的路徑和行數，判斷改動有沒有超出任務、哪些檔案看起來與任務無關。只給主代理一句建議，從不攔截。",
-				"ja-JP": "分離されたサブエージェントがパッチを返すと、タスク、変更されたパス、行数から、変更がタスクの範囲内か、どのファイルが無関係に見えるかを判定します。メインのエージェントに 1 行の助言を伝えるだけで、ブロックはしません。",
-				"ko-KR": "격리된 하위 에이전트가 패치를 돌려주면, 작업 내용과 변경된 경로, 줄 수를 보고 작업 범위 안에 있는지, 어떤 파일이 무관해 보이는지 판정합니다. 메인 에이전트에게 한 줄 조언을 줄 뿐 막지는 않습니다.",
-				"de-DE": "Gibt ein isolierter Unteragent einen Patch zurück, wird anhand der Aufgabe, der geänderten Pfade und der Zeilenzahlen beurteilt, ob er im Rahmen der Aufgabe bleibt und welche Dateien nichts damit zu tun haben. Der Hauptagent bekommt einen einzeiligen Rat; blockiert wird nie.",
-				"fr-FR": "Quand un sous-agent isolé rend un patch, juge d’après la tâche, les chemins modifiés et le nombre de lignes s’il reste dans le périmètre de la tâche et quels fichiers semblent sans rapport. Une ligne de conseil pour l’agent principal ; jamais de blocage.",
-				"es-ES": "Cuando un subagente aislado devuelve un parche, evalúa, a partir de la tarea, las rutas cambiadas y el número de líneas, si se ciñe a la tarea y qué archivos parecen no tener relación. Da una línea de consejo al agente principal; nunca bloquea.",
-				"pt-BR": "Quando um subagente isolado devolve um patch, avalia, pela tarefa, pelos caminhos alterados e pela contagem de linhas, se ele fica dentro da tarefa e quais arquivos parecem não relacionados. Dá uma linha de orientação ao agente principal; nunca bloqueia.",
-				"ru-RU": "Когда изолированный субагент возвращает патч, судья по задаче, изменённым путям и числу строк оценивает, не выходит ли патч за рамки задачи и какие файлы выглядят посторонними. Основной агент получает совет в одну строку; ничего не блокируется.",
-				"uk-UA": "Коли ізольований субагент повертає патч, оцінює за завданням, зміненими шляхами й кількістю рядків, чи не виходить він за межі завдання і які файли виглядають сторонніми. Основний агент отримує однорядкову пораду; нічого не блокується.",
-				"tr-TR": "Yalıtılmış bir alt ajan bir yama döndürdüğünde; görevden, değişen yollardan ve satır sayılarından yamanın görev kapsamında kalıp kalmadığına ve hangi dosyaların ilgisiz göründüğüne karar verir. Ana ajana tek satırlık bir öneri verir; asla engellemez.",
-				"fa-IR": "وقتی یک عامل فرعی جداشده پچی را برمی‌گرداند، از روی وظیفه، مسیرهای تغییرکرده و شمار خطوط داوری می‌کند که آیا پچ در محدودهٔ وظیفه می‌ماند و کدام فایل‌ها نامرتبط به نظر می‌رسند. فقط یک خط توصیه برای عامل اصلی؛ هرگز جلوی چیزی را نمی‌گیرد."
+				"zh": "隔离的子代理交回补丁时，只看任务、改动的路径和行数，判断改动是否超出任务、哪些文件与任务无关；只给主代理一句提示，从不拦截。默认关闭：交回的结果本来就列出了每个改动的文件和行数。",
+				"en": "When an isolated subagent hands back a patch, judges from the task, the changed paths and the line counts whether it stays within scope and which files look unrelated. Gives the main agent one line of advice; it never blocks. Off by default: the result already lists every changed file with its line counts."
 			}
 		},
 		{
@@ -1494,19 +1472,8 @@
 				"fa-IR": "Hive: انتشار یافته‌ها"
 			},
 			"summary": {
-				"zh": "一只蜂的发现值不值得放到公告板上给其他蜂看。",
-				"en": "Decides whether a bee's finding is worth putting on the board for the others.",
-				"zh-TW": "一個蜂群成員的發現，值不值得放到共享看板上給其他成員看。",
-				"ja-JP": "ビーの発見を、ほかのビーのために共有ボードへ載せる価値があるかを判定します。",
-				"ko-KR": "비(bee)의 발견이 다른 비들을 위해 공유 보드에 올릴 가치가 있는지 판정합니다.",
-				"de-DE": "Ob die Erkenntnis einer Biene es wert ist, für die anderen aufs gemeinsame Board zu kommen.",
-				"fr-FR": "Décide si la découverte d’une abeille mérite d’être placée sur le tableau partagé pour les autres.",
-				"es-ES": "Si merece la pena poner el hallazgo de una abeja en el tablero compartido para las demás.",
-				"pt-BR": "Se a descoberta de uma abelha vale ir para o quadro compartilhado, para as outras verem.",
-				"ru-RU": "Стоит ли выложить находку пчелы на общую доску для остальных.",
-				"uk-UA": "Чи варто виставити знахідку бджоли на спільну дошку для інших.",
-				"tr-TR": "Bir arının bulgusunun, diğerleri için paylaşılan panoya konmaya değip değmediği.",
-				"fa-IR": "اینکه یافتهٔ یک زنبور ارزش دارد روی تختهٔ مشترک گذاشته شود تا دیگران ببینند یا نه."
+				"zh": "一只蜂说的话值不值得放到公告板上给其他蜂看。以 FOUND: 或 DEAD END: 开头的发现直接发布，不用问。",
+				"en": "Decides whether what a bee said is worth putting on the board for the others. A finding that starts with FOUND: or DEAD END: is published without asking."
 			}
 		},
 		{
@@ -1529,19 +1496,8 @@
 				"fa-IR": "Hive: تحویل"
 			},
 			"summary": {
-				"zh": "公告板上的一条发现与某只蜂手头的工作有没有关系，有关系才送达。",
-				"en": "Decides whether a finding on the board matters to a bee's current work; only then is it delivered.",
-				"zh-TW": "共享看板上的一則發現和某個蜂群成員手上的工作有沒有關係；有關係才送達。",
-				"ja-JP": "共有ボード上の発見が、あるビーの現在の作業に関係するかを判定し、関係する場合にだけ配信します。",
-				"ko-KR": "공유 보드의 발견이 어떤 비의 현재 작업에 중요한지 판정하고, 중요할 때만 전달합니다.",
-				"de-DE": "Ob eine Erkenntnis auf dem Board für die aktuelle Arbeit einer Biene wichtig ist; nur dann wird sie übergeben.",
-				"fr-FR": "Décide si une découverte du tableau partagé compte pour le travail en cours d’une abeille ; elle ne lui est transmise que dans ce cas.",
-				"es-ES": "Si un hallazgo del tablero compartido importa para el trabajo actual de una abeja; solo entonces se le entrega.",
-				"pt-BR": "Se uma descoberta do quadro compartilhado importa para o trabalho atual de uma abelha; só então ela é entregue.",
-				"ru-RU": "Важна ли находка с общей доски для текущей работы пчелы; передаётся она только в этом случае.",
-				"uk-UA": "Чи важлива знахідка зі спільної дошки для поточної роботи бджоли; лише тоді її передають.",
-				"tr-TR": "Paylaşılan panodaki bir bulgunun bir arının mevcut işiyle ilgili olup olmadığı; yalnızca ilgiliyse teslim edilir.",
-				"fa-IR": "اینکه یافته‌ای روی تختهٔ مشترک به کار فعلی یک زنبور مربوط است یا نه؛ فقط در این صورت تحویل داده می‌شود."
+				"zh": "公告板上的一条发现与某只蜂手头的工作有没有关系，有关系才送达。判定器答不上来时照样送达（不超过每只蜂的上限）。",
+				"en": "Decides whether a finding on the board matters to a bee's current work; only then is it delivered. When the judge can't answer, it's delivered anyway, up to each bee's limit."
 			}
 		},
 		{
@@ -5885,6 +5841,32 @@
 						"tr-TR": "Sonrasında sabit cümleler kullanılır.",
 						"fa-IR": "پس از آن، جمله‌های ثابت به کار می‌روند."
 					}
+				},
+				{
+					"key": "unattended",
+					"kind": "boolean",
+					"default": false,
+					"label": {
+						"zh": "一次性运行里也写看板",
+						"en": "Also in one-shot runs"
+					},
+					"help": {
+						"zh": "mu --print 和 json 模式里没人看看板，默认不写，省下判定器和写看板模型的调用。",
+						"en": "Nobody watches the board in mu --print or json mode, so by default it isn't written there, saving the judge and writer calls."
+					}
+				},
+				{
+					"key": "followAlways",
+					"kind": "boolean",
+					"default": false,
+					"label": {
+						"zh": "子代理干活时按时查看",
+						"en": "Check on subagents on a timer"
+					},
+					"help": {
+						"zh": "默认只在有子代理开始、做完或出错时才查看；打开后不管有没有变化，每隔一段时间都看一次。",
+						"en": "By default the board checks only when a subagent starts, finishes or fails. On: it checks at every interval, changed or not."
+					}
 				}
 			]
 		},
@@ -6758,7 +6740,7 @@
 				{
 					"key": "maxRelatedPerNote",
 					"kind": "number",
-					"default": 6,
+					"default": 2,
 					"min": 0,
 					"max": 30,
 					"label": {
@@ -6790,6 +6772,32 @@
 						"uk-UA": "Лише ті, що мають із нею спільні слова. 0 вимикає виправлення.",
 						"tr-TR": "Yalnızca onunla ortak kelimeleri olanlar. 0 düzeltmeleri kapatır.",
 						"fa-IR": "فقط آن‌هایی که با آن واژهٔ مشترک دارند. 0 اصلاح‌ها را خاموش می‌کند."
+					}
+				},
+				{
+					"key": "publishMarked",
+					"kind": "boolean",
+					"default": true,
+					"label": {
+						"zh": "带标记的发现直接发布",
+						"en": "Publish marked findings directly"
+					},
+					"help": {
+						"zh": "蜂以 FOUND: 或 DEAD END: 开头说的话直接上公告板，不问判定器。",
+						"en": "What a bee says starting with FOUND: or DEAD END: goes on the board without asking the judge."
+					}
+				},
+				{
+					"key": "publishToolOutputs",
+					"kind": "boolean",
+					"default": false,
+					"label": {
+						"zh": "工具输出也拿去问要不要发布",
+						"en": "Consider tool output for the board too"
+					},
+					"help": {
+						"zh": "默认只看蜂自己说的话。",
+						"en": "By default only what a bee says is considered."
 					}
 				},
 				{

@@ -11,12 +11,20 @@ import {
 	type PublishInput,
 	type RelateInput,
 } from "../../decisions/hive.ts";
-import { type RoutingOutcome, swarmRouting } from "../../decisions/swarm-routing.ts";
+import type { RoutingInput, RoutingOutcome } from "../../decisions/swarm-routing.ts";
 import { Board, foldRelations, isDuplicate, type Note, overlapping } from "../../hive/board.ts";
 import { hiveRequest, parseHiveArgs } from "../../hive/request.ts";
 import { say } from "../../language.ts";
 import { BRIEF_ENV, briefEnv, briefFor, knownLessons } from "../../swarm/brief.ts";
-import { CHECKPOINT, conflictLine, correctionLine, HIVE_MESSAGE, lastCall, NOTES_HEADER } from "../../swarm/markers.ts";
+import {
+	CHECKPOINT,
+	conflictLine,
+	correctionLine,
+	HIVE_MESSAGE,
+	lastCall,
+	markOf,
+	NOTES_HEADER,
+} from "../../swarm/markers.ts";
 import { type BeeSpec, type BoardSummary, SwarmRun } from "../../swarm/run.ts";
 import { loadAgents } from "../agents.ts";
 import { clip, failOpen, type KyrnRuntime, textOf, userWords } from "../runtime.ts";
@@ -27,13 +35,16 @@ import {
 	limitsFrom,
 	permissionEnv,
 	pickModel,
+	ratingMatters,
 	registerSwarmCommand,
 	renderSwarmResult,
+	routeTasks,
 	SWARM_LIMIT_DEFAULTS,
 	type SwarmAssignment,
 	type SwarmRunner,
 	spawnRunner,
 	streamUpdates,
+	thinkingForRoute,
 	uniqueNames,
 } from "./swarm.ts";
 import { isWrappingUp } from "./swarm-child.ts";
@@ -46,15 +57,20 @@ interface Candidate {
 	source: string;
 }
 
-/** What one step of a bee produced that could be news: what it said, and the beginning of what its tools returned. */
+/**
+ * What one step of a bee produced that could be news: what it said and, with `toolOutputs`, the beginning of what
+ * its tools returned. Off by default: of 32 tool outputs put to the judge in 7 hives, none was published (2026-10).
+ */
 export function candidatesOf(
 	message: { content?: unknown },
 	toolResults: readonly { toolCallId?: string; toolName?: string; content?: unknown }[],
-	limit = 4,
+	options: { toolOutputs?: boolean; limit?: number } = {},
 ): Candidate[] {
+	const limit = options.limit ?? 4;
 	const candidates: Candidate[] = [];
 	const said = textOf(message.content).trim();
 	if (said.length >= 40) candidates.push({ text: clip(said, 700), source: "said" });
+	if (!options.toolOutputs) return candidates;
 	const calls = new Map<string, string>();
 	if (Array.isArray(message.content)) {
 		for (const block of message.content as Record<string, unknown>[]) {
@@ -90,7 +106,11 @@ function registerMember(runtime: KyrnRuntime, dir: string): void {
 		maxNotesPerBee: 12,
 		maxDeliveriesPerBee: 10,
 		/** Earlier notes a new one is held against, at most: the ones sharing the most words with it. */
-		maxRelatedPerNote: 6,
+		maxRelatedPerNote: 2,
+		/** A note a bee starts with FOUND: or DEAD END:, as the checkpoint asks, is published without asking the judge. */
+		publishMarked: true,
+		/** What a bee's tools returned is also put to the judge as a possible note, not only what the bee said. */
+		publishToolOutputs: false,
 		/** Tool calls a bee may make in silence before it is asked what it has found. 0 turns checkpoints off. */
 		checkpointEvery: 4,
 		/** Notes that arrive while a bee writes its report get one hearing: a corrected report, or "NO CHANGE". */
@@ -226,13 +246,24 @@ function registerMember(runtime: KyrnRuntime, dir: string): void {
 		const novel = candidates.filter((candidate) => !isDuplicate(candidate.text, known));
 		const mine: Note[] = [];
 		if (novel.length > 0 && posted < options.maxNotesPerBee) {
-			const inputs: PublishInput[] = novel.map((candidate) => ({
+			// What the bee marked as the checkpoint asks is news by its own word: the judge is asked about the rest.
+			// In 7 hives every note the judge published was a marked one, and it held back 14 of 45 marked findings.
+			const marks = novel.map((candidate) =>
+				options.publishMarked && candidate.source === "said" ? markOf(candidate.text) : undefined,
+			);
+			const asked = novel.filter((_, at) => !marks[at]);
+			const inputs: PublishInput[] = asked.map((candidate) => ({
 				goal,
 				focus,
 				note: candidate.text,
 				source: candidate.source,
 			}));
-			const verdicts = await runtime.engine.decideMany(hivePublish, inputs, { signal });
+			const judged = inputs.length > 0 ? await runtime.engine.decideMany(hivePublish, inputs, { signal }) : [];
+			const verdicts = novel.map((candidate, at) => {
+				const kind = marks[at];
+				if (kind) return { outcome: { publish: true, kind, score: 1 }, reason: "marked" };
+				return judged[asked.indexOf(candidate)];
+			});
 			verdicts.forEach((verdict, at) => {
 				const { publish, kind, score } = verdict.outcome;
 				board.log({
@@ -309,7 +340,9 @@ function registerMember(runtime: KyrnRuntime, dir: string): void {
 		"turn_end",
 		failOpen<TurnEndEvent, undefined>(async (event, ctx) => {
 			runtime.touch(ctx);
-			const candidates = candidatesOf(event.message as { content?: unknown }, event.toolResults);
+			const candidates = candidatesOf(event.message as { content?: unknown }, event.toolResults, {
+				toolOutputs: options.publishToolOutputs,
+			});
 			queue = queue.then(() => step(candidates, ctx.signal)).catch(() => undefined);
 			// Told to wrap up: nothing more goes in, it only has to get its report out.
 			if (isWrappingUp(runtime)) return undefined;
@@ -418,12 +451,29 @@ export function registerHive(runtime: KyrnRuntime, runner: SwarmRunner = spawnRu
 			const swarm = runtime.options("swarm", { enabled: true, models: [] as string[] });
 			const ladder = options.models.length > 0 ? options.models : swarm.models;
 			const current = ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined;
+			const sessionThinking = pi.getThinkingLevel();
+			const roleOf = (agentName: string | undefined) =>
+				roles.get(agentName ?? "") ?? roles.get(options.defaultAgent);
+			/** What the judge is asked about a bee: only how hard its angle is, and only when that can matter. */
+			const routing = (task: string, agentName: string | undefined): RoutingInput => ({
+				task: clip(task, 600),
+				rate: ratingMatters(ladder, [roleOf(agentName)]),
+			});
 			const placement = (verdict: RoutingOutcome, agentName: string | undefined): SwarmAssignment => {
-				const agent = roles.get(agentName ?? "") ?? roles.get(options.defaultAgent);
+				const agent = roleOf(agentName);
+				const model = agent?.model ?? pickModel(ladder, verdict.strength) ?? current;
 				return {
 					agent,
-					model: agent?.model ?? pickModel(ladder, verdict.strength) ?? current,
-					thinking: agent?.thinking ?? verdict.thinking,
+					model,
+					// As for delegate: a bee on the session's model keeps the session's thinking, so its first call reads
+					// the parent's prompt cache.
+					thinking: thinkingForRoute({
+						pinned: agent?.thinking,
+						model,
+						sessionModel: current,
+						sessionThinking,
+						judged: verdict.thinking,
+					}),
 					routedBy: agentName && roles.has(agentName) ? "caller" : "default",
 				};
 			};
@@ -431,10 +481,10 @@ export function registerHive(runtime: KyrnRuntime, runner: SwarmRunner = spawnRu
 			const tasks = bees.map((bee) => `${bee.focus} (part of: ${params.goal})`);
 			// What this project's lessons say about each angle, asked alongside the routing.
 			const lessons = runtime.knownLessons?.(tasks, signal);
-			const routes = await runtime.engine.decideMany(
-				swarmRouting,
-				tasks.map((task) => ({ task: clip(task, 600) })),
-				{ signal },
+			const routes = await routeTasks(
+				runtime,
+				tasks.map((task, at) => routing(task, bees[at].agent)),
+				signal,
 			);
 			const known = (await lessons?.catch(() => undefined)) ?? [];
 			interface Member {
@@ -446,7 +496,7 @@ export function registerHive(runtime: KyrnRuntime, runner: SwarmRunner = spawnRu
 			const members: Member[] = bees.map((bee, at) => ({
 				name: bee.name,
 				focus: bee.focus,
-				assignment: placement(routes[at].judged ?? routes[at].outcome, bee.agent),
+				assignment: placement(routes[at], bee.agent),
 				lessons: known[at],
 			}));
 			const specFor = (member: Member, all: readonly Member[]): BeeSpec<SwarmAssignment> => {
@@ -508,12 +558,12 @@ export function registerHive(runtime: KyrnRuntime, runner: SwarmRunner = spawnRu
 					const wanted = `verify-${verifiers + 1}`;
 					const name = uniqueNames([...members.map((member) => member.name), wanted]).at(-1) ?? wanted;
 					const focus = `Two investigators disagree. ${a.bee} reported: "${clip(a.text, 400)}" ${b.bee} reported: "${clip(b.text, 400)}" Find out which holds, or that both do under different conditions, with the command, file and line that shows it, and state it as FOUND: in your report.`;
-					const route = await runtime.engine.decide(
-						swarmRouting,
-						{ task: clip(`${focus} (part of: ${params.goal})`, 600) },
-						{ signal },
+					const [route] = await routeTasks(
+						runtime,
+						[routing(`${focus} (part of: ${params.goal})`, undefined)],
+						signal,
 					);
-					const member: Member = { name, focus, assignment: placement(route.judged ?? route.outcome, undefined) };
+					const member: Member = { name, focus, assignment: placement(route, undefined) };
 					if (run.add(specFor(member, [...members, member])) < 0) return;
 					verifiers++;
 					members.push(member);

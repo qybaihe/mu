@@ -68,6 +68,11 @@ export class CascadeJudge implements JudgeLike {
 		this.id = tiers.length === 1 ? tiers[0].judge.id : `cascade(${tiers.map((tier) => tier.judge.id).join(">")})`;
 	}
 
+	/** Whether any tier is trusted on a capability: when none is, every such question gets a neutral answer. */
+	trusts(capability: Capability): boolean {
+		return this.tiers.some((tier) => isTrusted(tier.profile, capability));
+	}
+
 	async evaluate<const Qs extends Questions>(request: JudgeCall<Qs>): Promise<JudgeResult<Qs>> {
 		validateQuestions(request.questions);
 		const startedAt = performance.now();
