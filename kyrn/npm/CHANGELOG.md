@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### Added
+
+- A long-thinking watchdog: a reply that has only been thinking for 10 minutes, with no text and no tool call yet, is cut and asked again at the same reasoning effort, with the end of its reasoning so far and a request to act on it first. The retry is never cut. At most 3 cuts per message (`features.watchdog`: `thinkingMs`, `maxCuts`).
+
+### Changed
+
+- Background jobs started with `bg_start` keep running after an unattended run (`mu --print`, json mode) ends, so a server a task asked for is still up afterwards. Such jobs write to their log file instead of a pipe to mu. Interactive and desktop sessions still stop their jobs at the end (`features.background.keepOnExit`: `headless`, `always` or `never`).
+- A failed model request is retried up to 8 times instead of 3 (`retry.maxRetries`). With the 60-second cap on each wait, a provider that stops answering for about four minutes no longer ends the run.
+
+### Fixed
+
+- A run that ended on a reply with only thinking in it, no text and no tool call, stopped there without a word. mu now sends the agent back to the task, up to the same limit as its other nudges.
+- A reply cut by the provider's content filter (`finish_reason: content_filter`) ended the run. It is now asked again, twice at most.
+
 ## [0.1.12] - 2026-10-22
 
 ### Changed

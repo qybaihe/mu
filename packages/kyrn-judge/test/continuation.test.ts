@@ -1,4 +1,4 @@
-import { fauxAssistantMessage } from "@earendil-works/pi-ai";
+import { fauxAssistantMessage, fauxThinking } from "@earendil-works/pi-ai";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import { parseConfig } from "../src/config.ts";
@@ -98,6 +98,24 @@ describe("carrying on after stopping short", () => {
 		await looping.session.prompt("Fix the flaky login test.");
 		await vi.waitFor(() => expect(looping.getPendingResponseCount()).toBe(1));
 		expect(nudges(looping)).toHaveLength(2);
+	});
+
+	it("sends a run that ended on thinking alone back to work, without a judge, and not forever", async () => {
+		const silent = () => fauxAssistantMessage([fauxThinking("The tests pass, so the fix holds.")]);
+		const provider = stopJudge();
+		const harness = await start(provider, []);
+		harness.setResponses([silent(), fauxAssistantMessage("Fixed: the parser accepts empty input."), silent()]);
+		await harness.session.prompt("Fix the parser.");
+		await vi.waitFor(() => expect(harness.getPendingResponseCount()).toBe(1));
+		expect(nudges(harness)).toEqual([expect.stringContaining("no message and no tool call")]);
+		// The silent end has nothing to judge; the one that followed it does.
+		expect(continueCalls(provider)).toHaveLength(1);
+
+		const mute = await start(stopJudge(), []);
+		mute.setResponses([silent(), silent(), silent(), silent()]);
+		await mute.session.prompt("Fix the parser.");
+		await vi.waitFor(() => expect(mute.getPendingResponseCount()).toBe(1));
+		expect(nudges(mute)).toHaveLength(2);
 	});
 
 	it("only records its verdict in shadow", async () => {

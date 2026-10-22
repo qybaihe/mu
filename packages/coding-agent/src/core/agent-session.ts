@@ -158,6 +158,10 @@ import {
 	type VirtualModelStateData,
 } from "./virtual-models.ts";
 
+/** A reply the provider's content filter cut, e.g. OpenAI-compatible `finish_reason: content_filter`. */
+const CONTENT_FILTER = /content.?filter/i;
+const CONTENT_FILTER_RETRIES = 2;
+
 // ============================================================================
 // Skill Block Parsing
 // ============================================================================
@@ -3766,6 +3770,11 @@ export class AgentSession {
 	private _isRetryableError(message: AssistantMessage): boolean {
 		// Context overflow is handled by compaction, not retry.
 		if (isContextOverflow(message, (this._modelForMessage(message) ?? this.model)?.contextWindow ?? 0)) return false;
+		// A provider's content filter can cut a long reply on what it happened to sample; the same request often goes
+		// through when asked again. Asked twice at most, since a filter that keeps firing will not change its mind.
+		if (message.stopReason === "error" && CONTENT_FILTER.test(message.errorMessage ?? "")) {
+			return this._retryAttempt < CONTENT_FILTER_RETRIES;
+		}
 		return isRetryableAssistantError(message);
 	}
 
