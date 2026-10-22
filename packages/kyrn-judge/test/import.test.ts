@@ -1,5 +1,14 @@
 import { spawnSync } from "node:child_process";
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import {
+	appendFileSync,
+	copyFileSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	utimesSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -24,6 +33,7 @@ import {
 	firstLine,
 	IMPORT_CONTEXT,
 	IMPORT_MARKER,
+	MAX_IMAGE_CHARS,
 	NO_RESULT,
 	uuidv7,
 } from "../src/import/session.ts";
@@ -345,7 +355,11 @@ type ContextMessage = ReturnType<typeof buildSessionContext>["messages"][number]
 function textOf(content: unknown): string {
 	if (typeof content === "string") return content;
 	if (!Array.isArray(content)) return "";
-	return content.map((block: { type: string; text?: string }) => (block.type === "text" ? block.text : "")).join(" ");
+	return content
+		.map((block: { type: string; text?: string; mimeType?: string }) =>
+			block.type === "text" ? block.text : block.type === "image" ? `[${block.mimeType}]` : "",
+		)
+		.join(" ");
 }
 
 /** One short line per message the model would read. */
@@ -357,7 +371,11 @@ function shape(messages: readonly ContextMessage[]): string[] {
 			case "assistant":
 				return `assistant: ${message.content
 					.map((block) =>
-						block.type === "text" ? block.text : block.type === "toolCall" ? `[${block.name} ${block.id}]` : "",
+						block.type === "text"
+							? block.text
+							: block.type === "toolCall"
+								? `[${block.name} ${block.id}]`
+								: `(thinking: ${block.type === "thinking" ? block.thinking : ""})`,
 					)
 					.join(" ")}${message.stopReason === "error" ? ` (error: ${message.errorMessage})` : ""}`;
 			case "toolResult":
@@ -390,14 +408,14 @@ function readFile(file: string): FileEntry[] {
 // ---------------------------------------------------------------------------------------------------------------
 
 describe("Claude Code transcripts", () => {
-	it("follows the latest branch, puts parallel calls back together and drops thinking", async () => {
+	it("follows the latest branch, puts parallel calls back together, keeps thinking and takes the given title", async () => {
 		const file = writeLines(join(temp(), `${CC_ID}.jsonl`), branchingSession());
 		const converted = await readClaudeCode(file);
 
 		expect(contextOf(converted)).toEqual([
 			`custom ${IMPORT_MARKER}`,
 			"user: Write a hello script in shell\nwith a comment on top",
-			"assistant: I will write it. [Write toolu_1]",
+			"assistant: (thinking: plan it) I will write it. [Write toolu_1]",
 			"result toolu_1: File created",
 			"assistant: Done: hello.sh prints hi.",
 			"user: Add a README instead",
@@ -410,7 +428,8 @@ describe("Claude Code transcripts", () => {
 			tool: "claude-code",
 			sourceId: CC_ID,
 			cwd: CWD,
-			name: "Write a hello script in shell",
+			// The title given with /rename, as Claude Code lists it.
+			name: "hello",
 			model: "claude-test-1",
 			started: at(1),
 		});
@@ -419,10 +438,10 @@ describe("Claude Code transcripts", () => {
 			assistant: 4,
 			toolCalls: 3,
 			toolResults: 3,
+			thinking: 1,
 			missingResults: 0,
 		});
 		expect(converted.counts.dropped).toMatchObject({
-			thinking: 1,
 			"records off the latest branch": 2,
 			"Claude Code bookkeeping (titles, queue, file history)": 3,
 		});
@@ -439,7 +458,9 @@ describe("Claude Code transcripts", () => {
 			display: true,
 			details: { version: 1, tool: "claude-code", source: file, sourceId: CC_ID },
 		});
-		expect(info).toMatchObject({ type: "session_info", name: "Write a hello script in shell" });
+		expect(info).toMatchObject({ type: "session_info", name: "hello" });
+		// The signature belongs to the model that wrote the thinking: it is not carried.
+		expect(JSON.stringify(converted.entries)).not.toContain('"sig"');
 		expect(JSON.stringify(converted.entries)).not.toContain("a second copy");
 		expect(JSON.stringify(converted.entries)).not.toContain("Now add a test");
 	});
@@ -570,6 +591,119 @@ describe("Claude Code transcripts", () => {
 	});
 });
 
+describe("what Claude Code transcripts keep", () => {
+	const messagesOf = (converted: ConvertedTranscript) =>
+		shape(sessionEntries(converted).flatMap((entry) => (entry.type === "message" ? [entry.message] : [])));
+
+	it("keeps what came before a compaction whose named record Claude Code wrote again behind its summary", async () => {
+		// Claude Code 2.1 names the reminder written last before compacting, then writes that record after the summary.
+		const lines = [
+			user("u1", null, 1, "Start the refactor"),
+			assistant("a1", "u1", 2, "m1", [{ type: "text", text: "Started." }]),
+			user("u2", "a1", 3, "Rename the module"),
+			assistant("a2", "u2", 4, "m2", [{ type: "text", text: "Renamed." }]),
+			ccRecord("system", "b1", null, 5, {
+				subtype: "compact_boundary",
+				logicalParentUuid: "t1",
+				compactMetadata: { trigger: "auto", preTokens: 900 },
+			}),
+			user("s1", "b1", 5, "Summary: the module was renamed.", { isCompactSummary: true }),
+			ccRecord("attachment", "t1", "s1", 4, { attachment: { type: "total_tokens_reminder", text: "tokens" } }),
+			user("u3", "t1", 6, "Now update the imports"),
+			assistant("a3", "u3", 7, "m3", [{ type: "text", text: "Imports updated." }]),
+		];
+		const converted = await readClaudeCode(writeLines(join(temp(), `${CC_ID}.jsonl`), lines));
+		expect(messagesOf(converted)).toEqual([
+			"user: Start the refactor",
+			"assistant: Started.",
+			"user: Rename the module",
+			"assistant: Renamed.",
+			"user: Now update the imports",
+			"assistant: Imports updated.",
+		]);
+		expect(converted.counts.compactions).toBe(1);
+		expect(converted.counts.dropped["records off the latest branch"]).toBeUndefined();
+		expect(contextOf(converted)).toEqual([
+			"summary (900): Summary: the module was renamed.",
+			`custom ${IMPORT_MARKER}`,
+			"user: Now update the imports",
+			"assistant: Imports updated.",
+		]);
+	});
+
+	it("keeps the images a person pasted and tools gave back, and says so for one no model takes", async () => {
+		const image = (mediaType: string, data: string) => ({
+			type: "image",
+			source: { type: "base64", media_type: mediaType, data },
+		});
+		const lines = [
+			user("u1", null, 1, [
+				image("image/png", "iVBORw0KGgo="),
+				{ type: "text", text: "What is wrong in this screenshot?" },
+				image("image/svg+xml", "PHN2Zz4="),
+			]),
+			assistant("a1", "u1", 2, "m1", [
+				{ type: "tool_use", id: "toolu_1", name: "Read", input: { file_path: "/tmp/x/shot.jpg" } },
+			]),
+			result("r1", "a1", 3, "toolu_1", [
+				image("image/jpeg", "/9j/4AAQ"),
+				image("image/png", "A".repeat(MAX_IMAGE_CHARS + 1)),
+			]),
+			assistant("a2", "r1", 4, "m2", [{ type: "text", text: "The button is cut off." }]),
+		];
+		const converted = await readClaudeCode(writeLines(join(temp(), `${CC_ID}.jsonl`), lines));
+		expect(messagesOf(converted)).toEqual([
+			"user: [image/png] What is wrong in this screenshot? (image not imported)",
+			"assistant: [Read toolu_1]",
+			"result toolu_1: [image/jpeg] (image not imported)",
+			"assistant: The button is cut off.",
+		]);
+		expect(converted.counts.images).toBe(2);
+		expect(converted.counts.dropped.images).toBe(2);
+		const pasted = sessionEntries(converted).find(
+			(entry) => entry.type === "message" && entry.message.role === "user",
+		);
+		expect(pasted).toMatchObject({
+			message: {
+				content: [
+					{ type: "image", mimeType: "image/png", data: "iVBORw0KGgo=" },
+					{ type: "text" },
+					{ type: "text", text: "(image not imported)" },
+				],
+			},
+		});
+	});
+
+	it("is named as Claude Code lists it: the title it was given, else the one it made up, else the first message", async () => {
+		const dir = temp();
+		const base = [
+			user("u1", null, 1, "Fix the login bug"),
+			assistant("a1", "u1", 2, "m1", [{ type: "text", text: "Fixed." }]),
+		];
+		const made = [...base, { type: "ai-title", aiTitle: "Login bug fix", sessionId: CC_ID }];
+		const given = [{ type: "custom-title", customTitle: "Auth work", sessionId: CC_ID }, ...made];
+		expect((await readClaudeCode(writeLines(join(dir, "a.jsonl"), base))).name).toBe("Fix the login bug");
+		expect((await readClaudeCode(writeLines(join(dir, "b.jsonl"), made))).name).toBe("Login bug fix");
+		expect((await readClaudeCode(writeLines(join(dir, "c.jsonl"), given))).name).toBe("Auth work");
+
+		// The list names it the same, from the start and the end of the transcript.
+		const projects = join(dir, "projects");
+		const filler = Array.from({ length: 400 }, (_, index) =>
+			ccRecord("attachment", `f${index}`, index === 0 ? "a1" : `f${index - 1}`, 3, {
+				attachment: { type: "hook_additional_context", content: ["x".repeat(4000)] },
+			}),
+		);
+		writeLines(join(projects, "p", `${CC_ID}.jsonl`), [
+			...base,
+			...filler,
+			{ type: "ai-title", aiTitle: "Login bug fix", sessionId: CC_ID },
+		]);
+		const none = join(dir, "none");
+		const listed = listConversations({ claudeProjects: projects, codexSessions: none, zcodeDatabase: none });
+		expect(listed.map((one) => one.title)).toEqual(["Login bug fix"]);
+	});
+});
+
 describe("Codex rollouts", () => {
 	it("imports the current shape: calls, results with their exit codes, a compaction, the model", async () => {
 		const converted = await readCodex(
@@ -585,7 +719,7 @@ describe("Codex rollouts", () => {
 			sessionEntries(converted).flatMap((entry) => (entry.type === "message" ? [entry.message] : [])),
 		);
 		expect(all).toEqual([
-			"user: Fix the failing test (image not imported)",
+			"user: Fix the failing test [image/png]",
 			"assistant: Looking at the test. [shell call_1]",
 			"result call_1 (error): 1 failing",
 			"assistant: [apply_patch call_2]",
@@ -607,11 +741,11 @@ describe("Codex rollouts", () => {
 		expect(converted.counts.dropped).toMatchObject({
 			"Codex instructions": 1,
 			"Codex setup": 1,
-			thinking: 1,
-			images: 1,
+			"thinking that cannot be read": 1,
 			"Codex events and state": 3,
 			"records not understood": 1,
 		});
+		expect(converted.counts).toMatchObject({ images: 1, thinking: 0 });
 		const assistantMessage = sessionEntries(converted).find(
 			(entry) => entry.type === "message" && entry.message.role === "assistant",
 		);
@@ -622,6 +756,28 @@ describe("Codex rollouts", () => {
 				content: [{}, { arguments: { command: ["npm", "test"] } }],
 			},
 		});
+	});
+
+	it("keeps the thinking Codex shows: its summary, or its text when it has one", async () => {
+		const rollout = newCodexRollout().map((line) =>
+			((line as Extra).payload as Extra | undefined)?.type === "reasoning"
+				? item(3, {
+						type: "reasoning",
+						summary: [{ type: "summary_text", text: "**Reading the test**" }],
+						encrypted_content: "opaque",
+					})
+				: line,
+		);
+		const converted = await readCodex(writeLines(join(temp(), `rollout-x-${CODEX_ID}.jsonl`), rollout));
+		const answer = sessionEntries(converted).find(
+			(entry) => entry.type === "message" && entry.message.role === "assistant",
+		);
+		expect(answer).toMatchObject({
+			message: {
+				content: [{ type: "thinking", thinking: "**Reading the test**" }, { type: "text" }, { type: "toolCall" }],
+			},
+		});
+		expect(converted.counts.thinking).toBe(1);
 	});
 
 	it("imports the older shape: the folder from the environment, a call that never got its result", async () => {
@@ -710,7 +866,7 @@ describe("importing into mu's sessions", () => {
 		expect(dirname(imported.sessionFile)).toBe(defaultSessionDir(CWD, s.agentDir));
 
 		const manager = SessionManager.open(imported.sessionFile);
-		expect(manager.getSessionName()).toBe("Write a hello script in shell");
+		expect(manager.getSessionName()).toBe("hello");
 		// pi keeps the folder as this machine spells it: <drive>:\tmp\... on Windows.
 		expect(manager.getCwd()).toBe(resolve(CWD));
 		expect(shape(buildSessionContext(manager.getEntries()).messages)).toHaveLength(10);
@@ -721,7 +877,7 @@ describe("importing into mu's sessions", () => {
 		expect(listed).toEqual([
 			expect.objectContaining({
 				id: imported.sessionId,
-				name: "Write a hello script in shell",
+				name: "hello",
 				firstMessage: expect.stringContaining("Write a hello script"),
 			}),
 		]);
@@ -746,6 +902,80 @@ describe("importing into mu's sessions", () => {
 		expect(both.map((one) => one.status)).toEqual(["imported", "already-imported"]);
 	});
 
+	it("brings an import up to date when the conversation went on, keeping its session and the name given in mu", async () => {
+		const s = stores();
+		const options = { agentDir: s.agentDir };
+		const [first] = await importTranscripts([s.cc], options);
+		if (first.status !== "imported") throw new Error(first.status);
+		// Renamed in mu: a setting, not the conversation going on.
+		const leaf = readFile(first.sessionFile).at(-1) as { id: string };
+		appendFileSync(
+			first.sessionFile,
+			`${JSON.stringify({ type: "session_info", id: "rename1", parentId: leaf.id, timestamp: at(20), name: "My hello" })}\n`,
+		);
+		const list = {
+			claudeProjects: s.claudeProjects,
+			codexSessions: s.codexSessions,
+			zcodeDatabase: join(s.dir, "z"),
+			store: options,
+		};
+		expect(listConversations(list).find((one) => one.tool === "claude-code")?.changed).toBeUndefined();
+		// Went on in Claude Code.
+		appendFileSync(
+			s.cc,
+			`${[
+				user("u9", "a8", 30, "Also add a license"),
+				assistant("a9", "u9", 31, "m9", [{ type: "text", text: "License added." }]),
+			]
+				.map((line) => JSON.stringify(line))
+				.join("\n")}\n`,
+		);
+		expect(listConversations(list).find((one) => one.tool === "claude-code")?.changed).toBe(true);
+
+		const [updated] = await importTranscripts([s.cc], options);
+		expect(updated).toMatchObject({
+			status: "updated",
+			sessionFile: first.sessionFile,
+			sessionId: first.sessionId,
+			before: { user: 2, assistant: 4 },
+			counts: { user: 3, assistant: 5 },
+		});
+		const manager = SessionManager.open(first.sessionFile);
+		expect(manager.getSessionName()).toBe("My hello");
+		expect(shape(buildSessionContext(manager.getEntries()).messages).slice(-2)).toEqual([
+			"user: Also add a license",
+			"assistant: License added.",
+		]);
+		// The entries the first import wrote keep their ids.
+		const ids = (file: string) => new Set(readFile(file).map((entry) => (entry as { id?: string }).id));
+		expect(ids(first.sessionFile).has(leaf.id)).toBe(true);
+		expect(listConversations(list).find((one) => one.tool === "claude-code")?.changed).toBeUndefined();
+
+		const [same] = await importTranscripts([s.cc], options);
+		expect(same).toMatchObject({ status: "already-imported", sessionFile: first.sessionFile });
+	});
+
+	it("imports a conversation that went on in mu and in the other tool as a new session beside the first", async () => {
+		const s = stores();
+		const options = { agentDir: s.agentDir };
+		const [first] = await importTranscripts([s.cc], options);
+		if (first.status !== "imported") throw new Error(first.status);
+		const leaf = readFile(first.sessionFile).at(-1) as { id: string };
+		const said = { role: "user", content: "Continue here in mu", timestamp: T0 + 40_000 };
+		appendFileSync(
+			first.sessionFile,
+			`${JSON.stringify({ type: "message", id: "mu1", parentId: leaf.id, timestamp: at(40), message: said })}\n`,
+		);
+		appendFileSync(s.cc, `${JSON.stringify(user("u9", "a8", 30, "Also add a license"))}\n`);
+		const [second] = await importTranscripts([s.cc], options);
+		expect(second).toMatchObject({ status: "imported", earlier: first.sessionFile });
+		if (second.status !== "imported") return;
+		expect(second.sessionFile).not.toBe(first.sessionFile);
+		expect(second.sessionId).not.toBe(first.sessionId);
+		expect(readFileSync(first.sessionFile, "utf8")).toContain("Continue here in mu");
+		expect(readFileSync(second.sessionFile, "utf8")).toContain("Also add a license");
+	});
+
 	it("says why a file was not imported", async () => {
 		const s = stores();
 		const titlesOnly = writeLines(join(s.dir, "titles.jsonl"), [
@@ -759,7 +989,7 @@ describe("importing into mu's sessions", () => {
 		);
 		expect(results.map((one) => (one.status === "failed" ? one.error : one.status))).toEqual([
 			"no such file",
-			"not a Claude Code or Codex transcript",
+			"not a Claude Code, Codex or ZCode transcript",
 			"no messages in this transcript",
 		]);
 	});
@@ -778,12 +1008,13 @@ describe("importing into mu's sessions", () => {
 		const options = {
 			claudeProjects: s.claudeProjects,
 			codexSessions: s.codexSessions,
+			zcodeDatabase: join(s.dir, "zcode", "db.sqlite"),
 			store: { agentDir: s.agentDir },
 		};
 		const all = listConversations(options);
 		expect(all.map((one) => [one.tool, one.title, one.cwd])).toEqual([
 			["codex", "Fix the failing test", CWD],
-			["claude-code", "Write a hello script in shell", CWD],
+			["claude-code", "hello", CWD],
 			["codex", "Add a README", "/tmp/mu-import-fixture/old-project"],
 		]);
 		expect(all[1]).toMatchObject({ id: CC_ID, subAgent: false, started: at(1) });
@@ -900,14 +1131,21 @@ describe("/import-chat", () => {
 			},
 			sessionManager: { getSessionDir: () => defaultSessionDir(CWD, agentDir) },
 		};
-		return { ctx, switched, notes, deps: { agentDir, sources: { claudeProjects, codexSessions } }, dir };
+		const zcodeDatabase = join(dir, "zcode", "db.sqlite");
+		return {
+			ctx,
+			switched,
+			notes,
+			deps: { agentDir, sources: { claudeProjects, codexSessions, zcodeDatabase } },
+			dir,
+		};
 	}
 
 	it("lists this project's conversations, imports the one picked and switches to it", async () => {
 		const { ctx, switched, notes, deps } = setup();
 		await importChat("", ctx, deps);
 		expect(ctx.ui.select).toHaveBeenCalledWith(expect.any(String), [expect.stringContaining("Claude Code")]);
-		expect(notes[0]).toContain('Imported "Write a hello script in shell" from Claude Code');
+		expect(notes[0]).toContain('Imported "hello" from Claude Code');
 		expect(switched).toHaveLength(1);
 		expect(dirname(switched[0])).toBe(defaultSessionDir(CWD, deps.agentDir));
 
@@ -920,7 +1158,7 @@ describe("/import-chat", () => {
 	it("says so when this project has none, and lists without a dialog where there is no UI", async () => {
 		const { ctx, notes, deps } = setup();
 		await importChat("", { ...ctx, cwd: "/tmp/mu-import-fixture/nothing-here" }, deps);
-		expect(notes[0]).toContain("No Claude Code or Codex conversations");
+		expect(notes[0]).toContain("No Claude Code, Codex or ZCode conversations");
 		await importChat("", { ...ctx, hasUI: false }, deps);
 		expect(notes[1]).toContain(`${CC_ID}.jsonl`);
 		expect(ctx.ui.select).not.toHaveBeenCalled();

@@ -12,25 +12,31 @@
  *   does not make an answer: some providers reuse ids. A record continues the answer before it when nothing came
  *   between them, or while that answer still has calls waiting for their results.)
  * - a compaction starts a new root (`compact_boundary`, no parent); its `logicalParentUuid` leads on to what was
- *   compacted, which pi keeps before its own compaction entry. When that record is not in the file, the message
- *   written just before the compaction is where the conversation stood.
+ *   compacted, which pi keeps before its own compaction entry. When that record is not in the file, or is not before
+ *   the compaction (Claude Code 2.1 moves the record it names behind its summary), the message written just before
+ *   the compaction is where the conversation stood.
  * Sub-agent records (`isSidechain`) are left out of a main transcript. A sub-agent's own transcript, where every
  * record is a sidechain, is imported as a conversation of its own.
+ *
+ * The session is named as Claude Code names it: the title it was given (`/rename`), else the one Claude Code wrote
+ * for it, else the person's first message.
  */
 import { statSync } from "node:fs";
 import { basename } from "node:path";
-import type { ImageContent, StopReason, TextContent } from "@earendil-works/pi-ai";
+import type { StopReason } from "@earendil-works/pi-ai";
 import { list, readJsonLines, record, str } from "./jsonl.ts";
 import {
 	type AssistantBlock,
 	absolute,
+	type ContentBlock,
 	type ConvertedTranscript,
 	classifyUserText,
 	commandText,
 	complete,
+	fileStamp,
 	firstLine,
-	IMAGE,
 	IMAGE_MARKER,
+	imageOf,
 	type ReadOptions,
 	SessionBuilder,
 	shellText,
@@ -53,22 +59,25 @@ interface TreeRecord {
 
 type Block = Record<string, unknown>;
 
-/** Image data and Claude Code's second copy of every tool result are never imported: dropped as soon as a line is read. */
+/** Claude Code's second copy of every tool result, and of an attached file, is never imported: dropped as soon as a line is read. */
 function slim(data: Record<string, unknown>): void {
 	delete data.toolUseResult;
-	for (const block of list(record(data.message)?.content)) {
-		const outer = record(block);
-		if (outer?.type === "image") delete outer.source;
-		if (outer?.type === "tool_result") {
-			for (const inner of list(outer.content)) {
-				const image = record(inner);
-				if (image?.type === "image") delete image.source;
-			}
-		}
-	}
 	const file = record(record(record(data.attachment)?.content)?.file);
 	if (file) delete file.base64;
 }
+
+/** An image block as Claude Code writes it (`source: {type: "base64", media_type, data}`). */
+function imageBlock(block: Block): ContentBlock {
+	const source = record(block.source);
+	return source?.type === "base64" ? imageOf(source.media_type, source.data) : imageOf(undefined, undefined);
+}
+
+/** A title record: what Claude Code calls the conversation. A name given to it wins over one Claude Code made up. */
+const TITLES: Readonly<Record<string, string>> = {
+	"custom-title": "customTitle",
+	"ai-title": "aiTitle",
+	summary: "summary",
+};
 
 function blocksOf(message: Record<string, unknown> | undefined): Block[] {
 	const content = message?.content;
@@ -82,13 +91,13 @@ function messageOf(item: TreeRecord): Record<string, unknown> {
 	return record(item.data.message) ?? {};
 }
 
-function resultContent(content: unknown, counts: { asText: number }): (TextContent | ImageContent)[] {
+function resultContent(content: unknown, counts: { asText: number }): ContentBlock[] {
 	if (typeof content === "string") return [{ type: "text", text: content }];
-	const blocks: (TextContent | ImageContent)[] = [];
+	const blocks: ContentBlock[] = [];
 	for (const block of list(content).map(record)) {
 		if (!block) continue;
 		if (block.type === "text") blocks.push({ type: "text", text: str(block.text) ?? "" });
-		else if (block.type === "image") blocks.push(IMAGE);
+		else if (block.type === "image") blocks.push(imageBlock(block));
 		else if (block.type === "tool_reference")
 			blocks.push({ type: "text", text: `[tool reference: ${str(block.tool_name) ?? "unknown"}]` });
 		else {
@@ -136,6 +145,8 @@ export async function readClaudeCode(path: string, options: ReadOptions = {}): P
 	const records: TreeRecord[] = [];
 	const byUuid = new Map<string, TreeRecord>();
 	let sessionId: string | undefined;
+	const titles = new Map<string, string>();
+	const stamp = fileStamp(source);
 
 	for await (const line of readJsonLines(source)) {
 		counts.records++;
@@ -150,6 +161,8 @@ export async function readClaudeCode(path: string, options: ReadOptions = {}): P
 			continue;
 		}
 		sessionId ??= str(data.sessionId);
+		const title = Object.hasOwn(TITLES, type) ? str(data[TITLES[type]])?.trim() : undefined;
+		if (title) titles.set(type, title);
 		const uuid = str(data.uuid);
 		if (!TREE_TYPES.has(type) || !uuid) {
 			builder.drop(uuid ? "records not understood" : "Claude Code bookkeeping (titles, queue, file history)");
@@ -196,6 +209,12 @@ export async function readClaudeCode(path: string, options: ReadOptions = {}): P
 		// A compaction boundary has no parent; what it compacted is its logical parent.
 		const next = current.parent ?? current.logicalParent;
 		let found = next ? byUuid.get(next) : undefined;
+		if (!current.parent && found) {
+			// Claude Code 2.1 writes the record a compaction names again behind its summary: then the compacted part
+			// ends with the message before the compaction.
+			const before = (position.get(found.uuid) ?? 0) < (position.get(current.uuid) ?? 0);
+			if (!before || chosen.has(found.uuid)) found = messageBefore(current);
+		}
 		if (next && !found) {
 			if (!current.parent) found = messageBefore(current);
 			if (!found) builder.drop("links to records that are not in the file");
@@ -309,7 +328,8 @@ export async function readClaudeCode(path: string, options: ReadOptions = {}): P
 			if (partMessage.stop_reason === "max_tokens") stop = "length";
 			for (const block of blocksOf(partMessage)) {
 				if (block.type === "text") blocks.push({ type: "text", text: str(block.text) ?? "" });
-				else if (block.type === "thinking" || block.type === "redacted_thinking") builder.drop("thinking");
+				else if (block.type === "thinking") blocks.push({ type: "thinking", thinking: str(block.thinking) ?? "" });
+				else if (block.type === "redacted_thinking") builder.drop("redacted thinking");
 				else if (block.type === "tool_use") {
 					const callId = str(block.id) ?? part.uuid;
 					if (callIds.has(callId)) {
@@ -344,7 +364,7 @@ export async function readClaudeCode(path: string, options: ReadOptions = {}): P
 			return;
 		}
 		const meta = item.data.isMeta === true;
-		const words: (TextContent | ImageContent)[] = [];
+		const words: ContentBlock[] = [];
 		const say = () => {
 			if (words.length === 0) return;
 			builder.user(words.splice(0), at, item.uuid);
@@ -363,7 +383,7 @@ export async function readClaudeCode(path: string, options: ReadOptions = {}): P
 			}
 			if (block.type === "image") {
 				if (meta) builder.drop("images");
-				else words.push(IMAGE);
+				else words.push(imageBlock(block));
 				continue;
 			}
 			if (block.type !== "text") {
@@ -427,14 +447,16 @@ export async function readClaudeCode(path: string, options: ReadOptions = {}): P
 		if (attachment.type === "queued_command") {
 			// A message typed while the model was working: the person's own words unless Claude Code wrote it.
 			const prompt = attachment.prompt;
-			const words: (TextContent | ImageContent)[] =
+			const words: ContentBlock[] =
 				typeof prompt === "string"
 					? [{ type: "text", text: prompt }]
 					: list(prompt)
 							.map(record)
 							.filter((block): block is Block => block !== undefined)
 							.map((block) =>
-								block.type === "text" ? { type: "text" as const, text: str(block.text) ?? "" } : IMAGE,
+								block.type === "text"
+									? { type: "text" as const, text: str(block.text) ?? "" }
+									: imageBlock(block),
 							);
 			const typed = attachment.commandMode === "prompt" && attachment.isMeta !== true;
 			if (typed) {
@@ -483,8 +505,9 @@ export async function readClaudeCode(path: string, options: ReadOptions = {}): P
 		sourceId: agentId ? `agent-${agentId}` : (sessionId ?? basename(source, ".jsonl")),
 		cwd: cwd ?? options.cwd ?? process.cwd(),
 		started: startedIso,
-		name: name ?? firstCommand,
+		name: titles.get("custom-title") ?? titles.get("ai-title") ?? titles.get("summary") ?? name ?? firstCommand,
 		model,
-		now: options.now,
+		stamp,
+		options,
 	});
 }

@@ -1,35 +1,42 @@
 /**
- * Bringing Claude Code and Codex conversations into mu: finding them on this machine, and turning one transcript into
- * one pi session in mu's session folder, where `/resume`, `mu --session` and the desktop app find it like any other.
+ * Bringing Claude Code, Codex and ZCode conversations into mu: finding them on this machine, and turning one into one
+ * pi session in mu's session folder, where `/resume`, `mu --session` and the desktop app find it like any other.
  *
  * An imported session starts with a marker entry (IMPORT_MARKER) that names the tool, the transcript and the tool's
- * own id for the conversation; a transcript whose conversation is already in the folder is not imported again.
+ * own id for the conversation. A conversation imported before is brought up to date instead: when it went on in the
+ * other tool, its session is written again with what is new (same file, same id), as long as nobody went on with it in
+ * mu; one that went on in mu as well is imported as a new session beside it. One that did not change is left as it is.
  *
  * Only node: built-ins at run time, so that `mu import` runs on a bare Node (cli.ts).
  */
-import { mkdirSync, readdirSync, realpathSync, statSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import type { FileEntry } from "@earendil-works/pi-coding-agent";
 import { readClaudeCode } from "./claude-code.ts";
 import { environmentCwd, readCodex } from "./codex.ts";
-import { readHead, record, str } from "./jsonl.ts";
+import { readHead, readTail, record, str } from "./jsonl.ts";
 import {
 	absolute,
 	type ConvertedTranscript,
 	classifyUserText,
 	commandText,
+	fileStamp,
 	findImport,
 	findImports,
 	firstLine,
 	type ImportCounts,
 	type ImportedSession,
+	type ImportOrigin,
 	type ImportTool,
 	type ReadOptions,
+	replaceSessionFile,
 	type SessionStore,
 	sessionDirFor,
 	sessionFileName,
 	writeSessionFile,
 } from "./session.ts";
+import { listZcode, parseZcodeSource, readZcode, zcodeDatabase, zcodeSource } from "./zcode.ts";
 
 export { readClaudeCode } from "./claude-code.ts";
 export { readCodex } from "./codex.ts";
@@ -41,9 +48,11 @@ export {
 	type ImportCounts,
 	type ImportOrigin,
 	type ImportTool,
+	isImportTool,
 	type SessionStore,
 	TOOL_NAMES,
 } from "./session.ts";
+export { readZcode, zcodeDatabase, zcodeSource } from "./zcode.ts";
 
 // ---------------------------------------------------------------------------------------------------------------
 // Which tool wrote a file
@@ -59,8 +68,9 @@ const CODEX_ITEMS: ReadonlySet<string> = new Set([
 	"reasoning",
 ]);
 
-/** Claude Code or Codex, from the first lines of the file; undefined for anything else. */
+/** Claude Code or Codex, from the first lines of the file, or ZCode from its `<database>#<id>`; undefined for anything else. */
 export function detectTool(path: string): ImportTool | undefined {
+	if (parseZcodeSource(path)) return "zcode";
 	let tool: ImportTool | undefined;
 	let lines = 0;
 	readHead(
@@ -94,7 +104,7 @@ export function detectTool(path: string): ImportTool | undefined {
 
 export interface FoundConversation {
 	tool: ImportTool;
-	/** The transcript. */
+	/** The transcript; for ZCode, `<database>#<id>`. */
 	path: string;
 	/** The tool's id for the conversation (what an import is recognised by). */
 	id: string;
@@ -111,9 +121,35 @@ export interface FoundConversation {
 	subAgent: boolean;
 	/** The mu session it was already imported as. */
 	importedAs?: string;
+	/** It changed after it was imported: importing it again brings what is new. */
+	changed?: true;
 }
 
 type Described = Pick<FoundConversation, "id" | "cwd" | "title" | "started" | "subAgent">;
+
+/** A name given to a conversation wins over one Claude Code made up for it. */
+const CLAUDE_TITLES: readonly (readonly [string, string])[] = [
+	["custom-title", "customTitle"],
+	["ai-title", "aiTitle"],
+	["summary", "summary"],
+];
+
+/** The title Claude Code shows for a conversation: it writes it again near the end now and then, so the end has it. */
+function claudeTitle(path: string, head: readonly Record<string, unknown>[]): string | undefined {
+	let tail: unknown[] = [];
+	try {
+		tail = readTail(path);
+	} catch {}
+	const found = new Map<string, string>();
+	for (const value of [...head, ...tail]) {
+		const data = record(value);
+		const type = str(data?.type);
+		const field = CLAUDE_TITLES.find(([name]) => name === type)?.[1];
+		const title = field ? str(data?.[field])?.trim() : undefined;
+		if (type && title) found.set(type, firstLine(title));
+	}
+	return CLAUDE_TITLES.map(([type]) => found.get(type)).find((title) => title !== undefined);
+}
 
 const TREE_TYPES: ReadonlySet<string> = new Set(["user", "assistant", "system", "attachment"]);
 
@@ -134,16 +170,14 @@ function describeClaudeCode(path: string): Described {
 	let started: string | undefined;
 	let title: string | undefined;
 	let command: string | undefined;
-	let named: string | undefined;
 	let first: boolean | undefined;
+	const titles: Record<string, unknown>[] = [];
 	readHead(path, (value) => {
 		const data = record(value);
 		if (!data) return false;
 		id ??= str(data.sessionId);
 		const type = str(data.type);
-		if (type === "custom-title") named ??= str(data.customTitle);
-		else if (type === "ai-title") named ??= str(data.aiTitle);
-		else if (type === "summary") named ??= str(data.summary);
+		if (CLAUDE_TITLES.some(([name]) => name === type)) titles.push(data);
 		if (!type || !TREE_TYPES.has(type)) return false;
 		// The first message says whose transcript this is: a sub-agent's has nothing but sidechain records.
 		first ??= data.isSidechain === true;
@@ -172,7 +206,7 @@ function describeClaudeCode(path: string): Described {
 	return {
 		id: first && agentId ? `agent-${agentId}` : (id ?? ""),
 		cwd,
-		title: title ?? named ?? command ?? "",
+		title: claudeTitle(path, titles) ?? title ?? command ?? "",
 		started,
 		subAgent: first === true,
 	};
@@ -272,13 +306,22 @@ export interface ListOptions {
 	claudeProjects?: string;
 	/** Codex's `sessions` folder. Default: codexSessionsDir(). */
 	codexSessions?: string;
+	/** ZCode's database. Default: zcodeDatabase(). */
+	zcodeDatabase?: string;
 	/** mu's sessions, to mark what was imported already. */
 	store?: SessionStore;
 	/** Also list the threads sub-agents ran. */
 	subAgents?: boolean;
 }
 
-/** The conversations Claude Code and Codex keep on this machine, the most recently changed first. */
+/** Whether a conversation changed after it was imported, from what it looks like now. */
+function changedSince(origin: ImportOrigin, stamp: string | undefined, modified: string): boolean {
+	if (origin.stamp !== undefined) return stamp !== undefined && stamp !== origin.stamp;
+	// Imported before stamps were kept: written to after the import.
+	return modified > origin.importedAt;
+}
+
+/** The conversations Claude Code, Codex and ZCode keep on this machine, the most recently changed first. */
 export function listConversations(options: ListOptions = {}): FoundConversation[] {
 	const claudeProjects = options.claudeProjects ?? claudeProjectsDir();
 	const codexSessions = options.codexSessions ?? codexSessionsDir();
@@ -293,13 +336,15 @@ export function listConversations(options: ListOptions = {}): FoundConversation[
 	}
 	for (const path of jsonlFiles(codexSessions, 4)) candidates.push({ tool: "codex", path });
 
-	const imported = new Map<string, string>();
-	if (options.store) {
-		for (const found of findImports(options.store)) {
-			imported.set(`${found.origin.tool}:id:${found.origin.sourceId}`, found.sessionFile);
-			imported.set(`${found.origin.tool}:path:${found.origin.source}`, found.sessionFile);
-		}
-	}
+	const imports = options.store ? findImports(options.store) : [];
+	const earlier = (tool: ImportTool, id: string, path: string) => findImport(imports, tool, id, path);
+	const mark = (found: ImportedSession | undefined, stamp: string | undefined, modified: string) =>
+		found
+			? {
+					importedAs: found.sessionFile,
+					...(changedSince(found.origin, stamp, modified) ? { changed: true as const } : {}),
+				}
+			: {};
 
 	const conversations: FoundConversation[] = [];
 	for (const { tool, path } of candidates) {
@@ -320,10 +365,14 @@ export function listConversations(options: ListOptions = {}): FoundConversation[
 		}
 		if (described.subAgent && !options.subAgents) continue;
 		if (options.cwd && !(described.cwd && sameFolder(described.cwd, options.cwd))) continue;
-		const importedAs =
-			(described.id ? imported.get(`${tool}:id:${described.id}`) : undefined) ??
-			imported.get(`${tool}:path:${path}`);
-		conversations.push({ tool, path, ...described, modified, size, ...(importedAs ? { importedAs } : {}) });
+		const found = earlier(tool, described.id, path);
+		conversations.push({ tool, path, ...described, modified, size, ...mark(found, fileStamp(path), modified) });
+	}
+	for (const zcode of listZcode(options.zcodeDatabase ?? zcodeDatabase(), { subAgents: options.subAgents })) {
+		if (options.cwd && !(zcode.cwd && sameFolder(zcode.cwd, options.cwd))) continue;
+		const { source, stamp, ...described } = zcode;
+		const found = earlier("zcode", zcode.id, source);
+		conversations.push({ tool: "zcode", path: source, ...described, ...mark(found, stamp, zcode.modified) });
 	}
 	return conversations.sort((a, b) => b.modified.localeCompare(a.modified));
 }
@@ -332,35 +381,108 @@ export function listConversations(options: ListOptions = {}): FoundConversation[
 // Importing
 // ---------------------------------------------------------------------------------------------------------------
 
-export interface ImportOptions extends SessionStore, ReadOptions {}
+export interface ImportOptions extends SessionStore, Omit<ReadOptions, "sessionId"> {}
+
+type Written = {
+	source: string;
+	tool: ImportTool;
+	sessionFile: string;
+	sessionId: string;
+	name: string;
+	cwd: string;
+	counts: ImportCounts;
+};
 
 export type ImportResult =
-	| {
-			status: "imported";
-			source: string;
-			tool: ImportTool;
-			sessionFile: string;
-			sessionId: string;
-			name: string;
-			cwd: string;
-			counts: ImportCounts;
-	  }
+	| ({
+			status: "imported" /** The earlier import of it, which went on in mu and was left as it was. */;
+			earlier?: string;
+	  } & Written)
+	| ({ status: "updated" /** What the session held before. */; before: ImportCounts } & Written)
 	| { status: "already-imported"; source: string; tool: ImportTool; sessionFile: string; sessionId: string }
 	| { status: "failed"; source: string; error: string };
 
-/** One transcript as a pi session, without writing anything. */
-export async function convertTranscript(path: string, options: ReadOptions = {}): Promise<ConvertedTranscript> {
-	const source = absolute(path);
-	const tool = detectTool(source);
-	if (!tool) throw new Error("not a Claude Code or Codex transcript");
+export const NOT_A_TRANSCRIPT = "not a Claude Code, Codex or ZCode transcript";
+
+function read(tool: ImportTool, source: string, options: ReadOptions): Promise<ConvertedTranscript> {
+	if (tool === "zcode") return readZcode(source, options);
 	return tool === "codex" ? readCodex(source, options) : readClaudeCode(source, options);
 }
 
+/** One transcript as a pi session, without writing anything. */
+export async function convertTranscript(path: string, options: ReadOptions = {}): Promise<ConvertedTranscript> {
+	const zcode = parseZcodeSource(path);
+	const source = zcode ? zcodeSource(zcode.database, zcode.id) : absolute(path);
+	const tool = detectTool(source);
+	if (!tool) throw new Error(NOT_A_TRANSCRIPT);
+	return read(tool, source, options);
+}
+
+/** The entries of a session file after the ones the import wrote: what happened to it in mu since. */
+function laterEntries(file: string, origin: ImportOrigin): Record<string, unknown>[] | undefined {
+	const written = origin.counts?.entries;
+	if (!written) return undefined;
+	let lines: string[];
+	try {
+		lines = readFileSync(file, "utf8").split("\n");
+	} catch {
+		return undefined;
+	}
+	const later: Record<string, unknown>[] = [];
+	for (const line of lines.slice(written + 1)) {
+		if (!line.trim()) continue;
+		try {
+			const entry = record(JSON.parse(line) as unknown);
+			if (entry) later.push(entry);
+		} catch {}
+	}
+	return later;
+}
+
+/** What only changes how mu runs the session (its name, model, thinking level, a mode), not the conversation. */
+const SETTINGS_ENTRIES: ReadonlySet<string> = new Set([
+	"session_info",
+	"model_change",
+	"thinking_level_change",
+	"custom",
+	"label",
+]);
+
+/**
+ * The session's entries brought up to date, when nobody went on with it in mu: the new import, then what mu wrote
+ * after the earlier one that is only settings (a new name, a model), hung after the new import's last entry.
+ * Undefined when the session went on in mu.
+ */
+function updatedEntries(earlier: ImportedSession, converted: ConvertedTranscript): FileEntry[] | undefined {
+	const later = laterEntries(earlier.sessionFile, earlier.origin);
+	if (!later || later.some((entry) => !SETTINGS_ENTRIES.has(String(entry.type)))) return undefined;
+	const entries = [...converted.entries];
+	const ids = new Set(later.map((entry) => entry.id));
+	let leaf = (entries.at(-1) as { id?: string }).id ?? null;
+	for (const entry of later) {
+		const parentId = typeof entry.parentId === "string" && ids.has(entry.parentId) ? entry.parentId : leaf;
+		entries.push({ ...entry, parentId } as unknown as FileEntry);
+		leaf = String(entry.id);
+	}
+	return entries;
+}
+
+/** Whether a new import says what the earlier one said: the same conversation, nothing new in it. */
+function sameAs(earlier: ImportOrigin, converted: ConvertedTranscript): boolean {
+	const digest = record(record(converted.entries[1])?.details)?.digest;
+	if (earlier.digest !== undefined) return earlier.digest === digest;
+	// An import from before digests were kept: as many messages either way.
+	const before = earlier.counts;
+	const after = converted.counts;
+	return before?.user === after.user && before.assistant === after.assistant && before.toolCalls === after.toolCalls;
+}
+
 async function importOne(path: string, options: ImportOptions, imports: ImportedSession[]): Promise<ImportResult> {
-	const source = absolute(path);
+	const zcode = parseZcodeSource(path);
+	const source = zcode ? zcodeSource(zcode.database, zcode.id) : absolute(path);
 	const failed = (error: string): ImportResult => ({ status: "failed", source, error });
 	try {
-		if (!statSync(source).isFile()) return failed("not a file");
+		if (!statSync(zcode ? zcode.database : source).isFile()) return failed("not a file");
 	} catch {
 		return failed("no such file");
 	}
@@ -373,15 +495,43 @@ async function importOne(path: string, options: ImportOptions, imports: Imported
 	});
 	try {
 		const tool = detectTool(source);
-		if (!tool) return failed("not a Claude Code or Codex transcript");
+		if (!tool) return failed(NOT_A_TRANSCRIPT);
 		// Recognised from the first lines when possible: a Codex rollout can be gigabytes.
-		const quick = (tool === "codex" ? describeCodex(source) : describeClaudeCode(source)).id;
-		const known = findImport(imports, tool, quick, source);
-		if (known) return already(tool, known);
-		const converted = tool === "codex" ? await readCodex(source, options) : await readClaudeCode(source, options);
-		const earlier = findImport(imports, tool, converted.sourceId, source);
-		if (earlier) return already(tool, earlier);
+		const quick = zcode ? zcode.id : (tool === "codex" ? describeCodex(source) : describeClaudeCode(source)).id;
+		let earlier = findImport(imports, tool, quick, source);
+		if (earlier?.origin.stamp !== undefined && earlier.origin.stamp === (zcode ? undefined : fileStamp(source)))
+			return already(tool, earlier);
+		const readOptions = (keep?: ImportedSession): ReadOptions => ({
+			cwd: options.cwd,
+			now: options.now,
+			...(keep ? { sessionId: keep.sessionId } : {}),
+		});
+		let converted = await read(tool, source, readOptions(earlier));
+		if (!earlier) {
+			earlier = findImport(imports, tool, converted.sourceId, source);
+			if (earlier) converted = await read(tool, source, readOptions(earlier));
+		}
+		if (earlier && sameAs(earlier.origin, converted)) return already(tool, earlier);
 		if (!converted.hasConversation) return failed("no messages in this transcript");
+		const written: Written = {
+			source,
+			tool,
+			sessionFile: "",
+			sessionId: converted.sessionId,
+			name: converted.name,
+			cwd: converted.cwd,
+			counts: converted.counts,
+		};
+		const update = earlier ? updatedEntries(earlier, converted) : undefined;
+		const origin = record(converted.entries[1])?.details as unknown as ImportOrigin;
+		if (earlier && update) {
+			replaceSessionFile(earlier.sessionFile, update);
+			const before = earlier.origin.counts;
+			imports.splice(imports.indexOf(earlier), 1, { ...earlier, origin });
+			return { status: "updated", ...written, sessionFile: earlier.sessionFile, before };
+		}
+		// Went on in mu as well: a session of its own, with an id of its own.
+		if (earlier) converted = await read(tool, source, readOptions());
 		const dir = sessionDirFor(converted.cwd, options);
 		mkdirSync(dir, { recursive: true });
 		const sessionFile = join(dir, sessionFileName(converted.started, converted.sessionId));
@@ -389,31 +539,24 @@ async function importOne(path: string, options: ImportOptions, imports: Imported
 		imports.push({
 			sessionFile,
 			sessionId: converted.sessionId,
-			origin: {
-				version: 1,
-				tool,
-				source,
-				sourceId: converted.sourceId,
-				importedAt: new Date().toISOString(),
-				counts: converted.counts,
-			},
+			origin: record(converted.entries[1])?.details as unknown as ImportOrigin,
 		});
 		return {
 			status: "imported",
-			source,
-			tool,
-			sessionFile,
+			...written,
 			sessionId: converted.sessionId,
-			name: converted.name,
-			cwd: converted.cwd,
-			counts: converted.counts,
+			sessionFile,
+			...(earlier ? { earlier: earlier.sessionFile } : {}),
 		};
 	} catch (error) {
 		return failed(error instanceof Error ? error.message : String(error));
 	}
 }
 
-/** Imports each transcript into the store; one that is there already, or cannot be read, is said so and skipped. */
+/**
+ * Imports each transcript into the store. One imported before is brought up to date, or left as it is when nothing
+ * changed; one that cannot be read is said so and skipped.
+ */
 export async function importTranscripts(paths: readonly string[], options: ImportOptions): Promise<ImportResult[]> {
 	const imports = findImports(options);
 	const results: ImportResult[] = [];

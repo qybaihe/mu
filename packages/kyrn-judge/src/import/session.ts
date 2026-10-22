@@ -5,8 +5,8 @@
  *
  * Only node: built-ins at run time (the pi imports are types), so that `mu import` runs on a bare Node.
  */
-import { randomBytes, randomUUID } from "node:crypto";
-import { closeSync, openSync, readdirSync, statSync, writeSync } from "node:fs";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { closeSync, openSync, readdirSync, renameSync, rmSync, statSync, writeSync } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 import type {
@@ -16,6 +16,7 @@ import type {
 	JsonValue,
 	StopReason,
 	TextContent,
+	ThinkingContent,
 	ToolCall,
 	Usage,
 } from "@earendil-works/pi-ai";
@@ -30,9 +31,16 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { readHead, record, str } from "./jsonl.ts";
 
-export type ImportTool = "claude-code" | "codex";
+export type ImportTool = "claude-code" | "codex" | "zcode";
 
-export const TOOL_NAMES: Readonly<Record<ImportTool, string>> = { "claude-code": "Claude Code", codex: "Codex" };
+export const TOOL_NAMES: Readonly<Record<ImportTool, string>> = {
+	"claude-code": "Claude Code",
+	codex: "Codex",
+	zcode: "ZCode",
+};
+
+export const isImportTool = (value: unknown): value is ImportTool =>
+	typeof value === "string" && Object.hasOwn(TOOL_NAMES, value);
 
 /** The first entry of every imported session: where it came from. Shown in the transcript, read by the model. */
 export const IMPORT_MARKER = "mu.import";
@@ -46,6 +54,12 @@ const SESSION_VERSION = 3;
 export const MAX_RESULT_CHARS = 100_000;
 
 export const IMAGE_MARKER = "(image not imported)";
+/** An image larger than this (base64 characters) is not imported: no model takes one that size. */
+export const MAX_IMAGE_CHARS = 7 * 1024 * 1024;
+/** The images of one conversation together, at most: the latest are kept, the earlier ones become IMAGE_MARKER. */
+export const MAX_IMAGES_CHARS = 48 * 1024 * 1024;
+/** The image types models take. */
+const IMAGE_TYPES: ReadonlySet<string> = new Set(["image/png", "image/jpeg", "image/gif", "image/webp"]);
 export const NO_RESULT = "No result was recorded for this call.";
 
 export interface ImportCounts {
@@ -57,6 +71,10 @@ export interface ImportCounts {
 	assistant: number;
 	toolCalls: number;
 	toolResults: number;
+	/** Thinking blocks, shown in the transcript and never sent to a model (pi drops another model's thinking). */
+	thinking: number;
+	/** Images imported with their data. */
+	images: number;
 	/** Hidden context messages (IMPORT_CONTEXT). */
 	context: number;
 	compactions: number;
@@ -80,6 +98,10 @@ export interface ImportOrigin {
 	sourceId: string;
 	importedAt: string;
 	model?: string;
+	/** What the transcript looked like on disk when it was imported (sourceStamp): a change means it may have grown. */
+	stamp?: string;
+	/** The imported conversation's fingerprint: an import of a grown transcript differs, one of the same does not. */
+	digest?: string;
 	counts: ImportCounts;
 }
 
@@ -91,6 +113,8 @@ export function emptyCounts(): ImportCounts {
 		assistant: 0,
 		toolCalls: 0,
 		toolResults: 0,
+		thinking: 0,
+		images: 0,
 		context: 0,
 		compactions: 0,
 		missingResults: 0,
@@ -191,8 +215,7 @@ export function readOrigin(file: string): { sessionId: string; origin: ImportOri
 	}
 	const details = record(marker?.details);
 	if (marker?.type !== "custom_message" || marker.customType !== IMPORT_MARKER || !details) return undefined;
-	const tool = details.tool;
-	if (tool !== "claude-code" && tool !== "codex") return undefined;
+	if (!isImportTool(details.tool)) return undefined;
 	if (typeof details.source !== "string") return undefined;
 	return { sessionId: str(header?.id) ?? "", origin: details as unknown as ImportOrigin };
 }
@@ -226,18 +249,20 @@ export function findImports(store: SessionStore): ImportedSession[] {
 	return found;
 }
 
-/** The earlier import of this transcript: the same tool and conversation id, or the same file. */
+/** The latest import of this transcript: the same tool and conversation id, or the same file. */
 export function findImport(
 	imports: readonly ImportedSession[],
 	tool: ImportTool,
 	sourceId: string,
 	source: string,
 ): ImportedSession | undefined {
-	return imports.find(
-		(found) =>
-			found.origin.tool === tool &&
-			((sourceId !== "" && found.origin.sourceId === sourceId) || found.origin.source === source),
-	);
+	let latest: ImportedSession | undefined;
+	for (const found of imports) {
+		if (found.origin.tool !== tool) continue;
+		if (!((sourceId !== "" && found.origin.sourceId === sourceId) || found.origin.source === source)) continue;
+		if (!latest || String(found.origin.importedAt) > String(latest.origin.importedAt)) latest = found;
+	}
+	return latest;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -376,10 +401,26 @@ type Item =
 	| { kind: "context"; text: string; at: number; key?: string }
 	| { kind: "compaction"; summary: string; tokensBefore: number; at: number; keepFrom: readonly string[] };
 
-export type AssistantBlock = TextContent | ToolCall;
+export type AssistantBlock = TextContent | ThinkingContent | ToolCall;
+/** What a person's message or a tool result holds. */
+export type ContentBlock = TextContent | ImageContent;
 
-/** An image in a transcript: never imported, so its data is not carried either. */
+/** An image whose data the transcript does not hold, or not in a form a model takes: imported as IMAGE_MARKER. */
 export const IMAGE: ImageContent = { type: "image", data: "", mimeType: "image/png" };
+
+/** An image from its type and base64 data; IMAGE when either is missing or the type is not one models take. */
+export function imageOf(mimeType: unknown, data: unknown): ImageContent {
+	if (typeof mimeType !== "string" || typeof data !== "string" || data.length === 0) return IMAGE;
+	const type = mimeType.toLowerCase() === "image/jpg" ? "image/jpeg" : mimeType.toLowerCase();
+	return IMAGE_TYPES.has(type) ? { type: "image", data, mimeType: type } : IMAGE;
+}
+
+/** An image given as a `data:` URL, as Codex and ZCode keep them; IMAGE for any other URL. */
+export function imageFromUrl(url: unknown): ImageContent {
+	if (typeof url !== "string") return IMAGE;
+	const head = /^data:([^;,]+);base64,/i.exec(url.slice(0, 200));
+	return head ? imageOf(head[1], url.slice(head[0].length)) : IMAGE;
+}
 
 export interface AssistantInput {
 	blocks: AssistantBlock[];
@@ -395,10 +436,25 @@ export interface ToolResultInput {
 	id: string;
 	/** The call's name when the format carries it; otherwise the name of the call with this id. */
 	name?: string;
-	content: (TextContent | ImageContent)[] | string;
+	content: ContentBlock[] | string;
 	isError: boolean;
 	at: number;
 	key?: string;
+}
+
+/** An entry id that is the same each time the same transcript is imported: the hash of the session, a key and a count. */
+function stableId(seed: string, taken: Set<string>): string {
+	const hash = createHash("sha256").update(seed).digest("hex");
+	for (let start = 0; start + 8 <= hash.length; start += 8) {
+		const id = hash.slice(start, start + 8);
+		if (!taken.has(id)) {
+			taken.add(id);
+			return id;
+		}
+	}
+	const id = randomUUID();
+	taken.add(id);
+	return id;
 }
 
 export class SessionBuilder {
@@ -427,15 +483,17 @@ export class SessionBuilder {
 		return this.counts.user + this.counts.assistant > 0;
 	}
 
-	/** Images become a line that says so; everything else is kept as it was. */
-	private withoutImages(content: (TextContent | ImageContent)[] | string): TextContent[] {
+	/** Text and images as they were; an image without its data, or larger than any model takes, says so instead. */
+	private blocksOf(content: ContentBlock[] | string): ContentBlock[] {
 		if (typeof content === "string") return [{ type: "text", text: content }];
-		const blocks: TextContent[] = [];
+		const blocks: ContentBlock[] = [];
 		for (const block of content) {
-			if (block.type === "image") {
+			if (block.type === "text") blocks.push({ type: "text", text: block.text });
+			else if (block.data.length > 0 && block.data.length <= MAX_IMAGE_CHARS) blocks.push(block);
+			else {
 				this.drop("images");
 				blocks.push({ type: "text", text: IMAGE_MARKER });
-			} else blocks.push({ type: "text", text: block.text });
+			}
 		}
 		return blocks;
 	}
@@ -480,8 +538,8 @@ export class SessionBuilder {
 		this.held = [];
 	}
 
-	user(content: (TextContent | ImageContent)[] | string, at: number, key?: string): void {
-		const blocks = this.withoutImages(content).filter((block) => block.text.length > 0);
+	user(content: ContentBlock[] | string, at: number, key?: string): void {
+		const blocks = this.blocksOf(content).filter((block) => block.type === "image" || block.text.length > 0);
 		if (blocks.length === 0) return;
 		this.counts.user++;
 		this.push({
@@ -501,7 +559,21 @@ export class SessionBuilder {
 
 	assistant(input: AssistantInput): void {
 		this.settle();
-		const blocks = input.blocks.filter((block) => block.type === "toolCall" || block.text.length > 0);
+		const unread = input.blocks.filter((block) => block.type === "thinking" && !block.thinking.trim()).length;
+		// Claude Code keeps only the signature of most thinking now: nothing there to read.
+		this.drop("thinking that cannot be read", unread);
+		let blocks = input.blocks.filter((block) =>
+			block.type === "toolCall"
+				? true
+				: block.type === "text"
+					? block.text.length > 0
+					: block.thinking.trim().length > 0,
+		);
+		// Thinking alone is no answer: a model is never sent another model's thinking, so it would be an empty one.
+		if (blocks.every((block) => block.type === "thinking")) {
+			this.drop("thinking without an answer", blocks.length);
+			blocks = [];
+		}
 		if (blocks.length === 0 && !input.error) return;
 		const calls = blocks.filter((block): block is ToolCall => block.type === "toolCall");
 		const message: AssistantMessage = {
@@ -518,6 +590,7 @@ export class SessionBuilder {
 		this.counts.assistant++;
 		this.items.push({ kind: "message", message, at: input.at, key: input.key });
 		if (input.error) return;
+		this.counts.thinking += blocks.filter((block) => block.type === "thinking").length;
 		for (const call of calls) {
 			this.counts.toolCalls++;
 			this.calls.set(call.id, call.name);
@@ -527,7 +600,7 @@ export class SessionBuilder {
 
 	toolResult(input: ToolResultInput): void {
 		const name = input.name || this.calls.get(input.id) || "unknown";
-		const blocks = this.withoutImages(input.content);
+		const blocks = this.blocksOf(input.content);
 		if (!this.pending.has(input.id)) {
 			if (this.answered.has(input.id)) {
 				this.drop("repeated tool results");
@@ -535,10 +608,17 @@ export class SessionBuilder {
 			}
 			// No call before it (the call was on a branch that was not taken, or before a cut): the result stays readable.
 			this.drop("tool results without their call, kept as context");
-			this.context(`[Result of an earlier ${name} call]\n${blocks.map((block) => block.text).join("\n")}`, input.at);
+			const text = blocks.map((block) => {
+				if (block.type === "text") return block.text;
+				this.drop("images");
+				return IMAGE_MARKER;
+			});
+			this.context(`[Result of an earlier ${name} call]\n${text.join("\n")}`, input.at);
 			return;
 		}
-		const content = blocks.map((block) => ({ type: "text" as const, text: this.clipped(block.text) }));
+		const content = blocks.map((block) =>
+			block.type === "text" ? { type: "text" as const, text: this.clipped(block.text) } : block,
+		);
 		this.pending.delete(input.id);
 		this.answered.add(input.id);
 		this.counts.toolResults++;
@@ -573,6 +653,37 @@ export class SessionBuilder {
 		this.items.push({ kind: "compaction", summary, tokensBefore, at, keepFrom });
 	}
 
+	/**
+	 * Images take MAX_IMAGES_CHARS at most, the latest first: they are what the conversation goes on from. An earlier
+	 * one past that becomes IMAGE_MARKER.
+	 */
+	private budgetImages(): void {
+		let left = MAX_IMAGES_CHARS;
+		for (let index = this.items.length - 1; index >= 0; index--) {
+			const item = this.items[index];
+			if (item.kind !== "message") continue;
+			const message = item.message;
+			if (message.role !== "user" && message.role !== "toolResult") continue;
+			if (typeof message.content === "string") continue;
+			const content = message.content;
+			if (!content.some((block) => block.type === "image")) continue;
+			const kept: ContentBlock[] = [];
+			for (let at = content.length - 1; at >= 0; at--) {
+				const block = content[at];
+				if (block.type !== "image") kept.unshift(block);
+				else if (block.data.length <= left) {
+					left -= block.data.length;
+					this.counts.images++;
+					kept.unshift(block);
+				} else {
+					this.drop("images");
+					kept.unshift({ type: "text", text: IMAGE_MARKER });
+				}
+			}
+			message.content = kept;
+		}
+	}
+
 	/** The session file's lines: header, marker, name, then the conversation as one chain. */
 	finish(input: {
 		sessionId: string;
@@ -583,22 +694,20 @@ export class SessionBuilder {
 		note: string;
 	}): FileEntry[] {
 		this.settle();
+		this.budgetImages();
+		// The same transcript gives the same ids, so that an import brought up to date (its session id kept) keeps them.
 		const taken = new Set<string>();
-		const newId = (): string => {
-			for (let attempt = 0; attempt < 100; attempt++) {
-				const id = randomUUID().slice(0, 8);
-				if (!taken.has(id)) {
-					taken.add(id);
-					return id;
-				}
-			}
-			const id = randomUUID();
-			taken.add(id);
-			return id;
+		const seen = new Map<string, number>();
+		const newId = (key: string): string => {
+			const times = seen.get(key) ?? 0;
+			seen.set(key, times + 1);
+			return stableId(`${input.sessionId}\n${key}\n${times}`, taken);
 		};
 		const startedAt = Date.parse(input.started);
 		const iso = (at: number): string => new Date(at > 0 ? at : startedAt).toISOString();
-		const ids = this.items.map(() => newId());
+		const ids = this.items.map((item, index) =>
+			newId(item.kind === "compaction" ? `compaction ${index}` : (item.key ?? `item ${index}`)),
+		);
 		const byKey = new Map<string, number>();
 		this.items.forEach((item, index) => {
 			if (item.kind !== "compaction" && item.key && !byKey.has(item.key)) byKey.set(item.key, index);
@@ -610,6 +719,7 @@ export class SessionBuilder {
 			if (item.kind === "compaction") lastCompaction = index;
 		});
 		this.counts.entries = this.items.length + 2 + (lastCompaction >= 0 ? 1 : 0);
+		const digest = createHash("sha256").update(JSON.stringify(this.items)).digest("hex").slice(0, 32);
 
 		const header: SessionHeader = {
 			type: "session",
@@ -620,17 +730,17 @@ export class SessionBuilder {
 		};
 		const marker: CustomMessageEntry<ImportOrigin> = {
 			type: "custom_message",
-			id: newId(),
+			id: newId("marker"),
 			parentId: null,
 			timestamp: input.started,
 			customType: IMPORT_MARKER,
 			content: input.note,
 			display: true,
-			details: { ...input.origin, counts: this.counts },
+			details: { ...input.origin, digest, counts: this.counts },
 		};
 		const info: SessionInfoEntry = {
 			type: "session_info",
-			id: newId(),
+			id: newId("name"),
 			parentId: marker.id,
 			timestamp: input.started,
 			name: input.name.replace(/[\r\n]+/g, " ").trim(),
@@ -657,7 +767,11 @@ export class SessionBuilder {
 				// pi keeps the entries from firstKeptEntryId up to the compaction; an id that is not before it keeps none.
 				const kept = item.keepFrom.map((key) => byKey.get(key)).find((at) => at !== undefined);
 				const firstKeptEntryId =
-					kept !== undefined && kept < index ? ids[kept] : index + 1 < ids.length ? ids[index + 1] : newId();
+					kept !== undefined && kept < index
+						? ids[kept]
+						: index + 1 < ids.length
+							? ids[index + 1]
+							: newId("after the last compaction");
 				const compaction: CompactionEntry = {
 					type: "compaction",
 					id,
@@ -671,7 +785,12 @@ export class SessionBuilder {
 			}
 			parentId = id;
 			if (index === lastCompaction) {
-				const again: CustomMessageEntry<ImportOrigin> = { ...marker, id: newId(), parentId, timestamp };
+				const again: CustomMessageEntry<ImportOrigin> = {
+					...marker,
+					id: newId("marker again"),
+					parentId,
+					timestamp,
+				};
 				entries.push(again);
 				parentId = again.id;
 			}
@@ -688,6 +807,18 @@ export interface ReadOptions {
 	/** Used when the transcript names no working directory. Default: this process's. */
 	cwd?: string;
 	now?: Date;
+	/** The session's id: an import brought up to date keeps the one it had. Default: a new one. */
+	sessionId?: string;
+}
+
+/** A file as it is on disk now, to tell later whether it changed: its size and when it was last written. */
+export function fileStamp(path: string): string | undefined {
+	try {
+		const stats = statSync(path);
+		return `${stats.size}:${Math.floor(stats.mtimeMs)}`;
+	} catch {
+		return undefined;
+	}
 }
 
 export interface ConvertedTranscript {
@@ -712,16 +843,25 @@ export function importNote(tool: ImportTool, source: string): string {
 	return [
 		`This conversation was imported from ${name} (${source}) and continues here.`,
 		`Its tool calls use ${name}'s tool names, which may differ from the tools available now.`,
-		"Thinking and images were not imported.",
 	].join(" ");
 }
 
 export function complete(
 	builder: SessionBuilder,
-	input: { source: string; sourceId: string; cwd: string; started: string; name?: string; model?: string; now?: Date },
+	input: {
+		source: string;
+		sourceId: string;
+		cwd: string;
+		started: string;
+		name?: string;
+		model?: string;
+		/** The transcript as it was when reading began (fileStamp). */
+		stamp?: string;
+		options: ReadOptions;
+	},
 ): ConvertedTranscript {
 	const started = Number.isNaN(Date.parse(input.started)) ? new Date().toISOString() : input.started;
-	const sessionId = uuidv7(Date.parse(started));
+	const sessionId = input.options.sessionId ?? uuidv7(Date.parse(started));
 	const name = input.name?.trim() || `${TOOL_NAMES[builder.tool]} conversation`;
 	const entries = builder.finish({
 		sessionId,
@@ -734,8 +874,9 @@ export function complete(
 			tool: builder.tool,
 			source: input.source,
 			sourceId: input.sourceId,
-			importedAt: (input.now ?? new Date()).toISOString(),
+			importedAt: (input.options.now ?? new Date()).toISOString(),
 			...(input.model ? { model: input.model } : {}),
+			...(input.stamp ? { stamp: input.stamp } : {}),
 		},
 	});
 	return {
@@ -753,12 +894,24 @@ export function complete(
 	};
 }
 
-/** Writes the lines to a new file; never replaces one. */
+/** Writes the lines to a new file; never replaces one (see replaceSessionFile). */
 export function writeSessionFile(file: string, entries: readonly FileEntry[]): void {
 	const fd = openSync(file, "wx", 0o600);
 	try {
 		for (const entry of entries) writeSync(fd, `${JSON.stringify(entry)}\n`);
 	} finally {
 		closeSync(fd);
+	}
+}
+
+/** Writes the lines in place of a session file, all at once: a reader sees the old file or the new one. */
+export function replaceSessionFile(file: string, entries: readonly FileEntry[]): void {
+	const temp = `${file}.${randomBytes(4).toString("hex")}.tmp`;
+	try {
+		writeSessionFile(temp, entries);
+		renameSync(temp, file);
+	} catch (error) {
+		rmSync(temp, { force: true });
+		throw error;
 	}
 }

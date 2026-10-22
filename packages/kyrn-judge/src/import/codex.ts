@@ -9,18 +9,19 @@
  */
 import { statSync } from "node:fs";
 import { basename } from "node:path";
-import type { ImageContent, TextContent } from "@earendil-works/pi-ai";
 import { list, readJsonLines, record, str } from "./jsonl.ts";
 import {
 	type AssistantBlock,
 	absolute,
+	type ContentBlock,
 	type ConvertedTranscript,
 	classifyUserText,
 	clip,
 	commandText,
 	complete,
+	fileStamp,
 	firstLine,
-	IMAGE,
+	imageFromUrl,
 	type ReadOptions,
 	SessionBuilder,
 	shellText,
@@ -42,10 +43,7 @@ export function environmentCwd(text: string): string | undefined {
 }
 
 /** A call's output: a string (often JSON with `output` and an exit code), a list of blocks, or an object. */
-function outputOf(
-	output: unknown,
-	counts: { asText: number },
-): { content: (TextContent | ImageContent)[] | string; isError: boolean } {
+function outputOf(output: unknown, counts: { asText: number }): { content: ContentBlock[] | string; isError: boolean } {
 	if (typeof output === "string") {
 		if (output.startsWith("{")) {
 			try {
@@ -64,12 +62,12 @@ function outputOf(
 		const text = str(object.content);
 		return { content: text ?? unknownBlockText(object), isError: object.success === false };
 	}
-	const blocks: (TextContent | ImageContent)[] = [];
+	const blocks: ContentBlock[] = [];
 	for (const block of list(output).map(record)) {
 		if (!block) continue;
 		if (block.type === "input_text" || block.type === "output_text" || block.type === "text")
 			blocks.push({ type: "text", text: str(block.text) ?? "" });
-		else if (block.type === "input_image") blocks.push(IMAGE);
+		else if (block.type === "input_image") blocks.push(imageFromUrl(block.image_url));
 		else {
 			counts.asText++;
 			blocks.push({ type: "text", text: unknownBlockText(block) });
@@ -90,6 +88,7 @@ function compactionText(summary: string, kept: readonly string[]): string {
 
 export async function readCodex(path: string, options: ReadOptions = {}): Promise<ConvertedTranscript> {
 	const source = absolute(path);
+	const stamp = fileStamp(source);
 	const builder = new SessionBuilder("codex");
 	const { counts } = builder;
 	let sourceId = "";
@@ -118,13 +117,13 @@ export async function readCodex(path: string, options: ReadOptions = {}): Promis
 
 	const userMessage = (blocks: Record<string, unknown>[]) => {
 		flush();
-		const words: (TextContent | ImageContent)[] = [];
+		const words: ContentBlock[] = [];
 		const say = () => {
 			if (words.length > 0) builder.user(words.splice(0), at);
 		};
 		for (const block of blocks) {
 			if (block.type === "input_image") {
-				words.push(IMAGE);
+				words.push(imageFromUrl(block.image_url));
 				continue;
 			}
 			if (block.type !== "input_text" && block.type !== "text") {
@@ -186,9 +185,19 @@ export async function readCodex(path: string, options: ReadOptions = {}): Promis
 				else builder.drop("Codex instructions");
 				return;
 			}
-			case "reasoning":
-				builder.drop("thinking");
+			case "reasoning": {
+				// What can be read of it: its summary, or its text when the model gave it. Encrypted content is the
+				// model's own, and never imported.
+				const read = (blocks: unknown) =>
+					list(blocks)
+						.map((block) => str(record(block)?.text)?.trim())
+						.filter((text): text is string => Boolean(text));
+				const content = read(payload.content);
+				const text = content.length > 0 ? content : read(payload.summary);
+				if (text.length === 0) builder.drop("thinking that cannot be read");
+				else answer().blocks.push({ type: "thinking", thinking: text.join("\n\n") });
 				return;
+			}
 			case "function_call":
 			case "tool_search_call":
 				answer().blocks.push({
@@ -350,6 +359,7 @@ export async function readCodex(path: string, options: ReadOptions = {}): Promis
 		started: startedIso,
 		name: name ?? firstCommand,
 		model: lastModel ?? model,
-		now: options.now,
+		stamp,
+		options,
 	});
 }
