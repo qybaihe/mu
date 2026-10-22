@@ -330,12 +330,30 @@ row(
 	"browse",
 	[browseTiers].flat().some(canRelate)
 		? `driven by ${[browseTiers].flat().join(" > ")}`
-		: 'needs a judge that can match a goal to a page. In mu.json: "routes": { "browser.step": ["llm:openai-codex/gpt-5.6-luna"] }',
+		: 'needs a judge that can match a goal to a page. In mu.json: "routes": { "browser.step": ["llm:openai/gpt-5.6-luna"] }',
 );
 
 const marks = { ok: "\x1b[32m ok\x1b[0m", fix: "\x1b[33mfix\x1b[0m", "--": "\x1b[2m  ·\x1b[0m" };
 const plain = !process.stdout.isTTY;
+/** Where a row's text starts: the mark, two spaces, the name's column. */
+const TEXT_COLUMN = 18;
+/** `text` broken between words into lines at most `size` wide; without a terminal, one line. */
+function wrap(text, size) {
+	if (!size || size < 20) return [text];
+	const lines = [];
+	let line = "";
+	for (const word of text.split(" ")) {
+		if (line && line.length + 1 + word.length > size) {
+			lines.push(line);
+			line = word;
+		} else line = line ? `${line} ${word}` : word;
+	}
+	return [...lines, line];
+}
 for (const [state, name, text] of rows) {
-	console.log(`${plain ? state.padStart(3) : marks[state]}  ${name.padEnd(13)}${text}`);
+	// In a terminal, a long row continues under its own text rather than at the left edge.
+	const [first, ...rest] = wrap(text, plain ? undefined : process.stdout.columns - TEXT_COLUMN - 1);
+	console.log(`${plain ? state.padStart(3) : marks[state]}  ${name.padEnd(13)}${first}`);
+	for (const line of rest) console.log(`${" ".repeat(TEXT_COLUMN)}${line}`);
 }
 process.exit(rows.some(([state]) => state === "fix") ? 1 : 0);
