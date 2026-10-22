@@ -1,5 +1,6 @@
+import { defineTool } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import type { Capability, OpenedBy } from "../../catalog/catalog.ts";
+import type { Capability, CapabilityKind, OpenedBy } from "../../catalog/catalog.ts";
 import { capabilityDisclosure } from "../../decisions/capability-disclosure.ts";
 import { say } from "../../language.ts";
 import { CAPABILITIES_OPEN_ENV, inheritedNames } from "../../swarm/brief.ts";
@@ -33,6 +34,32 @@ interface FindDetails {
 
 function line(capability: Capability): string {
 	return `- ${capability.id} · ${capability.title}: ${capability.description}`;
+}
+
+/** The user's own servers first: a request names them ("my open Linear issues") more often than a pack. */
+const KINDS: readonly CapabilityKind[] = ["mcp", "pack", "lsp", "tool"];
+const KIND_NAMES: Readonly<Record<CapabilityKind, string>> = {
+	mcp: "MCP server",
+	pack: "pack",
+	lsp: "language server",
+	tool: "tool",
+};
+const LISTED = 20;
+
+/**
+ * What `find_capability`'s description says is installed: every judged capability, hidden or open, by id and kind.
+ * With capability disclosure off nobody opens a hidden one for the model, so this is how it learns that the user's
+ * Linear server is there. Taken once, when the session's first turn starts, and kept: opening one never changes the
+ * description, and so never the cached prefix of the requests. Undefined when nothing is judged.
+ */
+export function installedLine(capabilities: readonly Capability[]): string | undefined {
+	const judged = capabilities
+		.filter((capability) => capability.exposure === "judged")
+		.sort((a, b) => KINDS.indexOf(a.kind) - KINDS.indexOf(b.kind));
+	if (judged.length === 0) return undefined;
+	const shown = judged.slice(0, LISTED).map((capability) => `${capability.id} (${KIND_NAMES[capability.kind]})`);
+	const more = judged.length - shown.length;
+	return `Installed: ${shown.join(", ")}${more > 0 ? `, and ${more} more` : ""}.`;
 }
 
 /** With the catalog switched off nothing is hidden, so packs and MCP servers are there from the start of a session. */
@@ -132,10 +159,21 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 		return capability;
 	};
 
+	/** Whether `find_capability` already says what is installed: once a session, before its first request. */
+	let described = false;
+
 	pi.on(
 		"before_agent_start",
 		failOpen(async (event, ctx) => {
 			runtime.touch(ctx);
+			if (!described) {
+				// By now the session has started and its MCP servers are in the catalog. Registering the tool again
+				// replaces it before any request has declared it.
+				described = true;
+				const installed = installedLine(catalog.list());
+				if (installed)
+					pi.registerTool({ ...findCapability, description: `${findCapability.description} ${installed}` });
+			}
 			if (isUnattended(ctx)) {
 				// A tool called for by its command stays for the session: `mu -p "/hive …"` needs its hive.
 				const called = event.messageType === "user" ? /^\/([^\s:]+)/.exec(event.prompt)?.[1] : undefined;
@@ -196,7 +234,7 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 		}),
 	);
 
-	pi.registerTool({
+	const findCapability = defineTool({
 		name: "find_capability",
 		label: "Find capability",
 		description:
@@ -258,6 +296,7 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 			};
 		},
 	});
+	pi.registerTool(findCapability);
 
 	pi.registerCommand("capabilities", {
 		description: say({

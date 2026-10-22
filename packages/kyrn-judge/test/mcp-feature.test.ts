@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AgentTool } from "@earendil-works/pi-agent-core";
-import { fauxAssistantMessage, fauxToolCall } from "@earendil-works/pi-ai";
+import { fauxAssistantMessage, fauxToolCall, type Message } from "@earendil-works/pi-ai";
 import { createMcpExtension, type ExtensionUIContext, loadMcpConfig } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -334,6 +334,45 @@ describe("MCP servers in the capability catalog", () => {
 			expect.objectContaining({ tools: expect.arrayContaining(["mcp__flaky__late"]) }),
 		]);
 		expect(JSON.stringify([results, events])).not.toContain(SECRET);
+	});
+
+	it("names the installed servers in find_capability's description from the first request, and keeps it", async () => {
+		/** Every declaration of find_capability in a request, with its description. */
+		const declarations = (messages: readonly Message[]) =>
+			messages
+				.flatMap((message) => (message.role === "system" ? (message.toolsAdded ?? []) : []))
+				.filter((tool) => tool.name === "find_capability")
+				.map((tool) => tool.description);
+		const requests: (readonly Message[])[] = [];
+		const seen = (reply: ReturnType<typeof fauxAssistantMessage>) => (context: { messages: Message[] }) => {
+			requests.push(context.messages);
+			return reply;
+		};
+
+		// Disclosure off, as by default: nothing tells the model about the server but this description.
+		const { harness } = await start({ servers: { linear: fake() }, mode: "off" });
+		harness.setResponses([
+			seen(
+				fauxAssistantMessage([fauxToolCall("find_capability", { open: "mcp:linear" })], { stopReason: "toolUse" }),
+			),
+			seen(fauxAssistantMessage("Opened.")),
+			seen(fauxAssistantMessage("Here they are.")),
+		]);
+		await harness.session.prompt("Check my open issues.");
+		const [first] = declarations(requests[0]);
+		expect(first).toContain("Installed: mcp:linear (MCP server).");
+		// Opening the server adds its tools; find_capability is declared once, and as it was.
+		await harness.session.prompt("And the closed ones?");
+		expect(mcpTools(harness)).toContain("mcp__linear__echo");
+		expect(declarations(requests[requests.length - 1])).toEqual([first]);
+
+		requests.length = 0;
+		const none = await start({ mode: "off" });
+		none.harness.setResponses([seen(fauxAssistantMessage("hi"))]);
+		await none.harness.session.prompt("Hello.");
+		const [plain] = declarations(requests[0]);
+		expect(plain).not.toContain("Installed:");
+		expect(first.startsWith(`${plain} `)).toBe(true);
 	});
 
 	it("starts a pinned server with the session, and every server when the catalog hides nothing", async () => {
