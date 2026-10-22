@@ -42,7 +42,7 @@ import {
 export const SETUP_DECLINED_FILE = "setup-declined";
 
 /** Exit codes. `start`: done, and the person wants a session now, which the launcher then starts (kyrn/bin/mu.mjs). */
-export const SETUP_EXIT = { done: 0, failed: 1, usage: 2, start: 3, cancelled: 130 } as const;
+export const SETUP_EXIT = { done: 0, failed: 1, usage: 2, start: 3, signIn: 4, cancelled: 130 } as const;
 
 /** Options that take a value. The launcher keeps the same list: whatever else stands alone on the command line is a key. */
 export const SETUP_VALUE_FLAGS: readonly string[] = [
@@ -524,7 +524,7 @@ class Setup {
 		const start = await this.start(key === undefined ? undefined : cleanKey(key));
 		if (start === "subscription") {
 			const code = await this.write(undefined, undefined, await this.judge(undefined));
-			return code === SETUP_EXIT.done ? this.offerSession() : code;
+			return code === SETUP_EXIT.done ? this.offerSession(true) : code;
 		}
 		const target = await this.checked(start.service, start.key);
 		this.modelKey = target.key;
@@ -1457,15 +1457,20 @@ class Setup {
 						zh: "在 mu 里用 /model 换模型；随时可以再运行 mu setup。",
 						en: "Switch models inside mu with /model, and run mu setup again any time.",
 					})
-				: this.t({ zh: "启动 mu 后输入 /login 登录。", en: "Start mu and type /login to sign in." }),
+				: this.t({ zh: "接下来在 mu 里用 /login 登录。", en: "Next, sign in with /login in mu." }),
 		);
 	}
 
-	/** On its own, a finished setup offers a session; on a first start the launcher goes on into one anyway. */
-	private async offerSession(): Promise<number> {
-		if (this.args.firstRun || this.scripted) return SETUP_EXIT.done;
+	/**
+	 * On its own, a finished setup offers a session; on a first start the launcher goes on into one anyway. After a
+	 * subscription was chosen (`signIn`), that session opens on /login: SETUP_EXIT.signIn.
+	 */
+	private async offerSession(signIn = false): Promise<number> {
+		if (this.scripted) return SETUP_EXIT.done;
+		if (this.args.firstRun) return signIn ? SETUP_EXIT.signIn : SETUP_EXIT.done;
 		const start = await this.confirm(this.t({ zh: "现在启动 mu 吗？[Y/n] ", en: "Start mu now? [Y/n] " }), true);
-		return start ? SETUP_EXIT.start : SETUP_EXIT.done;
+		if (!start) return SETUP_EXIT.done;
+		return signIn ? SETUP_EXIT.signIn : SETUP_EXIT.start;
 	}
 }
 

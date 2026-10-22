@@ -69,6 +69,7 @@ import {
 import { type AgentSession, type AgentSessionEvent, parseSkillBlock } from "../../core/agent-session.ts";
 import { type AgentSessionRuntime, SessionImportFileNotFoundError } from "../../core/agent-session-runtime.ts";
 import type { AgentSessionRuntimeDiagnostic } from "../../core/agent-session-services.ts";
+import { formatNoModelsAvailableMessage } from "../../core/auth-guidance.ts";
 import {
 	CACHE_TTL_MS,
 	type CacheMiss,
@@ -1215,7 +1216,12 @@ export class InteractiveMode {
 		}
 
 		if (modelFallbackMessage) {
-			this.showWarning(modelFallbackMessage);
+			// With no model at all, the way to add one from here is /login.
+			this.showWarning(
+				modelFallbackMessage === formatNoModelsAvailableMessage()
+					? formatNoModelsAvailableMessage({ inSession: true })
+					: modelFallbackMessage,
+			);
 		}
 
 		const crash = takeUnnotifiedCrash();
@@ -1228,8 +1234,11 @@ export class InteractiveMode {
 
 		void this.maybeWarnAboutAnthropicSubscriptionAuth();
 
-		// Process initial messages
-		if (initialMessage) {
+		// Process initial messages. A first message "/login" (mu setup starts the session that way once a subscription
+		// was chosen) opens the sign-in, as when typed in the editor.
+		if (initialMessage === "/login" || initialMessage?.startsWith("/login ")) {
+			await this.handleLoginCommand(initialMessage.slice("/login".length).trim() || undefined);
+		} else if (initialMessage) {
 			try {
 				await this.session.prompt(initialMessage, { images: initialImages });
 			} catch (error: unknown) {
