@@ -236,6 +236,16 @@ const NVIDIA_OPENAI_COMPAT: OpenAICompletionsCompat = {
 	supportsStrictMode: false,
 	supportsLongCacheRetention: false,
 };
+// Nebius Token Factory: vLLM behind an OpenAI-compatible gateway. Base compat comes from
+// detectOpenAICompletionsCompat(), modeled on NVIDIA NIM: the message role enum has no
+// "developer", and strict tool schemas and prompt_cache_retention are not verified.
+// https://docs.tokenfactory.nebius.com/api-reference/inference/create-chat-completion
+const NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1";
+// Effort values models.dev does not list yet, measured on Token Factory (2026-10-22): Nemotron 3 Super answers
+// directly with "none", and thinks longer from "low" to "medium"; "high" thinks as long as "medium".
+const NEBIUS_MEASURED_REASONING_OPTIONS: Record<string, ModelsDevReasoningOption[]> = {
+	"nvidia/nemotron-3-super-120b-a12b": [{ type: "effort", values: ["none", "low", "medium", "high"] }],
+};
 const NVIDIA_NIM_UNSUPPORTED_MODELS = new Set([
 	"abacusai/dracarys-llama-3.1-70b-instruct",
 	"bytedance/seed-oss-36b-instruct",
@@ -739,12 +749,14 @@ function detectOpenAICompletionsCompat(model: Model<"openai-completions">): Open
 	const isNvidia = provider === "nvidia" || baseUrl.includes("integrate.api.nvidia.com");
 	const isAntLing = provider === "ant-ling" || baseUrl.includes("api.ant-ling.com");
 	const isCerebras = provider === "cerebras" || baseUrl.includes("cerebras.ai");
+	const isNebius = provider === "nebius" || baseUrl.includes("tokenfactory.nebius.com");
 	const isTogetherReasoningOnly = isTogether && TOGETHER_REASONING_ONLY_MODELS.has(model.id);
 	const isDeepSeek = provider === "deepseek" || baseUrl.toLowerCase().includes("deepseek.com");
 
 	const isNonStandard =
 		isNvidia ||
 		isCerebras ||
+		isNebius ||
 		provider === "xai" ||
 		baseUrl.includes("api.x.ai") ||
 		isTogether ||
@@ -765,6 +777,7 @@ function detectOpenAICompletionsCompat(model: Model<"openai-completions">): Open
 		isCloudflareAiGateway ||
 		isTogether ||
 		isNvidia ||
+		isNebius ||
 		isAntLing ||
 		isZai;
 
@@ -778,7 +791,14 @@ function detectOpenAICompletionsCompat(model: Model<"openai-completions">): Open
 		supportsStore: !isNonStandard,
 		supportsDeveloperRole: isOpenRouterDeveloperRoleModel || (!isNonStandard && !isOpenRouter),
 		supportsReasoningEffort:
-			!isGrok && !isZai && !isMoonshot && !isTogether && !isCloudflareAiGateway && !isNvidia && !isAntLing,
+			!isGrok &&
+			!isZai &&
+			!isMoonshot &&
+			!isTogether &&
+			!isCloudflareAiGateway &&
+			!isNvidia &&
+			!isNebius &&
+			!isAntLing,
 		supportsUsageInStreaming: true,
 		supportsFinishReason: true,
 		maxTokensField: useMaxTokens ? "max_tokens" : "max_completion_tokens",
@@ -803,7 +823,8 @@ function detectOpenAICompletionsCompat(model: Model<"openai-completions">): Open
 		chatTemplateArgs: {},
 		zaiToolStream: false,
 		// Preserve built-in behavior as explicit metadata against the conservative runtime default.
-		supportsStrictMode: !isMoonshot && !isTogether && !isCloudflareAiGateway && !isNvidia && !isCerebras,
+		supportsStrictMode:
+			!isMoonshot && !isTogether && !isCloudflareAiGateway && !isNvidia && !isCerebras && !isNebius,
 		supportsOpenAIGrammarTools: false,
 		supportsMidConvoSystemMessages: false,
 		supportsMidConvoToolAdditions: false,
@@ -814,6 +835,7 @@ function detectOpenAICompletionsCompat(model: Model<"openai-completions">): Open
 			isCloudflareWorkersAI ||
 			isCloudflareAiGateway ||
 			isNvidia ||
+			isNebius ||
 			isAntLing
 		),
 	};
@@ -1965,6 +1987,40 @@ async function loadModelsDevData(): Promise<Model<any>[]> {
 					maxTokens: m.limit?.output || 4096,
 				});
 				recordModelsDevReasoningOptions("cerebras", modelId, m);
+			}
+		}
+
+		// Process Nebius Token Factory models
+		if (data.nebius?.models) {
+			for (const [modelId, model] of Object.entries(data.nebius.models)) {
+				const m = model as ModelsDevModel;
+				if (m.tool_call !== true) continue;
+
+				// The gateway accepts reasoning_effort, but which values a model honors varies
+				// (Nemotron 3.5: none/high; GLM 5.3: low/high/max). Send it only to models with
+				// models.dev effort values; applyModelsDevReasoningOptionMetadata maps the levels.
+				// Other reasoning models get no reasoning parameter and use their default.
+				const reasoningOptions = m.reasoning_options?.length
+					? m.reasoning_options
+					: NEBIUS_MEASURED_REASONING_OPTIONS[modelId];
+				if (reasoningOptions !== m.reasoning_options) m.reasoning_options = reasoningOptions;
+				const supportsReasoningEffort =
+					m.reasoning === true && getEffortThinkingLevelMap(reasoningOptions ?? []) !== undefined;
+
+				models.push({
+					id: modelId,
+					name: m.name || modelId,
+					api: "openai-completions",
+					provider: "nebius",
+					baseUrl: NEBIUS_BASE_URL,
+					reasoning: m.reasoning === true,
+					input: m.modalities?.input?.includes("image") ? ["text", "image"] : ["text"],
+					cost: getModelsDevCost(m.cost),
+					...(supportsReasoningEffort ? { compat: { supportsReasoningEffort: true } } : {}),
+					contextWindow: m.limit?.context || 4096,
+					maxTokens: m.limit?.output || 4096,
+				});
+				recordModelsDevReasoningOptions("nebius", modelId, m);
 			}
 		}
 

@@ -53,6 +53,8 @@ mu setup            # connect a model
 mu                  # start a session in the current directory
 ```
 
+**On Nebius Token Factory with NVIDIA Nemotron.** Paste a Token Factory key into `mu setup`: mu starts on Nemotron 3 Super and offers Nemotron 3 Ultra as the judge. This is new and not yet in the npm package, so run mu from source for now; [docs/nebius.md](docs/nebius.md) has the steps, the measurements behind the choice of models, and a Nemotron 3 Nano 4B judge distilled from Ultra that runs on your machine.
+
 You don't need a judge key to start: until you set one, the free Jev on OpenCode Zen answers. From the start, 34 of the 40 decision points act on their verdicts (summary-free compaction and mid-stream correction are off until you turn them on, the subagent patch scope check is off, and notification routing, mid-run messages and the drift check are only recorded), and every verdict is logged (`/status`, `mu ledger` or the app's Judge tab). To record what the judge would do without acting on it, put `{"modes": {"default": "shadow"}}` in `~/.mu/agent/mu.json`. More in [Getting started](docs/getting-started.md).
 
 ## How a turn works
@@ -170,6 +172,7 @@ Every point, with its feature switch and options: [docs/reference/decision-point
 - **Laya** (local, macOS on Apple silicon) is a 322M-parameter judge that runs on your machine and never touches the network. Nothing is downloaded without your consent. It's reliable on simple predicates and weaker on meta-judgments, so run it in shadow alongside your current judge and read the ledger before you give it a decision point.
 - **Any classifier model** in pi's catalog can serve as a tier: `classifier:<provider>/<model>`. Examples include Cloudflare's Clef (`clef`, `clef-flash`), the System One models on OpenRouter and the Vercel AI Gateway, or a llama.cpp classifier.
 - **Any LLM** can serve as a tier: `llm:<provider>/<model>`.
+- **NVIDIA Nemotron on Nebius Token Factory**: `nemotron` is Nemotron 3 Ultra with thinking off, and `nemotron-local` is Nemotron 3 Nano 4B distilled from it, served on your machine. With Nemotron 3 Super as the coding model and Token Factory Sandboxes to run commands in, mu runs end to end on Nebius: see [docs/nebius.md](docs/nebius.md).
 
 Judges can be chained in tiers, cheapest first:
 
@@ -358,7 +361,7 @@ Your keys stay on your machine. mu never downloads a model or a runtime on its o
 
 ## Documentation
 
-- [Getting started](docs/getting-started.md) · [Configuration](docs/configuration.md) · [Judges](docs/judges.md) · [Troubleshooting](docs/troubleshooting.md)
+- [Getting started](docs/getting-started.md) · [Configuration](docs/configuration.md) · [Judges](docs/judges.md) · [Nebius and NVIDIA Nemotron](docs/nebius.md) · [Troubleshooting](docs/troubleshooting.md)
 - Reference: [every decision point](docs/reference/decision-points.md) · [every feature and option](docs/reference/features.md) · [Changelog](CHANGELOG.md)
 - For contributors: [How mu works](docs/architecture.md) · [Adding a decision point](docs/adding-a-decision-point.md) · [Translations](docs/translations.md) · [Writing style](docs/writing-style.md)
 

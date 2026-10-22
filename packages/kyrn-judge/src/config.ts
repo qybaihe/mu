@@ -3,6 +3,7 @@ import { join } from "node:path";
 import type { JudgeProfile } from "./cascade.ts";
 import type { DecisionMode } from "./decision.ts";
 import { CONFIG_FILE, LEGACY_CONFIG_FILE, muEnv } from "./naming.ts";
+import type { JsonValue } from "./types.ts";
 
 /**
  * How one judge is reached. The decision points never see this: they ask
@@ -15,6 +16,8 @@ import { CONFIG_FILE, LEGACY_CONFIG_FILE, muEnv } from "./naming.ts";
  * - `llm`:     a generative model from the host's model registry, prompted to answer as JSON.
  * - `classifier`: a classifier model from the host's model catalog (Jev on OpenCode Zen or Cloudflare, Clef, the
  *              System One models on OpenRouter, a llama.cpp classifier), reached with the host's own credentials.
+ * - `logprob`: a chat model behind an OpenAI-compatible API (Nemotron on Nebius Token Factory, a vLLM server), its
+ *              probabilities read off the first answer token.
  * - `mock`:    neutral answers, for tests and offline work.
  */
 export interface JudgeConfig {
@@ -25,17 +28,32 @@ export interface JudgeConfig {
 	 * CLOUDFLARE_ACCOUNT_ID are, else the Vercel AI Gateway with the key pi keeps for it. `typesafe` is Jev over
 	 * System One at `baseUrl` (TypeSafe's own, OpenRouter's, a relay's), `gateway` through the Vercel AI Gateway.
 	 * `clm` is CLM-8B (github.com/Contrastive-LM/CLM) at the address of a `clm-serve`, which speaks System One too.
+	 * `systemone` is any other System One server, such as a distilled judge served on this machine.
 	 */
-	readonly type: "jev" | "typesafe" | "clm" | "gateway" | "local" | "http" | "llm" | "classifier" | "mock";
+	readonly type:
+		| "jev"
+		| "typesafe"
+		| "clm"
+		| "systemone"
+		| "gateway"
+		| "local"
+		| "http"
+		| "llm"
+		| "classifier"
+		| "logprob"
+		| "mock";
 	/**
-	 * jev, typesafe, gateway: judge model id. clm: a model the server serves, default "clm-latest". llm and
+	 * jev, typesafe, gateway: judge model id. clm: a model the server serves, default "clm-latest". systemone: the
+	 * model the server serves, sent as is. llm and
 	 * classifier: "provider/model-id", e.g. "opencode/jev-1.13" or "cloudflare-workers-ai/@cf/cloudflare/clef".
+	 * logprob: the model id the API takes, e.g. "nvidia/Nemotron-3_5-Lightning".
 	 */
 	readonly model?: string;
 	/**
-	 * gateway, local, http, clm, and the System One route (`typesafe`, or `jev` when a TypeSafe key is set).
+	 * gateway, local, http, clm, logprob, and the System One route (`typesafe`, or `jev` when a TypeSafe key is set).
 	 * For System One this is the endpoint URL; empty uses TypeSafe's own. For clm, the server's address
-	 * (`http://host:8700` is enough); empty is http://127.0.0.1:8700.
+	 * (`http://host:8700` is enough); empty is http://127.0.0.1:8700. For systemone, the server's address, written
+	 * the same ways. For logprob, the OpenAI-compatible base URL (`…/v1`).
 	 */
 	readonly baseUrl?: string;
 	/** http: request path, default "/evaluate". */
@@ -45,11 +63,13 @@ export interface JudgeConfig {
 	 * file. A typesafe judge keyed by MU_JUDGE_OPENROUTER_API_KEY, MU_JUDGE_CUSTOM_API_KEY or MU_JUDGE_CLM_API_KEY needs
 	 * its own `baseUrl`: those keys belong to another service and never go to TypeSafe. clm reads MU_JUDGE_CLM_API_KEY
 	 * unless told otherwise, and calls without a key when it is not set: a CLM server asks for one only when it was
-	 * started with CLM_API_KEY.
+	 * started with CLM_API_KEY. systemone likewise reads MU_JUDGE_SYSTEMONE_API_KEY unless told otherwise.
 	 */
 	readonly apiKeyEnv?: string;
 	/** llm: thinking level for the judge model, default "off". */
 	readonly thinking?: string;
+	/** logprob: extra request fields, e.g. `{"chat_template_kwargs": {"enable_thinking": false}}`. */
+	readonly body?: Readonly<Record<string, JsonValue>>;
 	readonly timeoutMs?: number;
 	readonly profile?: JudgeProfile;
 }
@@ -72,7 +92,10 @@ export interface KyrnConfig {
 	readonly mcp?: unknown;
 	/** "provider/model-id" of a small generative model for the things a judge cannot do: task frames, lessons. */
 	readonly writer?: string;
-	/** Store judged states in the ledger (needed to distil a local judge). Off by default: states hold user content. */
+	/**
+	 * Store each judge request (state and questions, secrets redacted) in the ledger, to distil a local judge from.
+	 * Off by default: states hold user content.
+	 */
 	readonly recordState: boolean;
 }
 
@@ -99,6 +122,22 @@ export const BUILT_IN_JUDGES: Readonly<Record<string, JudgeConfig>> = {
 	"clef-flash": { type: "classifier", model: "cloudflare-workers-ai/@cf/cloudflare/clef-flash" },
 	// CLM-8B on this machine, where `clm-serve` listens by default. Its profile is not measured on mu's questions yet.
 	clm: { type: "clm" },
+	// NVIDIA Nemotron 3 Ultra on Nebius Token Factory (NEBIUS_API_KEY) through the LLM judge prompt, thinking off:
+	// one JSON answer per request, 0.9 s at the median. Measured on 1,367 held-out judge requests from mu (Oct 2026),
+	// it was the only Nemotron on Token Factory that clearly beat no judge at all; Super, Nano 30B and Lightning
+	// (also read off first-token logprobs) missed the answer format or decided worse.
+	nemotron: { type: "llm", model: "nebius/nvidia/Nemotron-3-Ultra-550b-a55b", thinking: "off" },
+	// The same with thinking on (reasoning_effort "high"): 2.5 s at the median, 8.5 s at p90, about three times the
+	// tokens. Worth it where Ultra decides worst without it; route those decision points here (docs/nebius.md).
+	"nemotron-think": {
+		type: "llm",
+		model: "nebius/nvidia/Nemotron-3-Ultra-550b-a55b",
+		thinking: "high",
+		timeoutMs: 60_000,
+	},
+	// Nemotron 3 Nano 4B distilled from Nemotron 3 Ultra (github.com/qybaihe/mu-judge-nemotron), served on this
+	// machine by its System One server: `python serve/systemone_server.py --backend mlx --port 8770`.
+	"nemotron-local": { type: "systemone", baseUrl: "http://127.0.0.1:8770", model: "mu-judge-nemotron" },
 	// Measured in kyrn/docs/03-local-judge.md: the base checkpoint classifies one text well, says "yes" to
 	// nearly every relational question, and cannot use a rubric or judge the request itself. Measured on
 	// Terminal-Bench 2.1 (Oct 2026): on tool output it is wrong or late. All 15 passages it withheld as injections were
@@ -135,11 +174,13 @@ const JUDGE_TYPES: readonly string[] = [
 	"jev",
 	"typesafe",
 	"clm",
+	"systemone",
 	"gateway",
 	"local",
 	"http",
 	"llm",
 	"classifier",
+	"logprob",
 	"mock",
 ] satisfies JudgeConfig["type"][];
 

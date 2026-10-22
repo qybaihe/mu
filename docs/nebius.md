@@ -1,0 +1,108 @@
+# mu on Nebius Token Factory with NVIDIA Nemotron
+
+mu can run end to end on [Nebius Token Factory](https://tokenfactory.nebius.com) with NVIDIA's open Nemotron models. Each model does the job it fits:
+
+| Role in mu | Model on Token Factory | Why |
+| --- | --- | --- |
+| The coding model: reads, edits, runs commands | Nemotron 3 Super (`nvidia/nemotron-3-super-120b-a12b`) | Calls tools reliably, $0.30 / $0.90 per million tokens; its thinking follows mu's thinking level |
+| The judge at the 40 decision points | Nemotron 3 Ultra (`nvidia/Nemotron-3-Ultra-550b-a55b`), thinking off | The only Nemotron on Token Factory that clearly beat having no judge (below); 0.9 s at the median |
+| The judge on your machine | Nemotron 3 Nano 4B, distilled from Ultra ([mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron)) | Free and local; sends Ultra only the questions it is unsure of |
+| Where commands run, if you want them off your machine | Token Factory Sandboxes | Each command continues from the files the previous one left; changes come back only after you review the diff |
+
+## Set up
+
+Until the next release of the npm package, run mu from source (Node.js 22.19 or newer):
+
+```bash
+git clone https://github.com/qybaihe/mu && cd mu
+npm ci && npm run generate:models   # the model catalog is generated, not committed
+./kyrn/bin/mu setup                 # then ./kyrn/bin/mu wherever `mu` appears below
+```
+
+Create an API key in [Token Factory](https://tokenfactory.nebius.com), run `mu setup` and paste it: mu recognises a Token Factory key, checks it, starts you on Nemotron 3 Super and offers Nemotron 3 Ultra as the judge. In a script, the key comes from stdin:
+
+```bash
+mu setup --service nebius --key-stdin --judge nemotron
+```
+
+This keeps the key in `~/.mu/agent/auth.json`, makes Super the default model and writes the judge to `~/.mu/agent/mu.json`:
+
+```json
+{ "tiers": ["nemotron"] }
+```
+
+Then run `mu`. Without setup, the environment works too (or put the key in `~/.mu/.env`):
+
+```bash
+export NEBIUS_API_KEY=...
+MU_JUDGE=nemotron mu --provider nebius --model nvidia/nemotron-3-super-120b-a12b
+```
+
+In Judge mode (the default permission mode) Nemotron 3 Ultra approves what the task clearly needs and asks you about the rest. Every verdict goes to the ledger with its latency: `mu ledger`, `/status`, or the Judge tab in the desktop app. A typical run, fixing a failing test in a small Python project:
+
+```
+input.preflight: multi_step_task -> heavy  files=yes side=no clarify=no
+tool.approval: "approve"        python3 test_slugify.py
+turn.drift: "on_track"
+tool.approval: "approve"        python3 test_slugify.py
+skill.capture: "skip"
+turn.continue: "end"
+```
+
+Super fixed the bug and ran the tests twice; Ultra made 8 decisions on the way. The whole run cost $0.04.
+
+### Thinking where it pays
+
+On four decision points Nemotron 3 Ultra decides clearly better with thinking on: reading a new message (`input.preflight`), approving a command (`tool.approval`), keeping a memory (`memory.capture`) and offering skills (`skills.disclosure`). `nemotron-think` is Ultra with `reasoning_effort: "high"`; route those four to it and keep the fast judge for the rest:
+
+```json
+{
+  "tiers": ["nemotron"],
+  "routes": {
+    "input.preflight": ["nemotron-think"],
+    "tool.approval": ["nemotron-think"],
+    "memory.capture": ["nemotron-think"],
+    "skills.disclosure": ["nemotron-think"]
+  }
+}
+```
+
+On held-out test requests this raised Ultra's score from 54.7 to 57.9 on real requests and from 48.4 to 55.9 on constructed ones, and both gains hold at 95% confidence (paired bootstrap: +0.9 to +6.5 and +3.1 to +12.8). The four were chosen on the development split, where thinking made two other decision points worse (`board.read`, `capability.disclosure`): thinking everywhere is not better. The price: those decisions cost about twice as much (about a fifth more for the judge as a whole) and take about 2.5 s instead of 0.9 s at the median, so a command waits a little longer for its approval.
+
+## The judge on your machine
+
+[mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron) distills Nemotron 3 Ultra's answers into Nemotron 3 Nano 4B and serves it over System One, the protocol mu's judges speak. Start it, then use the built-in `nemotron-local` judge, with Ultra behind it for the questions it is unsure of:
+
+```json
+{ "tiers": ["nemotron-local", "nemotron"] }
+```
+
+A yes/no answer between 0.2 and 0.8, or a choice below 0.6, goes on to Ultra; everything else is settled locally.
+
+## Run commands in a Token Factory sandbox
+
+With the sandbox on, `bash`, `read`, `write` and `edit` run in a Token Factory sandbox instead of on your machine. The project is copied in when the session starts, and every command continues from the files the previous one left. Nothing changes on your machine until you run `/sandbox pull`, see the diff and agree.
+
+```bash
+export NEBIUS_PROJECT_ID=...   # Token Factory → Project settings
+MU_SANDBOX=nebius mu --provider nebius --model nvidia/nemotron-3-super-120b-a12b
+```
+
+`/sandbox status` shows the sandbox and the image it has reached; the options (base image, time limits) are under `features.sandbox` in [the feature reference](reference/features.md#sandbox).
+
+## Web search with Tavily
+
+With `TAVILY_API_KEY` set, `web_search` asks [Tavily](https://tavily.com) first and `web_fetch` falls back to Tavily's extract for pages it cannot read itself. See [Configuration](configuration.md).
+
+## Measured
+
+Every Nemotron model on Token Factory was put in the judge's seat on 1,353 held-out judge requests from mu's own sessions (decision points across permissions, context, memory, turn control and multi-agent work), scored by what mu then did, relative to having no judge (0 = no better than mu's fallbacks, 100 = every decision right):
+
+| Judge (thinking off) | Real requests | Constructed cases | Answer format errors |
+| --- | --- | --- | --- |
+| Nemotron 3 Ultra | **47.3** | **47.7** | 0.2% |
+| Nemotron 3 Super | 2.7 | −12.7 | 4% |
+| Nemotron 3.5 Lightning, read off first-token logprobs | 15.4 | −12.5 | none (one token) |
+| Nemotron 3.5 Lightning, JSON | — | — | 55% of 40 tried |
+
+On 4,838 further held-out requests, scored once, Nemotron 3 Ultra scored 54.7 on real requests (95% interval 44.6–64.0) and 48.4 on constructed ones: its answers are mostly right (92.7% of checks on constructed cases), but its mistakes cost more than those of judges trained for mu. Thinking on four decision points raised those test scores to 57.9 and 55.9 ([Thinking where it pays](#thinking-where-it-pays)).

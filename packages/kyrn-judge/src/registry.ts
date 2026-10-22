@@ -8,6 +8,7 @@ import { FreeJevFallback, type FreeJevOutcome } from "./providers/free-jev.ts";
 import { type ApiKeyResolver, GatewayJudgeProvider } from "./providers/gateway.ts";
 import { type LlmCompletion, LlmJudgeProvider } from "./providers/llm.ts";
 import { LocalJudgeProvider } from "./providers/local.ts";
+import { LogprobJudgeProvider } from "./providers/logprob.ts";
 import { MockJudgeProvider } from "./providers/mock.ts";
 import { CLM_DEFAULT_MODEL, clmEndpoint, TypeSafeJudgeProvider } from "./providers/typesafe.ts";
 import type { JudgeProvider } from "./types.ts";
@@ -32,12 +33,16 @@ const DEFAULT_TIMEOUT_MS: Readonly<Record<JudgeConfig["type"], number>> = {
 	typesafe: 10_000,
 	// A CLM server embeds every question together with the state: a batch of long ones takes seconds on a small GPU.
 	clm: 8000,
+	// A small judge on this machine answers in a fraction of a second; long states on a laptop take a few.
+	systemone: 8000,
 	gateway: 4000,
 	local: 4000,
 	http: 8000,
 	llm: 30_000,
 	// Jev and its kin on a service of the host's catalog: the same latency as Jev's own routes.
 	classifier: 10_000,
+	// One short request per question, all at once; a hosted model's queue can still take seconds.
+	logprob: 10_000,
 	mock: 1000,
 };
 
@@ -92,6 +97,18 @@ function createProvider(name: string, judge: JudgeConfig, host: JudgeHost): Judg
 			if (!call) throw new TypeError(`Judge "${name}": classifier models need a mu session`);
 			return new ClassifierJudgeProvider({ model: judge.model, call });
 		}
+		case "logprob": {
+			if (!judge.baseUrl || !judge.model) throw new TypeError(`Judge "${name}" needs a baseUrl and a model`);
+			const keyName = judge.apiKeyEnv ?? "MU_JUDGE_CUSTOM_API_KEY";
+			return new LogprobJudgeProvider({
+				baseUrl: judge.baseUrl,
+				model: judge.model,
+				apiKey: () => host.env?.[keyName],
+				keyName,
+				body: judge.body,
+				fetch: host.fetch,
+			});
+		}
 		case "typesafe": {
 			const keyName = judge.apiKeyEnv ?? "TYPESAFE_API_KEY";
 			// A key set up for another service goes only to the address it was set up with, never to TypeSafe's.
@@ -115,6 +132,20 @@ function createProvider(name: string, judge: JudgeConfig, host: JudgeHost): Judg
 				keyOptional: true,
 				judgeName: "CLM",
 				model: judge.model || CLM_DEFAULT_MODEL,
+				baseUrl: clmEndpoint(judge.baseUrl),
+				fetch: host.fetch,
+			});
+		}
+		case "systemone": {
+			// Like clm, for any other System One server: a key only when MU_JUDGE_SYSTEMONE_API_KEY (or apiKeyEnv) is set.
+			if (!judge.baseUrl) throw new TypeError(`Judge "${name}" needs a baseUrl`);
+			const keyName = judge.apiKeyEnv ?? "MU_JUDGE_SYSTEMONE_API_KEY";
+			return new TypeSafeJudgeProvider({
+				apiKey: () => host.env?.[keyName],
+				keyName,
+				keyOptional: true,
+				judgeName: name,
+				model: judge.model,
 				baseUrl: clmEndpoint(judge.baseUrl),
 				fetch: host.fetch,
 			});

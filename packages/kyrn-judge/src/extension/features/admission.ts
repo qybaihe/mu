@@ -152,14 +152,15 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 	/**
 	 * One verdict per chunk, in order. A hosted judge takes many chunks in one request, the state billed once
 	 * (measured 2026-09-23 on jev: 16 chunks in 0.44 s and 7.6k tokens, against 1.4 s and 11.6k tokens as 16
-	 * requests, with the same verdicts). The local sidecar's window holds one chunk, so it is asked one at a time.
+	 * requests, with the same verdicts). The local sidecar's window holds one chunk, and a logprob judge sends each
+	 * question with its state, so both are asked one chunk at a time.
 	 */
 	const judgeChunks = async (
 		call: string,
 		middle: readonly string[],
 		signal: AbortSignal | undefined,
 	): Promise<readonly AdmissionOutcome[]> => {
-		if (!runtime.judgeParallel) {
+		if (!runtime.judgeBatches) {
 			const decisions = await runtime.engine.decideMany(
 				toolAdmission,
 				middle.map((chunk) => ({ call, chunk })),

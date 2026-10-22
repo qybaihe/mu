@@ -91,6 +91,7 @@ const KEYS = {
 	anthropic: `sk-ant-api03-${"x".repeat(40)}`,
 	google: `AIza${"S".repeat(35)}`,
 	xai: `xai-${"z".repeat(40)}`,
+	nebius: `v1.${"CmQ".repeat(45)}a.${"x_9-".repeat(24)}`,
 	unknown: "made-up-key-of-no-known-shape-1234",
 	jev: "ts-made-up-jev-key-5678",
 };
@@ -110,6 +111,7 @@ describe("the services table", () => {
 		expect(ids(servicesForKey(KEYS.anthropic))).toEqual(["anthropic"]);
 		expect(ids(servicesForKey(KEYS.google))).toEqual(["google"]);
 		expect(ids(servicesForKey(KEYS.xai))).toEqual(["xai"]);
+		expect(ids(servicesForKey(KEYS.nebius))).toEqual(["nebius"]);
 		expect(servicesForKey(KEYS.unknown)).toEqual([]);
 		expect(servicesForKey("")).toEqual([]);
 		// Pasted with the quotes and spaces of a .env line.
@@ -840,16 +842,16 @@ describe("mu setup, asking in a terminal", () => {
 	});
 
 	it("sets up Ollama without a key, and says when it is not ready", async () => {
-		const down = await wizard({ answers: ["2", "14", "3"], respond: refused });
+		const down = await wizard({ answers: ["2", "15", "3"], respond: refused });
 		expect(down.said).toContain("Ollama isn't ready yet. Start it with `ollama serve`, then pull a model.");
 		expect(down.code).toBe(SETUP_EXIT.cancelled);
 		expect(down.events.some((event) => event.kind === "secret")).toBe(false);
 		expect(down.printed).not.toContain("Paste another key");
-		const empty = await wizard({ answers: ["2", "14", "3"], respond: () => listing() });
+		const empty = await wizard({ answers: ["2", "15", "3"], respond: () => listing() });
 		expect(empty.said).toContain("Ollama isn't ready yet. Start it with `ollama serve`, then pull a model.");
 		const up = await wizard({
 			// From the list: Ollama; its first chat model; no judge; no session.
-			answers: ["2", "14", "", "4", "n"],
+			answers: ["2", "15", "", "4", "n"],
 			respond: () => listing("nomic-embed-text:latest", "qwen2.5-coder:7b"),
 		});
 		expect(up.code).toBe(SETUP_EXIT.done);
@@ -870,7 +872,7 @@ describe("mu setup, asking in a terminal", () => {
 	it("takes an address of one's own, asks its key after it, finds its /v1, and names it", async () => {
 		const run = await wizard({
 			// From the list: other; its address; OpenAI-compatible; its name; (no key); its model; no judge; no session.
-			answers: ["2", "15", "http://127.0.0.1:8080", "1", "box", "", "4", "n"],
+			answers: ["2", "16", "http://127.0.0.1:8080", "1", "box", "", "4", "n"],
 			secrets: [""],
 			respond: (url) => (url === "http://127.0.0.1:8080/v1/models" ? listing("local-coder") : answer(404, "no")),
 		});
@@ -892,7 +894,7 @@ describe("mu setup, asking in a terminal", () => {
 
 	it("takes a number past the list as a slip, and a typed name as a model", async () => {
 		const run = await wizard({
-			answers: ["2", "14", "7", "my-model", "4", "n"],
+			answers: ["2", "15", "7", "my-model", "4", "n"],
 			respond: () => listing("a-coder", "b-coder"),
 		});
 		expect(run.said).toContain("Type a number from 1 to 2, or a model name.");
@@ -1105,6 +1107,27 @@ describe("mu setup in a script", () => {
 		const asked = await wizard({ answers: ["2", "6", "", "", "n"], secrets: [good], respond });
 		expect(asked.printed).toContain("1) Jev on OpenCode Zen with your OpenCode key (recommended), billed per call");
 		expect(asked.json("mu.json")).toEqual({ tiers: ["jev-opencode"] });
+	});
+
+	it("makes Nemotron 3 Ultra the judge with a Nebius key, and wants one for it", async () => {
+		const run = await stdinRun(["--service", "nebius", "--judge", "nemotron"], `${KEYS.nebius}\n`, {
+			respond: () => listing("nvidia/nemotron-3-super-120b-a12b", "nvidia/Nemotron-3-Ultra-550b-a55b"),
+		});
+		expect(run.code).toBe(SETUP_EXIT.done);
+		expect((run.pi as FakePi).stored).toEqual([{ provider: "nebius", key: KEYS.nebius }]);
+		expect(run.json("mu.json")).toEqual({ tiers: ["nemotron"] });
+		expect(run.said.join("\n")).toContain("Judge: Nemotron 3 Ultra on Nebius Token Factory.");
+
+		const keyless = await stdinRun(["--service", "deepseek", "--judge", "nemotron"], `${KEYS.hex32}\n`, {
+			respond: () => listing("deepseek-v4-pro"),
+		});
+		expect(keyless.code).toBe(SETUP_EXIT.usage);
+		expect(keyless.warned.join("\n")).toContain("--judge nemotron needs a Nebius key");
+		const keyed = await stdinRun(["--service", "deepseek", "--judge", "nemotron"], `${KEYS.hex32}\n`, {
+			env: { NEBIUS_API_KEY: "n" },
+			respond: () => listing("deepseek-v4-pro"),
+		});
+		expect(keyed.json("mu.json")).toEqual({ tiers: ["nemotron"] });
 	});
 
 	it("makes free Jev on OpenCode Zen the judge with no key, and wants a key for the paid one", async () => {

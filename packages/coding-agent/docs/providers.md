@@ -35,6 +35,7 @@ This table covers providers with a single primary API-key variable. Providers th
 | OpenAI | `OPENAI_API_KEY` |
 | DeepSeek | `DEEPSEEK_API_KEY` |
 | NVIDIA NIM | `NVIDIA_API_KEY` |
+| Nebius Token Factory | `NEBIUS_API_KEY` |
 | Google Gemini | `GEMINI_API_KEY` |
 | GitHub Copilot | `COPILOT_GITHUB_TOKEN` |
 | Mistral | `MISTRAL_API_KEY` |
