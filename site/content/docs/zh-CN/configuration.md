@@ -49,6 +49,7 @@ mu 看不懂的部分会退回默认值，而不是让 mu 停下。完全无法�
 - {points} 个判定点里有 {points_active} 个从一开始就生效（`context.compact` 和 `output.drift` 要你自己打开，`swarm.patch` 默认关闭，`notify.routing`、`input.interjection` 和 `turn.drift` 默认是影子模式，只记录判定）。想试一个判定器，或者对某个判定点没把握，就把它设成影子模式，读流水（`mu ledger`、`/status` 或桌面端的「判定」页），再把它设回生效。
 - `/mu mode <point> <off|shadow|active>` 在当前会话里切换一个判定点；`/mu mode default shadow` 切换全部。想保留一个模式，就写进 `mu.json`。
 - `MU_JUDGE_MODE=shadow mu` 为一次运行设置默认模式。
+- `"modes": { "default": "off" }` 完全不问判定器：默认是影子模式的那几个判定点也一起关闭，除非 `mu.json` 单独给它设了模式。`mu setup` 里判定器选「暂时不要」，写的就是这一项。
 
 ## 环境变量 {#env}
 
