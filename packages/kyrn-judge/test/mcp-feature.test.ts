@@ -375,6 +375,46 @@ describe("MCP servers in the capability catalog", () => {
 		expect(first.startsWith(`${plain} `)).toBe(true);
 	});
 
+	it("keeps find_capability in a mu --print run with a server installed, and the server opens within the run", async () => {
+		const declared = (messages: readonly Message[]) =>
+			messages
+				.flatMap((message) => (message.role === "system" ? (message.toolsAdded ?? []) : []))
+				.filter((tool) => tool.name === "find_capability")
+				.map((tool) => tool.description);
+		let first: readonly Message[] = [];
+		const { harness } = await start({ servers: { linear: fake() }, bind: false });
+		await harness.session.bindExtensions({ mode: "print" });
+		harness.setResponses([
+			(context) => {
+				first = context.messages;
+				return fauxAssistantMessage([fauxToolCall("find_capability", { open: "mcp:linear" })], {
+					stopReason: "toolUse",
+				});
+			},
+			fauxAssistantMessage([fauxToolCall("mcp__linear__echo", { message: "open issues" })], {
+				stopReason: "toolUse",
+			}),
+			fauxAssistantMessage("Done."),
+		]);
+		await harness.session.prompt("Use linear to list my open issues.");
+		const [description] = declared(first);
+		expect(description).toContain("mcp:linear (MCP server)");
+		expect(toolResults(harness)[1]).toContain("echo: open issues");
+
+		// No server: the run's first request is as #81 made it, without the tool.
+		let plain: readonly Message[] = [];
+		const none = await start({ bind: false });
+		await none.harness.session.bindExtensions({ mode: "print" });
+		none.harness.setResponses([
+			(context) => {
+				plain = context.messages;
+				return fauxAssistantMessage("Done.");
+			},
+		]);
+		await none.harness.session.prompt("Use linear to list my open issues.");
+		expect(declared(plain)).toEqual([]);
+	});
+
 	it("starts a pinned server with the session, and every server when the catalog hides nothing", async () => {
 		const pinned = await start({ servers: { pinned: { ...fake(), exposure: "always" }, other: fake() } });
 		pinned.harness.setResponses([fauxAssistantMessage("hi")]);

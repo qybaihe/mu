@@ -9,7 +9,8 @@ import { failOpen, type KyrnRuntime } from "../runtime.ts";
  * - preflight is not asked (`preflight.unattended`);
  * - capability disclosure is not asked, and packs stay hidden as always (`catalog.askUnattended`);
  * - tools and skills that need a person, a later session or a sub-agent are left out of the request
- *   (`catalog.unattendedHidden`);
+ *   (`catalog.unattendedHidden`), except `find_capability` when an MCP server is installed
+ *   (`catalog.unattendedFindWithMcp`);
  * - the drift check is not asked (`monitor.unattended`, below), nor notification routing (`notify.unattended`);
  * - no skill drafts (`procedures.unattended`) and no new lessons (`memory.unattendedWrites`). Kept lessons are still read;
  * - no checkpoints (`checkpoint.unattended`): nobody can confirm a rewind, so no file is ever put back;

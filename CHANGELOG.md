@@ -22,6 +22,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 - **A flagged script keeps its line breaks for the judge and in the confirmation.** They were run into one line, which in a script joins separate commands into one: `echo done` and an `rm -rf build` on the next line read as a single echo. Runs of spaces still collapse.
 - Pressing Escape during a sign-in in the terminal goes back to the list, instead of reporting "Failed to login to GitHub Copilot: This operation was aborted".
 - Choosing a subscription in `mu setup` no longer tells you to start mu and type `/login`: when setup starts mu, `/login` is already open.
+- **`mu --print` can reach your MCP servers again.** In a one-shot run nothing opened an MCP server, and the tool to open one was left out, so the agent couldn't use it. With a server installed, the agent now sees which ones are there and opens the one it needs; runs without one are unchanged.
 
 ## [0.1.11] - 2026-10-22
 

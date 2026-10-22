@@ -13,7 +13,8 @@ const CAPABILITY_MESSAGE = "kyrn.capabilities";
 /**
  * Left out of the request in an unattended run (`unattended.ts`): sub-agents and their patches, the browser and its
  * skill, file location by the judge, lessons for a later session, and the ways into what is hidden. In benchmark runs
- * they were next to never called, and each one is in every request.
+ * they were next to never called, and each one is in every request. `find_capability` stays when an MCP server is
+ * installed (`unattendedFindWithMcp`): nothing else reaches one there.
  */
 export const UNATTENDED_HIDDEN: readonly string[] = [
 	"delegate",
@@ -92,6 +93,12 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 		askUnattended: false,
 		/** Tools and skills, by name, left out of the request in a `mu --print` or json run. */
 		unattendedHidden: UNATTENDED_HIDDEN,
+		/**
+		 * Keep `find_capability` in such a run when an MCP server that can be hidden is installed. Nobody asks the judge
+		 * there, so without it the server can't be reached. Packs alone don't keep it: a benchmark run has no server, and
+		 * its requests stay as lean as they were.
+		 */
+		unattendedFindWithMcp: true,
 		/** Sub-agents open the capabilities this session has open instead of asking the judge again. */
 		subagentsInherit: true,
 	});
@@ -161,6 +168,8 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 
 	/** Whether `find_capability` already says what is installed: once a session, before its first request. */
 	let described = false;
+	/** Whether an unattended run keeps `find_capability`: a hideable MCP server is installed. Settled with the list. */
+	let findReachesMcp = false;
 
 	pi.on(
 		"before_agent_start",
@@ -170,6 +179,9 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 				// By now the session has started and its MCP servers are in the catalog. Registering the tool again
 				// replaces it before any request has declared it.
 				described = true;
+				findReachesMcp =
+					options.unattendedFindWithMcp &&
+					catalog.list().some((capability) => capability.kind === "mcp" && capability.exposure === "judged");
 				const installed = installedLine(catalog.list());
 				if (installed)
 					pi.registerTool({ ...findCapability, description: `${findCapability.description} ${installed}` });
@@ -179,7 +191,10 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 				const called = event.messageType === "user" ? /^\/([^\s:]+)/.exec(event.prompt)?.[1] : undefined;
 				if (called && unattendedHidden.includes(called)) released.add(called);
 				leftOut.clear();
-				for (const name of unattendedHidden) if (!released.has(name)) leftOut.add(name);
+				for (const name of unattendedHidden) {
+					if (released.has(name) || (name === "find_capability" && findReachesMcp)) continue;
+					leftOut.add(name);
+				}
 				// Rebuilt from the base list before every run, so this is done on every one.
 				if (event.systemPromptOptions.skills) {
 					event.systemPromptOptions.skills = event.systemPromptOptions.skills.filter(
