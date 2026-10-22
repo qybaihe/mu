@@ -900,7 +900,7 @@
 			},
 			"summary": {
 				"zh": "网页、搜索结果、MCP 服务器返回的内容，以及 shell 命令从别的机器取回的内容（curl、gh issue view），模型读到之前先过一遍：哪一段是写给 AI 的指令（让它忽略规则、交出数据、跑命令，或借一个链接把对话带出去）。这样的段落被扣下，换成一行说明。判定器没答上来时，只扣下明显的注入用语。子代理读到的内容里有段落被扣下时，它的报告交回时前面带一句警告。",
-				"en": "Before the model reads a web page, search results, an MCP server's response or what a shell command fetched from another machine (curl, gh issue view), checks which passages carry instructions aimed at an AI (to ignore rules, hand over data, run commands or leak the conversation through a link). Those passages are withheld and replaced with a one-line note. When the judge doesn't answer, only obvious injection phrases are withheld. If a subagent had passages withheld from what it read, its report comes back with a warning.",
+				"en": "Before the model reads a web page, search results, an MCP server's response or what a shell command fetched from another machine (curl, gh issue view), the judge checks which passages carry instructions aimed at an AI (to ignore rules, hand over data, run commands or leak the conversation through a link). Those passages are withheld and replaced with a one-line note. When the judge doesn't answer, only obvious injection phrases are withheld. If a subagent had passages withheld from what it read, its report comes back with a warning.",
 				"zh-TW": "網頁、搜尋結果、MCP 伺服器回傳的內容，以及 shell 指令從別的機器取回的內容（curl、gh issue view），在模型讀到之前先過一遍：哪一段是寫給 AI 的指令（叫它忽略規則、交出資料、執行指令，或藉一個連結把對話帶出去）。這樣的段落會被扣下，換成一行說明。判定器沒答上來時，只扣下明顯的注入用語。子代理讀到的內容裡有段落被扣下時，它的報告交回時前面會附一句警告。",
 				"ja-JP": "モデルが Web ページ、検索結果、MCP サーバーの応答、またはシェルコマンドが別のマシンから取得した内容（curl、gh issue view）を読む前に確認します。どの段落が AI に向けた指示（ルールを無視させる、データを渡させる、コマンドを実行させる、リンク経由で会話を外部へ持ち出させる）を含むか。該当する段落は差し止め、1 行の説明に置き換えます。判定器が答えないときは、明らかなインジェクション表現だけを差し止めます。読んだ内容から段落が差し止められたサブエージェントの報告には、警告が付いて返されます。",
 				"ko-KR": "모델이 웹 페이지, 검색 결과, MCP 서버의 응답, 또는 셸 명령이 다른 컴퓨터에서 가져온 내용(curl, gh issue view)을 읽기 전에 먼저 살펴봅니다. 어떤 단락이 AI를 겨냥한 지시(규칙 무시, 데이터 넘기기, 명령 실행, 링크로 대화를 밖으로 빼내기)를 담고 있는지. 그런 단락은 보류하고 한 줄 안내로 바꿉니다. 판정기가 답하지 못하면 명백한 주입 문구만 보류합니다. 읽은 내용에서 단락이 보류된 하위 에이전트의 보고서는 경고와 함께 돌아옵니다.",
@@ -5001,7 +5001,7 @@
 			},
 			"summary": {
 				"zh": "一次回复只思考、迟迟不写字也不调用工具，到时限就打断，用同样的思考强度重问一次，并把它想到哪一步带给它，让它先动手再接着想。重问的那一次不再打断。",
-				"en": "When a reply has only been thinking for too long, with no text and no tool call yet, it is cut and asked again at the same reasoning effort. The retry is told where the reasoning had got to and asked to act on it first. The retry itself is never cut."
+				"en": "When a reply has only been thinking for too long, with no text and no tool call yet, it is cut and asked again at the same reasoning effort. The retry is told where the reasoning had gotten to and asked to act on it first. The retry itself is never cut."
 			},
 			"defaultEnabled": true,
 			"options": [

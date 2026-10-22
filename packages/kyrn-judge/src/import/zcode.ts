@@ -422,7 +422,7 @@ export async function readZcode(sourcePath: string, options: ReadOptions = {}): 
 			continue;
 		}
 		if (data.role !== "assistant") {
-			builder.drop("records not understood");
+			builder.drop("unrecognized records");
 			continue;
 		}
 		const used = str(data.modelId) ?? str(data.modelID) ?? "";

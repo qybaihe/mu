@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="880" height="402" viewBox="0 0 880 402" role="img" aria-labelledby="t d" font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif'>
 <title id="t">Real failing test logs: 51% folded without loss</title>
-<desc id="d">5 failures, one diff each: 37819 characters, 86% folded. DOM test, 4 failures: 34115 characters, 44% folded. The same run, sub-agent: 34115 characters, 44% folded. Shared stderr stack: 15565 characters, 47% folded. 2 failures: 9249 characters, 16% folded. 7 suites fail to parse: 4953 characters, 0% folded. 5 different failures: 4004 characters, 0% folded.</desc>
+<desc id="d">5 failures, one diff each: 37,819 characters, 86% folded. DOM test, 4 failures: 34,115 characters, 44% folded. The same run, subagent: 34,115 characters, 44% folded. Shared stderr stack: 15,565 characters, 47% folded. 2 failures: 9,249 characters, 16% folded. 7 suites fail to parse: 4,953 characters, 0% folded. 5 different failures: 4,004 characters, 0% folded.</desc>
 <text x="0" y="22" font-size="18" font-weight="600" fill="#1f2328">Real failing test logs: 51% folded without loss</text>
 <text x="0" y="46" font-size="13.5" fill="#59636e">The 7 test logs over 4,000 characters in two days of the authors' sessions (Vitest). A run of 6 or more lines</text>
 <text x="0" y="65" font-size="13.5" fill="#59636e">identical to one kept above becomes one back-reference. The markers expand to the original, byte for byte.</text>
@@ -22,7 +22,7 @@
 <path d="M200,172 H457.904 Q457.904,172 457.904,172 V188 Q457.904,188 457.904,188 H200 Z" fill="#b4b2a9"/>
 <path d="M459.904,172 H656.5525 Q660.5525,172 660.5525,176 V184 Q660.5525,188 656.5525,188 H459.904 Z" fill="#2a78d6"/>
 <text x="668.5525" y="184.5" font-size="13.5" font-weight="600" fill="#1f2328" stroke="#ffffff" stroke-width="4" paint-order="stroke">44% folded</text>
-<text x="186" y="216.5" text-anchor="end" font-size="13.5" fill="#1f2328">The same run, sub-agent</text>
+<text x="186" y="216.5" text-anchor="end" font-size="13.5" fill="#1f2328">The same run, subagent</text>
 <path d="M200,204 H457.904 Q457.904,204 457.904,204 V220 Q457.904,220 457.904,220 H200 Z" fill="#b4b2a9"/>
 <path d="M459.904,204 H656.5525 Q660.5525,204 660.5525,208 V216 Q660.5525,220 656.5525,220 H459.904 Z" fill="#2a78d6"/>
 <text x="668.5525" y="216.5" font-size="13.5" font-weight="600" fill="#1f2328" stroke="#ffffff" stroke-width="4" paint-order="stroke">44% folded</text>

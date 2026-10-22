@@ -562,7 +562,7 @@ export class SessionBuilder {
 		this.settle();
 		const unread = input.blocks.filter((block) => block.type === "thinking" && !block.thinking.trim()).length;
 		// Claude Code keeps only the signature of most thinking now: nothing there to read.
-		this.drop("thinking that cannot be read", unread);
+		this.drop("unreadable thinking", unread);
 		let blocks = input.blocks.filter((block) =>
 			block.type === "toolCall"
 				? true

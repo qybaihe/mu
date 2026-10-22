@@ -23,7 +23,7 @@ import { getDefaultSessionDir } from "../../coding-agent/src/core/session-manage
 import { type ImportContext, importChat, storeOf } from "../src/extension/features/import.ts";
 import { readClaudeCode } from "../src/import/claude-code.ts";
 import { readCodex } from "../src/import/codex.ts";
-import { main as importCommand, parseArgs } from "../src/import/command.ts";
+import { formatResult, main as importCommand, parseArgs } from "../src/import/command.ts";
 import { detectTool, importTranscripts, listConversations } from "../src/import/index.ts";
 import {
 	type ConvertedTranscript,
@@ -584,7 +584,7 @@ describe("Claude Code transcripts", () => {
 		]);
 		expect(converted.counts.dropped).toMatchObject({
 			"unreadable lines": 2,
-			"records not understood": 3,
+			"unrecognized records": 3,
 			"Claude Code reminders and state": 1,
 		});
 		expect(converted.counts.asText).toBe(1);
@@ -741,9 +741,9 @@ describe("Codex rollouts", () => {
 		expect(converted.counts.dropped).toMatchObject({
 			"Codex instructions": 1,
 			"Codex setup": 1,
-			"thinking that cannot be read": 1,
+			"unreadable thinking": 1,
 			"Codex events and state": 3,
-			"records not understood": 1,
+			"unrecognized records": 1,
 		});
 		expect(converted.counts).toMatchObject({ images: 1, thinking: 0 });
 		const assistantMessage = sessionEntries(converted).find(
@@ -1107,6 +1107,22 @@ describe("mu import on the command line", () => {
 		});
 		expect(parseArgs(["--cwd"])).toEqual({ error: "--cwd needs a folder" });
 		expect(parseArgs(["--list", "a.jsonl"])).toEqual({ error: "--list doesn't take files" });
+	});
+
+	it("says what an import brought in and what it left out, most first, one line each", async () => {
+		const dir = temp();
+		const file = writeLines(join(dir, "t.jsonl"), sidechainSession());
+		const [result] = await importTranscripts([file], { agentDir: join(dir, "agent") });
+		if (result.status !== "imported") throw new Error(result.status);
+		const counts = { ...result.counts, dropped: { "Claude Code setup": 1, "repeated records": 12 } };
+		const lines = formatResult({ ...result, counts }, "/nowhere").split("\n");
+		expect(lines[0]).toMatch(/^Imported from Claude Code: "/);
+		expect(lines.slice(-4)).toEqual([
+			"  skipped:",
+			"    12  repeated records",
+			"     1  Claude Code setup",
+			`  to continue: mu --session ${result.sessionFile}`,
+		]);
 	});
 
 	it("puts sessions where MU_CODING_AGENT_DIR and the settings say", async () => {

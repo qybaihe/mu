@@ -104,7 +104,7 @@ export function usage(platform) {
 		"                           (see mu setup --help for scripting, reading a key from stdin and the supported services)",
 		"  mu judge <cmd>           manage the local judge, Laya (macOS on Apple silicon): setup | start | stop | status | run",
 		"  mu ledger [n] [--json]   print the judge's verdicts from the last n sessions",
-		"  mu import --list | <file>...   import Claude Code and Codex conversations (mu import --help)",
+		"  mu import --list | <file>...   import Claude Code, Codex and ZCode conversations (mu import --help)",
 		"  mu doctor                check the installation, the judges and the connections",
 		"  mu auth <cmd>            sign-in helper for the desktop app (JSON lines):",
 		"                           status | login <provider> | logout <provider>",
@@ -431,7 +431,7 @@ export function localJudgeSupport({ platform, env, wsl = false }) {
 		url,
 		message: [
 			`The local judge (Laya) is a Core ML sidecar that runs only on macOS on Apple silicon, not on ${where}.`,
-			"mu works without it: the default hosted judge, Jev, answers (free on OpenCode Zen, or with your own key via mu setup); you can also set an LLM judge in mu.json.",
+			"mu works without it: Jev, the default hosted judge, answers instead (free on OpenCode Zen, or with your own key via mu setup); you can also set an LLM judge in mu.json.",
 			"A local judge for the desktop app is in progress. Without a judge, decision points use their fallbacks.",
 			"To use a server that implements the same API (GET /health, POST /evaluate), set:",
 			"  MU_LOCAL_JUDGE_URL=http://host:port",
@@ -720,7 +720,7 @@ export function planJudge({ platform, env, argv, bin, wsl = false }) {
 // ---------------------------------------------------------------------------------------------------------
 
 /**
- * `mu import`: Claude Code and Codex conversations into mu's sessions (packages/kyrn-judge/src/import). The importer
+ * `mu import`: Claude Code, Codex and ZCode conversations into mu's sessions (packages/kyrn-judge/src/import). The importer
  * needs nothing but Node: the npm package runs its build, judge/dist/import.js, and a checkout its TypeScript with
  * Node's own type stripping (on by default from 22.18).
  */

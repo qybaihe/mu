@@ -42,6 +42,12 @@ describe('sessionSettings', () => {
     expect(sessionSettings([])).toEqual({});
   });
 
+  it('reads judge mode by its name before mu 0.1.12', () => {
+    expect(
+      sessionSettings([entry('p1', null, { type: 'custom', customType: 'mu.permissions', data: { mode: 'jev' } })])
+    ).toEqual({ permissions: 'judge' });
+  });
+
   it('does not take the model of a reply imported from another tool: mu goes on with its own', () => {
     const imported = [
       entry('i1', null, { type: 'custom_message', customType: 'mu.import', content: 'imported', display: true }),

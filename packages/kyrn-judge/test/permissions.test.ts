@@ -314,8 +314,9 @@ describe("what needs permission", () => {
 			"ask",
 		]);
 		expect(parseMode("root")).toBeUndefined();
-		// The mode's old name is not kept: a saved "jev" falls back to the default, which is judge mode.
-		expect(parseMode("jev")).toBeUndefined();
+		// The mode's name before 0.1.12 still reads as judge mode: a saved default of another mode must not take over
+		// a conversation, MU_PERMISSIONS or a default that said "jev".
+		expect(parseMode("jev")).toBe("judge");
 		expect(parseMode(3)).toBeUndefined();
 	});
 });

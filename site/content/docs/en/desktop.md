@@ -58,7 +58,7 @@ Light and dark follow the system. The interface comes in 13 languages, including
 
 ## Importing conversations {#import}
 
-Conversations from Claude Code, the Codex CLI and ZCode can be imported and continued in mu, with their whole history: messages, tool calls, thinking and images. The first-run guide offers this on its first screen when it finds some, under each app's icon, and Settings has it too. Importing a conversation again brings over what's new in it. The command line does it with `mu import --list` and `mu import <file>`.
+Conversations from Claude Code, the Codex CLI and ZCode can be imported and continued in mu with their full history: messages, tool calls, thinking and images. When the first-run guide finds some, it offers to import them on its first screen, under each app's icon; Settings has the same option. Importing a conversation again brings over what's new in it. The command line does it with `mu import --list` and `mu import <file>`.
 
 ## Updates, proxies and logs {#updates}
 

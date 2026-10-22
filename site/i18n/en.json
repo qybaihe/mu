@@ -59,8 +59,8 @@
     "story_h2": "Judge first, then act",
     "story_intro": "Ask for a plan, and most agents send the model every tool and skill description along with it. Models write better code every month, and their reports get harder to read. mu splits the work: a judge model decides, the main model works and a model picked for plain writing tells you where things stand.",
     "stage_caption": "Recorded in mu with TypeSafe's hosted judge model, Jev. Jev's verdicts and timings are real; the coding model's replies are scripted, so the turn plays the same every time.",
-    "swarm_alt": "The Hive tab in the desktop app: three bees investigate one bug at once; the arrows are findings the judge found worth delivering",
-    "swarm_caption": "The Hive tab in the desktop app: each arrow is a finding the judge found worth delivering.",
+    "swarm_alt": "The Hive tab in the desktop app: three bees investigate one bug at once; the arrows are findings the judge decided were worth delivering",
+    "swarm_caption": "The Hive tab in the desktop app: each arrow is a finding the judge decided was worth delivering.",
     "board_alt": "The plain-language board: what's being done, how far it got and the running account below",
     "board_caption": "The plain-language board: what the agent is doing, how far it got and the running account.",
     "chapters": [
@@ -140,7 +140,7 @@
     "more_label": "ALSO",
     "more_h2": "One set of accounts, settings and lessons for the command line and the app",
     "more": [
-      { "b": "Import conversations", "text": "Bring in your Codex and Claude Code conversations and carry on in mu." },
+      { "b": "Import conversations", "text": "Bring in your Claude Code, Codex and ZCode conversations and carry on in mu." },
       { "b": "Subscription sign-in", "text": "Sign in with ChatGPT, Claude, Grok or Google inside the app; no keys to copy around." },
       { "b": "Lessons", "text": "Your corrections and the traps the agent found a way around are kept; a lesson that is recalled and never followed retires itself." },
       { "b": "Built-in browser", "text": "The judge drives it step by step: look at the page, decide once, act; it stops to ask before submitting or paying." },
