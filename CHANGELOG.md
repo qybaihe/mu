@@ -16,6 +16,8 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 - A background job that ends, and the context-budget warnings, now reach the agent during the run, also in `mu --print`; a message you send while the agent works is no longer held up to 1.5 s for the judge. The judge only records what it would have done for these two points.
 - When the agent offers extra work you didn't ask for ("want me to do the same for the others?"), mu no longer takes that as a go-ahead and sends it back to work.
 - Cache warming no longer asks the judge while the agent is running, so it can't drop the prompt cache in the middle of a run.
+- **Screening tool output asks the judge less.** Injection screening no longer asks about text with no sentence in it (directory listings, links, response headers), and long-output filtering no longer judges a file the agent printed (`cat`, `sed -n`, `head`…) or a page it fetched. Build and test logs are still filtered.
+- **The local judge Laya no longer screens tool output.** It was slow there and its verdicts were wrong; the next judge, or mu's rules, do it instead.
 
 ### Fixed
 
