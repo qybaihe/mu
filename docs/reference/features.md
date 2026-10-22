@@ -49,6 +49,7 @@ On by default: yes. Decision points: `skills.disclosure`.
 | --- | --- | --- |
 | `minSkills` | `4` | Don't filter below this many skills. Range 1 to 100. |
 | `waitMs` | `4000` ms | Wait at most `4000` ms. Range 500 to 30000. |
+| `applyLate` | `true` | Apply a late first verdict from the next turn. When the verdict on the session's first message comes after the wait, skills are hidden from the next turn on, which changes the prompt prefix once. Off: the session keeps every skill description. |
 
 ## catalog
 
@@ -217,7 +218,7 @@ On by default: yes. Decision points: `turn.drift`.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `every` | `6` | Tool calls between checks. Range 1 to 100. |
-| `repeats` | `3` | Repeats that count as a loop. Range 2 to 20. |
+| `repeats` | `3` | Repeats that count as a loop. Only the same input with the same result counts as the same call; paging through a file does not. Range 2 to 20. |
 | `window` | `8` | Recent calls checked. Range 2 to 100. |
 
 ## lsp
@@ -306,7 +307,7 @@ On by default: yes. Decision points: `turn.completion`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, there's no nudge; the verdict is only recorded. Range 500 to 30000. |
+| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, there's no nudge, and the judge call is cancelled so it doesn't hold up the end of a one-shot run. Range 500 to 30000. |
 
 ## continuation
 
@@ -317,7 +318,7 @@ On by default: yes. Decision points: `turn.continue`.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `maxNudges` | `2` | Max nudges per message. Range 1 to 5. |
-| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, there's no nudge; the verdict is only recorded. Range 500 to 30000. |
+| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, there's no nudge, and the judge call is cancelled so it doesn't hold up the end of a one-shot run. Range 500 to 30000. |
 
 ## notify
 
@@ -328,12 +329,17 @@ On by default: yes. Decision points: `notify.routing`.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `budgetThresholds` | `70`, `85` | Context budget notices (%). |
+| `unjudged` | `now` | Without a verdict, context budget notices. Notification routing is in shadow by default, and then this decides. A next-turn notice is read only when another run starts, which never happens in a one-shot run. One of `now` (Now), `next_turn` (Next turn), `drop` (Never). |
 
 ## warming
 
 **Cache warming.** Refreshes the prompt cache before it expires, when that pays off.
 
 On by default: yes. Decision points: `cache.warming`.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, pi's own estimate decides, and the judge call is cancelled. Range 500 to 30000. |
 
 ## warmup
 
@@ -418,7 +424,7 @@ On by default: yes. Decision points: `browser.step`.
 
 ## background
 
-**Background commands.** bg_start / bg_output / bg_stop: run dev servers and long builds without blocking the turn. Notification routing decides whether a finished job interrupts; every job stops when the session ends, except in an unattended one-shot run.
+**Background commands.** bg_start / bg_output / bg_stop: run dev servers and long builds without blocking the turn. The agent hears of a finished job right away; every job stops when the session ends, except in an unattended one-shot run.
 
 On by default: yes.
 
@@ -430,7 +436,8 @@ On by default: yes.
 | `killGraceMs` | `3000` ms | Wait before force-killing a job. SIGTERM first (taskkill without /F on Windows), then force after this long. |
 | `logDir` | empty | Log directory. Empty means ~/.mu/jobs/<session id>, cleared after 7 days. |
 | `inheritShell` | `true` | Use the foreground shell settings. Reads shellPath and shellCommandPrefix from settings.json, like the bash tool. |
-| `wakeWhenIdle` | `false` | A finished job may wake an idle agent. Only a verdict of "now" starts a turn; when off, the notice is only appended. |
+| `wakeWhenIdle` | `false` | A finished job may wake an idle agent. Only a notice delivered "now" starts a turn; when off, the notice is only appended. |
+| `unjudged` | `now` | Without a verdict, a job's end or watched line. Notification routing is in shadow by default, and then this decides. A next-turn notice is read only when another run starts, which never happens in a one-shot run. One of `now` (Now), `next_turn` (Next turn), `drop` (Never). |
 | `keepOnExit` | `headless` | Jobs still running when the session ends. Unattended means a one-shot mu --print or json run, where a service the task asked for must still be up after the run. One of `headless` (Keep in unattended runs), `always` (Always keep), `never` (Always stop). |
 
 ## web

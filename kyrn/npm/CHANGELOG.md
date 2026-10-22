@@ -11,6 +11,15 @@
 - `swarm.patch` is off by default: the delegate result already lists every changed file with its line counts. `"modes": { "swarm.patch": "active" }` in `mu.json` turns it back on.
 - `browse` with a goal refuses up front when the judge for `browser.step` can't relate a goal to a page (Laya alone), and says how to route it to another judge; before, it opened the page and blocked after the first look.
 - In shadow mode, the decisions mu acts on anyway (`browser.step`, `swarm.routing`, `judge.items`) are recorded as the judge's, not as the fallback's (`actsInShadow`).
+- `notify.routing` and `input.interjection` are in shadow by default: the verdict is recorded and nothing waits for it. Without a verdict, a background job's end or watched line and the 70% and 85% context-budget notices reach the model at once, as a steer (`features.background.unjudged` and `features.notify.unjudged`: `now`, `next_turn` or `drop`); before, a job's end waited for a next turn that a one-shot run never has, and the budget notice was dropped. A watched line is not routed while `bg_output` waits on its job. A message sent mid-run goes on at once instead of after up to 1.5 s.
+- `turn.continue` (v2) asks whether what the closing message offers is more than the user asked for (`beyond_request`). Only a go-ahead on the requested work sends the agent back; an offer of extra work no longer does. The local judge (Laya) is not asked this question, so on Laya alone no stop counts as a go-ahead.
+- `cache.warming` is asked only while the agent is idle and waits at most 3 s (`features.warming.waitMs`). During a run pi's own decision stands, so a message that reads like a sign-off can no longer stop warming in the middle of the run.
+- `skills.disclosure`: a verdict on the session's first message that arrives after the 4 s wait is applied from the next turn, instead of the session keeping every skill description (`features.skills.applyLate`).
+
+### Fixed
+
+- The loop rule ("the same call 3 times with the same outcome") compares the whole input and the result text. Paging through a file with `read` at different offsets, or two scripts whose first 300 characters match, no longer counts as a loop.
+- The end-of-run checks (`turn.completion`, `turn.continue`) cancel their judge call when their 3 s wait runs out. A late verdict no longer keeps `mu --print` from exiting until the judge's own timeout: with a slow local judge, runs ended 7-13 s after their last message. Notification verdicts still on their way are cancelled when the session ends.
 
 ## [0.1.12] - 2026-10-22
 

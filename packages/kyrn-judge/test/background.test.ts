@@ -333,6 +333,25 @@ describe.skipIf(!posix)("background jobs", () => {
 		]);
 	});
 
+	it("marks a watched line as observed while a wait on the job runs", async () => {
+		const { manager, events } = create();
+		manager.start({
+			command: `sleep 0.2; echo "ERROR one"; sleep 1; echo "ERROR two"; sleep 5`,
+			cwd: tmpdir(),
+			watch: "^error",
+		});
+		const matches = () => events.filter((event) => event.type === "match");
+		// Nobody waits on the job: the line is news to whoever hears of it.
+		await vi.waitFor(() => expect(matches()).toHaveLength(1), { timeout: 5000 });
+		manager.read("bg-1", { maxChars: 1000 });
+		// A wait is running when the next one comes: its caller reads the line in its own output.
+		await manager.wait("bg-1", { timeoutMs: 8000, pattern: "ERROR two" });
+		expect(matches().map((event) => (event.type === "match" ? [event.line, event.observed] : []))).toEqual([
+			["ERROR one", false],
+			["ERROR two", true],
+		]);
+	});
+
 	it("stops every job on shutdown and as a last resort", async () => {
 		const { manager } = create();
 		const pids = [
@@ -421,6 +440,8 @@ describe.skipIf(!posix)("background feature", () => {
 		responder: MockResponder,
 		extra: {
 			mode?: DecisionMode;
+			/** notify.routing's own mode; unset, it keeps its built-in default (shadow). */
+			routing?: DecisionMode;
 			features?: Record<string, unknown>;
 			background?: Record<string, unknown>;
 			tools?: AgentTool[];
@@ -436,6 +457,7 @@ describe.skipIf(!posix)("background feature", () => {
 					provider: new MockJudgeProvider(responder),
 					mode: extra.mode ?? "active",
 					config: parseConfig({
+						modes: extra.routing ? { "notify.routing": extra.routing } : {},
 						features: {
 							memory: false,
 							background: {
@@ -532,7 +554,7 @@ describe.skipIf(!posix)("background feature", () => {
 	});
 
 	it("routes the end of a job the model is not waiting on: now steers the running turn", async () => {
-		const { harness } = await start(urgency("now"));
+		const { harness } = await start(urgency("now"), { routing: "active" });
 		let seen = "";
 		harness.setResponses([
 			call("bg_start", { command: "echo done; exit 1" }),
@@ -552,7 +574,7 @@ describe.skipIf(!posix)("background feature", () => {
 	});
 
 	it("routes it to the next turn, or nowhere", async () => {
-		const later = await start(urgency("next_turn"));
+		const later = await start(urgency("next_turn"), { routing: "active" });
 		let seen = "";
 		later.harness.setResponses([
 			call("bg_start", { command: "echo done" }),
@@ -568,7 +590,7 @@ describe.skipIf(!posix)("background feature", () => {
 		await later.harness.session.prompt("And the check?");
 		expect(seen).toContain("exited with code 0");
 
-		const never = await start(urgency("drop"));
+		const never = await start(urgency("drop"), { routing: "active" });
 		never.harness.setResponses([
 			call("bg_start", { command: "echo done" }),
 			call("pause", { ms: 900 }),
@@ -580,8 +602,31 @@ describe.skipIf(!posix)("background feature", () => {
 		expect(notices(never.harness)).toEqual([]);
 	});
 
-	it("tells the model at its next turn when no judge vouches for anything else", async () => {
-		const { harness } = await start(urgency("now"), { mode: "shadow" });
+	it("without a verdict (routing is in shadow by default) tells the model at once, within a single prompt", async () => {
+		const asked: string[] = [];
+		const { harness } = await start((request) => {
+			if ("urgency" in request.questions) asked.push(JSON.stringify(request.state));
+			// What the judge would say is recorded, not acted on.
+			return urgency("drop")(request);
+		});
+		let seen = "";
+		harness.setResponses([
+			call("bg_start", { command: "echo done; exit 3" }),
+			call("pause", { ms: 900 }),
+			(context) => {
+				seen = JSON.stringify(context.messages);
+				return fauxAssistantMessage("The check failed with code 3.");
+			},
+		]);
+		// One prompt and no other: a notice for the next turn would never be read.
+		await harness.session.prompt("Run the long check while you refactor.");
+		expect(notices(harness)).toHaveLength(1);
+		expect(seen).toContain("exited with code 3");
+		expect(asked).toHaveLength(1);
+	});
+
+	it("can still leave the notice for the next turn, as before", async () => {
+		const { harness } = await start(urgency("now"), { background: { unjudged: "next_turn" } });
 		harness.setResponses([
 			call("bg_start", { command: "echo done" }),
 			call("pause", { ms: 900 }),
@@ -592,6 +637,18 @@ describe.skipIf(!posix)("background feature", () => {
 		expect(notices(harness)).toEqual([]);
 		await harness.session.prompt("And the check?");
 		expect(notices(harness)).toHaveLength(1);
+	});
+
+	it("says nothing of a watched line or an end the model is already waiting for", async () => {
+		const { harness } = await start(urgency("now"), { routing: "active" });
+		harness.setResponses([
+			call("bg_start", { command: "sleep 0.3; echo ready; sleep 0.3", watch: "ready" }),
+			call("bg_output", { id: "bg-1", timeout: 10 }),
+			fauxAssistantMessage("It came up and finished."),
+		]);
+		await harness.session.prompt("Start it and wait until it is done.");
+		expect(results(harness)[1]).toContain("ready");
+		expect(notices(harness)).toEqual([]);
 	});
 
 	it("gives a long background test log the same admission treatment as a foreground one", async () => {

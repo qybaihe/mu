@@ -13,6 +13,15 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 - The plain-language board makes fewer model calls: it isn't written in `mu --print` or json mode, where nobody sees it, and while subagents work it updates only when one of them starts, finishes or fails.
 - Subagents and hives ask the judge less: no difficulty questions without a model ladder, and none at all when every role is named. Hive bees think at the session's level like other subagents, share their `FOUND:` and `DEAD END:` notes without waiting for the judge, and still hear from each other when the judge can't answer. The subagent patch scope check is off by default.
 - `browse` with a goal says up front when the configured judge can't drive the browser, instead of stopping after the first step.
+- A background job that ends, and the context-budget warnings, now reach the agent during the run, also in `mu --print`; a message you send while the agent works is no longer held up to 1.5 s for the judge. The judge only records what it would have done for these two points.
+- When the agent offers extra work you didn't ask for ("want me to do the same for the others?"), mu no longer takes that as a go-ahead and sends it back to work.
+- Cache warming no longer asks the judge while the agent is running, so it can't drop the prompt cache in the middle of a run.
+
+### Fixed
+
+- Reading a file page by page, or running scripts that only differ further down, no longer gets the agent told it is going in circles.
+- `mu --print` no longer stays up to 10 s after the run for a judge answer nobody waits for any more.
+- A late skill selection on the first message now takes effect from the next message, instead of every skill staying in the prompt for the whole conversation.
 
 ## [0.1.10] - 2026-10-22
 
