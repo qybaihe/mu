@@ -304,6 +304,7 @@ pi 自己的指令（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`
 
 ```bash
 npm install --ignore-scripts   # 安裝相依套件，不執行生命週期指令碼
+npm run hydrate:model-catalog  # 依儲存庫裡固定的目錄產生模型清單（不連網）
 node kyrn/bin/mu.mjs           # 從這份程式碼啟動 mu
 npm run check                  # 格式、靜態檢查、型別
 ./test.sh                      # 測試（沒有金鑰時跳過需要模型的測試）

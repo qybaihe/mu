@@ -62,6 +62,7 @@ You need Node.js 22.19 or newer (CI uses Node 24) and, for the desktop app, [Bun
 git clone https://github.com/qybaihe/mu.git
 cd mu
 npm install --ignore-scripts
+npm run hydrate:model-catalog # write the model list pi reads, from the pinned catalog (offline)
 node kyrn/bin/mu.mjs          # run mu from this checkout; Node runs the TypeScript directly
 ```
 

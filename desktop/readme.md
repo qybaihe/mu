@@ -8,6 +8,7 @@ Install the root dependencies first, so the app runs the mu in the same reposito
 
 ```bash
 npm install --ignore-scripts               # at the repository root
+npm run hydrate:model-catalog              # also at the root: the model list mu reads
 cd desktop
 bun install
 node scripts/prepareBackend.js            # once: the local service the app starts

@@ -304,6 +304,7 @@ pi 自身のコマンド（`/model`、`/thinking`、`/login`、`/resume`、`/tre
 
 ```bash
 npm install --ignore-scripts   # 依存パッケージのインストール（ライフサイクルスクリプトは実行しない）
+npm run hydrate:model-catalog  # リポジトリに固定されたカタログからモデル一覧を生成（オフライン）
 node kyrn/bin/mu.mjs           # このチェックアウトから mu を起動
 npm run check                  # フォーマット、lint、型チェック
 ./test.sh                      # テスト（モデルが必要なテストは、キーがなければスキップ）

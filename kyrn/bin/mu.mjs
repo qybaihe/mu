@@ -354,12 +354,26 @@ export function dependenciesInstalled({ root, platform, exists }) {
 	}
 }
 
-export function installHint({ root, platform }) {
-	const steps = [`cd ${root}`, "npm ci --ignore-scripts", "npm run hydrate:model-data"];
-	// Windows PowerShell 5 has no `&&`.
+/**
+ * Writes the model list pi reads at its start (packages/ai/src/providers/data, not committed) from the pinned catalog in
+ * the repository: offline and the same every time, as CI builds it.
+ */
+const HYDRATE = "npm run hydrate:model-catalog";
+
+/** A problem and the commands that fix it, one line to paste; Windows PowerShell 5 has no `&&`, so a list there. */
+function stepsHint(problem, steps, platform) {
 	return platform === "win32"
-		? `mu's dependencies aren't installed. Run:\n${steps.map((step) => `  ${step}`).join("\n")}`
-		: `mu's dependencies aren't installed. Run:  ${steps.join(" && ")}`;
+		? `${problem}. Run:\n${steps.map((step) => `  ${step}`).join("\n")}`
+		: `${problem}. Run:  ${steps.join(" && ")}`;
+}
+
+export function installHint({ root, platform }) {
+	return stepsHint("mu's dependencies aren't installed", [`cd ${root}`, "npm ci --ignore-scripts", HYDRATE], platform);
+}
+
+/** A checkout whose dependencies are in but whose model list was never written: a clone right after npm install. */
+export function modelDataHint({ root, platform }) {
+	return stepsHint("mu's list of models isn't generated in this checkout yet", [`cd ${root}`, HYDRATE], platform);
 }
 
 /** What mu says on a Node that does not strip TypeScript types, which a checkout cannot run on. */
@@ -372,12 +386,16 @@ const NO_TYPE_STRIPPING =
  * pi's own source resolver (packages/coding-agent/src/experimental/source-resolver.ts: each workspace package
  * resolves to its sources, as tsconfig.json's paths say) and Node's compile cache (compile-cache.mjs), the way pi
  * runs its own checkout (pi-test.sh). A runtime that does not strip types, a checkout whose dependencies are not
- * installed and one without the resolver are each said, not left to a failed import.
+ * installed or whose model list is not generated, and one without the resolver are each said, not left to a failed
+ * import.
  */
 export function sourceRuntime({ root, platform, stripsTypes, exists }) {
 	const path = pathFor(platform);
 	if (!stripsTypes) return { error: NO_TYPE_STRIPPING };
 	if (!dependenciesInstalled({ root, platform, exists })) return { error: installHint({ root, platform }) };
+	// Without it pi fails at its first import with ERR_MODULE_NOT_FOUND for a provider's .json.
+	if (!exists(path.join(root, "packages", "ai", "src", "providers", "data", ".manifest.json")))
+		return { error: modelDataHint({ root, platform }) };
 	const resolver = path.join(root, "packages", "coding-agent", "src", "experimental", "source-resolver.ts");
 	if (!exists(resolver)) return { error: `pi's source resolver is missing from this checkout (${resolver})` };
 	// As URLs: `--import` reads a Windows path such as C:\... as a URL whose scheme is c:.

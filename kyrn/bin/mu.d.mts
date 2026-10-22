@@ -32,6 +32,7 @@ export function ensureAppView(input: {
 
 export function dependenciesInstalled(input: { root: string; platform: Platform; exists(path: string): boolean }): boolean;
 export function installHint(input: { root: string; platform: Platform }): string;
+export function modelDataHint(input: { root: string; platform: Platform }): string;
 export type Layout = "repo" | "package";
 export function layoutOf(input: { root: string; platform: Platform; exists(path: string): boolean }): Layout;
 export function packageEntries(input: { root: string; platform: Platform }): {

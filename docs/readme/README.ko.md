@@ -304,6 +304,7 @@ pi의 자체 명령(`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`
 
 ```bash
 npm install --ignore-scripts   # 의존성 설치, 라이프사이클 스크립트는 실행하지 않음
+npm run hydrate:model-catalog  # 저장소에 고정된 카탈로그로 모델 목록 생성(오프라인)
 node kyrn/bin/mu.mjs           # 이 체크아웃에서 mu 실행
 npm run check                  # 포맷, 린트, 타입 검사
 ./test.sh                      # 테스트 (모델이 필요한 테스트는 키가 없으면 건너뜀)

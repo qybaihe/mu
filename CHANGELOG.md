@@ -20,6 +20,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 ### Fixed
 
 - **The judge reads a long flagged command as you are asked to confirm it**: up to 1,500 characters whole, past that its start and every flagged part with the text around it. Whole scripts up to 8,000 characters (0.1.11) read worse: amid hundreds of harmless lines the judge lost what you had and had not asked for.
+- **Running mu from a fresh clone works as the README says.** `npm install --ignore-scripts` then `node kyrn/bin/mu.mjs` failed with `ERR_MODULE_NOT_FOUND` for a provider's `.json`: the model list pi reads is generated, not committed. The READMEs, CONTRIBUTING.md and the desktop readme now include `npm run hydrate:model-catalog` (offline, from the pinned catalog, as CI builds it); without it the launcher says what to run, and `mu doctor` flags it. The hint for missing dependencies names that script too, instead of `hydrate:model-data`, which fetches the catalogs over the network.
 - **A flagged script keeps its line breaks for the judge and in the confirmation.** They were run into one line, which in a script joins separate commands into one: `echo done` and an `rm -rf build` on the next line read as a single echo. Runs of spaces still collapse.
 - Pressing Escape during a sign-in in the terminal goes back to the list, instead of reporting "Failed to login to GitHub Copilot: This operation was aborted".
 - Choosing a subscription in `mu setup` no longer tells you to start mu and type `/login`: when setup starts mu, `/login` is already open.

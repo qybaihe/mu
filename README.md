@@ -368,6 +368,7 @@ Bug reports, fixes, new decision points, judge measurements and translations are
 
 ```bash
 npm install --ignore-scripts   # install dependencies without lifecycle scripts
+npm run hydrate:model-catalog  # write the model list from the pinned catalog (offline)
 node kyrn/bin/mu.mjs           # run mu from this checkout
 npm run check                  # formatting, lint, types
 ./test.sh                      # tests (those that need a model are skipped without a key)

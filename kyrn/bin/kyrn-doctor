@@ -74,8 +74,12 @@ if (layout === "package") {
 		"dependencies",
 		installed
 			? "installed"
-			: `missing: cd ${root} && npm ci --ignore-scripts && npm run hydrate:model-data`,
+			: `missing: cd ${root} && npm ci --ignore-scripts && npm run hydrate:model-catalog`,
 	);
+	// The model list pi reads at its start is generated, not committed (installHint in mu.mjs).
+	if (installed && !existsSync(join(root, "packages", "ai", "src", "providers", "data", ".manifest.json"))) {
+		row("fix", "model list", `not generated: cd ${root} && npm run hydrate:model-catalog`);
+	}
 
 	// A link on POSIX, a small mu.cmd on Windows, where a link to a script cannot be run.
 	const linked = linkState({

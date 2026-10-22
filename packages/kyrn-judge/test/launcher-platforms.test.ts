@@ -89,11 +89,13 @@ const WIN_HOME = "C:\\Users\\bai";
 const winInstalled = {
 	[`${WIN_ROOT}\\node_modules\\undici\\package.json`]: "{}",
 	[`${WIN_ROOT}\\packages\\coding-agent\\src\\experimental\\source-resolver.ts`]: "",
+	[`${WIN_ROOT}\\packages\\ai\\src\\providers\\data\\.manifest.json`]: "{}",
 };
 const POSIX_ROOT = "/home/bai/KYRN";
 const posixInstalled = {
 	[`${POSIX_ROOT}/node_modules/undici/package.json`]: "{}",
 	[`${POSIX_ROOT}/packages/coding-agent/src/experimental/source-resolver.ts`]: "",
+	[`${POSIX_ROOT}/packages/ai/src/providers/data/.manifest.json`]: "{}",
 };
 /** How Node runs a checkout's TypeScript itself: pi's source resolver and Node's compile cache (sourceRuntime). */
 const POSIX_NATIVE = [
@@ -352,7 +354,7 @@ describe("starting pi", () => {
 			execPath: "node",
 			fs: disk({}),
 		});
-		expect(linux.error).toContain(`cd ${POSIX_ROOT} && npm ci --ignore-scripts && npm run hydrate:model-data`);
+		expect(linux.error).toContain(`cd ${POSIX_ROOT} && npm ci --ignore-scripts && npm run hydrate:model-catalog`);
 	});
 
 	it("on Windows runs node with an argument array: no shell, no .cmd shim, the prompt untouched", () => {
@@ -422,6 +424,12 @@ describe("starting pi", () => {
 		expect(runtime(true, Object.fromEntries(older))).toContain("source resolver");
 		// Node strips types, but the dependencies are not installed: that is still said, not left to a failed import.
 		expect(runtime(true, {})).toContain("npm ci --ignore-scripts");
+		// Installed, but the model list was never written (a clone right after npm install): pi would fail at its first
+		// import of a provider's .json.
+		const unhydrated = Object.entries(posixInstalled).filter(([file]) => !file.endsWith(".manifest.json"));
+		expect(runtime(true, Object.fromEntries(unhydrated))).toBe(
+			`mu's list of models isn't generated in this checkout yet. Run:  cd ${POSIX_ROOT} && npm run hydrate:model-catalog`,
+		);
 		// A user name with a space or beyond ASCII is escaped in the URL, and the file is still found.
 		const root = "C:\\Users\\白鹤 Li\\KYRN";
 		const named = sourceRuntime({
@@ -431,6 +439,7 @@ describe("starting pi", () => {
 			...disk({
 				[`${root}\\node_modules\\undici\\package.json`]: "{}",
 				[`${root}\\packages\\coding-agent\\src\\experimental\\source-resolver.ts`]: "",
+				[`${root}\\packages\\ai\\src\\providers\\data\\.manifest.json`]: "{}",
 			}),
 		});
 		expect(named.error === undefined && named.args[4]).toBe(
