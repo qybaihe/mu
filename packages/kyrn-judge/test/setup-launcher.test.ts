@@ -57,6 +57,7 @@ const POSIX_ROOT = "/home/bai/KYRN";
 const posixInstalled = {
 	[`${POSIX_ROOT}/node_modules/undici/package.json`]: "{}",
 	[`${POSIX_ROOT}/packages/coding-agent/src/experimental/source-resolver.ts`]: "",
+	[`${POSIX_ROOT}/packages/ai/src/providers/data/.manifest.json`]: "{}",
 };
 const POSIX_NATIVE = [
 	"--disable-warning=ExperimentalWarning",
