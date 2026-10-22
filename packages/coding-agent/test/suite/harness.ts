@@ -272,7 +272,8 @@ export async function createHarness(options: HarnessOptions = {}): Promise<Harne
 			session.dispose();
 			fauxProvider.unregister();
 			if (existsSync(tempDir)) {
-				rmSync(tempDir, { recursive: true });
+				// On Windows a git process the session started can still hold a handle for a moment (EPERM, EBUSY).
+				rmSync(tempDir, { recursive: true, maxRetries: 10, retryDelay: 100 });
 			}
 		},
 	};
