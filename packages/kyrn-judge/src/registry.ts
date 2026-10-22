@@ -33,6 +33,8 @@ const DEFAULT_TIMEOUT_MS: Readonly<Record<JudgeConfig["type"], number>> = {
 	typesafe: 10_000,
 	// A CLM server embeds every question together with the state: a batch of long ones takes seconds on a small GPU.
 	clm: 8000,
+	// A small judge on this machine answers in a fraction of a second; long states on a laptop take a few.
+	systemone: 8000,
 	gateway: 4000,
 	local: 4000,
 	http: 8000,
@@ -130,6 +132,20 @@ function createProvider(name: string, judge: JudgeConfig, host: JudgeHost): Judg
 				keyOptional: true,
 				judgeName: "CLM",
 				model: judge.model || CLM_DEFAULT_MODEL,
+				baseUrl: clmEndpoint(judge.baseUrl),
+				fetch: host.fetch,
+			});
+		}
+		case "systemone": {
+			// Like clm, for any other System One server: a key only when MU_JUDGE_SYSTEMONE_API_KEY (or apiKeyEnv) is set.
+			if (!judge.baseUrl) throw new TypeError(`Judge "${name}" needs a baseUrl`);
+			const keyName = judge.apiKeyEnv ?? "MU_JUDGE_SYSTEMONE_API_KEY";
+			return new TypeSafeJudgeProvider({
+				apiKey: () => host.env?.[keyName],
+				keyName,
+				keyOptional: true,
+				judgeName: name,
+				model: judge.model,
 				baseUrl: clmEndpoint(judge.baseUrl),
 				fetch: host.fetch,
 			});

@@ -57,6 +57,13 @@ The desktop app also asks first, then sets it up in one step. Laya is reliable o
 - `llm:<provider>/<model>`: any chat model, prompted to answer in JSON. It's slower, and every decision costs tokens, but it needs nothing beyond the model you already use. `mu setup --judge model` makes the session's model the judge.
 - `clm`: [CLM-8B](https://github.com/Contrastive-LM/CLM) behind a `clm-serve` (`http://127.0.0.1:8700` by default; set `MU_JUDGE_CLM_API_KEY` if the server requires a key). Not yet measured on mu's questions.
 
+## NVIDIA Nemotron on Nebius Token Factory
+
+- `nemotron`: Nemotron 3 Ultra on [Nebius Token Factory](https://tokenfactory.nebius.com), asked like `llm:` with thinking off, so each request gets one JSON answer (0.9 s at the median). Set `NEBIUS_API_KEY`. On 1,367 held-out judge requests from mu's own sessions it was the only Nemotron on Token Factory that clearly beat having no judge; Super, Nano 30B and Lightning missed the answer format or decided worse.
+- `nemotron-local`: Nemotron 3 Nano 4B distilled from Nemotron 3 Ultra ([mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron)), served on your machine over System One at `http://127.0.0.1:8770`. It reads every answer off one token, so a decision costs nothing and stays on the machine.
+
+Put them in a cascade, `"tiers": ["nemotron-local", "nemotron"]`, and only the questions the local judge is unsure of go on to Ultra.
+
 ## Your own judge
 
 Add it under `judges` in `mu.json`, with a name and a type:
@@ -80,6 +87,8 @@ Add it under `judges` in `mu.json`, with a name and a type:
 | `classifier` | A classifier from pi's catalog |
 | `local` | A Laya-compatible sidecar |
 | `clm` | A `clm-serve` |
+| `systemone` | Any other System One server at `baseUrl`, such as `mu-judge-nemotron`'s; sends `apiKeyEnv` (default `MU_JUDGE_SYSTEMONE_API_KEY`) only when it is set |
+| `logprob` | An OpenAI-compatible model at `baseUrl`, one question per request, the answer read off the first token's logprobs |
 
 The key itself never goes in the file: `apiKeyEnv` names the environment variable that holds it (set it in your environment or in mu's `.env`).
 

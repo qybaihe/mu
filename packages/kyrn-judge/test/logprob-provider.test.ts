@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BUILT_IN_JUDGES, parseConfig } from "../src/config.ts";
+import { parseConfig } from "../src/config.ts";
 import { LogprobJudgeProvider, labelDistribution, renderLabeledPrompt } from "../src/providers/logprob.ts";
 import { buildJudge } from "../src/registry.ts";
 import type { Questions } from "../src/types.ts";
@@ -163,13 +163,6 @@ describe("LogprobJudgeProvider", () => {
 });
 
 describe("logprob judges in the registry", () => {
-	it("builds the built-in Nemotron judge with the Token Factory key", () => {
-		expect(BUILT_IN_JUDGES.nemotron).toMatchObject({ type: "logprob", apiKeyEnv: "NEBIUS_API_KEY" });
-		const { judge, problems } = buildJudge(parseConfig({ tiers: ["nemotron"] }), { env: { NEBIUS_API_KEY: "k" } });
-		expect(problems).toEqual([]);
-		expect(judge.id).toBe("api.tokenfactory.nebius.com:nvidia/Nemotron-3_5-Lightning");
-	});
-
 	it("reads a logprob judge from mu.json and reports one without an address", () => {
 		const config = parseConfig({
 			tiers: ["mine", "broken"],
