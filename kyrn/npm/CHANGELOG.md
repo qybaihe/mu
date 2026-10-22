@@ -8,6 +8,7 @@
 
 ### Changed
 
+- `quietStartup` defaults to `"header"` under mu's name (pi keeps `false`): the welcome header shows, the startup listing of loaded resources doesn't; diagnostics still do. A value in settings.json, `false` included, holds; `--verbose` overrides it.
 - `/login` offers no Claude subscription sign-in under mu's name (Anthropic doesn't allow other apps to offer one); an Anthropic API key is still offered, and an earlier sign-in stays until `/logout`. `mu setup` refuses a Claude subscription token (`sk-ant-oat…`) given as a key, pasted or with `--key-stdin`, and sends it nowhere.
 - The plain-language board runs only where someone watches it, the terminal and the desktop app, not in `mu --print` or json mode (`features.board.unattended` brings it back). While subagents work, it looks again only when one of them starts, finishes or fails, not every 20 seconds (`followAlways`). An unsure "has anything changed?" with nothing new no longer rewrites the board, and "is it waiting for you?" is asked only once the agent stopped. Replayed on 82 judged looks, the change gate alone cuts the writer calls from 82 to 29.
 - `delegate` and `hive` ask the judge how hard a task is only when a model ladder is set (`features.swarm.models`) or a role pins a model of its own: without one, a delegation that names every role asks nothing, and one that doesn't asks only which role. Hive bees get their thinking level the way delegate's subagents do: on the session's model, the session's level, which keeps the parent's prompt cache warm.
