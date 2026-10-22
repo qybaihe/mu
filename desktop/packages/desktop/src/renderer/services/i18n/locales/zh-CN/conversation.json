@@ -592,7 +592,9 @@
     "hint": "输入 / 唤起命令，@ 引用文件，↑/↓ 切换历史消息",
     "mediaPathFallback": "该 Agent 不原生支持此文件类型，将以文件路径形式发送。",
     "hintWithSessions": "输入 / 唤起命令，@ 引用文件，@@ 引用会话，↑/↓ 切换历史消息",
-    "stop": "停止回复"
+    "stop": "停止回复",
+    "openCommand": "从这台电脑附加文件",
+    "copyCommand": "复制最后一条回复"
   },
   "composer": {
     "goalLine": {

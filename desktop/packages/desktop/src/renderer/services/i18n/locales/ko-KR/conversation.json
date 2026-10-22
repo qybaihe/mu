@@ -592,7 +592,9 @@
     "hint": "/ 로 명령, @ 로 파일 참조, ↑/↓ 로 메시지 기록 전환",
     "mediaPathFallback": "이 에이전트는 이 파일 형식을 기본적으로 지원하지 않으므로 파일 경로로 전송됩니다.",
     "hintWithSessions": "/ 로 명령, @ 로 파일, @@ 로 대화 참조, ↑/↓ 로 기록",
-    "stop": "응답 중지"
+    "stop": "응답 중지",
+    "openCommand": "이 컴퓨터에서 파일 첨부",
+    "copyCommand": "마지막 응답 복사"
   },
   "composer": {
     "goalLine": {

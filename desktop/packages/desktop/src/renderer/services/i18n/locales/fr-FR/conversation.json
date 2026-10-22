@@ -592,7 +592,9 @@
     "hint": "Tapez / pour les commandes, @ pour référencer des fichiers, ↑/↓ pour l'historique des messages",
     "mediaPathFallback": "Cet agent ne prend pas en charge nativement ce type de fichier ; il sera envoyé sous forme de chemin de fichier.",
     "hintWithSessions": "/ pour les commandes, @ pour les fichiers, @@ pour les conversations, ↑/↓ pour l’historique",
-    "stop": "Arrêter la réponse"
+    "stop": "Arrêter la réponse",
+    "openCommand": "Joindre des fichiers de cet ordinateur",
+    "copyCommand": "Copier la dernière réponse"
   },
   "composer": {
     "goalLine": {

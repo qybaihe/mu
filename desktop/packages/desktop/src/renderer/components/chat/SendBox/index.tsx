@@ -602,7 +602,7 @@ const SendBox: React.FC<{
     if (onSlashBuiltinCommand) {
       commands.push({
         name: 'open',
-        description: t('conversation.workspace.addFile', { defaultValue: 'Add File' }),
+        description: t('conversation.sendbox.openCommand'),
         kind: 'builtin',
         source: 'builtin',
       });
@@ -610,7 +610,7 @@ const SendBox: React.FC<{
     if (conversationContext?.conversation_id) {
       commands.push({
         name: 'copy',
-        description: t('messages.copy', { defaultValue: 'Copy' }),
+        description: t('conversation.sendbox.copyCommand'),
         kind: 'builtin',
         source: 'builtin',
       });

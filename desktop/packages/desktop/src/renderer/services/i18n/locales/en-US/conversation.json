@@ -592,7 +592,9 @@
     "hint": "Type / for commands, @ to reference files, ↑/↓ for message history",
     "mediaPathFallback": "This agent can't read this file type directly, so it'll be sent as a file path.",
     "hintWithSessions": "Type / for commands, @ for files, @@ for conversations, ↑/↓ for history",
-    "stop": "Stop the reply"
+    "stop": "Stop the reply",
+    "openCommand": "Attach files from this computer",
+    "copyCommand": "Copy the last reply"
   },
   "composer": {
     "goalLine": {
