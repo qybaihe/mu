@@ -6,6 +6,10 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ## [Unreleased]
 
+### Fixed
+
+- **A flagged script keeps its line breaks for the judge and in the confirmation.** They were run into one line, which in a script joins separate commands into one: `echo done` and an `rm -rf build` on the next line read as a single echo. Runs of spaces still collapse.
+
 ## [0.1.11] - 2026-10-22
 
 ### Added
