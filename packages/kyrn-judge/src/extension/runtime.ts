@@ -192,6 +192,11 @@ export class KyrnRuntime {
 	/** The harness itself cut the run that is ending (mid-stream correction), and will start the next one. Not the user's Esc. */
 	harnessAbort = false;
 	/**
+	 * When the run has to be done (epoch ms), set by the deadline feature from MU_TIME_BUDGET_S or
+	 * `features.deadline.budgetS`. Undefined when no budget is known: then nothing depends on it.
+	 */
+	deadlineAt: number | undefined;
+	/**
 	 * The ends of runs (pi's `agent_end` event, the one object every handler gets) after which a feature already sent
 	 * the agent back to work, so a later check says nothing more about the same end. One voice is enough.
 	 */

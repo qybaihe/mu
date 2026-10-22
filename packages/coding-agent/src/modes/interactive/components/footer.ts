@@ -217,7 +217,9 @@ export class FooterComponent implements Component {
 		let statsLeft = statsParts.join(" ");
 
 		// Add model name on the right side, plus thinking level if model supports it
-		const modelName = state.model?.id || "no-model";
+		// The agent's placeholder (provider and id "unknown") stands in until a model is set up.
+		const placeholder = state.model?.provider === "unknown" && state.model.id === "unknown";
+		const modelName = (!placeholder && state.model?.id) || "no model";
 
 		let statsLeftWidth = visibleWidth(statsLeft);
 

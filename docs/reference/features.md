@@ -263,6 +263,17 @@ On by default: no. Decision points: `output.drift`.
 | `maxRules` | `4` | Rules checked per call at most `4`. When there are more, the most recent ones are used. Range 1 to 12. |
 | `maxInterrupts` | `2` | Max cuts between two of your messages. Range 1 to 10. |
 
+## deadline
+
+**Run deadline.** When mu knows when the run has to be done, a reply that only thinks is cut sooner (see Long-thinking retry), and the model is told how many minutes are left when 50% and 80% of the time has passed; the second time it is also asked to get the requested result in place (files written, services running) before polishing. No judge is asked. Without a time budget, nothing changes.
+
+On by default: yes.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `budgetS` | `0` s | Time budget for a run. Counted from when the mu process starts; 0 means none. The environment variable MU_TIME_BUDGET_S takes precedence, and a benchmark harness sets it from the task's timeout. Sub-agents ignore the budget. |
+| `notices` | `true` | Tell the model how much time is left. One line at 50% and one at 80%. Tool calls under way are not interrupted; the model reads it before its next step. |
+
 ## watchdog
 
 **Long-thinking retry.** When a reply has only been thinking for too long, with no text and no tool call yet, it is cut and asked again at the same reasoning effort. The retry is told where the reasoning had gotten to and asked to act on it first. The retry itself is never cut.
@@ -271,7 +282,7 @@ On by default: yes.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `thinkingMs` | `600000` ms | Cut a reply after thinking this long. |
+| `thinkingMs` | `600000` ms | Cut a reply after thinking this long. With a run deadline (see Run deadline, MU_TIME_BUDGET_S) the cut can come sooner: after at most half the time left when the reply started, and never under a minute. |
 | `maxCuts` | `3` | Max cuts between two of your messages. Range 1 to 10. |
 
 ## goal

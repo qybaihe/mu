@@ -72,6 +72,12 @@ Keys for the hosted judges, each sent only to the service it belongs to (see [Ju
 
 `TAVILY_API_KEY` turns on [Tavily](https://tavily.com) for the web tools: `web_search` asks Tavily first and falls back to `features.web.search` and the built-in sources (on a bad key, a rate or plan limit, or a server error), and `web_fetch` asks Tavily's extract for a public page it could not reach or read itself. The key is read at each call, sent only to `api.tavily.com`, and never shown in results.
 
+Time:
+
+| Variable | Effect |
+| --- | --- |
+| `MU_TIME_BUDGET_S` | The run's time budget in seconds, counted from when mu starts. With it, a reply that only thinks is cut in time for a retry, and the model is told how many minutes are left at 50% and 80% of the budget ([`features.deadline`](reference/features.md#deadline)). Benchmark harnesses set it from the task's timeout. Without it, nothing changes. |
+
 The launcher:
 
 | Variable | Effect |
