@@ -1593,9 +1593,10 @@ export async function main(argv = process.argv.slice(2)) {
 		return 0;
 	}
 
-	if (layout === "package" && command === "version") {
+	// --version is the bare number, in the npm package as in a checkout (below).
+	if (layout === "package" && (command === "version" || command === "--version" || command === "-v")) {
 		const pkg = JSON.parse(readText(path.join(root, "package.json")));
-		out(`mu ${pkg.version} (pi ${pkg.muBuild?.pi ?? "?"}, npm package ${pkg.name})`);
+		out(command === "version" ? `mu ${pkg.version} (pi ${pkg.muBuild?.pi ?? "?"}, npm package ${pkg.name})` : pkg.version);
 		return 0;
 	}
 	// Asked before `version` too, as it always was: a checkout without its dependencies says so at the first command.

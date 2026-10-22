@@ -43,6 +43,13 @@ function check(name, ok, detail) {
 
 const version = spawnSync(mu, ["version"], options);
 check("mu version", version.status === 0 && /^mu \d+\.\d+\.\d+ \(pi \d/.test(version.stdout), version.stdout.trim() || version.stderr.trim());
+// --version is mu's own number, bare, the same as `mu version` names.
+const bare = spawnSync(mu, ["--version"], options);
+check(
+	"mu --version is mu's version",
+	bare.status === 0 && version.stdout.startsWith(`mu ${bare.stdout.trim()} (`),
+	bare.stdout.trim() || bare.stderr.trim(),
+);
 
 const help = spawnSync(mu, ["--help"], options);
 check(
