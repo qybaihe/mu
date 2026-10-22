@@ -6,6 +6,10 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ## [Unreleased]
 
+### Fixed
+
+- Pressing Escape during a sign-in in the terminal goes back to the list, instead of reporting "Failed to login to GitHub Copilot: This operation was aborted".
+
 ## [0.1.11] - 2026-10-22
 
 ### Added

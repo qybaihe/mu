@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- `/login`: a sign-in cancelled with Escape goes back quietly also when the flow rejects with the dialog's abort (GitHub Copilot's), not only with "Login cancelled".
+
 ## [0.1.13] - 2026-10-22
 
 ### Added
