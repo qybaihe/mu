@@ -269,19 +269,8 @@
 				"fa-IR": "پیام‌های حین کار"
 			},
 			"summary": {
-				"zh": "任务进行中你又发来一句话：判断是要立刻打断，还是等这一步做完再处理。",
-				"en": "For a message that arrives while the agent is working: interrupt now, or handle it after the current step.",
-				"zh-TW": "代理工作時你又傳來一則訊息：判斷是要立刻打斷，還是等這一步做完再處理。",
-				"ja-JP": "エージェントの作業中に届いたメッセージについて、すぐに中断するか、現在のステップが終わってから対応するかを判定します。",
-				"ko-KR": "에이전트가 작업하는 중에 메시지가 도착하면, 지금 바로 작업을 중단할지 현재 단계를 마친 뒤 처리할지 판정합니다.",
-				"de-DE": "Eine Nachricht, die eintrifft, während der Agent arbeitet: sofort unterbrechen oder nach dem aktuellen Schritt bearbeiten.",
-				"fr-FR": "Un message arrive pendant que l’agent travaille : interrompre tout de suite, ou le traiter après l’étape en cours.",
-				"es-ES": "Un mensaje que llega mientras el agente trabaja: interrumpir ahora o atenderlo al terminar el paso actual.",
-				"pt-BR": "Uma mensagem que chega enquanto o agente trabalha: interromper agora ou tratá-la depois da etapa atual.",
-				"ru-RU": "Сообщение, пришедшее во время работы агента: прервать работу сразу или обработать его после текущего шага.",
-				"uk-UA": "Повідомлення, що надходить, поки агент працює: перервати роботу зараз чи обробити його після поточного кроку.",
-				"tr-TR": "Ajan çalışırken gelen bir mesaj: iş hemen kesilsin mi, yoksa mesaj mevcut adımdan sonra mı ele alınsın?",
-				"fa-IR": "پیامی که هنگام کار عامل می‌رسد: همین حالا کار را قطع کند، یا پس از گام فعلی به آن بپردازد."
+				"zh": "任务进行中你又发来一句话：判断是要立刻打断，还是等这一步做完再处理。默认是影子模式：判定只记录，消息按你按的键投递，不用等判定。",
+				"en": "For a message that arrives while the agent is working: interrupt now, or handle it after the current step. In shadow by default: the verdict is only logged, and the message goes the way of the key you pressed without waiting for it."
 			}
 		},
 		{
@@ -759,19 +748,8 @@
 				"fa-IR": "گرم نگه‌داشتن حافظهٔ نهان"
 			},
 			"summary": {
-				"zh": "判断你是否很快会回来，以决定要不要在提示词缓存过期前续一下。",
-				"en": "Guesses whether you'll be back soon, to decide whether to refresh the prompt cache before it expires.",
-				"zh-TW": "判斷你是否很快會回來，以決定要不要在提示快取過期前先續上。",
-				"ja-JP": "あなたがすぐに戻ってくるかを予測し、期限が切れる前にプロンプトキャッシュを更新するかを決めます。",
-				"ko-KR": "사용자가 곧 돌아올지 추측해, 프롬프트 캐시가 만료되기 전에 갱신할지 정합니다.",
-				"de-DE": "Schätzt, ob du bald zurückkommst, um zu entscheiden, ob der Prompt-Cache vor dem Ablaufen aufgefrischt wird.",
-				"fr-FR": "Devine si vous allez bientôt revenir, pour décider de rafraîchir le cache du prompt avant qu’il n’expire.",
-				"es-ES": "Estima si volverás pronto para decidir si se renueva la caché del prompt antes de que caduque.",
-				"pt-BR": "Estima se você vai voltar logo, para decidir se renova o cache do prompt antes que ele expire.",
-				"ru-RU": "Прикидывает, скоро ли вы вернётесь, чтобы решить, обновить ли кэш промпта до истечения его срока.",
-				"uk-UA": "Оцінює, чи ви скоро повернетеся, щоб вирішити, чи оновлювати кеш промпту, перш ніж він застаріє.",
-				"tr-TR": "İstem önbelleğini süresi dolmadan yenileyip yenilememeye karar vermek için yakında geri dönüp dönmeyeceğinizi tahmin eder.",
-				"fa-IR": "حدس می‌زند که به‌زودی برمی‌گردید یا نه، تا معلوم شود حافظهٔ نهان پرامپت پیش از منقضی شدن تازه شود یا نه."
+				"zh": "判断你是否很快会回来，以决定要不要在提示词缓存过期前续一下。只在代理空闲时问：运行中从不丢掉缓存。",
+				"en": "Guesses whether you'll be back soon, to decide whether to refresh the prompt cache before it expires. Asked only while the agent is idle, so a run never loses its cache to it."
 			}
 		},
 		{
@@ -1389,19 +1367,8 @@
 				"fa-IR": "مسیریابی اعلان‌ها"
 			},
 			"summary": {
-				"zh": "上下文预算等事件出现时，判断该现在告诉模型、稍后再说，还是不必说。",
-				"en": "For events such as the context budget: tell the model now, later or not at all.",
-				"zh-TW": "上下文預算這類事件出現時，判斷該現在告訴模型、晚點再說，還是不必說。",
-				"ja-JP": "コンテキスト予算などのイベントを、モデルにすぐ伝えるか、後で伝えるか、伝えないかを判定します。",
-				"ko-KR": "컨텍스트 예산 같은 이벤트를 모델에게 지금 알릴지, 나중에 알릴지, 알리지 않을지 정합니다.",
-				"de-DE": "Bei Ereignissen wie dem Kontextbudget: dem Modell jetzt, später oder gar nicht Bescheid geben.",
-				"fr-FR": "Pour des événements comme le budget de contexte : prévenir le modèle maintenant, plus tard, ou pas du tout.",
-				"es-ES": "Para eventos como el presupuesto de contexto: avisar al modelo ahora, más tarde o nunca.",
-				"pt-BR": "Para eventos como o orçamento de contexto: informar o modelo agora, mais tarde ou nunca.",
-				"ru-RU": "Для таких событий, как расход бюджета контекста: сообщить модели сейчас, позже или не сообщать вовсе.",
-				"uk-UA": "Для подій на кшталт бюджету контексту: повідомити модель зараз, пізніше чи не повідомляти зовсім.",
-				"tr-TR": "Bağlam bütçesi gibi olaylar için: modele şimdi mi, sonra mı iletilsin, yoksa hiç mi iletilmesin?",
-				"fa-IR": "برای رویدادهایی مانند بودجهٔ زمینه: همین حالا به مدل گفته شود، بعداً، یا اصلاً گفته نشود."
+				"zh": "上下文预算、后台命令结束等事件出现时，判断该现在告诉模型、稍后再说，还是不必说。默认是影子模式：判定只记录，事件按各自的规则投递，后台命令结束和上下文预算都是立刻告知。",
+				"en": "For events such as the context budget or a background job's end: tell the model now, later or not at all. In shadow by default: the verdict is only logged and each event is delivered by its own rule, which for a job's end and the context budget is now."
 			}
 		},
 		{
@@ -1849,6 +1816,19 @@
 						"uk-UA": "Чекати щонайбільше",
 						"tr-TR": "En fazla bekleme",
 						"fa-IR": "حداکثر انتظار"
+					}
+				},
+				{
+					"key": "applyLate",
+					"kind": "boolean",
+					"default": true,
+					"label": {
+						"zh": "首次判定晚到时下一回合补上",
+						"en": "Apply a late first verdict from the next turn"
+					},
+					"help": {
+						"zh": "会话第一条消息的判定超过等待时间才到时，从下一回合起照它隐藏技能，提示词前缀只变这一次；关掉则整个会话都带着全部技能说明。",
+						"en": "When the verdict on the session's first message comes after the wait, skills are hidden from the next turn on, which changes the prompt prefix once. Off: the session keeps every skill description."
 					}
 				}
 			]
@@ -4383,6 +4363,10 @@
 						"uk-UA": "Повторів, що вважаються зацикленням",
 						"tr-TR": "Döngü sayılan tekrar",
 						"fa-IR": "تکرارهایی که حلقه به شمار می‌آیند"
+					},
+					"help": {
+						"zh": "输入完全相同、结果也完全相同才算同一调用；分段读同一个文件不算。",
+						"en": "Only the same input with the same result counts as the same call; paging through a file does not."
 					}
 				},
 				{
@@ -5941,19 +5925,8 @@
 						"fa-IR": "حداکثر انتظار"
 					},
 					"help": {
-						"zh": "超时就不催了，判定只记账。",
-						"en": "After this, there's no nudge; the verdict is only recorded.",
-						"zh-TW": "超過這個時間就不再提醒，判定結果只記錄下來。",
-						"ja-JP": "これを過ぎると促しはせず、判定は記録だけします。",
-						"ko-KR": "이 시간이 지나면 알려 주지 않고, 판정은 기록만 합니다.",
-						"de-DE": "Danach gibt es keine Erinnerung; das Urteil wird nur aufgezeichnet.",
-						"fr-FR": "Au-delà, pas de rappel ; le jugement est seulement enregistré.",
-						"es-ES": "Pasado este tiempo no hay recordatorio; el veredicto solo se registra.",
-						"pt-BR": "Depois disso não há lembrete; o veredito só é registrado.",
-						"ru-RU": "После этого напоминания нет, а решение только записывается.",
-						"uk-UA": "Після цього нагадування немає, а рішення лише записується.",
-						"tr-TR": "Bu süreden sonra hatırlatma yapılmaz; karar yalnızca kaydedilir.",
-						"fa-IR": "پس از این مدت یادآوری‌ای در کار نیست؛ نتیجهٔ داوری فقط ثبت می‌شود."
+						"zh": "超时就不催了，这次判定也随之取消，不拖住单次运行的退出。",
+						"en": "After this, there's no nudge, and the judge call is cancelled so it doesn't hold up the end of a one-shot run."
 					}
 				}
 			]
@@ -6051,19 +6024,8 @@
 						"fa-IR": "حداکثر انتظار"
 					},
 					"help": {
-						"zh": "超时就不催了，判定只记账。",
-						"en": "After this, there's no nudge; the verdict is only recorded.",
-						"zh-TW": "超過這個時間就不再提醒，判定結果只記錄下來。",
-						"ja-JP": "これを過ぎると促しはせず、判定は記録だけします。",
-						"ko-KR": "이 시간이 지나면 알려 주지 않고, 판정은 기록만 합니다.",
-						"de-DE": "Danach gibt es keine Erinnerung; das Urteil wird nur aufgezeichnet.",
-						"fr-FR": "Au-delà, pas de rappel ; le jugement est seulement enregistré.",
-						"es-ES": "Pasado este tiempo no hay recordatorio; el veredicto solo se registra.",
-						"pt-BR": "Depois disso não há lembrete; o veredito só é registrado.",
-						"ru-RU": "После этого напоминания нет, а решение только записывается.",
-						"uk-UA": "Після цього нагадування немає, а рішення лише записується.",
-						"tr-TR": "Bu süreden sonra hatırlatma yapılmaz; karar yalnızca kaydedilir.",
-						"fa-IR": "پس از این مدت یادآوری‌ای در کار نیست؛ نتیجهٔ داوری فقط ثبت می‌شود."
+						"zh": "超时就不催了，这次判定也随之取消，不拖住单次运行的退出。",
+						"en": "After this, there's no nudge, and the judge call is cancelled so it doesn't hold up the end of a one-shot run."
 					}
 				}
 			]
@@ -6124,6 +6086,42 @@
 						"tr-TR": "Bağlam bütçesi bildirimleri (%)",
 						"fa-IR": "اعلان‌های بودجهٔ زمینه (%)"
 					}
+				},
+				{
+					"key": "unjudged",
+					"kind": "choice",
+					"default": "now",
+					"choices": [
+						{
+							"value": "now",
+							"label": {
+								"zh": "立刻告知",
+								"en": "Now"
+							}
+						},
+						{
+							"value": "next_turn",
+							"label": {
+								"zh": "下一回合",
+								"en": "Next turn"
+							}
+						},
+						{
+							"value": "drop",
+							"label": {
+								"zh": "不说",
+								"en": "Never"
+							}
+						}
+					],
+					"label": {
+						"zh": "没有判定时，上下文预算提醒",
+						"en": "Without a verdict, context budget notices"
+					},
+					"help": {
+						"zh": "通知分流默认是影子模式，这时就按这里投递。「下一回合」要等下一次运行开始才读到，单次运行里读不到。",
+						"en": "Notification routing is in shadow by default, and then this decides. A next-turn notice is read only when another run starts, which never happens in a one-shot run."
+					}
 				}
 			]
 		},
@@ -6160,7 +6158,27 @@
 				"fa-IR": "وقتی به‌صرفه باشد، حافظهٔ نهان پرامپت را پیش از منقضی شدن تازه می‌کند."
 			},
 			"defaultEnabled": true,
-			"options": []
+			"options": [
+				{
+					"key": "waitMs",
+					"kind": "number",
+					"default": 3000,
+					"min": 500,
+					"max": 30000,
+					"unit": {
+						"zh": "毫秒",
+						"en": "ms"
+					},
+					"label": {
+						"zh": "最多等待",
+						"en": "Wait at most"
+					},
+					"help": {
+						"zh": "超时就按 pi 自己的算法决定，这次判定也随之取消。",
+						"en": "After this, pi's own estimate decides, and the judge call is cancelled."
+					}
+				}
+			]
 		},
 		{
 			"name": "warmup",
@@ -7202,19 +7220,8 @@
 				"fa-IR": "دستورهای پس‌زمینه"
 			},
 			"summary": {
-				"zh": "开发服务器、长时间构建放到后台跑，不占用回合；结束时是否打断交给「通知分流」；会话结束时全部终止，无人值守的单次运行除外。",
-				"en": "bg_start / bg_output / bg_stop: run dev servers and long builds without blocking the turn. Notification routing decides whether a finished job interrupts; every job stops when the session ends, except in an unattended one-shot run.",
-				"zh-TW": "bg_start / bg_output / bg_stop：開發伺服器和長時間的建置不會卡住這一輪。工作結束時要不要打斷，交給「通知分流」決定；對話結束時，所有工作一起停止，無人值守的單次執行除外。",
-				"ja-JP": "bg_start / bg_output / bg_stop: 開発サーバーや長いビルドを、ターンをブロックせずに実行します。ジョブの終了時に割り込むかどうかは「通知の振り分け」が決めます。無人の単発実行を除き、すべてのジョブはセッションとともに停止します。",
-				"ko-KR": "bg_start / bg_output / bg_stop: 개발 서버나 긴 빌드를 턴을 막지 않고 실행합니다. 작업이 끝났을 때 끼어들지는 알림 라우팅이 정하며, 무인 단발 실행을 빼면 모든 작업은 세션과 함께 중지됩니다.",
-				"de-DE": "bg_start / bg_output / bg_stop: Entwicklungsserver und lange Builds, ohne die Runde zu blockieren. Ob das Ende eines Jobs unterbricht, entscheidet die Zustellung von Benachrichtigungen; jeder Job endet mit der Sitzung, außer in einem unbeaufsichtigten Einzellauf.",
-				"fr-FR": "bg_start / bg_output / bg_stop : serveurs de développement et longues compilations sans bloquer le tour. L’aiguillage des notifications décide si la fin d’un processus interrompt ; chaque processus s’arrête avec la session, sauf lors d’une exécution unique sans surveillance.",
-				"es-ES": "bg_start / bg_output / bg_stop: servidores de desarrollo y compilaciones largas sin bloquear el turno. Si el final de una tarea interrumpe o no, lo decide el enrutamiento de notificaciones; todas las tareas se detienen con la sesión, salvo en una ejecución única desatendida.",
-				"pt-BR": "bg_start / bg_output / bg_stop: servidores de desenvolvimento e compilações longas sem bloquear o turno. O “Roteamento de notificações” decide se o fim de uma tarefa interrompe; toda tarefa termina junto com a sessão, exceto numa execução única sem supervisão.",
-				"ru-RU": "bg_start / bg_output / bg_stop: серверы разработки и долгие сборки без блокировки хода. Прерывает ли работу завершение задачи, решает маршрутизация уведомлений; все задачи останавливаются вместе с сеансом, кроме разового запуска без присмотра.",
-				"uk-UA": "bg_start / bg_output / bg_stop: сервери розробки й довгі збирання, які не блокують хід. Чи перериває роботу завершення процесу, вирішує маршрутизація сповіщень; усі процеси зупиняються разом із сеансом, крім разового запуску без нагляду.",
-				"tr-TR": "bg_start / bg_output / bg_stop: turu engellemeden geliştirme sunucuları ve uzun derlemeler. Bir işin bitişinin araya girip girmeyeceğine bildirim yönlendirme karar verir; gözetimsiz tek seferlik çalıştırmalar dışında her iş oturumla birlikte durur.",
-				"fa-IR": "bg_start / bg_output / bg_stop: سرورهای توسعه و ساخت‌های طولانی، بی‌آنکه نوبت معطل بماند. اینکه پایان یک کار پس‌زمینه کار جاری را قطع کند یا نه، با «مسیریابی اعلان‌ها» تعیین می‌شود؛ همهٔ کارهای پس‌زمینه با پایان نشست متوقف می‌شوند، مگر در یک اجرای یک‌بارهٔ بی‌نظارت."
+				"zh": "开发服务器、长时间构建放到后台跑，不占用回合；任务结束时立刻告诉代理；会话结束时全部终止，无人值守的单次运行除外。",
+				"en": "bg_start / bg_output / bg_stop: run dev servers and long builds without blocking the turn. The agent hears of a finished job right away; every job stops when the session ends, except in an unattended one-shot run."
 			},
 			"defaultEnabled": true,
 			"options": [
@@ -7468,19 +7475,44 @@
 						"fa-IR": "پایان یک کار می‌تواند عامل بیکار را بیدار کند"
 					},
 					"help": {
-						"zh": "只有判定为「立刻」时才会开始新回合；关闭时只留一条消息。",
-						"en": "Only a verdict of \"now\" starts a turn; when off, the notice is only appended.",
-						"zh-TW": "只有判定為「立刻」時才會開始新的一輪；關閉時只附上一則通知。",
-						"ja-JP": "判定が「すぐに届ける」の場合だけ新しいターンを始めます。オフの場合は、通知を追加するだけです。",
-						"ko-KR": "“지금”으로 판정될 때만 턴을 시작합니다. 끄면 알림을 덧붙이기만 합니다.",
-						"de-DE": "Nur das Urteil „jetzt“ startet eine Runde; ist die Option aus, wird der Hinweis nur angehängt.",
-						"fr-FR": "Seul un jugement « maintenant » démarre un tour. Si cette option est désactivée, l’avis est seulement ajouté.",
-						"es-ES": "Solo un veredicto de «ahora» inicia un turno; si está desactivado, solo se deja el aviso.",
-						"pt-BR": "Só um veredito “agora” inicia um turno; quando desativado, o aviso só é acrescentado.",
-						"ru-RU": "Ход начинается, только если решение — «сейчас»; когда выключено, уведомление просто добавляется.",
-						"uk-UA": "Хід починає лише рішення «зараз»; коли вимкнено, сповіщення просто додається.",
-						"tr-TR": "Yalnızca “Şimdi ilet” kararı yeni bir tur başlatır; kapalıyken bildirim yalnızca konuşmaya eklenir.",
-						"fa-IR": "فقط داوریِ «اکنون» نوبتی را شروع می‌کند؛ وقتی خاموش باشد، اعلان فقط افزوده می‌شود."
+						"zh": "只有「立刻」告知的才会开始新回合；关闭时只留一条消息。",
+						"en": "Only a notice delivered \"now\" starts a turn; when off, the notice is only appended."
+					}
+				},
+				{
+					"key": "unjudged",
+					"kind": "choice",
+					"default": "now",
+					"choices": [
+						{
+							"value": "now",
+							"label": {
+								"zh": "立刻告知",
+								"en": "Now"
+							}
+						},
+						{
+							"value": "next_turn",
+							"label": {
+								"zh": "下一回合",
+								"en": "Next turn"
+							}
+						},
+						{
+							"value": "drop",
+							"label": {
+								"zh": "不说",
+								"en": "Never"
+							}
+						}
+					],
+					"label": {
+						"zh": "没有判定时，任务结束或匹配行",
+						"en": "Without a verdict, a job's end or watched line"
+					},
+					"help": {
+						"zh": "通知分流默认是影子模式，这时就按这里投递。「下一回合」要等下一次运行开始才读到，单次运行里读不到。",
+						"en": "Notification routing is in shadow by default, and then this decides. A next-turn notice is read only when another run starts, which never happens in a one-shot run."
 					}
 				},
 				{

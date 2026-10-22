@@ -9,6 +9,10 @@ import { threeZone } from "../policy.ts";
  * question and examples these follow. mu splits off asking for a go-ahead: it counts only when the user already asked
  * for the work (mu never makes the model ask what it can decide itself), and a step that is hard to undo or reaches
  * beyond this machine is never pushed through.
+ *
+ * Nor is extra work the model offers: "Fixed. Let me know if you want the same for the other repos too." asks for a
+ * go-ahead after a request for work, but on something the user did not ask for. Read as a go-ahead it once cost 7
+ * turns of out-of-scope work. Only a go-ahead on what the user asked for counts, so `beyond_request` must be "no".
  */
 export interface ContinueInput {
 	readonly userMessage: string;
@@ -19,10 +23,12 @@ export type ContinueOutcome = "end" | "promised" | "go_ahead";
 
 export const turnContinue = defineDecision({
 	id: "turn.continue",
-	version: 1,
+	version: 2,
 	cacheImpact: "append-only",
 	latency: "inline",
-	capabilities: { work_requested: "meta" },
+	// Relating the two messages is beyond the local judge (Laya): it leaves `beyond_request` unanswered, and then
+	// nothing counts as a go-ahead.
+	capabilities: { work_requested: "meta", beyond_request: "relate" },
 	questions: {
 		promised: {
 			type: "boolean",
@@ -46,6 +52,10 @@ export const turnContinue = defineDecision({
 			instructions:
 				"Does `user_message` ask the assistant to make a change or carry out a task, not only to explain, answer or propose?",
 		},
+		beyond_request: {
+			type: "boolean",
+			instructions: "Is what `final_message` offers or asks about more than `user_message` asked for?",
+		},
 		irreversible: {
 			type: "boolean",
 			instructions:
@@ -59,7 +69,13 @@ export const turnContinue = defineDecision({
 		// A pause before a step that cannot be taken back is the one the user wants, whatever else was said.
 		if (threeZone(answers.irreversible) !== "no") return "end";
 		if (threeZone(answers.promised) === "yes") return "promised";
-		if (threeZone(answers.asks_go_ahead) === "yes" && threeZone(answers.work_requested) === "yes") return "go_ahead";
+		if (
+			threeZone(answers.asks_go_ahead) === "yes" &&
+			threeZone(answers.work_requested) === "yes" &&
+			threeZone(answers.beyond_request) === "no"
+		) {
+			return "go_ahead";
+		}
 		return "end";
 	},
 	fallback(): ContinueOutcome {

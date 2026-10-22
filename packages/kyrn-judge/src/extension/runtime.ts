@@ -590,6 +590,19 @@ export function within<T>(work: Promise<T>, waitMs: number): Promise<T | undefin
 	});
 }
 
+/**
+ * A judge call that is only worth having within `waitMs`, or undefined. Unlike `within`, the call does not carry on:
+ * `ask` gets a signal, aborted when the time is up. A verdict nobody waits for any more must not keep the judge busy,
+ * nor keep a one-shot run (`mu --print`) from exiting until the judge's own timeout. The engine records the call as
+ * aborted.
+ */
+export async function askWithin<T>(ask: (signal: AbortSignal) => Promise<T>, waitMs: number): Promise<T | undefined> {
+	const controller = new AbortController();
+	const result = await within(ask(controller.signal), waitMs);
+	if (result === undefined) controller.abort();
+	return result;
+}
+
 /** Wraps a handler so a bug in a feature can never block a tool or a prompt: pi treats a throw as a veto. */
 export function failOpen<Event, Result>(
 	handler: (event: Event, ctx: ExtensionContext) => Promise<Result | undefined> | Result | undefined,
