@@ -27,13 +27,18 @@ export type BackendRequest = <T>(method: string, path: string, body?: unknown) =
 export const AGENT_NAME = 'mu';
 /** What the registration was called before the rename. Found under these names too, and then renamed. */
 const FORMER_NAMES = ['KYRN'];
-export const AGENT_DESCRIPTION = 'mu harness · local Codex login · Jev judgment';
+export const AGENT_DESCRIPTION = 'mu harness · local Codex login · judge model';
 /**
  * The descriptions mu has written, compared case-insensitively: a record written before the judge's name took
- * its present capitalization is still ours to update.
+ * its present capitalization, or while the description named the judge Jev, is still ours to update.
  */
 const OWN_DESCRIPTIONS = new Set(
-  ['KYRN', 'KYRN harness · local Codex login · Jev judgment', AGENT_DESCRIPTION].map((text) => text.toLowerCase())
+  [
+    'KYRN',
+    'KYRN harness · local Codex login · Jev judgment',
+    'mu harness · local Codex login · Jev judgment',
+    AGENT_DESCRIPTION,
+  ].map((text) => text.toLowerCase())
 );
 /**
  * The permission mode of a run nobody watches: a scheduled task, a team's agents. The backend gives them its "full auto",

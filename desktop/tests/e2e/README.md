@@ -216,7 +216,7 @@ process's and the adapter's reports):
 4. A `bash` call answered 不允许 reaches the model as a refusal; the conversation goes on.
 5. A reply stopped halfway stays stopped; the next message works.
 6. 文件 lists the written file; 看板, switched on for the project with the fake model as its writer, shows its lines
-   (no Jev needed).
+   (no judge needed).
 7. After a quit and a new start the conversation opens with its history, and a new message works.
 8. 关于 shows the app's version (the checkout's `package.json`, or a packaged app's own); 检查更新 (against a canned
    GitHub answer offering a newer version) downloads nothing.

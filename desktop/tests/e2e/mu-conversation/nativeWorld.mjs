@@ -182,7 +182,7 @@ export function createNativeWorld({ desktopRoot, prepare }) {
 
   /**
    * Types a message into the conversation's send box and sends it; returns once the person's row shows. (The row shows
-   * at once: the run it starts does not begin until Jev has read the message and pi took it.)
+   * at once: the run it starts does not begin until the judge has read the message and pi took it.)
    */
   async function send(text) {
     const rows = await userRows().count();

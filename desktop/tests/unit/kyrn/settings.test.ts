@@ -418,7 +418,7 @@ describe('mu-only backend catalog', () => {
       env: [{ name: 'A', value: 'b' }],
       native_skills_dirs: ['/skills'],
       behavior_policy: { supports_side_question: true },
-      yolo_id: 'jev',
+      yolo_id: 'judge',
     };
     const installed = () =>
       ownLauncher(current, {
@@ -447,7 +447,7 @@ describe('mu-only backend catalog', () => {
               description: row.description,
               native_skills_dirs: row.native_skills_dirs,
               behavior_policy: row.behavior_policy,
-              yolo_id: 'jev',
+              yolo_id: 'judge',
             },
           },
         },
@@ -540,7 +540,7 @@ describe('mu-only backend catalog', () => {
             yolo_id: 'full',
             native_skills_dirs: ['/skills'],
             behavior_policy: { supports_side_question: true },
-            description: 'mu harness · local Codex login · Jev judgment',
+            description: 'mu harness · local Codex login · judge model',
           },
         },
       },
@@ -562,7 +562,7 @@ describe('mu-only backend catalog', () => {
     const put = puts(calls)[0]?.body as { advanced: { description: string } };
     expect(put.advanced.description).toBe('my own words');
   });
-  it('knows its own description in any capitalization, and writes it as the judge is spelled now', async () => {
+  it('knows its own description in any capitalization or wording, and writes the present one', async () => {
     const { calls, request } = backend([
       {
         id: 'k',
@@ -574,7 +574,7 @@ describe('mu-only backend catalog', () => {
     ]);
     await initializeKyrn(request, '/kyrn/acp');
     const put = puts(calls)[0]?.body as { advanced: { description: string } };
-    expect(put.advanced.description).toBe('mu harness · local Codex login · Jev judgment');
+    expect(put.advanced.description).toBe('mu harness · local Codex login · judge model');
   });
   it('keeps the old name rather than update a record it could not read whole', async () => {
     const { calls, request } = backend(
@@ -630,7 +630,7 @@ describe('mu-only backend catalog', () => {
         }),
       },
     ]);
-    const chosen = backend([{ id: 'k', name: 'mu', command: '/kyrn/acp', enabled: true, yolo_id: 'jev' }]);
+    const chosen = backend([{ id: 'k', name: 'mu', command: '/kyrn/acp', enabled: true, yolo_id: 'judge' }]);
     await initializeKyrn(chosen.request, '/kyrn/acp');
     expect(puts(chosen.calls)).toEqual([]);
   });

@@ -517,7 +517,7 @@ test('the files tab lists the written file, and the board is written by the fake
     await expect(p.getByTestId('sendbox-input')).toBeVisible({ timeout: 30_000 });
   });
 
-  await test.step('看板 on for this project shows the plain lines, without Jev', async () => {
+  await test.step('看板 on for this project shows the plain lines, without a judge', async () => {
     const expand = p.getByRole('button', { name: '展开工作面板' });
     if (await expand.isVisible().catch(() => false)) await expand.click();
     await workPanelTab('board').click();

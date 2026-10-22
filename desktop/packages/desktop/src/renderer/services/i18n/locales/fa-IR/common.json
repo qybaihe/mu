@@ -1261,7 +1261,7 @@
     "compactionDropped": "{{count}} فراخوانی حذف‌شده",
     "compactionDropped_one": "{{count}} فراخوانی حذف‌شده",
     "compactionDropped_other": "{{count}} فراخوانی حذف‌شده",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}} در حال دسته‌بندی پیام…",
       "classified": "دسته‌بندی {{judge}}: {{type}}",
       "byRule": "دسته‌بندی بر اساس قانون: {{type}}",

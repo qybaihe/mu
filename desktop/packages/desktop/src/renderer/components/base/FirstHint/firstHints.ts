@@ -1,13 +1,14 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 
 /**
- * One-sentence hints shown the first time something appears (a Jev verdict line, the side panel), until the person
- * closes them; closed is remembered in this browser's storage, per hint. Without storage they never show: a hint
- * that cannot be closed for good would nag.
+ * One-sentence hints shown the first time something appears (the judge's verdict line, the side panel), until the
+ * person closes them; closed is remembered in this browser's storage, per hint. Without storage they never show: a
+ * hint that cannot be closed for good would nag.
  *
  * One place shows a hint at a time: of the places that want it, the first to ask holds it until it goes away (a
  * conversation can have many verdict lines; the hint sits under one of them), and the next one takes it then.
  */
+/** The hints by the ids they are stored under: `jevLine` is the judge's verdict line, by the name it had then. */
 export const FIRST_HINTS = ['jevLine', 'workPanel'] as const;
 export type FirstHintId = (typeof FIRST_HINTS)[number];
 

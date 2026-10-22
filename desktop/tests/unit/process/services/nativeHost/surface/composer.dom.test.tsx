@@ -18,8 +18,8 @@ import { createFakeHost, type FakeHost } from './fakeClient';
 import { delta, ended, frame, reply, text, user } from './records';
 
 /**
- * The bottom of a native conversation against an in-memory host: the send box in each state (idle, a message Jev
- * reads, a run going), the queue, the status line, the notices about mu, and a panel's command. The shared send box
+ * The bottom of a native conversation against an in-memory host: the send box in each state (idle, a message the
+ * judge reads, a run going), the queue, the status line, the notices about mu, and a panel's command. The shared send box
  * is stood in for by its contract (value, send, stop, loading, sending while loading, tools, test ids), so the ids
  * found here are the ones the native screen gives the real box.
  */
@@ -131,7 +131,7 @@ const running = (host: FakeHost) =>
   });
 
 describe('the native send box', () => {
-  it('sends a prompt, holds the box while Jev reads it, and stops it there', async () => {
+  it('sends a prompt, holds the box while the judge reads it, and stops it there', async () => {
     const host = createFakeHost();
     host.add({ id: 'c1' });
     const gate: { release?: () => void } = {};

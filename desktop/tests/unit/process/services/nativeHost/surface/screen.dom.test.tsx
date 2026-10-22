@@ -26,7 +26,7 @@ import { ended, frame, reply, text, user } from './records';
 
 /**
  * The native conversation page and the sidebar group against an in-memory host: the page in each state of its host,
- * one that cannot be opened, a flag that is off, a draft whose session gives it its id, the Jev panel's feed, and the
+ * one that cannot be opened, a flag that is off, a draft whose session gives it its id, the work panel's feed, and the
  * sidebar's list and new conversation. The message list runs for real; its text rows and tool box are stood in for.
  */
 
@@ -342,7 +342,7 @@ describe('the native conversation page', () => {
     expect(screen.queryAllByTestId('row-fork')).toEqual([]);
   });
 
-  it('makes itself the current conversation and feeds the Jev panel from its view', async () => {
+  it('makes itself the current conversation and feeds the work panel from its view', async () => {
     const host = createFakeHost();
     host.add({ id: 'c1' });
     // The conversation shown before had a project: the explorer must not keep showing it.
@@ -458,7 +458,7 @@ describe('the sidebar’s native group', () => {
     await waitFor(() => expect(shownIds()).toContain('draft-4'));
     expect(items().find((item) => item.dataset.id === 'draft-4')).toHaveTextContent('gamma');
 
-    // Again, in a recent folder, with Jev approving what mu does.
+    // Again, in a recent folder, with the judge approving what mu does.
     await openNew();
     const mode = screen.getByTestId('native-permissions');
     expect(mode).toHaveTextContent("mu's default");
@@ -466,13 +466,13 @@ describe('the sidebar’s native group', () => {
       fireEvent.click(mode);
     });
     await act(async () => {
-      fireEvent.click(within(mode.parentElement ?? document.body).getByRole('option', { name: 'Jev approves' }));
+      fireEvent.click(within(mode.parentElement ?? document.body).getByRole('option', { name: 'Judge mode' }));
     });
-    expect(mode).toHaveTextContent('Jev approves');
+    expect(mode).toHaveTextContent('Judge mode');
     await act(async () => {
       fireEvent.click(screen.getAllByTestId('native-recent-folder')[1]);
     });
-    expect(creates(host).at(-1)).toEqual({ method: 'create', cwd: '/work/alpha', permissions: 'jev' });
+    expect(creates(host).at(-1)).toEqual({ method: 'create', cwd: '/work/alpha', permissions: 'judge' });
     await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/conversation/native/draft-5'));
   });
 

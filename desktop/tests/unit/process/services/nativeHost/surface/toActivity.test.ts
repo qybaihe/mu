@@ -4,9 +4,9 @@ import { toActivity } from '@/renderer/pages/native/utils/toActivity';
 import { isWorking, statusRow } from '@/renderer/pages/native/utils/statusRow';
 import { ended, frame, recorded, recordedSession, reply, text, toolCall, user } from './records';
 
-/** The Jev panel's activity of a native conversation, and the status line above its send box. */
+/** The work panel's activity of a native conversation, and the status line above its send box. */
 
-describe('the Jev panel’s activity', () => {
+describe('the work panel’s activity', () => {
   it('holds the recorded conversation’s frames with each decision’s ledger record, in time order', () => {
     const view = reduceAll(recorded);
     const events = toActivity(view);
@@ -122,11 +122,11 @@ describe('the status line', () => {
     expect(isWorking(running)).toBe(true);
     const reviewing = reduce(
       running,
-      frame('progress', { step: 'Jev is reviewing: ls', code: 'permission_review', params: { summary: 'ls' } })
+      frame('progress', { step: 'The judge is reviewing: ls', code: 'permission_review', params: { summary: 'ls' } })
     );
     expect(statusRow(reviewing)).toEqual({
       kind: 'working',
-      step: 'Jev is reviewing: ls',
+      step: 'The judge is reviewing: ls',
       code: 'permission_review',
       params: { summary: 'ls' },
     });

@@ -2,8 +2,8 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import FirstHint from '@/renderer/components/base/FirstHint';
-import { isTurnType, judgeName, type JevLine } from './jevLine';
-import styles from './MessageJevLine.module.css';
+import { isTurnType, judgeName, type JudgeLine } from './judgeLine';
+import styles from './MessageJudgeLine.module.css';
 
 /** The way to the judges' settings, where one is set up. Only the line that says there is none has it. */
 function JudgeSetup() {
@@ -13,10 +13,10 @@ function JudgeSetup() {
     <button
       type='button'
       className={styles.action}
-      data-testid='mu-jev-setup'
+      data-testid='mu-judge-setup'
       onClick={() => void navigate('/settings/judges')}
     >
-      {t('common.kyrn.jevLine.setUp')}
+      {t('common.kyrn.judgeLine.setUp')}
     </button>
   );
 }
@@ -28,33 +28,33 @@ function JudgeSetup() {
  * judge set up at all, the line says so once and offers to set one up. The hints the main model was given follow the
  * line as small labels ("先计划"), each with its whole sentence on hover.
  */
-export default function MessageJevLine({ line }: { line: JevLine }) {
+export default function MessageJudgeLine({ line }: { line: JudgeLine }) {
   const { t } = useTranslation();
   if (line.stage === 'quiet') return null;
   let text: string;
-  if (line.stage === 'classifying') text = t('common.kyrn.jevLine.classifying', { judge: judgeName(line.judge) });
-  else if (line.stage === 'noJudge') text = t('common.kyrn.jevLine.noJudge');
+  if (line.stage === 'classifying') text = t('common.kyrn.judgeLine.classifying', { judge: judgeName(line.judge) });
+  else if (line.stage === 'noJudge') text = t('common.kyrn.judgeLine.noJudge');
   else if (line.stage === 'fallback')
-    text = t(line.why === 'unanswered' ? 'common.kyrn.jevLine.unanswered' : 'common.kyrn.jevLine.fallback', {
+    text = t(line.why === 'unanswered' ? 'common.kyrn.judgeLine.unanswered' : 'common.kyrn.judgeLine.fallback', {
       judge: judgeName(line.judge),
     });
   else {
     const type = t(`common.kyrn.judgeView.values.${isTurnType(line.turnType) ? line.turnType : 'other'}`);
     const said = line.byRule
-      ? t('common.kyrn.jevLine.byRule', { type })
-      : t('common.kyrn.jevLine.classified', { type, judge: judgeName(line.judge) });
+      ? t('common.kyrn.judgeLine.byRule', { type })
+      : t('common.kyrn.judgeLine.classified', { type, judge: judgeName(line.judge) });
     text =
       line.state === 'shadow'
-        ? t('common.kyrn.jevLine.shadow', { line: said })
+        ? t('common.kyrn.judgeLine.shadow', { line: said })
         : line.state === 'late'
-          ? t('common.kyrn.jevLine.late', { line: said })
+          ? t('common.kyrn.judgeLine.late', { line: said })
           : said;
   }
   const muted =
     line.stage === 'fallback' || line.stage === 'noJudge' || (line.stage === 'classified' && line.state !== 'applied');
   const hints = line.stage === 'classifying' ? [] : (line.hints ?? []);
   const verdict = (
-    <div className={styles.line} data-testid='mu-jev-line' data-stage={line.stage}>
+    <div className={styles.line} data-testid='mu-judge-line' data-stage={line.stage}>
       <span
         className={line.stage === 'classifying' ? styles.dotBusy : muted ? styles.dotMuted : styles.dot}
         aria-hidden='true'
@@ -71,7 +71,7 @@ export default function MessageJevLine({ line }: { line: JevLine }) {
           key={id}
           className={styles.hint}
           title={t(`common.kyrn.judgeView.hints.${id}`)}
-          data-testid='mu-jev-hint'
+          data-testid='mu-judge-hint'
           data-hint={id}
         >
           {t(`common.kyrn.judgeView.hintChips.${id}`)}
@@ -79,11 +79,11 @@ export default function MessageJevLine({ line }: { line: JevLine }) {
       ))}
     </div>
   );
-  // The first verdict someone sees says once what the line is.
+  // The first verdict someone sees says once what the line is. `jevLine` is the hint's id in the browser's storage.
   return (
     <div className={styles.stack}>
       {verdict}
-      <FirstHint id='jevLine' wants={line.stage === 'classified'} text={t('common.kyrn.jevLine.firstHint')} />
+      <FirstHint id='jevLine' wants={line.stage === 'classified'} text={t('common.kyrn.judgeLine.firstHint')} />
     </div>
   );
 }

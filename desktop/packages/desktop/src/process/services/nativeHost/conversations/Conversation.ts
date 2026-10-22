@@ -91,7 +91,7 @@ const STORE_LOCKED = /Lock file is already being held|ELOCKED/;
 /** A prompt refused because the model store was locked goes again after these waits (KyrnAgent.ts). */
 export const LOCKED_RETRY_MS = [1500, 3000] as const;
 
-/** Permission modes are words (`full`, `jev`, `ask`), as mu names them (process/agent/kyrn/permissions.ts). */
+/** Permission modes are words (`full`, `judge`, `ask`), as mu names them (process/agent/kyrn/permissions.ts). */
 const MODE_ID = /^[a-z][a-z0-9-]{0,31}$/;
 
 /** The roles whose `message_end` pi saves as a `message` entry (AgentSession's `_savesMessage`, custom ones aside). */
@@ -789,7 +789,7 @@ export class Conversation {
 
   /**
    * The view anew from pi's session: what its file has, and what pi has not written yet. The dialogs pi waits on, the
-   * live part of a run and what only the live host says (`host`: the Jev panel's activity, mu's notices, pi's queue)
+   * live part of a run and what only the live host says (`host`: the work panel's activity, mu's notices, pi's queue)
    * stay as they were: a session file has none of them.
    */
   private async rebuild(host: ConversationHost, known?: PiSessionState): Promise<void> {

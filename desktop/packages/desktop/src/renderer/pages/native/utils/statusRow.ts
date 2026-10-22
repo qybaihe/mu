@@ -1,15 +1,15 @@
 /**
  * What the line above a native conversation's send box says about the run, from the view alone: pi's events and the
  * judgment layer's frames say how it stands, so nothing is guessed from time. One state at a time, the one the person
- * most needs to know: a compaction or a retry holds the run up, Jev classifies before the run starts, and the model
- * thinks or works while it goes. Once a run is over, how it ended.
+ * most needs to know: a compaction or a retry holds the run up, the judge classifies before the run starts, and the
+ * model thinks or works while it goes. Once a run is over, how it ended.
  */
 import type { JsonObject, NativeView } from '@/common/utils/nativeHost';
 
 export type StatusRow =
   /** Nothing ran yet. */
   | { kind: 'idle' }
-  /** Jev classifies the message before the run starts; `judge` is the judge asked (`jev-latest`, `laya`, …). */
+  /** The judge classifies the message before the run starts; `judge` is the one asked (`jev-latest`, `laya`, …). */
   | { kind: 'classifying'; judge: string }
   | { kind: 'compacting' }
   /** A request failed and pi tries again after `delayMs`: this is attempt `attempt` of `maxAttempts`. */

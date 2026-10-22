@@ -40,7 +40,7 @@ const permission: ViewPermission = {
 const asking = (extra: Partial<ViewDialog> = {}): ViewDialog => ({
   id: 'd1',
   method: 'select',
-  title: 'mu wants to run a command\nls -la\nJev is not sure this is what you want.',
+  title: 'mu wants to run a command\nls -la\nThe judge is not sure this is what you want.',
   options: ANSWERS,
   inRun: true,
   permission,
@@ -77,7 +77,7 @@ describe('the permission card of a native dialog', () => {
     const { answered } = show(asking());
     expect(screen.getByTestId('native-dialog')).toHaveAttribute('data-method', 'select');
     expect(screen.getByText('mu wants to run a command')).toBeInTheDocument();
-    expect(screen.getByText("Jev isn't sure this step is what you want.")).toBeInTheDocument();
+    expect(screen.getByText("The judge isn't sure this step is what you want.")).toBeInTheDocument();
     expect(screen.getByText('ls -la')).toBeInTheDocument();
     expect(options().map((option) => option.textContent)).toEqual(ANSWERS);
     await act(async () => {

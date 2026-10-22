@@ -68,7 +68,7 @@ registration is dropped as side-effect free.
 
 ## What this does not show
 
-- Real models, real Jev, real tools (`noTools: "builtin"`), long sessions, compaction, sub-agents (swarm / hive
+- Real models, a real judge, real tools (`noTools: "builtin"`), long sessions, compaction, sub-agents (swarm / hive
   spawn child pi processes by default; `swarmRunner` is the seam for running them in-host).
 - The renderer. The stream stops at Electron's main process; the reducer and the React surfaces are the next step.
 - The app's side: its conversation DB and history list still think in ACP conversations.

@@ -9,7 +9,7 @@
  * - A failed attempt that pi retries is hidden from the model by a `context_edit` naming its entry: the view folds it
  *   into the attempt that follows (`retries`). Nothing else a `context_edit` hides or replaces leaves the view:
  *   extensions edit what the model reads, not what the person saw.
- * - Jev's judgments are the ledger's `kyrn.decision` records: live they come twice (the `entry_appended` and the
+ * - The judge's judgments are the ledger's `kyrn.decision` records: live they come twice (the `entry_appended` and the
  *   `decision` presentation frame), once in the file, and count once by record id. Each is filed under the turn that
  *   asked (`origin.turn`), not the turn during which it arrived.
  * - The verdict line of a message (`kyrn.verdict`) follows its user message, live and in the file.
@@ -189,9 +189,9 @@ function liveWithout(live: ViewLive, key: 'classifying' | 'progress' | 'retry' |
 }
 
 /**
- * What the judgment layer said it was working out (Jev reviewing a command, choosing skills) is over once the model
- * writes again, a tool starts or mu asks the person: the line above the send box then says what happens now, not a
- * review that ended. A judge that failed (rate limited, say) ends its review with mu asking instead.
+ * What the judgment layer said it was working out (the judge reviewing a command, choosing skills) is over once the
+ * model writes again, a tool starts or mu asks the person: the line above the send box then says what happens now, not
+ * a review that ended. A judge that failed (rate limited, say) ends its review with mu asking instead.
  */
 function stepOver(view: NativeView): NativeView {
   return view.live.progress ? withLive(view, liveWithout(view.live, 'progress')) : view;

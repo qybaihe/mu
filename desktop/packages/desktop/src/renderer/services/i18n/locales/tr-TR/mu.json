@@ -159,7 +159,7 @@
       "jev": {
         "title": "Jev",
         "tag": "Önerilen",
-        "description": "Hızlı ve doğru. OpenCode Zen'de sınırlı bir süre ücretsiz; ya da TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare veya kendi hizmetinizin anahtarıyla çağrı başına ücretli."
+        "description": "TypeSafe'in barındırdığı hakem modeli. Hızlı ve doğru. OpenCode Zen'de sınırlı bir süre ücretsiz; ya da TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare veya kendi hizmetinizin anahtarıyla çağrı başına ücretli."
       },
       "local": {
         "title": "Yerel Laya",
@@ -260,9 +260,9 @@
         "title": "Tam erişim",
         "description": "Hiçbir şey sormadan her şeyi çalıştırır. Yapma dediğiniz şeyler yine durdurulur."
       },
-      "jev": {
-        "title": "Jev onaylar",
-        "description": "Proje içinde okuma ve düzenleme doğrudan yapılır; komutları, proje dışındaki değişiklikleri ve dışarıya dönük işlemleri sizin yerinize Jev onaylar, yalnızca emin olmadığında size sorar."
+      "judge": {
+        "title": "Hakem modu",
+        "description": "Proje içinde okuma ve düzenleme doğrudan yapılır; komutları, proje dışındaki değişiklikleri ve dışarıya dönük işlemleri sizin yerinize hakem onaylar, yalnızca emin olmadığında size sorar."
       },
       "ask": {
         "title": "En az izin",
@@ -281,9 +281,9 @@
     },
     "reason": {
       "ask": "En az izin: her düzenleme, komut ve dışarıya dönük işlem önce size sorulur.",
-      "unsure": "Jev bu adımın istediğiniz şey olduğundan emin değil.",
-      "beyond": "Jev bunun istediğiniz şeyin ötesine geçtiğini düşünüyor.",
-      "unrelated": "Jev bunun görevin bir parçası olmadığını düşünüyor.",
+      "unsure": "Hakem bu adımın istediğiniz şey olduğundan emin değil.",
+      "beyond": "Hakem bunun istediğiniz şeyin ötesine geçtiğini düşünüyor.",
+      "unrelated": "Hakem bunun görevin bir parçası olmadığını düşünüyor.",
       "protected": "Bu, mu'nun kendi ayarlarına dokunuyor; buna yalnızca siz izin verebilirsiniz.",
       "nojudge": "Henüz kullanılabilir bir hakem yok, bu yüzden mu her adımda size soruyor.",
       "judgedown": "Hakem bu kez yanıt vermedi, bu yüzden mu size soruyor."
@@ -885,7 +885,7 @@
     "lessons": "Bu projenin dersleri: /lessons id · tür · hatırlanma/uyulma · ders listesini verir, /lessons all her yerde geçerli olanları ve devre dışı bırakılanları da ekler",
     "forget": "Bir dersi devre dışı bırakır, artık hatırlanmaz: /forget <id başlangıcı> (id’ler /lessons içinde)",
     "capabilities": "Hangi yeteneklerin kurulu, hangilerinin açık olduğu: /capabilities, /capabilities open <id>",
-    "permissions": "mu’nun sormadan ne kadarını yapabileceği: /permissions full (Tam erişim) | jev (Jev onaylar) | ask (En az izin), bağımsız değişken olmadan bir seçici açılır. /permissions reset bu konuşmada izin verdiklerinizi unutur",
+    "permissions": "mu’nun sormadan ne kadarını yapabileceği: /permissions full (Tam erişim) | judge (Hakem modu) | ask (En az izin), bağımsız değişken olmadan bir seçici açılır. /permissions reset bu konuşmada izin verdiklerinizi unutur",
     "lsp": "Dil sunucuları: hangileri kurulu, hangileri çalışıyor ve son hata",
     "goal": "Hedef modu: ajan bir koşul sağlanana kadar çalışmaya devam eder. /goal <koşul>, /goal (gösterir ya da bir hedef sorar), /goal clear",
     "board": "Sade dilde pano: /board (gösterir), /board on, /board off (bu proje için), /board model (kimin yazdığı)",
@@ -1034,8 +1034,8 @@
   "details": {
     "lead": "Her özelliğin bir anahtarı vardır, ayarları Seçenekler'dedir. Girintili satırlar hakeme karar sorduğu yerlerdir: birini kapatırsanız o adım her zamanki gibi ilerler.",
     "featureOff": "Özellik kapalı",
-    "askJev": "Hakem karar versin",
-    "askJevAbout": "Hakem karar versin: {{point}}",
+    "askJudge": "Hakem karar versin",
+    "askJudgeAbout": "Hakem karar versin: {{point}}",
     "areas": {
       "input": "Girdi",
       "context": "Bağlam",

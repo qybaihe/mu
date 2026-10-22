@@ -264,10 +264,10 @@ export const BUILTIN_PROVIDER_NAMES: Readonly<Record<string, string>> = {
 };
 
 /**
- * Built-in providers pi reports as usable that nobody set up to talk to. The judge (Jev) takes its key from
- * `AI_GATEWAY_API_KEY`, which is also the variable pi reads for the Vercel AI Gateway, so with the judge set up that
- * way pi lists the gateway and its models. The key has to stay (the judge needs it), so the app does not offer the
- * gateway: not as another built-in provider, not as a model to start with or switch to.
+ * Built-in providers pi reports as usable that nobody set up to talk to. The judge (Jev through the Vercel AI Gateway)
+ * takes its key from `AI_GATEWAY_API_KEY`, which is also the variable pi reads for the Vercel AI Gateway, so with the
+ * judge set up that way pi lists the gateway and its models. The key has to stay (the judge needs it), so the app does
+ * not offer the gateway: not as another built-in provider, not as a model to start with or switch to.
  */
 export const UNOFFERED_PROVIDER_IDS: ReadonlySet<string> = new Set(['vercel-ai-gateway']);
 

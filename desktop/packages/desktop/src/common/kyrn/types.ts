@@ -17,7 +17,7 @@ export type JudgeSettings = {
  * the last pick (`<agentDir>/mu/permissions.json`, written by `/permissions` and by this page), then mu.json.
  */
 export type PermissionDefault = {
-  /** full, jev or ask; '' when this harness has no permission modes. */
+  /** full, judge or ask; '' when this harness has no permission modes. */
   mode: string;
   /** picked: the last pick; config: `features.permissions.mode` in mu.json; default: the harness's own. */
   from: 'picked' | 'config' | 'default';

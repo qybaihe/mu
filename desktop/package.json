@@ -1,7 +1,7 @@
 {
   "name": "mu-desktop",
   "version": "0.1.9",
-  "description": "mu, the coding agent with Jev judgment, as a desktop app.",
+  "description": "mu, the coding agent with a judge model, as a desktop app.",
   "keywords": [],
   "license": "MIT AND Apache-2.0",
   "author": {

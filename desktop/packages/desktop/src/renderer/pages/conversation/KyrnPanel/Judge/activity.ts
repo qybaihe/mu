@@ -555,7 +555,7 @@ export function answerRows(card: JudgeCard): { rows: JudgeAnswer[]; more: number
   return { rows: rows.slice(0, ANSWER_LIMIT), more: Math.max(0, rows.length - ANSWER_LIMIT) };
 }
 
-/** Events the Jev tab lists under its cards: everything that is neither a judgment nor another tab's record. */
+/** Events the judge tab lists under its cards: everything that is neither a judgment nor another tab's record. */
 export function runtimeEvents(events: Activity[]): Activity[] {
   return events.filter(
     (event) =>

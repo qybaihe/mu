@@ -84,7 +84,7 @@ const walk = (value: unknown, path: string[] = []): string[] =>
     : [path.join('.')];
 
 describe('Runtime event lines by the harness codes', () => {
-  it('names the progress step by its code, with the permission review naming what Jev looks at', () => {
+  it('names the progress step by its code, with the permission review naming what the judge looks at', () => {
     const cases: Array<[string, string, string]> = [
       ['frame', 'Updating the task frame', '正在更新任务帧'],
       ['lessons', 'Checking lessons from earlier conversations', '正在查看以往会话中的经验'],
@@ -96,7 +96,7 @@ describe('Runtime event lines by the harness codes', () => {
       expect(both('progress', { step: 'english step', code })).toEqual([[english], [chinese]]);
     }
     const review = {
-      step: 'Jev is reviewing: rm -rf dist',
+      step: 'The judge is reviewing: rm -rf dist',
       code: 'permission_review',
       params: { summary: 'rm -rf dist' },
     };
@@ -667,15 +667,20 @@ describe('Permission lines', () => {
   });
 
   it('says a call ran without asking and who let it: the judge, or the person for this conversation', () => {
-    expect(both('permissions.approved', { tool: 'bash', kind: 'shell', summary: 'npm test', by: 'jev' })).toEqual([
+    expect(both('permissions.approved', { tool: 'bash', kind: 'shell', summary: 'npm test', by: 'judge' })).toEqual([
       ['The judge let it run without asking you: npm test'],
       ['判定器放行了，没有问你：npm test'],
+    ]);
+    // An older harness names the judge `jev`.
+    expect(say(en, 'permissions.approved', { summary: 'npm test', by: 'jev' })).toEqual([
+      'The judge let it run without asking you: npm test',
     ]);
     expect(say(en, 'permissions.approved', { summary: 'npm test', by: 'grant', toolCallId: 'call-1' })).toEqual([
       'Ran without asking, as allowed for this conversation: npm test',
     ]);
     expect(say(en, 'permissions.approved', { summary: 'npm test', by: 'someone' })).toBeUndefined();
-    expect(say(en, 'permissions.approved', { by: 'jev' })).toBeUndefined();
+    expect(say(en, 'permissions.approved', { by: 'judge' })).toBeUndefined();
+    expect(say(en, 'permissions.approved', { summary: 'npm test', by: 'constructor' })).toBeUndefined();
   });
 });
 

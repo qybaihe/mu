@@ -482,7 +482,7 @@ packages/desktop/src/renderer/pages/conversation/Messages/MessageQuestion.tsx
 packages/desktop/src/renderer/pages/conversation/Messages/acp/MessageAcpPermission.tsx
 packages/desktop/src/renderer/pages/conversation/Messages/acp/MessageAcpTerminalOutput.tsx
 packages/desktop/src/renderer/pages/conversation/Messages/acp/MessageAcpToolCall.tsx
-packages/desktop/src/renderer/pages/conversation/Messages/acp/MessageJevLine.module.css
+packages/desktop/src/renderer/pages/conversation/Messages/acp/MessageJudgeLine.module.css
 packages/desktop/src/renderer/pages/conversation/Messages/anchorRail/MessageAnchorRail.module.css
 packages/desktop/src/renderer/pages/conversation/Messages/anchorRail/MessageAnchorRail.tsx
 packages/desktop/src/renderer/pages/conversation/Messages/anchorRail/anchors.ts

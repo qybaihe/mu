@@ -175,7 +175,7 @@ export function withSignedInModel(draft: Draft, provider: string, model: string,
 }
 
 /** The permission modes the guide knows how to describe, in the order it shows them. */
-export const GUIDE_PERMISSION_MODES = ['jev', 'full', 'ask'] as const;
+export const GUIDE_PERMISSION_MODES = ['judge', 'full', 'ask'] as const;
 export type GuidePermissionMode = (typeof GUIDE_PERMISSION_MODES)[number];
 
 /** The permission modes this harness offers that the guide can describe; none when it has no permission modes. */

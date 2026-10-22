@@ -15,7 +15,7 @@ import {
 } from '@/common/utils/nativeHost/index.ts';
 
 /**
- * What only a live host says, in the view's `host` part: the judgment layer's frames and the run's edges for the Jev
+ * What only a live host says, in the view's `host` part: the judgment layer's frames and the run's edges for the work
  * panel, notices, pi's queue and the session as pi describes it; and mu's permission question, from its announcement
  * to its dialog. None of it is in a session file.
  */
@@ -58,7 +58,7 @@ const userMessage = (text: string, timestamp: number): PiRecord => ({
   message: { role: 'user', content: [{ type: 'text', text }], timestamp },
 });
 
-describe('the activity the Jev panel reads', () => {
+describe('the activity the work panel reads', () => {
   it('holds every frame of the recorded conversation and the run’s edges, none of it in the file', () => {
     const view = reduceAll(records);
     const frames = records.flatMap((record) => {

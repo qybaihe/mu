@@ -1261,7 +1261,7 @@
     "compactionDropped": "{{count}} 件の呼び出しを削除",
     "compactionDropped_one": "{{count}} 件の呼び出しを削除",
     "compactionDropped_other": "{{count}} 件の呼び出しを削除",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}} がメッセージを分類中…",
       "classified": "{{judge}} の分類: {{type}}",
       "byRule": "ルールによる分類: {{type}}",

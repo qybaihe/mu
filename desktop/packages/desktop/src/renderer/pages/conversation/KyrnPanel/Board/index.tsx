@@ -68,7 +68,7 @@ function hear(heard: Heard, notes: readonly BoardNote[], news: BoardUpdate | und
 
 /**
  * The plain-language board: where the work stands, in plain words, for the person and never for the model. The
- * harness writes it (Jev picks the facts, a plain-speaking model writes them up) and presents it; this shows the
+ * harness writes it (the judge picks the facts, a plain-speaking model writes them up) and presents it; this shows the
  * latest one, what needs the person, and under it the running account of what the agent did, one line per thing,
  * as it happens. The switch is the harness's own `/board on|off`, sent into the conversation like a typed command,
  * so the board stays per project and the app never writes its settings. It is offered only where the harness has

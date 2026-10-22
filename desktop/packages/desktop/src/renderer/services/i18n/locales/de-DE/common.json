@@ -1261,7 +1261,7 @@
     "compactionDropped": "{{count}} Aufrufe entfernt",
     "compactionDropped_one": "{{count}} Aufruf entfernt",
     "compactionDropped_other": "{{count}} Aufrufe entfernt",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}} ordnet die Nachricht ein…",
       "classified": "Von {{judge}} eingeordnet: {{type}}",
       "byRule": "Per Regel eingeordnet: {{type}}",

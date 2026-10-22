@@ -253,7 +253,7 @@ try {
   );
   check(
     'register.mjs: our own old description is replaced',
-    record.description === 'mu harness · local Codex login · Jev judgment',
+    record.description === 'mu harness · local Codex login · judge model',
     String(record.description)
   );
   const assistantsNew = (await api('GET', '/api/assistants')).filter((r) => r.agent_id === id);

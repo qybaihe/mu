@@ -159,7 +159,7 @@
       "jev": {
         "title": "Jev",
         "tag": "Recomendado",
-        "description": "Rápido y preciso. Gratis en OpenCode Zen por tiempo limitado, o facturado por llamada con una clave de TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare o de un servicio propio."
+        "description": "El modelo juez alojado de TypeSafe. Rápido y preciso. Gratis en OpenCode Zen por tiempo limitado, o facturado por llamada con una clave de TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare o de un servicio propio."
       },
       "local": {
         "title": "Laya local",
@@ -260,9 +260,9 @@
         "title": "Acceso completo",
         "description": "Lo ejecuta todo sin preguntar. Lo que dijiste que no hiciera se sigue deteniendo."
       },
-      "jev": {
-        "title": "Jev aprueba",
-        "description": "Leer y editar dentro del proyecto sigue adelante; Jev aprueba por ti los comandos, los cambios fuera del proyecto y las acciones hacia fuera, y solo te pregunta cuando no está seguro."
+      "judge": {
+        "title": "Modo juez",
+        "description": "Leer y editar dentro del proyecto sigue adelante; el juez aprueba por ti los comandos, los cambios fuera del proyecto y las acciones hacia fuera, y solo te pregunta cuando no está seguro."
       },
       "ask": {
         "title": "Permisos mínimos",
@@ -281,9 +281,9 @@
     },
     "reason": {
       "ask": "Permisos mínimos: te pregunta antes de cada edición, comando o acción hacia fuera.",
-      "unsure": "Jev no está seguro de que este paso sea lo que quieres.",
-      "beyond": "Jev cree que esto va más allá de lo que has pedido.",
-      "unrelated": "Jev cree que esto no forma parte de la tarea.",
+      "unsure": "El juez no está seguro de que este paso sea lo que quieres.",
+      "beyond": "El juez cree que esto va más allá de lo que has pedido.",
+      "unrelated": "El juez cree que esto no forma parte de la tarea.",
       "protected": "Esto afecta a la propia configuración de mu; solo tú puedes permitirlo.",
       "nojudge": "Todavía no hay ningún juez disponible, así que mu te pregunta en cada paso.",
       "judgedown": "El juez no ha respondido esta vez, así que mu te pregunta."
@@ -885,7 +885,7 @@
     "lessons": "Las lecciones de este proyecto: /lessons lista id · tipo · recuperada/seguida · lección, /lessons all añade las de todas partes y las retiradas",
     "forget": "Retirar una lección para que ya no se recupere: /forget <inicio del id> (los id están en /lessons)",
     "capabilities": "Qué capacidades están instaladas y cuáles abiertas: /capabilities, /capabilities open <id>",
-    "permissions": "Cuánto puede hacer mu sin preguntar: /permissions full (Acceso completo) | jev (Jev aprueba) | ask (Permisos mínimos), o un selector sin argumentos. /permissions reset olvida lo que permitiste en esta conversación",
+    "permissions": "Cuánto puede hacer mu sin preguntar: /permissions full (Acceso completo) | judge (Modo juez) | ask (Permisos mínimos), o un selector sin argumentos. /permissions reset olvida lo que permitiste en esta conversación",
     "lsp": "Servidores de lenguaje: cuáles están instalados, cuáles se están ejecutando y el último error",
     "goal": "Modo objetivo: el agente sigue trabajando hasta que se cumpla una condición. /goal <condición>, /goal (mostrarlo o pedir uno), /goal clear",
     "board": "El tablero en lenguaje claro: /board (mostrarlo), /board on, /board off (para este proyecto), /board model (quién lo escribe)",
@@ -1034,8 +1034,8 @@
   "details": {
     "lead": "Un interruptor por función, con sus ajustes en «Opciones». Las filas sangradas son donde consulta al juez: si desactivas una, ese paso sigue como siempre.",
     "featureOff": "La función está desactivada",
-    "askJev": "Que decida el juez",
-    "askJevAbout": "Que decida el juez: {{point}}",
+    "askJudge": "Que decida el juez",
+    "askJudgeAbout": "Que decida el juez: {{point}}",
     "areas": {
       "input": "Entrada",
       "context": "Contexto",

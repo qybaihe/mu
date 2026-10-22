@@ -15,7 +15,7 @@
   "smart": "Smart",
   "build": "Build mode",
   "full": "Full access",
-  "jev": "Jev approves",
+  "judge": "Judge mode",
   "ask": "Ask first",
   "permission": "Permission",
   "switchMode": "Permission mode",
@@ -24,7 +24,7 @@
   "switchFailed": "Couldn't switch mode",
   "descriptions": {
     "full": "Runs everything without asking. Anything you've told mu not to do is still blocked.",
-    "jev": "Reads and edits inside the project go ahead. Jev decides on commands, changes outside the project and actions outside this computer, and asks you only when it's unsure.",
+    "judge": "Reads and edits inside the project go ahead. The judge decides on commands, changes outside the project and actions outside this computer, and asks you only when it's unsure.",
     "ask": "Only reads go ahead. mu asks you before every edit, command and action outside this computer."
   }
 }

@@ -159,7 +159,7 @@
       "jev": {
         "title": "Jev",
         "tag": "おすすめ",
-        "description": "高速かつ正確です。OpenCode Zen では期間限定で無料。TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare、または自前のサービスのキーを使えば呼び出しごとに課金されます。"
+        "description": "TypeSafe がホストする判定モデルです。高速かつ正確です。OpenCode Zen では期間限定で無料。TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare、または自前のサービスのキーを使えば呼び出しごとに課金されます。"
       },
       "local": {
         "title": "ローカル Laya",
@@ -260,9 +260,9 @@
         "title": "フルアクセス",
         "description": "何も確認せずに実行します。やらないでと伝えたことは引き続き止められます。"
       },
-      "jev": {
-        "title": "Jev が承認",
-        "description": "プロジェクト内の読み取りと編集はそのまま進めます。コマンド、プロジェクト外の変更、外部への操作は Jev があなたの代わりに承認し、判断に迷うときだけあなたに確認します。"
+      "judge": {
+        "title": "判定モード",
+        "description": "プロジェクト内の読み取りと編集はそのまま進めます。コマンド、プロジェクト外の変更、外部への操作は判定器があなたの代わりに承認し、判断に迷うときだけあなたに確認します。"
       },
       "ask": {
         "title": "最小権限",
@@ -281,9 +281,9 @@
     },
     "reason": {
       "ask": "最小権限：編集、コマンド、外部への操作はすべて事前にあなたに確認します。",
-      "unsure": "Jev は、この操作があなたの意図どおりか確信が持てません。",
-      "beyond": "Jev の判定では、この操作はあなたの依頼の範囲を超えています。",
-      "unrelated": "Jev の判定では、この操作はタスクと関係ありません。",
+      "unsure": "判定器は、この操作があなたの意図どおりか確信が持てません。",
+      "beyond": "判定器は、この操作があなたの依頼の範囲を超えていると判断しました。",
+      "unrelated": "判定器は、この操作がタスクと関係ないと判断しました。",
       "protected": "mu 自身の設定に触れる操作のため、許可できるのはあなただけです。",
       "nojudge": "まだ使える判定器がないため、mu はステップごとにあなたに確認します。",
       "judgedown": "今回は判定器から応答がなかったため、mu があなたに確認します。"
@@ -885,7 +885,7 @@
     "lessons": "このプロジェクトの教訓：/lessons で id · 種類 · 参照/守られた回数 · 教訓 を一覧表示、/lessons all でどこでも使う教訓と廃止した教訓も表示します",
     "forget": "教訓を廃止し、今後は参照しないようにします：/forget <id の先頭部分>（id は /lessons で確認）",
     "capabilities": "インストール済みのケイパビリティと、今開いているもの：/capabilities で表示、/capabilities open <ID> で開く",
-    "permissions": "mu が確認なしでどこまで行えるか：/permissions full（フルアクセス）| jev（Jev が承認）| ask（最小権限）、引数なしで選択肢を表示。/permissions reset でこの会話で許可した操作を忘れます",
+    "permissions": "mu が確認なしでどこまで行えるか：/permissions full（フルアクセス）| judge（判定モード）| ask（最小権限）、引数なしで選択肢を表示。/permissions reset でこの会話で許可した操作を忘れます",
     "lsp": "言語サーバー：インストール済みのもの、実行中のもの、直近のエラー",
     "goal": "目標モード：条件が満たされるまでエージェントに作業を続けさせます。/goal <条件> で設定、/goal で表示（未設定なら尋ねます）、/goal clear で終了",
     "board": "わかりやすいボード：/board で表示、/board on・/board off でこのプロジェクトのオン/オフ、/board model で書くモデルを変更",
@@ -1034,8 +1034,8 @@
   "details": {
     "lead": "機能ごとにスイッチが一つあり、設定は「オプション」にあります。字下げされた行は判定器に判断を求める箇所です。オフにすると、その段階はそのまま進みます。",
     "featureOff": "機能はオフです",
-    "askJev": "判定器に判断させる",
-    "askJevAbout": "判定器に判断させる：{{point}}",
+    "askJudge": "判定器に判断させる",
+    "askJudgeAbout": "判定器に判断させる：{{point}}",
     "areas": {
       "input": "入力",
       "context": "コンテキスト",

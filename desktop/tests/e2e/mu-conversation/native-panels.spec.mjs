@@ -2,8 +2,8 @@
 // The work panel beside a native conversation, end to end: pi runs inside the app (native is the default), the mock judge
 // judges in shadow mode (what it says changes nothing pi does), the board is on for the project and written by the fake
 // model, and mu's lesson store holds lessons written before the start. Each tab of the panel is opened and pictured,
-// light and dark: the folder's files with the one the model wrote, a file in the preview, the folder's lessons, Jev's
-// judgments, the board, the sub-agents, source control (here: no repository) and the browser. A file the model writes
+// light and dark: the folder's files with the one the model wrote, a file in the preview, the folder's lessons, the
+// judge's judgments, the board, the sub-agents, source control (here: no repository) and the browser. A file the model writes
 // while another tab is in view puts a dot on the files tab (and one the conversation held when it opened does not).
 // Run it with
 // `node scripts/kyrn/e2e-conversation.mjs --native -- native-panels.spec.mjs` (nativeWorld.mjs, profile.mjs).
@@ -85,7 +85,7 @@ async function showTab(name) {
   await expect(tab(name)).toHaveAttribute('aria-selected', 'true');
 }
 
-test('a native conversation writes a file, with Jev judging and the board on', async () => {
+test('a native conversation writes a file, with the judge judging and the board on', async () => {
   await start();
   await reachSidebar();
   await newConversation({ permissions: '完全访问' });
@@ -97,7 +97,7 @@ test('a native conversation writes a file, with Jev judging and the board on', a
   expectNoProblems();
 });
 
-test('the work panel shows the folder, its lessons, Jev’s judgments, the board and the browser', async () => {
+test('the work panel shows the folder, its lessons, the judge’s judgments, the board and the browser', async () => {
   const p = page();
 
   await test.step('文件 lists the folder and the file the model wrote', async () => {
@@ -218,7 +218,7 @@ test('after a quit, the reopened conversation’s panel reads its file: judgment
   await p.getByTestId('native-sidebar-item').click();
   await p.waitForURL(run.conversationUrl, { timeout: 30_000 });
   await expect(p.getByTestId('native-conversation')).toBeVisible();
-  // No host: the conversation is read from its session file, which keeps Jev's ledger but no frames.
+  // No host: the conversation is read from its session file, which keeps the judge's ledger but no frames.
   await expect(p.getByTestId('native-header-phase')).toHaveAttribute('data-phase', 'idle');
   await showTab('judge');
   await expect(p.getByTestId('judge-line').first()).toBeVisible({ timeout: 30_000 });

@@ -18,7 +18,7 @@ import { nativeConversationPath } from '@/renderer/pages/native/utils/paths';
 import { startNativeConversation, type ReadImage } from '../utils/nativeStart';
 import type { GuidSendResult } from './useGuidSend';
 
-/** Permission modes are words (`full`, `jev`, `ask`), as mu names them; anything else is not sent. */
+/** Permission modes are words (`full`, `judge`, `ask`), as mu names them; anything else is not sent. */
 const MODE_ID = /^[a-z][a-z0-9-]{0,31}$/;
 /** Thinking levels are words too (`off`, `low`, `high`, ...); pi refuses one it does not know. */
 const LEVEL_ID = /^[a-z][a-z0-9-]{0,15}$/;

@@ -14,7 +14,7 @@ import { useNativeClient } from '../utils/nativeClient';
 import { folderName } from '../utils/paths';
 
 /** mu's permission modes (MU_PERMISSIONS), named as the settings name them; '' is mu's own default. */
-const MODES = ['full', 'jev', 'ask'] as const;
+const MODES = ['full', 'judge', 'ask'] as const;
 
 const NativeNewConversation: React.FC<{ recent: string[]; onCreated: (conversation: NativeConversation) => void }> = ({
   recent,

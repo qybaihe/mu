@@ -13,7 +13,7 @@ side"). Nothing here shows unless the main process says the native host is on (`
   others and in view; the list is read again when the window comes back to the front (at most once a second), so a
   session the command line made meanwhile shows. Its "+" opens a popover: the
   folders the latest conversations worked in, "Choose a folder…", and the permission mode mu starts in (mu's default,
-  full access, Jev approves, minimal). The new conversation opens, empty, ready for its first message. A row's menu
+  full access, judge mode, minimal). The new conversation opens, empty, ready for its first message. A row's menu
   (its "…" button, shown while the row is hovered or focused, or a right click): pin, rename, in a dialog, and delete, after
   a confirmation (the session file goes to the bin; the page of a deleted conversation goes home). The row's tooltip:
   title, folder, how many messages, the conversation it was forked from. Sessions the backend's conversations use are not
@@ -50,7 +50,7 @@ side"). Nothing here shows unless the main process says the native host is on (`
   the fill passes 70% (`showsContextRing`), where it turns amber; in a narrow window, without the bar, always. Under each message, with the copy button, the fork button of mu's other conversations
   (`message-fork-button`): "Fork from here" makes a new session of the conversation up to that point and goes on in it
   (below); it is not there while a run goes.
-- **Work panel.** The Jev tabs (board, judge, sub-agents) read the page's view. The lessons tab lists the lessons of
+- **Work panel.** The judgment tabs (board, judge, sub-agents) read the page's view. The lessons tab lists the lessons of
   the conversation's folder (and those for everywhere), which can be reworded and retired as for any mu conversation;
   the files tab lists the folder, the model's new files included after each run, opens a file in the preview and gets its
   dot when the model finishes a write or an edit while another tab is in view; the
@@ -66,9 +66,9 @@ window that shows the conversation.
 Trace of one message:
 
 1. The person sends "fix the build". `useNativeConversation.send` asks `request(prompt)`, shows the message as on its
-   way (`outgoing`), and holds the send box: pi takes no second prompt while Jev reads the first.
-2. The judgment layer's `preflight.pending` frame arrives: `view.live.classifying` is set, the status line says "Jev is
-   reading your message…".
+   way (`outgoing`), and holds the send box: pi takes no second prompt while the judge reads the first.
+2. The judgment layer's `preflight.pending` frame arrives: `view.live.classifying` is set, the status line says "The
+   judge is reading your message…".
 3. pi takes the prompt: `message_end` of the user message replaces the message on its way; the verdict frame adds the
    `jev:` line under it.
 4. `message_update` deltas grow the reply's text row; a tool call becomes a tool row, its `tool_execution_*` records
@@ -81,7 +81,7 @@ it is answered are held and folded after it; a record that skips a number means 
 conversation is opened again. A draft's id that its session's id replaces (`changed { replaces }`) is followed, not
 reopened: the route follows it (`replace` navigation) and the text in the send box stays.
 
-The view then becomes rows for the list (`toMessages`), the Jev panel's activity (`toActivity`), the status line
+The view then becomes rows for the list (`toMessages`), the work panel's activity (`toActivity`), the status line
 (`statusRow`) and the dialogs. Nothing is read from the backend for a native conversation: a `MessageListRun` context
 tells the list, its anchor rail and `MessageText` that the rows come from a host of their own.
 
@@ -102,7 +102,7 @@ tells the list, its anchor rail and `MessageText` that the rows come from a host
 | `…/hooks/useNativePanel.ts`, `utils/nativeActivityStore.ts`, `utils/editNews.ts`                          | The page makes itself the current conversation and publishes its view's activity and its folder for the work panel, at most twice a second; another folder's preview closes; a finished `write` or `edit` is news for the files tab.                                                                        |
 | `…/hooks/useNativeAttention.ts`                                                                           | The main process's `attention` for the whole app: a system notification (`notification.show` with `native: true`, so a click routes to the native page) and the row marks (`useNativeUnread`, `markNativeUnread`, `clearNativeUnread`; kept while the app runs; cleared when the conversation's page opens) |
 | `…/hooks/useDialogDeadline.ts`                                                                            | Seconds left of a dialog with a `timeout`, counted from when this window first saw it.                                                                                                                                                                                                                      |
-| `…/utils/toMessages.ts`, `toActivity.ts`, `statusRow.ts`                                                  | The view as list rows, as Jev panel activity, as one status.                                                                                                                                                                                                                                                |
+| `…/utils/toMessages.ts`, `toActivity.ts`, `statusRow.ts`                                                  | The view as list rows, as work panel activity, as one status.                                                                                                                                                                                                                                               |
 | `…/utils/composerLines.ts`                                                                                | The goal the line above the send box shows (`goalOnScreen`) the context ring's numbers (`contextUsageOf`) and when it shows (`showsContextRing`).                                                                                                                                                           |
 | `…/utils/forkPoint.ts`                                                                                    | Where a message's fork button goes in pi's terms (`forkPoint`): `fork` before the person's message, `fork` at the next one (or `clone`) for mu's reply.                                                                                                                                                     |
 | `…/utils/dialogCard.ts`, `errorWords.ts`, `paths.ts`, `nativeClient.ts`                                   | Permission card words from mu's codes; a sentence per error kind; routes and folder names; the client over the bridge (a test hands in its own).                                                                                                                                                            |
@@ -192,8 +192,8 @@ providers keyed by a folder (`common/kyrn/folderBridge.ts`, answered in `process
 An app conversation reads by the conversation exactly as before: the work panel's test checks that no folder is read
 for it, and a conversation with a backend project keeps the project explorer.
 
-**The Jev tabs after a reopen.** The view's frames (`host.activity`) are live only; a conversation read back from its
-session file has Jev's ledger (`view.judgments`) and no frames. `toActivity` turns a judgment no frame carries into a
+**The judgment tabs after a reopen.** The view's frames (`host.activity`) are live only; a conversation read back from its
+session file has the judge's ledger (`view.judgments`) and no frames. `toActivity` turns a judgment no frame carries into a
 decision at the time its record says, so the judge tab of a reopened conversation shows its judgments (it was empty).
 What stays empty until the conversation's host runs again: the board (its updates are frames), the context gauge and
 the judge tab's context line (pi's `get_state`), and mu's notices. The classic tabs read them from the telemetry file,
@@ -201,21 +201,21 @@ which a native conversation does not write.
 
 ## The view on screen
 
-| View                                                                           | On screen                                                                                                                             |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| A user message                                                                 | `text` row, right (`MessageText`), with its images (`content.images`); its Jev verdict as the `jev:` line under it (`MessageJevLine`) |
-| `live.classifying`                                                             | A pending `jev:` line under the message on its way; the status line                                                                   |
-| An assistant message's text and thinking                                       | `text` row, left; `thinking` row, live only while the model writes it                                                                 |
-| A tool call with its output and result                                         | `acp_tool_call` row; the list groups a stretch of them into the tool box (`MessageToolGroupSummary`)                                  |
-| A failed request                                                               | The `tips` error row, in the bridge's fixed English, which the row words in the reader's language                                     |
-| `host.notices`, a stopped reply, a reply after retries                         | `mu:notice:` lines (`MessageMuNotice`), after the message that was last when the notice came                                          |
-| `status`, `live.compacting`, `live.retry`, `live.progress`                     | The status line (`NativeStatus`) and its `data-status`                                                                                |
-| `dialogs`                                                                      | The first open one above the send box, "Waiting after this one: N" for the rest                                                       |
-| `host.queue`                                                                   | The queue above the send box; "Take back" asks `clear_queue` and puts the texts into the box                                          |
-| `goal`                                                                         | The goal line above the send box while it runs or waits; none once it is met or cleared                                               |
-| `host.session.contextUsage`, `cost`, the last reply's `usage`                  | The context ring beside the send button; none while pi has not said how full the context is                                           |
-| Host status (`status` events)                                                  | Header phase; `needs-model` and `failed` as notices above the send box                                                                |
-| `judgments`, `host.activity`, tool snapshots and images, usage, `host.session` | Jev panel activity (`toActivity`), shaped as the CLI bridge's telemetry writes it                                                     |
+| View                                                                           | On screen                                                                                                                                 |
+| ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| A user message                                                                 | `text` row, right (`MessageText`), with its images (`content.images`); its judge verdict as the `jev:` line under it (`MessageJudgeLine`) |
+| `live.classifying`                                                             | A pending `jev:` line under the message on its way; the status line                                                                       |
+| An assistant message's text and thinking                                       | `text` row, left; `thinking` row, live only while the model writes it                                                                     |
+| A tool call with its output and result                                         | `acp_tool_call` row; the list groups a stretch of them into the tool box (`MessageToolGroupSummary`)                                      |
+| A failed request                                                               | The `tips` error row, in the bridge's fixed English, which the row words in the reader's language                                         |
+| `host.notices`, a stopped reply, a reply after retries                         | `mu:notice:` lines (`MessageMuNotice`), after the message that was last when the notice came                                              |
+| `status`, `live.compacting`, `live.retry`, `live.progress`                     | The status line (`NativeStatus`) and its `data-status`                                                                                    |
+| `dialogs`                                                                      | The first open one above the send box, "Waiting after this one: N" for the rest                                                           |
+| `host.queue`                                                                   | The queue above the send box; "Take back" asks `clear_queue` and puts the texts into the box                                              |
+| `goal`                                                                         | The goal line above the send box while it runs or waits; none once it is met or cleared                                                   |
+| `host.session.contextUsage`, `cost`, the last reply's `usage`                  | The context ring beside the send button; none while pi has not said how full the context is                                               |
+| Host status (`status` events)                                                  | Header phase; `needs-model` and `failed` as notices above the send box                                                                    |
+| `judgments`, `host.activity`, tool snapshots and images, usage, `host.session` | Work panel activity (`toActivity`), shaped as the CLI bridge's telemetry writes it                                                        |
 
 The view says how the run stands, so no row guesses: a thought is live only while the model writes it, and a call that
 never ended in a run that is over reads as failed.
@@ -255,7 +255,7 @@ conversation; the browser's own find sees the drawn rows only.
 
 - `prompt` when no run goes; `prompt` with `streamingBehavior: 'steer' | 'followUp'` while one goes, so a run that
   ended just before the message arrived is started by it instead of leaving it queued.
-- `abort` to stop; a prompt stopped while Jev still classified it is stopped again if pi takes it after the stop.
+- `abort` to stop; a prompt stopped while the judge still classified it is stopped again if pi takes it after the stop.
 - `clear_queue` to take the queue back; `respond` for dialogs; a panel's `/board on|off` as a prompt.
 - `get_state` only after a prompt that started no run (an extension command such as `/lessons`), to learn whether pi
   runs anything. Nothing is asked to show history: every command but `abort`, `abort_retry`, `abort_bash` and
@@ -322,7 +322,7 @@ For the Playwright harness (`tests/e2e/mu-conversation/`). Stable; nothing else 
 | `native-new`                                                                          | The "+" that opens the new-conversation popover (`native-new-panel`)                                                                                                                                                                               |
 | `native-project`                                                                      | "Choose a folder…": the folder dialog, then the new conversation                                                                                                                                                                                   |
 | `native-recent-folder`                                                                | A recent folder (its path in `title`): the new conversation there                                                                                                                                                                                  |
-| `native-permissions`                                                                  | The permission mode select (mu's default, full, jev, ask)                                                                                                                                                                                          |
+| `native-permissions`                                                                  | The permission mode select (mu's default, full, judge, ask)                                                                                                                                                                                        |
 | `native-create-failed`                                                                | Why a conversation could not be made                                                                                                                                                                                                               |
 | `native-conversation`, `native-header`, `native-header-folder`, `native-header-phase` | The page; its header; the folder; the host phase (`data-phase`)                                                                                                                                                                                    |
 | `native-empty`, `native-open-failed`, `native-open-retry`                             | An empty conversation; one that could not be opened; try again                                                                                                                                                                                     |
@@ -353,7 +353,7 @@ For the Playwright harness (`tests/e2e/mu-conversation/`). Stable; nothing else 
 | `native-model-chip`, `native-model-pill`                                              | The model · thinking level chip (`data-model` = `provider/id` or '' for none, `data-level`, `data-source` = host, file, reply or none); its button                                                                                                 |
 | `composer-model-option`, `composer-level-option`, `composer-model-search`             | In the chip's menu (the menu of mu's other conversations): a model (`data-value` = `provider/id`), a level of it (`data-value`), the search box past five models                                                                                   |
 | `native-model-loading`                                                                | The chip's menu while pi is asked for its models                                                                                                                                                                                                   |
-| `native-permission-pill`, `native-permission`                                         | The permission mode (`data-mode` = full, jev, ask, or '' for mu's default); its button                                                                                                                                                             |
+| `native-permission-pill`, `native-permission`                                         | The permission mode (`data-mode` = full, judge, ask, or '' for mu's default); its button                                                                                                                                                           |
 | `native-permission-option`                                                            | A mode in its menu (`data-mode`)                                                                                                                                                                                                                   |
 | `native-attach`, `native-attach-input`                                                | The "+" for files and images; the file input it opens (hidden; a test sets its files)                                                                                                                                                              |
 | `native-attachments`, `native-attachment`, `native-attachment-remove`                 | What is attached; one of them (`data-kind` = image or file, `data-name`); take it off                                                                                                                                                              |
@@ -365,7 +365,7 @@ For the Playwright harness (`tests/e2e/mu-conversation/`). Stable; nothing else 
 Three things to know when driving it:
 
 - **Waiting for a run.** A sent message shows at once as a `native-message-user` row, but its run starts only once
-  Jev has read it and pi took it; until then `data-status` still says how the last run ended. So after sending: wait
+  the judge has read it and pi took it; until then `data-status` still says how the last run ended. So after sending: wait
   for one more `native-message-user` row, then for `data-sending="false"`, then for `data-status` to be `settled`,
   `aborted` or `error`.
 - **Folded tool calls.** Several calls in one stretch fold into one line (`tool-activity-group`); their
@@ -381,7 +381,7 @@ Three things to know when driving it:
 | `surface/toMessages.test.ts`, `toActivity.test.ts`                                                                                                                                                     | Rows for each part of the view, reuse of unchanged rows; the panel's activity as the telemetry writes it.                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `surface/useNativeConversation.dom.test.tsx`, `useNativeConversations.dom.test.tsx`                                                                                                                    | Snapshot and records, held and missed records, draft ids, commands, dialogs; the list and the flag.                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `surface/dialogs.dom.test.tsx`                                                                                                                                                                         | The permission card from mu's codes, a failed answer, select, confirm, input, editor, the countdown.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `surface/composer.dom.test.tsx`                                                                                                                                                                        | The send box held while Jev reads, stop, steer and after the run, the queue taken back, a panel's command, the notices, the status line and `data-status`.                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `surface/composer.dom.test.tsx`                                                                                                                                                                        | The send box held while the judge reads, stop, steer and after the run, the queue taken back, a panel's command, the notices, the status line and `data-status`.                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `surface/composerControls.dom.test.tsx`, `view/settings.test.ts`                                                                                                                                       | The model, level and mode shown without a host (from the file, the last reply), the model menu and switch, the mode switch, the `/` menu, `@` mentions, attachments picked, dropped and pasted, the text ↑/↓ and `/copy` read; a session file's settings.                                                                                                                                                                                                                                                                                                            |
 | `surface/screen.dom.test.tsx`                                                                                                                                                                          | Page states, transcript rows, open failure and retry, flag off, a draft followed (the browser's host too), the panel feed and folder, the lessons note; sidebar list, new conversation (picked folder, recent folder, permission mode), create failure, show all.                                                                                                                                                                                                                                                                                                    |
 | `panels/folder.test.ts`, `panels/browser.test.ts`                                                                                                                                                      | A folder's listing (order, links, limit, never above it) and its lessons by real path; the browser's lookup by `MU_DESKTOP_SESSION` on native conversations and the panel host.                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -437,7 +437,7 @@ Elsewhere: `tests/unit/renderer/hooks/guidPage.dom.test.tsx` (the classic send w
 
 ## What the view's live-only part asks of the main process
 
-`host` (the Jev panel's activity, mu's notices, pi's queue, the session as pi described it) is in no session file. A
+`host` (the work panel's activity, mu's notices, pi's queue, the session as pi described it) is in no session file. A
 rebuild from the file (`Conversation.rebuild`, after `/clear`, a rewind, a session switch) should keep it as it keeps
 `dialogs` and `live`; otherwise the panel's activity and the notices clear at every rebuild. Comparisons of a held view
 with a file's view compare `durable(view)`.

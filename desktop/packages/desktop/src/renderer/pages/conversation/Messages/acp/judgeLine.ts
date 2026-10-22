@@ -1,10 +1,10 @@
 import type { TMessage } from '@/common/chat/chatLib';
 import { readReason } from '@/renderer/pages/conversation/KyrnPanel/Judge/activity';
 import { isPreflightHintId, type PreflightHintId } from '@/renderer/pages/conversation/KyrnPanel/Judge/wording';
-import { readJevPreflightRow } from '@/renderer/utils/chat/jevPreflight';
+import { readJudgePreflightRow } from '@/renderer/utils/chat/judgePreflight';
 
 /**
- * How Jev's classification of a message shows in the conversation: one line, not a tool call. The mu adapter
+ * How the judge's classification of a message shows in the conversation: one line, not a tool call. The mu adapter
  * (`process/agent/kyrn/events.ts`) sends it as a tool call with the id `jev:<runtime>:<turn>` and marks its stage in
  * `rawOutput.preflight` (pending, verdict with the verdict's fields, fallback). Conversations recorded before that
  * carry only the English title ("Jev · Classifying", "Jev · <turn type>", "Jev · Fallback"), which is read instead.
@@ -16,7 +16,7 @@ import { readJevPreflightRow } from '@/renderer/utils/chat/jevPreflight';
  * `judge` names the judge that was asked or answered (the verdict's `by`, the wait's `judge`): `jev-latest`, `laya`,
  * a cascade such as `laya>jev-latest`. It is empty for rows that never named one; those were Jev's.
  */
-export type JevLine =
+export type JudgeLine =
   | { stage: 'classifying'; judge: string }
   /** A class it answered with; `state` as the harness names it (applied, shadow, late), `byRule` when no judge had to read it. */
   | { stage: 'classified'; turnType: string; state: string; byRule: boolean; judge: string; hints?: PreflightHintId[] }
@@ -33,7 +33,8 @@ export type JevLine =
   /** Nothing worth a line: the classification is switched off, or the person skipped it. */
   | { stage: 'quiet' };
 
-const JEV_ID = /^jev:/;
+/** The preflight row's tool call id: `jev:` is the prefix stored conversations have always had. */
+const PREFLIGHT_ID = /^jev:/;
 
 /**
  * The classes the harness's preflight answers with (`TurnType` of kyrn-judge's input preflight). Each has a name in
@@ -95,17 +96,17 @@ function hintsOf(verdict: Record<string, unknown>): { hints?: PreflightHintId[] 
   return hints.length ? { hints } : {};
 }
 
-export function jevLine(message: TMessage): JevLine | undefined {
+export function judgeLine(message: TMessage): JudgeLine | undefined {
   if (message.type !== 'acp_tool_call') return undefined;
   const update = record(message.content?.update);
   const id = str(update.tool_call_id) || str(update.toolCallId);
-  if (!JEV_ID.test(id)) return undefined;
+  if (!PREFLIGHT_ID.test(id)) return undefined;
   const raw = update.rawOutput ?? update.raw_output;
   const verdict = record(raw);
   // The verdict names who answered; a wait names who was asked.
   const judge = str(verdict.by) === 'rule' ? '' : str(verdict.by) || str(verdict.judge);
   if (update.status === 'pending' || update.status === 'in_progress') return { stage: 'classifying', judge };
-  const row = readJevPreflightRow(id, update.title, raw);
+  const row = readJudgePreflightRow(id, update.title, raw);
   if (row?.state === 'pending') return { stage: 'classifying', judge };
   const turnType = row?.state === 'verdict' ? (row.turnType ?? '') : '';
   const state = str(verdict.state) || 'applied';

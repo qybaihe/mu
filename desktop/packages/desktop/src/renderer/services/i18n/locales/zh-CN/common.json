@@ -1261,7 +1261,7 @@
     "compactionDropped": "移除 {{count}} 次调用",
     "compactionDropped_one": "移除 {{count}} 次调用",
     "compactionDropped_other": "移除 {{count}} 次调用",
-    "jevLine": {
+    "judgeLine": {
       "classifying": "{{judge}} 正在归类…",
       "classified": "{{judge}} 归类为{{type}}",
       "byRule": "按规则归类为{{type}}",
