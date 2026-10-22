@@ -52,7 +52,8 @@ function line(capability: Capability): string {
 export function registerCatalog(runtime: KyrnRuntime): void {
 	const options = runtime.options("catalog", {
 		enabled: true,
-		waitMs: 4000,
+		/** Counted from the arrival of the message, as preflight's wait is. */
+		waitMs: 3000,
 		/** Ask which capabilities a task needs in a `mu --print` or json run too. Off: they stay hidden, and nothing waits. */
 		askUnattended: false,
 		/** Tools and skills, by name, left out of the request in a `mu --print` or json run. */

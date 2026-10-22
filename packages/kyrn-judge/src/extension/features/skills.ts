@@ -28,15 +28,22 @@ interface PromptSkill extends SkillCandidate {
  *
  * A sub-agent takes its parent's verdict (`subagentsInherit`): the parent passes the skills it keeps out of the
  * prompt, and the sub-agent hides those and asks nothing. A sub-agent never shows a skill its parent hid.
+ *
+ * The question goes out the moment the message arrives, alongside preflight's (`askEarly`). The prompt's skill list
+ * is not on the context of an `input` event, so it is taken from the last turn, and before the first turn from the
+ * skill commands, which list the same skills. Asked only once the turn starts, it waited for preflight first: in the
+ * owner's sessions that added a median 0.7 s to every message before the model started.
  */
 export function registerSkills(runtime: KyrnRuntime): void {
 	const options = runtime.options("skills", {
 		enabled: true,
 		minSkills: 4,
-		waitMs: 4000,
+		waitMs: 3000,
 		applyLate: true,
 		/** Sub-agents take the skills this session hides instead of asking the judge again. */
 		subagentsInherit: true,
+		/** Ask when the message arrives, alongside preflight, instead of after preflight's wait. */
+		askEarly: true,
 	});
 	if (!options.enabled) return;
 	const { pi } = runtime;
@@ -69,6 +76,27 @@ export function registerSkills(runtime: KyrnRuntime): void {
 	};
 	/** The question asked the moment the message arrived, alongside preflight: the first pick, or the later announcements. */
 	let early: { turn: number; first: boolean; decision: ReturnType<typeof disclose> } | undefined;
+	/** The prompt's skill list as the last turn had it, before this feature hid any. */
+	let seen: readonly PromptSkill[] | undefined;
+	/**
+	 * The prompt's skill list before the turn is built. An `input` event's context has no `getSystemPromptOptions` (a
+	 * command's has), so the last turn's list stands in, and before the first turn the skill commands do: pi makes one
+	 * `/skill:<name>` command of every skill it loaded, the same list the prompt starts from.
+	 */
+	const promptSkills = (): readonly PromptSkill[] => {
+		if (seen) return seen;
+		const ctx = runtime.ctx as { getSystemPromptOptions?: () => { skills?: readonly PromptSkill[] } } | undefined;
+		const listed = ctx?.getSystemPromptOptions?.().skills;
+		if (listed) return listed;
+		return pi
+			.getCommands()
+			.filter((command) => command.source === "skill")
+			.map((command) => ({
+				name: command.name.replace(/^skill:/, ""),
+				description: command.description ?? "",
+				filePath: command.sourceInfo.path,
+			}));
+	};
 	if (options.subagentsInherit) {
 		runtime.skillsHidden = () => {
 			if (!decided || runtime.mode(skillDisclosure.id) === "off") return undefined;
@@ -83,14 +111,12 @@ export function registerSkills(runtime: KyrnRuntime): void {
 		};
 	}
 	runtime.atTurnStart((words) => {
-		if (inherited || runtime.mode(skillDisclosure.id) === "off") return;
+		if (!options.askEarly || inherited || runtime.mode(skillDisclosure.id) === "off") return;
 		// Before asking which hidden skills to announce: a late first verdict decides which ones are hidden.
 		applyLate();
-		// The prompt's skill list before the turn is built: pi exposes it on the context where it can.
-		const ctx = runtime.ctx as { getSystemPromptOptions?: () => { skills?: readonly PromptSkill[] } } | undefined;
 		let all: readonly PromptSkill[] = [];
 		try {
-			all = ctx?.getSystemPromptOptions?.().skills ?? [];
+			all = promptSkills();
 		} catch {
 			return;
 		}
@@ -120,6 +146,7 @@ export function registerSkills(runtime: KyrnRuntime): void {
 			}
 			const mode = runtime.mode(skillDisclosure.id);
 			if (mode === "active") applyLate();
+			seen = event.systemPromptOptions.skills ?? [];
 			if (event.messageType === "custom") {
 				if (mode !== "off") {
 					event.systemPromptOptions.skills = (event.systemPromptOptions.skills ?? []).filter(
