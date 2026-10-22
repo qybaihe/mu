@@ -294,10 +294,10 @@ export const MANIFEST: HarnessManifest = {
 			id: "tool.approval",
 			group: "tools",
 			feature: "permissions",
-			title: { zh: "Jev 替你审批", en: "Jev approves for you" },
+			title: { zh: "判定器替你审批", en: "The judge approves for you" },
 			summary: {
-				zh: "在「Jev 审批」模式下，命令、项目外的改动、对外操作和子代理先交给 Jev：它确信这是任务需要、也是你会预期的做法才放行，否则在状态栏问你。",
-				en: "In Jev approves mode, commands, changes outside the project, external actions and subagents go to Jev first. Only what Jev is sure the task needs, done the way you'd expect, runs without asking; anything else asks you in the status bar.",
+				zh: "在「判定模式」下，命令、项目外的改动、对外操作和子代理先交给判定器：它确信这是任务需要、也是你会预期的做法才放行，否则在状态栏问你。",
+				en: "In Judge mode, commands, changes outside the project, external actions and subagents go to the judge first. Only what the judge is sure the task needs, done the way you'd expect, runs without asking; anything else asks you in the status bar.",
 			},
 		},
 		{
@@ -316,8 +316,8 @@ export const MANIFEST: HarnessManifest = {
 			feature: "injection",
 			title: { zh: "外来内容里的指令", en: "Instructions in outside content" },
 			summary: {
-				zh: "网页、搜索结果、MCP 服务器返回的内容，以及 shell 命令从别的机器取回的内容（curl、gh issue view），模型读到之前先过一遍：哪一段是写给 AI 的指令（让它忽略规则、交出数据、跑命令，或借一个链接把对话带出去）。这样的段落被扣下，换成一行说明。Jev 没答上来时，只扣下明显的注入用语。子代理读到的内容里有段落被扣下时，它的报告交回时前面带一句警告。",
-				en: "Before the model reads a web page, search results, an MCP server's response or what a shell command fetched from another machine (curl, gh issue view), checks which passages carry instructions aimed at an AI (to ignore rules, hand over data, run commands or leak the conversation through a link). Those passages are withheld and replaced with a one-line note. When Jev doesn't answer, only obvious injection phrases are withheld. If a subagent had passages withheld from what it read, its report comes back with a warning.",
+				zh: "网页、搜索结果、MCP 服务器返回的内容，以及 shell 命令从别的机器取回的内容（curl、gh issue view），模型读到之前先过一遍：哪一段是写给 AI 的指令（让它忽略规则、交出数据、跑命令，或借一个链接把对话带出去）。这样的段落被扣下，换成一行说明。判定器没答上来时，只扣下明显的注入用语。子代理读到的内容里有段落被扣下时，它的报告交回时前面带一句警告。",
+				en: "Before the model reads a web page, search results, an MCP server's response or what a shell command fetched from another machine (curl, gh issue view), checks which passages carry instructions aimed at an AI (to ignore rules, hand over data, run commands or leak the conversation through a link). Those passages are withheld and replaced with a one-line note. When the judge doesn't answer, only obvious injection phrases are withheld. If a subagent had passages withheld from what it read, its report comes back with a warning.",
 			},
 		},
 		{
@@ -326,8 +326,8 @@ export const MANIFEST: HarnessManifest = {
 			feature: "injection",
 			title: { zh: "MCP 工具说明里的私货", en: "Hidden instructions in MCP tool descriptions" },
 			summary: {
-				zh: "MCP 服务器自己写工具说明，模型把它当工具列表的一部分来读。每个工具第一次出现、说明变了时问一次：这段说明是不是要 AI 做调用这个工具以外的事（读用不着的文件或密钥、把数据发到别处、改变它对待别的工具或你的方式、瞒着你）？是的话这个工具从列表里拿掉，调用也被拒绝，并告诉你。Jev 没答上来时，只按 <IMPORTANT> 块、「别告诉用户」这类明显标记处理。",
-				en: "MCP servers write their own tool descriptions, and the model reads them as part of its tool list. Asked once per tool when it first appears and whenever its description changes: does the description ask the AI to do more than call this tool (read files or secrets it doesn't need, send data elsewhere, change how it treats other tools or you, hide something from you)? If so, the tool is removed from the list, calls to it are refused and you're told. When Jev gives no answer, only obvious markers such as an <IMPORTANT> block or \"do not tell the user\" count.",
+				zh: "MCP 服务器自己写工具说明，模型把它当工具列表的一部分来读。每个工具第一次出现、说明变了时问一次：这段说明是不是要 AI 做调用这个工具以外的事（读用不着的文件或密钥、把数据发到别处、改变它对待别的工具或你的方式、瞒着你）？是的话这个工具从列表里拿掉，调用也被拒绝，并告诉你。判定器没答上来时，只按 <IMPORTANT> 块、「别告诉用户」这类明显标记处理。",
+				en: "MCP servers write their own tool descriptions, and the model reads them as part of its tool list. Asked once per tool when it first appears and whenever its description changes: does the description ask the AI to do more than call this tool (read files or secrets it doesn't need, send data elsewhere, change how it treats other tools or you, hide something from you)? If so, the tool is removed from the list, calls to it are refused and you're told. When the judge gives no answer, only obvious markers such as an <IMPORTANT> block or \"do not tell the user\" count.",
 			},
 		},
 		{
@@ -811,18 +811,18 @@ export const MANIFEST: HarnessManifest = {
 			name: "permissions",
 			title: { zh: "权限模式", en: "Permission modes" },
 			summary: {
-				zh: "完全访问、Jev 审批、最小权限三种模式，用 /permissions 随时切换；需要授权时在状态栏提示你，可以只允许这一次，或这次对话都允许。开着它时，危险命令的把关也归它管。",
-				en: "Full access, Jev approves or Ask first; switch any time with /permissions. When a step needs your permission, the status bar asks; allow it once or for the whole conversation. While this feature is on, it also takes over the risky command guard.",
+				zh: "完全访问、判定模式、最小权限三种模式，用 /permissions 随时切换；需要授权时在状态栏提示你，可以只允许这一次，或这次对话都允许。开着它时，危险命令的把关也归它管。",
+				en: "Full access, Judge mode or Ask first; switch any time with /permissions. When a step needs your permission, the status bar asks; allow it once or for the whole conversation. While this feature is on, it also takes over the risky command guard.",
 			},
 			defaultEnabled: true,
 			options: [
 				{
 					key: "mode",
 					kind: "choice",
-					default: "jev",
+					default: "judge",
 					choices: [
 						{ value: "full", label: { zh: "完全访问", en: "Full access" } },
-						{ value: "jev", label: { zh: "Jev 审批", en: "Jev approves" } },
+						{ value: "judge", label: { zh: "判定模式", en: "Judge mode" } },
 						{ value: "ask", label: { zh: "最小权限", en: "Ask first" } },
 					],
 					label: { zh: "新对话的默认模式", en: "Mode for new conversations" },
@@ -2247,7 +2247,7 @@ export const MANIFEST: HarnessManifest = {
 			name: "mcp",
 			title: { zh: "MCP 服务器", en: "MCP servers" },
 			summary: {
-				zh: "MCP 服务器由 pi 自带的客户端连接（stdio 与 Streamable HTTP，支持 OAuth 登录，用 /mcp 管理）。从 Claude Code、Cursor、Codex 和 mu.json 沿用的服务器，每个是能力目录里的一项，默认隐藏：Jev 认定任务需要，或模型主动申请，才启动它并把工具交给模型。工具清单会缓存，服务器没跑过 Jev 也有描述可判。项目里定义的服务器第一次启动前要你点头，定义变了会再问。在 mu.json 里可以把某个服务器设为常开。用 mu mcp add 加的服务器归 pi 管：随会话连接，工具由 tool_search 按需加载。",
+				zh: "MCP 服务器由 pi 自带的客户端连接（stdio 与 Streamable HTTP，支持 OAuth 登录，用 /mcp 管理）。从 Claude Code、Cursor、Codex 和 mu.json 沿用的服务器，每个是能力目录里的一项，默认隐藏：判定器认定任务需要，或模型主动申请，才启动它并把工具交给模型。工具清单会缓存，服务器没跑过，判定器也有描述可判。项目里定义的服务器第一次启动前要你点头，定义变了会再问。在 mu.json 里可以把某个服务器设为常开。用 mu mcp add 加的服务器归 pi 管：随会话连接，工具由 tool_search 按需加载。",
 				en: 'MCP servers connect through pi\'s own client (stdio and Streamable HTTP, OAuth sign-in, managed with /mcp). Each server mu inherits from Claude Code, Cursor, Codex or mu.json is a hidden catalog entry: it starts, and its tools reach the model, only when the judge finds the task needs it or the model asks through find_capability. Tool lists are cached, so the judge has a description even before a server has run. A server defined by a project asks before its first start, and again when its definition changes. "exposure": "always" under mcp.servers in mu.json keeps a server open. Servers added with mu mcp add belong to pi: they connect with the session, and tool_search loads their tools when needed.',
 			},
 			defaultEnabled: true,

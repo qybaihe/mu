@@ -2,11 +2,12 @@ import { defineDecision } from "../decision.ts";
 import { isEscapeOption } from "../policy.ts";
 
 /**
- * Jev approves for the user. In Jev mode a call that would otherwise ask the
- * user (a command, a change outside the project, an action on the outside
- * world, a sub-agent) is put to the judge first: is it a step the task needs,
- * done the way the user would expect? Only a sure yes lets it run. Anything
- * else, and no verdict at all, goes to the user, with what Jev saw.
+ * The judge approves for the user. In judge mode a call that would otherwise
+ * ask the user (a command, a change outside the project, an action on the
+ * outside world, a sub-agent) is put to the judge first: is it a step the task
+ * needs, done the way the user would expect? Only a sure yes lets it run.
+ * Anything else, and no verdict at all, goes to the user, with what the judge
+ * saw.
  *
  * One choice question rather than booleans: choice distributions are sharp on
  * clear cases, and "beyond" versus "unrelated" tells the user why they are
@@ -24,7 +25,7 @@ export interface ToolApprovalInput {
 
 export type ToolApprovalOutcome = "approve" | "beyond" | "unrelated" | "unsure";
 
-/** How sure Jev has to be that a step is needed before it runs without the user. */
+/** How sure the judge has to be that a step is needed before it runs without the user. */
 export const APPROVE_AT = 0.8;
 
 export const toolApproval = defineDecision({

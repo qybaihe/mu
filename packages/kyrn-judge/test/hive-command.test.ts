@@ -65,7 +65,7 @@ describe("/hive in a session", () => {
 		options: {
 			hold?: Promise<void>;
 			tools?: AgentTool[];
-			permissions?: "full" | "jev";
+			permissions?: "full" | "judge";
 			responder?: MockResponder;
 		} = {},
 	) {
@@ -166,7 +166,7 @@ describe("/hive in a session", () => {
 		expect(notes).toEqual([]);
 	});
 
-	it("in Jev-approves mode: the hive is judged against /hive as the user's own words, not the turn before", async () => {
+	it("in judge mode: the hive is judged against /hive as the user's own words, not the turn before", async () => {
 		const approvals: Record<string, unknown>[] = [];
 		const responder: MockResponder = (request): Record<string, Answer> => {
 			if (!("verdict" in request.questions)) return {};
@@ -176,7 +176,7 @@ describe("/hive in a session", () => {
 			const choice = asked ? "needed" : "unrelated";
 			return { verdict: { type: "choice", choice, probabilities: { [choice]: 0.95 } } };
 		};
-		const { harness, bees } = await start({ permissions: "jev", responder });
+		const { harness, bees } = await start({ permissions: "judge", responder });
 		const notes = await asRpc(harness);
 		harness.setResponses([
 			fauxAssistantMessage("Hello."),
@@ -192,7 +192,7 @@ describe("/hive in a session", () => {
 		expect(approvals.map((state) => state.user_message)).toEqual([`/hive ${QUESTION}`]);
 		expect(String(approvals[0]?.tool_call)).toContain("hive");
 		expect(bees).toEqual(["where", "config", "run"]);
-		// Nobody was asked: Jev approved it.
+		// Nobody was asked: the judge approved it.
 		expect(notes).toEqual([]);
 		expect(JSON.stringify(harness.session.messages.at(-1))).toContain("The answer, from the hive.");
 	});

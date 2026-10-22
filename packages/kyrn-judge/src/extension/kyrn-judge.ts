@@ -174,8 +174,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 	const roots: HarnessRoots | undefined =
 		options.roots ?? (options.config || options.provider ? undefined : { home: homedir(), agentDir: getAgentDir() });
 	if (loaded.disabled) {
-		// Asking the user needs no judge, so the permission mode the user chose holds with judging off too. In Jev
-		// approval, with no Jev to ask, what Jev would have decided goes to the user.
+		// Asking the user needs no judge, so the permission mode the user chose holds with judging off too. In judge
+		// mode, with no judge to ask, what the judge would have decided goes to the user.
 		if (!options.only || options.only.includes("permissions")) registerPermissions(runtime, roots);
 		registerCommands(runtime, roots);
 		registerImport(pi);

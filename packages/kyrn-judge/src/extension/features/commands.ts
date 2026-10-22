@@ -41,7 +41,7 @@ const helpZh = () => `mu ${VERSIONS.mu} · 先判断再动手的编程代理，�
     /goal clear 结束
   /board on|off：为这个项目打开或关闭人话看板，用大白话讲进展、正在做什么、什么在等你；
     /board 查看，/board model 换个模型来讲
-  /permissions [模式]：mu 不问你就能做多少事，可选 full（完全访问）、jev（Jev 审批，由 Jev 替你批，
+  /permissions [模式]：mu 不问你就能做多少事，可选 full（完全访问）、judge（判定模式，由判定器替你批，
     拿不准才问你）、ask（最小权限，除了读都要问你）
   /capabilities：装了哪些能力，判定器为这次任务打开了哪些
   /ledger [条数]：最近几条判定和用时
@@ -93,9 +93,9 @@ Judgment kernel
                            for one (or shows the current goal) and /goal clear ends it
   /board on|off            turn the plain-language board on or off for this project: progress, what's happening,
                            what's waiting on you; /board shows it, /board model picks the model that writes it
-  /permissions [mode]      set how much mu can do without asking: full (Full access), jev (Jev approves: allows
-                           what the task clearly needs and asks you about the rest), ask (Ask first: asks before
-                           anything but reading)
+  /permissions [mode]      set how much mu can do without asking: full (Full access), judge (Judge mode: the judge
+                           allows what the task clearly needs and asks you about the rest), ask (Ask first: asks
+                           before anything but reading)
   /capabilities            show what's installed and what the judge turned on for this task
   /ledger [n]              show the last n verdicts and their latency
   /remember <lesson>       save a lesson for future sessions

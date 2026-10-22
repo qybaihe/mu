@@ -37,7 +37,7 @@ const MODE_STATUS = "mu.permissions";
 const PENDING_STATUS = "mu.permissions.pending";
 
 /**
- * Why the user is being asked. `nojudge` and `judgedown` are Jev mode without a verdict: no judge can answer yet
+ * Why the user is being asked. `nojudge` and `judgedown` are judge mode without a verdict: no judge can answer yet
  * (no usable key or credit, or none trusted with approvals, so every step asks), or the judge did not answer this
  * time (down, too slow, a broken answer).
  */
@@ -57,9 +57,9 @@ const REASON_TEXT: Readonly<Record<Exclude<AskReason, "flagged">, { zh: string; 
 		zh: "最小权限模式：改文件、跑命令、对外操作都先问你。",
 		en: "Ask first: mu asks you before every edit, command and action outside this computer.",
 	},
-	unsure: { zh: "Jev 拿不准这一步是不是你要的。", en: "Jev isn't sure this step is what you want." },
-	beyond: { zh: "Jev 认为这一步超出了你的要求。", en: "Jev thinks this goes beyond what you asked for." },
-	unrelated: { zh: "Jev 认为这一步和当前任务无关。", en: "Jev thinks this isn't part of the task." },
+	unsure: { zh: "判定器拿不准这一步是不是你要的。", en: "The judge isn't sure this step is what you want." },
+	beyond: { zh: "判定器认为这一步超出了你的要求。", en: "The judge thinks this goes beyond what you asked for." },
+	unrelated: { zh: "判定器认为这一步和当前任务无关。", en: "The judge thinks this isn't part of the task." },
 	protected: {
 		zh: "这会动到 mu 自己的设置，只能由你决定。",
 		en: "This touches mu's own settings; only you can allow it.",
@@ -83,9 +83,9 @@ export function modeLabel(mode: PermissionMode): string {
 }
 
 /**
- * Why no judge looked at a step, when none did. Its answer then says "unsure", which would tell the user Jev
- * weighed the step. `nojudge`: none will look at the next step either (no usable key, no credit, or only judges
- * not trusted with this kind of question, like a local judge alone). `judgedown`: one failed this time.
+ * Why no judge looked at a step, when none did. Its answer then says "unsure", which would tell the user the judge
+ * weighed the step. `nojudge`: none will look at the next step either (no usable key, no credit, or only judges not
+ * trusted with this kind of question, like a local judge alone). `judgedown`: one failed this time.
  */
 function unanswered(decision: Decision<unknown>): "nojudge" | "judgedown" | undefined {
 	if (decision.reason === "error:auth" || decision.reason === "error:payment_required") return "nojudge";
@@ -120,22 +120,22 @@ function projectSettings(cwd: string): string[] {
  * status bar. Without anyone to ask (print mode, a sub-agent), what would be
  * asked is refused with a reason the model can report.
  *
- * The risk guard's rules are part of this: in Jev mode a flagged command runs
- * only when Jev is sure the user asked for it; in the other modes the flag is
+ * The risk guard's rules are part of this: in judge mode a flagged command runs
+ * only when the judge is sure the user asked for it; in the other modes the flag is
  * shown with the question, or, in full access, nothing is asked at all.
  */
 export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | undefined): void {
 	const options = runtime.options("permissions", {
 		enabled: true,
 		/** The mode of a new conversation until the user picks one with /permissions. */
-		mode: "jev",
+		mode: "judge",
 	});
 	if (!options.enabled) return;
 	const { pi } = runtime;
 	const defaults = new PermissionDefaults(roots ? join(roots.agentDir, "mu") : undefined);
 	const guarded = protectedPaths(roots);
 	const initial = (): PermissionMode =>
-		parseMode(muEnv("PERMISSIONS")) ?? defaults.get() ?? parseMode(options.mode) ?? "jev";
+		parseMode(muEnv("PERMISSIONS")) ?? defaults.get() ?? parseMode(options.mode) ?? "judge";
 	let mode: PermissionMode = initial();
 	/** What the user allowed "for this conversation": `shell:npm test`, `edit`, `tool:browse`. */
 	let grants = new Set<string>();
@@ -186,7 +186,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		show(ctx);
 	});
 
-	const approvedBy = (event: ToolCallEvent, need: PermissionNeed, by: "jev" | "grant") => {
+	const approvedBy = (event: ToolCallEvent, need: PermissionNeed, by: "judge" | "grant") => {
 		runtime.present("permissions.approved", {
 			toolCallId: event.toolCallId,
 			tool: event.toolName,
@@ -197,8 +197,8 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		return undefined;
 	};
 
-	/** Asks Jev. True when it approves. */
-	const jevApproves = async (
+	/** Asks the judge. True when it approves. */
+	const judgeApproves = async (
 		event: ToolCallEvent,
 		need: PermissionNeed,
 		flag: string | undefined,
@@ -209,7 +209,10 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		const inherited = subAgentUserGoal();
 		const userMessage = clip(inherited ?? runtime.turn.userMessage, 400);
 		runtime.progress(
-			say({ zh: `Jev 在审批：${clip(need.summary, 60)}`, en: `Jev is reviewing: ${clip(need.summary, 60)}` }),
+			say({
+				zh: `判定器在审批：${clip(need.summary, 60)}`,
+				en: `The judge is reviewing: ${clip(need.summary, 60)}`,
+			}),
 			"permission_review",
 			{ summary: clip(need.summary, 60) },
 		);
@@ -219,9 +222,9 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 				{ command: clip(describeCall(event.toolName, event.input), 400), userMessage, flag },
 				{ signal: ctx.signal },
 			);
-			// The user chose Jev to decide, so its verdict counts in shadow too; no verdict means asking. A rule flagged
-			// the call, so only Jev being sure the user asked for it runs it: "not destructive" is read from the command
-			// itself, which can say anything about itself.
+			// The user chose the judge to decide, so its verdict counts in shadow too; no verdict means asking. A rule
+			// flagged the call, so only the judge being sure the user asked for it runs it: "not destructive" is read
+			// from the command itself, which can say anything about itself.
 			const requested = decision.answers?.requested;
 			const asked = requested?.type === "boolean" && threeZone(requested) === "yes";
 			return { approved: asked && (decision.judged ?? decision.outcome) === "allow", reason: "flagged" };
@@ -333,11 +336,11 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		const flag = command ? riskFlag(command) : undefined;
 		if (!need.protected && !flag && need.grant && grants.has(need.grant.key)) return approvedBy(event, need, "grant");
 		let reason: AskReason = need.protected ? "protected" : flag ? "flagged" : "ask";
-		if (mode === "jev" && !need.protected) {
+		if (mode === "judge" && !need.protected) {
 			// Editing the project is the task itself, and a checkpoint can take it back.
 			if (need.kind === "edit" && need.inProject && !flag) return undefined;
-			const verdict = await jevApproves(event, need, flag, ctx);
-			if (verdict.approved) return approvedBy(event, need, "jev");
+			const verdict = await judgeApproves(event, need, flag, ctx);
+			if (verdict.approved) return approvedBy(event, need, "judge");
 			reason = verdict.reason;
 		}
 		return askUser(event, need, reason, flag, ctx);
@@ -364,8 +367,8 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 
 	pi.registerCommand("permissions", {
 		description: say({
-			zh: "mu 不问你就能做多少事：/permissions full（完全访问）| jev（Jev 审批）| ask（最小权限），不带参数就弹出选择；/permissions reset 忘掉这次对话里允许过的操作",
-			en: "Set how much mu can do without asking: /permissions full | jev | ask (no argument opens a picker); /permissions reset clears what you've allowed so far",
+			zh: "mu 不问你就能做多少事：/permissions full（完全访问）| judge（判定模式）| ask（最小权限），不带参数就弹出选择；/permissions reset 忘掉这次对话里允许过的操作",
+			en: "Set how much mu can do without asking: /permissions full | judge | ask (no argument opens a picker); /permissions reset clears what you've allowed so far",
 		}),
 		handler: async (args, ctx) => {
 			runtime.touch(ctx);
@@ -410,7 +413,10 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 						...(allowed
 							? [say({ zh: `这次对话都允许：${allowed}`, en: `Allowed for this session: ${allowed}` })]
 							: []),
-						say({ zh: "切换：/permissions full | jev | ask", en: "To switch: /permissions full | jev | ask" }),
+						say({
+							zh: "切换：/permissions full | judge | ask",
+							en: "To switch: /permissions full | judge | ask",
+						}),
 					].join("\n"),
 					word ? "warning" : "info",
 				);

@@ -431,7 +431,7 @@ export function localJudgeSupport({ platform, env, wsl = false }) {
 		url,
 		message: [
 			`The local judge (Laya) is a Core ML sidecar that runs only on macOS on Apple silicon, not on ${where}.`,
-			"mu works without it: Jev answers by default (free on OpenCode Zen, or with your own key via mu setup); you can also set an LLM judge in mu.json.",
+			"mu works without it: the default hosted judge, Jev, answers (free on OpenCode Zen, or with your own key via mu setup); you can also set an LLM judge in mu.json.",
 			"A local judge for the desktop app is in progress. Without a judge, decision points use their fallbacks.",
 			"To use a server that implements the same API (GET /health, POST /evaluate), set:",
 			"  MU_LOCAL_JUDGE_URL=http://host:port",
