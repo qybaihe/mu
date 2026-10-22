@@ -127,6 +127,14 @@ export const BUILT_IN_JUDGES: Readonly<Record<string, JudgeConfig>> = {
 	// it was the only Nemotron on Token Factory that clearly beat no judge at all; Super, Nano 30B and Lightning
 	// (also read off first-token logprobs) missed the answer format or decided worse.
 	nemotron: { type: "llm", model: "nebius/nvidia/Nemotron-3-Ultra-550b-a55b", thinking: "off" },
+	// The same with thinking on (reasoning_effort "high"): 2.5 s at the median, 8.5 s at p90, about three times the
+	// tokens. Worth it where Ultra decides worst without it; route those decision points here (docs/nebius.md).
+	"nemotron-think": {
+		type: "llm",
+		model: "nebius/nvidia/Nemotron-3-Ultra-550b-a55b",
+		thinking: "high",
+		timeoutMs: 60_000,
+	},
 	// Nemotron 3 Nano 4B distilled from Nemotron 3 Ultra (github.com/qybaihe/mu-judge-nemotron), served on this
 	// machine by its System One server: `python serve/systemone_server.py --backend mlx --port 8770`.
 	"nemotron-local": { type: "systemone", baseUrl: "http://127.0.0.1:8770", model: "mu-judge-nemotron" },

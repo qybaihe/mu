@@ -365,7 +365,9 @@ export class KyrnRuntime {
 					},
 					{
 						signal,
-						maxTokens: 2000,
+						// The reasoning comes out of the same budget: thinking on mu's questions, Nemotron 3 Ultra
+						// used up to 4,400 tokens.
+						maxTokens: thinking ? 8000 : 2000,
 						reasoning: thinking as never,
 						cacheRetention: "none",
 						sessionId: this.sessionId,

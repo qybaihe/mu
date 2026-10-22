@@ -29,6 +29,19 @@ describe("built-in Nemotron judges", () => {
 		expect(result.answers.kind).toMatchObject({ type: "choice", choice: "build" });
 	});
 
+	it("asks Ultra with thinking on as nemotron-think, with time for it", async () => {
+		expect(BUILT_IN_JUDGES["nemotron-think"]).toMatchObject({ type: "llm", thinking: "high", timeoutMs: 60_000 });
+		const asked: (string | undefined)[] = [];
+		const { problems } = buildJudge(parseConfig({ tiers: ["nemotron-think"] }), {
+			llm: (_model, options) => {
+				asked.push(options?.thinking);
+				return async () => ({ text: "{}" });
+			},
+		});
+		expect(problems).toEqual([]);
+		expect(asked).toEqual(["high"]);
+	});
+
 	it("reaches the distilled Nemotron on this machine over System One, without a key", async () => {
 		const captured: { url: string; body: Record<string, unknown>; headers: Record<string, string> }[] = [];
 		const fetch: typeof globalThis.fetch = async (input, init) => {

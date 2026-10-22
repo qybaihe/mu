@@ -42,6 +42,23 @@ turn.continue: "end"
 
 Super fixed the bug and ran the tests twice; Ultra made 8 decisions on the way. The whole run cost $0.04.
 
+### Thinking where it pays
+
+Nemotron 3 Ultra decides much better with thinking on for a few decision points, at about three times the tokens and 2.5 s instead of 0.9 s at the median. `nemotron-think` is Ultra with `reasoning_effort: "high"`; give it those decision points and keep the fast judge for the rest:
+
+```json
+{
+  "tiers": ["nemotron"],
+  "routes": {
+    "memory.capture": ["nemotron-think"],
+    "tool.constraint": ["nemotron-think"],
+    "board.read": ["nemotron-think"],
+    "skills.disclosure": ["nemotron-think"],
+    "capability.disclosure": ["nemotron-think"]
+  }
+}
+```
+
 ## The judge on your machine
 
 [mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron) distills Nemotron 3 Ultra's answers into Nemotron 3 Nano 4B and serves it over System One, the protocol mu's judges speak. Start it, then use the built-in `nemotron-local` judge, with Ultra behind it for the questions it is unsure of:
