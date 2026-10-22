@@ -251,17 +251,21 @@ describe('signing in to a subscription', () => {
 });
 
 describe('who is signed in', () => {
-  it('offers Sign in with ChatGPT, and shows a Codex sign-in only while an account is signed in with it', () => {
-    const offered = ['openai', 'anthropic', 'xai'] as const;
-    expect(offeredProviders({ signedIn: [], offered: [...offered] })).toEqual(['openai', 'anthropic', 'xai']);
-    expect(offeredProviders({ signedIn: [{ provider: 'openai-codex', models: [] }], offered: [...offered] })).toEqual([
+  it('offers ChatGPT and Grok, and shows a Codex or Claude sign-in only while an account is signed in with it', () => {
+    const offered = ['openai', 'xai'] as const;
+    expect(offeredProviders({ signedIn: [], offered: [...offered] })).toEqual(['openai', 'xai']);
+    const before = [
+      { provider: 'openai-codex' as const, models: [] },
+      { provider: 'anthropic' as const, models: [] },
+    ];
+    expect(offeredProviders({ signedIn: before, offered: [...offered] })).toEqual([
       'openai',
       'openai-codex',
       'anthropic',
       'xai',
     ]);
     // Before the runner has said: pi's own sign-ins.
-    expect(offeredProviders({ signedIn: [] })).toEqual(['openai', 'anthropic', 'xai']);
+    expect(offeredProviders({ signedIn: [] })).toEqual(['openai', 'xai']);
   });
 
   it('reads the accounts and the sign-ins the runner reports, and only the ones the app knows', async () => {

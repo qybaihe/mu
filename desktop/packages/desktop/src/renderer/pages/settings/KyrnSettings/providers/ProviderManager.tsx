@@ -91,13 +91,17 @@ export default function ProviderManager(props: ProviderManagerProps) {
   const shown = available.providers.filter((provider) => !hidden.has(provider.id));
   // Whatever the running mu reported that is neither a subscription listed above nor an entry of models.json:
   // mostly providers whose API key is in the environment. A subscription id reported that way (Claude or Grok with
-  // an API key) is shown on its subscription row. A sign-in no longer offered (ChatGPT through Codex) shows as an
-  // account while it is signed in, never as a provider of its own.
+  // an API key) is shown on its subscription row. A subscription-only sign-in no longer offered (ChatGPT through
+  // Codex) shows as an account while it is signed in, never as a provider of its own; one whose id also takes a key
+  // (Anthropic) is a provider like any other when nobody is signed in to it.
   const builtin = shown.filter(
     (provider) =>
       !own.has(provider.id) &&
       !offered.has(provider.id) &&
-      !LEGACY_PROVIDERS.includes(provider.id as SubscriptionProvider)
+      !(
+        LEGACY_PROVIDERS.includes(provider.id as SubscriptionProvider) &&
+        !KEY_PROVIDERS.includes(provider.id as SubscriptionProvider)
+      )
   );
   const reported = available.providers.map((entry) => entry.id).filter((id) => !saved.has(id));
   // A subscription-only id reported while signed out is a snapshot from before a sign-out: not usable.

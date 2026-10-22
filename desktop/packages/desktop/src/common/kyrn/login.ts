@@ -1,6 +1,7 @@
 /**
- * Signing in to a model provider's subscription (ChatGPT, Claude, Grok, and a Google account through Gemini CLI or
- * Antigravity) with pi's own OAuth flows, from the app. The main process runs the flow in a child process and opens
+ * Signing in to a model provider's subscription (ChatGPT, Grok, and a Google account through Gemini CLI or
+ * Antigravity) with pi's own OAuth flows, from the app. A Claude subscription is no longer offered: Anthropic doesn't
+ * allow other apps to sign in with one (an account signed in before can still be signed out). The main process runs the flow in a child process and opens
  * the browser; the screen polls the state and answers what a flow asks (a code to paste, a choice). No credential
  * ever comes back to the screen.
  */
@@ -32,9 +33,13 @@ export const isGoogleProvider = (provider: SubscriptionProvider | undefined) =>
   provider !== undefined && GOOGLE_PROVIDERS.includes(provider);
 
 /** What every harness can sign in to: pi's own flows. The rest is only offered when the runner says so. */
-export const BUILT_IN_PROVIDERS: readonly SubscriptionProvider[] = ['openai', 'anthropic', 'xai'];
-/** Sign-ins no longer offered: an account signed in with one is shown (and can sign out), never a new one. */
-export const LEGACY_PROVIDERS: readonly SubscriptionProvider[] = ['openai-codex'];
+export const BUILT_IN_PROVIDERS: readonly SubscriptionProvider[] = ['openai', 'xai'];
+/**
+ * Sign-ins no longer offered: an account signed in with one is shown (and can sign out), never a new one. ChatGPT
+ * through the Codex CLI's login, which Sign in with ChatGPT replaces; a Claude subscription, which Anthropic doesn't
+ * allow other apps to sign in with.
+ */
+export const LEGACY_PROVIDERS: readonly SubscriptionProvider[] = ['openai-codex', 'anthropic'];
 /**
  * Subscriptions whose provider id also takes an API key (pi reads OPENAI_API_KEY, ANTHROPIC_API_KEY and XAI_API_KEY):
  * mu can report them as usable while nobody is signed in. The others are usable only signed in.

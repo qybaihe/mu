@@ -383,7 +383,11 @@
     "byKey": "Kullanılabilir (API anahtarı)",
     "byKeyHelp": "Giriş yapılmış bir abonelik yok, ancak mu son bağlantısında bunu kullanılabilir olarak bildirdi; genellikle API anahtarı ortamda olduğu için. Giriş yaparsanız abonelik kullanılır.",
     "otherRunning": "{{name}} için giriş yapılıyor; aynı anda yalnızca bir giriş yapılabilir.",
-    "showRunning": "Göster"
+    "showRunning": "Göster",
+    "legacy": {
+      "openai-codex": "Bu eski giriş, Codex CLI'nin girişinden geçiyor. Çıkış yapın, ardından ChatGPT ile giriş yapın.",
+      "anthropic": "Anthropic, diğer uygulamaların Claude aboneliğiyle giriş yapmasına izin vermiyor; bu yüzden mu artık bunu sunmuyor. Çıkış yapın ve bunun yerine bir Anthropic API anahtarı ekleyin."
+    }
   },
   "endpoints": {
     "openaiCompletions": {
@@ -506,7 +510,7 @@
       "signedIn": {
         "title": "Abonelikle giriş yap",
         "tag": "API anahtarı gerekmez",
-        "description": "ChatGPT, Claude, Grok ve diğer abonelikler"
+        "description": "ChatGPT, Grok ve diğer abonelikler"
       },
       "openai": {
         "title": "OpenAI uyumlu API",

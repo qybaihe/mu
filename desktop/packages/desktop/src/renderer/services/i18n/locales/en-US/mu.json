@@ -383,7 +383,11 @@
     "byKey": "Available (API key)",
     "byKeyHelp": "You're not signed in with a subscription, but mu reported this provider as available the last time it connected, usually because its API key is set in your environment. Signing in switches it to the subscription.",
     "otherRunning": "{{name}} sign-in is in progress. Only one sign-in can run at a time.",
-    "showRunning": "Show"
+    "showRunning": "Show",
+    "legacy": {
+      "openai-codex": "This older sign-in goes through the Codex CLI's login. Sign out, then sign in with ChatGPT.",
+      "anthropic": "Anthropic doesn't allow other apps to sign in with a Claude subscription, so mu no longer offers it. Sign out and add an Anthropic API key instead."
+    }
   },
   "endpoints": {
     "openaiCompletions": {
@@ -506,7 +510,7 @@
       "signedIn": {
         "title": "Sign in with a subscription",
         "tag": "No API key needed",
-        "description": "ChatGPT, Claude, Grok and other subscriptions"
+        "description": "ChatGPT, Grok and other subscriptions"
       },
       "openai": {
         "title": "OpenAI-compatible API",
