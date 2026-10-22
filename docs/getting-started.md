@@ -44,7 +44,7 @@ Inside a session, `/status` shows the judge, each decision point's mode and the 
 
 ## The judge
 
-mu asks a small, fast judge model the routine questions that come up in a session. You don't have to set one up: the default is Jev, TypeSafe's hosted judge model, and without a key the free Jev on OpenCode Zen answers. mu reminds you of this once a day. To use your own key, a local judge or another model, see [Judges](judges.md).
+mu asks a small, fast judge model the routine questions that come up in a session. You don't have to set one up: the default is Jev, TypeSafe's hosted judge model. Without a key, the free Jev on OpenCode Zen answers, and mu reminds you of this once a day. To use your own key, a local judge or another model, see [Judges](judges.md).
 
 ## Decisions and their modes
 

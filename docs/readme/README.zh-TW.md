@@ -31,7 +31,7 @@
 
 - **mu**：命令列。pi 的全部能力，加上判定核心。
 - **mu 桌面版**：內建 mu 和執行環境的桌面應用程式。下載，接上一個模型，開始。
-- **判定器**：預設的判定模型是 Jev，由 TypeSafe 託管。是非題、選擇題、評分題，每個答案帶機率，每一次判定都記進判定帳本。任何判定模型都可以取代它：本機的 Laya、你自己的 System One 服務，或任何一個大模型。
+- **判定器**：預設的判定模型是 Jev，由 TypeSafe 託管。是非題、選擇題、評分題，每個答案帶機率，每一次判定都記進判定帳本。任何判定模型都可以取代它：本機的 Laya（審批除外）、你自己的 System One 服務，或任何一個大模型。
 
 > 還在早期開發。預發布版（0.1.x）在 npm 和 [Releases](https://github.com/qybaihe/mu/releases) 上，作者每天都在用。名稱、設定和格式都可能改變。
 
@@ -245,7 +245,7 @@ mu                  # 在目前目錄開一個工作階段
   </picture>
 </p>
 
-底部的一條列讓核心一直在視線裡：哪個判定器在回答、跑在哪裡，啟用了多少個判定點；在對話裡，還有到目前為止的判定數、最近一次判定的耗時和上下文用量。權限模式和目標在傳送框裡；`⌘K` 開啟命令面板。模型登入在應用程式內完成：ChatGPT、Claude、Grok 和 Google（Gemini CLI / Antigravity）訂閱，或任何 pi 支援的供應商的 API 金鑰。Claude Code 和 Codex CLI 的對話可以匯入並接著聊。
+底部的一條列讓核心一直在視線裡：哪個判定器在回答、跑在哪裡，啟用了多少個判定點；在對話裡，還有到目前為止的判定數、最近一次判定的耗時和上下文用量。權限模式和目標在傳送框裡；`⌘K` 開啟命令面板。模型登入在應用程式內完成：ChatGPT、Claude、Grok 和 Google（Gemini CLI / Antigravity）訂閱，或任何 pi 支援的供應商的 API 金鑰。Claude Code、Codex CLI 和 ZCode 的對話可以匯入並接著聊。
 
 macOS（Apple 晶片 / Intel）、Windows（x64 / Arm）、Linux（x64 / Arm）的安裝檔由 GitHub Actions 建置，發布在 [Releases](https://github.com/qybaihe/mu/releases)。
 
