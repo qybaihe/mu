@@ -148,7 +148,12 @@ describe("an unattended run (mu --print, json mode)", () => {
 	async function start(
 		mode: Mode,
 		responder: MockResponder,
-		setup: { features?: Record<string, unknown>; runner?: SwarmRunner; lessons?: string } = {},
+		setup: {
+			features?: Record<string, unknown>;
+			modes?: Record<string, string>;
+			runner?: SwarmRunner;
+			lessons?: string;
+		} = {},
 	) {
 		const provider = new MockJudgeProvider(responder);
 		const skills = temp();
@@ -172,6 +177,7 @@ describe("an unattended run (mu --print, json mode)", () => {
 					provider,
 					mode: "active",
 					config: parseConfig({
+						modes: setup.modes,
 						features: {
 							procedures: { path: temp() },
 							memory: { path: setup.lessons ?? join(temp(), "lessons.jsonl") },
@@ -241,20 +247,17 @@ describe("an unattended run (mu --print, json mode)", () => {
 			const tools = declared(seen.first ?? []);
 			for (const name of [...LEFT_OUT, ...KEPT]) expect(tools, `${mode}: ${name}`).toContain(name);
 			expect(JSON.stringify(seen.first)).toContain("mu-browser");
-			// turn.drift only records by default, and still asks.
+			// turn.drift only records by default, and still asks. capability.disclosure is off by default in any run.
 			await vi.waitFor(() =>
-				expect([...asked(provider.calls)].sort()).toEqual([
-					"capability.disclosure",
-					"input.preflight",
-					"skill.capture",
-					"turn.drift",
-				]),
+				expect([...asked(provider.calls)].sort()).toEqual(["input.preflight", "skill.capture", "turn.drift"]),
 			);
 		}
 	});
 
 	it("turns each part back on with its option", async () => {
 		const { harness, provider } = await start("print", answers, {
+			// askUnattended matters only with the decision on, and it is off out of the box.
+			modes: { "capability.disclosure": "active" },
 			features: {
 				preflight: { unattended: true },
 				catalog: { askUnattended: true, unattendedHidden: ["browse"] },

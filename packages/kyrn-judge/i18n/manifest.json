@@ -295,18 +295,18 @@
 			"fa-IR": "نمایش گزینشی توانمندی‌ها"
 		},
 		"decisions[id=capability.disclosure].summary": {
-			"en": "Packs and MCP servers stay installed but hidden until a task needs them; their processes start only then.",
-			"zh-TW": "能力包和 MCP 伺服器已經裝好但預設隱藏，任務需要時才開啟，對應的程序也到那時才啟動。",
-			"ja-JP": "ケイパビリティパックや MCP サーバーはインストールされていても非表示にしておき、タスクで必要になったときだけ開きます。プロセスもそのときに起動します。",
-			"ko-KR": "기능 확장 팩과 MCP 서버는 설치해 두되 숨겨 두었다가 작업에 필요할 때만 엽니다. 해당 프로세스도 그때 시작됩니다.",
-			"de-DE": "Fähigkeitspakete und MCP-Server sind installiert, aber verborgen und werden erst geöffnet, wenn eine Aufgabe sie braucht; erst dann starten ihre Prozesse.",
-			"fr-FR": "Les packs et les serveurs MCP sont installés mais masqués, et ne s’ouvrent que lorsqu’une tâche en a besoin ; leurs processus démarrent à ce moment-là.",
-			"es-ES": "Los paquetes y los servidores MCP están instalados pero ocultos, y solo se abren cuando una tarea los necesita; es entonces cuando se inician sus procesos.",
-			"pt-BR": "Pacotes e servidores MCP ficam instalados, mas ocultos, e só são ativados quando uma tarefa precisa deles; é aí que os processos deles iniciam.",
-			"ru-RU": "Пакеты и MCP-серверы установлены, но скрыты и подключаются, только когда они нужны задаче; тогда же запускаются их процессы.",
-			"uk-UA": "Пакети й MCP-сервери встановлені, але приховані й відкриваються лише тоді, коли потрібні завданню; тоді ж запускаються їхні процеси.",
-			"tr-TR": "Paketler ve MCP sunucuları kuruludur ama gizli kalır; yalnızca bir görev gerektirdiğinde açılır ve süreçleri de ancak o zaman başlar.",
-			"fa-IR": "بسته‌های توانمندی و سرورهای MCP نصب‌اند اما پنهان می‌مانند و فقط وقتی وظیفه‌ای به آن‌ها نیاز دارد باز می‌شوند؛ فرایندهایشان هم همان موقع شروع می‌شود."
+			"en": "Packs and MCP servers stay installed but hidden until a task needs them; their processes start only then. Off by default: they stay hidden all the same, and the model opens what it needs with find_capability. Asked on every message, the judge opened none in practice.",
+			"zh-TW": "能力包和 MCP 伺服器已經裝好但預設隱藏，任務需要時才開啟，對應的程序也到那時才啟動。預設關閉：能力照樣隱藏，模型用 find_capability 自己開啟需要的；每則訊息都問一次判定器，實際用下來它一個也沒開啟過。",
+			"ja-JP": "ケイパビリティパックや MCP サーバーはインストールされていても非表示にしておき、タスクで必要になったときだけ開きます。プロセスもそのときに起動します。既定ではオフです。ケイパビリティは非表示のままで、必要なものはモデルが find_capability で開きます。メッセージごとに問い合わせていた判定器は、実際には一度も何も開きませんでした。",
+			"ko-KR": "기능 확장 팩과 MCP 서버는 설치해 두되 숨겨 두었다가 작업에 필요할 때만 엽니다. 해당 프로세스도 그때 시작됩니다. 기본값은 꺼짐입니다. 기능 확장은 숨겨진 채로 두고, 필요한 것은 모델이 find_capability로 엽니다. 메시지마다 묻던 판정기는 실제로 하나도 열지 않았습니다.",
+			"de-DE": "Fähigkeitspakete und MCP-Server sind installiert, aber verborgen und werden erst geöffnet, wenn eine Aufgabe sie braucht; erst dann starten ihre Prozesse. Standardmäßig aus: Sie bleiben trotzdem verborgen, und das Modell öffnet mit find_capability, was es braucht. Bei jeder Nachricht gefragt, hat der Judge in der Praxis keines geöffnet.",
+			"fr-FR": "Les packs et les serveurs MCP sont installés mais masqués, et ne s’ouvrent que lorsqu’une tâche en a besoin ; leurs processus démarrent à ce moment-là. Désactivé par défaut : ils restent masqués malgré tout, et le modèle ouvre ce dont il a besoin avec find_capability. Consulté à chaque message, le juge n’en a en pratique ouvert aucun.",
+			"es-ES": "Los paquetes y los servidores MCP están instalados pero ocultos, y solo se abren cuando una tarea los necesita; es entonces cuando se inician sus procesos. Desactivado de forma predeterminada: siguen ocultos igualmente, y el modelo abre lo que necesita con find_capability. Consultado en cada mensaje, el juez no abrió ninguno en la práctica.",
+			"pt-BR": "Pacotes e servidores MCP ficam instalados, mas ocultos, e só são ativados quando uma tarefa precisa deles; é aí que os processos deles iniciam. Desativado por padrão: eles continuam ocultos do mesmo jeito, e o modelo ativa o que precisa com find_capability. Consultado a cada mensagem, o juiz não ativou nenhum na prática.",
+			"ru-RU": "Пакеты и MCP-серверы установлены, но скрыты и подключаются, только когда они нужны задаче; тогда же запускаются их процессы. По умолчанию выключено: они всё равно остаются скрытыми, а модель подключает нужное через find_capability. Судья, которого спрашивали на каждое сообщение, на практике ничего не подключил.",
+			"uk-UA": "Пакети й MCP-сервери встановлені, але приховані й відкриваються лише тоді, коли потрібні завданню; тоді ж запускаються їхні процеси. Типово вимкнено: вони все одно лишаються прихованими, а модель відкриває потрібне через find_capability. Суддя, якого питали на кожне повідомлення, на практиці нічого не відкрив.",
+			"tr-TR": "Paketler ve MCP sunucuları kuruludur ama gizli kalır; yalnızca bir görev gerektirdiğinde açılır ve süreçleri de ancak o zaman başlar. Varsayılan olarak kapalı: yine de gizli kalırlar ve model ihtiyaç duyduğunu find_capability ile açar. Her mesajda sorulan hakem pratikte hiçbirini açmadı.",
+			"fa-IR": "بسته‌های توانمندی و سرورهای MCP نصب‌اند اما پنهان می‌مانند و فقط وقتی وظیفه‌ای به آن‌ها نیاز دارد باز می‌شوند؛ فرایندهایشان هم همان موقع شروع می‌شود. به‌طور پیش‌فرض خاموش است: باز هم پنهان می‌مانند و مدل هرچه لازم دارد را با find_capability باز می‌کند. داوری که برای هر پیام پرسیده می‌شد، در عمل هیچ‌کدام را باز نکرد."
 		},
 		"decisions[id=tool.admission].title": {
 			"en": "Tool output admission",

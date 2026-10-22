@@ -23,18 +23,30 @@ export function disclosing(...fragments: string[]): MockResponder {
 		);
 }
 
-/** A session with the catalog and the packs, and nothing else that would ask the judge. */
+/**
+ * A session with the catalog and the packs, and nothing else that would ask the judge. `mode` is also capability
+ * disclosure's own, which is off out of the box: these tests open packs by the judge's verdict.
+ */
 export async function startPacks(
 	harnesses: Harness[],
-	options: { responder?: MockResponder; mode?: DecisionMode; packs?: Record<string, unknown> } = {},
+	options: {
+		responder?: MockResponder;
+		mode?: DecisionMode;
+		packs?: Record<string, unknown>;
+		features?: Record<string, unknown>;
+	} = {},
 ): Promise<{ harness: Harness; provider: MockJudgeProvider }> {
 	const provider = new MockJudgeProvider(options.responder ?? disclosing());
+	const mode = options.mode ?? "active";
 	const harness = await createHarness({
 		extensionFactories: [
 			createKyrnJudgeExtension({
 				provider,
-				mode: options.mode ?? "active",
-				config: parseConfig({ features: attended({ memory: false, packs: options.packs ?? {} }) }),
+				mode,
+				config: parseConfig({
+					modes: { "capability.disclosure": mode },
+					features: attended({ memory: false, packs: options.packs ?? {}, ...options.features }),
+				}),
 				// Preflight is what counts user turns.
 				only: ["preflight", "catalog", "packs"],
 			}),

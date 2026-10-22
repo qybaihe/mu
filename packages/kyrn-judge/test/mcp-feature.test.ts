@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AgentTool } from "@earendil-works/pi-agent-core";
-import { fauxAssistantMessage, fauxToolCall } from "@earendil-works/pi-ai";
+import { fauxAssistantMessage, fauxToolCall, type Message } from "@earendil-works/pi-ai";
 import { createMcpExtension, type ExtensionUIContext, loadMcpConfig } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -96,6 +96,8 @@ async function start(options: {
 				provider: new MockJudgeProvider(options.responder ?? (() => ({}))),
 				mode: options.mode ?? "active",
 				config: parseConfig({
+					// Capability disclosure is off out of the box; these tests open servers by its verdict too.
+					modes: { "capability.disclosure": options.mode ?? "active" },
 					features: { memory: false, ...options.features },
 					mcp: options.servers ? { servers: options.servers } : undefined,
 				}),
@@ -334,17 +336,63 @@ describe("MCP servers in the capability catalog", () => {
 		expect(JSON.stringify([results, events])).not.toContain(SECRET);
 	});
 
-	it("starts a pinned server with the session, and every server when nothing is hidden", async () => {
+	it("names the installed servers in find_capability's description from the first request, and keeps it", async () => {
+		/** Every declaration of find_capability in a request, with its description. */
+		const declarations = (messages: readonly Message[]) =>
+			messages
+				.flatMap((message) => (message.role === "system" ? (message.toolsAdded ?? []) : []))
+				.filter((tool) => tool.name === "find_capability")
+				.map((tool) => tool.description);
+		const requests: (readonly Message[])[] = [];
+		const seen = (reply: ReturnType<typeof fauxAssistantMessage>) => (context: { messages: Message[] }) => {
+			requests.push(context.messages);
+			return reply;
+		};
+
+		// Disclosure off, as by default: nothing tells the model about the server but this description.
+		const { harness } = await start({ servers: { linear: fake() }, mode: "off" });
+		harness.setResponses([
+			seen(
+				fauxAssistantMessage([fauxToolCall("find_capability", { open: "mcp:linear" })], { stopReason: "toolUse" }),
+			),
+			seen(fauxAssistantMessage("Opened.")),
+			seen(fauxAssistantMessage("Here they are.")),
+		]);
+		await harness.session.prompt("Check my open issues.");
+		const [first] = declarations(requests[0]);
+		expect(first).toContain("Installed: mcp:linear (MCP server).");
+		// Opening the server adds its tools; find_capability is declared once, and as it was.
+		await harness.session.prompt("And the closed ones?");
+		expect(mcpTools(harness)).toContain("mcp__linear__echo");
+		expect(declarations(requests[requests.length - 1])).toEqual([first]);
+
+		requests.length = 0;
+		const none = await start({ mode: "off" });
+		none.harness.setResponses([seen(fauxAssistantMessage("hi"))]);
+		await none.harness.session.prompt("Hello.");
+		const [plain] = declarations(requests[0]);
+		expect(plain).not.toContain("Installed:");
+		expect(first.startsWith(`${plain} `)).toBe(true);
+	});
+
+	it("starts a pinned server with the session, and every server when the catalog hides nothing", async () => {
 		const pinned = await start({ servers: { pinned: { ...fake(), exposure: "always" }, other: fake() } });
 		pinned.harness.setResponses([fauxAssistantMessage("hi")]);
 		await pinned.harness.session.prompt("Hello.");
 		expect(mcpTools(pinned.harness)).toContain("mcp__pinned__echo");
 		expect(mcpTools(pinned.harness)).not.toContain("mcp__other__echo");
 
-		const open = await start({ servers: { one: fake(), two: fake() }, mode: "off" });
+		const open = await start({ servers: { one: fake(), two: fake() }, features: { catalog: false } });
 		open.harness.setResponses([fauxAssistantMessage("hi")]);
 		await open.harness.session.prompt("Hello.");
 		expect(mcpTools(open.harness)).toEqual(expect.arrayContaining(["mcp__one__echo", "mcp__two__echo"]));
+
+		// With the decision off nobody is asked, and the servers stay hidden as when the judge says no.
+		const off = await start({ servers: { one: fake() }, mode: "off", responder: disclose(yes) });
+		off.harness.setResponses([fauxAssistantMessage("hi")]);
+		await off.harness.session.prompt("Echo.");
+		expect(mcpTools(off.harness)).toEqual([]);
+		expect(active(off.harness)).toContain("find_capability");
 
 		const shadow = await start({ servers: { one: fake() }, mode: "shadow", responder: disclose(yes) });
 		shadow.harness.setResponses([fauxAssistantMessage("hi")]);

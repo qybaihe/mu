@@ -10,7 +10,7 @@ Each point has a mode:
 - `shadow`: Asked and logged, but changes nothing. Use it to see how well the judge does before relying on it.
 - `off`: Not asked; this decision point is off.
 
-The built-in default is `"modes": { "default": "active" }`. `context.compact` and `output.drift` belong to features that are off by default, so they don't run until you turn those features on. Out of the box, `input.interjection`, `notify.routing` and `turn.drift` are in `shadow` and `swarm.patch` is `off`. So 34 of the 40 points act on their verdicts from the start. Set `"default": "shadow"`, or a point's own mode, in `~/.mu/agent/mu.json` to only record verdicts; the desktop app's settings switch a point on or off; `/mu mode <point|default> <off|shadow|active>` switches one for the current session. See [Configuration](../configuration.md).
+The built-in default is `"modes": { "default": "active" }`. `context.compact` and `output.drift` belong to features that are off by default, so they don't run until you turn those features on. Out of the box, `input.interjection`, `notify.routing` and `turn.drift` are in `shadow` and `capability.disclosure` and `swarm.patch` are `off`. So 33 of the 40 points act on their verdicts from the start. Set `"default": "shadow"`, or a point's own mode, in `~/.mu/agent/mu.json` to only record verdicts; the desktop app's settings switch a point on or off; `/mu mode <point|default> <off|shadow|active>` switches one for the current session. See [Configuration](../configuration.md).
 
 The feature column names the switch in `features` that turns the whole behavior off; its options are in [Features](features.md).
 
@@ -27,7 +27,7 @@ The feature column names the switch in `features` that turns the whole behavior 
 | Decision point | Name | What it decides | Feature |
 | --- | --- | --- | --- |
 | `skills.disclosure` | Skill disclosure | Only skills relevant to the task go into the prompt; the rest stay hidden but findable. | [`skills`](features.md#skills) |
-| `capability.disclosure` | Capability disclosure | Packs and MCP servers stay installed but hidden until a task needs them; their processes start only then. | [`catalog`](features.md#catalog) |
+| `capability.disclosure` | Capability disclosure | Packs and MCP servers stay installed but hidden until a task needs them; their processes start only then. Off by default: they stay hidden all the same, and the model opens what it needs with find_capability. Asked on every message, the judge opened none in practice. | [`catalog`](features.md#catalog) |
 | `tool.admission` | Tool output admission | Judges long tool output in chunks; only what matters enters the context, and the rest is archived behind a pointer. | [`admission`](features.md#admission) |
 | `tool.admission.test-log` | Test log trimming | Keeps one copy of exact repeats in test output; optionally, the judge picks what's needed from the rest. | [`admission`](features.md#admission) |
 | `context.forget` | Forgetting stale results | When context use crosses a threshold, replaces stale tool results with one-line placeholders in outgoing requests. | [`forgetting`](features.md#forgetting) |

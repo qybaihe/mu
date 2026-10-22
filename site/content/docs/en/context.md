@@ -40,7 +40,7 @@ Off by default. When a conversation is compacted, the judge keeps or prunes pass
 Install a lot, show little:
 
 - **Skills.** Only the descriptions of skills that relate to the task go into the prompt. The others stay findable. With fewer than four skills, nothing is filtered.
-- **Packs and MCP servers.** They are installed but hidden: a server's process doesn't start and its tools aren't shown until the judge finds the task needs it, or the model asks for it. Tool lists are cached, so the judge knows what a server offers before it has ever run. `"exposure": "always"` under `mcp.servers` in `mu.json` keeps one open.
+- **Packs and MCP servers.** They are installed but hidden: a server's process doesn't start and its tools aren't shown until the model asks for it with `find_capability`, or you open it with `/capabilities open`. With `capability.disclosure` turned on (it is off by default), the judge also opens what it finds a task needs. Tool lists are cached, so the judge knows what a server offers before it has ever run. `"exposure": "always"` under `mcp.servers` in `mu.json` keeps one open.
 
 The packs that ship with mu: ast-grep structural search and rewrite, GitHub through `gh`, `/commit`, `/review`, conflict resolution and a debugger (debugpy, delve, lldb-dap). Each needs its program installed and gives an install hint when it is missing.
 

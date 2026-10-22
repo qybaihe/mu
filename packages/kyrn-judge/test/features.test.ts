@@ -469,6 +469,8 @@ describe("kyrn features", () => {
 						mode: "active",
 						only: ["preflight", "skills", "catalog", "memory"],
 						config: parseConfig({
+							// Off out of the box: on here, so the user's turn has a capability verdict to keep.
+							modes: { "capability.disclosure": "active" },
 							features: attended({
 								skills: { minSkills: 1 },
 								memory: { path, applied: false, outcome: false },
@@ -666,7 +668,11 @@ describe("kyrn features", () => {
 					provider,
 					mode: "active",
 					only: ["preflight", "skills", "catalog"],
-					config: parseConfig({ features: attended({ skills: { minSkills: 1 } }) }),
+					// Capability disclosure is off out of the box: on here, as the third question at the turn's start.
+					config: parseConfig({
+						modes: { "capability.disclosure": "active" },
+						features: attended({ skills: { minSkills: 1 } }),
+					}),
 					capabilities: [
 						{
 							id: "pack:debugger",

@@ -7,10 +7,10 @@
 每个能力包是能力目录里的一项 `pack:<名字>`，`exposure: "judged"`：
 
 - 装在 mu 里，但工具**不注册**，模型看不到，也不占上下文。
-- 判定器读用户这条消息，确信任务需要时（`capability.disclosure`）才打开；模型也能用 `find_capability` 自己要，用户能用 `/capabilities` 手动开。
+- 模型用 `find_capability` 自己要，用户用 `/capabilities` 手动开。`capability.disclosure` 打开（默认关闭）时，判定器也读用户这条消息，确信任务需要时替模型打开。
 - 打开的那一刻才去找外部程序（`ast-grep`、`git`、`gh`）。找不到就给出这个平台的安装提示，包保持关闭；启动时从不报错。Mac 上的 git 先查一遍是不是没装开发者工具的系统桩、有没有被 Xcode 许可拦住（见 checkpoints.md），是的话一次也不运行。
 - 用户的命令（`/commit`、`/review`）一直都在，自己打开需要的包。
-- 判定关闭、或目录功能关闭时，什么都不藏：所有能用的包在会话开始时就打开。
+- 目录功能关闭（`features.catalog: false`）时什么都不藏：所有能用的包在会话开始时就打开。判定关闭（默认）时照样都藏着，只是不问判定器。
 
 代码：`src/extension/features/packs.ts`（登记与打开），`src/extension/features/packs/*.ts`（各包），`src/packs/*.ts`（与 pi 无关的纯逻辑：进程、git、diff、冲突）。设置：`features.packs.*`，桌面端设置页由清单自动生成。
 

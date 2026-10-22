@@ -43,7 +43,7 @@ const helpZh = () => `mu ${VERSIONS.mu} · 先判断再动手的编程代理，�
     /board 查看，/board model 换个模型来讲
   /permissions [模式]：mu 不问你就能做多少事，可选 full（完全访问）、judge（判定模式，由判定器替你批，
     拿不准才问你）、ask（最小权限，除了读都要问你）
-  /capabilities：装了哪些能力，判定器为这次任务打开了哪些
+  /capabilities：装了哪些能力，这次打开了哪些；/capabilities open <ID> 打开一个
   /ledger [条数]：最近几条判定和用时
   /remember <经验>：记一条经验，以后的会话都会用上
   /lessons [all]：这个项目的经验，召回和照做了几次；all 连到处适用的和已退役的一起列
@@ -125,7 +125,7 @@ const helpSectionsEn = (): HelpSection[] => [
 				"/permissions [mode]",
 				"set how much mu can do without asking: full (Full access), judge (Judge mode: the judge allows what the task clearly needs and asks you about the rest), ask (Ask first: asks before anything but reading)",
 			],
-			["/capabilities", "show what's installed and what the judge turned on for this task"],
+			["/capabilities", "show what's installed and what's open for this task; /capabilities open <id> opens one"],
 			["/ledger [n]", "show the last n verdicts and their latency"],
 			["/remember <lesson>", "save a lesson for future sessions"],
 			[
