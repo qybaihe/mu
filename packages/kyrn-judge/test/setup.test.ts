@@ -792,7 +792,7 @@ describe("mu setup, asking in a terminal", () => {
 		// Subscription; judge: not now (Jev, free Jev or nothing: there is no model to judge with); no session.
 		const run = await wizard({ answers: ["3", "3", "n"] });
 		expect(run.code).toBe(SETUP_EXIT.done);
-		expect(run.printed).toContain("start mu, type /login");
+		expect(run.printed).toContain("When setup starts mu, /login is already open.");
 		expect(run.said).toContain("Next, sign in with /login in mu.");
 		expect(run.calls).toEqual([]);
 		expect(run.read("auth.json")).toBeUndefined();
