@@ -176,7 +176,12 @@ export function registerPreflight(runtime: KyrnRuntime): void {
 		hints: true,
 		/** Show the wait and the verdict in the terminal UI. */
 		show: true,
-		waitMs: 4000,
+		/**
+		 * Every wait before a turn ends by this much after the message arrived (`catalog`, `skills` and `memory` have
+		 * the same; the frame 3 s). In 67 judged messages from the owner's network none answered between 3 and 4 s: past
+		 * 3 s the answer came after 4.3 s or not at all, so the fourth second was always waited for nothing.
+		 */
+		waitMs: 3000,
 		/**
 		 * Ask in a `mu --print` or json run too. Off by default: there the verdict buys a hint that is rarely
 		 * followed, for judge tokens and up to `waitMs` before every prompt.

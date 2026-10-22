@@ -176,6 +176,29 @@ describe("tool output admission", () => {
 		release();
 	});
 
+	it("holds a result at most 2 s by default for a verdict that has not come", async () => {
+		let release: () => void = () => {};
+		const held = new Promise<void>((resolve) => {
+			release = resolve;
+		});
+		const slow = new MockJudgeProvider(async (request) => {
+			// Only the chunk verdicts hang; the check at the end of the run answers at once.
+			if (Object.keys(request.questions).some((id) => id === "kind" || /^k\d+$/.test(id))) await held;
+			return {};
+		});
+		const startedAt = Date.now();
+		try {
+			const harness = await run("active", slow);
+			const waited = Date.now() - startedAt;
+			expect(toolResultText(harness)).toBe(output);
+			expect(admissionCalls(slow)).toHaveLength(1);
+			expect(waited).toBeGreaterThanOrEqual(1900);
+			expect(waited).toBeLessThan(2900);
+		} finally {
+			release();
+		}
+	});
+
 	it("changes nothing in shadow mode", async () => {
 		const harness = await run("shadow");
 		expect(toolResultText(harness)).toBe(output);

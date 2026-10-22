@@ -1671,7 +1671,7 @@
 				{
 					"key": "waitMs",
 					"kind": "number",
-					"default": 4000,
+					"default": 3000,
 					"min": 500,
 					"max": 30000,
 					"unit": {
@@ -1705,19 +1705,8 @@
 						"fa-IR": "حداکثر انتظار"
 					},
 					"help": {
-						"zh": "超时就不等了，按原样开始。",
-						"en": "After this, the turn starts without the verdict.",
-						"zh-TW": "超過這個時間，這一輪就不等判定結果，直接開始。",
-						"ja-JP": "これを過ぎると、判定を待たずにターンを始めます。",
-						"ko-KR": "이 시간이 지나면 판정 없이 턴을 시작합니다.",
-						"de-DE": "Danach beginnt die Runde ohne das Urteil.",
-						"fr-FR": "Au-delà, le tour démarre sans le jugement.",
-						"es-ES": "Pasado este tiempo, el turno empieza sin el veredicto.",
-						"pt-BR": "Depois disso, o turno começa sem o veredito.",
-						"ru-RU": "После этого ход начинается без решения.",
-						"uk-UA": "Після цього хід починається без рішення.",
-						"tr-TR": "Bu süreden sonra tur, karar beklenmeden başlar.",
-						"fa-IR": "پس از این مدت، نوبت بدون نتیجهٔ داوری شروع می‌شود."
+						"zh": "超时就不等了，按原样开始。从消息到达算起；技能、能力和经验的判定同时在问，各自的等待也从这时算起。",
+						"en": "After this, the turn starts without the verdict. Counted from when the message arrives, like the waits of the skill, capability and lesson questions, which are asked alongside."
 					}
 				},
 				{
@@ -1889,7 +1878,7 @@
 				{
 					"key": "waitMs",
 					"kind": "number",
-					"default": 4000,
+					"default": 3000,
 					"min": 500,
 					"max": 30000,
 					"unit": {
@@ -1992,6 +1981,19 @@
 						"tr-TR": "Alt ajan, bu oturumun gizlediği becerileri gizler ve hakeme yeniden sormaz. Bu oturum henüz karar vermemişse alt ajan eskisi gibi kendisi sorar.",
 						"fa-IR": "عامل فرعی همان مهارت‌هایی را پنهان می‌کند که این نشست پنهان کرده و دوباره از داور نمی‌پرسد. تا وقتی این نشست هنوز تصمیمش را نگرفته، عامل فرعی مثل قبل خودش می‌پرسد."
 					}
+				},
+				{
+					"key": "askEarly",
+					"kind": "boolean",
+					"default": true,
+					"label": {
+						"zh": "消息一到就问",
+						"en": "Ask as soon as the message arrives"
+					},
+					"help": {
+						"zh": "和预判同时问，不等预判问完，回合开始前不用接连等两个判定。关掉则等预判之后再问。",
+						"en": "Asked alongside preflight, so the turn doesn't wait for two verdicts in a row. Off: asked once preflight is done."
+					}
 				}
 			]
 		},
@@ -2032,7 +2034,7 @@
 				{
 					"key": "waitMs",
 					"kind": "number",
-					"default": 4000,
+					"default": 3000,
 					"min": 500,
 					"max": 30000,
 					"unit": {
@@ -2474,7 +2476,7 @@
 				{
 					"key": "waitMs",
 					"kind": "number",
-					"default": 4000,
+					"default": 3000,
 					"min": 0,
 					"max": 30000,
 					"unit": {
@@ -3681,7 +3683,7 @@
 				{
 					"key": "waitMs",
 					"kind": "number",
-					"default": 4000,
+					"default": 2000,
 					"min": 500,
 					"max": 30000,
 					"unit": {
