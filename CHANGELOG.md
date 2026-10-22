@@ -16,6 +16,7 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ### Fixed
 
+- **The judge reads a long flagged command as you are asked to confirm it**: up to 1,500 characters whole, past that its start and every flagged part with the text around it. Whole scripts up to 8,000 characters (0.1.11) read worse: amid hundreds of harmless lines the judge lost what you had and had not asked for.
 - **A flagged script keeps its line breaks for the judge and in the confirmation.** They were run into one line, which in a script joins separate commands into one: `echo done` and an `rm -rf build` on the next line read as a single echo. Runs of spaces still collapse.
 
 ## [0.1.11] - 2026-10-22
