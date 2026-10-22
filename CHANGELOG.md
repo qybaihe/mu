@@ -6,6 +6,8 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ## [Unreleased]
 
+## [0.1.10] - 2026-10-22
+
 ### Added
 
 - **Import ZCode conversations**, alongside Claude Code and Codex: `mu import --list`, `/import-chat` and the desktop app find them in ZCode's database (`~/.zcode/cli/db/db.sqlite`), with their rewinds, compactions, subagent threads and forks.
