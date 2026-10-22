@@ -762,6 +762,17 @@ export const SETUP_DECLINED_FILE = "setup-declined";
 /** How `mu setup` says: set up, and start a session now. */
 export const SETUP_EXIT_START = 3;
 
+/** How `mu setup` says: a subscription was chosen, so start a session that opens on /login. */
+export const SETUP_EXIT_SIGN_IN = 4;
+
+/**
+ * What the session is started with after the wizard ended with `code`: /login after a subscription was chosen, unless
+ * the command line already says what to do.
+ */
+export function afterSetup(code, argv) {
+	return code === SETUP_EXIT_SIGN_IN && argv.length === 0 ? ["/login"] : argv;
+}
+
 /** How `mu setup` says it was cancelled (ctrl+c): a first start then goes no further. */
 export const SETUP_EXIT_CANCELLED = 130;
 
@@ -1507,8 +1518,8 @@ export async function main(argv = process.argv.slice(2)) {
 		if (plan.keyGiven) process.title = "mu setup";
 		mkdirSync(plan.agentDir, { recursive: true });
 		const code = await handOver(plan);
-		if (code !== SETUP_EXIT_START) return code;
-		sessionArgv = [];
+		if (code !== SETUP_EXIT_START && code !== SETUP_EXIT_SIGN_IN) return code;
+		sessionArgv = afterSetup(code, []);
 	}
 	if (command === "doctor") {
 		const link = linkPath({ platform, env, home });
@@ -1600,7 +1611,9 @@ export async function main(argv = process.argv.slice(2)) {
 		if (!setup.error) {
 			mkdirSync(setup.agentDir, { recursive: true });
 			// Whatever the wizard ends with, the session follows (pi says itself when there is no model), unless it was cancelled.
-			if ((await handOver(setup)) === SETUP_EXIT_CANCELLED) return SETUP_EXIT_CANCELLED;
+			const code = await handOver(setup);
+			if (code === SETUP_EXIT_CANCELLED) return SETUP_EXIT_CANCELLED;
+			sessionArgv = afterSetup(code, sessionArgv);
 		}
 	}
 

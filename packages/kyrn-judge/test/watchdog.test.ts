@@ -1,9 +1,13 @@
 import { fauxAssistantMessage, fauxText, fauxThinking } from "@earendil-works/pi-ai";
-import { afterEach, describe, expect, it } from "vitest";
+import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import { parseConfig } from "../src/config.ts";
-import { WATCHDOG_MESSAGE } from "../src/extension/features/watchdog.ts";
+import { registerDeadline } from "../src/extension/features/deadline.ts";
+import { cutAfterMs, registerWatchdog, WATCHDOG_MESSAGE } from "../src/extension/features/watchdog.ts";
 import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
+import { KyrnRuntime } from "../src/extension/runtime.ts";
+import { Judge } from "../src/judge.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
 
 /** About 1.5 seconds of thinking at the speed below: well past the watchdog's limit in these tests. */
@@ -64,5 +68,77 @@ describe("the long-thinking watchdog", () => {
 		await harness.session.prompt("Explain the parser.");
 		expect(harness.faux.state.callCount).toBe(1);
 		expect(retries(harness)).toEqual([]);
+	});
+});
+
+describe("when the watchdog cuts", () => {
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.restoreAllMocks();
+	});
+
+	it("waits thinkingMs without a deadline, and at most half the time left with one, never under a minute", () => {
+		// No deadline: exactly as before.
+		expect(cutAfterMs(600_000, undefined)).toBe(600_000);
+		// Plenty of time left: the deadline changes nothing.
+		expect(cutAfterMs(600_000, 3_600_000)).toBe(600_000);
+		expect(cutAfterMs(600_000, 1_200_000)).toBe(600_000);
+		// Terminal-Bench, adaptive-rejection-sampler: thinking began 283 s into 900 s. Cut 308.5 s later, at 591.5 s,
+		// with 308.5 s left for the retry, instead of at 883 s.
+		expect(cutAfterMs(600_000, 617_000)).toBe(308_500);
+		expect(cutAfterMs(600_000, 90_000)).toBe(60_000);
+		expect(cutAfterMs(600_000, -30_000)).toBe(60_000);
+		// A shorter thinkingMs is never lengthened.
+		expect(cutAfterMs(300, 10_000)).toBe(300);
+	});
+
+	/**
+	 * How long after it started a reply that only thinks is cut, with the run's deadline this far off when it starts.
+	 * "env" leaves the deadline to the deadline feature.
+	 */
+	async function cutAfter(deadlineInMs: number | undefined | "env"): Promise<number | undefined> {
+		vi.useFakeTimers();
+		const handlers = new Map<string, ((event: unknown, ctx: ExtensionContext) => unknown)[]>();
+		const pi = {
+			on: (event: string, handler: (event: unknown, ctx: ExtensionContext) => unknown) => {
+				handlers.set(event, [...(handlers.get(event) ?? []), handler]);
+			},
+			appendEntry: () => {},
+			getCommands: () => [],
+		} as unknown as ExtensionAPI;
+		const runtime = new KyrnRuntime(pi, parseConfig({}), new Judge({ provider: new MockJudgeProvider() }));
+		if (deadlineInMs === "env") registerDeadline(runtime);
+		registerWatchdog(runtime);
+		if (typeof deadlineInMs === "number") runtime.deadlineAt = Date.now() + deadlineInMs;
+		const startedAt = Date.now();
+		let cutAt: number | undefined;
+		const ctx = {
+			abort: () => {
+				cutAt ??= Date.now() - startedAt;
+			},
+		} as unknown as ExtensionContext;
+		for (const handler of handlers.get("message_start") ?? []) {
+			await handler({ type: "message_start", message: { role: "assistant" } }, ctx);
+		}
+		await vi.advanceTimersByTimeAsync(3_600_000);
+		return cutAt;
+	}
+
+	it("cuts after 10 minutes of thinking without a deadline, and sooner when the deadline is near", async () => {
+		expect(await cutAfter(undefined)).toBe(600_000);
+		expect(await cutAfter(3_600_000)).toBe(600_000);
+		expect(await cutAfter(617_000)).toBe(308_500);
+		expect(await cutAfter(30_000)).toBe(60_000);
+	});
+
+	it("takes the deadline from MU_TIME_BUDGET_S, counted from when mu started", async () => {
+		vi.stubEnv("KYRN_SWARM_DEPTH", "");
+		vi.stubEnv("KYRN_TIME_BUDGET_S", "");
+		vi.stubEnv("MU_TIME_BUDGET_S", "900");
+		// mu has been running for 283 s when the reply starts: 617 s are left.
+		vi.spyOn(process, "uptime").mockReturnValue(283);
+		expect(await cutAfter("env")).toBe(308_500);
+		vi.stubEnv("MU_TIME_BUDGET_S", "");
+		expect(await cutAfter("env")).toBe(600_000);
 	});
 });

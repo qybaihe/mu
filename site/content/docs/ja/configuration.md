@@ -65,6 +65,12 @@ mu が理解できない部分は、mu を止めずにその既定値に戻り�
 
 ホストされた判定器のキー（それぞれ自分のサービスにだけ送られます）：`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` と `CLOUDFLARE_ACCOUNT_ID`、`MU_JUDGE_CLM_API_KEY`。
 
+時間：
+
+| 変数 | 効果 |
+| --- | --- |
+| `MU_TIME_BUDGET_S` | この実行の時間の予算（秒）。mu の起動時から数える。設定すると、考えるだけの返答は再試行に間に合うよう早めに打ち切られ、予算の 50% と 80% を過ぎたときにモデルに残り時間（分）が伝えられる（`features.deadline`）。ベンチマークのハーネスがタスクのタイムアウトから設定する。設定しなければ何も変わらない。 |
+
 ランチャー：
 
 | 変数 | 効果 |

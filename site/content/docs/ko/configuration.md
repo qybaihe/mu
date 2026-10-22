@@ -65,6 +65,12 @@ mu가 이해하지 못하는 부분은 mu를 멈추지 않고 기본값으로 �
 
 호스팅 판정기의 키(각각 자기 서비스로만 보내져요): `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY`와 `CLOUDFLARE_ACCOUNT_ID`, `MU_JUDGE_CLM_API_KEY`.
 
+시간:
+
+| 변수 | 효과 |
+| --- | --- |
+| `MU_TIME_BUDGET_S` | 이번 실행의 시간 예산(초), mu가 시작한 때부터 세요. 설정하면 생각만 하는 응답을 재시도할 시간이 남도록 일찍 끊고, 예산의 50%와 80%가 지나면 모델에게 남은 시간(분)을 알려 줘요(`features.deadline`). 벤치마크 하네스가 작업의 타임아웃으로 설정해요. 설정하지 않으면 아무것도 바뀌지 않아요. |
+
 런처:
 
 | 변수 | 효과 |

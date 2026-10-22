@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- A run deadline: `MU_TIME_BUDGET_S` (or `features.deadline.budgetS`) is the run's time budget in seconds, counted from when the mu process started. With a budget, the watchdog cuts a reply that has only been thinking after `min(thinkingMs, max(60 s, half the time left when the reply started))` instead of after `thinkingMs`, and the model gets a one-line steer when 50% and 80% of the budget have passed: the minutes left and, at 80%, to get the requested result in place (files written, services running) before polishing (`features.deadline.notices`). No judge is asked, a sub-agent ignores the budget, and without one nothing changes. On Terminal-Bench 2.1 all 3 watchdog cuts came 788-886 s into a 900 s budget, too late for the retry to finish.
+
 ### Changed
 
 - `/login` offers no Claude subscription sign-in under mu's name (Anthropic doesn't allow other apps to offer one); an Anthropic API key is still offered, and an earlier sign-in stays until `/logout`. `mu setup` refuses a Claude subscription token (`sk-ant-oat…`) given as a key, pasted or with `--key-stdin`, and sends it nowhere.
@@ -30,6 +34,9 @@
 
 ### Fixed
 
+- `/login` hides the `openai-codex` sign-in under mu's name, as `mu auth` and the desktop app do; `openai` (Sign in with ChatGPT) replaces it. A stored `openai-codex` sign-in still works and shows in `/logout`. The first `/login` menu leaves out the "Sign in with Radius" shortcut under mu's name; Radius is still under Sign in with an account. `mu setup`'s subscription hint names `/login`'s actual entries.
+- The footer shows "no model" for the agent's `unknown/unknown` placeholder.
+- `mu setup` ends with exit code 4 (`SETUP_EXIT.signIn`) when a subscription was chosen and a session follows; the launcher then starts the session with `/login` as its first message, which opens the sign-in like the typed command (`afterSetup`). Inside a session, "No models available" leads with `/login` (`formatNoModelsAvailableMessage({ inSession: true })`).
 - `mu setup`'s "Not now" judge writes `"modes": { "default": "off" }` (before: nothing, so the default `jev` tier with no key used the free Jev on OpenCode Zen); a judge picked later removes that "off". `mu setup --judge off` writes the same for scripts; `--judge none` still leaves the judge unchanged. The engine takes `builtInModes` (DEFAULT_CONFIG.modes): with the default "off", a point whose mode is only its built-in one is off too, so no judge is asked; a mode set to another value holds. With every point off, the welcome line shows the judge as off and neither it nor the warm-up probes the judge.
 - The loop rule ("the same call 3 times with the same outcome") compares the whole input and the result text. Paging through a file with `read` at different offsets, or two scripts whose first 300 characters match, no longer counts as a loop.
 - The end-of-run checks (`turn.completion`, `turn.continue`) cancel their judge call when their 3 s wait runs out. A late verdict no longer keeps `mu --print` from exiting until the judge's own timeout: with a slow local judge, runs ended 7-13 s after their last message. Notification verdicts still on their way are cancelled when the session ends.

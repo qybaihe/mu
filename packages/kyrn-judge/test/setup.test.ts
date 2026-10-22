@@ -792,7 +792,7 @@ describe("mu setup, asking in a terminal", () => {
 		const run = await wizard({ answers: ["3", "3", "n"] });
 		expect(run.code).toBe(SETUP_EXIT.done);
 		expect(run.printed).toContain("start mu, type /login");
-		expect(run.said).toContain("Start mu and type /login to sign in.");
+		expect(run.said).toContain("Next, sign in with /login in mu.");
 		expect(run.calls).toEqual([]);
 		expect(run.read("auth.json")).toBeUndefined();
 		expect(run.json("mu.json")).toEqual({ modes: { default: "off" } });
@@ -812,6 +812,15 @@ describe("mu setup, asking in a terminal", () => {
 		// Again, with the free Jev: the "off" goes, a point's own mode stays.
 		const on = await wizard({ home, answers: ["3", "1", "n"] });
 		expect(on.json("mu.json")).toEqual({ tiers: ["jev"], modes: { "turn.drift": "active" } });
+	});
+
+	it("after a subscription, starts the session on /login", async () => {
+		const yes = await wizard({ answers: ["3", "3", "y"] });
+		expect(yes.code).toBe(SETUP_EXIT.signIn);
+		// On a first start the launcher goes on into the session anyway, opening /login.
+		const first = await wizard({ argv: ["--first-run"], answers: ["", "3", "3"] });
+		expect(first.code).toBe(SETUP_EXIT.signIn);
+		expect(first.at("ask", "Start mu now?")).toBe(-1);
 	});
 
 	it("asks which service a key of another shape is for, before sending it anywhere", async () => {

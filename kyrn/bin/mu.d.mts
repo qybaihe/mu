@@ -196,6 +196,8 @@ export function planImport(input: {
 
 export const SETUP_DECLINED_FILE: string;
 export const SETUP_EXIT_START: number;
+export const SETUP_EXIT_SIGN_IN: number;
+export function afterSetup(code: number, argv: readonly string[]): readonly string[];
 export const SETUP_EXIT_CANCELLED: number;
 export const SETUP_VALUE_FLAGS: readonly string[];
 export const MODEL_KEY_VARIABLES: readonly string[];

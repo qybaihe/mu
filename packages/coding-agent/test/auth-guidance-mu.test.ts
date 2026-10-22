@@ -22,4 +22,10 @@ describe("auth guidance in mu", () => {
 		expect(formatNoApiKeyFoundMessage("anthropic").split("\n")[0]).toBe("No API key found for anthropic.");
 		expect(formatNoModelsAvailableMessage()).toMatch(/^No models available\. Run `mu setup`/);
 	});
+
+	it("inside a session, leads with /login", () => {
+		const message = formatNoModelsAvailableMessage({ inSession: true });
+		expect(message).toMatch(/^No models available\. Type \/login to sign in with ChatGPT, Grok or Google/);
+		expect(message).toContain("Outside a session, `mu setup` does the same.");
+	});
 });

@@ -6,9 +6,22 @@ export const WATCHDOG_MESSAGE = "kyrn.watchdog";
 /** How much of the cut reasoning goes back with the retry: where it had got to, not the whole way there. */
 const TAIL_CHARS = 2000;
 
+/** With a deadline, a reply still gets at least this long to think before it is cut. */
+const MIN_CUT_MS = 60_000;
+
 function minutes(ms: number): string {
 	const total = Math.round(ms / 60_000);
 	return total === 1 ? "1 minute" : `${total} minutes`;
+}
+
+/**
+ * How long a reply may only think before it is cut. Without a deadline (`remainingMs` undefined), `thinkingMs`. With
+ * one, at most half the time that was left when the reply started, and never under a minute: on Terminal-Bench a reply
+ * that began thinking 3 to 5 minutes into a 15-minute task was cut 13 to 15 minutes in, too late for its retry to finish.
+ */
+export function cutAfterMs(thinkingMs: number, remainingMs: number | undefined): number {
+	if (remainingMs === undefined) return thinkingMs;
+	return Math.min(thinkingMs, Math.max(MIN_CUT_MS, remainingMs / 2));
 }
 
 /**
@@ -18,6 +31,7 @@ function minutes(ms: number): string {
  * on it rather than think it all through again.
  *
  * - Only a reply that has written nothing yet is cut. Text or a tool call means the model is acting.
+ * - When the run has a deadline (`runtime.deadlineAt`, see deadline.ts), the cut can come sooner: see `cutAfterMs`.
  * - The retry itself is never cut: a reply that really needs longer gets all the time it needs the second time.
  * - At most `maxCuts` cuts between two messages of the user.
  */
@@ -42,6 +56,10 @@ export function registerWatchdog(runtime: KyrnRuntime): void {
 	};
 
 	const watch = (ctx: ExtensionContext, about: number, startedAt: number): void => {
+		const after = cutAfterMs(
+			options.thinkingMs,
+			runtime.deadlineAt === undefined ? undefined : runtime.deadlineAt - startedAt,
+		);
 		timer = setTimeout(() => {
 			timer = undefined;
 			if (message !== about || acted || cut !== undefined) return;
@@ -50,7 +68,7 @@ export function registerWatchdog(runtime: KyrnRuntime): void {
 			runtime.harnessAbort = true;
 			runtime.present("watchdog.cut", { thinkingMs: cut.ms, thoughtChars: thought.length });
 			ctx.abort();
-		}, options.thinkingMs);
+		}, after);
 		// A watchdog never keeps the process alive.
 		timer.unref();
 	};
