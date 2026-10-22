@@ -2300,6 +2300,8 @@ export type I18nKey =
   | 'mu.accounts.byKey'
   | 'mu.accounts.byKeyHelp'
   | 'mu.accounts.instant'
+  | 'mu.accounts.legacy.anthropic'
+  | 'mu.accounts.legacy.openai-codex'
   | 'mu.accounts.models'
   | 'mu.accounts.otherRunning'
   | 'mu.accounts.showRunning'

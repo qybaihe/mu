@@ -48,12 +48,13 @@ export interface AuthOptions {
 export type AuthModel = { id: string; name: string };
 
 /** pi's own subscription flows, in every mu. ChatGPT is OpenAI's own Sign in with ChatGPT, on the `openai` provider. */
-export const BUILT_IN_PROVIDERS: readonly string[] = ["openai", "anthropic", "xai"];
+export const BUILT_IN_PROVIDERS: readonly string[] = ["openai", "xai"];
 /**
- * Flows that are no longer offered but still answered: an account signed in with one shows, works and can be signed
- * out. ChatGPT through the Codex CLI's own login (`openai-codex`), which Sign in with ChatGPT replaces.
+ * Sign-ins no longer offered: an account signed in with one is listed and can be signed out, never signed in anew.
+ * ChatGPT through the Codex CLI's own login (`openai-codex`), which Sign in with ChatGPT replaces, and a Claude
+ * subscription (`anthropic`), which Anthropic doesn't allow other apps to sign in with.
  */
-export const LEGACY_PROVIDERS: readonly string[] = ["openai-codex"];
+export const LEGACY_PROVIDERS: readonly string[] = ["openai-codex", "anthropic"];
 /** A provider whose list of models comes from the account: read again once it is signed in. */
 const LISTED_BY_ACCOUNT = new Set(["google-antigravity"]);
 /** The sign-in itself is done by then, and the list the account had stands. */
@@ -117,7 +118,9 @@ export async function runAuth(argv: readonly string[], options: AuthOptions): Pr
 			return 0;
 		}
 		if (!provider) throw new Error(USAGE);
-		if (!known.includes(provider)) throw new Error(`This version of mu can't sign in to ${provider}`);
+		if (!(mode === "login" ? offered : known).includes(provider)) {
+			throw new Error(`This version of mu can't sign in to ${provider}`);
+		}
 		if (mode === "logout") {
 			// Only a subscription sign-in is signed out here: a key stored for the same provider is left alone.
 			const stored = (await runtime.listCredentials()).find((credential) => credential.providerId === provider);

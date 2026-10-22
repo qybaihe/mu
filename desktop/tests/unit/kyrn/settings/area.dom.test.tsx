@@ -637,7 +637,8 @@ describe('providers and the default model', () => {
     const names = within(list)
       .getAllByRole('option')
       .map((item) => item.textContent);
-    expect(names).toEqual(['ChatGPT', 'Claude', 'Grok', 'Relay', 'corp-gateway']);
+    // A Claude subscription is no longer offered: Anthropic doesn't allow other apps to sign in with one.
+    expect(names).toEqual(['ChatGPT', 'Grok', 'Relay', 'corp-gateway']);
     expect(screen.getByTestId('mu-provider-editor')).toHaveTextContent('Relay');
     // mu reported the older ChatGPT sign-in (openai-codex, through Codex) too: with nobody signed in to it, it is
     // neither an account nor a built-in provider.
@@ -686,23 +687,47 @@ describe('providers and the default model', () => {
   it('signs out only after asking, and shows who is still signed in', async () => {
     bridge.loginStatus.mockResolvedValue({
       ok: true,
-      data: { signedIn: [{ provider: 'anthropic', models: [{ id: 'claude-opus-4-8', name: 'Claude Opus 4.8' }] }] },
+      data: { signedIn: [{ provider: 'xai', models: [{ id: 'grok-5', name: 'Grok 5' }] }] },
     });
     bridge.loginLogout.mockResolvedValue({ ok: true, data: { signedIn: [] } });
     await open('providers');
-    fireEvent.click(await screen.findByTestId('mu-provider-item-account-anthropic'));
-    const detail = screen.getByTestId('mu-account-anthropic');
+    fireEvent.click(await screen.findByTestId('mu-provider-item-account-xai'));
+    const detail = screen.getByTestId('mu-account-xai');
     await waitFor(() => expect(within(detail).getByTestId('mu-account-state')).toHaveTextContent('Signed in'));
-    fireEvent.click(within(detail).getByTestId('mu-account-signout-anthropic'));
+    fireEvent.click(within(detail).getByTestId('mu-account-signout-xai'));
     expect(bridge.loginLogout).not.toHaveBeenCalled();
-    const confirm = await screen.findByText("Sign out of Claude? You'll need to sign in again to use it.");
+    const confirm = await screen.findByText("Sign out of Grok? You'll need to sign in again to use it.");
     expect(confirm).toBeInTheDocument();
     const buttons = screen.getAllByRole('button', { name: 'Sign out' });
     fireEvent.click(buttons[buttons.length - 1]);
-    await waitFor(() => expect(bridge.loginLogout).toHaveBeenCalledWith({ provider: 'anthropic' }));
+    await waitFor(() => expect(bridge.loginLogout).toHaveBeenCalledWith({ provider: 'xai' }));
     await waitFor(() => expect(within(detail).getByTestId('mu-account-state')).toHaveTextContent('Not signed in'));
-    expect(within(detail).getByTestId('mu-account-signin-anthropic')).toBeInTheDocument();
+    expect(within(detail).getByTestId('mu-account-signin-xai')).toBeInTheDocument();
     await waitFor(() => expect(bridge.recheck).toHaveBeenCalledTimes(1));
+  });
+
+  it('shows a Claude subscription signed in before only to sign it out, and says to use an API key', async () => {
+    bridge.loginStatus.mockResolvedValue({
+      ok: true,
+      data: {
+        signedIn: [{ provider: 'anthropic', models: [{ id: 'claude-opus-4-8', name: 'Claude Opus 4.8' }] }],
+        offered: ['openai', 'xai'],
+      },
+    });
+    bridge.loginLogout.mockResolvedValue({ ok: true, data: { signedIn: [], offered: ['openai', 'xai'] } });
+    await open('providers');
+    fireEvent.click(await screen.findByTestId('mu-provider-item-account-anthropic'));
+    const detail = screen.getByTestId('mu-account-anthropic');
+    expect(within(detail).getByTestId('mu-account-legacy')).toHaveTextContent(
+      "Anthropic doesn't allow other apps to sign in with a Claude subscription"
+    );
+    fireEvent.click(within(detail).getByTestId('mu-account-signout-anthropic'));
+    const buttons = await screen.findAllByRole('button', { name: 'Sign out' });
+    fireEvent.click(buttons[buttons.length - 1]);
+    await waitFor(() => expect(bridge.loginLogout).toHaveBeenCalledWith({ provider: 'anthropic' }));
+    // Signed out, it is gone: there is no Claude sign-in to offer.
+    await waitFor(() => expect(screen.queryByTestId('mu-provider-item-account-anthropic')).not.toBeInTheDocument());
+    expect(screen.queryByTestId('mu-account-signin-anthropic')).not.toBeInTheDocument();
   });
 
   it('says in the app language when signing out or in did not work, with the raw reason under it', async () => {
@@ -1229,27 +1254,37 @@ describe('providers and the default model', () => {
     expect(offered).not.toContain('Lab 2');
   });
 
-  it('shows Claude as usable through an API key when mu reported it and nobody is signed in', async () => {
+  it('shows OpenAI as usable through an API key when mu reported it and nobody is signed in', async () => {
+    bridge.availableModels.mockResolvedValue({
+      ok: true,
+      data: { providers: [{ id: 'openai', models: [{ id: 'gpt-x', name: 'GPT X' }] }], thinkingLevels: [] },
+    });
+    await open('providers');
+    const item = await screen.findByTestId('mu-provider-item-account-openai');
+    await waitFor(() => expect(within(item).getByRole('img', { name: 'Available (API key)' })).toBeInTheDocument());
+    expect(screen.queryByTestId('mu-provider-item-builtin-openai')).not.toBeInTheDocument();
+    fireEvent.click(item);
+    const detail = screen.getByTestId('mu-account-openai');
+    expect(within(detail).getByTestId('mu-account-state')).toHaveTextContent('Available (API key)');
+    expect(detail).toHaveTextContent('its API key is set in your environment');
+    expect(detail).toHaveTextContent('GPT X');
+    expect(within(detail).getByTestId('mu-account-signin-openai')).toBeInTheDocument();
+  });
+
+  it('shows an Anthropic API key mu reported as a provider of its own, not as a Claude sign-in', async () => {
     bridge.availableModels.mockResolvedValue({
       ok: true,
       data: { providers: [{ id: 'anthropic', models: [{ id: 'claude-x', name: 'Claude X' }] }], thinkingLevels: [] },
     });
     await open('providers');
-    const item = await screen.findByTestId('mu-provider-item-account-anthropic');
-    await waitFor(() => expect(within(item).getByRole('img', { name: 'Available (API key)' })).toBeInTheDocument());
-    expect(screen.queryByTestId('mu-provider-item-builtin-anthropic')).not.toBeInTheDocument();
-    fireEvent.click(item);
-    const detail = screen.getByTestId('mu-account-anthropic');
-    expect(within(detail).getByTestId('mu-account-state')).toHaveTextContent('Available (API key)');
-    expect(detail).toHaveTextContent('its API key is set in your environment');
-    expect(detail).toHaveTextContent('Claude X');
-    expect(within(detail).getByTestId('mu-account-signin-anthropic')).toBeInTheDocument();
+    expect(await screen.findByTestId('mu-provider-item-builtin-anthropic')).toHaveTextContent('Claude');
+    expect(screen.queryByTestId('mu-provider-item-account-anthropic')).not.toBeInTheDocument();
   });
 
   it('shows a failed sign-in under its own subscription only, not under the one signed out next', async () => {
     bridge.loginStatus.mockResolvedValue({
       ok: true,
-      data: { signedIn: [{ provider: 'anthropic', models: [] }] },
+      data: { signedIn: [{ provider: 'openai', models: [] }] },
     });
     bridge.loginStart.mockResolvedValue({ ok: false, error: 'Timed out' });
     bridge.loginLogout.mockResolvedValue({ ok: true, data: { signedIn: [] } });
@@ -1258,15 +1293,15 @@ describe('providers and the default model', () => {
     fireEvent.click(screen.getByTestId('mu-account-signin-xai'));
     await waitFor(() => expect(screen.getByTestId('mu-account-xai')).toHaveTextContent('Timed out'));
 
-    fireEvent.click(screen.getByTestId('mu-provider-item-account-anthropic'));
-    const claude = screen.getByTestId('mu-account-anthropic');
-    await waitFor(() => expect(within(claude).getByTestId('mu-account-state')).toHaveTextContent('Signed in'));
-    fireEvent.click(within(claude).getByTestId('mu-account-signout-anthropic'));
+    fireEvent.click(screen.getByTestId('mu-provider-item-account-openai'));
+    const chatgpt = screen.getByTestId('mu-account-openai');
+    await waitFor(() => expect(within(chatgpt).getByTestId('mu-account-state')).toHaveTextContent('Signed in'));
+    fireEvent.click(within(chatgpt).getByTestId('mu-account-signout-openai'));
     const buttons = await screen.findAllByRole('button', { name: 'Sign out' });
     fireEvent.click(buttons[buttons.length - 1]);
     await waitFor(() => expect(bridge.loginLogout).toHaveBeenCalled());
-    await waitFor(() => expect(within(claude).getByTestId('mu-account-state')).toHaveTextContent('Not signed in'));
-    expect(claude).not.toHaveTextContent('Timed out');
+    await waitFor(() => expect(within(chatgpt).getByTestId('mu-account-state')).toHaveTextContent('Not signed in'));
+    expect(chatgpt).not.toHaveTextContent('Timed out');
   });
 
   it('opens a sign-in that is running, and points to it from another subscription', async () => {

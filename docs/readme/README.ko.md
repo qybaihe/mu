@@ -39,7 +39,7 @@
 
 ## 빠른 시작
 
-**데스크톱 앱.** [Releases](https://github.com/qybaihe/mu/releases/latest)에서 macOS, Windows, Linux용 설치 파일을 내려받아 열고, API 키를 붙여 넣거나 ChatGPT, Claude, Grok, Google 구독으로 로그인하세요. 따로 설치할 것은 없어요.
+**데스크톱 앱.** [Releases](https://github.com/qybaihe/mu/releases/latest)에서 macOS, Windows, Linux용 설치 파일을 내려받아 열고, API 키를 붙여 넣거나 ChatGPT, Grok, Google 구독으로 로그인하세요. 따로 설치할 것은 없어요.
 
 **명령줄.**
 
@@ -245,7 +245,7 @@ mu와 런타임이 들어 있는 데스크톱 앱이에요. Node를 설치할 �
   </picture>
 </p>
 
-아래쪽 막대에서 커널 상태를 늘 볼 수 있어요. 어떤 판정기가 답하고 어디서 도는지, 켜진 판정 지점이 몇 개인지, 대화 중이라면 지금까지의 판정 수, 마지막 판정에 걸린 시간, 사용 중인 컨텍스트까지 보여 줘요. 권한 모드와 목표는 입력창에 있고, `⌘K`로 명령어 팔레트를 열어요. 모델 로그인은 앱 안에서 해요. ChatGPT, Claude, Grok, Google(Gemini CLI / Antigravity) 구독이나, pi가 지원하는 어떤 프로바이더의 API 키든 쓸 수 있어요. Claude Code, Codex CLI, ZCode의 대화는 가져와서 이어 갈 수 있어요.
+아래쪽 막대에서 커널 상태를 늘 볼 수 있어요. 어떤 판정기가 답하고 어디서 도는지, 켜진 판정 지점이 몇 개인지, 대화 중이라면 지금까지의 판정 수, 마지막 판정에 걸린 시간, 사용 중인 컨텍스트까지 보여 줘요. 권한 모드와 목표는 입력창에 있고, `⌘K`로 명령어 팔레트를 열어요. 모델 로그인은 앱 안에서 해요. ChatGPT, Grok, Google(Gemini CLI / Antigravity) 구독이나, pi가 지원하는 어떤 프로바이더의 API 키든 쓸 수 있어요. Claude Code, Codex CLI, ZCode의 대화는 가져와서 이어 갈 수 있어요.
 
 macOS(Apple 실리콘 / Intel), Windows(x64 / Arm), Linux(x64 / Arm)용 빌드는 GitHub Actions에서 만들어 [Releases](https://github.com/qybaihe/mu/releases)에 올려요.
 

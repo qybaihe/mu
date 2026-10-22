@@ -43,7 +43,7 @@ What you get:
 
 ## Quick start
 
-**Desktop app.** Download the installer for macOS, Windows or Linux from [Releases](https://github.com/qybaihe/mu/releases/latest), open it and paste an API key or sign in with a ChatGPT, Claude, Grok or Google subscription. There's nothing else to install.
+**Desktop app.** Download the installer for macOS, Windows or Linux from [Releases](https://github.com/qybaihe/mu/releases/latest), open it and paste an API key or sign in with a ChatGPT, Grok or Google subscription. There's nothing else to install.
 
 **Command line.**
 
@@ -300,7 +300,7 @@ A desktop app with mu and its runtime built in: there's no Node.js to install an
   </picture>
 </p>
 
-A bar along the bottom keeps the kernel in view: which judge answers and where it runs, how many decision points are active and, in a conversation, the verdicts so far, the latest judge latency and the context in use. The permission mode and the goal sit in the composer, and `⌘K` opens the command palette. You connect models inside the app: sign in with a ChatGPT, Claude, Grok or Google (Gemini CLI / Antigravity) subscription, or add an API key for any provider pi supports. You can import Claude Code, Codex CLI and ZCode conversations and continue them.
+A bar along the bottom keeps the kernel in view: which judge answers and where it runs, how many decision points are active and, in a conversation, the verdicts so far, the latest judge latency and the context in use. The permission mode and the goal sit in the composer, and `⌘K` opens the command palette. You connect models inside the app: sign in with a ChatGPT, Grok or Google (Gemini CLI / Antigravity) subscription, or add an API key for any provider pi supports. You can import Claude Code, Codex CLI and ZCode conversations and continue them.
 
 GitHub Actions builds the app for macOS (Apple silicon / Intel), Windows (x64 / Arm) and Linux (x64 / Arm) and publishes it under [Releases](https://github.com/qybaihe/mu/releases).
 
