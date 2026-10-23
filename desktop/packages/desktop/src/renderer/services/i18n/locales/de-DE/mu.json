@@ -226,8 +226,10 @@
       "name": "mude 1.0 (auf diesem Mac)",
       "tierHelp": "Läuft auf diesem Mac. Einrichten auf der Seite „Judges“.",
       "notInstalled": "Nicht installiert.",
-      "unfinished": "Die letzte Installation wurde nicht abgeschlossen. Eine neue Installation macht dort weiter, wo sie aufgehört hat.",
+      "unfinished": "Die letzte Installation wurde nicht abgeschlossen. Beim Fortsetzen geht es an der unterbrochenen Stelle weiter.",
+      "unfinishedDownloaded": "{{done}} von {{total}} GB heruntergeladen. Beim Fortsetzen geht es an der unterbrochenen Stelle weiter.",
       "install": "mude 1.0 installieren",
+      "continue": "Installation fortsetzen",
       "consent": {
         "title": "mude 1.0 installieren?",
         "download": "mu lädt mude 1.0 von Hugging Face herunter (etwa {{download}} GB) und richtet dafür eine Python-Umgebung ein (etwa {{python}} GB). Das dauert ein paar Minuten.",
@@ -269,8 +271,9 @@
         "start": "Der Server von mude 1.0 wird gestartet…"
       },
       "downloaded": "{{done}} von {{total}} GB",
+      "downloadedSoFar": "{{done}} von {{total}} GB heruntergeladen.",
       "checking": "Heruntergeladene Dateien werden geprüft…",
-      "cancelled": "Installation abgebrochen. Bereits Heruntergeladenes bleibt erhalten, eine neue Installation macht dort weiter.",
+      "cancelled": "Installation abgebrochen. Bereits Heruntergeladenes bleibt erhalten.",
       "failed": {
         "install": "mude 1.0 konnte nicht installiert werden.",
         "enable": "mude 1.0 konnte nicht eingeschaltet werden.",
