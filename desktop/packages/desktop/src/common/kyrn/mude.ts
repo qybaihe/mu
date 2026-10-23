@@ -1,0 +1,103 @@
+/**
+ * mude, mu's own judge model, on a Mac with Apple silicon. The app never downloads or starts anything for it itself:
+ * the main process runs mu's command `mu judge mude <cmd> --json` (process/agent/kyrn/mude.ts), one at a time, and
+ * keeps what it reports for the settings page to show.
+ *
+ * - install: downloads the model, sets up its Python environment, starts its server and makes it mu's judge.
+ * - enable / disable: puts mude first in mu.json's `tiers`, or restores the judges it replaced (and stops the server).
+ * - start / stop: its server on 127.0.0.1, shared by every mu session on this Mac.
+ * - uninstall: disables it and deletes everything it installed.
+ *
+ * The app adds two actions of its own: `cancel` ends a running install (the command resumes the download next time),
+ * and `open` shows mude's folder in the file manager.
+ */
+
+/** What the command does. */
+export type MudeCommand = 'install' | 'enable' | 'disable' | 'start' | 'stop' | 'uninstall';
+export type MudeAction = MudeCommand | 'cancel' | 'open';
+
+export const MUDE_COMMANDS: readonly MudeCommand[] = ['install', 'enable', 'disable', 'start', 'stop', 'uninstall'];
+
+/** The commands that change mu.json: the settings are read again after each. */
+export const MUDE_CHANGES_SETTINGS: ReadonlySet<MudeCommand> = new Set(['install', 'enable', 'disable', 'uninstall']);
+
+/** What `mu judge mude status --json` reports. */
+export type MudeStatus = {
+  /** False on a Mac without Apple silicon, before macOS 14, or with less than 8 GB of memory; `problems` say why. */
+  supported: boolean;
+  /** Why it is not supported, in English. */
+  problems: string[];
+  /** The model is downloaded. */
+  installed: boolean;
+  /** Its Python environment is set up. */
+  pythonReady: boolean;
+  /** Its server runs. */
+  running: boolean;
+  /** Its server answers. */
+  ready: boolean;
+  port: number;
+  pid?: number;
+  /** What the server uses, while it runs. */
+  memoryBytes?: number;
+  /** mude is first in mu.json's `tiers`. */
+  enabled: boolean;
+  /** mude is the only judge: no decision goes to a judge behind it. */
+  localOnly: boolean;
+  /** The judges behind mude, by their names in mu.json (e.g. `jev`). */
+  fallback: string[];
+  model: string;
+  folder: string;
+  /** The server's log file. */
+  log: string;
+};
+
+/** The stages of a command, each with a sentence of its own. */
+export type MudeStep = 'download' | 'python' | 'start' | 'enable' | 'disable' | 'stop' | 'uninstall';
+
+/**
+ * Why a command failed. access: Hugging Face refused the download. network: it could not be reached. integrity: a
+ * downloaded file does not match. aborted: it was stopped. usage: the command was called wrongly (exit code 2).
+ * unsupported: this Mac cannot run mude.
+ */
+export type MudeErrorKind = 'access' | 'network' | 'integrity' | 'aborted' | 'usage' | 'unsupported';
+
+export type MudeDownload = {
+  file: string;
+  /** Bytes of the whole model. */
+  done: number;
+  total: number;
+  /** The file is being verified. */
+  checking: boolean;
+};
+
+export type MudeTask = {
+  id: number;
+  command: MudeCommand;
+  phase: 'running' | 'done' | 'failed' | 'cancelled';
+  step?: MudeStep;
+  /** The command's sentence for its current step, in English. */
+  message?: string;
+  /** While the model downloads. */
+  download?: MudeDownload;
+  /** The last lines of the Python packages' installation. */
+  log: string[];
+  error?: { message: string; kind?: MudeErrorKind };
+};
+
+export type MudeState = {
+  /** Whether this app offers mude at all: on macOS. Elsewhere nothing is run and the page shows nothing of it. */
+  available: boolean;
+  /** What mude's status was last; unset until the command first answered. */
+  status?: MudeStatus;
+  /** Why the status could not be read (a mu without the command, a command that failed), in English. */
+  problem?: string;
+  /** What runs now, or ran last; unset before the first command of this app run. */
+  task?: MudeTask;
+};
+
+/** What installing takes, about, for the consent: the model, its Python environment, and memory while it runs. */
+export const MUDE_DOWNLOAD_GB = 1.8;
+export const MUDE_PYTHON_GB = 1;
+export const MUDE_MEMORY_GB = 4;
+/** The memory a Mac needs to run mude at all (the command's own check). */
+export const MUDE_MIN_RAM_GB = 8;

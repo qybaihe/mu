@@ -161,6 +161,11 @@
         "tag": "Recomendado",
         "description": "O modelo juiz hospedado da TypeSafe. Rápido e preciso. Grátis no OpenCode Zen por tempo limitado, ou cobrado por chamada com uma chave da TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare ou de um serviço seu."
       },
+      "mude": {
+        "title": "mude",
+        "tag": "Neste Mac",
+        "description": "O modelo juiz do próprio mu, rodando neste Mac: sem chave e sem custo por chamada. Requer Apple silicon e usa cerca de {{memory}} GB de memória enquanto roda."
+      },
       "local": {
         "title": "Laya local",
         "tag": "Grátis · offline",
@@ -215,6 +220,74 @@
           "stopped": "O Laya parou antes de ficar pronto.",
           "foreign": "Há um Laya em execução que o mu não iniciou. Pare-o onde ele foi iniciado."
         }
+      }
+    },
+    "mude": {
+      "name": "mude (neste Mac)",
+      "tierHelp": "Roda neste Mac. Configure na página “Juízes”.",
+      "notInstalled": "Não instalado.",
+      "unfinished": "A última instalação não terminou. Instalar de novo continua de onde parou.",
+      "install": "Instalar o mude",
+      "consent": {
+        "title": "Instalar o mude?",
+        "download": "O mu baixa o mude do Hugging Face (cerca de {{download}} GB) e configura um ambiente Python para ele (cerca de {{python}} GB). Isso leva alguns minutos.",
+        "memory": "Enquanto roda, o mude usa cerca de {{memory}} GB de memória. Requer um Mac com Apple silicon e macOS 14 ou posterior.",
+        "after": "Depois de instalado, o mude é iniciado e passa a ser o juiz do mu.",
+        "ok": "Baixar e instalar"
+      },
+      "localOnly": "Só local — nunca consultar um juiz na nuvem",
+      "localOnlyOn": "O mude é o único juiz e nada vai para a nuvem. Quando o mude não consegue responder, o ponto de decisão usa a estratégia padrão.",
+      "localOnlyOff": "As decisões que o mude não consegue responder, por exemplo quando está parado ou em dúvida, vão para {{judges}} na nuvem, então o que é enviado sai deste Mac. Duas verificações de segurança também vão sempre para lá: a análise das descrições de ferramentas e a análise do conteúdo buscado em busca de instruções injetadas.",
+      "localOnlyOffLocal": "As decisões que o mude não consegue responder vão para {{judges}}, que também roda neste Mac.",
+      "localOnlyNone": "Não há nenhum juiz depois do mude. Quando o mude não consegue responder, o ponto de decisão usa a estratégia padrão.",
+      "use": "Usar o mude como juiz",
+      "status": {
+        "running": "Rodando em 127.0.0.1:{{port}}",
+        "runningMemory": "Rodando em 127.0.0.1:{{port}} · {{memory}} GB",
+        "starting": "Iniciando…",
+        "stopped": "Parado"
+      },
+      "resources": "Enquanto roda, o mude usa cerca de {{memory}} GB de memória. Todas as sessões do mu neste Mac o compartilham, inclusive as do terminal, e ele continua rodando até você pará-lo ou desativá-lo.",
+      "start": "Iniciar",
+      "stop": "Parar",
+      "openFolder": "Abrir pasta",
+      "uninstall": "Desinstalar",
+      "uninstallTitle": "Desinstalar o mude?",
+      "uninstallText": "Isso desativa o mude, traz de volta os juízes que ele substituiu e apaga o modelo e o ambiente Python dele (cerca de {{size}} GB). Você pode instalá-lo de novo depois.",
+      "working": {
+        "install": "Instalando o mude…",
+        "enable": "Ativando o mude…",
+        "disable": "Desativando o mude…",
+        "start": "Iniciando o mude…",
+        "stop": "Parando o mude…",
+        "uninstall": "Desinstalando o mude…"
+      },
+      "downloaded": "{{done}} de {{total}} GB",
+      "checking": "Verificando os arquivos baixados…",
+      "cancelled": "Instalação cancelada. O que já foi baixado fica guardado, e instalar de novo continua dali.",
+      "failed": {
+        "install": "Não foi possível instalar o mude.",
+        "enable": "Não foi possível ativar o mude.",
+        "disable": "Não foi possível desativar o mude.",
+        "start": "Não foi possível iniciar o mude.",
+        "stop": "Não foi possível parar o mude.",
+        "uninstall": "Não foi possível desinstalar o mude."
+      },
+      "error": {
+        "access": "O mude ainda não está disponível para download. Tente de novo mais tarde.",
+        "network": "Não foi possível acessar o Hugging Face. Verifique sua conexão e tente de novo; o que já foi baixado fica guardado.",
+        "integrity": "Um arquivo baixado não passou na verificação. Tente instalar de novo.",
+        "unsupported": "O mude não roda neste Mac."
+      },
+      "noStatus": "Não foi possível obter o status do mude: {{reason}}",
+      "saveFirst": "Para alterar o mude, salve ou descarte suas outras alterações primeiro.",
+      "needs": "O mude precisa de um Mac com Apple silicon, macOS 14 ou posterior e pelo menos {{ram}} GB de memória.",
+      "retry": "Tentar de novo",
+      "guide": {
+        "consent": "Baixa cerca de {{download}} GB, mais um ambiente Python de cerca de {{python}} GB. Roda neste Mac e usa cerca de {{memory}} GB de memória enquanto roda.",
+        "instead": "O mu usa o juiz hospedado no lugar dele.",
+        "ready": "O mude está rodando e é o seu juiz.",
+        "readyStopped": "O mude é o seu juiz. O servidor dele inicia na sua próxima sessão do mu."
       }
     },
     "clm": {

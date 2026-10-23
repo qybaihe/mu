@@ -161,6 +161,11 @@
         "tag": "推荐",
         "description": "TypeSafe 托管的判定模型。又快又准。在 OpenCode Zen 上限时免费；也可以用 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare 或你自己服务的密钥，按次计费。"
       },
+      "mude": {
+        "title": "mude",
+        "tag": "在这台 Mac 上",
+        "description": "mu 自己的判定模型，在这台 Mac 上运行：不需要密钥，也不按次收费。需要 Apple 芯片，运行时约占用 {{memory}} GB 内存。"
+      },
       "local": {
         "title": "本地 Laya",
         "tag": "免费 · 离线",
@@ -215,6 +220,74 @@
           "stopped": "Laya 还没准备好就停了。",
           "foreign": "这里在运行一个不是 mu 启动的 Laya，请在启动它的地方停止它。"
         }
+      }
+    },
+    "mude": {
+      "name": "mude（在这台 Mac 上）",
+      "tierHelp": "在这台 Mac 上运行。请在「判定器」页设置。",
+      "notInstalled": "未安装。",
+      "unfinished": "上次安装没有完成。再次安装会从中断的地方继续。",
+      "install": "安装 mude",
+      "consent": {
+        "title": "安装 mude？",
+        "download": "mu 会从 Hugging Face 下载 mude（约 {{download}} GB），并为它配置 Python 环境（约 {{python}} GB），需要几分钟。",
+        "memory": "mude 运行时约占用 {{memory}} GB 内存。需要搭载 Apple 芯片、macOS 14 或更高版本的 Mac。",
+        "after": "安装完成后，mude 会启动并成为 mu 的判定器。",
+        "ok": "下载并安装"
+      },
+      "localOnly": "仅本地——不询问任何云端判定器",
+      "localOnlyOn": "mude 是唯一的判定器，不会有任何内容发往云端。mude 无法回答时，判定点采用它的默认策略。",
+      "localOnlyOff": "mude 无法回答的判定（例如它已停止或拿不准时）会交给云端的 {{judges}}，发送过去的内容会离开这台 Mac。另有两项安全检查也始终交给它：审查工具描述，以及审查抓取的内容里是否夹带注入的指令。",
+      "localOnlyOffLocal": "mude 无法回答的判定会交给同样在这台 Mac 上运行的 {{judges}}。",
+      "localOnlyNone": "mude 后面没有设置其他判定器。mude 无法回答时，判定点采用它的默认策略。",
+      "use": "使用 mude 作为判定器",
+      "status": {
+        "running": "正在 127.0.0.1:{{port}} 上运行",
+        "runningMemory": "正在 127.0.0.1:{{port}} 上运行 · {{memory}} GB",
+        "starting": "正在启动…",
+        "stopped": "已停止"
+      },
+      "resources": "mude 运行时约占用 {{memory}} GB 内存。这台 Mac 上的所有 mu 会话（包括终端里的）共用它，它会一直运行，直到你停止或关闭它。",
+      "start": "启动",
+      "stop": "停止",
+      "openFolder": "打开文件夹",
+      "uninstall": "卸载",
+      "uninstallTitle": "卸载 mude？",
+      "uninstallText": "这会关闭 mude，恢复被它替换的判定器，并删除模型和它的 Python 环境（约 {{size}} GB）。之后可以重新安装。",
+      "working": {
+        "install": "正在安装 mude…",
+        "enable": "正在启用 mude…",
+        "disable": "正在关闭 mude…",
+        "start": "正在启动 mude…",
+        "stop": "正在停止 mude…",
+        "uninstall": "正在卸载 mude…"
+      },
+      "downloaded": "{{done}} / {{total}} GB",
+      "checking": "正在校验下载的文件…",
+      "cancelled": "已取消安装。已下载的部分会保留，再次安装会从那里继续。",
+      "failed": {
+        "install": "无法安装 mude。",
+        "enable": "无法启用 mude。",
+        "disable": "无法关闭 mude。",
+        "start": "无法启动 mude。",
+        "stop": "无法停止 mude。",
+        "uninstall": "无法卸载 mude。"
+      },
+      "error": {
+        "access": "mude 暂时还不能下载，请稍后再试。",
+        "network": "无法连接 Hugging Face。请检查网络后重试，已下载的部分会保留。",
+        "integrity": "有个下载的文件没有通过校验，请重新安装。",
+        "unsupported": "mude 无法在这台 Mac 上运行。"
+      },
+      "noStatus": "无法获取 mude 的状态：{{reason}}",
+      "saveFirst": "要更改 mude，请先保存或放弃其他更改。",
+      "needs": "mude 需要搭载 Apple 芯片、macOS 14 或更高版本、内存 {{ram}} GB 以上的 Mac。",
+      "retry": "重试",
+      "guide": {
+        "consent": "需要下载约 {{download}} GB，另加约 {{python}} GB 的 Python 环境。它在这台 Mac 上运行，运行时约占用 {{memory}} GB 内存。",
+        "instead": "mu 会改用云端判定器。",
+        "ready": "mude 已在运行，现在是你的判定器。",
+        "readyStopped": "mude 现在是你的判定器，它的服务会在下次 mu 会话开始时启动。"
       }
     },
     "clm": {

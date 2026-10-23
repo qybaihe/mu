@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, AutoComplete, Button, Input, Radio } from '@arco-design/web-react';
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
@@ -24,7 +24,15 @@ import {
   providerLabel,
 } from '@/renderer/pages/settings/KyrnSettings/providers/endpoints';
 import ConnectionTest from '@/renderer/pages/settings/KyrnSettings/providers/ConnectionTest';
+import { dirtySections } from '@/renderer/pages/settings/KyrnSettings/draft';
 import { ChoiceBody, JudgeChoiceTile } from '@/renderer/pages/settings/KyrnSettings/sections/JudgesSection';
+import {
+  MudeSetup,
+  MudeUnsupported,
+  mudeOffered,
+  useMude,
+  type MudeControl,
+} from '@/renderer/pages/settings/KyrnSettings/sections/MudePanel';
 import choiceStyles from '@/renderer/pages/settings/KyrnSettings/sections/sections.module.css';
 import { useMuSettings } from '@/renderer/pages/settings/KyrnSettings/useMuSettings';
 import ImportChatsModal from '@/renderer/pages/settings/SystemSettings/ImportChats/ImportChatsModal';
@@ -105,6 +113,22 @@ export default function Welcome() {
   const [added, setAdded] = useState<string>();
   // The judge's service and key, folded away while the judge answers as it is.
   const [judgeMore, setJudgeMore] = useState(false);
+  // mude, on a Mac: picked in the judge step, which sets it up right there through mu's own command. The command
+  // writes mu.json itself (mude first, the judges from before behind it), so once it ends the guide's draft is moved
+  // onto the files again, and the final save starts from them too: it never puts back the judge the draft held.
+  const [mudePicked, setMudePicked] = useState(false);
+  const mudeRan = useRef(false);
+  const mudeNow = useMude((task) => {
+    const judgeSet = task.phase === 'done' && (task.command === 'install' || task.command === 'enable');
+    void mu.rebase(judgeSet ? 'files' : 'draft');
+  });
+  const mude: MudeControl = {
+    ...mudeNow,
+    run: (action, localOnly) => {
+      mudeRan.current = true;
+      return mudeNow.run(action, localOnly);
+    },
+  };
   const keys = useKeySetup();
   // Claude Code, Codex and ZCode conversations on this computer not brought in yet: the first screen and the last
   // step offer them.
@@ -192,7 +216,18 @@ export default function Welcome() {
   };
 
   const finish = async () => {
-    if (mu.dirty.size === 0 || (await mu.save())) leave();
+    if (!mudeRan.current) {
+      if (mu.dirty.size === 0 || (await mu.save())) leave();
+      return;
+    }
+    // mude's command may have written mu.json since: the save starts from the files. With mude the last pick, the
+    // judge is what the files say (mude first once it is set up, else the judge from before).
+    const from = await mu.rebase(mudePicked ? 'files' : 'draft');
+    if (!from) return;
+    if (dirtySections(from.base, from.draft).size > 0 && !(await mu.save(from))) return;
+    // Set up here but not the judge after all: its server (about 4 GB of memory) is not left running for nothing.
+    if (from.draft.settings.mode === 'off' || choiceOf(from.draft.settings) !== 'mude') void mudeNow.run('stop');
+    leave();
   };
 
   if (!base || !draft) {
@@ -452,9 +487,25 @@ export default function Welcome() {
       <>
         <h1 className={styles.title}>{t('mu.welcome.judge.title')}</h1>
         <p className={styles.subtitle}>{t('mu.welcome.judge.subtitle')}</p>
-        {judgeReady ? <Ready testId='mu-welcome-judge-ready' text={judgeReady} /> : null}
+        {judgeReady && !mudePicked ? <Ready testId='mu-welcome-judge-ready' text={judgeReady} /> : null}
         <div className={choiceStyles.choices} role='radiogroup' aria-label={t('mu.welcome.judge.title')}>
           {GUIDE_CHOICES.map((choice) => {
+            if (choice === 'mude') {
+              // Shown on every machine, so someone without a Mac that runs it learns it exists; never in the way.
+              const disabled = !mudeOffered(mude.state);
+              return (
+                <JudgeChoiceTile
+                  key={choice}
+                  choice={choice}
+                  active={!disabled && (mudePicked || (!judgeOff && judge === 'mude'))}
+                  disabled={disabled}
+                  description={disabled ? <MudeUnsupported state={mude.state} guide /> : undefined}
+                  onPick={() => setMudePicked(true)}
+                >
+                  <MudeSetup mude={mude} judged={!judgeOff && judge === 'mude'} />
+                </JudgeChoiceTile>
+              );
+            }
             const fields = (
               <ChoiceBody
                 choice={choice}
@@ -472,11 +523,15 @@ export default function Welcome() {
               <JudgeChoiceTile
                 key={choice}
                 choice={choice}
-                active={!judgeOff && judge === choice}
+                active={!judgeOff && !mudePicked && judge === choice}
                 // Picking a judge after "No judge" turns the verdicts back on; a stored shadow stays as it is.
-                onPick={() =>
-                  mu.editSettings((now) => ({ ...choose(now, choice), mode: now.mode === 'off' ? 'active' : now.mode }))
-                }
+                onPick={() => {
+                  setMudePicked(false);
+                  mu.editSettings((now) => ({
+                    ...choose(now, choice),
+                    mode: now.mode === 'off' ? 'active' : now.mode,
+                  }));
+                }}
               >
                 {judgeOff ? null : folded ? (
                   <>
@@ -502,8 +557,11 @@ export default function Welcome() {
             title={t('mu.welcome.judge.none.title')}
             tag={t('mu.welcome.judge.none.tag')}
             description={t('mu.welcome.judge.none.description')}
-            active={judgeOff}
-            onPick={() => mu.editSettings((now) => ({ ...now, mode: 'off' }))}
+            active={judgeOff && !mudePicked}
+            onPick={() => {
+              setMudePicked(false);
+              mu.editSettings((now) => ({ ...now, mode: 'off' }));
+            }}
           />
         </div>
       </>

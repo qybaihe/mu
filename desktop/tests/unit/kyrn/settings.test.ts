@@ -146,6 +146,30 @@ describe('native mu settings', () => {
       f.cleanup();
     }
   });
+  it('knows mude, which `mu judge mude enable` puts first, and saves around it without writing it', () => {
+    const f = fixture();
+    try {
+      // What the command leaves: mude first, the judges it replaced behind it.
+      const file = join(f.dir, 'kyrn.json');
+      writeFileSync(file, JSON.stringify({ ...JSON.parse(readFileSync(file, 'utf8')), tiers: ['mude', 'jev'] }));
+      const read = f.store.read();
+      expect(read.tiers).toEqual(['mude', 'jev']);
+      expect(read.judges.mude).toEqual({
+        type: 'typesafe',
+        model: 'mude',
+        baseUrl: 'http://127.0.0.1:8790/v1/systemone',
+        apiKeyEnv: 'MU_JUDGE_MUDE_KEY',
+        timeoutMs: 4000,
+      });
+      // A save of something else is not refused for the order, and leaves mude to mu.
+      f.store.save({ ...read, mode: 'active' });
+      const raw = JSON.parse(readFileSync(file, 'utf8'));
+      expect(raw.tiers).toEqual(['mude', 'jev']);
+      expect(raw.judges.mude).toBeUndefined();
+    } finally {
+      f.cleanup();
+    }
+  });
   it('offers Jev on OpenCode Zen and Cloudflare, and Clef, as classifier models whose keys go where pi reads them', () => {
     const f = fixture();
     try {

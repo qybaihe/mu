@@ -36,6 +36,8 @@ const bridge = vi.hoisted(() => ({
   loginLogout: vi.fn(),
   localJudgeState: vi.fn(),
   localJudgeRun: vi.fn(),
+  mudeState: vi.fn(),
+  mudeRun: vi.fn(),
   clmCheck: vi.fn(),
 }));
 // The pickers' copy of what mu offers, read again after mu is checked again.
@@ -63,6 +65,8 @@ vi.mock('@/common/kyrn/bridge', () => ({
     loginLogout: { invoke: bridge.loginLogout },
     localJudgeState: { invoke: bridge.localJudgeState },
     localJudgeRun: { invoke: bridge.localJudgeRun },
+    mudeState: { invoke: bridge.mudeState },
+    mudeRun: { invoke: bridge.mudeRun },
     clmCheck: { invoke: bridge.clmCheck },
   },
   // As the real one: a failure keeps the code the store gave it.
@@ -146,6 +150,8 @@ function settings(patch: Partial<KyrnSettings> = {}): KyrnSettings {
 beforeEach(async () => {
   await i18n.changeLanguage('en-US');
   bridge.settings.mockResolvedValue({ ok: true, data: settings() });
+  // As off macOS: mude is not offered.
+  bridge.mudeState.mockResolvedValue({ ok: true, data: { available: false } });
   bridge.localJudgeState.mockResolvedValue({
     ok: true,
     data: { support: 'ok', installed: true, running: true, url: 'http://127.0.0.1:47823' },

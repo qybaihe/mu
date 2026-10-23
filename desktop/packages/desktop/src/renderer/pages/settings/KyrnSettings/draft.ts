@@ -215,6 +215,26 @@ export function dirtySections(base: KyrnSettings, draft: Draft): Set<SectionId> 
   return dirty;
 }
 
+/** The judge's part of the settings: what `mu judge mude` writes to mu.json. */
+const JUDGE_FIELDS: ReadonlySet<keyof KyrnSettings> = new Set<keyof KyrnSettings>(['tiers', 'judges', 'mode']);
+/** Read from the files only: never a change of the draft's. */
+const FILE_FIELDS: ReadonlySet<keyof KyrnSettings> = new Set<keyof KyrnSettings>(['revision', 'keys', 'harness']);
+
+/**
+ * The draft moved onto settings read again after mu's own command changed the files (mude's install writes mu.json):
+ * every part the draft changed since `base` keeps the draft's value, the rest is what the files say now. `judge`:
+ * `files` when the command just set the judge (the person picked mude), so the judge's order, profiles and switch
+ * come from the files whatever the draft held; `draft` to keep a judge picked in the draft afterwards. Typed keys stay.
+ */
+export function rebaseDraft(base: KyrnSettings, draft: Draft, fresh: KyrnSettings, judge: 'files' | 'draft'): Draft {
+  const settings = { ...fresh } as Record<keyof KyrnSettings, unknown>;
+  for (const field of Object.keys(fresh) as (keyof KyrnSettings)[]) {
+    if (FILE_FIELDS.has(field) || (judge === 'files' && JUDGE_FIELDS.has(field))) continue;
+    if (!same(base[field], draft.settings[field])) settings[field] = draft.settings[field];
+  }
+  return { ...draft, settings: settings as KyrnSettings };
+}
+
 /** Hand-written models.json entries that were there when the settings were read, and are removed in the draft. */
 export function removedEntries(base: KyrnSettings, draft: Draft): string[] {
   const kept = new Set(draft.settings.models.foreign.map((entry) => entry.id));

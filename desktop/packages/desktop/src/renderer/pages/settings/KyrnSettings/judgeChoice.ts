@@ -2,17 +2,21 @@ import { CLM_KEY_VARIABLE } from '@/common/kyrn/clm';
 import type { JudgeSettings, JudgeType, KyrnSettings } from '@/common/kyrn/types';
 
 /**
- * The three kinds of judge a person chooses between: Jev, Laya on this machine, or CLM on a server of their own. The
- * profiles behind them (jev, jev-direct, jev-openrouter, jev-gateway, jev-opencode, jev-opencode-free, jev-cloudflare,
- * jev-custom, laya, clm) are how the config keeps them; the tiers page shows them by these three names, and a Jev
- * profile by the service it reaches Jev through. Anything else (another classifier model such as Clef, a model as
- * judge, a mock, a self-hosted HTTP judge) is only named there, by the name it was given.
+ * The kinds of judge a person chooses between: Jev, mude or Laya on this machine, or CLM on a server of their own.
+ * The profiles behind them (jev, jev-direct, jev-openrouter, jev-gateway, jev-opencode, jev-opencode-free,
+ * jev-cloudflare, jev-custom, mude, laya, clm) are how the config keeps them; the tiers page shows them by these
+ * names, and a Jev profile by the service it reaches Jev through. Anything else (another classifier model such as
+ * Clef, a model as judge, a mock, a self-hosted HTTP judge) is only named there, by the name it was given.
+ *
+ * mude is chosen through mu's own command (`mu judge mude`, see common/kyrn/mude.ts), never through `choose`: it is
+ * installed, started and put first in the order by that command, which writes mu.json itself.
  */
-export type JudgeChoice = 'jev' | 'local' | 'clm';
+export type JudgeChoice = 'jev' | 'mude' | 'local' | 'clm';
 
-export const JUDGE_CHOICES: readonly JudgeChoice[] = ['jev', 'local', 'clm'];
+/** The settings' choices; mude only where the app offers it (macOS). */
+export const JUDGE_CHOICES: readonly JudgeChoice[] = ['jev', 'mude', 'local', 'clm'];
 /** The choices of the first-run guide. CLM needs a server with a GPU someone already runs: it waits in the settings. */
-export const GUIDE_CHOICES: readonly JudgeChoice[] = ['jev', 'local'];
+export const GUIDE_CHOICES: readonly JudgeChoice[] = ['jev', 'mude', 'local'];
 
 /** The kind of each type; a classifier model is Jev when it is Jev's (see serviceOf), else of no kind. */
 const KIND_OF: Record<Exclude<JudgeType, 'classifier'>, JudgeChoice | undefined> = {
@@ -27,11 +31,22 @@ const KIND_OF: Record<Exclude<JudgeType, 'classifier'>, JudgeChoice | undefined>
 };
 
 /** The profile a choice prefers when several of its kind exist: the built-in names. */
-const PREFERRED: Record<JudgeChoice, string> = { jev: 'jev', local: 'laya', clm: 'clm' };
+const PREFERRED: Record<JudgeChoice, string> = { jev: 'jev', mude: 'mude', local: 'laya', clm: 'clm' };
 
-/** Which of the three a profile is; undefined for a model as judge, a self-hosted HTTP judge or the mock. */
+/** The variable mude's profile names for its key: how it is told from a Jev profile on the same protocol. */
+export const MUDE_KEY_VARIABLE = 'MU_JUDGE_MUDE_KEY';
+
+/**
+ * mude, mu's own judge on this Mac: a System One profile like Jev's, at a local address, set up and switched on by
+ * `mu judge mude`, not by `choose`.
+ */
+export const isMude = (judge: JudgeSettings | undefined): boolean =>
+  judge?.type === 'typesafe' && judge.apiKeyEnv === MUDE_KEY_VARIABLE;
+
+/** Which kind a profile is; undefined for a model as judge, a self-hosted HTTP judge or the mock. */
 export function kindOf(judge: JudgeSettings | undefined): JudgeChoice | undefined {
   if (!judge) return undefined;
+  if (isMude(judge)) return 'mude';
   if (judge.type === 'classifier') return serviceOf(judge) ? 'jev' : undefined;
   return KIND_OF[judge.type];
 }
@@ -128,9 +143,11 @@ export function profileFor(settings: KyrnSettings, choice: JudgeChoice): string 
 
 /**
  * The settings with `choice` as the one judge. A cascade someone built by hand is replaced: the simple view has one
- * judge, the advanced view has the order.
+ * judge, the advanced view has the order. mude is left to its command (`mu judge mude enable`), which also starts it
+ * and keeps the judges behind it: the settings stay as they are.
  */
 export function choose(settings: KyrnSettings, choice: JudgeChoice): KyrnSettings {
+  if (choice === 'mude') return settings;
   const existing = profileFor(settings, choice);
   return existing ? { ...settings, tiers: [existing] } : settings;
 }

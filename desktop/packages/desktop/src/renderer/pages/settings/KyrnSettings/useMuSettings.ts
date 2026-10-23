@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -14,7 +15,16 @@ import { summarize } from '@/renderer/components/kernel/kernelSummary';
 import { KERNEL_SUMMARY_KEY } from '@/renderer/components/kernel/useKernelSummary';
 import type { AvailableModels } from '@/common/kyrn/models';
 import type { KyrnSettings } from '@/common/kyrn/types';
-import { completeSettings, dirtySections, isStale, newDraft, toSave, type Draft, type SectionId } from './draft';
+import {
+  completeSettings,
+  dirtySections,
+  isStale,
+  newDraft,
+  rebaseDraft,
+  toSave,
+  type Draft,
+  type SectionId,
+} from './draft';
 import { toMuError, type MuError } from './fields/muError';
 import { recheckMu } from './recheck';
 
@@ -33,8 +43,17 @@ export type MuSettings = {
   edit: (change: (draft: Draft) => Draft) => void;
   editSettings: (change: (settings: KyrnSettings) => KyrnSettings) => void;
   reload: () => void;
+  /** Loads the files again, then makes `change` in the new draft (unsaved, as an edit is). */
+  reloadWith: (change: (settings: KyrnSettings) => KyrnSettings) => void;
+  /**
+   * After mu's own command changed the files (mude): reads them again and keeps what the draft changed (see
+   * `rebaseDraft`). Answers with the new base and draft, for a save that must not wait for the next render; undefined
+   * when the files could not be read.
+   */
+  rebase: (judge: 'files' | 'draft') => Promise<{ base: KyrnSettings; draft: Draft } | undefined>;
   discard: () => void;
-  save: () => Promise<boolean>;
+  /** Saves the draft; `from`, a base and draft just made by `rebase`, instead of this render's. */
+  save: (from?: { base: KyrnSettings; draft: Draft }) => Promise<boolean>;
 };
 
 const NOTHING: AvailableModels = { providers: [], thinkingLevels: [] };
@@ -49,7 +68,11 @@ export function useMuSettings(): MuSettings {
   const [error, setError] = useState<MuSettings['error']>();
   const [generation, setGeneration] = useState(0);
 
-  const reload = useCallback(() => {
+  // What `rebase` moves the draft from: the newest, whichever render last saw it.
+  const latest = useRef<{ base?: KyrnSettings; draft?: Draft }>({});
+  latest.current = { base, draft };
+
+  const load = useCallback((change?: (settings: KyrnSettings) => KyrnSettings) => {
     setLoading(true);
     setError(undefined);
     void kyrnBridge.settings
@@ -58,7 +81,7 @@ export function useMuSettings(): MuSettings {
       .then(completeSettings)
       .then((value) => {
         setBase(value);
-        setDraft(newDraft(value));
+        setDraft(change ? { ...newDraft(value), settings: change(value) } : newDraft(value));
         setGeneration((now) => now + 1);
       })
       .catch((cause: unknown) => setError({ ...toMuError(cause), stale: false }))
@@ -70,7 +93,24 @@ export function useMuSettings(): MuSettings {
       .then(setAvailable)
       .catch(() => setAvailable(NOTHING));
   }, []);
+  const reload = useCallback(() => load(), [load]);
+  const reloadWith = useCallback((change: (settings: KyrnSettings) => KyrnSettings) => load(change), [load]);
   useEffect(reload, [reload]);
+
+  const rebase = useCallback(async (judge: 'files' | 'draft') => {
+    try {
+      const fresh = completeSettings(unwrap(await kyrnBridge.settings.invoke()));
+      const { base: before, draft: now } = latest.current;
+      const next = before && now ? rebaseDraft(before, now, fresh, judge) : newDraft(fresh);
+      latest.current = { base: fresh, draft: next };
+      setBase(fresh);
+      setDraft(next);
+      return { base: fresh, draft: next };
+    } catch (cause) {
+      setError({ ...toMuError(cause), stale: false });
+      return undefined;
+    }
+  }, []);
 
   const edit = useCallback((change: (draft: Draft) => Draft) => setDraft((now) => (now ? change(now) : now)), []);
   const editSettings = useCallback(
@@ -83,29 +123,34 @@ export function useMuSettings(): MuSettings {
     setGeneration((now) => now + 1);
   }, [base]);
 
-  const save = useCallback(async () => {
-    if (!draft) return false;
-    setSaving(true);
-    setError(undefined);
-    // The send boxes show the model a new conversation starts with: they read it again once a new one is saved.
-    const newDefault = base ? dirtySections(base, draft).has('defaultModel') : false;
-    try {
-      const saved = completeSettings(unwrap(await kyrnBridge.save.invoke(toSave(draft, base))));
-      setBase(saved);
-      setDraft(newDraft(saved));
-      void recheckMu();
-      if (newDefault) void mutate('mu.defaultModel');
-      // The kernel bar names the judge and counts the decision points that act.
-      void mutate(KERNEL_SUMMARY_KEY, summarize(saved), { revalidate: false });
-      return true;
-    } catch (cause) {
-      const failure = toMuError(cause);
-      setError({ ...failure, stale: isStale(failure) });
-      return false;
-    } finally {
-      setSaving(false);
-    }
-  }, [draft, base]);
+  const save = useCallback(
+    async (from?: { base: KyrnSettings; draft: Draft }) => {
+      const draftNow = from?.draft ?? draft;
+      const baseNow = from?.base ?? base;
+      if (!draftNow) return false;
+      setSaving(true);
+      setError(undefined);
+      // The send boxes show the model a new conversation starts with: they read it again once a new one is saved.
+      const newDefault = baseNow ? dirtySections(baseNow, draftNow).has('defaultModel') : false;
+      try {
+        const saved = completeSettings(unwrap(await kyrnBridge.save.invoke(toSave(draftNow, baseNow))));
+        setBase(saved);
+        setDraft(newDraft(saved));
+        void recheckMu();
+        if (newDefault) void mutate('mu.defaultModel');
+        // The kernel bar names the judge and counts the decision points that act.
+        void mutate(KERNEL_SUMMARY_KEY, summarize(saved), { revalidate: false });
+        return true;
+      } catch (cause) {
+        const failure = toMuError(cause);
+        setError({ ...failure, stale: isStale(failure) });
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [draft, base]
+  );
 
   const dirty = useMemo(() => (base && draft ? dirtySections(base, draft) : new Set<SectionId>()), [base, draft]);
   return {
@@ -120,6 +165,8 @@ export function useMuSettings(): MuSettings {
     edit,
     editSettings,
     reload,
+    reloadWith,
+    rebase,
     discard,
     save,
   };
