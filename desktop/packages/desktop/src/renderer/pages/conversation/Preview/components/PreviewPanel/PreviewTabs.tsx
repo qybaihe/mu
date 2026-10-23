@@ -232,15 +232,17 @@ const PreviewTabs: React.FC<PreviewTabsProps> = ({
                 {/* 叉叉放在 16px 的悬停方框里，图标本身收到 12px，与右侧面板按钮的视觉重量一致。
                     The close glyph sits in a 16px hover box, trimmed to 12px, so it weighs
                     the same as the panel buttons on the right. */}
-                <span
-                  className='flex items-center justify-center w-16px h-16px rd-4px flex-shrink-0 hover:bg-bg-3 transition-colors'
+                <button
+                  type='button'
+                  aria-label={t('common.close')}
+                  className='flex items-center justify-center w-16px h-16px rd-4px flex-shrink-0 hover:bg-bg-3 transition-colors bg-transparent border-0 p-0'
                   onClick={(e) => {
                     e.stopPropagation();
                     onCloseTab(tab.id);
                   }}
                 >
                   <Close theme='outline' size='12' fill={iconColors.secondary} className='hover:fill-primary' />
-                </span>
+                </button>
               </div>
             ))
           ) : (
