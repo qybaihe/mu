@@ -20,7 +20,7 @@ mu 有两种用法：自带所需一切的**桌面端**，和 **`mu` 命令行**
 2. 打开它。新手引导分四步：模型、权限模式、判定器、开始。
    - **模型。** 粘贴一个 API key，mu 会从格式认出是哪家服务（DeepSeek、Kimi、Qwen、GLM、SiliconFlow、OpenRouter、OpenAI、Anthropic、Google Gemini、xAI 等），并用一次请求检查它。也可以用 ChatGPT、Grok 或 Google 订阅登录。密钥不对、余额为零、地区不支持或连不上网，每一种都会说明该怎么办。
    - **权限。** 默认选中「判定模式」；见[权限与安全](@docs/permissions)。
-   - **判定器。** 没有密钥时，由免费的 Jev 回答（TypeSafe 托管的判定模型，经 OpenCode Zen）。不想给判定器发送任何内容，就选**不用判定器**。之后随时可以回来改。
+   - **判定器。** 在能跑 [mude 1.0](@docs/judges#mude)（mu 自己的决策模型）的 Mac 上，一开始就选中它，点一下就能装好。否则，没有密钥时，由免费的 Jev 回答（TypeSafe 托管的判定模型，经 OpenCode Zen）。不想给判定器发送任何内容，就选**不用判定器**。之后随时可以回来改。
    - **开始。** 如果 mu 找到 Claude Code、Codex 或 ZCode 的对话，会提出帮你导入（引导的第一屏也会提）。
 3. 选一个文件夹，开始对话。
 
@@ -61,7 +61,7 @@ mu                     # 在当前目录开一个会话
 
 ## 判定器 {#judge}
 
-mu 把一次会话里的例行问题交给一个小而快的判定模型。你不需要专门设置：没有 Jev 密钥时，由 OpenCode Zen 上免费的 Jev 回答，mu 每天提示一次。要用自己的密钥、本地判定器或别的模型，见[判定器](@docs/judges)。
+mu 把一次会话里的例行问题交给一个小而快的判定模型。你不需要专门设置：没有 Jev 密钥时，由 OpenCode Zen 上免费的 Jev 回答，mu 每天提示一次。在 Apple 芯片的 Mac 上，`mu setup` 和桌面端推荐 [mude 1.0](@docs/judges#mude)：mu 自己的决策模型，在你的 Mac 上运行。要用自己的密钥、本地判定器或别的模型，见[判定器](@docs/judges)。
 
 {points} 个判定点里有 {points_active} 个从一开始就按判定结果行事（`context.compact`、`output.drift`、`capability.disclosure` 和 `swarm.patch` 默认关闭，`notify.routing`、`input.interjection` 和 `turn.drift` 默认只记录），每次判定都会记录下来：`/status`、`mu ledger`，或桌面端的「判定」页。想先观察判定器、再决定信不信它，就把判定点设成影子模式：照常提问并记录，但不改变任何东西。
 
