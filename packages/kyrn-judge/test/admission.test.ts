@@ -155,6 +155,17 @@ describe("tool output admission", () => {
 		for (const call of calls) expect(Object.keys(call.state as object)).toEqual(["call", "chunk"]);
 	});
 
+	it("with Laya first and Jev behind it, asks in batches: Laya is not trusted on screening, so Jev answers", async () => {
+		const provider = kindJudge();
+		const harness = await run("active", provider, { tiers: ["laya", "jev"] });
+		expect(toolResultText(harness)).toContain("of warning output omitted");
+		const calls = admissionCalls(provider);
+		expect(calls).toHaveLength(1);
+		expect(Object.keys(calls[0].questions)).toEqual(
+			Array.from({ length: middleChunks }, (_, index) => `k${index + 1}`),
+		);
+	});
+
 	it("past the wait, lets the output through whole and only records the verdict", async () => {
 		let release: () => void = () => {};
 		const held = new Promise<void>((resolve) => {

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { ClassifierQuestion, JsonObject } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { isTrusted } from "../cascade.ts";
 import { CapabilityCatalog } from "../catalog/catalog.ts";
 import { DEFAULT_CONFIG, featureOptions, type KyrnConfig } from "../config.ts";
 import { DecisionEngine, type DecisionMode } from "../decision.ts";
@@ -14,6 +15,7 @@ import type { ClassifierCall } from "../providers/classifier.ts";
 import type { FreeJevOutcome } from "../providers/free-jev.ts";
 import type { LlmCompletion } from "../providers/llm.ts";
 import { buildJudge, resolveJudgeConfig } from "../registry.ts";
+import type { Capability } from "../types.ts";
 import { createJudgeFetch, type JudgeFetch } from "./judge-fetch.ts";
 import {
 	type KyrnPresentationEvent,
@@ -226,11 +228,8 @@ export class KyrnRuntime {
 	 * again. Undefined before a turn has chosen, or while the decision is off.
 	 */
 	capabilitiesOpen?: () => readonly string[] | undefined;
-	/**
-	 * True when the configured judge answers concurrent calls concurrently (a hosted model). The local
-	 * sidecar answers one at a time, and there the work of a turn is best asked in order of importance.
-	 */
-	readonly judgeParallel: boolean;
+	/** The judges in use, in order: the configured tiers, or what `/mu judge` switched to. */
+	private tiers: readonly string[];
 	private latestCtx: ExtensionContext | undefined;
 	private firstUserMessage = "";
 	private turnStartListeners: ((words: string) => void)[] = [];
@@ -246,7 +245,7 @@ export class KyrnRuntime {
 		this.pi = pi;
 		this.config = config;
 		if (problem) this.problems.push(problem);
-		this.judgeParallel = resolveJudgeConfig(config.tiers[0] ?? "", config)?.type !== "local";
+		this.tiers = config.tiers;
 		const sessionLedger: LedgerSink = {
 			append: (record: LedgerRecord) => {
 				pi.appendEntry(LEDGER_ENTRY_TYPE, record);
@@ -301,10 +300,33 @@ export class KyrnRuntime {
 		return built.judge;
 	}
 
+	/**
+	 * True when the first judge answers concurrent calls concurrently (a hosted model). The local
+	 * sidecar answers one at a time, and there the work of a turn is best asked in order of importance.
+	 */
+	get judgeParallel(): boolean {
+		return resolveJudgeConfig(this.tiers[0] ?? "", this.config)?.type !== "local";
+	}
+
+	/**
+	 * Whether the judge that answers `specId`'s questions takes many of them in one request. That is the first of its
+	 * judges (its route, else the tiers) trusted on `capability`: the cascade passes over the others. With `laya,jev`,
+	 * Jev answers `screen` questions, which Laya is not trusted on, so they go in batches; only a local judge that
+	 * answers them itself, whose window holds one, is asked one at a time.
+	 */
+	answersInBatches(specId: string, capability: Capability): boolean {
+		for (const name of this.config.routes[specId] ?? this.tiers) {
+			const judge = resolveJudgeConfig(name, this.config);
+			if (judge && isTrusted(judge.profile, capability)) return judge.type !== "local";
+		}
+		return this.judgeParallel;
+	}
+
 	/** Switch the decision model at runtime, e.g. `/mu judge laya,jev`. */
 	useJudges(tiers: readonly string[]): readonly string[] {
 		const before = this.problems.length;
 		this.engine.setJudge(this.buildConfiguredJudge(tiers));
+		this.tiers = tiers;
 		return this.problems.slice(before);
 	}
 

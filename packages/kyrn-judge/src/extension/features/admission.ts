@@ -164,7 +164,7 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 		middle: readonly string[],
 		signal: AbortSignal | undefined,
 	): Promise<readonly AdmissionOutcome[]> => {
-		if (!runtime.judgeParallel) {
+		if (!runtime.answersInBatches(toolAdmission.id, "screen")) {
 			const decisions = await runtime.engine.decideMany(
 				toolAdmission,
 				middle.map((chunk) => ({ call, chunk })),
