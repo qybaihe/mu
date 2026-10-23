@@ -31,7 +31,7 @@
 
 - **mu**：命令列。pi 的全部能力，加上判定核心。
 - **mu 桌面版**：內建 mu 和執行環境的桌面應用程式。下載，接上一個模型，開始。
-- **判定器**：預設的判定模型是 Jev，由 TypeSafe 託管。是非題、選擇題、評分題，每個答案帶機率，每一次判定都記進判定帳本。任何判定模型都可以取代它：在你的 Mac 上執行的 mu 自有模型 [mude](#mude在你的-mac-上判定不離開本機)、本機的 Laya（審批除外）、你自己的 System One 服務，或任何一個大模型。
+- **判定器**：預設的判定模型是 Jev，由 TypeSafe 託管。是非題、選擇題、評分題，每個答案帶機率，每一次判定都記進判定帳本。任何判定模型都可以取代它：在你的 Mac 上執行的 mu 自有模型 [mude 1.0](#mude-10針對程式設計場景最佳化的決策模型)、本機的 Laya（審批除外）、你自己的 System One 服務，或任何一個大模型。
 
 **目錄：**[快速開始](#快速開始) · [一輪是怎麼走的](#一輪是怎麼走的) · [判定點](#判定點) · [判定器](#判定器) · [實測](#實測) · [蜂群](#蜂群) · [人話看板](#人話看板) · [桌面版](#桌面版) · [命令列](#命令列) · [文件](#文件) · [參與貢獻](#參與貢獻)
 
@@ -141,16 +141,16 @@ mu                  # 在目前目錄開一個工作階段
 ## 判定器
 
 - **Jev**：TypeSafe 託管的判定模型，回答有邊界的問題，答案帶機率。可以經 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI，或任何支援同一協定的服務呼叫，每個服務有自己的金鑰（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`）：在桌面版的「判定器」頁選一個，預設用第一個設定了金鑰的。一把金鑰都沒有時，預設由 OpenCode Zen 上限時免費的 Jev 1.13 回答：判定要讀的內容會送到 OpenCode，它不拿來訓練模型，mu 每天提示一次。設定金鑰（`mu setup`，或「判定器」頁）後，下一個問題起就用你的金鑰。在作者自己的工作階段裡實測：HTTP/2 上一個熱連線的問題約 0.3 秒；16 塊工具輸出併成一個請求判完 0.44 秒，狀態只計費一次。判定、機率和耗時都進判定帳本：`mu ledger`，或桌面版的「判定」頁。
-- **mude**（本機，Apple 晶片的 Mac）：mu 自己的判定模型，專為判定微調，見[下文](#mude在你的-mac-上判定不離開本機)。
+- **mude 1.0**（本機，Apple 晶片的 Mac）：mu 自己的決策模型，針對程式設計場景最佳化，見[下文](#mude-10針對程式設計場景最佳化的決策模型)。
 - **Laya**（本機）。一個 3.22 億參數的判定器，在你的機器上執行，不經過網路。未經你同意不下載任何東西。在簡單述詞上可靠，在後設判斷上偏弱：先讓它以影子模式和你目前的判定器並行執行，看過判定帳本再把判定點交給它。
 - **pi 模型目錄裡的任何分類模型**，作為一個層級：`classifier:<provider>/<model>`。例如 Cloudflare 的 Clef（`clef`、`clef-flash`）、OpenRouter 和 Vercel AI Gateway 上的 System One 模型、llama.cpp 的分類模型。
 - **任何大模型**，作為一個層級：`llm:<provider>/<model>`。
 
 這換來什麼，以作者自己的工作階段為準：上下文很少填滿，因為工具輸出逐塊進入、過期結果不寫摘要直接放下；測試記錄精簡預設關閉，開啟後折疊完全相同的重複，在最長的幾份失敗測試記錄裡省下 51% 的字元，一個字元也沒丟（見[實測](#實測)）；提示快取過期之前，核心會判斷你會不會回來，會回來就提前續上。
 
-### mude：在你的 Mac 上判定，不離開本機
+### mude 1.0：針對程式設計場景最佳化的決策模型
 
-[mude-2b](https://huggingface.co/qybaihe/mude-2b) 是 mu 自己的判定模型：2B 參數，專為判定場景微調訓練，判定能力達到 SOTA 級。一次前向就答完一個判定的所有問題，每個答案帶機率；它在你的機器上執行，判定的內容不離開本機。mude-2b 和它的 [MLX 8-bit 版](https://huggingface.co/qybaihe/mude-2b-mlx-8bit)（1.8 GB）都採用 MIT 授權。目前一鍵安裝支援 Apple 晶片的 Mac（macOS 14 以上，記憶體 8 GB 以上），用的是 MLX 版：
+mude 1.0 是 mu 自己的決策模型，針對程式設計場景特別最佳化：經過微調和訓練，在程式設計場景的決策上達到 SOTA 級。它有 2B 參數，一次前向就答完一個判定的所有問題，每個答案帶機率；它在你的機器上執行，判定的內容不離開本機。[完整版](https://huggingface.co/qybaihe/mude-1.0)和 [MLX 8-bit 版](https://huggingface.co/qybaihe/mude-1.0-mlx-8bit)（1.8 GB）都採用 MIT 授權。目前一鍵安裝支援 Apple 晶片的 Mac（macOS 14 以上，記憶體 8 GB 以上），用的是 MLX 版：
 
 ```bash
 mu judge mude install               # 下載、逐一校驗檔案、在 127.0.0.1 上啟動，並設為判定器
@@ -160,9 +160,9 @@ mu judge mude disable               # 換回原本的判定器，並停掉它的
 mu judge mude uninstall             # 刪除模型和它的 Python 環境
 ```
 
-桌面 App 首次啟動的引導裡，「判定器」這一步會提供安裝 mude：顯示下載進度，失敗可以重試，也可以略過。之後在設定的「判定器」頁可以安裝、啟動、停止和解除安裝 mude，「僅限本機」開關等同於 `--local-only`。如果這台 Mac 跑不了 mude，引導會說明原因，繼續用託管的判定器。
+桌面 App 首次啟動的引導裡，「判定器」這一步會提供安裝 mude 1.0：顯示下載進度，失敗可以重試，也可以略過。之後在設定的「判定器」頁可以安裝、啟動、停止和解除安裝 mude，「僅限本機」開關等同於 `--local-only`。如果這台 Mac 跑不了 mude，引導會說明原因，繼續用託管的判定器。
 
-預設情況下，原本的判定器排在 mude 後面：mude 答不了的（服務沒在執行，或者它拿不準），以及它暫時還不被信任的兩項注入檢查，交給那個判定器。如果那個判定器是託管的（預設的 Jev 就是），它看到的內容會離開本機。mude 的服務執行時佔用約 4 GB 記憶體，`mu judge mude stop` 可以停掉。其他平台上，可以用完整的 [mude-2b](https://huggingface.co/qybaihe/mude-2b)（bf16、PyTorch，建議有 CUDA 顯示卡）自帶的 System One 服務執行，再依模型卡的寫法在 `mu.json` 裡把它加成 `typesafe` 判定器。
+預設情況下，原本的判定器排在 mude 後面：mude 答不了的（服務沒在執行，或者它拿不準），以及它暫時還不被信任的兩項注入檢查，交給那個判定器。如果那個判定器是託管的（預設的 Jev 就是），它看到的內容會離開本機。mude 的服務執行時佔用約 4 GB 記憶體，`mu judge mude stop` 可以停掉。其他平台上，可以用[完整版](https://huggingface.co/qybaihe/mude-1.0)（bf16、PyTorch，建議有 CUDA 顯示卡）自帶的 System One 服務執行，再依模型卡的寫法在 `mu.json` 裡把它加成 `typesafe` 判定器。
 
 ## 實測
 
@@ -334,13 +334,13 @@ npm run check                  # 格式、靜態檢查、型別
 如果你在工作中用到 mude，請引用：
 
 ```bibtex
-@misc{mude2b2026,
-  title        = {mude-2b: the decision model of the mu coding agent},
+@misc{mude2026,
+  title        = {mude 1.0: a decision model optimized for coding},
   author       = {qybaihe},
   year         = {2026},
   howpublished = {Hugging Face},
-  url          = {https://huggingface.co/qybaihe/mude-2b},
-  note         = {MIT License. MLX 8-bit edition for Apple silicon: https://huggingface.co/qybaihe/mude-2b-mlx-8bit}
+  url          = {https://huggingface.co/qybaihe/mude-1.0},
+  note         = {MIT License. MLX 8-bit edition for Apple silicon: https://huggingface.co/qybaihe/mude-1.0-mlx-8bit}
 }
 ```
 
@@ -348,7 +348,7 @@ npm run check                  # 格式、靜態檢查、型別
 
 mu 採用 MIT 授權（[LICENSE](../../LICENSE)；桌面版見 [desktop/LICENSE](../../desktop/LICENSE)）。它以 [pi](https://github.com/earendil-works/pi)（程式設計代理，MIT）為基礎建構，感謝 pi 的作者。有幾個判定點參考了其他專案：提示注入篩檢的問法來自 [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills)，續跑檢查和批次判定工具參考了 [oh-my-pi](https://github.com/can1357/oh-my-pi)。判定核心用到的第三方程式碼列在 [THIRD_PARTY_NOTICES.md](../../packages/kyrn-judge/THIRD_PARTY_NOTICES.md)。
 
-mude-2b 由 [d3-nano](https://huggingface.co/vllm-sr/d3-nano)（Decision 3.0，vLLM Semantic Router Team）微調而來，後者以 Qwen3.5-2B 為基礎；兩者都採用 Apache-2.0 授權，模型倉庫裡保留了它們的聲明。
+mude 1.0 由 [d3-nano](https://huggingface.co/vllm-sr/d3-nano)（Decision 3.0，vLLM Semantic Router Team）微調而來，後者以 Qwen3.5-2B 為基礎；兩者都採用 Apache-2.0 授權，模型倉庫裡保留了它們的聲明。
 
 桌面版最初 fork 自 [AionUi](https://github.com/iOfficeAI/AionUi)，從 AionUi 帶來的檔案列在 [desktop/APACHE-FILES.txt](../../desktop/APACHE-FILES.txt)，仍以 Apache License 2.0 授權（見 [desktop/NOTICE](../../desktop/NOTICE)）。
 

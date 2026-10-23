@@ -160,7 +160,6 @@ kbd { padding: 1px 6px; border: 1px solid var(--line-strong); border-bottom-widt
 .opt-flags { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 0 !important; font-size: 13px; color: var(--muted); }
 .opt-flag { padding: 0 9px; border: 1px solid var(--line-strong); border-radius: 999px; font-size: 12px; }
 .opt-flag.on { border-color: transparent; background: var(--accent); color: var(--accent-on); }
-.opt-flag.beta { border-style: dashed; }
 .opt-points a { text-decoration: none; }
 .opt-points code { font-size: 12px !important; }
 .prose h2 .opt-name { margin-left: 6px; border: 0; background: none; padding: 0; font-size: 0.55em; font-weight: 500; color: var(--faint); vertical-align: middle; }

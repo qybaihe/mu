@@ -29,7 +29,7 @@
 
 A coding agent makes hundreds of decisions per session that aren't about the code: what goes into the context, whether a command is safe, whether a finding is worth passing to another agent, whether the work is really done. Handing these to the main model costs tokens, time and focus. Fixed rules get them wrong too often. mu hands them to a **judge**: a small, fast model that answers one bounded question at a time, at 40 decision points in the agent loop. The main model keeps its attention on the work.
 
-mu comes as a command-line tool, `mu`, which does everything pi does and adds the judgment kernel, and as a desktop app that bundles mu and its runtime. The default judge model is Jev, hosted by TypeSafe. It answers yes/no, choice and score questions with a probability for each answer. Any judge model can take its place: [mude](#mude-a-judge-that-stays-on-your-mac), mu's own model, on your Mac; the local Laya (except for approvals); your own System One server; or any LLM.
+mu comes as a command-line tool, `mu`, which does everything pi does and adds the judgment kernel, and as a desktop app that bundles mu and its runtime. The default judge model is Jev, hosted by TypeSafe. It answers yes/no, choice and score questions with a probability for each answer. Any judge model can take its place: [mude 1.0](#mude-10-a-decision-model-optimized-for-coding), mu's own model, on your Mac; the local Laya (except for approvals); your own System One server; or any LLM.
 
 What you get:
 
@@ -165,7 +165,7 @@ Every point, with its feature switch and options: [docs/reference/decision-point
   With no key set, Jev 1.13 on OpenCode Zen answers, free for a limited time. What it judges goes to OpenCode, which doesn't train on it, and mu reminds you of this once a day. Set a key (`mu setup`, or Settings → Judges in the app) and mu switches to it starting with the next question.
 
   Measured in the authors' own sessions: a warm question takes about 0.3 s over HTTP/2, and 16 chunks of tool output are judged in a single request in 0.44 s, with the shared state billed once. Verdicts, probabilities and timings go to the ledger: run `mu ledger`, or open the Judge tab in the desktop app.
-- **mude** (local, a Mac with Apple silicon) is mu's own judge model, fine-tuned for judging: [below](#mude-a-judge-that-stays-on-your-mac).
+- **mude 1.0** (local, a Mac with Apple silicon) is mu's own decision model, optimized for coding: [below](#mude-10-a-decision-model-optimized-for-coding).
 - **Laya** (local, macOS on Apple silicon) is a 322M-parameter judge that runs on your machine and never touches the network. Nothing is downloaded without your consent. It's reliable on simple predicates and weaker on meta-judgments, so run it in shadow alongside your current judge and read the ledger before you give it a decision point.
 - **Any classifier model** in pi's catalog can serve as a tier: `classifier:<provider>/<model>`. Examples include Cloudflare's Clef (`clef`, `clef-flash`), the System One models on OpenRouter and the Vercel AI Gateway, or a llama.cpp classifier.
 - **Any LLM** can serve as a tier: `llm:<provider>/<model>`.
@@ -179,9 +179,9 @@ Judges can be chained in tiers, cheapest first:
   </picture>
 </p>
 
-### mude, a judge that stays on your Mac
+### mude 1.0, a decision model optimized for coding
 
-[mude-2b](https://huggingface.co/qybaihe/mude-2b) is mu's own judge model: 2B parameters, fine-tuned for judging, with state-of-the-art judging ability. It answers every question of a decision in one forward pass, with a probability for each answer, and runs on your machine, so what it judges never leaves it. Both mude-2b and its [MLX 8-bit edition](https://huggingface.co/qybaihe/mude-2b-mlx-8bit) (1.8 GB) are under the MIT license. For now, the one-step setup supports Macs with Apple silicon (macOS 14 or later, 8 GB of memory or more) and uses the MLX edition:
+mude 1.0 is mu's own decision model, optimized for coding: fine-tuned and trained for the decisions a coding agent makes, and state of the art at them. It has 2B parameters, answers every question of a decision in one forward pass, with a probability for each answer, and runs on your machine, so what it judges never leaves it. Both editions, the [full model](https://huggingface.co/qybaihe/mude-1.0) and the [MLX 8-bit edition](https://huggingface.co/qybaihe/mude-1.0-mlx-8bit) (1.8 GB), are under the MIT license. For now, the one-step setup supports Macs with Apple silicon (macOS 14 or later, 8 GB of memory or more) and uses the MLX edition:
 
 ```bash
 mu judge mude install               # download it, check every file, start it on 127.0.0.1 and make it the judge
@@ -191,9 +191,9 @@ mu judge mude disable               # back to the judges you had before, and sto
 mu judge mude uninstall             # remove the model and its Python environment
 ```
 
-In the desktop app, the first-run guide's judge step offers to install mude, with download progress and a retry if it fails; you can skip it. Later, the Judges page in Settings installs, starts, stops and uninstalls mude, and its "Only local" switch is the same as `--local-only`. On a Mac that can't run mude, the guide says so and keeps the hosted judge.
+In the desktop app, the first-run guide's judge step offers to install mude 1.0, with download progress and a retry if it fails; you can skip it. Later, the Judges page in Settings installs, starts, stops and uninstalls mude, and its "Only local" switch is the same as `--local-only`. On a Mac that can't run mude, the guide says so and keeps the hosted judge.
 
-By default, the judge you had before stays behind mude. What mude can't answer (its server is stopped, or it's unsure) goes to that judge, and so do two injection checks mude isn't trusted with yet. If that judge is hosted, as the default Jev is, what it reads leaves your machine. While it runs, mude's server uses about 4 GB of memory; `mu judge mude stop` stops it. On other platforms, you can serve the full [mude-2b](https://huggingface.co/qybaihe/mude-2b) (bf16, PyTorch; a CUDA GPU is recommended) with its own System One server and add it to `mu.json` as a `typesafe` judge, as its model card shows.
+By default, the judge you had before stays behind mude. What mude can't answer (its server is stopped, or it's unsure) goes to that judge, and so do two injection checks mude isn't trusted with yet. If that judge is hosted, as the default Jev is, what it reads leaves your machine. While it runs, mude's server uses about 4 GB of memory; `mu judge mude stop` stops it. On other platforms, you can serve the [full model](https://huggingface.co/qybaihe/mude-1.0) (bf16, PyTorch; a CUDA GPU is recommended) with its own System One server and add it to `mu.json` as a `typesafe` judge, as its model card shows.
 
 ## How mu is built
 
@@ -404,18 +404,18 @@ If mu is useful to you, a star helps others find it.
 If you use mude in your work, please cite it:
 
 ```bibtex
-@misc{mude2b2026,
-  title        = {mude-2b: the decision model of the mu coding agent},
+@misc{mude2026,
+  title        = {mude 1.0: a decision model optimized for coding},
   author       = {qybaihe},
   year         = {2026},
   howpublished = {Hugging Face},
-  url          = {https://huggingface.co/qybaihe/mude-2b},
-  note         = {MIT License. MLX 8-bit edition for Apple silicon: https://huggingface.co/qybaihe/mude-2b-mlx-8bit}
+  url          = {https://huggingface.co/qybaihe/mude-1.0},
+  note         = {MIT License. MLX 8-bit edition for Apple silicon: https://huggingface.co/qybaihe/mude-1.0-mlx-8bit}
 }
 ```
 
 ## Credits and license
 
-mu is under the MIT license ([LICENSE](LICENSE); the desktop app's is [desktop/LICENSE](desktop/LICENSE)). It is built on [pi](https://github.com/earendil-works/pi) (the coding agent, MIT), and we're grateful to its authors. Some decision points build on ideas from other projects: the wording of the prompt-injection screen comes from [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills), and the continuation check (`turn.continue`) and the bulk judging tool (`judge_items`) are based on [oh-my-pi](https://github.com/can1357/oh-my-pi). Third-party code in the judgment kernel is listed in [THIRD_PARTY_NOTICES.md](packages/kyrn-judge/THIRD_PARTY_NOTICES.md). mude-2b is a fine-tune of [d3-nano](https://huggingface.co/vllm-sr/d3-nano) (Decision 3.0, vLLM Semantic Router Team), built on Qwen3.5-2B; both are Apache-2.0, and the model's repository keeps their notices.
+mu is under the MIT license ([LICENSE](LICENSE); the desktop app's is [desktop/LICENSE](desktop/LICENSE)). It is built on [pi](https://github.com/earendil-works/pi) (the coding agent, MIT), and we're grateful to its authors. Some decision points build on ideas from other projects: the wording of the prompt-injection screen comes from [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills), and the continuation check (`turn.continue`) and the bulk judging tool (`judge_items`) are based on [oh-my-pi](https://github.com/can1357/oh-my-pi). Third-party code in the judgment kernel is listed in [THIRD_PARTY_NOTICES.md](packages/kyrn-judge/THIRD_PARTY_NOTICES.md). mude 1.0 is a fine-tune of [d3-nano](https://huggingface.co/vllm-sr/d3-nano) (Decision 3.0, vLLM Semantic Router Team), built on Qwen3.5-2B; both are Apache-2.0, and the model's repository keeps their notices.
 
 The desktop app began as a fork of [AionUi](https://github.com/iOfficeAI/AionUi); the files it took from AionUi, listed in [desktop/APACHE-FILES.txt](desktop/APACHE-FILES.txt), stay under the Apache License 2.0 (see [desktop/NOTICE](desktop/NOTICE)).

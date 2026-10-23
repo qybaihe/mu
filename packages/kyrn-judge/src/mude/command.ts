@@ -21,12 +21,13 @@ import {
 } from "./server.ts";
 
 /**
- * `mu judge mude`: installs mude, the decision model trained for mu, on this Mac and makes it mu's judge. One command
+ * `mu judge mude`: installs mude 1.0, mu's decision model optimized for coding, on this Mac and makes it mu's judge. One command
  * downloads the model (1.8 GB, every file checked against its pinned sha256), makes its Python environment, starts its
  * server on 127.0.0.1 and puts it first in mu.json. The desktop app runs the same commands with --json.
  */
 
-const USAGE = `mu judge mude: mude, mu's own decision model, as the judge on this Mac (Apple silicon, macOS 14 or later)
+const USAGE = `mu judge mude: mude 1.0, mu's own decision model optimized for coding, as the judge on this Mac
+(Apple silicon, macOS 14 or later)
 
   mu judge mude install [--local-only]   download it (${(MUDE_BYTES / 1e9).toFixed(1)} GB), set it up, start it and make it the judge
   mu judge mude enable [--local-only | --with-fallback]
@@ -36,8 +37,8 @@ const USAGE = `mu judge mude: mude, mu's own decision model, as the judge on thi
   mu judge mude status                   what is installed, running and enabled
   mu judge mude uninstall                disable it and delete the model and its Python environment
 
-What mude cannot answer, because its server is not running or it is unsure, goes to the judges that were there
-before it (Jev by default): those are hosted, so what they read leaves this machine. With --local-only, mude is the
+What mude 1.0 cannot answer, because its server is not running or it is unsure, goes to the judges that were there
+before it (Jev by default): those are hosted, so what they read leaves this machine. With --local-only, it is the
 only judge, and such a decision takes its fallback instead. Add --json for one JSON object per line.
 `;
 
@@ -113,7 +114,7 @@ export interface MudeStatus {
 function describe(status: MudeStatus): string {
 	const lines: string[] = [];
 	if (!status.supported) {
-		lines.push(`mude can't run here: ${status.problems.join("; ")}`);
+		lines.push(`mude 1.0 can't run here: ${status.problems.join("; ")}`);
 		return `${lines.join("\n")}\n`;
 	}
 	lines.push(
@@ -126,8 +127,8 @@ function describe(status: MudeStatus): string {
 	if (status.enabled) {
 		lines.push(
 			status.localOnly
-				? "judge     mude only: a decision mude cannot answer takes its fallback, and nothing goes to a hosted judge"
-				: `judge     mude, then ${status.fallback.join(" > ")} for what mude cannot answer (what those read leaves this machine)`,
+				? "judge     mude 1.0 only: a decision it cannot answer takes its fallback, and nothing goes to a hosted judge"
+				: `judge     mude 1.0, then ${status.fallback.join(" > ")} for what it cannot answer (what those read leaves this machine)`,
 		);
 	} else {
 		lines.push(`judge     ${status.installed ? "not enabled: mu judge mude enable" : "not enabled"}`);
@@ -249,10 +250,13 @@ async function ensureInstalled(ctx: Context, out: Out): Promise<void> {
 		// The files still to come, the Python environment (about 1 GB) and room to spare.
 		if (free !== undefined && free < need + 2e9) {
 			throw new Error(
-				`Not enough free disk space: mude needs about ${((need + 2e9) / 1e9).toFixed(1)} GB, and ${(free / 1e9).toFixed(1)} GB are free`,
+				`Not enough free disk space: mude 1.0 needs about ${((need + 2e9) / 1e9).toFixed(1)} GB, and ${(free / 1e9).toFixed(1)} GB are free`,
 			);
 		}
-		out.step("download", `Downloading mude (${MUDE_REPO}, ${(need / 1e9).toFixed(2)} GB) and checking every file`);
+		out.step(
+			"download",
+			`Downloading mude 1.0 (${MUDE_REPO}, ${(need / 1e9).toFixed(1)} GB) and checking every file`,
+		);
 		await downloadFiles({
 			dir: ctx.paths.model,
 			files: MUDE_FILES,
@@ -262,7 +266,7 @@ async function ensureInstalled(ctx: Context, out: Out): Promise<void> {
 		});
 	}
 	if (!venvReady(ctx.paths, ctx.lockFile)) {
-		out.step("python", "Setting up mude's Python environment (MLX, transformers; about 1 GB, once)");
+		out.step("python", "Setting up the Python environment for mude 1.0 (MLX, transformers; about 1 GB, once)");
 		let uv = findUv(ctx.paths, ctx.env);
 		if (!uv) uv = await downloadUv(ctx.paths, { onLine: (line) => out.line(line) });
 		await ensureVenv(ctx.paths, ctx.lockFile, uv, { onLine: (line) => out.line(line), env: ctx.env });
@@ -271,7 +275,7 @@ async function ensureInstalled(ctx: Context, out: Out): Promise<void> {
 
 function requireInstalled(ctx: Context): void {
 	if (!installed(ctx) || !venvReady(ctx.paths, ctx.lockFile)) {
-		throw new Error("mude is not installed here yet: mu judge mude install");
+		throw new Error("mude 1.0 is not installed here yet: mu judge mude install");
 	}
 }
 
@@ -280,8 +284,8 @@ async function start(ctx: Context, out: Out, wait = true): Promise<number> {
 	out.step(
 		"start",
 		serverAlive(ctx.paths)
-			? `mude's server is running on 127.0.0.1:${at}`
-			: `Starting mude's server on 127.0.0.1:${at} (loading the model takes a few seconds)`,
+			? `The mude 1.0 server is running on 127.0.0.1:${at}`
+			: `Starting the mude 1.0 server on 127.0.0.1:${at} (loading the model takes a few seconds)`,
 	);
 	await startServer(ctx.paths, { port: at, key: key(ctx), wait });
 	return at;
@@ -292,8 +296,8 @@ function enable(ctx: Context, out: Out, at: number, localOnly: boolean): void {
 	out.step(
 		"enable",
 		localOnly
-			? "mude is the judge, on its own. New mu sessions use it; one that is open now picks it up when it starts again."
-			: `mude is the judge, with ${tiers.slice(1).join(" > ")} behind it for what mude cannot answer. New mu sessions use it.`,
+			? "mude 1.0 is the judge, on its own. New mu sessions use it; one that is open now picks it up when it starts again."
+			: `mude 1.0 is the judge, with ${tiers.slice(1).join(" > ")} behind it for what it cannot answer. New mu sessions use it.`,
 	);
 }
 
@@ -326,7 +330,7 @@ export async function main(
 		}
 		const found = problems();
 		if (found.length > 0 && command !== "stop" && command !== "disable" && command !== "uninstall") {
-			out.error(`mude can't run on this machine: ${found.join("; ")}.`, "unsupported");
+			out.error(`mude 1.0 can't run on this machine: ${found.join("; ")}.`, "unsupported");
 			return 1;
 		}
 		switch (command) {
@@ -351,14 +355,14 @@ export async function main(
 			case "disable": {
 				if (!mudeInTiers(ctx.files)) {
 					const stopped = await stopServer(ctx.paths);
-					out.step("disable", `mude was not the judge${stopped ? "; its server is stopped" : ""}.`);
+					out.step("disable", `mude 1.0 was not the judge${stopped ? "; its server is stopped" : ""}.`);
 					break;
 				}
 				const tiers = disableMude(ctx.paths, ctx.files);
 				const stopped = await stopServer(ctx.paths);
 				out.step(
 					"disable",
-					`mude is no longer the judge: ${tiers.join(" > ")} again${stopped ? ", and its server is stopped" : ""}.`,
+					`mude 1.0 is no longer the judge: ${tiers.join(" > ")} again${stopped ? ", and its server is stopped" : ""}.`,
 				);
 				break;
 			}
@@ -369,13 +373,13 @@ export async function main(
 			}
 			case "stop": {
 				const stopped = await stopServer(ctx.paths);
-				out.step("stop", stopped ? "mude's server is stopped." : "mude's server was not running.");
+				out.step("stop", stopped ? "The mude 1.0 server is stopped." : "The mude 1.0 server was not running.");
 				break;
 			}
 			case "uninstall": {
 				if (mudeInTiers(ctx.files) || readState(ctx.paths)?.wroteEntry) {
 					const tiers = disableMude(ctx.paths, ctx.files, { removeEntry: true });
-					out.step("disable", `mude is no longer the judge: ${tiers.join(" > ")} again.`);
+					out.step("disable", `mude 1.0 is no longer the judge: ${tiers.join(" > ")} again.`);
 				}
 				await stopServer(ctx.paths);
 				rmSync(ctx.paths.root, { recursive: true, force: true });

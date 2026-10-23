@@ -261,7 +261,7 @@ On by default: yes. Decision points: `diagnostics.delivery`.
 
 ## ttsr
 
-**Mid-stream correction (experimental).** The judge, not a regular expression, notices when output goes astray, cuts it off, shows the rule and lets the model continue. Off by default; when on, every stretch of output costs one more judge call.
+**Mid-stream correction.** The judge, not a regular expression, notices when output goes astray, cuts it off, shows the rule and lets the model continue. Off by default; when on, every stretch of output costs one more judge call.
 
 On by default: no. Decision points: `output.drift`.
 
