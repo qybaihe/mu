@@ -102,7 +102,7 @@ export function usage(platform) {
 		"  mu -c | -r               continue the last session | pick a session to resume",
 		"  mu setup                 connect a model (paste an API key or pick a service) and choose a judge",
 		"                           (see mu setup --help for scripting, reading a key from stdin and the supported services)",
-		"  mu judge mude install    run mude, mu's own decision model, on this Mac as the judge (Apple silicon, 1.8 GB)",
+		"  mu judge mude install    run mude 1.0, mu's decision model optimized for coding, on this Mac as the judge (Apple silicon, 1.8 GB)",
 		"                           enable | disable | start | stop | status | uninstall (mu judge mude help)",
 		"  mu judge <cmd>           manage the local judge, Laya (macOS on Apple silicon): setup | start | stop | status | run",
 		"  mu ledger [n] [--json]   print the judge's verdicts from the last n sessions",

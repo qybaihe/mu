@@ -245,7 +245,7 @@ if (asksJudge && tiers.includes("mude")) {
 	const fallback = tiers.filter((tier) => tier !== "mude");
 	const behind = fallback.length > 0 ? `until it answers, ${fallback.join(" > ")} decide${fallback.length === 1 ? "s" : ""} (what they read leaves this machine)` : "until it answers, decisions take their fallbacks";
 	if (process.platform !== "darwin") {
-		row("--", "mude", `not available on ${platformName({ platform: process.platform, wsl })}: mude runs on a Mac with Apple silicon`);
+		row("--", "mude 1.0", `not available on ${platformName({ platform: process.platform, wsl })}: mude 1.0 runs on a Mac with Apple silicon`);
 	} else {
 		const entry = config?.judges?.mude;
 		const address = (typeof entry?.baseUrl === "string" ? entry.baseUrl : "http://127.0.0.1:8790/v1/systemone").replace(/\/v1\/systemone\/?$/, "");
@@ -254,12 +254,12 @@ if (asksJudge && tiers.includes("mude")) {
 			const response = await fetch(`${address}/health`, { signal: AbortSignal.timeout(2000) });
 			const health = await response.json();
 			const ms = Math.round(performance.now() - startedAt);
-			row(health.status === "ready" ? "ok" : "--", "mude", `${address} · ${health.status} · ${ms} ms`);
+			row(health.status === "ready" ? "ok" : "--", "mude 1.0", `${address} · ${health.status} · ${ms} ms`);
 		} catch {
-			row("fix", "mude", `${address} isn't answering: run mu judge mude start   (first time: mu judge mude install)`);
+			row("fix", "mude 1.0", `${address} isn't answering: run mu judge mude start   (first time: mu judge mude install)`);
 			row("--", "", behind);
 		}
-		if (!has("MU_JUDGE_MUDE_KEY")) row("fix", "mude key", "MU_JUDGE_MUDE_KEY is not set, so mu can't ask mude: run mu judge mude enable");
+		if (!has("MU_JUDGE_MUDE_KEY")) row("fix", "mude 1.0 key", "MU_JUDGE_MUDE_KEY is not set, so mu can't ask mude 1.0: run mu judge mude enable");
 	}
 }
 

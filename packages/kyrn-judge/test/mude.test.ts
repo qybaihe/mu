@@ -280,7 +280,7 @@ describe("mu judge mude", () => {
 				text += chunk;
 			}),
 		).toBe(0);
-		expect(text).toContain("mude was not the judge");
+		expect(text).toContain("mude 1.0 was not the judge");
 		expect(existsSync(join(dir, "home", "agent", "mu.json"))).toBe(false);
 	});
 });

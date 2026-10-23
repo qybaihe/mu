@@ -4,7 +4,7 @@
 
 ### Added
 
-- `mu judge mude install` makes mude, mu's own decision model, the judge on a Mac with Apple silicon (macOS 14 or later, 8 GB of memory or more). The steps:
+- `mu judge mude install` makes mude 1.0, mu's own decision model optimized for coding, the judge on a Mac with Apple silicon (macOS 14 or later, 8 GB of memory or more). The steps:
   - It downloads the MLX 8-bit edition from huggingface.co/qybaihe/mude-2b-mlx-8bit at a pinned revision: 31 files, 1.8 GB. Every file is checked against the sha256 pinned in `src/mude/manifest.ts`, and an interrupted download resumes with a range request.
   - It makes a Python 3.13 environment with uv: the machine's own, or a pinned release mu downloads. The packages come from `kyrn/local-judge/mude-requirements.lock.txt` with `--require-hashes`.
   - It starts the package's own System One server on 127.0.0.1:8790 (another free port when that one is taken) with a random key.

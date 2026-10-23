@@ -8,8 +8,8 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ### Added
 
-- **mude, mu's own decision model, can be your judge on a Mac with Apple silicon.** `mu judge mude install` does it in one command:
-  - It downloads mude (1.8 GB) and checks every file.
+- **mude 1.0, mu's own decision model, optimized for coding, can be your judge on a Mac with Apple silicon.** `mu judge mude install` does it in one command:
+  - It downloads mude 1.0 (1.8 GB) and checks every file.
   - It sets mude up and starts it on your Mac.
   - It makes mude the judge. Decisions it answers never leave your Mac, and it answers in about 0.1 s.
   - What mude can't answer goes to the judge you had before, which is hosted. `mu judge mude enable --local-only` makes mude the only judge. While it runs, it uses about 4 GB of memory.

@@ -32,7 +32,7 @@ Out of the box, the judge is Jev 1.13, TypeSafe's hosted judge model, free on Op
 - **Jev** (hosted): set `TYPESAFE_API_KEY` (TypeSafe), `MU_JUDGE_OPENROUTER_API_KEY` (Jev on OpenRouter), `AI_GATEWAY_API_KEY` (Vercel AI Gateway), `OPENCODE_API_KEY` (OpenCode Zen) or `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID` (Cloudflare Workers AI) in your environment, or add it to `~/.mu/.env` as `KEY=value`. `mu setup` asks for a key and writes it there. mu reads that file as data, never prints it and starts using the key automatically.
 - **Another classifier** from pi's catalog: `/mu judge classifier:<provider>/<model>`, for example Cloudflare's Clef (`clef`, `clef-flash`) or a System One model on OpenRouter, with that provider's key.
 - **CLM** (self-hosted; its encoder needs a GPU): start `clm-serve` from [Contrastive-LM/CLM](https://github.com/Contrastive-LM/CLM), then run `/mu judge clm`. For a server on another machine, add `"judges": { "clm": { "type": "clm", "baseUrl": "http://<host>:8700" } }` to `~/.mu/agent/mu.json`. If the server was started with `CLM_API_KEY`, set the same value in `MU_JUDGE_CLM_API_KEY`. `mu doctor` checks the server.
-- **mude** (local, a Mac with Apple silicon, macOS 14+), mu's own judge model, fine-tuned for judging: `mu judge mude install` downloads it (1.8 GB), sets it up in `~/.mu/local-judge/mude`, starts its server on 127.0.0.1 and puts it first. What it can't answer goes to the judges you had before, which are hosted; `mu judge mude enable --local-only` keeps everything on your Mac. Its server uses about 4 GB of memory until `mu judge mude stop`.
+- **mude 1.0** (local, a Mac with Apple silicon, macOS 14+), mu's own decision model, optimized for coding: `mu judge mude install` downloads it (1.8 GB), sets it up in `~/.mu/local-judge/mude`, starts its server on 127.0.0.1 and puts it first. What it can't answer goes to the judges you had before, which are hosted; `mu judge mude enable --local-only` keeps everything on your Mac. Its server uses about 4 GB of memory until `mu judge mude stop`.
 - **Laya** (local, macOS on Apple silicon): `mu judge setup` installs it into `~/.mu/local-judge`. It downloads about 930 MB, and only when you run that command.
 - **Any model you already use:** `/mu judge llm:<provider>/<model>`.
 
@@ -46,7 +46,7 @@ mu "prompt"              start a session with this prompt
 mu -p "prompt"           run one prompt, print the answer and exit
 mu -c | -r               continue the last session | pick a session to resume
 mu setup                 connect a model and choose a judge (see mu setup --help for scripting and services)
-mu judge mude <cmd>      mude on this Mac: install | enable | disable | start | stop | status | uninstall
+mu judge mude <cmd>      mude 1.0 on this Mac: install | enable | disable | start | stop | status | uninstall
 mu judge <cmd>           manage the local judge, Laya (macOS on Apple silicon): setup | start | stop | status | run
 mu ledger [n] [--json]   print the judge's verdicts from the last n sessions
 mu import <file>...      import Claude Code, Codex and ZCode conversations; --list shows them (mu import --help)
