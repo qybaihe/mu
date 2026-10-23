@@ -26,7 +26,7 @@ Judge mode puts one choice question, `tool.approval`, to the judge model: what i
     - no usable key (`error:auth`);
     - no credit on the judge's account (`error:payment_required`);
     - no judge that could be built at all, which also fails as `error:auth`;
-    - only judges not trusted with approvals, such as a local judge alone. Their answer is the neutral one, marked `untrusted`.
+    - only judges not trusted with approvals, such as Laya alone (mude 1.0 is trusted with them). Their answer is the neutral one, marked `untrusted`.
   - `judgedown`: the judge failed this time. "The judge did not answer this time, so mu asks you." / "判定器这次没有回答，所以先问你。" This covers any other `error:*` (down, too slow, a broken answer), and an answer marked `unavailable`, where the tier that should have answered failed while another answered.
   - When several judges are configured and every one fails, the failure that may pass is reported over one that lasts, whatever their order. So a local judge that is down, plus a hosted judge without a key, gives `judgedown`.
   - When the decision's mode is `off`, the judge is never asked, and the prompt still says `unsure`, as before.
