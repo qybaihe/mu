@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { isJudgeError } from "./errors.ts";
 import type { JudgeLike, JudgeTierReport } from "./judge.ts";
 import { validateQuestions } from "./judge.ts";
-import type { LedgerRecord, LedgerSink } from "./ledger.ts";
+import { appendWithTimeout, type LedgerRecord, type LedgerSink } from "./ledger.ts";
 import { hasEscapeOption } from "./policy.ts";
 import { environmentSecrets, redactJson } from "./redact.ts";
 import type {
@@ -351,11 +351,7 @@ export class DecisionEngine {
 	}
 
 	private async record(record: LedgerRecord): Promise<void> {
-		try {
-			await this.ledger?.append(record);
-		} catch {
-			// A broken ledger must not change what the agent does.
-		}
+		if (this.ledger) await appendWithTimeout(this.ledger, record);
 	}
 
 	async decide<In, const Qs extends Questions, Out extends JsonValue>(
@@ -503,6 +499,11 @@ export class DecisionEngine {
 						: undefined,
 			},
 			stateDigest: createHash("sha256").update(JSON.stringify(states)).digest("hex"),
+			state: this.recordState ? (states as JsonValue) : undefined,
+			questions:
+				this.recordState && spec.questionsFor
+					? (evaluations.map((evaluation) => evaluation.questions ?? null) as JsonValue)
+					: undefined,
 		});
 		return decisions;
 	}
