@@ -83,17 +83,35 @@ export function run(
 	});
 }
 
-/** Downloads the pinned uv into mu's own folder for it. */
+/**
+ * Downloads the pinned uv into mu's own folder for it. It is about 20 MB: a download still going after `timeoutMs`
+ * (default 5 minutes), from a server that stopped answering, ends instead of holding the install, and so does a stop.
+ */
 export async function downloadUv(
 	paths: MudePaths,
-	options: { fetch?: typeof fetch; onLine?: (line: string) => void } = {},
+	options: { fetch?: typeof fetch; onLine?: (line: string) => void; signal?: AbortSignal; timeoutMs?: number } = {},
 ): Promise<string> {
 	mkdirSync(paths.tools, { recursive: true });
 	const archive = "uv.tar.gz";
 	options.onLine?.(`Downloading uv ${UV_RELEASE.version}`);
-	const response = await (options.fetch ?? fetch)(UV_RELEASE.url, { redirect: "follow" });
-	if (!response.ok) throw new Error(`uv could not be downloaded: HTTP ${response.status}`);
-	const bytes = Buffer.from(await response.arrayBuffer());
+	const timeoutMs = options.timeoutMs ?? 300_000;
+	const timeout = AbortSignal.timeout(timeoutMs);
+	let bytes: Buffer;
+	try {
+		const response = await (options.fetch ?? fetch)(UV_RELEASE.url, {
+			redirect: "follow",
+			signal: options.signal ? AbortSignal.any([options.signal, timeout]) : timeout,
+		});
+		if (!response.ok) throw new Error(`HTTP ${response.status}`);
+		bytes = Buffer.from(await response.arrayBuffer());
+	} catch (error) {
+		const reason = timeout.aborted
+			? `no answer in ${timeoutMs / 1000} s`
+			: error instanceof Error
+				? error.message
+				: String(error);
+		throw new Error(`uv could not be downloaded from GitHub (${reason}): run mu judge mude install again`);
+	}
 	const actual = createHash("sha256").update(bytes).digest("hex");
 	if (actual !== UV_RELEASE.sha256)
 		throw new Error("The downloaded uv does not match its pinned sha256; nothing was installed");

@@ -10,6 +10,7 @@ import { disableMude, enableMude, judgeSetting, ROUTED_AWAY } from "../src/mude/
 import { DownloadError, downloadedBytes, downloadFiles, missingFiles, resumeFrom } from "../src/mude/download.ts";
 import { MUDE_BYTES, MUDE_FILES, MUDE_REVISION, type MudeFile, mudeFileUrl } from "../src/mude/manifest.ts";
 import { mudePaths } from "../src/mude/paths.ts";
+import { downloadUv } from "../src/mude/python.ts";
 
 const sha = (text: string) => createHash("sha256").update(text).digest("hex");
 
@@ -273,6 +274,25 @@ describe("downloading mude", () => {
 		rmSync(join(dir, "sub/b.bin.part"));
 		await downloadFiles(options());
 		expect(downloadedBytes(dir, files)).toBe(files[0].size + files[1].size);
+	});
+});
+
+describe("uv for mude's Python environment", () => {
+	// A request that gets no answer until it is given up on.
+	const hanging: typeof fetch = (_input, init) =>
+		new Promise((_resolve, reject) => init?.signal?.addEventListener("abort", () => reject(init.signal?.reason)));
+
+	it("gives up on a download of uv that gets no answer, and on a stop, instead of holding the install", async () => {
+		const paths = mudePaths(join(dir, "home"));
+		const started = Date.now();
+		await expect(downloadUv(paths, { fetch: hanging, timeoutMs: 100 })).rejects.toThrow(
+			"uv could not be downloaded from GitHub (no answer in 0.1 s): run mu judge mude install again",
+		);
+		expect(Date.now() - started).toBeLessThan(2000);
+		const stop = new AbortController();
+		const stopped = downloadUv(paths, { fetch: hanging, signal: stop.signal });
+		stop.abort();
+		await expect(stopped).rejects.toThrow(/^uv could not be downloaded from GitHub/);
 	});
 });
 

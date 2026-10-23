@@ -9,6 +9,7 @@
   - A full disk (ENOSPC or EDQUOT) during the download now ends the install at once with "The disk is full: <file> could not be written. Free some space, then run mu judge mude install to go on from here". Before, it was retried as a network error for about two minutes, and the desktop app said it couldn't reach Hugging Face.
   - The free-space check before a download counts only the bytes still to come. Before, it counted the whole of every unfinished file, even when most of it was on the disk already.
   - Ctrl-C (or SIGTERM) while the Python environment is being set up now says "Stopped while setting up the Python environment: mu judge mude install goes on from there", instead of "mude's Python packages could not be installed".
+- `mu judge mude install` on a Mac without uv: downloading the pinned uv (about 20 MB, from GitHub) had no time limit and ignored a stop. It now ends after 5 minutes with "uv could not be downloaded from GitHub (no answer in 300 s): run mu judge mude install again", and Ctrl-C or the app's Cancel ends it at once ("Stopped while setting up the Python environment").
 
 ## [0.2.1] - 2026-10-24
 

@@ -8,6 +8,7 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 - **Ctrl-C stops a mude 1.0 install at once while it waits to retry a dropped connection.** It says how much is downloaded and that the next install goes on from there. Before, mu ended 5 seconds later without a word. What was downloaded was kept either way.
 - **Installing mude 1.0 on a nearly full disk.** If the disk fills up during the download, the install now stops at once and says the disk is full. Before, it retried for two minutes, and the desktop app then blamed the connection. When an install goes on from a stop, the free-space check counts only what is still to download, so 1.7 GB already on the disk no longer has to fit a second time. Ctrl-C while the install sets up its Python environment now says it was stopped and goes on next time, not that the packages could not be installed.
+- **A mude 1.0 install no longer waits forever for uv.** When the Mac has no uv, the install downloads it from GitHub (about 20 MB). If GitHub stops answering, the install now gives up after 5 minutes and says to run it again. Ctrl-C stops it at once.
 
 ## [0.2.1] - 2026-10-24
 
