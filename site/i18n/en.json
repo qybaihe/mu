@@ -60,7 +60,6 @@
     "story_label": "MU · ONE TURN",
     "story_h2": "Judge first, then act",
     "story_intro": "Ask for a plan, and most agents send the model every tool and skill description along with it. Models write better code every month, and their reports get harder to read. mu splits the work: a judge model decides, the main model works and a model picked for plain writing tells you where things stand.",
-    "stage_caption": "Recorded in mu with TypeSafe's hosted judge model, Jev. Jev's verdicts and timings are real; the coding model's replies are scripted, so the turn plays the same every time.",
     "swarm_alt": "The Hive tab in the desktop app: three bees investigate one bug at once; the arrows are findings the judge decided were worth delivering",
     "swarm_caption": "The Hive tab in the desktop app: each arrow is a finding the judge decided was worth delivering.",
     "board_alt": "The plain-language board: what's being done, how far it got and the running account below",
