@@ -185,7 +185,17 @@ const PreviewTabs: React.FC<PreviewTabsProps> = ({
                 key={tab.id}
                 className={`flex items-center gap-6px px-10px h-full cursor-pointer transition-colors flex-shrink-0 ${tab.id === activeTabId ? 'bg-bg-1 text-t-primary' : 'text-t-secondary hover:bg-bg-3'}`}
                 style={{ maxWidth: `${MAX_TAB_WIDTH_PX}px` }}
+                role='tab'
+                tabIndex={0}
+                aria-selected={tab.id === activeTabId}
                 onClick={() => onSwitchTab(tab.id)}
+                onKeyDown={(e) => {
+                  if (e.target !== e.currentTarget) return;
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSwitchTab(tab.id);
+                  }
+                }}
                 onContextMenu={(e) => onContextMenu(e, tab.id)}
                 // 中键关闭 / Middle-click to close.
                 //
