@@ -214,17 +214,17 @@
     ],
     "board_label": "MUBENCH",
     "board_h2": "Capability leaderboard",
-    "board_p": "mubench 1.0 compares mude 1.0, Jev and d3-nano on requests from real coding sessions, overall and in eight capabilities.",
+    "board_p": "mubench 1.0 compares mude 1.0, Jev and d3-nano on requests from real coding sessions on open-source repositories, overall and in eight capabilities.",
     "board_link": "See the mubench 1.0 leaderboard"
   },
   "mubench": {
     "title": "mubench 1.0",
     "h1": "mubench 1.0: decision models, scored on a coding agent's decisions",
-    "lead": "On mubench's main board, every item is a request mu sent to a decision model during a real coding session, word for word. Each answer is scored by the cost of its consequences, and every model is compared with mu running without a decision model.",
+    "lead": "On mubench's main board, every item is a request mu sent to a decision model, word for word, in a real coding session on an open-source repository. Each answer is scored by the cost of its consequences, and every model is compared with mu running without a decision model.",
     "open": "Open source soon",
     "main_label": "MAIN BOARD",
     "main_h2": "Real coding sessions",
-    "main_intro": "{items} requests from {tasks} coding tasks. In every column, 0 is mu with no decision model, and 100 means a model removes all the cost mu pays without one. Below 0 is worse than having none.",
+    "main_intro": "{items} requests from {tasks} coding tasks on open-source repositories. In every column, 0 is mu with no decision model, and 100 means a model removes all the cost mu pays without one. Below 0 is worse than having none.",
     "model": "Model",
     "overall": "Overall",
     "caps": {
@@ -245,7 +245,15 @@
     "few_short": "Few items or an unstable score",
     "note_best": "Bold: the best score in each column.",
     "note_few": "Few items or an unstable score: fewer than {items} items, items from fewer than {tasks} tasks, or mu already right more than {baseline}% of the time with no decision model.",
-    "note_threat": "Malicious-instruction detection will be scored mainly on constructed items. It isn't scored yet.",
+    "note_threat": "Malicious-instruction detection will be scored mainly on constructed items, because attacks rarely appear in real sessions. It isn't scored yet.",
+    "weight_row": "Weight in overall",
+    "method_h3": "How the score is computed",
+    "method": [
+      { "b": "Capability score", "code": "100 × Σ w·(f − r) / Σ w·f", "p": "Summed over the capability's decision points: f is the average cost per check with no decision model, r the same with the model, and w the decision point's weight (3 for safety gates, 2 for decisions made every turn, 1 for the rest). 100 means all of that cost is removed, 0 no better than no decision model, below 0 worse." },
+      { "b": "Overall score", "p": "mubench's pooled score over every decision point. It equals the mean of the capability scores, each weighted by its share of the cost with no decision model (the \"Weight in overall\" row); the costs and weights were fixed before any model was scored. Not equal weights: item counts differ about 60-fold between capabilities, and equal weights would let the smallest, noisiest ones swing the result." },
+      { "b": "95% intervals", "p": "The thin lines on the overall charts. A bootstrap with 1,000 draws, resampled within each decision point: by task on the main board, since requests from one session aren't independent, and by scenario on the sub-board." },
+      { "b": "— (not scored)", "p": "The capability has no items, or mu loses nothing there without a decision model, so the score is undefined." }
+    ],
     "sub_h3": "Sub-board: constructed scenarios",
     "sub_intro": "{items} scenarios written for mubench and scored the same way. Their mix of decisions differs from real sessions, so the two boards are scored separately and never added together.",
     "list_sep": "; ",

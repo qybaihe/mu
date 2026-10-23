@@ -149,12 +149,12 @@ mu                  # 현재 디렉터리에서 세션 시작
 
 ### mubench 1.0: 의사결정 모델 비교
 
-mubench는 mu가 의사결정 모델을 위해 만든 벤치마크예요. 메인 보드의 문항은 모두 실제 코딩 세션에서 mu가 의사결정 모델에 보낸 요청을 그대로 옮긴 거예요. 답은 그 결과가 치르게 하는 비용으로 채점하고, 모든 모델을 의사결정 모델 없는 mu와 비교해요. 0은 차이가 없다는 뜻이고, 100은 그 비용을 모두 없앴다는 뜻이에요. 구성한 시나리오의 서브 보드까지 담은 전체 리더보드는 [usemu.dev/ko/mubench](https://usemu.dev/ko/mubench/)에 있어요. mubench는 곧 오픈소스로 공개돼요.
+mubench는 mu가 의사결정 모델을 위해 만든 벤치마크예요. 메인 보드의 문항은 모두 오픈소스 저장소에서 진행한 실제 코딩 세션에서 mu가 의사결정 모델에 보낸 요청을 그대로 옮긴 거예요. 답은 그 결과가 치르게 하는 비용으로 채점하고, 모든 모델을 의사결정 모델 없는 mu와 비교해요. 0은 차이가 없다는 뜻이고, 100은 그 비용을 모두 없앴다는 뜻이에요. 구성한 시나리오의 서브 보드까지 담은 전체 리더보드는 [usemu.dev/ko/mubench](https://usemu.dev/ko/mubench/)에 있어요. mubench는 곧 오픈소스로 공개돼요.
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="../images/mubench/composite-en-dark.svg">
-    <img src="../images/mubench/composite-en-light.svg" width="880" alt="mubench 1.0 메인 보드: 실제 코딩 세션의 요청 3,193개에서 얻은 종합 점수(95% 구간 포함). mude 1.0 64.9 (59.1–72.3); Jev 1.14 63.1 (55.6–70.5); Jev 1.13 61.5 (53.8–69.1); d3-nano (원본) 32.0 (21.3–39.0). 의사결정 모델 없음: 0.">
+    <img src="../images/mubench/composite-en-light.svg" width="880" alt="mubench 1.0 메인 보드: 오픈소스 저장소에서 진행한 실제 코딩 세션의 요청 3,193개에서 얻은 종합 점수(95% 구간 포함). mude 1.0 64.9 (59.1–72.3); Jev 1.14 63.1 (55.6–70.5); Jev 1.13 61.5 (53.8–69.1); d3-nano (원본) 32.0 (21.3–39.0). 의사결정 모델 없음: 0.">
   </picture>
 </p>
 

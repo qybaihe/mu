@@ -166,12 +166,12 @@ mu judge mude uninstall             # 刪除模型和它的 Python 環境
 
 ### mubench 1.0：決策模型怎麼比
 
-mubench 是 mu 為決策模型做的評測。主榜的每一道題，都是 mu 在真實程式設計工作階段裡送給決策模型的請求，一字未改。每個答案按它帶來的後果的代價計分，每個模型都和不用決策模型的 mu 相比：0 分是一樣，100 分是把這部分代價全部消除。完整榜單（含構造情境的副榜）在 [usemu.dev/zh-tw/mubench](https://usemu.dev/zh-tw/mubench/)。mubench 即將開源。
+mubench 是 mu 為決策模型做的評測。主榜的每一道題，都是 mu 在開源儲存庫上的真實程式設計工作階段裡送給決策模型的請求，一字未改。每個答案按它帶來的後果的代價計分，每個模型都和不用決策模型的 mu 相比：0 分是一樣，100 分是把這部分代價全部消除。完整榜單（含構造情境的副榜）在 [usemu.dev/zh-tw/mubench](https://usemu.dev/zh-tw/mubench/)。mubench 即將開源。
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="../images/mubench/composite-zh-dark.svg">
-    <img src="../images/mubench/composite-zh-light.svg" width="880" alt="mubench 1.0 主榜：真實程式設計工作階段裡 3,193 道請求上的綜合分，含 95% 區間。mude 1.0 64.9 (59.1–72.3)；Jev 1.14 63.1 (55.6–70.5)；Jev 1.13 61.5 (53.8–69.1)；d3-nano 原版 32.0 (21.3–39.0)；不用決策模型：0。">
+    <img src="../images/mubench/composite-zh-light.svg" width="880" alt="mubench 1.0 主榜：開源儲存庫上真實程式設計工作階段裡 3,193 道請求上的綜合分，含 95% 區間。mude 1.0 64.9 (59.1–72.3)；Jev 1.14 63.1 (55.6–70.5)；Jev 1.13 61.5 (53.8–69.1)；d3-nano 原版 32.0 (21.3–39.0)；不用決策模型：0。">
   </picture>
 </p>
 

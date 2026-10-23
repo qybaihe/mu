@@ -166,12 +166,12 @@ mu judge mude uninstall             # 删除模型和它的 Python 环境
 
 ### mubench 1.0：决策模型怎么比
 
-mubench 是 mu 给决策模型做的评测。主榜的每一道题，都是 mu 在真实编程会话里发给决策模型的请求，一字未改。每个答案按它带来的后果的代价计分，每个模型都和不用决策模型的 mu 相比：0 分是一样，100 分是把这部分代价全部消除。完整榜单（含构造场景的副榜）在 [usemu.dev/mubench](https://usemu.dev/mubench/)。mubench 即将开源。
+mubench 是 mu 给决策模型做的评测。主榜的每一道题，都是 mu 在开源仓库上的真实编程会话里发给决策模型的请求，一字未改。每个答案按它带来的后果的代价计分，每个模型都和不用决策模型的 mu 相比：0 分是一样，100 分是把这部分代价全部消除。完整榜单（含构造场景的副榜）在 [usemu.dev/mubench](https://usemu.dev/mubench/)。mubench 即将开源。
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="../images/mubench/composite-zh-dark.svg">
-    <img src="../images/mubench/composite-zh-light.svg" width="880" alt="mubench 1.0 主榜：真实编程会话里 3,193 道请求上的综合分，含 95% 区间。mude 1.0 64.9 (59.1–72.3)；Jev 1.14 63.1 (55.6–70.5)；Jev 1.13 61.5 (53.8–69.1)；d3-nano 原版 32.0 (21.3–39.0)；不用决策模型：0。">
+    <img src="../images/mubench/composite-zh-light.svg" width="880" alt="mubench 1.0 主榜：开源仓库上真实编程会话里 3,193 道请求上的综合分，含 95% 区间。mude 1.0 64.9 (59.1–72.3)；Jev 1.14 63.1 (55.6–70.5)；Jev 1.13 61.5 (53.8–69.1)；d3-nano 原版 32.0 (21.3–39.0)；不用决策模型：0。">
   </picture>
 </p>
 
