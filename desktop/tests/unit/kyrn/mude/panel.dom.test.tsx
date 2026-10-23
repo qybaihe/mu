@@ -298,8 +298,9 @@ describe('mude as a choice of the judges page', () => {
     const reads = bridge.settings.mock.calls.length;
     await waitFor(() => expect(bridge.mudeRun).toHaveBeenCalledWith({ action: 'cancel' }));
     // mu.json is read again (the command may have changed it), and the page is not drawn afresh: the same tile,
-    // still the open choice, with the message above the button that goes on with the install.
-    await waitFor(() => expect(bridge.settings.mock.calls.length).toBeGreaterThan(reads));
+    // still the open choice, with the message above the button that goes on with the install. The end of the install
+    // is seen by the next status poll (1 s while busy): longer than waitFor's default wait on a slow machine.
+    await waitFor(() => expect(bridge.settings.mock.calls.length).toBeGreaterThan(reads), { timeout: 3000 });
     await settle();
     expect(screen.getByTestId('mu-judge-choice-mude')).toBe(tile);
     expect(tile).toHaveAttribute('aria-checked', 'true');
