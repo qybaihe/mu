@@ -78,24 +78,29 @@ const MessageToolCall: React.FC<{ message: IMessageToolCall }> = ({ message }) =
           status={statusToBadge(normalized.status)}
           className={normalized.status === 'running' ? styles.breathing : undefined}
         />
-        <span
+        <button
+          type='button'
           className={
-            'flex-1 min-w-0' +
+            'flex-1 min-w-0 text-left bg-transparent border-0 p-0 font-inherit' +
             (expanded ? ' break-all' : ' truncate') +
             (hasDetail ? ' cursor-pointer hover:color-#4E5969' : '')
           }
+          aria-expanded={hasDetail ? expanded : undefined}
           onClick={hasDetail ? () => setExpanded(!expanded) : undefined}
         >
           <span className='font-medium text-13px'>{normalized.name}</span>
           {normalized.description && <span className='m-l-4px opacity-80 text-13px'>{normalized.description}</span>}
-        </span>
+        </button>
         {hasDetail && (
-          <span
-            className='flex-shrink-0 cursor-pointer hover:color-#4E5969 transition-colors'
+          <button
+            type='button'
+            aria-label={expanded ? t('common.collapse') : t('common.expand')}
+            aria-expanded={expanded}
+            className='flex-shrink-0 cursor-pointer hover:color-#4E5969 transition-colors bg-transparent border-0 p-0'
             onClick={() => setExpanded(!expanded)}
           >
             {expanded ? <IconDown style={{ fontSize: 12 }} /> : <IconRight style={{ fontSize: 12 }} />}
-          </span>
+          </button>
         )}
       </div>
       {expanded && hasDetail && (

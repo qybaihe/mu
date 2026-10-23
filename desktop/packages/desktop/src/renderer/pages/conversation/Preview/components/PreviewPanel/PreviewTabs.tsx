@@ -254,9 +254,11 @@ const PreviewTabs: React.FC<PreviewTabsProps> = ({
             {/* 最大化 / 还原：隐藏聊天区让预览铺满，两侧面板保持不变
                 Maximize / restore: hide the chat area so the preview fills it; side panels stay unchanged */}
             {onToggleMaximize && (
-              <div
-                className='flex items-center justify-center w-20px h-20px rd-4px cursor-pointer hover:bg-bg-3 transition-colors'
+              <button
+                type='button'
+                className='flex items-center justify-center w-20px h-20px rd-4px cursor-pointer hover:bg-bg-3 transition-colors bg-transparent border-0 p-0'
                 onClick={onToggleMaximize}
+                aria-label={isMaximized ? t('preview.restorePanel') : t('preview.maximizePanel')}
                 title={isMaximized ? t('preview.restorePanel') : t('preview.maximizePanel')}
               >
                 {isMaximized ? (
@@ -264,16 +266,18 @@ const PreviewTabs: React.FC<PreviewTabsProps> = ({
                 ) : (
                   <IconFullscreen style={{ fontSize: 14, color: iconColors.secondary }} />
                 )}
-              </div>
+              </button>
             )}
             {onClosePanel && (
-              <div
-                className='flex items-center justify-center w-20px h-20px rd-4px cursor-pointer hover:bg-bg-3 transition-colors'
+              <button
+                type='button'
+                className='flex items-center justify-center w-20px h-20px rd-4px cursor-pointer hover:bg-bg-3 transition-colors bg-transparent border-0 p-0'
                 onClick={onClosePanel}
+                aria-label={t('preview.collapsePanel')}
                 title={t('preview.collapsePanel')}
               >
                 <IconShrink style={{ fontSize: 14, color: iconColors.secondary }} />
-              </div>
+              </button>
             )}
           </div>
         )}
