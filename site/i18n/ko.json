@@ -231,7 +231,7 @@
   },
   "changelog": {
     "title": "변경 기록",
-    "lead": "데스크톱 릴리스마다 mu-agent가 들어 있어요. 주요 변경 사항을 데스크톱 버전별로 정리했어요. 모두 프리릴리스예요. mu는 아직 초기 개발 단계예요.",
+    "lead": "데스크톱 릴리스마다 mu-agent가 들어 있어요. 주요 변경 사항을 데스크톱 버전별로 정리했어요.",
     "agent_label": "포함",
     "download": "이 버전 내려받기",
     "full_agent": "mu-agent 전체 변경 기록(영어)",
@@ -357,7 +357,7 @@
         "date": "2026-09-23",
         "agent": "mu-agent 0.1.0 – 0.1.2",
         "items": [
-          "<b>첫 프리뷰 빌드.</b> macOS(서명 및 공증 완료), Windows, Linux용 데스크톱 앱을 각각 x64와 arm64로 냈어요. 앱 안에 mu가 들어 있어서 따로 설치할 것이 없어요.",
+          "<b>첫 릴리스.</b> macOS(서명 및 공증 완료), Windows, Linux용 데스크톱 앱을 각각 x64와 arm64로 냈어요. 앱 안에 mu가 들어 있어서 따로 설치할 것이 없어요.",
           "<b>npm의 명령줄:</b> <code>npm i -g mu-agent</code>. pi 위의 판정 커널에 <code>mu doctor</code>, <code>mu ledger</code>, 로컬 판정기 Laya가 함께 들어 있어요.",
           "<b>대화 가져오기:</b> <code>mu import</code>로 Claude Code와 Codex 대화를 가져와 이어 갈 수 있어요. 설정 문구는 12개 언어로 나와요."
         ]

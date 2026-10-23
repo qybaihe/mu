@@ -226,15 +226,15 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ## [0.1.2] - 2026-09-23
 
-Preview build.
+A build of the desktop app and `mu-agent`.
 
 ## [0.1.1] - 2026-09-23
 
-Preview build.
+A build of the desktop app and `mu-agent`.
 
 ## [0.1.0] - 2026-09-23
 
-The first preview: the desktop app for macOS (signed and notarized), Windows and Linux, x64 and arm64, with mu inside it, and `mu-agent` on npm.
+The first release: the desktop app for macOS (signed and notarized), Windows and Linux, x64 and arm64, with mu inside it, and `mu-agent` on npm.
 
 [Unreleased]: https://github.com/qybaihe/mu/compare/v0.1.6...main
 [0.1.6]: https://github.com/qybaihe/mu/releases/tag/v0.1.6

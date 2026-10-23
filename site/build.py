@@ -471,8 +471,6 @@ def render_options(manifest, lang, ctx, U, toc):
         toc.append({"id": fid, "text": t(f["title"])})
         flags = [f'<span class="opt-flag {"on" if f.get("defaultEnabled") else "off"}">'
                  f'{html.escape(U["options_on"] if f.get("defaultEnabled") else U["options_off"])}</span>']
-        if f.get("beta"):
-            flags.append(f'<span class="opt-flag beta">{html.escape(U["options_beta"])}</span>')
         points = owners.get(f["name"], [])
         if points:
             links = " ".join(f'<a href="{ctx.site_link("@decisions#" + p)}"><code>{p}</code></a>' for p in points)

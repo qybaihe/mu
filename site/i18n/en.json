@@ -231,7 +231,7 @@
   },
   "changelog": {
     "title": "Changelog",
-    "lead": "What changed in each release of mu: the desktop app and the command line together. Every desktop release bundles a specific mu-agent version, and all of them are pre-releases while mu is in early development.",
+    "lead": "What changed in each release of mu: the desktop app and the command line together. Every desktop release bundles a specific mu-agent version.",
     "english_note": "",
     "agent_label": "Includes",
     "download": "Download this version",

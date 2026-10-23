@@ -231,7 +231,7 @@
   },
   "changelog": {
     "title": "更新日志",
-    "lead": "桌面端每个版本都自带一个 mu-agent，下面按桌面端版本列出主要变化。全部是预发布版，还在早期开发。",
+    "lead": "桌面端每个版本都自带一个 mu-agent，下面按桌面端版本列出主要变化。",
     "agent_label": "自带",
     "download": "下载这个版本",
     "full_agent": "mu-agent 的完整更新记录（英文）",
@@ -356,7 +356,7 @@
         "date": "2026-09-23",
         "agent": "mu-agent 0.1.0 – 0.1.2",
         "items": [
-          "<b>第一批预览版。</b>桌面端有 macOS（已签名并经 Apple 公证）、Windows、Linux 三个平台，x64 和 arm64 都有；应用自带 mu，不用再装别的。",
+          "<b>第一批版本。</b>桌面端有 macOS（已签名并经 Apple 公证）、Windows、Linux 三个平台，x64 和 arm64 都有；应用自带 mu，不用再装别的。",
           "<b>命令行发布到 npm：</b><code>npm i -g mu-agent</code>。判定内核跑在 pi 上，附带 <code>mu doctor</code>、<code>mu ledger</code> 和本地判定器 Laya。",
           "<b>导入对话：</b><code>mu import</code> 把 Claude Code 和 Codex 的对话导进来接着聊；设置文字有 12 种语言。"
         ]
