@@ -29,7 +29,8 @@ import {
 const USAGE = `mu judge mude: mude 1.0, mu's own decision model optimized for coding, as the judge on this Mac
 (Apple silicon, macOS 14 or later)
 
-  mu judge mude install [--local-only]   download it (${(MUDE_BYTES / 1e9).toFixed(1)} GB), set it up, start it and make it the judge
+  mu judge mude install [--local-only]   download it (${(MUDE_BYTES / 1e9).toFixed(1)} GB), set it up, start it and make it the judge;
+                                         after a stop (Ctrl-C, a lost connection, a power cut), it goes on from there
   mu judge mude enable [--local-only | --with-fallback]
                                          make it the judge again, or change what happens when it can't answer
   mu judge mude disable                  back to the judges from before, and stop its server
@@ -89,7 +90,12 @@ function humanOut(write: (text: string) => void, tty: boolean): Out {
 		},
 		line: (text) => write(`  ${text}\n`),
 		status: (status) => write(describe(status)),
-		error: (message) => write(`${message}\n`),
+		error: (message) => {
+			// Below the progress line, not on it.
+			if (shown >= 0 && tty) write("\n");
+			shown = -1;
+			write(`${message}\n`);
+		},
 	};
 }
 
@@ -152,6 +158,8 @@ export interface Context {
 	readonly files: ConfigFiles;
 	readonly lockFile: string;
 	readonly env: NodeJS.ProcessEnv;
+	/** Stops a download (Ctrl-C, or the app ending the install): what it got so far stays for the next install. */
+	readonly signal?: AbortSignal;
 }
 
 /** What keeps mude from running on this machine, if anything. */
@@ -196,6 +204,23 @@ function freeBytes(path: string): number | undefined {
 		return stats.bavail * stats.bsize;
 	} catch {
 		return undefined;
+	}
+}
+
+const gb = (bytes: number) => (bytes / 1e9).toFixed(1);
+
+/**
+ * Whether an install makes mude the only judge: as its flags say, else as the install it goes on from was asked (one
+ * that stopped part way left install.json), else not.
+ */
+export function installLocalOnly(ctx: Context, args: readonly string[]): boolean {
+	if (args.includes("--local-only")) return true;
+	if (args.includes("--with-fallback")) return false;
+	try {
+		const value: unknown = JSON.parse(readFileSync(ctx.paths.install, "utf8"));
+		return typeof value === "object" && value !== null && "localOnly" in value && value.localOnly === true;
+	} catch {
+		return false;
 	}
 }
 
@@ -262,17 +287,31 @@ async function ensureInstalled(ctx: Context, out: Out): Promise<void> {
 				`Not enough free disk space: mude 1.0 needs about ${((need + 2e9) / 1e9).toFixed(1)} GB, and ${(free / 1e9).toFixed(1)} GB are free`,
 			);
 		}
+		const already = downloadedBytes(ctx.paths.model, MUDE_FILES);
 		out.step(
 			"download",
-			`Downloading mude 1.0 (${MUDE_REPO}, ${(need / 1e9).toFixed(1)} GB) and checking every file`,
+			already > 0
+				? `Going on with the mude 1.0 download (${MUDE_REPO}): ${gb(already)} of ${gb(MUDE_BYTES)} GB are here already`
+				: `Downloading mude 1.0 (${MUDE_REPO}, ${gb(need)} GB) and checking every file`,
 		);
-		await downloadFiles({
-			dir: ctx.paths.model,
-			files: MUDE_FILES,
-			url: (path) => mudeFileUrl(path, ctx.env.HF_ENDPOINT || undefined),
-			token: huggingFaceToken(ctx.env),
-			onProgress: (event) => out.progress(event),
-		});
+		try {
+			await downloadFiles({
+				dir: ctx.paths.model,
+				files: MUDE_FILES,
+				url: (path) => mudeFileUrl(path, ctx.env.HF_ENDPOINT || undefined),
+				token: huggingFaceToken(ctx.env),
+				onProgress: (event) => out.progress(event),
+				signal: ctx.signal,
+			});
+		} catch (error) {
+			if (error instanceof DownloadError && error.kind === "aborted") {
+				throw new DownloadError(
+					`Stopped with ${gb(downloadedBytes(ctx.paths.model, MUDE_FILES))} of ${gb(MUDE_BYTES)} GB downloaded: mu judge mude install goes on from there`,
+					"aborted",
+				);
+			}
+			throw error;
+		}
 	}
 	if (!venvReady(ctx.paths, ctx.lockFile)) {
 		out.step("python", "Setting up the Python environment for mude 1.0 (MLX, transformers; about 1 GB, once)");
@@ -344,9 +383,15 @@ export async function main(
 		}
 		switch (command) {
 			case "install": {
+				// An install that goes on from one that stopped keeps what that one was asked for, unless told otherwise:
+				// local only stays local only.
+				const localOnly = installLocalOnly(ctx, args);
+				mkdirSync(ctx.paths.root, { recursive: true });
+				writeFileSync(ctx.paths.install, `${JSON.stringify({ localOnly })}\n`);
 				await ensureInstalled(ctx, out);
 				const at = await start(ctx, out);
-				enable(ctx, out, at, flag("--local-only"));
+				enable(ctx, out, at, localOnly);
+				rmSync(ctx.paths.install, { force: true });
 				break;
 			}
 			case "enable": {

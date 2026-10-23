@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- `mu judge mude install` survives a power cut in the middle of the download. Every 32 MiB the partly downloaded file is synced to the disk and the amount on disk is recorded in `<file>.part.saved`. The next install goes on from there, so it never builds on an end the disk didn't keep. A part left by mu 0.2.0, which has no record, goes on from 32 MiB before its end.
+- A resumed file that fails its sha256 check is downloaded once more from the start, instead of ending the install.
+- The download rides out a lost connection: a try that gets some of the file starts the count of failed tries again. Tries that get nothing wait 2, 5, 10, 20 and then 30 s, about two minutes in all, before the install stops.
+- Ctrl-C, or the desktop app ending an install, stops the download where it is, keeps what it got and says how much: "Stopped with 0.9 of 1.8 GB downloaded: mu judge mude install goes on from there". An install that goes on says how much is already there.
+- An install that goes on from one that stopped keeps that one's `--local-only`: it is recorded in `install.json` until the install finishes. Before, running it again without the flag left the hosted judges behind mude.
+
 ## [0.2.0] - 2026-10-23
 
 **0.2.0 starts the era of mu's own models: `mu judge mude install` turns on mude 1.0 in one command.**
