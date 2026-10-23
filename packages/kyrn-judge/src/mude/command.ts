@@ -319,7 +319,7 @@ async function ensureInstalled(ctx: Context, out: Out): Promise<void> {
 		out.step("python", "Setting up the Python environment for mude 1.0 (MLX, transformers; about 1 GB, once)");
 		try {
 			let uv = findUv(ctx.paths, ctx.env);
-			if (!uv) uv = await downloadUv(ctx.paths, { onLine: (line) => out.line(line) });
+			if (!uv) uv = await downloadUv(ctx.paths, { onLine: (line) => out.line(line), signal: ctx.signal });
 			await ensureVenv(ctx.paths, ctx.lockFile, uv, { onLine: (line) => out.line(line), env: ctx.env });
 		} catch (error) {
 			// Ctrl-C reaches uv too, which then fails: that is a stop, not a broken environment.
