@@ -258,6 +258,24 @@ describe('native mu settings', () => {
       f.cleanup();
     }
   });
+  it('writes Laya with its whole built-in capability profile when it first goes into the file', () => {
+    const f = fixture();
+    try {
+      const current = f.store.read();
+      f.store.save({
+        ...current,
+        tiers: ['laya', 'jev'],
+        judges: { ...current.judges, laya: { ...current.judges.laya, baseUrl: 'http://127.0.0.1:47900' } },
+      });
+      const written = JSON.parse(readFileSync(join(f.dir, 'kyrn.json'), 'utf8'));
+      expect(written.judges.laya.profile).toEqual({
+        capabilities: { relate: false, rate: false, meta: false, screen: false, intent: false },
+      });
+      expect(written.judges.laya.baseUrl).toBe('http://127.0.0.1:47900');
+    } finally {
+      f.cleanup();
+    }
+  });
   it('offers CLM as a built-in: on this machine, or at an address on the network with the key its server asks for', () => {
     const f = fixture();
     try {

@@ -249,9 +249,11 @@ export class SettingsStore {
       if (sameJudge(current.judges[name], judge)) continue;
       judges[name] = {
         ...asRecord(previous[name]),
-        // Preserve Laya's measured capability profile when materialising a built-in.
+        // Preserve Laya's measured capability profile when materialising a built-in: the whole of it, as in mu's
+        // built-in `laya` (packages/kyrn-judge/src/config.ts). A user entry replaces the built-in, so a capability left
+        // out here would make Laya trusted on it again (screening tool output, reading a closing message as a promise).
         ...(name === 'laya' && !previous[name]
-          ? { profile: { capabilities: { relate: false, rate: false, meta: false } } }
+          ? { profile: { capabilities: { relate: false, rate: false, meta: false, screen: false, intent: false } } }
           : {}),
         ...judge,
         model: judge.model || undefined,
