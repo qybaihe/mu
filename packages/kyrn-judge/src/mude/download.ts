@@ -14,6 +14,7 @@ import { open } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { pipeline } from "node:stream/promises";
+import { setTimeout as wait } from "node:timers/promises";
 import type { MudeFile } from "./manifest.ts";
 
 /**
@@ -255,7 +256,8 @@ async function fetchFile(
 	onBytes: (bytes: number) => void,
 ): Promise<boolean> {
 	const attempts = options.attempts ?? 8;
-	const sleep = options.sleep ?? ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)));
+	// A stop ends a wait at once (the loop then says the download was stopped), not when the wait is over.
+	const sleep = options.sleep ?? ((ms: number) => wait(ms, undefined, { signal: options.signal }).catch(() => {}));
 	let resumed = false;
 	let failures = 0;
 	let lastError: unknown;

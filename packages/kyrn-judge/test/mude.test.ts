@@ -204,6 +204,18 @@ describe("downloading mude", () => {
 		expect(readFileSync(join(dir, "a.txt"), "utf8")).toBe(contents["a.txt"]);
 	});
 
+	it("stops at once when asked while it waits to try again", async () => {
+		status = 503;
+		const stop = new AbortController();
+		const started = Date.now();
+		// The real waits: after the first try fails, 2 s before the next. The stop comes during it.
+		const failed = downloadFiles(options({ files: [files[0]], signal: stop.signal, sleep: undefined }));
+		setTimeout(() => stop.abort(), 200);
+		await expect(failed).rejects.toMatchObject({ kind: "aborted" });
+		expect(Date.now() - started).toBeLessThan(1500);
+		expect(requests).toHaveLength(1);
+	});
+
 	it("refuses a file that does not match its pinned sha256, and removes it", async () => {
 		const wrong = [{ ...files[0], sha256: sha("something else") }];
 		await expect(downloadFiles(options({ files: wrong }))).rejects.toMatchObject({ kind: "integrity" });

@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Fixed
+
+- **Ctrl-C stops a mude 1.0 install at once while it waits to retry a dropped connection.** It says how much is downloaded and that the next install goes on from there. Before, mu ended 5 seconds later without a word. What was downloaded was kept either way.
+
 ## [0.2.1] - 2026-10-24
 
 **0.2.1 makes mude 1.0 the recommended judge on a Mac, and installing it survives a power cut.** The desktop app carries mu-agent 0.2.1.
