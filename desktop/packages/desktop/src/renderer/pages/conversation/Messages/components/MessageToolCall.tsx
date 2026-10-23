@@ -85,6 +85,7 @@ const MessageToolCall: React.FC<{ message: IMessageToolCall }> = ({ message }) =
             (expanded ? ' break-all' : ' truncate') +
             (hasDetail ? ' cursor-pointer hover:color-#4E5969' : '')
           }
+          disabled={!hasDetail}
           aria-expanded={hasDetail ? expanded : undefined}
           onClick={hasDetail ? () => setExpanded(!expanded) : undefined}
         >
