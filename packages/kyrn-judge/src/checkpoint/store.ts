@@ -550,7 +550,9 @@ function fdPath(fd: number): string | undefined {
 
 function openSecureParent(store: Store, path: string): SecureParent | undefined {
 	const prefix = fdRoot();
-	if (!prefix) return undefined;
+	// A POSIX descriptor path is what makes the unlink race-free. If a restricted runtime has no procfs/devfs,
+	// use the caller's path checks rather than reporting a missing target when opening that helper path fails.
+	if (!prefix || !existsSync(prefix)) return undefined;
 	const parts = path.split("/");
 	const flags = constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW;
 	let fd = openSync(store.root, flags);
