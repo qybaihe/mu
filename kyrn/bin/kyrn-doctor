@@ -196,7 +196,10 @@ const CLASSIFIER_KEYS = {
 const fromFile = existsSync(envFile) ? parseEnvFile(readFileSync(envFile, "utf8")).entries : [];
 const has = (name) => Boolean(process.env[name]) || fromFile.some(([key, value]) => key === name && value !== "");
 const where = `to ${tilde(envFile)} or to your environment`;
-const jevTier = tiers.find((tier) => ["jev", "typesafe", "gateway"].includes((config?.judges?.[tier] ?? JEV_ROUTES[tier])?.type));
+// mude speaks System One too, but on this machine and with a key of its own (its rows are below).
+const jevTier = tiers.find(
+	(tier) => tier !== "mude" && ["jev", "typesafe", "gateway"].includes((config?.judges?.[tier] ?? JEV_ROUTES[tier])?.type),
+);
 if (jevTier && asksJudge) {
 	const judge = config?.judges?.[jevTier] ?? JEV_ROUTES[jevTier];
 	if (judge.type === "jev") {
@@ -234,6 +237,29 @@ if (jevTier && asksJudge) {
 					? `${name} is set: Jev is called ${via} (value not shown)`
 					: `missing: add ${name} ${where} (Jev is called ${via})`,
 		);
+	}
+}
+
+// mude on this Mac (mu judge mude): its server's /health, and the key mu sends it.
+if (asksJudge && tiers.includes("mude")) {
+	const fallback = tiers.filter((tier) => tier !== "mude");
+	const behind = fallback.length > 0 ? `until it answers, ${fallback.join(" > ")} decide${fallback.length === 1 ? "s" : ""} (what they read leaves this machine)` : "until it answers, decisions take their fallbacks";
+	if (process.platform !== "darwin") {
+		row("--", "mude", `not available on ${platformName({ platform: process.platform, wsl })}: mude runs on a Mac with Apple silicon`);
+	} else {
+		const entry = config?.judges?.mude;
+		const address = (typeof entry?.baseUrl === "string" ? entry.baseUrl : "http://127.0.0.1:8790/v1/systemone").replace(/\/v1\/systemone\/?$/, "");
+		const startedAt = performance.now();
+		try {
+			const response = await fetch(`${address}/health`, { signal: AbortSignal.timeout(2000) });
+			const health = await response.json();
+			const ms = Math.round(performance.now() - startedAt);
+			row(health.status === "ready" ? "ok" : "--", "mude", `${address} · ${health.status} · ${ms} ms`);
+		} catch {
+			row("fix", "mude", `${address} isn't answering: run mu judge mude start   (first time: mu judge mude install)`);
+			row("--", "", behind);
+		}
+		if (!has("MU_JUDGE_MUDE_KEY")) row("fix", "mude key", "MU_JUDGE_MUDE_KEY is not set, so mu can't ask mude: run mu judge mude enable");
 	}
 }
 
