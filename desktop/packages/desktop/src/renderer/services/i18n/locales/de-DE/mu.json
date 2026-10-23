@@ -162,9 +162,9 @@
         "description": "Das gehostete Judge-Modell von TypeSafe. Schnell und genau. Auf OpenCode Zen für begrenzte Zeit kostenlos, sonst Abrechnung pro Aufruf mit einem Schlüssel für TypeSafe, OpenRouter, das Vercel AI Gateway, OpenCode Zen, Cloudflare oder einen eigenen Dienst."
       },
       "mude": {
-        "title": "mude",
+        "title": "mude 1.0",
         "tag": "Auf diesem Mac",
-        "description": "Das eigene Judge-Modell von mu, speziell aufs Urteilen feinabgestimmt, mit Urteilsvermögen auf State-of-the-Art-Niveau. Läuft auf diesem Mac: kein Schlüssel, keine Kosten pro Aufruf. Braucht Apple Silicon."
+        "description": "Das eigene Entscheidungsmodell von mu, fürs Programmieren optimiert und bei den Entscheidungen eines Coding-Agenten auf State-of-the-Art-Niveau. Läuft auf diesem Mac: kein Schlüssel, keine Kosten pro Aufruf. Braucht Apple Silicon."
       },
       "local": {
         "title": "Laya (lokal)",
@@ -223,77 +223,77 @@
       }
     },
     "mude": {
-      "name": "mude (auf diesem Mac)",
+      "name": "mude 1.0 (auf diesem Mac)",
       "tierHelp": "Läuft auf diesem Mac. Einrichten auf der Seite „Judges“.",
       "notInstalled": "Nicht installiert.",
       "unfinished": "Die letzte Installation wurde nicht abgeschlossen. Eine neue Installation macht dort weiter, wo sie aufgehört hat.",
-      "install": "mude installieren",
+      "install": "mude 1.0 installieren",
       "consent": {
-        "title": "mude installieren?",
-        "download": "mu lädt mude von Hugging Face herunter (etwa {{download}} GB) und richtet dafür eine Python-Umgebung ein (etwa {{python}} GB). Das dauert ein paar Minuten.",
-        "memory": "Während mude läuft, belegt es etwa {{memory}} GB Arbeitsspeicher. Es braucht einen Mac mit Apple Silicon und macOS 14 oder neuer.",
-        "after": "Nach der Installation startet mude und wird zum Judge von mu.",
+        "title": "mude 1.0 installieren?",
+        "download": "mu lädt mude 1.0 von Hugging Face herunter (etwa {{download}} GB) und richtet dafür eine Python-Umgebung ein (etwa {{python}} GB). Das dauert ein paar Minuten.",
+        "memory": "Während mude 1.0 läuft, belegt es etwa {{memory}} GB Arbeitsspeicher. Es braucht einen Mac mit Apple Silicon und macOS 14 oder neuer.",
+        "after": "Nach der Installation startet mude 1.0 und wird zum Judge von mu.",
         "ok": "Herunterladen und installieren"
       },
       "localOnly": "Nur lokal – nie einen Cloud-Judge fragen",
-      "localOnlyOn": "mude ist der einzige Judge, und nichts geht in die Cloud. Kann mude nicht antworten, nutzt der Entscheidungspunkt seine Standardstrategie.",
-      "localOnlyOff": "Entscheidungen, die mude nicht beantworten kann, etwa während es gestoppt oder unsicher ist, gehen an {{judges}} in der Cloud – was dorthin geht, verlässt diesen Mac. Zwei Sicherheitsprüfungen gehen immer dorthin: das Prüfen von Tool-Beschreibungen und das Prüfen abgerufener Inhalte auf eingeschleuste Anweisungen.",
-      "localOnlyOffLocal": "Entscheidungen, die mude nicht beantworten kann, gehen an {{judges}}, das ebenfalls auf diesem Mac läuft.",
-      "localOnlyNone": "Hinter mude ist kein Judge eingestellt. Kann mude nicht antworten, nutzt der Entscheidungspunkt seine Standardstrategie.",
-      "use": "mude als Judge verwenden",
+      "localOnlyOn": "mude 1.0 ist der einzige Judge, und nichts geht in die Cloud. Kann mude 1.0 nicht antworten, nutzt der Entscheidungspunkt seine Standardstrategie.",
+      "localOnlyOff": "Entscheidungen, die mude 1.0 nicht beantworten kann, etwa während es gestoppt oder unsicher ist, gehen an {{judges}} in der Cloud – was dorthin geht, verlässt diesen Mac. Zwei Sicherheitsprüfungen gehen immer dorthin: das Prüfen von Tool-Beschreibungen und das Prüfen abgerufener Inhalte auf eingeschleuste Anweisungen.",
+      "localOnlyOffLocal": "Entscheidungen, die mude 1.0 nicht beantworten kann, gehen an {{judges}}, das ebenfalls auf diesem Mac läuft.",
+      "localOnlyNone": "Hinter mude 1.0 ist kein Judge eingestellt. Kann mude 1.0 nicht antworten, nutzt der Entscheidungspunkt seine Standardstrategie.",
+      "use": "mude 1.0 als Judge verwenden",
       "status": {
         "running": "Läuft auf 127.0.0.1:{{port}}",
         "runningMemory": "Läuft auf 127.0.0.1:{{port}} · {{memory}} GB",
         "starting": "Wird gestartet…",
         "stopped": "Gestoppt"
       },
-      "resources": "Während mude läuft, belegt es etwa {{memory}} GB Arbeitsspeicher. Alle mu-Sitzungen auf diesem Mac teilen es sich, auch die im Terminal, und es läuft weiter, bis du es stoppst oder ausschaltest.",
+      "resources": "Während mude 1.0 läuft, belegt es etwa {{memory}} GB Arbeitsspeicher. Alle mu-Sitzungen auf diesem Mac teilen es sich, auch die im Terminal, und es läuft weiter, bis du es stoppst oder ausschaltest.",
       "shared": "Alle mu-Sitzungen auf diesem Mac teilen es sich, auch die im Terminal, und es läuft weiter, bis du es stoppst oder ausschaltest.",
       "start": "Starten",
       "stop": "Stoppen",
       "openFolder": "Ordner öffnen",
       "uninstall": "Deinstallieren",
-      "uninstallTitle": "mude deinstallieren?",
-      "uninstallText": "Damit wird mude ausgeschaltet, die ersetzten Judges kommen zurück, und das Modell samt Python-Umgebung (etwa {{size}} GB) wird gelöscht. Du kannst es später wieder installieren.",
+      "uninstallTitle": "mude 1.0 deinstallieren?",
+      "uninstallText": "Damit wird mude 1.0 ausgeschaltet, die ersetzten Judges kommen zurück, und das Modell samt Python-Umgebung (etwa {{size}} GB) wird gelöscht. Du kannst es später wieder installieren.",
       "working": {
-        "install": "mude wird installiert…",
-        "enable": "mude wird eingeschaltet…",
-        "disable": "mude wird ausgeschaltet…",
-        "start": "mude wird gestartet…",
-        "stop": "mude wird gestoppt…",
-        "uninstall": "mude wird deinstalliert…"
+        "install": "mude 1.0 wird installiert…",
+        "enable": "mude 1.0 wird eingeschaltet…",
+        "disable": "mude 1.0 wird ausgeschaltet…",
+        "start": "mude 1.0 wird gestartet…",
+        "stop": "mude 1.0 wird gestoppt…",
+        "uninstall": "mude 1.0 wird deinstalliert…"
       },
       "step": {
-        "download": "mude wird heruntergeladen und jede Datei geprüft…",
-        "python": "Die Python-Umgebung für mude wird eingerichtet…",
-        "start": "Der Server von mude wird gestartet…"
+        "download": "mude 1.0 wird heruntergeladen und jede Datei geprüft…",
+        "python": "Die Python-Umgebung für mude 1.0 wird eingerichtet…",
+        "start": "Der Server von mude 1.0 wird gestartet…"
       },
       "downloaded": "{{done}} von {{total}} GB",
       "checking": "Heruntergeladene Dateien werden geprüft…",
       "cancelled": "Installation abgebrochen. Bereits Heruntergeladenes bleibt erhalten, eine neue Installation macht dort weiter.",
       "failed": {
-        "install": "mude konnte nicht installiert werden.",
-        "enable": "mude konnte nicht eingeschaltet werden.",
-        "disable": "mude konnte nicht ausgeschaltet werden.",
-        "start": "mude konnte nicht gestartet werden.",
-        "stop": "mude konnte nicht gestoppt werden.",
-        "uninstall": "mude konnte nicht deinstalliert werden."
+        "install": "mude 1.0 konnte nicht installiert werden.",
+        "enable": "mude 1.0 konnte nicht eingeschaltet werden.",
+        "disable": "mude 1.0 konnte nicht ausgeschaltet werden.",
+        "start": "mude 1.0 konnte nicht gestartet werden.",
+        "stop": "mude 1.0 konnte nicht gestoppt werden.",
+        "uninstall": "mude 1.0 konnte nicht deinstalliert werden."
       },
       "error": {
-        "access": "mude kann noch nicht heruntergeladen werden. Versuch es später noch einmal.",
+        "access": "mude 1.0 kann noch nicht heruntergeladen werden. Versuch es später noch einmal.",
         "network": "Hugging Face ist nicht erreichbar. Prüfe deine Verbindung und versuch es noch einmal; bereits Heruntergeladenes bleibt erhalten.",
         "integrity": "Eine heruntergeladene Datei hat die Prüfung nicht bestanden. Versuch es mit einer neuen Installation.",
-        "unsupported": "mude kann auf diesem Mac nicht laufen."
+        "unsupported": "mude 1.0 kann auf diesem Mac nicht laufen."
       },
-      "noStatus": "Der Status von mude ist nicht abrufbar: {{reason}}",
-      "saveFirst": "Um mude zu ändern, speichere oder verwirf zuerst deine anderen Änderungen.",
-      "needs": "mude braucht einen Mac mit Apple Silicon, macOS 14 oder neuer und mindestens {{ram}} GB Arbeitsspeicher.",
+      "noStatus": "Der Status von mude 1.0 ist nicht abrufbar: {{reason}}",
+      "saveFirst": "Um mude 1.0 zu ändern, speichere oder verwirf zuerst deine anderen Änderungen.",
+      "needs": "mude 1.0 braucht einen Mac mit Apple Silicon, macOS 14 oder neuer und mindestens {{ram}} GB Arbeitsspeicher.",
       "retry": "Erneut versuchen",
       "guide": {
         "consent": "{{download}} GB zum Herunterladen, dazu eine Python-Umgebung mit {{python}} GB. Belegt im Betrieb etwa {{memory}} GB Arbeitsspeicher.",
         "instead": "mu nutzt stattdessen den gehosteten Judge.",
-        "ready": "mude läuft und ist jetzt dein Judge.",
-        "readyStopped": "mude ist jetzt dein Judge. Sein Server startet mit deiner nächsten mu-Sitzung."
+        "ready": "mude 1.0 läuft und ist jetzt dein Judge.",
+        "readyStopped": "mude 1.0 ist jetzt dein Judge. Sein Server startet mit deiner nächsten mu-Sitzung."
       }
     },
     "clm": {

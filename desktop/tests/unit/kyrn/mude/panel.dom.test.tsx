@@ -177,7 +177,7 @@ describe('mude as a choice of the judges page', () => {
     const tile = await judgesPage();
     await waitFor(() => expect(tile).toHaveAttribute('aria-disabled', 'true'));
     expect(within(tile).getByTestId('mu-mude-unsupported')).toHaveTextContent(
-      'mude needs a Mac with Apple silicon, macOS 14 or later and 8 GB of memory.'
+      'mude 1.0 needs a Mac with Apple silicon, macOS 14 or later and 8 GB of memory.'
     );
     expect(tile).toHaveTextContent('it needs macOS 14 or later');
     fireEvent.click(tile);
@@ -200,7 +200,7 @@ describe('mude as a choice of the judges page', () => {
     expect(screen.queryByTestId('mu-save-bar')).not.toBeInTheDocument();
     fireEvent.click(within(tile).getByTestId('mu-mude-install'));
     const dialog = await screen.findByRole('dialog');
-    expect(dialog).toHaveTextContent('Install mude?');
+    expect(dialog).toHaveTextContent('Install mude 1.0?');
     expect(dialog).toHaveTextContent('about 1.8 GB');
     expect(within(dialog).getByTestId('mu-mude-consent-help')).toHaveTextContent('go to Jev in the cloud');
     fireEvent.click(within(dialog).getByRole('checkbox'));
@@ -215,7 +215,7 @@ describe('mude as a choice of the judges page', () => {
   it('shows a running install with its progress and a Cancel, opened on it', async () => {
     const running = task('install', 'running', {
       step: 'download',
-      message: 'Downloading mude (qybaihe/mude-2b-mlx-8bit, 1.78 GB) and checking every file',
+      message: 'Downloading mude (qybaihe/mude-1.0-mlx-8bit, 1.78 GB) and checking every file',
       download: { file: 'mlx-q8.safetensors', done: MODEL_BYTES / 2, total: MODEL_BYTES, checking: false },
       log: ['Collecting mlx'],
     });
@@ -243,7 +243,7 @@ describe('mude as a choice of the judges page', () => {
     });
     const running = task('install', 'running', {
       step: 'download',
-      message: 'Downloading mude (qybaihe/mude-2b-mlx-8bit, 1.78 GB) and checking every file',
+      message: 'Downloading mude (qybaihe/mude-1.0-mlx-8bit, 1.78 GB) and checking every file',
       download: { file: 'mlx-q8.safetensors', done: 700_000_000, total: MODEL_BYTES, checking: false },
     });
     bridge.mudeState.mockResolvedValue(state(NOT_INSTALLED, running));
@@ -388,7 +388,7 @@ describe('mude as a choice of the judges page', () => {
     bridge.mudeRun.mockResolvedValue(state(RUNNING, task('enable', 'running')));
     fireEvent.click(only);
     await waitFor(() => expect(bridge.mudeRun).toHaveBeenCalledWith({ action: 'enable', localOnly: true }));
-    expect(tile).toHaveTextContent('Turning on mude…');
+    expect(tile).toHaveTextContent('Turning on mude 1.0…');
   });
 
   it('stops and starts its server, and asks before it uninstalls', async () => {
@@ -454,7 +454,7 @@ describe('mude as a choice of the judges page', () => {
     const tile = await judgesPage();
     fireEvent.click(tile);
     expect(within(tile).getByTestId('mu-mude-failed')).toHaveTextContent(
-      "mude isn't available for download yet. Try again later."
+      "mude 1.0 isn't available for download yet. Try again later."
     );
     expect(within(tile).queryByTestId('mu-mude-error')).not.toBeInTheDocument();
     expect(within(tile).getByTestId('mu-mude-install')).toBeInTheDocument();

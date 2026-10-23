@@ -205,7 +205,7 @@ describe('mude in the first-run guide', () => {
       'mu-judge-choice-local',
       'mu-welcome-judge-none',
     ]);
-    expect(tile).toHaveTextContent('mude');
+    expect(tile).toHaveTextContent('mude 1.0');
     expect(tile).toHaveTextContent('On this Mac');
     fireEvent.click(tile);
     expect(tile).toHaveAttribute('aria-checked', 'true');
@@ -233,7 +233,7 @@ describe('mude in the first-run guide', () => {
     const { tile } = await judgeStep();
     await waitFor(() => expect(tile).toHaveAttribute('aria-disabled', 'true'));
     expect(within(tile).getByTestId('mu-mude-unsupported')).toHaveTextContent(
-      'mude needs a Mac with Apple silicon, macOS 14 or later and 8 GB of memory. mu uses the hosted judge instead.'
+      'mude 1.0 needs a Mac with Apple silicon, macOS 14 or later and 8 GB of memory. mu uses the hosted judge instead.'
     );
     expect(tile).toHaveTextContent('this Mac has an Intel processor');
     fireEvent.click(tile);
@@ -261,7 +261,7 @@ describe('mude in the first-run guide', () => {
         NOT_INSTALLED,
         task('install', 'running', {
           step: 'download',
-          message: 'Downloading mude (qybaihe/mude-2b-mlx-8bit, 1.78 GB) and checking every file',
+          message: 'Downloading mude (qybaihe/mude-1.0-mlx-8bit, 1.78 GB) and checking every file',
           download: { file: 'mlx-q8.safetensors', done: MODEL_BYTES / 4, total: MODEL_BYTES, checking: false },
         })
       )
@@ -287,7 +287,7 @@ describe('mude in the first-run guide', () => {
     );
     fireEvent.click(within(tile).getByTestId('mu-mude-install'));
     expect(await within(tile).findByTestId('mu-mude-failed')).toHaveTextContent(
-      "mude isn't available for download yet. Try again later."
+      "mude 1.0 isn't available for download yet. Try again later."
     );
     bridge.mudeRun.mockResolvedValue(state(NOT_INSTALLED, task('install', 'running')));
     fireEvent.click(within(tile).getByTestId('mu-mude-retry'));
@@ -337,13 +337,13 @@ describe('mude in the first-run guide', () => {
     bridge.settings.mockResolvedValue(ok(afterInstall()));
     bridge.mudeState.mockResolvedValue(state(RUNNING, task('install', 'done')));
     expect(await within(tile).findByTestId('mu-mude-ready', {}, { timeout: 3000 })).toHaveTextContent(
-      'mude is running and is your judge.'
+      'mude 1.0 is running and is your judge.'
     );
     expect(tile).toHaveAttribute('aria-checked', 'true');
 
     fireEvent.click(screen.getByTestId('mu-welcome-next'));
     await screen.findByTestId('mu-welcome-step-done');
-    expect(screen.getByTestId('mu-welcome-done-judge')).toHaveTextContent('mude');
+    expect(screen.getByTestId('mu-welcome-done-judge')).toHaveTextContent('mude 1.0');
     fireEvent.click(screen.getByTestId('mu-welcome-start'));
     await waitFor(() => expect(bridge.save).toHaveBeenCalledTimes(1));
     const saved = bridge.save.mock.calls[0][0] as SaveSettings;

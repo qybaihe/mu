@@ -162,9 +162,9 @@
         "description": "TypeSafe がホストする判定モデルです。高速かつ正確です。OpenCode Zen では期間限定で無料。TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare、または自前のサービスのキーを使えば呼び出しごとに課金されます。"
       },
       "mude": {
-        "title": "mude",
+        "title": "mude 1.0",
         "tag": "この Mac 上",
-        "description": "mu 独自の判定モデル。判定専用にファインチューニングされ、SOTA レベルの判定能力を備えています。この Mac で動作し、キー不要、呼び出しごとの費用もかかりません。Apple シリコンが必要です。"
+        "description": "mu 独自の意思決定モデル。コーディング向けに最適化され、コーディングエージェントの判断で SOTA レベルの性能を備えています。この Mac で動作し、キー不要、呼び出しごとの費用もかかりません。Apple シリコンが必要です。"
       },
       "local": {
         "title": "ローカル Laya",
@@ -223,77 +223,77 @@
       }
     },
     "mude": {
-      "name": "mude（この Mac 上）",
+      "name": "mude 1.0（この Mac 上）",
       "tierHelp": "この Mac で動作します。設定は「判定器」ページで行います。",
       "notInstalled": "未インストール。",
       "unfinished": "前回のインストールは完了していません。もう一度インストールすると、中断したところから再開します。",
-      "install": "mude をインストール",
+      "install": "mude 1.0 をインストール",
       "consent": {
-        "title": "mude をインストールしますか？",
-        "download": "mu は Hugging Face から mude（約 {{download}} GB）をダウンロードし、そのための Python 環境（約 {{python}} GB）を用意します。数分かかります。",
-        "memory": "動作中の mude は約 {{memory}} GB のメモリを使います。Apple シリコン搭載で macOS 14 以降の Mac が必要です。",
-        "after": "インストールが終わると mude が起動し、mu の判定器になります。",
+        "title": "mude 1.0 をインストールしますか？",
+        "download": "mu は Hugging Face から mude 1.0（約 {{download}} GB）をダウンロードし、そのための Python 環境（約 {{python}} GB）を用意します。数分かかります。",
+        "memory": "動作中の mude 1.0 は約 {{memory}} GB のメモリを使います。Apple シリコン搭載で macOS 14 以降の Mac が必要です。",
+        "after": "インストールが終わると mude 1.0 が起動し、mu の判定器になります。",
         "ok": "ダウンロードしてインストール"
       },
       "localOnly": "ローカルのみ — クラウドの判定器には問い合わせない",
-      "localOnlyOn": "mude が唯一の判定器になり、クラウドには何も送られません。mude が答えられないときは、判定ポイントの既定の方針で処理します。",
-      "localOnlyOff": "mude が答えられない判定（停止中や判断に迷ったときなど）はクラウドの {{judges}} に回され、送られた内容はこの Mac の外に出ます。次の 2 つのセキュリティ確認も常にそちらに送られます：ツールの説明の審査と、取得したコンテンツに注入された指示がないかの審査です。",
-      "localOnlyOffLocal": "mude が答えられない判定は、同じくこの Mac で動く {{judges}} に回されます。",
-      "localOnlyNone": "mude の後ろに判定器が設定されていません。mude が答えられないときは、判定ポイントの既定の方針で処理します。",
-      "use": "mude を判定器として使う",
+      "localOnlyOn": "mude 1.0 が唯一の判定器になり、クラウドには何も送られません。答えられないときは、判定ポイントの既定の方針で処理します。",
+      "localOnlyOff": "mude 1.0 が答えられない判定（停止中や判断に迷ったときなど）はクラウドの {{judges}} に回され、送られた内容はこの Mac の外に出ます。次の 2 つのセキュリティ確認も常にそちらに送られます：ツールの説明の審査と、取得したコンテンツに注入された指示がないかの審査です。",
+      "localOnlyOffLocal": "mude 1.0 が答えられない判定は、同じくこの Mac で動く {{judges}} に回されます。",
+      "localOnlyNone": "mude 1.0 の後ろに判定器が設定されていません。答えられないときは、判定ポイントの既定の方針で処理します。",
+      "use": "mude 1.0 を判定器として使う",
       "status": {
         "running": "127.0.0.1:{{port}} で実行中",
         "runningMemory": "127.0.0.1:{{port}} で実行中 · {{memory}} GB",
         "starting": "起動中…",
         "stopped": "停止中"
       },
-      "resources": "動作中の mude は約 {{memory}} GB のメモリを使います。この Mac 上のすべての mu セッション（ターミナルのものを含む）で共有され、停止するかオフにするまで動き続けます。",
-      "shared": "mude はこの Mac 上のすべての mu セッション（ターミナルのものを含む）で共有され、停止するかオフにするまで動き続けます。",
+      "resources": "動作中の mude 1.0 は約 {{memory}} GB のメモリを使います。この Mac 上のすべての mu セッション（ターミナルのものを含む）で共有され、停止するかオフにするまで動き続けます。",
+      "shared": "mude 1.0 はこの Mac 上のすべての mu セッション（ターミナルのものを含む）で共有され、停止するかオフにするまで動き続けます。",
       "start": "起動",
       "stop": "停止",
       "openFolder": "フォルダーを開く",
       "uninstall": "アンインストール",
-      "uninstallTitle": "mude をアンインストールしますか？",
-      "uninstallText": "mude をオフにして置き換えていた判定器に戻し、モデルとその Python 環境（約 {{size}} GB）を削除します。あとで再インストールできます。",
+      "uninstallTitle": "mude 1.0 をアンインストールしますか？",
+      "uninstallText": "mude 1.0 をオフにして置き換えていた判定器に戻し、モデルとその Python 環境（約 {{size}} GB）を削除します。あとで再インストールできます。",
       "working": {
-        "install": "mude をインストールしています…",
-        "enable": "mude をオンにしています…",
-        "disable": "mude をオフにしています…",
-        "start": "mude を起動しています…",
-        "stop": "mude を停止しています…",
-        "uninstall": "mude をアンインストールしています…"
+        "install": "mude 1.0 をインストールしています…",
+        "enable": "mude 1.0 をオンにしています…",
+        "disable": "mude 1.0 をオフにしています…",
+        "start": "mude 1.0 を起動しています…",
+        "stop": "mude 1.0 を停止しています…",
+        "uninstall": "mude 1.0 をアンインストールしています…"
       },
       "step": {
-        "download": "mude をダウンロードし、すべてのファイルを確認しています…",
-        "python": "mude の Python 環境を準備しています…",
-        "start": "mude のサーバーを起動しています…"
+        "download": "mude 1.0 をダウンロードし、すべてのファイルを確認しています…",
+        "python": "mude 1.0 の Python 環境を準備しています…",
+        "start": "mude 1.0 のサーバーを起動しています…"
       },
       "downloaded": "{{done}} / {{total}} GB",
       "checking": "ダウンロードしたファイルを確認しています…",
       "cancelled": "インストールをキャンセルしました。ダウンロード済みの部分は残り、もう一度インストールするとそこから再開します。",
       "failed": {
-        "install": "mude をインストールできませんでした。",
-        "enable": "mude をオンにできませんでした。",
-        "disable": "mude をオフにできませんでした。",
-        "start": "mude を起動できませんでした。",
-        "stop": "mude を停止できませんでした。",
-        "uninstall": "mude をアンインストールできませんでした。"
+        "install": "mude 1.0 をインストールできませんでした。",
+        "enable": "mude 1.0 をオンにできませんでした。",
+        "disable": "mude 1.0 をオフにできませんでした。",
+        "start": "mude 1.0 を起動できませんでした。",
+        "stop": "mude 1.0 を停止できませんでした。",
+        "uninstall": "mude 1.0 をアンインストールできませんでした。"
       },
       "error": {
-        "access": "mude はまだダウンロードできません。しばらくしてからもう一度お試しください。",
+        "access": "mude 1.0 はまだダウンロードできません。しばらくしてからもう一度お試しください。",
         "network": "Hugging Face に接続できませんでした。接続を確認してもう一度お試しください。ダウンロード済みの部分は残ります。",
         "integrity": "ダウンロードしたファイルが検証に通りませんでした。もう一度インストールしてください。",
-        "unsupported": "この Mac では mude を実行できません。"
+        "unsupported": "この Mac では mude 1.0 を実行できません。"
       },
-      "noStatus": "mude の状態を取得できませんでした：{{reason}}",
-      "saveFirst": "mude を変更するには、先にほかの変更を保存するか破棄してください。",
-      "needs": "mude には Apple シリコン、macOS 14 以降、{{ram}} GB 以上のメモリを備えた Mac が必要です。",
+      "noStatus": "mude 1.0 の状態を取得できませんでした：{{reason}}",
+      "saveFirst": "mude 1.0 を変更するには、先にほかの変更を保存するか破棄してください。",
+      "needs": "mude 1.0 には Apple シリコン、macOS 14 以降、{{ram}} GB 以上のメモリを備えた Mac が必要です。",
       "retry": "再試行",
       "guide": {
         "consent": "{{download}} GB のダウンロードと {{python}} GB の Python 環境が必要です。動作中は約 {{memory}} GB のメモリを使います。",
         "instead": "代わりに mu はホスト型の判定器を使います。",
-        "ready": "mude が動作中で、あなたの判定器になりました。",
-        "readyStopped": "mude があなたの判定器になりました。サーバーは次の mu セッションの開始時に起動します。"
+        "ready": "mude 1.0 が動作中で、あなたの判定器になりました。",
+        "readyStopped": "mude 1.0 があなたの判定器になりました。サーバーは次の mu セッションの開始時に起動します。"
       }
     },
     "clm": {
