@@ -159,11 +159,13 @@
       "jev": {
         "title": "Jev",
         "tag": "おすすめ",
+        "tagHosted": "クラウド",
         "description": "TypeSafe がホストする判定モデルです。高速かつ正確です。OpenCode Zen では期間限定で無料。TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare、または自前のサービスのキーを使えば呼び出しごとに課金されます。"
       },
       "mude": {
         "title": "mude 1.0",
         "tag": "この Mac 上",
+        "tagRecommended": "おすすめ・この Mac 上",
         "description": "mu 独自の意思決定モデル。コーディング向けに最適化され、コーディングエージェントの判断で SOTA レベルの性能を備えています。この Mac で動作し、キー不要、呼び出しごとの費用もかかりません。Apple シリコンが必要です。"
       },
       "local": {

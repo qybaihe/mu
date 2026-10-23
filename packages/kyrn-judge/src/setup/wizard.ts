@@ -1111,32 +1111,58 @@ class Setup {
 					})
 			: undefined;
 		const choices: Choice<"keep" | "jev" | "opencode" | "free" | "model" | "mude" | "none">[] = [];
+		// On a Mac that can run it, mu's own model is the first offer, and the Jev that would have been first follows it.
+		const mude = this.deps.mude !== undefined;
+		if (mude) {
+			choices.push({
+				label: this.t({
+					zh: "mude 1.0（推荐），在这台 Mac 上运行：mu 自己的决策模型，判定不出本机。下载一次 1.8 GB，运行时约占 4 GB 内存；它答不了的交给 Jev",
+					en: "mude 1.0 on this Mac (recommended): mu's own decision model, and its verdicts stay on this Mac. A one-time 1.8 GB download; it uses about 4 GB of memory while it runs, and Jev takes what it can't answer",
+				}),
+				value: "mude",
+			});
+		}
 		// With no key for Jev anywhere, the free Jev is what the `jev` judge uses anyway: the first offer.
 		const keyless = !opencode && !where;
 		if (keyless) {
 			choices.push({
-				label: this.t({
-					zh: "Jev 免费版（推荐），在 OpenCode Zen 上：不用密钥，限时免费；以后加了密钥自动换用",
-					en: "Free Jev on OpenCode Zen (recommended): no key needed, free for a limited time; a key you add later takes over",
-				}),
+				label: mude
+					? this.t({
+							zh: "Jev 免费版，在 OpenCode Zen 上：不用密钥，限时免费；以后加了密钥自动换用",
+							en: "Free Jev on OpenCode Zen: no key needed, free for a limited time; a key you add later takes over",
+						})
+					: this.t({
+							zh: "Jev 免费版（推荐），在 OpenCode Zen 上：不用密钥，限时免费；以后加了密钥自动换用",
+							en: "Free Jev on OpenCode Zen (recommended): no key needed, free for a limited time; a key you add later takes over",
+						}),
 				value: "free",
 			});
 		}
 		if (opencode && !where) {
 			choices.push({
-				label: this.t({
-					zh: "Jev（推荐），在 OpenCode Zen 上，用你的 OpenCode 密钥，按次计费",
-					en: "Jev on OpenCode Zen with your OpenCode key (recommended), billed per call",
-				}),
+				label: mude
+					? this.t({
+							zh: "Jev，在 OpenCode Zen 上，用你的 OpenCode 密钥，按次计费",
+							en: "Jev on OpenCode Zen with your OpenCode key, billed per call",
+						})
+					: this.t({
+							zh: "Jev（推荐），在 OpenCode Zen 上，用你的 OpenCode 密钥，按次计费",
+							en: "Jev on OpenCode Zen with your OpenCode key (recommended), billed per call",
+						}),
 				value: "opencode",
 			});
 		}
 		if (where) {
 			choices.push({
-				label: this.t({
-					zh: `Jev（推荐），用已经设置的密钥（${where}）`,
-					en: `Jev with the key that's already set (recommended): ${where}`,
-				}),
+				label: mude
+					? this.t({
+							zh: `Jev，用已经设置的密钥（${where}）`,
+							en: `Jev with the key that's already set: ${where}`,
+						})
+					: this.t({
+							zh: `Jev（推荐），用已经设置的密钥（${where}）`,
+							en: `Jev with the key that's already set (recommended): ${where}`,
+						}),
 				value: "keep",
 			});
 		}
@@ -1161,16 +1187,6 @@ class Setup {
 					en: "Free Jev on OpenCode Zen: no key needed, free for a limited time",
 				}),
 				value: "free",
-			});
-		}
-		if (this.deps.mude) {
-			// Second, after the recommended Jev: mu's own model, on this Mac.
-			choices.splice(1, 0, {
-				label: this.t({
-					zh: "mude 1.0，在这台 Mac 上运行：mu 自己的决策模型，判定不出本机。下载一次 1.8 GB，运行时约占 4 GB 内存；它答不了的交给 Jev",
-					en: "mude 1.0 on this Mac: mu's own decision model, and its verdicts stay on this Mac. A one-time 1.8 GB download; it uses about 4 GB of memory while it runs, and Jev takes what it can't answer",
-				}),
-				value: "mude",
 			});
 		}
 		if (model) {

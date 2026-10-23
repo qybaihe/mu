@@ -20,6 +20,7 @@ import {
   choose,
   clmKeyVariable,
   defaultModelOf,
+  inShownOrder,
   isMude,
   JEV_SERVICES,
   JUDGE_CHOICES,
@@ -34,7 +35,7 @@ import {
 import ClmServerCheck from './ClmServerCheck';
 import SectionShell, { Card } from './SectionShell';
 import LocalJudgePanel from './LocalJudgePanel';
-import MudePanel, { MudeUnsupported, mudeInstalled, mudeOffered, useMude } from './MudePanel';
+import MudePanel, { MudeUnsupported, mudeInstalled, mudeOffered, mudeRecommended, useMude } from './MudePanel';
 import styles from './sections.module.css';
 
 type JudgesSectionProps = {
@@ -126,6 +127,9 @@ export function JudgeChoices({ draft, base, onChange, onKey, onReload }: JudgeCh
   const current = picked ?? (mude.busy ? 'mude' : saved);
   const offered = mude.state?.available === true;
   const mudeOk = mudeOffered(mude.state);
+  // On a Mac that can run it, mude comes first and is tagged as recommended. What is chosen stays the configuration's.
+  const recommended = mudeRecommended(mude.state);
+  const shown = inShownOrder(JUDGE_CHOICES, recommended).filter((choice) => choice !== 'mude' || offered);
   const pick = (choice: JudgeChoice) => {
     if (choice === 'mude') {
       setPicked('mude');
@@ -143,12 +147,13 @@ export function JudgeChoices({ draft, base, onChange, onKey, onReload }: JudgeCh
   return (
     <>
       <div className={styles.choices} role='radiogroup' aria-label={t('mu.judges.choose')}>
-        {JUDGE_CHOICES.filter((choice) => choice !== 'mude' || offered).map((choice) => {
+        {shown.map((choice) => {
           const disabled = choice === 'mude' && !mudeOk;
           return (
             <JudgeChoiceTile
               key={choice}
               choice={choice}
+              mudeRecommended={recommended}
               active={current === choice && !disabled}
               disabled={disabled}
               description={disabled ? <MudeUnsupported state={mude.state} /> : undefined}
@@ -176,17 +181,37 @@ type TileProps = {
   disabled?: boolean;
   /** Instead of the choice's own description. */
   description?: React.ReactNode;
+  /** mude can run on this Mac (see `mudeRecommended`), which changes the tags of mude and Jev (see `tagKey`). */
+  mudeRecommended?: boolean;
   children?: React.ReactNode;
 };
 
+/**
+ * The i18n key of a choice's tag. Where mude is the recommended judge (`recommended`), its tag says so, and Jev's says
+ * what it is (hosted) instead of being the recommended one; elsewhere every choice keeps its own tag.
+ */
+function tagKey(choice: JudgeChoice, recommended: boolean): string {
+  if (recommended && choice === 'mude') return 'mu.judges.choices.mude.tagRecommended';
+  if (recommended && choice === 'jev') return 'mu.judges.choices.jev.tagHosted';
+  return `mu.judges.choices.${choice}.tag`;
+}
+
 /** One of the judge choices, worded from the mu i18n module. */
-export function JudgeChoiceTile({ choice, active, onPick, disabled, description, children }: TileProps) {
+export function JudgeChoiceTile({
+  choice,
+  active,
+  onPick,
+  disabled,
+  description,
+  mudeRecommended: recommended = false,
+  children,
+}: TileProps) {
   const { t } = useTranslation();
   return (
     <ChoiceTile
       testId={`mu-judge-choice-${choice}`}
       title={t(`mu.judges.choices.${choice}.title`)}
-      tag={t(`mu.judges.choices.${choice}.tag`)}
+      tag={t(tagKey(choice, recommended))}
       description={description ?? t(`mu.judges.choices.${choice}.description`)}
       active={active}
       disabled={disabled}

@@ -14,6 +14,7 @@ import {
   choiceOf,
   choose,
   GUIDE_CHOICES,
+  inShownOrder,
   jevVariables,
   profileFor,
 } from '@/renderer/pages/settings/KyrnSettings/judgeChoice';
@@ -24,12 +25,13 @@ import {
   providerLabel,
 } from '@/renderer/pages/settings/KyrnSettings/providers/endpoints';
 import ConnectionTest from '@/renderer/pages/settings/KyrnSettings/providers/ConnectionTest';
-import { dirtySections } from '@/renderer/pages/settings/KyrnSettings/draft';
+import { dirtySections, type Draft } from '@/renderer/pages/settings/KyrnSettings/draft';
 import { ChoiceBody, JudgeChoiceTile } from '@/renderer/pages/settings/KyrnSettings/sections/JudgesSection';
 import {
   MudeSetup,
   MudeUnsupported,
   mudeOffered,
+  mudeRecommended,
   useMude,
   type MudeControl,
 } from '@/renderer/pages/settings/KyrnSettings/sections/MudePanel';
@@ -81,6 +83,16 @@ const TURN = [
   { point: 'turn.completion', verdict: 'completion', ms: 207 },
 ] as const;
 
+/**
+ * The judge is Jev answering free (no key for it saved or typed), with its verdicts on: what a new mu starts with, a
+ * judge nobody chose. The judge step then says so; on a Mac that can run mude, it starts with mude picked instead.
+ */
+function freeJevJudge({ settings, judgeKeys }: Draft): boolean {
+  const judge = choiceOf(settings);
+  if (settings.mode === 'off' || judge !== 'jev') return false;
+  return answersFree(settings.judges[profileFor(settings, judge) ?? ''], settings.keys, judgeKeys);
+}
+
 /** A line that says what is already set up and works: nothing to do on this step. */
 function Ready({ text, testId }: { text: string; testId: string }) {
   return (
@@ -116,7 +128,8 @@ export default function Welcome() {
   // mude, on a Mac: picked in the judge step, which sets it up right there through mu's own command. The command
   // writes mu.json itself (mude first, the judges from before behind it), so once it ends the guide's draft is moved
   // onto the files again, and the final save starts from them too: it never puts back the judge the draft held.
-  const [mudePicked, setMudePicked] = useState(false);
+  // Undefined until something is picked on the judge step: then the recommendation below decides.
+  const [mudePick, setMudePick] = useState<boolean>();
   const mudeRan = useRef(false);
   const mudeNow = useMude((task) => {
     const judgeSet = task.phase === 'done' && (task.command === 'install' || task.command === 'enable');
@@ -166,6 +179,15 @@ export default function Welcome() {
   ) : null;
 
   const { base, draft } = mu;
+  // On a Mac that can run it (as its status says, not while that is still read), mude is the recommended judge: the
+  // judge step starts with it picked, its install one click away and never started by itself, while the judge is still
+  // the free Jev a new mu starts with. A judge set up before (Jev with a key, Laya, CLM, no judge, mude itself) stays
+  // the one picked. Whatever the person picks on the step wins, and the status read later never moves it.
+  const recommendMude = mudeRecommended(mude.state);
+  const mudePicked = mudePick ?? (recommendMude && draft !== undefined && freeJevJudge(draft));
+  // The first press on the step's choices keeps the pick as it is shown: pressing the tile already picked does nothing
+  // of itself (a picked tile ignores a press), and a press on a field inside it is a press on that choice too.
+  const settleMudePick = () => setMudePick((now) => now ?? mudePicked);
   const chosenWay: Way | undefined = way;
   // The steps of the setup itself; the introduction before them is not one. The permission step only when this mu
   // has permission modes and they are on.
@@ -274,7 +296,7 @@ export default function Welcome() {
       : undefined;
   // No judge: every decision point off, as the settings' switch sets it, so nothing is sent to a judge.
   const judgeOff = settings.mode === 'off';
-  const judgeFree = !judgeOff && judge === 'jev' && answersFree(judgeProfile, settings.keys, draft.judgeKeys);
+  const judgeFree = freeJevJudge(draft);
   const judgeKeyed =
     !judgeOff &&
     judge === 'jev' &&
@@ -488,8 +510,14 @@ export default function Welcome() {
         <h1 className={styles.title}>{t('mu.welcome.judge.title')}</h1>
         <p className={styles.subtitle}>{t('mu.welcome.judge.subtitle')}</p>
         {judgeReady && !mudePicked ? <Ready testId='mu-welcome-judge-ready' text={judgeReady} /> : null}
-        <div className={choiceStyles.choices} role='radiogroup' aria-label={t('mu.welcome.judge.title')}>
-          {GUIDE_CHOICES.map((choice) => {
+        <div
+          className={choiceStyles.choices}
+          role='radiogroup'
+          aria-label={t('mu.welcome.judge.title')}
+          onClickCapture={settleMudePick}
+          onKeyDownCapture={settleMudePick}
+        >
+          {inShownOrder(GUIDE_CHOICES, recommendMude).map((choice) => {
             if (choice === 'mude') {
               // Shown on every machine, so someone without a Mac that runs it learns it exists; never in the way.
               const disabled = !mudeOffered(mude.state);
@@ -497,10 +525,11 @@ export default function Welcome() {
                 <JudgeChoiceTile
                   key={choice}
                   choice={choice}
+                  mudeRecommended={recommendMude}
                   active={!disabled && (mudePicked || (!judgeOff && judge === 'mude'))}
                   disabled={disabled}
                   description={disabled ? <MudeUnsupported state={mude.state} guide /> : undefined}
-                  onPick={() => setMudePicked(true)}
+                  onPick={() => setMudePick(true)}
                 >
                   <MudeSetup mude={mude} judged={!judgeOff && judge === 'mude'} />
                 </JudgeChoiceTile>
@@ -523,10 +552,11 @@ export default function Welcome() {
               <JudgeChoiceTile
                 key={choice}
                 choice={choice}
+                mudeRecommended={recommendMude}
                 active={!judgeOff && !mudePicked && judge === choice}
                 // Picking a judge after "No judge" turns the verdicts back on; a stored shadow stays as it is.
                 onPick={() => {
-                  setMudePicked(false);
+                  setMudePick(false);
                   mu.editSettings((now) => ({
                     ...choose(now, choice),
                     mode: now.mode === 'off' ? 'active' : now.mode,
@@ -559,7 +589,7 @@ export default function Welcome() {
             description={t('mu.welcome.judge.none.description')}
             active={judgeOff && !mudePicked}
             onPick={() => {
-              setMudePicked(false);
+              setMudePick(false);
               mu.editSettings((now) => ({ ...now, mode: 'off' }));
             }}
           />

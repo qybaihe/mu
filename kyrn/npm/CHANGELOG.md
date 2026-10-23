@@ -2,9 +2,13 @@
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-24
+
+**0.2.1 makes mude 1.0 the recommended judge on a Mac, set up from `mu setup`, and its install survives a power cut.**
+
 ### Added
 
-- `mu setup` offers mude 1.0 in its judge step on a Mac that can run it (Apple silicon, macOS 14 or later, 8 GB of memory or more). It is the second choice, after the recommended Jev. Picking it writes Jev as the judge, then installs mude 1.0 in front of it in the same terminal, with its progress. If the install doesn't finish, Jev stays the judge and `mu judge mude install` goes on from where it stopped. Scripts use `--judge mude`.
+- `mu setup` offers mude 1.0 in its judge step on a Mac that can run it (Apple silicon, macOS 14 or later, 8 GB of memory or more). It is the first choice and the recommended one, so pressing Enter picks it; the Jev that was recommended before follows it and stays a choice. Picking it writes Jev as the judge, then installs mude 1.0 in front of it in the same terminal, with its progress. If the install doesn't finish, Jev stays the judge and `mu judge mude install` goes on from where it stopped. Scripts use `--judge mude`. On other machines the judge step is as before: free Jev is first and recommended.
 
 ### Fixed
 

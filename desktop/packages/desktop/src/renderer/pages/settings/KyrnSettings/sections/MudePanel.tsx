@@ -125,6 +125,13 @@ export function mudeOffered(state: MudeState | undefined): boolean {
   return !state.problem;
 }
 
+/**
+ * mude can run on this Mac, as its status says: it is then the recommended judge, shown first with a tag that says so.
+ * Unlike `mudeOffered`, a state still being read is no: until the status says so, every choice stays as it was.
+ */
+export const mudeRecommended = (state: MudeState | undefined): boolean =>
+  Boolean(state?.available && state.status?.supported);
+
 /** mude is downloaded and its Python environment set up. */
 export const mudeInstalled = (status: MudeStatus | undefined): boolean =>
   Boolean(status?.supported && status.installed && status.pythonReady);

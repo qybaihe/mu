@@ -10,6 +10,7 @@ import {
   clmKeyVariable,
   defaultModelOf,
   GUIDE_CHOICES,
+  inShownOrder,
   JEV_SERVICES,
   JUDGE_CHOICES,
   jevKeyVariable,
@@ -127,6 +128,15 @@ describe('the judge choice', () => {
     expect(profileFor(settings({ judges: { ...settings().judges, gpu: clm } }), 'clm')).toBe('gpu');
     expect(clmKeyVariable(clm)).toBe('MU_JUDGE_CLM_API_KEY');
     expect(clmKeyVariable({ ...clm, apiKeyEnv: '' })).toBe('MU_JUDGE_CLM_API_KEY');
+  });
+
+  it('puts mude first where it is the recommended judge, and leaves the order as it is elsewhere', () => {
+    expect(inShownOrder(JUDGE_CHOICES, true)).toEqual(['mude', 'jev', 'local', 'clm']);
+    expect(inShownOrder(GUIDE_CHOICES, true)).toEqual(['mude', 'jev', 'local']);
+    expect(inShownOrder(JUDGE_CHOICES, false)).toEqual(['jev', 'mude', 'local', 'clm']);
+    expect(inShownOrder(GUIDE_CHOICES, false)).toEqual(['jev', 'mude', 'local']);
+    // Without mude among them, nothing moves.
+    expect(inShownOrder(['jev', 'local'], true)).toEqual(['jev', 'local']);
   });
 
   it('knows mude by its key, never takes it for Jev, and leaves choosing it to its command', () => {

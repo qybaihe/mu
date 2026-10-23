@@ -159,11 +159,13 @@
       "jev": {
         "title": "Jev",
         "tag": "Recommended",
+        "tagHosted": "Hosted",
         "description": "TypeSafe's hosted judge model. Fast and accurate. Free on OpenCode Zen for a limited time, or pay per call with a key for TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare or your own service."
       },
       "mude": {
         "title": "mude 1.0",
         "tag": "On this Mac",
+        "tagRecommended": "Recommended · on this Mac",
         "description": "mu's own decision model, optimized for coding and state of the art at a coding agent's decisions. Runs on this Mac: no key, no per-call cost. Needs Apple silicon."
       },
       "local": {
