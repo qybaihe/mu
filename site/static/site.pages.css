@@ -107,6 +107,58 @@
 .dp-measured .prose { max-width: 960px; }
 .dp-measured .prose h2 { margin-top: 0; }
 
+/* ---- Models page ---- */
+.models-section { padding-top: 96px; }
+.models-h3 { margin: 56px 0 0; font-size: 19px; font-weight: 650; }
+.models-h3 + .grid { margin-top: 18px; }
+.models-h3 + .list { margin-top: 8px; }
+.models-h3 + .prose { margin-top: 14px; }
+.grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid.two .card { display: flex; flex-direction: column; }
+.grid.two .card p { flex: 1; }
+.models-code { max-width: 960px; margin-top: 28px; }
+.models-compare { max-width: 960px; margin-top: 36px; }
+.models-compare table { min-width: 600px; }
+.models-compare thead td { background: var(--code); border-bottom: 1px solid var(--line); }
+.models-compare thead th { width: 41%; }
+.models-compare tbody th { background: none; color: var(--text); font-size: 14px; white-space: normal; }
+
+/* ---- mubench page ---- */
+.mb-open { margin: 18px 0 0; }
+.mb-open .opt-flag { display: inline-block; padding: 2px 12px; font-size: 13px; color: var(--muted); }
+.mb-board { max-width: none; margin-top: 32px; }
+.mb-board table { min-width: 980px; font-variant-numeric: tabular-nums; }
+.mb-board th, .mb-board td { padding: 12px 14px; }
+.mb-board thead th { min-width: 6.5em; white-space: normal; vertical-align: bottom; line-height: 1.35; text-align: right; }
+.mb-board thead th:first-child { min-width: 0; text-align: left; }
+.mb-board td { text-align: right; white-space: nowrap; color: var(--muted); font-size: 15px; }
+.mb-board td b { color: var(--text); font-weight: 700; }
+.mb-board th[scope="row"] { background: var(--bg); color: var(--text); font-size: 14.5px; font-weight: 600; white-space: nowrap; }
+/* The model names stay in view while the numbers scroll sideways in their box. */
+.mb-board th:first-child { position: sticky; left: 0; z-index: 1; box-shadow: inset -1px 0 0 var(--line); }
+.mb-board thead th:first-child { background: var(--code); }
+.mb-board .mb-overall { border-right: 1px solid var(--line); }
+.mb-board tbody .mb-overall { color: var(--text); font-size: 16px; }
+.mb-board tfoot th, .mb-board tfoot td { padding-top: 8px; padding-bottom: 8px; font-size: 13px; font-weight: 400; color: var(--faint); }
+.mb-board tfoot th[scope="row"] { color: var(--muted); font-size: 13px; font-weight: 500; }
+.mb-board tfoot tr:first-child > * { border-top: 1px solid var(--line-strong); }
+.mb-board tfoot tr:last-child > * { border-bottom: 0; }
+.mb-mark { margin-left: 2px; font-size: 0.78em; font-weight: 600; color: var(--judge); }
+.mb-notes { max-width: 840px; margin: 16px 0 0; padding: 0; list-style: none; font-size: 13.5px; color: var(--muted); }
+.mb-notes li + li { margin-top: 4px; }
+.mb-notes .mb-mark { display: inline-block; width: 1.1em; margin: 0; font-size: 1em; }
+.mb-sub-intro { max-width: 720px; margin: 8px 0 0; font-size: 15px; color: var(--muted); }
+.mb-sub { margin-top: 20px; }
+.mb-sub th, .mb-sub td { padding: 9px 12px; }
+.mb-sub td { font-size: 14px; }
+.mb-sub tbody .mb-overall { font-size: 14.5px; }
+.mb-sub th[scope="row"] { font-size: 14px; font-weight: 500; }
+.mb-chart { max-width: 880px; margin: 36px 0 0; }
+.mb-chart picture { display: block; }
+.mb-chart img { width: 100%; height: auto; }
+.mb-caps .chips { margin-top: 10px; }
+.mb-caps .chip { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
 /* ---- Documentation ---- */
 .docs { display: grid; grid-template-columns: 220px minmax(0, 1fr) 196px; gap: 56px; align-items: start; padding-top: 48px; }
 .docs-nav { position: sticky; top: 100px; max-height: calc(100vh - 124px); overflow-y: auto; font-size: 14px; }
@@ -143,7 +195,6 @@ kbd { padding: 1px 6px; border: 1px solid var(--line-strong); border-bottom-widt
 .opt-flags { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 0 !important; font-size: 13px; color: var(--muted); }
 .opt-flag { padding: 0 9px; border: 1px solid var(--line-strong); border-radius: 999px; font-size: 12px; }
 .opt-flag.on { border-color: transparent; background: var(--accent); color: var(--accent-on); }
-.opt-flag.beta { border-style: dashed; }
 .opt-points a { text-decoration: none; }
 .opt-points code { font-size: 12px !important; }
 .prose h2 .opt-name { margin-left: 6px; border: 0; background: none; padding: 0; font-size: 0.55em; font-weight: 500; color: var(--faint); vertical-align: middle; }
@@ -174,8 +225,8 @@ kbd { padding: 1px 6px; border: 1px solid var(--line-strong); border-bottom-widt
   .dp-bar { top: 76px; }
 }
 @media (max-width: 640px) {
-  .dp-how, .dp-map, .dp-catalog, .dp-judges, .dp-measured { padding-top: 72px; }
-  .lanes, .grid.four { grid-template-columns: 1fr; }
+  .dp-how, .dp-map, .dp-catalog, .dp-judges, .dp-measured, .models-section { padding-top: 72px; }
+  .lanes, .grid.four, .grid.two { grid-template-columns: 1fr; }
   .dp-bar { position: static; padding: 8px; }
   .dp-filters { flex-wrap: nowrap; overflow-x: auto; margin: 0 -2px; padding: 0 2px; scrollbar-width: none; }
   .dp-filters::-webkit-scrollbar { display: none; }
@@ -183,6 +234,8 @@ kbd { padding: 1px 6px; border: 1px solid var(--line-strong); border-bottom-widt
   .ex-row { grid-template-columns: 1fr; gap: 2px; }
   .docs-pager { grid-template-columns: 1fr; }
   .docs-pager .next { grid-column: 1; }
+  /* The phone charts are drawn 360 wide: no larger than that and a bit. */
+  .mb-chart img { max-width: 440px; }
 }
 
 /* Hangul in the mono font comes out widely spaced: Korean labels and verdicts use the body font. */

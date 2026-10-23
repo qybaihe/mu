@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="762" viewBox="0 0 880 762" role="img" aria-labelledby="t d" font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Noto Sans SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif'>
+<title id="t">mubench 1.0 主榜：八项能力</title>
+<desc id="d">每项能力的分数，来自真实编程会话里的 3,193 道请求。0 = 不用决策模型的 mu；100 = 它付出的代价全部消除。 权限放行: mude 1.0 52.6, Jev 1.14 53.7, Jev 1.13 52.7, d3-nano 原版 5.9. 恶意指令识别: 以构造题为主，目前还不出分。. 上下文压缩: mude 1.0 64.6, Jev 1.14 76.7, Jev 1.13 70.7, d3-nano 原版 −19.1. 按需加载与提醒: mude 1.0 −2.7, Jev 1.14 16.8, Jev 1.13 25.1, d3-nano 原版 −118.4. 归类与路由: mude 1.0 83.6, Jev 1.14 87.5, Jev 1.13 85.8, d3-nano 原版 51.7. 进度与完成判断: mude 1.0 86.6, Jev 1.14 61.6, Jev 1.13 61.6, d3-nano 原版 70.1. 记忆与经验: mude 1.0 58.7, Jev 1.14 75.1, Jev 1.13 72.2, d3-nano 原版 40.5. 多智能体协作: mude 1.0 19.8, Jev 1.14 4.6, Jev 1.13 −0.8, d3-nano 原版 26.0.</desc>
+<text x="0" y="22" font-size="17" font-weight="650" fill="#1d1b22">mubench 1.0 主榜：八项能力</text>
+<text x="0" y="48" font-size="13" fill="#5f5f6b">每项能力的分数，来自真实编程会话里的 3,193 道请求。0 = 不用决策模型的 mu；100 = 它付出的代价全部消除。</text>
+<rect x="0" y="68.5" width="10" height="10" rx="3" fill="#b42d86"/>
+<text x="16" y="78" font-size="12.5" fill="#1d1b22">mude 1.0</text>
+<rect x="89.12" y="68.5" width="10" height="10" rx="3" fill="#5b45db"/>
+<text x="105.1" y="78" font-size="12.5" fill="#1d1b22">Jev 1.14</text>
+<rect x="176.65000000000003" y="68.5" width="10" height="10" rx="3" fill="#a99bf7"/>
+<text x="192.7" y="78" font-size="12.5" fill="#1d1b22">Jev 1.13</text>
+<rect x="264.18000000000006" y="68.5" width="10" height="10" rx="3" fill="#6a6a73"/>
+<text x="280.2" y="78" font-size="12.5" fill="#1d1b22">d3-nano 原版</text>
+<text x="0" y="122" font-size="13.5" font-weight="650" fill="#1d1b22">权限放行</text>
+<line x1="140" y1="132" x2="140" y2="216" stroke="#d5d6dc" stroke-width="1"/>
+<line x1="248" y1="132" x2="248" y2="216" stroke="#e5e6eb" stroke-width="1"/>
+<line x1="356" y1="132" x2="356" y2="216" stroke="#e5e6eb" stroke-width="1"/>
+<text x="76" y="146.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">mude 1.0</text>
+<path d="M140,136 H249.6 Q253.6,136 253.6,140 V144 Q253.6,148 249.6,148 H140 Z" fill="#b42d86"/>
+<text x="412" y="146.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">52.6</text>
+<text x="76" y="167.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">Jev 1.14</text>
+<path d="M140,157 H252 Q256,157 256,161 V165 Q256,169 252,169 H140 Z" fill="#5b45db"/>
+<text x="412" y="167.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">53.7</text>
+<text x="76" y="188.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">Jev 1.13</text>
+<path d="M140,178 H249.8 Q253.8,178 253.8,182 V186 Q253.8,190 249.8,190 H140 Z" fill="#a99bf7"/>
+<text x="412" y="188.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">52.7</text>
+<text x="76" y="209.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">d3-nano</text>
+<path d="M140,199 H148.7 Q152.7,199 152.7,203 V207 Q152.7,211 148.7,211 H140 Z" fill="#6a6a73"/>
+<text x="412" y="209.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">5.9</text>
+<text x="140" y="230" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">0</text>
+<text x="248" y="230" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">50</text>
+<text x="356" y="230" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">100</text>
+<text x="468" y="122" font-size="13.5" font-weight="650" fill="#1d1b22">恶意指令识别<tspan dx="2" dy="-4" font-size="12.5" font-weight="700" fill="#a23bb2">†</tspan></text>
+<line x1="468" y1="132" x2="880" y2="132" stroke="#e5e6eb" stroke-width="1"/>
+<text x="468" y="176" font-size="12.5" fill="#5f5f6b">—   以构造题为主，目前还不出分。</text>
+<text x="0" y="272" font-size="13.5" font-weight="650" fill="#1d1b22">上下文压缩<tspan dx="2" dy="-4" font-size="12.5" font-weight="700" fill="#a23bb2">*</tspan></text>
+<line x1="140" y1="282" x2="140" y2="366" stroke="#d5d6dc" stroke-width="1"/>
+<line x1="248" y1="282" x2="248" y2="366" stroke="#e5e6eb" stroke-width="1"/>
+<line x1="356" y1="282" x2="356" y2="366" stroke="#e5e6eb" stroke-width="1"/>
+<text x="76" y="296.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">mude 1.0</text>
+<path d="M140,286 H275.5 Q279.5,286 279.5,290 V294 Q279.5,298 275.5,298 H140 Z" fill="#b42d86"/>
+<text x="412" y="296.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">64.6</text>
+<text x="76" y="317.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">Jev 1.14</text>
+<path d="M140,307 H301.7 Q305.7,307 305.7,311 V315 Q305.7,319 301.7,319 H140 Z" fill="#5b45db"/>
+<text x="412" y="317.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">76.7</text>
+<text x="76" y="338.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">Jev 1.13</text>
+<path d="M140,328 H288.7 Q292.7,328 292.7,332 V336 Q292.7,340 288.7,340 H140 Z" fill="#a99bf7"/>
+<text x="412" y="338.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">70.7</text>
+<text x="76" y="359.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">d3-nano</text>
+<path d="M140,349 H102.7 Q98.7,349 98.7,353 V357 Q98.7,361 102.7,361 H140 Z" fill="#6a6a73"/>
+<text x="412" y="359.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">−19.1</text>
+<text x="140" y="380" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">0</text>
+<text x="248" y="380" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">50</text>
+<text x="356" y="380" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">100</text>
+<text x="468" y="272" font-size="13.5" font-weight="650" fill="#1d1b22">按需加载与提醒<tspan dx="2" dy="-4" font-size="12.5" font-weight="700" fill="#a23bb2">*</tspan></text>
+<line x1="608" y1="282" x2="608" y2="366" stroke="#d5d6dc" stroke-width="1"/>
+<line x1="716" y1="282" x2="716" y2="366" stroke="#e5e6eb" stroke-width="1"/>
+<line x1="824" y1="282" x2="824" y2="366" stroke="#e5e6eb" stroke-width="1"/>
+<text x="544" y="296.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">mude 1.0</text>
+<path d="M608,286 H605.1 Q602.2,286 602.2,288.9 V295.1 Q602.2,298 605.1,298 H608 Z" fill="#b42d86"/>
+<text x="880" y="296.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">−2.7</text>
+<text x="544" y="317.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">Jev 1.14</text>
+<path d="M608,307 H640.3 Q644.3,307 644.3,311 V315 Q644.3,319 640.3,319 H608 Z" fill="#5b45db"/>
+<text x="880" y="317.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">16.8</text>
+<text x="544" y="338.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">Jev 1.13</text>
+<path d="M608,328 H658.2 Q662.2,328 662.2,332 V336 Q662.2,340 658.2,340 H608 Z" fill="#a99bf7"/>
+<text x="880" y="338.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">25.1</text>
+<text x="544" y="359.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">d3-nano</text>
+<path d="M608,349 H558 Q554,349 554,353 V357 Q554,361 558,361 H608 Z" fill="#6a6a73"/>
+<line x1="561" y1="362" x2="565" y2="348" stroke="#ffffff" stroke-width="2"/>
+<line x1="566" y1="362" x2="570" y2="348" stroke="#ffffff" stroke-width="2"/>
+<text x="880" y="359.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">−118.4</text>
+<text x="608" y="380" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">0</text>
+<text x="716" y="380" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">50</text>
+<text x="824" y="380" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">100</text>
+<text x="0" y="422" font-size="13.5" font-weight="650" fill="#1d1b22">归类与路由</text>
+<line x1="140" y1="432" x2="140" y2="516" stroke="#d5d6dc" stroke-width="1"/>
+<line x1="248" y1="432" x2="248" y2="516" stroke="#e5e6eb" stroke-width="1"/>
+<line x1="356" y1="432" x2="356" y2="516" stroke="#e5e6eb" stroke-width="1"/>
+<text x="76" y="446.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">mude 1.0</text>
+<path d="M140,436 H316.6 Q320.6,436 320.6,440 V444 Q320.6,448 316.6,448 H140 Z" fill="#b42d86"/>
+<text x="412" y="446.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">83.6</text>
+<text x="76" y="467.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">Jev 1.14</text>
+<path d="M140,457 H325 Q329,457 329,461 V465 Q329,469 325,469 H140 Z" fill="#5b45db"/>
+<text x="412" y="467.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">87.5</text>
+<text x="76" y="488.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">Jev 1.13</text>
+<path d="M140,478 H321.3 Q325.3,478 325.3,482 V486 Q325.3,490 321.3,490 H140 Z" fill="#a99bf7"/>
+<text x="412" y="488.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">85.8</text>
+<text x="76" y="509.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">d3-nano</text>
+<path d="M140,499 H247.7 Q251.7,499 251.7,503 V507 Q251.7,511 247.7,511 H140 Z" fill="#6a6a73"/>
+<text x="412" y="509.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">51.7</text>
+<text x="140" y="530" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">0</text>
+<text x="248" y="530" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">50</text>
+<text x="356" y="530" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">100</text>
+<text x="468" y="422" font-size="13.5" font-weight="650" fill="#1d1b22">进度与完成判断</text>
+<line x1="608" y1="432" x2="608" y2="516" stroke="#d5d6dc" stroke-width="1"/>
+<line x1="716" y1="432" x2="716" y2="516" stroke="#e5e6eb" stroke-width="1"/>
+<line x1="824" y1="432" x2="824" y2="516" stroke="#e5e6eb" stroke-width="1"/>
+<text x="544" y="446.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">mude 1.0</text>
+<path d="M608,436 H791.1 Q795.1,436 795.1,440 V444 Q795.1,448 791.1,448 H608 Z" fill="#b42d86"/>
+<text x="880" y="446.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">86.6</text>
+<text x="544" y="467.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">Jev 1.14</text>
+<path d="M608,457 H737.1 Q741.1,457 741.1,461 V465 Q741.1,469 737.1,469 H608 Z" fill="#5b45db"/>
+<text x="880" y="467.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">61.6</text>
+<text x="544" y="488.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">Jev 1.13</text>
+<path d="M608,478 H737.1 Q741.1,478 741.1,482 V486 Q741.1,490 737.1,490 H608 Z" fill="#a99bf7"/>
+<text x="880" y="488.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">61.6</text>
+<text x="544" y="509.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">d3-nano</text>
+<path d="M608,499 H755.4 Q759.4,499 759.4,503 V507 Q759.4,511 755.4,511 H608 Z" fill="#6a6a73"/>
+<text x="880" y="509.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">70.1</text>
+<text x="608" y="530" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">0</text>
+<text x="716" y="530" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">50</text>
+<text x="824" y="530" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">100</text>
+<text x="0" y="572" font-size="13.5" font-weight="650" fill="#1d1b22">记忆与经验</text>
+<line x1="140" y1="582" x2="140" y2="666" stroke="#d5d6dc" stroke-width="1"/>
+<line x1="248" y1="582" x2="248" y2="666" stroke="#e5e6eb" stroke-width="1"/>
+<line x1="356" y1="582" x2="356" y2="666" stroke="#e5e6eb" stroke-width="1"/>
+<text x="76" y="596.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">mude 1.0</text>
+<path d="M140,586 H262.8 Q266.8,586 266.8,590 V594 Q266.8,598 262.8,598 H140 Z" fill="#b42d86"/>
+<text x="412" y="596.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">58.7</text>
+<text x="76" y="617.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">Jev 1.14</text>
+<path d="M140,607 H298.2 Q302.2,607 302.2,611 V615 Q302.2,619 298.2,619 H140 Z" fill="#5b45db"/>
+<text x="412" y="617.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">75.1</text>
+<text x="76" y="638.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">Jev 1.13</text>
+<path d="M140,628 H292 Q296,628 296,632 V636 Q296,640 292,640 H140 Z" fill="#a99bf7"/>
+<text x="412" y="638.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">72.2</text>
+<text x="76" y="659.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">d3-nano</text>
+<path d="M140,649 H223.5 Q227.5,649 227.5,653 V657 Q227.5,661 223.5,661 H140 Z" fill="#6a6a73"/>
+<text x="412" y="659.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">40.5</text>
+<text x="140" y="680" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">0</text>
+<text x="248" y="680" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">50</text>
+<text x="356" y="680" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">100</text>
+<text x="468" y="572" font-size="13.5" font-weight="650" fill="#1d1b22">多智能体协作<tspan dx="2" dy="-4" font-size="12.5" font-weight="700" fill="#a23bb2">*</tspan></text>
+<line x1="608" y1="582" x2="608" y2="666" stroke="#d5d6dc" stroke-width="1"/>
+<line x1="716" y1="582" x2="716" y2="666" stroke="#e5e6eb" stroke-width="1"/>
+<line x1="824" y1="582" x2="824" y2="666" stroke="#e5e6eb" stroke-width="1"/>
+<text x="544" y="596.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">mude 1.0</text>
+<path d="M608,586 H646.8 Q650.8,586 650.8,590 V594 Q650.8,598 646.8,598 H608 Z" fill="#b42d86"/>
+<text x="880" y="596.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">19.8</text>
+<text x="544" y="617.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">Jev 1.14</text>
+<path d="M608,607 H613.9 Q617.9,607 617.9,611 V615 Q617.9,619 613.9,619 H608 Z" fill="#5b45db"/>
+<text x="880" y="617.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">4.6</text>
+<text x="544" y="638.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">Jev 1.13</text>
+<path d="M608,628 H607.1 Q606.3,628 606.3,628.9 V639.1 Q606.3,640 607.1,640 H608 Z" fill="#a99bf7"/>
+<text x="880" y="638.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">−0.8</text>
+<text x="544" y="659.5" font-size="11.5" text-anchor="end" fill="#5f5f6b">d3-nano</text>
+<path d="M608,649 H660.2 Q664.2,649 664.2,653 V657 Q664.2,661 660.2,661 H608 Z" fill="#6a6a73"/>
+<text x="880" y="659.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#1d1b22">26.0</text>
+<text x="608" y="680" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">0</text>
+<text x="716" y="680" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">50</text>
+<text x="824" y="680" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">100</text>
+<text x="0" y="712" font-size="12" fill="#5f5f6b">* 题少或分数不稳：不到 150 道题，题目来自不到 20 个任务，或者不用决策模型时 mu 的正确率已经超过 95%。</text>
+<text x="0" y="734" font-size="12" fill="#5f5f6b">† 恶意指令识别今后以构造题为主计分，目前还不出分。</text>
+<text x="0" y="756" font-size="12" fill="#5f5f6b">低于 −25 的柱子截断显示，右侧数字是实际分数。</text>
+</svg>

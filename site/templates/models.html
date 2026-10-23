@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% set M = L.models %}
+{% set hf = "https://huggingface.co/qybaihe/" %}
+{% block title %}{{ M.title }} · mu{% endblock %}
+{% block description %}{{ M.lead | striptags }}{% endblock %}
+{% block content %}
+  <section class="wrap page-head">
+    <p class="label intro" style="--d: 120ms">mu · {{ M.title }}</p>
+    <h1 class="intro" style="--d: 180ms">{{ M.h1 }}</h1>
+    <p class="page-lead intro" style="--d: 260ms">{{ M.lead }}</p>
+  </section>
+
+  <section class="wrap models-section" id="mude">
+    <p class="label" data-reveal>{{ M.mude_label }}</p>
+    <h2 data-reveal style="--d: 60ms">{{ M.mude_h2 }}</h2>
+    <p class="section-intro" data-reveal style="--d: 120ms">{{ M.mude_intro }}</p>
+    <div class="grid">
+      {% for F in M.facts %}<div class="card" data-reveal style="--d: {{ loop.index0 * 70 }}ms"><h3>{{ F.h3 }}</h3><p>{{ F.p }}</p></div>
+      {% endfor %}
+    </div>
+    <h3 class="models-h3" data-reveal>{{ M.downloads_h3 }}</h3>
+    <div class="grid two">
+      {% for name, text in [("mude-1.0", M.full_p), ("mude-1.0-mlx-8bit", M.mac_p)] %}<a class="card" data-reveal style="--d: {{ loop.index0 * 70 }}ms" href="{{ hf }}{{ name }}"><span class="go" aria-hidden="true">↗</span><h3>{{ name }}</h3><p>{{ text }}</p><code class="card-code">huggingface.co/qybaihe/{{ name }}</code></a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="wrap models-section" id="install">
+    <p class="label" data-reveal>{{ M.install_label }}</p>
+    <h2 data-reveal style="--d: 60ms">{{ M.install_h2 }}</h2>
+    <p class="section-intro" data-reveal style="--d: 120ms">{{ M.install_intro }}</p>
+    <div class="prose models-code" data-reveal>
+<pre><code class="language-bash">{% for cmd, note in [
+  ("mu judge mude install", M.cli.install),
+  ("mu judge mude status", M.cli.status),
+  ("mu judge mude enable --local-only", M.cli.local_only),
+  ("mu judge mude disable", M.cli.disable),
+  ("mu judge mude uninstall", M.cli.uninstall),
+] %}{{ cmd.ljust(36) }}<span class="c"># {{ note }}</span>{% if not loop.last %}
+{% endif %}{% endfor %}</code></pre>
+    </div>
+    <h3 class="models-h3" data-reveal>{{ M.app_h3 }}</h3>
+    <div class="list">
+      {% for A in M.app %}<div data-reveal style="--d: {{ loop.index0 * 80 }}ms"><b>{{ A.b }}</b>{{ A.text }}</div>
+      {% endfor %}
+    </div>
+    <h3 class="models-h3" data-reveal>{{ M.other_h3 }}</h3>
+    <div class="prose models-code" data-reveal>
+      <p>{{ M.other_p }}</p>
+<pre><code class="language-json">{
+  "judges": {
+    "mude": {
+      "type": "typesafe",
+      "baseUrl": "http://127.0.0.1:8790/v1/systemone",
+      "model": "mude",
+      "apiKeyEnv": "MUDE_KEY"
+    }
+  },
+  "tiers": ["mude"]
+}</code></pre>
+    </div>
+    <a class="principles-more" data-reveal href="{{ hf }}mude-1.0#use-with-mu">{{ M.other_link }}<span aria-hidden="true">↗</span></a>
+  </section>
+
+  <section class="wrap models-section" id="local">
+    <p class="label" data-reveal>{{ M.local_label }}</p>
+    <h2 data-reveal style="--d: 60ms">{{ M.local_h2 }}</h2>
+    <p class="section-intro" data-reveal style="--d: 120ms">{{ M.local_intro }}</p>
+    <div class="grid two">
+      {% for C in M.local %}<div class="card" data-reveal style="--d: {{ loop.index0 * 70 }}ms"><h3>{{ C.h3 }}</h3><p>{{ C.p }}</p><code class="card-code">{{ C.code }}</code></div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="wrap models-section" id="jev">
+    <p class="label" data-reveal>{{ M.jev_label }}</p>
+    <h2 data-reveal style="--d: 60ms">{{ M.jev_h2 }}</h2>
+    <p class="section-intro" data-reveal style="--d: 120ms">{{ M.jev_intro }}</p>
+    <div class="prose models-compare" data-reveal>
+      <div class="table-wrap"><table>
+        <thead><tr><td></td><th scope="col">mude 1.0</th><th scope="col">Jev</th></tr></thead>
+        <tbody>
+          {% for R in M.compare %}<tr><th scope="row">{{ R.k }}</th><td>{{ R.mude }}</td><td>{{ R.jev }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <section class="wrap models-section" id="leaderboard">
+    <p class="label" data-reveal>{{ M.board_label }}</p>
+    <h2 data-reveal style="--d: 60ms">{{ M.board_h2 }}</h2>
+    <p class="section-intro" data-reveal style="--d: 120ms">{{ M.board_p }}</p>
+    <a class="principles-more" data-reveal href="{{ url(L, pages.mubench) }}">{{ M.board_link }}<span aria-hidden="true">→</span></a>
+  </section>
+{% endblock %}

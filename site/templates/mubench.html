@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% set B = L.mubench %}
+{% macro chart(name, alt) %}<figure class="mb-chart" data-reveal>
+      {% for theme in ("light", "dark") %}{% set file = name ~ "-" ~ chart_lang ~ "-" ~ theme %}{% set wide, narrow = charts[file], charts[file ~ "-narrow"] %}<picture class="only-{{ theme }}"><source media="(max-width: 640px)" srcset="{{ root }}assets/mubench/{{ file }}-narrow.svg" width="{{ narrow.w }}" height="{{ narrow.h }}"><img src="{{ root }}assets/mubench/{{ file }}.svg" width="{{ wide.w }}" height="{{ wide.h }}" alt="{{ alt }}"></picture>
+      {% endfor %}</figure>{% endmacro %}
+{% macro board_table(board) %}<div class="prose mb-board{% if board.key != 'real' %} mb-sub{% endif %}" data-reveal>
+      <div class="table-wrap"><table>
+        <thead><tr><th scope="col">{{ B.model }}</th>{% for C in board.cols %}<th scope="col"{% if C.key == "overall" %} class="mb-overall"{% endif %}>{{ C.name }}{% if C.key == "threat" %}<sup class="mb-mark">†</sup>{% endif %}</th>{% endfor %}</tr></thead>
+        <tbody>
+          {% for R in board.rows %}<tr><th scope="row">{{ R.name }}</th>{% for X in R.cells %}<td{% if loop.first %} class="mb-overall"{% endif %}>{% if X.best %}<b>{{ X.text }}</b>{% else %}{{ X.text }}{% endif %}{% if X.few %}<sup class="mb-mark" title="{{ B.few_short }}">*</sup>{% endif %}</td>{% endfor %}</tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr class="mb-zero"><th scope="row">{{ B.zero_row }}</th>{% for C in board.cols %}<td{% if loop.first %} class="mb-overall"{% endif %}>{{ C.zero }}</td>{% endfor %}</tr>
+          <tr><th scope="row">{{ B.base_row }}</th>{% for C in board.cols %}<td{% if loop.first %} class="mb-overall"{% endif %}>{{ C.base }}</td>{% endfor %}</tr>
+          <tr><th scope="row">{{ B.count_row_tasks if board.tasks else B.count_row }}</th>{% for C in board.cols %}<td{% if loop.first %} class="mb-overall"{% endif %}>{{ C.count }}</td>{% endfor %}</tr>
+        </tfoot>
+      </table></div>
+    </div>{% endmacro %}
+{% set main, sub = boards %}
+{% block title %}{{ B.title }} · mu{% endblock %}
+{% block description %}{{ B.lead | striptags }}{% endblock %}
+{% block content %}
+  <section class="wrap page-head">
+    <p class="label intro" style="--d: 120ms">mu · {{ B.title }}</p>
+    <h1 class="intro" style="--d: 180ms">{{ B.h1 }}</h1>
+    <p class="page-lead intro" style="--d: 260ms">{{ B.lead }}</p>
+    <p class="mb-open intro" style="--d: 320ms"><span class="opt-flag">{{ B.open }}</span></p>
+  </section>
+
+  <section class="wrap models-section" id="real">
+    <p class="label" data-reveal>{{ B.main_label }}</p>
+    <h2 data-reveal style="--d: 60ms">{{ B.main_h2 }}</h2>
+    <p class="section-intro" data-reveal style="--d: 120ms">{{ B.main_intro | replace("{items}", main.total) | replace("{tasks}", main.tasks) }}</p>
+    {{ chart("composite", B.chart_overall_alt | replace("{list}", main.intervals)) }}
+    {{ board_table(main) }}
+    <ul class="mb-notes" data-reveal>
+      <li>{{ B.note_best }}</li>
+      <li><span class="mb-mark">*</span>{{ B.note_few | replace("{items}", few["items"]) | replace("{tasks}", few.tasks) | replace("{baseline}", few.baseline) }}</li>
+      <li><span class="mb-mark">†</span>{{ B.note_threat }}</li>
+    </ul>
+    {{ chart("capabilities", B.chart_caps_alt) }}
+
+    <h3 class="models-h3" id="constructed" data-reveal>{{ B.sub_h3 }}</h3>
+    <p class="mb-sub-intro" data-reveal>{{ B.sub_intro | replace("{items}", sub.total) }}</p>
+    {{ chart("constructed", B.chart_sub_alt | replace("{list}", sub.intervals)) }}
+    {{ board_table(sub) }}
+  </section>
+
+  <section class="wrap models-section" id="scoring">
+    <p class="label" data-reveal>{{ B.how_label }}</p>
+    <h2 data-reveal style="--d: 60ms">{{ B.how_h2 }}</h2>
+    {{ chart("scoring", B.chart_scoring_alt) }}
+  </section>
+
+  <section class="wrap models-section" id="capabilities">
+    <p class="label" data-reveal>{{ B.caps_label }}</p>
+    <h2 data-reveal style="--d: 60ms">{{ B.caps_h2 }}</h2>
+    <p class="section-intro" data-reveal style="--d: 120ms">{{ B.caps_intro }}</p>
+    <div class="list mb-caps">
+      {% for key, points in caps.items() %}<div data-reveal style="--d: {{ (loop.index0 % 2) * 70 }}ms"><b>{{ B.caps[key] }}</b>{{ B.caps_text[key] }}<span class="chips">{% for P in points %}<a class="chip" href="{{ url(L, pages.decisions) }}#{{ P }}">{{ P }}</a>{% endfor %}</span></div>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

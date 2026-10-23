@@ -17,6 +17,8 @@
     "nav_home": "首页",
     "nav_docs": "文档",
     "nav_decisions": "判定点",
+    "nav_models": "模型",
+    "nav_mubench": "mubench 1.0",
     "nav_changelog": "更新日志",
     "nav_install": "安装",
     "nav_site": "站点",
@@ -160,6 +162,113 @@
     "title": "判定点",
     "lead": "每一轮里那些和代码无关的决定，mu 交给判定器回答。这一页列出全部 {points} 个判定点：每个问什么、改变什么，以及谁来回答。"
   },
+  "models": {
+    "title": "模型",
+    "h1": "mude 1.0：针对编程场景优化的决策模型",
+    "lead": "mu 自己的决策模型，经过微调和训练，在编程场景的决策上达到 SOTA 级。它在你自己的机器上运行，判定的内容不会离开这台机器。",
+    "mude_label": "MUDE 1.0",
+    "mude_h2": "在你自己机器上跑的判定器",
+    "mude_intro": "每一轮，mu 都要问判定器几十个小问题。换成 mude 1.0，这些问题就在你的机器上回答。",
+    "facts": [
+      { "h3": "20 亿参数", "p": "一次前向就回答一次判定里的全部问题，每个答案都带概率。" },
+      { "h3": "本地判定", "p": "服务跑在 127.0.0.1 上。它判定的内容不会离开你的机器。" },
+      { "h3": "MIT 许可证", "p": "两个版本都放在 Hugging Face 上，免费下载。" }
+    ],
+    "downloads_h3": "在 Hugging Face 上",
+    "full_p": "完整版：bf16，PyTorch，约 4.0 GB。建议用 CUDA GPU。",
+    "mac_p": "Mac 版：MLX 8 位，下载 1.8 GB。mu 装的就是这一版。",
+    "install_label": "安装",
+    "install_h2": "在 Mac 上一条命令装好",
+    "install_intro": "一键安装目前只支持 Apple 芯片的 Mac：macOS 14 或更新，内存 8 GB 以上。服务运行时约占用 4 GB 内存。",
+    "cli": {
+      "install": "下载，逐个校验文件，在 127.0.0.1 上启动，设为判定器",
+      "status": "装了什么，有没有在运行，有没有启用",
+      "local_only": "只用 mude：什么都不发给云端判定器",
+      "disable": "换回之前的判定器，并停掉 mude 的服务",
+      "uninstall": "删除模型和它的 Python 环境"
+    },
+    "app_h3": "在桌面端",
+    "app": [
+      { "b": "新手引导", "text": "判定器这一步会提议安装 mude，并显示下载进度。可以跳过，失败了可以重试。这台 Mac 跑不了 mude 时，引导会说明，并继续用云端判定器。" },
+      { "b": "设置 → 判定器", "text": "mude 卡片上可以安装、启动、停止、设为判定器和卸载，还有「仅本地」开关。" }
+    ],
+    "other_h3": "在其他机器上",
+    "other_p": "在别的机器上，用完整版（Hugging Face 上的 mude-1.0）和它自带的 System One 服务来跑（做法见模型卡片），再在 <code>~/.mu/agent/mu.json</code> 里把它加成一个 <code>typesafe</code> 判定器。<code>MUDE_KEY</code> 里放的是启动服务时用的密钥：",
+    "other_link": "模型卡片上的「Use with mu」（英文）",
+    "local_label": "数据去向",
+    "local_h2": "什么会离开你的机器",
+    "local_intro": "mude 在你的机器上回答。别的内容会不会离开这台机器，取决于一个开关。",
+    "local": [
+      { "h3": "带兜底（默认）", "p": "你之前用的判定器留在 mude 后面兜底：mude 答不了的问题（它的服务没在运行，或者它拿不准），以及两项注入筛查（工具描述和工具输出），都交给它。如果它在云端，发过去的内容会离开你的机器。", "code": "mu judge mude install" },
+      { "h3": "仅本地", "p": "mude 是唯一的判定器，什么都不发给云端判定器。mude 答不了时，判定点照没有判定器时那样做。", "code": "mu judge mude enable --local-only" }
+    ],
+    "jev_label": "对比 Jev",
+    "jev_h2": "mude 1.0 和 Jev",
+    "jev_intro": "Jev 是 mu 默认的判定模型，由 TypeSafe 托管。是非题、选择题、打分题，每个答案带概率，每一次判定都进流水。",
+    "compare": [
+      { "k": "在哪里运行", "mude": "你的机器上，127.0.0.1", "jev": "TypeSafe 托管，经 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen 或 Cloudflare Workers AI 调用" },
+      { "k": "什么会离开你的机器", "mude": "开了「仅本地」就什么都不离开；否则是交给兜底判定器的内容", "jev": "每个问题需要的字段，比如一条消息、一块输出或一条命令；凭据先遮盖" },
+      { "k": "平台", "mude": "一键安装：Apple 芯片的 Mac。其他机器：在自己的服务器上跑完整版", "jev": "mu 能跑的地方都能用" },
+      { "k": "许可和获取", "mude": "MIT，两个版本都在 Hugging Face 上", "jev": "托管服务：没有密钥时经 OpenCode Zen 限时免费，配上自己的密钥按次付费" },
+      { "k": "怎么开始", "mude": "<code>mu judge mude install</code>，或在桌面端一键安装", "jev": "不用设置，默认就是它；<code>mu setup</code> 可以配密钥" }
+    ],
+    "board_label": "MUBENCH",
+    "board_h2": "能力分榜",
+    "board_p": "mubench 1.0 用真实编程会话里的请求，比较 mude 1.0、Jev 和 d3-nano 的综合分和八项能力分。",
+    "board_link": "查看 mubench 1.0 榜单"
+  },
+  "mubench": {
+    "title": "mubench 1.0",
+    "h1": "mubench 1.0：用编码代理的决策给决策模型打分",
+    "lead": "mubench 主榜的每一道题，都是 mu 在真实编程会话里发给决策模型的请求，一字未改。每个答案按它带来的后果的代价计分，每个模型都和不用决策模型的 mu 相比。",
+    "open": "即将开源",
+    "main_label": "主榜",
+    "main_h2": "真实编程会话",
+    "main_intro": "{items} 道请求，来自 {tasks} 个编程任务。每一列里，0 分是不用决策模型的 mu，100 分表示把 mu 不用决策模型时付出的代价全部消除；低于 0 分就是比不用还差。",
+    "model": "模型",
+    "overall": "综合",
+    "caps": {
+      "permission": "权限放行",
+      "threat": "恶意指令识别",
+      "compression": "上下文压缩",
+      "loading": "按需加载与提醒",
+      "routing": "归类与路由",
+      "progress": "进度与完成判断",
+      "memory": "记忆与经验",
+      "multiagent": "多智能体协作"
+    },
+    "names": { "d3-nano": "d3-nano 原版" },
+    "zero_row": "不用决策模型",
+    "base_row": "不用决策模型时的正确率",
+    "count_row_tasks": "题数（任务数）",
+    "count_row": "题数",
+    "few_short": "题少或分数不稳",
+    "note_best": "加粗：每一列的最高分。",
+    "note_few": "题少或分数不稳：不到 {items} 道题，题目来自不到 {tasks} 个任务，或者不用决策模型时 mu 的正确率已经超过 {baseline}%。",
+    "note_threat": "恶意指令识别今后以构造题为主计分，目前还不出分。",
+    "sub_h3": "副榜：构造场景",
+    "sub_intro": "{items} 个为 mubench 编写的场景，计分方法相同。它们的决策分布和真实会话不同，所以两个榜分开出分，不合在一起。",
+    "list_sep": "；",
+    "chart_overall_alt": "主榜综合分柱状图，含 95% 区间：{list}。不用决策模型：0。",
+    "chart_sub_alt": "副榜综合分柱状图，含 95% 区间：{list}。不用决策模型：0。",
+    "chart_caps_alt": "主榜八项能力分数的柱状图，数字见上方表格。",
+    "chart_scoring_alt": "mubench 怎么给决策模型打分：mu 在编程会话里发给决策模型的真实请求；被测模型做出的决策；这个决策带来的后果的代价；再和不用决策模型时的 mu 相比。",
+    "how_label": "计分",
+    "how_h2": "按后果计分",
+    "caps_label": "能力",
+    "caps_h2": "八项能力",
+    "caps_intro": "mubench 覆盖的每个判定点只属于一项能力。综合分覆盖全部判定点；每项能力在综合分里占多少，取决于不用决策模型时它让 mu 付出多少代价。",
+    "caps_text": {
+      "permission": "一个动作该不该放行：被标记的命令是不是用户要的，能不能替用户批准这次调用，会不会违反用户定下的硬约束。",
+      "threat": "网页、搜索结果、MCP 返回这些外来内容里，有没有冲着 AI 来的指令；MCP 工具说明里有没有夹带和工具无关的命令。",
+      "compression": "上下文快满时留下哪些旧的工具输出，某个旧结果还值不值它占的 token，工具输出的哪些块可以不进上下文。",
+      "loading": "这次任务要打开哪些能力包和技能，要不要、什么时候把诊断信息或外部事件告诉模型，要不要给提示缓存保温。",
+      "routing": "用户消息属于哪类、该花多大力气，中途插话是立刻转向还是排队，以及评审发现分级、文件定位和浏览器的下一步。",
+      "progress": "这一轮算不算完成，要不要让代理接着做，目标是否达成，是否跑偏或该回退，输出有没有违反规则。",
+      "memory": "哪些值得记，是不是已经记过，现在适用哪条经验，代理有没有照做，能不能沉淀成技能。",
+      "multiagent": "蜂群里传什么、传给谁，和已有的发现是什么关系；子代理带回的改动有没有越界；子任务交给哪个角色、用多高的思考档位。"
+    }
+  },
   "docs": {
     "title": "文档",
     "lead": "从安装到日常使用：桌面端、命令行、蜂群、人话看板和隐私。",
@@ -176,7 +285,7 @@
   },
   "changelog": {
     "title": "更新日志",
-    "lead": "桌面端每个版本都自带一个 mu-agent，下面按桌面端版本列出主要变化。全部是预发布版，还在早期开发。",
+    "lead": "桌面端每个版本都自带一个 mu-agent，下面按桌面端版本列出主要变化。",
     "agent_label": "自带",
     "download": "下载这个版本",
     "full_agent": "mu-agent 的完整更新记录（英文）",
@@ -301,7 +410,7 @@
         "date": "2026-09-23",
         "agent": "mu-agent 0.1.0 – 0.1.2",
         "items": [
-          "<b>第一批预览版。</b>桌面端有 macOS（已签名并经 Apple 公证）、Windows、Linux 三个平台，x64 和 arm64 都有；应用自带 mu，不用再装别的。",
+          "<b>第一批版本。</b>桌面端有 macOS（已签名并经 Apple 公证）、Windows、Linux 三个平台，x64 和 arm64 都有；应用自带 mu，不用再装别的。",
           "<b>命令行发布到 npm：</b><code>npm i -g mu-agent</code>。判定内核跑在 pi 上，附带 <code>mu doctor</code>、<code>mu ledger</code> 和本地判定器 Laya。",
           "<b>导入对话：</b><code>mu import</code> 把 Claude Code 和 Codex 的对话导进来接着聊；设置文字有 12 种语言。"
         ]

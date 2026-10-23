@@ -24,7 +24,7 @@ afterEach(() => {
 describe("mude's pinned package", () => {
 	it("pins every file of the MLX edition by size and sha256, the server included", () => {
 		expect(MUDE_FILES).toHaveLength(31);
-		expect(MUDE_BYTES).toBe(1_782_005_734);
+		expect(MUDE_BYTES).toBe(1_782_006_237);
 		const weights = MUDE_FILES.find((file) => file.path === "mlx-q8.safetensors");
 		expect(weights).toEqual({
 			path: "mlx-q8.safetensors",
@@ -46,10 +46,10 @@ describe("mude's pinned package", () => {
 
 	it("downloads from the pinned revision of the public repository", () => {
 		expect(mudeFileUrl("LICENSES/Apache-2.0.txt")).toBe(
-			`https://huggingface.co/qybaihe/mude-2b-mlx-8bit/resolve/${MUDE_REVISION}/LICENSES/Apache-2.0.txt`,
+			`https://huggingface.co/qybaihe/mude-1.0-mlx-8bit/resolve/${MUDE_REVISION}/LICENSES/Apache-2.0.txt`,
 		);
 		expect(mudeFileUrl("config.json", "http://127.0.0.1:9/")).toBe(
-			`http://127.0.0.1:9/qybaihe/mude-2b-mlx-8bit/resolve/${MUDE_REVISION}/config.json`,
+			`http://127.0.0.1:9/qybaihe/mude-1.0-mlx-8bit/resolve/${MUDE_REVISION}/config.json`,
 		);
 	});
 });
@@ -308,7 +308,7 @@ describe("mu judge mude", () => {
 				text += chunk;
 			}),
 		).toBe(0);
-		expect(text).toContain("mude was not the judge");
+		expect(text).toContain("mude 1.0 was not the judge");
 		expect(existsSync(join(dir, "home", "agent", "mu.json"))).toBe(false);
 	});
 });

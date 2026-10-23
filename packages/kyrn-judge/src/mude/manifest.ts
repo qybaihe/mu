@@ -1,12 +1,12 @@
 /**
- * mude, the decision model trained for mu's judgment layer, as one package of files at a fixed revision of its
+ * mude 1.0, mu's decision model optimized for coding, as one package of files at a fixed revision of its
  * Hugging Face repository: the Apple silicon (MLX, 8-bit) edition, with the System One server that comes in it
  * (`d3_server_mac.py`). Every file is pinned by size and sha256 here, not by the manifest that is downloaded with
  * them, so a changed file is refused rather than run.
  */
 
-export const MUDE_REPO = "qybaihe/mude-2b-mlx-8bit";
-export const MUDE_REVISION = "c7378c8a3a90d48f32ee924b78b070f493302898";
+export const MUDE_REPO = "qybaihe/mude-1.0-mlx-8bit";
+export const MUDE_REVISION = "269b71dbc4276770b5a021d7adbad100010473c8";
 
 /** The name the server reports and mu's judge asks for. */
 export const MUDE_MODEL = "mude";
@@ -21,9 +21,9 @@ const FILES: ReadonlyArray<readonly [string, number, string]> = [
 	[".gitattributes", 1570, "34448b82c17d60fec9b65b1f093c115ddbaadc04beb1b0140b6bfed2e012a930"],
 	["LICENSE", 1482, "793a9f63a9cdfd3436ca19a4a70e54d1acf9d639d84ba27129918284765f3a05"],
 	["LICENSES/Apache-2.0.txt", 11357, "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"],
-	["MODEL_MANIFEST.json", 19131, "2a09c9d8228923fd12097ce0449f04facbfda6fdd8a5ecc48dbdea5f936214d2"],
-	["NOTICE", 1827, "557b1ddfbf5a545f3ec99cdf2510a220d8b4b7e40f5bd37b3cf7295dfaee01f3"],
-	["README.md", 1971, "9c7dcef33125996feace6d0e444daea1819f4affcd69b015fc68066b72039d87"],
+	["MODEL_MANIFEST.json", 19177, "2d197005a61e693566e75946e034937ed13b192a150df583cfe2dde4f9f6ebcd"],
+	["NOTICE", 1899, "d57889a1687573fb059329fde16fc6d1feeadc683fc50aa592370b6a727bf42b"],
+	["README.md", 2356, "f86e44bd8573b306daafa86a3a4a261b430d99d5cd0df6bda223f187c5f56756"],
 	["chat_template.jinja", 7755, "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"],
 	["config.json", 2783, "4fba61002dea71507b2ea7d9910a70bb7df8f0a0639e2b2ffae2b978ddb9874b"],
 	["d3_engine.py", 4413, "086238942762df45047a32cd9a8e2bedd9b63167eb40be260c776de567979f53"],
@@ -53,7 +53,7 @@ const FILES: ReadonlyArray<readonly [string, number, string]> = [
 
 export const MUDE_FILES: readonly MudeFile[] = FILES.map(([path, size, sha256]) => ({ path, size, sha256 }));
 
-/** 1,782,005,734 bytes. */
+/** 1,782,006,237 bytes. */
 export const MUDE_BYTES = MUDE_FILES.reduce((sum, file) => sum + file.size, 0);
 
 /** Where a file of the pinned revision is downloaded from. */

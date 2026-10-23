@@ -31,9 +31,7 @@
 
 - **mu**：命令行。pi 的全部能力，加上判定内核。
 - **mu 桌面端**：自带 mu 和运行时的桌面应用。下载，接一个模型，开始。
-- **判定模型**：默认是 TypeSafe 托管的 Jev。是非题、选择题、打分题，每个答案带概率，每一次判定都进流水。任何判定模型都可以替代它：在你 Mac 上跑的 mu 自有模型 [mude](#mude在你-mac-上判定不出本机)、本地的 Laya（审批除外）、你自己的 System One 服务或任意 LLM。
-
-> 还在早期开发。预发布版（0.1.x）在 npm 和 [Releases](https://github.com/qybaihe/mu/releases) 上，作者每天在用。名字、设置和格式都可能变。
+- **判定模型**：默认是 TypeSafe 托管的 Jev。是非题、选择题、打分题，每个答案带概率，每一次判定都进流水。任何判定模型都可以替代它：在你 Mac 上跑的 mu 自有模型 [mude 1.0](#mude-10针对编程场景优化的决策模型)、本地的 Laya（审批除外）、你自己的 System One 服务或任意 LLM。
 
 **目录：**[快速开始](#快速开始) · [一轮是怎么走的](#一轮是怎么走的) · [判定点](#判定点) · [判定器](#判定器) · [实测](#实测) · [蜂群](#蜂群) · [人话看板](#人话看板) · [桌面端](#桌面端) · [命令行](#命令行) · [文档](#文档) · [参与贡献](#参与贡献)
 
@@ -123,7 +121,7 @@ mu                  # 在当前目录开一个会话
 | `turn.rewind` | 同一个失败一次又一次：这条路是死路吗？ | 退回到某个检查点 |
 | `turn.completion` | 模型说做完了：有什么东西验证过吗？ | 没有就提醒一次 |
 | `turn.continue` | 一轮停在「接下来我跑一下测试」，或者在你已经要它做的事上问「要我动手吗」：是不是没做完就停了？ | 让它接着做，每条消息最多两次；难以撤销的一步不会推它去做 |
-| `output.drift` | 模型正在写的时候：输出的末尾越过了你的约束吗？ | 实验性，默认关闭；边写边纠正 |
+| `output.drift` | 模型正在写的时候：输出的末尾越过了你的约束吗？ | 默认关闭；边写边纠正 |
 | `goal.met` | 目标模式下大模型给不出答案时：条件成立了吗？ | `/goal` 的兜底 |
 | `board.read` | 事情做到哪了，选择题？ | 供人话看板使用 |
 | `notify.routing` | 上下文预算之类的事件：现在告诉模型，晚点，还是不说？ | 模型在合适的时候被告知 |
@@ -143,16 +141,16 @@ mu                  # 在当前目录开一个会话
 ## 判定器
 
 - **Jev**：TypeSafe 托管的判定模型。有边界的问题，答案带概率。可以经 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI，或任何支持同一协议的服务调用，每个服务有自己的密钥（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`）：在桌面端的「判定器」页选一个，默认用第一个设置了密钥的。一个密钥都没有时，默认由 OpenCode Zen 上限时免费的 Jev 1.13 回答：判定要读的内容会发给 OpenCode，它不拿来训练模型，mu 每天提示一次。配上密钥（`mu setup`，或「判定器」页）后，下一个问题起就用你的密钥。在作者自己的会话里实测：HTTP/2 上一个热连接的问题约 0.3 秒；16 块工具输出并成一个请求判完 0.44 秒，状态只计费一次。判定、概率和耗时都进流水：`mu ledger`，或桌面端的「判定」页。
-- **mude**（本地，Apple 芯片的 Mac）：mu 自己的判定模型，见[下文](#mude在你-mac-上判定不出本机)。
+- **mude 1.0**（本地，Apple 芯片的 Mac）：mu 自己的决策模型，针对编程场景优化，见[下文](#mude-10针对编程场景优化的决策模型)。
 - **Laya**（本地）。一个 3.22 亿参数的判定器，在你的机器上跑，不走网络。未经你同意不下载任何东西。简单谓词上可靠，元判断上偏弱：先让它以影子模式和你当前的判定器并行跑，看过流水再把判定点交给它。
 - **pi 模型目录里的任何分类模型**，作为一级：`classifier:<提供商>/<模型>`。比如 Cloudflare 的 Clef（`clef`、`clef-flash`）、OpenRouter 和 Vercel AI Gateway 上的 System One 模型、llama.cpp 的分类模型。
 - **任何大模型**，作为一级：`llm:<提供商>/<模型>`。
 
 这换来什么，以作者自己的会话为准：上下文很少填满，因为工具输出逐块进入、过期结果不写摘要直接放下；测试日志精简默认关闭，开启后折叠完全相同的重复，在最长的几份失败测试日志里省下 51% 的字符，一个字符也没丢（见[实测](#实测)）；提示缓存过期之前，内核会判断你会不会回来，会回来就提前续上。
 
-### mude：在你 Mac 上判定，不出本机
+### mude 1.0：针对编程场景优化的决策模型
 
-[mude-2b](https://huggingface.co/qybaihe/mude-2b) 是 mu 自己的判定模型，一个用 mu 的判定请求训练的 2B 判定器。一次前向就答完一个判定的所有问题，每个答案带概率；它在你的机器上跑，判定的内容不离开本机。mude-2b 和它的 [MLX 8-bit 版](https://huggingface.co/qybaihe/mude-2b-mlx-8bit)（1.8 GB）都采用 MIT 许可证。目前一键安装支持 Apple 芯片的 Mac（macOS 14 及以上，内存 8 GB 及以上），用的是 MLX 版：
+mude 1.0 是 mu 自己的决策模型，针对编程场景特别优化：经过微调和训练，在编程场景的决策上达到 SOTA 级。它有 2B 参数，一次前向就答完一个判定的所有问题，每个答案带概率；它在你的机器上跑，判定的内容不离开本机。[完整版](https://huggingface.co/qybaihe/mude-1.0)和 [MLX 8-bit 版](https://huggingface.co/qybaihe/mude-1.0-mlx-8bit)（1.8 GB）都采用 MIT 许可证。目前一键安装支持 Apple 芯片的 Mac（macOS 14 及以上，内存 8 GB 及以上），用的是 MLX 版：
 
 ```bash
 mu judge mude install               # 下载、逐个校验文件、在 127.0.0.1 上启动，并设为判定器
@@ -162,9 +160,27 @@ mu judge mude disable               # 换回原来的判定器，并停掉它的
 mu judge mude uninstall             # 删除模型和它的 Python 环境
 ```
 
-桌面 App 首次启动的引导里，「判定器」这一步会提供安装 mude：显示下载进度，失败可以重试，也可以跳过。之后在设置的「判定器」页可以安装、启动、停止和卸载 mude，「仅本地」开关等同于 `--local-only`。如果这台 Mac 跑不了 mude，引导会说明原因，继续用托管的判定器。
+桌面 App 首次启动的引导里，「判定器」这一步会提供安装 mude 1.0：显示下载进度，失败可以重试，也可以跳过。之后在设置的「判定器」页可以安装、启动、停止和卸载 mude，「仅本地」开关等同于 `--local-only`。如果这台 Mac 跑不了 mude，引导会说明原因，继续用托管的判定器。
 
-默认情况下，原来的判定器排在 mude 后面：mude 答不了的（服务没在跑，或者它拿不准），以及它暂时还不被信任的两项注入检查，交给那个判定器。如果那个判定器是托管的（默认的 Jev 就是），它看到的内容会离开本机。mude 的服务运行时占用约 4 GB 内存，`mu judge mude stop` 可以停掉。其他平台上，可以用完整的 [mude-2b](https://huggingface.co/qybaihe/mude-2b)（bf16、PyTorch，建议有 CUDA 显卡）自带的 System One 服务跑起来，再按模型卡的写法在 `mu.json` 里把它加成 `typesafe` 判定器。
+默认情况下，原来的判定器排在 mude 后面：mude 答不了的（服务没在跑，或者它拿不准），以及它暂时还不被信任的两项注入检查，交给那个判定器。如果那个判定器是托管的（默认的 Jev 就是），它看到的内容会离开本机。mude 的服务运行时占用约 4 GB 内存，`mu judge mude stop` 可以停掉。其他平台上，可以用[完整版](https://huggingface.co/qybaihe/mude-1.0)（bf16、PyTorch，建议有 CUDA 显卡）自带的 System One 服务跑起来，再按模型卡的写法在 `mu.json` 里把它加成 `typesafe` 判定器。
+
+### mubench 1.0：决策模型怎么比
+
+mubench 是 mu 给决策模型做的评测。主榜的每一道题，都是 mu 在真实编程会话里发给决策模型的请求，一字未改。每个答案按它带来的后果的代价计分，每个模型都和不用决策模型的 mu 相比：0 分是一样，100 分是把这部分代价全部消除。完整榜单（含构造场景的副榜）在 [usemu.dev/mubench](https://usemu.dev/mubench/)。mubench 即将开源。
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../images/mubench/composite-zh-dark.svg">
+    <img src="../images/mubench/composite-zh-light.svg" width="880" alt="mubench 1.0 主榜：真实编程会话里 3,193 道请求上的综合分，含 95% 区间。mude 1.0 64.9 (59.1–72.3)；Jev 1.14 63.1 (55.6–70.5)；Jev 1.13 61.5 (53.8–69.1)；d3-nano 原版 32.0 (21.3–39.0)；不用决策模型：0。">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../images/mubench/capabilities-zh-dark.svg">
+    <img src="../images/mubench/capabilities-zh-light.svg" width="880" alt="mubench 1.0 主榜：每项能力的分数，依次是 mude 1.0、Jev 1.14、Jev 1.13、d3-nano 原版。权限放行：52.6、53.7、52.7、5.9；恶意指令识别：目前还不出分；上下文压缩：64.6、76.7、70.7、−19.1；按需加载与提醒：−2.7、16.8、25.1、−118.4；归类与路由：83.6、87.5、85.8、51.7；进度与完成判断：86.6、61.6、61.6、70.1；记忆与经验：58.7、75.1、72.2、40.5；多智能体协作：19.8、4.6、−0.8、26.0。">
+  </picture>
+</p>
 
 ## 实测
 
@@ -336,13 +352,13 @@ npm run check                  # 格式、静态检查、类型
 如果你在工作中用到 mude，请引用：
 
 ```bibtex
-@misc{mude2b2026,
-  title        = {mude-2b: the decision model of the mu coding agent},
+@misc{mude2026,
+  title        = {mude 1.0: a decision model optimized for coding},
   author       = {qybaihe},
   year         = {2026},
   howpublished = {Hugging Face},
-  url          = {https://huggingface.co/qybaihe/mude-2b},
-  note         = {MIT License. MLX 8-bit edition for Apple silicon: https://huggingface.co/qybaihe/mude-2b-mlx-8bit}
+  url          = {https://huggingface.co/qybaihe/mude-1.0},
+  note         = {MIT License. MLX 8-bit edition for Apple silicon: https://huggingface.co/qybaihe/mude-1.0-mlx-8bit}
 }
 ```
 
@@ -350,7 +366,7 @@ npm run check                  # 格式、静态检查、类型
 
 mu 采用 MIT 许可证（[LICENSE](../../LICENSE)；桌面端见 [desktop/LICENSE](../../desktop/LICENSE)）。它基于 [pi](https://github.com/earendil-works/pi)（编码代理，MIT）构建，感谢 pi 的作者。有几个判定点借鉴了别的项目：提示注入筛查的问法来自 [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills)，续跑检查和批量判定工具参考了 [oh-my-pi](https://github.com/can1357/oh-my-pi)。判定内核用到的第三方代码列在 [THIRD_PARTY_NOTICES.md](../../packages/kyrn-judge/THIRD_PARTY_NOTICES.md)。
 
-mude-2b 由 [d3-nano](https://huggingface.co/vllm-sr/d3-nano)（Decision 3.0，vLLM Semantic Router Team）微调而来，后者基于 Qwen3.5-2B；两者都是 Apache-2.0 许可证，模型仓库里保留了它们的声明。
+mude 1.0 由 [d3-nano](https://huggingface.co/vllm-sr/d3-nano)（Decision 3.0，vLLM Semantic Router Team）微调而来，后者基于 Qwen3.5-2B；两者都是 Apache-2.0 许可证，模型仓库里保留了它们的声明。
 
 桌面端最初 fork 自 [AionUi](https://github.com/iOfficeAI/AionUi)，从 AionUi 带来的文件列在 [desktop/APACHE-FILES.txt](../../desktop/APACHE-FILES.txt)，仍按 Apache License 2.0 授权（见 [desktop/NOTICE](../../desktop/NOTICE)）。
 

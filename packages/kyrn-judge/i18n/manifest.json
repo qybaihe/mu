@@ -869,18 +869,18 @@
 			"fa-IR": "پس از گزارش بازبینِ /review، برای هر یافته دو پرسش مطرح می‌شود: آیا رفتار برنامه را تغییر می‌دهد، و آیا به همین تغییر مربوط است؛ این دو، همراه با شدتی که خود بازبین تعیین کرده، یافته‌ها را از P0 تا P3 مرتب می‌کنند. هیچ یافته‌ای کنار گذاشته نمی‌شود، P3 جمع‌شده نمایش داده می‌شود و یافته‌ای که بازبین بر آن اصرار داشته هرگز در P3 قرار نمی‌گیرد."
 		},
 		"decisions[id=output.drift].title": {
-			"en": "Mid-stream correction (experimental)",
-			"zh-TW": "寫偏即停（實驗）",
-			"ja-JP": "出力中の軌道修正（実験的）",
-			"ko-KR": "출력 중 교정(실험)",
-			"de-DE": "Korrektur während der Ausgabe (Experiment)",
-			"fr-FR": "Correction en cours d’écriture (expérimental)",
-			"es-ES": "Corrección sobre la marcha (experimental)",
-			"pt-BR": "Correção durante a escrita (experimental)",
-			"ru-RU": "Исправление на лету (эксперимент)",
-			"uk-UA": "Виправлення на льоту (експеримент)",
-			"tr-TR": "Akış içinde düzeltme (deneysel)",
-			"fa-IR": "اصلاح در میانهٔ خروجی (آزمایشی)"
+			"en": "Mid-stream correction",
+			"zh-TW": "寫偏即停",
+			"ja-JP": "出力中の軌道修正",
+			"ko-KR": "출력 중 교정",
+			"de-DE": "Korrektur während der Ausgabe",
+			"fr-FR": "Correction en cours d’écriture",
+			"es-ES": "Corrección sobre la marcha",
+			"pt-BR": "Correção durante a escrita",
+			"ru-RU": "Исправление на лету",
+			"uk-UA": "Виправлення на льоту",
+			"tr-TR": "Akış içinde düzeltme",
+			"fa-IR": "اصلاح در میانهٔ خروجی"
 		},
 		"decisions[id=output.drift].summary": {
 			"en": "While the model writes, the judge checks the latest output against your hard constraints and the configured rules every few hundred characters. On a confident violation, the output is cut off, the rule is named, and the model continues from there. Runs only when the feature is turned on.",
@@ -3361,18 +3361,18 @@
 			"fa-IR": "حداکثر انتظار برای داور"
 		},
 		"features[name=ttsr].title": {
-			"en": "Mid-stream correction (experimental)",
-			"zh-TW": "寫偏即停（實驗）",
-			"ja-JP": "出力中の軌道修正（実験的）",
-			"ko-KR": "출력 중 교정(실험)",
-			"de-DE": "Korrektur während der Ausgabe (Experiment)",
-			"fr-FR": "Correction en cours d’écriture (expérimental)",
-			"es-ES": "Corrección sobre la marcha (experimental)",
-			"pt-BR": "Correção durante a escrita (experimental)",
-			"ru-RU": "Исправление на лету (эксперимент)",
-			"uk-UA": "Виправлення на льоту (експеримент)",
-			"tr-TR": "Akış içinde düzeltme (deneysel)",
-			"fa-IR": "اصلاح در میانهٔ خروجی (آزمایشی)"
+			"en": "Mid-stream correction",
+			"zh-TW": "寫偏即停",
+			"ja-JP": "出力中の軌道修正",
+			"ko-KR": "출력 중 교정",
+			"de-DE": "Korrektur während der Ausgabe",
+			"fr-FR": "Correction en cours d’écriture",
+			"es-ES": "Corrección sobre la marcha",
+			"pt-BR": "Correção durante a escrita",
+			"ru-RU": "Исправление на лету",
+			"uk-UA": "Виправлення на льоту",
+			"tr-TR": "Akış içinde düzeltme",
+			"fa-IR": "اصلاح در میانهٔ خروجی"
 		},
 		"features[name=ttsr].summary": {
 			"en": "The judge, not a regular expression, notices when output goes astray, cuts it off, shows the rule and lets the model continue. Off by default; when on, every stretch of output costs one more judge call.",

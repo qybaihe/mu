@@ -5,7 +5,8 @@ name: Site
 #
 # The build reads its facts instead of repeating them (site/build.py says where each comes from): the decision points
 # and options from packages/kyrn-judge/manifest.json, the changelog from CHANGELOG.md, each point's question and the
-# measurements from the READMEs, and the version, the banner and the download links from the newest GitHub release.
+# measurements from the READMEs, the mubench charts from docs/images/mubench, and the version, the banner and the
+# download links from the newest GitHub release.
 # So it runs when one of those changes: a push to main that touches them, a `v*` tag, a finished Desktop app run
 # (the run that publishes a release), and once a day in case a release was edited by hand. It always builds main.
 #
@@ -24,11 +25,13 @@ on:
       - 'CHANGELOG.md'
       - 'README.md'
       - 'docs/readme/**'
+      - 'docs/images/mubench/**'
       - 'desktop/packages/desktop/src/renderer/services/i18n/locales/*/agentMode.json'
       - '.github/workflows/site.yml'
   pull_request:
     paths:
       - 'site/**'
+      - 'docs/images/mubench/**'
       - '.github/workflows/site.yml'
   workflow_run:
     workflows: ['Desktop app']
