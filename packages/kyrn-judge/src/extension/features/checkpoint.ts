@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type {
+	AgentEndEvent,
 	ExtensionCommandContext,
 	ExtensionContext,
 	SessionShutdownEvent,
@@ -34,7 +35,7 @@ import { turnRewind } from "../../decisions/turn-rewind.ts";
 import type { Coded } from "../../language.ts";
 import { say } from "../../language.ts";
 import { muHome } from "../../naming.ts";
-import { clip, failOpen, type KyrnRuntime, textOf } from "../runtime.ts";
+import { clip, failOpen, type KyrnRuntime, textOf, within } from "../runtime.ts";
 import { describeCall } from "./admission.ts";
 import type { HarnessRoots } from "./inherit.ts";
 import { isUnattended } from "./unattended.ts";
@@ -263,7 +264,7 @@ Abandoned because: <why it did not work>`;
  *
  * An unattended run (`mu --print`, json mode; see `unattended.ts`) takes no checkpoint: nobody there can
  * confirm a rewind or type `/rewind`, so no file is ever put back, and the snapshot before the first change
- * and the scan after every one only held the agent up. A dead end is still asked about there, and the
+ * and the scan after every one were only work for nothing. A dead end is still asked about there, and the
  * model is told to step back, as it always was without a UI. `unattended: true` takes them again.
  */
 export function registerCheckpoint(
@@ -321,6 +322,8 @@ export function registerCheckpoint(
 	let pending: PendingRewind | undefined;
 	/** The tree right after the agent's last action. What differs from it later was changed by somebody else. */
 	let lastAgentTree: string | undefined;
+	/** The scan after the agent's latest change, queued or running: the run ends once it has. */
+	let rescan: Promise<void> | undefined;
 	const calls = new Map<string, { name: string; input: Record<string, unknown>; mutating: boolean }>();
 	let chain: Promise<unknown> = Promise.resolve();
 	let busy = 0;
@@ -493,12 +496,27 @@ export function registerCheckpoint(
 					turn.triggerCode = { code: "same_command_failed", params: { times: 3, command: clip(command, 120) } };
 				}
 			}
+			// Only a rewind reads this tree, to tell the user's edits from the agent's, and it queues behind the scan
+			// on `exclusive`: the next call need not wait for it (about 0.2 s per change in a container).
 			if (call.mutating && store && turn.checkpoint) {
 				const opened = store;
-				lastAgentTree = await exclusive(() => scan(opened, limits))
-					.then((scanned) => scanned.tree)
-					.catch(() => undefined);
+				rescan = exclusive(async () => {
+					lastAgentTree = await scan(opened, limits).then(
+						(scanned) => scanned.tree,
+						() => undefined,
+					);
+				});
 			}
+			return undefined;
+		}),
+	);
+
+	pi.on(
+		"agent_end",
+		failOpen<AgentEndEvent, undefined>(async () => {
+			// The run ends with the tree after its last change known, so an edit made from then on reads as the user's.
+			// Bounded, like shutdown: a `git gc` queued ahead must not hold the prompt back.
+			if (rescan) await within(rescan, 3000);
 			return undefined;
 		}),
 	);

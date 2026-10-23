@@ -503,6 +503,32 @@ describe("checkpoints and the judged rewind", () => {
 		}
 	});
 
+	it("the next call does not wait for the scan after a change, and the run ends once the last one has", async () => {
+		const git = spawnGit("git");
+		let root = "";
+		let trees = 0;
+		let nextCallRanFirst: boolean | undefined;
+		// The scan after the first change takes 300 ms; by then the second call has written its file.
+		const slow: GitRun = async (args, env, input, limit) => {
+			if (args[0] === "write-tree" && ++trees === 2) {
+				await new Promise((resolve) => setTimeout(resolve, 300));
+				nextCallRanFirst = existsSync(join(root, "b.ts"));
+			}
+			return git(args, env, input, limit);
+		};
+		const started = await start({ ui: scriptedUi({}), run: slow, runMode: "tui" });
+		root = started.root;
+		started.harness.setResponses([
+			call("write", { path: "app.ts", content: "v2\n" }),
+			call("write", { path: "b.ts", content: "b\n" }),
+			fauxAssistantMessage("Done."),
+		]);
+		await started.harness.session.prompt("Change it.");
+		expect(nextCallRanFirst).toBe(true);
+		// The snapshot, then one scan after each change: both scans are done when the prompt returns.
+		expect(trees).toBe(3);
+	});
+
 	it("shadow only records the verdict, off does not ask, and an unsure judge changes nothing", async () => {
 		const ui = scriptedUi({ confirm: true });
 		const shadow = await start({ responder: deadEnd, mode: "shadow", ui, navigation: true });
