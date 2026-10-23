@@ -576,6 +576,8 @@ interface Run {
 	home?: string;
 	/** The fake network: an answer per request. */
 	respond?: (url: string, headers: Readonly<Record<string, string>>) => Response | Error;
+	/** A Mac that can run mude 1.0: what its install ends with. */
+	mude?: number;
 }
 
 /** What happened, in order: said, warned, asked (a question or a key), or sent (a request). */
@@ -608,6 +610,7 @@ async function wizard(run: Run) {
 		},
 	};
 	const pi = run.pi ?? new FakePi();
+	let mudeInstalls = 0;
 	const fetch = (async (input: string | URL | Request, init?: RequestInit) => {
 		const url = String(input);
 		const headers = { ...(init?.headers as Record<string, string>) };
@@ -630,6 +633,16 @@ async function wizard(run: Run) {
 		readStdin: async () => run.stdin ?? "",
 		givenKey: run.givenKey,
 		timeoutMs: 1000,
+		mude:
+			run.mude === undefined
+				? undefined
+				: {
+						install: async () => {
+							mudeInstalls++;
+							events.push({ kind: "say", text: "(mu judge mude install)" });
+							return run.mude ?? 0;
+						},
+					},
 	});
 	const said = events.filter((event) => event.kind === "say").map((event) => event.text);
 	const warned = events.filter((event) => event.kind === "warn").map((event) => event.text);
@@ -651,7 +664,7 @@ async function wizard(run: Run) {
 	/** Where the first event with this text is, -1 when there is none. */
 	const at = (kind: Event["kind"], text: string) =>
 		events.findIndex((event) => event.kind === kind && event.text.includes(text));
-	return { code, events, said, warned, printed, calls, home, paths, pi, read, json, at };
+	return { code, events, said, warned, printed, calls, home, paths, pi, read, json, at, mudeInstalls };
 }
 
 describe("mu setup, asking in a terminal", () => {
@@ -819,6 +832,35 @@ describe("mu setup, asking in a terminal", () => {
 		// Again, with the free Jev: the "off" goes, a point's own mode stays.
 		const on = await wizard({ home, answers: ["3", "1", "n"] });
 		expect(on.json("mu.json")).toEqual({ tiers: ["jev"], modes: { "turn.drift": "active" } });
+	});
+
+	it("offers mude 1.0 second on a Mac that can run it, and installs it after the files are written", async () => {
+		// Subscription; judge: mude 1.0; no session.
+		const run = await wizard({ answers: ["3", "2", "n"], mude: 0 });
+		expect(run.printed).toContain("  2) mude 1.0 on this Mac: mu's own decision model");
+		expect(run.code).toBe(SETUP_EXIT.done);
+		expect(run.mudeInstalls).toBe(1);
+		expect(run.said.join("\n")).toContain("Judge: mude 1.0, installed next, with Jev for what it can't answer.");
+		// The install comes after the summary, and before the question about a session.
+		expect(run.at("say", "(mu judge mude install)")).toBeGreaterThan(run.at("say", "Judge: mude 1.0"));
+		expect(run.at("ask", "Start mu now?")).toBeGreaterThan(run.at("say", "(mu judge mude install)"));
+		// Elsewhere it is not offered: the same answer is Jev with a key of one's own.
+		const elsewhere = await wizard({ answers: ["3", "3", "n"] });
+		expect(elsewhere.printed).not.toContain("mude 1.0");
+		expect(elsewhere.mudeInstalls).toBe(0);
+	});
+
+	it("leaves Jev as the judge when mude 1.0 does not get installed, and says how to go on", async () => {
+		const home = temp();
+		mkdirSync(join(home, "agent"));
+		writeFileSync(join(home, "agent", "mu.json"), JSON.stringify({ tiers: ["laya"], modes: { default: "off" } }));
+		const run = await wizard({ home, answers: ["3", "2", "n"], mude: 1 });
+		expect(run.code).toBe(SETUP_EXIT.done);
+		expect(run.json("mu.json")).toEqual({ tiers: ["jev"] });
+		expect(run.warned.join("\n")).toContain(
+			"mude 1.0 isn't installed yet, so Jev is the judge until it is. Run mu judge mude install to go on from where it stopped.",
+		);
+		expect(run.at("ask", "Start mu now?")).toBeGreaterThan(-1);
 	});
 
 	it("after a subscription, starts the session on /login", async () => {
@@ -1111,6 +1153,25 @@ describe("mu setup in a script", () => {
 		const asked = await wizard({ answers: ["2", "6", "", "", "n"], secrets: [good], respond });
 		expect(asked.printed).toContain("1) Jev on OpenCode Zen with your OpenCode key (recommended), billed per call");
 		expect(asked.json("mu.json")).toEqual({ tiers: ["jev-opencode"] });
+	});
+
+	it("installs mude 1.0 with --judge mude on a Mac that can run it, and refuses it elsewhere", async () => {
+		const options = { respond: () => listing("deepseek-v4-pro") };
+		const mac = await stdinRun(["--service", "deepseek", "--judge", "mude"], `${KEYS.hex32}\n`, {
+			...options,
+			mude: 0,
+		});
+		expect(mac.code).toBe(SETUP_EXIT.done);
+		expect(mac.mudeInstalls).toBe(1);
+		const failed = await stdinRun(["--service", "deepseek", "--judge", "mude"], `${KEYS.hex32}\n`, {
+			...options,
+			mude: 1,
+		});
+		expect(failed.code).toBe(SETUP_EXIT.failed);
+		const elsewhere = await stdinRun(["--service", "deepseek", "--judge", "mude"], `${KEYS.hex32}\n`, options);
+		expect(elsewhere.code).toBe(SETUP_EXIT.usage);
+		expect(elsewhere.warned.join("\n")).toContain("--judge mude needs a Mac with Apple silicon");
+		expect(elsewhere.read("auth.json")).toBeUndefined();
 	});
 
 	it("makes free Jev on OpenCode Zen the judge with no key, and wants a key for the paid one", async () => {

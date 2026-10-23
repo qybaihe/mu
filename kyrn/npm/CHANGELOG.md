@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- `mu setup` offers mude 1.0 in its judge step on a Mac that can run it (Apple silicon, macOS 14 or later, 8 GB of memory or more). It is the second choice, after the recommended Jev. Picking it writes Jev as the judge, then installs mude 1.0 in front of it in the same terminal, with its progress. If the install doesn't finish, Jev stays the judge and `mu judge mude install` goes on from where it stopped. Scripts use `--judge mude`.
+
 ### Fixed
 
 - `mu judge mude install` survives a power cut in the middle of the download. Every 32 MiB the partly downloaded file is synced to the disk and the amount on disk is recorded in `<file>.part.saved`. The next install goes on from there, so it never builds on an end the disk didn't keep. A part left by mu 0.2.0, which has no record, goes on from 32 MiB before its end.

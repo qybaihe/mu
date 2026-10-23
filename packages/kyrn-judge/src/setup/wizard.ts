@@ -152,6 +152,16 @@ export interface SetupDeps {
 	/** Where the proxy for the check came from, when there is one ("HTTPS_PROXY", "settings.json"). */
 	readonly proxy?: string;
 	readonly timeoutMs?: number;
+	/** mude 1.0 (mu judge mude), on a Mac that can run it: offered in the judge step. Absent elsewhere. */
+	readonly mude?: MudeAccess;
+}
+
+export interface MudeAccess {
+	/**
+	 * Downloads mude 1.0 (or goes on with a download that stopped), starts it and puts it first, the judges this setup
+	 * wrote behind it. Its progress goes to the terminal; 0 once it is the judge.
+	 */
+	install(): Promise<number>;
 }
 
 export interface SetupArgs {
@@ -165,7 +175,7 @@ export interface SetupArgs {
 	readonly baseUrl?: string;
 	readonly api?: "openai" | "anthropic";
 	readonly name?: string;
-	readonly judge?: "jev" | "opencode" | "free" | "model" | "off" | "none";
+	readonly judge?: "jev" | "opencode" | "free" | "model" | "mude" | "off" | "none";
 	/** What is not an option: a key, when the entry is started without the launcher. */
 	readonly words: readonly string[];
 }
@@ -194,11 +204,11 @@ export function parseSetupArgs(argv: readonly string[]): SetupArgs | { readonly 
 		return { error: { zh: "--api 只能是 openai 或 anthropic", en: "--api must be openai or anthropic" } };
 	}
 	const judge = values.get("--judge");
-	if (judge !== undefined && !["jev", "opencode", "free", "model", "off", "none"].includes(judge)) {
+	if (judge !== undefined && !["jev", "opencode", "free", "model", "mude", "off", "none"].includes(judge)) {
 		return {
 			error: {
-				zh: "--judge 只能是 jev、opencode、free、model、off 或 none",
-				en: "--judge must be jev, opencode, free, model, off or none",
+				zh: "--judge 只能是 jev、opencode、free、model、mude、off 或 none",
+				en: "--judge must be jev, opencode, free, model, mude, off or none",
 			},
 		};
 	}
@@ -246,6 +256,7 @@ export function setupUsage(language: SetupLanguage): string {
 			"  --judge opencode  OpenCode Zen 上的 Jev，用 OpenCode 的密钥（--service opencode 或 OPENCODE_API_KEY）",
 			"  --judge free      OpenCode Zen 上限时免费的 Jev，不用密钥（没有密钥时本来就用它）",
 			"  --judge model     用刚设置的模型当判定器（更慢，每次判断都花 token）",
+			"  --judge mude      在这台 Mac 上装好 mude 1.0（mu 自己的决策模型，下载 1.8 GB）当判定器，Jev 在它后面",
 			"  --judge off       不用判定器：所有判定点关闭，什么都不发给判定器",
 			"  --judge none      不改判定器；不写 --judge 时也不改",
 			"  --api, --name     服务 other 的接口（openai 或 anthropic）和它在 mu 里的名字",
@@ -272,6 +283,8 @@ export function setupUsage(language: SetupLanguage): string {
 		"  --judge opencode  use Jev on OpenCode Zen with an OpenCode key (--service opencode or OPENCODE_API_KEY)",
 		"  --judge free      use the free Jev on OpenCode Zen (limited time, no key; the default while no key is set)",
 		"  --judge model     use the model you just set up as the judge (slower, and every verdict costs tokens)",
+		"  --judge mude      install mude 1.0, mu's own decision model, on this Mac (a 1.8 GB download) as the judge,",
+		"                    with Jev behind it",
 		"  --judge off       no judge: every decision point is off, and nothing is sent to a judge",
 		"  --judge none      leave the judge unchanged (the same as omitting --judge)",
 		"  --api, --name     for the service `other`: its API (openai or anthropic) and its name in mu",
@@ -364,6 +377,8 @@ type JudgeChoice =
 	| { readonly kind: "opencode" }
 	| { readonly kind: "free" }
 	| { readonly kind: "model" }
+	/** mude 1.0 on this Mac, with Jev behind it: installed right after the files are written. */
+	| { readonly kind: "mude" }
 	| { readonly kind: "none" };
 
 interface Choice<T> {
@@ -530,8 +545,11 @@ class Setup {
 		}
 		const start = await this.start(key === undefined ? undefined : cleanKey(key));
 		if (start === "subscription") {
-			const code = await this.write(undefined, undefined, await this.judge(undefined));
-			return code === SETUP_EXIT.done ? this.offerSession(true) : code;
+			const judge = await this.judge(undefined);
+			const code = await this.write(undefined, undefined, judge);
+			if (code !== SETUP_EXIT.done) return code;
+			const installed = await this.installMude(judge);
+			return installed === SETUP_EXIT.done ? this.offerSession(true) : installed;
 		}
 		const target = await this.checked(start.service, start.key);
 		this.modelKey = target.key;
@@ -539,7 +557,28 @@ class Setup {
 		await this.conflicts(target);
 		const judge = await this.judge({ provider: target.reach.provider, model });
 		const code = await this.write(target, model, judge);
-		return code === SETUP_EXIT.done ? this.offerSession() : code;
+		if (code !== SETUP_EXIT.done) return code;
+		const installed = await this.installMude(judge);
+		return installed === SETUP_EXIT.done ? this.offerSession() : installed;
+	}
+
+	/**
+	 * mude, when it was picked: installed now that the files name Jev, which it goes in front of. One that does not get
+	 * installed (no connection, stopped) leaves Jev as the judge, and `mu judge mude install` goes on from where it got.
+	 */
+	private async installMude(judge: JudgeChoice | undefined): Promise<number> {
+		const mude = this.deps.mude;
+		if (judge?.kind !== "mude" || !mude) return SETUP_EXIT.done;
+		this.io.say("");
+		const code = await mude.install();
+		if (code === 0) return SETUP_EXIT.done;
+		this.io.warn(
+			this.t({
+				zh: "mude 1.0 还没有装好，在那之前由 Jev 判定。运行 mu judge mude install 会从中断的地方接着装。",
+				en: "mude 1.0 isn't installed yet, so Jev is the judge until it is. Run mu judge mude install to go on from where it stopped.",
+			}),
+		);
+		return this.scripted ? SETUP_EXIT.failed : SETUP_EXIT.done;
 	}
 
 	/** The launcher's question on a first start. A no is remembered: the question is never asked again. */
@@ -1071,7 +1110,7 @@ class Setup {
 						en: `${existing.name} in ${this.path(paths.envFile)}`,
 					})
 			: undefined;
-		const choices: Choice<"keep" | "jev" | "opencode" | "free" | "model" | "none">[] = [];
+		const choices: Choice<"keep" | "jev" | "opencode" | "free" | "model" | "mude" | "none">[] = [];
 		// With no key for Jev anywhere, the free Jev is what the `jev` judge uses anyway: the first offer.
 		const keyless = !opencode && !where;
 		if (keyless) {
@@ -1124,6 +1163,16 @@ class Setup {
 				value: "free",
 			});
 		}
+		if (this.deps.mude) {
+			// Second, after the recommended Jev: mu's own model, on this Mac.
+			choices.splice(1, 0, {
+				label: this.t({
+					zh: "mude 1.0，在这台 Mac 上运行：mu 自己的决策模型，判定不出本机。下载一次 1.8 GB，运行时约占 4 GB 内存；它答不了的交给 Jev",
+					en: "mude 1.0 on this Mac: mu's own decision model, and its verdicts stay on this Mac. A one-time 1.8 GB download; it uses about 4 GB of memory while it runs, and Jev takes what it can't answer",
+				}),
+				value: "mude",
+			});
+		}
 		if (model) {
 			choices.push({
 				label: this.t({
@@ -1171,6 +1220,17 @@ class Setup {
 				return { kind: "opencode" };
 			case "free":
 				return { kind: "free" };
+			case "mude":
+				if (!this.deps.mude) {
+					throw this.fail(
+						{
+							zh: "--judge mude 需要 Apple 芯片的 Mac（macOS 14 及以上，内存 8 GB 及以上）",
+							en: "--judge mude needs a Mac with Apple silicon (macOS 14 or later, 8 GB of memory or more)",
+						},
+						SETUP_EXIT.usage,
+					);
+				}
+				return { kind: "mude" };
 			case "off":
 				return { kind: "none" };
 			case "jev": {
@@ -1409,8 +1469,9 @@ class Setup {
 		if (judge.kind === "model") {
 			if (target && model) tiers = [`llm:${target.reach.provider}/${model}`];
 		} else if (judge.kind === "opencode") tiers = ["jev-opencode"];
-		else if (judge.kind === "free") {
-			// `jev` uses the free Jev while no key is set, and a key added later without another setup.
+		else if (judge.kind === "free" || judge.kind === "mude") {
+			// `jev` uses the free Jev while no key is set, and a key added later without another setup. mude goes in front
+			// of it when it is installed.
 			if (!tiersOf(current).some((tier) => tier === "jev" || tier === "jev-opencode-free")) tiers = ["jev"];
 		} else if (!tiersOf(current).some((tier) => JEV_TIERS.has(tier))) tiers = ["jev"];
 		// A judge picked after "Not now" is turned back on.
@@ -1477,12 +1538,17 @@ class Setup {
 						? this.t({ zh: "判定器：暂时没有。", en: " Judge: none for now." })
 						: judge.kind === "opencode"
 							? this.t({ zh: "判定器：OpenCode Zen 上的 Jev。", en: " Judge: Jev on OpenCode Zen." })
-							: judge.kind === "free"
+							: judge.kind === "mude"
 								? this.t({
-										zh: "判定器：Jev，加密钥之前用 OpenCode Zen 上限时免费的版本。",
-										en: " Judge: Jev, using the free version on OpenCode Zen until you add a key.",
+										zh: "判定器：mude 1.0，下面接着安装；它答不了的交给 Jev。",
+										en: " Judge: mude 1.0, installed next, with Jev for what it can't answer.",
 									})
-								: this.t({ zh: "判定器：Jev。", en: " Judge: Jev." });
+								: judge.kind === "free"
+									? this.t({
+											zh: "判定器：Jev，加密钥之前用 OpenCode Zen 上限时免费的版本。",
+											en: " Judge: Jev, using the free version on OpenCode Zen until you add a key.",
+										})
+									: this.t({ zh: "判定器：Jev。", en: " Judge: Jev." });
 		this.io.say("");
 		this.io.say(`${done}${judged}`);
 		this.io.say(

@@ -1012,6 +1012,12 @@ export function planSetup({ platform, env, argv, root, home, execPath, fs, strip
 	childEnv.MU_SETUP_HOME = muDir;
 	// The .env a session gets: the wizard writes the Jev key there, and reads a proxy from it.
 	childEnv.MU_SETUP_ENV_FILE = envFilePath({ layout, root, muDir, platform });
+	// mude 1.0, which the judge step installs on a Mac that can run it: where `mu judge mude` keeps it (planMude).
+	if (platform === "darwin") {
+		childEnv.MU_MUDE_HOME = muDir;
+		childEnv.MU_MUDE_ENV_FILE = childEnv.MU_SETUP_ENV_FILE;
+		childEnv.MU_MUDE_LOCK = path.join(root, "kyrn", "local-judge", "mude-requirements.lock.txt");
+	}
 	return { command: execPath, args: [...entry, ...args], env: childEnv, strategy: "spawn", agentDir, keyGiven: key !== undefined };
 }
 
