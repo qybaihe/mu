@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- `mu judge mude install`: Ctrl-C (or SIGTERM) during the wait between tries after a dropped connection now stops the download at once. It prints "Stopped with X of 1.8 GB downloaded: mu judge mude install goes on from there". Before, the wait (up to 30 s) ran on, and the command ended 5 s later with no message. What was downloaded was kept either way.
+
 ## [0.2.1] - 2026-10-24
 
 **0.2.1 makes mude 1.0 the recommended judge on a Mac, set up from `mu setup`, and its install survives a power cut.**
