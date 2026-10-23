@@ -149,7 +149,7 @@ export function registerInjection(runtime: KyrnRuntime): void {
 		signal: AbortSignal | undefined,
 	): Promise<InjectionOutcome[]> => {
 		if (list.length === 0) return [];
-		if (!runtime.judgeParallel) {
+		if (!runtime.answersInBatches(toolInjection.id, "screen")) {
 			const decisions = await runtime.engine.decideMany(
 				toolInjection,
 				list.map((passage) => ({ source, passage })),
