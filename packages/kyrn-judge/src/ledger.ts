@@ -43,6 +43,12 @@ export interface LedgerRecord {
 	/** SHA-256 of the submitted state. The state itself is stored only when the engine is told to. */
 	readonly stateDigest: string;
 	readonly state?: JsonValue;
+	/**
+	 * The questions as asked, stored with the state for a decision that builds them from its input (`questionsFor`:
+	 * one question per skill, capability or memory). A decision with fixed questions is known by `specId` and
+	 * `specVersion`.
+	 */
+	readonly questions?: JsonValue;
 }
 
 export interface LedgerSink {
