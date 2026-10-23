@@ -17,10 +17,12 @@ import {
 	accessSync,
 	appendFileSync,
 	chmodSync,
+	closeSync,
 	constants,
 	existsSync,
 	lstatSync,
 	mkdirSync,
+	openSync,
 	readdirSync,
 	readFileSync,
 	realpathSync,
@@ -529,6 +531,85 @@ function destructivePathObstacle(store: Store, path: string): string | undefined
 	return undefined;
 }
 
+/** A descriptor for the parent directory keeps ancestor traversal stable until the unlink/rmdir. */
+interface SecureParent {
+	readonly fd: number;
+	readonly path: string;
+}
+
+function fdRoot(): string | undefined {
+	if (process.platform === "linux") return "/proc/self/fd";
+	if (process.platform === "darwin" || process.platform === "freebsd") return "/dev/fd";
+	return undefined;
+}
+
+function fdPath(fd: number): string | undefined {
+	const root = fdRoot();
+	return root ? join(root, String(fd)) : undefined;
+}
+
+function openSecureParent(store: Store, path: string): SecureParent | undefined {
+	const prefix = fdRoot();
+	if (!prefix) return undefined;
+	const parts = path.split("/");
+	const flags = constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW;
+	let fd = openSync(store.root, flags);
+	try {
+		for (const part of parts.slice(0, -1)) {
+			const next = openSync(join(fdPath(fd) as string, part), flags);
+			closeSync(fd);
+			fd = next;
+		}
+		return { fd, path: join(prefix, String(fd)) };
+	} catch (error) {
+		closeSync(fd);
+		throw error;
+	}
+}
+
+function unlinkSafe(store: Store, path: string): "removed" | "missing" | "directory" {
+	let parent: SecureParent | undefined;
+	try {
+		parent = openSecureParent(store, path);
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code === "ENOENT") return "missing";
+		throw error;
+	}
+	const target = parent ? join(parent.path, basename(path)) : onDisk(store, path);
+	try {
+		let stats: ReturnType<typeof lstatSync>;
+		try {
+			stats = lstatSync(target);
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code === "ENOENT") return "missing";
+			throw error;
+		}
+		if (stats.isDirectory()) return "directory";
+		try {
+			unlinkSync(target);
+			return "removed";
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code === "ENOENT") return "missing";
+			throw error;
+		}
+	} finally {
+		if (parent) closeSync(parent.fd);
+	}
+}
+
+function removeDirectoryIfEmpty(store: Store, path: string): void {
+	const parent = openSecureParent(store, path);
+	if (!parent) {
+		rmdirSync(onDisk(store, path));
+		return;
+	}
+	try {
+		rmdirSync(join(parent.path, basename(path)));
+	} finally {
+		closeSync(parent.fd);
+	}
+}
+
 /**
  * Makes the working tree equal to the snapshot for the planned paths, except `keep` (files the user
  * chose to hold on to). Removals come first so a file that replaced a folder is out of the way, then
@@ -552,16 +633,10 @@ export async function applyRestore(
 			leftAlone.push({ path, why: unsafe });
 			continue;
 		}
-		try {
-			const stats = lstatSync(onDisk(store, path));
-			if (stats.isDirectory()) {
-				leftAlone.push({ path, why: "a folder is in the way" });
-				continue;
-			}
-			unlinkSync(onDisk(store, path));
-		} catch (error) {
-			if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-			// Already gone: that is the state asked for.
+		const status = unlinkSafe(store, path);
+		if (status === "directory") {
+			leftAlone.push({ path, why: "a folder is in the way" });
+			continue;
 		}
 		removed.push(path);
 		// Folders the removed file leaves empty go too; rmdir refuses anything that still holds a file.
@@ -571,7 +646,7 @@ export async function applyRestore(
 				const parent = parts.slice(0, depth).join("/");
 				const unsafeParent = destructivePathObstacle(store, `${parent}/.mu-checkpoint-empty-dir`);
 				if (unsafeParent) break;
-				rmdirSync(join(store.root, ...parts.slice(0, depth)));
+				removeDirectoryIfEmpty(store, parent);
 			} catch (error) {
 				const code = (error as NodeJS.ErrnoException).code;
 				if (code === "ENOENT" || code === "ENOTEMPTY" || code === "EEXIST" || code === "ENOTDIR") break;
