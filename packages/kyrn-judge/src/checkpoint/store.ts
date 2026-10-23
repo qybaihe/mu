@@ -240,6 +240,18 @@ function realPath(path: string): string {
 	}
 }
 
+/** Like `realPath`, but never turns a permission or symlink-loop error into a missing path. */
+function realPathForSecurity(path: string): string {
+	const absolute = resolve(path);
+	try {
+		return realpathSync.native(absolute);
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+		const parent = dirname(absolute);
+		return parent === absolute ? absolute : join(realPathForSecurity(parent), basename(absolute));
+	}
+}
+
 /** `inner` relative to `outer`, or undefined when it is not inside it. "" when they are the same folder. */
 function inside(outer: string, inner: string): string | undefined {
 	const rel = relative(realPath(outer), realPath(inner));
@@ -475,8 +487,9 @@ function obstacle(store: Store, path: string, mustBeAbsent: boolean): string | u
 		try {
 			if (!lstatSync(join(store.root, ...parts.slice(0, depth))).isDirectory())
 				return "a file is where its folder should be";
-		} catch {
-			break;
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code === "ENOENT") break;
+			throw error;
 		}
 	}
 	try {
@@ -485,8 +498,33 @@ function obstacle(store: Store, path: string, mustBeAbsent: boolean): string | u
 		// In no tree yet on disk: ignored or over the size cap now, so not ours to overwrite.
 		if (mustBeAbsent) return "a file that is ignored or too large is there now";
 		if (stats.size > store.maxFileBytes) return "it is over the size cap now";
-	} catch {
-		// Nothing there.
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+	}
+	return undefined;
+}
+
+/**
+ * Checks the path immediately before a destructive operation. `lstat` on the final path is not enough:
+ * an ancestor symlink makes `unlink(path)` operate outside the project. The real-path check also covers
+ * a symlink whose target does not exist yet.
+ */
+function destructivePathObstacle(store: Store, path: string): string | undefined {
+	const parts = path.split("/");
+	for (let depth = 1; depth < parts.length; depth++) {
+		try {
+			if (!lstatSync(join(store.root, ...parts.slice(0, depth))).isDirectory())
+				return "a file or symlink is where its folder should be";
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+			throw error;
+		}
+	}
+	// Do not resolve the final component: it may itself be a symlink, and unlinking that directory
+	// entry is safe. Only the parent directory must remain inside the project.
+	const parent = dirname(onDisk(store, path));
+	if (!isWithin(store.root, realPathForSecurity(parent))) {
+		return "an ancestor symlink points outside the project";
 	}
 	return undefined;
 }
@@ -509,6 +547,11 @@ export async function applyRestore(
 	const removed: string[] = [];
 	for (const path of plan.remove) {
 		if (kept(path)) continue;
+		const unsafe = destructivePathObstacle(store, path);
+		if (unsafe) {
+			leftAlone.push({ path, why: unsafe });
+			continue;
+		}
 		try {
 			const stats = lstatSync(onDisk(store, path));
 			if (stats.isDirectory()) {
@@ -516,7 +559,8 @@ export async function applyRestore(
 				continue;
 			}
 			unlinkSync(onDisk(store, path));
-		} catch {
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
 			// Already gone: that is the state asked for.
 		}
 		removed.push(path);
@@ -524,9 +568,14 @@ export async function applyRestore(
 		const parts = path.split("/");
 		for (let depth = parts.length - 1; depth >= 1; depth--) {
 			try {
+				const parent = parts.slice(0, depth).join("/");
+				const unsafeParent = destructivePathObstacle(store, `${parent}/.mu-checkpoint-empty-dir`);
+				if (unsafeParent) break;
 				rmdirSync(join(store.root, ...parts.slice(0, depth)));
-			} catch {
-				break;
+			} catch (error) {
+				const code = (error as NodeJS.ErrnoException).code;
+				if (code === "ENOENT" || code === "ENOTEMPTY" || code === "EEXIST" || code === "ENOTDIR") break;
+				throw error;
 			}
 		}
 	}
@@ -553,7 +602,24 @@ export async function applyRestore(
 		const env = { ...store.env, GIT_INDEX_FILE: index };
 		try {
 			await git(store, ["read-tree", plan.commit], undefined, env);
-			await git(store, ["checkout-index", "--force", "-z", "--stdin"], `${write.join("\0")}\0`, env);
+			// The initial obstacle check happened before read-tree yielded. Recheck before checkout so an
+			// ancestor that became a symlink while git prepared the throwaway index is not followed.
+			const safeWrite: string[] = [];
+			for (const path of write) {
+				const unsafe = obstacle(store, path, plan.bringBack.includes(path));
+				if (unsafe) {
+					leftAlone.push({ path, why: unsafe });
+					if (plan.restore.includes(path)) {
+						const position = restored.indexOf(path);
+						if (position >= 0) restored.splice(position, 1);
+					} else {
+						const position = broughtBack.indexOf(path);
+						if (position >= 0) broughtBack.splice(position, 1);
+					}
+				} else safeWrite.push(path);
+			}
+			if (safeWrite.length > 0)
+				await git(store, ["checkout-index", "--force", "-z", "--stdin"], `${safeWrite.join("\0")}\0`, env);
 		} finally {
 			rmSync(index, { force: true });
 			rmSync(`${index}.lock`, { force: true });
