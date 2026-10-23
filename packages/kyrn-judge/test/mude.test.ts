@@ -1,3 +1,4 @@
+import { execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
@@ -5,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { planLaunch, planMude, wantsMude } from "../../../kyrn/bin/mu.mjs";
-import { installLocalOnly, main, problems } from "../src/mude/command.ts";
+import { holdInstall, installLocalOnly, main, problems } from "../src/mude/command.ts";
 import { disableMude, enableMude, judgeSetting, ROUTED_AWAY } from "../src/mude/config.ts";
 import { DownloadError, downloadedBytes, downloadFiles, missingFiles, resumeFrom } from "../src/mude/download.ts";
 import { MUDE_BYTES, MUDE_FILES, MUDE_REVISION, type MudeFile, mudeFileUrl } from "../src/mude/manifest.ts";
@@ -448,6 +449,38 @@ describe("mu judge mude", () => {
 		expect(installLocalOnly(ctx, [])).toBe(false);
 		expect(installLocalOnly(ctx, ["--local-only"])).toBe(true);
 	});
+
+	// mude installs only on a Mac; the lock reads process start times with ps, which Windows does not have.
+	it.skipIf(process.platform === "win32")(
+		"lets one install run at a time, and takes over the lock of one that is gone",
+		async () => {
+			const paths = mudePaths(join(dir, "home"));
+			const lock = () => JSON.parse(readFileSync(paths.installLock, "utf8"));
+			const release = holdInstall(paths);
+			expect(lock().pid).toBe(process.pid);
+			release();
+			expect(existsSync(paths.installLock)).toBe(false);
+
+			// Another install, running: a second one stops with a sentence, not with a file the first renamed.
+			const other = spawn(process.execPath, ["-e", "setTimeout(() => {}, 30000)"], { stdio: "ignore" });
+			const pid = other.pid ?? 0;
+			const started = execFileSync("/bin/ps", ["-p", String(pid), "-o", "lstart="], { encoding: "utf8" }).trim();
+			writeFileSync(paths.installLock, JSON.stringify({ pid, started }));
+			expect(() => holdInstall(paths)).toThrow(`Another mude 1.0 install is running (process ${pid})`);
+			// The same number with another start time is a process that took the number over after a power cut.
+			writeFileSync(paths.installLock, JSON.stringify({ pid, started: "Thu Jan  1 00:00:00 1970" }));
+			holdInstall(paths)();
+			// One that is gone, and a lock cut off while it was written, are taken over.
+			writeFileSync(paths.installLock, JSON.stringify({ pid, started }));
+			other.kill();
+			await new Promise((resolve) => other.once("exit", resolve));
+			holdInstall(paths)();
+			writeFileSync(paths.installLock, '{"pid": 1');
+			const taken = holdInstall(paths);
+			expect(lock().pid).toBe(process.pid);
+			taken();
+		},
+	);
 
 	it("disables nothing when mude was not the judge", async () => {
 		let text = "";

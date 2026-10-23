@@ -10,6 +10,7 @@
   - The free-space check before a download counts only the bytes still to come. Before, it counted the whole of every unfinished file, even when most of it was on the disk already.
   - Ctrl-C (or SIGTERM) while the Python environment is being set up now says "Stopped while setting up the Python environment: mu judge mude install goes on from there", instead of "mude's Python packages could not be installed".
 - `mu judge mude install` on a Mac without uv: downloading the pinned uv (about 20 MB, from GitHub) had no time limit and ignored a stop. It now ends after 5 minutes with "uv could not be downloaded from GitHub (no answer in 300 s): run mu judge mude install again", and Ctrl-C or the app's Cancel ends it at once ("Stopped while setting up the Python environment").
+- `mu judge mude install` (also from `mu setup` and the desktop app) takes `local-judge/mude/install.lock`. A second install while one runs now stops at once with "Another mude 1.0 install is running (process N). Wait for it to finish, or stop it, then run mu judge mude install again". Before, both downloaded into the same `.part` files, and the second failed with `ENOENT … .part` when the first renamed a finished file. The lock records the process's pid and start time, so a lock left by a power cut or a kill is taken over, even if the pid has since been reused.
 
 ## [0.2.1] - 2026-10-24
 
