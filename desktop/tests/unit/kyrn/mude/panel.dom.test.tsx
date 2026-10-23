@@ -153,6 +153,12 @@ async function judgesPage(language = i18n) {
 /** Lets a read of the settings that was asked for land, with whatever it would draw afresh. */
 const settle = () => act(() => new Promise((resolve) => setTimeout(resolve, 50)));
 
+/** The judge choices, in the order shown. */
+const tilesOf = () =>
+  within(screen.getByRole('radiogroup', { name: enMu.judges.choose }))
+    .getAllByRole('radio')
+    .map((radio) => radio.getAttribute('data-testid'));
+
 /** `first` comes before `second` in the page. */
 const before = (first: Element, second: Element) =>
   Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING);
@@ -168,6 +174,31 @@ describe('mude as a choice of the judges page', () => {
     await screen.findByTestId('mu-judge-choice-jev');
     await waitFor(() => expect(bridge.mudeState).toHaveBeenCalled());
     expect(screen.queryByTestId('mu-judge-choice-mude')).not.toBeInTheDocument();
+    // Nothing else changes: Jev stays the recommended one, in the usual order.
+    expect(tilesOf()).toEqual(['mu-judge-choice-jev', 'mu-judge-choice-local', 'mu-judge-choice-clm']);
+    expect(within(screen.getByTestId('mu-judge-choice-jev')).getByText('Recommended')).toBeInTheDocument();
+  });
+
+  it('on a Mac that can run it: first and recommended, Jev hosted, and the judge chosen still the settings’ own', async () => {
+    const tile = await judgesPage();
+    await waitFor(
+      () =>
+        expect(tilesOf()).toEqual([
+          'mu-judge-choice-mude',
+          'mu-judge-choice-jev',
+          'mu-judge-choice-local',
+          'mu-judge-choice-clm',
+        ]),
+      { timeout: 3000 }
+    );
+    expect(within(tile).getByText('Recommended · on this Mac')).toBeInTheDocument();
+    const jev = screen.getByTestId('mu-judge-choice-jev');
+    expect(within(jev).getByText('Hosted')).toBeInTheDocument();
+    expect(within(jev).queryByText('Recommended')).not.toBeInTheDocument();
+    // No pick of its own here: the page shows what the settings say.
+    expect(jev).toHaveAttribute('aria-checked', 'true');
+    expect(tile).toHaveAttribute('aria-checked', 'false');
+    expect(bridge.mudeRun).not.toHaveBeenCalled();
   });
 
   it('on a Mac that cannot run it: why, dimmed, and never picked', async () => {
@@ -176,6 +207,15 @@ describe('mude as a choice of the judges page', () => {
     );
     const tile = await judgesPage();
     await waitFor(() => expect(tile).toHaveAttribute('aria-disabled', 'true'));
+    // Not recommended here: the usual order and tags.
+    expect(tilesOf()).toEqual([
+      'mu-judge-choice-jev',
+      'mu-judge-choice-mude',
+      'mu-judge-choice-local',
+      'mu-judge-choice-clm',
+    ]);
+    expect(within(tile).getByText('On this Mac')).toBeInTheDocument();
+    expect(within(screen.getByTestId('mu-judge-choice-jev')).getByText('Recommended')).toBeInTheDocument();
     expect(within(tile).getByTestId('mu-mude-unsupported')).toHaveTextContent(
       'mude 1.0 needs a Mac with Apple silicon, macOS 14 or later and 8 GB of memory.'
     );

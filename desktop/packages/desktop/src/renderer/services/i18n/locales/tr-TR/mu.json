@@ -159,11 +159,13 @@
       "jev": {
         "title": "Jev",
         "tag": "Önerilen",
+        "tagHosted": "Bulutta",
         "description": "TypeSafe'in barındırdığı hakem modeli. Hızlı ve doğru. OpenCode Zen'de sınırlı bir süre ücretsiz; ya da TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare veya kendi hizmetinizin anahtarıyla çağrı başına ücretli."
       },
       "mude": {
         "title": "mude 1.0",
         "tag": "Bu Mac'te",
+        "tagRecommended": "Önerilen · bu Mac'te",
         "description": "mu'nun kendi karar modeli; kodlama için optimize edildi ve bir kodlama ajanının kararlarında SOTA düzeyinde. Bu Mac'te çalışır: anahtar yok, çağrı başına ücret yok. Apple çip gerektirir."
       },
       "local": {

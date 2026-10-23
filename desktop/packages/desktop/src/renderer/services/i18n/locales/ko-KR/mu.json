@@ -159,11 +159,13 @@
       "jev": {
         "title": "Jev",
         "tag": "추천",
+        "tagHosted": "클라우드",
         "description": "TypeSafe가 호스팅하는 판정 모델입니다. 빠르고 정확합니다. OpenCode Zen에서는 기간 한정 무료이고, TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare 또는 직접 운영하는 서비스의 키를 쓰면 호출마다 과금됩니다."
       },
       "mude": {
         "title": "mude 1.0",
         "tag": "이 Mac에서",
+        "tagRecommended": "추천 · 이 Mac에서",
         "description": "mu의 자체 의사결정 모델로, 코딩에 최적화되어 코딩 에이전트의 판단에서 SOTA 수준의 성능을 냅니다. 이 Mac에서 실행되며 키가 필요 없고 호출당 비용도 없습니다. Apple 실리콘이 필요합니다."
       },
       "local": {

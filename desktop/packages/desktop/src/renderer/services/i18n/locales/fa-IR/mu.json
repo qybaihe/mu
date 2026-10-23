@@ -159,11 +159,13 @@
       "jev": {
         "title": "Jev",
         "tag": "پیشنهادی",
+        "tagHosted": "ابری",
         "description": "مدل داور میزبانی‌شده توسط TypeSafe. سریع و دقیق. روی OpenCode Zen برای مدتی محدود رایگان است؛ یا با کلید TypeSafe، OpenRouter، Vercel AI Gateway، OpenCode Zen، Cloudflare یا سرویس خودتان، به ازای هر فراخوانی هزینه دارد."
       },
       "mude": {
         "title": "mude 1.0",
         "tag": "روی همین Mac",
+        "tagRecommended": "پیشنهادی · روی همین Mac",
         "description": "مدل تصمیم‌گیری خودِ mu، بهینه‌شده برای برنامه‌نویسی و در سطح SOTA در تصمیم‌های یک عامل برنامه‌نویسی. روی همین Mac اجرا می‌شود: بدون کلید و بدون هزینه برای هر فراخوانی. به تراشهٔ Apple نیاز دارد."
       },
       "local": {
