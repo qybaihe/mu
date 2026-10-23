@@ -33,6 +33,7 @@ mu                     # 現在のディレクトリで対話セッションを�
 | `mu import --list` | Claude Code、Codex、ZCode の会話を探す |
 | `mu import <file>…` | それらを履歴ごと mu に取り込み、そこで続ける。あとでもう一度実行すると新しい内容が加わる |
 | `mu judge setup \| start \| stop \| status` | ローカルの判定器 Laya。`setup` はモデルをダウンロードする前に確認する。 |
+| `mu judge mude install \| enable \| disable \| start \| stop \| status \| uninstall` | Apple シリコンの Mac で動く、mu 独自の意思決定モデル [mude 1.0](@docs/judges#mude)。ダウンロードが途中で止まっても、`install` は中断したところから続ける。 |
 | `mu link` / `mu unlink` | `mu` コマンドを PATH（`~/.local/bin`）に置く、または取り除く |
 | `mu auth status \| login <provider> \| logout <provider>` | デスクトップアプリが使うサブスクリプションのサインイン |
 | `mu migrate [--dry-run]` | 一度だけ実行：名前変更前のホーム `~/.kyrn` を `~/.mu` に移す |

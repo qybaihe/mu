@@ -33,6 +33,7 @@ mu                     # an interactive session in the current directory
 | `mu import --list` | Find your Claude Code, Codex and ZCode conversations |
 | `mu import <file>…` | Bring them into mu with their full history and continue there; run it again later to bring over what's new |
 | `mu judge setup \| start \| stop \| status` | The local judge, Laya. `setup` asks before downloading the model. |
+| `mu judge mude install \| enable \| disable \| start \| stop \| status \| uninstall` | [mude 1.0](@docs/judges#mude), mu's own decision model, on a Mac with Apple silicon. `install` goes on from where a stopped download left off. |
 | `mu link` / `mu unlink` | Put the `mu` command on your PATH (`~/.local/bin`), or remove it |
 | `mu auth status \| login <provider> \| logout <provider>` | Subscription sign-in, as used by the desktop app |
 | `mu migrate [--dry-run]` | One-time: move the old `~/.kyrn` folder to `~/.mu` |

@@ -14,7 +14,7 @@ summary: 여러분의 컴퓨터에 남는 것, 판정기가 보는 것, 모든 �
 
 판정기는 질문 하나에 필요한 필드만 봐요. 메시지 하나, 출력 청크 하나, 명령 하나, 실행의 짧은 요약 같은 것이요. 자격 증명은 판정기나 보드에 닿기 전에 가려져요.
 
-판정기 키가 없으면 이 필드는 OpenCode Zen의 무료 Jev(TypeSafe가 호스팅하는 기본 판정 모델)로 가요. OpenCode는 이것을 모델 학습에 쓰지 않고, mu가 하루에 한 번 그 사실을 알려 줘요. 직접 가진 키를 쓰면 여러분이 고른 서비스로 가요. 모든 것을 여러분의 컴퓨터에 두려면 로컬 판정기(`MU_JUDGE=laya`)를 쓰거나, 판정기를 끄거나(`mu setup --judge off`, 또는 `mu setup`에서 판정기를 "Not now"로 고르기. mu의 기능은 규칙대로 계속 동작해요), 커널 전체를 끄세요(`MU_JUDGE=off`).
+판정기 키가 없으면 이 필드는 OpenCode Zen의 무료 Jev(TypeSafe가 호스팅하는 기본 판정 모델)로 가요. OpenCode는 이것을 모델 학습에 쓰지 않고, mu가 하루에 한 번 그 사실을 알려 줘요. 직접 가진 키를 쓰면 여러분이 고른 서비스로 가요. 모든 것을 여러분의 컴퓨터에 두려면 Mac에서 [mude 1.0](@docs/judges#mude)만 쓰거나(`mu judge mude enable --local-only`), 로컬 판정기 Laya(`MU_JUDGE=laya`)를 쓰거나, 판정기를 끄거나(`mu setup --judge off`, 또는 `mu setup`에서 판정기를 "Not now"로 고르기. mu의 기능은 규칙대로 계속 동작해요), 커널 전체를 끄세요(`MU_JUDGE=off`).
 
 ## 판정 장부 {#ledger}
 

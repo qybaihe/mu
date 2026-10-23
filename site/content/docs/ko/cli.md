@@ -33,6 +33,7 @@ mu                     # 현재 디렉터리에서 대화형 세션 시작
 | `mu import --list` | Claude Code, Codex, ZCode 대화 찾기 |
 | `mu import <file>…` | 그 대화를 기록 전체와 함께 mu로 가져와 이어 가기. 나중에 다시 하면 새로 생긴 내용이 더해져요 |
 | `mu judge setup \| start \| stop \| status` | 로컬 판정기 Laya. `setup`은 모델을 내려받기 전에 물어요. |
+| `mu judge mude install \| enable \| disable \| start \| stop \| status \| uninstall` | Apple 실리콘 Mac에서 돌아가는 mu의 자체 의사결정 모델 [mude 1.0](@docs/judges#mude). 내려받기가 중간에 멈추면 `install`이 멈춘 곳부터 이어 가요. |
 | `mu link` / `mu unlink` | `mu` 명령을 PATH(`~/.local/bin`)에 넣거나 빼기 |
 | `mu auth status \| login <provider> \| logout <provider>` | 데스크톱 앱이 쓰는 구독 로그인 |
 | `mu migrate [--dry-run]` | 한 번만: 이름을 바꾸기 전의 홈 `~/.kyrn`을 `~/.mu`로 옮기기 |

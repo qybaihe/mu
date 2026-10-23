@@ -29,13 +29,17 @@ If none of this helps, [open an issue](https://github.com/qybaihe/mu/issues/new/
 
 **The judge seems to do nothing.** A point in shadow records its verdicts and changes nothing, and one that is off isn't asked. `/status` shows each point's mode; look for `"default": "shadow"` or `"off"` in `~/.mu/agent/mu.json`, or a `MU_JUDGE_MODE` in your environment.
 
-**"No judge is available yet, so mu asks about each step."** In *Judge mode*, mu asks about every step that needs approval when no judge can answer: no key and the free Jev unavailable, an exhausted account or only a local judge, which isn't trusted with approvals. Set a Jev key (`mu setup`), or switch the mode with `/permissions`.
+**"No judge is available yet, so mu asks about each step."** In *Judge mode*, mu asks about every step that needs approval when no judge can answer: no key and the free Jev unavailable, an exhausted account or only Laya, the local judge that isn't trusted with approvals. Set a Jev key (`mu setup`), or switch the mode with `/permissions`.
 
 **The free Jev stopped answering.** It is OpenCode Zen's limited-time offer, and mu says so when it ends. Set a key for one of the [Jev services](@docs/judges#jev), or choose another judge.
 
 **Verdicts are slow.** Every decision point has a time limit, after which mu carries on without the verdict; nothing blocks for long. `mu ledger --json` shows each verdict's latency. A slow or distant judge can be replaced per point with `routes`.
 
 **The local judge wants to download a model.** Laya's model is about 930 MB; mu downloads it only after you agree, in `mu judge setup` or in the app.
+
+**mude 1.0 isn't answering.** `mu judge mude status` shows whether its server is running, and `mu judge mude start` starts it; `mu doctor` checks the server and its key. Until it answers, the judges behind it answer, or, with `--local-only`, each decision takes its fallback.
+
+**The mude 1.0 install stopped.** Run `mu judge mude install` again, or press **Continue installing** in the app: it goes on from what is already downloaded.
 
 ## The terminal {#terminal}
 
