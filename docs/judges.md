@@ -60,7 +60,7 @@ The desktop app also asks first, then sets it up in one step. Laya is reliable o
 ## NVIDIA Nemotron on Nebius Token Factory
 
 - `nemotron`: Nemotron 3 Ultra on [Nebius Token Factory](https://tokenfactory.nebius.com), asked like `llm:` with thinking off, so each request gets one JSON answer (0.9 s at the median). Set `NEBIUS_API_KEY`, or choose it in `mu setup` with a Token Factory key (`--judge nemotron`). On 1,353 held-out judge requests from mu's own sessions it was the only Nemotron on Token Factory that clearly beat having no judge; Super, Nano 30B and Lightning missed the answer format or decided worse.
-- `nemotron-local`: Nemotron 3 Nano 4B distilled from Nemotron 3 Ultra ([mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron)), served on your machine over System One at `http://127.0.0.1:8770`. It reads every answer off one token, so a decision costs nothing and stays on the machine.
+- `nemotron-local`: Nemotron 3 Nano 4B, fine-tuned for mu's judge ([mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron)), served on your machine over System One at `http://127.0.0.1:8770`. It reads every answer off one token, so a decision costs nothing and stays on the machine.
 
 - `nemotron-think`: Nemotron 3 Ultra with thinking on, for the decision points where it decides much better that way (see [docs/nebius.md](nebius.md)); 2.5 s at the median.
 

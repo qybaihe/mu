@@ -6,7 +6,7 @@ mu can run end to end on [Nebius Token Factory](https://tokenfactory.nebius.com)
 | --- | --- | --- |
 | The coding model: reads, edits, runs commands | Nemotron 3 Super (`nvidia/nemotron-3-super-120b-a12b`) | Calls tools reliably, $0.30 / $0.90 per million tokens; its thinking follows mu's thinking level |
 | The judge at the 40 decision points | Nemotron 3 Ultra (`nvidia/Nemotron-3-Ultra-550b-a55b`), thinking off | The only Nemotron on Token Factory that clearly beat having no judge (below); 0.9 s at the median |
-| The judge on your machine | Nemotron 3 Nano 4B, distilled from Ultra ([mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron)) | Free and local, about 0.1 s to approve a command; on held-out test it scored above Ultra (below) |
+| The judge on your machine | Nemotron 3 Nano 4B, fine-tuned for mu's judge ([mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron)) | Free and local, about 0.1 s to approve a command; on held-out test it scored above Ultra (below) |
 | Where commands run, if you want them off your machine | Token Factory Sandboxes | Each command continues from the files the previous one left; changes come back only after you review the diff |
 
 ## Set up
@@ -77,7 +77,7 @@ On held-out test requests this raised Ultra's score from 54.7 to 57.9 on real re
 
 ## The judge on your machine
 
-[mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron) distills Nemotron 3 Ultra's answers into Nemotron 3 Nano 4B and serves it over System One, the protocol mu's judges speak. Its weights are on Hugging Face as [qybaihe/mu-judge-nemotron-nano-4b](https://huggingface.co/qybaihe/mu-judge-nemotron-nano-4b). On a machine with an NVIDIA GPU, in a clone of mu-judge-nemotron:
+[mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron) fine-tunes Nemotron 3 Nano 4B as mu's judge and serves it over System One, the protocol mu's judges speak. Its weights are on Hugging Face as [qybaihe/mu-judge-nemotron-nano-4b](https://huggingface.co/qybaihe/mu-judge-nemotron-nano-4b). On a machine with an NVIDIA GPU, in a clone of mu-judge-nemotron:
 
 ```bash
 uv pip install -e '.[train]'
@@ -122,12 +122,12 @@ Every Nemotron model on Token Factory was put in the judge's seat on 1,353 held-
 
 On 4,838 further held-out requests, scored once, Nemotron 3 Ultra scored 54.7 on real requests (95% interval 44.6–64.0) and 48.4 on constructed ones: its answers are mostly right (92.7% of checks on constructed cases), but its mistakes cost more than those of judges trained for mu. Thinking on four decision points raised those test scores to 57.9 and 55.9 ([Thinking where it pays](#thinking-where-it-pays)).
 
-Nemotron 3 Nano 4B, distilled from Ultra's answers, scored above its teacher:
+The fine-tuned 4B judge scored above Ultra:
 
 | Judge | Dev, real | Dev, constructed | Test, real (95% interval) | Test, constructed (95% interval) |
 | --- | --- | --- | --- | --- |
-| Nemotron 3 Nano 4B, distilled (`nemotron-local`) | **62.3** | 45.0 | **68.2** (61.0–76.0) | **59.9** (51.5–68.3) |
+| Nemotron 3 Nano 4B, fine-tuned (`nemotron-local`) | **62.3** | 45.0 | **68.2** (61.0–76.0) | **59.9** (51.5–68.3) |
 | Nemotron 3 Ultra (`nemotron`) | 47.3 | 47.7 | 54.7 (44.6–64.0) | 48.4 (35.8–59.8) |
-| The distilled Nano, then Ultra for what it is unsure of | 63.1 | 44.1 | 20.0 (−74.6–69.7) | 55.7 (44.8–66.4) |
+| The 4B judge, then Ultra for what it is unsure of | 63.1 | 44.1 | 20.0 (−74.6–69.7) | 55.7 (44.8–66.4) |
 
-On test the student is ahead of Ultra by 13.6 on real requests (paired interval +8.1 to +20.7) and by 11.5 on constructed ones (+1.5 to +22.6). On 112 author-written development requests, hard by design, it is clearly weaker (19.6 against Ultra's 52.3). With Ultra behind it, a few of Ultra's confident answers in costly places (letting a tool's output into the context, keeping a memory) cost more on real test requests than the student's doubt. Details: [mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron#results).
+On test the 4B judge is ahead of Ultra by 13.6 on real requests (paired interval +8.1 to +20.7) and by 11.5 on constructed ones (+1.5 to +22.6). On 112 author-written development requests, hard by design, it is clearly weaker (19.6 against Ultra's 52.3). With Ultra behind it, a few of Ultra's confident answers in costly places (letting a tool's output into the context, keeping a memory) cost more on real test requests than the 4B judge's doubt. Details: [mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron#results).
