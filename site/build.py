@@ -563,6 +563,8 @@ def mubench_boards(bench, B):
                 "best": max(scores.values(), default=None), "zero": "0" if scores else "—",
                 "base": "—" if c["baseline"] is None else f"{c['baseline']:.1f}%",
                 "count": f"{c['items']:,}" + (f" ({c['tasks']})" if "tasks" in c else ""),
+                # A capability's weight in the overall score; the overall column shows what they add up to.
+                "weight": f"{sum(board[k]['weight'] for k in bench['capabilities']) if cap == 'overall' else c['weight']:.1f}%",
             })
         overall = board["overall"]
         rows, intervals = [], []

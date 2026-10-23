@@ -157,6 +157,9 @@
 .mb-chart picture { display: block; }
 .mb-chart img { width: 100%; height: auto; }
 .mb-caps .chips { margin-top: 10px; }
+.mb-board tfoot th a { color: inherit; text-underline-offset: 3px; text-decoration-color: var(--line-strong); }
+.models-h3 + .mb-method { margin-top: 8px; }
+.mb-method .mb-formula { display: block; width: fit-content; max-width: 100%; margin: 6px 0 8px; padding: 4px 10px; font-size: 13.5px; color: var(--text); overflow-wrap: anywhere; }
 .mb-caps .chip { font-family: var(--mono); font-size: 12px; color: var(--muted); }
 
 /* ---- Documentation ---- */

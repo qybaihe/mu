@@ -14,6 +14,7 @@
           <tr class="mb-zero"><th scope="row">{{ B.zero_row }}</th>{% for C in board.cols %}<td{% if loop.first %} class="mb-overall"{% endif %}>{{ C.zero }}</td>{% endfor %}</tr>
           <tr><th scope="row">{{ B.base_row }}</th>{% for C in board.cols %}<td{% if loop.first %} class="mb-overall"{% endif %}>{{ C.base }}</td>{% endfor %}</tr>
           <tr><th scope="row">{{ B.count_row_tasks if board.tasks else B.count_row }}</th>{% for C in board.cols %}<td{% if loop.first %} class="mb-overall"{% endif %}>{{ C.count }}</td>{% endfor %}</tr>
+          <tr><th scope="row"><a href="#method">{{ B.weight_row }}</a></th>{% for C in board.cols %}<td{% if loop.first %} class="mb-overall"{% endif %}>{{ C.weight }}</td>{% endfor %}</tr>
         </tfoot>
       </table></div>
     </div>{% endmacro %}
@@ -51,6 +52,12 @@
     <p class="label" data-reveal>{{ B.how_label }}</p>
     <h2 data-reveal style="--d: 60ms">{{ B.how_h2 }}</h2>
     {{ chart("scoring", B.chart_scoring_alt) }}
+
+    <h3 class="models-h3" id="method" data-reveal>{{ B.method_h3 }}</h3>
+    <div class="list mb-method">
+      {% for M in B.method %}<div data-reveal style="--d: {{ (loop.index0 % 2) * 70 }}ms"><b>{{ M.b }}</b>{% if "code" in M %}<code class="mb-formula">{{ M.code }}</code>{% endif %}{{ M.p }}</div>
+      {% endfor %}
+    </div>
   </section>
 
   <section class="wrap models-section" id="capabilities">

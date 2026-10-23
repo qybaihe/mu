@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="880" height="798" viewBox="0 0 880 798" role="img" aria-labelledby="t d" font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Noto Sans SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif'>
 <title id="t">mubench 1.0 · main board: eight capabilities</title>
-<desc id="d">The score in each capability, on 3,193 requests from real coding sessions. 0 = mu with no decision model; 100 = all of the cost it pays removed. Permission approval: mude 1.0 52.6, Jev 1.14 53.7, Jev 1.13 52.7, d3-nano (original) 5.9. Malicious-instruction detection: Mostly constructed items; not scored yet.. Context compression: mude 1.0 64.6, Jev 1.14 76.7, Jev 1.13 70.7, d3-nano (original) −19.1. On-demand loading and reminders: mude 1.0 −2.7, Jev 1.14 16.8, Jev 1.13 25.1, d3-nano (original) −118.4. Classification and routing: mude 1.0 83.6, Jev 1.14 87.5, Jev 1.13 85.8, d3-nano (original) 51.7. Progress and completion: mude 1.0 86.6, Jev 1.14 61.6, Jev 1.13 61.6, d3-nano (original) 70.1. Memory and lessons: mude 1.0 58.7, Jev 1.14 75.1, Jev 1.13 72.2, d3-nano (original) 40.5. Multi-agent collaboration: mude 1.0 19.8, Jev 1.14 4.6, Jev 1.13 −0.8, d3-nano (original) 26.0.</desc>
+<desc id="d">The score in each capability, on 3,193 requests from real coding sessions on open-source repositories. 0 = mu with no decision model; 100 = all of the cost it pays removed. Permission approval: mude 1.0 52.6, Jev 1.14 53.7, Jev 1.13 52.7, d3-nano (original) 5.9. Malicious-instruction detection: Mostly constructed items; not scored yet.. Context compression: mude 1.0 64.6, Jev 1.14 76.7, Jev 1.13 70.7, d3-nano (original) −19.1. On-demand loading and reminders: mude 1.0 −2.7, Jev 1.14 16.8, Jev 1.13 25.1, d3-nano (original) −118.4. Classification and routing: mude 1.0 83.6, Jev 1.14 87.5, Jev 1.13 85.8, d3-nano (original) 51.7. Progress and completion: mude 1.0 86.6, Jev 1.14 61.6, Jev 1.13 61.6, d3-nano (original) 70.1. Memory and lessons: mude 1.0 58.7, Jev 1.14 75.1, Jev 1.13 72.2, d3-nano (original) 40.5. Multi-agent collaboration: mude 1.0 19.8, Jev 1.14 4.6, Jev 1.13 −0.8, d3-nano (original) 26.0.</desc>
 <text x="0" y="22" font-size="17" font-weight="650" fill="#f2f2f4">mubench 1.0 · main board: eight capabilities</text>
-<text x="0" y="48" font-size="13" fill="#a6a6b0">The score in each capability, on 3,193 requests from real coding sessions. 0 = mu with no decision model; 100 = all of the cost it pays</text>
-<text x="0" y="67" font-size="13" fill="#a6a6b0">removed.</text>
+<text x="0" y="48" font-size="13" fill="#a6a6b0">The score in each capability, on 3,193 requests from real coding sessions on open-source repositories. 0 = mu with no decision model;</text>
+<text x="0" y="67" font-size="13" fill="#a6a6b0">100 = all of the cost it pays removed.</text>
 <rect x="0" y="87.5" width="10" height="10" rx="3" fill="#d63fa2"/>
 <text x="16" y="97" font-size="12.5" fill="#f2f2f4">mude 1.0</text>
 <rect x="89.12" y="87.5" width="10" height="10" rx="3" fill="#8f7cf7"/>
@@ -152,6 +152,6 @@
 <text x="824" y="699" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">100</text>
 <text x="0" y="731" font-size="12" fill="#a6a6b0">* Few items or an unstable score: fewer than 150 items, items from fewer than 20 tasks, or mu already right more than 95% of the time with no</text>
 <text x="0" y="748" font-size="12" fill="#a6a6b0">decision model.</text>
-<text x="0" y="770" font-size="12" fill="#a6a6b0">† Malicious-instruction detection will be scored mainly on constructed items. It isn't scored yet.</text>
+<text x="0" y="770" font-size="12" fill="#a6a6b0">† Malicious-instruction detection will be scored mainly on constructed items, because attacks rarely appear in real sessions. It isn't scored yet.</text>
 <text x="0" y="792" font-size="12" fill="#a6a6b0">Bars below −25 are cut short; the number on the right is the score.</text>
 </svg>

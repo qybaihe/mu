@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="880" height="762" viewBox="0 0 880 762" role="img" aria-labelledby="t d" font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Noto Sans SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif'>
 <title id="t">mubench 1.0 主榜：八项能力</title>
-<desc id="d">每项能力的分数，来自真实编程会话里的 3,193 道请求。0 = 不用决策模型的 mu；100 = 它付出的代价全部消除。 权限放行: mude 1.0 52.6, Jev 1.14 53.7, Jev 1.13 52.7, d3-nano 原版 5.9. 恶意指令识别: 以构造题为主，目前还不出分。. 上下文压缩: mude 1.0 64.6, Jev 1.14 76.7, Jev 1.13 70.7, d3-nano 原版 −19.1. 按需加载与提醒: mude 1.0 −2.7, Jev 1.14 16.8, Jev 1.13 25.1, d3-nano 原版 −118.4. 归类与路由: mude 1.0 83.6, Jev 1.14 87.5, Jev 1.13 85.8, d3-nano 原版 51.7. 进度与完成判断: mude 1.0 86.6, Jev 1.14 61.6, Jev 1.13 61.6, d3-nano 原版 70.1. 记忆与经验: mude 1.0 58.7, Jev 1.14 75.1, Jev 1.13 72.2, d3-nano 原版 40.5. 多智能体协作: mude 1.0 19.8, Jev 1.14 4.6, Jev 1.13 −0.8, d3-nano 原版 26.0.</desc>
+<desc id="d">每项能力的分数，来自开源仓库上真实编程会话里的 3,193 道请求。0 = 不用决策模型的 mu；100 = 它付出的代价全部消除。 权限放行: mude 1.0 52.6, Jev 1.14 53.7, Jev 1.13 52.7, d3-nano 原版 5.9. 恶意指令识别: 以构造题为主，目前还不出分。. 上下文压缩: mude 1.0 64.6, Jev 1.14 76.7, Jev 1.13 70.7, d3-nano 原版 −19.1. 按需加载与提醒: mude 1.0 −2.7, Jev 1.14 16.8, Jev 1.13 25.1, d3-nano 原版 −118.4. 归类与路由: mude 1.0 83.6, Jev 1.14 87.5, Jev 1.13 85.8, d3-nano 原版 51.7. 进度与完成判断: mude 1.0 86.6, Jev 1.14 61.6, Jev 1.13 61.6, d3-nano 原版 70.1. 记忆与经验: mude 1.0 58.7, Jev 1.14 75.1, Jev 1.13 72.2, d3-nano 原版 40.5. 多智能体协作: mude 1.0 19.8, Jev 1.14 4.6, Jev 1.13 −0.8, d3-nano 原版 26.0.</desc>
 <text x="0" y="22" font-size="17" font-weight="650" fill="#1d1b22">mubench 1.0 主榜：八项能力</text>
-<text x="0" y="48" font-size="13" fill="#5f5f6b">每项能力的分数，来自真实编程会话里的 3,193 道请求。0 = 不用决策模型的 mu；100 = 它付出的代价全部消除。</text>
+<text x="0" y="48" font-size="13" fill="#5f5f6b">每项能力的分数，来自开源仓库上真实编程会话里的 3,193 道请求。0 = 不用决策模型的 mu；100 = 它付出的代价全部消除。</text>
 <rect x="0" y="68.5" width="10" height="10" rx="3" fill="#b42d86"/>
 <text x="16" y="78" font-size="12.5" fill="#1d1b22">mude 1.0</text>
 <rect x="89.12" y="68.5" width="10" height="10" rx="3" fill="#5b45db"/>
@@ -150,6 +150,6 @@
 <text x="716" y="680" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">50</text>
 <text x="824" y="680" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#8e8e99">100</text>
 <text x="0" y="712" font-size="12" fill="#5f5f6b">* 题少或分数不稳：不到 150 道题，题目来自不到 20 个任务，或者不用决策模型时 mu 的正确率已经超过 95%。</text>
-<text x="0" y="734" font-size="12" fill="#5f5f6b">† 恶意指令识别今后以构造题为主计分，目前还不出分。</text>
+<text x="0" y="734" font-size="12" fill="#5f5f6b">† 恶意指令识别今后以构造题为主计分，因为真实会话里很少出现攻击。目前还不出分。</text>
 <text x="0" y="756" font-size="12" fill="#5f5f6b">低于 −25 的柱子截断显示，右侧数字是实际分数。</text>
 </svg>

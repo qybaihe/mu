@@ -197,12 +197,12 @@ By default, the judge you had before stays behind mude. What mude can't answer (
 
 ### mubench 1.0: how decision models compare
 
-mubench is mu's benchmark for decision models. On its main board, every item is a request mu sent to a decision model during a real coding session, word for word. Each answer is scored by the cost of its consequences, and every model is compared with mu running without one: 0 is no better, 100 removes all of that cost. The full leaderboard, with a sub-board of constructed scenarios, is at [usemu.dev/en/mubench](https://usemu.dev/en/mubench/). mubench will be open source soon.
+mubench is mu's benchmark for decision models. On its main board, every item is a request mu sent to a decision model, word for word, in a real coding session on an open-source repository. Each answer is scored by the cost of its consequences, and every model is compared with mu running without one: 0 is no better, 100 removes all of that cost. The full leaderboard, with a sub-board of constructed scenarios, is at [usemu.dev/en/mubench](https://usemu.dev/en/mubench/). mubench will be open source soon.
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/images/mubench/composite-en-dark.svg">
-    <img src="docs/images/mubench/composite-en-light.svg" width="880" alt="mubench 1.0, main board: overall score on 3,193 requests from real coding sessions, with 95% intervals. mude 1.0 64.9 (59.1–72.3); Jev 1.14 63.1 (55.6–70.5); Jev 1.13 61.5 (53.8–69.1); d3-nano (original) 32.0 (21.3–39.0); no decision model: 0.">
+    <img src="docs/images/mubench/composite-en-light.svg" width="880" alt="mubench 1.0, main board: overall score on 3,193 requests from real coding sessions on open-source repositories, with 95% intervals. mude 1.0 64.9 (59.1–72.3); Jev 1.14 63.1 (55.6–70.5); Jev 1.13 61.5 (53.8–69.1); d3-nano (original) 32.0 (21.3–39.0); no decision model: 0.">
   </picture>
 </p>
 
