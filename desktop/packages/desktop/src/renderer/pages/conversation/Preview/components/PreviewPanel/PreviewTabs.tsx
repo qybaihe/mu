@@ -185,7 +185,17 @@ const PreviewTabs: React.FC<PreviewTabsProps> = ({
                 key={tab.id}
                 className={`flex items-center gap-6px px-10px h-full cursor-pointer transition-colors flex-shrink-0 ${tab.id === activeTabId ? 'bg-bg-1 text-t-primary' : 'text-t-secondary hover:bg-bg-3'}`}
                 style={{ maxWidth: `${MAX_TAB_WIDTH_PX}px` }}
+                role='tab'
+                tabIndex={0}
+                aria-selected={tab.id === activeTabId}
                 onClick={() => onSwitchTab(tab.id)}
+                onKeyDown={(e) => {
+                  if (e.target !== e.currentTarget) return;
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSwitchTab(tab.id);
+                  }
+                }}
                 onContextMenu={(e) => onContextMenu(e, tab.id)}
                 // 中键关闭 / Middle-click to close.
                 //
@@ -232,15 +242,17 @@ const PreviewTabs: React.FC<PreviewTabsProps> = ({
                 {/* 叉叉放在 16px 的悬停方框里，图标本身收到 12px，与右侧面板按钮的视觉重量一致。
                     The close glyph sits in a 16px hover box, trimmed to 12px, so it weighs
                     the same as the panel buttons on the right. */}
-                <span
-                  className='flex items-center justify-center w-16px h-16px rd-4px flex-shrink-0 hover:bg-bg-3 transition-colors'
+                <button
+                  type='button'
+                  aria-label={t('common.close')}
+                  className='flex items-center justify-center w-16px h-16px rd-4px flex-shrink-0 hover:bg-bg-3 transition-colors bg-transparent border-0 p-0'
                   onClick={(e) => {
                     e.stopPropagation();
                     onCloseTab(tab.id);
                   }}
                 >
                   <Close theme='outline' size='12' fill={iconColors.secondary} className='hover:fill-primary' />
-                </span>
+                </button>
               </div>
             ))
           ) : (
@@ -254,9 +266,11 @@ const PreviewTabs: React.FC<PreviewTabsProps> = ({
             {/* 最大化 / 还原：隐藏聊天区让预览铺满，两侧面板保持不变
                 Maximize / restore: hide the chat area so the preview fills it; side panels stay unchanged */}
             {onToggleMaximize && (
-              <div
-                className='flex items-center justify-center w-20px h-20px rd-4px cursor-pointer hover:bg-bg-3 transition-colors'
+              <button
+                type='button'
+                className='flex items-center justify-center w-20px h-20px rd-4px cursor-pointer hover:bg-bg-3 transition-colors bg-transparent border-0 p-0'
                 onClick={onToggleMaximize}
+                aria-label={isMaximized ? t('preview.restorePanel') : t('preview.maximizePanel')}
                 title={isMaximized ? t('preview.restorePanel') : t('preview.maximizePanel')}
               >
                 {isMaximized ? (
@@ -264,16 +278,18 @@ const PreviewTabs: React.FC<PreviewTabsProps> = ({
                 ) : (
                   <IconFullscreen style={{ fontSize: 14, color: iconColors.secondary }} />
                 )}
-              </div>
+              </button>
             )}
             {onClosePanel && (
-              <div
-                className='flex items-center justify-center w-20px h-20px rd-4px cursor-pointer hover:bg-bg-3 transition-colors'
+              <button
+                type='button'
+                className='flex items-center justify-center w-20px h-20px rd-4px cursor-pointer hover:bg-bg-3 transition-colors bg-transparent border-0 p-0'
                 onClick={onClosePanel}
+                aria-label={t('preview.collapsePanel')}
                 title={t('preview.collapsePanel')}
               >
                 <IconShrink style={{ fontSize: 14, color: iconColors.secondary }} />
-              </div>
+              </button>
             )}
           </div>
         )}

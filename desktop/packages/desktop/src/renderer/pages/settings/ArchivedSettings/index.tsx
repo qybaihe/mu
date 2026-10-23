@@ -414,8 +414,18 @@ const ArchivedSettings: React.FC = () => {
       className={`group box-border flex h-56px items-center gap-10px px-8px py-6px transition-colors hover:bg-fill-1 ${
         selectionMode ? 'cursor-pointer' : ''
       }`}
+      role={selectionMode ? 'checkbox' : undefined}
+      tabIndex={selectionMode ? 0 : undefined}
+      aria-checked={selectionMode ? selectedKeys.has(row.key) : undefined}
       onClick={() => {
         if (selectionMode) toggleRowSelected(row);
+      }}
+      onKeyDown={(event) => {
+        if (!selectionMode || event.target !== event.currentTarget) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          toggleRowSelected(row);
+        }
       }}
     >
       {selectionMode ? (
