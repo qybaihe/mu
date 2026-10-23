@@ -130,6 +130,31 @@ describe("mu setup, as the launcher starts it", () => {
 		expect(plan([KEY, "another"])).toEqual({ error: "mu setup takes one key at most (mu setup --help)", code: 2 });
 	});
 
+	it("tells the wizard on a Mac where mude 1.0 goes, as mu judge mude is told", () => {
+		const plan = planSetup({
+			...setupArgs,
+			platform: "darwin",
+			argv: [],
+			root: POSIX_ROOT,
+			fs: disk(posixInstalled),
+		});
+		if (plan.error !== undefined) throw new Error(plan.error);
+		expect(plan.env).toMatchObject({
+			MU_MUDE_HOME: "/home/bai/.mu",
+			MU_MUDE_ENV_FILE: `${POSIX_ROOT}/.env`,
+			MU_MUDE_LOCK: `${POSIX_ROOT}/kyrn/local-judge/mude-requirements.lock.txt`,
+		});
+		const linux = planSetup({
+			...setupArgs,
+			platform: "linux",
+			argv: [],
+			root: POSIX_ROOT,
+			fs: disk(posixInstalled),
+		});
+		if (linux.error !== undefined) throw new Error(linux.error);
+		expect(linux.env.MU_MUDE_HOME).toBeUndefined();
+	});
+
 	it("runs the package's built wizard on Windows, and the .env of mu's home", () => {
 		const built = `${WIN_PACKAGE}\\judge\\dist\\setup.js`;
 		const plan = planSetup({
