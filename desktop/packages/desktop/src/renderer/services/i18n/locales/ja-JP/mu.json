@@ -226,8 +226,10 @@
       "name": "mude 1.0（この Mac 上）",
       "tierHelp": "この Mac で動作します。設定は「判定器」ページで行います。",
       "notInstalled": "未インストール。",
-      "unfinished": "前回のインストールは完了していません。もう一度インストールすると、中断したところから再開します。",
+      "unfinished": "前回のインストールは完了していません。続けると、中断したところから再開します。",
+      "unfinishedDownloaded": "{{done}} / {{total}} GB をダウンロード済みです。続けると、中断したところから再開します。",
       "install": "mude 1.0 をインストール",
+      "continue": "インストールを続ける",
       "consent": {
         "title": "mude 1.0 をインストールしますか？",
         "download": "mu は Hugging Face から mude 1.0（約 {{download}} GB）をダウンロードし、そのための Python 環境（約 {{python}} GB）を用意します。数分かかります。",
@@ -269,8 +271,9 @@
         "start": "mude 1.0 のサーバーを起動しています…"
       },
       "downloaded": "{{done}} / {{total}} GB",
+      "downloadedSoFar": "{{done}} / {{total}} GB をダウンロード済みです。",
       "checking": "ダウンロードしたファイルを確認しています…",
-      "cancelled": "インストールをキャンセルしました。ダウンロード済みの部分は残り、もう一度インストールするとそこから再開します。",
+      "cancelled": "インストールをキャンセルしました。ダウンロード済みの部分は残ります。",
       "failed": {
         "install": "mude 1.0 をインストールできませんでした。",
         "enable": "mude 1.0 をオンにできませんでした。",

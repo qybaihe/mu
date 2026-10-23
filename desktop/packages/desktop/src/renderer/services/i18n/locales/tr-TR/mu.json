@@ -226,8 +226,10 @@
       "name": "mude 1.0 (bu Mac'te)",
       "tierHelp": "Bu Mac'te çalışır. Hakemler sayfasında kurun.",
       "notInstalled": "Kurulu değil.",
-      "unfinished": "Son kurulum tamamlanmadı. Yeniden kurmak, kaldığı yerden devam eder.",
+      "unfinished": "Son kurulum tamamlanmadı. Devam ederseniz kaldığı yerden sürer.",
+      "unfinishedDownloaded": "{{done}} / {{total}} GB indirildi. Devam ederseniz kurulum kaldığı yerden sürer.",
       "install": "mude 1.0'ı kur",
+      "continue": "Kuruluma devam et",
       "consent": {
         "title": "mude 1.0 kurulsun mu?",
         "download": "mu, mude 1.0'ı Hugging Face'ten indirir (yaklaşık {{download}} GB) ve onun için bir Python ortamı kurar (yaklaşık {{python}} GB). Bu birkaç dakika sürer.",
@@ -269,8 +271,9 @@
         "start": "mude 1.0 sunucusu başlatılıyor…"
       },
       "downloaded": "{{done}} / {{total}} GB",
+      "downloadedSoFar": "{{done}} / {{total}} GB indirildi.",
       "checking": "İndirilen dosyalar denetleniyor…",
-      "cancelled": "Kurulum iptal edildi. İndirilenler saklanır; yeniden kurmak oradan devam eder.",
+      "cancelled": "Kurulum iptal edildi. İndirilenler saklanır.",
       "failed": {
         "install": "mude 1.0 kurulamadı.",
         "enable": "mude 1.0 açılamadı.",

@@ -226,8 +226,10 @@
       "name": "mude 1.0 (on this Mac)",
       "tierHelp": "Runs on this Mac. Set it up on the Judges page.",
       "notInstalled": "Not installed.",
-      "unfinished": "The last install didn't finish. Installing again picks up where it stopped.",
+      "unfinished": "The last install didn't finish. Continuing picks up where it stopped.",
+      "unfinishedDownloaded": "Downloaded {{done}} of {{total}} GB. Continuing picks up where it stopped.",
       "install": "Install mude 1.0",
+      "continue": "Continue installing",
       "consent": {
         "title": "Install mude 1.0?",
         "download": "mu downloads mude 1.0 from Hugging Face (about {{download}} GB) and sets up a Python environment for it (about {{python}} GB). This takes a few minutes.",
@@ -269,8 +271,9 @@
         "start": "Starting mude 1.0's server…"
       },
       "downloaded": "{{done}} of {{total}} GB",
+      "downloadedSoFar": "Downloaded {{done}} of {{total}} GB.",
       "checking": "Checking the downloaded files…",
-      "cancelled": "Install canceled. What's downloaded is kept, and installing again picks up from there.",
+      "cancelled": "Install canceled. What's downloaded is kept.",
       "failed": {
         "install": "Couldn't install mude 1.0.",
         "enable": "Couldn't turn on mude 1.0.",

@@ -152,7 +152,11 @@ describe('mude as the app manages it', () => {
   it('passes the flags each command takes', async () => {
     const cases: [Parameters<Mude['run']>, string[]][] = [
       [['install'], ['install']],
-      [['install', false], ['install']],
+      // An answer given now wins over what an install that stopped was asked.
+      [
+        ['install', false],
+        ['install', '--with-fallback'],
+      ],
       [
         ['install', true],
         ['install', '--local-only'],

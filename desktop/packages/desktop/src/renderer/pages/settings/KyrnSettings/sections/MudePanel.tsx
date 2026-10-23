@@ -131,7 +131,7 @@ export const mudeInstalled = (status: MudeStatus | undefined): boolean =>
 
 /**
  * An install stopped part way, not one never started: some of the model is on disk (a partly downloaded file
- * included), or its Python environment is set up, but not all of it. Installing again goes on from there.
+ * included), or its Python environment is set up, but not all of it. Continuing it goes on from there.
  */
 const mudeUnfinished = (status: MudeStatus | undefined): boolean =>
   Boolean(
@@ -169,9 +169,9 @@ type MudePanelProps = {
 };
 
 /**
- * mude chosen as the judge on the judges page: install it (after the consent), or where it is installed, its server,
- * whether it is the only judge, its folder and uninstalling it. Each applies at once through `mu judge mude` in the
- * main process, outside the save bar.
+ * mude chosen as the judge on the judges page: install it (after the consent, or straight on where an install stopped
+ * part way), or where it is installed, its server, whether it is the only judge, its folder and uninstalling it. Each
+ * applies at once through `mu judge mude` in the main process, outside the save bar.
  */
 export default function MudePanel({ mude, unsaved }: MudePanelProps) {
   const { t, i18n } = useTranslation();
@@ -188,15 +188,16 @@ export default function MudePanel({ mude, unsaved }: MudePanelProps) {
   const language = i18n.language;
   const installed = mudeInstalled(status);
   const supported = status?.supported !== false;
-  // The line under the status: what it takes while it runs (where the status does not already say what it uses), that
-  // an install stopped part way (unless how it ended says so already), or what installing takes.
+  const unfinished = mudeUnfinished(status);
+  // The line under the status: what it takes while it runs (where the status does not already say what it uses), how
+  // much of an install that stopped part way is there, or what installing takes.
   let hint: string | undefined;
   if (installed)
     hint =
       status?.running && status.ready && status.memoryBytes
         ? t('mu.judges.mude.shared')
         : t('mu.judges.mude.resources', { memory: formatNumber(MUDE_MEMORY_GB, language) });
-  else if (mudeUnfinished(status)) hint = installEnded(task) ? undefined : t('mu.judges.mude.unfinished');
+  else if (unfinished) hint = unfinishedLine(t, status, installEnded(task), language);
   else hint = consentLine(t, language);
 
   const install = () => {
@@ -215,6 +216,11 @@ export default function MudePanel({ mude, unsaved }: MudePanelProps) {
       cancelText: t('common.cancel'),
       onOk: () => void run('install', localOnly),
     });
+  };
+  // An install that stopped part way goes on as it was agreed to: no consent again, and no "Only local" either way,
+  // so the command keeps the choice the stopped install was started with.
+  const resume = (): void => {
+    void run('install');
   };
   const uninstall = () =>
     modal.confirm?.({
@@ -255,8 +261,14 @@ export default function MudePanel({ mude, unsaved }: MudePanelProps) {
           </Button>
         ) : null}
         {supported && status && !installed && !busy ? (
-          <Button size='small' type='primary' disabled={unsaved} data-testid='mu-mude-install' onClick={install}>
-            {t('mu.judges.mude.install')}
+          <Button
+            size='small'
+            type='primary'
+            disabled={unsaved}
+            data-testid='mu-mude-install'
+            onClick={unfinished ? resume : install}
+          >
+            {t(unfinished ? 'mu.judges.mude.continue' : 'mu.judges.mude.install')}
           </Button>
         ) : null}
         {supported && status && installed && !busy ? (
@@ -328,8 +340,8 @@ type MudeSetupProps = {
 
 /**
  * mude in the first-run guide, set up where it is picked: what it takes, one button, the install's progress, why it
- * failed with a way to try again, and that it is the judge once it is. With the judges behind it as usual; the
- * settings have the rest.
+ * failed with a way to try again, how much of an install that stopped part way is there with a way to continue it,
+ * and that it is the judge once it is. With the judges behind it as usual; the settings have the rest.
  */
 export function MudeSetup({ mude, judged }: MudeSetupProps) {
   const { t, i18n } = useTranslation();
@@ -365,49 +377,46 @@ export function MudeSetup({ mude, judged }: MudeSetupProps) {
       </div>
     );
   const installed = mudeInstalled(status);
+  const unfinished = mudeUnfinished(status);
   const failed = task?.phase === 'failed' && (task.command === 'install' || task.command === 'enable');
+  // The line above the button: what mude takes while it runs, how much of an install that stopped part way is there
+  // (it goes on as agreed to when it started, so not what installing takes again), or what installing takes. Not
+  // after a failure, which says why under it, unless an install stopped part way.
+  let hint: string | undefined;
+  if (unfinished) hint = unfinishedLine(t, status, failed || installEnded(task), language);
+  else if (failed) hint = undefined;
+  else if (installed) hint = t('mu.judges.mude.resources', { memory: formatNumber(MUDE_MEMORY_GB, language) });
+  else hint = consentLine(t, language);
   return (
     <div className={styles.localJudge} data-testid='mu-mude'>
-      {failed ? (
-        <>
-          <Failure state={state} />
-          <div className={styles.localJudgeActions}>
-            <Button
-              size='small'
-              type='primary'
-              data-testid='mu-mude-retry'
-              onClick={() => void run(task.command === 'enable' && installed ? 'enable' : 'install')}
-            >
-              {t('mu.judges.mude.retry')}
-            </Button>
-          </div>
-        </>
-      ) : (
-        <>
-          {mudeUnfinished(status) && !installEnded(task) ? (
-            <div className={styles.choiceHint} data-testid='mu-mude-unfinished'>
-              {t('mu.judges.mude.unfinished')}
-            </div>
-          ) : null}
-          <div className={styles.choiceHint} data-testid='mu-mude-hint'>
-            {installed
-              ? t('mu.judges.mude.resources', { memory: formatNumber(MUDE_MEMORY_GB, language) })
-              : consentLine(t, language)}
-          </div>
-          {/* A cancelled install, above the button that goes on with it. */}
-          <Failure state={state} />
-          <div className={styles.localJudgeActions}>
-            <Button
-              size='small'
-              type='primary'
-              data-testid='mu-mude-install'
-              onClick={() => void run(installed ? 'enable' : 'install')}
-            >
-              {t(installed ? 'mu.judges.mude.use' : 'mu.judges.mude.install')}
-            </Button>
-          </div>
-        </>
-      )}
+      {hint ? (
+        <div className={styles.choiceHint} data-testid='mu-mude-hint'>
+          {hint}
+        </div>
+      ) : null}
+      {/* Why the last command failed, or a cancelled install, above the button that goes on. */}
+      <Failure state={state} />
+      <div className={styles.localJudgeActions}>
+        {failed ? (
+          <Button
+            size='small'
+            type='primary'
+            data-testid='mu-mude-retry'
+            onClick={() => void run(task.command === 'enable' && installed ? 'enable' : 'install')}
+          >
+            {t(unfinished ? 'mu.judges.mude.continue' : 'mu.judges.mude.retry')}
+          </Button>
+        ) : (
+          <Button
+            size='small'
+            type='primary'
+            data-testid='mu-mude-install'
+            onClick={() => void run(installed ? 'enable' : 'install')}
+          >
+            {t(installed ? 'mu.judges.mude.use' : unfinished ? 'mu.judges.mude.continue' : 'mu.judges.mude.install')}
+          </Button>
+        )}
+      </div>
       {problem ? (
         <div className={styles.localJudgeProblem} role='alert'>
           <MuErrorMessage error={problem} />
@@ -567,6 +576,27 @@ const consentLine = (t: TFunction, language: string): string =>
     python: gb(MUDE_PYTHON_GB, language),
     memory: formatNumber(MUDE_MEMORY_GB, language),
   });
+
+/**
+ * How much of an install that stopped part way is there, said where it is continued: the model's share on disk, and
+ * that continuing picks up from there. `ended`: how the install ended (cancelled, failed) is said beside it, and says
+ * what is kept; then only the amount, or nothing when none of the model is there.
+ */
+function unfinishedLine(
+  t: TFunction,
+  status: MudeStatus | undefined,
+  ended: boolean,
+  language: string
+): string | undefined {
+  const bytes = status?.downloadedBytes ?? 0;
+  if (bytes <= 0) return ended ? undefined : t('mu.judges.mude.unfinished');
+  // In decimal gigabytes as the consent gives the size, and never more than all of it.
+  const amount = {
+    done: gb(Math.min(bytes / DOWNLOAD_GB_BYTES, MUDE_DOWNLOAD_GB), language),
+    total: gb(MUDE_DOWNLOAD_GB, language),
+  };
+  return ended ? t('mu.judges.mude.downloadedSoFar', amount) : t('mu.judges.mude.unfinishedDownloaded', amount);
+}
 
 /** Gigabytes with one decimal, in the app language. */
 const gb = (value: number, language: string): string =>

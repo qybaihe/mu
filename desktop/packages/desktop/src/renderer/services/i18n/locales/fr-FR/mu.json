@@ -226,8 +226,10 @@
       "name": "mude 1.0 (sur ce Mac)",
       "tierHelp": "Tourne sur ce Mac. Configurez-le sur la page « Juges ».",
       "notInstalled": "Non installé.",
-      "unfinished": "La dernière installation n’est pas allée au bout. Réinstaller reprend là où elle s’est arrêtée.",
+      "unfinished": "La dernière installation n’est pas allée au bout. La poursuivre reprend là où elle s’est arrêtée.",
+      "unfinishedDownloaded": "{{done}} sur {{total}} Go téléchargés. Poursuivre l’installation reprend là où elle s’est arrêtée.",
       "install": "Installer mude 1.0",
+      "continue": "Poursuivre l’installation",
       "consent": {
         "title": "Installer mude 1.0 ?",
         "download": "mu télécharge mude 1.0 depuis Hugging Face (environ {{download}} Go) et lui prépare un environnement Python (environ {{python}} Go). Cela prend quelques minutes.",
@@ -269,8 +271,9 @@
         "start": "Démarrage du serveur de mude 1.0…"
       },
       "downloaded": "{{done}} sur {{total}} Go",
+      "downloadedSoFar": "{{done}} sur {{total}} Go téléchargés.",
       "checking": "Vérification des fichiers téléchargés…",
-      "cancelled": "Installation annulée. Ce qui est déjà téléchargé est conservé, et réinstaller reprend à partir de là.",
+      "cancelled": "Installation annulée. Ce qui est déjà téléchargé est conservé.",
       "failed": {
         "install": "Impossible d’installer mude 1.0.",
         "enable": "Impossible d’activer mude 1.0.",

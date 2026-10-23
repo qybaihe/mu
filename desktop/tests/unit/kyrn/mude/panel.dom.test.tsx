@@ -198,6 +198,8 @@ describe('mude as a choice of the judges page', () => {
     expect(tile.textContent?.match(/GB of memory/g)).toHaveLength(1);
     // Picking it changed nothing to save: its command does that.
     expect(screen.queryByTestId('mu-save-bar')).not.toBeInTheDocument();
+    // Nothing on disk yet: a fresh install, after the consent.
+    expect(within(tile).getByTestId('mu-mude-install')).toHaveTextContent('Install mude 1.0');
     fireEvent.click(within(tile).getByTestId('mu-mude-install'));
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toHaveTextContent('Install mude 1.0?');
@@ -304,9 +306,12 @@ describe('mude as a choice of the judges page', () => {
     expect(screen.getByTestId('mu-judge-choice-jev')).toHaveAttribute('aria-checked', 'false');
     const cancelled = within(tile).getByTestId('mu-mude-cancelled');
     expect(cancelled).toHaveTextContent(enMu.judges.mude.cancelled);
-    expect(before(cancelled, within(tile).getByTestId('mu-mude-install'))).toBe(true);
-    // The message says the download is kept: no second sentence that the install did not finish.
-    expect(within(tile).queryByTestId('mu-mude-hint')).not.toBeInTheDocument();
+    const resume = within(tile).getByTestId('mu-mude-install');
+    expect(before(cancelled, resume)).toBe(true);
+    expect(resume).toHaveTextContent('Continue installing');
+    // The message says the download is kept: the line under the status only says how much, no second sentence.
+    expect(within(tile).getByTestId('mu-mude-hint')).toHaveTextContent(/^Downloaded 0\.7 of 1\.8 GB\.$/);
+    expect(tile).not.toHaveTextContent('picks up');
   });
 
   it('opened on a running install, stays on it with why it failed, the command’s output folded', async () => {
@@ -327,8 +332,11 @@ describe('mude as a choice of the judges page', () => {
     expect(tile).toHaveAttribute('aria-checked', 'true');
     const failed = within(tile).getByTestId('mu-mude-failed');
     expect(failed).toHaveTextContent(enMu.judges.mude.error.network);
-    expect(before(failed, within(tile).getByTestId('mu-mude-install'))).toBe(true);
-    expect(within(tile).queryByTestId('mu-mude-hint')).not.toBeInTheDocument();
+    // The model is all there: the button below goes on with the install, and the line above says how much is kept.
+    const resume = within(tile).getByTestId('mu-mude-install');
+    expect(before(failed, resume)).toBe(true);
+    expect(resume).toHaveTextContent('Continue installing');
+    expect(within(tile).getByTestId('mu-mude-hint')).toHaveTextContent(/^Downloaded 1\.8 of 1\.8 GB\.$/);
     expect(within(tile).queryByTestId('mu-mude-error')).not.toBeInTheDocument();
     const details = within(tile).getByTestId('mu-mude-details');
     expect(details).toHaveAttribute('aria-expanded', 'false');
@@ -336,13 +344,37 @@ describe('mude as a choice of the judges page', () => {
     expect(within(tile).getByTestId('mu-mude-error')).toHaveTextContent('uv: failed to fetch mlx');
   });
 
-  it('tells an install that stopped part way from one never started, by what is on disk', async () => {
-    bridge.mudeState.mockResolvedValue(state({ ...NOT_INSTALLED, downloadedBytes: 700_000_000 }));
+  it('continues an install that stopped part way in one click: how much is there, and no consent again', async () => {
+    // Stopped as the app quit or the power went out: no command of this run says how it ended.
+    bridge.mudeState.mockResolvedValue(state({ ...NOT_INSTALLED, downloadedBytes: 900_000_000 }));
     const tile = await judgesPage();
     fireEvent.click(tile);
     expect(within(tile).getByTestId('mu-mude-status')).toHaveTextContent(enMu.judges.mude.notInstalled);
-    expect(within(tile).getByTestId('mu-mude-hint')).toHaveTextContent(enMu.judges.mude.unfinished);
+    expect(within(tile).getByTestId('mu-mude-hint')).toHaveTextContent(
+      'Downloaded 0.9 of 1.8 GB. Continuing picks up where it stopped.'
+    );
     expect(tile).not.toHaveTextContent('to download');
+    const resume = within(tile).getByTestId('mu-mude-install');
+    expect(resume).toHaveTextContent('Continue installing');
+    bridge.mudeRun.mockResolvedValue(
+      state({ ...NOT_INSTALLED, downloadedBytes: 900_000_000 }, task('install', 'running'))
+    );
+    fireEvent.click(resume);
+    // No flag either way: the command keeps the "Only local" choice of the install that stopped.
+    await waitFor(() => expect(bridge.mudeRun).toHaveBeenCalledTimes(1));
+    expect(bridge.mudeRun).toHaveBeenCalledWith({ action: 'install' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('mu-mude-consent')).not.toBeInTheDocument();
+  });
+
+  it('says an install stopped part way without an amount when none of the model is there yet', async () => {
+    bridge.mudeState.mockResolvedValue(state({ ...NOT_INSTALLED, pythonReady: true }));
+    const tile = await judgesPage();
+    fireEvent.click(tile);
+    expect(within(tile).getByTestId('mu-mude-hint')).toHaveTextContent(
+      "The last install didn't finish. Continuing picks up where it stopped."
+    );
+    expect(within(tile).getByTestId('mu-mude-install')).toHaveTextContent('Continue installing');
   });
 
   it('chosen when installed runs `enable`, not a save, and reads the settings again once it ended', async () => {
@@ -457,7 +489,8 @@ describe('mude as a choice of the judges page', () => {
       "mude 1.0 isn't available for download yet. Try again later."
     );
     expect(within(tile).queryByTestId('mu-mude-error')).not.toBeInTheDocument();
-    expect(within(tile).getByTestId('mu-mude-install')).toBeInTheDocument();
+    // Nothing was downloaded: installing again starts afresh.
+    expect(within(tile).getByTestId('mu-mude-install')).toHaveTextContent('Install mude 1.0');
   });
 
   it('names mude in the order by what it is', async () => {

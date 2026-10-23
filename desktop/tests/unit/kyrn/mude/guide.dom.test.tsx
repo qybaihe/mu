@@ -216,6 +216,8 @@ describe('mude in the first-run guide', () => {
     );
     // The memory it takes is said once.
     expect(tile.textContent?.match(/GB of memory/g)).toHaveLength(1);
+    // Nothing on disk yet: a fresh install, with what it takes said right above.
+    expect(within(tile).getByTestId('mu-mude-install')).toHaveTextContent('Install mude 1.0');
     bridge.mudeRun.mockResolvedValue(state(NOT_INSTALLED, task('install', 'running')));
     fireEvent.click(within(tile).getByTestId('mu-mude-install'));
     // With the judges behind it, as usual: no "only local" in the guide.
@@ -312,16 +314,44 @@ describe('mude in the first-run guide', () => {
     expect(within(tile).queryByTestId('mu-mude-error')).not.toBeInTheDocument();
     fireEvent.click(within(tile).getByTestId('mu-mude-details'));
     expect(within(tile).getByTestId('mu-mude-error')).toHaveTextContent('could not be downloaded (fetch failed)');
-    expect(within(tile).getByTestId('mu-mude-retry')).toBeInTheDocument();
+    // What is downloaded is kept: the button goes on from there, and the line above says how much, once.
+    expect(within(tile).getByTestId('mu-mude-retry')).toHaveTextContent('Continue installing');
+    expect(within(tile).getByTestId('mu-mude-hint')).toHaveTextContent(/^Downloaded 0\.7 of 1\.8 GB\.$/);
   });
 
-  it('says an install that stopped part way goes on from there', async () => {
-    bridge.mudeState.mockResolvedValue(state({ ...NOT_INSTALLED, downloadedBytes: 700_000_000 }));
+  it('continues an install that stopped part way in one click, saying how much is there', async () => {
+    // Stopped as the app quit or the power went out: no command of this run says how it ended.
+    bridge.mudeState.mockResolvedValue(state({ ...NOT_INSTALLED, downloadedBytes: 900_000_000 }));
     const { tile } = await judgeStep();
     fireEvent.click(tile);
-    expect(await within(tile).findByTestId('mu-mude-unfinished')).toHaveTextContent(enMu.judges.mude.unfinished);
-    // What installing takes is still said before the one button that does it.
-    expect(within(tile).getByTestId('mu-mude-hint')).toHaveTextContent('1.8 GB to download');
+    expect(await within(tile).findByTestId('mu-mude-hint')).toHaveTextContent(
+      'Downloaded 0.9 of 1.8 GB. Continuing picks up where it stopped.'
+    );
+    // Agreed to when it started: not what installing takes all over again.
+    expect(tile).not.toHaveTextContent('to download');
+    const resume = within(tile).getByTestId('mu-mude-install');
+    expect(resume).toHaveTextContent('Continue installing');
+    bridge.mudeRun.mockResolvedValue(
+      state({ ...NOT_INSTALLED, downloadedBytes: 900_000_000 }, task('install', 'running'))
+    );
+    fireEvent.click(resume);
+    // No flag either way: the command keeps the "Only local" choice of the install that stopped.
+    await waitFor(() => expect(bridge.mudeRun).toHaveBeenCalledTimes(1));
+    expect(bridge.mudeRun).toHaveBeenCalledWith({ action: 'install' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('after a cancelled install, says how much is kept once, beside how it ended', async () => {
+    bridge.mudeState.mockResolvedValue(
+      state({ ...NOT_INSTALLED, downloadedBytes: 900_000_000 }, task('install', 'cancelled', { step: 'download' }))
+    );
+    const { tile } = await judgeStep();
+    fireEvent.click(tile);
+    expect(await within(tile).findByTestId('mu-mude-cancelled')).toHaveTextContent(
+      "Install canceled. What's downloaded is kept."
+    );
+    expect(within(tile).getByTestId('mu-mude-hint')).toHaveTextContent(/^Downloaded 0\.9 of 1\.8 GB\.$/);
+    expect(within(tile).getByTestId('mu-mude-install')).toHaveTextContent('Continue installing');
   });
 
   it('once installed it is the judge, and the guide’s one save keeps mude first with the rest of the guide', async () => {
