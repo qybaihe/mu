@@ -530,6 +530,18 @@ describe("parseArgs", () => {
 			expect(result.messages).toEqual(["explain this"]);
 		});
 
+		test("takes a message that starts with a list item as a message, not an option", () => {
+			const task = "- Fix the parser in src/args.ts.\n- Then run the tests.";
+			const result = parseArgs(["--print", task]);
+			expect(result.diagnostics).toEqual([]);
+			expect(result.messages).toEqual([task]);
+			expect(parseArgs(["-- also a message", "--\tand this"]).messages).toEqual([
+				"-- also a message",
+				"--\tand this",
+			]);
+			expect(parseArgs(["-x"]).diagnostics).toEqual([{ type: "error", message: "Unknown option: -x" }]);
+		});
+
 		test("captures unknown long flags with string values", () => {
 			const result = parseArgs(["--unknown-flag", "message"]);
 			expect(result.messages).toEqual([]);
