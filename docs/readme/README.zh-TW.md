@@ -166,6 +166,24 @@ mu judge mude uninstall             # 刪除模型和它的 Python 環境
 
 預設情況下，原本的判定器排在 mude 後面：mude 答不了的（服務沒在執行，或者它拿不準），以及它暫時還不被信任的兩項注入檢查，交給那個判定器。如果那個判定器是託管的（預設的 Jev 就是），它看到的內容會離開本機。mude 的服務執行時佔用約 4 GB 記憶體，`mu judge mude stop` 可以停掉。其他平台上，可以用[完整版](https://huggingface.co/qybaihe/mude-1.0)（bf16、PyTorch，建議有 CUDA 顯示卡）自帶的 System One 服務執行，再依模型卡的寫法在 `mu.json` 裡把它加成 `typesafe` 判定器。
 
+### mubench 1.0：決策模型怎麼比
+
+mubench 是 mu 為決策模型做的評測。主榜的每一道題，都是 mu 在真實程式設計工作階段裡送給決策模型的請求，一字未改。每個答案按它帶來的後果的代價計分，每個模型都和不用決策模型的 mu 相比：0 分是一樣，100 分是把這部分代價全部消除。完整榜單（含構造情境的副榜）在 [usemu.dev/zh-tw/mubench](https://usemu.dev/zh-tw/mubench/)。mubench 即將開源。
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../images/mubench/composite-zh-dark.svg">
+    <img src="../images/mubench/composite-zh-light.svg" width="880" alt="mubench 1.0 主榜：真實程式設計工作階段裡 3,193 道請求上的綜合分，含 95% 區間。mude 1.0 64.9 (59.1–72.3)；Jev 1.14 63.1 (55.6–70.5)；Jev 1.13 61.5 (53.8–69.1)；d3-nano 原版 32.0 (21.3–39.0)；不用決策模型：0。">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../images/mubench/capabilities-zh-dark.svg">
+    <img src="../images/mubench/capabilities-zh-light.svg" width="880" alt="mubench 1.0 主榜：每項能力的分數，依序是 mude 1.0、Jev 1.14、Jev 1.13、d3-nano 原版。權限放行：52.6、53.7、52.7、5.9；惡意指令識別：目前還不出分；上下文壓縮：64.6、76.7、70.7、−19.1；按需載入與提醒：−2.7、16.8、25.1、−118.4；歸類與路由：83.6、87.5、85.8、51.7；進度與完成判斷：86.6、61.6、61.6、70.1；記憶與經驗：58.7、75.1、72.2、40.5；多代理協作：19.8、4.6、−0.8、26.0。">
+  </picture>
+</p>
+
 ## 實測
 
 下面的數字來自儲存庫自帶的回放腳本 [`kyrn/spikes/judge-bench/test-log-replay.ts`](../../kyrn/spikes/judge-bench/test-log-replay.ts)。方法和完整表格見 [kyrn/docs/09-test-log-admission.md](../../kyrn/docs/09-test-log-admission.md)（簡體中文）。

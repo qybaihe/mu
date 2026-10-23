@@ -122,7 +122,42 @@
 .models-compare thead td { background: var(--code); border-bottom: 1px solid var(--line); }
 .models-compare thead th { width: 41%; }
 .models-compare tbody th { background: none; color: var(--text); font-size: 14px; white-space: normal; }
-.models-soon { margin: 28px 0 0; padding: 32px 24px; border: 1px dashed var(--line-strong); border-radius: 16px; color: var(--muted); text-align: center; }
+
+/* ---- mubench page ---- */
+.mb-open { margin: 18px 0 0; }
+.mb-open .opt-flag { display: inline-block; padding: 2px 12px; font-size: 13px; color: var(--muted); }
+.mb-board { max-width: none; margin-top: 32px; }
+.mb-board table { min-width: 980px; font-variant-numeric: tabular-nums; }
+.mb-board th, .mb-board td { padding: 12px 14px; }
+.mb-board thead th { min-width: 6.5em; white-space: normal; vertical-align: bottom; line-height: 1.35; text-align: right; }
+.mb-board thead th:first-child { min-width: 0; text-align: left; }
+.mb-board td { text-align: right; white-space: nowrap; color: var(--muted); font-size: 15px; }
+.mb-board td b { color: var(--text); font-weight: 700; }
+.mb-board th[scope="row"] { background: var(--bg); color: var(--text); font-size: 14.5px; font-weight: 600; white-space: nowrap; }
+/* The model names stay in view while the numbers scroll sideways in their box. */
+.mb-board th:first-child { position: sticky; left: 0; z-index: 1; box-shadow: inset -1px 0 0 var(--line); }
+.mb-board thead th:first-child { background: var(--code); }
+.mb-board .mb-overall { border-right: 1px solid var(--line); }
+.mb-board tbody .mb-overall { color: var(--text); font-size: 16px; }
+.mb-board tfoot th, .mb-board tfoot td { padding-top: 8px; padding-bottom: 8px; font-size: 13px; font-weight: 400; color: var(--faint); }
+.mb-board tfoot th[scope="row"] { color: var(--muted); font-size: 13px; font-weight: 500; }
+.mb-board tfoot tr:first-child > * { border-top: 1px solid var(--line-strong); }
+.mb-board tfoot tr:last-child > * { border-bottom: 0; }
+.mb-mark { margin-left: 2px; font-size: 0.78em; font-weight: 600; color: var(--judge); }
+.mb-notes { max-width: 840px; margin: 16px 0 0; padding: 0; list-style: none; font-size: 13.5px; color: var(--muted); }
+.mb-notes li + li { margin-top: 4px; }
+.mb-notes .mb-mark { display: inline-block; width: 1.1em; margin: 0; font-size: 1em; }
+.mb-sub-intro { max-width: 720px; margin: 8px 0 0; font-size: 15px; color: var(--muted); }
+.mb-sub { margin-top: 20px; }
+.mb-sub th, .mb-sub td { padding: 9px 12px; }
+.mb-sub td { font-size: 14px; }
+.mb-sub tbody .mb-overall { font-size: 14.5px; }
+.mb-sub th[scope="row"] { font-size: 14px; font-weight: 500; }
+.mb-chart { max-width: 880px; margin: 36px 0 0; }
+.mb-chart picture { display: block; }
+.mb-chart img { width: 100%; height: auto; }
+.mb-caps .chips { margin-top: 10px; }
+.mb-caps .chip { font-family: var(--mono); font-size: 12px; color: var(--muted); }
 
 /* ---- Documentation ---- */
 .docs { display: grid; grid-template-columns: 220px minmax(0, 1fr) 196px; gap: 56px; align-items: start; padding-top: 48px; }
@@ -199,6 +234,8 @@ kbd { padding: 1px 6px; border: 1px solid var(--line-strong); border-bottom-widt
   .ex-row { grid-template-columns: 1fr; gap: 2px; }
   .docs-pager { grid-template-columns: 1fr; }
   .docs-pager .next { grid-column: 1; }
+  /* The phone charts are drawn 360 wide: no larger than that and a bit. */
+  .mb-chart img { max-width: 440px; }
 }
 
 /* Hangul in the mono font comes out widely spaced: Korean labels and verdicts use the body font. */

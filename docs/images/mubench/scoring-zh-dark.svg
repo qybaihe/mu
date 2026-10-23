@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="244" viewBox="0 0 880 244" role="img" aria-labelledby="t d" font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Noto Sans SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif'>
+<title id="t">mubench 怎么给决策模型打分</title>
+<desc id="d">1. 真实请求: mu 在真实编程会话里问决策模型的问题，一字不改，收作一道题。 2. 决策: 被测模型作答：命令直接跑还是先问，结果留下还是丢掉，这一轮算不算完成。 3. 后果: 答案按它带来的后果的代价计分，代价大的错误分量更重。 4. 对照不用决策模型: 这份代价和不用决策模型时的 mu 相比：0 分是一样，100 分是全部消除。</desc>
+<defs><linearGradient id="accent-dark" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f8d3ef"/><stop offset="0.55" stop-color="#dccdfd"/><stop offset="1" stop-color="#cdc5fb"/></linearGradient></defs>
+<text x="0" y="22" font-size="17" font-weight="650" fill="#f2f2f4">mubench 怎么给决策模型打分</text>
+<rect x="0.8" y="44.8" width="191.5" height="194.5" rx="14" fill="#141417" stroke="#26262c" stroke-width="1.5"/>
+<text x="18" y="72" font-size="11" font-family='"SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, "Liberation Mono", monospace' letter-spacing="0.5" fill="#777782">01</text>
+<rect x="18" y="88" width="64" height="34" rx="9" fill="none" stroke="#34343c" stroke-width="1.2"/>
+<line x1="29" y1="100" x2="68" y2="100" stroke="#777782" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="29" y1="110" x2="56" y2="110" stroke="#777782" stroke-width="2.5" stroke-linecap="round"/>
+<text x="18" y="156" font-size="15" font-weight="650" fill="#f2f2f4">真实请求</text>
+<text x="18" y="180" font-size="12.5" fill="#a6a6b0">mu 在真实编程会话里问决</text>
+<text x="18" y="198" font-size="12.5" fill="#a6a6b0">策模型的问题，一字不改，</text>
+<text x="18" y="216" font-size="12.5" fill="#a6a6b0">收作一道题。</text>
+<line x1="201" y1="142" x2="221" y2="142" stroke="#777782" stroke-width="1.4"/>
+<path d="M215,137.5 L221,142 L215,146.5" fill="none" stroke="#777782" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="229.8" y="44.8" width="191.5" height="194.5" rx="14" fill="#141417" stroke="#26262c" stroke-width="1.5"/>
+<text x="247" y="72" font-size="11" font-family='"SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, "Liberation Mono", monospace' letter-spacing="0.5" fill="#777782">02</text>
+<rect x="252" y="100" width="10" height="10" rx="1.2" fill="#e29bee" transform="rotate(45 257 105)"/>
+<rect x="273" y="91" width="38" height="12" rx="6" fill="url(#accent-dark)"/>
+<rect x="273" y="108" width="38" height="12" rx="6" fill="none" stroke="#34343c" stroke-width="1.2"/>
+<text x="247" y="156" font-size="15" font-weight="650" fill="#f2f2f4">决策</text>
+<text x="247" y="180" font-size="12.5" fill="#a6a6b0">被测模型作答：命令直接跑</text>
+<text x="247" y="198" font-size="12.5" fill="#a6a6b0">还是先问，结果留下还是丢</text>
+<text x="247" y="216" font-size="12.5" fill="#a6a6b0">掉，这一轮算不算完成。</text>
+<line x1="430" y1="142" x2="450" y2="142" stroke="#777782" stroke-width="1.4"/>
+<path d="M444,137.5 L450,142 L444,146.5" fill="none" stroke="#777782" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="458.8" y="44.8" width="191.5" height="194.5" rx="14" fill="#141417" stroke="#26262c" stroke-width="1.5"/>
+<text x="476" y="72" font-size="11" font-family='"SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, "Liberation Mono", monospace' letter-spacing="0.5" fill="#777782">03</text>
+<path d="M476,92 H494 Q498,92 498,96 V96 Q498,100 494,100 H476 Z" fill="#777782"/>
+<path d="M476,108 H532 Q536,108 536,112 V112 Q536,116 532,116 H476 Z" fill="#e29bee"/>
+<line x1="476" y1="88" x2="476" y2="120" stroke="#34343c" stroke-width="1.2"/>
+<text x="476" y="156" font-size="15" font-weight="650" fill="#f2f2f4">后果</text>
+<text x="476" y="180" font-size="12.5" fill="#a6a6b0">答案按它带来的后果的代价</text>
+<text x="476" y="198" font-size="12.5" fill="#a6a6b0">计分，代价大的错误分量更</text>
+<text x="476" y="216" font-size="12.5" fill="#a6a6b0">重。</text>
+<line x1="659" y1="142" x2="679" y2="142" stroke="#777782" stroke-width="1.4"/>
+<path d="M673,137.5 L679,142 L673,146.5" fill="none" stroke="#777782" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="687.8" y="44.8" width="191.5" height="194.5" rx="14" fill="#141417" stroke="url(#accent-dark)" stroke-width="1.5"/>
+<text x="705" y="72" font-size="11" font-family='"SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, "Liberation Mono", monospace' letter-spacing="0.5" fill="#777782">04</text>
+<line x1="705" y1="110" x2="769" y2="110" stroke="#34343c" stroke-width="1.2"/>
+<line x1="705" y1="104" x2="705" y2="116" stroke="#34343c" stroke-width="1.2"/>
+<line x1="769" y1="104" x2="769" y2="116" stroke="#34343c" stroke-width="1.2"/>
+<rect x="701.5" y="106.5" width="7" height="7" rx="1.2" fill="#777782" transform="rotate(45 705 110)"/>
+<circle cx="751" cy="110" r="5" fill="#e29bee" stroke="#0e0e10" stroke-width="2"/>
+<text x="705" y="96" font-size="10" text-anchor="middle" font-family='"SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, "Liberation Mono", monospace' fill="#777782">0</text>
+<text x="769" y="96" font-size="10" text-anchor="middle" font-family='"SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, "Liberation Mono", monospace' fill="#777782">100</text>
+<text x="705" y="156" font-size="15" font-weight="650" fill="#f2f2f4">对照不用决策模型</text>
+<text x="705" y="180" font-size="12.5" fill="#a6a6b0">这份代价和不用决策模型时</text>
+<text x="705" y="198" font-size="12.5" fill="#a6a6b0">的 mu 相比：0 分是一样，</text>
+<text x="705" y="216" font-size="12.5" fill="#a6a6b0">100 分是全部消除。</text>
+</svg>
