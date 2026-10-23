@@ -161,6 +161,11 @@
         "tag": "Recommended",
         "description": "TypeSafe's hosted judge model. Fast and accurate. Free on OpenCode Zen for a limited time, or pay per call with a key for TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare or your own service."
       },
+      "mude": {
+        "title": "mude",
+        "tag": "On this Mac",
+        "description": "mu's own judge model, running on this Mac: no key, no per-call cost. Needs Apple silicon, and about {{memory}} GB of memory while it runs."
+      },
       "local": {
         "title": "Local Laya",
         "tag": "Free · offline",
@@ -218,11 +223,7 @@
       }
     },
     "mude": {
-      "title": "mude",
-      "tag": "On this Mac",
       "name": "mude (on this Mac)",
-      "intro": "mu's own judge model, small enough to run on this Mac, with no key and no per-call cost.",
-      "first": "mude answers first. Its controls are below; the judges behind it are on the Judge order page.",
       "tierHelp": "Runs on this Mac. Set it up on the Judges page.",
       "notInstalled": "Not installed.",
       "unfinished": "The last install didn't finish. Installing again picks up where it stopped.",
@@ -240,7 +241,6 @@
       "localOnlyOffLocal": "Decisions mude can't answer go to {{judges}}, which also runs on this Mac.",
       "localOnlyNone": "No judge is set behind mude. When mude can't answer, the decision point uses its default.",
       "use": "Use mude as the judge",
-      "useHelp": "Turning it off brings back the judges it replaced and stops its server.",
       "status": {
         "running": "Running on 127.0.0.1:{{port}}",
         "runningMemory": "Running on 127.0.0.1:{{port}} · {{memory}} GB",
@@ -279,9 +279,16 @@
         "integrity": "A downloaded file didn't pass its check. Try installing again.",
         "unsupported": "mude can't run on this Mac."
       },
-      "unsupported": "mude can't run on this Mac:",
       "noStatus": "Couldn't get mude's status: {{reason}}",
-      "saveFirst": "To change mude, save or discard your other changes first."
+      "saveFirst": "To change mude, save or discard your other changes first.",
+      "needs": "mude needs a Mac with Apple silicon, macOS 14 or later and {{ram}} GB of memory.",
+      "retry": "Try again",
+      "guide": {
+        "consent": "About {{download}} GB to download, plus a Python environment of about {{python}} GB. It runs on this Mac and uses about {{memory}} GB of memory while running.",
+        "instead": "mu uses the hosted judge instead.",
+        "ready": "mude is running and is your judge.",
+        "readyStopped": "mude is your judge. Its server starts with your next mu session."
+      }
     },
     "clm": {
       "address": "Server address",

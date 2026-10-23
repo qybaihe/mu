@@ -118,8 +118,8 @@ describe('the judge choice', () => {
       timeoutMs: 10000,
     };
     const withClm = settings({ judges: { ...settings().judges, clm } });
-    expect(JUDGE_CHOICES).toEqual(['jev', 'local', 'clm']);
-    expect(GUIDE_CHOICES).toEqual(['jev', 'local']);
+    expect(JUDGE_CHOICES).toEqual(['jev', 'mude', 'local', 'clm']);
+    expect(GUIDE_CHOICES).toEqual(['jev', 'mude', 'local']);
     expect(kindOf(clm)).toBe('clm');
     expect(serviceOf(clm)).toBeUndefined();
     expect(choose(withClm, 'clm').tiers).toEqual(['clm']);
@@ -127,6 +127,25 @@ describe('the judge choice', () => {
     expect(profileFor(settings({ judges: { ...settings().judges, gpu: clm } }), 'clm')).toBe('gpu');
     expect(clmKeyVariable(clm)).toBe('MU_JUDGE_CLM_API_KEY');
     expect(clmKeyVariable({ ...clm, apiKeyEnv: '' })).toBe('MU_JUDGE_CLM_API_KEY');
+  });
+
+  it('knows mude by its key, never takes it for Jev, and leaves choosing it to its command', () => {
+    const mude = {
+      type: 'typesafe' as const,
+      model: 'mude',
+      baseUrl: 'http://127.0.0.1:8790/v1/systemone',
+      apiKeyEnv: 'MU_JUDGE_MUDE_KEY',
+      timeoutMs: 4000,
+    };
+    const withMude = settings({ judges: { ...settings().judges, mude }, tiers: ['mude', 'jev'] });
+    expect(kindOf(mude)).toBe('mude');
+    expect(serviceOf(mude)).toBe('typesafe');
+    expect(choiceOf(withMude)).toBe('mude');
+    expect(profileFor(withMude, 'mude')).toBe('mude');
+    // `mu judge mude enable` puts it first (and starts it): a pick in the draft never does.
+    const jevFirst = settings({ judges: { ...settings().judges, mude }, tiers: ['jev'] });
+    expect(choose(jevFirst, 'mude')).toBe(jevFirst);
+    expect(choose(withMude, 'jev').tiers).toEqual(['jev']);
   });
 
   it('stands for the profile of a kind the order already asks, so the key asked for is the one its service needs', () => {
@@ -530,7 +549,7 @@ describe('the order the guide lists services in', () => {
     expect(ids('zh-TW')).toEqual(MODEL_SERVICES.map((service) => service.id));
     for (const language of ['en-US', 'zh-CN']) {
       expect(ids(language).at(-1)).toBe('ollama');
-      expect([...ids(language)].sort()).toEqual(MODEL_SERVICES.map((service) => service.id).sort());
+      expect([...ids(language)].toSorted()).toEqual(MODEL_SERVICES.map((service) => service.id).toSorted());
     }
   });
 });

@@ -99,3 +99,5 @@ export type MudeState = {
 export const MUDE_DOWNLOAD_GB = 1.8;
 export const MUDE_PYTHON_GB = 1;
 export const MUDE_MEMORY_GB = 4;
+/** The memory a Mac needs to run mude at all (the command's own check). */
+export const MUDE_MIN_RAM_GB = 8;

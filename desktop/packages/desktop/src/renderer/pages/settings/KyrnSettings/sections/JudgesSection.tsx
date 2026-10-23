@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { Input, Switch, Tag } from '@arco-design/web-react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { CLM_DEFAULT_ADDRESS, CLM_DEFAULT_MODEL } from '@/common/kyrn/clm';
 import { isPlainRemoteEndpoint, isSafeEndpoint } from '@/common/kyrn/models';
+import { MUDE_MEMORY_GB } from '@/common/kyrn/mude';
 import type { JudgeSettings, KyrnSettings } from '@/common/kyrn/types';
 import MuSelect from '@/renderer/components/base/MuSelect';
 import OneLine from '@/renderer/components/settings/OneLine';
@@ -34,7 +35,7 @@ import {
 import ClmServerCheck from './ClmServerCheck';
 import SectionShell, { Card } from './SectionShell';
 import LocalJudgePanel from './LocalJudgePanel';
-import MudePanel from './MudePanel';
+import MudePanel, { MudeUnsupported, mudeInstalled, mudeOffered, useMude } from './MudePanel';
 import styles from './sections.module.css';
 
 type JudgesSectionProps = {
@@ -42,8 +43,11 @@ type JudgesSectionProps = {
   base: KyrnSettings;
   onChange: (change: (settings: KyrnSettings) => KyrnSettings) => void;
   onKey: (variable: string, value: string) => void;
-  /** mu's own command changed mu.json (mude's panel): the settings are read again. */
-  onReload?: () => void;
+  /**
+   * mu's own command changed mu.json (mude): the settings are read again, and `change` made in the new draft (a choice
+   * picked while mude was the judge, made once its command took mude out of the order).
+   */
+  onReload?: (change?: (settings: KyrnSettings) => KyrnSettings) => void;
 };
 
 /**
@@ -68,9 +72,7 @@ export default function JudgesSection({ draft, base, onChange, onKey, onReload }
           />
         </Row>
       </Card>
-      <JudgeChoices draft={draft} onChange={onChange} onKey={onKey} />
-      {/* mude applies at once, through mu's own command: with unsaved changes, it waits until they're saved. */}
-      <MudePanel unsaved={dirtySections(base, draft).size > 0} onSettingsChanged={onReload} />
+      <JudgeChoices draft={draft} base={base} onChange={onChange} onKey={onKey} onReload={onReload} />
     </SectionShell>
   );
 }
@@ -88,48 +90,105 @@ export function JudgeOrderSection(props: JudgesSectionProps) {
   );
 }
 
-type JudgeChoicesProps = Pick<JudgesSectionProps, 'draft' | 'onChange' | 'onKey'>;
+type JudgeChoicesProps = Pick<JudgesSectionProps, 'draft' | 'base' | 'onChange' | 'onKey' | 'onReload'>;
 
-/** The choice itself: which judge answers the small questions, and what that choice needs. */
-export function JudgeChoices({ draft, onChange, onKey }: JudgeChoicesProps) {
+/**
+ * The choice itself: which judge answers the small questions, and what that choice needs. mude (on a Mac) is chosen
+ * through its command, never by a save: where it is installed, picking it runs `enable`; where it is not, its body
+ * offers the install. Picking another judge while mude is the judge runs `disable` first (which brings back the
+ * judges it replaced and stops its server), then makes the pick in the settings read again. With unsaved changes,
+ * mude's commands wait (they write mu.json, and the save would then be refused as stale), and a pick away from it is
+ * an edit like any other.
+ */
+export function JudgeChoices({ draft, base, onChange, onKey, onReload }: JudgeChoicesProps) {
   const { t } = useTranslation();
   const { settings } = draft;
-  const current = choiceOf(settings);
+  const unsaved = dirtySections(base, draft).size > 0;
+  const kept = useRef({ unsaved, onReload });
+  kept.current = { unsaved, onReload };
+  // A choice to make once mude's `disable` has ended.
+  const after = useRef<JudgeChoice | undefined>(undefined);
+  const mude = useMude((task) => {
+    const next = after.current;
+    after.current = undefined;
+    // Unsaved changes stay: their save is then refused as stale, and the page offers to reload.
+    if (kept.current.unsaved) return;
+    kept.current.onReload?.(next && task.phase === 'done' ? (now) => choose(now, next) : undefined);
+  });
+  // mude picked but not (yet) the judge: its body shows the install, or why it could not be made the judge.
+  const [picked, setPicked] = useState<JudgeChoice>();
+  const saved = choiceOf(settings);
+  // While one of mude's commands runs (an install started before this page was opened too), its progress shows.
+  const current = picked ?? (mude.busy ? 'mude' : saved);
+  const offered = mude.state?.available === true;
+  const mudeOk = mudeOffered(mude.state);
+  const pick = (choice: JudgeChoice) => {
+    if (choice === 'mude') {
+      setPicked('mude');
+      if (mudeInstalled(mude.state?.status) && !unsaved && !mude.busy) void mude.run('enable');
+      return;
+    }
+    setPicked(undefined);
+    if (saved === 'mude' && offered && !unsaved && !mude.busy) {
+      after.current = choice;
+      void mude.run('disable');
+      return;
+    }
+    onChange((now) => choose(now, choice));
+  };
   return (
     <>
       <div className={styles.choices} role='radiogroup' aria-label={t('mu.judges.choose')}>
-        {JUDGE_CHOICES.map((choice) => (
-          <JudgeChoiceTile
-            key={choice}
-            choice={choice}
-            active={current === choice}
-            onPick={() => onChange((now) => choose(now, choice))}
-          >
-            {current === choice ? <ChoiceBody choice={choice} draft={draft} onChange={onChange} onKey={onKey} /> : null}
-          </JudgeChoiceTile>
-        ))}
+        {JUDGE_CHOICES.filter((choice) => choice !== 'mude' || offered).map((choice) => {
+          const disabled = choice === 'mude' && !mudeOk;
+          return (
+            <JudgeChoiceTile
+              key={choice}
+              choice={choice}
+              active={current === choice && !disabled}
+              disabled={disabled}
+              description={disabled ? <MudeUnsupported state={mude.state} /> : undefined}
+              onPick={() => pick(choice)}
+            >
+              {current !== choice ? null : choice === 'mude' ? (
+                <MudePanel mude={mude} unsaved={unsaved} />
+              ) : (
+                <ChoiceBody choice={choice} draft={draft} onChange={onChange} onKey={onKey} />
+              )}
+            </JudgeChoiceTile>
+          );
+        })}
       </div>
-      {current === undefined ? (
-        <div className={styles.meta}>
-          {t(isMude(settings.judges[settings.tiers[0]]) ? 'mu.judges.mude.first' : 'mu.judges.custom')}
-        </div>
-      ) : null}
+      {current === undefined ? <div className={styles.meta}>{t('mu.judges.custom')}</div> : null}
     </>
   );
 }
 
-type TileProps = { choice: JudgeChoice; active: boolean; onPick: () => void; children?: React.ReactNode };
+type TileProps = {
+  choice: JudgeChoice;
+  active: boolean;
+  onPick: () => void;
+  /** Cannot be picked on this machine; `description` then says why. */
+  disabled?: boolean;
+  /** Instead of the choice's own description. */
+  description?: React.ReactNode;
+  children?: React.ReactNode;
+};
 
-/** One of the three judge choices, worded from the mu i18n module. */
-export function JudgeChoiceTile({ choice, active, onPick, children }: TileProps) {
-  const { t } = useTranslation();
+/** One of the judge choices, worded from the mu i18n module. */
+export function JudgeChoiceTile({ choice, active, onPick, disabled, description, children }: TileProps) {
+  const { t, i18n } = useTranslation();
   return (
     <ChoiceTile
       testId={`mu-judge-choice-${choice}`}
       title={t(`mu.judges.choices.${choice}.title`)}
       tag={t(`mu.judges.choices.${choice}.tag`)}
-      description={t(`mu.judges.choices.${choice}.description`)}
+      description={
+        description ??
+        t(`mu.judges.choices.${choice}.description`, { memory: formatNumber(MUDE_MEMORY_GB, i18n.language) })
+      }
       active={active}
+      disabled={disabled}
       onPick={onPick}
     >
       {children}
@@ -156,6 +215,9 @@ export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: Bo
   const { settings } = draft;
   const name = profileFor(settings, choice);
   const judge = name ? settings.judges[name] : undefined;
+
+  // mude's body is its own panel (MudePanel, MudeSetup): it needs mude's state, which the choices read once.
+  if (choice === 'mude') return null;
 
   if (choice === 'clm') {
     if (!name || !judge) return null;
@@ -303,7 +365,10 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
   // Every judge in the order, Jev, Laya and CLM when they are not in it yet, and the other classifier models (Clef).
   const offered = [
     ...settings.tiers,
-    ...JUDGE_CHOICES.filter((choice) => !settings.tiers.some((name) => kindOf(settings.judges[name]) === choice))
+    // mude goes into the order through its command only (it is installed and started there).
+    ...JUDGE_CHOICES.filter(
+      (choice) => choice !== 'mude' && !settings.tiers.some((name) => kindOf(settings.judges[name]) === choice)
+    )
       .map((choice) => profileFor(settings, choice))
       .filter((name): name is string => name !== undefined),
     ...Object.keys(settings.judges).filter(

@@ -161,6 +161,11 @@
         "tag": "推荐",
         "description": "TypeSafe 托管的判定模型。又快又准。在 OpenCode Zen 上限时免费；也可以用 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare 或你自己服务的密钥，按次计费。"
       },
+      "mude": {
+        "title": "mude",
+        "tag": "在这台 Mac 上",
+        "description": "mu 自己的判定模型，在这台 Mac 上运行：不需要密钥，也不按次收费。需要 Apple 芯片，运行时约占用 {{memory}} GB 内存。"
+      },
       "local": {
         "title": "本地 Laya",
         "tag": "免费 · 离线",
@@ -218,11 +223,7 @@
       }
     },
     "mude": {
-      "title": "mude",
-      "tag": "在这台 Mac 上",
       "name": "mude（在这台 Mac 上）",
-      "intro": "mu 自己的判定模型，小到可以在这台 Mac 上运行，不需要密钥，也不按次收费。",
-      "first": "现在由 mude 第一个回答，可以在下面管理它；排在它后面的判定器在「判定顺序」页。",
       "tierHelp": "在这台 Mac 上运行。请在「判定器」页设置。",
       "notInstalled": "未安装。",
       "unfinished": "上次安装没有完成。再次安装会从中断的地方继续。",
@@ -240,7 +241,6 @@
       "localOnlyOffLocal": "mude 无法回答的判定会交给同样在这台 Mac 上运行的 {{judges}}。",
       "localOnlyNone": "mude 后面没有设置其他判定器。mude 无法回答时，判定点采用它的默认策略。",
       "use": "使用 mude 作为判定器",
-      "useHelp": "关闭后会恢复被它替换的判定器，并停止它的服务。",
       "status": {
         "running": "正在 127.0.0.1:{{port}} 上运行",
         "runningMemory": "正在 127.0.0.1:{{port}} 上运行 · {{memory}} GB",
@@ -279,9 +279,16 @@
         "integrity": "有个下载的文件没有通过校验，请重新安装。",
         "unsupported": "mude 无法在这台 Mac 上运行。"
       },
-      "unsupported": "mude 无法在这台 Mac 上运行：",
       "noStatus": "无法获取 mude 的状态：{{reason}}",
-      "saveFirst": "要更改 mude，请先保存或放弃其他更改。"
+      "saveFirst": "要更改 mude，请先保存或放弃其他更改。",
+      "needs": "mude 需要搭载 Apple 芯片、macOS 14 或更高版本、内存 {{ram}} GB 以上的 Mac。",
+      "retry": "重试",
+      "guide": {
+        "consent": "需要下载约 {{download}} GB，另加约 {{python}} GB 的 Python 环境。它在这台 Mac 上运行，运行时约占用 {{memory}} GB 内存。",
+        "instead": "mu 会改用云端判定器。",
+        "ready": "mude 已在运行，现在是你的判定器。",
+        "readyStopped": "mude 现在是你的判定器，它的服务会在下次 mu 会话开始时启动。"
+      }
     },
     "clm": {
       "address": "服务器地址",

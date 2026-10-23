@@ -161,6 +161,11 @@
         "tag": "おすすめ",
         "description": "TypeSafe がホストする判定モデルです。高速かつ正確です。OpenCode Zen では期間限定で無料。TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare、または自前のサービスのキーを使えば呼び出しごとに課金されます。"
       },
+      "mude": {
+        "title": "mude",
+        "tag": "この Mac 上",
+        "description": "mu 独自の判定モデルをこの Mac で動かします。キー不要で、呼び出しごとの費用もかかりません。Apple シリコンが必要で、動作中は約 {{memory}} GB のメモリを使います。"
+      },
       "local": {
         "title": "ローカル Laya",
         "tag": "無料・オフライン",
@@ -218,11 +223,7 @@
       }
     },
     "mude": {
-      "title": "mude",
-      "tag": "この Mac 上",
       "name": "mude（この Mac 上）",
-      "intro": "mu 独自の判定モデル。この Mac で動くほど小さく、キー不要で呼び出しごとの費用もかかりません。",
-      "first": "現在は mude が最初に答えます。操作は下にあります。後ろに控える判定器は「判定器の順序」ページにあります。",
       "tierHelp": "この Mac で動作します。設定は「判定器」ページで行います。",
       "notInstalled": "未インストール。",
       "unfinished": "前回のインストールは完了していません。もう一度インストールすると、中断したところから再開します。",
@@ -240,7 +241,6 @@
       "localOnlyOffLocal": "mude が答えられない判定は、同じくこの Mac で動く {{judges}} に回されます。",
       "localOnlyNone": "mude の後ろに判定器が設定されていません。mude が答えられないときは、判定ポイントの既定の方針で処理します。",
       "use": "mude を判定器として使う",
-      "useHelp": "オフにすると、置き換えていた判定器に戻し、サーバーを停止します。",
       "status": {
         "running": "127.0.0.1:{{port}} で実行中",
         "runningMemory": "127.0.0.1:{{port}} で実行中 · {{memory}} GB",
@@ -279,9 +279,16 @@
         "integrity": "ダウンロードしたファイルが検証に通りませんでした。もう一度インストールしてください。",
         "unsupported": "この Mac では mude を実行できません。"
       },
-      "unsupported": "この Mac では mude を実行できません：",
       "noStatus": "mude の状態を取得できませんでした：{{reason}}",
-      "saveFirst": "mude を変更するには、先にほかの変更を保存するか破棄してください。"
+      "saveFirst": "mude を変更するには、先にほかの変更を保存するか破棄してください。",
+      "needs": "mude には Apple シリコン、macOS 14 以降、{{ram}} GB 以上のメモリを備えた Mac が必要です。",
+      "retry": "再試行",
+      "guide": {
+        "consent": "約 {{download}} GB のダウンロードと、約 {{python}} GB の Python 環境が必要です。この Mac で動作し、動作中は約 {{memory}} GB のメモリを使います。",
+        "instead": "代わりに mu はホスト型の判定器を使います。",
+        "ready": "mude が動作中で、あなたの判定器になりました。",
+        "readyStopped": "mude があなたの判定器になりました。サーバーは次の mu セッションの開始時に起動します。"
+      }
     },
     "clm": {
       "address": "サーバーのアドレス",

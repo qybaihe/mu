@@ -161,6 +161,11 @@
         "tag": "Recommandé",
         "description": "Le modèle juge hébergé par TypeSafe. Rapide et précis. Gratuit sur OpenCode Zen pour une durée limitée, ou facturé à l'appel avec une clé TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare ou d'un service à vous."
       },
+      "mude": {
+        "title": "mude",
+        "tag": "Sur ce Mac",
+        "description": "Le modèle juge de mu, sur ce Mac : sans clé et sans coût par appel. Il faut une puce Apple, et il utilise environ {{memory}} Go de mémoire pendant qu’il tourne."
+      },
       "local": {
         "title": "Laya local",
         "tag": "Gratuit · hors ligne",
@@ -218,11 +223,7 @@
       }
     },
     "mude": {
-      "title": "mude",
-      "tag": "Sur ce Mac",
       "name": "mude (sur ce Mac)",
-      "intro": "Le modèle juge de mu, assez petit pour tourner sur ce Mac, sans clé et sans coût par appel.",
-      "first": "mude répond en premier. Ses commandes sont ci-dessous ; les juges placés après lui sont sur la page « Ordre des juges ».",
       "tierHelp": "Tourne sur ce Mac. Configurez-le sur la page « Juges ».",
       "notInstalled": "Non installé.",
       "unfinished": "La dernière installation n’est pas allée au bout. Réinstaller reprend là où elle s’est arrêtée.",
@@ -240,7 +241,6 @@
       "localOnlyOffLocal": "Les décisions auxquelles mude ne peut pas répondre vont à {{judges}}, qui tourne aussi sur ce Mac.",
       "localOnlyNone": "Aucun juge n’est placé après mude. Quand mude ne peut pas répondre, le point de décision applique sa stratégie par défaut.",
       "use": "Utiliser mude comme juge",
-      "useHelp": "Le désactiver rétablit les juges qu’il remplaçait et arrête son serveur.",
       "status": {
         "running": "En marche sur 127.0.0.1:{{port}}",
         "runningMemory": "En marche sur 127.0.0.1:{{port}} · {{memory}} Go",
@@ -279,9 +279,16 @@
         "integrity": "Un fichier téléchargé n’a pas passé la vérification. Réessayez l’installation.",
         "unsupported": "mude ne peut pas tourner sur ce Mac."
       },
-      "unsupported": "mude ne peut pas tourner sur ce Mac :",
       "noStatus": "Impossible d’obtenir l’état de mude : {{reason}}",
-      "saveFirst": "Pour modifier mude, enregistrez ou annulez d’abord vos autres modifications."
+      "saveFirst": "Pour modifier mude, enregistrez ou annulez d’abord vos autres modifications.",
+      "needs": "mude a besoin d’un Mac avec puce Apple, macOS 14 ou ultérieur et au moins {{ram}} Go de mémoire.",
+      "retry": "Réessayer",
+      "guide": {
+        "consent": "Environ {{download}} Go à télécharger, plus un environnement Python d’environ {{python}} Go. Il tourne sur ce Mac et utilise environ {{memory}} Go de mémoire pendant qu’il tourne.",
+        "instead": "mu utilise à la place le juge hébergé.",
+        "ready": "mude tourne et c’est maintenant votre juge.",
+        "readyStopped": "mude est maintenant votre juge. Son serveur démarre avec votre prochaine session mu."
+      }
     },
     "clm": {
       "address": "Adresse du serveur",

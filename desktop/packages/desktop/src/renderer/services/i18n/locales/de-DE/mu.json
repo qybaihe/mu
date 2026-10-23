@@ -161,6 +161,11 @@
         "tag": "Empfohlen",
         "description": "Das gehostete Judge-Modell von TypeSafe. Schnell und genau. Auf OpenCode Zen für begrenzte Zeit kostenlos, sonst Abrechnung pro Aufruf mit einem Schlüssel für TypeSafe, OpenRouter, das Vercel AI Gateway, OpenCode Zen, Cloudflare oder einen eigenen Dienst."
       },
+      "mude": {
+        "title": "mude",
+        "tag": "Auf diesem Mac",
+        "description": "Das eigene Judge-Modell von mu, auf diesem Mac: kein Schlüssel, keine Kosten pro Aufruf. Braucht Apple Silicon und belegt im Betrieb etwa {{memory}} GB Arbeitsspeicher."
+      },
       "local": {
         "title": "Laya (lokal)",
         "tag": "Kostenlos · offline",
@@ -218,11 +223,7 @@
       }
     },
     "mude": {
-      "title": "mude",
-      "tag": "Auf diesem Mac",
       "name": "mude (auf diesem Mac)",
-      "intro": "Das eigene Judge-Modell von mu, klein genug für diesen Mac, ohne Schlüssel und ohne Kosten pro Aufruf.",
-      "first": "mude antwortet als Erstes. Die Steuerung findest du unten, die Judges dahinter auf der Seite „Reihenfolge der Judges“.",
       "tierHelp": "Läuft auf diesem Mac. Einrichten auf der Seite „Judges“.",
       "notInstalled": "Nicht installiert.",
       "unfinished": "Die letzte Installation wurde nicht abgeschlossen. Eine neue Installation macht dort weiter, wo sie aufgehört hat.",
@@ -240,7 +241,6 @@
       "localOnlyOffLocal": "Entscheidungen, die mude nicht beantworten kann, gehen an {{judges}}, das ebenfalls auf diesem Mac läuft.",
       "localOnlyNone": "Hinter mude ist kein Judge eingestellt. Kann mude nicht antworten, nutzt der Entscheidungspunkt seine Standardstrategie.",
       "use": "mude als Judge verwenden",
-      "useHelp": "Beim Ausschalten kommen die Judges zurück, die mude ersetzt hat, und sein Server wird gestoppt.",
       "status": {
         "running": "Läuft auf 127.0.0.1:{{port}}",
         "runningMemory": "Läuft auf 127.0.0.1:{{port}} · {{memory}} GB",
@@ -279,9 +279,16 @@
         "integrity": "Eine heruntergeladene Datei hat die Prüfung nicht bestanden. Versuch es mit einer neuen Installation.",
         "unsupported": "mude kann auf diesem Mac nicht laufen."
       },
-      "unsupported": "mude kann auf diesem Mac nicht laufen:",
       "noStatus": "Der Status von mude ist nicht abrufbar: {{reason}}",
-      "saveFirst": "Um mude zu ändern, speichere oder verwirf zuerst deine anderen Änderungen."
+      "saveFirst": "Um mude zu ändern, speichere oder verwirf zuerst deine anderen Änderungen.",
+      "needs": "mude braucht einen Mac mit Apple Silicon, macOS 14 oder neuer und mindestens {{ram}} GB Arbeitsspeicher.",
+      "retry": "Erneut versuchen",
+      "guide": {
+        "consent": "Lädt etwa {{download}} GB herunter, dazu eine Python-Umgebung von etwa {{python}} GB. Läuft auf diesem Mac und belegt im Betrieb etwa {{memory}} GB Arbeitsspeicher.",
+        "instead": "mu nutzt stattdessen den gehosteten Judge.",
+        "ready": "mude läuft und ist jetzt dein Judge.",
+        "readyStopped": "mude ist jetzt dein Judge. Sein Server startet mit deiner nächsten mu-Sitzung."
+      }
     },
     "clm": {
       "address": "Serveradresse",

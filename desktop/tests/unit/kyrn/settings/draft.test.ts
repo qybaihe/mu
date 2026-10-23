@@ -15,6 +15,7 @@ import {
   matches,
   newDraft,
   optionParts,
+  rebaseDraft,
   rowCount,
   setCompaction,
   strayAreaOf,
@@ -169,6 +170,58 @@ describe('the draft of the settings area', () => {
     // A stale revision is recognised by the store's code, not by its English words.
     expect(isStale({ code: 'stale' })).toBe(true);
     expect(isStale({ code: 'unknown' })).toBe(false);
+  });
+});
+
+describe('a draft moved onto the files after mu judge mude wrote them', () => {
+  const mude = {
+    type: 'typesafe' as const,
+    model: 'mude',
+    baseUrl: 'http://127.0.0.1:8790/v1/systemone',
+    apiKeyEnv: 'MU_JUDGE_MUDE_KEY',
+    timeoutMs: 4000,
+  };
+  // What the command left: mude first, Jev behind it, the judge on, its key in the .env, a new revision.
+  const fresh: KyrnSettings = {
+    ...base,
+    revision: 'r2',
+    tiers: ['mude', 'jev'],
+    judges: { ...base.judges, mude },
+    mode: 'active',
+    keys: { ...base.keys, MU_JUDGE_MUDE_KEY: true },
+  };
+  const edited = () => {
+    const draft = newDraft(structuredClone(base));
+    draft.settings.models.defaults = { provider: 'relay', model: 'plain', thinkingLevel: '' };
+    draft.settings.permissions = { mode: 'full', from: 'default' };
+    draft.settings.tiers = ['laya'];
+    draft.settings.mode = 'off';
+    draft.judgeKeys = { TYPESAFE_API_KEY: 'typed' };
+    return draft;
+  };
+
+  it('takes the judge from the files when the command just set it, and keeps every other edit', () => {
+    const moved = rebaseDraft(base, edited(), fresh, 'files');
+    expect(moved.settings.revision).toBe('r2');
+    expect(moved.settings.tiers).toEqual(['mude', 'jev']);
+    expect(moved.settings.mode).toBe('active');
+    expect(moved.settings.keys.MU_JUDGE_MUDE_KEY).toBe(true);
+    expect(moved.settings.models.defaults).toEqual({ provider: 'relay', model: 'plain', thinkingLevel: '' });
+    expect(moved.settings.permissions.mode).toBe('full');
+    expect(moved.judgeKeys).toEqual({ TYPESAFE_API_KEY: 'typed' });
+    // Saved from there, the order is not written: it is what the files already say.
+    expect(toSave(moved, fresh).tiers).toEqual(['mude', 'jev']);
+    expect([...dirtySections(fresh, moved)].toSorted()).toEqual(['defaultModel', 'features', 'judges']);
+  });
+
+  it('keeps a judge picked in the draft since, and takes what was not touched from the files', () => {
+    const moved = rebaseDraft(base, edited(), fresh, 'draft');
+    expect(moved.settings.tiers).toEqual(['laya']);
+    expect(moved.settings.mode).toBe('off');
+    const untouched = rebaseDraft(base, newDraft(structuredClone(base)), fresh, 'draft');
+    expect(untouched.settings.tiers).toEqual(['mude', 'jev']);
+    expect(untouched.settings.judges.mude).toEqual(mude);
+    expect([...dirtySections(fresh, untouched)]).toEqual([]);
   });
 });
 

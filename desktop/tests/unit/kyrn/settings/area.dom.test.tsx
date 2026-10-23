@@ -1539,64 +1539,6 @@ describe('the kernel pages', () => {
     expect(within(page).queryByText(/Advanced/)).not.toBeInTheDocument();
   });
 
-  it('names mude by what it is, and reads the settings again after its command changed mu.json', async () => {
-    const mude = {
-      type: 'typesafe' as const,
-      model: 'mude',
-      baseUrl: 'http://127.0.0.1:8790/v1/systemone',
-      apiKeyEnv: 'MU_JUDGE_MUDE_KEY',
-      timeoutMs: 4000,
-    };
-    const judges = { ...settings().judges, mude };
-    bridge.settings.mockResolvedValue({ ok: true, data: settings({ tiers: ['mude', 'jev'], judges }) });
-    const status = {
-      supported: true,
-      problems: [],
-      installed: true,
-      pythonReady: true,
-      running: true,
-      ready: true,
-      port: 8790,
-      enabled: true,
-      localOnly: false,
-      fallback: ['jev'],
-      model: 'mude',
-      folder: '/Users/someone/.mu/mude',
-      log: '/Users/someone/.mu/mude/server.log',
-    };
-    bridge.mudeState.mockResolvedValue({ ok: true, data: { available: true, status } });
-    render(<SettingsArea page='judges' />, { wrapper });
-    const page = await screen.findByTestId('mu-section-judges');
-    // mude first is no Jev: no choice is picked, and the page says mude answers.
-    expect(page).toHaveTextContent(enMu.judges.mude.first);
-    expect(within(page).getByTestId('mu-judge-choice-jev')).toHaveAttribute('aria-checked', 'false');
-    const card = await within(page).findByTestId('mu-mude');
-    await waitFor(() => expect(card).toHaveTextContent('Running on 127.0.0.1:8790'));
-    expect(bridge.settings).toHaveBeenCalledTimes(1);
-
-    // Turning it off runs mu's command; once it ended, the page reads mu.json again.
-    bridge.mudeRun.mockResolvedValue({
-      ok: true,
-      data: { available: true, status, task: { id: 900, command: 'disable', phase: 'done', log: [] } },
-    });
-    bridge.settings.mockResolvedValue({ ok: true, data: settings({ tiers: ['jev'], judges }) });
-    fireEvent.click(within(within(card).getByTestId('mu-mude-use')).getByRole('switch'));
-    await waitFor(() => expect(bridge.mudeRun).toHaveBeenCalledWith({ action: 'disable' }));
-    await waitFor(() => expect(bridge.settings).toHaveBeenCalledTimes(2));
-    await waitFor(() => expect(screen.getByTestId('mu-judge-choice-jev')).toHaveAttribute('aria-checked', 'true'));
-    cleanup();
-
-    bridge.settings.mockResolvedValue({ ok: true, data: settings({ tiers: ['mude', 'jev'], judges }) });
-    render(<SettingsArea page='judge-order' />, { wrapper });
-    const order = await screen.findByTestId('mu-judge-tiers');
-    // The order's own tags (Jev's tier below has the tag of its key).
-    const tags = [...order.querySelectorAll('.arco-select .arco-tag')].map((tag) => tag.textContent);
-    expect(tags).toEqual([enMu.judges.mude.name, enMu.judges.choices.jev.title]);
-    const first = screen.getByTestId('mu-judge-tier-0');
-    expect(first).toHaveTextContent(enMu.judges.mude.tierHelp);
-    expect(within(first).queryByRole('textbox')).not.toBeInTheDocument();
-  });
-
   it('lists the order by name, and asks of the first judge only what the judges page does not', async () => {
     bridge.settings.mockResolvedValue({ ok: true, data: settings({ tiers: ['jev', 'laya'] }) });
     render(<SettingsArea page='judge-order' />, { wrapper });

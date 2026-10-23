@@ -161,6 +161,11 @@
         "tag": "Önerilen",
         "description": "TypeSafe'in barındırdığı hakem modeli. Hızlı ve doğru. OpenCode Zen'de sınırlı bir süre ücretsiz; ya da TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare veya kendi hizmetinizin anahtarıyla çağrı başına ücretli."
       },
+      "mude": {
+        "title": "mude",
+        "tag": "Bu Mac'te",
+        "description": "mu'nun kendi hakem modeli, bu Mac'te çalışır: anahtar yok, çağrı başına ücret yok. Apple çip gerektirir ve çalışırken yaklaşık {{memory}} GB bellek kullanır."
+      },
       "local": {
         "title": "Yerel Laya",
         "tag": "Ücretsiz · çevrimdışı",
@@ -218,11 +223,7 @@
       }
     },
     "mude": {
-      "title": "mude",
-      "tag": "Bu Mac'te",
       "name": "mude (bu Mac'te)",
-      "intro": "mu'nun kendi hakem modeli. Bu Mac'te çalışacak kadar küçük; anahtar gerektirmez ve çağrı başına ücreti yoktur.",
-      "first": "Şu an ilk mude yanıtlıyor. Denetimleri aşağıda; arkasındaki hakemler Hakem sırası sayfasında.",
       "tierHelp": "Bu Mac'te çalışır. Hakemler sayfasında kurun.",
       "notInstalled": "Kurulu değil.",
       "unfinished": "Son kurulum tamamlanmadı. Yeniden kurmak, kaldığı yerden devam eder.",
@@ -240,7 +241,6 @@
       "localOnlyOffLocal": "mude'nin yanıtlayamadığı kararlar, yine bu Mac'te çalışan {{judges}} hakemine gider.",
       "localOnlyNone": "mude'nin arkasında ayarlı bir hakem yok. mude yanıt veremediğinde karar noktası kendi varsayılanını kullanır.",
       "use": "mude'yi hakem olarak kullan",
-      "useHelp": "Kapatınca yerini aldığı hakemler geri gelir ve sunucusu durur.",
       "status": {
         "running": "127.0.0.1:{{port}} üzerinde çalışıyor",
         "runningMemory": "127.0.0.1:{{port}} üzerinde çalışıyor · {{memory}} GB",
@@ -279,9 +279,16 @@
         "integrity": "İndirilen bir dosya denetimden geçmedi. Yeniden kurmayı deneyin.",
         "unsupported": "mude bu Mac'te çalışamaz."
       },
-      "unsupported": "mude bu Mac'te çalışamaz:",
       "noStatus": "mude durumu alınamadı: {{reason}}",
-      "saveFirst": "mude'yi değiştirmek için önce diğer değişikliklerinizi kaydedin ya da atın."
+      "saveFirst": "mude'yi değiştirmek için önce diğer değişikliklerinizi kaydedin ya da atın.",
+      "needs": "mude için Apple çipli, macOS 14 veya sonrası ve en az {{ram}} GB belleği olan bir Mac gerekir.",
+      "retry": "Yeniden dene",
+      "guide": {
+        "consent": "Yaklaşık {{download}} GB indirilir, ayrıca yaklaşık {{python}} GB'lık bir Python ortamı kurulur. Bu Mac'te çalışır ve çalışırken yaklaşık {{memory}} GB bellek kullanır.",
+        "instead": "mu bunun yerine barındırılan hakemi kullanır.",
+        "ready": "mude çalışıyor ve artık hakeminiz.",
+        "readyStopped": "mude artık hakeminiz. Sunucusu bir sonraki mu oturumunda başlar."
+      }
     },
     "clm": {
       "address": "Sunucu adresi",

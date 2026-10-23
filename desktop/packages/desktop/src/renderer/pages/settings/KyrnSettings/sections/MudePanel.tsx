@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Checkbox, Modal, Progress, Switch } from '@arco-design/web-react';
-import classNames from 'classnames';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { mutate } from 'swr';
@@ -9,6 +8,7 @@ import {
   MUDE_CHANGES_SETTINGS,
   MUDE_DOWNLOAD_GB,
   MUDE_MEMORY_GB,
+  MUDE_MIN_RAM_GB,
   MUDE_PYTHON_GB,
   type MudeAction,
   type MudeState,
@@ -24,7 +24,6 @@ import { toMuError, type MuError } from '../fields/muError';
 import Row from '../fields/Row';
 import { StatusDot, type DotState } from '../providers/parts';
 import { recheckMu } from '../recheck';
-import { Card } from './SectionShell';
 import styles from './sections.module.css';
 
 const GB = 1024 ** 3;
@@ -33,32 +32,32 @@ const BUSY_POLL_MS = 1000;
 const STARTING_POLL_MS = 3000;
 
 /**
- * The last command whose change to mu.json the settings have read: kept across mounts, so a command that ended while
- * this page was not shown is read when it is shown again, and only once.
+ * The last command whose change to mu.json was handed on: kept across mounts, so a command that ended while no page
+ * showed mude is handed on when one does, and only once.
  */
 let settledTask = 0;
 
-type MudePanelProps = {
-  /** The settings have unsaved changes: a command that changes mu.json waits until they are saved or discarded. */
-  unsaved: boolean;
-  /** mu.json was changed by mu's command: the settings are read again. */
-  onSettingsChanged?: () => void;
+/** mude as a screen sees it: what the main process last said, and a way to run one of mu's mude commands. */
+export type MudeControl = {
+  state?: MudeState;
+  /** The bridge itself failed. */
+  problem?: MuError;
+  /** A command runs. */
+  busy: boolean;
+  run: (action: MudeAction, localOnly?: boolean) => Promise<void>;
 };
 
 /**
- * mude, mu's own judge, on a Mac with Apple silicon: install it, switch it on and off, choose whether it is the only
- * judge, start and stop its server, uninstall it. Each applies at once through `mu judge mude` in the main process,
- * outside the save bar; the settings are read again after a command that changed mu.json. Nothing is shown where the
- * app does not offer mude (anything but macOS).
+ * mude's state, read on mount and while a command runs or its server starts. `onSettled` is told once of every
+ * command that changed mu.json (install, enable, disable, uninstall) when it ended, done or not: the screen reads the
+ * settings again. mu is checked again and the kernel bar read again here.
  */
-export default function MudePanel({ unsaved, onSettingsChanged }: MudePanelProps) {
-  const { t, i18n } = useTranslation();
-  const [modal, modalHolder] = Modal.useModal();
+export function useMude(onSettled?: (task: MudeTask) => void): MudeControl {
   const [state, setState] = useState<MudeState>();
   const [problem, setProblem] = useState<MuError>();
   const live = useRef(true);
-  const settings = useRef({ unsaved, onSettingsChanged });
-  settings.current = { unsaved, onSettingsChanged };
+  const settled = useRef(onSettled);
+  settled.current = onSettled;
 
   const take = useCallback((next: MudeState) => {
     if (!live.current) return;
@@ -66,8 +65,7 @@ export default function MudePanel({ unsaved, onSettingsChanged }: MudePanelProps
     const task = next.task;
     if (!task || task.phase === 'running' || task.id <= settledTask || !MUDE_CHANGES_SETTINGS.has(task.command)) return;
     settledTask = task.id;
-    // Unsaved changes stay: their save is then refused as stale, and the page offers to reload.
-    if (!settings.current.unsaved) settings.current.onSettingsChanged?.();
+    settled.current?.(task);
     void recheckMu();
     void mutate(KERNEL_SUMMARY_KEY);
   }, []);
@@ -88,8 +86,7 @@ export default function MudePanel({ unsaved, onSettingsChanged }: MudePanelProps
     };
   }, [read]);
 
-  const task = state?.task;
-  const busy = task?.phase === 'running';
+  const busy = state?.task?.phase === 'running';
   const starting = Boolean(state?.status?.running && !state.status.ready);
   // The command moves on by itself, and a server takes a while to answer: the state is read meanwhile.
   useEffect(() => {
@@ -98,25 +95,79 @@ export default function MudePanel({ unsaved, onSettingsChanged }: MudePanelProps
     return () => clearInterval(timer);
   }, [busy, starting, read]);
 
-  const run = async (action: MudeAction, localOnly?: boolean) => {
-    setProblem(undefined);
-    try {
-      take(unwrap(await kyrnBridge.mudeRun.invoke({ action, ...(localOnly === undefined ? {} : { localOnly }) })));
-    } catch (error) {
-      if (live.current) setProblem(toMuError(error));
-    }
-  };
+  const run = useCallback(
+    async (action: MudeAction, localOnly?: boolean) => {
+      setProblem(undefined);
+      try {
+        take(unwrap(await kyrnBridge.mudeRun.invoke({ action, ...(localOnly === undefined ? {} : { localOnly }) })));
+      } catch (error) {
+        if (live.current) setProblem(toMuError(error));
+      }
+    },
+    [take]
+  );
 
+  return { state, problem, busy, run };
+}
+
+/** Whether mude can be set up on this machine, as far as is known: unknown (still being read) counts as yes. */
+export function mudeOffered(state: MudeState | undefined): boolean {
+  if (!state) return true;
+  if (!state.available) return false;
+  if (state.status) return state.status.supported;
+  return !state.problem;
+}
+
+/** mude is downloaded and its Python environment set up. */
+export const mudeInstalled = (status: MudeStatus | undefined): boolean =>
+  Boolean(status?.supported && status.installed && status.pythonReady);
+
+/**
+ * Why this machine cannot run mude: one plain sentence, and the command's reasons under it. `guide`: in the first-run
+ * guide, which also says what mu does instead.
+ */
+export function MudeUnsupported({ state, guide = false }: { state?: MudeState; guide?: boolean }) {
+  const { t, i18n } = useTranslation();
+  const problems = state?.status?.problems ?? [];
+  return (
+    <span data-testid='mu-mude-unsupported'>
+      {t('mu.judges.mude.needs', { ram: formatNumber(MUDE_MIN_RAM_GB, i18n.language) })}
+      {guide ? ` ${t('mu.judges.mude.guide.instead')}` : null}
+      {problems.map((line) => (
+        <span key={line} className={styles.mudeReason} dir='ltr'>
+          {line}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+type MudePanelProps = {
+  mude: MudeControl;
+  /** The settings have unsaved changes: a command that changes mu.json waits until they are saved or discarded. */
+  unsaved: boolean;
+};
+
+/**
+ * mude chosen as the judge on the judges page: install it (after the consent), or where it is installed, its server,
+ * whether it is the only judge, its folder and uninstalling it. Each applies at once through `mu judge mude` in the
+ * main process, outside the save bar.
+ */
+export default function MudePanel({ mude, unsaved }: MudePanelProps) {
+  const { t, i18n } = useTranslation();
+  const [modal, modalHolder] = Modal.useModal();
+  const { state, problem, busy, run } = mude;
   if (!state)
     return problem ? (
       <div className={styles.choiceHint} role='alert'>
         <MuErrorMessage error={problem} />
       </div>
     ) : null;
-  if (!state.available) return null;
 
-  const { status } = state;
-  const names = (list: string[]) => fallbackNames(list, i18n.language);
+  const { status, task } = state;
+  const language = i18n.language;
+  const installed = mudeInstalled(status);
+  const supported = status?.supported !== false;
 
   const install = () => {
     let localOnly = false;
@@ -138,154 +189,230 @@ export default function MudePanel({ unsaved, onSettingsChanged }: MudePanelProps
   const uninstall = () =>
     modal.confirm?.({
       title: t('mu.judges.mude.uninstallTitle'),
-      content: t('mu.judges.mude.uninstallText', { size: gb(MUDE_DOWNLOAD_GB + MUDE_PYTHON_GB, i18n.language) }),
+      content: t('mu.judges.mude.uninstallText', { size: gb(MUDE_DOWNLOAD_GB + MUDE_PYTHON_GB, language) }),
       okText: t('mu.judges.mude.uninstall'),
       okButtonProps: { status: 'danger' },
       cancelText: t('common.cancel'),
       onOk: () => void run('uninstall'),
     });
 
-  const installed = Boolean(status?.installed && status.pythonReady);
-  const supported = status?.supported !== false;
-
   return (
-    <Card
-      title={t('mu.judges.mude.title')}
-      judge
-      summary={t('mu.judges.mude.intro')}
-      testId='mu-mude'
-      badges={<span className={styles.choiceTag}>{t('mu.judges.mude.tag')}</span>}
-    >
+    <div className={styles.localJudge} data-testid='mu-mude'>
       {modalHolder}
-      <div className={classNames(styles.tierPanel, styles.localJudge)}>
-        {!supported && status ? (
-          <div className={styles.localJudgeModel} data-testid='mu-mude-unsupported'>
-            <div>{t('mu.judges.mude.unsupported')}</div>
-            {status.problems.map((line) => (
-              <div key={line} dir='ltr'>
-                {line}
-              </div>
-            ))}
-          </div>
-        ) : busy ? (
-          <Working task={task} />
-        ) : status ? (
-          <div className={styles.localJudgeStatus} data-testid='mu-mude-status'>
-            <StatusDot state={dotOf(status, installed)} label={statusText(t, status, installed, i18n.language)} />
-            <span>{statusText(t, status, installed, i18n.language)}</span>
-          </div>
+      {!supported ? (
+        <div className={styles.localJudgeModel}>
+          <MudeUnsupported state={state} />
+        </div>
+      ) : busy && task ? (
+        <Working task={task} />
+      ) : status ? (
+        <div className={styles.localJudgeStatus} data-testid='mu-mude-status'>
+          <StatusDot state={dotOf(status, installed)} label={statusText(t, status, installed, language)} />
+          <span>{statusText(t, status, installed, language)}</span>
+        </div>
+      ) : null}
+      {supported && status && !busy ? (
+        <div className={styles.choiceHint}>
+          {installed
+            ? t('mu.judges.mude.resources', { memory: formatNumber(MUDE_MEMORY_GB, language) })
+            : status.installed || status.pythonReady
+              ? t('mu.judges.mude.unfinished')
+              : consentLine(t, language)}
+        </div>
+      ) : null}
+      <div className={styles.localJudgeActions}>
+        {busy && task?.command === 'install' ? (
+          <Button size='small' data-testid='mu-mude-cancel' onClick={() => void run('cancel')}>
+            {t('common.cancel')}
+          </Button>
+        ) : null}
+        {supported && status && !installed && !busy ? (
+          <Button size='small' type='primary' disabled={unsaved} data-testid='mu-mude-install' onClick={install}>
+            {t('mu.judges.mude.install')}
+          </Button>
         ) : null}
         {supported && status && installed && !busy ? (
-          <div className={styles.choiceHint}>
-            {t('mu.judges.mude.resources', { memory: formatNumber(MUDE_MEMORY_GB, i18n.language) })}
-          </div>
-        ) : null}
-        {supported && status && !installed && !busy && (status.installed || status.pythonReady) ? (
-          <div className={styles.choiceHint}>{t('mu.judges.mude.unfinished')}</div>
-        ) : null}
-        <div className={styles.localJudgeActions}>
-          {busy && task.command === 'install' ? (
-            <Button size='small' data-testid='mu-mude-cancel' onClick={() => void run('cancel')}>
-              {t('common.cancel')}
-            </Button>
-          ) : null}
-          {supported && status && !installed && !busy ? (
-            <Button size='small' type='primary' disabled={unsaved} data-testid='mu-mude-install' onClick={install}>
-              {t('mu.judges.mude.install')}
-            </Button>
-          ) : null}
-          {supported && status && installed && !busy ? (
-            <>
-              {status.running ? (
-                <Button size='small' data-testid='mu-mude-stop' onClick={() => void run('stop')}>
-                  {t('mu.judges.mude.stop')}
-                </Button>
-              ) : (
-                <Button size='small' data-testid='mu-mude-start' onClick={() => void run('start')}>
-                  {t('mu.judges.mude.start')}
-                </Button>
-              )}
-              <Button size='small' data-testid='mu-mude-open' onClick={() => void run('open')}>
-                {t('mu.judges.mude.openFolder')}
-              </Button>
+          <>
+            {status.enabled ? null : (
               <Button
                 size='small'
-                status='danger'
+                type='primary'
                 disabled={unsaved}
-                data-testid='mu-mude-uninstall'
-                onClick={uninstall}
+                data-testid='mu-mude-use'
+                onClick={() => void run('enable')}
               >
-                {t('mu.judges.mude.uninstall')}
+                {t('mu.judges.mude.use')}
               </Button>
-            </>
-          ) : null}
-        </div>
-        {supported && status && unsaved && !busy ? (
-          <div className={styles.choiceHint} data-testid='mu-mude-unsaved'>
-            {t('mu.judges.mude.saveFirst')}
-          </div>
-        ) : null}
-        <Failure state={state} />
-        {problem ? (
-          <div className={styles.localJudgeProblem} role='alert'>
-            <MuErrorMessage error={problem} />
-          </div>
+            )}
+            {status.running ? (
+              <Button size='small' data-testid='mu-mude-stop' onClick={() => void run('stop')}>
+                {t('mu.judges.mude.stop')}
+              </Button>
+            ) : (
+              <Button size='small' data-testid='mu-mude-start' onClick={() => void run('start')}>
+                {t('mu.judges.mude.start')}
+              </Button>
+            )}
+            <Button size='small' data-testid='mu-mude-open' onClick={() => void run('open')}>
+              {t('mu.judges.mude.openFolder')}
+            </Button>
+            <Button size='small' status='danger' disabled={unsaved} data-testid='mu-mude-uninstall' onClick={uninstall}>
+              {t('mu.judges.mude.uninstall')}
+            </Button>
+          </>
         ) : null}
       </div>
-      {supported && status && installed ? (
-        <>
-          <Row title={t('mu.judges.mude.use')} help={t('mu.judges.mude.useHelp')} testId='mu-mude-use'>
-            <Switch
-              size='small'
-              aria-label={t('mu.judges.mude.use')}
-              checked={status.enabled}
-              loading={busy && (task.command === 'enable' || task.command === 'disable')}
-              disabled={busy || unsaved}
-              onChange={(on: boolean) => void run(on ? 'enable' : 'disable')}
-            />
-          </Row>
+      {supported && status && unsaved && !busy ? (
+        <div className={styles.choiceHint} data-testid='mu-mude-unsaved'>
+          {t('mu.judges.mude.saveFirst')}
+        </div>
+      ) : null}
+      <Failure state={state} />
+      {problem ? (
+        <div className={styles.localJudgeProblem} role='alert'>
+          <MuErrorMessage error={problem} />
+        </div>
+      ) : null}
+      {supported && status && installed && status.enabled ? (
+        <div>
           <Row title={t('mu.judges.mude.localOnly')} testId='mu-mude-local-only'>
             <Switch
               size='small'
               aria-label={t('mu.judges.mude.localOnly')}
               checked={status.localOnly}
-              disabled={busy || unsaved || !status.enabled}
+              disabled={busy || unsaved}
               onChange={(on: boolean) => void run('enable', on)}
             />
           </Row>
           <div className={styles.choiceHint} data-testid='mu-mude-local-only-help'>
-            {localOnlyText(t, status.localOnly, status.fallback, names)}
+            {localOnlyText(t, status.localOnly, status.fallback, language)}
           </div>
-        </>
+        </div>
       ) : null}
-    </Card>
+    </div>
   );
 }
 
-/** What runs: the command's sentence for its step, the download's progress, the Python installer's last lines. */
+type MudeSetupProps = {
+  mude: MudeControl;
+  /** The guide's settings ask mude first. */
+  judged: boolean;
+};
+
+/**
+ * mude in the first-run guide, set up where it is picked: what it takes, one button, the install's progress, why it
+ * failed with a way to try again, and that it is the judge once it is. With the judges behind it as usual; the
+ * settings have the rest.
+ */
+export function MudeSetup({ mude, judged }: MudeSetupProps) {
+  const { t, i18n } = useTranslation();
+  const { state, problem, busy, run } = mude;
+  if (!state)
+    return problem ? (
+      <div className={styles.localJudgeProblem} role='alert'>
+        <MuErrorMessage error={problem} />
+      </div>
+    ) : null;
+  const { status, task } = state;
+  const language = i18n.language;
+  if (busy && task)
+    return (
+      <div className={styles.localJudge} data-testid='mu-mude'>
+        <Working task={task} />
+        {task.command === 'install' ? (
+          <div className={styles.localJudgeActions}>
+            <Button size='small' data-testid='mu-mude-cancel' onClick={() => void run('cancel')}>
+              {t('common.cancel')}
+            </Button>
+          </div>
+        ) : null}
+      </div>
+    );
+  if (judged && status?.enabled)
+    return (
+      <div className={styles.localJudge} data-testid='mu-mude'>
+        <div className={styles.localJudgeStatus} role='status' data-testid='mu-mude-ready'>
+          <StatusDot state={status.running ? 'ready' : 'off'} label={t('mu.judges.mude.guide.ready')} />
+          <span>{t(status.running ? 'mu.judges.mude.guide.ready' : 'mu.judges.mude.guide.readyStopped')}</span>
+        </div>
+      </div>
+    );
+  const installed = mudeInstalled(status);
+  const failed = task?.phase === 'failed' && (task.command === 'install' || task.command === 'enable');
+  return (
+    <div className={styles.localJudge} data-testid='mu-mude'>
+      {failed ? (
+        <>
+          <Failure state={state} />
+          <div className={styles.localJudgeActions}>
+            <Button
+              size='small'
+              type='primary'
+              data-testid='mu-mude-retry'
+              onClick={() => void run(task.command === 'enable' && installed ? 'enable' : 'install')}
+            >
+              {t('mu.judges.mude.retry')}
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className={styles.choiceHint}>
+            {installed
+              ? t('mu.judges.mude.resources', { memory: formatNumber(MUDE_MEMORY_GB, language) })
+              : consentLine(t, language)}
+          </div>
+          <div className={styles.localJudgeActions}>
+            <Button
+              size='small'
+              type='primary'
+              data-testid='mu-mude-install'
+              onClick={() => void run(installed ? 'enable' : 'install')}
+            >
+              {t(installed ? 'mu.judges.mude.use' : 'mu.judges.mude.install')}
+            </Button>
+          </div>
+          <Failure state={state} />
+        </>
+      )}
+      {problem ? (
+        <div className={styles.localJudgeProblem} role='alert'>
+          <MuErrorMessage error={problem} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * What runs: the command's sentence for its step and the last Python lines; an install shows its progress too, the
+ * download's share of it (full once the download is done and the later steps run).
+ */
 function Working({ task }: { task: MudeTask }) {
   const { t, i18n } = useTranslation();
   const { download } = task;
   const label = task.message || t(`mu.judges.mude.working.${task.command}`);
-  const percent =
-    download && download.total > 0 ? Math.min(100, Math.floor((download.done / download.total) * 100)) : 0;
+  const downloaded = download && download.total > 0 ? Math.floor((download.done / download.total) * 100) : 0;
+  const percent = task.step && task.step !== 'download' ? 100 : Math.min(100, downloaded);
   return (
     <>
       <div className={styles.localJudgeStatus} data-testid='mu-mude-status'>
         <StatusDot state='busy' label={label} />
         <span dir={task.message ? 'ltr' : undefined}>{label}</span>
       </div>
-      {task.step === 'download' && download ? (
-        <div data-testid='mu-mude-download'>
+      {task.command === 'install' ? (
+        <div data-testid='mu-mude-progress'>
           <Progress percent={percent} size='small' color='var(--text-primary)' />
-          <div className={styles.choiceHint}>
-            {download.checking
-              ? t('mu.judges.mude.checking')
-              : t('mu.judges.mude.downloaded', {
-                  done: gb(download.done / GB, i18n.language),
-                  total: gb(download.total / GB, i18n.language),
-                })}
-          </div>
+          {task.step === 'download' && download ? (
+            <div className={styles.choiceHint} data-testid='mu-mude-download'>
+              {download.checking
+                ? t('mu.judges.mude.checking')
+                : t('mu.judges.mude.downloaded', {
+                    done: gb(download.done / GB, i18n.language),
+                    total: gb(download.total / GB, i18n.language),
+                  })}
+            </div>
+          ) : null}
         </div>
       ) : null}
       {task.log.length ? (
@@ -359,33 +486,38 @@ function Consent({ fallback, onLocalOnly }: { fallback: string[]; onLocalOnly: (
           {t('mu.judges.mude.localOnly')}
         </Checkbox>
         <div className={styles.choiceHint}>
-          {localOnlyText(t, localOnly, fallback.length ? fallback : ['jev'], (list) => fallbackNames(list, language))}
+          {localOnlyText(t, localOnly, fallback.length ? fallback : ['jev'], language)}
         </div>
       </div>
     </div>
   );
 }
 
+/** The one line that says what installing takes, where it is started from a button. */
+const consentLine = (t: TFunction, language: string): string =>
+  t('mu.judges.mude.guide.consent', {
+    download: gb(MUDE_DOWNLOAD_GB, language),
+    python: gb(MUDE_PYTHON_GB, language),
+    memory: formatNumber(MUDE_MEMORY_GB, language),
+  });
+
 /** Gigabytes with one decimal, in the app language. */
 const gb = (value: number, language: string): string =>
   formatNumber(value, language, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-
-/** The judges behind mude by their names (Jev, Laya), each once. */
-const fallbackNames = (list: string[], language: string): string =>
-  formatNameList([...new Set(list.map((name) => describeTier(name, {}).judge))], language);
 
 /** Whether every judge behind mude runs on this Mac too: then nothing leaves it. */
 const allLocal = (list: string[]): boolean =>
   list.every((name) => name === 'mock' || describeTier(name, {}).via === 'local');
 
 /**
- * What "only local" means, said where it is chosen: with it on, mude alone; with it off, the judges behind mude get
- * what it cannot answer and two security checks, and a hosted judge takes what it reads off this Mac.
+ * What "only local" means, said where it is chosen: with it on, mude alone; with it off, the judges behind mude (by
+ * their names, each once) get what it cannot answer and two security checks, and a hosted one takes what it reads off
+ * this Mac.
  */
-function localOnlyText(t: TFunction, localOnly: boolean, fallback: string[], names: (list: string[]) => string) {
+function localOnlyText(t: TFunction, localOnly: boolean, fallback: string[], language: string) {
   if (localOnly) return t('mu.judges.mude.localOnlyOn');
   if (fallback.length === 0) return t('mu.judges.mude.localOnlyNone');
-  const judges = names(fallback);
+  const judges = formatNameList([...new Set(fallback.map((name) => describeTier(name, {}).judge))], language);
   return allLocal(fallback)
     ? t('mu.judges.mude.localOnlyOffLocal', { judges })
     : t('mu.judges.mude.localOnlyOff', { judges });

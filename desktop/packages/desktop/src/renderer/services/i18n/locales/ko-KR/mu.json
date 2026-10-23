@@ -161,6 +161,11 @@
         "tag": "추천",
         "description": "TypeSafe가 호스팅하는 판정 모델입니다. 빠르고 정확합니다. OpenCode Zen에서는 기간 한정 무료이고, TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare 또는 직접 운영하는 서비스의 키를 쓰면 호출마다 과금됩니다."
       },
+      "mude": {
+        "title": "mude",
+        "tag": "이 Mac에서",
+        "description": "mu의 자체 판정 모델을 이 Mac에서 실행합니다. 키가 필요 없고 호출당 비용도 없습니다. Apple 실리콘이 필요하며 실행 중에는 메모리를 약 {{memory}}GB 사용합니다."
+      },
       "local": {
         "title": "로컬 Laya",
         "tag": "무료 · 오프라인",
@@ -218,11 +223,7 @@
       }
     },
     "mude": {
-      "title": "mude",
-      "tag": "이 Mac에서",
       "name": "mude (이 Mac에서)",
-      "intro": "mu의 자체 판정 모델입니다. 이 Mac에서 실행될 만큼 작고, 키가 필요 없으며 호출당 비용도 없습니다.",
-      "first": "지금은 mude가 먼저 답합니다. 설정은 아래에 있고, 그 뒤의 판정기는 판정기 순서 페이지에 있습니다.",
       "tierHelp": "이 Mac에서 실행됩니다. 판정기 페이지에서 설정하세요.",
       "notInstalled": "설치되지 않음.",
       "unfinished": "지난 설치가 끝나지 않았습니다. 다시 설치하면 멈춘 곳부터 이어서 진행합니다.",
@@ -240,7 +241,6 @@
       "localOnlyOffLocal": "mude가 답하지 못하는 판정은 역시 이 Mac에서 실행되는 {{judges}}(으)로 넘어갑니다.",
       "localOnlyNone": "mude 뒤에 설정된 판정기가 없습니다. mude가 답하지 못하면 판정 지점의 기본 전략을 따릅니다.",
       "use": "mude를 판정기로 사용",
-      "useHelp": "끄면 mude가 대신하던 판정기로 되돌리고 서버를 중지합니다.",
       "status": {
         "running": "127.0.0.1:{{port}}에서 실행 중",
         "runningMemory": "127.0.0.1:{{port}}에서 실행 중 · {{memory}}GB",
@@ -279,9 +279,16 @@
         "integrity": "내려받은 파일이 검사를 통과하지 못했습니다. 다시 설치해 보세요.",
         "unsupported": "이 Mac에서는 mude를 실행할 수 없습니다."
       },
-      "unsupported": "이 Mac에서는 mude를 실행할 수 없습니다:",
       "noStatus": "mude 상태를 가져오지 못했습니다: {{reason}}",
-      "saveFirst": "mude를 변경하려면 먼저 다른 변경 사항을 저장하거나 취소하세요."
+      "saveFirst": "mude를 변경하려면 먼저 다른 변경 사항을 저장하거나 취소하세요.",
+      "needs": "mude를 실행하려면 Apple 실리콘, macOS 14 이상, 메모리 {{ram}}GB 이상인 Mac이 필요합니다.",
+      "retry": "다시 시도",
+      "guide": {
+        "consent": "약 {{download}}GB를 내려받고, 약 {{python}}GB의 Python 환경을 준비합니다. 이 Mac에서 실행되며 실행 중에는 메모리를 약 {{memory}}GB 사용합니다.",
+        "instead": "대신 mu는 호스팅 판정기를 사용합니다.",
+        "ready": "mude가 실행 중이며 판정기로 설정되었습니다.",
+        "readyStopped": "mude가 판정기로 설정되었습니다. 서버는 다음 mu 세션을 시작할 때 실행됩니다."
+      }
     },
     "clm": {
       "address": "서버 주소",
