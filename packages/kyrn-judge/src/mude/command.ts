@@ -14,6 +14,7 @@ import {
 	health,
 	portFree,
 	readPid,
+	StartStopped,
 	serverAlive,
 	serverMemory,
 	startServer,
@@ -384,7 +385,11 @@ function requireInstalled(ctx: Context): void {
 	}
 }
 
-async function start(ctx: Context, out: Out, wait = true): Promise<number> {
+/**
+ * Starts the server for `command` (install, enable or start). A stop while it loads ends the wait, and the server if
+ * this start began it.
+ */
+async function start(ctx: Context, out: Out, command: string, wait = true): Promise<number> {
 	const at = await port(ctx);
 	out.step(
 		"start",
@@ -392,7 +397,19 @@ async function start(ctx: Context, out: Out, wait = true): Promise<number> {
 			? `The mude 1.0 server is running on 127.0.0.1:${at}`
 			: `Starting the mude 1.0 server on 127.0.0.1:${at} (loading the model takes a few seconds)`,
 	);
-	await startServer(ctx.paths, { port: at, key: key(ctx), wait });
+	try {
+		await startServer(ctx.paths, { port: at, key: key(ctx), wait, signal: ctx.signal });
+	} catch (error) {
+		if (error instanceof StartStopped) {
+			throw new DownloadError(
+				error.serverStopped
+					? `Stopped while the mude 1.0 server was starting, and stopped the server too: mu judge mude ${command} goes on from there`
+					: `Stopped waiting for the mude 1.0 server, which goes on starting: mu judge mude ${command} goes on from there`,
+				"aborted",
+			);
+		}
+		throw error;
+	}
 	return at;
 }
 
@@ -447,7 +464,7 @@ export async function main(
 				try {
 					writeFileSync(ctx.paths.install, `${JSON.stringify({ localOnly })}\n`);
 					await ensureInstalled(ctx, out);
-					const at = await start(ctx, out);
+					const at = await start(ctx, out, "install");
 					enable(ctx, out, at, localOnly);
 					rmSync(ctx.paths.install, { force: true });
 				} finally {
@@ -463,7 +480,7 @@ export async function main(
 					: flag("--with-fallback")
 						? false
 						: current.enabled && current.localOnly;
-				const at = await start(ctx, out);
+				const at = await start(ctx, out, "enable");
 				enable(ctx, out, at, localOnly);
 				break;
 			}
@@ -483,7 +500,7 @@ export async function main(
 			}
 			case "start": {
 				requireInstalled(ctx);
-				await start(ctx, out, !flag("--no-wait"));
+				await start(ctx, out, "start", !flag("--no-wait"));
 				break;
 			}
 			case "stop": {

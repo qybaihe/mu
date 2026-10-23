@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { planLaunch, planMude, wantsMude } from "../../../kyrn/bin/mu.mjs";
 import { holdInstall, installLocalOnly, main, problems } from "../src/mude/command.ts";
@@ -12,6 +12,7 @@ import { DownloadError, downloadedBytes, downloadFiles, missingFiles, resumeFrom
 import { MUDE_BYTES, MUDE_FILES, MUDE_REVISION, type MudeFile, mudeFileUrl } from "../src/mude/manifest.ts";
 import { mudePaths } from "../src/mude/paths.ts";
 import { downloadUv } from "../src/mude/python.ts";
+import { readPid, StartStopped, serverAlive, startServer, stopServer } from "../src/mude/server.ts";
 
 const sha = (text: string) => createHash("sha256").update(text).digest("hex");
 
@@ -294,6 +295,50 @@ describe("uv for mude's Python environment", () => {
 		const stopped = downloadUv(paths, { fetch: hanging, signal: stop.signal });
 		stop.abort();
 		await expect(stopped).rejects.toThrow(/^uv could not be downloaded from GitHub/);
+	});
+});
+
+// The server is a process with a command line (ps), which Windows does not have; mude runs only on a Mac.
+describe.skipIf(process.platform === "win32")("mude's server", () => {
+	const freePort = () =>
+		new Promise<number>((resolve) => {
+			const probe = createServer();
+			probe.listen(0, "127.0.0.1", () => {
+				const address = probe.address();
+				probe.close(() => resolve(typeof address === "object" && address ? address.port : 0));
+			});
+		});
+	const quick = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, Math.min(ms, 50)));
+
+	it("stops a server it started when its start is stopped, and leaves one that was running", async () => {
+		const paths = mudePaths(join(dir, "home"));
+		mkdirSync(paths.model, { recursive: true });
+		mkdirSync(dirname(paths.python), { recursive: true });
+		// A server that never gets ready; its command line names d3_server_mac.py and the model, as the real one's does.
+		writeFileSync(paths.python, "#!/bin/sh\nwhile :; do sleep 1; done\n", { mode: 0o755 });
+		const port = await freePort();
+		const stop = new AbortController();
+		const starting = startServer(paths, { port, key: "k", signal: stop.signal, sleep: quick });
+		await quick(300);
+		const pid = readPid(paths);
+		expect(serverAlive(paths, pid)).toBe(true);
+		stop.abort();
+		await expect(starting).rejects.toBeInstanceOf(StartStopped);
+		await expect(starting).rejects.toMatchObject({ serverStopped: true });
+		expect(serverAlive(paths, pid)).toBe(false);
+		expect(existsSync(paths.pid)).toBe(false);
+
+		// Started by someone else (a session, the app): a stop ends only the wait for it.
+		await startServer(paths, { port, key: "k", wait: false });
+		const running = readPid(paths);
+		const waiting = new AbortController();
+		waiting.abort();
+		await expect(startServer(paths, { port, key: "k", signal: waiting.signal, sleep: quick })).rejects.toMatchObject({
+			serverStopped: false,
+		});
+		expect(serverAlive(paths, running)).toBe(true);
+		await stopServer(paths, quick);
+		expect(serverAlive(paths, running)).toBe(false);
 	});
 });
 
