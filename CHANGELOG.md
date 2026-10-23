@@ -4,6 +4,19 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Added
+
+- **`mu setup` offers mude 1.0.** On a Mac that can run it, the judge step lists mude 1.0 second, after the recommended Jev. Picking it installs mude 1.0 right there, with Jev behind it for what it can't answer. Scripts use `--judge mude`.
+
+### Fixed
+
+- **Installing mude 1.0 survives a power cut, a lost connection or a stop, and goes on from where it was.**
+  - The download is saved to the disk as it goes, so after a power cut it continues from the last part the disk kept, instead of failing its check at the end.
+  - A dropped connection is retried for about two minutes, and every try that gets more of the file starts the count again.
+  - Ctrl-C, or quitting the desktop app, keeps what was downloaded.
+  - A continued install keeps the "Only local" choice it was started with.
+- **The desktop app continues a stopped install in one click.** Settings → Judges and the first-run guide show "Continue installing" and how much is already downloaded ("Downloaded 0.9 of 1.8 GB"), and continue without asking for consent again.
+
 ## [0.2.0] - 2026-10-23
 
 **0.2.0 starts the era of mu's own models: turn on mude 1.0 in one click.** The desktop app carries mu-agent 0.2.0.
