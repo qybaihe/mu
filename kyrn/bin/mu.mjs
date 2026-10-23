@@ -102,6 +102,8 @@ export function usage(platform) {
 		"  mu -c | -r               continue the last session | pick a session to resume",
 		"  mu setup                 connect a model (paste an API key or pick a service) and choose a judge",
 		"                           (see mu setup --help for scripting, reading a key from stdin and the supported services)",
+		"  mu judge mude install    run mude, mu's own decision model, on this Mac as the judge (Apple silicon, 1.8 GB)",
+		"                           enable | disable | start | stop | status | uninstall (mu judge mude help)",
 		"  mu judge <cmd>           manage the local judge, Laya (macOS on Apple silicon): setup | start | stop | status | run",
 		"  mu ledger [n] [--json]   print the judge's verdicts from the last n sessions",
 		"  mu import <file>...      import Claude Code, Codex and ZCode conversations; --list shows them (mu import --help)",
@@ -321,8 +323,8 @@ export function layoutOf({ root, platform, exists }) {
 }
 
 /**
- * The files the npm package runs: pi, the judgment layer, the sign-in of `mu auth`, the importer of `mu import` and the
- * wizard of `mu setup`.
+ * The files the npm package runs: pi, the judgment layer, the sign-in of `mu auth`, the importer of `mu import`, the
+ * wizard of `mu setup` and `mu judge mude`.
  */
 export function packageEntries({ root, platform }) {
 	const path = pathFor(platform);
@@ -332,6 +334,7 @@ export function packageEntries({ root, platform }) {
 		auth: path.join(root, "judge", "dist", "auth.js"),
 		import: path.join(root, "judge", "dist", "import.js"),
 		setup: path.join(root, "judge", "dist", "setup.js"),
+		mude: path.join(root, "judge", "dist", "mude.js"),
 	};
 }
 
@@ -440,6 +443,28 @@ export function wantsLaya({ env, agentDir, platform, readFile }) {
 }
 
 /** The Core ML sidecar exists for macOS only. Anything else needs a server of its own behind MU_LOCAL_JUDGE_URL. */
+/**
+ * Whether the configuration asks for mude (mu judge mude): MU_JUDGE naming it, else `tiers` or a route in mu.json (or
+ * kyrn.json when there is no mu.json). Its server is then started when a session starts, as Laya's is.
+ */
+export function wantsMude({ env, agentDir, platform, readFile }) {
+	const judges = muEnv("JUDGE", env);
+	if (judges) return judges.split(",").some((judge) => judge.trim() === "mude");
+	const path = pathFor(platform);
+	for (const name of ["mu.json", "kyrn.json"]) {
+		let config;
+		try {
+			config = JSON.parse(readFile(path.join(agentDir, name)));
+		} catch (error) {
+			if (error instanceof SyntaxError) return false;
+			continue;
+		}
+		const named = (tiers) => Array.isArray(tiers) && tiers.includes("mude");
+		return named(config?.tiers) || Object.values(config?.routes ?? {}).some(named);
+	}
+	return false;
+}
+
 export function localJudgeSupport({ platform, env, wsl = false }) {
 	if (platform === "darwin") return { runs: true };
 	const url = muEnv("LOCAL_JUDGE_URL", env);
@@ -580,6 +605,14 @@ export function planLaunch({
 		}
 	}
 
+	// mude's server, when the configuration asks for it: started without waiting, so a session never waits for the
+	// model to load (what mude cannot answer yet goes to the judges behind it). Only a Mac runs it.
+	let startMude;
+	if (execPath && platform === "darwin" && wantsMude({ env: childEnv, agentDir, platform, readFile: fs.readFile })) {
+		const mude = planMude({ platform, env: childEnv, argv: ["start", "--no-wait"], root, home, execPath, fs, stripsTypes });
+		if (!mude.error) startMude = { command: mude.command, args: mude.args, env: mude.env };
+	}
+
 	return {
 		command: execPath,
 		args: [...entry, ...judgeArgs({ argv, layout, root, platform, agentDir, readFile: fs.readFile }), ...argv],
@@ -590,6 +623,7 @@ export function planLaunch({
 		appDir,
 		agentDir,
 		startJudge,
+		startMude,
 		notes,
 		preface: argv[0] === "-h" || argv[0] === "--help" ? `${usage(platform)}\n\npi's help (mu passes all of this through):\n` : undefined,
 	};
@@ -606,10 +640,17 @@ export function planLaunch({
  *
  * A checkout runs there as it runs on the command line (sourceRuntime). Returns { error } when pi cannot run.
  */
-export function planHost({ platform, env, argv, root, home, fs, wsl = false, stripsTypes = true }) {
+export function planHost({ platform, env, argv, root, home, fs, wsl = false, stripsTypes = true, nodePath, nodeEnv = {} }) {
 	const path = pathFor(platform);
 	const launch = planLaunch({ platform, env, argv, root, home, execPath: "", fs, wsl, stripsTypes });
 	if (launch.error !== undefined) return { error: launch.error };
+	// mude's server is started by a Node of the host's: `nodePath` with `nodeEnv` (Electron's own binary with
+	// ELECTRON_RUN_AS_NODE=1 in the desktop app). Without one, the host leaves it to the app.
+	let startMude;
+	if (nodePath && platform === "darwin" && wantsMude({ env: launch.env, agentDir: launch.agentDir, platform, readFile: fs.readFile })) {
+		const mude = planMude({ platform, env: { ...launch.env, ...nodeEnv }, argv: ["start", "--no-wait"], root, home, execPath: nodePath, fs, stripsTypes });
+		if (!mude.error) startMude = { command: mude.command, args: mude.args, env: mude.env };
+	}
 	const common = {
 		env: launch.env,
 		layout: launch.layout,
@@ -617,6 +658,7 @@ export function planHost({ platform, env, argv, root, home, fs, wsl = false, str
 		appDir: launch.appDir,
 		agentDir: launch.agentDir,
 		startJudge: launch.startJudge,
+		startMude,
 		notes: launch.notes,
 	};
 	if (launch.layout === "package") {
@@ -661,6 +703,7 @@ function prepareFiles({ plan, platform, root, err }) {
  */
 export function prepareLaunch({ plan, platform, root, bin, err }) {
 	prepareFiles({ plan, platform, root, err });
+	startMudeServer(plan);
 	if (plan.startJudge) {
 		const started = spawnSync(pathFor(platform).join(bin, "kyrn-judge-local"), ["start"], {
 			stdio: "ignore",
@@ -671,11 +714,31 @@ export function prepareLaunch({ plan, platform, root, bin, err }) {
 }
 
 /**
+ * mude's server, started in the background (`mu judge mude start --no-wait`): nothing waits for it, and it outlives this
+ * process, shared by every mu session like Laya. When mude is not installed it does nothing (the doctor says so).
+ */
+function startMudeServer(plan) {
+	if (!plan.startMude) return;
+	try {
+		const child = spawn(plan.startMude.command, plan.startMude.args, {
+			env: plan.startMude.env,
+			stdio: "ignore",
+			detached: true,
+		});
+		child.once("error", () => {});
+		child.unref();
+	} catch {
+		// mu works without it: the judges behind mude answer.
+	}
+}
+
+/**
  * prepareLaunch for a program that must not stop while the local judge starts, such as the desktop app's main process:
  * the same steps and notes, with the local judge started through a child process it waits for without blocking.
  */
 export async function prepareLaunchAsync({ plan, platform, root, bin, err }) {
 	prepareFiles({ plan, platform, root, err });
+	startMudeServer(plan);
 	if (!plan.startJudge) return;
 	const status = await new Promise((resolve) => {
 		const child = spawn(pathFor(platform).join(bin, "kyrn-judge-local"), ["start"], {
@@ -790,6 +853,42 @@ export function planImport({ platform, env, argv, root, home, execPath, fs, stri
 	childEnv.MU_CODING_AGENT_DIR = agentDir;
 	childEnv.KYRN_CODING_AGENT_DIR = agentDir;
 	childEnv.PI_CODING_AGENT_DIR = agentDir;
+	return { command: execPath, args: [...entry, ...argv], env: childEnv, agentDir };
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// mu judge mude
+// ---------------------------------------------------------------------------------------------------------
+
+/**
+ * `mu judge mude <command>` (packages/kyrn-judge/src/mude): mude on this Mac, from the checkout's TypeScript or the
+ * package's built judge/dist/mude.js. It is told where mu keeps things: the agent folder (mu.json), mu's home (the
+ * model and its environment go under local-judge/mude), the .env (its key) and the lock of its Python packages.
+ */
+export function planMude({ platform, env, argv, root, home, execPath, fs, stripsTypes = true }) {
+	const path = pathFor(platform);
+	const layout = layoutOf({ root, platform, exists: fs.exists });
+	let entry;
+	if (layout === "package") {
+		const built = packageEntries({ root, platform }).mude;
+		if (!fs.exists(built)) {
+			return { error: `This mu-agent package has no mu judge mude (${built} is missing). Update it: npm i -g mu-agent` };
+		}
+		entry = [built];
+	} else {
+		const source = path.join(root, "packages", "kyrn-judge", "src", "mude", "cli.ts");
+		if (!fs.exists(source)) return { error: `mu judge mude is missing from this checkout (${source})` };
+		if (!stripsTypes) return { error: NO_TYPE_STRIPPING };
+		entry = ["--disable-warning=ExperimentalWarning", source];
+	}
+	const muDir = muHome({ home, platform, isDir: fs.isDir });
+	const agentDir = agentDirFor({ env, muDir, platform });
+	const childEnv = {};
+	for (const [key, value] of Object.entries(env)) if (typeof value === "string") childEnv[key] = value;
+	childEnv.MU_AGENT_DIR = agentDir;
+	childEnv.MU_MUDE_HOME = muDir;
+	childEnv.MU_MUDE_ENV_FILE = envFilePath({ layout, root, muDir, platform });
+	childEnv.MU_MUDE_LOCK = path.join(root, "kyrn", "local-judge", "mude-requirements.lock.txt");
 	return { command: execPath, args: [...entry, ...argv], env: childEnv, agentDir };
 }
 
@@ -1503,6 +1602,23 @@ export async function main(argv = process.argv.slice(2)) {
 				link: (target, at, kind) => symlinkSync(target, at, kind),
 			},
 		});
+	}
+	if (command === "judge" && rest[0] === "mude") {
+		const plan = planMude({
+			platform,
+			env,
+			argv: rest.slice(1),
+			root,
+			home,
+			execPath: process.execPath,
+			stripsTypes: Boolean(process.features.typescript),
+			fs: { exists: existsSync, isDir, readFile: readText },
+		});
+		if (plan.error) {
+			err(plan.error);
+			return 1;
+		}
+		return handOver({ command: plan.command, args: plan.args, env: plan.env, strategy: "spawn" });
 	}
 	if (command === "judge") {
 		const plan = planJudge({ platform, env, argv: rest, bin, wsl });

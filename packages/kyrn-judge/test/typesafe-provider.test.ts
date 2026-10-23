@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseConfig } from "../src/config.ts";
+import { BUILT_IN_JUDGES, parseConfig } from "../src/config.ts";
 import { isJudgeError } from "../src/errors.ts";
 import { CLM_BASE_URL, clmEndpoint, TypeSafeJudgeProvider } from "../src/providers/typesafe.ts";
 import { buildJudge } from "../src/registry.ts";
@@ -325,5 +325,38 @@ describe("CLM", () => {
 		expect(built.problems[0]).toBe(
 			'Judge "odd" needs a baseUrl: its key MU_JUDGE_CLM_API_KEY is not sent to TypeSafe',
 		);
+	});
+});
+
+describe("mude", () => {
+	const answers = {
+		answers: { edit: { noul: 0.9 }, kind: { choice: "other", probabilities: { other: 0.95 } }, size: { score: 1 } },
+	};
+
+	it("asks mude's server on this machine with the key the install wrote, and trusts it on every capability", async () => {
+		const seen: { url?: string; init?: RequestInit } = {};
+		const built = buildJudge(parseConfig({ tiers: ["mude"] }), {
+			env: { MU_JUDGE_MUDE_KEY: "local-key", TYPESAFE_API_KEY: "ts-key" },
+			fetch: fakeFetch(200, answers, seen),
+		});
+		expect(built.problems).toEqual([]);
+		expect(built.judge.id).toBe("127.0.0.1:8790:mude");
+		const result = await built.judge.evaluate({ state: { user_message: "rename it" }, questions });
+		expect(seen.url).toBe("http://127.0.0.1:8790/v1/systemone");
+		expect(new Headers(seen.init?.headers).get("authorization")).toBe("Bearer local-key");
+		expect(JSON.parse(String(seen.init?.body)).model).toBe("mude");
+		expect(result.answers.edit).toMatchObject({ type: "boolean", probability: 0.9 });
+		expect(BUILT_IN_JUDGES.mude.profile).toBeUndefined();
+		expect(BUILT_IN_JUDGES.mude.timeoutMs).toBe(4000);
+	});
+
+	it("never sends mude's key to TypeSafe", () => {
+		const built = buildJudge(
+			parseConfig({ tiers: ["odd"], judges: { odd: { type: "typesafe", apiKeyEnv: "MU_JUDGE_MUDE_KEY" } } }),
+			{
+				env: { MU_JUDGE_MUDE_KEY: "local-key" },
+			},
+		);
+		expect(built.problems[0]).toBe('Judge "odd" needs a baseUrl: its key MU_JUDGE_MUDE_KEY is not sent to TypeSafe');
 	});
 });
