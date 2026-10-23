@@ -109,7 +109,23 @@ export interface StartOptions {
 	readonly timeoutMs?: number;
 	/** Start it and return without waiting for it to be ready. */
 	readonly wait?: boolean;
+	/**
+	 * Ends the wait (Ctrl-C, the app cancelling an install). A server this call started goes too: until mude is the
+	 * judge nothing asks it, and it would hold about 4 GB of memory for nothing. One that was running before stays.
+	 */
+	readonly signal?: AbortSignal;
 	readonly sleep?: (ms: number) => Promise<void>;
+}
+
+export class StartStopped extends Error {
+	/** Whether the server went too: one this call started does, one that was running before does not. */
+	readonly serverStopped: boolean;
+
+	constructor(serverStopped = false) {
+		super("Stopped while the mude 1.0 server was starting");
+		this.name = "StartStopped";
+		this.serverStopped = serverStopped;
+	}
 }
 
 export interface Started {
@@ -124,7 +140,7 @@ export async function startServer(paths: MudePaths, options: StartOptions): Prom
 	const running = readPid(paths);
 	if (running && serverAlive(paths, running)) {
 		// Already started, by another mu or the desktop app: ready, or still loading.
-		if (options.wait !== false) await untilReady(paths, running, options.port, timeoutMs, sleep);
+		if (options.wait !== false) await untilReady(paths, running, options.port, timeoutMs, sleep, options.signal);
 		return { pid: running, port: options.port, already: true };
 	}
 	if (!(await portFree(options.port))) {
@@ -173,7 +189,15 @@ export async function startServer(paths: MudePaths, options: StartOptions): Prom
 	if (!pid) throw new Error("mude's server could not be started");
 	child.unref();
 	writeFileSync(paths.pid, `${pid}\n`, { mode: 0o600 });
-	if (options.wait !== false) await untilReady(paths, pid, options.port, timeoutMs, sleep);
+	if (options.wait !== false) {
+		try {
+			await untilReady(paths, pid, options.port, timeoutMs, sleep, options.signal);
+		} catch (error) {
+			if (!(error instanceof StartStopped)) throw error;
+			await stopServer(paths);
+			throw new StartStopped(true);
+		}
+	}
 	return { pid, port: options.port, already: false };
 }
 
@@ -183,9 +207,11 @@ async function untilReady(
 	port: number,
 	timeoutMs: number,
 	sleep: (ms: number) => Promise<unknown>,
+	signal?: AbortSignal,
 ): Promise<void> {
 	const deadline = Date.now() + timeoutMs;
 	while (Date.now() < deadline) {
+		if (signal?.aborted) throw new StartStopped();
 		if ((await health(port))?.status === "ready") return;
 		if (!serverAlive(paths, pid)) {
 			rmSync(paths.pid, { force: true });
