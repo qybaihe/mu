@@ -68,8 +68,15 @@ export function appendWithTimeout(
 	record: LedgerRecord,
 	timeoutMs = LEDGER_APPEND_TIMEOUT_MS,
 ): Promise<void> {
-	const append = Promise.resolve()
-		.then(() => sink.append(record))
+	let result: void | Promise<void>;
+	try {
+		// Invoke the sink immediately to preserve the synchronous side effects of
+		// sinks such as MemoryLedger; only waiting for an async result is bounded.
+		result = sink.append(record);
+	} catch {
+		return Promise.resolve();
+	}
+	const append = Promise.resolve(result)
 		.then(
 			() => undefined,
 			// A failed ledger is best effort. The decision must still complete.
