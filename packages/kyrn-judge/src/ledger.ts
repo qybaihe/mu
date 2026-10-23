@@ -76,12 +76,11 @@ export function appendWithTimeout(
 	} catch {
 		return Promise.resolve();
 	}
-	const append = Promise.resolve(result)
-		.then(
-			() => undefined,
-			// A failed ledger is best effort. The decision must still complete.
-			() => undefined,
-		);
+	const append = Promise.resolve(result).then(
+		() => undefined,
+		// A failed ledger is best effort. The decision must still complete.
+		() => undefined,
+	);
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	const timeout = new Promise<void>((resolve) => {
 		timer = setTimeout(resolve, timeoutMs);
