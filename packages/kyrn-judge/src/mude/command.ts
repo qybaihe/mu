@@ -224,6 +224,50 @@ export function installLocalOnly(ctx: Context, args: readonly string[]): boolean
 	}
 }
 
+/** When `pid` started, as ps says; with the pid, it tells a process from one that took over the number since. */
+function startedAt(pid: number): string | undefined {
+	try {
+		return execFileSync("/bin/ps", ["-p", String(pid), "-o", "lstart="], { encoding: "utf8" }).trim() || undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * Keeps two installs (another terminal, `mu setup`, the desktop app) from downloading into the same files at once,
+ * where one renames a file the other is still writing. `install.lock` names the process installing; one whose process
+ * is gone (a power cut, a kill) is taken over. Returns its release.
+ */
+export function holdInstall(paths: MudePaths): () => void {
+	mkdirSync(paths.root, { recursive: true });
+	const mine = `${JSON.stringify({ pid: process.pid, started: startedAt(process.pid) ?? "" })}\n`;
+	try {
+		writeFileSync(paths.installLock, mine, { flag: "wx" });
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+		let holder: { pid?: unknown; started?: unknown } = {};
+		try {
+			holder = JSON.parse(readFileSync(paths.installLock, "utf8"));
+		} catch {
+			// Unreadable: left by a process that was cut off while writing it.
+		}
+		const pid = typeof holder.pid === "number" ? holder.pid : 0;
+		if (pid > 0 && pid !== process.pid && holder.started && startedAt(pid) === holder.started) {
+			throw new Error(
+				`Another mude 1.0 install is running (process ${pid}). Wait for it to finish, or stop it, then run mu judge mude install again`,
+			);
+		}
+		writeFileSync(paths.installLock, mine);
+	}
+	return () => {
+		try {
+			if (readFileSync(paths.installLock, "utf8") === mine) rmSync(paths.installLock, { force: true });
+		} catch {
+			// Gone already.
+		}
+	};
+}
+
 function installed(ctx: Context): boolean {
 	return missingFiles(ctx.paths.model, MUDE_FILES).length === 0;
 }
@@ -399,12 +443,16 @@ export async function main(
 				// An install that goes on from one that stopped keeps what that one was asked for, unless told otherwise:
 				// local only stays local only.
 				const localOnly = installLocalOnly(ctx, args);
-				mkdirSync(ctx.paths.root, { recursive: true });
-				writeFileSync(ctx.paths.install, `${JSON.stringify({ localOnly })}\n`);
-				await ensureInstalled(ctx, out);
-				const at = await start(ctx, out);
-				enable(ctx, out, at, localOnly);
-				rmSync(ctx.paths.install, { force: true });
+				const release = holdInstall(ctx.paths);
+				try {
+					writeFileSync(ctx.paths.install, `${JSON.stringify({ localOnly })}\n`);
+					await ensureInstalled(ctx, out);
+					const at = await start(ctx, out);
+					enable(ctx, out, at, localOnly);
+					rmSync(ctx.paths.install, { force: true });
+				} finally {
+					release();
+				}
 				break;
 			}
 			case "enable": {

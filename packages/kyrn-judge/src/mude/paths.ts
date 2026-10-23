@@ -26,6 +26,8 @@ export interface MudePaths {
 	readonly state: string;
 	/** install.json: what an install that has not finished was asked for (local only or not), for the one that goes on. */
 	readonly install: string;
+	/** install.lock: the process installing now, so that a second install (another terminal, the app) waits its turn. */
+	readonly installLock: string;
 }
 
 export function mudePaths(muHome: string): MudePaths {
@@ -45,5 +47,6 @@ export function mudePaths(muHome: string): MudePaths {
 		log: join(root, "server.log"),
 		state: join(root, "state.json"),
 		install: join(root, "install.json"),
+		installLock: join(root, "install.lock"),
 	};
 }
