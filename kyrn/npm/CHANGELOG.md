@@ -5,6 +5,7 @@
 ### Added
 
 - Spend that no message of a session carries is recorded as a `kyrn.usage` session entry (a custom entry: kept in the file, never sent to the model; format in `kyrn/docs/features/usage-accounting.md`). A reply the watchdog cuts: the aborted request reports no usage, so its output is estimated from the reasoning that had streamed at 3.5 characters per token (the median over 164 reasoning-only MiMo replies on Terminal-Bench 2.1), less any output the provider did report, and priced at the model's output rate (`source: "watchdog-cut"`, `estimated: true`). Each `delegate` or `hive` sub-agent, verifiers included, when it ends: the sums of its messages' usage and cost as it streamed them, plus its own watchdog's estimates, `partial: true` when it was stopped or failed (`source: "subagent"`, with `kind`, `name`, `role`, `status`). On Terminal-Bench 2.1, 9 cuts of about 27k reasoning tokens and one hive at three times its parent's cost were in no session file. The `watchdog.cut` presentation event's `thoughtChars` is now the whole reasoning, not the end kept for the retry.
+- With `"recordState": true`, a decision whose questions are built from its input (one per skill in `skills.disclosure`, per capability, per memory in `memory.worth`, and so on) also keeps those questions in its ledger row (`questions`, redacted like the request). Without them such a row could not be replayed or used to train a judge. Decisions with fixed questions are named by `specId` and `specVersion`, and keep nothing more.
 
 ### Changed
 
