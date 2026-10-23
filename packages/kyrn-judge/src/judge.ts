@@ -127,10 +127,21 @@ export class Judge implements JudgeLike {
 
 		let responses: Awaited<ReturnType<JudgeProvider["evaluate"]>>[];
 		try {
-			// Questions are answered in isolation, so chunks can run concurrently over the same state.
-			responses = await Promise.all(
+			const requests = Promise.all(
 				chunks.map((questions) => this.provider.evaluate({ state: request.state, questions, signal })),
 			);
+			// An external provider is expected to honor AbortSignal, but a broken or
+			// third-party implementation may not. Race the provider work itself so the
+			// judge still fails open at the configured deadline instead of hanging.
+			const deadline = new Promise<never>((_, reject) => {
+				const timer = setTimeout(
+					() => reject(new JudgeError("timeout", `Judge call exceeded ${this.timeoutMs} ms`)),
+					this.timeoutMs,
+				);
+				requests.finally(() => clearTimeout(timer)).catch(() => undefined);
+			});
+			// Questions are answered in isolation, so chunks can run concurrently over the same state.
+			responses = await Promise.race([requests, deadline]);
 		} catch (error) {
 			if (request.signal?.aborted) throw new JudgeError("aborted", "Judge call was aborted", { cause: error });
 			if (timeout.aborted) {
