@@ -3,7 +3,7 @@ import type { ClassifierQuestion, JsonObject } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { isTrusted } from "../cascade.ts";
 import { CapabilityCatalog } from "../catalog/catalog.ts";
-import { DEFAULT_CONFIG, featureOptions, type KyrnConfig } from "../config.ts";
+import { DEFAULT_CONFIG, featureOptions, type JudgeConfig, type KyrnConfig } from "../config.ts";
 import { DecisionEngine, type DecisionMode } from "../decision.ts";
 import type { PreflightOutcome, TaskFrame } from "../decisions/input-preflight.ts";
 import type { NotifyFn } from "../decisions/notify-routing.ts";
@@ -230,6 +230,8 @@ export class KyrnRuntime {
 	capabilitiesOpen?: () => readonly string[] | undefined;
 	/** The judges in use, in order: the configured tiers, or what `/mu judge` switched to. */
 	private tiers: readonly string[];
+	/** Decisions answered by their own judges (`routes` in mu.json, `/mu route`). */
+	private readonly routes = new Map<string, readonly string[]>();
 	private latestCtx: ExtensionContext | undefined;
 	private firstUserMessage = "";
 	private turnStartListeners: ((words: string) => void)[] = [];
@@ -278,6 +280,8 @@ export class KyrnRuntime {
 	route(specId: string, tiers: readonly string[]): readonly string[] {
 		const before = this.problems.length;
 		this.engine.setJudgeFor(specId, tiers.length > 0 ? this.buildConfiguredJudge(tiers) : undefined);
+		if (tiers.length > 0) this.routes.set(specId, tiers);
+		else this.routes.delete(specId);
 		return this.problems.slice(before);
 	}
 
@@ -315,11 +319,22 @@ export class KyrnRuntime {
 	 * answers them itself, whose window holds one, is asked one at a time.
 	 */
 	answersInBatches(specId: string, capability: Capability): boolean {
-		for (const name of this.config.routes[specId] ?? this.tiers) {
-			const judge = resolveJudgeConfig(name, this.config);
-			if (judge && isTrusted(judge.profile, capability)) return judge.type !== "local";
+		for (const judge of this.judgesFor(specId)) {
+			if (isTrusted(judge.profile, capability)) return judge.type !== "local";
 		}
 		return this.judgeParallel;
+	}
+
+	/**
+	 * Whether any judge of `specId` (its route, else the tiers) is trusted on `capability`. When none is, the cascade
+	 * gives each such question a neutral answer without asking.
+	 */
+	trusts(specId: string, capability: Capability): boolean {
+		return this.judgesFor(specId).some((judge) => isTrusted(judge.profile, capability));
+	}
+
+	private judgesFor(specId: string): JudgeConfig[] {
+		return (this.routes.get(specId) ?? this.tiers).flatMap((name) => resolveJudgeConfig(name, this.config) ?? []);
 	}
 
 	/** Switch the decision model at runtime, e.g. `/mu judge laya,jev`. */

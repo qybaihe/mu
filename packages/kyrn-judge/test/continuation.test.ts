@@ -264,6 +264,36 @@ describe("carrying on after stopping short", () => {
 		expect(trusted.outcome).toBe("promised");
 	});
 
+	it("with Laya alone, asks nothing at the end of a run, where its verdict could only be to end", async () => {
+		const run = async (continuation: Record<string, unknown>, tiers = ["laya"], route?: string) => {
+			const provider = stopJudge();
+			const harness = await createHarness({
+				extensionFactories: [
+					createKyrnJudgeExtension({
+						provider,
+						mode: "active",
+						config: parseConfig({
+							tiers,
+							features: { memory: false, permissions: { mode: "full" }, continuation },
+						}),
+					}),
+				],
+			});
+			harnesses.push(harness);
+			if (route) await harness.session.prompt(route);
+			harness.setResponses([fauxAssistantMessage("Let me run the tests next."), fauxAssistantMessage("Done.")]);
+			await harness.session.prompt("Fix the flaky test.");
+			return { calls: continueCalls(provider).length, nudges: nudges(harness).length };
+		};
+		// Laya is trusted on neither `promised` nor a go-ahead: the verdict could only be "end", so nothing is asked.
+		expect(await run({})).toEqual({ calls: 0, nudges: 0 });
+		// continuation.localPromised lets Laya answer `promised`: it is asked at both ends, and its yes sends the agent back.
+		expect(await run({ localPromised: true })).toEqual({ calls: 2, nudges: 1 });
+		// The same when only this decision is routed to Laya, during the session.
+		expect(await run({}, ["jev"])).toEqual({ calls: 2, nudges: 1 });
+		expect(await run({}, ["jev"], "/mu route turn.continue laya")).toEqual({ calls: 0, nudges: 0 });
+	});
+
 	it("sends a run that ended on thinking alone back to work, without a judge, and not forever", async () => {
 		const silent = () => fauxAssistantMessage([fauxThinking("The tests pass, so the fix holds.")]);
 		const provider = stopJudge();
