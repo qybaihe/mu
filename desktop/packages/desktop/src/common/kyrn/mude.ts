@@ -102,7 +102,7 @@ export type MudeState = {
 
 /**
  * What installing takes, about, for the consent: the model, its Python environment, and memory while it runs. Download
- * sizes are in decimal gigabytes (10⁹ bytes), as Hugging Face gives them: the model is 1,782,005,734 bytes.
+ * sizes are in decimal gigabytes (10⁹ bytes), as Hugging Face gives them: the model is 1,782,006,237 bytes.
  */
 export const MUDE_DOWNLOAD_GB = 1.8;
 /** Bytes in a gigabyte of a download, as MUDE_DOWNLOAD_GB counts them. */

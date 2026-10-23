@@ -281,8 +281,8 @@ export class Mude {
 
   /**
    * Runs a command unless one is running, which a request then only reads. `localOnly` chooses between
-   * `--local-only` and `--with-fallback` for enable, and asks install for `--local-only`. `cancel` ends a running
-   * install; `open` shows mude's folder.
+   * `--local-only` and `--with-fallback` for install and enable. `cancel` ends a running install; `open` shows
+   * mude's folder.
    */
   async run(action: MudeAction, localOnly?: boolean): Promise<MudeState> {
     if (!this.available) throw new KyrnError('invalid', 'mude runs on macOS only');
@@ -400,10 +400,14 @@ export class Mude {
   }
 }
 
-/** The flags of a command: only local or with the judges behind it. */
+/**
+ * The flags of a command: only local or with the judges behind it. Left out, install goes on the way the install it
+ * continues was asked (the command keeps that choice), and enable keeps the current one.
+ */
 function flagsOf(command: MudeCommand, localOnly: boolean | undefined): string[] {
-  if (command === 'install') return localOnly === true ? ['--local-only'] : [];
-  if (command === 'enable' && localOnly !== undefined) return [localOnly ? '--local-only' : '--with-fallback'];
+  if ((command === 'install' || command === 'enable') && localOnly !== undefined) {
+    return [localOnly ? '--local-only' : '--with-fallback'];
+  }
   return [];
 }
 
