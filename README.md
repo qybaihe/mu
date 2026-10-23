@@ -183,7 +183,7 @@ Judges can be chained in tiers, cheapest first:
 
 ### mude 1.0, a decision model optimized for coding
 
-mude 1.0 is mu's own decision model, optimized for coding: fine-tuned and trained for the decisions a coding agent makes, and state of the art at them. It has 2B parameters, answers every question of a decision in one forward pass, with a probability for each answer, and runs on your machine, so what it judges never leaves it. Both editions, the [full model](https://huggingface.co/qybaihe/mude-2b) and the [MLX 8-bit edition](https://huggingface.co/qybaihe/mude-2b-mlx-8bit) (1.8 GB), are under the MIT license. For now, the one-step setup supports Macs with Apple silicon (macOS 14 or later, 8 GB of memory or more) and uses the MLX edition:
+mude 1.0 is mu's own decision model, optimized for coding: fine-tuned and trained for the decisions a coding agent makes, and state of the art at them. It has 2B parameters, answers every question of a decision in one forward pass, with a probability for each answer, and runs on your machine, so what it judges never leaves it. Both editions, the [full model](https://huggingface.co/qybaihe/mude-1.0) and the [MLX 8-bit edition](https://huggingface.co/qybaihe/mude-1.0-mlx-8bit) (1.8 GB), are under the MIT license. For now, the one-step setup supports Macs with Apple silicon (macOS 14 or later, 8 GB of memory or more) and uses the MLX edition:
 
 ```bash
 mu judge mude install               # download it, check every file, start it on 127.0.0.1 and make it the judge
@@ -195,7 +195,7 @@ mu judge mude uninstall             # remove the model and its Python environmen
 
 In the desktop app, the first-run guide's judge step offers to install mude 1.0, with download progress and a retry if it fails; you can skip it. Later, the Judges page in Settings installs, starts, stops and uninstalls mude, and its "Only local" switch is the same as `--local-only`. On a Mac that can't run mude, the guide says so and keeps the hosted judge.
 
-By default, the judge you had before stays behind mude. What mude can't answer (its server is stopped, or it's unsure) goes to that judge, and so do two injection checks mude isn't trusted with yet. If that judge is hosted, as the default Jev is, what it reads leaves your machine. While it runs, mude's server uses about 4 GB of memory; `mu judge mude stop` stops it. On other platforms, you can serve the [full model](https://huggingface.co/qybaihe/mude-2b) (bf16, PyTorch; a CUDA GPU is recommended) with its own System One server and add it to `mu.json` as a `typesafe` judge, as its model card shows.
+By default, the judge you had before stays behind mude. What mude can't answer (its server is stopped, or it's unsure) goes to that judge, and so do two injection checks mude isn't trusted with yet. If that judge is hosted, as the default Jev is, what it reads leaves your machine. While it runs, mude's server uses about 4 GB of memory; `mu judge mude stop` stops it. On other platforms, you can serve the [full model](https://huggingface.co/qybaihe/mude-1.0) (bf16, PyTorch; a CUDA GPU is recommended) with its own System One server and add it to `mu.json` as a `typesafe` judge, as its model card shows.
 
 ## How mu is built
 
@@ -413,8 +413,8 @@ If you use mude in your work, please cite it:
   author       = {qybaihe},
   year         = {2026},
   howpublished = {Hugging Face},
-  url          = {https://huggingface.co/qybaihe/mude-2b},
-  note         = {MIT License. MLX 8-bit edition for Apple silicon: https://huggingface.co/qybaihe/mude-2b-mlx-8bit}
+  url          = {https://huggingface.co/qybaihe/mude-1.0},
+  note         = {MIT License. MLX 8-bit edition for Apple silicon: https://huggingface.co/qybaihe/mude-1.0-mlx-8bit}
 }
 ```
 

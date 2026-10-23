@@ -152,7 +152,7 @@ mu                  # 在目前目錄開一個工作階段
 
 ### mude 1.0：針對程式設計場景最佳化的決策模型
 
-mude 1.0 是 mu 自己的決策模型，針對程式設計場景特別最佳化：經過微調和訓練，在程式設計場景的決策上達到 SOTA 級。它有 2B 參數，一次前向就答完一個判定的所有問題，每個答案帶機率；它在你的機器上執行，判定的內容不離開本機。[完整版](https://huggingface.co/qybaihe/mude-2b)和 [MLX 8-bit 版](https://huggingface.co/qybaihe/mude-2b-mlx-8bit)（1.8 GB）都採用 MIT 授權。目前一鍵安裝支援 Apple 晶片的 Mac（macOS 14 以上，記憶體 8 GB 以上），用的是 MLX 版：
+mude 1.0 是 mu 自己的決策模型，針對程式設計場景特別最佳化：經過微調和訓練，在程式設計場景的決策上達到 SOTA 級。它有 2B 參數，一次前向就答完一個判定的所有問題，每個答案帶機率；它在你的機器上執行，判定的內容不離開本機。[完整版](https://huggingface.co/qybaihe/mude-1.0)和 [MLX 8-bit 版](https://huggingface.co/qybaihe/mude-1.0-mlx-8bit)（1.8 GB）都採用 MIT 授權。目前一鍵安裝支援 Apple 晶片的 Mac（macOS 14 以上，記憶體 8 GB 以上），用的是 MLX 版：
 
 ```bash
 mu judge mude install               # 下載、逐一校驗檔案、在 127.0.0.1 上啟動，並設為判定器
@@ -164,7 +164,7 @@ mu judge mude uninstall             # 刪除模型和它的 Python 環境
 
 桌面 App 首次啟動的引導裡，「判定器」這一步會提供安裝 mude 1.0：顯示下載進度，失敗可以重試，也可以略過。之後在設定的「判定器」頁可以安裝、啟動、停止和解除安裝 mude，「僅限本機」開關等同於 `--local-only`。如果這台 Mac 跑不了 mude，引導會說明原因，繼續用託管的判定器。
 
-預設情況下，原本的判定器排在 mude 後面：mude 答不了的（服務沒在執行，或者它拿不準），以及它暫時還不被信任的兩項注入檢查，交給那個判定器。如果那個判定器是託管的（預設的 Jev 就是），它看到的內容會離開本機。mude 的服務執行時佔用約 4 GB 記憶體，`mu judge mude stop` 可以停掉。其他平台上，可以用[完整版](https://huggingface.co/qybaihe/mude-2b)（bf16、PyTorch，建議有 CUDA 顯示卡）自帶的 System One 服務執行，再依模型卡的寫法在 `mu.json` 裡把它加成 `typesafe` 判定器。
+預設情況下，原本的判定器排在 mude 後面：mude 答不了的（服務沒在執行，或者它拿不準），以及它暫時還不被信任的兩項注入檢查，交給那個判定器。如果那個判定器是託管的（預設的 Jev 就是），它看到的內容會離開本機。mude 的服務執行時佔用約 4 GB 記憶體，`mu judge mude stop` 可以停掉。其他平台上，可以用[完整版](https://huggingface.co/qybaihe/mude-1.0)（bf16、PyTorch，建議有 CUDA 顯示卡）自帶的 System One 服務執行，再依模型卡的寫法在 `mu.json` 裡把它加成 `typesafe` 判定器。
 
 ## 實測
 
@@ -341,8 +341,8 @@ npm run check                  # 格式、靜態檢查、型別
   author       = {qybaihe},
   year         = {2026},
   howpublished = {Hugging Face},
-  url          = {https://huggingface.co/qybaihe/mude-2b},
-  note         = {MIT License. MLX 8-bit edition for Apple silicon: https://huggingface.co/qybaihe/mude-2b-mlx-8bit}
+  url          = {https://huggingface.co/qybaihe/mude-1.0},
+  note         = {MIT License. MLX 8-bit edition for Apple silicon: https://huggingface.co/qybaihe/mude-1.0-mlx-8bit}
 }
 ```
 

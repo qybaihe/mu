@@ -152,7 +152,7 @@ mu                  # 在当前目录开一个会话
 
 ### mude 1.0：针对编程场景优化的决策模型
 
-mude 1.0 是 mu 自己的决策模型，针对编程场景特别优化：经过微调和训练，在编程场景的决策上达到 SOTA 级。它有 2B 参数，一次前向就答完一个判定的所有问题，每个答案带概率；它在你的机器上跑，判定的内容不离开本机。[完整版](https://huggingface.co/qybaihe/mude-2b)和 [MLX 8-bit 版](https://huggingface.co/qybaihe/mude-2b-mlx-8bit)（1.8 GB）都采用 MIT 许可证。目前一键安装支持 Apple 芯片的 Mac（macOS 14 及以上，内存 8 GB 及以上），用的是 MLX 版：
+mude 1.0 是 mu 自己的决策模型，针对编程场景特别优化：经过微调和训练，在编程场景的决策上达到 SOTA 级。它有 2B 参数，一次前向就答完一个判定的所有问题，每个答案带概率；它在你的机器上跑，判定的内容不离开本机。[完整版](https://huggingface.co/qybaihe/mude-1.0)和 [MLX 8-bit 版](https://huggingface.co/qybaihe/mude-1.0-mlx-8bit)（1.8 GB）都采用 MIT 许可证。目前一键安装支持 Apple 芯片的 Mac（macOS 14 及以上，内存 8 GB 及以上），用的是 MLX 版：
 
 ```bash
 mu judge mude install               # 下载、逐个校验文件、在 127.0.0.1 上启动，并设为判定器
@@ -164,7 +164,7 @@ mu judge mude uninstall             # 删除模型和它的 Python 环境
 
 桌面 App 首次启动的引导里，「判定器」这一步会提供安装 mude 1.0：显示下载进度，失败可以重试，也可以跳过。之后在设置的「判定器」页可以安装、启动、停止和卸载 mude，「仅本地」开关等同于 `--local-only`。如果这台 Mac 跑不了 mude，引导会说明原因，继续用托管的判定器。
 
-默认情况下，原来的判定器排在 mude 后面：mude 答不了的（服务没在跑，或者它拿不准），以及它暂时还不被信任的两项注入检查，交给那个判定器。如果那个判定器是托管的（默认的 Jev 就是），它看到的内容会离开本机。mude 的服务运行时占用约 4 GB 内存，`mu judge mude stop` 可以停掉。其他平台上，可以用[完整版](https://huggingface.co/qybaihe/mude-2b)（bf16、PyTorch，建议有 CUDA 显卡）自带的 System One 服务跑起来，再按模型卡的写法在 `mu.json` 里把它加成 `typesafe` 判定器。
+默认情况下，原来的判定器排在 mude 后面：mude 答不了的（服务没在跑，或者它拿不准），以及它暂时还不被信任的两项注入检查，交给那个判定器。如果那个判定器是托管的（默认的 Jev 就是），它看到的内容会离开本机。mude 的服务运行时占用约 4 GB 内存，`mu judge mude stop` 可以停掉。其他平台上，可以用[完整版](https://huggingface.co/qybaihe/mude-1.0)（bf16、PyTorch，建议有 CUDA 显卡）自带的 System One 服务跑起来，再按模型卡的写法在 `mu.json` 里把它加成 `typesafe` 判定器。
 
 ## 实测
 
@@ -341,8 +341,8 @@ npm run check                  # 格式、静态检查、类型
   author       = {qybaihe},
   year         = {2026},
   howpublished = {Hugging Face},
-  url          = {https://huggingface.co/qybaihe/mude-2b},
-  note         = {MIT License. MLX 8-bit edition for Apple silicon: https://huggingface.co/qybaihe/mude-2b-mlx-8bit}
+  url          = {https://huggingface.co/qybaihe/mude-1.0},
+  note         = {MIT License. MLX 8-bit edition for Apple silicon: https://huggingface.co/qybaihe/mude-1.0-mlx-8bit}
 }
 ```
 

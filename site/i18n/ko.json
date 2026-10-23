@@ -192,7 +192,7 @@
       { "b": "설정 → 판정기", "text": "mude 카드에서 설치, 시작, 중지, 판정기로 사용, 제거를 할 수 있고, '로컬 전용' 스위치도 있어요." }
     ],
     "other_h3": "다른 컴퓨터에서는",
-    "other_p": "다른 컴퓨터에서는 전체 버전(Hugging Face의 mude-2b)을 자체 System One 서버로 돌리고(방법은 모델 카드에 있어요), <code>~/.mu/agent/mu.json</code>에 <code>typesafe</code> 판정기로 추가하세요. <code>MUDE_KEY</code>에는 서버를 시작할 때 쓴 키를 넣어 두세요.",
+    "other_p": "다른 컴퓨터에서는 전체 버전(Hugging Face의 mude-1.0)을 자체 System One 서버로 돌리고(방법은 모델 카드에 있어요), <code>~/.mu/agent/mu.json</code>에 <code>typesafe</code> 판정기로 추가하세요. <code>MUDE_KEY</code>에는 서버를 시작할 때 쓴 키를 넣어 두세요.",
     "other_link": "모델 카드의 'Use with mu'(영어)",
     "local_label": "컴퓨터 밖으로 나가는 것",
     "local_h2": "무엇이 컴퓨터에 남는가",

@@ -1,4 +1,4 @@
-# mude's Python environment (mu judge mude install): requirements-mac.txt of qybaihe/mude-2b-mlx-8bit, resolved and
+# mude's Python environment (mu judge mude install): requirements-mac.txt of qybaihe/mude-1.0-mlx-8bit, resolved and
 # hashed for Python 3.13 on macOS 14+ arm64, the set the model was tested with:
 #   MACOSX_DEPLOYMENT_TARGET=14.0 uv pip compile requirements-mac.txt --generate-hashes --python-version 3.13 \
 #     --python-platform aarch64-apple-darwin --no-header --index-url https://pypi.org/simple

@@ -20,7 +20,7 @@
     </div>
     <h3 class="models-h3" data-reveal>{{ M.downloads_h3 }}</h3>
     <div class="grid two">
-      {% for name, text in [("mude-2b", M.full_p), ("mude-2b-mlx-8bit", M.mac_p)] %}<a class="card" data-reveal style="--d: {{ loop.index0 * 70 }}ms" href="{{ hf }}{{ name }}"><span class="go" aria-hidden="true">↗</span><h3>{{ name }}</h3><p>{{ text }}</p><code class="card-code">huggingface.co/qybaihe/{{ name }}</code></a>
+      {% for name, text in [("mude-1.0", M.full_p), ("mude-1.0-mlx-8bit", M.mac_p)] %}<a class="card" data-reveal style="--d: {{ loop.index0 * 70 }}ms" href="{{ hf }}{{ name }}"><span class="go" aria-hidden="true">↗</span><h3>{{ name }}</h3><p>{{ text }}</p><code class="card-code">huggingface.co/qybaihe/{{ name }}</code></a>
       {% endfor %}
     </div>
   </section>
@@ -59,7 +59,7 @@
   "tiers": ["mude"]
 }</code></pre>
     </div>
-    <a class="principles-more" data-reveal href="{{ hf }}mude-2b#use-with-mu">{{ M.other_link }}<span aria-hidden="true">↗</span></a>
+    <a class="principles-more" data-reveal href="{{ hf }}mude-1.0#use-with-mu">{{ M.other_link }}<span aria-hidden="true">↗</span></a>
   </section>
 
   <section class="wrap models-section" id="local">

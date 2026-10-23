@@ -192,7 +192,7 @@
       { "b": "設定 → 判定器", "text": "mude 卡片上可以安裝、啟動、停止、設為判定器和解除安裝，還有「僅限本機」開關。" }
     ],
     "other_h3": "在其他機器上",
-    "other_p": "在別的機器上，用完整版（Hugging Face 上的 mude-2b）和它自帶的 System One 服務來執行（做法見模型卡），再在 <code>~/.mu/agent/mu.json</code> 裡把它加成一個 <code>typesafe</code> 判定器。<code>MUDE_KEY</code> 裡放的是啟動服務時用的金鑰：",
+    "other_p": "在別的機器上，用完整版（Hugging Face 上的 mude-1.0）和它自帶的 System One 服務來執行（做法見模型卡），再在 <code>~/.mu/agent/mu.json</code> 裡把它加成一個 <code>typesafe</code> 判定器。<code>MUDE_KEY</code> 裡放的是啟動服務時用的金鑰：",
     "other_link": "模型卡上的「Use with mu」（英文）",
     "local_label": "資料去向",
     "local_h2": "什麼會離開你的機器",

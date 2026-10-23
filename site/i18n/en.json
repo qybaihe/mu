@@ -192,7 +192,7 @@
       { "b": "Settings → Judges", "text": "The mude card installs, starts and stops it, makes it the judge and uninstalls it. It also has the Only local switch." }
     ],
     "other_h3": "On other machines",
-    "other_p": "Elsewhere, run the full edition (mude-2b on Hugging Face) with its own System One server, as its model card shows, and add it to <code>~/.mu/agent/mu.json</code> as a <code>typesafe</code> judge. <code>MUDE_KEY</code> holds the key the server was started with:",
+    "other_p": "Elsewhere, run the full edition (mude-1.0 on Hugging Face) with its own System One server, as its model card shows, and add it to <code>~/.mu/agent/mu.json</code> as a <code>typesafe</code> judge. <code>MUDE_KEY</code> holds the key the server was started with:",
     "other_link": "Using mude 1.0 with mu, on its model card",
     "local_label": "WHAT LEAVES YOUR MACHINE",
     "local_h2": "What stays on your machine",

@@ -192,7 +192,7 @@
       { "b": "設定 → 判定器", "text": "mude のカードから、インストール、起動、停止、判定器としての使用、アンインストールができます。「ローカルのみ」スイッチもここにあります。" }
     ],
     "other_h3": "ほかのマシンでは",
-    "other_p": "ほかのマシンでは、フル版（Hugging Face の mude-2b）を付属の System One サーバーで動かし（手順はモデルカードにあります）、<code>~/.mu/agent/mu.json</code> に <code>typesafe</code> 判定器として追加します。<code>MUDE_KEY</code> には、サーバーの起動時に使ったキーを入れておきます：",
+    "other_p": "ほかのマシンでは、フル版（Hugging Face の mude-1.0）を付属の System One サーバーで動かし（手順はモデルカードにあります）、<code>~/.mu/agent/mu.json</code> に <code>typesafe</code> 判定器として追加します。<code>MUDE_KEY</code> には、サーバーの起動時に使ったキーを入れておきます：",
     "other_link": "モデルカードの「Use with mu」（英語）",
     "local_label": "マシンの外に出るもの",
     "local_h2": "何がマシンに残るか",
