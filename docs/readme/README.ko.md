@@ -165,6 +165,15 @@ mubench는 mu가 의사결정 모델을 위해 만든 벤치마크예요. 메인
   </picture>
 </p>
 
+결정 정확도는 더 단순한 별도 지표예요. 모델이 맞힌 검사 항목의 비율로, 실수의 비용과 상관없이 모든 검사 항목을 똑같이 세요. 각 패널의 첫 막대는 의사결정 모델 없는 mu예요.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../images/mubench/accuracy-en-dark.svg">
+    <img src="../images/mubench/accuracy-en-light.svg" width="880" alt="mubench 1.0 결정 정확도(95% 구간 포함). 메인 보드, 오픈소스 저장소에서 진행한 실제 코딩 세션의 요청 3,193개: 의사결정 모델 없음 78.0% (75.9–80.2); mude 1.0 91.5% (89.6–93.3); Jev 1.14 90.1% (88.9–91.3); Jev 1.13 89.4% (87.7–91.1); d3-nano (원본) 83.5% (82.1–84.9). 서브 보드, 구성한 시나리오 1,655개: 의사결정 모델 없음 44.5% (42.8–46.2); mude 1.0 92.1% (91.1–93.1); Jev 1.14 91.8% (90.8–92.8); Jev 1.13 91.1% (90.0–92.0); d3-nano (원본) 80.1% (78.6–81.7).">
+  </picture>
+</p>
+
 ## 실측
 
 아래 숫자는 저장소에 들어 있는 리플레이 [`kyrn/spikes/judge-bench/test-log-replay.ts`](../../kyrn/spikes/judge-bench/test-log-replay.ts)에서 나왔어요. 방법과 전체 표는 [kyrn/docs/09-test-log-admission.md](../../kyrn/docs/09-test-log-admission.md)(중국어)에 있어요.

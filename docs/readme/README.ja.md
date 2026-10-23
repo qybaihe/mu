@@ -165,6 +165,15 @@ mubench は、mu が意思決定モデルのために作ったベンチマーク
   </picture>
 </p>
 
+判断の正答率は、もっと素朴な別の指標です。モデルが正しく答えたチェックの割合で、間違いのコストに関係なく、どのチェックも同じ重みです。各パネルの最初の棒は意思決定モデルなしの mu です。
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../images/mubench/accuracy-en-dark.svg">
+    <img src="../images/mubench/accuracy-en-light.svg" width="880" alt="mubench 1.0 の判断の正答率（95% 区間付き）。メインボード、オープンソースのリポジトリでの実際のコーディングセッションの 3,193 件のリクエスト：意思決定モデルなし 78.0% (75.9–80.2)、mude 1.0 91.5% (89.6–93.3)、Jev 1.14 90.1% (88.9–91.3)、Jev 1.13 89.4% (87.7–91.1)、d3-nano（オリジナル） 83.5% (82.1–84.9)。サブボード、作成した 1,655 件のシナリオ：意思決定モデルなし 44.5% (42.8–46.2)、mude 1.0 92.1% (91.1–93.1)、Jev 1.14 91.8% (90.8–92.8)、Jev 1.13 91.1% (90.0–92.0)、d3-nano（オリジナル） 80.1% (78.6–81.7)。">
+  </picture>
+</p>
+
 ## 実測
 
 以下の数字は、リポジトリに含まれるリプレイ [`kyrn/spikes/judge-bench/test-log-replay.ts`](../../kyrn/spikes/judge-bench/test-log-replay.ts) によるものです。方法と完全な表は [kyrn/docs/09-test-log-admission.md](../../kyrn/docs/09-test-log-admission.md)（中国語）にあります。

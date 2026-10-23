@@ -49,6 +49,10 @@ const WORDS = {
     caps_sub: 'The score in each capability, on {items} requests from real coding sessions on open-source repositories. 0 = mu with no decision model; 100 = all of the cost it pays removed.',
     threat_cell: 'Mostly constructed items; not scored yet.',
     clipped: 'Bars below −25 are cut short; the number on the right is the score.',
+    acc_title: 'mubench 1.0 · decision accuracy',
+    acc_sub: 'The share of checks each model gets right, next to mu with no decision model. Every check counts the same, whatever its mistakes cost. The small numbers are the gain in points; the thin lines are 95% intervals.',
+    acc_real: 'Main board · {items} requests from real coding sessions',
+    acc_constructed: 'Sub-board · {items} constructed scenarios',
     scoring_title: 'How mubench scores a decision model',
     steps: [
       ['A real request', 'What mu asked a decision model in a real coding session on an open-source repository, kept word for word as an item.'],
@@ -67,6 +71,10 @@ const WORDS = {
     caps_sub: '每项能力的分数，来自开源仓库上真实编程会话里的 {items} 道请求。0 = 不用决策模型的 mu；100 = 它付出的代价全部消除。',
     threat_cell: '以构造题为主，目前还不出分。',
     clipped: '低于 −25 的柱子截断显示，右侧数字是实际分数。',
+    acc_title: 'mubench 1.0 决策正确率',
+    acc_sub: '每个模型答对的检查项占比，和不用决策模型的 mu 对比。每个检查项分量相同，不管答错的代价多大。小字是提高的百分点，细线是 95% 区间。',
+    acc_real: '主榜 · 真实编程会话里的 {items} 道请求',
+    acc_constructed: '副榜 · {items} 个构造场景',
     scoring_title: 'mubench 怎么给决策模型打分',
     steps: [
       ['真实请求', 'mu 在开源仓库上的真实编程会话里问决策模型的问题，一字不改，收作一道题。'],
@@ -316,6 +324,70 @@ function capabilities(lang, theme, narrow) {
   return svg(Wd, y + 6, W.caps_title, desc, body);
 }
 
+// ── Decision accuracy, against mu with no decision model ─────────────────────
+
+function accuracy(lang, theme, narrow) {
+  const c = THEMES[theme];
+  const W = WORDS[lang];
+  const B = I18N[lang];
+  const Wd = narrow ? 360 : 880;
+  const body = [];
+  let [t, y] = para(0, 22, W.acc_title, Wd, { size: narrow ? 15 : 17, weight: 650, fill: c.text }, narrow ? 21 : 24);
+  body.push(t);
+  [t, y] = para(0, y + (narrow ? 24 : 26), W.acc_sub, Wd, { size: narrow ? 12.5 : 13, fill: c.muted }, 19);
+  body.push(t);
+  const gap = 56;
+  const PW = narrow ? Wd : (Wd - gap) / 2;
+  const pct = (v) => `${v.toFixed(1)}%`;
+  const gain = (v) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1)}`;
+  const descParts = [];
+  let bottom = y;
+  ['real', 'constructed'].forEach((key, i) => {
+    const o = bench.boards[key].overall;
+    const order = models(lang).sort((a, b) => o.scores[b.id] - o.scores[a.id]);
+    // The first row is mu with no decision model; the bars under it are what a decision model adds.
+    const rows = [{ id: 'baseline', name: B.zero_row, v: o.baseline, ci: o.acc_ci.baseline }, ...order.map((m) => ({ ...m, v: o.acc[m.id], ci: o.acc_ci[m.id] }))];
+    const px = narrow ? 0 : i * (PW + gap);
+    let py = narrow ? bottom + (i ? 30 : 30) : y + 30;
+    const [ht, hy] = para(px, py + 14, fill(W[`acc_${key}`], { items: nf(o.items) }), PW, { size: 13.5, weight: 650, fill: c.text }, 19);
+    body.push(ht);
+    py = hy + 18;
+    const labelW = Math.min(narrow ? 120 : 132, Math.max(...rows.map((r) => width(r.name, 12.5, r.id === 'baseline' ? 400 : 600))));
+    const valueW = narrow ? 96 : 104;
+    const x0 = px + labelW + 10;
+    const plot = PW - labelW - 10 - valueW;
+    const sx = (v) => x0 + (v / 100) * plot;
+    const pitch = 30;
+    const barH = 16;
+    const rowsH = rows.length * pitch - (pitch - barH);
+    for (const v of [0, 50, 100]) body.push(line(sx(v), py - 6, sx(v), py + rowsH + 6, v === 0 ? c.lineStrong : c.line));
+    rows.forEach((r, k) => {
+      const by = py + k * pitch;
+      const cy = by + barH / 2;
+      const base = r.id === 'baseline';
+      body.push(text(x0 - 10, cy + 4.5, r.name, { size: 12.5, weight: base ? 400 : 600, fill: base ? c.muted : c.text, anchor: 'end' }));
+      if (base) {
+        body.push(`<rect x="${r1(x0)}" y="${r1(by + 0.75)}" width="${r1(sx(r.v) - x0 - 0.75)}" height="${barH - 1.5}" rx="3" fill="${c.box}" stroke="${c.faint}" stroke-width="1.5"/>`);
+      } else {
+        body.push(bar(x0, sx(r.v), by, barH, c.models[r.id]));
+      }
+      const [lo, hi] = r.ci;
+      for (const [a, b2, d] of [[lo, hi, 0], [lo, lo, 4], [hi, hi, 4]]) {
+        body.push(line(sx(a), cy - d, sx(b2), cy + d, c.text, 1.5, ' stroke-linecap="round" opacity="0.8"'));
+      }
+      const vx = Math.max(sx(hi), sx(r.v)) + 9;
+      body.push(text(vx, cy + 4.5, pct(r.v), { size: 13, weight: 650, fill: base ? c.muted : c.text, nums: true }));
+      if (!base) body.push(text(vx + width(pct(r.v), 13, 650) + 6, cy + 4, gain(r.v - o.baseline), { size: 11.5, fill: c.faint, nums: true }));
+      descParts.push(`${r.name} ${pct(r.v)} (95% ${pct(lo)}–${pct(hi)})`);
+    });
+    const ty = py + rowsH + 22;
+    for (const v of [0, 50, 100]) body.push(text(sx(v), ty, `${v}%`, { size: 10.5, fill: c.faint, anchor: 'middle', nums: true }));
+    bottom = Math.max(bottom, ty);
+  });
+  const desc = `${W.acc_sub} ${descParts.join('; ')}.`;
+  return svg(Wd, bottom + 10, W.acc_title, desc, body);
+}
+
 // ── How it scores ────────────────────────────────────────────────────────────
 
 function glyph(i, x, y, c, gid) {
@@ -419,6 +491,7 @@ for (const lang of ['en', 'zh']) {
         [`composite-${end}`]: composite('real', lang, theme, narrow),
         [`constructed-${end}`]: composite('constructed', lang, theme, narrow),
         [`capabilities-${end}`]: capabilities(lang, theme, narrow),
+        [`accuracy-${end}`]: accuracy(lang, theme, narrow),
         [`scoring-${end}`]: scoring(lang, theme, narrow),
       };
       for (const [name, body] of Object.entries(files)) {
