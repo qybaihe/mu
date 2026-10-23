@@ -31,7 +31,7 @@
 
 - **mu**：命令行。pi 的全部能力，加上判定内核。
 - **mu 桌面端**：自带 mu 和运行时的桌面应用。下载，接一个模型，开始。
-- **判定模型**：默认是 TypeSafe 托管的 Jev。是非题、选择题、打分题，每个答案带概率，每一次判定都进流水。任何判定模型都可以替代它：本地的 Laya（审批除外）、你自己的 System One 服务或任意 LLM。
+- **判定模型**：默认是 TypeSafe 托管的 Jev。是非题、选择题、打分题，每个答案带概率，每一次判定都进流水。任何判定模型都可以替代它：在你 Mac 上跑的 mu 自有模型 [mude](#mude在你-mac-上判定不出本机)、本地的 Laya（审批除外）、你自己的 System One 服务或任意 LLM。
 
 > 还在早期开发。预发布版（0.1.x）在 npm 和 [Releases](https://github.com/qybaihe/mu/releases) 上，作者每天在用。名字、设置和格式都可能变。
 
@@ -143,11 +143,28 @@ mu                  # 在当前目录开一个会话
 ## 判定器
 
 - **Jev**：TypeSafe 托管的判定模型。有边界的问题，答案带概率。可以经 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI，或任何支持同一协议的服务调用，每个服务有自己的密钥（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`）：在桌面端的「判定器」页选一个，默认用第一个设置了密钥的。一个密钥都没有时，默认由 OpenCode Zen 上限时免费的 Jev 1.13 回答：判定要读的内容会发给 OpenCode，它不拿来训练模型，mu 每天提示一次。配上密钥（`mu setup`，或「判定器」页）后，下一个问题起就用你的密钥。在作者自己的会话里实测：HTTP/2 上一个热连接的问题约 0.3 秒；16 块工具输出并成一个请求判完 0.44 秒，状态只计费一次。判定、概率和耗时都进流水：`mu ledger`，或桌面端的「判定」页。
+- **mude**（本地，Apple 芯片的 Mac）：mu 自己的判定模型，见[下文](#mude在你-mac-上判定不出本机)。
 - **Laya**（本地）。一个 3.22 亿参数的判定器，在你的机器上跑，不走网络。未经你同意不下载任何东西。简单谓词上可靠，元判断上偏弱：先让它以影子模式和你当前的判定器并行跑，看过流水再把判定点交给它。
 - **pi 模型目录里的任何分类模型**，作为一级：`classifier:<提供商>/<模型>`。比如 Cloudflare 的 Clef（`clef`、`clef-flash`）、OpenRouter 和 Vercel AI Gateway 上的 System One 模型、llama.cpp 的分类模型。
 - **任何大模型**，作为一级：`llm:<提供商>/<模型>`。
 
 这换来什么，以作者自己的会话为准：上下文很少填满，因为工具输出逐块进入、过期结果不写摘要直接放下；测试日志精简默认关闭，开启后折叠完全相同的重复，在最长的几份失败测试日志里省下 51% 的字符，一个字符也没丢（见[实测](#实测)）；提示缓存过期之前，内核会判断你会不会回来，会回来就提前续上。
+
+### mude：在你 Mac 上判定，不出本机
+
+[mude-2b](https://huggingface.co/qybaihe/mude-2b) 是 mu 自己的判定模型，一个用 mu 的判定请求训练的 2B 判定器。一次前向就答完一个判定的所有问题，每个答案带概率；它在你的机器上跑，判定的内容不离开本机。mude-2b 和它的 [MLX 8-bit 版](https://huggingface.co/qybaihe/mude-2b-mlx-8bit)（1.8 GB）都采用 MIT 许可证。目前一键安装支持 Apple 芯片的 Mac（macOS 14 及以上，内存 8 GB 及以上），用的是 MLX 版：
+
+```bash
+mu judge mude install               # 下载、逐个校验文件、在 127.0.0.1 上启动，并设为判定器
+mu judge mude status                # 装了什么、在不在跑、有没有启用
+mu judge mude enable --local-only   # 只用 mude：什么都不发给托管的判定器
+mu judge mude disable               # 换回原来的判定器，并停掉它的服务
+mu judge mude uninstall             # 删除模型和它的 Python 环境
+```
+
+桌面 App 首次启动的引导里，「判定器」这一步会提供安装 mude：显示下载进度，失败可以重试，也可以跳过。之后在设置的「判定器」页可以安装、启动、停止和卸载 mude，「仅本地」开关等同于 `--local-only`。如果这台 Mac 跑不了 mude，引导会说明原因，继续用托管的判定器。
+
+默认情况下，原来的判定器排在 mude 后面：mude 答不了的（服务没在跑，或者它拿不准），以及它暂时还不被信任的两项注入检查，交给那个判定器。如果那个判定器是托管的（默认的 Jev 就是），它看到的内容会离开本机。mude 的服务运行时占用约 4 GB 内存，`mu judge mude stop` 可以停掉。其他平台上，可以用完整的 [mude-2b](https://huggingface.co/qybaihe/mude-2b)（bf16、PyTorch，建议有 CUDA 显卡）自带的 System One 服务跑起来，再按模型卡的写法在 `mu.json` 里把它加成 `typesafe` 判定器。
 
 ## 实测
 
@@ -314,9 +331,26 @@ npm run check                  # 格式、静态检查、类型
 
 所有参与者遵守[行为准则](../../CODE_OF_CONDUCT.md)。安全问题请按 [SECURITY.md](../../SECURITY.md) 私下报告。
 
+## 引用
+
+如果你在工作中用到 mude，请引用：
+
+```bibtex
+@misc{mude2b2026,
+  title        = {mude-2b: the decision model of the mu coding agent},
+  author       = {qybaihe},
+  year         = {2026},
+  howpublished = {Hugging Face},
+  url          = {https://huggingface.co/qybaihe/mude-2b},
+  note         = {MIT License. MLX 8-bit edition for Apple silicon: https://huggingface.co/qybaihe/mude-2b-mlx-8bit}
+}
+```
+
 ## 来源与协议
 
 mu 采用 MIT 许可证（[LICENSE](../../LICENSE)；桌面端见 [desktop/LICENSE](../../desktop/LICENSE)）。它基于 [pi](https://github.com/earendil-works/pi)（编码代理，MIT）构建，感谢 pi 的作者。有几个判定点借鉴了别的项目：提示注入筛查的问法来自 [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills)，续跑检查和批量判定工具参考了 [oh-my-pi](https://github.com/can1357/oh-my-pi)。判定内核用到的第三方代码列在 [THIRD_PARTY_NOTICES.md](../../packages/kyrn-judge/THIRD_PARTY_NOTICES.md)。
+
+mude-2b 由 [d3-nano](https://huggingface.co/vllm-sr/d3-nano)（Decision 3.0，vLLM Semantic Router Team）微调而来，后者基于 Qwen3.5-2B；两者都是 Apache-2.0 许可证，模型仓库里保留了它们的声明。
 
 桌面端最初 fork 自 [AionUi](https://github.com/iOfficeAI/AionUi)，从 AionUi 带来的文件列在 [desktop/APACHE-FILES.txt](../../desktop/APACHE-FILES.txt)，仍按 Apache License 2.0 授权（见 [desktop/NOTICE](../../desktop/NOTICE)）。
 
