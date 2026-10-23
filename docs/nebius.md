@@ -6,7 +6,7 @@ mu can run end to end on [Nebius Token Factory](https://tokenfactory.nebius.com)
 | --- | --- | --- |
 | The coding model: reads, edits, runs commands | Nemotron 3 Super (`nvidia/nemotron-3-super-120b-a12b`) | Calls tools reliably, $0.30 / $0.90 per million tokens; its thinking follows mu's thinking level |
 | The judge at the 40 decision points | Nemotron 3 Ultra (`nvidia/Nemotron-3-Ultra-550b-a55b`), thinking off | The only Nemotron on Token Factory that clearly beat having no judge (below); 0.9 s at the median |
-| The judge on your machine | Nemotron 3 Nano 4B, distilled from Ultra ([mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron)) | Free and local, about 0.1 s a verdict; on held-out test it scored above Ultra (below) |
+| The judge on your machine | Nemotron 3 Nano 4B, distilled from Ultra ([mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron)) | Free and local, about 0.1 s to approve a command; on held-out test it scored above Ultra (below) |
 | Where commands run, if you want them off your machine | Token Factory Sandboxes | Each command continues from the files the previous one left; changes come back only after you review the diff |
 
 ## Set up

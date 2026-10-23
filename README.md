@@ -189,7 +189,7 @@ With one [Token Factory](https://tokenfactory.nebius.com) key, `mu setup` puts b
 
 - **Nemotron 3 Super writes, runs and tests the code** through mu's tools. mu's thinking levels map onto the `reasoning_effort` values Super accepts.
 - **Nemotron 3 Ultra is the judge** (`nemotron`). `nemotron-think` asks it with thinking on; a few lines of config route the four decision points where that measurably decides better to it.
-- **A Nemotron 3 Nano 4B distilled from Ultra judges on your own GPU** (`nemotron-local`, from [mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron)) in about 0.1 s a verdict.
+- **A Nemotron 3 Nano 4B distilled from Ultra judges on your own GPU** (`nemotron-local`, from [mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron)), approving a command in about 0.1 s.
 
 Token Factory is what made choosing these models a measurement rather than a guess. Every Nemotron it serves sat in the judge's seat on the same 1,353 held-out judge requests from mu's sessions, scored by what mu then did; only Ultra clearly beat having no judge (47.3 on real requests, Super 2.7, Lightning 15.4). Ultra then labelled 9,494 judge requests to train the distilled judge, and on 4,838 held-out test requests, scored once, the student scored above its teacher (68.2 against 54.7 on real requests, 59.9 against 48.4 on constructed ones). All of it, every evaluation and every label, came to about $27 of Token Factory credit, with no model of our own to host. Setup, routes and the numbers with their confidence intervals: [docs/nebius.md](docs/nebius.md).
 
