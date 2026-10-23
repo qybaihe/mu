@@ -5,9 +5,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { planLaunch, planMude, wantsMude } from "../../../kyrn/bin/mu.mjs";
-import { main, problems } from "../src/mude/command.ts";
+import { installLocalOnly, main, problems } from "../src/mude/command.ts";
 import { disableMude, enableMude, judgeSetting, ROUTED_AWAY } from "../src/mude/config.ts";
-import { DownloadError, downloadedBytes, downloadFiles, missingFiles } from "../src/mude/download.ts";
+import { DownloadError, downloadedBytes, downloadFiles, missingFiles, resumeFrom } from "../src/mude/download.ts";
 import { MUDE_BYTES, MUDE_FILES, MUDE_REVISION, type MudeFile, mudeFileUrl } from "../src/mude/manifest.ts";
 import { mudePaths } from "../src/mude/paths.ts";
 
@@ -65,10 +65,16 @@ describe("downloading mude", () => {
 	let base: string;
 	const requests: { path: string; range?: string; auth?: string }[] = [];
 	let status = 200;
+	/** Each response sends this many bytes of the file and then drops the connection. */
+	let cutAfter: number | undefined;
+	/** Each response sends this many bytes and then sends nothing more, holding the connection open. */
+	let holdAfter: number | undefined;
 
 	beforeEach(async () => {
 		requests.length = 0;
 		status = 200;
+		cutAfter = undefined;
+		holdAfter = undefined;
 		server = createServer((request, response) => {
 			const path = decodeURIComponent((request.url ?? "").slice(1));
 			requests.push({ path, range: request.headers.range, auth: request.headers.authorization });
@@ -78,11 +84,16 @@ describe("downloading mude", () => {
 				return;
 			}
 			const range = /^bytes=(\d+)-$/.exec(request.headers.range ?? "");
-			if (range) {
-				const from = Number(range[1]);
-				response.writeHead(206, { "content-length": text.length - from }).end(text.slice(from));
+			const from = range ? Number(range[1]) : 0;
+			response.writeHead(range ? 206 : 200, { "content-length": text.length - from });
+			const rest = text.slice(from);
+			if (cutAfter !== undefined && rest.length > cutAfter) {
+				// Closed a moment after the bytes, as a dropped connection is: what is read before it ends is not lost.
+				response.write(rest.slice(0, cutAfter), () => setTimeout(() => response.socket?.end(), 50));
+			} else if (holdAfter !== undefined && rest.length > holdAfter) {
+				response.write(rest.slice(0, holdAfter));
 			} else {
-				response.writeHead(200, { "content-length": text.length }).end(text);
+				response.end(rest);
 			}
 		});
 		await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -90,6 +101,7 @@ describe("downloading mude", () => {
 		base = `http://127.0.0.1:${typeof address === "object" && address ? address.port : 0}`;
 	});
 	afterEach(async () => {
+		server.closeAllConnections();
 		await new Promise((resolve) => server.close(resolve));
 	});
 
@@ -112,12 +124,84 @@ describe("downloading mude", () => {
 		expect(requests).toEqual([]);
 	});
 
-	it("goes on from the bytes an interrupted download left", async () => {
-		writeFileSync(join(dir, "a.txt.part"), contents["a.txt"].slice(0, 1234));
-		await downloadFiles(options({ files: [files[0]] }));
-		expect(requests[0]).toMatchObject({ path: "a.txt", range: "bytes=1234-" });
+	it("goes on from the bytes an interrupted download left on the disk", async () => {
+		writeFileSync(join(dir, "a.txt.part"), contents["a.txt"].slice(0, 5000));
+		writeFileSync(join(dir, "a.txt.part.saved"), "4096\n");
+		await downloadFiles(options({ files: [files[0]], checkpointBytes: 1024 }));
+		expect(requests[0]).toMatchObject({ path: "a.txt", range: "bytes=4096-" });
 		expect(readFileSync(join(dir, "a.txt"), "utf8")).toBe(contents["a.txt"]);
 		expect(existsSync(join(dir, "a.txt.part"))).toBe(false);
+		expect(existsSync(join(dir, "a.txt.part.saved"))).toBe(false);
+	});
+
+	it("writes again the end of a part that a power cut may have left unwritten", async () => {
+		// Up to the checkpoint the bytes are the file's; after it, what the disk had (zeros) when the power went.
+		writeFileSync(join(dir, "a.txt.part"), `${contents["a.txt"].slice(0, 4096)}${"\0".repeat(3000)}`);
+		writeFileSync(join(dir, "a.txt.part.saved"), "4096\n");
+		await downloadFiles(options({ files: [files[0]], checkpointBytes: 1024 }));
+		expect(requests).toHaveLength(1);
+		expect(readFileSync(join(dir, "a.txt"), "utf8")).toBe(contents["a.txt"]);
+		// A part without a checkpoint (an older mu's) loses its last checkpointBytes the same way.
+		rmSync(join(dir, "a.txt"));
+		rmSync(join(dir, ".mu-verified.json"));
+		writeFileSync(join(dir, "a.txt.part"), contents["a.txt"].slice(0, 5000));
+		expect(resumeFrom(join(dir, "a.txt.part"), files[0].size, 1024)).toBe(5000 - 1024);
+		requests.length = 0;
+		await downloadFiles(options({ files: [files[0]], checkpointBytes: 1024 }));
+		expect(requests[0].range).toBe(`bytes=${5000 - 1024}-`);
+		expect(readFileSync(join(dir, "a.txt"), "utf8")).toBe(contents["a.txt"]);
+	});
+
+	it("downloads a file from the start once more when what it went on from was wrong", async () => {
+		writeFileSync(join(dir, "a.txt.part"), "x".repeat(4096));
+		writeFileSync(join(dir, "a.txt.part.saved"), "4096\n");
+		await downloadFiles(options({ files: [files[0]], checkpointBytes: 1024 }));
+		expect(requests.map((request) => request.range)).toEqual(["bytes=4096-", undefined]);
+		expect(readFileSync(join(dir, "a.txt"), "utf8")).toBe(contents["a.txt"]);
+	});
+
+	it("keeps trying while the connection keeps dropping, as long as each try gets some of the file", async () => {
+		cutAfter = 7000;
+		const waits: number[] = [];
+		await downloadFiles(
+			options({ files: [files[1]], attempts: 2, sleep: async (ms) => void waits.push(ms), checkpointBytes: 1024 }),
+		);
+		// 54,000 bytes at 7,000 a try: eight tries, each going on from where the one before stopped.
+		expect(requests).toHaveLength(8);
+		expect(requests[1].range).toBe("bytes=7000-");
+		expect(waits.every((ms) => ms === 2000)).toBe(true);
+		expect(readFileSync(join(dir, "sub/b.bin"), "utf8")).toBe(contents["sub/b.bin"]);
+	});
+
+	it("gives up after tries in a row that get nothing, waiting longer each time", async () => {
+		status = 503;
+		const waits: number[] = [];
+		const failed = downloadFiles(options({ files: [files[0]], sleep: async (ms) => void waits.push(ms) }));
+		await expect(failed).rejects.toMatchObject({ kind: "network" });
+		expect(requests).toHaveLength(8);
+		expect(waits).toEqual([2000, 5000, 10_000, 20_000, 30_000, 30_000, 30_000]);
+	});
+
+	it("stops when asked, keeping what it got on the disk for the next install", async () => {
+		holdAfter = 3000;
+		const stop = new AbortController();
+		const failed = downloadFiles(
+			options({
+				files: [files[0]],
+				signal: stop.signal,
+				onProgress: (progress) => {
+					if (progress.done >= 3000) stop.abort();
+				},
+			}),
+		);
+		await expect(failed).rejects.toMatchObject({ kind: "aborted" });
+		expect(readFileSync(join(dir, "a.txt.part.saved"), "utf8").trim()).toBe("3000");
+		expect(resumeFrom(join(dir, "a.txt.part"), files[0].size)).toBe(3000);
+		holdAfter = undefined;
+		requests.length = 0;
+		await downloadFiles(options({ files: [files[0]] }));
+		expect(requests[0].range).toBe("bytes=3000-");
+		expect(readFileSync(join(dir, "a.txt"), "utf8")).toBe(contents["a.txt"]);
 	});
 
 	it("refuses a file that does not match its pinned sha256, and removes it", async () => {
@@ -299,6 +383,18 @@ describe("mu judge mude", () => {
 			}),
 		).toBe(0);
 		expect(JSON.parse(text.trim())).toMatchObject({ installed: false, downloadedBytes: 5100 });
+	});
+
+	it("goes on with an install the way the one that stopped was asked, local only included", () => {
+		const ctx = context();
+		expect(installLocalOnly(ctx, [])).toBe(false);
+		mkdirSync(ctx.paths.root, { recursive: true });
+		writeFileSync(ctx.paths.install, `${JSON.stringify({ localOnly: true })}\n`);
+		expect(installLocalOnly(ctx, [])).toBe(true);
+		expect(installLocalOnly(ctx, ["--with-fallback"])).toBe(false);
+		writeFileSync(ctx.paths.install, "not json");
+		expect(installLocalOnly(ctx, [])).toBe(false);
+		expect(installLocalOnly(ctx, ["--local-only"])).toBe(true);
 	});
 
 	it("disables nothing when mude was not the judge", async () => {

@@ -24,6 +24,8 @@ export interface MudePaths {
 	readonly log: string;
 	/** state.json: the port, and what the judge order was before mude went first. */
 	readonly state: string;
+	/** install.json: what an install that has not finished was asked for (local only or not), for the one that goes on. */
+	readonly install: string;
 }
 
 export function mudePaths(muHome: string): MudePaths {
@@ -42,5 +44,6 @@ export function mudePaths(muHome: string): MudePaths {
 		pid: join(root, "server.pid"),
 		log: join(root, "server.log"),
 		state: join(root, "state.json"),
+		install: join(root, "install.json"),
 	};
 }
