@@ -71,7 +71,14 @@ On held-out test requests this raised Ultra's score from 54.7 to 57.9 on real re
 
 ## The judge on your machine
 
-[mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron) distills Nemotron 3 Ultra's answers into Nemotron 3 Nano 4B and serves it over System One, the protocol mu's judges speak. Start it on a machine with an NVIDIA GPU, then use the built-in `nemotron-local` judge:
+[mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron) distills Nemotron 3 Ultra's answers into Nemotron 3 Nano 4B and serves it over System One, the protocol mu's judges speak. Its weights are on Hugging Face as [qybaihe/mu-judge-nemotron-nano-4b](https://huggingface.co/qybaihe/mu-judge-nemotron-nano-4b). On a machine with an NVIDIA GPU, in a clone of mu-judge-nemotron:
+
+```bash
+uv pip install -e '.[train]'
+python serve/systemone_server.py --model qybaihe/mu-judge-nemotron-nano-4b --port 8770
+```
+
+Then use the built-in `nemotron-local` judge:
 
 ```json
 { "tiers": ["nemotron-local"] }
