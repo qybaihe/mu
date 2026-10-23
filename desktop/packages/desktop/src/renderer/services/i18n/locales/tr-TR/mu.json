@@ -162,9 +162,9 @@
         "description": "TypeSafe'in barındırdığı hakem modeli. Hızlı ve doğru. OpenCode Zen'de sınırlı bir süre ücretsiz; ya da TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare veya kendi hizmetinizin anahtarıyla çağrı başına ücretli."
       },
       "mude": {
-        "title": "mude",
+        "title": "mude 1.0",
         "tag": "Bu Mac'te",
-        "description": "mu'nun kendi hakem modeli, bu Mac'te çalışır: anahtar yok, çağrı başına ücret yok. Apple çip gerektirir ve çalışırken yaklaşık {{memory}} GB bellek kullanır."
+        "description": "mu'nun kendi karar modeli; kodlama için optimize edildi ve bir kodlama ajanının kararlarında SOTA düzeyinde. Bu Mac'te çalışır: anahtar yok, çağrı başına ücret yok. Apple çip gerektirir."
       },
       "local": {
         "title": "Yerel Laya",
@@ -223,71 +223,77 @@
       }
     },
     "mude": {
-      "name": "mude (bu Mac'te)",
+      "name": "mude 1.0 (bu Mac'te)",
       "tierHelp": "Bu Mac'te çalışır. Hakemler sayfasında kurun.",
       "notInstalled": "Kurulu değil.",
       "unfinished": "Son kurulum tamamlanmadı. Yeniden kurmak, kaldığı yerden devam eder.",
-      "install": "mude'yi kur",
+      "install": "mude 1.0'ı kur",
       "consent": {
-        "title": "mude kurulsun mu?",
-        "download": "mu, mude'yi Hugging Face'ten indirir (yaklaşık {{download}} GB) ve onun için bir Python ortamı kurar (yaklaşık {{python}} GB). Bu birkaç dakika sürer.",
-        "memory": "mude çalışırken yaklaşık {{memory}} GB bellek kullanır. Apple çipli ve macOS 14 veya sonrası bir Mac gerekir.",
-        "after": "Kurulum bitince mude başlar ve mu'nun hakemi olur.",
+        "title": "mude 1.0 kurulsun mu?",
+        "download": "mu, mude 1.0'ı Hugging Face'ten indirir (yaklaşık {{download}} GB) ve onun için bir Python ortamı kurar (yaklaşık {{python}} GB). Bu birkaç dakika sürer.",
+        "memory": "mude 1.0 çalışırken yaklaşık {{memory}} GB bellek kullanır. Apple çipli ve macOS 14 veya sonrası bir Mac gerekir.",
+        "after": "Kurulum bitince mude 1.0 başlar ve mu'nun hakemi olur.",
         "ok": "İndir ve kur"
       },
       "localOnly": "Yalnızca yerel — hiçbir bulut hakemine sorma",
-      "localOnlyOn": "Tek hakem mude olur ve buluta hiçbir şey gitmez. mude yanıt veremediğinde karar noktası kendi varsayılanını kullanır.",
-      "localOnlyOff": "mude'nin yanıtlayamadığı kararlar (örneğin durmuşken ya da emin değilken) buluttaki {{judges}} hakemine gider; oraya gönderilen her şey bu Mac'ten çıkar. İki güvenlik denetimi de her zaman oraya gider: araç açıklamalarının taranması ve getirilen içerikte enjekte edilmiş talimat olup olmadığının taranması.",
-      "localOnlyOffLocal": "mude'nin yanıtlayamadığı kararlar, yine bu Mac'te çalışan {{judges}} hakemine gider.",
-      "localOnlyNone": "mude'nin arkasında ayarlı bir hakem yok. mude yanıt veremediğinde karar noktası kendi varsayılanını kullanır.",
-      "use": "mude'yi hakem olarak kullan",
+      "localOnlyOn": "Tek hakem mude 1.0 olur ve buluta hiçbir şey gitmez. Yanıt veremediğinde karar noktası kendi varsayılanını kullanır.",
+      "localOnlyOff": "mude 1.0'ın yanıtlayamadığı kararlar (örneğin durmuşken ya da emin değilken) buluttaki {{judges}} hakemine gider; oraya gönderilen her şey bu Mac'ten çıkar. İki güvenlik denetimi de her zaman oraya gider: araç açıklamalarının taranması ve getirilen içerikte enjekte edilmiş talimat olup olmadığının taranması.",
+      "localOnlyOffLocal": "mude 1.0'ın yanıtlayamadığı kararlar, yine bu Mac'te çalışan {{judges}} hakemine gider.",
+      "localOnlyNone": "mude 1.0'ın arkasında ayarlı bir hakem yok. Yanıt veremediğinde karar noktası kendi varsayılanını kullanır.",
+      "use": "mude 1.0'ı hakem olarak kullan",
       "status": {
         "running": "127.0.0.1:{{port}} üzerinde çalışıyor",
         "runningMemory": "127.0.0.1:{{port}} üzerinde çalışıyor · {{memory}} GB",
         "starting": "Başlatılıyor…",
         "stopped": "Durduruldu"
       },
-      "resources": "mude çalışırken yaklaşık {{memory}} GB bellek kullanır. Terminaldekiler de dahil bu Mac'teki tüm mu oturumları onu paylaşır ve siz durdurana ya da kapatana kadar çalışmaya devam eder.",
+      "resources": "mude 1.0 çalışırken yaklaşık {{memory}} GB bellek kullanır. Terminaldekiler de dahil bu Mac'teki tüm mu oturumları onu paylaşır ve siz durdurana ya da kapatana kadar çalışmaya devam eder.",
+      "shared": "Terminaldekiler de dahil bu Mac'teki tüm mu oturumları onu paylaşır ve siz durdurana ya da kapatana kadar çalışmaya devam eder.",
       "start": "Başlat",
       "stop": "Durdur",
       "openFolder": "Klasörü aç",
       "uninstall": "Kaldır",
-      "uninstallTitle": "mude kaldırılsın mı?",
-      "uninstallText": "Bu işlem mude'yi kapatır, yerini aldığı hakemleri geri getirir ve modeli ile Python ortamını siler (yaklaşık {{size}} GB). Daha sonra yeniden kurabilirsiniz.",
+      "uninstallTitle": "mude 1.0 kaldırılsın mı?",
+      "uninstallText": "Bu işlem mude 1.0'ı kapatır, yerini aldığı hakemleri geri getirir ve modeli ile Python ortamını siler (yaklaşık {{size}} GB). Daha sonra yeniden kurabilirsiniz.",
       "working": {
-        "install": "mude kuruluyor…",
-        "enable": "mude açılıyor…",
-        "disable": "mude kapatılıyor…",
-        "start": "mude başlatılıyor…",
-        "stop": "mude durduruluyor…",
-        "uninstall": "mude kaldırılıyor…"
+        "install": "mude 1.0 kuruluyor…",
+        "enable": "mude 1.0 açılıyor…",
+        "disable": "mude 1.0 kapatılıyor…",
+        "start": "mude 1.0 başlatılıyor…",
+        "stop": "mude 1.0 durduruluyor…",
+        "uninstall": "mude 1.0 kaldırılıyor…"
+      },
+      "step": {
+        "download": "mude 1.0 indiriliyor ve her dosya denetleniyor…",
+        "python": "mude 1.0 için Python ortamı hazırlanıyor…",
+        "start": "mude 1.0 sunucusu başlatılıyor…"
       },
       "downloaded": "{{done}} / {{total}} GB",
       "checking": "İndirilen dosyalar denetleniyor…",
       "cancelled": "Kurulum iptal edildi. İndirilenler saklanır; yeniden kurmak oradan devam eder.",
       "failed": {
-        "install": "mude kurulamadı.",
-        "enable": "mude açılamadı.",
-        "disable": "mude kapatılamadı.",
-        "start": "mude başlatılamadı.",
-        "stop": "mude durdurulamadı.",
-        "uninstall": "mude kaldırılamadı."
+        "install": "mude 1.0 kurulamadı.",
+        "enable": "mude 1.0 açılamadı.",
+        "disable": "mude 1.0 kapatılamadı.",
+        "start": "mude 1.0 başlatılamadı.",
+        "stop": "mude 1.0 durdurulamadı.",
+        "uninstall": "mude 1.0 kaldırılamadı."
       },
       "error": {
-        "access": "mude henüz indirilemiyor. Daha sonra yeniden deneyin.",
+        "access": "mude 1.0 henüz indirilemiyor. Daha sonra yeniden deneyin.",
         "network": "Hugging Face'e ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin; indirilmiş olanlar saklanır.",
         "integrity": "İndirilen bir dosya denetimden geçmedi. Yeniden kurmayı deneyin.",
-        "unsupported": "mude bu Mac'te çalışamaz."
+        "unsupported": "mude 1.0 bu Mac'te çalışamaz."
       },
-      "noStatus": "mude durumu alınamadı: {{reason}}",
-      "saveFirst": "mude'yi değiştirmek için önce diğer değişikliklerinizi kaydedin ya da atın.",
-      "needs": "mude için Apple çipli, macOS 14 veya sonrası ve en az {{ram}} GB belleği olan bir Mac gerekir.",
+      "noStatus": "mude 1.0 durumu alınamadı: {{reason}}",
+      "saveFirst": "mude 1.0'ı değiştirmek için önce diğer değişikliklerinizi kaydedin ya da atın.",
+      "needs": "mude 1.0 için Apple çipli, macOS 14 veya sonrası ve en az {{ram}} GB belleği olan bir Mac gerekir.",
       "retry": "Yeniden dene",
       "guide": {
-        "consent": "Yaklaşık {{download}} GB indirilir, ayrıca yaklaşık {{python}} GB'lık bir Python ortamı kurulur. Bu Mac'te çalışır ve çalışırken yaklaşık {{memory}} GB bellek kullanır.",
+        "consent": "{{download}} GB indirilir, ayrıca {{python}} GB'lık bir Python ortamı kurulur. Çalışırken yaklaşık {{memory}} GB bellek kullanır.",
         "instead": "mu bunun yerine barındırılan hakemi kullanır.",
-        "ready": "mude çalışıyor ve artık hakeminiz.",
-        "readyStopped": "mude artık hakeminiz. Sunucusu bir sonraki mu oturumunda başlar."
+        "ready": "mude 1.0 çalışıyor ve artık hakeminiz.",
+        "readyStopped": "mude 1.0 artık hakeminiz. Sunucusu bir sonraki mu oturumunda başlar."
       }
     },
     "clm": {

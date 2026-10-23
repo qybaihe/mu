@@ -1,12 +1,14 @@
 import React from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createInstance } from 'i18next';
 import { I18nextProvider } from 'react-i18next';
 import type { MudeState, MudeStatus, MudeTask } from '@/common/kyrn/mude';
 import type { KyrnSettings, Result } from '@/common/kyrn/types';
 import enCommon from '@/renderer/services/i18n/locales/en-US/common.json';
 import enMu from '@/renderer/services/i18n/locales/en-US/mu.json';
+import zhCommon from '@/renderer/services/i18n/locales/zh-CN/common.json';
+import zhMu from '@/renderer/services/i18n/locales/zh-CN/mu.json';
 import SettingsArea from '@/renderer/pages/settings/KyrnSettings/SettingsArea';
 
 /** mude as a choice of the judges page: every command through the bridge to `mu judge mude`, played by the test. */
@@ -46,6 +48,8 @@ beforeAll(async () => {
 });
 
 const GB = 1024 ** 3;
+/** The model's size in bytes, as the command counts its download. */
+const MODEL_BYTES = 1_782_005_734;
 const MUDE_PROFILE = {
   type: 'typesafe' as const,
   model: 'mude',
@@ -136,15 +140,22 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-async function judgesPage() {
+async function judgesPage(language = i18n) {
   render(
-    <I18nextProvider i18n={i18n}>
+    <I18nextProvider i18n={language}>
       <SettingsArea page='judges' />
     </I18nextProvider>
   );
   await screen.findByTestId('mu-section-judges');
   return screen.findByTestId('mu-judge-choice-mude');
 }
+
+/** Lets a read of the settings that was asked for land, with whatever it would draw afresh. */
+const settle = () => act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+
+/** `first` comes before `second` in the page. */
+const before = (first: Element, second: Element) =>
+  Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING);
 
 describe('mude as a choice of the judges page', () => {
   it('is not offered where the app does not offer mude', async () => {
@@ -166,7 +177,7 @@ describe('mude as a choice of the judges page', () => {
     const tile = await judgesPage();
     await waitFor(() => expect(tile).toHaveAttribute('aria-disabled', 'true'));
     expect(within(tile).getByTestId('mu-mude-unsupported')).toHaveTextContent(
-      'mude needs a Mac with Apple silicon, macOS 14 or later and 8 GB of memory.'
+      'mude 1.0 needs a Mac with Apple silicon, macOS 14 or later and 8 GB of memory.'
     );
     expect(tile).toHaveTextContent('it needs macOS 14 or later');
     fireEvent.click(tile);
@@ -176,19 +187,26 @@ describe('mude as a choice of the judges page', () => {
 
   it('picked when not installed: the install, after the consent with "Only local", and nothing in the draft', async () => {
     const tile = await judgesPage();
-    expect(tile).toHaveTextContent("mu's own judge model, running on this Mac");
+    expect(tile).toHaveTextContent(enMu.judges.choices.mude.description);
     fireEvent.click(tile);
     expect(tile).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByTestId('mu-judge-choice-jev')).toHaveAttribute('aria-checked', 'false');
-    expect(tile).toHaveTextContent('About 1.8 GB to download');
+    expect(within(tile).getByTestId('mu-mude-hint')).toHaveTextContent(
+      '1.8 GB to download, plus a 1.0 GB Python environment. Uses about 4 GB of memory while running.'
+    );
+    // The memory it takes is said once.
+    expect(tile.textContent?.match(/GB of memory/g)).toHaveLength(1);
     // Picking it changed nothing to save: its command does that.
     expect(screen.queryByTestId('mu-save-bar')).not.toBeInTheDocument();
     fireEvent.click(within(tile).getByTestId('mu-mude-install'));
     const dialog = await screen.findByRole('dialog');
-    expect(dialog).toHaveTextContent('Install mude?');
-    expect(dialog).toHaveTextContent('go to Jev in the cloud');
+    expect(dialog).toHaveTextContent('Install mude 1.0?');
+    expect(dialog).toHaveTextContent('about 1.8 GB');
+    expect(within(dialog).getByTestId('mu-mude-consent-help')).toHaveTextContent('go to Jev in the cloud');
     fireEvent.click(within(dialog).getByRole('checkbox'));
-    expect(dialog).toHaveTextContent('nothing goes to the cloud');
+    // The other explanation is shown in the same place, which kept room for it: the dialog does not change size.
+    expect(within(dialog).getByTestId('mu-mude-consent-help')).toHaveTextContent('nothing goes to the cloud');
+    expect(within(dialog).getAllByText(/go to Jev in the cloud/)[0]).toHaveAttribute('aria-hidden', 'true');
     bridge.mudeRun.mockResolvedValue(state(NOT_INSTALLED, task('install', 'running')));
     fireEvent.click(within(dialog).getByRole('button', { name: 'Download and install' }));
     await waitFor(() => expect(bridge.mudeRun).toHaveBeenCalledWith({ action: 'install', localOnly: true }));
@@ -197,14 +215,16 @@ describe('mude as a choice of the judges page', () => {
   it('shows a running install with its progress and a Cancel, opened on it', async () => {
     const running = task('install', 'running', {
       step: 'download',
-      message: 'Downloading mude and checking every file',
-      download: { file: 'model.safetensors', done: 0.9 * GB, total: 1.8 * GB, checking: false },
+      message: 'Downloading mude (qybaihe/mude-1.0-mlx-8bit, 1.78 GB) and checking every file',
+      download: { file: 'mlx-q8.safetensors', done: MODEL_BYTES / 2, total: MODEL_BYTES, checking: false },
       log: ['Collecting mlx'],
     });
     bridge.mudeState.mockResolvedValue(state(NOT_INSTALLED, running));
     const tile = await judgesPage();
     await waitFor(() => expect(tile).toHaveAttribute('aria-checked', 'true'));
-    expect(tile).toHaveTextContent('Downloading mude and checking every file');
+    expect(within(tile).getByTestId('mu-mude-status')).toHaveTextContent(enMu.judges.mude.step.download);
+    // One size, as the consent gives it (decimal gigabytes): not the command's own sentence with another.
+    expect(tile).not.toHaveTextContent('1.78');
     const progress = within(tile).getByTestId('mu-mude-progress');
     expect(progress).toHaveTextContent('50%');
     expect(progress).toHaveTextContent('0.9 of 1.8 GB');
@@ -212,6 +232,117 @@ describe('mude as a choice of the judges page', () => {
     bridge.mudeRun.mockResolvedValue(state(NOT_INSTALLED, { ...running, phase: 'cancelled' }));
     fireEvent.click(within(tile).getByTestId('mu-mude-cancel'));
     await waitFor(() => expect(bridge.mudeRun).toHaveBeenCalledWith({ action: 'cancel' }));
+  });
+
+  it('says each step of an install in the app language, not in the command’s English', async () => {
+    const zh = createInstance();
+    await zh.init({
+      lng: 'zh-CN',
+      resources: { 'zh-CN': { translation: { common: zhCommon, mu: zhMu } } },
+      interpolation: { escapeValue: false },
+    });
+    const running = task('install', 'running', {
+      step: 'download',
+      message: 'Downloading mude (qybaihe/mude-1.0-mlx-8bit, 1.78 GB) and checking every file',
+      download: { file: 'mlx-q8.safetensors', done: 700_000_000, total: MODEL_BYTES, checking: false },
+    });
+    bridge.mudeState.mockResolvedValue(state(NOT_INSTALLED, running));
+    const tile = await judgesPage(zh);
+    await waitFor(() =>
+      expect(within(tile).getByTestId('mu-mude-status')).toHaveTextContent(zhMu.judges.mude.step.download)
+    );
+    expect(within(tile).getByTestId('mu-mude-download')).toHaveTextContent('0.7 / 1.8 GB');
+    expect(tile).not.toHaveTextContent('Downloading');
+    bridge.mudeState.mockResolvedValue(
+      state(NOT_INSTALLED, {
+        ...running,
+        step: 'python',
+        message: "Setting up mude's Python environment (MLX, transformers; about 1 GB, once)",
+        download: undefined,
+      })
+    );
+    await waitFor(
+      () => expect(within(tile).getByTestId('mu-mude-status')).toHaveTextContent(zhMu.judges.mude.step.python),
+      { timeout: 3000 }
+    );
+    expect(tile).not.toHaveTextContent('Setting up');
+    bridge.mudeState.mockResolvedValue(
+      state(NOT_INSTALLED, { ...running, step: 'start', message: "Starting mude's server on 127.0.0.1:8790" })
+    );
+    await waitFor(
+      () => expect(within(tile).getByTestId('mu-mude-status')).toHaveTextContent(zhMu.judges.mude.step.start),
+      { timeout: 3000 }
+    );
+    expect(tile).not.toHaveTextContent('127.0.0.1');
+  });
+
+  it('keeps mude open with how a cancelled install ended, and does not draw the page afresh', async () => {
+    const tile = await judgesPage();
+    fireEvent.click(tile);
+    fireEvent.click(within(tile).getByTestId('mu-mude-install'));
+    const dialog = await screen.findByRole('dialog');
+    const running = task('install', 'running', {
+      step: 'download',
+      download: { file: 'mlx-q8.safetensors', done: 700_000_000, total: MODEL_BYTES, checking: false },
+    });
+    bridge.mudeRun.mockResolvedValue(state(NOT_INSTALLED, running));
+    bridge.mudeState.mockResolvedValue(state(NOT_INSTALLED, running));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Download and install' }));
+    fireEvent.click(await within(tile).findByTestId('mu-mude-cancel'));
+    // Cancelled: what is downloaded stays.
+    const left = { ...NOT_INSTALLED, downloadedBytes: 700_000_000 };
+    bridge.mudeRun.mockResolvedValue(state(left, { ...running, phase: 'cancelled' }));
+    bridge.mudeState.mockResolvedValue(state(left, { ...running, phase: 'cancelled' }));
+    const reads = bridge.settings.mock.calls.length;
+    await waitFor(() => expect(bridge.mudeRun).toHaveBeenCalledWith({ action: 'cancel' }));
+    // mu.json is read again (the command may have changed it), and the page is not drawn afresh: the same tile,
+    // still the open choice, with the message above the button that goes on with the install.
+    await waitFor(() => expect(bridge.settings.mock.calls.length).toBeGreaterThan(reads));
+    await settle();
+    expect(screen.getByTestId('mu-judge-choice-mude')).toBe(tile);
+    expect(tile).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByTestId('mu-judge-choice-jev')).toHaveAttribute('aria-checked', 'false');
+    const cancelled = within(tile).getByTestId('mu-mude-cancelled');
+    expect(cancelled).toHaveTextContent(enMu.judges.mude.cancelled);
+    expect(before(cancelled, within(tile).getByTestId('mu-mude-install'))).toBe(true);
+    // The message says the download is kept: no second sentence that the install did not finish.
+    expect(within(tile).queryByTestId('mu-mude-hint')).not.toBeInTheDocument();
+  });
+
+  it('opened on a running install, stays on it with why it failed, the command’s output folded', async () => {
+    const running = task('install', 'running', { step: 'python', log: ['Collecting mlx'] });
+    bridge.mudeState.mockResolvedValue(state(NOT_INSTALLED, running));
+    const tile = await judgesPage();
+    await waitFor(() => expect(tile).toHaveAttribute('aria-checked', 'true'));
+    const reads = bridge.settings.mock.calls.length;
+    bridge.mudeState.mockResolvedValue(
+      state(
+        { ...NOT_INSTALLED, installed: true, downloadedBytes: MODEL_BYTES },
+        { ...running, phase: 'failed', error: { message: 'uv: failed to fetch mlx', kind: 'network' } }
+      )
+    );
+    await waitFor(() => expect(bridge.settings.mock.calls.length).toBeGreaterThan(reads), { timeout: 3000 });
+    await settle();
+    expect(screen.getByTestId('mu-judge-choice-mude')).toBe(tile);
+    expect(tile).toHaveAttribute('aria-checked', 'true');
+    const failed = within(tile).getByTestId('mu-mude-failed');
+    expect(failed).toHaveTextContent(enMu.judges.mude.error.network);
+    expect(before(failed, within(tile).getByTestId('mu-mude-install'))).toBe(true);
+    expect(within(tile).queryByTestId('mu-mude-hint')).not.toBeInTheDocument();
+    expect(within(tile).queryByTestId('mu-mude-error')).not.toBeInTheDocument();
+    const details = within(tile).getByTestId('mu-mude-details');
+    expect(details).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(details);
+    expect(within(tile).getByTestId('mu-mude-error')).toHaveTextContent('uv: failed to fetch mlx');
+  });
+
+  it('tells an install that stopped part way from one never started, by what is on disk', async () => {
+    bridge.mudeState.mockResolvedValue(state({ ...NOT_INSTALLED, downloadedBytes: 700_000_000 }));
+    const tile = await judgesPage();
+    fireEvent.click(tile);
+    expect(within(tile).getByTestId('mu-mude-status')).toHaveTextContent(enMu.judges.mude.notInstalled);
+    expect(within(tile).getByTestId('mu-mude-hint')).toHaveTextContent(enMu.judges.mude.unfinished);
+    expect(tile).not.toHaveTextContent('to download');
   });
 
   it('chosen when installed runs `enable`, not a save, and reads the settings again once it ended', async () => {
@@ -241,6 +372,8 @@ describe('mude as a choice of the judges page', () => {
     expect(tile).toHaveAttribute('aria-checked', 'true');
     await waitFor(() => expect(tile).toHaveTextContent('Running on 127.0.0.1:8790 · 3.6 GB'));
     expect(tile).toHaveTextContent('including ones in the terminal');
+    // What it uses is in the status already: no second figure under it.
+    expect(tile).not.toHaveTextContent('about 4 GB');
     const only = within(within(tile).getByTestId('mu-mude-local-only')).getByRole('switch');
     expect(only).not.toBeChecked();
     const help = within(tile).getByTestId('mu-mude-local-only-help');
@@ -255,7 +388,7 @@ describe('mude as a choice of the judges page', () => {
     bridge.mudeRun.mockResolvedValue(state(RUNNING, task('enable', 'running')));
     fireEvent.click(only);
     await waitFor(() => expect(bridge.mudeRun).toHaveBeenCalledWith({ action: 'enable', localOnly: true }));
-    expect(tile).toHaveTextContent('Turning on mude…');
+    expect(tile).toHaveTextContent('Turning on mude 1.0…');
   });
 
   it('stops and starts its server, and asks before it uninstalls', async () => {
@@ -321,7 +454,7 @@ describe('mude as a choice of the judges page', () => {
     const tile = await judgesPage();
     fireEvent.click(tile);
     expect(within(tile).getByTestId('mu-mude-failed')).toHaveTextContent(
-      "mude isn't available for download yet. Try again later."
+      "mude 1.0 isn't available for download yet. Try again later."
     );
     expect(within(tile).queryByTestId('mu-mude-error')).not.toBeInTheDocument();
     expect(within(tile).getByTestId('mu-mude-install')).toBeInTheDocument();

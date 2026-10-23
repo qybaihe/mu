@@ -162,9 +162,9 @@
         "description": "TypeSafe 託管的判定模型。又快又準。在 OpenCode Zen 上限時免費；也可以用 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare 或你自己服務的金鑰，按次計費。"
       },
       "mude": {
-        "title": "mude",
+        "title": "mude 1.0",
         "tag": "在這台 Mac 上",
-        "description": "mu 自己的判定模型，在這台 Mac 上執行：不需要金鑰，也不按次收費。需要 Apple 晶片，執行時約占用 {{memory}} GB 記憶體。"
+        "description": "mu 自己的決策模型，針對程式設計情境特別最佳化，程式設計情境的決策能力達到 SOTA 級。在這台 Mac 上執行，不需要金鑰，不按次收費，需要 Apple 晶片。"
       },
       "local": {
         "title": "本機 Laya",
@@ -223,71 +223,77 @@
       }
     },
     "mude": {
-      "name": "mude（在這台 Mac 上）",
+      "name": "mude 1.0（在這台 Mac 上）",
       "tierHelp": "在這台 Mac 上執行。請在「判定器」頁設定。",
       "notInstalled": "未安裝。",
       "unfinished": "上次安裝沒有完成。再次安裝會從中斷的地方繼續。",
-      "install": "安裝 mude",
+      "install": "安裝 mude 1.0",
       "consent": {
-        "title": "安裝 mude？",
-        "download": "mu 會從 Hugging Face 下載 mude（約 {{download}} GB），並為它設定 Python 環境（約 {{python}} GB），需要幾分鐘。",
-        "memory": "mude 執行時約占用 {{memory}} GB 記憶體。需要搭載 Apple 晶片、macOS 14 或更新版本的 Mac。",
-        "after": "安裝完成後，mude 會啟動並成為 mu 的判定器。",
+        "title": "安裝 mude 1.0？",
+        "download": "mu 會從 Hugging Face 下載 mude 1.0（約 {{download}} GB），並為它設定 Python 環境（約 {{python}} GB），需要幾分鐘。",
+        "memory": "mude 1.0 執行時約占用 {{memory}} GB 記憶體。需要搭載 Apple 晶片、macOS 14 或更新版本的 Mac。",
+        "after": "安裝完成後，mude 1.0 會啟動並成為 mu 的判定器。",
         "ok": "下載並安裝"
       },
       "localOnly": "僅限本機——不詢問任何雲端判定器",
-      "localOnlyOn": "mude 是唯一的判定器，不會有任何內容送往雲端。mude 無法回答時，判定點採用它的預設策略。",
-      "localOnlyOff": "mude 無法回答的判定（例如它已停止或拿不準時）會交給雲端的 {{judges}}，送過去的內容會離開這台 Mac。另有兩項安全檢查也一律交給它：審查工具描述，以及審查擷取的內容裡是否夾帶注入的指令。",
-      "localOnlyOffLocal": "mude 無法回答的判定會交給同樣在這台 Mac 上執行的 {{judges}}。",
-      "localOnlyNone": "mude 後面沒有設定其他判定器。mude 無法回答時，判定點採用它的預設策略。",
-      "use": "使用 mude 作為判定器",
+      "localOnlyOn": "mude 1.0 是唯一的判定器，不會有任何內容送往雲端。它無法回答時，判定點採用自己的預設策略。",
+      "localOnlyOff": "mude 1.0 無法回答的判定（例如它已停止或拿不準時）會交給雲端的 {{judges}}，送過去的內容會離開這台 Mac。另有兩項安全檢查也一律交給它：審查工具描述，以及審查擷取的內容裡是否夾帶注入的指令。",
+      "localOnlyOffLocal": "mude 1.0 無法回答的判定會交給同樣在這台 Mac 上執行的 {{judges}}。",
+      "localOnlyNone": "mude 1.0 後面沒有設定其他判定器。它無法回答時，判定點採用自己的預設策略。",
+      "use": "使用 mude 1.0 作為判定器",
       "status": {
         "running": "正在 127.0.0.1:{{port}} 上執行",
         "runningMemory": "正在 127.0.0.1:{{port}} 上執行 · {{memory}} GB",
         "starting": "正在啟動…",
         "stopped": "已停止"
       },
-      "resources": "mude 執行時約占用 {{memory}} GB 記憶體。這台 Mac 上的所有 mu 工作階段（包括終端機裡的）共用它，它會一直執行，直到你停止或關閉它。",
+      "resources": "mude 1.0 執行時約占用 {{memory}} GB 記憶體。這台 Mac 上的所有 mu 工作階段（包括終端機裡的）共用它，它會一直執行，直到你停止或關閉它。",
+      "shared": "這台 Mac 上的所有 mu 工作階段（包括終端機裡的）共用它，它會一直執行，直到你停止或關閉它。",
       "start": "啟動",
       "stop": "停止",
       "openFolder": "打開資料夾",
       "uninstall": "解除安裝",
-      "uninstallTitle": "解除安裝 mude？",
-      "uninstallText": "這會關閉 mude，恢復被它取代的判定器，並刪除模型和它的 Python 環境（約 {{size}} GB）。之後可以重新安裝。",
+      "uninstallTitle": "解除安裝 mude 1.0？",
+      "uninstallText": "這會關閉 mude 1.0，恢復被它取代的判定器，並刪除模型和它的 Python 環境（約 {{size}} GB）。之後可以重新安裝。",
       "working": {
-        "install": "正在安裝 mude…",
-        "enable": "正在啟用 mude…",
-        "disable": "正在關閉 mude…",
-        "start": "正在啟動 mude…",
-        "stop": "正在停止 mude…",
-        "uninstall": "正在解除安裝 mude…"
+        "install": "正在安裝 mude 1.0…",
+        "enable": "正在啟用 mude 1.0…",
+        "disable": "正在關閉 mude 1.0…",
+        "start": "正在啟動 mude 1.0…",
+        "stop": "正在停止 mude 1.0…",
+        "uninstall": "正在解除安裝 mude 1.0…"
+      },
+      "step": {
+        "download": "正在下載 mude 1.0 並驗證每個檔案…",
+        "python": "正在設定 mude 1.0 的 Python 環境…",
+        "start": "正在啟動 mude 1.0 的服務…"
       },
       "downloaded": "{{done}} / {{total}} GB",
       "checking": "正在驗證下載的檔案…",
       "cancelled": "已取消安裝。已下載的部分會保留，再次安裝會從那裡繼續。",
       "failed": {
-        "install": "無法安裝 mude。",
-        "enable": "無法啟用 mude。",
-        "disable": "無法關閉 mude。",
-        "start": "無法啟動 mude。",
-        "stop": "無法停止 mude。",
-        "uninstall": "無法解除安裝 mude。"
+        "install": "無法安裝 mude 1.0。",
+        "enable": "無法啟用 mude 1.0。",
+        "disable": "無法關閉 mude 1.0。",
+        "start": "無法啟動 mude 1.0。",
+        "stop": "無法停止 mude 1.0。",
+        "uninstall": "無法解除安裝 mude 1.0。"
       },
       "error": {
-        "access": "mude 暫時還不能下載，請稍後再試。",
+        "access": "mude 1.0 暫時還不能下載，請稍後再試。",
         "network": "無法連線到 Hugging Face。請檢查網路後重試，已下載的部分會保留。",
         "integrity": "有個下載的檔案沒有通過驗證，請重新安裝。",
-        "unsupported": "mude 無法在這台 Mac 上執行。"
+        "unsupported": "mude 1.0 無法在這台 Mac 上執行。"
       },
-      "noStatus": "無法取得 mude 的狀態：{{reason}}",
-      "saveFirst": "要變更 mude，請先儲存或捨棄其他變更。",
-      "needs": "mude 需要搭載 Apple 晶片、macOS 14 或更新版本、記憶體 {{ram}} GB 以上的 Mac。",
+      "noStatus": "無法取得 mude 1.0 的狀態：{{reason}}",
+      "saveFirst": "要變更 mude 1.0，請先儲存或捨棄其他變更。",
+      "needs": "mude 1.0 需要搭載 Apple 晶片、macOS 14 或更新版本、記憶體 {{ram}} GB 以上的 Mac。",
       "retry": "重試",
       "guide": {
-        "consent": "需要下載約 {{download}} GB，另加約 {{python}} GB 的 Python 環境。它在這台 Mac 上執行，執行時約占用 {{memory}} GB 記憶體。",
+        "consent": "下載 {{download}} GB，另需 {{python}} GB 的 Python 環境；執行時約占用 {{memory}} GB 記憶體。",
         "instead": "mu 會改用雲端判定器。",
-        "ready": "mude 已在執行，現在是你的判定器。",
-        "readyStopped": "mude 現在是你的判定器，它的服務會在下次 mu 工作階段開始時啟動。"
+        "ready": "mude 1.0 已在執行，現在是你的判定器。",
+        "readyStopped": "mude 1.0 現在是你的判定器，它的服務會在下次 mu 工作階段開始時啟動。"
       }
     },
     "clm": {

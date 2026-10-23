@@ -29,6 +29,11 @@ export type MudeStatus = {
   problems: string[];
   /** The model is downloaded. */
   installed: boolean;
+  /**
+   * Bytes of the model on disk, partly downloaded files included: while not installed, an install that stopped part
+   * way (the next one goes on from there). Unset when there are none, or from a mu that does not say.
+   */
+  downloadedBytes?: number;
   /** Its Python environment is set up. */
   pythonReady: boolean;
   /** Its server runs. */
@@ -75,7 +80,7 @@ export type MudeTask = {
   command: MudeCommand;
   phase: 'running' | 'done' | 'failed' | 'cancelled';
   step?: MudeStep;
-  /** The command's sentence for its current step, in English. */
+  /** The command's sentence for its current step, in English: the app says each step in its own words instead. */
   message?: string;
   /** While the model downloads. */
   download?: MudeDownload;
@@ -95,8 +100,13 @@ export type MudeState = {
   task?: MudeTask;
 };
 
-/** What installing takes, about, for the consent: the model, its Python environment, and memory while it runs. */
+/**
+ * What installing takes, about, for the consent: the model, its Python environment, and memory while it runs. Download
+ * sizes are in decimal gigabytes (10⁹ bytes), as Hugging Face gives them: the model is 1,782,005,734 bytes.
+ */
 export const MUDE_DOWNLOAD_GB = 1.8;
+/** Bytes in a gigabyte of a download, as MUDE_DOWNLOAD_GB counts them. */
+export const DOWNLOAD_GB_BYTES = 1e9;
 export const MUDE_PYTHON_GB = 1;
 export const MUDE_MEMORY_GB = 4;
 /** The memory a Mac needs to run mude at all (the command's own check). */

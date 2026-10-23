@@ -126,6 +126,11 @@
   background-color: var(--mu-accent-fill-active);
 }
 
+/* A box keeps square corners: the theme's small radius (6px) on Arco's 14px box would make it read as a radio. */
+[data-color-scheme='mu'] .arco-checkbox-mask {
+  border-radius: 3px;
+}
+
 [data-color-scheme='mu'] .arco-checkbox-checked:not(.arco-checkbox-disabled) .arco-checkbox-mask,
 [data-color-scheme='mu'] .arco-checkbox-indeterminate:not(.arco-checkbox-disabled) .arco-checkbox-mask {
   border-color: var(--mu-accent-fill-active);

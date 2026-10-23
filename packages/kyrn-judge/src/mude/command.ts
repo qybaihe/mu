@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, statfsSync, writeFileSync 
 import { homedir, release, totalmem } from "node:os";
 import { join } from "node:path";
 import { type ConfigFiles, disableMude, enableMude, judgeSetting, mudeInTiers, readState } from "./config.ts";
-import { DownloadError, downloadFiles, huggingFaceToken, missingFiles } from "./download.ts";
+import { DownloadError, downloadedBytes, downloadFiles, huggingFaceToken, missingFiles } from "./download.ts";
 import { MUDE_BYTES, MUDE_FILES, MUDE_REPO, MUDE_REVISION, mudeFileUrl } from "./manifest.ts";
 import { type MudePaths, mudePaths } from "./paths.ts";
 import { downloadUv, ensureVenv, findUv, venvReady } from "./python.ts";
@@ -97,6 +97,8 @@ export interface MudeStatus {
 	readonly supported: boolean;
 	readonly problems: readonly string[];
 	readonly installed: boolean;
+	/** Bytes of the model on disk, partly downloaded files included: above 0 while not installed, an install stopped part way. */
+	readonly downloadedBytes: number;
 	readonly pythonReady: boolean;
 	readonly running: boolean;
 	readonly ready: boolean;
@@ -118,7 +120,13 @@ function describe(status: MudeStatus): string {
 		return `${lines.join("\n")}\n`;
 	}
 	lines.push(
-		`model     ${status.installed ? `installed (${MUDE_REPO} @ ${MUDE_REVISION.slice(0, 7)})` : "not installed: mu judge mude install"}`,
+		`model     ${
+			status.installed
+				? `installed (${MUDE_REPO} @ ${MUDE_REVISION.slice(0, 7)})`
+				: status.downloadedBytes > 0
+					? `partly downloaded (${(status.downloadedBytes / 1e9).toFixed(1)} of ${(MUDE_BYTES / 1e9).toFixed(1)} GB): mu judge mude install goes on from there`
+					: "not installed: mu judge mude install"
+		}`,
 	);
 	if (status.installed && !status.pythonReady) lines.push("python    not set up: mu judge mude install");
 	lines.push(
@@ -227,6 +235,7 @@ export async function status(ctx: Context): Promise<MudeStatus> {
 		supported: found.length === 0,
 		problems: found,
 		installed: installed(ctx),
+		downloadedBytes: downloadedBytes(ctx.paths.model, MUDE_FILES),
 		pythonReady: venvReady(ctx.paths, ctx.lockFile),
 		running,
 		ready,
