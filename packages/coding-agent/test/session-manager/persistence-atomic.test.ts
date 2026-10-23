@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { type FileEntry, type SessionEntry, SessionManager } from "../../src/core/session-manager.ts";
 import { userMsg } from "../utilities.ts";
 
-type InternalSessionManager = SessionManager & {
+type InternalSessionManager = {
 	_rewriteFile(entries?: FileEntry[]): void;
 };
 
@@ -47,7 +47,7 @@ describe("SessionManager persistence", () => {
 			parentId: null,
 			timestamp: new Date().toISOString(),
 		};
-		const internal = session as InternalSessionManager;
+		const internal = session as unknown as InternalSessionManager;
 
 		expect(() => internal._rewriteFile([...session.getEntries(), malformed])).toThrow(TypeError);
 		expect(readFileSync(sessionFile, "utf8")).toBe(persisted);
