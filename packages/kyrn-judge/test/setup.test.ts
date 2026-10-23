@@ -834,19 +834,23 @@ describe("mu setup, asking in a terminal", () => {
 		expect(on.json("mu.json")).toEqual({ tiers: ["jev"], modes: { "turn.drift": "active" } });
 	});
 
-	it("offers mude 1.0 second on a Mac that can run it, and installs it after the files are written", async () => {
-		// Subscription; judge: mude 1.0; no session.
-		const run = await wizard({ answers: ["3", "2", "n"], mude: 0 });
-		expect(run.printed).toContain("  2) mude 1.0 on this Mac: mu's own decision model");
+	it("recommends mude 1.0 first on a Mac that can run it, and installs it after the files are written", async () => {
+		// Subscription; judge: the default, mude 1.0; no session.
+		const run = await wizard({ answers: ["3", "", "n"], mude: 0 });
+		expect(run.printed).toContain("  1) mude 1.0 on this Mac (recommended): mu's own decision model");
+		// Free Jev is still there, no longer the recommended one.
+		expect(run.printed).toContain("  2) Free Jev on OpenCode Zen: no key needed");
+		expect(run.printed).not.toContain("Free Jev on OpenCode Zen (recommended)");
 		expect(run.code).toBe(SETUP_EXIT.done);
 		expect(run.mudeInstalls).toBe(1);
 		expect(run.said.join("\n")).toContain("Judge: mude 1.0, installed next, with Jev for what it can't answer.");
 		// The install comes after the summary, and before the question about a session.
 		expect(run.at("say", "(mu judge mude install)")).toBeGreaterThan(run.at("say", "Judge: mude 1.0"));
 		expect(run.at("ask", "Start mu now?")).toBeGreaterThan(run.at("say", "(mu judge mude install)"));
-		// Elsewhere it is not offered: the same answer is Jev with a key of one's own.
-		const elsewhere = await wizard({ answers: ["3", "3", "n"] });
+		// Elsewhere it is not offered, and the free Jev is the recommended default as before.
+		const elsewhere = await wizard({ answers: ["3", "", "n"] });
 		expect(elsewhere.printed).not.toContain("mude 1.0");
+		expect(elsewhere.printed).toContain("  1) Free Jev on OpenCode Zen (recommended)");
 		expect(elsewhere.mudeInstalls).toBe(0);
 	});
 
@@ -854,7 +858,7 @@ describe("mu setup, asking in a terminal", () => {
 		const home = temp();
 		mkdirSync(join(home, "agent"));
 		writeFileSync(join(home, "agent", "mu.json"), JSON.stringify({ tiers: ["laya"], modes: { default: "off" } }));
-		const run = await wizard({ home, answers: ["3", "2", "n"], mude: 1 });
+		const run = await wizard({ home, answers: ["3", "1", "n"], mude: 1 });
 		expect(run.code).toBe(SETUP_EXIT.done);
 		expect(run.json("mu.json")).toEqual({ tiers: ["jev"] });
 		expect(run.warned.join("\n")).toContain(
