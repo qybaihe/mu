@@ -37,9 +37,7 @@ What you get:
 - **Permission checks that don't stop you at every step.** In *Judge mode*, the default, the judge lets through what the task clearly needs and asks you about the rest. Rules catch risky commands first, and web pages and MCP output are screened for instructions aimed at the AI before the model sees them.
 - **Decisions you can audit.** Every verdict goes into a local ledger with its probabilities and timing (`mu ledger`, `/status` or the desktop app's Judge tab). Any decision point can run in shadow mode, asked and logged but changing nothing, so you can compare judges before you rely on one.
 
-> mu is in early development (0.1.x). See [Status and limitations](#status-and-limitations).
-
-**Contents:** [Quick start](#quick-start) · [How a turn works](#how-a-turn-works) · [Decision points](#decision-points) · [Judges](#judges) · [How mu is built](#how-mu-is-built) · [Measured](#measured) · [The hive](#the-hive) · [The board](#the-plain-language-board) · [Desktop app](#the-desktop-app) · [Command line](#command-line) · [Privacy](#privacy) · [Status](#status-and-limitations) · [Documentation](#documentation) · [Contributing](#contributing)
+**Contents:** [Quick start](#quick-start) · [How a turn works](#how-a-turn-works) · [Decision points](#decision-points) · [Judges](#judges) · [How mu is built](#how-mu-is-built) · [Measured](#measured) · [The hive](#the-hive) · [The board](#the-plain-language-board) · [Desktop app](#the-desktop-app) · [Command line](#command-line) · [Privacy](#privacy) · [Limitations](#limitations) · [Documentation](#documentation) · [Contributing](#contributing)
 
 ## Quick start
 
@@ -138,7 +136,7 @@ The 40 points fall into five groups:
 | `turn.rewind` | The same failure, again and again: is this approach a dead end? | Back to a checkpoint |
 | `turn.completion` | The model says it's done: did anything verify that? | One nudge if not |
 | `turn.continue` | The run ends on "Let me run the tests next", or on a request for a go-ahead on work you already asked for: did it stop short? | It's sent back to work, at most twice per message, and never toward a step that's hard to undo |
-| `output.drift` | While the model is writing: does the tail of its output cross your constraints? | Experimental and off by default; corrected mid-stream |
+| `output.drift` | While the model is writing: does the tail of its output cross your constraints? | Off by default; corrected mid-stream |
 | `goal.met` | In goal mode, when the main model gives no answer: is the condition met? | The fallback for `/goal` |
 | `board.read` | Where do things stand? Asked as multiple choice | Feeds the plain-language board |
 | `notify.routing` | An event such as the context budget running low: tell the model now, later or never? | The model hears about it at the right time |
@@ -364,14 +362,12 @@ pi's own commands (`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`,
 
 Your keys stay on your machine. mu never downloads a model or a runtime on its own; anything that needs a download asks first. The judge sees only the fields a question needs. With no key set, those fields go to the free Jev on OpenCode Zen; `mu setup --judge off` (no judge is asked; mu's features keep working on their rules), `MU_JUDGE=off` or Laya keeps everything on your machine. Every verdict is logged locally, and you can read all of them. The desktop app sends no telemetry or crash reports. Details are in [SECURITY.md](SECURITY.md#what-leaves-your-machine).
 
-## Status and limitations
+## Limitations
 
-- mu is in early development. Pre-releases (0.1.x) are on npm and under [Releases](https://github.com/qybaihe/mu/releases). The authors use it every day, but names, settings and formats may still change.
 - The measurements above come from the authors' own sessions and from synthetic projects. The test-log repeats cover Vitest only.
 - The test-log numbers measure what reaches the model, not whether the model then finishes the task. There's no end-to-end comparison with pi, Claude Code or Codex on the same tasks yet.
 - Laya, the local judge, runs only on macOS on Apple silicon, and it's weaker on meta-judgments than on simple predicates. Run it in shadow before you give it a decision point.
 - Jev on OpenCode Zen is free for a limited time only.
-- `output.drift` is experimental and off by default.
 
 ## Documentation
 
