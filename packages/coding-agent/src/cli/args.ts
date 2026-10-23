@@ -89,6 +89,9 @@ export function parseArgs(args: string[]): Args {
 				}
 			}
 			break;
+		} else if (/^-+\s/.test(arg)) {
+			// A message that starts with a list item ("- Fix the parser"): an option has no whitespace after its dashes.
+			result.messages.push(arg);
 		} else if (arg === "--help" || arg === "-h") {
 			result.help = true;
 		} else if (arg === "--version" || arg === "-v") {

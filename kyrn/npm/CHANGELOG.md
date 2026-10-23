@@ -19,6 +19,7 @@
 
 - `/login`: a sign-in cancelled with Escape goes back quietly also when the flow rejects with the dialog's abort (GitHub Copilot's), not only with "Login cancelled".
 - An unattended run (`mu --print`, json mode; not a sub-agent) could not reach an MCP server that isn't `"exposure": "always"`: since #81 it leaves `find_capability` out (`catalog.unattendedHidden`) and asks no `capability.disclosure`, and #122 made that the case for `"modes": { "default": "off" }` too. Now `find_capability` stays in such a run when at least one judged MCP server is installed when its first turn starts (`features.catalog.unattendedFindWithMcp`, default true), with the installed list from #122 in its description (`mcp:linear (MCP server)`, …), so the model can open the server within the run. Packs alone don't keep it: a run without a server (Terminal-Bench has none) sends the same first request as before, and no prompt or tool description names `find_capability` there.
+- `mu "- Fix the parser"` (a message that starts with a list item) runs instead of ending with "Unknown option: - Fix the parser". On Terminal-Bench 2.1 one task's instruction starts that way (pytorch-model-recovery), and Harbor's pi command, which mu's bench adapter builds on, puts no `--` before it: that task ended with exit 1 before the agent ran, in pi and in every mu config.
 
 ## [0.1.13] - 2026-10-22
 
