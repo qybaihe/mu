@@ -29,9 +29,21 @@ const KIND_OF: Record<Exclude<JudgeType, 'classifier'>, JudgeChoice | undefined>
 /** The profile a choice prefers when several of its kind exist: the built-in names. */
 const PREFERRED: Record<JudgeChoice, string> = { jev: 'jev', local: 'laya', clm: 'clm' };
 
-/** Which of the three a profile is; undefined for a model as judge, a self-hosted HTTP judge or the mock. */
+/** The variable mude's profile names for its key: how it is told from a Jev profile on the same protocol. */
+export const MUDE_KEY_VARIABLE = 'MU_JUDGE_MUDE_KEY';
+
+/**
+ * mude, mu's own judge on this Mac: a System One profile like Jev's, at a local address, set up and switched on by
+ * `mu judge mude` (its panel on the judges page), not by these choices.
+ */
+export const isMude = (judge: JudgeSettings | undefined): boolean =>
+  judge?.type === 'typesafe' && judge.apiKeyEnv === MUDE_KEY_VARIABLE;
+
+/**
+ * Which of the three a profile is; undefined for mude, a model as judge, a self-hosted HTTP judge or the mock.
+ */
 export function kindOf(judge: JudgeSettings | undefined): JudgeChoice | undefined {
-  if (!judge) return undefined;
+  if (!judge || isMude(judge)) return undefined;
   if (judge.type === 'classifier') return serviceOf(judge) ? 'jev' : undefined;
   return KIND_OF[judge.type];
 }

@@ -14,6 +14,7 @@ import { testProvider } from '../agent/kyrn/config/connection';
 import { envFileOf, expectedHarness, findHarness, launcherOf, manifestOf } from '../agent/kyrn/harness';
 import { checkClmServer } from '../agent/kyrn/clmServer';
 import { LocalJudge } from '../agent/kyrn/localJudge';
+import { Mude } from '../agent/kyrn/mude';
 import { OnnxLocalJudge, openFolder, usesOnnxJudge } from '../agent/kyrn/localJudgeOnnx';
 import { importCli, importService } from '../agent/kyrn/importChats';
 import { addSkill, listSkills, removeSkill, skillsFolder } from '../agent/kyrn/capabilities/skills';
@@ -179,6 +180,17 @@ export function initKyrnBridge(): void {
     void localJudge.autoStart(agentDir).catch((error: unknown) => console.warn('[mu] local judge autostart:', error));
   kyrnBridge.localJudgeState.provider(() => result(() => localJudge.state()));
   kyrnBridge.localJudgeRun.provider(({ action, consent }) => result(() => localJudge.run(action, consent === true)));
+  // mude: mu's own commands do the work (`mu judge mude … --json`); macOS only, and nothing is run elsewhere.
+  const mude = new Mude(harness, {
+    agentDir,
+    open: (folder) => openFolder(folder, (path) => shell.openPath(path)),
+  });
+  // An install still running when the app quits is ended with it: the command resumes the download next time.
+  app.once('will-quit', () => mude.dispose());
+  kyrnBridge.mudeState.provider(() => result(() => mude.state()));
+  kyrnBridge.mudeRun.provider(({ action, localOnly }) =>
+    result(() => mude.run(action, typeof localOnly === 'boolean' ? localOnly : undefined))
+  );
   kyrnBridge.clmCheck.provider(({ baseUrl }) =>
     result(() => checkClmServer(typeof baseUrl === 'string' ? baseUrl : ''))
   );

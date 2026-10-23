@@ -217,6 +217,72 @@
         }
       }
     },
+    "mude": {
+      "title": "mude",
+      "tag": "在這台 Mac 上",
+      "name": "mude（在這台 Mac 上）",
+      "intro": "mu 自己的判定模型，小到可以在這台 Mac 上執行，不需要金鑰，也不按次收費。",
+      "first": "現在由 mude 第一個回答，可以在下面管理它；排在它後面的判定器在「判定順序」頁。",
+      "tierHelp": "在這台 Mac 上執行。請在「判定器」頁設定。",
+      "notInstalled": "未安裝。",
+      "unfinished": "上次安裝沒有完成。再次安裝會從中斷的地方繼續。",
+      "install": "安裝 mude",
+      "consent": {
+        "title": "安裝 mude？",
+        "download": "mu 會從 Hugging Face 下載 mude（約 {{download}} GB），並為它設定 Python 環境（約 {{python}} GB），需要幾分鐘。",
+        "memory": "mude 執行時約占用 {{memory}} GB 記憶體。需要搭載 Apple 晶片、macOS 14 或更新版本的 Mac。",
+        "after": "安裝完成後，mude 會啟動並成為 mu 的判定器。",
+        "ok": "下載並安裝"
+      },
+      "localOnly": "僅限本機——不詢問任何雲端判定器",
+      "localOnlyOn": "mude 是唯一的判定器，不會有任何內容送往雲端。mude 無法回答時，判定點採用它的預設策略。",
+      "localOnlyOff": "mude 無法回答的判定（例如它已停止或拿不準時）會交給雲端的 {{judges}}，送過去的內容會離開這台 Mac。另有兩項安全檢查也一律交給它：審查工具描述，以及審查擷取的內容裡是否夾帶注入的指令。",
+      "localOnlyOffLocal": "mude 無法回答的判定會交給同樣在這台 Mac 上執行的 {{judges}}。",
+      "localOnlyNone": "mude 後面沒有設定其他判定器。mude 無法回答時，判定點採用它的預設策略。",
+      "use": "使用 mude 作為判定器",
+      "useHelp": "關閉後會恢復被它取代的判定器，並停止它的服務。",
+      "status": {
+        "running": "正在 127.0.0.1:{{port}} 上執行",
+        "runningMemory": "正在 127.0.0.1:{{port}} 上執行 · {{memory}} GB",
+        "starting": "正在啟動…",
+        "stopped": "已停止"
+      },
+      "resources": "mude 執行時約占用 {{memory}} GB 記憶體。這台 Mac 上的所有 mu 工作階段（包括終端機裡的）共用它，它會一直執行，直到你停止或關閉它。",
+      "start": "啟動",
+      "stop": "停止",
+      "openFolder": "打開資料夾",
+      "uninstall": "解除安裝",
+      "uninstallTitle": "解除安裝 mude？",
+      "uninstallText": "這會關閉 mude，恢復被它取代的判定器，並刪除模型和它的 Python 環境（約 {{size}} GB）。之後可以重新安裝。",
+      "working": {
+        "install": "正在安裝 mude…",
+        "enable": "正在啟用 mude…",
+        "disable": "正在關閉 mude…",
+        "start": "正在啟動 mude…",
+        "stop": "正在停止 mude…",
+        "uninstall": "正在解除安裝 mude…"
+      },
+      "downloaded": "{{done}} / {{total}} GB",
+      "checking": "正在驗證下載的檔案…",
+      "cancelled": "已取消安裝。已下載的部分會保留，再次安裝會從那裡繼續。",
+      "failed": {
+        "install": "無法安裝 mude。",
+        "enable": "無法啟用 mude。",
+        "disable": "無法關閉 mude。",
+        "start": "無法啟動 mude。",
+        "stop": "無法停止 mude。",
+        "uninstall": "無法解除安裝 mude。"
+      },
+      "error": {
+        "access": "mude 暫時還不能下載，請稍後再試。",
+        "network": "無法連線到 Hugging Face。請檢查網路後重試，已下載的部分會保留。",
+        "integrity": "有個下載的檔案沒有通過驗證，請重新安裝。",
+        "unsupported": "mude 無法在這台 Mac 上執行。"
+      },
+      "unsupported": "mude 無法在這台 Mac 上執行：",
+      "noStatus": "無法取得 mude 的狀態：{{reason}}",
+      "saveFirst": "要變更 mude，請先儲存或捨棄其他變更。"
+    },
     "clm": {
       "address": "伺服器位址",
       "addressHelp": "clm-serve 監聽的位址，例如 http://192.168.1.20:8700。留空就是這台電腦（{{address}}）。",

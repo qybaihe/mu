@@ -217,6 +217,72 @@
         }
       }
     },
+    "mude": {
+      "title": "mude",
+      "tag": "Sur ce Mac",
+      "name": "mude (sur ce Mac)",
+      "intro": "Le modèle juge de mu, assez petit pour tourner sur ce Mac, sans clé et sans coût par appel.",
+      "first": "mude répond en premier. Ses commandes sont ci-dessous ; les juges placés après lui sont sur la page « Ordre des juges ».",
+      "tierHelp": "Tourne sur ce Mac. Configurez-le sur la page « Juges ».",
+      "notInstalled": "Non installé.",
+      "unfinished": "La dernière installation n’est pas allée au bout. Réinstaller reprend là où elle s’est arrêtée.",
+      "install": "Installer mude",
+      "consent": {
+        "title": "Installer mude ?",
+        "download": "mu télécharge mude depuis Hugging Face (environ {{download}} Go) et lui prépare un environnement Python (environ {{python}} Go). Cela prend quelques minutes.",
+        "memory": "Pendant qu’il tourne, mude utilise environ {{memory}} Go de mémoire. Il faut un Mac avec puce Apple et macOS 14 ou ultérieur.",
+        "after": "Une fois installé, mude démarre et devient le juge de mu.",
+        "ok": "Télécharger et installer"
+      },
+      "localOnly": "Local uniquement — ne jamais interroger un juge dans le cloud",
+      "localOnlyOn": "mude est le seul juge et rien ne part dans le cloud. Quand mude ne peut pas répondre, le point de décision applique sa stratégie par défaut.",
+      "localOnlyOff": "Les décisions auxquelles mude ne peut pas répondre, par exemple quand il est arrêté ou hésitant, vont à {{judges}} dans le cloud : ce qui y est envoyé quitte ce Mac. Deux contrôles de sécurité y vont toujours aussi : l’examen des descriptions d’outils et l’examen du contenu récupéré à la recherche d’instructions injectées.",
+      "localOnlyOffLocal": "Les décisions auxquelles mude ne peut pas répondre vont à {{judges}}, qui tourne aussi sur ce Mac.",
+      "localOnlyNone": "Aucun juge n’est placé après mude. Quand mude ne peut pas répondre, le point de décision applique sa stratégie par défaut.",
+      "use": "Utiliser mude comme juge",
+      "useHelp": "Le désactiver rétablit les juges qu’il remplaçait et arrête son serveur.",
+      "status": {
+        "running": "En marche sur 127.0.0.1:{{port}}",
+        "runningMemory": "En marche sur 127.0.0.1:{{port}} · {{memory}} Go",
+        "starting": "Démarrage…",
+        "stopped": "Arrêté"
+      },
+      "resources": "Pendant qu’il tourne, mude utilise environ {{memory}} Go de mémoire. Toutes les sessions mu de ce Mac le partagent, y compris celles du terminal, et il reste en marche jusqu’à ce que vous l’arrêtiez ou le désactiviez.",
+      "start": "Démarrer",
+      "stop": "Arrêter",
+      "openFolder": "Ouvrir le dossier",
+      "uninstall": "Désinstaller",
+      "uninstallTitle": "Désinstaller mude ?",
+      "uninstallText": "Cela désactive mude, rétablit les juges qu’il remplaçait et supprime le modèle et son environnement Python (environ {{size}} Go). Vous pourrez le réinstaller plus tard.",
+      "working": {
+        "install": "Installation de mude…",
+        "enable": "Activation de mude…",
+        "disable": "Désactivation de mude…",
+        "start": "Démarrage de mude…",
+        "stop": "Arrêt de mude…",
+        "uninstall": "Désinstallation de mude…"
+      },
+      "downloaded": "{{done}} sur {{total}} Go",
+      "checking": "Vérification des fichiers téléchargés…",
+      "cancelled": "Installation annulée. Ce qui est déjà téléchargé est conservé, et réinstaller reprend à partir de là.",
+      "failed": {
+        "install": "Impossible d’installer mude.",
+        "enable": "Impossible d’activer mude.",
+        "disable": "Impossible de désactiver mude.",
+        "start": "Impossible de démarrer mude.",
+        "stop": "Impossible d’arrêter mude.",
+        "uninstall": "Impossible de désinstaller mude."
+      },
+      "error": {
+        "access": "mude n’est pas encore disponible au téléchargement. Réessayez plus tard.",
+        "network": "Impossible de joindre Hugging Face. Vérifiez votre connexion et réessayez ; ce qui est déjà téléchargé est conservé.",
+        "integrity": "Un fichier téléchargé n’a pas passé la vérification. Réessayez l’installation.",
+        "unsupported": "mude ne peut pas tourner sur ce Mac."
+      },
+      "unsupported": "mude ne peut pas tourner sur ce Mac :",
+      "noStatus": "Impossible d’obtenir l’état de mude : {{reason}}",
+      "saveFirst": "Pour modifier mude, enregistrez ou annulez d’abord vos autres modifications."
+    },
     "clm": {
       "address": "Adresse du serveur",
       "addressHelp": "L’adresse où écoute clm-serve, par exemple http://192.168.1.20:8700. Vide : cet ordinateur ({{address}}).",

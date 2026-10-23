@@ -217,6 +217,72 @@
         }
       }
     },
+    "mude": {
+      "title": "mude",
+      "tag": "Bu Mac'te",
+      "name": "mude (bu Mac'te)",
+      "intro": "mu'nun kendi hakem modeli. Bu Mac'te çalışacak kadar küçük; anahtar gerektirmez ve çağrı başına ücreti yoktur.",
+      "first": "Şu an ilk mude yanıtlıyor. Denetimleri aşağıda; arkasındaki hakemler Hakem sırası sayfasında.",
+      "tierHelp": "Bu Mac'te çalışır. Hakemler sayfasında kurun.",
+      "notInstalled": "Kurulu değil.",
+      "unfinished": "Son kurulum tamamlanmadı. Yeniden kurmak, kaldığı yerden devam eder.",
+      "install": "mude'yi kur",
+      "consent": {
+        "title": "mude kurulsun mu?",
+        "download": "mu, mude'yi Hugging Face'ten indirir (yaklaşık {{download}} GB) ve onun için bir Python ortamı kurar (yaklaşık {{python}} GB). Bu birkaç dakika sürer.",
+        "memory": "mude çalışırken yaklaşık {{memory}} GB bellek kullanır. Apple çipli ve macOS 14 veya sonrası bir Mac gerekir.",
+        "after": "Kurulum bitince mude başlar ve mu'nun hakemi olur.",
+        "ok": "İndir ve kur"
+      },
+      "localOnly": "Yalnızca yerel — hiçbir bulut hakemine sorma",
+      "localOnlyOn": "Tek hakem mude olur ve buluta hiçbir şey gitmez. mude yanıt veremediğinde karar noktası kendi varsayılanını kullanır.",
+      "localOnlyOff": "mude'nin yanıtlayamadığı kararlar (örneğin durmuşken ya da emin değilken) buluttaki {{judges}} hakemine gider; oraya gönderilen her şey bu Mac'ten çıkar. İki güvenlik denetimi de her zaman oraya gider: araç açıklamalarının taranması ve getirilen içerikte enjekte edilmiş talimat olup olmadığının taranması.",
+      "localOnlyOffLocal": "mude'nin yanıtlayamadığı kararlar, yine bu Mac'te çalışan {{judges}} hakemine gider.",
+      "localOnlyNone": "mude'nin arkasında ayarlı bir hakem yok. mude yanıt veremediğinde karar noktası kendi varsayılanını kullanır.",
+      "use": "mude'yi hakem olarak kullan",
+      "useHelp": "Kapatınca yerini aldığı hakemler geri gelir ve sunucusu durur.",
+      "status": {
+        "running": "127.0.0.1:{{port}} üzerinde çalışıyor",
+        "runningMemory": "127.0.0.1:{{port}} üzerinde çalışıyor · {{memory}} GB",
+        "starting": "Başlatılıyor…",
+        "stopped": "Durduruldu"
+      },
+      "resources": "mude çalışırken yaklaşık {{memory}} GB bellek kullanır. Terminaldekiler de dahil bu Mac'teki tüm mu oturumları onu paylaşır ve siz durdurana ya da kapatana kadar çalışmaya devam eder.",
+      "start": "Başlat",
+      "stop": "Durdur",
+      "openFolder": "Klasörü aç",
+      "uninstall": "Kaldır",
+      "uninstallTitle": "mude kaldırılsın mı?",
+      "uninstallText": "Bu işlem mude'yi kapatır, yerini aldığı hakemleri geri getirir ve modeli ile Python ortamını siler (yaklaşık {{size}} GB). Daha sonra yeniden kurabilirsiniz.",
+      "working": {
+        "install": "mude kuruluyor…",
+        "enable": "mude açılıyor…",
+        "disable": "mude kapatılıyor…",
+        "start": "mude başlatılıyor…",
+        "stop": "mude durduruluyor…",
+        "uninstall": "mude kaldırılıyor…"
+      },
+      "downloaded": "{{done}} / {{total}} GB",
+      "checking": "İndirilen dosyalar denetleniyor…",
+      "cancelled": "Kurulum iptal edildi. İndirilenler saklanır; yeniden kurmak oradan devam eder.",
+      "failed": {
+        "install": "mude kurulamadı.",
+        "enable": "mude açılamadı.",
+        "disable": "mude kapatılamadı.",
+        "start": "mude başlatılamadı.",
+        "stop": "mude durdurulamadı.",
+        "uninstall": "mude kaldırılamadı."
+      },
+      "error": {
+        "access": "mude henüz indirilemiyor. Daha sonra yeniden deneyin.",
+        "network": "Hugging Face'e ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin; indirilmiş olanlar saklanır.",
+        "integrity": "İndirilen bir dosya denetimden geçmedi. Yeniden kurmayı deneyin.",
+        "unsupported": "mude bu Mac'te çalışamaz."
+      },
+      "unsupported": "mude bu Mac'te çalışamaz:",
+      "noStatus": "mude durumu alınamadı: {{reason}}",
+      "saveFirst": "mude'yi değiştirmek için önce diğer değişikliklerinizi kaydedin ya da atın."
+    },
     "clm": {
       "address": "Sunucu adresi",
       "addressHelp": "clm-serve sunucusunun dinlediği adres, örneğin http://192.168.1.20:8700. Boş bırakılırsa bu bilgisayar ({{address}}).",

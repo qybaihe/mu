@@ -40,6 +40,14 @@ const defaults: Record<string, Partial<JudgeSettings>> = {
   },
   'jev-gateway': { type: 'gateway', model: 'typesafe-ai/jev', apiKeyEnv: 'AI_GATEWAY_API_KEY' },
   laya: { type: 'local', baseUrl: 'http://127.0.0.1:47823' },
+  // mude, mu's own judge on this Mac: a System One server `mu judge mude` installs and starts (common/kyrn/mude.ts).
+  mude: {
+    type: 'typesafe',
+    baseUrl: 'http://127.0.0.1:8790/v1/systemone',
+    model: 'mude',
+    apiKeyEnv: 'MU_JUDGE_MUDE_KEY',
+    timeoutMs: 4000,
+  },
   // CLM on a server of one's own; no address is clm-serve's default on this machine (common/kyrn/clm.ts).
   clm: { type: 'clm', model: CLM_DEFAULT_MODEL, apiKeyEnv: CLM_KEY_VARIABLE },
   // Classifier models of mu's catalog, reached with the provider's own key (OPENCODE_API_KEY, CLOUDFLARE_API_KEY and

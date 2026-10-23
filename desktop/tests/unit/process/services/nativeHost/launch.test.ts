@@ -106,6 +106,16 @@ describe('prepareHost', () => {
     });
   });
 
+  it('hands the launcher the Node to start mude’s server with, when it is given one', async () => {
+    const planHost = vi.fn(() => PLAN);
+    const importLauncher = vi.fn(async () => ({ planHost, prepareLaunch: vi.fn() }));
+    const node = { path: '/Applications/mu.app/Contents/MacOS/mu', env: { ELECTRON_RUN_AS_NODE: '1' } };
+    await prepareHost(options({ importLauncher, node }));
+    expect(planHost).toHaveBeenCalledWith(
+      expect.objectContaining({ nodePath: node.path, nodeEnv: { ELECTRON_RUN_AS_NODE: '1' } })
+    );
+  });
+
   it('prepares with prepareLaunchAsync when the launcher has it, and waits for it', async () => {
     const prepareLaunch = vi.fn();
     let finish: (() => void) | undefined;
@@ -247,7 +257,13 @@ describe('startNativeHost', () => {
     module: '/mu/pi.ts',
     execArgv: input.stripsTypes ? ['--strips-types'] : [],
     args: ['-e', '/mu/judge.ts', ...input.argv],
-    env: { HOME: input.home, MARK: input.env.MARK ?? '', HTTPS_PROXY: 'http://planned-proxy:3128' },
+    env: {
+      HOME: input.home,
+      MARK: input.env.MARK ?? '',
+      HTTPS_PROXY: 'http://planned-proxy:3128',
+      MUDE_NODE: input.nodePath ?? '',
+      MUDE_NODE_ENV: JSON.stringify(input.nodeEnv ?? null),
+    },
     layout: 'repo', muDir: '/m', appDir: '/m/app', agentDir: '/m/agent', startJudge: false, notes: [],
   };
 }
@@ -299,6 +315,9 @@ export function prepareLaunch() {}
         NO_PROXY: '127.0.0.1',
         HOME: expect.any(String),
         MARK: 'from-the-app',
+        // The Node the launcher starts mude's server with: the app's own (Electron as Node in the app).
+        MUDE_NODE: process.execPath,
+        MUDE_NODE_ENV: JSON.stringify(process.versions.electron ? { ELECTRON_RUN_AS_NODE: '1' } : {}),
       },
       cwd: '/project',
       stdio: 'pipe',

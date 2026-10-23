@@ -217,6 +217,72 @@
         }
       }
     },
+    "mude": {
+      "title": "mude",
+      "tag": "On this Mac",
+      "name": "mude (on this Mac)",
+      "intro": "mu's own judge model, small enough to run on this Mac, with no key and no per-call cost.",
+      "first": "mude answers first. Its controls are below; the judges behind it are on the Judge order page.",
+      "tierHelp": "Runs on this Mac. Set it up on the Judges page.",
+      "notInstalled": "Not installed.",
+      "unfinished": "The last install didn't finish. Installing again picks up where it stopped.",
+      "install": "Install mude",
+      "consent": {
+        "title": "Install mude?",
+        "download": "mu downloads mude from Hugging Face (about {{download}} GB) and sets up a Python environment for it (about {{python}} GB). This takes a few minutes.",
+        "memory": "While it runs, mude uses about {{memory}} GB of memory. It needs a Mac with Apple silicon and macOS 14 or later.",
+        "after": "Once it's installed, mude starts and becomes mu's judge.",
+        "ok": "Download and install"
+      },
+      "localOnly": "Only local — never ask a cloud judge",
+      "localOnlyOn": "mude is the only judge, and nothing goes to the cloud. When mude can't answer, the decision point uses its default.",
+      "localOnlyOff": "Decisions mude can't answer, for example while it's stopped or when it's unsure, go to {{judges}} in the cloud, so what's sent there leaves this Mac. Two security checks always go there too: screening tool descriptions, and screening fetched content for injected instructions.",
+      "localOnlyOffLocal": "Decisions mude can't answer go to {{judges}}, which also runs on this Mac.",
+      "localOnlyNone": "No judge is set behind mude. When mude can't answer, the decision point uses its default.",
+      "use": "Use mude as the judge",
+      "useHelp": "Turning it off brings back the judges it replaced and stops its server.",
+      "status": {
+        "running": "Running on 127.0.0.1:{{port}}",
+        "runningMemory": "Running on 127.0.0.1:{{port}} · {{memory}} GB",
+        "starting": "Starting…",
+        "stopped": "Stopped"
+      },
+      "resources": "While it runs, mude uses about {{memory}} GB of memory. Every mu session on this Mac shares it, including ones in the terminal, and it keeps running until you stop it or turn it off.",
+      "start": "Start",
+      "stop": "Stop",
+      "openFolder": "Open folder",
+      "uninstall": "Uninstall",
+      "uninstallTitle": "Uninstall mude?",
+      "uninstallText": "This turns mude off, brings back the judges it replaced, and deletes the model and its Python environment (about {{size}} GB). You can install it again later.",
+      "working": {
+        "install": "Installing mude…",
+        "enable": "Turning on mude…",
+        "disable": "Turning off mude…",
+        "start": "Starting mude…",
+        "stop": "Stopping mude…",
+        "uninstall": "Uninstalling mude…"
+      },
+      "downloaded": "{{done}} of {{total}} GB",
+      "checking": "Checking the downloaded files…",
+      "cancelled": "Install canceled. What's downloaded is kept, and installing again picks up from there.",
+      "failed": {
+        "install": "Couldn't install mude.",
+        "enable": "Couldn't turn on mude.",
+        "disable": "Couldn't turn off mude.",
+        "start": "Couldn't start mude.",
+        "stop": "Couldn't stop mude.",
+        "uninstall": "Couldn't uninstall mude."
+      },
+      "error": {
+        "access": "mude isn't available for download yet. Try again later.",
+        "network": "Couldn't reach Hugging Face. Check your connection and try again; what's already downloaded is kept.",
+        "integrity": "A downloaded file didn't pass its check. Try installing again.",
+        "unsupported": "mude can't run on this Mac."
+      },
+      "unsupported": "mude can't run on this Mac:",
+      "noStatus": "Couldn't get mude's status: {{reason}}",
+      "saveFirst": "To change mude, save or discard your other changes first."
+    },
     "clm": {
       "address": "Server address",
       "addressHelp": "Where clm-serve listens, such as http://192.168.1.20:8700. Leave empty for this computer ({{address}}).",

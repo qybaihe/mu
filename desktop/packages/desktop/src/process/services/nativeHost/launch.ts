@@ -62,6 +62,12 @@ export type Launcher = {
     home: string;
     stripsTypes: boolean;
     fs: LauncherFs;
+    /**
+     * The Node the launcher runs `mu judge mude start --no-wait` with when the configuration asks for mude, and what to
+     * add to its environment. A launcher from before mude ignores both.
+     */
+    nodePath?: string;
+    nodeEnv?: Record<string, string>;
   }): HostPlan | { error: string };
   prepareLaunch(input: PrepareLaunchInput): void;
   prepareLaunchAsync?(input: PrepareLaunchInput): Promise<void>;
@@ -80,6 +86,11 @@ export type PrepareOptions = {
   /** Whether the host's Node strips TypeScript types itself (`process.features.typescript`): a checkout needs it. */
   stripsTypes: boolean;
   fs?: LauncherFs;
+  /**
+   * The Node the launcher starts mude's server with (macOS, when mu.json asks for mude): in the app its own binary,
+   * which runs a script as Node with ELECTRON_RUN_AS_NODE (see piRpc.ts, launchCommand).
+   */
+  node?: { path: string; env: Record<string, string> };
   importLauncher?: (file: string) => Promise<unknown>;
   /** Where the launcher's notes go (a `.env` line it skipped, a local judge that cannot run here). */
   note?: (line: string) => void;
@@ -141,6 +152,7 @@ async function planned(options: PrepareOptions): Promise<{ launcher: Launcher; p
     home: options.home,
     stripsTypes: options.stripsTypes,
     fs,
+    ...(options.node ? { nodePath: options.node.path, nodeEnv: options.node.env } : {}),
   });
   if (refused(plan)) throw new NativeHostError('plan', plan.error);
   return { launcher, plan, bin };

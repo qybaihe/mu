@@ -8,7 +8,7 @@ import type { JudgeSettings, KyrnSettings } from '@/common/kyrn/types';
 import MuSelect from '@/renderer/components/base/MuSelect';
 import OneLine from '@/renderer/components/settings/OneLine';
 import { formatNumber } from '@/renderer/services/i18n/format';
-import type { Draft } from '../draft';
+import { dirtySections, type Draft } from '../draft';
 import ChoiceTile from '../fields/ChoiceTile';
 import { shownMode } from '../fields/mode';
 import Row from '../fields/Row';
@@ -20,6 +20,7 @@ import {
   choose,
   clmKeyVariable,
   defaultModelOf,
+  isMude,
   JEV_SERVICES,
   JUDGE_CHOICES,
   type JevService,
@@ -33,6 +34,7 @@ import {
 import ClmServerCheck from './ClmServerCheck';
 import SectionShell, { Card } from './SectionShell';
 import LocalJudgePanel from './LocalJudgePanel';
+import MudePanel from './MudePanel';
 import styles from './sections.module.css';
 
 type JudgesSectionProps = {
@@ -40,6 +42,8 @@ type JudgesSectionProps = {
   base: KyrnSettings;
   onChange: (change: (settings: KyrnSettings) => KyrnSettings) => void;
   onKey: (variable: string, value: string) => void;
+  /** mu's own command changed mu.json (mude's panel): the settings are read again. */
+  onReload?: () => void;
 };
 
 /**
@@ -48,7 +52,7 @@ type JudgesSectionProps = {
  * it works, and under it what that choice needs (Jev a service and its key, Laya the one-click panel, CLM its server's
  * address). The order of several judges is the next page.
  */
-export default function JudgesSection({ draft, onChange, onKey }: JudgesSectionProps) {
+export default function JudgesSection({ draft, base, onChange, onKey, onReload }: JudgesSectionProps) {
   const { t } = useTranslation();
   const on = shownMode(draft.settings.mode) === 'active';
   return (
@@ -65,6 +69,8 @@ export default function JudgesSection({ draft, onChange, onKey }: JudgesSectionP
         </Row>
       </Card>
       <JudgeChoices draft={draft} onChange={onChange} onKey={onKey} />
+      {/* mude applies at once, through mu's own command: with unsaved changes, it waits until they're saved. */}
+      <MudePanel unsaved={dirtySections(base, draft).size > 0} onSettingsChanged={onReload} />
     </SectionShell>
   );
 }
@@ -103,7 +109,11 @@ export function JudgeChoices({ draft, onChange, onKey }: JudgeChoicesProps) {
           </JudgeChoiceTile>
         ))}
       </div>
-      {current === undefined ? <div className={styles.meta}>{t('mu.judges.custom')}</div> : null}
+      {current === undefined ? (
+        <div className={styles.meta}>
+          {t(isMude(settings.judges[settings.tiers[0]]) ? 'mu.judges.mude.first' : 'mu.judges.custom')}
+        </div>
+      ) : null}
     </>
   );
 }
@@ -286,6 +296,7 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
   const { t, i18n } = useTranslation();
   const { settings } = draft;
   const nameOf = (profile: string): string => {
+    if (isMude(settings.judges[profile])) return t('mu.judges.mude.name');
     const kind = kindOf(settings.judges[profile]);
     return kind ? t(`mu.judges.choices.${kind}.title`) : profile;
   };
@@ -326,8 +337,9 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
         const kind = kindOf(judge);
         const classifier = kind === undefined && judge?.type === 'classifier';
         // The first of Jev, Laya and CLM is the one the judges page chose: what it needs is asked for there.
-        const summary =
-          index === 0 && kind !== undefined
+        const summary = isMude(judge)
+          ? t('mu.judges.mude.tierHelp')
+          : index === 0 && kind !== undefined
             ? t('mu.judges.firstTier')
             : kind === 'local'
               ? t('mu.judges.types.localHelp')
