@@ -163,7 +163,7 @@
   },
   "models": {
     "title": "Models",
-    "lead": "mude-2b is mu's own decision model. As your judge, it makes its judgments on your machine, and what it judges never leaves it.",
+    "lead": "mude-2b is mu's own judge model, fine-tuned for judging, with state-of-the-art judging ability. It runs on your machine, so what it judges never leaves it.",
     "mude_label": "MUDE-2B",
     "mude_h2": "A judge that runs on your machine",
     "mude_intro": "In every turn, mu asks a judge dozens of small questions. mude-2b answers them on your machine.",
