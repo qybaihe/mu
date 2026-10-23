@@ -159,11 +159,13 @@
       "jev": {
         "title": "Jev",
         "tag": "Recomendado",
+        "tagHosted": "Hospedado",
         "description": "O modelo juiz hospedado da TypeSafe. Rápido e preciso. Grátis no OpenCode Zen por tempo limitado, ou cobrado por chamada com uma chave da TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare ou de um serviço seu."
       },
       "mude": {
         "title": "mude 1.0",
         "tag": "Neste Mac",
+        "tagRecommended": "Recomendado · neste Mac",
         "description": "O modelo de decisão do próprio mu, otimizado para programação e no estado da arte nas decisões de um agente de programação. Roda neste Mac: sem chave e sem custo por chamada. Requer Apple silicon."
       },
       "local": {

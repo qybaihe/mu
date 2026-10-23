@@ -18,6 +18,13 @@ export const JUDGE_CHOICES: readonly JudgeChoice[] = ['jev', 'mude', 'local', 'c
 /** The choices of the first-run guide. CLM needs a server with a GPU someone already runs: it waits in the settings. */
 export const GUIDE_CHOICES: readonly JudgeChoice[] = ['jev', 'mude', 'local'];
 
+/**
+ * The choices in the order the judges page and the first-run guide show them: on a Mac that can run mude, mude is the
+ * recommended judge and comes first, the others in their usual order behind it; elsewhere the order is as given.
+ */
+export const inShownOrder = (choices: readonly JudgeChoice[], mudeRecommended: boolean): readonly JudgeChoice[] =>
+  mudeRecommended && choices.includes('mude') ? ['mude', ...choices.filter((choice) => choice !== 'mude')] : choices;
+
 /** The kind of each type; a classifier model is Jev when it is Jev's (see serviceOf), else of no kind. */
 const KIND_OF: Record<Exclude<JudgeType, 'classifier'>, JudgeChoice | undefined> = {
   jev: 'jev',

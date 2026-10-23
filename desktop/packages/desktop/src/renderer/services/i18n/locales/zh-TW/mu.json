@@ -159,11 +159,13 @@
       "jev": {
         "title": "Jev",
         "tag": "推薦",
+        "tagHosted": "雲端",
         "description": "TypeSafe 託管的判定模型。又快又準。在 OpenCode Zen 上限時免費；也可以用 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare 或你自己服務的金鑰，按次計費。"
       },
       "mude": {
         "title": "mude 1.0",
         "tag": "在這台 Mac 上",
+        "tagRecommended": "推薦 · 在這台 Mac 上",
         "description": "mu 自己的決策模型，針對程式設計情境特別最佳化，程式設計情境的決策能力達到 SOTA 級。在這台 Mac 上執行，不需要金鑰，不按次收費，需要 Apple 晶片。"
       },
       "local": {

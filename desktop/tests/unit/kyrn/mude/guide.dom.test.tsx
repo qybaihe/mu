@@ -183,6 +183,17 @@ async function judgeStep() {
   return { step, tile: within(step).getByTestId('mu-judge-choice-mude') };
 }
 
+/** The judge step's choices, in the order shown. */
+const tilesOf = (step: HTMLElement) =>
+  within(step)
+    .getAllByRole('radio')
+    .map((radio) => radio.getAttribute('data-testid'));
+
+/** Today's order, where mude is not the recommended judge. */
+const USUAL_ORDER = ['mu-judge-choice-jev', 'mu-judge-choice-mude', 'mu-judge-choice-local', 'mu-welcome-judge-none'];
+/** On a Mac that can run mude: mude first, then the others in their usual order. */
+const MUDE_FIRST = ['mu-judge-choice-mude', 'mu-judge-choice-jev', 'mu-judge-choice-local', 'mu-welcome-judge-none'];
+
 /** On to the last step, and Start: what the guide saved. */
 async function finish(): Promise<SaveSettings> {
   fireEvent.click(screen.getByTestId('mu-welcome-next'));
@@ -194,22 +205,20 @@ async function finish(): Promise<SaveSettings> {
 }
 
 describe('mude in the first-run guide', () => {
-  it('is offered beside Jev, Laya and No judge, and says what installing takes before the one button', async () => {
+  it('on a Mac that can run it: first, recommended and already picked, installed only on a click', async () => {
     const { step, tile } = await judgeStep();
-    const tiles = within(step)
-      .getAllByRole('radio')
-      .map((radio) => radio.getAttribute('data-testid'));
-    expect(tiles).toEqual([
-      'mu-judge-choice-jev',
-      'mu-judge-choice-mude',
-      'mu-judge-choice-local',
-      'mu-welcome-judge-none',
-    ]);
+    // The status, read as the guide opened, says this Mac can run mude.
+    await waitFor(() => expect(tilesOf(step)).toEqual(MUDE_FIRST), { timeout: 3000 });
     expect(tile).toHaveTextContent('mude 1.0');
-    expect(tile).toHaveTextContent('On this Mac');
-    fireEvent.click(tile);
+    expect(within(tile).getByText('Recommended · on this Mac')).toBeInTheDocument();
+    // Jev says what it is instead of being the recommended one.
+    const jev = within(step).getByTestId('mu-judge-choice-jev');
+    expect(within(jev).getByText('Hosted')).toBeInTheDocument();
+    expect(within(jev).queryByText('Recommended')).not.toBeInTheDocument();
+    // Picked without a click, with its one button right there; nothing is started by itself.
     expect(tile).toHaveAttribute('aria-checked', 'true');
-    expect(within(step).getByTestId('mu-judge-choice-jev')).toHaveAttribute('aria-checked', 'false');
+    expect(jev).toHaveAttribute('aria-checked', 'false');
+    expect(within(step).queryByTestId('mu-welcome-judge-ready')).not.toBeInTheDocument();
     expect(tile).toHaveTextContent(enMu.judges.choices.mude.description);
     expect(within(tile).getByTestId('mu-mude-hint')).toHaveTextContent(
       '1.8 GB to download, plus a 1.0 GB Python environment. Uses about 4 GB of memory while running.'
@@ -218,10 +227,65 @@ describe('mude in the first-run guide', () => {
     expect(tile.textContent?.match(/GB of memory/g)).toHaveLength(1);
     // Nothing on disk yet: a fresh install, with what it takes said right above.
     expect(within(tile).getByTestId('mu-mude-install')).toHaveTextContent('Install mude 1.0');
+    expect(bridge.mudeRun).not.toHaveBeenCalled();
     bridge.mudeRun.mockResolvedValue(state(NOT_INSTALLED, task('install', 'running')));
     fireEvent.click(within(tile).getByTestId('mu-mude-install'));
     // With the judges behind it, as usual: no "only local" in the guide.
     await waitFor(() => expect(bridge.mudeRun).toHaveBeenCalledWith({ action: 'install' }));
+  });
+
+  it('picked but not installed, Next leaves the judge from before: the free Jev', async () => {
+    const { tile } = await judgeStep();
+    await waitFor(() => expect(tile).toHaveAttribute('aria-checked', 'true'), { timeout: 3000 });
+    fireEvent.click(screen.getByTestId('mu-welcome-next'));
+    await screen.findByTestId('mu-welcome-step-done');
+    expect(screen.getByTestId('mu-welcome-done-judge')).toHaveTextContent('Jev');
+    expect(screen.getByTestId('mu-welcome-done-judge')).toHaveTextContent(enMu.welcome.done.freeJev);
+    fireEvent.click(screen.getByTestId('mu-welcome-start'));
+    await screen.findByText('landing page');
+    // Nothing was changed: nothing to save, and no command ran.
+    expect(bridge.save).not.toHaveBeenCalled();
+    expect(bridge.mudeRun).not.toHaveBeenCalled();
+  });
+
+  it('keeps Jev when it is picked before the status is read, also once it says mude can run here', async () => {
+    // The status is not read yet: it is answered further down.
+    const status: { answer?: (result: Result<MudeState>) => void } = {};
+    bridge.mudeState.mockReturnValue(
+      new Promise<Result<MudeState>>((resolve) => {
+        status.answer = resolve;
+      })
+    );
+    const { step, tile } = await judgeStep();
+    // Not known yet: the usual order and tags, with the judge the files have.
+    expect(tilesOf(step)).toEqual(USUAL_ORDER);
+    const jev = within(step).getByTestId('mu-judge-choice-jev');
+    expect(within(jev).getByText('Recommended')).toBeInTheDocument();
+    expect(jev).toHaveAttribute('aria-checked', 'true');
+    // The tile already picked: the press settles it all the same.
+    fireEvent.click(jev);
+    status.answer?.(state(NOT_INSTALLED));
+    await waitFor(() => expect(tilesOf(step)).toEqual(MUDE_FIRST), { timeout: 3000 });
+    expect(within(tile).getByText('Recommended · on this Mac')).toBeInTheDocument();
+    expect(jev).toHaveAttribute('aria-checked', 'true');
+    expect(tile).toHaveAttribute('aria-checked', 'false');
+    expect(within(step).getByTestId('mu-welcome-judge-ready')).toBeInTheDocument();
+    expect(bridge.mudeRun).not.toHaveBeenCalled();
+  });
+
+  it('leaves a judge set up before as it is, and only puts mude first', async () => {
+    bridge.settings.mockResolvedValue(ok(newUser({ tiers: ['laya'] })));
+    const { step, tile } = await judgeStep();
+    await waitFor(() => expect(tilesOf(step)).toEqual(MUDE_FIRST), { timeout: 3000 });
+    expect(within(step).getByTestId('mu-judge-choice-local')).toHaveAttribute('aria-checked', 'true');
+    expect(tile).toHaveAttribute('aria-checked', 'false');
+    cleanup();
+    // Jev with a key of its own: set up on purpose, so it stays the pick too.
+    bridge.settings.mockResolvedValue(ok(newUser({ keys: { TYPESAFE_API_KEY: true } })));
+    const keyed = await judgeStep();
+    await waitFor(() => expect(tilesOf(keyed.step)).toEqual(MUDE_FIRST), { timeout: 3000 });
+    expect(within(keyed.step).getByTestId('mu-judge-choice-jev')).toHaveAttribute('aria-checked', 'true');
+    expect(keyed.tile).toHaveAttribute('aria-checked', 'false');
   });
 
   it('on a machine that cannot run it: dimmed, says why and what mu does instead, and never in the way', async () => {
@@ -232,8 +296,13 @@ describe('mude in the first-run guide', () => {
         problems: ['it needs Apple silicon (an M1 or newer); this Mac has an Intel processor'],
       })
     );
-    const { tile } = await judgeStep();
+    const { step, tile } = await judgeStep();
     await waitFor(() => expect(tile).toHaveAttribute('aria-disabled', 'true'));
+    // Not recommended here: the usual order and tags, and Jev picked as the files say.
+    expect(tilesOf(step)).toEqual(USUAL_ORDER);
+    expect(within(tile).getByText('On this Mac')).toBeInTheDocument();
+    expect(within(step).getByTestId('mu-judge-choice-jev')).toHaveAttribute('aria-checked', 'true');
+    expect(within(within(step).getByTestId('mu-judge-choice-jev')).getByText('Recommended')).toBeInTheDocument();
     expect(within(tile).getByTestId('mu-mude-unsupported')).toHaveTextContent(
       'mude 1.0 needs a Mac with Apple silicon, macOS 14 or later and 8 GB of memory. mu uses the hosted judge instead.'
     );
@@ -247,6 +316,10 @@ describe('mude in the first-run guide', () => {
     const off = await judgeStep();
     await waitFor(() => expect(off.tile).toHaveAttribute('aria-disabled', 'true'));
     expect(off.tile).toHaveTextContent('mu uses the hosted judge instead.');
+    expect(tilesOf(off.step)).toEqual(USUAL_ORDER);
+    expect(within(off.tile).getByText('On this Mac')).toBeInTheDocument();
+    expect(within(off.step).getByTestId('mu-judge-choice-jev')).toHaveAttribute('aria-checked', 'true');
+    expect(within(within(off.step).getByTestId('mu-judge-choice-jev')).getByText('Recommended')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('mu-welcome-next'));
     await screen.findByTestId('mu-welcome-step-done');
     expect(screen.getByTestId('mu-welcome-done-judge')).toHaveTextContent('Jev');
@@ -356,7 +429,9 @@ describe('mude in the first-run guide', () => {
 
   it('once installed it is the judge, and the guide’s one save keeps mude first with the rest of the guide', async () => {
     const { step, tile } = await judgeStep();
-    // A key typed for Jev before mude was picked: it is saved too.
+    // A key typed for Jev, picked first, before mude was picked again: it is saved too.
+    await waitFor(() => expect(tile).toHaveAttribute('aria-checked', 'true'), { timeout: 3000 });
+    fireEvent.click(within(step).getByTestId('mu-judge-choice-jev'));
     fireEvent.click(within(step).getByTestId('mu-welcome-judge-more'));
     fireEvent.change(within(step).getByLabelText('TypeSafe API key'), { target: { value: 'jev-key' } });
     fireEvent.click(tile);
