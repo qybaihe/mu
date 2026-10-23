@@ -35,7 +35,7 @@ import { turnRewind } from "../../decisions/turn-rewind.ts";
 import type { Coded } from "../../language.ts";
 import { say } from "../../language.ts";
 import { muHome } from "../../naming.ts";
-import { clip, failOpen, type KyrnRuntime, textOf, within } from "../runtime.ts";
+import { askWithin, clip, failOpen, type KyrnRuntime, textOf, within } from "../runtime.ts";
 import { describeCall } from "./admission.ts";
 import type { HarnessRoots } from "./inherit.ts";
 import { isUnattended } from "./unattended.ts";
@@ -295,6 +295,11 @@ export function registerCheckpoint(
 		propose: true,
 		/** How long a proposal waits for an answer before the run carries on. 0 waits forever. */
 		confirmSeconds: 120,
+		/**
+		 * How long the end of a turn waits for `turn.rewind`'s verdict; a later one changes nothing. On Terminal-Bench
+		 * 2.1 every verdict came in 0.2-1.6 s.
+		 */
+		rewindWaitMs: 3000,
 		/** Take checkpoints in a `mu --print` or json run too, for a session resumed later in the terminal. */
 		unattended: false,
 	});
@@ -797,18 +802,23 @@ export function registerCheckpoint(
 			turn.trigger = undefined;
 			turn.triggerCode = undefined;
 			turn.asked++;
-			const decision = await runtime.engine.decide(
-				turnRewind,
-				{
-					goal: runtime.taskFrame()?.goal ?? checkpoint?.label ?? turnStart(ctx).label,
-					recentSteps: turn.steps,
-					trigger,
-					editsSinceCheckpoint: turn.edits,
-					lastCheckFailed: turn.lastCheckFailed,
-				},
-				{ signal: ctx.signal },
+			const state = {
+				goal: runtime.taskFrame()?.goal ?? checkpoint?.label ?? turnStart(ctx).label,
+				recentSteps: turn.steps,
+				trigger,
+				editsSinceCheckpoint: turn.edits,
+				lastCheckFailed: turn.lastCheckFailed,
+			};
+			// The run waits for this verdict, and a late one changes nothing (the fallback carries on): at most
+			// `rewindWaitMs`, not the judge's own timeout (10 s hosted, 30 s for an `llm:` judge).
+			const decision = await askWithin(
+				(signal) =>
+					runtime.engine.decide(turnRewind, state, {
+						signal: ctx.signal ? AbortSignal.any([signal, ctx.signal]) : signal,
+					}),
+				options.rewindWaitMs,
 			);
-			if (decision.source !== "judge" || decision.outcome !== "propose") return undefined;
+			if (decision?.source !== "judge" || decision.outcome !== "propose") return undefined;
 			turn.proposed = true;
 			// Nobody to ask, so nothing is undone: the model is told, and the choice of a new approach is its own.
 			const stepBack = () =>

@@ -529,6 +529,25 @@ describe("checkpoints and the judged rewind", () => {
 		expect(trees).toBe(3);
 	});
 
+	it("a dead-end verdict that is late changes nothing, and the turn does not wait for it", async () => {
+		const ui = scriptedUi({ confirm: true });
+		// The judge never answers dead_end: without a limit the turn would wait for the judge's own timeout.
+		const slow: MockResponder = (request) => ("dead_end" in request.questions ? new Promise(() => {}) : {});
+		const { harness, file, provider } = await start({
+			responder: slow,
+			ui,
+			navigation: true,
+			options: { rewindWaitMs: 100 },
+		});
+		harness.setResponses([...failingRun(), fauxAssistantMessage("Still failing.")]);
+		const began = Date.now();
+		await harness.session.prompt("Make the tests pass.");
+		expect(Date.now() - began).toBeLessThan(5000);
+		expect(provider.calls.filter((request) => "dead_end" in request.questions)).toHaveLength(1);
+		expect(ui.asked).toEqual([]);
+		expect(file("app.ts")).toBe("attempt\n");
+	});
+
 	it("shadow only records the verdict, off does not ask, and an unsure judge changes nothing", async () => {
 		const ui = scriptedUi({ confirm: true });
 		const shadow = await start({ responder: deadEnd, mode: "shadow", ui, navigation: true });
@@ -739,6 +758,12 @@ describe("turn.rewind and what counts as a change", () => {
 		expect(isMutatingCall("read", { path: "a" })).toBe(false);
 		expect(isMutatingCall("bash", { command: "git log -3" })).toBe(false);
 		expect(isMutatingCall("bash", { command: "sed -i s/a/b/ x" })).toBe(true);
+		// A chain of read-only commands only looks, as the permission gate reads it: no snapshot before it.
+		expect(isMutatingCall("bash", { command: "pwd && find src -name '*.ts' | sort | head" })).toBe(false);
+		expect(isMutatingCall("bash", { command: "git status --short; git log --oneline -5" })).toBe(false);
+		expect(isMutatingCall("bash", { command: "ls; rm a" })).toBe(true);
+		expect(isMutatingCall("bash", { command: "git status && rm -rf build" })).toBe(true);
+		expect(isMutatingCall("bash", { command: "cd ../other && git status" })).toBe(true);
 		// pi's shell on Windows is the powershell tool: read-only cmdlets read, everything else may write.
 		expect(isMutatingCall("powershell", { command: "Get-ChildItem src" })).toBe(false);
 		expect(isMutatingCall("powershell", { command: "gci src | Select-String TODO" })).toBe(false);
