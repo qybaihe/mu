@@ -1,4 +1,4 @@
-"""Build usemu.dev, the mu site: five languages; home, decision points, models, mubench, docs and changelog.
+"""Build usemu.dev, the mu site: five languages; home, decision points, models, mubench, enterprise, docs and changelog.
 
 The facts come from the mu repository, so a rebuild follows the product:
   packages/kyrn-judge/manifest.json   the decision points, features and options, with their names in every language
@@ -17,8 +17,8 @@ and from GitHub's API, at build time:
 
 The site's own words and assets:
   templates/                       Jinja2 templates
-  i18n/<lang>.json                 the home page, the models and mubench pages, the navigation, the banner and the translated
-                                   changelog
+  i18n/<lang>.json                 the home page, the models, mubench and enterprise pages, the navigation, the banner and the
+                                   translated changelog
   content/mubench.json             the mubench leaderboard's numbers, the same in every language
   content/decisions.<lang>.json    the decision point page: explanations and one example per point
   content/docs/<lang>/*.md         the documentation pages (a missing one falls back to English)
@@ -75,6 +75,7 @@ PAGES = {
     "decisions": {"key": "decisions", "path": "decisions/"},
     "models": {"key": "models", "path": "models/"},
     "mubench": {"key": "mubench", "path": "mubench/"},
+    "enterprise": {"key": "enterprise", "path": "enterprise/"},
     "changelog": {"key": "changelog", "path": "changelog/"},
 }
 for _slug, _ in DOCS:
@@ -794,6 +795,8 @@ def main():
                 values.update(boards=mubench_boards(bench, L["mubench"]), few=bench["few"], caps=bench["capabilities"],
                               charts=charts, chart_lang="zh" if lang.startswith("zh") else "en")
                 template = "mubench.html"
+            elif key == "enterprise":
+                template = "enterprise.html"
             elif key == "docs":
                 values.update(U=U, sidebar=sidebar)
                 template = "docs_index.html"

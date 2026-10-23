@@ -19,6 +19,7 @@
     "nav_decisions": "Decision points",
     "nav_models": "Models",
     "nav_mubench": "mubench 1.0",
+    "nav_enterprise": "Enterprise",
     "nav_changelog": "Changelog",
     "nav_install": "Install",
     "nav_site": "Site",
@@ -283,6 +284,61 @@
       "memory": "What is worth remembering, whether it is already known, which lesson applies now, whether the agent followed it, and whether it can become a skill.",
       "multiagent": "What to pass between agents in a hive, to whom, and how it relates to earlier findings; whether a subagent's changes stay in scope; which role and thinking level a subtask gets."
     }
+  },
+  "enterprise": {
+    "title": "Enterprise",
+    "h1": "Need a decision model customized for you and your company?",
+    "lead": "In every turn, mu asks a decision model dozens of small questions: may this command run, which old output is worth keeping, is the work done. We can tune one to how your team answers them, run it on your own machines, and show you in numbers what it changes.",
+    "cta": "Tell us what you need",
+    "cta_models": "About mude 1.0",
+    "mude_label": "MUDE 1.0",
+    "mude_h2": "Start from mude 1.0, on your own machines",
+    "mude_intro": "mude 1.0 is mu's own decision model, optimized for coding. It has 2B parameters and an MIT license, and both editions are on Hugging Face. The decisions it answers stay inside your network.",
+    "run": [
+      { "h3": "Macs with Apple silicon", "p": "One click in the desktop app, or one command: <code>mu judge mude install</code>. mu downloads the 8-bit MLX edition, checks every file, starts it on 127.0.0.1 and makes it the judge." },
+      { "h3": "Your GPU servers", "p": "The full bf16 model, with its own System One server. A CUDA GPU is recommended. mu reaches it as a judge over your own network." }
+    ],
+    "mude_link": "More about mude 1.0 on the Models page",
+    "custom_label": "CUSTOMIZATION",
+    "custom_h2": "Tuned to how your team decides",
+    "custom_intro": "Every team draws its own lines. We'll work with you to fine-tune a decision model on your decision points, workflows and rules, and measure it against your current setup before you rely on it.",
+    "steps": [
+      { "h3": "Your decisions", "p": "We start from the decisions that matter to you: what counts as risky in your codebase, what your review policy asks for, how work should be routed." },
+      { "h3": "A baseline", "p": "We score your current setup on those decisions the way mubench does: each answer by the cost of its consequences." },
+      { "h3": "Fine-tuning", "p": "We fine-tune a decision model on your decision points, workflows and rules." },
+      { "h3": "Before and after", "p": "The same scoring again, next to your current setup, so you can see what changed before you switch." }
+    ],
+    "custom_link": "How mubench scores decision models",
+    "mu_label": "WITH MU",
+    "mu_h2": "Works with mu out of the box",
+    "mu_intro": "mu already knows how to use mude 1.0, on the command line and in the desktop app.",
+    "mu": [
+      { "b": "The judge in the CLI and the app", "text": "<code>mu judge mude install</code> on the command line, or the mude card in the desktop app's Settings → Judges." },
+      { "b": "Local only", "text": "With <code>mu judge mude enable --local-only</code>, mude is the only judge and nothing goes to a hosted judge. When mude can't answer, the decision point does what it would do without a judge." },
+      { "b": "Shadow mode first", "text": "Decision points in shadow mode still ask and record their verdicts, but change nothing, so you can watch a model before you trust it." },
+      { "b": "A ledger for audit", "text": "Every verdict is recorded on your machine: the answers and their probabilities, how long it took, and whether the judge or a fallback gave it. Read it with <code>mu ledger</code> or in the app's Judge tab." }
+    ],
+    "faq_label": "QUESTIONS",
+    "faq_h2": "Common questions",
+    "faq": [
+      { "q": "Can we try mude 1.0 before we talk?", "a": "Yes. It's free under the MIT license. Install it, put your decision points in shadow mode, and read its verdicts in the ledger." },
+      { "q": "Does our coding model change?", "a": "No. A decision model only answers mu's decisions. Your coding model, and where it runs, stay your choice." },
+      { "q": "What leaves our network?", "a": "Nothing mude answers: it runs on your machines. With local only on, nothing goes to a hosted judge either. Your coding model is separate, and what it sees goes wherever it runs." },
+      { "q": "How would we know a custom model is better?", "a": "We score it the way mubench does, on your own decision points, before and after, next to your current setup. You see the numbers before you switch." }
+    ],
+    "contact_label": "CONTACT",
+    "contact_h2": "Tell us what you'd like a model for",
+    "contact_intro": "A few lines are enough to start: your team, your setup, and the decisions you'd like a model to get right.",
+    "soon": "Coming soon",
+    "form_note": "This form isn't connected yet. Pressing Send sends nothing and stores nothing.",
+    "f_name": "Name",
+    "f_email": "Work email",
+    "f_company": "Company",
+    "f_need": "What decisions would you like a model for?",
+    "f_need_hint": "For example: which commands need a person's review in your monorepo, what your agents may change on their own, or how requests should be routed.",
+    "send": "Send",
+    "sent": "Coming soon.",
+    "sent_p": "This form doesn't send yet, so nothing was sent or stored."
   },
   "docs": {
     "title": "Docs",

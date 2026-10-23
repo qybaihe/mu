@@ -168,6 +168,36 @@
 .mb-method .mb-formula { display: block; width: fit-content; max-width: 100%; margin: 6px 0 8px; padding: 4px 10px; font-size: 13.5px; color: var(--text); overflow-wrap: anywhere; }
 .mb-caps .chip { font-family: var(--mono); font-size: 12px; color: var(--muted); }
 
+/* ---- Enterprise page ---- */
+.ent-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 28px 0 0; }
+.ent-run .card p code { padding: 1px 6px; border-radius: 6px; background: var(--code); border: 1px solid var(--line); font-size: 13px; overflow-wrap: anywhere; }
+.ent-run a.card-code { color: var(--text); text-decoration: none; }
+.ent-run a.card-code:hover { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line-strong); }
+.ent-steps { margin: 36px 0 0; padding: 0; list-style: none; }
+.ent-form {
+  max-width: 760px; margin-top: 32px; padding: 28px; border: 1px solid var(--line); border-radius: 16px;
+  background: var(--card); box-shadow: var(--shadow-1);
+}
+.ent-form-note { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; margin: 0 0 22px; font-size: 14px; color: var(--muted); }
+.ent-form-note .opt-flag { flex: none; padding: 1px 10px; font-weight: 600; }
+.ent-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 16px; }
+.ent-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ent-wide { grid-column: 1 / -1; }
+.ent-field label { font-size: 14px; font-weight: 600; color: var(--text); }
+.ent-field input, .ent-field textarea {
+  width: 100%; min-height: 42px; padding: 9px 12px; border: 1px solid var(--line-strong); border-radius: 10px;
+  background: var(--bg); color: var(--text); font: inherit; font-size: 15px; line-height: 1.5;
+  transition: border-color 160ms var(--ease), box-shadow 160ms var(--ease);
+}
+.ent-field textarea { min-height: 128px; resize: vertical; }
+.ent-field input:hover, .ent-field textarea:hover { border-color: var(--faint); }
+.ent-field input:focus, .ent-field textarea:focus { outline: none; border-color: var(--judge); box-shadow: 0 0 0 3px var(--ring); }
+.ent-hint { margin: 0; font-size: 13px; color: var(--muted); }
+.ent-submit { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-top: 22px; }
+.ent-status { margin: 0; font-size: 14px; color: var(--muted); }
+.ent-status b { color: var(--text); }
+html:lang(zh) .ent-status b, html:lang(ja) .ent-status b { margin-right: 4px; }
+
 /* ---- Documentation ---- */
 .docs { display: grid; grid-template-columns: 220px minmax(0, 1fr) 196px; gap: 56px; align-items: start; padding-top: 48px; }
 .docs-nav { position: sticky; top: 100px; max-height: calc(100vh - 124px); overflow-y: auto; font-size: 14px; }
@@ -245,6 +275,9 @@ kbd { padding: 1px 6px; border: 1px solid var(--line-strong); border-bottom-widt
   .docs-pager .next { grid-column: 1; }
   /* The phone charts are drawn 360 wide: no larger than that and a bit. */
   .mb-chart img { max-width: 440px; }
+  .ent-form { padding: 20px 16px; }
+  .ent-fields { grid-template-columns: 1fr; }
+  .ent-submit .btn { width: 100%; }
 }
 
 /* Hangul in the mono font comes out widely spaced: Korean labels and verdicts use the body font. */

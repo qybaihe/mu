@@ -424,6 +424,32 @@
     videos.forEach(function (v) { v.controls = true; });
   }
 
+  // ---- Enterprise contact form: not connected yet. Sending it sends and stores nothing; it says so instead ----
+  var entForm = document.querySelector('[data-ent-form]');
+  if (entForm) {
+    var entStatus = entForm.querySelector('[data-ent-status]');
+    entForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      // Emptied first, so a second press is announced again.
+      entStatus.textContent = '';
+      setTimeout(function () {
+        var title = document.createElement('b');
+        title.textContent = entStatus.getAttribute('data-title');
+        entStatus.appendChild(title);
+        // A space after the title, except after a Chinese or Japanese full stop.
+        var sep = /^(zh|ja)/.test(document.documentElement.lang) ? '' : ' ';
+        entStatus.appendChild(document.createTextNode(sep + entStatus.getAttribute('data-text')));
+      }, 60);
+    });
+    // Cmd/Ctrl+Enter in the text box sends too, as in most message boxes.
+    entForm.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && e.target.tagName === 'TEXTAREA') {
+        e.preventDefault();
+        if (entForm.requestSubmit) entForm.requestSubmit(); else entForm.dispatchEvent(new Event('submit', { cancelable: true }));
+      }
+    });
+  }
+
   // ---- Appearance: auto follows the system; the choice is remembered in this browser only ----
   var themeButtons = document.querySelectorAll('[data-theme-set]');
   function currentMode() { return root.getAttribute('data-theme') || 'auto'; }

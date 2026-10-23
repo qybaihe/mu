@@ -116,7 +116,7 @@ h1, h2 { word-break: keep-all; overflow-wrap: anywhere; }
 .brand img { width: 26px; height: 26px; border-radius: 7px; transition: transform 300ms var(--ease); }
 .brand:hover img { transform: rotate(-8deg) scale(1.06); }
 .links { display: flex; gap: 24px; margin: 0 auto; font-size: 14px; }
-.links a { position: relative; text-decoration: none; color: var(--muted); transition: color 160ms var(--ease); }
+.links a { position: relative; text-decoration: none; color: var(--muted); white-space: nowrap; transition: color 160ms var(--ease); }
 .links a::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 2px; border-radius: 2px;
   background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform 240ms var(--ease);
