@@ -251,7 +251,7 @@
   "electronRebuild": {
     "electronVersion": "^37.3.1"
   },
-  "muAgentVersion": "0.1.13",
+  "muAgentVersion": "0.1.14",
   "patchedDependencies": {
     "7zip-bin@5.2.0": "patches/7zip-bin@5.2.0.patch"
   },

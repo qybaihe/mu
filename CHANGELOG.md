@@ -6,37 +6,19 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ## [Unreleased]
 
+## [0.1.11] - 2026-10-23
+
 ### Added
 
 - **Session files count what subagents and cut replies spent.** A reply stopped for thinking too long, and each subagent, leave a `kyrn.usage` entry with their tokens and cost, so a cost report or benchmark can include them. The model never sees these entries.
 - **The desktop app's first-run guide offers "No judge".** It is the third choice on the judge step, beside Jev and Laya: every decision point is off and nothing is sent to a judge, like `mu setup`'s "Not now". Skipping the step still keeps the judge it shows. Picking a judge afterwards turns the verdicts back on.
+- **`MU_TIME_BUDGET_S` gives a run a deadline.** Set it to the seconds a run may take (benchmark harnesses set it from the task's timeout): a reply stuck thinking is cut early enough for its retry to finish, and the agent hears how much time is left at 50% and 80%, with a reminder to get the requested result in place first. Without it nothing changes.
 
 ### Changed
 
 - **Replies start sooner in the terminal and the desktop app.** The questions mu asks the judge about a new message go out together instead of one after another, and a turn waits at most 3 s for them instead of 4 s. A long command output waits at most 2 s for its check instead of 4 s. In the authors' own sessions the wait before the model starts fell from a median 2.7 s to 1.7 s. Checks that guard a command (permission, risk, your constraints, prompt injection) wait as before.
 - In `mu --print` and json-mode runs, mu tells the agent at most once per message that it said it would do more and stopped, and not again after the agent answered without doing anything. The local judge no longer decides this: it took a finished "Done. Created …" for a promise.
 - **The judge no longer picks which packs and MCP servers a message needs.** Asked 196 times on benchmarks and in real sessions, it never opened one, and each turn waited for its answer. They stay hidden as before, and `find_capability` now tells the agent which ones are installed (`mcp:linear (MCP server)`, `pack:debugger (pack)`, …), so it opens one when a task needs it; you can with `/capabilities open`. `"modes": { "capability.disclosure": "active" }` in `~/.mu/agent/mu.json`, or the desktop app's settings, bring the question back; `"features": { "catalog": false }` shows everything from the start.
-
-### Fixed
-
-- **The judge reads a long flagged command as you are asked to confirm it**: up to 1,500 characters whole, past that its start and every flagged part with the text around it. Whole scripts up to 8,000 characters (0.1.11) read worse: amid hundreds of harmless lines the judge lost what you had and had not asked for.
-- **Running mu from a fresh clone works as the README says.** `npm install --ignore-scripts` then `node kyrn/bin/mu.mjs` failed with `ERR_MODULE_NOT_FOUND` for a provider's `.json`: the model list pi reads is generated, not committed. The READMEs, CONTRIBUTING.md and the desktop readme now include `npm run hydrate:model-catalog` (offline, from the pinned catalog, as CI builds it); without it the launcher says what to run, and `mu doctor` flags it. The hint for missing dependencies names that script too, instead of `hydrate:model-data`, which fetches the catalogs over the network.
-- **A flagged script keeps its line breaks for the judge and in the confirmation.** They were run into one line, which in a script joins separate commands into one: `echo done` and an `rm -rf build` on the next line read as a single echo. Runs of spaces still collapse.
-- Pressing Escape during a sign-in in the terminal goes back to the list, instead of reporting "Failed to login to GitHub Copilot: This operation was aborted".
-- Choosing a subscription in `mu setup` no longer tells you to start mu and type `/login`: when setup starts mu, `/login` is already open.
-- **`mu --print` can reach your MCP servers again.** In a one-shot run nothing opened an MCP server, and the tool to open one was left out, so the agent couldn't use it. With a server installed, the agent now sees which ones are there and opens the one it needs; runs without one are unchanged.
-- The desktop app's first-run guide names OpenAI, Claude and Gemini first under "Paste an API key" in every language but Chinese, as its list of services already does.
-- **With the judge off, the terminal no longer reads as if one answered.** The footer no longer names it after each message ("Jev 1.13 (free): chat · answer directly · off"), and `/status` says "judge: off" instead of naming the judge set up, and no longer lists `notify.routing`, `input.interjection` and `turn.drift` as `shadow`: with the default off they are off too. `/doctor` no longer checks the judge by asking it a question, which sent a request to OpenCode and brought up the notice that the free Jev reads what you send; it and `mu doctor` say the judge is off and nothing is sent, leave out the Jev key row, and show the browser as off, which it is without browser.step.
-- A first `mu setup` no longer says it backed up the previous files when the only one was the empty `auth.json` pi writes at its first start.
-
-## [0.1.11] - 2026-10-22
-
-### Added
-
-- **`MU_TIME_BUDGET_S` gives a run a deadline.** Set it to the seconds a run may take (benchmark harnesses set it from the task's timeout): a reply stuck thinking is cut early enough for its retry to finish, and the agent hears how much time is left at 50% and 80%, with a reminder to get the requested result in place first. Without it nothing changes.
-
-### Changed
-
 - **Services in the order you'd look for them.** In English (and any language but Chinese), `mu setup`'s list and the desktop app's first-run guide start with OpenAI, Anthropic, Google, xAI and OpenRouter; in Chinese they keep starting with DeepSeek, Qwen and Kimi.
 - **A quieter start in the terminal.** mu's welcome is the whole first screen: the list of loaded skills, prompts and extensions that pi prints under it is left out; prompts and skills are still in the `/` menu. Problems loading them still show. `"quietStartup": false` in settings.json, or `--verbose`, brings the list back.
 - **The terminal's `/login` no longer offers a Claude subscription sign-in either**, so the command line matches the desktop app: Anthropic doesn't allow other apps to offer one. `/login anthropic` goes straight to the API key. A sign-in made before keeps working until `/logout`.
@@ -60,8 +42,16 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ### Fixed
 
+- **Running mu from a fresh clone works as the README says.** `npm install --ignore-scripts` then `node kyrn/bin/mu.mjs` failed with `ERR_MODULE_NOT_FOUND` for a provider's `.json`: the model list pi reads is generated, not committed. The READMEs, CONTRIBUTING.md and the desktop readme now include `npm run hydrate:model-catalog` (offline, from the pinned catalog, as CI builds it); without it the launcher says what to run, and `mu doctor` flags it. The hint for missing dependencies names that script too, instead of `hydrate:model-data`, which fetches the catalogs over the network.
+- **A flagged script keeps its line breaks for the judge and in the confirmation.** They were run into one line, which in a script joins separate commands into one: `echo done` and an `rm -rf build` on the next line read as a single echo. Runs of spaces still collapse.
+- Pressing Escape during a sign-in in the terminal goes back to the list, instead of reporting "Failed to login to GitHub Copilot: This operation was aborted".
+- Choosing a subscription in `mu setup` no longer tells you to start mu and type `/login`: when setup starts mu, `/login` is already open.
+- **`mu --print` can reach your MCP servers again.** In a one-shot run nothing opened an MCP server, and the tool to open one was left out, so the agent couldn't use it. With a server installed, the agent now sees which ones are there and opens the one it needs; runs without one are unchanged.
+- The desktop app's first-run guide names OpenAI, Claude and Gemini first under "Paste an API key" in every language but Chinese, as its list of services already does.
+- **With the judge off, the terminal no longer reads as if one answered.** The footer no longer names it after each message ("Jev 1.13 (free): chat · answer directly · off"), and `/status` says "judge: off" instead of naming the judge set up, and no longer lists `notify.routing`, `input.interjection` and `turn.drift` as `shadow`: with the default off they are off too. `/doctor` no longer checks the judge by asking it a question, which sent a request to OpenCode and brought up the notice that the free Jev reads what you send; it and `mu doctor` say the judge is off and nothing is sent, leave out the Jev key row, and show the browser as off, which it is without browser.step.
+- A first `mu setup` no longer says it backed up the previous files when the only one was the empty `auth.json` pi writes at its first start.
 - `mu doctor` in a terminal starts with how many things need fixing, as `/doctor` inside mu does.
-- **The judge sees the risky part of a long command.** A flagged command (`rm -rf`, `DROP TABLE`, a force push, …) reached the judge cut to its first 400 characters, so in a long script the part the flag was about could be missing, and the judge could let it run as harmless. The judge now gets the whole command up to 8,000 characters; past that, its start and every flagged part with the text around it. The confirmation you are asked shows the flagged parts too.
+- **The judge sees the risky part of a long command.** A flagged command (`rm -rf`, `DROP TABLE`, a force push, …) reached the judge cut to its first 400 characters, so in a long script the part the flag was about could be missing, and the judge could let it run as harmless. Now a command up to 1,500 characters reaches it whole; past that, its start and every flagged part with the text around it: the same excerpt you are asked to confirm. Whole scripts up to 8,000 characters, tried first, read worse: amid hundreds of harmless lines the judge lost what you had and had not asked for.
 - Reading a file page by page, or running scripts that only differ further down, no longer gets the agent told it is going in circles.
 - `mu --print` no longer stays up to 10 s after the run for a judge answer nobody waits for any more.
 - A late skill selection on the first message now takes effect from the next message, instead of every skill staying in the prompt for the whole conversation.
