@@ -743,6 +743,14 @@ describe("turn.rewind and what counts as a change", () => {
 			expect(isReadOnlyCommand(command), command).toBe(true);
 		}
 		for (const command of [
+			'sort "$OPTS" input.txt',
+			'rg "$ARGS" .',
+			"git diff --ext-diff",
+			"git show --textconv HEAD:file.txt",
+		]) {
+			expect(isReadOnlyCommand(command), command).toBe(false);
+		}
+		for (const command of [
 			"npm test",
 			"echo hi > a.txt",
 			"cat a.txt | xargs rm",

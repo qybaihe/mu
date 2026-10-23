@@ -68,6 +68,15 @@ function longOption(words: readonly string[], option: string, shortest = 1): boo
 function readOnlyProgram(piece: string): boolean {
 	if (!READ_ONLY_PROGRAM.test(piece)) return false;
 	const words = piece.split(/\s+/);
+	// Do not classify git's external diff/text conversion hooks as harmless. They
+	// execute commands from repository configuration even though the git command
+	// itself appears to only read data.
+	if (
+		words[0]?.toLowerCase() === "git" &&
+		words.some((word) => /^(?:--(?:ext-diff|textconv)|--(?:ext-diff|textconv)=)/i.test(word))
+	) {
+		return false;
+	}
 	// `--output` writes a file (`git diff`, `sort`), and so does `--out`, the same option cut short.
 	if (longOption(words, "output")) return false;
 	// A case-insensitive file system finds `rg` for `RG` as well.
@@ -84,7 +93,10 @@ function readOnlyProgram(piece: string): boolean {
  */
 export function isReadOnlyCommand(command: string, powershell = false): boolean {
 	const text = command.trim();
-	if (!text || SHELL_TRICKS.test(text) || /--output\b/.test(text)) return false;
+	// Variable expansion makes the command's effective arguments depend on mutable
+	// process state. In particular, it can inject writer/helper options into a
+	// program that passed the static allowlist (e.g. `sort "$OPTS"`).
+	if (!text || SHELL_TRICKS.test(text) || text.includes("$") || /--output\b/.test(text)) return false;
 	if (powershell && POWERSHELL_TRICKS.test(text)) return false;
 	return text.split("|").every((part) => readOnlyProgram(part.trim()));
 }
@@ -228,6 +240,7 @@ export function isReadOnlyChain(command: string, powershell = false): boolean {
 			return true;
 		}
 		if (program === "find") return !words.some((word) => FIND_ACTS.test(word));
+		if (words.some((word) => word.includes("$"))) return false;
 		if (moved && program.toLowerCase() === "git") return false;
 		return readOnlyProgram(words.join(" "));
 	});

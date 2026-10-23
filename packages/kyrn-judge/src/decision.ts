@@ -440,19 +440,19 @@ export class DecisionEngine {
 		const origin = this.asked();
 		const startedAt = performance.now();
 		const evaluations: Evaluation<Out>[] = new Array(inputs.length);
+		const states = inputs.map((input) => spec.buildState(input));
 		let next = 0;
 		const worker = async () => {
 			while (next < inputs.length) {
 				const index = next++;
-				evaluations[index] = await this.evaluate(
-					spec,
-					inputs[index],
-					spec.buildState(inputs[index]),
-					options.signal,
-				);
+				evaluations[index] = await this.evaluate(spec, inputs[index], states[index], options.signal);
 			}
 		};
-		const workers = Math.max(1, Math.min(options.concurrency ?? 4, inputs.length));
+		const concurrency = options.concurrency ?? 4;
+		if (!Number.isInteger(concurrency) || concurrency < 1) {
+			throw new TypeError("Decision concurrency must be a positive integer");
+		}
+		const workers = Math.min(concurrency, inputs.length);
 		await Promise.all(Array.from({ length: workers }, worker));
 
 		const ledgerId = randomUUID();
@@ -475,6 +475,7 @@ export class DecisionEngine {
 		});
 
 		const inputTokens = evaluations.reduce((sum, evaluation) => sum + (evaluation.usage?.inputTokens ?? 0), 0);
+		const outputTokens = evaluations.reduce((sum, evaluation) => sum + (evaluation.usage?.outputTokens ?? 0), 0);
 		const failures = evaluations.filter((evaluation) => evaluation.failure?.startsWith("error:")).length;
 		await this.record({
 			id: ledgerId,
@@ -491,7 +492,7 @@ export class DecisionEngine {
 				mode === "shadow" && !spec.actsInShadow ? "shadow" : failures === inputs.length ? "error:all" : undefined,
 			judged: evaluations.map((evaluation) => evaluation.judged ?? null),
 			latencyMs: Math.round(performance.now() - startedAt),
-			usage: { inputTokens, outputTokens: 0 },
+			usage: { inputTokens, outputTokens },
 			batch: {
 				size: inputs.length,
 				failures,
@@ -501,9 +502,7 @@ export class DecisionEngine {
 						? evaluations.map((evaluation) => evaluation.answers ?? null)
 						: undefined,
 			},
-			stateDigest: createHash("sha256")
-				.update(JSON.stringify(inputs.map((input) => spec.buildState(input))))
-				.digest("hex"),
+			stateDigest: createHash("sha256").update(JSON.stringify(states)).digest("hex"),
 		});
 		return decisions;
 	}

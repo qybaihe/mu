@@ -7,6 +7,14 @@ import type { JudgeProvider, JudgeRequest, ProviderResponse, Questions } from ".
 const yesNo = { type: "boolean", instructions: "Is it?" } as const;
 
 describe("Judge", () => {
+	it("rejects invalid request limits instead of allowing a non-progressing fan-out", () => {
+		const provider = new MockJudgeProvider();
+		expect(() => new Judge({ provider, maxQuestionsPerRequest: 0 })).toThrow(/maxQuestionsPerRequest/);
+		expect(() => new Judge({ provider, maxQuestionsPerRequest: -1 })).toThrow(/maxQuestionsPerRequest/);
+		expect(() => new Judge({ provider, maxQuestionsPerRequest: Number.NaN })).toThrow(/maxQuestionsPerRequest/);
+		expect(() => new Judge({ provider, timeoutMs: 0 })).toThrow(/timeoutMs/);
+	});
+
 	it("returns typed answers, usage and the provider id", async () => {
 		const provider = new MockJudgeProvider(() => ({ urgent: { type: "boolean", probability: 0.93 } }));
 		const judge = new Judge({ provider });
@@ -75,6 +83,15 @@ describe("Judge", () => {
 			provider: new MockJudgeProvider(() => ({ team: { type: "choice", choice: "shipping" } })),
 		});
 		await expect(unknownOption.evaluate({ state: "s", questions })).rejects.toMatchObject({
+			kind: "invalid_response",
+		});
+
+		const invalidProbability = new Judge({
+			provider: new MockJudgeProvider(() => ({
+				team: { type: "choice", choice: "billing", probabilities: { billing: 2 } },
+			})),
+		});
+		await expect(invalidProbability.evaluate({ state: "s", questions })).rejects.toMatchObject({
 			kind: "invalid_response",
 		});
 
