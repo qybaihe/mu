@@ -4,18 +4,14 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
-### Added
-
-- **mude 1.0, mu's own decision model, optimized for coding, can be your judge on a Mac with Apple silicon.** `mu judge mude install` does it in one command:
-  - It downloads mude 1.0 (1.8 GB) and checks every file.
-  - It sets mude up and starts it on your Mac.
-  - It makes mude the judge. Decisions it answers never leave your Mac, and it answers in about 0.1 s.
-  - What mude can't answer goes to the judge you had before, which is hosted. `mu judge mude enable --local-only` makes mude the only judge. While it runs, it uses about 4 GB of memory.
-
 ## [0.1.11] - 2026-10-23
 
 ### Added
 
+- **mude 1.0 installs on your Mac in one step and becomes mu's judge.** mude 1.0 is mu's own decision model, optimized for coding. On a Mac with Apple silicon (macOS 14 or later, 8 GB of memory or more):
+  - In the desktop app, the first-run guide's judge step installs it with one click: it downloads mude 1.0 (1.8 GB) and checks every file, sets it up, starts it and makes it the judge. You can follow the progress, try again if it fails, or skip it. Settings → Judges has the same card: install, start, stop, make it the judge, uninstall, and an "Only local" switch.
+  - In the terminal, `mu judge mude install` does the same, and `status`, `enable --local-only`, `disable`, `start`, `stop` and `uninstall` manage it.
+  - Decisions it answers never leave your Mac, and it answers in about 0.1 s. What it can't answer goes to the judge you had before, which is hosted, unless you choose Only local. While it runs, it uses about 4 GB of memory.
 - **Session files count what subagents and cut replies spent.** A reply stopped for thinking too long, and each subagent, leave a `kyrn.usage` entry with their tokens and cost, so a cost report or benchmark can include them. The model never sees these entries.
 - **The desktop app's first-run guide offers "No judge".** It is the third choice on the judge step, beside Jev and Laya: every decision point is off and nothing is sent to a judge, like `mu setup`'s "Not now". Skipping the step still keeps the judge it shows. Picking a judge afterwards turns the verdicts back on.
 - **`MU_TIME_BUDGET_S` gives a run a deadline.** Set it to the seconds a run may take (benchmark harnesses set it from the task's timeout): a reply stuck thinking is cut early enough for its retry to finish, and the agent hears how much time is left at 50% and 80%, with a reminder to get the requested result in place first. Without it nothing changes.

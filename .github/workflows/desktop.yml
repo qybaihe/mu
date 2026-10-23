@@ -681,7 +681,7 @@ jobs:
           # What's new: this version's section of CHANGELOG.md, without its heading.
           changes="$(awk -v heading="## [${tag#v}]" 'index($0, heading) == 1 { found = 1; next } /^## \[/ { if (found) exit } found' CHANGELOG.md)"
           {
-            echo "Preview build of mu ${tag}."
+            echo "mu ${tag}: the desktop app and the \`mu\` command line."
             echo
             echo "- **Desktop app**: macOS (.dmg, .zip), Windows (.exe), Linux (.deb), each for x64 and arm64."
             if [ "$MACOS_NOTARIZED" = "true" ]; then
@@ -707,12 +707,12 @@ jobs:
           # The update feed goes along when there is one (SHA256SUMS covers the installers and the source only).
           shopt -s nullglob
           if [ -n "${DRAFT}" ]; then
-            gh release create "$tag" dist/* updates/* --title "mu ${tag}" --notes-file notes.md --prerelease --draft --target "${GITHUB_SHA}"
+            gh release create "$tag" dist/* updates/* --title "mu ${tag}" --notes-file notes.md --draft --target "${GITHUB_SHA}"
           elif gh release view "$tag" >/dev/null 2>&1; then
             # Publishing a draft creates its tag, which runs this workflow again: that release is already out.
             echo "::notice::${tag} is already released (published from a draft); nothing to create."
           else
-            gh release create "$tag" dist/* updates/* --title "mu ${tag}" --notes-file notes.md --prerelease --verify-tag
+            gh release create "$tag" dist/* updates/* --title "mu ${tag}" --notes-file notes.md --verify-tag
           fi
 
       - name: Report an incomplete update feed

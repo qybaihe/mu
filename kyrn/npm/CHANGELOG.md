@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.1.15] - 2026-10-23
+
 ### Added
 
 - `mu judge mude install` makes mude 1.0, mu's own decision model optimized for coding, the judge on a Mac with Apple silicon (macOS 14 or later, 8 GB of memory or more). The steps:
