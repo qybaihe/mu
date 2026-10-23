@@ -1,0 +1,44 @@
+{
+  "about": "The mubench 1.0 leaderboard (usemu.dev/mubench/). A score is the share of the cost of mu's calls with no decision model that a model removes, x 100, over a capability's decision points (overall: all of them), so 0 is mu with no decision model. items: the scored items; tasks: the coding tasks the main board's items come from; baseline: the share of checks mu gets right with no decision model; scores is null where a capability is not scored yet; ci: the overall score's 95% bootstrap interval.",
+  "few": {"items": 150, "tasks": 20, "baseline": 95},
+  "capabilities": {
+    "permission": ["tool.risk", "tool.approval", "tool.constraint"],
+    "threat": ["tool.injection", "tool.description"],
+    "compression": ["context.compact", "context.forget", "tool.admission"],
+    "loading": ["capability.disclosure", "skills.disclosure", "diagnostics.delivery", "notify.routing", "cache.warming"],
+    "routing": ["input.preflight", "input.interjection", "task.frame", "judge.items", "review.triage", "files.locate", "browser.step"],
+    "progress": ["turn.completion", "turn.continue", "goal.met", "turn.drift", "turn.rewind", "output.drift", "board.read"],
+    "memory": ["memory.capture", "memory.worth", "memory.merge", "memory.recall", "memory.applied", "memory.outcome", "skill.capture"],
+    "multiagent": ["hive.publish", "hive.deliver", "hive.relate", "swarm.patch", "swarm.routing"]
+  },
+  "models": [
+    {"id": "mude-1.0", "name": "mude 1.0"},
+    {"id": "jev-1.14", "name": "Jev 1.14"},
+    {"id": "jev-1.13", "name": "Jev 1.13"},
+    {"id": "d3-nano", "name": "d3-nano"}
+  ],
+  "boards": {
+    "real": {
+      "overall": {"items": 3193, "tasks": 86, "baseline": 78.0, "scores": {"mude-1.0": 64.9, "jev-1.14": 63.1, "jev-1.13": 61.5, "d3-nano": 32.0}, "ci": {"mude-1.0": [59.1, 72.3], "jev-1.14": [55.6, 70.5], "jev-1.13": [53.8, 69.1], "d3-nano": [21.3, 39.0]}},
+      "permission": {"items": 449, "tasks": 86, "baseline": 60.6, "scores": {"mude-1.0": 52.6, "jev-1.14": 53.7, "jev-1.13": 52.7, "d3-nano": 5.9}},
+      "threat": {"items": 19, "tasks": 5, "baseline": 100.0, "scores": null},
+      "compression": {"items": 74, "tasks": 15, "baseline": 96.3, "scores": {"mude-1.0": 64.6, "jev-1.14": 76.7, "jev-1.13": 70.7, "d3-nano": -19.1}},
+      "loading": {"items": 300, "tasks": 86, "baseline": 96.4, "scores": {"mude-1.0": -2.7, "jev-1.14": 16.8, "jev-1.13": 25.1, "d3-nano": -118.4}},
+      "routing": {"items": 547, "tasks": 86, "baseline": 61.3, "scores": {"mude-1.0": 83.6, "jev-1.14": 87.5, "jev-1.13": 85.8, "d3-nano": 51.7}},
+      "progress": {"items": 1143, "tasks": 86, "baseline": 86.6, "scores": {"mude-1.0": 86.6, "jev-1.14": 61.6, "jev-1.13": 61.6, "d3-nano": 70.1}},
+      "memory": {"items": 437, "tasks": 82, "baseline": 82.9, "scores": {"mude-1.0": 58.7, "jev-1.14": 75.1, "jev-1.13": 72.2, "d3-nano": 40.5}},
+      "multiagent": {"items": 224, "tasks": 9, "baseline": 43.6, "scores": {"mude-1.0": 19.8, "jev-1.14": 4.6, "jev-1.13": -0.8, "d3-nano": 26.0}}
+    },
+    "constructed": {
+      "overall": {"items": 1591, "baseline": 44.6, "scores": {"mude-1.0": 81.3, "jev-1.14": 80.1, "jev-1.13": 76.0, "d3-nano": 57.1}, "ci": {"mude-1.0": [75.9, 85.6], "jev-1.14": [73.7, 85.5], "jev-1.13": [69.4, 82.3], "d3-nano": [52.7, 61.4]}},
+      "permission": {"items": 242, "baseline": 54.9, "scores": {"mude-1.0": 74.5, "jev-1.14": 74.8, "jev-1.13": 65.2, "d3-nano": 51.2}},
+      "threat": {"items": 0, "baseline": null, "scores": null},
+      "compression": {"items": 128, "baseline": 36.4, "scores": {"mude-1.0": 83.9, "jev-1.14": 55.0, "jev-1.13": 59.9, "d3-nano": 39.7}},
+      "loading": {"items": 193, "baseline": 47.0, "scores": {"mude-1.0": 64.2, "jev-1.14": 83.3, "jev-1.13": 88.7, "d3-nano": 42.4}},
+      "routing": {"items": 302, "baseline": 31.2, "scores": {"mude-1.0": 93.0, "jev-1.14": 94.0, "jev-1.13": 93.0, "d3-nano": 78.3}},
+      "progress": {"items": 334, "baseline": 49.4, "scores": {"mude-1.0": 81.5, "jev-1.14": 80.5, "jev-1.13": 70.7, "d3-nano": 54.0}},
+      "memory": {"items": 271, "baseline": 58.0, "scores": {"mude-1.0": 84.9, "jev-1.14": 82.1, "jev-1.13": 80.7, "d3-nano": 36.6}},
+      "multiagent": {"items": 121, "baseline": 50.2, "scores": {"mude-1.0": 79.4, "jev-1.14": 69.7, "jev-1.13": 72.4, "d3-nano": 69.2}}
+    }
+  }
+}

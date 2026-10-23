@@ -147,6 +147,24 @@ mu                  # 현재 디렉터리에서 세션 시작
 
 만든 사람들의 실제 세션에서 얻은 효과예요. 도구 출력이 청크 단위로 들어오고 오래된 결과는 요약 없이 내려놓기 때문에 컨텍스트가 가득 차는 일은 드물어요. 테스트 로그 정리는 기본값이 꺼짐인데, 켜면 완전히 같은 반복을 접어서 가장 긴 실패 테스트 로그들의 글자 수를 51% 줄였고, 잃은 글자는 하나도 없어요([실측](#실측) 참고). 프롬프트 캐시가 만료되기 전에 커널이 여러분이 돌아올지 판단하고, 돌아올 것 같으면 캐시를 갱신해요.
 
+### mubench 1.0: 의사결정 모델 비교
+
+mubench는 mu가 의사결정 모델을 위해 만든 벤치마크예요. 메인 보드의 문항은 모두 실제 코딩 세션에서 mu가 의사결정 모델에 보낸 요청을 그대로 옮긴 거예요. 답은 그 결과가 치르게 하는 비용으로 채점하고, 모든 모델을 의사결정 모델 없는 mu와 비교해요. 0은 차이가 없다는 뜻이고, 100은 그 비용을 모두 없앴다는 뜻이에요. 구성한 시나리오의 서브 보드까지 담은 전체 리더보드는 [usemu.dev/ko/mubench](https://usemu.dev/ko/mubench/)에 있어요. mubench는 곧 오픈소스로 공개돼요.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../images/mubench/composite-en-dark.svg">
+    <img src="../images/mubench/composite-en-light.svg" width="880" alt="mubench 1.0 메인 보드: 실제 코딩 세션의 요청 3,193개에서 얻은 종합 점수(95% 구간 포함). mude 1.0 64.9 (59.1–72.3); Jev 1.14 63.1 (55.6–70.5); Jev 1.13 61.5 (53.8–69.1); d3-nano (원본) 32.0 (21.3–39.0). 의사결정 모델 없음: 0.">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../images/mubench/capabilities-en-dark.svg">
+    <img src="../images/mubench/capabilities-en-light.svg" width="880" alt="mubench 1.0 메인 보드: 능력별 점수(mude 1.0, Jev 1.14, Jev 1.13, d3-nano (원본) 순서). 권한 승인: 52.6, 53.7, 52.7, 5.9; 악성 지시 탐지: 아직 채점하지 않음; 컨텍스트 압축: 64.6, 76.7, 70.7, −19.1; 필요할 때 불러오기와 알림: −2.7, 16.8, 25.1, −118.4; 분류와 라우팅: 83.6, 87.5, 85.8, 51.7; 진행과 완료 판단: 86.6, 61.6, 61.6, 70.1; 기억과 교훈: 58.7, 75.1, 72.2, 40.5; 멀티 에이전트 협업: 19.8, 4.6, −0.8, 26.0.">
+  </picture>
+</p>
+
 ## 실측
 
 아래 숫자는 저장소에 들어 있는 리플레이 [`kyrn/spikes/judge-bench/test-log-replay.ts`](../../kyrn/spikes/judge-bench/test-log-replay.ts)에서 나왔어요. 방법과 전체 표는 [kyrn/docs/09-test-log-admission.md](../../kyrn/docs/09-test-log-admission.md)(중국어)에 있어요.

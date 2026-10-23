@@ -195,6 +195,24 @@ In the desktop app, the first-run guide's judge step offers to install mude 1.0,
 
 By default, the judge you had before stays behind mude. What mude can't answer (its server is stopped, or it's unsure) goes to that judge, and so do two injection checks mude isn't trusted with yet. If that judge is hosted, as the default Jev is, what it reads leaves your machine. While it runs, mude's server uses about 4 GB of memory; `mu judge mude stop` stops it. On other platforms, you can serve the [full model](https://huggingface.co/qybaihe/mude-1.0) (bf16, PyTorch; a CUDA GPU is recommended) with its own System One server and add it to `mu.json` as a `typesafe` judge, as its model card shows.
 
+### mubench 1.0: how decision models compare
+
+mubench is mu's benchmark for decision models. On its main board, every item is a request mu sent to a decision model during a real coding session, word for word. Each answer is scored by the cost of its consequences, and every model is compared with mu running without one: 0 is no better, 100 removes all of that cost. The full leaderboard, with a sub-board of constructed scenarios, is at [usemu.dev/en/mubench](https://usemu.dev/en/mubench/). mubench will be open source soon.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/mubench/composite-en-dark.svg">
+    <img src="docs/images/mubench/composite-en-light.svg" width="880" alt="mubench 1.0, main board: overall score on 3,193 requests from real coding sessions, with 95% intervals. mude 1.0 64.9 (59.1–72.3); Jev 1.14 63.1 (55.6–70.5); Jev 1.13 61.5 (53.8–69.1); d3-nano (original) 32.0 (21.3–39.0); no decision model: 0.">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/mubench/capabilities-en-dark.svg">
+    <img src="docs/images/mubench/capabilities-en-light.svg" width="880" alt="mubench 1.0, main board: scores per capability for mude 1.0, Jev 1.14, Jev 1.13, d3-nano (original). Permission approval: 52.6, 53.7, 52.7, 5.9; Malicious-instruction detection: not scored yet; Context compression: 64.6, 76.7, 70.7, −19.1; On-demand loading and reminders: −2.7, 16.8, 25.1, −118.4; Classification and routing: 83.6, 87.5, 85.8, 51.7; Progress and completion: 86.6, 61.6, 61.6, 70.1; Memory and lessons: 58.7, 75.1, 72.2, 40.5; Multi-agent collaboration: 19.8, 4.6, −0.8, 26.0.">
+  </picture>
+</p>
+
 ## How mu is built
 
 <p align="center">
