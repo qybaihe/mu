@@ -216,6 +216,26 @@ describe("downloading mude", () => {
 		expect(requests).toHaveLength(1);
 	});
 
+	it("gives up at once when the disk is full, instead of trying again and blaming the connection", async () => {
+		const waits: number[] = [];
+		let calls = 0;
+		// A write the disk refuses fails inside the same try as a dropped connection does; here the stream carries it.
+		const full = Object.assign(new Error("ENOSPC: no space left on device, write"), { code: "ENOSPC" });
+		const failed = downloadFiles(
+			options({
+				files: [files[0]],
+				sleep: async (ms) => void waits.push(ms),
+				fetch: async () => {
+					calls++;
+					return new Response(new ReadableStream({ start: (controller) => controller.error(full) }));
+				},
+			}),
+		);
+		await expect(failed).rejects.toThrow(/^The disk is full: a\.txt could not be written/);
+		expect(calls).toBe(1);
+		expect(waits).toEqual([]);
+	});
+
 	it("refuses a file that does not match its pinned sha256, and removes it", async () => {
 		const wrong = [{ ...files[0], sha256: sha("something else") }];
 		await expect(downloadFiles(options({ files: wrong }))).rejects.toMatchObject({ kind: "integrity" });

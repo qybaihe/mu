@@ -5,6 +5,10 @@
 ### Fixed
 
 - `mu judge mude install`: Ctrl-C (or SIGTERM) during the wait between tries after a dropped connection now stops the download at once. It prints "Stopped with X of 1.8 GB downloaded: mu judge mude install goes on from there". Before, the wait (up to 30 s) ran on, and the command ended 5 s later with no message. What was downloaded was kept either way.
+- `mu judge mude install`, disk space and stops:
+  - A full disk (ENOSPC or EDQUOT) during the download now ends the install at once with "The disk is full: <file> could not be written. Free some space, then run mu judge mude install to go on from here". Before, it was retried as a network error for about two minutes, and the desktop app said it couldn't reach Hugging Face.
+  - The free-space check before a download counts only the bytes still to come. Before, it counted the whole of every unfinished file, even when most of it was on the disk already.
+  - Ctrl-C (or SIGTERM) while the Python environment is being set up now says "Stopped while setting up the Python environment: mu judge mude install goes on from there", instead of "mude's Python packages could not be installed".
 
 ## [0.2.1] - 2026-10-24
 
