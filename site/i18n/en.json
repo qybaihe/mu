@@ -243,6 +243,7 @@
     "count_row": "Items",
     "few_short": "Few items or an unstable score",
     "note_best": "Bold: the best score in each column.",
+    "note_best_acc": "Bold: the highest value in each column.",
     "note_few": "Few items or an unstable score: fewer than {items} items, items from fewer than {tasks} tasks, or mu already right more than {baseline}% of the time with no decision model.",
     "note_threat": "Malicious-instruction detection will be scored mainly on constructed items, because attacks rarely appear in real sessions. It isn't scored yet.",
     "score_note": "A score is how much of the cost of mistakes mu pays with no decision model a model removes: 100 removes all of it, 0 is no better, below 0 is worse. It isn't an accuracy; that's in <a href=\"#accuracy\">decision accuracy</a> below.",

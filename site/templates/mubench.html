@@ -69,7 +69,7 @@
     <h3 class="models-h3" data-reveal>{{ B.sub_h3 }}</h3>
     {{ acc_table(sub) }}
     <ul class="mb-notes" data-reveal>
-      <li>{{ B.note_best }}</li>
+      <li>{{ B.note_best_acc }}</li>
       <li><span class="mb-mark">*</span>{{ B.note_few | replace("{items}", few["items"]) | replace("{tasks}", few.tasks) | replace("{baseline}", few.baseline) }}</li>
       <li><span class="mb-mark">†</span>{{ B.note_threat_acc }}</li>
     </ul>
