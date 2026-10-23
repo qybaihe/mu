@@ -266,6 +266,44 @@ describe("checkpoint store", () => {
 	});
 
 	it.skipIf(process.platform === "win32")(
+		"does not remove through an ancestor symlink, and does not call permission errors removed",
+		async () => {
+			const root = temp("mu-remove-safe-");
+			const outside = temp("mu-remove-outside-");
+			write(outside, "secret.txt", "must survive\n");
+			symlinkSync(outside, join(root, "link"), "dir");
+			const store = await open(root);
+
+			const result = await applyRestore(store, {
+				commit: "not-used",
+				restore: [],
+				remove: ["link/secret.txt"],
+				bringBack: [],
+				leftAlone: [],
+			});
+			expect(result.removed).toEqual([]);
+			expect(result.leftAlone).toEqual([
+				{ path: "link/secret.txt", why: "a file or symlink is where its folder should be" },
+			]);
+			expect(read(outside, "secret.txt")).toBe("must survive\n");
+
+			write(root, "blocked.txt", "do not remove\n");
+			chmodSync(root, 0o555);
+			await expect(
+				applyRestore(store, {
+					commit: "not-used",
+					restore: [],
+					remove: ["blocked.txt"],
+					bringBack: [],
+					leftAlone: [],
+				}),
+			).rejects.toMatchObject({ code: "EACCES" });
+			chmodSync(root, 0o755);
+			expect(read(root, "blocked.txt")).toBe("do not remove\n");
+		},
+	);
+
+	it.skipIf(process.platform === "win32")(
 		"brings symlinks back as symlinks, and modes and line endings as they were",
 		async () => {
 			const root = temp("mu-links-");
