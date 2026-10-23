@@ -55,6 +55,41 @@ export interface LedgerSink {
 	append(record: LedgerRecord): void | Promise<void>;
 }
 
+/**
+ * Ledger writes are bookkeeping and must not hold up the decision that produced
+ * them. A sink can still perform its write after this budget expires because
+ * LedgerSink has no cancellation contract; the caller simply stops waiting.
+ */
+export const LEDGER_APPEND_TIMEOUT_MS = 1_000;
+
+/** Run one sink write without letting a slow or stuck sink block its caller. */
+export function appendWithTimeout(
+	sink: LedgerSink,
+	record: LedgerRecord,
+	timeoutMs = LEDGER_APPEND_TIMEOUT_MS,
+): Promise<void> {
+	let result: void | Promise<void>;
+	try {
+		// Invoke the sink immediately to preserve the synchronous side effects of
+		// sinks such as MemoryLedger; only waiting for an async result is bounded.
+		result = sink.append(record);
+	} catch {
+		return Promise.resolve();
+	}
+	const append = Promise.resolve(result).then(
+		() => undefined,
+		// A failed ledger is best effort. The decision must still complete.
+		() => undefined,
+	);
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	const timeout = new Promise<void>((resolve) => {
+		timer = setTimeout(resolve, timeoutMs);
+	});
+	return Promise.race([append, timeout]).finally(() => {
+		if (timer !== undefined) clearTimeout(timer);
+	});
+}
+
 export class MemoryLedger implements LedgerSink {
 	readonly records: LedgerRecord[] = [];
 	private readonly capacity: number;
@@ -95,6 +130,6 @@ export class CompositeLedger implements LedgerSink {
 	}
 
 	async append(record: LedgerRecord): Promise<void> {
-		await Promise.allSettled(this.sinks.map(async (sink) => sink.append(record)));
+		await Promise.allSettled(this.sinks.map((sink) => appendWithTimeout(sink, record)));
 	}
 }

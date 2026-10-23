@@ -198,6 +198,54 @@ describe("DecisionEngine", () => {
 		await expect(engine.decideMany(spec, [input], { concurrency: 0 })).rejects.toThrow(/concurrency/);
 	});
 
+	it("records cached batch states and dynamic questions without rebuilding them", async () => {
+		let builds = 0;
+		let questionBuilds = 0;
+		const spec = defineDecision({
+			id: "test.batch_record_state",
+			version: 1,
+			cacheImpact: "none",
+			latency: "inline",
+			questions: {},
+			questionsFor: (value: { id: number; text: string }) => {
+				questionBuilds++;
+				return {
+					keep: { type: "boolean" as const, instructions: `Keep item ${value.id}?` },
+				};
+			},
+			buildState: (value: { id: number; text: string }) => {
+				builds++;
+				return { id: value.id, text: value.text };
+			},
+			policy: () => "keep" as const,
+			fallback: () => "keep" as const,
+		});
+		const inputs = [
+			{ id: 1, text: "first" },
+			{ id: 2, text: "second" },
+		];
+		const ledger = new MemoryLedger();
+		const engine = new DecisionEngine({
+			judge: new Judge({ provider: new MockJudgeProvider() }),
+			defaultMode: "active",
+			ledger,
+			recordState: true,
+		});
+
+		await engine.decideMany(spec, inputs, { concurrency: 1 });
+
+		expect(builds).toBe(inputs.length);
+		expect(questionBuilds).toBe(inputs.length);
+		expect(ledger.records[0].state).toEqual([
+			{ id: 1, text: "first" },
+			{ id: 2, text: "second" },
+		]);
+		expect(ledger.records[0].questions).toEqual([
+			{ keep: { type: "boolean", instructions: "Keep item 1?" } },
+			{ keep: { type: "boolean", instructions: "Keep item 2?" } },
+		]);
+	});
+
 	it("records where the caller was when it asked, not where it is when a slow judge answers", async () => {
 		const waiting: ((answers: Record<string, Answer>) => void)[] = [];
 		const provider = new MockJudgeProvider(
