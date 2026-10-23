@@ -78,6 +78,18 @@ export function registerContinuation(runtime: KyrnRuntime): void {
 	if (!options.enabled) return;
 	const { pi } = runtime;
 	const spec = options.localPromised ? turnContinueLocalPromised : turnContinue;
+	const declared = spec.capabilities;
+	const trusted = (question: string): boolean =>
+		runtime.trusts(spec.id, (typeof declared === "object" ? declared[question] : declared) ?? "classify");
+	/**
+	 * Whether a verdict could send the agent back: `promised` answered, or all three questions of a go-ahead, and
+	 * `irreversible`, whose neutral answer ends the run. Laya alone is trusted on neither `promised` (`intent`) nor a
+	 * go-ahead (`meta`, `relate`): there the verdict can only be "end", and asking it would only hold up the end of the
+	 * run, by up to `waitMs`. With `localPromised` Laya answers `promised`, and is asked.
+	 */
+	const canSendBack = () =>
+		trusted("irreversible") &&
+		(trusted("promised") || (trusted("asks_go_ahead") && trusted("work_requested") && trusted("beyond_request")));
 	/** The turn in which the last end was sent back to work, by this check or another: the next run answers that nudge. */
 	let nudgedIn: TurnState | undefined;
 	const promisedNudges = new WeakMap<TurnState, number>();
@@ -103,7 +115,7 @@ export function registerContinuation(runtime: KyrnRuntime): void {
 				return undefined;
 			}
 			const finalMessage = stoppedOn(event);
-			if (!finalMessage) return undefined;
+			if (!finalMessage || !canSendBack()) return undefined;
 			// Where a message stops short is its end, so the end is what the judge reads.
 			const flat = finalMessage.replace(/\s+/g, " ");
 			const input = {
