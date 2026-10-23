@@ -280,14 +280,16 @@ async function ensureInstalled(ctx: Context, out: Out): Promise<void> {
 	const missing = missingFiles(ctx.paths.model, MUDE_FILES);
 	if (missing.length > 0) {
 		const need = missing.reduce((sum, file) => sum + file.size, 0);
+		const already = downloadedBytes(ctx.paths.model, MUDE_FILES);
 		const free = freeBytes(ctx.paths.root);
-		// The files still to come, the Python environment (about 1 GB) and room to spare.
-		if (free !== undefined && free < need + 2e9) {
+		// The bytes still to come (what a stopped install left is on the disk already), the Python environment (about
+		// 1 GB) and room to spare.
+		const room = MUDE_BYTES - already + 2e9;
+		if (free !== undefined && free < room) {
 			throw new Error(
-				`Not enough free disk space: mude 1.0 needs about ${((need + 2e9) / 1e9).toFixed(1)} GB, and ${(free / 1e9).toFixed(1)} GB are free`,
+				`Not enough free disk space: mude 1.0 needs about ${gb(room)} GB, and ${gb(free)} GB are free`,
 			);
 		}
-		const already = downloadedBytes(ctx.paths.model, MUDE_FILES);
 		out.step(
 			"download",
 			already > 0
@@ -315,9 +317,20 @@ async function ensureInstalled(ctx: Context, out: Out): Promise<void> {
 	}
 	if (!venvReady(ctx.paths, ctx.lockFile)) {
 		out.step("python", "Setting up the Python environment for mude 1.0 (MLX, transformers; about 1 GB, once)");
-		let uv = findUv(ctx.paths, ctx.env);
-		if (!uv) uv = await downloadUv(ctx.paths, { onLine: (line) => out.line(line) });
-		await ensureVenv(ctx.paths, ctx.lockFile, uv, { onLine: (line) => out.line(line), env: ctx.env });
+		try {
+			let uv = findUv(ctx.paths, ctx.env);
+			if (!uv) uv = await downloadUv(ctx.paths, { onLine: (line) => out.line(line) });
+			await ensureVenv(ctx.paths, ctx.lockFile, uv, { onLine: (line) => out.line(line), env: ctx.env });
+		} catch (error) {
+			// Ctrl-C reaches uv too, which then fails: that is a stop, not a broken environment.
+			if (ctx.signal?.aborted) {
+				throw new DownloadError(
+					"Stopped while setting up the Python environment: mu judge mude install goes on from there",
+					"aborted",
+				);
+			}
+			throw error;
+		}
 	}
 }
 

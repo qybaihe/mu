@@ -269,6 +269,13 @@ async function fetchFile(
 			return resumed;
 		} catch (error) {
 			if (error instanceof DownloadError && error.kind !== "network") throw error;
+			// A full disk stays full: trying again would only take two more minutes and then blame the connection.
+			const code = (error as NodeJS.ErrnoException).code;
+			if (code === "ENOSPC" || code === "EDQUOT") {
+				throw new Error(
+					`The disk is full: ${file.path} could not be written. Free some space, then run mu judge mude install to go on from here`,
+				);
+			}
 			lastError = error;
 			// A try that got some of the file was worth it: the count of tries in a row that got nothing starts again.
 			failures = resumeFrom(part, file.size, options.checkpointBytes) > before ? 1 : failures + 1;
