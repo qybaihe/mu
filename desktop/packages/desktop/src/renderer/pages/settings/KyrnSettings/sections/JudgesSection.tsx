@@ -8,6 +8,7 @@ import type { JudgeSettings, KyrnSettings } from '@/common/kyrn/types';
 import MuSelect from '@/renderer/components/base/MuSelect';
 import OneLine from '@/renderer/components/settings/OneLine';
 import { formatNumber } from '@/renderer/services/i18n/format';
+import { isMacOS } from '@/renderer/utils/platform';
 import { dirtySections, type Draft } from '../draft';
 import ChoiceTile from '../fields/ChoiceTile';
 import { shownMode } from '../fields/mode';
@@ -127,9 +128,12 @@ export function JudgeChoices({ draft, base, onChange, onKey, onReload }: JudgeCh
   const current = picked ?? (mude.busy ? 'mude' : saved);
   const offered = mude.state?.available === true;
   const mudeOk = mudeOffered(mude.state);
+  // While its status is still read (about a second) on a Mac, mude stands where it most likely will: first and
+  // recommended, so the page does not move when the status arrives. A Mac that cannot run it then moves it back.
+  const reading = mude.state === undefined && !mude.problem && isMacOS();
   // On a Mac that can run it, mude comes first and is tagged as recommended. What is chosen stays the configuration's.
-  const recommended = mudeRecommended(mude.state);
-  const shown = inShownOrder(JUDGE_CHOICES, recommended).filter((choice) => choice !== 'mude' || offered);
+  const recommended = mudeRecommended(mude.state) || reading;
+  const shown = inShownOrder(JUDGE_CHOICES, recommended).filter((choice) => choice !== 'mude' || offered || reading);
   const pick = (choice: JudgeChoice) => {
     if (choice === 'mude') {
       setPicked('mude');
