@@ -424,7 +424,7 @@ const DESCRIBED: HarnessManifest = {
 			id: "output.drift",
 			group: "turn",
 			feature: "ttsr",
-			title: { zh: "写偏即停（实验）", en: "Mid-stream correction (experimental)" },
+			title: { zh: "写偏即停", en: "Mid-stream correction" },
 			summary: {
 				zh: "模型边输出，判定器边每隔几百字对照一次你的硬约束和下面配置的规则；确信写偏了就立刻掐断输出，告诉模型是哪一条，让它从断点接着写。只有开启了「写偏即停」功能才会运行。",
 				en: "While the model writes, the judge checks the latest output against your hard constraints and the configured rules every few hundred characters. On a confident violation, the output is cut off, the rule is named, and the model continues from there. Runs only when the feature is turned on.",
@@ -1683,7 +1683,7 @@ const DESCRIBED: HarnessManifest = {
 		},
 		{
 			name: "ttsr",
-			title: { zh: "写偏即停（实验）", en: "Mid-stream correction (experimental)" },
+			title: { zh: "写偏即停", en: "Mid-stream correction" },
 			summary: {
 				zh: "语义版 TTSR：不用正则，而由判定器发现模型写偏，中断输出、摆出规则、从原处继续。默认关闭；开启后每隔一段输出就会多一次判定调用。",
 				en: "The judge, not a regular expression, notices when output goes astray, cuts it off, shows the rule and lets the model continue. Off by default; when on, every stretch of output costs one more judge call.",
