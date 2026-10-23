@@ -4,7 +4,9 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
-## [0.1.11] - 2026-10-23
+## [0.2.0] - 2026-10-23
+
+**0.2.0 starts the era of mu's own models: turn on mude 1.0 in one click.** The desktop app carries mu-agent 0.2.0.
 
 ### Added
 

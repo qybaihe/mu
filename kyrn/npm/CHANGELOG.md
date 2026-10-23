@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 
-## [0.1.15] - 2026-10-23
+## [0.2.0] - 2026-10-23
+
+**0.2.0 starts the era of mu's own models: `mu judge mude install` turns on mude 1.0 in one command.**
 
 ### Added
 
