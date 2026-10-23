@@ -2,8 +2,6 @@
 
 What changed in each release of mu: the desktop app and the `mu` command line together. Releases are published under [Releases](https://github.com/qybaihe/mu/releases) with their downloads; the `mu-agent` npm package has its own, more detailed [changelog](kyrn/npm/CHANGELOG.md).
 
-mu is in pre-release (0.1.x): names, settings and formats may still change between releases.
-
 ## [Unreleased]
 
 ### Added
