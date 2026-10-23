@@ -361,7 +361,7 @@
     "download": "이 버전 내려받기",
     "full_agent": "mu-agent 전체 변경 기록(영어)",
     "headlines": {
-      "v0.1.11": "mude 1.0을 한 번에 Mac 판정기로, mu setup에서 바로 구독 로그인, 정말 끌 수 있는 판정기, 더 빨리 시작하는 답변",
+      "v0.2.0": "자체 모델 시대의 시작: mude 1.0을 한 번에 켜고, mu setup에서 바로 구독 로그인, 더 빨리 시작하는 답변",
       "v0.1.10": "ZCode 대화 가져오기, 영어 다듬기, 무인 실행에도 남는 서버",
       "v0.1.9": "새 디자인, 새 공급자는 모델 목록에서 설정",
       "v0.1.8": "MCP 도구 설명 속 숨은 지시 검사, 잘 끝난 긴 작업을 스킬 초안으로"
@@ -369,11 +369,11 @@
     "english_note": "이 릴리스의 노트는 아직 한국어로 옮기지 못했어요. 아래는 영어 원문이에요.",
     "entries": [
       {
-        "version": "v0.1.11",
+        "version": "v0.2.0",
         "date": "2026-10-23",
-        "agent": "mu-agent 0.1.15",
+        "agent": "mu-agent 0.2.0",
         "items": [
-          "<b>mude 1.0을 한 번에 Mac에 설치해 mu의 판정기로.</b>mude 1.0은 코딩에 최적화된 mu의 자체 의사결정 모델이에요. Apple 실리콘 Mac(macOS 14 이상, 메모리 8 GB 이상)에서는 데스크톱 앱 첫 실행 가이드의 '판정기' 단계에서 한 번 누르면 내려받고(1.8 GB, 모든 파일 검증) 설정하고 실행한 뒤 판정기로 지정해요. 진행 상황이 보이고, 실패하면 다시 시도할 수 있고, 건너뛸 수도 있어요. 설정 → '판정기'에도 같은 카드가 있어 설치, 시작, 중지, 판정기로 사용, 제거, '로컬 전용' 스위치를 쓸 수 있어요. 터미널에서는 <code>mu judge mude install</code>이에요. mude가 답한 판정은 컴퓨터 밖으로 나가지 않고, 한 번에 약 0.1초 걸려요. 답하지 못한 건 이전의 호스팅 판정기로 가요('로컬 전용'을 고르면 가지 않아요). 실행 중에는 메모리를 약 4 GB 써요.",
+          "<b>0.2.0: 자체 모델 시대의 시작. mude 1.0을 한 번에 켜요.</b>mude 1.0은 코딩에 최적화된 mu의 자체 의사결정 모델이에요. Apple 실리콘 Mac(macOS 14 이상, 메모리 8 GB 이상)에서는 데스크톱 앱 첫 실행 가이드의 '판정기' 단계에서 한 번 누르면 내려받고(1.8 GB, 모든 파일 검증) 설정하고 실행한 뒤 판정기로 지정해요. 진행 상황이 보이고, 실패하면 다시 시도할 수 있고, 건너뛸 수도 있어요. 설정 → '판정기'에도 같은 카드가 있어 설치, 시작, 중지, 판정기로 사용, 제거, '로컬 전용' 스위치를 쓸 수 있어요. 터미널에서는 <code>mu judge mude install</code>이에요. mude가 답한 판정은 컴퓨터 밖으로 나가지 않고, 한 번에 약 0.1초 걸려요. 답하지 못한 건 이전의 호스팅 판정기로 가요('로컬 전용'을 고르면 가지 않아요). 실행 중에는 메모리를 약 4 GB 써요.",
           "<b><code>mu setup</code>에서 구독을 고르면 바로 로그인으로 이어져요.</b> <code>mu setup</code>이 고를 항목(Sign in with an account, 그다음 ChatGPT는 OpenAI, Grok은 xAI, 아니면 Google)을 알려 주고, 거기서 시작하는 세션(그리고 처음 시작하는 <code>mu</code>)은 <code>/login</code>이 열린 채로 시작해요. 터미널의 <code>/login</code>은 데스크톱 앱과 같아졌어요. Codex CLI의 로그인은 빠졌고, ChatGPT는 OpenAI로 로그인해요. Claude 구독 로그인도 Anthropic이 다른 앱에서 제공하는 걸 허용하지 않아서 빠졌고, <code>/login anthropic</code>은 바로 API 키 입력으로 넘어가요. 첫 메뉴에서 \"Sign in with Radius\"도 빠졌어요. 전에 한 로그인은 <code>/logout</code>할 때까지 동작해요. API 키 칸에 Claude 구독 토큰(<code>sk-ant-oat…</code>)을 붙여 넣으면, <code>mu setup</code>과 첫 실행 가이드가 어디에도 보내지 않고 API 키를 달라고 해요.",
           "<b>판정기에서 \"Not now\"를 고르면 정말로 판정기가 없어요.</b> 전에는 아무것도 기록하지 않아서 무료 Jev가 그대로 답했고, Jev가 읽는 내용은 OpenCode로 갔어요. 이제는 <code>mu.json</code>에서 모든 판정 지점을 끄고(<code>\"modes\": { \"default\": \"off\" }</code>), 환영 줄에 판정기가 꺼져 있다고 알려 주며, 판정기에는 아무것도 보내지 않아요. 나중에 <code>mu setup</code>에서 판정기를 고르면 다시 켜지고, 스크립트에서는 <code>mu setup --judge off</code>가 같은 일을 해요. 섀도 모드로 시작하는 알림 라우팅, 작업 중 끼어들기, 이탈 감시도 함께 꺼지기 때문에, 데스크톱 앱에서 \"판정 적용\"을 끄면 판정기 호출이 모두 멈춰요. 설정과 커널 바도 이 판정 지점들을 켜진 것으로 보여 주지 않고, 기본 상태 그대로 기록만 하거나 꺼진 것으로 보여 줘요.",
           "<b>더 조용한 터미널, 더 알기 쉬운 도움말.</b> 첫 화면은 mu의 환영 화면뿐이고, pi가 보여 주던 불러온 스킬, 프롬프트, 확장 목록은 빠졌어요(<code>/</code> 메뉴에는 있고, <code>--verbose</code>나 <code>\"quietStartup\": false</code>로 목록을 다시 볼 수 있어요). <code>/help</code>는 설명을 터미널 너비에 맞춰 열마다 줄을 바꾸고, <code>mu doctor</code>와 <code>/doctor</code>는 고칠 항목이 몇 개인지부터 알려 줘요. 모델이 없을 때 <code>/status</code>와 상태 줄에 pi의 자리표시 값 <code>unknown</code>이 나오지 않아요. <code>mu judge --help</code>는 명령마다 설명해 주고, <code>mu judge status</code>는 로컬 판정기 상태를 한 줄로 알려 줘요. <code>mu ledger --help</code>, <code>mu link --help</code>, <code>mu unlink --help</code>는 도움말만 보여 주고 실행하지 않으며, <code>mu auth --help</code>는 mu 자체 로그인 명령을 먼저 보여 줘요. 소스에서 실행할 때 <code>mu --version</code>은 pi가 아니라 mu의 버전을 보여 줘요.",
