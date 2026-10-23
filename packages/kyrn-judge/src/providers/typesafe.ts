@@ -81,7 +81,7 @@ function fromWire(question: Question, raw: Record<string, unknown> | undefined):
 		const score = numberOr(raw.score);
 		return score === undefined ? undefined : { type: "score", score, confidence };
 	}
-	if (typeof raw.choice !== "string" || !(raw.choice in question.criteria)) return undefined;
+	if (typeof raw.choice !== "string" || !Object.hasOwn(question.criteria, raw.choice)) return undefined;
 	return { type: "choice", choice: raw.choice, probabilities: probabilitiesOf(raw.probabilities), confidence };
 }
 

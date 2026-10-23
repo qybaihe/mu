@@ -183,6 +183,21 @@ describe("DecisionEngine", () => {
 		expect(await recorded(keepChunk, true)).toBeUndefined();
 	});
 
+	it("builds each batch state once and rejects invalid concurrency", async () => {
+		let builds = 0;
+		const spec = {
+			...keepChunk,
+			buildState: (value: typeof input) => {
+				builds++;
+				return keepChunk.buildState(value);
+			},
+		};
+		const { engine } = engineWith(0.03, "active");
+		await engine.decideMany(spec, [input, input], { concurrency: 1 });
+		expect(builds).toBe(2);
+		await expect(engine.decideMany(spec, [input], { concurrency: 0 })).rejects.toThrow(/concurrency/);
+	});
+
 	it("records where the caller was when it asked, not where it is when a slow judge answers", async () => {
 		const waiting: ((answers: Record<string, Answer>) => void)[] = [];
 		const provider = new MockJudgeProvider(

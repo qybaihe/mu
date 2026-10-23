@@ -81,7 +81,14 @@ function answerProblem(question: Question, answer: Answer | undefined): string |
 	if (answer.type !== question.type) return `has type "${answer.type}", expected "${question.type}"`;
 	if (answer.type === "boolean") return isProbability(answer.probability) ? undefined : "has an invalid probability";
 	if (answer.type === "choice" && question.type === "choice") {
-		return answer.choice in question.criteria ? undefined : `picked unknown option "${answer.choice}"`;
+		if (!Object.hasOwn(question.criteria, answer.choice)) return `picked unknown option "${answer.choice}"`;
+		if (answer.probabilities !== undefined) {
+			for (const [option, probability] of Object.entries(answer.probabilities)) {
+				if (!Object.hasOwn(question.criteria, option)) return `reported unknown probability option "${option}"`;
+				if (!isProbability(probability)) return `reported invalid probability for "${option}"`;
+			}
+		}
+		return undefined;
 	}
 	if (answer.type === "score" && question.type === "score") {
 		const max = question.criteria.length - 1;
@@ -107,8 +114,15 @@ export class Judge implements JudgeLike {
 
 	constructor(options: JudgeOptions) {
 		this.provider = options.provider;
-		this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-		this.maxQuestionsPerRequest = options.maxQuestionsPerRequest ?? DEFAULT_MAX_QUESTIONS_PER_REQUEST;
+		const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+		const maxQuestionsPerRequest = options.maxQuestionsPerRequest ?? DEFAULT_MAX_QUESTIONS_PER_REQUEST;
+		if (!Number.isFinite(timeoutMs) || timeoutMs <= 0)
+			throw new TypeError("Judge timeoutMs must be a finite positive number");
+		if (!Number.isInteger(maxQuestionsPerRequest) || maxQuestionsPerRequest < 1) {
+			throw new TypeError("Judge maxQuestionsPerRequest must be a positive integer");
+		}
+		this.timeoutMs = timeoutMs;
+		this.maxQuestionsPerRequest = maxQuestionsPerRequest;
 	}
 
 	async evaluate<const Qs extends Questions>(request: JudgeCall<Qs>): Promise<JudgeResult<Qs>> {
