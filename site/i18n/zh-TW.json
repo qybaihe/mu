@@ -298,7 +298,7 @@
     "download": "下載這個版本",
     "full_agent": "mu-agent 的完整更新紀錄（英文）",
     "headlines": {
-      "v0.1.11": "在 mu setup 裡直接訂閱登入，判定器說關就關，回覆更快開始，終端機更安靜，執行可以設時限",
+      "v0.1.11": "mude 1.0 一鍵裝進 Mac 當判定器，在 mu setup 裡直接訂閱登入，判定器說關就關，回覆更快開始",
       "v0.1.10": "匯入 ZCode 對話，英文校訂，無人值守的執行留住伺服器",
       "v0.1.9": "介面換了新樣子，新加的服務商依模型列表填好參數",
       "v0.1.8": "檢查 MCP 工具描述裡藏的指令，跑通的長任務可以存成技能"
@@ -308,8 +308,9 @@
       {
         "version": "v0.1.11",
         "date": "2026-10-23",
-        "agent": "mu-agent 0.1.14",
+        "agent": "mu-agent 0.1.15",
         "items": [
+          "<b>mude 1.0 一鍵裝進你的 Mac，當 mu 的判定器。</b>mude 1.0 是 mu 自己的決策模型，針對程式設計場景最佳化。在 Apple 晶片的 Mac 上（macOS 14 以上，記憶體 8 GB 以上），桌面版首次啟動引導的「判定器」一步點一下就能下載（1.8 GB，逐一校驗）、裝好、啟動並設為判定器；看得到進度，失敗可以重試，也可以略過。設定 →「判定器」裡有同樣的卡片：安裝、啟動、停止、設為判定器、解除安裝，還有「僅限本機」開關。終端機裡用 <code>mu judge mude install</code>。它回答的判定不離開本機，每次約 0.1 秒；答不了的交給原本的託管判定器，選了「僅限本機」就不交。執行時約佔用 4 GB 記憶體。",
           "<b>在 <code>mu setup</code> 選訂閱帳號，接著就是登入。</b><code>mu setup</code> 會寫明該選哪一項：Sign in with an account，再選 OpenAI（ChatGPT）、xAI（Grok）或 Google；它啟動的工作階段（還有第一次啟動 <code>mu</code>）會直接開啟 <code>/login</code>，不用自己輸入。終端機的 <code>/login</code> 和桌面版一致了：不再提供 Codex CLI 的登入，ChatGPT 透過 OpenAI 登入；也不再提供 Claude 訂閱登入（Anthropic 不允許其他應用程式這麼做），<code>/login anthropic</code> 會直接要 API 金鑰；第一個選單也拿掉了「Sign in with Radius」。之前的登入在 <code>/logout</code> 之前照常可用。把 Claude 訂閱權杖（<code>sk-ant-oat…</code>）貼到要填 API 金鑰的地方，<code>mu setup</code> 和首次引導會認出來，不送到任何地方，並請你改填 API 金鑰。",
           "<b>判定器選「暫時不要」，就真的不用判定器。</b>以前選它什麼都沒寫入，免費的 Jev 照樣回答，它讀到的內容也照樣送到了 OpenCode。現在它會在 <code>mu.json</code> 裡關閉所有判定點（<code>\"modes\": { \"default\": \"off\" }</code>），歡迎訊息寫明判定器已關閉，什麼都不會送給判定器；之後在 <code>mu setup</code> 選一個判定器就會重新開啟，指令碼裡用 <code>mu setup --judge off</code>。原本處於影子模式的通知分流、中途插話和偏離監控也隨之關閉，所以在桌面版關掉「判定生效」，對判定器的每次呼叫都會停止；桌面版的設定和核心列也依出廠狀態把這些判定點顯示為只記錄或關閉，不再顯示為生效中。",
           "<b>終端機更安靜，命令列說明更清楚。</b>歡迎畫面就是整個第一個畫面，pi 列出的已載入技能、提示詞和擴充功能不再顯示（它們仍在 <code>/</code> 選單裡；<code>--verbose</code> 或 <code>\"quietStartup\": false</code> 能讓列表回來）。<code>/help</code> 依終端機寬度分欄換行；<code>mu doctor</code> 和 <code>/doctor</code> 先說有幾項要修正；沒有模型時，<code>/status</code> 和狀態列不再顯示 pi 的預留值 <code>unknown</code>。<code>mu judge --help</code> 說明每個指令，<code>mu judge status</code> 用一行說明本機判定器的狀態；<code>mu ledger --help</code>、<code>mu link --help</code> 和 <code>mu unlink --help</code> 只顯示說明、不再真的執行；<code>mu auth --help</code> 先列出 mu 自己的登入指令；從原始碼執行時，<code>mu --version</code> 顯示 mu 的版本，不是 pi 的。",
