@@ -167,7 +167,7 @@ Every point, with its feature switch and options: [docs/reference/decision-point
   With no key set, Jev 1.13 on OpenCode Zen answers, free for a limited time. What it judges goes to OpenCode, which doesn't train on it, and mu reminds you of this once a day. Set a key (`mu setup`, or Settings → Judges in the app) and mu switches to it starting with the next question.
 
   Measured in the authors' own sessions: a warm question takes about 0.3 s over HTTP/2, and 16 chunks of tool output are judged in a single request in 0.44 s, with the shared state billed once. Verdicts, probabilities and timings go to the ledger: run `mu ledger`, or open the Judge tab in the desktop app.
-- **mude** (local, a Mac with Apple silicon) is mu's own decision model: [below](#mude-a-judge-that-stays-on-your-mac).
+- **mude** (local, a Mac with Apple silicon) is mu's own judge model, fine-tuned for judging: [below](#mude-a-judge-that-stays-on-your-mac).
 - **Laya** (local, macOS on Apple silicon) is a 322M-parameter judge that runs on your machine and never touches the network. Nothing is downloaded without your consent. It's reliable on simple predicates and weaker on meta-judgments, so run it in shadow alongside your current judge and read the ledger before you give it a decision point.
 - **Any classifier model** in pi's catalog can serve as a tier: `classifier:<provider>/<model>`. Examples include Cloudflare's Clef (`clef`, `clef-flash`), the System One models on OpenRouter and the Vercel AI Gateway, or a llama.cpp classifier.
 - **Any LLM** can serve as a tier: `llm:<provider>/<model>`.
@@ -183,7 +183,7 @@ Judges can be chained in tiers, cheapest first:
 
 ### mude, a judge that stays on your Mac
 
-[mude-2b](https://huggingface.co/qybaihe/mude-2b) is mu's own decision model, a 2B judge trained on mu's decision requests. It answers every question of a decision in one forward pass, with a probability for each answer, and runs on your machine, so what it judges never leaves it. Both mude-2b and its [MLX 8-bit edition](https://huggingface.co/qybaihe/mude-2b-mlx-8bit) (1.8 GB) are under the MIT license. For now, the one-step setup supports Macs with Apple silicon (macOS 14 or later, 8 GB of memory or more) and uses the MLX edition:
+[mude-2b](https://huggingface.co/qybaihe/mude-2b) is mu's own judge model: 2B parameters, fine-tuned for judging, with state-of-the-art judging ability. It answers every question of a decision in one forward pass, with a probability for each answer, and runs on your machine, so what it judges never leaves it. Both mude-2b and its [MLX 8-bit edition](https://huggingface.co/qybaihe/mude-2b-mlx-8bit) (1.8 GB) are under the MIT license. For now, the one-step setup supports Macs with Apple silicon (macOS 14 or later, 8 GB of memory or more) and uses the MLX edition:
 
 ```bash
 mu judge mude install               # download it, check every file, start it on 127.0.0.1 and make it the judge

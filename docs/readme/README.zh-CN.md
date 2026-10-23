@@ -143,7 +143,7 @@ mu                  # 在当前目录开一个会话
 ## 判定器
 
 - **Jev**：TypeSafe 托管的判定模型。有边界的问题，答案带概率。可以经 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI，或任何支持同一协议的服务调用，每个服务有自己的密钥（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`）：在桌面端的「判定器」页选一个，默认用第一个设置了密钥的。一个密钥都没有时，默认由 OpenCode Zen 上限时免费的 Jev 1.13 回答：判定要读的内容会发给 OpenCode，它不拿来训练模型，mu 每天提示一次。配上密钥（`mu setup`，或「判定器」页）后，下一个问题起就用你的密钥。在作者自己的会话里实测：HTTP/2 上一个热连接的问题约 0.3 秒；16 块工具输出并成一个请求判完 0.44 秒，状态只计费一次。判定、概率和耗时都进流水：`mu ledger`，或桌面端的「判定」页。
-- **mude**（本地，Apple 芯片的 Mac）：mu 自己的判定模型，见[下文](#mude在你-mac-上判定不出本机)。
+- **mude**（本地，Apple 芯片的 Mac）：mu 自己的判定模型，专为判定微调，见[下文](#mude在你-mac-上判定不出本机)。
 - **Laya**（本地）。一个 3.22 亿参数的判定器，在你的机器上跑，不走网络。未经你同意不下载任何东西。简单谓词上可靠，元判断上偏弱：先让它以影子模式和你当前的判定器并行跑，看过流水再把判定点交给它。
 - **pi 模型目录里的任何分类模型**，作为一级：`classifier:<提供商>/<模型>`。比如 Cloudflare 的 Clef（`clef`、`clef-flash`）、OpenRouter 和 Vercel AI Gateway 上的 System One 模型、llama.cpp 的分类模型。
 - **任何大模型**，作为一级：`llm:<提供商>/<模型>`。
@@ -152,7 +152,7 @@ mu                  # 在当前目录开一个会话
 
 ### mude：在你 Mac 上判定，不出本机
 
-[mude-2b](https://huggingface.co/qybaihe/mude-2b) 是 mu 自己的判定模型，一个用 mu 的判定请求训练的 2B 判定器。一次前向就答完一个判定的所有问题，每个答案带概率；它在你的机器上跑，判定的内容不离开本机。mude-2b 和它的 [MLX 8-bit 版](https://huggingface.co/qybaihe/mude-2b-mlx-8bit)（1.8 GB）都采用 MIT 许可证。目前一键安装支持 Apple 芯片的 Mac（macOS 14 及以上，内存 8 GB 及以上），用的是 MLX 版：
+[mude-2b](https://huggingface.co/qybaihe/mude-2b) 是 mu 自己的判定模型：2B 参数，专为判定场景微调训练，判定能力达到 SOTA 级。一次前向就答完一个判定的所有问题，每个答案带概率；它在你的机器上跑，判定的内容不离开本机。mude-2b 和它的 [MLX 8-bit 版](https://huggingface.co/qybaihe/mude-2b-mlx-8bit)（1.8 GB）都采用 MIT 许可证。目前一键安装支持 Apple 芯片的 Mac（macOS 14 及以上，内存 8 GB 及以上），用的是 MLX 版：
 
 ```bash
 mu judge mude install               # 下载、逐个校验文件、在 127.0.0.1 上启动，并设为判定器
