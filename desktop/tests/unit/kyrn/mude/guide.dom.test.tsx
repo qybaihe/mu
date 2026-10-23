@@ -59,7 +59,8 @@ beforeAll(async () => {
   });
 });
 
-const GB = 1024 ** 3;
+/** The model's size in bytes, as the command counts its download. */
+const MODEL_BYTES = 1_782_005_734;
 const MUDE_PROFILE = {
   type: 'typesafe' as const,
   model: 'mude',
@@ -209,9 +210,12 @@ describe('mude in the first-run guide', () => {
     fireEvent.click(tile);
     expect(tile).toHaveAttribute('aria-checked', 'true');
     expect(within(step).getByTestId('mu-judge-choice-jev')).toHaveAttribute('aria-checked', 'false');
-    expect(tile).toHaveTextContent(
-      'About 1.8 GB to download, plus a Python environment of about 1.0 GB. It runs on this Mac and uses about 4 GB of memory while running.'
+    expect(tile).toHaveTextContent(enMu.judges.choices.mude.description);
+    expect(within(tile).getByTestId('mu-mude-hint')).toHaveTextContent(
+      '1.8 GB to download, plus a 1.0 GB Python environment. Uses about 4 GB of memory while running.'
     );
+    // The memory it takes is said once.
+    expect(tile.textContent?.match(/GB of memory/g)).toHaveLength(1);
     bridge.mudeRun.mockResolvedValue(state(NOT_INSTALLED, task('install', 'running')));
     fireEvent.click(within(tile).getByTestId('mu-mude-install'));
     // With the judges behind it, as usual: no "only local" in the guide.
@@ -257,16 +261,17 @@ describe('mude in the first-run guide', () => {
         NOT_INSTALLED,
         task('install', 'running', {
           step: 'download',
-          message: 'Downloading mude and checking every file',
-          download: { file: 'model.safetensors', done: 0.45 * GB, total: 1.8 * GB, checking: false },
+          message: 'Downloading mude (qybaihe/mude-2b-mlx-8bit, 1.78 GB) and checking every file',
+          download: { file: 'mlx-q8.safetensors', done: MODEL_BYTES / 4, total: MODEL_BYTES, checking: false },
         })
       )
     );
     fireEvent.click(within(tile).getByTestId('mu-mude-install'));
     const progress = await within(tile).findByTestId('mu-mude-progress');
     expect(progress).toHaveTextContent('25%');
-    expect(progress).toHaveTextContent('0.5 of 1.8 GB');
-    expect(tile).toHaveTextContent('Downloading mude and checking every file');
+    expect(progress).toHaveTextContent('0.4 of 1.8 GB');
+    expect(within(tile).getByTestId('mu-mude-status')).toHaveTextContent(enMu.judges.mude.step.download);
+    expect(tile).not.toHaveTextContent('1.78');
     expect(within(tile).getByTestId('mu-mude-cancel')).toBeInTheDocument();
     expect(within(tile).queryByTestId('mu-mude-install')).not.toBeInTheDocument();
   });
@@ -288,6 +293,35 @@ describe('mude in the first-run guide', () => {
     fireEvent.click(within(tile).getByTestId('mu-mude-retry'));
     await waitFor(() => expect(bridge.mudeRun).toHaveBeenCalledTimes(2));
     expect(bridge.mudeRun).toHaveBeenLastCalledWith({ action: 'install' });
+  });
+
+  it('folds the command’s output of a failed install, so Back and Next stay in sight', async () => {
+    const { tile } = await judgeStep();
+    fireEvent.click(tile);
+    bridge.mudeRun.mockResolvedValue(
+      state(
+        { ...NOT_INSTALLED, downloadedBytes: 700_000_000 },
+        task('install', 'failed', {
+          log: ['Fetching mlx-q8.safetensors'],
+          error: { message: 'mlx-q8.safetensors could not be downloaded (fetch failed)', kind: 'network' },
+        })
+      )
+    );
+    fireEvent.click(within(tile).getByTestId('mu-mude-install'));
+    expect(await within(tile).findByTestId('mu-mude-failed')).toHaveTextContent(enMu.judges.mude.error.network);
+    expect(within(tile).queryByTestId('mu-mude-error')).not.toBeInTheDocument();
+    fireEvent.click(within(tile).getByTestId('mu-mude-details'));
+    expect(within(tile).getByTestId('mu-mude-error')).toHaveTextContent('could not be downloaded (fetch failed)');
+    expect(within(tile).getByTestId('mu-mude-retry')).toBeInTheDocument();
+  });
+
+  it('says an install that stopped part way goes on from there', async () => {
+    bridge.mudeState.mockResolvedValue(state({ ...NOT_INSTALLED, downloadedBytes: 700_000_000 }));
+    const { tile } = await judgeStep();
+    fireEvent.click(tile);
+    expect(await within(tile).findByTestId('mu-mude-unfinished')).toHaveTextContent(enMu.judges.mude.unfinished);
+    // What installing takes is still said before the one button that does it.
+    expect(within(tile).getByTestId('mu-mude-hint')).toHaveTextContent('1.8 GB to download');
   });
 
   it('once installed it is the judge, and the guide’s one save keeps mude first with the rest of the guide', async () => {

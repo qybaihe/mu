@@ -323,6 +323,31 @@
   line-height: 18px;
 }
 
+/* "Error details" under a failed mude command: a quiet link at the start of the line, not a full-width bar. */
+.mudeDetails:global(.arco-btn) {
+  align-self: flex-start;
+  margin-inline-start: -4px;
+  padding-inline: 4px;
+}
+
+/* "Only local" in mude's install dialog: the box hugs its label, so a click beside it does not tick it. */
+.mudeConsentCheck {
+  align-self: flex-start;
+}
+
+/* Both explanations of "Only local" in one cell: the longer sets the height, whichever one shows. */
+.mudeConsentHelp {
+  display: grid;
+}
+
+.mudeConsentHelp > * {
+  grid-area: 1 / 1;
+}
+
+.mudeConsentHidden {
+  visibility: hidden;
+}
+
 /* Plain rows, laid out like the app's other settings pages: a quiet list of rows, each a readable title, one line
    and its control (the features' switches, the decision points' under them). A feature's options are a page of their
    own. */

@@ -164,7 +164,7 @@
       "mude": {
         "title": "mude",
         "tag": "Bu Mac'te",
-        "description": "mu'nun kendi hakem modeli, bu Mac'te çalışır: anahtar yok, çağrı başına ücret yok. Apple çip gerektirir ve çalışırken yaklaşık {{memory}} GB bellek kullanır."
+        "description": "mu'nun kendi hakem modeli; özellikle hakemlik için ince ayarlanmış, SOTA düzeyinde hakemlik yeteneğine sahip. Bu Mac'te çalışır: anahtar yok, çağrı başına ücret yok. Apple çip gerektirir."
       },
       "local": {
         "title": "Yerel Laya",
@@ -248,6 +248,7 @@
         "stopped": "Durduruldu"
       },
       "resources": "mude çalışırken yaklaşık {{memory}} GB bellek kullanır. Terminaldekiler de dahil bu Mac'teki tüm mu oturumları onu paylaşır ve siz durdurana ya da kapatana kadar çalışmaya devam eder.",
+      "shared": "Terminaldekiler de dahil bu Mac'teki tüm mu oturumları onu paylaşır ve siz durdurana ya da kapatana kadar çalışmaya devam eder.",
       "start": "Başlat",
       "stop": "Durdur",
       "openFolder": "Klasörü aç",
@@ -261,6 +262,11 @@
         "start": "mude başlatılıyor…",
         "stop": "mude durduruluyor…",
         "uninstall": "mude kaldırılıyor…"
+      },
+      "step": {
+        "download": "mude indiriliyor ve her dosya denetleniyor…",
+        "python": "mude için Python ortamı hazırlanıyor…",
+        "start": "mude sunucusu başlatılıyor…"
       },
       "downloaded": "{{done}} / {{total}} GB",
       "checking": "İndirilen dosyalar denetleniyor…",
@@ -284,7 +290,7 @@
       "needs": "mude için Apple çipli, macOS 14 veya sonrası ve en az {{ram}} GB belleği olan bir Mac gerekir.",
       "retry": "Yeniden dene",
       "guide": {
-        "consent": "Yaklaşık {{download}} GB indirilir, ayrıca yaklaşık {{python}} GB'lık bir Python ortamı kurulur. Bu Mac'te çalışır ve çalışırken yaklaşık {{memory}} GB bellek kullanır.",
+        "consent": "{{download}} GB indirilir, ayrıca {{python}} GB'lık bir Python ortamı kurulur. Çalışırken yaklaşık {{memory}} GB bellek kullanır.",
         "instead": "mu bunun yerine barındırılan hakemi kullanır.",
         "ready": "mude çalışıyor ve artık hakeminiz.",
         "readyStopped": "mude artık hakeminiz. Sunucusu bir sonraki mu oturumunda başlar."

@@ -164,7 +164,7 @@
       "mude": {
         "title": "mude",
         "tag": "En este Mac",
-        "description": "El modelo juez propio de mu, en este Mac: sin clave y sin coste por llamada. Necesita Apple silicon y usa unos {{memory}} GB de memoria mientras funciona."
+        "description": "El modelo juez propio de mu, ajustado específicamente para juzgar, con una capacidad de juicio de última generación (SOTA). Funciona en este Mac: sin clave y sin coste por llamada. Necesita Apple silicon."
       },
       "local": {
         "title": "Laya local",
@@ -248,6 +248,7 @@
         "stopped": "Detenido"
       },
       "resources": "Mientras funciona, mude usa unos {{memory}} GB de memoria. Lo comparten todas las sesiones de mu de este Mac, también las del terminal, y sigue en marcha hasta que lo detengas o lo desactives.",
+      "shared": "Lo comparten todas las sesiones de mu de este Mac, también las del terminal, y sigue en marcha hasta que lo detengas o lo desactives.",
       "start": "Iniciar",
       "stop": "Detener",
       "openFolder": "Abrir carpeta",
@@ -261,6 +262,11 @@
         "start": "Iniciando mude…",
         "stop": "Deteniendo mude…",
         "uninstall": "Desinstalando mude…"
+      },
+      "step": {
+        "download": "Descargando mude y comprobando cada archivo…",
+        "python": "Preparando el entorno de Python de mude…",
+        "start": "Iniciando el servidor de mude…"
       },
       "downloaded": "{{done}} de {{total}} GB",
       "checking": "Comprobando los archivos descargados…",
@@ -284,7 +290,7 @@
       "needs": "mude necesita un Mac con Apple silicon, macOS 14 o posterior y al menos {{ram}} GB de memoria.",
       "retry": "Reintentar",
       "guide": {
-        "consent": "Descarga unos {{download}} GB, más un entorno de Python de unos {{python}} GB. Funciona en este Mac y usa unos {{memory}} GB de memoria mientras está en marcha.",
+        "consent": "{{download}} GB de descarga, más un entorno de Python de {{python}} GB. Usa unos {{memory}} GB de memoria mientras funciona.",
         "instead": "mu usa en su lugar el juez alojado en la nube.",
         "ready": "mude está en marcha y es tu juez.",
         "readyStopped": "mude es tu juez. Su servidor se inicia con tu próxima sesión de mu."

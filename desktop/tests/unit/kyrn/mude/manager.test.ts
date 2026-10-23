@@ -352,4 +352,13 @@ describe('parseStatus', () => {
     });
     expect(parseStatus({ type: 'status' })).toBeUndefined();
   });
+
+  it('keeps how much of the model is on disk, an install stopped part way, only when there is some', () => {
+    expect(parseStatus({ type: 'status', ...OFF, downloadedBytes: 700_000_000 })).toEqual({
+      ...OFF,
+      downloadedBytes: 700_000_000,
+    });
+    expect(parseStatus({ type: 'status', ...OFF, downloadedBytes: 0 })).toEqual(OFF);
+    expect(parseStatus({ type: 'status', ...OFF, downloadedBytes: 'lots' })).toEqual(OFF);
+  });
 });

@@ -164,7 +164,7 @@
       "mude": {
         "title": "mude",
         "tag": "在這台 Mac 上",
-        "description": "mu 自己的判定模型，在這台 Mac 上執行：不需要金鑰，也不按次收費。需要 Apple 晶片，執行時約占用 {{memory}} GB 記憶體。"
+        "description": "mu 自己的判定模型，專為判定情境微調訓練，判定能力達到 SOTA 級。在這台 Mac 上執行，不需要金鑰，不按次收費，需要 Apple 晶片。"
       },
       "local": {
         "title": "本機 Laya",
@@ -248,6 +248,7 @@
         "stopped": "已停止"
       },
       "resources": "mude 執行時約占用 {{memory}} GB 記憶體。這台 Mac 上的所有 mu 工作階段（包括終端機裡的）共用它，它會一直執行，直到你停止或關閉它。",
+      "shared": "這台 Mac 上的所有 mu 工作階段（包括終端機裡的）共用它，它會一直執行，直到你停止或關閉它。",
       "start": "啟動",
       "stop": "停止",
       "openFolder": "打開資料夾",
@@ -261,6 +262,11 @@
         "start": "正在啟動 mude…",
         "stop": "正在停止 mude…",
         "uninstall": "正在解除安裝 mude…"
+      },
+      "step": {
+        "download": "正在下載 mude 並驗證每個檔案…",
+        "python": "正在設定 mude 的 Python 環境…",
+        "start": "正在啟動 mude 的服務…"
       },
       "downloaded": "{{done}} / {{total}} GB",
       "checking": "正在驗證下載的檔案…",
@@ -284,7 +290,7 @@
       "needs": "mude 需要搭載 Apple 晶片、macOS 14 或更新版本、記憶體 {{ram}} GB 以上的 Mac。",
       "retry": "重試",
       "guide": {
-        "consent": "需要下載約 {{download}} GB，另加約 {{python}} GB 的 Python 環境。它在這台 Mac 上執行，執行時約占用 {{memory}} GB 記憶體。",
+        "consent": "下載 {{download}} GB，另需 {{python}} GB 的 Python 環境；執行時約占用 {{memory}} GB 記憶體。",
         "instead": "mu 會改用雲端判定器。",
         "ready": "mude 已在執行，現在是你的判定器。",
         "readyStopped": "mude 現在是你的判定器，它的服務會在下次 mu 工作階段開始時啟動。"

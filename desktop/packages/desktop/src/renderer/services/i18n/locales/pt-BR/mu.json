@@ -164,7 +164,7 @@
       "mude": {
         "title": "mude",
         "tag": "Neste Mac",
-        "description": "O modelo juiz do próprio mu, rodando neste Mac: sem chave e sem custo por chamada. Requer Apple silicon e usa cerca de {{memory}} GB de memória enquanto roda."
+        "description": "O modelo juiz do próprio mu, ajustado especificamente para julgar, com capacidade de julgamento no estado da arte. Roda neste Mac: sem chave e sem custo por chamada. Requer Apple silicon."
       },
       "local": {
         "title": "Laya local",
@@ -248,6 +248,7 @@
         "stopped": "Parado"
       },
       "resources": "Enquanto roda, o mude usa cerca de {{memory}} GB de memória. Todas as sessões do mu neste Mac o compartilham, inclusive as do terminal, e ele continua rodando até você pará-lo ou desativá-lo.",
+      "shared": "Todas as sessões do mu neste Mac o compartilham, inclusive as do terminal, e ele continua rodando até você pará-lo ou desativá-lo.",
       "start": "Iniciar",
       "stop": "Parar",
       "openFolder": "Abrir pasta",
@@ -261,6 +262,11 @@
         "start": "Iniciando o mude…",
         "stop": "Parando o mude…",
         "uninstall": "Desinstalando o mude…"
+      },
+      "step": {
+        "download": "Baixando o mude e verificando cada arquivo…",
+        "python": "Preparando o ambiente Python do mude…",
+        "start": "Iniciando o servidor do mude…"
       },
       "downloaded": "{{done}} de {{total}} GB",
       "checking": "Verificando os arquivos baixados…",
@@ -284,7 +290,7 @@
       "needs": "O mude precisa de um Mac com Apple silicon, macOS 14 ou posterior e pelo menos {{ram}} GB de memória.",
       "retry": "Tentar de novo",
       "guide": {
-        "consent": "Baixa cerca de {{download}} GB, mais um ambiente Python de cerca de {{python}} GB. Roda neste Mac e usa cerca de {{memory}} GB de memória enquanto roda.",
+        "consent": "{{download}} GB para baixar, mais um ambiente Python de {{python}} GB. Usa cerca de {{memory}} GB de memória enquanto roda.",
         "instead": "O mu usa o juiz hospedado no lugar dele.",
         "ready": "O mude está rodando e é o seu juiz.",
         "readyStopped": "O mude é o seu juiz. O servidor dele inicia na sua próxima sessão do mu."

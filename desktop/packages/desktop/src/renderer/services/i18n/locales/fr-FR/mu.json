@@ -164,7 +164,7 @@
       "mude": {
         "title": "mude",
         "tag": "Sur ce Mac",
-        "description": "Le modèle juge de mu, sur ce Mac : sans clé et sans coût par appel. Il faut une puce Apple, et il utilise environ {{memory}} Go de mémoire pendant qu’il tourne."
+        "description": "Le modèle juge de mu, affiné spécialement pour juger, avec une capacité de jugement à l’état de l’art. Il tourne sur ce Mac : sans clé et sans coût par appel. Il faut une puce Apple."
       },
       "local": {
         "title": "Laya local",
@@ -248,6 +248,7 @@
         "stopped": "Arrêté"
       },
       "resources": "Pendant qu’il tourne, mude utilise environ {{memory}} Go de mémoire. Toutes les sessions mu de ce Mac le partagent, y compris celles du terminal, et il reste en marche jusqu’à ce que vous l’arrêtiez ou le désactiviez.",
+      "shared": "Toutes les sessions mu de ce Mac le partagent, y compris celles du terminal, et il reste en marche jusqu’à ce que vous l’arrêtiez ou le désactiviez.",
       "start": "Démarrer",
       "stop": "Arrêter",
       "openFolder": "Ouvrir le dossier",
@@ -261,6 +262,11 @@
         "start": "Démarrage de mude…",
         "stop": "Arrêt de mude…",
         "uninstall": "Désinstallation de mude…"
+      },
+      "step": {
+        "download": "Téléchargement de mude et vérification de chaque fichier…",
+        "python": "Préparation de l’environnement Python de mude…",
+        "start": "Démarrage du serveur de mude…"
       },
       "downloaded": "{{done}} sur {{total}} Go",
       "checking": "Vérification des fichiers téléchargés…",
@@ -284,7 +290,7 @@
       "needs": "mude a besoin d’un Mac avec puce Apple, macOS 14 ou ultérieur et au moins {{ram}} Go de mémoire.",
       "retry": "Réessayer",
       "guide": {
-        "consent": "Environ {{download}} Go à télécharger, plus un environnement Python d’environ {{python}} Go. Il tourne sur ce Mac et utilise environ {{memory}} Go de mémoire pendant qu’il tourne.",
+        "consent": "{{download}} Go à télécharger, plus un environnement Python de {{python}} Go. Utilise environ {{memory}} Go de mémoire pendant qu’il tourne.",
         "instead": "mu utilise à la place le juge hébergé.",
         "ready": "mude tourne et c’est maintenant votre juge.",
         "readyStopped": "mude est maintenant votre juge. Son serveur démarre avec votre prochaine session mu."

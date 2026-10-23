@@ -164,7 +164,7 @@
       "mude": {
         "title": "mude",
         "tag": "この Mac 上",
-        "description": "mu 独自の判定モデルをこの Mac で動かします。キー不要で、呼び出しごとの費用もかかりません。Apple シリコンが必要で、動作中は約 {{memory}} GB のメモリを使います。"
+        "description": "mu 独自の判定モデル。判定専用にファインチューニングされ、SOTA レベルの判定能力を備えています。この Mac で動作し、キー不要、呼び出しごとの費用もかかりません。Apple シリコンが必要です。"
       },
       "local": {
         "title": "ローカル Laya",
@@ -248,6 +248,7 @@
         "stopped": "停止中"
       },
       "resources": "動作中の mude は約 {{memory}} GB のメモリを使います。この Mac 上のすべての mu セッション（ターミナルのものを含む）で共有され、停止するかオフにするまで動き続けます。",
+      "shared": "mude はこの Mac 上のすべての mu セッション（ターミナルのものを含む）で共有され、停止するかオフにするまで動き続けます。",
       "start": "起動",
       "stop": "停止",
       "openFolder": "フォルダーを開く",
@@ -261,6 +262,11 @@
         "start": "mude を起動しています…",
         "stop": "mude を停止しています…",
         "uninstall": "mude をアンインストールしています…"
+      },
+      "step": {
+        "download": "mude をダウンロードし、すべてのファイルを確認しています…",
+        "python": "mude の Python 環境を準備しています…",
+        "start": "mude のサーバーを起動しています…"
       },
       "downloaded": "{{done}} / {{total}} GB",
       "checking": "ダウンロードしたファイルを確認しています…",
@@ -284,7 +290,7 @@
       "needs": "mude には Apple シリコン、macOS 14 以降、{{ram}} GB 以上のメモリを備えた Mac が必要です。",
       "retry": "再試行",
       "guide": {
-        "consent": "約 {{download}} GB のダウンロードと、約 {{python}} GB の Python 環境が必要です。この Mac で動作し、動作中は約 {{memory}} GB のメモリを使います。",
+        "consent": "{{download}} GB のダウンロードと {{python}} GB の Python 環境が必要です。動作中は約 {{memory}} GB のメモリを使います。",
         "instead": "代わりに mu はホスト型の判定器を使います。",
         "ready": "mude が動作中で、あなたの判定器になりました。",
         "readyStopped": "mude があなたの判定器になりました。サーバーは次の mu セッションの開始時に起動します。"

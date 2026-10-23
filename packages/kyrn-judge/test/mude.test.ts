@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { planLaunch, planMude, wantsMude } from "../../../kyrn/bin/mu.mjs";
 import { main, problems } from "../src/mude/command.ts";
 import { disableMude, enableMude, judgeSetting, ROUTED_AWAY } from "../src/mude/config.ts";
-import { DownloadError, downloadFiles, missingFiles } from "../src/mude/download.ts";
+import { DownloadError, downloadedBytes, downloadFiles, missingFiles } from "../src/mude/download.ts";
 import { MUDE_BYTES, MUDE_FILES, MUDE_REVISION, type MudeFile, mudeFileUrl } from "../src/mude/manifest.ts";
 import { mudePaths } from "../src/mude/paths.ts";
 
@@ -145,6 +145,19 @@ describe("downloading mude", () => {
 		await downloadFiles(options({ files: [files[1]] }));
 		expect(requests).toEqual([]);
 	});
+
+	it("counts what an interrupted download left, so a stopped install can be told from a fresh one", async () => {
+		expect(downloadedBytes(dir, files)).toBe(0);
+		writeFileSync(join(dir, "a.txt.part"), contents["a.txt"].slice(0, 1234));
+		expect(downloadedBytes(dir, files)).toBe(1234);
+		// A part longer than the file counts as the file, no more.
+		mkdirSync(join(dir, "sub"), { recursive: true });
+		writeFileSync(join(dir, "sub/b.bin.part"), `${contents["sub/b.bin"]}extra`);
+		expect(downloadedBytes(dir, files)).toBe(1234 + files[1].size);
+		rmSync(join(dir, "sub/b.bin.part"));
+		await downloadFiles(options());
+		expect(downloadedBytes(dir, files)).toBe(files[0].size + files[1].size);
+	});
 });
 
 describe("mude in mu.json", () => {
@@ -260,6 +273,7 @@ describe("mu judge mude", () => {
 		expect(status).toMatchObject({
 			type: "status",
 			installed: false,
+			downloadedBytes: 0,
 			pythonReady: false,
 			running: false,
 			enabled: false,
@@ -271,6 +285,20 @@ describe("mu judge mude", () => {
 			}),
 		).toBe(2);
 		expect(text).toContain("Unknown option");
+	});
+
+	it("reports how much of the model an install stopped part way left", async () => {
+		const ctx = context();
+		mkdirSync(ctx.paths.model, { recursive: true });
+		writeFileSync(join(ctx.paths.model, "mlx-q8.safetensors.part"), Buffer.alloc(5000));
+		writeFileSync(join(ctx.paths.model, "config.json"), Buffer.alloc(100));
+		let text = "";
+		expect(
+			await main(["status", "--json"], ctx, (chunk) => {
+				text += chunk;
+			}),
+		).toBe(0);
+		expect(JSON.parse(text.trim())).toMatchObject({ installed: false, downloadedBytes: 5100 });
 	});
 
 	it("disables nothing when mude was not the judge", async () => {

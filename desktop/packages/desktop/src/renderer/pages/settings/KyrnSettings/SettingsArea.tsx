@@ -111,13 +111,7 @@ function Area({ page: routed, feature, part, focus, onView, mu }: SettingsAreaPr
       content = <BoardModelSection draft={draft} base={base} available={mu.available} onDraft={mu.edit} />;
     else if (page === 'judges')
       content = (
-        <JudgesSection
-          draft={draft}
-          base={base}
-          onChange={mu.editSettings}
-          onKey={onKey}
-          onReload={(change) => (change ? mu.reloadWith(change) : mu.reload())}
-        />
+        <JudgesSection draft={draft} base={base} onChange={mu.editSettings} onKey={onKey} onReload={mu.refresh} />
       );
     else if (page === 'judge-order')
       content = <JudgeOrderSection draft={draft} base={base} onChange={mu.editSettings} onKey={onKey} />;

@@ -164,7 +164,7 @@
       "mude": {
         "title": "mude",
         "tag": "Auf diesem Mac",
-        "description": "Das eigene Judge-Modell von mu, auf diesem Mac: kein Schlüssel, keine Kosten pro Aufruf. Braucht Apple Silicon und belegt im Betrieb etwa {{memory}} GB Arbeitsspeicher."
+        "description": "Das eigene Judge-Modell von mu, speziell aufs Urteilen feinabgestimmt, mit Urteilsvermögen auf State-of-the-Art-Niveau. Läuft auf diesem Mac: kein Schlüssel, keine Kosten pro Aufruf. Braucht Apple Silicon."
       },
       "local": {
         "title": "Laya (lokal)",
@@ -248,6 +248,7 @@
         "stopped": "Gestoppt"
       },
       "resources": "Während mude läuft, belegt es etwa {{memory}} GB Arbeitsspeicher. Alle mu-Sitzungen auf diesem Mac teilen es sich, auch die im Terminal, und es läuft weiter, bis du es stoppst oder ausschaltest.",
+      "shared": "Alle mu-Sitzungen auf diesem Mac teilen es sich, auch die im Terminal, und es läuft weiter, bis du es stoppst oder ausschaltest.",
       "start": "Starten",
       "stop": "Stoppen",
       "openFolder": "Ordner öffnen",
@@ -261,6 +262,11 @@
         "start": "mude wird gestartet…",
         "stop": "mude wird gestoppt…",
         "uninstall": "mude wird deinstalliert…"
+      },
+      "step": {
+        "download": "mude wird heruntergeladen und jede Datei geprüft…",
+        "python": "Die Python-Umgebung für mude wird eingerichtet…",
+        "start": "Der Server von mude wird gestartet…"
       },
       "downloaded": "{{done}} von {{total}} GB",
       "checking": "Heruntergeladene Dateien werden geprüft…",
@@ -284,7 +290,7 @@
       "needs": "mude braucht einen Mac mit Apple Silicon, macOS 14 oder neuer und mindestens {{ram}} GB Arbeitsspeicher.",
       "retry": "Erneut versuchen",
       "guide": {
-        "consent": "Lädt etwa {{download}} GB herunter, dazu eine Python-Umgebung von etwa {{python}} GB. Läuft auf diesem Mac und belegt im Betrieb etwa {{memory}} GB Arbeitsspeicher.",
+        "consent": "{{download}} GB zum Herunterladen, dazu eine Python-Umgebung mit {{python}} GB. Belegt im Betrieb etwa {{memory}} GB Arbeitsspeicher.",
         "instead": "mu nutzt stattdessen den gehosteten Judge.",
         "ready": "mude läuft und ist jetzt dein Judge.",
         "readyStopped": "mude ist jetzt dein Judge. Sein Server startet mit deiner nächsten mu-Sitzung."

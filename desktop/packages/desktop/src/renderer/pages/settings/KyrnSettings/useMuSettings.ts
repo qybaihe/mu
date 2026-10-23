@@ -38,13 +38,20 @@ export type MuSettings = {
   saving: boolean;
   /** Why loading or saving failed; `stale` when another program changed the files since they were loaded. */
   error?: MuError & { stale: boolean };
-  /** Counts discards and loads: sections are drawn afresh on each, so no field keeps a choice that was dropped. */
+  /**
+   * Counts discards and loads (not refreshes): sections are drawn afresh on each, so no field keeps a choice that was
+   * dropped.
+   */
   generation: number;
   edit: (change: (draft: Draft) => Draft) => void;
   editSettings: (change: (settings: KyrnSettings) => KyrnSettings) => void;
   reload: () => void;
-  /** Loads the files again, then makes `change` in the new draft (unsaved, as an edit is). */
-  reloadWith: (change: (settings: KyrnSettings) => KyrnSettings) => void;
+  /**
+   * After mu's own command changed the files (mude), with nothing unsaved: loads them again without drawing the
+   * sections afresh (unlike `reload`), so what a page shows of the command stays, then makes `change` in the new draft
+   * (unsaved, as an edit is).
+   */
+  refresh: (change?: (settings: KyrnSettings) => KyrnSettings) => void;
   /**
    * After mu's own command changed the files (mude): reads them again and keeps what the draft changed (see
    * `rebaseDraft`). Answers with the new base and draft, for a save that must not wait for the next render; undefined
@@ -72,7 +79,7 @@ export function useMuSettings(): MuSettings {
   const latest = useRef<{ base?: KyrnSettings; draft?: Draft }>({});
   latest.current = { base, draft };
 
-  const load = useCallback((change?: (settings: KyrnSettings) => KyrnSettings) => {
+  const load = useCallback((redraw: boolean, change?: (settings: KyrnSettings) => KyrnSettings) => {
     setLoading(true);
     setError(undefined);
     void kyrnBridge.settings
@@ -82,7 +89,7 @@ export function useMuSettings(): MuSettings {
       .then((value) => {
         setBase(value);
         setDraft(change ? { ...newDraft(value), settings: change(value) } : newDraft(value));
-        setGeneration((now) => now + 1);
+        if (redraw) setGeneration((now) => now + 1);
       })
       .catch((cause: unknown) => setError({ ...toMuError(cause), stale: false }))
       .finally(() => setLoading(false));
@@ -93,8 +100,8 @@ export function useMuSettings(): MuSettings {
       .then(setAvailable)
       .catch(() => setAvailable(NOTHING));
   }, []);
-  const reload = useCallback(() => load(), [load]);
-  const reloadWith = useCallback((change: (settings: KyrnSettings) => KyrnSettings) => load(change), [load]);
+  const reload = useCallback(() => load(true), [load]);
+  const refresh = useCallback((change?: (settings: KyrnSettings) => KyrnSettings) => load(false, change), [load]);
   useEffect(reload, [reload]);
 
   const rebase = useCallback(async (judge: 'files' | 'draft') => {
@@ -165,7 +172,7 @@ export function useMuSettings(): MuSettings {
     edit,
     editSettings,
     reload,
-    reloadWith,
+    refresh,
     rebase,
     discard,
     save,

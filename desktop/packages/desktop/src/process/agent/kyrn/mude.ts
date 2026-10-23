@@ -83,10 +83,12 @@ export function parseStatus(value: unknown): MudeStatus | undefined {
   if (typeof row.supported !== 'boolean' || typeof row.installed !== 'boolean') return undefined;
   const pid = count(row.pid);
   const memory = count(row.memoryBytes);
+  const downloaded = count(row.downloadedBytes);
   return {
     supported: row.supported,
     problems: array(row.problems).map(text).filter(Boolean),
     installed: row.installed,
+    ...(downloaded > 0 ? { downloadedBytes: downloaded } : {}),
     pythonReady: row.pythonReady === true,
     running: row.running === true,
     ready: row.ready === true,

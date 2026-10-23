@@ -111,6 +111,32 @@ export function missingFiles(dir: string, files: readonly MudeFile[]): MudeFile[
 	return files.filter((file) => !knownGood(dir, file, verified));
 }
 
+/**
+ * Bytes of `files` already on disk: checked files, whole files not checked yet, and what an interrupted download left
+ * in `<name>.part`. Above 0 and below the files' size, an install stopped part way, and the next one goes on from there.
+ */
+export function downloadedBytes(dir: string, files: readonly MudeFile[]): number {
+	const verified = readVerified(dir);
+	let bytes = 0;
+	for (const file of files) {
+		if (knownGood(dir, file, verified)) {
+			bytes += file.size;
+			continue;
+		}
+		const target = join(dir, file.path);
+		bytes += Math.min(file.size, Math.max(sizeOf(target), sizeOf(`${target}.part`)));
+	}
+	return bytes;
+}
+
+function sizeOf(path: string): number {
+	try {
+		return statSync(path).size;
+	} catch {
+		return 0;
+	}
+}
+
 export class DownloadError extends Error {
 	readonly kind: "access" | "network" | "integrity" | "aborted";
 

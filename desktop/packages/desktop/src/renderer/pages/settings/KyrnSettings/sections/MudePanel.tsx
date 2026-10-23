@@ -1,10 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Checkbox, Modal, Progress, Switch } from '@arco-design/web-react';
+import { Down, Up } from '@icon-park/react';
+import classNames from 'classnames';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { mutate } from 'swr';
 import { kyrnBridge, unwrap } from '@/common/kyrn/bridge';
 import {
+  DOWNLOAD_GB_BYTES,
   MUDE_CHANGES_SETTINGS,
   MUDE_DOWNLOAD_GB,
   MUDE_MEMORY_GB,
@@ -13,6 +16,7 @@ import {
   type MudeAction,
   type MudeState,
   type MudeStatus,
+  type MudeStep,
   type MudeTask,
 } from '@/common/kyrn/mude';
 import { describeTier } from '@/renderer/components/kernel/kernelSummary';
@@ -26,10 +30,13 @@ import { StatusDot, type DotState } from '../providers/parts';
 import { recheckMu } from '../recheck';
 import styles from './sections.module.css';
 
+/** Memory is counted in binary gigabytes; downloads in decimal ones (DOWNLOAD_GB_BYTES), as Hugging Face gives them. */
 const GB = 1024 ** 3;
 /** How often the state is read while a command runs, and while the server is starting. */
 const BUSY_POLL_MS = 1000;
 const STARTING_POLL_MS = 3000;
+/** The steps that take a while, each said in the app's words while it runs; the others are said by what runs. */
+const LONG_STEPS: ReadonlySet<MudeStep> = new Set(['download', 'python', 'start']);
 
 /**
  * The last command whose change to mu.json was handed on: kept across mounts, so a command that ended while no page
@@ -123,6 +130,19 @@ export const mudeInstalled = (status: MudeStatus | undefined): boolean =>
   Boolean(status?.supported && status.installed && status.pythonReady);
 
 /**
+ * An install stopped part way, not one never started: some of the model is on disk (a partly downloaded file
+ * included), or its Python environment is set up, but not all of it. Installing again goes on from there.
+ */
+const mudeUnfinished = (status: MudeStatus | undefined): boolean =>
+  Boolean(
+    status && !mudeInstalled(status) && (status.installed || status.pythonReady || (status.downloadedBytes ?? 0) > 0)
+  );
+
+/** The last install was cancelled or failed: what it says of itself already tells that it did not finish. */
+const installEnded = (task: MudeTask | undefined): boolean =>
+  task?.command === 'install' && (task.phase === 'cancelled' || task.phase === 'failed');
+
+/**
  * Why this machine cannot run mude: one plain sentence, and the command's reasons under it. `guide`: in the first-run
  * guide, which also says what mu does instead.
  */
@@ -168,6 +188,16 @@ export default function MudePanel({ mude, unsaved }: MudePanelProps) {
   const language = i18n.language;
   const installed = mudeInstalled(status);
   const supported = status?.supported !== false;
+  // The line under the status: what it takes while it runs (where the status does not already say what it uses), that
+  // an install stopped part way (unless how it ended says so already), or what installing takes.
+  let hint: string | undefined;
+  if (installed)
+    hint =
+      status?.running && status.ready && status.memoryBytes
+        ? t('mu.judges.mude.shared')
+        : t('mu.judges.mude.resources', { memory: formatNumber(MUDE_MEMORY_GB, language) });
+  else if (mudeUnfinished(status)) hint = installEnded(task) ? undefined : t('mu.judges.mude.unfinished');
+  else hint = consentLine(t, language);
 
   const install = () => {
     let localOnly = false;
@@ -211,15 +241,13 @@ export default function MudePanel({ mude, unsaved }: MudePanelProps) {
           <span>{statusText(t, status, installed, language)}</span>
         </div>
       ) : null}
-      {supported && status && !busy ? (
-        <div className={styles.choiceHint}>
-          {installed
-            ? t('mu.judges.mude.resources', { memory: formatNumber(MUDE_MEMORY_GB, language) })
-            : status.installed || status.pythonReady
-              ? t('mu.judges.mude.unfinished')
-              : consentLine(t, language)}
+      {supported && status && !busy && hint ? (
+        <div className={styles.choiceHint} data-testid='mu-mude-hint'>
+          {hint}
         </div>
       ) : null}
+      {/* How the last command ended, above the button that runs it again. */}
+      <Failure state={state} />
       <div className={styles.localJudgeActions}>
         {busy && task?.command === 'install' ? (
           <Button size='small' data-testid='mu-mude-cancel' onClick={() => void run('cancel')}>
@@ -267,7 +295,6 @@ export default function MudePanel({ mude, unsaved }: MudePanelProps) {
           {t('mu.judges.mude.saveFirst')}
         </div>
       ) : null}
-      <Failure state={state} />
       {problem ? (
         <div className={styles.localJudgeProblem} role='alert'>
           <MuErrorMessage error={problem} />
@@ -357,11 +384,18 @@ export function MudeSetup({ mude, judged }: MudeSetupProps) {
         </>
       ) : (
         <>
-          <div className={styles.choiceHint}>
+          {mudeUnfinished(status) && !installEnded(task) ? (
+            <div className={styles.choiceHint} data-testid='mu-mude-unfinished'>
+              {t('mu.judges.mude.unfinished')}
+            </div>
+          ) : null}
+          <div className={styles.choiceHint} data-testid='mu-mude-hint'>
             {installed
               ? t('mu.judges.mude.resources', { memory: formatNumber(MUDE_MEMORY_GB, language) })
               : consentLine(t, language)}
           </div>
+          {/* A cancelled install, above the button that goes on with it. */}
+          <Failure state={state} />
           <div className={styles.localJudgeActions}>
             <Button
               size='small'
@@ -372,7 +406,6 @@ export function MudeSetup({ mude, judged }: MudeSetupProps) {
               {t(installed ? 'mu.judges.mude.use' : 'mu.judges.mude.install')}
             </Button>
           </div>
-          <Failure state={state} />
         </>
       )}
       {problem ? (
@@ -385,20 +418,23 @@ export function MudeSetup({ mude, judged }: MudeSetupProps) {
 }
 
 /**
- * What runs: the command's sentence for its step and the last Python lines; an install shows its progress too, the
- * download's share of it (full once the download is done and the later steps run).
+ * What runs, in the app language: the step that takes a while (the download, the Python environment, the server's
+ * start), else the command; and the last Python lines. An install shows its progress too, the download's share of it
+ * (full once the download is done and the later steps run), in decimal gigabytes as the consent gives the size. The
+ * command's own English sentence for the step is not shown: it says the size a second time, in other units.
  */
 function Working({ task }: { task: MudeTask }) {
   const { t, i18n } = useTranslation();
-  const { download } = task;
-  const label = task.message || t(`mu.judges.mude.working.${task.command}`);
+  const { download, step } = task;
+  const label =
+    step && LONG_STEPS.has(step) ? t(`mu.judges.mude.step.${step}`) : t(`mu.judges.mude.working.${task.command}`);
   const downloaded = download && download.total > 0 ? Math.floor((download.done / download.total) * 100) : 0;
-  const percent = task.step && task.step !== 'download' ? 100 : Math.min(100, downloaded);
+  const percent = step && step !== 'download' ? 100 : Math.min(100, downloaded);
   return (
     <>
       <div className={styles.localJudgeStatus} data-testid='mu-mude-status'>
         <StatusDot state='busy' label={label} />
-        <span dir={task.message ? 'ltr' : undefined}>{label}</span>
+        <span>{label}</span>
       </div>
       {task.command === 'install' ? (
         <div data-testid='mu-mude-progress'>
@@ -408,8 +444,8 @@ function Working({ task }: { task: MudeTask }) {
               {download.checking
                 ? t('mu.judges.mude.checking')
                 : t('mu.judges.mude.downloaded', {
-                    done: gb(download.done / GB, i18n.language),
-                    total: gb(download.total / GB, i18n.language),
+                    done: gb(download.done / DOWNLOAD_GB_BYTES, i18n.language),
+                    total: gb(download.total / DOWNLOAD_GB_BYTES, i18n.language),
                   })}
             </div>
           ) : null}
@@ -424,9 +460,14 @@ function Working({ task }: { task: MudeTask }) {
   );
 }
 
-/** Why the last command failed, or that the install was cancelled; why the status could not be read. */
+/**
+ * Why the last command failed, or that the install was cancelled; why the status could not be read. The command's own
+ * output stays folded behind "Error details": a few lines of English that would push the rest (the guide's Back and
+ * Next) out of a small window.
+ */
 function Failure({ state }: { state: MudeState }) {
   const { t } = useTranslation();
+  const [details, setDetails] = useState(false);
   const { task } = state;
   if (task?.phase === 'cancelled')
     return (
@@ -444,9 +485,24 @@ function Failure({ state }: { state: MudeState }) {
         </div>
         {/* The command's own words, in English, under a sentence that does not already say it all. */}
         {task.error?.message && kind !== 'access' ? (
-          <pre className={styles.localJudgeOutput} dir='ltr' data-testid='mu-mude-error'>
-            {[...task.log.slice(-4), task.error.message].join('\n')}
-          </pre>
+          <>
+            <Button
+              size='mini'
+              type='text'
+              className={styles.mudeDetails}
+              aria-expanded={details}
+              data-testid='mu-mude-details'
+              icon={details ? <Up theme='outline' size='12' /> : <Down theme='outline' size='12' />}
+              onClick={() => setDetails((open) => !open)}
+            >
+              {t('common.error_details')}
+            </Button>
+            {details ? (
+              <pre className={styles.localJudgeOutput} dir='ltr' data-testid='mu-mude-error'>
+                {[...task.log.slice(-4), task.error.message].join('\n')}
+              </pre>
+            ) : null}
+          </>
         ) : null}
       </>
     );
@@ -477,6 +533,7 @@ function Consent({ fallback, onLocalOnly }: { fallback: string[]; onLocalOnly: (
       <div>{t('mu.judges.mude.consent.after')}</div>
       <div className={styles.choiceField}>
         <Checkbox
+          className={styles.mudeConsentCheck}
           checked={localOnly}
           onChange={(next: boolean) => {
             setLocalOnly(next);
@@ -485,8 +542,18 @@ function Consent({ fallback, onLocalOnly }: { fallback: string[]; onLocalOnly: (
         >
           {t('mu.judges.mude.localOnly')}
         </Checkbox>
-        <div className={styles.choiceHint}>
-          {localOnlyText(t, localOnly, fallback.length ? fallback : ['jev'], language)}
+        {/* Both explanations take their place, the one not chosen unseen: ticking the box never resizes the dialog. */}
+        <div className={styles.mudeConsentHelp}>
+          {[false, true].map((only) => (
+            <div
+              key={String(only)}
+              className={classNames(styles.choiceHint, only !== localOnly && styles.mudeConsentHidden)}
+              aria-hidden={only !== localOnly}
+              data-testid={only === localOnly ? 'mu-mude-consent-help' : undefined}
+            >
+              {localOnlyText(t, only, fallback.length ? fallback : ['jev'], language)}
+            </div>
+          ))}
         </div>
       </div>
     </div>

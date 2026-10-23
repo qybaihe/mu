@@ -4,7 +4,6 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { CLM_DEFAULT_ADDRESS, CLM_DEFAULT_MODEL } from '@/common/kyrn/clm';
 import { isPlainRemoteEndpoint, isSafeEndpoint } from '@/common/kyrn/models';
-import { MUDE_MEMORY_GB } from '@/common/kyrn/mude';
 import type { JudgeSettings, KyrnSettings } from '@/common/kyrn/types';
 import MuSelect from '@/renderer/components/base/MuSelect';
 import OneLine from '@/renderer/components/settings/OneLine';
@@ -45,7 +44,8 @@ type JudgesSectionProps = {
   onKey: (variable: string, value: string) => void;
   /**
    * mu's own command changed mu.json (mude): the settings are read again, and `change` made in the new draft (a choice
-   * picked while mude was the judge, made once its command took mude out of the order).
+   * picked while mude was the judge, made once its command took mude out of the order). The page stays as it is
+   * meanwhile, not drawn afresh: the choice open and what mude's body says of the command stay in sight.
    */
   onReload?: (change?: (settings: KyrnSettings) => KyrnSettings) => void;
 };
@@ -108,15 +108,19 @@ export function JudgeChoices({ draft, base, onChange, onKey, onReload }: JudgeCh
   kept.current = { unsaved, onReload };
   // A choice to make once mude's `disable` has ended.
   const after = useRef<JudgeChoice | undefined>(undefined);
+  // mude picked but not (yet) the judge: its body shows the install, or why it could not be made the judge.
+  const [picked, setPicked] = useState<JudgeChoice>();
   const mude = useMude((task) => {
     const next = after.current;
     after.current = undefined;
+    // An install that was cancelled or failed keeps mude's body open, with what it says, also when it was opened
+    // because the install ran (not picked); an uninstall leaves the judges it brought back.
+    if (task.command === 'install' && task.phase !== 'done') setPicked('mude');
+    if (task.command === 'uninstall' && task.phase === 'done') setPicked(undefined);
     // Unsaved changes stay: their save is then refused as stale, and the page offers to reload.
     if (kept.current.unsaved) return;
     kept.current.onReload?.(next && task.phase === 'done' ? (now) => choose(now, next) : undefined);
   });
-  // mude picked but not (yet) the judge: its body shows the install, or why it could not be made the judge.
-  const [picked, setPicked] = useState<JudgeChoice>();
   const saved = choiceOf(settings);
   // While one of mude's commands runs (an install started before this page was opened too), its progress shows.
   const current = picked ?? (mude.busy ? 'mude' : saved);
@@ -177,16 +181,13 @@ type TileProps = {
 
 /** One of the judge choices, worded from the mu i18n module. */
 export function JudgeChoiceTile({ choice, active, onPick, disabled, description, children }: TileProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   return (
     <ChoiceTile
       testId={`mu-judge-choice-${choice}`}
       title={t(`mu.judges.choices.${choice}.title`)}
       tag={t(`mu.judges.choices.${choice}.tag`)}
-      description={
-        description ??
-        t(`mu.judges.choices.${choice}.description`, { memory: formatNumber(MUDE_MEMORY_GB, i18n.language) })
-      }
+      description={description ?? t(`mu.judges.choices.${choice}.description`)}
       active={active}
       disabled={disabled}
       onPick={onPick}
