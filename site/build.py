@@ -545,40 +545,55 @@ def decision_groups(manifest, lang, D, questions, D_en):
 # ---- mubench ----
 
 def mubench_boards(bench, B):
-    """The mubench page's two boards in one language: the models best first, every number formatted, the best score in
-    each column found, and the scores of a capability with few items or an unstable score marked (bench["few"]: fewer
-    items than that, items from fewer tasks, or mu right more often than that with no decision model)."""
+    """The mubench page's two boards in one language, each as a score table and an accuracy table: the models best
+    score first, every number formatted, the best in each column found, and the cells of a capability with few items or
+    an unstable score marked (bench["few"]: fewer items than that, items from fewer tasks, or mu right more often than
+    that with no decision model)."""
     few = bench["few"]
+
+    def best(values):
+        """The top value of a column, when it stands out: not when every model ties."""
+        return max(values) if values and len(set(values)) > 1 else None
+
     boards = []
     for key in ("real", "constructed"):
         board = bench["boards"][key]
         cols = []
         for cap in ["overall", *bench["capabilities"]]:
             c = board[cap]
-            scores = c["scores"] or {}
-            unstable = bool(scores) and cap != "overall" and (
+            scores, acc = c["scores"] or {}, c["acc"] or {}
+            unstable = cap != "overall" and (
                 c["items"] < few["items"] or c.get("tasks", few["tasks"]) < few["tasks"] or (c["baseline"] or 0) > few["baseline"])
             cols.append({
-                "key": cap, "name": B["overall"] if cap == "overall" else B["caps"][cap], "scores": scores, "few": unstable,
-                "best": max(scores.values(), default=None), "zero": "0" if scores else "—",
-                "base": "—" if c["baseline"] is None else f"{c['baseline']:.1f}%",
+                "key": cap, "name": B["overall"] if cap == "overall" else B["caps"][cap], "scores": scores, "acc": acc, "few": unstable,
+                "best": best(list(scores.values())), "best_acc": best(list(acc.values())),
+                # mu's own accuracy with no decision model, shown where the models' accuracies are.
+                "base": f"{c['baseline']:.1f}%" if acc else "—",
                 "count": f"{c['items']:,}" + (f" ({c['tasks']})" if "tasks" in c else ""),
                 # A capability's weight in the overall score; the overall column shows what they add up to.
                 "weight": f"{sum(board[k]['weight'] for k in bench['capabilities']) if cap == 'overall' else c['weight']:.1f}%",
             })
         overall = board["overall"]
-        rows, intervals = [], []
+        rows, acc_rows, intervals = [], [], []
         for m in sorted(bench["models"], key=lambda m: -overall["scores"][m["id"]]):
-            cells = []
-            for c in cols:
-                v = c["scores"].get(m["id"])
-                cells.append({"text": "—" if v is None else f"{v:.1f}".replace("-", "−"), "best": v is not None and v == c["best"], "few": c["few"]})
             name = B["names"].get(m["id"], m["name"])
+            cells, acc_cells = [], []
+            for c in cols:
+                v, a = c["scores"].get(m["id"]), c["acc"].get(m["id"])
+                cells.append({"text": "—" if v is None else f"{v:.1f}".replace("-", "−"), "best": v is not None and v == c["best"],
+                              "few": c["few"] and v is not None})
+                acc_cells.append({"text": "—" if a is None else f"{a:.1f}%", "best": a is not None and a == c["best_acc"],
+                                  "few": c["few"] and a is not None})
             rows.append({"name": name, "cells": cells})
+            acc_rows.append({"name": name, "cells": acc_cells})
             lo, hi = overall["ci"][m["id"]]
             intervals.append(f"{name} {overall['scores'][m['id']]:.1f} ({lo:.1f}–{hi:.1f})")
-        boards.append({"key": key, "cols": cols, "rows": rows, "total": f"{overall['items']:,}", "tasks": overall.get("tasks"),
-                       "intervals": B["list_sep"].join(intervals)})
+        boards.append({"key": key, "cols": cols, "rows": rows, "acc_rows": acc_rows, "total": f"{overall['items']:,}",
+                       "tasks": overall.get("tasks"), "intervals": B["list_sep"].join(intervals),
+                       "accuracies": B["list_sep"].join(
+                           [f"{B['zero_row']} {overall['baseline']:.1f}% ({overall['acc_ci']['baseline'][0]:.1f}–{overall['acc_ci']['baseline'][1]:.1f})"]
+                           + [f"{B['names'].get(m['id'], m['name'])} {overall['acc'][m['id']]:.1f}% ({overall['acc_ci'][m['id']][0]:.1f}–{overall['acc_ci'][m['id']][1]:.1f})"
+                              for m in sorted(bench["models"], key=lambda m: -overall["scores"][m["id"]])])})
     return boards
 
 

@@ -143,7 +143,13 @@
 .mb-board tfoot th[scope="row"] { color: var(--muted); font-size: 13px; font-weight: 500; }
 .mb-board tfoot tr:first-child > * { border-top: 1px solid var(--line-strong); }
 .mb-board tfoot tr:last-child > * { border-bottom: 0; }
-.mb-mark { margin-left: 2px; font-size: 0.78em; font-weight: 600; color: var(--judge); }
+.mb-table-note { max-width: 840px; margin: 28px 0 0; font-size: 14px; color: var(--muted); }
+.mb-table-note a { color: var(--text); text-underline-offset: 3px; text-decoration-color: var(--line-strong); }
+.mb-table-note + .mb-board { margin-top: 14px; }
+/* The accuracy board's first row: mu with no decision model, what the models are measured against. */
+.mb-board .mb-base > * { border-bottom: 1px solid var(--line-strong); color: var(--muted); font-size: 14px; }
+.mb-board .mb-base th[scope="row"] { color: var(--muted); font-weight: 500; }
+.mb-board tbody .mb-base .mb-overall { color: var(--muted); font-size: 14.5px; } font-size: 0.78em; font-weight: 600; color: var(--judge); }
 .mb-notes { max-width: 840px; margin: 16px 0 0; padding: 0; list-style: none; font-size: 13.5px; color: var(--muted); }
 .mb-notes li + li { margin-top: 4px; }
 .mb-notes .mb-mark { display: inline-block; width: 1.1em; margin: 0; font-size: 1em; }

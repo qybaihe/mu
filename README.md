@@ -213,6 +213,15 @@ mubench is mu's benchmark for decision models. On its main board, every item is 
   </picture>
 </p>
 
+Decision accuracy is a separate, plainer measure: the share of checks a model gets right, every check counting the same whatever its mistakes cost. The first bar in each panel is mu with no decision model.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/mubench/accuracy-en-dark.svg">
+    <img src="docs/images/mubench/accuracy-en-light.svg" width="880" alt="mubench 1.0: decision accuracy, with 95% intervals. Main board, 3,193 requests from real coding sessions on open-source repositories: No decision model 78.0% (75.9–80.2); mude 1.0 91.5% (89.6–93.3); Jev 1.14 90.1% (88.9–91.3); Jev 1.13 89.4% (87.7–91.1); d3-nano (original) 83.5% (82.1–84.9). Sub-board, 1,655 constructed scenarios: No decision model 44.5% (42.8–46.2); mude 1.0 92.1% (91.1–93.1); Jev 1.14 91.8% (90.8–92.8); Jev 1.13 91.1% (90.0–92.0); d3-nano (original) 80.1% (78.6–81.7).">
+  </picture>
+</p>
+
 ## How mu is built
 
 <p align="center">

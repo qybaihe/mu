@@ -182,6 +182,15 @@ mubench 是 mu 為決策模型做的評測。主榜的每一道題，都是 mu �
   </picture>
 </p>
 
+決策正確率是另一個更直白的指標：模型答對的檢查項占比，每個檢查項分量相同，不管答錯的代價多大。每組第一根長條是不用決策模型的 mu。
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../images/mubench/accuracy-zh-dark.svg">
+    <img src="../images/mubench/accuracy-zh-light.svg" width="880" alt="mubench 1.0 決策正確率，含 95% 區間。主榜，開源儲存庫上真實程式設計工作階段裡的 3,193 道請求：不用決策模型 78.0% (75.9–80.2)；mude 1.0 91.5% (89.6–93.3)；Jev 1.14 90.1% (88.9–91.3)；Jev 1.13 89.4% (87.7–91.1)；d3-nano 原版 83.5% (82.1–84.9)。副榜，1,655 個構造情境：不用決策模型 44.5% (42.8–46.2)；mude 1.0 92.1% (91.1–93.1)；Jev 1.14 91.8% (90.8–92.8)；Jev 1.13 91.1% (90.0–92.0)；d3-nano 原版 80.1% (78.6–81.7)。">
+  </picture>
+</p>
+
 ## 實測
 
 下面的數字來自儲存庫自帶的回放腳本 [`kyrn/spikes/judge-bench/test-log-replay.ts`](../../kyrn/spikes/judge-bench/test-log-replay.ts)。方法和完整表格見 [kyrn/docs/09-test-log-admission.md](../../kyrn/docs/09-test-log-admission.md)（簡體中文）。
