@@ -17,10 +17,13 @@ import {
 	closeSync,
 	createReadStream,
 	existsSync,
+	fsyncSync,
 	mkdirSync,
 	openSync,
 	readdirSync,
 	readSync,
+	renameSync,
+	rmSync,
 	type Stats,
 	statSync,
 	writeFileSync,
@@ -1123,15 +1126,40 @@ export class SessionManager {
 		}
 	}
 
-	private _rewriteFile(): void {
+	private _rewriteFile(entries: FileEntry[] = this.fileEntries): void {
 		if (!this.persist || !this.sessionFile) return;
-		const fd = openSync(this.sessionFile, "w");
+
+		// Rewrite through a temporary file so a crash or write failure cannot leave
+		// the session file truncated or partially written. The temporary file lives
+		// next to the session file, making rename atomic on the same filesystem.
+		const tempFile = `${this.sessionFile}.${randomUUID()}.tmp`;
+		let fd: number | undefined;
 		try {
-			for (const entry of this.fileEntries) {
+			fd = openSync(tempFile, "wx");
+			for (const entry of entries) {
 				writeFileSync(fd, `${JSON.stringify(entry)}\n`);
 			}
-		} finally {
+			fsyncSync(fd);
 			closeSync(fd);
+			fd = undefined;
+			renameSync(tempFile, this.sessionFile);
+		} catch (error) {
+			if (fd !== undefined) {
+				try {
+					closeSync(fd);
+				} catch {
+					// Preserve the original write error.
+				}
+				fd = undefined;
+			}
+			try {
+				rmSync(tempFile, { force: true });
+			} catch {
+				// Preserve the original write error.
+			}
+			throw error;
+		} finally {
+			if (fd !== undefined) closeSync(fd);
 		}
 	}
 
@@ -1165,25 +1193,17 @@ export class SessionManager {
 	 * closing pi without chatting leaves no file behind. Starting at the user message (not the
 	 * first assistant reply) keeps the prompt on disk if the first turn never completes (#10000).
 	 */
-	private _hasConversation(): boolean {
-		return this.fileEntries.some(
-			(e) => e.type === "message" && (e.message.role === "user" || e.message.role === "assistant"),
-		);
+	private _hasConversation(entries: FileEntry[] = this.fileEntries): boolean {
+		return entries.some((e) => e.type === "message" && (e.message.role === "user" || e.message.role === "assistant"));
 	}
 
 	_persist(entry: SessionEntry): void {
 		if (!this.persist || !this.sessionFile) return;
 
 		if (!this.flushed) {
-			if (!this._hasConversation()) return;
-			const fd = openSync(this.sessionFile, "wx");
-			try {
-				for (const e of this.fileEntries) {
-					writeFileSync(fd, `${JSON.stringify(e)}\n`);
-				}
-			} finally {
-				closeSync(fd);
-			}
+			const entries = [...this.fileEntries, entry];
+			if (!this._hasConversation(entries)) return;
+			this._rewriteFile(entries);
 			this.flushed = true;
 		} else {
 			appendFileSync(this.sessionFile, `${JSON.stringify(entry)}\n`);
@@ -1207,14 +1227,15 @@ export class SessionManager {
 
 	/** The reserved id when there is one to spend, else a new one. */
 	private takeEntryId(reserved: string | undefined): string {
-		return reserved !== undefined && this.reservedIds.delete(reserved) ? reserved : this.newId();
+		return reserved !== undefined && this.reservedIds.has(reserved) ? reserved : this.newId();
 	}
 
 	private _appendEntry(entry: SessionEntry): void {
+		this._persist(entry);
+		this.reservedIds.delete(entry.id);
 		this.fileEntries.push(entry);
 		this.byId.set(entry.id, entry);
 		this.leafId = entry.id;
-		this._persist(entry);
 	}
 
 	/** Append a message as child of current leaf, then advance leaf. Returns entry id.
