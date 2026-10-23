@@ -37,6 +37,12 @@ vi.mock('@/common/kyrn/bridge', () => ({
 }));
 const recheck = vi.hoisted(() => ({ recheckMu: vi.fn(async () => undefined) }));
 vi.mock('@/renderer/pages/settings/KyrnSettings/recheck', () => recheck);
+/** Whether the page runs on a Mac (the user agent says so in the app). */
+const platform = vi.hoisted(() => ({ mac: false }));
+vi.mock('@/renderer/utils/platform', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/renderer/utils/platform')>()),
+  isMacOS: () => platform.mac,
+}));
 
 const i18n = createInstance();
 beforeAll(async () => {
@@ -138,6 +144,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  platform.mac = false;
 });
 
 async function judgesPage(language = i18n) {
@@ -199,6 +206,26 @@ describe('mude as a choice of the judges page', () => {
     expect(jev).toHaveAttribute('aria-checked', 'true');
     expect(tile).toHaveAttribute('aria-checked', 'false');
     expect(bridge.mudeRun).not.toHaveBeenCalled();
+  });
+
+  it('on a Mac, stands first while its status is read, so the page does not move when it arrives', async () => {
+    platform.mac = true;
+    let answer: ((value: Result<MudeState>) => void) | undefined;
+    bridge.mudeState.mockImplementation(
+      () =>
+        new Promise<Result<MudeState>>((resolve) => {
+          answer = resolve;
+        })
+    );
+    const order = ['mu-judge-choice-mude', 'mu-judge-choice-jev', 'mu-judge-choice-local', 'mu-judge-choice-clm'];
+    const tile = await judgesPage();
+    expect(tilesOf()).toEqual(order);
+    expect(within(tile).getByText('Recommended · on this Mac')).toBeInTheDocument();
+    await act(async () => answer?.(state(NOT_INSTALLED)));
+    await settle();
+    expect(screen.getByTestId('mu-judge-choice-mude')).toBe(tile);
+    expect(tilesOf()).toEqual(order);
+    expect(within(tile).getByText('Recommended · on this Mac')).toBeInTheDocument();
   });
 
   it('on a Mac that cannot run it: why, dimmed, and never picked', async () => {
