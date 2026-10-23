@@ -12,13 +12,13 @@
 //
 //   kyrn/bin/          mu.mjs (npm's `mu`), kyrn-doctor, kyrn-ledger, kyrn-judge-local
 //   kyrn/local-judge/  the Laya sidecar's server (macOS). `mu judge setup` installs its venv and weights
-//                      into ~/.mu/local-judge, and only when asked to
+//                      into ~/.mu/local-judge, and only when asked to; mude's lock (mu judge mude install)
 //   dist/              pi's Node bundle (dist/bundle/cli.js), with its themes, assets, export templates and
 //                      the native clipboard helpers of pi-tui
 //   judge/             the judgment layer built to JavaScript, with its prompts, skills and agents, and the
 //                      manifest.json the desktop app reads its settings from; dist/auth.js is `mu auth`, the
-//                      desktop app's subscription sign-in, dist/import.js is `mu import` and dist/setup.js
-//                      is `mu setup`
+//                      desktop app's subscription sign-in, dist/import.js is `mu import`, dist/setup.js
+//                      is `mu setup` and dist/mude.js is `mu judge mude`
 //   docs/, examples/   pi's documentation, which the agent reads when asked about itself
 //   package.json       names the app mu (piConfig), so pi keeps its files in ~/.mu
 import { execFileSync, spawnSync } from "node:child_process";
@@ -290,6 +290,20 @@ async function buildJudge(out) {
 			}
 		}
 	}
+	// `mu judge mude` (src/mude) runs on a bare Node as well, in the desktop app too (Electron as Node): it takes nothing
+	// from node_modules.
+	const mude = await build({
+		...common,
+		entryPoints: { mude: join(judgeSource, "src/mude/cli.ts") },
+		outdir: join(judgeRoot, "dist"),
+	});
+	for (const output of Object.values(mude.metafile.outputs)) {
+		for (const imported of output.imports) {
+			if (imported.external && !isBuiltin(imported.path)) {
+				throw new Error(`mu judge mude leaves ${imported.path} to be found at run time; it must run on Node alone`);
+			}
+		}
+	}
 	// manifest.json is what the desktop app draws its settings from, also for an mu that came from npm.
 	for (const name of ["agents", "prompts", "skills", "themes", "manifest.json", "THIRD_PARTY_NOTICES.md"]) {
 		cpSync(join(judgeSource, name), join(judgeRoot, name), { recursive: true });
@@ -340,7 +354,7 @@ function copyLauncher(out) {
 		cpSync(join(repo, "kyrn", "bin", name), target);
 		chmodSync(target, 0o755);
 	}
-	for (const name of ["server.py", "requirements.lock.txt"]) {
+	for (const name of ["server.py", "requirements.lock.txt", "mude-requirements.lock.txt"]) {
 		cpSync(join(repo, "kyrn", "local-judge", name), join(out, "kyrn", "local-judge", name));
 	}
 }

@@ -42,13 +42,14 @@ const DEFAULT_TIMEOUT_MS: Readonly<Record<JudgeConfig["type"], number>> = {
 };
 
 /**
- * Keys for a service other than TypeSafe (Jev on OpenRouter, an address of the user's own, a CLM server). Any other
+ * Keys for a service other than TypeSafe (Jev on OpenRouter, an address of the user's own, a CLM server, mude). Any other
  * variable may hold a TypeSafe key under a name of its own, and goes to TypeSafe when no address is set.
  */
 const KEYS_FOR_ELSEWHERE: ReadonlySet<string> = new Set([
 	"MU_JUDGE_OPENROUTER_API_KEY",
 	"MU_JUDGE_CUSTOM_API_KEY",
 	"MU_JUDGE_CLM_API_KEY",
+	"MU_JUDGE_MUDE_KEY",
 ]);
 
 /** `llm:provider/model` and `classifier:provider/model` name a judge inline, without a `judges` entry. */

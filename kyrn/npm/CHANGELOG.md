@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+### Added
+
+- `mu judge mude install` makes mude, mu's own decision model, the judge on a Mac with Apple silicon (macOS 14 or later, 8 GB of memory or more). The steps:
+  - It downloads the MLX 8-bit edition from huggingface.co/qybaihe/mude-2b-mlx-8bit at a pinned revision: 31 files, 1.8 GB. Every file is checked against the sha256 pinned in `src/mude/manifest.ts`, and an interrupted download resumes with a range request.
+  - It makes a Python 3.13 environment with uv: the machine's own, or a pinned release mu downloads. The packages come from `kyrn/local-judge/mude-requirements.lock.txt` with `--require-hashes`.
+  - It starts the package's own System One server on 127.0.0.1:8790 (another free port when that one is taken) with a random key.
+  - It puts `mude` first in `tiers`. The key goes in the .env as `MU_JUDGE_MUDE_KEY`.
+- What happens when mude can't answer:
+  - By default, a decision it can't answer (its server is down, or a yes/no between 0.2 and 0.8) goes to the judges that were there before. Those are hosted, so what they read leaves the machine. `tool.description` and `tool.injection` also keep going to them (`routes`): mude did worse than Jev on the first in mu's internal benchmark, and the second was not measured.
+  - With `--local-only`, mude is the only judge.
+- Other commands: `enable [--local-only | --with-fallback]`, `disable` (back to the judges from before), `start`, `stop`, `status` and `uninstall`. `--json` prints one JSON object per line, for the desktop app.
+- A session starts the server in the background when `tiers`, a route or `MU_JUDGE` names mude, on macOS only; the desktop app's host does too, with Electron as Node. It is shared by every session like Laya's, and uses about 4 GB of memory until stopped.
+- The built-in judge `mude`: `typesafe` at 127.0.0.1:8790, key `MU_JUDGE_MUDE_KEY` (never sent to TypeSafe), 4 s timeout, trusted on every capability.
+- `mu doctor` checks the mude server's `/health` and its key.
+
 ## [0.1.14] - 2026-10-23
 
 ### Added

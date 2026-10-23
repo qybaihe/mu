@@ -41,6 +41,7 @@ export function packageEntries(input: { root: string; platform: Platform }): {
 	auth: string;
 	import: string;
 	setup: string;
+	mude: string;
 };
 export function envFilePath(input: { layout: Layout; root: string; muDir: string; platform: Platform }): string;
 export function agentDirFor(input: { env: Env; muDir: string; platform: Platform }): string;
@@ -50,6 +51,19 @@ export function wantsLaya(input: {
 	platform: Platform;
 	readFile(path: string): string;
 }): boolean;
+/** Whether the configuration asks for mude: MU_JUDGE, else `tiers` or a route in mu.json. */
+export function wantsMude(input: {
+	env: Env;
+	agentDir: string;
+	platform: Platform;
+	readFile(path: string): string;
+}): boolean;
+/** How to run `mu judge mude start --no-wait` in the background before a session (macOS only). */
+export interface MudeStart {
+	command: string;
+	args: string[];
+	env: Record<string, string>;
+}
 export function localJudgeSupport(input: { platform: Platform; env: Env; wsl?: boolean }): {
 	runs: boolean;
 	url?: string;
@@ -69,6 +83,7 @@ export interface LaunchPlan {
 	appDir: string;
 	agentDir: string;
 	startJudge: boolean;
+	startMude?: MudeStart;
 	notes: string[];
 	preface?: string;
 }
@@ -107,6 +122,7 @@ export interface HostPlan {
 	appDir: string;
 	agentDir: string;
 	startJudge: boolean;
+	startMude?: MudeStart;
 	notes: string[];
 }
 export function planHost(input: {
@@ -119,6 +135,9 @@ export function planHost(input: {
 	/** Whether the host's Node strips TypeScript types itself (process.features.typescript). Default true. */
 	stripsTypes?: boolean;
 	fs: { exists(path: string): boolean; isDir(path: string): boolean; readFile(path: string): string };
+	/** A Node to start mude's server with (the desktop app: Electron's binary), and what it needs in its environment. */
+	nodePath?: string;
+	nodeEnv?: Record<string, string>;
 }): HostPlan | { error: string };
 
 /**
@@ -134,7 +153,7 @@ export function prepareLaunch(input: PrepareLaunchInput): void;
 export function prepareLaunchAsync(input: PrepareLaunchInput): Promise<void>;
 
 export interface PrepareLaunchInput {
-	plan: Pick<HostPlan, "layout" | "appDir" | "agentDir" | "notes" | "startJudge" | "env">;
+	plan: Pick<HostPlan, "layout" | "appDir" | "agentDir" | "notes" | "startJudge" | "env"> & { startMude?: MudeStart };
 	platform: Platform;
 	root: string;
 	bin: string;
@@ -193,6 +212,17 @@ export function planImport(input: {
 	home: string;
 	execPath: string;
 	/** Whether the Node that runs mu strips TypeScript types itself (process.features.typescript). Default true. */
+	stripsTypes?: boolean;
+	fs: { exists(path: string): boolean; isDir(path: string): boolean; readFile(path: string): string };
+}): { error?: undefined; command: string; args: string[]; env: Record<string, string>; agentDir: string } | { error: string };
+
+export function planMude(input: {
+	platform: Platform;
+	env: Env;
+	argv: readonly string[];
+	root: string;
+	home: string;
+	execPath: string;
 	stripsTypes?: boolean;
 	fs: { exists(path: string): boolean; isDir(path: string): boolean; readFile(path: string): string };
 }): { error?: undefined; command: string; args: string[]; env: Record<string, string>; agentDir: string } | { error: string };

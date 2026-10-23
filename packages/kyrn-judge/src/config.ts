@@ -57,7 +57,7 @@ export interface JudgeConfig {
 export interface KyrnConfig {
 	/** Judges tried in order; each later one only sees what the earlier ones left uncertain. */
 	readonly tiers: readonly string[];
-	/** Named judges, merged over the built-in ones (`jev` and its routes, `clef`, `clm`, `laya`, `mock`). */
+	/** Named judges, merged over the built-in ones (`jev` and its routes, `clef`, `clm`, `laya`, `mude`, `mock`). */
 	readonly judges: Readonly<Record<string, JudgeConfig>>;
 	/** `default` plus per-decision overrides keyed by spec id. */
 	readonly modes: Readonly<Record<string, DecisionMode>>;
@@ -110,6 +110,20 @@ export const BUILT_IN_JUDGES: Readonly<Record<string, JudgeConfig>> = {
 	laya: {
 		type: "local",
 		profile: { capabilities: { relate: false, rate: false, meta: false, screen: false, intent: false } },
+	},
+	// mude, the decision model trained for mu's judgment layer, on this Mac (`mu judge mude install`, Apple silicon):
+	// the System One server that comes in its package, on 127.0.0.1:8790, with the key the install wrote to the .env.
+	// Trusted on every capability: on mu's own dev scenarios (an internal benchmark, not public yet) it did as well as Jev
+	// or better on relate, rate, meta, screening tool output (`tool.admission`) and promises (`turn.continue`), and on
+	// classify but for one check: a tool's description screened for injected instructions (`tool.description`), where
+	// Jev did better. Nothing measured it on injections in fetched content (`tool.injection`). So with a judge behind it,
+	// `mu judge mude` routes those two checks to that judge (`routes` in mu.json). It answers in about 0.1 s here.
+	mude: {
+		type: "typesafe",
+		baseUrl: "http://127.0.0.1:8790/v1/systemone",
+		model: "mude",
+		apiKeyEnv: "MU_JUDGE_MUDE_KEY",
+		timeoutMs: 4000,
 	},
 	mock: { type: "mock" },
 };
