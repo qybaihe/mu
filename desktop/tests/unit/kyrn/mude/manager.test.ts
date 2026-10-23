@@ -1,5 +1,8 @@
 import { EventEmitter } from 'node:events';
-import { delimiter, join } from 'node:path';
+import { posix } from 'node:path';
+
+// The manager is tested as on a Mac, whatever runs the tests: its paths are POSIX ones.
+const { delimiter, join } = posix;
 import { PassThrough } from 'node:stream';
 import { describe, expect, it, vi } from 'vitest';
 import type { MudeStatus } from '@/common/kyrn/mude';

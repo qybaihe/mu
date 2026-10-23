@@ -1,6 +1,6 @@
 import { spawn as nodeSpawn } from 'node:child_process';
 import { homedir } from 'node:os';
-import { delimiter, join } from 'node:path';
+import { posix, win32 } from 'node:path';
 import type { Readable } from 'node:stream';
 import { KyrnError } from '../../../common/kyrn/errors';
 import {
@@ -190,9 +190,12 @@ export class Mude {
       node,
       electron
     );
+    // Paths of the platform mude runs on, not of the one that runs this (the tests run everywhere).
+    const paths = platform === 'win32' ? win32 : posix;
     // A Mac app's PATH is short: where uv and Homebrew's tools usually are, for the Python environment.
-    const extra = platform === 'darwin' ? [join(home, '.local', 'bin'), '/opt/homebrew/bin', '/usr/local/bin'] : [];
-    const path = [...extra, env.PATH ?? ''].filter(Boolean).join(delimiter);
+    const extra =
+      platform === 'darwin' ? [paths.join(home, '.local', 'bin'), '/opt/homebrew/bin', '/usr/local/bin'] : [];
+    const path = [...extra, env.PATH ?? ''].filter(Boolean).join(paths.delimiter);
     return {
       command: start.command,
       args: start.args,
