@@ -11,7 +11,13 @@ mu can run end to end on [Nebius Token Factory](https://tokenfactory.nebius.com)
 
 ## Set up
 
-Until the next release of the npm package, run mu from source (Node.js 22.19 or newer):
+Until a release of the npm package includes this, install the hackathon test build (Node.js 22.19 or newer), built and checked by CI:
+
+```bash
+npm i -g https://github.com/qybaihe/mu/releases/download/nebius-hackathon-1/mu-agent-0.1.12.tgz
+```
+
+Or run mu from source:
 
 ```bash
 git clone https://github.com/qybaihe/mu && cd mu
