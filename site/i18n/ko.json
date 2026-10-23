@@ -17,6 +17,7 @@
     "nav_home": "홈",
     "nav_docs": "문서",
     "nav_decisions": "판정 지점",
+    "nav_models": "모델",
     "nav_changelog": "변경 기록",
     "nav_install": "설치",
     "nav_site": "사이트",
@@ -159,6 +160,59 @@
   "decisions": {
     "title": "판정 지점",
     "lead": "턴마다 코드와 상관없는 결정은 판정기에게 가요. 이 페이지에는 판정 지점 {points}개가 모두 있어요. 각각 무엇을 묻고, 무엇을 바꾸고, 누가 답하는지."
+  },
+  "models": {
+    "title": "모델",
+    "lead": "mude-2b는 mu의 자체 판정 모델이에요. 판정기로 쓰면 mude의 판정은 여러분의 컴퓨터에서 이뤄지고, mude가 판정하는 내용은 컴퓨터 밖으로 나가지 않아요.",
+    "mude_label": "MUDE-2B",
+    "mude_h2": "여러분의 컴퓨터에서 도는 판정기",
+    "mude_intro": "mu는 턴마다 판정기에게 작은 질문을 수십 개 물어요. mude-2b를 쓰면 이 질문에 여러분의 컴퓨터에서 답해요.",
+    "facts": [
+      { "h3": "2B 파라미터", "p": "순전파 한 번으로 판정 하나에 담긴 질문에 모두 답하고, 답마다 확률을 붙여요." },
+      { "h3": "로컬 판정", "p": "서버가 127.0.0.1에서 돌아요. 판정하는 내용은 컴퓨터 밖으로 나가지 않아요." },
+      { "h3": "MIT 라이선스", "p": "두 버전 모두 Hugging Face에서 무료로 내려받을 수 있어요." }
+    ],
+    "downloads_h3": "Hugging Face에서 받기",
+    "full_p": "전체 모델: bf16, PyTorch, 약 4.0GB. CUDA GPU를 권장해요.",
+    "mac_p": "Mac 버전: MLX, 8비트, 내려받는 크기 1.8GB. mu가 설치하는 게 이 버전이에요.",
+    "install_label": "설치",
+    "install_h2": "Mac에서는 명령 하나로",
+    "install_intro": "원클릭 설치는 지금은 Apple 실리콘 Mac만 지원해요. macOS 14 이상, 메모리 8GB 이상이 필요해요. 실행 중인 서버는 메모리를 약 4GB 써요.",
+    "cli": {
+      "install": "내려받고, 모든 파일을 검증하고, 127.0.0.1에서 시작하고, 판정기로 지정",
+      "status": "무엇이 설치·실행·활성화되어 있는지",
+      "local_only": "mude만 사용: 호스팅 판정기에는 아무것도 보내지 않음",
+      "disable": "이전 판정기로 돌아가고 mude 서버를 멈춤",
+      "uninstall": "모델과 Python 환경을 삭제"
+    },
+    "app_h3": "데스크톱 앱에서",
+    "app": [
+      { "b": "설정 가이드", "text": "판정기 단계에서 mude 설치를 제안하고 내려받기 진행 상황을 보여 줘요. 건너뛸 수 있고, 실패하면 다시 시도할 수 있어요. mude를 돌릴 수 없는 Mac이면 그렇다고 알려 주고 클라우드 판정기를 그대로 써요." },
+      { "b": "설정 → 판정기", "text": "mude 카드에서 설치, 시작, 중지, 판정기로 사용, 제거를 할 수 있고, '로컬 전용' 스위치도 있어요." }
+    ],
+    "other_h3": "다른 컴퓨터에서는",
+    "other_p": "다른 컴퓨터에서는 전체 mude-2b를 자체 System One 서버로 돌리고(방법은 모델 카드에 있어요), <code>~/.mu/agent/mu.json</code>에 <code>typesafe</code> 판정기로 추가하세요. <code>MUDE_KEY</code>에는 서버를 시작할 때 쓴 키를 넣어 두세요.",
+    "other_link": "모델 카드의 'Use with mu'(영어)",
+    "local_label": "컴퓨터 밖으로 나가는 것",
+    "local_h2": "무엇이 컴퓨터에 남는가",
+    "local_intro": "mude는 여러분의 컴퓨터에서 답해요. 그 밖의 내용이 밖으로 나가는지는 스위치 하나로 정해져요.",
+    "local": [
+      { "h3": "폴백 있음(기본값)", "p": "전에 쓰던 판정기가 mude 뒤에 남아요. mude가 답하지 못하는 질문(서버가 돌고 있지 않거나 mude가 확신하지 못할 때)과 두 가지 주입 검사(도구 설명, 도구 출력)는 그 판정기로 가요. 그 판정기가 클라우드에 있으면 보낸 내용은 컴퓨터 밖으로 나가요.", "code": "mu judge mude install" },
+      { "h3": "로컬 전용", "p": "mude가 유일한 판정기가 되고, 호스팅 판정기에는 아무것도 보내지 않아요. mude가 답하지 못하면 판정 지점은 판정기가 없을 때처럼 동작해요.", "code": "mu judge mude enable --local-only" }
+    ],
+    "jev_label": "Jev와 비교",
+    "jev_h2": "mude-2b와 Jev",
+    "jev_intro": "Jev는 mu의 기본 판정 모델로, TypeSafe가 호스팅해요. 예/아니요, 선택, 점수 질문에 답하고, 답마다 확률을 붙이고, 모든 판정을 판정 장부에 남겨요.",
+    "compare": [
+      { "k": "실행 위치", "mude": "여러분의 컴퓨터(127.0.0.1)", "jev": "TypeSafe가 호스팅. TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare Workers AI 중 하나를 거쳐 불러요" },
+      { "k": "컴퓨터 밖으로 나가는 것", "mude": "'로컬 전용'이면 아무것도 나가지 않아요. 아니면 폴백 판정기로 가는 내용", "jev": "질문마다 필요한 필드(메시지, 출력 청크, 명령 등). 자격 증명은 먼저 가려져요" },
+      { "k": "플랫폼", "mude": "원클릭 설치는 Apple 실리콘 Mac. 다른 컴퓨터에서는 전체 모델을 직접 운영하는 서버에서", "jev": "mu가 돌아가는 곳이면 어디서나" },
+      { "k": "라이선스와 제공 방식", "mude": "MIT. 두 버전 모두 Hugging Face에 있어요", "jev": "호스팅 서비스. 키가 없으면 OpenCode Zen에서 기간 한정 무료, 직접 가진 키로는 호출당 과금" },
+      { "k": "시작하는 법", "mude": "<code>mu judge mude install</code>, 또는 데스크톱 앱에서 원클릭", "jev": "설정할 것 없이 기본값이에요. 키는 <code>mu setup</code>으로 설정해요" }
+    ],
+    "board_label": "MUBENCH",
+    "board_h2": "능력별 리더보드",
+    "board_soon": "능력별 리더보드는 곧 공개돼요."
   },
   "docs": {
     "title": "문서",

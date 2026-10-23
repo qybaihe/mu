@@ -1,4 +1,4 @@
-"""Build usemu.dev, the mu site: five languages; home, decision points, docs and changelog.
+"""Build usemu.dev, the mu site: five languages; home, decision points, models, docs and changelog.
 
 The facts come from the mu repository, so a rebuild follows the product:
   packages/kyrn-judge/manifest.json   the decision points, features and options, with their names in every language
@@ -16,7 +16,7 @@ and from GitHub's API, at build time:
 
 The site's own words and assets:
   templates/                       Jinja2 templates
-  i18n/<lang>.json                 the home page, the navigation, the banner and the translated changelog
+  i18n/<lang>.json                 the home page, the models page, the navigation, the banner and the translated changelog
   content/decisions.<lang>.json    the decision point page: explanations and one example per point
   content/docs/<lang>/*.md         the documentation pages (a missing one falls back to English)
   content/docs-ui.<lang>.json      the words around the documentation
@@ -70,6 +70,7 @@ PAGES = {
     "home": {"key": "home", "path": ""},
     "docs": {"key": "docs", "path": "docs/"},
     "decisions": {"key": "decisions", "path": "decisions/"},
+    "models": {"key": "models", "path": "models/"},
     "changelog": {"key": "changelog", "path": "changelog/"},
 }
 for _slug, _ in DOCS:
@@ -721,6 +722,8 @@ def main():
                     docs_options=PAGES["docs/options"], docs_judges=PAGES["docs/judges"],
                 )
                 template = "decisions.html"
+            elif key == "models":
+                template = "models.html"
             elif key == "docs":
                 values.update(U=U, sidebar=sidebar)
                 template = "docs_index.html"
