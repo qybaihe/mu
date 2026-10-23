@@ -2,7 +2,7 @@
 
 **A coding agent with a judgment kernel.** It hands its routine decisions to a small, fast judge model, so the main model can keep its attention on the work.
 
-> **Early development.** The authors use mu every day, but names, settings and file formats may still change. Source, docs and the desktop app: [github.com/qybaihe/mu](https://github.com/qybaihe/mu) (README in English, 简体中文, 繁體中文, 日本語 and 한국어).
+> Source, docs and the desktop app: [github.com/qybaihe/mu](https://github.com/qybaihe/mu) (README in English, 简体中文, 繁體中文, 日本語 and 한국어).
 
 ## Install
 
