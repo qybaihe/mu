@@ -4,9 +4,17 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-24
+
+**0.2.1 makes mude 1.0 the recommended judge on a Mac, and installing it survives a power cut.** The desktop app carries mu-agent 0.2.1.
+
+### Changed
+
+- **mude 1.0 is the recommended judge on a Mac that can run it** (Apple silicon, macOS 14 or later, 8 GB of memory or more). The desktop app's first-run guide and Settings → Judges list it first, marked recommended, and the guide picks it to start with: one click installs it. Jev is still there to pick, and on other machines it is recommended as before.
+
 ### Added
 
-- **`mu setup` offers mude 1.0.** On a Mac that can run it, the judge step lists mude 1.0 second, after the recommended Jev. Picking it installs mude 1.0 right there, with Jev behind it for what it can't answer. Scripts use `--judge mude`.
+- **`mu setup` offers mude 1.0.** On a Mac that can run it, the judge step opens with mude 1.0, the recommended answer. Picking it installs mude 1.0 right there, with Jev behind it for what it can't answer. Scripts use `--judge mude`.
 
 ### Fixed
 
