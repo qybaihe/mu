@@ -4,12 +4,17 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+## [0.2.8] - 2026-10-24
+
+**0.2.8 makes the plain-language board talk like a teammate: who's doing what, what's stuck and what's next, each subagent by name, in the language you write in, and in the desktop app at the top of the conversation.** The desktop app carries mu-agent 0.2.8.
+
 ### Changed
 
 - **The plain-language board talks like a teammate giving a quick update.** It leads with one line on who is doing what, or what just happened, then says what's stuck and on what, and what comes next. It starts from what changed since its last update instead of rewording it, names the file, test or command that matters, and leaves out filler such as "making progress". When a check fails, the board can say why, from the check's own output, with any key taken out. In the terminal, the board above the editor shows that line, then what needs you or what's stuck, then the latest step; `/board` shows the rest.
 - **The board says what each subagent is doing.** While subagents work, the board lists them by name with what each is doing and for how long. When one comes back or fails, the board says so right away, with the first line of its report or why it stopped, instead of waiting for all of them. "2 subagents finished" now says "1 with errors" when one of them failed or timed out.
 - **The board tells you when something is stuck, while it's stuck.** A command that runs for a minute, or a subagent that goes a minute without output, gets a line on the board ("Still running npm test, 3 min in") that updates at 1, 3 and 10 minutes, and the board looks again each time. Set `features.board.stallMs` to change the minute, or 0 to turn it off.
 - **The board's model writes in the language you write in.** It used to follow the desktop app's language. Now a Chinese message gets a Chinese board in an English app, and an English message gets an English one in a Japanese app; a message like "ok" goes by the one before it. The board's fixed lines still follow the app's language, and `features.board.language` still fixes one.
+- **In the desktop app, the board leads with that line, and you see it with the panel closed.** The board shows the line first, then what's stuck, what's next and who's doing what, and how long ago it was updated. With the work panel closed, the line sits at the top of the conversation; click it to open the board.
 
 ### Fixed
 
