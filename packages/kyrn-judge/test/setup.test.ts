@@ -861,7 +861,7 @@ describe("mu setup, asking in a terminal", () => {
 		const run = await wizard({
 			answers: ["1", "3", "n"],
 			secrets: [KEYS.openaiProject],
-			respond: () => listing("gpt-5.5"),
+			respond: () => listing("gpt-6.1-sol"),
 		});
 		expect(run.code).toBe(SETUP_EXIT.done);
 		expect(run.printed).toContain(
@@ -1257,7 +1257,7 @@ describe("mu setup in a script", () => {
 		// The OpenAI model's own key, given once or twice: nothing more to write.
 		for (const stdin of [`${KEYS.openaiProject}\n`, `${KEYS.openaiProject}\n${KEYS.openaiProject}\n`]) {
 			const own = await stdinRun(["--service", "openai", "--judge", "openai"], stdin, {
-				respond: () => listing("gpt-5.5"),
+				respond: () => listing("gpt-6.1-sol"),
 			});
 			expect(own.code).toBe(SETUP_EXIT.done);
 			expect(own.read(".env")).toBeUndefined();
