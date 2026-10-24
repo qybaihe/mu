@@ -362,9 +362,8 @@ export default function ProviderManager(props: ProviderManagerProps) {
 
   return (
     <div className={styles.providers}>
-      {/* The page's own title names the providers: this head only says what can be done, and adds one. */}
+      {/* The page's own title names the providers: this head only adds one. */}
       <div className={styles.managerHead}>
-        <p className={classNames(styles.hint, 'min-w-0 m-0')}>{t('mu.providers.summary')}</p>
         <Button
           type='primary'
           size='small'

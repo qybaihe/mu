@@ -1,11 +1,9 @@
 {
   "title": "mu settings",
-  "description": "Judges, decision points, features, models and context. The mu command line uses the same settings.",
   "reload": "Reload",
   "modified": "Changed",
   "applyNote": "Changes apply to new conversations. A running conversation keeps the settings it started with until you reconnect it.",
   "apiKey": "API key",
-  "keyHelp": "After you save the key, it isn't shown again. It stays on this computer, readable only by your user account.",
   "keyKeep": "Leave empty to keep the saved key",
   "endpointRule": "Enter an address that starts with https:// or http://. It can't include a user name, password, query or fragment.",
   "endpointPlain": "This address uses plain http, so the key and your messages aren't encrypted. That's fine for a server on this computer or your own network, even one you reach through a name in your hosts file. Use https over the internet.",
@@ -73,7 +71,6 @@
     "useDefault": "Use the default ({{mode}})"
   },
   "features": {
-    "lead": "What mu does for you in the background. Turn a feature off and mu stops doing it.",
     "beta": "Beta",
     "reset": "Restore defaults",
     "boardModelElsewhere": "To choose the model that writes the board, go to Board model.",
@@ -87,9 +84,7 @@
     "details": "Details"
   },
   "judges": {
-    "tiersHelp": "mu asks the judges in order. A judge only sees the questions earlier judges weren't sure about.",
     "order": "Order",
-    "orderHelp": "The first judge is the one you chose on the Judges page.",
     "firstTier": "The judge you chose on the Judges page. Set its service, address and key there.",
     "tierTitle": "Tier {{index}}: {{name}}",
     "service": "Service",
@@ -105,17 +100,14 @@
       },
       "typesafe": {
         "name": "TypeSafe",
-        "help": "Always connects to TypeSafe directly.",
         "key": "TypeSafe API key"
       },
       "openrouter": {
         "name": "OpenRouter",
-        "help": "Always connects through OpenRouter, with an OpenRouter API key. This key is used only for Jev; it doesn't change the key for OpenRouter's chat models.",
         "key": "OpenRouter API key"
       },
       "gateway": {
         "name": "Vercel AI Gateway",
-        "help": "Always connects through the Vercel AI Gateway.",
         "key": "Vercel AI Gateway API key"
       },
       "opencode": {
@@ -125,7 +117,6 @@
       },
       "cloudflare": {
         "name": "Cloudflare Workers AI",
-        "help": "Jev on Cloudflare Workers AI, with a Cloudflare API token and your account ID.",
         "key": "Cloudflare API token",
         "account": "Cloudflare account ID",
         "accountHelp": "Find it on the Workers AI page of the Cloudflare dashboard. It's stored the same way as the token.",
@@ -139,19 +130,9 @@
     },
     "model": "Judge model",
     "baseUrl": "Base URL",
-    "baseUrlHelp": "Leave empty to use TypeSafe's default address.",
-    "customUrlHelp": "The service's System One address. Its key is sent only to this address.",
     "baseUrlNeeded": "Enter the custom service's address.",
     "customTier": "A judge you added yourself. Change it in mu's settings file.",
-    "endpointDefault": "The service's default address",
-    "types": {
-      "localHelp": "Runs on this computer.",
-      "clmHelp": "Runs on your own CLM server.",
-      "classifierHelp": "A classifier model from mu's model catalog: {{model}}. mu calls it with its provider's key."
-    },
-    "intro": "While it works, mu has many small questions to settle: how to handle a message, or whether a step breaks a rule you set. Choose the judge that answers them.",
     "mode": "Verdicts take effect",
-    "modeHelp": "On: the judge's verdicts take effect. Off: every step runs as usual. Decision points without their own setting follow this one.",
     "choose": "Choose a judge",
     "custom": "Your first judge is a custom one. View or change it on the Judge order page.",
     "keyPlaceholder": "Paste the key",
@@ -179,7 +160,6 @@
         "description": "Answers the same questions as Jev, on your own server (clm-serve). Its encoder needs a GPU; there's no per-call cost."
       }
     },
-    "localAddress": "Address: {{address}}",
     "laya": {
       "running": "Running on this computer",
       "stopped": "Installed but not running. mu starts it when needed.",
@@ -252,7 +232,6 @@
         "stopped": "Stopped"
       },
       "resources": "While it runs, mude 1.0 uses about {{memory}} GB of memory. Every mu session on this Mac shares it, including ones in the terminal, and it keeps running until you stop it or turn it off.",
-      "shared": "Every mu session on this Mac shares it, including ones in the terminal, and it keeps running until you stop it or turn it off.",
       "start": "Start",
       "stop": "Stop",
       "openFolder": "Open folder",
@@ -303,12 +282,9 @@
     },
     "clm": {
       "address": "Server address",
-      "addressHelp": "Where clm-serve listens, such as http://192.168.1.20:8700. Leave empty for this computer ({{address}}).",
       "key": "Server key",
       "keyPlaceholder": "Only if the server requires one",
-      "keyHelp": "Only needed if the server was started with CLM_API_KEY. Enter the same value. After you save the key, it isn't shown again.",
       "check": "Check server",
-      "unmeasured": "CLM's accuracy on mu's decisions hasn't been measured yet.",
       "status": {
         "checking": "Contacting the server…",
         "ready": "Online · {{models}} · {{ms}} ms",
@@ -332,11 +308,9 @@
   },
   "context": {
     "auto": "Automatic compaction",
-    "autoHelp": "Compacts the conversation history when the context window is nearly full.",
     "limit": "Context limit",
     "limitHelp": "0 uses the model's context window minus the reserve. Otherwise, {{min}} to {{max}}. Checked before each model request; it's not a hard cutoff.",
-    "limitProblem": "Use 0, or a whole number from {{min}} to {{max}}.",
-    "lead": "When to compact a conversation, how large its context can grow and which features work on it."
+    "limitProblem": "Use 0, or a whole number from {{min}} to {{max}}."
   },
   "permissions": {
     "modes": {
@@ -397,7 +371,6 @@
     }
   },
   "providers": {
-    "lead": "Where your models come from: subscriptions and endpoints. Pick a conversation's model and thinking level in its message box.",
     "title": "Providers",
     "custom": "Custom providers",
     "manualGroup": "Added by hand",
@@ -432,7 +405,6 @@
     "commented": "models.json contains comments, and saving from here would remove them, so providers are read-only. Remove the comments by hand to edit providers here.",
     "modelCount_one": "{{count, number}} model",
     "modelCount_other": "{{count, number}} models",
-    "summary": "Sign in with a subscription and use it right away, or connect any OpenAI-, Anthropic- or Gemini-compatible endpoint.",
     "subscriptions": "Subscriptions",
     "manualShort": "Manual",
     "needsSetup": "Not set up yet",
@@ -445,13 +417,10 @@
     "removeDefault": "It's the default for new conversations, so the default model is cleared too."
   },
   "defaults": {
-    "summary": "What new conversations start with. You can still switch within a conversation.",
     "provider": "Provider",
     "model": "Model",
     "level": "Thinking level",
     "levelUnset": "Not set",
-    "levelHelp": "Levels this model doesn't support are disabled.",
-    "levelClamped": "Not set means Medium. If the model doesn't support a level, mu uses the nearest one it does.",
     "noReasoning": "This model doesn't support thinking, so conversations with it always start with thinking off.",
     "notSet": "Not set",
     "pickProvider": "Choose a provider first."
@@ -462,7 +431,6 @@
     "signOutFailed": "Couldn't sign out. Try again.",
     "signOutConfirm": "Sign out of {{name}}? You'll need to sign in again to use it.",
     "signedOut": "Not signed in",
-    "instant": "Signing in or out takes effect immediately. No need to save.",
     "models": "Available models",
     "byKey": "Available (API key)",
     "byKeyHelp": "You're not signed in with a subscription, but mu reported this provider as available the last time it connected, usually because its API key is set in your environment. Signing in switches it to the subscription.",
@@ -524,12 +492,10 @@
     "noId": "New model",
     "show": "Show {{name}}",
     "addListed": "Add {{name}}",
-    "levels": "Thinking levels",
-    "levelsHelp": "Checked levels are offered for this model. Very high and Max stay off until you turn them on."
+    "levels": "Thinking levels"
   },
   "test": {
     "run": "Test connection",
-    "hint": "Sends one small request from this app: it fetches the model list, or, if it can't, asks the first model for a one-word reply.",
     "okModels": "Connected ({{ms}} ms). The endpoint lists {{count, number}} models.",
     "okCompletion": "Connected ({{ms}} ms). The model answered.",
     "auth": "The key was rejected (HTTP {{status}}).",
@@ -547,7 +513,7 @@
   },
   "boardModel": {
     "title": "Board model",
-    "summary": "Writes the board: a plain-language summary of how the work is going. It's for you only and never enters the conversation's context. Each update is one model call.",
+    "summary": "Writes the board: a plain-language summary of how the work is going. Each update is one model call.",
     "pick": "Choose a model",
     "recommended": "Recommended: Claude Opus 4.6 for the most natural, consistent writing, or Gemini 3.8 Flash for speed and lower cost.",
     "recommendedTag": "recommended",
@@ -557,7 +523,6 @@
     "pickProvider": "Choose a provider first.",
     "unset": "None yet. mu asks the first time you turn on the board.",
     "session": "Same model as the conversation",
-    "sessionHelp": "If the conversation switches models, the board switches too.",
     "update": "This version of mu doesn't let you choose the board's model here. Update mu first."
   },
   "levels": {
@@ -585,7 +550,6 @@
     "start": "Get started",
     "model": {
       "title": "Connect a model",
-      "subtitle": "mu uses it to write code and answer you. You can change any of this in Settings later.",
       "model": "Model",
       "baseUrl": "Base URL",
       "key": "API key",
@@ -629,7 +593,6 @@
       "placeholder": "Paste the key here",
       "service": "Service",
       "servicePlaceholder": "Detected from the key",
-      "serviceHint": "mu detects the service from the key. If it can't, choose it here.",
       "recognized": "Detected from the key.",
       "ambiguous": "Several services use keys that look like this. Which one is it from?",
       "unknown": "mu doesn't recognize this kind of key. Which service is it from?",
@@ -639,7 +602,6 @@
       "lookingLocal": "Looking for {{service}} on this computer…",
       "recheck": "Check again",
       "startsWith": "mu will start with",
-      "modelHint": "You can switch models anytime.",
       "outcome": {
         "ok": "The key works.",
         "okLocal": "{{service}} is running on this computer.",
@@ -715,7 +677,6 @@
     },
     "judge": {
       "title": "Choose a judge",
-      "subtitle": "The judge answers the small questions mu has while it works. mu still works without one; it just skips these checks.",
       "readyFree": "Jev is ready, free for now. Nothing to set up here.",
       "readyKey": "Jev is ready with your key.",
       "more": "Change the service or use your own key",
@@ -728,7 +689,6 @@
     },
     "done": {
       "title": "All set",
-      "subtitle": "Review your choices, then get started.",
       "model": "Model",
       "judge": "Judge",
       "none": "Not set",
@@ -757,20 +717,6 @@
         "text_one": "mu found {{count}} conversation from another coding agent on this computer. Import it with its full history and keep going here.",
         "text_other": "mu found {{count}} conversations from other coding agents on this computer. Import them with their full history and keep going here.",
         "open": "Choose conversations…"
-      },
-      "points": {
-        "judge": {
-          "title": "A check at every step",
-          "text": "A built-in judge watches the key moments, so mu thinks before it acts, follows your rules and checks its work before calling a job done."
-        },
-        "control": {
-          "title": "You see it, you steer it",
-          "text": "Checkpoints let you roll back changes. When mu uses the in-app browser, you can watch each step and pause or take over."
-        },
-        "ready": {
-          "title": "Works out of the box",
-          "text": "It picks up the rules, skills and MCP servers you've already set up in Claude Code, Cursor and Codex."
-        }
       },
       "start": "Set up"
     },
@@ -828,7 +774,6 @@
     },
     "permissions": {
       "title": "How much mu can do on its own",
-      "subtitle": "New conversations start in the mode you choose here. Switch anytime from the message box or with /permissions.",
       "recommended": "Recommended"
     }
   },
@@ -935,11 +880,9 @@
   },
   "importChats": {
     "title": "Import conversations",
-    "description": "Bring your Claude Code, Codex or ZCode conversations from this computer into mu with their full history and continue them here.",
     "open": "Choose…",
     "dialog": {
       "title": "Import conversations",
-      "hint": "Each conversation you choose becomes a mu conversation in its project folder, with its full history: messages, tool calls, thinking and images. Choose one again later to bring over what's new.",
       "search": "Search by text or folder",
       "loading": "Looking for conversations…",
       "empty": "No Claude Code, Codex or ZCode conversations found on this computer.",
@@ -1142,8 +1085,6 @@
     }
   },
   "details": {
-    "lead": "Each feature has one switch, with its settings under Options. Indented rows are the feature's decision points, where it asks the judge. Turn one off and that step runs as usual.",
-    "featureOff": "This feature is off",
     "askJudge": "Ask the judge",
     "askJudgeAbout": "Ask the judge: {{point}}",
     "areas": {
@@ -1170,7 +1111,6 @@
       "cursor": "Cursor"
     },
     "skills": {
-      "lead": "The skills mu can use in every conversation, and where each comes from.",
       "search": "Search skills",
       "open": "Open folder",
       "add": "Add skill",
@@ -1181,33 +1121,26 @@
       "empty": "mu has no skills yet.",
       "noMatch": "No matching skills.",
       "failed": "Couldn't read mu's skills.",
-      "project": "Project skills (.mu/skills, .agents/skills, .claude/skills) load only in that project's conversations and aren't listed here.",
       "groups": {
         "mu": {
-          "title": "mu's skills",
-          "help": "In {{folder}}. Skills you add go here, and only these can be removed."
+          "title": "mu's skills"
         },
         "agents": {
-          "title": "Shared skills",
-          "help": "In ~/.agents/skills, shared by several agents. mu reads them but never changes them."
+          "title": "Shared skills"
         },
         "builtin": {
-          "title": "Built-in",
-          "help": "Shipped with mu. Each one is available while the feature it belongs to is on."
+          "title": "Built-in"
         },
         "claude": {
-          "title": "From Claude Code",
-          "help": "From ~/.claude/skills. mu only reads them; turn off features.inherit in mu.json to stop using them."
+          "title": "From Claude Code"
         },
         "codex": {
-          "title": "From Codex",
-          "help": "From ~/.codex/skills. mu only reads them; turn off features.inherit in mu.json to stop using them."
+          "title": "From Codex"
         }
       }
     },
     "mcp": {
       "title": "MCP servers",
-      "lead": "The MCP servers mu can use in every conversation, and where each is set up.",
       "open": "Open config file",
       "add": "Add server",
       "added": "Added {{name}}. New conversations can use it.",
@@ -1219,7 +1152,6 @@
       "failed": "Couldn't read mu's MCP servers.",
       "featureOff": "The MCP feature is off in mu.json: only the servers in mcp.json are used.",
       "unreadable": "Couldn't read these files, so their servers are missing: {{files}}",
-      "project": "Project servers (.mu/mcp.json, .mcp.json, .cursor/mcp.json) are used only in that project's conversations and aren't listed here.",
       "locked": {
         "offInSource": {
           "label": "Off in its source",
@@ -1232,20 +1164,16 @@
       },
       "groups": {
         "mu": {
-          "title": "mu's servers",
-          "help": "In mcp.json and mu.json. Servers you add go into {{file}}, the same as with mu mcp add."
+          "title": "mu's servers"
         },
         "claude": {
-          "title": "From Claude Code",
-          "help": "From ~/.claude.json. Turning one off here only writes to mu.json, never to Claude Code's file."
+          "title": "From Claude Code"
         },
         "cursor": {
-          "title": "From Cursor",
-          "help": "From ~/.cursor/mcp.json. Turning one off here only writes to mu.json, never to Cursor's file."
+          "title": "From Cursor"
         },
         "codex": {
-          "title": "From Codex",
-          "help": "From ~/.codex/config.toml. Turning one off here only writes to mu.json, never to Codex's file."
+          "title": "From Codex"
         }
       },
       "form": {

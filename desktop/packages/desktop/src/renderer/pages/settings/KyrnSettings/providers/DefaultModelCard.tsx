@@ -74,11 +74,6 @@ export default function DefaultModelCard({
   const model = custom?.models.find((candidate) => candidate.id === defaults.model);
   const levels = model ? modelThinkingLevels(model) : [...THINKING_LEVELS];
   const noReasoning = Boolean(model) && !model?.reasoning;
-  const help = noReasoning
-    ? t('mu.defaults.noReasoning')
-    : model
-      ? t('mu.defaults.levelHelp')
-      : t('mu.defaults.levelClamped');
 
   return (
     <Card testId='mu-defaults'>
@@ -120,7 +115,7 @@ export default function DefaultModelCard({
       <Row
         testId='mu-thinking-level'
         title={t('mu.defaults.level')}
-        help={help}
+        help={noReasoning ? t('mu.defaults.noReasoning') : undefined}
         modified={defaults.thinkingLevel !== base.models.defaults.thinkingLevel}
       >
         <Radio.Group

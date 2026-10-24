@@ -344,7 +344,6 @@
   "language": "Sprache",
   "saveUploadToWorkspace": "Uploads im Arbeitsbereich speichern",
   "startOnBoot": "Beim Start ausführen",
-  "startOnBootDesc": "mu automatisch starten, wenn du dich bei macOS oder Windows anmeldest.",
   "startOnBootUnsupported": "Nur in der installierten App für macOS und Windows verfügbar.",
   "startOnBootUpdateFailed": "Einstellung für Autostart konnte nicht aktualisiert werden",
   "closeToTray": "In Taskleiste schließen",
@@ -363,10 +362,8 @@
   "groupApp": "Anwendung",
   "groupAbout": "Sonstiges",
   "agentIdleTimeout": "Agenten-Leerlaufzeitüberschreitung",
-  "agentIdleTimeoutDesc": "Ein untätiger Agent wird nach dieser Zeit beendet, um Speicher freizugeben.",
   "previewTextSizeLimit": "Vorschau-Größenlimit",
   "previewTextSizeLimitUnit": "MB",
-  "previewTextSizeLimitDesc": "Textdateien über dieser Größe werden mit einem Hinweis statt mit Inhalt geöffnet. Gilt nur für neu geöffnete Tabs.",
   "gemini": "Gemini CLI",
   "model": "Modell",
   "system": "System",
@@ -984,22 +981,18 @@
   "browserData": {
     "title": "Integrierter Browser",
     "agentControlLabel": "Agent darf den integrierten Browser bedienen",
-    "agentControlDesc": "Wenn aktiviert, kann der Agent im integrierten Browser Seiten öffnen, klicken und Formulare für Sie ausfüllen – etwa um etwas zu recherchieren oder einen Ablauf auf einer Website abzuschließen. Er kann ausschließlich diese eine Browseransicht steuern: die mu-Oberfläche selbst bleibt unerreichbar, und es wird nie ein separates Chrome-Fenster geöffnet. Ist die Option aus, können Sie den Browser weiterhin selbst nutzen; nur der Agent verliert den Zugriff.",
     "agentControlSaved": "Einstellung gespeichert",
     "agentControlFailed": "Einstellung konnte nicht gespeichert werden",
     "agentControlRestartRequired": "Diese Einstellung wird nach einem Neustart der App wirksam.",
     "clearLabel": "Browserdaten löschen",
-    "clearDesc": "Meldet dich von allen Websites ab, bei denen der Browser angemeldet ist, und löscht den Cache. Offene Tabs wirken nach dem Neuladen.",
     "clearConfirmTitle": "Browserdaten löschen?",
     "clearConfirmContent": "Du wirst von allen Websites im integrierten Browser abgemeldet. Das kann nicht rückgängig gemacht werden.",
     "clearSuccess": "Browserdaten gelöscht",
-    "clearFailed": "Browserdaten konnten nicht gelöscht werden",
-    "description": "Ob der Agent den integrierten Browser bedienen darf, und das Löschen der Daten, die der Browser speichert."
+    "clearFailed": "Browserdaten konnten nicht gelöscht werden"
   },
   "archived": {
     "navLabel": "Archivierte Unterhaltungen",
     "title": "Archiviert",
-    "description": "Unterhaltungen, die du archiviert hast. Hole sie in die Seitenleiste zurück oder lösche mehrere auf einmal endgültig.",
     "empty": "Keine archivierten Elemente",
     "noProject": "Kein Projekt",
     "chatCount": "{{count}} Chats",
@@ -1072,13 +1065,8 @@
   },
   "mcpAuthRequiredNamed": "{{name}} erfordert eine Anmeldung",
   "mcpTestConnectionSuccessNamed": "{{name}} verbunden",
-  "appearanceDescription": "Sprache, Theme, Schriftarten und Skalierung.",
-  "systemDescription": "Start mit dem Computer, Weiterlaufen nach dem Schließen des Fensters, Benachrichtigungen und die Ordner, in denen mu arbeitet und protokolliert.",
-  "conversationsDescription": "Zeitlimits, die Größengrenze der Vorschau, der Ablageort für Uploads und Nachrichten zwischen Unterhaltungen.",
-  "aboutDescription": "Welche Version von mu das ist, ihre Updates und der Weg zu den Protokollen.",
   "developer": {
     "title": "Entwickler",
-    "description": "Die Entwickler-Tools sowie Port und MCP-Konfigurationen, mit denen andere Programme den integrierten Browser erreichen.",
     "devOnly": "Diese Werkzeuge gibt es nur, wenn mu aus den Quellen läuft."
   },
   "search": {

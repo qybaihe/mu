@@ -197,7 +197,6 @@ export default function ModelRows({ models, onChange, suggestions, facts = {}, d
                           </Checkbox>
                         ))}
                       </div>
-                      <p className={styles.hint}>{t('mu.models.levelsHelp')}</p>
                     </div>
                   ) : null}
                 </div>

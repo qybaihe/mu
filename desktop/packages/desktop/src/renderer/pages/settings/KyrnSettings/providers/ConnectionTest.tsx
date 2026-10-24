@@ -49,7 +49,7 @@ export default function ConnectionTest({ provider, typedKey, disabled, onModels 
     }
   };
 
-  let message: React.ReactNode = <span className={styles.hint}>{t('mu.test.hint')}</span>;
+  let message: React.ReactNode = null;
   if (failure)
     message = (
       <div className={styles.problem} role='alert' data-testid='mu-test-failure'>

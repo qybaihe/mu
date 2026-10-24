@@ -156,8 +156,6 @@ export default function ProviderEditor(props: ProviderEditorProps) {
             value={typedKey}
             onChange={onKey}
           />
-          {/* Where the key is kept, in plain words: the file and the variable are the app's business. */}
-          <span className={styles.hint}>{t('mu.keyHelp')}</span>
           <Checkbox
             disabled={readOnly}
             checked={provider.authHeader}

@@ -263,28 +263,25 @@ function Current({ update, words, fresh }: { update: BoardUpdate; words: BoardWo
         <section className={styles.ask} data-testid='mu-board-ask' aria-label={t('common.kyrn.boardView.needsYou')}>
           <h4 className={styles.sectionTitle}>{t('common.kyrn.boardView.needsYou')}</h4>
           {words.confirm.length ? (
-            <>
-              <ul className={styles.askList}>
-                {words.confirm.map((item, index) => (
-                  <li key={`${index}:${item}`}>
-                    <Button
-                      type='text'
-                      long
-                      className={styles.askItem}
-                      data-testid='mu-board-confirm'
-                      title={t('common.kyrn.boardView.quote')}
-                      onClick={() => quote(item)}
-                    >
-                      <span className={styles.askText} data-testid='mu-board-confirm-text'>
-                        {item}
-                      </span>
-                      <span className={styles.askAction}>{t('common.reply')}</span>
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-              <p className={styles.faint}>{t('common.kyrn.boardView.quoteHint')}</p>
-            </>
+            <ul className={styles.askList}>
+              {words.confirm.map((item, index) => (
+                <li key={`${index}:${item}`}>
+                  <Button
+                    type='text'
+                    long
+                    className={styles.askItem}
+                    data-testid='mu-board-confirm'
+                    title={t('common.kyrn.boardView.quote')}
+                    onClick={() => quote(item)}
+                  >
+                    <span className={styles.askText} data-testid='mu-board-confirm-text'>
+                      {item}
+                    </span>
+                    <span className={styles.askAction}>{t('common.reply')}</span>
+                  </Button>
+                </li>
+              ))}
+            </ul>
           ) : (
             <p className={styles.askPlain}>{t('common.kyrn.boardView.needsYouText')}</p>
           )}

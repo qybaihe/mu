@@ -68,7 +68,6 @@
     "newTask": "Yeni görev",
     "createViaChat": "Sohbetle oluştur",
     "createManually": "Manuel oluştur",
-    "description": "Görevleri bir zamanlamayla çalıştırın. Ayrıca herhangi bir konuşmada mu'dan sizin için bir görev oluşturmasını isteyebilirsiniz.",
     "awakeBanner": "Zamanlanmış görevler yalnızca bilgisayarınız açıkken çalışır.",
     "keepAwake": "Uyanık tut",
     "keepAwakeTooltip": "Etkinleştirildiğinde mu bilgisayarınızın uyku moduna geçmesini engeller",

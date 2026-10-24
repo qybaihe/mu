@@ -16,7 +16,7 @@ import { SettingsPage } from '../components/SettingsPageHeader';
 const SystemSettings: React.FC = () => {
   const { t } = useTranslation();
   return (
-    <SettingsPage title={t('settings.system')} description={t('settings.systemDescription')}>
+    <SettingsPage title={t('settings.system')}>
       <SystemModalContent />
     </SettingsPage>
   );

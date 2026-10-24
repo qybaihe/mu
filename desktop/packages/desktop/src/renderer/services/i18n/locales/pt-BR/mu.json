@@ -1,11 +1,9 @@
 {
   "title": "Configurações do mu",
-  "description": "Tudo o que dá para configurar no mu: juízes, pontos de decisão, recursos, modelos e contexto. Compartilhado com a linha de comando do mu.",
   "reload": "Recarregar",
   "modified": "Alterado",
   "applyNote": "As alterações valem para novas sessões. Uma sessão em andamento mantém a configuração com que começou; reconecte-a para aplicá-las.",
   "apiKey": "Chave de API",
-  "keyHelp": "Depois de salva, a chave nunca mais é exibida. Fica neste computador, e só a sua conta pode lê-la.",
   "keyKeep": "Deixe em branco para manter a chave salva",
   "endpointRule": "Digite um endereço que comece com https:// ou http://. Ele não pode incluir usuário, senha, consulta nem fragmento.",
   "endpointPlain": "Este endereço usa http sem criptografia: a chave e suas mensagens trafegam sem criptografia. Tudo bem para um servidor neste computador ou na sua rede, inclusive um nome que o arquivo hosts aponte para lá. Pela internet, use https.",
@@ -73,7 +71,6 @@
     "useDefault": "Voltar ao padrão ({{mode}})"
   },
   "features": {
-    "lead": "O que o mu faz por você em segundo plano. Desative um recurso e o mu deixa de fazê-lo.",
     "beta": "Beta",
     "reset": "Restaurar padrões",
     "boardModelElsewhere": "O modelo que escreve o painel é escolhido em “Modelo do painel em linguagem simples”.",
@@ -87,9 +84,7 @@
     "details": "Configurações detalhadas"
   },
   "judges": {
-    "tiersHelp": "Os juízes são consultados em ordem. Cada um só vê o que os anteriores deixaram incerto.",
     "order": "Ordem",
-    "orderHelp": "O primeiro é o juiz escolhido na página “Juízes”.",
     "firstTier": "O juiz escolhido na página “Juízes”: serviço, endereço e chave são definidos lá.",
     "tierTitle": "Camada {{index}}: {{name}}",
     "service": "Serviço",
@@ -105,17 +100,14 @@
       },
       "typesafe": {
         "name": "TypeSafe",
-        "help": "Sempre direto pelo TypeSafe.",
         "key": "Chave de API do TypeSafe"
       },
       "openrouter": {
         "name": "OpenRouter",
-        "help": "Sempre pelo OpenRouter, com uma chave de API do OpenRouter. Ela é salva só para o Jev: defini-la não muda a chave dos modelos de chat do OpenRouter.",
         "key": "Chave de API do OpenRouter"
       },
       "gateway": {
         "name": "Vercel AI Gateway",
-        "help": "Sempre pelo Vercel AI Gateway.",
         "key": "Chave de API do Vercel AI Gateway"
       },
       "opencode": {
@@ -125,7 +117,6 @@
       },
       "cloudflare": {
         "name": "Cloudflare Workers AI",
-        "help": "Jev no Cloudflare Workers AI, com um token de API da Cloudflare e o ID da sua conta.",
         "key": "Token de API da Cloudflare",
         "account": "ID da conta Cloudflare",
         "accountHelp": "Aparece na página Workers AI do painel da Cloudflare. É salvo como o token.",
@@ -139,19 +130,9 @@
     },
     "model": "Modelo do juiz",
     "baseUrl": "URL base",
-    "baseUrlHelp": "Deixe vazio para usar o endereço oficial da TypeSafe.",
-    "customUrlHelp": "O endereço System One do serviço. A chave dele só é enviada para lá.",
     "baseUrlNeeded": "Um serviço personalizado precisa do endereço dele.",
     "customTier": "Um juiz que você mesmo adicionou. Para mudá-lo, edite o arquivo de configurações do mu.",
-    "endpointDefault": "Endereço padrão do serviço",
-    "types": {
-      "localHelp": "Roda neste computador.",
-      "clmHelp": "Roda no seu próprio servidor CLM.",
-      "classifierHelp": "Um modelo de classificação do catálogo do mu: {{model}}. O mu o chama com a chave do provedor."
-    },
-    "intro": "Enquanto trabalha, o mu faz muitas pequenas perguntas: como tratar esta mensagem, se este passo viola uma regra que você definiu. O juiz as responde. Escolha um.",
     "mode": "Aplicar os vereditos",
-    "modeHelp": "Ligado: os vereditos do juiz têm efeito. Desligado: cada etapa segue normalmente. As etapas sem ajuste próprio seguem este.",
     "choose": "Escolha um juiz",
     "custom": "No momento, o primeiro juiz é personalizado: veja e altere na página “Ordem dos juízes”.",
     "keyPlaceholder": "Cole a chave",
@@ -179,7 +160,6 @@
         "description": "Responde às mesmas perguntas que o Jev, em um servidor seu (clm-serve). O codificador precisa de uma GPU; nada é cobrado por chamada."
       }
     },
-    "localAddress": "Endereço: {{address}}",
     "laya": {
       "running": "Em execução nesta máquina",
       "stopped": "Instalado, mas não está em execução. O mu o inicia quando precisar.",
@@ -252,7 +232,6 @@
         "stopped": "Parado"
       },
       "resources": "Enquanto roda, o mude 1.0 usa cerca de {{memory}} GB de memória. Todas as sessões do mu neste Mac o compartilham, inclusive as do terminal, e ele continua rodando até você pará-lo ou desativá-lo.",
-      "shared": "Todas as sessões do mu neste Mac o compartilham, inclusive as do terminal, e ele continua rodando até você pará-lo ou desativá-lo.",
       "start": "Iniciar",
       "stop": "Parar",
       "openFolder": "Abrir pasta",
@@ -303,12 +282,9 @@
     },
     "clm": {
       "address": "Endereço do servidor",
-      "addressHelp": "Onde o clm-serve escuta, por exemplo http://192.168.1.20:8700. Vazio é este computador ({{address}}).",
       "key": "Chave do servidor",
       "keyPlaceholder": "Só se o servidor pedir",
-      "keyHelp": "Só um servidor iniciado com CLM_API_KEY pede chave: digite o mesmo valor. Depois de salva, ela nunca mais é exibida.",
       "check": "Verificar o servidor",
-      "unmeasured": "Ainda não foi medido quão bem o CLM toma as decisões do mu.",
       "status": {
         "checking": "Consultando o servidor…",
         "ready": "Respondendo · {{models}} · {{ms}} ms",
@@ -332,11 +308,9 @@
   },
   "context": {
     "auto": "Compactação automática",
-    "autoHelp": "Compacta o histórico quando o contexto está quase cheio.",
     "limit": "Limite de contexto",
     "limitHelp": "0 segue a janela do modelo menos a reserva. Caso contrário, de {{min}} a {{max}}. Verificado antes da próxima solicitação ao modelo; não é um corte rígido.",
-    "limitProblem": "Use 0 ou um número inteiro de {{min}} a {{max}}.",
-    "lead": "Quando a conversa é compactada, até onde o contexto pode crescer e os recursos que atuam sobre o contexto."
+    "limitProblem": "Use 0 ou um número inteiro de {{min}} a {{max}}."
   },
   "permissions": {
     "modes": {
@@ -397,7 +371,6 @@
     "flagged": "Arriscado: {{flag}}."
   },
   "providers": {
-    "lead": "De onde vêm os modelos: assinaturas e endpoints. O modelo e o nível de raciocínio de uma conversa são escolhidos na caixa de mensagem dela.",
     "title": "Provedores",
     "custom": "Provedores personalizados",
     "manualGroup": "Editados manualmente",
@@ -432,7 +405,6 @@
     "commented": "O models.json contém comentários. Salvar por aqui os removeria, por isso os provedores estão somente leitura. Remova os comentários manualmente para editar aqui.",
     "modelCount_one": "{{count, number}} modelo",
     "modelCount_other": "{{count, number}} modelos",
-    "summary": "Entre com uma assinatura e use na hora, ou conecte qualquer endpoint compatível com OpenAI, Anthropic ou Gemini.",
     "subscriptions": "Assinaturas",
     "manualShort": "Manual",
     "needsSetup": "Ainda não configurado",
@@ -445,13 +417,10 @@
     "removeDefault": "Novas sessões começam com ele, então o modelo padrão também será limpo."
   },
   "defaults": {
-    "summary": "Com o que uma nova sessão começa. Dentro de uma conversa, você ainda pode trocar.",
     "provider": "Provedor",
     "model": "Modelo",
     "level": "Nível de raciocínio",
     "levelUnset": "Não definir",
-    "levelHelp": "Os níveis que este modelo não aceita ficam desativados.",
-    "levelClamped": "“Não definir” equivale a Médio. Um nível que o modelo não aceita vira o mais próximo que ele aceita.",
     "noReasoning": "Este modelo não raciocina, então uma sessão com ele sempre começa com o raciocínio desligado.",
     "notSet": "Não definido",
     "pickProvider": "Escolha um provedor primeiro."
@@ -462,7 +431,6 @@
     "signOutFailed": "O logout não foi concluído. Você pode tentar de novo.",
     "signOutConfirm": "Sair de {{name}}? Você precisará entrar de novo para usá-lo.",
     "signedOut": "Não conectado",
-    "instant": "Entrar e sair têm efeito imediato, sem precisar salvar.",
     "models": "Modelos que você pode usar",
     "byKey": "Disponível (chave de API)",
     "byKeyHelp": "Nenhuma assinatura está conectada, mas o mu o informou como disponível na última conexão, geralmente porque a chave de API dele está no ambiente. Ao entrar, ele passa a usar a assinatura.",
@@ -524,12 +492,10 @@
     "noId": "Novo modelo",
     "show": "Mostrar {{name}}",
     "addListed": "Adicionar {{name}}",
-    "levels": "Níveis de raciocínio",
-    "levelsHelp": "Só os níveis marcados ficam disponíveis neste modelo. Muito alto e Máximo ficam desligados até você ativá-los."
+    "levels": "Níveis de raciocínio"
   },
   "test": {
     "run": "Testar conexão",
-    "hint": "Uma única solicitação mínima deste aplicativo: a lista de modelos ou, se não der, uma resposta de uma palavra do primeiro modelo.",
     "okModels": "Conectado ({{ms}} ms). O endpoint lista {{count, number}} modelos.",
     "okCompletion": "Conectado ({{ms}} ms). O modelo respondeu.",
     "auth": "A chave foi rejeitada (HTTP {{status}}).",
@@ -547,7 +513,7 @@
   },
   "boardModel": {
     "title": "Modelo do painel em linguagem simples",
-    "summary": "Escreve o painel em linguagem simples: como o trabalho está indo, em palavras do dia a dia. Só para você, nunca entra no contexto da conversa; cada atualização é uma chamada.",
+    "summary": "Escreve o painel em linguagem simples: como o trabalho está indo, em palavras do dia a dia. Cada atualização é uma chamada.",
     "pick": "Um modelo à sua escolha",
     "recommended": "Recomendado: Claude Opus 4.6, o mais natural e estável; depois Gemini 3.8 Flash, mais rápido e mais barato.",
     "recommendedTag": "recomendado",
@@ -557,7 +523,6 @@
     "pickProvider": "Escolha um provedor primeiro",
     "unset": "Nenhum ainda: o mu pergunta na primeira vez que o painel for ativado.",
     "session": "O modelo que a conversa estiver usando",
-    "sessionHelp": "Quando a conversa troca de modelo, o painel acompanha.",
     "update": "Esta versão do mu não permite escolher aqui qual modelo escreve o painel. Atualize o mu primeiro."
   },
   "levels": {
@@ -585,7 +550,6 @@
     "start": "Começar",
     "model": {
       "title": "Conecte um modelo",
-      "subtitle": "O mu o usa para escrever código e responder a você. Você pode mudar tudo depois nas Configurações.",
       "model": "Modelo",
       "baseUrl": "URL base",
       "key": "Chave de API",
@@ -629,7 +593,6 @@
       "placeholder": "Cole a chave aqui",
       "service": "Serviço",
       "servicePlaceholder": "Reconhecido pela chave",
-      "serviceHint": "O mu reconhece o serviço pela chave. Se não conseguir, escolha aqui.",
       "recognized": "Reconhecido pela chave.",
       "ambiguous": "Chaves de mais de um serviço têm esta forma. De qual deles é esta?",
       "unknown": "O mu não conhece este tipo de chave. De qual serviço ela é?",
@@ -639,7 +602,6 @@
       "lookingLocal": "Procurando {{service}} nesta máquina…",
       "recheck": "Verificar de novo",
       "startsWith": "O mu vai começar com",
-      "modelHint": "Você pode trocar de modelo quando quiser.",
       "outcome": {
         "ok": "A chave funciona.",
         "okLocal": "{{service}} está rodando nesta máquina.",
@@ -715,7 +677,6 @@
     },
     "judge": {
       "title": "Escolha um juiz",
-      "subtitle": "O juiz responde às pequenas perguntas que o mu faz enquanto trabalha. O mu funciona sem juiz, só que sem essas verificações.",
       "readyFree": "O Jev gratuito está pronto. Não há nada a fazer aqui.",
       "readyKey": "O Jev está pronto, com a chave que você definiu.",
       "more": "Trocar de serviço ou usar sua própria chave",
@@ -728,7 +689,6 @@
     },
     "done": {
       "title": "Tudo pronto",
-      "subtitle": "Confira tudo e comece.",
       "model": "Modelo",
       "judge": "Juiz",
       "none": "Não definido",
@@ -757,20 +717,6 @@
         "text_one": "O mu encontrou neste computador {{count}} conversa com outro assistente de programação. Importe-a com todo o histórico e continue aqui.",
         "text_other": "O mu encontrou neste computador {{count}} conversas com outros assistentes de programação. Importe-as com todo o histórico e continue aqui.",
         "open": "Escolher conversas…"
-      },
-      "points": {
-        "judge": {
-          "title": "Uma verificação a cada passo",
-          "text": "Um juiz integrado acompanha os momentos-chave: pensar antes de agir, seguir as regras que você definiu, nunca dar por concluído sem verificar."
-        },
-        "control": {
-          "title": "Você vê, você conduz",
-          "text": "Os pontos de controle permitem desfazer alterações; quando o mu usa o navegador integrado, cada etapa fica à vista, e você pode pausar ou assumir o controle."
-        },
-        "ready": {
-          "title": "Pronto para usar",
-          "text": "Ele aproveita as regras, habilidades e servidores MCP que você já configurou no Claude Code, Cursor e Codex."
-        }
       },
       "start": "Configurar"
     },
@@ -828,7 +774,6 @@
     },
     "permissions": {
       "title": "Quanto o mu faz sozinho",
-      "subtitle": "As conversas novas começam no modo escolhido aqui. Você pode trocar a qualquer momento na caixa de envio ou com /permissions.",
       "recommended": "Recomendado"
     }
   },
@@ -935,11 +880,9 @@
   },
   "importChats": {
     "title": "Importar conversas",
-    "description": "Traga para o mu, com todo o histórico, as conversas que você teve no Claude Code, no Codex ou no ZCode neste computador e continue-as aqui.",
     "open": "Escolher…",
     "dialog": {
       "title": "Importar conversas",
-      "hint": "Cada conversa escolhida vira uma conversa do mu na pasta do projeto dela, com todo o histórico: mensagens, chamadas de ferramentas, raciocínio e imagens. Escolha-a de novo depois para trazer o que houver de novo.",
       "search": "Buscar por palavras ou pasta",
       "loading": "Procurando conversas…",
       "empty": "Nenhuma conversa do Claude Code, do Codex ou do ZCode foi encontrada neste computador.",
@@ -1142,8 +1085,6 @@
     }
   },
   "details": {
-    "lead": "Um interruptor por recurso, com as configurações em Opções. As linhas recuadas são onde ele consulta o juiz: desative uma e essa etapa segue normalmente.",
-    "featureOff": "O recurso está desligado",
     "askJudge": "Deixar o juiz decidir",
     "askJudgeAbout": "Deixar o juiz decidir: {{point}}",
     "areas": {
@@ -1170,7 +1111,6 @@
       "cursor": "do Cursor"
     },
     "skills": {
-      "lead": "As habilidades que o mu pode usar em cada conversa e de onde vem cada uma.",
       "search": "Buscar habilidades",
       "open": "Abrir pasta",
       "add": "Adicionar habilidade",
@@ -1181,33 +1121,26 @@
       "empty": "O mu ainda não tem habilidades.",
       "noMatch": "Nenhuma habilidade corresponde.",
       "failed": "Não foi possível ler as habilidades do mu.",
-      "project": "As habilidades próprias de um projeto (.mu/skills, .agents/skills, .claude/skills) só são carregadas nas conversas desse projeto e não aparecem aqui.",
       "groups": {
         "mu": {
-          "title": "Habilidades do mu",
-          "help": "Em {{folder}}. As habilidades adicionadas ficam aqui, e só estas podem ser removidas."
+          "title": "Habilidades do mu"
         },
         "agents": {
-          "title": "Habilidades compartilhadas",
-          "help": "Em ~/.agents/skills, compartilhadas por vários agentes. O mu as lê e nunca as altera."
+          "title": "Habilidades compartilhadas"
         },
         "builtin": {
-          "title": "Incluídas no mu",
-          "help": "Vêm com o mu e ficam ativas enquanto o recurso que as traz estiver ativo."
+          "title": "Incluídas no mu"
         },
         "claude": {
-          "title": "Do Claude Code",
-          "help": "De ~/.claude/skills. O mu só as lê; features.inherit no mu.json para de aproveitá-las."
+          "title": "Do Claude Code"
         },
         "codex": {
-          "title": "Do Codex",
-          "help": "De ~/.codex/skills. O mu só as lê; features.inherit no mu.json para de aproveitá-las."
+          "title": "Do Codex"
         }
       }
     },
     "mcp": {
       "title": "Servidores MCP",
-      "lead": "Os servidores MCP que o mu pode usar em cada conversa e onde cada um está configurado.",
       "open": "Abrir arquivo de configuração",
       "add": "Adicionar servidor",
       "added": "{{name}} adicionado. Novas conversas já podem usá-lo.",
@@ -1219,7 +1152,6 @@
       "failed": "Não foi possível ler os servidores MCP do mu.",
       "featureOff": "O recurso MCP está desativado no mu.json: só os servidores do mcp.json são usados.",
       "unreadable": "Não foi possível ler estes arquivos, então os servidores deles estão faltando: {{files}}",
-      "project": "Os servidores próprios de um projeto (.mu/mcp.json, .mcp.json, .cursor/mcp.json) só são usados nas conversas desse projeto e não aparecem aqui.",
       "locked": {
         "offInSource": {
           "label": "Desativado na origem",
@@ -1232,20 +1164,16 @@
       },
       "groups": {
         "mu": {
-          "title": "Servidores do mu",
-          "help": "No mcp.json e no mu.json. Servidores adicionados vão para {{file}}, como com mu mcp add."
+          "title": "Servidores do mu"
         },
         "claude": {
-          "title": "Do Claude Code",
-          "help": "De ~/.claude.json. Desativá-lo aqui grava só no mu.json, nunca no arquivo do Claude Code."
+          "title": "Do Claude Code"
         },
         "cursor": {
-          "title": "Do Cursor",
-          "help": "De ~/.cursor/mcp.json. Desativá-lo aqui grava só no mu.json, nunca no arquivo do Cursor."
+          "title": "Do Cursor"
         },
         "codex": {
-          "title": "Do Codex",
-          "help": "De ~/.codex/config.toml. Desativá-lo aqui grava só no mu.json, nunca no arquivo do Codex."
+          "title": "Do Codex"
         }
       },
       "form": {
