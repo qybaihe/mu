@@ -1183,6 +1183,9 @@
         "helpers_back_failed_other": "{{count, number}} assistants revenus, {{failed, number}} en erreur",
         "with_detail": "{{line}} : {{detail}}"
       },
+      "list": {
+        "separator": ", "
+      },
       "headlines": {
         "helpers_working": "{{count, number}} assistants au travail",
         "helpers_working_one": "{{count, number}} assistant au travail",

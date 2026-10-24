@@ -14,6 +14,7 @@ import Board from '@/renderer/pages/conversation/KyrnPanel/Board';
 import { toBoardUpdate, type BoardNote } from '@/renderer/pages/conversation/KyrnPanel/Board/board';
 import {
   HELPER_FAILURES,
+  labeledTitles,
   NOTE_NUMBERS,
   NOTE_SENTENCES,
   noteWords,
@@ -390,6 +391,31 @@ describe('board v2’s fixed sentences', () => {
     const params = { what: 'npm test' };
     expect(withLabels(params, labelOf)).toBe(params);
     expect(withLabels(undefined, labelOf)).toBeUndefined();
+  });
+
+  it('calls each helper a helpers_sent line lists by its label, listed the way the app’s language lists names', () => {
+    const audit = 'audit timing in src/retry.ts';
+    const rewrite = 'rewrite retry.test.ts with fake timers';
+    const commaName = 'read a, b and c';
+    const labels = new Map([
+      [audit, '查计时'],
+      [rewrite, '改测试'],
+      [commaName, '读三个'],
+    ]);
+    const labelOf = (who: string) => labels.get(who);
+    const has = (key: string) => i18n.exists(key);
+    const sent = (titles: string, count = 2) => ruleLine('helpers_sent', { count, titles });
+    expect(noteWords(sent(`${audit}, ${rewrite}`), i18n.t, has, labelOf)).toBe('派出 2 个助手：查计时、改测试');
+    expect(noteWords(sent(`${audit}, ${rewrite}`), i18n.getFixedT('en-US'), has, labelOf)).toBe(
+      'Started 2 subagents: 查计时, 改测试'
+    );
+    // A name without a label stays, and so does the harness's ", "; without labels the line is as the harness listed it.
+    expect(noteWords(sent(`${audit}, scout`), i18n.t, has, labelOf)).toBe('派出 2 个助手：查计时, scout');
+    expect(noteWords(sent(`${audit}, ${rewrite}`), i18n.t, has)).toBe(`派出 2 个助手：${audit}, ${rewrite}`);
+    // One helper whose name holds ", " is still found by its whole name.
+    expect(noteWords(sent(commaName, 1), i18n.t, has, labelOf)).toBe('派出 1 个助手：读三个');
+    expect(labeledTitles('scout, docs', labelOf, '、')).toBe('scout, docs');
+    expect(labeledTitles(`${rewrite}, ${audit}`, labelOf, '、')).toBe('改测试、查计时');
   });
 
   it('words a rules headline about a helper with the label the board’s helpers give it', () => {

@@ -1183,6 +1183,9 @@
         "helpers_back_failed_other": "{{count, number}} دستیار برگشتند، {{failed, number}} با خطا",
         "with_detail": "{{line}}: {{detail}}"
       },
+      "list": {
+        "separator": "، "
+      },
       "headlines": {
         "helpers_working": "{{count, number}} دستیار مشغول کارند",
         "helpers_working_one": "{{count, number}} دستیار مشغول کار است",

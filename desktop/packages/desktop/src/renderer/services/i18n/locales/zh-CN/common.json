@@ -1183,6 +1183,9 @@
         "helpers_back_failed_other": "回来了 {{count, number}} 个，{{failed, number}} 个出错",
         "with_detail": "{{line}}：{{detail}}"
       },
+      "list": {
+        "separator": "、"
+      },
       "headlines": {
         "helpers_working": "{{count, number}} 个助手在干活",
         "helpers_working_one": "{{count, number}} 个助手在干活",
