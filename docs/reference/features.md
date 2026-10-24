@@ -166,7 +166,7 @@ On by default: yes. Decision points: `tool.admission`, `tool.admission.test-log`
 | `minChars` | `4000` chars | Only filter output longer than `4000` chars. Range 500 to 200000. |
 | `chunkChars` | `1200` chars | Chunk size. Range 200 to 20000. |
 | `maxChunks` | `48` | Judge at most this many chunks. Range 4 to 400. |
-| `batchChunks` | `16` | Chunks per request. A hosted judge takes many chunks in one request, with the shared context billed once; the local judge takes one at a time. Range 1 to 32. |
+| `batchChunks` | `16` | Chunks per request. The judge takes many chunks in one request, with the shared context billed once. Range 1 to 32. |
 | `waitMs` | `2000` ms | Wait at most `2000` ms. After this, the full output goes in; the verdict is only recorded. Range 500 to 30000. |
 | `passThrough` | `read`, `edit`, `write`, `delegate`, `hive`, `web_fetch` | Never filter these tools. |
 | `printCommands` | `cat`, `sed -n`, `head`, `tail`, `nl`, `less`, `bat`, `grep`, `rg`, `od`, `xxd`, `git show`, `git diff`, `readelf`, `objdump` | Never filter file prints. When a bash command only prints a file with these programs (after a cd, or piped through them), its output goes in whole, as with read: the model asked to see that file. Build, test, background-job and other output is still judged. Empty: all of it is judged. |
@@ -351,7 +351,6 @@ On by default: yes. Decision points: `turn.continue`.
 | `waitMs` | `3000` ms | Wait at most `3000` ms. After this, there's no nudge, and the judge call is canceled so it doesn't hold up the end of a one-shot run. Range 500 to 30000. |
 | `unattendedPromised` | `1` | Unattended: nudges for work it said it would do. Unattended means a one-shot mu --print or json-mode run. There, a run is sent back at most this many times per message for work it said it would do; Max nudges per message still caps all nudges together. When the judge mistook a finished "Done. Created …" for a promise, the second nudge cost a benchmark run 4 more requests. Range 0 to 5. |
 | `promisedAfterToolless` | `false` | Unattended: nudge again after an answer without a tool call. Off by default: when the agent answered the last nudge without calling a tool ("The work is already complete"), it answered by stopping, and isn't told again that it said it would do more. A run that stops without a message is still sent back. |
-| `localPromised` | `false` | Let the local judge decide whether work was left undone. Off by default: this question goes to the next judge in your list, and with the local judge (Laya) alone no such nudge is sent. In a benchmark run Laya twice read a finished "Done. Created …" as a promise of more work. |
 
 ## notify
 

@@ -2185,18 +2185,18 @@
 			"fa-IR": "تعداد تکه در هر درخواست"
 		},
 		"features[name=admission].options[key=batchChunks].help": {
-			"en": "A hosted judge takes many chunks in one request, with the shared context billed once; the local judge takes one at a time.",
-			"zh-TW": "託管判定器把多塊放進一個請求，狀態只計費一次；本機判定器一律一次一塊。",
-			"ja-JP": "ホスト型の判定器は多くのチャンクを 1 回のリクエストで受け取り、状態の課金は 1 回だけです。ローカルの判定器は 1 つずつ処理します。",
-			"ko-KR": "호스팅 판정기는 여러 청크를 한 번의 요청으로 받으며 상태는 한 번만 과금됩니다. 로컬 판정기는 한 번에 하나씩 처리합니다.",
-			"de-DE": "Ein gehosteter Judge nimmt viele Abschnitte in einer Anfrage, der Zustand wird nur einmal berechnet; der lokale Judge nimmt einen nach dem anderen.",
-			"fr-FR": "Un juge hébergé reçoit de nombreux fragments en une seule requête, l’état n’étant facturé qu’une fois ; le juge local les traite un par un.",
-			"es-ES": "Un juez alojado recibe muchos fragmentos en una sola solicitud y el estado se factura una vez; el juez local los procesa de uno en uno.",
-			"pt-BR": "Um juiz hospedado recebe muitos blocos numa só solicitação, com o estado cobrado uma vez; o juiz local recebe um de cada vez.",
-			"ru-RU": "Облачный судья принимает много частей одним запросом, и состояние оплачивается один раз; локальный судья берёт по одной.",
-			"uk-UA": "Хмарний суддя приймає багато частин одним запитом, і стан оплачується один раз; локальний суддя бере по одній.",
-			"tr-TR": "Barındırılan bir hakem birçok parçayı tek istekte alır ve durum bir kez ücretlendirilir; yerel hakem her seferinde bir parça alır.",
-			"fa-IR": "داور میزبانی‌شده چندین تکه را در یک درخواست می‌گیرد و هزینهٔ وضعیت فقط یک بار حساب می‌شود؛ داور محلی هر بار یک تکه می‌گیرد."
+			"en": "The judge takes many chunks in one request, with the shared context billed once.",
+			"zh-TW": "判定器把多塊放進一個請求，狀態只計費一次。",
+			"ja-JP": "判定器は多くのチャンクを 1 回のリクエストで受け取り、状態の課金は 1 回だけです。",
+			"ko-KR": "판정기는 여러 청크를 한 번의 요청으로 받으며 상태는 한 번만 과금됩니다.",
+			"de-DE": "Der Judge nimmt viele Abschnitte in einer Anfrage, der Zustand wird nur einmal berechnet.",
+			"fr-FR": "Le juge reçoit de nombreux fragments en une seule requête, l’état n’étant facturé qu’une fois.",
+			"es-ES": "El juez recibe muchos fragmentos en una sola solicitud y el estado se factura una vez.",
+			"pt-BR": "O juiz recebe muitos blocos numa só solicitação, com o estado cobrado uma vez.",
+			"ru-RU": "Судья принимает много частей одним запросом, и состояние оплачивается один раз.",
+			"uk-UA": "Суддя приймає багато частин одним запитом, і стан оплачується один раз.",
+			"tr-TR": "Hakem birçok parçayı tek istekte alır ve durum bir kez ücretlendirilir.",
+			"fa-IR": "داور چندین تکه را در یک درخواست می‌گیرد و هزینهٔ وضعیت فقط یک بار حساب می‌شود."
 		},
 		"features[name=admission].options[key=waitMs].unit": {
 			"en": "ms",

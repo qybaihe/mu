@@ -5,9 +5,8 @@
  *
  * Configuration lives in `<agent dir>/kyrn.json` (see `../config.ts`), with
  * environment overrides:
- *   KYRN_JUDGE            judges to use, in order: jev | laya | mock | classifier:<provider>/<model> | llm:<provider>/<model> | a name from kyrn.json; "off" disables
+ *   KYRN_JUDGE            judges to use, in order: jev | mude | mock | classifier:<provider>/<model> | llm:<provider>/<model> | a name from kyrn.json; "off" disables
  *   KYRN_JUDGE_MODE       default mode of every decision: active (default) | shadow | off
- *   KYRN_LOCAL_JUDGE_URL  sidecar address for `laya` (default http://127.0.0.1:47823)
  *
  * The decision model is pluggable: features ask typed questions through one
  * engine and never know which model answers. Every handler fails open. pi
@@ -21,6 +20,8 @@ import type { Capability } from "../catalog/catalog.ts";
 import { DEFAULT_CONFIG, type KyrnConfig, loadConfig } from "../config.ts";
 import type { DecisionMode } from "../decision.ts";
 import { Judge } from "../judge.ts";
+import { mudeReady } from "../laya-migration.ts";
+import { muHome } from "../naming.ts";
 import { FRAME_OUT_ENV } from "../swarm/brief.ts";
 import type { JudgeProvider } from "../types.ts";
 import { registerAdmission } from "./features/admission.ts";
@@ -47,6 +48,7 @@ import { type HarnessRoots, registerInherit } from "./features/inherit.ts";
 import { registerInjection } from "./features/injection.ts";
 import { registerInterjection } from "./features/interjection.ts";
 import { registerJudgeItems } from "./features/judge-items.ts";
+import { registerLayaNotice } from "./features/laya.ts";
 import { registerLsp } from "./features/lsp.ts";
 import { registerMcp } from "./features/mcp.ts";
 import { registerMemory } from "./features/memory.ts";
@@ -154,10 +156,16 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 	// Whatever else is on or off: in RPC mode, a promise nothing handled is logged instead of ending mu.
 	registerRejectionLog(pi);
 	// An injected provider or config means the caller owns the setup: do not read the user's files.
+	const home = muHome();
 	const loaded =
 		options.config || options.provider
-			? { config: options.config ?? DEFAULT_CONFIG, disabled: false, problem: undefined }
-			: loadConfig({ dir: getAgentDir(), env: process.env });
+			? { config: options.config ?? DEFAULT_CONFIG, disabled: false, problem: undefined, laya: undefined }
+			: loadConfig({
+					dir: getAgentDir(),
+					env: process.env,
+					// Laya, no longer built in, still named in mu.json: mude 1.0 takes its place when it is set up here.
+					replaceLaya: () => (mudeReady(home, process.env) ? "mude" : undefined),
+				});
 	// KYRN_JUDGE=off keeps the CLI (welcome screen, commands) and the permission modes, and asks no judge: every
 	// decision is off.
 	const config: KyrnConfig = loaded.disabled
@@ -180,6 +188,7 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 	const roots: HarnessRoots | undefined =
 		options.roots ?? (options.config || options.provider ? undefined : { home: homedir(), agentDir: getAgentDir() });
 	runtime.stateDir = roots ? join(roots.agentDir, "mu") : undefined;
+	if (loaded.laya) registerLayaNotice(runtime, loaded.laya, roots, home);
 	if (loaded.disabled) {
 		// Asking the user needs no judge, so the permission mode the user chose holds with judging off too. In judge
 		// mode, with no judge to ask, what the judge would have decided goes to the user.

@@ -22,8 +22,9 @@
 // - mu's name on the agent: PI_PACKAGE_DIR points at ~/.mu/app, a view of packages/coding-agent whose
 //   package.json carries piConfig {name: mu, configDir: .mu}. No upstream file is edited.
 // - the judgment layer (packages/kyrn-judge), with judges from ~/.mu/agent/mu.json or MU_JUDGE
-//   (e.g. "laya", "laya,luna", "laya,jev", "off"). When "laya" is among them the sidecar is started (macOS only).
-//   kyrn.json and every KYRN_* variable are still read when the mu spelling is absent.
+//   (e.g. "jev", "mude,jev", "off"). When mude 1.0 or a decision model added from Hugging Face is among them, its
+//   server is started in the background (macOS only). kyrn.json and every KYRN_* variable are still read when the
+//   mu spelling is absent.
 // - the repo-root .env (the Jev key), read as data and handed to the agent without ever being printed.
 //   The npm package reads ~/.mu/.env instead: there is no repository around it.
 import { spawn, spawnSync } from "node:child_process";
@@ -104,7 +105,6 @@ export function usage(platform) {
 		"  mu judge mude install    install mude 1.0, mu's own decision model for coding, and make it the judge on this Mac (Apple silicon, 1.8 GB)",
 		"                           enable | disable | start | stop | status | uninstall (mu judge mude help)",
 		"  mu judge model <cmd>     other decision models from Hugging Face: add <link> | list | use | remove (mu judge model help)",
-		"  mu judge <cmd>           manage the local judge, Laya (macOS on Apple silicon): setup | start | stop | status | run",
 		"  mu ledger [n] [--json]   print the judge's verdicts from the last n sessions",
 		"  mu import <file>...      import Claude Code, Codex and ZCode conversations; --list shows them (mu import --help)",
 		"  mu doctor                check the installation, the judges and the connections",
@@ -422,28 +422,9 @@ export function agentDirFor({ env, muDir, platform }) {
 	);
 }
 
-/** Whether the configuration asks for the local judge. */
-export function wantsLaya({ env, agentDir, platform, readFile }) {
-	const judges = muEnv("JUDGE", env);
-	if (judges) return `,${judges},`.includes(",laya");
-	const path = pathFor(platform);
-	for (const name of ["mu.json", "kyrn.json"]) {
-		let text;
-		try {
-			text = readFile(path.join(agentDir, name));
-		} catch {
-			continue;
-		}
-		// Like the file itself: kyrn.json is only looked at when there is no mu.json.
-		return text.includes('"laya');
-	}
-	return false;
-}
-
-/** The Core ML sidecar exists for macOS only. Anything else needs a server of its own behind MU_LOCAL_JUDGE_URL. */
 /**
  * Whether the configuration asks for mude (mu judge mude): MU_JUDGE naming it, else `tiers` or a route in mu.json (or
- * kyrn.json when there is no mu.json). Its server is then started when a session starts, as Laya's is.
+ * kyrn.json when there is no mu.json). Its server is then started when a session starts.
  */
 export function wantsMude({ env, agentDir, platform, readFile }) {
 	const judges = muEnv("JUDGE", env);
@@ -487,28 +468,45 @@ export function wantedModel({ env, agentDir, muDir, platform, readFile, exists }
 	return undefined;
 }
 
+/**
+ * Whether mu.json (or kyrn.json when there is no mu.json) still names Laya, which mu no longer has: `laya` in `tiers`
+ * or a route (and no judge of that name of a type mu knows), or a judge of Laya's type, `local`. The judgment layer
+ * then puts mude 1.0 in its place when it is set up on this Mac (packages/kyrn-judge/src/laya-migration.ts), so mude's
+ * server is started for that session too. MU_JUDGE naming Laya is only skipped.
+ */
+export function namesLaya({ env, agentDir, platform, readFile }) {
+	if (muEnv("JUDGE", env)) return false;
+	const path = pathFor(platform);
+	for (const name of ["mu.json", "kyrn.json"]) {
+		let config;
+		try {
+			config = JSON.parse(readFile(path.join(agentDir, name)));
+		} catch (error) {
+			if (error instanceof SyntaxError) return false;
+			continue;
+		}
+		const judges = config?.judges && typeof config.judges === "object" ? config.judges : {};
+		const known = ["jev", "typesafe", "clm", "gateway", "http", "llm", "classifier", "mock"];
+		const retired = (tier) =>
+			typeof tier === "string" &&
+			(judges[tier.trim()]?.type === "local" || (tier.trim() === "laya" && !known.includes(judges.laya?.type)));
+		const lists = [config?.tiers, ...Object.values(config?.routes ?? {})];
+		return lists.some((tiers) => (Array.isArray(tiers) ? tiers : typeof tiers === "string" ? tiers.split(",") : []).some(retired));
+	}
+	return false;
+}
+
+/** What mude 1.0 needs to answer: its environment, made by `mu judge mude install`, and the key `enable` writes to the .env. */
+export function mudeSetUp({ env, muDir, platform, exists }) {
+	return Boolean(env.MU_JUDGE_MUDE_KEY) && exists(pathFor(platform).join(muDir, "local-judge", "mude", "venv", "bin", "python"));
+}
+
 /** What starts the server of the decision model the configuration asks for: `mu judge mude start`, or a model's. */
 export function localModelStart({ env, agentDir, muDir, platform, readFile, exists }) {
 	if (wantsMude({ env, agentDir, platform, readFile })) return ["start", "--no-wait"];
+	if (namesLaya({ env, agentDir, platform, readFile }) && mudeSetUp({ env, muDir, platform, exists })) return ["start", "--no-wait"];
 	const model = wantedModel({ env, agentDir, muDir, platform, readFile, exists });
 	return model ? ["model", "start", model, "--no-wait"] : undefined;
-}
-
-export function localJudgeSupport({ platform, env, wsl = false }) {
-	if (platform === "darwin") return { runs: true };
-	const url = muEnv("LOCAL_JUDGE_URL", env);
-	const where = platformName({ platform, wsl });
-	return {
-		runs: false,
-		url,
-		message: [
-			`The local judge (Laya) is a Core ML sidecar that runs only on macOS on Apple silicon, not on ${where}.`,
-			"mu works without it: Jev, the default hosted judge, answers instead (free on OpenCode Zen, or with your own key via mu setup); you can also set an LLM judge in mu.json.",
-			"A local judge for the desktop app is in progress. Without a judge, decision points use their fallbacks.",
-			"To use a server that implements the same API (GET /health, POST /evaluate), set:",
-			"  MU_LOCAL_JUDGE_URL=http://host:port",
-		].join("\n"),
-	};
 }
 
 /** exec replaces this process, as the bash launcher did; spawn is what Windows has. MU_LAUNCH forces either. */
@@ -623,17 +621,6 @@ export function planLaunch({
 	// pi reports a fresh install to pi.dev with its version. mu-agent is not a pi install; asked for, it still can be.
 	if (layout === "package" && childEnv.PI_TELEMETRY === undefined) childEnv.PI_TELEMETRY = "0";
 
-	let startJudge = false;
-	if (wantsLaya({ env: childEnv, agentDir, platform, readFile: fs.readFile })) {
-		const support = localJudgeSupport({ platform, env: childEnv, wsl });
-		if (support.runs) startJudge = true;
-		else if (!support.url) {
-			notes.push(
-				`mu: the configuration asks for the local judge (Laya), which runs on macOS only; on ${platformName({ platform, wsl })}, the decision points it would answer use the next judge or their fallbacks (mu judge status)`,
-			);
-		}
-	}
-
 	// mude's server, or an added model's, when the configuration asks for it: started without waiting, so a session
 	// never waits for the model to load (what it cannot answer yet goes to the judges behind it). Only a Mac runs it.
 	let startMude;
@@ -652,7 +639,6 @@ export function planLaunch({
 		muDir,
 		appDir,
 		agentDir,
-		startJudge,
 		startMude,
 		notes,
 		preface: argv[0] === "-h" || argv[0] === "--help" ? `${usage(platform)}\n\npi's help (mu passes all of this through):\n` : undefined,
@@ -688,7 +674,6 @@ export function planHost({ platform, env, argv, root, home, fs, wsl = false, str
 		muDir: launch.muDir,
 		appDir: launch.appDir,
 		agentDir: launch.agentDir,
-		startJudge: launch.startJudge,
 		startMude,
 		notes: launch.notes,
 	};
@@ -712,10 +697,6 @@ export function planHost({ platform, env, argv, root, home, fs, wsl = false, str
 	};
 }
 
-/** What mu says when the local judge does not come up. */
-const LOCAL_JUDGE_NOT_STARTED =
-	"mu: the local judge (Laya) didn't start; decision points use the next judge or their fallbacks. Run mu judge status for details.";
-
 /** The part of the preparation that is files: the app view of a checkout, mu's agent folder, the configuration's notes. */
 function prepareFiles({ plan, platform, root, err }) {
 	const path = pathFor(platform);
@@ -728,26 +709,19 @@ function prepareFiles({ plan, platform, root, err }) {
 
 /**
  * What is done before pi starts, for the command line and the desktop app's runtime host alike: the app view that
- * names a checkout mu, mu's agent folder, the configuration's notes (to `err`), and the local judge when the
- * configuration asks for it. `bin` is this launcher's folder. The local judge is one shared sidecar: starting it is
- * idempotent and never blocks pi.
+ * names a checkout mu, mu's agent folder, the configuration's notes (to `err`), and the server of the decision model
+ * the configuration asks for (mude 1.0, or one added from Hugging Face), started in the background. Nothing here waits
+ * for a judge. `bin` (this launcher's folder) is still taken, for the hosts that pass it.
  */
-export function prepareLaunch({ plan, platform, root, bin, err }) {
+export function prepareLaunch({ plan, platform, root, err }) {
 	prepareFiles({ plan, platform, root, err });
 	startMudeServer(plan);
-	if (plan.startJudge) {
-		const started = spawnSync(pathFor(platform).join(bin, "kyrn-judge-local"), ["start"], {
-			stdio: "ignore",
-			env: plan.env,
-		});
-		if (started.status !== 0) err(LOCAL_JUDGE_NOT_STARTED);
-	}
 }
 
 /**
  * mude's server, or an added model's, started in the background (`mu judge mude start --no-wait`): nothing waits for
- * it, and it outlives this process, shared by every mu session like Laya. When it is not installed it does nothing (the
- * doctor says so).
+ * it, and it outlives this process, shared by every mu session. When it is not installed it does nothing (the doctor
+ * says so). Until it answers, the judges behind it do: its address refuses the connection at once.
  */
 function startMudeServer(plan) {
 	if (!plan.startMude) return;
@@ -765,22 +739,11 @@ function startMudeServer(plan) {
 }
 
 /**
- * prepareLaunch for a program that must not stop while the local judge starts, such as the desktop app's main process:
- * the same steps and notes, with the local judge started through a child process it waits for without blocking.
+ * prepareLaunch for a program that must not stop, such as the desktop app's main process. It is prepareLaunch: it
+ * starts nothing it waits for. It stays a promise for the hosts that await it.
  */
-export async function prepareLaunchAsync({ plan, platform, root, bin, err }) {
-	prepareFiles({ plan, platform, root, err });
-	startMudeServer(plan);
-	if (!plan.startJudge) return;
-	const status = await new Promise((resolve) => {
-		const child = spawn(pathFor(platform).join(bin, "kyrn-judge-local"), ["start"], {
-			stdio: "ignore",
-			env: plan.env,
-		});
-		child.once("error", () => resolve(null));
-		child.once("close", (code) => resolve(code));
-	});
-	if (status !== 0) err(LOCAL_JUDGE_NOT_STARTED);
+export async function prepareLaunchAsync(input) {
+	prepareLaunch(input);
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -847,13 +810,38 @@ export function planAuth({ platform, env, argv, root, home, execPath, fs, canExe
 // mu judge
 // ---------------------------------------------------------------------------------------------------------
 
-/** What `mu judge <cmd>` does here: the macOS script, a look at a server of one's own, or a plain explanation. */
-export function planJudge({ platform, env, argv, bin, wsl = false }) {
-	const args = argv.length > 0 ? argv : ["status"];
-	const support = localJudgeSupport({ platform, env, wsl });
-	if (support.runs) return { kind: "script", command: pathFor(platform).join(bin, "kyrn-judge-local"), args };
-	if (args[0] === "status" && support.url) return { kind: "health", url: `${support.url.replace(/\/+$/, "")}/health` };
-	return { kind: "unsupported", message: support.message };
+/** `mu judge help`. `mu judge mude …` and `mu judge model …` have their own (packages/kyrn-judge/src/mude). */
+export const JUDGE_USAGE = [
+	"mu judge: the decision model that answers mu's judgment calls on this machine.",
+	"",
+	"  mu judge mude <cmd>     mude 1.0, mu's own decision model for coding (a Mac with Apple silicon):",
+	"                          install | enable | disable | start | stop | status | uninstall (mu judge mude help)",
+	"  mu judge model <cmd>    other decision models from Hugging Face: add <link> | list | use | remove (mu judge model help)",
+	"",
+	"Hosted judges (Jev and others) are set with mu setup, or in ~/.mu/agent/mu.json.",
+].join("\n");
+
+/** The commands that ran Laya's sidecar until mu 0.2.4. */
+const LAYA_COMMANDS = ["setup", "start", "stop", "status", "run"];
+
+/**
+ * What `mu judge <cmd>` does, besides `mude` and `model`: its usage, or a plain explanation. Laya, which `mu judge
+ * setup | start | stop | status | run` ran, is no longer built into mu.
+ */
+export function planJudge({ argv }) {
+	const [command] = argv;
+	if (command === undefined || command === "help" || command === "--help" || command === "-h") return { kind: "usage", code: 0, text: JUDGE_USAGE };
+	if (LAYA_COMMANDS.includes(command)) {
+		return {
+			kind: "removed",
+			code: 1,
+			text: [
+				`mu judge ${command} managed Laya, which is no longer built into mu.`,
+				"For a decision model on this machine, install mude 1.0 (mu judge mude install), or add one from Hugging Face (mu judge model add <link>).",
+			].join("\n"),
+		};
+	}
+	return { kind: "unknown", code: 2, text: `Unknown command: mu judge ${command}\n\n${JUDGE_USAGE}` };
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -1661,20 +1649,10 @@ export async function main(argv = process.argv.slice(2)) {
 		return handOver({ command: plan.command, args: plan.args, env: plan.env, strategy: "spawn" });
 	}
 	if (command === "judge") {
-		const plan = planJudge({ platform, env, argv: rest, bin, wsl });
-		if (plan.kind === "script") return handOver({ command: plan.command, args: plan.args, env, strategy });
-		if (plan.kind === "unsupported") {
-			err(plan.message);
-			return 1;
-		}
-		try {
-			const response = await fetch(plan.url, { signal: AbortSignal.timeout(2000) });
-			out(await response.text());
-			return 0;
-		} catch {
-			out(`The local judge server isn't answering at ${plan.url}. Check that it's running.`);
-			return 1;
-		}
+		const plan = planJudge({ argv: rest });
+		if (plan.code === 0) out(plan.text);
+		else err(plan.text);
+		return plan.code;
 	}
 	if (command === "ledger") {
 		return handOver({ command: process.execPath, args: [path.join(bin, "kyrn-ledger"), ...rest], env, strategy });
