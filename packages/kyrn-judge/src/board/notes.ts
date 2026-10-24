@@ -25,6 +25,11 @@ export interface BoardNote {
 	readonly failed?: boolean;
 	/** The subagent the line is about, by its name; absent for the main agent. */
 	readonly who?: string;
+	/**
+	 * What the board calls that subagent: a short name in the board's language, from the writer. Only with `who`, and
+	 * only once the writer gave one; `who` and the params keep the exact name.
+	 */
+	readonly label?: string;
 }
 
 type Sentence = (params: NoteParams) => string;
@@ -91,9 +96,15 @@ const SENTENCES: Readonly<Record<string, { readonly zh: Sentence; readonly en: S
 
 export type NoteCode = keyof typeof SENTENCES;
 
-/** A fixed sentence in the person's language. */
-export function noteText(code: NoteCode, params: NoteParams, language: BoardLanguage): string {
-	return SENTENCES[code][language](params);
+/**
+ * A fixed sentence in the person's language. `label` is what the board calls the subagent the sentence names: it
+ * stands in for the exact name (`name` or `who`) in the words, never in the params.
+ */
+export function noteText(code: NoteCode, params: NoteParams, language: BoardLanguage, label?: string): string {
+	const named = label
+		? { ...params, ...("name" in params ? { name: label } : {}), ...("who" in params ? { who: label } : {}) }
+		: params;
+	return SENTENCES[code][language](named);
 }
 
 /** The reason a goal continued or paused, as the sentence's tail: "：…" in Chinese, ": …" in English, or nothing. */
@@ -130,6 +141,9 @@ export function parseBoardNote(data: unknown): BoardNote | undefined {
 		...(params && Object.keys(params).length > 0 ? { params: params as NoteParams } : {}),
 		...(value.failed === true ? { failed: true } : {}),
 		...(typeof value.who === "string" && value.who ? { who: value.who } : {}),
+		...(typeof value.who === "string" && value.who && typeof value.label === "string" && value.label
+			? { label: value.label }
+			: {}),
 	};
 }
 

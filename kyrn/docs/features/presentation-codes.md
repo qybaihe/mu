@@ -166,20 +166,21 @@ Only the updates with `by: "rules"` are fixed sentences, apart from a rules head
 - `log` is the running account's latest lines (up to 40, oldest first), the same objects as `board.note` sends; the update replayed on opening (`restored: true`) carries it so a reopened conversation has its account.
 - `headline` is one spoken line on every board this kernel writes. The model writes it on a model board. A rules headline comes with `headlineCode` and `headlineParams`; it goes out on a rules board, and right after the judge decides to update (the stage changed, something is stuck or a permission is pending), before the model's board replaces it.
 - `blocked` and `next` are empty or one sentence. When the model left `blocked` empty while something is stuck, the rules fill it, with `blockedCode` and `blockedParams` (the account codes below; for now only `still_running`).
-- `agents` lists the subagents of the live runs, built by rules: `who`, `role` (when it differs from the name), `state` (`working`, `waiting`, `done`, `failed`, `stuck`), `doing` and `sinceMs`. `doing` is the model's words when it gave some for that exact name, otherwise a short summary by rule in Chinese or English: the report's first line, the command, "waiting for a slot", "thinking", or why it failed. A client may word `state` itself.
+- `agents` lists the subagents of the live runs, built by rules: `who`, `label` (v2.1, once the model gave one), `role` (when it differs from the name), `state` (`working`, `waiting`, `done`, `failed`, `stuck`), `doing` and `sinceMs`. `doing` is the model's words when it gave some for that exact name, otherwise a short summary by rule in Chinese or English: the report's first line, the command, "waiting for a slot", "thinking", or why it failed. A client may word `state` itself.
+- `label` is what the board calls a subagent: a short name the model gave it in the board's language (at most 10 Chinese or Japanese characters, or 4 words). `who` stays the exact name and is what identifies the subagent everywhere (the params of every code, `who` on account lines). Show `label ?? who`. A label stays until the model gives another for that name, or a new delegation sends out a subagent of that name.
 - `updatedAt` is when the board was made, in epoch ms.
 - `phase` can be `blocked`: waiting on something other than the person (a long command, a subagent, the judge, the network).
 
 | headlineCode | params | zh / en |
 | --- | --- | --- |
 | `now_<phase>` | | The phase's sentence, the same as `now` without `focusText`; `now_unclear` when there is no phase. `now_blocked`: 在等一件慢的事做完：命令、助手或网络。 / Waiting on something slow: a command, a subagent or the network. |
-| `still_running` | `who?`, `what`, `minutes` | The same as the account line below |
+| `still_running` | `who?`, `what`, `minutes` | The same as the account line below. `headline` says the subagent's label when it has one; `who` stays the name, and the label is the one `agents` gives that name. `blockedCode` `still_running` works the same way |
 | `helpers_working` | `count` | N 个助手在分头干 / N subagents are working in parallel |
 | `waiting_permission` | `what` | 在等你允许：… / Waiting for your permission: … |
 
 ## board.note
 
-One line of the board's running account. `sequence` and `at` together identify a line: the same two sent again replace the earlier line (the `looked` line grows while the agent reads file after file, and the `still_running` line while a call goes on). `by: "model"` lines are the board model's own words and have no code. `by: "rules"` lines carry `code` and `params`; `failed` marks a check that failed, a command that errored, a denied permission, trouble, a subagent that did not finish well. `who` names the subagent a line is about; lines about the main agent have none.
+One line of the board's running account. `sequence` and `at` together identify a line: the same two sent again replace the earlier line (the `looked` line grows while the agent reads file after file, and the `still_running` line while a call goes on). `by: "model"` lines are the board model's own words and have no code. `by: "rules"` lines carry `code` and `params`; `failed` marks a check that failed, a command that errored, a denied permission, trouble, a subagent that did not finish well. `who` names the subagent a line is about; lines about the main agent have none. `label` (v2.1) comes only with `who`, once the board's model gave that subagent a label: `text` already calls it by the label, and a client that words the code itself puts `label` in place of the `name` or `who` param. The params keep the exact name.
 
 | code | params | zh / en |
 | --- | --- | --- |

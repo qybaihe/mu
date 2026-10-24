@@ -540,7 +540,10 @@ export function registerSwarm(runtime: KyrnRuntime, runner: SwarmRunner = spawnR
 		parameters: Type.Object({
 			tasks: Type.Array(
 				Type.Object({
-					title: Type.String({ description: "Short name of the task" }),
+					title: Type.String({
+						description:
+							"Short name of the task, shown to the person on mu's board and in its list of subagents: a few words in the language the person writes in",
+					}),
 					instructions: Type.String({
 						description: "Complete, self-contained instructions, including what to report back",
 					}),

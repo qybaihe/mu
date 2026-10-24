@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Board v2.1, subagent labels (`kyrn/docs/features/plain-language-board.md`, `presentation-codes.md`). The writer's `agents[]` entries take a `label`: a short name in the board's language (at most 10 CJK characters or 4 words). The prompt asks it to keep a label once given and to call subagents by their labels in `headline`, `now`, `blocked`, `next` and `note`. The parser keeps a label only for a name the request listed, strips filler, quotes and closing marks, and caps it. The board keeps a per-session map from name to label: a reply without a label keeps the old one, and a new delegation of the same name clears it. The request's SUBAGENTS lines show each label beside the name (`- name (label: …) (role)`). `board.update.agents[]` and `board.note` gain an optional `label`; `who` and the params keep the exact name. The fixed sentences that name a subagent (`helper_done`, `helper_failed`, `still_running`, the rules headline and `blocked`, `/board`, the terminal widget) use the label. The `delegate` tool's `title` description now asks for a short name in the language the person writes in; hive member names are unchanged.
+
 ## [0.2.8] - 2026-10-24
 
 **0.2.8 is plain-language board v2: a teammate's update (`headline`, `blocked`, `next`, `agents`), subagent outcomes as they happen, a stall clock, the writer in the person's language, and two races fixed.**
