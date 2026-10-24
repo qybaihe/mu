@@ -607,8 +607,9 @@ describe("inherited rules and skills in a session", () => {
 		const results = toolResults(harness);
 		expect(results[0]).toContain("Validate every input with zod.");
 		expect(results[0]).toContain(".cursor/rules/api.mdc");
-		expect(results[1]).not.toContain("zod");
-		expect(results[2]).not.toContain("zod");
+		// The rule's text, not the bare word: a random tool call id can contain "zod".
+		expect(results[1]).not.toContain("Validate every input with zod.");
+		expect(results[2]).not.toContain("Validate every input with zod.");
 		expect(events.filter((event) => event.kind === "inherit.rule")).toHaveLength(1);
 
 		expect(notices).toHaveLength(1);
