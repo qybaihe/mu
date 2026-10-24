@@ -4,6 +4,18 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Changed
+
+- **The plain-language board talks like a teammate giving a quick update.** It leads with one line on who is doing what, or what just happened, then says what's stuck and on what, and what comes next. It starts from what changed since its last update instead of rewording it, names the file, test or command that matters, and leaves out filler such as "making progress". When a check fails, the board can say why, from the check's own output, with any key taken out. In the terminal, the board above the editor shows that line, then what needs you or what's stuck, then the latest step; `/board` shows the rest.
+- **The board says what each subagent is doing.** While subagents work, the board lists them by name with what each is doing and for how long. When one comes back or fails, the board says so right away, with the first line of its report or why it stopped, instead of waiting for all of them. "2 subagents finished" now says "1 with errors" when one of them failed or timed out.
+- **The board tells you when something is stuck, while it's stuck.** A command that runs for a minute, or a subagent that goes a minute without output, gets a line on the board ("Still running npm test, 3 min in") that updates at 1, 3 and 10 minutes, and the board looks again each time. Set `features.board.stallMs` to change the minute, or 0 to turn it off.
+- **The board's model writes in the language you write in.** It used to follow the desktop app's language. Now a Chinese message gets a Chinese board in an English app, and an English message gets an English one in a Japanese app; a message like "ok" goes by the one before it. The board's fixed lines still follow the app's language, and `features.board.language` still fixes one.
+
+### Fixed
+
+- **A permission prompt stays on the board until you answer it.** A board update that started just before mu asked for permission could replace the "Needs you" line while the prompt was still open. The board also showed the stage the agent was in, such as "Making changes", instead of "Waiting for you".
+- **A busy agent no longer keeps the board from updating.** When the agent said something every few seconds, each board update gave way to the next one, and the board could stay unwritten until the agent stopped. Now the board is written anyway once it's 15 seconds old (`features.board.maxStaleMs`). Mid-run, the board's model gets 20 seconds instead of 60, since a later update is already out of date.
+
 ## [0.2.7] - 2026-10-24
 
 **0.2.7 adds OpenAI's decision model as a judge, starts OpenAI on GPT-6.1 Sol, shortens the model menu to the OpenAI models worth picking, and keeps the thinking level in view.** The desktop app carries mu-agent 0.2.7.

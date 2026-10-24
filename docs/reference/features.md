@@ -321,11 +321,13 @@ On by default: yes. Decision points: `board.read`.
 | --- | --- | --- |
 | `defaultOn` | `false` | On in projects you haven't set it for. Off by default: each board update costs a model call. |
 | `model` | empty | Model that writes the board. As provider/model; if set here, you won't be asked. Empty: you pick one the first time you turn the board on (Claude Opus 4.6 recommended, then Gemini 3.8 Flash), saved in mu/board.json. If none is picked: the writer model, else the current model. |
-| `language` | `auto` | Board language. One of `auto` (The one you write in), `zh` (Chinese), `en` (English). |
+| `language` | `auto` | Board language. Auto: what the model writes follows the language of your messages; the board's fixed lines follow the app's language. One of `auto` (The one you write in), `zh` (Chinese), `en` (English). |
 | `everyTools` | `5` | Tool calls between checks. Range 1 to 100. |
 | `minIntervalMs` | `20000` ms | Minimum time between checks while it works. When the agent stops, the board always checks, regardless of this setting. Range 0 to 600000. |
 | `maxSteps` | `10` | Latest tool calls read each time. Range 3 to 50. |
-| `narrateTimeoutMs` | `60000` ms | Max wait for the writer. After that, stock phrases are used. Range 5000 to 300000. |
+| `narrateTimeoutMs` | `60000` ms | Max wait for the writer. This is the limit when a run ends. Mid-run the writer gets 20 s at most, since a later update would already be out of date. After that, stock phrases are used. Range 5000 to 300000. |
+| `stallMs` | `60000` ms | Time before a long step counts as stuck. When a command runs this long, or a subagent has no output for this long, the board adds a line saying it's still running, updates that line at 3 and 10 times this, and checks again each time. 0 turns this off. Range 0 to 3600000. |
+| `maxStaleMs` | `15000` ms | Oldest the board gets while things keep happening. When something new happens while the judge is still reading, the board usually waits for the next check. If it's already older than this, it's rewritten anyway, so a busy agent can't keep it out of date. Range 0 to 300000. |
 | `unattended` | `false` | Also in one-shot runs. Nobody watches the board in mu --print or json mode, so by default it isn't written there, saving the judge and writer calls. |
 | `followAlways` | `false` | Check on subagents on a timer. By default the board checks only when a subagent starts, finishes or fails. On: it checks at every interval, changed or not. |
 

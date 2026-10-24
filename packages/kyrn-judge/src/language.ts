@@ -38,6 +38,47 @@ export function appLanguage(env: Record<string, string | undefined> = process.en
 	return { code, wording: base === "zh" ? "zh" : "en", name: nameOf(code) };
 }
 
+const ENGLISH: AppLanguage = { code: "en", wording: "en", name: "English" };
+const BY_SCRIPT = {
+	kana: { code: "ja", wording: "en", name: "Japanese" },
+	hangul: { code: "ko", wording: "en", name: "Korean" },
+	han: { code: "zh-CN", wording: "zh", name: "Simplified Chinese" },
+} as const satisfies Record<string, AppLanguage>;
+/** Kana before Han: Japanese is written with both. Hangul before Han: Korean text may carry a few Han characters. */
+const SCRIPTS = [
+	["kana", /[぀-ヿㇰ-ㇿ]/],
+	["hangul", /[가-힯ᄀ-ᇿ㄰-㆏]/],
+	["han", /[㐀-鿿豈-﫿]/],
+] as const;
+/** App languages not written in Latin letters: a message in Latin letters is not in one of them. */
+const NOT_LATIN = new Set(["zh", "ja", "ko", "ru", "uk", "be", "bg", "mk", "el", "fa", "ar", "ur", "he", "hi", "th"]);
+
+/**
+ * The language a person writes in, from their latest messages, newest first: what a model writing for them
+ * (the board) should write in. Each message is read by its script, and the first that tells decides:
+ * - kana: Japanese; Hangul: Korean; Han characters: Chinese;
+ * - two or more words in Latin letters: the app's language when it is one written in Latin letters other than
+ *   English (a German app, a German message), else English;
+ * - letters of another script (Cyrillic, Arabic, …): the app's language unless it is English, Chinese, Japanese or
+ *   Korean, else English.
+ * A message that tells nothing ("ok", "1", a lone path) passes to the one before it; when none tells, the app's
+ * language (MU_LANG) does, else English. The app's own tag wins whenever it names the same language, so a
+ * Traditional Chinese app keeps "Traditional Chinese".
+ */
+export function writingLanguage(messages: readonly string[], app = appLanguage()): AppLanguage {
+	const base = app?.code.split("-")[0].toLowerCase() ?? "";
+	for (const text of messages.slice(0, 3)) {
+		const script = SCRIPTS.find(([, pattern]) => pattern.test(text))?.[0];
+		if (script) return app && base === BY_SCRIPT[script].code.split("-")[0] ? app : BY_SCRIPT[script];
+		const latinWords = text.match(/\p{Script=Latin}{2,}/gu)?.length ?? 0;
+		if (latinWords >= 2) return app && base !== "en" && !NOT_LATIN.has(base) ? app : ENGLISH;
+		if (/[^\P{L}\p{Script=Latin}]/u.test(text)) {
+			return app && !["en", "zh", "ja", "ko"].includes(base) ? app : ENGLISH;
+		}
+	}
+	return app ?? ENGLISH;
+}
+
 /** The Chinese or the English of a message, by the app's language; English when none is set. */
 export function say(texts: { readonly zh: string; readonly en: string }, language = appLanguage()): string {
 	return language?.wording === "zh" ? texts.zh : texts.en;
