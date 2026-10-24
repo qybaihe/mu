@@ -68,6 +68,12 @@ export type NativeConversationState = {
    * the view instead.
    */
   settings?: SessionSettings;
+  /**
+   * The model and thinking level the home page's first message is setting while mu starts (its `set_model` and
+   * `set_thinking_level`), until they are set: the model chip says them meanwhile, where it would otherwise say mu's
+   * default, or the model pi reports as it starts, which the set-up is about to change.
+   */
+  settingUp?: Pick<SessionSettings, 'model' | 'thinkingLevel'>;
 };
 
 /** A message sent while another was on its way, until its turn comes. */
@@ -85,6 +91,26 @@ export type FirstMessage = {
   /** What the person typed, which goes back into the box if the message cannot be sent. */
   typed?: string;
 };
+
+/** What a first message's set-up sets: the model (`provider/id`) and the thinking level, when it sets them. */
+function settingUpOf(setup: readonly PiCommand[]): NativeConversationState['settingUp'] {
+  let model: string | undefined;
+  let thinkingLevel: string | undefined;
+  for (const command of setup) {
+    if (command.type === 'set_model') model = `${command.provider}/${command.modelId}`;
+    if (command.type === 'set_thinking_level') thinkingLevel = command.level;
+  }
+  return model || thinkingLevel
+    ? { ...(model ? { model } : {}), ...(thinkingLevel ? { thinkingLevel } : {}) }
+    : undefined;
+}
+
+/** The state once the first message's set-up is done: the model chip says what pi says from then on. */
+function setUpDone(state: NativeConversationState): NativeConversationState {
+  if (!state.settingUp) return state;
+  const { settingUp: _done, ...rest } = state;
+  return rest;
+}
 
 /** First messages by the id of the conversation they are for, until its screen opens it. */
 const staged = new Map<string, FirstMessage>();
@@ -367,15 +393,21 @@ export function useNativeConversation(requestedId: string): NativeConversationSt
           if (options.first) next.returned = { id: outgoing.id, text: options.typed ?? text };
           return next;
         });
+      // The set-up is done, or failed: what pi says is in force from then on.
+      const setUp = (): void => {
+        if (options.first) commit(setUpDone);
+      };
       for (const command of setup) {
         // One after another: the level goes after the model, which sets it back.
         // eslint-disable-next-line no-await-in-loop
         const done = await client.request(latest.current.id, command);
         if (done.ok === false) {
+          setUp();
           notSent(done);
           return done;
         }
       }
+      setUp();
       // Stopped while mu was being set up: the message does not go.
       if (setup.length > 0 && stopTaken.current) {
         stopTaken.current = false;
@@ -452,13 +484,19 @@ export function useNativeConversation(requestedId: string): NativeConversationSt
   /** The home page's first message: the model and level, then the message; with nothing typed, the model and level. */
   const sendFirst = useCallback(
     async (first: FirstMessage): Promise<void> => {
+      const settingUp = settingUpOf(first.setup);
+      if (settingUp) commit((old) => ({ ...old, settingUp }));
       if (first.text) {
         await send(first.text, first.images ?? [], { setup: first.setup, first: true, typed: first.typed });
         return;
       }
-      for (const command of first.setup) if ((await request(command)).ok === false) return;
+      try {
+        for (const command of first.setup) if ((await request(command)).ok === false) return;
+      } finally {
+        commit(setUpDone);
+      }
     },
-    [request, send]
+    [commit, request, send]
   );
   useEffect(() => {
     firstRef.current = sendFirst;

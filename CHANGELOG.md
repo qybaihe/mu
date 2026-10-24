@@ -7,6 +7,8 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 ### Fixed
 
 - **`mu doctor` no longer fails on a machine without Chrome.** A browser is only needed for mu's browser, so the row now says it's optional instead of asking you to fix it, and `mu doctor` (and `/doctor` inside mu) passes when everything else is set up. `mu --help` also fits in a 100-column terminal now.
+- **Small visual fixes in the desktop app.** In the sidebar, a long project name now ends in an ellipsis before the project's **+** and menu buttons instead of running under them, and the buttons hide again when the pointer leaves after a click. A pinned conversation's title gets room before its folder name. In a reply, the folder icon after a file name no longer leaves a gap in the sentence while it's hidden, and a file name that doesn't exist is gray but easy to read. Right after you send from the home page, the model chip names the same model the home page showed instead of "Default model" while mu starts.
+- **A mistyped Hugging Face model name no longer says the model is private.** When you add a decision model under Settings → Judges, Hugging Face answers a name that doesn't exist the same way as a private or gated model, so the app now asks you to check the name and says it may not exist, or may be private or gated.
 
 ## [0.2.5] - 2026-10-24
 
