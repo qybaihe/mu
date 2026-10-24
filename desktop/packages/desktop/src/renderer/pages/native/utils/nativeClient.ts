@@ -4,6 +4,7 @@
  */
 import { createContext, useContext } from 'react';
 import { ipcBridge } from '@/common';
+import { kyrnGitBridge } from '@/common/kyrn/gitBridge';
 import {
   nativeBridge,
   type NativeAttentionEvent,
@@ -39,6 +40,11 @@ export type NativeClient = {
   onAttention: (listener: (event: NativeAttentionEvent) => void) => () => void;
   /** Asks the person for a project folder; undefined when they chose none. */
   pickFolder: () => Promise<string | undefined>;
+  /**
+   * The repository each folder is in (its top folder), by the folder; a folder in none is left out, and so is every
+   * folder when they cannot be looked up.
+   */
+  repoRoots: (folders: string[]) => Promise<Record<string, string>>;
 };
 
 /**
@@ -63,6 +69,10 @@ export const bridgeClient: NativeClient = {
   onAttention: (listener) => nativeBridge.attention.on(listener),
   pickFolder: async () =>
     (await ipcBridge.dialog.showOpen.invoke({ properties: ['openDirectory', 'createDirectory'] }))?.[0],
+  repoRoots: async (folders) => {
+    const result = await kyrnGitBridge.roots.invoke({ folders });
+    return result.ok ? result.data : {};
+  },
 };
 
 export const NativeClientContext = createContext<NativeClient>(bridgeClient);

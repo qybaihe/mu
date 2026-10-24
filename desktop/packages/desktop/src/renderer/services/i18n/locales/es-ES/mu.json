@@ -1093,9 +1093,11 @@
       "body": "mu trabaja en esta carpeta. Di qué quieres que se haga."
     },
     "sider": {
-      "title": "Recientes",
       "new": "Nueva conversación en una carpeta",
       "empty": "Aún no hay conversaciones",
+      "addProject": "Añadir proyecto",
+      "removeProject": "Quitar proyecto",
+      "archiveProjectConfirm": "¿Archivar «{{name}}» y sus conversaciones? Puedes restaurarlas desde Archivados, al final de la lista.",
       "all": "Mostrar todas ({{count}})",
       "fewer": "Mostrar menos",
       "deleteConfirm": "¿Eliminar “{{title}}”? Su archivo de sesión va a la papelera, desde donde aún puedes restaurarlo.",

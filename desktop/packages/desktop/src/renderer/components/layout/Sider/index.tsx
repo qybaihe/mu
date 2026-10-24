@@ -6,7 +6,7 @@ import { cleanupSiderTooltips, getSiderTooltipProps } from '@renderer/utils/ui/s
 import { useLayoutContext } from '@renderer/hooks/context/LayoutContext';
 import { blurActiveElement } from '@renderer/utils/ui/focus';
 import { useThemeContext } from '@renderer/hooks/context/ThemeContext';
-import NativeSiderGroup from '@renderer/pages/native/components/NativeSiderGroup';
+import NativeSiderGroup from '@renderer/pages/native/sider/NativeSiderGroup';
 import { useNativeEnabled } from '@renderer/pages/native/hooks/useNativeConversations';
 import { SETTINGS_HOME } from '@renderer/pages/settings/settingsNav';
 import { SiderToolbar, SiderSearchEntry, SiderScheduledEntry } from './SiderNav';

@@ -12,8 +12,9 @@ import { getCurrentConversation } from '@/renderer/pages/conversation/explorer/c
 import { getCurrentProject, setCurrentProject } from '@/renderer/pages/conversation/explorer/currentProjectStore';
 import { KernelBody } from '@/renderer/pages/conversation/KyrnPanel';
 import NativeConversationPage from '@/renderer/pages/native';
-import NativeSiderGroup from '@/renderer/pages/native/components/NativeSiderGroup';
+import NativeSiderGroup from '@/renderer/pages/native/sider/NativeSiderGroup';
 import { forgetNativeUnread } from '@/renderer/pages/native/hooks/useNativeAttention';
+import { forgetProjects, forgetRepoRoots } from '@/renderer/pages/native/sider/useProjects';
 import { NativeClientContext, type NativeClient } from '@/renderer/pages/native/utils/nativeClient';
 import { useNativeActivity, useNativeFolder } from '@/renderer/pages/native/utils/nativeActivityStore';
 import enCommon from '@/renderer/services/i18n/locales/en-US/common.json';
@@ -67,7 +68,11 @@ vi.mock('@/renderer/pages/conversation/Preview/browser/muBrowser/MuBrowserHost',
   ),
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  forgetProjects();
+  forgetRepoRoots();
+});
 
 const i18n = createInstance();
 void i18n.init({
@@ -86,7 +91,15 @@ void i18n.init({
   interpolation: { escapeValue: false },
 });
 
-const Where: React.FC = () => <div data-testid='where'>{useLocation().pathname}</div>;
+/** Where the app is: the route, and the folder the home page was asked to start in (`state.workspace`). */
+const Where: React.FC = () => {
+  const { pathname, state } = useLocation();
+  return (
+    <div data-testid='where' data-workspace={(state as { workspace?: string } | null)?.workspace ?? ''}>
+      {pathname}
+    </div>
+  );
+};
 
 const Panel: React.FC<{ id: string }> = ({ id }) => {
   const activity = useNativeActivity(id);
@@ -397,6 +410,9 @@ const items = () => screen.queryAllByTestId('native-sidebar-item');
 /** What this window keeps in its storage under `key`: a list of ids. */
 const stored = (key: string): string[] => JSON.parse(localStorage.getItem(key) ?? '[]');
 const shownIds = () => items().map((item) => item.dataset.id);
+const projectFolders = () => screen.queryAllByTestId('native-project-group').map((group) => group.dataset.folder);
+const projectOf = (folder: string) =>
+  document.querySelector<HTMLElement>(`[data-testid="native-project-group"][data-folder="${folder}"]`);
 const creates = (host: FakeHost) => host.calls.filter((call) => call.method === 'create');
 const openNew = async () => {
   await act(async () => {
@@ -422,10 +438,12 @@ describe('the sidebar’s native group', () => {
     sider(host.client);
     await waitFor(() => expect(shownIds()).toEqual(['b', 'a']));
     expect(screen.getByTestId('native-sidebar-group')).toBeInTheDocument();
+    // Each in its folder's project, the one changed last first: a row does not repeat its project's folder.
+    expect(projectFolders()).toEqual(['/work/beta', '/work/alpha']);
     const [b, a] = items();
-    expect(b).toHaveTextContent('Fix the buildbeta');
+    expect(b).toHaveTextContent(/^Fix the build$/);
     expect(b.querySelector('[aria-label="Running"]')).not.toBeNull();
-    expect(a).toHaveTextContent('New conversationalpha');
+    expect(a).toHaveTextContent(/^New conversation$/);
     fireEvent.click(a);
     expect(screen.getByTestId('where')).toHaveTextContent('/conversation/native/a');
   });
@@ -456,7 +474,8 @@ describe('the sidebar’s native group', () => {
     expect(creates(host)).toEqual([{ method: 'create', cwd: '/work/gamma' }]);
     await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/conversation/native/draft-4'));
     await waitFor(() => expect(shownIds()).toContain('draft-4'));
-    expect(items().find((item) => item.dataset.id === 'draft-4')).toHaveTextContent('gamma');
+    // In a project of its own: the folder is in no repository and under no added folder.
+    expect(projectOf('/work/gamma')?.querySelector('[data-id="draft-4"]')).not.toBeNull();
 
     // Again, in a recent folder, with the judge approving what mu does.
     await openNew();
@@ -543,13 +562,13 @@ describe('the sidebar’s native group', () => {
     expect(shownIds()).toEqual(['new', 'a']);
   });
 
-  it('shows the newest few, and all of them when asked', async () => {
+  it('shows the newest few of a project, and all of them when asked', async () => {
     const host = createFakeHost();
     for (let index = 1; index <= 10; index++) host.add({ id: `c${index}`, updatedAt: index });
     sider(host.client);
-    await waitFor(() => expect(shownIds()).toHaveLength(8));
+    await waitFor(() => expect(shownIds()).toHaveLength(5));
     expect(shownIds()[0]).toBe('c10');
-    expect(shownIds()).not.toContain('c2');
+    expect(shownIds()).not.toContain('c5');
     expect(screen.getByTestId('native-sidebar-more')).toHaveTextContent('Show all (10)');
     fireEvent.click(screen.getByTestId('native-sidebar-more'));
     expect(shownIds()).toHaveLength(10);
@@ -608,14 +627,17 @@ describe('the sidebar’s native group', () => {
     for (let index = 1; index <= 10; index++)
       host.add({ id: `c${index}`, updatedAt: index, sessionFile: `/s/c${index}.jsonl` });
     sider(host.client);
-    await waitFor(() => expect(shownIds()).toHaveLength(8));
-    // The oldest, pinned, first; then the newest seven.
-    expect(shownIds()).toEqual(['c1', 'c10', 'c9', 'c8', 'c7', 'c6', 'c5', 'c4']);
-    expect(screen.getByTestId('native-sidebar-more')).toHaveTextContent('Show all (10)');
+    await waitFor(() => expect(shownIds()).toHaveLength(6));
+    // The oldest, pinned, above the project; then the project's newest five, of the nine it has.
+    expect(shownIds()).toEqual(['c1', 'c10', 'c9', 'c8', 'c7', 'c6']);
+    expect(screen.getByTestId('native-sidebar-pinned-label')).toHaveTextContent('Pinned');
+    expect(screen.getByTestId('native-sidebar-more')).toHaveTextContent('Show all (9)');
     pinsAre(['c1', 'c2']);
-    expect(shownIds()).toEqual(['c2', 'c1', 'c10', 'c9', 'c8', 'c7', 'c6', 'c5']);
+    expect(shownIds()).toEqual(['c2', 'c1', 'c10', 'c9', 'c8', 'c7', 'c6']);
+    expect(screen.getByTestId('native-sidebar-more')).toHaveTextContent('Show all (8)');
     pinsAre();
-    expect(shownIds()).toEqual(['c10', 'c9', 'c8', 'c7', 'c6', 'c5', 'c4', 'c3']);
+    expect(shownIds()).toEqual(['c10', 'c9', 'c8', 'c7', 'c6']);
+    expect(screen.queryByTestId('native-sidebar-pinned-label')).toBeNull();
   });
 
   it('offers no pin to a conversation with no session file yet: its id changes when pi names it', async () => {
@@ -740,7 +762,7 @@ describe('the sidebar’s native group', () => {
     for (let index = 1; index <= 11; index++)
       host.add({ id: `c${index}`, updatedAt: index, sessionFile: `/s/c${index}.jsonl` });
     sider(host.client);
-    await waitFor(() => expect(shownIds()).toHaveLength(8));
+    await waitFor(() => expect(shownIds()).toHaveLength(5));
     expect(shownIds()).not.toContain('c1');
     expect(screen.getByTestId('native-sidebar-more')).toHaveTextContent('Show all (9)');
     expect(screen.getByTestId('native-sidebar-archived-toggle')).toHaveTextContent('Archived (2)');
@@ -878,5 +900,168 @@ describe('the sidebar’s native group', () => {
     await waitFor(() => expect(screen.getByTestId('native-sidebar-delete')).toBeVisible());
     fireEvent.keyDown(within(items()[0]).getByTestId('native-sidebar-item-menu'), { key: 'Enter' });
     expect(screen.getByTestId('where')).toHaveTextContent('/guid');
+  });
+
+  const rowsOf = (folder: string) =>
+    [...(projectOf(folder)?.querySelectorAll<HTMLElement>('[data-testid="native-sidebar-item"]') ?? [])].map(
+      (row) => row.dataset.id
+    );
+  const headOf = (folder: string) => {
+    const head = projectOf(folder)?.querySelector<HTMLElement>('[aria-expanded]');
+    if (!head) throw new Error(`no project ${folder}`);
+    return head;
+  };
+
+  it('groups the conversations by the repository their folder is in, else by the folder; a new folder makes its project', async () => {
+    const host = createFakeHost();
+    host.repo('/work/mu');
+    host.add({ id: 'a', cwd: '/work/mu', title: 'At the top', updatedAt: 1 });
+    host.add({ id: 'b', cwd: '/work/mu/packages/app', title: 'In a package', updatedAt: 3 });
+    host.add({ id: 'c', cwd: '/work/notes', title: 'Notes', updatedAt: 2 });
+    sider(host.client);
+    await waitFor(() => expect(projectFolders()).toEqual(['/work/mu', '/work/notes']));
+    expect(headOf('/work/mu')).toHaveTextContent('mu');
+    expect(rowsOf('/work/mu')).toEqual(['b', 'a']);
+    expect(rowsOf('/work/notes')).toEqual(['c']);
+    // A row says its folder where it is not the project's own.
+    expect(items()[0]).toHaveTextContent(/^In a packageapp$/);
+    expect(items()[1]).toHaveTextContent(/^At the top$/);
+
+    // Started from the command line in a folder no project has: a project of its own, at the top.
+    act(() =>
+      host.change({
+        conversation: { id: 'd', cwd: '/work/site', title: 'Site', createdAt: 4, updatedAt: 4, live: false },
+      })
+    );
+    await waitFor(() => expect(projectFolders()).toEqual(['/work/site', '/work/mu', '/work/notes']));
+    // In another folder of a repository the list has: into its project, no project of its own on the way.
+    act(() =>
+      host.change({
+        conversation: { id: 'e', cwd: '/work/mu/docs', title: 'Docs', createdAt: 5, updatedAt: 5, live: false },
+      })
+    );
+    expect(projectFolders()).toEqual(['/work/mu', '/work/site', '/work/notes']);
+    expect(rowsOf('/work/mu')).toEqual(['e', 'b', 'a']);
+  });
+
+  it('adds a project from a picked folder: it shows, empty, and the home page opens to start a conversation there', async () => {
+    const host = createFakeHost();
+    host.repo('/work/mu');
+    host.add({ id: 'a', cwd: '/work/mu', updatedAt: 1 });
+    sider(host.client);
+    await waitFor(() => expect(projectFolders()).toEqual(['/work/mu']));
+    const add = screen.getByTestId('native-add-project-row');
+    expect(add).toHaveTextContent('Add project');
+    // No folder picked: nothing changes.
+    await act(async () => {
+      fireEvent.click(add);
+    });
+    expect(projectFolders()).toEqual(['/work/mu']);
+    expect(screen.getByTestId('where')).toHaveAttribute('data-workspace', '');
+
+    host.pick('/work/new');
+    await act(async () => {
+      fireEvent.click(add);
+    });
+    expect(projectFolders()).toEqual(['/work/new', '/work/mu']);
+    expect(rowsOf('/work/new')).toEqual([]);
+    expect(stored('mu.native.projects')).toEqual([{ folder: '/work/new', addedAt: expect.any(Number) }]);
+    expect(screen.getByTestId('where')).toHaveTextContent('/guid');
+    expect(screen.getByTestId('where')).toHaveAttribute('data-workspace', '/work/new');
+    // What is started in it, or in a folder inside it, is in it.
+    act(() =>
+      host.change({
+        conversation: { id: 'n', cwd: '/work/new/api', title: 'API', createdAt: 9, updatedAt: 9, live: false },
+      })
+    );
+    await waitFor(() => expect(rowsOf('/work/new')).toEqual(['n']));
+    expect(projectFolders()).toEqual(['/work/new', '/work/mu']);
+  });
+
+  it('starts a conversation in a project from its "+", and folds a project, which stays folded', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'a', cwd: '/work/alpha', updatedAt: 1 });
+    host.add({ id: 'b', cwd: '/work/beta', updatedAt: 2 });
+    sider(host.client, '/conversation/native/b');
+    await waitFor(() => expect(projectFolders()).toEqual(['/work/beta', '/work/alpha']));
+    await act(async () => {
+      fireEvent.click(within(projectOf('/work/alpha')!).getByTestId('native-project-new'));
+    });
+    expect(screen.getByTestId('where')).toHaveTextContent('/guid');
+    expect(screen.getByTestId('where')).toHaveAttribute('data-workspace', '/work/alpha');
+    // A click on the "+" does not fold the project.
+    expect(headOf('/work/alpha')).toHaveAttribute('aria-expanded', 'true');
+
+    fireEvent.click(headOf('/work/alpha'));
+    expect(headOf('/work/alpha')).toHaveAttribute('aria-expanded', 'false');
+    expect(shownIds()).toEqual(['b']);
+    expect(stored('mu.native.foldedProjects')).toEqual(['/work/alpha']);
+    cleanup();
+    sider(host.client);
+    await waitFor(() => expect(projectFolders()).toEqual(['/work/beta', '/work/alpha']));
+    expect(shownIds()).toEqual(['b']);
+    fireEvent.keyDown(headOf('/work/alpha'), { key: 'Enter' });
+    expect(shownIds()).toEqual(['b', 'a']);
+    expect(stored('mu.native.foldedProjects')).toEqual([]);
+  });
+
+  it('keeps the open conversation in view past the newest few of its project', async () => {
+    const host = createFakeHost();
+    for (let index = 1; index <= 7; index++) host.add({ id: `c${index}`, updatedAt: index });
+    sider(host.client, '/conversation/native/c1');
+    await waitFor(() => expect(shownIds()).toEqual(['c7', 'c6', 'c5', 'c4', 'c3', 'c1']));
+    expect(items().at(-1)).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('archives a project with its conversations after a confirmation, and removes an empty one', async () => {
+    const success = vi.spyOn(Message, 'success').mockImplementation(() => undefined as never);
+    setIs('mu.native.archived');
+    const host = createFakeHost();
+    host.add({ id: 'a', cwd: '/work/alpha', updatedAt: 1, sessionFile: '/s/a.jsonl' });
+    host.add({ id: 'a2', cwd: '/work/alpha', updatedAt: 2, sessionFile: '/s/a2.jsonl' });
+    // A draft keeps its place: its id changes when pi names its session, so it could not be restored.
+    host.add({ id: 'draft-1', cwd: '/work/alpha', updatedAt: 3 });
+    host.add({ id: 'b', cwd: '/work/beta', updatedAt: 4, sessionFile: '/s/b.jsonl' });
+    sider(host.client);
+    await waitFor(() => expect(projectFolders()).toEqual(['/work/beta', '/work/alpha']));
+    const menu = async (folder: string) => {
+      await act(async () => {
+        fireEvent.click(within(projectOf(folder)!).getByTestId('native-project-menu'));
+      });
+      await waitFor(() => expect(screen.getByTestId('native-project-archive')).toBeVisible());
+    };
+    await menu('/work/alpha');
+    expect(screen.getByTestId('native-project-archive')).toHaveTextContent('Archive project');
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-project-archive'));
+    });
+    expect(await screen.findByTestId('native-project-archiving')).toHaveTextContent(
+      'Archive "alpha" and its conversations? You can restore them from Archived at the end of the list.'
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-project-archive-confirm'));
+    });
+    expect(stored('mu.native.archived').toSorted()).toEqual(['a', 'a2']);
+    expect(rowsOf('/work/alpha')).toEqual(['draft-1']);
+    expect(screen.getByTestId('native-sidebar-archived-toggle')).toHaveTextContent('Archived (2)');
+    expect(success).toHaveBeenLastCalledWith('Archived');
+
+    // An added project with nothing in it is only removed.
+    host.pick('/work/empty');
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-add-project-row'));
+    });
+    expect(projectFolders()).toContain('/work/empty');
+    await menu('/work/empty');
+    expect(screen.getByTestId('native-project-archive')).toHaveTextContent('Remove project');
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-project-archive'));
+    });
+    // No confirmation asked.
+    expect(screen.getByTestId('native-project-archiving')).toBeEmptyDOMElement();
+    expect(projectFolders()).not.toContain('/work/empty');
+    expect(stored('mu.native.projects')).toEqual([]);
+    setIs('mu.native.archived');
+    success.mockRestore();
   });
 });
