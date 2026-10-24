@@ -361,6 +361,7 @@
     "download": "Download this version",
     "full_agent": "Full mu-agent changelog",
     "headlines": {
+      "v0.2.2": "the mude 1.0 install copes with a full disk, a stop at any step and two installs at once; clearer English",
       "v0.2.1": "mude 1.0 is the recommended judge on a Mac, and installing it survives a power cut",
       "v0.2.0": "mu's own model arrives: mude 1.0 in one click, subscription sign-in straight from mu setup, replies that start sooner",
       "v0.1.10": "conversations imported from ZCode, a copy edit of the English, unattended runs that keep their servers",

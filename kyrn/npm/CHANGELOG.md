@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-10-24
+
+**0.2.2 makes `mu judge mude install` cope with a full disk, a stop at any step and two installs at once.**
+
+### Changed
+
+- English pass on the strings added since 0.1.10, against `docs/writing-style.md`: `mu judge mude` messages say how to resume ("Run mu judge mude install to resume"); errors say what happened and what to do next ("Couldn't create the Python environment (uv venv)", "Hugging Face returned 404 for …", the disk-space error); the kernel's settings descriptions read naturally (their translations kept); `mu --help` describes `mu judge mude install` as "install mude 1.0, mu's own decision model for coding, and make it the judge on this Mac".
+
 ### Fixed
 
 - `mu judge mude install`: Ctrl-C (or SIGTERM) during the wait between tries after a dropped connection now stops the download at once. It prints "Stopped with X of 1.8 GB downloaded. Run mu judge mude install to resume". Before, the wait (up to 30 s) ran on, and the command ended 5 s later with no message. What was downloaded was kept either way.
