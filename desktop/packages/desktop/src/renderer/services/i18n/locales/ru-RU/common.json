@@ -1213,6 +1213,9 @@
         "helpers_back_failed_other": "Вернулось помощников: {{count, number}}, с ошибками: {{failed, number}}",
         "with_detail": "{{line}}: {{detail}}"
       },
+      "list": {
+        "separator": ", "
+      },
       "headlines": {
         "helpers_working": "Работают помощники: {{count, number}}",
         "helpers_working_one": "Работают помощники: {{count, number}}",

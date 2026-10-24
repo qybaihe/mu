@@ -1183,6 +1183,9 @@
         "helpers_back_failed_other": "{{count, number}} ajudantes voltaram, {{failed, number}} com erro",
         "with_detail": "{{line}}: {{detail}}"
       },
+      "list": {
+        "separator": ", "
+      },
       "headlines": {
         "helpers_working": "{{count, number}} ajudantes trabalhando",
         "helpers_working_one": "{{count, number}} ajudante trabalhando",

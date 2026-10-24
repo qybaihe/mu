@@ -17,6 +17,8 @@ type Translate = (key: string, options?: Record<string, unknown>) => string;
 type Has = (key: string) => boolean;
 
 const KEY = 'common.kyrn.boardView.notes';
+/** How the app's language lists names: its separator ("、" in Chinese). */
+const LIST = 'common.kyrn.boardView.list';
 
 /** Each fixed sentence and what fills it. */
 export const NOTE_SENTENCES: ReadonlyMap<string, readonly string[]> = new Map([
@@ -134,12 +136,34 @@ export const noteLabel = (note: BoardNote, labelOf?: LabelOf): string | undefine
   note.who ? (note.label ?? labelOf?.(note.who)) : undefined;
 
 /**
+ * `helpers_sent`'s titles with each helper called by its label. The harness joins the helpers' exact names with ", ",
+ * before any of them has a label, so each part is looked up by name (the whole first: one helper's name may hold ", ").
+ * When every part has a label, they are joined the way the app's language lists things ("查计时、改测试"); otherwise the
+ * names without one stay, and so does ", ".
+ */
+export function labeledTitles(titles: string, labelOf: LabelOf, separator: string): string {
+  const whole = labelOf(titles);
+  if (whole) return whole;
+  const parts = titles.split(', ');
+  const labels = parts.map((part) => labelOf(part));
+  if (!labels.some(Boolean)) return titles;
+  if (labels.every(Boolean)) return labels.join(separator);
+  return parts.map((part, at) => labels[at] ?? part).join(', ');
+}
+
+/**
  * The line in the app's language, or undefined when it keeps the harness's (or the model's) sentence. The helper the
- * line is about is called by its label (`noteLabel`); another name in its params stays as it is.
+ * line is about is called by its label (`noteLabel`); another name in its params stays as it is, except the helpers
+ * `helpers_sent` lists, each called by its own label.
  */
 export function noteWords(note: BoardNote, t: Translate, has: Has, labelOf?: LabelOf): string | undefined {
   if (note.by !== 'rules' || !note.code) return undefined;
   const label = noteLabel(note, labelOf);
-  const params = label ? withLabels(note.params, (name) => (name === note.who ? label : undefined)) : note.params;
+  let params = label ? withLabels(note.params, (name) => (name === note.who ? label : undefined)) : note.params;
+  const titles = params?.titles;
+  if (note.code === 'helpers_sent' && labelOf && typeof titles === 'string' && titles) {
+    const separator = has(`${LIST}.separator`) ? t(`${LIST}.separator`) : ', ';
+    params = { ...params, titles: labeledTitles(titles, labelOf, separator) };
+  }
   return codeWords(note.code, params, t, has);
 }

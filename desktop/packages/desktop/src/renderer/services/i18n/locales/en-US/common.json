@@ -1183,6 +1183,9 @@
         "helpers_back_failed_other": "{{count, number}} subagents finished, {{failed, number}} with errors",
         "with_detail": "{{line}}: {{detail}}"
       },
+      "list": {
+        "separator": ", "
+      },
       "headlines": {
         "helpers_working": "{{count, number}} subagents are working",
         "helpers_working_one": "{{count, number}} subagent is working",

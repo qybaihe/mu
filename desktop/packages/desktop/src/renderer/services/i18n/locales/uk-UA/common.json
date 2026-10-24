@@ -1214,6 +1214,9 @@
         "helpers_back_failed_other": "Повернулося помічників: {{count, number}}, з помилками: {{failed, number}}",
         "with_detail": "{{line}}: {{detail}}"
       },
+      "list": {
+        "separator": ", "
+      },
       "headlines": {
         "helpers_working": "Працюють помічники: {{count, number}}",
         "helpers_working_one": "Працюють помічники: {{count, number}}",

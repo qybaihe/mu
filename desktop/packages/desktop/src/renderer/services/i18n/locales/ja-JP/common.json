@@ -1183,6 +1183,9 @@
         "helpers_back_failed_other": "{{count, number}} 人戻り、{{failed, number}} 人がエラー",
         "with_detail": "{{line}}：{{detail}}"
       },
+      "list": {
+        "separator": "、"
+      },
       "headlines": {
         "helpers_working": "助っ人 {{count, number}} 人が作業中",
         "helpers_working_one": "助っ人 {{count, number}} 人が作業中",

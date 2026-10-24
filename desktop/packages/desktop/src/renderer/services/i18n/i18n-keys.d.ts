@@ -361,6 +361,7 @@ export type I18nKey =
   | 'common.kyrn.boardView.headlines.helpers_working_one'
   | 'common.kyrn.boardView.headlines.helpers_working_other'
   | 'common.kyrn.boardView.headlines.waiting_permission'
+  | 'common.kyrn.boardView.list.separator'
   | 'common.kyrn.boardView.needsYou'
   | 'common.kyrn.boardView.needsYouText'
   | 'common.kyrn.boardView.next'

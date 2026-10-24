@@ -1183,6 +1183,9 @@
         "helpers_back_failed_other": "{{count, number}}명 돌아옴, {{failed, number}}명 오류",
         "with_detail": "{{line}}: {{detail}}"
       },
+      "list": {
+        "separator": ", "
+      },
       "headlines": {
         "helpers_working": "도우미 {{count, number}}명이 일하는 중",
         "helpers_working_one": "도우미 {{count, number}}명이 일하는 중",
