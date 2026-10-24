@@ -161,6 +161,21 @@ describe("DecisionEngine", () => {
 		expect(ledger.records[0].questions).toEqual(keepChunk.questions);
 	});
 
+	it("keeps the recorded request when the judge fails, since it can still be replayed", async () => {
+		const ledger = new MemoryLedger();
+		const failing = new MockJudgeProvider(() => {
+			throw new JudgeError("server", "the judge is down");
+		});
+		await new DecisionEngine({ judge: new Judge({ provider: failing }), ledger, recordState: true }).decide(
+			keepChunk,
+			input,
+		);
+
+		expect(ledger.records[0].reason).toBe("error:server");
+		expect(ledger.records[0].state).toEqual({ intent: input.intent, chunk: input.chunk });
+		expect(ledger.records[0].questions).toEqual(keepChunk.questions);
+	});
+
 	it("stores built questions with the state as well as fixed ones, and nothing without recordState", async () => {
 		const pickTools = defineDecision({
 			id: "test.pick_tools",
