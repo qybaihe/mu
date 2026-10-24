@@ -1,9 +1,10 @@
 import { existsSync, mkdirSync, mkdtempSync, rmdirSync, rmSync } from "node:fs";
+import { createServer, get } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AuthInteraction, LoginOptions, ModelsStore, Provider } from "@earendil-works/pi-ai";
 import * as pi from "@earendil-works/pi-coding-agent";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AUTH_USAGE, AUTH_COMMANDS as LAUNCHER_COMMANDS } from "../../../kyrn/bin/mu.mjs";
 import { exitWhenUnlocked, holdLocksUntilExit } from "../src/auth/exit.ts";
 import {
@@ -302,9 +303,13 @@ describe("mu auth", () => {
 	});
 
 	it("says what went wrong, as a line, with exit code 1", async () => {
+		const usage = "usage: mu auth status | mu auth login <provider> [--paste] | mu auth logout <provider>";
 		const cases: [string[], string][] = [
-			[[], "usage: mu auth status | mu auth login <provider> | mu auth logout <provider>"],
-			[["login"], "usage: mu auth status | mu auth login <provider> | mu auth logout <provider>"],
+			[[], usage],
+			[["login"], usage],
+			[["login", "openai", "--fast"], usage],
+			[["logout", "openai", "--paste"], usage],
+			[["login", "openai", "xai"], usage],
 			[["login", "google-gemini-cli"], "This version of mu can't sign in to google-gemini-cli"],
 			[["logout", "openrouter"], "This version of mu can't sign in to openrouter"],
 			// No longer offered: signed out, never signed in anew.
@@ -325,6 +330,74 @@ describe("mu auth", () => {
 		expect(app.said).toEqual([{ type: "error", message: "Login cancelled" }]);
 	});
 
+	it("passes on the code of an error the app can act on, with the program holding the callback port", async () => {
+		const runtime = new FakeRuntime();
+		runtime.flow = async () => {
+			// As pi's flows throw it (callback-port.ts); what the app is told is picked from it, nothing more.
+			throw Object.assign(new Error("Port 1455 is in use by codex (process 4321)"), {
+				code: "port_in_use",
+				port: 1455,
+				holder: { pid: 4321, command: "codex", cwd: "/somewhere/private" },
+				stack: "never sent",
+			});
+		};
+		const app = pipe();
+		expect(await runAuth(["login", "openai"], { runtime, preferred, extra: [], io: app.io })).toBe(1);
+		expect(app.said).toEqual([
+			{
+				type: "error",
+				message: "Port 1455 is in use by codex (process 4321)",
+				code: "port_in_use",
+				port: 1455,
+				holder: { pid: 4321, command: "codex" },
+			},
+		]);
+
+		// A code of the system's own (a socket's, say) is no part of the contract.
+		runtime.flow = async () => {
+			throw Object.assign(new Error("read ECONNRESET"), { code: "ECONNRESET" });
+		};
+		const other = pipe();
+		await runAuth(["login", "openai"], { runtime, preferred, extra: [], io: other.io });
+		expect(other.said).toEqual([{ type: "error", message: "read ECONNRESET" }]);
+	});
+
+	it("signs in with the pasted address alone when asked to, telling the flow not to listen", async () => {
+		const runtime = new FakeRuntime();
+		const login: LoginOptions = { agentName: "mu", getDeviceId: () => "device-1" };
+		const app = pipe();
+		expect(await runAuth(["login", "openai", "--paste"], { runtime, preferred, extra: [], io: app.io, login })).toBe(
+			0,
+		);
+		expect(runtime.loginOptions).toEqual([{ ...login, pasteOnly: true }]);
+		expect(app.said.at(-1)).toMatchObject({ type: "done", provider: "openai" });
+	});
+
+	it("stops a sign-in at once when the process is told to end", async () => {
+		const runtime = new FakeRuntime();
+		let signal: AbortSignal | undefined;
+		runtime.flow = (interaction) => {
+			signal = interaction.signal;
+			return new Promise((_resolve, reject) => {
+				interaction.signal?.addEventListener("abort", () => reject(new Error("Login cancelled")), { once: true });
+			});
+		};
+		const ending = new AbortController();
+		const app = pipe();
+		const running = runAuth(["login", "openai"], {
+			runtime,
+			preferred,
+			extra: [],
+			io: app.io,
+			signal: ending.signal,
+		});
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		expect(signal?.aborted).toBe(false);
+		ending.abort();
+		expect(await running).toBe(1);
+		expect(signal?.aborted).toBe(true);
+	});
+
 	it("keeps an account's model order when pi starts it on its first model, or knows no starting model", () => {
 		const runtime = new FakeRuntime();
 		expect(modelsOf(runtime, "anthropic", preferred).map((model) => model.id)).toEqual(["claude-opus-4-8"]);
@@ -343,6 +416,144 @@ describe("mu auth", () => {
 		expect(typeof pi.ModelRuntime.create).toBe("function");
 		expect(typeof pi.FileModelsStore).toBe("function");
 		expect(pi.defaultModelPerProvider["openai-codex"]).toEqual(expect.any(String));
+	});
+});
+
+/**
+ * The desktop app's Sign in with ChatGPT, through `mu auth` on pi's own runtime and flow, on the real callback port
+ * (1455), into a credential store in a folder of its own. QA, 2026-10-23: the app's sign-in failed with "Port 1455 is
+ * in use, probably by an unfinished login in another pi session or by the Codex CLI". No account, no network: the
+ * browser is a request to the port, and OpenAI's token endpoint is a stub.
+ */
+describe.sequential("Sign in with ChatGPT through mu auth, on its callback port", () => {
+	const PORT = 1455;
+	const DEVICE_ID = "e61bbe28-07ef-466d-8e5d-a344f94ab305";
+	const login: LoginOptions = { agentName: "mu", getDeviceId: () => DEVICE_ID };
+	const dirs: string[] = [];
+
+	const portFree = () =>
+		new Promise<boolean>((resolve) => {
+			const probe = createServer();
+			probe.once("error", () => resolve(false));
+			probe.listen(PORT, "127.0.0.1", () => probe.close(() => resolve(true)));
+		});
+
+	/** pi's model runtime on a credential store of its own. */
+	const runtime = async () => {
+		const dir = mkdtempSync(join(tmpdir(), "mu-auth-port-"));
+		dirs.push(dir);
+		return pi.ModelRuntime.create({ authPath: join(dir, "auth.json"), modelsPath: null, refreshOnCreate: false });
+	};
+
+	/** One `mu auth login openai`, as the app runs it. `browser` comes back to the port once the page is opened. */
+	const signIn = (runtime: AuthRuntime, { browser }: { browser: boolean }) => {
+		const app = pipe();
+		let opened: () => void = () => {};
+		const page = new Promise<void>((resolve) => {
+			opened = resolve;
+		});
+		const say = app.io.say;
+		app.io.say = (message) => {
+			say(message);
+			const event = message.event as { type?: string; url?: string } | undefined;
+			if (message.type !== "event" || event?.type !== "auth_url" || !event.url) return;
+			opened();
+			if (!browser) return;
+			const authorize = new URL(event.url);
+			const callback = new URL(authorize.searchParams.get("redirect_uri") ?? "");
+			callback.searchParams.set("code", "authorization-code");
+			callback.searchParams.set("state", authorize.searchParams.get("state") ?? "");
+			callback.searchParams.set("client_id", "oaiapp_issued");
+			get(callback, { agent: false }, (response) => response.resume());
+		};
+		const done = runAuth(["login", "openai"], { runtime, preferred, extra: [], io: app.io, login });
+		return { app, page, done };
+	};
+
+	beforeEach(async (context) => {
+		// A real program on this machine holds the port (the Codex CLI's login): leave it alone.
+		if (!(await portFree())) context.skip();
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (input: string | URL | Request) => {
+				const url = input instanceof Request ? input.url : String(input);
+				if (url !== "https://auth.openai.com/api/accounts/oauth/token") return new Response("", { status: 404 });
+				return Response.json({
+					access_token: "access-token",
+					refresh_token: "refresh-token",
+					expires_in: 3600,
+					id_token: "id-token",
+					scope: "openid profile email offline_access resource.invoke chatgpt.tokens.use.direct",
+				});
+			}),
+		);
+	});
+
+	afterEach(async () => {
+		vi.unstubAllGlobals();
+		while (dirs.length > 0) rmSync(dirs.pop() as string, { recursive: true, force: true });
+		expect(await portFree()).toBe(true);
+	});
+
+	it("signs in twice in a row, and after a cancel, and after a sign-out", async () => {
+		const models = await runtime();
+		const first = signIn(models, { browser: true });
+		expect(await first.done).toBe(0);
+		expect(first.app.said.at(-1)).toMatchObject({ type: "done", provider: "openai" });
+		expect(await portFree()).toBe(true);
+
+		const again = signIn(models, { browser: true });
+		expect(await again.done).toBe(0);
+
+		// The person cancels: the port is given back with the answer.
+		const cancelled = signIn(models, { browser: false });
+		await cancelled.page;
+		expect(await portFree()).toBe(false);
+		cancelled.app.send({ type: "cancel" });
+		expect(await cancelled.done).toBe(1);
+		expect(await portFree()).toBe(true);
+		const afterCancel = signIn(models, { browser: true });
+		expect(await afterCancel.done).toBe(0);
+
+		const out = pipe();
+		expect(await runAuth(["logout", "openai"], { runtime: models, preferred, extra: [], io: out.io })).toBe(0);
+		expect(out.said.at(-1)).toMatchObject({ type: "status", signedIn: [] });
+		const afterSignOut = signIn(models, { browser: true });
+		expect(await afterSignOut.done).toBe(0);
+		expect(JSON.stringify(afterSignOut.app.said)).not.toContain("refresh-token");
+	});
+
+	it("takes the port over from a sign-in still waiting in another run, which says why it stopped", async () => {
+		const earlier = signIn(await runtime(), { browser: false });
+		await earlier.page;
+		const later = signIn(await runtime(), { browser: true });
+
+		expect(await earlier.done).toBe(1);
+		expect(earlier.app.said.at(-1)).toEqual({
+			type: "error",
+			message: "Sign-in stopped: a newer sign-in started and took over port 1455.",
+			code: "login_taken_over",
+		});
+		expect(await later.done).toBe(0);
+	});
+
+	it("tells the app which program keeps the port, and leaves that program alone", async () => {
+		const seen: string[] = [];
+		const codex = createServer((request, response) => {
+			seen.push(`${request.method} ${request.url}`);
+			response.writeHead(404).end("Not Found");
+		});
+		await new Promise<void>((resolve) => codex.listen(PORT, "127.0.0.1", resolve));
+		try {
+			const blocked = signIn(await runtime(), { browser: true });
+			expect(await blocked.done).toBe(1);
+			const line = blocked.app.said.at(-1);
+			expect(line).toMatchObject({ type: "error", code: "port_in_use", port: 1455 });
+			if (process.platform === "darwin") expect(line?.holder).toMatchObject({ pid: process.pid });
+			expect(seen).toEqual(["GET /pi-login"]);
+		} finally {
+			await new Promise((resolve) => codex.close(resolve));
+		}
 	});
 });
 
