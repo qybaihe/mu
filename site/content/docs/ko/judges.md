@@ -65,6 +65,22 @@ Jev는 TypeSafe가 만든 판정 모델로, 바로 이런 질문을 위해 만�
 
 **속도와 비용.** 만든 사람들의 실제 세션에서 잰 값이에요. 웜 연결에서 질문 하나에 약 0.3초, 도구 출력 16청크를 요청 하나로 판정하는 데 0.44초가 걸렸고, 상태는 한 번만 과금됐어요. 세션을 쓰는 동안에는 50초마다 아주 작은 질문 하나로 연결을 웜 상태로 유지해서, 턴 전의 질문들이 연결에 드는 1~3초를 건너뛰어요.
 
+## OpenAI의 판정 모델 {#openai}
+
+내장된 `openai` 판정기는 OpenAI의 [Decisions API](https://developers.openai.com/api/docs/guides/decisions)(`POST /v1/decisions`)로 `gpt-6-luna`에 물어요. OpenAI API 키가 필요해요. 키는 `MU_JUDGE_OPENAI_KEY`예요. 없으면 mu가 `openai` 프로바이더용으로 이미 가진 OpenAI API 키(`mu setup`, `/login` 또는 `OPENAI_API_KEY`)를 써요. ChatGPT로 로그인한 건 해당되지 않아요. `mu setup --judge openai`나 앱의 판정기 페이지에서 설정하거나 `mu.json`에 적으세요.
+
+```json
+{ "tiers": ["openai"] }
+```
+
+OpenAI는 캐시되지 않은 입력 토큰 100만 개에 0.10달러를 받고, 출력은 무료예요. mu의 질문으로는 아직 측정하지 않았어요.
+
+같은 Decisions 엔드포인트를 제공하는 중계 서비스나 프록시를 거쳐 쓰려면 `baseUrl`과 전용 키를 지정하세요. mu의 `openai` 프로바이더 키는 `api.openai.com`으로만 보내져요.
+
+```json
+{ "judges": { "relay": { "type": "openai", "baseUrl": "https://relay.example.com/v1", "apiKeyEnv": "MU_JUDGE_RELAY_KEY" } } }
+```
+
 ## 설정에 아직 Laya가 있다면 {#laya}
 
 Laya는 mu 0.2.4까지 들어 있던 서드파티 로컬 판정기로, 이제는 들어 있지 않아요. `mu.json`이 `tiers`나 `routes`, 또는 `local` 타입 판정기로 아직 Laya를 가리켜도 그대로 동작해요. 이 Mac에 mude 1.0이 설정되어 있으면 mude 1.0이 그 자리를 대신하고, 아니면 목록에 남은 판정기가 답하고, 남은 판정기가 없으면 Jev가 답해요. mu는 `mu.json`을 한 번만 고치고(그 항목만 바꾸고, 원래 파일은 `~/.mu/backups`에 남겨요), 어떤 판정기로 바꿨는지 알려 줘요. `MU_JUDGE=laya`는 건너뛰어요. 내 컴퓨터에서 다른 의사결정 모델을 쓰려면 [Hugging Face에서 추가](@docs/judges#models)하세요.
@@ -97,6 +113,7 @@ Laya는 mu 0.2.4까지 들어 있던 서드파티 로컬 판정기로, 이제는
 | `llm` | pi 레지스트리의 채팅 모델 |
 | `classifier` | pi 카탈로그의 분류 모델 |
 | `clm` | `clm-serve` |
+| `openai` | `baseUrl`의 OpenAI Decisions API(기본값은 OpenAI 자체) |
 
 키는 절대 파일에 넣지 않아요. `apiKeyEnv`는 키를 담은 환경 변수의 이름이고, 그 변수는 여러분의 환경이나 mu의 `.env`에 설정해요.
 

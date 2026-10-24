@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+- The `openai` judge (type and built-in name): OpenAI's decision model, `gpt-6-luna`, through `POST /v1/decisions` ([Decisions API](https://developers.openai.com/api/docs/guides/decisions)). Yes/no questions go out as predicates with their criteria in the instructions, choices as choices and scores as levels; answers come back with their probabilities and confidence, and usage with the cached and cache-write input tokens (`cachedInputTokens`, `cacheWriteTokens` in the ledger). A refusal or a missing answer fails the call as with TypeSafe, so the next judge or the fallback answers, and HTTP 401, 403, 429 and 5xx are classified the same way. The key is `MU_JUDGE_OPENAI_KEY`. Without it, at OpenAI's own address, the judge takes the key of the `openai` model provider (auth.json or `OPENAI_API_KEY`), but not a Sign in with ChatGPT token, nor the key of an `openai` provider that models.json points elsewhere. With a `baseUrl` (a relay or proxy that serves the same Decisions endpoint), only the judge's own key goes there. The keys of other judge services are never sent to it, and `MU_JUDGE_OPENAI_KEY` and `OPENAI_API_KEY` never to TypeSafe.
+- The `openai` judge checks a request against the API's limits before sending it (1–400 questions, 2–255 choices, 2–10 levels; `bad_request` otherwise, so the next judge answers), and exports the models the API serves (`OPENAI_DECISIONS_MODELS`, today `gpt-6-luna`). When it has no key (`missing`: signed out of OpenAI, or the key removed) or OpenAI answers 401, or a 403 not about billing (`rejected`), the session says so once: `judge.notice` with `code: "openai_key"` and `reason`, then the line.
+- `mu setup` offers OpenAI's decision model in its judge step, and scripts use `--judge openai`: the OpenAI key mu has, or a key on stdin's second line, written to the .env as `MU_JUDGE_OPENAI_KEY`. `mu doctor` reports where its key comes from, and `/mu judge` lists `openai`.
+
 ## [0.2.6] - 2026-10-24
 
 **0.2.6 shows the note that Laya was replaced when a person sends a message, keeps mude 1.0 local only when it's installed again, and stops `mu doctor` failing on a machine without Chrome.**

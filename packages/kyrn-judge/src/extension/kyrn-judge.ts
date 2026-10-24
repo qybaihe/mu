@@ -54,6 +54,7 @@ import { registerMcp } from "./features/mcp.ts";
 import { registerMemory } from "./features/memory.ts";
 import { registerMonitor } from "./features/monitor.ts";
 import { registerNotify } from "./features/notify.ts";
+import { registerOpenAIKeyNotice } from "./features/openai-key.ts";
 import { registerPacks } from "./features/packs.ts";
 import { registerPermissions } from "./features/permissions.ts";
 import { registerPreflight } from "./features/preflight.ts";
@@ -268,6 +269,7 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		if (!options.only || options.only.includes(name)) register(runtime);
 	}
 	registerFreeJevNotice(runtime, roots);
+	registerOpenAIKeyNotice(runtime);
 	registerCommands(runtime, roots);
 	registerImport(pi);
 	if (roots) registerLockSafeQuit(pi, roots.agentDir);

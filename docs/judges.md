@@ -68,6 +68,22 @@ After these, mu falls back to a Vercel AI Gateway key that pi saved at `/login`.
 
 Measured in the authors' own sessions: a warm question takes about 0.3 s, and 16 chunks of tool output are judged in a single request in 0.44 s, with the shared state billed once.
 
+## OpenAI's decision model
+
+The built-in `openai` judge asks `gpt-6-luna` through OpenAI's [Decisions API](https://developers.openai.com/api/docs/guides/decisions) (`POST /v1/decisions`), with an OpenAI API key. Its key is `MU_JUDGE_OPENAI_KEY`. Without it, the judge uses the OpenAI API key mu already has for its `openai` provider (from `mu setup`, `/login` or `OPENAI_API_KEY`); Sign in with ChatGPT doesn't count. `mu setup --judge openai` or Settings → Judges in the desktop app sets it up, or put it in `mu.json`:
+
+```json
+{ "tiers": ["openai"] }
+```
+
+OpenAI charges $0.10 per million uncached input tokens, and nothing for output. Not yet measured on mu's questions.
+
+To reach it through a relay or proxy that serves the same Decisions endpoint, give it a `baseUrl` and a key of its own. The key of mu's `openai` provider only ever goes to `api.openai.com`:
+
+```json
+{ "judges": { "relay": { "type": "openai", "baseUrl": "https://relay.example.com/v1", "apiKeyEnv": "MU_JUDGE_RELAY_KEY" } } }
+```
+
 ## Classifier models and LLMs
 
 - `classifier:<provider>/<model>`: any classifier in pi's model catalog, reached with the sign-in or key you already have for that provider. Examples: Cloudflare's Clef (built in as `clef` and `clef-flash`), the System One models on OpenRouter and the Vercel AI Gateway, or a llama.cpp classifier.
@@ -96,6 +112,7 @@ Add it under `judges` in `mu.json`, with a name and a type:
 | `llm` | A chat model from pi's registry |
 | `classifier` | A classifier from pi's catalog |
 | `clm` | A `clm-serve` |
+| `openai` | OpenAI's Decisions API, at `baseUrl` (OpenAI's own by default) |
 
 The key itself never goes in the file: `apiKeyEnv` names the environment variable that holds it (set it in your environment or in mu's `.env`).
 
