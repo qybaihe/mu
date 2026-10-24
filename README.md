@@ -48,7 +48,7 @@ mu setup            # connect a model
 mu                  # start a session in the current directory
 ```
 
-**On Nebius Token Factory with NVIDIA Nemotron.** Paste a Token Factory key into `mu setup`: mu starts on Nemotron 3 Super and offers Nemotron 3 Ultra as the judge. This is new and not yet in the npm package, so run mu from source for now; [docs/nebius.md](docs/nebius.md) has the steps, the measurements behind the choice of models, and a Nemotron 3 Nano 4B judge, fine-tuned for mu, that runs on your machine.
+**On Nebius Token Factory with NVIDIA Nemotron.** Paste a Token Factory key into `mu setup`: mu starts on Nemotron 3 Super and offers Nemotron 3 Ultra as the judge. This is in the npm package from mu-agent 0.2.9; [docs/nebius.md](docs/nebius.md) has the steps, the measurements behind the choice of models, and a Nemotron 3 Nano 4B judge, fine-tuned for mu, that runs on your machine.
 
 You don't need a judge key to start: until you set one, the free Jev on OpenCode Zen answers. Out of the box, 34 of the 40 decision points act on their verdicts, and every verdict is logged (`/status`, `mu ledger` or the app's Judge tab). To record what the judge would do without acting on it, put `{"modes": {"default": "shadow"}}` in `~/.mu/agent/mu.json`. More in [Getting started](docs/getting-started.md).
 

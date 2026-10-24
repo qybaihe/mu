@@ -11,7 +11,13 @@ mu can run end to end on [Nebius Token Factory](https://tokenfactory.nebius.com)
 
 ## Set up
 
-Until a release of the npm package includes this, install the hackathon test build (Node.js 22.19 or newer), built and checked by CI:
+Install mu (Node.js 22.19 or newer). Token Factory and the Nemotron judges are in the npm package from mu-agent 0.2.9:
+
+```bash
+npm i -g mu-agent
+```
+
+The hackathon test build, built and checked by CI before that release, still works too:
 
 ```bash
 npm i -g https://github.com/qybaihe/mu/releases/download/nebius-hackathon-1/mu-agent-0.1.12.tgz
