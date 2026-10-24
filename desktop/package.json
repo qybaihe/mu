@@ -1,6 +1,6 @@
 {
   "name": "mu-desktop",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "mu, the coding agent with a judge model, as a desktop app.",
   "keywords": [],
   "license": "MIT AND Apache-2.0",
@@ -249,7 +249,7 @@
   "electronRebuild": {
     "electronVersion": "^37.3.1"
   },
-  "muAgentVersion": "0.2.4",
+  "muAgentVersion": "0.2.5",
   "patchedDependencies": {
     "7zip-bin@5.2.0": "patches/7zip-bin@5.2.0.patch"
   },
