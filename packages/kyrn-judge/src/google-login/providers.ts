@@ -60,7 +60,7 @@ export function geminiCliProvider(): Provider {
 // ---------------------------------------------------------------------------
 // Antigravity
 
-/** Gemini 3 thinks at a level, never not at all; Pro has no "minimal". As Google's catalog has them. */
+/** Gemini 3 thinks at a level, never not at all; Pro has no "minimal", nor has Gemini 4. As Google's catalog has them. */
 const FLASH_LEVELS: ThinkingLevelMap = {
 	off: null,
 	minimal: "minimal",
@@ -73,7 +73,11 @@ const FLASH_LEVELS: ThinkingLevelMap = {
 const PRO_LEVELS: ThinkingLevelMap = { ...FLASH_LEVELS, minimal: null };
 
 const levelsOf = (id: string): ThinkingLevelMap | undefined =>
-	/^gemini-3(?:\.\d+)?-pro/.test(id) ? PRO_LEVELS : /^gemini-3(?:\.\d+)?-flash/.test(id) ? FLASH_LEVELS : undefined;
+	/^gemini-3(?:\.\d+)?-pro|^gemini-4/.test(id)
+		? PRO_LEVELS
+		: /^gemini-3(?:\.\d+)?-flash/.test(id)
+			? FLASH_LEVELS
+			: undefined;
 
 const OPUS: ModelCost = { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 };
 const SONNET: ModelCost = { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 };
@@ -141,8 +145,10 @@ const SERVED = /^(?:gemini|claude|gpt-oss)-/;
 /**
  * The models in a `fetchAvailableModels` answer: `{ models: { <id>: {...} } }`,
  * or a list of `{ id }` just in case. What it says about a model it knows is
- * used; the rest comes from the model's family. A model the baseline has keeps
- * the baseline's entry.
+ * used (its name, context, output limit, images, thinking); the rest comes from
+ * the model's family. A model the baseline has keeps the baseline's entry. A
+ * placeholder for a model the account may not use (`disabled`, or an id such as
+ * `gemini-4-argon-disabled`) is left out: asking it fails.
  */
 export function antigravityModelsFrom(body: unknown): Model<Api>[] {
 	const listed = isRecord(body) ? body.models : undefined;
@@ -157,7 +163,8 @@ export function antigravityModelsFrom(body: unknown): Model<Api>[] {
 	const models = new Map<string, Model<Api>>();
 	for (const [raw, info] of entries) {
 		const id = raw.trim();
-		if (!SERVED.test(id) || /image/.test(id) || models.has(id)) continue;
+		if (!SERVED.test(id) || /image/.test(id) || /-disabled$/.test(id) || info.disabled === true || models.has(id))
+			continue;
 		const known = baseline.get(id);
 		if (known) {
 			models.set(id, known);
@@ -179,7 +186,8 @@ export function antigravityModelsFrom(body: unknown): Model<Api>[] {
 				reasoning,
 				input: images ? TEXT_AND_IMAGE : ["text"],
 				cost: FREE,
-				contextWindow: family === "gemini" ? 1048576 : family === "claude" ? 200000 : 131072,
+				contextWindow:
+					positive(info.maxTokens) ?? (family === "gemini" ? 1048576 : family === "claude" ? 200000 : 131072),
 				maxTokens:
 					positive(info.maxOutputTokens) ?? (family === "gemini" ? 65535 : family === "claude" ? 64000 : 32768),
 			}),

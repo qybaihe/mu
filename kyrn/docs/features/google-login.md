@@ -40,7 +40,18 @@ Grok 的登录（SuperGrok / X Premium，提供商 `xai`）是 pi 自带的，�
 ## 4. 有哪些模型
 
 - **Gemini CLI**：就是 Google 自己的 Gemini 目录（API key 看到的那份），去掉不是对话用的（图像、实时语音、电脑操作、研究代理、`latest` 别名、Gemma）。现在是 12 个：2.5 Flash / Flash-Lite / Pro，3 Flash Preview，3.1 Flash Lite（含 Preview），3.1 Pro Preview，3.5 Flash / Flash Lite，3.6 Flash，3.7 Flash，3.8 Flash。思考等级沿用目录里的设置。费用显示为 0（免费档或许可）。
-- **Antigravity**：先有 pi 删掉时它提供的 9 个（Claude Opus 4.5 / 4.6 Thinking，Claude Sonnet 4.5（含 Thinking）/ 4.6，Gemini 3 Flash，Gemini 3.1 Pro High / Low，GPT-OSS 120B Medium），费用是同一模型的 API 价格，只作参考。**登录后**会问 Antigravity 这个账号现在能用哪些（`v1internal:fetchAvailableModels`），新出现的模型按家族给默认上限：Claude 20 万上下文、Gemini 约 105 万、GPT-OSS 13 万；它说了输出上限、是否支持图片 / 思考的，按它说的。问不到时保留上一次的列表。
+- **Antigravity**：先有 pi 删掉时它提供的 9 个（Claude Opus 4.5 / 4.6 Thinking，Claude Sonnet 4.5（含 Thinking）/ 4.6，Gemini 3 Flash，Gemini 3.1 Pro High / Low，GPT-OSS 120B Medium），费用是同一模型的 API 价格，只作参考。**登录后**会问 Antigravity 这个账号现在能用哪些（`v1internal:fetchAvailableModels`），新出现的模型按家族给默认上限：Claude 20 万上下文、Gemini 约 105 万、GPT-OSS 13 万；它说了上下文（`maxTokens`）、输出上限、是否支持图片 / 思考的，按它说的。标成 `disabled` 的、或 id 以 `-disabled` 结尾的占位条目不列（这个账号用不了）。问不到时保留上一次的列表。已经登录的账号，终端和桌面端每次开会话时会在后台再问一次（每个进程一次，20 秒超时，失败不提示；print / JSON 模式和设了 `PI_OFFLINE` 时不问），所以不用重新登录就能拿到新模型。
+
+  **客户端身份决定能看到哪些模型（2026-10-24 用真实付费账号核实）。** 同一个账号、同一个令牌，只改 `User-Agent`：
+
+  | User-Agent | 列出的模型 | `gemini-4-argon-medium` 生成 |
+  | --- | --- | --- |
+  | `antigravity/1.107.0 darwin/arm64`（以前用的，IDE） | 20 个，没有 Gemini 4 Argon，也没有 Gemini 3.8 Flash 的分档 | 404 |
+  | `antigravity/3.0.0 darwin/arm64` 到 `99.0.0`（IDE） | 多出 `gemini-3.8-flash-low/medium/high`，仍没有 Argon | — |
+  | `antigravity/cli/1.2.4`（命令行） | 同上，没有 Argon | — |
+  | `antigravity/cli/1.4.0`（命令行，现在用的） | 26 个，多出 `gemini-4-argon-low/medium/high`（显示名 “Gemini 4 Argon (Low/Medium/High)”，上下文 1,048,576，输出 65,536） | 200，`modelVersion: gemini-4-argon` |
+
+  这和 Google 的文档一致：Gemini 4 Argon 不在 Antigravity IDE 里，只在 Antigravity 应用、命令行和 IDE 扩展里，而且只给直接付费的 Google AI Pro（非试用）、Ultra 和 Enterprise。用命令行的身份时，Claude Sonnet / Opus 5.5、Gemini 3 Flash、GPT-OSS 120B 照常可用（同一天逐个验证过）。Gemini 4 只按等级思考（low / medium / high），不能关，没有 minimal。
 
 ## 5. 实现
 
@@ -61,7 +72,7 @@ Grok 的登录（SuperGrok / X Premium，提供商 `xai`）是 pi 自带的，�
 - 429 / 5xx：按服务器说的时间等（`retry-after`、“reset after 1m2s”、“Please retry in 2s”、`retryDelay`），最多重试 3 次；服务器要等的比 `maxRetryDelayMs`（默认 60 秒）还久，就直接报出来，不干等。
 - 其它错误（比如 400）不重试。
 - 回答是空的：再问两次。
-- Antigravity 特有：客户端版本 `antigravity/1.107.0 darwin/arm64`（Google 提高最低版本时用 `MU_ANTIGRAVITY_VERSION` 改）、`requestType: "agent"`、它要求的系统提示放在最前、Claude 的工具用旧的 `parameters` 写法、Claude 思考模型带 `anthropic-beta: interleaved-thinking-2025-05-14`。
+- Antigravity 特有：以 Antigravity 命令行的身份请求，`User-Agent: antigravity/cli/1.4.0`（Google 提高最低版本时用 `MU_ANTIGRAVITY_VERSION` 改）、`requestType: "agent"`、它要求的系统提示放在最前、Claude 的工具用旧的 `parameters` 写法、Claude 思考模型带 `anthropic-beta: interleaved-thinking-2025-05-14`。
 - 思考：Gemini 3 及以后按等级（`thinkingLevel`），Gemini 2.5 和 Claude 按预算（1024 / 2048 / 8192 / 16384，塞在输出上限里）；关掉思考时，Gemini 3 Pro 这类关不掉的用最低等级，且不显示思考内容。
 
 ## 6. 设置（`features.googleLogin.*`）
