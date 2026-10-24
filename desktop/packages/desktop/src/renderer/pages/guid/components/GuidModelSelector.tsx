@@ -7,7 +7,7 @@
 import type { IProvider, TProviderWithModel } from '@/common/config/storage';
 import RuntimeSelectorPill from '@/renderer/components/agent/RuntimeSelectorPill';
 import { modelLevelMenu } from '@/renderer/pages/conversation/platforms/acp/Composer/ModelLevelMenu';
-import { filterModelMenu, modelMenu } from '@/renderer/pages/conversation/platforms/acp/Composer/modelMenu';
+import { levelsOf, modelMenu, visibleModelMenu } from '@/renderer/pages/conversation/platforms/acp/Composer/modelMenu';
 import { iconColors } from '@/renderer/styles/colors';
 import { getModelDisplayLabel } from '@/renderer/utils/model/agentLogo';
 import type { AgentRuntimeDerivedOption } from '@/renderer/utils/model/agentRuntimeCatalog';
@@ -68,7 +68,7 @@ type AcpModelChipProps = {
 
 /**
  * The model · thinking chip of the home page: the same pill and the same menu as a conversation's, fed by the models
- * the agent reported last. The model picked here opens to the thinking levels; the pick is kept for the next send.
+ * the agent reported last, with the thinking levels under the list. The pick is kept for the next send.
  */
 const AcpModelChip: React.FC<AcpModelChipProps> = ({
   info,
@@ -83,32 +83,39 @@ const AcpModelChip: React.FC<AcpModelChipProps> = ({
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   const [query, setQuery] = useState('');
+  const [showAll, setShowAll] = useState(false);
   const current = selected ?? defaultModel ?? info.current_model_id;
   const names = useProviderNames();
-  const groups = useMemo(
+  const all = useMemo(
     () =>
-      filterModelMenu(
-        modelMenu(
-          {
-            currentValue: current,
-            options: info.available_models.map((model) => ({
-              value: model.id,
-              label: model.label,
-              description: model.description,
-            })),
-          },
-          thoughtLevel,
-          {},
-          (id) => providerDisplayName(t, id, names)
-        ),
-        query
+      modelMenu(
+        {
+          currentValue: current,
+          options: info.available_models.map((model) => ({
+            value: model.id,
+            label: model.label,
+            description: model.description,
+          })),
+        },
+        thoughtLevel,
+        {},
+        (id) => providerDisplayName(t, id, names)
       ),
-    [current, info.available_models, thoughtLevel, query, t, names]
+    [current, info.available_models, thoughtLevel, t, names]
+  );
+  const shown = useMemo(
+    () => visibleModelMenu(all, { query, showAll, keep: [current, defaultModel] }),
+    [all, current, defaultModel, query, showAll]
   );
 
-  const pick = (model: string, level?: string) => {
+  const close = () => {
     setVisible(false);
     setQuery('');
+    setShowAll(false);
+  };
+
+  const pick = (model: string, level?: string) => {
+    close();
     if (model !== current) onSelect(model);
     if (level) onThoughtLevelSelect?.(level);
   };
@@ -120,22 +127,26 @@ const AcpModelChip: React.FC<AcpModelChipProps> = ({
       position='br'
       popupVisible={visible}
       onVisibleChange={(open) => {
-        setVisible(open);
-        if (!open) setQuery('');
+        if (open) setVisible(true);
+        else close();
       }}
       droplist={modelLevelMenu(t, {
-        groups,
+        groups: shown.groups,
         total: info.available_models.length,
         query,
         onQuery: setQuery,
         current,
         level: thoughtLevel?.currentValue,
+        levels: levelsOf(all, current),
+        hidden: shown.hidden,
+        showAll,
+        onShowAll: setShowAll,
         onPick: pick,
         defaultModel,
         ...(onMakeDefault && current
           ? {
               onMakeDefault: () => {
-                setVisible(false);
+                close();
                 onMakeDefault(current);
               },
             }

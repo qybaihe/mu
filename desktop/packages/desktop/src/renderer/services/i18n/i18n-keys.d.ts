@@ -1519,6 +1519,8 @@ export type I18nKey =
   | 'conversation.composer.makeDefault'
   | 'conversation.composer.makeDefaultFailed'
   | 'conversation.composer.modelBusy'
+  | 'conversation.composer.showAllModels'
+  | 'conversation.composer.showFewerModels'
   | 'conversation.composer.thinkingNote'
   | 'conversation.contextUsage.cachedReadTokens'
   | 'conversation.contextUsage.cachedWriteTokens'
