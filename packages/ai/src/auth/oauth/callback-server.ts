@@ -8,6 +8,7 @@
 import { createServer, type ServerResponse } from "node:http";
 import { oauthErrorHtml, oauthSuccessHtml } from "../../utils/oauth-page.ts";
 import type { ProviderAuthInteraction } from "../types.ts";
+import { answerLoginControl, closeCallbackServer, LoginTakenOverError, listenOnLoginPort } from "./callback-port.ts";
 
 export interface OAuthCallbackServerOptions<T> {
 	/** Provider name used on the browser page, for example `OpenAI`. */
@@ -28,6 +29,13 @@ export interface OAuthCallbackServerOptions<T> {
 	complete: (code: string) => Promise<T>;
 	signal?: AbortSignal;
 	timeoutMs?: number;
+	/**
+	 * `port` is a fixed one other sign-ins listen on too (1455: OpenAI's, shared with the Codex CLI). An earlier
+	 * sign-in of ours on it is asked to hand it over, this one hands it over when a later one asks, and closing it
+	 * closes its idle connections too. Starting throws `CallbackPortInUseError` when another program keeps the port
+	 * (callback-port.ts).
+	 */
+	sharedPort?: boolean;
 }
 
 export interface OAuthCallbackServer<T> {
@@ -77,6 +85,11 @@ export async function startOAuthCallbackServer<T>(
 
 	const server = createServer((request, response) => {
 		void (async () => {
+			const takeOver = (by: "pi" | "codex") => {
+				finish({ error: new LoginTakenOverError(options.port, by) });
+				closeCallbackServer(server);
+			};
+			if (options.sharedPort && answerLoginControl(request, response, takeOver)) return;
 			const url = new URL(request.url ?? "/", "http://localhost");
 			if (request.method !== "GET" || url.pathname !== options.path) {
 				sendPage(response, 404, oauthErrorHtml("Callback route not found."));
@@ -115,13 +128,17 @@ export async function startOAuthCallbackServer<T>(
 		})();
 	});
 
-	await new Promise<void>((resolve, reject) => {
-		server.once("error", reject);
-		server.listen(options.port, options.host, () => {
-			server.off("error", reject);
-			resolve();
+	if (options.sharedPort) {
+		await listenOnLoginPort(server, { port: options.port, host: options.host, signal });
+	} else {
+		await new Promise<void>((resolve, reject) => {
+			server.once("error", reject);
+			server.listen(options.port, options.host, () => {
+				server.off("error", reject);
+				resolve();
+			});
 		});
-	});
+	}
 	const address = server.address();
 	if (!address || typeof address === "string") {
 		server.close();
@@ -142,7 +159,8 @@ export async function startOAuthCallbackServer<T>(
 		},
 		close: () => {
 			finish({ error: new Error("OAuth callback server closed") });
-			server.close();
+			if (options.sharedPort) closeCallbackServer(server);
+			else server.close();
 		},
 	};
 }

@@ -4,15 +4,19 @@ import type { AuthInteraction, AuthPrompt, LoginOptions, Provider } from "@earen
  * `mu auth`: signing in to a provider's subscription outside any session, for the desktop app, with pi's own
  * OAuth flows and pi's credential store (<agent dir>/auth.json), exactly as /login does in the terminal.
  *
- *   mu auth status               who is signed in, and what this mu can sign in to
- *   mu auth login <provider>     one sign-in, from the browser's page to the stored credential
- *   mu auth logout <provider>    signs that subscription out, then says who is still signed in
+ *   mu auth status                     who is signed in, and what this mu can sign in to
+ *   mu auth login <provider>           one sign-in, from the browser's page to the stored credential
+ *   mu auth login <provider> --paste   the same, taking the address the browser ends on as pasted, with no
+ *                                      callback server (for when another program holds the callback port)
+ *   mu auth logout <provider>          signs that subscription out, then says who is still signed in
  *
  * It speaks JSON lines. Out: `event` (what the flow reports: the page to open, a device code, progress),
  * `prompt` and `prompt_done` (a question for the person, and its withdrawal when the browser answered first),
  * `signed_in` (the credential is stored), `done` (with what the account can use), `status`, and `error`, after
- * which it exits with 1. In, during a sign-in: `answer` (to the open prompt) and `cancel`; the input ending
- * cancels too. No line ever carries a credential.
+ * which it exits with 1. An `error` the app can act on carries a `code`: `port_in_use` (another program holds the
+ * callback port; with `port`, and `holder`: its `pid` and `command` when the system says, and `pi` when it is an older
+ * pi or mu sign-in) and `login_taken_over` (a newer sign-in took the port over). In, during a sign-in: `answer` (to
+ * the open prompt) and `cancel`; the input ending cancels too. No line ever carries a credential.
  */
 
 /** What of pi's model runtime a sign-in uses. */
@@ -39,6 +43,8 @@ export interface AuthOptions {
 	/** mu's own sign-ins (the Google ones), present while its googleLogin feature is on. */
 	readonly extra: readonly Provider[];
 	readonly io: AuthIo;
+	/** Aborts when the process is told to end (SIGTERM at the app's quit): a sign-in under way stops at once. */
+	readonly signal?: AbortSignal;
 	/** How long reading an account's models may take once it is signed in. */
 	readonly modelsReadMs?: number;
 	/** What a flow is told about this mu: its name, and the stable id of this installation (Sign in with ChatGPT). */
@@ -61,7 +67,9 @@ const LISTED_BY_ACCOUNT = new Set(["google-antigravity"]);
 const MODELS_READ_MS = 20_000;
 /** pi's Codex flow asks how to sign in; from the app it is always the browser on this machine, never the headless way. */
 const BROWSER_METHOD = "browser";
-const USAGE = "usage: mu auth status | mu auth login <provider> | mu auth logout <provider>";
+const USAGE = "usage: mu auth status | mu auth login <provider> [--paste] | mu auth logout <provider>";
+/** The error codes of pi's flows an app can act on, passed on in the `error` line. */
+const ERROR_CODES: readonly string[] = ["port_in_use", "login_taken_over"];
 
 /** The subcommands `mu auth` answers itself. The others (`check`, `print-api-key`, ...) are pi's own. */
 export const AUTH_COMMANDS: readonly string[] = ["status", "login", "logout"];
@@ -90,12 +98,44 @@ function shown(prompt: AuthPrompt): Record<string, unknown> {
 	};
 }
 
+/**
+ * The `error` line: the flow's message, and when the flow says what went wrong in a way an app can act on, its
+ * `code`, and for `port_in_use` the port and what the system says of the program holding it. Nothing else of the
+ * error is passed on.
+ */
+function errorLine(error: unknown): Record<string, unknown> {
+	const line: Record<string, unknown> = {
+		type: "error",
+		message: error instanceof Error ? error.message : String(error),
+	};
+	if (!(error instanceof Error)) return line;
+	const { code, port, holder } = error as Error & { code?: unknown; port?: unknown; holder?: unknown };
+	if (typeof code !== "string" || !ERROR_CODES.includes(code)) return line;
+	line.code = code;
+	if (code !== "port_in_use") return line;
+	if (typeof port === "number") line.port = port;
+	if (holder && typeof holder === "object") {
+		const { pid, command, pi } = holder as { pid?: unknown; command?: unknown; pi?: unknown };
+		line.holder = {
+			...(typeof pid === "number" ? { pid } : {}),
+			...(typeof command === "string" ? { command } : {}),
+			...(pi === true ? { pi } : {}),
+		};
+	}
+	return line;
+}
+
 /** Runs one `mu auth` command to its end and gives back the exit code. */
 export async function runAuth(argv: readonly string[], options: AuthOptions): Promise<number> {
 	const { runtime, preferred, io } = options;
 	try {
-		const [mode, provider] = argv;
+		const flags = argv.filter((arg) => arg.startsWith("--"));
+		const [mode, provider, ...extra] = argv.filter((arg) => !arg.startsWith("--"));
 		if (!AUTH_COMMANDS.includes(mode ?? "")) throw new Error(USAGE);
+		const paste = flags.includes("--paste");
+		if (extra.length > 0 || flags.some((flag) => flag !== "--paste") || (paste && mode !== "login")) {
+			throw new Error(USAGE);
+		}
 		for (const extra of options.extra) runtime.registerNativeProvider(extra);
 		if (options.extra.length > 0) {
 			await runtime.refresh({ allowNetwork: false, providers: options.extra.map((extra) => extra.id) });
@@ -128,16 +168,22 @@ export async function runAuth(argv: readonly string[], options: AuthOptions): Pr
 			io.say(await status());
 			return 0;
 		}
-		await signIn(provider, options);
+		await signIn(provider, paste ? { ...options, login: { ...options.login, pasteOnly: true } } : options);
 		return 0;
 	} catch (error) {
-		io.say({ type: "error", message: error instanceof Error ? error.message : String(error) });
+		io.say(errorLine(error));
 		return 1;
 	}
 }
 
-async function signIn(provider: string, { runtime, preferred, io, modelsReadMs, login }: AuthOptions): Promise<void> {
+async function signIn(
+	provider: string,
+	{ runtime, preferred, io, modelsReadMs, login, signal: ending }: AuthOptions,
+): Promise<void> {
 	const controller = new AbortController();
+	// The process is ending: the flow stops now, and its callback server with it, not when the process is gone.
+	ending?.addEventListener("abort", () => controller.abort(), { once: true });
+	if (ending?.aborted) controller.abort();
 	let pending: { resolve(value: string): void; reject(error: Error): void } | undefined;
 	io.listen(
 		(line) => {

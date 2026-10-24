@@ -20,6 +20,8 @@ const agentDir = muEnv("AGENT_DIR") || join(muHome(), "agent");
 const authPath = join(agentDir, "auth.json");
 const modelsStorePath = join(agentDir, "models-store.json");
 const say = (message: Readonly<Record<string, unknown>>) => process.stdout.write(`${JSON.stringify(message)}\n`);
+/** Aborts when the process is told to end: a sign-in under way gives its callback port back before the exit. */
+const ending = new AbortController();
 
 /**
  * The Google sign-ins are mu's, offered while its googleLogin feature is on, which is read from the user's mu.json
@@ -68,6 +70,7 @@ async function main(): Promise<number> {
 				lines.on("close", end);
 			},
 		},
+		signal: ending.signal,
 	});
 }
 
@@ -81,7 +84,10 @@ const leave = (code: number): void => {
 // Exits once the answer is out: a sign-in's callback server or an idle connection must not keep the process alive.
 // A run the app ends (SIGTERM, at its time limit or when it quits) ends the same way, with no lock left either.
 for (const signal of ["SIGTERM", "SIGINT", "SIGHUP"] as const)
-	process.on(signal, () => leave(128 + constants.signals[signal]));
+	process.on(signal, () => {
+		ending.abort();
+		leave(128 + constants.signals[signal]);
+	});
 main().then(leave, (error: unknown) => {
 	say({ type: "error", message: error instanceof Error ? error.message : String(error) });
 	leave(1);
