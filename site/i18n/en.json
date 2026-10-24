@@ -304,6 +304,7 @@
     "download": "Download this version",
     "full_agent": "Full mu-agent changelog",
     "headlines": {
+      "v0.2.7": "OpenAI's decision model as a judge; GPT-6.1 Sol by default; a shorter OpenAI model menu; the thinking level stays in view",
       "v0.2.6": "the note that Laya was replaced now reaches you; mude 1.0 stays local only; mu doctor passes without Chrome; sidebar and file-link fixes",
       "v0.2.5": "Laya is no longer built in, so mu switches to mude 1.0 or Jev on its own; opening a conversation no longer waits for the judge",
       "v0.2.4": "click a file named in a reply to open it; conversations grouped by project and opening instantly; Gemini 4 Argon; OpenAI-compatible relays fixed",
