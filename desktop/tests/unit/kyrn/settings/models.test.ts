@@ -505,6 +505,24 @@ describe('the startup model and thinking level in settings.json', () => {
       expect(f.store.defaultModel()).toEqual({ provider: '', model: '', thinkingLevel: '' });
     });
   });
+  it('a sign-out moves the default to another model, or to none, and keeps the thinking default', () => {
+    const pi = {
+      theme: 'dark',
+      defaultProvider: 'openai-codex',
+      defaultModel: 'gpt-5.5',
+      defaultThinkingLevel: 'high',
+    };
+    using(fixture(undefined, pi), (f) => {
+      expect(f.store.replaceDefaultModel({ provider: 'relay', model: 'plain' })).toEqual({
+        provider: 'relay',
+        model: 'plain',
+        thinkingLevel: 'high',
+      });
+      expect(f.pi()).toEqual({ ...pi, defaultProvider: 'relay', defaultModel: 'plain' });
+      expect(f.store.replaceDefaultModel()).toEqual({ provider: '', model: '', thinkingLevel: 'high' });
+      expect(f.pi()).toEqual({ theme: 'dark', defaultThinkingLevel: 'high' });
+    });
+  });
   it('knows which levels a model takes, by pi’s rule', () => {
     expect(supportedThinkingLevels(false)).toEqual(['off']);
     expect(supportedThinkingLevels(true)).toEqual(['off', 'minimal', 'low', 'medium', 'high']);

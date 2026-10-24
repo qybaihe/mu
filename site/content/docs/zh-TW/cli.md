@@ -32,6 +32,7 @@ mu                     # 在目前目錄開啟一個互動式工作階段
 | `mu import <file>…` | 把它們連同完整歷史匯入 mu，在這裡接著聊；之後再執行一次會帶來新增的內容 |
 | `mu judge setup \| start \| stop \| status` | 本機判定器 Laya。`setup` 下載模型前會先問你。 |
 | `mu judge mude install \| enable \| disable \| start \| stop \| status \| uninstall` | [mude 1.0](@docs/judges#mude)，mu 自己的決策模型，在 Apple 晶片的 Mac 上執行。下載中途停下後，`install` 會從中斷的地方接著下載。 |
+| `mu judge model add \| list \| use \| start \| stop \| status \| disable \| remove` | Hugging Face 上的[其他決策模型](@docs/judges#models)，像 mude 1.0 一樣執行。`add` 接受連結或 `owner/name`，下載中途停下後會接著下載。 |
 | `mu link` / `mu unlink` | 把 `mu` 指令放進 PATH（`~/.local/bin`），或移除 |
 | `mu auth status \| login <provider> \| logout <provider>` | 訂閱登入，和桌面版用的一樣 |
 | `mu migrate [--dry-run]` | 一次性：把改名前的主目錄 `~/.kyrn` 搬到 `~/.mu` |

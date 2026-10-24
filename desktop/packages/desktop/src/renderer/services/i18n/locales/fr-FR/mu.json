@@ -280,6 +280,53 @@
         "readyStopped": "mude 1.0 est maintenant votre juge. Son serveur démarre avec votre prochaine session mu."
       }
     },
+    "models": {
+      "title": "Autres modèles de décision",
+      "placeholder": "Lien Hugging Face ou owner/name",
+      "add": "Ajouter",
+      "trust": "Un modèle exécute son propre code serveur sur ce Mac. N’ajoutez que des modèles de confiance.",
+      "use": "Utiliser comme juge",
+      "continue": "Poursuivre le téléchargement",
+      "remove": "Supprimer",
+      "removeTitle": "Supprimer {{name}} ?",
+      "removeText": "{{name}} sera retiré de l’ordre des juges et ses fichiers (environ {{size}} Go) seront supprimés. Vous pourrez l’ajouter de nouveau plus tard.",
+      "noList": "Impossible de lire les modèles de décision : {{reason}}",
+      "cancelled": "Annulé. Ce qui est déjà téléchargé est conservé.",
+      "state": {
+        "judge": "Le juge · {{size}} Go",
+        "running": "En marche · {{size}} Go",
+        "installed": "Installé · {{size}} Go",
+        "partial": "{{done}} Go sur {{total}} Go téléchargés",
+        "notDownloaded": "Non téléchargé · {{size}} Go"
+      },
+      "step": {
+        "resolve": "Recherche du modèle sur Hugging Face…",
+        "download": "Téléchargement de {{name}} et vérification de chaque fichier…",
+        "python": "Préparation de l’environnement Python…",
+        "start": "Démarrage du serveur de {{name}}…"
+      },
+      "working": {
+        "add": "Ajout de {{name}}…",
+        "use": "Passage du juge à {{name}}…",
+        "disable": "Arrêt de {{name}}…",
+        "remove": "Suppression de {{name}}…"
+      },
+      "failed": {
+        "add": "Impossible d’ajouter le modèle.",
+        "use": "Impossible d’en faire le juge.",
+        "disable": "Impossible de l’arrêter.",
+        "remove": "Impossible de le supprimer."
+      },
+      "error": {
+        "usage": "Ce n’est ni un lien vers un modèle Hugging Face, ni son owner/name.",
+        "access": "Hugging Face ne partage pas ce modèle : il est privé ou à accès restreint.",
+        "notFound": "Hugging Face n’a pas ce modèle.",
+        "notRunnable": "mu ne peut pas exécuter ce modèle : il lui manque d3_server_mac.py, le serveur fourni avec les modèles empaquetés comme mude 1.0.",
+        "network": "Impossible de joindre Hugging Face. Vérifiez votre connexion et réessayez ; ce qui est déjà téléchargé est conservé.",
+        "integrity": "Un fichier téléchargé n’a pas passé la vérification. Réessayez.",
+        "unsupported": "Ce Mac ne peut pas exécuter de modèles de décision."
+      }
+    },
     "clm": {
       "address": "Adresse du serveur",
       "key": "Clé du serveur",
@@ -436,6 +483,8 @@
     "byKeyHelp": "Aucun abonnement n’est connecté, mais à sa dernière connexion mu a signalé ce fournisseur comme utilisable, généralement parce que sa clé API se trouve dans l’environnement. Une connexion le fait passer sur l’abonnement.",
     "otherRunning": "Connexion à {{name}} en cours ; une seule connexion à la fois.",
     "showRunning": "Afficher",
+    "switched": "Déconnecté de {{name}}. Modèle remplacé par {{model}}.",
+    "noModelLeft": "Déconnecté de {{name}}. Aucun autre modèle n’est configuré.",
     "legacy": {
       "openai-codex": "Cette ancienne connexion passe par celle de la CLI Codex. Déconnectez-vous, puis connectez-vous avec ChatGPT.",
       "anthropic": "Anthropic n'autorise pas les autres applications à se connecter avec un abonnement Claude : mu ne le propose donc plus. Déconnectez-vous et ajoutez plutôt une clé API Anthropic."
@@ -756,8 +805,18 @@
       "submit": "Valider",
       "openAgain": "Rouvrir la page",
       "pasteCode": "Coller un code à la place",
+      "pasteHint": "Une fois connecté, votre navigateur ouvre une adresse qui commence par {{address}}. La page peut afficher une erreur, ce n’est pas grave. Copiez l’adresse complète depuis la barre d’adresse et collez-la ici.",
       "cancel": "Annuler",
       "failed": "La connexion n’a pas abouti. Vous pouvez réessayer.",
+      "retry": "Réessayer",
+      "pasteInstead": "Coller l’adresse à la place",
+      "takenOver": "Une autre connexion a pris le port qu’attendait celle-ci (un /login dans un terminal, ou la CLI Codex) : celle-ci s’est donc arrêtée.",
+      "portInUse": {
+        "program": "Le port {{port}} est utilisé par {{command}} (processus {{pid}}), sans doute pour sa propre connexion. Terminez ou annulez cette connexion là-bas, puis cliquez sur « Réessayer ».",
+        "process": "Le port {{port}} est utilisé par le processus {{pid}}, sans doute pour sa propre connexion (la CLI Codex et l’app Codex utilisent ce port). Terminez ou annulez cette connexion là-bas, puis cliquez sur « Réessayer ».",
+        "session": "Le port {{port}} est occupé par une connexion inachevée dans une autre session mu ou pi (processus {{pid}}). Terminez-la ou annulez-la là-bas (Échap dans un terminal), puis cliquez sur « Réessayer ».",
+        "unknown": "Le port {{port}} est utilisé par un autre programme, sans doute la CLI Codex ou l’app Codex en cours de connexion. Terminez ou annulez cette connexion là-bas, puis cliquez sur « Réessayer »."
+      },
       "asks": "{{name}} demande (texte d’origine) :",
       "needAccount": "Connectez-vous d’abord à un compte, puis choisissez un modèle.",
       "experimental": "Expérimental",
@@ -988,11 +1047,7 @@
     },
     "send": {
       "placeholder": "Écrire à mu…",
-      "placeholderWorking": "Orientez mu maintenant, ou laissez un message pour après cette exécution…",
-      "steer": "Maintenant",
-      "steerHint": "Parvient à mu à sa prochaine étape",
-      "followUp": "Après",
-      "followUpHint": "Attend la fin de cette exécution"
+      "placeholderWorking": "Écrire à mu, qui choisit quand intégrer le message au travail…"
     },
     "queue": {
       "title": "En attente d’envoi",

@@ -2,10 +2,30 @@
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-10-24
+
+**0.2.3 adds `mu judge model` for decision models from Hugging Face, makes mu decide when a mid-run message reaches the work, and makes Sign in with ChatGPT cope with a busy port 1455.**
+
 ### Added
 
 - `mu judge model`: other decision models from Hugging Face, next to mude 1.0. `mu judge model add <link or owner/name>[@revision]` looks the model up on Hugging Face and pins the commit and every file (sha256 for files in LFS, the git hash for the others). It then downloads the model with progress and checks every file, resuming after a stop like `mu judge mude install`. It sets the model up in mude's Python environment, starts its server on 127.0.0.1 and makes it the judge, with the judges from before behind it unless `--local-only`. `list`, `use <name>` (`use mude` switches back), `start`, `stop`, `status`, `disable` and `remove` manage them, and `--json` gives one JSON object per line, as for `mu judge mude`. A model must be packaged like mude 1.0's MLX edition, with its own `d3_server_mac.py`; a repository without one is refused before anything is downloaded. One decision model runs at a time: switching stops the other's server, and mu starts the one that is the judge before a session, as it does mude.
 - `mu judge mude uninstall` keeps the Python environment when models added with `mu judge model` still use it.
+- `mu auth login <provider> --paste` signs in without listening on the callback port: you sign in in the browser, then paste the address it ends on. That works whichever program holds the port.
+
+### Changed
+
+- Less small print: `mu --help` no longer says "Formerly KYRN", `mu setup` drops its header line, the sign-in location sentence and the closing footer, and its judge question fits on one line; `mu ledger` drops its help footer, and the kernel part of the in-session `/help` keeps only the Esc and expand keys.
+- mu now decides when a message you send during a run reaches the work: `input.interjection` is active by default (it was in shadow). Enter still sends a steer and Alt+Enter a follow-up, and the judge can move the message. A correction reaches the model at its next step, even when you queued it. Extra work and unrelated questions wait until the run is done, even when you sent them with Enter. Anything else goes the way you sent it. The message waits up to 1.5 s for the verdict (`features.interjection.waitMs`). It goes as sent when the verdict is late, when the judge fails or is off, and when the run ends during the wait. Messages you send in quick succession arrive in the order you sent them, however long each verdict takes. 34 of the 40 decision points now act from the start. To keep the old behavior, put `"input.interjection": "shadow"` under `modes` in `~/.mu/agent/mu.json`.
+
+### Fixed
+
+- Sign in with ChatGPT (`/login` and `mu auth login openai`, which the desktop app runs) no longer fails with "Port 1455 is in use" when the port is held by another sign-in of mu or pi. Port 1455 is fixed by OpenAI, and a sign-in keeps it until it ends. Before, a second sign-in started while the first still waited (two in a row from the app, a `/login` left open in a terminal) failed with that message. Now the new sign-in asks the earlier one to let go: the earlier one stops with "Sign-in stopped: a newer sign-in started and took over port 1455", and the new one listens. The Codex CLI's own login takes the port over the same way, with the request it already sends to an older login server.
+- When another program keeps port 1455 (the Codex CLI or the Codex app, while its own login waits), the sign-in now names it: "Port 1455 is in use by codex (process 4321), probably for its own sign-in … Finish or cancel that sign-in, then try again". That program is left alone. `mu auth` passes this on with `code: "port_in_use"`, the port and the program, so the app can say it in its own words. The program is looked up with `lsof` (or `ss`, or `netstat` on Windows); where none answers, the message says "another program".
+- Every way a ChatGPT sign-in ends now gives port 1455 back at once: success, an error, a cancel (Escape in `/login`, `cancel` or the input closing for `mu auth`), SIGTERM to `mu auth` (the app quitting or ending it), and a prompt that never answers. A sign-in nobody finishes stops listening after 15 minutes. The older ChatGPT sign-in through the Codex login (`openai-codex`) takes the port over from an earlier sign-in of mu the same way. When another program keeps the port, it still falls back to the pasted address, and now says which program it is.
+- A mid-run message that the judge moves to the other queue is now expanded like any other: a prompt template or a skill (`/name …`) reaches the model expanded, not as you typed it.
+- A session in RPC mode (each conversation of the desktop app) now checks `get_available_models` and `set_model` against the credential store, so a sign-in or sign-out made by another process counts at once: `mu auth logout`, or `/logout` in another terminal. Before, a signed-out subscription's models stayed listed until the session restarted.
+- `/logout` moves the session off the signed-out provider's model, to the default model (else a provider's default, else the first model available), and says so: "Logged out of ChatGPT. Switched to openai/gpt-5.5." Before, the next prompt failed with "No API key". With no model left, it says to use `/login`.
+- `mu auth logout google-antigravity` also drops the list of models the account gave from `models-store.json`, so the next sign-in starts from its own.
 
 ## [0.2.2] - 2026-10-24
 

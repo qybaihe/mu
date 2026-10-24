@@ -280,6 +280,53 @@
         "readyStopped": "mude 1.0 ist jetzt dein Judge. Sein Server startet mit deiner nächsten mu-Sitzung."
       }
     },
+    "models": {
+      "title": "Weitere Entscheidungsmodelle",
+      "placeholder": "Hugging-Face-Link oder owner/name",
+      "add": "Hinzufügen",
+      "trust": "Ein Modell führt seinen eigenen Servercode auf diesem Mac aus. Füge nur Modelle hinzu, denen du vertraust.",
+      "use": "Als Judge verwenden",
+      "continue": "Download fortsetzen",
+      "remove": "Entfernen",
+      "removeTitle": "{{name}} entfernen?",
+      "removeText": "Damit wird {{name}} aus der Judge-Reihenfolge genommen und seine Dateien (etwa {{size}} GB) werden gelöscht. Du kannst es später wieder hinzufügen.",
+      "noList": "Die Entscheidungsmodelle konnten nicht gelesen werden: {{reason}}",
+      "cancelled": "Abgebrochen. Bereits Heruntergeladenes bleibt erhalten.",
+      "state": {
+        "judge": "Der Judge · {{size}} GB",
+        "running": "Läuft · {{size}} GB",
+        "installed": "Installiert · {{size}} GB",
+        "partial": "{{done}} von {{total}} GB heruntergeladen",
+        "notDownloaded": "Nicht heruntergeladen · {{size}} GB"
+      },
+      "step": {
+        "resolve": "Das Modell wird auf Hugging Face gesucht…",
+        "download": "{{name}} wird heruntergeladen und jede Datei geprüft…",
+        "python": "Die Python-Umgebung wird eingerichtet…",
+        "start": "Der Server von {{name}} wird gestartet…"
+      },
+      "working": {
+        "add": "{{name}} wird hinzugefügt…",
+        "use": "Der Judge wird auf {{name}} umgestellt…",
+        "disable": "{{name}} wird ausgeschaltet…",
+        "remove": "{{name}} wird entfernt…"
+      },
+      "failed": {
+        "add": "Das Modell konnte nicht hinzugefügt werden.",
+        "use": "Es konnte nicht zum Judge gemacht werden.",
+        "disable": "Es konnte nicht ausgeschaltet werden.",
+        "remove": "Es konnte nicht entfernt werden."
+      },
+      "error": {
+        "usage": "Das ist weder ein Link zu einem Hugging-Face-Modell noch dessen owner/name.",
+        "access": "Hugging Face gibt dieses Modell nicht frei: Es ist privat oder zugangsbeschränkt.",
+        "notFound": "Hugging Face hat kein solches Modell.",
+        "notRunnable": "mu kann dieses Modell nicht ausführen: Ihm fehlt d3_server_mac.py, der Server, den wie mude 1.0 verpackte Modelle mitbringen.",
+        "network": "Hugging Face ist nicht erreichbar. Prüfe deine Verbindung und versuch es noch einmal; bereits Heruntergeladenes bleibt erhalten.",
+        "integrity": "Eine heruntergeladene Datei hat die Prüfung nicht bestanden. Versuch es noch einmal.",
+        "unsupported": "Dieser Mac kann keine Entscheidungsmodelle ausführen."
+      }
+    },
     "clm": {
       "address": "Serveradresse",
       "key": "Serverschlüssel",
@@ -436,6 +483,8 @@
     "byKeyHelp": "Es ist kein Abo angemeldet, aber mu hat diesen Anbieter bei der letzten Verbindung als nutzbar gemeldet, meist weil sein API-Schlüssel in der Umgebung gesetzt ist. Nach der Anmeldung wird das Abo verwendet.",
     "otherRunning": "Die {{name}}-Anmeldung läuft gerade; es ist immer nur eine Anmeldung gleichzeitig möglich.",
     "showRunning": "Anzeigen",
+    "switched": "Von {{name}} abgemeldet. Gewechselt zu {{model}}.",
+    "noModelLeft": "Von {{name}} abgemeldet. Kein anderes Modell ist eingerichtet.",
     "legacy": {
       "openai-codex": "Diese ältere Anmeldung läuft über das Login der Codex CLI. Melde dich ab und dann mit ChatGPT an.",
       "anthropic": "Anthropic erlaubt anderen Apps keine Anmeldung mit einem Claude-Abo, daher bietet mu sie nicht mehr an. Melde dich ab und füge stattdessen einen Anthropic-API-Schlüssel hinzu."
@@ -756,8 +805,18 @@
       "submit": "Absenden",
       "openAgain": "Seite erneut öffnen",
       "pasteCode": "Stattdessen Code einfügen",
+      "pasteHint": "Nach der Anmeldung öffnet dein Browser eine Adresse, die mit {{address}} beginnt. Die Seite zeigt vielleicht einen Fehler an, das macht nichts. Kopiere die ganze Adresse aus der Adressleiste und füge sie hier ein.",
       "cancel": "Abbrechen",
       "failed": "Die Anmeldung wurde nicht abgeschlossen. Du kannst es erneut versuchen.",
+      "retry": "Erneut versuchen",
+      "pasteInstead": "Stattdessen die Adresse einfügen",
+      "takenOver": "Eine andere Anmeldung hat den Port übernommen, auf den diese gewartet hat (ein /login im Terminal oder die Codex CLI), deshalb wurde diese beendet.",
+      "portInUse": {
+        "program": "Port {{port}} wird von {{command}} (Prozess {{pid}}) belegt, vermutlich für dessen eigene Anmeldung. Schließe diese Anmeldung dort ab oder brich sie ab und klicke dann auf „Erneut versuchen“.",
+        "process": "Port {{port}} wird von Prozess {{pid}} belegt, vermutlich für eine eigene Anmeldung (die Codex CLI und die Codex-App nutzen diesen Port). Schließe diese Anmeldung dort ab oder brich sie ab und klicke dann auf „Erneut versuchen“.",
+        "session": "Port {{port}} ist durch eine nicht abgeschlossene Anmeldung in einer anderen mu- oder pi-Sitzung belegt (Prozess {{pid}}). Schließe sie dort ab oder brich sie ab (im Terminal mit Esc) und klicke dann auf „Erneut versuchen“.",
+        "unknown": "Port {{port}} wird von einem anderen Programm belegt, vermutlich meldet sich gerade die Codex CLI oder die Codex-App an. Schließe diese Anmeldung dort ab oder brich sie ab und klicke dann auf „Erneut versuchen“."
+      },
       "asks": "{{name}} fragt (im Originalwortlaut):",
       "needAccount": "Melde dich zuerst bei einem Konto an und wähle dann ein Modell.",
       "experimental": "Experimentell",
@@ -988,11 +1047,7 @@
     },
     "send": {
       "placeholder": "Nachricht an mu…",
-      "placeholderWorking": "Lenke mu jetzt, oder hinterlasse eine Nachricht für nach diesem Lauf…",
-      "steer": "Jetzt",
-      "steerHint": "Erreicht mu bei seinem nächsten Schritt",
-      "followUp": "Danach",
-      "followUpHint": "Wartet, bis dieser Lauf endet"
+      "placeholderWorking": "Nachricht an mu – mu entscheidet, wann sie in die Arbeit einfließt…"
     },
     "queue": {
       "title": "Wartet auf das Senden",

@@ -280,6 +280,53 @@
         "readyStopped": "mude 1.0 現在是你的判定器，它的服務會在下次 mu 工作階段開始時啟動。"
       }
     },
+    "models": {
+      "title": "其他決策模型",
+      "placeholder": "Hugging Face 連結或 owner/name",
+      "add": "新增",
+      "trust": "模型會在這台 Mac 上執行它自帶的伺服器程式碼，只新增你信任的模型。",
+      "use": "設為判定器",
+      "continue": "繼續下載",
+      "remove": "移除",
+      "removeTitle": "移除 {{name}}？",
+      "removeText": "這會把 {{name}} 移出判定順序，並刪除它的檔案（約 {{size}} GB）。之後可以再新增。",
+      "noList": "無法讀取決策模型：{{reason}}",
+      "cancelled": "已取消。已下載的部分會保留。",
+      "state": {
+        "judge": "目前的判定器 · {{size}} GB",
+        "running": "執行中 · {{size}} GB",
+        "installed": "已安裝 · {{size}} GB",
+        "partial": "已下載 {{done}} / {{total}} GB",
+        "notDownloaded": "未下載 · {{size}} GB"
+      },
+      "step": {
+        "resolve": "正在 Hugging Face 上尋找模型…",
+        "download": "正在下載 {{name}} 並驗證每個檔案…",
+        "python": "正在設定 Python 環境…",
+        "start": "正在啟動 {{name}} 的伺服器…"
+      },
+      "working": {
+        "add": "正在新增 {{name}}…",
+        "use": "正在把判定器切換到 {{name}}…",
+        "disable": "正在關閉 {{name}}…",
+        "remove": "正在移除 {{name}}…"
+      },
+      "failed": {
+        "add": "無法新增這個模型。",
+        "use": "無法把它設為判定器。",
+        "disable": "無法關閉它。",
+        "remove": "無法移除它。"
+      },
+      "error": {
+        "usage": "這不是 Hugging Face 模型的連結，也不是它的 owner/name。",
+        "access": "Hugging Face 不提供這個模型：它是私人的，或需要申請存取。",
+        "notFound": "Hugging Face 上沒有這個模型。",
+        "notRunnable": "mu 無法執行這個模型：它沒有 d3_server_mac.py，也就是以 mude 1.0 方式打包的模型自帶的伺服器。",
+        "network": "無法連線到 Hugging Face。請檢查網路後重試，已下載的部分會保留。",
+        "integrity": "有個下載的檔案沒有通過驗證，請重試。",
+        "unsupported": "這台 Mac 無法執行決策模型。"
+      }
+    },
     "clm": {
       "address": "伺服器位址",
       "key": "伺服器金鑰",
@@ -436,6 +483,8 @@
     "byKeyHelp": "目前沒有登入訂閱帳號，但 mu 上次連線時回報它能用，通常是因為環境裡有它的 API 金鑰。登入後會改用訂閱。",
     "otherRunning": "{{name}} 正在登入，同一時間只能進行一個登入。",
     "showRunning": "查看",
+    "switched": "已登出 {{name}}，已改用 {{model}}。",
+    "noModelLeft": "已登出 {{name}}。尚未設定其他模型。",
     "legacy": {
       "openai-codex": "這是經由 Codex CLI 的舊登入方式。請登出，再用 ChatGPT 登入。",
       "anthropic": "Anthropic 不允許其他應用程式用 Claude 訂閱登入，所以 mu 不再提供。請登出，改為新增 Anthropic API 金鑰。"
@@ -756,8 +805,18 @@
       "submit": "送出",
       "openAgain": "重新開啟授權頁",
       "pasteCode": "手動貼上授權碼",
+      "pasteHint": "登入後，瀏覽器會跳到一個以 {{address}} 開頭的網址，頁面可能顯示錯誤，這沒關係。把網址列裡的完整網址複製下來，貼到這裡。",
       "cancel": "取消",
       "failed": "登入沒有完成，可以再試一次。",
+      "retry": "重試",
+      "pasteInstead": "改用貼上網址登入",
+      "takenOver": "另一個登入（終端機裡的 /login 或 Codex CLI）接手了這次登入在等的連接埠，這次登入已停止。",
+      "portInUse": {
+        "program": "連接埠 {{port}} 正被 {{command}}（處理程序 {{pid}}）占用，多半是它自己的登入。請在那裡完成或取消登入，然後按「重試」。",
+        "process": "連接埠 {{port}} 正被處理程序 {{pid}} 占用，多半是它自己的登入（Codex CLI 和 Codex 應用程式也用這個連接埠）。請在那裡完成或取消登入，然後按「重試」。",
+        "session": "連接埠 {{port}} 被另一個 mu 或 pi 工作階段裡未完成的登入占著（處理程序 {{pid}}）。請在那裡完成或取消登入（在終端機按 Esc），然後按「重試」。",
+        "unknown": "連接埠 {{port}} 正被另一個程式占用，多半是 Codex CLI 或 Codex 應用程式在登入。請在那裡完成或取消登入，然後按「重試」。"
+      },
       "asks": "{{name}} 的登入在問（以下是原文）：",
       "needAccount": "先登入一個帳號，再選一個模型。",
       "experimental": "實驗性",
@@ -988,11 +1047,7 @@
     },
     "send": {
       "placeholder": "傳訊息給 mu…",
-      "placeholderWorking": "現在引導 mu，或留一則訊息，等這一輪結束後再送…",
-      "steer": "現在",
-      "steerHint": "在 mu 的下一步送達",
-      "followUp": "之後",
-      "followUpHint": "等這一輪執行結束後再送"
+      "placeholderWorking": "傳訊息給 mu，它會在適當的時候把訊息帶進工作…"
     },
     "queue": {
       "title": "等待傳送",

@@ -8,6 +8,26 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 - **Files named in a reply are links in the desktop app.** When a reply names a file as inline code, like `07_card.png` or `out/report.pdf`, or links to one, the name becomes a link once the file is found. A relative name is read against the conversation's folder, and a bare file name is also looked for in its subfolders. An image opens in the side panel, where you can zoom in and out and step through every image the reply names with the arrow keys or buttons. Any other file opens in its default app, and the folder icon beside it shows it in Finder (File Explorer on Windows). A program, such as a `.sh`, `.command` or `.exe` file, is only shown in its folder, never run. A clear path to a file that doesn't exist is greyed out, with "File not found" on hover. Ordinary code, like `npm run build` or `x.length`, stays as it was.
 
+## [0.2.3] - 2026-10-24
+
+**0.2.3 adds decision models from Hugging Face next to mude 1.0, lets mu decide when a message sent mid-run reaches the work, and makes Sign in with ChatGPT cope with a busy port 1455.** The desktop app carries mu-agent 0.2.3.
+
+### Added
+
+- **Other decision models from Hugging Face, next to mude 1.0.** Paste a Hugging Face link or `owner/name` under mude on the Judges page in Settings (or run `mu judge model add <link>`). mu downloads the model with progress, checks every file, resumes a download that stopped, sets it up and makes it the judge. The list shows each added model with Use, Continue downloading and Remove, and "Use mude 1.0 as the judge" switches back. Only one decision model runs at a time. A model must be packaged like mude 1.0's MLX edition, with its own `d3_server_mac.py`, which runs on your Mac, so add only models you trust.
+
+### Changed
+
+- **Less small print.** The site, the app, the command line and the READMEs drop intro paragraphs, footnotes and hints that repeated what was already on screen. Install sizes, costs, warnings and what leaves your machine stay.
+- **The Now / After switch next to the message box is gone: mu decides when a message you send during a run reaches the work.** A correction reaches the model at its next step. Extra work and unrelated questions wait until the run is done. The queue above the box shows where each message went, and you can still take them back. The judge has up to 1.5 seconds to decide. If it doesn't answer in time, or fails, the message reaches the model at its next step. In the terminal, Enter and Alt+Enter work as before, and mu can move the message the same way. To turn this off, set `"input.interjection": "shadow"` under `modes` in `~/.mu/agent/mu.json`. Messages from the app then reach the model at its next step, and in the terminal the key you press decides, as before.
+
+### Fixed
+
+- **Signing out of a subscription takes its models out of the model pickers at once.** After you signed out of ChatGPT, Grok or a Google account in Settings, the default model's and the board's pickers, the home page and open conversations kept listing that account's models until the app restarted. Now they drop them as soon as the sign-out finishes. If the default model or an open conversation was on one of them, it switches to another model you've set up and says so. `/logout` in the terminal does the same for the current session.
+- **Sign in with ChatGPT no longer fails with "Port 1455 is in use" when the port is held by another sign-in of mu.** ChatGPT's sign-in waits for the browser on port 1455, which OpenAI fixes and the Codex CLI uses too. Before, the app could start a new sign-in while the one before it still held the port, and a `/login` left open in a terminal blocked the app until it was cancelled there. Now the app starts a new sign-in only once the one before has ended (ending it after 3 seconds at most). An earlier sign-in of mu, in the app or in a terminal, hands the port over by itself.
+- **When another program holds the port, the app says which one and offers Retry.** For example: "Port 1455 is in use by codex (process 4321), probably for its own sign-in. Finish or cancel that sign-in there, then click Retry", in every language the app ships in. "Paste the address instead" signs in without the port: you sign in in the browser, then paste the address it ends on. Before, the app showed the flow's English error and nothing to do about it.
+- **Every way a sign-in ends gives the port back:** finishing, Cancel, the 15-minute limit, closing the app's last window, signing out (which now ends a sign-in still under way first) and quitting the app.
+
 ## [0.2.2] - 2026-10-24
 
 **0.2.2 makes the mude 1.0 install cope with a full disk, a stop at any step and two installs at once, and its English reads naturally.** The desktop app carries mu-agent 0.2.2.

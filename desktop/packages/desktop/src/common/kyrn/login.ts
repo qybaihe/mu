@@ -63,6 +63,17 @@ export type LoginPrompt = {
 
 export type LoginPhase = 'idle' | 'running' | 'done' | 'failed' | 'cancelled';
 
+/**
+ * Why a sign-in failed, when the flow says in a way the app can act on: `port_in_use`, another program keeps the port
+ * the browser comes back to (the Codex CLI's or the Codex app's own login, on ChatGPT's 1455); `login_taken_over`, a
+ * newer sign-in took that port over from this one.
+ */
+export type LoginErrorCode = 'port_in_use' | 'login_taken_over';
+export const LOGIN_ERROR_CODES: readonly LoginErrorCode[] = ['port_in_use', 'login_taken_over'];
+
+/** The program keeping the port, as far as the system says; `pi` when it is an older mu or pi's unfinished sign-in. */
+export type LoginPortHolder = { pid?: number; command?: string; pi?: boolean };
+
 export type LoginState = {
   /** Grows with every start, so a screen can tell an old answer from the current one. */
   id: number;
@@ -80,7 +91,16 @@ export type LoginState = {
   /** After success: what the account can use, from pi's catalogue. */
   models?: LoginModel[];
   error?: string;
+  /** With a failure the app can act on: what it was, and for `port_in_use` the port and who keeps it. */
+  code?: LoginErrorCode;
+  port?: number;
+  holder?: LoginPortHolder;
+  /** The sign-in takes the address the browser ends on as pasted, and listens on no port. */
+  paste?: boolean;
 };
+
+/** How a sign-in is started: `paste`, by the pasted address alone, for when another program keeps the port. */
+export type LoginStartOptions = { paste?: boolean };
 
 /**
  * Who is signed in already, by provider, with what they can use, and what this harness can sign in to (`offered`,
@@ -90,6 +110,16 @@ export type LoginStatus = {
   signedIn: { provider: SubscriptionProvider; models: LoginModel[] }[];
   offered?: SubscriptionProvider[];
 };
+
+/** A model a sign-out switched to: pi's provider and model ids, and the model's name. */
+export type SwitchedModel = { provider: string; model: string; name: string };
+
+/**
+ * What a sign-out moved off the account's models besides its credential: the model new conversations start on
+ * (`defaultMoved`) and the running conversations (`conversations`, how many), each when it was one of the account's
+ * models and mu no longer offers it. `to` is the model they went on with; left out when no other model is set up.
+ */
+export type SignOutSwitch = { defaultMoved: boolean; conversations: number; to?: SwitchedModel };
 
 /**
  * The providers to show: what the runner offers (or pi's own ones until it has said), and any other one an account is

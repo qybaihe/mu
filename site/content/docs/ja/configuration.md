@@ -46,7 +46,7 @@ mu が理解できない部分は、mu を止めずにその既定値に戻り�
 
 ## モードの使い方 {#modes}
 
-- {points} の判定ポイントのうち {points_active} は最初から判定を反映します（`context.compact` と `output.drift` は既定でオフ、`capability.disclosure` と `swarm.patch` もオフで、`notify.routing`、`input.interjection`、`turn.drift` はシャドーで判定を記録するだけです）。判定器や、確信の持てない判定ポイントを試すには、シャドーにして台帳を読み（`mu ledger`、`/status`、アプリの判定タブ）、それから active に戻します。
+- {points} の判定ポイントのうち {points_active} は最初から判定を反映します（`context.compact` と `output.drift` は既定でオフ、`capability.disclosure` と `swarm.patch` もオフで、`notify.routing` と `turn.drift` はシャドーで判定を記録するだけです）。判定器や、確信の持てない判定ポイントを試すには、シャドーにして台帳を読み（`mu ledger`、`/status`、アプリの判定タブ）、それから active に戻します。
 - `/mu mode <point> <off|shadow|active>` は現在のセッションで一つの判定ポイントを切り替え、`/mu mode default shadow` はすべてを切り替えます。モードを残しておくには、`mu.json` に書きます。
 - `MU_JUDGE_MODE=shadow mu` は、1 回の実行の既定値を設定します。
 - `"modes": { "default": "off" }` にすると、判定器には一切問い合わせません。既定でシャドーの判定ポイントもオフになります（`mu.json` で個別にモードを指定したものを除く）。`mu setup` で判定器に「Not now」を選ぶと、これが書き込まれます。

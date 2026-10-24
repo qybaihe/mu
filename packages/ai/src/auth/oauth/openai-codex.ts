@@ -15,6 +15,7 @@ if (typeof process !== "undefined" && (process.versions?.node || process.version
 
 import { getProviderEnvValue } from "../../utils/provider-env.ts";
 import type { LoginOptions, OAuthAuth, OAuthCredential, ProviderAuthInteraction } from "../types.ts";
+import { CallbackPortInUseError } from "./callback-port.ts";
 import { startOAuthCallbackServer, waitForCallbackOrManualInput } from "./callback-server.ts";
 import { pollOAuthDeviceCodeFlow } from "./device-code.ts";
 import { generatePKCE } from "./pkce.ts";
@@ -361,16 +362,29 @@ async function loginOpenAICodex(
 	options?: LoginOptions,
 ): Promise<OAuthCredential> {
 	const { verifier, state, url } = await createAuthorizationFlow(options?.agentName);
-	// Port 1455 is shared with the Codex CLI; when it is taken, fall back to the pasted redirect URL.
-	const callback = await startOAuthCallbackServer({
-		providerName: "OpenAI",
-		host: getCallbackHost(),
-		port: 1455,
-		path: "/auth/callback",
-		state,
-		complete: async (code) => code,
-		signal: interaction.signal,
-	}).catch(() => undefined);
+	// Port 1455 is shared with the Codex CLI. An earlier sign-in of ours hands it over; when another program keeps it,
+	// or with `pasteOnly`, the pasted redirect URL is used instead.
+	const callback = options?.pasteOnly
+		? undefined
+		: await startOAuthCallbackServer({
+				providerName: "OpenAI",
+				host: getCallbackHost(),
+				port: 1455,
+				path: "/auth/callback",
+				state,
+				complete: async (code) => code,
+				signal: interaction.signal,
+				sharedPort: true,
+			}).catch((error: unknown) => {
+				if (interaction.signal.aborted) throw new Error("Login cancelled");
+				if (error instanceof CallbackPortInUseError) {
+					interaction.notify({
+						type: "info",
+						message: `${error.message} Or paste the address your browser ends on after sign-in.`,
+					});
+				}
+				return undefined;
+			});
 
 	interaction.notify({
 		type: "auth_url",

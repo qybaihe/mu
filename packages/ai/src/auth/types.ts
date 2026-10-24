@@ -211,6 +211,12 @@ export interface LoginOptions {
 	 * Codex originator. Defaults to pi's own name.
 	 */
 	agentName?: string;
+	/**
+	 * Don't listen for the browser's redirect on this machine: the flow takes only the redirect address the person
+	 * pastes. For when another program keeps a fixed callback port (the Codex CLI's login on 1455, which Sign in with
+	 * ChatGPT shares). Flows without a fixed port ignore it.
+	 */
+	pasteOnly?: boolean;
 }
 
 /**

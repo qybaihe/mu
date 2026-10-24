@@ -22,6 +22,7 @@ import {
   clmKeyVariable,
   defaultModelOf,
   inShownOrder,
+  isAddedModel,
   isMude,
   JEV_SERVICES,
   JUDGE_CHOICES,
@@ -36,7 +37,8 @@ import {
 import ClmServerCheck from './ClmServerCheck';
 import SectionShell, { Card } from './SectionShell';
 import LocalJudgePanel from './LocalJudgePanel';
-import MudePanel, { MudeUnsupported, mudeInstalled, mudeOffered, mudeRecommended, useMude } from './MudePanel';
+import DecisionModels, { useDecisionModels } from './mude/DecisionModels';
+import MudePanel, { MudeUnsupported, mudeInstalled, mudeOffered, mudeRecommended, useMude } from './mude/MudePanel';
 import styles from './sections.module.css';
 
 type JudgesSectionProps = {
@@ -100,7 +102,8 @@ type JudgeChoicesProps = Pick<JudgesSectionProps, 'draft' | 'base' | 'onChange' 
  * offers the install. Picking another judge while mude is the judge runs `disable` first (which brings back the
  * judges it replaced and stops its server), then makes the pick in the settings read again. With unsaved changes,
  * mude's commands wait (they write mu.json, and the save would then be refused as stale), and a pick away from it is
- * an edit like any other.
+ * an edit like any other. A decision model added from Hugging Face (DecisionModels, under mude's body) counts as the
+ * same choice: picking another judge while it is the judge runs its `disable` the same way.
  */
 export function JudgeChoices({ draft, base, onChange, onKey, onReload }: JudgeChoicesProps) {
   const { t } = useTranslation();
@@ -112,7 +115,11 @@ export function JudgeChoices({ draft, base, onChange, onKey, onReload }: JudgeCh
   const after = useRef<JudgeChoice | undefined>(undefined);
   // mude picked but not (yet) the judge: its body shows the install, or why it could not be made the judge.
   const [picked, setPicked] = useState<JudgeChoice>();
+  // mude's commands and the added models' change which of them is the judge: each reads the other again.
+  const refreshModels = useRef<() => Promise<void>>(async () => undefined);
+  const refreshMude = useRef<() => Promise<void>>(async () => undefined);
   const mude = useMude((task) => {
+    void refreshModels.current();
     const next = after.current;
     after.current = undefined;
     // An install that was cancelled or failed keeps mude's body open, with what it says, also when it was opened
@@ -123,9 +130,22 @@ export function JudgeChoices({ draft, base, onChange, onKey, onReload }: JudgeCh
     if (kept.current.unsaved) return;
     kept.current.onReload?.(next && task.phase === 'done' ? (now) => choose(now, next) : undefined);
   });
+  const models = useDecisionModels((task) => {
+    void refreshMude.current();
+    const next = after.current;
+    after.current = undefined;
+    if (kept.current.unsaved) return;
+    kept.current.onReload?.(next && task.phase === 'done' ? (now) => choose(now, next) : undefined);
+  });
+  refreshModels.current = models.refresh;
+  refreshMude.current = mude.refresh;
+  const busy = mude.busy || models.busy;
   const saved = choiceOf(settings);
+  // An added model is the judge: taking it out of the order is its command's, not mude's.
+  const first = settings.tiers[0];
+  const addedFirst = first !== undefined && isAddedModel(settings.judges[first]) ? first : undefined;
   // While one of mude's commands runs (an install started before this page was opened too), its progress shows.
-  const current = picked ?? (mude.busy ? 'mude' : saved);
+  const current = picked ?? (busy ? 'mude' : saved);
   const offered = mude.state?.available === true;
   const mudeOk = mudeOffered(mude.state);
   // While its status is still read (about a second) on a Mac, mude stands where it most likely will: first and
@@ -137,13 +157,15 @@ export function JudgeChoices({ draft, base, onChange, onKey, onReload }: JudgeCh
   const pick = (choice: JudgeChoice) => {
     if (choice === 'mude') {
       setPicked('mude');
-      if (mudeInstalled(mude.state?.status) && !unsaved && !mude.busy) void mude.run('enable');
+      // Already a decision model on this Mac (mude or an added one): which one stays as it is.
+      if (saved !== 'mude' && mudeInstalled(mude.state?.status) && !unsaved && !busy) void mude.run('enable');
       return;
     }
     setPicked(undefined);
-    if (saved === 'mude' && offered && !unsaved && !mude.busy) {
+    if (saved === 'mude' && offered && !unsaved && !busy) {
       after.current = choice;
-      void mude.run('disable');
+      if (addedFirst) void models.run({ action: 'disable', target: addedFirst });
+      else void mude.run('disable');
       return;
     }
     onChange((now) => choose(now, choice));
@@ -164,7 +186,10 @@ export function JudgeChoices({ draft, base, onChange, onKey, onReload }: JudgeCh
               onPick={() => pick(choice)}
             >
               {current !== choice ? null : choice === 'mude' ? (
-                <MudePanel mude={mude} unsaved={unsaved} />
+                <>
+                  <MudePanel mude={mude} unsaved={unsaved} waiting={models.busy} />
+                  <DecisionModels models={models} unsaved={unsaved} mudeBusy={mude.busy} />
+                </>
               ) : (
                 <ChoiceBody choice={choice} draft={draft} onChange={onChange} onKey={onKey} />
               )}
@@ -382,6 +407,8 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
   const { settings } = draft;
   const nameOf = (profile: string): string => {
     if (isMude(settings.judges[profile])) return t('mu.judges.mude.name');
+    // An added model goes by the name it was added under.
+    if (isAddedModel(settings.judges[profile])) return profile;
     const kind = kindOf(settings.judges[profile]);
     return kind ? t(`mu.judges.choices.${kind}.title`) : profile;
   };
@@ -422,13 +449,14 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
         const classifier = kind === undefined && judge?.type === 'classifier';
         // Where what a judge needs is set when it is not here: the first of Jev, Laya and CLM is the one the judges
         // page chose, mude is set up there too, and a judge of another kind is set in mu's settings file.
-        const summary = isMude(judge)
-          ? t('mu.judges.mude.tierHelp')
-          : index === 0 && kind !== undefined
-            ? t('mu.judges.firstTier')
-            : kind === undefined && !classifier
-              ? t('mu.judges.customTier')
-              : undefined;
+        const summary =
+          isMude(judge) || isAddedModel(judge)
+            ? t('mu.judges.mude.tierHelp')
+            : index === 0 && kind !== undefined
+              ? t('mu.judges.firstTier')
+              : kind === undefined && !classifier
+                ? t('mu.judges.customTier')
+                : undefined;
         return (
           <Card
             key={`${index}:${name}`}

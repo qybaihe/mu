@@ -806,9 +806,10 @@ export const LINK_USAGE = [
 export const AUTH_USAGE = [
 	"mu's sign-in, which the desktop app runs (JSON lines on stdout):",
 	"  mu auth status",
-	"  mu auth login <provider>",
+	"  mu auth login <provider> [--paste]",
 	"  mu auth logout <provider>",
-	"In a terminal, /login inside mu signs in the same way.",
+	"In a terminal, /login inside mu signs in the same way. With --paste, the sign-in takes the address the browser",
+	"ends on as pasted instead of listening for it: for when another program (the Codex CLI) holds the callback port.",
 	"",
 	"pi's auth commands:",
 ].join("\n");

@@ -51,7 +51,7 @@ On by default: yes. Decision points: `skills.disclosure`.
 | `minSkills` | `4` | Don't filter below this many skills. Range 1 to 100. |
 | `waitMs` | `3000` ms | Wait at most `3000` ms. Range 500 to 30000. |
 | `applyLate` | `true` | Apply a late first verdict from the next turn. When the verdict on the session's first message comes after the wait, skills are hidden from the next turn on, which changes the prompt prefix once. Off: the session keeps every skill description. |
-| `subagentsInherit` | `true` | Subagents take this session's choice. A subagent hides the skills this session hides and doesn't ask the judge again. While this session hasn't settled yet, a subagent asks for itself as before. |
+| `subagentsInherit` | `true` | Subagents take this session's choice. A subagent hides the skills this session hides and doesn't ask the judge again. Until this session has decided, a subagent asks the judge itself, as before. |
 | `askEarly` | `true` | Ask as soon as the message arrives. Asked alongside preflight, so the turn doesn't wait for two verdicts in a row. Off: asked once preflight is done. |
 
 ## catalog
@@ -64,9 +64,9 @@ On by default: yes. Decision points: `capability.disclosure`.
 | --- | --- | --- |
 | `waitMs` | `3000` ms | Wait at most `3000` ms. Range 500 to 30000. |
 | `askUnattended` | `false` | Also choose capabilities in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: capabilities stay hidden, and the turn doesn't wait. |
-| `unattendedHidden` | `delegate`, `apply_patch_from`, `browse`, `locate`, `remember`, `find_skill`, `find_capability`, `hive`, `mu-browser` | Tools and skills left out of unattended runs. By name. One-shot runs almost never use them, and each one is in every request. One you call for by its command (such as /hive) stays. Empty keeps them all. |
+| `unattendedHidden` | `delegate`, `apply_patch_from`, `browse`, `locate`, `remember`, `find_skill`, `find_capability`, `hive`, `mu-browser` | Tools and skills left out of unattended runs. List them by name. One-shot runs almost never use these, yet every request carries them. Anything you call by its command (such as /hive) stays in. Empty keeps them all. |
 | `unattendedFindWithMcp` | `true` | Keep find_capability in unattended runs when an MCP server is installed. Unattended means a one-shot mu --print or json-mode run. Nobody asks the judge there, so without find_capability an MCP server that isn't always open can't be reached. On: with such a server installed, find_capability stays, lists what's installed, and the model opens what it needs. With packs alone it's left out, and requests stay as they were. |
-| `subagentsInherit` | `true` | Subagents take this session's capabilities. A subagent opens the capabilities this session has open and doesn't ask the judge again; what's hidden here stays hidden there. Before this session has chosen, a subagent asks for itself as before. |
+| `subagentsInherit` | `true` | Subagents take this session's capabilities. A subagent opens the capabilities this session has open and doesn't ask the judge again; what's hidden here stays hidden there. Until this session has chosen, a subagent asks the judge itself, as before. |
 
 ## frame
 
@@ -150,7 +150,7 @@ On by default: yes. Decision points: `tool.injection`, `tool.description`.
 | --- | --- | --- |
 | `tools` | `web_fetch`, `web_search`, `browse`, `mcp__*` | Tools screened. Tool names, or a prefix ending in *; mcp__* covers every MCP server. |
 | `fetchCommands` | `curl`, `wget`, `gh`, `glab`, `lynx`, `w3m`, `Invoke-WebRequest`, `Invoke-RestMethod`, `iwr`, `irm` | Fetching commands. When a bash or PowerShell command runs one of these programs, its output is screened unless every address it's given is on this machine (localhost); gh and glab output is always screened. Empty: no shell output is screened. |
-| `proseWords` | `6` | Words in a row to ask the judge. A passage without this many words in a row (8 characters in a row for Chinese, Japanese and other scripts written without spaces) isn't put to the judge; rules alone read it. Directory listings, link lists, response headers and short grep hits can't hold an instruction. 0: every passage is judged. Range 0 to 50. |
+| `proseWords` | `6` | Minimum words in a row to ask the judge. A passage without this many words in a row (8 characters in a row for Chinese, Japanese and other scripts written without spaces) isn't sent to the judge; only the rules check it. Directory listings, link lists, response headers and short grep hits can't hold an instruction. 0: every passage is judged. Range 0 to 50. |
 | `waitMs` | `6000` ms | Wait at most `6000` ms. After this, rules withhold only obvious injection phrases; the verdict is still recorded. Range 500 to 30000. |
 | `descriptions` | `true` | Screen MCP tool descriptions. MCP tools whose descriptions ask the AI to do more than use the tool are removed from the list (tool.description). |
 | `descriptionWaitMs` | `8000` ms | Wait for tool description verdicts at most `8000` ms. How long a turn waits for verdicts on MCP tools it hasn't seen before. After this, rules decide until the verdict arrives. Range 500 to 30000. |
@@ -221,7 +221,7 @@ On by default: yes. Decision points: `turn.rewind`.
 | `timeoutMs` | `30000` ms | Max time for a snapshot. Past this, the turn runs without a checkpoint; the tool call still runs. Range 1000 to 600000. |
 | `propose` | `true` | Propose a rewind at a dead end. |
 | `confirmSeconds` | `120` s | How long a proposal waits for you. If you don't answer, the run continues. 0 waits forever. Range 0 to 3600. |
-| `unattended` | `false` | Also take checkpoints in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: nobody there can confirm a rewind, so no file is ever put back, while the snapshot and the scan after every change hold up each step. At a dead end the model is still told to step back. |
+| `unattended` | `false` | Also take checkpoints in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: nobody is there to confirm a rewind, so no file would ever be put back, and the snapshot and scan after every change would only slow down each step. At a dead end the model is still told to step back. |
 
 ## monitor
 
@@ -235,7 +235,7 @@ On by default: yes. Decision points: `turn.drift`.
 | `minMinutes` | `3` min | At least this long between checks. A check needs both: the tool calls above, and this long since the last check. Range 0 to 60. |
 | `maxMinutes` | `10` min | Check at least this often. A check comes after this long whatever happened, so a long reply with no tool call is checked too. Range 1 to 120. |
 | `stuckMinutes` | `10` min | No progress for this long before a drift steer. It also takes two drift readings in a row, each at least 90% sure. Progress is a new file written, more tests passing, a different error, a command of a minute or more that succeeds, or an item ticked. Range 0 to 120. |
-| `cooldownMinutes` | `15` min | At least this long between two steers. The judge's steers, on drift or a loop, wait this long after the monitor's last steer, the loop rule's included. Range 0 to 240. |
+| `cooldownMinutes` | `15` min | At least this long between two steers. The judge's steers (on drift or a loop) wait this long after the monitor's last steer, including one from the loop rule. Range 0 to 240. |
 | `repeats` | `3` | Repeats that count as a loop. Only the same input with the same result counts as the same call; paging through a file does not. Range 2 to 20. |
 | `window` | `8` | Recent calls checked. Range 2 to 100. |
 | `unattended` | `false` | Also check for drift in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default. The rule that catches going in circles still applies. |
@@ -280,12 +280,12 @@ On by default: yes.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `budgetS` | `0` s | Time budget for a run. Counted from when the mu process starts; 0 means none. The environment variable MU_TIME_BUDGET_S takes precedence, and a benchmark harness sets it from the task's timeout. Sub-agents ignore the budget. |
+| `budgetS` | `0` s | Time budget for a run. Counted from when the mu process starts; 0 means none. The environment variable MU_TIME_BUDGET_S takes precedence, and a benchmark harness sets it from the task's timeout. Subagents ignore the budget. |
 | `notices` | `true` | Tell the model how much time is left. One line at 50% and one at 80%. Tool calls under way are not interrupted; the model reads it before its next step. |
 
 ## watchdog
 
-**Long-thinking retry.** When a reply has only been thinking for too long, with no text and no tool call yet, it is cut and asked again at the same reasoning effort. The retry is told where the reasoning had gotten to and asked to act on it first. The retry itself is never cut.
+**Long-thinking retry.** When a reply has done nothing but think for too long, with no text and no tool call yet, it's cut off and retried at the same reasoning effort. The retry is told how far the reasoning got and asked to act on it first. The retry itself is never cut off.
 
 On by default: yes.
 
@@ -337,7 +337,7 @@ On by default: yes. Decision points: `turn.completion`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, there's no nudge, and the judge call is cancelled so it doesn't hold up the end of a one-shot run. Range 500 to 30000. |
+| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, there's no nudge, and the judge call is canceled so it doesn't hold up the end of a one-shot run. Range 500 to 30000. |
 
 ## continuation
 
@@ -348,8 +348,8 @@ On by default: yes. Decision points: `turn.continue`.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `maxNudges` | `2` | Max nudges per message. Range 1 to 5. |
-| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, there's no nudge, and the judge call is cancelled so it doesn't hold up the end of a one-shot run. Range 500 to 30000. |
-| `unattendedPromised` | `1` | Unattended: nudges for work it said it would do. Unattended means a one-shot mu --print or json-mode run. There, a run is sent back for work it said it would do at most this many times per message; Max nudges per message still caps all nudges together. When the judge mistook a finished "Done. Created …" for a promise, the second nudge cost a benchmark run 4 more requests. Range 0 to 5. |
+| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, there's no nudge, and the judge call is canceled so it doesn't hold up the end of a one-shot run. Range 500 to 30000. |
+| `unattendedPromised` | `1` | Unattended: nudges for work it said it would do. Unattended means a one-shot mu --print or json-mode run. There, a run is sent back at most this many times per message for work it said it would do; Max nudges per message still caps all nudges together. When the judge mistook a finished "Done. Created …" for a promise, the second nudge cost a benchmark run 4 more requests. Range 0 to 5. |
 | `promisedAfterToolless` | `false` | Unattended: nudge again after an answer without a tool call. Off by default: when the agent answered the last nudge without calling a tool ("The work is already complete"), it answered by stopping, and isn't told again that it said it would do more. A run that stops without a message is still sent back. |
 | `localPromised` | `false` | Let the local judge decide whether work was left undone. Off by default: this question goes to the next judge in your list, and with the local judge (Laya) alone no such nudge is sent. In a benchmark run Laya twice read a finished "Done. Created …" as a promise of more work. |
 
@@ -363,7 +363,7 @@ On by default: yes. Decision points: `notify.routing`.
 | --- | --- | --- |
 | `budgetThresholds` | `70`, `85` | Context budget notices (%). |
 | `unjudged` | `now` | Without a verdict, context budget notices. Notification routing is in shadow by default, and then this decides. A next-turn notice is read only when another run starts, which never happens in a one-shot run. One of `now` (Now), `next_turn` (Next turn), `drop` (Never). |
-| `unattended` | `false` | Also ask the judge about notices in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: notices go by their own rules, as they do in shadow, the default, where the verdict is only recorded. |
+| `unattended` | `false` | Also ask the judge about notices in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default: notices follow their own rules, as they do in shadow mode (the default), where the verdict is only recorded. |
 
 ## warming
 
@@ -373,7 +373,7 @@ On by default: yes. Decision points: `cache.warming`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, pi's own estimate decides, and the judge call is cancelled. Range 500 to 30000. |
+| `waitMs` | `3000` ms | Wait at most `3000` ms. After this, pi's own estimate decides, and the judge call is canceled. Range 500 to 30000. |
 
 ## warmup
 

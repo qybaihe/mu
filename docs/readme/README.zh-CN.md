@@ -44,7 +44,7 @@ mu setup            # 接入一个模型
 mu                  # 在当前目录开一个会话
 ```
 
-开始用不需要判定器的 key：没设置之前，由 OpenCode Zen 上免费的 Jev 回答。40 个判定点里有 33 个一开始就生效，每次判定都会记录下来（`/status`、`mu ledger`、桌面端的判定页）。如果只想记录判定器会怎么做、不改变行为，在 `~/.mu/agent/mu.json` 里写 `{"modes": {"default": "shadow"}}`。更多见 [Getting started](../getting-started.md)（英文）。
+开始用不需要判定器的 key：没设置之前，由 OpenCode Zen 上免费的 Jev 回答。40 个判定点里有 34 个一开始就生效，每次判定都会记录下来（`/status`、`mu ledger`、桌面端的判定页）。如果只想记录判定器会怎么做、不改变行为，在 `~/.mu/agent/mu.json` 里写 `{"modes": {"default": "shadow"}}`。更多见 [Getting started](../getting-started.md)（英文）。
 
 ## 一轮是怎么走的
 

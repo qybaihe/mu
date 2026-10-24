@@ -4,7 +4,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { offeredProviders } from '../../../../packages/desktop/src/common/kyrn/login';
+import { offeredProviders, type SwitchedModel } from '../../../../packages/desktop/src/common/kyrn/login';
+import type { AvailableModels, ModelDefaults } from '../../../../packages/desktop/src/common/kyrn/models';
+import { leaveProvider } from '../../../../packages/desktop/src/process/agent/kyrn/config/signOut';
 import {
   LoginManager,
   openable,
@@ -150,6 +152,8 @@ describe('signing in to a subscription', () => {
     expect(runners[0].sent).toEqual([{ type: 'cancel' }]);
 
     runners[0].say({ type: 'done', provider: 'anthropic', models: [{ id: 'old' }] });
+    runners[0].end(0);
+    await settle();
     runners[1].say({ type: 'prompt', prompt: { type: 'manual_code', message: 'code' } });
     await settle();
     expect(manager.state()).toMatchObject({ id: 2, provider: 'openai-codex', phase: 'running' });
@@ -180,6 +184,8 @@ describe('signing in to a subscription', () => {
     });
 
     manager.start('xai');
+    runners[0].end(1);
+    await settle();
     runners[1].say({
       type: 'event',
       event: { type: 'device_code', userCode: 'X', verificationUri: 'file:///etc/hosts' },
@@ -236,6 +242,8 @@ describe('signing in to a subscription', () => {
     await vi.advanceTimersByTimeAsync(1);
     expect(manager.state()).toMatchObject({ phase: 'failed', error: 'The sign-in waited too long and was stopped' });
     expect(runners[0].sent).toEqual([{ type: 'cancel' }]);
+    runners[0].end(1);
+    await vi.advanceTimersByTimeAsync(0);
 
     manager.start('google-antigravity');
     runners[1].say({ type: 'signed_in' });
@@ -247,6 +255,128 @@ describe('signing in to a subscription', () => {
     const { manager, runners } = setup();
     expect(() => manager.start('google' as never)).toThrow('Unknown provider');
     expect(runners).toEqual([]);
+  });
+});
+
+// QA, 2026-10-23: Sign in with ChatGPT failed with "Port 1455 is in use, probably by an unfinished login in another pi
+// session or by the Codex CLI". The app started the next runner at once, while the one before could still be listening
+// on the callback port.
+describe('the callback port between sign-ins', () => {
+  it('starts the next runner only once the one before has ended', async () => {
+    const { manager, runners } = setup();
+    manager.start('openai');
+    expect(manager.start('openai')).toMatchObject({ id: 2, phase: 'running' });
+    await settle();
+    expect(runners).toHaveLength(1);
+    expect(runners[0].sent).toEqual([{ type: 'cancel' }]);
+
+    runners[0].end(1);
+    await settle();
+    expect(runners.map((runner) => runner.args)).toEqual([
+      ['login', 'openai'],
+      ['login', 'openai'],
+    ]);
+    runners[1].say({ type: 'event', event: { type: 'auth_url', url: 'https://auth.openai.com/authorize?state=2' } });
+    await settle();
+    expect(manager.state()).toMatchObject({
+      id: 2,
+      phase: 'running',
+      url: 'https://auth.openai.com/authorize?state=2',
+    });
+  });
+
+  it('ends a runner that does not stop, and starts the next one 3 s after at the latest', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    const { manager, runners } = setup();
+    manager.start('openai');
+    manager.start('openai');
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(runners[0].killed).toBe(true);
+    expect(runners).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(runners).toHaveLength(2);
+  });
+
+  it('never starts a sign-in cancelled while the one before was ending', async () => {
+    const { manager, runners } = setup();
+    manager.start('openai');
+    manager.start('openai');
+    expect(manager.cancel()).toMatchObject({ id: 2, phase: 'cancelled' });
+    runners[0].end(1);
+    await settle();
+    expect(runners).toHaveLength(1);
+  });
+
+  it('passes on why a sign-in failed, and which program keeps the port', async () => {
+    const { manager, runners } = setup();
+    manager.start('openai');
+    runners[0].say({
+      type: 'error',
+      message: 'Port 1455 is in use by codex (process 4321), probably for its own sign-in',
+      code: 'port_in_use',
+      port: 1455,
+      holder: { pid: 4321, command: 'codex', cwd: '/private' },
+    });
+    runners[0].end(1);
+    await settle();
+    expect(manager.state()).toEqual({
+      id: 1,
+      provider: 'openai',
+      phase: 'failed',
+      prompt: undefined,
+      error: 'Port 1455 is in use by codex (process 4321), probably for its own sign-in',
+      code: 'port_in_use',
+      port: 1455,
+      holder: { pid: 4321, command: 'codex' },
+    });
+
+    // A code the app does not know is no code at all.
+    manager.start('openai');
+    runners[1].say({ type: 'error', message: 'read ECONNRESET', code: 'ECONNRESET' });
+    await settle();
+    expect(manager.state()).toMatchObject({ id: 2, phase: 'failed', error: 'read ECONNRESET' });
+    expect(manager.state().code).toBeUndefined();
+  });
+
+  it('signs in by the pasted address alone when asked to', () => {
+    const { manager, runners } = setup();
+    expect(manager.start('openai', { paste: true })).toMatchObject({
+      provider: 'openai',
+      phase: 'running',
+      paste: true,
+    });
+    expect(runners[0].args).toEqual(['login', 'openai', '--paste']);
+    runners[0].end(1);
+  });
+
+  it('ends a sign-in under way before signing out, and signs in again after the sign-out', async () => {
+    const { manager, runners } = setup();
+    manager.start('openai');
+    const left = manager.logout('openai');
+    expect(manager.state()).toMatchObject({ id: 1, phase: 'cancelled' });
+    await settle();
+    expect(runners[0].sent).toEqual([{ type: 'cancel' }]);
+    // The sign-out waits for the sign-in's runner: it keeps the port, and writes the store the sign-out changes.
+    expect(runners).toHaveLength(1);
+    runners[0].end(1);
+    await settle();
+    expect(runners[1].args).toEqual(['logout', 'openai']);
+    runners[1].say({ type: 'status', signedIn: [] });
+    runners[1].end(0);
+    await expect(left).resolves.toEqual({ signedIn: [] });
+
+    expect(manager.start('openai')).toMatchObject({ id: 2, phase: 'running' });
+    expect(runners[2].args).toEqual(['login', 'openai']);
+  });
+
+  it('ends a runner still stopping when the app quits, and starts no other', async () => {
+    const { manager, runners } = setup();
+    manager.start('openai');
+    manager.start('openai');
+    manager.dispose();
+    expect(runners[0].killed).toBe(true);
+    await settle();
+    expect(runners).toHaveLength(1);
   });
 });
 
@@ -481,5 +611,64 @@ describe('what the sign-in may open and run', () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+/**
+ * What a sign-out moves besides the credential (process/agent/kyrn/config/signOut.ts): the default model and the
+ * running conversations, from what mu reports once it was checked again.
+ */
+
+const usable = (providers: AvailableModels['providers']): AvailableModels => ({ providers, thinkingLevels: [] });
+const defaults = (provider: string, model: string): ModelDefaults => ({ provider, model, thinkingLevel: '' });
+
+function parts(before: ModelDefaults, switched: SwitchedModel[] = []) {
+  return {
+    defaults: vi.fn(() => before),
+    replaceDefault: vi.fn(),
+    conversations: vi.fn(async () => switched),
+  };
+}
+
+describe('a sign-out', () => {
+  it('moves the default off the account to the first model mu still offers, and the conversations with it', async () => {
+    const moved = parts(defaults('openai-codex', 'gpt-5.5'), [{ provider: 'relay', model: 'plain', name: 'Plain' }]);
+    const after = usable([
+      { id: 'corp-gateway', models: [] },
+      { id: 'relay', models: [{ id: 'plain', name: 'Plain' }] },
+      { id: 'xai', models: [{ id: 'grok-5', name: 'Grok 5' }] },
+    ]);
+    await expect(leaveProvider('openai-codex', after, moved)).resolves.toEqual({
+      defaultMoved: true,
+      conversations: 1,
+      to: { provider: 'relay', model: 'plain', name: 'Plain' },
+    });
+    expect(moved.replaceDefault).toHaveBeenCalledWith({ provider: 'relay', model: 'plain' });
+    expect(moved.conversations).toHaveBeenCalledWith('openai-codex', { provider: 'relay', id: 'plain' });
+  });
+
+  it('clears the default when no other model is set up', async () => {
+    const moved = parts(defaults('xai', 'grok-5'));
+    await expect(leaveProvider('xai', usable([]), moved)).resolves.toEqual({ defaultMoved: true, conversations: 0 });
+    expect(moved.replaceDefault).toHaveBeenCalledWith(undefined);
+    expect(moved.conversations).toHaveBeenCalledWith('xai', undefined);
+  });
+
+  it('keeps a default mu still offers (an API key for the same provider), and on another provider', async () => {
+    const byKey = parts(defaults('openai', 'gpt-5.5'));
+    const withKey = usable([{ id: 'openai', models: [{ id: 'gpt-5.5', name: 'GPT-5.5' }] }]);
+    await expect(leaveProvider('openai', withKey, byKey)).resolves.toEqual({ defaultMoved: false, conversations: 0 });
+    expect(byKey.replaceDefault).not.toHaveBeenCalled();
+
+    // A conversation on the account's model still goes on with the default, which is another provider's.
+    const elsewhere = parts(defaults('relay', 'plain'), [{ provider: 'relay', model: 'plain', name: 'Plain' }]);
+    const after = usable([{ id: 'relay', models: [{ id: 'plain', name: 'Plain' }] }]);
+    await expect(leaveProvider('google-antigravity', after, elsewhere)).resolves.toEqual({
+      defaultMoved: false,
+      conversations: 1,
+      to: { provider: 'relay', model: 'plain', name: 'Plain' },
+    });
+    expect(elsewhere.replaceDefault).not.toHaveBeenCalled();
+    expect(elsewhere.conversations).toHaveBeenCalledWith('google-antigravity', { provider: 'relay', id: 'plain' });
   });
 });

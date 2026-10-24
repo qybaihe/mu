@@ -44,7 +44,7 @@ mu setup            # モデルを接続する
 mu                  # 現在のディレクトリでセッションを始める
 ```
 
-始めるのに判定器のキーは要りません。キーを設定するまでは、OpenCode Zen の無料の Jev が答えます。40 の判定ポイントのうち 33 が最初から判定を反映し、判定はすべて記録されます（`/status`、`mu ledger`、デスクトップアプリの判定タブ）。判定器がどうするかを記録するだけにしたい場合は、`~/.mu/agent/mu.json` に `{"modes": {"default": "shadow"}}` と書きます。詳しくは [Getting started](../getting-started.md)（英語）。
+始めるのに判定器のキーは要りません。キーを設定するまでは、OpenCode Zen の無料の Jev が答えます。40 の判定ポイントのうち 34 が最初から判定を反映し、判定はすべて記録されます（`/status`、`mu ledger`、デスクトップアプリの判定タブ）。判定器がどうするかを記録するだけにしたい場合は、`~/.mu/agent/mu.json` に `{"modes": {"default": "shadow"}}` と書きます。詳しくは [Getting started](../getting-started.md)（英語）。
 
 ## 1 ターンの流れ
 

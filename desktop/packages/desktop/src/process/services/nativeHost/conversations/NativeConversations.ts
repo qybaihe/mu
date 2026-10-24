@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import type { SwitchedModel } from '../../../../common/kyrn/login.ts';
 import type { NativeConversation, NativeSnapshot } from '../../../../common/kyrn/nativeBridge.ts';
 import type { DialogAnswer, PiCommand } from '../../../../common/utils/nativeHost/records.ts';
 import { NativeHostError } from '../NativeHost.ts';
@@ -11,7 +12,7 @@ import { readSessionFile, SessionReader } from '../sessions/readSession.ts';
 import { SessionStore, type StoredSession } from '../sessions/SessionStore.ts';
 import { Conversation, type ConversationOwner } from './Conversation.ts';
 import { NativeRequestError } from './errors.ts';
-import { readDefaultModel } from './modelSearch.ts';
+import { readDefaultModel, type ModelChoice } from './modelSearch.ts';
 import type { ConversationEvents, NativeConversationsApi, StartHost } from './types.ts';
 
 /**
@@ -210,6 +211,23 @@ export class NativeConversations implements NativeConversationsApi {
   private refuseOutside(file: string | undefined): void {
     if (file && existsSync(file) && !insideSessionFolders(this.folders(), file))
       throw new NativeRequestError('invalid', `mu keeps no session at ${file}`);
+  }
+
+  /**
+   * `provider` was signed out: every conversation whose host runs one of its models goes on with `wanted`, else the
+   * first model its pi offers (Conversation.leave). Resolves with the models they went on with, one per conversation
+   * switched; one that could not be switched is left as it is.
+   */
+  async leave(provider: string, wanted?: ModelChoice): Promise<SwitchedModel[]> {
+    const switched = await Promise.all(
+      [...this.byId.values()].map((conversation) =>
+        conversation.leave(provider, wanted).catch((error: unknown): undefined => {
+          this.log(`a native conversation could not leave ${provider}'s model: ${String(error)}`);
+          return undefined;
+        })
+      )
+    );
+    return switched.filter((model): model is SwitchedModel => model !== undefined);
   }
 
   /** Ends every host (the app quits). Calls after it fail with `closed`. */

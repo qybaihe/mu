@@ -1,8 +1,9 @@
 /**
  * The bottom of a native conversation: what mu has queued, what the screen says about mu, a dialog pi waits on, the
- * status line and the send box. While a run goes, a message either steers it (it reaches the model at its next step)
- * or waits for its end, as the person picks, and the stop button stops the run (or the message the judge is still
- * reading). A command another panel sends to this conversation (the board's switch: `/board on`) goes to pi as it is.
+ * status line and the send box. While a run goes, a message is sent as a steer, as Enter sends it in mu's terminal, and
+ * mu decides when it reaches the work: at the run's next step, or after the run (`input.interjection`). The queue
+ * above the box shows where each one went. The stop button stops the run (or the message the judge is still reading).
+ * A command another panel sends to this conversation (the board's switch: `/board on`) goes to pi as it is.
  *
  * The send box carries what mu's other conversations have (docs/native-host-ui.md): files and images attached
  * (picked, dropped or pasted), mu's permission mode, the model and its thinking level, pi's slash commands in the `/`
@@ -10,7 +11,7 @@
  * ↑/↓ history and `/copy` read the conversation's text. Above it, the goal mu works towards (`/goal <condition>`),
  * which the person can end; beside the send button, how full the model's context is.
  */
-import { Button, Radio } from '@arco-design/web-react';
+import { Button } from '@arco-design/web-react';
 import type { TMessage } from '@/common/chat/chatLib';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -26,7 +27,7 @@ import { useAddEventListener, type SendBoxCommandState } from '@/renderer/utils/
 import type { FileSelectionItem } from '@/renderer/utils/file/fileSelection';
 import { useNativeAttachments } from '../hooks/useNativeAttachments';
 import { useNativeCommands } from '../hooks/useNativeCommands';
-import type { NativeConversationApi, NativeConversationState, SendMode } from '../hooks/useNativeConversation';
+import type { NativeConversationApi, NativeConversationState } from '../hooks/useNativeConversation';
 import { useNativeModels } from '../hooks/useNativeModels';
 import { contextUsageOf, goalOnScreen, showsContextRing } from '../utils/composerLines';
 import { useNativeClient } from '../utils/nativeClient';
@@ -56,7 +57,10 @@ const SendBoxMessages: React.FC<{ rows: TMessage[] }> = ({ rows }) => {
   return null;
 };
 
-/** What pi holds to send: steering messages first (they go at the model's next step), then the ones for after. */
+/**
+ * What pi holds to send, which shows where mu put each message: steering messages first (they go at the model's next
+ * step), then the ones for after the run.
+ */
 const Queue: React.FC<{ steering: string[]; followUp: string[]; onTakeBack: () => void }> = ({
   steering,
   followUp,
@@ -129,7 +133,6 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
   const { clearFailure } = conversation;
   const cwd = conversation.conversation?.cwd;
   const [draft, setDraft] = useState('');
-  const [mode, setMode] = useState<SendMode>('steer');
   // The project's files the person mentioned with `@` (the send box keeps them in step with the text).
   const [mentioned, setMentioned] = useState<FileSelectionItem[]>([]);
   const files = useNativeAttachments();
@@ -185,7 +188,7 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
           return path ? [path] : [];
         }),
       ];
-      const result = await send(withFiles(text, paths), mode, files.images(), {
+      const result = await send(withFiles(text, paths), files.images(), {
         command: runsCommand(text, commands.extensions),
       });
       // What did not reach pi goes back into the box, attachments included.
@@ -194,7 +197,7 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
       setMentioned([]);
       return undefined;
     },
-    [commands.extensions, cwd, files, mentioned, mode, send]
+    [commands.extensions, cwd, files, mentioned, send]
   );
 
   // Files dropped or pasted into the box are read here, before the shared box would upload them.
@@ -291,26 +294,10 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
             compactActions={false}
             prefix={<NativeAttachmentList attachments={files.attachments} onRemove={files.remove} />}
             tools={
-              // Left of the input: attachments, then what mu may do; while a run goes, when a message reaches it.
+              // Left of the input: attachments, then what mu may do.
               <>
                 <NativeAttachButton onClick={() => picker.current?.click()} />
                 <NativePermissionPill state={permissions} held={held} request={request} />
-                {working ? (
-                  <Radio.Group
-                    type='button'
-                    size='mini'
-                    value={mode}
-                    onChange={(value: SendMode) => setMode(value)}
-                    data-testid='native-send-mode'
-                  >
-                    <Radio value='steer' title={t('mu.native.send.steerHint')}>
-                      {t('mu.native.send.steer')}
-                    </Radio>
-                    <Radio value='followUp' title={t('mu.native.send.followUpHint')}>
-                      {t('mu.native.send.followUp')}
-                    </Radio>
-                  </Radio.Group>
-                ) : null}
               </>
             }
             rightTools={<NativeModelChip models={models} busy={working || held} />}

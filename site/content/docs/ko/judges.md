@@ -33,6 +33,19 @@ mu judge mude status
 
 기본적으로 전에 쓰던 판정기는 `tiers`에서 mude 뒤에 남아요. mude가 답하지 못하는 질문(서버가 멈춰 있거나 확신이 없을 때)과, 아직 mude에 맡기지 않는 두 가지 인젝션 검사는 그 판정기가 답해요. `--local-only`면 mude가 유일한 판정기가 되고, 답하지 못하는 결정은 폴백을 따라요. mude는 한 번 답하는 데 약 0.1초 걸리고, mude가 읽은 내용은 Mac 밖으로 나가지 않아요. 서버는 실행 중에 메모리를 약 4GB 쓰고, 설정에 mude가 있으면 mu가 세션 전에 시작해요. 중간에 멈춘 설치(Ctrl-C, 연결 끊김, 정전)는 다음에 멈춘 곳부터 이어져요. 다른 플랫폼에서는 [전체 모델](https://huggingface.co/qybaihe/mude-1.0)을 함께 제공되는 System One 서버로 띄우고, 모델 카드대로 `typesafe` 판정기로 추가하세요.
 
+### 다른 의사결정 모델 {#models}
+
+`mu judge model`로 Hugging Face의 다른 의사결정 모델도 같은 방식으로 추가할 수 있어요. 링크나 `owner/name`만 붙여 넣으면 돼요. mu는 커밋과 모든 파일의 해시를 고정하고, 진행 상황을 보여 주며 이어 받을 수 있게 모델을 내려받은 뒤, mude의 Python 환경에서 실행해 판정기로 지정해요. 모델은 mude 1.0 MLX 버전처럼 패키징되어 자체 `d3_server_mac.py`를 갖고 있어야 해요. 이 코드는 여러분의 Mac에서 실행되니 믿을 수 있는 모델만 추가하세요.
+
+```bash
+mu judge model add https://huggingface.co/owner/name   # owner/name@revision도 가능, 다시 실행하면 이어 받기
+mu judge model list                                    # mude 1.0과 추가한 모델
+mu judge model use mude                                # mude 1.0으로 되돌리거나 다른 모델로 바꾸기
+mu judge model remove name
+```
+
+의사결정 모델은 한 번에 하나만 실행돼요. 바꾸면 다른 모델의 서버는 멈춰요. 데스크톱 앱에서는 '설정 → 판정기'의 mude 1.0 아래에서 같은 일을 할 수 있어요.
+
 ## Jev, 클라우드 {#jev}
 
 Jev는 TypeSafe가 만든 판정 모델로, 바로 이런 질문을 위해 만들어졌어요. 내장 `jev` 판정기는 키가 설정된 첫 번째 서비스를 통해 Jev에 닿아요.

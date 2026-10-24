@@ -280,6 +280,53 @@
         "readyStopped": "mude 1.0 is your judge. Its server starts with your next mu session."
       }
     },
+    "models": {
+      "title": "Other decision models",
+      "placeholder": "Hugging Face link or owner/name",
+      "add": "Add",
+      "trust": "A model runs its own server code on this Mac. Add only models you trust.",
+      "use": "Use as the judge",
+      "continue": "Continue downloading",
+      "remove": "Remove",
+      "removeTitle": "Remove {{name}}?",
+      "removeText": "This takes {{name}} out of the judge order and deletes its files (about {{size}} GB). You can add it again later.",
+      "noList": "Couldn't read the decision models: {{reason}}",
+      "cancelled": "Canceled. What's downloaded is kept.",
+      "state": {
+        "judge": "The judge · {{size}} GB",
+        "running": "Running · {{size}} GB",
+        "installed": "Installed · {{size}} GB",
+        "partial": "{{done}} of {{total}} GB downloaded",
+        "notDownloaded": "Not downloaded · {{size}} GB"
+      },
+      "step": {
+        "resolve": "Looking up the model on Hugging Face…",
+        "download": "Downloading {{name}} and checking every file…",
+        "python": "Setting up the Python environment…",
+        "start": "Starting {{name}}'s server…"
+      },
+      "working": {
+        "add": "Adding {{name}}…",
+        "use": "Switching the judge to {{name}}…",
+        "disable": "Turning off {{name}}…",
+        "remove": "Removing {{name}}…"
+      },
+      "failed": {
+        "add": "Couldn't add the model.",
+        "use": "Couldn't make it the judge.",
+        "disable": "Couldn't turn it off.",
+        "remove": "Couldn't remove it."
+      },
+      "error": {
+        "usage": "That isn't a link to a Hugging Face model, or its owner/name.",
+        "access": "Hugging Face won't share this model: it's private or gated.",
+        "notFound": "Hugging Face has no such model.",
+        "notRunnable": "mu can't run this model: it has no d3_server_mac.py, the server that models packaged like mude 1.0 come with.",
+        "network": "Couldn't reach Hugging Face. Check your connection and try again; what's already downloaded is kept.",
+        "integrity": "A downloaded file failed verification. Try again.",
+        "unsupported": "This Mac can't run decision models."
+      }
+    },
     "clm": {
       "address": "Server address",
       "key": "Server key",
@@ -436,6 +483,8 @@
     "byKeyHelp": "You're not signed in with a subscription, but mu reported this provider as available the last time it connected, usually because its API key is set in your environment. Signing in switches it to the subscription.",
     "otherRunning": "{{name}} sign-in is in progress. Only one sign-in can run at a time.",
     "showRunning": "Show",
+    "switched": "Signed out of {{name}}. Switched to {{model}}.",
+    "noModelLeft": "Signed out of {{name}}. No other model is set up.",
     "legacy": {
       "openai-codex": "This older sign-in goes through the Codex CLI's login. Sign out, then sign in with ChatGPT.",
       "anthropic": "Anthropic doesn't allow other apps to sign in with a Claude subscription, so mu no longer offers it. Sign out and add an Anthropic API key instead."
@@ -756,8 +805,18 @@
       "submit": "Submit",
       "openAgain": "Reopen the page",
       "pasteCode": "Paste a code instead",
+      "pasteHint": "After you sign in, your browser goes to an address that starts with {{address}}. The page may show an error; that's fine. Copy the whole address from the address bar and paste it here.",
       "cancel": "Cancel",
       "failed": "Couldn't sign in. Try again.",
+      "retry": "Retry",
+      "pasteInstead": "Paste the address instead",
+      "takenOver": "Another sign-in took over the port this one was waiting on (a /login in a terminal, or the Codex CLI), so this one stopped.",
+      "portInUse": {
+        "program": "Port {{port}} is in use by {{command}} (process {{pid}}), probably for its own sign-in. Finish or cancel that sign-in there, then click Retry.",
+        "process": "Port {{port}} is in use by process {{pid}}, probably for its own sign-in (the Codex CLI and the Codex app use this port). Finish or cancel that sign-in there, then click Retry.",
+        "session": "Port {{port}} is held by an unfinished sign-in in another mu or pi session (process {{pid}}). Finish or cancel it there (Esc in a terminal), then click Retry.",
+        "unknown": "Port {{port}} is in use by another program, probably the Codex CLI or the Codex app signing in. Finish or cancel that sign-in there, then click Retry."
+      },
       "asks": "{{name}} asks:",
       "needAccount": "Sign in to an account first, then pick a model.",
       "experimental": "Experimental",
@@ -988,11 +1047,7 @@
     },
     "send": {
       "placeholder": "Message mu…",
-      "placeholderWorking": "Steer mu now, or queue a message for when it's done…",
-      "steer": "Now",
-      "steerHint": "Reaches mu at its next step",
-      "followUp": "After",
-      "followUpHint": "Sent when this run ends"
+      "placeholderWorking": "Message mu. It decides when to bring this into the work…"
     },
     "queue": {
       "title": "Queued",

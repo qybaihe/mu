@@ -269,21 +269,20 @@
 				"fa-IR": "پیام‌های حین کار"
 			},
 			"summary": {
-				"zh": "任务进行中你又发来一句话：判断是要立刻打断，还是等这一步做完再处理。默认是影子模式：判定只记录，消息按你按的键投递，不用等判定。",
-				"en": "For a message that arrives while the agent is working: interrupt now, or handle it after the current step. In shadow by default: the verdict is only logged, and the key you pressed decides what happens to the message, without waiting for the verdict.",
-				"zh-TW": "代理工作時你又傳來一則訊息：判斷是要立刻打斷，還是等這一步做完再處理。預設為影子模式：判定只記錄下來，訊息照你按的鍵送出，不等判定。",
-				"ja-JP": "エージェントの作業中に届いたメッセージについて、すぐに中断するか、現在のステップが終わってから対応するかを判定します。既定ではシャドーモードです。判定は記録するだけで、メッセージは判定を待たずに、押したキーのとおりに届けます。",
-				"ko-KR": "에이전트가 작업하는 중에 메시지가 도착하면, 지금 바로 작업을 중단할지 현재 단계를 마친 뒤 처리할지 판정합니다. 기본값은 섀도 모드입니다. 판정은 기록만 하고, 메시지는 판정을 기다리지 않고 누른 키대로 전달됩니다.",
-				"de-DE": "Eine Nachricht, die eintrifft, während der Agent arbeitet: sofort unterbrechen oder nach dem aktuellen Schritt bearbeiten. Standardmäßig im Schattenmodus: Das Urteil wird nur aufgezeichnet, und die Nachricht wird so zugestellt, wie es die gedrückte Taste vorgibt, ohne auf das Urteil zu warten.",
-				"fr-FR": "Un message arrive pendant que l’agent travaille : interrompre tout de suite, ou le traiter après l’étape en cours. En mode fantôme par défaut : le jugement est seulement enregistré, et le message suit la touche sur laquelle vous avez appuyé, sans attendre le jugement.",
-				"es-ES": "Un mensaje que llega mientras el agente trabaja: interrumpir ahora o atenderlo al terminar el paso actual. En modo sombra de forma predeterminada: el veredicto solo se registra y el mensaje se entrega según la tecla que pulsaste, sin esperarlo.",
-				"pt-BR": "Uma mensagem que chega enquanto o agente trabalha: interromper agora ou tratá-la depois da etapa atual. No modo sombra por padrão: o veredito só é registrado, e a mensagem segue a tecla que você apertou, sem esperar por ele.",
-				"ru-RU": "Сообщение, пришедшее во время работы агента: прервать работу сразу или обработать его после текущего шага. По умолчанию в теневом режиме: решение только записывается, а сообщение доставляется так, как велит нажатая клавиша, не дожидаясь решения.",
-				"uk-UA": "Повідомлення, що надходить, поки агент працює: перервати роботу зараз чи обробити його після поточного кроку. Типово в тіньовому режимі: рішення лише записується, а повідомлення доставляється відповідно до натиснутої клавіші, не чекаючи на рішення.",
-				"tr-TR": "Ajan çalışırken gelen bir mesaj: iş hemen kesilsin mi, yoksa mesaj mevcut adımdan sonra mı ele alınsın? Varsayılan olarak gölge modunda: karar yalnızca kaydedilir ve mesaj, kararı beklemeden bastığınız tuşa göre iletilir.",
-				"fa-IR": "پیامی که هنگام کار عامل می‌رسد: همین حالا کار را قطع کند، یا پس از گام فعلی به آن بپردازد. به‌طور پیش‌فرض در حالت سایه است: نتیجهٔ داوری فقط ثبت می‌شود و پیام، بی‌آنکه منتظر آن بماند، طبق کلیدی که زده‌اید تحویل داده می‌شود."
-			},
-			"defaultMode": "shadow"
+				"zh": "任务进行中你又发来一句话：判断是在下一步就带进工作，还是等这一轮做完再处理。判定最多等 1.5 秒；没有判定时，消息按你发送的方式送达。",
+				"en": "For a message you send while the agent is working: bring it into the work at the next step, or hold it until the run is done. mu waits up to 1.5 seconds for the verdict; without one, the message goes as you sent it.",
+				"zh-TW": "任務進行中你又傳來一則訊息：判斷是在下一步就帶進工作，還是等這一輪做完再處理。判定最多等 1.5 秒；沒有判定時，訊息照你傳送的方式送達。",
+				"ja-JP": "エージェントの作業中に送ったメッセージを、次のステップで作業に取り込むか、実行が終わるまで待たせるかを判定します。判定は最大 1.5 秒待ち、判定がなければメッセージは送ったとおりに届きます。",
+				"ko-KR": "에이전트가 작업하는 중에 보낸 메시지를 다음 단계에서 작업에 반영할지, 실행이 끝날 때까지 기다리게 할지 판정합니다. 판정은 최대 1.5초 기다리며, 판정이 없으면 메시지는 보낸 그대로 전달됩니다.",
+				"de-DE": "Eine Nachricht, die Sie senden, während der Agent arbeitet: beim nächsten Schritt in die Arbeit aufnehmen oder zurückhalten, bis der Lauf fertig ist. mu wartet bis zu 1,5 Sekunden auf das Urteil; ohne Urteil wird die Nachricht so zugestellt, wie Sie sie gesendet haben.",
+				"fr-FR": "Un message envoyé pendant que l’agent travaille : l’intégrer au travail dès l’étape suivante, ou le garder jusqu’à la fin de l’exécution. mu attend le jugement jusqu’à 1,5 seconde ; sans jugement, le message part tel que vous l’avez envoyé.",
+				"es-ES": "Un mensaje que envías mientras el agente trabaja: incorporarlo al trabajo en el siguiente paso o guardarlo hasta que termine la ejecución. mu espera el veredicto hasta 1,5 segundos; sin veredicto, el mensaje se entrega tal como lo enviaste.",
+				"pt-BR": "Uma mensagem que você envia enquanto o agente trabalha: levá-la ao trabalho na próxima etapa ou guardá-la até a execução terminar. O mu espera o veredito por até 1,5 segundo; sem ele, a mensagem segue como você a enviou.",
+				"ru-RU": "Сообщение, отправленное во время работы агента: включить его в работу на следующем шаге или придержать до конца запуска. mu ждёт решения до 1,5 секунды; без решения сообщение доставляется так, как вы его отправили.",
+				"uk-UA": "Повідомлення, надіслане під час роботи агента: долучити його до роботи на наступному кроці чи притримати до кінця запуску. mu чекає на рішення до 1,5 секунди; без рішення повідомлення доставляється так, як ви його надіслали.",
+				"tr-TR": "Ajan çalışırken gönderdiğiniz bir mesaj: bir sonraki adımda işe katılsın mı, yoksa çalışma bitene kadar beklesin mi? mu karar için en fazla 1,5 saniye bekler; karar gelmezse mesaj gönderdiğiniz gibi iletilir.",
+				"fa-IR": "پیامی که هنگام کار عامل می‌فرستید: در گام بعدی وارد کار شود، یا تا پایان اجرا نگه داشته شود. mu حداکثر 1.5 ثانیه منتظر نتیجهٔ داوری می‌ماند؛ اگر نتیجه‌ای نرسد، پیام همان‌طور که فرستاده‌اید تحویل داده می‌شود."
+			}
 		},
 		{
 			"id": "skills.disclosure",

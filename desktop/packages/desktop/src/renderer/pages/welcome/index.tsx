@@ -34,7 +34,7 @@ import {
   mudeRecommended,
   useMude,
   type MudeControl,
-} from '@/renderer/pages/settings/KyrnSettings/sections/MudePanel';
+} from '@/renderer/pages/settings/KyrnSettings/sections/mude/MudePanel';
 import choiceStyles from '@/renderer/pages/settings/KyrnSettings/sections/sections.module.css';
 import { useMuSettings } from '@/renderer/pages/settings/KyrnSettings/useMuSettings';
 import ImportChatsModal from '@/renderer/pages/settings/SystemSettings/ImportChats/ImportChatsModal';
