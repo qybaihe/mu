@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.2.8] - 2026-10-24
+
+**0.2.8 is plain-language board v2: a teammate's update (`headline`, `blocked`, `next`, `agents`), subagent outcomes as they happen, a stall clock, the writer in the person's language, and two races fixed.**
+
 ### Changed
 
 - Plain-language board v2 (`kyrn/docs/features/plain-language-board.md`; contract with the desktop app in §4, codes in `presentation-codes.md`). The writer's prompt now asks for a teammate's spoken update, in this JSON: `headline`, `now`, `blocked`, `next`, `progress`, `agents: [{who, doing}]`, `confirm`, `note`. Its first sentence, "You are the voice of a coding session's status board.", is the new routing marker for tests and the desktop's e2e fake model. Only the example in the board's language is included. The request starts with `FACTS`: the task (clipped to 600 characters), the frame's `currentSubgoal`, the checklist, the stage, the run's and the previous board's age, the permission being waited for, the previous board, what is in flight (the main agent's call and how long since its last output, background jobs, the judge's permission review, the goal check), each subagent on its own line (elapsed time, silence, failed steps, retry, the report's first line, the error), the news (a failed step carries the first error-like lines of its output, redacted with `redactSecrets`), the frame's open questions, the account and the latest steps.
