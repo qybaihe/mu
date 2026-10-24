@@ -8,6 +8,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 - **Files named in a reply are links in the desktop app.** When a reply names a file as inline code, like `07_card.png` or `out/report.pdf`, or links to one, the name becomes a link once the file is found. A relative name is read against the conversation's folder, and a bare file name is also looked for in its subfolders. An image opens in the side panel, where you can zoom in and out and step through every image the reply names with the arrow keys or buttons. Any other file opens in its default app, and the folder icon beside it shows it in Finder (File Explorer on Windows). A program, such as a `.sh`, `.command` or `.exe` file, is only shown in its folder, never run. A clear path to a file that doesn't exist is greyed out, with "File not found" on hover. Ordinary code, like `npm run build` or `x.length`, stays as it was.
 
+### Fixed
+
+- **A third-party OpenAI-compatible provider no longer fails with "unknown role developer".** mu sent a thinking model's instructions as a `developer` message, the role OpenAI's newer models use, to every OpenAI-compatible endpoint. Many relays and gateways know only `system`, so every request failed with `Model request failed: 502 … unknown role developer`, although the provider's connection check passed. Now only OpenAI, Azure OpenAI and Xiaomi MiMo, whose docs list `developer`, get it; every other endpoint gets `system`, and the reply-length field all of them read, `max_tokens`, instead of OpenAI's `max_completion_tokens`, which some ignore. If an endpoint still turns a request away over the role or a field it doesn't know, such as `max_completion_tokens`, `reasoning_effort`, `stream_options` or `store`, mu asks once more without it, before any reply shows, and keeps doing so for that model until it restarts. Set `compat` in `models.json` to choose yourself.
+
 ## [0.2.3] - 2026-10-24
 
 **0.2.3 adds decision models from Hugging Face next to mude 1.0, lets mu decide when a message sent mid-run reaches the work, and makes Sign in with ChatGPT cope with a busy port 1455.** The desktop app carries mu-agent 0.2.3.

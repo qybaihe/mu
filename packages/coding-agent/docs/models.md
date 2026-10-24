@@ -78,6 +78,28 @@ To route a built-in provider through a proxy, set only its `baseUrl`. Its models
 
 [Models Configuration](models-configuration.md) lists every field.
 
+### Third-party OpenAI-compatible endpoints
+
+With `"api": "openai-completions"`, Pi sends OpenAI's newer request shape only to endpoints documented to take it: `api.openai.com`, Azure OpenAI, and Xiaomi MiMo. There, a reasoning model's system prompt goes as a `developer` message and the output limit as `max_completion_tokens`, with `store: false` on OpenAI and Azure. Every other endpoint, including a relay or gateway, gets the shape all OpenAI-compatible servers accept: a `system` message, `max_tokens`, and no `store`.
+
+If an endpoint still rejects part of a request, for example with `unknown role developer` or `Unrecognized request argument supplied: max_completion_tokens`, Pi sends the request again with that part changed before any reply appears, and keeps the change for that model until Pi restarts. This covers the `developer` role, the max tokens field, `reasoning_effort`, `stream_options`, `store`, and the prompt cache fields, each changed at most once per request. A rejection of a value, such as a `max_tokens` above the model's limit, is shown as it is. Requests to `api.openai.com` are never changed this way.
+
+To choose yourself, set `compat` on the provider or a model. A relay in front of OpenAI's reasoning models can take OpenAI's shape:
+
+```json
+{
+  "providers": {
+    "my-relay": {
+      "baseUrl": "https://relay.example.com/v1",
+      "api": "openai-completions",
+      "apiKey": "$MY_RELAY_KEY",
+      "compat": { "supportsDeveloperRole": true, "maxTokensField": "max_completion_tokens" },
+      "models": [{ "id": "gpt-5.5", "reasoning": true }]
+    }
+  }
+}
+```
+
 ### Describe model input and caching
 
 Use `inputLimits.images.resize` to control how Pi encodes new image attachments, `read` results, and tool-result images before storing them in conversation history:
@@ -218,4 +240,4 @@ Complete the provider's headless authentication flow when available. Some provid
 
 ### A compatible endpoint rejects requests
 
-Check its API type and compatibility settings in `models.json`. The upstream server must support the corresponding request fields and behavior.
+Check its API type and compatibility settings in `models.json`. The upstream server must support the corresponding request fields and behavior. Pi already resends a request whose `developer` role or optional field an OpenAI-compatible endpoint rejects; see [Third-party OpenAI-compatible endpoints](#third-party-openai-compatible-endpoints). For any other field the error names, set the matching `compat` field from [Models Configuration](models-configuration.md#openai-completions).

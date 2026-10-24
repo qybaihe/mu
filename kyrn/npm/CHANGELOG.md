@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- A custom OpenAI-compatible provider (`"api": "openai-completions"` in `models.json`) no longer fails with "unknown role developer" for a thinking model. Only `api.openai.com`, Azure OpenAI and Xiaomi MiMo get `developer` messages and `max_completion_tokens`; other endpoints get `system`, `max_tokens` and no `store`. When an endpoint still rejects the `developer` role, the max tokens field, `reasoning_effort`, `stream_options`, `store` or the prompt cache fields with a 400 (or a gateway's 5xx wrapping one), mu sends the request once more without it, before any output, and remembers that for the model until it restarts. `compat` in `models.json` overrides the defaults.
+
 ## [0.2.3] - 2026-10-24
 
 **0.2.3 adds `mu judge model` for decision models from Hugging Face, makes mu decide when a mid-run message reaches the work, and makes Sign in with ChatGPT cope with a busy port 1455.**
