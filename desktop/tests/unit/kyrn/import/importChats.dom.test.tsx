@@ -266,14 +266,13 @@ describe('the import dialog', () => {
     expect(screen.getByPlaceholderText('Search by text or folder')).toBeInTheDocument();
   });
 
-  it('says nothing was found on the line where the description starts, with no search box', async () => {
+  it('says nothing was found in the dialog’s own column, with no search box', async () => {
     list.mockResolvedValue({ ok: true, data: { conversations: [] } });
     render(<Dialog />);
     await settle();
     const empty = screen.getByText('No Claude Code, Codex or ZCode conversations found on this computer.');
-    const hint = screen.getByText(/Each conversation you choose becomes a mu conversation/);
-    // Both in the dialog's one column, the empty line not in the list that reaches past it.
-    expect(empty.parentElement).toBe(hint.parentElement);
+    // In the dialog's one column, not in the list that reaches past it.
+    expect(empty.parentElement).toBe(screen.getByTestId('import-chats-body'));
     expect(screen.queryByTestId('import-chats-list')).toBeNull();
     expect(screen.queryByPlaceholderText('Search by text or folder')).toBeNull();
   });

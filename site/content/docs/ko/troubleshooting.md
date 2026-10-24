@@ -15,15 +15,11 @@ summary: mu가 시작되지 않을 때, 모델에 닿지 못할 때, 판정기�
 
 **Windows: 대화에서 Git for Windows가 없다고 해요.** mu는 Windows에서 POSIX 셸로 명령을 실행해요. [Git for Windows](https://git-scm.com/download/win)를 설치하고 새 대화를 시작하세요.
 
-**`C:\Program Files\mu`에 설치한 앱이 mu를 시작하지 못해요.** 0.1.5에서 고쳤어요. 최신 릴리스를 기존 설치 위에 설치하세요. 데이터는 그대로 남아요.
-
-**`mu install`, `mu list`, `mu config`가 대신 세션을 시작해요.** mu-agent 0.1.8과 데스크톱 0.1.7에서 고쳤어요. 최신 릴리스로 업데이트하세요.
-
 ## 모델과 네트워크 {#models}
 
 **모델이 설정되어 있지 않아요.** `mu setup`이나 앱의 설정 가이드를 실행하세요. API 키를 붙여 넣거나 구독으로 로그인하면 돼요.
 
-**터미널에서는 괜찮은데 앱에서만 "User location is not supported"가 뜨거나 요청이 시간 초과돼요.** 모델 서비스가 여러분 네트워크의 지역을 거부하거나, 앱이 프록시를 보지 못하는 거예요. 0.1.5부터 앱은 `HTTPS_PROXY`가 설정되어 있지 않으면 시스템 프록시를 따라요. 프록시가 켜져 있는지 확인하거나, mu용으로 `HTTPS_PROXY`를 설정하세요.
+**터미널에서는 괜찮은데 앱에서만 "User location is not supported"가 뜨거나 요청이 시간 초과돼요.** 모델 서비스가 여러분 네트워크의 지역을 거부하거나, 앱이 프록시를 보지 못하는 거예요. 앱은 `HTTPS_PROXY`가 설정되어 있지 않으면 시스템 프록시를 따라요. 프록시가 켜져 있는지 확인하거나, mu용으로 `HTTPS_PROXY`를 설정하세요.
 
 ## 판정기 {#judge}
 
@@ -40,10 +36,6 @@ summary: mu가 시작되지 않을 때, 모델에 닿지 못할 때, 판정기�
 **mude 1.0이 답하지 않아요.** `mu judge mude status`로 서버가 실행 중인지 확인하고, `mu judge mude start`로 시작하세요. `mu doctor`는 서버와 키를 점검해요. mude가 답할 수 있을 때까지는 뒤에 있는 판정기가 답하고, `--local-only`면 각 결정이 폴백을 따라요.
 
 **mude 1.0 설치가 중간에 멈췄어요.** `mu judge mude install`을 다시 실행하거나, 앱에서 **설치 계속하기**를 누르세요. 이미 내려받은 부분부터 이어져요.
-
-## 터미널 {#terminal}
-
-**서브 에이전트가 시작될 때 터미널 UI가 "Rendered line … exceeds terminal width"와 함께 비정상 종료돼요.** mu-agent 0.1.8과 데스크톱 0.1.7에서 고쳤어요. 최신 릴리스로 업데이트하세요.
 
 ## 처음부터 다시 {#reset}
 

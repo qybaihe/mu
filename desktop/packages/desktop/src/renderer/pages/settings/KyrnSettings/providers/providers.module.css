@@ -1,5 +1,5 @@
-/* Every provider in one place: one line of what can be done with the add button, then the list on the left and the
-   chosen one on the right; one column when the section is narrow. Neutral surfaces: the accent is for buttons only. */
+/* Every provider in one place: the add button, then the list on the left and the chosen one on the right; one column
+   when the section is narrow. Neutral surfaces: the accent is for buttons only. */
 .providers {
   display: flex;
   flex-direction: column;
@@ -9,9 +9,7 @@
 
 .managerHead {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: flex-end;
 }
 
 .manager {
@@ -429,10 +427,5 @@
   .pair,
   .modelEdit {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .managerHead {
-    flex-wrap: wrap;
-    align-items: flex-start;
   }
 }

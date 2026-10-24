@@ -138,7 +138,6 @@ const ScheduledTasksPage: React.FC = () => {
             sticky={false}
             data-testid='scheduled-tasks-header'
             title={t('cron.scheduledTasks')}
-            description={t('cron.page.description')}
             actions={
               <>
                 {!isMobile && (

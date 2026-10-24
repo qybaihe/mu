@@ -1,11 +1,9 @@
 {
   "title": "mu 设置",
-  "description": "mu 支持的各项控制都在这里：判定器、判定点、功能、模型与上下文。与命令行里的 mu 共用同一份配置。",
   "reload": "重新载入",
   "modified": "已修改",
   "applyNote": "修改对新会话生效。正在运行的会话沿用启动时的配置，重新连接后才会使用新配置。",
   "apiKey": "API 密钥",
-  "keyHelp": "保存后不再显示。只存在这台电脑上，只有你的账户能读。",
   "keyKeep": "留空则保留已保存的密钥",
   "endpointRule": "请填写以 https:// 或 http:// 开头的地址，不能包含用户名、密码、查询参数或片段。",
   "endpointPlain": "这个地址用的是明文 http，密钥和消息都不加密。服务在本机或你自己的网络里（包括 hosts 文件指过去的域名）就没问题；走公网请用 https。",
@@ -73,7 +71,6 @@
     "useDefault": "改回默认（{{mode}}）"
   },
   "features": {
-    "lead": "mu 在后台替你做的事。关掉一项，mu 就不再做这件事。",
     "beta": "测试版",
     "reset": "恢复默认",
     "boardModelElsewhere": "写看板的模型在「人话模型」里选。",
@@ -87,9 +84,7 @@
     "details": "详细设置"
   },
   "judges": {
-    "tiersHelp": "判定器按顺序依次尝试；后一级只处理前面几级拿不准的问题。",
     "order": "顺序",
-    "orderHelp": "排在第一的就是「判定器」页选的那个。",
     "firstTier": "就是「判定器」页选的那个：服务、地址和密钥在那里设置。",
     "tierTitle": "第 {{index}} 级：{{name}}",
     "service": "服务",
@@ -105,17 +100,14 @@
       },
       "typesafe": {
         "name": "TypeSafe",
-        "help": "始终直连 TypeSafe。",
         "key": "TypeSafe API 密钥"
       },
       "openrouter": {
         "name": "OpenRouter",
-        "help": "始终经由 OpenRouter，用 OpenRouter 的 API 密钥。它单独给 Jev 保存，设置它不会改动 OpenRouter 聊天模型的密钥。",
         "key": "OpenRouter API 密钥"
       },
       "gateway": {
         "name": "Vercel AI Gateway",
-        "help": "始终经由 Vercel AI Gateway。",
         "key": "Vercel AI Gateway API 密钥"
       },
       "opencode": {
@@ -125,7 +117,6 @@
       },
       "cloudflare": {
         "name": "Cloudflare Workers AI",
-        "help": "Cloudflare Workers AI 上的 Jev，需要 Cloudflare API 令牌和你的账户 ID。",
         "key": "Cloudflare API 令牌",
         "account": "Cloudflare 账户 ID",
         "accountHelp": "在 Cloudflare 控制台的 Workers AI 页面可以看到。和令牌一样保存。",
@@ -139,19 +130,9 @@
     },
     "model": "判定模型",
     "baseUrl": "接口地址",
-    "baseUrlHelp": "留空则使用 TypeSafe 官方地址",
-    "customUrlHelp": "该服务的 System One 地址。它的密钥只会发到这里。",
     "baseUrlNeeded": "自定义服务需要填写地址。",
     "customTier": "你自己加的判定器，要改它请编辑 mu 的设置文件。",
-    "endpointDefault": "使用服务的默认地址",
-    "types": {
-      "localHelp": "在这台电脑上运行。",
-      "clmHelp": "运行在你自己的 CLM 服务器上。",
-      "classifierHelp": "mu 模型目录里的分类模型：{{model}}。mu 用它所属服务商的密钥调用它。"
-    },
-    "intro": "mu 工作时要做很多小判断：这条消息该怎么处理、这一步会不会违反你定的规则……判定器负责回答。选一个就行。",
     "mode": "判定生效",
-    "modeHelp": "开着时，判定器的结论直接起作用；关掉后每一步照常进行。没有单独设置的环节都跟着它。",
     "choose": "选择判定器",
     "custom": "现在排在第一位的是自定义判定器，可以在「判定顺序」页查看和修改。",
     "keyPlaceholder": "粘贴密钥",
@@ -179,7 +160,6 @@
         "description": "回答和 Jev 一样的问题，运行在你自己的服务器上（clm-serve）。编码器需要 GPU，不按次计费。"
       }
     },
-    "localAddress": "服务地址：{{address}}",
     "laya": {
       "running": "正在本机运行",
       "stopped": "已安装，没有运行。mu 用到它时会自己启动。",
@@ -252,7 +232,6 @@
         "stopped": "已停止"
       },
       "resources": "mude 1.0 运行时约占用 {{memory}} GB 内存。这台 Mac 上的所有 mu 会话（包括终端里的）共用它，它会一直运行，直到你停止或关闭它。",
-      "shared": "这台 Mac 上的所有 mu 会话（包括终端里的）共用它，它会一直运行，直到你停止或关闭它。",
       "start": "启动",
       "stop": "停止",
       "openFolder": "打开文件夹",
@@ -350,12 +329,9 @@
     },
     "clm": {
       "address": "服务器地址",
-      "addressHelp": "clm-serve 监听的地址，比如 http://192.168.1.20:8700。留空就是这台电脑（{{address}}）。",
       "key": "服务器密钥",
       "keyPlaceholder": "服务器要求时才填",
-      "keyHelp": "只有用 CLM_API_KEY 启动的服务器才要密钥：填同一个值。保存后不再显示。",
       "check": "检查服务器",
-      "unmeasured": "CLM 做 mu 的判定做得怎么样，目前还没有测过。",
       "status": {
         "checking": "正在询问服务器…",
         "ready": "正在应答 · {{models}} · {{ms}} 毫秒",
@@ -379,11 +355,9 @@
   },
   "context": {
     "auto": "自动压缩",
-    "autoHelp": "上下文快满时自动压缩历史。",
     "limit": "上下文上限",
     "limitHelp": "0 表示使用模型的上下文窗口减去预留量；否则填 {{min}} 到 {{max}}。在下一次请求模型之前检查，不是硬性截断。",
-    "limitProblem": "请填 0，或 {{min}} 到 {{max}} 之间的整数。",
-    "lead": "对话何时压缩、上下文最多多大，以及作用于上下文的功能。"
+    "limitProblem": "请填 0，或 {{min}} 到 {{max}} 之间的整数。"
   },
   "permissions": {
     "modes": {
@@ -444,7 +418,6 @@
     }
   },
   "providers": {
-    "lead": "模型从哪里来：订阅账号和接口地址。对话用哪个模型、思考等级多少，在发送框里选。",
     "title": "提供商",
     "custom": "自定义提供商",
     "manualGroup": "手动配置",
@@ -479,7 +452,6 @@
     "commented": "models.json 里有注释，从这里保存会把注释弄丢，所以提供商暂为只读。手动去掉注释后即可在此编辑。",
     "modelCount_one": "{{count, number}} 个模型",
     "modelCount_other": "{{count, number}} 个模型",
-    "summary": "登录订阅账号就能直接用，也可以接入任何 OpenAI、Anthropic 或 Gemini 兼容的接口。",
     "subscriptions": "订阅登录",
     "manualShort": "手动",
     "needsSetup": "待配置",
@@ -492,13 +464,10 @@
     "removeDefault": "新会话默认用的就是它，所以默认模型也会清空。"
   },
   "defaults": {
-    "summary": "新会话启动时使用。对话中仍可随时切换。",
     "provider": "提供商",
     "model": "模型",
     "level": "思考等级",
     "levelUnset": "不指定",
-    "levelHelp": "该模型不支持的等级已置灰。",
-    "levelClamped": "不指定时为「中」。模型不支持的等级会自动改用最接近的可用等级。",
     "noReasoning": "这个模型不支持思考，用它启动的会话思考固定为关闭。",
     "notSet": "未指定",
     "pickProvider": "请先选择提供商。"
@@ -509,7 +478,6 @@
     "signOutFailed": "退出登录没有完成，可以再试一次。",
     "signOutConfirm": "要退出 {{name}} 的登录吗？退出后需要重新登录才能使用。",
     "signedOut": "未登录",
-    "instant": "登录和退出立即生效，不用点保存。",
     "models": "可用的模型",
     "byKey": "可用（API 密钥）",
     "byKeyHelp": "没有登录订阅，但 mu 上次连接时报告它能用，通常是因为环境里有它的 API 密钥。登录订阅后改用订阅。",
@@ -571,12 +539,10 @@
     "noId": "新模型",
     "show": "查看 {{name}}",
     "addListed": "添加 {{name}}",
-    "levels": "思考等级",
-    "levelsHelp": "勾选的等级才会提供给这个模型。极高和最高默认关闭，勾选后才会打开。"
+    "levels": "思考等级"
   },
   "test": {
     "run": "测试连接",
-    "hint": "由本应用发出一次最小的请求：先取模型列表，取不到就让第一个模型回一个字。",
     "okModels": "连接成功（{{ms}} 毫秒），接口返回了 {{count, number}} 个模型。",
     "okCompletion": "连接成功（{{ms}} 毫秒），模型已应答。",
     "auth": "密钥被拒绝（HTTP {{status}}）。",
@@ -594,7 +560,7 @@
   },
   "boardModel": {
     "title": "人话模型",
-    "summary": "人话看板用它把进展讲成大白话。只给你看，不进对话的上下文；看板每更新一次调用一次。",
+    "summary": "人话看板用它把进展讲成大白话。看板每更新一次调用一次。",
     "pick": "指定一个模型",
     "recommended": "推荐 Claude Opus 4.6：讲得最自然、最稳；其次 Gemini 3.8 Flash：更快，也更省。",
     "recommendedTag": "推荐",
@@ -604,7 +570,6 @@
     "pickProvider": "先选提供商",
     "unset": "还没选：第一次打开看板时 mu 会问你。",
     "session": "跟着对话用的模型",
-    "sessionHelp": "对话换了模型，看板也跟着换。",
     "update": "这个版本的 mu 还不能在这里选写看板的模型，更新 mu 后就可以。"
   },
   "levels": {
@@ -632,7 +597,6 @@
     "start": "开始使用",
     "model": {
       "title": "连接一个模型",
-      "subtitle": "mu 用它写代码、回答问题。之后随时可以在设置里修改。",
       "model": "模型",
       "baseUrl": "接口地址",
       "key": "API 密钥",
@@ -676,7 +640,6 @@
       "placeholder": "把密钥粘贴到这里",
       "service": "服务商",
       "servicePlaceholder": "根据密钥自动识别",
-      "serviceHint": "mu 会根据密钥认出服务商；认不出时，在这里选一下。",
       "recognized": "已根据密钥识别。",
       "ambiguous": "好几家服务商的密钥都长这样，这是哪家的？",
       "unknown": "mu 认不出这种密钥，这是哪家的？",
@@ -686,7 +649,6 @@
       "lookingLocal": "正在本机查找 {{service}}…",
       "recheck": "重新检查",
       "startsWith": "mu 先用这个模型",
-      "modelHint": "之后随时可以换。",
       "outcome": {
         "ok": "密钥可以用。",
         "okLocal": "本机的 {{service}} 正在运行。",
@@ -762,7 +724,6 @@
     },
     "judge": {
       "title": "选一个判定器",
-      "subtitle": "mu 工作时的各种小判断由判定器来回答。没有判定器也能运行，只是少了这些把关。",
       "readyFree": "免费的 Jev 已经就绪，不用做任何事。",
       "readyKey": "Jev 已经就绪，用的是你设置的密钥。",
       "more": "换服务或用自己的密钥",
@@ -775,7 +736,6 @@
     },
     "done": {
       "title": "准备好了",
-      "subtitle": "确认一下，就可以开始了。",
       "model": "模型",
       "judge": "判定器",
       "none": "暂未设置",
@@ -804,20 +764,6 @@
         "text_one": "mu 在这台电脑上找到了 {{count}} 段在其他编程助手里聊过的对话，可以连同全部历史导进来，在这里接着聊。",
         "text_other": "mu 在这台电脑上找到了 {{count}} 段在其他编程助手里聊过的对话，可以连同全部历史导进来，在这里接着聊。",
         "open": "选择对话…"
-      },
-      "points": {
-        "judge": {
-          "title": "每一步都有把关",
-          "text": "内置的判定器在关键处把关：先想清楚再动手，不越过你定的规则，没验证不说做完。"
-        },
-        "control": {
-          "title": "看得见，管得住",
-          "text": "检查点让你可以回滚改动；mu 用应用内浏览器时，每一步都在眼前，可以暂停，也可以接管。"
-        },
-        "ready": {
-          "title": "开箱即用",
-          "text": "自动沿用你在 Claude Code、Cursor、Codex 里配好的规则、技能和 MCP 服务器。"
-        }
       },
       "start": "开始设置"
     },
@@ -875,7 +821,6 @@
     },
     "permissions": {
       "title": "mu 自己能做多少",
-      "subtitle": "新对话从这里选的方式开始。之后随时可以在输入框里或用 /permissions 切换。",
       "recommended": "推荐"
     }
   },
@@ -982,11 +927,9 @@
   },
   "importChats": {
     "title": "导入对话",
-    "description": "把这台电脑上在 Claude Code、Codex 或 ZCode 里聊过的对话连同全部历史带进 mu，在这里接着聊。",
     "open": "选择对话",
     "dialog": {
       "title": "导入对话",
-      "hint": "选中的每段对话都会变成 mu 里的一个对话，放在原来的项目文件夹下，并带上全部历史：消息、工具调用、思考过程和图片。以后再选一次，就能把新增的内容带过来。",
       "search": "按内容或文件夹搜索",
       "loading": "正在找对话…",
       "empty": "这台电脑上没有找到 Claude Code、Codex 或 ZCode 的对话。",
@@ -1189,8 +1132,6 @@
     }
   },
   "details": {
-    "lead": "每项功能一个开关，选项在「选项」里。缩进的几行是它请判定器判断的地方：关掉一处，那一步照常进行。",
-    "featureOff": "功能已关闭",
     "askJudge": "让判定器判断",
     "askJudgeAbout": "让判定器判断：{{point}}",
     "areas": {
@@ -1217,7 +1158,6 @@
       "cursor": "Cursor"
     },
     "skills": {
-      "lead": "mu 在每个对话里都能用的技能，以及各自从哪里来。",
       "search": "搜索技能",
       "open": "打开文件夹",
       "add": "添加技能",
@@ -1228,33 +1168,26 @@
       "empty": "mu 还没有技能。",
       "noMatch": "没有匹配的技能。",
       "failed": "没能读取 mu 的技能。",
-      "project": "项目自己的技能（.mu/skills、.agents/skills、.claude/skills）只在那个项目的对话里加载，这里不列出。",
       "groups": {
         "mu": {
-          "title": "mu 的技能",
-          "help": "在 {{folder}} 里。添加的技能放在这里，也只有这里的可以移除。"
+          "title": "mu 的技能"
         },
         "agents": {
-          "title": "共享的技能",
-          "help": "在 ~/.agents/skills 里，几个代理共用。mu 只读取，不做改动。"
+          "title": "共享的技能"
         },
         "builtin": {
-          "title": "mu 自带",
-          "help": "随 mu 提供，带来它的功能开着时才加载。"
+          "title": "mu 自带"
         },
         "claude": {
-          "title": "沿用 Claude Code",
-          "help": "来自 ~/.claude/skills。mu 只读取；在 mu.json 的 features.inherit 里可以不再沿用。"
+          "title": "沿用 Claude Code"
         },
         "codex": {
-          "title": "沿用 Codex",
-          "help": "来自 ~/.codex/skills。mu 只读取；在 mu.json 的 features.inherit 里可以不再沿用。"
+          "title": "沿用 Codex"
         }
       }
     },
     "mcp": {
       "title": "MCP 服务器",
-      "lead": "mu 在每个对话里都能用的 MCP 服务器，以及各自在哪里设置。",
       "open": "打开配置文件",
       "add": "添加服务器",
       "added": "已添加 {{name}}，新对话里可以用了。",
@@ -1266,7 +1199,6 @@
       "failed": "没能读取 mu 的 MCP 服务器。",
       "featureOff": "mu.json 里关闭了 MCP 功能：只使用 mcp.json 里的服务器。",
       "unreadable": "这些文件读不了，其中的服务器没有列出：{{files}}",
-      "project": "项目自己的服务器（.mu/mcp.json、.mcp.json、.cursor/mcp.json）只在那个项目的对话里使用，这里不列出。",
       "locked": {
         "offInSource": {
           "label": "已在原处关闭",
@@ -1279,20 +1211,16 @@
       },
       "groups": {
         "mu": {
-          "title": "mu 的服务器",
-          "help": "在 mcp.json 和 mu.json 里。添加的服务器写进 {{file}}，和 mu mcp add 一样。"
+          "title": "mu 的服务器"
         },
         "claude": {
-          "title": "沿用 Claude Code",
-          "help": "来自 ~/.claude.json。在这里关掉只写进 mu.json，不改 Claude Code 的文件。"
+          "title": "沿用 Claude Code"
         },
         "cursor": {
-          "title": "沿用 Cursor",
-          "help": "来自 ~/.cursor/mcp.json。在这里关掉只写进 mu.json，不改 Cursor 的文件。"
+          "title": "沿用 Cursor"
         },
         "codex": {
-          "title": "沿用 Codex",
-          "help": "来自 ~/.codex/config.toml。在这里关掉只写进 mu.json，不改 Codex 的文件。"
+          "title": "沿用 Codex"
         }
       },
       "form": {

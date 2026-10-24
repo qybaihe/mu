@@ -344,7 +344,6 @@
   "language": "言語",
   "saveUploadToWorkspace": "アップロードファイルをプロジェクトフォルダに保存",
   "startOnBoot": "起動時に自動起動",
-  "startOnBootDesc": "macOS または Windows にサインインしたときに mu を自動起動します。",
   "startOnBootUnsupported": "インストール版の macOS / Windows アプリでのみ利用できます。",
   "startOnBootUpdateFailed": "起動時自動起動の設定更新に失敗しました",
   "closeToTray": "トレイに最小化",
@@ -373,10 +372,8 @@
   "groupApp": "アプリケーション",
   "groupAbout": "その他",
   "agentIdleTimeout": "エージェントのアイドルタイムアウト",
-  "agentIdleTimeoutDesc": "この時間アイドル状態が続いたエージェントは、メモリを空けるために停止します。",
   "previewTextSizeLimit": "プレビューサイズ上限",
   "previewTextSizeLimitUnit": "MB",
-  "previewTextSizeLimitDesc": "このサイズを超えるテキストファイルは内容を読み込まず、通知のみ表示します。新しく開いたタブにのみ適用されます。",
   "gemini": "Gemini",
   "model": "モデル",
   "system": "システム",
@@ -985,22 +982,18 @@
   "browserData": {
     "title": "アプリ内ブラウザー",
     "agentControlLabel": "アプリ内ブラウザのエージェント操作を許可",
-    "agentControlDesc": "オンにすると、エージェントがアプリ内ブラウザでページを開いたり、クリックやフォーム入力を代行できます（調べ物やサイト上の手続きなど）。操作できるのはアプリ内ブラウザのビューのみで、mu の画面自体には触れられず、別の Chrome ウィンドウを開くこともありません。オフにしてもブラウザは通常どおり使えますが、エージェントは操作できなくなります。",
     "agentControlSaved": "設定を保存しました",
     "agentControlFailed": "設定の保存に失敗しました",
     "agentControlRestartRequired": "この設定はアプリを再起動すると有効になります。",
     "clearLabel": "閲覧データを消去",
-    "clearDesc": "ブラウザーでログイン済みのすべてのサイトからサインアウトし、キャッシュを消去します。開いているタブは再読み込み後に反映されます。",
     "clearConfirmTitle": "閲覧データを消去しますか？",
     "clearConfirmContent": "アプリ内ブラウザーのすべてのサイトからサインアウトされます。この操作は取り消せません。",
     "clearSuccess": "閲覧データを消去しました",
-    "clearFailed": "閲覧データの消去に失敗しました",
-    "description": "エージェントにアプリ内ブラウザーの操作を許可するかどうかと、ブラウザーが保存したデータの消去。"
+    "clearFailed": "閲覧データの消去に失敗しました"
   },
   "archived": {
     "navLabel": "アーカイブ済みの会話",
     "title": "アーカイブ済み",
-    "description": "アーカイブした会話です。サイドバーに復元するか、一括で完全に削除できます。",
     "empty": "アーカイブはありません",
     "noProject": "プロジェクトなし",
     "chatCount": "チャット {{count}} 件",
@@ -1073,13 +1066,8 @@
   },
   "mcpAuthRequiredNamed": "{{name}} へのログインが必要です",
   "mcpTestConnectionSuccessNamed": "{{name}} に接続しました",
-  "appearanceDescription": "言語、テーマ、フォント、ズーム。",
-  "systemDescription": "起動時の自動起動、ウィンドウを閉じた後も動き続けること、通知、mu の作業フォルダとログフォルダ。",
-  "conversationsDescription": "タイムアウト、プレビューのサイズ上限、アップロードの保存先、会話間メッセージ。",
-  "aboutDescription": "mu のバージョン、アップデート、ログフォルダへの入口。",
   "developer": {
     "title": "開発者",
-    "description": "開発者ツールと、外部ツールがアプリ内ブラウザーに接続するためのポートと MCP 設定。",
     "devOnly": "これらのツールは、ソースから実行した mu でのみ使えます。"
   },
   "search": {

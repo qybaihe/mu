@@ -212,7 +212,7 @@ const SystemModalContent: React.FC = () => {
     {
       key: 'startOnBoot',
       label: t('settings.startOnBoot'),
-      description: startOnBoot.supported ? t('settings.startOnBootDesc') : t('settings.startOnBootUnsupported'),
+      description: startOnBoot.supported ? undefined : t('settings.startOnBootUnsupported'),
       component: (
         <Switch
           size='small'

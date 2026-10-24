@@ -257,7 +257,7 @@ describe('the first-run guide', () => {
   it('says what mu is, connects an API model, takes a judge key, saves once at the end, and is not shown again', async () => {
     at('/welcome', <Welcome />);
     expect(await screen.findByText('Welcome to mu')).toBeInTheDocument();
-    expect(screen.getByText('A check at every step')).toBeInTheDocument();
+    expect(screen.getByTestId('mu-welcome-turn')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('mu-welcome-begin'));
     fireEvent.click(await screen.findByTestId('mu-welcome-way-openai'));
     // Nothing filled in: the step stays and says why, and the field in question is marked.

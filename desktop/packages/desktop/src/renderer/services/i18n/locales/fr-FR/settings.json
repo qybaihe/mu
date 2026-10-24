@@ -344,7 +344,6 @@
   "language": "Langue",
   "saveUploadToWorkspace": "Enregistrer les téléversements dans l'espace de travail",
   "startOnBoot": "Démarrage automatique",
-  "startOnBootDesc": "Lancer mu automatiquement au démarrage de macOS ou Windows.",
   "startOnBootUnsupported": "Disponible uniquement dans l’application installée pour macOS et Windows.",
   "startOnBootUpdateFailed": "Échec de la mise à jour du paramètre de démarrage automatique",
   "closeToTray": "Réduire dans la barre système",
@@ -373,10 +372,8 @@
   "groupApp": "Application",
   "groupAbout": "Autres",
   "agentIdleTimeout": "Délai d'inactivité de l'agent",
-  "agentIdleTimeoutDesc": "Un agent inactif s’arrête après cette durée pour libérer de la mémoire.",
   "previewTextSizeLimit": "Limite de taille d'aperçu",
   "previewTextSizeLimitUnit": "Mo",
-  "previewTextSizeLimitDesc": "Les fichiers texte plus volumineux s'ouvrent avec un message au lieu du contenu. S'applique uniquement aux nouveaux onglets.",
   "gemini": "Gemini CLI",
   "model": "Modèle",
   "system": "Système",
@@ -984,22 +981,18 @@
   "browserData": {
     "title": "Navigateur intégré",
     "agentControlLabel": "Autoriser l'agent à utiliser le navigateur intégré",
-    "agentControlDesc": "Lorsque cette option est activée, l'agent peut ouvrir des pages, cliquer et remplir des formulaires à votre place dans le navigateur intégré — par exemple pour faire une recherche ou terminer une démarche sur un site. Il ne peut piloter que cette vue de navigateur : il n'a pas accès à l'interface de mu elle-même et n'ouvre jamais de fenêtre Chrome distincte. Désactivée, le navigateur reste utilisable par vous ; seul l'agent perd l'accès.",
     "agentControlSaved": "Paramètre enregistré",
     "agentControlFailed": "Échec de l'enregistrement du paramètre",
     "agentControlRestartRequired": "Ce paramètre prend effet après le redémarrage de l'application.",
     "clearLabel": "Effacer les données de navigation",
-    "clearDesc": "Vous déconnecte de tous les sites où le navigateur est connecté et vide le cache. Les onglets ouverts sont concernés après rechargement.",
     "clearConfirmTitle": "Effacer les données de navigation ?",
     "clearConfirmContent": "Vous serez déconnecté de tous les sites du navigateur intégré. Cette action est irréversible.",
     "clearSuccess": "Données de navigation effacées",
-    "clearFailed": "Échec de l'effacement des données de navigation",
-    "description": "Si l'agent peut utiliser le navigateur intégré, et l'effacement de ce que le navigateur conserve."
+    "clearFailed": "Échec de l'effacement des données de navigation"
   },
   "archived": {
     "navLabel": "Conversations archivées",
     "title": "Archives",
-    "description": "Les conversations que vous avez archivées. Restaurez-les dans la barre latérale ou supprimez-les définitivement par lot.",
     "empty": "Aucun élément archivé",
     "noProject": "Aucun projet",
     "chatCount": "{{count}} conversations",
@@ -1072,13 +1065,8 @@
   },
   "mcpAuthRequiredNamed": "{{name}} nécessite une connexion",
   "mcpTestConnectionSuccessNamed": "{{name}} connecté",
-  "appearanceDescription": "La langue, le thème, les polices et l'échelle.",
-  "systemDescription": "Le démarrage avec l'ordinateur, ce qui se passe quand la fenêtre se ferme, les notifications et les dossiers où mu travaille et écrit ses journaux.",
-  "conversationsDescription": "Les délais d'attente, la taille maximale de l'aperçu, l'emplacement des téléversements et les messages entre conversations.",
-  "aboutDescription": "La version de mu, ses mises à jour et l'accès à ses journaux.",
   "developer": {
     "title": "Développement",
-    "description": "Les outils de développement, ainsi que le port et les configurations MCP qui permettent à d’autres outils d’atteindre le navigateur intégré.",
     "devOnly": "Ces outils ne sont proposés que lorsque mu est lancé depuis ses sources."
   },
   "search": {

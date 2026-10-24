@@ -14,5 +14,3 @@ Each feature is configured under `features.<name>` in `~/.mu/agent/mu.json`. `fa
   }
 }
 ```
-
-The desktop app's settings write the same file, with the same names and descriptions as this page. Both come from one manifest in the repository.

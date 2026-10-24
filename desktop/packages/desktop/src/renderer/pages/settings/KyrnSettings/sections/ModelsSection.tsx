@@ -36,12 +36,7 @@ export default function ProvidersSection({ draft, base, available, onDraft }: Mo
   const setModels = (patch: Partial<KyrnSettings['models']>) =>
     onDraft((now) => ({ ...now, settings: { ...now.settings, models: { ...now.settings.models, ...patch } } }));
   return (
-    <SectionShell
-      id='providers'
-      title={t('mu.sections.providers')}
-      description={t('mu.providers.lead')}
-      actions={inRouter ? <ReopenGuide /> : undefined}
-    >
+    <SectionShell id='providers' title={t('mu.sections.providers')} actions={inRouter ? <ReopenGuide /> : undefined}>
       <ProviderManager
         draft={draft}
         base={base}
@@ -75,7 +70,7 @@ export function DefaultModelSection({ draft, base, available, onDraft }: ModelsS
   const { t } = useTranslation();
   const { accounts } = useSubscriptionLogin();
   return (
-    <SectionShell id='defaultModel' title={t('mu.sections.defaultModel')} description={t('mu.defaults.summary')}>
+    <SectionShell id='defaultModel' title={t('mu.sections.defaultModel')}>
       <DefaultModelCard
         settings={draft.settings}
         base={base}

@@ -3,8 +3,6 @@ title: The command line
 summary: mu's commands, the slash commands inside a session and what comes from pi unchanged.
 ---
 
-The `mu` command is pi, the coding agent, with mu's judgment kernel loaded. Everything pi does works as before; mu adds its own commands and the decision points.
-
 ```bash
 npm i -g mu-agent      # needs Node.js 22.19 or newer
 mu                     # an interactive session in the current directory

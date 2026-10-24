@@ -3,7 +3,7 @@ title: Configuration
 summary: mu.json, the environment variables, proxies and where the per-feature options are.
 ---
 
-mu reads pi's settings (models, sign-ins, preferences) and its own, in `~/.mu/agent/mu.json`. The desktop app's settings write the same file: every change made there can be made by hand, and vice versa.
+mu reads pi's settings (models, sign-ins, preferences) and its own, in `~/.mu/agent/mu.json`.
 
 Only your own `mu.json` is read. A project can't change the judge, its address or its modes, because the judge reads your messages.
 
@@ -69,7 +69,7 @@ Time:
 
 | Variable | Effect |
 | --- | --- |
-| `MU_TIME_BUDGET_S` | The run's time budget in seconds, counted from when mu starts. A reply that's only thinking is then cut off early enough to leave time for a retry, and the model is told how many minutes are left at 50% and 80% (`features.deadline`). Benchmark harnesses set it from the task's timeout; without it nothing changes. |
+| `MU_TIME_BUDGET_S` | The run's time budget in seconds, counted from when mu starts. A reply that's only thinking is then cut off early enough to leave time for a retry, and the model is told how many minutes are left at 50% and 80% (`features.deadline`). Without it nothing changes. |
 
 The launcher:
 
@@ -80,8 +80,6 @@ The launcher:
 | `MU_LANG` | mu's own messages in a session: Chinese for `zh…`, English otherwise. The desktop app sets it to the app's language; `mu setup` follows your locale. |
 | `MU_LINK_DIR` | Where `mu link` puts the `mu` command, in place of `~/.local/bin` |
 | `MU_CHROME` | The Chrome or Chromium the built-in browser uses on the command line |
-
-Each `MU_` variable is also read under its old `KYRN_` spelling.
 
 mu also reads a `.env` file: `~/.mu/.env` for the npm package. Lines are `KEY=VALUE`; nothing in it is executed. `mu setup` writes the Jev key there. Variables already set in your environment win.
 

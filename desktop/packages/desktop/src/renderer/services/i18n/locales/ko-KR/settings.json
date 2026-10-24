@@ -344,7 +344,6 @@
   "language": "언어",
   "saveUploadToWorkspace": "업로드 파일을 프로젝트 폴더에 저장",
   "startOnBoot": "시작 시 자동 실행",
-  "startOnBootDesc": "macOS 또는 Windows 로그인 시 mu를 자동으로 실행합니다.",
   "startOnBootUnsupported": "설치된 macOS 및 Windows 앱에서만 사용할 수 있습니다.",
   "startOnBootUpdateFailed": "시작 시 자동 실행 설정을 업데이트하지 못했습니다",
   "closeToTray": "트레이로 닫기",
@@ -373,10 +372,8 @@
   "groupApp": "애플리케이션",
   "groupAbout": "기타",
   "agentIdleTimeout": "에이전트 유휴 시간 초과",
-  "agentIdleTimeoutDesc": "이 시간 동안 유휴 상태인 에이전트는 메모리를 확보하기 위해 중지됩니다.",
   "previewTextSizeLimit": "미리보기 크기 제한",
   "previewTextSizeLimitUnit": "MB",
-  "previewTextSizeLimitDesc": "이 크기를 넘는 텍스트 파일은 내용을 불러오지 않고 안내만 표시합니다. 새로 연 탭에만 적용됩니다.",
   "gemini": "Gemini",
   "model": "모델",
   "system": "시스템",
@@ -985,22 +982,18 @@
   "browserData": {
     "title": "앱 내 브라우저",
     "agentControlLabel": "앱 내 브라우저의 에이전트 조작 허용",
-    "agentControlDesc": "켜면 에이전트가 앱 내 브라우저에서 페이지를 열고 클릭하거나 양식을 채워 줍니다(자료 검색, 웹사이트 절차 완료 등). 조작 대상은 앱 내 브라우저 화면 하나뿐이며, mu 인터페이스 자체에는 접근할 수 없고 별도의 Chrome 창도 열지 않습니다. 끄면 브라우저는 계속 직접 사용할 수 있고 에이전트만 조작할 수 없게 됩니다.",
     "agentControlSaved": "설정이 저장되었습니다",
     "agentControlFailed": "설정 저장에 실패했습니다",
     "agentControlRestartRequired": "이 설정은 앱을 다시 시작한 후 적용됩니다.",
     "clearLabel": "인터넷 사용 정보 삭제",
-    "clearDesc": "브라우저에 로그인된 모든 사이트에서 로그아웃하고 캐시를 삭제합니다. 열려 있는 탭은 새로 고침 후 적용됩니다.",
     "clearConfirmTitle": "인터넷 사용 정보를 삭제할까요?",
     "clearConfirmContent": "앱 내 브라우저의 모든 사이트에서 로그아웃됩니다. 되돌릴 수 없습니다.",
     "clearSuccess": "인터넷 사용 정보를 삭제했습니다",
-    "clearFailed": "인터넷 사용 정보 삭제에 실패했습니다",
-    "description": "에이전트가 앱 내 브라우저를 사용할 수 있는지, 그리고 브라우저가 저장한 데이터 삭제."
+    "clearFailed": "인터넷 사용 정보 삭제에 실패했습니다"
   },
   "archived": {
     "navLabel": "보관된 대화",
     "title": "보관됨",
-    "description": "보관한 대화입니다. 사이드바로 복원하거나 일괄 삭제로 영구 삭제할 수 있습니다.",
     "empty": "보관된 항목이 없습니다",
     "noProject": "프로젝트 없음",
     "chatCount": "대화 {{count}}개",
@@ -1073,13 +1066,8 @@
   },
   "mcpAuthRequiredNamed": "{{name}}에 로그인이 필요합니다",
   "mcpTestConnectionSuccessNamed": "{{name}}에 연결되었습니다",
-  "appearanceDescription": "언어, 테마, 글꼴, 비율.",
-  "systemDescription": "시작 시 자동 실행, 창을 닫은 뒤에도 계속 실행, 알림, 그리고 mu가 작업하고 로그를 남기는 폴더.",
-  "conversationsDescription": "시간 제한, 미리보기 크기 한도, 업로드 저장 위치, 대화 간 메시지.",
-  "aboutDescription": "mu의 버전, 업데이트, 그리고 로그 폴더로 가는 길.",
   "developer": {
     "title": "개발자",
-    "description": "개발자 도구, 그리고 외부 도구가 앱 내 브라우저에 연결할 때 쓰는 포트와 MCP 설정입니다.",
     "devOnly": "이 도구는 소스에서 실행한 mu에서만 제공됩니다."
   },
   "search": {

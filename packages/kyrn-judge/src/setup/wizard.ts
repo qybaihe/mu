@@ -535,14 +535,6 @@ class Setup {
 				SETUP_EXIT.usage,
 			);
 		}
-		if (!args.firstRun) {
-			this.io.say(
-				this.t({
-					zh: "mu setup：给 mu 接上一个干活的模型，再选一个判定器。",
-					en: "mu setup: connect a model for mu to work with, and choose a judge.",
-				}),
-			);
-		}
 		const start = await this.start(key === undefined ? undefined : cleanKey(key));
 		if (start === "subscription") {
 			const judge = await this.judge(undefined);
@@ -639,11 +631,10 @@ class Setup {
 		);
 		if (route === "subscription") {
 			// pi's /login already does every sign-in: the browser, device codes, a pasted redirect. mu leaves it to pi.
-			const auth = this.path(join(this.deps.paths.agentDir, "auth.json"));
 			this.io.say(
 				this.t({
-					zh: `订阅账号在 mu 里用 /login 登录：选 Sign in with an account，再选 OpenAI（ChatGPT）、xAI（Grok）或 Google 的一项，按提示在浏览器里完成。setup 接着启动 mu 时，/login 已经打开。登录信息保存在 ${auth}。`,
-					en: `Sign in to your subscription from inside mu with /login: choose Sign in with an account, then OpenAI for ChatGPT, xAI for Grok or one of the Google sign-ins, and finish in the browser. When setup starts mu, /login is already open. The sign-in is saved in ${auth}.`,
+					zh: "订阅账号在 mu 里用 /login 登录：选 Sign in with an account，再选 OpenAI（ChatGPT）、xAI（Grok）或 Google 的一项，按提示在浏览器里完成。setup 接着启动 mu 时，/login 已经打开。",
+					en: "Sign in to your subscription from inside mu with /login: choose Sign in with an account, then OpenAI for ChatGPT, xAI for Grok or one of the Google sign-ins, and finish in the browser. When setup starts mu, /login is already open.",
 				}),
 			);
 			return "subscription";
@@ -1207,8 +1198,8 @@ class Setup {
 		});
 		const picked = await this.choose(
 			this.t({
-				zh: "mu 工作时要做很多小判断：这条消息该怎么处理、这一步会不会违反你定的规则……判定器负责回答。选哪个判定器？",
-				en: "As it works, mu faces many small decisions: how to handle a message, whether a step breaks your rules. A judge answers them. Which judge do you want?",
+				zh: "mu 工作中的小判断交给哪个判定器？",
+				en: "Which judge should answer mu's small decisions?",
 			}),
 			choices,
 		);
@@ -1567,14 +1558,8 @@ class Setup {
 									: this.t({ zh: "判定器：Jev。", en: " Judge: Jev." });
 		this.io.say("");
 		this.io.say(`${done}${judged}`);
-		this.io.say(
-			target
-				? this.t({
-						zh: "在 mu 里用 /model 换模型；随时可以再运行 mu setup。",
-						en: "Switch models inside mu with /model, and run mu setup again any time.",
-					})
-				: this.t({ zh: "接下来在 mu 里用 /login 登录。", en: "Next, sign in with /login in mu." }),
-		);
+		if (!target)
+			this.io.say(this.t({ zh: "接下来在 mu 里用 /login 登录。", en: "Next, sign in with /login in mu." }));
 	}
 
 	/**
