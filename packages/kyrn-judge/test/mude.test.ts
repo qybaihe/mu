@@ -505,6 +505,21 @@ describe("mu judge mude", () => {
 		expect(installLocalOnly(ctx, ["--local-only"])).toBe(true);
 	});
 
+	it("keeps local only when mude is installed again over a working one, as enable does", () => {
+		const ctx = context();
+		mkdirSync(ctx.files.agentDir, { recursive: true });
+		const muJson = join(ctx.files.agentDir, "mu.json");
+		writeFileSync(muJson, `${JSON.stringify({ tiers: ["mude"] })}\n`);
+		expect(installLocalOnly(ctx, [])).toBe(true);
+		expect(installLocalOnly(ctx, ["--with-fallback"])).toBe(false);
+		writeFileSync(muJson, `${JSON.stringify({ tiers: ["mude", "jev"] })}\n`);
+		expect(installLocalOnly(ctx, [])).toBe(false);
+		// An install that stopped part way still decides: it was asked before the file says otherwise.
+		mkdirSync(ctx.paths.root, { recursive: true });
+		writeFileSync(ctx.paths.install, `${JSON.stringify({ localOnly: true })}\n`);
+		expect(installLocalOnly(ctx, [])).toBe(true);
+	});
+
 	// mude installs only on a Mac; the lock reads process start times with ps, which Windows does not have.
 	it.skipIf(process.platform === "win32")(
 		"lets one install run at a time, and takes over the lock of one that is gone",

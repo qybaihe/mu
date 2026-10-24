@@ -137,8 +137,11 @@ export async function resolveModel(
 			);
 		}
 		if (response.status === 401 || response.status === 403) {
+			// Asked without a token, Hugging Face answers 401 for a model that doesn't exist too, so a typo lands here.
 			throw new ModelError(
-				`${ref.repo} is private or gated on Hugging Face (${response.status}). Accept its terms on huggingface.co, set HF_TOKEN, then add it again`,
+				response.status === 401 && !options.token
+					? `Couldn't open ${ref.repo} on Hugging Face (401): it doesn't exist, or it's private or gated. Check the name; for a gated model, accept its terms on huggingface.co, set HF_TOKEN, then add it again`
+					: `${ref.repo} is private or gated on Hugging Face (${response.status}). Accept its terms on huggingface.co, set HF_TOKEN, then add it again`,
 				"access",
 			);
 		}
