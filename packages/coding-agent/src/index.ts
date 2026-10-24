@@ -240,6 +240,8 @@ export {
 	ModelRuntime,
 	type ModelRuntimeAuthOverrides,
 } from "./core/model-runtime.ts";
+// mu: `mu auth logout` drops the list of models an account gave from pi's catalogue store, also from pi's bundle.
+export { FileModelsStore } from "./core/models-store.ts";
 export type {
 	PackageManager,
 	PathMetadata,

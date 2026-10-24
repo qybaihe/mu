@@ -15,6 +15,7 @@ import { summarize } from '@/renderer/components/kernel/kernelSummary';
 import { KERNEL_SUMMARY_KEY } from '@/renderer/components/kernel/useKernelSummary';
 import type { AvailableModels } from '@/common/kyrn/models';
 import type { KyrnSettings } from '@/common/kyrn/types';
+import { useAddEventListener } from '@/renderer/utils/emitter';
 import {
   completeSettings,
   dirtySections,
@@ -118,6 +119,19 @@ export function useMuSettings(): MuSettings {
       return undefined;
     }
   }, []);
+
+  // mu was checked again (a save, a sign-in, a sign-out): what it offers now replaces the copy, so a signed-out
+  // account's models leave the pickers at once. When it cannot be read, the copy stays.
+  useAddEventListener('mu.rechecked', () => {
+    void kyrnBridge.availableModels
+      .invoke()
+      .then(unwrap)
+      .then(setAvailable)
+      .catch((): undefined => undefined);
+  });
+  // The app changed the files itself (a sign-out moved the default model): the draft moves onto them, keeping what it
+  // changed, so the next save is not refused as stale.
+  useAddEventListener('mu.files.changed', () => void rebase('draft'), [rebase]);
 
   const edit = useCallback((change: (draft: Draft) => Draft) => setDraft((now) => (now ? change(now) : now)), []);
   const editSettings = useCallback(

@@ -221,10 +221,12 @@ const JUDGE_FIELDS: ReadonlySet<keyof KyrnSettings> = new Set<keyof KyrnSettings
 const FILE_FIELDS: ReadonlySet<keyof KyrnSettings> = new Set<keyof KyrnSettings>(['revision', 'keys', 'harness']);
 
 /**
- * The draft moved onto settings read again after mu's own command changed the files (mude's install writes mu.json):
- * every part the draft changed since `base` keeps the draft's value, the rest is what the files say now. `judge`:
- * `files` when the command just set the judge (the person picked mude), so the judge's order, profiles and switch
- * come from the files whatever the draft held; `draft` to keep a judge picked in the draft afterwards. Typed keys stay.
+ * The draft moved onto settings read again after mu's own command changed the files (mude's install writes mu.json),
+ * or the app did (a sign-out moved the default model): every part the draft changed since `base` keeps the draft's
+ * value, the rest is what the files say now. The models go part by part: a default moved by a sign-out is taken
+ * while the draft only changed a provider. `judge`: `files` when the command just set the judge (the person picked
+ * mude), so the judge's order, profiles and switch come from the files whatever the draft held; `draft` to keep a
+ * judge picked in the draft afterwards. Typed keys stay.
  */
 export function rebaseDraft(base: KyrnSettings, draft: Draft, fresh: KyrnSettings, judge: 'files' | 'draft'): Draft {
   const settings = { ...fresh } as Record<keyof KyrnSettings, unknown>;
@@ -232,7 +234,10 @@ export function rebaseDraft(base: KyrnSettings, draft: Draft, fresh: KyrnSetting
     if (FILE_FIELDS.has(field) || (judge === 'files' && JUDGE_FIELDS.has(field))) continue;
     if (!same(base[field], draft.settings[field])) settings[field] = draft.settings[field];
   }
-  return { ...draft, settings: settings as KyrnSettings };
+  const models = { ...fresh.models } as Record<keyof KyrnSettings['models'], unknown>;
+  for (const part of Object.keys(fresh.models) as (keyof KyrnSettings['models'])[])
+    if (!same(base.models[part], draft.settings.models[part])) models[part] = draft.settings.models[part];
+  return { ...draft, settings: { ...(settings as KyrnSettings), models: models as KyrnSettings['models'] } };
 }
 
 /** Hand-written models.json entries that were there when the settings were read, and are removed in the draft. */

@@ -7,6 +7,12 @@
 - `mu judge model`: other decision models from Hugging Face, next to mude 1.0. `mu judge model add <link or owner/name>[@revision]` looks the model up on Hugging Face and pins the commit and every file (sha256 for files in LFS, the git hash for the others). It then downloads the model with progress and checks every file, resuming after a stop like `mu judge mude install`. It sets the model up in mude's Python environment, starts its server on 127.0.0.1 and makes it the judge, with the judges from before behind it unless `--local-only`. `list`, `use <name>` (`use mude` switches back), `start`, `stop`, `status`, `disable` and `remove` manage them, and `--json` gives one JSON object per line, as for `mu judge mude`. A model must be packaged like mude 1.0's MLX edition, with its own `d3_server_mac.py`; a repository without one is refused before anything is downloaded. One decision model runs at a time: switching stops the other's server, and mu starts the one that is the judge before a session, as it does mude.
 - `mu judge mude uninstall` keeps the Python environment when models added with `mu judge model` still use it.
 
+### Fixed
+
+- A session in RPC mode (each conversation of the desktop app) now checks `get_available_models` and `set_model` against the credential store, so a sign-in or sign-out made by another process counts at once: `mu auth logout`, or `/logout` in another terminal. Before, a signed-out subscription's models stayed listed until the session restarted.
+- `/logout` moves the session off the signed-out provider's model, to the default model (else a provider's default, else the first model available), and says so: "Logged out of ChatGPT. Switched to openai/gpt-5.5." Before, the next prompt failed with "No API key". With no model left, it says to use `/login`.
+- `mu auth logout google-antigravity` also drops the list of models the account gave from `models-store.json`, so the next sign-in starts from its own.
+
 ## [0.2.2] - 2026-10-24
 
 **0.2.2 makes `mu judge mude install` cope with a full disk, a stop at any step and two installs at once.**

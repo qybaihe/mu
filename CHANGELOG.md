@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Fixed
+
+- **Signing out of a subscription takes its models out of the model pickers at once.** After you signed out of ChatGPT, Grok or a Google account in Settings, the default model's and the board's pickers, the home page and open conversations kept listing that account's models until the app restarted. Now they drop them as soon as the sign-out finishes. If the default model or an open conversation was on one of them, it switches to another model you've set up and says so. `/logout` in the terminal does the same for the current session.
+
 ## [0.2.2] - 2026-10-24
 
 **0.2.2 makes the mude 1.0 install cope with a full disk, a stop at any step and two installs at once, and its English reads naturally.** The desktop app carries mu-agent 0.2.2.
