@@ -3,8 +3,6 @@ title: Permissions and safety
 summary: The three permission modes, what the judge may approve for you, your hard constraints, risky commands and outside content.
 ---
 
-The **permission mode** sets how much mu may do without asking. It shows in the status line and in the app's send box, and `/permissions` switches it at any time.
-
 ## The three modes {#modes}
 
 | Mode | Runs without asking | Asks you |
@@ -56,4 +54,4 @@ Before the first change of every turn that edits files, mu snapshots the project
 - `/rewind` shows what would change, then takes the files, the conversation or both back. Files you edited yourself since are listed separately and asked about.
 - `/rewind undo` takes the last rewind back.
 
-Checkpoints are skipped for a session started in your home folder, and for very large projects (more than 5,000 files or 200 MB to take in), with a note. See also [Goal mode and finishing](@docs/goal#rewind).
+Checkpoints are skipped for a session started in your home folder, and for very large projects (more than 5,000 files or 200 MB to take in), with a note.

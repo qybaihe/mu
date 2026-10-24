@@ -15,15 +15,11 @@ summary: mu 啟動不了、連不上模型，或者判定器好像什麼都沒�
 
 **Windows：對話裡說缺少 Git for Windows。** mu 在 Windows 上用 POSIX shell 執行指令。裝上 [Git for Windows](https://git-scm.com/download/win)，再開一個新對話。
 
-**裝在 `C:\Program Files\mu` 裡的應用程式啟動不了 mu。** 已在 0.1.5 修正：把最新版本裝在舊版本上面即可；你的資料會保留。
-
-**`mu install`、`mu list` 或 `mu config` 反而開了一個工作階段。** 已在 mu-agent 0.1.8 和桌面版 0.1.7 修正，更新到最新版本即可。
-
 ## 模型和網路 {#models}
 
 **沒有設定模型。** 執行 `mu setup`，或者用桌面版的新手引導：貼上一組 API 金鑰，或者用訂閱登入。
 
-**桌面版裡出現「User location is not supported」或請求逾時，終端機裡卻正常。** 模型的服務拒絕了你所在網路的地區，或者桌面版沒看到你的網路代理。從 0.1.5 起，沒有設定 `HTTPS_PROXY` 時，桌面版會跟隨系統代理；檢查代理是否開啟，或者為 mu 設定 `HTTPS_PROXY`。
+**桌面版裡出現「User location is not supported」或請求逾時，終端機裡卻正常。** 模型的服務拒絕了你所在網路的地區，或者桌面版沒看到你的網路代理。沒有設定 `HTTPS_PROXY` 時，桌面版會跟隨系統代理；檢查代理是否開啟，或者為 mu 設定 `HTTPS_PROXY`。
 
 ## 判定器 {#judge}
 
@@ -40,10 +36,6 @@ summary: mu 啟動不了、連不上模型，或者判定器好像什麼都沒�
 **mude 1.0 沒有回答。** `mu judge mude status` 會顯示它的服務是否在執行，`mu judge mude start` 會啟動它；`mu doctor` 會檢查服務和它的金鑰。在它能回答之前，由排在它後面的判定器回答；如果用了 `--local-only`，每個決策按備援規則處理。
 
 **mude 1.0 安裝中途停了。** 再執行一次 `mu judge mude install`，或在桌面版點**繼續安裝**：會從已經下載的部分接著裝。
-
-## 終端機 {#terminal}
-
-**子代理啟動時，終端機介面崩潰並回報「Rendered line … exceeds terminal width」。** 已在 mu-agent 0.1.8 和桌面版 0.1.7 修正，更新到最新版本即可。
 
 ## 從頭開始 {#reset}
 

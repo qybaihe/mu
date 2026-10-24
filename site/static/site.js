@@ -105,7 +105,7 @@
     });
   });
 
-  // ---- Hero: split the headline into characters, type the kicker and the command ----
+  // ---- Hero: split the headline into characters, type the command ----
   var h1 = document.querySelector('[data-split]');
   if (h1 && motion) {
     var n = 0;
@@ -221,7 +221,6 @@
   var SEG_ORDER = ['start', 'fail', 'edit', 'done'];
   function Player(figure) {
     this.pre = figure.querySelector('.term-body');
-    this.caption = figure.querySelector('figcaption');
     this.steps = figure.querySelectorAll('.steps i');
     this.timer = null;
     this.seg = null;
@@ -257,10 +256,6 @@
     }
     this.timer = setTimeout(next, 450);
   };
-  Player.prototype.setCaption = function (text) {
-    if (this.caption && text) this.caption.textContent = text;
-  };
-
   // The spinner in "Working" turns, as it does in the terminal.
   if (motion && data) {
     var SPIN = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
@@ -292,7 +287,6 @@
     slot.appendChild(copy);
     if (chapter.getAttribute('data-seg') && data) {
       var player = new Player(copy);
-      player.setCaption(chapter.getAttribute('data-caption'));
       player.render(data.segments[chapter.getAttribute('data-seg')][1]);
       chapter._player = player;
     }
@@ -303,18 +297,12 @@
     var name = chapter.getAttribute('data-frame');
     Object.keys(frames).forEach(function (key) { frames[key].classList.toggle('is-active', key === name); });
     var seg = chapter.getAttribute('data-seg');
-    if (seg && stagePlayer) {
-      stagePlayer.setCaption(chapter.getAttribute('data-caption'));
-      stagePlayer.play(seg);
-    }
+    if (seg && stagePlayer) stagePlayer.play(seg);
   }
   if (chapters.length) {
     chapters[0].classList.add('is-current');
     if (frames[chapters[0].getAttribute('data-frame')]) frames[chapters[0].getAttribute('data-frame')].classList.add('is-active');
-    if (stagePlayer) {
-      stagePlayer.setCaption(chapters[0].getAttribute('data-caption'));
-      stagePlayer.render(data.segments.start[motion ? 0 : 1]);
-    }
+    if (stagePlayer) stagePlayer.render(data.segments.start[motion ? 0 : 1]);
   }
   var wide = window.matchMedia ? window.matchMedia('(min-width: 981px)') : { matches: true };
 

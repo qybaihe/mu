@@ -50,7 +50,6 @@
 .star-cta-box img { flex: none; width: 56px; height: 56px; border-radius: 14px; }
 .star-cta-text { flex: 1; min-width: 0; }
 .star-cta-text h2 { font-size: clamp(20px, 2.2vw, 24px); }
-.star-cta-text p { margin: 6px 0 0; font-size: 15px; color: var(--muted); }
 .star-cta-btn { flex: none; height: 46px; padding: 0 8px 0 18px; }
 .star-cta-btn .star-count { background: rgba(255, 255, 255, 0.55); color: var(--accent-on); }
 .foot-langs { display: flex; flex-wrap: wrap; gap: 4px 14px; }
@@ -151,17 +150,16 @@
 .release li b { color: var(--text); font-weight: 650; }
 .release li code { padding: 1px 6px; border-radius: 6px; background: var(--code); border: 1px solid var(--line); font-size: 0.86em; }
 .release li a { color: var(--text); text-underline-offset: 3px; }
-/* A release rendered from CHANGELOG.md: Added / Changed / Fixed, lists that nest, a note when it's in English. */
+/* A release rendered from CHANGELOG.md: Added / Changed / Fixed, lists that nest. */
 .release-body > :first-child { margin-top: 0; }
 .release-body h3.release-kind { margin: 26px 0 10px; font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
-.release-body h3.release-kind:first-child, .release-note + h3.release-kind { margin-top: 0; }
+.release-body h3.release-kind:first-child { margin-top: 0; }
 .release-body p { margin: 0 0 12px; color: var(--prose); }
 .release-body p code { padding: 1px 6px; border-radius: 6px; background: var(--code); border: 1px solid var(--line); font-size: 0.86em; overflow-wrap: anywhere; }
 .release-body p a { color: var(--text); text-underline-offset: 3px; }
 .release-body ul ul { margin-top: 8px; }
 .release-body li li + li { margin-top: 8px; }
 .release li strong { color: var(--text); font-weight: 650; }
-.release-note { margin: 0 0 16px; font-size: 13px; color: var(--muted); }
 .release-foot { padding: 28px 0 0; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
 .release-foot a { color: var(--text); text-underline-offset: 3px; }
 
