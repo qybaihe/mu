@@ -5,9 +5,9 @@ import { DEFAULT_THRESHOLDS, neutralAnswer, type Thresholds } from "./policy.ts"
 import type { Answer, AnswersFor, Capability, JudgeUsage, JudgeWarning, Question, Questions } from "./types.ts";
 
 /**
- * What a judge is good at. Profiles are per model and measured, not assumed:
- * the base Laya checkpoint classifies a single text well but answers "yes" to
- * nearly every relational question and cannot use an ordinal rubric
+ * What a judge is good at. Profiles are per model and measured, not assumed: a
+ * small base classifier can read a single text well and still answer "yes" to
+ * nearly every relational question, or fail to use an ordinal rubric
  * (kyrn/docs/03-local-judge.md). Over-confidence is the one failure a cascade
  * cannot see in the probabilities, so it has to be declared here.
  */

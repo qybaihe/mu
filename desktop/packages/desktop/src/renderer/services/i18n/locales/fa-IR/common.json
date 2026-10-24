@@ -1273,7 +1273,8 @@
     "eventLine": {
       "judgeNotice": {
         "freeJev": "کلید Jev تنظیم نشده است: Jev رایگان در OpenCode Zen پاسخ می‌دهد",
-        "freeJevUnavailable": "Jev رایگان دیگر پاسخ نمی‌دهد: تا تنظیم کلید Jev، قواعد ثابت تصمیم می‌گیرند"
+        "freeJevUnavailable": "Jev رایگان دیگر پاسخ نمی‌دهد: تا تنظیم کلید Jev، قواعد ثابت تصمیم می‌گیرند",
+        "layaRemoved": "Laya دیگر به‌صورت داخلی در mu نیست: داور اکنون {{judge}} است"
       },
       "detail": "جزئیات: {{detail}}",
       "progress": {

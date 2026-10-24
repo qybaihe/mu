@@ -1273,7 +1273,8 @@
     "eventLine": {
       "judgeNotice": {
         "freeJev": "Kein Jev-Schlüssel gesetzt: Der kostenlose Jev auf OpenCode Zen antwortet",
-        "freeJevUnavailable": "Der kostenlose Jev antwortet nicht mehr: Bis ein Jev-Schlüssel gesetzt ist, entscheiden feste Regeln"
+        "freeJevUnavailable": "Der kostenlose Jev antwortet nicht mehr: Bis ein Jev-Schlüssel gesetzt ist, entscheiden feste Regeln",
+        "layaRemoved": "Laya ist nicht mehr in mu enthalten: Der Judge ist jetzt {{judge}}"
       },
       "detail": "Details: {{detail}}",
       "progress": {

@@ -56,6 +56,10 @@ export type MudeStatus = {
   log: string;
 };
 
+/** mude can run here and is downloaded with its Python environment set up: it can be the judge. */
+export const isMudeInstalled = (status: MudeStatus | undefined): boolean =>
+  Boolean(status?.supported && status.installed && status.pythonReady);
+
 /** The stages of a command, each with a sentence of its own. */
 export type MudeStep = 'download' | 'python' | 'start' | 'enable' | 'disable' | 'stop' | 'uninstall';
 

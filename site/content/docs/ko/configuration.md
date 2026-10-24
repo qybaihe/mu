@@ -19,7 +19,7 @@ mu는 pi의 설정(모델, 로그인, 환경설정)과 자체 설정 `~/.mu/agen
   },
   "routes": {
     "browser.step": ["jev"],
-    "memory.capture": ["laya", "jev"]
+    "memory.capture": ["mude", "jev"]
   },
   "features": {
     "admission": { "testLog": "rules" },
@@ -57,11 +57,10 @@ mu가 이해하지 못하는 부분은 mu를 멈추지 않고 기본값으로 �
 
 | 변수 | 효과 |
 | --- | --- |
-| `MU_JUDGE` | 이번 실행의 판정기, 쉼표로 구분: `laya`, `laya,jev`, `jev-opencode-free`, `classifier:<provider>/<model>`, `llm:<provider>/<model>`. `off`는 커널을 꺼요. |
+| `MU_JUDGE` | 이번 실행의 판정기, 쉼표로 구분: `jev`, `mude,jev`, `jev-opencode-free`, `classifier:<provider>/<model>`, `llm:<provider>/<model>`. `off`는 커널을 꺼요. |
 | `MU_JUDGE_MODE` | 이번 실행의 기본 모드: `off`, `shadow`, `active` |
 | `MU_WRITER` | 글쓰기 모델의 `provider/model` |
 | `MU_PERMISSIONS` | 이번 실행의 권한 모드: `full`, `judge`, `ask` |
-| `MU_LOCAL_JUDGE_URL` | `mu judge start`가 띄우는 서버가 아닌 다른 로컬 판정기 서버의 주소 |
 
 호스팅 판정기의 키(각각 자기 서비스로만 보내져요): `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY`와 `CLOUDFLARE_ACCOUNT_ID`, `MU_JUDGE_CLM_API_KEY`, `MU_JUDGE_OPENAI_KEY`.
 

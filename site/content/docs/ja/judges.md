@@ -8,7 +8,7 @@ summary: 誰が判定ポイントに答えるか、判定器の選び方、つ�
 `~/.mu/agent/mu.json` の `tiers` は、判定器を順に並べたものです。後ろの判定器には、前の判定器が確信を持てなかった問いだけが渡るので、安いローカルの判定器を先に置き、残りをクラウドの判定器に拾わせることができます：
 
 ```json
-{ "tiers": ["laya", "jev"] }
+{ "tiers": ["mude", "jev"] }
 ```
 
 `routes` は、一つの判定ポイントに専用の判定器を割り当てます：
@@ -17,7 +17,7 @@ summary: 誰が判定ポイントに答えるか、判定器の選び方、つ�
 { "routes": { "browser.step": ["jev"], "memory.capture": ["llm:anthropic/claude-haiku-4-5"] } }
 ```
 
-セッションの中では、`/mu judge <judges>` と `/mu route <point> <judges|default>` で同じことができます。`MU_JUDGE=laya,jev mu` は 1 回の実行だけ判定器を設定します。`/status` で、どの判定器が何に答えるかがわかります。アプリの「判定器」ページでも同じ設定ができます。
+セッションの中では、`/mu judge <judges>` と `/mu route <point> <judges|default>` で同じことができます。`MU_JUDGE=mude,jev mu` は 1 回の実行だけ判定器を設定します。`/status` で、どの判定器が何に答えるかがわかります。アプリの「判定器」ページでも同じ設定ができます。
 
 時間内に答える判定器がなければ、各判定ポイントは判定がないときと同じように動き（たいていは何も変わりません）、台帳にその理由が残ります。
 
@@ -75,23 +75,15 @@ Jev は TypeSafe による判定モデルで、この種の問いのために作
 
 OpenAI の料金は、キャッシュされていない入力 100 万トークンあたり 0.10 ドルで、出力は無料です。mu の問いではまだ測っていません。
 
-Azure のリソースや中継サービス経由で使うときは、`baseUrl` と専用のキーを指定します。mu の `openai` プロバイダーのキーは `api.openai.com` にしか送られません。
+同じ Decisions エンドポイントを提供する中継サービスやプロキシ経由で使うときは、`baseUrl` と専用のキーを指定します。mu の `openai` プロバイダーのキーは `api.openai.com` にしか送られません。
 
 ```json
-{ "judges": { "azure": { "type": "openai", "baseUrl": "https://example.openai.azure.com/openai/v1", "apiKeyEnv": "MU_JUDGE_AZURE_KEY" } } }
+{ "judges": { "relay": { "type": "openai", "baseUrl": "https://relay.example.com/v1", "apiKeyEnv": "MU_JUDGE_RELAY_KEY" } } }
 ```
 
-## Laya（ローカル） {#laya}
+## 設定にまだ Laya がある場合 {#laya}
 
-322M パラメータの判定器で、ローカルで動き、ネットワークには一切触れません。
-
-```bash
-mu judge setup     # モデルをダウンロードする前に確認する
-mu judge start     # 起動する
-mu judge status
-```
-
-Laya は単純な述語（このテキストはエラーを説明しているか？）では信頼できますが、関係を問う質問や依頼そのものについての質問には弱めです。mu はこのことを把握していて、Laya がうまく答えられない問いは送らないので、`["laya", "jev"]` のようなチェーンでは、そうした問いは直接次の判定器に渡ります。判定モードの承認は、Laya には任せません。Laya に判定ポイントを任せる前に、シャドーモードで今の判定器と並べて動かし、台帳を読んでください。
+Laya は、mu 0.2.4 まで組み込まれていたサードパーティのローカル判定器で、いまは組み込まれていません。`mu.json` が `tiers` や `routes`、`local` タイプの判定器としてまだ Laya を指していても、そのまま動きます。この Mac で mude 1.0 がセットアップ済みなら mude 1.0 が代わりに入り、そうでなければリストに残った判定器が答え、何も残らなければ Jev が答えます。mu は `mu.json` を一度だけ直し（変えるのはその項目だけで、元のファイルは `~/.mu/backups` に残します）、どの判定器に切り替えたかを知らせます。`MU_JUDGE=laya` は無視されます。手元で別の意思決定モデルを使うには、[Hugging Face から追加](@docs/judges#models)してください。
 
 ## 分類モデルと LLM {#other-judges}
 
@@ -120,7 +112,6 @@ Laya は単純な述語（このテキストはエラーを説明しているか
 | `http` | `{ state, questions }` を受け取り `{ answers }` を返す任意のエンドポイント |
 | `llm` | pi のレジストリにあるチャットモデル |
 | `classifier` | pi のカタログにある分類モデル |
-| `local` | Laya 互換のローカルサーバー |
 | `clm` | `clm-serve` |
 | `openai` | `baseUrl` の OpenAI Decisions API（既定は OpenAI 自身） |
 

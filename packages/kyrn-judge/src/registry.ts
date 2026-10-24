@@ -1,13 +1,12 @@
 import { CascadeJudge, type CascadeTier } from "./cascade.ts";
-import { BUILT_IN_JUDGES, type JudgeConfig, type KyrnConfig } from "./config.ts";
+import { BUILT_IN_JUDGES, type JudgeConfig, type KyrnConfig, LAYA } from "./config.ts";
 import { JudgeError } from "./errors.ts";
 import { Judge, type JudgeLike } from "./judge.ts";
-import { muEnv } from "./naming.ts";
 import { type ClassifierCall, ClassifierJudgeProvider } from "./providers/classifier.ts";
 import { FreeJevFallback, type FreeJevOutcome } from "./providers/free-jev.ts";
 import { type ApiKeyResolver, GatewayJudgeProvider } from "./providers/gateway.ts";
+import { HttpJudgeProvider } from "./providers/http-judge.ts";
 import { type LlmCompletion, LlmJudgeProvider } from "./providers/llm.ts";
-import { LocalJudgeProvider } from "./providers/local.ts";
 import { MockJudgeProvider } from "./providers/mock.ts";
 import { isOpenAIAddress, OPENAI_JUDGE_KEY, OpenAIDecisionsJudgeProvider } from "./providers/openai-decisions.ts";
 import { CLM_DEFAULT_MODEL, clmEndpoint, TypeSafeJudgeProvider } from "./providers/typesafe.ts";
@@ -39,7 +38,6 @@ const DEFAULT_TIMEOUT_MS: Readonly<Record<JudgeConfig["type"], number>> = {
 	// A CLM server embeds every question together with the state: a batch of long ones takes seconds on a small GPU.
 	clm: 8000,
 	gateway: 4000,
-	local: 4000,
 	http: 8000,
 	llm: 30_000,
 	// Jev and its kin on a service of the host's catalog: the same latency as Jev's own routes.
@@ -84,14 +82,10 @@ function createProvider(name: string, judge: JudgeConfig, host: JudgeHost): Judg
 	switch (judge.type) {
 		case "mock":
 			return new MockJudgeProvider();
-		case "local":
-			return new LocalJudgeProvider({
-				baseUrl: judge.baseUrl ?? muEnv("LOCAL_JUDGE_URL", host.env ?? {}),
-				fetch: host.fetch,
-			});
 		case "http": {
+			if (!judge.baseUrl) throw new TypeError(`Judge "${name}" needs a baseUrl (the address of its server)`);
 			const apiKeyEnv = judge.apiKeyEnv;
-			return new LocalJudgeProvider({
+			return new HttpJudgeProvider({
 				id: `http:${name}`,
 				baseUrl: judge.baseUrl,
 				path: judge.path,
@@ -143,7 +137,7 @@ function createProvider(name: string, judge: JudgeConfig, host: JudgeHost): Judg
 		}
 		case "openai": {
 			// The judge's own key (MU_JUDGE_OPENAI_KEY) goes to the judge's address. The key of mu's `openai` model
-			// provider goes to OpenAI's own address only, never to an Azure resource or a relay.
+			// provider goes to OpenAI's own address only, never to a relay or proxy.
 			const keyName = judge.apiKeyEnv ?? OPENAI_JUDGE_KEY;
 			const atOpenAI = isOpenAIAddress(judge.baseUrl);
 			if (KEYS_NOT_FOR_OPENAI.has(keyName)) {
@@ -218,7 +212,11 @@ export function buildJudge(config: KyrnConfig, host: JudgeHost = {}): BuiltJudge
 	for (const name of config.tiers) {
 		const judgeConfig = resolveJudgeConfig(name, config);
 		if (!judgeConfig) {
-			problems.push(`unknown judge "${name}"`);
+			problems.push(
+				name === LAYA
+					? `"laya" is no longer built into mu: add a decision model from Hugging Face with mu judge model add <link>`
+					: `unknown judge "${name}"`,
+			);
 			continue;
 		}
 		try {

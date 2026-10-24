@@ -21,8 +21,8 @@ export const OPENAI_DECISIONS_DEFAULT_MODEL = "gpt-6-luna";
 export const OPENAI_JUDGE_KEY = "MU_JUDGE_OPENAI_KEY";
 
 /**
- * The Decisions endpoint at an address written as `https://host`, `https://host/v1` (OpenAI's, an Azure resource's
- * `…/openai/v1`, a relay's) or as the endpoint itself.
+ * The Decisions endpoint at an address written as `https://host`, `https://host/v1` (OpenAI's, or a relay's or
+ * proxy's that serves the same endpoint) or as the endpoint itself.
  */
 export function decisionsEndpoint(baseUrl: string | undefined): string {
 	const url = (baseUrl || OPENAI_DECISIONS_BASE_URL).replace(/\/+$/, "");
@@ -46,7 +46,7 @@ export interface OpenAIDecisionsJudgeProviderOptions {
 	/** Where the key is read from, named when it is missing. */
 	keyName?: string;
 	model?: string;
-	/** OpenAI's API unless set: an Azure resource or a relay that serves the same endpoint. */
+	/** OpenAI's API unless set: a relay or proxy that serves the same Decisions endpoint. */
 	baseUrl?: string;
 	fetch?: typeof fetch;
 }

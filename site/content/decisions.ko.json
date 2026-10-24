@@ -31,7 +31,7 @@
     "judges_h2": "판정기는 설치 전체로도, 판정 지점마다도 고를 수 있어요",
     "judges": [
       { "h3": "Jev, 클라우드", "p": "키가 없으면 OpenCode Zen을 통해 무료로 답해요. 직접 가진 키로는 TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode, Cloudflare를 쓸 수 있어요.", "code": "mu setup" },
-      { "h3": "Laya, 여러분의 컴퓨터에서", "p": "322M 파라미터, 네트워크 없음. 단순한 술어에는 믿을 만해요. 믿고 맡기기 전에 섀도 모드로 지금 쓰는 판정기와 나란히 돌려 보세요.", "code": "mu judge setup" },
+      { "h3": "mude 1.0, 여러분의 Mac에서", "p": "코딩에 최적화된 mu의 자체 의사결정 모델로, Apple 실리콘 Mac에서 돌아가요. 약 0.1초 만에 답하고, 읽은 내용은 Mac 밖으로 나가지 않아요.", "code": "mu judge mude install" },
       { "h3": "분류 모델", "p": "pi 모델 카탈로그의 어떤 분류 모델이든(예: Cloudflare의 Clef) 이미 가진 로그인으로 쓸 수 있어요.", "code": "classifier:<provider>/<model>" },
       { "h3": "어떤 LLM이든", "p": "이미 쓰는 모델에게 JSON으로 답하게 해요. 더 느리고, 판정마다 토큰이 들어요.", "code": "llm:<provider>/<model>" }
     ],

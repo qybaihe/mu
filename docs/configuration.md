@@ -16,7 +16,7 @@ mu reads only your own `mu.json`. A project can't change the judge, its endpoint
   },
   "routes": {
     "browser.step": ["jev"],
-    "memory.capture": ["laya", "jev"]
+    "memory.capture": ["mude", "jev"]
   },
   "judges": {
     "my-relay": {
@@ -37,7 +37,7 @@ mu reads only your own `mu.json`. A project can't change the judge, its endpoint
 
 | Key | Meaning | Default |
 | --- | --- | --- |
-| `tiers` | The judges that answer, in order. A later judge only sees what the earlier ones left uncertain: `["laya", "jev"]` asks the local judge first. | `["jev"]` |
+| `tiers` | The judges that answer, in order. A later judge only sees what the earlier ones left uncertain: `["mude", "jev"]` asks mude 1.0, on your Mac, first. | `["jev"]` |
 | `modes` | `default`, plus one entry per decision point: `active` (verdicts take effect), `shadow` (asked and logged, nothing changes) or `off` (not asked). | `{ "default": "active" }` |
 | `routes` | Gives a decision point its own judges, in place of `tiers`. | none |
 | `judges` | Your own named judges, added to the built-in ones. See [Judges](judges.md#your-own-judge). | none |
@@ -62,11 +62,10 @@ Judges and modes:
 
 | Variable | Effect |
 | --- | --- |
-| `MU_JUDGE` | Judges for this run, comma-separated: `laya`, `laya,jev`, `jev-opencode-free`, `classifier:<provider>/<model>`, `llm:<provider>/<model>`. `off` turns the kernel off. |
+| `MU_JUDGE` | Judges for this run, comma-separated: `jev`, `mude,jev`, `jev-opencode-free`, `classifier:<provider>/<model>`, `llm:<provider>/<model>`. `off` turns the kernel off. |
 | `MU_JUDGE_MODE` | Default mode for this run: `off`, `shadow` or `active`. |
 | `MU_WRITER` | `provider/model-id` for the writer model. |
 | `MU_PERMISSIONS` | Permission mode for this run: `full`, `judge` or `ask`. |
-| `MU_LOCAL_JUDGE_URL` | Address of a local judge server, if it isn't the one `mu judge start` runs. |
 
 Keys for the hosted judges, each sent only to the service it belongs to (see [Judges](judges.md#hosted-jev)): `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`, `MU_JUDGE_CLM_API_KEY`, and `MU_JUDGE_OPENAI_KEY` ([OpenAI's decision model](judges.md#openais-decision-model)).
 

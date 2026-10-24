@@ -1273,7 +1273,8 @@
     "eventLine": {
       "judgeNotice": {
         "freeJev": "No Jev key is set, so mu is using Jev's free tier on OpenCode Zen",
-        "freeJevUnavailable": "Jev's free tier stopped answering, so mu's default rules decide until you add a Jev key"
+        "freeJevUnavailable": "Jev's free tier stopped answering, so mu's default rules decide until you add a Jev key",
+        "layaRemoved": "Laya is no longer built into mu, so the judge is now {{judge}}"
       },
       "detail": "Details: {{detail}}",
       "progress": {

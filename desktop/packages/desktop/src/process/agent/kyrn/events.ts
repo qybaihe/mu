@@ -74,7 +74,7 @@ export function mapEvent(event: JsonRecord): SessionUpdate[] {
     // The titles are an English fallback for other clients. The desktop names the row in the reader's language from
     // `rawOutput.preflight` and the verdict's turn type, so a stored conversation follows a later language switch. The
     // `jev:` id prefix is the one stored conversations have always had.
-    // The judge that was asked (`jev-latest`, `laya`, `laya>jev-latest`…) names the row until a verdict says who
+    // The judge that was asked (`jev-latest`, `mude`, `mude>jev-latest`…) names the row until a verdict says who
     // answered.
     if (frame.kind === 'preflight.pending')
       return [

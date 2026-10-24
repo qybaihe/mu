@@ -19,7 +19,7 @@ mu は、pi の設定（モデル、サインイン、環境設定）と、`~/.m
   },
   "routes": {
     "browser.step": ["jev"],
-    "memory.capture": ["laya", "jev"]
+    "memory.capture": ["mude", "jev"]
   },
   "features": {
     "admission": { "testLog": "rules" },
@@ -57,11 +57,10 @@ mu が理解できない部分は、mu を止めずにその既定値に戻り�
 
 | 変数 | 効果 |
 | --- | --- |
-| `MU_JUDGE` | この実行の判定器（カンマ区切り）：`laya`、`laya,jev`、`jev-opencode-free`、`classifier:<provider>/<model>`、`llm:<provider>/<model>`。`off` でカーネルをオフにする。 |
+| `MU_JUDGE` | この実行の判定器（カンマ区切り）：`jev`、`mude,jev`、`jev-opencode-free`、`classifier:<provider>/<model>`、`llm:<provider>/<model>`。`off` でカーネルをオフにする。 |
 | `MU_JUDGE_MODE` | この実行の既定のモード：`off`、`shadow`、`active` |
 | `MU_WRITER` | 書き手のモデルの `provider/model` |
 | `MU_PERMISSIONS` | この実行の権限モード：`full`、`judge`、`ask` |
-| `MU_LOCAL_JUDGE_URL` | `mu judge start` が起動するもの以外の、ローカル判定器サーバーのアドレス |
 
 ホストされた判定器のキー（それぞれ自分のサービスにだけ送られます）：`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` と `CLOUDFLARE_ACCOUNT_ID`、`MU_JUDGE_CLM_API_KEY`、`MU_JUDGE_OPENAI_KEY`。
 

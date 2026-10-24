@@ -4,10 +4,10 @@ A judge answers the bounded questions asked at mu's decision points: yes or no, 
 
 ## Which judge answers
 
-`tiers` in `~/.mu/agent/mu.json` (or `MU_JUDGE` for one run) lists the judges in order. Each later judge only sees the questions the earlier ones left uncertain, so a cheap local judge can go first and a hosted one can catch the rest:
+`tiers` in `~/.mu/agent/mu.json` (or `MU_JUDGE` for one run) lists the judges in order. Each later judge only sees the questions the earlier ones left uncertain, so a fast local judge can go first and a hosted one can catch the rest:
 
 ```json
-{ "tiers": ["laya", "jev"] }
+{ "tiers": ["mude", "jev"] }
 ```
 
 `routes` gives a decision point its own judges:
@@ -45,6 +45,10 @@ mu judge model remove name
 
 One decision model runs at a time: switching stops the other one's server. In the desktop app, Settings → Judges has the same, next to mude 1.0.
 
+### Laya
+
+Earlier versions of mu included Laya, a third-party local judge. mu no longer does. A `mu.json` that still names `laya` (in `tiers` or a route), or a judge of type `local`, is read without it: mude 1.0 takes its place when it's set up on this Mac, and otherwise the judges that remain answer, or Jev when none remain. mu fixes `mu.json` once, at the start of the next session in the terminal or the app, keeps a copy of the old file in `~/.mu/backups`, and tells you. `MU_JUDGE` naming `laya` is skipped. For another decision model, use mude 1.0 or add one from Hugging Face as above.
+
 ## Hosted Jev
 
 Jev is a judgment model from TypeSafe, built for this kind of question. The built-in `jev` judge reaches it through the first service whose key is set:
@@ -74,23 +78,11 @@ The built-in `openai` judge asks `gpt-6-luna` through OpenAI's [Decisions API](h
 
 OpenAI charges $0.10 per million uncached input tokens, and nothing for output. Not yet measured on mu's questions.
 
-To reach it through an Azure resource or a relay, give it a `baseUrl` and a key of its own. The key of mu's `openai` provider only ever goes to `api.openai.com`:
+To reach it through a relay or proxy that serves the same Decisions endpoint, give it a `baseUrl` and a key of its own. The key of mu's `openai` provider only ever goes to `api.openai.com`:
 
 ```json
-{ "judges": { "azure": { "type": "openai", "baseUrl": "https://example.openai.azure.com/openai/v1", "apiKeyEnv": "MU_JUDGE_AZURE_KEY" } } }
+{ "judges": { "relay": { "type": "openai", "baseUrl": "https://relay.example.com/v1", "apiKeyEnv": "MU_JUDGE_RELAY_KEY" } } }
 ```
-
-## Laya, the local judge
-
-Laya is a 322M-parameter judge that runs on your machine and never touches the network.
-
-```bash
-mu judge setup     # asks before downloading the model
-mu judge start     # starts the sidecar
-mu judge status
-```
-
-The desktop app also asks first, then sets it up in one step. Laya is reliable on simple predicates (does this text describe an error?) and weak on questions about relationships or about the request itself. mu knows this and never sends it a question it can't answer well, so in a cascade such as `["laya", "jev"]` those questions go straight to the next judge. Run it in shadow mode alongside your current judge and read the ledger before you give it a decision point of its own. The measurements are in [kyrn/docs/03-local-judge.md](../kyrn/docs/03-local-judge.md) (in Chinese).
 
 ## Classifier models and LLMs
 
@@ -119,7 +111,6 @@ Add it under `judges` in `mu.json`, with a name and a type:
 | `http` | Any endpoint that takes `{ state, questions }` and returns `{ answers }` |
 | `llm` | A chat model from pi's registry |
 | `classifier` | A classifier from pi's catalog |
-| `local` | A Laya-compatible sidecar |
 | `clm` | A `clm-serve` |
 | `openai` | OpenAI's Decisions API, at `baseUrl` (OpenAI's own by default) |
 

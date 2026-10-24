@@ -28,7 +28,7 @@
 
 - **mu**：命令列。pi 的全部能力，加上判定核心。
 - **mu 桌面版**：內建 mu 和執行環境的桌面應用程式。下載，接上一個模型，開始。
-- **判定器**：預設的判定模型是 Jev，由 TypeSafe 託管。是非題、選擇題、評分題，每個答案帶機率，每一次判定都記進判定帳本。任何判定模型都可以取代它：在你的 Mac 上執行的 mu 自有模型 [mude 1.0](#mude-10針對程式設計場景最佳化的決策模型)、本機的 Laya（審批除外）、你自己的 System One 服務，或任何一個大模型。
+- **判定器**：預設的判定模型是 Jev，由 TypeSafe 託管。是非題、選擇題、評分題，每個答案帶機率，每一次判定都記進判定帳本。任何判定模型都可以取代它：在你的 Mac 上執行的 mu 自有模型 [mude 1.0](#mude-10針對程式設計場景最佳化的決策模型)、Hugging Face 上的其他決策模型、你自己的 System One 服務，或任何一個大模型。
 
 **目錄：**[快速開始](#快速開始) · [一輪是怎麼走的](#一輪是怎麼走的) · [判定點](#判定點) · [判定器](#判定器) · [實測](#實測) · [蜂群](#蜂群) · [人話看板](#人話看板) · [桌面版](#桌面版) · [命令列](#命令列) · [文件](#文件) · [參與貢獻](#參與貢獻)
 
@@ -64,7 +64,7 @@ mu                  # 在目前目錄開一個工作階段
 
 ## 判定點
 
-每個判定點可以是 `active`（生效，預設）、`shadow`（照常提問並記錄，但不改變任何行為，用來在開啟之前比較判定器）或 `off`（關閉），也可以指定自己的判定器：`jev`、`laya`（本機）、`classifier:<provider>/<model>`、`llm:<provider>/<model>`，或 `laya,jev` 這樣的串接。
+每個判定點可以是 `active`（生效，預設）、`shadow`（照常提問並記錄，但不改變任何行為，用來在開啟之前比較判定器）或 `off`（關閉），也可以指定自己的判定器：`jev`、`mude`（本機）、`classifier:<provider>/<model>`、`llm:<provider>/<model>`，或 `mude,jev` 這樣的串接。
 
 **輸入**
 
@@ -138,7 +138,7 @@ mu                  # 在目前目錄開一個工作階段
 - **Jev**：TypeSafe 託管的判定模型，回答有邊界的問題，答案帶機率。可以經 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI，或任何支援同一協定的服務呼叫，每個服務有自己的金鑰（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`）：在桌面版的「判定器」頁選一個，預設用第一個設定了金鑰的。一把金鑰都沒有時，預設由 OpenCode Zen 上限時免費的 Jev 1.13 回答：判定要讀的內容會送到 OpenCode，它不拿來訓練模型，mu 每天提示一次。設定金鑰（`mu setup`，或「判定器」頁）後，下一個問題起就用你的金鑰。在作者自己的工作階段裡實測：HTTP/2 上一個熱連線的問題約 0.3 秒；16 塊工具輸出併成一個請求判完 0.44 秒，狀態只計費一次。
 - **mude 1.0**（本機，Apple 晶片的 Mac）：mu 自己的決策模型，針對程式設計場景最佳化，見[下文](#mude-10針對程式設計場景最佳化的決策模型)。
 - **OpenAI 的決策模型** `gpt-6-luna`。透過 OpenAI 的 [Decisions API](https://developers.openai.com/api/docs/guides/decisions) 回答，使用 OpenAI 的 API 金鑰（`MU_JUDGE_OPENAI_KEY`，或 mu 已有的 OpenAI 金鑰）。用 `mu setup --judge openai` 或在設定 → 判定器裡選它。
-- **Laya**（本機）。一個 3.22 億參數的判定器，在你的機器上執行，不經過網路。在簡單述詞上可靠，在後設判斷上偏弱：先讓它以影子模式和你目前的判定器並行執行，看過判定帳本再把判定點交給它。
+- **Hugging Face 上的其他決策模型**（本機，Apple 晶片的 Mac）：`mu judge model add <連結>`（或桌面版設定的「判定器」頁）加入一個和 mude 1.0 同樣打包的模型，並讓它擔任判定器。mu 不再內建 Laya：`mu.json` 裡還寫著它的，mude 1.0 裝好了就由 mude 1.0 頂替，否則用剩下的判定器或 Jev，mu 會提示一次。
 - **pi 模型目錄裡的任何分類模型**，作為一個層級：`classifier:<provider>/<model>`。例如 Cloudflare 的 Clef（`clef`、`clef-flash`）、OpenRouter 和 Vercel AI Gateway 上的 System One 模型、llama.cpp 的分類模型。
 - **任何大模型**，作為一個層級：`llm:<provider>/<model>`。
 
@@ -301,7 +301,7 @@ mu doctor     # 檢查安裝、判定器和各項連線
 | 指令 | 做什麼 |
 | --- | --- |
 | `/status` | 判定器、各判定點的模式、沒放進上下文的內容、最近的判定 |
-| `/mu judge <judges>` | 由哪些判定器回答、按什麼順序：`laya`、`laya,jev`、`jev-opencode-free`、`openai`、`classifier:<provider>/<model>`、`llm:<provider>/<model>` |
+| `/mu judge <judges>` | 由哪些判定器回答、按什麼順序：`jev`、`mude,jev`、`jev-opencode-free`、`openai`、`classifier:<provider>/<model>`、`llm:<provider>/<model>` |
 | `/mu route <point> <judge>` | 讓某一個判定點用自己的判定器 |
 | `/mu mode <point> <off\|shadow\|active>` | 切換某一個判定點 |
 | `/frame` | 任務框架：目標、你的約束及其出處、驗收條件 |
@@ -318,11 +318,11 @@ mu doctor     # 檢查安裝、判定器和各項連線
 | `/import-chat` | 匯入 Claude Code、Codex 或 ZCode 的對話 |
 | `/doctor` | 檢查設定和連線 |
 
-pi 自己的指令（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export` 等）原樣保留，只有一處不同：`/login` 不提供 Claude 訂閱登入（Anthropic 不允許其他應用程式提供），請改用 Anthropic API 金鑰。`MU_JUDGE=laya,jev mu` 只為這一次執行更換判定器。
+pi 自己的指令（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export` 等）原樣保留，只有一處不同：`/login` 不提供 Claude 訂閱登入（Anthropic 不允許其他應用程式提供），請改用 Anthropic API 金鑰。`MU_JUDGE=mude,jev mu` 只為這一次執行更換判定器。
 
 ## 隱私
 
-金鑰只留在本機。mu 不會自己下載任何模型或執行環境；需要下載的東西都會先問你。判定器只看得到一個問題所需的欄位（沒設金鑰時，這些欄位送到 OpenCode Zen 上免費的 Jev；用 `mu setup --judge off`（不問判定器，mu 的功能照常按規則運作）、`MU_JUDGE=off` 或 Laya 就全部留在本機）；每一次判定都記錄在本機，你全都看得到。
+金鑰只留在本機。mu 不會自己下載任何模型或執行環境；需要下載的東西都會先問你。判定器只看得到一個問題所需的欄位（沒設金鑰時，這些欄位送到 OpenCode Zen 上免費的 Jev；用帶 `--local-only` 的 mude 1.0、`mu setup --judge off`（不問判定器，mu 的功能照常按規則運作）或 `MU_JUDGE=off` 就全部留在本機）；每一次判定都記錄在本機，你全都看得到。
 
 ## 文件
 

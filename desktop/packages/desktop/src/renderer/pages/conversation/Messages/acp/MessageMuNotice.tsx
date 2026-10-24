@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IMPORT_TOOL_NAMES, importToolOf } from '@/common/kyrn/importChats';
 import ImportToolMark from '@/renderer/components/brand/ImportToolMark';
+import { describeTier } from '@/renderer/components/kernel/kernelSummary';
 import { formatNumber } from '@/renderer/services/i18n/format';
-import { openExternalUrl } from '@/renderer/utils/platform';
+import { isMacOS, openExternalUrl } from '@/renderer/utils/platform';
 import {
   checkpointOffWords,
   FREE_JEV_UNAVAILABLE_KEYS,
@@ -29,7 +30,7 @@ function Mark({ notice }: { notice: MuNotice }) {
     return <PauseOne theme='outline' size='14' className='flex-none text-t-secondary' aria-hidden='true' />;
   if (notice.code === 'to_model')
     return <Remind theme='outline' size='14' className='flex-none text-t-secondary' aria-hidden='true' />;
-  if (notice.code === 'free_jev' || (!notice.code && notice.level === 'info'))
+  if (notice.code === 'free_jev' || notice.code === 'laya_removed' || (!notice.code && notice.level === 'info'))
     return <Info theme='outline' size='14' className='flex-none text-t-secondary' aria-hidden='true' />;
   return notice.level === 'error' ? (
     <Attention theme='outline' size='14' className='flex-none' style={{ color: 'var(--danger)' }} aria-hidden='true' />
@@ -105,6 +106,10 @@ function NoticeLine({ notice }: { notice: MuNotice }) {
     // A reason this build has no words for is said in mu's own.
     const key = notice.reason ? FREE_JEV_UNAVAILABLE_KEYS[notice.reason] : undefined;
     text = key ? t(key) : notice.title || t(MU_NOTICE_KEYS.free_jev_unavailable);
+  } else if (notice.code === 'laya_removed') {
+    // Another decision model comes from Hugging Face where the app adds one: on a Mac.
+    const key = isMacOS() ? MU_NOTICE_KEYS.laya_removed : 'mu.notices.layaRemovedNoModels';
+    text = t(key, { judge: describeTier(notice.judge || 'jev', {}).judge });
   } else text = notice.code ? t(MU_NOTICE_KEYS[notice.code]) : notice.title;
   const link = notice.code ? MU_NOTICE_LINKS[notice.code] : undefined;
   if (!text) return null;

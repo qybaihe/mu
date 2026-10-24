@@ -1181,8 +1181,8 @@
 				"fa-IR": "نیمه‌کاره ماند"
 			},
 			"summary": {
-				"zh": "一轮结束在「接下来我去跑测试」却什么也没做，或者你已经让它做了它还在问「要我改吗」：让它接着做。难以撤销、或要出这台电脑的一步（推送、发布、删除、付款）不催。每条消息最多催两次；无人值守的运行里「说了没做」最多催一次，它回应上一次催促时没调工具就不再催。本地判定器（Laya）不回答「说了没做」。",
-				"en": "When a run ends on \"next I'll run the tests\" without doing it, or asks permission for work you already asked for, sends the agent back to it. Never nudges a step that is hard to undo or reaches beyond this machine (push, publish, delete, pay). At most twice per message; in an unattended run, at most once for work it said it would do, and not after it answered a nudge without a tool call. The local judge (Laya) doesn't answer whether work was left undone."
+				"zh": "一轮结束在「接下来我去跑测试」却什么也没做，或者你已经让它做了它还在问「要我改吗」：让它接着做。难以撤销、或要出这台电脑的一步（推送、发布、删除、付款）不催。每条消息最多催两次；无人值守的运行里「说了没做」最多催一次，它回应上一次催促时没调工具就不再催。",
+				"en": "When a run ends on \"next I'll run the tests\" without doing it, or asks permission for work you already asked for, sends the agent back to it. Never nudges a step that is hard to undo or reaches beyond this machine (push, publish, delete, pay). At most twice per message; in an unattended run, at most once for work it said it would do, and not after it answered a nudge without a tool call."
 			}
 		},
 		{
@@ -3700,19 +3700,19 @@
 						"fa-IR": "تعداد تکه در هر درخواست"
 					},
 					"help": {
-						"zh": "托管判定器把多块放进一个请求，状态只计费一次；本地判定器始终一次一块。",
-						"en": "A hosted judge takes many chunks in one request, with the shared context billed once; the local judge takes one at a time.",
-						"zh-TW": "託管判定器把多塊放進一個請求，狀態只計費一次；本機判定器一律一次一塊。",
-						"ja-JP": "ホスト型の判定器は多くのチャンクを 1 回のリクエストで受け取り、状態の課金は 1 回だけです。ローカルの判定器は 1 つずつ処理します。",
-						"ko-KR": "호스팅 판정기는 여러 청크를 한 번의 요청으로 받으며 상태는 한 번만 과금됩니다. 로컬 판정기는 한 번에 하나씩 처리합니다.",
-						"de-DE": "Ein gehosteter Judge nimmt viele Abschnitte in einer Anfrage, der Zustand wird nur einmal berechnet; der lokale Judge nimmt einen nach dem anderen.",
-						"fr-FR": "Un juge hébergé reçoit de nombreux fragments en une seule requête, l’état n’étant facturé qu’une fois ; le juge local les traite un par un.",
-						"es-ES": "Un juez alojado recibe muchos fragmentos en una sola solicitud y el estado se factura una vez; el juez local los procesa de uno en uno.",
-						"pt-BR": "Um juiz hospedado recebe muitos blocos numa só solicitação, com o estado cobrado uma vez; o juiz local recebe um de cada vez.",
-						"ru-RU": "Облачный судья принимает много частей одним запросом, и состояние оплачивается один раз; локальный судья берёт по одной.",
-						"uk-UA": "Хмарний суддя приймає багато частин одним запитом, і стан оплачується один раз; локальний суддя бере по одній.",
-						"tr-TR": "Barındırılan bir hakem birçok parçayı tek istekte alır ve durum bir kez ücretlendirilir; yerel hakem her seferinde bir parça alır.",
-						"fa-IR": "داور میزبانی‌شده چندین تکه را در یک درخواست می‌گیرد و هزینهٔ وضعیت فقط یک بار حساب می‌شود؛ داور محلی هر بار یک تکه می‌گیرد."
+						"zh": "判定器把多块放进一个请求，状态只计费一次。",
+						"en": "The judge takes many chunks in one request, with the shared context billed once.",
+						"zh-TW": "判定器把多塊放進一個請求，狀態只計費一次。",
+						"ja-JP": "判定器は多くのチャンクを 1 回のリクエストで受け取り、状態の課金は 1 回だけです。",
+						"ko-KR": "판정기는 여러 청크를 한 번의 요청으로 받으며 상태는 한 번만 과금됩니다.",
+						"de-DE": "Der Judge nimmt viele Abschnitte in einer Anfrage, der Zustand wird nur einmal berechnet.",
+						"fr-FR": "Le juge reçoit de nombreux fragments en une seule requête, l’état n’étant facturé qu’une fois.",
+						"es-ES": "El juez recibe muchos fragmentos en una sola solicitud y el estado se factura una vez.",
+						"pt-BR": "O juiz recebe muitos blocos numa só solicitação, com o estado cobrado uma vez.",
+						"ru-RU": "Судья принимает много частей одним запросом, и состояние оплачивается один раз.",
+						"uk-UA": "Суддя приймає багато частин одним запитом, і стан оплачується один раз.",
+						"tr-TR": "Hakem birçok parçayı tek istekte alır ve durum bir kez ücretlendirilir.",
+						"fa-IR": "داور چندین تکه را در یک درخواست می‌گیرد و هزینهٔ وضعیت فقط یک بار حساب می‌شود."
 					}
 				},
 				{
@@ -7091,19 +7091,6 @@
 					"help": {
 						"zh": "默认不催：它回应上一次催促时一个工具也没调（比如「工作已经做完了」），就是用停下来作了答，不再说它没做完。什么也没说就停下的一轮照样会被催。",
 						"en": "Off by default: when the agent answered the last nudge without calling a tool (\"The work is already complete\"), it answered by stopping, and isn't told again that it said it would do more. A run that stops without a message is still sent back."
-					}
-				},
-				{
-					"key": "localPromised",
-					"kind": "boolean",
-					"default": false,
-					"label": {
-						"zh": "让本地判定器判断「说了没做」",
-						"en": "Let the local judge decide whether work was left undone"
-					},
-					"help": {
-						"zh": "默认不让：这一问交给判定器列表里的下一个；只有本地判定器（Laya）时就不因此催。基准测试里 Laya 两次把做完了的「已完成，已创建 …」当成还要接着做。",
-						"en": "Off by default: this question goes to the next judge in your list, and with the local judge (Laya) alone no such nudge is sent. In a benchmark run Laya twice read a finished \"Done. Created …\" as a promise of more work."
 					}
 				}
 			]

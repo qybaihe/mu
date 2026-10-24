@@ -8,6 +8,7 @@ import { mutate } from 'swr';
 import { kyrnBridge, unwrap } from '@/common/kyrn/bridge';
 import {
   DOWNLOAD_GB_BYTES,
+  isMudeInstalled,
   MUDE_CHANGES_SETTINGS,
   MUDE_DOWNLOAD_GB,
   MUDE_MEMORY_GB,
@@ -135,8 +136,7 @@ export const mudeRecommended = (state: MudeState | undefined): boolean =>
   Boolean(state?.available && state.status?.supported);
 
 /** mude is downloaded and its Python environment set up. */
-export const mudeInstalled = (status: MudeStatus | undefined): boolean =>
-  Boolean(status?.supported && status.installed && status.pythonReady);
+export const mudeInstalled = isMudeInstalled;
 
 /**
  * An install stopped part way, not one never started: some of the model is on disk (a partly downloaded file

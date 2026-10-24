@@ -5,7 +5,7 @@ import { Type } from "typebox";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import { CascadeJudge } from "../src/cascade.ts";
-import { BUILT_IN_JUDGES, parseConfig } from "../src/config.ts";
+import { parseConfig } from "../src/config.ts";
 import { DecisionEngine } from "../src/decision.ts";
 import { toolAdmission, toolAdmissionBatch } from "../src/decisions/tool-admission.ts";
 import { chunkLines, describeCall, printsFile } from "../src/extension/features/admission.ts";
@@ -144,28 +144,6 @@ describe("tool output admission", () => {
 		expect(calls[0].state).toMatchObject({ call: "run_tests: npm test" });
 	});
 
-	it("asks a local judge one chunk at a time, with the same result", async () => {
-		const provider = kindJudge();
-		const harness = await run("active", provider, { tiers: ["laya"] });
-		const text = toolResultText(harness);
-		expect(text).toContain("FAIL test/login.test.ts");
-		expect(text).toContain("of warning output omitted");
-		const calls = admissionCalls(provider);
-		expect(calls).toHaveLength(middleChunks);
-		for (const call of calls) expect(Object.keys(call.state as object)).toEqual(["call", "chunk"]);
-	});
-
-	it("with Laya first and Jev behind it, asks in batches: Laya is not trusted on screening, so Jev answers", async () => {
-		const provider = kindJudge();
-		const harness = await run("active", provider, { tiers: ["laya", "jev"] });
-		expect(toolResultText(harness)).toContain("of warning output omitted");
-		const calls = admissionCalls(provider);
-		expect(calls).toHaveLength(1);
-		expect(Object.keys(calls[0].questions)).toEqual(
-			Array.from({ length: middleChunks }, (_, index) => `k${index + 1}`),
-		);
-	});
-
 	it("past the wait, lets the output through whole and only records the verdict", async () => {
 		let release: () => void = () => {};
 		const held = new Promise<void>((resolve) => {
@@ -251,16 +229,17 @@ describe("tool output admission", () => {
 });
 
 describe("who judges admission", () => {
-	const laya = BUILT_IN_JUDGES.laya.profile;
+	/** A small classifier's profile: trusted to classify a text, not to screen tool output. */
+	const small = { capabilities: { relate: false, rate: false, meta: false, screen: false, intent: false } };
 	const call = "bash: make";
 	const chunks = chunkLines(output, 1200).slice(1, -1);
 
-	it("is never the local judge: the next tier answers, and with none behind it everything is kept", async () => {
-		const local = kindJudge();
+	it("is never a judge not trusted to screen: the next tier answers, and with none behind it everything is kept", async () => {
+		const classifier = kindJudge();
 		const hosted = kindJudge();
 		const engine = new DecisionEngine({
 			judge: new CascadeJudge([
-				{ judge: new Judge({ provider: local }), profile: laya },
+				{ judge: new Judge({ provider: classifier }), profile: small },
 				{ judge: new Judge({ provider: hosted }) },
 			]),
 			defaultMode: "active",
@@ -271,7 +250,7 @@ describe("who judges admission", () => {
 		expect(hosted.calls).toHaveLength(1);
 
 		const alone = new DecisionEngine({
-			judge: new CascadeJudge([{ judge: new Judge({ provider: local }), profile: laya }]),
+			judge: new CascadeJudge([{ judge: new Judge({ provider: classifier }), profile: small }]),
 			defaultMode: "active",
 		});
 		expect(await alone.decide(toolAdmission, { call, chunk: chunks[0] })).toMatchObject({
@@ -282,7 +261,7 @@ describe("who judges admission", () => {
 		const [kept] = await alone.decideMany(toolAdmissionBatch, [{ call, chunks }]);
 		expect(kept.source).toBe("fallback");
 		expect(kept.outcome.every((outcome) => !outcome.drop)).toBe(true);
-		expect(local.calls).toEqual([]);
+		expect(classifier.calls).toEqual([]);
 	});
 });
 

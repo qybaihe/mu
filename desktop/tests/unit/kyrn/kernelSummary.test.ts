@@ -59,8 +59,7 @@ describe('kernel summary', () => {
     });
   });
 
-  it('names Laya, named services and model judges by what a person would call them', () => {
-    expect(describeTier('laya', NO_KEYS)).toEqual({ judge: 'Laya', via: 'local', free: false });
+  it('names mude, named services and model judges by what a person would call them', () => {
     expect(describeTier('mude', NO_KEYS)).toEqual({ judge: 'mude 1.0', via: 'local', free: false });
     expect(describeTier('jev-direct', NO_KEYS)).toMatchObject({ judge: 'Jev', via: 'TypeSafe' });
     expect(describeTier('classifier:openrouter/acme/judge-1', NO_KEYS)).toMatchObject({ judge: 'acme/judge-1' });
@@ -71,7 +70,7 @@ describe('kernel summary', () => {
     expect(summarize(settings())).toMatchObject({ judge: 'Jev', fallbacks: 0, active: 2, shadow: 0, total: 3 });
     expect(summarize(settings({ decisionModes: { 'turn.drift': 'shadow' } }))).toMatchObject({ active: 1, shadow: 1 });
     expect(summarize(settings({ mode: 'off' }))).toMatchObject({ active: 0, shadow: 0, mode: 'off' });
-    expect(summarize(settings({ tiers: ['laya', 'jev'] }))).toMatchObject({ judge: 'Laya', fallbacks: 1 });
+    expect(summarize(settings({ tiers: ['mude', 'jev'] }))).toMatchObject({ judge: 'mude 1.0', fallbacks: 1 });
     expect(summarize(settings({ harness: { status: 'missing' } }))).toMatchObject({ active: 0, total: 0 });
   });
 

@@ -30,7 +30,6 @@ mu                     # 현재 디렉터리에서 대화형 세션 시작
 | `mu ledger [n] [--json]` | 최근 n개 세션에서 판정기가 내린 판정. `--json`은 모든 기록을 확률, 소요 시간과 함께 내보내요. |
 | `mu import --list` | Claude Code, Codex, ZCode 대화 찾기 |
 | `mu import <file>…` | 그 대화를 기록 전체와 함께 mu로 가져와 이어 가기. 나중에 다시 하면 새로 생긴 내용이 더해져요 |
-| `mu judge setup \| start \| stop \| status` | 로컬 판정기 Laya. `setup`은 모델을 내려받기 전에 물어요. |
 | `mu judge mude install \| enable \| disable \| start \| stop \| status \| uninstall` | Apple 실리콘 Mac에서 돌아가는 mu의 자체 의사결정 모델 [mude 1.0](@docs/judges#mude). 내려받기가 중간에 멈추면 `install`이 멈춘 곳부터 이어 가요. |
 | `mu judge model add \| list \| use \| start \| stop \| status \| disable \| remove` | Hugging Face의 [다른 의사결정 모델](@docs/judges#models)을 mude 1.0처럼 실행. `add`는 링크나 `owner/name`을 받고, 멈춘 내려받기를 이어 가요. |
 | `mu link` / `mu unlink` | `mu` 명령을 PATH(`~/.local/bin`)에 넣거나 빼기 |
@@ -42,7 +41,7 @@ mu                     # 현재 디렉터리에서 대화형 세션 시작
 | 명령어 | 하는 일 |
 | --- | --- |
 | `/status` | 판정기, 판정 지점별 모드, 컨텍스트에서 뺀 것, 최근 판정 |
-| `/mu judge <judges>` | 어떤 판정기가 어떤 순서로 답할지: `laya`, `laya,jev`, `jev-opencode-free`, `classifier:<provider>/<model>`, `llm:<provider>/<model>` |
+| `/mu judge <judges>` | 어떤 판정기가 어떤 순서로 답할지: `jev`, `mude,jev`, `jev-opencode-free`, `classifier:<provider>/<model>`, `llm:<provider>/<model>` |
 | `/mu route <point> <judges>` | 판정 지점 하나에 따로 판정기 지정하기 |
 | `/mu mode <point> <off\|shadow\|active>` | 이 세션에서 판정 지점 하나, 또는 `default`로 전부를 전환하기 |
 | `/frame` | 작업 프레임: 목표, 여러분의 제약과 그 출처, 인수 조건 |
@@ -70,7 +69,7 @@ pi의 자체 명령어는 그대로예요: `/model`, `/thinking`, `/login`, `/re
 
 | 변수 | 효과 |
 | --- | --- |
-| `MU_JUDGE=laya,jev mu` | 이번 실행에서만 쓸 판정기. `MU_JUDGE=off`는 커널을 꺼요. |
+| `MU_JUDGE=mude,jev mu` | 이번 실행에서만 쓸 판정기. `MU_JUDGE=off`는 커널을 꺼요. |
 | `MU_JUDGE_MODE=shadow mu` | 이번 실행에서 모든 판정 지점을 섀도로 |
 | `MU_PERMISSIONS=ask mu` | 이번 실행의 권한 모드: `full`, `judge`, `ask` |
 | `MU_LANG=zh-CN mu` | mu 자체 메시지를 중국어(`zh`)나 영어(그 밖의 값)로 |

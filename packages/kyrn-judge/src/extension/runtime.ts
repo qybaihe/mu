@@ -317,27 +317,6 @@ export class KyrnRuntime {
 	}
 
 	/**
-	 * True when the first judge answers concurrent calls concurrently (a hosted model). The local
-	 * sidecar answers one at a time, and there the work of a turn is best asked in order of importance.
-	 */
-	get judgeParallel(): boolean {
-		return resolveJudgeConfig(this.tiers[0] ?? "", this.config)?.type !== "local";
-	}
-
-	/**
-	 * Whether the judge that answers `specId`'s questions takes many of them in one request. That is the first of its
-	 * judges (its route, else the tiers) trusted on `capability`: the cascade passes over the others. With `laya,jev`,
-	 * Jev answers `screen` questions, which Laya is not trusted on, so they go in batches; only a local judge that
-	 * answers them itself, whose window holds one, is asked one at a time.
-	 */
-	answersInBatches(specId: string, capability: Capability): boolean {
-		for (const judge of this.judgesFor(specId)) {
-			if (isTrusted(judge.profile, capability)) return judge.type !== "local";
-		}
-		return this.judgeParallel;
-	}
-
-	/**
 	 * Whether any judge of `specId` (its route, else the tiers) is trusted on `capability`. When none is, the cascade
 	 * gives each such question a neutral answer without asking.
 	 */
@@ -349,7 +328,7 @@ export class KyrnRuntime {
 		return (this.routes.get(specId) ?? this.tiers).flatMap((name) => resolveJudgeConfig(name, this.config) ?? []);
 	}
 
-	/** Switch the decision model at runtime, e.g. `/mu judge laya,jev`. */
+	/** Switch the decision model at runtime, e.g. `/mu judge mude,jev`. */
 	useJudges(tiers: readonly string[]): readonly string[] {
 		const before = this.problems.length;
 		this.engine.setJudge(this.buildConfiguredJudge(tiers));
@@ -478,8 +457,7 @@ export class KyrnRuntime {
 	 * work the moment the message arrives instead of when the turn starts: memory, skills and
 	 * capabilities are then read alongside preflight, and the turn starts after the slowest of them
 	 * rather than after all of them in a row. The listener gets what the judge should read
-	 * (`judgedText`). It is not called when the judge answers one call at a time: there, later work
-	 * would only delay preflight, and the turn's order of importance is preflight first.
+	 * (`judgedText`).
 	 */
 	atTurnStart(listener: (words: string) => void): void {
 		this.turnStartListeners.push(listener);
@@ -487,7 +465,6 @@ export class KyrnRuntime {
 
 	/** Whoever counted the turn calls this once preflight's own question is on its way. */
 	startTurnWork(userMessage: string): void {
-		if (!this.judgeParallel) return;
 		const words = judgedText(userMessage, this.pi.getCommands());
 		if (words === undefined) return;
 		for (const listener of this.turnStartListeners) {
@@ -624,7 +601,7 @@ export class KyrnRuntime {
 		}
 	}
 
-	/** "cascade(local:laya>gateway:typesafe-ai/jev)" -> "laya>jev". */
+	/** "cascade(127.0.0.1:8790:mude>gateway:typesafe-ai/jev)" -> "mude>jev". */
 	get judgeLabel(): string {
 		if (!this.enabled) return "off";
 		const id = this.engine.providerId.replace(/^cascade\((.*)\)$/, "$1");

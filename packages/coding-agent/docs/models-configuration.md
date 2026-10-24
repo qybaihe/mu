@@ -110,12 +110,12 @@ See [Describe model input and caching](models.md#describe-model-input-and-cachin
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `supportsStore` | boolean |  | Whether the provider supports the store field. Default: auto-detected from URL. |
-| `supportsDeveloperRole` | boolean |  | Whether the provider supports the developer role instead of system. Default: auto-detected from URL. |
-| `supportsReasoningEffort` | boolean |  | Whether the provider supports reasoning_effort. Default: auto-detected from URL. |
-| `supportsUsageInStreaming` | boolean | `true` | Whether the provider supports stream_options.include_usage for token usage in streaming responses. |
+| `supportsStore` | boolean |  | Whether the provider supports the store field. Default: true for api.openai.com and Azure OpenAI, false for other endpoints. |
+| `supportsDeveloperRole` | boolean |  | Whether the provider supports the developer role instead of system for reasoning models. Default: true for api.openai.com, Azure OpenAI, and Xiaomi MiMo, false for other endpoints. When an endpoint rejects the developer role, Pi sends the request again with system and keeps using system for that model until it restarts. |
+| `supportsReasoningEffort` | boolean |  | Whether the provider supports reasoning_effort. Default: auto-detected from URL. When an endpoint rejects reasoning_effort as an unknown field, Pi sends the request again without it. |
+| `supportsUsageInStreaming` | boolean | `true` | Whether the provider supports stream_options.include_usage for token usage in streaming responses. When an endpoint rejects stream_options as an unknown field, Pi sends the request again without it. |
 | `supportsFinishReason` | boolean | `true` | Whether streamed responses include finish_reason. When false, pi infers stop or toolUse when the stream ends. |
-| `maxTokensField` | `"max_completion_tokens" \| "max_tokens"` |  | Which field to use for max tokens. Default: auto-detected from URL. |
+| `maxTokensField` | `"max_completion_tokens" \| "max_tokens"` |  | Which field to use for max tokens. Default: max_completion_tokens for api.openai.com, Azure OpenAI, and Xiaomi MiMo, max_tokens for other endpoints. When an endpoint rejects the field, Pi sends the request again with the other one. |
 | `requiresToolResultName` | boolean |  | Whether tool results require the name field. Default: auto-detected from URL. |
 | `requiresAssistantAfterToolResult` | boolean |  | Whether a user message after tool results requires an assistant message in between. Default: auto-detected from URL. |
 | `requiresThinkingAsText` | boolean |  | Whether thinking blocks must be converted to text blocks with &lt;thinking> delimiters. Default: auto-detected from URL. |

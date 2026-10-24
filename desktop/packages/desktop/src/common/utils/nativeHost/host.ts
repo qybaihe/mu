@@ -167,24 +167,30 @@ export function takeCheckpointOff(view: NativeView, payload: JsonObject): Native
   return withHost(view, { notices: next });
 }
 
+/** The codes of mu's `judge.notice` the app words. */
+const JUDGE_NOTICE_CODES: ReadonlySet<string> = new Set(['free_jev', 'free_jev_unavailable', 'laya_removed']);
+
 /**
- * mu's `judge.notice`: the judge answers with the free Jev on OpenCode Zen (`free_jev`), or the free Jev stopped
- * (`free_jev_unavailable`, with `paid` or `gone`), said once each, by code, so the app words it. mu sends its own line
- * with `notify` right after (`takeNotify` drops it); a line already said becomes the coded notice where it stands. A
- * code this build does not know leaves mu's line to say it.
+ * mu's `judge.notice`: the judge answers with the free Jev on OpenCode Zen (`free_jev`), the free Jev stopped
+ * (`free_jev_unavailable`, with `paid` or `gone`), or Laya is gone and `judge` answers in its place (`laya_removed`),
+ * said once each, by code, so the app words it. mu sends its own line with `notify` right after (`takeNotify` drops
+ * it); a line already said becomes the coded notice where it stands. A code this build does not know leaves mu's line
+ * to say it.
  */
 export function takeJudgeNotice(view: NativeView, payload: JsonObject): NativeView {
   const named = asText(payload.code);
-  const code = named === 'free_jev' || named === 'free_jev_unavailable' ? named : undefined;
+  const code = JUDGE_NOTICE_CODES.has(named) ? (named as NonNullable<ViewNotice['code']>) : undefined;
   if (!code) return view;
   const notices = view.host.notices;
   if (notices.some((notice) => notice.code === code)) return view;
   const text = asText(payload.message).trim();
   const reason = asText(payload.reason);
-  const coded: Pick<ViewNotice, 'level' | 'code' | 'reason'> = {
-    level: code === 'free_jev' ? 'info' : 'warning',
+  const judge = code === 'laya_removed' ? asText(payload.judge) : '';
+  const coded: Pick<ViewNotice, 'level' | 'code' | 'reason' | 'judge'> = {
+    level: code === 'free_jev_unavailable' ? 'warning' : 'info',
     code,
     ...(reason ? { reason } : {}),
+    ...(judge ? { judge } : {}),
   };
   const said = text ? notices.findIndex((notice) => notice.text === text) : -1;
   if (said < 0) return addNotice(view, { text, ...coded });

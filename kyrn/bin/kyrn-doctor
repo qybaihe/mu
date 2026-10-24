@@ -14,7 +14,6 @@ import {
 	findOnPath,
 	layoutOf,
 	linkState,
-	localJudgeSupport,
 	packageEntries,
 	parseEnvFile,
 	platformName,
@@ -143,31 +142,18 @@ if (overrides.length > 0) row("--", "modes", overrides.map(([id, value]) => `${i
 const ladder = config?.features?.swarm?.models ?? [];
 row("--", "subagents", ladder.length > 0 ? `model ladder ${ladder.join(" < ")}` : "use the session's model (no ladder configured)");
 
-const judgeSupport = localJudgeSupport({ platform: process.platform, env: process.env, wsl });
-if (!asksJudge) {
-	// Nothing asks the local judge either: whether it is up does not matter.
-} else if (tiers.some((tier) => tier.startsWith("laya")) && !judgeSupport.runs && !judgeSupport.url) {
-	// Not a failure of this installation: the sidecar is Core ML, and there is none for this platform.
-	row("--", "local judge", `not available on ${platformName({ platform: process.platform, wsl })}: the Laya sidecar needs Core ML (macOS on Apple silicon)`);
-	row("--", "", "Laya's decision points use the next judge or their fallbacks. Use Jev, an LLM judge or MU_LOCAL_JUDGE_URL=<a server with the same API>");
-} else if (tiers.some((tier) => tier.startsWith("laya"))) {
-	const base = env("LOCAL_JUDGE_URL") ?? `http://127.0.0.1:${env("LOCAL_JUDGE_PORT") ?? 47823}`;
-	const startedAt = performance.now();
-	try {
-		const response = await fetch(`${base}/health`, { signal: AbortSignal.timeout(2000) });
-		const health = await response.json();
-		const ms = Math.round(performance.now() - startedAt);
-		row(health.status === "ok" ? "ok" : "--", "local judge", `${base} · ${health.status} · ${health.model ?? "laya"} · ${ms} ms`);
-	} catch {
-		row(
-			"fix",
-			"local judge",
-			judgeSupport.runs
-				? `${base} isn't answering: run mu judge start   (first time: mu judge setup)`
-				: `${base} (MU_LOCAL_JUDGE_URL) isn't answering`,
-		);
-	}
+// Laya, the local judge mu had until 0.2.4, is no longer built in. The next session takes it out of mu.json (mude 1.0 in
+// its place when it is set up), and skips it in MU_JUDGE (packages/kyrn-judge/src/laya-migration.ts).
+if (tiers.includes("laya") || Object.values(config?.judges ?? {}).some((judge) => judge?.type === "local")) {
+	row(
+		"--",
+		"laya",
+		env("JUDGE")
+			? "no longer built into mu: mu skips it in MU_JUDGE. Other decision models: mu judge model add <link>"
+			: "no longer built into mu: the next session takes it out of mu.json. Other decision models: mu judge model add <link>",
+	);
 }
+
 // The built-in ways to Jev, as packages/kyrn-judge/src/config.ts has them; mu.json may name others.
 const JEV_ROUTES = {
 	jev: { type: "jev" },

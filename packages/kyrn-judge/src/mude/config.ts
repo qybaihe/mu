@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from "node:fs";
-import { BUILT_IN_JUDGES } from "../config.ts";
+import { BUILT_IN_JUDGES, retiredJudges } from "../config.ts";
 import { envFileValue } from "../setup/env-file.ts";
 import {
 	Backups,
@@ -191,9 +191,12 @@ export function enableLocal(judge: LocalJudge, paths: MudePaths, files: ConfigFi
 	const name = judge.name;
 	const { path, config } = readConfig(files);
 	const state = readState(paths);
-	const current = tiersOf(config).filter((tier) => tier !== name);
+	// Laya, which mu no longer has, is not kept behind it (config.ts).
+	const retired = retiredJudges(config.judges);
+	const current = tiersOf(config).filter((tier) => tier !== name && !retired.has(tier));
 	// The order to fall back on: what is there now, or, when the judge is there alone (local only), what was there before.
-	const before = current.length > 0 ? current : [...(state?.previousTiers ?? ["jev"])];
+	const kept = (state?.previousTiers ?? []).filter((tier) => !retired.has(tier));
+	const before = current.length > 0 ? current : kept.length > 0 ? kept : ["jev"];
 	const tiers = options.localOnly ? [name] : [name, ...before.filter((tier) => tier !== name)];
 	const judgeWasOff = state?.judgeWasOff ?? judgeOff(config);
 	let next = withJudge(withTiers(withoutOwnRoutes(config, state), tiers), true);
@@ -246,8 +249,10 @@ export function disableLocal(
 ): string[] {
 	const { path, config } = readConfig(files);
 	const state = readState(paths);
-	const rest = tiersOf(config).filter((tier) => tier !== judge.name);
-	const tiers = rest.length > 0 ? rest : [...(state?.previousTiers ?? ["jev"])];
+	const retired = retiredJudges(config.judges);
+	const rest = tiersOf(config).filter((tier) => tier !== judge.name && !retired.has(tier));
+	const previous = (state?.previousTiers ?? []).filter((tier) => !retired.has(tier));
+	const tiers = rest.length > 0 ? rest : previous.length > 0 ? previous : ["jev"];
 	let next = withTiers(withoutOwnRoutes(config, state), tiers);
 	if (state?.judgeWasOff) next = withJudge(next, false);
 	if (options.removeEntry && state?.wroteEntry) {

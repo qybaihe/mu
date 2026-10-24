@@ -41,8 +41,6 @@ export type Questions = Readonly<Record<string, Question>>;
 export interface AnswerSignals {
 	/** Provider-reported confidence in [0, 1]. */
 	readonly confidence?: number;
-	/** Estimated probability that acting on this answer beats escalating (Laya's action head). */
-	readonly actProbability?: number;
 	/** Which judge produced this answer, when several are chained. */
 	readonly judge?: string;
 }

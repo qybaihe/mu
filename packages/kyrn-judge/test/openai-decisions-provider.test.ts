@@ -207,15 +207,15 @@ describe("OpenAIDecisionsJudgeProvider", () => {
 		expect(decisionsEndpoint("")).toBe("https://api.openai.com/v1/decisions");
 		expect(decisionsEndpoint("https://api.openai.com/v1/")).toBe("https://api.openai.com/v1/decisions");
 		expect(decisionsEndpoint("https://api.openai.com")).toBe("https://api.openai.com/v1/decisions");
-		expect(decisionsEndpoint("https://res.openai.azure.com/openai/v1")).toBe(
-			"https://res.openai.azure.com/openai/v1/decisions",
+		expect(decisionsEndpoint("https://proxy.example.com/openai/v1")).toBe(
+			"https://proxy.example.com/openai/v1/decisions",
 		);
 		expect(decisionsEndpoint("http://10.0.0.5:8080/v1/decisions")).toBe("http://10.0.0.5:8080/v1/decisions");
 		expect(isOpenAIAddress(undefined)).toBe(true);
 		expect(isOpenAIAddress("https://api.openai.com/v1")).toBe(true);
 		expect(isOpenAIAddress("http://api.openai.com/v1")).toBe(false);
 		expect(isOpenAIAddress("https://api.openai.com.example.com/v1")).toBe(false);
-		expect(isOpenAIAddress("https://res.openai.azure.com/openai/v1")).toBe(false);
+		expect(isOpenAIAddress("https://proxy.example.com/openai/v1")).toBe(false);
 
 		const relay = new OpenAIDecisionsJudgeProvider({
 			apiKey: "k",
@@ -237,14 +237,14 @@ describe("the openai judge", () => {
 		const luna = {
 			type: "openai",
 			model: "gpt-6-luna",
-			baseUrl: "https://res.openai.azure.com/openai/v1",
-			apiKeyEnv: "MU_JUDGE_AZURE_KEY",
+			baseUrl: "https://proxy.example.com/v1",
+			apiKeyEnv: "MU_JUDGE_PROXY_KEY",
 			timeoutMs: 5000,
 		};
 		const config = parseConfig({ tiers: ["luna", "jev"], judges: { luna } });
 		expect(config.judges.luna).toEqual(luna);
 		expect(config.tiers).toEqual(["luna", "jev"]);
-		expect(buildJudge(config, { env: { MU_JUDGE_AZURE_KEY: "a" } }).problems).toEqual([]);
+		expect(buildJudge(config, { env: { MU_JUDGE_PROXY_KEY: "p" } }).problems).toEqual([]);
 	});
 
 	it("sends its own key, MU_JUDGE_OPENAI_KEY, before the key of mu's openai provider", async () => {
@@ -295,7 +295,7 @@ describe("the openai judge", () => {
 		expect(none.calls).toBe(0);
 	});
 
-	it("never sends the openai provider's key to another address: an Azure resource or a relay gets its own key only", async () => {
+	it("never sends the openai provider's key to another address: a relay or proxy gets its own key only", async () => {
 		const relay = { type: "openai", baseUrl: "https://relay.example.com/v1" };
 		const config = parseConfig({ tiers: ["relay"], judges: { relay } });
 		const unkeyed: Seen = { calls: 0 };

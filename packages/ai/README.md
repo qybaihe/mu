@@ -1335,7 +1335,7 @@ Use `models.refresh({ providers: ['openrouter'] })` to restrict work to selected
 
 Custom models can carry `headers` (e.g. proxies behind bot detection) and `compat` flags. `Models.getAuth(model)` includes those model headers, and stream methods merge them before explicit request headers and `transformHeaders`. See [OpenAI Compatibility Settings](#openai-compatibility-settings).
 
-Some OpenAI-compatible servers do not understand the `developer` role used for reasoning-capable models. For those providers, set `compat.supportsDeveloperRole` to `false` so the system prompt is sent as a `system` message instead. If the server also does not support `reasoning_effort`, set `compat.supportsReasoningEffort` to `false` too. This commonly applies to Ollama, vLLM, SGLang, and similar OpenAI-compatible servers.
+Many OpenAI-compatible servers do not understand the `developer` role used for reasoning-capable models, or `max_completion_tokens`. The `openai-completions` API sends those only to `api.openai.com`, Azure OpenAI, and Xiaomi MiMo, which document them; any other endpoint gets the system prompt as a `system` message, the output limit as `max_tokens`, and no `store`. When an endpoint still rejects one of these, or `reasoning_effort`, `stream_options`, or the prompt cache fields, with a 400 or 422 that names it (or a 5xx gateway error wrapping one), the request is sent again with that part changed before any event is emitted, and the change is kept for that provider, base URL, and model for the rest of the process. Requests to `api.openai.com` are never changed this way. Set `compat` to choose yourself; for example, a server that also ignores `reasoning_effort` can set `compat.supportsReasoningEffort` to `false`.
 
 Use model-level `thinkingLevelMap` to describe model-specific thinking controls. Keys are pi thinking levels (`off`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`). Missing standard levels through `high` use provider defaults; `xhigh` and `max` are opt-in and require a non-null map entry. String values are sent to the provider, `null` marks a level unsupported, and maps may skip levels.
 
@@ -1402,8 +1402,8 @@ The `openai-completions` API is implemented by many providers with minor differe
 
 ```typescript
 interface OpenAICompletionsCompat {
-  supportsStore?: boolean;           // Whether provider supports the `store` field (default: true)
-  supportsDeveloperRole?: boolean;   // Whether provider supports `developer` role vs `system` (default: true)
+  supportsStore?: boolean;           // Whether provider supports the `store` field (default: true for api.openai.com and Azure OpenAI, false otherwise)
+  supportsDeveloperRole?: boolean;   // Whether provider supports `developer` role vs `system` (default: true for api.openai.com, Azure OpenAI, and Xiaomi MiMo, false otherwise)
   supportsReasoningEffort?: boolean; // Whether provider supports `reasoning_effort` (default: true)
   supportsUsageInStreaming?: boolean; // Whether provider supports `stream_options: { include_usage: true }` (default: true)
   supportsStrictMode?: boolean;      // Whether provider supports `strict` in tool definitions (default: false; enabled in metadata for capable built-in models)
@@ -1412,7 +1412,7 @@ interface OpenAICompletionsCompat {
   supportsMidConvoToolAdditions?: boolean; // Whether system messages can add tools mid-conversation via Kimi-style `tools` system messages; requires supportsMidConvoSystemMessages (default: false)
   sendSessionAffinityHeaders?: boolean; // Send session-affinity data from `sessionId` (default: true for OpenRouter, false otherwise)
   sessionAffinityFormat?: 'openai' | 'openai-nosession' | 'openrouter'; // Format for session affinity: 'openai' uses `prompt_cache_key`, `session_id`, `x-client-request-id`, and `x-session-affinity`; 'openai-nosession' uses `prompt_cache_key`, `x-client-request-id`, and `x-session-affinity`; 'openrouter' uses `x-session-id` (default: auto-detected)
-  maxTokensField?: 'max_completion_tokens' | 'max_tokens';  // Which field name to use (default: max_completion_tokens)
+  maxTokensField?: 'max_completion_tokens' | 'max_tokens';  // Which field name to use (default: max_completion_tokens for api.openai.com, Azure OpenAI, and Xiaomi MiMo, max_tokens otherwise)
   requiresToolResultName?: boolean;  // Whether tool results require the `name` field (default: false)
   requiresAssistantAfterToolResult?: boolean; // Whether tool results must be followed by an assistant message (default: false)
   requiresThinkingAsText?: boolean;  // Whether thinking blocks must be converted to text (default: false)

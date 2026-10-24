@@ -28,7 +28,7 @@
 
 - **mu**: 명령줄 버전이에요. pi가 하는 모든 것에 판정 커널을 더했어요.
 - **mu 데스크톱**: mu와 런타임이 들어 있는 데스크톱 앱이에요. 내려받고, 모델을 연결하고, 시작하면 돼요.
-- **판정 모델**: 기본값은 TypeSafe가 호스팅하는 Jev예요. 예/아니요, 선택, 점수 질문에 답하고, 답마다 확률을 붙이고, 모든 판정을 판정 장부에 남겨요. 어떤 판정 모델이든 그 자리를 대신할 수 있어요. 로컬의 Laya(승인 판정은 제외), 직접 운영하는 System One 서버, 어떤 LLM이든요.
+- **판정 모델**: 기본값은 TypeSafe가 호스팅하는 Jev예요. 예/아니요, 선택, 점수 질문에 답하고, 답마다 확률을 붙이고, 모든 판정을 판정 장부에 남겨요. 어떤 판정 모델이든 그 자리를 대신할 수 있어요. Mac에서 돌아가는 mu 자체 모델 mude 1.0, Hugging Face의 다른 의사결정 모델, 직접 운영하는 System One 서버, 어떤 LLM이든요.
 
 **목차:** [빠른 시작](#빠른-시작) · [한 턴의 흐름](#한-턴의-흐름) · [판정 지점](#판정-지점) · [판정기](#판정기) · [실측](#실측) · [하이브](#하이브) · [쉬운 말 보드](#쉬운-말-보드) · [데스크톱 앱](#데스크톱-앱) · [명령줄](#명령줄) · [문서](#문서) · [기여하기](#기여하기)
 
@@ -64,7 +64,7 @@ mu                  # 현재 디렉터리에서 세션 시작
 
 ## 판정 지점
 
-판정 지점마다 `active`(켬, 기본값), `shadow`(묻고 기록하지만 아무것도 바꾸지 않음. 판정기를 켜기 전에 비교해 보는 용도), `off`(끔) 중 하나로 둘 수 있고, 판정기도 따로 지정할 수 있어요: `jev`, `laya`(로컬), `classifier:<provider>/<model>`, `llm:<provider>/<model>`, 또는 `laya,jev` 같은 캐스케이드.
+판정 지점마다 `active`(켬, 기본값), `shadow`(묻고 기록하지만 아무것도 바꾸지 않음. 판정기를 켜기 전에 비교해 보는 용도), `off`(끔) 중 하나로 둘 수 있고, 판정기도 따로 지정할 수 있어요: `jev`, `mude`(로컬), `classifier:<provider>/<model>`, `llm:<provider>/<model>`, 또는 `mude,jev` 같은 캐스케이드.
 
 **입력**
 
@@ -137,7 +137,8 @@ mu                  # 현재 디렉터리에서 세션 시작
 
 - **Jev**(클라우드). TypeSafe가 호스팅하는 판정 모델로, 답의 범위가 정해진 질문에 확률과 함께 답해요. TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare Workers AI, 또는 같은 프로토콜을 쓰는 어떤 서비스로든 부를 수 있고, 서비스마다 키가 따로 있어요(`TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY`와 `CLOUDFLARE_ACCOUNT_ID`). 데스크톱 앱의 '판정기' 페이지에서 고를 수 있고, 기본값은 키가 설정된 첫 번째 서비스예요. 키가 하나도 없으면 OpenCode Zen의 기간 한정 무료 Jev 1.13이 답해요. 판정에 필요한 내용은 OpenCode로 가지만 모델 학습에는 쓰이지 않고, mu가 하루에 한 번 알려 줘요. 키를 설정하면(`mu setup`이나 '판정기' 페이지) 다음 질문부터 그 키를 써요. 만든 사람들의 실제 세션에서 잰 값으로, HTTP/2 웜 연결에서 질문 하나에 약 0.3초, 도구 출력 16청크를 요청 하나로 판정하는 데 0.44초가 걸렸고, 상태는 한 번만 과금됐어요.
 - **OpenAI의 판정 모델** `gpt-6-luna`. OpenAI의 [Decisions API](https://developers.openai.com/api/docs/guides/decisions)로 OpenAI API 키(`MU_JUDGE_OPENAI_KEY` 또는 mu가 이미 가진 OpenAI 키)를 써서 답해요. `mu setup --judge openai`나 설정 → 판정기에서 고를 수 있어요.
-- **Laya**(로컬). 여러분의 컴퓨터에서 돌아가고 네트워크에는 전혀 닿지 않는 322M 파라미터 판정기예요. 단순한 술어에는 믿을 만하지만 메타 판단에는 약한 편이에요. 판정 지점을 맡기기 전에 섀도 모드로 지금 쓰는 판정기와 나란히 돌려 보고 판정 장부를 읽어 보세요.
+- **mude 1.0**(로컬, Apple 실리콘 Mac). 코딩에 맞게 최적화한 mu 자체 의사결정 모델이에요. `mu judge mude install`로 설치하고 판정기로 삼아요.
+- **Hugging Face의 다른 의사결정 모델**(로컬, Apple 실리콘 Mac). `mu judge model add <링크>`(또는 데스크톱 앱 설정의 '판정기')로 mude 1.0과 같은 방식으로 패키징된 모델을 추가하고 판정기로 삼아요. Laya는 이제 mu에 들어 있지 않아요. `mu.json`에 아직 Laya가 있으면 mude 1.0이 설정돼 있을 때는 mude 1.0이 그 자리를 맡고, 아니면 남은 판정기나 Jev를 쓰며, mu가 한 번 알려 줘요.
 - **pi 모델 카탈로그의 어떤 분류 모델이든** 계층 하나로 쓸 수 있어요: `classifier:<provider>/<model>`. Cloudflare의 Clef(`clef`, `clef-flash`), OpenRouter와 Vercel AI Gateway의 System One 모델, llama.cpp 분류 모델 등.
 - **어떤 LLM이든** 계층 하나로 쓸 수 있어요: `llm:<provider>/<model>`.
 
@@ -284,7 +285,7 @@ Node 22.19 이상이 필요해요. `mu -p "prompt"`는 한 번 실행하고 결�
 | 명령어 | 하는 일 |
 | --- | --- |
 | `/status` | 판정기, 판정 지점별 모드, 컨텍스트에서 뺀 것, 최근 판정 |
-| `/mu judge <judges>` | 어떤 판정기가 어떤 순서로 답할지: `laya`, `laya,jev`, `jev-opencode-free`, `openai`, `classifier:<provider>/<model>`, `llm:<provider>/<model>` |
+| `/mu judge <judges>` | 어떤 판정기가 어떤 순서로 답할지: `jev`, `mude,jev`, `jev-opencode-free`, `openai`, `classifier:<provider>/<model>`, `llm:<provider>/<model>` |
 | `/mu route <point> <judge>` | 판정 지점 하나에 따로 판정기를 지정하기 |
 | `/mu mode <point> <off\|shadow\|active>` | 판정 지점 하나를 전환하기 |
 | `/frame` | 작업 프레임: 목표, 여러분의 제약과 그 출처, 인수 조건 |
@@ -301,11 +302,11 @@ Node 22.19 이상이 필요해요. `mu -p "prompt"`는 한 번 실행하고 결�
 | `/import-chat` | Claude Code, Codex 또는 ZCode 대화 가져오기 |
 | `/doctor` | 설정과 연결 점검하기 |
 
-pi의 자체 명령(`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export` 등)은 그대로예요. 다만 `/login`에는 Claude 구독 로그인이 없어요(Anthropic이 다른 앱의 제공을 허용하지 않아서요). Anthropic API 키를 쓰세요. `MU_JUDGE=laya,jev mu`로 실행하면 그 실행에서만 판정기를 바꿀 수 있어요.
+pi의 자체 명령(`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export` 등)은 그대로예요. 다만 `/login`에는 Claude 구독 로그인이 없어요(Anthropic이 다른 앱의 제공을 허용하지 않아서요). Anthropic API 키를 쓰세요. `MU_JUDGE=mude,jev mu`로 실행하면 그 실행에서만 판정기를 바꿀 수 있어요.
 
 ## 프라이버시
 
-키는 이 컴퓨터를 떠나지 않아요. mu는 모델이나 런타임을 스스로 내려받지 않고, 내려받아야 하는 것은 모두 먼저 물어봐요. 판정기는 질문에 필요한 필드만 봐요(키가 없으면 그 필드는 OpenCode Zen의 무료 Jev로 가요. `mu setup --judge off`(판정기에 아무것도 묻지 않고, mu의 기능은 규칙대로 계속 동작해요), `MU_JUDGE=off`, Laya 중 하나를 쓰면 전부 이 컴퓨터에 남아요). 모든 판정은 로컬에 기록되고, 전부 읽어 볼 수 있어요.
+키는 이 컴퓨터를 떠나지 않아요. mu는 모델이나 런타임을 스스로 내려받지 않고, 내려받아야 하는 것은 모두 먼저 물어봐요. 판정기는 질문에 필요한 필드만 봐요(키가 없으면 그 필드는 OpenCode Zen의 무료 Jev로 가요. `--local-only`를 붙인 mude 1.0, `mu setup --judge off`(판정기에 아무것도 묻지 않고, mu의 기능은 규칙대로 계속 동작해요), `MU_JUDGE=off` 중 하나를 쓰면 전부 이 컴퓨터에 남아요). 모든 판정은 로컬에 기록되고, 전부 읽어 볼 수 있어요.
 
 ## 문서
 

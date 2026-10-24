@@ -136,42 +136,6 @@ describe("kyrn judge extension", () => {
 		expect((started.get("capabilities") ?? 0) - (started.get("preflight") ?? 0)).toBeLessThan(150);
 	});
 
-	it("with a judge that answers one call at a time, the other questions wait for preflight's answer", async () => {
-		const started = new Map<string, number>();
-		const provider = new MockJudgeProvider(async (request) => {
-			const kind =
-				"turn_type" in request.questions
-					? "preflight"
-					: "capability_0" in request.questions
-						? "capabilities"
-						: "other";
-			started.set(kind, Math.min(started.get(kind) ?? Number.POSITIVE_INFINITY, performance.now()));
-			if (kind === "preflight") await new Promise((resolve) => setTimeout(resolve, 250));
-			return chatVerdict;
-		});
-		const harness = await createHarness({
-			extensionFactories: [
-				createKyrnJudgeExtension({
-					provider,
-					mode: "active",
-					config: parseConfig({
-						tiers: ["laya"],
-						modes: { "capability.disclosure": "active" },
-						features: attended(),
-					}),
-				}),
-			],
-		});
-		harnesses.push(harness);
-		harness.setResponses([fauxAssistantMessage("Sure.")]);
-
-		await harness.session.prompt("what does the refreshToken helper do?");
-
-		await vi.waitFor(() => expect(started.has("capabilities")).toBe(true));
-		// A local sidecar serves one request at a time: preflight's answer comes first, the rest queue behind it.
-		expect((started.get("capabilities") ?? 0) - (started.get("preflight") ?? 0)).toBeGreaterThanOrEqual(200);
-	});
-
 	it("in shadow mode hands a long tool result over at once and records the admission verdict behind it", async () => {
 		const lines = Array.from({ length: 120 }, (_, index) => `line ${index} ${"x".repeat(60)}`).join("\n");
 		const dump: AgentTool = {

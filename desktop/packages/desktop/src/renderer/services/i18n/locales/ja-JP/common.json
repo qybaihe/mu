@@ -1273,7 +1273,8 @@
     "eventLine": {
       "judgeNotice": {
         "freeJev": "Jev キーが未設定のため、OpenCode Zen の無料 Jev を使用中",
-        "freeJevUnavailable": "無料の Jev が応答しなくなりました。Jev キーを設定するまで固定ルールで判断します"
+        "freeJevUnavailable": "無料の Jev が応答しなくなりました。Jev キーを設定するまで固定ルールで判断します",
+        "layaRemoved": "Laya は mu に組み込まれなくなったため、判定器は {{judge}} になりました"
       },
       "detail": "詳細: {{detail}}",
       "progress": {

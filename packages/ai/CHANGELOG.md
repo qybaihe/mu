@@ -12,10 +12,15 @@
 - Failed model request spans report `provider_error` status with up to 500 error-message characters; cancelled requests keep `ok` status with `stop: "aborted"`.
 - Added `MiniMax-M3.1-Flash` to the `minimax` and `minimax-cn` providers, with thinking levels low through max sent as `output_config.effort`. Thinking cannot be turned off for this model. New MiniMax models from models.dev now appear without a manual allowlist entry; only the older M2, M2.1, M2.5, and M2.5-highspeed models stay hidden ([#11121](https://github.com/earendil-works/pi/issues/11121))
 
+### Changed
+
+- `openai-completions` sends OpenAI's newer request shape (`developer` messages for reasoning models, `max_completion_tokens`, and `store: false`) only to `api.openai.com` and Azure OpenAI, plus `developer` and `max_completion_tokens` to Xiaomi MiMo, whose docs list them. Every other endpoint now gets `system` messages, `max_tokens`, and no `store` unless `compat` says otherwise. Built-in models that relied on detection change accordingly: Groq, OpenRouter, Cerebras, Hugging Face, Fireworks, GitHub Copilot, Cloudflare Workers AI, and Qwen Token Plan now send `max_tokens`; Groq, OpenRouter, Hugging Face, and Xiaomi stop sending `store`; Groq reasoning models get `system` instead of `developer`.
+
 ### Fixed
 
 - Fixed whitespace-only tool output (for example a bare `\r\n` from bash) being sent as-is to OpenAI Completions, OpenAI Responses, and Google providers; it now uses the same placeholder as empty output, since some providers reject whitespace-only tool content with a 400 ([#8720](https://github.com/earendil-works/pi/issues/8720))
 - Fixed automatic retry not triggering for gateway upstream failures such as `upstream_error: Upstream request failed`, `upstream_stream_read_error`, and `Upstream HTTP/2 stream failed` ([#10920](https://github.com/earendil-works/pi/issues/10920))
+- Fixed third-party OpenAI-compatible endpoints rejecting `openai-completions` requests with errors such as `unknown role developer`. When an endpoint rejects the `developer` role, the max tokens field, `reasoning_effort`, `stream_options`, `store`, or the prompt cache fields with a 400 or 422 that names it (or a 5xx gateway error wrapping one), the request is sent again with that part changed, once per part and before any event is emitted, and the change is kept for that provider, base URL, and model for the rest of the process. A rejected value is not retried, and `api.openai.com` requests are never changed.
 
 ## [1.3.0] - 2026-10-15
 

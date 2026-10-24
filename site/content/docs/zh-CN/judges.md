@@ -8,7 +8,7 @@ summary: 谁来回答判定点，怎样选择、串联和比较判定器，以�
 `~/.mu/agent/mu.json` 里的 `tiers` 按顺序列出判定器。后一个判定器只看到前面几个拿不准的问题，所以可以让便宜的本地判定器先答，云端的判定器接住剩下的：
 
 ```json
-{ "tiers": ["laya", "jev"] }
+{ "tiers": ["mude", "jev"] }
 ```
 
 `routes` 让一个判定点用自己的判定器：
@@ -17,7 +17,7 @@ summary: 谁来回答判定点，怎样选择、串联和比较判定器，以�
 { "routes": { "browser.step": ["jev"], "memory.capture": ["llm:anthropic/claude-haiku-4-5"] } }
 ```
 
-在会话里，`/mu judge <judges>` 和 `/mu route <point> <judges|default>` 做同样的事；`MU_JUDGE=laya,jev mu` 只为一次运行指定判定器。`/status` 显示哪个判定器回答什么，桌面端的「判定器」页也能设置这些。
+在会话里，`/mu judge <judges>` 和 `/mu route <point> <judges|default>` 做同样的事；`MU_JUDGE=mude,jev mu` 只为一次运行指定判定器。`/status` 显示哪个判定器回答什么，桌面端的「判定器」页也能设置这些。
 
 没有判定器按时回答时，每个判定点就照没有判定时那样做（通常是什么都不变），流水里记下原因。
 
@@ -75,23 +75,15 @@ Jev 是 TypeSafe 做的判定模型，专门回答这类问题。内置的 `jev`
 
 OpenAI 按未命中缓存的输入 token 收费，每百万 0.10 美元，输出不收费。还没有在 mu 的问题上测过。
 
-要通过 Azure 资源或中转服务访问它，给它一个 `baseUrl` 和它自己的密钥。mu 的 `openai` 提供商的密钥只会发给 `api.openai.com`：
+要通过提供同一 Decisions 端点的中转服务或代理访问它，给它一个 `baseUrl` 和它自己的密钥。mu 的 `openai` 提供商的密钥只会发给 `api.openai.com`：
 
 ```json
-{ "judges": { "azure": { "type": "openai", "baseUrl": "https://example.openai.azure.com/openai/v1", "apiKeyEnv": "MU_JUDGE_AZURE_KEY" } } }
+{ "judges": { "relay": { "type": "openai", "baseUrl": "https://relay.example.com/v1", "apiKeyEnv": "MU_JUDGE_RELAY_KEY" } } }
 ```
 
-## Laya（本地） {#laya}
+## 配置里还写着 Laya {#laya}
 
-一个 3.22 亿参数的判定器，在你的机器上运行，从不连网。
-
-```bash
-mu judge setup     # 下载模型前会先问你
-mu judge start     # 启动它
-mu judge status
-```
-
-Laya 在简单谓词上可靠（这段文字是不是在描述一个错误？），在关于关系或关于请求本身的问题上偏弱。mu 知道这一点，从不把它答不好的问题交给它，所以在 `["laya", "jev"]` 这样的链里，这些问题直接交给下一个判定器。在「判定模式」下，审批不交给 Laya。先让它以影子模式和你当前的判定器并行跑，看过流水，再把某个判定点单独交给它。
+Laya 是 mu 在 0.2.4 及以前内置的第三方本地判定器，现在已不再内置。`mu.json` 里还写着它（在 `tiers` 里、某个 `routes` 里，或是一个 `local` 类型的判定器）也照常能用：这台 Mac 上装好了 mude 1.0，就由 mude 1.0 顶替它；否则由列表里剩下的判定器回答，一个都不剩就用 Jev。mu 只改一次 `mu.json`，只动这几项，旧文件在 `~/.mu/backups` 里留一份，并告诉你换成了哪个判定器。`MU_JUDGE=laya` 会被跳过。想在本机用别的决策模型，可以[从 Hugging Face 添加](@docs/judges#models)。
 
 ## 分类模型和大模型 {#other-judges}
 
@@ -120,7 +112,6 @@ Laya 在简单谓词上可靠（这段文字是不是在描述一个错误？）
 | `http` | 任何接收 `{ state, questions }`、返回 `{ answers }` 的端点 |
 | `llm` | pi 模型注册表里的一个聊天模型 |
 | `classifier` | pi 模型目录里的一个分类模型 |
-| `local` | 一个兼容 Laya 的本地服务器 |
 | `clm` | 一个 `clm-serve` |
 | `openai` | `baseUrl` 处的 OpenAI Decisions API，默认是 OpenAI 自己的 |
 
