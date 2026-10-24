@@ -13,6 +13,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 - **A message sent from the desktop app's home page opens its conversation at once.** The home page used to wait while mu started, the model and thinking level were set and the judge read the message. Now the conversation opens as soon as it is made and shows the message straight away, and mu starts behind it. You can type the next message meanwhile: it waits above the box, goes in the order sent, and can be taken back. If the model or level can't be set, the conversation says why and the message comes back into the box.
 
+### Fixed
+
+- **Gemini 4 Argon shows up after you sign in with Google Antigravity, and works.** mu introduced itself to Antigravity as its IDE, and Google gives Gemini 4 Argon and the Gemini 3.8 Flash tiers only to its command line, so they were missing from the model pickers and a request for them failed. Now the app and the terminal list Gemini 4 Argon (Low, Medium and High) and the Gemini 3.8 Flash tiers when your plan includes them. An account that was already signed in gets them as a session starts, without signing in again, and signing out removes them with the account's other models.
+
 ## [0.2.3] - 2026-10-24
 
 **0.2.3 adds decision models from Hugging Face next to mude 1.0, lets mu decide when a message sent mid-run reaches the work, and makes Sign in with ChatGPT cope with a busy port 1455.** The desktop app carries mu-agent 0.2.3.
