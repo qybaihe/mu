@@ -104,6 +104,8 @@ export function usage(platform) {
 		"                           (see mu setup --help for scripting, reading a key from stdin and the supported services)",
 		"  mu judge mude install    install mude 1.0, mu's own decision model for coding, and make it the judge on this Mac (Apple silicon, 1.8 GB)",
 		"                           enable | disable | start | stop | status | uninstall (mu judge mude help)",
+		"  mu judge model add <link>  add another decision model from Hugging Face and make it the judge",
+		"                           list | use | start | stop | status | remove (mu judge model help)",
 		"  mu judge <cmd>           manage the local judge, Laya (macOS on Apple silicon): setup | start | stop | status | run",
 		"  mu ledger [n] [--json]   print the judge's verdicts from the last n sessions",
 		"  mu import <file>...      import Claude Code, Codex and ZCode conversations; --list shows them (mu import --help)",
@@ -465,6 +467,37 @@ export function wantsMude({ env, agentDir, platform, readFile }) {
 	return false;
 }
 
+/**
+ * The decision model added from Hugging Face (mu judge model add) that the configuration asks for, when mude isn't the
+ * one: the first judge in MU_JUDGE, `tiers` or a route that has a record in <mu home>/local-judge/models. Its server is
+ * then started when a session starts, as mude's is.
+ */
+export function wantedModel({ env, agentDir, muDir, platform, readFile, exists }) {
+	const path = pathFor(platform);
+	const added = (name) => /^[a-z0-9][a-z0-9._-]*$/.test(name) && exists(path.join(muDir, "local-judge", "models", name, "model.json"));
+	const judges = muEnv("JUDGE", env);
+	if (judges) return judges.split(",").map((judge) => judge.trim()).find(added);
+	for (const name of ["mu.json", "kyrn.json"]) {
+		let config;
+		try {
+			config = JSON.parse(readFile(path.join(agentDir, name)));
+		} catch (error) {
+			if (error instanceof SyntaxError) return undefined;
+			continue;
+		}
+		const names = [config?.tiers, ...Object.values(config?.routes ?? {})].flatMap((tiers) => (Array.isArray(tiers) ? tiers : []));
+		return names.find((judge) => typeof judge === "string" && added(judge));
+	}
+	return undefined;
+}
+
+/** What starts the server of the decision model the configuration asks for: `mu judge mude start`, or a model's. */
+export function localModelStart({ env, agentDir, muDir, platform, readFile, exists }) {
+	if (wantsMude({ env, agentDir, platform, readFile })) return ["start", "--no-wait"];
+	const model = wantedModel({ env, agentDir, muDir, platform, readFile, exists });
+	return model ? ["model", "start", model, "--no-wait"] : undefined;
+}
+
 export function localJudgeSupport({ platform, env, wsl = false }) {
 	if (platform === "darwin") return { runs: true };
 	const url = muEnv("LOCAL_JUDGE_URL", env);
@@ -605,11 +638,12 @@ export function planLaunch({
 		}
 	}
 
-	// mude's server, when the configuration asks for it: started without waiting, so a session never waits for the
-	// model to load (what mude cannot answer yet goes to the judges behind it). Only a Mac runs it.
+	// mude's server, or an added model's, when the configuration asks for it: started without waiting, so a session
+	// never waits for the model to load (what it cannot answer yet goes to the judges behind it). Only a Mac runs it.
 	let startMude;
-	if (execPath && platform === "darwin" && wantsMude({ env: childEnv, agentDir, platform, readFile: fs.readFile })) {
-		const mude = planMude({ platform, env: childEnv, argv: ["start", "--no-wait"], root, home, execPath, fs, stripsTypes });
+	const local = execPath && platform === "darwin" ? localModelStart({ env: childEnv, agentDir, muDir, platform, readFile: fs.readFile, exists: fs.exists }) : undefined;
+	if (local) {
+		const mude = planMude({ platform, env: childEnv, argv: local, root, home, execPath, fs, stripsTypes });
 		if (!mude.error) startMude = { command: mude.command, args: mude.args, env: mude.env };
 	}
 
@@ -647,8 +681,9 @@ export function planHost({ platform, env, argv, root, home, fs, wsl = false, str
 	// mude's server is started by a Node of the host's: `nodePath` with `nodeEnv` (Electron's own binary with
 	// ELECTRON_RUN_AS_NODE=1 in the desktop app). Without one, the host leaves it to the app.
 	let startMude;
-	if (nodePath && platform === "darwin" && wantsMude({ env: launch.env, agentDir: launch.agentDir, platform, readFile: fs.readFile })) {
-		const mude = planMude({ platform, env: { ...launch.env, ...nodeEnv }, argv: ["start", "--no-wait"], root, home, execPath: nodePath, fs, stripsTypes });
+	const local = nodePath && platform === "darwin" ? localModelStart({ env: launch.env, agentDir: launch.agentDir, muDir: launch.muDir, platform, readFile: fs.readFile, exists: fs.exists }) : undefined;
+	if (local) {
+		const mude = planMude({ platform, env: { ...launch.env, ...nodeEnv }, argv: local, root, home, execPath: nodePath, fs, stripsTypes });
 		if (!mude.error) startMude = { command: mude.command, args: mude.args, env: mude.env };
 	}
 	const common = {
@@ -714,8 +749,9 @@ export function prepareLaunch({ plan, platform, root, bin, err }) {
 }
 
 /**
- * mude's server, started in the background (`mu judge mude start --no-wait`): nothing waits for it, and it outlives this
- * process, shared by every mu session like Laya. When mude is not installed it does nothing (the doctor says so).
+ * mude's server, or an added model's, started in the background (`mu judge mude start --no-wait`): nothing waits for
+ * it, and it outlives this process, shared by every mu session like Laya. When it is not installed it does nothing (the
+ * doctor says so).
  */
 function startMudeServer(plan) {
 	if (!plan.startMude) return;
@@ -1609,11 +1645,12 @@ export async function main(argv = process.argv.slice(2)) {
 			},
 		});
 	}
-	if (command === "judge" && rest[0] === "mude") {
+	// `mu judge model …` runs in the same file as `mu judge mude …`, as `model …`.
+	if (command === "judge" && (rest[0] === "mude" || rest[0] === "model")) {
 		const plan = planMude({
 			platform,
 			env,
-			argv: rest.slice(1),
+			argv: rest[0] === "model" ? rest : rest.slice(1),
 			root,
 			home,
 			execPath: process.execPath,

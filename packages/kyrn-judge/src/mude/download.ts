@@ -92,6 +92,18 @@ export async function sha256File(path: string): Promise<string> {
 	return hash.digest("hex");
 }
 
+/** The hash `file` is pinned with: its sha256, or the git blob sha1 of a small file a repository keeps in git. */
+export const pinnedHash = (file: MudeFile): string => file.sha256 ?? file.gitSha1 ?? "";
+
+/** `path` hashed the way `file` is pinned. */
+async function hashOf(path: string, file: MudeFile): Promise<string> {
+	if (file.sha256 || !file.gitSha1) return sha256File(path);
+	const hash = createHash("sha1");
+	hash.update(`blob ${statSync(path).size}\0`);
+	await pipeline(createReadStream(path), hash);
+	return hash.digest("hex");
+}
+
 interface Verified {
 	readonly [path: string]: { readonly size: number; readonly mtimeMs: number; readonly sha256: string };
 }
@@ -108,7 +120,7 @@ function readVerified(dir: string): Record<string, Verified[string]> {
 /** Whether `file` is in place and was checked before, unchanged since: same size and modification time. */
 function knownGood(dir: string, file: MudeFile, verified: Verified): boolean {
 	const seen = verified[file.path];
-	if (!seen || seen.sha256 !== file.sha256) return false;
+	if (!seen || seen.sha256 !== pinnedHash(file)) return false;
 	try {
 		const stats = statSync(join(dir, file.path));
 		return stats.size === file.size && stats.mtimeMs === seen.mtimeMs;
@@ -119,7 +131,7 @@ function knownGood(dir: string, file: MudeFile, verified: Verified): boolean {
 
 function remember(dir: string, verified: Record<string, Verified[string]>, file: MudeFile): void {
 	const stats = statSync(join(dir, file.path));
-	verified[file.path] = { size: stats.size, mtimeMs: stats.mtimeMs, sha256: file.sha256 };
+	verified[file.path] = { size: stats.size, mtimeMs: stats.mtimeMs, sha256: pinnedHash(file) };
 	writeFileSync(join(dir, ".mu-verified.json"), `${JSON.stringify(verified, null, 1)}\n`);
 }
 
@@ -182,7 +194,7 @@ export async function downloadFiles(options: DownloadOptions): Promise<void> {
 		// A whole file under its own name from an earlier run (or put there by hand) is checked, not downloaded again.
 		if (existsSync(target) && statSync(target).size === file.size) {
 			options.onProgress?.({ file: file.path, checking: true, done: settled, total });
-			if ((await sha256File(target)) === file.sha256) {
+			if ((await hashOf(target, file)) === pinnedHash(file)) {
 				remember(dir, verified, file);
 				settled += file.size;
 				continue;
@@ -194,19 +206,19 @@ export async function downloadFiles(options: DownloadOptions): Promise<void> {
 			options.onProgress?.({ file: file.path, checking: false, done: settled + bytes, total });
 		let resumed = await fetchFile(options, file, part, onBytes);
 		options.onProgress?.({ file: file.path, checking: true, done: settled + file.size, total });
-		let actual = await sha256File(part);
-		if (actual !== file.sha256 && resumed) {
+		let actual = await hashOf(part, file);
+		if (actual !== pinnedHash(file) && resumed) {
 			// What an earlier try left was not what it seemed (a power cut, a file changed by hand): once more from
 			// nothing, before giving up.
 			dropPart(part);
 			resumed = await fetchFile(options, file, part, onBytes);
 			options.onProgress?.({ file: file.path, checking: true, done: settled + file.size, total });
-			actual = await sha256File(part);
+			actual = await hashOf(part, file);
 		}
-		if (actual !== file.sha256) {
+		if (actual !== pinnedHash(file)) {
 			dropPart(part);
 			throw new DownloadError(
-				`${file.path} does not match its pinned sha256 (got ${actual.slice(0, 12)}…, want ${file.sha256.slice(0, 12)}…); it was removed`,
+				`${file.path} does not match its pinned ${file.sha256 ? "sha256" : "git hash"} (got ${actual.slice(0, 12)}…, want ${pinnedHash(file).slice(0, 12)}…); it was removed`,
 				"integrity",
 			);
 		}

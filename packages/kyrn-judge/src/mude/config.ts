@@ -40,6 +40,26 @@ export const ROUTED_AWAY = ["tool.description", "tool.injection"] as const;
 export const MUDE = "mude";
 export const KEY_VARIABLE = "MU_JUDGE_MUDE_KEY";
 
+/**
+ * A decision model that runs on this Mac behind its own server: mude, or one added from Hugging Face (models.ts). The
+ * same rules put either first and take it out again; only its name, its key's variable and its mu.json entry differ.
+ */
+export interface LocalJudge {
+	/** Its name in `tiers`. */
+	readonly name: string;
+	/** The .env variable with the key its server was started with. */
+	readonly keyVariable: string;
+	/** Its mu.json `judges` entry for a server on `port`, or undefined where mu's built-in one serves. */
+	readonly entry: (port: number) => Record<string, unknown> | undefined;
+}
+
+/** mude: mu's built-in entry serves on the usual port; on another, an entry with that address. */
+export const MUDE_JUDGE: LocalJudge = {
+	name: MUDE,
+	keyVariable: KEY_VARIABLE,
+	entry: (port) => (port === DEFAULT_PORT ? undefined : entryFor(port)),
+};
+
 export interface MudeState {
 	readonly port: number;
 	/** The judge order before mude was put first, without mude. */
@@ -84,20 +104,26 @@ export interface JudgeSetting {
 	readonly unreadable?: boolean;
 }
 
-export function judgeSetting(files: ConfigFiles): JudgeSetting {
+export function judgeSetting(files: ConfigFiles, name = MUDE): JudgeSetting {
 	const file = readJsonFile(judgeConfigPath(files.agentDir));
 	if (file.state === "unreadable") return { enabled: false, localOnly: false, fallback: [], unreadable: true };
 	const config = file.state === "ok" ? file.value : {};
 	const tiers = tiersOf(config);
-	const enabled = tiers[0] === MUDE && !judgeOff(config);
-	const fallback = tiers.filter((tier) => tier !== MUDE);
+	const enabled = tiers[0] === name && !judgeOff(config);
+	const fallback = tiers.filter((tier) => tier !== name);
 	return { enabled, localOnly: enabled && fallback.length === 0, fallback };
 }
 
-/** Whether mu.json has mude anywhere in its judge order. */
-export function mudeInTiers(files: ConfigFiles): boolean {
+/** Whether mu.json has the judge `name` (mude unless said) anywhere in its judge order. */
+export function mudeInTiers(files: ConfigFiles, name = MUDE): boolean {
 	const file = readJsonFile(judgeConfigPath(files.agentDir));
-	return file.state === "ok" && tiersOf(file.value).includes(MUDE);
+	return file.state === "ok" && tiersOf(file.value).includes(name);
+}
+
+/** mu.json's judge order, or none when it can't be read. */
+export function currentTiers(files: ConfigFiles): string[] {
+	const file = readJsonFile(judgeConfigPath(files.agentDir));
+	return file.state === "ok" ? tiersOf(file.value) : [];
 }
 
 function readConfig(files: ConfigFiles): { path: string; config: Record<string, unknown> } {
@@ -157,18 +183,25 @@ export interface EnableOptions {
 
 /** Puts mude first, with or without the judges behind it. Returns the new order. */
 export function enableMude(paths: MudePaths, files: ConfigFiles, options: EnableOptions): string[] {
+	return enableLocal(MUDE_JUDGE, paths, files, options);
+}
+
+/** Puts `judge` first, with or without the judges behind it. Returns the new order. */
+export function enableLocal(judge: LocalJudge, paths: MudePaths, files: ConfigFiles, options: EnableOptions): string[] {
+	const name = judge.name;
 	const { path, config } = readConfig(files);
 	const state = readState(paths);
-	const current = tiersOf(config).filter((tier) => tier !== MUDE);
-	// The order to fall back on: what is there now, or, when mude is there alone (local only), what was there before it.
+	const current = tiersOf(config).filter((tier) => tier !== name);
+	// The order to fall back on: what is there now, or, when the judge is there alone (local only), what was there before.
 	const before = current.length > 0 ? current : [...(state?.previousTiers ?? ["jev"])];
-	const tiers = options.localOnly ? [MUDE] : [MUDE, ...before.filter((tier) => tier !== MUDE)];
+	const tiers = options.localOnly ? [name] : [name, ...before.filter((tier) => tier !== name)];
 	const judgeWasOff = state?.judgeWasOff ?? judgeOff(config);
 	let next = withJudge(withTiers(withoutOwnRoutes(config, state), tiers), true);
 	const judges = judgesOf(next);
-	const entry = options.port !== DEFAULT_PORT;
-	if (entry) judges[MUDE] = entryFor(options.port);
-	else if (state?.wroteEntry) delete judges[MUDE];
+	const written = judge.entry(options.port);
+	if (written) judges[name] = written;
+	else if (state?.wroteEntry) delete judges[name];
+	const entry = written !== undefined;
 	next = withSection(next, "judges", judges);
 	// The two checks mude is not trusted with go to the judges behind it; a route someone set by hand stays.
 	const fallback = tiers.slice(1);
@@ -185,9 +218,9 @@ export function enableMude(paths: MudePaths, files: ConfigFiles, options: Enable
 	const backups = new Backups(files.home, files.now ?? new Date());
 	backups.save(path);
 	writeJsonFile(path, next);
-	if (envFileValue(readText(files.envFile), KEY_VARIABLE) !== options.key) {
+	if (envFileValue(readText(files.envFile), judge.keyVariable) !== options.key) {
 		backups.save(files.envFile);
-		writeEnvValue(files.envFile, KEY_VARIABLE, options.key);
+		writeEnvValue(files.envFile, judge.keyVariable, options.key);
 	}
 	writeState(paths, {
 		port: options.port,
@@ -201,15 +234,25 @@ export function enableMude(paths: MudePaths, files: ConfigFiles, options: Enable
 
 /** Takes mude out of the order: the judges behind it go first again, or the ones from before it was enabled. */
 export function disableMude(paths: MudePaths, files: ConfigFiles, options: { removeEntry?: boolean } = {}): string[] {
+	return disableLocal(MUDE_JUDGE, paths, files, options);
+}
+
+/** Takes `judge` out of the order: the judges behind it go first again, or the ones from before it was enabled. */
+export function disableLocal(
+	judge: LocalJudge,
+	paths: MudePaths,
+	files: ConfigFiles,
+	options: { removeEntry?: boolean } = {},
+): string[] {
 	const { path, config } = readConfig(files);
 	const state = readState(paths);
-	const rest = tiersOf(config).filter((tier) => tier !== MUDE);
+	const rest = tiersOf(config).filter((tier) => tier !== judge.name);
 	const tiers = rest.length > 0 ? rest : [...(state?.previousTiers ?? ["jev"])];
 	let next = withTiers(withoutOwnRoutes(config, state), tiers);
 	if (state?.judgeWasOff) next = withJudge(next, false);
 	if (options.removeEntry && state?.wroteEntry) {
 		const judges = judgesOf(next);
-		delete judges[MUDE];
+		delete judges[judge.name];
 		next = withSection(next, "judges", judges);
 	}
 	new Backups(files.home, files.now ?? new Date()).save(path);
