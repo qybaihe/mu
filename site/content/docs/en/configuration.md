@@ -46,7 +46,7 @@ A part mu doesn't understand falls back to its default instead of stopping mu. A
 
 ## Modes in practice {#modes}
 
-- {points_active} of the {points} points act from the start: `context.compact` and `output.drift` stay off until you turn them on, `capability.disclosure` and `swarm.patch` are off, and `notify.routing`, `input.interjection` and `turn.drift` are in shadow, recording their verdicts only. To try a judge, or a point you're unsure of, put the point in shadow mode, read the ledger (`mu ledger`, `/status` or the app's Judge tab), then set it back to active.
+- {points_active} of the {points} points act from the start: `context.compact` and `output.drift` stay off until you turn them on, `capability.disclosure` and `swarm.patch` are off, and `notify.routing` and `turn.drift` are in shadow, recording their verdicts only. To try a judge, or a point you're unsure of, put the point in shadow mode, read the ledger (`mu ledger`, `/status` or the app's Judge tab), then set it back to active.
 - `/mu mode <point> <off|shadow|active>` switches one point for the current session; `/mu mode default shadow` all of them. To keep a mode, put it in `mu.json`.
 - `MU_JUDGE_MODE=shadow mu` sets the default for one run.
 - `"modes": { "default": "off" }` asks no judge at all: the points that are in shadow by default are off too, unless `mu.json` gives one its own mode. Choosing "Not now" at the judge step of `mu setup` writes this.

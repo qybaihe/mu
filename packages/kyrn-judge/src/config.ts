@@ -142,8 +142,9 @@ export const DEFAULT_CONFIG: KyrnConfig = {
 		"capability.disclosure": "off",
 		// Its rules deliver what matters; in single-prompt runs a "next_turn" verdict never reached anyone.
 		"notify.routing": "shadow",
-		// About a second on every mid-run message, and no verdict has changed anything yet.
-		"input.interjection": "shadow",
+		// input.interjection follows the default: mu, not the key that sent it, decides when a message sent mid-run
+		// reaches the work. A message waits for its verdict for at most 1.5 s (`features.interjection.waitMs`), and goes
+		// as sent without one. A built-in "active" here would keep it acting under a default of shadow.
 		// Its steers were mostly wrong where it flagged anything at all, so it only records until it is reworked.
 		"turn.drift": "shadow",
 	},

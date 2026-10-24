@@ -50,7 +50,7 @@ If mu doesn't understand part of the file, that part falls back to its default a
 
 ## Modes in practice
 
-- 33 of the 40 points act from the start: `context.compact` and `output.drift` are off until you turn them on, `capability.disclosure` and `swarm.patch` are off, and `notify.routing`, `input.interjection` and `turn.drift` are in shadow. With `capability.disclosure` off, packs and MCP servers stay hidden and the model opens one with `find_capability`; `"capability.disclosure": "active"` in `modes` has the judge open them again. To try out a judge, or a point you're unsure of, put the point in shadow mode, read the ledger (`mu ledger`, `/status` or the app's Judge tab), then set it back to active once its verdicts look right.
+- 34 of the 40 points act from the start: `context.compact` and `output.drift` are off until you turn them on, `capability.disclosure` and `swarm.patch` are off, and `notify.routing` and `turn.drift` are in shadow. With `capability.disclosure` off, packs and MCP servers stay hidden and the model opens one with `find_capability`; `"capability.disclosure": "active"` in `modes` has the judge open them again. To try out a judge, or a point you're unsure of, put the point in shadow mode, read the ledger (`mu ledger`, `/status` or the app's Judge tab), then set it back to active once its verdicts look right.
 - `/mu mode <point> <off|shadow|active>` switches one point for the current session, and `/mu mode default shadow` switches all of them. To make a mode stick, put it in `mu.json`; the app's settings turn points on or off.
 - `MU_JUDGE_MODE=shadow mu` sets the default mode for one run.
 

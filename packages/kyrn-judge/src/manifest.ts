@@ -146,8 +146,8 @@ const DESCRIBED: HarnessManifest = {
 			feature: "interjection",
 			title: { zh: "中途插话", en: "Mid-run messages" },
 			summary: {
-				zh: "任务进行中你又发来一句话：判断是要立刻打断，还是等这一步做完再处理。默认是影子模式：判定只记录，消息按你按的键投递，不用等判定。",
-				en: "For a message that arrives while the agent is working: interrupt now, or handle it after the current step. In shadow by default: the verdict is only logged, and the key you pressed decides what happens to the message, without waiting for the verdict.",
+				zh: "任务进行中你又发来一句话：判断是在下一步就带进工作，还是等这一轮做完再处理。判定最多等 1.5 秒；没有判定时，消息按你发送的方式送达。",
+				en: "For a message you send while the agent is working: bring it into the work at the next step, or hold it until the run is done. mu waits up to 1.5 seconds for the verdict; without one, the message goes as you sent it.",
 			},
 		},
 		{

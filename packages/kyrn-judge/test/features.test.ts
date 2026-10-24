@@ -274,7 +274,7 @@ describe("kyrn features", () => {
 		expect(asked).toHaveLength(1);
 	});
 
-	it("interjection: in shadow, the default, a message sent mid-run goes on at once and the verdict is only recorded", async () => {
+	it("interjection: in shadow, a message sent mid-run goes on at once and the verdict is only recorded", async () => {
 		const asked: string[] = [];
 		const correction: Answer = { type: "choice", choice: "correction", probabilities: { correction: 0.95 } };
 		const judge =
@@ -285,7 +285,7 @@ describe("kyrn features", () => {
 				await new Promise((resolve) => setTimeout(resolve, delayMs));
 				return { kind: correction };
 			};
-		const harness = await start(judge(1000));
+		const harness = await start(judge(1000), { modes: { "input.interjection": "shadow" } });
 		harness.setResponses([fauxAssistantMessage("Migrating.")]);
 		await harness.session.prompt("Migrate the users table.");
 
@@ -300,9 +300,10 @@ describe("kyrn features", () => {
 		expect(result.action).not.toBe("handled");
 		expect(asked).toHaveLength(1);
 
-		// Active, it still waits for the verdict and re-sends a correction as a steer.
-		const active = await start(judge(0), { modes: { "input.interjection": "active" } });
-		active.setResponses([fauxAssistantMessage("Migrating."), fauxAssistantMessage("Stopped.")]);
+		// Active, the default, it waits for the verdict. The run is over by then here, so the message starts the next one
+		// as it was sent: there is no queue left to choose. test/interjection.test.ts sends messages during a run.
+		const active = await start(judge(0));
+		active.setResponses([fauxAssistantMessage("Migrating.")]);
 		await active.session.prompt("Migrate the users table.");
 		const routed = await active.session.extensionRunner.emitInput(
 			"Stop, that is the production database.",
@@ -310,7 +311,8 @@ describe("kyrn features", () => {
 			"interactive",
 			"followUp",
 		);
-		expect(routed.action).toBe("handled");
+		expect(routed.action).not.toBe("handled");
+		expect(asked).toHaveLength(2);
 	});
 
 	it("cache warming: asks only while the agent is idle, and not for longer than its wait", async () => {
@@ -950,7 +952,7 @@ describe("decision specs over lists and choices", () => {
 		]);
 	});
 
-	it("interjection: a correction steers, extra work queues, anything unclear keeps the user's own routing", async () => {
+	it("interjection: a correction steers, extra work and side questions wait for the run's end, anything unclear goes as sent", async () => {
 		const route = async (choice: string, probability: number) =>
 			(
 				await engineWith(() => ({
@@ -963,6 +965,7 @@ describe("decision specs over lists and choices", () => {
 			).outcome;
 		expect(await route("correction", 0.9)).toBe("steer");
 		expect(await route("addition", 0.9)).toBe("followUp");
+		expect(await route("side_question", 0.9)).toBe("followUp");
 		expect(await route("correction", 0.5)).toBe("keep");
 		expect(await route("other", 0.9)).toBe("keep");
 	});
