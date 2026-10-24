@@ -304,6 +304,7 @@
     "download": "下載這個版本",
     "full_agent": "mu-agent 的完整更新紀錄（英文）",
     "headlines": {
+      "v0.2.5": "移除內建的 Laya：原本用 Laya 的自動換成 mude 1.0 或 Jev；開啟對話不再等判定器啟動",
       "v0.2.4": "回覆裡提到的檔案可以點開；對話依專案歸類、從首頁立即進入；支援 Gemini 4 Argon；修正第三方 OpenAI 相容服務",
       "v0.2.3": "可以新增 Hugging Face 上的其他決策模型；執行中送出的訊息由 mu 決定何時送達；ChatGPT 登入不再被連接埠占用卡住",
       "v0.2.2": "安裝 mude 1.0 更穩：磁碟寫滿、中途停下、同時安裝都能妥善處理；英文更道地",
@@ -314,6 +315,16 @@
       "v0.1.8": "檢查 MCP 工具描述裡藏的指令，跑通的長任務可以存成技能"
     },
     "entries": [
+      {
+        "version": "v0.2.5",
+        "date": "2026-10-24",
+        "agent": "mu-agent 0.2.5",
+        "items": [
+          "<b>mu 不再內建 Laya。</b>App 的「設定 → 判定器」和首次引導裡不再有本機 Laya，命令列的 <code>mu judge setup</code>、<code>mu judge start</code> 等 Laya 指令也拿掉了。想用其他本機決策模型，在「設定 → 判定器」裡從 Hugging Face 新增，或用 <code>mu judge model add &lt;連結&gt;</code>（模型須以 mude 1.0 的方式打包）。Windows 和 Linux 安裝檔也因此變小了。",
+          "<b>原本用 Laya 的，升級後自動換判定器。</b>mude 1.0 已在這台 Mac 上裝好時由它接手，否則用 Laya 後面原有的判定器，都沒有就用 Jev。mu 只改 <code>~/.mu/agent/mu.json</code> 裡相關的值，並在 <code>~/.mu/backups</code> 留一份備份，第一次開啟對話時提示一次。Laya 下載過的檔案不會自動刪除，更新紀錄裡列出了可以手動刪除的資料夾。",
+          "<b>開啟對話不再等判定器啟動。</b>App 不再先啟動 Laya；mude 1.0 或從 Hugging Face 新增的模型在背景啟動，還沒啟動好之前由下一個判定器回答，不會卡住第一則回覆。"
+        ]
+      },
       {
         "version": "v0.2.4",
         "date": "2026-10-24",

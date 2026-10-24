@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-10-24
+
+**0.2.5 removes Laya from mu's built-in judges. If Laya was your judge, mu switches to mude 1.0 when it's set up on your Mac, otherwise to Jev, and says so once; opening a conversation never waits for a judge to start.** The desktop app carries mu-agent 0.2.5.
+
 ### Changed
 
 - **If Laya was your judge, the desktop app shows mude 1.0 or Jev in its place.** The Judges page shows mude 1.0 as your judge when it's set up on your Mac, otherwise the judges you had behind Laya, or Jev when there were none: the same choice mu makes when it switches your settings over. The app doesn't change `mu.json` for this. The first conversation you open says once which judge you have now and, on a Mac, that you can add other decision models from Hugging Face under Settings → Judges. The app doesn't delete what Laya downloaded. You can delete these folders yourself: `~/.mu/local-judge/laya-multilingual-onnx` on Windows and Linux, and `~/.mu/local-judge/models/laya-multilingual-coreml` and `~/.mu/local-judge/.venv` on a Mac.
