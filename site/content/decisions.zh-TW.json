@@ -31,7 +31,7 @@
     "judges_h2": "判定器可以整體選，也可以每個判定點單獨選",
     "judges": [
       { "h3": "Jev（雲端）", "p": "不設定金鑰也能用，透過 OpenCode Zen 免費回答。設定了自己的金鑰，可以走 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode 或 Cloudflare。", "code": "mu setup" },
-      { "h3": "Laya（本機）", "p": "3.22 億參數，在你的機器上執行，不走網路。簡單的是非題很可靠；先以影子模式和你目前的判定器平行執行一段時間，再交給它。", "code": "mu judge setup" },
+      { "h3": "mude 1.0（在你的 Mac 上）", "p": "mu 自己的決策模型，針對程式設計場景最佳化，在 Apple 晶片的 Mac 上執行。大約 0.1 秒答完，讀到的內容不會離開你的 Mac。", "code": "mu judge mude install" },
       { "h3": "分類模型", "p": "pi 模型目錄裡的任何分類模型，例如 Cloudflare 的 Clef，用你已有的登入或金鑰。", "code": "classifier:<供應商>/<模型>" },
       { "h3": "任何大模型", "p": "就用你正在用的模型，讓它以 JSON 回答。慢一些，每次判定都花 token。", "code": "llm:<供應商>/<模型>" }
     ],

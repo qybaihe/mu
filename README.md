@@ -26,7 +26,7 @@
 
 A coding agent makes hundreds of decisions per session that aren't about the code: what goes into the context, whether a command is safe, whether a finding is worth passing to another agent, whether the work is really done. Handing these to the main model costs tokens, time and focus. Fixed rules get them wrong too often. mu hands them to a **judge**: a small, fast model that answers one bounded question at a time, at 40 decision points in the agent loop. The main model keeps its attention on the work.
 
-mu comes as a command-line tool, `mu`, which does everything pi does and adds the judgment kernel, and as a desktop app that bundles mu and its runtime. The default judge model is Jev, hosted by TypeSafe. It answers yes/no, choice and score questions with a probability for each answer. Any judge model can take its place: [mude 1.0](#mude-10-a-decision-model-optimized-for-coding), mu's own model, on your Mac; the local Laya (except for approvals); your own System One server; or any LLM.
+mu comes as a command-line tool, `mu`, which does everything pi does and adds the judgment kernel, and as a desktop app that bundles mu and its runtime. The default judge model is Jev, hosted by TypeSafe. It answers yes/no, choice and score questions with a probability for each answer. Any judge model can take its place: [mude 1.0](#mude-10-a-decision-model-optimized-for-coding), mu's own model, on your Mac; another decision model from Hugging Face; your own System One server; or any LLM.
 
 What you get:
 
@@ -61,7 +61,7 @@ You don't need a judge key to start: until you set one, the free Jev on OpenCode
 
 ## Decision points
 
-Each decision point is `active` (the default), `shadow` (asked and logged, but changes nothing; useful for comparing judges before you switch one on) or `off`. Each can also name its own judge: `jev`, `laya` (local), `classifier:<provider>/<model>`, `llm:<provider>/<model>` or a cascade such as `laya,jev`.
+Each decision point is `active` (the default), `shadow` (asked and logged, but changes nothing; useful for comparing judges before you switch one on) or `off`. Each can also name its own judge: `jev`, `mude` (local), `classifier:<provider>/<model>`, `llm:<provider>/<model>` or a cascade such as `mude,jev`.
 
 The 40 points fall into five groups:
 
@@ -161,7 +161,7 @@ Every point, with its feature switch and options: [docs/reference/decision-point
 
   Measured in the authors' own sessions: a warm question takes about 0.3 s over HTTP/2, and 16 chunks of tool output are judged in a single request in 0.44 s, with the shared state billed once.
 - **mude 1.0** (local, a Mac with Apple silicon) is mu's own decision model, optimized for coding ([more below](#mude-10-a-decision-model-optimized-for-coding)).
-- **Laya** (local, macOS on Apple silicon) is a 322M-parameter judge that runs on your machine and never touches the network. It's reliable on simple predicates and weaker on meta-judgments, so run it in shadow alongside your current judge and read the ledger before you give it a decision point.
+- **Other decision models from Hugging Face** (local, a Mac with Apple silicon): `mu judge model add <link>` (or Settings → Judges in the app) adds one that is packaged like mude 1.0 and makes it the judge. Laya is no longer included: a `mu.json` that still names it gets mude 1.0 in its place when mude is set up, otherwise the remaining judges or Jev, and mu says so once.
 - **Any classifier model** in pi's catalog can serve as a tier: `classifier:<provider>/<model>`. Examples include Cloudflare's Clef (`clef`, `clef-flash`), the System One models on OpenRouter and the Vercel AI Gateway, or a llama.cpp classifier.
 - **Any LLM** can serve as a tier: `llm:<provider>/<model>`.
 
@@ -170,7 +170,7 @@ Judges can be chained in tiers, cheapest first:
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/tiers-dark.svg">
-    <img src="docs/readme/tiers-light.svg" width="880" alt="Judges in tiers, for a cascade such as laya,jev. All questions go to Laya first, local and free. What it is sure of becomes a verdict; a yes/no answer between 0.2 and 0.8 is uncertain and goes on to Jev, hosted, about 0.3 seconds. What is still uncertain, or what no judge answered, gets the fallback: what mu would do without a judge. The ledger records every answer and which judge gave it. Laya is not trusted on relating, scoring or meta-judgments, so those go on to Jev.">
+    <img src="docs/readme/tiers-light.svg" width="880" alt="Judges in tiers, for a cascade such as mude,jev. All questions go to mude 1.0 first, local, about 0.1 seconds. What it is sure of becomes a verdict; a yes/no answer between 0.2 and 0.8 is uncertain and goes on to Jev, hosted, about 0.3 seconds. What is still uncertain, or what no judge answered, gets the fallback: what mu would do without a judge. The ledger records every answer and which judge gave it. A question a judge isn't trusted on skips it and goes on to the next.">
   </picture>
 </p>
 
@@ -222,7 +222,7 @@ Decision accuracy is a separate, plainer measure: the share of checks a model ge
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/pieces-dark.svg">
-    <img src="docs/readme/pieces-light.svg" width="880" alt="The pieces. The desktop app (desktop/, which runs pi in a utility process over pi's RPC protocol) and the mu command (kyrn/bin/mu.mjs) both start pi, the coding agent: its agent loop, tools, sessions and providers. Inside pi runs the judgment kernel (packages/kyrn-judge): features hooked into pi's events, a decision engine with modes, judges and fallbacks, and the ledger. pi calls the main model. The engine asks the judges: Jev, Laya, any classifier or any LLM.">
+    <img src="docs/readme/pieces-light.svg" width="880" alt="The pieces. The desktop app (desktop/, which runs pi in a utility process over pi's RPC protocol) and the mu command (kyrn/bin/mu.mjs) both start pi, the coding agent: its agent loop, tools, sessions and providers. Inside pi runs the judgment kernel (packages/kyrn-judge): features hooked into pi's events, a decision engine with modes, judges and fallbacks, and the ledger. pi calls the main model. The engine asks the judges: Jev, mude 1.0, any classifier or any LLM.">
   </picture>
 </p>
 
@@ -353,7 +353,7 @@ Requires Node.js 22.19 or newer. `mu -p "prompt"` runs a single prompt and print
 | Command | What it does |
 | --- | --- |
 | `/status` | Show the judges, each decision point's mode, what was kept out of the context and the latest verdicts |
-| `/mu judge <judges>` | Set which judges answer, in which order: `laya`, `laya,jev`, `jev-opencode-free`, `classifier:<provider>/<model>`, `llm:<provider>/<model>` |
+| `/mu judge <judges>` | Set which judges answer, in which order: `jev`, `mude,jev`, `jev-opencode-free`, `classifier:<provider>/<model>`, `llm:<provider>/<model>` |
 | `/mu route <point> <judge>` | Give one decision point its own judge |
 | `/mu mode <point> <off\|shadow\|active>` | Switch one decision point's mode |
 | `/frame` | Show the task frame: the goal, your constraints with their source and the acceptance criteria |
@@ -370,11 +370,11 @@ Requires Node.js 22.19 or newer. `mu -p "prompt"` runs a single prompt and print
 | `/import-chat` | Import a Claude Code, Codex or ZCode conversation |
 | `/doctor` | Check the setup and the connections |
 
-pi's own commands (`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export` and the rest) work as they do in pi, except that `/login` offers no Claude subscription sign-in: Anthropic doesn't allow other apps to offer one, so use an Anthropic API key. `MU_JUDGE=laya,jev mu` overrides the judges for a single run.
+pi's own commands (`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export` and the rest) work as they do in pi, except that `/login` offers no Claude subscription sign-in: Anthropic doesn't allow other apps to offer one, so use an Anthropic API key. `MU_JUDGE=mude,jev mu` overrides the judges for a single run.
 
 ## Privacy
 
-Your keys stay on your machine. mu never downloads a model or a runtime on its own; anything that needs a download asks first. The judge sees only the fields a question needs. With no key set, those fields go to the free Jev on OpenCode Zen. To keep everything on your machine, use mude 1.0 with `--local-only`, Laya, `MU_JUDGE=off` or `mu setup --judge off` (no judge is asked, and mu's features fall back to their own rules). Every verdict is logged locally, and you can read all of them. The desktop app sends no telemetry or crash reports. Details are in [SECURITY.md](SECURITY.md#what-leaves-your-machine).
+Your keys stay on your machine. mu never downloads a model or a runtime on its own; anything that needs a download asks first. The judge sees only the fields a question needs. With no key set, those fields go to the free Jev on OpenCode Zen. To keep everything on your machine, use mude 1.0 with `--local-only`, `MU_JUDGE=off` or `mu setup --judge off` (no judge is asked, and mu's features fall back to their own rules). Every verdict is logged locally, and you can read all of them. The desktop app sends no telemetry or crash reports. Details are in [SECURITY.md](SECURITY.md#what-leaves-your-machine).
 
 ## Documentation
 

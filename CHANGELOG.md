@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Removed
+
+- **Laya is no longer built into mu.** Laya, the third-party local judge (`mu judge setup`, `mu judge start`), its sidecar and the `local` judge type are gone. If your judge was Laya, the first session you open in the terminal or the app switches it over: to mude 1.0 when it's set up on your Mac, otherwise to the judges you had behind Laya, or to Jev when there were none. mu changes only those values in `~/.mu/agent/mu.json`, keeps a copy of the file in `~/.mu/backups`, and tells you once what your judge is now. `MU_JUDGE=laya` is skipped. To use another decision model on your Mac, add it from Hugging Face with `mu judge model add <link>`, or under Settings → Judges in the app.
+
 ## [0.2.4] - 2026-10-24
 
 **0.2.4 turns files a reply names into links, groups conversations by project, opens a conversation from the home page at once, brings Gemini 4 Argon through Google Antigravity, and fixes third-party OpenAI-compatible providers that turned away the `developer` role.** The desktop app carries mu-agent 0.2.4.

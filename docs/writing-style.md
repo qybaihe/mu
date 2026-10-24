@@ -43,7 +43,6 @@ Product terms. Use these spellings and meanings everywhere; don't invent synonym
 | mu | The product: the CLI and the desktop app. | Lowercase. "μ" only as the logo. |
 | judge | A small, fast model that answers one bounded question. | Not "judger", "arbiter", "classifier" (a classifier is one kind of judge). |
 | Jev | TypeSafe's hosted judge model, the default judge. | A name; never "the Jev". Use it only for that model; when you describe how mu works, say "the judge". |
-| Laya | The local judge. | |
 | decision point | A place in the agent loop where mu asks the judge. | Written as an id in code font: `tool.risk`. Not "judgment point", "hook". |
 | verdict | The judge's answer at a decision point. | Not "judgment", "ruling", "result". |
 | ledger | The local log of every verdict. | |

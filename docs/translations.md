@@ -26,7 +26,7 @@ Guidelines:
 
 - Translate the meaning for someone using the app, not word for word. Keep it short: buttons and labels are narrow.
 - Keep placeholders exactly as they are (`{{count}}`, `{{name}}`), along with the plural forms the locale needs (`_one`, `_other`, and `_few` and `_many` for Slavic languages).
-- Leave names as they are: mu, Jev, Laya, pi, MCP, and model and provider names.
+- Leave names as they are: mu, Jev, mude 1.0, pi, MCP, and model and provider names.
 - Keep commands, paths, keys and code in English (`/permissions`, `mu.json`).
 
 ## The kernel's settings text
