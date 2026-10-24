@@ -4,9 +4,15 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Changed
+
+- **If Laya was your judge, the desktop app shows mude 1.0 or Jev in its place.** The Judges page shows mude 1.0 as your judge when it's set up on your Mac, otherwise the judges you had behind Laya, or Jev when there were none: the same choice mu makes when it switches your settings over. The app doesn't change `mu.json` for this. The first conversation you open says once which judge you have now and, on a Mac, that you can add other decision models from Hugging Face under Settings → Judges. The app doesn't delete what Laya downloaded. You can delete these folders yourself: `~/.mu/local-judge/laya-multilingual-onnx` on Windows and Linux, and `~/.mu/local-judge/models/laya-multilingual-coreml` and `~/.mu/local-judge/.venv` on a Mac.
+- **Opening a conversation never waits for a judge to start.** The app no longer starts Laya before mu, and mude 1.0 or a decision model from Hugging Face starts in the background while the conversation opens.
+
 ### Removed
 
 - **Laya is no longer built into mu.** Laya, the third-party local judge (`mu judge setup`, `mu judge start`), its sidecar and the `local` judge type are gone. If your judge was Laya, the first session you open in the terminal or the app switches it over: to mude 1.0 when it's set up on your Mac, otherwise to the judges you had behind Laya, or to Jev when there were none. mu changes only those values in `~/.mu/agent/mu.json`, keeps a copy of the file in `~/.mu/backups`, and tells you once what your judge is now. `MU_JUDGE=laya` is skipped. To use another decision model on your Mac, add it from Hugging Face with `mu judge model add <link>`, or under Settings → Judges in the app.
+- **Laya is no longer built into the desktop app.** The "Local Laya" choice is gone from the Judges page in Settings and from the first-run guide, with its install and start buttons and the copy of Laya the app ran itself on Windows and Linux. The Judges page offers Jev, mude 1.0 (on a Mac with Apple silicon) and CLM, and the guide offers Jev and mude 1.0. To use another decision model, add it from Hugging Face under mude 1.0 on the Judges page, or with `mu judge model add <link>`. It must be packaged like mude 1.0. The Windows and Linux downloads are smaller, because they no longer carry the ONNX runtime.
 
 ## [0.2.4] - 2026-10-24
 

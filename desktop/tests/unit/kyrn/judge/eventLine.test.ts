@@ -417,6 +417,13 @@ describe('Runtime event lines by the harness codes', () => {
     expect(say(tw, 'judge.notice', { code: 'free_jev_unavailable' }, 'zh-TW')).toEqual([
       '免費 Jev 已停止回答：設定 Jev 金鑰之前由固定規則決定',
     ]);
+    expect(both('judge.notice', { code: 'laya_removed', judge: 'mude', message: 'mu: Laya is no longer…' })).toEqual([
+      ['Laya is no longer built into mu, so the judge is now mude 1.0'],
+      ['mu 不再内置 Laya，判定器现在是 mude 1.0'],
+    ]);
+    expect(say(en, 'judge.notice', { code: 'laya_removed' })).toEqual([
+      'Laya is no longer built into mu, so the judge is now Jev',
+    ]);
     expect(say(en, 'judge.notice', { code: 'future', message: 'later' })).toBeUndefined();
   });
 });

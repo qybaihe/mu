@@ -92,13 +92,13 @@ describe('a classification in the judge log', () => {
 
   it('names the judge that answered: the first judge of a cascade, and a judge the app does not know as it is', () => {
     expect(answeredBy('jev-latest')).toBe(`Classified by Jev: ${task}`);
-    expect(answeredBy('laya>jev-latest')).toBe(`Classified by Laya: ${task}`);
+    expect(answeredBy('clm-8b>jev-latest')).toBe(`Classified by CLM: ${task}`);
     expect(answeredBy('clm-8b')).toBe(`Classified by CLM: ${task}`);
     expect(answeredBy('my-judge')).toBe(`Classified by my-judge: ${task}`);
     // Waiting, the line names the judge that was asked.
     expect(
-      classification(recorded('preflight.pending', { judge: 'laya', mode: 'active' }, turn('runtime', 1, 2)))
-    ).toBe('Laya is classifying this message…');
+      classification(recorded('preflight.pending', { judge: 'clm-8b', mode: 'active' }, turn('runtime', 1, 2)))
+    ).toBe('CLM is classifying this message…');
   });
 
   it('says why a classification came to nothing: no judge, no answer, switched off, skipped, or no clear class', () => {
@@ -110,10 +110,10 @@ describe('a classification in the judge log', () => {
     // A wait that ran out is the judge not answering in time.
     expect(
       classification(
-        recorded('preflight.pending', { judge: 'laya' }, turn('runtime', 1, 2)),
+        recorded('preflight.pending', { judge: 'clm-8b' }, turn('runtime', 1, 2)),
         recorded('preflight.wait_end', { reason: 'timeout', waitedMs: 3000 }, turn('runtime', 1, 3))
       )
-    ).toBe("Laya didn't answer this time; continuing as usual");
+    ).toBe("CLM didn't answer this time; continuing as usual");
   });
 });
 

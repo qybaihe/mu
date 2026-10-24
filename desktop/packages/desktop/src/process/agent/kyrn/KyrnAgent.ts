@@ -208,6 +208,11 @@ export const MU_NOTICES = {
    * payment) or `gone` (no longer offered). Plain rules decide until a Jev key is set.
    */
   free_jev_unavailable: 'mu: the free Jev stopped answering, so plain rules decide until a Jev key is set.',
+  /**
+   * The configuration named Laya, which mu no longer has, and mu moved it on (mu's `judge.notice`); the input's `judge`
+   * is the judge in its place by its name in the order (`mude`, `jev`, …). Said once, in the first session after it.
+   */
+  laya_removed: 'mu: Laya is no longer built in, so another judge answers now.',
   /** The person stopped the reply: what came before this line is all of it. */
   stopped: 'You stopped this reply.',
 } as const;
@@ -991,14 +996,15 @@ export class KyrnAgent implements Agent {
     });
   }
   /**
-   * mu's `judge.notice`: the judge answers with the free Jev on OpenCode Zen (`free_jev`), or the free Jev stopped
-   * (`free_jev_unavailable`, why in `reason`). One line each per conversation, by code, which the desktop words in the
-   * app's language; mu's own line, its title, comes right after as a notification and is not said again. A code this
-   * build does not know leaves mu's line to say it.
+   * mu's `judge.notice`: the judge answers with the free Jev on OpenCode Zen (`free_jev`), the free Jev stopped
+   * (`free_jev_unavailable`, why in `reason`), or Laya is gone and `judge` answers in its place (`laya_removed`, said in
+   * the first session after mu moved the configuration on). One line each per conversation, by code, which the desktop
+   * words in the app's language; mu's own line, its title, comes right after as a notification and is not said again.
+   * A code this build does not know leaves mu's line to say it.
    */
   private judgeNotice(id: string, session: Session, payload: JsonRecord): void {
     const code = text(payload.code);
-    if (code !== 'free_jev' && code !== 'free_jev_unavailable') return;
+    if (code !== 'free_jev' && code !== 'free_jev_unavailable' && code !== 'laya_removed') return;
     const message = text(payload.message).trim();
     if (message) {
       session.said.add(`coded:${message}`);
@@ -1007,7 +1013,11 @@ export class KyrnAgent implements Agent {
     if (session.said.has(code)) return;
     session.said.add(code);
     const reason = text(payload.reason);
-    this.notice(id, session, code, { title: message, input: reason ? { code: reason } : {} });
+    const judge = code === 'laya_removed' ? text(payload.judge) : '';
+    this.notice(id, session, code, {
+      title: message,
+      input: { ...(reason ? { code: reason } : {}), ...(judge ? { judge } : {}) },
+    });
   }
   /**
    * Asks the app one of mu's questions and answers mu exactly once, whatever happens: a failure to ask, an answer that

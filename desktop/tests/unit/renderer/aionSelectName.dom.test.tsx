@@ -11,7 +11,7 @@ afterEach(cleanup);
 
 const options = [
   { value: 'jev', label: 'Jev' },
-  { value: 'laya', label: 'Laya' },
+  { value: 'mude', label: 'mude 1.0' },
 ];
 
 describe('a multiple select', () => {

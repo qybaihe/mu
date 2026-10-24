@@ -91,10 +91,6 @@ files:
   - 'node_modules/better-sqlite3/vendor/**'
   - 'node_modules/bcrypt/vendor/**'
   - 'node_modules/node-pty/vendor/**'
-  # Laya's ONNX runtime (the local judge on Windows and Linux) ships binaries for every platform and arch. Only
-  # exclusions apply inside node_modules, and ${platform} is the build machine's: the arch is left out here, the
-  # other systems in win/linux/mac below.
-  - '!**/node_modules/onnxruntime-node/bin/napi-v6/*/!(${arch})/**'
   # Exclude vite source maps
   - '!**/*.map'
   # Exclude syntax highlighter languages (keep common ones)
@@ -131,8 +127,6 @@ win:
     #    - msi
   icon: resources/app.ico # Use the checked-in Windows icon resource for executable metadata/icon patching
   artifactName: ${productName}-${version}-${os}-${arch}.${ext}
-  files:
-    - '!**/node_modules/onnxruntime-node/bin/napi-v6/{darwin,linux}/**'
 
 nsis:
   oneClick: false
@@ -155,9 +149,6 @@ mac:
   gatekeeperAssess: false
   entitlements: entitlements.plist
   entitlementsInherit: entitlements.plist
-  # On a Mac, Laya runs on Core ML (kyrn-judge-local); the ONNX runtime stays out of the app.
-  files:
-    - '!**/node_modules/onnxruntime-node/bin/**'
 
 dmg:
   # Use UDZO format which is more reliable on CI
@@ -188,8 +179,6 @@ linux:
   artifactName: ${productName}-${version}-${os}-${arch}.${ext}
   # `mu` on the PATH is the command line (npm i -g mu-agent); the desktop app gets its own name there.
   executableName: mu-desktop
-  files:
-    - '!**/node_modules/onnxruntime-node/bin/napi-v6/{darwin,win32}/**'
   category: Utility
   maintainer: mu
   vendor: mu
@@ -224,8 +213,6 @@ asarUnpack:
   # tree-sitter WASM files need to be unpacked for fs.readFile access
   - '**/node_modules/web-tree-sitter/**/*'
   - '**/node_modules/tree-sitter-bash/**/*'
-  # onnxruntime-node loads its .node and the shared libraries beside it from disk
-  - '**/node_modules/onnxruntime-node/**/*'
   # Builtin MCP server scripts must be unpacked so external node processes can execute them
   - 'out/main/builtin-mcp-image-gen.js'
   - 'out/main/builtin-mcp-browser.js'

@@ -137,7 +137,7 @@ describe('the native send box', () => {
     const gate: { release?: () => void } = {};
     host.answer((id, command) => {
       if (command.type !== 'prompt') return { ok: true, data: { isStreaming: false, isCompacting: false } };
-      host.push(id, frame('preflight.pending', { judge: 'laya' }));
+      host.push(id, frame('preflight.pending', { judge: 'mude' }));
       return new Promise<NativeResult<unknown>>((resolve) => {
         gate.release = () => resolve({ ok: true, data: undefined });
       });

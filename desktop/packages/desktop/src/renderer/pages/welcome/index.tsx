@@ -180,7 +180,7 @@ export default function Welcome() {
   const { base, draft } = mu;
   // On a Mac that can run it (as its status says, not while that is still read), mude is the recommended judge: the
   // judge step starts with it picked, its install one click away and never started by itself, while the judge is still
-  // the free Jev a new mu starts with. A judge set up before (Jev with a key, Laya, CLM, no judge, mude itself) stays
+  // the free Jev a new mu starts with. A judge set up before (Jev with a key, CLM, no judge, mude itself) stays
   // the one picked. Whatever the person picks on the step wins, and the status read later never moves it.
   const recommendMude = mudeRecommended(mude.state);
   const mudePicked = mudePick ?? (recommendMude && draft !== undefined && freeJevJudge(draft));
@@ -525,7 +525,6 @@ export default function Welcome() {
               <ChoiceBody
                 choice={choice}
                 draft={draft}
-                guide
                 onChange={mu.editSettings}
                 onKey={(variable, value) =>
                   mu.edit((now) => ({ ...now, judgeKeys: { ...now.judgeKeys, [variable]: value } }))

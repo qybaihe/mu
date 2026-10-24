@@ -293,12 +293,12 @@ describe('feature options', () => {
 describe('what a save leaves alone', () => {
   it('never drops routes, writer, recordState, judge profiles or keys it does not know', () => {
     const config = {
-      tiers: ['laya', 'jev'],
+      tiers: ['clm', 'jev'],
       routes: { 'browser.step': ['luna'] },
       writer: 'openai/gpt-5.6-luna',
       recordState: true,
       judges: {
-        laya: { type: 'local', profile: { capabilities: { relate: false } } },
+        clm: { type: 'clm', profile: { capabilities: { relate: false } } },
         luna: { type: 'llm', model: 'a/b' },
       },
       somethingNew: { nested: [1, 2, 3] },

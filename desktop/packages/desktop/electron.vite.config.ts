@@ -111,9 +111,6 @@ export default defineConfig(({ mode }) => {
         rollupOptions: {
           input: {
             index: resolve('packages/desktop/src/index.ts'),
-            // The local judge where Core ML does not run, started as a utility process (onnxruntime-node stays
-            // external and loads from node_modules, which a utility process reads inside app.asar).
-            localJudgeOnnx: resolve('packages/desktop/src/process/services/localJudgeOnnx/entry.ts'),
             // The native host (MU_NATIVE_HOST=1): pi in a utility process per session, imported at run time from the
             // harness it is started with (docs/native-host.md).
             nativeHost: resolve('packages/desktop/src/process/services/nativeHost/entry.ts'),

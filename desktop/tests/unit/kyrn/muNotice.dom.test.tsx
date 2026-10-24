@@ -23,11 +23,14 @@ import zhMu from '@/renderer/services/i18n/locales/zh-CN/mu.json';
 
 // The mu bridge's notices (a `mu:notice:` tool call with the code in its input) are one line in the reader's language.
 
-vi.mock('@/renderer/utils/platform', () => ({ openExternalUrl: vi.fn(async () => {}) }));
+/** Whether the app runs on a Mac, where it adds decision models from Hugging Face. */
+const platform = vi.hoisted(() => ({ mac: true }));
+vi.mock('@/renderer/utils/platform', () => ({ openExternalUrl: vi.fn(async () => {}), isMacOS: () => platform.mac }));
 
 afterEach(() => {
   cleanup();
   vi.mocked(openExternalUrl).mockClear();
+  platform.mac = true;
 });
 
 const LOCALES = join(__dirname, '../../../packages/desktop/src/renderer/services/i18n/locales');
@@ -75,7 +78,7 @@ describe('the bridge’s notices', () => {
           .reduce<unknown>((at, name) => (at as Record<string, unknown> | undefined)?.[name], mu);
       for (const code of MU_NOTICE_CODES)
         expect(sentence(MU_NOTICE_KEYS[code]), `${language} ${code}`).toEqual(expect.any(String));
-      for (const key of Object.values(FREE_JEV_UNAVAILABLE_KEYS))
+      for (const key of [...Object.values(FREE_JEV_UNAVAILABLE_KEYS), 'mu.notices.layaRemovedNoModels'])
         expect(sentence(key), `${language} ${key}`).toEqual(expect.any(String));
     }
   });
@@ -251,6 +254,42 @@ describe('the free Jev', () => {
     // A reason this build has no words for is said in mu's own.
     showNotice('en', stopped('newer'));
     expect(screen.getByTestId('mu-notice')).toHaveTextContent('mu: it stopped');
+  });
+});
+
+describe('Laya, gone from mu', () => {
+  const removed = (judge?: string) =>
+    notice({
+      title: 'mu: Laya is no longer built in, so your judge is now mude 1.0.',
+      raw_input: { notice: 'laya_removed', ...(judge ? { judge } : {}) },
+    });
+
+  it('says which judge took its place, and that another decision model comes from Hugging Face', () => {
+    expect(muNotice(removed('mude'))).toEqual({
+      code: 'laya_removed',
+      title: 'mu: Laya is no longer built in, so your judge is now mude 1.0.',
+      judge: 'mude',
+    });
+    const mude = showNotice('en', removed('mude'));
+    expect(screen.getByTestId('mu-notice')).toHaveAttribute('data-code', 'laya_removed');
+    expect(screen.getByTestId('mu-notice')).toHaveTextContent(
+      'Laya is no longer built into mu, so your judge is now mude 1.0. To use another decision model, add it from ' +
+        'Hugging Face under Settings → Judges.'
+    );
+    mude.unmount();
+    // No judge named: Jev, mu's default.
+    showNotice('zh', removed());
+    expect(screen.getByTestId('mu-notice')).toHaveTextContent(
+      'mu 不再内置 Laya，你的判定器现在是 Jev。想用其他决策模型，在「设置 → 判定器」里从 Hugging Face 添加。'
+    );
+  });
+
+  it('offers no decision model from Hugging Face where the app adds none (Windows, Linux)', () => {
+    platform.mac = false;
+    showNotice('en', removed('jev'));
+    expect(screen.getByTestId('mu-notice')).toHaveTextContent(
+      /^Laya is no longer built into mu, so your judge is now Jev\.$/
+    );
   });
 });
 
