@@ -5,7 +5,7 @@ import { KyrnError, type KyrnResult } from './errors';
 import type { ImportedHistory, ImportList, ImportOutcome } from './importChats';
 import type { LessonChange, LessonsView } from './lessons';
 import type { LocalJudgeAction, LocalJudgeState } from './localJudge';
-import type { LoginState, LoginStatus, SubscriptionProvider } from './login';
+import type { LoginState, LoginStatus, SignOutSwitch, SubscriptionProvider } from './login';
 import type { ModelRequest, ModelsState, MudeAction, MudeState } from './mude';
 import type {
   AvailableModels,
@@ -63,6 +63,13 @@ export const kyrnBridge = {
   loginCancel: bridge.buildProvider<KyrnResult<LoginState>, void>('kyrn.login.cancel'),
   loginStatus: bridge.buildProvider<KyrnResult<LoginStatus>, void>('kyrn.login.status'),
   loginLogout: bridge.buildProvider<KyrnResult<LoginStatus>, { provider: SubscriptionProvider }>('kyrn.login.logout'),
+  /**
+   * After a sign-out, once mu was checked again: the model new conversations start on, and the conversations running on
+   * one of the account's models, go on with a model mu still offers.
+   */
+  loginSwitchModels: bridge.buildProvider<KyrnResult<SignOutSwitch>, { provider: SubscriptionProvider }>(
+    'kyrn.login.switchModels'
+  ),
   /** The local judge (Laya) on this machine; see common/kyrn/localJudge.ts. */
   localJudgeState: bridge.buildProvider<KyrnResult<LocalJudgeState>, void>('kyrn.localJudge.state'),
   /** `consent`: the person agreed to what `setup` downloads. */

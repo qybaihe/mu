@@ -483,6 +483,8 @@
     "byKeyHelp": "Nenhuma assinatura está conectada, mas o mu o informou como disponível na última conexão, geralmente porque a chave de API dele está no ambiente. Ao entrar, ele passa a usar a assinatura.",
     "otherRunning": "O login em {{name}} está em andamento, e só um login é feito por vez.",
     "showRunning": "Mostrar",
+    "switched": "Você saiu de {{name}}. O modelo passou a ser {{model}}.",
+    "noModelLeft": "Você saiu de {{name}}. Nenhum outro modelo está configurado.",
     "legacy": {
       "openai-codex": "Este login antigo passa pelo login da CLI do Codex. Saia e depois entre com o ChatGPT.",
       "anthropic": "A Anthropic não permite que outros apps entrem com uma assinatura do Claude, então o mu não oferece mais essa opção. Saia e adicione uma chave de API da Anthropic."

@@ -483,6 +483,8 @@
     "byKeyHelp": "No hay ninguna suscripción con sesión iniciada, pero mu lo indicó como disponible en su última conexión, normalmente porque su clave de API está en el entorno. Al iniciar sesión pasa a usar la suscripción.",
     "otherRunning": "Se está iniciando sesión en {{name}}; solo puede haber un inicio de sesión a la vez.",
     "showRunning": "Ver",
+    "switched": "Sesión de {{name}} cerrada. Se cambió a {{model}}.",
+    "noModelLeft": "Sesión de {{name}} cerrada. No hay ningún otro modelo configurado.",
     "legacy": {
       "openai-codex": "Este inicio de sesión anterior pasa por el de la CLI de Codex. Cierra la sesión y luego inicia sesión con ChatGPT.",
       "anthropic": "Anthropic no permite que otras apps inicien sesión con una suscripción de Claude, así que mu ya no lo ofrece. Cierra la sesión y añade una clave de API de Anthropic."

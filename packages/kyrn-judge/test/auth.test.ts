@@ -159,6 +159,28 @@ describe("mu auth", () => {
 		expect(said.at(-1)).toMatchObject({ type: "status", signedIn: [] });
 	});
 
+	it("drops the list of models an account gave when it signs out, and keeps pi's own catalogue", async () => {
+		const runtime = new FakeRuntime();
+		runtime.credentials = [
+			{ providerId: "google-antigravity", type: "oauth" },
+			{ providerId: "openai-codex", type: "oauth" },
+			{ providerId: "xai", type: "api_key" },
+		];
+		const forgotten: string[] = [];
+		const forgetModels = async (providerId: string) => {
+			forgotten.push(providerId);
+		};
+		const extra = [googleish("google-antigravity")];
+		const { io } = pipe();
+		expect(await runAuth(["logout", "google-antigravity"], { runtime, preferred, extra, io, forgetModels })).toBe(0);
+		// Codex's models come from pi's catalogue, the same for every account: they stay for the next sign-in.
+		expect(await runAuth(["logout", "openai-codex"], { runtime, preferred, extra, io, forgetModels })).toBe(0);
+		// A key is not signed out, and nothing of its provider is dropped.
+		expect(await runAuth(["logout", "xai"], { runtime, preferred, extra, io, forgetModels })).toBe(0);
+		expect(runtime.loggedOut).toEqual(["google-antigravity", "openai-codex"]);
+		expect(forgotten).toEqual(["google-antigravity"]);
+	});
+
 	it("walks a sign-in: the page to open, the browser chosen for the person, a pasted code, then the models", async () => {
 		const runtime = new FakeRuntime();
 		const asked: string[] = [];
@@ -319,6 +341,7 @@ describe("mu auth", () => {
 		for (const command of AUTH_COMMANDS) expect(AUTH_USAGE).toContain(`mu auth ${command}`);
 		// The npm package runs `mu auth` on pi's bundle, whose index must carry both.
 		expect(typeof pi.ModelRuntime.create).toBe("function");
+		expect(typeof pi.FileModelsStore).toBe("function");
 		expect(pi.defaultModelPerProvider["openai-codex"]).toEqual(expect.any(String));
 	});
 });

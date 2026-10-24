@@ -91,6 +91,16 @@ export type LoginStatus = {
   offered?: SubscriptionProvider[];
 };
 
+/** A model a sign-out switched to: pi's provider and model ids, and the model's name. */
+export type SwitchedModel = { provider: string; model: string; name: string };
+
+/**
+ * What a sign-out moved off the account's models besides its credential: the model new conversations start on
+ * (`defaultMoved`) and the running conversations (`conversations`, how many), each when it was one of the account's
+ * models and mu no longer offers it. `to` is the model they went on with; left out when no other model is set up.
+ */
+export type SignOutSwitch = { defaultMoved: boolean; conversations: number; to?: SwitchedModel };
+
 /**
  * The providers to show: what the runner offers (or pi's own ones until it has said), and any other one an account is
  * signed in to (a login no longer offered), so it can still be seen and signed out. Always in the app's order.
