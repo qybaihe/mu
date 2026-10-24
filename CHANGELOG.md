@@ -4,10 +4,18 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-10-24
+
+**0.2.2 makes the mude 1.0 install cope with a full disk, a stop at any step and two installs at once, and its English reads naturally.** The desktop app carries mu-agent 0.2.2.
+
+### Changed
+
+- **Clearer English in the app, the command line, the site and the docs.** The mude 1.0 switch is now called "Local only". Install messages say how to resume, and error messages say what to do next. Settings descriptions and the README read more naturally.
+
 ### Fixed
 
 - **Ctrl-C stops a mude 1.0 install at once while it waits to retry a dropped connection.** It says how much is downloaded and that the next install resumes from there. Before, mu ended 5 seconds later without a word. What was downloaded was kept either way.
-- **Installing mude 1.0 on a nearly full disk.** If the disk fills up during the download, the install now stops at once and says the disk is full. Before, it retried for two minutes, and the desktop app then blamed the connection. When an install goes on from a stop, the free-space check counts only what is still to download, so 1.7 GB already on the disk no longer has to fit a second time. Ctrl-C while the install sets up its Python environment now says it was stopped and goes on next time, not that the packages could not be installed.
+- **Installing mude 1.0 on a nearly full disk.** If the disk fills up during the download, the install now stops at once and says the disk is full. Before, it retried for two minutes, and the desktop app then blamed the connection. When an install resumes after a stop, the free-space check counts only what is still to download, so 1.7 GB already on the disk no longer has to fit a second time. Ctrl-C while the install sets up its Python environment now says it was stopped and resumes next time, instead of saying the packages couldn't be installed.
 - **A mude 1.0 install no longer waits forever for uv.** When the Mac has no uv, the install downloads it from GitHub (about 20 MB). If GitHub stops answering, the install now gives up after 5 minutes and says to run it again. Ctrl-C stops it at once.
 - **Two mude 1.0 installs no longer run at once.** For example, one in a terminal and one in the desktop app. Before, both downloaded into the same files, and one failed with a missing-file error even when the other finished. Now the second says another install is running and to wait for it. If a power cut or a kill leaves a stale lock behind, the next install takes it over.
 - **Stopping a mude 1.0 install while its server starts no longer leaves the server running.** Ctrl-C, or Cancel in the desktop app, used to leave the half-started server holding about 4 GB of memory, with mude not yet the judge. Now the stop ends the server too, and the terminal says so at once. A server that was already running before the command stays.
