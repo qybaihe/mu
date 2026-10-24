@@ -756,8 +756,18 @@
       "submit": "Valider",
       "openAgain": "Rouvrir la page",
       "pasteCode": "Coller un code à la place",
+      "pasteHint": "Une fois connecté, votre navigateur ouvre une adresse qui commence par {{address}}. La page peut afficher une erreur, ce n’est pas grave. Copiez l’adresse complète depuis la barre d’adresse et collez-la ici.",
       "cancel": "Annuler",
       "failed": "La connexion n’a pas abouti. Vous pouvez réessayer.",
+      "retry": "Réessayer",
+      "pasteInstead": "Coller l’adresse à la place",
+      "takenOver": "Une autre connexion a pris le port qu’attendait celle-ci (un /login dans un terminal, ou la CLI Codex) : celle-ci s’est donc arrêtée.",
+      "portInUse": {
+        "program": "Le port {{port}} est utilisé par {{command}} (processus {{pid}}), sans doute pour sa propre connexion. Terminez ou annulez cette connexion là-bas, puis cliquez sur « Réessayer ».",
+        "process": "Le port {{port}} est utilisé par le processus {{pid}}, sans doute pour sa propre connexion (la CLI Codex et l’app Codex utilisent ce port). Terminez ou annulez cette connexion là-bas, puis cliquez sur « Réessayer ».",
+        "session": "Le port {{port}} est occupé par une connexion inachevée dans une autre session mu ou pi (processus {{pid}}). Terminez-la ou annulez-la là-bas (Échap dans un terminal), puis cliquez sur « Réessayer ».",
+        "unknown": "Le port {{port}} est utilisé par un autre programme, sans doute la CLI Codex ou l’app Codex en cours de connexion. Terminez ou annulez cette connexion là-bas, puis cliquez sur « Réessayer »."
+      },
       "asks": "{{name}} demande (texte d’origine) :",
       "needAccount": "Connectez-vous d’abord à un compte, puis choisissez un modèle.",
       "experimental": "Expérimental",

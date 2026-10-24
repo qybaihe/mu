@@ -756,8 +756,18 @@
       "submit": "Enviar",
       "openAgain": "Abrir la página de nuevo",
       "pasteCode": "Pegar un código en su lugar",
+      "pasteHint": "Después de iniciar sesión, el navegador irá a una dirección que empieza por {{address}}. Puede que la página muestre un error; no pasa nada. Copia la dirección completa de la barra de direcciones y pégala aquí.",
       "cancel": "Cancelar",
       "failed": "No se completó el inicio de sesión. Puedes intentarlo de nuevo.",
+      "retry": "Reintentar",
+      "pasteInstead": "Pegar la dirección en su lugar",
+      "takenOver": "Otro inicio de sesión ocupó el puerto que este esperaba (un /login en una terminal o la CLI de Codex), así que este se detuvo.",
+      "portInUse": {
+        "program": "El puerto {{port}} lo está usando {{command}} (proceso {{pid}}), probablemente para su propio inicio de sesión. Termina o cancela ese inicio de sesión allí y luego haz clic en «Reintentar».",
+        "process": "El puerto {{port}} lo está usando el proceso {{pid}}, probablemente para su propio inicio de sesión (la CLI de Codex y la app de Codex usan este puerto). Termina o cancela ese inicio de sesión allí y luego haz clic en «Reintentar».",
+        "session": "El puerto {{port}} lo ocupa un inicio de sesión sin terminar en otra sesión de mu o pi (proceso {{pid}}). Termínalo o cancélalo allí (Esc en una terminal) y luego haz clic en «Reintentar».",
+        "unknown": "El puerto {{port}} lo está usando otro programa, probablemente la CLI de Codex o la app de Codex al iniciar sesión. Termina o cancela ese inicio de sesión allí y luego haz clic en «Reintentar»."
+      },
       "asks": "{{name}} pregunta (con sus propias palabras):",
       "needAccount": "Primero inicia sesión en una cuenta y luego elige un modelo.",
       "experimental": "Experimental",

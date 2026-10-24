@@ -157,7 +157,7 @@ export function initKyrnBridge(): void {
   const login = new LoginManager(spawnAuth(launcherOf(harness, process.platform), agentDir), (url) => {
     if (openable(url)) void shell.openExternal(url);
   });
-  kyrnBridge.loginStart.provider(({ provider }) => result(() => login.start(provider)));
+  kyrnBridge.loginStart.provider(({ provider, paste }) => result(() => login.start(provider, { paste: paste === true })));
   kyrnBridge.loginState.provider(() => result(() => login.state()));
   kyrnBridge.loginAnswer.provider(({ id, value }) => result(() => login.answer(id, value)));
   kyrnBridge.loginCancel.provider(() => result(() => login.cancel()));
@@ -165,6 +165,11 @@ export function initKyrnBridge(): void {
   kyrnBridge.loginLogout.provider(({ provider }) => result(() => login.logout(provider)));
   // A sign-in, or a look at who is signed in, still running when the app quits is ended with it.
   app.once('will-quit', () => login.dispose());
+  // With no window left to show it (a Mac app stays open), a sign-in under way is cancelled: it would keep its
+  // callback port, which the Codex CLI and a terminal /login use too, until its time limit.
+  app.on('window-all-closed', () => {
+    login.cancel();
+  });
   // Core ML on Apple Silicon Macs, the app's own ONNX judge on Windows and Linux: the same state and actions.
   const localJudge = usesOnnxJudge(process.platform, process.arch, process.env)
     ? new OnnxLocalJudge({

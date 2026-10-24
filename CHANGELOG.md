@@ -4,6 +4,12 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Fixed
+
+- **Sign in with ChatGPT no longer fails with "Port 1455 is in use" when the port is held by another sign-in of mu.** ChatGPT's sign-in waits for the browser on port 1455, which OpenAI fixes and the Codex CLI uses too. Before, the app could start a new sign-in while the one before it still held the port, and a `/login` left open in a terminal blocked the app until it was cancelled there. Now the app starts a new sign-in only once the one before has ended (ending it after 3 seconds at most). An earlier sign-in of mu, in the app or in a terminal, hands the port over by itself.
+- **When another program holds the port, the app says which one and offers Retry.** For example: "Port 1455 is in use by codex (process 4321), probably for its own sign-in. Finish or cancel that sign-in there, then click Retry", in every language the app ships in. "Paste the address instead" signs in without the port: you sign in in the browser, then paste the address it ends on. Before, the app showed the flow's English error and nothing to do about it.
+- **Every way a sign-in ends gives the port back:** finishing, Cancel, the 15-minute limit, closing the app's last window, signing out (which now ends a sign-in still under way first) and quitting the app.
+
 ## [0.2.2] - 2026-10-24
 
 **0.2.2 makes the mude 1.0 install cope with a full disk, a stop at any step and two installs at once, and its English reads naturally.** The desktop app carries mu-agent 0.2.2.
