@@ -120,7 +120,8 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/mu-agent-v')
     needs: [pack, smoke]
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Room for the check below, which waits up to 20 minutes for the registry.
+    timeout-minutes: 30
     permissions:
       contents: read
       id-token: write
@@ -165,9 +166,10 @@ jobs:
         shell: bash
         run: |
           expected=$(shasum -a 1 "$TARBALL" | cut -d' ' -f1)
-          # The registry can answer 404 for a few minutes after a publish. `|| true`: under `bash -e` a failed
-          # `npm view` would end the step at the first try instead of asking again.
-          for attempt in $(seq 1 30); do
+          # The registry can answer 404 for a while after a publish: more than 5 minutes for 0.2.7 and 0.2.9, so it is
+          # asked for up to 20. `|| true`: under `bash -e` a failed `npm view` would end the step at the first try
+          # instead of asking again.
+          for attempt in $(seq 1 120); do
             served=$(npm view "mu-agent@$VERSION" dist.shasum --prefer-online 2>/dev/null || true)
             [ -n "$served" ] && break
             sleep 10
