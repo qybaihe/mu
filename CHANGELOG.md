@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+## [0.2.9] - 2026-10-24
+
+**0.2.9 names subagents in your language on the plain-language board, so a Chinese board says 查计时 instead of an English task title.** The desktop app carries mu-agent 0.2.9.
+
 ### Changed
 
 - **Subagents are named in your language on the board.** A subagent goes by the task title the agent gave it, which is often in English, so a Chinese board could say 「audit timing in src/retry.ts 回来了」. Now the board's model gives each subagent a short name in the language you write in, such as 「查计时」, and the board uses it wherever it mentions that subagent: the top line, what's stuck, who's doing what, the account of what happened, and the board in the terminal. The agent is also asked to write its task titles in your language.
