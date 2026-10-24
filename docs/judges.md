@@ -115,4 +115,4 @@ The key itself never goes in the file: `apiKeyEnv` names the environment variabl
 3. Read the verdicts: `mu ledger [n]` prints the verdicts from the last n sessions, `mu ledger --json` gives every record with its probabilities and timings, and the desktop app's Judge tab shows each verdict with its question.
 4. Switch the point to `active` once its verdicts look right.
 
-`"recordState": true` also keeps the judged state in the ledger, which you need to train or distill your own judge on your sessions. It's off by default because the states contain your content.
+`"recordState": true` also keeps the judged state in the ledger, which you need to train your own judge on your sessions. It's off by default because the states contain your content.

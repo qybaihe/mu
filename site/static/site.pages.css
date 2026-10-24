@@ -24,7 +24,6 @@
 .dp-mode-name.mode-off { color: var(--faint); }
 .dp-mode code { margin-left: 8px; font-size: 12px; color: var(--faint); }
 .dp-mode p { margin: 8px 0 0; font-size: 14px; color: var(--muted); }
-.dp-rules { margin: 18px 0 0; padding-top: 14px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
 
 /* Group marks: pink to lavender, as small dots only. */
 .gdot { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06); }
@@ -124,8 +123,6 @@
 .models-compare tbody th { background: none; color: var(--text); font-size: 14px; white-space: normal; }
 
 /* ---- mubench page ---- */
-.mb-open { margin: 18px 0 0; }
-.mb-open .opt-flag { display: inline-block; padding: 2px 12px; font-size: 13px; color: var(--muted); }
 .mb-board { max-width: none; margin-top: 32px; }
 .mb-board table { min-width: 980px; font-variant-numeric: tabular-nums; }
 .mb-board th, .mb-board td { padding: 12px 14px; }
@@ -192,7 +189,6 @@
 .ent-field textarea { min-height: 128px; resize: vertical; }
 .ent-field input:hover, .ent-field textarea:hover { border-color: var(--faint); }
 .ent-field input:focus, .ent-field textarea:focus { outline: none; border-color: var(--judge); box-shadow: 0 0 0 3px var(--ring); }
-.ent-hint { margin: 0; font-size: 13px; color: var(--muted); }
 .ent-submit { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-top: 22px; }
 .ent-status { margin: 0; font-size: 14px; color: var(--muted); }
 .ent-status b { color: var(--text); }

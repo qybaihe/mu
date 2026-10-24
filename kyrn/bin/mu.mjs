@@ -100,8 +100,7 @@ export function usage(platform) {
 		'  mu "prompt"              start a session with this prompt',
 		'  mu -p "prompt"           run one prompt, print the answer and exit',
 		"  mu -c | -r               continue the last session | pick a session to resume",
-		"  mu setup                 connect a model (paste an API key or pick a service) and choose a judge",
-		"                           (see mu setup --help for scripting, reading a key from stdin and the supported services)",
+		"  mu setup                 connect a model (paste an API key or pick a service) and choose a judge (mu setup --help)",
 		"  mu judge mude install    install mude 1.0, mu's own decision model for coding, and make it the judge on this Mac (Apple silicon, 1.8 GB)",
 		"                           enable | disable | start | stop | status | uninstall (mu judge mude help)",
 		"  mu judge model add <link>  add another decision model from Hugging Face and make it the judge",
@@ -118,8 +117,6 @@ export function usage(platform) {
 		"",
 		"Everything else goes to pi unchanged: mu --help also shows pi's options,",
 		"and mu install|remove|update|list|config manage pi packages.",
-		"",
-		"Formerly KYRN: the kyrn commands still work.",
 	].join("\n");
 }
 

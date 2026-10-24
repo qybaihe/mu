@@ -31,8 +31,7 @@ const helpZh = () => `mu ${VERSIONS.mu} · 先判断再动手的编程代理，�
   /import-chat [文件]：把这个项目在 Claude Code、Codex 或 ZCode 里的对话导入进来，接着在这里聊
 
 判断层
-  你的每条消息都先交给判定器读：读的时候消息停在输入框上方（按 esc 可跳过等待），
-  判定结果留在对话里这条消息下面。${keyText("app.tools.expand")} 可以看每个判定背后的全部回答。
+  按 esc 不等判定器读完消息；${keyText("app.tools.expand")} 可以看每个判定背后的全部回答。
   /mu judge <判定器>：由哪些模型来判定、按什么顺序，比如 laya | laya,jev | jev-opencode-free | clm | classifier:<提供商>/<模型> | llm:<提供商>/<模型>
   /mu route <判定点> <判定器|default>：让某一个判定点用自己的判定器，比如 browser.step llm:openai/gpt-5.6-luna
   /mu mode <判定点|default> <off|shadow|active>：off 关闭，shadow 影子（只记录，不起作用），active 生效
@@ -100,7 +99,7 @@ const helpSectionsEn = (): HelpSection[] => [
 	},
 	{
 		title: "Judgment kernel",
-		intro: `The judge reads every message first. While it reads, your message waits above the editor (esc skips the wait); the verdict then appears under your message. ${keyText("app.tools.expand")} shows the full answers behind a verdict.`,
+		intro: `esc skips the wait for the judge's reading of a message; ${keyText("app.tools.expand")} shows the full answers behind a verdict.`,
 		rows: [
 			[
 				"/mu judge <judges>",

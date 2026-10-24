@@ -3,8 +3,6 @@ title: Judges
 summary: Who answers the decision points, how to choose, chain and compare judges, and what each one costs.
 ---
 
-A judge answers the bounded questions of mu's [decision points](@decisions): yes or no, one of a few named answers or a score, each with a probability. The decision points never know which judge answered. You choose, for the whole installation or per point, and you can compare judges on your own sessions before switching.
-
 ## Which judge answers {#tiers}
 
 `tiers` in `~/.mu/agent/mu.json` lists the judges in order. Each later judge only sees the questions the earlier ones left uncertain, so a cheap local judge can go first and a hosted one catch the rest:
@@ -21,7 +19,7 @@ A judge answers the bounded questions of mu's [decision points](@decisions): yes
 
 In a session, `/mu judge <judges>` and `/mu route <point> <judges|default>` do the same; `MU_JUDGE=laya,jev mu` sets the judges for one run. `/status` shows which judge answers what, and the app's judges page sets the same things.
 
-When no judge answers in time, each decision point does what it would do without a verdict (usually: nothing changes), and the ledger records why. Nothing waits long: every point has a time limit.
+When no judge answers in time, each decision point does what it would do without a verdict (usually: nothing changes), and the ledger records why.
 
 ## mude 1.0, on your Mac {#mude}
 
@@ -64,7 +62,7 @@ mu judge start     # starts it
 mu judge status
 ```
 
-The desktop app also asks first, then sets it up in one step. Laya is reliable on simple predicates (does this text describe an error?) and weak on questions about relations or about the request itself. mu knows this and never sends it a question it can't answer well, so in a chain such as `["laya", "jev"]` those go straight to the next judge. Laya isn't trusted with approvals in *Judge mode*. Run it in shadow next to your current judge and read the ledger before giving it a decision point of its own.
+Laya is reliable on simple predicates (does this text describe an error?) and weak on questions about relations or about the request itself. mu knows this and never sends it a question it can't answer well, so in a chain such as `["laya", "jev"]` those go straight to the next judge. Laya isn't trusted with approvals in *Judge mode*. Run it in shadow next to your current judge and read the ledger before giving it a decision point of its own.
 
 ## Classifier models and LLMs {#other-judges}
 
@@ -115,4 +113,4 @@ Set them in `mu.json` under `modes` (a `default` plus one entry per point), for 
 3. Read the verdicts: `mu ledger [n]` prints the last n sessions, `mu ledger --json` gives every record with its probabilities and timings, and the app's Judge tab shows each verdict with its question.
 4. Switch the point back to active when its verdicts look right.
 
-`"recordState": true` also keeps the judged state in the ledger, which you need to train or distill a judge of your own. It is off by default because the states hold your content.
+`"recordState": true` also keeps the judged state in the ledger, which you need to train a judge of your own. It is off by default because the states hold your content.

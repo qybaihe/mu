@@ -155,7 +155,6 @@ h1, h2 { word-break: keep-all; overflow-wrap: anywhere; }
   transition: transform 400ms var(--ease);
 }
 .hero-icon:hover { transform: translateY(-3px) rotate(-4deg) scale(1.04); }
-.kicker { min-height: 1.6em; margin: 0 0 14px; font-family: var(--mono); font-size: 14px; letter-spacing: 0.04em; color: var(--faint); }
 .hero h1 {
   margin: 0; font-size: clamp(38px, 6.2vw, 68px); line-height: 1.12; font-weight: 700; letter-spacing: -0.02em;
   text-wrap: balance;
@@ -218,11 +217,9 @@ html:not(.js) .tab[aria-selected="true"]::after { content: ""; position: absolut
 .hint code { font-size: 13px; padding: 1px 6px; border-radius: 6px; background: var(--code); border: 1px solid var(--line); }
 .hint a { color: var(--text); text-underline-offset: 3px; text-decoration-color: var(--line-strong); }
 .downloads { display: flex; flex-wrap: wrap; gap: 10px; }
-.meta { margin: 22px 0 0; font-size: 13px; color: var(--faint); }
 /* The desktop app under the hero, in the page's theme */
 .app-shot { max-width: 1080px; margin: 56px auto 0; }
 .app-shot img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); box-shadow: var(--shadow-3); }
-.app-shot figcaption { margin-top: 14px; font-size: 13px; color: var(--faint); }
 
 /* Story: sticky stage on the left, chapters on the right */
 .story-head { padding-top: 96px; }
@@ -246,7 +243,6 @@ h2 { margin: 0; font-size: clamp(26px, 3.2vw, 36px); line-height: 1.25; letter-s
 .motion .frame { transform: translateY(14px) scale(0.985); }
 .frame.is-active { opacity: 1; visibility: visible; transform: none; transition: opacity 420ms var(--ease), transform 520ms var(--ease), visibility 0s; }
 html:not(.js) .frame:first-child { opacity: 1; visibility: visible; }
-.frame figcaption { min-height: 1.6em; margin-top: 12px; font-size: 13px; color: var(--faint); text-align: center; transition: opacity 240ms var(--ease); }
 .term {
   container-type: inline-size;
   border-radius: 12px; overflow: hidden; background: var(--t-bg); color: var(--t-fg);
@@ -325,8 +321,6 @@ a.card:hover .go { color: var(--text); transform: translate(2px, -2px); }
 .list div { padding: 16px 0; border-bottom: 1px solid var(--line); font-size: 15px; color: var(--muted); }
 .list b { display: block; color: var(--text); font-size: 16px; font-weight: 650; margin-bottom: 2px; }
 .list code { padding: 1px 6px; border-radius: 6px; background: var(--code); border: 1px solid var(--line); font-size: 13px; }
-.note { margin: 24px 0 0; font-size: 14px; color: var(--muted); }
-.note a { color: var(--text); text-underline-offset: 3px; text-decoration-color: var(--line-strong); }
 
 /* Footer */
 footer { margin-top: 112px; border-top: 1px solid var(--line); padding: 36px 0 48px; font-size: 14px; color: var(--faint); }

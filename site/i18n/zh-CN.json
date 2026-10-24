@@ -38,14 +38,10 @@
     "replay": "↻ 重播",
     "replay_label": "重播这一段",
     "term_label": "mu 命令行的录屏",
-    "source_note": "这一页的内容和 GitHub 上的 README 同步。",
     "star_cta_h2": "喜欢 mu，就去 GitHub 点个 Star",
-    "star_cta_p": "Star 能让更多人看到它。代码、讨论和每一个版本都在仓库里。",
-    "star_cta_button": "在 GitHub 上 Star",
-    "stars_label": "颗 Star"
+    "star_cta_button": "在 GitHub 上 Star"
   },
   "home": {
-    "kicker": "μ · Only what's needed.",
     "h1": "只给任务<wbr><em>最需要的</em>上下文",
     "lead": "mu 是一个编码代理。一个小而快的判定模型每一轮替大模型做几十个小决定：什么留在上下文里，这条命令安不安全，活到底干完了没有。大模型把注意力留给正事。",
     "tab_cli": "命令行",
@@ -53,24 +49,17 @@
     "cli_hint": "需要 Node.js 22.19 或更新。装好后在项目目录里运行 <code>mu</code>；第一次用先运行 <code>mu setup</code> 接入一个模型。",
     "dl_mac_arm": "Apple 芯片",
     "dl_mac_intel": "Intel",
-    "app_hint": "macOS 版已签名并经 Apple 公证；Windows 版暂未签名，SmartScreen 会提示。应用自带 mu，不用另装 Node.js。ARM 版 Windows、Linux 和全部安装包见 <a href=\"https://github.com/qybaihe/mu/releases\">Releases</a>。",
-    "meta": "macOS · Windows · Linux · 开源（MIT + Apache-2.0）· 基于 pi",
+    "app_hint": "Windows 版暂未签名，SmartScreen 会提示。ARM 版 Windows、Linux 和全部安装包见 <a href=\"https://github.com/qybaihe/mu/releases\">Releases</a>。",
     "app_alt": "修好一个 bug 之后的 mu 桌面端：中间是对话，右侧判定页逐条列出判定器的判定、判定点和耗时，底部是内核状态栏",
-    "app_caption": "桌面端：判定页列出每一次判定的判定点和耗时。",
     "cue": "看一轮会话",
-    "story_label": "MU · 一轮会话",
     "story_h2": "先判断，再动手",
-    "story_intro": "写个方案，上下文里却背着一整套工具；模型越来越会写代码，人却越来越看不懂它在说什么。mu 的办法是把「判断」和「干活」分开：判断交给判定模型，干活交给大模型，讲话交给会说人话的模型。",
     "swarm_alt": "桌面端的蜂群页：三只蜂同时调查一个 bug，箭头是判定器判过后确认送达的信息",
-    "swarm_caption": "桌面端的蜂群页：箭头是判定器判过、确认送达的信息。",
     "board_alt": "人话看板：在做什么、做到哪了，下面是一行一行的流水",
-    "board_caption": "人话看板：在做什么、做到哪了，下面是一行行流水。",
     "chapters": [
       {
         "seg": "start",
         "label": "你说话的时候",
         "h2": "判定器先读一遍",
-        "caption": "一句话进来，判定器先给出一行判定，大模型才开始干活。",
         "paras": [
           "这是新任务、追问，还是在纠正它？干活时的插话要不要立刻打断？要不要把技能和工具加载进来，还是一句话就能答？"
         ],
@@ -83,7 +72,6 @@
         "seg": "fail",
         "label": "工具返回的时候",
         "h2": "输出先过一遍判定器",
-        "caption": "跑测试：13 个用例挂了 1 个。",
         "paras": [
           "一次测试、一次搜索，动辄几百行。判定器逐块判断哪些现在有用：失败的用例留下，一遍遍刷屏的日志去掉。没进上下文的部分归档，留一个指针，需要时再取回。",
           "网页和 MCP 返回的内容里，冲着模型来的指令会先被拦下。"
@@ -93,7 +81,6 @@
         "seg": "edit",
         "label": "动手之前",
         "h2": "该停的停，不该问的不问",
-        "caption": "找到原因：一分钟被定义成了一秒。改好这一行，没有回头问你。",
         "paras": [
           "每条命令执行之前，规则先标出有风险的操作，判定器再确认这是你要的、没有越过你说过的限制。权限分三档：<b>完全访问</b>、<b>判定模式</b>、<b>最小权限</b>，随时切换。在「判定模式」下，任务明显需要的由判定器直接放行，其余的才来问你。"
         ]
@@ -102,7 +89,6 @@
         "seg": "done",
         "label": "一轮结束的时候",
         "h2": "说做完了，要有证据",
-        "caption": "重新跑一遍，13 个全过，再说清楚改了什么。",
         "paras": [
           "模型说「好了」的时候，mu 会看这一轮有没有验证过，中途有没有跑偏，要不要退回检查点重来。",
           "用 <code>/goal &lt;条件&gt;</code> 给一个目标，它会一直干到条件成立才停。做没做完由大模型核对，判定器兜底；同一个错反复出现时，判定器判断这是不是一条死路。"
@@ -127,9 +113,7 @@
         ]
       }
     ],
-    "principles_label": "刻意不做的事",
     "principles_h2": "mu 不做什么",
-    "principles_intro": "大模型的注意力有限，上下文也是。下面这些，是 mu 特意没做、或者特意换了做法的地方。",
     "principles": [
       { "h3": "少打扰你", "p": "在「判定模式」下，任务明显需要的由判定器直接放行，其余的才来问你。" },
       { "h3": "不把工具全塞进上下文", "p": "开口第一句先判断：闲聊、追问，还是要动手的活。用不到的技能和 MCP 服务器不进上下文。" },
@@ -139,7 +123,6 @@
       { "h3": "不另起炉灶", "p": "命令行基于 pi，pi 的模型、扩展、技能和会话树都在；桌面端用的也是同一套会话。" }
     ],
     "principles_more": "{points} 个判定点各自问什么、改变什么",
-    "more_label": "还有这些",
     "more_h2": "命令行和桌面端，共用一套账号、设置和经验",
     "more": [
       { "b": "导入对话", "text": "Claude Code、Codex、ZCode 的对话导进来，接着在 mu 里聊。" },
@@ -149,26 +132,22 @@
       { "b": "判定流水", "text": "每次判定的结论和用时都记下来：<code>/status</code>、<code>mu ledger</code>，桌面端有判定页。" },
       { "b": "13 种界面语言", "text": "桌面端界面有简体中文、繁體中文、English、日本語、한국어等 13 种语言。" }
     ],
-    "community_label": "参与进来",
     "community_h2": "一起把 mu 做好",
     "community": [
-      { "h3": "Issues", "p": "报 bug、提需求，模板会带你填好要的信息。", "href": "https://github.com/qybaihe/mu/issues" },
+      { "h3": "Issues", "p": "报 bug、提需求。", "href": "https://github.com/qybaihe/mu/issues" },
       { "h3": "Discussions", "p": "用法、想法、你做的东西，都可以来聊。", "href": "https://github.com/qybaihe/mu/discussions" },
       { "h3": "参与贡献", "p": "修 bug、提新判定点、测判定器、做翻译，从 good first issue 开始。", "href": "https://github.com/qybaihe/mu/blob/main/CONTRIBUTING.md" }
-    ],
-    "key_note": "判定器不配 key 也能用：Jev 可以免费起步。写代码的模型用你自己的订阅或 API key。想换成自己的 TypeSafe key 或别的判定器，见<a href=\"{decisions}#judges\">判定器</a>。"
+    ]
   },
   "decisions": {
     "title": "判定点",
-    "lead": "每一轮里那些和代码无关的决定，mu 交给判定器回答。这一页列出全部 {points} 个判定点：每个问什么、改变什么，以及谁来回答。"
+    "lead": "每一轮里那些和代码无关的决定，mu 交给判定器回答。"
   },
   "models": {
     "title": "模型",
     "h1": "mude 1.0：针对编程场景优化的决策模型",
     "lead": "mu 自己的决策模型，经过微调和训练，在编程场景的决策上达到 SOTA 级。它在你自己的机器上运行，判定的内容不会离开这台机器。",
-    "mude_label": "MUDE 1.0",
     "mude_h2": "在你自己机器上跑的判定器",
-    "mude_intro": "每一轮，mu 都要问判定器几十个小问题。换成 mude 1.0，这些问题就在你的机器上回答。",
     "facts": [
       { "h3": "20 亿参数", "p": "一次前向就回答一次判定里的全部问题，每个答案都带概率。" },
       { "h3": "本地判定", "p": "服务跑在 127.0.0.1 上。它判定的内容不会离开你的机器。" },
@@ -177,7 +156,6 @@
     "downloads_h3": "在 Hugging Face 上",
     "full_p": "完整版：bf16，PyTorch，约 4.0 GB。建议用 CUDA GPU。",
     "mac_p": "Mac 版：MLX 8 位，下载 1.8 GB。mu 装的就是这一版。",
-    "install_label": "安装",
     "install_h2": "在 Mac 上一条命令装好",
     "install_intro": "一键安装目前只支持 Apple 芯片的 Mac：macOS 14 或更新，内存 8 GB 以上。在这样的 Mac 上，mude 是推荐的判定器，<code>mu setup</code> 会把它列在第一位。服务运行时约占用 4 GB 内存。",
     "cli": {
@@ -189,22 +167,18 @@
     },
     "app_h3": "在桌面端",
     "app": [
-      { "b": "新手引导", "text": "在能跑 mude 的 Mac 上，判定器这一步一开始就选中它，作为推荐的判定器，点一下就能安装，并显示下载进度。可以改选别的判定器或跳过，失败了可以重试；安装中途停下（哪怕是断电），点「继续安装」就从中断的地方接着装。这台 Mac 跑不了 mude 时，引导会说明，并继续用云端判定器。" },
+      { "b": "新手引导", "text": "在能跑 mude 的 Mac 上，判定器这一步一开始就选中它，作为推荐的判定器，点一下就能安装。安装中途停下，点「继续安装」就从中断的地方接着装。" },
       { "b": "设置 → 判定器", "text": "mude 卡片上可以安装、启动、停止、设为判定器和卸载，还有「仅本地」开关。" }
     ],
     "other_h3": "在其他机器上",
     "other_p": "在别的机器上，用完整版（Hugging Face 上的 mude-1.0）和它自带的 System One 服务来跑（做法见模型卡片），再在 <code>~/.mu/agent/mu.json</code> 里把它加成一个 <code>typesafe</code> 判定器。<code>MUDE_KEY</code> 里放的是启动服务时用的密钥：",
     "other_link": "模型卡片上的「Use with mu」（英文）",
-    "local_label": "数据去向",
     "local_h2": "什么会离开你的机器",
-    "local_intro": "mude 在你的机器上回答。别的内容会不会离开这台机器，取决于一个开关。",
     "local": [
       { "h3": "带兜底（默认）", "p": "你之前用的判定器留在 mude 后面兜底：mude 答不了的问题（它的服务没在运行，或者它拿不准），以及两项注入筛查（工具描述和工具输出），都交给它。如果它在云端，发过去的内容会离开你的机器。", "code": "mu judge mude install" },
       { "h3": "仅本地", "p": "mude 是唯一的判定器，什么都不发给云端判定器。mude 答不了时，判定点照没有判定器时那样做。", "code": "mu judge mude enable --local-only" }
     ],
-    "jev_label": "对比 Jev",
     "jev_h2": "mude 1.0 和 Jev",
-    "jev_intro": "Jev 是 mu 默认的判定模型，由 TypeSafe 托管。是非题、选择题、打分题，每个答案带概率，每一次判定都进流水。",
     "compare": [
       { "k": "在哪里运行", "mude": "你的机器上，127.0.0.1", "jev": "TypeSafe 托管，经 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen 或 Cloudflare Workers AI 调用" },
       { "k": "什么会离开你的机器", "mude": "开了「仅本地」就什么都不离开；否则是交给兜底判定器的内容", "jev": "每个问题需要的字段，比如一条消息、一块输出或一条命令；凭据先遮盖" },
@@ -212,17 +186,13 @@
       { "k": "许可和获取", "mude": "MIT，两个版本都在 Hugging Face 上", "jev": "托管服务：没有密钥时经 OpenCode Zen 限时免费，配上自己的密钥按次付费" },
       { "k": "怎么开始", "mude": "<code>mu judge mude install</code>，或在桌面端一键安装", "jev": "不用设置，默认就是它；<code>mu setup</code> 可以配密钥" }
     ],
-    "board_label": "MUBENCH",
     "board_h2": "能力分榜",
-    "board_p": "mubench 1.0 用开源仓库上真实编程会话里的请求，比较 mude 1.0、Jev 和 d3-nano 的综合分和八项能力分。",
     "board_link": "查看 mubench 1.0 榜单"
   },
   "mubench": {
     "title": "mubench 1.0",
     "h1": "mubench 1.0：用编码代理的决策给决策模型打分",
     "lead": "mubench 主榜的每一道题，都是 mu 在开源仓库上的真实编程会话里发给决策模型的请求，一字未改。每个答案按它带来的后果的代价计分，每个模型都和不用决策模型的 mu 相比。",
-    "open": "即将开源",
-    "main_label": "主榜",
     "main_h2": "真实编程会话",
     "main_intro": "{items} 道请求，来自开源仓库上的 {tasks} 个编程任务。",
     "model": "模型",
@@ -242,10 +212,8 @@
     "count_row_tasks": "题数（任务数）",
     "count_row": "题数",
     "few_short": "题少或分数不稳",
-    "note_best": "加粗：每一列的最高分。",
-    "note_best_acc": "加粗：每一列的最高值。",
     "note_few": "题少或分数不稳：不到 {items} 道题，题目来自不到 {tasks} 个任务，或者不用决策模型时 mu 的正确率已经超过 {baseline}%。",
-    "note_threat": "恶意指令识别今后以构造题为主计分，因为真实会话里很少出现攻击。目前还不出分。",
+    "note_threat": "恶意指令识别目前还不出分。",
     "score_note": "分数衡量的是：不用决策模型时 mu 因出错付出的代价，被模型消除了多少。100 分是全部消除，0 分是没有改善，负分是更差。它不是正确率，正确率见下方的<a href=\"#accuracy\">决策正确率</a>。",
     "note_threat_acc": "恶意指令识别这里也不列：主榜的 19 道这类请求里没有攻击，每个模型和不用决策模型的 mu 都全部答对；副榜还没有这类题。",
     "weight_row": "在综合分中的权重",
@@ -258,7 +226,6 @@
     ],
     "sub_h3": "副榜：构造场景",
     "sub_intro": "{items} 个为 mubench 编写的场景，计分方法相同。它们的决策分布和真实会话不同，所以两个榜分开出分，不合在一起。",
-    "acc_label": "正确率",
     "acc_h2": "决策正确率",
     "acc_intro": "模型答对的检查项占比（一道题可能有几个检查项），第一行是不用决策模型的 mu。这里每个检查项分量相同，不管答错的代价多大，所以正确率和分数给出的排名可能不同。",
     "acc_main_h3": "主榜：真实编程会话",
@@ -268,11 +235,8 @@
     "chart_sub_alt": "副榜综合分柱状图，含 95% 区间：{list}。不用决策模型：0。",
     "chart_caps_alt": "主榜八项能力分数的柱状图，数字见上方表格。",
     "chart_scoring_alt": "mubench 怎么给决策模型打分：mu 在编程会话里发给决策模型的真实请求；被测模型做出的决策；这个决策带来的后果的代价；再和不用决策模型时的 mu 相比。",
-    "how_label": "计分",
     "how_h2": "按后果计分",
-    "caps_label": "能力",
     "caps_h2": "八项能力",
-    "caps_intro": "mubench 覆盖的每个判定点只属于一项能力。综合分覆盖全部判定点；每项能力在综合分里占多少，取决于不用决策模型时它让 mu 付出多少代价。",
     "caps_text": {
       "permission": "一个动作该不该放行：被标记的命令是不是用户要的，能不能替用户批准这次调用，会不会违反用户定下的硬约束。",
       "threat": "网页、搜索结果、MCP 返回这些外来内容里，有没有冲着 AI 来的指令；MCP 工具说明里有没有夹带和工具无关的命令。",
@@ -290,17 +254,13 @@
     "lead": "每一轮，mu 都要问决策模型几十个小问题：这条命令能不能跑，哪段旧输出值得留下，这件事做完了没有。我们可以照您团队的判断标准定制一个决策模型，让它在您自己的机器上运行，并用数字告诉您它带来了什么变化。",
     "cta": "告诉我们您的需求",
     "cta_models": "了解 mude 1.0",
-    "mude_label": "MUDE 1.0",
     "mude_h2": "从 mude 1.0 开始，跑在您自己的机器上",
-    "mude_intro": "mude 1.0 是 mu 自己的决策模型，针对编程场景优化：20 亿参数，MIT 许可证，两个版本都放在 Hugging Face 上。它回答的决策都留在您的网络之内。",
     "run": [
       { "h3": "Apple 芯片的 Mac", "p": "在桌面端点一下，或者执行一条命令 <code>mu judge mude install</code>：mu 会下载 MLX 8 位版本，逐个校验文件，在 127.0.0.1 上启动它，并把它设为判定器。" },
       { "h3": "您的 GPU 服务器", "p": "完整的 bf16 模型，配上它自带的 System One 服务，建议用 CUDA GPU。mu 通过您自己的网络，把它当作判定器来调用。" }
     ],
     "mude_link": "在模型页进一步了解 mude 1.0",
-    "custom_label": "定制",
     "custom_h2": "照您团队的方式做决策",
-    "custom_intro": "每个团队拿捏的分寸都不一样。我们会和您一起，用您的判定点、工作流程和规则微调一个决策模型，并在您真正用它之前，拿它和您现在的配置做对比。",
     "steps": [
       { "h3": "您的决策", "p": "从对您要紧的决策开始：在您的代码库里什么算有风险，您的评审规范要求什么，工作该怎么分派。" },
       { "h3": "先测基线", "p": "像 mubench 那样，在这些决策上给您现在的配置打分：每个答案按它带来的后果的代价计分。" },
@@ -308,16 +268,13 @@
       { "h3": "前后对比", "p": "用同样的方法再打一次分，和您现在的配置放在一起比，切换之前就看清变化。" }
     ],
     "custom_link": "mubench 怎么给决策模型打分",
-    "mu_label": "配合 mu",
     "mu_h2": "开箱即用，配合 mu",
-    "mu_intro": "mu 本来就知道怎么用 mude 1.0，命令行和桌面端都一样。",
     "mu": [
       { "b": "命令行和桌面端的判定器", "text": "在命令行里执行 <code>mu judge mude install</code>，或者在桌面端「设置 → 判定器」的 mude 卡片上操作。" },
       { "b": "仅本地", "text": "执行 <code>mu judge mude enable --local-only</code> 后，mude 是唯一的判定器，什么都不发给云端判定器。mude 答不了时，判定点照没有判定器时那样做。" },
       { "b": "先用影子模式", "text": "影子模式下的判定点照常提问、记录判定，但不改变任何东西。您可以先观察模型，再决定信不信它。" },
       { "b": "可供审计的流水", "text": "每次判定都记录在您的机器上：答案和它们的概率、用时，以及它来自判定器还是兜底。用 <code>mu ledger</code> 或桌面端的「判定」页查看。" }
     ],
-    "faq_label": "问答",
     "faq_h2": "常见问题",
     "faq": [
       { "q": "能先试用 mude 1.0，再联系你们吗？", "a": "可以。它以 MIT 许可证免费提供。装好以后，把判定点设成影子模式，在流水里看它的判定。" },
@@ -325,33 +282,20 @@
       { "q": "哪些内容会离开我们的网络？", "a": "mude 回答的都不会：它跑在您的机器上。打开仅本地后，也不会有内容发给云端判定器。编程模型是另一回事：它看到的内容会发到它运行的地方。" },
       { "q": "怎么知道定制的模型更好？", "a": "像 mubench 那样，在您自己的判定点上给它打分，前后各一次，和您现在的配置放在一起比。切换之前，您就能看到数字。" }
     ],
-    "contact_label": "联系",
     "contact_h2": "告诉我们您想让模型做哪些决策",
-    "contact_intro": "几句话就够开始了：您的团队、现在的配置，以及您希望模型做对的决策。",
     "soon": "敬请期待",
     "form_note": "这个表单还没有接通。点「发送」不会发出任何内容，也不会保存任何内容。",
     "f_name": "姓名",
     "f_email": "工作邮箱",
     "f_company": "公司",
     "f_need": "您想让模型做哪些决策？",
-    "f_need_hint": "例如：在您的单体仓库里，哪些命令需要人工审核；代理可以自己改动什么；请求该怎么分派。",
     "send": "发送",
     "sent": "敬请期待。",
     "sent_p": "这个表单还没有接通，什么都没有发送，也没有保存。"
   },
   "docs": {
     "title": "文档",
-    "lead": "从安装到日常使用：桌面端、命令行、蜂群、人话看板和隐私。",
-    "more_h2": "更多参考",
-    "more_p": "下面这些参考文档目前只有英文，放在 GitHub 仓库里：",
-    "more": [
-      { "text": "Getting started", "href": "https://github.com/qybaihe/mu/blob/main/docs/getting-started.md" },
-      { "text": "Configuration", "href": "https://github.com/qybaihe/mu/blob/main/docs/configuration.md" },
-      { "text": "Judges", "href": "https://github.com/qybaihe/mu/blob/main/docs/judges.md" },
-      { "text": "Troubleshooting", "href": "https://github.com/qybaihe/mu/blob/main/docs/troubleshooting.md" },
-      { "text": "Features and options", "href": "https://github.com/qybaihe/mu/blob/main/docs/reference/features.md" },
-      { "text": "How mu works", "href": "https://github.com/qybaihe/mu/blob/main/docs/architecture.md" }
-    ]
+    "lead": "从安装到日常使用：桌面端、命令行、蜂群、人话看板和隐私。"
   },
   "changelog": {
     "title": "更新日志",
@@ -367,7 +311,6 @@
       "v0.1.9": "界面换了新样子，新加的服务商按模型列表填好参数",
       "v0.1.8": "检查 MCP 工具描述里藏的指令，跑通的长任务可以存成技能"
     },
-    "english_note": "这个版本的说明还没有中文版，下面是英文原文。",
     "entries": [
       {
         "version": "v0.2.2",

@@ -3,8 +3,6 @@ title: Getting started
 summary: Install the desktop app or the command line, connect a model and run a first task.
 ---
 
-mu comes in two forms: a **desktop app** that carries everything it needs, and the **`mu` command line**. Both share accounts, settings, sessions and lessons, so you can start a task in one and pick it up in the other.
-
 ## The desktop app {#desktop-app}
 
 1. Download the build for your system from [Releases](https://github.com/qybaihe/mu/releases/latest), or from the [home page](@home#install), which picks your system for you.
@@ -16,15 +14,13 @@ mu comes in two forms: a **desktop app** that carries everything it needs, and t
    | Windows x64 / Arm | `mu-<version>-win-x64.exe` / `mu-<version>-win-arm64.exe` |
    | Linux x64 / Arm (Debian, Ubuntu) | `mu-<version>-linux-amd64.deb` / `mu-<version>-linux-arm64.deb` |
 
-   `SHA256SUMS` on the release page lists the checksum of every file. The macOS builds are signed and notarized by Apple. The Windows builds aren't code-signed yet, so SmartScreen warns the first time: choose **More info**, then **Run anyway**.
+   The Windows builds aren't code-signed yet, so SmartScreen warns the first time: choose **More info**, then **Run anyway**.
 2. Open it. The first-run guide walks through four steps: a model, a permission mode, a judge and a start.
-   - **Model.** Paste an API key, and mu recognizes the service from the key's format (OpenAI, Anthropic, Google Gemini, xAI, OpenRouter, DeepSeek, Kimi, Qwen, GLM, SiliconFlow and more) and checks it with one request. Or sign in with a ChatGPT, Grok or Google subscription. If the key is wrong, the balance is empty, the region isn't supported or there's no connection, mu says so and tells you what to do.
+   - **Model.** Paste an API key, and mu recognizes the service from the key's format (OpenAI, Anthropic, Google Gemini, xAI, OpenRouter, DeepSeek, Kimi, Qwen, GLM, SiliconFlow and more) and checks it with one request. Or sign in with a ChatGPT, Grok or Google subscription.
    - **Permissions.** *Judge mode* is preselected; see [Permissions and safety](@docs/permissions).
-   - **Judge.** On a Mac that can run [mude 1.0](@docs/judges#mude), mu's own decision model, it's preselected, and one click installs it. Otherwise, with no key, Jev (TypeSafe's hosted judge model) answers for free through OpenCode Zen. To send nothing to a judge, choose **No judge**. You can come back to this any time.
-   - **Start.** If mu finds Claude Code, Codex or ZCode conversations, it offers to import them (the guide's first screen offers them too).
+   - **Judge.** On a Mac that can run [mude 1.0](@docs/judges#mude), mu's own decision model, it's preselected, and one click installs it. Otherwise, with no key, Jev (TypeSafe's hosted judge model) answers for free through OpenCode Zen. To send nothing to a judge, choose **No judge**.
+   - **Start.** If mu finds Claude Code, Codex or ZCode conversations, it offers to import them.
 3. Pick a folder and start a conversation.
-
-Nothing else needs installing: no Node.js, and nothing is downloaded at the first start. When a new release is out, the app tells you its version and size, downloads it only after you agree and installs it when you restart.
 
 ## The command line {#command-line}
 
@@ -34,7 +30,7 @@ mu setup               # connect a model and choose the judge
 mu                     # a session in the current directory
 ```
 
-`mu setup` asks step by step, in Chinese or English. To use a ChatGPT, Grok or Google subscription instead of a key, choose it there: mu then starts on `/login`, and you finish signing in in the browser. If you skip it, the first time you run `mu` without a model, it asks once whether to set one up. For scripts, `mu setup --help` shows the non-interactive forms; a key is read from standard input, never from the command line.
+To use a ChatGPT, Grok or Google subscription instead of a key, choose it in `mu setup`: mu then starts on `/login`, and you finish signing in in the browser. For scripts, `mu setup --help` shows the non-interactive forms; a key is read from standard input, never from the command line.
 
 Some things to try:
 
@@ -46,8 +42,6 @@ Some things to try:
 | `mu import --list` | Find Claude Code, Codex and ZCode conversations to bring in |
 | `mu doctor` | Check the installation, the judges and the connections |
 | `mu ledger 3` | What the judge decided in the last three sessions |
-
-Inside a session, `/status` shows the judge, each decision point's mode and the latest verdicts, and `/help` lists every command. The [command line page](@docs/cli) has the full list.
 
 ## Your first task {#first-task}
 
@@ -61,9 +55,9 @@ To keep it going until a condition holds, use [goal mode](@docs/goal): `/goal al
 
 ## The judge {#judge}
 
-mu asks a small, fast judge model the routine questions of a session. You don't have to set one up: with no Jev key, the free Jev on OpenCode Zen answers, and mu says so once a day. On a Mac with Apple silicon, `mu setup` and the app recommend [mude 1.0](@docs/judges#mude), mu's own decision model, which runs on your Mac. To use your own key, a local judge or another model, see [Judges](@docs/judges).
+You don't have to set up a judge: with no Jev key, the free Jev on OpenCode Zen answers, and mu says so once a day. On a Mac with Apple silicon, `mu setup` and the app recommend [mude 1.0](@docs/judges#mude), mu's own decision model, which runs on your Mac. To use your own key, a local judge or another model, see [Judges](@docs/judges).
 
-{points_active} of the {points} decision points act on their verdicts from the start (`context.compact` and `output.drift` are off until you turn them on, `capability.disclosure` and `swarm.patch` are off, and `notify.routing`, `input.interjection` and `turn.drift` only record theirs), and each verdict is logged: `/status`, `mu ledger` or the Judge tab in the app. To watch the judge before trusting it, put the decision points in shadow mode: they're still asked and logged, but change nothing.
+{points_active} of the {points} decision points act on their verdicts from the start, and each verdict is logged: `/status`, `mu ledger` or the Judge tab in the app. To watch the judge before trusting it, put the decision points in shadow mode: they're still asked and logged, but change nothing.
 
 ```json
 { "modes": { "default": "shadow" } }
