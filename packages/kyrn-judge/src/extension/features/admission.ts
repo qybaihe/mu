@@ -157,13 +157,22 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 	/**
 	 * One verdict per chunk, in order. The judge takes many chunks in one request, the state billed once
 	 * (measured 2026-09-23 on jev: 16 chunks in 0.44 s and 7.6k tokens, against 1.4 s and 11.6k tokens as 16
-	 * requests, with the same verdicts).
+	 * requests, with the same verdicts). A logprob judge sends each question with its state, so where one answers
+	 * `screen` questions the chunks are asked one at a time.
 	 */
 	const judgeChunks = async (
 		call: string,
 		middle: readonly string[],
 		signal: AbortSignal | undefined,
 	): Promise<readonly AdmissionOutcome[]> => {
+		if (!runtime.answersInBatches(toolAdmission.id, "screen")) {
+			const decisions = await runtime.engine.decideMany(
+				toolAdmission,
+				middle.map((chunk) => ({ call, chunk })),
+				{ signal, concurrency: options.concurrency },
+			);
+			return decisions.map((decision) => decision.outcome);
+		}
 		const size = Math.max(1, Math.min(options.batchChunks, Math.floor(BATCH_STATE_CHARS / options.chunkChars)));
 		const batches: { call: string; chunks: string[] }[] = [];
 		for (let start = 0; start < middle.length; start += size) {

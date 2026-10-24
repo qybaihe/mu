@@ -256,7 +256,7 @@ export class KyrnRuntime {
 			append: (record: LedgerRecord) => {
 				pi.appendEntry(LEDGER_ENTRY_TYPE, record);
 				// Raw judge inputs are not part of the UI protocol, even when the diagnostic ledger records them.
-				const { state: _state, ...visible } = record;
+				const { state: _state, questions: _questions, ...visible } = record;
 				// A judge that answers after the next message began still belongs to the turn that asked.
 				this.present("decision", visible, askedTurn(record) ?? this.userTurns);
 			},
@@ -327,6 +327,16 @@ export class KyrnRuntime {
 		return this.judgesFor(specId).some((judge) => isTrusted(judge.profile, capability));
 	}
 
+	/**
+	 * Whether the judge that answers `specId`'s questions takes many of them in one request. That is the first of its
+	 * judges (its route, else the tiers) trusted on `capability`, as the cascade picks it. A logprob judge sends each
+	 * question as its own request with the state in front: there a batch state would go out once per question, so its
+	 * items are asked one at a time instead.
+	 */
+	answersInBatches(specId: string, capability: Capability): boolean {
+		return this.judgesFor(specId).find((judge) => isTrusted(judge.profile, capability))?.type !== "logprob";
+	}
+
 	private judgesFor(specId: string): JudgeConfig[] {
 		return (this.routes.get(specId) ?? this.tiers).flatMap((name) => resolveJudgeConfig(name, this.config) ?? []);
 	}
@@ -389,7 +399,7 @@ export class KyrnRuntime {
 
 	/**
 	 * A completion function over one of the host's models. Looked up per call, because models load after extensions.
-	 * `maxTokens` caps the reply (2000 by default).
+	 * `maxTokens` caps the reply (2000 by default, 8000 with thinking on, which spends the same budget).
 	 */
 	llm(modelRef: string, options: { thinking?: string; maxTokens?: number } = {}): LlmCompletion {
 		return async ({ system, user, signal }) => {
@@ -409,7 +419,9 @@ export class KyrnRuntime {
 					},
 					{
 						signal,
-						maxTokens: options.maxTokens ?? 2000,
+						// The reasoning comes out of the same budget: thinking on mu's questions, Nemotron 3 Ultra
+						// used up to 4,400 tokens.
+						maxTokens: options.maxTokens ?? (thinking ? 8000 : 2000),
 						reasoning: thinking as never,
 						cacheRetention: "none",
 						sessionId: this.sessionId,

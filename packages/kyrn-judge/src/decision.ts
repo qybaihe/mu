@@ -159,8 +159,11 @@ interface Evaluation<Out> {
 	warnings?: readonly JudgeWarning[];
 	tiers?: readonly JudgeTierReport[];
 	failure?: string;
-	/** The questions as asked, kept for the ledger where they were built from the input (`questionsFor`). */
-	questions?: Questions;
+	/**
+	 * With `recordState`: the request as the judge received it, secrets redacted, for the ledger. Kept when the call
+	 * fails too: such a request is still one to replay or to train a judge on.
+	 */
+	request?: { state: JsonValue; questions: JsonValue };
 }
 
 export class DecisionEngine {
@@ -296,12 +299,15 @@ export class DecisionEngine {
 		this.stats.calls++;
 		const shared = !this.routed.has(spec.id);
 		if (shared) this.lastUsedAt = Date.now();
+		let request: Evaluation<Out>["request"];
 		try {
 			// A judge weighs what a call does, never the key it does it with.
 			const known = this.knownSecrets();
+			const sent = redactJson(state, known);
 			const asked = redactJson(questions, known);
+			if (this.recordState) request = { state: sent as JsonValue, questions: asked as unknown as JsonValue };
 			const result = await this.judgeFor(spec.id).evaluate({
-				state: redactJson(state, known),
+				state: sent,
 				questions: asked,
 				signal,
 				capabilities,
@@ -314,8 +320,7 @@ export class DecisionEngine {
 				modelId: result.modelId,
 				warnings: result.warnings.length > 0 ? result.warnings : undefined,
 				tiers: result.tiers,
-				// Fixed questions are the spec's own (`specId`, `specVersion`); built ones exist nowhere else.
-				questions: this.recordState && spec.questionsFor ? asked : undefined,
+				request,
 			};
 			const verdict = spec.policy(result.answers as AnswersFor<Qs>, input);
 			if (verdict === ABSTAIN) {
@@ -330,7 +335,7 @@ export class DecisionEngine {
 			const message = error instanceof Error ? error.message : String(error);
 			this.stats.failures++;
 			this.stats.lastError = { kind, message, at: new Date().toISOString() };
-			return { failure: `error:${kind}` };
+			return { failure: `error:${kind}`, request };
 		} finally {
 			if (shared) this.lastUsedAt = Date.now();
 		}
@@ -395,8 +400,8 @@ export class DecisionEngine {
 			warnings: evaluation.warnings,
 			tiers: evaluation.tiers,
 			stateDigest: createHash("sha256").update(JSON.stringify(state)).digest("hex"),
-			state: this.recordState ? (state as JsonValue) : undefined,
-			questions: evaluation.questions as JsonValue | undefined,
+			state: evaluation.request?.state,
+			questions: evaluation.request?.questions,
 		};
 		await this.record(record);
 

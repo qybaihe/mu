@@ -90,6 +90,15 @@ To reach it through a relay or proxy that serves the same Decisions endpoint, gi
 - `llm:<provider>/<model>`: any chat model, prompted to answer in JSON. It's slower, and every decision costs tokens, but it needs nothing beyond the model you already use. `mu setup --judge model` makes the session's model the judge.
 - `clm`: [CLM-8B](https://github.com/Contrastive-LM/CLM) behind a `clm-serve` (`http://127.0.0.1:8700` by default; set `MU_JUDGE_CLM_API_KEY` if the server requires a key). Not yet measured on mu's questions.
 
+## NVIDIA Nemotron on Nebius Token Factory
+
+- `nemotron`: Nemotron 3 Ultra on [Nebius Token Factory](https://tokenfactory.nebius.com), asked like `llm:` with thinking off, so each request gets one JSON answer (0.9 s at the median). Set `NEBIUS_API_KEY`, or choose it in `mu setup` with a Token Factory key (`--judge nemotron`). On 1,353 held-out judge requests from mu's own sessions it was the only Nemotron on Token Factory that clearly beat having no judge; Super, Nano 30B and Lightning missed the answer format or decided worse.
+- `nemotron-local`: Nemotron 3 Nano 4B, fine-tuned for mu's judge ([mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron)), served on your machine over System One at `http://127.0.0.1:8770`. It reads every answer off one token, so a decision costs nothing and stays on the machine.
+
+- `nemotron-think`: Nemotron 3 Ultra with thinking on, for the decision points where it decides much better that way (see [docs/nebius.md](nebius.md)); 2.5 s at the median.
+
+Put them in a cascade, `"tiers": ["nemotron-local", "nemotron"]`, and only the questions the local judge is unsure of go on to Ultra.
+
 ## Your own judge
 
 Add it under `judges` in `mu.json`, with a name and a type:
@@ -112,6 +121,8 @@ Add it under `judges` in `mu.json`, with a name and a type:
 | `llm` | A chat model from pi's registry |
 | `classifier` | A classifier from pi's catalog |
 | `clm` | A `clm-serve` |
+| `systemone` | Any other System One server at `baseUrl`, such as `mu-judge-nemotron`'s; sends `apiKeyEnv` (default `MU_JUDGE_SYSTEMONE_API_KEY`) only when it is set |
+| `logprob` | An OpenAI-compatible model at `baseUrl`, one question per request, the answer read off the first token's logprobs |
 | `openai` | OpenAI's Decisions API, at `baseUrl` (OpenAI's own by default) |
 
 The key itself never goes in the file: `apiKeyEnv` names the environment variable that holds it (set it in your environment or in mu's `.env`).
@@ -123,4 +134,4 @@ The key itself never goes in the file: `apiKeyEnv` names the environment variabl
 3. Read the verdicts: `mu ledger [n]` prints the verdicts from the last n sessions, `mu ledger --json` gives every record with its probabilities and timings, and the desktop app's Judge tab shows each verdict with its question.
 4. Switch the point to `active` once its verdicts look right.
 
-`"recordState": true` also keeps the judged state in the ledger, which you need to train your own judge on your sessions. It's off by default because the states contain your content.
+`"recordState": true` also keeps each judge request in the ledger: the state and the questions as the judge received them, with known secrets redacted. You need it to train or distill your own judge on your sessions ([mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron) turns them into training data). It's off by default because the states contain your content.

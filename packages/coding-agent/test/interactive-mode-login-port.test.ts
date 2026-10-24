@@ -38,7 +38,8 @@ function fakeThis(modelRuntime: ModelRuntime) {
 		editorContainer: {
 			clear: vi.fn(),
 			addChild: (child: unknown) => {
-				if (child && typeof child === "object" && "signal" in child) dialogs.push(child as unknown as { cancel(): void });
+				if (child && typeof child === "object" && "signal" in child)
+					dialogs.push(child as unknown as { cancel(): void });
 			},
 		},
 		editor: {},

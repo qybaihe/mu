@@ -1637,6 +1637,7 @@ function detectCompat(model: Model<"openai-completions">): ResolvedOpenAIComplet
 	const isCloudflareAiGateway = provider === "cloudflare-ai-gateway" || baseUrl.includes("gateway.ai.cloudflare.com");
 	const isNvidia = provider === "nvidia" || baseUrl.includes("integrate.api.nvidia.com");
 	const isAntLing = provider === "ant-ling" || baseUrl.includes("api.ant-ling.com");
+	const isNebius = provider === "nebius" || baseUrl.includes("tokenfactory.nebius.com");
 	const isDeepSeek = provider === "deepseek" || baseUrl.toLowerCase().includes("deepseek.com");
 
 	const isGrok = provider === "xai" || baseUrl.includes("api.x.ai");
@@ -1650,7 +1651,14 @@ function detectCompat(model: Model<"openai-completions">): ResolvedOpenAIComplet
 		supportsStore: isOpenAIApi || isAzureOpenAI,
 		supportsDeveloperRole: takesOpenAIRequestShape || isOpenRouterDeveloperRoleModel,
 		supportsReasoningEffort:
-			!isGrok && !isZai && !isMoonshot && !isTogether && !isCloudflareAiGateway && !isNvidia && !isAntLing,
+			!isGrok &&
+			!isZai &&
+			!isMoonshot &&
+			!isTogether &&
+			!isCloudflareAiGateway &&
+			!isNvidia &&
+			!isNebius &&
+			!isAntLing,
 		supportsUsageInStreaming: true,
 		supportsFinishReason: true,
 		// Every OpenAI-compatible server reads max_tokens. Some ignore max_completion_tokens
@@ -1691,6 +1699,7 @@ function detectCompat(model: Model<"openai-completions">): ResolvedOpenAIComplet
 			isCloudflareWorkersAI ||
 			isCloudflareAiGateway ||
 			isNvidia ||
+			isNebius ||
 			isAntLing
 		),
 	};

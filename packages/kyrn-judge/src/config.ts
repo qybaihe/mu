@@ -3,6 +3,7 @@ import { join } from "node:path";
 import type { JudgeProfile } from "./cascade.ts";
 import type { DecisionMode } from "./decision.ts";
 import { CONFIG_FILE, LEGACY_CONFIG_FILE, muEnv } from "./naming.ts";
+import type { JsonValue } from "./types.ts";
 
 /**
  * How one judge is reached. The decision points never see this: they ask
@@ -14,6 +15,8 @@ import { CONFIG_FILE, LEGACY_CONFIG_FILE, muEnv } from "./naming.ts";
  * - `llm`:     a generative model from the host's model registry, prompted to answer as JSON.
  * - `classifier`: a classifier model from the host's model catalog (Jev on OpenCode Zen or Cloudflare, Clef, the
  *              System One models on OpenRouter, a llama.cpp classifier), reached with the host's own credentials.
+ * - `logprob`: a chat model behind an OpenAI-compatible API (Nemotron on Nebius Token Factory, a vLLM server), its
+ *              probabilities read off the first answer token.
  * - `openai`:  OpenAI's decision model (`gpt-6-luna`) through its Decisions API, with an OpenAI API key.
  * - `mock`:    neutral answers, for tests and offline work.
  */
@@ -25,19 +28,33 @@ export interface JudgeConfig {
 	 * CLOUDFLARE_ACCOUNT_ID are, else the Vercel AI Gateway with the key pi keeps for it. `typesafe` is Jev over
 	 * System One at `baseUrl` (TypeSafe's own, OpenRouter's, a relay's), `gateway` through the Vercel AI Gateway.
 	 * `clm` is CLM-8B (github.com/Contrastive-LM/CLM) at the address of a `clm-serve`, which speaks System One too.
-	 * `openai` is OpenAI's decision model through `POST /v1/decisions`.
+	 * `systemone` is any other System One server, such as a fine-tuned judge served on this machine. `openai` is OpenAI's
+	 * decision model through `POST /v1/decisions`.
 	 */
-	readonly type: "jev" | "typesafe" | "clm" | "gateway" | "http" | "llm" | "classifier" | "openai" | "mock";
+	readonly type:
+		| "jev"
+		| "typesafe"
+		| "clm"
+		| "systemone"
+		| "gateway"
+		| "http"
+		| "llm"
+		| "classifier"
+		| "logprob"
+		| "openai"
+		| "mock";
 	/**
-	 * jev, typesafe, gateway: judge model id. clm: a model the server serves, default "clm-latest". openai: default
-	 * "gpt-6-luna". llm and classifier: "provider/model-id", e.g. "opencode/jev-1.13" or
-	 * "cloudflare-workers-ai/@cf/cloudflare/clef".
+	 * jev, typesafe, gateway: judge model id. clm: a model the server serves, default "clm-latest". systemone: the
+	 * model the server serves, sent as is. openai: default "gpt-6-luna". llm and classifier: "provider/model-id",
+	 * e.g. "opencode/jev-1.13" or "cloudflare-workers-ai/@cf/cloudflare/clef". logprob: the model id the API takes,
+	 * e.g. "nvidia/Nemotron-3_5-Lightning".
 	 */
 	readonly model?: string;
 	/**
-	 * gateway, http, clm, and the System One route (`typesafe`, or `jev` when a TypeSafe key is set).
-	 * For System One this is the endpoint URL; empty uses TypeSafe's own. For clm, the server's address
-	 * (`http://host:8700` is enough); empty is http://127.0.0.1:8700. For openai, a relay or proxy that serves the
+	 * gateway, http, clm, systemone, logprob, openai, and the System One route (`typesafe`, or `jev` when a TypeSafe key
+	 * is set). For System One this is the endpoint URL; empty uses TypeSafe's own. For clm, the server's address
+	 * (`http://host:8700` is enough); empty is http://127.0.0.1:8700. For systemone, the server's address, written
+	 * the same ways. For logprob, the OpenAI-compatible base URL (`…/v1`). For openai, a relay or proxy that serves the
 	 * same Decisions endpoint; empty is https://api.openai.com/v1.
 	 */
 	readonly baseUrl?: string;
@@ -48,13 +65,16 @@ export interface JudgeConfig {
 	 * file. A typesafe judge keyed by MU_JUDGE_OPENROUTER_API_KEY, MU_JUDGE_CUSTOM_API_KEY or MU_JUDGE_CLM_API_KEY needs
 	 * its own `baseUrl`: those keys belong to another service and never go to TypeSafe. clm reads MU_JUDGE_CLM_API_KEY
 	 * unless told otherwise, and calls without a key when it is not set: a CLM server asks for one only when it was
-	 * started with CLM_API_KEY. openai reads MU_JUDGE_OPENAI_KEY unless told otherwise; at OpenAI's own address, without
-	 * it, the key of mu's `openai` model provider (`/login`, `mu setup`, OPENAI_API_KEY). Neither the provider's key nor
-	 * a key of another judge service is ever sent to another address.
+	 * started with CLM_API_KEY. systemone likewise reads MU_JUDGE_SYSTEMONE_API_KEY unless told otherwise. openai reads
+	 * MU_JUDGE_OPENAI_KEY unless told otherwise; at OpenAI's own address, without it, the key of mu's `openai` model
+	 * provider (`/login`, `mu setup`, OPENAI_API_KEY). Neither the provider's key nor a key of another judge service is
+	 * ever sent to another address.
 	 */
 	readonly apiKeyEnv?: string;
 	/** llm: thinking level for the judge model, default "off". */
 	readonly thinking?: string;
+	/** logprob: extra request fields, e.g. `{"chat_template_kwargs": {"enable_thinking": false}}`. */
+	readonly body?: Readonly<Record<string, JsonValue>>;
 	readonly timeoutMs?: number;
 	readonly profile?: JudgeProfile;
 }
@@ -77,7 +97,10 @@ export interface KyrnConfig {
 	readonly mcp?: unknown;
 	/** "provider/model-id" of a small generative model for the things a judge cannot do: task frames, lessons. */
 	readonly writer?: string;
-	/** Store judged states in the ledger (needed to distil a local judge). Off by default: states hold user content. */
+	/**
+	 * Store each judge request (state and questions, secrets redacted) in the ledger, to distil a local judge from.
+	 * Off by default: states hold user content.
+	 */
 	readonly recordState: boolean;
 }
 
@@ -104,6 +127,22 @@ export const BUILT_IN_JUDGES: Readonly<Record<string, JudgeConfig>> = {
 	"clef-flash": { type: "classifier", model: "cloudflare-workers-ai/@cf/cloudflare/clef-flash" },
 	// CLM-8B on this machine, where `clm-serve` listens by default. Its profile is not measured on mu's questions yet.
 	clm: { type: "clm" },
+	// NVIDIA Nemotron 3 Ultra on Nebius Token Factory (NEBIUS_API_KEY) through the LLM judge prompt, thinking off:
+	// one JSON answer per request, 0.9 s at the median. Measured on 1,367 held-out judge requests from mu (Oct 2026),
+	// it was the only Nemotron on Token Factory that clearly beat no judge at all; Super, Nano 30B and Lightning
+	// (also read off first-token logprobs) missed the answer format or decided worse.
+	nemotron: { type: "llm", model: "nebius/nvidia/Nemotron-3-Ultra-550b-a55b", thinking: "off" },
+	// The same with thinking on (reasoning_effort "high"): 2.5 s at the median, 8.5 s at p90, about three times the
+	// tokens. Worth it where Ultra decides worst without it; route those decision points here (docs/nebius.md).
+	"nemotron-think": {
+		type: "llm",
+		model: "nebius/nvidia/Nemotron-3-Ultra-550b-a55b",
+		thinking: "high",
+		timeoutMs: 60_000,
+	},
+	// Nemotron 3 Nano 4B fine-tuned as mu's judge (github.com/qybaihe/mu-judge-nemotron), served on this machine by
+	// its System One server: `python serve/systemone_server.py --port 8770`.
+	"nemotron-local": { type: "systemone", baseUrl: "http://127.0.0.1:8770", model: "mu-judge-nemotron" },
 	// mude, the decision model trained for mu's judgment layer, on this Mac (`mu judge mude install`, Apple silicon):
 	// the System One server that comes in its package, on 127.0.0.1:8790, with the key the install wrote to the .env.
 	// Trusted on every capability: on mu's own dev scenarios (an internal benchmark, not public yet) it did as well as Jev
@@ -156,10 +195,12 @@ const JUDGE_TYPES: readonly string[] = [
 	"jev",
 	"typesafe",
 	"clm",
+	"systemone",
 	"gateway",
 	"http",
 	"llm",
 	"classifier",
+	"logprob",
 	"openai",
 	"mock",
 ] satisfies JudgeConfig["type"][];

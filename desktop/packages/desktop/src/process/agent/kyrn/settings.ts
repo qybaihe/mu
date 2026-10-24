@@ -66,6 +66,11 @@ const defaults: Record<string, Partial<JudgeSettings>> = {
   'clef-flash': { type: 'classifier', model: 'cloudflare-workers-ai/@cf/cloudflare/clef-flash' },
   // OpenAI's decision model, gpt-6-luna, through its Decisions API, with a key of its own.
   openai: { type: 'openai', model: 'gpt-6-luna', apiKeyEnv: 'MU_JUDGE_OPENAI_KEY' },
+  // NVIDIA Nemotron on Nebius Token Factory (NEBIUS_API_KEY, or a key kept with mu setup): Nemotron 3 Ultra with
+  // thinking off and on, and a Nemotron 3 Nano 4B fine-tuned as mu's judge, served on this machine over System One.
+  nemotron: { type: 'llm', model: 'nebius/nvidia/Nemotron-3-Ultra-550b-a55b' },
+  'nemotron-think': { type: 'llm', model: 'nebius/nvidia/Nemotron-3-Ultra-550b-a55b', timeoutMs: 60000 },
+  'nemotron-local': { type: 'systemone', baseUrl: 'http://127.0.0.1:8770', model: 'mu-judge-nemotron' },
   mock: { type: 'mock' },
 };
 const types = new Set<string>(JUDGE_TYPES);

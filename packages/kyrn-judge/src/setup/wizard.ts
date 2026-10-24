@@ -82,6 +82,7 @@ const JEV_TIERS = new Set([
 ]);
 /** Where OpenCode Zen's key is, for Jev there: the variable pi reads it from. */
 const OPENCODE_KEY = "OPENCODE_API_KEY";
+const NEBIUS_KEY = "NEBIUS_API_KEY";
 const JEV_PAGE = "https://typesafe.ai";
 /** Where an OpenAI API key is made, for the `openai` judge. */
 const OPENAI_KEY_PAGE = "https://platform.openai.com/api-keys";
@@ -178,7 +179,7 @@ export interface SetupArgs {
 	readonly baseUrl?: string;
 	readonly api?: "openai" | "anthropic";
 	readonly name?: string;
-	readonly judge?: "jev" | "opencode" | "free" | "openai" | "model" | "mude" | "off" | "none";
+	readonly judge?: "jev" | "opencode" | "free" | "nemotron" | "openai" | "model" | "mude" | "off" | "none";
 	/** What is not an option: a key, when the entry is started without the launcher. */
 	readonly words: readonly string[];
 }
@@ -207,11 +208,14 @@ export function parseSetupArgs(argv: readonly string[]): SetupArgs | { readonly 
 		return { error: { zh: "--api 只能是 openai 或 anthropic", en: "--api must be openai or anthropic" } };
 	}
 	const judge = values.get("--judge");
-	if (judge !== undefined && !["jev", "opencode", "free", "openai", "model", "mude", "off", "none"].includes(judge)) {
+	if (
+		judge !== undefined &&
+		!["jev", "opencode", "free", "nemotron", "openai", "model", "mude", "off", "none"].includes(judge)
+	) {
 		return {
 			error: {
-				zh: "--judge 只能是 jev、opencode、free、openai、model、mude、off 或 none",
-				en: "--judge must be jev, opencode, free, openai, model, mude, off or none",
+				zh: "--judge 只能是 jev、opencode、free、nemotron、openai、model、mude、off 或 none",
+				en: "--judge must be jev, opencode, free, nemotron, openai, model, mude, off or none",
 			},
 		};
 	}
@@ -258,6 +262,7 @@ export function setupUsage(language: SetupLanguage): string {
 			"  --judge jev       Jev 密钥（TypeSafe）写在标准输入的第二行；已经设置了 TYPESAFE_API_KEY 就不用",
 			"  --judge opencode  OpenCode Zen 上的 Jev，用 OpenCode 的密钥（--service opencode 或 OPENCODE_API_KEY）",
 			"  --judge free      OpenCode Zen 上限时免费的 Jev，不用密钥（没有密钥时本来就用它）",
+			"  --judge nemotron  Nebius Token Factory 上的 Nemotron 3 Ultra，用 Nebius 的密钥（--service nebius 或 NEBIUS_API_KEY）",
 			"  --judge openai    OpenAI 的决策模型 gpt-6-luna：用 mu 已有的 OpenAI 密钥，或标准输入第二行的密钥",
 			"  --judge model     用刚设置的模型当判定器（更慢，每次判断都花 token）",
 			"  --judge mude      在这台 Mac 上装好 mude 1.0（mu 自己的决策模型，下载 1.8 GB）当判定器，Jev 在它后面",
@@ -286,6 +291,8 @@ export function setupUsage(language: SetupLanguage): string {
 		"  --judge jev       read the Jev key (TypeSafe) from stdin's second line, unless TYPESAFE_API_KEY is already set",
 		"  --judge opencode  use Jev on OpenCode Zen with an OpenCode key (--service opencode or OPENCODE_API_KEY)",
 		"  --judge free      use the free Jev on OpenCode Zen (limited time, no key; the default while no key is set)",
+		"  --judge nemotron  use Nemotron 3 Ultra on Nebius Token Factory with a Nebius key (--service nebius or",
+		"                    NEBIUS_API_KEY)",
 		"  --judge openai    use OpenAI's decision model, gpt-6-luna, with the OpenAI key mu has or one on stdin's second line",
 		"  --judge model     use the model you just set up as the judge (slower, and every verdict costs tokens)",
 		"  --judge mude      install mude 1.0, mu's own decision model, on this Mac (a 1.8 GB download) as the judge,",
@@ -381,6 +388,8 @@ type JudgeChoice =
 	/** Jev on OpenCode Zen: with the OpenCode key (`jev-opencode`), or the free model without one. */
 	| { readonly kind: "opencode" }
 	| { readonly kind: "free" }
+	/** Nemotron 3 Ultra on Nebius Token Factory, with the Nebius key (the built-in `nemotron` judge). */
+	| { readonly kind: "nemotron" }
 	/** OpenAI's decision model: with a key of its own (written as MU_JUDGE_OPENAI_KEY), or the OpenAI key mu has. */
 	| { readonly kind: "openai"; readonly key?: string }
 	| { readonly kind: "model" }
@@ -1099,8 +1108,14 @@ class Setup {
 			Boolean(env[OPENCODE_KEY]) ||
 			(!(OPENCODE_KEY in env) && envText !== undefined && Boolean(envFileValue(envText, OPENCODE_KEY))) ||
 			(await this.deps.pi.credential("opencode")) !== undefined;
+		// A Nebius key reaches Nemotron 3 Ultra on Token Factory, the `nemotron` judge.
+		const nebius =
+			model?.provider === "nebius" ||
+			Boolean(env[NEBIUS_KEY]) ||
+			(!(NEBIUS_KEY in env) && envText !== undefined && Boolean(envFileValue(envText, NEBIUS_KEY))) ||
+			(await this.deps.pi.credential("nebius")) !== undefined;
 		const openai = await this.openaiKeySet(model, envText);
-		if (this.scripted) return this.scriptedJudge(model, envText, existing !== undefined, opencode, openai);
+		if (this.scripted) return this.scriptedJudge(model, envText, existing !== undefined, opencode, openai, nebius);
 		const where = existing
 			? existing.where === "env"
 				? this.t({ zh: `环境变量 ${existing.name}`, en: `${existing.name} in your environment` })
@@ -1109,7 +1124,9 @@ class Setup {
 						en: `${existing.name} in ${this.path(paths.envFile)}`,
 					})
 			: undefined;
-		const choices: Choice<"keep" | "jev" | "opencode" | "free" | "openai" | "model" | "mude" | "none">[] = [];
+		const choices: Choice<
+			"keep" | "jev" | "opencode" | "free" | "nemotron" | "openai" | "model" | "mude" | "none"
+		>[] = [];
 		// On a Mac that can run it, mu's own model is the first offer, and the Jev that would have been first follows it.
 		const mude = this.deps.mude !== undefined;
 		if (mude) {
@@ -1188,6 +1205,15 @@ class Setup {
 				value: "free",
 			});
 		}
+		if (nebius) {
+			choices.push({
+				label: this.t({
+					zh: "Nemotron 3 Ultra，在 Nebius Token Factory 上，用你的 Nebius 密钥：每次判断约 1 秒，按 token 计费",
+					en: "Nemotron 3 Ultra on Nebius Token Factory with your Nebius key: about 1 s per verdict, billed per token",
+				}),
+				value: "nemotron",
+			});
+		}
 		choices.push({
 			label: openai
 				? this.t({
@@ -1254,6 +1280,7 @@ class Setup {
 		keySet: boolean,
 		opencode: boolean,
 		openai: boolean,
+		nebius: boolean,
 	): JudgeChoice | undefined {
 		switch (this.args.judge) {
 			case "opencode":
@@ -1269,6 +1296,17 @@ class Setup {
 				return { kind: "opencode" };
 			case "free":
 				return { kind: "free" };
+			case "nemotron":
+				if (!nebius) {
+					throw this.fail(
+						{
+							zh: "--judge nemotron 需要 Nebius 的密钥：用 --service nebius 设置它，或先设置 NEBIUS_API_KEY",
+							en: "--judge nemotron needs a Nebius key: set one up with --service nebius, or set NEBIUS_API_KEY first",
+						},
+						SETUP_EXIT.usage,
+					);
+				}
+				return { kind: "nemotron" };
 			case "mude":
 				if (!this.deps.mude) {
 					throw this.fail(
@@ -1580,6 +1618,7 @@ class Setup {
 		if (judge.kind === "model") {
 			if (target && model) tiers = [`llm:${target.reach.provider}/${model}`];
 		} else if (judge.kind === "opencode") tiers = ["jev-opencode"];
+		else if (judge.kind === "nemotron") tiers = ["nemotron"];
 		else if (judge.kind === "openai") tiers = ["openai"];
 		else if (judge.kind === "free" || judge.kind === "mude") {
 			// `jev` uses the free Jev while no key is set, and a key added later without another setup. mude goes in front
@@ -1663,17 +1702,22 @@ class Setup {
 							? this.t({ zh: "判定器：OpenCode Zen 上的 Jev。", en: " Judge: Jev on OpenCode Zen." })
 							: judge.kind === "openai"
 								? this.t({ zh: "判定器：OpenAI 的 gpt-6-luna。", en: " Judge: OpenAI's gpt-6-luna." })
-								: judge.kind === "mude"
+								: judge.kind === "nemotron"
 									? this.t({
-											zh: "判定器：mude 1.0，下面接着安装；它答不了的交给 Jev。",
-											en: " Judge: mude 1.0, installed next, with Jev for what it can't answer.",
+											zh: "判定器：Nebius Token Factory 上的 Nemotron 3 Ultra。",
+											en: " Judge: Nemotron 3 Ultra on Nebius Token Factory.",
 										})
-									: judge.kind === "free"
+									: judge.kind === "mude"
 										? this.t({
-												zh: "判定器：Jev，加密钥之前用 OpenCode Zen 上限时免费的版本。",
-												en: " Judge: Jev, using the free version on OpenCode Zen until you add a key.",
+												zh: "判定器：mude 1.0，下面接着安装；它答不了的交给 Jev。",
+												en: " Judge: mude 1.0, installed next, with Jev for what it can't answer.",
 											})
-										: this.t({ zh: "判定器：Jev。", en: " Judge: Jev." });
+										: judge.kind === "free"
+											? this.t({
+													zh: "判定器：Jev，加密钥之前用 OpenCode Zen 上限时免费的版本。",
+													en: " Judge: Jev, using the free version on OpenCode Zen until you add a key.",
+												})
+											: this.t({ zh: "判定器：Jev。", en: " Judge: Jev." });
 		this.io.say("");
 		this.io.say(`${done}${judged}`);
 		if (!target)

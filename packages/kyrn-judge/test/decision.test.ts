@@ -142,10 +142,41 @@ describe("DecisionEngine", () => {
 		expect(quiet.records[0].stateDigest).toMatch(/^[0-9a-f]{64}$/);
 		expect(quiet.records[0].state).toBeUndefined();
 		expect(verbose.records[0].state).toEqual({ intent: input.intent, chunk: input.chunk });
+		expect(verbose.records[0].questions).toEqual(keepChunk.questions);
+		expect(quiet.records[0].questions).toBeUndefined();
 		expect(verbose.records[0].stateDigest).toBe(quiet.records[0].stateDigest);
 	});
 
-	it("stores the questions with the state where they are built from the input, and only then", async () => {
+	it("keeps the recorded request as the judge saw it, with known secrets redacted", async () => {
+		const ledger = new MemoryLedger();
+		const secret = "sk-test-0123456789abcdef";
+		await new DecisionEngine({
+			judge: new Judge({ provider: new MockJudgeProvider() }),
+			ledger,
+			recordState: true,
+			knownSecrets: () => [secret],
+		}).decide(keepChunk, { intent: "deploy", chunk: `export KEY=${secret}` });
+
+		expect(JSON.stringify(ledger.records[0].state)).not.toContain(secret);
+		expect(ledger.records[0].questions).toEqual(keepChunk.questions);
+	});
+
+	it("keeps the recorded request when the judge fails, since it can still be replayed", async () => {
+		const ledger = new MemoryLedger();
+		const failing = new MockJudgeProvider(() => {
+			throw new JudgeError("server", "the judge is down");
+		});
+		await new DecisionEngine({ judge: new Judge({ provider: failing }), ledger, recordState: true }).decide(
+			keepChunk,
+			input,
+		);
+
+		expect(ledger.records[0].reason).toBe("error:server");
+		expect(ledger.records[0].state).toEqual({ intent: input.intent, chunk: input.chunk });
+		expect(ledger.records[0].questions).toEqual(keepChunk.questions);
+	});
+
+	it("stores built questions with the state as well as fixed ones, and nothing without recordState", async () => {
 		const pickTools = defineDecision({
 			id: "test.pick_tools",
 			version: 1,
@@ -179,8 +210,7 @@ describe("DecisionEngine", () => {
 			t1: { type: "boolean", instructions: "Does `task` need a browser?" },
 		});
 		expect(await recorded(pickTools, false)).toBeUndefined();
-		// Fixed questions are the spec's own: `specId` and `specVersion` name them.
-		expect(await recorded(keepChunk, true)).toBeUndefined();
+		expect(await recorded(keepChunk, true)).toEqual(keepChunk.questions);
 	});
 
 	it("records where the caller was when it asked, not where it is when a slow judge answers", async () => {

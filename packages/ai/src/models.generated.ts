@@ -23,6 +23,7 @@ import { MINIMAX_CN_CLASSIFIER_MODELS, MINIMAX_CN_IMAGE_MODELS, MINIMAX_CN_MODEL
 import { MISTRAL_CLASSIFIER_MODELS, MISTRAL_IMAGE_MODELS, MISTRAL_MODELS } from "./providers/mistral.models.ts";
 import { MOONSHOTAI_CLASSIFIER_MODELS, MOONSHOTAI_IMAGE_MODELS, MOONSHOTAI_MODELS } from "./providers/moonshotai.models.ts";
 import { MOONSHOTAI_CN_CLASSIFIER_MODELS, MOONSHOTAI_CN_IMAGE_MODELS, MOONSHOTAI_CN_MODELS } from "./providers/moonshotai-cn.models.ts";
+import { NEBIUS_CLASSIFIER_MODELS, NEBIUS_IMAGE_MODELS, NEBIUS_MODELS } from "./providers/nebius.models.ts";
 import { NVIDIA_CLASSIFIER_MODELS, NVIDIA_IMAGE_MODELS, NVIDIA_MODELS } from "./providers/nvidia.models.ts";
 import { OPENAI_CLASSIFIER_MODELS, OPENAI_IMAGE_MODELS, OPENAI_MODELS } from "./providers/openai.models.ts";
 import { OPENAI_CODEX_CLASSIFIER_MODELS, OPENAI_CODEX_IMAGE_MODELS, OPENAI_CODEX_MODELS } from "./providers/openai-codex.models.ts";
@@ -67,6 +68,7 @@ export const MODELS: {
 	readonly "mistral": typeof MISTRAL_MODELS;
 	readonly "moonshotai": typeof MOONSHOTAI_MODELS;
 	readonly "moonshotai-cn": typeof MOONSHOTAI_CN_MODELS;
+	readonly "nebius": typeof NEBIUS_MODELS;
 	readonly "nvidia": typeof NVIDIA_MODELS;
 	readonly "openai": typeof OPENAI_MODELS;
 	readonly "openai-codex": typeof OPENAI_CODEX_MODELS;
@@ -110,6 +112,7 @@ export const MODELS: {
 	"mistral": MISTRAL_MODELS,
 	"moonshotai": MOONSHOTAI_MODELS,
 	"moonshotai-cn": MOONSHOTAI_CN_MODELS,
+	"nebius": NEBIUS_MODELS,
 	"nvidia": NVIDIA_MODELS,
 	"openai": OPENAI_MODELS,
 	"openai-codex": OPENAI_CODEX_MODELS,
@@ -155,6 +158,7 @@ export const IMAGE_MODELS: {
 	readonly "mistral": typeof MISTRAL_IMAGE_MODELS;
 	readonly "moonshotai": typeof MOONSHOTAI_IMAGE_MODELS;
 	readonly "moonshotai-cn": typeof MOONSHOTAI_CN_IMAGE_MODELS;
+	readonly "nebius": typeof NEBIUS_IMAGE_MODELS;
 	readonly "nvidia": typeof NVIDIA_IMAGE_MODELS;
 	readonly "openai": typeof OPENAI_IMAGE_MODELS;
 	readonly "openai-codex": typeof OPENAI_CODEX_IMAGE_MODELS;
@@ -198,6 +202,7 @@ export const IMAGE_MODELS: {
 	"mistral": MISTRAL_IMAGE_MODELS,
 	"moonshotai": MOONSHOTAI_IMAGE_MODELS,
 	"moonshotai-cn": MOONSHOTAI_CN_IMAGE_MODELS,
+	"nebius": NEBIUS_IMAGE_MODELS,
 	"nvidia": NVIDIA_IMAGE_MODELS,
 	"openai": OPENAI_IMAGE_MODELS,
 	"openai-codex": OPENAI_CODEX_IMAGE_MODELS,
@@ -243,6 +248,7 @@ export const CLASSIFIER_MODELS: {
 	readonly "mistral": typeof MISTRAL_CLASSIFIER_MODELS;
 	readonly "moonshotai": typeof MOONSHOTAI_CLASSIFIER_MODELS;
 	readonly "moonshotai-cn": typeof MOONSHOTAI_CN_CLASSIFIER_MODELS;
+	readonly "nebius": typeof NEBIUS_CLASSIFIER_MODELS;
 	readonly "nvidia": typeof NVIDIA_CLASSIFIER_MODELS;
 	readonly "openai": typeof OPENAI_CLASSIFIER_MODELS;
 	readonly "openai-codex": typeof OPENAI_CODEX_CLASSIFIER_MODELS;
@@ -286,6 +292,7 @@ export const CLASSIFIER_MODELS: {
 	"mistral": MISTRAL_CLASSIFIER_MODELS,
 	"moonshotai": MOONSHOTAI_CLASSIFIER_MODELS,
 	"moonshotai-cn": MOONSHOTAI_CN_CLASSIFIER_MODELS,
+	"nebius": NEBIUS_CLASSIFIER_MODELS,
 	"nvidia": NVIDIA_CLASSIFIER_MODELS,
 	"openai": OPENAI_CLASSIFIER_MODELS,
 	"openai-codex": OPENAI_CODEX_CLASSIFIER_MODELS,

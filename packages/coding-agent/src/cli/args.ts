@@ -431,6 +431,7 @@ ${chalk.bold("Environment Variables:")}
   AZURE_OPENAI_DEPLOYMENT_NAME_MAP - Azure OpenAI model=deployment map (comma-separated)
   DEEPSEEK_API_KEY                 - DeepSeek API key
   NVIDIA_API_KEY                   - NVIDIA NIM API key
+  NEBIUS_API_KEY                   - Nebius Token Factory API key
   GEMINI_API_KEY                   - Google Gemini API key
   GROQ_API_KEY                     - Groq API key
   CEREBRAS_API_KEY                 - Cerebras API key
