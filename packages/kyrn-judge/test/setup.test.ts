@@ -862,7 +862,7 @@ describe("mu setup, asking in a terminal", () => {
 		expect(run.code).toBe(SETUP_EXIT.done);
 		expect(run.json("mu.json")).toEqual({ tiers: ["jev"] });
 		expect(run.warned.join("\n")).toContain(
-			"mude 1.0 isn't installed yet, so Jev is the judge until it is. Run mu judge mude install to go on from where it stopped.",
+			"mude 1.0 isn't installed yet, so Jev is the judge until it is. Run mu judge mude install to resume it.",
 		);
 		expect(run.at("ask", "Start mu now?")).toBeGreaterThan(-1);
 	});

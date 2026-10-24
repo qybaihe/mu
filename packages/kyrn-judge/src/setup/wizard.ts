@@ -575,7 +575,7 @@ class Setup {
 		this.io.warn(
 			this.t({
 				zh: "mude 1.0 还没有装好，在那之前由 Jev 判定。运行 mu judge mude install 会从中断的地方接着装。",
-				en: "mude 1.0 isn't installed yet, so Jev is the judge until it is. Run mu judge mude install to go on from where it stopped.",
+				en: "mude 1.0 isn't installed yet, so Jev is the judge until it is. Run mu judge mude install to resume it.",
 			}),
 		);
 		return this.scripted ? SETUP_EXIT.failed : SETUP_EXIT.done;
