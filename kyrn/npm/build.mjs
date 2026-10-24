@@ -10,9 +10,8 @@
 // The package is laid out like the repository, so the launcher finds everything two folders above
 // kyrn/bin/mu.mjs either way (it tells the two apart with layoutOf):
 //
-//   kyrn/bin/          mu.mjs (npm's `mu`), kyrn-doctor, kyrn-ledger, kyrn-judge-local
-//   kyrn/local-judge/  the Laya sidecar's server (macOS). `mu judge setup` installs its venv and weights
-//                      into ~/.mu/local-judge, and only when asked to; mude's lock (mu judge mude install)
+//   kyrn/bin/          mu.mjs (npm's `mu`), kyrn-doctor, kyrn-ledger
+//   kyrn/local-judge/  the lock of mude 1.0's Python packages (mu judge mude install, mu judge model add)
 //   dist/              pi's Node bundle (dist/bundle/cli.js), with its themes, assets, export templates and
 //                      the native clipboard helpers of pi-tui
 //   judge/             the judgment layer built to JavaScript, with its prompts, skills and agents, and the
@@ -349,14 +348,13 @@ function copyPi(out) {
 }
 
 function copyLauncher(out) {
-	for (const name of ["mu.mjs", "kyrn-doctor", "kyrn-ledger", "kyrn-judge-local"]) {
+	for (const name of ["mu.mjs", "kyrn-doctor", "kyrn-ledger"]) {
 		const target = join(out, "kyrn", "bin", name);
 		cpSync(join(repo, "kyrn", "bin", name), target);
 		chmodSync(target, 0o755);
 	}
-	for (const name of ["server.py", "requirements.lock.txt", "mude-requirements.lock.txt"]) {
-		cpSync(join(repo, "kyrn", "local-judge", name), join(out, "kyrn", "local-judge", name));
-	}
+	const lock = join("kyrn", "local-judge", "mude-requirements.lock.txt");
+	cpSync(join(repo, lock), join(out, lock));
 }
 
 /**

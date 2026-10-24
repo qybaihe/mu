@@ -11,6 +11,7 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ### Removed
 
+- **Laya is no longer built into mu.** Laya, the third-party local judge (`mu judge setup`, `mu judge start`), its sidecar and the `local` judge type are gone. If your judge was Laya, the first session you open in the terminal or the app switches it over: to mude 1.0 when it's set up on your Mac, otherwise to the judges you had behind Laya, or to Jev when there were none. mu changes only those values in `~/.mu/agent/mu.json`, keeps a copy of the file in `~/.mu/backups`, and tells you once what your judge is now. `MU_JUDGE=laya` is skipped. To use another decision model on your Mac, add it from Hugging Face with `mu judge model add <link>`, or under Settings → Judges in the app.
 - **Laya is no longer built into the desktop app.** The "Local Laya" choice is gone from the Judges page in Settings and from the first-run guide, with its install and start buttons and the copy of Laya the app ran itself on Windows and Linux. The Judges page offers Jev, mude 1.0 (on a Mac with Apple silicon) and CLM, and the guide offers Jev and mude 1.0. To use another decision model, add it from Hugging Face under mude 1.0 on the Judges page, or with `mu judge model add <link>`. It must be packaged like mude 1.0. The Windows and Linux downloads are smaller, because they no longer carry the ONNX runtime.
 
 ## [0.2.4] - 2026-10-24

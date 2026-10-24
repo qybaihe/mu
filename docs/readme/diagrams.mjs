@@ -183,7 +183,7 @@ function turn(c) {
   out.push(diamond(24, judgeTop + 24, c, 8));
   out.push(text(40, judgeTop + 29, 'The judge', { size: 14.5, weight: 600, fill: c.text }));
   out.push(
-    text(122, judgeTop + 29, 'Jev (hosted), Laya (local), a classifier or any LLM: one bounded question, about 0.3 s.', {
+    text(122, judgeTop + 29, 'Jev (hosted), mude 1.0 (local), a classifier or any LLM: one bounded question, about 0.3 s.', {
       size: 13,
       fill: c.muted,
     })
@@ -201,7 +201,7 @@ function turn(c) {
       width: W,
       height: H,
       title: 'How a turn works',
-      desc: `Four stages of a turn, each with the decision points it asks the judge. ${points.join(' ')} The model loops over stages 2 and 3: call a tool, run it, read what came back. Every stage asks the same judge: Jev, Laya, a classifier or any LLM, one bounded question in about 0.3 seconds, and every verdict goes to the ledger.`,
+      desc: `Four stages of a turn, each with the decision points it asks the judge. ${points.join(' ')} The model loops over stages 2 and 3: call a tool, run it, read what came back. Every stage asks the same judge: Jev, mude 1.0, a classifier or any LLM, one bounded question in about 0.3 seconds, and every verdict goes to the ledger.`,
     },
     out
   );
@@ -285,7 +285,7 @@ function pieces(c) {
   out.push(label(0, jy - 12, 'Judges, by decision point or in tiers', c.faint));
   const judges = [
     ['Jev', 'hosted · probabilities'],
-    ['Laya', 'local · offline'],
+    ['mude 1.0', 'local · offline'],
     ['classifier:', '<provider>/<model>'],
     ['llm:', '<provider>/<model>'],
   ];
@@ -303,7 +303,7 @@ function pieces(c) {
       width: W,
       height: H,
       title: 'The pieces',
-      desc: 'The desktop app (desktop/, which runs pi in a utility process over pi’s RPC protocol) and the mu command (kyrn/bin/mu.mjs) both start pi, the coding agent: its agent loop, tools, sessions and providers. Inside pi runs the judgment kernel (packages/kyrn-judge): features that hook pi’s events and act on verdicts, a decision engine with modes, judges and fallbacks, and a ledger of every verdict in the session. pi calls the main model, any provider it supports. The engine asks the judges: Jev (hosted, with probabilities), Laya (local, offline), any classifier model or any LLM.',
+      desc: 'The desktop app (desktop/, which runs pi in a utility process over pi’s RPC protocol) and the mu command (kyrn/bin/mu.mjs) both start pi, the coding agent: its agent loop, tools, sessions and providers. Inside pi runs the judgment kernel (packages/kyrn-judge): features that hook pi’s events and act on verdicts, a decision engine with modes, judges and fallbacks, and a ledger of every verdict in the session. pi calls the main model, any provider it supports. The engine asks the judges: Jev (hosted, with probabilities), mude 1.0 (local, offline), any classifier model or any LLM.',
     },
     out
   );
@@ -314,7 +314,7 @@ function pieces(c) {
 const STEPS = [
   ['A feature hooks an event', 'web_fetch returns a page', 'pi event'],
   ['It asks a decision point', 'small state, bounded question', 'tool.injection'],
-  ['The engine picks a judge', 'mode, tiers, a fallback', 'tiers: laya,jev'],
+  ['The engine picks a judge', 'mode, tiers, a fallback', 'tiers: mude,jev'],
   ['The judge answers', 'yes 0.97 · in 0.3 s', 'verdict'],
   ['The ledger records it', 'answers, latency, usage', 'kyrn.decision'],
   ['The feature acts', 'the passage is withheld', 'active mode'],
@@ -352,7 +352,7 @@ function decision(c) {
       width: W,
       height: H,
       title: 'A decision, end to end',
-      desc: 'Six steps, with tool.injection screening a web page as the example. 1: a feature hooks a pi event (web_fetch returns a page). 2: it asks a decision point, tool.injection, with a small state and a bounded question. 3: the engine checks the point’s mode and picks a judge from its tiers (for example laya, then jev), with a fallback. 4: the judge answers, for example yes with probability 0.97 in 0.3 seconds. 5: the ledger records the verdict, its answers, latency and usage as a kyrn.decision entry. 6: in active mode the feature acts and the passage is withheld; in shadow mode it stops at step 5. Without a verdict, mu takes the fallback and the ledger says why.',
+      desc: 'Six steps, with tool.injection screening a web page as the example. 1: a feature hooks a pi event (web_fetch returns a page). 2: it asks a decision point, tool.injection, with a small state and a bounded question. 3: the engine checks the point’s mode and picks a judge from its tiers (for example mude, then jev), with a fallback. 4: the judge answers, for example yes with probability 0.97 in 0.3 seconds. 5: the ledger records the verdict, its answers, latency and usage as a kyrn.decision entry. 6: in active mode the feature acts and the passage is withheld; in shadow mode it stops at step 5. Without a verdict, mu takes the fallback and the ledger says why.',
     },
     out
   );
@@ -366,7 +366,7 @@ function tiers(c) {
   const out = [`<defs>${arrowHead('a', c.faint)}${arrowHead('p', c.pink)}</defs>`];
   out.push(text(0, 22, 'Judges in tiers', { size: 18, weight: 600, fill: c.text }));
   out.push(
-    text(0, 46, 'A cascade such as laya,jev: each judge only sees the questions the one before it wasn’t sure about.', {
+    text(0, 46, 'A cascade such as mude,jev: each judge only sees the questions the one before it wasn’t sure about.', {
       size: 13.5,
       fill: c.muted,
     })
@@ -377,7 +377,7 @@ function tiers(c) {
   const h = 84;
   const boxes = [
     { x: 0, w: 150, name: 'Questions', lines: ['one or many,', 'from a decision point'], judge: false },
-    { x: 214, w: 190, name: 'Laya', lines: ['local, offline, no cost', 'trusted on classifying'], judge: true },
+    { x: 214, w: 190, name: 'mude 1.0', lines: ['local, about 0.1 s', 'nothing leaves your Mac'], judge: true },
     { x: 468, w: 190, name: 'Jev', lines: ['hosted, about 0.3 s', 'trusted on every kind'], judge: true },
     { x: 722, w: 158, name: 'The fallback', lines: ['what mu would do', 'without a judge'], judge: false },
   ];
@@ -419,7 +419,7 @@ function tiers(c) {
   out.push(text(x2, by + 34, '0.2', { size: 11, fill: c.faint, anchor: 'middle', mono: true }));
   out.push(text(x8, by + 34, '0.8', { size: 11, fill: c.faint, anchor: 'middle', mono: true }));
   out.push(
-    text(0, H - 6, 'A judge’s known weakness never decides: Laya isn’t trusted on relating, scoring or meta-judgments, so those go on to Jev.', {
+    text(0, H - 6, 'A judge’s known weakness never decides: a question a judge isn’t trusted on skips it and goes on to the next.', {
       size: 12,
       fill: c.faint,
     })
@@ -429,7 +429,7 @@ function tiers(c) {
       width: W,
       height: H,
       title: 'Judges in tiers',
-      desc: 'A cascade such as laya,jev. All questions go to Laya first: local, offline and free, trusted on classifying. What Laya is sure of becomes a verdict; a yes/no answer is unsure when its probability is between 0.2 and 0.8, and unsure questions go on to Jev, hosted, about 0.3 seconds. What Jev is sure of becomes a verdict; what is still unsure, or what no judge answered, gets the fallback: what mu would do without a judge. The ledger records every answer, which judge gave it or why the fallback was used, and the time. Laya is not trusted on relating, scoring or meta-judgments, so those questions go on to Jev.',
+      desc: 'A cascade such as mude,jev. All questions go to mude 1.0 first: local, about 0.1 seconds, and nothing leaves your Mac. What mude is sure of becomes a verdict; a yes/no answer is unsure when its probability is between 0.2 and 0.8, and unsure questions go on to Jev, hosted, about 0.3 seconds. What Jev is sure of becomes a verdict; what is still unsure, or what no judge answered, gets the fallback: what mu would do without a judge. The ledger records every answer, which judge gave it or why the fallback was used, and the time. A question a judge isn’t trusted on skips it and goes on to the next one.',
     },
     out
   );

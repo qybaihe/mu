@@ -47,7 +47,7 @@ mu is a fork of [pi](https://github.com/earendil-works/pi)'s monorepo with a jud
 | `packages/coding-agent/`, `packages/ai/`, `packages/agent/`, `packages/tui/`, … | pi's packages: the agent, providers and models, and the terminal UI. mu keeps its changes here small and marked, so pi's releases can be merged in |
 | `kyrn/bin/mu.mjs` | The `mu` launcher: `mu setup`, `mu doctor`, `mu import`, and starting pi with the kernel |
 | `kyrn/npm/` | The `mu-agent` npm package and its [changelog](kyrn/npm/CHANGELOG.md) |
-| `kyrn/local-judge/` | The sidecar for Laya, the local judge |
+| `kyrn/local-judge/` | The lock of mude 1.0's Python packages |
 | `kyrn/docs/` | Design notes and measurements, mostly in Chinese |
 | `desktop/` | The desktop app (Electron); mu's parts are under `desktop/packages/desktop/src/**/kyrn/` and `KyrnPanel/` |
 | `docs/` | Documentation for users and contributors |

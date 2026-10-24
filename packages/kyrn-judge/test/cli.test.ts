@@ -24,7 +24,7 @@ const plain: Paint = { fg: (_color, text) => text, bold: (text) => text };
 const view: WelcomeView = {
 	version: "0.1.0",
 	piVersion: "0.86.0",
-	judge: "laya",
+	judge: "jev",
 	health: { ok: true, latencyMs: 95 },
 	mode: "active",
 	model: "openai-codex/gpt-5.6-sol",
@@ -39,7 +39,7 @@ describe("welcome screen", () => {
 		const text = renderWelcome(view, 100, plain).join("\n");
 
 		expect(text).toContain("judgment-first coding agent");
-		expect(text).toContain("Laya · answering in 95 ms · decision points active");
+		expect(text).toContain("Jev · answering in 95 ms · decision points active");
 		expect(text).toContain("openai-codex/gpt-5.6-sol · thinking medium");
 		expect(text).toContain("/help");
 		expect(text).not.toContain("What the judge does here");
@@ -51,8 +51,8 @@ describe("welcome screen", () => {
 		expect(judgeDisplayName("jev-1.13-free")).toBe("Jev 1.13 (free)");
 		expect(judgeDisplayName("jev-latest")).toBe("Jev");
 		expect(judgeDisplayName("jev-1.13")).toBe("Jev 1.13");
-		expect(judgeDisplayName("laya>jev")).toBe("Laya, Jev");
-		expect(judgeDisplayName("laya,jev")).toBe("Laya, Jev");
+		expect(judgeDisplayName("clm>jev")).toBe("clm, Jev");
+		expect(judgeDisplayName("clm,jev")).toBe("clm, Jev");
 		expect(judgeDisplayName("clef-flash")).toBe("clef-flash");
 	});
 
@@ -131,11 +131,11 @@ describe("per-decision judges", () => {
 
 	it("reads routes from the config, as lists or comma strings", () => {
 		const config = parseConfig({
-			tiers: ["laya"],
-			routes: { "browser.step": ["luna"], "turn.drift": "laya, jev", bad: [] },
+			tiers: ["clm"],
+			routes: { "browser.step": ["luna"], "turn.drift": "clm, jev", bad: [] },
 		});
 
-		expect(config.routes).toEqual({ "browser.step": ["luna"], "turn.drift": ["laya", "jev"] });
+		expect(config.routes).toEqual({ "browser.step": ["luna"], "turn.drift": ["clm", "jev"] });
 		expect(parseConfig({}).routes).toEqual({});
 	});
 

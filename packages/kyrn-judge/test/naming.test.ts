@@ -22,21 +22,21 @@ afterEach(() => {
 
 describe("the rename from KYRN to mu", () => {
 	it("reads a setting under its new name first and under its old name still", () => {
-		expect(muEnv("JUDGE", { MU_JUDGE: "laya", KYRN_JUDGE: "jev" })).toBe("laya");
+		expect(muEnv("JUDGE", { MU_JUDGE: "clm", KYRN_JUDGE: "jev" })).toBe("clm");
 		expect(muEnv("JUDGE", { KYRN_JUDGE: "jev" })).toBe("jev");
 		expect(muEnv("JUDGE", { MU_JUDGE: "", KYRN_JUDGE: "jev" })).toBe("jev");
 		expect(muEnv("JUDGE", {})).toBeUndefined();
 	});
 
 	it("applies the judge, mode and writer overrides under either spelling", () => {
-		const current = loadConfig({ env: { MU_JUDGE: "laya,gateway", MU_JUDGE_MODE: "active", MU_WRITER: "p/m" } });
-		expect(current.config).toMatchObject({ tiers: ["laya", "jev"], modes: { default: "active" }, writer: "p/m" });
+		const current = loadConfig({ env: { MU_JUDGE: "clm,gateway", MU_JUDGE_MODE: "active", MU_WRITER: "p/m" } });
+		expect(current.config).toMatchObject({ tiers: ["clm", "jev"], modes: { default: "active" }, writer: "p/m" });
 
-		const legacy = loadConfig({ env: { KYRN_JUDGE: "laya", KYRN_JUDGE_MODE: "off", KYRN_WRITER: "p/old" } });
-		expect(legacy.config).toMatchObject({ tiers: ["laya"], modes: { default: "off" }, writer: "p/old" });
+		const legacy = loadConfig({ env: { KYRN_JUDGE: "clm", KYRN_JUDGE_MODE: "off", KYRN_WRITER: "p/old" } });
+		expect(legacy.config).toMatchObject({ tiers: ["clm"], modes: { default: "off" }, writer: "p/old" });
 
 		expect(loadConfig({ env: { KYRN_JUDGE: "off" } }).disabled).toBe(true);
-		expect(loadConfig({ env: { MU_JUDGE: "laya", KYRN_JUDGE: "off" } }).disabled).toBe(false);
+		expect(loadConfig({ env: { MU_JUDGE: "clm", KYRN_JUDGE: "off" } }).disabled).toBe(false);
 	});
 
 	it("reads mu.json, and kyrn.json only when there is no mu.json", () => {

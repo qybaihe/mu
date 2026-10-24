@@ -2,6 +2,8 @@
 
 > 已于 2026-09-21 更名为 mu（命令 `mu`，标识 μ）。本文是更名前的记录，正文保持原样；新旧名对照见 [10-rename-to-mu.md](10-rename-to-mu.md)。
 
+> 2026-10-24（0.2.5）：Laya 已从 mu 移除。`kyrn/bin/kyrn-judge-local`、`kyrn/local-judge/server.py` 和 `local` 类型的判定器都已删掉，`kyrn/local-judge/` 里只剩 mude 1.0 的 Python 依赖锁。下面的文件地图、启动命令和 provider 列表已按此改过；第 9 节等处仍是当时的记录。
+
 > 2026-09-20 · 基于上游 `earendil-works/pi` 提交 `d1230ea20`（v0.86.0 之后）
 > 行号来自对源码的静态阅读（两份测绘 + 我对承重结论的抽查），未逐条运行验证；上游更新后行号会漂移，以函数名为准。
 > 决策点编号（A1、B2…）见 [01-jev-integration-brainstorm.md](01-jev-integration-brainstorm.md) §4。
@@ -16,8 +18,7 @@ KYRN/                      = pi 的分叉（git）
   packages/kyrn-judge/     判断内核 + pi 适配扩展        ← 新增
   kyrn/
     bin/kyrn-dev           从源码启动 KYRN                ← 新增
-    bin/kyrn-judge-local   本地判断 sidecar 的 setup/start/stop/status
-    local-judge/           sidecar（server.py）+ venv + 权重（后两者被 kyrn/.gitignore 忽略）
+    local-judge/           mude 1.0 的 Python 依赖锁（mude-requirements.lock.txt）
     docs/                  设计文档
     spikes/jev-smoke/      Jev 网关冒烟测试
     spikes/judge-bench/    同一批标注场景上对比任意判断后端
@@ -33,7 +34,7 @@ KYRN/                      = pi 的分叉（git）
 ```bash
 kyrn/bin/kyrn-dev                      # 交互模式；自动选 Node ≥22、隔离配置到 ~/.kyrn/agent、加载判断内核扩展
 KYRN_JUDGE=mock kyrn/bin/kyrn-dev      # 不联网的假判断后端
-KYRN_JUDGE=laya kyrn/bin/kyrn-dev      # 本地 Laya（Core ML）判断后端，自动拉起 sidecar；见 03-local-judge.md
+KYRN_JUDGE=mude,jev kyrn/bin/kyrn-dev  # 本机的 mude 1.0 先答（mu judge mude install），Jev 兜底
 KYRN_JUDGE_MODE=active kyrn/bin/kyrn-dev
 ```
 
@@ -136,9 +137,9 @@ src/
   types.ts  errors.ts  policy.ts     线上契约（与网关同形）、错误分类、三区间/逃生选项/中性答案
   judge.ts                           单个判断模型：超时、>32 题分片、答案校验；JudgeLike 抽象
   cascade.ts                         多档级联：按"能力档案"路由，逐题升级，不可信的答案中性化
-  registry.ts  config.ts             判断模型注册表（gateway / local / http / llm / mock）+ ~/.kyrn/agent/kyrn.json
+  registry.ts  config.ts             判断模型注册表（jev / typesafe / clm / gateway / http / llm / classifier / mock）+ ~/.kyrn/agent/kyrn.json
   decision.ts  ledger.ts             DecisionSpec（静态或按输入生成题目）+ 引擎（off/shadow/active、decideMany、fail-open）+ 账本
-  providers/                         gateway（Jev）· local（Laya sidecar / 任意同协议 HTTP）· llm（任意生成式模型）· mock
+  providers/                         gateway（Jev）· typesafe（System One：TypeSafe、mude 1.0、CLM）· http-judge（任意同协议 HTTP）· llm（任意生成式模型）· mock
   decisions/                         15 个决策规格：input-preflight · skill-disclosure · memory · interjection ·
                                      tool-admission · tool-risk · context-forget · turn-drift · turn-completion ·
                                      notify-routing · swarm-routing · cache-warming · file-locate · browser-step

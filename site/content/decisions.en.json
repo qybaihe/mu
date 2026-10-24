@@ -31,7 +31,7 @@
     "judges_h2": "Pick the judge, per installation or per point",
     "judges": [
       { "h3": "Jev, hosted", "p": "Free with no key, through OpenCode Zen. With your own key: TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode or Cloudflare.", "code": "mu setup" },
-      { "h3": "Laya, on your machine", "p": "322 million parameters, no network. Reliable on simple predicates; run it in shadow next to your current judge before trusting it.", "code": "mu judge setup" },
+      { "h3": "mude 1.0, on your Mac", "p": "mu's own decision model, optimized for coding, on a Mac with Apple silicon. It answers in about 0.1 s, and nothing it reads leaves your Mac.", "code": "mu judge mude install" },
       { "h3": "A classifier model", "p": "Any classifier in pi's model catalog, such as Cloudflare's Clef, with the sign-in you already have.", "code": "classifier:<provider>/<model>" },
       { "h3": "Any LLM", "p": "The model you already use, asked to answer as JSON. Slower, and every verdict costs tokens.", "code": "llm:<provider>/<model>" }
     ],

@@ -41,7 +41,7 @@ export const turnContinue = defineDecision({
 });
 ```
 
-(Simplified from the real [`turn-continue.ts`](../packages/kyrn-judge/src/decisions/turn-continue.ts). `capabilities` declares what a question needs in order to be answered, so a cascade can skip judges that can't answer it, such as the local judge on questions about the request itself; see `decision.ts`.)
+(Simplified from the real [`turn-continue.ts`](../packages/kyrn-judge/src/decisions/turn-continue.ts). `capabilities` declares what a question needs in order to be answered, so a cascade can skip judges that can't answer it, such as a small classifier on questions about the request itself; see `decision.ts`.)
 
 Question types: `boolean` (the probability of yes), `choice` (named answers, each with a description; it must include an escape answer such as `unclear` or `none`) and `score` (ordered levels). For questions over a list whose length is only known at run time (one per file, one per lesson), use `questionsFor` and keep one shared state.
 

@@ -406,8 +406,8 @@ const DESCRIBED: HarnessManifest = {
 			feature: "continuation",
 			title: { zh: "半路停下", en: "Stopped short" },
 			summary: {
-				zh: "一轮结束在「接下来我去跑测试」却什么也没做，或者你已经让它做了它还在问「要我改吗」：让它接着做。难以撤销、或要出这台电脑的一步（推送、发布、删除、付款）不催。每条消息最多催两次；无人值守的运行里「说了没做」最多催一次，它回应上一次催促时没调工具就不再催。本地判定器（Laya）不回答「说了没做」。",
-				en: "When a run ends on \"next I'll run the tests\" without doing it, or asks permission for work you already asked for, sends the agent back to it. Never nudges a step that is hard to undo or reaches beyond this machine (push, publish, delete, pay). At most twice per message; in an unattended run, at most once for work it said it would do, and not after it answered a nudge without a tool call. The local judge (Laya) doesn't answer whether work was left undone.",
+				zh: "一轮结束在「接下来我去跑测试」却什么也没做，或者你已经让它做了它还在问「要我改吗」：让它接着做。难以撤销、或要出这台电脑的一步（推送、发布、删除、付款）不催。每条消息最多催两次；无人值守的运行里「说了没做」最多催一次，它回应上一次催促时没调工具就不再催。",
+				en: 'When a run ends on "next I\'ll run the tests" without doing it, or asks permission for work you already asked for, sends the agent back to it. Never nudges a step that is hard to undo or reaches beyond this machine (push, publish, delete, pay). At most twice per message; in an unattended run, at most once for work it said it would do, and not after it answered a nudge without a tool call.',
 			},
 		},
 		{
@@ -1144,8 +1144,8 @@ const DESCRIBED: HarnessManifest = {
 					max: 32,
 					label: { zh: "一次请求判断几块", en: "Chunks per request" },
 					help: {
-						zh: "托管判定器把多块放进一个请求，状态只计费一次；本地判定器始终一次一块。",
-						en: "A hosted judge takes many chunks in one request, with the shared context billed once; the local judge takes one at a time.",
+						zh: "判定器把多块放进一个请求，状态只计费一次。",
+						en: "The judge takes many chunks in one request, with the shared context billed once.",
 					},
 				},
 				{
@@ -2076,19 +2076,6 @@ const DESCRIBED: HarnessManifest = {
 					help: {
 						zh: "默认不催：它回应上一次催促时一个工具也没调（比如「工作已经做完了」），就是用停下来作了答，不再说它没做完。什么也没说就停下的一轮照样会被催。",
 						en: 'Off by default: when the agent answered the last nudge without calling a tool ("The work is already complete"), it answered by stopping, and isn\'t told again that it said it would do more. A run that stops without a message is still sent back.',
-					},
-				},
-				{
-					key: "localPromised",
-					kind: "boolean",
-					default: false,
-					label: {
-						zh: "让本地判定器判断「说了没做」",
-						en: "Let the local judge decide whether work was left undone",
-					},
-					help: {
-						zh: "默认不让：这一问交给判定器列表里的下一个；只有本地判定器（Laya）时就不因此催。基准测试里 Laya 两次把做完了的「已完成，已创建 …」当成还要接着做。",
-						en: 'Off by default: this question goes to the next judge in your list, and with the local judge (Laya) alone no such nudge is sent. In a benchmark run Laya twice read a finished "Done. Created …" as a promise of more work.',
 					},
 				},
 			],

@@ -1,5 +1,5 @@
 import type { AgentEndEvent } from "@earendil-works/pi-coding-agent";
-import { type ContinueOutcome, turnContinue, turnContinueLocalPromised } from "../../decisions/turn-continue.ts";
+import { type ContinueOutcome, turnContinue } from "../../decisions/turn-continue.ts";
 import { askWithin, clip, failOpen, type KyrnRuntime, type TurnState, textOf } from "../runtime.ts";
 import { isUnattended } from "./unattended.ts";
 
@@ -72,20 +72,17 @@ export function registerContinuation(runtime: KyrnRuntime): void {
 		unattendedPromised: 1,
 		/** In an unattended run, such a nudge after the agent answered a nudge without calling a tool. */
 		promisedAfterToolless: false,
-		/** Let the local judge (Laya) answer `promised`; by default it is not trusted on it (`intent`). */
-		localPromised: false,
 	});
 	if (!options.enabled) return;
 	const { pi } = runtime;
-	const spec = options.localPromised ? turnContinueLocalPromised : turnContinue;
+	const spec = turnContinue;
 	const declared = spec.capabilities;
 	const trusted = (question: string): boolean =>
 		runtime.trusts(spec.id, (typeof declared === "object" ? declared[question] : declared) ?? "classify");
 	/**
 	 * Whether a verdict could send the agent back: `promised` answered, or all three questions of a go-ahead, and
-	 * `irreversible`, whose neutral answer ends the run. Laya alone is trusted on neither `promised` (`intent`) nor a
-	 * go-ahead (`meta`, `relate`): there the verdict can only be "end", and asking it would only hold up the end of the
-	 * run, by up to `waitMs`. With `localPromised` Laya answers `promised`, and is asked.
+	 * `irreversible`, whose neutral answer ends the run. A judge trusted on neither `promised` (`intent`) nor a go-ahead
+	 * (`meta`, `relate`) could only say "end", and asking it would only hold up the end of the run, by up to `waitMs`.
 	 */
 	const canSendBack = () =>
 		trusted("irreversible") &&

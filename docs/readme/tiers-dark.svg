@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="880" height="330" viewBox="0 0 880 330" role="img" aria-labelledby="t d" font-family="-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif">
 <title id="t">Judges in tiers</title>
-<desc id="d">A cascade such as laya,jev. All questions go to Laya first: local, offline and free, trusted on classifying. What Laya is sure of becomes a verdict; a yes/no answer is unsure when its probability is between 0.2 and 0.8, and unsure questions go on to Jev, hosted, about 0.3 seconds. What Jev is sure of becomes a verdict; what is still unsure, or what no judge answered, gets the fallback: what mu would do without a judge. The ledger records every answer, which judge gave it or why the fallback was used, and the time. Laya is not trusted on relating, scoring or meta-judgments, so those questions go on to Jev.</desc>
+<desc id="d">A cascade such as mude,jev. All questions go to mude 1.0 first: local, about 0.1 seconds, and nothing leaves your Mac. What mude is sure of becomes a verdict; a yes/no answer is unsure when its probability is between 0.2 and 0.8, and unsure questions go on to Jev, hosted, about 0.3 seconds. What Jev is sure of becomes a verdict; what is still unsure, or what no judge answered, gets the fallback: what mu would do without a judge. The ledger records every answer, which judge gave it or why the fallback was used, and the time. A question a judge isn’t trusted on skips it and goes on to the next one.</desc>
 <defs><marker id="a" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8b949e"/></marker><marker id="p" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#ff8ad8"/></marker></defs>
 <text x="0" y="22" font-size="18" font-weight="600" fill="#f0f6fc">Judges in tiers</text>
-<text x="0" y="46" font-size="13.5" fill="#b7bdc8">A cascade such as laya,jev: each judge only sees the questions the one before it wasn’t sure about.</text>
+<text x="0" y="46" font-size="13.5" fill="#b7bdc8">A cascade such as mude,jev: each judge only sees the questions the one before it wasn’t sure about.</text>
 <line x1="0" x2="880" y1="66" y2="66" stroke="#30363d"/>
 <rect x="0" y="104" width="150" height="84" rx="10" fill="#151b23" stroke="#3d444d"/>
 <text x="16" y="133" font-size="14.5" font-weight="600" fill="#f0f6fc">Questions</text>
@@ -11,9 +11,9 @@
 <text x="16" y="174" font-size="12.5" fill="#b7bdc8">from a decision point</text>
 <rect x="214" y="104" width="190" height="84" rx="10" fill="rgba(255, 138, 216, 0.07)" stroke="rgba(255, 138, 216, 0.4)"/>
 <rect x="229" y="125" width="6" height="6" rx="1" fill="#ff8ad8" stroke="rgba(255, 138, 216, 0.25)" stroke-width="2" transform="rotate(45 232 128)"/>
-<text x="246" y="133" font-size="14.5" font-weight="600" fill="#f0f6fc">Laya</text>
-<text x="230" y="156" font-size="12.5" fill="#b7bdc8">local, offline, no cost</text>
-<text x="230" y="174" font-size="12.5" fill="#b7bdc8">trusted on classifying</text>
+<text x="246" y="133" font-size="14.5" font-weight="600" fill="#f0f6fc">mude 1.0</text>
+<text x="230" y="156" font-size="12.5" fill="#b7bdc8">local, about 0.1 s</text>
+<text x="230" y="174" font-size="12.5" fill="#b7bdc8">nothing leaves your Mac</text>
 <rect x="468" y="104" width="190" height="84" rx="10" fill="rgba(255, 138, 216, 0.07)" stroke="rgba(255, 138, 216, 0.4)"/>
 <rect x="483" y="125" width="6" height="6" rx="1" fill="#ff8ad8" stroke="rgba(255, 138, 216, 0.25)" stroke-width="2" transform="rotate(45 486 128)"/>
 <text x="500" y="133" font-size="14.5" font-weight="600" fill="#f0f6fc">Jev</text>
@@ -41,5 +41,5 @@
 <rect x="34" y="268" width="102" height="8" rx="0" fill="rgba(255, 138, 216, 0.07)" stroke="rgba(255, 138, 216, 0.4)"/>
 <text x="34" y="290" font-size="11" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#8b949e">0.2</text>
 <text x="136" y="290" font-size="11" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace" fill="#8b949e">0.8</text>
-<text x="0" y="324" font-size="12" fill="#8b949e">A judge’s known weakness never decides: Laya isn’t trusted on relating, scoring or meta-judgments, so those go on to Jev.</text>
+<text x="0" y="324" font-size="12" fill="#8b949e">A judge’s known weakness never decides: a question a judge isn’t trusted on skips it and goes on to the next.</text>
 </svg>
