@@ -34,7 +34,7 @@ If that doesn't help, [open an issue](https://github.com/qybaihe/mu/issues/new/c
 
 **The local judge wants to download a model.** Laya's model is about 930 MB. mu downloads it only after you agree, in `mu judge setup` or in the app.
 
-**mude 1.0 isn't answering.** `mu judge mude status` shows whether its server is running, and `mu judge mude start` starts it. `mu doctor` checks the server and its key. Until it answers, the judges behind it answer, or, with `--local-only`, each decision takes its fallback. See [mude 1.0](judges.md#mude-10-on-your-mac).
+**mude 1.0 isn't answering.** `mu judge mude status` shows whether its server is running, and `mu judge mude start` starts it. `mu doctor` checks the server and its key. Until it answers, its fallback judges answer instead, or, with `--local-only`, each decision point uses its default. See [mude 1.0](judges.md#mude-10-on-your-mac).
 
 **The mude 1.0 install stopped.** Run `mu judge mude install` again, or press **Continue installing** in the app. It picks up where it left off.
 

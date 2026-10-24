@@ -46,10 +46,10 @@ A part mu doesn't understand falls back to its default instead of stopping mu. A
 
 ## Modes in practice {#modes}
 
-- {points_active} of the {points} points act from the start: `context.compact` and `output.drift` stay off until you turn them on, `capability.disclosure` and `swarm.patch` are off, and `notify.routing`, `input.interjection` and `turn.drift` are in shadow, recording their verdicts only. To try a judge, or a point you're unsure of, put it in shadow, read the ledger (`mu ledger`, `/status` or the app's Judge tab), then set it back to active.
+- {points_active} of the {points} points act from the start: `context.compact` and `output.drift` stay off until you turn them on, `capability.disclosure` and `swarm.patch` are off, and `notify.routing`, `input.interjection` and `turn.drift` are in shadow, recording their verdicts only. To try a judge, or a point you're unsure of, put the point in shadow mode, read the ledger (`mu ledger`, `/status` or the app's Judge tab), then set it back to active.
 - `/mu mode <point> <off|shadow|active>` switches one point for the current session; `/mu mode default shadow` all of them. To keep a mode, put it in `mu.json`.
 - `MU_JUDGE_MODE=shadow mu` sets the default for one run.
-- `"modes": { "default": "off" }` asks no judge at all: the points in shadow out of the box are off too, unless `mu.json` gives one a mode of its own. "Not now" for the judge in `mu setup` writes this.
+- `"modes": { "default": "off" }` asks no judge at all: the points that are in shadow by default are off too, unless `mu.json` gives one its own mode. Choosing "Not now" at the judge step of `mu setup` writes this.
 
 ## Environment variables {#env}
 
@@ -69,7 +69,7 @@ Time:
 
 | Variable | Effect |
 | --- | --- |
-| `MU_TIME_BUDGET_S` | The run's time budget in seconds, counted from when mu starts. A reply that only thinks is then cut in time for a retry, and the model hears how many minutes are left at 50% and 80% (`features.deadline`). Benchmark harnesses set it from the task's timeout; without it nothing changes. |
+| `MU_TIME_BUDGET_S` | The run's time budget in seconds, counted from when mu starts. A reply that's only thinking is then cut off early enough to leave time for a retry, and the model is told how many minutes are left at 50% and 80% (`features.deadline`). Benchmark harnesses set it from the task's timeout; without it nothing changes. |
 
 The launcher:
 

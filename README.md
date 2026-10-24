@@ -49,7 +49,7 @@ mu setup            # connect a model
 mu                  # start a session in the current directory
 ```
 
-You don't need a judge key to start: until you set one, the free Jev on OpenCode Zen answers. From the start, 33 of the 40 decision points act on their verdicts (summary-free compaction and mid-stream correction are off until you turn them on, capability disclosure and the subagent patch scope check are off, and notification routing, mid-run messages and the drift check are only recorded), and every verdict is logged (`/status`, `mu ledger` or the app's Judge tab). To record what the judge would do without acting on it, put `{"modes": {"default": "shadow"}}` in `~/.mu/agent/mu.json`. More in [Getting started](docs/getting-started.md).
+You don't need a judge key to start: until you set one, the free Jev on OpenCode Zen answers. Out of the box, 33 of the 40 decision points act on their verdicts, and every verdict is logged (`/status`, `mu ledger` or the app's Judge tab). Of the other seven, summary-free compaction and mid-stream correction are off until you turn them on, capability disclosure and the subagent patch scope check are off, and notification routing, mid-run messages and the drift check only record their verdicts. To record what the judge would do without acting on it, put `{"modes": {"default": "shadow"}}` in `~/.mu/agent/mu.json`. More in [Getting started](docs/getting-started.md).
 
 ## How a turn works
 
@@ -113,7 +113,7 @@ The 40 points fall into five groups:
 | Decision point | Question | Effect |
 | --- | --- | --- |
 | `tool.risk` | The rules flagged a command: did you ask for it? | If the judge is unsure, mu asks you |
-| `tool.approval` | In *Judge mode*: does the task clearly need this command, this change outside the project, this external action or this subagent? | Only what the judge is sure of runs; everything else asks you |
+| `tool.approval` | In *Judge mode*: does the task clearly need this command, this change outside the project, this external action or this subagent? | Only what the judge is sure of runs; mu asks you about the rest |
 | `tool.constraint` | Before a call that changes something: does it cross a constraint you stated? | The call is stopped |
 | `tool.injection` | Passage by passage, in a web page, a search result, an MCP server's output or something a command fetched from another machine (`curl`, `gh issue view`): is there an instruction aimed at the AI? | Those passages never reach the model; a note marks where each one was. A subagent that read such passages hands back its report under a warning |
 | `tool.description` | When an MCP tool's description first appears or changes: does it ask the AI for more than calling the tool (reading secrets, sending data elsewhere, hiding something from you)? | The tool is removed from the model's list, calls to it are refused, and you're told |
@@ -163,7 +163,7 @@ Every point, with its feature switch and options: [docs/reference/decision-point
   With no key set, Jev 1.13 on OpenCode Zen answers, free for a limited time. What it judges goes to OpenCode, which doesn't train on it, and mu reminds you of this once a day. Set a key (`mu setup`, or Settings → Judges in the app) and mu switches to it starting with the next question.
 
   Measured in the authors' own sessions: a warm question takes about 0.3 s over HTTP/2, and 16 chunks of tool output are judged in a single request in 0.44 s, with the shared state billed once. Verdicts, probabilities and timings go to the ledger: run `mu ledger`, or open the Judge tab in the desktop app.
-- **mude 1.0** (local, a Mac with Apple silicon) is mu's own decision model, optimized for coding: [below](#mude-10-a-decision-model-optimized-for-coding).
+- **mude 1.0** (local, a Mac with Apple silicon) is mu's own decision model, optimized for coding ([more below](#mude-10-a-decision-model-optimized-for-coding)).
 - **Laya** (local, macOS on Apple silicon) is a 322M-parameter judge that runs on your machine and never touches the network. Nothing is downloaded without your consent. It's reliable on simple predicates and weaker on meta-judgments, so run it in shadow alongside your current judge and read the ledger before you give it a decision point.
 - **Any classifier model** in pi's catalog can serve as a tier: `classifier:<provider>/<model>`. Examples include Cloudflare's Clef (`clef`, `clef-flash`), the System One models on OpenRouter and the Vercel AI Gateway, or a llama.cpp classifier.
 - **Any LLM** can serve as a tier: `llm:<provider>/<model>`.
@@ -179,7 +179,7 @@ Judges can be chained in tiers, cheapest first:
 
 ### mude 1.0, a decision model optimized for coding
 
-mude 1.0 is mu's own decision model, optimized for coding: trained for the decisions a coding agent makes and state of the art at making them. It has 2B parameters, answers every question of a decision in one forward pass, with a probability for each answer, and runs on your machine, so what it judges never leaves it. Both editions, the [full model](https://huggingface.co/qybaihe/mude-1.0) and the [MLX 8-bit edition](https://huggingface.co/qybaihe/mude-1.0-mlx-8bit) (1.8 GB), are under the MIT license. For now, the one-step setup supports Macs with Apple silicon (macOS 14 or later, 8 GB of memory or more) and uses the MLX edition:
+mude 1.0 is mu's own decision model, optimized for coding: trained for the decisions a coding agent makes and state of the art at making them. It has 2B parameters and answers every question in a decision in one forward pass, with a probability for each answer. It runs on your machine, so what it judges never leaves it. Both editions, the [full model](https://huggingface.co/qybaihe/mude-1.0) and the [MLX 8-bit edition](https://huggingface.co/qybaihe/mude-1.0-mlx-8bit) (1.8 GB), are under the MIT license. For now, the one-step setup supports Macs with Apple silicon (macOS 14 or later, 8 GB of memory or more) and uses the MLX edition:
 
 ```bash
 mu judge mude install               # download it, check every file, start it on 127.0.0.1 and make it the judge
@@ -189,13 +189,13 @@ mu judge mude disable               # back to the judges you had before, and sto
 mu judge mude uninstall             # remove the model and its Python environment
 ```
 
-On a Mac that can run it, mude 1.0 is the recommended judge. `mu setup` offers it first, and in the desktop app the first-run guide's judge step starts with it picked: one click installs it, with download progress and a retry if it fails, and you can pick another judge or skip it. Later, the Judges page in Settings installs, starts, stops and uninstalls mude, and its "Local only" switch is the same as `--local-only`. An install that stops (Ctrl-C, a lost connection, a power cut, quitting the app) picks up where it left off: run `mu judge mude install` again, or click "Continue installing". On a Mac that can't run mude, the guide says so and keeps the hosted judge.
+On a Mac that can run it, mude 1.0 is the recommended judge. `mu setup` offers it first, and in the desktop app the first-run guide's judge step has it preselected: one click installs it, with download progress and a retry if the install fails, and you can pick another judge or skip the step. Later, the Judges page in Settings installs, starts, stops and uninstalls mude, and its "Local only" switch is the same as `--local-only`. An install that stops (Ctrl-C, a lost connection, a power cut, quitting the app) picks up where it left off: run `mu judge mude install` again, or click "Continue installing". On a Mac that can't run mude, the guide says so and keeps the hosted judge.
 
 By default, the judge you had before stays on as mude's fallback. What mude can't answer (its server is stopped, or it's unsure) goes to that judge, and so do two injection checks mude isn't trusted with yet. If that judge is hosted, as the default Jev is, what it reads leaves your machine. While it runs, mude's server uses about 4 GB of memory; `mu judge mude stop` stops it. On other platforms, you can serve the [full model](https://huggingface.co/qybaihe/mude-1.0) (bf16, PyTorch; a CUDA GPU is recommended) with its own System One server and add it to `mu.json` as a `typesafe` judge, as its model card shows.
 
 ### mubench 1.0: how decision models compare
 
-mubench is mu's benchmark for decision models. On its main board, every item is a request mu sent to a decision model, word for word, in a real coding session on an open-source repository. Each answer is scored by the cost of its consequences, and every model is compared with mu running without one: 0 is no better, 100 removes all of that cost. The full leaderboard, with a sub-board of constructed scenarios, is at [usemu.dev/en/mubench](https://usemu.dev/en/mubench/). mubench will be open source soon.
+mubench is mu's benchmark for decision models. On its main board, every item is a request mu sent to a decision model, word for word, in a real coding session on an open-source repository. Each answer is scored by the cost of its consequences, and every model is compared with mu running without a decision model: 0 is no better, and 100 removes all the cost mu pays without one. The full leaderboard, with a sub-board of constructed scenarios, is at [usemu.dev/en/mubench](https://usemu.dev/en/mubench/). mubench will be open source soon.
 
 <p align="center">
   <picture>
@@ -211,7 +211,7 @@ mubench is mu's benchmark for decision models. On its main board, every item is 
   </picture>
 </p>
 
-Decision accuracy is a separate, plainer measure: the share of checks a model gets right, every check counting the same whatever its mistakes cost. The first bar in each panel is mu with no decision model.
+Decision accuracy is a separate, plainer measure: the share of checks a model gets right, with every check counting the same, whatever a mistake on it would cost. The first bar in each panel is mu with no decision model.
 
 <p align="center">
   <picture>
@@ -385,7 +385,7 @@ pi's own commands (`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`,
 
 ## Privacy
 
-Your keys stay on your machine. mu never downloads a model or a runtime on its own; anything that needs a download asks first. The judge sees only the fields a question needs. With no key set, those fields go to the free Jev on OpenCode Zen; `mu setup --judge off` (no judge is asked; mu's features keep working on their rules), `MU_JUDGE=off` or Laya keeps everything on your machine. Every verdict is logged locally, and you can read all of them. The desktop app sends no telemetry or crash reports. Details are in [SECURITY.md](SECURITY.md#what-leaves-your-machine).
+Your keys stay on your machine. mu never downloads a model or a runtime on its own; anything that needs a download asks first. The judge sees only the fields a question needs. With no key set, those fields go to the free Jev on OpenCode Zen. To keep everything on your machine, use mude 1.0 with `--local-only`, Laya, `MU_JUDGE=off` or `mu setup --judge off` (no judge is asked, and mu's features fall back to their own rules). Every verdict is logged locally, and you can read all of them. The desktop app sends no telemetry or crash reports. Details are in [SECURITY.md](SECURITY.md#what-leaves-your-machine).
 
 ## Limitations
 
