@@ -4,12 +4,17 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-10-24
+
+**0.2.3 adds decision models from Hugging Face next to mude 1.0, lets mu decide when a message sent mid-run reaches the work, and makes Sign in with ChatGPT cope with a busy port 1455.** The desktop app carries mu-agent 0.2.3.
+
 ### Added
 
 - **Other decision models from Hugging Face, next to mude 1.0.** Paste a Hugging Face link or `owner/name` under mude on the Judges page in Settings (or run `mu judge model add <link>`). mu downloads the model with progress, checks every file, resumes a download that stopped, sets it up and makes it the judge. The list shows each added model with Use, Continue downloading and Remove, and "Use mude 1.0 as the judge" switches back. Only one decision model runs at a time. A model must be packaged like mude 1.0's MLX edition, with its own `d3_server_mac.py`, which runs on your Mac, so add only models you trust.
 
 ### Changed
 
+- **Less small print.** The site, the app, the command line and the READMEs drop intro paragraphs, footnotes and hints that repeated what was already on screen. Install sizes, costs, warnings and what leaves your machine stay.
 - **The Now / After switch next to the message box is gone: mu decides when a message you send during a run reaches the work.** A correction reaches the model at its next step. Extra work and unrelated questions wait until the run is done. The queue above the box shows where each message went, and you can still take them back. The judge has up to 1.5 seconds to decide. If it doesn't answer in time, or fails, the message reaches the model at its next step. In the terminal, Enter and Alt+Enter work as before, and mu can move the message the same way. To turn this off, set `"input.interjection": "shadow"` under `modes` in `~/.mu/agent/mu.json`. Messages from the app then reach the model at its next step, and in the terminal the key you press decides, as before.
 
 ### Fixed
