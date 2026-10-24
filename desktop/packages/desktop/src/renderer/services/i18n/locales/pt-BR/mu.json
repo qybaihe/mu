@@ -153,6 +153,11 @@
         "title": "CLM",
         "tag": "Auto-hospedado",
         "description": "Responde às mesmas perguntas que o Jev, em um servidor seu (clm-serve). O codificador precisa de uma GPU; nada é cobrado por chamada."
+      },
+      "openai": {
+        "title": "OpenAI",
+        "tag": "Hospedado",
+        "description": "O modelo de decisão da OpenAI, gpt-6-luna, com uma chave de API da OpenAI. A OpenAI cobra por token de entrada."
       }
     },
     "mude": {
@@ -294,6 +299,9 @@
         "mock": "Este servidor usa o codificador simulado do CLM: as respostas dele são ruído, não do CLM.",
         "failed": "Não foi possível consultar o servidor."
       }
+    },
+    "openai": {
+      "key": "Chave de API da OpenAI"
     }
   },
   "keyState": {

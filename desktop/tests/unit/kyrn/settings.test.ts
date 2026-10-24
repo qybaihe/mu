@@ -331,6 +331,49 @@ describe('native mu settings', () => {
       f.cleanup();
     }
   });
+  it('offers OpenAI’s decision model as a built-in with a key of its own, which never goes to TypeSafe', () => {
+    const f = fixture();
+    try {
+      const read = f.store.read();
+      expect(read.judges.openai).toEqual({
+        type: 'openai',
+        model: 'gpt-6-luna',
+        baseUrl: '',
+        apiKeyEnv: 'MU_JUDGE_OPENAI_KEY',
+        timeoutMs: 10000,
+      });
+      expect(read.keys.MU_JUDGE_OPENAI_KEY).toBe(false);
+      // Chosen with its key: only the order is written, and the key goes to the .env, never back to the screen.
+      const saved = f.store.save({
+        ...read,
+        tiers: ['openai'],
+        credentials: [{ name: 'MU_JUDGE_OPENAI_KEY', value: 'sk-proj-fixture' }],
+      });
+      expect(saved.keys.MU_JUDGE_OPENAI_KEY).toBe(true);
+      expect(JSON.stringify(saved)).not.toContain('sk-proj-fixture');
+      const raw = JSON.parse(readFileSync(join(f.dir, 'kyrn.json'), 'utf8'));
+      expect(raw.tiers).toEqual(['openai']);
+      expect(raw.judges.openai).toBeUndefined();
+      expect(readFileSync(join(f.root, '.env'), 'utf8')).toContain('MU_JUDGE_OPENAI_KEY=sk-proj-fixture');
+      // A key of another judge service is never sent to OpenAI…
+      const now = f.store.read();
+      const stray = { ...now.judges.openai, apiKeyEnv: 'TYPESAFE_API_KEY' };
+      expect(() => f.store.save({ ...now, tiers: ['stray'], judges: { ...now.judges, stray } })).toThrow(
+        'not sent to OpenAI'
+      );
+      // …and OpenAI's key never to TypeSafe through a System One judge without an address.
+      const loose = {
+        type: 'typesafe' as const,
+        model: '',
+        baseUrl: '',
+        apiKeyEnv: 'MU_JUDGE_OPENAI_KEY',
+        timeoutMs: 10000,
+      };
+      expect(() => f.store.save({ ...now, tiers: ['loose'], judges: { ...now.judges, loose } })).toThrow('no base URL');
+    } finally {
+      f.cleanup();
+    }
+  });
 });
 
 describe('a mu.json that still names Laya, the local judge mu no longer has', () => {

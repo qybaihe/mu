@@ -153,6 +153,11 @@
         "title": "CLM",
         "tag": "Self-hosted",
         "description": "Answers the same questions as Jev, on your own server (clm-serve). Its encoder needs a GPU; there's no per-call cost."
+      },
+      "openai": {
+        "title": "OpenAI",
+        "tag": "Hosted",
+        "description": "OpenAI's decision model, gpt-6-luna, with an OpenAI API key. OpenAI bills it per input token."
       }
     },
     "mude": {
@@ -294,6 +299,9 @@
         "mock": "This server runs CLM's mock encoder, so its answers are noise, not real CLM verdicts.",
         "failed": "Couldn't contact the server."
       }
+    },
+    "openai": {
+      "key": "OpenAI API key"
     }
   },
   "keyState": {

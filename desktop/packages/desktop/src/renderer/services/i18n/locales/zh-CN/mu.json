@@ -153,6 +153,11 @@
         "title": "CLM",
         "tag": "自建",
         "description": "回答和 Jev 一样的问题，运行在你自己的服务器上（clm-serve）。编码器需要 GPU，不按次计费。"
+      },
+      "openai": {
+        "title": "OpenAI",
+        "tag": "云端",
+        "description": "OpenAI 的决策模型 gpt-6-luna，用 OpenAI API 密钥。OpenAI 按输入 token 计费。"
       }
     },
     "mude": {
@@ -294,6 +299,9 @@
         "mock": "这台服务器运行的是 CLM 的模拟编码器：它的回答是噪声，不是 CLM 的判断。",
         "failed": "没能询问服务器。"
       }
+    },
+    "openai": {
+      "key": "OpenAI API 密钥"
     }
   },
   "keyState": {

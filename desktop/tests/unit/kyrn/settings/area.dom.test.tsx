@@ -1608,12 +1608,13 @@ describe('the kernel pages', () => {
     expect(within(verdicts).getByRole('switch', { name: enMu.judges.mode })).toBeChecked();
     // The switch's name says it all: no sentence under it.
     expect(verdicts).toHaveTextContent(new RegExp(`^${enMu.judges.mode}$`));
-    // The choices, Jev and CLM where mude is not offered, no Laya, and no second way to pick a judge.
+    // The choices, Jev, CLM and OpenAI where mude is not offered, no Laya, and no second way to pick a judge.
     const choice = within(page).getByTestId('mu-judge-choice-jev');
     expect(verdicts.compareDocumentPosition(choice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(page).getByTestId('mu-judge-choice-clm')).toBeInTheDocument();
+    expect(within(page).getByTestId('mu-judge-choice-openai')).toBeInTheDocument();
     expect(within(page).queryByTestId('mu-judge-choice-local')).not.toBeInTheDocument();
-    expect(within(page).getAllByRole('radio')).toHaveLength(2);
+    expect(within(page).getAllByRole('radio')).toHaveLength(3);
     // The service and its long help once, in the choice; no order and no model id on this page.
     expect(within(page).getAllByLabelText(enMu.judges.service)).toHaveLength(1);
     expect(page.textContent?.split(enMu.judges.services.auto.help)).toHaveLength(2);
@@ -1890,6 +1891,50 @@ describe('the kernel pages', () => {
     expect(sent.tiers).toEqual(['clm']);
     expect(sent.judges.clm).toMatchObject({ type: 'clm', baseUrl: 'http://192.168.1.20:8700' });
     expect(sent.credentials).toEqual([{ name: 'MU_JUDGE_CLM_API_KEY', value: 'clm-key' }]);
+  });
+
+  it('offers OpenAI’s decision model as a choice, which asks for its key and nothing else', async () => {
+    const openai = {
+      type: 'openai' as const,
+      model: 'gpt-6-luna',
+      baseUrl: '',
+      apiKeyEnv: 'MU_JUDGE_OPENAI_KEY',
+      timeoutMs: 10000,
+    };
+    // As the store sends it: the built-in profile, and the state of its key.
+    bridge.settings.mockResolvedValue({
+      ok: true,
+      data: settings({
+        judges: { ...settings().judges, openai },
+        keys: { TYPESAFE_API_KEY: true, MU_JUDGE_OPENAI_KEY: false },
+      }),
+    });
+    await open('judges');
+    const tile = screen.getByTestId('mu-judge-choice-openai');
+    expect(tile).toHaveTextContent(enMu.judges.choices.openai.title);
+    expect(tile).toHaveAttribute('aria-checked', 'false');
+    fireEvent.click(tile);
+    expect(tile).toHaveAttribute('aria-checked', 'true');
+    // Its key, hidden as it is typed; no service, address or model on this page.
+    const key = within(tile).getByLabelText(enMu.judges.openai.key);
+    expect(key).toHaveAttribute('type', 'password');
+    expect(within(tile).getByText(enMu.keyState.none)).toBeInTheDocument();
+    expect(within(tile).queryByLabelText(enMu.judges.service)).not.toBeInTheDocument();
+    expect(within(tile).queryByLabelText(enMu.judges.baseUrl)).not.toBeInTheDocument();
+    expect(within(tile).queryByLabelText(enMu.judges.model)).not.toBeInTheDocument();
+    fireEvent.change(key, { target: { value: 'sk-proj-made-up' } });
+    // The order: OpenAI by its name and its model; its key is the choice's.
+    fireEvent.click(screen.getByTestId('mu-nav-judge-order'));
+    const tier = screen.getByTestId('mu-judge-tier-0');
+    expect(tier).toHaveTextContent(`Tier 1: ${enMu.judges.choices.openai.title}`);
+    expect(within(tier).getByLabelText(enMu.judges.model)).toHaveAttribute('placeholder', 'gpt-6-luna');
+    expect(within(tier).queryByLabelText(enMu.judges.openai.key)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText('Save'));
+    await waitFor(() => expect(bridge.save).toHaveBeenCalled());
+    const sent = bridge.save.mock.calls[0][0] as SaveSettings;
+    expect(sent.tiers).toEqual(['openai']);
+    expect(sent.judges.openai).toEqual(openai);
+    expect(sent.credentials).toEqual([{ name: 'MU_JUDGE_OPENAI_KEY', value: 'sk-proj-made-up' }]);
   });
 
   it('puts the switches that carry the product on the core features page, each with the way to its row', async () => {
