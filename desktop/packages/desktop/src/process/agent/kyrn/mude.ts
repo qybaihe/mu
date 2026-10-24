@@ -138,8 +138,7 @@ function judgeCommand(
   // Paths of the platform mude runs on, not of the one that runs this (the tests run everywhere).
   const paths = platform === 'win32' ? win32 : posix;
   // A Mac app's PATH is short: where uv and Homebrew's tools usually are, for the Python environment.
-  const extra =
-    platform === 'darwin' ? [paths.join(home, '.local', 'bin'), '/opt/homebrew/bin', '/usr/local/bin'] : [];
+  const extra = platform === 'darwin' ? [paths.join(home, '.local', 'bin'), '/opt/homebrew/bin', '/usr/local/bin'] : [];
   const path = [...extra, env.PATH ?? ''].filter(Boolean).join(paths.delimiter);
   return {
     command: start.command,
@@ -634,8 +633,7 @@ export class DecisionModels {
         } else {
           task.phase = 'failed';
           if (!task.error) {
-            const message =
-              failure || said.join('\n') || `mu judge model ${command} ended with code ${code ?? 'none'}`;
+            const message = failure || said.join('\n') || `mu judge model ${command} ended with code ${code ?? 'none'}`;
             task.error = { message, ...(code === 2 ? { kind: 'usage' as const } : {}) };
           }
         }

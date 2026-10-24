@@ -222,13 +222,7 @@ export default function DecisionModels({ models, unsaved, mudeBusy }: DecisionMo
           aria-label={t('mu.judges.models.placeholder')}
           data-testid='mu-models-link'
         />
-        <Button
-          size='small'
-          type='primary'
-          disabled={locked || !link.trim()}
-          data-testid='mu-models-add'
-          onClick={add}
-        >
+        <Button size='small' type='primary' disabled={locked || !link.trim()} data-testid='mu-models-add' onClick={add}>
           {t('mu.judges.models.add')}
         </Button>
       </div>

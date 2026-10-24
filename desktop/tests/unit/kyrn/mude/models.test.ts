@@ -124,7 +124,13 @@ describe('decision models as the app manages them', () => {
     add.child.line({ type: 'step', step: 'resolve', message: 'Looking up owner/fast-judge on Hugging Face' });
     add.child.line({ type: 'model', name: 'fast-judge', repo: 'owner/fast-judge', bytes: 900_000_000 });
     add.child.line({ type: 'step', step: 'download', message: 'Downloading fast-judge' });
-    add.child.line({ type: 'progress', file: 'weights.safetensors', done: 450_000_000, total: 900_000_000, checking: false });
+    add.child.line({
+      type: 'progress',
+      file: 'weights.safetensors',
+      done: 450_000_000,
+      total: 900_000_000,
+      checking: false,
+    });
     await settle();
     const running = await models.state();
     expect(running.task).toMatchObject({
