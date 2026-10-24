@@ -352,7 +352,7 @@ describe("the launcher and added models", () => {
 	it("starts the server of the added model the configuration names, and only one it knows", () => {
 		const asks = (text: string, env = {}, extra: Record<string, string> = { [recordFile]: "{}" }) => {
 			const fs = disk({ [`${agent}/mu.json`]: text, ...extra });
-			const options = { env, agentDir: agent, muDir: "/Users/bai/.mu", platform: "darwin", ...fs };
+			const options = { env, agentDir: agent, muDir: "/Users/bai/.mu", platform: "darwin" as const, ...fs };
 			return { model: wantedModel(options), start: localModelStart(options) };
 		};
 		expect(asks('{"tiers":["fast-judge","jev"]}')).toEqual({
