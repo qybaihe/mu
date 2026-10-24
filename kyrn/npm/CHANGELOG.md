@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- `mu doctor` and `/doctor` mark a missing Chrome, Chromium, Edge or Brave as optional (`--`) instead of something to fix, so `mu doctor` exits 0 when everything else is set up. `mu --help` lines fit in 100 columns.
+
 ## [0.2.5] - 2026-10-24
 
 **0.2.5 removes Laya from mu's built-in judges. A configuration that still names it switches to mude 1.0 or Jev on its own.**
