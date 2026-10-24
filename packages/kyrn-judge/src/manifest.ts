@@ -147,7 +147,7 @@ const DESCRIBED: HarnessManifest = {
 			title: { zh: "中途插话", en: "Mid-run messages" },
 			summary: {
 				zh: "任务进行中你又发来一句话：判断是要立刻打断，还是等这一步做完再处理。默认是影子模式：判定只记录，消息按你按的键投递，不用等判定。",
-				en: "For a message that arrives while the agent is working: interrupt now, or handle it after the current step. In shadow by default: the verdict is only logged, and the message goes the way of the key you pressed without waiting for it.",
+				en: "For a message that arrives while the agent is working: interrupt now, or handle it after the current step. In shadow by default: the verdict is only logged, and the key you pressed decides what happens to the message, without waiting for the verdict.",
 			},
 		},
 		{
@@ -467,7 +467,7 @@ const DESCRIBED: HarnessManifest = {
 			title: { zh: "通知分流", en: "Notification routing" },
 			summary: {
 				zh: "上下文预算、后台命令结束等事件出现时，判断该现在告诉模型、稍后再说，还是不必说。默认是影子模式：判定只记录，事件按各自的规则投递，后台命令结束和上下文预算都是立刻告知。",
-				en: "For events such as the context budget or a background job's end: tell the model now, later or not at all. In shadow by default: the verdict is only logged and each event is delivered by its own rule, which for a job's end and the context budget is now.",
+				en: "For events such as the context budget or a background job's end: tell the model now, later or not at all. In shadow by default: the verdict is only logged, and each event is delivered by its own rule: right away for a job's end and the context budget.",
 			},
 		},
 		{
@@ -637,7 +637,7 @@ const DESCRIBED: HarnessManifest = {
 					label: { zh: "子代理沿用这里的选择", en: "Subagents take this session's choice" },
 					help: {
 						zh: "子代理隐藏主会话隐藏的技能，不再问判定器。主会话还没定下来时，子代理照旧自己问。",
-						en: "A subagent hides the skills this session hides and doesn't ask the judge again. While this session hasn't settled yet, a subagent asks for itself as before.",
+						en: "A subagent hides the skills this session hides and doesn't ask the judge again. Until this session has decided, a subagent asks the judge itself, as before.",
 					},
 				},
 				{
@@ -700,7 +700,7 @@ const DESCRIBED: HarnessManifest = {
 					},
 					help: {
 						zh: "按名字写。这些在一次性运行里几乎没人用，却每次请求都要带上。用命令点名的（比如 /hive）照样保留；清空就全带上。",
-						en: "By name. One-shot runs almost never use them, and each one is in every request. One you call for by its command (such as /hive) stays. Empty keeps them all.",
+						en: "List them by name. One-shot runs almost never use these, yet every request carries them. Anything you call by its command (such as /hive) stays in. Empty keeps them all.",
 					},
 				},
 				{
@@ -723,7 +723,7 @@ const DESCRIBED: HarnessManifest = {
 					label: { zh: "子代理沿用这里打开的能力", en: "Subagents take this session's capabilities" },
 					help: {
 						zh: "子代理打开主会话已经打开的能力，不再问判定器；主会话隐藏的照样隐藏。主会话还没选过时，子代理照旧自己问。",
-						en: "A subagent opens the capabilities this session has open and doesn't ask the judge again; what's hidden here stays hidden there. Before this session has chosen, a subagent asks for itself as before.",
+						en: "A subagent opens the capabilities this session has open and doesn't ask the judge again; what's hidden here stays hidden there. Until this session has chosen, a subagent asks the judge itself, as before.",
 					},
 				},
 			],
@@ -1057,10 +1057,10 @@ const DESCRIBED: HarnessManifest = {
 					default: 6,
 					min: 0,
 					max: 50,
-					label: { zh: "几个词连成句才送判", en: "Words in a row to ask the judge" },
+					label: { zh: "几个词连成句才送判", en: "Minimum words in a row to ask the judge" },
 					help: {
 						zh: "一段里没有这么多个连着的词（中文、日文这类不空格的文字算连着 8 个字），就不问判定器，只按规则看：目录列表、链接列表、响应头、几个字的 grep 结果里放不下一条指令。0：每段都问。",
-						en: "A passage without this many words in a row (8 characters in a row for Chinese, Japanese and other scripts written without spaces) isn't put to the judge; rules alone read it. Directory listings, link lists, response headers and short grep hits can't hold an instruction. 0: every passage is judged.",
+						en: "A passage without this many words in a row (8 characters in a row for Chinese, Japanese and other scripts written without spaces) isn't sent to the judge; only the rules check it. Directory listings, link lists, response headers and short grep hits can't hold an instruction. 0: every passage is judged.",
 					},
 				},
 				{
@@ -1472,7 +1472,7 @@ const DESCRIBED: HarnessManifest = {
 					label: { zh: "无人值守的运行也拍检查点", en: "Also take checkpoints in unattended runs" },
 					help: {
 						zh: "无人值守指 mu --print 和 json 模式的一次性运行。默认不拍：那里没人能确认回退，文件从不会被放回去，拍快照和每次改动后的扫描却让每一步都多等。遇到死路照样提醒模型退一步。",
-						en: "Unattended means a one-shot mu --print or json-mode run. Off by default: nobody there can confirm a rewind, so no file is ever put back, while the snapshot and the scan after every change hold up each step. At a dead end the model is still told to step back.",
+						en: "Unattended means a one-shot mu --print or json-mode run. Off by default: nobody is there to confirm a rewind, so no file would ever be put back, and the snapshot and scan after every change would only slow down each step. At a dead end the model is still told to step back.",
 					},
 				},
 			],
@@ -1540,7 +1540,7 @@ const DESCRIBED: HarnessManifest = {
 					label: { zh: "两次提醒至少间隔", en: "At least this long between two steers" },
 					help: {
 						zh: "判定器的提醒（跑偏或原地打转）离监测的上一次提醒至少隔这么久，规则发现的打转也算一次。",
-						en: "The judge's steers, on drift or a loop, wait this long after the monitor's last steer, the loop rule's included.",
+						en: "The judge's steers (on drift or a loop) wait this long after the monitor's last steer, including one from the loop rule.",
 					},
 				},
 				{
@@ -1745,7 +1745,7 @@ const DESCRIBED: HarnessManifest = {
 					label: { zh: "一次运行的时间预算", en: "Time budget for a run" },
 					help: {
 						zh: "从 mu 进程启动时算起，0 表示不设。环境变量 MU_TIME_BUDGET_S 优先，评测框架用它按任务的超时来设。子代理不用这个预算。",
-						en: "Counted from when the mu process starts; 0 means none. The environment variable MU_TIME_BUDGET_S takes precedence, and a benchmark harness sets it from the task's timeout. Sub-agents ignore the budget.",
+						en: "Counted from when the mu process starts; 0 means none. The environment variable MU_TIME_BUDGET_S takes precedence, and a benchmark harness sets it from the task's timeout. Subagents ignore the budget.",
 					},
 				},
 				{
@@ -1765,7 +1765,7 @@ const DESCRIBED: HarnessManifest = {
 			title: { zh: "长思考重试", en: "Long-thinking retry" },
 			summary: {
 				zh: "一次回复只思考、迟迟不写字也不调用工具，到时限就打断，用同样的思考强度重问一次，并把它想到哪一步带给它，让它先动手再接着想。重问的那一次不再打断。",
-				en: "When a reply has only been thinking for too long, with no text and no tool call yet, it is cut and asked again at the same reasoning effort. The retry is told where the reasoning had gotten to and asked to act on it first. The retry itself is never cut.",
+				en: "When a reply has done nothing but think for too long, with no text and no tool call yet, it's cut off and retried at the same reasoning effort. The retry is told how far the reasoning got and asked to act on it first. The retry itself is never cut off.",
 			},
 			defaultEnabled: true,
 			options: [
@@ -2018,7 +2018,7 @@ const DESCRIBED: HarnessManifest = {
 					label: { zh: "最多等待", en: "Wait at most" },
 					help: {
 						zh: "超时就不催了，这次判定也随之取消，不拖住单次运行的退出。",
-						en: "After this, there's no nudge, and the judge call is cancelled so it doesn't hold up the end of a one-shot run.",
+						en: "After this, there's no nudge, and the judge call is canceled so it doesn't hold up the end of a one-shot run.",
 					},
 				},
 			],
@@ -2050,7 +2050,7 @@ const DESCRIBED: HarnessManifest = {
 					label: { zh: "最多等待", en: "Wait at most" },
 					help: {
 						zh: "超时就不催了，这次判定也随之取消，不拖住单次运行的退出。",
-						en: "After this, there's no nudge, and the judge call is cancelled so it doesn't hold up the end of a one-shot run.",
+						en: "After this, there's no nudge, and the judge call is canceled so it doesn't hold up the end of a one-shot run.",
 					},
 				},
 				{
@@ -2062,7 +2062,7 @@ const DESCRIBED: HarnessManifest = {
 					label: { zh: "无人值守时「说了没做」最多催几次", en: "Unattended: nudges for work it said it would do" },
 					help: {
 						zh: "无人值守指 mu --print 和 json 模式的一次性运行。那里每条消息因为「说了要做却没做」最多催这么多次；所有催促加起来仍受上面的次数限制。判定把做完了的「已完成，已创建 …」当成没做完时，第二次催促在基准测试里多花了 4 次请求。",
-						en: 'Unattended means a one-shot mu --print or json-mode run. There, a run is sent back for work it said it would do at most this many times per message; Max nudges per message still caps all nudges together. When the judge mistook a finished "Done. Created …" for a promise, the second nudge cost a benchmark run 4 more requests.',
+						en: 'Unattended means a one-shot mu --print or json-mode run. There, a run is sent back at most this many times per message for work it said it would do; Max nudges per message still caps all nudges together. When the judge mistook a finished "Done. Created …" for a promise, the second nudge cost a benchmark run 4 more requests.',
 					},
 				},
 				{
@@ -2127,7 +2127,7 @@ const DESCRIBED: HarnessManifest = {
 					label: { zh: "无人值守的运行也判定通知分流", en: "Also ask the judge about notices in unattended runs" },
 					help: {
 						zh: "无人值守指 mu --print 和 json 模式的一次性运行。默认不问：通知照样按各自的规则投递，和默认的影子模式一样，那里的判定本来也只记录、不生效。",
-						en: "Unattended means a one-shot mu --print or json-mode run. Off by default: notices go by their own rules, as they do in shadow, the default, where the verdict is only recorded.",
+						en: "Unattended means a one-shot mu --print or json-mode run. Off by default: notices follow their own rules, as they do in shadow mode (the default), where the verdict is only recorded.",
 					},
 				},
 			],
@@ -2151,7 +2151,7 @@ const DESCRIBED: HarnessManifest = {
 					label: { zh: "最多等待", en: "Wait at most" },
 					help: {
 						zh: "超时就按 pi 自己的算法决定，这次判定也随之取消。",
-						en: "After this, pi's own estimate decides, and the judge call is cancelled.",
+						en: "After this, pi's own estimate decides, and the judge call is canceled.",
 					},
 				},
 			],

@@ -273,7 +273,7 @@ async function fetchFile(
 			const code = (error as NodeJS.ErrnoException).code;
 			if (code === "ENOSPC" || code === "EDQUOT") {
 				throw new Error(
-					`The disk is full: ${file.path} could not be written. Free some space, then run mu judge mude install to resume`,
+					`The disk is full: couldn't write ${file.path}. Free up some space, then run mu judge mude install to resume`,
 				);
 			}
 			lastError = error;
@@ -324,7 +324,7 @@ async function fetchOnce(
 		});
 		if (response.status === 401 || response.status === 403 || response.status === 404) {
 			throw new DownloadError(
-				`Hugging Face answered ${response.status} for ${file.path}: the model is not public yet, or this machine's token cannot read it`,
+				`Hugging Face returned ${response.status} for ${file.path}: the model isn't public yet, or this machine's token can't access it`,
 				"access",
 			);
 		}

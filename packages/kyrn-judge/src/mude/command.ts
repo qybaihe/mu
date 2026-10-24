@@ -332,7 +332,7 @@ async function ensureInstalled(ctx: Context, out: Out): Promise<void> {
 		const room = MUDE_BYTES - already + 2e9;
 		if (free !== undefined && free < room) {
 			throw new Error(
-				`Not enough free disk space: mude 1.0 needs about ${gb(room)} GB, and ${gb(free)} GB are free`,
+				`Not enough free disk space: mude 1.0 needs about ${gb(room)} GB, and only ${gb(free)} GB are free. Free up some space, then run mu judge mude install again`,
 			);
 		}
 		out.step(

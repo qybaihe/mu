@@ -872,7 +872,7 @@ export function planMude({ platform, env, argv, root, home, execPath, fs, strips
 	if (layout === "package") {
 		const built = packageEntries({ root, platform }).mude;
 		if (!fs.exists(built)) {
-			return { error: `This mu-agent package has no mu judge mude (${built} is missing). Update it: npm i -g mu-agent` };
+			return { error: `This mu-agent package doesn't include mu judge mude (${built} is missing). Update it: npm i -g mu-agent` };
 		}
 		entry = [built];
 	} else {

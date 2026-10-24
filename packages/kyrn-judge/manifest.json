@@ -270,7 +270,7 @@
 			},
 			"summary": {
 				"zh": "任务进行中你又发来一句话：判断是要立刻打断，还是等这一步做完再处理。默认是影子模式：判定只记录，消息按你按的键投递，不用等判定。",
-				"en": "For a message that arrives while the agent is working: interrupt now, or handle it after the current step. In shadow by default: the verdict is only logged, and the message goes the way of the key you pressed without waiting for it.",
+				"en": "For a message that arrives while the agent is working: interrupt now, or handle it after the current step. In shadow by default: the verdict is only logged, and the key you pressed decides what happens to the message, without waiting for the verdict.",
 				"zh-TW": "代理工作時你又傳來一則訊息：判斷是要立刻打斷，還是等這一步做完再處理。預設為影子模式：判定只記錄下來，訊息照你按的鍵送出，不等判定。",
 				"ja-JP": "エージェントの作業中に届いたメッセージについて、すぐに中断するか、現在のステップが終わってから対応するかを判定します。既定ではシャドーモードです。判定は記録するだけで、メッセージは判定を待たずに、押したキーのとおりに届けます。",
 				"ko-KR": "에이전트가 작업하는 중에 메시지가 도착하면, 지금 바로 작업을 중단할지 현재 단계를 마친 뒤 처리할지 판정합니다. 기본값은 섀도 모드입니다. 판정은 기록만 하고, 메시지는 판정을 기다리지 않고 누른 키대로 전달됩니다.",
@@ -1382,7 +1382,7 @@
 			},
 			"summary": {
 				"zh": "上下文预算、后台命令结束等事件出现时，判断该现在告诉模型、稍后再说，还是不必说。默认是影子模式：判定只记录，事件按各自的规则投递，后台命令结束和上下文预算都是立刻告知。",
-				"en": "For events such as the context budget or a background job's end: tell the model now, later or not at all. In shadow by default: the verdict is only logged and each event is delivered by its own rule, which for a job's end and the context budget is now.",
+				"en": "For events such as the context budget or a background job's end: tell the model now, later or not at all. In shadow by default: the verdict is only logged, and each event is delivered by its own rule: right away for a job's end and the context budget.",
 				"zh-TW": "上下文預算、背景工作結束這類事件出現時，判斷該現在告訴模型、晚點再說，還是不必說。預設為影子模式：判定只記錄下來，事件各按自己的規則送達；背景工作結束和上下文預算都是立刻告知。",
 				"ja-JP": "コンテキスト予算やバックグラウンドジョブの終了などのイベントを、モデルにすぐ伝えるか、後で伝えるか、伝えないかを判定します。既定ではシャドーモードです。判定は記録するだけで、各イベントはそれぞれのルールで届けます。ジョブの終了とコンテキスト予算の場合は、すぐに届けます。",
 				"ko-KR": "컨텍스트 예산이나 백그라운드 작업 종료 같은 이벤트를 모델에게 지금 알릴지, 나중에 알릴지, 알리지 않을지 정합니다. 기본값은 섀도 모드입니다. 판정은 기록만 하고 각 이벤트는 자체 규칙에 따라 전달되는데, 작업 종료와 컨텍스트 예산은 바로 알립니다.",
@@ -1969,7 +1969,7 @@
 					},
 					"help": {
 						"zh": "子代理隐藏主会话隐藏的技能，不再问判定器。主会话还没定下来时，子代理照旧自己问。",
-						"en": "A subagent hides the skills this session hides and doesn't ask the judge again. While this session hasn't settled yet, a subagent asks for itself as before.",
+						"en": "A subagent hides the skills this session hides and doesn't ask the judge again. Until this session has decided, a subagent asks the judge itself, as before.",
 						"zh-TW": "子代理隱藏主對話隱藏的技能，不再問判定器。主對話還沒決定時，子代理照舊自己問。",
 						"ja-JP": "サブエージェントは、このセッションで非表示にしたスキルを同じく非表示にし、判定器に改めて問い合わせません。このセッションの選択がまだ決まっていないうちは、サブエージェントはこれまでどおり自分で問い合わせます。",
 						"ko-KR": "하위 에이전트는 이 세션에서 숨긴 스킬을 똑같이 숨기고, 판정기에 다시 묻지 않습니다. 이 세션의 선택이 아직 정해지지 않았다면 하위 에이전트는 전처럼 직접 묻습니다.",
@@ -2135,7 +2135,7 @@
 					},
 					"help": {
 						"zh": "按名字写。这些在一次性运行里几乎没人用，却每次请求都要带上。用命令点名的（比如 /hive）照样保留；清空就全带上。",
-						"en": "By name. One-shot runs almost never use them, and each one is in every request. One you call for by its command (such as /hive) stays. Empty keeps them all.",
+						"en": "List them by name. One-shot runs almost never use these, yet every request carries them. Anything you call by its command (such as /hive) stays in. Empty keeps them all.",
 						"zh-TW": "依名稱填寫。單次執行幾乎用不到它們，卻每次請求都要帶上。用指令點名的（例如 /hive）照樣保留。留空則全部保留。",
 						"ja-JP": "名前で指定します。単発実行ではほとんど使われないのに、どれもリクエストのたびに含まれます。コマンドで呼び出したもの（/hive など）は残ります。空欄の場合は、すべて残します。",
 						"ko-KR": "이름으로 지정합니다. 단발 실행에서는 거의 쓰이지 않는데도 요청마다 들어갑니다. 명령으로 직접 부른 것(예: /hive)은 남습니다. 비워 두면 모두 남깁니다.",
@@ -2205,7 +2205,7 @@
 					},
 					"help": {
 						"zh": "子代理打开主会话已经打开的能力，不再问判定器；主会话隐藏的照样隐藏。主会话还没选过时，子代理照旧自己问。",
-						"en": "A subagent opens the capabilities this session has open and doesn't ask the judge again; what's hidden here stays hidden there. Before this session has chosen, a subagent asks for itself as before.",
+						"en": "A subagent opens the capabilities this session has open and doesn't ask the judge again; what's hidden here stays hidden there. Until this session has chosen, a subagent asks the judge itself, as before.",
 						"zh-TW": "子代理開啟主對話已經開啟的能力，不再問判定器；主對話隱藏的照樣隱藏。主對話還沒選過時，子代理照舊自己問。",
 						"ja-JP": "サブエージェントは、このセッションで開いているケイパビリティを開き、判定器に改めて問い合わせません。ここで非表示のものは、サブエージェントでも非表示のままです。このセッションがまだ選んでいないうちは、サブエージェントはこれまでどおり自分で問い合わせます。",
 						"ko-KR": "하위 에이전트는 이 세션에서 열려 있는 기능 확장을 열고, 판정기에 다시 묻지 않습니다. 여기서 숨긴 것은 하위 에이전트에서도 숨겨집니다. 이 세션이 아직 고르지 않았다면 하위 에이전트는 전처럼 직접 묻습니다.",
@@ -3379,7 +3379,7 @@
 					"max": 50,
 					"label": {
 						"zh": "几个词连成句才送判",
-						"en": "Words in a row to ask the judge",
+						"en": "Minimum words in a row to ask the judge",
 						"zh-TW": "連續幾個詞才送判定器",
 						"ja-JP": "判定器に回す連続語数",
 						"ko-KR": "판정기에 묻는 연속 단어 수",
@@ -3394,7 +3394,7 @@
 					},
 					"help": {
 						"zh": "一段里没有这么多个连着的词（中文、日文这类不空格的文字算连着 8 个字），就不问判定器，只按规则看：目录列表、链接列表、响应头、几个字的 grep 结果里放不下一条指令。0：每段都问。",
-						"en": "A passage without this many words in a row (8 characters in a row for Chinese, Japanese and other scripts written without spaces) isn't put to the judge; rules alone read it. Directory listings, link lists, response headers and short grep hits can't hold an instruction. 0: every passage is judged.",
+						"en": "A passage without this many words in a row (8 characters in a row for Chinese, Japanese and other scripts written without spaces) isn't sent to the judge; only the rules check it. Directory listings, link lists, response headers and short grep hits can't hold an instruction. 0: every passage is judged.",
 						"zh-TW": "一段文字裡沒有這麼多個連著的詞（中文、日文這類不用空格分詞的文字，算連續 8 個字），就不問判定器，只按規則看：目錄清單、連結清單、回應標頭和只有幾個字的 grep 結果裡放不下一條指令。0：每段都問。",
 						"ja-JP": "この数だけ語が連続しない段落（中国語や日本語など、単語を空白で区切らない文字では 8 文字連続）は判定器に回さず、ルールだけで読みます。ディレクトリ一覧、リンク一覧、レスポンスヘッダー、短い grep の結果には指示を入れる余地がありません。0 にすると、すべての段落を判定します。",
 						"ko-KR": "연속된 단어가 이만큼 없는 단락(중국어, 일본어처럼 띄어쓰기 없이 쓰는 문자는 연속 8자)은 판정기에 묻지 않고 규칙으로만 읽습니다. 디렉토리 목록, 링크 목록, 응답 헤더, 짧은 grep 결과에는 지시가 들어갈 여지가 없습니다. 0이면 모든 단락을 판정합니다.",
@@ -4852,7 +4852,7 @@
 					},
 					"help": {
 						"zh": "无人值守指 mu --print 和 json 模式的一次性运行。默认不拍：那里没人能确认回退，文件从不会被放回去，拍快照和每次改动后的扫描却让每一步都多等。遇到死路照样提醒模型退一步。",
-						"en": "Unattended means a one-shot mu --print or json-mode run. Off by default: nobody there can confirm a rewind, so no file is ever put back, while the snapshot and the scan after every change hold up each step. At a dead end the model is still told to step back.",
+						"en": "Unattended means a one-shot mu --print or json-mode run. Off by default: nobody is there to confirm a rewind, so no file would ever be put back, and the snapshot and scan after every change would only slow down each step. At a dead end the model is still told to step back.",
 						"zh-TW": "無人值守指 mu --print 或 json 模式的單次執行。預設關閉：那裡沒人能確認回退，檔案從來不會被放回去，拍快照和每次改動後的掃描卻讓每一步都要多等。走進死路時照樣提醒模型退一步。",
 						"ja-JP": "無人実行とは mu --print や json モードの単発実行のことです。既定ではオフです。そこでは巻き戻しを確認できる人がいないため、ファイルが元に戻されることはないのに、スナップショットと変更のたびのスキャンでどのステップも待たされます。行き止まりでは、これまでどおりモデルに一歩引くよう伝えます。",
 						"ko-KR": "무인 실행은 mu --print 또는 json 모드의 단발 실행을 말합니다. 기본값은 꺼짐입니다. 거기서는 되감기를 확인해 줄 사람이 없어 파일이 되돌려지는 일이 없는데도, 스냅샷과 변경할 때마다 하는 검사 때문에 단계마다 기다려야 하기 때문입니다. 막다른 길에서는 여전히 모델에게 한 걸음 물러나라고 알려 줍니다.",
@@ -5118,7 +5118,7 @@
 					},
 					"help": {
 						"zh": "判定器的提醒（跑偏或原地打转）离监测的上一次提醒至少隔这么久，规则发现的打转也算一次。",
-						"en": "The judge's steers, on drift or a loop, wait this long after the monitor's last steer, the loop rule's included.",
+						"en": "The judge's steers (on drift or a loop) wait this long after the monitor's last steer, including one from the loop rule.",
 						"zh-TW": "判定器的提醒（偏離或原地打轉）距離監控的上一次提醒至少隔這麼久，規則發現的打轉也算一次。",
 						"ja-JP": "判定器による軌道修正の促し（逸脱や堂々巡り）は、逸脱検知の前回の促しからこの時間を空けます。堂々巡りのルールによる促しも前回に数えます。",
 						"ko-KR": "판정기의 방향 수정 알림(이탈이나 제자리 맴돌기)은 감시 기능의 마지막 알림 이후 이만큼 기다립니다. 맴돌기 규칙이 보낸 알림도 포함합니다.",
@@ -5839,7 +5839,7 @@
 					},
 					"help": {
 						"zh": "从 mu 进程启动时算起，0 表示不设。环境变量 MU_TIME_BUDGET_S 优先，评测框架用它按任务的超时来设。子代理不用这个预算。",
-						"en": "Counted from when the mu process starts; 0 means none. The environment variable MU_TIME_BUDGET_S takes precedence, and a benchmark harness sets it from the task's timeout. Sub-agents ignore the budget.",
+						"en": "Counted from when the mu process starts; 0 means none. The environment variable MU_TIME_BUDGET_S takes precedence, and a benchmark harness sets it from the task's timeout. Subagents ignore the budget.",
 						"zh-TW": "從 mu 啟動時算起，0 表示不設。環境變數 MU_TIME_BUDGET_S 優先，評測框架會依任務的逾時來設定它。子代理不套用這個預算。",
 						"ja-JP": "mu のプロセスの起動時から数えます。0 にすると予算なしになります。環境変数 MU_TIME_BUDGET_S が優先され、ベンチマークのハーネスはタスクのタイムアウトからこれを設定します。サブエージェントはこの予算を無視します。",
 						"ko-KR": "mu 프로세스가 시작된 때부터 셉니다. 0이면 예산을 두지 않습니다. 환경 변수 MU_TIME_BUDGET_S가 우선하며, 벤치마크 하네스는 작업의 타임아웃으로 이 값을 설정합니다. 하위 에이전트는 이 예산을 따르지 않습니다.",
@@ -5909,7 +5909,7 @@
 			},
 			"summary": {
 				"zh": "一次回复只思考、迟迟不写字也不调用工具，到时限就打断，用同样的思考强度重问一次，并把它想到哪一步带给它，让它先动手再接着想。重问的那一次不再打断。",
-				"en": "When a reply has only been thinking for too long, with no text and no tool call yet, it is cut and asked again at the same reasoning effort. The retry is told where the reasoning had gotten to and asked to act on it first. The retry itself is never cut.",
+				"en": "When a reply has done nothing but think for too long, with no text and no tool call yet, it's cut off and retried at the same reasoning effort. The retry is told how far the reasoning got and asked to act on it first. The retry itself is never cut off.",
 				"zh-TW": "一次回覆只顧著思考太久，還沒寫字也沒呼叫工具，就會被打斷，以同樣的思考強度重問一次。重問時會告訴它原本想到哪一步，請它先動手再接著想。重問的那一次不會再被打斷。",
 				"ja-JP": "返信が考えるばかりで長くかかり、まだテキストもツール呼び出しもない場合は、打ち切って同じ思考レベルで聞き直します。聞き直すときは推論がどこまで進んでいたかを伝え、まずそれをもとに手を動かすよう求めます。聞き直した返信は打ち切りません。",
 				"ko-KR": "응답이 텍스트도 도구 호출도 없이 너무 오래 생각만 하고 있으면 중단하고 같은 사고 수준으로 다시 묻습니다. 다시 물을 때는 추론이 어디까지 갔는지 알려 주고, 먼저 그에 따라 행동하라고 요청합니다. 다시 묻는 응답은 중단하지 않습니다.",
@@ -6942,7 +6942,7 @@
 					},
 					"help": {
 						"zh": "超时就不催了，这次判定也随之取消，不拖住单次运行的退出。",
-						"en": "After this, there's no nudge, and the judge call is cancelled so it doesn't hold up the end of a one-shot run.",
+						"en": "After this, there's no nudge, and the judge call is canceled so it doesn't hold up the end of a one-shot run.",
 						"zh-TW": "超過這個時間就不再提醒，這次判定器呼叫也隨之取消，免得拖住單次執行的結束。",
 						"ja-JP": "これを過ぎると促しはせず、判定器の呼び出しも取り消して、単発実行の終了を遅らせないようにします。",
 						"ko-KR": "이 시간이 지나면 알려 주지 않고, 판정기 호출도 취소해 단발 실행이 끝나는 것을 붙잡지 않게 합니다.",
@@ -7052,7 +7052,7 @@
 					},
 					"help": {
 						"zh": "超时就不催了，这次判定也随之取消，不拖住单次运行的退出。",
-						"en": "After this, there's no nudge, and the judge call is cancelled so it doesn't hold up the end of a one-shot run.",
+						"en": "After this, there's no nudge, and the judge call is canceled so it doesn't hold up the end of a one-shot run.",
 						"zh-TW": "超過這個時間就不再提醒，這次判定器呼叫也隨之取消，免得拖住單次執行的結束。",
 						"ja-JP": "これを過ぎると促しはせず、判定器の呼び出しも取り消して、単発実行の終了を遅らせないようにします。",
 						"ko-KR": "이 시간이 지나면 알려 주지 않고, 판정기 호출도 취소해 단발 실행이 끝나는 것을 붙잡지 않게 합니다.",
@@ -7078,7 +7078,7 @@
 					},
 					"help": {
 						"zh": "无人值守指 mu --print 和 json 模式的一次性运行。那里每条消息因为「说了要做却没做」最多催这么多次；所有催促加起来仍受上面的次数限制。判定把做完了的「已完成，已创建 …」当成没做完时，第二次催促在基准测试里多花了 4 次请求。",
-						"en": "Unattended means a one-shot mu --print or json-mode run. There, a run is sent back for work it said it would do at most this many times per message; Max nudges per message still caps all nudges together. When the judge mistook a finished \"Done. Created …\" for a promise, the second nudge cost a benchmark run 4 more requests."
+						"en": "Unattended means a one-shot mu --print or json-mode run. There, a run is sent back at most this many times per message for work it said it would do; Max nudges per message still caps all nudges together. When the judge mistook a finished \"Done. Created …\" for a promise, the second nudge cost a benchmark run 4 more requests."
 					}
 				},
 				{
@@ -7278,7 +7278,7 @@
 					},
 					"help": {
 						"zh": "无人值守指 mu --print 和 json 模式的一次性运行。默认不问：通知照样按各自的规则投递，和默认的影子模式一样，那里的判定本来也只记录、不生效。",
-						"en": "Unattended means a one-shot mu --print or json-mode run. Off by default: notices go by their own rules, as they do in shadow, the default, where the verdict is only recorded.",
+						"en": "Unattended means a one-shot mu --print or json-mode run. Off by default: notices follow their own rules, as they do in shadow mode (the default), where the verdict is only recorded.",
 						"zh-TW": "無人值守指 mu --print 或 json 模式的單次執行。預設關閉：通知照樣依各自的規則送達，和預設的影子模式一樣，那裡的判定本來也只記錄、不生效。",
 						"ja-JP": "無人実行とは mu --print や json モードの単発実行のことです。既定ではオフです。通知はそれぞれのルールで届けます。既定のシャドーモードでも同じで、そこでは判定は記録するだけです。",
 						"ko-KR": "무인 실행은 mu --print 또는 json 모드의 단발 실행을 말합니다. 기본값은 꺼짐입니다. 알림은 각자의 규칙대로 전달됩니다. 기본값인 섀도 모드에서도 마찬가지이며, 거기서 판정은 기록만 됩니다.",
@@ -7366,7 +7366,7 @@
 					},
 					"help": {
 						"zh": "超时就按 pi 自己的算法决定，这次判定也随之取消。",
-						"en": "After this, pi's own estimate decides, and the judge call is cancelled.",
+						"en": "After this, pi's own estimate decides, and the judge call is canceled.",
 						"zh-TW": "超過這個時間就交給 pi 自己的估算決定，這次判定器呼叫也隨之取消。",
 						"ja-JP": "これを過ぎると pi 自身の見積もりで決め、判定器の呼び出しは取り消します。",
 						"ko-KR": "이 시간이 지나면 pi 자체의 추정으로 정하고, 판정기 호출은 취소합니다.",
