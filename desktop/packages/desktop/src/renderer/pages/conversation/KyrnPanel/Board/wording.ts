@@ -1,5 +1,5 @@
 import type { BoardCode, BoardUpdate } from './board';
-import { codeWords, wordSentence } from './noteWords';
+import { codeWords, withLabels, wordSentence, type LabelOf } from './noteWords';
 
 /**
  * A fixed board in the reader's language. The board's model writes in the language the person writes in (detected
@@ -13,6 +13,9 @@ import { codeWords, wordSentence } from './noteWords';
  *
  * A fixed board's "now" names a stage as going on ("wrapping up", "changing the code"). Once the run has ended the
  * board's state says how it ended, and a stage under it would misread it: a fixed board that ended has no "now".
+ *
+ * A rules line that names a helper (`still_running` with `who`) calls it by its label (board v2.1): the one the latest
+ * board's `agents` give its exact name, or the panel's own map of them.
  */
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
@@ -38,10 +41,14 @@ const HEADLINE_SENTENCES: ReadonlyMap<string, readonly string[]> = new Map([
   ['waiting_permission', ['what']],
 ]);
 
-/** A rules-built headline or blocked line in the app's language; undefined to keep the harness's sentence. */
-export function codedLine(found: BoardCode | undefined, t: Translate, has: Has): string | undefined {
+/**
+ * A rules-built headline or blocked line in the app's language, the helper it names called by its label; undefined to
+ * keep the harness's sentence.
+ */
+export function codedLine(found: BoardCode | undefined, t: Translate, has: Has, labelOf?: LabelOf): string | undefined {
   if (!found) return undefined;
-  const { code, params } = found;
+  const { code } = found;
+  const params = withLabels(found.params, labelOf);
   // `now_<phase>`: the stage's sentence, as a fixed board says what it does now.
   const phase = /^now_([a-z_]+)$/.exec(code)?.[1];
   if (phase) return has(`${KEY}.now.${phase}`) ? t(`${KEY}.now.${phase}`) : undefined;
@@ -50,14 +57,27 @@ export function codedLine(found: BoardCode | undefined, t: Translate, has: Has):
   return codeWords(code, params, t, has);
 }
 
-export function boardWords(update: BoardUpdate, t: Translate, has: Has, number: (value: number) => string): BoardWords {
+/** What the board calls each helper: the labels its `agents` carry. */
+const agentLabels =
+  (update: BoardUpdate): LabelOf =>
+  (who) =>
+    update.agents?.find((agent) => agent.who === who)?.label;
+
+export function boardWords(
+  update: BoardUpdate,
+  t: Translate,
+  has: Has,
+  number: (value: number) => string,
+  labels?: ReadonlyMap<string, string>
+): BoardWords {
   const over = update.by === 'rules' && update.ended;
+  const labelOf: LabelOf = labels ? (who) => labels.get(who) : agentLabels(update);
   const said = {
     now: over ? '' : update.now,
     progress: update.progress,
     confirm: update.confirm,
-    headline: codedLine(update.headlineCode, t, has) ?? update.headline ?? '',
-    blocked: codedLine(update.blockedCode, t, has) ?? update.blocked ?? '',
+    headline: codedLine(update.headlineCode, t, has, labelOf) ?? update.headline ?? '',
+    blocked: codedLine(update.blockedCode, t, has, labelOf) ?? update.blocked ?? '',
     next: update.next ?? '',
   };
   // An older harness sends no codes: its sentence may name the item being worked on, which the facts here lack.

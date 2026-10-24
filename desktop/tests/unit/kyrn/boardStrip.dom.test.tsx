@@ -156,6 +156,23 @@ describe('the board’s headline strip', () => {
     }
   });
 
+  it('calls a stuck helper by its label in a rules headline', () => {
+    const rewrite = 'rewrite retry.test.ts with fake timers';
+    publish([
+      switched(true),
+      board({
+        headline: `${rewrite}: npx vitest has run 6 min with no output`,
+        headlineCode: 'still_running',
+        headlineParams: { who: rewrite, what: 'npx vitest', minutes: 6 },
+        agents: [{ who: rewrite, label: 'test rewrite', state: 'stuck', doing: 'no output' }],
+      }),
+    ]);
+    showStrip();
+    expect(screen.getByTestId('mu-board-strip-text')).toHaveTextContent(
+      'test rewrite: npx vitest has run 6 min with no output'
+    );
+  });
+
   it('sits in the conversation’s header, between the title and mu’s state', () => {
     publish([switched(true), board()]);
     const conversation: NativeConversation = {

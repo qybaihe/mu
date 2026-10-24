@@ -7,6 +7,9 @@ import type { BoardNote } from './board';
  * its sentence (`code`) and what fills it (`params`), so it is worded again here. A line whose sentence this build does
  * not know, or whose params do not fit it, keeps the harness's sentence; a line the board's model wrote is its own words
  * and stays. The contract is the harness's `board.note` (kyrn/docs/features/plain-language-board.md).
+ *
+ * A sentence that names a helper (`name`, `who`) names it by its label when the board has one (board v2.1): the params
+ * carry the helper's exact name, which identifies it, and the label is what the person reads.
  */
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
@@ -60,6 +63,21 @@ const fits = (name: string, value: string | number | undefined) =>
 
 type Params = Readonly<Record<string, string | number>> | undefined;
 
+/** What the board calls a helper, by its exact name; undefined when it has no label. */
+export type LabelOf = (who: string) => string | undefined;
+
+/** The params with each helper they name (`name`, `who`) called by its label, where it has one. */
+export function withLabels(params: Params, labelOf: LabelOf | undefined): Params {
+  if (!params || !labelOf) return params;
+  let named: Record<string, string | number> | undefined;
+  for (const key of ['name', 'who']) {
+    const value = params[key];
+    const label = typeof value === 'string' && value ? labelOf(value) : undefined;
+    if (label) (named ??= { ...params })[key] = label;
+  }
+  return named ?? params;
+}
+
 /**
  * One fixed sentence in the app's language: undefined when the app has no wording for `key` or a param it names does
  * not fit. Only what the sentence names is passed on: nothing else in the params reaches the translator's options.
@@ -111,8 +129,17 @@ export function codeWords(code: string, params: Params, t: Translate, has: Has):
   return names ? wordSentence(`${KEY}.${code}`, names, params, t, has) : undefined;
 }
 
-/** The line in the app's language, or undefined when it keeps the harness's (or the model's) sentence. */
-export function noteWords(note: BoardNote, t: Translate, has: Has): string | undefined {
+/** What the board calls the helper a line is about: the line's own label, else the board's; undefined for none. */
+export const noteLabel = (note: BoardNote, labelOf?: LabelOf): string | undefined =>
+  note.who ? (note.label ?? labelOf?.(note.who)) : undefined;
+
+/**
+ * The line in the app's language, or undefined when it keeps the harness's (or the model's) sentence. The helper the
+ * line is about is called by its label (`noteLabel`); another name in its params stays as it is.
+ */
+export function noteWords(note: BoardNote, t: Translate, has: Has, labelOf?: LabelOf): string | undefined {
   if (note.by !== 'rules' || !note.code) return undefined;
-  return codeWords(note.code, note.params, t, has);
+  const label = noteLabel(note, labelOf);
+  const params = label ? withLabels(note.params, (name) => (name === note.who ? label : undefined)) : note.params;
+  return codeWords(note.code, params, t, has);
 }
