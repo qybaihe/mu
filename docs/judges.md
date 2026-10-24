@@ -22,7 +22,7 @@ If no judge answers in time, the decision point falls back to what it does witho
 
 ## mude 1.0, on your Mac
 
-mude 1.0 is mu's own decision model, optimized for coding. It has 2B parameters and answers every question of a decision in one forward pass. On a Mac with Apple silicon (macOS 14 or later, 8 GB of memory or more), it's the recommended judge: `mu setup` offers it first, and the desktop app's first-run guide starts with it picked.
+mude 1.0 is mu's own decision model, optimized for coding. It has 2B parameters and answers every question in a decision in one forward pass. On a Mac with Apple silicon (macOS 14 or later, 8 GB of memory or more), it's the recommended judge: `mu setup` offers it first, and the desktop app's first-run guide has it preselected.
 
 ```bash
 mu judge mude install               # download it (1.8 GB), check every file, start it and make it the judge
@@ -30,7 +30,7 @@ mu judge mude enable --local-only   # mude only: nothing goes to a hosted judge
 mu judge mude status
 ```
 
-By default, the judges you had before stay behind it in `tiers`. They answer what mude can't (its server is stopped, or it's unsure) and the two injection checks mude isn't trusted with yet. With `--local-only`, mude is the only judge, and a decision it can't answer takes its fallback. mude answers in about 0.1 s, and what it reads never leaves your Mac. Its server uses about 4 GB of memory while it runs, and mu starts it before a session when your configuration names it. If an install stops (Ctrl-C, a lost connection, a power cut), running it again picks up where it left off. On other platforms, serve the [full model](https://huggingface.co/qybaihe/mude-1.0) with its own System One server and add it as a `typesafe` judge, as its model card shows.
+By default, the judges you had before stay in `tiers` after it as fallbacks. They answer what mude can't (its server is stopped, or it's unsure) and handle the two injection checks mude isn't trusted with yet. With `--local-only`, mude is the only judge, and when it can't answer, the decision point uses its default. mude answers in about 0.1 s, and what it reads never leaves your Mac. Its server uses about 4 GB of memory while it runs, and mu starts it before a session when your configuration names it. If an install stops (Ctrl-C, a lost connection, a power cut), running it again picks up where it left off. On other platforms, serve the [full model](https://huggingface.co/qybaihe/mude-1.0) with its own System One server and add it as a `typesafe` judge, as its model card shows.
 
 ## Hosted Jev
 
