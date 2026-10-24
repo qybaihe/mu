@@ -147,13 +147,19 @@ describe('useNativeConversation', () => {
 
     await act(async () => {
       await result.current.send('also b');
-      await result.current.send('then c', 'followUp');
+      await result.current.send('then c', [{ type: 'image', mimeType: 'image/png', data: 'AAAA' }]);
     });
     const commands = host.calls.filter((call) => call.method === 'request').map((call) => call.command);
     expect(commands).toContainEqual({ type: 'prompt', message: 'fix it' });
     // As prompts with pi's streamingBehavior: a run that ended meanwhile is started by the message, not left waiting.
+    // Each a steer, as Enter is in the terminal: mu's kernel moves one to after the run when that suits it better.
     expect(commands).toContainEqual({ type: 'prompt', message: 'also b', streamingBehavior: 'steer' });
-    expect(commands).toContainEqual({ type: 'prompt', message: 'then c', streamingBehavior: 'followUp' });
+    expect(commands).toContainEqual({
+      type: 'prompt',
+      message: 'then c',
+      images: [{ type: 'image', mimeType: 'image/png', data: 'AAAA' }],
+      streamingBehavior: 'steer',
+    });
   });
 
   it('lets pi show a refused prompt, and says a failure pi could not', async () => {

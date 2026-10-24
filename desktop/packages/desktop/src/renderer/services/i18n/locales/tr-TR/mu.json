@@ -1047,11 +1047,7 @@
     },
     "send": {
       "placeholder": "mu'ya mesaj yazın…",
-      "placeholderWorking": "mu'yu şimdi yönlendirin ya da bu çalışmadan sonrası için bir mesaj bırakın…",
-      "steer": "Şimdi",
-      "steerHint": "mu'ya bir sonraki adımında ulaşır",
-      "followUp": "Sonra",
-      "followUpHint": "Bu çalışma bitene kadar bekler"
+      "placeholderWorking": "mu'ya mesaj yazın; mesajı işe ne zaman katacağına mu karar verir…"
     },
     "queue": {
       "title": "Gönderilmeyi bekliyor",

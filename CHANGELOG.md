@@ -8,6 +8,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 - **Other decision models from Hugging Face, next to mude 1.0.** Paste a Hugging Face link or `owner/name` under mude on the Judges page in Settings (or run `mu judge model add <link>`). mu downloads the model with progress, checks every file, resumes a download that stopped, sets it up and makes it the judge. The list shows each added model with Use, Continue downloading and Remove, and "Use mude 1.0 as the judge" switches back. Only one decision model runs at a time. A model must be packaged like mude 1.0's MLX edition, with its own `d3_server_mac.py`, which runs on your Mac, so add only models you trust.
 
+### Changed
+
+- **The Now / After switch next to the message box is gone: mu decides when a message you send during a run reaches the work.** A correction reaches the model at its next step. Extra work and unrelated questions wait until the run is done. The queue above the box shows where each message went, and you can still take them back. The judge has up to 1.5 seconds to decide. If it doesn't answer in time, or fails, the message reaches the model at its next step. In the terminal, Enter and Alt+Enter work as before, and mu can move the message the same way. To turn this off, set `"input.interjection": "shadow"` under `modes` in `~/.mu/agent/mu.json`. Messages from the app then reach the model at its next step, and in the terminal the key you press decides, as before.
+
 ### Fixed
 
 - **Signing out of a subscription takes its models out of the model pickers at once.** After you signed out of ChatGPT, Grok or a Google account in Settings, the default model's and the board's pickers, the home page and open conversations kept listing that account's models until the app restarted. Now they drop them as soon as the sign-out finishes. If the default model or an open conversation was on one of them, it switches to another model you've set up and says so. `/logout` in the terminal does the same for the current session.

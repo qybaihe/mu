@@ -1047,11 +1047,7 @@
     },
     "send": {
       "placeholder": "Message mu…",
-      "placeholderWorking": "Steer mu now, or queue a message for when it's done…",
-      "steer": "Now",
-      "steerHint": "Reaches mu at its next step",
-      "followUp": "After",
-      "followUpHint": "Sent when this run ends"
+      "placeholderWorking": "Message mu. It decides when to bring this into the work…"
     },
     "queue": {
       "title": "Queued",
