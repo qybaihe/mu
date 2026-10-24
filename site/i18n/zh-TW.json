@@ -304,6 +304,7 @@
     "download": "下載這個版本",
     "full_agent": "mu-agent 的完整更新紀錄（英文）",
     "headlines": {
+      "v0.2.7": "OpenAI 的決策模型可以當判定器；OpenAI 預設用 GPT-6.1 Sol；模型選單只列值得選的 OpenAI 模型；思考等級不再被擠走",
       "v0.2.6": "Laya 被替換的提示現在看得到了；mude 1.0 重裝後仍只用本機；沒裝 Chrome 時 mu doctor 不再報錯；側邊欄和檔案連結的小修正",
       "v0.2.5": "移除內建的 Laya：原本用 Laya 的自動換成 mude 1.0 或 Jev；開啟對話不再等判定器啟動",
       "v0.2.4": "回覆裡提到的檔案可以點開；對話依專案歸類、從首頁立即進入；支援 Gemini 4 Argon；修正第三方 OpenAI 相容服務",
@@ -316,6 +317,17 @@
       "v0.1.8": "檢查 MCP 工具描述裡藏的指令，跑通的長任務可以存成技能"
     },
     "entries": [
+      {
+        "version": "v0.2.7",
+        "date": "2026-10-24",
+        "agent": "mu-agent 0.2.7",
+        "items": [
+          "<b>OpenAI 的決策模型可以當判定器了。</b><code>gpt-6-luna</code> 透過 OpenAI 的 Decisions API 回答 mu 的判定。可以用 <code>mu setup --judge openai</code>、在對話裡輸入 <code>/mu judge openai</code>，或在「設定 → 判定器」裡選 OpenAI，那裡可以填它的金鑰。它用自己的金鑰 <code>MU_JUDGE_OPENAI_KEY</code>，沒有時就用你給 mu 的模型設定的 OpenAI API 金鑰（ChatGPT 登入不行）。想經過提供同樣 Decisions 介面的轉發服務或代理存取，就在 <code>~/.mu/agent/mu.json</code> 裡給這個判定器設 <code>baseUrl</code> 和獨立的金鑰：mu 的 OpenAI 模型金鑰只會送到 api.openai.com。OpenAI 對未命中快取的輸入按每百萬 token 0.10 美元收費，輸出不收費。它還沒在 mu 的問題上測過。如果金鑰沒了（登出了 OpenAI 或刪了金鑰）或被 OpenAI 拒絕，mu 每個對話提示一次，金鑰恢復前由下一個判定器或規則來判定。桌面版裡這個金鑰有「移除金鑰」按鈕，模型從 OpenAI 提供的清單裡選。",
+          "<b>OpenAI 預設用最新的模型。</b>用 OpenAI API 金鑰或 ChatGPT 登入、還沒選過模型時，mu 現在從 GPT-6.1 Sol 開始，不再是 GPT-5.5；<code>mu setup</code> 為 OpenAI 金鑰給出的也是它。",
+          "<b>模型選單只列值得選的 OpenAI 模型。</b>用 ChatGPT 登入或 OpenAI 金鑰時，桌面版的模型選單只顯示 GPT-5.6 及更新的模型（GPT-5.6 Luna、Sol、Terra，GPT-6 Astra、Luna、Sol，GPT-6.1 Sol），不再從 GPT-4 一路列下來。搜尋仍能找到所有模型，清單最後的「顯示全部模型」能看到其餘的，對話正在用的模型也一直留在清單裡。",
+          "<b>思考等級不再被擠走。</b>以前它在模型選單旁另開一個小選單，模型一多就被擠到下面，小視窗裡甚至超出視窗底部。現在它固定在同一個選單裡模型清單的下方，不隨清單捲動，模型和思考等級總能同時看到，窄視窗也一樣。"
+        ]
+      },
       {
         "version": "v0.2.6",
         "date": "2026-10-24",
