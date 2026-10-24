@@ -43,11 +43,11 @@ mu judge model use mude                                # switch the judge back t
 mu judge model remove name
 ```
 
-One decision model runs at a time: switching stops the other one's server. In the desktop app, Settings → Judges has the same, next to mude 1.0.
+One decision model runs at a time: switching stops the other one's server. In the desktop app, you can do the same under Settings → Judges, next to mude 1.0.
 
 ### Laya
 
-Earlier versions of mu included Laya, a third-party local judge. mu no longer does. A `mu.json` that still names `laya` (in `tiers` or a route), or a judge of type `local`, is read without it: mude 1.0 takes its place when it's set up on this Mac, and otherwise the judges that remain answer, or Jev when none remain. mu fixes `mu.json` once, at the start of the next session in the terminal or the app, keeps a copy of the old file in `~/.mu/backups`, and tells you. `MU_JUDGE` naming `laya` is skipped. For another decision model, use mude 1.0 or add one from Hugging Face as above.
+Earlier versions of mu included Laya, a third-party local judge. mu no longer does. A `mu.json` that still names `laya` (in `tiers` or a route), or a judge of type `local`, is read without it: mude 1.0 takes its place when it's set up on this Mac, and otherwise the judges that remain answer, or Jev when none remain. mu updates `mu.json` once, at the start of the next session in the terminal or the app, keeps a copy of the old file in `~/.mu/backups`, and tells you. If `MU_JUDGE` names `laya`, mu skips it. For another decision model, use mude 1.0 or add one from Hugging Face as above.
 
 ## Hosted Jev
 

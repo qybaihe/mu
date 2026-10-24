@@ -252,7 +252,7 @@ export async function modelMain(
 			else out = humanOut(write, tty, each.pkg);
 			out.step(
 				"model",
-				`${record.repo} @ ${record.revision.slice(0, 7)} (${gb(record.bytes)} GB) is the decision model ${record.id}. It runs its own server code (${SERVER_FILE}) on this Mac: add only models you trust.`,
+				`Adding ${record.repo} @ ${record.revision.slice(0, 7)} (${gb(record.bytes)} GB) as ${record.id}. It runs its own server code (${SERVER_FILE}) on this Mac: add only models you trust.`,
 			);
 			await install(each, out, flags, mudePaths(home));
 			out.status(await status(each));

@@ -206,7 +206,7 @@ describe("a configuration that still names Laya, which mu no longer has", () => 
 		const named = start(at, { env: { MU_JUDGE: "laya,jev" } });
 		expect(named.config.tiers).toEqual(["jev"]);
 		expect(named.notified[0].message).toBe(
-			"mu: Laya is no longer built in, so mu skips the laya in MU_JUDGE and your judge is now Jev. To use another decision model, add it from Hugging Face: mu judge model add <link> (or Settings → Judges in the desktop app).",
+			"mu: Laya is no longer built in, so mu skips laya in MU_JUDGE and your judge is now Jev. To use another decision model, add it from Hugging Face: mu judge model add <link> (or Settings → Judges in the desktop app).",
 		);
 		// MU_JUDGE naming nothing else leaves the file's judges.
 		const alone = start(at, { env: { KYRN_JUDGE: "laya" } });

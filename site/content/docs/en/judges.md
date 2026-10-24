@@ -44,7 +44,7 @@ mu judge model use mude                                # switch back to mude 1.0
 mu judge model remove name
 ```
 
-One decision model runs at a time: switching stops the other one's server. In the desktop app, Settings → Judges has the same, under mude 1.0.
+One decision model runs at a time: switching stops the other one's server. In the desktop app, you can do the same under Settings → Judges, below mude 1.0.
 
 ## Jev, hosted {#jev}
 
@@ -83,7 +83,7 @@ To reach it through a relay or proxy that serves the same Decisions endpoint, gi
 
 ## If your configuration still names Laya {#laya}
 
-Laya, the third-party local judge mu shipped until 0.2.4, is no longer built in. A `mu.json` that still names it, in `tiers`, in a route or as a judge of type `local`, keeps working: mude 1.0 takes its place when it's set up on your Mac; otherwise the judges left in the list answer, or Jev when none are left. mu fixes `mu.json` once, changing only those entries and keeping a copy of the old file in `~/.mu/backups`, and tells you which judge took over. `MU_JUDGE=laya` is skipped. For another decision model on your machine, [add one from Hugging Face](@docs/judges#models).
+Laya, the third-party local judge mu shipped until 0.2.4, is no longer built in. A `mu.json` that still names it, in `tiers`, in a route or as a judge of type `local`, keeps working: mude 1.0 takes its place when it's set up on your Mac; otherwise the judges left in the list answer, or Jev when none are left. mu updates `mu.json` once, changing only those entries and keeping a copy of the old file in `~/.mu/backups`, and tells you which judge took over. If `MU_JUDGE` names `laya`, mu skips it. For another decision model on your machine, [add one from Hugging Face](@docs/judges#models).
 
 ## Classifier models and LLMs {#other-judges}
 

@@ -138,7 +138,7 @@ export async function resolveModel(
 		}
 		if (response.status === 401 || response.status === 403) {
 			throw new ModelError(
-				`Hugging Face won't show ${ref.repo} (${response.status}): it's private or gated. Accept its terms on huggingface.co, set HF_TOKEN, then add it again`,
+				`${ref.repo} is private or gated on Hugging Face (${response.status}). Accept its terms on huggingface.co, set HF_TOKEN, then add it again`,
 				"access",
 			);
 		}

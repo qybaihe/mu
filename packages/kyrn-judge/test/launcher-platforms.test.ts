@@ -901,7 +901,7 @@ describe("Laya, no longer built in", () => {
 		for (const command of ["setup", "start", "stop", "status", "run"]) {
 			const plan = planJudge({ argv: [command] });
 			expect(plan).toMatchObject({ kind: "removed", code: 1 });
-			expect(plan.text).toContain(`mu judge ${command} managed Laya, which is no longer built into mu.`);
+			expect(plan.text).toContain(`mu judge ${command} used to manage Laya, which is no longer built into mu.`);
 			expect(plan.text).toContain("mu judge mude install");
 			expect(plan.text).toContain("mu judge model add <link>");
 		}
