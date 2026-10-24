@@ -614,7 +614,9 @@
     "defaultTag": "padrão",
     "makeDefault": "Usar como padrão em novas conversas",
     "madeDefault": "Novas conversas vão começar com este modelo.",
-    "makeDefaultFailed": "Não foi possível salvar o modelo padrão."
+    "makeDefaultFailed": "Não foi possível salvar o modelo padrão.",
+    "showAllModels": "Mostrar todos os modelos ({{count}})",
+    "showFewerModels": "Mostrar menos modelos"
   },
   "agentTip": {
     "codes": {

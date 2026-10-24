@@ -608,7 +608,9 @@
     "defaultTag": "預設",
     "makeDefault": "設為新對話的預設模型",
     "madeDefault": "新對話會預設使用這個模型。",
-    "makeDefaultFailed": "無法儲存預設模型。"
+    "makeDefaultFailed": "無法儲存預設模型。",
+    "showAllModels": "顯示全部模型（{{count}}）",
+    "showFewerModels": "收合"
   },
   "agentTip": {
     "codes": {

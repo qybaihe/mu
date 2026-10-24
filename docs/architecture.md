@@ -7,7 +7,7 @@ mu is [pi](https://github.com/earendil-works/pi), the coding agent, with a judgm
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="readme/pieces-dark.svg">
-    <img src="readme/pieces-light.svg" width="880" alt="The desktop app and the mu command both start pi, the coding agent, with the judgment kernel inside it: features, the decision engine and the ledger. pi calls the main model; the engine asks the judges: Jev, Laya, any classifier or any LLM.">
+    <img src="readme/pieces-light.svg" width="880" alt="The desktop app and the mu command both start pi, the coding agent, with the judgment kernel inside it: features, the decision engine and the ledger. pi calls the main model; the engine asks the judges: Jev, mude 1.0, any classifier or any LLM.">
   </picture>
 </p>
 

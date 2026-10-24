@@ -13,6 +13,10 @@ import { threeZone } from "../policy.ts";
  * Nor is extra work the model offers: "Fixed. Let me know if you want the same for the other repos too." asks for a
  * go-ahead after a request for work, but on something the user did not ask for. Read as a go-ahead it once cost 7
  * turns of out-of-scope work. Only a go-ahead on what the user asked for counts, so `beyond_request` must be "no".
+ *
+ * `promised` needs `intent`: a small classifier can read "Done. Created …" as a promise of more work. With only judges
+ * not trusted on it, `promised` is unanswered and never sends the agent back; only the rule for an ending with no
+ * message does (features/continuation.ts).
  */
 export interface ContinueInput {
 	readonly userMessage: string;
@@ -21,14 +25,16 @@ export interface ContinueInput {
 
 export type ContinueOutcome = "end" | "promised" | "go_ahead";
 
+// A judge not trusted to relate the two messages leaves `beyond_request` unanswered, and then nothing counts as a
+// go-ahead.
+const CAPABILITIES = { promised: "intent", work_requested: "meta", beyond_request: "relate" } as const;
+
 export const turnContinue = defineDecision({
 	id: "turn.continue",
 	version: 2,
 	cacheImpact: "append-only",
 	latency: "inline",
-	// Relating the two messages is beyond the local judge (Laya): it leaves `beyond_request` unanswered, and then
-	// nothing counts as a go-ahead.
-	capabilities: { work_requested: "meta", beyond_request: "relate" },
+	capabilities: CAPABILITIES,
 	questions: {
 		promised: {
 			type: "boolean",

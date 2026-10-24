@@ -16,7 +16,7 @@ mu reads only your own `mu.json`. A project can't change the judge, its endpoint
   },
   "routes": {
     "browser.step": ["jev"],
-    "memory.capture": ["laya", "jev"]
+    "memory.capture": ["mude", "jev"]
   },
   "judges": {
     "my-relay": {
@@ -37,7 +37,7 @@ mu reads only your own `mu.json`. A project can't change the judge, its endpoint
 
 | Key | Meaning | Default |
 | --- | --- | --- |
-| `tiers` | The judges that answer, in order. A later judge only sees what the earlier ones left uncertain: `["laya", "jev"]` asks the local judge first. | `["jev"]` |
+| `tiers` | The judges that answer, in order. A later judge only sees what the earlier ones left uncertain: `["mude", "jev"]` asks mude 1.0, on your Mac, first. | `["jev"]` |
 | `modes` | `default`, plus one entry per decision point: `active` (verdicts take effect), `shadow` (asked and logged, nothing changes) or `off` (not asked). | `{ "default": "active" }` |
 | `routes` | Gives a decision point its own judges, in place of `tiers`. | none |
 | `judges` | Your own named judges, added to the built-in ones. See [Judges](judges.md#your-own-judge). | none |
@@ -50,7 +50,7 @@ If mu doesn't understand part of the file, that part falls back to its default a
 
 ## Modes in practice
 
-- All but two points act from the start (`context.compact` and `output.drift` are off until you turn them on). To try out a judge, or a point you're unsure of, put the point in shadow mode, read the ledger (`mu ledger`, `/status` or the app's Judge tab), then set it back to active once its verdicts look right.
+- 34 of the 40 points act from the start: `context.compact` and `output.drift` are off until you turn them on, `capability.disclosure` and `swarm.patch` are off, and `notify.routing` and `turn.drift` are in shadow. With `capability.disclosure` off, packs and MCP servers stay hidden and the model opens one with `find_capability`; `"capability.disclosure": "active"` in `modes` has the judge open them again. To try out a judge, or a point you're unsure of, put the point in shadow mode, read the ledger (`mu ledger`, `/status` or the app's Judge tab), then set it back to active once its verdicts look right.
 - `/mu mode <point> <off|shadow|active>` switches one point for the current session, and `/mu mode default shadow` switches all of them. To make a mode stick, put it in `mu.json`; the app's settings turn points on or off.
 - `MU_JUDGE_MODE=shadow mu` sets the default mode for one run.
 
@@ -62,13 +62,12 @@ Judges and modes:
 
 | Variable | Effect |
 | --- | --- |
-| `MU_JUDGE` | Judges for this run, comma-separated: `laya`, `laya,jev`, `jev-opencode-free`, `classifier:<provider>/<model>`, `llm:<provider>/<model>`. `off` turns the kernel off. |
+| `MU_JUDGE` | Judges for this run, comma-separated: `jev`, `mude,jev`, `jev-opencode-free`, `classifier:<provider>/<model>`, `llm:<provider>/<model>`. `off` turns the kernel off. |
 | `MU_JUDGE_MODE` | Default mode for this run: `off`, `shadow` or `active`. |
 | `MU_WRITER` | `provider/model-id` for the writer model. |
 | `MU_PERMISSIONS` | Permission mode for this run: `full`, `judge` or `ask`. |
-| `MU_LOCAL_JUDGE_URL` | Address of a local judge server, if it isn't the one `mu judge start` runs. |
 
-Keys for the hosted judges, each sent only to the service it belongs to (see [Judges](judges.md#hosted-jev)): `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`, and `MU_JUDGE_CLM_API_KEY`.
+Keys for the hosted judges, each sent only to the service it belongs to (see [Judges](judges.md#hosted-jev)): `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`, `MU_JUDGE_CLM_API_KEY`, and `MU_JUDGE_OPENAI_KEY` ([OpenAI's decision model](judges.md#openais-decision-model)).
 
 `TAVILY_API_KEY` turns on [Tavily](https://tavily.com) for the web tools: `web_search` asks Tavily first and falls back to `features.web.search` and the built-in sources (on a bad key, a rate or plan limit, or a server error), and `web_fetch` asks Tavily's extract for a public page it could not reach or read itself. The key is read at each call, sent only to `api.tavily.com`, and never shown in results.
 
@@ -76,7 +75,7 @@ Time:
 
 | Variable | Effect |
 | --- | --- |
-| `MU_TIME_BUDGET_S` | The run's time budget in seconds, counted from when mu starts. With it, a reply that only thinks is cut in time for a retry, and the model is told how many minutes are left at 50% and 80% of the budget ([`features.deadline`](reference/features.md#deadline)). Benchmark harnesses set it from the task's timeout. Without it, nothing changes. |
+| `MU_TIME_BUDGET_S` | The run's time budget in seconds, counted from when mu starts. With it, a reply that's only thinking is cut off early enough to leave time for a retry, and the model is told how many minutes are left at 50% and 80% of the budget ([`features.deadline`](reference/features.md#deadline)). Benchmark harnesses set it from the task's timeout. Without it, nothing changes. |
 
 The launcher:
 

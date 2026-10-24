@@ -16,6 +16,8 @@ import { attended } from "./attended.ts";
 
 /** The harness runs in print mode; these tests are about preflight as an interactive session asks it. */
 const config = parseConfig({ features: attended() });
+/** The same, with capability disclosure on (it is off out of the box): a second question at the start of a turn. */
+const withCapabilities = parseConfig({ modes: { "capability.disclosure": "active" }, features: attended() });
 
 const yes: Answer = { type: "boolean", probability: 0.95 };
 const no: Answer = { type: "boolean", probability: 0.04 };
@@ -42,8 +44,8 @@ function ledgerRecords(harness: Harness): LedgerRecord[] {
 }
 
 /**
- * The records of the decision these tests are about. A default session holds hidden capability packs,
- * so every message is also asked which of them it needs (`capability.disclosure`).
+ * The records of the decision these tests are about. A session may ask other questions about the same message
+ * (`skills.disclosure`, and `capability.disclosure` where a test turns it on).
  */
 function preflightRecords(harness: Harness): LedgerRecord[] {
 	return ledgerRecords(harness).filter((record) => record.specId === inputPreflight.id);
@@ -122,7 +124,7 @@ describe("kyrn judge extension", () => {
 			return chatVerdict;
 		});
 		const harness = await createHarness({
-			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "active", config })],
+			extensionFactories: [createKyrnJudgeExtension({ provider, mode: "active", config: withCapabilities })],
 		});
 		harnesses.push(harness);
 		harness.setResponses([fauxAssistantMessage("Sure.")]);
@@ -132,38 +134,6 @@ describe("kyrn judge extension", () => {
 		await vi.waitFor(() => expect(started.has("capabilities")).toBe(true));
 		// The capability question went out while preflight's was still being answered, not after it.
 		expect((started.get("capabilities") ?? 0) - (started.get("preflight") ?? 0)).toBeLessThan(150);
-	});
-
-	it("with a judge that answers one call at a time, the other questions wait for preflight's answer", async () => {
-		const started = new Map<string, number>();
-		const provider = new MockJudgeProvider(async (request) => {
-			const kind =
-				"turn_type" in request.questions
-					? "preflight"
-					: "capability_0" in request.questions
-						? "capabilities"
-						: "other";
-			started.set(kind, Math.min(started.get(kind) ?? Number.POSITIVE_INFINITY, performance.now()));
-			if (kind === "preflight") await new Promise((resolve) => setTimeout(resolve, 250));
-			return chatVerdict;
-		});
-		const harness = await createHarness({
-			extensionFactories: [
-				createKyrnJudgeExtension({
-					provider,
-					mode: "active",
-					config: parseConfig({ tiers: ["laya"], features: attended() }),
-				}),
-			],
-		});
-		harnesses.push(harness);
-		harness.setResponses([fauxAssistantMessage("Sure.")]);
-
-		await harness.session.prompt("what does the refreshToken helper do?");
-
-		await vi.waitFor(() => expect(started.has("capabilities")).toBe(true));
-		// A local sidecar serves one request at a time: preflight's answer comes first, the rest queue behind it.
-		expect((started.get("capabilities") ?? 0) - (started.get("preflight") ?? 0)).toBeGreaterThanOrEqual(200);
 	});
 
 	it("in shadow mode hands a long tool result over at once and records the admission verdict behind it", async () => {

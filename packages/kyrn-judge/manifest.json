@@ -269,21 +269,20 @@
 				"fa-IR": "پیام‌های حین کار"
 			},
 			"summary": {
-				"zh": "任务进行中你又发来一句话：判断是要立刻打断，还是等这一步做完再处理。默认是影子模式：判定只记录，消息按你按的键投递，不用等判定。",
-				"en": "For a message that arrives while the agent is working: interrupt now, or handle it after the current step. In shadow by default: the verdict is only logged, and the message goes the way of the key you pressed without waiting for it.",
-				"zh-TW": "代理工作時你又傳來一則訊息：判斷是要立刻打斷，還是等這一步做完再處理。預設為影子模式：判定只記錄下來，訊息照你按的鍵送出，不等判定。",
-				"ja-JP": "エージェントの作業中に届いたメッセージについて、すぐに中断するか、現在のステップが終わってから対応するかを判定します。既定ではシャドーモードです。判定は記録するだけで、メッセージは判定を待たずに、押したキーのとおりに届けます。",
-				"ko-KR": "에이전트가 작업하는 중에 메시지가 도착하면, 지금 바로 작업을 중단할지 현재 단계를 마친 뒤 처리할지 판정합니다. 기본값은 섀도 모드입니다. 판정은 기록만 하고, 메시지는 판정을 기다리지 않고 누른 키대로 전달됩니다.",
-				"de-DE": "Eine Nachricht, die eintrifft, während der Agent arbeitet: sofort unterbrechen oder nach dem aktuellen Schritt bearbeiten. Standardmäßig im Schattenmodus: Das Urteil wird nur aufgezeichnet, und die Nachricht wird so zugestellt, wie es die gedrückte Taste vorgibt, ohne auf das Urteil zu warten.",
-				"fr-FR": "Un message arrive pendant que l’agent travaille : interrompre tout de suite, ou le traiter après l’étape en cours. En mode fantôme par défaut : le jugement est seulement enregistré, et le message suit la touche sur laquelle vous avez appuyé, sans attendre le jugement.",
-				"es-ES": "Un mensaje que llega mientras el agente trabaja: interrumpir ahora o atenderlo al terminar el paso actual. En modo sombra de forma predeterminada: el veredicto solo se registra y el mensaje se entrega según la tecla que pulsaste, sin esperarlo.",
-				"pt-BR": "Uma mensagem que chega enquanto o agente trabalha: interromper agora ou tratá-la depois da etapa atual. No modo sombra por padrão: o veredito só é registrado, e a mensagem segue a tecla que você apertou, sem esperar por ele.",
-				"ru-RU": "Сообщение, пришедшее во время работы агента: прервать работу сразу или обработать его после текущего шага. По умолчанию в теневом режиме: решение только записывается, а сообщение доставляется так, как велит нажатая клавиша, не дожидаясь решения.",
-				"uk-UA": "Повідомлення, що надходить, поки агент працює: перервати роботу зараз чи обробити його після поточного кроку. Типово в тіньовому режимі: рішення лише записується, а повідомлення доставляється відповідно до натиснутої клавіші, не чекаючи на рішення.",
-				"tr-TR": "Ajan çalışırken gelen bir mesaj: iş hemen kesilsin mi, yoksa mesaj mevcut adımdan sonra mı ele alınsın? Varsayılan olarak gölge modunda: karar yalnızca kaydedilir ve mesaj, kararı beklemeden bastığınız tuşa göre iletilir.",
-				"fa-IR": "پیامی که هنگام کار عامل می‌رسد: همین حالا کار را قطع کند، یا پس از گام فعلی به آن بپردازد. به‌طور پیش‌فرض در حالت سایه است: نتیجهٔ داوری فقط ثبت می‌شود و پیام، بی‌آنکه منتظر آن بماند، طبق کلیدی که زده‌اید تحویل داده می‌شود."
-			},
-			"defaultMode": "shadow"
+				"zh": "任务进行中你又发来一句话：判断是在下一步就带进工作，还是等这一轮做完再处理。判定最多等 1.5 秒；没有判定时，消息按你发送的方式送达。",
+				"en": "For a message you send while the agent is working: deliver it at the next step, or hold it until the run is done. mu waits up to 1.5 seconds for the verdict; without one, the message goes as you sent it.",
+				"zh-TW": "任務進行中你又傳來一則訊息：判斷是在下一步就帶進工作，還是等這一輪做完再處理。判定最多等 1.5 秒；沒有判定時，訊息照你傳送的方式送達。",
+				"ja-JP": "エージェントの作業中に送ったメッセージを、次のステップで作業に取り込むか、実行が終わるまで待たせるかを判定します。判定は最大 1.5 秒待ち、判定がなければメッセージは送ったとおりに届きます。",
+				"ko-KR": "에이전트가 작업하는 중에 보낸 메시지를 다음 단계에서 작업에 반영할지, 실행이 끝날 때까지 기다리게 할지 판정합니다. 판정은 최대 1.5초 기다리며, 판정이 없으면 메시지는 보낸 그대로 전달됩니다.",
+				"de-DE": "Eine Nachricht, die Sie senden, während der Agent arbeitet: beim nächsten Schritt in die Arbeit aufnehmen oder zurückhalten, bis der Lauf fertig ist. mu wartet bis zu 1,5 Sekunden auf das Urteil; ohne Urteil wird die Nachricht so zugestellt, wie Sie sie gesendet haben.",
+				"fr-FR": "Un message envoyé pendant que l’agent travaille : l’intégrer au travail dès l’étape suivante, ou le garder jusqu’à la fin de l’exécution. mu attend le jugement jusqu’à 1,5 seconde ; sans jugement, le message part tel que vous l’avez envoyé.",
+				"es-ES": "Un mensaje que envías mientras el agente trabaja: incorporarlo al trabajo en el siguiente paso o guardarlo hasta que termine la ejecución. mu espera el veredicto hasta 1,5 segundos; sin veredicto, el mensaje se entrega tal como lo enviaste.",
+				"pt-BR": "Uma mensagem que você envia enquanto o agente trabalha: levá-la ao trabalho na próxima etapa ou guardá-la até a execução terminar. O mu espera o veredito por até 1,5 segundo; sem ele, a mensagem segue como você a enviou.",
+				"ru-RU": "Сообщение, отправленное во время работы агента: включить его в работу на следующем шаге или придержать до конца запуска. mu ждёт решения до 1,5 секунды; без решения сообщение доставляется так, как вы его отправили.",
+				"uk-UA": "Повідомлення, надіслане під час роботи агента: долучити його до роботи на наступному кроці чи притримати до кінця запуску. mu чекає на рішення до 1,5 секунди; без рішення повідомлення доставляється так, як ви його надіслали.",
+				"tr-TR": "Ajan çalışırken gönderdiğiniz bir mesaj: bir sonraki adımda işe katılsın mı, yoksa çalışma bitene kadar beklesin mi? mu karar için en fazla 1,5 saniye bekler; karar gelmezse mesaj gönderdiğiniz gibi iletilir.",
+				"fa-IR": "پیامی که هنگام کار عامل می‌فرستید: در گام بعدی وارد کار شود، یا تا پایان اجرا نگه داشته شود. mu حداکثر 1.5 ثانیه منتظر نتیجهٔ داوری می‌ماند؛ اگر نتیجه‌ای نرسد، پیام همان‌طور که فرستاده‌اید تحویل داده می‌شود."
+			}
 		},
 		{
 			"id": "skills.disclosure",
@@ -340,20 +339,21 @@
 				"fa-IR": "نمایش گزینشی توانمندی‌ها"
 			},
 			"summary": {
-				"zh": "能力包、MCP 服务器等装着但默认不露，任务需要时才打开，对应的进程也到那时才启动。",
-				"en": "Packs and MCP servers stay installed but hidden until a task needs them; their processes start only then.",
-				"zh-TW": "能力包和 MCP 伺服器已經裝好但預設隱藏，任務需要時才開啟，對應的程序也到那時才啟動。",
-				"ja-JP": "ケイパビリティパックや MCP サーバーはインストールされていても非表示にしておき、タスクで必要になったときだけ開きます。プロセスもそのときに起動します。",
-				"ko-KR": "기능 확장 팩과 MCP 서버는 설치해 두되 숨겨 두었다가 작업에 필요할 때만 엽니다. 해당 프로세스도 그때 시작됩니다.",
-				"de-DE": "Fähigkeitspakete und MCP-Server sind installiert, aber verborgen und werden erst geöffnet, wenn eine Aufgabe sie braucht; erst dann starten ihre Prozesse.",
-				"fr-FR": "Les packs et les serveurs MCP sont installés mais masqués, et ne s’ouvrent que lorsqu’une tâche en a besoin ; leurs processus démarrent à ce moment-là.",
-				"es-ES": "Los paquetes y los servidores MCP están instalados pero ocultos, y solo se abren cuando una tarea los necesita; es entonces cuando se inician sus procesos.",
-				"pt-BR": "Pacotes e servidores MCP ficam instalados, mas ocultos, e só são ativados quando uma tarefa precisa deles; é aí que os processos deles iniciam.",
-				"ru-RU": "Пакеты и MCP-серверы установлены, но скрыты и подключаются, только когда они нужны задаче; тогда же запускаются их процессы.",
-				"uk-UA": "Пакети й MCP-сервери встановлені, але приховані й відкриваються лише тоді, коли потрібні завданню; тоді ж запускаються їхні процеси.",
-				"tr-TR": "Paketler ve MCP sunucuları kuruludur ama gizli kalır; yalnızca bir görev gerektirdiğinde açılır ve süreçleri de ancak o zaman başlar.",
-				"fa-IR": "بسته‌های توانمندی و سرورهای MCP نصب‌اند اما پنهان می‌مانند و فقط وقتی وظیفه‌ای به آن‌ها نیاز دارد باز می‌شوند؛ فرایندهایشان هم همان موقع شروع می‌شود."
-			}
+				"zh": "能力包、MCP 服务器等装着但默认不露，任务需要时才打开，对应的进程也到那时才启动。默认关闭：能力照样隐藏，模型用 find_capability 自己打开要用的；每条消息都问一次判定器，实际用下来它一个也没打开过。",
+				"en": "Packs and MCP servers stay installed but hidden until a task needs them; their processes start only then. Off by default: they stay hidden all the same, and the model opens what it needs with find_capability. Asked on every message, the judge opened none in practice.",
+				"zh-TW": "能力包和 MCP 伺服器已經裝好但預設隱藏，任務需要時才開啟，對應的程序也到那時才啟動。預設關閉：能力照樣隱藏，模型用 find_capability 自己開啟需要的；每則訊息都問一次判定器，實際用下來它一個也沒開啟過。",
+				"ja-JP": "ケイパビリティパックや MCP サーバーはインストールされていても非表示にしておき、タスクで必要になったときだけ開きます。プロセスもそのときに起動します。既定ではオフです。ケイパビリティは非表示のままで、必要なものはモデルが find_capability で開きます。メッセージごとに問い合わせていた判定器は、実際には一度も何も開きませんでした。",
+				"ko-KR": "기능 확장 팩과 MCP 서버는 설치해 두되 숨겨 두었다가 작업에 필요할 때만 엽니다. 해당 프로세스도 그때 시작됩니다. 기본값은 꺼짐입니다. 기능 확장은 숨겨진 채로 두고, 필요한 것은 모델이 find_capability로 엽니다. 메시지마다 묻던 판정기는 실제로 하나도 열지 않았습니다.",
+				"de-DE": "Fähigkeitspakete und MCP-Server sind installiert, aber verborgen und werden erst geöffnet, wenn eine Aufgabe sie braucht; erst dann starten ihre Prozesse. Standardmäßig aus: Sie bleiben trotzdem verborgen, und das Modell öffnet mit find_capability, was es braucht. Bei jeder Nachricht gefragt, hat der Judge in der Praxis keines geöffnet.",
+				"fr-FR": "Les packs et les serveurs MCP sont installés mais masqués, et ne s’ouvrent que lorsqu’une tâche en a besoin ; leurs processus démarrent à ce moment-là. Désactivé par défaut : ils restent masqués malgré tout, et le modèle ouvre ce dont il a besoin avec find_capability. Consulté à chaque message, le juge n’en a en pratique ouvert aucun.",
+				"es-ES": "Los paquetes y los servidores MCP están instalados pero ocultos, y solo se abren cuando una tarea los necesita; es entonces cuando se inician sus procesos. Desactivado de forma predeterminada: siguen ocultos igualmente, y el modelo abre lo que necesita con find_capability. Consultado en cada mensaje, el juez no abrió ninguno en la práctica.",
+				"pt-BR": "Pacotes e servidores MCP ficam instalados, mas ocultos, e só são ativados quando uma tarefa precisa deles; é aí que os processos deles iniciam. Desativado por padrão: eles continuam ocultos do mesmo jeito, e o modelo ativa o que precisa com find_capability. Consultado a cada mensagem, o juiz não ativou nenhum na prática.",
+				"ru-RU": "Пакеты и MCP-серверы установлены, но скрыты и подключаются, только когда они нужны задаче; тогда же запускаются их процессы. По умолчанию выключено: они всё равно остаются скрытыми, а модель подключает нужное через find_capability. Судья, которого спрашивали на каждое сообщение, на практике ничего не подключил.",
+				"uk-UA": "Пакети й MCP-сервери встановлені, але приховані й відкриваються лише тоді, коли потрібні завданню; тоді ж запускаються їхні процеси. Типово вимкнено: вони все одно лишаються прихованими, а модель відкриває потрібне через find_capability. Суддя, якого питали на кожне повідомлення, на практиці нічого не відкрив.",
+				"tr-TR": "Paketler ve MCP sunucuları kuruludur ama gizli kalır; yalnızca bir görev gerektirdiğinde açılır ve süreçleri de ancak o zaman başlar. Varsayılan olarak kapalı: yine de gizli kalırlar ve model ihtiyaç duyduğunu find_capability ile açar. Her mesajda sorulan hakem pratikte hiçbirini açmadı.",
+				"fa-IR": "بسته‌های توانمندی و سرورهای MCP نصب‌اند اما پنهان می‌مانند و فقط وقتی وظیفه‌ای به آن‌ها نیاز دارد باز می‌شوند؛ فرایندهایشان هم همان موقع شروع می‌شود. به‌طور پیش‌فرض خاموش است: باز هم پنهان می‌مانند و مدل هرچه لازم دارد را با find_capability باز می‌کند. داوری که برای هر پیام پرسیده می‌شد، در عمل هیچ‌کدام را باز نکرد."
+			},
+			"defaultMode": "off"
 		},
 		{
 			"id": "tool.admission",
@@ -1181,19 +1181,8 @@
 				"fa-IR": "نیمه‌کاره ماند"
 			},
 			"summary": {
-				"zh": "一轮结束在「接下来我去跑测试」却什么也没做，或者你已经让它做了它还在问「要我改吗」：让它接着做。难以撤销、或要出这台电脑的一步（推送、发布、删除、付款）不催。每条消息最多催两次。",
-				"en": "When a run ends on \"next I'll run the tests\" without doing it, or asks permission for work you already asked for, sends the agent back to it. Never nudges a step that is hard to undo or reaches beyond this machine (push, publish, delete, pay). At most twice per message.",
-				"zh-TW": "一輪結束在「接下來我去跑測試」卻什麼也沒做，或者你已經讓它做了它還在問「要我改嗎」：讓它接著做。難以撤銷、或要離開這台電腦的一步（推送、發布、刪除、付款）不催。每則訊息最多催兩次。",
-				"ja-JP": "「次にテストを実行します」と言って何もせずに終わった回や、すでに頼んだ作業について「直しましょうか？」と聞いて終わった回は、作業に戻らせます。元に戻しにくい手順や、このマシンの外に及ぶ手順（プッシュ、公開、削除、支払い）は促しません。1 メッセージにつき最大 2 回です。",
-				"ko-KR": "\"다음으로 테스트를 실행하겠습니다\"라고 하고 아무것도 하지 않은 채 끝난 실행이나, 이미 요청한 작업인데 \"고칠까요?\"라고 묻고 끝난 실행은 다시 작업으로 돌려보냅니다. 되돌리기 어렵거나 이 컴퓨터 밖에 영향을 주는 단계(푸시, 게시, 삭제, 결제)는 재촉하지 않습니다. 메시지마다 최대 두 번입니다.",
-				"de-DE": "Ein Lauf, der mit „als Nächstes führe ich die Tests aus“ endet, ohne es zu tun, oder der für eine bereits erbetene Arbeit um Erlaubnis fragt, wird zurück an die Arbeit geschickt. Ein Schritt, der schwer rückgängig zu machen ist oder über diesen Rechner hinausreicht (Push, Veröffentlichen, Löschen, Bezahlen), wird nie angetrieben. Höchstens zweimal pro Nachricht.",
-				"fr-FR": "Une exécution qui se termine sur « ensuite je lance les tests » sans le faire, ou qui demande le feu vert pour un travail que vous avez déjà demandé, est renvoyée au travail. Une étape difficile à annuler ou qui sort de cette machine (push, publication, suppression, paiement) n'est jamais forcée. Au plus deux fois par message.",
-				"es-ES": "Una ejecución que termina en «ahora ejecuto las pruebas» sin hacerlo, o que pide permiso para un trabajo que ya pediste, se devuelve al trabajo. Un paso difícil de deshacer o que va más allá de esta máquina (push, publicar, borrar, pagar) nunca se fuerza. Como máximo dos veces por mensaje.",
-				"pt-BR": "Uma execução que termina em \"agora vou rodar os testes\" sem fazer isso, ou que pede autorização para um trabalho que você já pediu, é mandada de volta ao trabalho. Um passo difícil de desfazer ou que vai além desta máquina (push, publicar, apagar, pagar) nunca é forçado. No máximo duas vezes por mensagem.",
-				"ru-RU": "Запуск, который заканчивается словами «дальше запущу тесты», но ничего не делает, или спрашивает разрешения на работу, о которой вы уже попросили, отправляется обратно к работе. Шаг, который трудно отменить или который выходит за пределы этой машины (push, публикация, удаление, оплата), никогда не подталкивается. Не больше двух раз на сообщение.",
-				"uk-UA": "Запуск, що завершується словами «далі запущу тести», але нічого не робить, або питає дозволу на роботу, про яку ви вже попросили, відправляється назад до роботи. Крок, який важко скасувати або який виходить за межі цієї машини (push, публікація, видалення, оплата), ніколи не підганяється. Не більше двох разів на повідомлення.",
-				"tr-TR": "\"Sırada testleri çalıştırmak var\" deyip hiçbir şey yapmadan biten ya da zaten istediğiniz bir iş için onay soran bir çalışma, işe geri gönderilir. Geri alınması zor ya da bu makinenin dışına uzanan bir adım (push, yayımlama, silme, ödeme) asla zorlanmaz. Mesaj başına en fazla iki kez.",
-				"fa-IR": "اجرایی که با «حالا تست‌ها را اجرا می‌کنم» تمام شود ولی کاری نکند، یا برای کاری که خودتان خواسته‌اید اجازه بخواهد، به کار برگردانده می‌شود. گامی که برگرداندنش دشوار است یا از این رایانه بیرون می‌رود (push، انتشار، حذف، پرداخت) هرگز تحت فشار قرار نمی‌گیرد. حداکثر دو بار برای هر پیام."
+				"zh": "一轮结束在「接下来我去跑测试」却什么也没做，或者你已经让它做了它还在问「要我改吗」：让它接着做。难以撤销、或要出这台电脑的一步（推送、发布、删除、付款）不催。每条消息最多催两次；无人值守的运行里「说了没做」最多催一次，它回应上一次催促时没调工具就不再催。",
+				"en": "When a run ends on \"next I'll run the tests\" without doing it, or asks permission for work you already asked for, sends the agent back to it. Never nudges a step that is hard to undo or reaches beyond this machine (push, publish, delete, pay). At most twice per message; in an unattended run, at most once for work it said it would do, and not after it answered a nudge without a tool call."
 			}
 		},
 		{
@@ -1236,19 +1225,19 @@
 			"group": "turn",
 			"feature": "ttsr",
 			"title": {
-				"zh": "写偏即停（实验）",
-				"en": "Mid-stream correction (experimental)",
-				"zh-TW": "寫偏即停（實驗）",
-				"ja-JP": "出力中の軌道修正（実験的）",
-				"ko-KR": "출력 중 교정(실험)",
-				"de-DE": "Korrektur während der Ausgabe (Experiment)",
-				"fr-FR": "Correction en cours d’écriture (expérimental)",
-				"es-ES": "Corrección sobre la marcha (experimental)",
-				"pt-BR": "Correção durante a escrita (experimental)",
-				"ru-RU": "Исправление на лету (эксперимент)",
-				"uk-UA": "Виправлення на льоту (експеримент)",
-				"tr-TR": "Akış içinde düzeltme (deneysel)",
-				"fa-IR": "اصلاح در میانهٔ خروجی (آزمایشی)"
+				"zh": "写偏即停",
+				"en": "Mid-stream correction",
+				"zh-TW": "寫偏即停",
+				"ja-JP": "出力中の軌道修正",
+				"ko-KR": "출력 중 교정",
+				"de-DE": "Korrektur während der Ausgabe",
+				"fr-FR": "Correction en cours d’écriture",
+				"es-ES": "Corrección sobre la marcha",
+				"pt-BR": "Correção durante a escrita",
+				"ru-RU": "Исправление на лету",
+				"uk-UA": "Виправлення на льоту",
+				"tr-TR": "Akış içinde düzeltme",
+				"fa-IR": "اصلاح در میانهٔ خروجی"
 			},
 			"summary": {
 				"zh": "模型边输出，判定器边每隔几百字对照一次你的硬约束和下面配置的规则；确信写偏了就立刻掐断输出，告诉模型是哪一条，让它从断点接着写。只有开启了「写偏即停」功能才会运行。",
@@ -1392,7 +1381,7 @@
 			},
 			"summary": {
 				"zh": "上下文预算、后台命令结束等事件出现时，判断该现在告诉模型、稍后再说，还是不必说。默认是影子模式：判定只记录，事件按各自的规则投递，后台命令结束和上下文预算都是立刻告知。",
-				"en": "For events such as the context budget or a background job's end: tell the model now, later or not at all. In shadow by default: the verdict is only logged and each event is delivered by its own rule, which for a job's end and the context budget is now.",
+				"en": "For events such as the context budget or a background job's end: tell the model now, later or not at all. In shadow by default: the verdict is only logged, and each event is delivered by its own rule (right away for a job's end and the context budget).",
 				"zh-TW": "上下文預算、背景工作結束這類事件出現時，判斷該現在告訴模型、晚點再說，還是不必說。預設為影子模式：判定只記錄下來，事件各按自己的規則送達；背景工作結束和上下文預算都是立刻告知。",
 				"ja-JP": "コンテキスト予算やバックグラウンドジョブの終了などのイベントを、モデルにすぐ伝えるか、後で伝えるか、伝えないかを判定します。既定ではシャドーモードです。判定は記録するだけで、各イベントはそれぞれのルールで届けます。ジョブの終了とコンテキスト予算の場合は、すぐに届けます。",
 				"ko-KR": "컨텍스트 예산이나 백그라운드 작업 종료 같은 이벤트를 모델에게 지금 알릴지, 나중에 알릴지, 알리지 않을지 정합니다. 기본값은 섀도 모드입니다. 판정은 기록만 하고 각 이벤트는 자체 규칙에 따라 전달되는데, 작업 종료와 컨텍스트 예산은 바로 알립니다.",
@@ -1682,7 +1671,7 @@
 				{
 					"key": "waitMs",
 					"kind": "number",
-					"default": 4000,
+					"default": 3000,
 					"min": 500,
 					"max": 30000,
 					"unit": {
@@ -1716,19 +1705,8 @@
 						"fa-IR": "حداکثر انتظار"
 					},
 					"help": {
-						"zh": "超时就不等了，按原样开始。",
-						"en": "After this, the turn starts without the verdict.",
-						"zh-TW": "超過這個時間，這一輪就不等判定結果，直接開始。",
-						"ja-JP": "これを過ぎると、判定を待たずにターンを始めます。",
-						"ko-KR": "이 시간이 지나면 판정 없이 턴을 시작합니다.",
-						"de-DE": "Danach beginnt die Runde ohne das Urteil.",
-						"fr-FR": "Au-delà, le tour démarre sans le jugement.",
-						"es-ES": "Pasado este tiempo, el turno empieza sin el veredicto.",
-						"pt-BR": "Depois disso, o turno começa sem o veredito.",
-						"ru-RU": "После этого ход начинается без решения.",
-						"uk-UA": "Після цього хід починається без рішення.",
-						"tr-TR": "Bu süreden sonra tur, karar beklenmeden başlar.",
-						"fa-IR": "پس از این مدت، نوبت بدون نتیجهٔ داوری شروع می‌شود."
+						"zh": "超时就不等了，按原样开始。从消息到达算起；技能、能力和经验的判定同时在问，各自的等待也从这时算起。",
+						"en": "After this, the turn starts without the verdict. Counted from when the message arrives, like the waits of the skill, capability and lesson questions, which are asked alongside."
 					}
 				},
 				{
@@ -1900,7 +1878,7 @@
 				{
 					"key": "waitMs",
 					"kind": "number",
-					"default": 4000,
+					"default": 3000,
 					"min": 500,
 					"max": 30000,
 					"unit": {
@@ -1975,11 +1953,46 @@
 					"default": true,
 					"label": {
 						"zh": "子代理沿用这里的选择",
-						"en": "Subagents take this session's choice"
+						"en": "Subagents take this session's choice",
+						"zh-TW": "子代理沿用這裡的選擇",
+						"ja-JP": "サブエージェントはこのセッションの選択を引き継ぐ",
+						"ko-KR": "하위 에이전트는 이 세션의 선택을 따름",
+						"de-DE": "Unteragenten übernehmen die Auswahl dieser Sitzung",
+						"fr-FR": "Les sous-agents reprennent le choix de cette session",
+						"es-ES": "Los subagentes heredan la elección de esta sesión",
+						"pt-BR": "Subagentes herdam a escolha desta sessão",
+						"ru-RU": "Субагенты наследуют выбор этого сеанса",
+						"uk-UA": "Субагенти успадковують вибір цього сеансу",
+						"tr-TR": "Alt ajanlar bu oturumun seçimini devralır",
+						"fa-IR": "عامل‌های فرعی انتخاب این نشست را دنبال کنند"
 					},
 					"help": {
 						"zh": "子代理隐藏主会话隐藏的技能，不再问判定器。主会话还没定下来时，子代理照旧自己问。",
-						"en": "A subagent hides the skills this session hides and doesn't ask the judge again. While this session hasn't settled yet, a subagent asks for itself as before."
+						"en": "A subagent hides the skills this session hides and doesn't ask the judge again. Until this session has decided, a subagent asks the judge itself, as before.",
+						"zh-TW": "子代理隱藏主對話隱藏的技能，不再問判定器。主對話還沒決定時，子代理照舊自己問。",
+						"ja-JP": "サブエージェントは、このセッションで非表示にしたスキルを同じく非表示にし、判定器に改めて問い合わせません。このセッションの選択がまだ決まっていないうちは、サブエージェントはこれまでどおり自分で問い合わせます。",
+						"ko-KR": "하위 에이전트는 이 세션에서 숨긴 스킬을 똑같이 숨기고, 판정기에 다시 묻지 않습니다. 이 세션의 선택이 아직 정해지지 않았다면 하위 에이전트는 전처럼 직접 묻습니다.",
+						"de-DE": "Ein Unteragent blendet die Skills aus, die diese Sitzung ausblendet, und fragt den Judge nicht noch einmal. Solange diese Sitzung noch nicht entschieden hat, fragt ein Unteragent wie bisher selbst.",
+						"fr-FR": "Un sous-agent masque les compétences que cette session masque et ne redemande pas au juge. Tant que cette session n’a pas encore tranché, un sous-agent demande lui-même, comme avant.",
+						"es-ES": "Un subagente oculta las habilidades que oculta esta sesión y no vuelve a preguntar al juez. Mientras esta sesión aún no lo haya decidido, el subagente pregunta por su cuenta, como antes.",
+						"pt-BR": "Um subagente oculta as habilidades que esta sessão oculta e não pergunta de novo ao juiz. Enquanto esta sessão ainda não tiver decidido, o subagente pergunta por conta própria, como antes.",
+						"ru-RU": "Субагент скрывает те же навыки, что скрыты в этом сеансе, и не спрашивает судью повторно. Пока этот сеанс ещё не определился, субагент, как и раньше, спрашивает сам.",
+						"uk-UA": "Субагент приховує ті самі навички, що приховано в цьому сеансі, і не запитує суддю повторно. Поки цей сеанс ще не визначився, субагент, як і раніше, запитує сам.",
+						"tr-TR": "Alt ajan, bu oturumun gizlediği becerileri gizler ve hakeme yeniden sormaz. Bu oturum henüz karar vermemişse alt ajan eskisi gibi kendisi sorar.",
+						"fa-IR": "عامل فرعی همان مهارت‌هایی را پنهان می‌کند که این نشست پنهان کرده و دوباره از داور نمی‌پرسد. تا وقتی این نشست هنوز تصمیمش را نگرفته، عامل فرعی مثل قبل خودش می‌پرسد."
+					}
+				},
+				{
+					"key": "askEarly",
+					"kind": "boolean",
+					"default": true,
+					"label": {
+						"zh": "消息一到就问",
+						"en": "Ask as soon as the message arrives"
+					},
+					"help": {
+						"zh": "和预判同时问，不等预判问完，回合开始前不用接连等两个判定。关掉则等预判之后再问。",
+						"en": "Asked alongside preflight, so the turn doesn't wait for two verdicts in a row. Off: asked once preflight is done."
 					}
 				}
 			]
@@ -2021,7 +2034,7 @@
 				{
 					"key": "waitMs",
 					"kind": "number",
-					"default": 4000,
+					"default": 3000,
 					"min": 500,
 					"max": 30000,
 					"unit": {
@@ -2121,7 +2134,7 @@
 					},
 					"help": {
 						"zh": "按名字写。这些在一次性运行里几乎没人用，却每次请求都要带上。用命令点名的（比如 /hive）照样保留；清空就全带上。",
-						"en": "By name. One-shot runs almost never use them, and each one is in every request. One you call for by its command (such as /hive) stays. Empty keeps them all.",
+						"en": "List them by name. One-shot runs almost never use these, yet every request carries them. Anything you call by its command (such as /hive) stays in. Empty keeps them all.",
 						"zh-TW": "依名稱填寫。單次執行幾乎用不到它們，卻每次請求都要帶上。用指令點名的（例如 /hive）照樣保留。留空則全部保留。",
 						"ja-JP": "名前で指定します。単発実行ではほとんど使われないのに、どれもリクエストのたびに含まれます。コマンドで呼び出したもの（/hive など）は残ります。空欄の場合は、すべて残します。",
 						"ko-KR": "이름으로 지정합니다. 단발 실행에서는 거의 쓰이지 않는데도 요청마다 들어갑니다. 명령으로 직접 부른 것(예: /hive)은 남습니다. 비워 두면 모두 남깁니다.",
@@ -2136,16 +2149,73 @@
 					}
 				},
 				{
+					"key": "unattendedFindWithMcp",
+					"kind": "boolean",
+					"default": true,
+					"label": {
+						"zh": "装了 MCP 服务器时，无人值守的运行保留 find_capability",
+						"en": "Keep find_capability in unattended runs when an MCP server is installed",
+						"zh-TW": "裝了 MCP 伺服器時，無人值守執行保留 find_capability",
+						"ja-JP": "MCP サーバーがあるとき、無人実行でも find_capability を残す",
+						"ko-KR": "MCP 서버가 설치되어 있으면 무인 실행에서도 find_capability 유지",
+						"de-DE": "find_capability in unbeaufsichtigten Läufen behalten, wenn ein MCP-Server installiert ist",
+						"fr-FR": "Garder find_capability lors des exécutions sans surveillance quand un serveur MCP est installé",
+						"es-ES": "Mantener find_capability en las ejecuciones desatendidas si hay un servidor MCP instalado",
+						"pt-BR": "Manter find_capability nas execuções sem supervisão quando houver um servidor MCP instalado",
+						"ru-RU": "Оставлять find_capability при запусках без присмотра, если установлен MCP-сервер",
+						"uk-UA": "Лишати find_capability в запусках без нагляду, якщо встановлено MCP-сервер",
+						"tr-TR": "Bir MCP sunucusu kuruluysa gözetimsiz çalıştırmalarda find_capability'yi tut",
+						"fa-IR": "نگه داشتن find_capability در اجراهای بی‌نظارت وقتی سرور MCP نصب است"
+					},
+					"help": {
+						"zh": "无人值守指 mu --print 和 json 模式的一次性运行。那里不问判定器，find_capability 又不在请求里，没设成常开的 MCP 服务器就用不上。开着时，只要装了这样的服务器，find_capability 就留着，说明里列出装了哪些，模型能自己打开；只有能力包时照样拿掉，请求和以前一样。",
+						"en": "Unattended means a one-shot mu --print or json-mode run. Nobody asks the judge there, so without find_capability an MCP server that isn't always open can't be reached. On: with such a server installed, find_capability stays, lists what's installed, and the model opens what it needs. With packs alone it's left out, and requests stay as they were.",
+						"zh-TW": "無人值守指 mu --print 或 json 模式的單次執行。那裡不問判定器，find_capability 又不在請求裡，沒設成常開的 MCP 伺服器就用不上。開啟時，只要裝了這樣的伺服器，find_capability 就留著，說明裡列出裝了哪些，模型能自己開啟；只有能力包時照樣拿掉，請求和以前一樣。",
+						"ja-JP": "無人実行とは mu --print や json モードの単発実行のことです。そこでは判定器に問い合わせないので、find_capability がないと、常時オープンにしていない MCP サーバーには届きません。オンにすると、そうしたサーバーがあるときは find_capability を残し、インストール済みのものを説明に列挙して、モデルが必要なものを開けるようにします。パックだけのときは従来どおり除外し、リクエストは変わりません。",
+						"ko-KR": "무인 실행은 mu --print 또는 json 모드의 단발 실행을 말합니다. 거기서는 판정기에 묻지 않으므로, find_capability가 없으면 항상 열어 두지 않은 MCP 서버에 닿을 수 없습니다. 켜 두면 그런 서버가 설치되어 있을 때 find_capability를 남기고, 설치된 것을 설명에 나열해 모델이 필요한 것을 열 수 있게 합니다. 팩만 있을 때는 전처럼 빼고, 요청도 그대로입니다.",
+						"de-DE": "Unbeaufsichtigt heißt: ein einmaliger Lauf mit mu --print oder im json-Modus. Dort wird der Judge nicht gefragt, also ist ein MCP-Server, der nicht immer offen ist, ohne find_capability nicht erreichbar. An: Ist ein solcher Server installiert, bleibt find_capability, nennt, was installiert ist, und das Modell öffnet, was es braucht. Mit Paketen allein bleibt es weg, und die Anfragen bleiben, wie sie waren.",
+						"fr-FR": "Sans surveillance désigne une exécution unique de mu --print ou en mode json. Le juge n’y est pas consulté : sans find_capability, un serveur MCP qui n’est pas toujours ouvert reste hors d’atteinte. Activé : quand un tel serveur est installé, find_capability reste, liste ce qui est installé, et le modèle ouvre ce dont il a besoin. Avec des packs seulement, il est omis et les requêtes restent les mêmes.",
+						"es-ES": "Desatendida significa una ejecución única de mu --print o en modo json. Allí no se consulta al juez, así que sin find_capability no se puede llegar a un servidor MCP que no esté siempre abierto. Activado: con un servidor así instalado, find_capability se queda, enumera lo instalado y el modelo abre lo que necesita. Con solo paquetes se excluye y las solicitudes siguen como antes.",
+						"pt-BR": "Sem supervisão significa uma execução única de mu --print ou no modo json. Lá o juiz não é consultado, então sem find_capability um servidor MCP que não esteja sempre ativo fica inalcançável. Ativado: com um servidor assim instalado, find_capability fica, lista o que está instalado, e o modelo ativa o que precisa. Só com pacotes, ele fica de fora e as solicitações continuam como antes.",
+						"ru-RU": "Без присмотра — это разовый запуск mu --print или в режиме json. Судью там не спрашивают, поэтому без find_capability до MCP-сервера, который не подключён всегда, не добраться. Включено: если такой сервер установлен, find_capability остаётся, перечисляет установленное, и модель подключает нужное. Если есть только пакеты, он исключается, и запросы остаются прежними.",
+						"uk-UA": "Без нагляду — це разовий запуск mu --print або в режимі json. Суддю там не запитують, тож без find_capability до MCP-сервера, який не відкритий завжди, не дістатися. Увімкнено: якщо такий сервер встановлено, find_capability лишається, перелічує встановлене, і модель відкриває потрібне. Якщо є лише пакети, його виключено, і запити лишаються такими, як були.",
+						"tr-TR": "Gözetimsiz, mu --print veya json modundaki tek seferlik bir çalıştırmadır. Orada hakeme sorulmaz; bu yüzden find_capability olmadan her zaman açık olmayan bir MCP sunucusuna ulaşılamaz. Açık: böyle bir sunucu kuruluysa find_capability kalır, kurulu olanları listeler ve model ihtiyaç duyduğunu açar. Yalnızca paketler varsa dışarıda bırakılır ve istekler eskisi gibi kalır.",
+						"fa-IR": "بی‌نظارت یعنی یک اجرای یک‌بارهٔ mu --print یا در حالت json. آنجا از داور پرسیده نمی‌شود، پس بدون find_capability به سرور MCPی که همیشه باز نیست نمی‌توان رسید. روشن: اگر چنین سروری نصب باشد، find_capability می‌ماند، نصب‌شده‌ها را فهرست می‌کند و مدل هرچه لازم دارد را باز می‌کند. وقتی فقط بسته‌ها هستند کنار گذاشته می‌شود و درخواست‌ها مثل قبل می‌مانند."
+					}
+				},
+				{
 					"key": "subagentsInherit",
 					"kind": "boolean",
 					"default": true,
 					"label": {
 						"zh": "子代理沿用这里打开的能力",
-						"en": "Subagents take this session's capabilities"
+						"en": "Subagents take this session's capabilities",
+						"zh-TW": "子代理沿用這裡開啟的能力",
+						"ja-JP": "サブエージェントはこのセッションのケイパビリティを引き継ぐ",
+						"ko-KR": "하위 에이전트는 이 세션의 기능 확장을 따름",
+						"de-DE": "Unteragenten übernehmen die Fähigkeiten dieser Sitzung",
+						"fr-FR": "Les sous-agents reprennent les capacités de cette session",
+						"es-ES": "Los subagentes heredan las capacidades de esta sesión",
+						"pt-BR": "Subagentes herdam as capacidades desta sessão",
+						"ru-RU": "Субагенты наследуют возможности этого сеанса",
+						"uk-UA": "Субагенти успадковують можливості цього сеансу",
+						"tr-TR": "Alt ajanlar bu oturumun yeteneklerini devralır",
+						"fa-IR": "عامل‌های فرعی توانمندی‌های این نشست را دنبال کنند"
 					},
 					"help": {
 						"zh": "子代理打开主会话已经打开的能力，不再问判定器；主会话隐藏的照样隐藏。主会话还没选过时，子代理照旧自己问。",
-						"en": "A subagent opens the capabilities this session has open and doesn't ask the judge again; what's hidden here stays hidden there. Before this session has chosen, a subagent asks for itself as before."
+						"en": "A subagent opens the capabilities this session has open and doesn't ask the judge again; what's hidden here stays hidden there. Until this session has chosen, a subagent asks the judge itself, as before.",
+						"zh-TW": "子代理開啟主對話已經開啟的能力，不再問判定器；主對話隱藏的照樣隱藏。主對話還沒選過時，子代理照舊自己問。",
+						"ja-JP": "サブエージェントは、このセッションで開いているケイパビリティを開き、判定器に改めて問い合わせません。ここで非表示のものは、サブエージェントでも非表示のままです。このセッションがまだ選んでいないうちは、サブエージェントはこれまでどおり自分で問い合わせます。",
+						"ko-KR": "하위 에이전트는 이 세션에서 열려 있는 기능 확장을 열고, 판정기에 다시 묻지 않습니다. 여기서 숨긴 것은 하위 에이전트에서도 숨겨집니다. 이 세션이 아직 고르지 않았다면 하위 에이전트는 전처럼 직접 묻습니다.",
+						"de-DE": "Ein Unteragent öffnet die Fähigkeiten, die in dieser Sitzung offen sind, und fragt den Judge nicht noch einmal; was hier verborgen ist, bleibt auch dort verborgen. Solange diese Sitzung noch nicht gewählt hat, fragt ein Unteragent wie bisher selbst.",
+						"fr-FR": "Un sous-agent ouvre les capacités ouvertes dans cette session et ne redemande pas au juge ; ce qui est masqué ici le reste chez lui. Tant que cette session n’a pas encore choisi, un sous-agent demande lui-même, comme avant.",
+						"es-ES": "Un subagente abre las capacidades que esta sesión tiene abiertas y no vuelve a preguntar al juez; lo que aquí está oculto sigue oculto allí. Mientras esta sesión no haya elegido, el subagente pregunta por su cuenta, como antes.",
+						"pt-BR": "Um subagente ativa as capacidades que esta sessão tem ativas e não pergunta de novo ao juiz; o que está oculto aqui continua oculto lá. Enquanto esta sessão não tiver escolhido, o subagente pergunta por conta própria, como antes.",
+						"ru-RU": "Субагент подключает возможности, подключённые в этом сеансе, и не спрашивает судью повторно; то, что скрыто здесь, остаётся скрытым и у него. Пока этот сеанс ещё не сделал выбор, субагент, как и раньше, спрашивает сам.",
+						"uk-UA": "Субагент відкриває можливості, відкриті в цьому сеансі, і не запитує суддю повторно; те, що приховано тут, лишається прихованим і в нього. Поки цей сеанс ще не зробив вибору, субагент, як і раніше, запитує сам.",
+						"tr-TR": "Alt ajan, bu oturumda açık olan yetenekleri açar ve hakeme yeniden sormaz; burada gizli olan orada da gizli kalır. Bu oturum henüz seçim yapmamışsa alt ajan eskisi gibi kendisi sorar.",
+						"fa-IR": "عامل فرعی توانمندی‌هایی را باز می‌کند که این نشست باز کرده و دوباره از داور نمی‌پرسد؛ آنچه اینجا پنهان است آنجا هم پنهان می‌ماند. تا وقتی این نشست هنوز انتخاب نکرده، عامل فرعی مثل قبل خودش می‌پرسد."
 					}
 				}
 			]
@@ -2441,7 +2511,7 @@
 				{
 					"key": "waitMs",
 					"kind": "number",
-					"default": 4000,
+					"default": 3000,
 					"min": 0,
 					"max": 30000,
 					"unit": {
@@ -3308,7 +3378,7 @@
 					"max": 50,
 					"label": {
 						"zh": "几个词连成句才送判",
-						"en": "Words in a row to ask the judge",
+						"en": "Minimum words in a row to ask the judge",
 						"zh-TW": "連續幾個詞才送判定器",
 						"ja-JP": "判定器に回す連続語数",
 						"ko-KR": "판정기에 묻는 연속 단어 수",
@@ -3323,7 +3393,7 @@
 					},
 					"help": {
 						"zh": "一段里没有这么多个连着的词（中文、日文这类不空格的文字算连着 8 个字），就不问判定器，只按规则看：目录列表、链接列表、响应头、几个字的 grep 结果里放不下一条指令。0：每段都问。",
-						"en": "A passage without this many words in a row (8 characters in a row for Chinese, Japanese and other scripts written without spaces) isn't put to the judge; rules alone read it. Directory listings, link lists, response headers and short grep hits can't hold an instruction. 0: every passage is judged.",
+						"en": "A passage without this many words in a row (8 characters in a row for Chinese, Japanese and other scripts written without spaces) isn't sent to the judge; only the rules check it. Directory listings, link lists, response headers and short grep hits can't hold an instruction. 0: every passage is judged.",
 						"zh-TW": "一段文字裡沒有這麼多個連著的詞（中文、日文這類不用空格分詞的文字，算連續 8 個字），就不問判定器，只按規則看：目錄清單、連結清單、回應標頭和只有幾個字的 grep 結果裡放不下一條指令。0：每段都問。",
 						"ja-JP": "この数だけ語が連続しない段落（中国語や日本語など、単語を空白で区切らない文字では 8 文字連続）は判定器に回さず、ルールだけで読みます。ディレクトリ一覧、リンク一覧、レスポンスヘッダー、短い grep の結果には指示を入れる余地がありません。0 にすると、すべての段落を判定します。",
 						"ko-KR": "연속된 단어가 이만큼 없는 단락(중국어, 일본어처럼 띄어쓰기 없이 쓰는 문자는 연속 8자)은 판정기에 묻지 않고 규칙으로만 읽습니다. 디렉토리 목록, 링크 목록, 응답 헤더, 짧은 grep 결과에는 지시가 들어갈 여지가 없습니다. 0이면 모든 단락을 판정합니다.",
@@ -3630,25 +3700,25 @@
 						"fa-IR": "تعداد تکه در هر درخواست"
 					},
 					"help": {
-						"zh": "托管判定器把多块放进一个请求，状态只计费一次；本地判定器始终一次一块。",
-						"en": "A hosted judge takes many chunks in one request, with the shared context billed once; the local judge takes one at a time.",
-						"zh-TW": "託管判定器把多塊放進一個請求，狀態只計費一次；本機判定器一律一次一塊。",
-						"ja-JP": "ホスト型の判定器は多くのチャンクを 1 回のリクエストで受け取り、状態の課金は 1 回だけです。ローカルの判定器は 1 つずつ処理します。",
-						"ko-KR": "호스팅 판정기는 여러 청크를 한 번의 요청으로 받으며 상태는 한 번만 과금됩니다. 로컬 판정기는 한 번에 하나씩 처리합니다.",
-						"de-DE": "Ein gehosteter Judge nimmt viele Abschnitte in einer Anfrage, der Zustand wird nur einmal berechnet; der lokale Judge nimmt einen nach dem anderen.",
-						"fr-FR": "Un juge hébergé reçoit de nombreux fragments en une seule requête, l’état n’étant facturé qu’une fois ; le juge local les traite un par un.",
-						"es-ES": "Un juez alojado recibe muchos fragmentos en una sola solicitud y el estado se factura una vez; el juez local los procesa de uno en uno.",
-						"pt-BR": "Um juiz hospedado recebe muitos blocos numa só solicitação, com o estado cobrado uma vez; o juiz local recebe um de cada vez.",
-						"ru-RU": "Облачный судья принимает много частей одним запросом, и состояние оплачивается один раз; локальный судья берёт по одной.",
-						"uk-UA": "Хмарний суддя приймає багато частин одним запитом, і стан оплачується один раз; локальний суддя бере по одній.",
-						"tr-TR": "Barındırılan bir hakem birçok parçayı tek istekte alır ve durum bir kez ücretlendirilir; yerel hakem her seferinde bir parça alır.",
-						"fa-IR": "داور میزبانی‌شده چندین تکه را در یک درخواست می‌گیرد و هزینهٔ وضعیت فقط یک بار حساب می‌شود؛ داور محلی هر بار یک تکه می‌گیرد."
+						"zh": "判定器把多块放进一个请求，状态只计费一次。",
+						"en": "The judge takes many chunks in one request, with the shared context billed once.",
+						"zh-TW": "判定器把多塊放進一個請求，狀態只計費一次。",
+						"ja-JP": "判定器は多くのチャンクを 1 回のリクエストで受け取り、状態の課金は 1 回だけです。",
+						"ko-KR": "판정기는 여러 청크를 한 번의 요청으로 받으며 상태는 한 번만 과금됩니다.",
+						"de-DE": "Der Judge nimmt viele Abschnitte in einer Anfrage, der Zustand wird nur einmal berechnet.",
+						"fr-FR": "Le juge reçoit de nombreux fragments en une seule requête, l’état n’étant facturé qu’une fois.",
+						"es-ES": "El juez recibe muchos fragmentos en una sola solicitud y el estado se factura una vez.",
+						"pt-BR": "O juiz recebe muitos blocos numa só solicitação, com o estado cobrado uma vez.",
+						"ru-RU": "Судья принимает много частей одним запросом, и состояние оплачивается один раз.",
+						"uk-UA": "Суддя приймає багато частин одним запитом, і стан оплачується один раз.",
+						"tr-TR": "Hakem birçok parçayı tek istekte alır ve durum bir kez ücretlendirilir.",
+						"fa-IR": "داور چندین تکه را در یک درخواست می‌گیرد و هزینهٔ وضعیت فقط یک بار حساب می‌شود."
 					}
 				},
 				{
 					"key": "waitMs",
 					"kind": "number",
-					"default": 4000,
+					"default": 2000,
 					"min": 500,
 					"max": 30000,
 					"unit": {
@@ -4766,11 +4836,33 @@
 					"default": false,
 					"label": {
 						"zh": "无人值守的运行也拍检查点",
-						"en": "Also take checkpoints in unattended runs"
+						"en": "Also take checkpoints in unattended runs",
+						"zh-TW": "無人值守執行時也建立檢查點",
+						"ja-JP": "無人実行でもチェックポイントを作成",
+						"ko-KR": "무인 실행에서도 체크포인트 생성",
+						"de-DE": "Checkpoints auch in unbeaufsichtigten Läufen anlegen",
+						"fr-FR": "Créer aussi des points de restauration lors des exécutions sans surveillance",
+						"es-ES": "Crear también puntos de control en ejecuciones desatendidas",
+						"pt-BR": "Criar pontos de controle também em execuções sem supervisão",
+						"ru-RU": "Создавать контрольные точки также при запусках без присмотра",
+						"uk-UA": "Створювати контрольні точки також під час запусків без нагляду",
+						"tr-TR": "Gözetimsiz çalıştırmalarda da kontrol noktası oluştur",
+						"fa-IR": "ساختن نقطهٔ بازگشت در اجراهای بی‌نظارت هم"
 					},
 					"help": {
 						"zh": "无人值守指 mu --print 和 json 模式的一次性运行。默认不拍：那里没人能确认回退，文件从不会被放回去，拍快照和每次改动后的扫描却让每一步都多等。遇到死路照样提醒模型退一步。",
-						"en": "Unattended means a one-shot mu --print or json-mode run. Off by default: nobody there can confirm a rewind, so no file is ever put back, while the snapshot and the scan after every change hold up each step. At a dead end the model is still told to step back."
+						"en": "Unattended means a one-shot mu --print or json-mode run. Off by default: nobody is there to confirm a rewind, so no file would ever be put back, and the snapshot and scan after every change would only slow down each step. At a dead end the model is still told to step back.",
+						"zh-TW": "無人值守指 mu --print 或 json 模式的單次執行。預設關閉：那裡沒人能確認回退，檔案從來不會被放回去，拍快照和每次改動後的掃描卻讓每一步都要多等。走進死路時照樣提醒模型退一步。",
+						"ja-JP": "無人実行とは mu --print や json モードの単発実行のことです。既定ではオフです。そこでは巻き戻しを確認できる人がいないため、ファイルが元に戻されることはないのに、スナップショットと変更のたびのスキャンでどのステップも待たされます。行き止まりでは、これまでどおりモデルに一歩引くよう伝えます。",
+						"ko-KR": "무인 실행은 mu --print 또는 json 모드의 단발 실행을 말합니다. 기본값은 꺼짐입니다. 거기서는 되감기를 확인해 줄 사람이 없어 파일이 되돌려지는 일이 없는데도, 스냅샷과 변경할 때마다 하는 검사 때문에 단계마다 기다려야 하기 때문입니다. 막다른 길에서는 여전히 모델에게 한 걸음 물러나라고 알려 줍니다.",
+						"de-DE": "Unbeaufsichtigt heißt: ein einmaliger Lauf mit mu --print oder im json-Modus. Standardmäßig aus: Dort kann niemand ein Zurücksetzen bestätigen, also wird nie eine Datei zurückgeholt, während der Snapshot und der Scan nach jeder Änderung jeden Schritt aufhalten. In einer Sackgasse wird das Modell trotzdem aufgefordert, einen Schritt zurückzugehen.",
+						"fr-FR": "Sans surveillance désigne une exécution unique de mu --print ou en mode json. Désactivé par défaut : personne n’y peut confirmer un retour en arrière, donc aucun fichier n’est jamais restauré, alors que l’instantané et l’analyse après chaque modification ralentissent chaque étape. Dans une impasse, le modèle est quand même invité à reculer d’un pas.",
+						"es-ES": "Desatendida significa una ejecución única de mu --print o en modo json. Desactivado de forma predeterminada: ahí nadie puede confirmar un retroceso, así que nunca se restaura ningún archivo, mientras que la instantánea y el escaneo tras cada cambio retrasan cada paso. Ante un callejón sin salida, al modelo se le sigue diciendo que dé un paso atrás.",
+						"pt-BR": "Sem supervisão significa uma execução única de mu --print ou no modo json. Desativado por padrão: ali ninguém pode confirmar um retrocesso, então nenhum arquivo é restaurado, enquanto o instantâneo e a varredura após cada alteração atrasam cada etapa. Diante de um beco sem saída, o modelo continua sendo orientado a dar um passo atrás.",
+						"ru-RU": "Без присмотра — это разовый запуск mu --print или в режиме json. По умолчанию выключено: там некому подтвердить откат, так что ни один файл не возвращается, а снимок и сканирование после каждого изменения задерживают каждый шаг. В тупике модели по-прежнему говорят сделать шаг назад.",
+						"uk-UA": "Без нагляду — це разовий запуск mu --print або в режимі json. Типово вимкнено: там нікому підтвердити відкат, тож жоден файл не повертається, а знімок і сканування після кожної зміни затримують кожен крок. У глухому куті моделі, як і раніше, кажуть зробити крок назад.",
+						"tr-TR": "Gözetimsiz, mu --print veya json modundaki tek seferlik bir çalıştırmadır. Varsayılan olarak kapalı: orada geri sarmayı onaylayabilecek kimse yoktur, yani hiçbir dosya geri getirilmez; anlık görüntü ve her değişiklikten sonraki tarama ise her adımı bekletir. Çıkmazda modele yine bir adım geri çekilmesi söylenir.",
+						"fa-IR": "بی‌نظارت یعنی یک اجرای یک‌بارهٔ mu --print یا در حالت json. به‌طور پیش‌فرض خاموش است: آنجا کسی نیست که عقب‌گرد را تأیید کند، پس هیچ فایلی برگردانده نمی‌شود، در حالی که تصویر لحظه‌ای و بررسی پس از هر تغییر هر گام را معطل می‌کنند. در بن‌بست همچنان به مدل گفته می‌شود یک گام عقب برود."
 					}
 				}
 			]
@@ -4839,15 +4931,48 @@
 					"max": 60,
 					"unit": {
 						"zh": "分钟",
-						"en": "min"
+						"en": "min",
+						"zh-TW": "分鐘",
+						"ja-JP": "分",
+						"ko-KR": "분",
+						"de-DE": "Min.",
+						"fr-FR": "min",
+						"es-ES": "min",
+						"pt-BR": "min",
+						"ru-RU": "мин",
+						"uk-UA": "хв",
+						"tr-TR": "dk",
+						"fa-IR": "دقیقه"
 					},
 					"label": {
 						"zh": "两次检查至少间隔",
-						"en": "At least this long between checks"
+						"en": "At least this long between checks",
+						"zh-TW": "兩次檢查至少間隔",
+						"ja-JP": "確認の最短間隔",
+						"ko-KR": "확인 사이 최소 간격",
+						"de-DE": "Mindestabstand zwischen zwei Prüfungen",
+						"fr-FR": "Délai minimal entre deux vérifications",
+						"es-ES": "Tiempo mínimo entre comprobaciones",
+						"pt-BR": "Tempo mínimo entre verificações",
+						"ru-RU": "Минимальный интервал между проверками",
+						"uk-UA": "Мінімальний інтервал між перевірками",
+						"tr-TR": "Kontroller arasında en kısa süre",
+						"fa-IR": "کمترین فاصلهٔ میان دو بررسی"
 					},
 					"help": {
 						"zh": "攒够上面的工具调用次数，并且离上次检查过了这么久，才再检查。",
-						"en": "A check needs both: the tool calls above, and this long since the last check."
+						"en": "A check needs both: the tool calls above, and this long since the last check.",
+						"zh-TW": "累積到上面的工具呼叫次數，而且距離上次檢查已經過了這麼久，才會再檢查。",
+						"ja-JP": "確認には両方が必要です。上記の回数のツール呼び出しと、前回の確認からこの時間が経っていることです。",
+						"ko-KR": "위에서 정한 횟수만큼 도구 호출이 쌓이고, 지난 확인 이후 이만큼 시간이 지나야 다시 확인합니다.",
+						"de-DE": "Für eine Prüfung braucht es beides: die Tool-Aufrufe oben und so viel Zeit seit der letzten Prüfung.",
+						"fr-FR": "Une vérification demande les deux : les appels d’outil ci-dessus, et ce délai depuis la dernière vérification.",
+						"es-ES": "Una comprobación necesita las dos cosas: las llamadas a herramientas de arriba y este tiempo desde la última comprobación.",
+						"pt-BR": "Uma verificação precisa das duas coisas: as chamadas de ferramenta acima e este tempo desde a última verificação.",
+						"ru-RU": "Для проверки нужно и то и другое: вызовы инструментов, указанные выше, и столько времени с последней проверки.",
+						"uk-UA": "Для перевірки потрібно і те, і те: виклики інструментів, указані вище, і стільки часу від останньої перевірки.",
+						"tr-TR": "Bir kontrol için ikisi de gerekir: yukarıdaki araç çağrıları ve son kontrolden bu yana bu kadar süre.",
+						"fa-IR": "هر بررسی به هر دو نیاز دارد: فراخوانی‌های ابزارِ بالا، و گذشتن این مدت از بررسی قبلی."
 					}
 				},
 				{
@@ -4858,15 +4983,48 @@
 					"max": 120,
 					"unit": {
 						"zh": "分钟",
-						"en": "min"
+						"en": "min",
+						"zh-TW": "分鐘",
+						"ja-JP": "分",
+						"ko-KR": "분",
+						"de-DE": "Min.",
+						"fr-FR": "min",
+						"es-ES": "min",
+						"pt-BR": "min",
+						"ru-RU": "мин",
+						"uk-UA": "хв",
+						"tr-TR": "dk",
+						"fa-IR": "دقیقه"
 					},
 					"label": {
 						"zh": "最长隔多久检查一次",
-						"en": "Check at least this often"
+						"en": "Check at least this often",
+						"zh-TW": "最長隔多久檢查一次",
+						"ja-JP": "確認の最長間隔",
+						"ko-KR": "확인 사이 최대 간격",
+						"de-DE": "Höchstabstand zwischen zwei Prüfungen",
+						"fr-FR": "Délai maximal entre deux vérifications",
+						"es-ES": "Tiempo máximo entre comprobaciones",
+						"pt-BR": "Tempo máximo entre verificações",
+						"ru-RU": "Максимальный интервал между проверками",
+						"uk-UA": "Максимальний інтервал між перевірками",
+						"tr-TR": "Kontroller arasında en uzun süre",
+						"fa-IR": "بیشترین فاصلهٔ میان دو بررسی"
 					},
 					"help": {
 						"zh": "到时间就检查，不管有没有新的工具调用，所以很久没有动静的回复也照看得到。",
-						"en": "A check comes after this long whatever happened, so a long reply with no tool call is checked too."
+						"en": "A check comes after this long whatever happened, so a long reply with no tool call is checked too.",
+						"zh-TW": "時間一到就檢查，不管有沒有新的工具呼叫，所以很久沒有動靜的回覆也照看得到。",
+						"ja-JP": "何があってもこの時間が経てば確認するので、ツール呼び出しのない長い返信も確認されます。",
+						"ko-KR": "무슨 일이 있었든 이 시간이 지나면 확인하므로, 도구 호출 없이 길어지는 응답도 확인됩니다.",
+						"de-DE": "Nach dieser Zeit wird geprüft, egal was passiert ist; so wird auch eine lange Antwort ohne Tool-Aufruf geprüft.",
+						"fr-FR": "Une vérification a lieu après ce délai quoi qu’il arrive, si bien qu’une longue réponse sans appel d’outil est vérifiée elle aussi.",
+						"es-ES": "Pasado este tiempo se comprueba pase lo que pase, así que también se revisa una respuesta larga sin llamadas a herramientas.",
+						"pt-BR": "Depois desse tempo há uma verificação, aconteça o que acontecer; assim, uma resposta longa sem chamada de ferramenta também é verificada.",
+						"ru-RU": "По истечении этого времени проверка проходит в любом случае, так что долгий ответ без вызовов инструментов тоже проверяется.",
+						"uk-UA": "Після цього часу перевірка відбувається за будь-яких умов, тож довга відповідь без викликів інструментів теж перевіряється.",
+						"tr-TR": "Ne olursa olsun bu süreden sonra kontrol yapılır; böylece araç çağrısı olmayan uzun bir yanıt da kontrol edilir.",
+						"fa-IR": "پس از این مدت در هر حال بررسی انجام می‌شود، پس پاسخ طولانی‌ای که هیچ فراخوانی ابزاری ندارد هم بررسی می‌شود."
 					}
 				},
 				{
@@ -4877,15 +5035,48 @@
 					"max": 120,
 					"unit": {
 						"zh": "分钟",
-						"en": "min"
+						"en": "min",
+						"zh-TW": "分鐘",
+						"ja-JP": "分",
+						"ko-KR": "분",
+						"de-DE": "Min.",
+						"fr-FR": "min",
+						"es-ES": "min",
+						"pt-BR": "min",
+						"ru-RU": "мин",
+						"uk-UA": "хв",
+						"tr-TR": "dk",
+						"fa-IR": "دقیقه"
 					},
 					"label": {
 						"zh": "多久没有进展才提醒跑偏",
-						"en": "No progress for this long before a drift steer"
+						"en": "No progress for this long before a drift steer",
+						"zh-TW": "多久沒有進展才提醒偏離",
+						"ja-JP": "進展のない状態がこの時間続いたら軌道修正を促す",
+						"ko-KR": "방향 수정 알림 전에 진척이 없어야 하는 시간",
+						"de-DE": "So lange ohne Fortschritt vor einer Kurskorrektur",
+						"fr-FR": "Durée sans progrès avant un recadrage",
+						"es-ES": "Tiempo sin avances antes de una corrección de rumbo",
+						"pt-BR": "Tempo sem progresso antes de uma correção de rumo",
+						"ru-RU": "Время без продвижения до поправки курса",
+						"uk-UA": "Час без поступу до корекції курсу",
+						"tr-TR": "Yön düzeltmeden önce ilerlemesiz geçecek süre",
+						"fa-IR": "مدت بی‌پیشرفتی پیش از تذکر اصلاح مسیر"
 					},
 					"help": {
 						"zh": "还要连续两次检查都判断为跑偏，且把握至少九成。进展指：写出新文件、通过的测试变多、出现不同的报错、跑了一分钟以上的命令成功结束、勾掉一项待办。",
-						"en": "It also takes two drift readings in a row, each at least 90% sure. Progress is a new file written, more tests passing, a different error, a command of a minute or more that succeeds, or an item ticked."
+						"en": "It also takes two drift readings in a row, each at least 90% sure. Progress is a new file written, more tests passing, a different error, a command of a minute or more that succeeds, or an item ticked.",
+						"zh-TW": "還要連續兩次檢查都判斷為偏離，且把握至少九成。進展指：寫出新檔案、通過的測試變多、出現不同的錯誤、跑了一分鐘以上的指令成功結束、勾掉一項待辦。",
+						"ja-JP": "さらに、2 回続けて逸脱と判定され、どちらも確信度が 90% 以上である必要があります。進展とは、新しいファイルの作成、通るテストの増加、別のエラーの発生、1 分以上かかるコマンドの成功、ToDo 項目のチェックのいずれかです。",
+						"ko-KR": "또한 두 번 연속으로 이탈로 판정되고, 매번 확신이 90% 이상이어야 합니다. 진척이란 새 파일 작성, 통과하는 테스트 증가, 다른 오류 발생, 1분 이상 걸린 명령의 성공, 할 일 항목 체크 중 하나입니다.",
+						"de-DE": "Außerdem braucht es zwei Abdrift-Befunde in Folge, jeder zu mindestens 90% sicher. Fortschritt ist eine neu geschriebene Datei, mehr bestandene Tests, ein anderer Fehler, ein erfolgreicher Befehl, der eine Minute oder länger lief, oder ein abgehakter Punkt.",
+						"fr-FR": "Il faut aussi deux constats de dérive d’affilée, chacun sûr à au moins 90%. Un progrès, c’est un nouveau fichier écrit, plus de tests qui passent, une erreur différente, une commande d’une minute ou plus qui réussit, ou un élément coché.",
+						"es-ES": "Además hacen falta dos lecturas de desvío seguidas, cada una con al menos un 90% de certeza. Un avance es un archivo nuevo escrito, más pruebas que pasan, un error distinto, un comando de un minuto o más que termina bien o un elemento marcado.",
+						"pt-BR": "Também são necessárias duas leituras de deriva seguidas, cada uma com pelo menos 90% de certeza. Progresso é um arquivo novo escrito, mais testes passando, um erro diferente, um comando de um minuto ou mais que dá certo ou um item marcado.",
+						"ru-RU": "Кроме того, нужны два вывода об отклонении подряд, каждый с уверенностью не меньше 90%. Продвижение — это новый записанный файл, больше проходящих тестов, другая ошибка, успешно завершённая команда длительностью от минуты или отмеченный пункт.",
+						"uk-UA": "Крім того, потрібні два висновки про відхилення поспіль, кожен із упевненістю щонайменше 90%. Поступ — це новий записаний файл, більше тестів, що проходять, інша помилка, успішно завершена команда тривалістю від хвилини або позначений пункт.",
+						"tr-TR": "Ayrıca art arda iki sapma değerlendirmesi gerekir, her biri en az %90 emin. İlerleme; yeni yazılmış bir dosya, geçen testlerin artması, farklı bir hata, bir dakika veya daha uzun süren ve başarıyla biten bir komut ya da işaretlenmiş bir maddedir.",
+						"fa-IR": "افزون بر این، دو تشخیص انحراف پشت سر هم لازم است که هر کدام دست‌کم 90% مطمئن باشد. پیشرفت یعنی نوشتن فایلی تازه، قبول شدن تست‌های بیشتر، خطایی متفاوت، موفق شدن دستوری که یک دقیقه یا بیشتر طول کشیده، یا تیک خوردن یک مورد."
 					}
 				},
 				{
@@ -4896,15 +5087,48 @@
 					"max": 240,
 					"unit": {
 						"zh": "分钟",
-						"en": "min"
+						"en": "min",
+						"zh-TW": "分鐘",
+						"ja-JP": "分",
+						"ko-KR": "분",
+						"de-DE": "Min.",
+						"fr-FR": "min",
+						"es-ES": "min",
+						"pt-BR": "min",
+						"ru-RU": "мин",
+						"uk-UA": "хв",
+						"tr-TR": "dk",
+						"fa-IR": "دقیقه"
 					},
 					"label": {
 						"zh": "两次提醒至少间隔",
-						"en": "At least this long between two steers"
+						"en": "At least this long between two steers",
+						"zh-TW": "兩次提醒至少間隔",
+						"ja-JP": "軌道修正の促しの最短間隔",
+						"ko-KR": "방향 수정 알림 사이 최소 간격",
+						"de-DE": "Mindestabstand zwischen zwei Kurskorrekturen",
+						"fr-FR": "Délai minimal entre deux recadrages",
+						"es-ES": "Tiempo mínimo entre dos correcciones de rumbo",
+						"pt-BR": "Tempo mínimo entre duas correções de rumo",
+						"ru-RU": "Минимальный интервал между поправками курса",
+						"uk-UA": "Мінімальний інтервал між корекціями курсу",
+						"tr-TR": "İki yön düzeltme arasında en kısa süre",
+						"fa-IR": "کمترین فاصلهٔ میان دو تذکر اصلاح مسیر"
 					},
 					"help": {
 						"zh": "判定器的提醒（跑偏或原地打转）离监测的上一次提醒至少隔这么久，规则发现的打转也算一次。",
-						"en": "The judge's steers, on drift or a loop, wait this long after the monitor's last steer, the loop rule's included."
+						"en": "The judge's steers (on drift or a loop) wait this long after the monitor's last steer, including one from the loop rule.",
+						"zh-TW": "判定器的提醒（偏離或原地打轉）距離監控的上一次提醒至少隔這麼久，規則發現的打轉也算一次。",
+						"ja-JP": "判定器による軌道修正の促し（逸脱や堂々巡り）は、逸脱検知の前回の促しからこの時間を空けます。堂々巡りのルールによる促しも前回に数えます。",
+						"ko-KR": "판정기의 방향 수정 알림(이탈이나 제자리 맴돌기)은 감시 기능의 마지막 알림 이후 이만큼 기다립니다. 맴돌기 규칙이 보낸 알림도 포함합니다.",
+						"de-DE": "Kurskorrekturen des Judge, wegen Abdriftens oder einer Schleife, warten so lange nach der letzten Kurskorrektur der Überwachung, auch einer durch die Schleifenregel.",
+						"fr-FR": "Les recadrages du juge, pour dérive ou boucle, attendent ce délai après le dernier recadrage de la surveillance, y compris celui de la règle de boucle.",
+						"es-ES": "Las correcciones de rumbo del juez, por desvío o por bucle, esperan este tiempo tras la última corrección del monitor, incluida la de la regla de bucles.",
+						"pt-BR": "As correções de rumo do juiz, por deriva ou por loop, esperam este tempo depois da última correção do monitor, incluída a da regra de loop.",
+						"ru-RU": "Поправки курса от судьи — из-за отклонения или зацикливания — ждут столько после последней поправки контроля отклонений, включая поправку по правилу зацикливания.",
+						"uk-UA": "Корекції курсу від судді — через відхилення чи зациклення — чекають стільки після останньої корекції контролю відхилень, зокрема й за правилом зациклення.",
+						"tr-TR": "Hakemin sapma ya da döngü için yaptığı yön düzeltmeleri, izlemenin son yön düzeltmesinden sonra bu kadar bekler; döngü kuralınınki de sayılır.",
+						"fa-IR": "تذکرهای اصلاح مسیرِ داور، برای انحراف یا حلقه، پس از آخرین تذکر پایش دست‌کم این مدت صبر می‌کنند؛ تذکری که قانون حلقه داده هم حساب می‌شود."
 					}
 				},
 				{
@@ -5394,19 +5618,19 @@
 		{
 			"name": "ttsr",
 			"title": {
-				"zh": "写偏即停（实验）",
-				"en": "Mid-stream correction (experimental)",
-				"zh-TW": "寫偏即停（實驗）",
-				"ja-JP": "出力中の軌道修正（実験的）",
-				"ko-KR": "출력 중 교정(실험)",
-				"de-DE": "Korrektur während der Ausgabe (Experiment)",
-				"fr-FR": "Correction en cours d’écriture (expérimental)",
-				"es-ES": "Corrección sobre la marcha (experimental)",
-				"pt-BR": "Correção durante a escrita (experimental)",
-				"ru-RU": "Исправление на лету (эксперимент)",
-				"uk-UA": "Виправлення на льоту (експеримент)",
-				"tr-TR": "Akış içinde düzeltme (deneysel)",
-				"fa-IR": "اصلاح در میانهٔ خروجی (آزمایشی)"
+				"zh": "写偏即停",
+				"en": "Mid-stream correction",
+				"zh-TW": "寫偏即停",
+				"ja-JP": "出力中の軌道修正",
+				"ko-KR": "출력 중 교정",
+				"de-DE": "Korrektur während der Ausgabe",
+				"fr-FR": "Correction en cours d’écriture",
+				"es-ES": "Corrección sobre la marcha",
+				"pt-BR": "Correção durante a escrita",
+				"ru-RU": "Исправление на лету",
+				"uk-UA": "Виправлення на льоту",
+				"tr-TR": "Akış içinde düzeltme",
+				"fa-IR": "اصلاح در میانهٔ خروجی"
 			},
 			"summary": {
 				"zh": "语义版 TTSR：不用正则，而由判定器发现模型写偏，中断输出、摆出规则、从原处继续。默认关闭；开启后每隔一段输出就会多一次判定调用。",
@@ -5614,7 +5838,7 @@
 					},
 					"help": {
 						"zh": "从 mu 进程启动时算起，0 表示不设。环境变量 MU_TIME_BUDGET_S 优先，评测框架用它按任务的超时来设。子代理不用这个预算。",
-						"en": "Counted from when the mu process starts; 0 means none. The environment variable MU_TIME_BUDGET_S takes precedence, and a benchmark harness sets it from the task's timeout. Sub-agents ignore the budget.",
+						"en": "Counted from when the mu process starts; 0 means none. The environment variable MU_TIME_BUDGET_S takes precedence, and a benchmark harness sets it from the task's timeout. Subagents ignore the budget.",
 						"zh-TW": "從 mu 啟動時算起，0 表示不設。環境變數 MU_TIME_BUDGET_S 優先，評測框架會依任務的逾時來設定它。子代理不套用這個預算。",
 						"ja-JP": "mu のプロセスの起動時から数えます。0 にすると予算なしになります。環境変数 MU_TIME_BUDGET_S が優先され、ベンチマークのハーネスはタスクのタイムアウトからこれを設定します。サブエージェントはこの予算を無視します。",
 						"ko-KR": "mu 프로세스가 시작된 때부터 셉니다. 0이면 예산을 두지 않습니다. 환경 변수 MU_TIME_BUDGET_S가 우선하며, 벤치마크 하네스는 작업의 타임아웃으로 이 값을 설정합니다. 하위 에이전트는 이 예산을 따르지 않습니다.",
@@ -5684,7 +5908,7 @@
 			},
 			"summary": {
 				"zh": "一次回复只思考、迟迟不写字也不调用工具，到时限就打断，用同样的思考强度重问一次，并把它想到哪一步带给它，让它先动手再接着想。重问的那一次不再打断。",
-				"en": "When a reply has only been thinking for too long, with no text and no tool call yet, it is cut and asked again at the same reasoning effort. The retry is told where the reasoning had gotten to and asked to act on it first. The retry itself is never cut.",
+				"en": "When a reply has done nothing but think for too long, with no text and no tool call yet, it's cut off and retried at the same reasoning effort. The retry is told how far the reasoning got and asked to act on it first. The retry itself is never cut off.",
 				"zh-TW": "一次回覆只顧著思考太久，還沒寫字也沒呼叫工具，就會被打斷，以同樣的思考強度重問一次。重問時會告訴它原本想到哪一步，請它先動手再接著想。重問的那一次不會再被打斷。",
 				"ja-JP": "返信が考えるばかりで長くかかり、まだテキストもツール呼び出しもない場合は、打ち切って同じ思考レベルで聞き直します。聞き直すときは推論がどこまで進んでいたかを伝え、まずそれをもとに手を動かすよう求めます。聞き直した返信は打ち切りません。",
 				"ko-KR": "응답이 텍스트도 도구 호출도 없이 너무 오래 생각만 하고 있으면 중단하고 같은 사고 수준으로 다시 묻습니다. 다시 물을 때는 추론이 어디까지 갔는지 알려 주고, 먼저 그에 따라 행동하라고 요청합니다. 다시 묻는 응답은 중단하지 않습니다.",
@@ -6368,6 +6592,21 @@
 						"tr-TR": "Panonun dili",
 						"fa-IR": "زبان تابلو"
 					},
+					"help": {
+						"zh": "自动：模型写的话跟着你发消息用的语言，看板上固定的句子跟着应用的界面语言。",
+						"en": "Auto: what the model writes follows the language of your messages; the board's fixed lines follow the app's language.",
+						"zh-TW": "自動：模型寫的話跟著你發訊息用的語言，看板上固定的句子跟著應用程式的介面語言。",
+						"ja-JP": "自動：モデルが書く文はあなたのメッセージの言語に合わせ、ボードの決まった文はアプリの表示言語に合わせます。",
+						"ko-KR": "자동: 모델이 쓰는 글은 여러분이 보내는 메시지의 언어를 따르고, 보드의 정해진 문장은 앱의 언어를 따릅니다.",
+						"de-DE": "Automatisch: Was das Modell schreibt, folgt der Sprache deiner Nachrichten; die festen Zeilen der Übersicht folgen der Sprache der App.",
+						"fr-FR": "Auto : ce que le modèle écrit suit la langue de vos messages ; les phrases fixes du tableau suivent la langue de l’application.",
+						"es-ES": "Automático: lo que escribe el modelo sigue el idioma de tus mensajes; las frases fijas del tablero siguen el idioma de la aplicación.",
+						"pt-BR": "Automático: o que o modelo escreve segue o idioma das suas mensagens; as frases fixas do painel seguem o idioma do app.",
+						"ru-RU": "Авто: то, что пишет модель, следует языку ваших сообщений; готовые фразы сводки — языку приложения.",
+						"uk-UA": "Авто: те, що пише модель, відповідає мові ваших повідомлень; готові фрази зведення — мові застосунку.",
+						"tr-TR": "Otomatik: modelin yazdıkları mesajlarınızın dilini izler; panonun sabit cümleleri uygulamanın dilini izler.",
+						"fa-IR": "خودکار: آنچه مدل می‌نویسد از زبان پیام‌های شما پیروی می‌کند؛ جمله‌های ثابت تابلو از زبان برنامه."
+					},
 					"choices": [
 						{
 							"value": "auto",
@@ -6558,19 +6797,123 @@
 						"fa-IR": "حداکثر انتظار برای نوشتن تابلو"
 					},
 					"help": {
-						"zh": "超时就用固定的句子说。",
-						"en": "After that, stock phrases are used.",
-						"zh-TW": "逾時就改用固定的句子。",
-						"ja-JP": "それを過ぎると、決まった文を使います。",
-						"ko-KR": "이 시간이 지나면 정해진 문장을 씁니다.",
-						"de-DE": "Danach werden feste Sätze verwendet.",
-						"fr-FR": "Au-delà, des phrases toutes faites sont utilisées.",
-						"es-ES": "Después se usan frases fijas.",
-						"pt-BR": "Depois disso, são usadas frases fixas.",
-						"ru-RU": "После этого используются готовые фразы.",
-						"uk-UA": "Після цього використовуються готові фрази.",
-						"tr-TR": "Sonrasında sabit cümleler kullanılır.",
-						"fa-IR": "پس از آن، جمله‌های ثابت به کار می‌روند."
+						"zh": "这是一轮结束时的上限；干活中途最多等 20 秒，再晚写出来也过时了。超时就用固定的句子说。",
+						"en": "This is the limit when a run ends. Mid-run the writer gets 20 s at most, since a later update would already be out of date. After that, stock phrases are used.",
+						"zh-TW": "這是一輪結束時的上限；做事途中最多等 20 秒，再晚寫出來也過時了。逾時就改用固定的句子。",
+						"ja-JP": "これは実行が終わったときの上限です。作業の途中では最大 20 秒しか待ちません。それより遅い更新はもう古いからです。過ぎると、決まった文を使います。",
+						"ko-KR": "실행이 끝날 때의 한도입니다. 작업 중에는 최대 20초만 기다립니다. 그보다 늦은 업데이트는 이미 낡았기 때문입니다. 이 시간이 지나면 정해진 문장을 씁니다.",
+						"de-DE": "Das gilt am Ende eines Laufs. Während der Arbeit wird höchstens 20 s gewartet, weil ein späteres Update schon veraltet wäre. Danach werden feste Sätze verwendet.",
+						"fr-FR": "C’est la limite à la fin d’une exécution. En cours de route, le rédacteur a 20 s au plus, car une mise à jour plus tardive serait déjà dépassée. Au-delà, des phrases toutes faites sont utilisées.",
+						"es-ES": "Este es el límite al terminar una ejecución. A mitad del trabajo se espera 20 s como máximo, porque una actualización más tardía ya estaría desfasada. Después se usan frases fijas.",
+						"pt-BR": "Este é o limite quando uma execução termina. No meio do trabalho, a espera é de no máximo 20 s, porque uma atualização mais tardia já estaria desatualizada. Depois disso, são usadas frases fixas.",
+						"ru-RU": "Это предел в конце запуска. Во время работы ожидание не дольше 20 с: более позднее обновление уже устарело бы. После этого используются готовые фразы.",
+						"uk-UA": "Це межа наприкінці запуску. Під час роботи очікування не довше 20 с: пізніше оновлення вже було б застарілим. Після цього використовуються готові фрази.",
+						"tr-TR": "Bu, bir çalışma bittiğindeki sınırdır. İş sürerken en fazla 20 sn beklenir, çünkü daha geç bir güncelleme zaten eskimiş olur. Sonrasında sabit cümleler kullanılır.",
+						"fa-IR": "این سقف پایان یک اجراست. در میانهٔ کار حداکثر ۲۰ ثانیه صبر می‌شود، چون به‌روزرسانی دیرتر دیگر کهنه است. پس از آن، جمله‌های ثابت به کار می‌روند."
+					}
+				},
+				{
+					"key": "stallMs",
+					"kind": "number",
+					"default": 60000,
+					"min": 0,
+					"max": 3600000,
+					"unit": {
+						"zh": "毫秒",
+						"en": "ms",
+						"zh-TW": "毫秒",
+						"ja-JP": "ミリ秒",
+						"ko-KR": "밀리초",
+						"de-DE": "ms",
+						"fr-FR": "ms",
+						"es-ES": "ms",
+						"pt-BR": "ms",
+						"ru-RU": "мс",
+						"uk-UA": "мс",
+						"tr-TR": "ms",
+						"fa-IR": "میلی‌ثانیه"
+					},
+					"label": {
+						"zh": "一步跑多久算卡住",
+						"en": "Time before a long step counts as stuck",
+						"zh-TW": "一步跑多久算卡住",
+						"ja-JP": "1 つのステップが止まったとみなすまでの時間",
+						"ko-KR": "한 단계가 멈췄다고 볼 때까지의 시간",
+						"de-DE": "Zeit, bis ein langer Schritt als hängend gilt",
+						"fr-FR": "Délai avant qu’une longue étape soit jugée bloquée",
+						"es-ES": "Tiempo para dar por atascado un paso largo",
+						"pt-BR": "Tempo até um passo longo contar como travado",
+						"ru-RU": "Через сколько долгий шаг считается зависшим",
+						"uk-UA": "Через скільки довгий крок вважається завислим",
+						"tr-TR": "Uzun bir adımın takılmış sayılması için süre",
+						"fa-IR": "زمانی که پس از آن یک گام طولانی گیرکرده به حساب می‌آید"
+					},
+					"help": {
+						"zh": "一个命令跑了这么久，或者一个子代理这么久没有输出，看板就记一行「还在跑」，到 3 倍、10 倍时更新这一行，每次都重新看一眼。0 表示不管。",
+						"en": "When a command runs this long, or a subagent has no output for this long, the board adds a line saying it's still running, updates that line at 3 and 10 times this, and checks again each time. 0 turns this off.",
+						"zh-TW": "一個命令跑了這麼久，或者一個子代理這麼久沒有輸出，看板就記一行「還在跑」，到 3 倍、10 倍時更新這一行，每次都重新看一眼。0 表示不管。",
+						"ja-JP": "コマンドがこれだけ長く実行されている、またはサブエージェントからこれだけ出力がないと、ボードに「まだ実行中」の一行を加え、3 倍と 10 倍の時点でその行を更新し、そのたびに読み直します。0 でオフになります。",
+						"ko-KR": "명령이 이만큼 오래 실행되거나 하위 에이전트가 이만큼 출력이 없으면, 보드에 아직 실행 중이라는 줄을 하나 더하고 3배와 10배가 될 때 그 줄을 고치며 그때마다 다시 살펴봅니다. 0이면 끕니다.",
+						"de-DE": "Läuft ein Befehl so lange oder kommt von einem Unteragenten so lange keine Ausgabe, fügt die Übersicht eine Zeile hinzu, dass er noch läuft, aktualisiert sie beim 3- und 10-Fachen und sieht jedes Mal erneut nach. 0 schaltet das ab.",
+						"fr-FR": "Quand une commande tourne aussi longtemps, ou qu’un sous-agent ne produit rien pendant aussi longtemps, le tableau ajoute une ligne indiquant qu’elle tourne encore, la met à jour à 3 et 10 fois cette durée et jette un nouveau coup d’œil à chaque fois. 0 désactive cela.",
+						"es-ES": "Cuando un comando lleva este tiempo en marcha, o un subagente pasa este tiempo sin dar salida, el tablero añade una línea que dice que sigue en marcha, la actualiza al triple y al décuplo de este tiempo y vuelve a echar un vistazo cada vez. 0 lo desactiva.",
+						"pt-BR": "Quando um comando roda por esse tempo, ou um subagente fica esse tempo sem saída, o painel adiciona uma linha dizendo que ainda está rodando, atualiza essa linha em 3 e 10 vezes esse tempo e faz uma nova leitura a cada vez. 0 desativa isso.",
+						"ru-RU": "Если команда выполняется так долго или субагент столько же молчит, в сводке появляется строка о том, что работа ещё идёт; её обновляют при трёх- и десятикратном значении, и каждый раз сводка просматривается заново. 0 отключает это.",
+						"uk-UA": "Якщо команда виконується так довго або субагент стільки ж мовчить, у зведенні з’являється рядок про те, що робота ще триває; його оновлюють при три- та десятикратному значенні, і щоразу зведення переглядається знову. 0 вимикає це.",
+						"tr-TR": "Bir komut bu kadar uzun sürerse ya da bir alt ajan bu kadar süre çıktı vermezse, pano hâlâ çalıştığını söyleyen bir satır ekler, bu satırı 3 ve 10 katında günceller ve her seferinde yeniden bakar. 0 bunu kapatır.",
+						"fa-IR": "وقتی یک فرمان این‌قدر طول بکشد، یا یک عامل فرعی این‌قدر خروجی ندهد، تابلو یک خط اضافه می‌کند که هنوز در حال اجراست، آن خط را در ۳ و ۱۰ برابر این زمان به‌روز می‌کند و هر بار دوباره نگاه می‌کند. ۰ آن را خاموش می‌کند."
+					}
+				},
+				{
+					"key": "maxStaleMs",
+					"kind": "number",
+					"default": 15000,
+					"min": 0,
+					"max": 300000,
+					"unit": {
+						"zh": "毫秒",
+						"en": "ms",
+						"zh-TW": "毫秒",
+						"ja-JP": "ミリ秒",
+						"ko-KR": "밀리초",
+						"de-DE": "ms",
+						"fr-FR": "ms",
+						"es-ES": "ms",
+						"pt-BR": "ms",
+						"ru-RU": "мс",
+						"uk-UA": "мс",
+						"tr-TR": "ms",
+						"fa-IR": "میلی‌ثانیه"
+					},
+					"label": {
+						"zh": "事情接连发生时，看板最旧多久",
+						"en": "Oldest the board gets while things keep happening",
+						"zh-TW": "事情接連發生時，看板最舊多久",
+						"ja-JP": "次々と動きがあるときのボードの古さの上限",
+						"ko-KR": "일이 계속 일어날 때 보드가 낡아도 되는 최대 시간",
+						"de-DE": "Höchstes Alter der Übersicht, solange ständig etwas passiert",
+						"fr-FR": "Âge maximal du tableau quand les événements s’enchaînent",
+						"es-ES": "Antigüedad máxima del tablero mientras siguen pasando cosas",
+						"pt-BR": "Idade máxima do painel enquanto as coisas continuam acontecendo",
+						"ru-RU": "Насколько устаревшей может быть сводка, пока всё время что-то происходит",
+						"uk-UA": "Наскільки застарілим може бути зведення, поки весь час щось відбувається",
+						"tr-TR": "Sürekli bir şeyler olurken panonun en fazla eskiliği",
+						"fa-IR": "حداکثر کهنگی تابلو وقتی پشت سر هم اتفاقی می‌افتد"
+					},
+					"help": {
+						"zh": "判定器还在读时又发生了新的事，看板一般等下一次再写；但看板已经比这更旧时照写，免得代理一直在忙、看板一直不更新。",
+						"en": "When something new happens while the judge is still reading, the board usually waits for the next check. If it's already older than this, it's rewritten anyway, so a busy agent can't keep it out of date.",
+						"zh-TW": "判定器還在讀時又發生了新的事，看板一般等下一次再寫；但看板已經比這更舊時照寫，免得代理一直在忙、看板一直不更新。",
+						"ja-JP": "判定器が読み取っている間に新しいことが起きると、ボードは通常次の読み取りまで待ちます。すでにこれより古ければそのまま書き直すので、エージェントが忙しくてもボードが古いままになりません。",
+						"ko-KR": "판정기가 아직 읽는 동안 새 일이 생기면 보드는 보통 다음 확인까지 기다립니다. 이미 이보다 오래됐다면 그대로 다시 써서, 에이전트가 바빠도 보드가 낡은 채로 남지 않습니다.",
+						"de-DE": "Passiert etwas Neues, während der Judge noch liest, wartet die Übersicht normalerweise auf die nächste Prüfung. Ist sie schon älter als dieser Wert, wird sie trotzdem neu geschrieben, damit ein beschäftigter Agent sie nicht veralten lässt.",
+						"fr-FR": "Quand du nouveau arrive pendant que le juge lit encore, le tableau attend en général le prochain coup d’œil. S’il est déjà plus ancien que cette durée, il est réécrit quand même, pour qu’un agent très occupé ne le laisse pas dépassé.",
+						"es-ES": "Cuando pasa algo nuevo mientras el juez aún lee, el tablero suele esperar a la siguiente revisión. Si ya es más antiguo que esto, se reescribe igualmente, para que un agente ocupado no lo deje desfasado.",
+						"pt-BR": "Quando algo novo acontece enquanto o juiz ainda está lendo, o painel costuma esperar a próxima leitura. Se ele já for mais antigo que isso, é reescrito mesmo assim, para que um agente ocupado não o deixe desatualizado.",
+						"ru-RU": "Если что-то новое происходит, пока судья ещё читает, сводка обычно ждёт следующего просмотра. Если она уже старше этого значения, её всё равно переписывают, чтобы занятый агент не оставлял её устаревшей.",
+						"uk-UA": "Якщо щось нове стається, поки суддя ще читає, зведення зазвичай чекає наступного перегляду. Якщо воно вже старше за це значення, його все одно переписують, щоб зайнятий агент не залишав його застарілим.",
+						"tr-TR": "Hakem henüz okurken yeni bir şey olursa pano genellikle bir sonraki bakışı bekler. Zaten bundan eskiyse yine de yeniden yazılır; böylece meşgul bir ajan panoyu eskimiş bırakamaz.",
+						"fa-IR": "اگر وقتی داور هنوز در حال خواندن است اتفاق تازه‌ای بیفتد، تابلو معمولاً تا بررسی بعدی صبر می‌کند. اگر از این مقدار کهنه‌تر شده باشد، باز هم بازنویسی می‌شود تا عاملِ پرمشغله آن را کهنه نگه ندارد."
 					}
 				},
 				{
@@ -6717,7 +7060,7 @@
 					},
 					"help": {
 						"zh": "超时就不催了，这次判定也随之取消，不拖住单次运行的退出。",
-						"en": "After this, there's no nudge, and the judge call is cancelled so it doesn't hold up the end of a one-shot run.",
+						"en": "After this, there's no nudge, and the judge call is canceled so it doesn't hold up the end of a one-shot run.",
 						"zh-TW": "超過這個時間就不再提醒，這次判定器呼叫也隨之取消，免得拖住單次執行的結束。",
 						"ja-JP": "これを過ぎると促しはせず、判定器の呼び出しも取り消して、単発実行の終了を遅らせないようにします。",
 						"ko-KR": "이 시간이 지나면 알려 주지 않고, 판정기 호출도 취소해 단발 실행이 끝나는 것을 붙잡지 않게 합니다.",
@@ -6827,7 +7170,7 @@
 					},
 					"help": {
 						"zh": "超时就不催了，这次判定也随之取消，不拖住单次运行的退出。",
-						"en": "After this, there's no nudge, and the judge call is cancelled so it doesn't hold up the end of a one-shot run.",
+						"en": "After this, there's no nudge, and the judge call is canceled so it doesn't hold up the end of a one-shot run.",
 						"zh-TW": "超過這個時間就不再提醒，這次判定器呼叫也隨之取消，免得拖住單次執行的結束。",
 						"ja-JP": "これを過ぎると促しはせず、判定器の呼び出しも取り消して、単発実行の終了を遅らせないようにします。",
 						"ko-KR": "이 시간이 지나면 알려 주지 않고, 판정기 호출도 취소해 단발 실행이 끝나는 것을 붙잡지 않게 합니다.",
@@ -6839,6 +7182,34 @@
 						"uk-UA": "Після цього нагадування немає, а виклик судді скасовується, щоб не затримувати завершення разового запуску.",
 						"tr-TR": "Bu süreden sonra hatırlatma yapılmaz ve hakem çağrısı iptal edilir; böylece tek seferlik bir çalıştırmanın bitişini geciktirmez.",
 						"fa-IR": "پس از این مدت یادآوری‌ای در کار نیست و فراخوانی داور لغو می‌شود تا پایان یک اجرای یک‌باره را معطل نکند."
+					}
+				},
+				{
+					"key": "unattendedPromised",
+					"kind": "number",
+					"default": 1,
+					"min": 0,
+					"max": 5,
+					"label": {
+						"zh": "无人值守时「说了没做」最多催几次",
+						"en": "Unattended: nudges for work it said it would do"
+					},
+					"help": {
+						"zh": "无人值守指 mu --print 和 json 模式的一次性运行。那里每条消息因为「说了要做却没做」最多催这么多次；所有催促加起来仍受上面的次数限制。判定把做完了的「已完成，已创建 …」当成没做完时，第二次催促在基准测试里多花了 4 次请求。",
+						"en": "Unattended means a one-shot mu --print or json-mode run. There, a run is sent back at most this many times per message for work it said it would do; Max nudges per message still caps all nudges together. When the judge mistook a finished \"Done. Created …\" for a promise, the second nudge cost a benchmark run 4 more requests."
+					}
+				},
+				{
+					"key": "promisedAfterToolless",
+					"kind": "boolean",
+					"default": false,
+					"label": {
+						"zh": "无人值守时回应催促没调工具也再催",
+						"en": "Unattended: nudge again after an answer without a tool call"
+					},
+					"help": {
+						"zh": "默认不催：它回应上一次催促时一个工具也没调（比如「工作已经做完了」），就是用停下来作了答，不再说它没做完。什么也没说就停下的一轮照样会被催。",
+						"en": "Off by default: when the agent answered the last nudge without calling a tool (\"The work is already complete\"), it answered by stopping, and isn't told again that it said it would do more. A run that stops without a message is still sent back."
 					}
 				}
 			]
@@ -6997,11 +7368,33 @@
 					"default": false,
 					"label": {
 						"zh": "无人值守的运行也判定通知分流",
-						"en": "Also ask the judge about notices in unattended runs"
+						"en": "Also ask the judge about notices in unattended runs",
+						"zh-TW": "無人值守執行時也判定通知分流",
+						"ja-JP": "無人実行でも通知の振り分けを判定",
+						"ko-KR": "무인 실행에서도 알림 라우팅 판정",
+						"de-DE": "Den Judge auch in unbeaufsichtigten Läufen zu Benachrichtigungen fragen",
+						"fr-FR": "Consulter aussi le juge sur les notifications lors des exécutions sans surveillance",
+						"es-ES": "Consultar también al juez sobre los avisos en ejecuciones desatendidas",
+						"pt-BR": "Consultar o juiz sobre os avisos também em execuções sem supervisão",
+						"ru-RU": "Спрашивать судью об уведомлениях также при запусках без присмотра",
+						"uk-UA": "Запитувати суддю про сповіщення також під час запусків без нагляду",
+						"tr-TR": "Gözetimsiz çalıştırmalarda da bildirimler için hakeme sor",
+						"fa-IR": "پرسیدن از داور دربارهٔ اعلان‌ها در اجراهای بی‌نظارت هم"
 					},
 					"help": {
 						"zh": "无人值守指 mu --print 和 json 模式的一次性运行。默认不问：通知照样按各自的规则投递，和默认的影子模式一样，那里的判定本来也只记录、不生效。",
-						"en": "Unattended means a one-shot mu --print or json-mode run. Off by default: notices go by their own rules, as they do in shadow, the default, where the verdict is only recorded."
+						"en": "Unattended means a one-shot mu --print or json-mode run. Off by default: notices follow their own rules, as they do in shadow mode (the default), where the verdict is only recorded.",
+						"zh-TW": "無人值守指 mu --print 或 json 模式的單次執行。預設關閉：通知照樣依各自的規則送達，和預設的影子模式一樣，那裡的判定本來也只記錄、不生效。",
+						"ja-JP": "無人実行とは mu --print や json モードの単発実行のことです。既定ではオフです。通知はそれぞれのルールで届けます。既定のシャドーモードでも同じで、そこでは判定は記録するだけです。",
+						"ko-KR": "무인 실행은 mu --print 또는 json 모드의 단발 실행을 말합니다. 기본값은 꺼짐입니다. 알림은 각자의 규칙대로 전달됩니다. 기본값인 섀도 모드에서도 마찬가지이며, 거기서 판정은 기록만 됩니다.",
+						"de-DE": "Unbeaufsichtigt heißt: ein einmaliger Lauf mit mu --print oder im json-Modus. Standardmäßig aus: Benachrichtigungen werden nach ihren eigenen Regeln zugestellt, so wie im Schattenmodus, der Voreinstellung, in dem das Urteil nur aufgezeichnet wird.",
+						"fr-FR": "Sans surveillance désigne une exécution unique de mu --print ou en mode json. Désactivé par défaut : les notifications suivent leurs propres règles, comme en mode fantôme, le mode par défaut, où le jugement est seulement enregistré.",
+						"es-ES": "Desatendida significa una ejecución única de mu --print o en modo json. Desactivado de forma predeterminada: los avisos se entregan según sus propias reglas, igual que en el modo sombra, el predeterminado, donde el veredicto solo se registra.",
+						"pt-BR": "Sem supervisão significa uma execução única de mu --print ou no modo json. Desativado por padrão: os avisos seguem as próprias regras, como no modo sombra, o padrão, em que o veredito só é registrado.",
+						"ru-RU": "Без присмотра — это разовый запуск mu --print или в режиме json. По умолчанию выключено: уведомления доставляются по своим правилам, как и в теневом режиме — режиме по умолчанию, — где решение только записывается.",
+						"uk-UA": "Без нагляду — це разовий запуск mu --print або в режимі json. Типово вимкнено: сповіщення доставляються за власними правилами, як і в тіньовому режимі — типовому, — де рішення лише записується.",
+						"tr-TR": "Gözetimsiz, mu --print veya json modundaki tek seferlik bir çalıştırmadır. Varsayılan olarak kapalı: bildirimler kendi kurallarına göre iletilir; varsayılan olan gölge modunda da böyledir ve orada karar yalnızca kaydedilir.",
+						"fa-IR": "بی‌نظارت یعنی یک اجرای یک‌بارهٔ mu --print یا در حالت json. به‌طور پیش‌فرض خاموش است: اعلان‌ها طبق قاعدهٔ خودشان تحویل داده می‌شوند؛ در حالت سایه هم که پیش‌فرض است همین‌طور است و نتیجهٔ داوری فقط ثبت می‌شود."
 					}
 				}
 			]
@@ -7078,7 +7471,7 @@
 					},
 					"help": {
 						"zh": "超时就按 pi 自己的算法决定，这次判定也随之取消。",
-						"en": "After this, pi's own estimate decides, and the judge call is cancelled.",
+						"en": "After this, pi's own estimate decides, and the judge call is canceled.",
 						"zh-TW": "超過這個時間就交給 pi 自己的估算決定，這次判定器呼叫也隨之取消。",
 						"ja-JP": "これを過ぎると pi 自身の見積もりで決め、判定器の呼び出しは取り消します。",
 						"ko-KR": "이 시간이 지나면 pi 자체의 추정으로 정하고, 판정기 호출은 취소합니다.",
@@ -7223,11 +7616,33 @@
 					"default": false,
 					"label": {
 						"zh": "本机和局域网的判定器也保温",
-						"en": "Also keep a judge on this machine or network warm"
+						"en": "Also keep a judge on this machine or network warm",
+						"zh-TW": "本機和區域網路的判定器也保溫",
+						"ja-JP": "このマシンやローカルネットワーク上の判定器も保温",
+						"ko-KR": "이 컴퓨터나 로컬 네트워크의 판정기도 예열",
+						"de-DE": "Auch einen Judge auf diesem Rechner oder im lokalen Netz warm halten",
+						"fr-FR": "Préchauffer aussi un juge sur cette machine ou ce réseau",
+						"es-ES": "Calentar también un juez en esta máquina o en la red local",
+						"pt-BR": "Aquecer também um juiz nesta máquina ou na rede local",
+						"ru-RU": "Прогревать и судью на этом компьютере или в локальной сети",
+						"uk-UA": "Прогрівати й суддю на цьому комп’ютері чи в локальній мережі",
+						"tr-TR": "Bu makinedeki veya yerel ağdaki hakemi de sıcak tut",
+						"fa-IR": "گرم نگه‌داشتن داورِ روی همین دستگاه یا شبکهٔ محلی هم"
 					},
 					"help": {
 						"zh": "判定器地址是 localhost、127.0.0.1、局域网地址或 host.docker.internal 时，默认不保温：在那里建连几乎不花时间，而在一次只答一个问题的服务器上，保温的问题会排在真正的判定前面。",
-						"en": "Off by default for a judge at localhost, 127.0.0.1, a local network address or host.docker.internal: a new connection there costs next to nothing, and on a server that answers one question at a time a probe would queue in front of real ones."
+						"en": "Off by default for a judge at localhost, 127.0.0.1, a local network address or host.docker.internal: a new connection there costs next to nothing, and on a server that answers one question at a time a probe would queue in front of real ones.",
+						"zh-TW": "判定器位址是 localhost、127.0.0.1、區域網路位址或 host.docker.internal 時，預設不保溫：在那裡建立連線幾乎不花時間，而在一次只回答一個問題的伺服器上，保溫的問題會排在真正的判定前面。",
+						"ja-JP": "判定器が localhost、127.0.0.1、ローカルネットワークのアドレス、host.docker.internal にある場合、既定ではオフです。そこでは新しい接続にほとんど時間がかからず、一度に 1 つの問いにしか答えないサーバーでは、保温用の問いが本当の判定の前に並んでしまいます。",
+						"ko-KR": "판정기 주소가 localhost, 127.0.0.1, 로컬 네트워크 주소 또는 host.docker.internal이면 기본값은 꺼짐입니다. 거기서는 새 연결에 드는 시간이 거의 없고, 한 번에 질문 하나만 답하는 서버에서는 예열용 질문이 실제 판정 앞에 줄을 서게 되기 때문입니다.",
+						"de-DE": "Standardmäßig aus für einen Judge unter localhost, 127.0.0.1, einer Adresse im lokalen Netz oder host.docker.internal: Eine neue Verbindung kostet dort so gut wie nichts, und auf einem Server, der eine Frage nach der anderen beantwortet, würde sich eine Warmhaltefrage vor echte Fragen stellen.",
+						"fr-FR": "Désactivé par défaut pour un juge à localhost, 127.0.0.1, une adresse du réseau local ou host.docker.internal : une nouvelle connexion n’y coûte presque rien, et sur un serveur qui répond à une question à la fois, une question de préchauffage passerait devant les vraies.",
+						"es-ES": "Desactivado de forma predeterminada para un juez en localhost, 127.0.0.1, una dirección de la red local o host.docker.internal: ahí una conexión nueva no cuesta casi nada, y en un servidor que responde una pregunta cada vez, una pregunta de calentamiento se pondría en la cola delante de las reales.",
+						"pt-BR": "Desativado por padrão para um juiz em localhost, 127.0.0.1, um endereço da rede local ou host.docker.internal: ali uma conexão nova quase não custa nada, e num servidor que responde uma pergunta por vez, uma pergunta de aquecimento entraria na fila na frente das reais.",
+						"ru-RU": "По умолчанию выключено для судьи на localhost, 127.0.0.1, адресе локальной сети или host.docker.internal: новое соединение там почти ничего не стоит, а на сервере, который отвечает на один вопрос за раз, прогревочный вопрос встал бы в очередь перед настоящими.",
+						"uk-UA": "Типово вимкнено для судді на localhost, 127.0.0.1, адресі локальної мережі чи host.docker.internal: нове з’єднання там майже нічого не коштує, а на сервері, що відповідає на одне запитання за раз, прогрівальне запитання стало б у чергу перед справжніми.",
+						"tr-TR": "localhost, 127.0.0.1, bir yerel ağ adresi ya da host.docker.internal üzerindeki bir hakem için varsayılan olarak kapalı: orada yeni bir bağlantı neredeyse hiçbir şeye mal olmaz, ve aynı anda tek soru yanıtlayan bir sunucuda sıcak tutma sorusu gerçek soruların önünde sıraya girerdi.",
+						"fa-IR": "برای داوری که روی localhost، 127.0.0.1، یک نشانی شبکهٔ محلی یا host.docker.internal است، به‌طور پیش‌فرض خاموش است: آنجا اتصال تازه تقریباً هزینه‌ای ندارد، و روی سروری که هر بار فقط به یک پرسش پاسخ می‌دهد، پرسشِ گرم‌نگه‌داری جلوی پرسش‌های واقعی در صف می‌ایستاد."
 					}
 				},
 				{
@@ -7236,11 +7651,33 @@
 					"default": false,
 					"label": {
 						"zh": "无人值守的运行也保温",
-						"en": "Also keep the connection warm in unattended runs"
+						"en": "Also keep the connection warm in unattended runs",
+						"zh-TW": "無人值守執行時也保溫",
+						"ja-JP": "無人実行でも接続を保温",
+						"ko-KR": "무인 실행에서도 연결 예열",
+						"de-DE": "Die Verbindung auch in unbeaufsichtigten Läufen warm halten",
+						"fr-FR": "Garder aussi la connexion chaude lors des exécutions sans surveillance",
+						"es-ES": "Mantener también caliente la conexión en ejecuciones desatendidas",
+						"pt-BR": "Manter a conexão aquecida também em execuções sem supervisão",
+						"ru-RU": "Прогревать соединение также при запусках без присмотра",
+						"uk-UA": "Прогрівати з’єднання також під час запусків без нагляду",
+						"tr-TR": "Gözetimsiz çalıştırmalarda da bağlantıyı sıcak tut",
+						"fa-IR": "گرم نگه‌داشتن اتصال در اجراهای بی‌نظارت هم"
 					},
 					"help": {
 						"zh": "无人值守指 mu --print 和 json 模式的一次性运行。默认不保温：那里每 50 秒一个的小问题，花的比省下的建连时间还多；线路近时省下的不到 0.1 秒。",
-						"en": "Unattended means a one-shot mu --print or json-mode run. Off by default: there a probe every 50 s costs more than the connection setup it saves, under a tenth of a second on a short route."
+						"en": "Unattended means a one-shot mu --print or json-mode run. Off by default: there a probe every 50 s costs more than the connection setup it saves, under a tenth of a second on a short route.",
+						"zh-TW": "無人值守指 mu --print 或 json 模式的單次執行。預設關閉：那裡每 50 秒一個的小問題，花的比省下的連線時間還多；線路近時省下的不到 0.1 秒。",
+						"ja-JP": "無人実行とは mu --print や json モードの単発実行のことです。既定ではオフです。そこでは 50 秒ごとの保温用の問いのほうが、それで省ける接続の時間より高くつきます。経路が近ければ、省けるのは 0.1 秒未満です。",
+						"ko-KR": "무인 실행은 mu --print 또는 json 모드의 단발 실행을 말합니다. 기본값은 꺼짐입니다. 거기서는 50초마다 보내는 예열용 질문이 그것으로 아끼는 연결 시간보다 더 많이 듭니다. 경로가 가까우면 아끼는 시간은 0.1초도 안 됩니다.",
+						"de-DE": "Unbeaufsichtigt heißt: ein einmaliger Lauf mit mu --print oder im json-Modus. Standardmäßig aus: Dort kostet eine Warmhaltefrage alle 50 s mehr als der Verbindungsaufbau, den sie spart – auf einer kurzen Strecke weniger als eine Zehntelsekunde.",
+						"fr-FR": "Sans surveillance désigne une exécution unique de mu --print ou en mode json. Désactivé par défaut : là, une question de préchauffage toutes les 50 s coûte plus que la connexion qu’elle épargne, moins d’un dixième de seconde sur un trajet court.",
+						"es-ES": "Desatendida significa una ejecución única de mu --print o en modo json. Desactivado de forma predeterminada: ahí una pregunta de calentamiento cada 50 s cuesta más que la conexión que ahorra, menos de una décima de segundo en una ruta corta.",
+						"pt-BR": "Sem supervisão significa uma execução única de mu --print ou no modo json. Desativado por padrão: ali uma pergunta de aquecimento a cada 50 s custa mais do que a conexão que economiza, menos de um décimo de segundo numa rota curta.",
+						"ru-RU": "Без присмотра — это разовый запуск mu --print или в режиме json. По умолчанию выключено: там прогревочный вопрос каждые 50 с стоит дороже, чем экономит на подключении, — на коротком маршруте меньше десятой доли секунды.",
+						"uk-UA": "Без нагляду — це разовий запуск mu --print або в режимі json. Типово вимкнено: там прогрівальне запитання кожні 50 с коштує більше, ніж заощаджує на підключенні, — на короткому маршруті менше десятої частки секунди.",
+						"tr-TR": "Gözetimsiz, mu --print veya json modundaki tek seferlik bir çalıştırmadır. Varsayılan olarak kapalı: orada her 50 sn'de bir sorulan sıcak tutma sorusu, kazandırdığı bağlantı kurma süresinden daha pahalıya gelir; kısa bir hatta kazanç saniyenin onda birinden azdır.",
+						"fa-IR": "بی‌نظارت یعنی یک اجرای یک‌بارهٔ mu --print یا در حالت json. به‌طور پیش‌فرض خاموش است: آنجا پرسش گرم‌نگه‌داری هر 50 ثانیه بیش از زمان برقراری اتصالی که صرفه‌جویی می‌کند هزینه دارد؛ در مسیر کوتاه این صرفه‌جویی کمتر از یک‌دهم ثانیه است."
 					}
 				}
 			]
@@ -9004,11 +9441,33 @@
 					"default": false,
 					"label": {
 						"zh": "无人值守的运行和子代理也用完整的身份说明",
-						"en": "Full identity note in unattended runs and subagents"
+						"en": "Full identity note in unattended runs and subagents",
+						"zh-TW": "無人值守執行和子代理也用完整的身分說明",
+						"ja-JP": "無人実行とサブエージェントでも完全な自己紹介を使う",
+						"ko-KR": "무인 실행과 하위 에이전트에서도 전체 신원 안내 사용",
+						"de-DE": "Vollständiger Hinweis zur Identität in unbeaufsichtigten Läufen und Unteragenten",
+						"fr-FR": "Note d’identité complète lors des exécutions sans surveillance et dans les sous-agents",
+						"es-ES": "Nota de identidad completa en ejecuciones desatendidas y subagentes",
+						"pt-BR": "Nota de identidade completa em execuções sem supervisão e subagentes",
+						"ru-RU": "Полная заметка о том, что это mu, при запусках без присмотра и в субагентах",
+						"uk-UA": "Повна примітка про ідентичність під час запусків без нагляду та в субагентах",
+						"tr-TR": "Gözetimsiz çalıştırmalarda ve alt ajanlarda tam kimlik notu",
+						"fa-IR": "یادداشت معرفی کامل در اجراهای بی‌نظارت و عامل‌های فرعی هم"
 					},
 					"help": {
 						"zh": "无人值守指 mu --print 和 json 模式的一次性运行。默认那里和子代理里只说必要的：不提要人输入的命令、可能没有的工具，pi 的文档目录缩成一行路径。每次请求约省 375 个词元。",
-						"en": "Unattended means a one-shot mu --print or json-mode run. Off by default: there and in subagents the note leaves out commands to type and tools the run may not have, and pi's list of docs becomes one line with the path. That saves about 375 tokens per request."
+						"en": "Unattended means a one-shot mu --print or json-mode run. Off by default: there and in subagents the note leaves out commands to type and tools the run may not have, and pi's list of docs becomes one line with the path. That saves about 375 tokens per request.",
+						"zh-TW": "無人值守指 mu --print 或 json 模式的單次執行。預設關閉：那裡和子代理裡只說必要的，不提要人輸入的指令、可能沒有的工具，pi 的文件目錄縮成一行路徑。每次請求約省 375 個 token。",
+						"ja-JP": "無人実行とは mu --print や json モードの単発実行のことです。既定ではオフです。そこやサブエージェントでは、自己紹介から入力用のコマンドや、その実行にないかもしれないツールを省き、pi のドキュメント一覧はパスを示す 1 行にまとめます。これでリクエストごとに約 375 トークン節約できます。",
+						"ko-KR": "무인 실행은 mu --print 또는 json 모드의 단발 실행을 말합니다. 기본값은 꺼짐입니다. 거기와 하위 에이전트에서는 안내에서 직접 입력하는 명령과 그 실행에 없을 수도 있는 도구를 빼고, pi의 문서 목록은 경로 한 줄로 줄입니다. 그러면 요청마다 약 375토큰을 아낍니다.",
+						"de-DE": "Unbeaufsichtigt heißt: ein einmaliger Lauf mit mu --print oder im json-Modus. Standardmäßig aus: Dort und in Unteragenten lässt der Hinweis Befehle zum Eintippen und Tools weg, die der Lauf vielleicht nicht hat, und die Liste der Dokumentation von pi wird zu einer Zeile mit dem Pfad. Das spart etwa 375 Tokens pro Anfrage.",
+						"fr-FR": "Sans surveillance désigne une exécution unique de mu --print ou en mode json. Désactivé par défaut : là et dans les sous-agents, la note omet les commandes à taper et les outils que l’exécution n’a peut-être pas, et la liste des docs de pi se réduit à une ligne avec le chemin. Cela économise environ 375 jetons par requête.",
+						"es-ES": "Desatendida significa una ejecución única de mu --print o en modo json. Desactivado de forma predeterminada: ahí y en los subagentes, la nota omite los comandos que se teclean y las herramientas que puede que la ejecución no tenga, y la lista de documentos de pi queda en una línea con la ruta. Así se ahorran unos 375 tokens por solicitud.",
+						"pt-BR": "Sem supervisão significa uma execução única de mu --print ou no modo json. Desativado por padrão: ali e nos subagentes, a nota omite comandos para digitar e ferramentas que a execução talvez não tenha, e a lista de documentos do pi vira uma linha com o caminho. Isso economiza cerca de 375 tokens por solicitação.",
+						"ru-RU": "Без присмотра — это разовый запуск mu --print или в режиме json. По умолчанию выключено: там и в субагентах заметка опускает команды для ввода и инструменты, которых у запуска может не быть, а список документации pi сокращается до одной строки с путём. Это экономит около 375 токенов на запрос.",
+						"uk-UA": "Без нагляду — це разовий запуск mu --print або в режимі json. Типово вимкнено: там і в субагентах примітка пропускає команди для введення й інструменти, яких у запуску може не бути, а список документації pi скорочується до одного рядка зі шляхом. Це заощаджує близько 375 токенів на запит.",
+						"tr-TR": "Gözetimsiz, mu --print veya json modundaki tek seferlik bir çalıştırmadır. Varsayılan olarak kapalı: orada ve alt ajanlarda not, yazılacak komutları ve çalıştırmada olmayabilecek araçları dışarıda bırakır; pi'nin belge listesi de yolu içeren tek bir satıra iner. Bu, istek başına yaklaşık 375 jeton tasarruf sağlar.",
+						"fa-IR": "بی‌نظارت یعنی یک اجرای یک‌بارهٔ mu --print یا در حالت json. به‌طور پیش‌فرض خاموش است: آنجا و در عامل‌های فرعی، یادداشت فرمان‌هایی را که باید تایپ شوند و ابزارهایی را که ممکن است آن اجرا نداشته باشد کنار می‌گذارد، و فهرست مستندات pi به یک خط با مسیر آن کوتاه می‌شود. این کار در هر درخواست حدود 375 توکن صرفه‌جویی می‌کند."
 					}
 				}
 			]

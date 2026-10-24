@@ -1,0 +1,657 @@
+import { execFileSync } from "node:child_process";
+import { randomBytes } from "node:crypto";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statfsSync, writeFileSync } from "node:fs";
+import { homedir, release, totalmem } from "node:os";
+import { join } from "node:path";
+import {
+	type ConfigFiles,
+	currentTiers,
+	disableLocal,
+	disableMude,
+	enableLocal,
+	judgeSetting,
+	type LocalJudge,
+	MUDE,
+	MUDE_JUDGE,
+	mudeInTiers,
+	readState,
+} from "./config.ts";
+import { DownloadError, downloadedBytes, downloadFiles, huggingFaceToken, missingFiles } from "./download.ts";
+import { fileUrl, MUDE_BYTES, MUDE_FILES, MUDE_MODEL, MUDE_REPO, MUDE_REVISION, type MudeFile } from "./manifest.ts";
+import { listRecords, localJudgeOf, modelPaths } from "./models.ts";
+import { type MudePaths, mudePaths } from "./paths.ts";
+import { downloadUv, ensureVenv, findUv, venvReady } from "./python.ts";
+import {
+	choosePort,
+	DEFAULT_PORT,
+	health,
+	portFree,
+	readPid,
+	StartStopped,
+	serverAlive,
+	serverMemory,
+	startServer,
+	stopServer,
+} from "./server.ts";
+
+/**
+ * `mu judge mude`: installs mude 1.0, mu's decision model optimized for coding, on this Mac and makes it mu's judge. One command
+ * downloads the model (1.8 GB, every file checked against its pinned sha256), makes its Python environment, starts its
+ * server on 127.0.0.1 and puts it first in mu.json. The desktop app runs the same commands with --json.
+ */
+
+const USAGE = `mu judge mude: mude 1.0, mu's own decision model optimized for coding, as the judge on this Mac
+(Apple silicon, macOS 14 or later)
+
+  mu judge mude install [--local-only]   download it (${(MUDE_BYTES / 1e9).toFixed(1)} GB), set it up, start it and make it the judge;
+                                         after a stop (Ctrl-C, a lost connection, a power cut), it picks up where it left off
+  mu judge mude enable [--local-only | --with-fallback]
+                                         make it the judge again, or change what happens when it can't answer
+  mu judge mude disable                  back to the judges from before, and stop its server
+  mu judge mude start | stop             start or stop its server (about 4 GB of memory while it runs)
+  mu judge mude status                   what is installed, running and enabled
+  mu judge mude uninstall                disable it and delete the model and its Python environment
+
+What mude 1.0 cannot answer, because its server is not running or it is unsure, goes to the judges that were there
+before it (Jev by default): those are hosted, so what they read leaves this machine. With --local-only, it is the
+only judge, and such a decision takes its fallback instead. Add --json for one JSON object per line.
+`;
+
+export interface Out {
+	step(step: string, message: string): void;
+	progress(event: { file: string; done: number; total: number; checking: boolean }): void;
+	line(text: string): void;
+	status(status: MudeStatus): void;
+	error(message: string, kind?: string): void;
+}
+
+export function jsonOut(write: (text: string) => void): Out {
+	const emit = (value: Record<string, unknown>) => write(`${JSON.stringify(value)}\n`);
+	let last = 0;
+	return {
+		step: (step, message) => emit({ type: "step", step, message }),
+		progress: (event) => {
+			const now = Date.now();
+			if (now - last < 250 && event.done < event.total && !event.checking) return;
+			last = now;
+			emit({ type: "progress", ...event });
+		},
+		line: (text) => emit({ type: "log", line: text }),
+		status: (status) => emit({ type: "status", ...status }),
+		error: (message, kind) => emit({ type: "error", message, kind }),
+	};
+}
+
+export function humanOut(write: (text: string) => void, tty: boolean, pkg: Package = MUDE_PACKAGE): Out {
+	let shown = -1;
+	return {
+		step: (_step, message) => {
+			if (shown >= 0 && tty) write("\n");
+			shown = -1;
+			write(`${message}\n`);
+		},
+		progress: ({ done, total, checking }) => {
+			const percent = total > 0 ? Math.floor((done / total) * 100) : 100;
+			if (tty) {
+				write(
+					`\r  ${percent}%  ${(done / 1e9).toFixed(2)} of ${(total / 1e9).toFixed(2)} GB${checking ? "  (checking)" : ""}   `,
+				);
+				shown = percent;
+			} else if (percent >= shown + 10 || percent === 100) {
+				shown = percent - (percent % 10);
+				write(`  ${percent}%\n`);
+			}
+		},
+		line: (text) => write(`  ${text}\n`),
+		status: (status) => write(describe(status, pkg)),
+		error: (message) => {
+			// Below the progress line, not on it.
+			if (shown >= 0 && tty) write("\n");
+			shown = -1;
+			write(`${message}\n`);
+		},
+	};
+}
+
+export interface MudeStatus {
+	/** Its name in the judge order: mude, or an added model's id. */
+	readonly name: string;
+	readonly supported: boolean;
+	readonly problems: readonly string[];
+	readonly installed: boolean;
+	/** Bytes of the model on disk, partly downloaded files included: above 0 while not installed, an install stopped part way. */
+	readonly downloadedBytes: number;
+	readonly pythonReady: boolean;
+	readonly running: boolean;
+	readonly ready: boolean;
+	readonly port: number;
+	readonly pid?: number;
+	readonly memoryBytes?: number;
+	readonly enabled: boolean;
+	readonly localOnly: boolean;
+	readonly fallback: readonly string[];
+	readonly model: string;
+	readonly folder: string;
+	readonly log: string;
+}
+
+function describe(status: MudeStatus, pkg: Package): string {
+	const lines: string[] = [];
+	if (!status.supported) {
+		lines.push(`${pkg.label} can't run here: ${status.problems.join("; ")}`);
+		return `${lines.join("\n")}\n`;
+	}
+	lines.push(
+		`model     ${
+			status.installed
+				? `installed (${pkg.repo} @ ${pkg.revision.slice(0, 7)})`
+				: status.downloadedBytes > 0
+					? `partly downloaded (${(status.downloadedBytes / 1e9).toFixed(1)} of ${(pkg.bytes / 1e9).toFixed(1)} GB): ${pkg.install} resumes it`
+					: `not installed: ${pkg.install}`
+		}`,
+	);
+	if (status.installed && !status.pythonReady) lines.push(`python    not set up: ${pkg.install}`);
+	lines.push(
+		`server    ${status.ready ? `running on 127.0.0.1:${status.port}${status.memoryBytes ? ` · ${(status.memoryBytes / 1e9).toFixed(1)} GB of memory` : ""}` : status.running ? `starting on 127.0.0.1:${status.port}` : "stopped"}`,
+	);
+	if (status.enabled) {
+		lines.push(
+			status.localOnly
+				? `judge     ${pkg.label} only: a decision it cannot answer takes its fallback, and nothing goes to a hosted judge`
+				: `judge     ${pkg.label}, then ${status.fallback.join(" > ")} for what it cannot answer (what those read leaves this machine)`,
+		);
+	} else {
+		lines.push(`judge     ${status.installed ? `not enabled: ${pkg.again("enable")}` : "not enabled"}`);
+	}
+	lines.push(`folder    ${status.folder}`);
+	return `${lines.join("\n")}\n`;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+
+export interface Context {
+	readonly paths: MudePaths;
+	readonly files: ConfigFiles;
+	readonly lockFile: string;
+	readonly env: NodeJS.ProcessEnv;
+	/** Stops a download (Ctrl-C, or the app ending the install): what it got so far stays for the next install. */
+	readonly signal?: AbortSignal;
+	/** What is installed and run: mude 1.0 unless said (a decision model added from Hugging Face, models-command.ts). */
+	readonly pkg?: Package;
+}
+
+/** What an install downloads, sets up and runs as a judge: mude 1.0, or a decision model added from Hugging Face. */
+export interface Package {
+	/** How messages name it: "mude 1.0", or an added model's id. */
+	readonly label: string;
+	readonly repo: string;
+	readonly revision: string;
+	readonly files: readonly MudeFile[];
+	readonly bytes: number;
+	readonly judge: LocalJudge;
+	/** The model name its server answers to. */
+	readonly served: string;
+	/** The command that installs it, or goes on with an install that stopped. */
+	readonly install: string;
+	/** The command that does `what` (start, enable…) again, for "run … again". */
+	readonly again: (what: string) => string;
+}
+
+export const MUDE_PACKAGE: Package = {
+	label: "mude 1.0",
+	repo: MUDE_REPO,
+	revision: MUDE_REVISION,
+	files: MUDE_FILES,
+	bytes: MUDE_BYTES,
+	judge: MUDE_JUDGE,
+	served: MUDE_MODEL,
+	install: "mu judge mude install",
+	again: (what) => `mu judge mude ${what}`,
+};
+
+const pkgOf = (ctx: Context): Package => ctx.pkg ?? MUDE_PACKAGE;
+
+/** What keeps mude from running on this machine, if anything. */
+export function problems(
+	options: { platform?: string; arm64?: boolean; darwinMajor?: number; memoryBytes?: number } = {},
+): string[] {
+	const platform = options.platform ?? process.platform;
+	if (platform !== "darwin") return ["it needs a Mac with Apple silicon (an M1 or newer)"];
+	const out: string[] = [];
+	const arm64 = options.arm64 ?? appleSilicon();
+	if (!arm64) out.push("it needs Apple silicon (an M1 or newer); this Mac has an Intel processor");
+	// Darwin 23 is macOS 14.
+	const darwinMajor = options.darwinMajor ?? Number.parseInt(release().split(".")[0] ?? "0", 10);
+	if (darwinMajor < 23) out.push("it needs macOS 14 or later");
+	const memory = options.memoryBytes ?? totalmem();
+	if (memory < 8 * 1024 ** 3)
+		out.push(
+			`it needs 8 GB of memory or more (it uses about 4 GB); this Mac has ${Math.round(memory / 1024 ** 3)} GB`,
+		);
+	return out;
+}
+
+function appleSilicon(): boolean {
+	if (process.arch === "arm64") return true;
+	// A Node running under Rosetta reports x64 on an Apple silicon Mac.
+	try {
+		return execFileSync("/usr/sbin/sysctl", ["-n", "hw.optional.arm64"], { encoding: "utf8" }).trim() === "1";
+	} catch {
+		return false;
+	}
+}
+
+function freeBytes(path: string): number | undefined {
+	let dir = path;
+	while (!existsSync(dir)) {
+		const parent = join(dir, "..");
+		if (parent === dir) return undefined;
+		dir = parent;
+	}
+	try {
+		const stats = statfsSync(dir);
+		return stats.bavail * stats.bsize;
+	} catch {
+		return undefined;
+	}
+}
+
+const gb = (bytes: number) => (bytes / 1e9).toFixed(1);
+
+/**
+ * Whether an install makes mude the only judge: as its flags say, else as the install it goes on from was asked (one
+ * that stopped part way left install.json), else as it is now. An install run again over a working one, or reached
+ * through `mu judge model add` with mude's own repo, keeps local only as enable does.
+ */
+export function installLocalOnly(ctx: Context, args: readonly string[]): boolean {
+	if (args.includes("--local-only")) return true;
+	if (args.includes("--with-fallback")) return false;
+	try {
+		const value: unknown = JSON.parse(readFileSync(ctx.paths.install, "utf8"));
+		if (typeof value === "object" && value !== null && "localOnly" in value) return value.localOnly === true;
+	} catch {
+		// No install to go on from.
+	}
+	const current = judgeSetting(ctx.files, pkgOf(ctx).judge.name);
+	return current.enabled && current.localOnly;
+}
+
+/** When `pid` started, as ps says; with the pid, it tells a process from one that took over the number since. */
+function startedAt(pid: number): string | undefined {
+	try {
+		return execFileSync("/bin/ps", ["-p", String(pid), "-o", "lstart="], { encoding: "utf8" }).trim() || undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * Keeps two installs (another terminal, `mu setup`, the desktop app) from downloading into the same files at once,
+ * where one renames a file the other is still writing. `install.lock` names the process installing; one whose process
+ * is gone (a power cut, a kill) is taken over. Returns its release.
+ */
+export function holdInstall(paths: MudePaths, pkg: Package = MUDE_PACKAGE): () => void {
+	mkdirSync(paths.root, { recursive: true });
+	const mine = `${JSON.stringify({ pid: process.pid, started: startedAt(process.pid) ?? "" })}\n`;
+	try {
+		writeFileSync(paths.installLock, mine, { flag: "wx" });
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+		let holder: { pid?: unknown; started?: unknown } = {};
+		try {
+			holder = JSON.parse(readFileSync(paths.installLock, "utf8"));
+		} catch {
+			// Unreadable: left by a process that was cut off while writing it.
+		}
+		const pid = typeof holder.pid === "number" ? holder.pid : 0;
+		if (pid > 0 && pid !== process.pid && holder.started && startedAt(pid) === holder.started) {
+			throw new Error(
+				`Another ${pkg.label} install is running (process ${pid}). Wait for it to finish, or stop it, then run ${pkg.install} again`,
+			);
+		}
+		writeFileSync(paths.installLock, mine);
+	}
+	return () => {
+		try {
+			if (readFileSync(paths.installLock, "utf8") === mine) rmSync(paths.installLock, { force: true });
+		} catch {
+			// Gone already.
+		}
+	};
+}
+
+function installed(ctx: Context): boolean {
+	return missingFiles(ctx.paths.model, pkgOf(ctx).files).length === 0;
+}
+
+function key(ctx: Context): string {
+	try {
+		const existing = readFileSync(ctx.paths.key, "utf8").trim();
+		if (existing) return existing;
+	} catch {
+		// A first install.
+	}
+	mkdirSync(ctx.paths.root, { recursive: true });
+	const made = randomBytes(32).toString("hex");
+	writeFileSync(ctx.paths.key, `${made}\n`, { mode: 0o600 });
+	return made;
+}
+
+/** The port to start on: the one from before when it is free or already ours, else 8790, else any free one. */
+async function port(ctx: Context): Promise<number> {
+	const previous = readState(ctx.paths)?.port;
+	if (previous && (serverAlive(ctx.paths) || (await portFree(previous)))) return previous;
+	return choosePort(DEFAULT_PORT);
+}
+
+export async function status(ctx: Context): Promise<MudeStatus> {
+	const pkg = pkgOf(ctx);
+	const found = problems();
+	const state = readState(ctx.paths);
+	const at = state?.port ?? DEFAULT_PORT;
+	const pid = readPid(ctx.paths);
+	const running = serverAlive(ctx.paths, pid);
+	const ready = running && (await health(at))?.status === "ready";
+	const setting = judgeSetting(ctx.files, pkg.judge.name);
+	return {
+		name: pkg.judge.name,
+		supported: found.length === 0,
+		problems: found,
+		installed: installed(ctx),
+		downloadedBytes: downloadedBytes(ctx.paths.model, pkg.files),
+		pythonReady: venvReady(ctx.paths, ctx.lockFile),
+		running,
+		ready,
+		port: at,
+		pid: running ? pid : undefined,
+		memoryBytes: running ? serverMemory(pid) : undefined,
+		enabled: setting.enabled,
+		localOnly: setting.localOnly,
+		fallback: setting.fallback,
+		model: `${pkg.repo}@${pkg.revision}`,
+		folder: ctx.paths.root,
+		log: ctx.paths.log,
+	};
+}
+
+export async function ensureInstalled(ctx: Context, out: Out): Promise<void> {
+	const pkg = pkgOf(ctx);
+	const missing = missingFiles(ctx.paths.model, pkg.files);
+	if (missing.length > 0) {
+		const need = missing.reduce((sum, file) => sum + file.size, 0);
+		const already = downloadedBytes(ctx.paths.model, pkg.files);
+		const free = freeBytes(ctx.paths.root);
+		// The bytes still to come (what a stopped install left is on the disk already), the Python environment (about
+		// 1 GB) and room to spare.
+		const room = pkg.bytes - already + 2e9;
+		if (free !== undefined && free < room) {
+			throw new Error(
+				`Not enough free disk space: ${pkg.label} needs about ${gb(room)} GB, and only ${gb(free)} GB are free. Free up some space, then run ${pkg.install} again`,
+			);
+		}
+		out.step(
+			"download",
+			already > 0
+				? `Resuming the ${pkg.label} download (${pkg.repo}): ${gb(already)} of ${gb(pkg.bytes)} GB already downloaded`
+				: `Downloading ${pkg.label} (${pkg.repo}, ${gb(need)} GB) and checking every file`,
+		);
+		try {
+			await downloadFiles({
+				dir: ctx.paths.model,
+				files: pkg.files,
+				url: (path) => fileUrl(pkg.repo, pkg.revision, path, ctx.env.HF_ENDPOINT || undefined),
+				token: huggingFaceToken(ctx.env),
+				onProgress: (event) => out.progress(event),
+				signal: ctx.signal,
+			});
+		} catch (error) {
+			if (error instanceof DownloadError && error.kind === "aborted") {
+				throw new DownloadError(
+					`Stopped with ${gb(downloadedBytes(ctx.paths.model, pkg.files))} of ${gb(pkg.bytes)} GB downloaded. Run ${pkg.install} to resume`,
+					"aborted",
+				);
+			}
+			throw error;
+		}
+	}
+	if (!venvReady(ctx.paths, ctx.lockFile)) {
+		out.step("python", `Setting up the Python environment for ${pkg.label} (MLX, transformers; about 1 GB, once)`);
+		try {
+			let uv = findUv(ctx.paths, ctx.env);
+			if (!uv) uv = await downloadUv(ctx.paths, { onLine: (line) => out.line(line), signal: ctx.signal });
+			await ensureVenv(ctx.paths, ctx.lockFile, uv, { onLine: (line) => out.line(line), env: ctx.env });
+		} catch (error) {
+			// Ctrl-C reaches uv too, which then fails: that is a stop, not a broken environment.
+			if (ctx.signal?.aborted) {
+				throw new DownloadError(
+					`Stopped while setting up the Python environment. Run ${pkg.install} to resume`,
+					"aborted",
+				);
+			}
+			throw error;
+		}
+	}
+}
+
+export function requireInstalled(ctx: Context): void {
+	if (!installed(ctx) || !venvReady(ctx.paths, ctx.lockFile)) {
+		const pkg = pkgOf(ctx);
+		throw new Error(`${pkg.label} is not installed here yet: ${pkg.install}`);
+	}
+}
+
+/**
+ * Starts the server for `command` (install, enable or start). A stop while it loads ends the wait, and the server if
+ * this start began it.
+ */
+export async function start(ctx: Context, out: Out, command: string, wait = true): Promise<number> {
+	const pkg = pkgOf(ctx);
+	const at = await port(ctx);
+	out.step(
+		"start",
+		serverAlive(ctx.paths)
+			? `The ${pkg.label} server is running on 127.0.0.1:${at}`
+			: `Starting the ${pkg.label} server on 127.0.0.1:${at} (loading the model takes a few seconds)`,
+	);
+	try {
+		await startServer(ctx.paths, { port: at, key: key(ctx), wait, signal: ctx.signal, name: pkg.served });
+	} catch (error) {
+		if (error instanceof StartStopped) {
+			throw new DownloadError(
+				error.serverStopped
+					? `Stopped while the ${pkg.label} server was starting, and stopped the server too. Run ${pkg.again(command)} again to finish`
+					: `Stopped waiting for the ${pkg.label} server, which is still starting. Run ${pkg.again(command)} again to finish`,
+				"aborted",
+			);
+		}
+		throw error;
+	}
+	return at;
+}
+
+/** The other decision models on this Mac: mude and the ones added from Hugging Face, but for the one `ctx` runs. */
+function others(ctx: Context): { judge: LocalJudge; paths: MudePaths }[] {
+	const name = pkgOf(ctx).judge.name;
+	const home = ctx.files.home;
+	const found: { judge: LocalJudge; paths: MudePaths }[] = [];
+	if (name !== MUDE) found.push({ judge: MUDE_JUDGE, paths: mudePaths(home) });
+	for (const record of listRecords(home)) {
+		if (record.id !== name) found.push({ judge: localJudgeOf(record.id), paths: modelPaths(home, record) });
+	}
+	return found;
+}
+
+/**
+ * Stops the servers of the other decision models before this one starts: one runs at a time, as each holds about 4 GB
+ * of memory. One that is the judge stays the judge until this one takes its place (enable), and its server starts
+ * again with the next mu session should this one fail to start.
+ */
+export async function stopOthers(ctx: Context): Promise<void> {
+	for (const other of others(ctx)) await stopServer(other.paths);
+}
+
+/** Puts this decision model first in the judge order, in place of any other one on this Mac. */
+export async function enable(ctx: Context, out: Out, at: number, localOnly: boolean): Promise<void> {
+	const pkg = pkgOf(ctx);
+	const tiers = currentTiers(ctx.files);
+	for (const other of others(ctx)) {
+		if (tiers.includes(other.judge.name)) disableLocal(other.judge, other.paths, ctx.files);
+	}
+	const order = enableLocal(pkg.judge, ctx.paths, ctx.files, { port: at, key: key(ctx), localOnly });
+	out.step(
+		"enable",
+		localOnly
+			? `${pkg.label} is the judge, on its own. New mu sessions use it; one that is open now picks it up when it starts again.`
+			: `${pkg.label} is the judge, with ${order.slice(1).join(" > ")} behind it for what it cannot answer. New mu sessions use it.`,
+	);
+}
+
+/**
+ * Downloads, sets up and starts the decision model, then makes it the judge. An install that goes on from one that
+ * stopped keeps what that one was asked for, unless told otherwise: local only stays local only.
+ */
+export async function install(ctx: Context, out: Out, args: readonly string[], holdAlso?: MudePaths): Promise<void> {
+	const localOnly = installLocalOnly(ctx, args);
+	const release = holdInstall(ctx.paths, pkgOf(ctx));
+	// An added model sets up mude's Python environment when there is none yet: no mude install may do so at once.
+	let releaseAlso: (() => void) | undefined;
+	try {
+		if (holdAlso && !venvReady(ctx.paths, ctx.lockFile)) releaseAlso = holdInstall(holdAlso);
+		writeFileSync(ctx.paths.install, `${JSON.stringify({ localOnly })}\n`);
+		await ensureInstalled(ctx, out);
+		await stopOthers(ctx);
+		const at = await start(ctx, out, "install");
+		await enable(ctx, out, at, localOnly);
+		rmSync(ctx.paths.install, { force: true });
+	} finally {
+		releaseAlso?.();
+		release();
+	}
+}
+
+/** Makes the installed decision model the judge again, local only or with the judges behind it as `args` say. */
+export async function enableCommand(ctx: Context, out: Out, args: readonly string[]): Promise<void> {
+	requireInstalled(ctx);
+	const current = judgeSetting(ctx.files, pkgOf(ctx).judge.name);
+	const localOnly = args.includes("--local-only")
+		? true
+		: args.includes("--with-fallback")
+			? false
+			: current.enabled && current.localOnly;
+	await stopOthers(ctx);
+	const at = await start(ctx, out, "enable");
+	await enable(ctx, out, at, localOnly);
+}
+
+export async function main(
+	argv: readonly string[],
+	ctx: Context,
+	write: (text: string) => void,
+	tty = false,
+): Promise<number> {
+	const json = argv.includes("--json");
+	const args = argv.filter((arg) => arg !== "--json");
+	const out = json ? jsonOut(write) : humanOut(write, tty);
+	const command = args[0] ?? "status";
+	const flag = (name: string) => args.includes(name);
+	try {
+		if (command === "help" || command === "--help" || command === "-h") {
+			write(USAGE);
+			return 0;
+		}
+		const unknown = args
+			.slice(1)
+			.find((arg) => !["--local-only", "--with-fallback", "--no-wait", "--yes"].includes(arg));
+		if (unknown) {
+			out.error(`Unknown option for mu judge mude ${command}: ${unknown} (mu judge mude help)`, "usage");
+			return 2;
+		}
+		if (command === "status") {
+			out.status(await status(ctx));
+			return 0;
+		}
+		const found = problems();
+		if (found.length > 0 && command !== "stop" && command !== "disable" && command !== "uninstall") {
+			out.error(`mude 1.0 can't run on this machine: ${found.join("; ")}.`, "unsupported");
+			return 1;
+		}
+		switch (command) {
+			case "install":
+				await install(ctx, out, args);
+				break;
+			case "enable":
+				await enableCommand(ctx, out, args);
+				break;
+			case "disable": {
+				if (!mudeInTiers(ctx.files)) {
+					const stopped = await stopServer(ctx.paths);
+					out.step("disable", `mude 1.0 was not the judge${stopped ? "; its server is stopped" : ""}.`);
+					break;
+				}
+				const tiers = disableMude(ctx.paths, ctx.files);
+				const stopped = await stopServer(ctx.paths);
+				out.step(
+					"disable",
+					`mude 1.0 is no longer the judge: ${tiers.join(" > ")} again${stopped ? ", and its server is stopped" : ""}.`,
+				);
+				break;
+			}
+			case "start": {
+				requireInstalled(ctx);
+				await start(ctx, out, "start", !flag("--no-wait"));
+				break;
+			}
+			case "stop": {
+				const stopped = await stopServer(ctx.paths);
+				out.step("stop", stopped ? "The mude 1.0 server is stopped." : "The mude 1.0 server was not running.");
+				break;
+			}
+			case "uninstall": {
+				if (mudeInTiers(ctx.files) || readState(ctx.paths)?.wroteEntry) {
+					const tiers = disableMude(ctx.paths, ctx.files, { removeEntry: true });
+					out.step("disable", `mude 1.0 is no longer the judge: ${tiers.join(" > ")} again.`);
+				}
+				await stopServer(ctx.paths);
+				if (listRecords(ctx.files.home).length > 0) {
+					// The models added from Hugging Face run in this Python environment too.
+					for (const name of existsSync(ctx.paths.root) ? readdirSync(ctx.paths.root) : []) {
+						const path = join(ctx.paths.root, name);
+						if (path !== ctx.paths.venv && path !== ctx.paths.tools)
+							rmSync(path, { recursive: true, force: true });
+					}
+					out.step(
+						"uninstall",
+						`Deleted mude 1.0 and its key from ${ctx.paths.root}. Its Python environment stays there for the other decision models.`,
+					);
+				} else {
+					rmSync(ctx.paths.root, { recursive: true, force: true });
+					out.step("uninstall", `Deleted ${ctx.paths.root}: the model, its Python environment and its key.`);
+				}
+				break;
+			}
+			default:
+				out.error(`Unknown command: mu judge mude ${command}\n\n${USAGE}`, "usage");
+				return 2;
+		}
+		out.status(await status(ctx));
+		return 0;
+	} catch (error) {
+		const kind = error instanceof DownloadError ? error.kind : undefined;
+		out.error(error instanceof Error ? error.message : String(error), kind);
+		return 1;
+	}
+}
+
+/** The files and folders the launcher hands over (planMude in kyrn/bin/mu.mjs), else mu's usual places. */
+export function contextFromEnv(env: NodeJS.ProcessEnv = process.env, home = homedir()): Context {
+	const muHome = env.MU_MUDE_HOME || join(home, ".mu");
+	const agentDir = env.MU_AGENT_DIR || join(muHome, "agent");
+	return {
+		paths: mudePaths(muHome),
+		files: { agentDir, home: muHome, envFile: env.MU_MUDE_ENV_FILE || join(muHome, ".env") },
+		lockFile:
+			env.MU_MUDE_LOCK ||
+			join(import.meta.dirname, "..", "..", "..", "..", "kyrn", "local-judge", "mude-requirements.lock.txt"),
+		env,
+	};
+}

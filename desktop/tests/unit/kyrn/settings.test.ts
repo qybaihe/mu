@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import type { JudgeType } from '../../../packages/desktop/src/common/kyrn/types';
 import { SettingsStore } from '../../../packages/desktop/src/process/agent/kyrn/settings';
 import {
   AGENT_DESCRIPTION,
@@ -142,6 +143,30 @@ describe('native mu settings', () => {
       const raw = JSON.parse(readFileSync(join(f.dir, 'kyrn.json'), 'utf8'));
       expect(raw.tiers).toEqual(['jev-openrouter']);
       expect(raw.judges['jev-openrouter']).toBeUndefined();
+    } finally {
+      f.cleanup();
+    }
+  });
+  it('knows mude, which `mu judge mude enable` puts first, and saves around it without writing it', () => {
+    const f = fixture();
+    try {
+      // What the command leaves: mude first, the judges it replaced behind it.
+      const file = join(f.dir, 'kyrn.json');
+      writeFileSync(file, JSON.stringify({ ...JSON.parse(readFileSync(file, 'utf8')), tiers: ['mude', 'jev'] }));
+      const read = f.store.read();
+      expect(read.tiers).toEqual(['mude', 'jev']);
+      expect(read.judges.mude).toEqual({
+        type: 'typesafe',
+        model: 'mude',
+        baseUrl: 'http://127.0.0.1:8790/v1/systemone',
+        apiKeyEnv: 'MU_JUDGE_MUDE_KEY',
+        timeoutMs: 4000,
+      });
+      // A save of something else is not refused for the order, and leaves mude to mu.
+      f.store.save({ ...read, mode: 'active' });
+      const raw = JSON.parse(readFileSync(file, 'utf8'));
+      expect(raw.tiers).toEqual(['mude', 'jev']);
+      expect(raw.judges.mude).toBeUndefined();
     } finally {
       f.cleanup();
     }
@@ -306,6 +331,173 @@ describe('native mu settings', () => {
       f.cleanup();
     }
   });
+  it('offers OpenAI’s decision model as a built-in with a key of its own, which never goes to TypeSafe', () => {
+    const f = fixture();
+    try {
+      const read = f.store.read();
+      expect(read.judges.openai).toEqual({
+        type: 'openai',
+        model: 'gpt-6-luna',
+        baseUrl: '',
+        apiKeyEnv: 'MU_JUDGE_OPENAI_KEY',
+        timeoutMs: 10000,
+      });
+      expect(read.keys.MU_JUDGE_OPENAI_KEY).toBe(false);
+      // Chosen with its key: only the order is written, and the key goes to the .env, never back to the screen.
+      const saved = f.store.save({
+        ...read,
+        tiers: ['openai'],
+        credentials: [{ name: 'MU_JUDGE_OPENAI_KEY', value: 'sk-proj-fixture' }],
+      });
+      expect(saved.keys.MU_JUDGE_OPENAI_KEY).toBe(true);
+      expect(JSON.stringify(saved)).not.toContain('sk-proj-fixture');
+      const raw = JSON.parse(readFileSync(join(f.dir, 'kyrn.json'), 'utf8'));
+      expect(raw.tiers).toEqual(['openai']);
+      expect(raw.judges.openai).toBeUndefined();
+      expect(readFileSync(join(f.root, '.env'), 'utf8')).toContain('MU_JUDGE_OPENAI_KEY=sk-proj-fixture');
+      // A key of another judge service is never sent to OpenAI…
+      const now = f.store.read();
+      const stray = { ...now.judges.openai, apiKeyEnv: 'TYPESAFE_API_KEY' };
+      expect(() => f.store.save({ ...now, tiers: ['stray'], judges: { ...now.judges, stray } })).toThrow(
+        'not sent to OpenAI'
+      );
+      // …and OpenAI's key never to TypeSafe through a System One judge without an address.
+      const loose = {
+        type: 'typesafe' as const,
+        model: '',
+        baseUrl: '',
+        apiKeyEnv: 'MU_JUDGE_OPENAI_KEY',
+        timeoutMs: 10000,
+      };
+      expect(() => f.store.save({ ...now, tiers: ['loose'], judges: { ...now.judges, loose } })).toThrow('no base URL');
+    } finally {
+      f.cleanup();
+    }
+  });
+  it('removes a judge’s key from the .env on save, refuses any other name, and never says a value', () => {
+    const f = fixture();
+    try {
+      const envPath = join(f.root, '.env');
+      writeFileSync(
+        envPath,
+        'OPENAI_API_KEY=sk-provider-fixture\nMU_JUDGE_OPENAI_KEY=sk-judge-fixture\nTYPESAFE_API_KEY=ts-fixture\n'
+      );
+      const read = f.store.read();
+      expect(read.keys.MU_JUDGE_OPENAI_KEY).toBe(true);
+      const saved = f.store.save({ ...read, tiers: ['openai'], removeCredentials: ['MU_JUDGE_OPENAI_KEY'] });
+      // The judge's line goes; the rest of the .env stays as it was, the provider's OpenAI key too.
+      expect(readFileSync(envPath, 'utf8')).toBe('OPENAI_API_KEY=sk-provider-fixture\nTYPESAFE_API_KEY=ts-fixture\n');
+      expect(saved.keys.MU_JUDGE_OPENAI_KEY).toBe(false);
+      expect(saved.tiers).toEqual(['openai']);
+      expect(JSON.stringify(saved)).not.toContain('fixture');
+      // Only a variable this page saves: never a provider's key, the environment's OpenAI key or anything else.
+      const now = f.store.read();
+      const refused = (removeCredentials: unknown) => {
+        try {
+          f.store.save({ ...now, removeCredentials: removeCredentials as string[] });
+        } catch (error) {
+          expect((error as Error).message).toBe('Invalid credential');
+          return true;
+        }
+        return false;
+      };
+      for (const name of ['OPENAI_API_KEY', 'MU_PROVIDER_RELAY_API_KEY', 'PATH', 'MU_JUDGE_OPENAI_KEY=x', '', 42])
+        expect(refused([name]), String(name)).toBe(true);
+      expect(refused('MU_JUDGE_OPENAI_KEY')).toBe(true);
+      expect(refused(Array.from({ length: 17 }, (_, index) => `MU_JUDGE_K${index}`))).toBe(true);
+      // Never set and removed by one save.
+      expect(() =>
+        f.store.save({
+          ...now,
+          credentials: [{ name: 'TYPESAFE_API_KEY', value: 'ts-new' }],
+          removeCredentials: ['TYPESAFE_API_KEY'],
+        })
+      ).toThrow('Invalid credential');
+      expect(readFileSync(envPath, 'utf8')).toBe('OPENAI_API_KEY=sk-provider-fixture\nTYPESAFE_API_KEY=ts-fixture\n');
+      // Removing a key that is not there changes nothing.
+      f.store.save({ ...now, removeCredentials: ['MU_JUDGE_OPENAI_KEY'] });
+      expect(readFileSync(envPath, 'utf8')).toBe('OPENAI_API_KEY=sk-provider-fixture\nTYPESAFE_API_KEY=ts-fixture\n');
+    } finally {
+      f.cleanup();
+    }
+  });
+});
+
+describe('a mu.json that still names Laya, the local judge mu no longer has', () => {
+  const write = (f: ReturnType<typeof fixture>, config: unknown) =>
+    writeFileSync(join(f.dir, 'kyrn.json'), JSON.stringify(config));
+  const written = (f: ReturnType<typeof fixture>) => JSON.parse(readFileSync(join(f.dir, 'kyrn.json'), 'utf8'));
+  /** mude 1.0 set up, as `mu judge mude enable` leaves it: its key in the .env. */
+  const mudeKey = (f: ReturnType<typeof fixture>) => writeFileSync(join(f.root, '.env'), 'MU_JUDGE_MUDE_KEY=k\n');
+  // Only the .env says whether mude's key is set here.
+  beforeEach(() => {
+    vi.stubEnv('MU_JUDGE_MUDE_KEY', '');
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('reads the order as mu leaves it: mude in Laya’s place where it is set up, else the judges behind it, else Jev', () => {
+    const f = fixture();
+    try {
+      write(f, { tiers: ['laya'] });
+      expect(f.store.laya()).toBe('first');
+      expect(f.store.read().tiers).toEqual(['jev']);
+      // Installed but without its key, as the harness has it: not set up, so not in Laya's place.
+      expect(f.store.read({ mudeInstalled: true }).tiers).toEqual(['jev']);
+      mudeKey(f);
+      expect(f.store.read({ mudeInstalled: true }).tiers).toEqual(['mude']);
+      expect(f.store.read().judges.laya).toBeUndefined();
+      write(f, { tiers: ['laya', 'clm'] });
+      expect(f.store.read().tiers).toEqual(['clm']);
+      expect(f.store.read({ mudeInstalled: true }).tiers).toEqual(['mude', 'clm']);
+      // A judge of Laya's `local` type under a name of its own is Laya too; mude already in the order is asked once.
+      write(f, {
+        tiers: ['jev', 'my-laya', 'mude'],
+        judges: { 'my-laya': { type: 'local', baseUrl: 'http://127.0.0.1:47823' } },
+      });
+      expect(f.store.laya()).toBe('later');
+      expect(f.store.read().tiers).toEqual(['jev', 'mude']);
+      expect(f.store.read({ mudeInstalled: true }).tiers).toEqual(['jev', 'mude']);
+      expect(Object.keys(f.store.read().judges)).not.toContain('my-laya');
+      write(f, { tiers: ['jev'] });
+      expect(f.store.laya()).toBeUndefined();
+    } finally {
+      f.cleanup();
+    }
+  });
+
+  it('writes nothing for Laya: a save keeps its entry, and the order unless it was changed', () => {
+    const f = fixture();
+    try {
+      const laya = { type: 'local', baseUrl: 'http://127.0.0.1:47823', profile: { capabilities: { rate: false } } };
+      write(f, { tiers: ['laya'], judges: { laya } });
+      mudeKey(f);
+      const read = f.store.read({ mudeInstalled: true });
+      expect(read.tiers).toEqual(['mude']);
+      // Another change: the order and Laya's entry stay for mu to move on.
+      expect(f.store.save({ ...read, mode: 'shadow' }, { mudeInstalled: true }).tiers).toEqual(['mude']);
+      expect(written(f)).toMatchObject({ tiers: ['laya'], judges: { laya }, modes: { default: 'shadow' } });
+      // A judge picked: the order is written, without Laya.
+      const saved = f.store.save({ ...f.store.read(), tiers: ['clm'] });
+      expect(saved.tiers).toEqual(['clm']);
+      expect(written(f)).toMatchObject({ tiers: ['clm'], judges: { laya } });
+      expect(f.store.laya()).toBeUndefined();
+    } finally {
+      f.cleanup();
+    }
+  });
+
+  it('refuses a judge of the local type: mu no longer runs one', () => {
+    const f = fixture();
+    try {
+      const read = f.store.read();
+      const old = { ...read.judges.jev, type: 'local' as unknown as JudgeType, baseUrl: 'http://127.0.0.1:47823' };
+      expect(() => f.store.save({ ...read, tiers: ['old'], judges: { ...read.judges, old } })).toThrow('Invalid judge');
+    } finally {
+      f.cleanup();
+    }
+  });
 });
 
 describe('the rename from KYRN to mu', () => {
@@ -329,8 +521,8 @@ describe('the rename from KYRN to mu', () => {
   it('reads mu.json first when both files are there, and writes mu.json on a fresh machine', () => {
     const f = fixture();
     try {
-      writeFileSync(join(f.dir, 'mu.json'), JSON.stringify({ tiers: ['laya'] }));
-      expect(f.store.read().tiers).toEqual(['laya']);
+      writeFileSync(join(f.dir, 'mu.json'), JSON.stringify({ tiers: ['clm'] }));
+      expect(f.store.read().tiers).toEqual(['clm']);
       const fresh = join(f.root, 'fresh');
       mkdirSync(fresh);
       expect(configPath(fresh)).toBe(join(fresh, 'mu.json'));

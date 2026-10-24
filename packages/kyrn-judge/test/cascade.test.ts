@@ -24,13 +24,13 @@ function named(id: string, answers: Record<string, Answer>): MockJudgeProvider {
 const failing: JudgeProvider = {
 	id: "down",
 	evaluate: async () => {
-		throw new JudgeError("unreachable", "sidecar is not running");
+		throw new JudgeError("unreachable", "server is not running");
 	},
 };
 
 describe("CascadeJudge", () => {
 	it("asks the next tier only what the first one left uncertain or is not trusted on", async () => {
-		const local = named("laya", {
+		const local = named("small", {
 			edit: { type: "boolean", probability: 0.95 },
 			vague: { type: "boolean", probability: 0.5 },
 			size: { type: "score", score: 1.5 },
@@ -49,18 +49,18 @@ describe("CascadeJudge", () => {
 		// The score never reached the local judge: it is not trusted to rate.
 		expect(Object.keys(local.calls[0].questions)).toEqual(["edit", "vague"]);
 		expect(Object.keys(strong.calls[0].questions).sort()).toEqual(["size", "vague"]);
-		expect(result.answers.edit).toMatchObject({ probability: 0.95, judge: "laya" });
+		expect(result.answers.edit).toMatchObject({ probability: 0.95, judge: "small" });
 		expect(result.answers.vague).toMatchObject({ probability: 0.03, judge: "jev" });
 		expect(result.answers.size).toMatchObject({ score: 0.2, judge: "jev" });
 		expect(result.tiers).toMatchObject([
-			{ judgeId: "laya", asked: 2, kept: 1 },
+			{ judgeId: "small", asked: 2, kept: 1 },
 			{ judgeId: "jev", asked: 2, kept: 2 },
 		]);
-		expect(result.providerId).toBe("cascade(laya>jev)");
+		expect(result.providerId).toBe("cascade(small>jev)");
 	});
 
 	it("keeps an uncertain answer when the stronger tier is down", async () => {
-		const local = named("laya", {
+		const local = named("small", {
 			edit: { type: "boolean", probability: 0.95 },
 			vague: { type: "boolean", probability: 0.5 },
 			size: { type: "score", score: 1.5 },
@@ -72,7 +72,7 @@ describe("CascadeJudge", () => {
 
 		const result = await cascade.evaluate({ state: "x", questions });
 
-		expect(result.answers.vague).toMatchObject({ probability: 0.5, judge: "laya" });
+		expect(result.answers.vague).toMatchObject({ probability: 0.5, judge: "small" });
 		expect(result.tiers?.[1]).toMatchObject({ judgeId: "down", error: "unreachable" });
 	});
 
@@ -92,7 +92,7 @@ describe("CascadeJudge", () => {
 		await expect(dead.evaluate({ state: "x", questions })).rejects.toMatchObject({ kind: "unreachable" });
 	});
 
-	// Found with the QA fixes, 2026-09-25: laya then a keyless Jev would say "no judge yet", Jev then laya "the judge
+	// Found with the QA fixes, 2026-09-25: a small judge then a keyless Jev would say "no judge yet", Jev then it "the judge
 	// did not answer": what failed last decided. A judge that may answer next time is what the next call can expect.
 	it("when every tier fails, reports the failure that may pass over one that lasts, in either order", async () => {
 		const tier = (id: string, error: JudgeError) => ({
@@ -107,7 +107,7 @@ describe("CascadeJudge", () => {
 		});
 		const noKey = tier("jev", new JudgeError("auth", "No API key is configured for Jev"));
 		const noCredit = tier("gateway", new JudgeError("payment_required", "The gateway answered 402"));
-		const down = tier("laya", new JudgeError("unreachable", "sidecar is not running"));
+		const down = tier("small", new JudgeError("unreachable", "server is not running"));
 		for (const tiers of [
 			[noKey, down],
 			[down, noKey],
@@ -127,7 +127,7 @@ describe("CascadeJudge", () => {
 	});
 
 	it("answers neutrally when no tier is trusted with a question, instead of guessing", async () => {
-		const local = named("laya", { edit: { type: "boolean", probability: 0.95 } });
+		const local = named("small", { edit: { type: "boolean", probability: 0.95 } });
 		const cascade = new CascadeJudge([
 			{ judge: new Judge({ provider: local }), profile: { capabilities: { relate: false, rate: false } } },
 		]);
@@ -250,8 +250,8 @@ describe("judge configuration", () => {
 	});
 
 	it("lets the environment pick the tiers, the default mode, or switch the kernel off", () => {
-		const picked = loadConfig({ env: { KYRN_JUDGE: "laya, gateway", KYRN_JUDGE_MODE: "active" } });
-		expect(picked.config.tiers).toEqual(["laya", "jev"]);
+		const picked = loadConfig({ env: { KYRN_JUDGE: "clm, gateway", KYRN_JUDGE_MODE: "active" } });
+		expect(picked.config.tiers).toEqual(["clm", "jev"]);
 		expect(picked.config.modes.default).toBe("active");
 		expect(loadConfig({ env: { KYRN_JUDGE: "off" } }).disabled).toBe(true);
 		expect(loadConfig({ env: {} }).config.tiers).toEqual(["jev"]);
@@ -259,7 +259,7 @@ describe("judge configuration", () => {
 
 	it("ignores malformed parts of mu.json instead of failing", () => {
 		const config = parseConfig({
-			tiers: "laya",
+			tiers: "clm",
 			modes: { default: "loud", "tool.admission": "active" },
 			judges: [1],
 		});
@@ -274,9 +274,27 @@ describe("judge configuration", () => {
 	});
 
 	it("keeps the points that only watch by default in shadow, unless mu.json says otherwise", () => {
-		expect(parseConfig({}).modes).toMatchObject({ "notify.routing": "shadow", "input.interjection": "shadow" });
+		expect(parseConfig({}).modes).toMatchObject({ "notify.routing": "shadow", "turn.drift": "shadow" });
 		const chosen = parseConfig({ modes: { default: "shadow", "notify.routing": "active" } }).modes;
-		expect(chosen).toMatchObject({ default: "shadow", "notify.routing": "active", "input.interjection": "shadow" });
+		expect(chosen).toMatchObject({ default: "shadow", "notify.routing": "active", "turn.drift": "shadow" });
+	});
+
+	it("leaves input.interjection to the default mode: active out of the box, and whatever mu.json makes the default", () => {
+		const modeOf = (raw: unknown): string => {
+			const { default: defaultMode, ...modes } = parseConfig(raw).modes;
+			const { default: _default, ...builtInModes } = DEFAULT_CONFIG.modes;
+			return new DecisionEngine({
+				judge: new Judge({ provider: new MockJudgeProvider(() => ({})) }),
+				defaultMode,
+				modes,
+				builtInModes,
+			}).getMode("input.interjection");
+		};
+		expect(DEFAULT_CONFIG.modes["input.interjection"]).toBeUndefined();
+		expect(modeOf({})).toBe("active");
+		expect(modeOf({ modes: { default: "shadow" } })).toBe("shadow");
+		expect(modeOf({ modes: { default: "off" } })).toBe("off");
+		expect(modeOf({ modes: { "input.interjection": "shadow" } })).toBe("shadow");
 	});
 });
 

@@ -4,7 +4,7 @@
 
 mu's harness layer for [pi](https://github.com/earendil-works/pi): a small, fast judgment model makes the routine calls (what kind of turn is this, which tool output matters, which sub-agent and model fit a task, what to click next on a web page), code carries them out, and the main model keeps its context for thinking.
 
-The judgment model is pluggable: Jev (TypeSafe's hosted judge model) through the Vercel AI Gateway, a local Laya sidecar, any HTTP server that speaks `{state, questions}` → `{answers}`, or any generative model pi can reach. Features never know which one answers. Every decision fails open to pi's stock behaviour and is written to a ledger.
+The judgment model is pluggable: Jev (TypeSafe's hosted judge model) through the Vercel AI Gateway, mude 1.0 on this Mac, any HTTP server that speaks `{state, questions}` → `{answers}`, or any generative model pi can reach. Features never know which one answers. Every decision fails open to pi's stock behaviour and is written to a ledger.
 
 ## Use it
 
@@ -22,7 +22,7 @@ From this repository, `kyrn/bin/mu` (on Windows `kyrn\bin\mu.cmd`; the launcher 
 
 ```jsonc
 {
-  "tiers": ["laya", "jev"],          // asked in order; a later tier only gets what an earlier one is unsure of or not trusted on
+  "tiers": ["mude", "jev"],          // asked in order; a later tier only gets what an earlier one is unsure of or not trusted on
   "judges": { "luna": { "type": "llm", "model": "openai/gpt-5.6-luna" } },
   "modes": { "default": "active" },  // off | shadow (record only) | active (the default), per decision id
   "features": {
@@ -33,7 +33,7 @@ From this repository, `kyrn/bin/mu` (on Windows `kyrn\bin\mu.cmd`; the launcher 
 }
 ```
 
-Environment: `MU_JUDGE=laya,llm:provider/model` (or `off`), `MU_JUDGE_MODE=active`, `MU_TIME_BUDGET_S=900` (the run's time budget in seconds from mu's start: the watchdog cuts a thinking-only reply in time for its retry, and the model hears the time left at 50% and 80%; `features.deadline`); the `KYRN_` spellings still work. In a session: `/mu`, `/mu judge laya,jev`, `/mu mode tool.admission active`, `/agents`, `/remember`.
+Environment: `MU_JUDGE=mude,llm:provider/model` (or `off`), `MU_JUDGE_MODE=active`, `MU_TIME_BUDGET_S=900` (the run's time budget in seconds from mu's start: the watchdog cuts a thinking-only reply in time for its retry, and the model hears the time left at 50% and 80%; `features.deadline`); the `KYRN_` spellings still work. In a session: `/mu`, `/mu judge mude,jev`, `/mu mode tool.admission active`, `/agents`, `/remember`.
 
 ## What the main model gets
 
@@ -46,6 +46,8 @@ Environment: `MU_JUDGE=laya,llm:provider/model` (or `off`), `MU_JUDGE_MODE=activ
 | `find_skill` | Lists skills the judge kept out of the system prompt. |
 
 `delegate` and `hive` run on one swarm runtime (`src/swarm/`): every sub-agent streams its steps back, so the terminal shows for each one whether it is alive, what it is doing this second and what it last said. A watchdog ends a sub-agent that shows no sign of life, a time budget asks it for its report before ending it, and `/swarm stop [name]` or `/swarm kill [name]` does the same by hand without throwing away what was found. Limits: `features.swarm` / `features.hive` → `concurrency`, `beeMinutes`, `graceSeconds`, `stallSeconds`, `toolStallSeconds`.
+
+A sub-agent keeps no session of its own, and a reply the watchdog cut reports no usage: both are recorded in the session as `kyrn.usage` entries, never sent to the model, so a session's totals can include them. Format: [`kyrn/docs/features/usage-accounting.md`](../../kyrn/docs/features/usage-accounting.md).
 
 Everything else (turn preflight, tool-output admission, context forgetting, risk guard, drift and completion checks, memory, cache warming) runs on pi's extension events. The map of every decision point is in [`kyrn/docs/04-injection-points.md`](../../kyrn/docs/04-injection-points.md).
 

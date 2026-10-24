@@ -1,8 +1,7 @@
 import type { BeforeAgentStartEvent, ExtensionContext, SessionStartEvent } from "@earendil-works/pi-coding-agent";
-import { capabilityDisclosure } from "../../decisions/capability-disclosure.ts";
 import { run } from "../../packs/exec.ts";
 import { failOpen, type KyrnRuntime } from "../runtime.ts";
-import { CAPABILITY_ENTRY } from "./catalog.ts";
+import { CAPABILITY_ENTRY, hidesNothing } from "./catalog.ts";
 import { astGrepPack } from "./packs/ast-grep.ts";
 import { registerCommit } from "./packs/commit.ts";
 import { conflictsPack } from "./packs/conflicts.ts";
@@ -130,11 +129,11 @@ export function registerPacks(runtime: KyrnRuntime): void {
 		});
 	}
 
-	// With disclosure off, or no catalog at all, nothing is hidden and nobody opens anything: the tools
-	// have to be there from the start. A pack whose program is missing simply stays out.
+	// With no catalog nothing is hidden and nobody opens anything: the tools have to be there from the start. A pack
+	// whose program is missing simply stays out. With capability disclosure off, the catalog still hides them.
 	const startAllWhenNothingIsHidden = async (ctx: ExtensionContext): Promise<undefined> => {
 		runtime.touch(ctx);
-		if (runtime.mode(capabilityDisclosure.id) === "off" || runtime.config.features.catalog === false) {
+		if (hidesNothing(runtime)) {
 			await Promise.allSettled(packs.map(start));
 		}
 		return undefined;

@@ -610,7 +610,9 @@
     "defaultTag": "varsayılan",
     "makeDefault": "Yeni sohbetler için varsayılan yap",
     "madeDefault": "Yeni sohbetler bu modelle başlayacak.",
-    "makeDefaultFailed": "Varsayılan model kaydedilemedi."
+    "makeDefaultFailed": "Varsayılan model kaydedilemedi.",
+    "showAllModels": "Tüm modelleri göster ({{count}})",
+    "showFewerModels": "Daha az model göster"
   },
   "agentTip": {
     "codes": {

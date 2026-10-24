@@ -319,5 +319,18 @@
   "saveFailedWithDetail": "Couldn't save: {{detail}}",
   "zoomActualSize": "Reset zoom",
   "zoomFit": "Fit",
-  "zoomFitTooltip": "Fit to the panel width"
+  "zoomFitTooltip": "Fit to the panel width",
+  "gallery": {
+    "label": "Image {{name}}",
+    "previous": "Previous image",
+    "next": "Next image",
+    "position": "{{index}} of {{count}}",
+    "gone": "This file isn't there anymore. It may have been moved or deleted.",
+    "tooLarge": "This image is too large to show here ({{size}}). Open it in the default app instead."
+  },
+  "reveal": {
+    "mac": "Show in Finder",
+    "windows": "Show in File Explorer",
+    "linux": "Show in folder"
+  }
 }

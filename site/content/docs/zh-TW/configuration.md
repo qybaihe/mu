@@ -3,7 +3,7 @@ title: 設定
 summary: mu.json、環境變數、網路代理，以及各功能的選項在哪裡。
 ---
 
-mu 讀取 pi 的設定（模型、登入、偏好）和它自己的設定，後者在 `~/.mu/agent/mu.json` 裡。桌面版的設定寫的也是這個檔案：在那裡做的每一處改動都可以手動做，反過來也一樣。
+mu 讀取 pi 的設定（模型、登入、偏好）和它自己的設定，後者在 `~/.mu/agent/mu.json` 裡。
 
 只讀取你自己的 `mu.json`。專案不能更改判定器、它的位址或模式，因為判定器會讀你的訊息。
 
@@ -19,7 +19,7 @@ mu 讀取 pi 的設定（模型、登入、偏好）和它自己的設定，後�
   },
   "routes": {
     "browser.step": ["jev"],
-    "memory.capture": ["laya", "jev"]
+    "memory.capture": ["mude", "jev"]
   },
   "features": {
     "admission": { "testLog": "rules" },
@@ -46,7 +46,7 @@ mu 看不懂的部分會退回預設值，而不是讓 mu 停下。完全無法�
 
 ## 實際使用中的模式 {#modes}
 
-- {points} 個判定點裡有 {points_active} 個從一開始就生效（`context.compact` 和 `output.drift` 要你自己開啟，`swarm.patch` 預設關閉，`notify.routing`、`input.interjection` 和 `turn.drift` 預設是影子模式，只記錄判定）。想試一個判定器，或者對某個判定點沒把握，就把它設成影子模式，讀帳本（`mu ledger`、`/status` 或桌面版的「判定」頁），再把它設回生效。
+- {points} 個判定點裡有 {points_active} 個從一開始就生效（`context.compact` 和 `output.drift` 要你自己開啟，`capability.disclosure` 和 `swarm.patch` 預設關閉，`notify.routing` 和 `turn.drift` 預設是影子模式，只記錄判定）。想試一個判定器，或者對某個判定點沒把握，就把它設成影子模式，讀帳本（`mu ledger`、`/status` 或桌面版的「判定」頁），再把它設回生效。
 - `/mu mode <point> <off|shadow|active>` 在目前的工作階段裡切換一個判定點；`/mu mode default shadow` 切換全部。想保留一個模式，就寫進 `mu.json`。
 - `MU_JUDGE_MODE=shadow mu` 為一次執行設定預設模式。
 - `"modes": { "default": "off" }` 完全不問判定器：預設是影子模式的那幾個判定點也一起關閉，除非 `mu.json` 單獨給它設了模式。`mu setup` 裡判定器選「暫時不要」，寫的就是這一項。
@@ -57,19 +57,18 @@ mu 看不懂的部分會退回預設值，而不是讓 mu 停下。完全無法�
 
 | 變數 | 效果 |
 | --- | --- |
-| `MU_JUDGE` | 這次執行用的判定器，以逗號分隔：`laya`、`laya,jev`、`jev-opencode-free`、`classifier:<provider>/<model>`、`llm:<provider>/<model>`。`off` 關掉判定核心。 |
+| `MU_JUDGE` | 這次執行用的判定器，以逗號分隔：`jev`、`mude,jev`、`jev-opencode-free`、`classifier:<provider>/<model>`、`llm:<provider>/<model>`。`off` 關掉判定核心。 |
 | `MU_JUDGE_MODE` | 這次執行的預設模式：`off`、`shadow` 或 `active` |
 | `MU_WRITER` | writer 模型的 `provider/model` |
 | `MU_PERMISSIONS` | 這次執行的權限模式：`full`、`judge` 或 `ask` |
-| `MU_LOCAL_JUDGE_URL` | 本機判定器伺服器的位址，用於 `mu judge start` 啟動的那個之外的伺服器 |
 
-雲端判定器的金鑰，每個只送給它自己的服務：`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`、`MU_JUDGE_CLM_API_KEY`。
+雲端判定器的金鑰，每個只送給它自己的服務：`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`、`MU_JUDGE_CLM_API_KEY`、`MU_JUDGE_OPENAI_KEY`。
 
 時間：
 
 | 變數 | 效果 |
 | --- | --- |
-| `MU_TIME_BUDGET_S` | 這次執行的時間預算，單位秒，從 mu 啟動時算起。設了它，只思考的回覆會及時打斷、留出重試的時間，時間用掉 50% 和 80% 時模型會知道還剩幾分鐘（`features.deadline`）。評測框架依任務的逾時來設；不設就什麼都不變。 |
+| `MU_TIME_BUDGET_S` | 這次執行的時間預算，單位秒，從 mu 啟動時算起。設了它，只思考的回覆會及時打斷、留出重試的時間，時間用掉 50% 和 80% 時模型會知道還剩幾分鐘（`features.deadline`）。不設就什麼都不變。 |
 
 啟動器：
 
@@ -80,8 +79,6 @@ mu 看不懂的部分會退回預設值，而不是讓 mu 停下。完全無法�
 | `MU_LANG` | 工作階段裡 mu 自己的訊息：`zh…` 用中文，其他用英文。桌面版把它設成應用程式的語言；`mu setup` 跟隨你的系統語言。 |
 | `MU_LINK_DIR` | `mu link` 把 `mu` 指令放在哪裡，取代 `~/.local/bin` |
 | `MU_CHROME` | 命令列裡內建瀏覽器使用的 Chrome 或 Chromium |
-
-每個 `MU_` 變數也認得它以前的 `KYRN_` 寫法。
 
 mu 還會讀一個 `.env` 檔案：npm 套件用的是 `~/.mu/.env`。每行是 `KEY=VALUE`；裡面的任何內容都不會被執行。`mu setup` 把 Jev 金鑰寫在那裡。環境裡已經設定的變數優先。
 

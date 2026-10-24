@@ -3,7 +3,7 @@ title: 設定
 summary: mu.json、環境変数、プロキシ、そして機能ごとのオプションの場所。
 ---
 
-mu は、pi の設定（モデル、サインイン、環境設定）と、`~/.mu/agent/mu.json` にある自身の設定を読み込みます。デスクトップアプリの設定も同じファイルに書き込みます。アプリで行える変更はすべて手でも行え、その逆も同じです。
+mu は、pi の設定（モデル、サインイン、環境設定）と、`~/.mu/agent/mu.json` にある自身の設定を読み込みます。
 
 読み込むのはあなた自身の `mu.json` だけです。判定器はあなたのメッセージを読むので、プロジェクトが判定器、その接続先、モードを変えることはできません。
 
@@ -19,7 +19,7 @@ mu は、pi の設定（モデル、サインイン、環境設定）と、`~/.m
   },
   "routes": {
     "browser.step": ["jev"],
-    "memory.capture": ["laya", "jev"]
+    "memory.capture": ["mude", "jev"]
   },
   "features": {
     "admission": { "testLog": "rules" },
@@ -46,7 +46,7 @@ mu が理解できない部分は、mu を止めずにその既定値に戻り�
 
 ## モードの使い方 {#modes}
 
-- {points} の判定ポイントのうち {points_active} は最初から判定を反映します（`context.compact` と `output.drift` は既定でオフ、`swarm.patch` もオフで、`notify.routing`、`input.interjection`、`turn.drift` はシャドーで判定を記録するだけです）。判定器や、確信の持てない判定ポイントを試すには、シャドーにして台帳を読み（`mu ledger`、`/status`、アプリの判定タブ）、それから active に戻します。
+- {points} の判定ポイントのうち {points_active} は最初から判定を反映します（`context.compact` と `output.drift` は既定でオフ、`capability.disclosure` と `swarm.patch` もオフで、`notify.routing` と `turn.drift` はシャドーで判定を記録するだけです）。判定器や、確信の持てない判定ポイントを試すには、シャドーにして台帳を読み（`mu ledger`、`/status`、アプリの判定タブ）、それから active に戻します。
 - `/mu mode <point> <off|shadow|active>` は現在のセッションで一つの判定ポイントを切り替え、`/mu mode default shadow` はすべてを切り替えます。モードを残しておくには、`mu.json` に書きます。
 - `MU_JUDGE_MODE=shadow mu` は、1 回の実行の既定値を設定します。
 - `"modes": { "default": "off" }` にすると、判定器には一切問い合わせません。既定でシャドーの判定ポイントもオフになります（`mu.json` で個別にモードを指定したものを除く）。`mu setup` で判定器に「Not now」を選ぶと、これが書き込まれます。
@@ -57,19 +57,18 @@ mu が理解できない部分は、mu を止めずにその既定値に戻り�
 
 | 変数 | 効果 |
 | --- | --- |
-| `MU_JUDGE` | この実行の判定器（カンマ区切り）：`laya`、`laya,jev`、`jev-opencode-free`、`classifier:<provider>/<model>`、`llm:<provider>/<model>`。`off` でカーネルをオフにする。 |
+| `MU_JUDGE` | この実行の判定器（カンマ区切り）：`jev`、`mude,jev`、`jev-opencode-free`、`classifier:<provider>/<model>`、`llm:<provider>/<model>`。`off` でカーネルをオフにする。 |
 | `MU_JUDGE_MODE` | この実行の既定のモード：`off`、`shadow`、`active` |
 | `MU_WRITER` | 書き手のモデルの `provider/model` |
 | `MU_PERMISSIONS` | この実行の権限モード：`full`、`judge`、`ask` |
-| `MU_LOCAL_JUDGE_URL` | `mu judge start` が起動するもの以外の、ローカル判定器サーバーのアドレス |
 
-ホストされた判定器のキー（それぞれ自分のサービスにだけ送られます）：`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` と `CLOUDFLARE_ACCOUNT_ID`、`MU_JUDGE_CLM_API_KEY`。
+ホストされた判定器のキー（それぞれ自分のサービスにだけ送られます）：`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` と `CLOUDFLARE_ACCOUNT_ID`、`MU_JUDGE_CLM_API_KEY`、`MU_JUDGE_OPENAI_KEY`。
 
 時間：
 
 | 変数 | 効果 |
 | --- | --- |
-| `MU_TIME_BUDGET_S` | この実行の時間の予算（秒）。mu の起動時から数える。設定すると、考えるだけの返答は再試行に間に合うよう早めに打ち切られ、予算の 50% と 80% を過ぎたときにモデルに残り時間（分）が伝えられる（`features.deadline`）。ベンチマークのハーネスがタスクのタイムアウトから設定する。設定しなければ何も変わらない。 |
+| `MU_TIME_BUDGET_S` | この実行の時間の予算（秒）。mu の起動時から数える。設定すると、考えるだけの返答は再試行に間に合うよう早めに打ち切られ、予算の 50% と 80% を過ぎたときにモデルに残り時間（分）が伝えられる（`features.deadline`）。設定しなければ何も変わらない。 |
 
 ランチャー：
 
@@ -80,8 +79,6 @@ mu が理解できない部分は、mu を止めずにその既定値に戻り�
 | `MU_LANG` | セッション内の mu 自身のメッセージの言語：`zh…` なら中国語、それ以外は英語。デスクトップアプリはアプリの言語に設定し、`mu setup` はロケールに従う。 |
 | `MU_LINK_DIR` | `~/.local/bin` の代わりに、`mu link` が `mu` コマンドを置く場所 |
 | `MU_CHROME` | コマンドラインで内蔵ブラウザが使う Chrome または Chromium |
-
-`MU_` で始まる変数は、どれも古い `KYRN_` の綴りでも読み込まれます。
 
 mu は `.env` ファイルも読み込みます。npm パッケージでは `~/.mu/.env` です。各行は `KEY=VALUE` の形で、その中の何も実行されません。`mu setup` は Jev のキーをここに書き込みます。環境ですでに設定されている変数が優先されます。
 

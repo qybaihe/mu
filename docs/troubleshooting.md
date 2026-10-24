@@ -26,13 +26,17 @@ If that doesn't help, [open an issue](https://github.com/qybaihe/mu/issues/new/c
 
 **The judge seems to do nothing.** A point in shadow mode records its verdicts and changes nothing, and a point that's off isn't asked at all. `/status` shows each point's mode. Look for `"default": "shadow"` or `"off"` in `~/.mu/agent/mu.json`, or `MU_JUDGE_MODE` in your environment. See [Getting started](getting-started.md#decisions-and-their-modes).
 
-**"No judge is available yet, so mu asks about each step."** In *Judge mode*, mu asks you about every step that needs approval when no judge can answer. That happens when there's no key and the free Jev is unavailable, when your judge account has hit its limit, or when only a local judge is set up, since a local judge isn't trusted with approvals. Set a Jev key (`mu setup`), or switch the permission mode with `/permissions`.
+**"No judge is available yet, so mu asks about each step."** In *Judge mode*, mu asks you about every step that needs approval when no judge can answer. That happens when there's no key and the free Jev is unavailable, when your judge account has hit its limit, or when your only judges aren't trusted with approvals. Set a Jev key (`mu setup`), or switch the permission mode with `/permissions`.
 
 **The free Jev stopped answering.** It's a limited-time offer from OpenCode Zen, and mu tells you when it ends. Set a key for one of the [Jev services](judges.md#hosted-jev), or choose another judge.
 
 **Verdicts are slow.** Every decision point has a time limit, after which mu carries on without the verdict, so nothing blocks for long. `mu ledger --json` shows each verdict's latency. If a judge is far away on the network or busy, you can replace it per point with `routes`.
 
-**The local judge wants to download a model.** Laya's model is about 930 MB. mu downloads it only after you agree, in `mu judge setup` or in the app.
+**"Laya is no longer built in."** mu used to include Laya, a local judge, and no longer does. Where your `mu.json` named it, mu now uses mude 1.0 if it's set up on this Mac, otherwise your other judges or Jev, and it has updated the file (a copy of the old one is in `~/.mu/backups`). `mu judge setup`, `start`, `stop` and `status` are gone too. For a decision model on your Mac, use [mude 1.0](judges.md#mude-10-on-your-mac) or [add one from Hugging Face](judges.md#other-decision-models).
+
+**mude 1.0 isn't answering.** `mu judge mude status` shows whether its server is running, and `mu judge mude start` starts it. `mu doctor` checks the server and its key. Until it answers, its fallback judges answer instead, or, with `--local-only`, each decision point uses its default. See [mude 1.0](judges.md#mude-10-on-your-mac).
+
+**The mude 1.0 install stopped.** Run `mu judge mude install` again, or press **Continue installing** in the app. It picks up where it left off.
 
 ## The terminal UI
 

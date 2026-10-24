@@ -142,6 +142,11 @@ export async function startNativeHost(options: StartNativeHostOptions): Promise<
     platform: process.platform,
     stripsTypes: Boolean(process.features.typescript),
     fs: options.fs,
+    // mude's server, when the configuration asks for it, starts as the app runs mu's other scripts.
+    node: {
+      path: env.MU_NODE || process.execPath,
+      env: process.versions.electron ? { ELECTRON_RUN_AS_NODE: '1' } : {},
+    },
     note: (line) => console.warn(`[mu] ${line}`),
   });
   const host = new NativeHost({

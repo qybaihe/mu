@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="1389" viewBox="0 0 360 1389" role="img" aria-labelledby="t d" font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Noto Sans SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif'>
+<title id="t">mubench 1.0 · main board: eight capabilities</title>
+<desc id="d">The score in each capability, on 3,193 requests from real coding sessions on open-source repositories. 0 = mu with no decision model; 100 = all of the cost it pays removed. Permission approval: mude 1.0 52.6, Jev 1.14 53.7, Jev 1.13 52.7, d3-nano (original) 5.9. Malicious-instruction detection: Mostly constructed items; not scored yet.. Context compression: mude 1.0 64.6, Jev 1.14 76.7, Jev 1.13 70.7, d3-nano (original) −19.1. On-demand loading and reminders: mude 1.0 −2.7, Jev 1.14 16.8, Jev 1.13 25.1, d3-nano (original) −118.4. Classification and routing: mude 1.0 83.6, Jev 1.14 87.5, Jev 1.13 85.8, d3-nano (original) 51.7. Progress and completion: mude 1.0 86.6, Jev 1.14 61.6, Jev 1.13 61.6, d3-nano (original) 70.1. Memory and lessons: mude 1.0 58.7, Jev 1.14 75.1, Jev 1.13 72.2, d3-nano (original) 40.5. Multi-agent collaboration: mude 1.0 19.8, Jev 1.14 4.6, Jev 1.13 −0.8, d3-nano (original) 26.0.</desc>
+<text x="0" y="22" font-size="15" font-weight="650" fill="#f2f2f4">mubench 1.0 · main board: eight capabilities</text>
+<text x="0" y="46" font-size="12.5" fill="#a6a6b0">The score in each capability, on 3,193 requests from real</text>
+<text x="0" y="65" font-size="12.5" fill="#a6a6b0">coding sessions on open-source repositories. 0 = mu with</text>
+<text x="0" y="84" font-size="12.5" fill="#a6a6b0">no decision model; 100 = all of the cost it pays removed.</text>
+<rect x="0" y="104.5" width="10" height="10" rx="3" fill="#d63fa2"/>
+<text x="16" y="114" font-size="12.5" fill="#f2f2f4">mude 1.0</text>
+<rect x="89.12" y="104.5" width="10" height="10" rx="3" fill="#8f7cf7"/>
+<text x="105.1" y="114" font-size="12.5" fill="#f2f2f4">Jev 1.14</text>
+<rect x="176.65000000000003" y="104.5" width="10" height="10" rx="3" fill="#5f52b8"/>
+<text x="192.7" y="114" font-size="12.5" fill="#f2f2f4">Jev 1.13</text>
+<rect x="0" y="126.5" width="10" height="10" rx="3" fill="#8b8b96"/>
+<text x="16" y="136" font-size="12.5" fill="#f2f2f4">d3-nano (original)</text>
+<text x="0" y="180" font-size="13.5" font-weight="650" fill="#f2f2f4">Permission approval</text>
+<line x1="120.8" y1="190" x2="120.8" y2="270" stroke="#34343c" stroke-width="1"/>
+<line x1="214.4" y1="190" x2="214.4" y2="270" stroke="#26262c" stroke-width="1"/>
+<line x1="308" y1="190" x2="308" y2="270" stroke="#26262c" stroke-width="1"/>
+<text x="64" y="204.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">mude 1.0</text>
+<path d="M120.8,194 H215.3 Q219.3,194 219.3,198 V202 Q219.3,206 215.3,206 H120.8 Z" fill="#d63fa2"/>
+<text x="360" y="204.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">52.6</text>
+<text x="64" y="224.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">Jev 1.14</text>
+<path d="M120.8,214 H217.3 Q221.3,214 221.3,218 V222 Q221.3,226 217.3,226 H120.8 Z" fill="#8f7cf7"/>
+<text x="360" y="224.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">53.7</text>
+<text x="64" y="244.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">Jev 1.13</text>
+<path d="M120.8,234 H215.5 Q219.5,234 219.5,238 V242 Q219.5,246 215.5,246 H120.8 Z" fill="#5f52b8"/>
+<text x="360" y="244.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">52.7</text>
+<text x="64" y="264.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">d3-nano</text>
+<path d="M120.8,254 H127.8 Q131.8,254 131.8,258 V262 Q131.8,266 127.8,266 H120.8 Z" fill="#8b8b96"/>
+<text x="360" y="264.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">5.9</text>
+<text x="120.8" y="284" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">0</text>
+<text x="214.4" y="284" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">50</text>
+<text x="308" y="284" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">100</text>
+<text x="0" y="322" font-size="13.5" font-weight="650" fill="#f2f2f4">Malicious-instruction detection<tspan dx="2" dy="-4" font-size="12.5" font-weight="700" fill="#e29bee">†</tspan></text>
+<line x1="0" y1="332" x2="360" y2="332" stroke="#26262c" stroke-width="1"/>
+<text x="0" y="354" font-size="12.5" fill="#a6a6b0">—   Mostly constructed items; not scored yet.</text>
+<text x="0" y="408" font-size="13.5" font-weight="650" fill="#f2f2f4">Context compression<tspan dx="2" dy="-4" font-size="12.5" font-weight="700" fill="#e29bee">*</tspan></text>
+<line x1="120.8" y1="418" x2="120.8" y2="498" stroke="#34343c" stroke-width="1"/>
+<line x1="214.4" y1="418" x2="214.4" y2="498" stroke="#26262c" stroke-width="1"/>
+<line x1="308" y1="418" x2="308" y2="498" stroke="#26262c" stroke-width="1"/>
+<text x="64" y="432.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">mude 1.0</text>
+<path d="M120.8,422 H237.7 Q241.7,422 241.7,426 V430 Q241.7,434 237.7,434 H120.8 Z" fill="#d63fa2"/>
+<text x="360" y="432.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">64.6</text>
+<text x="64" y="452.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">Jev 1.14</text>
+<path d="M120.8,442 H260.4 Q264.4,442 264.4,446 V450 Q264.4,454 260.4,454 H120.8 Z" fill="#8f7cf7"/>
+<text x="360" y="452.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">76.7</text>
+<text x="64" y="472.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">Jev 1.13</text>
+<path d="M120.8,462 H249.2 Q253.2,462 253.2,466 V470 Q253.2,474 249.2,474 H120.8 Z" fill="#5f52b8"/>
+<text x="360" y="472.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">70.7</text>
+<text x="64" y="492.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">d3-nano</text>
+<path d="M120.8,482 H89 Q85,482 85,486 V490 Q85,494 89,494 H120.8 Z" fill="#8b8b96"/>
+<text x="360" y="492.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">−19.1</text>
+<text x="120.8" y="512" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">0</text>
+<text x="214.4" y="512" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">50</text>
+<text x="308" y="512" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">100</text>
+<text x="0" y="550" font-size="13.5" font-weight="650" fill="#f2f2f4">On-demand loading and reminders<tspan dx="2" dy="-4" font-size="12.5" font-weight="700" fill="#e29bee">*</tspan></text>
+<line x1="120.8" y1="560" x2="120.8" y2="640" stroke="#34343c" stroke-width="1"/>
+<line x1="214.4" y1="560" x2="214.4" y2="640" stroke="#26262c" stroke-width="1"/>
+<line x1="308" y1="560" x2="308" y2="640" stroke="#26262c" stroke-width="1"/>
+<text x="64" y="574.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">mude 1.0</text>
+<path d="M120.8,564 H118.3 Q115.7,564 115.7,566.5 V573.5 Q115.7,576 118.3,576 H120.8 Z" fill="#d63fa2"/>
+<text x="360" y="574.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">−2.7</text>
+<text x="64" y="594.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">Jev 1.14</text>
+<path d="M120.8,584 H148.2 Q152.2,584 152.2,588 V592 Q152.2,596 148.2,596 H120.8 Z" fill="#8f7cf7"/>
+<text x="360" y="594.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">16.8</text>
+<text x="64" y="614.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">Jev 1.13</text>
+<path d="M120.8,604 H163.8 Q167.8,604 167.8,608 V612 Q167.8,616 163.8,616 H120.8 Z" fill="#5f52b8"/>
+<text x="360" y="614.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">25.1</text>
+<text x="64" y="634.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">d3-nano</text>
+<path d="M120.8,624 H78 Q74,624 74,628 V632 Q74,636 78,636 H120.8 Z" fill="#8b8b96"/>
+<line x1="81" y1="637" x2="85" y2="623" stroke="#0e0e10" stroke-width="2"/>
+<line x1="86" y1="637" x2="90" y2="623" stroke="#0e0e10" stroke-width="2"/>
+<text x="360" y="634.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">−118.4</text>
+<text x="120.8" y="654" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">0</text>
+<text x="214.4" y="654" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">50</text>
+<text x="308" y="654" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">100</text>
+<text x="0" y="692" font-size="13.5" font-weight="650" fill="#f2f2f4">Classification and routing</text>
+<line x1="120.8" y1="702" x2="120.8" y2="782" stroke="#34343c" stroke-width="1"/>
+<line x1="214.4" y1="702" x2="214.4" y2="782" stroke="#26262c" stroke-width="1"/>
+<line x1="308" y1="702" x2="308" y2="782" stroke="#26262c" stroke-width="1"/>
+<text x="64" y="716.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">mude 1.0</text>
+<path d="M120.8,706 H273.3 Q277.3,706 277.3,710 V714 Q277.3,718 273.3,718 H120.8 Z" fill="#d63fa2"/>
+<text x="360" y="716.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">83.6</text>
+<text x="64" y="736.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">Jev 1.14</text>
+<path d="M120.8,726 H280.6 Q284.6,726 284.6,730 V734 Q284.6,738 280.6,738 H120.8 Z" fill="#8f7cf7"/>
+<text x="360" y="736.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">87.5</text>
+<text x="64" y="756.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">Jev 1.13</text>
+<path d="M120.8,746 H277.4 Q281.4,746 281.4,750 V754 Q281.4,758 277.4,758 H120.8 Z" fill="#5f52b8"/>
+<text x="360" y="756.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">85.8</text>
+<text x="64" y="776.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">d3-nano</text>
+<path d="M120.8,766 H213.6 Q217.6,766 217.6,770 V774 Q217.6,778 213.6,778 H120.8 Z" fill="#8b8b96"/>
+<text x="360" y="776.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">51.7</text>
+<text x="120.8" y="796" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">0</text>
+<text x="214.4" y="796" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">50</text>
+<text x="308" y="796" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">100</text>
+<text x="0" y="834" font-size="13.5" font-weight="650" fill="#f2f2f4">Progress and completion</text>
+<line x1="120.8" y1="844" x2="120.8" y2="924" stroke="#34343c" stroke-width="1"/>
+<line x1="214.4" y1="844" x2="214.4" y2="924" stroke="#26262c" stroke-width="1"/>
+<line x1="308" y1="844" x2="308" y2="924" stroke="#26262c" stroke-width="1"/>
+<text x="64" y="858.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">mude 1.0</text>
+<path d="M120.8,848 H278.9 Q282.9,848 282.9,852 V856 Q282.9,860 278.9,860 H120.8 Z" fill="#d63fa2"/>
+<text x="360" y="858.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">86.6</text>
+<text x="64" y="878.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">Jev 1.14</text>
+<path d="M120.8,868 H232.1 Q236.1,868 236.1,872 V876 Q236.1,880 232.1,880 H120.8 Z" fill="#8f7cf7"/>
+<text x="360" y="878.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">61.6</text>
+<text x="64" y="898.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">Jev 1.13</text>
+<path d="M120.8,888 H232.1 Q236.1,888 236.1,892 V896 Q236.1,900 232.1,900 H120.8 Z" fill="#5f52b8"/>
+<text x="360" y="898.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">61.6</text>
+<text x="64" y="918.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">d3-nano</text>
+<path d="M120.8,908 H248 Q252,908 252,912 V916 Q252,920 248,920 H120.8 Z" fill="#8b8b96"/>
+<text x="360" y="918.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">70.1</text>
+<text x="120.8" y="938" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">0</text>
+<text x="214.4" y="938" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">50</text>
+<text x="308" y="938" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">100</text>
+<text x="0" y="976" font-size="13.5" font-weight="650" fill="#f2f2f4">Memory and lessons</text>
+<line x1="120.8" y1="986" x2="120.8" y2="1066" stroke="#34343c" stroke-width="1"/>
+<line x1="214.4" y1="986" x2="214.4" y2="1066" stroke="#26262c" stroke-width="1"/>
+<line x1="308" y1="986" x2="308" y2="1066" stroke="#26262c" stroke-width="1"/>
+<text x="64" y="1000.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">mude 1.0</text>
+<path d="M120.8,990 H226.7 Q230.7,990 230.7,994 V998 Q230.7,1002 226.7,1002 H120.8 Z" fill="#d63fa2"/>
+<text x="360" y="1000.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">58.7</text>
+<text x="64" y="1020.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">Jev 1.14</text>
+<path d="M120.8,1010 H257.4 Q261.4,1010 261.4,1014 V1018 Q261.4,1022 257.4,1022 H120.8 Z" fill="#8f7cf7"/>
+<text x="360" y="1020.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">75.1</text>
+<text x="64" y="1040.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">Jev 1.13</text>
+<path d="M120.8,1030 H252 Q256,1030 256,1034 V1038 Q256,1042 252,1042 H120.8 Z" fill="#5f52b8"/>
+<text x="360" y="1040.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">72.2</text>
+<text x="64" y="1060.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">d3-nano</text>
+<path d="M120.8,1050 H192.6 Q196.6,1050 196.6,1054 V1058 Q196.6,1062 192.6,1062 H120.8 Z" fill="#8b8b96"/>
+<text x="360" y="1060.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">40.5</text>
+<text x="120.8" y="1080" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">0</text>
+<text x="214.4" y="1080" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">50</text>
+<text x="308" y="1080" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">100</text>
+<text x="0" y="1118" font-size="13.5" font-weight="650" fill="#f2f2f4">Multi-agent collaboration<tspan dx="2" dy="-4" font-size="12.5" font-weight="700" fill="#e29bee">*</tspan></text>
+<line x1="120.8" y1="1128" x2="120.8" y2="1208" stroke="#34343c" stroke-width="1"/>
+<line x1="214.4" y1="1128" x2="214.4" y2="1208" stroke="#26262c" stroke-width="1"/>
+<line x1="308" y1="1128" x2="308" y2="1208" stroke="#26262c" stroke-width="1"/>
+<text x="64" y="1142.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">mude 1.0</text>
+<path d="M120.8,1132 H153.9 Q157.9,1132 157.9,1136 V1140 Q157.9,1144 153.9,1144 H120.8 Z" fill="#d63fa2"/>
+<text x="360" y="1142.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">19.8</text>
+<text x="64" y="1162.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">Jev 1.14</text>
+<path d="M120.8,1152 H125.4 Q129.4,1152 129.4,1156 V1160 Q129.4,1164 125.4,1164 H120.8 Z" fill="#8f7cf7"/>
+<text x="360" y="1162.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">4.6</text>
+<text x="64" y="1182.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">Jev 1.13</text>
+<path d="M120.8,1172 H120.1 Q119.3,1172 119.3,1172.7 V1183.3 Q119.3,1184 120.1,1184 H120.8 Z" fill="#5f52b8"/>
+<text x="360" y="1182.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">−0.8</text>
+<text x="64" y="1202.5" font-size="11.5" text-anchor="end" fill="#a6a6b0">d3-nano</text>
+<path d="M120.8,1192 H165.5 Q169.5,1192 169.5,1196 V1200 Q169.5,1204 165.5,1204 H120.8 Z" fill="#8b8b96"/>
+<text x="360" y="1202.5" font-size="12" font-weight="600" text-anchor="end" style="font-variant-numeric: tabular-nums" fill="#f2f2f4">26.0</text>
+<text x="120.8" y="1222" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">0</text>
+<text x="214.4" y="1222" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">50</text>
+<text x="308" y="1222" font-size="10" text-anchor="middle" style="font-variant-numeric: tabular-nums" fill="#777782">100</text>
+<text x="0" y="1254" font-size="12" fill="#a6a6b0">* Few items or an unstable score: fewer than 150 items,</text>
+<text x="0" y="1271" font-size="12" fill="#a6a6b0">items from fewer than 20 tasks, or mu already right more</text>
+<text x="0" y="1288" font-size="12" fill="#a6a6b0">than 95% of the time with no decision model.</text>
+<text x="0" y="1310" font-size="12" fill="#a6a6b0">† Malicious-instruction detection will be scored mainly on</text>
+<text x="0" y="1327" font-size="12" fill="#a6a6b0">constructed items, because attacks rarely appear in real</text>
+<text x="0" y="1344" font-size="12" fill="#a6a6b0">sessions. It isn't scored yet.</text>
+<text x="0" y="1366" font-size="12" fill="#a6a6b0">Bars below −25 are cut short; the number on the right is the</text>
+<text x="0" y="1383" font-size="12" fill="#a6a6b0">score.</text>
+</svg>

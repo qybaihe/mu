@@ -14,7 +14,7 @@ summary: 什麼留在你的機器上，判定器能看到什麼，以及怎樣�
 
 判定器只看到一個問題需要的欄位：一則訊息、一塊輸出、一條指令、一段簡短的執行摘要。任何東西到達判定器或看板之前，認證資訊都會被遮蔽。
 
-沒有判定器金鑰時，這些欄位會送給 OpenCode Zen 上免費的 Jev（Jev 是 TypeSafe 託管的判定模型，也是預設的判定器）。OpenCode 不拿它們訓練模型，mu 每天提示一次。用你自己的金鑰時，它們會送給你選的服務。要讓一切都留在本機，就用本機判定器（`MU_JUDGE=laya`），或者關掉判定器（`mu setup --judge off`，或在 `mu setup` 問判定器時選「暫時不要」；mu 的功能照常按規則運作），或者關掉整個判定核心（`MU_JUDGE=off`）。
+沒有判定器金鑰時，這些欄位會送給 OpenCode Zen 上免費的 Jev（Jev 是 TypeSafe 託管的判定模型，也是預設的判定器）。OpenCode 不拿它們訓練模型，mu 每天提示一次。用你自己的金鑰時，它們會送給你選的服務。要讓一切都留在本機，就在 Mac 上只用 [mude 1.0](@docs/judges#mude)（`mu judge mude enable --local-only`），或者關掉判定器（`mu setup --judge off`，或在 `mu setup` 問判定器時選「暫時不要」；mu 的功能照常按規則運作），或者關掉整個判定核心（`MU_JUDGE=off`）。
 
 ## 帳本 {#ledger}
 

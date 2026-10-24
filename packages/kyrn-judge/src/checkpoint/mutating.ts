@@ -4,7 +4,8 @@
  *
  * Wrong in the safe direction only: an unknown tool or command counts as changing files (one snapshot
  * more than needed), and a command counts as read-only only when every part of it is on a short list.
- * The permission gate and the constraint gate read commands with `isReadOnlyChain`, which also takes chains of them.
+ * A shell command is read with `isReadOnlyChain`, which also takes chains of them (`git status; git log -5`), as the
+ * permission gate and the constraint gate read it.
  */
 import { isShellTool } from "../extension/shell-tools.ts";
 
@@ -234,7 +235,7 @@ export function isReadOnlyChain(command: string, powershell = false): boolean {
 
 export function isMutatingCall(toolName: string, input: Readonly<Record<string, unknown>>): boolean {
 	if (READ_ONLY_TOOLS.has(toolName)) return false;
-	if (isShellTool(toolName)) return !isReadOnlyCommand(String(input.command ?? ""), toolName === "powershell");
+	if (isShellTool(toolName)) return !isReadOnlyChain(String(input.command ?? ""), toolName === "powershell");
 	return true;
 }
 

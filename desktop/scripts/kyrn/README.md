@@ -39,8 +39,8 @@ Built-in mu browser, hive, skills and tools still run inside mu.
 Where mu comes from (`process/agent/kyrn/harness.ts`): `MU_ROOT` / `KYRN_ROOT` when set; else the copy the packaged
 app carries (`<resources>/harness/mu-agent`, below); else a checkout beside this one (`../KYRN`, or `..` in the MU
 monorepo); else `mu-agent` installed with npm (`npm i -g mu-agent`), found from `mu` on PATH or in npm's usual global
-folders. The npm package, the app's copy included, keeps its keys in `~/.mu/.env` and its Laya venv in
-`~/.mu/local-judge`, and the settings follow it there.
+folders. The npm package, the app's copy included, keeps its keys in `~/.mu/.env` and mude 1.0 in
+`~/.mu/local-judge/mude`, and the settings follow it there.
 
 Windows has no bash. There the registration's command is `acp.cmd`, which runs `acp.mjs` with Node (22.19 or newer
 on PATH), and the adapter starts the harness as `node <root>/kyrn/bin/mu.mjs --mode rpc`, with no shell; closing a
@@ -81,8 +81,8 @@ WSL (`process/agent/kyrn/windows/wsl.ts`): on Windows, a conversation whose fold
 install when it is missing. The harness shares the Windows side's agent folder (one sign-in, one configuration:
 `MU_AGENT_DIR`) and the app's session file, both translated by WSL through `WSLENV` (`/p`); keys in a `.env` come
 from the distribution's own `~/.mu/.env`. Closing a conversation ends mu's input first (it then shuts down by
-itself), and ends the `wsl.exe` tree only if that did not work. The app's local judge and browser bridge listen on
-Windows' loopback, which WSL reaches only in mirrored networking mode. The start script is tested with bash; nothing
+itself), and ends the `wsl.exe` tree only if that did not work. The app's browser bridge listens on Windows'
+loopback, which WSL reaches only in mirrored networking mode. The start script is tested with bash; nothing
 of this has run on a real Windows machine with WSL yet.
 
 `node scripts/kyrn/start-check/check.mjs [--packaged]` checks this whole chain on the machine it runs on, the way the
@@ -297,9 +297,10 @@ provider, and not in the real Electron app.
 ## First-run guide and subscription sign-in (2026-09-22)
 
 - **The guide** (`/welcome`) opens once for someone without a startup model (`mu.onboarding.v1` in localStorage marks
-  it seen) and again from Settings → Models → "新手引导": what mu is, a model, a judge (Jev with its key, or the local
-  Laya), a summary. Everything is written in one save at the end, keys only as credentials. The OpenAI tile asks for
-  Chat Completions or Responses; the judge page offers Jev and Laya only, the full tier editor stays under "高级设置".
+  it seen) and again from Settings → Models → "新手引导": what mu is, a model, a judge (Jev with its key; since 0.2.0
+  mude 1.0 too, and the local Laya until 0.2.5), a summary. Everything is written in one save at the end, keys only as
+  credentials. The OpenAI tile asks for Chat Completions or Responses; the judge page offers Jev and mude 1.0 only, the
+  full tier editor stays under "高级设置".
 - **Signing in with a subscription** (ChatGPT Plus/Pro as pi's `openai-codex`, Claude Pro/Max as `anthropic`) runs pi's
   own OAuth flow in a child process, `mu auth status | login <provider> | logout <provider>` (the harness's
   `packages/kyrn-judge/src/auth`), started by `LoginManager` (`process/agent/kyrn/login.ts`) through the harness's

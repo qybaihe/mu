@@ -84,7 +84,7 @@ export default function SubscriptionLogin({ value, onChange }: Props) {
           onCancel={flow.cancel}
         />
       ) : null}
-      <LoginProblem failure={flow.failure} />
+      <LoginProblem failure={flow.failure} onStart={flow.start} />
 
       {account && account.models.length ? (
         <div className={choiceStyles.choiceField}>

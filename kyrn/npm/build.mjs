@@ -10,15 +10,14 @@
 // The package is laid out like the repository, so the launcher finds everything two folders above
 // kyrn/bin/mu.mjs either way (it tells the two apart with layoutOf):
 //
-//   kyrn/bin/          mu.mjs (npm's `mu`), kyrn-doctor, kyrn-ledger, kyrn-judge-local
-//   kyrn/local-judge/  the Laya sidecar's server (macOS). `mu judge setup` installs its venv and weights
-//                      into ~/.mu/local-judge, and only when asked to
+//   kyrn/bin/          mu.mjs (npm's `mu`), kyrn-doctor, kyrn-ledger
+//   kyrn/local-judge/  the lock of mude 1.0's Python packages (mu judge mude install, mu judge model add)
 //   dist/              pi's Node bundle (dist/bundle/cli.js), with its themes, assets, export templates and
 //                      the native clipboard helpers of pi-tui
 //   judge/             the judgment layer built to JavaScript, with its prompts, skills and agents, and the
 //                      manifest.json the desktop app reads its settings from; dist/auth.js is `mu auth`, the
-//                      desktop app's subscription sign-in, dist/import.js is `mu import` and dist/setup.js
-//                      is `mu setup`
+//                      desktop app's subscription sign-in, dist/import.js is `mu import`, dist/setup.js
+//                      is `mu setup` and dist/mude.js is `mu judge mude`
 //   docs/, examples/   pi's documentation, which the agent reads when asked about itself
 //   package.json       names the app mu (piConfig), so pi keeps its files in ~/.mu
 import { execFileSync, spawnSync } from "node:child_process";
@@ -131,6 +130,23 @@ export function rewriteMetaUrl(source, relativePath) {
 	return source.replaceAll("import.meta.url", `new URL(${JSON.stringify(path)}, new URL("../", import.meta.url)).href`);
 }
 
+/**
+ * Where the extension pi imports goes, judge/mu/index.js, and what is split from it.
+ *
+ * pi lists an extension by its file name, or by the folder of an index file: judge/mu/index.js is `mu`.
+ *
+ * Code the judgment layer imports only when it is used, with `import()`, goes to chunks beside index.js. Node reads
+ * and compiles a chunk only when it is imported. In one file, Node compiled all of it at every start, sub-agents
+ * included. Example: the Google sign-in's request code (google-login/cloud-code.ts) with Google's SDK and what only
+ * they use, 1.2 MB of the 3.5 MB, runs only on a request to those providers, but compiling it cost about 9 ms of
+ * every start on a cold compile cache (Apple M6, mu 0.1.12), which is what a fresh container always has.
+ *
+ * The chunks stay in judge/mu, one folder below judge/ as index.js is: rewriteMetaUrl counts on that.
+ */
+export function extensionBundle(entry, outdir) {
+	return { entryPoints: { index: entry }, outdir, splitting: true, chunkNames: "[name]-[hash]" };
+}
+
 /** Exact versions, as everywhere in this repository: "^0.86.0" is written 0.86.0. */
 export function exactVersion(range) {
 	const version = String(range).replace(/^[\^~]/, "");
@@ -195,12 +211,7 @@ async function buildJudge(out) {
 		plugins,
 	};
 	const results = [
-		await build({
-			...common,
-			// pi lists an extension by its file name, or by the folder of an index file: judge/mu/index.js is `mu`.
-			entryPoints: { index: join(judgeSource, "src/extension/kyrn-judge.ts") },
-			outdir: join(judgeRoot, "mu"),
-		}),
+		await build({ ...common, ...extensionBundle(join(judgeSource, "src/extension/kyrn-judge.ts"), join(judgeRoot, "mu")) }),
 		// `mu doctor` looks for a browser with the same code the browser feature uses.
 		await build({ ...common, entryPoints: { chrome: join(judgeSource, "src/browser/chrome.ts") }, outdir: join(judgeRoot, "dist") }),
 	];
@@ -278,6 +289,20 @@ async function buildJudge(out) {
 			}
 		}
 	}
+	// `mu judge mude` (src/mude) runs on a bare Node as well, in the desktop app too (Electron as Node): it takes nothing
+	// from node_modules.
+	const mude = await build({
+		...common,
+		entryPoints: { mude: join(judgeSource, "src/mude/cli.ts") },
+		outdir: join(judgeRoot, "dist"),
+	});
+	for (const output of Object.values(mude.metafile.outputs)) {
+		for (const imported of output.imports) {
+			if (imported.external && !isBuiltin(imported.path)) {
+				throw new Error(`mu judge mude leaves ${imported.path} to be found at run time; it must run on Node alone`);
+			}
+		}
+	}
 	// manifest.json is what the desktop app draws its settings from, also for an mu that came from npm.
 	for (const name of ["agents", "prompts", "skills", "themes", "manifest.json", "THIRD_PARTY_NOTICES.md"]) {
 		cpSync(join(judgeSource, name), join(judgeRoot, name), { recursive: true });
@@ -323,25 +348,27 @@ function copyPi(out) {
 }
 
 function copyLauncher(out) {
-	for (const name of ["mu.mjs", "kyrn-doctor", "kyrn-ledger", "kyrn-judge-local"]) {
+	for (const name of ["mu.mjs", "kyrn-doctor", "kyrn-ledger"]) {
 		const target = join(out, "kyrn", "bin", name);
 		cpSync(join(repo, "kyrn", "bin", name), target);
 		chmodSync(target, 0o755);
 	}
-	for (const name of ["server.py", "requirements.lock.txt"]) {
-		cpSync(join(repo, "kyrn", "local-judge", name), join(out, "kyrn", "local-judge", name));
-	}
+	const lock = join("kyrn", "local-judge", "mude-requirements.lock.txt");
+	cpSync(join(repo, lock), join(out, lock));
 }
 
 /**
  * The staged judgment layer has to be a module that Node imports as it is, next to the pi it is packed with: when
  * Node cannot, pi's loader transpiles all of it with Babel at every start, which a 1 GB machine does not survive.
  * A child process with a small heap imports it, which also runs every module's top level against pi's modules.
+ * `chunks` are the files split from it (extensionBundle), imported after it: a chunk only imported when its code is
+ * used would otherwise first be tried on a user's machine.
  */
-export function checkNativeImport(file) {
+export function checkNativeImport(file, chunks = []) {
 	const home = mkdtempSync(join(tmpdir(), "mu-build-"));
 	try {
-		const script = `const m = await import(${JSON.stringify(pathToFileURL(file).href)}); if (typeof m.default !== "function") throw new Error("the default export is not an extension factory");`;
+		const urls = JSON.stringify(chunks.map((chunk) => pathToFileURL(chunk).href));
+		const script = `const m = await import(${JSON.stringify(pathToFileURL(file).href)}); if (typeof m.default !== "function") throw new Error("the default export is not an extension factory"); for (const url of ${urls}) await import(url);`;
 		const result = spawnSync(process.execPath, ["--max-old-space-size=128", "--input-type=module", "-e", script], {
 			cwd: home,
 			env: { ...process.env, HOME: home, USERPROFILE: home, PI_OFFLINE: "1" },
@@ -350,7 +377,11 @@ export function checkNativeImport(file) {
 		});
 		if (result.status !== 0) {
 			const why = (result.error?.message ?? result.stderr).trim().split("\n").slice(-6).join("\n");
-			throw new Error(`Node cannot import ${file} by itself, so pi would transpile it at every start:\n${why}`);
+			throw new Error(
+				chunks.length === 0
+					? `Node cannot import ${file} by itself, so pi would transpile it at every start:\n${why}`
+					: `Node cannot import ${file} or a chunk split from it by itself (pi would transpile the extension at every start; a chunk would fail when first used):\n${why}`,
+			);
 		}
 	} finally {
 		rmSync(home, { recursive: true, force: true });
@@ -378,7 +409,13 @@ export async function main(argv = process.argv.slice(2)) {
 
 	const pi = copyPi(out);
 	const judgeVersion = await buildJudge(out);
-	checkNativeImport(join(out, "judge", "mu", "index.js"));
+	const extensionDir = join(out, "judge", "mu");
+	checkNativeImport(
+		join(extensionDir, "index.js"),
+		readdirSync(extensionDir)
+			.filter((name) => name !== "index.js")
+			.map((name) => join(extensionDir, name)),
+	);
 	copyLauncher(out);
 	cpSync(join(repo, "LICENSE"), join(out, "LICENSE"));
 	cpSync(join(here, "README.md"), join(out, "README.md"));

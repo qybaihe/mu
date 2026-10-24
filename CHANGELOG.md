@@ -2,16 +2,162 @@
 
 What changed in each release of mu: the desktop app and the `mu` command line together. Releases are published under [Releases](https://github.com/qybaihe/mu/releases) with their downloads; the `mu-agent` npm package has its own, more detailed [changelog](kyrn/npm/CHANGELOG.md).
 
-mu is in pre-release (0.1.x): names, settings and formats may still change between releases.
-
 ## [Unreleased]
+
+## [0.2.8] - 2026-10-24
+
+**0.2.8 makes the plain-language board talk like a teammate: who's doing what, what's stuck and what's next, each subagent by name, in the language you write in, and in the desktop app at the top of the conversation.** The desktop app carries mu-agent 0.2.8.
+
+### Changed
+
+- **The plain-language board talks like a teammate giving a quick update.** It leads with one line on who is doing what, or what just happened, then says what's stuck and on what, and what comes next. It starts from what changed since its last update instead of rewording it, names the file, test or command that matters, and leaves out filler such as "making progress". When a check fails, the board can say why, from the check's own output, with any key taken out. In the terminal, the board above the editor shows that line, then what needs you or what's stuck, then the latest step; `/board` shows the rest.
+- **The board says what each subagent is doing.** While subagents work, the board lists them by name with what each is doing and for how long. When one comes back or fails, the board says so right away, with the first line of its report or why it stopped, instead of waiting for all of them. "2 subagents finished" now says "1 with errors" when one of them failed or timed out.
+- **The board tells you when something is stuck, while it's stuck.** A command that runs for a minute, or a subagent that goes a minute without output, gets a line on the board ("Still running npm test, 3 min in") that updates at 1, 3 and 10 minutes, and the board looks again each time. Set `features.board.stallMs` to change the minute, or 0 to turn it off.
+- **The board's model writes in the language you write in.** It used to follow the desktop app's language. Now a Chinese message gets a Chinese board in an English app, and an English message gets an English one in a Japanese app; a message like "ok" goes by the one before it. The board's fixed lines still follow the app's language, and `features.board.language` still fixes one.
+- **In the desktop app, the board leads with that line, and you see it with the panel closed.** The board shows the line first, then what's stuck, what's next and who's doing what, and how long ago it was updated. With the work panel closed, the line sits at the top of the conversation; click it to open the board.
+
+### Fixed
+
+- **A permission prompt stays on the board until you answer it.** A board update that started just before mu asked for permission could replace the "Needs you" line while the prompt was still open. The board also showed the stage the agent was in, such as "Making changes", instead of "Waiting for you".
+- **A busy agent no longer keeps the board from updating.** When the agent said something every few seconds, each board update gave way to the next one, and the board could stay unwritten until the agent stopped. Now the board is written anyway once it's 15 seconds old (`features.board.maxStaleMs`). Mid-run, the board's model gets 20 seconds instead of 60, since a later update is already out of date.
+
+## [0.2.7] - 2026-10-24
+
+**0.2.7 adds OpenAI's decision model as a judge, starts OpenAI on GPT-6.1 Sol, shortens the model menu to the OpenAI models worth picking, and keeps the thinking level in view.** The desktop app carries mu-agent 0.2.7.
 
 ### Added
 
+- **OpenAI's decision model can be the judge.** `gpt-6-luna` answers mu's decisions through OpenAI's Decisions API. Pick it with `mu setup --judge openai`, with `/mu judge openai` in a session, or as OpenAI on the Judges page in Settings, which has a field for its key. It uses its own key, `MU_JUDGE_OPENAI_KEY`, or else the OpenAI API key you already set up for mu's models (Sign in with ChatGPT doesn't work for it). To reach it through a relay or proxy that serves the same Decisions endpoint, give the judge a `baseUrl` and a key of its own in `~/.mu/agent/mu.json`: the key of mu's OpenAI models only ever goes to api.openai.com. OpenAI charges $0.10 per million uncached input tokens and nothing for output. It isn't measured on mu's questions yet. If its key goes away (you sign out of OpenAI or remove the key) or OpenAI turns the key down, mu says so once per session, and the next judge or mu's fallbacks decide until a key is back. In the desktop app, the key has a Remove key button, and the model is picked from the list OpenAI serves.
+
+### Changed
+
+- **OpenAI's newest model is the default.** With an OpenAI API key or Sign in with ChatGPT and no model picked yet, mu now starts on GPT-6.1 Sol instead of GPT-5.5, and `mu setup` offers it for an OpenAI key.
+- **The model menu lists the OpenAI models worth picking.** With Sign in with ChatGPT or an OpenAI key, the desktop app's model menu shows GPT-5.6 and newer (GPT-5.6 Luna, Sol and Terra, GPT-6 Astra, Luna and Sol, and GPT-6.1 Sol) instead of every OpenAI model back to GPT-4. Search still finds any model, **Show all models** at the end of the list shows the rest, and the model a conversation already uses always stays in the list.
+
+### Fixed
+
+- **The thinking level stays in view.** It used to open in a side menu that a long model list pushed down, past the bottom of a small window. It now sits under the model list in the same menu, outside the part that scrolls, so the model and its thinking level always show together, in a narrow window too.
+
+## [0.2.6] - 2026-10-24
+
+**0.2.6 shows the note that Laya was replaced when you send your first message, keeps mude 1.0 local only when it's installed again, stops `mu doctor` failing on a machine without Chrome, and tidies the sidebar, file links and model chip in the desktop app.** The desktop app carries mu-agent 0.2.6.
+
+### Fixed
+
+- **You now see the note that Laya was replaced.** If your settings still named Laya, 0.2.5 was meant to tell you once which judge took its place. In the desktop app, the check the app runs on mu at every start got that note instead of you, before any conversation opened. mu still updates `mu.json` when a session starts, and now keeps the note until you send your first message, in the app or the terminal. If 0.2.5 already updated your `mu.json`, you won't see the note: your judge is mude 1.0 if it's set up on your Mac, otherwise the other judges in your list or Jev, and the old file is in `~/.mu/backups`.
+- **Installing mude 1.0 again keeps it local only.** Running `mu judge mude install` over a working local-only setup, or `mu judge model add` with mude's own repo, used to put Jev back behind it. It now keeps what you chose, as `mu judge mude enable` does; `--with-fallback` still changes it.
+- **`mu doctor` no longer fails on a machine without Chrome.** A browser is only needed for mu's browser, so the row now says it's optional instead of asking you to fix it, and `mu doctor` (and `/doctor` inside mu) passes when everything else is set up. `mu --help` also fits in a 100-column terminal now.
+- **Small visual fixes in the desktop app.** In the sidebar, a long project name now ends in an ellipsis before the project's **+** and menu buttons instead of running under them, and the buttons hide again when the pointer leaves after a click. A pinned conversation's title gets room before its folder name. In a reply, the folder icon after a file name no longer leaves a gap in the sentence while it's hidden, and a file name that doesn't exist is gray but easy to read. Right after you send from the home page, the model chip names the same model the home page showed instead of "Default model" while mu starts.
+- **A mistyped Hugging Face model name no longer says the model is private.** When you add a decision model under Settings → Judges or with `mu judge model add`, Hugging Face answers a name that doesn't exist the same way as a private or gated model, so mu now asks you to check the name and says it may not exist, or may be private or gated.
+
+## [0.2.5] - 2026-10-24
+
+**0.2.5 removes Laya from mu's built-in judges. If Laya was your judge, mu switches to mude 1.0 when it's set up on your Mac, otherwise to Jev, and says so once; opening a conversation never waits for a judge to start.** The desktop app carries mu-agent 0.2.5.
+
+### Changed
+
+- **If Laya was your judge, the desktop app shows mude 1.0 or Jev in its place.** The Judges page shows mude 1.0 as your judge when it's set up on your Mac, otherwise the judges you had behind Laya, or Jev when there were none: the same choice mu makes when it switches your settings over. The app doesn't change `mu.json` for this. The first conversation you open says once which judge you have now and, on a Mac, that you can add other decision models from Hugging Face under Settings → Judges. The app doesn't delete what Laya downloaded. You can delete these folders yourself: `~/.mu/local-judge/laya-multilingual-onnx` on Windows and Linux, and `~/.mu/local-judge/models/laya-multilingual-coreml` and `~/.mu/local-judge/.venv` on a Mac.
+- **Opening a conversation never waits for a judge to start.** The app no longer starts Laya before mu, and mude 1.0 or a decision model from Hugging Face starts in the background while the conversation opens.
+
+### Removed
+
+- **Laya is no longer built into mu.** Laya, the third-party local judge (`mu judge setup`, `mu judge start`), its sidecar and the `local` judge type are gone. If your judge was Laya, the first session you open in the terminal or the app switches it over: to mude 1.0 when it's set up on your Mac, otherwise to the judges you had behind Laya, or to Jev when there were none. mu changes only those values in `~/.mu/agent/mu.json`, keeps a copy of the file in `~/.mu/backups`, and tells you once what your judge is now. `MU_JUDGE=laya` is skipped. To use another decision model on your Mac, add it from Hugging Face with `mu judge model add <link>`, or under Settings → Judges in the app.
+- **Laya is no longer built into the desktop app.** The "Local Laya" choice is gone from the Judges page in Settings and from the first-run guide, with its install and start buttons and the copy of Laya the app ran itself on Windows and Linux. The Judges page offers Jev, mude 1.0 (on a Mac with Apple silicon) and CLM, and the guide offers Jev and mude 1.0. To use another decision model, add it from Hugging Face under mude 1.0 on the Judges page, or with `mu judge model add <link>`. It must be packaged like mude 1.0. The Windows and Linux downloads are smaller, because they no longer carry the ONNX runtime.
+
+## [0.2.4] - 2026-10-24
+
+**0.2.4 turns files a reply names into links, groups conversations by project, opens a conversation from the home page at once, brings Gemini 4 Argon through Google Antigravity, and fixes third-party OpenAI-compatible providers that turned away the `developer` role.** The desktop app carries mu-agent 0.2.4.
+
+### Added
+
+- **Files named in a reply are links in the desktop app.** When a reply names a file as inline code, like `07_card.png` or `out/report.pdf`, or links to one, the name becomes a link once the file is found. A relative name is read against the conversation's folder, and a bare file name is also looked for in its subfolders. An image opens in the side panel, where you can zoom in and out and step through every image the reply names with the arrow keys or buttons. Any other file opens in its default app, and the folder icon beside it shows it in Finder (File Explorer on Windows). A program, such as a `.sh`, `.command` or `.exe` file, is only shown in its folder, never run. A clear path to a file that doesn't exist is grayed out, with "File not found" on hover. Ordinary code, like `npm run build` or `x.length`, stays as it was.
+- **Conversations are grouped by project in the desktop app's sidebar.** Each conversation goes under its project: the Git repository its folder is in, or the folder itself when it is in none. A conversation you start in a new folder makes its project as it appears, and the conversations you already have are sorted into theirs. **Add project** at the end of the list picks a folder and opens the home page in it. A project's **+** starts a conversation there, and its menu archives the project with its conversations. Each project shows its five newest conversations, with Show all for the rest, and pinned conversations stay above the projects.
+
+### Changed
+
+- **A message sent from the desktop app's home page opens its conversation at once.** The home page used to wait while mu started, the model and thinking level were set and the judge read the message. Now the conversation opens as soon as it is made and shows the message straight away, and mu starts behind it. You can type the next message meanwhile: it waits above the box, goes in the order sent, and can be taken back. If the model or level can't be set, the conversation says why and the message comes back into the box.
+
+### Fixed
+
+- **Gemini 4 Argon shows up after you sign in with Google Antigravity, and works.** mu introduced itself to Antigravity as its IDE, and Google gives Gemini 4 Argon and the Gemini 3.8 Flash tiers only to its command line, so they were missing from the model pickers and a request for them failed. Now the app and the terminal list Gemini 4 Argon (Low, Medium and High) and the Gemini 3.8 Flash tiers when your plan includes them. An account that was already signed in gets them as a session starts, without signing in again, and signing out removes them with the account's other models.
+- **A third-party OpenAI-compatible provider no longer fails with "unknown role developer".** mu sent a thinking model's instructions as a `developer` message, the role OpenAI's newer models use, to every OpenAI-compatible endpoint. Many relays and gateways know only `system`, so every request failed with `Model request failed: 502 … unknown role developer`, although the provider's connection check passed. Now only OpenAI, Azure OpenAI and Xiaomi MiMo, whose docs list `developer`, get it; every other endpoint gets `system`, and the reply-length field all of them read, `max_tokens`, instead of OpenAI's `max_completion_tokens`, which some ignore. If an endpoint still turns a request away over the role or a field it doesn't know, such as `max_completion_tokens`, `reasoning_effort`, `stream_options` or `store`, mu asks once more without it, before any reply shows, and keeps doing so for that model until it restarts. Set `compat` in `models.json` to choose yourself.
+
+## [0.2.3] - 2026-10-24
+
+**0.2.3 adds decision models from Hugging Face next to mude 1.0, lets mu decide when a message sent mid-run reaches the work, and makes Sign in with ChatGPT cope with a busy port 1455.** The desktop app carries mu-agent 0.2.3.
+
+### Added
+
+- **Other decision models from Hugging Face, next to mude 1.0.** Paste a Hugging Face link or `owner/name` under mude on the Judges page in Settings (or run `mu judge model add <link>`). mu downloads the model with progress, checks every file, resumes a download that stopped, sets it up and makes it the judge. The list shows each added model with Use, Continue downloading and Remove, and "Use mude 1.0 as the judge" switches back. Only one decision model runs at a time. A model must be packaged like mude 1.0's MLX edition, with its own `d3_server_mac.py`, which runs on your Mac, so add only models you trust.
+
+### Changed
+
+- **Less small print.** The site, the app, the command line and the READMEs drop intro paragraphs, footnotes and hints that repeated what was already on screen. Install sizes, costs, warnings and what leaves your machine stay.
+- **The Now / After switch next to the message box is gone: mu decides when a message you send during a run reaches the work.** A correction reaches the model at its next step. Extra work and unrelated questions wait until the run is done. The queue above the box shows where each message went, and you can still take them back. The judge has up to 1.5 seconds to decide. If it doesn't answer in time, or fails, the message reaches the model at its next step. In the terminal, Enter and Alt+Enter work as before, and mu can move the message the same way. To turn this off, set `"input.interjection": "shadow"` under `modes` in `~/.mu/agent/mu.json`. Messages from the app then reach the model at its next step, and in the terminal the key you press decides, as before.
+
+### Fixed
+
+- **Signing out of a subscription takes its models out of the model pickers at once.** After you signed out of ChatGPT, Grok or a Google account in Settings, the default model's and the board's pickers, the home page and open conversations kept listing that account's models until the app restarted. Now they drop them as soon as the sign-out finishes. If the default model or an open conversation was on one of them, it switches to another model you've set up and says so. `/logout` in the terminal does the same for the current session.
+- **Sign in with ChatGPT no longer fails with "Port 1455 is in use" when the port is held by another sign-in of mu.** ChatGPT's sign-in waits for the browser on port 1455, which OpenAI fixes and the Codex CLI uses too. Before, the app could start a new sign-in while the one before it still held the port, and a `/login` left open in a terminal blocked the app until it was canceled there. Now the app starts a new sign-in only once the one before has ended (ending it after 3 seconds at most). An earlier sign-in of mu, in the app or in a terminal, hands the port over by itself.
+- **When another program holds the port, the app says which one and offers Retry.** For example: "Port 1455 is in use by codex (process 4321), probably for its own sign-in. Finish or cancel that sign-in there, then click Retry", in every language the app ships in. "Paste the address instead" signs in without the port: you sign in in the browser, then paste the address it ends on. Before, the app showed the flow's English error and nothing to do about it.
+- **Every way a sign-in ends gives the port back:** finishing, Cancel, the 15-minute limit, closing the app's last window, signing out (which now ends a sign-in still under way first) and quitting the app.
+
+## [0.2.2] - 2026-10-24
+
+**0.2.2 makes the mude 1.0 install cope with a full disk, a stop at any step and two installs at once, and its English reads naturally.** The desktop app carries mu-agent 0.2.2.
+
+### Changed
+
+- **Clearer English in the app, the command line, the site and the docs.** The mude 1.0 switch is now called "Local only". Install messages say how to resume, and error messages say what to do next. Settings descriptions and the README read more naturally.
+
+### Fixed
+
+- **Ctrl-C stops a mude 1.0 install at once while it waits to retry a dropped connection.** It says how much is downloaded and that the next install resumes from there. Before, mu ended 5 seconds later without a word. What was downloaded was kept either way.
+- **Installing mude 1.0 on a nearly full disk.** If the disk fills up during the download, the install now stops at once and says the disk is full. Before, it retried for two minutes, and the desktop app then blamed the connection. When an install resumes after a stop, the free-space check counts only what is still to download, so 1.7 GB already on the disk no longer has to fit a second time. Ctrl-C while the install sets up its Python environment now says it was stopped and resumes next time, instead of saying the packages couldn't be installed.
+- **A mude 1.0 install no longer waits forever for uv.** When the Mac has no uv, the install downloads it from GitHub (about 20 MB). If GitHub stops answering, the install now gives up after 5 minutes and says to run it again. Ctrl-C stops it at once.
+- **Two mude 1.0 installs no longer run at once.** For example, one in a terminal and one in the desktop app. Before, both downloaded into the same files, and one failed with a missing-file error even when the other finished. Now the second says another install is running and to wait for it. If a power cut or a kill leaves a stale lock behind, the next install takes it over.
+- **Stopping a mude 1.0 install while its server starts no longer leaves the server running.** Ctrl-C, or Cancel in the desktop app, used to leave the half-started server holding about 4 GB of memory, with mude not yet the judge. Now the stop ends the server too, and the terminal says so at once. A server that was already running before the command stays.
+
+## [0.2.1] - 2026-10-24
+
+**0.2.1 makes mude 1.0 the recommended judge on a Mac, and installing it survives a power cut.** The desktop app carries mu-agent 0.2.1.
+
+### Changed
+
+- **mude 1.0 is the recommended judge on a Mac that can run it** (Apple silicon, macOS 14 or later, 8 GB of memory or more). The desktop app's first-run guide and Settings → Judges list it first, marked recommended, and the guide picks it to start with: one click installs it. Jev is still there to pick, and on other machines it is recommended as before.
+
+### Added
+
+- **`mu setup` offers mude 1.0.** On a Mac that can run it, the judge step opens with mude 1.0, the recommended answer. Picking it installs mude 1.0 right there, with Jev behind it for what it can't answer. Scripts use `--judge mude`.
+
+### Fixed
+
+- **Installing mude 1.0 survives a power cut, a lost connection or a stop, and goes on from where it was.**
+  - The download is saved to the disk as it goes, so after a power cut it continues from the last part the disk kept, instead of failing its check at the end.
+  - A dropped connection is retried for about two minutes, and every try that gets more of the file starts the count again.
+  - Ctrl-C, or quitting the desktop app, keeps what was downloaded.
+  - A continued install keeps the "Only local" choice it was started with.
+- **The desktop app continues a stopped install in one click.** Settings → Judges and the first-run guide show "Continue installing" and how much is already downloaded ("Downloaded 0.9 of 1.8 GB"), and continue without asking for consent again.
+
+## [0.2.0] - 2026-10-23
+
+**0.2.0 starts the era of mu's own models: turn on mude 1.0 in one click.** The desktop app carries mu-agent 0.2.0.
+
+### Added
+
+- **mude 1.0 installs on your Mac in one step and becomes mu's judge.** mude 1.0 is mu's own decision model, optimized for coding. On a Mac with Apple silicon (macOS 14 or later, 8 GB of memory or more):
+  - In the desktop app, the first-run guide's judge step installs it with one click: it downloads mude 1.0 (1.8 GB) and checks every file, sets it up, starts it and makes it the judge. You can follow the progress, try again if it fails, or skip it. Settings → Judges has the same card: install, start, stop, make it the judge, uninstall, and an "Only local" switch.
+  - In the terminal, `mu judge mude install` does the same, and `status`, `enable --local-only`, `disable`, `start`, `stop` and `uninstall` manage it.
+  - Decisions it answers never leave your Mac, and it answers in about 0.1 s. What it can't answer goes to the judge you had before, which is hosted, unless you choose Only local. While it runs, it uses about 4 GB of memory.
+- **Session files count what subagents and cut replies spent.** A reply stopped for thinking too long, and each subagent, leave a `kyrn.usage` entry with their tokens and cost, so a cost report or benchmark can include them. The model never sees these entries.
+- **The desktop app's first-run guide offers "No judge".** It is the third choice on the judge step, beside Jev and Laya: every decision point is off and nothing is sent to a judge, like `mu setup`'s "Not now". Skipping the step still keeps the judge it shows. Picking a judge afterwards turns the verdicts back on.
 - **`MU_TIME_BUDGET_S` gives a run a deadline.** Set it to the seconds a run may take (benchmark harnesses set it from the task's timeout): a reply stuck thinking is cut early enough for its retry to finish, and the agent hears how much time is left at 50% and 80%, with a reminder to get the requested result in place first. Without it nothing changes.
 
 ### Changed
 
+- **Replies start sooner in the terminal and the desktop app.** The questions mu asks the judge about a new message go out together instead of one after another, and a turn waits at most 3 s for them instead of 4 s. A long command output waits at most 2 s for its check instead of 4 s. In the authors' own sessions the wait before the model starts fell from a median 2.7 s to 1.7 s. Checks that guard a command (permission, risk, your constraints, prompt injection) wait as before.
+- In `mu --print` and json-mode runs, mu tells the agent at most once per message that it said it would do more and stopped, and not again after the agent answered without doing anything. The local judge no longer decides this: it took a finished "Done. Created …" for a promise.
+- **The judge no longer picks which packs and MCP servers a message needs.** Asked 196 times on benchmarks and in real sessions, it never opened one, and each turn waited for its answer. They stay hidden as before, and `find_capability` now tells the agent which ones are installed (`mcp:linear (MCP server)`, `pack:debugger (pack)`, …), so it opens one when a task needs it; you can with `/capabilities open`. `"modes": { "capability.disclosure": "active" }` in `~/.mu/agent/mu.json`, or the desktop app's settings, bring the question back; `"features": { "catalog": false }` shows everything from the start.
 - **Services in the order you'd look for them.** In English (and any language but Chinese), `mu setup`'s list and the desktop app's first-run guide start with OpenAI, Anthropic, Google, xAI and OpenRouter; in Chinese they keep starting with DeepSeek, Qwen and Kimi.
 - **A quieter start in the terminal.** mu's welcome is the whole first screen: the list of loaded skills, prompts and extensions that pi prints under it is left out; prompts and skills are still in the `/` menu. Problems loading them still show. `"quietStartup": false` in settings.json, or `--verbose`, brings the list back.
 - **The terminal's `/login` no longer offers a Claude subscription sign-in either**, so the command line matches the desktop app: Anthropic doesn't allow other apps to offer one. `/login anthropic` goes straight to the API key. A sign-in made before keeps working until `/logout`.
@@ -35,8 +181,16 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ### Fixed
 
+- **Running mu from a fresh clone works as the README says.** `npm install --ignore-scripts` then `node kyrn/bin/mu.mjs` failed with `ERR_MODULE_NOT_FOUND` for a provider's `.json`: the model list pi reads is generated, not committed. The READMEs, CONTRIBUTING.md and the desktop readme now include `npm run hydrate:model-catalog` (offline, from the pinned catalog, as CI builds it); without it the launcher says what to run, and `mu doctor` flags it. The hint for missing dependencies names that script too, instead of `hydrate:model-data`, which fetches the catalogs over the network.
+- **A flagged script keeps its line breaks for the judge and in the confirmation.** They were run into one line, which in a script joins separate commands into one: `echo done` and an `rm -rf build` on the next line read as a single echo. Runs of spaces still collapse.
+- Pressing Escape during a sign-in in the terminal goes back to the list, instead of reporting "Failed to login to GitHub Copilot: This operation was aborted".
+- Choosing a subscription in `mu setup` no longer tells you to start mu and type `/login`: when setup starts mu, `/login` is already open.
+- **`mu --print` can reach your MCP servers again.** In a one-shot run nothing opened an MCP server, and the tool to open one was left out, so the agent couldn't use it. With a server installed, the agent now sees which ones are there and opens the one it needs; runs without one are unchanged.
+- The desktop app's first-run guide names OpenAI, Claude and Gemini first under "Paste an API key" in every language but Chinese, as its list of services already does.
+- **With the judge off, the terminal no longer reads as if one answered.** The footer no longer names it after each message ("Jev 1.13 (free): chat · answer directly · off"), and `/status` says "judge: off" instead of naming the judge set up, and no longer lists `notify.routing`, `input.interjection` and `turn.drift` as `shadow`: with the default off they are off too. `/doctor` no longer checks the judge by asking it a question, which sent a request to OpenCode and brought up the notice that the free Jev reads what you send; it and `mu doctor` say the judge is off and nothing is sent, leave out the Jev key row, and show the browser as off, which it is without browser.step.
+- A first `mu setup` no longer says it backed up the previous files when the only one was the empty `auth.json` pi writes at its first start.
 - `mu doctor` in a terminal starts with how many things need fixing, as `/doctor` inside mu does.
-- **The judge sees the risky part of a long command.** A flagged command (`rm -rf`, `DROP TABLE`, a force push, …) reached the judge cut to its first 400 characters, so in a long script the part the flag was about could be missing, and the judge could let it run as harmless. The judge now gets the whole command up to 8,000 characters; past that, its start and every flagged part with the text around it. The confirmation you are asked shows the flagged parts too.
+- **The judge sees the risky part of a long command.** A flagged command (`rm -rf`, `DROP TABLE`, a force push, …) reached the judge cut to its first 400 characters, so in a long script the part the flag was about could be missing, and the judge could let it run as harmless. Now a command up to 1,500 characters reaches it whole; past that, its start and every flagged part with the text around it: the same excerpt you are asked to confirm. Whole scripts up to 8,000 characters, tried first, read worse: amid hundreds of harmless lines the judge lost what you had and had not asked for.
 - Reading a file page by page, or running scripts that only differ further down, no longer gets the agent told it is going in circles.
 - `mu --print` no longer stays up to 10 s after the run for a judge answer nobody waits for any more.
 - A late skill selection on the first message now takes effect from the next message, instead of every skill staying in the prompt for the whole conversation.
@@ -203,15 +357,15 @@ mu is in pre-release (0.1.x): names, settings and formats may still change betwe
 
 ## [0.1.2] - 2026-09-23
 
-Preview build.
+A build of the desktop app and `mu-agent`.
 
 ## [0.1.1] - 2026-09-23
 
-Preview build.
+A build of the desktop app and `mu-agent`.
 
 ## [0.1.0] - 2026-09-23
 
-The first preview: the desktop app for macOS (signed and notarized), Windows and Linux, x64 and arm64, with mu inside it, and `mu-agent` on npm.
+The first release: the desktop app for macOS (signed and notarized), Windows and Linux, x64 and arm64, with mu inside it, and `mu-agent` on npm.
 
 [Unreleased]: https://github.com/qybaihe/mu/compare/v0.1.6...main
 [0.1.6]: https://github.com/qybaihe/mu/releases/tag/v0.1.6

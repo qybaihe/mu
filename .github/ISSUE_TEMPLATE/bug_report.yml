@@ -65,7 +65,7 @@ body:
     attributes:
       label: Model, judge and settings
       description: |
-        The model, the judge (`/status` shows it: "free Jev", Jev with a key, Laya…), the permission mode, and any settings you changed. Never paste keys.
+        The model, the judge (`/status` shows it: "free Jev", Jev with a key, mude 1.0…), the permission mode, and any settings you changed. Never paste keys.
     validations:
       required: false
 

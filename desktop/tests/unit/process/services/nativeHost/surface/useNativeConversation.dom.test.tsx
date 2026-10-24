@@ -3,7 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { NativeResult, NativeSnapshot } from '@/common/kyrn/nativeBridge';
 import { durable, reduceAll, type NativeView, type PiRecord } from '@/common/utils/nativeHost';
-import { useNativeConversation } from '@/renderer/pages/native/hooks/useNativeConversation';
+import { stageFirstMessage, useNativeConversation } from '@/renderer/pages/native/hooks/useNativeConversation';
 import { NativeClientContext, type NativeClient } from '@/renderer/pages/native/utils/nativeClient';
 import { createFakeHost, type FakeHost } from './fakeClient';
 import { ended, findRecord, frame, recorded, reply, text, user } from './records';
@@ -147,13 +147,19 @@ describe('useNativeConversation', () => {
 
     await act(async () => {
       await result.current.send('also b');
-      await result.current.send('then c', 'followUp');
+      await result.current.send('then c', [{ type: 'image', mimeType: 'image/png', data: 'AAAA' }]);
     });
     const commands = host.calls.filter((call) => call.method === 'request').map((call) => call.command);
     expect(commands).toContainEqual({ type: 'prompt', message: 'fix it' });
     // As prompts with pi's streamingBehavior: a run that ended meanwhile is started by the message, not left waiting.
+    // Each a steer, as Enter is in the terminal: mu's kernel moves one to after the run when that suits it better.
     expect(commands).toContainEqual({ type: 'prompt', message: 'also b', streamingBehavior: 'steer' });
-    expect(commands).toContainEqual({ type: 'prompt', message: 'then c', streamingBehavior: 'followUp' });
+    expect(commands).toContainEqual({
+      type: 'prompt',
+      message: 'then c',
+      images: [{ type: 'image', mimeType: 'image/png', data: 'AAAA' }],
+      streamingBehavior: 'steer',
+    });
   });
 
   it('lets pi show a refused prompt, and says a failure pi could not', async () => {
@@ -382,6 +388,73 @@ describe('useNativeConversation', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.epoch).not.toBe(replaced);
     expect(result.current.epoch).not.toBe(opened);
+  });
+
+  it('shows the first message the home page left as soon as the conversation opens, and sends it after mu is set up', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    const pi: { started?: () => void } = {};
+    host.answer(async (_id, command) => {
+      // mu starts on the first command: it takes its time.
+      if (command.type === 'set_model')
+        await new Promise<void>((resolve) => {
+          pi.started = resolve;
+        });
+      if (command.type === 'get_state') return { ok: true, data: { isStreaming: false } };
+      return { ok: true, data: undefined };
+    });
+    stageFirstMessage('c1', {
+      setup: [{ type: 'set_model', provider: 'e2e', modelId: 'e2e-fake-model-2' }],
+      text: 'fix the build',
+    });
+    const { result } = mount(host);
+    await waitFor(() => expect(result.current.outgoing?.text).toBe('fix the build'));
+    const sent = () => host.calls.filter((call) => call.method === 'request').map((call) => call.command?.type);
+    expect(sent()).toEqual(['set_model']);
+    await act(async () => pi.started?.());
+    await waitFor(() => expect(sent()).toEqual(['set_model', 'prompt', 'get_state']));
+    expect(result.current.returned).toBeUndefined();
+  });
+
+  it('does not send a first message stopped while mu is set up, and gives its text back', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    const pi: { started?: () => void } = {};
+    host.answer(async (_id, command) => {
+      if (command.type === 'set_model')
+        await new Promise<void>((resolve) => {
+          pi.started = resolve;
+        });
+      return { ok: true, data: undefined };
+    });
+    stageFirstMessage('c1', {
+      setup: [{ type: 'set_model', provider: 'e2e', modelId: 'e2e-fake-model-2' }],
+      text: 'fix the build\n\n[[AION_FILES]]\n/uploads/spec.pdf',
+      typed: 'fix the build',
+    });
+    const { result } = mount(host);
+    await waitFor(() => expect(result.current.outgoing).toBeDefined());
+    await act(async () => {
+      await result.current.abort();
+      pi.started?.();
+    });
+    await waitFor(() => expect(result.current.outgoing).toBeUndefined());
+    const sent = host.calls.filter((call) => call.method === 'request').map((call) => call.command?.type);
+    expect(sent).toEqual(['set_model', 'abort']);
+    expect(result.current.returned).toMatchObject({ text: 'fix the build' });
+  });
+
+  it('sets up a conversation the home page started with nothing typed, and sends no message', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    stageFirstMessage('c1', { setup: [{ type: 'set_thinking_level', level: 'low' }] });
+    const { result } = mount(host);
+    await waitFor(() => expect(host.calls.some((call) => call.method === 'request')).toBe(true));
+    await act(async () => {});
+    expect(host.calls.filter((call) => call.method === 'request').map((call) => call.command)).toEqual([
+      { type: 'set_thinking_level', level: 'low' },
+    ]);
+    expect(result.current.outgoing).toBeUndefined();
   });
 
   it('says why a conversation cannot be opened', async () => {

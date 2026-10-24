@@ -6,7 +6,7 @@ import { defaultModeOf, type DecisionMode } from '@/common/kyrn/manifest';
 import type { KyrnSettings } from '@/common/kyrn/types';
 
 export type KernelSummary = {
-  /** The judge's name: "Jev", "Laya", or a model id. */
+  /** The judge's name as shown: "Jev", "mude 1.0" (tier `mude`), or a model id. */
   judge: string;
   /** Where it runs: a service name, "local", or '' when there is nothing to add. */
   via: string;
@@ -54,7 +54,9 @@ export function describeTier(
   }
   if (tier === 'jev-opencode-free') return { judge: 'Jev', via: 'OpenCode Zen', free: true };
   if (NAMED_JEV[tier]) return { judge: 'Jev', via: NAMED_JEV[tier], free: false };
-  if (tier === 'laya') return { judge: 'Laya', via: 'local', free: false };
+  if (tier === 'mude') return { judge: 'mude 1.0', via: 'local', free: false };
+  // OpenAI's decision model, by the name its choice has on the Judges page.
+  if (tier === 'openai') return { judge: 'OpenAI', via: '', free: false };
   if (tier === 'clef' || tier === 'clef-flash')
     return { judge: tier === 'clef' ? 'Clef' : 'Clef Flash', via: 'Cloudflare', free: false };
   if (tier === 'mock') return { judge: 'Mock judge', via: '', free: false };

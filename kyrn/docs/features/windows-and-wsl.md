@@ -50,7 +50,7 @@ macOS 实测（Node 24.16，临时 HOME，9 次取中位数）：
 | `mu link` 的两条拒绝 | 目标位置已有不是自己的 `mu`：不覆盖；PATH 上已有别的 `mu`：不遮蔽，除非 `--force` | 同左；“是不是自己”靠垫片内容判断，按 PATHEXT 搜 PATH，仓库的 `kyrn\bin` 自己在 PATH 上不算“别的 mu” |
 | `mu unlink` | 只删软链 | 只删带自己标记行的垫片 |
 | `mu migrate` | 行为与原 bash 版一致，仍用 `pgrep`（既有 7 个测试原样通过） | `tasklist /FO CSV` 取进程名 + 一次 PowerShell `Get-CimInstance Win32_Process` 取命令行，由带测试的解析函数处理；旧路径留 junction。**读不到进程列表就拒绝迁移。** 实际上只有这台 Mac 有过 `~/.kyrn`，Windows 上永远是“Nothing to move” |
-| `mu judge …` | macOS：照旧调 `kyrn-judge-local` | 见第 5 节 |
+| `mu judge …` | `mu judge mude`、`mu judge model` 只在 Apple Silicon 的 Mac 上跑 | 见第 5 节 |
 
 ### `.env`
 
@@ -72,14 +72,12 @@ macOS 实测（Node 24.16，临时 HOME，9 次取中位数）：
 
 `/proc/version` 含 “microsoft” 或有 `WSL_DISTRO_NAME`，且平台是 linux，才算 WSL。对启动器来说 WSL 就是 Linux；区别只在浏览器和 `mu doctor` 的平台一行（macOS / Linux / WSL / Windows）。规则有两份（`mu.mjs` 的 `detectWsl`、`platform.ts` 的 `isWsl`，因为启动器不能 import TypeScript，包也不能依赖 `kyrn/bin`），有一个测试把两份在同一张输入表上逐项比对。
 
-## 5. 本地判定服务（Laya）
+## 5. 本地判定服务
 
-sidecar 是 Core ML，只能在 Apple Silicon 的 macOS 上跑。非 macOS 上：
+2026-10-24（0.2.5）起 Laya 已从 mu 移除：Core ML 的 sidecar（`kyrn-judge-local`、`server.py`）和 `mu judge setup|start|stop|status|run` 都没有了，这几个命令现在在所有平台上都打印一段说明并以 1 退出，指向 mude 1.0（`mu judge mude install`）和从 Hugging Face 添加的决策模型（`mu judge model add <链接>`）。这两者都只在 Apple Silicon 的 Mac 上跑；别的平台用 Jev、`mu.json` 里的 llm / classifier 判定器，或者一台说 System One 协议的服务器（`typesafe` 类型）。
 
-- `mu judge setup|start|stop|run`：打印说明并以 1 退出，不会出现堆栈。说明里写明：只支持 macOS；可以用 Jev 或 `mu.json` 里的 llm 判定器；桌面端自己的本地判定服务在做；任何实现了同一契约（`GET /health`、`POST /evaluate`）的服务器都可以通过 `MU_LOCAL_JUDGE_URL` 接进来。
-- `mu judge status` 在设置了 `MU_LOCAL_JUDGE_URL` 时会真的去问那台服务器的 `/health`。
-- 配置里要了 laya 而平台跑不了：启动时一行提示（设置了 `MU_LOCAL_JUDGE_URL` 就不提示），决策照常回退到下一层判定器或 pi 的原生行为。`mu doctor` 把它显示成说明行而不是 `fix`。
-- macOS 上行为不变（配置里有 laya 就自动拉起）。
+- 配置里还写着 laya（或一个 `local` 类型的判定器）：任何平台上都不再有启动提示，会话里直接跳过它（Mac 上装好了 mude 1.0 就由 mude 顶替），第一次有人看着的会话把 mu.json 改掉；提示记在 `<agentDir>/mu/notices.json`，等有人发出第一条消息时说一次（桌面端启动时后端对 mu 的健康检查不发消息，不会把它用掉）。
+- 启动器不再拉起任何 sidecar；只在 Mac 上、配置要 mude 1.0 或已添加的模型时，后台启动它的服务器，不等它。
 
 ## 6. 仍然假设 POSIX 的地方（grep 审计，范围：`kyrn/` 与 `packages/kyrn-judge/src`）
 
@@ -98,7 +96,7 @@ sidecar 是 Core ML，只能在 Apple Silicon 的 macOS 上跑。非 macOS 上�
 | `compaction.ts`、`swarm.ts` 的 `mode: 0o600` | 靠权限位保护临时文件 | **无害，保持**：Windows 忽略权限位，但 `%TEMP%` 本来就在用户配置目录下，按用户隔离 |
 | `guard.ts`、`constraints.ts`、`completion.ts`、`compaction/prune.ts`、`swarm/state.ts` | 只认 `bash` 工具；`guard.ts` 的危险命令规则全是 POSIX 写法（`rm -rf`、`sudo`、`curl … \| sh`） | **未解决**：Windows 上 pi 还有 `powershell` 工具，这五处都看不到它的命令，危险命令复核（B3）对 `Remove-Item -Recurse -Force`、`rd /s /q`、`iex (iwr …)` 无效。涉及判断点措辞，应单独做一包 |
 | `kyrn/bin/kyrn`、`kyrn-dev` | bash 转发器 | **未解决（有意）**：Windows 上入口是 `mu.cmd`。桌面端适配器现在调用 `kyrn/bin/kyrn`，它的 Windows 版应直接 `spawn(node, [mu.mjs, …])`（不要经 `.cmd`），并且用 `taskkill /T` 或关闭 stdin 来结束会话：Windows 上杀掉启动器不会带走 pi。属于桌面端的包 |
-| `kyrn/bin/kyrn-judge-local`、`kyrn/local-judge/server.py` | bash、`curl`、`nohup`、`kill -0`、Core ML | **未解决（有意）**：运行时本身只有 macOS 版。路线图第 4 节第 4 条（ONNX / CPU 运行时）另做 |
+| `kyrn/bin/kyrn-judge-local`、`kyrn/local-judge/server.py` | bash、`curl`、`nohup`、`kill -0`、Core ML | **已删**（0.2.5，随 Laya 一起移除） |
 | 桌面仓库的 `scripts/kyrn/*` | bash | **未解决**：不在本仓库 |
 
 ## 7. 验证

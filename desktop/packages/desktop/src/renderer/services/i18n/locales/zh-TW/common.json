@@ -168,7 +168,6 @@
     "judge": "判定器設定",
     "reload": "重新載入",
     "starting": "正在啟動 mu…",
-    "startingHint": "正在連線本機的 mu 核心，讀取模型與判定器設定。",
     "startupError": "mu 啟動失敗",
     "hiveView": {
       "title": "蜂群",
@@ -186,7 +185,6 @@
       "lastStep": "{{status}} · 上一步：{{step}}",
       "runs": "蜂群執行紀錄",
       "graph": "協作關係圖",
-      "graphHint": "線越粗，送達越多。點一個成員打開它的那一列；指向一條線，看它送達了什麼。",
       "map": "連接圖",
       "legend": "圖例",
       "legendDelivery": "送達",
@@ -206,7 +204,6 @@
       "board": "共享看板",
       "noNotes": "尚無共享發現。",
       "context": "執行上下文",
-      "contextHint": "記錄的訊息和已完成的工具輸出，不是完整的模型提示詞。工具輸出會在完成後顯示。",
       "focus": "指派任務",
       "missingFocus": "此次執行未記錄指派任務。",
       "current": "目前活動",
@@ -1065,7 +1062,6 @@
     "compactionAborted": "壓縮已取消",
     "compactionFailed": "壓縮失敗",
     "compactionSavings": "上下文減少約 {{saved}}",
-    "compactionEstimate": "壓縮後 tokens 為估計值；下次模型回傳後更新用量。",
     "cacheHit": "快取命中",
     "cachePending": "暫無快取用量資料",
     "cacheLabel": "工作階段快取命中率：{{percent}}",
@@ -1101,7 +1097,6 @@
       "needsYou": "需要你確認",
       "needsYouText": "代理在對話裡等你回答。",
       "quote": "引用到回覆裡",
-      "quoteHint": "點一條會引用到輸入框，你送出之前不會傳送。",
       "account": "它做了什麼",
       "earlierNotes": "更早的 {{count, number}} 條",
       "earlierNotes_one": "更早的 {{count, number}} 條",
@@ -1114,7 +1109,8 @@
         "fixing": "在修問題",
         "waiting": "在等你",
         "wrapping_up": "在收尾",
-        "stuck": "好像卡住了"
+        "stuck": "好像卡住了",
+        "blocked": "在等別的"
       },
       "checks_one": "驗收 {{done}}/{{total}}",
       "checks_other": "驗收 {{done}}/{{total}}",
@@ -1138,6 +1134,7 @@
           "wrapping_up": "手上的活做完了，正在收尾。",
           "stuck": "好像在原地打轉，可能需要你給個方向。",
           "unclear": "正在做事。",
+          "blocked": "在等指令、助手或網路那邊出結果。",
           "focus": "{{now}}（在做：{{focus}}）"
         },
         "confirm": {
@@ -1172,8 +1169,39 @@
         "did": "用 {{tool}} 做了：{{what}}",
         "said_quote": "它說：{{text}}",
         "ended": "停下來了。",
-        "waiting_reply": "停下來了，在等你回覆。"
-      }
+        "waiting_reply": "停下來了，在等你回覆。",
+        "still_running": "還在跑 {{what}}，{{minutes, number}} 分鐘了",
+        "still_running_who": "{{who}} 跑 {{what}} {{minutes, number}} 分鐘沒動靜",
+        "helper_done": "{{name}} 回來了：{{summary}}",
+        "helper_failed": {
+          "failed": "{{name}} 出錯了",
+          "timed_out": "{{name}} 逾時了",
+          "stopped": "{{name}} 被停了"
+        },
+        "helpers_back_failed": "回來了 {{count, number}} 個，{{failed, number}} 個出錯",
+        "helpers_back_failed_one": "回來了 {{count, number}} 個，{{failed, number}} 個出錯",
+        "helpers_back_failed_other": "回來了 {{count, number}} 個，{{failed, number}} 個出錯",
+        "with_detail": "{{line}}：{{detail}}"
+      },
+      "headlines": {
+        "helpers_working": "{{count, number}} 個助手在做事",
+        "helpers_working_one": "{{count, number}} 個助手在做事",
+        "helpers_working_other": "{{count, number}} 個助手在做事",
+        "waiting_permission": "在等你允許：{{what}}"
+      },
+      "updated": "{{ago}}前更新",
+      "updatedNow": "剛剛更新",
+      "blocked": "卡住了",
+      "blockedLine": "卡住了：{{text}}",
+      "next": "接下來",
+      "agents": "誰在做什麼",
+      "agentStates": {
+        "working": "在做",
+        "waiting": "在等",
+        "stuck": "卡住了"
+      },
+      "stripOpen": "人話看板：{{headline}}",
+      "stripHint": "點一下開啟看板"
     },
     "lessonsView": {
       "filterLabel": "顯示哪些經驗",
@@ -1278,7 +1306,10 @@
     "eventLine": {
       "judgeNotice": {
         "freeJev": "未設定 Jev 金鑰，使用 OpenCode Zen 上的免費 Jev",
-        "freeJevUnavailable": "免費 Jev 已停止回答：設定 Jev 金鑰之前由固定規則決定"
+        "freeJevUnavailable": "免費 Jev 已停止回答：設定 Jev 金鑰之前由固定規則決定",
+        "openaiKeyMissing": "OpenAI 的決策模型沒有 API 金鑰：由下一個判定器或固定規則決定",
+        "openaiKeyRejected": "OpenAI 拒絕了決策模型的 API 金鑰：由下一個判定器或固定規則決定",
+        "layaRemoved": "mu 不再內建 Laya，判定器現在是 {{judge}}"
       },
       "detail": "詳細資訊：{{detail}}",
       "progress": {

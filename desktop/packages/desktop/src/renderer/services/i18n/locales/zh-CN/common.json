@@ -168,7 +168,6 @@
     "judge": "判定器配置",
     "reload": "重新加载",
     "starting": "正在启动 mu…",
-    "startingHint": "正在连接本机的 mu 内核，读取模型与判定器配置。",
     "startupError": "mu 启动失败",
     "hiveView": {
       "title": "蜂群",
@@ -186,7 +185,6 @@
       "lastStep": "{{status}} · 上一步：{{step}}",
       "runs": "蜂群运行记录",
       "graph": "协作关系图",
-      "graphHint": "线越粗，送达越多。点一个成员打开它的那一行；指向一条线，看它送达了什么。",
       "map": "连接图",
       "legend": "图例",
       "legendDelivery": "送达",
@@ -206,7 +204,6 @@
       "board": "共享看板",
       "noNotes": "尚无共享发现。",
       "context": "执行上下文",
-      "contextHint": "记录的消息和已完成的工具输出，不是完整的模型提示词。工具输出会在完成后显示。",
       "focus": "分配任务",
       "missingFocus": "此次运行未记录分配任务。",
       "current": "当前活动",
@@ -1065,7 +1062,6 @@
     "compactionAborted": "压缩已取消",
     "compactionFailed": "压缩失败",
     "compactionSavings": "上下文减少约 {{saved}}",
-    "compactionEstimate": "压缩后 tokens 为估算值；下次模型返回后更新用量。",
     "cacheHit": "缓存命中",
     "cachePending": "暂无缓存用量数据",
     "cacheLabel": "会话缓存命中率：{{percent}}",
@@ -1101,7 +1097,6 @@
       "needsYou": "需要你确认",
       "needsYouText": "代理在对话里等你回答。",
       "quote": "引用到回复里",
-      "quoteHint": "点一条会引用到输入框，你发出去之前不会发送。",
       "account": "它做了什么",
       "earlierNotes": "更早的 {{count, number}} 条",
       "earlierNotes_one": "更早的 {{count, number}} 条",
@@ -1114,7 +1109,8 @@
         "fixing": "在修问题",
         "waiting": "在等你",
         "wrapping_up": "在收尾",
-        "stuck": "好像卡住了"
+        "stuck": "好像卡住了",
+        "blocked": "在等别的"
       },
       "checks_one": "验收 {{done}}/{{total}}",
       "checks_other": "验收 {{done}}/{{total}}",
@@ -1138,6 +1134,7 @@
           "wrapping_up": "手上的活做完了，正在收尾。",
           "stuck": "好像在原地打转，可能需要你给个方向。",
           "unclear": "正在干活。",
+          "blocked": "在等命令、助手或网络那边出结果。",
           "focus": "{{now}}（在做：{{focus}}）"
         },
         "confirm": {
@@ -1172,8 +1169,39 @@
         "did": "用 {{tool}} 做了：{{what}}",
         "said_quote": "它说：{{text}}",
         "ended": "停下来了。",
-        "waiting_reply": "停下来了，在等你回复。"
-      }
+        "waiting_reply": "停下来了，在等你回复。",
+        "still_running": "还在跑 {{what}}，{{minutes, number}} 分钟了",
+        "still_running_who": "{{who}} 跑 {{what}} {{minutes, number}} 分钟没动静",
+        "helper_done": "{{name}} 回来了：{{summary}}",
+        "helper_failed": {
+          "failed": "{{name}} 出错了",
+          "timed_out": "{{name}} 超时了",
+          "stopped": "{{name}} 被停了"
+        },
+        "helpers_back_failed": "回来了 {{count, number}} 个，{{failed, number}} 个出错",
+        "helpers_back_failed_one": "回来了 {{count, number}} 个，{{failed, number}} 个出错",
+        "helpers_back_failed_other": "回来了 {{count, number}} 个，{{failed, number}} 个出错",
+        "with_detail": "{{line}}：{{detail}}"
+      },
+      "headlines": {
+        "helpers_working": "{{count, number}} 个助手在干活",
+        "helpers_working_one": "{{count, number}} 个助手在干活",
+        "helpers_working_other": "{{count, number}} 个助手在干活",
+        "waiting_permission": "在等你允许：{{what}}"
+      },
+      "updated": "{{ago}}前更新",
+      "updatedNow": "刚刚更新",
+      "blocked": "卡住了",
+      "blockedLine": "卡住了：{{text}}",
+      "next": "接下来",
+      "agents": "谁在做什么",
+      "agentStates": {
+        "working": "在做",
+        "waiting": "在等",
+        "stuck": "卡住了"
+      },
+      "stripOpen": "人话看板：{{headline}}",
+      "stripHint": "点一下打开看板"
     },
     "lessonsView": {
       "filterLabel": "显示哪些经验",
@@ -1278,7 +1306,10 @@
     "eventLine": {
       "judgeNotice": {
         "freeJev": "未配置 Jev 密钥，使用 OpenCode Zen 上的免费 Jev",
-        "freeJevUnavailable": "免费 Jev 已停止回答：配置 Jev 密钥之前由固定规则决定"
+        "freeJevUnavailable": "免费 Jev 已停止回答：配置 Jev 密钥之前由固定规则决定",
+        "openaiKeyMissing": "OpenAI 的决策模型没有 API 密钥：由下一个判定器或固定规则决定",
+        "openaiKeyRejected": "OpenAI 拒绝了决策模型的 API 密钥：由下一个判定器或固定规则决定",
+        "layaRemoved": "mu 不再内置 Laya，判定器现在是 {{judge}}"
       },
       "detail": "详情：{{detail}}",
       "progress": {

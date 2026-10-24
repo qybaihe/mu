@@ -23,6 +23,8 @@ export interface BoardNote {
 	readonly params?: NoteParams;
 	/** Something went wrong: a failed check, a command that errored, a denied permission, trouble. */
 	readonly failed?: boolean;
+	/** The subagent the line is about, by its name; absent for the main agent. */
+	readonly who?: string;
 }
 
 type Sentence = (params: NoteParams) => string;
@@ -48,8 +50,25 @@ const SENTENCES: Readonly<Record<string, { readonly zh: Sentence; readonly en: S
 		en: (p) => `Started ${p.count} ${one(p, "count") ? "subagent" : "subagents"}: ${p.titles}`,
 	},
 	helpers_back: {
-		zh: (p) => `${p.count} 个助手回来了`,
-		en: (p) => `${p.count} ${one(p, "count") ? "subagent" : "subagents"} finished`,
+		zh: (p) => (Number(p.failed ?? 0) > 0 ? `回来了 ${p.count} 个，${p.failed} 个出错` : `${p.count} 个助手回来了`),
+		en: (p) =>
+			`${p.count} ${one(p, "count") ? "subagent" : "subagents"} finished${Number(p.failed ?? 0) > 0 ? `, ${p.failed} with errors` : ""}`,
+	},
+	helper_done: {
+		zh: (p) => `${p.name} 回来了${p.summary ? `：${p.summary}` : ""}`,
+		en: (p) => `${p.name} is back${p.summary ? `: ${p.summary}` : ""}`,
+	},
+	helper_failed: {
+		zh: (p) => `${p.name} ${p.reason === "timed_out" ? "超时了" : p.reason === "stopped" ? "被停了" : "出错了"}`,
+		en: (p) =>
+			`${p.name} ${p.reason === "timed_out" ? "timed out" : p.reason === "stopped" ? "was stopped" : "failed"}`,
+	},
+	still_running: {
+		zh: (p) => (p.who ? `${p.who} 跑 ${p.what} ${p.minutes} 分钟没动静` : `还在跑 ${p.what}，${p.minutes} 分钟了`),
+		en: (p) =>
+			p.who
+				? `${p.who}: ${p.what} has run ${p.minutes} min with no output`
+				: `Still running ${p.what}, ${p.minutes} min in`,
 	},
 	permission_allowed: { zh: (p) => `你允许了：${p.summary}`, en: (p) => `You allowed: ${p.summary}` },
 	permission_denied: { zh: (p) => `你没允许：${p.summary}`, en: (p) => `You didn't allow: ${p.summary}` },
@@ -110,6 +129,7 @@ export function parseBoardNote(data: unknown): BoardNote | undefined {
 		...(typeof value.code === "string" ? { code: value.code } : {}),
 		...(params && Object.keys(params).length > 0 ? { params: params as NoteParams } : {}),
 		...(value.failed === true ? { failed: true } : {}),
+		...(typeof value.who === "string" && value.who ? { who: value.who } : {}),
 	};
 }
 

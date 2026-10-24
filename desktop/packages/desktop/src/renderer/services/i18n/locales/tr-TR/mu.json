@@ -1,11 +1,9 @@
 {
   "title": "mu ayarları",
-  "description": "mu'ya verilebilecek tüm ayarlar: hakemler, karar noktaları, özellikler, modeller ve bağlam. mu komut satırıyla ortak kullanılır.",
   "reload": "Yeniden yükle",
   "modified": "Değiştirildi",
   "applyNote": "Değişiklikler yeni oturumlarda geçerli olur. Çalışan bir oturum başladığı yapılandırmayı korur; değişiklikleri alması için yeniden bağlayın.",
   "apiKey": "API anahtarı",
-  "keyHelp": "Kaydedildikten sonra bir daha gösterilmez. Yalnızca bu bilgisayarda kalır ve yalnızca sizin hesabınız okuyabilir.",
   "keyKeep": "Kayıtlı anahtarı korumak için boş bırakın",
   "endpointRule": "https:// veya http:// ile başlayan bir adres girin. Adreste kullanıcı adı, şifre, sorgu veya parça bulunmamalı.",
   "endpointPlain": "Bu adres şifresiz http kullanıyor: anahtar ve mesajlarınız şifrelenmez. Bu bilgisayardaki ya da kendi ağınızdaki bir sunucu için sorun değil; hosts dosyanızın oraya yönlendirdiği bir ad da olur. İnternet üzerinden https kullanın.",
@@ -73,7 +71,6 @@
     "useDefault": "Varsayılana dön ({{mode}})"
   },
   "features": {
-    "lead": "mu'nun arka planda sizin için yaptıkları. Birini kapatırsanız mu onu yapmayı bırakır.",
     "beta": "Beta",
     "reset": "Varsayılanlara dön",
     "boardModelElsewhere": "Panoyu yazan model, Sade dil modeli bölümünde seçilir.",
@@ -87,9 +84,7 @@
     "details": "Ayrıntılı ayarlar"
   },
   "judges": {
-    "tiersHelp": "Hakemler sırayla denenir. Sonraki hakem yalnızca öncekilerin emin olamadığı soruları görür.",
     "order": "Sıra",
-    "orderHelp": "İlki, Hakemler sayfasında seçilen hakemdir.",
     "firstTier": "Hakemler sayfasında seçilen hakem: hizmeti, adresi ve anahtarı orada ayarlanır.",
     "tierTitle": "{{index}}. kademe: {{name}}",
     "service": "Hizmet",
@@ -105,17 +100,14 @@
       },
       "typesafe": {
         "name": "TypeSafe",
-        "help": "Her zaman doğrudan TypeSafe.",
         "key": "TypeSafe API anahtarı"
       },
       "openrouter": {
         "name": "OpenRouter",
-        "help": "Her zaman OpenRouter üzerinden, bir OpenRouter API anahtarıyla. Yalnızca Jev için kaydedilir; ayarlamak OpenRouter sohbet modellerinin anahtarını değiştirmez.",
         "key": "OpenRouter API anahtarı"
       },
       "gateway": {
         "name": "Vercel AI Gateway",
-        "help": "Her zaman Vercel AI Gateway üzerinden.",
         "key": "Vercel AI Gateway API anahtarı"
       },
       "opencode": {
@@ -125,7 +117,6 @@
       },
       "cloudflare": {
         "name": "Cloudflare Workers AI",
-        "help": "Cloudflare Workers AI'da Jev; bir Cloudflare API belirteci ve hesap kimliğiniz gerekir.",
         "key": "Cloudflare API belirteci",
         "account": "Cloudflare hesap kimliği",
         "accountHelp": "Cloudflare panosundaki Workers AI sayfasında görünür. Belirteçle aynı şekilde kaydedilir.",
@@ -139,92 +130,165 @@
     },
     "model": "Hakem modeli",
     "baseUrl": "Temel URL",
-    "baseUrlHelp": "Boş bırakılırsa TypeSafe'in kendi adresi kullanılır.",
-    "customUrlHelp": "Hizmetin System One adresi. Anahtarı yalnızca buraya gönderilir.",
     "baseUrlNeeded": "Özel bir hizmetin adresi olmalıdır.",
     "customTier": "Kendi eklediğiniz bir hakem. Değiştirmek için mu'nun ayar dosyasını düzenleyin.",
-    "endpointDefault": "Hizmetin varsayılan adresi",
-    "types": {
-      "localHelp": "Bu bilgisayarda çalışır.",
-      "clmHelp": "Kendi CLM sunucunuzda çalışır.",
-      "classifierHelp": "mu'nun model kataloğundan bir sınıflandırma modeli: {{model}}. mu onu sağlayıcısının anahtarıyla çağırır."
-    },
-    "intro": "mu çalışırken pek çok küçük soruyla karşılaşır: bu mesaj nasıl ele alınmalı, bu adım koyduğunuz bir kuralı çiğniyor mu? Bunları hakem yanıtlar. Birini seçin.",
     "mode": "Kararları uygula",
-    "modeHelp": "Açık: hakemin kararları uygulanır. Kapalı: her adım her zamanki gibi devam eder. Kendi ayarı olmayan adımlar bunu izler.",
     "choose": "Bir hakem seçin",
     "custom": "Şu an ilk sıradaki hakem özel bir hakem: Hakem sırası sayfasında görüp değiştirebilirsiniz.",
     "keyPlaceholder": "Anahtarı yapıştırın",
+    "removeKey": "Anahtarı kaldır",
     "choices": {
       "jev": {
         "title": "Jev",
         "tag": "Önerilen",
+        "tagHosted": "Bulutta",
         "description": "TypeSafe'in barındırdığı hakem modeli. Hızlı ve doğru. OpenCode Zen'de sınırlı bir süre ücretsiz; ya da TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare veya kendi hizmetinizin anahtarıyla çağrı başına ücretli."
       },
-      "local": {
-        "title": "Yerel Laya",
-        "tag": "Ücretsiz · çevrimdışı",
-        "description": "Bu bilgisayarda çalışır; ağ yok, ücret yok. Sınıflandırmada iyidir; ilişkilendirme ve puanlama daha az güvenilirdir."
+      "mude": {
+        "title": "mude 1.0",
+        "tag": "Bu Mac'te",
+        "tagRecommended": "Önerilen · bu Mac'te",
+        "description": "mu'nun kendi karar modeli; kodlama için optimize edildi ve bir kodlama ajanının kararlarında SOTA düzeyinde. Bu Mac'te çalışır: anahtar yok, çağrı başına ücret yok. Apple çip gerektirir."
       },
       "clm": {
         "title": "CLM",
         "tag": "Kendi sunucunuz",
         "description": "Jev ile aynı soruları kendi sunucunuzda (clm-serve) yanıtlar. Kodlayıcısı GPU ister; çağrı başına ücret yoktur."
+      },
+      "openai": {
+        "title": "OpenAI",
+        "tag": "Bulutta",
+        "description": "OpenAI'ın karar modeli gpt-6-luna, bir OpenAI API anahtarıyla. OpenAI giriş token'ı başına ücretlendirir."
       }
     },
-    "localAddress": "Adres: {{address}}",
-    "laya": {
-      "running": "Bu makinede çalışıyor",
-      "stopped": "Kurulu, çalışmıyor. mu gerektiğinde onu başlatır.",
-      "missing": "Henüz kurulu değil.",
-      "platform": "Laya bu bilgisayarda çalışamaz: Windows veya Linux (x64 ya da arm64) ya da Apple Silicon işlemcili bir Mac gerekir.",
-      "needsUv": "Kurulum için bir Python paket yöneticisi olan uv gerekiyor. Onu kurun, sonra buraya dönün.",
-      "uvLink": "uv nasıl kurulur",
-      "install": "Laya'yı kur",
+    "mude": {
+      "name": "mude 1.0 (bu Mac'te)",
+      "tierHelp": "Bu Mac'te çalışır. Hakemler sayfasında kurun.",
+      "notInstalled": "Kurulu değil.",
+      "unfinished": "Son kurulum tamamlanmadı. Devam ederseniz kaldığı yerden sürer.",
+      "unfinishedDownloaded": "{{done}} / {{total}} GB indirildi. Devam ederseniz kurulum kaldığı yerden sürer.",
+      "install": "mude 1.0'ı kur",
+      "continue": "Kuruluma devam et",
+      "consent": {
+        "title": "mude 1.0 kurulsun mu?",
+        "download": "mu, mude 1.0'ı Hugging Face'ten indirir (yaklaşık {{download}} GB) ve onun için bir Python ortamı kurar (yaklaşık {{python}} GB). Bu birkaç dakika sürer.",
+        "memory": "mude 1.0 çalışırken yaklaşık {{memory}} GB bellek kullanır. Apple çipli ve macOS 14 veya sonrası bir Mac gerekir.",
+        "after": "Kurulum bitince mude 1.0 başlar ve mu'nun hakemi olur.",
+        "ok": "İndir ve kur"
+      },
+      "localOnly": "Yalnızca yerel — hiçbir bulut hakemine sorma",
+      "localOnlyOn": "Tek hakem mude 1.0 olur ve buluta hiçbir şey gitmez. Yanıt veremediğinde karar noktası kendi varsayılanını kullanır.",
+      "localOnlyOff": "mude 1.0'ın yanıtlayamadığı kararlar (örneğin durmuşken ya da emin değilken) buluttaki {{judges}} hakemine gider; oraya gönderilen her şey bu Mac'ten çıkar. İki güvenlik denetimi de her zaman oraya gider: araç açıklamalarının taranması ve getirilen içerikte enjekte edilmiş talimat olup olmadığının taranması.",
+      "localOnlyOffLocal": "mude 1.0'ın yanıtlayamadığı kararlar, yine bu Mac'te çalışan {{judges}} hakemine gider.",
+      "localOnlyNone": "mude 1.0'ın arkasında ayarlı bir hakem yok. Yanıt veremediğinde karar noktası kendi varsayılanını kullanır.",
+      "use": "mude 1.0'ı hakem olarak kullan",
+      "status": {
+        "running": "127.0.0.1:{{port}} üzerinde çalışıyor",
+        "runningMemory": "127.0.0.1:{{port}} üzerinde çalışıyor · {{memory}} GB",
+        "starting": "Başlatılıyor…",
+        "stopped": "Durduruldu"
+      },
+      "resources": "mude 1.0 çalışırken yaklaşık {{memory}} GB bellek kullanır. Terminaldekiler de dahil bu Mac'teki tüm mu oturumları onu paylaşır ve siz durdurana ya da kapatana kadar çalışmaya devam eder.",
       "start": "Başlat",
       "stop": "Durdur",
-      "confirmTitle": "Laya indirilip kurulsun mu?",
-      "confirmText": "Bu işlem PyPI ve Hugging Face'ten mu'nun klasörüne yaklaşık {{size}} MB (Python paketleri ve modelin ağırlıkları) indirir ve birkaç dakika sürer. Laya kurulduktan sonra başlar.",
-      "confirmOk": "İndir ve kur",
+      "openFolder": "Klasörü aç",
+      "uninstall": "Kaldır",
+      "uninstallTitle": "mude 1.0 kaldırılsın mı?",
+      "uninstallText": "Bu işlem mude 1.0'ı kapatır, yerini aldığı hakemleri geri getirir ve modeli ile Python ortamını siler (yaklaşık {{size}} GB). Daha sonra yeniden kurabilirsiniz.",
       "working": {
-        "setup": "Laya kuruluyor…",
-        "start": "Laya başlatılıyor…",
-        "stop": "Laya durduruluyor…"
+        "install": "mude 1.0 kuruluyor…",
+        "enable": "mude 1.0 açılıyor…",
+        "disable": "mude 1.0 kapatılıyor…",
+        "start": "mude 1.0 başlatılıyor…",
+        "stop": "mude 1.0 durduruluyor…",
+        "uninstall": "mude 1.0 kaldırılıyor…"
+      },
+      "step": {
+        "download": "mude 1.0 indiriliyor ve her dosya denetleniyor…",
+        "python": "mude 1.0 için Python ortamı hazırlanıyor…",
+        "start": "mude 1.0 sunucusu başlatılıyor…"
+      },
+      "downloaded": "{{done}} / {{total}} GB",
+      "downloadedSoFar": "{{done}} / {{total}} GB indirildi.",
+      "checking": "İndirilen dosyalar denetleniyor…",
+      "cancelled": "Kurulum iptal edildi. İndirilenler saklanır.",
+      "failed": {
+        "install": "mude 1.0 kurulamadı.",
+        "enable": "mude 1.0 açılamadı.",
+        "disable": "mude 1.0 kapatılamadı.",
+        "start": "mude 1.0 başlatılamadı.",
+        "stop": "mude 1.0 durdurulamadı.",
+        "uninstall": "mude 1.0 kaldırılamadı."
+      },
+      "error": {
+        "access": "mude 1.0 henüz indirilemiyor. Daha sonra yeniden deneyin.",
+        "network": "Hugging Face'e ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin; indirilmiş olanlar saklanır.",
+        "integrity": "İndirilen bir dosya denetimden geçmedi. Yeniden kurmayı deneyin.",
+        "unsupported": "mude 1.0 bu Mac'te çalışamaz."
+      },
+      "noStatus": "mude 1.0 durumu alınamadı: {{reason}}",
+      "saveFirst": "mude 1.0'ı değiştirmek için önce diğer değişikliklerinizi kaydedin ya da atın.",
+      "needs": "mude 1.0 için Apple çipli, macOS 14 veya sonrası ve en az {{ram}} GB belleği olan bir Mac gerekir.",
+      "retry": "Yeniden dene",
+      "guide": {
+        "consent": "{{download}} GB indirilir, ayrıca {{python}} GB'lık bir Python ortamı kurulur. Çalışırken yaklaşık {{memory}} GB bellek kullanır.",
+        "instead": "mu bunun yerine barındırılan hakemi kullanır.",
+        "ready": "mude 1.0 çalışıyor ve artık hakeminiz.",
+        "readyStopped": "mude 1.0 artık hakeminiz. Sunucusu bir sonraki mu oturumunda başlar."
+      }
+    },
+    "models": {
+      "title": "Diğer karar modelleri",
+      "placeholder": "Hugging Face bağlantısı veya owner/name",
+      "add": "Ekle",
+      "trust": "Bir model kendi sunucu kodunu bu Mac'te çalıştırır. Yalnızca güvendiğiniz modelleri ekleyin.",
+      "use": "Hakem olarak kullan",
+      "continue": "İndirmeye devam et",
+      "remove": "Kaldır",
+      "removeTitle": "{{name}} kaldırılsın mı?",
+      "removeText": "Bu, {{name}} modelini hakem sırasından çıkarır ve dosyalarını (yaklaşık {{size}} GB) siler. Daha sonra yeniden ekleyebilirsiniz.",
+      "noList": "Karar modelleri okunamadı: {{reason}}",
+      "cancelled": "İptal edildi. İndirilenler saklanır.",
+      "state": {
+        "judge": "Hakem · {{size}} GB",
+        "running": "Çalışıyor · {{size}} GB",
+        "installed": "Kurulu · {{size}} GB",
+        "partial": "{{total}} GB'ın {{done}} GB'ı indirildi",
+        "notDownloaded": "İndirilmedi · {{size}} GB"
+      },
+      "step": {
+        "resolve": "Model Hugging Face'te aranıyor…",
+        "download": "{{name}} indiriliyor ve her dosya denetleniyor…",
+        "python": "Python ortamı hazırlanıyor…",
+        "start": "{{name}} sunucusu başlatılıyor…"
+      },
+      "working": {
+        "add": "{{name}} ekleniyor…",
+        "use": "Hakem {{name}} olarak değiştiriliyor…",
+        "disable": "{{name}} kapatılıyor…",
+        "remove": "{{name}} kaldırılıyor…"
       },
       "failed": {
-        "setup": "Kurulum tamamlanmadı. Yeniden deneyebilirsiniz.",
-        "start": "Laya başlamadı.",
-        "stop": "Laya durmadı."
+        "add": "Model eklenemedi.",
+        "use": "Hakem yapılamadı.",
+        "disable": "Kapatılamadı.",
+        "remove": "Kaldırılamadı."
       },
-      "onnx": {
-        "missing": "Laya'nın modeli henüz bu bilgisayarda yok (yaklaşık {{size}} MB). mu onu sizin yerinize indirmez: dosyaları Hugging Face'ten indirip model klasörüne koyun, ardından \"Denetle ve başlat\"a basın.",
-        "stopped": "Model yerinde, Laya çalışmıyor. Hakem olarak Laya seçiliyse mu, uygulama açıldığında onu kendisi başlatır.",
-        "starting": "Model denetleniyor ve Laya başlatılıyor… İlk denetim modelin tamamını okur, biraz sürer.",
-        "missingFiles": "Hâlâ eksik: {{files}}",
-        "wrongFiles": "mu ile test edilen sürüm değil, yeniden indirin: {{files}}",
-        "folder": "Model klasörü: {{folder}}",
-        "command": "Hugging Face komut satırı (hf) varsa bu tek komut her şeyi indirir:",
-        "page": "Hugging Face'ten al",
-        "openFolder": "Model klasörünü aç",
-        "check": "Denetle ve başlat",
-        "problem": {
-          "missing": "Bazı model dosyaları eksik.",
-          "wrong": "Bazı model dosyaları mu ile test edilen sürüm değil. Yeniden indirin.",
-          "runtime": "Bu bilgisayar modeli çalıştıramadı.",
-          "port": "Laya'nın bağlantı noktasını ({{port}}) başka bir program kullanıyor.",
-          "stopped": "Laya hazır olmadan durdu.",
-          "foreign": "Burada mu'nun başlatmadığı bir Laya çalışıyor. Onu başlatıldığı yerden durdurun."
-        }
+      "error": {
+        "usage": "Bu, bir Hugging Face modelinin bağlantısı ya da owner/name değeri değil.",
+        "access": "Bu model Hugging Face'te açılamadı. Adını denetleyin: model olmayabilir ya da özel veya erişimi kısıtlı olabilir.",
+        "notFound": "Hugging Face'te böyle bir model yok.",
+        "notRunnable": "mu bu modeli çalıştıramaz: mude 1.0 gibi paketlenmiş modellerle gelen sunucu d3_server_mac.py eksik.",
+        "network": "Hugging Face'e ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin; indirilmiş olanlar saklanır.",
+        "integrity": "İndirilen bir dosya doğrulamayı geçemedi. Yeniden deneyin.",
+        "unsupported": "Bu Mac karar modellerini çalıştıramaz."
       }
     },
     "clm": {
       "address": "Sunucu adresi",
-      "addressHelp": "clm-serve sunucusunun dinlediği adres, örneğin http://192.168.1.20:8700. Boş bırakılırsa bu bilgisayar ({{address}}).",
       "key": "Sunucu anahtarı",
       "keyPlaceholder": "Yalnızca sunucu isterse",
-      "keyHelp": "Yalnızca CLM_API_KEY ile başlatılan bir sunucu anahtar ister: aynı değeri girin. Kaydedildikten sonra bir daha gösterilmez.",
       "check": "Sunucuyu denetle",
-      "unmeasured": "CLM'nin mu'nun kararlarını ne kadar iyi verdiği henüz ölçülmedi.",
       "status": {
         "checking": "Sunucuya soruluyor…",
         "ready": "Yanıt veriyor · {{models}} · {{ms}} ms",
@@ -236,23 +300,26 @@
         "mock": "Bu sunucu CLM'nin sahte kodlayıcısıyla çalışıyor: yanıtları gürültüdür, CLM'nin değil.",
         "failed": "Sunucuya sorulamadı."
       }
+    },
+    "openai": {
+      "key": "OpenAI API anahtarı",
+      "keyHelp": "Boş bırakılırsa mu, OpenAI sağlayıcısının API anahtarını (Ayarlar → Sağlayıcılar) veya OPENAI_API_KEY'i kullanır; ChatGPT girişini asla kullanmaz."
     }
   },
   "keyState": {
     "none": "Ayarlanmadı",
     "set": "Ayarlandı",
     "typed": "Yeni anahtar, henüz kaydedilmedi",
+    "removed": "Anahtar kaldırıldı, henüz kaydedilmedi",
     "empty": "Değişken boş",
     "managed": "Ayarlandı",
     "manual": "Ayarlandı (elle)"
   },
   "context": {
     "auto": "Otomatik sıkıştırma",
-    "autoHelp": "Bağlam neredeyse dolduğunda geçmişi sıkıştırır.",
     "limit": "Bağlam sınırı",
     "limitHelp": "0 ise modelin penceresi, ayrılan pay düşülerek kullanılır. Aksi hâlde {{min}} ile {{max}} arası. Sonraki model isteğinden önce kontrol edilir; kesin bir sınır değildir.",
-    "limitProblem": "0 ya da {{min}} ile {{max}} arasında bir tam sayı girin.",
-    "lead": "Konuşmanın ne zaman sıkıştırılacağı, bağlamının ne kadar büyüyebileceği ve bağlam üzerinde çalışan özellikler."
+    "limitProblem": "0 ya da {{min}} ile {{max}} arasında bir tam sayı girin."
   },
   "permissions": {
     "modes": {
@@ -313,7 +380,6 @@
     "flagged": "Riskli: {{flag}}."
   },
   "providers": {
-    "lead": "Modellerin nereden geldiği: abonelikler ve uç noktalar. Bir konuşmanın modeli ve düşünme düzeyi, o konuşmanın mesaj alanında seçilir.",
     "title": "Sağlayıcılar",
     "custom": "Özel sağlayıcılar",
     "manualGroup": "Elle yazılmış",
@@ -348,7 +414,6 @@
     "commented": "models.json yorumlar içeriyor. Buradan kaydetmek bunları silerdi, bu yüzden sağlayıcılar salt okunur. Burada düzenlemek için yorumları elle kaldırın.",
     "modelCount_one": "{{count, number}} model",
     "modelCount_other": "{{count, number}} model",
-    "summary": "Bir abonelikle giriş yapıp hemen kullanın ya da herhangi bir OpenAI, Anthropic veya Gemini uyumlu uç noktaya bağlanın.",
     "subscriptions": "Abonelikler",
     "manualShort": "Elle",
     "needsSetup": "Henüz kurulmadı",
@@ -361,13 +426,10 @@
     "removeDefault": "Yeni oturumlar bununla başlıyor, bu yüzden varsayılan model de temizlenir."
   },
   "defaults": {
-    "summary": "Yeni bir oturumun neyle başladığı. Bir sohbetin içinde yine de değiştirebilirsiniz.",
     "provider": "Sağlayıcı",
     "model": "Model",
     "level": "Düşünme düzeyi",
     "levelUnset": "Belirtme",
-    "levelHelp": "Bu modelin desteklemediği düzeyler devre dışıdır.",
-    "levelClamped": "“Belirtme” Orta anlamına gelir. Modelin desteklemediği bir düzey, desteklediği en yakın düzeye dönüşür.",
     "noReasoning": "Bu model düşünmez; bu yüzden onunla açılan bir oturum her zaman düşünme kapalı başlar.",
     "notSet": "Belirtilmedi",
     "pickProvider": "Önce bir sağlayıcı seçin."
@@ -378,12 +440,13 @@
     "signOutFailed": "Çıkış tamamlanmadı. Yeniden deneyebilirsiniz.",
     "signOutConfirm": "{{name}} hesabından çıkış yapılsın mı? Kullanmak için yeniden giriş yapmanız gerekecek.",
     "signedOut": "Giriş yapılmadı",
-    "instant": "Giriş ve çıkış, kaydetmeye gerek kalmadan hemen geçerli olur.",
     "models": "Kullanabileceğiniz modeller",
     "byKey": "Kullanılabilir (API anahtarı)",
     "byKeyHelp": "Giriş yapılmış bir abonelik yok, ancak mu son bağlantısında bunu kullanılabilir olarak bildirdi; genellikle API anahtarı ortamda olduğu için. Giriş yaparsanız abonelik kullanılır.",
     "otherRunning": "{{name}} için giriş yapılıyor; aynı anda yalnızca bir giriş yapılabilir.",
     "showRunning": "Göster",
+    "switched": "{{name}} hesabından çıkış yapıldı. {{model}} modeline geçildi.",
+    "noModelLeft": "{{name}} hesabından çıkış yapıldı. Ayarlanmış başka model yok.",
     "legacy": {
       "openai-codex": "Bu eski giriş, Codex CLI'nin girişinden geçiyor. Çıkış yapın, ardından ChatGPT ile giriş yapın.",
       "anthropic": "Anthropic, diğer uygulamaların Claude aboneliğiyle giriş yapmasına izin vermiyor; bu yüzden mu artık bunu sunmuyor. Çıkış yapın ve bunun yerine bir Anthropic API anahtarı ekleyin."
@@ -440,12 +503,10 @@
     "noId": "Yeni model",
     "show": "Göster: {{name}}",
     "addListed": "Ekle: {{name}}",
-    "levels": "Düşünme düzeyleri",
-    "levelsHelp": "Bu model yalnızca işaretli düzeyleri sunar. Çok yüksek ve En yüksek, siz açana kadar kapalı kalır."
+    "levels": "Düşünme düzeyleri"
   },
   "test": {
     "run": "Bağlantıyı sına",
-    "hint": "Bu uygulamadan tek bir küçük istek gönderilir: model listesi, o alınamazsa ilk modelden tek kelimelik bir yanıt.",
     "okModels": "Bağlandı ({{ms}} ms). Uç nokta {{count, number}} model listeliyor.",
     "okCompletion": "Bağlandı ({{ms}} ms). Model yanıt verdi.",
     "auth": "Anahtar reddedildi (HTTP {{status}}).",
@@ -463,7 +524,7 @@
   },
   "boardModel": {
     "title": "Sade dil modeli",
-    "summary": "Sade dildeki panoyu yazar: işin nasıl gittiğini gündelik bir dille anlatır. Yalnızca size gösterilir, konuşmanın bağlamına asla girmez; her güncelleme bir model çağrısıdır.",
+    "summary": "Sade dildeki panoyu yazar: işin nasıl gittiğini gündelik bir dille anlatır. Her güncelleme bir model çağrısıdır.",
     "pick": "Seçtiğiniz bir model",
     "recommended": "Önerilen: en doğal ve en istikrarlı olan Claude Opus 4.6; ardından daha hızlı ve daha ucuz olan Gemini 3.8 Flash.",
     "recommendedTag": "önerilen",
@@ -473,7 +534,6 @@
     "pickProvider": "Önce bir sağlayıcı seçin",
     "unset": "Henüz yok: pano ilk kez açıldığında mu size sorar.",
     "session": "Konuşmanın kullandığı model",
-    "sessionHelp": "Konuşmanın modeli değişince pano da onu izler.",
     "update": "mu'nun bu sürümünde panoyu yazan model buradan seçilemiyor. Önce mu'yu güncelleyin."
   },
   "levels": {
@@ -501,7 +561,6 @@
     "start": "Başla",
     "model": {
       "title": "Bir model bağlayın",
-      "subtitle": "mu bunu kod yazmak ve size yanıt vermek için kullanır. Hepsini daha sonra Ayarlar'dan değiştirebilirsiniz.",
       "model": "Model",
       "baseUrl": "Temel URL",
       "key": "API anahtarı",
@@ -541,11 +600,10 @@
     "apiKey": {
       "title": "API anahtarı yapıştırın",
       "tag": "En kolayı",
-      "description": "DeepSeek, Kimi, Qwen, GLM, OpenAI, Claude, Gemini ve diğerleri: mu hizmeti anahtardan tanır, gerisini kendisi ayarlar",
+      "description": "OpenAI, Claude, Gemini, DeepSeek, Kimi, Qwen, GLM ve diğerleri: mu hizmeti anahtardan tanır, gerisini kendisi ayarlar",
       "placeholder": "Anahtarı buraya yapıştırın",
       "service": "Hizmet",
       "servicePlaceholder": "Anahtardan bulunur",
-      "serviceHint": "mu hizmeti anahtardan bulur. Bulamazsa buradan seçin.",
       "recognized": "Anahtardan bulundu.",
       "ambiguous": "Birden fazla hizmetin anahtarı böyle görünür. Bu anahtar hangisinin?",
       "unknown": "mu bu tür anahtarı tanımıyor. Hangi hizmetin anahtarı?",
@@ -555,7 +613,6 @@
       "lookingLocal": "Bu bilgisayarda {{service}} aranıyor…",
       "recheck": "Yeniden denetle",
       "startsWith": "mu’nun başlayacağı model",
-      "modelHint": "Modeli istediğiniz zaman değiştirebilirsiniz.",
       "outcome": {
         "ok": "Anahtar çalışıyor.",
         "okLocal": "{{service}} bu bilgisayarda çalışıyor.",
@@ -631,15 +688,18 @@
     },
     "judge": {
       "title": "Bir hakem seçin",
-      "subtitle": "Hakem, mu'nun çalışırken sorduğu küçük soruları yanıtlar. mu hakemsiz de çalışır, yalnızca bu kontroller olmaz.",
       "readyFree": "Ücretsiz Jev hazır. Burada yapılacak bir şey yok.",
       "readyKey": "Jev, belirlediğiniz anahtarla hazır.",
       "more": "Hizmeti değiştir veya kendi anahtarını kullan",
-      "less": "Gizle"
+      "less": "Gizle",
+      "none": {
+        "title": "Hakem yok",
+        "tag": "Hiçbir şey gönderilmez",
+        "description": "Hiçbir karar noktası hakeme sormaz, bu yüzden hakeme hiçbir şey gönderilmez. mu varsayılan kurallarıyla karar verir. Bir hakemi daha sonra Ayarlar'dan seçebilirsiniz."
+      }
     },
     "done": {
       "title": "Her şey hazır",
-      "subtitle": "Bir göz atın, sonra başlayın.",
       "model": "Model",
       "judge": "Hakem",
       "none": "Ayarlanmadı",
@@ -668,20 +728,6 @@
         "text_one": "mu bu bilgisayarda başka bir kodlama asistanıyla yapılmış {{count}} sohbet buldu. Tüm geçmişiyle içe aktarın ve burada devam edin.",
         "text_other": "mu bu bilgisayarda başka kodlama asistanlarıyla yapılmış {{count}} sohbet buldu. Tüm geçmişleriyle içe aktarın ve burada devam edin.",
         "open": "Sohbetleri seç…"
-      },
-      "points": {
-        "judge": {
-          "title": "Her adımda bir kontrol",
-          "text": "Yerleşik bir hakem kritik anları gözetir: harekete geçmeden önce düşünmek, koyduğunuz kurallara uymak, doğrulamadan asla bitti dememek."
-        },
-        "control": {
-          "title": "Görürsünüz, yönetirsiniz",
-          "text": "Kontrol noktaları değişiklikleri geri almanızı sağlar; mu uygulama içi tarayıcıyı kullanırken her adım gözünüzün önündedir, duraklatabilir ya da devralabilirsiniz."
-        },
-        "ready": {
-          "title": "Hemen kullanıma hazır",
-          "text": "Claude Code, Cursor ve Codex'te zaten kurduğunuz kuralları, becerileri ve MCP sunucularını aktarır."
-        }
       },
       "start": "Kuruluma başla"
     },
@@ -721,8 +767,18 @@
       "submit": "Gönder",
       "openAgain": "Sayfayı yeniden aç",
       "pasteCode": "Bunun yerine kod yapıştır",
+      "pasteHint": "Giriş yaptıktan sonra tarayıcınız {{address}} ile başlayan bir adrese gider. Sayfa bir hata gösterebilir; sorun değil. Adres çubuğundaki adresin tamamını kopyalayıp buraya yapıştırın.",
       "cancel": "İptal",
       "failed": "Giriş tamamlanmadı. Yeniden deneyebilirsiniz.",
+      "retry": "Yeniden dene",
+      "pasteInstead": "Bunun yerine adresi yapıştır",
+      "takenOver": "Başka bir giriş (terminaldeki bir /login ya da Codex CLI) bu girişin beklediği portu devraldı, bu yüzden bu giriş durdu.",
+      "portInUse": {
+        "program": "{{port}} numaralı port {{command}} (işlem {{pid}}) tarafından kullanılıyor, büyük olasılıkla kendi girişi için. O girişi orada tamamlayın ya da iptal edin, sonra “Yeniden dene” düğmesine tıklayın.",
+        "process": "{{port}} numaralı port {{pid}} numaralı işlem tarafından kullanılıyor, büyük olasılıkla kendi girişi için (Codex CLI ve Codex uygulaması bu portu kullanır). O girişi orada tamamlayın ya da iptal edin, sonra “Yeniden dene” düğmesine tıklayın.",
+        "session": "{{port}} numaralı port, başka bir mu veya pi oturumundaki tamamlanmamış bir giriş tarafından tutuluyor (işlem {{pid}}). Onu orada tamamlayın ya da iptal edin (terminalde Esc), sonra “Yeniden dene” düğmesine tıklayın.",
+        "unknown": "{{port}} numaralı port başka bir program tarafından kullanılıyor, büyük olasılıkla giriş yapan Codex CLI ya da Codex uygulaması. O girişi orada tamamlayın ya da iptal edin, sonra “Yeniden dene” düğmesine tıklayın."
+      },
       "asks": "{{name}} soruyor (kendi ifadesiyle):",
       "needAccount": "Önce bir hesapla giriş yapın, ardından bir model seçin.",
       "experimental": "Deneysel",
@@ -739,7 +795,6 @@
     },
     "permissions": {
       "title": "mu kendi başına ne kadar yapsın",
-      "subtitle": "Yeni konuşmalar burada seçtiğiniz modla başlar. İstediğiniz zaman gönderme kutusundan ya da /permissions ile değiştirebilirsiniz.",
       "recommended": "Önerilen"
     }
   },
@@ -774,6 +829,12 @@
       "paid": "OpenCode Zen'deki ücretsiz Jev artık anahtar veya ödeme istiyor; şimdilik basit kurallar karar veriyor. Hakemi geri almak için Ayarlar → Hakemler'e bir Jev anahtarı girin.",
       "gone": "OpenCode Zen artık ücretsiz Jev sunmuyor; şimdilik basit kurallar karar veriyor. Hakemi geri almak için Ayarlar → Hakemler'e bir Jev anahtarı girin."
     },
+    "openaiKey": {
+      "missing": "OpenAI'ın karar modelinin artık API anahtarı yok, bu yüzden karar vermiyor. Ayarlar → Hakemler'e bir anahtar girin veya başka bir hakem seçin.",
+      "rejected": "OpenAI, karar modelinin API anahtarını reddetti, bu yüzden karar vermiyor. Ayarlar → Hakemler'e başka bir anahtar girin veya başka bir hakem seçin."
+    },
+    "layaRemoved": "Laya artık mu'ya yerleşik değil, bu yüzden hakeminiz artık {{judge}}. Başka bir karar modeli kullanmak için Ayarlar → Hakemler bölümünden Hugging Face'ten ekleyin.",
+    "layaRemovedNoModels": "Laya artık mu'ya yerleşik değil, bu yüzden hakeminiz artık {{judge}}.",
     "checkpointOffWhy": {
       "gitMissing": "Bu konuşmada kontrol noktaları kapalı: Bu bilgisayarda Git bulunamadı. Git'i kurun, ardından kontrol noktaları için yeni bir konuşma başlatın.",
       "xcodeLicense": "Bu konuşmada kontrol noktaları kapalı: Xcode lisansı kabul edilene kadar Git bu Mac'te çalışamaz. Terminal'de sudo xcodebuild -license ile kabul edin, ardından kontrol noktaları için yeni bir konuşma başlatın.",
@@ -846,11 +907,9 @@
   },
   "importChats": {
     "title": "Konuşmaları içe aktar",
-    "description": "Bu bilgisayarda Claude Code, Codex veya ZCode ile yaptığınız konuşmaları tüm geçmişleriyle mu’ya getirin ve burada sürdürün.",
     "open": "Seç…",
     "dialog": {
       "title": "Konuşmaları içe aktar",
-      "hint": "Seçtiğiniz her konuşma, tüm geçmişiyle birlikte kendi proje klasöründe bir mu konuşması olur: mesajlar, araç çağrıları, düşünme adımları ve görseller. Yeni eklenenleri getirmek için daha sonra yeniden seçebilirsiniz.",
       "search": "Sözcüğe veya klasöre göre ara",
       "loading": "Konuşmalar aranıyor…",
       "empty": "Bu bilgisayarda Claude Code, Codex veya ZCode konuşması bulunamadı.",
@@ -956,11 +1015,7 @@
     },
     "send": {
       "placeholder": "mu'ya mesaj yazın…",
-      "placeholderWorking": "mu'yu şimdi yönlendirin ya da bu çalışmadan sonrası için bir mesaj bırakın…",
-      "steer": "Şimdi",
-      "steerHint": "mu'ya bir sonraki adımında ulaşır",
-      "followUp": "Sonra",
-      "followUpHint": "Bu çalışma bitene kadar bekler"
+      "placeholderWorking": "mu'ya mesaj yazın; mesajı işe ne zaman katacağına mu karar verir…"
     },
     "queue": {
       "title": "Gönderilmeyi bekliyor",
@@ -1006,9 +1061,11 @@
       "body": "mu bu klasörde çalışır. Ne yapılmasını istediğinizi söyleyin."
     },
     "sider": {
-      "title": "Son",
       "new": "Bir klasörde yeni konuşma",
       "empty": "Henüz konuşma yok",
+      "addProject": "Proje ekle",
+      "removeProject": "Projeyi kaldır",
+      "archiveProjectConfirm": "“{{name}}” ve içindeki konuşmalar arşivlensin mi? Listenin sonundaki Arşiv bölümünden geri yükleyebilirsiniz.",
       "all": "Tümünü göster ({{count}})",
       "fewer": "Daha az göster",
       "deleteConfirm": "“{{title}}” silinsin mi? Oturum dosyası çöp kutusuna taşınır; oradan hâlâ geri yükleyebilirsiniz.",
@@ -1053,8 +1110,6 @@
     }
   },
   "details": {
-    "lead": "Her özelliğin bir anahtarı vardır, ayarları Seçenekler'dedir. Girintili satırlar hakeme karar sorduğu yerlerdir: birini kapatırsanız o adım her zamanki gibi ilerler.",
-    "featureOff": "Özellik kapalı",
     "askJudge": "Hakem karar versin",
     "askJudgeAbout": "Hakem karar versin: {{point}}",
     "areas": {
@@ -1081,7 +1136,6 @@
       "cursor": "Cursor"
     },
     "skills": {
-      "lead": "mu’nun her konuşmada kullanabileceği beceriler ve her birinin nereden geldiği.",
       "search": "Becerilerde ara",
       "open": "Klasörü aç",
       "add": "Beceri ekle",
@@ -1092,33 +1146,26 @@
       "empty": "mu’nun henüz becerisi yok.",
       "noMatch": "Eşleşen beceri yok.",
       "failed": "mu’nun becerileri okunamadı.",
-      "project": "Bir projenin kendi becerileri (.mu/skills, .agents/skills, .claude/skills) yalnızca o projenin konuşmalarında yüklenir ve burada listelenmez.",
       "groups": {
         "mu": {
-          "title": "mu’nun becerileri",
-          "help": "{{folder}} içinde. Eklenen beceriler buraya gelir ve yalnızca bunlar kaldırılabilir."
+          "title": "mu’nun becerileri"
         },
         "agents": {
-          "title": "Paylaşılan beceriler",
-          "help": "~/.agents/skills içinde, birkaç ajan ortak kullanır. mu bunları okur, hiç değiştirmez."
+          "title": "Paylaşılan beceriler"
         },
         "builtin": {
-          "title": "mu ile gelenler",
-          "help": "mu ile birlikte gelir; onu getiren özellik açık olduğu sürece açıktır."
+          "title": "mu ile gelenler"
         },
         "claude": {
-          "title": "Claude Code’dan",
-          "help": "~/.claude/skills klasöründen. mu yalnızca okur; mu.json içindeki features.inherit devralmayı durdurur."
+          "title": "Claude Code’dan"
         },
         "codex": {
-          "title": "Codex’ten",
-          "help": "~/.codex/skills klasöründen. mu yalnızca okur; mu.json içindeki features.inherit devralmayı durdurur."
+          "title": "Codex’ten"
         }
       }
     },
     "mcp": {
       "title": "MCP sunucuları",
-      "lead": "mu’nun her konuşmada kullanabileceği MCP sunucuları ve her birinin nerede ayarlandığı.",
       "open": "Yapılandırma dosyasını aç",
       "add": "Sunucu ekle",
       "added": "{{name}} eklendi. Yeni konuşmalar artık kullanabilir.",
@@ -1130,7 +1177,6 @@
       "failed": "mu’nun MCP sunucuları okunamadı.",
       "featureOff": "MCP özelliği mu.json içinde kapalı: yalnızca mcp.json içindeki sunucular kullanılır.",
       "unreadable": "Bu dosyalar okunamadı, bu yüzden sunucuları listede yok: {{files}}",
-      "project": "Bir projenin kendi sunucuları (.mu/mcp.json, .mcp.json, .cursor/mcp.json) yalnızca o projenin konuşmalarında kullanılır ve burada listelenmez.",
       "locked": {
         "offInSource": {
           "label": "Kaynağında kapalı",
@@ -1143,20 +1189,16 @@
       },
       "groups": {
         "mu": {
-          "title": "mu’nun sunucuları",
-          "help": "mcp.json ve mu.json içinde. Eklenen sunucular, mu mcp add’de olduğu gibi {{file}} dosyasına yazılır."
+          "title": "mu’nun sunucuları"
         },
         "claude": {
-          "title": "Claude Code’dan",
-          "help": "~/.claude.json dosyasından. Burada kapatmak yalnızca mu.json’a yazar, Claude Code’un dosyasına asla."
+          "title": "Claude Code’dan"
         },
         "cursor": {
-          "title": "Cursor’dan",
-          "help": "~/.cursor/mcp.json dosyasından. Burada kapatmak yalnızca mu.json’a yazar, Cursor’ın dosyasına asla."
+          "title": "Cursor’dan"
         },
         "codex": {
-          "title": "Codex’ten",
-          "help": "~/.codex/config.toml dosyasından. Burada kapatmak yalnızca mu.json’a yazar, Codex’in dosyasına asla."
+          "title": "Codex’ten"
         }
       },
       "form": {

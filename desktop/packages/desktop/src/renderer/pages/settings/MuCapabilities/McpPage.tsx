@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { kyrnBridge, unwrap } from '@/common/kyrn/bridge';
 import { MCP_SOURCES, type MuMcpServer, type MuMcpServers } from '@/common/kyrn/capabilities';
 import type { KyrnResult } from '@/common/kyrn/errors';
-import OneLine from '@/renderer/components/settings/OneLine';
 import SettingsPageWrapper from '../components/SettingsPageWrapper';
 import MuErrorMessage from '../KyrnSettings/fields/MuErrorMessage';
 import { muErrorText, toMuError } from '../KyrnSettings/fields/muError';
@@ -127,7 +126,6 @@ export default function MuMcpPage() {
       <SectionShell
         id='mu-mcp'
         title={t('mu.capabilities.mcp.title')}
-        description={t('mu.capabilities.mcp.lead')}
         actions={
           <>
             <Button size='small' onClick={() => void reveal()}>
@@ -159,7 +157,6 @@ export default function MuMcpPage() {
               testId={`mu-mcp-${source}`}
               title={t(`mu.capabilities.mcp.groups.${source}.title`)}
               badges={<Count value={shown.length} />}
-              summary={<OneLine text={t(`mu.capabilities.mcp.groups.${source}.help`, { file: list.data?.file })} />}
             >
               {shown.map((server) => (
                 <div
@@ -188,7 +185,6 @@ export default function MuMcpPage() {
             </Card>
           ))
         )}
-        {list.data ? <div className={styles.meta}>{t('mu.capabilities.mcp.project')}</div> : null}
       </SectionShell>
     </SettingsPageWrapper>
   );

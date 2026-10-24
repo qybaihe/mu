@@ -17,6 +17,9 @@
     "nav_home": "Home",
     "nav_docs": "Docs",
     "nav_decisions": "Decision points",
+    "nav_models": "Models",
+    "nav_mubench": "mubench 1.0",
+    "nav_enterprise": "Enterprise",
     "nav_changelog": "Changelog",
     "nav_install": "Install",
     "nav_site": "Site",
@@ -35,14 +38,10 @@
     "replay": "↻ Replay",
     "replay_label": "Replay this part",
     "term_label": "Recording of the mu command line",
-    "source_note": "This page is based on the README on GitHub.",
     "star_cta_h2": "If mu is useful to you, star it on GitHub",
-    "star_cta_p": "A star helps more people find it. The code, the discussions and every release live in the repository.",
-    "star_cta_button": "Star on GitHub",
-    "stars_label": "stars"
+    "star_cta_button": "Star on GitHub"
   },
   "home": {
-    "kicker": "μ · Only what's needed.",
     "h1": "Only the context<wbr> the task <em>needs</em>",
     "lead": "mu is a coding agent. A small, fast judge model makes dozens of small decisions for the main model in every turn: what stays in the context, whether a command is safe, whether the work is really done. The main model keeps its attention on the work.",
     "tab_cli": "Command line",
@@ -50,38 +49,29 @@
     "cli_hint": "Needs Node.js 22.19 or newer. Run <code>mu setup</code> once to connect a model, then <code>mu</code> in a project folder.",
     "dl_mac_arm": "Apple silicon",
     "dl_mac_intel": "Intel",
-    "app_hint": "The macOS app is signed and notarized by Apple; the Windows app isn't signed yet, so SmartScreen shows a warning. mu is built into the app, so there's no Node.js to install. Windows on Arm, Linux on Arm and every other download are under <a href=\"https://github.com/qybaihe/mu/releases\">Releases</a>.",
-    "meta": "macOS · Windows · Linux · open source (MIT + Apache-2.0) · built on pi",
+    "app_hint": "The Windows app isn't signed yet, so SmartScreen shows a warning. Windows on Arm, Linux on Arm and every other download are under <a href=\"https://github.com/qybaihe/mu/releases\">Releases</a>.",
     "app_alt": "The mu desktop app after a bug fix: the conversation in the middle, the Judge tab on the right listing each of the judge's verdicts with its decision point and time, and the kernel bar along the bottom",
-    "app_caption": "The desktop app: the Judge tab lists every verdict with its decision point and how long it took.",
     "cue": "Watch a turn",
-    "story_label": "MU · ONE TURN",
     "story_h2": "Judge first, then act",
-    "story_intro": "Ask for a plan, and most agents send the model every tool and skill description along with it. Models write better code every month, and their reports get harder to read. mu splits the work: a judge model decides, the main model works and a model picked for plain writing tells you where things stand.",
-    "stage_caption": "Recorded in mu with TypeSafe's hosted judge model, Jev. Jev's verdicts and timings are real; the coding model's replies are scripted, so the turn plays the same every time.",
     "swarm_alt": "The Hive tab in the desktop app: three bees investigate one bug at once; the arrows are findings the judge decided were worth delivering",
-    "swarm_caption": "The Hive tab in the desktop app: each arrow is a finding the judge decided was worth delivering.",
     "board_alt": "The plain-language board: what's being done, how far it got and the running account below",
-    "board_caption": "The plain-language board: what the agent is doing, how far it got and the running account.",
     "chapters": [
       {
         "seg": "start",
         "label": "When you send a message",
         "h2": "The judge reads it first",
-        "caption": "A message comes in; the judge gives a one-line verdict before the main model starts.",
         "paras": [
           "Is this a new task, a follow-up or a correction? Should a message that arrives mid-run interrupt now? Does it need skills and tools, or will a one-line answer do?"
         ],
         "verdict": true,
         "after": [
-          "In this turn, \"{prompt}\" comes in, and in under a second the judge answers: a multi-step task, full effort. Skills and MCP servers the task doesn't need stay out of the context until it does."
+          "In this turn, the user writes \"{prompt}\", and in under a second the judge answers: a multi-step task, full effort. Skills and MCP servers the task doesn't need stay out of the context until it does."
         ]
       },
       {
         "seg": "fail",
         "label": "When a tool returns",
         "h2": "Output goes through the judge first",
-        "caption": "The tests run: 1 of 13 fails.",
         "paras": [
           "A test run or a search can easily return hundreds of lines. The judge decides, chunk by chunk, what matters now; only that enters the context, and the rest is archived behind a pointer, ready when it's needed.",
           "In web pages and MCP results, instructions aimed at the model are withheld before it reads them."
@@ -91,7 +81,6 @@
         "seg": "edit",
         "label": "Before acting",
         "h2": "Block what's risky, ask only when it matters",
-        "caption": "It finds the cause, a minute defined as one second, and fixes that line without coming back to ask.",
         "paras": [
           "Before a command runs, rules flag anything risky, and the judge checks that you asked for it and that it doesn't cross a constraint you stated. There are three permission modes (<b>Full access</b>, <b>Judge mode</b> and <b>Ask first</b>), and you can switch at any time. In Judge mode, the judge lets through what the task clearly needs and asks you about the rest."
         ]
@@ -100,7 +89,6 @@
         "seg": "done",
         "label": "When the turn ends",
         "h2": "Done means verified",
-        "caption": "It runs the tests again, all 13 pass, and it says what it changed.",
         "paras": [
           "When the model says it's done, mu checks whether anything verified that, whether the turn drifted and whether to go back to a checkpoint.",
           "<code>/goal &lt;condition&gt;</code> keeps the agent working until the condition holds. The main model checks whether it does, with the judge as the fallback; when the same error comes back again and again, the judge decides whether the approach is a dead end."
@@ -125,19 +113,16 @@
         ]
       }
     ],
-    "principles_label": "WHAT WE LEFT OUT",
     "principles_h2": "What mu doesn't do",
-    "principles_intro": "A model's attention is limited, and so is its context. These are the things mu chose not to do, or chose to do differently.",
     "principles": [
       { "h3": "Fewer interruptions", "p": "In Judge mode, the judge lets through what the task clearly needs and asks you about the rest." },
       { "h3": "No toolbox in every prompt", "p": "Each message is judged: small talk, a follow-up or work to do. Skills and MCP servers that aren't needed stay out of the context." },
       { "h3": "Fewer summaries", "p": "When the context grows, stale tool results are dropped instead of summarized, and summary-free compaction is an option. Before the cache expires, mu judges whether a refresh is worth it." },
-      { "h3": "No locked-in judge", "p": "{points} decision points, each with its own switch and its own judge: the free Jev, the local Laya or any LLM." },
+      { "h3": "No locked-in judge", "p": "{points} decision points, each with its own switch and its own judge: the free Jev, mude 1.0 on your Mac or any LLM." },
       { "h3": "No judge key needed to start", "p": "Without a judge key, the free Jev on OpenCode Zen answers, and mu says so once a day." },
       { "h3": "No new foundation", "p": "The command line is built on pi, with its models, extensions, skills and session tree. The desktop app runs the same sessions." }
     ],
     "principles_more": "What each of the {points} decision points asks and changes",
-    "more_label": "ALSO",
     "more_h2": "One set of accounts, settings and lessons for the command line and the app",
     "more": [
       { "b": "Import conversations", "text": "Bring in your Claude Code, Codex and ZCode conversations and carry on in mu." },
@@ -147,41 +132,187 @@
       { "b": "A ledger of verdicts", "text": "Every verdict and how long it took: <code>/status</code>, <code>mu ledger</code> and the app's Judge tab." },
       { "b": "13 interface languages", "text": "The desktop app speaks English, 简体中文, 繁體中文, 日本語, 한국어 and 8 more." }
     ],
-    "community_label": "GET INVOLVED",
     "community_h2": "Help make mu better",
     "community": [
-      { "h3": "Issues", "p": "Report a bug or ask for a feature; the forms ask for what is needed.", "href": "https://github.com/qybaihe/mu/issues" },
+      { "h3": "Issues", "p": "Report a bug or ask for a feature.", "href": "https://github.com/qybaihe/mu/issues" },
       { "h3": "Discussions", "p": "Questions, ideas and what you built with mu.", "href": "https://github.com/qybaihe/mu/discussions" },
       { "h3": "Contributing", "p": "Fix a bug, propose a decision point, measure a judge or translate; good first issues are labeled.", "href": "https://github.com/qybaihe/mu/blob/main/CONTRIBUTING.md" }
-    ],
-    "key_note": "The judge works without a key: you can start with the free Jev. The model that writes the code uses your own subscription or API key. To use your own TypeSafe key or another judge, see <a href=\"{decisions}#judges\">Judges</a>."
+    ]
   },
   "decisions": {
     "title": "Decision points",
-    "lead": "The decisions in every turn that aren't about the code go to a judge. This page lists all {points} decision points: what each one asks, what it changes and who answers."
+    "lead": "The decisions in every turn that aren't about the code go to a judge."
+  },
+  "models": {
+    "title": "Models",
+    "h1": "mude 1.0: a decision model optimized for coding",
+    "lead": "mu's own decision model, trained for the decisions a coding agent makes and state of the art at making them. It runs on your machine, so what it judges never leaves it.",
+    "mude_h2": "A judge that runs on your machine",
+    "facts": [
+      { "h3": "2B parameters", "p": "One forward pass answers every question in a decision, each with a probability." },
+      { "h3": "Judged locally", "p": "Its server runs on 127.0.0.1. What it judges never leaves your machine." },
+      { "h3": "MIT license", "p": "Both editions are on Hugging Face, free to download." }
+    ],
+    "downloads_h3": "On Hugging Face",
+    "full_p": "The full model: bf16, PyTorch, about 4.0 GB. A CUDA GPU is recommended.",
+    "mac_p": "The Mac edition: MLX, 8-bit, a 1.8 GB download. It's the one mu installs.",
+    "install_h2": "One command on a Mac",
+    "install_intro": "One-click install works on Macs with Apple silicon today, with macOS 14 or later and at least 8 GB of memory. On such a Mac, mude is the recommended judge, and <code>mu setup</code> offers it first. While it runs, the server uses about 4 GB.",
+    "cli": {
+      "install": "download (resumes after a stop), verify every file, start it on 127.0.0.1, make it the judge",
+      "status": "what is installed, running and enabled",
+      "local_only": "mude only: nothing goes to a hosted judge",
+      "disable": "back to the previous judge; stops its server",
+      "uninstall": "remove the model and its Python environment"
+    },
+    "app_h3": "In the desktop app",
+    "app": [
+      { "b": "First-run guide", "text": "On a Mac that can run it, the judge step starts with mude selected as the recommended judge, and one click installs it. If an install stops, click Continue installing to pick up where it left off." },
+      { "b": "Settings → Judges", "text": "The mude card installs, starts and stops it, makes it the judge and uninstalls it. It also has the Local only switch." }
+    ],
+    "other_h3": "On other machines",
+    "other_p": "Elsewhere, run the full edition (mude-1.0 on Hugging Face) with its own System One server, as its model card shows, and add it to <code>~/.mu/agent/mu.json</code> as a <code>typesafe</code> judge. <code>MUDE_KEY</code> holds the key the server was started with:",
+    "other_link": "Using mude 1.0 with mu, on its model card",
+    "local_h2": "What stays on your machine",
+    "local": [
+      { "h3": "With a fallback (the default)", "p": "The judge you used before stays on as mude's fallback. It answers what mude can't (when mude's server isn't running or mude is unsure) and always handles the two injection screens: tool descriptions and tool output. When that judge is hosted, what goes to it leaves your machine.", "code": "mu judge mude install" },
+      { "h3": "Local only", "p": "mude is the only judge, and nothing goes to a hosted judge. When mude can't answer, the decision point does what it would do without a judge.", "code": "mu judge mude enable --local-only" }
+    ],
+    "jev_h2": "mude 1.0 and Jev",
+    "compare": [
+      { "k": "Where it runs", "mude": "On your machine, at 127.0.0.1", "jev": "Hosted by TypeSafe, reached through TypeSafe, OpenRouter, the Vercel AI Gateway, OpenCode Zen or Cloudflare Workers AI" },
+      { "k": "What leaves your machine", "mude": "Nothing, with Local only on. Otherwise, what goes to the fallback judge", "jev": "The fields each question needs, such as a message, a chunk of output or a command. Credentials are masked first" },
+      { "k": "Platforms", "mude": "One-click install on Macs with Apple silicon. Elsewhere, the full model on your own server", "jev": "Wherever mu runs" },
+      { "k": "License and availability", "mude": "MIT. Both editions are on Hugging Face", "jev": "A hosted service: free with no key on OpenCode Zen for a limited time, or paid per call with your own key" },
+      { "k": "Setup", "mude": "<code>mu judge mude install</code>, or one click in the desktop app", "jev": "None, it's the default. <code>mu setup</code> sets a key" }
+    ],
+    "board_h2": "Capability leaderboard",
+    "board_link": "See the mubench 1.0 leaderboard"
+  },
+  "mubench": {
+    "title": "mubench 1.0",
+    "h1": "mubench 1.0: decision models, scored on a coding agent's decisions",
+    "lead": "On mubench's main board, every item is a request mu sent to a decision model, word for word, in a real coding session on an open-source repository. Each answer is scored by the cost of its consequences, and every model is compared with mu running without a decision model.",
+    "main_h2": "Real coding sessions",
+    "main_intro": "{items} requests from {tasks} coding tasks on open-source repositories.",
+    "model": "Model",
+    "overall": "Overall",
+    "caps": {
+      "permission": "Permission approval",
+      "threat": "Malicious-instruction detection",
+      "compression": "Context compression",
+      "loading": "On-demand loading and reminders",
+      "routing": "Classification and routing",
+      "progress": "Progress and completion",
+      "memory": "Memory and lessons",
+      "multiagent": "Multi-agent collaboration"
+    },
+    "names": { "d3-nano": "d3-nano (original)" },
+    "zero_row": "No decision model",
+    "count_row_tasks": "Items (tasks)",
+    "count_row": "Items",
+    "few_short": "Few items or an unstable score",
+    "note_few": "Few items or an unstable score: fewer than {items} items, items from fewer than {tasks} tasks, or mu already right more than {baseline}% of the time with no decision model.",
+    "note_threat": "Malicious-instruction detection isn't scored yet.",
+    "score_note": "Without a decision model, mu's mistakes have a cost. A score is how much of that cost a model removes: 100 removes all of it, 0 is no better, below 0 is worse. It isn't accuracy; that's in <a href=\"#accuracy\">decision accuracy</a> below.",
+    "note_threat_acc": "Malicious-instruction detection isn't shown here either: none of the main board's 19 such requests contains an attack, and every model, as well as mu with no decision model, gets them all right. The sub-board has none yet.",
+    "weight_row": "Weight in overall",
+    "method_h3": "How the score is computed",
+    "method": [
+      { "b": "Capability score", "code": "100 × Σ w·(f − r) / Σ w·f", "p": "Summed over the capability's decision points: f is the average cost per check with no decision model, r the same with the model, and w the decision point's weight (3 for safety gates, 2 for decisions made every turn, 1 for the rest). 100 means all of that cost is removed, 0 no better than no decision model, below 0 worse." },
+      { "b": "Overall score", "p": "mubench's pooled score over every decision point. It equals the mean of the capability scores, each weighted by its share of the cost with no decision model (the \"Weight in overall\" row); the costs and weights were fixed before any model was scored. Not equal weights: item counts differ about 60-fold between capabilities, and equal weights would let the smallest, noisiest ones swing the result." },
+      { "b": "95% intervals", "p": "The thin lines on the overall charts. A bootstrap with 1,000 draws, resampled within each decision point: by task on the main board, since requests from one session aren't independent, and by scenario on the sub-board." },
+      { "b": "— (not scored)", "p": "The capability has no items, or mu loses nothing there without a decision model, so the score is undefined." }
+    ],
+    "sub_h3": "Sub-board: constructed scenarios",
+    "sub_intro": "{items} scenarios written for mubench and scored the same way. Their mix of decisions differs from real sessions, so the two boards are scored separately and never added together.",
+    "acc_h2": "Decision accuracy",
+    "acc_intro": "The share of checks a model gets right (an item can have several checks), with mu running without a decision model as the first row. Here every check counts the same, whatever its mistakes cost, so accuracy and score can rank models differently.",
+    "acc_main_h3": "Main board: real coding sessions",
+    "chart_acc_alt": "Bar chart of decision accuracy, with 95% intervals. Main board: {main}. Sub-board: {sub}.",
+    "list_sep": "; ",
+    "chart_overall_alt": "Bar chart of the main board's overall scores, with 95% intervals: {list}. No decision model: 0.",
+    "chart_sub_alt": "Bar chart of the sub-board's overall scores, with 95% intervals: {list}. No decision model: 0.",
+    "chart_caps_alt": "Bar charts of the eight capability scores on the main board; the numbers are in the table above.",
+    "chart_scoring_alt": "How mubench scores a decision model: a real request mu sent to a decision model in a coding session; the decision the model under test makes; the cost of its consequences; that cost compared with mu running without a decision model.",
+    "how_h2": "Scored by consequences",
+    "caps_h2": "Eight capabilities",
+    "caps_text": {
+      "permission": "Whether an action may go ahead: is a flagged command what the user asked for, can a call be approved for the user, does it break a constraint the user set.",
+      "threat": "Whether outside content, such as a web page, a search result or an MCP reply, carries instructions aimed at the AI, and whether an MCP tool's description slips in commands that have nothing to do with the tool.",
+      "compression": "When the context is nearly full, which old tool output to keep; whether an old result is still worth its tokens; which parts of a tool's output can stay out of the context.",
+      "loading": "Which packs and skills a task needs; whether and when to tell the model about diagnostics or outside events; whether to keep the prompt cache warm.",
+      "routing": "What kind of message this is and how much effort it deserves; whether a mid-run message changes course now or waits; also review triage, finding files and the browser's next step.",
+      "progress": "Whether the turn is done, whether the agent should keep going, whether the goal is met, whether the work has drifted or should be rewound, and whether output breaks a rule.",
+      "memory": "What is worth remembering, whether it is already known, which lesson applies now, whether the agent followed it, and whether it can become a skill.",
+      "multiagent": "What to pass between agents in a hive, to whom, and how it relates to earlier findings; whether a subagent's changes stay in scope; which role and thinking level a subtask gets."
+    }
+  },
+  "enterprise": {
+    "title": "Enterprise",
+    "h1": "Need a decision model customized for you and your company?",
+    "lead": "In every turn, mu asks a decision model dozens of small questions: may this command run, which old output is worth keeping, is the work done. We can tune one to how your team answers them, run it on your own machines, and show you in numbers what it changes.",
+    "cta": "Tell us what you need",
+    "cta_models": "About mude 1.0",
+    "mude_h2": "Start from mude 1.0, on your own machines",
+    "run": [
+      { "h3": "Macs with Apple silicon", "p": "One click in the desktop app, or one command: <code>mu judge mude install</code>. mu downloads the 8-bit MLX edition, checks every file, starts it on 127.0.0.1 and makes it the judge." },
+      { "h3": "Your GPU servers", "p": "The full bf16 model, with its own System One server. A CUDA GPU is recommended. mu reaches it as a judge over your own network." }
+    ],
+    "mude_link": "More about mude 1.0 on the Models page",
+    "custom_h2": "Tuned to how your team decides",
+    "steps": [
+      { "h3": "Your decisions", "p": "We start from the decisions that matter to you: what counts as risky in your codebase, what your review policy asks for, how work should be routed." },
+      { "h3": "A baseline", "p": "We score your current setup on those decisions the way mubench does: each answer by the cost of its consequences." },
+      { "h3": "Fine-tuning", "p": "We fine-tune a decision model on your decision points, workflows and rules." },
+      { "h3": "Before and after", "p": "The same scoring again, next to your current setup, so you can see what changed before you switch." }
+    ],
+    "custom_link": "How mubench scores decision models",
+    "mu_h2": "Works with mu out of the box",
+    "mu": [
+      { "b": "The judge in the CLI and the app", "text": "<code>mu judge mude install</code> on the command line, or the mude card in the desktop app's Settings → Judges." },
+      { "b": "Local only", "text": "With <code>mu judge mude enable --local-only</code>, mude is the only judge and nothing goes to a hosted judge. When mude can't answer, the decision point does what it would do without a judge." },
+      { "b": "Shadow mode first", "text": "Decision points in shadow mode still ask and record their verdicts, but change nothing, so you can watch a model before you trust it." },
+      { "b": "A ledger for audit", "text": "Every verdict is recorded on your machine: the answers and their probabilities, how long it took, and whether the judge or a fallback gave it. Read it with <code>mu ledger</code> or in the app's Judge tab." }
+    ],
+    "faq_h2": "Common questions",
+    "faq": [
+      { "q": "Can we try mude 1.0 before we talk?", "a": "Yes. It's free under the MIT license. Install it, put your decision points in shadow mode, and read its verdicts in the ledger." },
+      { "q": "Does our coding model change?", "a": "No. A decision model only answers mu's decisions. Your coding model, and where it runs, stay your choice." },
+      { "q": "What leaves our network?", "a": "Nothing mude answers: it runs on your machines. With Local only on, nothing goes to a hosted judge either. Your coding model is separate, and what it sees goes wherever it runs." },
+      { "q": "How would we know a custom model is better?", "a": "We score it the way mubench does, on your own decision points, before and after, next to your current setup. You see the numbers before you switch." }
+    ],
+    "contact_h2": "Tell us what you'd like a model for",
+    "soon": "Coming soon",
+    "form_note": "This form isn't connected yet. Pressing Send sends nothing and stores nothing.",
+    "f_name": "Name",
+    "f_email": "Work email",
+    "f_company": "Company",
+    "f_need": "What decisions would you like a model for?",
+    "send": "Send",
+    "sent": "Coming soon.",
+    "sent_p": "This form doesn't send yet, so nothing was sent or stored."
   },
   "docs": {
     "title": "Docs",
-    "lead": "From installing to everyday use: the desktop app, the command line, the hive, the plain-language board and privacy.",
-    "more_h2": "More reference docs",
-    "more_p": "These reference documents live in the GitHub repository:",
-    "more": [
-      { "text": "Getting started", "href": "https://github.com/qybaihe/mu/blob/main/docs/getting-started.md" },
-      { "text": "Configuration", "href": "https://github.com/qybaihe/mu/blob/main/docs/configuration.md" },
-      { "text": "Judges", "href": "https://github.com/qybaihe/mu/blob/main/docs/judges.md" },
-      { "text": "Troubleshooting", "href": "https://github.com/qybaihe/mu/blob/main/docs/troubleshooting.md" },
-      { "text": "Features and options", "href": "https://github.com/qybaihe/mu/blob/main/docs/reference/features.md" },
-      { "text": "How mu works", "href": "https://github.com/qybaihe/mu/blob/main/docs/architecture.md" }
-    ]
+    "lead": "From installing to everyday use: the desktop app, the command line, the hive, the plain-language board and privacy."
   },
   "changelog": {
     "title": "Changelog",
-    "lead": "What changed in each release of mu: the desktop app and the command line together. Every desktop release bundles a specific mu-agent version, and all of them are pre-releases while mu is in early development.",
-    "english_note": "",
+    "lead": "What changed in each release of mu: the desktop app and the command line together. Every desktop release bundles a specific mu-agent version.",
     "agent_label": "Includes",
     "download": "Download this version",
     "full_agent": "Full mu-agent changelog",
     "headlines": {
+      "v0.2.8": "the plain-language board talks like a teammate: who's doing what, what's stuck, what's next",
+      "v0.2.7": "OpenAI's decision model as a judge; GPT-6.1 Sol by default; a shorter OpenAI model menu; the thinking level stays in view",
+      "v0.2.6": "the note that Laya was replaced now reaches you; mude 1.0 stays local only; mu doctor passes without Chrome; sidebar and file-link fixes",
+      "v0.2.5": "Laya is no longer built in, so mu switches to mude 1.0 or Jev on its own; opening a conversation no longer waits for the judge",
+      "v0.2.4": "click a file named in a reply to open it; conversations grouped by project and opening instantly; Gemini 4 Argon; OpenAI-compatible relays fixed",
+      "v0.2.3": "decision models from Hugging Face next to mude 1.0; mu decides when a mid-run message lands; ChatGPT sign-in copes with a busy port",
+      "v0.2.2": "the mude 1.0 install copes with a full disk, a stop at any step and two installs at once; clearer English",
+      "v0.2.1": "mude 1.0 is the recommended judge on a Mac, and installing it survives a power cut",
+      "v0.2.0": "mu's own model arrives: mude 1.0 in one click, subscription sign-in straight from mu setup, replies that start sooner",
       "v0.1.10": "conversations imported from ZCode, a copy edit of the English, unattended runs that keep their servers",
       "v0.1.9": "a new look, model limits read from each provider's model list",
       "v0.1.8": "MCP tool descriptions screened for hidden instructions, long runs saved as draft skills"

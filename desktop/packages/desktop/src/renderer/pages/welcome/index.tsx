@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, AutoComplete, Button, Input, Radio } from '@arco-design/web-react';
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +14,7 @@ import {
   choiceOf,
   choose,
   GUIDE_CHOICES,
+  inShownOrder,
   jevVariables,
   profileFor,
 } from '@/renderer/pages/settings/KyrnSettings/judgeChoice';
@@ -24,7 +25,16 @@ import {
   providerLabel,
 } from '@/renderer/pages/settings/KyrnSettings/providers/endpoints';
 import ConnectionTest from '@/renderer/pages/settings/KyrnSettings/providers/ConnectionTest';
+import { dirtySections, type Draft } from '@/renderer/pages/settings/KyrnSettings/draft';
 import { ChoiceBody, JudgeChoiceTile } from '@/renderer/pages/settings/KyrnSettings/sections/JudgesSection';
+import {
+  MudeSetup,
+  MudeUnsupported,
+  mudeOffered,
+  mudeRecommended,
+  useMude,
+  type MudeControl,
+} from '@/renderer/pages/settings/KyrnSettings/sections/mude/MudePanel';
 import choiceStyles from '@/renderer/pages/settings/KyrnSettings/sections/sections.module.css';
 import { useMuSettings } from '@/renderer/pages/settings/KyrnSettings/useMuSettings';
 import ImportChatsModal from '@/renderer/pages/settings/SystemSettings/ImportChats/ImportChatsModal';
@@ -61,7 +71,6 @@ const API_WAYS = ['openai', 'anthropic'] as const;
 type ApiWay = (typeof API_WAYS)[number];
 type OpenAiApi = Extract<GuideApi, 'openai-completions' | 'openai-responses'>;
 const OPENAI_APIS: readonly OpenAiApi[] = ['openai-completions', 'openai-responses'];
-const INTRO_POINTS = ['judge', 'control', 'ready'] as const;
 
 /**
  * One turn as the judge sees it, for the introduction: three real decision points, what each one's verdict said and
@@ -72,6 +81,16 @@ const TURN = [
   { point: 'tool.approval', verdict: 'approval', ms: 205 },
   { point: 'turn.completion', verdict: 'completion', ms: 207 },
 ] as const;
+
+/**
+ * The judge is Jev answering free (no key for it saved or typed), with its verdicts on: what a new mu starts with, a
+ * judge nobody chose. The judge step then says so; on a Mac that can run mude, it starts with mude picked instead.
+ */
+function freeJevJudge({ settings, judgeKeys }: Draft): boolean {
+  const judge = choiceOf(settings);
+  if (settings.mode === 'off' || judge !== 'jev') return false;
+  return answersFree(settings.judges[profileFor(settings, judge) ?? ''], settings.keys, judgeKeys);
+}
 
 /** A line that says what is already set up and works: nothing to do on this step. */
 function Ready({ text, testId }: { text: string; testId: string }) {
@@ -105,6 +124,23 @@ export default function Welcome() {
   const [added, setAdded] = useState<string>();
   // The judge's service and key, folded away while the judge answers as it is.
   const [judgeMore, setJudgeMore] = useState(false);
+  // mude, on a Mac: picked in the judge step, which sets it up right there through mu's own command. The command
+  // writes mu.json itself (mude first, the judges from before behind it), so once it ends the guide's draft is moved
+  // onto the files again, and the final save starts from them too: it never puts back the judge the draft held.
+  // Undefined until something is picked on the judge step: then the recommendation below decides.
+  const [mudePick, setMudePick] = useState<boolean>();
+  const mudeRan = useRef(false);
+  const mudeNow = useMude((task) => {
+    const judgeSet = task.phase === 'done' && (task.command === 'install' || task.command === 'enable');
+    void mu.rebase(judgeSet ? 'files' : 'draft');
+  });
+  const mude: MudeControl = {
+    ...mudeNow,
+    run: (action, localOnly) => {
+      mudeRan.current = true;
+      return mudeNow.run(action, localOnly);
+    },
+  };
   const keys = useKeySetup();
   // Claude Code, Codex and ZCode conversations on this computer not brought in yet: the first screen and the last
   // step offer them.
@@ -142,6 +178,15 @@ export default function Welcome() {
   ) : null;
 
   const { base, draft } = mu;
+  // On a Mac that can run it (as its status says, not while that is still read), mude is the recommended judge: the
+  // judge step starts with it picked, its install one click away and never started by itself, while the judge is still
+  // the free Jev a new mu starts with. A judge set up before (Jev with a key, CLM, no judge, mude itself) stays
+  // the one picked. Whatever the person picks on the step wins, and the status read later never moves it.
+  const recommendMude = mudeRecommended(mude.state);
+  const mudePicked = mudePick ?? (recommendMude && draft !== undefined && freeJevJudge(draft));
+  // The first press on the step's choices keeps the pick as it is shown: pressing the tile already picked does nothing
+  // of itself (a picked tile ignores a press), and a press on a field inside it is a press on that choice too.
+  const settleMudePick = () => setMudePick((now) => now ?? mudePicked);
   const chosenWay: Way | undefined = way;
   // The steps of the setup itself; the introduction before them is not one. The permission step only when this mu
   // has permission modes and they are on.
@@ -192,7 +237,18 @@ export default function Welcome() {
   };
 
   const finish = async () => {
-    if (mu.dirty.size === 0 || (await mu.save())) leave();
+    if (!mudeRan.current) {
+      if (mu.dirty.size === 0 || (await mu.save())) leave();
+      return;
+    }
+    // mude's command may have written mu.json since: the save starts from the files. With mude the last pick, the
+    // judge is what the files say (mude first once it is set up, else the judge from before).
+    const from = await mu.rebase(mudePicked ? 'files' : 'draft');
+    if (!from) return;
+    if (dirtySections(from.base, from.draft).size > 0 && !(await mu.save(from))) return;
+    // Set up here but not the judge after all: its server (about 4 GB of memory) is not left running for nothing.
+    if (from.draft.settings.mode === 'off' || choiceOf(from.draft.settings) !== 'mude') void mudeNow.run('stop');
+    leave();
   };
 
   if (!base || !draft) {
@@ -237,8 +293,11 @@ export default function Welcome() {
           model: modelName(saved.provider, saved.model),
         })
       : undefined;
-  const judgeFree = judge === 'jev' && answersFree(judgeProfile, settings.keys, draft.judgeKeys);
+  // No judge: every decision point off, as the settings' switch sets it, so nothing is sent to a judge.
+  const judgeOff = settings.mode === 'off';
+  const judgeFree = freeJevJudge(draft);
   const judgeKeyed =
+    !judgeOff &&
     judge === 'jev' &&
     !judgeFree &&
     jevVariables(judgeProfile).every((variable) => Boolean(settings.keys[variable] || draft.judgeKeys[variable]));
@@ -288,23 +347,12 @@ export default function Welcome() {
             ))}
           </ol>
         </figure>
-        <ul className={styles.points}>
-          {INTRO_POINTS.map((point) => (
-            <li key={point} className={styles.point}>
-              <div>
-                <div className={styles.pointTitle}>{t(`mu.welcome.intro.points.${point}.title`)}</div>
-                <div className={styles.pointText}>{t(`mu.welcome.intro.points.${point}.text`)}</div>
-              </div>
-            </li>
-          ))}
-        </ul>
       </>
     );
   } else if (step === 'model') {
     body = (
       <>
         <h1 className={styles.title}>{t('mu.welcome.model.title')}</h1>
-        <p className={styles.subtitle}>{t('mu.welcome.model.subtitle')}</p>
         {savedModel ? <Ready testId='mu-welcome-model-ready' text={savedModel} /> : null}
         <div className={choiceStyles.choices} role='radiogroup' aria-label={t('mu.welcome.model.title')}>
           <ChoiceTile
@@ -428,7 +476,6 @@ export default function Welcome() {
     body = (
       <>
         <h1 className={styles.title}>{t('mu.welcome.permissions.title')}</h1>
-        <p className={styles.subtitle}>{t('mu.welcome.permissions.subtitle')}</p>
         <div className={choiceStyles.choices} role='radiogroup' aria-label={t('mu.welcome.permissions.title')}>
           {permissionModes.map((mode) => (
             <ChoiceTile
@@ -448,15 +495,36 @@ export default function Welcome() {
     body = (
       <>
         <h1 className={styles.title}>{t('mu.welcome.judge.title')}</h1>
-        <p className={styles.subtitle}>{t('mu.welcome.judge.subtitle')}</p>
-        {judgeReady ? <Ready testId='mu-welcome-judge-ready' text={judgeReady} /> : null}
-        <div className={choiceStyles.choices} role='radiogroup' aria-label={t('mu.welcome.judge.title')}>
-          {GUIDE_CHOICES.map((choice) => {
+        {judgeReady && !mudePicked ? <Ready testId='mu-welcome-judge-ready' text={judgeReady} /> : null}
+        <div
+          className={choiceStyles.choices}
+          role='radiogroup'
+          aria-label={t('mu.welcome.judge.title')}
+          onClickCapture={settleMudePick}
+          onKeyDownCapture={settleMudePick}
+        >
+          {inShownOrder(GUIDE_CHOICES, recommendMude).map((choice) => {
+            if (choice === 'mude') {
+              // Shown on every machine, so someone without a Mac that runs it learns it exists; never in the way.
+              const disabled = !mudeOffered(mude.state);
+              return (
+                <JudgeChoiceTile
+                  key={choice}
+                  choice={choice}
+                  mudeRecommended={recommendMude}
+                  active={!disabled && (mudePicked || (!judgeOff && judge === 'mude'))}
+                  disabled={disabled}
+                  description={disabled ? <MudeUnsupported state={mude.state} guide /> : undefined}
+                  onPick={() => setMudePick(true)}
+                >
+                  <MudeSetup mude={mude} judged={!judgeOff && judge === 'mude'} />
+                </JudgeChoiceTile>
+              );
+            }
             const fields = (
               <ChoiceBody
                 choice={choice}
                 draft={draft}
-                guide
                 onChange={mu.editSettings}
                 onKey={(variable, value) =>
                   mu.edit((now) => ({ ...now, judgeKeys: { ...now.judgeKeys, [variable]: value } }))
@@ -469,10 +537,18 @@ export default function Welcome() {
               <JudgeChoiceTile
                 key={choice}
                 choice={choice}
-                active={judge === choice}
-                onPick={() => mu.editSettings((now) => choose(now, choice))}
+                mudeRecommended={recommendMude}
+                active={!judgeOff && !mudePicked && judge === choice}
+                // Picking a judge after "No judge" turns the verdicts back on; a stored shadow stays as it is.
+                onPick={() => {
+                  setMudePick(false);
+                  mu.editSettings((now) => ({
+                    ...choose(now, choice),
+                    mode: now.mode === 'off' ? 'active' : now.mode,
+                  }));
+                }}
               >
-                {folded ? (
+                {judgeOff ? null : folded ? (
                   <>
                     <button
                       type='button'
@@ -491,6 +567,17 @@ export default function Welcome() {
               </JudgeChoiceTile>
             );
           })}
+          <ChoiceTile
+            testId='mu-welcome-judge-none'
+            title={t('mu.welcome.judge.none.title')}
+            tag={t('mu.welcome.judge.none.tag')}
+            description={t('mu.welcome.judge.none.description')}
+            active={judgeOff && !mudePicked}
+            onPick={() => {
+              setMudePick(false);
+              mu.editSettings((now) => ({ ...now, mode: 'off' }));
+            }}
+          />
         </div>
       </>
     );
@@ -507,7 +594,6 @@ export default function Welcome() {
     body = (
       <>
         <h1 className={styles.title}>{t('mu.welcome.done.title')}</h1>
-        <p className={styles.subtitle}>{t('mu.welcome.done.subtitle')}</p>
         <dl className={styles.summary}>
           <div className={styles.summaryRow}>
             <dt>{t('mu.welcome.done.model')}</dt>
@@ -528,17 +614,23 @@ export default function Welcome() {
           ) : null}
           <div className={styles.summaryRow}>
             <dt>{t('mu.welcome.done.judge')}</dt>
-            <dd>
-              {judge ? <span className={styles.judgeMark} aria-hidden='true' /> : null}
-              {judge ? t(`mu.judges.choices.${judge}.title`) : t('mu.welcome.done.none')}
-              {free ? (
-                <span className={styles.note}>{t('mu.welcome.done.freeJev')}</span>
-              ) : judge === 'jev' && !keyReady ? (
-                <span className={styles.warn}>{t('mu.welcome.done.noKey')}</span>
-              ) : null}
+            <dd data-testid='mu-welcome-done-judge'>
+              {judgeOff ? (
+                t('mu.welcome.judge.none.title')
+              ) : (
+                <>
+                  {judge ? <span className={styles.judgeMark} aria-hidden='true' /> : null}
+                  {judge ? t(`mu.judges.choices.${judge}.title`) : t('mu.welcome.done.none')}
+                  {free ? (
+                    <span className={styles.note}>{t('mu.welcome.done.freeJev')}</span>
+                  ) : judge === 'jev' && !keyReady ? (
+                    <span className={styles.warn}>{t('mu.welcome.done.noKey')}</span>
+                  ) : null}
+                </>
+              )}
             </dd>
           </div>
-          {judge && kernel.total > 0 ? (
+          {judge && !judgeOff && kernel.total > 0 ? (
             <div className={styles.summaryRow} data-testid='mu-welcome-kernel'>
               <dt>{t('common.kyrn.hero.kernel')}</dt>
               <dd className={styles.mono}>

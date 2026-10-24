@@ -41,8 +41,6 @@ export type Questions = Readonly<Record<string, Question>>;
 export interface AnswerSignals {
 	/** Provider-reported confidence in [0, 1]. */
 	readonly confidence?: number;
-	/** Estimated probability that acting on this answer beats escalating (Laya's action head). */
-	readonly actProbability?: number;
 	/** Which judge produced this answer, when several are chained. */
 	readonly judge?: string;
 }
@@ -81,6 +79,10 @@ export type AnswersFor<Qs extends Questions> = { readonly [Id in keyof Qs]: Answ
 export interface JudgeUsage {
 	inputTokens?: number;
 	outputTokens?: number;
+	/** Of the input tokens, those read from the provider's prompt cache, when it reports them (OpenAI). */
+	cachedInputTokens?: number;
+	/** Of the input tokens, those written to the provider's prompt cache, when it reports them (OpenAI). */
+	cacheWriteTokens?: number;
 }
 
 /**
@@ -92,8 +94,10 @@ export interface JudgeUsage {
  * - `meta`:     judge a property of the request itself (vague? decomposable?).
  * - `screen`:   read raw text from a tool (a fetched page, a listing, a build log) for what is buried in it: an
  *               instruction aimed at an AI, noise to leave out. The verdict decides what the model gets to read.
+ * - `intent`:   read the agent's own closing message for whether it says it will do more ("Let me run the tests
+ *               next.") or reports what is done ("Done. Created …"). The verdict sends the agent back to work.
  */
-export type Capability = "classify" | "relate" | "rate" | "meta" | "screen";
+export type Capability = "classify" | "relate" | "rate" | "meta" | "screen" | "intent";
 
 /** Something the provider did that the caller did not ask for, such as truncating the state. */
 export interface JudgeWarning {

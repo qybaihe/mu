@@ -168,7 +168,6 @@
     "judge": "Configuración del juez",
     "reload": "Recargar",
     "starting": "Iniciando mu…",
-    "startingHint": "Conectando con el núcleo local de mu y leyendo la configuración del modelo y del juez.",
     "startupError": "No se pudo iniciar mu",
     "hiveView": {
       "title": "Hive",
@@ -186,7 +185,6 @@
       "lastStep": "{{status}} · último paso: {{step}}",
       "runs": "Ejecuciones de Hive",
       "graph": "Mapa de colaboración",
-      "graphHint": "Cuanto más gruesa la línea, más pasó por ella. Elige una abeja para abrir su fila; señala una línea para leer lo que llevó.",
       "map": "Mapa",
       "legend": "Leyenda",
       "legendDelivery": "entrega",
@@ -206,7 +204,6 @@
       "board": "Tablero compartido",
       "noNotes": "Aún no hay hallazgos compartidos.",
       "context": "Contexto de ejecución",
-      "contextHint": "Mensajes registrados y salida de herramientas completada, no la instrucción completa del modelo. La salida aparece al terminar.",
       "focus": "Asignación",
       "missingFocus": "No se registró la asignación para esta ejecución.",
       "current": "Actividad actual",
@@ -1065,7 +1062,6 @@
     "compactionAborted": "Compactación cancelada",
     "compactionFailed": "La compactación ha fallado",
     "compactionSavings": "Reducción del contexto ≈{{saved}}",
-    "compactionEstimate": "Los tokens tras la compactación son una estimación; la siguiente respuesta del modelo actualizará el uso.",
     "cacheHit": "Aciertos de caché",
     "cachePending": "Aún no se ha informado del uso de caché",
     "cacheLabel": "Tasa de aciertos de caché de la sesión: {{percent}}",
@@ -1101,7 +1097,6 @@
       "needsYou": "Te necesita",
       "needsYouText": "El agente espera tu respuesta en la conversación.",
       "quote": "Citar en tu respuesta",
-      "quoteHint": "Haz clic en uno para citarlo en tu respuesta; no se envía nada hasta que lo envíes tú.",
       "account": "Lo que ha hecho",
       "earlierNotes": "{{count, number}} anteriores",
       "earlierNotes_one": "{{count, number}} anterior",
@@ -1114,7 +1109,8 @@
         "fixing": "Corrigiendo lo que encontró la revisión",
         "waiting": "Esperándote",
         "wrapping_up": "Terminando",
-        "stuck": "Parece atascado"
+        "stuck": "Parece atascado",
+        "blocked": "Esperando otra cosa"
       },
       "checks_one": "{{done}} de {{total}} comprobación hecha",
       "checks_other": "{{done}} de {{total}} comprobaciones hechas",
@@ -1140,8 +1136,9 @@
           "wrapping_up": "El trabajo está hecho; está dando los últimos retoques.",
           "stuck": "Parece que está dando vueltas en círculos; quizá necesite que le des una pista.",
           "unclear": "Está trabajando.",
-          "focus": "{{now}} (En curso: {{focus}})",
-          "planning": "Está pensando cómo hacerlo; aún no ha cambiado nada."
+          "planning": "Está pensando cómo hacerlo; aún no ha cambiado nada.",
+          "blocked": "Esperando a un comando, un ayudante o la red.",
+          "focus": "{{now}} (En curso: {{focus}})"
         }
       },
       "notes": {
@@ -1172,8 +1169,39 @@
         "did": "Ha usado {{tool}}: {{what}}",
         "said_quote": "Ha dicho: {{text}}",
         "ended": "Se ha detenido.",
-        "waiting_reply": "Se ha detenido y espera tu respuesta."
-      }
+        "waiting_reply": "Se ha detenido y espera tu respuesta.",
+        "still_running": "Sigue ejecutando {{what}}, lleva {{minutes, number}} min",
+        "still_running_who": "{{who}}: {{what}} lleva {{minutes, number}} min sin salida",
+        "helper_done": "{{name}} ha vuelto: {{summary}}",
+        "helper_failed": {
+          "failed": "{{name}} ha fallado",
+          "timed_out": "A {{name}} se le acabó el tiempo",
+          "stopped": "Se detuvo a {{name}}"
+        },
+        "helpers_back_failed": "Han vuelto {{count, number}} ayudantes, {{failed, number}} con errores",
+        "helpers_back_failed_one": "Ha vuelto {{count, number}} ayudante, {{failed, number}} con errores",
+        "helpers_back_failed_other": "Han vuelto {{count, number}} ayudantes, {{failed, number}} con errores",
+        "with_detail": "{{line}}: {{detail}}"
+      },
+      "headlines": {
+        "helpers_working": "{{count, number}} ayudantes trabajando",
+        "helpers_working_one": "{{count, number}} ayudante trabajando",
+        "helpers_working_other": "{{count, number}} ayudantes trabajando",
+        "waiting_permission": "Esperando tu permiso: {{what}}"
+      },
+      "updated": "Actualizado hace {{ago}}",
+      "updatedNow": "Actualizado ahora mismo",
+      "blocked": "Bloqueado",
+      "blockedLine": "Bloqueado: {{text}}",
+      "next": "Lo siguiente",
+      "agents": "Quién hace qué",
+      "agentStates": {
+        "working": "Trabajando",
+        "waiting": "Esperando",
+        "stuck": "Atascado"
+      },
+      "stripOpen": "Tablero en lenguaje claro: {{headline}}",
+      "stripHint": "Haz clic para abrir el tablero"
     },
     "lessonsView": {
       "filterLabel": "Qué lecciones mostrar",
@@ -1278,7 +1306,10 @@
     "eventLine": {
       "judgeNotice": {
         "freeJev": "No hay clave de Jev: responde el Jev gratuito de OpenCode Zen",
-        "freeJevUnavailable": "El Jev gratuito dejó de responder: deciden reglas fijas hasta que configures una clave de Jev"
+        "freeJevUnavailable": "El Jev gratuito dejó de responder: deciden reglas fijas hasta que configures una clave de Jev",
+        "openaiKeyMissing": "El modelo de decisión de OpenAI no tiene clave de API: deciden el siguiente juez o reglas fijas",
+        "openaiKeyRejected": "OpenAI rechazó la clave de API del modelo de decisión: deciden el siguiente juez o reglas fijas",
+        "layaRemoved": "Laya ya no viene integrado en mu: el juez ahora es {{judge}}"
       },
       "detail": "Detalles: {{detail}}",
       "progress": {

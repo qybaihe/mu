@@ -319,5 +319,18 @@
   "saveFailedWithDetail": "저장하지 못했습니다: {{detail}}",
   "zoomActualSize": "확대/축소 초기화",
   "zoomFit": "너비 맞춤",
-  "zoomFitTooltip": "패널 너비에 맞춤"
+  "zoomFitTooltip": "패널 너비에 맞춤",
+  "gallery": {
+    "label": "이미지 {{name}}",
+    "previous": "이전 이미지",
+    "next": "다음 이미지",
+    "position": "{{index}} / {{count}}",
+    "gone": "이 파일을 찾을 수 없습니다. 이동되었거나 삭제되었을 수 있습니다.",
+    "tooLarge": "이미지가 너무 커서 여기에 표시할 수 없습니다({{size}}). 기본 앱에서 열어 주세요."
+  },
+  "reveal": {
+    "mac": "Finder에서 보기",
+    "windows": "파일 탐색기에서 보기",
+    "linux": "폴더에서 보기"
+  }
 }

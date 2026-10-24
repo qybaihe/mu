@@ -1,5 +1,5 @@
-import React from 'react';
-import { Input, Switch, Tag } from '@arco-design/web-react';
+import React, { useRef, useState } from 'react';
+import { Button, Input, Switch, Tag } from '@arco-design/web-react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { CLM_DEFAULT_ADDRESS, CLM_DEFAULT_MODEL } from '@/common/kyrn/clm';
@@ -8,7 +8,8 @@ import type { JudgeSettings, KyrnSettings } from '@/common/kyrn/types';
 import MuSelect from '@/renderer/components/base/MuSelect';
 import OneLine from '@/renderer/components/settings/OneLine';
 import { formatNumber } from '@/renderer/services/i18n/format';
-import type { Draft } from '../draft';
+import { isMacOS } from '@/renderer/utils/platform';
+import { dirtySections, keyRemoved, type Draft } from '../draft';
 import ChoiceTile from '../fields/ChoiceTile';
 import { shownMode } from '../fields/mode';
 import Row from '../fields/Row';
@@ -20,19 +21,26 @@ import {
   choose,
   clmKeyVariable,
   defaultModelOf,
+  inShownOrder,
+  isAddedModel,
+  isMude,
   JEV_SERVICES,
   JUDGE_CHOICES,
   type JevService,
   type JudgeChoice,
   jevVariables,
   kindOf,
+  OPENAI_DEFAULT_MODEL,
+  openaiKeyVariable,
+  openaiModelChoices,
   profileFor,
   serviceOf,
   withJevService,
 } from '../judgeChoice';
 import ClmServerCheck from './ClmServerCheck';
 import SectionShell, { Card } from './SectionShell';
-import LocalJudgePanel from './LocalJudgePanel';
+import DecisionModels, { useDecisionModels } from './mude/DecisionModels';
+import MudePanel, { MudeUnsupported, mudeInstalled, mudeOffered, mudeRecommended, useMude } from './mude/MudePanel';
 import styles from './sections.module.css';
 
 type JudgesSectionProps = {
@@ -40,21 +48,29 @@ type JudgesSectionProps = {
   base: KyrnSettings;
   onChange: (change: (settings: KyrnSettings) => KyrnSettings) => void;
   onKey: (variable: string, value: string) => void;
+  /** A judge's saved key is to go from mu's .env on save (OpenAI's); without it, no key is offered for removal. */
+  onRemoveKey?: (variable: string) => void;
+  /**
+   * mu's own command changed mu.json (mude): the settings are read again, and `change` made in the new draft (a choice
+   * picked while mude was the judge, made once its command took mude out of the order). The page stays as it is
+   * meanwhile, not drawn afresh: the choice open and what mude's body says of the command stay in sight.
+   */
+  onReload?: (change?: (settings: KyrnSettings) => KyrnSettings) => void;
 };
 
 /**
  * The judges page. First whether the judge's verdicts take effect at all (the mode every decision point without one
  * of its own follows), then the choice most people make once: which judge answers the small questions mu asks while
- * it works, and under it what that choice needs (Jev a service and its key, Laya the one-click panel, CLM its server's
- * address). The order of several judges is the next page.
+ * it works, and under it what that choice needs (Jev a service and its key, mude its panel, CLM its server's address).
+ * The order of several judges is the next page.
  */
-export default function JudgesSection({ draft, onChange, onKey }: JudgesSectionProps) {
+export default function JudgesSection({ draft, base, onChange, onKey, onRemoveKey, onReload }: JudgesSectionProps) {
   const { t } = useTranslation();
   const on = shownMode(draft.settings.mode) === 'active';
   return (
-    <SectionShell id='judges' title={t('mu.sections.judges')} description={t('mu.judges.intro')}>
+    <SectionShell id='judges' title={t('mu.sections.judges')}>
       <Card testId='mu-judge-mode'>
-        <Row title={t('mu.judges.mode')} help={t('mu.judges.modeHelp')}>
+        <Row title={t('mu.judges.mode')}>
           {/* A stored shadow reads as off and stays in the file until the switch is turned. */}
           <Switch
             size='small'
@@ -64,7 +80,14 @@ export default function JudgesSection({ draft, onChange, onKey }: JudgesSectionP
           />
         </Row>
       </Card>
-      <JudgeChoices draft={draft} onChange={onChange} onKey={onKey} />
+      <JudgeChoices
+        draft={draft}
+        base={base}
+        onChange={onChange}
+        onKey={onKey}
+        onRemoveKey={onRemoveKey}
+        onReload={onReload}
+      />
     </SectionShell>
   );
 }
@@ -76,50 +99,162 @@ export default function JudgesSection({ draft, onChange, onKey }: JudgesSectionP
 export function JudgeOrderSection(props: JudgesSectionProps) {
   const { t } = useTranslation();
   return (
-    <SectionShell id='judgeOrder' title={t('mu.sections.judgeOrder')} description={t('mu.judges.tiersHelp')}>
+    <SectionShell id='judgeOrder' title={t('mu.sections.judgeOrder')}>
       <JudgeTiers {...props} />
     </SectionShell>
   );
 }
 
-type JudgeChoicesProps = Pick<JudgesSectionProps, 'draft' | 'onChange' | 'onKey'>;
+type JudgeChoicesProps = Pick<JudgesSectionProps, 'draft' | 'base' | 'onChange' | 'onKey' | 'onRemoveKey' | 'onReload'>;
 
-/** The choice itself: which judge answers the small questions, and what that choice needs. */
-export function JudgeChoices({ draft, onChange, onKey }: JudgeChoicesProps) {
+/**
+ * The choice itself: which judge answers the small questions, and what that choice needs. mude (on a Mac) is chosen
+ * through its command, never by a save: where it is installed, picking it runs `enable`; where it is not, its body
+ * offers the install. Picking another judge while mude is the judge runs `disable` first (which brings back the
+ * judges it replaced and stops its server), then makes the pick in the settings read again. With unsaved changes,
+ * mude's commands wait (they write mu.json, and the save would then be refused as stale), and a pick away from it is
+ * an edit like any other. A decision model added from Hugging Face (DecisionModels, under mude's body) counts as the
+ * same choice: picking another judge while it is the judge runs its `disable` the same way.
+ */
+export function JudgeChoices({ draft, base, onChange, onKey, onRemoveKey, onReload }: JudgeChoicesProps) {
   const { t } = useTranslation();
   const { settings } = draft;
-  const current = choiceOf(settings);
+  const unsaved = dirtySections(base, draft).size > 0;
+  const kept = useRef({ unsaved, onReload });
+  kept.current = { unsaved, onReload };
+  // A choice to make once mude's `disable` has ended.
+  const after = useRef<JudgeChoice | undefined>(undefined);
+  // mude picked but not (yet) the judge: its body shows the install, or why it could not be made the judge.
+  const [picked, setPicked] = useState<JudgeChoice>();
+  // mude's commands and the added models' change which of them is the judge: each reads the other again.
+  const refreshModels = useRef<() => Promise<void>>(async () => undefined);
+  const refreshMude = useRef<() => Promise<void>>(async () => undefined);
+  const mude = useMude((task) => {
+    void refreshModels.current();
+    const next = after.current;
+    after.current = undefined;
+    // An install that was cancelled or failed keeps mude's body open, with what it says, also when it was opened
+    // because the install ran (not picked); an uninstall leaves the judges it brought back.
+    if (task.command === 'install' && task.phase !== 'done') setPicked('mude');
+    if (task.command === 'uninstall' && task.phase === 'done') setPicked(undefined);
+    // Unsaved changes stay: their save is then refused as stale, and the page offers to reload.
+    if (kept.current.unsaved) return;
+    kept.current.onReload?.(next && task.phase === 'done' ? (now) => choose(now, next) : undefined);
+  });
+  const models = useDecisionModels((task) => {
+    void refreshMude.current();
+    const next = after.current;
+    after.current = undefined;
+    if (kept.current.unsaved) return;
+    kept.current.onReload?.(next && task.phase === 'done' ? (now) => choose(now, next) : undefined);
+  });
+  refreshModels.current = models.refresh;
+  refreshMude.current = mude.refresh;
+  const busy = mude.busy || models.busy;
+  const saved = choiceOf(settings);
+  // An added model is the judge: taking it out of the order is its command's, not mude's.
+  const first = settings.tiers[0];
+  const addedFirst = first !== undefined && isAddedModel(settings.judges[first]) ? first : undefined;
+  // While one of mude's commands runs (an install started before this page was opened too), its progress shows.
+  const current = picked ?? (busy ? 'mude' : saved);
+  const offered = mude.state?.available === true;
+  const mudeOk = mudeOffered(mude.state);
+  // While its status is still read (about a second) on a Mac, mude stands where it most likely will: first and
+  // recommended, so the page does not move when the status arrives. A Mac that cannot run it then moves it back.
+  const reading = mude.state === undefined && !mude.problem && isMacOS();
+  // On a Mac that can run it, mude comes first and is tagged as recommended. What is chosen stays the configuration's.
+  const recommended = mudeRecommended(mude.state) || reading;
+  const shown = inShownOrder(JUDGE_CHOICES, recommended).filter((choice) => choice !== 'mude' || offered || reading);
+  const pick = (choice: JudgeChoice) => {
+    if (choice === 'mude') {
+      setPicked('mude');
+      // Already a decision model on this Mac (mude or an added one): which one stays as it is.
+      if (saved !== 'mude' && mudeInstalled(mude.state?.status) && !unsaved && !busy) void mude.run('enable');
+      return;
+    }
+    setPicked(undefined);
+    if (saved === 'mude' && offered && !unsaved && !busy) {
+      after.current = choice;
+      if (addedFirst) void models.run({ action: 'disable', target: addedFirst });
+      else void mude.run('disable');
+      return;
+    }
+    onChange((now) => choose(now, choice));
+  };
   return (
     <>
       <div className={styles.choices} role='radiogroup' aria-label={t('mu.judges.choose')}>
-        {JUDGE_CHOICES.map((choice) => (
-          <JudgeChoiceTile
-            key={choice}
-            choice={choice}
-            active={current === choice}
-            onPick={() => onChange((now) => choose(now, choice))}
-          >
-            {current === choice ? <ChoiceBody choice={choice} draft={draft} onChange={onChange} onKey={onKey} /> : null}
-          </JudgeChoiceTile>
-        ))}
+        {shown.map((choice) => {
+          const disabled = choice === 'mude' && !mudeOk;
+          return (
+            <JudgeChoiceTile
+              key={choice}
+              choice={choice}
+              mudeRecommended={recommended}
+              active={current === choice && !disabled}
+              disabled={disabled}
+              description={disabled ? <MudeUnsupported state={mude.state} /> : undefined}
+              onPick={() => pick(choice)}
+            >
+              {current !== choice ? null : choice === 'mude' ? (
+                <>
+                  <MudePanel mude={mude} unsaved={unsaved} waiting={models.busy} />
+                  <DecisionModels models={models} unsaved={unsaved} mudeBusy={mude.busy} />
+                </>
+              ) : (
+                <ChoiceBody choice={choice} draft={draft} onChange={onChange} onKey={onKey} onRemoveKey={onRemoveKey} />
+              )}
+            </JudgeChoiceTile>
+          );
+        })}
       </div>
       {current === undefined ? <div className={styles.meta}>{t('mu.judges.custom')}</div> : null}
     </>
   );
 }
 
-type TileProps = { choice: JudgeChoice; active: boolean; onPick: () => void; children?: React.ReactNode };
+type TileProps = {
+  choice: JudgeChoice;
+  active: boolean;
+  onPick: () => void;
+  /** Cannot be picked on this machine; `description` then says why. */
+  disabled?: boolean;
+  /** Instead of the choice's own description. */
+  description?: React.ReactNode;
+  /** mude can run on this Mac (see `mudeRecommended`), which changes the tags of mude and Jev (see `tagKey`). */
+  mudeRecommended?: boolean;
+  children?: React.ReactNode;
+};
 
-/** One of the three judge choices, worded from the mu i18n module. */
-export function JudgeChoiceTile({ choice, active, onPick, children }: TileProps) {
+/**
+ * The i18n key of a choice's tag. Where mude is the recommended judge (`recommended`), its tag says so, and Jev's says
+ * what it is (hosted) instead of being the recommended one; elsewhere every choice keeps its own tag.
+ */
+function tagKey(choice: JudgeChoice, recommended: boolean): string {
+  if (recommended && choice === 'mude') return 'mu.judges.choices.mude.tagRecommended';
+  if (recommended && choice === 'jev') return 'mu.judges.choices.jev.tagHosted';
+  return `mu.judges.choices.${choice}.tag`;
+}
+
+/** One of the judge choices, worded from the mu i18n module. */
+export function JudgeChoiceTile({
+  choice,
+  active,
+  onPick,
+  disabled,
+  description,
+  mudeRecommended: recommended = false,
+  children,
+}: TileProps) {
   const { t } = useTranslation();
   return (
     <ChoiceTile
       testId={`mu-judge-choice-${choice}`}
       title={t(`mu.judges.choices.${choice}.title`)}
-      tag={t(`mu.judges.choices.${choice}.tag`)}
-      description={t(`mu.judges.choices.${choice}.description`)}
+      tag={t(tagKey(choice, recommended))}
+      description={description ?? t(`mu.judges.choices.${choice}.description`)}
       active={active}
+      disabled={disabled}
       onPick={onPick}
     >
       {children}
@@ -130,22 +265,24 @@ export function JudgeChoiceTile({ choice, active, onPick, children }: TileProps)
 type BodyProps = {
   choice: JudgeChoice;
   draft: Draft;
-  /** In the first-run guide, which sets a judge up: Laya's address and its Stop belong to the settings. */
-  guide?: boolean;
   onChange: JudgesSectionProps['onChange'];
   onKey: JudgesSectionProps['onKey'];
+  onRemoveKey?: JudgesSectionProps['onRemoveKey'];
 };
 
 /**
  * What a choice needs: Jev the service it is reached through (with the address of a service that has one to set) and
- * that service's key, Laya to be installed and running (one click each), CLM the address of its server, the key of a
- * server that asks for one, and word from the server.
+ * that service's key, CLM the address of its server, the key of a server that asks for one, and word from the server;
+ * OpenAI's decision model its key.
  */
-export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: BodyProps) {
+export function ChoiceBody({ choice, draft, onChange, onKey, onRemoveKey }: BodyProps) {
   const { t } = useTranslation();
   const { settings } = draft;
   const name = profileFor(settings, choice);
   const judge = name ? settings.judges[name] : undefined;
+
+  // mude's body is its own panel (MudePanel, MudeSetup): it needs mude's state, which the choices read once.
+  if (choice === 'mude') return null;
 
   if (choice === 'clm') {
     if (!name || !judge) return null;
@@ -168,9 +305,7 @@ export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: Bo
             <div className={fieldStyles.problem} role='alert'>
               {problem}
             </div>
-          ) : (
-            <div className={styles.choiceHint}>{t('mu.judges.clm.addressHelp', { address: CLM_DEFAULT_ADDRESS })}</div>
-          )}
+          ) : null}
         </div>
         <div className={styles.choiceField}>
           <label className={styles.choiceLabel}>
@@ -185,7 +320,6 @@ export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: Bo
             placeholder={set ? t('mu.keyKeep') : t('mu.judges.clm.keyPlaceholder')}
             onChange={(value) => onKey(variable, value)}
           />
-          <div className={styles.choiceHint}>{t('mu.judges.clm.keyHelp')}</div>
         </div>
         <div className={styles.choiceField}>
           <ClmServerCheck
@@ -193,106 +327,118 @@ export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: Bo
             model={judge.model || CLM_DEFAULT_MODEL}
             keySet={Boolean(set || draft.judgeKeys[variable])}
           />
-          <div className={styles.choiceHint}>{t('mu.judges.clm.unmeasured')}</div>
         </div>
       </div>
     );
   }
 
-  if (choice === 'jev') {
-    const service = serviceOf(judge) ?? 'auto';
-    const address = addressOf(t, service, judge?.baseUrl ?? '');
+  if (choice === 'openai') {
+    if (!judge) return null;
+    const variable = openaiKeyVariable(judge);
     return (
       <div className={styles.choiceFields}>
         <div className={styles.choiceField}>
-          <label className={styles.choiceLabel}>{t('mu.judges.service')}</label>
-          <MuSelect
-            className={styles.choiceInput}
-            aria-label={t('mu.judges.service')}
-            value={service}
-            // The Jev the order asks first: the one this choice stands for.
-            onChange={(next: JevService) =>
-              onChange((now) => withJevService(now, now.tiers.indexOf(profileFor(now, 'jev') ?? ''), next))
-            }
-            options={serviceOptions(t)}
-          />
-          <OneLine text={t(`mu.judges.services.${service}.help`)} />
-        </div>
-        {address && name ? (
-          <div className={styles.choiceField}>
-            <label className={styles.choiceLabel}>{t('mu.judges.baseUrl')}</label>
-            <Input
-              className={styles.choiceInput}
-              aria-label={t('mu.judges.baseUrl')}
-              placeholder={address.placeholder}
-              status={address.problem ? 'error' : undefined}
-              value={judge?.baseUrl}
-              onChange={(baseUrl) => onChange((now) => withProfile(now, name, { baseUrl }))}
-            />
-            {address.problem ? (
-              <div className={fieldStyles.problem} role='alert'>
-                {address.problem}
-              </div>
-            ) : (
-              <div className={styles.choiceHint}>{address.help}</div>
-            )}
+          <div className={styles.choiceLabel}>
+            <label>{t('mu.judges.openai.key')}</label>
+            <OpenAIKeyState variable={variable} draft={draft} onRemoveKey={onRemoveKey} />
           </div>
-        ) : null}
-        {jevVariables(judge).map((variable) => {
-          const label = variableLabel(t, service, variable);
-          return (
-            <div className={styles.choiceField} key={variable}>
-              <label className={styles.choiceLabel}>
-                {label}
-                <Tag size='small'>{t(settings.keys[variable] ? 'mu.keyState.set' : 'mu.keyState.none')}</Tag>
-              </label>
-              <VariableInput
-                className={styles.choiceInput}
-                variable={variable}
-                label={label}
-                set={settings.keys[variable]}
-                draft={draft}
-                onKey={onKey}
-              />
-              <div className={styles.choiceHint}>{variableHelp(t, variable)}</div>
-            </div>
-          );
-        })}
+          <OpenAIKeyInput className={styles.choiceInput} variable={variable} draft={draft} onKey={onKey} />
+          <div className={styles.choiceHint}>{t('mu.judges.openai.keyHelp')}</div>
+        </div>
       </div>
     );
   }
 
+  // Jev: the choice left.
+  const service = serviceOf(judge) ?? 'auto';
+  const address = addressOf(t, service, judge?.baseUrl ?? '');
+  const help = serviceHelp(t, service);
   return (
-    <div className={styles.choiceField}>
-      <LocalJudgePanel guide={guide} />
-      {guide ? null : (
-        <div className={styles.choiceHint}>
-          {t('mu.judges.localAddress', { address: judge?.baseUrl || t('mu.judges.endpointDefault') })}
+    <div className={styles.choiceFields}>
+      <div className={styles.choiceField}>
+        <label className={styles.choiceLabel}>{t('mu.judges.service')}</label>
+        <MuSelect
+          className={styles.choiceInput}
+          aria-label={t('mu.judges.service')}
+          value={service}
+          // The Jev the order asks first: the one this choice stands for.
+          onChange={(next: JevService) =>
+            onChange((now) => withJevService(now, now.tiers.indexOf(profileFor(now, 'jev') ?? ''), next))
+          }
+          options={serviceOptions(t)}
+        />
+        {help ? <OneLine text={help} /> : null}
+      </div>
+      {address && name ? (
+        <div className={styles.choiceField}>
+          <label className={styles.choiceLabel}>{t('mu.judges.baseUrl')}</label>
+          <Input
+            className={styles.choiceInput}
+            aria-label={t('mu.judges.baseUrl')}
+            placeholder={address.placeholder}
+            status={address.problem ? 'error' : undefined}
+            value={judge?.baseUrl}
+            onChange={(baseUrl) => onChange((now) => withProfile(now, name, { baseUrl }))}
+          />
+          {address.problem ? (
+            <div className={fieldStyles.problem} role='alert'>
+              {address.problem}
+            </div>
+          ) : address.help ? (
+            <div className={styles.choiceHint}>{address.help}</div>
+          ) : null}
         </div>
-      )}
+      ) : null}
+      {jevVariables(judge).map((variable) => {
+        const label = variableLabel(t, service, variable);
+        const where = variableHelp(t, variable);
+        return (
+          <div className={styles.choiceField} key={variable}>
+            <label className={styles.choiceLabel}>
+              {label}
+              <Tag size='small'>{t(settings.keys[variable] ? 'mu.keyState.set' : 'mu.keyState.none')}</Tag>
+            </label>
+            <VariableInput
+              className={styles.choiceInput}
+              variable={variable}
+              label={label}
+              set={settings.keys[variable]}
+              draft={draft}
+              onKey={onKey}
+            />
+            {where ? <div className={styles.choiceHint}>{where}</div> : null}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
 /**
- * The judge tiers: the order, by the judges' names (Jev, Laya, CLM), then a group per judge in that order with what it
+ * The judge tiers: the order, by the judges' names (Jev, mude, CLM), then a group per judge in that order with what it
  * needs. The first judge is the one chosen on the judges page, which asks for its service, its address and its key
- * (Laya's install, CLM's server): here it has only its model. A judge further down the order needs everything here,
+ * (CLM's server too): here it has only its model. A judge further down the order needs everything here,
  * where it is the only place: Jev the service it is reached through, its model, the service's address where it has
  * one and its key; CLM its server's address, its model and its key. A judge of another kind (a model as judge, a
  * self-hosted HTTP service) goes by the name it was given.
  */
-function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
+function JudgeTiers({ draft, base, onChange, onKey, onRemoveKey }: JudgesSectionProps) {
   const { t, i18n } = useTranslation();
   const { settings } = draft;
   const nameOf = (profile: string): string => {
+    if (isMude(settings.judges[profile])) return t('mu.judges.mude.name');
+    // An added model goes by the name it was added under.
+    if (isAddedModel(settings.judges[profile])) return profile;
     const kind = kindOf(settings.judges[profile]);
     return kind ? t(`mu.judges.choices.${kind}.title`) : profile;
   };
-  // Every judge in the order, Jev, Laya and CLM when they are not in it yet, and the other classifier models (Clef).
+  // Every judge in the order, Jev and CLM when they are not in it yet, and the other classifier models (Clef).
   const offered = [
     ...settings.tiers,
-    ...JUDGE_CHOICES.filter((choice) => !settings.tiers.some((name) => kindOf(settings.judges[name]) === choice))
+    // mude goes into the order through its command only (it is installed and started there).
+    ...JUDGE_CHOICES.filter(
+      (choice) => choice !== 'mude' && !settings.tiers.some((name) => kindOf(settings.judges[name]) === choice)
+    )
       .map((choice) => profileFor(settings, choice))
       .filter((name): name is string => name !== undefined),
     ...Object.keys(settings.judges).filter(
@@ -305,11 +451,7 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
   return (
     <div className={styles.stack} data-testid='mu-judge-tiers'>
       <Card>
-        <Row
-          title={t('mu.judges.order')}
-          help={t('mu.judges.orderHelp')}
-          modified={base.tiers.join() !== settings.tiers.join()}
-        >
+        <Row title={t('mu.judges.order')} modified={base.tiers.join() !== settings.tiers.join()}>
           <MuSelect
             mode='multiple'
             size='small'
@@ -325,19 +467,16 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
         const judge = settings.judges[name];
         const kind = kindOf(judge);
         const classifier = kind === undefined && judge?.type === 'classifier';
-        // The first of Jev, Laya and CLM is the one the judges page chose: what it needs is asked for there.
+        // Where what a judge needs is set when it is not here: the first of Jev and CLM is the one the judges page
+        // chose, mude is set up there too, and a judge of another kind is set in mu's settings file.
         const summary =
-          index === 0 && kind !== undefined
-            ? t('mu.judges.firstTier')
-            : kind === 'local'
-              ? t('mu.judges.types.localHelp')
-              : kind === 'clm'
-                ? t('mu.judges.types.clmHelp')
-                : classifier
-                  ? t('mu.judges.types.classifierHelp', { model: judge.model })
-                  : kind === undefined
-                    ? t('mu.judges.customTier')
-                    : undefined;
+          isMude(judge) || isAddedModel(judge)
+            ? t('mu.judges.mude.tierHelp')
+            : index === 0 && kind !== undefined
+              ? t('mu.judges.firstTier')
+              : kind === undefined && !classifier
+                ? t('mu.judges.customTier')
+                : undefined;
         return (
           <Card
             key={`${index}:${name}`}
@@ -348,15 +487,19 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
           >
             {kind === 'jev' ? (
               <JevFields draft={draft} base={base} index={index} onChange={onChange} onKey={onKey} />
+            ) : kind === 'openai' ? (
+              <OpenAIFields
+                draft={draft}
+                base={base}
+                index={index}
+                onChange={onChange}
+                onKey={onKey}
+                onRemoveKey={onRemoveKey}
+              />
             ) : kind === 'clm' ? (
               <ClmFields draft={draft} base={base} index={index} onChange={onChange} onKey={onKey} />
             ) : classifier ? (
               <ClassifierFields draft={draft} index={index} onKey={onKey} />
-            ) : kind === 'local' && index > 0 ? (
-              // The first judge is the one chosen on the judges page, whose choice installs and starts it.
-              <div className={styles.tierPanel}>
-                <LocalJudgePanel />
-              </div>
             ) : null}
           </Card>
         );
@@ -387,10 +530,8 @@ function addressOf(t: TFunction, service: JevService, baseUrl: string) {
   else if (custom) problem = t('mu.judges.baseUrlNeeded');
   return {
     placeholder: custom ? CUSTOM_ENDPOINT : TYPESAFE_ENDPOINT,
-    help:
-      baseUrl && isPlainRemoteEndpoint(baseUrl)
-        ? t('mu.endpointPlain')
-        : t(custom ? 'mu.judges.customUrlHelp' : 'mu.judges.baseUrlHelp'),
+    // Only a warning: the placeholder already shows the address to use.
+    help: baseUrl && isPlainRemoteEndpoint(baseUrl) ? t('mu.endpointPlain') : undefined,
     problem,
   };
 }
@@ -401,8 +542,18 @@ const variableLabel = (t: TFunction, service: JevService, variable: string): str
     ? t('mu.judges.services.cloudflare.account')
     : t(`mu.judges.services.${service}.key`);
 
-const variableHelp = (t: TFunction, variable: string): string =>
-  t(variable === CLOUDFLARE_ACCOUNT_VARIABLE ? 'mu.judges.services.cloudflare.accountHelp' : 'mu.keyHelp');
+/** Where to find Cloudflare's account ID; a key needs no sentence. */
+const variableHelp = (t: TFunction, variable: string): string | undefined =>
+  variable === CLOUDFLARE_ACCOUNT_VARIABLE ? t('mu.judges.services.cloudflare.accountHelp') : undefined;
+
+/**
+ * The services whose sentence says something the name does not: what it costs, where the questions go, what a custom
+ * service has to speak. The others are named well enough by their names.
+ */
+const SERVICES_WITH_HELP: ReadonlySet<JevService> = new Set(['auto', 'opencodeFree', 'opencode', 'custom']);
+
+const serviceHelp = (t: TFunction, service: JevService): string | undefined =>
+  SERVICES_WITH_HELP.has(service) ? t(`mu.judges.services.${service}.help`) : undefined;
 
 type VariableInputProps = {
   className: string;
@@ -464,7 +615,7 @@ function JevFields({ draft, base, index, onChange, onKey }: JudgesSectionProps &
       {here ? (
         <Row
           title={t('mu.judges.service')}
-          help={t(`mu.judges.services.${service}.help`)}
+          help={serviceHelp(t, service)}
           modified={before !== undefined && serviceOf(before) !== service}
         >
           <MuSelect
@@ -593,7 +744,6 @@ function ClmFields({ draft, base, index, onChange, onKey }: JudgesSectionProps &
       {here ? (
         <Row
           title={t('mu.judges.clm.address')}
-          help={problem ? undefined : t('mu.judges.clm.addressHelp', { address: CLM_DEFAULT_ADDRESS })}
           problem={problem}
           modified={saved !== undefined && saved.baseUrl !== judge.baseUrl}
         >
@@ -622,7 +772,6 @@ function ClmFields({ draft, base, index, onChange, onKey }: JudgesSectionProps &
         <>
           <Row
             title={t('mu.judges.clm.key')}
-            help={t('mu.judges.clm.keyHelp')}
             modified={Boolean(draft.judgeKeys[variable])}
             badges={<Tag size='small'>{t(set ? 'mu.keyState.set' : 'mu.keyState.none')}</Tag>}
           >
@@ -644,6 +793,95 @@ function ClmFields({ draft, base, index, onChange, onKey }: JudgesSectionProps &
             />
           </div>
         </>
+      ) : null}
+    </>
+  );
+}
+
+type OpenAIKeyInputProps = {
+  className: string;
+  size?: 'small';
+  variable: string;
+  draft: Draft;
+  onKey: JudgesSectionProps['onKey'];
+};
+
+/** Where the key of OpenAI's decision model is typed, hidden as it is typed. */
+function OpenAIKeyInput({ className, size, variable, draft, onKey }: OpenAIKeyInputProps) {
+  const { t } = useTranslation();
+  const kept = draft.settings.keys[variable] && !keyRemoved(draft, variable);
+  return (
+    <Input.Password
+      size={size}
+      className={className}
+      aria-label={t('mu.judges.openai.key')}
+      autoComplete='new-password'
+      value={draft.judgeKeys[variable] ?? ''}
+      placeholder={kept ? t('mu.keyKeep') : t('mu.judges.keyPlaceholder')}
+      onChange={(value) => onKey(variable, value)}
+    />
+  );
+}
+
+type OpenAIKeyStateProps = Pick<JudgesSectionProps, 'draft' | 'onRemoveKey'> & { variable: string };
+
+/**
+ * Whether OpenAI's key is set, and while it is, the way to remove it: it goes from mu's .env when the draft is saved,
+ * and until a key is set again, mu says so in the conversation and the next judge answers (or mu's fallbacks). A key
+ * typed in its place replaces it instead.
+ */
+function OpenAIKeyState({ variable, draft, onRemoveKey }: OpenAIKeyStateProps) {
+  const { t } = useTranslation();
+  const removed = draft.settings.keys[variable] && keyRemoved(draft, variable);
+  const set = draft.settings.keys[variable] && !removed;
+  return (
+    <>
+      <Tag size='small' data-testid='mu-openai-key-state'>
+        {t(removed ? 'mu.keyState.removed' : set ? 'mu.keyState.set' : 'mu.keyState.none')}
+      </Tag>
+      {set && onRemoveKey ? (
+        <Button type='text' size='mini' data-testid='mu-openai-key-remove' onClick={() => onRemoveKey(variable)}>
+          {t('mu.judges.removeKey')}
+        </Button>
+      ) : null}
+    </>
+  );
+}
+
+/**
+ * OpenAI's decision model in the order: its model, picked among the ones the Decisions API serves (a model mu.json
+ * names that is not one of them stays offered as it is), and when it is not the judge chosen on the judges page (which
+ * asks for it), its key.
+ */
+function OpenAIFields({ draft, base, index, onChange, onKey, onRemoveKey }: JudgesSectionProps & { index: number }) {
+  const { t } = useTranslation();
+  const { settings } = draft;
+  const name = settings.tiers[index];
+  const judge = settings.judges[name];
+  const saved = base.judges[name];
+  const variable = openaiKeyVariable(judge);
+  return (
+    <>
+      <Row title={t('mu.judges.model')} modified={saved !== undefined && saved.model !== judge.model}>
+        <MuSelect
+          size='small'
+          className={fieldStyles.wide}
+          aria-label={t('mu.judges.model')}
+          data-testid='mu-openai-model'
+          value={judge.model || OPENAI_DEFAULT_MODEL}
+          onChange={(model: string) => onChange((now) => withProfile(now, name, { model }))}
+          options={openaiModelChoices(saved?.model ?? '', judge.model).map((model) => ({ value: model, label: model }))}
+        />
+      </Row>
+      {index > 0 ? (
+        <Row
+          title={t('mu.judges.openai.key')}
+          help={t('mu.judges.openai.keyHelp')}
+          modified={Boolean(draft.judgeKeys[variable]) || keyRemoved(draft, variable)}
+          badges={<OpenAIKeyState variable={variable} draft={draft} onRemoveKey={onRemoveKey} />}
+        >
+          <OpenAIKeyInput size='small' className={fieldStyles.wide} variable={variable} draft={draft} onKey={onKey} />
+        </Row>
       ) : null}
     </>
   );

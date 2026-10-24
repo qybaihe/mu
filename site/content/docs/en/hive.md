@@ -3,8 +3,6 @@ title: Subagents and the hive
 summary: Delegating to subagents with roles, isolated edits that come back as patches, and the hive, where the judge decides what passes between bees.
 ---
 
-mu can hand work to other agents in two ways: **subagents** take separate tasks, and a **hive** puts several bees on one hard problem at once.
-
 ## Subagents {#sub-agents}
 
 The model delegates with the `delegate` tool, or you ask with `/agents`. For each task the judge picks a role, a model tier and a thinking level by difficulty (`swarm.routing`). The built-in roles:
@@ -28,15 +26,11 @@ The main agent then decides: `apply_patch_from` applies all of it or nothing, wi
 
 ## The hive {#hive}
 
-Every multi-agent system answers the same question: should one agent tell another what it knows? Tell nothing, and they walk into the same dead end; tell everything, and each context fills with the others' chatter. In a hive, the judge is the gate.
-
 A hive is two to six bees, each with its own angle. Bees read code, run commands and use the browser; they never change code, which stays the main model's job. `/hive <question>` starts one; the agent also starts one when a problem resists a direct attempt.
 
 - **Publishing** (`hive.publish`). Whenever a bee has said its piece, the judge asks: is there a finding, a dead end, a decision or a blocker worth sharing? If so, it goes on an append-only shared board.
 - **Delivery** (`hive.deliver`). For every new note, the judge asks of each other bee: does this matter to its angle? Only then is it delivered, marked as *a finding, not an instruction*.
 - **Corrections** (`hive.relate`). A later finding can overturn an earlier one: a bee reports the tests can't run, another later clears an environment variable and they run. The judge reads how two notes relate: *replaces*, *contradicts* or *supports*. A replaced finding becomes a correction sent to every bee that heard the old one. A contradiction keeps both as a dispute; if no one settles it within a minute, a verifier bee is sent to check.
-
-One real run: three bees, nine minutes, 117 candidate notes judged, 27 published, 16 delivered to the bee that needed them. Every verdict is in the run's ledger.
 
 ## Watching and stopping {#control}
 

@@ -4,11 +4,19 @@ import { CLM_DEFAULT_MODEL, CLM_KEY_VARIABLE } from '../../../common/kyrn/clm';
 import { KyrnError } from '../../../common/kyrn/errors';
 import { DECISION_MODES, type DecisionMode, type FeatureState } from '../../../common/kyrn/manifest';
 import { THINKING_LEVELS, type DefaultModelChange, type ModelDefaults } from '../../../common/kyrn/models';
-import type { Credential, JudgeSettings, JudgeType, KyrnSettings, SaveSettings } from '../../../common/kyrn/types';
+import {
+  JUDGE_TYPES,
+  type Credential,
+  type JudgeSettings,
+  type JudgeType,
+  type KyrnSettings,
+  type SaveSettings,
+} from '../../../common/kyrn/types';
 import { configPath } from './naming';
-import { array, asRecord, text } from './piRpc';
+import { asRecord, text } from './piRpc';
 import { atomic, hasVariable, parseObject, readOptional, serialise, withVariables } from './config/files';
 import { applyDecisionModes, applyFeatures, loadManifest, readDecisionModes, readFeatures } from './config/features';
+import { isLaya, layaInOrder, orderWithoutLaya } from './config/laya';
 import {
   applyDefaults,
   applyModels,
@@ -39,7 +47,14 @@ const defaults: Record<string, Partial<JudgeSettings>> = {
     apiKeyEnv: 'MU_JUDGE_OPENROUTER_API_KEY',
   },
   'jev-gateway': { type: 'gateway', model: 'typesafe-ai/jev', apiKeyEnv: 'AI_GATEWAY_API_KEY' },
-  laya: { type: 'local', baseUrl: 'http://127.0.0.1:47823' },
+  // mude, mu's own judge on this Mac: a System One server `mu judge mude` installs and starts (common/kyrn/mude.ts).
+  mude: {
+    type: 'typesafe',
+    baseUrl: 'http://127.0.0.1:8790/v1/systemone',
+    model: 'mude',
+    apiKeyEnv: 'MU_JUDGE_MUDE_KEY',
+    timeoutMs: 4000,
+  },
   // CLM on a server of one's own; no address is clm-serve's default on this machine (common/kyrn/clm.ts).
   clm: { type: 'clm', model: CLM_DEFAULT_MODEL, apiKeyEnv: CLM_KEY_VARIABLE },
   // Classifier models of mu's catalog, reached with the provider's own key (OPENCODE_API_KEY, CLOUDFLARE_API_KEY and
@@ -49,9 +64,11 @@ const defaults: Record<string, Partial<JudgeSettings>> = {
   'jev-cloudflare': { type: 'classifier', model: 'cloudflare-workers-ai/typesafe/jev' },
   clef: { type: 'classifier', model: 'cloudflare-workers-ai/@cf/cloudflare/clef' },
   'clef-flash': { type: 'classifier', model: 'cloudflare-workers-ai/@cf/cloudflare/clef-flash' },
+  // OpenAI's decision model, gpt-6-luna, through its Decisions API, with a key of its own.
+  openai: { type: 'openai', model: 'gpt-6-luna', apiKeyEnv: 'MU_JUDGE_OPENAI_KEY' },
   mock: { type: 'mock' },
 };
-const types = new Set(['jev', 'typesafe', 'clm', 'gateway', 'local', 'http', 'llm', 'classifier', 'mock']);
+const types = new Set<string>(JUDGE_TYPES);
 const modes = new Set<string>(DECISION_MODES);
 /** What a judge may name as its credential. A provider's key is deliberately not among them. */
 const variable = /^(?:TYPESAFE_API_KEY|AI_GATEWAY_API_KEY|(?:MU|KYRN)_JUDGE_[A-Z0-9_]+)$/;
@@ -62,11 +79,28 @@ const variable = /^(?:TYPESAFE_API_KEY|AI_GATEWAY_API_KEY|(?:MU|KYRN)_JUDGE_[A-Z
 const classifierVariables = ['OPENCODE_API_KEY', 'CLOUDFLARE_API_KEY', 'CLOUDFLARE_ACCOUNT_ID'];
 const saved = (name: string): boolean => variable.test(name) || classifierVariables.includes(name);
 /**
- * Keys for a service other than TypeSafe: Jev on OpenRouter or at an address of one's own, and a CLM server. The
+ * Keys for a service other than TypeSafe: Jev on OpenRouter or at an address of one's own, a CLM server, and OpenAI. The
  * harness refuses a System One judge keyed by one of them that has no address of its own (KEYS_FOR_ELSEWHERE in
  * kyrn-judge's registry), so such a key never goes to TypeSafe.
  */
-const keysForElsewhere = new Set(['MU_JUDGE_OPENROUTER_API_KEY', 'MU_JUDGE_CUSTOM_API_KEY', CLM_KEY_VARIABLE]);
+const keysForElsewhere = new Set([
+  'MU_JUDGE_OPENROUTER_API_KEY',
+  'MU_JUDGE_CUSTOM_API_KEY',
+  CLM_KEY_VARIABLE,
+  'MU_JUDGE_OPENAI_KEY',
+]);
+/**
+ * Keys of the other judge services, which the harness never sends to OpenAI (KEYS_NOT_FOR_OPENAI in kyrn-judge's
+ * registry): an OpenAI judge keyed by one of them is refused.
+ */
+const keysNotForOpenAI = new Set([
+  'TYPESAFE_API_KEY',
+  'AI_GATEWAY_API_KEY',
+  'MU_JUDGE_OPENROUTER_API_KEY',
+  'MU_JUDGE_CUSTOM_API_KEY',
+  CLM_KEY_VARIABLE,
+  'MU_JUDGE_MUDE_KEY',
+]);
 /** Keys of custom model providers, referenced from models.json as `"$MU_PROVIDER_<ID>_API_KEY"`. */
 const providerVariable = /^MU_PROVIDER_[A-Z0-9_]{1,80}_API_KEY$/;
 /** The .env is sourced by a shell (`kyrn/bin/mu`), so nothing a shell would interpret may get into a value. */
@@ -74,6 +108,15 @@ const secret = /^[A-Za-z0-9_./+=:@-]{1,4096}$/;
 /** The context cap: 0 (follow the model), or a number of tokens in this range. */
 const CONTEXT_MIN = 8192;
 const CONTEXT_MAX = 10000000;
+
+/**
+ * How mu.json is read where it still names Laya (config/laya.ts): whether mude 1.0 is installed, which with its key set
+ * takes Laya's place in the judge order. The bridge asks mu's own command, and only while the file names Laya.
+ */
+export type ReadOptions = { mudeInstalled?: boolean };
+
+/** The key mude's server asks for: set up, mude has it in the .env (`mu judge mude enable` writes it). */
+const MUDE_KEY = 'MU_JUDGE_MUDE_KEY';
 
 const sameJudge = (a: JudgeSettings | undefined, b: JudgeSettings): boolean =>
   a !== undefined &&
@@ -141,14 +184,20 @@ export class SettingsStore {
         .digest('hex'),
     };
   }
-  read(): KyrnSettings {
-    return this.state(this.load());
+  read(options: ReadOptions = {}): KyrnSettings {
+    return this.state(this.load(), options);
   }
-  private state(files: ReturnType<SettingsStore['load']>): KyrnSettings {
+  /** Where Laya stands in mu.json's judge order (config/laya.ts); undefined once mu moved the file on. */
+  laya(): ReturnType<typeof layaInOrder> {
+    return layaInOrder(parseObject(readOptional(this.path), this.path));
+  }
+  private state(files: ReturnType<SettingsStore['load']>, options: ReadOptions = {}): KyrnSettings {
     const { config, pi, env, harness } = files;
     const compaction = asRecord(pi.compaction);
     const judges: Record<string, JudgeSettings> = {};
     for (const [name, value] of Object.entries({ ...defaults, ...asRecord(config.judges) })) {
+      // Laya is gone: its profiles are not shown, nor offered for the order.
+      if (isLaya(name, value)) continue;
       const judge = asRecord(value);
       judges[name] = {
         type: (text(judge.type) || 'jev') as JudgeType,
@@ -169,7 +218,7 @@ export class SettingsStore {
     const features = manifest ? readFeatures(manifest, config) : {};
     return {
       revision: files.revision,
-      tiers: array(config.tiers).length ? array(config.tiers).map(text) : ['jev'],
+      tiers: orderWithoutLaya(config, options.mudeInstalled === true && hasVariable(MUDE_KEY, env)),
       judges,
       mode: (modes.has(mode) ? mode : 'active') as DecisionMode,
       keys,
@@ -184,10 +233,11 @@ export class SettingsStore {
       boardModel: files.board,
     };
   }
-  save(input: SaveSettings): KyrnSettings {
+  /** `options`: as the settings saved over were read, so an order nobody changed is not written. */
+  save(input: SaveSettings, options: ReadOptions = {}): KyrnSettings {
     const files = this.load();
     if (input.revision !== files.revision) throw new KyrnError('stale', 'Configuration changed. Reload before saving.');
-    const current = this.state(files);
+    const current = this.state(files, options);
     const { config, pi, harness } = files;
     const changed = { config: false, pi: false, models: false };
 
@@ -231,6 +281,10 @@ export class SettingsStore {
         throw new KyrnError('judgeEndpoint', `Judge ${name} has no base URL, and its key is not sent to TypeSafe`, {
           name,
         });
+      if (judge.type === 'openai' && keysNotForOpenAI.has(judge.apiKeyEnv))
+        throw new KyrnError('keyVariable', `Judge ${name}'s key belongs to another service and is not sent to OpenAI`, {
+          name: judge.apiKeyEnv,
+        });
     }
     const credentials: Credential[] = [...(input.credential ? [input.credential] : []), ...(input.credentials ?? [])];
     for (const credential of credentials) {
@@ -241,6 +295,18 @@ export class SettingsStore {
     }
     const providerKeys = credentials.filter((credential) => providerVariable.test(credential.name));
     if (providerKeys.length && !input.models) throw new KyrnError('invalid', 'Invalid credential');
+    // A judge's key removed (a sign-out of its service): only a variable this page saves, and never one set by the same
+    // save. A provider's key goes with its provider (applyModels), never this way. What came over IPC is checked as it
+    // is, whatever its type says.
+    const removals: unknown[] = Array.isArray(input.removeCredentials) ? input.removeCredentials : [];
+    if (
+      (input.removeCredentials !== undefined && !Array.isArray(input.removeCredentials)) ||
+      removals.length > 16 ||
+      removals.some(
+        (name) => typeof name !== 'string' || !saved(name) || credentials.some((credential) => credential.name === name)
+      )
+    )
+      throw new KyrnError('invalid', 'Invalid credential');
 
     // Judges: only the ones that were changed are written, so a built-in one nobody touched is not frozen into the file.
     const previous = asRecord(config.judges);
@@ -249,10 +315,6 @@ export class SettingsStore {
       if (sameJudge(current.judges[name], judge)) continue;
       judges[name] = {
         ...asRecord(previous[name]),
-        // Preserve Laya's measured capability profile when materialising a built-in.
-        ...(name === 'laya' && !previous[name]
-          ? { profile: { capabilities: { relate: false, rate: false, meta: false } } }
-          : {}),
         ...judge,
         model: judge.model || undefined,
         baseUrl: judge.baseUrl || undefined,
@@ -261,7 +323,8 @@ export class SettingsStore {
       changed.config = true;
     }
     for (const name of Object.keys(previous)) {
-      if (name in input.judges) continue;
+      // Laya's profiles were never shown: they stay for mu to drop when it moves the file on (config/laya.ts).
+      if (name in input.judges || isLaya(name, previous[name])) continue;
       delete judges[name];
       changed.config = true;
     }
@@ -332,6 +395,8 @@ export class SettingsStore {
       for (const [name, value] of change.env) env.set(name, value);
     }
     for (const credential of credentials) if (saved(credential.name)) env.set(credential.name, credential.value);
+    // Removed: the line goes from the .env (withVariables).
+    for (const name of removals) if (typeof name === 'string') env.set(name, undefined);
 
     // Everything above only checked and prepared. The key goes first: a provider must never point at a missing one.
     if (env.size) atomic(this.envPath, withVariables(files.env, env));
@@ -339,7 +404,7 @@ export class SettingsStore {
     if (changed.config) atomic(this.path, serialise(config, files.raw));
     if (changed.pi) atomic(this.piPath, serialise(pi, files.piRaw));
     if (changed.models) atomic(this.modelsPath, serialise(files.models.doc, files.modelsRaw));
-    return this.read();
+    return this.read(options);
   }
   /** The model new sessions start on: pi's defaults alone, without reading the rest of the settings. */
   defaultModel(): ModelDefaults {
@@ -358,6 +423,18 @@ export class SettingsStore {
       throw new KyrnError('invalid', 'Invalid model');
     if (applyDefaults(pi, before, { provider: input.provider, model: input.model, thinkingLevel: level }))
       atomic(this.piPath, serialise(pi, piRaw));
+    return readDefaults(pi);
+  }
+  /**
+   * After a sign-out took the model new sessions start on (config/signOut.ts): it becomes `next`, or none. Only pi's
+   * defaults change, as with `setDefaultModel`; the thinking default stays.
+   */
+  replaceDefaultModel(next?: { provider: string; model: string }): ModelDefaults {
+    const piRaw = readOptional(this.piPath);
+    const pi = parseObject(piRaw, this.piPath);
+    const before = readDefaults(pi);
+    const after = { provider: next?.provider ?? '', model: next?.model ?? '', thinkingLevel: before.thinkingLevel };
+    if (applyDefaults(pi, before, after)) atomic(this.piPath, serialise(pi, piRaw));
     return readDefaults(pi);
   }
   /** For the connection test: the saved key of a provider, which stays inside the main process. */

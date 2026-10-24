@@ -116,5 +116,18 @@
   "optionNumber": "選択肢 {{number}}",
   "copyFilesHeader": "ファイル：",
   "exportHeaderLine": "{{label}}：{{value}}",
-  "exportSpeakerLine": "{{speaker}}："
+  "exportSpeakerLine": "{{speaker}}：",
+  "fileRef": {
+    "preview": "{{name}} をプレビュー",
+    "open": "{{name}} を開く",
+    "reveal": {
+      "mac": "{{name}} を Finder で表示",
+      "windows": "{{name}} をエクスプローラーで表示",
+      "linux": "{{name}} をフォルダで表示"
+    },
+    "missing": "ファイルが見つかりません",
+    "ambiguous": "同じ名前のファイルが複数あります",
+    "gone": "{{name}} が見つかりません。移動または削除された可能性があります。",
+    "openFailed": "{{name}} を開けませんでした"
+  }
 }

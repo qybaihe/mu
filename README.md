@@ -2,7 +2,6 @@
   <img src="desktop/resources/app.png" width="96" alt="mu">
 </p>
 <h1 align="center">mu</h1>
-<p align="center">μ · Only what's needed.</p>
 <p align="center">A coding agent that hands its routine decisions to a small, fast judge model, so the main model can focus on the code. Built on <a href="https://github.com/earendil-works/pi">pi</a>.</p>
 
 <p align="center">
@@ -23,13 +22,11 @@
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/run-dark.gif">
     <img src="docs/readme/run-light.gif" alt="A run in the mu desktop app, in a job-queue project called relay. The message: jobs with a 1h30m timeout get killed after about an hour; find out why, fix it and make sure the tests pass. The judge classifies it as a multi-step task (input.preflight). The model runs the tests, which the judge lets through (tool.approval): one of 13 fails. It reads the duration parser, finds that a minute is defined as 1,000 ms, says it will change it to 60,000 and run the tests again, and stops without doing it. The judge answers that the run stopped short (turn.continue), mu reminds the model that the turn isn't finished, and the model changes the unit and runs the tests: all 13 pass. The Judge tab on the right lists each verdict with its decision point and latency.">
   </picture>
-  <br>
-  <sub>A recorded run in the desktop app. The coding model's replies are scripted for the recording (it's shown as GPT-6.1 Sol), and the project and the earlier conversations in the sidebar were made up for it. The judge's verdicts, their timings and the recovery are real: the model stopped short, <code>turn.continue</code> caught it, and mu sent it back to finish.</sub>
 </p>
 
 A coding agent makes hundreds of decisions per session that aren't about the code: what goes into the context, whether a command is safe, whether a finding is worth passing to another agent, whether the work is really done. Handing these to the main model costs tokens, time and focus. Fixed rules get them wrong too often. mu hands them to a **judge**: a small, fast model that answers one bounded question at a time, at 40 decision points in the agent loop. The main model keeps its attention on the work.
 
-mu comes as a command-line tool, `mu`, which does everything pi does and adds the judgment kernel, and as a desktop app that bundles mu and its runtime. The default judge model is Jev, hosted by TypeSafe. It answers yes/no, choice and score questions with a probability for each answer. Any judge model can take its place: the local Laya (except for approvals), your own System One server or any LLM.
+mu comes as a command-line tool, `mu`, which does everything pi does and adds the judgment kernel, and as a desktop app that bundles mu and its runtime. The default judge model is Jev, hosted by TypeSafe. It answers yes/no, choice and score questions with a probability for each answer. Any judge model can take its place: [mude 1.0](#mude-10-a-decision-model-optimized-for-coding), mu's own model, on your Mac; another decision model from Hugging Face; your own System One server; or any LLM.
 
 What you get:
 
@@ -37,9 +34,7 @@ What you get:
 - **Permission checks that don't stop you at every step.** In *Judge mode*, the default, the judge lets through what the task clearly needs and asks you about the rest. Rules catch risky commands first, and web pages and MCP output are screened for instructions aimed at the AI before the model sees them.
 - **Decisions you can audit.** Every verdict goes into a local ledger with its probabilities and timing (`mu ledger`, `/status` or the desktop app's Judge tab). Any decision point can run in shadow mode, asked and logged but changing nothing, so you can compare judges before you rely on one.
 
-> mu is in early development (0.1.x). See [Status and limitations](#status-and-limitations).
-
-**Contents:** [Quick start](#quick-start) · [How a turn works](#how-a-turn-works) · [Decision points](#decision-points) · [Judges](#judges) · [How mu is built](#how-mu-is-built) · [Measured](#measured) · [The hive](#the-hive) · [The board](#the-plain-language-board) · [Desktop app](#the-desktop-app) · [Command line](#command-line) · [Privacy](#privacy) · [Status](#status-and-limitations) · [Documentation](#documentation) · [Contributing](#contributing)
+**Contents:** [Quick start](#quick-start) · [How a turn works](#how-a-turn-works) · [Decision points](#decision-points) · [Judges](#judges) · [How mu is built](#how-mu-is-built) · [Measured](#measured) · [The hive](#the-hive) · [The board](#the-plain-language-board) · [Desktop app](#the-desktop-app) · [Command line](#command-line) · [Privacy](#privacy) · [Documentation](#documentation) · [Contributing](#contributing)
 
 ## Quick start
 
@@ -55,7 +50,7 @@ mu                  # start a session in the current directory
 
 **On Nebius Token Factory with NVIDIA Nemotron.** Paste a Token Factory key into `mu setup`: mu starts on Nemotron 3 Super and offers Nemotron 3 Ultra as the judge. This is new and not yet in the npm package, so run mu from source for now; [docs/nebius.md](docs/nebius.md) has the steps, the measurements behind the choice of models, and a Nemotron 3 Nano 4B judge, fine-tuned for mu, that runs on your machine.
 
-You don't need a judge key to start: until you set one, the free Jev on OpenCode Zen answers. From the start, 34 of the 40 decision points act on their verdicts (summary-free compaction and mid-stream correction are off until you turn them on, the subagent patch scope check is off, and notification routing, mid-run messages and the drift check are only recorded), and every verdict is logged (`/status`, `mu ledger` or the app's Judge tab). To record what the judge would do without acting on it, put `{"modes": {"default": "shadow"}}` in `~/.mu/agent/mu.json`. More in [Getting started](docs/getting-started.md).
+You don't need a judge key to start: until you set one, the free Jev on OpenCode Zen answers. Out of the box, 34 of the 40 decision points act on their verdicts, and every verdict is logged (`/status`, `mu ledger` or the app's Judge tab). To record what the judge would do without acting on it, put `{"modes": {"default": "shadow"}}` in `~/.mu/agent/mu.json`. More in [Getting started](docs/getting-started.md).
 
 ## How a turn works
 
@@ -66,11 +61,9 @@ You don't need a judge key to start: until you set one, the free Jev on OpenCode
   </picture>
 </p>
 
-Each name in the diagram is a decision point, asked as a short question about a small piece of state. Its verdict steers what happens next. Rules set the floor: they catch a dangerous-looking command first, and the judge can only clear it by confirming you asked for it.
-
 ## Decision points
 
-Each decision point is `active` (the default), `shadow` (asked and logged, but changes nothing; useful for comparing judges before you switch one on) or `off`. Each can also name its own judge: `jev`, `laya` (local), `classifier:<provider>/<model>`, `llm:<provider>/<model>` or a cascade such as `laya,jev`.
+Each decision point is `active` (the default), `shadow` (asked and logged, but changes nothing; useful for comparing judges before you switch one on) or `off`. Each can also name its own judge: `jev`, `mude` (local), `classifier:<provider>/<model>`, `llm:<provider>/<model>` or a cascade such as `mude,jev`.
 
 The 40 points fall into five groups:
 
@@ -119,7 +112,7 @@ The 40 points fall into five groups:
 | Decision point | Question | Effect |
 | --- | --- | --- |
 | `tool.risk` | The rules flagged a command: did you ask for it? | If the judge is unsure, mu asks you |
-| `tool.approval` | In *Judge mode*: does the task clearly need this command, this change outside the project, this external action or this subagent? | Only what the judge is sure of runs; everything else asks you |
+| `tool.approval` | In *Judge mode*: does the task clearly need this command, this change outside the project, this external action or this subagent? | Only what the judge is sure of runs; mu asks you about the rest |
 | `tool.constraint` | Before a call that changes something: does it cross a constraint you stated? | The call is stopped |
 | `tool.injection` | Passage by passage, in a web page, a search result, an MCP server's output or something a command fetched from another machine (`curl`, `gh issue view`): is there an instruction aimed at the AI? | Those passages never reach the model; a note marks where each one was. A subagent that read such passages hands back its report under a warning |
 | `tool.description` | When an MCP tool's description first appears or changes: does it ask the AI for more than calling the tool (reading secrets, sending data elsewhere, hiding something from you)? | The tool is removed from the model's list, calls to it are refused, and you're told |
@@ -140,7 +133,7 @@ The 40 points fall into five groups:
 | `turn.rewind` | The same failure, again and again: is this approach a dead end? | Back to a checkpoint |
 | `turn.completion` | The model says it's done: did anything verify that? | One nudge if not |
 | `turn.continue` | The run ends on "Let me run the tests next", or on a request for a go-ahead on work you already asked for: did it stop short? | It's sent back to work, at most twice per message, and never toward a step that's hard to undo |
-| `output.drift` | While the model is writing: does the tail of its output cross your constraints? | Experimental and off by default; corrected mid-stream |
+| `output.drift` | While the model is writing: does the tail of its output cross your constraints? | Off by default; corrected mid-stream |
 | `goal.met` | In goal mode, when the main model gives no answer: is the condition met? | The fallback for `/goal` |
 | `board.read` | Where do things stand? Asked as multiple choice | Feeds the plain-language board |
 | `notify.routing` | An event such as the context budget running low: tell the model now, later or never? | The model hears about it at the right time |
@@ -168,8 +161,10 @@ Every point, with its feature switch and options: [docs/reference/decision-point
 
   With no key set, Jev 1.13 on OpenCode Zen answers, free for a limited time. What it judges goes to OpenCode, which doesn't train on it, and mu reminds you of this once a day. Set a key (`mu setup`, or Settings → Judges in the app) and mu switches to it starting with the next question.
 
-  Measured in the authors' own sessions: a warm question takes about 0.3 s over HTTP/2, and 16 chunks of tool output are judged in a single request in 0.44 s, with the shared state billed once. Verdicts, probabilities and timings go to the ledger: run `mu ledger`, or open the Judge tab in the desktop app.
-- **Laya** (local, macOS on Apple silicon) is a 322M-parameter judge that runs on your machine and never touches the network. Nothing is downloaded without your consent. It's reliable on simple predicates and weaker on meta-judgments, so run it in shadow alongside your current judge and read the ledger before you give it a decision point.
+  Measured in the authors' own sessions: a warm question takes about 0.3 s over HTTP/2, and 16 chunks of tool output are judged in a single request in 0.44 s, with the shared state billed once.
+- **mude 1.0** (local, a Mac with Apple silicon) is mu's own decision model, optimized for coding ([more below](#mude-10-a-decision-model-optimized-for-coding)).
+- **OpenAI's decision model**, `gpt-6-luna`, answers through OpenAI's [Decisions API](https://developers.openai.com/api/docs/guides/decisions) with an OpenAI API key: `MU_JUDGE_OPENAI_KEY`, or the OpenAI key mu already has. Pick it with `mu setup --judge openai` or under Settings → Judges ([details](docs/judges.md#openais-decision-model)).
+- **Other decision models from Hugging Face** (local, a Mac with Apple silicon): `mu judge model add <link>` (or Settings → Judges in the app) adds one that is packaged like mude 1.0 and makes it the judge. Laya is no longer included: a `mu.json` that still names it gets mude 1.0 in its place when mude is set up, otherwise the remaining judges or Jev, and mu says so once.
 - **Any classifier model** in pi's catalog can serve as a tier: `classifier:<provider>/<model>`. Examples include Cloudflare's Clef (`clef`, `clef-flash`), the System One models on OpenRouter and the Vercel AI Gateway, or a llama.cpp classifier.
 - **Any LLM** can serve as a tier: `llm:<provider>/<model>`.
 - **NVIDIA Nemotron on Nebius Token Factory**: `nemotron` is Nemotron 3 Ultra with thinking off, and `nemotron-local` is Nemotron 3 Nano 4B, fine-tuned for mu's judge, served on your machine. With Nemotron 3 Super as the coding model, both of mu's model roles run on Token Factory: see [docs/nebius.md](docs/nebius.md), which also covers running commands in Token Factory Sandboxes (new, and so far tested only against a stand-in for the Sandboxes API).
@@ -179,7 +174,50 @@ Judges can be chained in tiers, cheapest first:
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/tiers-dark.svg">
-    <img src="docs/readme/tiers-light.svg" width="880" alt="Judges in tiers, for a cascade such as laya,jev. All questions go to Laya first, local and free. What it is sure of becomes a verdict; a yes/no answer between 0.2 and 0.8 is uncertain and goes on to Jev, hosted, about 0.3 seconds. What is still uncertain, or what no judge answered, gets the fallback: what mu would do without a judge. The ledger records every answer and which judge gave it. Laya is not trusted on relating, scoring or meta-judgments, so those go on to Jev.">
+    <img src="docs/readme/tiers-light.svg" width="880" alt="Judges in tiers, for a cascade such as mude,jev. All questions go to mude 1.0 first, local, about 0.1 seconds. What it is sure of becomes a verdict; a yes/no answer between 0.2 and 0.8 is uncertain and goes on to Jev, hosted, about 0.3 seconds. What is still uncertain, or what no judge answered, gets the fallback: what mu would do without a judge. The ledger records every answer and which judge gave it. A question a judge isn't trusted on skips it and goes on to the next.">
+  </picture>
+</p>
+
+### mude 1.0, a decision model optimized for coding
+
+mude 1.0 is mu's own decision model, optimized for coding: trained for the decisions a coding agent makes and state of the art at making them. It has 2B parameters and answers every question in a decision in one forward pass, with a probability for each answer. It runs on your machine, so what it judges never leaves it. Both editions, the [full model](https://huggingface.co/qybaihe/mude-1.0) and the [MLX 8-bit edition](https://huggingface.co/qybaihe/mude-1.0-mlx-8bit) (1.8 GB), are under the MIT license. For now, the one-step setup supports Macs with Apple silicon (macOS 14 or later, 8 GB of memory or more) and uses the MLX edition:
+
+```bash
+mu judge mude install               # download it, check every file, start it on 127.0.0.1 and make it the judge
+mu judge mude status                # what is installed, running and enabled
+mu judge mude enable --local-only   # mude only: nothing goes to a hosted judge
+mu judge mude disable               # back to the judges you had before, and stop its server
+mu judge mude uninstall             # remove the model and its Python environment
+```
+
+On a Mac that can run it, mude 1.0 is the recommended judge. `mu setup` offers it first, and in the desktop app the first-run guide's judge step has it preselected: one click installs it. Later, the Judges page in Settings installs, starts, stops and uninstalls mude, and its "Local only" switch is the same as `--local-only`. An install that stops (Ctrl-C, a lost connection, a power cut, quitting the app) picks up where it left off: run `mu judge mude install` again, or click "Continue installing".
+
+By default, the judge you had before stays on as mude's fallback. What mude can't answer (its server is stopped, or it's unsure) goes to that judge, and so do two injection checks mude isn't trusted with yet. If that judge is hosted, as the default Jev is, what it reads leaves your machine. While it runs, mude's server uses about 4 GB of memory; `mu judge mude stop` stops it. On other platforms, you can serve the [full model](https://huggingface.co/qybaihe/mude-1.0) (bf16, PyTorch; a CUDA GPU is recommended) with its own System One server and add it to `mu.json` as a `typesafe` judge, as its model card shows.
+
+### mubench 1.0: how decision models compare
+
+mubench is mu's benchmark for decision models. On its main board, every item is a request mu sent to a decision model, word for word, in a real coding session on an open-source repository. Each answer is scored by the cost of its consequences, and every model is compared with mu running without a decision model: 0 is no better, and 100 removes all the cost mu pays without one. The full leaderboard, with a sub-board of constructed scenarios, is at [usemu.dev/en/mubench](https://usemu.dev/en/mubench/).
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/mubench/composite-en-dark.svg">
+    <img src="docs/images/mubench/composite-en-light.svg" width="880" alt="mubench 1.0, main board: overall score on 3,193 requests from real coding sessions on open-source repositories, with 95% intervals. mude 1.0 64.9 (59.1–72.3); Jev 1.14 63.1 (55.6–70.5); Jev 1.13 61.5 (53.8–69.1); d3-nano (original) 32.0 (21.3–39.0); no decision model: 0.">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/mubench/capabilities-en-dark.svg">
+    <img src="docs/images/mubench/capabilities-en-light.svg" width="880" alt="mubench 1.0, main board: scores per capability for mude 1.0, Jev 1.14, Jev 1.13, d3-nano (original). Permission approval: 52.6, 53.7, 52.7, 5.9; Malicious-instruction detection: not scored yet; Context compression: 64.6, 76.7, 70.7, −19.1; On-demand loading and reminders: −2.7, 16.8, 25.1, −118.4; Classification and routing: 83.6, 87.5, 85.8, 51.7; Progress and completion: 86.6, 61.6, 61.6, 70.1; Memory and lessons: 58.7, 75.1, 72.2, 40.5; Multi-agent collaboration: 19.8, 4.6, −0.8, 26.0.">
+  </picture>
+</p>
+
+Decision accuracy is a separate, plainer measure: the share of checks a model gets right, with every check counting the same, whatever a mistake on it would cost.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/mubench/accuracy-en-dark.svg">
+    <img src="docs/images/mubench/accuracy-en-light.svg" width="880" alt="mubench 1.0: decision accuracy, with 95% intervals. Main board, 3,193 requests from real coding sessions on open-source repositories: No decision model 78.0% (75.9–80.2); mude 1.0 91.5% (89.6–93.3); Jev 1.14 90.1% (88.9–91.3); Jev 1.13 89.4% (87.7–91.1); d3-nano (original) 83.5% (82.1–84.9). Sub-board, 1,655 constructed scenarios: No decision model 44.5% (42.8–46.2); mude 1.0 92.1% (91.1–93.1); Jev 1.14 91.8% (90.8–92.8); Jev 1.13 91.1% (90.0–92.0); d3-nano (original) 80.1% (78.6–81.7).">
   </picture>
 </p>
 
@@ -198,7 +236,7 @@ Token Factory is what made choosing these models a measurement rather than a gue
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/pieces-dark.svg">
-    <img src="docs/readme/pieces-light.svg" width="880" alt="The pieces. The desktop app (desktop/, which runs pi in a utility process over pi's RPC protocol) and the mu command (kyrn/bin/mu.mjs) both start pi, the coding agent: its agent loop, tools, sessions and providers. Inside pi runs the judgment kernel (packages/kyrn-judge): features hooked into pi's events, a decision engine with modes, judges and fallbacks, and the ledger. pi calls the main model. The engine asks the judges: Jev, Laya, any classifier or any LLM.">
+    <img src="docs/readme/pieces-light.svg" width="880" alt="The pieces. The desktop app (desktop/, which runs pi in a utility process over pi's RPC protocol) and the mu command (kyrn/bin/mu.mjs) both start pi, the coding agent: its agent loop, tools, sessions and providers. Inside pi runs the judgment kernel (packages/kyrn-judge): features hooked into pi's events, a decision engine with modes, judges and fallbacks, and the ledger. pi calls the main model. The engine asks the judges: Jev, mude 1.0, any classifier or any LLM.">
   </picture>
 </p>
 
@@ -250,8 +288,6 @@ What these numbers don't show:
 - The repeats come from two days of one developer's sessions: 15 test logs, all from Vitest, of which the 7 over 4,000 characters are charted. Other test runners haven't been measured.
 - There's no end-to-end comparison with pi, Claude Code or Codex on the same tasks yet.
 
-`node kyrn/spikes/judge-bench/test-log-replay.ts` reruns every arm except Jev's in seconds, without a key. On the current code those arms come out 0.6 to 1.1 points higher than the charted numbers, which were measured on 2026-09-21. The Jev arm needs `TYPESAFE_API_KEY`.
-
 <details>
 <summary>The charts as tables</summary>
 
@@ -276,8 +312,6 @@ What these numbers don't show:
 
 ## The hive
 
-Every multi-agent system has to answer the same question: should one agent tell another what it knows? The usual answers are nothing (each agent reports only to the main agent), everything (the whole history, in a group chat or a handoff), whatever each agent's own large model decides, or fixed rules and a shared environment. In mu, the judge is the gate.
-
 A hive is two to six bees, each with its own focus. Bees read code, run commands and browse the web, but never edit; the main model makes the changes. Each time a bee finishes a message, `hive.publish` asks once: is there a finding, a dead end, a decision or a blocker here worth sharing? If so, it goes on a shared, append-only board. For each new note, `hive.deliver` asks once per other bee: does this touch its focus? If it does, the note is delivered, marked *a finding, not an instruction*.
 
 The board is append-only, so an earlier conclusion stays even after a later one overturns it: a bee reports that the tests won't run, then unsets an environment variable and they do. `hive.relate` decides how two notes relate: *supersedes*, *contradicts* or *supports*. When a conclusion is superseded, a correction goes to every bee that holds the old note. When two notes contradict each other, both stay, marked as a dispute; if nobody settles it within a minute, a bee is sent to verify.
@@ -286,19 +320,15 @@ The board is append-only, so an earlier conclusion stays even after a later one 
 
 You can watch all of this in the desktop app's Hive tab. Each bee gets a row: its role, its model and what it's doing or has just said. The map shows who delivered findings to whom, and the more findings travel along a line, the thicker it gets. Corrections and disputes have their own marks, and a line lights up the moment a finding arrives. The *Information flow* list shows the text of every delivery, and every verdict is listed too. The hive card in the conversation shows a miniature of the map and opens this tab.
 
-One real run: 3 bees, 9 minutes, 117 candidates judged, 27 posted to the board and 16 delivered to the bees that needed them. Every verdict is in the run's log.
-
 `/swarm` shows what each bee is doing, `/swarm stop` asks them to report now and `/swarm kill` ends them. A bee that runs out of time is asked for its report and ended if none arrives, and a watchdog handles a stuck model or tool. A hive always reports back.
 
 ## The plain-language board
-
-Frontier models keep getting better at the work and worse at talking about it. Each generation's progress updates read more like output meant for another machine: denser, more opaque, less like a person talking. mu doesn't ask the working model to narrate itself.
 
 With the board on (`/board`, or the switch on the desktop app's Board tab), each step the agent takes becomes one plain line on the board as soon as it finishes: a file changed, a check passed or failed, a command ran. Consecutive file reads are folded into a single line with a running count. Whenever the agent says something mid-run, `board.read` asks the judge whether it's news. If it is, a model chosen only for plain writing (`/board model`) rewrites it for a person and keeps the board's status current: what's happening now, how many checklist items are done and what's waiting on you. When a run finishes, a summary becomes the last line, with the full account kept above it, so you see what was done, not just that it's done.
 
 <p align="center"><img src="docs/readme/board.png" width="960" alt="The desktop app's plain-language board after the hive answered: waiting for you to say whether to fix it, the one question that needs you and what happened before, with context use and cache hit rate at the top"></p>
 
-The working model keeps its own language for the work, and the board stays readable at a glance. The board follows the permission mode, the goal and the subagents, and when the agent changes course, the wording follows. The two numbers at the top are context use and cache hit rate, the direct result of the context and cache decision points above.
+The board follows the permission mode, the goal and the subagents, and when the agent changes course, the wording follows. The two numbers at the top are context use and cache hit rate.
 
 ## The desktop app
 
@@ -332,12 +362,12 @@ mu doctor     # check the installation, the judges and the connections
   </picture>
 </p>
 
-Requires Node.js 22.19 or newer. `mu -p "prompt"` runs a single prompt and prints the answer; `mu -c` continues the last session. `mu import --list` finds your Claude Code, Codex and ZCode conversations, and `mu import <file>` brings one in with its full history; importing it again later brings over what's new. `mu ledger [n]` prints what the judge decided in the last n sessions. The command line and the desktop app share accounts, settings and lessons. In the terminal, mu uses its own `mu-dark` and `mu-light` themes until you choose one in `/settings` (`system` follows your terminal's palette).
+Requires Node.js 22.19 or newer. `mu -p "prompt"` runs a single prompt and prints the answer; `mu -c` continues the last session. `mu import --list` finds your Claude Code, Codex and ZCode conversations, and `mu import <file>` brings one in with its full history; importing it again later brings over what's new. `mu ledger [n]` prints what the judge decided in the last n sessions. The command line and the desktop app share accounts, settings and lessons.
 
 | Command | What it does |
 | --- | --- |
 | `/status` | Show the judges, each decision point's mode, what was kept out of the context and the latest verdicts |
-| `/mu judge <judges>` | Set which judges answer, in which order: `laya`, `laya,jev`, `jev-opencode-free`, `classifier:<provider>/<model>`, `llm:<provider>/<model>` |
+| `/mu judge <judges>` | Set which judges answer, in which order: `jev`, `mude,jev`, `jev-opencode-free`, `openai`, `classifier:<provider>/<model>`, `llm:<provider>/<model>` |
 | `/mu route <point> <judge>` | Give one decision point its own judge |
 | `/mu mode <point> <off\|shadow\|active>` | Switch one decision point's mode |
 | `/frame` | Show the task frame: the goal, your constraints with their source and the acceptance criteria |
@@ -354,20 +384,11 @@ Requires Node.js 22.19 or newer. `mu -p "prompt"` runs a single prompt and print
 | `/import-chat` | Import a Claude Code, Codex or ZCode conversation |
 | `/doctor` | Check the setup and the connections |
 
-pi's own commands (`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export` and the rest) work as they do in pi, except that `/login` offers no Claude subscription sign-in: Anthropic doesn't allow other apps to offer one, so use an Anthropic API key. `MU_JUDGE=laya,jev mu` overrides the judges for a single run.
+pi's own commands (`/model`, `/thinking`, `/login`, `/resume`, `/tree`, `/fork`, `/compact`, `/export` and the rest) work as they do in pi, except that `/login` offers no Claude subscription sign-in: Anthropic doesn't allow other apps to offer one, so use an Anthropic API key. `MU_JUDGE=mude,jev mu` overrides the judges for a single run.
 
 ## Privacy
 
-Your keys stay on your machine. mu never downloads a model or a runtime on its own; anything that needs a download asks first. The judge sees only the fields a question needs. With no key set, those fields go to the free Jev on OpenCode Zen; `mu setup --judge off` (no judge is asked; mu's features keep working on their rules), `MU_JUDGE=off` or Laya keeps everything on your machine. Every verdict is logged locally, and you can read all of them. The desktop app sends no telemetry or crash reports. Details are in [SECURITY.md](SECURITY.md#what-leaves-your-machine).
-
-## Status and limitations
-
-- mu is in early development. Pre-releases (0.1.x) are on npm and under [Releases](https://github.com/qybaihe/mu/releases). The authors use it every day, but names, settings and formats may still change.
-- The measurements above come from the authors' own sessions and from synthetic projects. The test-log repeats cover Vitest only.
-- The test-log numbers measure what reaches the model, not whether the model then finishes the task. There's no end-to-end comparison with pi, Claude Code or Codex on the same tasks yet.
-- Laya, the local judge, runs only on macOS on Apple silicon, and it's weaker on meta-judgments than on simple predicates. Run it in shadow before you give it a decision point.
-- Jev on OpenCode Zen is free for a limited time only.
-- `output.drift` is experimental and off by default.
+Your keys stay on your machine. mu never downloads a model or a runtime on its own; anything that needs a download asks first. The judge sees only the fields a question needs. With no key set, those fields go to the free Jev on OpenCode Zen. To keep everything on your machine, use mude 1.0 with `--local-only`, `MU_JUDGE=off` or `mu setup --judge off` (no judge is asked, and mu's features fall back to their own rules). Every verdict is logged locally, and you can read all of them. The desktop app sends no telemetry or crash reports. Details are in [SECURITY.md](SECURITY.md#what-leaves-your-machine).
 
 ## Documentation
 
@@ -381,6 +402,7 @@ Bug reports, fixes, new decision points, judge measurements and translations are
 
 ```bash
 npm install --ignore-scripts   # install dependencies without lifecycle scripts
+npm run hydrate:model-catalog  # write the model list from the pinned catalog (offline)
 node kyrn/bin/mu.mjs           # run mu from this checkout
 npm run check                  # formatting, lint, types
 ./test.sh                      # tests (those that need a model are skipped without a key)
@@ -396,10 +418,23 @@ Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md). Report s
 - Bugs and feature requests: [Issues](https://github.com/qybaihe/mu/issues/new/choose).
 - More: [SUPPORT.md](SUPPORT.md).
 
-If mu is useful to you, a star helps others find it.
+## Citation
+
+If you use mude in your work, please cite it:
+
+```bibtex
+@misc{mude2026,
+  title        = {mude 1.0: a decision model optimized for coding},
+  author       = {qybaihe},
+  year         = {2026},
+  howpublished = {Hugging Face},
+  url          = {https://huggingface.co/qybaihe/mude-1.0},
+  note         = {MIT License. MLX 8-bit edition for Apple silicon: https://huggingface.co/qybaihe/mude-1.0-mlx-8bit}
+}
+```
 
 ## Credits and license
 
-mu is under the MIT license ([LICENSE](LICENSE); the desktop app's is [desktop/LICENSE](desktop/LICENSE)). It is built on [pi](https://github.com/earendil-works/pi) (the coding agent, MIT), and we're grateful to its authors. Some decision points build on ideas from other projects: the wording of the prompt-injection screen comes from [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills), and the continuation check (`turn.continue`) and the bulk judging tool (`judge_items`) are based on [oh-my-pi](https://github.com/can1357/oh-my-pi). Third-party code in the judgment kernel is listed in [THIRD_PARTY_NOTICES.md](packages/kyrn-judge/THIRD_PARTY_NOTICES.md).
+mu is under the MIT license ([LICENSE](LICENSE); the desktop app's is [desktop/LICENSE](desktop/LICENSE)). It is built on [pi](https://github.com/earendil-works/pi) (the coding agent, MIT), and we're grateful to its authors. Some decision points build on ideas from other projects: the wording of the prompt-injection screen comes from [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills), and the continuation check (`turn.continue`) and the bulk judging tool (`judge_items`) are based on [oh-my-pi](https://github.com/can1357/oh-my-pi). Third-party code in the judgment kernel is listed in [THIRD_PARTY_NOTICES.md](packages/kyrn-judge/THIRD_PARTY_NOTICES.md). mude 1.0 is a fine-tune of [d3-nano](https://huggingface.co/vllm-sr/d3-nano) (Decision 3.0, vLLM Semantic Router Team), built on Qwen3.5-2B; both are Apache-2.0, and the model's repository keeps their notices.
 
 The desktop app began as a fork of [AionUi](https://github.com/iOfficeAI/AionUi); the files it took from AionUi, listed in [desktop/APACHE-FILES.txt](desktop/APACHE-FILES.txt), stay under the Apache License 2.0 (see [desktop/NOTICE](desktop/NOTICE)).

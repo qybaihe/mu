@@ -111,7 +111,8 @@ describe("a sub-agent takes its parent's skills and capabilities", () => {
 					mode: "active",
 					only: ["preflight", "skills", "catalog", "swarm", "hive", "permissions"],
 					config: parseConfig({
-						modes: setup.modes,
+						// Capability disclosure is off out of the box; these parents open the debugger by its verdict.
+						modes: { "capability.disclosure": "active", ...setup.modes },
 						features: attended({
 							permissions: { mode: "full" },
 							swarm: { isolation: "none", agentsDir: skills },
@@ -129,10 +130,11 @@ describe("a sub-agent takes its parent's skills and capabilities", () => {
 	}
 
 	/** A parent that delegates one task and starts a hive of two, and what each child was handed. */
-	async function parent(responder: MockResponder, features?: Record<string, unknown>) {
+	async function parent(responder: MockResponder, features?: Record<string, unknown>, modes?: Record<string, string>) {
 		const handed: Record<string, string>[] = [];
 		const { harness } = await start("tui", responder, {
 			features,
+			modes,
 			runner: async (task, _assignment, _signal, env) => {
 				handed.push({ ...env });
 				return `${task.title}: done`;
@@ -169,6 +171,12 @@ describe("a sub-agent takes its parent's skills and capabilities", () => {
 		}
 	});
 
+	it("passes what is open with capability disclosure off, as it is by default, so a child asks nothing either", async () => {
+		const handed = await parent(verdicts, undefined, { "capability.disclosure": "off" });
+		expect(handed).toHaveLength(3);
+		for (const env of handed) expect(JSON.parse(env[CAPABILITIES_OPEN_ENV])).toEqual([]);
+	});
+
 	it("passes nothing with the options off, and no skills while the first verdict is still on its way", async () => {
 		const off = await parent(verdicts, {
 			skills: { subagentsInherit: false },
@@ -202,7 +210,7 @@ describe("a sub-agent takes its parent's skills and capabilities", () => {
 		vi.stubEnv("KYRN_SWARM_DEPTH", "1");
 		vi.stubEnv(SKILLS_HIDDEN_ENV, JSON.stringify(HIDDEN));
 		vi.stubEnv(CAPABILITIES_OPEN_ENV, JSON.stringify(["pack:debugger"]));
-		// Its own modes would show every skill and capability: the parent's answer holds all the same.
+		// Its own modes would ask about capabilities, or show every skill: the parent's answer holds all the same.
 		for (const modes of [undefined, { "skills.disclosure": "off", "capability.disclosure": "off" }]) {
 			const { harness, provider } = await start("json", verdicts, { modes });
 			let first: readonly Message[] = [];

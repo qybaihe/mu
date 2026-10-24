@@ -10,9 +10,16 @@ import styles from './Board.module.css';
 const SHOWN = 30;
 
 /**
+ * The helper a line is about, as a chip in front of it: none for the main agent, nor where the line's own sentence
+ * already starts from that name ("scout is back: …").
+ */
+const chipOf = (note: BoardNote): string | undefined =>
+  note.who && note.params?.name !== note.who && note.params?.who !== note.who ? note.who : undefined;
+
+/**
  * What the agent did, newest first: one line each, at the time it happened. The board model's own words stand out
- * from the harness's fixed sentences, and a line where something went wrong has a hollow dot, never a colour. A new
- * line fades in; one the harness sends again changes where it stands.
+ * from the harness's fixed sentences, and a line where something went wrong has a hollow dot, never a colour. A line
+ * about a helper says which one. A new line fades in; one the harness sends again changes where it stands.
  */
 export default function Account({
   notes,
@@ -39,6 +46,7 @@ export default function Account({
         {shown.map((note) => {
           const worded = words(note);
           const fresh = isFresh(note);
+          const chip = chipOf(note);
           return (
             <li
               key={note.id}
@@ -54,6 +62,11 @@ export default function Account({
               {/* The harness's and the model's own sentences may be in another script than the app's. */}
               <span className={styles.noteText} dir={worded === undefined ? 'auto' : undefined}>
                 {note.failed ? <span className={styles.noteDot} aria-hidden='true' /> : null}
+                {chip ? (
+                  <span className={styles.who} data-testid='mu-board-note-who' dir='auto'>
+                    {chip}
+                  </span>
+                ) : null}
                 {worded ?? note.text}
               </span>
             </li>

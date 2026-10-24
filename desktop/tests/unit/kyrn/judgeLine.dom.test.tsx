@@ -141,17 +141,17 @@ describe('reading the judge’s class from the tool call the adapter sends', () 
         preflight({
           title: 'Jev · Classifying',
           status: 'in_progress',
-          rawOutput: { preflight: 'pending', judge: 'laya' },
+          rawOutput: { preflight: 'pending', judge: 'mude' },
         })
       )
-    ).toEqual({ stage: 'classifying', judge: 'laya' });
+    ).toEqual({ stage: 'classifying', judge: 'mude' });
     expect(
       judgeLine(preflight({ title: 'Jev · chat', rawOutput: { preflight: 'verdict', turnType: 'chat', by: 'clm-8b' } }))
     ).toMatchObject({ stage: 'classified', judge: 'clm-8b' });
     // The adapter adds the judge it asked to a wait that ran out.
     expect(
-      judgeLine(preflight({ title: 'Jev · Fallback', rawOutput: { preflight: 'fallback', judge: 'laya>jev-latest' } }))
-    ).toEqual({ stage: 'fallback', why: 'unanswered', judge: 'laya>jev-latest' });
+      judgeLine(preflight({ title: 'Jev · Fallback', rawOutput: { preflight: 'fallback', judge: 'mude>jev-latest' } }))
+    ).toEqual({ stage: 'fallback', why: 'unanswered', judge: 'mude>jev-latest' });
     expect(
       judgeLine(preflight({ title: 'Jev · chat', rawOutput: { preflight: 'verdict', turnType: 'chat', by: 'rule' } }))
     ).toMatchObject({ byRule: true, judge: '' });
@@ -167,10 +167,10 @@ describe('reading the judge’s class from the tool call the adapter sends', () 
       );
     expect(verdict({ reasonCode: 'error:auth', reason: 'HTTP 401' })).toEqual({ stage: 'noJudge' });
     expect(verdict({ reason_code: 'error:timeout' })).toEqual({ stage: 'fallback', why: 'unanswered', judge: '' });
-    expect(verdict({ reason: 'no answer after 6.0 s', by: 'laya' })).toEqual({
+    expect(verdict({ reason: 'no answer after 6.0 s', by: 'mude' })).toEqual({
       stage: 'fallback',
       why: 'unanswered',
-      judge: 'laya',
+      judge: 'mude',
     });
     expect(verdict({ reasonCode: 'abstain' })).toEqual({ stage: 'fallback', why: 'unsure', judge: '' });
     expect(verdict({ reasonCode: 'off' })).toEqual({ stage: 'quiet' });
@@ -281,12 +281,14 @@ describe('reading the judge’s class from the tool call the adapter sends', () 
 });
 
 describe('the judge’s name and why no class came', () => {
-  it('names Jev, Laya and CLM by their labels, a cascade by its first tier, and Jev when none is named', () => {
+  it('names Jev and CLM by their labels, a cascade by its first tier, and Jev when none is named', () => {
     expect(judgeName('jev-latest')).toBe('Jev');
     expect(judgeName('openrouter/jev-latest')).toBe('Jev');
-    expect(judgeName('laya')).toBe('Laya');
-    expect(judgeName('laya>jev-latest')).toBe('Laya');
     expect(judgeName('clm-8b')).toBe('CLM');
+    expect(judgeName('clm-8b>jev-latest')).toBe('CLM');
+    // A label the app does not name, as it is: mude, or Laya in a conversation from before mu dropped it.
+    expect(judgeName('mude>jev-latest')).toBe('mude');
+    expect(judgeName('laya')).toBe('laya');
     expect(judgeName('')).toBe('Jev');
     expect(judgeName(undefined)).toBe('Jev');
     expect(judgeName('my-own-judge')).toBe('my-own-judge');
@@ -364,16 +366,16 @@ describe('the line, in the language of the app', () => {
     expect(screen.getByTestId('mu-judge-line')).toHaveTextContent('Jev 正在归类…');
   });
 
-  it('names the judge that answered or was asked: Laya, CLM, the first tier of a cascade', () => {
-    const laya = showLine(
+  it('names the judge that answered or was asked: mude, CLM, the first tier of a cascade', () => {
+    const mude = showLine(
       'zh',
       preflight({
         title: 'Jev · chat',
-        rawOutput: { preflight: 'verdict', turnType: 'chat', state: 'applied', by: 'laya' },
+        rawOutput: { preflight: 'verdict', turnType: 'chat', state: 'applied', by: 'mude' },
       })
     );
-    expect(screen.getByTestId('mu-judge-line')).toHaveTextContent(/^Laya 归类为闲聊$/);
-    laya.unmount();
+    expect(screen.getByTestId('mu-judge-line')).toHaveTextContent(/^mude 归类为闲聊$/);
+    mude.unmount();
     const clm = showLine(
       'en',
       preflight({
@@ -386,9 +388,9 @@ describe('the line, in the language of the app', () => {
     clm.unmount();
     showLine(
       'zh',
-      preflight({ title: 'Jev · Fallback', rawOutput: { preflight: 'fallback', judge: 'laya>jev-latest' } })
+      preflight({ title: 'Jev · Fallback', rawOutput: { preflight: 'fallback', judge: 'clm-8b>jev-latest' } })
     );
-    expect(screen.getByTestId('mu-judge-line')).toHaveTextContent(/^Laya 这次没有回答，按默认方式继续$/);
+    expect(screen.getByTestId('mu-judge-line')).toHaveTextContent(/^CLM 这次没有回答，按默认方式继续$/);
   });
 
   it('says there is no judge when its key was refused, and leads to the judges’ settings', () => {

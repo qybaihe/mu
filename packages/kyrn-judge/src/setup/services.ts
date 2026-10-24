@@ -188,7 +188,7 @@ export const SETUP_SERVICES: readonly SetupService[] = [
 		name: "OpenAI",
 		baseUrls: ["https://api.openai.com/v1"],
 		api: "openai-responses",
-		models: ["gpt-5.5"],
+		models: ["gpt-6.1-sol"],
 		keyShape: /^sk-(?:proj-|svcacct-|admin-|(?!ant-|or-)[A-Za-z0-9_-]*T3BlbkFJ)/,
 		keyPage: "https://platform.openai.com/api-keys",
 		providers: ["openai"],

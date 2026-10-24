@@ -41,8 +41,9 @@ type DetailsSectionProps = {
 /**
  * One area of the details: every feature that acts there, one row each with its switch and the way to its options,
  * and under it, indented, each decision point it asks the judge, with a switch for whether the judge's verdict there
- * takes effect. A point of a feature that is off is not asked: its row is greyed and says so. A point whose feature the
- * harness does not describe is a row of its own. The context page starts with the compaction settings.
+ * takes effect; the feature's sentence says what they are about, so they have none of their own. A point of a feature
+ * that is off is not asked: its row is greyed, its switch disabled. A point whose feature the harness does not describe
+ * is a row of its own, with its sentence. The context page starts with the compaction settings.
  */
 export default function DetailsSection({
   area,
@@ -103,8 +104,8 @@ export default function DetailsSection({
                 <span className={styles.judgeMark} />
               </span>
             </div>
-            <OneLine text={say(decision.summary)} />
-            {off ? <div className={styles.plainNote}>{t('mu.details.featureOff')}</div> : null}
+            {/* Under its feature, whose sentence says what it does, the point needs none of its own. */}
+            {feature ? null : <OneLine text={say(decision.summary)} />}
           </div>
           <div className={styles.plainControl}>
             <Switch
@@ -134,11 +135,7 @@ export default function DetailsSection({
   };
 
   return (
-    <SectionShell
-      id={`details-${area}`}
-      title={t(`mu.pages.details.${area}`)}
-      description={t(area === 'context' ? 'mu.context.lead' : 'mu.details.lead')}
-    >
+    <SectionShell id={`details-${area}`} title={t(`mu.pages.details.${area}`)}>
       {area === 'context' ? <ContextRows settings={settings} base={base} onChange={onChange} /> : null}
       {!manifest ? <Alert type='warning' content={t('mu.harness.tooOld')} /> : null}
       {manifest && !rows.length ? <div className={styles.empty}>{t('mu.features.none')}</div> : null}

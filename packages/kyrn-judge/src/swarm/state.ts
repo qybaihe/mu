@@ -1,5 +1,6 @@
 import { WITHHELD_NOTES } from "../decisions/tool-injection.ts";
 import { type Coded, codedError, codeOf } from "../language.ts";
+import { USAGE_ENTRY, type UsageEntry } from "../usage.ts";
 import {
 	CHECKPOINT,
 	HIVE_MESSAGE,
@@ -49,11 +50,15 @@ export interface BeeActivity {
 	params?: Readonly<Record<string, string | number>>;
 }
 
+/** What its requests used, as its own messages report it; `cost` in USD at its model's catalog price. */
 export interface BeeUsage {
 	input: number;
 	output: number;
 	cacheRead: number;
+	cacheWrite: number;
 	cost: number;
+	/** Output its own session recorded as an estimate (a watchdog cut, see usage.ts), included in `output`. */
+	estimatedOutput?: number;
 }
 
 export interface BeeState {
@@ -125,7 +130,7 @@ export function newBee(name: string, now: number, details: Partial<BeeState> = {
 		turns: 0,
 		toolCalls: 0,
 		toolErrors: 0,
-		usage: { input: 0, output: 0, cacheRead: 0, cost: 0 },
+		usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0 },
 		published: 0,
 		received: 0,
 		withheld: 0,
@@ -209,8 +214,10 @@ export interface BeeEvent {
 		customType?: string;
 		stopReason?: string;
 		errorMessage?: string;
-		usage?: { input?: number; output?: number; cacheRead?: number; cost?: { total?: number } };
+		usage?: { input?: number; output?: number; cacheRead?: number; cacheWrite?: number; cost?: { total?: number } };
 	};
+	/** `entry_appended`: an entry its own (in-memory) session took. */
+	entry?: { type?: string; customType?: string; data?: unknown };
 	assistantMessageEvent?: { type?: string; delta?: string };
 	toolName?: string;
 	args?: unknown;
@@ -292,6 +299,7 @@ export function applyEvent(state: BeeState, event: BeeEvent, now: number): boole
 				state.usage.input += usage.input ?? 0;
 				state.usage.output += usage.output ?? 0;
 				state.usage.cacheRead += usage.cacheRead ?? 0;
+				state.usage.cacheWrite += usage.cacheWrite ?? 0;
 				state.usage.cost += usage.cost?.total ?? 0;
 			}
 			const text = textOf(message.content).trim();
@@ -311,6 +319,21 @@ export function applyEvent(state: BeeState, event: BeeEvent, now: number): boole
 			state.errorCode = undefined;
 			state.errorParams = undefined;
 			if (text && !hasToolCall(message.content)) state.finals.push(text);
+			break;
+		}
+		case "entry_appended": {
+			// Spend its own messages do not carry, such as a reply its watchdog cut: counted with the rest.
+			const entry = event.entry;
+			if (entry?.type !== "custom" || entry.customType !== USAGE_ENTRY || !entry.data) break;
+			const spent = entry.data as Partial<UsageEntry>;
+			const number = (value: unknown) => (typeof value === "number" && Number.isFinite(value) ? value : 0);
+			state.usage.input += number(spent.input);
+			state.usage.output += number(spent.output);
+			state.usage.cacheRead += number(spent.cacheRead);
+			state.usage.cacheWrite += number(spent.cacheWrite);
+			state.usage.cost += number(spent.cost);
+			if (spent.estimated)
+				state.usage.estimatedOutput = (state.usage.estimatedOutput ?? 0) + number(spent.estimatedOutput);
 			break;
 		}
 		case "tool_execution_start": {

@@ -114,12 +114,17 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 		judgeMinChars: 6000,
 		chunkChars: 1200,
 		maxChunks: 48,
-		/** Chunks put to a hosted judge in one request. The local sidecar is asked one chunk at a time whatever this says. */
+		/** Chunks put to the judge in one request. */
 		batchChunks: 16,
-		/** Requests in flight at once: batches for a hosted judge, chunks for the local sidecar. */
+		/** Requests in flight at once. */
 		concurrency: 4,
-		/** A verdict later than this is not worth holding the result for: the output goes in whole, the verdict is only recorded. */
-		waitMs: 4000,
+		/**
+		 * A verdict later than this is not worth holding the result for: the output goes in whole, the verdict is only
+		 * recorded. In the owner's sessions 35 of 42 verdicts came within 2 s, the one that dropped anything in 0.4 s,
+		 * and the 3 that came between 2 and 4 s dropped nothing, while 19 of 57 results waited the whole 4 s for a
+		 * verdict that came later or never.
+		 */
+		waitMs: 2000,
 		/**
 		 * Tools whose output is never judged: file contents and pages the model asked for, and sub-agent reports the bees
 		 * already shaped.
@@ -150,17 +155,17 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 	);
 
 	/**
-	 * One verdict per chunk, in order. A hosted judge takes many chunks in one request, the state billed once
+	 * One verdict per chunk, in order. The judge takes many chunks in one request, the state billed once
 	 * (measured 2026-09-23 on jev: 16 chunks in 0.44 s and 7.6k tokens, against 1.4 s and 11.6k tokens as 16
-	 * requests, with the same verdicts). The local sidecar's window holds one chunk, and a logprob judge sends each
-	 * question with its state, so both are asked one chunk at a time.
+	 * requests, with the same verdicts). A logprob judge sends each question with its state, so where one answers
+	 * `screen` questions the chunks are asked one at a time.
 	 */
 	const judgeChunks = async (
 		call: string,
 		middle: readonly string[],
 		signal: AbortSignal | undefined,
 	): Promise<readonly AdmissionOutcome[]> => {
-		if (!runtime.judgeBatches) {
+		if (!runtime.answersInBatches(toolAdmission.id, "screen")) {
 			const decisions = await runtime.engine.decideMany(
 				toolAdmission,
 				middle.map((chunk) => ({ call, chunk })),

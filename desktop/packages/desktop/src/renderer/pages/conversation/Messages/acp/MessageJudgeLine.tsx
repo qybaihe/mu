@@ -23,7 +23,7 @@ function JudgeSetup() {
 
 /**
  * The judge's classification of the message, as one quiet line in the person's own language ("Jev 归类为闲聊"), in
- * place of a tool call box. The judge is named as the one that answered (Jev, Laya, CLM). Shadow and late verdicts say
+ * place of a tool call box. The judge is named as the one that answered (Jev, CLM, mude). Shadow and late verdicts say
  * they were not used; a rule's class says so; no class says whether the judge did not answer or was not sure. With no
  * judge set up at all, the line says so once and offers to set one up. The hints the main model was given follow the
  * line as small labels ("先计划"), each with its whole sentence on hover.

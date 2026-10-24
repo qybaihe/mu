@@ -30,8 +30,6 @@ const bridge = vi.hoisted(() => ({
   loginAnswer: vi.fn(),
   loginCancel: vi.fn(),
   loginLogout: vi.fn(),
-  localJudgeState: vi.fn(),
-  localJudgeRun: vi.fn(),
   importList: vi.fn(),
 }));
 vi.mock('@/common/kyrn/bridge', () => ({
@@ -47,8 +45,6 @@ vi.mock('@/common/kyrn/bridge', () => ({
     loginAnswer: { invoke: bridge.loginAnswer },
     loginCancel: { invoke: bridge.loginCancel },
     loginLogout: { invoke: bridge.loginLogout },
-    localJudgeState: { invoke: bridge.localJudgeState },
-    localJudgeRun: { invoke: bridge.localJudgeRun },
     importList: { invoke: bridge.importList },
   },
   // As the real one: a failure keeps the code the store gave it.
@@ -80,10 +76,10 @@ vi.mock('@/renderer/components/settings/LanguageSwitcher', () => ({
 function newUser(patch: Partial<KyrnSettings> = {}): KyrnSettings {
   return {
     revision: 'r1',
-    tiers: ['laya'],
+    tiers: ['jev'],
     judges: {
       jev: { type: 'jev', model: 'jev-latest', baseUrl: '', apiKeyEnv: 'TYPESAFE_API_KEY', timeoutMs: 10000 },
-      laya: { type: 'local', model: '', baseUrl: 'http://127.0.0.1:47823', apiKeyEnv: '', timeoutMs: 4000 },
+      clm: { type: 'clm', model: 'clm-latest', baseUrl: '', apiKeyEnv: 'MU_JUDGE_CLM_API_KEY', timeoutMs: 10000 },
     },
     mode: 'shadow',
     betaCompression: false,
@@ -124,10 +120,6 @@ beforeEach(() => {
   bridge.importList.mockResolvedValue({ ok: true, data: { conversations: [] } });
   bridge.loginStatus.mockResolvedValue({ ok: true, data: { signedIn: [] } });
   bridge.loginState.mockResolvedValue({ ok: true, data: { id: 0, phase: 'idle' } });
-  bridge.localJudgeState.mockResolvedValue({
-    ok: true,
-    data: { support: 'ok', installed: true, running: true, url: 'http://127.0.0.1:47823' },
-  });
   bridge.save.mockImplementation(async ({ models, credentials: _credentials, ...input }: SaveSettings) => {
     const base = newUser();
     return { ok: true, data: { ...base, ...input, revision: 'r2', models: { ...base.models, ...models } } };
@@ -168,67 +160,6 @@ describe('a settings section as its own page', () => {
     expect(saved.credentials).toEqual([{ name: 'TYPESAFE_API_KEY', value: 'jev-key' }]);
   });
 
-  it('installs Laya with one click, only after the person agrees to the download, and ends with it running', async () => {
-    const url = 'http://127.0.0.1:47823';
-    const task = {
-      id: 1,
-      action: 'setup',
-      phase: 'running',
-      output: ['Resolved 26 packages', 'Downloading coremltools'],
-    };
-    bridge.localJudgeState.mockResolvedValue({
-      ok: true,
-      data: { support: 'ok', installed: false, running: false, url },
-    });
-    bridge.localJudgeRun.mockResolvedValue({
-      ok: true,
-      data: { support: 'ok', installed: false, running: false, url, task },
-    });
-    at('/settings/judges', <SettingsArea page='judges' />);
-    const panel = await screen.findByTestId('mu-laya');
-    await waitFor(() => expect(panel).toHaveTextContent('Not installed.'));
-    fireEvent.click(within(panel).getByTestId('mu-laya-install'));
-    // Nothing is downloaded before the person says yes, and they are told how much.
-    expect(
-      await screen.findByText(/downloads about 800 MB of Python packages and model weights from PyPI and Hugging Face/)
-    ).toBeInTheDocument();
-    expect(bridge.localJudgeRun).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Download and install' }));
-    await waitFor(() => expect(bridge.localJudgeRun).toHaveBeenCalledWith({ action: 'setup', consent: true }));
-    expect(await within(panel).findByTestId('mu-laya-output')).toHaveTextContent('Downloading coremltools');
-    expect(panel).toHaveTextContent('Installing Laya…');
-    // Its state is read while it works; the setup goes on to start it.
-    bridge.localJudgeState.mockResolvedValue({
-      ok: true,
-      data: { support: 'ok', installed: true, running: true, url, task: { ...task, action: 'start', phase: 'done' } },
-    });
-    await waitFor(() => expect(panel).toHaveTextContent('Running on this computer'), { timeout: 3000 });
-    expect(within(panel).getByTestId('mu-laya-stop')).toBeInTheDocument();
-    expect(within(panel).queryByTestId('mu-laya-output')).not.toBeInTheDocument();
-  });
-
-  it('says why Laya cannot be installed on this machine, and where uv comes from', async () => {
-    const url = 'http://127.0.0.1:47823';
-    bridge.localJudgeState.mockResolvedValue({
-      ok: true,
-      data: { support: 'uv', installed: false, running: false, url },
-    });
-    const { unmount } = at('/settings/judges', <SettingsArea page='judges' />);
-    const panel = await screen.findByTestId('mu-laya');
-    await waitFor(() => expect(panel).toHaveTextContent('Installing Laya requires uv'));
-    expect(within(panel).getByTestId('mu-laya-uv')).toBeInTheDocument();
-    expect(within(panel).queryByTestId('mu-laya-install')).not.toBeInTheDocument();
-    unmount();
-    bridge.localJudgeState.mockResolvedValue({
-      ok: true,
-      data: { support: 'platform', installed: false, running: false, url },
-    });
-    at('/settings/judges', <SettingsArea page='judges' />);
-    const other = await screen.findByTestId('mu-laya');
-    await waitFor(() => expect(other).toHaveTextContent('or a Mac with Apple silicon'));
-    expect(within(other).queryByRole('button')).not.toBeInTheDocument();
-  });
-
   it('keeps the order of several judges on a page of its own, in the open, each judge by its name', async () => {
     at('/settings/judge-order', <SettingsArea page='judge-order' />);
     const tiers = await screen.findByTestId('mu-judge-tiers');
@@ -236,10 +167,11 @@ describe('a settings section as its own page', () => {
     expect(within(tiers).getByRole('combobox', { name: 'Order' })).toBeInTheDocument();
     // Its typing input, which takes the focus, says the same.
     expect(within(tiers).getByRole('textbox', { name: 'Order' })).toBeInTheDocument();
-    // Laya, the one judge here, needs nothing in the order: the choice on the judges page installs and starts it.
-    const laya = within(tiers).getByTestId('mu-judge-tier-0');
-    expect(laya).toHaveTextContent('Tier 1: Local Laya');
-    expect(within(laya).queryByRole('textbox')).not.toBeInTheDocument();
+    // Jev, the one judge here: only its model in the order. Its service and key are the judges page's.
+    const jev = within(tiers).getByTestId('mu-judge-tier-0');
+    expect(jev).toHaveTextContent('Tier 1: Jev');
+    expect(within(jev).getByLabelText(enMu.judges.model)).toHaveValue('jev-latest');
+    expect(within(jev).queryByLabelText(enMu.judges.service)).not.toBeInTheDocument();
     expect(within(tiers).queryByTestId('mu-judge-tier-1')).not.toBeInTheDocument();
   });
 });
@@ -257,7 +189,7 @@ describe('the first-run guide', () => {
   it('says what mu is, connects an API model, takes a judge key, saves once at the end, and is not shown again', async () => {
     at('/welcome', <Welcome />);
     expect(await screen.findByText('Welcome to mu')).toBeInTheDocument();
-    expect(screen.getByText('A check at every step')).toBeInTheDocument();
+    expect(screen.getByTestId('mu-welcome-turn')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('mu-welcome-begin'));
     fireEvent.click(await screen.findByTestId('mu-welcome-way-openai'));
     // Nothing filled in: the step stays and says why, and the field in question is marked.
@@ -327,17 +259,16 @@ describe('the first-run guide', () => {
     expect(screen.getByLabelText('Model name')).toHaveValue('my-model');
   });
 
-  it('sets Laya up without its address or a Stop: those are for the settings', async () => {
+  it('offers Jev and mude 1.0 and no Laya, while CLM waits in the settings', async () => {
     at('/welcome', <Welcome />);
     fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
     fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
-    await screen.findByTestId('mu-welcome-step-judge');
-    // A new user's order starts with Laya: its tile is the chosen one, open.
-    const tile = screen.getByTestId('mu-judge-choice-local');
-    const panel = await within(tile).findByTestId('mu-laya');
-    expect(await within(panel).findByTestId('mu-laya-status')).toHaveTextContent(enMu.judges.laya.running);
-    expect(within(panel).queryByTestId('mu-laya-stop')).not.toBeInTheDocument();
-    expect(tile).not.toHaveTextContent('127.0.0.1');
+    const step = await screen.findByTestId('mu-welcome-step-judge');
+    expect(within(step).getByTestId('mu-judge-choice-jev')).toBeInTheDocument();
+    expect(within(step).getByTestId('mu-judge-choice-mude')).toBeInTheDocument();
+    expect(within(step).queryByTestId('mu-judge-choice-local')).not.toBeInTheDocument();
+    expect(within(step).queryByTestId('mu-judge-choice-clm')).not.toBeInTheDocument();
+    expect(step).not.toHaveTextContent(/laya/i);
   });
 
   it('says what already works when the guide is opened again, so nothing reads as the first time', async () => {
@@ -534,6 +465,65 @@ describe('the first-run guide', () => {
     fireEvent.click(screen.getByTestId('mu-welcome-skip'));
     expect(await screen.findByTestId('mu-welcome-step-judge')).toBeInTheDocument();
     expect(bridge.save).not.toHaveBeenCalled();
+  });
+
+  it('offers no judge at all, which turns every decision point off so nothing is sent to one', async () => {
+    at('/welcome', <Welcome />);
+    fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
+    await screen.findByTestId('mu-welcome-step-judge');
+    fireEvent.click(screen.getByTestId('mu-judge-choice-jev'));
+    expect(screen.getByTestId('mu-welcome-judge-ready')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('mu-welcome-judge-none'));
+    expect(screen.getByTestId('mu-welcome-judge-none')).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByTestId('mu-judge-choice-jev')).toHaveAttribute('aria-checked', 'false');
+    // Nothing answers, so nothing says Jev is ready, and the judges' fields are not offered.
+    expect(screen.queryByTestId('mu-welcome-judge-ready')).toBeNull();
+    expect(screen.queryByTestId('mu-welcome-judge-more')).toBeNull();
+    fireEvent.click(screen.getByTestId('mu-welcome-next'));
+
+    await screen.findByTestId('mu-welcome-step-done');
+    expect(screen.getByTestId('mu-welcome-done-judge')).toHaveTextContent('No judge');
+    expect(screen.queryByTestId('mu-welcome-kernel')).toBeNull();
+    fireEvent.click(screen.getByTestId('mu-welcome-start'));
+    await waitFor(() => expect(bridge.save).toHaveBeenCalledTimes(1));
+    expect((bridge.save.mock.calls[0][0] as SaveSettings).mode).toBe('off');
+  });
+
+  it('turns the verdicts back on when a judge is picked after none, and leaves a stored shadow alone', async () => {
+    bridge.settings.mockResolvedValue({ ok: true, data: newUser({ mode: 'off' }) });
+    at('/welcome', <Welcome />);
+    fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
+    await screen.findByTestId('mu-welcome-step-judge');
+    // Set up before without a judge (mu setup's "Not now"): the guide says so.
+    expect(screen.getByTestId('mu-welcome-judge-none')).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(screen.getByTestId('mu-judge-choice-jev'));
+    expect(screen.getByTestId('mu-welcome-judge-none')).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByTestId('mu-judge-choice-jev')).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(screen.getByTestId('mu-welcome-next'));
+    await screen.findByTestId('mu-welcome-step-done');
+    fireEvent.click(screen.getByTestId('mu-welcome-start'));
+    await waitFor(() => expect(bridge.save).toHaveBeenCalledTimes(1));
+    expect((bridge.save.mock.calls[0][0] as SaveSettings).mode).toBe('active');
+
+    // Settings that record shadow (here with CLM, which the guide does not offer): picking a judge keeps it.
+    cleanup();
+    bridge.save.mockClear();
+    localStorage.clear();
+    bridge.settings.mockResolvedValue({ ok: true, data: newUser({ tiers: ['clm'] }) });
+    at('/welcome', <Welcome />);
+    fireEvent.click(await screen.findByTestId('mu-welcome-begin'));
+    fireEvent.click(await screen.findByTestId('mu-welcome-skip'));
+    await screen.findByTestId('mu-welcome-step-judge');
+    expect(screen.getByTestId('mu-welcome-judge-none')).toHaveAttribute('aria-checked', 'false');
+    fireEvent.click(screen.getByTestId('mu-judge-choice-jev'));
+    fireEvent.click(screen.getByTestId('mu-welcome-next'));
+    await screen.findByTestId('mu-welcome-step-done');
+    fireEvent.click(screen.getByTestId('mu-welcome-start'));
+    await waitFor(() => expect(bridge.save).toHaveBeenCalledTimes(1));
+    expect((bridge.save.mock.calls[0][0] as SaveSettings).mode).toBe('shadow');
   });
 
   it('shows a turn as the judge sees it, and ends on what the kernel bar will say', async () => {
@@ -937,6 +927,68 @@ describe('signing in with a subscription', () => {
     const alert = await screen.findByText("Couldn't sign in. Try again.", {}, { timeout: 3000 });
     expect(alert).toHaveTextContent('Token exchange request failed');
     expect(screen.getByTestId('mu-login-openai')).not.toBeDisabled();
+  });
+
+  // QA, 2026-10-23: "Port 1455 is in use, probably by an unfinished login in another pi session or by the Codex CLI".
+  it('names the program keeping the callback port, tries again, and signs in by the pasted address instead', async () => {
+    await toSubscriptions();
+    const portTaken = {
+      ...running,
+      phase: 'failed',
+      error: 'Port 1455 is in use by codex (process 4321), probably for its own sign-in',
+      code: 'port_in_use',
+      port: 1455,
+      holder: { pid: 4321, command: 'codex' },
+    };
+    bridge.loginStart.mockResolvedValue({ ok: true, data: running });
+    bridge.loginState.mockResolvedValue({ ok: true, data: portTaken });
+    fireEvent.click(screen.getByTestId('mu-login-openai'));
+    const alert = await screen.findByText(
+      'Port 1455 is in use by codex (process 4321), probably for its own sign-in. Finish or cancel that sign-in there, then click Retry.',
+      {},
+      { timeout: 3000 }
+    );
+    // One sentence in the app language, not the flow's English under it.
+    expect(alert).not.toHaveTextContent('Couldn');
+    expect(screen.getByTestId('mu-login-problem')).not.toHaveTextContent('probably for its own sign-in Finish');
+
+    bridge.loginStart.mockResolvedValue({ ok: true, data: { ...running, id: 2 } });
+    bridge.loginState.mockResolvedValue({ ok: true, data: { ...portTaken, id: 2 } });
+    fireEvent.click(screen.getByTestId('mu-login-retry'));
+    await waitFor(() => expect(bridge.loginStart).toHaveBeenCalledTimes(2));
+    expect(bridge.loginStart).toHaveBeenLastCalledWith({ provider: 'openai' });
+    await screen.findByTestId('mu-login-paste-instead', {}, { timeout: 3000 });
+
+    const pasting = {
+      ...running,
+      id: 3,
+      paste: true,
+      prompt: {
+        type: 'manual_code',
+        message: 'Paste the address your browser ends on after sign-in:',
+        placeholder: 'http://127.0.0.1:1455/auth/callback',
+      },
+    };
+    bridge.loginStart.mockResolvedValue({ ok: true, data: pasting });
+    bridge.loginState.mockResolvedValue({ ok: true, data: pasting });
+    fireEvent.click(screen.getByTestId('mu-login-paste-instead'));
+    await waitFor(() => expect(bridge.loginStart).toHaveBeenLastCalledWith({ provider: 'openai', paste: true }));
+    // The field is there at once, with what to paste: nothing listens for the browser.
+    expect(await screen.findByTestId('mu-login-paste-hint')).toHaveTextContent(
+      'your browser goes to an address that starts with http://127.0.0.1:1455/auth/callback'
+    );
+    expect(screen.queryByTestId('mu-login-paste')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Authorization code'), {
+      target: { value: 'http://127.0.0.1:1455/auth/callback?code=c&state=s' },
+    });
+    bridge.loginAnswer.mockResolvedValue({ ok: true, data: { ...pasting, prompt: undefined } });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
+    await waitFor(() =>
+      expect(bridge.loginAnswer).toHaveBeenCalledWith({
+        id: 3,
+        value: 'http://127.0.0.1:1455/auth/callback?code=c&state=s',
+      })
+    );
   });
 });
 

@@ -32,7 +32,7 @@ a signed/notarized distributable.
   office assistant catalog, bot/channel adapter, provider SDK, analytics or
   promotional entry is installed or imported by this target.
 - Only the KYRN launcher starts agents. Its existing model configuration and
-  OAuth login remain authoritative. Jev/Laya selection stays in KYRN's config.
+  OAuth login remain authoritative. The judge selection stays in KYRN's config.
 - Keys are never returned to the renderer. BrowserWindow uses context isolation,
   sandboxing, no Node integration, a restricted IPC surface and no navigation.
 

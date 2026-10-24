@@ -55,7 +55,6 @@
     "newTask": "New task",
     "createViaChat": "Create in a conversation",
     "createManually": "Create manually",
-    "description": "Run tasks on a schedule. You can also ask mu in any conversation to create one for you.",
     "awakeBanner": "Scheduled tasks only run while your computer is awake.",
     "keepAwake": "Keep awake",
     "keepAwakeTooltip": "Keeps your computer from sleeping so scheduled tasks can run",

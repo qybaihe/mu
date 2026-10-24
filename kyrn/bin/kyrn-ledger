@@ -20,8 +20,6 @@ if (args.includes("--help") || args.includes("-h")) {
 			"  mu ledger            verdicts from the 5 most recent sessions",
 			"  mu ledger <n>        from the n most recent",
 			"  mu ledger --json     one JSON object per verdict, for scripts",
-			"",
-			"It reads the session files mu keeps on this machine; nothing is sent anywhere.",
 		].join("\n"),
 	);
 	process.exit(0);

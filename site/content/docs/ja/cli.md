@@ -3,8 +3,6 @@ title: コマンドライン
 summary: mu のコマンド、セッション内のスラッシュコマンド、そして pi からそのまま引き継いだもの。
 ---
 
-`mu` コマンドは、コーディングエージェント pi に mu の判定カーネルを読み込んだものです。pi にできることはすべてこれまでどおり動き、mu は独自のコマンドと判定ポイントを加えます。
-
 ```bash
 npm i -g mu-agent      # Node.js 22.19 以降が必要
 mu                     # 現在のディレクトリで対話セッションを始める
@@ -32,7 +30,8 @@ mu                     # 現在のディレクトリで対話セッションを�
 | `mu ledger [n] [--json]` | 直近 n 回のセッションで判定器が下した判定。`--json` で、すべての記録を確率と所要時間付きで出力する。 |
 | `mu import --list` | Claude Code、Codex、ZCode の会話を探す |
 | `mu import <file>…` | それらを履歴ごと mu に取り込み、そこで続ける。あとでもう一度実行すると新しい内容が加わる |
-| `mu judge setup \| start \| stop \| status` | ローカルの判定器 Laya。`setup` はモデルをダウンロードする前に確認する。 |
+| `mu judge mude install \| enable \| disable \| start \| stop \| status \| uninstall` | Apple シリコンの Mac で動く、mu 独自の意思決定モデル [mude 1.0](@docs/judges#mude)。ダウンロードが途中で止まっても、`install` は中断したところから続ける。 |
+| `mu judge model add \| list \| use \| start \| stop \| status \| disable \| remove` | Hugging Face の[ほかの意思決定モデル](@docs/judges#models)を mude 1.0 と同じように動かす。`add` はリンクか `owner/name` を受け取り、止まったダウンロードを再開する。 |
 | `mu link` / `mu unlink` | `mu` コマンドを PATH（`~/.local/bin`）に置く、または取り除く |
 | `mu auth status \| login <provider> \| logout <provider>` | デスクトップアプリが使うサブスクリプションのサインイン |
 | `mu migrate [--dry-run]` | 一度だけ実行：名前変更前のホーム `~/.kyrn` を `~/.mu` に移す |
@@ -42,7 +41,7 @@ mu                     # 現在のディレクトリで対話セッションを�
 | コマンド | 内容 |
 | --- | --- |
 | `/status` | 判定器、各判定ポイントのモード、コンテキストに入れなかったもの、最新の判定 |
-| `/mu judge <judges>` | どの判定器がどの順で答えるか：`laya`、`laya,jev`、`jev-opencode-free`、`classifier:<provider>/<model>`、`llm:<provider>/<model>` |
+| `/mu judge <judges>` | どの判定器がどの順で答えるか：`jev`、`mude,jev`、`jev-opencode-free`、`classifier:<provider>/<model>`、`llm:<provider>/<model>` |
 | `/mu route <point> <judges>` | 一つの判定ポイントに専用の判定器を割り当てる |
 | `/mu mode <point> <off\|shadow\|active>` | このセッションで、一つの判定ポイント（`default` ならすべて）を切り替える |
 | `/frame` | タスクフレーム：目標、あなたの制約とその出どころ、受け入れ条件 |
@@ -70,7 +69,7 @@ pi 自身のコマンド（`/model`、`/thinking`、`/login`、`/resume`、`/tre
 
 | 変数 | 効果 |
 | --- | --- |
-| `MU_JUDGE=laya,jev mu` | この実行だけの判定器。`MU_JUDGE=off` でカーネルをオフにする。 |
+| `MU_JUDGE=mude,jev mu` | この実行だけの判定器。`MU_JUDGE=off` でカーネルをオフにする。 |
 | `MU_JUDGE_MODE=shadow mu` | この実行では、すべての判定ポイントをシャドーにする |
 | `MU_PERMISSIONS=ask mu` | この実行の権限モード：`full`、`judge`、`ask` |
 | `MU_LANG=zh-CN mu` | mu 自身のメッセージを中国語（`zh`）か英語（それ以外）にする |

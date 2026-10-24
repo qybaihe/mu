@@ -3,7 +3,7 @@ title: 설정
 summary: mu.json, 환경 변수, 프록시, 그리고 기능별 옵션이 있는 곳.
 ---
 
-mu는 pi의 설정(모델, 로그인, 환경설정)과 자체 설정 `~/.mu/agent/mu.json`을 읽어요. 데스크톱 앱의 설정도 같은 파일에 써요. 거기서 바꿀 수 있는 것은 모두 손으로도 바꿀 수 있고, 반대도 마찬가지예요.
+mu는 pi의 설정(모델, 로그인, 환경설정)과 자체 설정 `~/.mu/agent/mu.json`을 읽어요.
 
 여러분 자신의 `mu.json`만 읽어요. 판정기는 여러분의 메시지를 읽기 때문에, 프로젝트가 판정기나 그 주소, 모드를 바꿀 수는 없어요.
 
@@ -19,7 +19,7 @@ mu는 pi의 설정(모델, 로그인, 환경설정)과 자체 설정 `~/.mu/agen
   },
   "routes": {
     "browser.step": ["jev"],
-    "memory.capture": ["laya", "jev"]
+    "memory.capture": ["mude", "jev"]
   },
   "features": {
     "admission": { "testLog": "rules" },
@@ -46,7 +46,7 @@ mu가 이해하지 못하는 부분은 mu를 멈추지 않고 기본값으로 �
 
 ## 모드 실제로 쓰기 {#modes}
 
-- 판정 지점 {points}개 중 {points_active}개는 처음부터 판정을 반영해요(`context.compact`와 `output.drift`는 기본으로 꺼져 있고, `swarm.patch`도 꺼져 있으며, `notify.routing`, `input.interjection`, `turn.drift`는 섀도라서 판정을 기록만 해요). 판정기나 확신이 없는 판정 지점을 시험하려면 섀도로 두고, 판정 장부(`mu ledger`, `/status`, 앱의 판정 탭)를 읽은 다음, 다시 active로 돌려요.
+- 판정 지점 {points}개 중 {points_active}개는 처음부터 판정을 반영해요(`context.compact`와 `output.drift`는 기본으로 꺼져 있고, `capability.disclosure`와 `swarm.patch`도 꺼져 있으며, `notify.routing`과 `turn.drift`는 섀도라서 판정을 기록만 해요). 판정기나 확신이 없는 판정 지점을 시험하려면 섀도로 두고, 판정 장부(`mu ledger`, `/status`, 앱의 판정 탭)를 읽은 다음, 다시 active로 돌려요.
 - `/mu mode <point> <off|shadow|active>`는 현재 세션에서 판정 지점 하나를 바꾸고, `/mu mode default shadow`는 전부를 바꿔요. 모드를 계속 유지하려면 `mu.json`에 넣으세요.
 - `MU_JUDGE_MODE=shadow mu`는 한 번 실행의 기본 모드를 정해요.
 - `"modes": { "default": "off" }`로 두면 판정기에 아무것도 묻지 않아요. 기본이 섀도인 판정 지점도 함께 꺼져요(`mu.json`에서 따로 모드를 준 지점은 제외). `mu setup`에서 판정기를 "Not now"로 고르면 이렇게 기록돼요.
@@ -57,19 +57,18 @@ mu가 이해하지 못하는 부분은 mu를 멈추지 않고 기본값으로 �
 
 | 변수 | 효과 |
 | --- | --- |
-| `MU_JUDGE` | 이번 실행의 판정기, 쉼표로 구분: `laya`, `laya,jev`, `jev-opencode-free`, `classifier:<provider>/<model>`, `llm:<provider>/<model>`. `off`는 커널을 꺼요. |
+| `MU_JUDGE` | 이번 실행의 판정기, 쉼표로 구분: `jev`, `mude,jev`, `jev-opencode-free`, `classifier:<provider>/<model>`, `llm:<provider>/<model>`. `off`는 커널을 꺼요. |
 | `MU_JUDGE_MODE` | 이번 실행의 기본 모드: `off`, `shadow`, `active` |
 | `MU_WRITER` | 글쓰기 모델의 `provider/model` |
 | `MU_PERMISSIONS` | 이번 실행의 권한 모드: `full`, `judge`, `ask` |
-| `MU_LOCAL_JUDGE_URL` | `mu judge start`가 띄우는 서버가 아닌 다른 로컬 판정기 서버의 주소 |
 
-호스팅 판정기의 키(각각 자기 서비스로만 보내져요): `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY`와 `CLOUDFLARE_ACCOUNT_ID`, `MU_JUDGE_CLM_API_KEY`.
+호스팅 판정기의 키(각각 자기 서비스로만 보내져요): `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY`와 `CLOUDFLARE_ACCOUNT_ID`, `MU_JUDGE_CLM_API_KEY`, `MU_JUDGE_OPENAI_KEY`.
 
 시간:
 
 | 변수 | 효과 |
 | --- | --- |
-| `MU_TIME_BUDGET_S` | 이번 실행의 시간 예산(초), mu가 시작한 때부터 세요. 설정하면 생각만 하는 응답을 재시도할 시간이 남도록 일찍 끊고, 예산의 50%와 80%가 지나면 모델에게 남은 시간(분)을 알려 줘요(`features.deadline`). 벤치마크 하네스가 작업의 타임아웃으로 설정해요. 설정하지 않으면 아무것도 바뀌지 않아요. |
+| `MU_TIME_BUDGET_S` | 이번 실행의 시간 예산(초), mu가 시작한 때부터 세요. 설정하면 생각만 하는 응답을 재시도할 시간이 남도록 일찍 끊고, 예산의 50%와 80%가 지나면 모델에게 남은 시간(분)을 알려 줘요(`features.deadline`). 설정하지 않으면 아무것도 바뀌지 않아요. |
 
 런처:
 
@@ -80,8 +79,6 @@ mu가 이해하지 못하는 부분은 mu를 멈추지 않고 기본값으로 �
 | `MU_LANG` | 세션 안에서 mu 자체 메시지의 언어: `zh…`면 중국어, 그 밖에는 영어. 데스크톱 앱은 앱의 언어로 설정하고, `mu setup`은 여러분의 로캘을 따라요. |
 | `MU_LINK_DIR` | `~/.local/bin` 대신 `mu link`가 `mu` 명령을 둘 곳 |
 | `MU_CHROME` | 명령줄에서 내장 브라우저가 쓸 Chrome이나 Chromium |
-
-`MU_` 변수는 모두 예전 철자인 `KYRN_`으로도 읽어요.
 
 mu는 `.env` 파일도 읽어요. npm 패키지는 `~/.mu/.env`예요. 줄은 `KEY=VALUE` 형식이고, 그 안의 어떤 것도 실행하지 않아요. `mu setup`은 Jev 키를 여기에 써요. 여러분의 환경에 이미 설정된 변수가 우선해요.
 

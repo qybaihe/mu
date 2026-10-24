@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { isSafeEndpoint, type ProviderTestResult } from '@/common/kyrn/models';
-import type { KyrnSettings } from '@/common/kyrn/types';
+import type { JudgeType, KyrnSettings } from '@/common/kyrn/types';
 import { newDraft } from '@/renderer/pages/settings/KyrnSettings/draft';
 import {
   answersFree,
@@ -10,11 +10,14 @@ import {
   clmKeyVariable,
   defaultModelOf,
   GUIDE_CHOICES,
+  inShownOrder,
   JEV_SERVICES,
   JUDGE_CHOICES,
   jevKeyVariable,
   jevVariables,
   kindOf,
+  OPENAI_DEFAULT_MODEL,
+  openaiKeyVariable,
   profileFor,
   serviceOf,
   withJevService,
@@ -44,7 +47,7 @@ import {
 function settings(patch: Partial<KyrnSettings> = {}): KyrnSettings {
   return {
     revision: 'r1',
-    tiers: ['laya', 'jev'],
+    tiers: ['clef', 'jev'],
     judges: {
       jev: { type: 'jev', model: 'jev-latest', baseUrl: '', apiKeyEnv: 'TYPESAFE_API_KEY', timeoutMs: 10000 },
       'jev-gateway': {
@@ -54,7 +57,13 @@ function settings(patch: Partial<KyrnSettings> = {}): KyrnSettings {
         apiKeyEnv: 'AI_GATEWAY_API_KEY',
         timeoutMs: 10000,
       },
-      laya: { type: 'local', model: '', baseUrl: 'http://127.0.0.1:47823', apiKeyEnv: '', timeoutMs: 4000 },
+      clef: {
+        type: 'classifier',
+        model: 'cloudflare-workers-ai/@cf/cloudflare/clef',
+        baseUrl: '',
+        apiKeyEnv: '',
+        timeoutMs: 10000,
+      },
       mock: { type: 'mock', model: '', baseUrl: '', apiKeyEnv: '', timeoutMs: 10000 },
     },
     mode: 'active',
@@ -79,8 +88,12 @@ function settings(patch: Partial<KyrnSettings> = {}): KyrnSettings {
 }
 
 describe('the judge choice', () => {
-  it('reads the choice from the first judge asked, and knows none for a mock', () => {
-    expect(choiceOf(settings())).toBe('local');
+  it('reads the choice from the first judge asked, and knows none for a mock, Clef or Laya', () => {
+    expect(choiceOf(settings())).toBeUndefined();
+    // Laya, which mu no longer has, never reaches the page (the main process leaves it out); were it there, it would
+    // be no choice either.
+    const laya = { ...settings().judges.jev, type: 'local' as unknown as JudgeType };
+    expect(choiceOf(settings({ tiers: ['laya'], judges: { ...settings().judges, laya } }))).toBeUndefined();
     expect(choiceOf(settings({ tiers: ['jev-gateway'] }))).toBe('jev');
     expect(choiceOf(settings({ tiers: ['mock'] }))).toBeUndefined();
   });
@@ -93,11 +106,11 @@ describe('the judge choice', () => {
 
   it('makes the choice the one judge, and leaves a model as judge to the advanced view', () => {
     expect(choose(settings(), 'jev').tiers).toEqual(['jev']);
-    expect(choose(settings({ tiers: ['jev'] }), 'local').tiers).toEqual(['laya']);
+    const clm = { type: 'clm' as const, model: '', baseUrl: '', apiKeyEnv: '', timeoutMs: 10000 };
+    expect(choose(settings({ judges: { ...settings().judges, clm }, tiers: ['jev'] }), 'clm').tiers).toEqual(['clm']);
     // Without a profile of that kind nothing changes.
-    const { laya: _laya, ...noLocal } = settings().judges;
-    const without = settings({ judges: noLocal, tiers: ['jev'] });
-    expect(choose(without, 'local')).toBe(without);
+    const without = settings({ tiers: ['jev'] });
+    expect(choose(without, 'clm')).toBe(without);
     // A model as judge first in line is not one of the two choices: the page says it is a custom one.
     const modelFirst = settings({
       judges: {
@@ -118,8 +131,8 @@ describe('the judge choice', () => {
       timeoutMs: 10000,
     };
     const withClm = settings({ judges: { ...settings().judges, clm } });
-    expect(JUDGE_CHOICES).toEqual(['jev', 'local', 'clm']);
-    expect(GUIDE_CHOICES).toEqual(['jev', 'local']);
+    expect(JUDGE_CHOICES).toEqual(['jev', 'mude', 'clm', 'openai']);
+    expect(GUIDE_CHOICES).toEqual(['jev', 'mude']);
     expect(kindOf(clm)).toBe('clm');
     expect(serviceOf(clm)).toBeUndefined();
     expect(choose(withClm, 'clm').tiers).toEqual(['clm']);
@@ -129,12 +142,65 @@ describe('the judge choice', () => {
     expect(clmKeyVariable({ ...clm, apiKeyEnv: '' })).toBe('MU_JUDGE_CLM_API_KEY');
   });
 
+  it('offers OpenAI’s decision model as a choice of the settings, with a key of its own, and not in the guide', () => {
+    const openai = {
+      type: 'openai' as const,
+      model: 'gpt-6-luna',
+      baseUrl: '',
+      apiKeyEnv: 'MU_JUDGE_OPENAI_KEY',
+      timeoutMs: 10000,
+    };
+    const withOpenAI = settings({ judges: { ...settings().judges, openai } });
+    expect(JUDGE_CHOICES).toContain('openai');
+    expect(GUIDE_CHOICES).not.toContain('openai');
+    expect(kindOf(openai)).toBe('openai');
+    expect(serviceOf(openai)).toBeUndefined();
+    expect(profileFor(withOpenAI, 'openai')).toBe('openai');
+    expect(choose(withOpenAI, 'openai').tiers).toEqual(['openai']);
+    expect(choiceOf(choose(withOpenAI, 'openai'))).toBe('openai');
+    // A profile of one's own (a relay serving the same endpoint) stands for the choice when the order asks it.
+    const relay = { ...openai, baseUrl: 'https://relay.example.com/v1', apiKeyEnv: 'MU_JUDGE_RELAY_KEY' };
+    const viaRelay = settings({ judges: { ...withOpenAI.judges, relay }, tiers: ['relay'] });
+    expect(profileFor(viaRelay, 'openai')).toBe('relay');
+    expect(openaiKeyVariable(relay)).toBe('MU_JUDGE_RELAY_KEY');
+    expect(openaiKeyVariable({ ...openai, apiKeyEnv: '' })).toBe('MU_JUDGE_OPENAI_KEY');
+    expect(OPENAI_DEFAULT_MODEL).toBe('gpt-6-luna');
+  });
+
+  it('puts mude first where it is the recommended judge, and leaves the order as it is elsewhere', () => {
+    expect(inShownOrder(JUDGE_CHOICES, true)).toEqual(['mude', 'jev', 'clm', 'openai']);
+    expect(inShownOrder(GUIDE_CHOICES, true)).toEqual(['mude', 'jev']);
+    expect(inShownOrder(JUDGE_CHOICES, false)).toEqual(['jev', 'mude', 'clm', 'openai']);
+    expect(inShownOrder(GUIDE_CHOICES, false)).toEqual(['jev', 'mude']);
+    // Without mude among them, nothing moves.
+    expect(inShownOrder(['jev', 'clm'], true)).toEqual(['jev', 'clm']);
+  });
+
+  it('knows mude by its key, never takes it for Jev, and leaves choosing it to its command', () => {
+    const mude = {
+      type: 'typesafe' as const,
+      model: 'mude',
+      baseUrl: 'http://127.0.0.1:8790/v1/systemone',
+      apiKeyEnv: 'MU_JUDGE_MUDE_KEY',
+      timeoutMs: 4000,
+    };
+    const withMude = settings({ judges: { ...settings().judges, mude }, tiers: ['mude', 'jev'] });
+    expect(kindOf(mude)).toBe('mude');
+    expect(serviceOf(mude)).toBe('typesafe');
+    expect(choiceOf(withMude)).toBe('mude');
+    expect(profileFor(withMude, 'mude')).toBe('mude');
+    // `mu judge mude enable` puts it first (and starts it): a pick in the draft never does.
+    const jevFirst = settings({ judges: { ...settings().judges, mude }, tiers: ['jev'] });
+    expect(choose(jevFirst, 'mude')).toBe(jevFirst);
+    expect(choose(withMude, 'jev').tiers).toEqual(['jev']);
+  });
+
   it('stands for the profile of a kind the order already asks, so the key asked for is the one its service needs', () => {
     const viaGateway = settings({ tiers: ['jev-gateway'] });
     expect(profileFor(viaGateway, 'jev')).toBe('jev-gateway');
     expect(jevKeyVariable(viaGateway.judges[profileFor(viaGateway, 'jev')!])).toBe('AI_GATEWAY_API_KEY');
     expect(choose(viaGateway, 'jev').tiers).toEqual(['jev-gateway']);
-    expect(kindOf(viaGateway.judges.laya)).toBe('local');
+    expect(kindOf(viaGateway.judges.clef)).toBeUndefined();
     expect(kindOf(viaGateway.judges.mock)).toBeUndefined();
   });
 
@@ -149,7 +215,7 @@ describe('the judge choice', () => {
     // A TypeSafe key under a name of its own, or none named, is still TypeSafe's.
     expect(serviceOf(systemOne('KYRN_JUDGE_TYPESAFE'))).toBe('typesafe');
     expect(serviceOf(systemOne(''))).toBe('typesafe');
-    expect(serviceOf(judges.laya)).toBeUndefined();
+    expect(serviceOf(judges.clef)).toBeUndefined();
     expect(serviceOf(undefined)).toBeUndefined();
     // Every service is Jev to the choice above, and has a model its own profile starts with.
     for (const service of JEV_SERVICES) {
@@ -218,8 +284,8 @@ describe('the judge choice', () => {
 
   it('puts the profile of the service picked in its place in the order, made from its preset when there is none', () => {
     // The built-in one is used as it is.
-    expect(withJevService(settings(), 1, 'gateway').tiers).toEqual(['laya', 'jev-gateway']);
-    expect(withJevService(settings({ tiers: ['jev-gateway', 'laya'] }), 0, 'auto').tiers).toEqual(['jev', 'laya']);
+    expect(withJevService(settings(), 1, 'gateway').tiers).toEqual(['clef', 'jev-gateway']);
+    expect(withJevService(settings({ tiers: ['jev-gateway', 'clef'] }), 0, 'auto').tiers).toEqual(['jev', 'clef']);
     const changed = settings();
     const byHand = {
       ...changed,
@@ -228,7 +294,7 @@ describe('the judge choice', () => {
     expect(withJevService(byHand, 1, 'gateway').judges['jev-gateway'].model).toBe('typesafe-ai/jev-2');
     // None yet: made from the preset, and the profile it replaces stays as it was.
     const direct = withJevService(settings(), 1, 'typesafe');
-    expect(direct.tiers).toEqual(['laya', 'jev-direct']);
+    expect(direct.tiers).toEqual(['clef', 'jev-direct']);
     expect(direct.judges['jev-direct']).toEqual({
       type: 'typesafe',
       model: 'jev-latest',
@@ -238,7 +304,7 @@ describe('the judge choice', () => {
     });
     expect(direct.judges.jev).toEqual(settings().judges.jev);
     const openRouter = withJevService(settings(), 1, 'openrouter');
-    expect(openRouter.tiers).toEqual(['laya', 'jev-openrouter']);
+    expect(openRouter.tiers).toEqual(['clef', 'jev-openrouter']);
     expect(openRouter.judges['jev-openrouter']).toEqual({
       type: 'typesafe',
       model: '~typesafe/jev-latest',
@@ -248,7 +314,7 @@ describe('the judge choice', () => {
     });
     // A custom service has no address until one is typed.
     const custom = withJevService(settings(), 1, 'custom');
-    expect(custom.tiers).toEqual(['laya', 'jev-custom']);
+    expect(custom.tiers).toEqual(['clef', 'jev-custom']);
     expect(custom.judges['jev-custom']).toMatchObject({
       type: 'typesafe',
       baseUrl: '',
@@ -263,14 +329,14 @@ describe('the judge choice', () => {
       timeoutMs: 10000,
     };
     const own = withJevService(settings({ judges: { ...settings().judges, relay } }), 1, 'custom');
-    expect(own.tiers).toEqual(['laya', 'relay']);
+    expect(own.tiers).toEqual(['clef', 'relay']);
     expect(own.judges['jev-custom']).toBeUndefined();
     // A profile of another service written by hand under the built-in name is left alone.
     const taken = settings({
       judges: { ...settings().judges, 'jev-custom': { ...relay, apiKeyEnv: 'MU_JUDGE_OPENROUTER_API_KEY' } },
     });
     const beside = withJevService(taken, 1, 'custom');
-    expect(beside.tiers).toEqual(['laya', 'jev-custom-2']);
+    expect(beside.tiers).toEqual(['clef', 'jev-custom-2']);
     expect(beside.judges['jev-custom']).toEqual(taken.judges['jev-custom']);
     expect(serviceOf(beside.judges['jev-custom-2'])).toBe('custom');
   });
@@ -530,7 +596,7 @@ describe('the order the guide lists services in', () => {
     expect(ids('zh-TW')).toEqual(MODEL_SERVICES.map((service) => service.id));
     for (const language of ['en-US', 'zh-CN']) {
       expect(ids(language).at(-1)).toBe('ollama');
-      expect([...ids(language)].sort()).toEqual(MODEL_SERVICES.map((service) => service.id).sort());
+      expect([...ids(language)].toSorted()).toEqual(MODEL_SERVICES.map((service) => service.id).toSorted());
     }
   });
 });

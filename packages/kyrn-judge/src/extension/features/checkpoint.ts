@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type {
+	AgentEndEvent,
 	ExtensionCommandContext,
 	ExtensionContext,
 	SessionShutdownEvent,
@@ -34,7 +35,7 @@ import { turnRewind } from "../../decisions/turn-rewind.ts";
 import type { Coded } from "../../language.ts";
 import { say } from "../../language.ts";
 import { muHome } from "../../naming.ts";
-import { clip, failOpen, type KyrnRuntime, textOf } from "../runtime.ts";
+import { askWithin, clip, failOpen, type KyrnRuntime, textOf, within } from "../runtime.ts";
 import { describeCall } from "./admission.ts";
 import type { HarnessRoots } from "./inherit.ts";
 import { isUnattended } from "./unattended.ts";
@@ -263,7 +264,7 @@ Abandoned because: <why it did not work>`;
  *
  * An unattended run (`mu --print`, json mode; see `unattended.ts`) takes no checkpoint: nobody there can
  * confirm a rewind or type `/rewind`, so no file is ever put back, and the snapshot before the first change
- * and the scan after every one only held the agent up. A dead end is still asked about there, and the
+ * and the scan after every one were only work for nothing. A dead end is still asked about there, and the
  * model is told to step back, as it always was without a UI. `unattended: true` takes them again.
  */
 export function registerCheckpoint(
@@ -294,6 +295,11 @@ export function registerCheckpoint(
 		propose: true,
 		/** How long a proposal waits for an answer before the run carries on. 0 waits forever. */
 		confirmSeconds: 120,
+		/**
+		 * How long the end of a turn waits for `turn.rewind`'s verdict; a later one changes nothing. On Terminal-Bench
+		 * 2.1 every verdict came in 0.2-1.6 s.
+		 */
+		rewindWaitMs: 3000,
 		/** Take checkpoints in a `mu --print` or json run too, for a session resumed later in the terminal. */
 		unattended: false,
 	});
@@ -321,6 +327,8 @@ export function registerCheckpoint(
 	let pending: PendingRewind | undefined;
 	/** The tree right after the agent's last action. What differs from it later was changed by somebody else. */
 	let lastAgentTree: string | undefined;
+	/** The scan after the agent's latest change, queued or running: the run ends once it has. */
+	let rescan: Promise<void> | undefined;
 	const calls = new Map<string, { name: string; input: Record<string, unknown>; mutating: boolean }>();
 	let chain: Promise<unknown> = Promise.resolve();
 	let busy = 0;
@@ -493,12 +501,27 @@ export function registerCheckpoint(
 					turn.triggerCode = { code: "same_command_failed", params: { times: 3, command: clip(command, 120) } };
 				}
 			}
+			// Only a rewind reads this tree, to tell the user's edits from the agent's, and it queues behind the scan
+			// on `exclusive`: the next call need not wait for it (about 0.2 s per change in a container).
 			if (call.mutating && store && turn.checkpoint) {
 				const opened = store;
-				lastAgentTree = await exclusive(() => scan(opened, limits))
-					.then((scanned) => scanned.tree)
-					.catch(() => undefined);
+				rescan = exclusive(async () => {
+					lastAgentTree = await scan(opened, limits).then(
+						(scanned) => scanned.tree,
+						() => undefined,
+					);
+				});
 			}
+			return undefined;
+		}),
+	);
+
+	pi.on(
+		"agent_end",
+		failOpen<AgentEndEvent, undefined>(async () => {
+			// The run ends with the tree after its last change known, so an edit made from then on reads as the user's.
+			// Bounded, like shutdown: a `git gc` queued ahead must not hold the prompt back.
+			if (rescan) await within(rescan, 3000);
 			return undefined;
 		}),
 	);
@@ -779,18 +802,23 @@ export function registerCheckpoint(
 			turn.trigger = undefined;
 			turn.triggerCode = undefined;
 			turn.asked++;
-			const decision = await runtime.engine.decide(
-				turnRewind,
-				{
-					goal: runtime.taskFrame()?.goal ?? checkpoint?.label ?? turnStart(ctx).label,
-					recentSteps: turn.steps,
-					trigger,
-					editsSinceCheckpoint: turn.edits,
-					lastCheckFailed: turn.lastCheckFailed,
-				},
-				{ signal: ctx.signal },
+			const state = {
+				goal: runtime.taskFrame()?.goal ?? checkpoint?.label ?? turnStart(ctx).label,
+				recentSteps: turn.steps,
+				trigger,
+				editsSinceCheckpoint: turn.edits,
+				lastCheckFailed: turn.lastCheckFailed,
+			};
+			// The run waits for this verdict, and a late one changes nothing (the fallback carries on): at most
+			// `rewindWaitMs`, not the judge's own timeout (10 s hosted, 30 s for an `llm:` judge).
+			const decision = await askWithin(
+				(signal) =>
+					runtime.engine.decide(turnRewind, state, {
+						signal: ctx.signal ? AbortSignal.any([signal, ctx.signal]) : signal,
+					}),
+				options.rewindWaitMs,
 			);
-			if (decision.source !== "judge" || decision.outcome !== "propose") return undefined;
+			if (decision?.source !== "judge" || decision.outcome !== "propose") return undefined;
 			turn.proposed = true;
 			// Nobody to ask, so nothing is undone: the model is told, and the choice of a new approach is its own.
 			const stepBack = () =>

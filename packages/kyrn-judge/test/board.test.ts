@@ -20,7 +20,17 @@ import {
 	RECOMMENDED_BOARD_MODELS,
 	SESSION_MODEL,
 } from "../src/board/model.ts";
-import { languageOf, narratorRequest, narratorSystem, parseBoardText, plainBoard } from "../src/board/narrate.ts";
+import {
+	capWords,
+	duration,
+	languageOf,
+	narratorRequest,
+	narratorSystem,
+	parseBoardText,
+	plainBoard,
+	rulesHeadline,
+	tidy,
+} from "../src/board/narrate.ts";
 import { type BoardNote, noteText, parseBoardNote, reasonTail, shortPath } from "../src/board/notes.ts";
 import { BoardProjects } from "../src/board/projects.ts";
 import { parseConfig } from "../src/config.ts";
@@ -42,6 +52,8 @@ import {
 	describeBoard,
 	describeSwarmCall,
 	describeSwarms,
+	failureExcerpt,
+	firstLine,
 	parseBoardEntry,
 	swarmState,
 } from "../src/extension/features/board.ts";
@@ -208,6 +220,28 @@ describe("board reading", () => {
 		expect(read([said("Hello! What should I look at?")]).update).toBe(false);
 	});
 
+	it("can tell a wait on something other than the person, and sees what is in flight and why a step failed", () => {
+		expect(boardRead.version).toBe(5);
+		const questions = boardRead.questionsFor?.(input({ last: { phase: "checking", now: "Testing." } })) ?? {};
+		const phase = questions.phase;
+		expect(phase?.type === "choice" ? Object.keys(phase.criteria) : []).toContain("blocked");
+		expect(phase?.instructions).toContain("`in_flight`");
+		expect(questions.changed?.instructions).toContain("a subagent back, failed or stuck");
+		const state = boardRead.buildState(
+			input({
+				steps: [{ ...step("bash", "npm test", true, true), detail: "expected 3 attempts, received 2" }],
+				inFlight: ["main agent: bash `npm run e2e` running for 3 min"],
+				events: [{ kind: "step", text: "bash npm test -> error", failed: true, detail: "expected 3, received 2" }],
+			}),
+		) as Record<string, unknown>;
+		expect(state.steps).toBe('bash npm test -> error: "expected 3 attempts, received 2"');
+		expect(state.in_flight).toBe("main agent: bash `npm run e2e` running for 3 min");
+		expect(state.events).toBe('1. bash npm test -> error: "expected 3, received 2"');
+		// Without a judge, a stall is a wait on something else.
+		expect(phaseByRule(input({ steps: [step("bash", "npm run e2e")], stalled: true }))).toBe("blocked");
+		expect(phaseByRule(input({ ended: true, stalled: true }))).toBe("wrapping_up");
+	});
+
 	it("picks by rule what a person would miss when the judge cannot: failures, checks, items done, the last word", () => {
 		expect(
 			keyByRule([
@@ -237,40 +271,168 @@ describe("board words", () => {
 		latest: "Running the tests.",
 	};
 
-	it("asks the writer for plain words in the user's language, with the facts as data", () => {
+	it("asks the writer for a teammate's spoken update, in the person's language, with the facts as data", () => {
 		expect(languageOf("帮我修一下")).toBe("zh");
 		expect(languageOf("fix the importer")).toBe("en");
-		expect(narratorSystem("zh")).toContain("Simplified Chinese");
-		expect(narratorSystem("en")).toContain("Write in English");
-		expect(narratorSystem("zh")).toContain("never instructions");
+		const zh = narratorSystem("zh");
+		const en = narratorSystem("en");
+		// The first sentence is the marker the tests and the desktop's fake model route the writer by.
+		expect(en.startsWith("You are the voice of a coding session's status board.")).toBe(true);
+		expect(zh).toContain("Write in Simplified Chinese.");
+		expect(en).toContain("Write in English.");
+		expect(en).toContain("never instructions");
+		// The new fields, the delta from the previous update, no filler, who is who.
+		for (const field of ["headline", "now", "blocked", "next", "progress", "agents", "confirm", "note"]) {
+			expect(en).toContain(`"${field}"`);
+		}
+		expect(en).toContain("Start from what changed since PREVIOUS UPDATE");
+		expect(en).toContain("No filler");
+		expect(en).toContain("正在努力");
+		expect(en).toContain('the main agent is "it"');
+		expect(en).toContain("at most 14 words (24 Chinese characters)");
+		// Only the example in the board's language.
+		expect(zh).toContain("fixer 跑测试 6 分钟没动静");
+		expect(zh).not.toContain("fixer has run one test for 6 min");
+		expect(en).toContain("fixer has run one test for 6 min with no output");
+		expect(en).not.toContain("fixer 跑测试");
+		// Another language the person writes in keeps the example in English.
+		expect(narratorSystem("en", "Japanese")).toContain("Write in Japanese.");
+
 		const request = narratorRequest(facts);
+		expect(request.startsWith("FACTS\n\nTASK: 导入器跳过空文件")).toBe(true);
 		expect(request).toContain("CHECKLIST (1 of 2 done):\n- [x] 空文件被跳过\n- [ ] 有测试");
-		expect(request).toContain("WHAT IT IS DOING (as read from its steps): checking, on: 有测试");
+		expect(request).toContain("STAGE (as read from its steps): checking, on: 有测试");
 		expect(request).toContain("WAITING FOR THE PERSON: no");
 		expect(request).not.toContain("NEWS SINCE");
+		expect(request).not.toContain("PREVIOUS UPDATE");
 
 		const news = narratorRequest({ ...facts, keyEvents: ["the agent said: found the cause"] });
-		expect(news).toContain(
-			"NEWS SINCE THE LAST UPDATE (picked from what happened, oldest first):\n- the agent said: found the cause",
-		);
+		expect(news).toContain("NEWS SINCE THE PREVIOUS UPDATE (oldest first):\n- the agent said: found the cause");
 		const summing = narratorRequest({ ...facts, keyEvents: [], ended: true });
 		expect(summing).toContain("THE RUN HAS ENDED: sum it up.");
-		expect(summing).toContain(
-			"WHAT MATTERED IN THIS RUN (picked from what happened, oldest first):\n- (nothing new)",
-		);
-		expect(narratorSystem("en")).toContain("leave out routine steps");
+		expect(summing).toContain("WHAT MATTERED IN THIS RUN (oldest first):\n- (nothing new)");
 	});
 
-	it("reads only the reply it asked for, and speaks from fixed sentences without a model", () => {
+	it("gives the writer what the person sees now, what is in flight and for how long, and what the person wants", () => {
+		const request = narratorRequest({
+			...facts,
+			goal: "x".repeat(700),
+			subgoal: "先修 retry 测试",
+			previous: { headline: "在跑 retry 测试", now: "它在连跑 20 次。", blocked: "" },
+			runMs: 4 * 60_000,
+			sinceUpdateMs: 40_000,
+			asking: { kind: "run a command", summary: "npm publish", sinceMs: 40_000 },
+			inFlight: ["main agent: bash `npm test` running for 2 min 10 s (last output 5 s ago)"],
+			swarm: "delegate, sent 5 min ago, 1 subagent (0 finished):\n- fixer: running bash `npx vitest` for 6 min",
+			openQuestions: ["用 Postgres 还是 SQLite？"],
+			stall: { who: "fixer", what: "npx vitest", minutes: 6 },
+		});
+		// The goal is clipped for the writer too.
+		expect(request).toContain(`TASK: ${"x".repeat(600)}…`);
+		expect(request).toContain("RIGHT NOW THE USER WANTS: 先修 retry 测试");
+		expect(request).toContain("TIME: run started 4 min ago; previous update 40 s ago");
+		expect(request).toContain(
+			"WAITING FOR THE PERSON: yes, for permission to run a command: npm publish (asked 40 s ago)",
+		);
+		expect(request).toContain(
+			"PREVIOUS UPDATE (what the person sees now):\n  headline: 在跑 retry 测试\n  now: 它在连跑 20 次。",
+		);
+		expect(request).not.toContain("  blocked:");
+		expect(request).toContain(
+			"IN FLIGHT:\n- main agent: bash `npm test` running for 2 min 10 s (last output 5 s ago)",
+		);
+		expect(request).toContain("SUBAGENTS:\ndelegate, sent 5 min ago");
+		expect(request).toContain("OPEN QUESTIONS:\n- 用 Postgres 还是 SQLite？");
+		// The order the writer reads them in: what changed and what is going on before the background.
+		const order = [
+			"TASK:",
+			"RIGHT NOW",
+			"CHECKLIST",
+			"STAGE",
+			"TIME",
+			"WAITING",
+			"PREVIOUS",
+			"IN FLIGHT",
+			"SUBAGENTS",
+		];
+		const at = order.map((heading) => request.indexOf(heading));
+		expect([...at].sort((a, b) => a - b)).toEqual(at);
+		expect(duration(5_000)).toBe("5 s");
+		expect(duration(130_000)).toBe("2 min 10 s");
+		expect(duration(180_000)).toBe("3 min");
+		expect(duration(12.5 * 60_000)).toBe("12 min");
+	});
+
+	it("reads the new reply and the old one, caps each field, takes out filler and subagents it does not know", () => {
+		// The first board's four fields: the headline is the start of "now".
 		expect(
 			parseBoardText('ok {"progress": " 两件做完一件 ", "now": "在跑测试", "confirm": ["", "选数据库", 3]}'),
-		).toEqual({ progress: "两件做完一件", now: "在跑测试", confirm: ["选数据库"] });
+		).toEqual({
+			headline: "在跑测试",
+			progress: "两件做完一件",
+			now: "在跑测试",
+			blocked: "",
+			next: "",
+			confirm: ["选数据库"],
+		});
 		expect(parseBoardText('{"progress": "x", "now": " "}')).toBeUndefined();
 		expect(parseBoardText("no json")).toBeUndefined();
 
+		const reply = parseBoardText(
+			JSON.stringify({
+				headline: "fixer has run one test for 6 min with no output, and it might be stuck for a long while yet",
+				now: "Good news: scout is back. The retry delay reads the clock twice. It also logs twice. Working on it.",
+				blocked: "fixer: `npx vitest test/retry.test.ts` has run 6 min with no new output.",
+				next: "Let's see.",
+				progress: "Cause found; the fix is written but not verified, making progress.",
+				agents: [
+					{ who: "scout", doing: "done: found the clock bug in retry.ts and wrote it up for the main agent" },
+					{ who: "fixer (worker)", doing: "test run, 6 min, no output" },
+					{ who: "ghost", doing: "made up" },
+					{ who: "scout", doing: 3 },
+				],
+				confirm: [],
+				note: "Why the test was flaky: the retry delay reads the clock twice.",
+			}),
+			["scout", "fixer"],
+		);
+		expect(reply).toEqual({
+			headline: "fixer has run one test for 6 min with no output, and it might…",
+			// The opener and the sentence of filler are gone, and two sentences are left.
+			now: "scout is back. The retry delay reads the clock twice.",
+			blocked: "fixer: `npx vitest test/retry.test.ts` has run 6 min with no new output.",
+			next: "",
+			progress: "Cause found; the fix is written but not verified.",
+			confirm: [],
+			note: "Why the test was flaky: the retry delay reads the clock twice.",
+			// Only the names it was told about: "fixer (worker)" is fixer, "ghost" is dropped.
+			doing: { scout: "done: found the clock bug in retry.ts and wrote it…", fixer: "test run, 6 min, no output" },
+		});
+		// Chinese is capped by characters: 24 for the headline.
+		const zh = parseBoardText(
+			JSON.stringify({
+				headline: "复现了：retry 测试连跑 20 次挂了 1 次，第 7 次报少重试了一次所以要改",
+				now: "持续推进中。第 7 次报少重试了一次。",
+			}),
+		);
+		expect(zh?.headline).toBe("复现了：retry 测试连跑 20 次挂了 1 次，第 7 次报少重试了一次…");
+		expect(zh?.now).toBe("第 7 次报少重试了一次。");
+		expect(capWords("在跑 npm test，3 分钟了", 14)).toBe("在跑 npm test，3 分钟了");
+		expect(tidy("改好了 retry.ts，持续推进中。")).toBe("改好了 retry.ts。");
+		// File names keep their dots: a sentence ends only at a mark before a space.
+		expect(tidy("Edited retry.test.ts and src/a.ts. Ran it. Then more.")).toBe(
+			"Edited retry.test.ts and src/a.ts. Ran it.",
+		);
+	});
+
+	it("speaks from fixed sentences without a model, with a headline a client can word from its code", () => {
 		expect(plainBoard(facts)).toEqual({
+			headline: "正在跑测试或检查，看改得对不对。",
+			headlineCode: "now_checking",
 			progress: "清单上 2 件事，做完了 1 件。",
 			now: "正在跑测试或检查，看改得对不对。（在做：有测试）",
+			blocked: "",
+			next: "",
 			confirm: [],
 			confirmCodes: [],
 		});
@@ -283,7 +445,9 @@ describe("board words", () => {
 			needsUser: true,
 			latest: "Done so far.\nPostgres or SQLite?",
 		});
-		expect(english).toEqual({
+		expect(english).toMatchObject({
+			headline: "Stopped and waiting for your reply.",
+			headlineCode: "now_waiting",
 			progress: "No checklist yet.",
 			now: "Stopped and waiting for your reply.",
 			confirm: ["Postgres or SQLite?"],
@@ -295,21 +459,110 @@ describe("board words", () => {
 			confirm: ["It's waiting for your reply."],
 			confirmCodes: ["waiting_reply"],
 		});
+		// What it waits on comes first: a permission, then a stall, then subagents at work.
+		const stalled = plainBoard({ ...facts, stall: { what: "npm test", minutes: 3 } });
+		expect(stalled).toMatchObject({
+			headline: "还在跑 npm test，3 分钟了",
+			headlineCode: "still_running",
+			headlineParams: { what: "npm test", minutes: 3 },
+			blocked: "还在跑 npm test，3 分钟了",
+			blockedCode: "still_running",
+			blockedParams: { what: "npm test", minutes: 3 },
+		});
+		expect(
+			plainBoard({ ...facts, language: "en", stall: { who: "fixer", what: "npx vitest", minutes: 6 } }).headline,
+		).toBe("fixer: npx vitest has run 6 min with no output");
+		expect(
+			plainBoard({ ...facts, asking: { kind: "run a command", summary: "npm publish", sinceMs: 0 } }),
+		).toMatchObject({
+			headline: "在等你允许：npm publish",
+			headlineCode: "waiting_permission",
+			headlineParams: { what: "npm publish" },
+		});
+		expect(plainBoard({ ...facts, language: "en", swarm: "delegate", helpersWorking: 2 })).toMatchObject({
+			headline: "2 subagents are working in parallel",
+			headlineCode: "helpers_working",
+			headlineParams: { count: 2 },
+		});
+		expect(rulesHeadline("now_blocked", {}, "zh")).toBe("在等一件慢的事做完：命令、助手或网络。");
+		expect(rulesHeadline("helpers_working", { count: 1 }, "en")).toBe("1 subagent is working in parallel");
 	});
 
 	it("reads back only board entries it wrote, and shows them in the user's language", () => {
 		const board = parseBoardEntry({ progress: "p", now: "n", confirm: ["c", 1], by: "model", done: 1, total: 2 });
 		expect(board).toMatchObject({ progress: "p", now: "n", confirm: ["c"], by: "model", needsUser: false });
 		expect(board).not.toHaveProperty("news");
+		expect(board).not.toHaveProperty("headline");
 		expect(parseBoardEntry({ progress: "p", now: "n", news: ["edit a.ts -> ok", 2] })?.news).toEqual([
 			"edit a.ts -> ok",
 		]);
 		expect(parseBoardEntry({ now: "n" })).toBeUndefined();
-		expect(describeBoard(board, "zh")).toBe("进展: p\n正在做: n\n需要你确认:\n  - c");
+		// An old board without a headline: "now" stands in for it.
+		expect(describeBoard(board, "zh")).toBe("正在做: n\n进展: p\n需要你确认:\n  - c");
 		expect(describeBoard(undefined, "en")).toContain("Nothing on the board yet");
 		// Greek mu, U+03BC, never the micro sign.
-		expect(boardWidget(board as BoardUpdate, "zh")).toEqual(["\u03bc 看板 · p", "  n", "  要你确认: c"]);
+		expect(boardWidget(board as BoardUpdate, "zh")).toEqual(["\u03bc n", "  要你确认: c"]);
 		expect(boardWidget(board as BoardUpdate, "zh")[0].codePointAt(0)).toBe(0x3bc);
+
+		// The new fields read back, and anything else is left out.
+		const full = parseBoardEntry({
+			headline: "fixer 跑测试 6 分钟没动静",
+			headlineCode: "still_running",
+			headlineParams: { who: "fixer", what: "npx vitest", minutes: 6, junk: [1] },
+			progress: "原因找到了。",
+			now: "scout 回来了。",
+			blocked: "fixer：npx vitest 跑了 6 分钟。",
+			next: "它说再连跑 20 次。",
+			confirm: [],
+			agents: [
+				{ who: "scout", state: "done", doing: "查完了", sinceMs: 1000 },
+				{ who: "fixer", role: "worker", state: "stuck", doing: "跑测试" },
+				{ who: "ghost", state: "dancing", doing: "?" },
+			],
+			updatedAt: 1234,
+		});
+		expect(full).toMatchObject({
+			headline: "fixer 跑测试 6 分钟没动静",
+			headlineCode: "still_running",
+			headlineParams: { who: "fixer", what: "npx vitest", minutes: 6 },
+			blocked: "fixer：npx vitest 跑了 6 分钟。",
+			next: "它说再连跑 20 次。",
+			agents: [
+				{ who: "scout", state: "done", doing: "查完了", sinceMs: 1000 },
+				{ who: "fixer", role: "worker", state: "stuck", doing: "跑测试" },
+			],
+			updatedAt: 1234,
+		});
+		// The terminal: the headline, then what is stuck (or what waits on the person), then the newest account line.
+		const latest: BoardNote = {
+			sequence: 1,
+			at: 1,
+			kind: "helpers",
+			text: "scout 回来了：retry.ts 读了两次时钟",
+			by: "rules",
+		};
+		expect(boardWidget(full as BoardUpdate, "zh", latest)).toEqual([
+			"\u03bc fixer 跑测试 6 分钟没动静",
+			"  卡在: fixer：npx vitest 跑了 6 分钟。",
+			"  · scout 回来了：retry.ts 读了两次时钟",
+		]);
+		expect(boardWidget({ ...(full as BoardUpdate), confirm: ["选数据库", "给个密钥"] }, "en")).toEqual([
+			"\u03bc fixer 跑测试 6 分钟没动静",
+			"  Needs you: 选数据库 (+1)",
+		]);
+		// /board: everything the widget leaves out.
+		expect(describeBoard(full, "en")).toBe(
+			[
+				"fixer 跑测试 6 分钟没动静",
+				"Now: scout 回来了。",
+				"Blocked: fixer：npx vitest 跑了 6 分钟。",
+				"Next: 它说再连跑 20 次。",
+				"Progress: 原因找到了。",
+				"Subagents:",
+				"  - scout (done, 1 s): 查完了",
+				"  - fixer (stuck): 跑测试",
+			].join("\n"),
+		);
 	});
 });
 
@@ -431,7 +684,9 @@ describe("board feature", () => {
 		};
 	}
 
-	const WRITER = "You tell a person who is not a programmer";
+	const WRITER = "You are the voice of a coding session's status board";
+	/** The request's own line at the end of a run (the instructions name it too). */
+	const ENDED = "THE RUN HAS ENDED: sum it up.";
 	/**
 	 * The board writes in the background, so its model call can come between two of the agent's.
 	 * Every queued step routes by who is asking: the writer gets the next writer reply, the agent the next of its own.
@@ -467,7 +722,12 @@ describe("board feature", () => {
 	): Promise<{ harness: Harness; events: KyrnPresentationEvent[]; notes: string[] }> {
 		const events: KyrnPresentationEvent[] = [];
 		const harness = await createHarness({
-			tools: [tool("edit"), tool("bash"), tool("read"), ...(extra.tools ?? [])],
+			// A test's own tool of the same name takes the plain one's place.
+			tools: [
+				...new Map(
+					[tool("edit"), tool("bash"), tool("read"), ...(extra.tools ?? [])].map((each) => [each.name, each]),
+				).values(),
+			],
 			extensionFactories: [
 				createKyrnJudgeExtension({
 					provider: new MockJudgeProvider(responder),
@@ -551,7 +811,7 @@ describe("board feature", () => {
 			fauxAssistantMessage("The importer skips empty files and its tests pass."),
 		];
 		const writer = (request: string) =>
-			request.includes("THE RUN HAS ENDED")
+			request.includes(ENDED)
 				? JSON.stringify({ progress: "Done.", now: "It finished and checked its work.", confirm: [] })
 				: JSON.stringify({ progress: "Halfway.", now: "It changed the importer.", confirm: [] });
 		harness.setResponses(Array.from({ length: 10 }, () => router(agent, writer, asked)));
@@ -566,7 +826,12 @@ describe("board feature", () => {
 		expect(asked[0]).toContain("edit src/importer.ts -> ok");
 		expect(asked.at(-1)).toContain("The importer skips empty files and its tests pass.");
 		expect(asked.at(-1)).toContain("Write in English");
-		expect(events.filter((event) => event.kind === "board.update")).toHaveLength(boards(harness).length);
+		// Every board kept went out to the panel, with when it was made; the rules' headline may have gone out first.
+		const shown = events
+			.filter((event) => event.kind === "board.update")
+			.map((event) => event.payload as BoardUpdate);
+		for (const kept of boards(harness)) expect(shown).toContainEqual(kept);
+		expect(boards(harness).every((kept) => typeof kept.updatedAt === "number" && kept.headline)).toBe(true);
 		// Nothing of the board reached the agent.
 		expect(JSON.stringify(harness.session.messages)).not.toContain("It changed the importer.");
 
@@ -607,7 +872,7 @@ describe("board feature", () => {
 			fauxAssistantMessage("The importer skips empty files."),
 		];
 		const writer = (request: string) =>
-			request.includes("THE RUN HAS ENDED")
+			request.includes(ENDED)
 				? JSON.stringify({ progress: "Done.", now: "It finished.", confirm: [] })
 				: JSON.stringify({ progress: "Halfway.", now: "It is still working.", confirm: [] });
 		harness.setResponses(Array.from({ length: 6 }, () => router(agent, writer, [])));
@@ -667,21 +932,40 @@ describe("board feature", () => {
 		expect(count.reads).toBe(before);
 	});
 
-	it("writes in the app's language when the desktop says which, even one mu has no wording for", async () => {
-		vi.stubEnv("MU_LANG", "ja-JP");
-		const { harness } = await start(reading(() => ({ phase: choice("changing"), needs_user: no, changed: yes })));
-		await harness.session.prompt("/board on");
-		const asked: string[] = [];
-		const agent = [work("edit", { path: "a.ts" }), fauxAssistantMessage("Edited a.ts.")];
-		harness.setResponses(
-			Array.from({ length: 6 }, () =>
-				router(agent, [JSON.stringify({ progress: "半分", now: "a.ts を変更", confirm: [] })], asked),
-			),
-		);
-		await harness.session.prompt("Change a.ts.");
-		await vi.waitFor(() => expect(boards(harness)).toHaveLength(1), { timeout: 5000 });
-		expect(asked[0]).toContain("Write in Japanese.");
-		expect(boards(harness)[0]).toMatchObject({ now: "a.ts を変更", by: "model" });
+	it("writes in the language the person writes in, with the app's language only breaking a tie", async () => {
+		/** The person's messages, one turn each; what the writer was told to write in, and the account's last line. */
+		const run = async (lang: string | undefined, messages: string[], board: Record<string, unknown> = {}) => {
+			vi.stubEnv("MU_LANG", lang);
+			const { harness, events } = await start(
+				reading(() => ({ phase: choice("changing"), needs_user: no, changed: yes })),
+				board,
+			);
+			await harness.session.prompt("/board on");
+			const asked: string[] = [];
+			const agent = messages.flatMap(() => [work("edit", { path: "a.ts" }), fauxAssistantMessage("Edited a.ts.")]);
+			const writer = () => JSON.stringify({ headline: "a.ts", progress: "p", now: "n", confirm: [] });
+			harness.setResponses(Array.from({ length: 6 * messages.length }, () => router(agent, writer, asked)));
+			for (const message of messages) await harness.session.prompt(message);
+			await vi.waitFor(() => expect(boards(harness).at(-1)?.ended).toBe(true), { timeout: 5000 });
+			const tongue = /Write in ([A-Za-z ]+)\./.exec(asked.at(-1) ?? "")?.[1];
+			const lines = notesOf(events).filter((note) => note.by === "rules");
+			return { tongue, line: lines.find((note) => note.code === "changed_file")?.text };
+		};
+		// The person writes Japanese in an English app: the board's words are Japanese; its fixed lines follow the app.
+		expect(await run("en-US", ["a.ts を変更してください"])).toEqual({ tongue: "Japanese", line: "Edited a.ts" });
+		// Chinese in an English app: Chinese words, English fixed lines (the app words them from their codes anyway).
+		expect(await run("en-US", ["把 a.ts 改一下"])).toEqual({ tongue: "Simplified Chinese", line: "Edited a.ts" });
+		// English in a Japanese app: English; a Latin-script message is not Japanese.
+		expect((await run("ja-JP", ["Change a.ts, please."])).tongue).toBe("English");
+		// "ok" tells nothing: the message before it does.
+		expect((await run("zh-TW", ["把 a.ts 改一下", "ok"])).tongue).toBe("Traditional Chinese");
+		// Nothing anyone typed tells: the app's language.
+		expect((await run("de-DE", ["a.ts"])).tongue).toBe("German");
+		// A fixed language wins over all of it.
+		expect(await run("ja-JP", ["a.ts を変更してください"], { language: "zh" })).toEqual({
+			tongue: "Simplified Chinese",
+			line: "改了 a.ts",
+		});
 	});
 
 	it("a reopened session shows the last board again, marked as restored", async () => {
@@ -808,7 +1092,7 @@ describe("board feature", () => {
 		];
 		const writer = (request: string) =>
 			JSON.stringify({
-				progress: request.includes("THE RUN HAS ENDED") ? "All done." : "Found it.",
+				progress: request.includes(ENDED) ? "All done." : "Found it.",
 				now: "x",
 				confirm: [],
 			});
@@ -821,9 +1105,7 @@ describe("board feature", () => {
 		expect(judged[0]).toContain("the agent said: Found it: empty files crash the parser.");
 		const first = boards(harness)[0];
 		expect(first.news).toEqual(["the agent said: Found it: empty files crash the parser."]);
-		expect(asked[0]).toContain(
-			"NEWS SINCE THE LAST UPDATE (picked from what happened, oldest first):\\n- the agent said: Found it",
-		);
+		expect(asked[0]).toContain("NEWS SINCE THE PREVIOUS UPDATE (oldest first):\\n- the agent said: Found it");
 		// The summing up weighs the news picked earlier in the run again, beside what came after.
 		const last = judged.at(-1) ?? "";
 		expect(last.split("\n")[0]).toBe("1. the agent said: Found it: empty files crash the parser.");
@@ -831,10 +1113,8 @@ describe("board feature", () => {
 		// While it worked, what the judge had called routine was not asked about again at the next look.
 		const during = judged.slice(1, -1).join("\n");
 		expect(during).not.toContain("the agent said: Found it");
-		expect(asked.at(-1)).toContain("THE RUN HAS ENDED: sum it up.");
-		expect(asked.at(-1)).toContain(
-			"WHAT MATTERED IN THIS RUN (picked from what happened, oldest first):\\n- the agent said: Found it",
-		);
+		expect(asked.at(-1)).toContain(ENDED);
+		expect(asked.at(-1)).toContain("WHAT MATTERED IN THIS RUN (oldest first):\\n- the agent said: Found it");
 		expect(boards(harness).at(-1)).toMatchObject({ progress: "All done.", ended: true });
 	});
 
@@ -1099,8 +1379,10 @@ describe("board feature", () => {
 		const stateOf = (request: JudgeRequest | undefined) => (request?.state ?? {}) as Record<string, unknown>;
 		// A look while they worked, from the clock: the judge saw who was out and what each was doing.
 		const during = judged.find((request) => "sub_agents" in stateOf(request));
-		expect(String(stateOf(during).sub_agents)).toContain("delegate, 2 subagents");
-		expect(String(stateOf(during).sub_agents)).toContain("scout (scout)");
+		expect(String(stateOf(during).sub_agents)).toMatch(/^delegate, sent \d+ s ago, 2 subagents \(0 finished\):/);
+		// By name, as the writer must report them; the role only when it is not the name.
+		expect(String(stateOf(during).sub_agents)).toContain("\n- scout: ");
+		expect(String(stateOf(during).sub_agents)).toContain("\n- fixer (scout): ");
 		const shown = boards(harness).find((update) => !update.ended && update.now.includes("Subagents"));
 		expect(shown?.now).toBe("Subagents are working on parts of it in parallel; waiting for them to finish.");
 		// Sending them out and their coming back are events, in a person's words, not the JSON of the call.
@@ -1294,7 +1576,7 @@ describe("board feature", () => {
 		// The writer adds a line to the account only when the news gives it something to tell.
 		const writer = (request: string) =>
 			JSON.stringify(
-				request.includes("THE RUN HAS ENDED")
+				request.includes(ENDED)
 					? { progress: "All done.", now: "Finished.", confirm: [], note: "It fixed the crash on empty files." }
 					: request.includes("- the agent said: Found it")
 						? {
@@ -1324,12 +1606,10 @@ describe("board feature", () => {
 		// writer saw the account so far; the end summed up.
 		expect(asked).toHaveLength(3);
 		expect(asked[0]).toContain("- (nothing new)");
-		expect(asked[1]).toContain(
-			"NEWS SINCE THE LAST UPDATE (picked from what happened, oldest first):\\n- the agent said: Found it",
-		);
+		expect(asked[1]).toContain("NEWS SINCE THE PREVIOUS UPDATE (oldest first):\\n- the agent said: Found it");
 		expect(asked[1]).toContain("ALREADY ON THE ACCOUNT");
 		expect(asked[1]).toContain("- Looked at 1 file or location");
-		expect(asked[2]).toContain("THE RUN HAS ENDED");
+		expect(asked[2]).toContain(ENDED);
 	});
 
 	it("quotes the agent's own words when the writer does not answer, so the account still has the finding", async () => {
@@ -1357,6 +1637,417 @@ describe("board feature", () => {
 		expect(lines[2]).toBe("ended:Stopped.");
 		expect(lines).toHaveLength(3);
 	});
+
+	it("tells the writer why a check failed, from its output, without the credential in it", async () => {
+		const token = "ghp_AbCdEfGhIjKlMnOpQrStUvWxYz0123456789";
+		const failing: AgentTool = {
+			...tool("bash"),
+			execute: async () => {
+				throw new Error(
+					[
+						" RUN  v4.1.11 /work/app",
+						" ✓ test/a.test.ts (3 tests) 12ms",
+						" FAIL  test/retry.test.ts > retries 3 times",
+						"AssertionError: expected 3 attempts, received 2",
+						`Error: the reporter could not upload with ${token}`,
+						" Test Files  1 failed | 1 passed (2)",
+					].join("\n"),
+				);
+			},
+		};
+		const { harness, events } = await start(
+			reading(() => ({ phase: choice("fixing"), needs_user: no, changed: yes })),
+			{ everyTools: 100 },
+			undefined,
+			{},
+			{ tools: [failing] },
+		);
+		await harness.session.prompt("/board on");
+		const asked: string[] = [];
+		const agent = [
+			fauxAssistantMessage(
+				[
+					fauxText("Running the retry test."),
+					fauxToolCall("bash", { command: "npx vitest --run test/retry.test.ts" }),
+				],
+				{ stopReason: "toolUse" },
+			),
+			fauxAssistantMessage("It fails: one attempt short."),
+		];
+		const writer = (request: string) =>
+			JSON.stringify(
+				request.includes(ENDED)
+					? { headline: "Stopped: the retry test fails", progress: "p", now: "n", confirm: [] }
+					: { headline: "Running the retry test", progress: "p", now: "It runs the retry test.", confirm: [] },
+			);
+		harness.setResponses(Array.from({ length: 10 }, () => router(agent, writer, asked)));
+		await harness.session.prompt("test/retry.test.ts 在 CI 上时不时挂，帮我查一下。");
+		await vi.waitFor(() => expect(boards(harness).at(-1)?.ended).toBe(true), { timeout: 5000 });
+		const all = asked.join("\n");
+		// Why it failed, from its own output: the error lines, not the passing ones.
+		expect(all).toContain(
+			'bash npx vitest --run test/retry.test.ts -> error: \\"FAIL test/retry.test.ts > retries 3 times | AssertionError: expected 3 attempts, received 2 | Error: the reporter could not upload with [redacted]\\"',
+		);
+		expect(all).not.toContain(token);
+		// Taken out where the excerpt is made: the judge and the panel get it too.
+		const news = boards(harness).flatMap((kept) => kept.news ?? []);
+		expect(news.join("\n")).toContain("[redacted]");
+		expect(JSON.stringify(boards(harness))).not.toContain(token);
+		// The second request shows what the person saw: the first board's words.
+		expect(asked.at(-1)).toContain(
+			"PREVIOUS UPDATE (what the person sees now):\\n  headline: Running the retry test",
+		);
+		expect(asked.at(-1)).toContain("Write in Simplified Chinese.");
+		const failed = notesOf(events).find((note) => note.code === "check_failed");
+		expect(failed).toMatchObject({ failed: true, params: { command: "npx vitest --run test/retry.test.ts" } });
+		expect(failureExcerpt({ content: [{ type: "text", text: "\u001b[31mError: boom\u001b[0m" }] })).toBe(
+			"Error: boom",
+		);
+		expect(failureExcerpt({ content: [{ type: "text", text: "a\nb\nc" }] })).toBe("b | c");
+		expect(failureExcerpt({ content: [] })).toBeUndefined();
+	});
+
+	it("keeps a permission on the board while a look that started before it was asked writes", async () => {
+		vi.stubEnv("MU_PERMISSIONS", "ask");
+		let release: () => void = () => undefined;
+		const gate = new Promise<void>((resolve) => {
+			release = resolve;
+		});
+		const asked: string[] = [];
+		let events: KyrnPresentationEvent[] = [];
+		const updates = () =>
+			events.filter((event) => event.kind === "board.update").map((event) => event.payload as BoardUpdate);
+		let whilePicking: BoardUpdate | undefined;
+		const started = await start(
+			reading(() => ({ phase: choice("checking"), needs_user: no, changed: yes })),
+			{},
+			undefined,
+			{
+				// The picker is open: the slow writer answers now, and its board must still say what waits on the person.
+				select: async (_title: string, options: string[]) => {
+					release();
+					await vi.waitFor(() => expect(updates().some((update) => update.by === "model")).toBe(true), {
+						timeout: 5000,
+					});
+					whilePicking = updates().at(-1);
+					return options[0];
+				},
+			},
+			{ only: ["permissions"] },
+		);
+		events = started.events;
+		const { harness } = started;
+		await harness.session.prompt("/board on");
+		const agent = [
+			fauxAssistantMessage([fauxText("Running the tests now."), fauxToolCall("bash", { command: "npm test" })], {
+				stopReason: "toolUse",
+			}),
+			fauxAssistantMessage("Tests pass."),
+		];
+		const slow: FauxResponseFactory = async (context) => {
+			const request = JSON.stringify(context.messages);
+			if (!request.includes(WRITER)) return agent.shift() ?? fauxAssistantMessage("no more agent replies");
+			asked.push(request);
+			if (asked.length === 1) await gate;
+			return fauxAssistantMessage(
+				JSON.stringify({
+					headline: "It is running the tests",
+					progress: "p",
+					now: "It runs npm test.",
+					confirm: [],
+				}),
+			);
+		};
+		harness.setResponses(Array.from({ length: 8 }, () => slow));
+		await harness.session.prompt("Run the tests.");
+		await vi.waitFor(() => expect(boards(harness).at(-1)?.ended).toBe(true), { timeout: 8000 });
+		// The writer had not heard of the ask, and its board went out while the picker was open: the ask stayed.
+		expect(asked[0]).toContain("WAITING FOR THE PERSON: no");
+		expect(whilePicking).toMatchObject({
+			by: "model",
+			now: "It runs npm test.",
+			needsUser: true,
+			phase: "waiting",
+			confirm: ["mu wants to run a command: npm test. It's waiting for your permission."],
+			headline: "Waiting for your permission: npm test",
+			headlineCode: "waiting_permission",
+			headlineParams: { what: "npm test" },
+		});
+		// The ask itself, at once and by rule, says the agent waits: not the stage it was in before.
+		const ask = updates().find((update) => update.headlineCode === "waiting_permission");
+		expect(ask).toMatchObject({ phase: "waiting", needsUser: true });
+		// Answered: off the board.
+		const after = updates().slice(updates().indexOf(whilePicking as BoardUpdate) + 1);
+		expect(after[0]).toMatchObject({ needsUser: false, confirm: [] });
+		expect(after[0].headlineCode).not.toBe("waiting_permission");
+	});
+
+	/** A delegate like the real one: it streams snapshots while its subagents work and returns the last one. */
+	const streamingDelegate = (dir: string, limits: Record<string, number> = {}): AgentTool => ({
+		name: "delegate",
+		label: "delegate",
+		description: "delegate",
+		parameters: Type.Object({ tasks: Type.Array(Type.Object({ title: Type.String() })) }),
+		execute: async (_id, params, signal, onUpdate) => {
+			const run = new SwarmRun<object>({
+				kind: "delegate",
+				title: "2 tasks",
+				dir,
+				limits,
+				bees: (params as { tasks: { title: string }[] }).tasks.map((task) => ({
+					name: task.title,
+					task: { title: task.title, instructions: "look" },
+					assignment: {},
+					role: task.title === "fixer" ? "worker" : "scout",
+				})),
+			});
+			run.onChange = () =>
+				onUpdate?.({ content: [{ type: "text", text: "…" }], details: { snapshot: run.snapshot() } });
+			const outcomes = await run.run(async (task, _assignment, stop, _env, observer) => {
+				observer?.event({ type: "agent_start" });
+				if (task.title === "scout") {
+					await new Promise((resolve) => setTimeout(resolve, 300));
+					observer?.event({
+						type: "message_end",
+						message: {
+							role: "assistant",
+							content: [{ type: "text", text: "backoff() reads Date.now() twice." }],
+						},
+					});
+					return "backoff() reads Date.now() twice.";
+				}
+				// fixer starts a test in watch mode and never says anything again: the watchdog stops it.
+				observer?.event({
+					type: "tool_execution_start",
+					toolName: "bash",
+					args: { command: "npx vitest test/retry.test.ts" },
+				});
+				return new Promise<string>((_resolve, reject) =>
+					stop?.addEventListener("abort", () => reject(new Error("stopped"))),
+				);
+			}, signal);
+			return {
+				content: [{ type: "text", text: outcomes.map((outcome) => outcome.report).join("\n") }],
+				details: { snapshot: run.snapshot(), reports: outcomes.map((outcome) => outcome.report) },
+			};
+		},
+	});
+
+	it("tells each subagent's end as it happens, names the one that timed out, and lists who is doing what", async () => {
+		const dir = mkdtempSync(join(tmpdir(), "mu-board-helpers-"));
+		temporary.push(dir);
+		const judged: string[] = [];
+		const { harness, events } = await start(
+			(request) => {
+				if ("phase" in request.questions) judged.push(eventsOf(request));
+				return reading(() => ({ phase: choice("understanding"), needs_user: no, changed: yes }))(request);
+			},
+			{},
+			undefined,
+			{},
+			{ tools: [streamingDelegate(dir, { toolStallSeconds: 1, beeMinutes: 0 })] },
+		);
+		await harness.session.prompt("/board on");
+		const asked: string[] = [];
+		const agent = [
+			fauxAssistantMessage([fauxToolCall("delegate", { tasks: [{ title: "scout" }, { title: "fixer" }] })], {
+				stopReason: "toolUse",
+			}),
+			fauxAssistantMessage("scout found it; fixer timed out."),
+		];
+		// The writer names a subagent the facts never mentioned: that one is dropped.
+		const writer = () =>
+			JSON.stringify({
+				headline: "scout is back, fixer is still on the test",
+				progress: "p",
+				now: "n",
+				agents: [
+					{ who: "fixer", doing: "running the retry test" },
+					{ who: "ghost", doing: "haunting" },
+				],
+				confirm: [],
+			});
+		harness.setResponses(Array.from({ length: 12 }, () => router(agent, writer, asked)));
+		await harness.session.prompt("Find why retry.test.ts is flaky.");
+		await vi.waitFor(() => expect(boards(harness).at(-1)?.ended).toBe(true), { timeout: 10_000 });
+
+		const lines = notesOf(events).filter((note) => note.kind === "helpers");
+		expect(lines.map((note) => `${note.code}:${note.who ?? ""}:${note.text}`)).toEqual([
+			"helpers_sent::Started 2 subagents: scout, fixer",
+			"helper_done:scout:scout is back: backoff() reads Date.now() twice.",
+			"helper_failed:fixer:fixer timed out",
+			"helpers_back::2 subagents finished, 1 with errors",
+		]);
+		expect(lines[2]).toMatchObject({ failed: true, params: { name: "fixer", reason: "timed_out" } });
+		expect(String(lines[2].params?.detail)).toContain("no sign of life from its bash call");
+		expect(lines[3]).toMatchObject({ failed: true, params: { count: 2, failed: 1 } });
+		// Each end was news for the judge while the delegation still ran, not only once it returned.
+		const scoutBack = judged.findIndex((text) =>
+			text.includes("scout came back, reporting: backoff() reads Date.now() twice."),
+		);
+		const fixerOut = judged.findIndex((text) => text.includes("fixer timed out: no sign of life"));
+		expect(scoutBack).toBeGreaterThanOrEqual(0);
+		expect(fixerOut).toBeGreaterThan(scoutBack);
+		expect(judged.slice(0, fixerOut + 1).join("\n")).not.toContain("delegate 2 subagents: scout, fixer ->");
+		// The writer was told who is out, by name, and the board lists them by rule with its words for a known name.
+		expect(asked.some((request) => request.includes("SUBAGENTS:\\ndelegate, sent"))).toBe(true);
+		const withAgents = events
+			.filter((event) => event.kind === "board.update")
+			.map((event) => event.payload as BoardUpdate)
+			.find((update) => update.by === "model" && update.agents?.some((agent) => agent.state === "done"));
+		expect(withAgents?.agents?.map((agent) => agent.who)).toEqual(["scout", "fixer"]);
+		expect(withAgents?.agents?.[0]).not.toHaveProperty("role");
+		expect(withAgents?.agents?.[0]).toMatchObject({
+			who: "scout",
+			state: "done",
+			doing: "backoff() reads Date.now() twice.",
+		});
+		expect(withAgents?.agents?.[1]).toMatchObject({
+			who: "fixer",
+			role: "worker",
+			state: "working",
+			doing: "running the retry test",
+		});
+		expect(typeof withAgents?.agents?.[1].sinceMs).toBe("number");
+		// Without subagents at work, no list.
+		expect(boards(harness).at(-1)).not.toHaveProperty("agents");
+	}, 20_000);
+
+	it("says a long call is still running, on one line that grows, with one look at 1, 3 and 10 minutes", async () => {
+		let release: () => void = () => undefined;
+		const gate = new Promise<void>((resolve) => {
+			release = resolve;
+		});
+		let running = false;
+		const slowBash: AgentTool = {
+			...tool("bash"),
+			execute: async () => {
+				running = true;
+				await gate;
+				return { content: [{ type: "text", text: "ok" }], details: {} };
+			},
+		};
+		const judged: string[] = [];
+		const { harness, events } = await start(
+			(request) => {
+				if ("phase" in request.questions) judged.push(eventsOf(request));
+				return reading(() => ({ phase: choice("blocked"), needs_user: no, changed: yes }))(request);
+			},
+			{ everyTools: 100 },
+			undefined,
+			{},
+			{ tools: [slowBash] },
+		);
+		await harness.session.prompt("/board on");
+		const asked: string[] = [];
+		const agent = [work("bash", { command: "npm run e2e" }), fauxAssistantMessage("The e2e tests pass.")];
+		const writer = () =>
+			JSON.stringify({ headline: "e2e tests are running", progress: "p", now: "n", blocked: "", confirm: [] });
+		harness.setResponses(Array.from({ length: 12 }, () => router(agent, writer, asked)));
+		vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "Date"], now: Date.now() });
+		try {
+			const done = harness.session.prompt("Run the e2e tests.");
+			await vi.waitFor(() => expect(running).toBe(true), { timeout: 5000 });
+			const stallLooks = () => judged.filter((text) => text.includes("is still running")).length;
+			// The clock ticks every 15 s: each step is crossed at the first tick past it.
+			let at = 0;
+			for (const [seconds, looks] of [
+				[75, 1],
+				[195, 2],
+				[615, 3],
+				[1500, 3],
+			]) {
+				await vi.advanceTimersByTimeAsync((seconds - at) * 1000);
+				at = seconds;
+				await vi.waitFor(() => expect(stallLooks()).toBe(looks), { timeout: 5000 });
+			}
+			release();
+			await done;
+		} finally {
+			vi.useRealTimers();
+		}
+		await vi.waitFor(() => expect(boards(harness).at(-1)?.ended).toBe(true), { timeout: 5000 });
+		const stalls = notesOf(events).filter((note) => note.code === "still_running");
+		expect(stalls.map((note) => note.params?.minutes)).toEqual([1, 3, 10]);
+		expect(new Set(stalls.map((note) => `${note.sequence}:${note.at}`)).size).toBe(1);
+		expect(stalls.at(-1)?.text).toBe("Still running npm run e2e, 10 min in");
+		// The writer heard what is in flight and for how long, and the board says what is stuck when it did not.
+		expect(
+			asked.some((request) => request.includes("IN FLIGHT:\\n- main agent: bash `npm run e2e` running for 10 min")),
+		).toBe(true);
+		const shown = events
+			.filter((event) => event.kind === "board.update")
+			.map((event) => event.payload as BoardUpdate);
+		const late = shown.filter((update) => !update.ended && update.by === "model").at(-1);
+		expect(late).toMatchObject({
+			phase: "blocked",
+			headline: "e2e tests are running",
+			blocked: "Still running npm run e2e, 10 min in",
+			blockedCode: "still_running",
+			blockedParams: { what: "npm run e2e", minutes: 10 },
+		});
+		// Before the writer's words, the rules' headline went out at once.
+		expect(shown.some((update) => update.headlineCode === "still_running")).toBe(true);
+		// Once the call ended, its line stays in the account but grows no more, and the step has its own line.
+		expect(notesOf(events).at(-2)?.code).toBe("ran_command");
+	}, 20_000);
+
+	it("writes the board even when something new keeps arriving while the judge reads, once the board is stale", async () => {
+		const writes = async (board: Record<string, unknown>): Promise<number> => {
+			let reads = 0;
+			let answered = 0;
+			let harness: Harness | undefined;
+			// The agent reads until the judge has answered four looks, so every look comes while it works.
+			const read: AgentTool = {
+				...tool("read"),
+				execute: async () => {
+					await vi.waitFor(() => expect(answered).toBe(4), { timeout: 5000 });
+					await new Promise((resolve) => setTimeout(resolve, 100));
+					return { content: [{ type: "text", text: "ok" }], details: {} };
+				},
+			};
+			const started = await start(
+				async (request): Promise<Record<string, Answer>> => {
+					if (!("phase" in request.questions)) return {};
+					reads++;
+					await new Promise((resolve) => setTimeout(resolve, 5));
+					// Every look but the fourth: the agent says something more while the judge reads.
+					if (reads <= 3) {
+						await harness?.session.extensionRunner.emitMessageEnd({
+							type: "message_end",
+							message: fauxAssistantMessage([fauxText(`Still looking (${reads}).`)], { stopReason: "toolUse" }),
+						});
+					}
+					answered++;
+					return { phase: choice("understanding"), needs_user: no, changed: yes };
+				},
+				{ everyTools: 100, ...board },
+				undefined,
+				{},
+				{ tools: [read] },
+			);
+			harness = started.harness;
+			await harness.session.prompt("/board on");
+			const asked: string[] = [];
+			const agent = [
+				fauxAssistantMessage([fauxText("Let me look."), fauxToolCall("read", { path: "a.ts" })], {
+					stopReason: "toolUse",
+				}),
+				fauxAssistantMessage("Done looking."),
+			];
+			const writer = () =>
+				JSON.stringify({ headline: `Look ${asked.length}`, progress: "p", now: "n", confirm: [] });
+			harness.setResponses(Array.from({ length: 10 }, () => router(agent, writer, asked)));
+			await harness.session.prompt("Look at a.ts.");
+			await vi.waitFor(() => expect(boards(started.harness).at(-1)?.ended).toBe(true), { timeout: 5000 });
+			return asked.filter((request) => !request.includes(ENDED)).length;
+		};
+		// The first board is written although more came in while the judge read: there was none to fall back on.
+		// With a fresh board, a look overtaken by more leaves the writing to the one after it.
+		expect(await writes({ maxStaleMs: 60_000 })).toBe(2);
+		// Once the board the person sees is older than maxStaleMs, every look writes.
+		expect(await writes({ maxStaleMs: 0 })).toBe(4);
+	});
 });
 
 describe("board and subagents", () => {
@@ -1369,28 +2060,51 @@ describe("board and subagents", () => {
 		);
 		expect(describeSwarmCall("bash", { command: "ls" })).toBeUndefined();
 
-		const now = 1000;
+		const start = 1_000_000;
+		const now = start + 5 * 60_000;
 		const bee = (name: string, status: BeeState["status"], extra: Partial<BeeState> = {}): BeeState => ({
-			...newBee(name, now, { role: "scout" }),
+			...newBee(name, start, { role: "worker" }),
+			startedAt: start,
 			status,
 			...extra,
 		});
 		const snapshot = {
 			kind: "delegate" as const,
-			title: "3 tasks",
-			startedAt: now,
+			title: "5 tasks",
+			startedAt: start,
 			now,
 			dir: "/tmp/x",
 			bees: [
-				bee("scout", "tool", { tool: { name: "read", summary: "src/a.ts", startedAt: now } }),
-				bee("fixer", "done", { said: "Fixed it." }),
+				// Six minutes on one command, nothing out of it for as long, one step failed before.
+				bee("fixer", "tool", {
+					tool: { name: "bash", summary: "bash npx vitest test/retry.test.ts", startedAt: now - 362_000 },
+					lastEventAt: now - 360_000,
+					toolErrors: 1,
+				}),
+				bee("scout", "done", {
+					role: "scout",
+					endedAt: start + 2 * 60_000,
+					finals: ["## Found it\nbackoff() reads Date.now() twice, so the second attempt waits too little."],
+				}),
 				bee("tests", "queued"),
+				bee("lint", "timed-out", { endedAt: now, error: "no sign of life from its bash call for 15m00s" }),
+				bee("docs", "retrying", {
+					retry: { attempt: 2, maxAttempts: 3, delayMs: 1000, message: "429 rate limited" },
+				}),
 			],
 		};
-		expect(describeSwarms([snapshot])).toBe(
-			"delegate, 3 subagents (1 finished): scout (scout): read src/a.ts; fixer (scout): back, said: Fixed it.; tests (scout): waiting for a slot",
+		expect(describeSwarms([snapshot], now)).toBe(
+			[
+				"delegate, sent 5 min ago, 5 subagents (2 finished):",
+				"- fixer (worker): running bash `npx vitest test/retry.test.ts` for 6 min 2 s; no new output for 6 min; 1 failed step",
+				'- scout: back after 2 min; reported: "Found it"',
+				"- tests (worker): waiting for a slot",
+				"- lint (worker): timed out after 5 min: no sign of life from its bash call for 15m00s",
+				"- docs (worker): retrying after an error (attempt 2 of 3): 429 rate limited",
+			].join("\n"),
 		);
 		expect(describeSwarms([])).toBeUndefined();
+		expect(firstLine("(Warning: withheld text.)\n## Found it\nmore")).toBe("Found it");
 	});
 
 	it("tells the writer and the fixed sentences about the helpers", () => {
@@ -1401,10 +2115,10 @@ describe("board and subagents", () => {
 			needsUser: false,
 			steps: [],
 			latest: "",
-			swarm: "delegate, 2 subagents (0 finished): a (scout): starting; b (scout): starting",
+			swarm: "delegate, sent 1 s ago, 2 subagents (0 finished):\n- a (scout): thinking, 1 s in\n- b (scout): thinking, 1 s in",
 		};
 		expect(narratorRequest(facts)).toContain(
-			"HELPERS IT SENT OUT TO WORK IN PARALLEL (what each one is doing):\ndelegate, 2 subagents",
+			"SUBAGENTS:\ndelegate, sent 1 s ago, 2 subagents (0 finished):\n- a (scout)",
 		);
 		expect(plainBoard(facts).now).toBe(
 			"Subagents are working on parts of it in parallel; waiting for them to finish.",
@@ -1422,6 +2136,27 @@ describe("board account", () => {
 		expect(noteText("check_failed", { command: "npm test" }, "zh")).toBe("检查没通过：npm test");
 		expect(noteText("helpers_sent", { count: 1, titles: "scout" }, "en")).toBe("Started 1 subagent: scout");
 		expect(noteText("helpers_back", { count: 2 }, "zh")).toBe("2 个助手回来了");
+		expect(noteText("helpers_back", { count: 2, failed: 0 }, "en")).toBe("2 subagents finished");
+		expect(noteText("helpers_back", { count: 2, failed: 1 }, "zh")).toBe("回来了 2 个，1 个出错");
+		expect(noteText("helpers_back", { count: 2, failed: 1 }, "en")).toBe("2 subagents finished, 1 with errors");
+		expect(noteText("helper_done", { name: "scout", summary: "retry.ts 读了两次时钟" }, "zh")).toBe(
+			"scout 回来了：retry.ts 读了两次时钟",
+		);
+		expect(noteText("helper_done", { name: "scout", summary: "" }, "en")).toBe("scout is back");
+		expect(
+			["failed", "timed_out", "stopped"].map((reason) => noteText("helper_failed", { name: "fixer", reason }, "zh")),
+		).toEqual(["fixer 出错了", "fixer 超时了", "fixer 被停了"]);
+		expect(noteText("helper_failed", { name: "fixer", reason: "timed_out" }, "en")).toBe("fixer timed out");
+		expect(noteText("still_running", { what: "npm test", minutes: 3 }, "zh")).toBe("还在跑 npm test，3 分钟了");
+		expect(noteText("still_running", { what: "npm test", minutes: 3 }, "en")).toBe(
+			"Still running npm test, 3 min in",
+		);
+		expect(noteText("still_running", { who: "fixer", what: "npx vitest", minutes: 6 }, "zh")).toBe(
+			"fixer 跑 npx vitest 6 分钟没动静",
+		);
+		expect(noteText("still_running", { who: "fixer", what: "npx vitest", minutes: 6 }, "en")).toBe(
+			"fixer: npx vitest has run 6 min with no output",
+		);
 		expect(noteText("goal_round", { round: 2, reason: reasonTail("tests still fail", "en") }, "en")).toBe(
 			"The goal isn't met yet, so mu kept the agent working (round 2): tests still fail",
 		);
@@ -1455,12 +2190,14 @@ describe("board account", () => {
 		expect(parseBoardNote({ at: 1 })).toBeUndefined();
 		const board = parseBoardEntry({ progress: "p", now: "n", log: [note, "junk"] });
 		expect(board?.log).toEqual([note]);
-		expect(describeBoard(board, "zh")).toBe("进展: p\n正在做: n\n它做了什么:\n  · 检查通过了：npm test");
+		expect(describeBoard(board, "zh")).toBe("正在做: n\n进展: p\n它做了什么:\n  · 检查通过了：npm test");
 		expect(boardWidget(board as BoardUpdate, "en", parseBoardNote(note))).toEqual([
-			"\u03bc board · p",
-			"  n",
+			"\u03bc n",
 			"  · 检查通过了：npm test",
 		]);
+		// A line about a subagent says which one.
+		expect(parseBoardNote({ ...note, who: "scout" })).toMatchObject({ who: "scout" });
+		expect(parseBoardNote({ ...note, who: "" })).not.toHaveProperty("who");
 		expect(
 			parseBoardText('{"progress": "p", "now": "n", "confirm": [], "note": " It found the cause. "}')?.note,
 		).toBe("It found the cause.");

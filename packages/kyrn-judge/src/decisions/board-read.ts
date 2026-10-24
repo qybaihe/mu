@@ -18,7 +18,8 @@ export type BoardPhase =
 	| "fixing"
 	| "waiting"
 	| "wrapping_up"
-	| "stuck";
+	| "stuck"
+	| "blocked";
 
 export interface BoardStep {
 	readonly tool: string;
@@ -27,6 +28,8 @@ export interface BoardStep {
 	readonly failed: boolean;
 	/** A test run, build, type check or linter. */
 	readonly check: boolean;
+	/** For a step that failed: the first error-like lines of its output, credentials taken out. */
+	readonly detail?: string;
 }
 
 /** Something that happened, for the judge to weigh: a step, something the agent said, an item ticked. */
@@ -36,6 +39,8 @@ export interface BoardEvent {
 	readonly text: string;
 	readonly failed?: boolean;
 	readonly check?: boolean;
+	/** Why it failed, as its output said: the first error-like lines, credentials taken out. */
+	readonly detail?: string;
 }
 
 export interface BoardItem {
@@ -62,6 +67,10 @@ export interface BoardInput {
 	readonly last?: { readonly phase?: BoardPhase; readonly focus?: string; readonly now: string };
 	/** Sub-agents at work right now, one line each: while they work the agent takes no step of its own. */
 	readonly swarm?: string;
+	/** What is under way and for how long: the tool call in flight, background jobs, waits on the person or the judge. */
+	readonly inFlight?: readonly string[];
+	/** A tool call or a subagent has gone a minute or more without finishing or a sign of life. */
+	readonly stalled?: boolean;
 }
 
 export type BoardReading = {
@@ -83,7 +92,9 @@ export const MAX_KEY = 6;
 
 /** One line, as the judge and the writer read it. */
 export const describeEvent = (event: BoardEvent): string =>
-	`${event.kind === "said" ? "the agent said: " : event.kind === "ticked" ? "item done: " : ""}${event.text}`;
+	`${event.kind === "said" ? "the agent said: " : event.kind === "ticked" ? "item done: " : ""}${event.text}${
+		event.detail ? `: "${event.detail}"` : ""
+	}`;
 const eventLine = (event: BoardEvent, index: number) => `${index + 1}. ${describeEvent(event)}`;
 
 /** By rule, when the judge cannot pick: failures, checks, items done, and the last thing the agent said. */
@@ -108,10 +119,13 @@ const PHASES: Record<BoardPhase | "other", string> = {
 	waiting: "Stopped, waiting for the user",
 	wrapping_up: "Finished its work and summing up",
 	stuck: "Repeating itself or going in circles",
+	blocked: "Waiting on something other than the user: a long command, a subagent, the judge, the network",
 	other: "Cannot tell",
 };
 
-const stepLine = (step: BoardStep) => `${step.tool} ${step.what} -> ${step.failed ? "error" : "ok"}`;
+/** One step as the judge and the writer read it: `bash npm test -> error: "expected 3, received 2"`. */
+export const stepLine = (step: BoardStep): string =>
+	`${step.tool} ${step.what} -> ${step.failed ? "error" : "ok"}${step.detail ? `: "${step.detail}"` : ""}`;
 const choiceOf = (answer: Answer | undefined) => (answer?.type === "choice" ? pickChoice(answer) : undefined);
 const EVENT_KINDS = {
 	key: "News the person would want: a result, a finding, a decision, a failure, a check passing or failing, an item done",
@@ -128,6 +142,7 @@ export function asksSomething(text: string): boolean {
 /** The phase by rule, when there is no judge: the kind of the last step, or how the run ended. */
 export function phaseByRule(input: BoardInput): BoardPhase {
 	if (input.ended) return asksSomething(input.latest) ? "waiting" : "wrapping_up";
+	if (input.stalled) return "blocked";
 	const last = input.steps.at(-1);
 	if (!last) return "understanding";
 	if (last.check) return last.failed ? "fixing" : "checking";
@@ -141,7 +156,9 @@ export const boardRead = defineDecision({
 	id: "board.read",
 	// 2: the judge also picks, among what happened, the news the writer is given. 3: it sees the sub-agents at work.
 	// 4: needs_user only once the agent stopped; unsure about a change with nothing new is no change.
-	version: 4,
+	// 5: a phase for waiting on something other than the user, what is in flight and for how long, why a step
+	// failed, and a subagent back or stuck counts as a change.
+	version: 5,
 	cacheImpact: "none",
 	latency: "background",
 	capabilities: "relate",
@@ -152,7 +169,7 @@ export const boardRead = defineDecision({
 			phase: {
 				type: "choice",
 				instructions:
-					"What is the agent doing right now, judging by `steps`, `latest` and, when present, `sub_agents`?",
+					"What is the agent doing right now, judging by `steps`, `latest` and, when present, `sub_agents` and `in_flight`?",
 				criteria: PHASES,
 			},
 		};
@@ -186,7 +203,7 @@ export const boardRead = defineDecision({
 			questions.changed = {
 				type: "boolean",
 				instructions:
-					"Compared with `last_board`, has something happened that the user would want to hear: a new phase, an item finished, a failure, a question to them?",
+					"Compared with `last_board`, has something happened that the user would want to hear: a new phase, an item finished, a failure, a subagent back, failed or stuck, a long wait, a question to them?",
 			};
 		}
 		return questions;
@@ -202,6 +219,7 @@ export const boardRead = defineDecision({
 			latest: input.latest.slice(0, 800),
 			agent_stopped: input.ended,
 			...(input.swarm ? { sub_agents: input.swarm.slice(0, 1200) } : {}),
+			...(input.inFlight?.length ? { in_flight: input.inFlight.join("\n").slice(0, 600) } : {}),
 			...(input.events?.length
 				? { events: input.events.slice(-MAX_EVENTS).map(eventLine).join("\n").slice(0, 6000) }
 				: {}),

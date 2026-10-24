@@ -28,7 +28,7 @@ export class Preferences {
       judge: Array.isArray(judge.tiers) ? judge.tiers.join(',') : 'jev',
       mode: object(judge.modes).default || 'shadow',
     };
-    const judges = [...new Set(['jev', 'jev-direct', 'jev-gateway', 'laya', ...Object.keys(object(judge.judges))])];
+    const judges = [...new Set(['jev', 'jev-direct', 'jev-gateway', ...Object.keys(object(judge.judges))])];
     return { defaults: { ...inherited, ...object(saved.defaults) }, projects: object(saved.projects), judges };
   }
   effective(cwd) {

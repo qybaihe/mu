@@ -11,13 +11,13 @@ import type { JsonValue } from "./types.ts";
  *
  * - `gateway`: a judge model behind the Vercel AI Gateway (Jev).
  * - `clm`:     CLM-8B behind `clm-serve`, which answers the same questions Jev does.
- * - `local`:   the Laya sidecar started by `mu judge start`.
  * - `http`:    any endpoint that takes `{state, questions}` and returns `{answers}`.
  * - `llm`:     a generative model from the host's model registry, prompted to answer as JSON.
  * - `classifier`: a classifier model from the host's model catalog (Jev on OpenCode Zen or Cloudflare, Clef, the
  *              System One models on OpenRouter, a llama.cpp classifier), reached with the host's own credentials.
  * - `logprob`: a chat model behind an OpenAI-compatible API (Nemotron on Nebius Token Factory, a vLLM server), its
  *              probabilities read off the first answer token.
+ * - `openai`:  OpenAI's decision model (`gpt-6-luna`) through its Decisions API, with an OpenAI API key.
  * - `mock`:    neutral answers, for tests and offline work.
  */
 export interface JudgeConfig {
@@ -28,7 +28,8 @@ export interface JudgeConfig {
 	 * CLOUDFLARE_ACCOUNT_ID are, else the Vercel AI Gateway with the key pi keeps for it. `typesafe` is Jev over
 	 * System One at `baseUrl` (TypeSafe's own, OpenRouter's, a relay's), `gateway` through the Vercel AI Gateway.
 	 * `clm` is CLM-8B (github.com/Contrastive-LM/CLM) at the address of a `clm-serve`, which speaks System One too.
-	 * `systemone` is any other System One server, such as a distilled judge served on this machine.
+	 * `systemone` is any other System One server, such as a fine-tuned judge served on this machine. `openai` is OpenAI's
+	 * decision model through `POST /v1/decisions`.
 	 */
 	readonly type:
 		| "jev"
@@ -36,24 +37,25 @@ export interface JudgeConfig {
 		| "clm"
 		| "systemone"
 		| "gateway"
-		| "local"
 		| "http"
 		| "llm"
 		| "classifier"
 		| "logprob"
+		| "openai"
 		| "mock";
 	/**
 	 * jev, typesafe, gateway: judge model id. clm: a model the server serves, default "clm-latest". systemone: the
-	 * model the server serves, sent as is. llm and
-	 * classifier: "provider/model-id", e.g. "opencode/jev-1.13" or "cloudflare-workers-ai/@cf/cloudflare/clef".
-	 * logprob: the model id the API takes, e.g. "nvidia/Nemotron-3_5-Lightning".
+	 * model the server serves, sent as is. openai: default "gpt-6-luna". llm and classifier: "provider/model-id",
+	 * e.g. "opencode/jev-1.13" or "cloudflare-workers-ai/@cf/cloudflare/clef". logprob: the model id the API takes,
+	 * e.g. "nvidia/Nemotron-3_5-Lightning".
 	 */
 	readonly model?: string;
 	/**
-	 * gateway, local, http, clm, logprob, and the System One route (`typesafe`, or `jev` when a TypeSafe key is set).
-	 * For System One this is the endpoint URL; empty uses TypeSafe's own. For clm, the server's address
+	 * gateway, http, clm, systemone, logprob, openai, and the System One route (`typesafe`, or `jev` when a TypeSafe key
+	 * is set). For System One this is the endpoint URL; empty uses TypeSafe's own. For clm, the server's address
 	 * (`http://host:8700` is enough); empty is http://127.0.0.1:8700. For systemone, the server's address, written
-	 * the same ways. For logprob, the OpenAI-compatible base URL (`…/v1`).
+	 * the same ways. For logprob, the OpenAI-compatible base URL (`…/v1`). For openai, a relay or proxy that serves the
+	 * same Decisions endpoint; empty is https://api.openai.com/v1.
 	 */
 	readonly baseUrl?: string;
 	/** http: request path, default "/evaluate". */
@@ -63,7 +65,10 @@ export interface JudgeConfig {
 	 * file. A typesafe judge keyed by MU_JUDGE_OPENROUTER_API_KEY, MU_JUDGE_CUSTOM_API_KEY or MU_JUDGE_CLM_API_KEY needs
 	 * its own `baseUrl`: those keys belong to another service and never go to TypeSafe. clm reads MU_JUDGE_CLM_API_KEY
 	 * unless told otherwise, and calls without a key when it is not set: a CLM server asks for one only when it was
-	 * started with CLM_API_KEY. systemone likewise reads MU_JUDGE_SYSTEMONE_API_KEY unless told otherwise.
+	 * started with CLM_API_KEY. systemone likewise reads MU_JUDGE_SYSTEMONE_API_KEY unless told otherwise. openai reads
+	 * MU_JUDGE_OPENAI_KEY unless told otherwise; at OpenAI's own address, without it, the key of mu's `openai` model
+	 * provider (`/login`, `mu setup`, OPENAI_API_KEY). Neither the provider's key nor a key of another judge service is
+	 * ever sent to another address.
 	 */
 	readonly apiKeyEnv?: string;
 	/** llm: thinking level for the judge model, default "off". */
@@ -77,7 +82,7 @@ export interface JudgeConfig {
 export interface KyrnConfig {
 	/** Judges tried in order; each later one only sees what the earlier ones left uncertain. */
 	readonly tiers: readonly string[];
-	/** Named judges, merged over the built-in ones (`jev` and its routes, `clef`, `clm`, `laya`, `mock`). */
+	/** Named judges, merged over the built-in ones (`jev` and its routes, `clef`, `clm`, `mude`, `openai`, `mock`). */
 	readonly judges: Readonly<Record<string, JudgeConfig>>;
 	/** `default` plus per-decision overrides keyed by spec id. */
 	readonly modes: Readonly<Record<string, DecisionMode>>;
@@ -135,16 +140,25 @@ export const BUILT_IN_JUDGES: Readonly<Record<string, JudgeConfig>> = {
 		thinking: "high",
 		timeoutMs: 60_000,
 	},
-	// Nemotron 3 Nano 4B distilled from Nemotron 3 Ultra (github.com/qybaihe/mu-judge-nemotron), served on this
-	// machine by its System One server: `python serve/systemone_server.py --backend mlx --port 8770`.
+	// Nemotron 3 Nano 4B fine-tuned as mu's judge (github.com/qybaihe/mu-judge-nemotron), served on this machine by
+	// its System One server: `python serve/systemone_server.py --port 8770`.
 	"nemotron-local": { type: "systemone", baseUrl: "http://127.0.0.1:8770", model: "mu-judge-nemotron" },
-	// Measured in kyrn/docs/03-local-judge.md: the base checkpoint classifies one text well, says "yes" to
-	// nearly every relational question, and cannot use a rubric or judge the request itself. Measured on
-	// Terminal-Bench 2.1 (Oct 2026): on tool output it is wrong or late. All 15 passages it withheld as injections were
-	// clean (directory listings, href lists, headers, JSON), its one admission drop was a makefile, and most of its
-	// calls on both failed or came too late. So screening tool output (`screen`) goes to the next tier, or to the
-	// rules.
-	laya: { type: "local", profile: { capabilities: { relate: false, rate: false, meta: false, screen: false } } },
+	// mude, the decision model trained for mu's judgment layer, on this Mac (`mu judge mude install`, Apple silicon):
+	// the System One server that comes in its package, on 127.0.0.1:8790, with the key the install wrote to the .env.
+	// Trusted on every capability: on mu's own dev scenarios (an internal benchmark, not public yet) it did as well as Jev
+	// or better on relate, rate, meta, screening tool output (`tool.admission`) and promises (`turn.continue`), and on
+	// classify but for one check: a tool's description screened for injected instructions (`tool.description`), where
+	// Jev did better. Nothing measured it on injections in fetched content (`tool.injection`). So with a judge behind it,
+	// `mu judge mude` routes those two checks to that judge (`routes` in mu.json). It answers in about 0.1 s here.
+	mude: {
+		type: "typesafe",
+		baseUrl: "http://127.0.0.1:8790/v1/systemone",
+		model: "mude",
+		apiKeyEnv: "MU_JUDGE_MUDE_KEY",
+		timeoutMs: 4000,
+	},
+	// OpenAI's decision model, gpt-6-luna, through the Decisions API. Not measured on mu's questions yet.
+	openai: { type: "openai" },
 	mock: { type: "mock" },
 };
 
@@ -157,10 +171,14 @@ export const DEFAULT_CONFIG: KyrnConfig = {
 		// swarm.patch is off: it sees only paths and line counts, which the delegate result already lists, and it held
 		// up every delegate call that brought back a patch.
 		"swarm.patch": "off",
+		// capability.disclosure is off: asked on every message, it opened nothing in 162 benchmark questions and 34 in
+		// real sessions, while it held up the start of the turn. Packs stay hidden, and find_capability opens one.
+		"capability.disclosure": "off",
 		// Its rules deliver what matters; in single-prompt runs a "next_turn" verdict never reached anyone.
 		"notify.routing": "shadow",
-		// About a second on every mid-run message, and no verdict has changed anything yet.
-		"input.interjection": "shadow",
+		// input.interjection follows the default: mu, not the key that sent it, decides when a message sent mid-run
+		// reaches the work. A message waits for its verdict for at most 1.5 s (`features.interjection.waitMs`), and goes
+		// as sent without one. A built-in "active" here would keep it acting under a default of shadow.
 		// Its steers were mostly wrong where it flagged anything at all, so it only records until it is reworked.
 		"turn.drift": "shadow",
 	},
@@ -170,17 +188,20 @@ export const DEFAULT_CONFIG: KyrnConfig = {
 };
 
 const MODES: readonly string[] = ["off", "shadow", "active"];
+/** Laya's name, and the type of its sidecar, which mu no longer has (`retiredJudges`). */
+export const LAYA = "laya";
+const RETIRED_TYPE = "local";
 const JUDGE_TYPES: readonly string[] = [
 	"jev",
 	"typesafe",
 	"clm",
 	"systemone",
 	"gateway",
-	"local",
 	"http",
 	"llm",
 	"classifier",
 	"logprob",
+	"openai",
 	"mock",
 ] satisfies JudgeConfig["type"][];
 
@@ -226,17 +247,79 @@ function readJudges(value: unknown): Record<string, JudgeConfig> {
 	return judges;
 }
 
+/**
+ * Laya, the third-party local judge mu had until 0.2.4 (a Core ML sidecar of type `local`), is no longer built in. The
+ * names in `judges` (as mu.json has it) that meant it: `laya`, unless an entry of a type mu knows took that name, and
+ * every entry of type `local`. A configuration that still names one of them is read without it (laya-migration.ts).
+ */
+export function retiredJudges(judges: unknown): Set<string> {
+	const names = new Set<string>();
+	const entries = isRecord(judges) ? judges : {};
+	const own = entries[LAYA];
+	if (!(isRecord(own) && typeof own.type === "string" && JUDGE_TYPES.includes(own.type))) names.add(LAYA);
+	for (const [name, entry] of Object.entries(entries)) {
+		if (isRecord(entry) && entry.type === RETIRED_TYPE) names.add(name);
+	}
+	return names;
+}
+
+/**
+ * `tiers` without the retired judges: `replacement` where the first of them was (mude, when it is set up on this
+ * machine), or nothing. A judge already in the list is not added twice. Undefined when `tiers` names none of them.
+ */
+export function withoutRetired(
+	tiers: readonly string[],
+	retired: ReadonlySet<string>,
+	replacement?: string,
+): string[] | undefined {
+	if (!tiers.some((tier) => retired.has(tier.trim()))) return undefined;
+	const mapped = tiers.flatMap((tier) => (retired.has(tier.trim()) ? (replacement ? [replacement] : []) : [tier]));
+	return mapped.filter((tier, index) => tier !== replacement || mapped.indexOf(tier) === index);
+}
+
+/** Whether `tiers` or a route of a parsed mu.json names a retired judge (`retiredJudges`). */
+export function namesRetired(value: unknown): boolean {
+	if (!isRecord(value)) return false;
+	const retired = retiredJudges(value.judges);
+	// `tiers` is read as a list only (parseConfig); a route may be "a, b" too (readRoutes).
+	const lists = [
+		Array.isArray(value.tiers) ? value.tiers : [],
+		...(isRecord(value.routes) ? Object.values(value.routes) : []),
+	];
+	return lists.some((tiers) => readTiers(tiers).some((tier) => retired.has(tier)));
+}
+
+export interface ParseOptions {
+	/**
+	 * The judge that answers where the file still names Laya (`retiredJudges`): mude, when it is set up on this
+	 * machine. Asked only when the file names Laya. Without one, Laya is left out, and `tiers` with nothing else in it
+	 * is the default.
+	 */
+	readonly replaceLaya?: () => string | undefined;
+}
+
 /** Parses the contents of `mu.json`. Unknown or malformed parts fall back to defaults instead of throwing. */
-export function parseConfig(value: unknown): KyrnConfig {
+export function parseConfig(value: unknown, options: ParseOptions = {}): KyrnConfig {
 	if (!isRecord(value)) return DEFAULT_CONFIG;
-	const tiers = Array.isArray(value.tiers)
+	const named = Array.isArray(value.tiers)
 		? value.tiers.filter((tier): tier is string => typeof tier === "string")
 		: [];
+	const retired = retiredJudges(value.judges);
+	const replacement = namesRetired(value) ? options.replaceLaya?.() : undefined;
+	const tiers = withoutRetired(named, retired, replacement) ?? named;
+	const routes = readRoutes(value.routes);
+	for (const [specId, routed] of Object.entries(routes)) {
+		const kept = withoutRetired(routed, retired, replacement);
+		if (kept === undefined) continue;
+		// A route left with no judge goes back to `tiers`.
+		if (kept.length > 0) routes[specId] = kept;
+		else delete routes[specId];
+	}
 	return {
 		tiers: tiers.length > 0 ? tiers : DEFAULT_CONFIG.tiers,
 		judges: readJudges(value.judges),
 		modes: { ...DEFAULT_CONFIG.modes, ...readModes(value.modes) },
-		routes: readRoutes(value.routes),
+		routes,
 		features: isRecord(value.features) ? value.features : {},
 		mcp: isRecord(value.mcp) ? value.mcp : undefined,
 		writer: typeof value.writer === "string" ? value.writer : undefined,
@@ -248,26 +331,54 @@ export interface ConfigSource {
 	/** Directory holding `mu.json`, normally the agent directory (~/.mu/agent). */
 	readonly dir?: string;
 	readonly env?: Readonly<Record<string, string | undefined>>;
+	/** See `ParseOptions.replaceLaya`. */
+	readonly replaceLaya?: () => string | undefined;
+}
+
+/** Where the configuration named Laya, which it is read without, and what took its place in the file. */
+export interface LayaSkipped {
+	/** mu.json (or kyrn.json) names it: laya-migration.ts takes it out of the file once. */
+	readonly file: boolean;
+	/** MU_JUDGE names it: skipped in every session that has the variable. */
+	readonly env: boolean;
+	/** The judge put where Laya was in the file (mude), if any. */
+	readonly replacement?: string;
 }
 
 /**
  * `mu.json` from the agent directory (`kyrn.json` when there is none), then environment overrides:
- *   MU_JUDGE        comma-separated tiers, e.g. "laya" or "laya,jev"; "off" disables the kernel
+ *   MU_JUDGE        comma-separated tiers, e.g. "jev" or "mude,jev"; "off" disables the kernel
  *   MU_JUDGE_MODE   default mode for every decision
  *   MU_WRITER       "provider/model-id"
  * Each is also read under its old `KYRN_` spelling.
  *
+ * Laya is skipped wherever it is named (`retiredJudges`); `laya` says where.
+ *
  * Only the user's own directory is read. A project must not be able to point
  * the judge, which sees user messages, at an endpoint of its choosing.
  */
-export function loadConfig(source: ConfigSource = {}): { config: KyrnConfig; disabled: boolean; problem?: string } {
+export function loadConfig(source: ConfigSource = {}): {
+	config: KyrnConfig;
+	disabled: boolean;
+	problem?: string;
+	laya?: LayaSkipped;
+} {
 	const env = source.env ?? process.env;
 	let config = DEFAULT_CONFIG;
 	let problem: string | undefined;
+	let inFile = false;
+	let replacement: string | undefined;
 	// The first file that exists wins, even when it is broken: a half-written mu.json must not silently bring back old settings.
 	for (const file of source.dir ? [CONFIG_FILE, LEGACY_CONFIG_FILE] : []) {
 		try {
-			config = parseConfig(JSON.parse(readFileSync(join(source.dir as string, file), "utf8")));
+			const value: unknown = JSON.parse(readFileSync(join(source.dir as string, file), "utf8"));
+			inFile = namesRetired(value);
+			config = parseConfig(value, {
+				replaceLaya: () => {
+					replacement = source.replaceLaya?.();
+					return replacement;
+				},
+			});
 			break;
 		} catch (error) {
 			if ((error as NodeJS.ErrnoException).code === "ENOENT") continue;
@@ -276,18 +387,26 @@ export function loadConfig(source: ConfigSource = {}): { config: KyrnConfig; dis
 		}
 	}
 
+	let inEnv = false;
 	const judge = muEnv("JUDGE", env)?.trim();
 	if (judge === "off") return { config, disabled: true, problem };
 	if (judge) {
 		// "gateway" was the first name of the Jev backend.
-		const tiers = judge.split(",").map((tier) => (tier.trim() === "gateway" ? "jev" : tier.trim()));
-		config = { ...config, tiers: tiers.filter(Boolean) };
+		const tiers = judge
+			.split(",")
+			.map((tier) => (tier.trim() === "gateway" ? "jev" : tier.trim()))
+			.filter(Boolean);
+		// Laya is left out; MU_JUDGE naming nothing else leaves the judges of the file.
+		const kept = config.judges[LAYA] ? tiers : tiers.filter((tier) => tier !== LAYA);
+		inEnv = kept.length < tiers.length;
+		if (kept.length > 0) config = { ...config, tiers: kept };
 	}
 	const mode = muEnv("JUDGE_MODE", env);
 	if (mode && MODES.includes(mode)) config = { ...config, modes: { ...config.modes, default: mode as DecisionMode } };
 	const writer = muEnv("WRITER", env);
 	if (writer) config = { ...config, writer };
-	return { config, disabled: false, problem };
+	const laya = inFile || inEnv ? { file: inFile, env: inEnv, replacement } : undefined;
+	return { config, disabled: false, problem, ...(laya ? { laya } : {}) };
 }
 
 /** A feature's options: its defaults, overridden by `features.<name>` when that is an object; `false` disables it. */

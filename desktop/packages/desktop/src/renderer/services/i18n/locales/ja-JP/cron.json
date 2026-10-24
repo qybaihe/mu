@@ -68,7 +68,6 @@
     "newTask": "新規タスク",
     "createViaChat": "チャットで作成",
     "createManually": "手動で作成",
-    "description": "タスクをスケジュールで自動実行できます。どの会話でも mu に依頼して定期タスクを作成することもできます。",
     "awakeBanner": "スケジュールタスクはコンピュータが起動している間のみ実行されます。",
     "keepAwake": "スリープを防止",
     "keepAwakeTooltip": "有効にすると、mu がコンピュータのスリープを防止します",

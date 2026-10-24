@@ -89,9 +89,10 @@ const WorkspaceCollapse: React.FC<WorkspaceCollapseProps> = ({
             {/* 标题内容 — flex 容器让内部 header span 的 truncate 生效 */}
             <div className='flex-1 min-w-0 flex items-center overflow-hidden'>{header}</div>
 
-            {/* 尾部操作槽 — 固定宽度让文本提前截断；按钮 hover 才出现时允许左溢出到文本区覆盖最后 1-2 字 */}
+            {/* The slot at the end: as wide as what it shows. Buttons that show on hover take their width from the title
+                then, so the title ends in an ellipsis before them instead of under them. */}
             {trailing && (
-              <div className='shrink-0 flex items-center justify-end w-22px' onClick={(e) => e.stopPropagation()}>
+              <div className='shrink-0 flex items-center justify-end' onClick={(e) => e.stopPropagation()}>
                 {trailing}
               </div>
             )}

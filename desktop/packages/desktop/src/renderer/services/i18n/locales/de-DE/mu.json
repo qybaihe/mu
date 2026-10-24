@@ -1,11 +1,9 @@
 {
   "title": "mu-Einstellungen",
-  "description": "Alles, was du mu vorgeben kannst: Judges, Entscheidungspunkte, Funktionen, Modelle und Kontext. Gemeinsam mit der mu-Kommandozeile genutzt.",
   "reload": "Neu laden",
   "modified": "Geändert",
   "applyNote": "Änderungen gelten für neue Sitzungen. Eine laufende Sitzung behält die Konfiguration, mit der sie gestartet wurde; verbinde sie neu, um die Änderungen zu übernehmen.",
   "apiKey": "API-Schlüssel",
-  "keyHelp": "Nach dem Speichern wird der Schlüssel nie wieder angezeigt. Er bleibt auf diesem Computer und ist nur für dein Konto lesbar.",
   "keyKeep": "Leer lassen, um den gespeicherten Schlüssel zu behalten",
   "endpointRule": "Gib eine Adresse ein, die mit https:// oder http:// beginnt. Benutzernamen, Passwörter, Abfrageparameter oder Fragmente sind darin nicht erlaubt.",
   "endpointPlain": "Diese Adresse nutzt unverschlüsseltes http: Schlüssel und Nachrichten gehen unverschlüsselt über die Leitung. Für einen Server auf diesem Computer oder in deinem Netzwerk ist das in Ordnung, auch für einen Namen, den deine hosts-Datei dorthin lenkt. Über das Internet nutze https.",
@@ -73,7 +71,6 @@
     "useDefault": "Zurück zum Standard ({{mode}})"
   },
   "features": {
-    "lead": "Was mu im Hintergrund für dich erledigt. Schaltest du etwas aus, lässt mu es bleiben.",
     "beta": "Beta",
     "reset": "Standard wiederherstellen",
     "boardModelElsewhere": "Das Modell, das das Board schreibt, wählst du unter „Klartext-Modell“.",
@@ -87,9 +84,7 @@
     "details": "Details"
   },
   "judges": {
-    "tiersHelp": "Die Judges werden der Reihe nach gefragt. Ein späterer sieht nur, was die vorherigen offen gelassen haben.",
     "order": "Reihenfolge",
-    "orderHelp": "Der erste ist der Judge, der auf der Seite „Judges“ gewählt ist.",
     "firstTier": "Der auf der Seite „Judges“ gewählte Judge: Dienst, Adresse und Schlüssel werden dort eingestellt.",
     "tierTitle": "Stufe {{index}}: {{name}}",
     "service": "Dienst",
@@ -105,17 +100,14 @@
       },
       "typesafe": {
         "name": "TypeSafe",
-        "help": "Immer direkt über TypeSafe.",
         "key": "API-Schlüssel für TypeSafe"
       },
       "openrouter": {
         "name": "OpenRouter",
-        "help": "Immer über OpenRouter, mit einem API-Schlüssel von OpenRouter. Er wird nur für Jev gespeichert: Das Setzen ändert den Schlüssel der Chatmodelle von OpenRouter nicht.",
         "key": "API-Schlüssel für OpenRouter"
       },
       "gateway": {
         "name": "Vercel AI Gateway",
-        "help": "Immer über das Vercel AI Gateway.",
         "key": "API-Schlüssel für das Vercel AI Gateway"
       },
       "opencode": {
@@ -125,7 +117,6 @@
       },
       "cloudflare": {
         "name": "Cloudflare Workers AI",
-        "help": "Jev auf Cloudflare Workers AI, mit einem Cloudflare-API-Token und deiner Konto-ID.",
         "key": "Cloudflare-API-Token",
         "account": "Cloudflare-Konto-ID",
         "accountHelp": "Steht im Cloudflare-Dashboard auf der Seite Workers AI. Wird wie das Token gespeichert.",
@@ -139,92 +130,165 @@
     },
     "model": "Judge-Modell",
     "baseUrl": "Basis-URL",
-    "baseUrlHelp": "Leer lassen, dann gilt TypeSafes eigene Adresse.",
-    "customUrlHelp": "Die System-One-Adresse des Dienstes. Sein Schlüssel wird nur dorthin geschickt.",
     "baseUrlNeeded": "Ein eigener Dienst braucht seine Adresse.",
     "customTier": "Ein Judge, den du selbst hinzugefügt hast. Ändern kannst du ihn in der Einstellungsdatei von mu.",
-    "endpointDefault": "Standardadresse des Dienstes",
-    "types": {
-      "localHelp": "Läuft auf diesem Rechner.",
-      "clmHelp": "Läuft auf einem eigenen CLM-Server.",
-      "classifierHelp": "Ein Klassifikationsmodell aus mus Modellkatalog: {{model}}. mu erreicht es mit dem Schlüssel seines Anbieters."
-    },
-    "intro": "Während mu arbeitet, fallen viele kleine Fragen an: wie es mit dieser Nachricht umgehen soll, ob dieser Schritt gegen eine deiner Vorgaben verstößt. Der Judge beantwortet sie. Wähle einen aus.",
     "mode": "Urteile wirken",
-    "modeHelp": "An: Die Urteile des Judges wirken. Aus: Jeder Schritt läuft wie gewohnt. Schritte ohne eigene Einstellung folgen dieser.",
     "choose": "Judge wählen",
     "custom": "Der erste Judge ist gerade ein benutzerdefinierter: Auf der Seite „Reihenfolge der Judges“ kannst du ihn ansehen und ändern.",
     "keyPlaceholder": "Schlüssel einfügen",
+    "removeKey": "Schlüssel entfernen",
     "choices": {
       "jev": {
         "title": "Jev",
         "tag": "Empfohlen",
+        "tagHosted": "Gehostet",
         "description": "Das gehostete Judge-Modell von TypeSafe. Schnell und genau. Auf OpenCode Zen für begrenzte Zeit kostenlos, sonst Abrechnung pro Aufruf mit einem Schlüssel für TypeSafe, OpenRouter, das Vercel AI Gateway, OpenCode Zen, Cloudflare oder einen eigenen Dienst."
       },
-      "local": {
-        "title": "Laya (lokal)",
-        "tag": "Kostenlos · offline",
-        "description": "Läuft auf diesem Rechner, ohne Netzwerk und ohne Kosten. Gut beim Einordnen; beim Zuordnen und Bewerten weniger zuverlässig."
+      "mude": {
+        "title": "mude 1.0",
+        "tag": "Auf diesem Mac",
+        "tagRecommended": "Empfohlen · auf diesem Mac",
+        "description": "Das eigene Entscheidungsmodell von mu, fürs Programmieren optimiert und bei den Entscheidungen eines Coding-Agenten auf State-of-the-Art-Niveau. Läuft auf diesem Mac: kein Schlüssel, keine Kosten pro Aufruf. Braucht Apple Silicon."
       },
       "clm": {
         "title": "CLM",
         "tag": "Selbst gehostet",
         "description": "Beantwortet dieselben Fragen wie Jev, auf einem eigenen Server (clm-serve). Sein Encoder braucht eine GPU; pro Aufruf fallen keine Kosten an."
+      },
+      "openai": {
+        "title": "OpenAI",
+        "tag": "Gehostet",
+        "description": "Das Entscheidungsmodell von OpenAI, gpt-6-luna, mit einem OpenAI-API-Schlüssel. OpenAI rechnet pro Eingabe-Token ab."
       }
     },
-    "localAddress": "Adresse: {{address}}",
-    "laya": {
-      "running": "Läuft auf diesem Rechner",
-      "stopped": "Installiert, läuft aber nicht. mu startet Laya bei Bedarf.",
-      "missing": "Noch nicht installiert.",
-      "platform": "Laya läuft nicht auf diesem Rechner: Dafür ist Windows oder Linux (x64 oder arm64) oder ein Mac mit Apple Silicon nötig.",
-      "needsUv": "Für die Installation brauchst du uv, einen Python-Paketmanager. Installiere ihn und komm dann hierher zurück.",
-      "uvLink": "So installierst du uv",
-      "install": "Laya installieren",
+    "mude": {
+      "name": "mude 1.0 (auf diesem Mac)",
+      "tierHelp": "Läuft auf diesem Mac. Einrichten auf der Seite „Judges“.",
+      "notInstalled": "Nicht installiert.",
+      "unfinished": "Die letzte Installation wurde nicht abgeschlossen. Beim Fortsetzen geht es an der unterbrochenen Stelle weiter.",
+      "unfinishedDownloaded": "{{done}} von {{total}} GB heruntergeladen. Beim Fortsetzen geht es an der unterbrochenen Stelle weiter.",
+      "install": "mude 1.0 installieren",
+      "continue": "Installation fortsetzen",
+      "consent": {
+        "title": "mude 1.0 installieren?",
+        "download": "mu lädt mude 1.0 von Hugging Face herunter (etwa {{download}} GB) und richtet dafür eine Python-Umgebung ein (etwa {{python}} GB). Das dauert ein paar Minuten.",
+        "memory": "Während mude 1.0 läuft, belegt es etwa {{memory}} GB Arbeitsspeicher. Es braucht einen Mac mit Apple Silicon und macOS 14 oder neuer.",
+        "after": "Nach der Installation startet mude 1.0 und wird zum Judge von mu.",
+        "ok": "Herunterladen und installieren"
+      },
+      "localOnly": "Nur lokal – nie einen Cloud-Judge fragen",
+      "localOnlyOn": "mude 1.0 ist der einzige Judge, und nichts geht in die Cloud. Kann mude 1.0 nicht antworten, nutzt der Entscheidungspunkt seine Standardstrategie.",
+      "localOnlyOff": "Entscheidungen, die mude 1.0 nicht beantworten kann, etwa während es gestoppt oder unsicher ist, gehen an {{judges}} in der Cloud – was dorthin geht, verlässt diesen Mac. Zwei Sicherheitsprüfungen gehen immer dorthin: das Prüfen von Tool-Beschreibungen und das Prüfen abgerufener Inhalte auf eingeschleuste Anweisungen.",
+      "localOnlyOffLocal": "Entscheidungen, die mude 1.0 nicht beantworten kann, gehen an {{judges}}, das ebenfalls auf diesem Mac läuft.",
+      "localOnlyNone": "Hinter mude 1.0 ist kein Judge eingestellt. Kann mude 1.0 nicht antworten, nutzt der Entscheidungspunkt seine Standardstrategie.",
+      "use": "mude 1.0 als Judge verwenden",
+      "status": {
+        "running": "Läuft auf 127.0.0.1:{{port}}",
+        "runningMemory": "Läuft auf 127.0.0.1:{{port}} · {{memory}} GB",
+        "starting": "Wird gestartet…",
+        "stopped": "Gestoppt"
+      },
+      "resources": "Während mude 1.0 läuft, belegt es etwa {{memory}} GB Arbeitsspeicher. Alle mu-Sitzungen auf diesem Mac teilen es sich, auch die im Terminal, und es läuft weiter, bis du es stoppst oder ausschaltest.",
       "start": "Starten",
       "stop": "Stoppen",
-      "confirmTitle": "Laya herunterladen und installieren?",
-      "confirmText": "Dabei werden etwa {{size}} MB von PyPI und Hugging Face (Python-Pakete und die Modellgewichte) in den Ordner von mu heruntergeladen; das dauert ein paar Minuten. Laya startet, sobald die Installation fertig ist.",
-      "confirmOk": "Herunterladen und installieren",
+      "openFolder": "Ordner öffnen",
+      "uninstall": "Deinstallieren",
+      "uninstallTitle": "mude 1.0 deinstallieren?",
+      "uninstallText": "Damit wird mude 1.0 ausgeschaltet, die ersetzten Judges kommen zurück, und das Modell samt Python-Umgebung (etwa {{size}} GB) wird gelöscht. Du kannst es später wieder installieren.",
       "working": {
-        "setup": "Laya wird installiert…",
-        "start": "Laya wird gestartet…",
-        "stop": "Laya wird gestoppt…"
+        "install": "mude 1.0 wird installiert…",
+        "enable": "mude 1.0 wird eingeschaltet…",
+        "disable": "mude 1.0 wird ausgeschaltet…",
+        "start": "mude 1.0 wird gestartet…",
+        "stop": "mude 1.0 wird gestoppt…",
+        "uninstall": "mude 1.0 wird deinstalliert…"
+      },
+      "step": {
+        "download": "mude 1.0 wird heruntergeladen und jede Datei geprüft…",
+        "python": "Die Python-Umgebung für mude 1.0 wird eingerichtet…",
+        "start": "Der Server von mude 1.0 wird gestartet…"
+      },
+      "downloaded": "{{done}} von {{total}} GB",
+      "downloadedSoFar": "{{done}} von {{total}} GB heruntergeladen.",
+      "checking": "Heruntergeladene Dateien werden geprüft…",
+      "cancelled": "Installation abgebrochen. Bereits Heruntergeladenes bleibt erhalten.",
+      "failed": {
+        "install": "mude 1.0 konnte nicht installiert werden.",
+        "enable": "mude 1.0 konnte nicht eingeschaltet werden.",
+        "disable": "mude 1.0 konnte nicht ausgeschaltet werden.",
+        "start": "mude 1.0 konnte nicht gestartet werden.",
+        "stop": "mude 1.0 konnte nicht gestoppt werden.",
+        "uninstall": "mude 1.0 konnte nicht deinstalliert werden."
+      },
+      "error": {
+        "access": "mude 1.0 kann noch nicht heruntergeladen werden. Versuch es später noch einmal.",
+        "network": "Hugging Face ist nicht erreichbar. Prüfe deine Verbindung und versuch es noch einmal; bereits Heruntergeladenes bleibt erhalten.",
+        "integrity": "Eine heruntergeladene Datei hat die Prüfung nicht bestanden. Versuch es mit einer neuen Installation.",
+        "unsupported": "mude 1.0 kann auf diesem Mac nicht laufen."
+      },
+      "noStatus": "Der Status von mude 1.0 ist nicht abrufbar: {{reason}}",
+      "saveFirst": "Um mude 1.0 zu ändern, speichere oder verwirf zuerst deine anderen Änderungen.",
+      "needs": "mude 1.0 braucht einen Mac mit Apple Silicon, macOS 14 oder neuer und mindestens {{ram}} GB Arbeitsspeicher.",
+      "retry": "Erneut versuchen",
+      "guide": {
+        "consent": "{{download}} GB zum Herunterladen, dazu eine Python-Umgebung mit {{python}} GB. Belegt im Betrieb etwa {{memory}} GB Arbeitsspeicher.",
+        "instead": "mu nutzt stattdessen den gehosteten Judge.",
+        "ready": "mude 1.0 läuft und ist jetzt dein Judge.",
+        "readyStopped": "mude 1.0 ist jetzt dein Judge. Sein Server startet mit deiner nächsten mu-Sitzung."
+      }
+    },
+    "models": {
+      "title": "Weitere Entscheidungsmodelle",
+      "placeholder": "Hugging-Face-Link oder owner/name",
+      "add": "Hinzufügen",
+      "trust": "Ein Modell führt seinen eigenen Servercode auf diesem Mac aus. Füge nur Modelle hinzu, denen du vertraust.",
+      "use": "Als Judge verwenden",
+      "continue": "Download fortsetzen",
+      "remove": "Entfernen",
+      "removeTitle": "{{name}} entfernen?",
+      "removeText": "Damit wird {{name}} aus der Judge-Reihenfolge genommen und seine Dateien (etwa {{size}} GB) werden gelöscht. Du kannst es später wieder hinzufügen.",
+      "noList": "Die Entscheidungsmodelle konnten nicht gelesen werden: {{reason}}",
+      "cancelled": "Abgebrochen. Bereits Heruntergeladenes bleibt erhalten.",
+      "state": {
+        "judge": "Der Judge · {{size}} GB",
+        "running": "Läuft · {{size}} GB",
+        "installed": "Installiert · {{size}} GB",
+        "partial": "{{done}} von {{total}} GB heruntergeladen",
+        "notDownloaded": "Nicht heruntergeladen · {{size}} GB"
+      },
+      "step": {
+        "resolve": "Das Modell wird auf Hugging Face gesucht…",
+        "download": "{{name}} wird heruntergeladen und jede Datei geprüft…",
+        "python": "Die Python-Umgebung wird eingerichtet…",
+        "start": "Der Server von {{name}} wird gestartet…"
+      },
+      "working": {
+        "add": "{{name}} wird hinzugefügt…",
+        "use": "Der Judge wird auf {{name}} umgestellt…",
+        "disable": "{{name}} wird ausgeschaltet…",
+        "remove": "{{name}} wird entfernt…"
       },
       "failed": {
-        "setup": "Die Installation wurde nicht abgeschlossen. Du kannst es erneut versuchen.",
-        "start": "Laya konnte nicht starten.",
-        "stop": "Laya konnte nicht gestoppt werden."
+        "add": "Das Modell konnte nicht hinzugefügt werden.",
+        "use": "Es konnte nicht zum Judge gemacht werden.",
+        "disable": "Es konnte nicht ausgeschaltet werden.",
+        "remove": "Es konnte nicht entfernt werden."
       },
-      "onnx": {
-        "missing": "Das Modell von Laya ist noch nicht auf diesem Rechner (etwa {{size}} MB). mu lädt es nicht für dich herunter: Lade die Dateien von Hugging Face, lege sie in den Modellordner und klicke dann auf „Prüfen und starten“.",
-        "stopped": "Das Modell ist da, Laya läuft nicht. Wenn Laya dein Judge ist, startet mu es beim Öffnen der App von selbst.",
-        "starting": "Modell wird geprüft und Laya gestartet… Die erste Prüfung liest das ganze Modell und dauert einen Moment.",
-        "missingFiles": "Es fehlen noch: {{files}}",
-        "wrongFiles": "Nicht die Version, mit der mu getestet wurde – bitte neu herunterladen: {{files}}",
-        "folder": "Modellordner: {{folder}}",
-        "command": "Mit der Hugging-Face-Kommandozeile (hf) holt dieser eine Befehl alles:",
-        "page": "Auf Hugging Face holen",
-        "openFolder": "Modellordner öffnen",
-        "check": "Prüfen und starten",
-        "problem": {
-          "missing": "Einige Modelldateien fehlen.",
-          "wrong": "Einige Modelldateien sind nicht die Version, mit der mu getestet wurde. Lade sie neu herunter.",
-          "runtime": "Dieser Rechner konnte das Modell nicht ausführen.",
-          "port": "Ein anderes Programm belegt schon den Port von Laya ({{port}}).",
-          "stopped": "Laya wurde beendet, bevor es bereit war.",
-          "foreign": "Hier läuft ein Laya, das mu nicht gestartet hat. Beende es dort, wo es gestartet wurde."
-        }
+      "error": {
+        "usage": "Das ist weder ein Link zu einem Hugging-Face-Modell noch dessen owner/name.",
+        "access": "Dieses Modell lässt sich auf Hugging Face nicht öffnen. Prüfe den Namen: Vielleicht existiert es nicht, oder es ist privat oder zugangsbeschränkt.",
+        "notFound": "Hugging Face hat kein solches Modell.",
+        "notRunnable": "mu kann dieses Modell nicht ausführen: Ihm fehlt d3_server_mac.py, der Server, den wie mude 1.0 verpackte Modelle mitbringen.",
+        "network": "Hugging Face ist nicht erreichbar. Prüfe deine Verbindung und versuch es noch einmal; bereits Heruntergeladenes bleibt erhalten.",
+        "integrity": "Eine heruntergeladene Datei hat die Prüfung nicht bestanden. Versuch es noch einmal.",
+        "unsupported": "Dieser Mac kann keine Entscheidungsmodelle ausführen."
       }
     },
     "clm": {
       "address": "Serveradresse",
-      "addressHelp": "Wo clm-serve lauscht, etwa http://192.168.1.20:8700. Leer bedeutet dieser Computer ({{address}}).",
       "key": "Serverschlüssel",
       "keyPlaceholder": "Nur wenn der Server einen verlangt",
-      "keyHelp": "Nur ein Server, der mit CLM_API_KEY gestartet wurde, verlangt einen Schlüssel: Gib denselben Wert ein. Nach dem Speichern wird er nie wieder angezeigt.",
       "check": "Server prüfen",
-      "unmeasured": "Wie gut CLM die Entscheidungen von mu trifft, ist noch nicht gemessen.",
       "status": {
         "checking": "Server wird gefragt …",
         "ready": "Antwortet · {{models}} · {{ms}} ms",
@@ -236,23 +300,26 @@
         "mock": "Dieser Server läuft mit dem Mock-Encoder von CLM: Seine Antworten sind Rauschen, nicht die von CLM.",
         "failed": "Der Server konnte nicht gefragt werden."
       }
+    },
+    "openai": {
+      "key": "API-Schlüssel für OpenAI",
+      "keyHelp": "Ohne ihn nutzt mu den API-Schlüssel des OpenAI-Anbieters (Einstellungen → Anbieter) oder OPENAI_API_KEY, nie eine ChatGPT-Anmeldung."
     }
   },
   "keyState": {
     "none": "Nicht gesetzt",
     "set": "Gesetzt",
     "typed": "Neuer Schlüssel, noch nicht gespeichert",
+    "removed": "Schlüssel entfernt, noch nicht gespeichert",
     "empty": "Variable ist leer",
     "managed": "Gesetzt",
     "manual": "Gesetzt (von Hand)"
   },
   "context": {
     "auto": "Automatische Verdichtung",
-    "autoHelp": "Verdichtet den Verlauf, wenn der Kontext fast voll ist.",
     "limit": "Kontextgrenze",
     "limitHelp": "0 folgt dem Kontextfenster des Modells abzüglich der Reserve. Sonst {{min}} bis {{max}}. Wird vor der nächsten Modellanfrage geprüft, kein harter Schnitt.",
-    "limitProblem": "Gib 0 oder eine ganze Zahl von {{min}} bis {{max}} ein.",
-    "lead": "Wann das Gespräch verdichtet wird, wie groß sein Kontext werden darf, und die Funktionen, die auf den Kontext wirken."
+    "limitProblem": "Gib 0 oder eine ganze Zahl von {{min}} bis {{max}} ein."
   },
   "permissions": {
     "modes": {
@@ -313,7 +380,6 @@
     "flagged": "Riskant: {{flag}}."
   },
   "providers": {
-    "lead": "Woher die Modelle kommen: Abos und Endpunkte. Modell und Denkstufe einer Unterhaltung wählst du in ihrem Eingabefeld.",
     "title": "Anbieter",
     "custom": "Benutzerdefinierte Anbieter",
     "manualGroup": "Von Hand geschrieben",
@@ -348,7 +414,6 @@
     "commented": "models.json enthält Kommentare. Beim Speichern von hier aus würden sie entfernt, daher sind die Anbieter schreibgeschützt. Entferne die Kommentare von Hand, um sie hier zu bearbeiten.",
     "modelCount_one": "{{count, number}} Modell",
     "modelCount_other": "{{count, number}} Modelle",
-    "summary": "Melde dich mit einem Abo an und leg direkt los, oder verbinde einen beliebigen OpenAI-, Anthropic- oder Gemini-kompatiblen Endpunkt.",
     "subscriptions": "Abos",
     "manualShort": "Von Hand",
     "needsSetup": "Noch nicht eingerichtet",
@@ -361,13 +426,10 @@
     "removeDefault": "Neue Sitzungen starten damit, daher wird auch das Standardmodell zurückgesetzt."
   },
   "defaults": {
-    "summary": "Womit eine neue Sitzung startet. In einer Unterhaltung kannst du trotzdem wechseln.",
     "provider": "Anbieter",
     "model": "Modell",
     "level": "Denkstufe",
     "levelUnset": "Nicht festlegen",
-    "levelHelp": "Stufen, die dieses Modell nicht unterstützt, sind deaktiviert.",
-    "levelClamped": "„Nicht festlegen“ heißt Mittel. Eine Stufe, die das Modell nicht unterstützt, wird zur nächstgelegenen, die es unterstützt.",
     "noReasoning": "Dieses Modell denkt nicht, daher startet eine Sitzung damit immer mit ausgeschaltetem Denken.",
     "notSet": "Nicht festgelegt",
     "pickProvider": "Wähle zuerst einen Anbieter."
@@ -378,12 +440,13 @@
     "signOutFailed": "Die Abmeldung wurde nicht abgeschlossen. Du kannst es erneut versuchen.",
     "signOutConfirm": "Von {{name}} abmelden? Um es wieder zu nutzen, musst du dich erneut anmelden.",
     "signedOut": "Nicht angemeldet",
-    "instant": "Anmelden und Abmelden wirken sofort, ohne Speichern.",
     "models": "Nutzbare Modelle",
     "byKey": "Nutzbar (API-Schlüssel)",
     "byKeyHelp": "Es ist kein Abo angemeldet, aber mu hat diesen Anbieter bei der letzten Verbindung als nutzbar gemeldet, meist weil sein API-Schlüssel in der Umgebung gesetzt ist. Nach der Anmeldung wird das Abo verwendet.",
     "otherRunning": "Die {{name}}-Anmeldung läuft gerade; es ist immer nur eine Anmeldung gleichzeitig möglich.",
     "showRunning": "Anzeigen",
+    "switched": "Von {{name}} abgemeldet. Gewechselt zu {{model}}.",
+    "noModelLeft": "Von {{name}} abgemeldet. Kein anderes Modell ist eingerichtet.",
     "legacy": {
       "openai-codex": "Diese ältere Anmeldung läuft über das Login der Codex CLI. Melde dich ab und dann mit ChatGPT an.",
       "anthropic": "Anthropic erlaubt anderen Apps keine Anmeldung mit einem Claude-Abo, daher bietet mu sie nicht mehr an. Melde dich ab und füge stattdessen einen Anthropic-API-Schlüssel hinzu."
@@ -440,12 +503,10 @@
     "noId": "Neues Modell",
     "show": "{{name}} anzeigen",
     "addListed": "{{name}} hinzufügen",
-    "levels": "Denkstufen",
-    "levelsHelp": "Nur angehakte Stufen bietet dieses Modell an. Sehr hoch und Maximal bleiben aus, bis du sie einschaltest."
+    "levels": "Denkstufen"
   },
   "test": {
     "run": "Verbindung testen",
-    "hint": "Eine kleinstmögliche Anfrage aus dieser App: die Modellliste, sonst eine Antwort aus einem Wort vom ersten Modell.",
     "okModels": "Verbunden ({{ms}} ms). Der Endpunkt listet {{count, number}} Modelle auf.",
     "okCompletion": "Verbunden ({{ms}} ms). Das Modell hat geantwortet.",
     "auth": "Der Schlüssel wurde abgelehnt (HTTP {{status}}).",
@@ -463,7 +524,7 @@
   },
   "boardModel": {
     "title": "Klartext-Modell",
-    "summary": "Schreibt das Klartext-Board: wie die Arbeit vorangeht, in einfachen Worten. Nur für dich, nie im Kontext der Unterhaltung; jede Aktualisierung kostet einen Modellaufruf.",
+    "summary": "Schreibt das Klartext-Board: wie die Arbeit vorangeht, in einfachen Worten. Jede Aktualisierung kostet einen Modellaufruf.",
     "pick": "Ein Modell deiner Wahl",
     "recommended": "Empfohlen: Claude Opus 4.6, am natürlichsten und beständigsten; danach Gemini 3.8 Flash, schneller und günstiger.",
     "recommendedTag": "empfohlen",
@@ -473,7 +534,6 @@
     "pickProvider": "Zuerst einen Anbieter wählen",
     "unset": "Noch keins: mu fragt, wenn das Board zum ersten Mal eingeschaltet wird.",
     "session": "Dasselbe Modell wie die Unterhaltung",
-    "sessionHelp": "Wechselt die Unterhaltung das Modell, wechselt das Board mit.",
     "update": "In dieser Version von mu lässt sich hier nicht festlegen, welches Modell das Board schreibt. Aktualisiere zuerst mu."
   },
   "levels": {
@@ -501,7 +561,6 @@
     "start": "Loslegen",
     "model": {
       "title": "Modell verbinden",
-      "subtitle": "mu schreibt damit Code und antwortet dir. Alles lässt sich später in den Einstellungen ändern.",
       "model": "Modell",
       "baseUrl": "Basis-URL",
       "key": "API-Schlüssel",
@@ -541,11 +600,10 @@
     "apiKey": {
       "title": "API-Schlüssel einfügen",
       "tag": "Am einfachsten",
-      "description": "DeepSeek, Kimi, Qwen, GLM, OpenAI, Claude, Gemini und mehr: mu erkennt den Dienst am Schlüssel und richtet den Rest ein",
+      "description": "OpenAI, Claude, Gemini, DeepSeek, Kimi, Qwen, GLM und mehr: mu erkennt den Dienst am Schlüssel und richtet den Rest ein",
       "placeholder": "Schlüssel hier einfügen",
       "service": "Dienst",
       "servicePlaceholder": "Am Schlüssel erkannt",
-      "serviceHint": "mu erkennt den Dienst am Schlüssel. Klappt das nicht, wähle ihn hier aus.",
       "recognized": "Am Schlüssel erkannt.",
       "ambiguous": "So sehen die Schlüssel mehrerer Dienste aus. Von welchem ist dieser?",
       "unknown": "mu kennt diese Art Schlüssel nicht. Von welchem Dienst ist er?",
@@ -555,7 +613,6 @@
       "lookingLocal": "{{service}} wird auf diesem Rechner gesucht…",
       "recheck": "Erneut prüfen",
       "startsWith": "mu startet mit",
-      "modelHint": "Du kannst das Modell jederzeit wechseln.",
       "outcome": {
         "ok": "Der Schlüssel funktioniert.",
         "okLocal": "{{service}} läuft auf diesem Rechner.",
@@ -631,15 +688,18 @@
     },
     "judge": {
       "title": "Judge wählen",
-      "subtitle": "Der Judge beantwortet die kleinen Fragen, die bei der Arbeit von mu anfallen. mu läuft auch ohne Judge, nur eben ohne diese Prüfungen.",
       "readyFree": "Der kostenlose Jev ist bereit. Hier ist nichts zu tun.",
       "readyKey": "Jev ist bereit, mit dem Schlüssel, den du festgelegt hast.",
       "more": "Dienst wechseln oder eigenen Schlüssel verwenden",
-      "less": "Ausblenden"
+      "less": "Ausblenden",
+      "none": {
+        "title": "Kein Judge",
+        "tag": "Nichts wird gesendet",
+        "description": "Kein Entscheidungspunkt fragt einen Judge, also wird auch nichts an einen gesendet. mu entscheidet nach seinen Standardregeln. Einen Judge kannst du später in den Einstellungen wählen."
+      }
     },
     "done": {
       "title": "Alles bereit",
-      "subtitle": "Prüfe alles noch einmal, dann kann es losgehen.",
       "model": "Modell",
       "judge": "Judge",
       "none": "Nicht festgelegt",
@@ -668,20 +728,6 @@
         "text_one": "mu hat auf diesem Computer {{count}} Unterhaltung mit einem anderen Programmierassistenten gefunden. Importiere sie mit ihrem ganzen Verlauf und mach hier weiter.",
         "text_other": "mu hat auf diesem Computer {{count}} Unterhaltungen mit anderen Programmierassistenten gefunden. Importiere sie mit ihrem ganzen Verlauf und mach hier weiter.",
         "open": "Unterhaltungen auswählen…"
-      },
-      "points": {
-        "judge": {
-          "title": "Eine Prüfung bei jedem Schritt",
-          "text": "Ein integrierter Judge achtet auf die entscheidenden Momente: erst nachdenken, dann handeln, deine Vorgaben einhalten und nichts als erledigt melden, was nicht überprüft ist."
-        },
-        "control": {
-          "title": "Alles im Blick, alles im Griff",
-          "text": "Mit Checkpoints lassen sich Änderungen rückgängig machen; nutzt mu den integrierten Browser, ist jeder Schritt sichtbar, und du kannst pausieren oder übernehmen."
-        },
-        "ready": {
-          "title": "Sofort einsatzbereit",
-          "text": "mu übernimmt die Regeln, Skills und MCP-Server, die du bereits in Claude Code, Cursor und Codex eingerichtet hast."
-        }
       },
       "start": "Einrichten"
     },
@@ -721,8 +767,18 @@
       "submit": "Absenden",
       "openAgain": "Seite erneut öffnen",
       "pasteCode": "Stattdessen Code einfügen",
+      "pasteHint": "Nach der Anmeldung öffnet dein Browser eine Adresse, die mit {{address}} beginnt. Die Seite zeigt vielleicht einen Fehler an, das macht nichts. Kopiere die ganze Adresse aus der Adressleiste und füge sie hier ein.",
       "cancel": "Abbrechen",
       "failed": "Die Anmeldung wurde nicht abgeschlossen. Du kannst es erneut versuchen.",
+      "retry": "Erneut versuchen",
+      "pasteInstead": "Stattdessen die Adresse einfügen",
+      "takenOver": "Eine andere Anmeldung hat den Port übernommen, auf den diese gewartet hat (ein /login im Terminal oder die Codex CLI), deshalb wurde diese beendet.",
+      "portInUse": {
+        "program": "Port {{port}} wird von {{command}} (Prozess {{pid}}) belegt, vermutlich für dessen eigene Anmeldung. Schließe diese Anmeldung dort ab oder brich sie ab und klicke dann auf „Erneut versuchen“.",
+        "process": "Port {{port}} wird von Prozess {{pid}} belegt, vermutlich für eine eigene Anmeldung (die Codex CLI und die Codex-App nutzen diesen Port). Schließe diese Anmeldung dort ab oder brich sie ab und klicke dann auf „Erneut versuchen“.",
+        "session": "Port {{port}} ist durch eine nicht abgeschlossene Anmeldung in einer anderen mu- oder pi-Sitzung belegt (Prozess {{pid}}). Schließe sie dort ab oder brich sie ab (im Terminal mit Esc) und klicke dann auf „Erneut versuchen“.",
+        "unknown": "Port {{port}} wird von einem anderen Programm belegt, vermutlich meldet sich gerade die Codex CLI oder die Codex-App an. Schließe diese Anmeldung dort ab oder brich sie ab und klicke dann auf „Erneut versuchen“."
+      },
       "asks": "{{name}} fragt (im Originalwortlaut):",
       "needAccount": "Melde dich zuerst bei einem Konto an und wähle dann ein Modell.",
       "experimental": "Experimentell",
@@ -739,7 +795,6 @@
     },
     "permissions": {
       "title": "Wie viel mu selbst erledigt",
-      "subtitle": "Neue Unterhaltungen starten in dem Modus, den du hier wählst. Wechseln kannst du jederzeit im Eingabefeld oder mit /permissions.",
       "recommended": "Empfohlen"
     }
   },
@@ -774,6 +829,12 @@
       "paid": "Der kostenlose Jev auf OpenCode Zen verlangt jetzt einen Schlüssel oder eine Zahlung, daher entscheiden vorerst feste Regeln. Trage unter Einstellungen → Judges einen Jev-Schlüssel ein, um den Judge zurückzubekommen.",
       "gone": "OpenCode Zen bietet den kostenlosen Jev nicht mehr an, daher entscheiden vorerst feste Regeln. Trage unter Einstellungen → Judges einen Jev-Schlüssel ein, um den Judge zurückzubekommen."
     },
+    "openaiKey": {
+      "missing": "Das Entscheidungsmodell von OpenAI hat keinen API-Schlüssel mehr und urteilt daher nicht. Trage unter Einstellungen → Judges einen ein oder wähle einen anderen Judge.",
+      "rejected": "OpenAI hat den API-Schlüssel des Entscheidungsmodells abgelehnt, daher urteilt es nicht. Trage unter Einstellungen → Judges einen anderen Schlüssel ein oder wähle einen anderen Judge."
+    },
+    "layaRemoved": "Laya ist nicht mehr in mu enthalten, daher ist Ihr Judge jetzt {{judge}}. Um ein anderes Entscheidungsmodell zu nutzen, fügen Sie es unter Einstellungen → Judges von Hugging Face hinzu.",
+    "layaRemovedNoModels": "Laya ist nicht mehr in mu enthalten, daher ist Ihr Judge jetzt {{judge}}.",
     "checkpointOffWhy": {
       "gitMissing": "Checkpoints sind in dieser Unterhaltung aus: Git wurde auf diesem Computer nicht gefunden. Installiere Git und starte dann eine neue Unterhaltung, um sie zu bekommen.",
       "xcodeLicense": "Checkpoints sind in dieser Unterhaltung aus: Git läuft auf diesem Mac erst, wenn die Xcode-Lizenz akzeptiert ist. Akzeptiere sie mit sudo xcodebuild -license im Terminal und starte dann eine neue Unterhaltung, um sie zu bekommen.",
@@ -846,11 +907,9 @@
   },
   "importChats": {
     "title": "Unterhaltungen importieren",
-    "description": "Hol Unterhaltungen, die du auf diesem Computer in Claude Code, Codex oder ZCode geführt hast, mit ihrem ganzen Verlauf in mu und führe sie hier fort.",
     "open": "Auswählen…",
     "dialog": {
       "title": "Unterhaltungen importieren",
-      "hint": "Jede ausgewählte Unterhaltung wird zu einer mu-Unterhaltung in ihrem Projektordner, mit ihrem ganzen Verlauf: Nachrichten, Werkzeugaufrufe, Denkschritte und Bilder. Wähle sie später erneut aus, um Neues nachzuholen.",
       "search": "Nach Wörtern oder Ordner suchen",
       "loading": "Unterhaltungen werden gesucht…",
       "empty": "Auf diesem Computer wurden keine Unterhaltungen aus Claude Code, Codex oder ZCode gefunden.",
@@ -956,11 +1015,7 @@
     },
     "send": {
       "placeholder": "Nachricht an mu…",
-      "placeholderWorking": "Lenke mu jetzt, oder hinterlasse eine Nachricht für nach diesem Lauf…",
-      "steer": "Jetzt",
-      "steerHint": "Erreicht mu bei seinem nächsten Schritt",
-      "followUp": "Danach",
-      "followUpHint": "Wartet, bis dieser Lauf endet"
+      "placeholderWorking": "Nachricht an mu – mu entscheidet, wann sie in die Arbeit einfließt…"
     },
     "queue": {
       "title": "Wartet auf das Senden",
@@ -1006,9 +1061,11 @@
       "body": "mu arbeitet in diesem Ordner. Sag, was erledigt werden soll."
     },
     "sider": {
-      "title": "Zuletzt",
       "new": "Neue Unterhaltung in einem Ordner",
       "empty": "Noch keine Unterhaltungen",
+      "addProject": "Projekt hinzufügen",
+      "removeProject": "Projekt entfernen",
+      "archiveProjectConfirm": "„{{name}}“ und die Unterhaltungen darin archivieren? Du kannst sie unter „Archiviert“ am Ende der Liste wiederherstellen.",
       "all": "Alle anzeigen ({{count}})",
       "fewer": "Weniger anzeigen",
       "deleteConfirm": "„{{title}}“ löschen? Die Sitzungsdatei landet im Papierkorb, wo du sie noch wiederherstellen kannst.",
@@ -1053,8 +1110,6 @@
     }
   },
   "details": {
-    "lead": "Ein Schalter pro Funktion, ihre Einstellungen unter „Optionen“. Die eingerückten Zeilen sind die Stellen, an denen sie den Judge fragt: Schaltest du eine aus, läuft dieser Schritt wie gewohnt.",
-    "featureOff": "Die Funktion ist aus",
     "askJudge": "Den Judge entscheiden lassen",
     "askJudgeAbout": "Den Judge entscheiden lassen: {{point}}",
     "areas": {
@@ -1081,7 +1136,6 @@
       "cursor": "aus Cursor"
     },
     "skills": {
-      "lead": "Die Skills, die mu in jeder Unterhaltung nutzen kann, und woher sie jeweils kommen.",
       "search": "Skills suchen",
       "open": "Ordner öffnen",
       "add": "Skill hinzufügen",
@@ -1092,33 +1146,26 @@
       "empty": "mu hat noch keine Skills.",
       "noMatch": "Kein Skill passt.",
       "failed": "Die Skills von mu konnten nicht gelesen werden.",
-      "project": "Die eigenen Skills eines Projekts (.mu/skills, .agents/skills, .claude/skills) werden nur in dessen Unterhaltungen geladen und hier nicht aufgeführt.",
       "groups": {
         "mu": {
-          "title": "Skills von mu",
-          "help": "In {{folder}}. Hinzugefügte Skills landen hier, und nur diese lassen sich entfernen."
+          "title": "Skills von mu"
         },
         "agents": {
-          "title": "Gemeinsame Skills",
-          "help": "In ~/.agents/skills, von mehreren Agenten genutzt. mu liest sie und ändert sie nie."
+          "title": "Gemeinsame Skills"
         },
         "builtin": {
-          "title": "Mit mu geliefert",
-          "help": "Kommen mit mu und sind an, solange die Funktion an ist, die sie mitbringt."
+          "title": "Mit mu geliefert"
         },
         "claude": {
-          "title": "Aus Claude Code",
-          "help": "Aus ~/.claude/skills. mu liest sie nur; features.inherit in mu.json beendet die Übernahme."
+          "title": "Aus Claude Code"
         },
         "codex": {
-          "title": "Aus Codex",
-          "help": "Aus ~/.codex/skills. mu liest sie nur; features.inherit in mu.json beendet die Übernahme."
+          "title": "Aus Codex"
         }
       }
     },
     "mcp": {
       "title": "MCP-Server",
-      "lead": "Die MCP-Server, die mu in jeder Unterhaltung nutzen kann, und wo sie jeweils eingerichtet sind.",
       "open": "Konfigurationsdatei öffnen",
       "add": "Server hinzufügen",
       "added": "{{name}} hinzugefügt. Neue Unterhaltungen können ihn nutzen.",
@@ -1130,7 +1177,6 @@
       "failed": "Die MCP-Server von mu konnten nicht gelesen werden.",
       "featureOff": "Die MCP-Funktion ist in mu.json aus: Nur die Server aus mcp.json werden genutzt.",
       "unreadable": "Diese Dateien konnten nicht gelesen werden, ihre Server fehlen daher: {{files}}",
-      "project": "Die eigenen Server eines Projekts (.mu/mcp.json, .mcp.json, .cursor/mcp.json) werden nur in dessen Unterhaltungen genutzt und hier nicht aufgeführt.",
       "locked": {
         "offInSource": {
           "label": "An der Quelle aus",
@@ -1143,20 +1189,16 @@
       },
       "groups": {
         "mu": {
-          "title": "Server von mu",
-          "help": "In mcp.json und mu.json. Hinzugefügte Server kommen wie bei mu mcp add in {{file}}."
+          "title": "Server von mu"
         },
         "claude": {
-          "title": "Aus Claude Code",
-          "help": "Aus ~/.claude.json. Hier abschalten schreibt nur in mu.json, nie in die Datei von Claude Code."
+          "title": "Aus Claude Code"
         },
         "cursor": {
-          "title": "Aus Cursor",
-          "help": "Aus ~/.cursor/mcp.json. Hier abschalten schreibt nur in mu.json, nie in die Datei von Cursor."
+          "title": "Aus Cursor"
         },
         "codex": {
-          "title": "Aus Codex",
-          "help": "Aus ~/.codex/config.toml. Hier abschalten schreibt nur in mu.json, nie in die Datei von Codex."
+          "title": "Aus Codex"
         }
       },
       "form": {

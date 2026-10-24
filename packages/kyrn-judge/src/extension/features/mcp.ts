@@ -8,7 +8,6 @@ import {
 	type McpServerConfig,
 } from "@earendil-works/pi-coding-agent";
 import type { Capability } from "../../catalog/catalog.ts";
-import { capabilityDisclosure } from "../../decisions/capability-disclosure.ts";
 import { expandPlaceholders } from "../../inherit/mcp-config.ts";
 import type { InheritanceScan } from "../../inherit/scan.ts";
 import type { McpServerDefinition } from "../../inherit/types.ts";
@@ -17,6 +16,7 @@ import { serverEnvironment } from "../../mcp/environment.ts";
 import { allocateServerNames, capabilityId } from "../../mcp/names.ts";
 import { type CachedTool, McpStore } from "../../mcp/store.ts";
 import { clip, failOpen, type KyrnRuntime } from "../runtime.ts";
+import { hidesNothing } from "./catalog.ts";
 import { type HarnessRoots, inheritedFor } from "./inherit.ts";
 
 interface Entry {
@@ -93,9 +93,10 @@ function literal(value: string): string {
  * tools reached as configured there (`mu mcp add` makes them `deferred`, loaded
  * through `tool_search`). An inherited server of the same name yields to them.
  *
- * With `capability.disclosure` off nothing is hidden, so every server is
- * registered with the session. A server with `"exposure": "always"` in mu.json
- * is registered with the session either way.
+ * With the catalog switched off (`features.catalog: false`) nothing is hidden,
+ * so every server is registered with the session. With `capability.disclosure`
+ * off, as by default, they stay hidden and `find_capability` opens one. A server
+ * with `"exposure": "always"` in mu.json is registered with the session either way.
  */
 export function registerMcp(runtime: KyrnRuntime, roots: HarnessRoots | undefined): void {
 	const options = runtime.options("mcp", {
@@ -350,7 +351,7 @@ export function registerMcp(runtime: KyrnRuntime, roots: HarnessRoots | undefine
 			ensureLoaded(ctx);
 			// Servers that are to be open without anybody asking: pinned ones, and all of them when nothing is hidden.
 			// A question about a project's server is asked when somebody wants that server, not at every start.
-			const everything = runtime.mode(capabilityDisclosure.id) === "off";
+			const everything = hidesNothing(runtime);
 			for (const entry of entries.values()) {
 				if (!everything && entry.definition.exposure !== "always") continue;
 				if (entry.needsApproval && !store.isApproved(ctx.cwd, entry.definition)) continue;

@@ -170,7 +170,6 @@
     "judge": "Настройка судьи",
     "reload": "Перезагрузить",
     "starting": "Запуск mu…",
-    "startingHint": "Подключение к локальному ядру mu и чтение настроек модели и судьи.",
     "startupError": "Не удалось запустить mu",
     "hiveView": {
       "title": "Hive",
@@ -188,7 +187,6 @@
       "lastStep": "{{status}} · последний шаг: {{step}}",
       "runs": "Запуски Hive",
       "graph": "Карта сотрудничества",
-      "graphHint": "Чем толще линия, тем больше по ней передано. Выберите пчелу, чтобы открыть её строку; наведите на линию, чтобы прочитать, что она принесла.",
       "map": "Карта",
       "legend": "Обозначения",
       "legendDelivery": "доставка",
@@ -210,7 +208,6 @@
       "board": "Общая доска",
       "noNotes": "Общих находок пока нет.",
       "context": "Контекст выполнения",
-      "contextHint": "Записанные сообщения и завершённый вывод инструментов, не полный запрос модели. Вывод появляется после завершения.",
       "focus": "Назначение",
       "missingFocus": "Назначение для этого запуска не записано.",
       "current": "Текущая активность",
@@ -1079,7 +1076,6 @@
     "compactionAborted": "Уплотнение отменено",
     "compactionFailed": "Не удалось выполнить уплотнение",
     "compactionSavings": "Сокращение контекста ≈{{saved}}",
-    "compactionEstimate": "Число токенов после уплотнения — оценка; следующий ответ модели обновит данные.",
     "cacheHit": "Попадания в кэш",
     "cachePending": "Данных об использовании кэша пока нет",
     "cacheLabel": "Доля попаданий в кэш за сеанс: {{percent}}",
@@ -1115,7 +1111,6 @@
       "needsYou": "Нужно ваше решение",
       "needsYouText": "Агент ждёт вашего ответа в диалоге.",
       "quote": "Процитировать в ответе",
-      "quoteHint": "Нажмите на пункт, чтобы процитировать его в ответе; ничего не отправится, пока вы не отправите сами.",
       "account": "Что сделано",
       "earlierNotes": "Более ранние записи: {{count, number}}",
       "earlierNotes_one": "Более ранние записи: {{count, number}}",
@@ -1130,7 +1125,8 @@
         "fixing": "Исправляет найденное при проверке",
         "waiting": "Ждёт вас",
         "wrapping_up": "Завершает",
-        "stuck": "Похоже, застрял"
+        "stuck": "Похоже, застрял",
+        "blocked": "Ждёт другого"
       },
       "checks_one": "Выполнено {{done}} из {{total}} проверки",
       "checks_other": "Выполнено {{done}} из {{total}} проверки",
@@ -1160,8 +1156,9 @@
           "wrapping_up": "Работа сделана; остались последние штрихи.",
           "stuck": "Похоже, ходит по кругу; возможно, нужна ваша подсказка.",
           "unclear": "Работает.",
-          "focus": "{{now}} (В работе: {{focus}})",
-          "planning": "Продумывает, как это сделать; пока ничего не изменено."
+          "planning": "Продумывает, как это сделать; пока ничего не изменено.",
+          "blocked": "Ждёт команду, помощника или сеть.",
+          "focus": "{{now}} (В работе: {{focus}})"
         }
       },
       "checks_few": "Выполнено {{done}} из {{total}} проверок",
@@ -1200,8 +1197,43 @@
         "did": "Использовал {{tool}}: {{what}}",
         "said_quote": "Агент сказал: {{text}}",
         "ended": "Остановился.",
-        "waiting_reply": "Остановился и ждёт вашего ответа."
-      }
+        "waiting_reply": "Остановился и ждёт вашего ответа.",
+        "still_running": "Всё ещё выполняется {{what}}, уже {{minutes, number}} мин",
+        "still_running_who": "{{who}}: {{what}} идёт {{minutes, number}} мин без вывода",
+        "helper_done": "{{name}} вернулся: {{summary}}",
+        "helper_failed": {
+          "failed": "{{name}}: ошибка",
+          "timed_out": "{{name}}: время вышло",
+          "stopped": "{{name}} остановлен"
+        },
+        "helpers_back_failed": "Вернулось помощников: {{count, number}}, с ошибками: {{failed, number}}",
+        "helpers_back_failed_one": "Вернулось помощников: {{count, number}}, с ошибками: {{failed, number}}",
+        "helpers_back_failed_few": "Вернулось помощников: {{count, number}}, с ошибками: {{failed, number}}",
+        "helpers_back_failed_many": "Вернулось помощников: {{count, number}}, с ошибками: {{failed, number}}",
+        "helpers_back_failed_other": "Вернулось помощников: {{count, number}}, с ошибками: {{failed, number}}",
+        "with_detail": "{{line}}: {{detail}}"
+      },
+      "headlines": {
+        "helpers_working": "Работают помощники: {{count, number}}",
+        "helpers_working_one": "Работают помощники: {{count, number}}",
+        "helpers_working_few": "Работают помощники: {{count, number}}",
+        "helpers_working_many": "Работают помощники: {{count, number}}",
+        "helpers_working_other": "Работают помощники: {{count, number}}",
+        "waiting_permission": "Ждёт вашего разрешения: {{what}}"
+      },
+      "updated": "Обновлено {{ago}} назад",
+      "updatedNow": "Обновлено только что",
+      "blocked": "Застряло",
+      "blockedLine": "Застряло: {{text}}",
+      "next": "Дальше",
+      "agents": "Кто что делает",
+      "agentStates": {
+        "working": "Работает",
+        "waiting": "Ждёт",
+        "stuck": "Застрял"
+      },
+      "stripOpen": "Сводка простыми словами: {{headline}}",
+      "stripHint": "Нажмите, чтобы открыть сводку"
     },
     "lessonsView": {
       "filterLabel": "Какие уроки показывать",
@@ -1330,7 +1362,10 @@
     "eventLine": {
       "judgeNotice": {
         "freeJev": "Ключ Jev не задан: отвечает бесплатный Jev на OpenCode Zen",
-        "freeJevUnavailable": "Бесплатный Jev перестал отвечать: пока не задан ключ Jev, решают фиксированные правила"
+        "freeJevUnavailable": "Бесплатный Jev перестал отвечать: пока не задан ключ Jev, решают фиксированные правила",
+        "openaiKeyMissing": "У модели решений OpenAI нет API-ключа: решают следующий судья или фиксированные правила",
+        "openaiKeyRejected": "OpenAI отклонил API-ключ модели решений: решают следующий судья или фиксированные правила",
+        "layaRemoved": "Laya больше не входит в mu: теперь судья — {{judge}}"
       },
       "detail": "Подробности: {{detail}}",
       "progress": {

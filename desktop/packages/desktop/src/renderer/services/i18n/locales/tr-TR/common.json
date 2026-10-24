@@ -168,7 +168,6 @@
     "judge": "Hakem yapılandırması",
     "reload": "Yeniden yükle",
     "starting": "mu başlatılıyor…",
-    "startingHint": "Yerel mu çekirdeğine bağlanılıyor, model ve hakem yapılandırması okunuyor.",
     "startupError": "mu başlatılamadı",
     "hiveView": {
       "title": "Hive",
@@ -186,7 +185,6 @@
       "lastStep": "{{status}} · son adım: {{step}}",
       "runs": "Hive çalışmaları",
       "graph": "İş birliği haritası",
-      "graphHint": "Çizgi ne kadar kalınsa o kadar çok şey taşınmıştır. Bir arıyı seçmek satırını açar; bir çizginin üzerine gelmek taşıdığını gösterir.",
       "map": "Harita",
       "legend": "Açıklama",
       "legendDelivery": "teslim",
@@ -206,7 +204,6 @@
       "board": "Paylaşılan pano",
       "noNotes": "Henüz paylaşılan bulgu yok.",
       "context": "Yürütme bağlamı",
-      "contextHint": "Kaydedilmiş mesajlar ve tamamlanmış araç çıktısıdır; tam model istemi değildir. Araç çıktısı tamamlandıktan sonra görünür.",
       "focus": "Atama",
       "missingFocus": "Bu çalışma için atama kaydedilmedi.",
       "current": "Geçerli etkinlik",
@@ -1065,7 +1062,6 @@
     "compactionAborted": "Sıkıştırma iptal edildi",
     "compactionFailed": "Sıkıştırma başarısız oldu",
     "compactionSavings": "Bağlamda azalma ≈{{saved}}",
-    "compactionEstimate": "Sıkıştırma sonrası token sayısı tahminidir; bir sonraki model yanıtı kullanımı günceller.",
     "cacheHit": "Önbellek isabetleri",
     "cachePending": "Henüz önbellek kullanımı bildirilmedi",
     "cacheLabel": "Oturum önbellek isabet oranı: {{percent}}",
@@ -1101,7 +1097,6 @@
       "needsYou": "Size ihtiyaç var",
       "needsYouText": "Ajan konuşmada yanıtınızı bekliyor.",
       "quote": "Yanıtınızda alıntıla",
-      "quoteHint": "Yanıtınızda alıntılamak için birine tıklayın; siz göndermeden hiçbir şey gönderilmez.",
       "account": "Neler yaptı",
       "earlierNotes": "{{count, number}} önceki kayıt",
       "earlierNotes_one": "{{count, number}} önceki kayıt",
@@ -1114,7 +1109,8 @@
         "fixing": "Kontrolde bulunanı düzeltiyor",
         "waiting": "Sizi bekliyor",
         "wrapping_up": "Topluyor",
-        "stuck": "Takılmış görünüyor"
+        "stuck": "Takılmış görünüyor",
+        "blocked": "Başka bir şeyi bekliyor"
       },
       "checks_one": "{{total}} kontrolden {{done}} tanesi tamam",
       "checks_other": "{{total}} kontrolden {{done}} tanesi tamam",
@@ -1140,8 +1136,9 @@
           "wrapping_up": "İş bitti; şimdi toparlıyor.",
           "stuck": "Döngüye girmiş gibi görünüyor; sizden bir ipucuna ihtiyacı olabilir.",
           "unclear": "Çalışıyor.",
-          "focus": "{{now}} (Şu anki iş: {{focus}})",
-          "planning": "Nasıl yapacağını düşünüyor; henüz hiçbir şeyi değiştirmedi."
+          "planning": "Nasıl yapacağını düşünüyor; henüz hiçbir şeyi değiştirmedi.",
+          "blocked": "Bir komutu, bir yardımcıyı ya da ağı bekliyor.",
+          "focus": "{{now}} (Şu anki iş: {{focus}})"
         }
       },
       "notes": {
@@ -1172,8 +1169,39 @@
         "did": "{{tool}} ile şunu yaptı: {{what}}",
         "said_quote": "Şunu söyledi: {{text}}",
         "ended": "Durdu.",
-        "waiting_reply": "Durdu, yanıtınızı bekliyor."
-      }
+        "waiting_reply": "Durdu, yanıtınızı bekliyor.",
+        "still_running": "{{what}} hâlâ çalışıyor, {{minutes, number}} dk oldu",
+        "still_running_who": "{{who}}: {{what}} {{minutes, number}} dk’dır çıktı vermeden çalışıyor",
+        "helper_done": "{{name}} döndü: {{summary}}",
+        "helper_failed": {
+          "failed": "{{name}} hata verdi",
+          "timed_out": "{{name}} zaman aşımına uğradı",
+          "stopped": "{{name}} durduruldu"
+        },
+        "helpers_back_failed": "{{count, number}} yardımcı döndü, {{failed, number}} tanesi hatalı",
+        "helpers_back_failed_one": "{{count, number}} yardımcı döndü, {{failed, number}} tanesi hatalı",
+        "helpers_back_failed_other": "{{count, number}} yardımcı döndü, {{failed, number}} tanesi hatalı",
+        "with_detail": "{{line}}: {{detail}}"
+      },
+      "headlines": {
+        "helpers_working": "{{count, number}} yardımcı çalışıyor",
+        "helpers_working_one": "{{count, number}} yardımcı çalışıyor",
+        "helpers_working_other": "{{count, number}} yardımcı çalışıyor",
+        "waiting_permission": "İzninizi bekliyor: {{what}}"
+      },
+      "updated": "{{ago}} önce güncellendi",
+      "updatedNow": "Az önce güncellendi",
+      "blocked": "Takıldı",
+      "blockedLine": "Takıldı: {{text}}",
+      "next": "Sırada",
+      "agents": "Kim ne yapıyor",
+      "agentStates": {
+        "working": "Çalışıyor",
+        "waiting": "Bekliyor",
+        "stuck": "Takıldı"
+      },
+      "stripOpen": "Sade dilde pano: {{headline}}",
+      "stripHint": "Panoyu açmak için tıklayın"
     },
     "lessonsView": {
       "filterLabel": "Hangi dersler gösterilsin",
@@ -1278,7 +1306,10 @@
     "eventLine": {
       "judgeNotice": {
         "freeJev": "Jev anahtarı yok: OpenCode Zen'deki ücretsiz Jev yanıtlıyor",
-        "freeJevUnavailable": "Ücretsiz Jev yanıt vermeyi bıraktı: Bir Jev anahtarı ayarlanana kadar sabit kurallar karar veriyor"
+        "freeJevUnavailable": "Ücretsiz Jev yanıt vermeyi bıraktı: Bir Jev anahtarı ayarlanana kadar sabit kurallar karar veriyor",
+        "openaiKeyMissing": "OpenAI'ın karar modelinin API anahtarı yok: Sıradaki hakem veya sabit kurallar karar veriyor",
+        "openaiKeyRejected": "OpenAI, karar modelinin API anahtarını reddetti: Sıradaki hakem veya sabit kurallar karar veriyor",
+        "layaRemoved": "Laya artık mu'ya yerleşik değil: hakem artık {{judge}}"
       },
       "detail": "Ayrıntılar: {{detail}}",
       "progress": {

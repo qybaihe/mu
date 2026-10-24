@@ -72,6 +72,16 @@ export function validateQuestions(questions: Questions): void {
 	}
 }
 
+/** Adds `part` to `total`. The cache counts appear only once a provider reports them. */
+export function addUsage(total: JudgeUsage, part: JudgeUsage | undefined): void {
+	total.inputTokens = (total.inputTokens ?? 0) + (part?.inputTokens ?? 0);
+	total.outputTokens = (total.outputTokens ?? 0) + (part?.outputTokens ?? 0);
+	if (part?.cachedInputTokens !== undefined)
+		total.cachedInputTokens = (total.cachedInputTokens ?? 0) + part.cachedInputTokens;
+	if (part?.cacheWriteTokens !== undefined)
+		total.cacheWriteTokens = (total.cacheWriteTokens ?? 0) + part.cacheWriteTokens;
+}
+
 function isProbability(value: unknown): value is number {
 	return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1;
 }
@@ -127,10 +137,21 @@ export class Judge implements JudgeLike {
 
 		let responses: Awaited<ReturnType<JudgeProvider["evaluate"]>>[];
 		try {
-			// Questions are answered in isolation, so chunks can run concurrently over the same state.
-			responses = await Promise.all(
+			const requests = Promise.all(
 				chunks.map((questions) => this.provider.evaluate({ state: request.state, questions, signal })),
 			);
+			// An external provider is expected to honor AbortSignal, but a broken or
+			// third-party implementation may not. Race the provider work itself so the
+			// judge still fails open at the configured deadline instead of hanging.
+			const deadline = new Promise<never>((_, reject) => {
+				const timer = setTimeout(
+					() => reject(new JudgeError("timeout", `Judge call exceeded ${this.timeoutMs} ms`)),
+					this.timeoutMs,
+				);
+				requests.finally(() => clearTimeout(timer)).catch(() => undefined);
+			});
+			// Questions are answered in isolation, so chunks can run concurrently over the same state.
+			responses = await Promise.race([requests, deadline]);
 		} catch (error) {
 			if (request.signal?.aborted) throw new JudgeError("aborted", "Judge call was aborted", { cause: error });
 			if (timeout.aborted) {
@@ -146,8 +167,7 @@ export class Judge implements JudgeLike {
 		for (const response of responses) {
 			Object.assign(answers, response.answers);
 			if (response.warnings) warnings.push(...response.warnings);
-			usage.inputTokens = (usage.inputTokens ?? 0) + (response.usage?.inputTokens ?? 0);
-			usage.outputTokens = (usage.outputTokens ?? 0) + (response.usage?.outputTokens ?? 0);
+			addUsage(usage, response.usage);
 		}
 		for (const id of ids) {
 			const problem = answerProblem(request.questions[id], answers[id]);

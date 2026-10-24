@@ -189,22 +189,24 @@ export const OpenAICompletionsCompatSchema = Type.Object(
 	{
 		supportsStore: Type.Optional(
 			Type.Boolean({
-				description: "Whether the provider supports the store field. Default: auto-detected from URL.",
+				description:
+					"Whether the provider supports the store field. Default: true for api.openai.com and Azure OpenAI, false for other endpoints.",
 			}),
 		),
 		supportsDeveloperRole: optionalCompatBoolean({
 			description:
-				"Whether the provider supports the developer role instead of system. Default: auto-detected from URL.",
+				"Whether the provider supports the developer role instead of system for reasoning models. Default: true for api.openai.com, Azure OpenAI, and Xiaomi MiMo, false for other endpoints. When an endpoint rejects the developer role, Pi sends the request again with system and keeps using system for that model until it restarts.",
 		}),
 		supportsReasoningEffort: Type.Optional(
 			Type.Boolean({
-				description: "Whether the provider supports reasoning_effort. Default: auto-detected from URL.",
+				description:
+					"Whether the provider supports reasoning_effort. Default: auto-detected from URL. When an endpoint rejects reasoning_effort as an unknown field, Pi sends the request again without it.",
 			}),
 		),
 		supportsUsageInStreaming: Type.Optional(
 			Type.Boolean({
 				description:
-					"Whether the provider supports stream_options.include_usage for token usage in streaming responses.",
+					"Whether the provider supports stream_options.include_usage for token usage in streaming responses. When an endpoint rejects stream_options as an unknown field, Pi sends the request again without it.",
 				default: true,
 			}),
 		),
@@ -217,7 +219,8 @@ export const OpenAICompletionsCompatSchema = Type.Object(
 		),
 		maxTokensField: Type.Optional(
 			Type.Union([Type.Literal("max_completion_tokens"), Type.Literal("max_tokens")], {
-				description: "Which field to use for max tokens. Default: auto-detected from URL.",
+				description:
+					"Which field to use for max tokens. Default: max_completion_tokens for api.openai.com, Azure OpenAI, and Xiaomi MiMo, max_tokens for other endpoints. When an endpoint rejects the field, Pi sends the request again with the other one.",
 			}),
 		),
 		requiresToolResultName: Type.Optional(
@@ -344,7 +347,7 @@ export const OpenAICompletionsCompatSchema = Type.Object(
 	},
 	{
 		description:
-			"Compatibility settings for OpenAI-compatible completions APIs. Use this to override URL-based auto-detection for custom providers.",
+			"Compatibility settings for OpenAI-compatible completions APIs. Use this to override URL-based auto-detection for custom providers. Explicit values win over detection, but not over a field the endpoint has rejected: Pi sends such a request again without the field and remembers that for the model until it restarts.",
 		additionalProperties: true,
 	},
 );

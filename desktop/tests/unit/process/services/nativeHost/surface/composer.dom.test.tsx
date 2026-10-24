@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NativeResult } from '@/common/kyrn/nativeBridge';
 import type { PiCommand } from '@/common/utils/nativeHost';
 import NativeComposer from '@/renderer/pages/native/components/NativeComposer';
-import { useNativeConversation } from '@/renderer/pages/native/hooks/useNativeConversation';
+import { stageFirstMessage, useNativeConversation } from '@/renderer/pages/native/hooks/useNativeConversation';
 import { NativeClientContext } from '@/renderer/pages/native/utils/nativeClient';
 import enCommon from '@/renderer/services/i18n/locales/en-US/common.json';
 import enConversation from '@/renderer/services/i18n/locales/en-US/conversation.json';
@@ -137,7 +137,7 @@ describe('the native send box', () => {
     const gate: { release?: () => void } = {};
     host.answer((id, command) => {
       if (command.type !== 'prompt') return { ok: true, data: { isStreaming: false, isCompacting: false } };
-      host.push(id, frame('preflight.pending', { judge: 'laya' }));
+      host.push(id, frame('preflight.pending', { judge: 'mude' }));
       return new Promise<NativeResult<unknown>>((resolve) => {
         gate.release = () => resolve({ ok: true, data: undefined });
       });
@@ -153,9 +153,10 @@ describe('the native send box', () => {
     // On its way: the run it starts has not begun, so the status is still the last run's.
     expect(status()).toHaveAttribute('data-sending', 'true');
     expect(status()).toHaveAttribute('data-status', 'idle');
-    // The judge reads the message: the box holds (no second prompt), says so, and offers to stop.
+    // The judge reads the message: the box says so and offers to stop; a second message may be written and sent, and
+    // waits its turn.
     expect(box()).toHaveAttribute('data-loading', 'true');
-    expect(box()).toHaveAttribute('data-send', 'false');
+    expect(box()).toHaveAttribute('data-send', 'true');
     expect(status()).toHaveTextContent('The judge is reading your message…');
     await act(async () => {
       fireEvent.click(screen.getByTestId('native-abort'));
@@ -168,24 +169,92 @@ describe('the native send box', () => {
     expect(status()).toHaveAttribute('data-sending', 'false');
   });
 
-  it('steers a run that goes, or leaves the message for after it', async () => {
+  it('lets messages sent while one is on its way wait their turn, sends them in order, and takes them back', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    const gates: Array<() => void> = [];
+    host.answer((_id, command) => {
+      if (command.type !== 'prompt') return { ok: true, data: { isStreaming: false, isCompacting: false } };
+      return new Promise<NativeResult<unknown>>((resolve) => {
+        gates.push(() => resolve({ ok: true, data: undefined }));
+      });
+    });
+    await mount(host);
+    const prompts = () => commands(host).flatMap((command) => (command.type === 'prompt' ? [command.message] : []));
+    type('fix the build');
+    await send();
+    type('then run the tests');
+    await send();
+    type('and write the notes');
+    await send();
+    // Only the first went: the others wait on screen, in the order sent, and the box is free.
+    expect(prompts()).toEqual(['fix the build']);
+    expect(screen.getByTestId('native-queue')).toHaveTextContent(
+      'Next stepthen run the testsNext stepand write the notes'
+    );
+    expect(input()).toHaveValue('');
+    await act(async () => gates[0]?.());
+    await waitFor(() => expect(prompts()).toEqual(['fix the build', 'then run the tests']));
+    expect(screen.getByTestId('native-queue')).not.toHaveTextContent('then run the tests');
+    // Taken back, the last one is in the box and never goes; pi had nothing queued, so nothing is asked of it.
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-queue-take-back'));
+    });
+    expect(input()).toHaveValue('and write the notes');
+    expect(screen.queryByTestId('native-queue')).toBeNull();
+    expect(commands(host)).not.toContainEqual({ type: 'clear_queue' });
+    await act(async () => gates[1]?.());
+    await act(async () => {});
+    expect(prompts()).toEqual(['fix the build', 'then run the tests']);
+  });
+
+  it('sends the first message the home page left, after the model and level, and puts it back in the box when it cannot go', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    host.answer((_id, command) =>
+      command.type === 'set_thinking_level'
+        ? { ok: false, kind: 'command', message: 'Unknown thinking level bogus' }
+        : { ok: true, data: { isStreaming: false, isCompacting: false } }
+    );
+    stageFirstMessage('c1', {
+      setup: [
+        { type: 'set_model', provider: 'e2e', modelId: 'e2e-fake-thinker' },
+        { type: 'set_thinking_level', level: 'bogus' },
+      ],
+      text: 'fix the build\n\n[[AION_FILES]]\n/uploads/spec.pdf',
+      typed: 'fix the build',
+    });
+    await mount(host);
+    await waitFor(() => expect(input()).toHaveValue('fix the build'));
+    expect(commands(host)).toEqual([
+      { type: 'set_model', provider: 'e2e', modelId: 'e2e-fake-thinker' },
+      { type: 'set_thinking_level', level: 'bogus' },
+    ]);
+    expect(screen.getByTestId('native-command-failed')).toHaveTextContent('Unknown thinking level bogus');
+    expect(status()).toHaveAttribute('data-sending', 'false');
+  });
+
+  it('sends a message during a run as a steer, with no switch for when it arrives: mu decides that', async () => {
     const host = createFakeHost();
     host.add({ id: 'c1' });
     await mount(host);
     expect(screen.queryByTestId('native-send-mode')).toBeNull();
     await running(host);
-    expect(screen.getByTestId('native-send-mode')).toBeInTheDocument();
+    // No Now / After switch beside the box: the kernel (input.interjection) moves a message to after the run.
+    expect(screen.queryByTestId('native-send-mode')).toBeNull();
+    expect(screen.queryByRole('radio')).toBeNull();
+    expect(screen.queryByText('Now')).toBeNull();
+    expect(screen.queryByText('After')).toBeNull();
     expect(box()).toHaveAttribute('data-loading', 'true');
     expect(box()).toHaveAttribute('data-send', 'true');
-    expect(input()).toHaveAttribute('placeholder', "Steer mu now, or queue a message for when it's done…");
+    expect(input()).toHaveAttribute('placeholder', 'Message mu. It decides when to act on it…');
     type('also check the tests');
     await send();
-    fireEvent.click(screen.getByText('After'));
     type('then write the notes');
     await send();
     expect(commands(host)).toEqual([
       { type: 'prompt', message: 'also check the tests', streamingBehavior: 'steer' },
-      { type: 'prompt', message: 'then write the notes', streamingBehavior: 'followUp' },
+      { type: 'prompt', message: 'then write the notes', streamingBehavior: 'steer' },
     ]);
   });
 

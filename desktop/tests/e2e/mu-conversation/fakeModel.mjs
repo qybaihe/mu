@@ -27,10 +27,14 @@ export const FAKE_API_KEY = 'e2e-key-not-secret';
 export const PLAIN_CHUNKS = ['PLAIN-REPLY-OK: ', '这是', '分成', '好几段', '流式', '发回来的', '回答。'];
 export const PLAIN_TEXT = PLAIN_CHUNKS.join('');
 export const SLOW_CHUNK_COUNT = 150;
-/** What the board's writer gets back: the JSON object its system prompt asks for. */
+/** What the board's writer gets back: the JSON object its system prompt asks for (kernel board v2). */
 export const BOARD_REPLY = {
-  progress: 'E2E-BOARD-PROGRESS: 已经写好一个文件。',
+  headline: 'E2E-BOARD-HEADLINE: 写好了一个文件',
   now: 'E2E-BOARD-NOW: 正在等下一步。',
+  blocked: 'E2E-BOARD-BLOCKED: 在等你发下一条消息。',
+  next: 'E2E-BOARD-NEXT: 你回复后接着写。',
+  progress: 'E2E-BOARD-PROGRESS: 已经写好一个文件。',
+  agents: [],
   confirm: [],
   note: 'E2E-BOARD-NOTE: 写了一个文件。',
 };
@@ -72,7 +76,8 @@ export function planReply(messages) {
   const user = lastUser >= 0 ? textOf(list[lastUser].content) : '';
   const results = list.slice(lastUser + 1).filter((message) => message?.role === 'tool');
   const lastResult = results.length ? textOf(results[results.length - 1].content) : '';
-  if (/You tell a person who is not a programmer/.test(system)) {
+  // The board's writer, by the first sentence of its instructions (packages/kyrn-judge/src/board/narrate.ts).
+  if (/You are the voice of a coding session's status board/.test(system)) {
     return { scenario: 'board', kind: 'text', chunks: [JSON.stringify(BOARD_REPLY)] };
   }
   const marker = /E2E:(PLAIN|WRITE|BASH|SLOW|ECHO)(?:[ \t]+([^\n]*))?/.exec(user);

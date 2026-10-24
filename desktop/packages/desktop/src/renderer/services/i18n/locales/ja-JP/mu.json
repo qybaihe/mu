@@ -1,11 +1,9 @@
 {
   "title": "mu の設定",
-  "description": "mu に指示できるすべての項目: 判定器、判定ポイント、機能、モデル、コンテキスト。mu コマンドラインと共有されます。",
   "reload": "再読み込み",
   "modified": "変更済み",
   "applyNote": "変更は新しいセッションに適用されます。実行中のセッションは開始時の設定のままです。変更を反映するには再接続してください。",
   "apiKey": "API キー",
-  "keyHelp": "保存後は二度と表示されません。このコンピューターにだけ保存され、あなたのアカウントしか読めません。",
   "keyKeep": "空欄のままにすると保存済みのキーを保持します",
   "endpointRule": "https:// または http:// で始まるアドレスを入力してください。ユーザー名、パスワード、クエリ、フラグメントは含められません。",
   "endpointPlain": "このアドレスは平文の http なので、キーとメッセージは暗号化されません。このコンピューターや自分のネットワーク上のサーバー（hosts ファイルで向けた名前を含む）なら問題ありません。インターネット越しには https を使ってください。",
@@ -73,7 +71,6 @@
     "useDefault": "既定に戻す（{{mode}}）"
   },
   "features": {
-    "lead": "mu がバックグラウンドで代わりに行うことです。オフにすると、mu はそれを行わなくなります。",
     "beta": "ベータ",
     "reset": "既定値に戻す",
     "boardModelElsewhere": "ボードを書くモデルは「わかりやすいボードのモデル」で選択します。",
@@ -87,9 +84,7 @@
     "details": "詳細設定"
   },
   "judges": {
-    "tiersHelp": "判定器は順に試されます。後の判定器は、前の判定器で確定しなかったものだけを扱います。",
     "order": "順序",
-    "orderHelp": "最初のものが「判定器」ページで選んだ判定器です。",
     "firstTier": "「判定器」ページで選んだ判定器です。サービス・アドレス・キーはそちらで設定します。",
     "tierTitle": "第 {{index}} 階層：{{name}}",
     "service": "サービス",
@@ -105,17 +100,14 @@
       },
       "typesafe": {
         "name": "TypeSafe",
-        "help": "常に TypeSafe に直接接続します。",
         "key": "TypeSafe の API キー"
       },
       "openrouter": {
         "name": "OpenRouter",
-        "help": "常に OpenRouter を経由し、OpenRouter の API キーを使います。キーは Jev 専用に保存され、設定しても OpenRouter のチャットモデル用のキーは変わりません。",
         "key": "OpenRouter の API キー"
       },
       "gateway": {
         "name": "Vercel AI Gateway",
-        "help": "常に Vercel AI Gateway を経由します。",
         "key": "Vercel AI Gateway の API キー"
       },
       "opencode": {
@@ -125,7 +117,6 @@
       },
       "cloudflare": {
         "name": "Cloudflare Workers AI",
-        "help": "Cloudflare Workers AI 上の Jev。Cloudflare の API トークンとアカウント ID が必要です。",
         "key": "Cloudflare の API トークン",
         "account": "Cloudflare のアカウント ID",
         "accountHelp": "Cloudflare ダッシュボードの Workers AI ページに表示されています。トークンと同じように保存されます。",
@@ -139,92 +130,165 @@
     },
     "model": "判定モデル",
     "baseUrl": "ベース URL",
-    "baseUrlHelp": "空欄なら TypeSafe の公式アドレスを使います。",
-    "customUrlHelp": "このサービスの System One アドレスです。キーはここにだけ送られます。",
     "baseUrlNeeded": "カスタムサービスにはアドレスが必要です。",
     "customTier": "自分で追加した判定器です。変更するには mu の設定ファイルを編集してください。",
-    "endpointDefault": "サービスの既定のアドレス",
-    "types": {
-      "localHelp": "このコンピューターで動きます。",
-      "clmHelp": "あなた自身の CLM サーバーで動きます。",
-      "classifierHelp": "mu のモデルカタログにある分類モデル：{{model}}。mu はそのプロバイダーのキーで呼び出します。"
-    },
-    "intro": "mu は作業中に、このメッセージをどう扱うか、このステップが設定したルールに反していないか、といった小さな判断を何度も迫られます。それに答えるのが判定器です。1 つ選んでください。",
     "mode": "判定を反映",
-    "modeHelp": "オンのとき判定器の判定が反映され、オフにすると各段階はそのまま進みます。個別に設定していない段階はこれに従います。",
     "choose": "判定器を選択",
     "custom": "現在、先頭の判定器はカスタム設定です。「判定器の順序」ページで確認・変更できます。",
     "keyPlaceholder": "キーを貼り付け",
+    "removeKey": "キーを削除",
     "choices": {
       "jev": {
         "title": "Jev",
         "tag": "おすすめ",
+        "tagHosted": "クラウド",
         "description": "TypeSafe がホストする判定モデルです。高速かつ正確です。OpenCode Zen では期間限定で無料。TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare、または自前のサービスのキーを使えば呼び出しごとに課金されます。"
       },
-      "local": {
-        "title": "ローカル Laya",
-        "tag": "無料・オフライン",
-        "description": "このコンピューター上で動作し、ネットワーク不要・無料です。分類は得意ですが、関連付けやスコアリングの信頼性は劣ります。"
+      "mude": {
+        "title": "mude 1.0",
+        "tag": "この Mac 上",
+        "tagRecommended": "おすすめ・この Mac 上",
+        "description": "mu 独自の意思決定モデル。コーディング向けに最適化され、コーディングエージェントの判断で SOTA レベルの性能を備えています。この Mac で動作し、キー不要、呼び出しごとの費用もかかりません。Apple シリコンが必要です。"
       },
       "clm": {
         "title": "CLM",
         "tag": "セルフホスト",
         "description": "Jev と同じ質問に、あなた自身のサーバー（clm-serve）で答えます。エンコーダーには GPU が必要で、呼び出しごとの課金はありません。"
+      },
+      "openai": {
+        "title": "OpenAI",
+        "tag": "クラウド",
+        "description": "OpenAI の判定モデル gpt-6-luna を、OpenAI の API キーで使います。課金は入力トークンごとです。"
       }
     },
-    "localAddress": "アドレス: {{address}}",
-    "laya": {
-      "running": "このマシンで実行中",
-      "stopped": "インストール済みですが、実行されていません。必要なときに mu が起動します。",
-      "missing": "まだインストールされていません。",
-      "platform": "このコンピューターでは Laya を実行できません。Windows または Linux（x64 または arm64）か、Apple Silicon 搭載の Mac が必要です。",
-      "needsUv": "インストールには Python のパッケージマネージャー uv が必要です。uv をインストールしてから、ここに戻ってください。",
-      "uvLink": "uv のインストール方法",
-      "install": "Laya をインストール",
+    "mude": {
+      "name": "mude 1.0（この Mac 上）",
+      "tierHelp": "この Mac で動作します。設定は「判定器」ページで行います。",
+      "notInstalled": "未インストール。",
+      "unfinished": "前回のインストールは完了していません。続けると、中断したところから再開します。",
+      "unfinishedDownloaded": "{{done}} / {{total}} GB をダウンロード済みです。続けると、中断したところから再開します。",
+      "install": "mude 1.0 をインストール",
+      "continue": "インストールを続ける",
+      "consent": {
+        "title": "mude 1.0 をインストールしますか？",
+        "download": "mu は Hugging Face から mude 1.0（約 {{download}} GB）をダウンロードし、そのための Python 環境（約 {{python}} GB）を用意します。数分かかります。",
+        "memory": "動作中の mude 1.0 は約 {{memory}} GB のメモリを使います。Apple シリコン搭載で macOS 14 以降の Mac が必要です。",
+        "after": "インストールが終わると mude 1.0 が起動し、mu の判定器になります。",
+        "ok": "ダウンロードしてインストール"
+      },
+      "localOnly": "ローカルのみ — クラウドの判定器には問い合わせない",
+      "localOnlyOn": "mude 1.0 が唯一の判定器になり、クラウドには何も送られません。答えられないときは、判定ポイントの既定の方針で処理します。",
+      "localOnlyOff": "mude 1.0 が答えられない判定（停止中や判断に迷ったときなど）はクラウドの {{judges}} に回され、送られた内容はこの Mac の外に出ます。次の 2 つのセキュリティ確認も常にそちらに送られます：ツールの説明の審査と、取得したコンテンツに注入された指示がないかの審査です。",
+      "localOnlyOffLocal": "mude 1.0 が答えられない判定は、同じくこの Mac で動く {{judges}} に回されます。",
+      "localOnlyNone": "mude 1.0 の後ろに判定器が設定されていません。答えられないときは、判定ポイントの既定の方針で処理します。",
+      "use": "mude 1.0 を判定器として使う",
+      "status": {
+        "running": "127.0.0.1:{{port}} で実行中",
+        "runningMemory": "127.0.0.1:{{port}} で実行中 · {{memory}} GB",
+        "starting": "起動中…",
+        "stopped": "停止中"
+      },
+      "resources": "動作中の mude 1.0 は約 {{memory}} GB のメモリを使います。この Mac 上のすべての mu セッション（ターミナルのものを含む）で共有され、停止するかオフにするまで動き続けます。",
       "start": "起動",
       "stop": "停止",
-      "confirmTitle": "Laya をダウンロードしてインストールしますか？",
-      "confirmText": "PyPI と Hugging Face から約 {{size}} MB（Python パッケージとモデルの重み）を mu のフォルダーにダウンロードします。数分かかります。インストールが終わると Laya が起動します。",
-      "confirmOk": "ダウンロードしてインストール",
+      "openFolder": "フォルダーを開く",
+      "uninstall": "アンインストール",
+      "uninstallTitle": "mude 1.0 をアンインストールしますか？",
+      "uninstallText": "mude 1.0 をオフにして置き換えていた判定器に戻し、モデルとその Python 環境（約 {{size}} GB）を削除します。あとで再インストールできます。",
       "working": {
-        "setup": "Laya をインストールしています…",
-        "start": "Laya を起動しています…",
-        "stop": "Laya を停止しています…"
+        "install": "mude 1.0 をインストールしています…",
+        "enable": "mude 1.0 をオンにしています…",
+        "disable": "mude 1.0 をオフにしています…",
+        "start": "mude 1.0 を起動しています…",
+        "stop": "mude 1.0 を停止しています…",
+        "uninstall": "mude 1.0 をアンインストールしています…"
+      },
+      "step": {
+        "download": "mude 1.0 をダウンロードし、すべてのファイルを確認しています…",
+        "python": "mude 1.0 の Python 環境を準備しています…",
+        "start": "mude 1.0 のサーバーを起動しています…"
+      },
+      "downloaded": "{{done}} / {{total}} GB",
+      "downloadedSoFar": "{{done}} / {{total}} GB をダウンロード済みです。",
+      "checking": "ダウンロードしたファイルを確認しています…",
+      "cancelled": "インストールをキャンセルしました。ダウンロード済みの部分は残ります。",
+      "failed": {
+        "install": "mude 1.0 をインストールできませんでした。",
+        "enable": "mude 1.0 をオンにできませんでした。",
+        "disable": "mude 1.0 をオフにできませんでした。",
+        "start": "mude 1.0 を起動できませんでした。",
+        "stop": "mude 1.0 を停止できませんでした。",
+        "uninstall": "mude 1.0 をアンインストールできませんでした。"
+      },
+      "error": {
+        "access": "mude 1.0 はまだダウンロードできません。しばらくしてからもう一度お試しください。",
+        "network": "Hugging Face に接続できませんでした。接続を確認してもう一度お試しください。ダウンロード済みの部分は残ります。",
+        "integrity": "ダウンロードしたファイルが検証に通りませんでした。もう一度インストールしてください。",
+        "unsupported": "この Mac では mude 1.0 を実行できません。"
+      },
+      "noStatus": "mude 1.0 の状態を取得できませんでした：{{reason}}",
+      "saveFirst": "mude 1.0 を変更するには、先にほかの変更を保存するか破棄してください。",
+      "needs": "mude 1.0 には Apple シリコン、macOS 14 以降、{{ram}} GB 以上のメモリを備えた Mac が必要です。",
+      "retry": "再試行",
+      "guide": {
+        "consent": "{{download}} GB のダウンロードと {{python}} GB の Python 環境が必要です。動作中は約 {{memory}} GB のメモリを使います。",
+        "instead": "代わりに mu はホスト型の判定器を使います。",
+        "ready": "mude 1.0 が動作中で、あなたの判定器になりました。",
+        "readyStopped": "mude 1.0 があなたの判定器になりました。サーバーは次の mu セッションの開始時に起動します。"
+      }
+    },
+    "models": {
+      "title": "ほかの意思決定モデル",
+      "placeholder": "Hugging Face のリンクまたは owner/name",
+      "add": "追加",
+      "trust": "モデルは自身のサーバーコードをこの Mac で実行します。信頼できるモデルだけを追加してください。",
+      "use": "判定器として使う",
+      "continue": "ダウンロードを続ける",
+      "remove": "削除",
+      "removeTitle": "{{name}} を削除しますか？",
+      "removeText": "{{name}} を判定の順序から外し、そのファイル（約 {{size}} GB）を削除します。あとでまた追加できます。",
+      "noList": "意思決定モデルを読み込めませんでした：{{reason}}",
+      "cancelled": "キャンセルしました。ダウンロード済みの部分は残ります。",
+      "state": {
+        "judge": "現在の判定器 · {{size}} GB",
+        "running": "実行中 · {{size}} GB",
+        "installed": "インストール済み · {{size}} GB",
+        "partial": "{{done}} / {{total}} GB をダウンロード済み",
+        "notDownloaded": "未ダウンロード · {{size}} GB"
+      },
+      "step": {
+        "resolve": "Hugging Face でモデルを探しています…",
+        "download": "{{name}} をダウンロードし、すべてのファイルを検証しています…",
+        "python": "Python 環境を準備しています…",
+        "start": "{{name}} のサーバーを起動しています…"
+      },
+      "working": {
+        "add": "{{name}} を追加しています…",
+        "use": "判定器を {{name}} に切り替えています…",
+        "disable": "{{name}} をオフにしています…",
+        "remove": "{{name}} を削除しています…"
       },
       "failed": {
-        "setup": "インストールが完了しませんでした。もう一度お試しください。",
-        "start": "Laya を起動できませんでした。",
-        "stop": "Laya を停止できませんでした。"
+        "add": "モデルを追加できませんでした。",
+        "use": "判定器にできませんでした。",
+        "disable": "オフにできませんでした。",
+        "remove": "削除できませんでした。"
       },
-      "onnx": {
-        "missing": "このコンピューターにはまだ Laya のモデルがありません（約 {{size}} MB）。mu は自動ではダウンロードしません。Hugging Face からファイルをダウンロードしてモデルフォルダーに入れ、「確認して起動」を押してください。",
-        "stopped": "モデルは揃っていますが、Laya は実行されていません。Laya を判定器に選んでいる場合、アプリを開いたときに mu が自動で起動します。",
-        "starting": "モデルを確認して Laya を起動しています… 初回の確認ではモデル全体を読み込むため、少し時間がかかります。",
-        "missingFiles": "まだ足りないファイル：{{files}}",
-        "wrongFiles": "mu でテストしたバージョンではありません。ダウンロードし直してください：{{files}}",
-        "folder": "モデルフォルダー：{{folder}}",
-        "command": "Hugging Face のコマンドライン（hf）があれば、次のコマンド 1 つですべて取得できます：",
-        "page": "Hugging Face で入手",
-        "openFolder": "モデルフォルダーを開く",
-        "check": "確認して起動",
-        "problem": {
-          "missing": "一部のモデルファイルがありません。",
-          "wrong": "一部のモデルファイルが mu でテストしたバージョンではありません。ダウンロードし直してください。",
-          "runtime": "このコンピューターではモデルを実行できませんでした。",
-          "port": "Laya のポート（{{port}}）はすでに別のプログラムが使用しています。",
-          "stopped": "Laya は準備が整う前に停止しました。",
-          "foreign": "mu が起動したのではない Laya が実行中です。起動した場所で停止してください。"
-        }
+      "error": {
+        "usage": "Hugging Face のモデルのリンクでも owner/name でもありません。",
+        "access": "Hugging Face でこのモデルを開けませんでした。名前を確認してください。存在しないか、非公開か、アクセス申請が必要な可能性があります。",
+        "notFound": "Hugging Face にそのモデルはありません。",
+        "notRunnable": "mu はこのモデルを実行できません。mude 1.0 と同じ形式のモデルに付属するサーバー d3_server_mac.py がありません。",
+        "network": "Hugging Face に接続できませんでした。接続を確認してもう一度お試しください。ダウンロード済みの部分は残ります。",
+        "integrity": "ダウンロードしたファイルが検証に失敗しました。もう一度お試しください。",
+        "unsupported": "この Mac では意思決定モデルを実行できません。"
       }
     },
     "clm": {
       "address": "サーバーのアドレス",
-      "addressHelp": "clm-serve が待ち受けるアドレスです（例: http://192.168.1.20:8700）。空欄ならこのコンピューター（{{address}}）です。",
       "key": "サーバーのキー",
       "keyPlaceholder": "サーバーが求める場合のみ",
-      "keyHelp": "キーを求めるのは CLM_API_KEY を付けて起動したサーバーだけです。同じ値を入力してください。保存後は二度と表示されません。",
       "check": "サーバーを確認",
-      "unmeasured": "CLM が mu の判定をどれだけうまく行えるかは、まだ測定していません。",
       "status": {
         "checking": "サーバーに問い合わせ中…",
         "ready": "応答中 · {{models}} · {{ms}} ミリ秒",
@@ -236,23 +300,26 @@
         "mock": "このサーバーは CLM のモックエンコーダーで動いています。回答はノイズで、CLM のものではありません。",
         "failed": "サーバーに問い合わせできませんでした。"
       }
+    },
+    "openai": {
+      "key": "OpenAI の API キー",
+      "keyHelp": "未入力の場合、mu は OpenAI プロバイダーの API キー（設定 → プロバイダー）か OPENAI_API_KEY を使います。ChatGPT のサインインは使えません。"
     }
   },
   "keyState": {
     "none": "未設定",
     "set": "設定済み",
     "typed": "新しいキー（未保存）",
+    "removed": "キーを削除（未保存）",
     "empty": "変数が空です",
     "managed": "設定済み",
     "manual": "設定済み（手動）"
   },
   "context": {
     "auto": "自動圧縮",
-    "autoHelp": "コンテキストがいっぱいに近づくと、履歴を圧縮します。",
     "limit": "コンテキスト上限",
     "limitHelp": "0 の場合は、モデルのコンテキストウィンドウから予約分を引いた値に従います。それ以外は {{min}}〜{{max}} で指定します。次のモデルリクエストの前に確認されるもので、厳密な打ち切りではありません。",
-    "limitProblem": "0、または {{min}}〜{{max}} の整数を入力してください。",
-    "lead": "会話をいつ圧縮するか、コンテキストをどこまで大きくできるか、そしてコンテキストに働く機能。"
+    "limitProblem": "0、または {{min}}〜{{max}} の整数を入力してください。"
   },
   "permissions": {
     "modes": {
@@ -313,7 +380,6 @@
     "flagged": "危険な操作：{{flag}}。"
   },
   "providers": {
-    "lead": "モデルの提供元（サブスクリプションとエンドポイント）を設定します。会話のモデルと思考レベルは、その会話の入力欄で選択します。",
     "title": "プロバイダー",
     "custom": "カスタムプロバイダー",
     "manualGroup": "手動設定",
@@ -348,7 +414,6 @@
     "commented": "models.json にコメントが含まれています。ここから保存するとコメントが消えるため、プロバイダーは読み取り専用です。ここで編集するには、コメントを手動で削除してください。",
     "modelCount_one": "{{count, number}} 個のモデル",
     "modelCount_other": "{{count, number}} 個のモデル",
-    "summary": "サブスクリプションでログインしてすぐに使うか、OpenAI、Anthropic、Gemini 互換の任意のエンドポイントに接続できます。",
     "subscriptions": "サブスクリプション",
     "manualShort": "手動",
     "needsSetup": "未設定",
@@ -361,13 +426,10 @@
     "removeDefault": "新しいセッションはこれを使って始まるため、既定のモデルもクリアされます。"
   },
   "defaults": {
-    "summary": "新しいセッションの開始時の設定です。会話の中でも切り替えられます。",
     "provider": "プロバイダー",
     "model": "モデル",
     "level": "思考レベル",
     "levelUnset": "指定しない",
-    "levelHelp": "このモデルが対応していないレベルは選べません。",
-    "levelClamped": "「指定しない」は「中」になります。モデルが対応していないレベルは、対応している最も近いレベルになります。",
     "noReasoning": "このモデルは思考しないため、このモデルのセッションは常に思考オフで始まります。",
     "notSet": "未指定",
     "pickProvider": "先にプロバイダーを選んでください。"
@@ -378,12 +440,13 @@
     "signOutFailed": "ログアウトが完了しませんでした。もう一度お試しください。",
     "signOutConfirm": "{{name}} からログアウトしますか？再び使うには、もう一度ログインする必要があります。",
     "signedOut": "未ログイン",
-    "instant": "ログインとログアウトは、保存しなくてもすぐに反映されます。",
     "models": "利用できるモデル",
     "byKey": "利用可能（API キー）",
     "byKeyHelp": "サブスクリプションにはログインしていませんが、前回の接続時に mu が利用可能と報告しました。通常は、その API キーが環境変数にあるためです。ログインするとサブスクリプションに切り替わります。",
     "otherRunning": "{{name}} のログインが進行中です。ログインは一度に 1 つしか実行できません。",
     "showRunning": "表示する",
+    "switched": "{{name}} からログアウトしました。{{model}} に切り替えました。",
+    "noModelLeft": "{{name}} からログアウトしました。ほかのモデルは設定されていません。",
     "legacy": {
       "openai-codex": "この旧サインインは Codex CLI のログインを経由します。サインアウトしてから、ChatGPT でサインインしてください。",
       "anthropic": "Anthropic は他のアプリが Claude のサブスクリプションでサインインすることを認めていないため、mu では提供を終了しました。サインアウトして、代わりに Anthropic の API キーを追加してください。"
@@ -440,12 +503,10 @@
     "noId": "新しいモデル",
     "show": "{{name}} を表示",
     "addListed": "{{name}} を追加",
-    "levels": "思考レベル",
-    "levelsHelp": "チェックしたレベルだけをこのモデルで使えます。非常に高いと最大はオンにするまで使えません。"
+    "levels": "思考レベル"
   },
   "test": {
     "run": "接続をテスト",
-    "hint": "このアプリから最小限のリクエストを 1 回送信します。モデル一覧を取得し、取得できない場合は最初のモデルにひと言だけ答えてもらいます。",
     "okModels": "接続しました（{{ms}} ミリ秒）。エンドポイントには {{count, number}} 個のモデルがあります。",
     "okCompletion": "接続しました（{{ms}} ミリ秒）。モデルが応答しました。",
     "auth": "キーが拒否されました（HTTP {{status}}）。",
@@ -463,7 +524,7 @@
   },
   "boardModel": {
     "title": "わかりやすいボードのモデル",
-    "summary": "わかりやすいボードを書くモデルです。作業の進み具合を日常の言葉で伝えます。あなただけに表示され、会話のコンテキストには入りません。更新のたびに 1 回呼び出します。",
+    "summary": "わかりやすいボードを書くモデルです。作業の進み具合を日常の言葉で伝えます。更新のたびに 1 回呼び出します。",
     "pick": "モデルを指定",
     "recommended": "おすすめは Claude Opus 4.6 で、最も自然で安定しています。次点は Gemini 3.8 Flash で、より高速かつ安価です。",
     "recommendedTag": "おすすめ",
@@ -473,7 +534,6 @@
     "pickProvider": "先にプロバイダーを選択してください",
     "unset": "未選択: 初めてボードをオンにしたときに mu が尋ねます。",
     "session": "会話で使っているモデル",
-    "sessionHelp": "会話のモデルを切り替えると、ボードも同じモデルに切り替わります。",
     "update": "このバージョンの mu では、ボードを書くモデルをここで指定できません。先に mu を更新してください。"
   },
   "levels": {
@@ -501,7 +561,6 @@
     "start": "はじめる",
     "model": {
       "title": "モデルを接続",
-      "subtitle": "mu はこのモデルを使ってコードを書き、質問に答えます。あとから「設定」でいつでも変更できます。",
       "model": "モデル",
       "baseUrl": "ベース URL",
       "key": "API キー",
@@ -541,11 +600,10 @@
     "apiKey": {
       "title": "API キーを貼り付け",
       "tag": "いちばん簡単",
-      "description": "DeepSeek、Kimi、Qwen、GLM、OpenAI、Claude、Gemini など。キーからサービスを見分けて、残りは mu が設定します",
+      "description": "OpenAI、Claude、Gemini、DeepSeek、Kimi、Qwen、GLM など。キーからサービスを見分けて、残りは mu が設定します",
       "placeholder": "ここにキーを貼り付け",
       "service": "サービス",
       "servicePlaceholder": "キーから判別",
-      "serviceHint": "mu がキーからサービスを見分けます。見分けられないときは、ここで選んでください。",
       "recognized": "キーから判別しました。",
       "ambiguous": "この形のキーを使うサービスが複数あります。どのサービスのキーですか？",
       "unknown": "mu はこの種類のキーを知りません。どのサービスのキーですか？",
@@ -555,7 +613,6 @@
       "lookingLocal": "このマシンで {{service}} を探しています…",
       "recheck": "もう一度確認",
       "startsWith": "mu が最初に使うモデル",
-      "modelHint": "モデルはいつでも切り替えられます。",
       "outcome": {
         "ok": "キーは使えます。",
         "okLocal": "{{service}} はこのマシンで動いています。",
@@ -631,15 +688,18 @@
     },
     "judge": {
       "title": "判定器を選択",
-      "subtitle": "判定器は、mu が作業中に迫られる小さな判断に答えます。判定器がなくても mu は動作しますが、これらのチェックは行われません。",
       "readyFree": "無料の Jev がすでに使えます。ここでの設定は不要です。",
       "readyKey": "Jev がすでに使えます。設定済みのキーを使います。",
       "more": "サービスを変える、または自分のキーを使う",
-      "less": "閉じる"
+      "less": "閉じる",
+      "none": {
+        "title": "判定器を使わない",
+        "tag": "送信なし",
+        "description": "どの判定ポイントも判定器に問い合わせないため、判定器には何も送信されません。mu は既定のルールで判断します。判定器はあとから設定で選べます。"
+      }
     },
     "done": {
       "title": "準備完了",
-      "subtitle": "内容を確認して、始めましょう。",
       "model": "モデル",
       "judge": "判定器",
       "none": "未設定",
@@ -668,20 +728,6 @@
         "text_one": "このコンピューターで、ほかのコーディングアシスタントとの会話が {{count}} 件見つかりました。履歴ごと取り込んで、ここで続けられます。",
         "text_other": "このコンピューターで、ほかのコーディングアシスタントとの会話が {{count}} 件見つかりました。履歴ごと取り込んで、ここで続けられます。",
         "open": "会話を選ぶ…"
-      },
-      "points": {
-        "judge": {
-          "title": "すべてのステップでチェック",
-          "text": "内蔵の判定器が重要な場面を見守ります。行動の前に考え、あなたが設定したルールを守り、検証せずに完了とはしません。"
-        },
-        "control": {
-          "title": "すべて見えて、操作できる",
-          "text": "チェックポイントで変更を元に戻せます。mu がアプリ内ブラウザーを使うときは、操作が一つずつ見えるので、一時停止したり、操作を引き継いだりできます。"
-        },
-        "ready": {
-          "title": "すぐに使える",
-          "text": "Claude Code、Cursor、Codex で設定済みのルール、スキル、MCP サーバーをそのまま利用します。"
-        }
       },
       "start": "セットアップ"
     },
@@ -721,8 +767,18 @@
       "submit": "送信",
       "openAgain": "ページをもう一度開く",
       "pasteCode": "代わりにコードを貼り付け",
+      "pasteHint": "ログインすると、ブラウザは {{address}} で始まるアドレスに移動します。ページにエラーが表示されることがありますが、問題ありません。アドレスバーのアドレスをすべてコピーして、ここに貼り付けてください。",
       "cancel": "キャンセル",
       "failed": "ログインが完了しませんでした。もう一度お試しください。",
+      "retry": "再試行",
+      "pasteInstead": "代わりにアドレスを貼り付けてログイン",
+      "takenOver": "別のログイン（ターミナルの /login や Codex CLI）が、このログインが待っていたポートを引き継いだため、このログインは停止しました。",
+      "portInUse": {
+        "program": "ポート {{port}} は {{command}}（プロセス {{pid}}）が使用中です。おそらくそれ自身のログインのためです。そちらでログインを完了するかキャンセルしてから、「再試行」をクリックしてください。",
+        "process": "ポート {{port}} はプロセス {{pid}} が使用中です。おそらくそれ自身のログインのためです（Codex CLI と Codex アプリもこのポートを使います）。そちらでログインを完了するかキャンセルしてから、「再試行」をクリックしてください。",
+        "session": "ポート {{port}} は、別の mu または pi のセッションで完了していないログインが使用しています（プロセス {{pid}}）。そちらで完了するかキャンセル（ターミナルでは Esc）してから、「再試行」をクリックしてください。",
+        "unknown": "ポート {{port}} は別のプログラムが使用中です。おそらく Codex CLI か Codex アプリがログイン中です。そちらでログインを完了するかキャンセルしてから、「再試行」をクリックしてください。"
+      },
       "asks": "{{name}} からの質問（原文のまま）:",
       "needAccount": "先にアカウントにログインしてから、モデルを選択してください。",
       "experimental": "実験的",
@@ -739,7 +795,6 @@
     },
     "permissions": {
       "title": "mu が自分で進める範囲",
-      "subtitle": "新しい会話はここで選んだモードで始まります。送信欄や /permissions でいつでも切り替えられます。",
       "recommended": "おすすめ"
     }
   },
@@ -774,6 +829,12 @@
       "paid": "OpenCode Zen の無料の Jev がキーか支払いを求めるようになったため、当面はルールで判定します。「設定 → 判定器」で Jev のキーを入力すると戻ります。",
       "gone": "OpenCode Zen が無料の Jev の提供を終えたため、当面はルールで判定します。「設定 → 判定器」で Jev のキーを入力すると戻ります。"
     },
+    "openaiKey": {
+      "missing": "OpenAI の判定モデルに API キーがないため、判定に参加していません。「設定 → 判定器」でキーを入力するか、別の判定器を選んでください。",
+      "rejected": "OpenAI が判定モデルの API キーを拒否したため、判定に参加していません。「設定 → 判定器」で別のキーを入力するか、別の判定器を選んでください。"
+    },
+    "layaRemoved": "Laya は mu に組み込まれなくなったため、判定器は {{judge}} になりました。ほかの意思決定モデルを使うには、「設定 → 判定器」で Hugging Face から追加してください。",
+    "layaRemovedNoModels": "Laya は mu に組み込まれなくなったため、判定器は {{judge}} になりました。",
     "checkpointOffWhy": {
       "gitMissing": "この会話ではチェックポイントがオフです：このコンピューターに Git が見つかりませんでした。Git をインストールしてから新しい会話を始めると、チェックポイントが使えます。",
       "xcodeLicense": "この会話ではチェックポイントがオフです：Xcode のライセンスに同意するまで、この Mac では Git を実行できません。ターミナルで sudo xcodebuild -license を実行して同意してから新しい会話を始めると、チェックポイントが使えます。",
@@ -846,11 +907,9 @@
   },
   "importChats": {
     "title": "会話を取り込む",
-    "description": "このコンピューターで Claude Code、Codex、ZCode と交わした会話を履歴ごと mu に取り込み、ここで続けます。",
     "open": "会話を選ぶ",
     "dialog": {
       "title": "会話を取り込む",
-      "hint": "選んだ会話はそれぞれ、元のプロジェクトフォルダーにある mu の会話になります。メッセージ、ツール呼び出し、思考過程、画像まで、履歴をすべて引き継ぎます。あとでもう一度選ぶと、新しいやり取りを取り込めます。",
       "search": "内容やフォルダーで検索",
       "loading": "会話を探しています…",
       "empty": "このコンピューターに Claude Code、Codex、ZCode の会話は見つかりませんでした。",
@@ -956,11 +1015,7 @@
     },
     "send": {
       "placeholder": "mu にメッセージを送る…",
-      "placeholderWorking": "今すぐ mu を導くか、この実行が終わった後に送るメッセージを残す…",
-      "steer": "今すぐ",
-      "steerHint": "mu の次のステップで届きます",
-      "followUp": "後で",
-      "followUpHint": "この実行が終わるまで待ちます"
+      "placeholderWorking": "mu にメッセージを送る。作業に取り込むタイミングは mu が決めます…"
     },
     "queue": {
       "title": "送信待ち",
@@ -1006,9 +1061,11 @@
       "body": "mu はこのフォルダーで作業します。やりたいことを伝えてください。"
     },
     "sider": {
-      "title": "最近",
       "new": "フォルダーで新しい会話",
       "empty": "まだ会話はありません",
+      "addProject": "プロジェクトを追加",
+      "removeProject": "プロジェクトを外す",
+      "archiveProjectConfirm": "「{{name}}」とその会話をアーカイブしますか？一覧の末尾にある「アーカイブ済み」から復元できます。",
       "all": "すべて表示（{{count}}）",
       "fewer": "折りたたむ",
       "deleteConfirm": "「{{title}}」を削除しますか？セッションファイルはゴミ箱に移り、あとで復元できます。",
@@ -1053,8 +1110,6 @@
     }
   },
   "details": {
-    "lead": "機能ごとにスイッチが一つあり、設定は「オプション」にあります。字下げされた行は判定器に判断を求める箇所です。オフにすると、その段階はそのまま進みます。",
-    "featureOff": "機能はオフです",
     "askJudge": "判定器に判断させる",
     "askJudgeAbout": "判定器に判断させる：{{point}}",
     "areas": {
@@ -1081,7 +1136,6 @@
       "cursor": "Cursor"
     },
     "skills": {
-      "lead": "mu がすべての会話で使えるスキルと、それぞれの出どころ。",
       "search": "スキルを検索",
       "open": "フォルダーを開く",
       "add": "スキルを追加",
@@ -1092,33 +1146,26 @@
       "empty": "mu にはまだスキルがありません。",
       "noMatch": "一致するスキルはありません。",
       "failed": "mu のスキルを読み込めませんでした。",
-      "project": "プロジェクト固有のスキル（.mu/skills、.agents/skills、.claude/skills）はそのプロジェクトの会話でのみ読み込まれ、ここには表示されません。",
       "groups": {
         "mu": {
-          "title": "mu のスキル",
-          "help": "{{folder}} にあります。追加したスキルはここに入り、削除できるのもここにあるものだけです。"
+          "title": "mu のスキル"
         },
         "agents": {
-          "title": "共有スキル",
-          "help": "~/.agents/skills にあり、複数のエージェントで共有されます。mu は読み取るだけで変更しません。"
+          "title": "共有スキル"
         },
         "builtin": {
-          "title": "mu に付属",
-          "help": "mu と一緒に提供され、それをもたらす機能がオンのときに読み込まれます。"
+          "title": "mu に付属"
         },
         "claude": {
-          "title": "Claude Code から引き継ぎ",
-          "help": "~/.claude/skills から。mu は読み取るだけです。mu.json の features.inherit で引き継ぎを止められます。"
+          "title": "Claude Code から引き継ぎ"
         },
         "codex": {
-          "title": "Codex から引き継ぎ",
-          "help": "~/.codex/skills から。mu は読み取るだけです。mu.json の features.inherit で引き継ぎを止められます。"
+          "title": "Codex から引き継ぎ"
         }
       }
     },
     "mcp": {
       "title": "MCP サーバー",
-      "lead": "mu がすべての会話で使える MCP サーバーと、それぞれの設定場所。",
       "open": "設定ファイルを開く",
       "add": "サーバーを追加",
       "added": "{{name}} を追加しました。新しい会話から使えます。",
@@ -1130,7 +1177,6 @@
       "failed": "mu の MCP サーバーを読み込めませんでした。",
       "featureOff": "mu.json で MCP 機能がオフになっています。mcp.json のサーバーだけが使われます。",
       "unreadable": "次のファイルを読み込めなかったため、そのサーバーは表示されていません: {{files}}",
-      "project": "プロジェクト固有のサーバー（.mu/mcp.json、.mcp.json、.cursor/mcp.json）はそのプロジェクトの会話でのみ使われ、ここには表示されません。",
       "locked": {
         "offInSource": {
           "label": "元の設定でオフ",
@@ -1143,20 +1189,16 @@
       },
       "groups": {
         "mu": {
-          "title": "mu のサーバー",
-          "help": "mcp.json と mu.json にあります。追加したサーバーは mu mcp add と同じく {{file}} に書き込まれます。"
+          "title": "mu のサーバー"
         },
         "claude": {
-          "title": "Claude Code から引き継ぎ",
-          "help": "~/.claude.json から。ここでオフにすると mu.json にだけ書き込まれ、Claude Code のファイルは変更されません。"
+          "title": "Claude Code から引き継ぎ"
         },
         "cursor": {
-          "title": "Cursor から引き継ぎ",
-          "help": "~/.cursor/mcp.json から。ここでオフにすると mu.json にだけ書き込まれ、Cursor のファイルは変更されません。"
+          "title": "Cursor から引き継ぎ"
         },
         "codex": {
-          "title": "Codex から引き継ぎ",
-          "help": "~/.codex/config.toml から。ここでオフにすると mu.json にだけ書き込まれ、Codex のファイルは変更されません。"
+          "title": "Codex から引き継ぎ"
         }
       },
       "form": {

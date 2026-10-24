@@ -319,5 +319,18 @@
   "saveFailedWithDetail": "保存に失敗しました：{{detail}}",
   "zoomActualSize": "ズームをリセット",
   "zoomFit": "幅に合わせる",
-  "zoomFitTooltip": "パネルの幅に合わせる"
+  "zoomFitTooltip": "パネルの幅に合わせる",
+  "gallery": {
+    "label": "画像 {{name}}",
+    "previous": "前の画像",
+    "next": "次の画像",
+    "position": "{{index}} / {{count}}",
+    "gone": "このファイルが見つかりません。移動または削除された可能性があります。",
+    "tooLarge": "画像が大きすぎるため、ここでは表示できません（{{size}}）。既定のアプリで開いてください。"
+  },
+  "reveal": {
+    "mac": "Finder で表示",
+    "windows": "エクスプローラーで表示",
+    "linux": "フォルダで表示"
+  }
 }

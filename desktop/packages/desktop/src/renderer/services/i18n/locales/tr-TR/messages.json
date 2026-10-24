@@ -116,5 +116,18 @@
   "optionNumber": "Seçenek {{number}}",
   "copyFilesHeader": "Dosyalar:",
   "exportHeaderLine": "{{label}}: {{value}}",
-  "exportSpeakerLine": "{{speaker}}:"
+  "exportSpeakerLine": "{{speaker}}:",
+  "fileRef": {
+    "preview": "{{name}} dosyasını önizle",
+    "open": "{{name}} dosyasını aç",
+    "reveal": {
+      "mac": "{{name}} dosyasını Finder'da göster",
+      "windows": "{{name}} dosyasını Dosya Gezgini'nde göster",
+      "linux": "{{name}} dosyasını klasöründe göster"
+    },
+    "missing": "Dosya bulunamadı",
+    "ambiguous": "Bu ada sahip birden fazla dosya var",
+    "gone": "{{name}} artık orada değil. Taşınmış veya silinmiş olabilir.",
+    "openFailed": "{{name}} açılamadı"
+  }
 }

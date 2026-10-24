@@ -2,7 +2,6 @@
   <img src="../../desktop/resources/app.png" width="96" alt="mu">
 </p>
 <h1 align="center">mu</h1>
-<p align="center">μ · Only what's needed.</p>
 <p align="center">帶判定核心的程式設計代理。以 <a href="https://github.com/earendil-works/pi">pi</a> 為基礎。</p>
 
 <p align="center">
@@ -23,17 +22,13 @@
     <source media="(prefers-color-scheme: dark)" srcset="run-dark.gif">
     <img src="run-light.gif" alt="桌面版裡的一次執行，專案是任務佇列 relay。訊息：relay.config.json 裡 timeout 設為 1h30m 的任務，跑一個小時左右就被終止，找出原因、修好，並確認測試都能通過。判定器把訊息判為多步驟任務（input.preflight）。模型跑測試，判定器放行（tool.approval）：13 個裡失敗了 1 個。模型讀時長解析器，發現一分鐘被定義成 1,000 毫秒，說要改成 60,000 再跑一次測試，然後沒做就停了。判定器認為這次執行半途而止（turn.continue），mu 提醒模型這一輪還沒完，模型改好單位、再跑測試：13 個全部通過。右側判定頁逐條列出每次判定、判定點和耗時。">
   </picture>
-  <br>
-  <sub>在桌面版裡錄下的一次執行。程式設計模型的回覆是為錄製寫好的腳本（介面上顯示為 GPT-6.1 Sol），專案和側欄裡之前的對話也是為錄製準備的；判定器的裁決、耗時和那次復原都是真的：模型話說一半就停了，<code>turn.continue</code> 發現了，mu 讓它回去做完。</sub>
 </p>
 
 一個程式設計代理每個工作階段要做幾百個和程式碼無關的決定：什麼留在上下文裡，一條指令安不安全，一個發現值不值得告訴另一個代理，工作做完了沒有。交給大模型，花的是 token、延遲和注意力；交給寫死的規則，錯得太多。mu 把它們交給一個**判定器**：一個小而快的模型，每次只回答一個有邊界的問題，每一輪有 40 個判定點。大模型把注意力留給正事。
 
 - **mu**：命令列。pi 的全部能力，加上判定核心。
 - **mu 桌面版**：內建 mu 和執行環境的桌面應用程式。下載，接上一個模型，開始。
-- **判定器**：預設的判定模型是 Jev，由 TypeSafe 託管。是非題、選擇題、評分題，每個答案帶機率，每一次判定都記進判定帳本。任何判定模型都可以取代它：本機的 Laya（審批除外）、你自己的 System One 服務，或任何一個大模型。
-
-> 還在早期開發。預發布版（0.1.x）在 npm 和 [Releases](https://github.com/qybaihe/mu/releases) 上，作者每天都在用。名稱、設定和格式都可能改變。
+- **判定器**：預設的判定模型是 Jev，由 TypeSafe 託管。是非題、選擇題、評分題，每個答案帶機率，每一次判定都記進判定帳本。任何判定模型都可以取代它：在你的 Mac 上執行的 mu 自有模型 [mude 1.0](#mude-10針對程式設計場景最佳化的決策模型)、Hugging Face 上的其他決策模型、你自己的 System One 服務，或任何一個大模型。
 
 **目錄：**[快速開始](#快速開始) · [一輪是怎麼走的](#一輪是怎麼走的) · [判定點](#判定點) · [判定器](#判定器) · [實測](#實測) · [蜂群](#蜂群) · [人話看板](#人話看板) · [桌面版](#桌面版) · [命令列](#命令列) · [文件](#文件) · [參與貢獻](#參與貢獻)
 
@@ -49,7 +44,7 @@ mu setup            # 接上一個模型
 mu                  # 在目前目錄開一個工作階段
 ```
 
-開始使用不需要判定器的金鑰：設定之前，由 OpenCode Zen 上免費的 Jev 回答。40 個判定點裡有 34 個一開始就生效（免摘要壓縮和寫偏即停要你開啟才執行，子代理修補的範圍檢查預設關閉，通知分流、中途插話和偏離判斷只記錄），每次判定都會記錄下來（`/status`、`mu ledger`、桌面版的判定分頁）。如果只想記錄判定器會怎麼做、不改變行為，在 `~/.mu/agent/mu.json` 寫入 `{"modes": {"default": "shadow"}}`。更多請見 [Getting started](../getting-started.md)（英文）。
+開始使用不需要判定器的金鑰：設定之前，由 OpenCode Zen 上免費的 Jev 回答。40 個判定點裡有 34 個一開始就生效，每次判定都會記錄下來（`/status`、`mu ledger`、桌面版的判定分頁）。如果只想記錄判定器會怎麼做、不改變行為，在 `~/.mu/agent/mu.json` 寫入 `{"modes": {"default": "shadow"}}`。更多請見 [Getting started](../getting-started.md)（英文）。
 
 ## 一輪是怎麼走的
 
@@ -67,11 +62,9 @@ mu                  # 在目前目錄開一個工作階段
  一輪結束 ──▶ turn.completion · turn.continue · turn.drift · turn.rewind · memory.applied · board.read · cache.warming
 ```
 
-每個名字都是一個判定點。每個判定點是一個關於一小段狀態的短問題；答案決定接下來怎麼走。規則是底線：看起來危險的指令先由規則攔下，判定器只負責確認這是你要的。
-
 ## 判定點
 
-每個判定點可以是 `active`（生效，預設）、`shadow`（照常提問並記錄，但不改變任何行為，用來在開啟之前比較判定器）或 `off`（關閉），也可以指定自己的判定器：`jev`、`laya`（本機）、`classifier:<provider>/<model>`、`llm:<provider>/<model>`，或 `laya,jev` 這樣的串接。
+每個判定點可以是 `active`（生效，預設）、`shadow`（照常提問並記錄，但不改變任何行為，用來在開啟之前比較判定器）或 `off`（關閉），也可以指定自己的判定器：`jev`、`mude`（本機）、`classifier:<provider>/<model>`、`llm:<provider>/<model>`，或 `mude,jev` 這樣的串接。
 
 **輸入**
 
@@ -123,7 +116,7 @@ mu                  # 在目前目錄開一個工作階段
 | `turn.rewind` | 同一個失敗一次又一次：這條路是死路嗎？ | 退回到某個檢查點 |
 | `turn.completion` | 模型說做完了：有什麼東西驗證過嗎？ | 沒有就提醒一次 |
 | `turn.continue` | 一輪停在「接下來我跑一下測試」，或在你已經要它做的事上問「要我動手嗎」：是不是沒做完就停了？ | 讓它接著做，每則訊息最多兩次；難以撤銷的一步不會推它去做 |
-| `output.drift` | 模型正在寫的時候：輸出的末尾越過了你的約束嗎？ | 實驗性，預設關閉；邊寫邊糾正 |
+| `output.drift` | 模型正在寫的時候：輸出的末尾越過了你的約束嗎？ | 預設關閉；邊寫邊糾正 |
 | `goal.met` | 目標模式下大模型給不出答案時：條件成立了嗎？ | `/goal` 的備援 |
 | `board.read` | 事情做到哪了，選擇題？ | 供人話看板使用 |
 | `notify.routing` | 上下文預算之類的事件：現在告訴模型，晚點，還是不說？ | 模型在合適的時候被告知 |
@@ -142,12 +135,57 @@ mu                  # 在目前目錄開一個工作階段
 
 ## 判定器
 
-- **Jev**：TypeSafe 託管的判定模型，回答有邊界的問題，答案帶機率。可以經 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI，或任何支援同一協定的服務呼叫，每個服務有自己的金鑰（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`）：在桌面版的「判定器」頁選一個，預設用第一個設定了金鑰的。一把金鑰都沒有時，預設由 OpenCode Zen 上限時免費的 Jev 1.13 回答：判定要讀的內容會送到 OpenCode，它不拿來訓練模型，mu 每天提示一次。設定金鑰（`mu setup`，或「判定器」頁）後，下一個問題起就用你的金鑰。在作者自己的工作階段裡實測：HTTP/2 上一個熱連線的問題約 0.3 秒；16 塊工具輸出併成一個請求判完 0.44 秒，狀態只計費一次。判定、機率和耗時都進判定帳本：`mu ledger`，或桌面版的「判定」頁。
-- **Laya**（本機）。一個 3.22 億參數的判定器，在你的機器上執行，不經過網路。未經你同意不下載任何東西。在簡單述詞上可靠，在後設判斷上偏弱：先讓它以影子模式和你目前的判定器並行執行，看過判定帳本再把判定點交給它。
+- **Jev**：TypeSafe 託管的判定模型，回答有邊界的問題，答案帶機率。可以經 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI，或任何支援同一協定的服務呼叫，每個服務有自己的金鑰（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`）：在桌面版的「判定器」頁選一個，預設用第一個設定了金鑰的。一把金鑰都沒有時，預設由 OpenCode Zen 上限時免費的 Jev 1.13 回答：判定要讀的內容會送到 OpenCode，它不拿來訓練模型，mu 每天提示一次。設定金鑰（`mu setup`，或「判定器」頁）後，下一個問題起就用你的金鑰。在作者自己的工作階段裡實測：HTTP/2 上一個熱連線的問題約 0.3 秒；16 塊工具輸出併成一個請求判完 0.44 秒，狀態只計費一次。
+- **mude 1.0**（本機，Apple 晶片的 Mac）：mu 自己的決策模型，針對程式設計場景最佳化，見[下文](#mude-10針對程式設計場景最佳化的決策模型)。
+- **OpenAI 的決策模型** `gpt-6-luna`。透過 OpenAI 的 [Decisions API](https://developers.openai.com/api/docs/guides/decisions) 回答，使用 OpenAI 的 API 金鑰（`MU_JUDGE_OPENAI_KEY`，或 mu 已有的 OpenAI 金鑰）。用 `mu setup --judge openai` 或在設定 → 判定器裡選它。
+- **Hugging Face 上的其他決策模型**（本機，Apple 晶片的 Mac）：`mu judge model add <連結>`（或桌面版設定的「判定器」頁）加入一個和 mude 1.0 同樣打包的模型，並讓它擔任判定器。mu 不再內建 Laya：`mu.json` 裡還寫著它的，mude 1.0 裝好了就由 mude 1.0 頂替，否則用剩下的判定器或 Jev，mu 會提示一次。
 - **pi 模型目錄裡的任何分類模型**，作為一個層級：`classifier:<provider>/<model>`。例如 Cloudflare 的 Clef（`clef`、`clef-flash`）、OpenRouter 和 Vercel AI Gateway 上的 System One 模型、llama.cpp 的分類模型。
 - **任何大模型**，作為一個層級：`llm:<provider>/<model>`。
 
 這換來什麼，以作者自己的工作階段為準：上下文很少填滿，因為工具輸出逐塊進入、過期結果不寫摘要直接放下；測試記錄精簡預設關閉，開啟後折疊完全相同的重複，在最長的幾份失敗測試記錄裡省下 51% 的字元，一個字元也沒丟（見[實測](#實測)）；提示快取過期之前，核心會判斷你會不會回來，會回來就提前續上。
+
+### mude 1.0：針對程式設計場景最佳化的決策模型
+
+mude 1.0 是 mu 自己的決策模型，針對程式設計場景特別最佳化：經過微調和訓練，在程式設計場景的決策上達到 SOTA 級。它有 2B 參數，一次前向就答完一個判定的所有問題，每個答案帶機率；它在你的機器上執行，判定的內容不離開本機。[完整版](https://huggingface.co/qybaihe/mude-1.0)和 [MLX 8-bit 版](https://huggingface.co/qybaihe/mude-1.0-mlx-8bit)（1.8 GB）都採用 MIT 授權。目前一鍵安裝支援 Apple 晶片的 Mac（macOS 14 以上，記憶體 8 GB 以上），用的是 MLX 版：
+
+```bash
+mu judge mude install               # 下載、逐一校驗檔案、在 127.0.0.1 上啟動，並設為判定器
+mu judge mude status                # 裝了什麼、有沒有在執行、有沒有啟用
+mu judge mude enable --local-only   # 只用 mude：什麼都不送給託管的判定器
+mu judge mude disable               # 換回原本的判定器，並停掉它的服務
+mu judge mude uninstall             # 刪除模型和它的 Python 環境
+```
+
+在能跑 mude 1.0 的 Mac 上，它是推薦的判定器：`mu setup` 把它列在第一位；桌面 App 首次啟動的引導裡，「判定器」這一步一開始就選中它，點一下就能安裝。之後在設定的「判定器」頁可以安裝、啟動、停止和解除安裝 mude，「僅限本機」開關等同於 `--local-only`。安裝中途停下（Ctrl-C、斷網、斷電、結束 App）後，會從中斷的地方接著裝：再執行一次 `mu judge mude install`，或者點「繼續安裝」。
+
+預設情況下，原本的判定器排在 mude 後面：mude 答不了的（服務沒在執行，或者它拿不準），以及它暫時還不被信任的兩項注入檢查，交給那個判定器。如果那個判定器是託管的（預設的 Jev 就是），它看到的內容會離開本機。mude 的服務執行時佔用約 4 GB 記憶體，`mu judge mude stop` 可以停掉。其他平台上，可以用[完整版](https://huggingface.co/qybaihe/mude-1.0)（bf16、PyTorch，建議有 CUDA 顯示卡）自帶的 System One 服務執行，再依模型卡的寫法在 `mu.json` 裡把它加成 `typesafe` 判定器。
+
+### mubench 1.0：決策模型怎麼比
+
+mubench 是 mu 為決策模型做的評測。主榜的每一道題，都是 mu 在開源儲存庫上的真實程式設計工作階段裡送給決策模型的請求，一字未改。每個答案按它帶來的後果的代價計分，每個模型都和不用決策模型的 mu 相比：0 分是一樣，100 分是把這部分代價全部消除。完整榜單（含構造情境的副榜）在 [usemu.dev/zh-tw/mubench](https://usemu.dev/zh-tw/mubench/)。
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../images/mubench/composite-zh-dark.svg">
+    <img src="../images/mubench/composite-zh-light.svg" width="880" alt="mubench 1.0 主榜：開源儲存庫上真實程式設計工作階段裡 3,193 道請求上的綜合分，含 95% 區間。mude 1.0 64.9 (59.1–72.3)；Jev 1.14 63.1 (55.6–70.5)；Jev 1.13 61.5 (53.8–69.1)；d3-nano 原版 32.0 (21.3–39.0)；不用決策模型：0。">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../images/mubench/capabilities-zh-dark.svg">
+    <img src="../images/mubench/capabilities-zh-light.svg" width="880" alt="mubench 1.0 主榜：每項能力的分數，依序是 mude 1.0、Jev 1.14、Jev 1.13、d3-nano 原版。權限放行：52.6、53.7、52.7、5.9；惡意指令識別：目前還不出分；上下文壓縮：64.6、76.7、70.7、−19.1；按需載入與提醒：−2.7、16.8、25.1、−118.4；歸類與路由：83.6、87.5、85.8、51.7；進度與完成判斷：86.6、61.6、61.6、70.1；記憶與經驗：58.7、75.1、72.2、40.5；多代理協作：19.8、4.6、−0.8、26.0。">
+  </picture>
+</p>
+
+決策正確率是另一個更直白的指標：模型答對的檢查項占比，每個檢查項分量相同，不管答錯的代價多大。
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../images/mubench/accuracy-zh-dark.svg">
+    <img src="../images/mubench/accuracy-zh-light.svg" width="880" alt="mubench 1.0 決策正確率，含 95% 區間。主榜，開源儲存庫上真實程式設計工作階段裡的 3,193 道請求：不用決策模型 78.0% (75.9–80.2)；mude 1.0 91.5% (89.6–93.3)；Jev 1.14 90.1% (88.9–91.3)；Jev 1.13 89.4% (87.7–91.1)；d3-nano 原版 83.5% (82.1–84.9)。副榜，1,655 個構造情境：不用決策模型 44.5% (42.8–46.2)；mude 1.0 92.1% (91.1–93.1)；Jev 1.14 91.8% (90.8–92.8)；Jev 1.13 91.1% (90.0–92.0)；d3-nano 原版 80.1% (78.6–81.7)。">
+  </picture>
+</p>
 
 ## 實測
 
@@ -184,8 +222,6 @@ mu                  # 在目前目錄開一個工作階段
 - 重複段來自一位開發者兩天的工作階段：15 份測試記錄，全部是 Vitest，圖裡是其中超過 4,000 字元的 7 份。其他執行器沒有測過。
 - 還沒有在同一批任務上和 pi、Claude Code、Codex 做端到端比較。
 
-`node kyrn/spikes/judge-bench/test-log-replay.ts` 幾秒內離線重跑 Jev 以外的所有組，不需要金鑰；在目前的程式碼上，這些組比圖裡高 0.6 到 1.1 個百分點，圖是 2026-09-21 測的。Jev 那一組需要 `TYPESAFE_API_KEY`。
-
 <details>
 <summary>圖中的數據</summary>
 
@@ -210,8 +246,6 @@ mu                  # 在目前目錄開一個工作階段
 
 ## 蜂群
 
-多代理系統都要回答同一個問題：一個代理知道的，要不要告訴另一個？常見的答案是什麼都不傳（只向主代理回報）、什麼都傳（群組聊天或交接時帶上全部歷史）、讓每個代理自己的大模型來決定、或者靠固定規則和環境。mu 的答案：判定器當閘門。
-
 一個蜂群是 2 到 6 隻 bee，各有自己的關注點。bee 讀程式碼、執行指令、開瀏覽器；從不改程式碼，改動由主模型來做。每隻 bee 每說完一段，`hive.publish` 問一次：這裡有沒有值得共享的發現、死路、決定或阻礙？值得的就放上一塊只增不刪的共享板。板上每來一條新筆記，`hive.deliver` 對每一隻別的 bee 各問一次：這和它的關注點有關嗎？有關就投遞過去，標明「這是發現，不是指令」。
 
 因為板只增不刪，後來的結論會推翻早先的：一隻 bee 回報測試跑不起來，後來清掉一個環境變數就跑起來了。`hive.relate` 讀兩條筆記之間的關係：*推翻*、*矛盾*或*支持*。被推翻的結論變成一條更正，送給每一隻拿著舊結論的 bee。互相矛盾的兩條都留著，標成爭議；一分鐘內沒人解決，就派一隻核實 bee 去查。
@@ -220,17 +254,15 @@ mu                  # 在目前目錄開一個工作階段
 
 桌面版的「蜂群」頁就是這一切的現場。每隻 bee 一行：角色、模型、此刻在做什麼或剛說了什麼。連接圖畫出誰把發現送給了誰：線越粗代表送達越多，更正和爭議各有自己的畫法，一條發現送到的那一刻會沿著線亮一下。資訊流裡是每一條送達的原文，判定記錄裡是每一次裁決。對話裡的蜂群卡片帶一張縮圖，點開就是這一頁。
 
-一次真實的執行：3 隻 bee，9 分鐘，評了 117 條候選，27 條上板，16 條投遞到需要它的 bee 那裡。每一次判定都在執行記錄裡。
-
 `/swarm` 看每一隻在做什麼；`/swarm stop` 讓它們現在交報告；`/swarm kill` 立刻結束。時間到了的 bee 會被要求交報告，不交的會被結束；卡住的模型或工具由看門狗處理。蜂群一定會回來。
 
 ## 人話看板
 
-前沿模型一代比一代會做事，卻一代比一代不會講自己做了什麼：回報進度的文字越寫越像給另一台機器讀的輸出，更密、更晦澀，越來越不像人在說話。mu 不讓做事的模型自己回報。開啟看板（`/board`，或桌面版看板頁上的開關）後，代理每做完一步，看板上立刻多一行人話：改了哪個檔案、檢查過沒過、執行了什麼命令，連著讀檔案就折成一行「看了 N 個檔案」。代理做事途中每說一段話，`board.read` 都請判定器判一次這是不是新消息；是，就由一個只因為會講人話而被選中的模型（`/board model` 可換）當場重講給人聽，並同時更新看板的現況：現在在做什麼，清單上幾件事做完了幾件，有什麼在等你。一次執行結束時的總結是流水的最後一行，過程留在上面，所以你看到的不只是「做完了」，還有它到底做了什麼。
+開啟看板（`/board`，或桌面版看板頁上的開關）後，代理每做完一步，看板上立刻多一行人話：改了哪個檔案、檢查過沒過、執行了什麼命令，連著讀檔案就折成一行「看了 N 個檔案」。代理做事途中每說一段話，`board.read` 都請判定器判一次這是不是新消息；是，就由一個只因為會講人話而被選中的模型（`/board model` 可換）當場重講給人聽，並同時更新看板的現況：現在在做什麼，清單上幾件事做完了幾件，有什麼在等你。一次執行結束時的總結是流水的最後一行，過程留在上面，所以你看到的不只是「做完了」，還有它到底做了什麼。
 
 <p align="center"><img src="board.zh-CN.png" width="960" alt="桌面版的人話看板，蜂群回答之後：在等你決定要不要修，唯一需要你確認的問題，以及之前發生了什麼；頂端是上下文用量和快取命中率"></p>
 
-做事的模型照舊用自己的語言做事；看板上出現的字，始終一眼就讀得懂。看板跟著權限模式、目標和子代理走，代理換了做法，看板也換一種說法。頂端兩個數字是上下文用量和快取命中率，正是上面那些上下文和快取判定的直接結果。
+看板跟著權限模式、目標和子代理走，代理換了做法，看板也換一種說法。頂端兩個數字是上下文用量和快取命中率。
 
 ## 桌面版
 
@@ -264,12 +296,12 @@ mu doctor     # 檢查安裝、判定器和各項連線
   </picture>
 </p>
 
-需要 Node 22.19 或更新版本。`mu -p "prompt"` 執行一次並印出結果；`mu -c` 接續上一個工作階段。`mu import --list` 找出你的 Claude Code、Codex 和 ZCode 對話，`mu import <file>` 連同完整歷史一起匯入；之後再匯入一次，會把新增的內容帶過來。`mu ledger [n]` 印出最近 n 個工作階段裡判定器的決定。命令列和桌面版共用帳號、設定和經驗。在終端機裡，mu 使用自己的 `mu-dark` 和 `mu-light` 主題，直到你在 `/settings` 裡另選一個（`system` 跟隨終端機的配色）。
+需要 Node 22.19 或更新版本。`mu -p "prompt"` 執行一次並印出結果；`mu -c` 接續上一個工作階段。`mu import --list` 找出你的 Claude Code、Codex 和 ZCode 對話，`mu import <file>` 連同完整歷史一起匯入；之後再匯入一次，會把新增的內容帶過來。`mu ledger [n]` 印出最近 n 個工作階段裡判定器的決定。命令列和桌面版共用帳號、設定和經驗。
 
 | 指令 | 做什麼 |
 | --- | --- |
 | `/status` | 判定器、各判定點的模式、沒放進上下文的內容、最近的判定 |
-| `/mu judge <judges>` | 由哪些判定器回答、按什麼順序：`laya`、`laya,jev`、`jev-opencode-free`、`classifier:<provider>/<model>`、`llm:<provider>/<model>` |
+| `/mu judge <judges>` | 由哪些判定器回答、按什麼順序：`jev`、`mude,jev`、`jev-opencode-free`、`openai`、`classifier:<provider>/<model>`、`llm:<provider>/<model>` |
 | `/mu route <point> <judge>` | 讓某一個判定點用自己的判定器 |
 | `/mu mode <point> <off\|shadow\|active>` | 切換某一個判定點 |
 | `/frame` | 任務框架：目標、你的約束及其出處、驗收條件 |
@@ -286,11 +318,11 @@ mu doctor     # 檢查安裝、判定器和各項連線
 | `/import-chat` | 匯入 Claude Code、Codex 或 ZCode 的對話 |
 | `/doctor` | 檢查設定和連線 |
 
-pi 自己的指令（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export` 等）原樣保留，只有一處不同：`/login` 不提供 Claude 訂閱登入（Anthropic 不允許其他應用程式提供），請改用 Anthropic API 金鑰。`MU_JUDGE=laya,jev mu` 只為這一次執行更換判定器。
+pi 自己的指令（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`/fork`、`/compact`、`/export` 等）原樣保留，只有一處不同：`/login` 不提供 Claude 訂閱登入（Anthropic 不允許其他應用程式提供），請改用 Anthropic API 金鑰。`MU_JUDGE=mude,jev mu` 只為這一次執行更換判定器。
 
 ## 隱私
 
-金鑰只留在本機。mu 不會自己下載任何模型或執行環境；需要下載的東西都會先問你。判定器只看得到一個問題所需的欄位（沒設金鑰時，這些欄位送到 OpenCode Zen 上免費的 Jev；用 `mu setup --judge off`（不問判定器，mu 的功能照常按規則運作）、`MU_JUDGE=off` 或 Laya 就全部留在本機）；每一次判定都記錄在本機，你全都看得到。
+金鑰只留在本機。mu 不會自己下載任何模型或執行環境；需要下載的東西都會先問你。判定器只看得到一個問題所需的欄位（沒設金鑰時，這些欄位送到 OpenCode Zen 上免費的 Jev；用帶 `--local-only` 的 mude 1.0、`mu setup --judge off`（不問判定器，mu 的功能照常按規則運作）或 `MU_JUDGE=off` 就全部留在本機）；每一次判定都記錄在本機，你全都看得到。
 
 ## 文件
 
@@ -304,6 +336,7 @@ pi 自己的指令（`/model`、`/thinking`、`/login`、`/resume`、`/tree`、`
 
 ```bash
 npm install --ignore-scripts   # 安裝相依套件，不執行生命週期指令碼
+npm run hydrate:model-catalog  # 依儲存庫裡固定的目錄產生模型清單（不連網）
 node kyrn/bin/mu.mjs           # 從這份程式碼啟動 mu
 npm run check                  # 格式、靜態檢查、型別
 ./test.sh                      # 測試（沒有金鑰時跳過需要模型的測試）
@@ -313,9 +346,26 @@ npm run check                  # 格式、靜態檢查、型別
 
 所有參與者都遵守[行為準則](../../CODE_OF_CONDUCT.md)。安全問題請依 [SECURITY.md](../../SECURITY.md) 私下回報。
 
+## 引用
+
+如果你在工作中用到 mude，請引用：
+
+```bibtex
+@misc{mude2026,
+  title        = {mude 1.0: a decision model optimized for coding},
+  author       = {qybaihe},
+  year         = {2026},
+  howpublished = {Hugging Face},
+  url          = {https://huggingface.co/qybaihe/mude-1.0},
+  note         = {MIT License. MLX 8-bit edition for Apple silicon: https://huggingface.co/qybaihe/mude-1.0-mlx-8bit}
+}
+```
+
 ## 來源與授權
 
 mu 採用 MIT 授權（[LICENSE](../../LICENSE)；桌面版見 [desktop/LICENSE](../../desktop/LICENSE)）。它以 [pi](https://github.com/earendil-works/pi)（程式設計代理，MIT）為基礎建構，感謝 pi 的作者。有幾個判定點參考了其他專案：提示注入篩檢的問法來自 [hermes-jev-skills](https://github.com/kerpopule/hermes-jev-skills)，續跑檢查和批次判定工具參考了 [oh-my-pi](https://github.com/can1357/oh-my-pi)。判定核心用到的第三方程式碼列在 [THIRD_PARTY_NOTICES.md](../../packages/kyrn-judge/THIRD_PARTY_NOTICES.md)。
+
+mude 1.0 由 [d3-nano](https://huggingface.co/vllm-sr/d3-nano)（Decision 3.0，vLLM Semantic Router Team）微調而來，後者以 Qwen3.5-2B 為基礎；兩者都採用 Apache-2.0 授權，模型倉庫裡保留了它們的聲明。
 
 桌面版最初 fork 自 [AionUi](https://github.com/iOfficeAI/AionUi)，從 AionUi 帶來的檔案列在 [desktop/APACHE-FILES.txt](../../desktop/APACHE-FILES.txt)，仍以 Apache License 2.0 授權（見 [desktop/NOTICE](../../desktop/NOTICE)）。
 
@@ -324,5 +374,3 @@ mu 採用 MIT 授權（[LICENSE](../../LICENSE)；桌面版見 [desktop/LICENSE]
 - 提問和想法：[Discussions](https://github.com/qybaihe/mu/discussions)；中文討論（簡體中文）也可以到 [linux.do](https://linux.do)。
 - bug 和需求：[Issues](https://github.com/qybaihe/mu/issues/new/choose)。
 - 更多：[SUPPORT.md](../../SUPPORT.md)。
-
-如果 mu 對你有幫助，給個 star 能讓更多人看到它。

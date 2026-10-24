@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="644" viewBox="0 0 360 644" role="img" aria-labelledby="t d" font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Noto Sans SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif'>
+<title id="t">How mubench scores a decision model</title>
+<desc id="d">1. A real request: What mu asked a decision model in a real coding session on an open-source repository, kept word for word as an item. 2. The decision: The model under test answers it: run a command or ask first, keep a result or drop it, call a turn done or not. 3. Its consequences: The answer is scored by the cost of what it leads to. A costly mistake weighs more than a cheap one. 4. Against no decision model: That cost is compared with what mu does with no decision model: 0 is no better, 100 removes all of it.</desc>
+<defs><linearGradient id="accent-light" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f8d3ef"/><stop offset="0.55" stop-color="#dccdfd"/><stop offset="1" stop-color="#cdc5fb"/></linearGradient></defs>
+<text x="0" y="22" font-size="15" font-weight="650" fill="#1d1b22">How mubench scores a decision model</text>
+<rect x="0.75" y="44.8" width="358.5" height="138.5" rx="14" fill="#f5f5f7" stroke="#e5e6eb" stroke-width="1.5"/>
+<text x="18" y="70" font-size="11" font-family='"SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, "Liberation Mono", monospace' letter-spacing="0.5" fill="#8e8e99">01</text>
+<text x="48" y="71" font-size="15" font-weight="650" fill="#1d1b22">A real request</text>
+<text x="18" y="96" font-size="12.5" fill="#5f5f6b">What mu asked a decision model in a</text>
+<text x="18" y="114" font-size="12.5" fill="#5f5f6b">real coding session on an</text>
+<text x="18" y="132" font-size="12.5" fill="#5f5f6b">open-source repository, kept word</text>
+<text x="18" y="150" font-size="12.5" fill="#5f5f6b">for word as an item.</text>
+<rect x="278" y="90" width="64" height="34" rx="9" fill="none" stroke="#d5d6dc" stroke-width="1.2"/>
+<line x1="289" y1="102" x2="328" y2="102" stroke="#8e8e99" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="289" y1="112" x2="316" y2="112" stroke="#8e8e99" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="180" y1="190" x2="180" y2="208" stroke="#8e8e99" stroke-width="1.4"/>
+<path d="M175.5,202 L180,208 L184.5,202" fill="none" stroke="#8e8e99" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="0.75" y="214.8" width="358.5" height="120.5" rx="14" fill="#f5f5f7" stroke="#e5e6eb" stroke-width="1.5"/>
+<text x="18" y="240" font-size="11" font-family='"SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, "Liberation Mono", monospace' letter-spacing="0.5" fill="#8e8e99">02</text>
+<text x="48" y="241" font-size="15" font-weight="650" fill="#1d1b22">The decision</text>
+<text x="18" y="266" font-size="12.5" fill="#5f5f6b">The model under test answers it: run</text>
+<text x="18" y="284" font-size="12.5" fill="#5f5f6b">a command or ask first, keep a result</text>
+<text x="18" y="302" font-size="12.5" fill="#5f5f6b">or drop it, call a turn done or not.</text>
+<rect x="283" y="272" width="10" height="10" rx="1.2" fill="#a23bb2" transform="rotate(45 288 277)"/>
+<rect x="304" y="263" width="38" height="12" rx="6" fill="url(#accent-light)"/>
+<rect x="304" y="280" width="38" height="12" rx="6" fill="none" stroke="#d5d6dc" stroke-width="1.2"/>
+<line x1="180" y1="342" x2="180" y2="360" stroke="#8e8e99" stroke-width="1.4"/>
+<path d="M175.5,354 L180,360 L184.5,354" fill="none" stroke="#8e8e99" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="0.75" y="366.8" width="358.5" height="120.5" rx="14" fill="#f5f5f7" stroke="#e5e6eb" stroke-width="1.5"/>
+<text x="18" y="392" font-size="11" font-family='"SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, "Liberation Mono", monospace' letter-spacing="0.5" fill="#8e8e99">03</text>
+<text x="48" y="393" font-size="15" font-weight="650" fill="#1d1b22">Its consequences</text>
+<text x="18" y="418" font-size="12.5" fill="#5f5f6b">The answer is scored by the cost of</text>
+<text x="18" y="436" font-size="12.5" fill="#5f5f6b">what it leads to. A costly mistake</text>
+<text x="18" y="454" font-size="12.5" fill="#5f5f6b">weighs more than a cheap one.</text>
+<path d="M278,416 H296 Q300,416 300,420 V420 Q300,424 296,424 H278 Z" fill="#8e8e99"/>
+<path d="M278,432 H334 Q338,432 338,436 V436 Q338,440 334,440 H278 Z" fill="#a23bb2"/>
+<line x1="278" y1="412" x2="278" y2="444" stroke="#d5d6dc" stroke-width="1.2"/>
+<line x1="180" y1="494" x2="180" y2="512" stroke="#8e8e99" stroke-width="1.4"/>
+<path d="M175.5,506 L180,512 L184.5,506" fill="none" stroke="#8e8e99" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="0.75" y="518.8" width="358.5" height="120.5" rx="14" fill="#f5f5f7" stroke="url(#accent-light)" stroke-width="1.5"/>
+<text x="18" y="544" font-size="11" font-family='"SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, "Liberation Mono", monospace' letter-spacing="0.5" fill="#8e8e99">04</text>
+<text x="48" y="545" font-size="15" font-weight="650" fill="#1d1b22">Against no decision model</text>
+<text x="18" y="570" font-size="12.5" fill="#5f5f6b">That cost is compared with what mu</text>
+<text x="18" y="588" font-size="12.5" fill="#5f5f6b">does with no decision model: 0 is no</text>
+<text x="18" y="606" font-size="12.5" fill="#5f5f6b">better, 100 removes all of it.</text>
+<line x1="278" y1="586" x2="342" y2="586" stroke="#d5d6dc" stroke-width="1.2"/>
+<line x1="278" y1="580" x2="278" y2="592" stroke="#d5d6dc" stroke-width="1.2"/>
+<line x1="342" y1="580" x2="342" y2="592" stroke="#d5d6dc" stroke-width="1.2"/>
+<rect x="274.5" y="582.5" width="7" height="7" rx="1.2" fill="#8e8e99" transform="rotate(45 278 586)"/>
+<circle cx="324" cy="586" r="5" fill="#a23bb2" stroke="#ffffff" stroke-width="2"/>
+<text x="278" y="572" font-size="10" text-anchor="middle" font-family='"SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, "Liberation Mono", monospace' fill="#8e8e99">0</text>
+<text x="342" y="572" font-size="10" text-anchor="middle" font-family='"SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, "Liberation Mono", monospace' fill="#8e8e99">100</text>
+</svg>

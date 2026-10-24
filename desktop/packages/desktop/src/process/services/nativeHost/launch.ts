@@ -2,8 +2,8 @@
  * How a native host is started, decided by mu's own launcher (`kyrn/bin/mu.mjs` in the harness, types in
  * `mu.d.mts`): `planHost` says which module to import pi from, with which Node flags, arguments and environment, and
  * `prepareLaunchAsync` (or, in a launcher from before it, `prepareLaunch`) does what the command line does before pi
- * starts (the app view of a checkout, the agent folder, the configuration's notes, the local judge). The app's pi and
- * the command line's are then one: the same files, settings, sign-ins and keys.
+ * starts (the app view of a checkout, the agent folder, the configuration's notes, mude's server started without
+ * waiting). The app's pi and the command line's are then one: the same files, settings, sign-ins and keys.
  *
  * The launcher is imported when a host starts: its path depends on where the harness is, which is known only then.
  */
@@ -35,7 +35,11 @@ export type HostPlan = {
   muDir: string;
   appDir: string;
   agentDir: string;
-  startJudge: boolean;
+  /**
+   * A launcher from before 0.2.5 starts Laya, the local judge mu no longer has, when the configuration asks for it,
+   * and waits for it. The app never lets it (see prepareHost); a newer launcher has no such field.
+   */
+  startJudge?: boolean;
   notes: string[];
 };
 
@@ -50,8 +54,7 @@ type PrepareLaunchInput = {
 
 /**
  * The part of the launcher module a host needs. A launcher from before the native host has neither `planHost` nor
- * `prepareLaunch`; one from before 2026-09-29 has no `prepareLaunchAsync`, whose local judge start does not hold the
- * calling process (`prepareLaunch` starts it with `spawnSync`, which would freeze the app's windows meanwhile).
+ * `prepareLaunch`; one from before 2026-09-29 has no `prepareLaunchAsync`, which never holds the calling process.
  */
 export type Launcher = {
   planHost(input: {
@@ -62,6 +65,12 @@ export type Launcher = {
     home: string;
     stripsTypes: boolean;
     fs: LauncherFs;
+    /**
+     * The Node the launcher runs `mu judge mude start --no-wait` with when the configuration asks for mude, and what to
+     * add to its environment. A launcher from before mude ignores both.
+     */
+    nodePath?: string;
+    nodeEnv?: Record<string, string>;
   }): HostPlan | { error: string };
   prepareLaunch(input: PrepareLaunchInput): void;
   prepareLaunchAsync?(input: PrepareLaunchInput): Promise<void>;
@@ -80,8 +89,13 @@ export type PrepareOptions = {
   /** Whether the host's Node strips TypeScript types itself (`process.features.typescript`): a checkout needs it. */
   stripsTypes: boolean;
   fs?: LauncherFs;
+  /**
+   * The Node the launcher starts mude's server with (macOS, when mu.json asks for mude): in the app its own binary,
+   * which runs a script as Node with ELECTRON_RUN_AS_NODE (see piRpc.ts, launchCommand).
+   */
+  node?: { path: string; env: Record<string, string> };
   importLauncher?: (file: string) => Promise<unknown>;
-  /** Where the launcher's notes go (a `.env` line it skipped, a local judge that cannot run here). */
+  /** Where the launcher's notes go (a `.env` line it skipped, a judge the configuration names that cannot run here). */
   note?: (line: string) => void;
 };
 
@@ -141,6 +155,7 @@ async function planned(options: PrepareOptions): Promise<{ launcher: Launcher; p
     home: options.home,
     stripsTypes: options.stripsTypes,
     fs,
+    ...(options.node ? { nodePath: options.node.path, nodeEnv: options.node.env } : {}),
   });
   if (refused(plan)) throw new NativeHostError('plan', plan.error);
   return { launcher, plan, bin };
@@ -167,7 +182,9 @@ export async function prepareHost(options: PrepareOptions): Promise<PreparedHost
   const { launcher, plan, bin } = await planned(options);
   const notes: string[] = [];
   const input: PrepareLaunchInput = {
-    plan,
+    // Nothing waits for a judge before pi starts: an older launcher's Laya start is left out. mude's server, which a
+    // launcher starts without waiting, stays.
+    plan: { ...plan, startJudge: false },
     platform,
     root: harness.root,
     bin,

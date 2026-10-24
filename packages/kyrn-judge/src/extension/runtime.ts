@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import type { ClassifierQuestion, JsonObject } from "@earendil-works/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { isTrusted } from "../cascade.ts";
 import { CapabilityCatalog } from "../catalog/catalog.ts";
-import { DEFAULT_CONFIG, featureOptions, type KyrnConfig } from "../config.ts";
+import { DEFAULT_CONFIG, featureOptions, type JudgeConfig, type KyrnConfig } from "../config.ts";
 import { DecisionEngine, type DecisionMode } from "../decision.ts";
 import type { PreflightOutcome, TaskFrame } from "../decisions/input-preflight.ts";
 import type { NotifyFn } from "../decisions/notify-routing.ts";
@@ -13,7 +14,9 @@ import { CompositeLedger, type LedgerRecord, type LedgerSink, MemoryLedger } fro
 import type { ClassifierCall } from "../providers/classifier.ts";
 import type { FreeJevOutcome } from "../providers/free-jev.ts";
 import type { LlmCompletion } from "../providers/llm.ts";
+import { isOpenAIAddress, type OpenAIKeyProblem } from "../providers/openai-decisions.ts";
 import { buildJudge, resolveJudgeConfig } from "../registry.ts";
+import type { Capability } from "../types.ts";
 import { createJudgeFetch, type JudgeFetch } from "./judge-fetch.ts";
 import {
 	type KyrnPresentationEvent,
@@ -24,6 +27,7 @@ import {
 
 export const LEDGER_ENTRY_TYPE = "kyrn.decision";
 const GATEWAY_PROVIDER_ID = "vercel-ai-gateway";
+const OPENAI_PROVIDER_ID = "openai";
 const STATUS_KEY = "kyrn";
 
 export function textOf(content: unknown): string {
@@ -226,17 +230,10 @@ export class KyrnRuntime {
 	 * again. Undefined before a turn has chosen, or while the decision is off.
 	 */
 	capabilitiesOpen?: () => readonly string[] | undefined;
-	/**
-	 * True when the configured judge answers concurrent calls concurrently (a hosted model). The local
-	 * sidecar answers one at a time, and there the work of a turn is best asked in order of importance.
-	 */
-	readonly judgeParallel: boolean;
-	/**
-	 * True when the configured judge answers many questions about one state in one request (Jev and its kin), so
-	 * chunks of one output are best asked together. A logprob judge sends each question as its own request with the
-	 * state in front: there a batch state would be sent once per question, and each chunk is asked alone instead.
-	 */
-	readonly judgeBatches: boolean;
+	/** The judges in use, in order: the configured tiers, or what `/mu judge` switched to. */
+	private tiers: readonly string[];
+	/** Decisions answered by their own judges (`routes` in mu.json, `/mu route`). */
+	private readonly routes = new Map<string, readonly string[]>();
 	private latestCtx: ExtensionContext | undefined;
 	private firstUserMessage = "";
 	private turnStartListeners: ((words: string) => void)[] = [];
@@ -245,6 +242,8 @@ export class KyrnRuntime {
 	onPresentation?: PresentationListener;
 	/** Set by the free Jev notice: how each call went when the `jev` judge falls back to the free Jev. */
 	onFreeJev?: (outcome: FreeJevOutcome) => void;
+	/** Told when the `openai` judge has no usable key (features/openai-key.ts says so once). */
+	onOpenAIKey?: (problem: OpenAIKeyProblem) => void;
 	/** Features that show the person what another feature announced: the board says a permission is waiting. */
 	private readonly observers = new Map<KyrnPresentationEvent["kind"], Set<(payload: unknown) => void>>();
 
@@ -252,9 +251,7 @@ export class KyrnRuntime {
 		this.pi = pi;
 		this.config = config;
 		if (problem) this.problems.push(problem);
-		const firstJudge = resolveJudgeConfig(config.tiers[0] ?? "", config)?.type;
-		this.judgeParallel = firstJudge !== "local";
-		this.judgeBatches = firstJudge !== "local" && firstJudge !== "logprob";
+		this.tiers = config.tiers;
 		const sessionLedger: LedgerSink = {
 			append: (record: LedgerRecord) => {
 				pi.appendEntry(LEDGER_ENTRY_TYPE, record);
@@ -287,6 +284,8 @@ export class KyrnRuntime {
 	route(specId: string, tiers: readonly string[]): readonly string[] {
 		const before = this.problems.length;
 		this.engine.setJudgeFor(specId, tiers.length > 0 ? this.buildConfiguredJudge(tiers) : undefined);
+		if (tiers.length > 0) this.routes.set(specId, tiers);
+		else this.routes.delete(specId);
 		return this.problems.slice(before);
 	}
 
@@ -300,19 +299,53 @@ export class KyrnRuntime {
 				gatewayApiKey: async () =>
 					(await this.latestCtx?.modelRegistry.getApiKeyForProvider(GATEWAY_PROVIDER_ID)) ??
 					process.env.AI_GATEWAY_API_KEY,
+				openaiApiKey: async () => {
+					const registry = this.latestCtx?.modelRegistry;
+					const models = registry?.getAll().filter((model) => model.provider === OPENAI_PROVIDER_ID) ?? [];
+					// A models.json that moves the `openai` provider elsewhere makes its key that address's.
+					if (models.some((model) => !isOpenAIAddress(model.baseUrl))) return undefined;
+					// The Decisions API takes API keys only, never the token of a Sign in with ChatGPT.
+					const signedIn = models.length > 0 && registry?.isUsingOAuth(models[0]) === true;
+					const stored = signedIn ? undefined : await registry?.getApiKeyForProvider(OPENAI_PROVIDER_ID);
+					return stored ?? process.env.OPENAI_API_KEY;
+				},
 				llm: (model, options) => this.llm(model, options),
 				classify: (model) => this.classifier(model),
 				freeJev: (outcome) => this.onFreeJev?.(outcome),
+				openaiKeyProblem: (problem) => this.onOpenAIKey?.(problem),
 			},
 		);
 		this.problems.push(...built.problems);
 		return built.judge;
 	}
 
-	/** Switch the decision model at runtime, e.g. `/mu judge laya,jev`. */
+	/**
+	 * Whether any judge of `specId` (its route, else the tiers) is trusted on `capability`. When none is, the cascade
+	 * gives each such question a neutral answer without asking.
+	 */
+	trusts(specId: string, capability: Capability): boolean {
+		return this.judgesFor(specId).some((judge) => isTrusted(judge.profile, capability));
+	}
+
+	/**
+	 * Whether the judge that answers `specId`'s questions takes many of them in one request. That is the first of its
+	 * judges (its route, else the tiers) trusted on `capability`, as the cascade picks it. A logprob judge sends each
+	 * question as its own request with the state in front: there a batch state would go out once per question, so its
+	 * items are asked one at a time instead.
+	 */
+	answersInBatches(specId: string, capability: Capability): boolean {
+		return this.judgesFor(specId).find((judge) => isTrusted(judge.profile, capability))?.type !== "logprob";
+	}
+
+	private judgesFor(specId: string): JudgeConfig[] {
+		return (this.routes.get(specId) ?? this.tiers).flatMap((name) => resolveJudgeConfig(name, this.config) ?? []);
+	}
+
+	/** Switch the decision model at runtime, e.g. `/mu judge mude,jev`. */
 	useJudges(tiers: readonly string[]): readonly string[] {
 		const before = this.problems.length;
 		this.engine.setJudge(this.buildConfiguredJudge(tiers));
+		this.tiers = tiers;
 		return this.problems.slice(before);
 	}
 
@@ -364,8 +397,11 @@ export class KyrnRuntime {
 		};
 	}
 
-	/** A completion function over one of the host's models. Looked up per call, because models load after extensions. */
-	llm(modelRef: string, options: { thinking?: string } = {}): LlmCompletion {
+	/**
+	 * A completion function over one of the host's models. Looked up per call, because models load after extensions.
+	 * `maxTokens` caps the reply (2000 by default, 8000 with thinking on, which spends the same budget).
+	 */
+	llm(modelRef: string, options: { thinking?: string; maxTokens?: number } = {}): LlmCompletion {
 		return async ({ system, user, signal }) => {
 			const ctx = this.latestCtx;
 			if (!ctx) throw new JudgeError("unreachable", "No session is attached yet");
@@ -385,7 +421,7 @@ export class KyrnRuntime {
 						signal,
 						// The reasoning comes out of the same budget: thinking on mu's questions, Nemotron 3 Ultra
 						// used up to 4,400 tokens.
-						maxTokens: thinking ? 8000 : 2000,
+						maxTokens: options.maxTokens ?? (thinking ? 8000 : 2000),
 						reasoning: thinking as never,
 						cacheRetention: "none",
 						sessionId: this.sessionId,
@@ -439,8 +475,7 @@ export class KyrnRuntime {
 	 * work the moment the message arrives instead of when the turn starts: memory, skills and
 	 * capabilities are then read alongside preflight, and the turn starts after the slowest of them
 	 * rather than after all of them in a row. The listener gets what the judge should read
-	 * (`judgedText`). It is not called when the judge answers one call at a time: there, later work
-	 * would only delay preflight, and the turn's order of importance is preflight first.
+	 * (`judgedText`).
 	 */
 	atTurnStart(listener: (words: string) => void): void {
 		this.turnStartListeners.push(listener);
@@ -448,7 +483,6 @@ export class KyrnRuntime {
 
 	/** Whoever counted the turn calls this once preflight's own question is on its way. */
 	startTurnWork(userMessage: string): void {
-		if (!this.judgeParallel) return;
 		const words = judgedText(userMessage, this.pi.getCommands());
 		if (words === undefined) return;
 		for (const listener of this.turnStartListeners) {
@@ -504,7 +538,8 @@ export class KyrnRuntime {
 		return { goal, currentSubgoal: current && current !== goal ? current : undefined };
 	}
 
-	status(text: string): void {
+	/** Sets mu's line in the footer; undefined takes it down. */
+	status(text: string | undefined): void {
 		const ctx = this.latestCtx;
 		if (ctx?.hasUI) ctx.ui.setStatus(STATUS_KEY, text);
 	}
@@ -584,7 +619,7 @@ export class KyrnRuntime {
 		}
 	}
 
-	/** "cascade(local:laya>gateway:typesafe-ai/jev)" -> "laya>jev". */
+	/** "cascade(127.0.0.1:8790:mude>gateway:typesafe-ai/jev)" -> "mude>jev". */
 	get judgeLabel(): string {
 		if (!this.enabled) return "off";
 		const id = this.engine.providerId.replace(/^cascade\((.*)\)$/, "$1");

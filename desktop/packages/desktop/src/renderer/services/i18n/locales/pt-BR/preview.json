@@ -319,5 +319,18 @@
   "saveFailedWithDetail": "Falha ao salvar: {{detail}}",
   "zoomActualSize": "Redefinir zoom",
   "zoomFit": "Ajustar",
-  "zoomFitTooltip": "Ajustar à largura do painel"
+  "zoomFitTooltip": "Ajustar à largura do painel",
+  "gallery": {
+    "label": "Imagem {{name}}",
+    "previous": "Imagem anterior",
+    "next": "Próxima imagem",
+    "position": "{{index}} de {{count}}",
+    "gone": "Este arquivo não está mais lá. Pode ter sido movido ou excluído.",
+    "tooLarge": "Esta imagem é grande demais para mostrar aqui ({{size}}). Abra-a no aplicativo padrão."
+  },
+  "reveal": {
+    "mac": "Mostrar no Finder",
+    "windows": "Mostrar no Explorador de Arquivos",
+    "linux": "Mostrar na pasta"
+  }
 }

@@ -19,6 +19,8 @@
 - Fixed compaction and branch summaries failing with "generation hit the token cap" when reasoning used most of the fixed summary output limit. Summaries now use the model's output limit, and `compaction.reserveTokens` only controls when compaction starts ([#9512](https://github.com/earendil-works/pi/issues/9512), [#9075](https://github.com/earendil-works/pi/issues/9075)).
 - Fixed `models.schema.json` missing descriptions for provider and model fields, so editors showed no hints for them ([#10790](https://github.com/earendil-works/pi/issues/10790))
 - A reply cut by the provider's content filter (`finish_reason: content_filter`) is retried, at most twice, instead of ending the run.
+- A message that starts with a list item (`pi "- Fix the parser"`, `pi -p "- Rename foo"`) is read as a message, not rejected with "Unknown option": an option never has whitespace right after its dashes.
+- Custom OpenAI-compatible providers in `models.json` no longer fail with `unknown role developer` for reasoning models: endpoints other than `api.openai.com`, Azure OpenAI, and Xiaomi MiMo get `system` messages and `max_tokens`, and a request an endpoint rejects for the `developer` role or an optional field is sent again without it. See [Third-party OpenAI-compatible endpoints](docs/models.md#third-party-openai-compatible-endpoints).
 
 ## [1.3.0] - 2026-10-15
 

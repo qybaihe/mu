@@ -12,9 +12,11 @@ import {
   areaRows,
   dirtySections,
   isStale,
+  keyRemoved,
   matches,
   newDraft,
   optionParts,
+  rebaseDraft,
   rowCount,
   setCompaction,
   strayAreaOf,
@@ -103,15 +105,29 @@ describe('the draft of the settings area', () => {
       settings: base,
       judgeKeys: { TYPESAFE_API_KEY: 'judge' },
       providerKeys: { relay: 'sk', gone: 'x' },
+      removedKeys: [],
     });
     expect(sent.credentials).toEqual([
       { name: 'TYPESAFE_API_KEY', value: 'judge' },
       { name: 'MU_PROVIDER_RELAY_API_KEY', value: 'sk' },
     ]);
+    expect(sent).not.toHaveProperty('removeCredentials');
     expect(Object.keys(sent)).not.toEqual(expect.arrayContaining(['keys', 'harness']));
     expect(Object.keys(sent.models ?? {})).toEqual(['providers', 'defaults']);
     const old = toSave(newDraft({ ...base, harness: { status: 'missing' }, features: {} }));
     expect(old).not.toHaveProperty('features');
+  });
+  it('names a judge’s removed key for the store, unless a key was typed in its place', () => {
+    const draft = { ...newDraft(base), removedKeys: ['MU_JUDGE_OPENAI_KEY', 'MU_JUDGE_RELAY_KEY'] };
+    expect([...dirtySections(base, draft)]).toEqual(['judges']);
+    expect(keyRemoved(draft, 'MU_JUDGE_OPENAI_KEY')).toBe(true);
+    expect(toSave(draft).removeCredentials).toEqual(['MU_JUDGE_OPENAI_KEY', 'MU_JUDGE_RELAY_KEY']);
+    const typed = { ...draft, judgeKeys: { MU_JUDGE_RELAY_KEY: 'sk-relay' } };
+    expect(keyRemoved(typed, 'MU_JUDGE_RELAY_KEY')).toBe(false);
+    expect(toSave(typed).removeCredentials).toEqual(['MU_JUDGE_OPENAI_KEY']);
+    expect(toSave(typed).credentials).toEqual([{ name: 'MU_JUDGE_RELAY_KEY', value: 'sk-relay' }]);
+    // A typed key cleared again: the removal stands.
+    expect(toSave({ ...draft, judgeKeys: { MU_JUDGE_RELAY_KEY: '' } }).removeCredentials).toHaveLength(2);
   });
   it('counts a removed hand-written entry as a change, and names it for the store only against the base', () => {
     const read = { ...base, models: { ...base.models, foreign: [entry('lab'), entry('anthropic')] } };
@@ -129,13 +145,13 @@ describe('the draft of the settings area', () => {
     expect([...dirtySections(base, newDraft(on))]).toEqual(['features']);
   });
   it('names the one judges page for the choice, the order, a profile’s field and any judge’s key', () => {
-    const laya = { type: 'local' as const, model: '', baseUrl: '', apiKeyEnv: '', timeoutMs: 3000 };
-    const one = { ...base, judges: { ...base.judges, laya } };
-    const two = { ...one, tiers: ['jev', 'laya'] };
-    // Laya picked: the one judge now.
-    expect([...dirtySections(two, newDraft({ ...two, tiers: ['laya'] }))]).toEqual(['judges']);
+    const clm = { type: 'clm' as const, model: '', baseUrl: '', apiKeyEnv: '', timeoutMs: 3000 };
+    const one = { ...base, judges: { ...base.judges, clm } };
+    const two = { ...one, tiers: ['jev', 'clm'] };
+    // CLM picked: the one judge now.
+    expect([...dirtySections(two, newDraft({ ...two, tiers: ['clm'] }))]).toEqual(['judges']);
     // The order turned round, and a second judge added.
-    expect([...dirtySections(two, newDraft({ ...two, tiers: ['laya', 'jev'] }))]).toEqual(['judges']);
+    expect([...dirtySections(two, newDraft({ ...two, tiers: ['clm', 'jev'] }))]).toEqual(['judges']);
     expect([...dirtySections(one, newDraft(two))]).toEqual(['judges']);
     // A profile's field.
     const slower = structuredClone(one);
@@ -143,8 +159,8 @@ describe('the draft of the settings area', () => {
     expect([...dirtySections(one, newDraft(slower))]).toEqual(['judges']);
     // A key, of the judge chosen or of one further down the order.
     expect([...dirtySections(base, { ...newDraft(base), judgeKeys: { MU_JUDGE_OWN: 'k' } })]).toEqual(['judges']);
-    const layaFirst = { ...one, tiers: ['laya', 'jev'] };
-    expect([...dirtySections(layaFirst, { ...newDraft(layaFirst), judgeKeys: { TYPESAFE_API_KEY: 'k' } })]).toEqual([
+    const clmFirst = { ...one, tiers: ['clm', 'jev'] };
+    expect([...dirtySections(clmFirst, { ...newDraft(clmFirst), judgeKeys: { TYPESAFE_API_KEY: 'k' } })]).toEqual([
       'judges',
     ]);
   });
@@ -169,6 +185,58 @@ describe('the draft of the settings area', () => {
     // A stale revision is recognised by the store's code, not by its English words.
     expect(isStale({ code: 'stale' })).toBe(true);
     expect(isStale({ code: 'unknown' })).toBe(false);
+  });
+});
+
+describe('a draft moved onto the files after mu judge mude wrote them', () => {
+  const mude = {
+    type: 'typesafe' as const,
+    model: 'mude',
+    baseUrl: 'http://127.0.0.1:8790/v1/systemone',
+    apiKeyEnv: 'MU_JUDGE_MUDE_KEY',
+    timeoutMs: 4000,
+  };
+  // What the command left: mude first, Jev behind it, the judge on, its key in the .env, a new revision.
+  const fresh: KyrnSettings = {
+    ...base,
+    revision: 'r2',
+    tiers: ['mude', 'jev'],
+    judges: { ...base.judges, mude },
+    mode: 'active',
+    keys: { ...base.keys, MU_JUDGE_MUDE_KEY: true },
+  };
+  const edited = () => {
+    const draft = newDraft(structuredClone(base));
+    draft.settings.models.defaults = { provider: 'relay', model: 'plain', thinkingLevel: '' };
+    draft.settings.permissions = { mode: 'full', from: 'default' };
+    draft.settings.tiers = ['clm'];
+    draft.settings.mode = 'off';
+    draft.judgeKeys = { TYPESAFE_API_KEY: 'typed' };
+    return draft;
+  };
+
+  it('takes the judge from the files when the command just set it, and keeps every other edit', () => {
+    const moved = rebaseDraft(base, edited(), fresh, 'files');
+    expect(moved.settings.revision).toBe('r2');
+    expect(moved.settings.tiers).toEqual(['mude', 'jev']);
+    expect(moved.settings.mode).toBe('active');
+    expect(moved.settings.keys.MU_JUDGE_MUDE_KEY).toBe(true);
+    expect(moved.settings.models.defaults).toEqual({ provider: 'relay', model: 'plain', thinkingLevel: '' });
+    expect(moved.settings.permissions.mode).toBe('full');
+    expect(moved.judgeKeys).toEqual({ TYPESAFE_API_KEY: 'typed' });
+    // Saved from there, the order is not written: it is what the files already say.
+    expect(toSave(moved, fresh).tiers).toEqual(['mude', 'jev']);
+    expect([...dirtySections(fresh, moved)].toSorted()).toEqual(['defaultModel', 'features', 'judges']);
+  });
+
+  it('keeps a judge picked in the draft since, and takes what was not touched from the files', () => {
+    const moved = rebaseDraft(base, edited(), fresh, 'draft');
+    expect(moved.settings.tiers).toEqual(['clm']);
+    expect(moved.settings.mode).toBe('off');
+    const untouched = rebaseDraft(base, newDraft(structuredClone(base)), fresh, 'draft');
+    expect(untouched.settings.tiers).toEqual(['mude', 'jev']);
+    expect(untouched.settings.judges.mude).toEqual(mude);
+    expect([...dirtySections(fresh, untouched)]).toEqual([]);
   });
 });
 

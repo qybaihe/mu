@@ -57,6 +57,7 @@ const POSIX_ROOT = "/home/bai/KYRN";
 const posixInstalled = {
 	[`${POSIX_ROOT}/node_modules/undici/package.json`]: "{}",
 	[`${POSIX_ROOT}/packages/coding-agent/src/experimental/source-resolver.ts`]: "",
+	[`${POSIX_ROOT}/packages/ai/src/providers/data/.manifest.json`]: "{}",
 };
 const POSIX_NATIVE = [
 	"--disable-warning=ExperimentalWarning",
@@ -127,6 +128,31 @@ describe("mu setup, as the launcher starts it", () => {
 		const named = plan(["--model", "deepseek-chat", KEY]);
 		expect(named.error === undefined && named.env.MU_SETUP_KEY).toBe(KEY);
 		expect(plan([KEY, "another"])).toEqual({ error: "mu setup takes one key at most (mu setup --help)", code: 2 });
+	});
+
+	it("tells the wizard on a Mac where mude 1.0 goes, as mu judge mude is told", () => {
+		const plan = planSetup({
+			...setupArgs,
+			platform: "darwin",
+			argv: [],
+			root: POSIX_ROOT,
+			fs: disk(posixInstalled),
+		});
+		if (plan.error !== undefined) throw new Error(plan.error);
+		expect(plan.env).toMatchObject({
+			MU_MUDE_HOME: "/home/bai/.mu",
+			MU_MUDE_ENV_FILE: `${POSIX_ROOT}/.env`,
+			MU_MUDE_LOCK: `${POSIX_ROOT}/kyrn/local-judge/mude-requirements.lock.txt`,
+		});
+		const linux = planSetup({
+			...setupArgs,
+			platform: "linux",
+			argv: [],
+			root: POSIX_ROOT,
+			fs: disk(posixInstalled),
+		});
+		if (linux.error !== undefined) throw new Error(linux.error);
+		expect(linux.env.MU_MUDE_HOME).toBeUndefined();
 	});
 
 	it("runs the package's built wizard on Windows, and the .env of mu's home", () => {

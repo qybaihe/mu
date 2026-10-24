@@ -3,8 +3,23 @@ import type { DecisionMode, FeatureState, HarnessState } from './manifest';
 import type { ModelsSettings } from './models';
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
-/** `classifier`: a classifier model of mu's model catalog, `model` = "provider/model-id" (Jev on OpenCode Zen, Clef…). */
-export type JudgeType = 'jev' | 'typesafe' | 'clm' | 'gateway' | 'local' | 'http' | 'llm' | 'classifier' | 'mock';
+/**
+ * `classifier`: a classifier model of mu's model catalog, `model` = "provider/model-id" (Jev on OpenCode Zen, Clef…).
+ * `openai`: OpenAI's decision model through its Decisions API.
+ */
+export type JudgeType = 'jev' | 'typesafe' | 'clm' | 'gateway' | 'http' | 'llm' | 'classifier' | 'openai' | 'mock';
+/** The judge types mu runs. Laya's `local` is gone (process/agent/kyrn/config/laya.ts). */
+export const JUDGE_TYPES: readonly JudgeType[] = [
+  'jev',
+  'typesafe',
+  'clm',
+  'gateway',
+  'http',
+  'llm',
+  'classifier',
+  'openai',
+  'mock',
+];
 export type JudgeSettings = {
   type: JudgeType;
   model: string;
@@ -55,7 +70,8 @@ export type KyrnSettings = {
 export type Credential = { name: string; value: string };
 /**
  * What `read()` returned, with changes. `decisionModes`, `features` and `models` may be left out: that part of the
- * files is then not touched. Keys only travel this way, in `credential` / `credentials`.
+ * files is then not touched. Keys only travel this way, in `credential` / `credentials`; `removeCredentials` names the
+ * judge keys to delete.
  */
 export type SaveSettings = Omit<
   KyrnSettings,
@@ -67,6 +83,8 @@ export type SaveSettings = Omit<
   models?: Pick<ModelsSettings, 'providers' | 'defaults'> & { removeEntries?: string[] };
   credential?: Credential;
   credentials?: Credential[];
+  /** Judge key variables to delete from the .env (a sign-out of a judge's service). Names only, never a value. */
+  removeCredentials?: string[];
   /** The permission mode of new conversations. Written only when it changes. */
   permissions?: Pick<PermissionDefault, 'mode'>;
   /** The board's model. Written only when it changes. */

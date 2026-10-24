@@ -194,11 +194,11 @@ describe("judge warm-up", () => {
 		expect(signals[0].aborted).toBe(true);
 	});
 
-	it("does nothing for a local judge: there is no connection worth keeping warm", async () => {
+	it("does nothing for a judge on this machine: there is no connection worth keeping warm", async () => {
 		vi.useFakeTimers();
 		const { pi, emit } = fakePi();
 		const provider = new MockJudgeProvider();
-		const runtime = new KyrnRuntime(pi, parseConfig({ tiers: ["laya"] }), new Judge({ provider }));
+		const runtime = new KyrnRuntime(pi, parseConfig({ tiers: ["clm"] }), new Judge({ provider }));
 		registerWarmup(runtime);
 		await emit("session_start");
 		await vi.advanceTimersByTimeAsync(200_000);

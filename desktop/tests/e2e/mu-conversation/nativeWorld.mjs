@@ -349,10 +349,14 @@ export function createNativeWorld({ desktopRoot, prepare }) {
       await p.getByTestId('native-permissions').click();
       await p.locator('.arco-select-popup:visible .arco-select-option', { hasText: permissions }).click();
     }
+    const before = p.url();
     await p.getByTestId('native-project').click();
-    await p.waitForURL(/#\/conversation\/native\//, { timeout: 30_000 });
+    // From inside a conversation the old URL already matches, so wait for a different one.
+    await p.waitForURL((url) => /#\/conversation\/native\//.test(url.href) && url.href !== before, { timeout: 30_000 });
     run.conversationUrl = p.url();
     await expect(p.getByTestId('native-conversation')).toBeVisible();
+    // The route changes before the old conversation's rows leave the screen; a new one has none.
+    await expect(userRows()).toHaveCount(0, { timeout: 15_000 });
   }
 
   /**

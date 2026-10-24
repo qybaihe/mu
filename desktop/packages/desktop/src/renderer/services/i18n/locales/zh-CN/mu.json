@@ -1,11 +1,9 @@
 {
   "title": "mu 设置",
-  "description": "mu 支持的各项控制都在这里：判定器、判定点、功能、模型与上下文。与命令行里的 mu 共用同一份配置。",
   "reload": "重新载入",
   "modified": "已修改",
   "applyNote": "修改对新会话生效。正在运行的会话沿用启动时的配置，重新连接后才会使用新配置。",
   "apiKey": "API 密钥",
-  "keyHelp": "保存后不再显示。只存在这台电脑上，只有你的账户能读。",
   "keyKeep": "留空则保留已保存的密钥",
   "endpointRule": "请填写以 https:// 或 http:// 开头的地址，不能包含用户名、密码、查询参数或片段。",
   "endpointPlain": "这个地址用的是明文 http，密钥和消息都不加密。服务在本机或你自己的网络里（包括 hosts 文件指过去的域名）就没问题；走公网请用 https。",
@@ -73,7 +71,6 @@
     "useDefault": "改回默认（{{mode}}）"
   },
   "features": {
-    "lead": "mu 在后台替你做的事。关掉一项，mu 就不再做这件事。",
     "beta": "测试版",
     "reset": "恢复默认",
     "boardModelElsewhere": "写看板的模型在「人话模型」里选。",
@@ -87,9 +84,7 @@
     "details": "详细设置"
   },
   "judges": {
-    "tiersHelp": "判定器按顺序依次尝试；后一级只处理前面几级拿不准的问题。",
     "order": "顺序",
-    "orderHelp": "排在第一的就是「判定器」页选的那个。",
     "firstTier": "就是「判定器」页选的那个：服务、地址和密钥在那里设置。",
     "tierTitle": "第 {{index}} 级：{{name}}",
     "service": "服务",
@@ -105,17 +100,14 @@
       },
       "typesafe": {
         "name": "TypeSafe",
-        "help": "始终直连 TypeSafe。",
         "key": "TypeSafe API 密钥"
       },
       "openrouter": {
         "name": "OpenRouter",
-        "help": "始终经由 OpenRouter，用 OpenRouter 的 API 密钥。它单独给 Jev 保存，设置它不会改动 OpenRouter 聊天模型的密钥。",
         "key": "OpenRouter API 密钥"
       },
       "gateway": {
         "name": "Vercel AI Gateway",
-        "help": "始终经由 Vercel AI Gateway。",
         "key": "Vercel AI Gateway API 密钥"
       },
       "opencode": {
@@ -125,7 +117,6 @@
       },
       "cloudflare": {
         "name": "Cloudflare Workers AI",
-        "help": "Cloudflare Workers AI 上的 Jev，需要 Cloudflare API 令牌和你的账户 ID。",
         "key": "Cloudflare API 令牌",
         "account": "Cloudflare 账户 ID",
         "accountHelp": "在 Cloudflare 控制台的 Workers AI 页面可以看到。和令牌一样保存。",
@@ -139,92 +130,165 @@
     },
     "model": "判定模型",
     "baseUrl": "接口地址",
-    "baseUrlHelp": "留空则使用 TypeSafe 官方地址",
-    "customUrlHelp": "该服务的 System One 地址。它的密钥只会发到这里。",
     "baseUrlNeeded": "自定义服务需要填写地址。",
     "customTier": "你自己加的判定器，要改它请编辑 mu 的设置文件。",
-    "endpointDefault": "使用服务的默认地址",
-    "types": {
-      "localHelp": "在这台电脑上运行。",
-      "clmHelp": "运行在你自己的 CLM 服务器上。",
-      "classifierHelp": "mu 模型目录里的分类模型：{{model}}。mu 用它所属服务商的密钥调用它。"
-    },
-    "intro": "mu 工作时要做很多小判断：这条消息该怎么处理、这一步会不会违反你定的规则……判定器负责回答。选一个就行。",
     "mode": "判定生效",
-    "modeHelp": "开着时，判定器的结论直接起作用；关掉后每一步照常进行。没有单独设置的环节都跟着它。",
     "choose": "选择判定器",
     "custom": "现在排在第一位的是自定义判定器，可以在「判定顺序」页查看和修改。",
     "keyPlaceholder": "粘贴密钥",
+    "removeKey": "移除密钥",
     "choices": {
       "jev": {
         "title": "Jev",
         "tag": "推荐",
+        "tagHosted": "云端",
         "description": "TypeSafe 托管的判定模型。又快又准。在 OpenCode Zen 上限时免费；也可以用 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare 或你自己服务的密钥，按次计费。"
       },
-      "local": {
-        "title": "本地 Laya",
-        "tag": "免费 · 离线",
-        "description": "在这台电脑上运行，不联网、不花钱。适合分类判断，关联和打分不够可靠。"
+      "mude": {
+        "title": "mude 1.0",
+        "tag": "在这台 Mac 上",
+        "tagRecommended": "推荐 · 在这台 Mac 上",
+        "description": "mu 自己的决策模型，针对编程场景特别优化，编程场景的决策能力达到 SOTA 级。在这台 Mac 上运行，不需要密钥，不按次收费，需要 Apple 芯片。"
       },
       "clm": {
         "title": "CLM",
         "tag": "自建",
         "description": "回答和 Jev 一样的问题，运行在你自己的服务器上（clm-serve）。编码器需要 GPU，不按次计费。"
+      },
+      "openai": {
+        "title": "OpenAI",
+        "tag": "云端",
+        "description": "OpenAI 的决策模型 gpt-6-luna，用 OpenAI API 密钥。OpenAI 按输入 token 计费。"
       }
     },
-    "localAddress": "服务地址：{{address}}",
-    "laya": {
-      "running": "正在本机运行",
-      "stopped": "已安装，没有运行。mu 用到它时会自己启动。",
-      "missing": "还没有安装。",
-      "platform": "这台电脑跑不了 Laya：它需要 Windows 或 Linux（x64 或 arm64），或者 Apple Silicon 的 Mac。",
-      "needsUv": "安装需要先装好 uv（Python 的包管理工具），装好后回到这里。",
-      "uvLink": "怎么安装 uv",
-      "install": "安装 Laya",
+    "mude": {
+      "name": "mude 1.0（在这台 Mac 上）",
+      "tierHelp": "在这台 Mac 上运行。请在「判定器」页设置。",
+      "notInstalled": "未安装。",
+      "unfinished": "上次安装没有完成。继续安装会从中断的地方接着进行。",
+      "unfinishedDownloaded": "已下载 {{done}} / {{total}} GB，继续安装会从中断的地方接着下。",
+      "install": "安装 mude 1.0",
+      "continue": "继续安装",
+      "consent": {
+        "title": "安装 mude 1.0？",
+        "download": "mu 会从 Hugging Face 下载 mude 1.0（约 {{download}} GB），并为它配置 Python 环境（约 {{python}} GB），需要几分钟。",
+        "memory": "mude 1.0 运行时约占用 {{memory}} GB 内存。需要搭载 Apple 芯片、macOS 14 或更高版本的 Mac。",
+        "after": "安装完成后，mude 1.0 会启动并成为 mu 的判定器。",
+        "ok": "下载并安装"
+      },
+      "localOnly": "仅本地——不询问任何云端判定器",
+      "localOnlyOn": "mude 1.0 是唯一的判定器，不会有任何内容发往云端。它无法回答时，判定点采用自己的默认策略。",
+      "localOnlyOff": "mude 1.0 无法回答的判定（例如它已停止或拿不准时）会交给云端的 {{judges}}，发送过去的内容会离开这台 Mac。另有两项安全检查也始终交给它：审查工具描述，以及审查抓取的内容里是否夹带注入的指令。",
+      "localOnlyOffLocal": "mude 1.0 无法回答的判定会交给同样在这台 Mac 上运行的 {{judges}}。",
+      "localOnlyNone": "mude 1.0 后面没有设置其他判定器。它无法回答时，判定点采用自己的默认策略。",
+      "use": "使用 mude 1.0 作为判定器",
+      "status": {
+        "running": "正在 127.0.0.1:{{port}} 上运行",
+        "runningMemory": "正在 127.0.0.1:{{port}} 上运行 · {{memory}} GB",
+        "starting": "正在启动…",
+        "stopped": "已停止"
+      },
+      "resources": "mude 1.0 运行时约占用 {{memory}} GB 内存。这台 Mac 上的所有 mu 会话（包括终端里的）共用它，它会一直运行，直到你停止或关闭它。",
       "start": "启动",
       "stop": "停止",
-      "confirmTitle": "下载并安装 Laya？",
-      "confirmText": "这会从 PyPI 和 Hugging Face 下载约 {{size}} MB（Python 依赖和模型权重）到 mu 的目录，需要几分钟。装好后 Laya 会自动启动。",
-      "confirmOk": "下载并安装",
+      "openFolder": "打开文件夹",
+      "uninstall": "卸载",
+      "uninstallTitle": "卸载 mude 1.0？",
+      "uninstallText": "这会关闭 mude 1.0，恢复被它替换的判定器，并删除模型和它的 Python 环境（约 {{size}} GB）。之后可以重新安装。",
       "working": {
-        "setup": "正在安装 Laya…",
-        "start": "正在启动 Laya…",
-        "stop": "正在停止 Laya…"
+        "install": "正在安装 mude 1.0…",
+        "enable": "正在启用 mude 1.0…",
+        "disable": "正在关闭 mude 1.0…",
+        "start": "正在启动 mude 1.0…",
+        "stop": "正在停止 mude 1.0…",
+        "uninstall": "正在卸载 mude 1.0…"
+      },
+      "step": {
+        "download": "正在下载 mude 1.0 并校验每个文件…",
+        "python": "正在配置 mude 1.0 的 Python 环境…",
+        "start": "正在启动 mude 1.0 的服务…"
+      },
+      "downloaded": "{{done}} / {{total}} GB",
+      "downloadedSoFar": "已下载 {{done}} / {{total}} GB。",
+      "checking": "正在校验下载的文件…",
+      "cancelled": "已取消安装。已下载的部分会保留。",
+      "failed": {
+        "install": "无法安装 mude 1.0。",
+        "enable": "无法启用 mude 1.0。",
+        "disable": "无法关闭 mude 1.0。",
+        "start": "无法启动 mude 1.0。",
+        "stop": "无法停止 mude 1.0。",
+        "uninstall": "无法卸载 mude 1.0。"
+      },
+      "error": {
+        "access": "mude 1.0 暂时还不能下载，请稍后再试。",
+        "network": "无法连接 Hugging Face。请检查网络后重试，已下载的部分会保留。",
+        "integrity": "有个下载的文件没有通过校验，请重新安装。",
+        "unsupported": "mude 1.0 无法在这台 Mac 上运行。"
+      },
+      "noStatus": "无法获取 mude 1.0 的状态：{{reason}}",
+      "saveFirst": "要更改 mude 1.0，请先保存或放弃其他更改。",
+      "needs": "mude 1.0 需要搭载 Apple 芯片、macOS 14 或更高版本、内存 {{ram}} GB 以上的 Mac。",
+      "retry": "重试",
+      "guide": {
+        "consent": "下载 {{download}} GB，另需 {{python}} GB 的 Python 环境；运行时约占用 {{memory}} GB 内存。",
+        "instead": "mu 会改用云端判定器。",
+        "ready": "mude 1.0 已在运行，现在是你的判定器。",
+        "readyStopped": "mude 1.0 现在是你的判定器，它的服务会在下次 mu 会话开始时启动。"
+      }
+    },
+    "models": {
+      "title": "其他决策模型",
+      "placeholder": "Hugging Face 链接或 owner/name",
+      "add": "添加",
+      "trust": "模型会在这台 Mac 上运行它自带的服务器代码，只添加你信任的模型。",
+      "use": "设为判定器",
+      "continue": "继续下载",
+      "remove": "移除",
+      "removeTitle": "移除 {{name}}？",
+      "removeText": "这会把 {{name}} 移出判定顺序，并删除它的文件（约 {{size}} GB）。以后可以再添加。",
+      "noList": "无法读取决策模型：{{reason}}",
+      "cancelled": "已取消。已下载的部分会保留。",
+      "state": {
+        "judge": "当前判定器 · {{size}} GB",
+        "running": "运行中 · {{size}} GB",
+        "installed": "已安装 · {{size}} GB",
+        "partial": "已下载 {{done}} / {{total}} GB",
+        "notDownloaded": "未下载 · {{size}} GB"
+      },
+      "step": {
+        "resolve": "正在 Hugging Face 上查找模型…",
+        "download": "正在下载 {{name}} 并校验每个文件…",
+        "python": "正在配置 Python 环境…",
+        "start": "正在启动 {{name}} 的服务器…"
+      },
+      "working": {
+        "add": "正在添加 {{name}}…",
+        "use": "正在把判定器切换到 {{name}}…",
+        "disable": "正在关闭 {{name}}…",
+        "remove": "正在移除 {{name}}…"
       },
       "failed": {
-        "setup": "安装没有完成，可以再试一次。",
-        "start": "Laya 没能启动。",
-        "stop": "Laya 没能停止。"
+        "add": "没能添加这个模型。",
+        "use": "没能把它设为判定器。",
+        "disable": "没能关闭它。",
+        "remove": "没能移除它。"
       },
-      "onnx": {
-        "missing": "这台电脑上还没有 Laya 的模型（约 {{size}} MB）。mu 不会替你下载：请从 Hugging Face 下载这些文件，放进模型文件夹，再点「检查并启动」。",
-        "stopped": "模型已就位，Laya 没有运行。选了 Laya 作为判定器时，mu 会在打开 App 时自己启动它。",
-        "starting": "正在检查模型并启动 Laya… 第一次检查要读完整个模型，需要一会儿。",
-        "missingFiles": "还缺：{{files}}",
-        "wrongFiles": "这些文件不是 mu 测试过的版本，请重新下载：{{files}}",
-        "folder": "模型文件夹：{{folder}}",
-        "command": "装了 Hugging Face 命令行（hf）的话，一条命令就能下全：",
-        "page": "去 Hugging Face 下载",
-        "openFolder": "打开模型文件夹",
-        "check": "检查并启动",
-        "problem": {
-          "missing": "缺少部分模型文件。",
-          "wrong": "部分模型文件不是 mu 测试过的版本，请重新下载。",
-          "runtime": "这台电脑运行不了这个模型。",
-          "port": "Laya 的端口（{{port}}）已被别的程序占用。",
-          "stopped": "Laya 还没准备好就停了。",
-          "foreign": "这里在运行一个不是 mu 启动的 Laya，请在启动它的地方停止它。"
-        }
+      "error": {
+        "usage": "这不是 Hugging Face 模型的链接，也不是它的 owner/name。",
+        "access": "无法在 Hugging Face 上打开这个模型。请检查名称：它可能不存在，也可能是私有的或需要申请访问。",
+        "notFound": "Hugging Face 上没有这个模型。",
+        "notRunnable": "mu 运行不了这个模型：它没有 d3_server_mac.py，也就是按 mude 1.0 方式打包的模型自带的服务器。",
+        "network": "无法连接 Hugging Face。请检查网络后重试，已下载的部分会保留。",
+        "integrity": "有个下载的文件没通过校验，请重试。",
+        "unsupported": "这台 Mac 运行不了决策模型。"
       }
     },
     "clm": {
       "address": "服务器地址",
-      "addressHelp": "clm-serve 监听的地址，比如 http://192.168.1.20:8700。留空就是这台电脑（{{address}}）。",
       "key": "服务器密钥",
       "keyPlaceholder": "服务器要求时才填",
-      "keyHelp": "只有用 CLM_API_KEY 启动的服务器才要密钥：填同一个值。保存后不再显示。",
       "check": "检查服务器",
-      "unmeasured": "CLM 做 mu 的判定做得怎么样，目前还没有测过。",
       "status": {
         "checking": "正在询问服务器…",
         "ready": "正在应答 · {{models}} · {{ms}} 毫秒",
@@ -236,23 +300,26 @@
         "mock": "这台服务器运行的是 CLM 的模拟编码器：它的回答是噪声，不是 CLM 的判断。",
         "failed": "没能询问服务器。"
       }
+    },
+    "openai": {
+      "key": "OpenAI API 密钥",
+      "keyHelp": "不填时，mu 用 OpenAI 提供商的 API 密钥（设置 → 提供商）或 OPENAI_API_KEY，不用 ChatGPT 登录。"
     }
   },
   "keyState": {
     "none": "未配置",
     "set": "已配置",
     "typed": "已输入新密钥，待保存",
+    "removed": "已移除密钥，待保存",
     "empty": "变量为空",
     "managed": "已配置",
     "manual": "已配置（手动）"
   },
   "context": {
     "auto": "自动压缩",
-    "autoHelp": "上下文快满时自动压缩历史。",
     "limit": "上下文上限",
     "limitHelp": "0 表示使用模型的上下文窗口减去预留量；否则填 {{min}} 到 {{max}}。在下一次请求模型之前检查，不是硬性截断。",
-    "limitProblem": "请填 0，或 {{min}} 到 {{max}} 之间的整数。",
-    "lead": "对话何时压缩、上下文最多多大，以及作用于上下文的功能。"
+    "limitProblem": "请填 0，或 {{min}} 到 {{max}} 之间的整数。"
   },
   "permissions": {
     "modes": {
@@ -313,7 +380,6 @@
     }
   },
   "providers": {
-    "lead": "模型从哪里来：订阅账号和接口地址。对话用哪个模型、思考等级多少，在发送框里选。",
     "title": "提供商",
     "custom": "自定义提供商",
     "manualGroup": "手动配置",
@@ -348,7 +414,6 @@
     "commented": "models.json 里有注释，从这里保存会把注释弄丢，所以提供商暂为只读。手动去掉注释后即可在此编辑。",
     "modelCount_one": "{{count, number}} 个模型",
     "modelCount_other": "{{count, number}} 个模型",
-    "summary": "登录订阅账号就能直接用，也可以接入任何 OpenAI、Anthropic 或 Gemini 兼容的接口。",
     "subscriptions": "订阅登录",
     "manualShort": "手动",
     "needsSetup": "待配置",
@@ -361,13 +426,10 @@
     "removeDefault": "新会话默认用的就是它，所以默认模型也会清空。"
   },
   "defaults": {
-    "summary": "新会话启动时使用。对话中仍可随时切换。",
     "provider": "提供商",
     "model": "模型",
     "level": "思考等级",
     "levelUnset": "不指定",
-    "levelHelp": "该模型不支持的等级已置灰。",
-    "levelClamped": "不指定时为「中」。模型不支持的等级会自动改用最接近的可用等级。",
     "noReasoning": "这个模型不支持思考，用它启动的会话思考固定为关闭。",
     "notSet": "未指定",
     "pickProvider": "请先选择提供商。"
@@ -378,12 +440,13 @@
     "signOutFailed": "退出登录没有完成，可以再试一次。",
     "signOutConfirm": "要退出 {{name}} 的登录吗？退出后需要重新登录才能使用。",
     "signedOut": "未登录",
-    "instant": "登录和退出立即生效，不用点保存。",
     "models": "可用的模型",
     "byKey": "可用（API 密钥）",
     "byKeyHelp": "没有登录订阅，但 mu 上次连接时报告它能用，通常是因为环境里有它的 API 密钥。登录订阅后改用订阅。",
     "otherRunning": "{{name}} 正在登录，同一时间只能进行一个登录。",
     "showRunning": "去看看",
+    "switched": "已退出 {{name}} 的登录，已改用 {{model}}。",
+    "noModelLeft": "已退出 {{name}} 的登录。还没有设置其他模型。",
     "legacy": {
       "openai-codex": "这是经由 Codex CLI 的旧登录方式。请退出登录，再用 ChatGPT 登录。",
       "anthropic": "Anthropic 不允许其他应用用 Claude 订阅登录，所以 mu 不再提供。请退出登录，改为添加 Anthropic API key。"
@@ -440,12 +503,10 @@
     "noId": "新模型",
     "show": "查看 {{name}}",
     "addListed": "添加 {{name}}",
-    "levels": "思考等级",
-    "levelsHelp": "勾选的等级才会提供给这个模型。极高和最高默认关闭，勾选后才会打开。"
+    "levels": "思考等级"
   },
   "test": {
     "run": "测试连接",
-    "hint": "由本应用发出一次最小的请求：先取模型列表，取不到就让第一个模型回一个字。",
     "okModels": "连接成功（{{ms}} 毫秒），接口返回了 {{count, number}} 个模型。",
     "okCompletion": "连接成功（{{ms}} 毫秒），模型已应答。",
     "auth": "密钥被拒绝（HTTP {{status}}）。",
@@ -463,7 +524,7 @@
   },
   "boardModel": {
     "title": "人话模型",
-    "summary": "人话看板用它把进展讲成大白话。只给你看，不进对话的上下文；看板每更新一次调用一次。",
+    "summary": "人话看板用它把进展讲成大白话。看板每更新一次调用一次。",
     "pick": "指定一个模型",
     "recommended": "推荐 Claude Opus 4.6：讲得最自然、最稳；其次 Gemini 3.8 Flash：更快，也更省。",
     "recommendedTag": "推荐",
@@ -473,7 +534,6 @@
     "pickProvider": "先选提供商",
     "unset": "还没选：第一次打开看板时 mu 会问你。",
     "session": "跟着对话用的模型",
-    "sessionHelp": "对话换了模型，看板也跟着换。",
     "update": "这个版本的 mu 还不能在这里选写看板的模型，更新 mu 后就可以。"
   },
   "levels": {
@@ -501,7 +561,6 @@
     "start": "开始使用",
     "model": {
       "title": "连接一个模型",
-      "subtitle": "mu 用它写代码、回答问题。之后随时可以在设置里修改。",
       "model": "模型",
       "baseUrl": "接口地址",
       "key": "API 密钥",
@@ -545,7 +604,6 @@
       "placeholder": "把密钥粘贴到这里",
       "service": "服务商",
       "servicePlaceholder": "根据密钥自动识别",
-      "serviceHint": "mu 会根据密钥认出服务商；认不出时，在这里选一下。",
       "recognized": "已根据密钥识别。",
       "ambiguous": "好几家服务商的密钥都长这样，这是哪家的？",
       "unknown": "mu 认不出这种密钥，这是哪家的？",
@@ -555,7 +613,6 @@
       "lookingLocal": "正在本机查找 {{service}}…",
       "recheck": "重新检查",
       "startsWith": "mu 先用这个模型",
-      "modelHint": "之后随时可以换。",
       "outcome": {
         "ok": "密钥可以用。",
         "okLocal": "本机的 {{service}} 正在运行。",
@@ -631,15 +688,18 @@
     },
     "judge": {
       "title": "选一个判定器",
-      "subtitle": "mu 工作时的各种小判断由判定器来回答。没有判定器也能运行，只是少了这些把关。",
       "readyFree": "免费的 Jev 已经就绪，不用做任何事。",
       "readyKey": "Jev 已经就绪，用的是你设置的密钥。",
       "more": "换服务或用自己的密钥",
-      "less": "收起"
+      "less": "收起",
+      "none": {
+        "title": "不用判定器",
+        "tag": "不发送任何内容",
+        "description": "所有判定点都不问判定器，也就不会向它发送任何内容；mu 按默认规则处理。之后可以在设置里再选判定器。"
+      }
     },
     "done": {
       "title": "准备好了",
-      "subtitle": "确认一下，就可以开始了。",
       "model": "模型",
       "judge": "判定器",
       "none": "暂未设置",
@@ -668,20 +728,6 @@
         "text_one": "mu 在这台电脑上找到了 {{count}} 段在其他编程助手里聊过的对话，可以连同全部历史导进来，在这里接着聊。",
         "text_other": "mu 在这台电脑上找到了 {{count}} 段在其他编程助手里聊过的对话，可以连同全部历史导进来，在这里接着聊。",
         "open": "选择对话…"
-      },
-      "points": {
-        "judge": {
-          "title": "每一步都有把关",
-          "text": "内置的判定器在关键处把关：先想清楚再动手，不越过你定的规则，没验证不说做完。"
-        },
-        "control": {
-          "title": "看得见，管得住",
-          "text": "检查点让你可以回滚改动；mu 用应用内浏览器时，每一步都在眼前，可以暂停，也可以接管。"
-        },
-        "ready": {
-          "title": "开箱即用",
-          "text": "自动沿用你在 Claude Code、Cursor、Codex 里配好的规则、技能和 MCP 服务器。"
-        }
       },
       "start": "开始设置"
     },
@@ -721,8 +767,18 @@
       "submit": "提交",
       "openAgain": "重新打开授权页",
       "pasteCode": "手动粘贴授权码",
+      "pasteHint": "登录后，浏览器会跳到一个以 {{address}} 开头的网址，页面可能显示出错，这没关系。把地址栏里的完整网址复制下来，粘贴到这里。",
       "cancel": "取消",
       "failed": "登录没有完成，可以再试一次。",
+      "retry": "重试",
+      "pasteInstead": "改为粘贴网址登录",
+      "takenOver": "另一个登录（终端里的 /login 或 Codex CLI）接手了这次登录在等的端口，这次登录已停止。",
+      "portInUse": {
+        "program": "端口 {{port}} 正被 {{command}}（进程 {{pid}}）占用，多半是它自己的登录。请在那里完成或取消登录，然后点「重试」。",
+        "process": "端口 {{port}} 正被进程 {{pid}} 占用，多半是它自己的登录（Codex CLI 和 Codex 应用也用这个端口）。请在那里完成或取消登录，然后点「重试」。",
+        "session": "端口 {{port}} 被另一个 mu 或 pi 会话里没完成的登录占着（进程 {{pid}}）。请在那里完成或取消登录（终端里按 Esc），然后点「重试」。",
+        "unknown": "端口 {{port}} 正被另一个程序占用，多半是 Codex CLI 或 Codex 应用在登录。请在那里完成或取消登录，然后点「重试」。"
+      },
       "asks": "{{name}} 的登录在问（以下是原文）：",
       "needAccount": "先登录一个账号，再选一个模型。",
       "experimental": "实验性",
@@ -739,7 +795,6 @@
     },
     "permissions": {
       "title": "mu 自己能做多少",
-      "subtitle": "新对话从这里选的方式开始。之后随时可以在输入框里或用 /permissions 切换。",
       "recommended": "推荐"
     }
   },
@@ -774,6 +829,12 @@
       "paid": "OpenCode Zen 上的免费 Jev 现在要密钥或付费了，判定暂时交给规则。在「设置 → 判定器」里填一个 Jev 密钥就能恢复。",
       "gone": "OpenCode Zen 已经不提供免费的 Jev 了，判定暂时交给规则。在「设置 → 判定器」里填一个 Jev 密钥就能恢复。"
     },
+    "openaiKey": {
+      "missing": "OpenAI 的决策模型现在没有 API 密钥，暂时不参与判定。在「设置 → 判定器」里填一个，或换一个判定器。",
+      "rejected": "OpenAI 拒绝了决策模型的 API 密钥，暂时不参与判定。在「设置 → 判定器」里换一个密钥，或换一个判定器。"
+    },
+    "layaRemoved": "mu 不再内置 Laya，你的判定器现在是 {{judge}}。想用其他决策模型，在「设置 → 判定器」里从 Hugging Face 添加。",
+    "layaRemovedNoModels": "mu 不再内置 Laya，你的判定器现在是 {{judge}}。",
     "checkpointOffWhy": {
       "gitMissing": "这个对话的检查点已关闭：这台电脑上找不到 Git。装好 Git 后新开一个对话就有了。",
       "xcodeLicense": "这个对话的检查点已关闭：这台 Mac 要先同意 Xcode 许可协议才能运行 Git。在终端运行 sudo xcodebuild -license 同意后，新开一个对话就有了。",
@@ -846,11 +907,9 @@
   },
   "importChats": {
     "title": "导入对话",
-    "description": "把这台电脑上在 Claude Code、Codex 或 ZCode 里聊过的对话连同全部历史带进 mu，在这里接着聊。",
     "open": "选择对话",
     "dialog": {
       "title": "导入对话",
-      "hint": "选中的每段对话都会变成 mu 里的一个对话，放在原来的项目文件夹下，并带上全部历史：消息、工具调用、思考过程和图片。以后再选一次，就能把新增的内容带过来。",
       "search": "按内容或文件夹搜索",
       "loading": "正在找对话…",
       "empty": "这台电脑上没有找到 Claude Code、Codex 或 ZCode 的对话。",
@@ -956,11 +1015,7 @@
     },
     "send": {
       "placeholder": "给 mu 发消息…",
-      "placeholderWorking": "现在引导 mu，或者留一条消息，等这一轮结束后再发…",
-      "steer": "现在",
-      "steerHint": "在 mu 的下一步送达",
-      "followUp": "之后",
-      "followUpHint": "等这一轮运行结束后再发"
+      "placeholderWorking": "给 mu 发消息，它会在合适的时候把消息带进工作…"
     },
     "queue": {
       "title": "等待发送",
@@ -1006,9 +1061,11 @@
       "body": "mu 会在这个文件夹里工作。说说你想做什么。"
     },
     "sider": {
-      "title": "最近",
       "new": "在文件夹里新建对话",
       "empty": "还没有对话",
+      "addProject": "添加项目",
+      "removeProject": "移除项目",
+      "archiveProjectConfirm": "确定归档「{{name}}」和其中的对话吗？可以在列表末尾的「已归档」里恢复。",
       "all": "显示全部（{{count}}）",
       "fewer": "收起",
       "deleteConfirm": "删除「{{title}}」？它的会话文件会移到废纸篓，之后仍可恢复。",
@@ -1053,8 +1110,6 @@
     }
   },
   "details": {
-    "lead": "每项功能一个开关，选项在「选项」里。缩进的几行是它请判定器判断的地方：关掉一处，那一步照常进行。",
-    "featureOff": "功能已关闭",
     "askJudge": "让判定器判断",
     "askJudgeAbout": "让判定器判断：{{point}}",
     "areas": {
@@ -1081,7 +1136,6 @@
       "cursor": "Cursor"
     },
     "skills": {
-      "lead": "mu 在每个对话里都能用的技能，以及各自从哪里来。",
       "search": "搜索技能",
       "open": "打开文件夹",
       "add": "添加技能",
@@ -1092,33 +1146,26 @@
       "empty": "mu 还没有技能。",
       "noMatch": "没有匹配的技能。",
       "failed": "没能读取 mu 的技能。",
-      "project": "项目自己的技能（.mu/skills、.agents/skills、.claude/skills）只在那个项目的对话里加载，这里不列出。",
       "groups": {
         "mu": {
-          "title": "mu 的技能",
-          "help": "在 {{folder}} 里。添加的技能放在这里，也只有这里的可以移除。"
+          "title": "mu 的技能"
         },
         "agents": {
-          "title": "共享的技能",
-          "help": "在 ~/.agents/skills 里，几个代理共用。mu 只读取，不做改动。"
+          "title": "共享的技能"
         },
         "builtin": {
-          "title": "mu 自带",
-          "help": "随 mu 提供，带来它的功能开着时才加载。"
+          "title": "mu 自带"
         },
         "claude": {
-          "title": "沿用 Claude Code",
-          "help": "来自 ~/.claude/skills。mu 只读取；在 mu.json 的 features.inherit 里可以不再沿用。"
+          "title": "沿用 Claude Code"
         },
         "codex": {
-          "title": "沿用 Codex",
-          "help": "来自 ~/.codex/skills。mu 只读取；在 mu.json 的 features.inherit 里可以不再沿用。"
+          "title": "沿用 Codex"
         }
       }
     },
     "mcp": {
       "title": "MCP 服务器",
-      "lead": "mu 在每个对话里都能用的 MCP 服务器，以及各自在哪里设置。",
       "open": "打开配置文件",
       "add": "添加服务器",
       "added": "已添加 {{name}}，新对话里可以用了。",
@@ -1130,7 +1177,6 @@
       "failed": "没能读取 mu 的 MCP 服务器。",
       "featureOff": "mu.json 里关闭了 MCP 功能：只使用 mcp.json 里的服务器。",
       "unreadable": "这些文件读不了，其中的服务器没有列出：{{files}}",
-      "project": "项目自己的服务器（.mu/mcp.json、.mcp.json、.cursor/mcp.json）只在那个项目的对话里使用，这里不列出。",
       "locked": {
         "offInSource": {
           "label": "已在原处关闭",
@@ -1143,20 +1189,16 @@
       },
       "groups": {
         "mu": {
-          "title": "mu 的服务器",
-          "help": "在 mcp.json 和 mu.json 里。添加的服务器写进 {{file}}，和 mu mcp add 一样。"
+          "title": "mu 的服务器"
         },
         "claude": {
-          "title": "沿用 Claude Code",
-          "help": "来自 ~/.claude.json。在这里关掉只写进 mu.json，不改 Claude Code 的文件。"
+          "title": "沿用 Claude Code"
         },
         "cursor": {
-          "title": "沿用 Cursor",
-          "help": "来自 ~/.cursor/mcp.json。在这里关掉只写进 mu.json，不改 Cursor 的文件。"
+          "title": "沿用 Cursor"
         },
         "codex": {
-          "title": "沿用 Codex",
-          "help": "来自 ~/.codex/config.toml。在这里关掉只写进 mu.json，不改 Codex 的文件。"
+          "title": "沿用 Codex"
         }
       },
       "form": {

@@ -165,8 +165,10 @@ jobs:
         shell: bash
         run: |
           expected=$(shasum -a 1 "$TARBALL" | cut -d' ' -f1)
-          for attempt in 1 2 3 4 5 6; do
-            served=$(npm view "mu-agent@$VERSION" dist.shasum 2>/dev/null)
+          # The registry can answer 404 for a few minutes after a publish. `|| true`: under `bash -e` a failed
+          # `npm view` would end the step at the first try instead of asking again.
+          for attempt in $(seq 1 30); do
+            served=$(npm view "mu-agent@$VERSION" dist.shasum --prefer-online 2>/dev/null || true)
             [ -n "$served" ] && break
             sleep 10
           done

@@ -4,7 +4,7 @@ import { Type } from "typebox";
 import { afterEach, describe, expect, it } from "vitest";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import { CascadeJudge } from "../src/cascade.ts";
-import { BUILT_IN_JUDGES, parseConfig } from "../src/config.ts";
+import { parseConfig } from "../src/config.ts";
 import { DecisionEngine } from "../src/decision.ts";
 import {
 	holdsProse,
@@ -211,7 +211,7 @@ describe("injection screening", () => {
 	});
 
 	it("reads a stand-in answer as no answer: the rules withhold the plain phrase", async () => {
-		// What a cascade gives where no judge it has is trusted to screen (the local Laya alone): 0.5, said by nobody.
+		// What a cascade gives where no judge it has is trusted to screen (a small classifier alone): 0.5, said by nobody.
 		const standIn = new MockJudgeProvider((request) =>
 			Object.fromEntries(
 				Object.keys(request.questions).map((id) => [id, { type: "boolean", probability: 0.5, judge: "untrusted" }]),
@@ -284,13 +284,14 @@ describe("injection screening", () => {
 });
 
 describe("who screens", () => {
-	const laya = BUILT_IN_JUDGES.laya.profile;
+	/** A small classifier's profile: trusted to classify a text, not to screen tool output. */
+	const small = { capabilities: { relate: false, rate: false, meta: false, screen: false, intent: false } };
 
-	it("is never the local judge: the next tier answers, and with none behind it the rules do", async () => {
-		const local = screeningJudge();
+	it("is never a judge not trusted to screen: the next tier answers, and with none behind it the rules do", async () => {
+		const classifier = screeningJudge();
 		const hosted = screeningJudge();
 		const cascade = new CascadeJudge([
-			{ judge: new Judge({ provider: local }), profile: laya },
+			{ judge: new Judge({ provider: classifier }), profile: small },
 			{ judge: new Judge({ provider: hosted }) },
 		]);
 		const engine = new DecisionEngine({ judge: cascade, defaultMode: "active" });
@@ -299,7 +300,7 @@ describe("who screens", () => {
 		expect(hosted.calls).toHaveLength(1);
 
 		const alone = new DecisionEngine({
-			judge: new CascadeJudge([{ judge: new Judge({ provider: local }), profile: laya }]),
+			judge: new CascadeJudge([{ judge: new Judge({ provider: classifier }), profile: small }]),
 			defaultMode: "active",
 		});
 		expect(await alone.decide(toolInjection, { source: "web", passage: LOUD })).toMatchObject({
@@ -309,7 +310,7 @@ describe("who screens", () => {
 		});
 		const [rules] = await alone.decideMany(toolInjectionBatch, [{ source: "web", passages: [LOUD, CLEAN] }]);
 		expect(rules).toMatchObject({ source: "fallback", outcome: [null, null] });
-		expect(local.calls).toEqual([]);
+		expect(classifier.calls).toEqual([]);
 	});
 });
 

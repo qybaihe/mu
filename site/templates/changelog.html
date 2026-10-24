@@ -3,9 +3,7 @@
 {% block description %}{{ P.lead | striptags }}{% endblock %}
 {% block content %}
   <section class="wrap page-head">
-    <p class="label intro" style="--d: 120ms">mu · {{ P.title }}</p>
     <h1 class="intro" style="--d: 180ms">{{ P.title }}</h1>
-    <p class="page-lead intro" style="--d: 260ms">{{ P.lead }}</p>
   </section>
   <div class="wrap releases">
     {% for E in P.entries %}
@@ -17,8 +15,7 @@
         <a class="dl" href="{{ E.href }}">{{ P.download }}<span aria-hidden="true">↗</span></a>
       </div>
       {% if E.html %}<div class="release-body"{% if E.lang %} lang="{{ E.lang }}"{% endif %}>
-        {% if E.lang %}<p class="release-note" lang="{{ L.lang }}">{{ P.english_note }}</p>
-        {% endif %}{{ E.html }}
+        {{ E.html }}
       </div>{% else %}<ul>
         {% for I in E['items'] %}<li>{{ I }}</li>
         {% endfor %}

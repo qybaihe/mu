@@ -8,6 +8,10 @@
  * after the snapshot. A draft's id that its session's id replaces (`changed` with `replaces`), and a session's id that a
  * fork or a `/new` moves the conversation from, is followed, not reopened; the session it left is a conversation of
  * its own from then on, which the list announces, and which opening it by its id shows afresh.
+ *
+ * The home page opens a conversation as soon as it is made, and hands it its first message (`stageFirstMessage`): the
+ * screen shows the message at once and sends it while mu starts (the model, the level, then the prompt, which mu's judge
+ * reads first). What the person sends meanwhile waits its turn on screen (`waiting`) and goes in the order sent.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
@@ -30,12 +34,6 @@ import { useNativeClient } from '../utils/nativeClient';
 import { isWorking } from '../utils/statusRow';
 import type { OutgoingMessage } from '../utils/toMessages';
 
-/**
- * How a message sent while a run goes reaches it: at its next step, or after it. It goes as a prompt with pi's
- * `streamingBehavior`, so a run that ended just before it arrived is started by it instead of leaving it queued.
- */
-export type SendMode = 'steer' | 'followUp';
-
 export type NativeConversationState = {
   /** The conversation's id now: a draft's id gives way to its session's. */
   id: string;
@@ -56,6 +54,10 @@ export type NativeConversationState = {
   epoch: number;
   /** A prompt the person sent that is not in the conversation yet: pi takes it once the judge has classified it. */
   outgoing?: OutgoingMessage & { users: number };
+  /** What the person sent while another message was on its way: it goes, in order, once that one is taken. */
+  waiting: readonly WaitingMessage[];
+  /** A first message that could not be sent: its text, for the send box to take back (once per `id`). */
+  returned?: { id: string; text: string };
   /** The last command that failed for a reason the view cannot show (the host could not start, a timeout, …). */
   commandFailure?: NativeFailure;
   /** Dialogs this window answered or let run out, gone before the record that says so arrives. */
@@ -66,7 +68,57 @@ export type NativeConversationState = {
    * the view instead.
    */
   settings?: SessionSettings;
+  /**
+   * The model and thinking level the home page's first message is setting while mu starts (its `set_model` and
+   * `set_thinking_level`), until they are set: the model chip says them meanwhile, where it would otherwise say mu's
+   * default, or the model pi reports as it starts, which the set-up is about to change.
+   */
+  settingUp?: Pick<SessionSettings, 'model' | 'thinkingLevel'>;
 };
+
+/** A message sent while another was on its way, until its turn comes. */
+export type WaitingMessage = { id: string; text: string };
+
+/**
+ * What the home page hands a conversation it made: the commands that set it up (the model, then the thinking level),
+ * and the person's first message, if they typed one.
+ */
+export type FirstMessage = {
+  setup: PiCommand[];
+  /** The message as pi gets it (the files' paths under it), when one was typed. */
+  text?: string;
+  images?: PiImage[];
+  /** What the person typed, which goes back into the box if the message cannot be sent. */
+  typed?: string;
+};
+
+/** What a first message's set-up sets: the model (`provider/id`) and the thinking level, when it sets them. */
+function settingUpOf(setup: readonly PiCommand[]): NativeConversationState['settingUp'] {
+  let model: string | undefined;
+  let thinkingLevel: string | undefined;
+  for (const command of setup) {
+    if (command.type === 'set_model') model = `${command.provider}/${command.modelId}`;
+    if (command.type === 'set_thinking_level') thinkingLevel = command.level;
+  }
+  return model || thinkingLevel
+    ? { ...(model ? { model } : {}), ...(thinkingLevel ? { thinkingLevel } : {}) }
+    : undefined;
+}
+
+/** The state once the first message's set-up is done: the model chip says what pi says from then on. */
+function setUpDone(state: NativeConversationState): NativeConversationState {
+  if (!state.settingUp) return state;
+  const { settingUp: _done, ...rest } = state;
+  return rest;
+}
+
+/** First messages by the id of the conversation they are for, until its screen opens it. */
+const staged = new Map<string, FirstMessage>();
+
+/** Hands a conversation just made its first message: the screen that opens it sends it. */
+export function stageFirstMessage(id: string, first: FirstMessage): void {
+  staged.set(id, first);
+}
 
 export type NativeConversationApi = {
   /**
@@ -78,16 +130,14 @@ export type NativeConversationApi = {
   /** Opens the conversation again, after it could not be opened. */
   retry: () => void;
   /**
-   * A prompt, with the images the person attached; while a run goes, a steering or follow-up message. `command`: the
+   * A prompt, with the images the person attached. While a run goes, it is a steer, as Enter is in mu's terminal:
+   * mu's judgment kernel (`input.interjection`) moves it to after the run when that suits it better. `command`: the
    * text runs a command an extension answers itself (mu's `/goal …`), which adds no message of the person's: it is no
    * longer on its way once pi took it, whether or not it starts a run.
    */
-  send: (
-    text: string,
-    mode?: SendMode,
-    images?: PiImage[],
-    options?: { command?: boolean }
-  ) => Promise<NativeResult<unknown>>;
+  send: (text: string, images?: PiImage[], options?: SendOptions) => Promise<NativeResult<unknown>>;
+  /** Takes back what waits to be sent: its texts, in order; none of it is sent. */
+  takeBackWaiting: () => string[];
   /** Stops the run, or the prompt the judge is still classifying. */
   abort: () => Promise<NativeResult<unknown>>;
   respond: (dialogId: string, answer: DialogAnswer) => Promise<NativeResult<void>>;
@@ -99,6 +149,19 @@ export type NativeConversationApi = {
   /** Names the conversation (the main process: pi's `set_session_name`, or the file); the new title comes as a change. */
   rename: (name: string) => Promise<NativeResult<void>>;
 };
+
+type SendOptions = {
+  command?: boolean;
+  /** Commands that go first, once the message shows (the first message's model and level). */
+  setup?: PiCommand[];
+  /** A first message: what fails gives its text back to the send box (`returned`). */
+  first?: boolean;
+  /** The text that goes back, when it is not the message itself (the files' paths left out). */
+  typed?: string;
+};
+
+/** What a send taken back while it waited answers: nothing went, and nothing is to go back into the box. */
+const TAKEN_BACK: NativeResult<unknown> = { ok: true, data: undefined };
 
 const IDLE: NativeHostStatus = { phase: 'idle' };
 
@@ -112,6 +175,7 @@ const initial = (id: string): NativeConversationState => ({
   seq: 0,
   epoch: ++epochs,
   closed: new Set(),
+  waiting: [],
 });
 
 const userCount = (view: NativeView): number => view.messages.filter((message) => message.role === 'user').length;
@@ -152,6 +216,8 @@ export function useNativeConversation(requestedId: string): NativeConversationSt
   const key = followed.current.key;
   // The effect's own `open`, for `retry`.
   const reopen = useRef<(() => Promise<void>) | undefined>(undefined);
+  // Sends a first message the home page staged, once the conversation is open (set below, after `send`).
+  const firstRef = useRef<((first: FirstMessage) => Promise<void>) | undefined>(undefined);
   const commit = useCallback((change: (old: NativeConversationState) => NativeConversationState) => {
     const next = change(latest.current);
     if (next === latest.current) return;
@@ -198,6 +264,11 @@ export function useNativeConversation(requestedId: string): NativeConversationSt
           settings: session,
         })
       );
+      const first = staged.get(mine.first);
+      if (first) {
+        staged.delete(mine.first);
+        void firstRef.current?.(first);
+      }
     };
 
     const fold = (event: NativeRecordEvent): void => {
@@ -289,16 +360,19 @@ export function useNativeConversation(requestedId: string): NativeConversationSt
     [client, fail]
   );
 
-  const send = useCallback(
-    async (
-      text: string,
-      mode: SendMode = 'steer',
-      images: PiImage[] = [],
-      options: { command?: boolean } = {}
-    ): Promise<NativeResult<unknown>> => {
+  /**
+   * Sends one message: the prompt (a steer while a run goes), after the commands that set the conversation up, if any.
+   * The message shows at once (`outgoing`) and stops being on its way once pi took it.
+   */
+  const deliver = useCallback(
+    async (text: string, images: PiImage[], options: SendOptions): Promise<NativeResult<unknown>> => {
       const now = latest.current;
       const attached = images.length > 0 ? { images } : {};
-      if (isWorking(now.view)) return request({ type: 'prompt', message: text, ...attached, streamingBehavior: mode });
+      const setup = options.setup ?? [];
+      // A prompt with pi's `streamingBehavior`, so a run that ended just before it arrived is started by it instead of
+      // leaving it queued.
+      if (isWorking(now.view) && setup.length === 0)
+        return request({ type: 'prompt', message: text, ...attached, streamingBehavior: 'steer' });
       sent += 1;
       const outgoing = {
         id: `outgoing-${sent}`,
@@ -309,16 +383,42 @@ export function useNativeConversation(requestedId: string): NativeConversationSt
       };
       stopTaken.current = false;
       commit((old) => ({ ...old, outgoing, commandFailure: undefined }));
-      const result = await client.request(now.id, { type: 'prompt', message: text, ...attached });
-      if (result.ok === false) {
-        stopTaken.current = false;
-        // pi refusing the prompt is a record the view shows; anything else is said here.
+      // It did not go: off the screen, said why (`failure`, when the view does not say it), and a first message's
+      // text back into the box.
+      const notSent = (failure: NativeFailure | undefined): void =>
         commit((old) => {
           const next = { ...old };
           if (old.outgoing?.id === outgoing.id) delete next.outgoing;
-          if (result.kind !== 'command') next.commandFailure = result;
+          if (failure) next.commandFailure = failure;
+          if (options.first) next.returned = { id: outgoing.id, text: options.typed ?? text };
           return next;
         });
+      // The set-up is done, or failed: what pi says is in force from then on.
+      const setUp = (): void => {
+        if (options.first) commit(setUpDone);
+      };
+      for (const command of setup) {
+        // One after another: the level goes after the model, which sets it back.
+        // eslint-disable-next-line no-await-in-loop
+        const done = await client.request(latest.current.id, command);
+        if (done.ok === false) {
+          setUp();
+          notSent(done);
+          return done;
+        }
+      }
+      setUp();
+      // Stopped while mu was being set up: the message does not go.
+      if (setup.length > 0 && stopTaken.current) {
+        stopTaken.current = false;
+        notSent(undefined);
+        return TAKEN_BACK;
+      }
+      const result = await client.request(latest.current.id, { type: 'prompt', message: text, ...attached });
+      if (result.ok === false) {
+        stopTaken.current = false;
+        // pi refusing the prompt is a record the view shows; anything else is said here.
+        notSent(result.kind === 'command' ? undefined : result);
         return result;
       }
       if (stopTaken.current) {
@@ -346,6 +446,61 @@ export function useNativeConversation(requestedId: string): NativeConversationSt
     },
     [client, commit, request]
   );
+
+  // Messages go one after another: one sent while another is on its way waits on screen (`waiting`) until that one is
+  // taken, so pi gets them in the order sent (pi takes one prompt at a time; the next is a steer of the run it started).
+  const chain = useRef<Promise<unknown>>(Promise.resolve());
+  const inFlight = useRef(0);
+
+  const send = useCallback(
+    (text: string, images: PiImage[] = [], options: SendOptions = {}): Promise<NativeResult<unknown>> => {
+      const ticket = inFlight.current > 0 ? `waiting-${++sent}` : undefined;
+      inFlight.current += 1;
+      if (ticket) commit((old) => ({ ...old, waiting: [...old.waiting, { id: ticket, text }] }));
+      // Nothing on its way: it goes now, and shows at once.
+      const going = ticket
+        ? chain.current.then(async () => {
+            // Taken back while it waited: it does not go.
+            if (!latest.current.waiting.some((each) => each.id === ticket)) return TAKEN_BACK;
+            commit((old) => ({ ...old, waiting: old.waiting.filter((each) => each.id !== ticket) }));
+            return deliver(text, images, options);
+          })
+        : deliver(text, images, options);
+      const run = going.finally(() => {
+        inFlight.current -= 1;
+      });
+      chain.current = run.catch((): undefined => undefined);
+      return run;
+    },
+    [commit, deliver]
+  );
+
+  const takeBackWaiting = useCallback((): string[] => {
+    const texts = latest.current.waiting.map((each) => each.text);
+    if (texts.length) commit((old) => ({ ...old, waiting: [] }));
+    return texts;
+  }, [commit]);
+
+  /** The home page's first message: the model and level, then the message; with nothing typed, the model and level. */
+  const sendFirst = useCallback(
+    async (first: FirstMessage): Promise<void> => {
+      const settingUp = settingUpOf(first.setup);
+      if (settingUp) commit((old) => ({ ...old, settingUp }));
+      if (first.text) {
+        await send(first.text, first.images ?? [], { setup: first.setup, first: true, typed: first.typed });
+        return;
+      }
+      try {
+        for (const command of first.setup) if ((await request(command)).ok === false) return;
+      } finally {
+        commit(setUpDone);
+      }
+    },
+    [commit, request, send]
+  );
+  useEffect(() => {
+    firstRef.current = sendFirst;
+  }, [sendFirst]);
 
   const abort = useCallback(async () => {
     if (latest.current.outgoing) stopTaken.current = true;
@@ -385,7 +540,7 @@ export function useNativeConversation(requestedId: string): NativeConversationSt
   const rename = useCallback((name: string) => client.rename(latest.current.id, name), [client]);
 
   return useMemo(
-    () => ({ ...state, key, retry, send, abort, respond, expire, request, clearFailure, rename }),
-    [state, key, retry, send, abort, respond, expire, request, clearFailure, rename]
+    () => ({ ...state, key, retry, send, takeBackWaiting, abort, respond, expire, request, clearFailure, rename }),
+    [state, key, retry, send, takeBackWaiting, abort, respond, expire, request, clearFailure, rename]
   );
 }

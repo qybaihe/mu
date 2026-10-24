@@ -116,5 +116,18 @@
   "optionNumber": "옵션 {{number}}",
   "copyFilesHeader": "파일:",
   "exportHeaderLine": "{{label}}: {{value}}",
-  "exportSpeakerLine": "{{speaker}}:"
+  "exportSpeakerLine": "{{speaker}}:",
+  "fileRef": {
+    "preview": "{{name}} 미리 보기",
+    "open": "{{name}} 열기",
+    "reveal": {
+      "mac": "Finder에서 {{name}} 보기",
+      "windows": "파일 탐색기에서 {{name}} 보기",
+      "linux": "폴더에서 {{name}} 보기"
+    },
+    "missing": "파일을 찾을 수 없습니다",
+    "ambiguous": "이름이 같은 파일이 여러 개 있습니다",
+    "gone": "{{name}}을(를) 찾을 수 없습니다. 이동되었거나 삭제되었을 수 있습니다.",
+    "openFailed": "{{name}}을(를) 열 수 없습니다"
+  }
 }

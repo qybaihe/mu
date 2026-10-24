@@ -14,7 +14,6 @@ import {
 	findOnPath,
 	layoutOf,
 	linkState,
-	localJudgeSupport,
 	packageEntries,
 	parseEnvFile,
 	platformName,
@@ -74,8 +73,12 @@ if (layout === "package") {
 		"dependencies",
 		installed
 			? "installed"
-			: `missing: cd ${root} && npm ci --ignore-scripts && npm run hydrate:model-data`,
+			: `missing: cd ${root} && npm ci --ignore-scripts && npm run hydrate:model-catalog`,
 	);
+	// The model list pi reads at its start is generated, not committed (installHint in mu.mjs).
+	if (installed && !existsSync(join(root, "packages", "ai", "src", "providers", "data", ".manifest.json"))) {
+		row("fix", "model list", `not generated: cd ${root} && npm run hydrate:model-catalog`);
+	}
 
 	// A link on POSIX, a small mu.cmd on Windows, where a link to a script cannot be run.
 	const linked = linkState({
@@ -118,35 +121,39 @@ row(
 const config = readJson(join(agentDir, "mu.json")) ?? readJson(join(agentDir, "kyrn.json"));
 const tiers = (env("JUDGE") ? env("JUDGE").split(",") : (config?.tiers ?? ["jev"])).map((tier) => tier.trim());
 const mode = env("JUDGE_MODE") ?? config?.modes?.default ?? "active";
-row("--", "judges", `${tiers.join(" > ")} · default mode ${mode}${env("JUDGE") ? " (from MU_JUDGE)" : ""}`);
 const overrides = Object.entries(config?.modes ?? {}).filter(([id]) => id !== "default");
+// The modes mu sets out of the box besides the default, as packages/kyrn-judge/src/config.ts has them: one of these in
+// mu.json gives way to a default of off (DecisionEngine.getMode).
+const BUILT_IN_MODES = {
+	"swarm.patch": "off",
+	"capability.disclosure": "off",
+	"notify.routing": "shadow",
+	"turn.drift": "shadow",
+};
+// Whether any decision point asks a judge (DecisionEngine.asksJudge). With none, nothing is sent to one, and the rows
+// about keys and judges that answer would only mislead.
+const asksJudge = mode !== "off" || overrides.some(([id, value]) => value !== "off" && BUILT_IN_MODES[id] !== value);
+row(
+	"--",
+	"judges",
+	`${tiers.join(" > ")} · default mode ${mode}${env("JUDGE") ? " (from MU_JUDGE)" : ""}${asksJudge ? "" : " · no decision point asks a judge, so nothing is sent to one"}`,
+);
 if (overrides.length > 0) row("--", "modes", overrides.map(([id, value]) => `${id}=${value}`).join(" "));
 const ladder = config?.features?.swarm?.models ?? [];
 row("--", "subagents", ladder.length > 0 ? `model ladder ${ladder.join(" < ")}` : "use the session's model (no ladder configured)");
 
-const judgeSupport = localJudgeSupport({ platform: process.platform, env: process.env, wsl });
-if (tiers.some((tier) => tier.startsWith("laya")) && !judgeSupport.runs && !judgeSupport.url) {
-	// Not a failure of this installation: the sidecar is Core ML, and there is none for this platform.
-	row("--", "local judge", `not available on ${platformName({ platform: process.platform, wsl })}: the Laya sidecar needs Core ML (macOS on Apple silicon)`);
-	row("--", "", "Laya's decision points use the next judge or their fallbacks. Use Jev, an LLM judge or MU_LOCAL_JUDGE_URL=<a server with the same API>");
-} else if (tiers.some((tier) => tier.startsWith("laya"))) {
-	const base = env("LOCAL_JUDGE_URL") ?? `http://127.0.0.1:${env("LOCAL_JUDGE_PORT") ?? 47823}`;
-	const startedAt = performance.now();
-	try {
-		const response = await fetch(`${base}/health`, { signal: AbortSignal.timeout(2000) });
-		const health = await response.json();
-		const ms = Math.round(performance.now() - startedAt);
-		row(health.status === "ok" ? "ok" : "--", "local judge", `${base} · ${health.status} · ${health.model ?? "laya"} · ${ms} ms`);
-	} catch {
-		row(
-			"fix",
-			"local judge",
-			judgeSupport.runs
-				? `${base} isn't answering: run mu judge start   (first time: mu judge setup)`
-				: `${base} (MU_LOCAL_JUDGE_URL) isn't answering`,
-		);
-	}
+// Laya, the local judge mu had until 0.2.4, is no longer built in. The next session takes it out of mu.json (mude 1.0 in
+// its place when it is set up), and skips it in MU_JUDGE (packages/kyrn-judge/src/laya-migration.ts).
+if (tiers.includes("laya") || Object.values(config?.judges ?? {}).some((judge) => judge?.type === "local")) {
+	row(
+		"--",
+		"laya",
+		env("JUDGE")
+			? "no longer built into mu: mu skips it in MU_JUDGE. Other decision models: mu judge model add <link>"
+			: "no longer built into mu: the next session takes it out of mu.json. Other decision models: mu judge model add <link>",
+	);
 }
+
 // The built-in ways to Jev, as packages/kyrn-judge/src/config.ts has them; mu.json may name others.
 const JEV_ROUTES = {
 	jev: { type: "jev" },
@@ -174,8 +181,11 @@ const CLASSIFIER_KEYS = {
 const fromFile = existsSync(envFile) ? parseEnvFile(readFileSync(envFile, "utf8")).entries : [];
 const has = (name) => Boolean(process.env[name]) || fromFile.some(([key, value]) => key === name && value !== "");
 const where = `to ${tilde(envFile)} or to your environment`;
-const jevTier = tiers.find((tier) => ["jev", "typesafe", "gateway"].includes((config?.judges?.[tier] ?? JEV_ROUTES[tier])?.type));
-if (jevTier) {
+// mude speaks System One too, but on this machine and with a key of its own (its rows are below).
+const jevTier = tiers.find(
+	(tier) => tier !== "mude" && ["jev", "typesafe", "gateway"].includes((config?.judges?.[tier] ?? JEV_ROUTES[tier])?.type),
+);
+if (jevTier && asksJudge) {
 	const judge = config?.judges?.[jevTier] ?? JEV_ROUTES[jevTier];
 	if (judge.type === "jev") {
 		// The order the registry tries: TypeSafe directly, Jev on OpenRouter, the Vercel AI Gateway, OpenCode Zen,
@@ -215,15 +225,40 @@ if (jevTier) {
 	}
 }
 
+// mude on this Mac (mu judge mude): its server's /health, and the key mu sends it.
+if (asksJudge && tiers.includes("mude")) {
+	const fallback = tiers.filter((tier) => tier !== "mude");
+	const behind = fallback.length > 0 ? `until it answers, ${fallback.join(" > ")} decide${fallback.length === 1 ? "s" : ""} (what they read leaves this machine)` : "until it answers, decisions take their fallbacks";
+	if (process.platform !== "darwin") {
+		row("--", "mude 1.0", `not available on ${platformName({ platform: process.platform, wsl })}: mude 1.0 runs on a Mac with Apple silicon`);
+	} else {
+		const entry = config?.judges?.mude;
+		const address = (typeof entry?.baseUrl === "string" ? entry.baseUrl : "http://127.0.0.1:8790/v1/systemone").replace(/\/v1\/systemone\/?$/, "");
+		const startedAt = performance.now();
+		try {
+			const response = await fetch(`${address}/health`, { signal: AbortSignal.timeout(2000) });
+			const health = await response.json();
+			const ms = Math.round(performance.now() - startedAt);
+			row(health.status === "ready" ? "ok" : "--", "mude 1.0", `${address} · ${health.status} · ${ms} ms`);
+		} catch {
+			row("fix", "mude 1.0", `${address} isn't answering: run mu judge mude start   (first time: mu judge mude install)`);
+			row("--", "", behind);
+		}
+		if (!has("MU_JUDGE_MUDE_KEY")) row("fix", "mude 1.0 key", "MU_JUDGE_MUDE_KEY is not set, so mu can't ask mude 1.0: run mu judge mude enable");
+	}
+}
+
 // Classifier models of pi's catalog (Jev on OpenCode Zen or Cloudflare, Clef, …), for the tiers and routes that use them.
 const classifierOf = (tier) =>
 	tier.startsWith("classifier:")
 		? { type: "classifier", model: tier.slice("classifier:".length) }
 		: (config?.judges?.[tier] ?? JEV_ROUTES[tier]);
-const askedTiers = [
-	...tiers,
-	...Object.values(config?.routes ?? {}).flatMap((value) => (Array.isArray(value) ? value : String(value).split(","))),
-].map((tier) => String(tier).trim());
+const askedTiers = asksJudge
+	? [
+			...tiers,
+			...Object.values(config?.routes ?? {}).flatMap((value) => (Array.isArray(value) ? value : String(value).split(","))),
+		].map((tier) => String(tier).trim())
+	: [];
 for (const model of new Set(askedTiers.map(classifierOf).filter((judge) => judge?.type === "classifier").map((judge) => judge.model))) {
 	const provider = String(model ?? "").split("/")[0];
 	// OpenCode's free models answer without a key (the client sends "public", as OpenCode's own does).
@@ -242,6 +277,21 @@ for (const model of new Set(askedTiers.map(classifierOf).filter((judge) => judge
 			`${model}: ${unset.join(" and ")} not set${authBytes > 8 ? `; a key stored with /login ${provider} works too (not read here)` : `: add ${unset.join(", ")} ${where}, or store a key with /login ${provider}`}`,
 		);
 	}
+}
+
+// OpenAI's decision model (gpt-6-luna) through its Decisions API, for the tiers and routes that use it. Its own key goes
+// to its address; at OpenAI's own address, an OpenAI key of mu's `openai` provider works too (kyrn-judge/src/registry.ts).
+const OPENAI_JUDGE = { type: "openai" };
+const openaiOf = (tier) => config?.judges?.[tier] ?? (tier === "openai" ? OPENAI_JUDGE : undefined);
+for (const judge of new Set(askedTiers.map(openaiOf).filter((judge) => judge?.type === "openai"))) {
+	const name = judge.apiKeyEnv ?? "MU_JUDGE_OPENAI_KEY";
+	const host = judge.baseUrl && URL.canParse(judge.baseUrl) ? new URL(judge.baseUrl).host : "api.openai.com";
+	const model = judge.model || "gpt-6-luna";
+	const providerKey = host === "api.openai.com" && name === "MU_JUDGE_OPENAI_KEY";
+	if (has(name)) row("ok", "openai", `${name} is set: ${model} is called at ${host} (value not shown)`);
+	else if (providerKey && has("OPENAI_API_KEY")) row("ok", "openai", `OPENAI_API_KEY is set: ${model} is called at ${host} (value not shown)`);
+	else if (providerKey && authBytes > 8) row("--", "openai", `${name} not set; an OpenAI API key stored with mu setup or /login works too (not read here)`);
+	else row("fix", "openai", `${name} not set: add it ${where}${providerKey ? ", or set up an OpenAI API key with mu setup" : ""}`);
 }
 
 // CLM-8B behind `clm-serve` (github.com/Contrastive-LM/CLM), for the tiers and routes that use it.
@@ -310,10 +360,13 @@ const { browserAdvice, findBrowser, thisBrowserHost } = await import(
 const browserHost = thisBrowserHost();
 const chrome = findBrowser(browserHost);
 const [advice, ...moreAdvice] = chrome ? [] : browserAdvice(browserHost).split("\n");
+// Only mu's browser needs one: without it the rest of mu works, so it is not something to fix.
 row(
-	chrome ? "ok" : "fix",
+	chrome ? "ok" : "--",
 	"browser",
-	chrome ? `${chrome.executable}${chrome.side === "windows" ? "  (on the Windows side, reached over mirrored networking)" : ""}` : advice,
+	chrome
+		? `${chrome.executable}${chrome.side === "windows" ? "  (on the Windows side, reached over mirrored networking)" : ""}`
+		: `optional, for mu's browser. ${advice}`,
 );
 for (const line of moreAdvice) row("--", "", line);
 const canRelate = (tier) =>
@@ -321,16 +374,21 @@ const canRelate = (tier) =>
 	tier === "gateway" ||
 	tier.startsWith("llm:") ||
 	tier.startsWith("classifier:") ||
-	["llm", "clm", "classifier"].includes(judgeOf(tier)?.type);
+	tier === "openai" ||
+	["llm", "clm", "classifier", "openai"].includes(judgeOf(tier)?.type);
 const browseTiers = config?.routes?.["browser.step"] ?? tiers;
 const routed = Object.entries(config?.routes ?? {});
 if (routed.length > 0) row("--", "routes", routed.map(([id, value]) => `${id} -> ${[value].flat().join(" > ")}`).join(" · "));
+// mu's browser runs on the judge: with browser.step off it is switched off (src/extension/features/browser.ts).
+const browseMode = config?.modes?.["browser.step"] ?? mode;
 row(
-	[browseTiers].flat().some(canRelate) ? "ok" : "--",
+	browseMode !== "off" && [browseTiers].flat().some(canRelate) ? "ok" : "--",
 	"browse",
-	[browseTiers].flat().some(canRelate)
-		? `driven by ${[browseTiers].flat().join(" > ")}`
-		: 'needs a judge that can match a goal to a page. In mu.json: "routes": { "browser.step": ["llm:openai/gpt-5.6-luna"] }',
+	browseMode === "off"
+		? "off: mu's browser runs on the judge, and browser.step is off"
+		: [browseTiers].flat().some(canRelate)
+			? `driven by ${[browseTiers].flat().join(" > ")}`
+			: 'needs a judge that can match a goal to a page. In mu.json: "routes": { "browser.step": ["llm:openai/gpt-5.6-luna"] }',
 );
 
 const marks = { ok: "\x1b[32m ok\x1b[0m", fix: "\x1b[33mfix\x1b[0m", "--": "\x1b[2m  ·\x1b[0m" };

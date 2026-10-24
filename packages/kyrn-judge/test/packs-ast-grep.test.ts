@@ -369,13 +369,28 @@ describe.skipIf(process.platform === "win32")("pack:ast-grep in the catalog", ()
 		expect(toolResults(harness)[1]).toContain("pack:ast-grep");
 	});
 
-	it("has its tools from the start when disclosure is off, since nothing is hidden then", async () => {
+	it("has its tools from the start when the catalog is off, since nothing is hidden then", async () => {
 		const { harness } = await startPacks(harnesses, {
-			mode: "off",
 			packs: { astGrepCommand: fakeAstGrep(tempDir()).command },
+			features: { catalog: false },
 		});
 		harness.setResponses([fauxAssistantMessage("ok")]);
 		await harness.session.prompt("Hi.");
+		expect(active(harness)).toEqual(expect.arrayContaining(["sg_search", "sg_rewrite"]));
+	});
+
+	it("stays hidden with disclosure off, and opens when the model asks", async () => {
+		const { harness, provider } = await startPacks(harnesses, {
+			mode: "off",
+			responder: disclosing("ast-grep"),
+			packs: { astGrepCommand: fakeAstGrep(tempDir()).command },
+		});
+		harness.setResponses([fauxAssistantMessage("ok")]);
+		await harness.session.prompt("Find every console.log call.");
+		expect(registered(harness)).not.toContain("sg_search");
+		expect(provider.calls).toEqual([]);
+		harness.setResponses([call("find_capability", { open: "pack:ast-grep" }), fauxAssistantMessage("Open.")]);
+		await harness.session.prompt("Search for them.");
 		expect(active(harness)).toEqual(expect.arrayContaining(["sg_search", "sg_rewrite"]));
 	});
 });

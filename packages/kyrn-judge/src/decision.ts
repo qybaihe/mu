@@ -159,6 +159,11 @@ interface Evaluation<Out> {
 	warnings?: readonly JudgeWarning[];
 	tiers?: readonly JudgeTierReport[];
 	failure?: string;
+	/**
+	 * With `recordState`: the request as the judge received it, secrets redacted, for the ledger. Kept when the call
+	 * fails too: such a request is still one to replay or to train a judge on.
+	 */
+	request?: { state: JsonValue; questions: JsonValue };
 }
 
 export class DecisionEngine {
@@ -265,9 +270,16 @@ export class DecisionEngine {
 		this.defaultMode = mode;
 	}
 
-	/** Spec ids with an explicit mode, for status displays. */
-	explicitModes(): ReadonlyMap<string, DecisionMode> {
-		return this.modes;
+	/**
+	 * The points whose mode, as it takes effect, differs from the default: what a status display lists after it. A
+	 * built-in shadow that gives way to a default of off is not one.
+	 */
+	overrides(): ReadonlyMap<string, DecisionMode> {
+		return new Map(
+			[...this.modes.keys()]
+				.map((specId): [string, DecisionMode] => [specId, this.getMode(specId)])
+				.filter(([, mode]) => mode !== this.defaultMode),
+		);
 	}
 
 	private async evaluate<In, const Qs extends Questions, Out extends JsonValue>(
@@ -287,12 +299,16 @@ export class DecisionEngine {
 		this.stats.calls++;
 		const shared = !this.routed.has(spec.id);
 		if (shared) this.lastUsedAt = Date.now();
+		let request: Evaluation<Out>["request"];
 		try {
 			// A judge weighs what a call does, never the key it does it with.
 			const known = this.knownSecrets();
+			const sent = redactJson(state, known);
+			const asked = redactJson(questions, known);
+			if (this.recordState) request = { state: sent as JsonValue, questions: asked as unknown as JsonValue };
 			const result = await this.judgeFor(spec.id).evaluate({
-				state: redactJson(state, known),
-				questions: redactJson(questions, known),
+				state: sent,
+				questions: asked,
 				signal,
 				capabilities,
 			});
@@ -304,6 +320,7 @@ export class DecisionEngine {
 				modelId: result.modelId,
 				warnings: result.warnings.length > 0 ? result.warnings : undefined,
 				tiers: result.tiers,
+				request,
 			};
 			const verdict = spec.policy(result.answers as AnswersFor<Qs>, input);
 			if (verdict === ABSTAIN) {
@@ -318,7 +335,7 @@ export class DecisionEngine {
 			const message = error instanceof Error ? error.message : String(error);
 			this.stats.failures++;
 			this.stats.lastError = { kind, message, at: new Date().toISOString() };
-			return { failure: `error:${kind}` };
+			return { failure: `error:${kind}`, request };
 		} finally {
 			if (shared) this.lastUsedAt = Date.now();
 		}
@@ -336,20 +353,6 @@ export class DecisionEngine {
 			// Bookkeeping, like the ledger itself: it must not change what the agent does.
 			return undefined;
 		}
-	}
-
-	/** The request as the judge receives it, secrets redacted: what `recordState` keeps for distilling a judge. */
-	private requestAsSent<In, const Qs extends Questions, Out extends JsonValue>(
-		spec: DecisionSpec<In, Qs, Out>,
-		input: In,
-		state: JudgeInput,
-	): { state: JsonValue; questions: JsonValue } {
-		const known = this.knownSecrets();
-		const questions: Questions = spec.questionsFor ? spec.questionsFor(input) : spec.questions;
-		return {
-			state: redactJson(state, known) as JsonValue,
-			questions: redactJson(questions, known) as unknown as JsonValue,
-		};
 	}
 
 	private async record(record: LedgerRecord): Promise<void> {
@@ -371,7 +374,6 @@ export class DecisionEngine {
 
 		const origin = this.asked();
 		const state = spec.buildState(input);
-		const asked = this.recordState ? this.requestAsSent(spec, input, state) : undefined;
 		const evaluation = await this.evaluate(spec, input, state, options.signal);
 		const { judged } = evaluation;
 		const useJudged = this.applies(spec, mode) && judged !== undefined;
@@ -398,8 +400,8 @@ export class DecisionEngine {
 			warnings: evaluation.warnings,
 			tiers: evaluation.tiers,
 			stateDigest: createHash("sha256").update(JSON.stringify(state)).digest("hex"),
-			state: asked?.state,
-			questions: asked?.questions,
+			state: evaluation.request?.state,
+			questions: evaluation.request?.questions,
 		};
 		await this.record(record);
 

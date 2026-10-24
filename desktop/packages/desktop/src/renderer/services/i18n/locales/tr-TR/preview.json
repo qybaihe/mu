@@ -319,5 +319,18 @@
   "saveFailedWithDetail": "Kaydedilemedi: {{detail}}",
   "zoomActualSize": "Yakınlaştırmayı sıfırla",
   "zoomFit": "Sığdır",
-  "zoomFitTooltip": "Panel genişliğine sığdır"
+  "zoomFitTooltip": "Panel genişliğine sığdır",
+  "gallery": {
+    "label": "Görsel {{name}}",
+    "previous": "Önceki görsel",
+    "next": "Sonraki görsel",
+    "position": "{{index}} / {{count}}",
+    "gone": "Bu dosya artık orada değil. Taşınmış veya silinmiş olabilir.",
+    "tooLarge": "Bu görsel burada gösterilemeyecek kadar büyük ({{size}}). Lütfen varsayılan uygulamada açın."
+  },
+  "reveal": {
+    "mac": "Finder'da göster",
+    "windows": "Dosya Gezgini'nde göster",
+    "linux": "Klasörde göster"
+  }
 }

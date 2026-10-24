@@ -608,7 +608,9 @@
     "defaultTag": "默认",
     "makeDefault": "设为新对话的默认模型",
     "madeDefault": "新对话会默认用这个模型。",
-    "makeDefaultFailed": "没能保存默认模型。"
+    "makeDefaultFailed": "没能保存默认模型。",
+    "showAllModels": "显示全部模型（{{count}}）",
+    "showFewerModels": "收起"
   },
   "agentTip": {
     "codes": {

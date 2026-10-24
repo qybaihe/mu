@@ -344,7 +344,6 @@
   "language": "語言",
   "saveUploadToWorkspace": "上傳檔案儲存到專案資料夾",
   "startOnBoot": "開機啟動",
-  "startOnBootDesc": "登入 macOS 或 Windows 後自動啟動 mu。",
   "startOnBootUnsupported": "僅在安裝版的 macOS 與 Windows 應用程式中可用。",
   "startOnBootUpdateFailed": "更新開機啟動設定失敗",
   "closeToTray": "關閉到托盤",
@@ -373,10 +372,8 @@
   "groupApp": "應用",
   "groupAbout": "其他",
   "agentIdleTimeout": "代理閒置逾時",
-  "agentIdleTimeoutDesc": "代理閒置超過這個時長就會停止，以釋放記憶體。",
   "previewTextSizeLimit": "預覽大小上限",
   "previewTextSizeLimitUnit": "MB",
-  "previewTextSizeLimitDesc": "超過該大小的文字檔案只顯示提示、不載入內容。僅對新開啟的標籤頁生效。",
   "gemini": "Gemini",
   "model": "模型",
   "system": "系統",
@@ -985,22 +982,18 @@
   "browserData": {
     "title": "應用內瀏覽器",
     "agentControlLabel": "允許代理操作應用內瀏覽器",
-    "agentControlDesc": "開啟後，代理可以在應用內瀏覽器裡替你開啟網頁、點擊和填寫表單，例如查資料或完成某個網站流程。它只能操作應用內瀏覽器這一個頁面，碰不到 mu 介面本身，也不會開啟獨立的 Chrome 視窗。關閉後瀏覽器仍可自行使用，只是代理無法操作。",
     "agentControlSaved": "設定已儲存",
     "agentControlFailed": "設定儲存失敗",
     "agentControlRestartRequired": "此設定需重新啟動應用後生效。",
     "clearLabel": "清空瀏覽資料",
-    "clearDesc": "登出瀏覽器中所有已登入的網站，並清空快取。已開啟的瀏覽器標籤頁重新載入後生效。",
     "clearConfirmTitle": "確定清空瀏覽資料？",
     "clearConfirmContent": "應用內瀏覽器中所有網站的登入狀態都會被登出，且無法復原。",
     "clearSuccess": "瀏覽資料已清空",
-    "clearFailed": "清空瀏覽資料失敗",
-    "description": "是否允許代理操作應用內瀏覽器，以及清除瀏覽器保存的資料。"
+    "clearFailed": "清空瀏覽資料失敗"
   },
   "archived": {
     "navLabel": "已歸檔的對話",
     "title": "已歸檔",
-    "description": "你歸檔的會話。可以恢復到側邊欄，或批次刪除將其永久刪除。",
     "empty": "暫無歸檔內容",
     "noProject": "無項目",
     "chatCount": "{{count}} 個聊天",
@@ -1073,13 +1066,8 @@
   },
   "mcpAuthRequiredNamed": "{{name}} 需要身分驗證",
   "mcpTestConnectionSuccessNamed": "{{name}} 連線測試成功",
-  "appearanceDescription": "介面語言、主題、字型和介面縮放。",
-  "systemDescription": "開機啟動、關閉視窗後繼續執行、通知，以及 mu 的工作目錄和日誌目錄。",
-  "conversationsDescription": "逾時時間、預覽大小上限、上傳檔案的去處，以及對話之間的訊息。",
-  "aboutDescription": "目前的 mu 版本、更新，以及日誌資料夾的入口。",
   "developer": {
     "title": "開發者",
-    "description": "開發者工具，以及外部工具連線應用內瀏覽器用的連接埠和 MCP 設定。",
     "devOnly": "這些工具只在從原始碼執行的 mu 裡提供。"
   },
   "search": {

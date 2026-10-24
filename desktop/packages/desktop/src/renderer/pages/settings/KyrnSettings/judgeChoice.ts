@@ -2,36 +2,80 @@ import { CLM_KEY_VARIABLE } from '@/common/kyrn/clm';
 import type { JudgeSettings, JudgeType, KyrnSettings } from '@/common/kyrn/types';
 
 /**
- * The three kinds of judge a person chooses between: Jev, Laya on this machine, or CLM on a server of their own. The
- * profiles behind them (jev, jev-direct, jev-openrouter, jev-gateway, jev-opencode, jev-opencode-free, jev-cloudflare,
- * jev-custom, laya, clm) are how the config keeps them; the tiers page shows them by these three names, and a Jev
- * profile by the service it reaches Jev through. Anything else (another classifier model such as Clef, a model as
- * judge, a mock, a self-hosted HTTP judge) is only named there, by the name it was given.
+ * The kinds of judge a person chooses between: Jev, mude on this machine, CLM on a server of their own, or OpenAI's
+ * decision model. The profiles behind them (jev, jev-direct, jev-openrouter, jev-gateway, jev-opencode,
+ * jev-opencode-free, jev-cloudflare, jev-custom, mude, clm, openai) are how the config keeps them; the tiers page shows
+ * them by these names, and a Jev profile by the service it reaches Jev through. Anything else (another classifier
+ * model such as Clef, a model as judge, a mock, a self-hosted HTTP judge) is only named there, by the name it was
+ * given. Laya, the local judge mu no longer has, is not among them: the settings never show it
+ * (process/agent/kyrn/config/laya.ts).
+ *
+ * mude is chosen through mu's own command (`mu judge mude`, see common/kyrn/mude.ts), never through `choose`: it is
+ * installed, started and put first in the order by that command, which writes mu.json itself. So is a decision model
+ * added from Hugging Face (`mu judge model`), which counts as the same choice: a decision model on this Mac.
  */
-export type JudgeChoice = 'jev' | 'local' | 'clm';
+export type JudgeChoice = 'jev' | 'mude' | 'clm' | 'openai';
 
-export const JUDGE_CHOICES: readonly JudgeChoice[] = ['jev', 'local', 'clm'];
+/** The settings' choices; mude only where the app offers it (macOS). */
+export const JUDGE_CHOICES: readonly JudgeChoice[] = ['jev', 'mude', 'clm', 'openai'];
 /** The choices of the first-run guide. CLM needs a server with a GPU someone already runs: it waits in the settings. */
-export const GUIDE_CHOICES: readonly JudgeChoice[] = ['jev', 'local'];
+export const GUIDE_CHOICES: readonly JudgeChoice[] = ['jev', 'mude'];
+
+/**
+ * The choices in the order the judges page and the first-run guide show them: on a Mac that can run mude, mude is the
+ * recommended judge and comes first, the others in their usual order behind it; elsewhere the order is as given.
+ */
+export const inShownOrder = (choices: readonly JudgeChoice[], mudeRecommended: boolean): readonly JudgeChoice[] =>
+  mudeRecommended && choices.includes('mude') ? ['mude', ...choices.filter((choice) => choice !== 'mude')] : choices;
 
 /** The kind of each type; a classifier model is Jev when it is Jev's (see serviceOf), else of no kind. */
 const KIND_OF: Record<Exclude<JudgeType, 'classifier'>, JudgeChoice | undefined> = {
   jev: 'jev',
   typesafe: 'jev',
   gateway: 'jev',
-  local: 'local',
   clm: 'clm',
+  openai: 'openai',
   llm: undefined,
   http: undefined,
   mock: undefined,
 };
 
 /** The profile a choice prefers when several of its kind exist: the built-in names. */
-const PREFERRED: Record<JudgeChoice, string> = { jev: 'jev', local: 'laya', clm: 'clm' };
+const PREFERRED: Record<JudgeChoice, string> = { jev: 'jev', mude: 'mude', clm: 'clm', openai: 'openai' };
 
-/** Which of the three a profile is; undefined for a model as judge, a self-hosted HTTP judge or the mock. */
+/** The variable mude's profile names for its key: how it is told from a Jev profile on the same protocol. */
+export const MUDE_KEY_VARIABLE = 'MU_JUDGE_MUDE_KEY';
+
+/**
+ * mude, mu's own judge on this Mac: a System One profile like Jev's, at a local address, set up and switched on by
+ * `mu judge mude`, not by `choose`.
+ */
+export const isMude = (judge: JudgeSettings | undefined): boolean =>
+  judge?.type === 'typesafe' && judge.apiKeyEnv === MUDE_KEY_VARIABLE;
+
+/** Keys of services elsewhere: a System One profile with one of them is Jev at an address of the person's own. */
+const KEYS_FOR_ELSEWHERE: ReadonlySet<string> = new Set([
+  'MU_JUDGE_OPENROUTER_API_KEY',
+  'MU_JUDGE_CUSTOM_API_KEY',
+  'MU_JUDGE_CLM_API_KEY',
+]);
+
+/**
+ * A decision model added from Hugging Face (`mu judge model add`, common/kyrn/mude.ts): a System One profile on
+ * 127.0.0.1 with the key its command wrote, `MU_JUDGE_<NAME>_KEY`. Like mude, it is the decision model on this Mac,
+ * switched by its command and not by `choose`.
+ */
+export const isAddedModel = (judge: JudgeSettings | undefined): boolean =>
+  judge?.type === 'typesafe' &&
+  !isMude(judge) &&
+  /^MU_JUDGE_[A-Z0-9_]+_KEY$/.test(judge.apiKeyEnv) &&
+  !KEYS_FOR_ELSEWHERE.has(judge.apiKeyEnv) &&
+  /^http:\/\/127\.0\.0\.1:\d+\/v1\/systemone$/.test(judge.baseUrl);
+
+/** Which kind a profile is; undefined for a model as judge, a self-hosted HTTP judge or the mock. */
 export function kindOf(judge: JudgeSettings | undefined): JudgeChoice | undefined {
   if (!judge) return undefined;
+  if (isMude(judge) || isAddedModel(judge)) return 'mude';
   if (judge.type === 'classifier') return serviceOf(judge) ? 'jev' : undefined;
   return KIND_OF[judge.type];
 }
@@ -128,9 +172,11 @@ export function profileFor(settings: KyrnSettings, choice: JudgeChoice): string 
 
 /**
  * The settings with `choice` as the one judge. A cascade someone built by hand is replaced: the simple view has one
- * judge, the advanced view has the order.
+ * judge, the advanced view has the order. mude is left to its command (`mu judge mude enable`), which also starts it
+ * and keeps the judges behind it: the settings stay as they are.
  */
 export function choose(settings: KyrnSettings, choice: JudgeChoice): KyrnSettings {
+  if (choice === 'mude') return settings;
   const existing = profileFor(settings, choice);
   return existing ? { ...settings, tiers: [existing] } : settings;
 }
@@ -226,3 +272,28 @@ export const jevKeyVariable = (judge: JudgeSettings | undefined): string | undef
 
 /** The variable a CLM profile's key lives in: needed only by a server started with CLM_API_KEY. */
 export const clmKeyVariable = (judge: JudgeSettings | undefined): string => judge?.apiKeyEnv || CLM_KEY_VARIABLE;
+
+/**
+ * The models OpenAI's Decisions API serves, as its reference says (`POST /v1/decisions`: "Only `gpt-6-luna` is
+ * supported"). The judge order offers these and nothing else to pick.
+ */
+export const OPENAI_MODELS: readonly string[] = ['gpt-6-luna'];
+
+/** The model an OpenAI profile asks for when it names none: the first the Decisions API serves. */
+export const OPENAI_DEFAULT_MODEL = OPENAI_MODELS[0];
+
+/**
+ * The models to offer for an OpenAI profile: the ones the Decisions API serves, then any other the profile names (as
+ * saved in mu.json, as in the draft), since a relay may serve one: such a model stays as it is until someone picks
+ * another, and can be picked back.
+ */
+export const openaiModelChoices = (...named: string[]): string[] => [
+  ...new Set([...OPENAI_MODELS, ...named.filter(Boolean)]),
+];
+
+/**
+ * The variable an OpenAI profile's key lives in. Without a value there, mu takes the OpenAI API key it has for its own
+ * `openai` provider, at OpenAI's address only (kyrn-judge's registry).
+ */
+export const openaiKeyVariable = (judge: JudgeSettings | undefined): string =>
+  judge?.apiKeyEnv || 'MU_JUDGE_OPENAI_KEY';

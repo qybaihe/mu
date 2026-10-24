@@ -3,8 +3,6 @@ title: Context
 summary: How mu keeps the context small: tool output by the chunk, stale results dropped without summaries, skills and MCP servers only when needed.
 ---
 
-The model's attention is limited, and so is its context. mu keeps out what the task doesn't need, so the context rarely fills and the prompt cache stays warm. Each piece below is a [decision point](@decisions) you can switch or put in shadow.
-
 ## Long tool output {#admission}
 
 Output longer than 4,000 characters, from a search, a build or a command, is cut into chunks of about 1,200 characters, and the judge is asked of each: does this matter now? Up to 16 chunks go in one request, the state billed once. What matters enters the context; the rest is archived with a pointer, so the model can fetch it if it turns out to need it. If the judge takes longer than four seconds, the output goes in whole.
@@ -19,7 +17,7 @@ A failing run often prints the same diff, DOM dump or stack trace once for every
 { "features": { "admission": { "testLog": "rules" } } }
 ```
 
-`"jev"` goes one step further: with a verbose reporter, the judge also picks which passing records and test output the current goal still needs. Failures and the summary are never asked about. The settings call this *Test log trimming*. Measurements are on the [decision points page](@decisions#measured).
+`"jev"` goes one step further: with a verbose reporter, the judge also picks which passing records and test output the current goal still needs. Failures and the summary are never asked about. The settings call this *Test log trimming*.
 
 mu also tells test runners that an agent is reading, so Vitest and others print only failures and the summary.
 
@@ -37,10 +35,8 @@ Off by default. When a conversation is compacted, the judge keeps or prunes pass
 
 ## Skills, packs and MCP servers {#disclosure}
 
-Install a lot, show little:
-
 - **Skills.** Only the descriptions of skills that relate to the task go into the prompt. The others stay findable. With fewer than four skills, nothing is filtered.
-- **Packs and MCP servers.** They are installed but hidden: a server's process doesn't start and its tools aren't shown until the judge finds the task needs it, or the model asks for it. Tool lists are cached, so the judge knows what a server offers before it has ever run. `"exposure": "always"` under `mcp.servers` in `mu.json` keeps one open.
+- **Packs and MCP servers.** They are installed but hidden: a server's process doesn't start and its tools aren't shown until the model asks for it with `find_capability`, or you open it with `/capabilities open`. With `capability.disclosure` turned on (it is off by default), the judge also opens what it finds a task needs. Tool lists are cached, so the judge knows what a server offers before it has ever run. `"exposure": "always"` under `mcp.servers` in `mu.json` keeps one open.
 
 The packs that ship with mu: ast-grep structural search and rewrite, GitHub through `gh`, `/commit`, `/review`, conflict resolution and a debugger (debugpy, delve, lldb-dap). Each needs its program installed and gives an install hint when it is missing.
 

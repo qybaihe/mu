@@ -65,10 +65,11 @@ export default function KeyPaste({ setup, tried }: KeyPasteProps) {
   // A key several services' shapes fit is asked about with just those; any other key with every service, in the order
   // for the app's language.
   const offered = candidates.length > 1 ? candidates : servicesInOrder(i18n.language);
-  let serviceHint = t('mu.welcome.apiKey.serviceHint');
+  // Nothing until there is a key: the placeholder says the service is told from it.
+  let serviceHint = '';
   if (service) serviceHint = setup.recognized ? t('mu.welcome.apiKey.recognized') : '';
-  else if (setup.refused) serviceHint = '';
-  else if (typed) serviceHint = t(candidates.length > 1 ? 'mu.welcome.apiKey.ambiguous' : 'mu.welcome.apiKey.unknown');
+  else if (typed && !setup.refused)
+    serviceHint = t(candidates.length > 1 ? 'mu.welcome.apiKey.ambiguous' : 'mu.welcome.apiKey.unknown');
 
   return (
     <div className={styles.fields}>
@@ -198,7 +199,6 @@ export default function KeyPaste({ setup, tried }: KeyPasteProps) {
               onChange={setup.setModel}
             />
           )}
-          <div className={choiceStyles.choiceHint}>{t('mu.welcome.apiKey.modelHint')}</div>
         </Field>
       ) : null}
     </div>

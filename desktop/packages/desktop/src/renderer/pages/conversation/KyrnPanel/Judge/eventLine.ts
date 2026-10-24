@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next';
 import { runEnding, type BrowserRunState, type BrowserRunStatus } from '@/common/kyrn/browserRun';
 import { parseCoded, parseParams, type CodeParams, type Coded } from '@/common/kyrn/hive';
+import { describeTier } from '@/renderer/components/kernel/kernelSummary';
 import { formatDuration, formatNumber } from '@/renderer/services/i18n/format';
 import { checkpointOffWords, readCheckpointParams } from '@/renderer/pages/conversation/Messages/acp/muNotice';
 import { reasonLine, reasonText, statusKey } from '@/renderer/pages/conversation/Preview/browser/muBrowser/format';
@@ -438,14 +439,23 @@ function injectionLines(t: TFunction, payload: Record<string, unknown>): string[
 const boardLine = (t: TFunction, payload: Record<string, unknown>): string[] | undefined =>
   typeof payload.on === 'boolean' ? [t(`${KEY}.board.${payload.on ? 'on' : 'off'}`)] : undefined;
 
-/** A notice about the judge itself, by its code: the free Jev answering, or no longer answering. */
+/**
+ * A notice about the judge itself, by its code: the free Jev answering, or no longer answering, Laya gone with the
+ * judge in its place (`judge`, by its name in the order), or OpenAI's decision model without a usable key (by its
+ * reason: none set, or refused by OpenAI).
+ */
 const JUDGE_NOTICES: Readonly<Record<string, string>> = {
   free_jev: 'freeJev',
   free_jev_unavailable: 'freeJevUnavailable',
+  laya_removed: 'layaRemoved',
+  openai_key: 'openaiKeyMissing',
 };
 const judgeNoticeLine = (t: TFunction, payload: Record<string, unknown>): string[] | undefined => {
-  const words = JUDGE_NOTICES[str(payload.code)];
-  return words ? [t(`${KEY}.judgeNotice.${words}`)] : undefined;
+  const code = str(payload.code);
+  const words = code === 'openai_key' && str(payload.reason) === 'rejected' ? 'openaiKeyRejected' : JUDGE_NOTICES[code];
+  if (!words) return undefined;
+  const judge = describeTier(str(payload.judge) || 'jev', {}).judge;
+  return [t(`${KEY}.judgeNotice.${words}`, { judge })];
 };
 
 // ── entry ───────────────────────────────────────────────────────────────────

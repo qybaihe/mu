@@ -1,10 +1,11 @@
-"""Build usemu.dev, the mu site: five languages; home, decision points, docs and changelog.
+"""Build usemu.dev, the mu site: five languages; home, decision points, models, mubench, enterprise, docs and changelog.
 
 The facts come from the mu repository, so a rebuild follows the product:
   packages/kyrn-judge/manifest.json   the decision points, features and options, with their names in every language
   README.md, docs/readme/README.<lang>.md
                                       each decision point's question, and the measurements on the decision point page
   docs/readme/bench-*.svg             the charts of those measurements
+  docs/images/mubench/*.svg           the mubench page's charts (drawn by charts.mjs there, from content/mubench.json)
   CHANGELOG.md                        the changelog: every release in English, and in a language that has no
                                       translation of a release yet
   desktop/.../i18n/locales/<locale>/agentMode.json
@@ -16,7 +17,9 @@ and from GitHub's API, at build time:
 
 The site's own words and assets:
   templates/                       Jinja2 templates
-  i18n/<lang>.json                 the home page, the navigation, the banner and the translated changelog
+  i18n/<lang>.json                 the home page, the models, mubench and enterprise pages, the navigation, the banner and the
+                                   translated changelog
+  content/mubench.json             the mubench leaderboard's numbers, the same in every language
   content/decisions.<lang>.json    the decision point page: explanations and one example per point
   content/docs/<lang>/*.md         the documentation pages (a missing one falls back to English)
   content/docs-ui.<lang>.json      the words around the documentation
@@ -70,6 +73,9 @@ PAGES = {
     "home": {"key": "home", "path": ""},
     "docs": {"key": "docs", "path": "docs/"},
     "decisions": {"key": "decisions", "path": "decisions/"},
+    "models": {"key": "models", "path": "models/"},
+    "mubench": {"key": "mubench", "path": "mubench/"},
+    "enterprise": {"key": "enterprise", "path": "enterprise/"},
     "changelog": {"key": "changelog", "path": "changelog/"},
 }
 for _slug, _ in DOCS:
@@ -470,8 +476,6 @@ def render_options(manifest, lang, ctx, U, toc):
         toc.append({"id": fid, "text": t(f["title"])})
         flags = [f'<span class="opt-flag {"on" if f.get("defaultEnabled") else "off"}">'
                  f'{html.escape(U["options_on"] if f.get("defaultEnabled") else U["options_off"])}</span>']
-        if f.get("beta"):
-            flags.append(f'<span class="opt-flag beta">{html.escape(U["options_beta"])}</span>')
         points = owners.get(f["name"], [])
         if points:
             links = " ".join(f'<a href="{ctx.site_link("@decisions#" + p)}"><code>{p}</code></a>' for p in points)
@@ -537,6 +541,61 @@ def decision_groups(manifest, lang, D, questions, D_en):
             })
         groups.append({"key": key, "name": names.get(ml) or names["en"], "blurb": D["page"]["groups"][key], "points": points})
     return groups
+
+
+# ---- mubench ----
+
+def mubench_boards(bench, B):
+    """The mubench page's two boards in one language, each as a score table and an accuracy table: the models best
+    score first, every number formatted, the best in each column found, and the cells of a capability with few items or
+    an unstable score marked (bench["few"]: fewer items than that, items from fewer tasks, or mu right more often than
+    that with no decision model)."""
+    few = bench["few"]
+
+    def best(values):
+        """The top value of a column, when it stands out: not when every model ties."""
+        return max(values) if values and len(set(values)) > 1 else None
+
+    boards = []
+    for key in ("real", "constructed"):
+        board = bench["boards"][key]
+        cols = []
+        for cap in ["overall", *bench["capabilities"]]:
+            c = board[cap]
+            scores, acc = c["scores"] or {}, c["acc"] or {}
+            unstable = cap != "overall" and (
+                c["items"] < few["items"] or c.get("tasks", few["tasks"]) < few["tasks"] or (c["baseline"] or 0) > few["baseline"])
+            cols.append({
+                "key": cap, "name": B["overall"] if cap == "overall" else B["caps"][cap], "scores": scores, "acc": acc, "few": unstable,
+                "best": best(list(scores.values())), "best_acc": best(list(acc.values())),
+                # mu's own accuracy with no decision model, shown where the models' accuracies are.
+                "base": f"{c['baseline']:.1f}%" if acc else "—",
+                "count": f"{c['items']:,}" + (f" ({c['tasks']})" if "tasks" in c else ""),
+                # A capability's weight in the overall score; the overall column shows what they add up to.
+                "weight": f"{sum(board[k]['weight'] for k in bench['capabilities']) if cap == 'overall' else c['weight']:.1f}%",
+            })
+        overall = board["overall"]
+        rows, acc_rows, intervals = [], [], []
+        for m in sorted(bench["models"], key=lambda m: -overall["scores"][m["id"]]):
+            name = B["names"].get(m["id"], m["name"])
+            cells, acc_cells = [], []
+            for c in cols:
+                v, a = c["scores"].get(m["id"]), c["acc"].get(m["id"])
+                cells.append({"text": "—" if v is None else f"{v:.1f}".replace("-", "−"), "best": v is not None and v == c["best"],
+                              "few": c["few"] and v is not None})
+                acc_cells.append({"text": "—" if a is None else f"{a:.1f}%", "best": a is not None and a == c["best_acc"],
+                                  "few": c["few"] and a is not None})
+            rows.append({"name": name, "cells": cells})
+            acc_rows.append({"name": name, "cells": acc_cells})
+            lo, hi = overall["ci"][m["id"]]
+            intervals.append(f"{name} {overall['scores'][m['id']]:.1f} ({lo:.1f}–{hi:.1f})")
+        boards.append({"key": key, "cols": cols, "rows": rows, "acc_rows": acc_rows, "total": f"{overall['items']:,}",
+                       "tasks": overall.get("tasks"), "intervals": B["list_sep"].join(intervals),
+                       "accuracies": B["list_sep"].join(
+                           [f"{B['zero_row']} {overall['baseline']:.1f}% ({overall['acc_ci']['baseline'][0]:.1f}–{overall['acc_ci']['baseline'][1]:.1f})"]
+                           + [f"{B['names'].get(m['id'], m['name'])} {overall['acc'][m['id']]:.1f}% ({overall['acc_ci'][m['id']][0]:.1f}–{overall['acc_ci'][m['id']][1]:.1f})"
+                              for m in sorted(bench["models"], key=lambda m: -overall["scores"][m["id"]])])})
+    return boards
 
 
 # ---- Changelog ----
@@ -641,6 +700,7 @@ def main():
     if not agents[latest["number"]]:
         warn(f"no mu-agent version found for {latest['tag']}; the banner leaves it out")
     modes = {L["lang"]: mode_labels(repo, L["lang"]) for L in locales}
+    bench = json.loads((here / "content" / "mubench.json").read_text())
 
     css = "".join((here / "static" / name).read_text() for name in ("site.base.css", "site.extra.css", "site.pages.css"))
     js = (here / "static" / "site.js").read_text()
@@ -656,6 +716,13 @@ def main():
         shutil.copy(here / "assets" / name, assets / "readme" / name)
     for name in SITE_ASSETS:
         shutil.copy(here / "assets" / name, assets / name)
+    # The mubench charts, with their sizes for the page's <img> and <source> tags.
+    (assets / "mubench").mkdir(exist_ok=True)
+    charts = {}
+    for path in sorted((repo / "docs/images/mubench").glob("*.svg")):
+        shutil.copy(path, assets / "mubench" / path.name)
+        size = re.search(r'<svg[^>]*?\swidth="(\d+)" height="(\d+)"', path.read_text())
+        charts[path.stem] = {"w": int(size.group(1)), "h": int(size.group(2))}
 
     stars = star_count()
     release = {
@@ -721,6 +788,15 @@ def main():
                     docs_options=PAGES["docs/options"], docs_judges=PAGES["docs/judges"],
                 )
                 template = "decisions.html"
+            elif key == "models":
+                template = "models.html"
+            elif key == "mubench":
+                # The charts come in English and Chinese.
+                values.update(boards=mubench_boards(bench, L["mubench"]), few=bench["few"], caps=bench["capabilities"],
+                              charts=charts, chart_lang="zh" if lang.startswith("zh") else "en")
+                template = "mubench.html"
+            elif key == "enterprise":
+                template = "enterprise.html"
             elif key == "docs":
                 values.update(U=U, sidebar=sidebar)
                 template = "docs_index.html"

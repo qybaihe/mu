@@ -161,6 +161,43 @@ describe("DecisionEngine", () => {
 		expect(ledger.records[0].questions).toEqual(keepChunk.questions);
 	});
 
+	it("stores built questions with the state as well as fixed ones, and nothing without recordState", async () => {
+		const pickTools = defineDecision({
+			id: "test.pick_tools",
+			version: 1,
+			cacheImpact: "none",
+			latency: "inline",
+			questions: {},
+			questionsFor: (input: { task: string; tools: string[] }) =>
+				Object.fromEntries(
+					input.tools.map((tool, index) => [
+						`t${index}`,
+						{ type: "boolean" as const, instructions: `Does \`task\` need ${tool}?` },
+					]),
+				),
+			buildState: (input: { task: string; tools: string[] }) => ({ task: input.task }),
+			policy: (answers) => Object.keys(answers).length,
+			fallback: () => 0,
+		});
+		const built = { task: "deploy the site", tools: ["the shell", "a browser"] };
+		const recorded = async (spec: typeof pickTools | typeof keepChunk, recordState: boolean) => {
+			const ledger = new MemoryLedger();
+			const engine = new DecisionEngine({
+				judge: new Judge({ provider: new MockJudgeProvider() }),
+				ledger,
+				recordState,
+			});
+			await (spec === keepChunk ? engine.decide(keepChunk, input) : engine.decide(pickTools, built));
+			return ledger.records[0].questions;
+		};
+		expect(await recorded(pickTools, true)).toEqual({
+			t0: { type: "boolean", instructions: "Does `task` need the shell?" },
+			t1: { type: "boolean", instructions: "Does `task` need a browser?" },
+		});
+		expect(await recorded(pickTools, false)).toBeUndefined();
+		expect(await recorded(keepChunk, true)).toEqual(keepChunk.questions);
+	});
+
 	it("records where the caller was when it asked, not where it is when a slow judge answers", async () => {
 		const waiting: ((answers: Record<string, Answer>) => void)[] = [];
 		const provider = new MockJudgeProvider(
@@ -220,16 +257,23 @@ describe("DecisionEngine modes", () => {
 		expect(engine.getMode("test.keep_chunk")).toBe("off");
 		expect(engine.getMode("test.other")).toBe("active");
 		expect(engine.asksJudge()).toBe(true);
+		// /status lists what differs from the default as it takes effect: not the shadow that gave way.
+		expect([...engine.overrides()]).toEqual([["test.other", "active"]]);
 		const decision = await engine.decide(keepChunk, input);
 		expect(decision).toMatchObject({ outcome: "keep", source: "fallback" });
 		expect(provider.calls).toHaveLength(0);
 
 		engine.setMode("test.other", "off");
 		expect(engine.asksJudge()).toBe(false);
+		expect(engine.overrides().size).toBe(0);
 		// Turned on again, the built-in shadow comes back.
 		engine.setDefaultMode("active");
 		expect(engine.getMode("test.keep_chunk")).toBe("shadow");
 		expect(engine.asksJudge()).toBe(true);
+		expect([...engine.overrides()]).toEqual([
+			["test.keep_chunk", "shadow"],
+			["test.other", "off"],
+		]);
 	});
 });
 

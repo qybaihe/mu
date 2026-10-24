@@ -120,6 +120,16 @@
   cursor: default;
 }
 
+/* A choice this machine cannot take: readable, never picked. */
+.choiceDisabled {
+  cursor: not-allowed;
+}
+
+.choiceDisabled .choiceRadio,
+.choiceDisabled .choiceTitle {
+  opacity: 0.5;
+}
+
 .choiceRadio {
   flex: none;
   width: 16px;
@@ -222,12 +232,13 @@
   text-wrap: balance;
 }
 
-/* Laya further down the judge order: its panel in the group's list, spaced as a row. */
+/* A judge further down the order with a panel of its own (CLM's server check): in the group's list, spaced as a row. */
 .tierPanel {
   padding: 12px 0;
 }
 
-/* Laya on this machine: where it stands, what can be done, and the script's last words while it works. */
+/* A judge's panel (mude, a decision model, a CLM server): where it stands, what can be done, and the command's last
+   words while it works. */
 .localJudge {
   display: flex;
   flex-direction: column;
@@ -302,6 +313,40 @@
   line-height: 16px;
   word-break: break-all;
   user-select: all;
+}
+
+/* Why this machine cannot run mude, in the command's words: one line each, under the sentence that says it. */
+.mudeReason {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/* "Error details" under a failed mude command: a quiet link at the start of the line, not a full-width bar. */
+.mudeDetails:global(.arco-btn) {
+  align-self: flex-start;
+  margin-inline-start: -4px;
+  padding-inline: 4px;
+}
+
+/* "Local only" in mude's install dialog: the box hugs its label, so a click beside it does not tick it. */
+.mudeConsentCheck {
+  align-self: flex-start;
+}
+
+/* Both explanations of "Local only" in one cell: the longer sets the height, whichever one shows. */
+.mudeConsentHelp {
+  display: grid;
+}
+
+.mudeConsentHelp > * {
+  grid-area: 1 / 1;
+}
+
+.mudeConsentHidden {
+  visibility: hidden;
 }
 
 /* Plain rows, laid out like the app's other settings pages: a quiet list of rows, each a readable title, one line
@@ -467,4 +512,41 @@
   .plainControl {
     align-items: flex-start;
   }
+}
+
+/* The decision models added from Hugging Face, under mude: one row each, then the field that adds one. */
+.modelsTitle {
+  margin-top: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.modelRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.modelName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.modelId {
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.modelsAdd {
+  display: flex;
+  gap: 8px;
 }

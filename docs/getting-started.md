@@ -44,11 +44,11 @@ Inside a session, `/status` shows the judge, each decision point's mode and the 
 
 ## The judge
 
-mu asks a small, fast judge model the routine questions that come up in a session. You don't have to set one up: the default is Jev, TypeSafe's hosted judge model. Without a key, the free Jev on OpenCode Zen answers, and mu reminds you of this once a day. To use your own key, a local judge or another model, see [Judges](judges.md).
+mu asks a small, fast judge model the routine questions that come up in a session. You don't have to set one up: the default is Jev, TypeSafe's hosted judge model. Without a key, the free Jev on OpenCode Zen answers, and mu reminds you of this once a day. On a Mac with Apple silicon, `mu setup` and the app recommend [mude 1.0](judges.md#mude-10-on-your-mac), mu's own decision model, which runs on your Mac. To use your own key, a local judge or another model, see [Judges](judges.md).
 
 ## Decisions and their modes
 
-34 of the 40 decision points are **active** from the start: mu asks the judge and acts on its verdicts. `context.compact` and `output.drift` are off until you turn them on, `swarm.patch` is off, and `notify.routing`, `input.interjection` and `turn.drift` are in shadow: asked and logged, while their own rules decide. Every verdict is logged, so you can see what the judge decided (`/status`, `mu ledger` or the Judge tab in the app).
+34 of the 40 decision points are **active** from the start: mu asks the judge and acts on its verdicts. `context.compact` and `output.drift` are off until you turn them on, `capability.disclosure` and `swarm.patch` are off, and `notify.routing` and `turn.drift` are in shadow: asked and logged, while their own rules decide. Every verdict is logged, so you can see what the judge decided (`/status`, `mu ledger` or the Judge tab in the app).
 
 To watch the judge before you trust it, set the default mode to **shadow**. The judge is still asked and its verdicts are logged, but they change nothing. In `~/.mu/agent/mu.json`:
 

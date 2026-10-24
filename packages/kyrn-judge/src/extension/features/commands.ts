@@ -31,9 +31,8 @@ const helpZh = () => `mu ${VERSIONS.mu} · 先判断再动手的编程代理，�
   /import-chat [文件]：把这个项目在 Claude Code、Codex 或 ZCode 里的对话导入进来，接着在这里聊
 
 判断层
-  你的每条消息都先交给判定器读：读的时候消息停在输入框上方（按 esc 可跳过等待），
-  判定结果留在对话里这条消息下面。${keyText("app.tools.expand")} 可以看每个判定背后的全部回答。
-  /mu judge <判定器>：由哪些模型来判定、按什么顺序，比如 laya | laya,jev | jev-opencode-free | clm | classifier:<提供商>/<模型> | llm:<提供商>/<模型>
+  按 esc 不等判定器读完消息；${keyText("app.tools.expand")} 可以看每个判定背后的全部回答。
+  /mu judge <判定器>：由哪些模型来判定、按什么顺序，比如 jev | mude,jev | jev-opencode-free | openai | clm | classifier:<提供商>/<模型> | llm:<提供商>/<模型>
   /mu route <判定点> <判定器|default>：让某一个判定点用自己的判定器，比如 browser.step llm:openai/gpt-5.6-luna
   /mu mode <判定点|default> <off|shadow|active>：off 关闭，shadow 影子（只记录，不起作用），active 生效
   /frame：查看任务帧，也就是 mu 记住的目标、你的硬约束（原话加出处）和验收条件
@@ -43,7 +42,7 @@ const helpZh = () => `mu ${VERSIONS.mu} · 先判断再动手的编程代理，�
     /board 查看，/board model 换个模型来讲
   /permissions [模式]：mu 不问你就能做多少事，可选 full（完全访问）、judge（判定模式，由判定器替你批，
     拿不准才问你）、ask（最小权限，除了读都要问你）
-  /capabilities：装了哪些能力，判定器为这次任务打开了哪些
+  /capabilities：装了哪些能力，这次打开了哪些；/capabilities open <ID> 打开一个
   /ledger [条数]：最近几条判定和用时
   /remember <经验>：记一条经验，以后的会话都会用上
   /lessons [all]：这个项目的经验，召回和照做了几次；all 连到处适用的和已退役的一起列
@@ -100,11 +99,11 @@ const helpSectionsEn = (): HelpSection[] => [
 	},
 	{
 		title: "Judgment kernel",
-		intro: `The judge reads every message first. While it reads, your message waits above the editor (esc skips the wait); the verdict then appears under your message. ${keyText("app.tools.expand")} shows the full answers behind a verdict.`,
+		intro: `While the judge reads a message, esc skips the wait; ${keyText("app.tools.expand")} shows the full answers behind a verdict.`,
 		rows: [
 			[
 				"/mu judge <judges>",
-				"set which judges answer, in order: laya | laya,jev | jev-opencode-free | clm | classifier:<provider>/<model> | llm:<provider>/<model>",
+				"set which judges answer, in order: jev | mude,jev | jev-opencode-free | openai | clm | classifier:<provider>/<model> | llm:<provider>/<model>",
 			],
 			[
 				"/mu route <point> <judge|default>",
@@ -125,7 +124,7 @@ const helpSectionsEn = (): HelpSection[] => [
 				"/permissions [mode]",
 				"set how much mu can do without asking: full (Full access), judge (Judge mode: the judge allows what the task clearly needs and asks you about the rest), ask (Ask first: asks before anything but reading)",
 			],
-			["/capabilities", "show what's installed and what the judge turned on for this task"],
+			["/capabilities", "show what's installed and what's open for this task; /capabilities open <id> opens one"],
 			["/ledger [n]", "show the last n verdicts and their latency"],
 			["/remember <lesson>", "save a lesson for future sessions"],
 			[
@@ -294,13 +293,14 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 	const status = (ctx: ExtensionCommandContext): string => {
 		const { stats } = engine;
 		const { savings } = runtime;
-		const modes = [...engine.explicitModes()].map(([specId, mode]) => `${specId}=${mode}`).join(" ");
+		const modes = [...engine.overrides()].map(([specId, mode]) => `${specId}=${mode}`).join(" ");
 		const usage = ctx.getContextUsage();
 		const lines = [
 			`model: ${modelRef(ctx.model) ?? "none yet"} · thinking ${pi.getThinkingLevel()}${
 				usage?.percent === undefined || usage.percent === null ? "" : ` · context ${Math.round(usage.percent)}%`
 			}`,
-			`judge: ${runtime.enabled ? engine.providerId : "off"}`,
+			// With every point off no judge is asked, whichever is set up: say so, as the welcome does.
+			`judge: ${!runtime.enabled ? "off" : engine.asksJudge() ? engine.providerId : "off · every decision point uses its fallback"}`,
 			...[...engine.routes()].map(([specId, judge]) => `  ${specId} -> ${judge.id}`),
 			`mode: default=${engine.getMode("*")}${modes ? ` ${modes}` : ""}`,
 			`calls: ${stats.calls} | failures: ${stats.failures} | abstentions: ${stats.abstentions} | input tokens: ${stats.inputTokens} | probes: ${stats.probes} (${stats.probeInputTokens} input tokens)`,
@@ -356,7 +356,7 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 			en: "Show mu's status. Also: /mu judge <judges> | /mu route <point> <judge|default> | /mu mode <point|default> <off|shadow|active>",
 		}),
 		getArgumentCompletions: (prefix) => {
-			const options = ["judge laya", "judge jev", "judge laya,jev", "mode default active", "mode default shadow"];
+			const options = ["judge jev", "judge mude", "judge mude,jev", "mode default active", "mode default shadow"];
 			const matches = options.filter((option) => option.startsWith(prefix));
 			return matches.length > 0 ? matches.map((value) => ({ value, label: value })) : null;
 		},
@@ -414,7 +414,9 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 		handler: async (_args, ctx) => {
 			runtime.touch(ctx);
 			const ok = (good: boolean) => (good ? "ok  " : "FIX ");
-			const probe = runtime.enabled ? await engine.probe() : undefined;
+			// With every decision point off nothing is sent to a judge, and the check must not send anything either.
+			const asks = runtime.enabled && engine.asksJudge();
+			const probe = asks ? await engine.probe() : undefined;
 			const browserHost = thisBrowserHost();
 			const chrome = findBrowser(browserHost)?.executable;
 			const available = ctx.modelRegistry.getAvailable();
@@ -437,19 +439,32 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 					? [
 							ok(probe.ok),
 							"judge",
-							`${engine.providerId} ${probe.ok ? `answers in ${probe.latencyMs} ms` : `isn't answering (${probe.error}). For laya, run mu judge start`}`,
+							`${engine.providerId} ${probe.ok ? `answers in ${probe.latencyMs} ms` : `isn't answering (${probe.error}). For mude 1.0, run mu judge mude start`}`,
 						]
-					: ["--  ", "judge", "off (MU_JUDGE=off)"],
+					: [
+							"--  ",
+							"judge",
+							runtime.enabled
+								? "off: no decision point asks one, so nothing is sent to a judge"
+								: "off (MU_JUDGE=off)",
+						],
 				[
 					"--  ",
 					"decisions",
 					`default mode ${engine.getMode("*")}. Change it with /mu mode default <off|shadow|active>`,
 				],
-				[ok(Boolean(chrome)), "browser", chrome ?? browserAdvice(browserHost)],
+				// Only mu's browser needs one: without it the rest of mu works.
+				[
+					chrome ? "ok  " : "--  ",
+					"browser",
+					chrome ?? `optional, for mu's browser. ${browserAdvice(browserHost)}`,
+				],
 				[
 					"--  ",
 					"browse",
-					`driven by ${engine.judgeFor("browser.step").id}. It needs a judge that can match a goal to a page (Jev or an LLM judge), e.g. /mu route browser.step llm:openai/gpt-5.6-luna`,
+					runtime.mode("browser.step") === "off"
+						? "off: mu's browser runs on the judge, and browser.step is off"
+						: `driven by ${engine.judgeFor("browser.step").id}. It needs a judge that can match a goal to a page (Jev or an LLM judge), e.g. /mu route browser.step llm:openai/gpt-5.6-luna`,
 				],
 				[
 					ok(roles.length > 0),

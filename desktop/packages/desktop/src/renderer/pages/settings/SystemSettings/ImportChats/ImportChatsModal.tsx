@@ -276,15 +276,12 @@ const ImportChatsModal: React.FC<Props> = ({ visible, onClose, stay = false }) =
       }}
     >
       <div className='flex flex-col gap-12px' data-testid='import-chats-body'>
-        <p className='m-0 text-13px leading-20px text-t-secondary' style={{ textWrap: 'balance' }}>
-          {t('mu.importChats.dialog.hint')}
-        </p>
         {searchable ? (
           <Input allowClear value={query} onChange={setQuery} placeholder={t('mu.importChats.dialog.search')} />
         ) : null}
         {status ?? (
           // The rows reach 8px past the column on both sides: their hover fills a little beyond the words, which line
-          // up with the description.
+          // up with the search box.
           <div className='max-h-[52vh] overflow-y-auto -mx-8px' data-testid='import-chats-list'>
             {groups.map((group) => (
               <section

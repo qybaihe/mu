@@ -35,6 +35,8 @@ import ExcelPreview from '../viewers/ExcelViewer';
 import HTMLEditor from '../editors/HTMLEditor';
 import HTMLRenderer from '../renderers/HTMLRenderer';
 import ImagePreview from '../viewers/ImageViewer';
+import ImageGallery from '../ImageGallery/ImageGallery';
+import { galleryOf } from '../ImageGallery/galleryTab';
 import MarkdownEditor from '../editors/MarkdownEditor';
 import MarkdownPreview from '../viewers/MarkdownViewer';
 import PDFPreview from '../viewers/PDFViewer';
@@ -1122,6 +1124,10 @@ const PreviewPanel: React.FC = () => {
         />
       );
     } else if (content_type === 'image') {
+      // An image a reply named: the viewer that zooms and steps through the reply's images.
+      const gallery = galleryOf(metadata);
+      if (gallery && metadata?.file_path)
+        return <ImageGallery tabId={activeTab.id} path={metadata.file_path} gallery={gallery} />;
       return (
         <ImagePreview
           fileRef={metadata?.fileRef}

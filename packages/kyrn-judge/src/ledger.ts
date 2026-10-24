@@ -43,8 +43,9 @@ export interface LedgerRecord {
 	/** SHA-256 of the submitted state. The state itself is stored only when the engine is told to. */
 	readonly stateDigest: string;
 	/**
-	 * With `recordState`: the state and the questions as the judge received them (secrets redacted). Together they
-	 * are the judge request, so a ledger can be replayed to a teacher model to distil a judge.
+	 * With `recordState`: the state and the questions as the judge received them (secrets redacted), fixed questions
+	 * and those a decision builds from its input (`questionsFor`) alike. Together they are the judge request, so a
+	 * ledger row can be replayed, or used to train a judge.
 	 */
 	readonly state?: JsonValue;
 	readonly questions?: JsonValue;

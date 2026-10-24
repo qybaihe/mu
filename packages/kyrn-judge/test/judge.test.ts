@@ -49,6 +49,18 @@ describe("Judge", () => {
 		});
 	});
 
+	it("times out a provider that ignores AbortSignal", async () => {
+		const stuck: JudgeProvider = {
+			id: "stuck",
+			evaluate: () => new Promise<ProviderResponse>(() => {}),
+		};
+		const judge = new Judge({ provider: stuck, timeoutMs: 10 });
+
+		await expect(judge.evaluate({ state: "s", questions: { q: yesNo } })).rejects.toMatchObject({
+			kind: "timeout",
+		});
+	});
+
 	it("classifies a caller abort as aborted, not as a timeout", async () => {
 		const hanging: JudgeProvider = {
 			id: "hanging",

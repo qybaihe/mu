@@ -211,12 +211,12 @@ describe('rows written by hand', () => {
 
   it('shows the message on its way while the judge classifies it, then the message itself with the judge’s line', () => {
     const outgoing = { id: 'outgoing-1', text: 'fix the test', at: 5 };
-    const classifying = reduce(emptyView(), frame('preflight.pending', { judge: 'laya', mode: 'active' }, 1));
+    const classifying = reduce(emptyView(), frame('preflight.pending', { judge: 'mude', mode: 'active' }, 1));
     const waiting = rows(classifying, { outgoing });
     expect(waiting.map(brief)).toEqual(['person: fix the test', 'judge: classifying']);
-    expect(judgeLine(waiting[1])).toEqual({ stage: 'classifying', judge: 'laya' });
+    expect(judgeLine(waiting[1])).toEqual({ stage: 'classifying', judge: 'mude' });
 
-    const verdict = { version: 1, by: 'laya', state: 'applied', turnType: 'single_edit', hintIds: [] as string[] };
+    const verdict = { version: 1, by: 'mude', state: 'applied', turnType: 'single_edit', hintIds: [] as string[] };
     const taken = reduceAll(
       [
         frame('preflight.verdict', verdict, 1),
@@ -227,7 +227,7 @@ describe('rows written by hand', () => {
       classifying
     );
     expect(rows(taken).map(brief)).toEqual(['person: fix the test', 'judge: classified']);
-    expect(judgeLine(rows(taken)[1])).toMatchObject({ stage: 'classified', turnType: 'single_edit', judge: 'laya' });
+    expect(judgeLine(rows(taken)[1])).toMatchObject({ stage: 'classified', turnType: 'single_edit', judge: 'mude' });
   });
 
   it('says once that bash is missing, instead of pi’s error', () => {
@@ -321,5 +321,16 @@ describe('rows written by hand', () => {
     expect(brief(second.at(-1) as TMessage)).toBe('mu: hello');
     // Other words (another language) give new rows.
     expect(map(after, { ...options, words: { retried: () => '', compacted: () => '' } })[0]).not.toBe(second[0]);
+  });
+});
+
+describe('Laya, gone from mu', () => {
+  it('passes the judge in Laya’s place on to the line that words it', () => {
+    const line = 'mu: Laya is no longer built in, so your judge is now mude 1.0.';
+    const view = reduceAll([frame('judge.notice', { code: 'laya_removed', judge: 'mude', message: line })]);
+    const notices = rows(view)
+      .map((row) => muNotice(row))
+      .filter(Boolean);
+    expect(notices).toEqual([{ code: 'laya_removed', title: line, judge: 'mude' }]);
   });
 });

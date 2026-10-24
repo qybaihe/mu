@@ -1,5 +1,6 @@
+import { defineTool } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import type { Capability, OpenedBy } from "../../catalog/catalog.ts";
+import type { Capability, CapabilityKind, OpenedBy } from "../../catalog/catalog.ts";
 import { capabilityDisclosure } from "../../decisions/capability-disclosure.ts";
 import { say } from "../../language.ts";
 import { CAPABILITIES_OPEN_ENV, inheritedNames } from "../../swarm/brief.ts";
@@ -12,7 +13,8 @@ const CAPABILITY_MESSAGE = "kyrn.capabilities";
 /**
  * Left out of the request in an unattended run (`unattended.ts`): sub-agents and their patches, the browser and its
  * skill, file location by the judge, lessons for a later session, and the ways into what is hidden. In benchmark runs
- * they were next to never called, and each one is in every request.
+ * they were next to never called, and each one is in every request. `find_capability` stays when an MCP server is
+ * installed (`unattendedFindWithMcp`): nothing else reaches one there.
  */
 export const UNATTENDED_HIDDEN: readonly string[] = [
 	"delegate",
@@ -35,13 +37,46 @@ function line(capability: Capability): string {
 	return `- ${capability.id} · ${capability.title}: ${capability.description}`;
 }
 
+/** The user's own servers first: a request names them ("my open Linear issues") more often than a pack. */
+const KINDS: readonly CapabilityKind[] = ["mcp", "pack", "lsp", "tool"];
+const KIND_NAMES: Readonly<Record<CapabilityKind, string>> = {
+	mcp: "MCP server",
+	pack: "pack",
+	lsp: "language server",
+	tool: "tool",
+};
+const LISTED = 20;
+
+/**
+ * What `find_capability`'s description says is installed: every judged capability, hidden or open, by id and kind.
+ * With capability disclosure off nobody opens a hidden one for the model, so this is how it learns that the user's
+ * Linear server is there. Taken once, when the session's first turn starts, and kept: opening one never changes the
+ * description, and so never the cached prefix of the requests. Undefined when nothing is judged.
+ */
+export function installedLine(capabilities: readonly Capability[]): string | undefined {
+	const judged = capabilities
+		.filter((capability) => capability.exposure === "judged")
+		.sort((a, b) => KINDS.indexOf(a.kind) - KINDS.indexOf(b.kind));
+	if (judged.length === 0) return undefined;
+	const shown = judged.slice(0, LISTED).map((capability) => `${capability.id} (${KIND_NAMES[capability.kind]})`);
+	const more = judged.length - shown.length;
+	return `Installed: ${shown.join(", ")}${more > 0 ? `, and ${more} more` : ""}.`;
+}
+
+/** With the catalog switched off nothing is hidden, so packs and MCP servers are there from the start of a session. */
+export function hidesNothing(runtime: KyrnRuntime): boolean {
+	return !runtime.options("catalog", { enabled: true }).enabled;
+}
+
 /**
  * Keeps the tools of hidden capabilities out of the model's tool list, lets the
  * judge open the ones a task needs, and gives the model a way to find and open
  * the rest itself (see `../../catalog/catalog.ts`).
  *
- * With the decision `off` nothing is hidden. In `shadow` the verdicts are only
- * recorded, so capabilities stay hidden and `find_capability` is the way in.
+ * The decision is `off` by default (config.ts): nobody is asked and nothing waits, capabilities stay hidden as when
+ * the judge finds none needed, and `find_capability`, `/capabilities open` and a pack's own commands are the way in.
+ * In `shadow` the verdicts are only recorded, with the same result. Only `active` opens what the judge is sure of.
+ * With the feature switched off (`features.catalog: false`) nothing is hidden: see `hidesNothing`.
  *
  * An unattended run (`mu --print`, json mode) asks nothing: what is hidden stays hidden. It also leaves the tools and
  * skills of `unattendedHidden` out of the request, except one the person called for by its command (`/hive …`).
@@ -52,11 +87,18 @@ function line(capability: Capability): string {
 export function registerCatalog(runtime: KyrnRuntime): void {
 	const options = runtime.options("catalog", {
 		enabled: true,
-		waitMs: 4000,
+		/** Counted from the arrival of the message, as preflight's wait is. */
+		waitMs: 3000,
 		/** Ask which capabilities a task needs in a `mu --print` or json run too. Off: they stay hidden, and nothing waits. */
 		askUnattended: false,
 		/** Tools and skills, by name, left out of the request in a `mu --print` or json run. */
 		unattendedHidden: UNATTENDED_HIDDEN,
+		/**
+		 * Keep `find_capability` in such a run when an MCP server that can be hidden is installed. Nobody asks the judge
+		 * there, so without it the server can't be reached. Packs alone don't keep it: a benchmark run has no server, and
+		 * its requests stay as lean as they were.
+		 */
+		unattendedFindWithMcp: true,
 		/** Sub-agents open the capabilities this session has open instead of asking the judge again. */
 		subagentsInherit: true,
 	});
@@ -70,22 +112,25 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 	/** Inside a sub-agent: the capabilities its parent has open. They are opened once, and nothing is asked. */
 	const inherited = inheritedNames(CAPABILITIES_OPEN_ENV);
 	let inheritedOpened = false;
-	/** Whether to ask the judge: never in a sub-agent that took its parent's answer, nor in an unattended run unless `askUnattended` says so. */
-	const asks = (): boolean => !inherited && (options.askUnattended || !isUnattended(runtime.ctx));
+	/**
+	 * Whether to ask the judge: never with the decision off, nor in a sub-agent that took its parent's answer, nor in an
+	 * unattended run unless `askUnattended` says so.
+	 */
+	const asks = (): boolean =>
+		runtime.mode(capabilityDisclosure.id) !== "off" &&
+		!inherited &&
+		(options.askUnattended || !isUnattended(runtime.ctx));
 	/** A turn has chosen what it opens: from then on a sub-agent can take this session's answer. */
 	let chosen = false;
 	if (options.subagentsInherit) {
-		runtime.capabilitiesOpen = () =>
-			chosen && runtime.mode(capabilityDisclosure.id) !== "off"
-				? catalog.history().map((record) => record.id)
-				: undefined;
+		runtime.capabilitiesOpen = () => (chosen ? catalog.history().map((record) => record.id) : undefined);
 	}
 	const disclose = (words: string, candidates: readonly Capability[], signal?: AbortSignal) =>
 		runtime.engine.decide(capabilityDisclosure, { userMessage: words, capabilities: candidates }, { signal });
 	/** The question asked the moment the message arrived, alongside preflight. */
 	let early: { turn: number; decision: ReturnType<typeof disclose> } | undefined;
 	runtime.atTurnStart((words) => {
-		if (runtime.mode(capabilityDisclosure.id) === "off" || !asks()) return;
+		if (!asks()) return;
 		const candidates = catalog.hidden();
 		if (candidates.length === 0) return;
 		const decision = disclose(words, candidates);
@@ -97,8 +142,8 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 	/** Left-out names the person called for by their command in this session. */
 	const released = new Set<string>();
 
-	const applyLoadout = (hideNothing = false): void => {
-		const hidden = new Set(hideNothing ? [] : catalog.hiddenTools());
+	const applyLoadout = (): void => {
+		const hidden = new Set(catalog.hiddenTools());
 		for (const name of leftOut) hidden.add(name);
 		const active = new Set(pi.getActiveTools());
 		for (const tool of hidden) {
@@ -121,16 +166,35 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 		return capability;
 	};
 
+	/** Whether `find_capability` already says what is installed: once a session, before its first request. */
+	let described = false;
+	/** Whether an unattended run keeps `find_capability`: a hideable MCP server is installed. Settled with the list. */
+	let findReachesMcp = false;
+
 	pi.on(
 		"before_agent_start",
 		failOpen(async (event, ctx) => {
 			runtime.touch(ctx);
+			if (!described) {
+				// By now the session has started and its MCP servers are in the catalog. Registering the tool again
+				// replaces it before any request has declared it.
+				described = true;
+				findReachesMcp =
+					options.unattendedFindWithMcp &&
+					catalog.list().some((capability) => capability.kind === "mcp" && capability.exposure === "judged");
+				const installed = installedLine(catalog.list());
+				if (installed)
+					pi.registerTool({ ...findCapability, description: `${findCapability.description} ${installed}` });
+			}
 			if (isUnattended(ctx)) {
 				// A tool called for by its command stays for the session: `mu -p "/hive …"` needs its hive.
 				const called = event.messageType === "user" ? /^\/([^\s:]+)/.exec(event.prompt)?.[1] : undefined;
 				if (called && unattendedHidden.includes(called)) released.add(called);
 				leftOut.clear();
-				for (const name of unattendedHidden) if (!released.has(name)) leftOut.add(name);
+				for (const name of unattendedHidden) {
+					if (released.has(name) || (name === "find_capability" && findReachesMcp)) continue;
+					leftOut.add(name);
+				}
 				// Rebuilt from the base list before every run, so this is done on every one.
 				if (event.systemPromptOptions.skills) {
 					event.systemPromptOptions.skills = event.systemPromptOptions.skills.filter(
@@ -145,10 +209,6 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 					for (const id of inherited) await open(id, "parent").catch(() => undefined);
 				}
 				applyLoadout();
-				return undefined;
-			}
-			if (runtime.mode(capabilityDisclosure.id) === "off") {
-				applyLoadout(true);
 				return undefined;
 			}
 			if (event.messageType === "custom") {
@@ -189,7 +249,7 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 		}),
 	);
 
-	pi.registerTool({
+	const findCapability = defineTool({
 		name: "find_capability",
 		label: "Find capability",
 		description:
@@ -251,6 +311,7 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 			};
 		},
 	});
+	pi.registerTool(findCapability);
 
 	pi.registerCommand("capabilities", {
 		description: say({

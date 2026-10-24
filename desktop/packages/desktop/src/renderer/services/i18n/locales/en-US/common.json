@@ -168,7 +168,6 @@
     "judge": "Judge configuration",
     "reload": "Reload",
     "starting": "Starting mu…",
-    "startingHint": "Connecting to the local service and loading your model and judge settings.",
     "startupError": "mu couldn't start",
     "hiveView": {
       "title": "Hive",
@@ -186,7 +185,6 @@
       "lastStep": "{{status}} · last step: {{step}}",
       "runs": "Hive runs",
       "graph": "Collaboration map",
-      "graphHint": "Thicker lines carried more findings. Select a bee to open its row; hover over a line to see what it carried.",
       "map": "Map",
       "legend": "Legend",
       "legendDelivery": "delivery",
@@ -206,7 +204,6 @@
       "board": "Shared findings",
       "noNotes": "No shared findings yet.",
       "context": "Execution context",
-      "contextHint": "Recorded messages and finished tool output, not the full model prompt. Tool output appears once the call finishes.",
       "focus": "Assignment",
       "missingFocus": "No assignment was recorded for this run.",
       "current": "Current activity",
@@ -1065,7 +1062,6 @@
     "compactionAborted": "Compaction canceled",
     "compactionFailed": "Compaction failed",
     "compactionSavings": "Context reduced by ≈{{saved}}",
-    "compactionEstimate": "Token count after compaction is an estimate; the next model response updates it.",
     "cacheHit": "Cache hits",
     "cachePending": "No cache usage reported yet",
     "cacheLabel": "Cache hit rate for this conversation: {{percent}}",
@@ -1101,7 +1097,6 @@
       "needsYou": "Needs you",
       "needsYouText": "The agent is waiting for your answer in the conversation.",
       "quote": "Quote in your reply",
-      "quoteHint": "Click one to quote it in your reply; nothing is sent until you send it.",
       "account": "What it did",
       "earlierNotes": "{{count, number}} earlier",
       "earlierNotes_one": "{{count, number}} earlier",
@@ -1114,7 +1109,8 @@
         "fixing": "Fixing what the check found",
         "waiting": "Waiting for you",
         "wrapping_up": "Wrapping up",
-        "stuck": "Seems stuck"
+        "stuck": "Seems stuck",
+        "blocked": "Waiting on something else"
       },
       "checks_one": "{{done}} of {{total}} check done",
       "checks_other": "{{done}} of {{total}} checks done",
@@ -1138,6 +1134,7 @@
           "wrapping_up": "The work is done; wrapping up.",
           "stuck": "Seems to be going in circles; it may need a hint from you.",
           "unclear": "Working.",
+          "blocked": "Waiting on a command, a subagent or the network to finish.",
           "focus": "{{now}} (working on: {{focus}})"
         },
         "confirm": {
@@ -1172,8 +1169,39 @@
         "did": "Used {{tool}}: {{what}}",
         "said_quote": "It said: {{text}}",
         "ended": "Stopped.",
-        "waiting_reply": "Stopped, waiting for your reply."
-      }
+        "waiting_reply": "Stopped, waiting for your reply.",
+        "still_running": "Still running {{what}}, {{minutes, number}} min in",
+        "still_running_who": "{{who}}: {{what}} has run {{minutes, number}} min with no output",
+        "helper_done": "{{name}} is back: {{summary}}",
+        "helper_failed": {
+          "failed": "{{name}} failed",
+          "timed_out": "{{name}} timed out",
+          "stopped": "{{name}} was stopped"
+        },
+        "helpers_back_failed": "{{count, number}} subagents finished, {{failed, number}} with errors",
+        "helpers_back_failed_one": "{{count, number}} subagent finished, {{failed, number}} with errors",
+        "helpers_back_failed_other": "{{count, number}} subagents finished, {{failed, number}} with errors",
+        "with_detail": "{{line}}: {{detail}}"
+      },
+      "headlines": {
+        "helpers_working": "{{count, number}} subagents are working",
+        "helpers_working_one": "{{count, number}} subagent is working",
+        "helpers_working_other": "{{count, number}} subagents are working",
+        "waiting_permission": "Waiting for you to allow: {{what}}"
+      },
+      "updated": "Updated {{ago}} ago",
+      "updatedNow": "Updated just now",
+      "blocked": "Blocked",
+      "blockedLine": "Blocked: {{text}}",
+      "next": "Next",
+      "agents": "Who's doing what",
+      "agentStates": {
+        "working": "Working",
+        "waiting": "Waiting",
+        "stuck": "Stuck"
+      },
+      "stripOpen": "Plain-language board: {{headline}}",
+      "stripHint": "Click to open the board"
     },
     "lessonsView": {
       "filterLabel": "Which lessons to show",
@@ -1278,7 +1306,10 @@
     "eventLine": {
       "judgeNotice": {
         "freeJev": "No Jev key is set, so mu is using Jev's free tier on OpenCode Zen",
-        "freeJevUnavailable": "Jev's free tier stopped answering, so mu's default rules decide until you add a Jev key"
+        "freeJevUnavailable": "Jev's free tier stopped answering, so mu's default rules decide until you add a Jev key",
+        "openaiKeyMissing": "OpenAI's decision model has no API key, so the next judge or mu's default rules decide",
+        "openaiKeyRejected": "OpenAI rejected the decision model's API key, so the next judge or mu's default rules decide",
+        "layaRemoved": "Laya is no longer built into mu, so the judge is now {{judge}}"
       },
       "detail": "Details: {{detail}}",
       "progress": {

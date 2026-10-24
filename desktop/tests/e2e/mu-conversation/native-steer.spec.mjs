@@ -1,9 +1,10 @@
 // @ts-check
 // Interjecting in a run, end to end, in the real app on the native host (on by default): a message sent while a run
-// goes is not lost and does not start a second run. It waits in pi's queue, above the send box, as a steer (at the run's
-// next step) or a follow-up (after the run); "Edit" puts the queued texts into the box, and the run goes on as it
-// was. A steer left in the queue is delivered when the run ends, and answered. The slow reply of the fake model
-// (`E2E:SLOW`, one chunk every 200 ms) keeps the run going long enough to type into. Run with
+// goes is not lost and does not start a second run. There is no switch for when it arrives: it goes as a steer, and mu
+// (input.interjection) may move it to after the run. This profile turns every decision point off, so each one stays a
+// steer (at the run's next step). It waits in pi's queue, above the send box; "Edit" puts the queued texts into the
+// box, and the run goes on as it was. A steer left in the queue is delivered when the run ends, and answered. The slow
+// reply of the fake model (`E2E:SLOW`, one chunk every 200 ms) keeps the run going long enough to type into. Run with
 // `bun run e2e:conversation --native` (every native*.spec.mjs).
 import { expect, test } from '@playwright/test';
 import { dirname, resolve } from 'node:path';
@@ -54,14 +55,15 @@ async function slowReplyReaches(chunk) {
   await expect(status()).toHaveAttribute('data-status', /^(working|thinking)$/);
 }
 
-test('a steer and a follow-up wait in the queue while the run goes, and "Edit" puts them in the box', async () => {
+test('two messages sent while the run goes wait in the queue, and "Edit" puts them in the box', async () => {
   await start();
   await reachSidebar();
   await newConversation();
   const p = page();
   await send('E2E:SLOW first run');
   await slowReplyReaches(3);
-  await expect(p.getByTestId('native-send-mode')).toBeVisible();
+  // No Now / After switch beside the box.
+  await expect(p.getByTestId('native-send-mode')).toHaveCount(0);
 
   await interject('E2E:ECHO STEERED-OK');
   await expect(queue()).toContainText('STEERED-OK', { timeout: 15_000 });
@@ -69,10 +71,8 @@ test('a steer and a follow-up wait in the queue while the run goes, and "Edit" p
   await expect(userRows()).toHaveCount(1);
   await expect(p.getByTestId('native-abort')).toBeVisible();
 
-  // The second is left for after the run: the switch beside the box.
-  await p.getByTestId('native-send-mode').locator('.arco-radio-button').nth(1).click();
-  await interject('E2E:ECHO AFTER-OK');
-  await expect(queue()).toContainText('AFTER-OK', { timeout: 15_000 });
+  await interject('E2E:ECHO ALSO-OK');
+  await expect(queue()).toContainText('ALSO-OK', { timeout: 15_000 });
   await expect(queue().locator('span.truncate')).toHaveCount(2);
   await shot('queued');
 
@@ -80,7 +80,7 @@ test('a steer and a follow-up wait in the queue while the run goes, and "Edit" p
   await p.getByTestId('native-queue-take-back').click();
   await expect(queue()).toHaveCount(0);
   const box = p.getByTestId('native-send-input');
-  await expect(box).toHaveValue(/STEERED-OK[\s\S]*AFTER-OK/);
+  await expect(box).toHaveValue(/STEERED-OK[\s\S]*ALSO-OK/);
   await expect(status()).toHaveAttribute('data-status', /^(working|thinking)$/);
   await shot('taken-back');
   expectNoProblems();
@@ -100,7 +100,6 @@ test('a steer left in the queue is delivered when the run ends, and answered', a
   const users = await userRows().count();
   await send('E2E:SLOW second run');
   await slowReplyReaches(3);
-  // Steer mode is the default for each run: the switch shows `steer`.
   await interject('E2E:ECHO STEERED-OK');
   await expect(queue()).toContainText('STEERED-OK', { timeout: 15_000 });
   await expect(userRows()).toHaveCount(users + 1);

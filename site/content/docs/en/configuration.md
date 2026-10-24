@@ -3,7 +3,7 @@ title: Configuration
 summary: mu.json, the environment variables, proxies and where the per-feature options are.
 ---
 
-mu reads pi's settings (models, sign-ins, preferences) and its own, in `~/.mu/agent/mu.json`. The desktop app's settings write the same file: every change made there can be made by hand, and vice versa.
+mu reads pi's settings (models, sign-ins, preferences) and its own, in `~/.mu/agent/mu.json`.
 
 Only your own `mu.json` is read. A project can't change the judge, its address or its modes, because the judge reads your messages.
 
@@ -19,7 +19,7 @@ Only your own `mu.json` is read. A project can't change the judge, its address o
   },
   "routes": {
     "browser.step": ["jev"],
-    "memory.capture": ["laya", "jev"]
+    "memory.capture": ["mude", "jev"]
   },
   "features": {
     "admission": { "testLog": "rules" },
@@ -46,10 +46,10 @@ A part mu doesn't understand falls back to its default instead of stopping mu. A
 
 ## Modes in practice {#modes}
 
-- {points_active} of the {points} points act from the start: `context.compact` and `output.drift` stay off until you turn them on, `swarm.patch` is off, and `notify.routing`, `input.interjection` and `turn.drift` are in shadow, recording their verdicts only. To try a judge, or a point you're unsure of, put it in shadow, read the ledger (`mu ledger`, `/status` or the app's Judge tab), then set it back to active.
+- {points_active} of the {points} points act from the start: `context.compact` and `output.drift` stay off until you turn them on, `capability.disclosure` and `swarm.patch` are off, and `notify.routing` and `turn.drift` are in shadow, recording their verdicts only. To try a judge, or a point you're unsure of, put the point in shadow mode, read the ledger (`mu ledger`, `/status` or the app's Judge tab), then set it back to active.
 - `/mu mode <point> <off|shadow|active>` switches one point for the current session; `/mu mode default shadow` all of them. To keep a mode, put it in `mu.json`.
 - `MU_JUDGE_MODE=shadow mu` sets the default for one run.
-- `"modes": { "default": "off" }` asks no judge at all: the points in shadow out of the box are off too, unless `mu.json` gives one a mode of its own. "Not now" for the judge in `mu setup` writes this.
+- `"modes": { "default": "off" }` asks no judge at all: the points that are in shadow by default are off too, unless `mu.json` gives one its own mode. Choosing "Not now" at the judge step of `mu setup` writes this.
 
 ## Environment variables {#env}
 
@@ -57,19 +57,18 @@ Judges and modes:
 
 | Variable | Effect |
 | --- | --- |
-| `MU_JUDGE` | Judges for this run, comma-separated: `laya`, `laya,jev`, `jev-opencode-free`, `classifier:<provider>/<model>`, `llm:<provider>/<model>`. `off` turns the kernel off. |
+| `MU_JUDGE` | Judges for this run, comma-separated: `jev`, `mude,jev`, `jev-opencode-free`, `classifier:<provider>/<model>`, `llm:<provider>/<model>`. `off` turns the kernel off. |
 | `MU_JUDGE_MODE` | Default mode for this run: `off`, `shadow` or `active` |
 | `MU_WRITER` | `provider/model` for the writing model |
 | `MU_PERMISSIONS` | Permission mode for this run: `full`, `judge` or `ask` |
-| `MU_LOCAL_JUDGE_URL` | Address of a local judge server other than the one `mu judge start` runs |
 
-Keys for the hosted judges, each sent only to its own service: `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`, `MU_JUDGE_CLM_API_KEY`.
+Keys for the hosted judges, each sent only to its own service: `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`, `MU_JUDGE_CLM_API_KEY`, `MU_JUDGE_OPENAI_KEY`.
 
 Time:
 
 | Variable | Effect |
 | --- | --- |
-| `MU_TIME_BUDGET_S` | The run's time budget in seconds, counted from when mu starts. A reply that only thinks is then cut in time for a retry, and the model hears how many minutes are left at 50% and 80% (`features.deadline`). Benchmark harnesses set it from the task's timeout; without it nothing changes. |
+| `MU_TIME_BUDGET_S` | The run's time budget in seconds, counted from when mu starts. A reply that's only thinking is then cut off early enough to leave time for a retry, and the model is told how many minutes are left at 50% and 80% (`features.deadline`). Without it nothing changes. |
 
 The launcher:
 
@@ -80,8 +79,6 @@ The launcher:
 | `MU_LANG` | mu's own messages in a session: Chinese for `zh…`, English otherwise. The desktop app sets it to the app's language; `mu setup` follows your locale. |
 | `MU_LINK_DIR` | Where `mu link` puts the `mu` command, in place of `~/.local/bin` |
 | `MU_CHROME` | The Chrome or Chromium the built-in browser uses on the command line |
-
-Each `MU_` variable is also read under its old `KYRN_` spelling.
 
 mu also reads a `.env` file: `~/.mu/.env` for the npm package. Lines are `KEY=VALUE`; nothing in it is executed. `mu setup` writes the Jev key there. Variables already set in your environment win.
 

@@ -1,10 +1,12 @@
 /**
  * The home page's send while the native host is on (docs/native-host-ui.md): the message starts a conversation on the
- * native host, with no backend in its path, and the page opens it once pi took the message. The home page lists mu's
- * assistants only (initializeKyrn keeps mu's), so every send is mu's; the folder, the permission mode picked on the
- * page, the model the pill picked and the thinking level, when one was picked, go with it. A send that cannot start
- * one says why, in the native screens' words, and keeps what was typed. GuidPage uses useGuidSend instead while the
- * host is off.
+ * native host, with no backend in its path. The home page lists mu's assistants only (initializeKyrn keeps mu's), so
+ * every send is mu's; the folder, the permission mode picked on the page, the model the pill picked and the thinking
+ * level, when one was picked, go with it. The conversation opens as soon as it is made, and its screen sends the
+ * model, the level and the message while mu starts (`stageFirstMessage`): the person does not wait here for mu to
+ * start and its judge to read the message. A conversation that cannot be made says why, in the native screens' words,
+ * and keeps what was typed; what fails after, the conversation says, and its box takes the text back. GuidPage uses
+ * useGuidSend instead while the host is off.
  */
 import { Message } from '@arco-design/web-react';
 import type { TFunction } from 'i18next';
@@ -13,6 +15,7 @@ import type { NavigateFunction } from 'react-router-dom';
 import { ipcBridge } from '@/common';
 import type { ChatFileRef } from '@/common/types/chatFile';
 import { errorKey } from '@/renderer/pages/native/utils/errorWords';
+import { stageFirstMessage } from '@/renderer/pages/native/hooks/useNativeConversation';
 import { useNativeClient } from '@/renderer/pages/native/utils/nativeClient';
 import { nativeConversationPath } from '@/renderer/pages/native/utils/paths';
 import { startNativeConversation, type ReadImage } from '../utils/nativeStart';
@@ -91,6 +94,7 @@ export const useGuidNativeSend = (deps: GuidNativeSendDeps): GuidSendResult => {
       Message.error(`${t(errorKey(started.kind))} ${started.message}`.trim());
       return false;
     }
+    stageFirstMessage(started.id, started.first);
     await navigate(nativeConversationPath(started.id));
     return true;
   }, [client, dir, files, input, navigate, pickedThoughtLevel, readImage, selectedAcpModel, selectedMode, t]);

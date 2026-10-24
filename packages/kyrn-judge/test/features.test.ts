@@ -6,6 +6,7 @@ import { fauxAssistantMessage, fauxText, fauxToolCall } from "@earendil-works/pi
 import { Type } from "typebox";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
+import { createTestExtensionsResult, createTestResourceLoader } from "../../coding-agent/test/utilities.ts";
 import { UNUSABLE_TEXT } from "../src/checkpoint/git.ts";
 import { parseConfig } from "../src/config.ts";
 import { DecisionEngine } from "../src/decision.ts";
@@ -135,6 +136,10 @@ describe("kyrn features", () => {
 		expect(many).toMatch(/\(\d+ more flagged parts left out\)$/);
 		// Flagged only as the shell reads its words: the excerpt shows those words.
 		expect(riskExcerpt(`${steps(0, 1500)} && r''m -rf build`)).toContain("rm -rf build");
+		// Line breaks stay, short script or long: run into one line, the delete read as words for echo to print.
+		expect(riskExcerpt("echo done\n\n   rm  -rf\tbuild\r\n")).toBe("echo done\nrm -rf build");
+		const script = `${steps(0, 1500).replaceAll(" && ", "\n")}\necho done\nrm -rf build\n${steps(1500, 50).replaceAll(" && ", "\n")}`;
+		expect(riskExcerpt(script)).toContain("echo done\nrm -rf build\necho step-1500");
 
 		const seen: string[] = [];
 		const harness = await start(
@@ -269,7 +274,7 @@ describe("kyrn features", () => {
 		expect(asked).toHaveLength(1);
 	});
 
-	it("interjection: in shadow, the default, a message sent mid-run goes on at once and the verdict is only recorded", async () => {
+	it("interjection: in shadow, a message sent mid-run goes on at once and the verdict is only recorded", async () => {
 		const asked: string[] = [];
 		const correction: Answer = { type: "choice", choice: "correction", probabilities: { correction: 0.95 } };
 		const judge =
@@ -280,7 +285,7 @@ describe("kyrn features", () => {
 				await new Promise((resolve) => setTimeout(resolve, delayMs));
 				return { kind: correction };
 			};
-		const harness = await start(judge(1000));
+		const harness = await start(judge(1000), { modes: { "input.interjection": "shadow" } });
 		harness.setResponses([fauxAssistantMessage("Migrating.")]);
 		await harness.session.prompt("Migrate the users table.");
 
@@ -295,9 +300,10 @@ describe("kyrn features", () => {
 		expect(result.action).not.toBe("handled");
 		expect(asked).toHaveLength(1);
 
-		// Active, it still waits for the verdict and re-sends a correction as a steer.
-		const active = await start(judge(0), { modes: { "input.interjection": "active" } });
-		active.setResponses([fauxAssistantMessage("Migrating."), fauxAssistantMessage("Stopped.")]);
+		// Active, the default, it waits for the verdict. The run is over by then here, so the message starts the next one
+		// as it was sent: there is no queue left to choose. test/interjection.test.ts sends messages during a run.
+		const active = await start(judge(0));
+		active.setResponses([fauxAssistantMessage("Migrating.")]);
 		await active.session.prompt("Migrate the users table.");
 		const routed = await active.session.extensionRunner.emitInput(
 			"Stop, that is the production database.",
@@ -305,7 +311,8 @@ describe("kyrn features", () => {
 			"interactive",
 			"followUp",
 		);
-		expect(routed.action).toBe("handled");
+		expect(routed.action).not.toBe("handled");
+		expect(asked).toHaveLength(2);
 	});
 
 	it("cache warming: asks only while the agent is idle, and not for longer than its wait", async () => {
@@ -464,6 +471,8 @@ describe("kyrn features", () => {
 						mode: "active",
 						only: ["preflight", "skills", "catalog", "memory"],
 						config: parseConfig({
+							// Off out of the box: on here, so the user's turn has a capability verdict to keep.
+							modes: { "capability.disclosure": "active" },
 							features: attended({
 								skills: { minSkills: 1 },
 								memory: { path, applied: false, outcome: false },
@@ -566,6 +575,130 @@ describe("kyrn features", () => {
 			expect(await run(false)).toEqual([["calendar"], ["calendar"]]);
 		} finally {
 			rmSync(directory, { recursive: true, force: true });
+		}
+	});
+
+	/**
+	 * A session whose skills are loaded the way pi loads them from disk: the prompt's list and the `/skill:` commands
+	 * both come from them, which the injected lists of the tests above do not reach.
+	 */
+	async function withSkills(
+		names: readonly string[],
+		factories: Parameters<typeof createTestExtensionsResult>[0],
+	): Promise<Harness> {
+		const resourceLoader = createTestResourceLoader({
+			extensionsResult: await createTestExtensionsResult(factories),
+		});
+		resourceLoader.getSkills = () => ({
+			skills: names.map((name) => ({
+				name,
+				description: `Works with ${name} files`,
+				filePath: join(tmpdir(), "mu-skills", name, "SKILL.md"),
+				baseDir: join(tmpdir(), "mu-skills", name),
+				sourceInfo: {
+					path: join(tmpdir(), "mu-skills", name, "SKILL.md"),
+					source: "test",
+					scope: "temporary" as const,
+					origin: "top-level" as const,
+				},
+				disableModelInvocation: false,
+			})),
+			diagnostics: [],
+		});
+		const harness = await createHarness({ resourceLoader });
+		harnesses.push(harness);
+		return harness;
+	}
+
+	it("skills: the first question goes out with preflight's, not after preflight's wait", async () => {
+		const run = async (askEarly: boolean) => {
+			let preflightAnswered = false;
+			let askedBeforePreflightAnswered: boolean | undefined;
+			const provider = new MockJudgeProvider(async (request): Promise<Record<string, Answer>> => {
+				if ("turn_type" in request.questions) {
+					await new Promise((resolve) => setTimeout(resolve, 200));
+					preflightAnswered = true;
+					return {};
+				}
+				if ("skill_0" in request.questions) {
+					askedBeforePreflightAnswered ??= !preflightAnswered;
+					return { skill_0: no, skill_1: yes };
+				}
+				return {};
+			});
+			const skillNames: string[][] = [];
+			const harness = await withSkills(
+				["calendar", "spreadsheet"],
+				[
+					createKyrnJudgeExtension({
+						provider,
+						mode: "active",
+						only: ["preflight", "skills"],
+						config: parseConfig({ features: attended({ skills: { minSkills: 1, askEarly } }) }),
+					}),
+					(pi) => {
+						pi.on("before_agent_start", (event) => {
+							skillNames.push((event.systemPromptOptions.skills ?? []).map((skill) => skill.name));
+						});
+					},
+				],
+			);
+			harness.setResponses([fauxAssistantMessage("The sheet is updated.")]);
+			await harness.session.prompt("Add a total row to the budget sheet.");
+			return { askedBeforePreflightAnswered, skillNames };
+		};
+		// Asked the moment the message arrived, from the skill commands; its verdict still shapes the first request.
+		expect(await run(true)).toEqual({ askedBeforePreflightAnswered: true, skillNames: [["spreadsheet"]] });
+		// Switched off, the question waits for preflight's verdict first, as before.
+		expect(await run(false)).toEqual({ askedBeforePreflightAnswered: false, skillNames: [["spreadsheet"]] });
+	});
+
+	it("a turn waits at most 3 s by default for the questions asked before it", async () => {
+		let release: () => void = () => {};
+		const held = new Promise<void>((resolve) => {
+			release = resolve;
+		});
+		// Preflight, the skills and the capabilities get no answer while the turn waits.
+		const provider = new MockJudgeProvider(async (): Promise<Record<string, Answer>> => {
+			await held;
+			return {};
+		});
+		const harness = await withSkills(
+			["calendar", "spreadsheet"],
+			[
+				createKyrnJudgeExtension({
+					provider,
+					mode: "active",
+					only: ["preflight", "skills", "catalog"],
+					// Capability disclosure is off out of the box: on here, as the third question at the turn's start.
+					config: parseConfig({
+						modes: { "capability.disclosure": "active" },
+						features: attended({ skills: { minSkills: 1 } }),
+					}),
+					capabilities: [
+						{
+							id: "pack:debugger",
+							kind: "pack",
+							title: "Debugger",
+							description: "Debug processes",
+							tools: [],
+							exposure: "judged",
+						},
+					],
+				}),
+			],
+		);
+		harness.setResponses([fauxAssistantMessage("Done.")]);
+		const startedAt = Date.now();
+		try {
+			await harness.session.prompt("Add a total row to the budget sheet.");
+			const waited = Date.now() - startedAt;
+			expect(waited).toBeGreaterThanOrEqual(2900);
+			expect(waited).toBeLessThan(3900);
+			const asked = provider.calls.flatMap((call) => Object.keys(call.questions));
+			expect(asked).toEqual(expect.arrayContaining(["turn_type", "skill_0", "capability_0"]));
+		} finally {
+			release();
 		}
 	});
 
@@ -819,7 +952,7 @@ describe("decision specs over lists and choices", () => {
 		]);
 	});
 
-	it("interjection: a correction steers, extra work queues, anything unclear keeps the user's own routing", async () => {
+	it("interjection: a correction steers, extra work and side questions wait for the run's end, anything unclear goes as sent", async () => {
 		const route = async (choice: string, probability: number) =>
 			(
 				await engineWith(() => ({
@@ -832,6 +965,7 @@ describe("decision specs over lists and choices", () => {
 			).outcome;
 		expect(await route("correction", 0.9)).toBe("steer");
 		expect(await route("addition", 0.9)).toBe("followUp");
+		expect(await route("side_question", 0.9)).toBe("followUp");
 		expect(await route("correction", 0.5)).toBe("keep");
 		expect(await route("other", 0.9)).toBe("keep");
 	});

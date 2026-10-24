@@ -4,10 +4,10 @@ A judge answers the bounded questions asked at mu's decision points: yes or no, 
 
 ## Which judge answers
 
-`tiers` in `~/.mu/agent/mu.json` (or `MU_JUDGE` for one run) lists the judges in order. Each later judge only sees the questions the earlier ones left uncertain, so a cheap local judge can go first and a hosted one can catch the rest:
+`tiers` in `~/.mu/agent/mu.json` (or `MU_JUDGE` for one run) lists the judges in order. Each later judge only sees the questions the earlier ones left uncertain, so a fast local judge can go first and a hosted one can catch the rest:
 
 ```json
-{ "tiers": ["laya", "jev"] }
+{ "tiers": ["mude", "jev"] }
 ```
 
 `routes` gives a decision point its own judges:
@@ -19,6 +19,35 @@ A judge answers the bounded questions asked at mu's decision points: yes or no, 
 In a session, use `/mu judge <tiers>` and `/mu route <point> <tiers|default>`. `/status` shows which judge answers what, and Settings → Judges in the desktop app sets the same things.
 
 If no judge answers in time, the decision point falls back to what it does without a verdict (usually, nothing changes), and the ledger records why.
+
+## mude 1.0, on your Mac
+
+mude 1.0 is mu's own decision model, optimized for coding. It has 2B parameters and answers every question in a decision in one forward pass. On a Mac with Apple silicon (macOS 14 or later, 8 GB of memory or more), it's the recommended judge: `mu setup` offers it first, and the desktop app's first-run guide has it preselected.
+
+```bash
+mu judge mude install               # download it (1.8 GB), check every file, start it and make it the judge
+mu judge mude enable --local-only   # mude only: nothing goes to a hosted judge
+mu judge mude status
+```
+
+By default, the judges you had before stay in `tiers` after it as fallbacks. They answer what mude can't (its server is stopped, or it's unsure) and handle the two injection checks mude isn't trusted with yet. With `--local-only`, mude is the only judge, and when it can't answer, the decision point uses its default. mude answers in about 0.1 s, and what it reads never leaves your Mac. Its server uses about 4 GB of memory while it runs, and mu starts it before a session when your configuration names it. If an install stops (Ctrl-C, a lost connection, a power cut), running it again picks up where it left off. On other platforms, serve the [full model](https://huggingface.co/qybaihe/mude-1.0) with its own System One server and add it as a `typesafe` judge, as its model card shows.
+
+### Other decision models
+
+`mu judge model` adds other decision models from Hugging Face the same way: paste a link or `owner/name`. mu pins the commit and every file's hash, downloads the model with resume and progress, runs it in mude's Python environment and makes it the judge. It must be packaged like mude 1.0's MLX edition, with its own `d3_server_mac.py`, which runs on your Mac: add only models you trust.
+
+```bash
+mu judge model add https://huggingface.co/owner/name   # or owner/name@revision; run it again to resume
+mu judge model list                                    # mude 1.0 and the models you added; which one is the judge
+mu judge model use mude                                # switch the judge back to mude 1.0 (or to another model)
+mu judge model remove name
+```
+
+One decision model runs at a time: switching stops the other one's server. In the desktop app, you can do the same under Settings → Judges, next to mude 1.0.
+
+### Laya
+
+Earlier versions of mu included Laya, a third-party local judge. mu no longer does. A `mu.json` that still names `laya` (in `tiers` or a route), or a judge of type `local`, is read without it: mude 1.0 takes its place when it's set up on this Mac, and otherwise the judges that remain answer, or Jev when none remain. mu updates `mu.json` once, at the start of the next session in the terminal or the app, and keeps a copy of the old file in `~/.mu/backups`. It tells you which judge took over when you send your next message. If `MU_JUDGE` names `laya`, mu skips it. For another decision model, use mude 1.0 or add one from Hugging Face as above.
 
 ## Hosted Jev
 
@@ -39,17 +68,21 @@ After these, mu falls back to a Vercel AI Gateway key that pi saved at `/login`.
 
 Measured in the authors' own sessions: a warm question takes about 0.3 s, and 16 chunks of tool output are judged in a single request in 0.44 s, with the shared state billed once.
 
-## Laya, the local judge
+## OpenAI's decision model
 
-Laya is a 322M-parameter judge that runs on your machine and never touches the network.
+The built-in `openai` judge asks `gpt-6-luna` through OpenAI's [Decisions API](https://developers.openai.com/api/docs/guides/decisions) (`POST /v1/decisions`), with an OpenAI API key. Its key is `MU_JUDGE_OPENAI_KEY`. Without it, the judge uses the OpenAI API key mu already has for its `openai` provider (from `mu setup`, `/login` or `OPENAI_API_KEY`); Sign in with ChatGPT doesn't count. `mu setup --judge openai` or Settings → Judges in the desktop app sets it up, or put it in `mu.json`:
 
-```bash
-mu judge setup     # asks before downloading the model
-mu judge start     # starts the sidecar
-mu judge status
+```json
+{ "tiers": ["openai"] }
 ```
 
-The desktop app also asks first, then sets it up in one step. Laya is reliable on simple predicates (does this text describe an error?) and weak on questions about relationships or about the request itself. mu knows this and never sends it a question it can't answer well, so in a cascade such as `["laya", "jev"]` those questions go straight to the next judge. Run it in shadow mode alongside your current judge and read the ledger before you give it a decision point of its own. The measurements are in [kyrn/docs/03-local-judge.md](../kyrn/docs/03-local-judge.md) (in Chinese).
+OpenAI charges $0.10 per million uncached input tokens, and nothing for output. Not yet measured on mu's questions.
+
+To reach it through a relay or proxy that serves the same Decisions endpoint, give it a `baseUrl` and a key of its own. The key of mu's `openai` provider only ever goes to `api.openai.com`:
+
+```json
+{ "judges": { "relay": { "type": "openai", "baseUrl": "https://relay.example.com/v1", "apiKeyEnv": "MU_JUDGE_RELAY_KEY" } } }
+```
 
 ## Classifier models and LLMs
 
@@ -87,10 +120,10 @@ Add it under `judges` in `mu.json`, with a name and a type:
 | `http` | Any endpoint that takes `{ state, questions }` and returns `{ answers }` |
 | `llm` | A chat model from pi's registry |
 | `classifier` | A classifier from pi's catalog |
-| `local` | A Laya-compatible sidecar |
 | `clm` | A `clm-serve` |
 | `systemone` | Any other System One server at `baseUrl`, such as `mu-judge-nemotron`'s; sends `apiKeyEnv` (default `MU_JUDGE_SYSTEMONE_API_KEY`) only when it is set |
 | `logprob` | An OpenAI-compatible model at `baseUrl`, one question per request, the answer read off the first token's logprobs |
+| `openai` | OpenAI's Decisions API, at `baseUrl` (OpenAI's own by default) |
 
 The key itself never goes in the file: `apiKeyEnv` names the environment variable that holds it (set it in your environment or in mu's `.env`).
 
