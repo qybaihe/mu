@@ -142,10 +142,13 @@ test('a thinking level set on the model that reasons reaches the request', async
   await p.getByTestId('native-model-pill').click();
   const thinker = modelOption(THINKING_MODEL_ID);
   await expect(thinker).toBeVisible({ timeout: 30_000 });
-  await thinker.hover();
+  // A row switches the model; the levels of the model in use sit under the list, outside the part that scrolls.
+  await thinker.click();
+  await expect(chip()).toHaveAttribute('data-model', `e2e/${THINKING_MODEL_ID}`);
+  await p.getByTestId('native-model-pill').click();
   const high = p.locator('[data-testid="composer-level-option"][data-value="high"]');
-  await expect(high).toBeVisible();
-  // The menu of levels flies out of a chip at the bottom of the window: every level is inside the window, not below it.
+  await expect(high).toBeVisible({ timeout: 30_000 });
+  // The menu opens above a chip at the bottom of the window: every level is inside the window, not below it.
   const levels = p.locator('[data-testid="composer-level-option"]');
   const inside = await levels.evaluateAll((items) =>
     items.map((item) => {

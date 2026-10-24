@@ -5,6 +5,7 @@ import {
   deriveSelectOption,
   type AcpDerivedOption,
 } from '@/renderer/hooks/agent/useAcpConfigOptions';
+import { isFeaturedModel } from '@/renderer/utils/model/featuredModels';
 
 /** The ids a thinking-level option goes by when it has no category, as `useAcpConfigOptions` reads it. */
 const THOUGHT_LEVEL_IDS = ['thought_level', 'reasoning_effort'];
@@ -79,6 +80,50 @@ export function filterModelMenu(groups: MenuModelGroup[], query: string): MenuMo
       ),
     }))
     .filter((group) => group.models.length > 0);
+}
+
+/**
+ * The short list: the models the picker lists before "Show all models" (`isFeaturedModel`), and always the ones in
+ * `keep` (the model in use, the default), so a conversation on an older model still finds it there. A provider with no
+ * featured model at all keeps every one of its own. `hidden` says how many rows were left out.
+ */
+export function shortModelMenu(
+  groups: MenuModelGroup[],
+  keep: ReadonlyArray<string | null | undefined>
+): { groups: MenuModelGroup[]; hidden: number } {
+  const kept = new Set(keep.filter((value): value is string => Boolean(value)));
+  let hidden = 0;
+  const shown = groups.map((group) => {
+    if (!group.models.some((entry) => isFeaturedModel(entry.value))) return group;
+    const models = group.models.filter((entry) => kept.has(entry.value) || isFeaturedModel(entry.value));
+    hidden += group.models.length - models.length;
+    return { ...group, models };
+  });
+  return { groups: shown, hidden };
+}
+
+/**
+ * The rows the menu shows: a search looks through every model; without one, the short list (`shortModelMenu`) unless
+ * the person asked for all of them. `hidden` is how many the short list leaves out (0 while searching): above 0, the
+ * menu offers to show them all, or to go back to the short list.
+ */
+export function visibleModelMenu(
+  groups: MenuModelGroup[],
+  { query, showAll, keep }: { query: string; showAll: boolean; keep: ReadonlyArray<string | null | undefined> }
+): { groups: MenuModelGroup[]; hidden: number } {
+  if (query.trim()) return { groups: filterModelMenu(groups, query), hidden: 0 };
+  const short = shortModelMenu(groups, keep);
+  return showAll ? { groups, hidden: short.hidden } : short;
+}
+
+/** The thinking levels a model of the menu takes (empty when it is not there, or nothing says). */
+export function levelsOf(groups: MenuModelGroup[], value: string | null | undefined): MenuLevel[] {
+  if (!value) return [];
+  for (const group of groups) {
+    const found = group.models.find((entry) => entry.value === value);
+    if (found) return found.levels;
+  }
+  return [];
 }
 
 export type ConfigOptionSetter = (optionId: string, value: string) => Promise<AcpConfigOptionDto[] | null | undefined>;

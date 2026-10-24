@@ -608,7 +608,9 @@
     "defaultTag": "default",
     "makeDefault": "Make default for new conversations",
     "madeDefault": "New conversations will start with this model.",
-    "makeDefaultFailed": "Couldn't save the default model."
+    "makeDefaultFailed": "Couldn't save the default model.",
+    "showAllModels": "Show all models ({{count}})",
+    "showFewerModels": "Show fewer models"
   },
   "agentTip": {
     "codes": {

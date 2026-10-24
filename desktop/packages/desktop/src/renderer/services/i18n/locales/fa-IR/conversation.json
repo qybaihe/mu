@@ -608,7 +608,9 @@
     "defaultTag": "پیش‌فرض",
     "makeDefault": "پیش‌فرض گفتگوهای جدید شود",
     "madeDefault": "گفتگوهای جدید با این مدل شروع می‌شوند.",
-    "makeDefaultFailed": "مدل پیش‌فرض ذخیره نشد."
+    "makeDefaultFailed": "مدل پیش‌فرض ذخیره نشد.",
+    "showAllModels": "نمایش همه مدل‌ها ({{count}})",
+    "showFewerModels": "نمایش مدل‌های کمتر"
   },
   "agentTip": {
     "codes": {

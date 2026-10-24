@@ -96,12 +96,24 @@ vi.mock('@arco-design/web-react', () => {
           {children}
         </div>
       ),
-      // SubMenu renders both its title row and its children so tests can inspect both levels.
-      SubMenu: ({ children, title }: { children?: React.ReactNode; title?: React.ReactNode }) => (
-        <div role='group'>
-          <div data-testid='submenu-title'>{title}</div>
-          <div data-testid='submenu-body'>{children}</div>
-        </div>
+    }
+  );
+  // A radio group as the menu's levels use it: a click picks the radio's value.
+  const RadioGroupContext = React.createContext<{ onChange?: (value: string) => void }>({});
+  const Radio = Object.assign(
+    ({ children, value, ...rest }: { children?: React.ReactNode; value: string; [key: string]: unknown }) => {
+      const group = React.useContext(RadioGroupContext);
+      return (
+        <label role='radio' data-testid={rest['data-testid'] as string} onClick={() => group.onChange?.(value)}>
+          {children}
+        </label>
+      );
+    },
+    {
+      Group: ({ children, onChange }: { children?: React.ReactNode; onChange?: (value: string) => void }) => (
+        <RadioGroupContext.Provider value={{ onChange }}>
+          <div role='radiogroup'>{children}</div>
+        </RadioGroupContext.Provider>
       ),
     }
   );
@@ -119,6 +131,7 @@ vi.mock('@arco-design/web-react', () => {
       </div>
     ),
     Menu,
+    Radio,
     Tooltip: ({ children, content }: { children?: React.ReactNode; content?: React.ReactNode }) => (
       <span data-tooltip-content={typeof content === 'string' ? content : undefined}>{children}</span>
     ),
@@ -166,7 +179,7 @@ describe('GuidModelSelector', () => {
     ).toHaveAttribute('data-tooltip-content', 'Use the default model currently configured by the CLI');
   });
 
-  it('offers the conversation’s model · thinking menu: models by provider, the one in use opening to its levels', () => {
+  it('offers the conversation’s model · thinking menu: models by provider, the levels of the one in use under them', () => {
     const setSelectedAcpModel = vi.fn();
     const onThoughtLevelSelect = vi.fn();
 
@@ -192,14 +205,13 @@ describe('GuidModelSelector', () => {
     );
 
     expect(screen.getByText('GLM 5.1 · Medium')).toBeInTheDocument();
-    // By provider, each by its name rather than its id; no separate "Model" and "Thinking level" rows.
+    // By provider, each by its name rather than its id.
     expect(screen.getByRole('group', { name: 'Vercel AI Gateway' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'OpenAI' })).toBeInTheDocument();
-    expect(screen.queryByText('Thinking Level')).not.toBeInTheDocument();
 
-    // The model in use opens to its levels: one pick sets the level.
-    const [inUse] = screen.getAllByTestId('submenu-body');
-    fireEvent.click(within(inUse).getByText('High'));
+    // The levels of the model in use sit under the list: a pick there sets the level only.
+    const levels = within(screen.getByRole('radiogroup'));
+    fireEvent.click(levels.getByText('High'));
     expect(onThoughtLevelSelect).toHaveBeenCalledWith('high');
     expect(setSelectedAcpModel).not.toHaveBeenCalled();
 

@@ -1,10 +1,10 @@
 /**
  * The model a native conversation answers with and how hard it thinks, in one chip at the right of the send box
  * (`model · level`), with the look and the menu of the chip in mu's other conversations (Composer/ComposerModelChip):
- * every model pi offers by provider, and a model that takes more than one level opens to its levels, so one pick sets
- * both. Opening it asks pi what it offers (which starts mu when it is not running); showing it starts nothing. A
- * switch waits for the run to end, as elsewhere, and is for this conversation only: the menu's "make default" is how
- * it becomes the model new conversations start on.
+ * the models pi offers by provider (the short list until the person asks for all), and under them the thinking levels
+ * of the model in use. Opening it asks pi what it offers (which starts mu when it is not running); showing it starts
+ * nothing. A switch waits for the run to end, as elsewhere, and is for this conversation only: the menu's "make
+ * default" is how it becomes the model new conversations start on.
  */
 import { Dropdown, Menu, Tooltip } from '@arco-design/web-react';
 import { Brain, Down } from '@icon-park/react';
@@ -16,7 +16,7 @@ import { useModelNames } from '@/renderer/hooks/agent/useModelNames';
 import { useMuDefaultModel } from '@/renderer/hooks/agent/useMuDefaultModel';
 import { useProviderNames } from '@/renderer/hooks/agent/useProviderNames';
 import { modelLevelMenu } from '@/renderer/pages/conversation/platforms/acp/Composer/ModelLevelMenu';
-import { filterModelMenu, modelMenu } from '@/renderer/pages/conversation/platforms/acp/Composer/modelMenu';
+import { levelsOf, modelMenu, visibleModelMenu } from '@/renderer/pages/conversation/platforms/acp/Composer/modelMenu';
 import { iconColors } from '@/renderer/styles/colors';
 import { modelDisplayName, providerDisplayName } from '@/renderer/utils/model/providerName';
 import type { NativeModels } from '../../hooks/useNativeModels';
@@ -32,26 +32,28 @@ const NativeModelChip: React.FC<{
   const muDefault = useMuDefaultModel();
   const [visible, setVisible] = useState(false);
   const [query, setQuery] = useState('');
+  const [showAll, setShowAll] = useState(false);
   const { model, level, source, offer, loading, switching, load, pick } = models;
   // Each time the menu opens, pi is asked again: a provider set up meanwhile shows.
   useEffect(() => {
     if (visible) void load();
   }, [load, visible]);
 
-  const groups = useMemo(
+  const all = useMemo(
     () =>
       offer
-        ? filterModelMenu(
-            modelMenu(
-              { currentValue: model, options: offer.options },
-              offer.currentLevels ? { options: offer.currentLevels.map((value) => ({ value })) } : null,
-              offer.levels,
-              (id) => providerDisplayName(t, id, names)
-            ),
-            query
+        ? modelMenu(
+            { currentValue: model, options: offer.options },
+            offer.currentLevels ? { options: offer.currentLevels.map((value) => ({ value })) } : null,
+            offer.levels,
+            (id) => providerDisplayName(t, id, names)
           )
         : [],
-    [model, names, offer, query, t]
+    [model, names, offer, t]
+  );
+  const shown = useMemo(
+    () => visibleModelMenu(all, { query, showAll, keep: [model, muDefault.model] }),
+    [all, model, muDefault.model, query, showAll]
   );
 
   // mu runs without a model: the chip says so and opens the list to pick one.
@@ -76,6 +78,7 @@ const NativeModelChip: React.FC<{
   const close = () => {
     setVisible(false);
     setQuery('');
+    setShowAll(false);
   };
 
   const droplist =
@@ -87,12 +90,16 @@ const NativeModelChip: React.FC<{
       </Menu>
     ) : (
       modelLevelMenu(t, {
-        groups,
+        groups: shown.groups,
         total: offer?.options.length ?? 0,
         query,
         onQuery: setQuery,
         current: model,
         level,
+        levels: levelsOf(all, model),
+        hidden: shown.hidden,
+        showAll,
+        onShowAll: setShowAll,
         onPick: (value, picked) => {
           close();
           void pick(value, picked);
@@ -146,8 +153,8 @@ const NativeModelChip: React.FC<{
       position='tr'
       popupVisible={visible}
       onVisibleChange={(open) => {
-        setVisible(open);
-        if (!open) setQuery('');
+        if (open) setVisible(true);
+        else close();
       }}
       droplist={droplist}
     >

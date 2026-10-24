@@ -5,7 +5,10 @@ import {
   applyModelPick,
   configErrorMessageKey,
   filterModelMenu,
+  levelsOf,
   modelMenu,
+  shortModelMenu,
+  visibleModelMenu,
 } from '@/renderer/pages/conversation/platforms/acp/Composer/modelMenu';
 import { modelDisplayName, providerDisplayName } from '@/renderer/utils/model/providerName';
 
@@ -159,6 +162,81 @@ describe('filterModelMenu', () => {
 
   it('keeps everything for a blank query', () => {
     expect(filterModelMenu(groups, '  ')).toBe(groups);
+  });
+});
+
+/** The values the rows hold, group by group. */
+const values = (groups: { models: { value: string }[] }[]) => groups.map((group) => group.models.map((m) => m.value));
+
+describe('the short list', () => {
+  // A ChatGPT sign-in's list, cut down: older models around the GPT-5.6 and GPT-6 series, and a provider set up by hand.
+  const signedIn = modelMenu(
+    {
+      currentValue: null,
+      options: [
+        { value: 'openai/gpt-4.1', label: 'GPT-4.1' },
+        { value: 'openai/gpt-4o', label: 'GPT-4o' },
+        { value: 'openai/gpt-5.5', label: 'GPT-5.5' },
+        { value: 'openai/gpt-5.6-sol', label: 'GPT-5.6 Sol' },
+        { value: 'openai/gpt-6-luna', label: 'GPT-6 Luna' },
+        { value: 'openai/gpt-6.1-sol', label: 'GPT-6.1 Sol' },
+        { value: 'openai/o3', label: 'o3' },
+        { value: 'relay/large', label: 'Large' },
+      ],
+    },
+    null,
+    { 'openai/gpt-6.1-sol': ['off', 'low', 'high'] }
+  );
+
+  it('lists the newest OpenAI series and every model of other providers, and counts what it leaves out', () => {
+    const short = shortModelMenu(signedIn, []);
+    expect(values(short.groups)).toEqual([
+      ['openai/gpt-5.6-sol', 'openai/gpt-6-luna', 'openai/gpt-6.1-sol'],
+      ['relay/large'],
+    ]);
+    expect(short.hidden).toBe(4);
+  });
+
+  it('keeps the model in use and the default even when they are older', () => {
+    const short = shortModelMenu(signedIn, ['openai/gpt-4o', undefined, null, 'openai/o3']);
+    expect(values(short.groups)[0]).toEqual([
+      'openai/gpt-4o',
+      'openai/gpt-5.6-sol',
+      'openai/gpt-6-luna',
+      'openai/gpt-6.1-sol',
+      'openai/o3',
+    ]);
+    expect(short.hidden).toBe(2);
+  });
+
+  it('keeps every model of a provider that has none of the newest series', () => {
+    const old = modelMenu(
+      {
+        currentValue: null,
+        options: [
+          { value: 'openai/gpt-4o', label: 'GPT-4o' },
+          { value: 'openai/gpt-5.5', label: 'GPT-5.5' },
+        ],
+      },
+      null,
+      {}
+    );
+    expect(shortModelMenu(old, [])).toEqual({ groups: old, hidden: 0 });
+  });
+
+  it('searches every model, and shows them all once asked, still counting what the short list leaves out', () => {
+    const searched = visibleModelMenu(signedIn, { query: '4o', showAll: false, keep: [] });
+    expect(values(searched.groups)).toEqual([['openai/gpt-4o']]);
+    expect(searched.hidden).toBe(0);
+    expect(visibleModelMenu(signedIn, { query: ' ', showAll: false, keep: [] })).toEqual(shortModelMenu(signedIn, []));
+    expect(visibleModelMenu(signedIn, { query: '', showAll: true, keep: [] })).toEqual({ groups: signedIn, hidden: 4 });
+  });
+
+  it('reads the levels of a model, whether or not the short list shows it', () => {
+    expect(levelsOf(signedIn, 'openai/gpt-6.1-sol')).toEqual([{ value: 'off' }, { value: 'low' }, { value: 'high' }]);
+    expect(levelsOf(signedIn, 'openai/gpt-4o')).toEqual([]);
+    expect(levelsOf(signedIn, 'missing/model')).toEqual([]);
+    expect(levelsOf(signedIn, null)).toEqual([]);
   });
 });
 

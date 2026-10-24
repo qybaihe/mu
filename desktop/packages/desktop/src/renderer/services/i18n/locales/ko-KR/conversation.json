@@ -608,7 +608,9 @@
     "defaultTag": "기본",
     "makeDefault": "새 대화의 기본 모델로 설정",
     "madeDefault": "새 대화는 이 모델로 시작합니다.",
-    "makeDefaultFailed": "기본 모델을 저장하지 못했습니다."
+    "makeDefaultFailed": "기본 모델을 저장하지 못했습니다.",
+    "showAllModels": "모든 모델 보기({{count}})",
+    "showFewerModels": "접기"
   },
   "agentTip": {
     "codes": {
