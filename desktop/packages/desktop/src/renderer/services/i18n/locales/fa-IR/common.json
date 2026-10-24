@@ -1109,7 +1109,8 @@
         "fixing": "در حال رفع مشکلات بررسی",
         "waiting": "منتظر شما",
         "wrapping_up": "در حال جمع‌بندی",
-        "stuck": "به نظر گیر کرده"
+        "stuck": "به نظر گیر کرده",
+        "blocked": "منتظر چیز دیگری"
       },
       "checks_one": "{{done}} از {{total}} بررسی انجام شد",
       "checks_other": "{{done}} از {{total}} بررسی انجام شد",
@@ -1135,8 +1136,9 @@
           "wrapping_up": "کار انجام شد؛ در حال جمع‌بندی است.",
           "stuck": "به نظر می‌رسد دور خود می‌چرخد؛ شاید به راهنمایی شما نیاز داشته باشد.",
           "unclear": "در حال کار است.",
-          "focus": "{{now}} (مورد فعلی: {{focus}})",
-          "planning": "در حال فکر کردن به راه انجام کار است؛ هنوز چیزی را تغییر نداده است."
+          "planning": "در حال فکر کردن به راه انجام کار است؛ هنوز چیزی را تغییر نداده است.",
+          "blocked": "منتظر یک فرمان، یک دستیار یا شبکه است.",
+          "focus": "{{now}} (مورد فعلی: {{focus}})"
         }
       },
       "notes": {
@@ -1167,8 +1169,39 @@
         "did": "با {{tool}} این کار را کرد: {{what}}",
         "said_quote": "گفت: {{text}}",
         "ended": "متوقف شد.",
-        "waiting_reply": "متوقف شده و منتظر پاسخ شماست."
-      }
+        "waiting_reply": "متوقف شده و منتظر پاسخ شماست.",
+        "still_running": "{{what}} هنوز در حال اجراست، {{minutes, number}} دقیقه گذشته",
+        "still_running_who": "{{who}}: {{what}} {{minutes, number}} دقیقه است بدون خروجی اجرا می‌شود",
+        "helper_done": "{{name}} برگشت: {{summary}}",
+        "helper_failed": {
+          "failed": "{{name}} خطا داد",
+          "timed_out": "مهلت {{name}} تمام شد",
+          "stopped": "{{name}} متوقف شد"
+        },
+        "helpers_back_failed": "{{count, number}} دستیار برگشتند، {{failed, number}} با خطا",
+        "helpers_back_failed_one": "{{count, number}} دستیار برگشت، {{failed, number}} با خطا",
+        "helpers_back_failed_other": "{{count, number}} دستیار برگشتند، {{failed, number}} با خطا",
+        "with_detail": "{{line}}: {{detail}}"
+      },
+      "headlines": {
+        "helpers_working": "{{count, number}} دستیار مشغول کارند",
+        "helpers_working_one": "{{count, number}} دستیار مشغول کار است",
+        "helpers_working_other": "{{count, number}} دستیار مشغول کارند",
+        "waiting_permission": "منتظر اجازهٔ شما: {{what}}"
+      },
+      "updated": "{{ago}} پیش به‌روز شد",
+      "updatedNow": "همین حالا به‌روز شد",
+      "blocked": "گیر کرده",
+      "blockedLine": "گیر کرده: {{text}}",
+      "next": "قدم بعد",
+      "agents": "چه کسی چه می‌کند",
+      "agentStates": {
+        "working": "مشغول کار",
+        "waiting": "منتظر",
+        "stuck": "گیر کرده"
+      },
+      "stripOpen": "تابلوی ساده: {{headline}}",
+      "stripHint": "برای باز کردن تابلو کلیک کنید"
     },
     "lessonsView": {
       "filterLabel": "کدام درس‌ها نمایش داده شوند",

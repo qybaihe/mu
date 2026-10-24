@@ -7,6 +7,11 @@ import { record, str } from '../activity';
  * `/board on|off`; `board.update` is the latest board, `restored` when it is the last one replayed on opening;
  * `board.note` is one line of the board's running account (what the agent did), sent the moment it happens, and every
  * `board.update` carries the last lines of that account as `log`.
+ *
+ * Board v2 (kyrn/docs/features/plain-language-board.md) adds, all optional: a spoken `headline`, what is `blocked`,
+ * what comes `next`, who is doing what (`agents`, built by the harness's rules from the live helper runs), when the
+ * board was made (`updatedAt`), the stage `blocked`, and `who` on a line of the account. A board without them is shown
+ * exactly as before.
  */
 
 export const BOARD_PHASES = [
@@ -18,6 +23,8 @@ export const BOARD_PHASES = [
   'waiting',
   'wrapping_up',
   'stuck',
+  // Waiting on something other than the person: a long command, a helper, the judge, the network.
+  'blocked',
 ] as const;
 export type BoardPhase = (typeof BOARD_PHASES)[number];
 
@@ -49,7 +56,28 @@ export type BoardNote = {
   failed: boolean;
   /** From the account the session replays as it opens: not news. */
   restored: boolean;
+  /** The helper the line is about (its name as the agent gave it); absent for the main agent. */
+  who?: string;
 };
+
+export const AGENT_STATES = ['working', 'waiting', 'done', 'failed', 'stuck'] as const;
+export type AgentState = (typeof AGENT_STATES)[number];
+
+/** One helper the main agent sent out, as the harness's rules saw it when the board was made. */
+export type BoardAgent = {
+  /** Its name, exactly as the helper run names it. */
+  who: string;
+  role?: string;
+  /** Absent for a state this build does not know. */
+  state?: AgentState;
+  /** What it is doing: the model's words for this helper when it gave some, else the rules' summary. */
+  doing: string;
+  /** How long it had been in its state when the board was made. */
+  sinceMs?: number;
+};
+
+/** A sentence of the harness's rules, named by its code so the app can word it in its own language. */
+export type BoardCode = { code: string; params?: Record<string, string | number> };
 
 export type BoardUpdate = {
   /** The event's own id: a new one is a new board. */
@@ -77,6 +105,20 @@ export type BoardUpdate = {
   confirmCodes?: (string | null)[];
   /** The last lines of the running account, oldest first, from a harness that keeps one. */
   log?: BoardNote[];
+  /** One spoken line: who is doing what right now, or what just happened (v2). */
+  headline?: string;
+  /** The headline's fixed sentence, when the harness's rules wrote it. */
+  headlineCode?: BoardCode;
+  /** Who waits on what, and for how long (v2). */
+  blocked?: string;
+  /** The blocked line's fixed sentence, when the harness's rules wrote it. */
+  blockedCode?: BoardCode;
+  /** What comes next, taken from the facts (v2). */
+  next?: string;
+  /** Who is doing what: one row per helper (v2); the main agent is not listed. */
+  agents?: BoardAgent[];
+  /** When the harness made the board, in ms since the epoch (v2). */
+  updatedAt?: number;
 };
 
 export type BoardView = {
@@ -93,6 +135,10 @@ export type BoardView = {
 /** A line the board shows is short: a longer one is cut rather than let it take the panel. */
 const LINE_LIMIT = 600;
 const CONFIRM_LIMIT = 8;
+/** How many helpers the board lists. */
+const AGENT_LIMIT = 16;
+/** A name is short: a longer one is cut. */
+const NAME_LIMIT = 80;
 /** How many lines the account keeps: the oldest go first. */
 export const ACCOUNT_LIMIT = 200;
 /** The latest time a Date can hold. */
@@ -106,12 +152,50 @@ const CODE = /^[a-z][a-z_]{0,47}$/;
 const PARAM = /^[A-Za-z][A-Za-z0-9_]{0,31}$/;
 const count = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
+const shortName = (value: unknown) => {
+  const text = str(value).trim();
+  return text.length > NAME_LIMIT ? `${text.slice(0, NAME_LIMIT)}…` : text;
+};
+/** A time in ms since the epoch that a Date can hold. */
+const instant = (value: unknown): number | undefined =>
+  typeof value === 'number' && value > 0 && value <= TIME_LIMIT ? value : undefined;
+
+/** A fixed sentence's code and what fills it; none without a code. */
+function codeOf(code: unknown, params: unknown): BoardCode | undefined {
+  if (!CODE.test(str(code))) return undefined;
+  const filled = noteParams(params);
+  return { code: str(code), ...(filled ? { params: filled } : {}) };
+}
+
+/** The helpers a board lists, in the harness's order; a row without a name is dropped. */
+function boardAgents(value: unknown): BoardAgent[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const agents: BoardAgent[] = [];
+  for (const item of value as unknown[]) {
+    const row = record(item);
+    const who = shortName(row.who);
+    if (!who) continue;
+    const role = shortName(row.role);
+    const state = AGENT_STATES.find((known) => known === row.state);
+    const since = row.sinceMs;
+    agents.push({
+      who,
+      ...(role ? { role } : {}),
+      ...(state ? { state } : {}),
+      doing: line(row.doing),
+      ...(typeof since === 'number' && Number.isFinite(since) && since >= 0 ? { sinceMs: since } : {}),
+    });
+    if (agents.length === AGENT_LIMIT) break;
+  }
+  return agents;
+}
 
 export function toBoardUpdate(event: Activity): BoardUpdate | undefined {
   const payload = event.payload;
   const now = line(payload.now);
   const progress = line(payload.progress);
-  if (!now && !progress) return undefined;
+  const headline = line(payload.headline);
+  if (!now && !progress && !headline) return undefined;
   const phase = BOARD_PHASES.find((known) => known === payload.phase);
   // Each line keeps its code through the filtering: the codes are the lines' own, in the same order.
   const coded = Array.isArray(payload.confirmCodes);
@@ -124,6 +208,12 @@ export function toBoardUpdate(event: Activity): BoardUpdate | undefined {
   const focusText = line(payload.focusText);
   const restored = payload.restored === true;
   const log = boardLog(payload, restored);
+  const blocked = line(payload.blocked);
+  const next = line(payload.next);
+  const headlineCode = headline ? codeOf(payload.headlineCode, payload.headlineParams) : undefined;
+  const blockedCode = blocked ? codeOf(payload.blockedCode, payload.blockedParams) : undefined;
+  const agents = boardAgents(payload.agents);
+  const updatedAt = instant(payload.updatedAt);
   return {
     id: event.id,
     progress,
@@ -139,6 +229,13 @@ export function toBoardUpdate(event: Activity): BoardUpdate | undefined {
     ended: payload.ended === true,
     restored,
     ...(log ? { log } : {}),
+    ...(headline ? { headline } : {}),
+    ...(headlineCode ? { headlineCode } : {}),
+    ...(blocked ? { blocked } : {}),
+    ...(blockedCode ? { blockedCode } : {}),
+    ...(next ? { next } : {}),
+    ...(agents?.length ? { agents } : {}),
+    ...(updatedAt ? { updatedAt } : {}),
   };
 }
 
@@ -157,8 +254,8 @@ function noteParams(value: unknown): Record<string, string | number> | undefined
 function toNote(value: unknown, restored: boolean): BoardNote | undefined {
   const payload = record(value);
   const text = line(payload.text);
-  const at = payload.at;
-  if (!text || typeof at !== 'number' || !(at > 0 && at <= TIME_LIMIT)) return undefined;
+  const at = instant(payload.at);
+  if (!text || at === undefined) return undefined;
   // Without its counter a note is known by its time alone.
   const sequence =
     Number.isSafeInteger(payload.sequence) && (payload.sequence as number) >= 0 ? (payload.sequence as number) : 0;
@@ -166,6 +263,7 @@ function toNote(value: unknown, restored: boolean): BoardNote | undefined {
   const by = payload.by === 'rules' ? 'rules' : 'model';
   const code = by === 'rules' && CODE.test(str(payload.code)) ? str(payload.code) : undefined;
   const params = noteParams(payload.params);
+  const who = shortName(payload.who);
   return {
     id: `${at}:${sequence}`,
     sequence,
@@ -177,6 +275,7 @@ function toNote(value: unknown, restored: boolean): BoardNote | undefined {
     ...(params ? { params } : {}),
     failed: payload.failed === true,
     restored,
+    ...(who ? { who } : {}),
   };
 }
 

@@ -9,10 +9,22 @@ import { memoryEvents } from '@/renderer/pages/conversation/KyrnPanel/Lessons/mo
  * see something new there, so a session reread from the start (a conversation opened again) gives the same one.
  */
 
-/** The board's words: a new board is news; the one replayed as the session opens repeats the last. */
+/**
+ * The board's words: a new board is news; the one replayed as the session opens repeats the last. A new headline or a
+ * new blocked line is news too (a long run's "6 min" becoming "7 min" included).
+ */
 export function boardSignature(events: readonly Activity[]): string {
   const update = boardView(events).update;
-  return update ? JSON.stringify([update.phase ?? '', update.now, update.progress, update.confirm]) : '';
+  return update
+    ? JSON.stringify([
+        update.phase ?? '',
+        update.now,
+        update.progress,
+        update.confirm,
+        update.headline ?? '',
+        update.blocked ?? '',
+      ])
+    : '';
 }
 
 /** The latest verdict on a message. The wait before it is not news; the verdict is. */

@@ -1109,7 +1109,8 @@
         "fixing": "Behebt, was die Prüfung fand",
         "waiting": "Wartet auf dich",
         "wrapping_up": "Schließt ab",
-        "stuck": "Scheint festzustecken"
+        "stuck": "Scheint festzustecken",
+        "blocked": "Wartet auf etwas anderes"
       },
       "checks_one": "{{done}} von {{total}} Prüfpunkt erledigt",
       "checks_other": "{{done}} von {{total}} Prüfpunkten erledigt",
@@ -1135,8 +1136,9 @@
           "wrapping_up": "Ist mit der Arbeit fertig und schließt ab.",
           "stuck": "Scheint sich im Kreis zu drehen; ein Hinweis von dir könnte helfen.",
           "unclear": "Arbeitet.",
-          "focus": "{{now}} (Aktueller Punkt: {{focus}})",
-          "planning": "Überlegt das Vorgehen; geändert ist noch nichts."
+          "planning": "Überlegt das Vorgehen; geändert ist noch nichts.",
+          "blocked": "Wartet auf einen Befehl, einen Helfer oder das Netzwerk.",
+          "focus": "{{now}} (Aktueller Punkt: {{focus}})"
         }
       },
       "notes": {
@@ -1167,8 +1169,39 @@
         "did": "Hat {{tool}} benutzt: {{what}}",
         "said_quote": "Er sagte: {{text}}",
         "ended": "Angehalten.",
-        "waiting_reply": "Hat angehalten und wartet auf deine Antwort."
-      }
+        "waiting_reply": "Hat angehalten und wartet auf deine Antwort.",
+        "still_running": "{{what}} läuft noch, seit {{minutes, number}} Min.",
+        "still_running_who": "{{who}}: {{what}} läuft seit {{minutes, number}} Min. ohne Ausgabe",
+        "helper_done": "{{name}} ist zurück: {{summary}}",
+        "helper_failed": {
+          "failed": "{{name}} ist fehlgeschlagen",
+          "timed_out": "{{name}} hat das Zeitlimit überschritten",
+          "stopped": "{{name}} wurde gestoppt"
+        },
+        "helpers_back_failed": "{{count, number}} Helfer zurück, {{failed, number}} mit Fehlern",
+        "helpers_back_failed_one": "{{count, number}} Helfer zurück, {{failed, number}} mit Fehlern",
+        "helpers_back_failed_other": "{{count, number}} Helfer zurück, {{failed, number}} mit Fehlern",
+        "with_detail": "{{line}}: {{detail}}"
+      },
+      "headlines": {
+        "helpers_working": "{{count, number}} Helfer arbeiten",
+        "helpers_working_one": "{{count, number}} Helfer arbeitet",
+        "helpers_working_other": "{{count, number}} Helfer arbeiten",
+        "waiting_permission": "Wartet auf deine Erlaubnis: {{what}}"
+      },
+      "updated": "Vor {{ago}} aktualisiert",
+      "updatedNow": "Gerade aktualisiert",
+      "blocked": "Blockiert",
+      "blockedLine": "Blockiert: {{text}}",
+      "next": "Als Nächstes",
+      "agents": "Wer macht was",
+      "agentStates": {
+        "working": "Arbeitet",
+        "waiting": "Wartet",
+        "stuck": "Hängt fest"
+      },
+      "stripOpen": "Klartext-Board: {{headline}}",
+      "stripHint": "Klicken, um das Board zu öffnen"
     },
     "lessonsView": {
       "filterLabel": "Welche Lektionen angezeigt werden",

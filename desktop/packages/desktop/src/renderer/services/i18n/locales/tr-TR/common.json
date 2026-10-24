@@ -1109,7 +1109,8 @@
         "fixing": "Kontrolde bulunanı düzeltiyor",
         "waiting": "Sizi bekliyor",
         "wrapping_up": "Topluyor",
-        "stuck": "Takılmış görünüyor"
+        "stuck": "Takılmış görünüyor",
+        "blocked": "Başka bir şeyi bekliyor"
       },
       "checks_one": "{{total}} kontrolden {{done}} tanesi tamam",
       "checks_other": "{{total}} kontrolden {{done}} tanesi tamam",
@@ -1135,8 +1136,9 @@
           "wrapping_up": "İş bitti; şimdi toparlıyor.",
           "stuck": "Döngüye girmiş gibi görünüyor; sizden bir ipucuna ihtiyacı olabilir.",
           "unclear": "Çalışıyor.",
-          "focus": "{{now}} (Şu anki iş: {{focus}})",
-          "planning": "Nasıl yapacağını düşünüyor; henüz hiçbir şeyi değiştirmedi."
+          "planning": "Nasıl yapacağını düşünüyor; henüz hiçbir şeyi değiştirmedi.",
+          "blocked": "Bir komutu, bir yardımcıyı ya da ağı bekliyor.",
+          "focus": "{{now}} (Şu anki iş: {{focus}})"
         }
       },
       "notes": {
@@ -1167,8 +1169,39 @@
         "did": "{{tool}} ile şunu yaptı: {{what}}",
         "said_quote": "Şunu söyledi: {{text}}",
         "ended": "Durdu.",
-        "waiting_reply": "Durdu, yanıtınızı bekliyor."
-      }
+        "waiting_reply": "Durdu, yanıtınızı bekliyor.",
+        "still_running": "{{what}} hâlâ çalışıyor, {{minutes, number}} dk oldu",
+        "still_running_who": "{{who}}: {{what}} {{minutes, number}} dk’dır çıktı vermeden çalışıyor",
+        "helper_done": "{{name}} döndü: {{summary}}",
+        "helper_failed": {
+          "failed": "{{name}} hata verdi",
+          "timed_out": "{{name}} zaman aşımına uğradı",
+          "stopped": "{{name}} durduruldu"
+        },
+        "helpers_back_failed": "{{count, number}} yardımcı döndü, {{failed, number}} tanesi hatalı",
+        "helpers_back_failed_one": "{{count, number}} yardımcı döndü, {{failed, number}} tanesi hatalı",
+        "helpers_back_failed_other": "{{count, number}} yardımcı döndü, {{failed, number}} tanesi hatalı",
+        "with_detail": "{{line}}: {{detail}}"
+      },
+      "headlines": {
+        "helpers_working": "{{count, number}} yardımcı çalışıyor",
+        "helpers_working_one": "{{count, number}} yardımcı çalışıyor",
+        "helpers_working_other": "{{count, number}} yardımcı çalışıyor",
+        "waiting_permission": "İzninizi bekliyor: {{what}}"
+      },
+      "updated": "{{ago}} önce güncellendi",
+      "updatedNow": "Az önce güncellendi",
+      "blocked": "Takıldı",
+      "blockedLine": "Takıldı: {{text}}",
+      "next": "Sırada",
+      "agents": "Kim ne yapıyor",
+      "agentStates": {
+        "working": "Çalışıyor",
+        "waiting": "Bekliyor",
+        "stuck": "Takıldı"
+      },
+      "stripOpen": "Sade dilde pano: {{headline}}",
+      "stripHint": "Panoyu açmak için tıklayın"
     },
     "lessonsView": {
       "filterLabel": "Hangi dersler gösterilsin",

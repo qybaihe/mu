@@ -1,6 +1,6 @@
 /**
- * The top of a native conversation: its title, the project folder it works in, and how its mu is (starting, working,
- * without a model, stopped). A mu that has not started yet says nothing: the next message starts it. Nor does a mu that
+ * The top of a native conversation: its title, the project folder it works in, the plain-language board's headline
+ * while the work panel is closed, and how its mu is (starting, working, without a model, stopped). A mu that has not started yet says nothing: the next message starts it. Nor does a mu that
  * is up and waiting for the next message: "Running" there read as if the turn were still going.
  *
  * The title is renamed where it stands, as a classic conversation's is: a click (or Enter) makes it a field, Enter or
@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import type { NativeConversation, NativeHostStatus, NativeResult } from '@/common/kyrn/nativeBridge';
 import { iconColors } from '@/renderer/styles/colors';
 import { folderName } from '../utils/paths';
+import NativeBoardStrip from './NativeBoardStrip';
 
 const DOT: Record<NativeHostStatus['phase'], string> = {
   idle: iconColors.disabled,
@@ -132,7 +133,9 @@ const NativeHeader: React.FC<{
   working?: boolean;
   /** Renames the conversation; without it the title is not renamed here. */
   onRename?: (name: string) => Promise<NativeResult<void>>;
-}> = ({ conversation, host, working = false, onRename }) => {
+  /** The id the conversation's work panel and board are kept under; with it, the board's headline shows here. */
+  conversationId?: string;
+}> = ({ conversation, host, working = false, onRename, conversationId }) => {
   const { t } = useTranslation();
   const up = host.phase === 'running';
   // What there is to report: nothing before mu starts or while it waits for a message; the words stay for screen readers.
@@ -156,6 +159,8 @@ const NativeHeader: React.FC<{
           </span>
         ) : null}
       </div>
+      {/* The board's headline while the work panel is closed: it takes the room between the title and the state. */}
+      {conversationId ? <NativeBoardStrip conversationId={conversationId} /> : null}
       <div className='shrink-0 flex items-center gap-10px text-12px leading-18px text-t-secondary'>
         <span
           className={quiet ? 'sr-only' : 'flex items-center gap-6px'}

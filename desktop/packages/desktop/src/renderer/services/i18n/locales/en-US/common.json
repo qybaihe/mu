@@ -1109,7 +1109,8 @@
         "fixing": "Fixing what the check found",
         "waiting": "Waiting for you",
         "wrapping_up": "Wrapping up",
-        "stuck": "Seems stuck"
+        "stuck": "Seems stuck",
+        "blocked": "Waiting on something else"
       },
       "checks_one": "{{done}} of {{total}} check done",
       "checks_other": "{{done}} of {{total}} checks done",
@@ -1133,6 +1134,7 @@
           "wrapping_up": "The work is done; wrapping up.",
           "stuck": "Seems to be going in circles; it may need a hint from you.",
           "unclear": "Working.",
+          "blocked": "Waiting on a command, a subagent or the network to finish.",
           "focus": "{{now}} (working on: {{focus}})"
         },
         "confirm": {
@@ -1167,8 +1169,39 @@
         "did": "Used {{tool}}: {{what}}",
         "said_quote": "It said: {{text}}",
         "ended": "Stopped.",
-        "waiting_reply": "Stopped, waiting for your reply."
-      }
+        "waiting_reply": "Stopped, waiting for your reply.",
+        "still_running": "Still running {{what}}, {{minutes, number}} min in",
+        "still_running_who": "{{who}}: {{what}} has run {{minutes, number}} min with no output",
+        "helper_done": "{{name}} is back: {{summary}}",
+        "helper_failed": {
+          "failed": "{{name}} failed",
+          "timed_out": "{{name}} timed out",
+          "stopped": "{{name}} was stopped"
+        },
+        "helpers_back_failed": "{{count, number}} subagents finished, {{failed, number}} with errors",
+        "helpers_back_failed_one": "{{count, number}} subagent finished, {{failed, number}} with errors",
+        "helpers_back_failed_other": "{{count, number}} subagents finished, {{failed, number}} with errors",
+        "with_detail": "{{line}}: {{detail}}"
+      },
+      "headlines": {
+        "helpers_working": "{{count, number}} subagents are working",
+        "helpers_working_one": "{{count, number}} subagent is working",
+        "helpers_working_other": "{{count, number}} subagents are working",
+        "waiting_permission": "Waiting for you to allow: {{what}}"
+      },
+      "updated": "Updated {{ago}} ago",
+      "updatedNow": "Updated just now",
+      "blocked": "Blocked",
+      "blockedLine": "Blocked: {{text}}",
+      "next": "Next",
+      "agents": "Who's doing what",
+      "agentStates": {
+        "working": "Working",
+        "waiting": "Waiting",
+        "stuck": "Stuck"
+      },
+      "stripOpen": "Plain-language board: {{headline}}",
+      "stripHint": "Click to open the board"
     },
     "lessonsView": {
       "filterLabel": "Which lessons to show",

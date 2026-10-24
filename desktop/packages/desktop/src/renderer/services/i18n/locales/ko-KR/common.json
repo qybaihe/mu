@@ -1109,7 +1109,8 @@
         "fixing": "확인에서 나온 문제를 고치는 중",
         "waiting": "응답을 기다리는 중",
         "wrapping_up": "마무리하는 중",
-        "stuck": "막힌 것 같습니다"
+        "stuck": "막힌 것 같습니다",
+        "blocked": "다른 작업을 기다리는 중"
       },
       "checks_one": "확인 항목 {{done}}/{{total}} 완료",
       "checks_other": "확인 항목 {{done}}/{{total}} 완료",
@@ -1135,8 +1136,9 @@
           "wrapping_up": "작업을 마쳤고 마무리하고 있습니다.",
           "stuck": "제자리를 맴도는 것 같습니다. 방향을 알려 주셔야 할 수도 있습니다.",
           "unclear": "작업하고 있습니다.",
-          "focus": "{{now}} (진행 중: {{focus}})",
-          "planning": "어떻게 할지 구상하고 있습니다. 아직 아무것도 바꾸지 않았습니다."
+          "planning": "어떻게 할지 구상하고 있습니다. 아직 아무것도 바꾸지 않았습니다.",
+          "blocked": "명령, 도우미, 네트워크 쪽 결과를 기다리고 있습니다.",
+          "focus": "{{now}} (진행 중: {{focus}})"
         }
       },
       "notes": {
@@ -1167,8 +1169,39 @@
         "did": "{{tool}} 도구를 썼습니다: {{what}}",
         "said_quote": "에이전트가 한 말: {{text}}",
         "ended": "멈췄습니다.",
-        "waiting_reply": "멈춰서 응답을 기다리고 있습니다."
-      }
+        "waiting_reply": "멈춰서 응답을 기다리고 있습니다.",
+        "still_running": "{{what}} 아직 실행 중, {{minutes, number}}분째",
+        "still_running_who": "{{who}}: {{what}} {{minutes, number}}분째 출력 없음",
+        "helper_done": "{{name}} 돌아옴: {{summary}}",
+        "helper_failed": {
+          "failed": "{{name}} 오류",
+          "timed_out": "{{name}} 시간 초과",
+          "stopped": "{{name}} 중지됨"
+        },
+        "helpers_back_failed": "{{count, number}}명 돌아옴, {{failed, number}}명 오류",
+        "helpers_back_failed_one": "{{count, number}}명 돌아옴, {{failed, number}}명 오류",
+        "helpers_back_failed_other": "{{count, number}}명 돌아옴, {{failed, number}}명 오류",
+        "with_detail": "{{line}}: {{detail}}"
+      },
+      "headlines": {
+        "helpers_working": "도우미 {{count, number}}명이 일하는 중",
+        "helpers_working_one": "도우미 {{count, number}}명이 일하는 중",
+        "helpers_working_other": "도우미 {{count, number}}명이 일하는 중",
+        "waiting_permission": "허용을 기다리는 중: {{what}}"
+      },
+      "updated": "{{ago}} 전 업데이트",
+      "updatedNow": "방금 업데이트",
+      "blocked": "막힘",
+      "blockedLine": "막힘: {{text}}",
+      "next": "다음",
+      "agents": "누가 무엇을 하는지",
+      "agentStates": {
+        "working": "작업 중",
+        "waiting": "대기 중",
+        "stuck": "막힘"
+      },
+      "stripOpen": "쉬운 말 보드: {{headline}}",
+      "stripHint": "클릭해서 보드 열기"
     },
     "lessonsView": {
       "filterLabel": "표시할 교훈",

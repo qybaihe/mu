@@ -170,6 +170,85 @@
   overflow-wrap: anywhere;
 }
 
+/* How long ago the board was made: quiet, at the end of the state's row, the same width as it counts. */
+.updated {
+  margin-inline-start: auto;
+  color: var(--bg-6);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* A board with a headline (v2): the headline leads, then what is blocked, what comes next, now and how far. */
+.spoken {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.spoken .progress {
+  margin: 0;
+}
+
+.headline {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 24px;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+/* Under a headline, "now" is a plain paragraph. */
+.nowPlain {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+/* One fact with its label: the label in its own column, the sentence wrapping in the other. */
+.fact {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 10px;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.factLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 3.5em;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.factText {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* What is blocked: set apart by a hairline in the warning colour and a hollow mark, calm rather than alarming. */
+.blocked {
+  padding: 6px 10px;
+  border-inline-start: 2px solid var(--warning);
+  border-radius: 4px;
+  background: var(--fill);
+}
+
+.blocked .factLabel {
+  color: var(--text-primary);
+}
+
+.blocked .stateMark {
+  height: 20px;
+  color: var(--warning);
+}
+
 .meter {
   display: flex;
   align-items: center;
@@ -206,6 +285,7 @@
 }
 
 .ask,
+.agents,
 .account {
   display: flex;
   flex-direction: column;
@@ -317,6 +397,23 @@
   overflow-wrap: anywhere;
 }
 
+/* The helper a line is about: a small chip in front of its sentence. */
+.who {
+  display: inline-block;
+  max-width: 12em;
+  margin-inline-end: 6px;
+  padding: 0 5px;
+  overflow: hidden;
+  border: 1px solid var(--border-base);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: 1px;
+}
+
 /* Something went wrong: told by the words and a hollow dot, never by a colour. */
 .noteDot {
   display: inline-block;
@@ -350,4 +447,67 @@
 .more:global(.arco-btn:focus-visible) {
   outline: 1px solid var(--text-primary);
   outline-offset: 2px;
+}
+
+/* Who is doing what: one row per helper, its mark, its name, what it is doing and, while it goes on, for how long. */
+.agentList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agent {
+  display: grid;
+  grid-template-columns: 11px minmax(0, max-content) minmax(0, 1fr) max-content;
+  align-items: baseline;
+  column-gap: 8px;
+  padding: 3px 0;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.agent .stateMark {
+  align-self: start;
+  height: 20px;
+}
+
+.agent .stateMark[data-mark='cross'],
+.agent .stateMark[data-mark='tick'] {
+  color: var(--text-secondary);
+}
+
+.agentWho {
+  max-width: 10em;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agentDoing {
+  min-width: 0;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* Waiting, stuck or failed: said in words beside the mark, as a small tag. */
+.agentState {
+  margin-inline-end: 6px;
+  padding: 0 5px;
+  border: 1px solid var(--border-base);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.agentTime {
+  color: var(--bg-6);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
