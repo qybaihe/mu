@@ -330,12 +330,12 @@
   padding-inline: 4px;
 }
 
-/* "Only local" in mude's install dialog: the box hugs its label, so a click beside it does not tick it. */
+/* "Local only" in mude's install dialog: the box hugs its label, so a click beside it does not tick it. */
 .mudeConsentCheck {
   align-self: flex-start;
 }
 
-/* Both explanations of "Only local" in one cell: the longer sets the height, whichever one shows. */
+/* Both explanations of "Local only" in one cell: the longer sets the height, whichever one shows. */
 .mudeConsentHelp {
   display: grid;
 }
