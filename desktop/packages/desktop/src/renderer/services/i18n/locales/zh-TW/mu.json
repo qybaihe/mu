@@ -1037,11 +1037,7 @@
     },
     "send": {
       "placeholder": "傳訊息給 mu…",
-      "placeholderWorking": "現在引導 mu，或留一則訊息，等這一輪結束後再送…",
-      "steer": "現在",
-      "steerHint": "在 mu 的下一步送達",
-      "followUp": "之後",
-      "followUpHint": "等這一輪執行結束後再送"
+      "placeholderWorking": "傳訊息給 mu，它會在適當的時候把訊息帶進工作…"
     },
     "queue": {
       "title": "等待傳送",

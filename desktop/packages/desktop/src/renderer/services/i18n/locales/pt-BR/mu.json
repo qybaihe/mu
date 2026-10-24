@@ -1037,11 +1037,7 @@
     },
     "send": {
       "placeholder": "Mensagem para o mu…",
-      "placeholderWorking": "Oriente o mu agora ou deixe uma mensagem para depois desta execução…",
-      "steer": "Agora",
-      "steerHint": "Chega ao mu no próximo passo dele",
-      "followUp": "Depois",
-      "followUpHint": "Espera esta execução terminar"
+      "placeholderWorking": "Mensagem para o mu; ele decide quando trazê-la para o trabalho…"
     },
     "queue": {
       "title": "Aguardando envio",

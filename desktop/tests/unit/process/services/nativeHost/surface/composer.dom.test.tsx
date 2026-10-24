@@ -168,24 +168,27 @@ describe('the native send box', () => {
     expect(status()).toHaveAttribute('data-sending', 'false');
   });
 
-  it('steers a run that goes, or leaves the message for after it', async () => {
+  it('sends a message during a run as a steer, with no switch for when it arrives: mu decides that', async () => {
     const host = createFakeHost();
     host.add({ id: 'c1' });
     await mount(host);
     expect(screen.queryByTestId('native-send-mode')).toBeNull();
     await running(host);
-    expect(screen.getByTestId('native-send-mode')).toBeInTheDocument();
+    // No Now / After switch beside the box: the kernel (input.interjection) moves a message to after the run.
+    expect(screen.queryByTestId('native-send-mode')).toBeNull();
+    expect(screen.queryByRole('radio')).toBeNull();
+    expect(screen.queryByText('Now')).toBeNull();
+    expect(screen.queryByText('After')).toBeNull();
     expect(box()).toHaveAttribute('data-loading', 'true');
     expect(box()).toHaveAttribute('data-send', 'true');
-    expect(input()).toHaveAttribute('placeholder', "Steer mu now, or queue a message for when it's done…");
+    expect(input()).toHaveAttribute('placeholder', 'Message mu. It decides when to bring this into the work…');
     type('also check the tests');
     await send();
-    fireEvent.click(screen.getByText('After'));
     type('then write the notes');
     await send();
     expect(commands(host)).toEqual([
       { type: 'prompt', message: 'also check the tests', streamingBehavior: 'steer' },
-      { type: 'prompt', message: 'then write the notes', streamingBehavior: 'followUp' },
+      { type: 'prompt', message: 'then write the notes', streamingBehavior: 'steer' },
     ]);
   });
 

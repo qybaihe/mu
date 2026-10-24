@@ -1037,11 +1037,7 @@
     },
     "send": {
       "placeholder": "mu にメッセージを送る…",
-      "placeholderWorking": "今すぐ mu を導くか、この実行が終わった後に送るメッセージを残す…",
-      "steer": "今すぐ",
-      "steerHint": "mu の次のステップで届きます",
-      "followUp": "後で",
-      "followUpHint": "この実行が終わるまで待ちます"
+      "placeholderWorking": "mu にメッセージを送る。作業に取り込むタイミングは mu が決めます…"
     },
     "queue": {
       "title": "送信待ち",

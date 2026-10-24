@@ -30,12 +30,6 @@ import { useNativeClient } from '../utils/nativeClient';
 import { isWorking } from '../utils/statusRow';
 import type { OutgoingMessage } from '../utils/toMessages';
 
-/**
- * How a message sent while a run goes reaches it: at its next step, or after it. It goes as a prompt with pi's
- * `streamingBehavior`, so a run that ended just before it arrived is started by it instead of leaving it queued.
- */
-export type SendMode = 'steer' | 'followUp';
-
 export type NativeConversationState = {
   /** The conversation's id now: a draft's id gives way to its session's. */
   id: string;
@@ -78,16 +72,12 @@ export type NativeConversationApi = {
   /** Opens the conversation again, after it could not be opened. */
   retry: () => void;
   /**
-   * A prompt, with the images the person attached; while a run goes, a steering or follow-up message. `command`: the
+   * A prompt, with the images the person attached. While a run goes, it is a steer, as Enter is in mu's terminal:
+   * mu's judgment kernel (`input.interjection`) moves it to after the run when that suits it better. `command`: the
    * text runs a command an extension answers itself (mu's `/goal …`), which adds no message of the person's: it is no
    * longer on its way once pi took it, whether or not it starts a run.
    */
-  send: (
-    text: string,
-    mode?: SendMode,
-    images?: PiImage[],
-    options?: { command?: boolean }
-  ) => Promise<NativeResult<unknown>>;
+  send: (text: string, images?: PiImage[], options?: { command?: boolean }) => Promise<NativeResult<unknown>>;
   /** Stops the run, or the prompt the judge is still classifying. */
   abort: () => Promise<NativeResult<unknown>>;
   respond: (dialogId: string, answer: DialogAnswer) => Promise<NativeResult<void>>;
@@ -292,13 +282,15 @@ export function useNativeConversation(requestedId: string): NativeConversationSt
   const send = useCallback(
     async (
       text: string,
-      mode: SendMode = 'steer',
       images: PiImage[] = [],
       options: { command?: boolean } = {}
     ): Promise<NativeResult<unknown>> => {
       const now = latest.current;
       const attached = images.length > 0 ? { images } : {};
-      if (isWorking(now.view)) return request({ type: 'prompt', message: text, ...attached, streamingBehavior: mode });
+      // A prompt with pi's `streamingBehavior`, so a run that ended just before it arrived is started by it instead of
+      // leaving it queued.
+      if (isWorking(now.view))
+        return request({ type: 'prompt', message: text, ...attached, streamingBehavior: 'steer' });
       sent += 1;
       const outgoing = {
         id: `outgoing-${sent}`,

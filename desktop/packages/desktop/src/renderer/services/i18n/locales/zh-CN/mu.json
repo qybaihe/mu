@@ -1037,11 +1037,7 @@
     },
     "send": {
       "placeholder": "给 mu 发消息…",
-      "placeholderWorking": "现在引导 mu，或者留一条消息，等这一轮结束后再发…",
-      "steer": "现在",
-      "steerHint": "在 mu 的下一步送达",
-      "followUp": "之后",
-      "followUpHint": "等这一轮运行结束后再发"
+      "placeholderWorking": "给 mu 发消息，它会在合适的时候把消息带进工作…"
     },
     "queue": {
       "title": "等待发送",

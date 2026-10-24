@@ -1037,11 +1037,7 @@
     },
     "send": {
       "placeholder": "mu에게 메시지 보내기…",
-      "placeholderWorking": "지금 mu를 이끌거나, 이번 실행이 끝난 뒤 보낼 메시지를 남기세요…",
-      "steer": "지금",
-      "steerHint": "mu의 다음 단계에 전달됩니다",
-      "followUp": "나중에",
-      "followUpHint": "이번 실행이 끝날 때까지 기다립니다"
+      "placeholderWorking": "mu에게 메시지를 보내세요. 작업에 언제 반영할지는 mu가 정해요…"
     },
     "queue": {
       "title": "보내기 대기 중",

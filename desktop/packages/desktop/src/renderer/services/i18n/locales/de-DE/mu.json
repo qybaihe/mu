@@ -1037,11 +1037,7 @@
     },
     "send": {
       "placeholder": "Nachricht an mu…",
-      "placeholderWorking": "Lenke mu jetzt, oder hinterlasse eine Nachricht für nach diesem Lauf…",
-      "steer": "Jetzt",
-      "steerHint": "Erreicht mu bei seinem nächsten Schritt",
-      "followUp": "Danach",
-      "followUpHint": "Wartet, bis dieser Lauf endet"
+      "placeholderWorking": "Nachricht an mu – mu entscheidet, wann sie in die Arbeit einfließt…"
     },
     "queue": {
       "title": "Wartet auf das Senden",
