@@ -512,3 +512,40 @@
     align-items: flex-start;
   }
 }
+
+/* The decision models added from Hugging Face, under mude: one row each, then the field that adds one. */
+.modelsTitle {
+  margin-top: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.modelRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.modelName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.modelId {
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.modelsAdd {
+  display: flex;
+  gap: 8px;
+}

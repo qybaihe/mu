@@ -280,6 +280,53 @@
         "readyStopped": "mude 1.0 is your judge. Its server starts with your next mu session."
       }
     },
+    "models": {
+      "title": "Other decision models",
+      "placeholder": "Hugging Face link or owner/name",
+      "add": "Add",
+      "trust": "A model runs its own server code on this Mac. Add only models you trust.",
+      "use": "Use as the judge",
+      "continue": "Continue downloading",
+      "remove": "Remove",
+      "removeTitle": "Remove {{name}}?",
+      "removeText": "This takes {{name}} out of the judge order and deletes its files (about {{size}} GB). You can add it again later.",
+      "noList": "Couldn't read the decision models: {{reason}}",
+      "cancelled": "Canceled. What's downloaded is kept.",
+      "state": {
+        "judge": "The judge · {{size}} GB",
+        "running": "Running · {{size}} GB",
+        "installed": "Installed · {{size}} GB",
+        "partial": "{{done}} of {{total}} GB downloaded",
+        "notDownloaded": "Not downloaded · {{size}} GB"
+      },
+      "step": {
+        "resolve": "Looking up the model on Hugging Face…",
+        "download": "Downloading {{name}} and checking every file…",
+        "python": "Setting up the Python environment…",
+        "start": "Starting {{name}}'s server…"
+      },
+      "working": {
+        "add": "Adding {{name}}…",
+        "use": "Switching the judge to {{name}}…",
+        "disable": "Turning off {{name}}…",
+        "remove": "Removing {{name}}…"
+      },
+      "failed": {
+        "add": "Couldn't add the model.",
+        "use": "Couldn't make it the judge.",
+        "disable": "Couldn't turn it off.",
+        "remove": "Couldn't remove it."
+      },
+      "error": {
+        "usage": "That isn't a link to a Hugging Face model, or its owner/name.",
+        "access": "Hugging Face won't share this model: it's private or gated.",
+        "notFound": "Hugging Face has no such model.",
+        "notRunnable": "mu can't run this model: it has no d3_server_mac.py, the server that models packaged like mude 1.0 come with.",
+        "network": "Couldn't reach Hugging Face. Check your connection and try again; what's already downloaded is kept.",
+        "integrity": "A downloaded file failed verification. Try again.",
+        "unsupported": "This Mac can't run decision models."
+      }
+    },
     "clm": {
       "address": "Server address",
       "key": "Server key",

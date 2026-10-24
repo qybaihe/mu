@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Added
+
+- **Other decision models from Hugging Face, next to mude 1.0.** Paste a Hugging Face link or `owner/name` under mude on the Judges page in Settings (or run `mu judge model add <link>`). mu downloads the model with progress, checks every file, resumes a download that stopped, sets it up and makes it the judge. The list shows each added model with Use, Continue downloading and Remove, and "Use mude 1.0 as the judge" switches back. Only one decision model runs at a time. A model must be packaged like mude 1.0's MLX edition, with its own `d3_server_mac.py`, which runs on your Mac, so add only models you trust.
+
 ### Fixed
 
 - **Signing out of a subscription takes its models out of the model pickers at once.** After you signed out of ChatGPT, Grok or a Google account in Settings, the default model's and the board's pickers, the home page and open conversations kept listing that account's models until the app restarted. Now they drop them as soon as the sign-out finishes. If the default model or an open conversation was on one of them, it switches to another model you've set up and says so. `/logout` in the terminal does the same for the current session.

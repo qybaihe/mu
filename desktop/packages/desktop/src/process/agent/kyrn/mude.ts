@@ -4,6 +4,14 @@ import { posix, win32 } from 'node:path';
 import type { Readable } from 'node:stream';
 import { KyrnError } from '../../../common/kyrn/errors';
 import {
+  type DecisionModel,
+  MODEL_COMMANDS,
+  type ModelCommand,
+  type ModelErrorKind,
+  type ModelRequest,
+  type ModelStep,
+  type ModelsState,
+  type ModelTask,
   MUDE_COMMANDS,
   type MudeAction,
   type MudeCommand,
@@ -119,6 +127,26 @@ function lines(stream: Readable | null, each: (line: string) => void): () => voi
   };
 }
 
+/** The command and its arguments for `mu judge <words> --json` through mu's launcher, and its environment. */
+function judgeCommand(
+  harness: Pick<Harness, 'root' | 'layout'>,
+  deps: MudeDeps,
+  words: string[]
+): { command: string; args: string[]; env: NodeJS.ProcessEnv } {
+  const { platform, env, home, agentDir, node, electron, proxyEnv } = deps;
+  const start = launchCommand(launcherOf(harness, platform), ['judge', ...words, '--json'], node, electron);
+  // Paths of the platform mude runs on, not of the one that runs this (the tests run everywhere).
+  const paths = platform === 'win32' ? win32 : posix;
+  // A Mac app's PATH is short: where uv and Homebrew's tools usually are, for the Python environment.
+  const extra = platform === 'darwin' ? [paths.join(home, '.local', 'bin'), '/opt/homebrew/bin', '/usr/local/bin'] : [];
+  const path = [...extra, env.PATH ?? ''].filter(Boolean).join(paths.delimiter);
+  return {
+    command: start.command,
+    args: start.args,
+    env: { ...env, ...proxyEnv(), ...start.env, MU_AGENT_DIR: agentDir, PATH: path },
+  };
+}
+
 const defaults = (): MudeDeps => ({
   spawn: (command, args, env) => {
     const child = nodeSpawn(command, args, {
@@ -185,24 +213,7 @@ export class Mude {
 
   /** The command and its arguments for `mu judge mude <args> --json`, and its environment. */
   command(args: string[]): { command: string; args: string[]; env: NodeJS.ProcessEnv } {
-    const { platform, env, home, agentDir, node, electron, proxyEnv } = this.deps;
-    const start = launchCommand(
-      launcherOf(this.harness, platform),
-      ['judge', 'mude', ...args, '--json'],
-      node,
-      electron
-    );
-    // Paths of the platform mude runs on, not of the one that runs this (the tests run everywhere).
-    const paths = platform === 'win32' ? win32 : posix;
-    // A Mac app's PATH is short: where uv and Homebrew's tools usually are, for the Python environment.
-    const extra =
-      platform === 'darwin' ? [paths.join(home, '.local', 'bin'), '/opt/homebrew/bin', '/usr/local/bin'] : [];
-    const path = [...extra, env.PATH ?? ''].filter(Boolean).join(paths.delimiter);
-    return {
-      command: start.command,
-      args: start.args,
-      env: { ...env, ...proxyEnv(), ...start.env, MU_AGENT_DIR: agentDir, PATH: path },
-    };
+    return judgeCommand(this.harness, this.deps, ['mude', ...args]);
   }
 
   /** What the app knows of mude. With no command running, the status is asked for afresh first. */
@@ -418,5 +429,256 @@ function parse(line: string): Record<string, unknown> | undefined {
     return typeof event.type === 'string' ? event : undefined;
   } catch {
     return undefined;
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+
+const MODEL_STEPS: ReadonlySet<string> = new Set<ModelStep>([
+  'resolve',
+  'model',
+  'download',
+  'python',
+  'start',
+  'enable',
+  'disable',
+  'remove',
+]);
+
+const MODEL_KINDS: ReadonlySet<string> = new Set([...KINDS, 'notFound', 'notRunnable']);
+
+/** One model of `mu judge model list --json`, as the app keeps it; undefined when it is not one. */
+export function parseModel(value: unknown): DecisionModel | undefined {
+  const row = asRecord(value);
+  const name = text(row.name);
+  if (!name || typeof row.installed !== 'boolean') return undefined;
+  return {
+    name,
+    label: text(row.label) || name,
+    repo: text(row.repo),
+    revision: text(row.revision),
+    bytes: count(row.bytes),
+    builtIn: row.builtIn === true,
+    installed: row.installed,
+    downloadedBytes: count(row.downloadedBytes),
+    running: row.running === true,
+    ready: row.ready === true,
+    enabled: row.enabled === true,
+    localOnly: row.localOnly === true,
+  };
+}
+
+/**
+ * Decision models from Hugging Face beside mude, as the app manages them: runs `mu judge model <cmd> --json` the way
+ * Mude runs mude's commands, one at a time, and keeps the list it reports. Offered on macOS only.
+ */
+export class DecisionModels {
+  private harness: Pick<Harness, 'root' | 'layout'>;
+  private deps: MudeDeps;
+  private models?: DecisionModel[];
+  private problem?: string;
+  private task?: ModelTask;
+  private child?: MudeProcess;
+  private reading?: Promise<void>;
+  private next = 0;
+
+  constructor(harness: Pick<Harness, 'root' | 'layout'>, deps: Partial<MudeDeps> = {}) {
+    this.harness = harness;
+    this.deps = { ...defaults(), ...deps };
+  }
+
+  private get available(): boolean {
+    return this.deps.platform === 'darwin';
+  }
+
+  /** The command and its arguments for `mu judge model <args> --json`, and its environment. */
+  command(args: string[]): { command: string; args: string[]; env: NodeJS.ProcessEnv } {
+    return judgeCommand(this.harness, this.deps, ['model', ...args]);
+  }
+
+  /** The models and what runs. With no command running, the list is asked for afresh first. */
+  async state(): Promise<ModelsState> {
+    if (!this.available) return { available: false };
+    if (this.task?.phase !== 'running') await this.refresh();
+    return this.snapshot();
+  }
+
+  private snapshot(): ModelsState {
+    return {
+      available: this.available,
+      ...(this.models ? { models: this.models.map((model) => ({ ...model })) } : {}),
+      ...(this.problem ? { problem: this.problem } : {}),
+      ...(this.task ? { task: { ...this.task, log: [...this.task.log] } } : {}),
+    };
+  }
+
+  private refresh(): Promise<void> {
+    this.reading ??= this.readList().finally(() => {
+      this.reading = undefined;
+    });
+    return this.reading;
+  }
+
+  private readList(): Promise<void> {
+    return new Promise((resolve) => {
+      const start = this.command(['list']);
+      let child: MudeProcess;
+      try {
+        child = this.deps.spawn(start.command, start.args, start.env);
+      } catch (error) {
+        this.problem = error instanceof Error ? error.message : String(error);
+        resolve();
+        return;
+      }
+      let found: DecisionModel[] | undefined;
+      let error = '';
+      const said: string[] = [];
+      const flushOut = lines(child.stdout, (line) => {
+        const event = parse(line);
+        if (event?.type === 'models') {
+          found = array(event.models)
+            .map(parseModel)
+            .filter((model): model is DecisionModel => model !== undefined);
+        } else if (event?.type === 'error') error = text(event.message) || error;
+      });
+      const flushErr = lines(child.stderr, (line) => said.push(clean(line)));
+      let ended = false;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const end = (code: number | null, why?: string) => {
+        if (ended) return;
+        ended = true;
+        clearTimeout(timer);
+        flushOut();
+        flushErr();
+        if (found) {
+          this.models = found;
+          this.problem = undefined;
+        } else {
+          this.problem =
+            why ||
+            error ||
+            said.slice(-STDERR_LINES).join('\n') ||
+            `mu judge model list ended with code ${code ?? 'none'}`;
+        }
+        resolve();
+      };
+      timer = setTimeout(() => {
+        child.kill();
+        end(null, 'mu judge model list did not answer in time');
+      }, this.deps.statusTimeoutMs);
+      child.on('error', (failure) => end(null, failure.message));
+      child.on('close', (code) => end(code));
+    });
+  }
+
+  /**
+   * Runs a command unless one is running, which a request then only reads: add takes a link or owner/name, use,
+   * disable and remove a model's name. `localOnly` chooses between `--local-only` and `--with-fallback` for add and use. `cancel`
+   * ends a running add.
+   */
+  async run(request: ModelRequest): Promise<ModelsState> {
+    if (!this.available) throw new KyrnError('invalid', 'Decision models run on macOS only');
+    const { action } = request;
+    if (action === 'cancel') {
+      if (this.task?.phase === 'running' && this.task.command === 'add') {
+        this.task.phase = 'cancelled';
+        this.child?.kill();
+      }
+      return this.snapshot();
+    }
+    if (!MODEL_COMMANDS.includes(action)) throw new KyrnError('invalid', `Unknown model action: ${String(action)}`);
+    const target = request.target?.trim() ?? '';
+    // A link or a name, never an option the command would read as one.
+    if (!target || target.startsWith('-')) throw new KyrnError('invalid', 'Name the model: a link or owner/name');
+    if (this.task?.phase === 'running' || this.child) return this.snapshot();
+    const flags =
+      (action === 'add' || action === 'use') && request.localOnly !== undefined
+        ? [request.localOnly ? '--local-only' : '--with-fallback']
+        : [];
+    this.start(action, target, flags);
+    return this.snapshot();
+  }
+
+  private start(command: ModelCommand, target: string, flags: string[]): void {
+    const task: ModelTask = { id: ++this.next, command, target, phase: 'running', log: [] };
+    if (command !== 'add') task.name = target;
+    this.task = task;
+    const start = this.command([command, target, ...flags]);
+    let child: MudeProcess;
+    try {
+      child = this.deps.spawn(start.command, start.args, start.env);
+    } catch (error) {
+      task.phase = 'failed';
+      task.error = { message: error instanceof Error ? error.message : String(error) };
+      return;
+    }
+    this.child = child;
+    const said: string[] = [];
+    let finished = false;
+    const flushOut = lines(child.stdout, (line) => this.take(task, line));
+    const flushErr = lines(child.stderr, (line) => {
+      said.push(clean(line));
+      said.splice(0, Math.max(0, said.length - STDERR_LINES));
+    });
+    const finish = (code: number | null, failure?: string) => {
+      if (finished) return;
+      finished = true;
+      flushOut();
+      flushErr();
+      if (this.child === child) this.child = undefined;
+      if (task.phase !== 'cancelled') {
+        if (code === 0 && !failure) {
+          task.phase = 'done';
+          task.download = undefined;
+        } else {
+          task.phase = 'failed';
+          if (!task.error) {
+            const message = failure || said.join('\n') || `mu judge model ${command} ended with code ${code ?? 'none'}`;
+            task.error = { message, ...(code === 2 ? { kind: 'usage' as const } : {}) };
+          }
+        }
+      }
+      // What changed (a model added, the judge switched, one removed), or where a stop left a download.
+      void this.refresh();
+    };
+    child.on('error', (error) => finish(null, error.message));
+    child.on('close', (code) => finish(code));
+  }
+
+  /** One line of the command's output. */
+  private take(task: ModelTask, line: string): void {
+    const event = parse(line);
+    if (!event) {
+      task.log = [...task.log, clean(line)].slice(-LOG_LINES);
+      return;
+    }
+    if (event.type === 'model') {
+      task.name = text(event.name) || task.name;
+    } else if (event.type === 'step' && MODEL_STEPS.has(text(event.step))) {
+      task.step = text(event.step) as ModelStep;
+      task.message = clean(text(event.message));
+      if (task.step !== 'download') task.download = undefined;
+    } else if (event.type === 'progress') {
+      task.download = {
+        file: text(event.file),
+        done: count(event.done),
+        total: count(event.total),
+        checking: event.checking === true,
+      };
+    } else if (event.type === 'log') {
+      const said = clean(text(event.line));
+      if (said) task.log = [...task.log, said].slice(-LOG_LINES);
+    } else if (event.type === 'error') {
+      const kind = text(event.kind);
+      task.error = {
+        message: clean(text(event.message)) || `mu judge model ${task.command} failed`,
+        ...(MODEL_KINDS.has(kind) ? { kind: kind as ModelErrorKind } : {}),
+      };
+    }
+  }
+
+  dispose(): void {
+    this.child?.kill();
+    this.child = undefined;
   }
 }
