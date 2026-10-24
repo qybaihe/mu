@@ -345,10 +345,13 @@ const { browserAdvice, findBrowser, thisBrowserHost } = await import(
 const browserHost = thisBrowserHost();
 const chrome = findBrowser(browserHost);
 const [advice, ...moreAdvice] = chrome ? [] : browserAdvice(browserHost).split("\n");
+// Only mu's browser needs one: without it the rest of mu works, so it is not something to fix.
 row(
-	chrome ? "ok" : "fix",
+	chrome ? "ok" : "--",
 	"browser",
-	chrome ? `${chrome.executable}${chrome.side === "windows" ? "  (on the Windows side, reached over mirrored networking)" : ""}` : advice,
+	chrome
+		? `${chrome.executable}${chrome.side === "windows" ? "  (on the Windows side, reached over mirrored networking)" : ""}`
+		: `optional, for mu's browser. ${advice}`,
 );
 for (const line of moreAdvice) row("--", "", line);
 const canRelate = (tier) =>

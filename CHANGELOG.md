@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Fixed
+
+- **`mu doctor` no longer fails on a machine without Chrome.** A browser is only needed for mu's browser, so the row now says it's optional instead of asking you to fix it, and `mu doctor` (and `/doctor` inside mu) passes when everything else is set up. `mu --help` also fits in a 100-column terminal now.
+
 ## [0.2.5] - 2026-10-24
 
 **0.2.5 removes Laya from mu's built-in judges. If Laya was your judge, mu switches to mude 1.0 when it's set up on your Mac, otherwise to Jev, and says so once; opening a conversation never waits for a judge to start.** The desktop app carries mu-agent 0.2.5.

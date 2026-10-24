@@ -453,7 +453,12 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 					"decisions",
 					`default mode ${engine.getMode("*")}. Change it with /mu mode default <off|shadow|active>`,
 				],
-				[ok(Boolean(chrome)), "browser", chrome ?? browserAdvice(browserHost)],
+				// Only mu's browser needs one: without it the rest of mu works.
+				[
+					chrome ? "ok  " : "--  ",
+					"browser",
+					chrome ?? `optional, for mu's browser. ${browserAdvice(browserHost)}`,
+				],
 				[
 					"--  ",
 					"browse",
