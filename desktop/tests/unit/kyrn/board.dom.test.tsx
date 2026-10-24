@@ -11,6 +11,7 @@ import Board from '@/renderer/pages/conversation/KyrnPanel/Board';
 import {
   ACCOUNT_LIMIT,
   boardAccount,
+  boardLabels,
   boardState,
   boardStateKey,
   boardView,
@@ -780,6 +781,151 @@ describe('a v2 board in the panel', () => {
       'scout is back: found it',
       'docsThe README still says retries wait 1 s.',
     ]);
+  });
+});
+
+/** Board v2.1: helpers with labels, in the board's language, beside their exact names. */
+const AUDIT = 'audit timing in src/retry.ts';
+const REWRITE = 'rewrite retry.test.ts with fake timers';
+const labelled = (payload: Record<string, unknown> = {}) =>
+  spoken({
+    agents: [
+      { who: AUDIT, label: 'timing audit', role: 'scout', state: 'done', doing: 'found it', sinceMs: 240_000 },
+      { who: REWRITE, label: 'test rewrite', role: 'worker', state: 'stuck', doing: 'no output', sinceMs: 360_000 },
+      { who: 'docs', state: 'working', doing: 'updating the README', sinceMs: 70_000 },
+    ],
+    ...payload,
+  });
+
+describe('reading the labels of a v2.1 board', () => {
+  it('keeps a helper’s label beside its name, and a line’s only beside its helper', () => {
+    const read = toBoardUpdate(
+      labelled({
+        agents: [
+          { who: AUDIT, label: '  timing audit ', state: 'done', doing: 'found it' },
+          { who: REWRITE, label: 'x'.repeat(100), state: 'working', doing: 'running' },
+          { who: 'docs', label: '', state: 'working', doing: 'writing' },
+          { who: 'lint', label: 3, state: 'working', doing: 'linting' },
+        ],
+      })
+    );
+    expect(read?.agents).toEqual([
+      { who: AUDIT, label: 'timing audit', state: 'done', doing: 'found it' },
+      // A label is a few words: a long one is cut.
+      { who: REWRITE, label: `${'x'.repeat(40)}…`, state: 'working', doing: 'running' },
+      { who: 'docs', state: 'working', doing: 'writing' },
+      { who: 'lint', state: 'working', doing: 'linting' },
+    ]);
+    expect(toBoardNote(note({ who: AUDIT, label: ' timing audit ' }))).toMatchObject({
+      who: AUDIT,
+      label: 'timing audit',
+    });
+    expect(toBoardNote(note({ label: 'timing audit' }))).not.toHaveProperty('label');
+    // An old board and an old line: no labels at all.
+    expect(toBoardUpdate(spoken())?.agents?.some((agent) => 'label' in agent)).toBe(false);
+    expect(toBoardNote(note({ who: 'fixer' }))).not.toHaveProperty('label');
+  });
+
+  it('knows each helper’s label from the lines of the account and the latest board, the board winning', () => {
+    const account = boardAccount([
+      note({ who: AUDIT, label: 'old name' }),
+      note({ who: 'docs', label: 'readme' }),
+      note({ who: 'lint' }),
+    ]);
+    const labels = boardLabels(toBoardUpdate(labelled()), account);
+    expect([...labels]).toEqual([
+      [AUDIT, 'timing audit'],
+      ['docs', 'readme'],
+      [REWRITE, 'test rewrite'],
+    ]);
+    expect(boardLabels(undefined, [])).toEqual(new Map());
+  });
+});
+
+describe('a v2.1 board in the panel', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ now: T0, toFake: ['Date', 'setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('lists each helper by its label, with its exact name in the tooltip, and one without a label by its name', async () => {
+    showBoard([switched(true), labelled()]);
+    const names = screen.getAllByTestId('mu-board-agent-who');
+    expect(names.map((name) => name.textContent)).toEqual(['timing audit', 'test rewrite', 'docs']);
+    expect(names[0]).toHaveAttribute('data-who', AUDIT);
+    expect(names[0]).not.toHaveAttribute('title');
+    // Without a label: the name, its title as before.
+    expect(names[2]).toHaveAttribute('title', 'docs');
+    fireEvent.mouseEnter(names[1]);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(screen.getByRole('tooltip')).toHaveTextContent(`${REWRITE} (worker)`);
+  });
+
+  it('calls a helper by its label on the lines about it, the chip too, and words its fixed sentences with it', () => {
+    showBoard([
+      switched(true),
+      labelled(),
+      // The harness's own label on the line.
+      note({
+        who: AUDIT,
+        label: 'timing audit',
+        code: 'helper_done',
+        params: { name: AUDIT, summary: 'found it' },
+        text: 'timing audit is back: found it',
+      }),
+      // A line from before the label: the board's label for its helper.
+      note({ who: REWRITE, code: 'still_running', params: { who: REWRITE, what: 'npx vitest', minutes: 3 } }),
+      note({ who: REWRITE, label: 'test rewrite', by: 'model', text: 'Rewrote the test with fake timers.' }),
+      note({ who: 'docs', by: 'model', text: 'The README still says retries wait 1 s.' }),
+      note({ who: 'docs', by: 'model', text: 'docs: one more line.' }),
+    ]);
+    expect(texts()).toEqual([
+      // An old line without a label stays as it was, chip and all.
+      'docsdocs: one more line.',
+      'docsThe README still says retries wait 1 s.',
+      'test rewriteRewrote the test with fake timers.',
+      'test rewrite: npx vitest has run 3 min with no output',
+      'timing audit is back: found it',
+    ]);
+    const chips = screen.getAllByTestId('mu-board-note-who');
+    expect(chips.map((chip) => [chip.textContent, chip.getAttribute('data-who')])).toEqual([
+      ['docs', 'docs'],
+      ['docs', 'docs'],
+      ['test rewrite', REWRITE],
+    ]);
+  });
+
+  it('hides the chip where the line as shown starts from the label', () => {
+    showBoard([
+      switched(true),
+      labelled(),
+      note({ who: REWRITE, label: 'test rewrite', by: 'model', text: 'test rewrite switched to fake timers.' }),
+    ]);
+    expect(screen.queryByTestId('mu-board-note-who')).toBeNull();
+  });
+
+  it('words a rules headline about a stuck helper with its label', () => {
+    showBoard([
+      switched(true),
+      labelled({
+        headline: `${REWRITE}: npx vitest has run 6 min with no output`,
+        headlineCode: 'still_running',
+        headlineParams: { who: REWRITE, what: 'npx vitest', minutes: 6 },
+        blocked: `${REWRITE}: npx vitest has run 6 min with no output`,
+        blockedCode: 'still_running',
+        blockedParams: { who: REWRITE, what: 'npx vitest', minutes: 6 },
+      }),
+    ]);
+    expect(screen.getByTestId('mu-board-headline')).toHaveTextContent(
+      'test rewrite: npx vitest has run 6 min with no output'
+    );
+    expect(screen.getByTestId('mu-board-blocked')).toHaveTextContent(
+      'Blockedtest rewrite: npx vitest has run 6 min with no output'
+    );
   });
 });
 

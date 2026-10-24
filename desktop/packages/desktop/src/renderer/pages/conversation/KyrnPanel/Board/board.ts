@@ -12,6 +12,10 @@ import { record, str } from '../activity';
  * what comes `next`, who is doing what (`agents`, built by the harness's rules from the live helper runs), when the
  * board was made (`updatedAt`), the stage `blocked`, and `who` on a line of the account. A board without them is shown
  * exactly as before.
+ *
+ * Board v2.1 adds `label`, on a helper of `agents` and beside `who` on a line of the account: what the board calls that
+ * helper, a short name in the board's language that the harness's writer gave it. `who` stays the helper's exact name
+ * and identifies it everywhere (the params of the fixed sentences carry the name too); the app shows `label ?? who`.
  */
 
 export const BOARD_PHASES = [
@@ -58,6 +62,8 @@ export type BoardNote = {
   restored: boolean;
   /** The helper the line is about (its name as the agent gave it); absent for the main agent. */
   who?: string;
+  /** What the board calls that helper, in the board's language (v2.1); only with `who`, once the harness has one. */
+  label?: string;
 };
 
 export const AGENT_STATES = ['working', 'waiting', 'done', 'failed', 'stuck'] as const;
@@ -67,6 +73,8 @@ export type AgentState = (typeof AGENT_STATES)[number];
 export type BoardAgent = {
   /** Its name, exactly as the helper run names it. */
   who: string;
+  /** What the board calls it: a short name in the board's language (v2.1), once the harness's writer gave one. */
+  label?: string;
   role?: string;
   /** Absent for a state this build does not know. */
   state?: AgentState;
@@ -139,6 +147,8 @@ const CONFIRM_LIMIT = 8;
 const AGENT_LIMIT = 16;
 /** A name is short: a longer one is cut. */
 const NAME_LIMIT = 80;
+/** A label is shorter still: the harness keeps it to a few words. */
+const LABEL_LIMIT = 40;
 /** How many lines the account keeps: the oldest go first. */
 export const ACCOUNT_LIMIT = 200;
 /** The latest time a Date can hold. */
@@ -152,9 +162,9 @@ const CODE = /^[a-z][a-z_]{0,47}$/;
 const PARAM = /^[A-Za-z][A-Za-z0-9_]{0,31}$/;
 const count = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
-const shortName = (value: unknown) => {
+const shortName = (value: unknown, limit = NAME_LIMIT) => {
   const text = str(value).trim();
-  return text.length > NAME_LIMIT ? `${text.slice(0, NAME_LIMIT)}…` : text;
+  return text.length > limit ? `${text.slice(0, limit)}…` : text;
 };
 /** A time in ms since the epoch that a Date can hold. */
 const instant = (value: unknown): number | undefined =>
@@ -175,11 +185,13 @@ function boardAgents(value: unknown): BoardAgent[] | undefined {
     const row = record(item);
     const who = shortName(row.who);
     if (!who) continue;
+    const label = shortName(row.label, LABEL_LIMIT);
     const role = shortName(row.role);
     const state = AGENT_STATES.find((known) => known === row.state);
     const since = row.sinceMs;
     agents.push({
       who,
+      ...(label ? { label } : {}),
       ...(role ? { role } : {}),
       ...(state ? { state } : {}),
       doing: line(row.doing),
@@ -264,6 +276,7 @@ function toNote(value: unknown, restored: boolean): BoardNote | undefined {
   const code = by === 'rules' && CODE.test(str(payload.code)) ? str(payload.code) : undefined;
   const params = noteParams(payload.params);
   const who = shortName(payload.who);
+  const label = who ? shortName(payload.label, LABEL_LIMIT) : '';
   return {
     id: `${at}:${sequence}`,
     sequence,
@@ -276,6 +289,7 @@ function toNote(value: unknown, restored: boolean): BoardNote | undefined {
     failed: payload.failed === true,
     restored,
     ...(who ? { who } : {}),
+    ...(label ? { label } : {}),
   };
 }
 
@@ -289,6 +303,20 @@ function boardLog(payload: Record<string, unknown>, restored: boolean): BoardNot
     .slice(-ACCOUNT_LIMIT)
     .map((item) => toNote(item, restored))
     .filter((note): note is BoardNote => note !== undefined);
+}
+
+/**
+ * What the board calls each helper, by its exact name (v2.1): the labels on the lines of the account, then those of the
+ * latest board's helpers, which win. A line from before its helper had a label is shown with the label too.
+ */
+export function boardLabels(
+  update: BoardUpdate | undefined,
+  account: readonly BoardNote[]
+): ReadonlyMap<string, string> {
+  const labels = new Map<string, string>();
+  for (const note of account) if (note.who && note.label) labels.set(note.who, note.label);
+  for (const agent of update?.agents ?? []) if (agent.label) labels.set(agent.who, agent.label);
+  return labels;
 }
 
 /** What the board says now: the last switch and the last board, in the order the session sent them. */

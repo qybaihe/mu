@@ -17,6 +17,7 @@ import {
   NOTE_NUMBERS,
   NOTE_SENTENCES,
   noteWords,
+  withLabels,
 } from '@/renderer/pages/conversation/KyrnPanel/Board/noteWords';
 import { boardWords, codedLine } from '@/renderer/pages/conversation/KyrnPanel/Board/wording';
 
@@ -346,6 +347,82 @@ describe('board v2’s fixed sentences', () => {
     expect(screen.getByTestId('mu-board-blocked')).toHaveTextContent('卡住了在等你允许：npm publish');
     expect(screen.getByTestId('mu-board-next')).toHaveTextContent('接下来It said it will publish once you allow it.');
     expect(screen.getByTestId('mu-board-state')).toHaveTextContent('在等别的');
+  });
+
+  it('calls a helper by its label in the sentences that name it, and leaves every other name as it is', () => {
+    const audit = 'audit timing in src/retry.ts';
+    const rewrite = 'rewrite retry.test.ts with fake timers';
+    const labels = new Map([
+      [audit, '查计时'],
+      [rewrite, '改测试'],
+    ]);
+    const labelOf = (who: string) => labels.get(who);
+    const t = i18n.t;
+    const has = (key: string) => i18n.exists(key);
+    // The line's own label, then the board's.
+    const back = { ...ruleLine('helper_done', { name: audit, summary: 'found it' }, audit), label: '查计时' };
+    expect(noteWords(back, t, has)).toBe('查计时 回来了：found it');
+    expect(noteWords(ruleLine('helper_done', { name: audit, summary: 'found it' }, audit), t, has, labelOf)).toBe(
+      '查计时 回来了：found it'
+    );
+    expect(
+      noteWords(ruleLine('still_running', { who: rewrite, what: 'npx vitest', minutes: 6 }, rewrite), t, has, labelOf)
+    ).toBe('改测试 跑 npx vitest 6 分钟没动静');
+    expect(noteWords(ruleLine('helper_failed', { name: rewrite, reason: 'timed_out' }, rewrite), t, has, labelOf)).toBe(
+      '改测试 超时了'
+    );
+    // A name that is not the line's helper keeps its own words; so does a line without a label anywhere.
+    expect(noteWords(ruleLine('helper_done', { name: audit, summary: 'x' }, 'docs'), t, has, labelOf)).toBe(
+      `${audit} 回来了：x`
+    );
+    expect(noteWords(ruleLine('helper_done', { name: 'scout', summary: 'x' }, 'scout'), t, has, labelOf)).toBe(
+      'scout 回来了：x'
+    );
+    // A rules headline names its helper by `who`: the label the board has for it.
+    expect(
+      codedLine({ code: 'still_running', params: { who: rewrite, what: 'npx vitest', minutes: 6 } }, t, has, labelOf)
+    ).toBe('改测试 跑 npx vitest 6 分钟没动静');
+    expect(withLabels({ who: rewrite, what: rewrite, minutes: 6 }, labelOf)).toEqual({
+      who: '改测试',
+      what: rewrite,
+      minutes: 6,
+    });
+    const params = { what: 'npm test' };
+    expect(withLabels(params, labelOf)).toBe(params);
+    expect(withLabels(undefined, labelOf)).toBeUndefined();
+  });
+
+  it('words a rules headline about a helper with the label the board’s helpers give it', () => {
+    const rewrite = 'rewrite retry.test.ts with fake timers';
+    const read = toBoardUpdate(
+      event('board.update', {
+        progress: '',
+        now: 'n',
+        confirm: [],
+        phase: 'blocked',
+        needsUser: false,
+        done: 0,
+        total: 0,
+        by: 'model',
+        ended: false,
+        headline: `${rewrite} 跑 npx vitest 6 分钟没动静`,
+        headlineCode: 'still_running',
+        headlineParams: { who: rewrite, what: 'npx vitest', minutes: 6 },
+        agents: [{ who: rewrite, label: '改测试', state: 'stuck', doing: '没输出' }],
+      })
+    );
+    const words = boardWords(
+      read as NonNullable<typeof read>,
+      i18n.t,
+      (key) => i18n.exists(key),
+      (value) => String(value)
+    );
+    expect(words.headline).toBe('改测试 跑 npx vitest 6 分钟没动静');
+    // Without a label for it: the name.
+    const bare = { ...(read as NonNullable<typeof read>), agents: [] };
+    expect(boardWords(bare, i18n.t, (key) => i18n.exists(key), String).headline).toBe(
+      `${rewrite} 跑 npx vitest 6 分钟没动静`
+    );
   });
 
   it('words each headline code, and keeps the harness’s sentence for one it does not know', () => {

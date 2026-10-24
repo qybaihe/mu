@@ -1,4 +1,5 @@
 import React from 'react';
+import { Tooltip } from '@arco-design/web-react';
 import { Check, Close } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
 import { formatElapsed, useNow } from '../clock';
@@ -55,9 +56,33 @@ function Elapsed({ since, from, live }: { since: number; from?: number; live: bo
 }
 
 /**
+ * A helper's name in its row: what the board calls it (its label, board v2.1), else its exact name. With a label, the
+ * exact name (and role) is in its tooltip; without one, in its title, as before.
+ */
+function Who({ agent }: { agent: BoardAgent }) {
+  const full = agent.role ? `${agent.who} (${agent.role})` : agent.who;
+  const shown = agent.label ?? agent.who;
+  if (shown === agent.who) {
+    return (
+      <span className={styles.agentWho} title={full} data-testid='mu-board-agent-who'>
+        {agent.who}
+      </span>
+    );
+  }
+  return (
+    <Tooltip content={full}>
+      <span className={styles.agentWho} data-testid='mu-board-agent-who' data-who={agent.who} dir='auto'>
+        {shown}
+      </span>
+    </Tooltip>
+  );
+}
+
+/**
  * Who is doing what: one row per helper the main agent sent out, as the harness's rules saw them when the board was
- * made (so no name is ever made up): its state, its name, what it is doing, and for one still at it, how long. `live`:
- * the board is the current one of a running session, so the times count up from `updatedAt`.
+ * made (so no name is ever made up): its state, its name (its label when the board has one), what it is doing, and for
+ * one still at it, how long. `live`: the board is the current one of a running session, so the times count up from
+ * `updatedAt`.
  */
 export default function Agents({
   agents,
@@ -85,9 +110,7 @@ export default function Agents({
               data-state={state ?? 'unknown'}
             >
               <Mark state={state} />
-              <span className={styles.agentWho} title={agent.role ? `${agent.who} (${agent.role})` : agent.who}>
-                {agent.who}
-              </span>
+              <Who agent={agent} />
               <span className={styles.agentDoing} dir='auto'>
                 {state ? (
                   <span

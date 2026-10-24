@@ -12,6 +12,7 @@ import Agents from './Agents';
 import {
   asksUser,
   boardAccount,
+  boardLabels,
   boardState,
   boardStateKey,
   boardView,
@@ -80,15 +81,19 @@ export default function Board({ events, conversationId }: { events: Activity[]; 
   const { t, i18n } = useTranslation();
   const view = useMemo(() => boardView(events), [events]);
   const account = useMemo(() => boardAccount(events), [events]);
+  // What the board calls each helper (its label), wherever a line or a board names it.
+  const labels = useMemo(() => boardLabels(view.update, account), [view.update, account]);
   // A fixed board or line is rebuilt in the reader's language; what a model wrote is shown as it wrote it.
-  const { say, sayNote } = useMemo(() => {
+  const { say, sayNote, labelOf } = useMemo(() => {
     const has = (key: string) => i18n.exists(key);
     const number = (value: number) => formatNumber(value, i18n.language);
+    const label = (who: string) => labels.get(who);
     return {
-      say: (update: BoardUpdate) => boardWords(update, t, has, number),
-      sayNote: (note: BoardNote) => noteWords(note, t, has),
+      say: (update: BoardUpdate) => boardWords(update, t, has, number, labels),
+      sayNote: (note: BoardNote) => noteWords(note, t, has, label),
+      labelOf: label,
     };
-  }, [i18n, t]);
+  }, [i18n, t, labels]);
   const words = useMemo(() => (view.update ? say(view.update) : undefined), [say, view.update]);
   const [pending, setPending] = useState<Pending>();
   const on = view.on ?? false;
@@ -165,7 +170,12 @@ export default function Board({ events, conversationId }: { events: Activity[]; 
         </p>
       )}
       {on && account.length ? (
-        <Account notes={account} isFresh={(note) => latest.fresh.get(note.id) === true} words={sayNote} />
+        <Account
+          notes={account}
+          isFresh={(note) => latest.fresh.get(note.id) === true}
+          words={sayNote}
+          labelOf={labelOf}
+        />
       ) : null}
       {/* In place from the start, so what changes in it is announced; only news goes in. */}
       <div className={styles.announce} aria-live='polite' aria-atomic='true' data-testid='mu-board-announce'>
