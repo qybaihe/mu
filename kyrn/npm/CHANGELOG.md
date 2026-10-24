@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- The `openai` provider's default model is `gpt-6.1-sol` (was `gpt-5.5`), as `openai-codex` and `github-copilot` already were; `mu setup` names it for an OpenAI key.
+
 ## [0.2.6] - 2026-10-24
 
 **0.2.6 shows the note that Laya was replaced when a person sends a message, keeps mude 1.0 local only when it's installed again, and stops `mu doctor` failing on a machine without Chrome.**

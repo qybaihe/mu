@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Changed
+
+- **OpenAI's newest model is the default.** With an OpenAI API key or Sign in with ChatGPT and no model picked yet, mu now starts on GPT-6.1 Sol instead of GPT-5.5, and `mu setup` offers it for an OpenAI key.
+
 ## [0.2.6] - 2026-10-24
 
 **0.2.6 shows the note that Laya was replaced when you send your first message, keeps mude 1.0 local only when it's installed again, stops `mu doctor` failing on a machine without Chrome, and tidies the sidebar, file links and model chip in the desktop app.** The desktop app carries mu-agent 0.2.6.

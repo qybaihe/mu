@@ -532,7 +532,7 @@ class FakePi implements PiAccess {
 		"zai-coding-cn": { baseUrl: "https://open.bigmodel.cn/api/coding/paas/v4", models: ["glm-5.3"] },
 		openrouter: { baseUrl: "https://openrouter.ai/api/v1", models: ["moonshotai/kimi-k2.6"] },
 		opencode: { baseUrl: "https://opencode.ai/zen/v1", models: ["kimi-k2.6", "claude-opus-4-8"] },
-		openai: { baseUrl: "https://api.openai.com/v1", models: ["gpt-5.5"] },
+		openai: { baseUrl: "https://api.openai.com/v1", models: ["gpt-6.1-sol"] },
 		anthropic: { baseUrl: "https://api.anthropic.com", models: ["claude-opus-4-8"] },
 		google: { baseUrl: "https://generativelanguage.googleapis.com/v1beta", models: ["gemini-3.1-pro-preview"] },
 		xai: { baseUrl: "https://api.x.ai/v1", models: ["grok-4.7"] },
