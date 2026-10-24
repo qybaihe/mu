@@ -27,16 +27,38 @@ import type { FileSelectionItem } from '@/renderer/utils/file/fileSelection';
 export type ModelInForce = {
   model?: string;
   level?: string;
-  /** host: pi said it (a host runs); file: the session file says it; reply: the model of the last reply. */
-  source: 'host' | 'file' | 'reply' | 'none';
+  /**
+   * host: pi said it (a host runs); file: the session file says it; reply: the model of the last reply; setup: the
+   * home page's first message is setting it while mu starts.
+   */
+  source: 'host' | 'file' | 'reply' | 'setup' | 'none';
 };
 
 /**
- * The model and thinking level in force. A running host's own report comes first (it may say there is no model);
- * without one, what the session file said when the conversation was opened; without that, the model of the last
- * reply (pi resumes a session with it). Without any (an imported conversation not yet answered in mu), mu's default.
+ * The model and thinking level in force. What the home page's first message is setting while mu starts comes first
+ * (`settingUp`: pi's report as it starts names the model the set-up is about to change); then a running host's own
+ * report (it may say there is no model); without one, what the session file said when the conversation was opened;
+ * without that, the model of the last reply (pi resumes a session with it). Without any (an imported conversation not
+ * yet answered in mu), mu's default.
  */
-export function modelInForce(view: NativeView, settings?: SessionSettings): ModelInForce {
+export function modelInForce(
+  view: NativeView,
+  settings?: SessionSettings,
+  settingUp?: Pick<SessionSettings, 'model' | 'thinkingLevel'>
+): ModelInForce {
+  const found = reportedModel(view, settings);
+  if (!settingUp?.model && !settingUp?.thinkingLevel) return found;
+  const model = settingUp.model ?? found.model;
+  const level = settingUp.thinkingLevel ?? found.level;
+  return {
+    ...(model ? { model } : {}),
+    ...(level ? { level } : {}),
+    source: settingUp.model ? 'setup' : found.source,
+  };
+}
+
+/** The model and level pi, the session file or the last reply say. */
+function reportedModel(view: NativeView, settings?: SessionSettings): ModelInForce {
   const session = view.host.session;
   if (session) return { model: session.model, level: session.thinkingLevel, source: 'host' };
   if (settings?.model || settings?.thinkingLevel)

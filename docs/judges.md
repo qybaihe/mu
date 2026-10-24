@@ -47,7 +47,7 @@ One decision model runs at a time: switching stops the other one's server. In th
 
 ### Laya
 
-Earlier versions of mu included Laya, a third-party local judge. mu no longer does. A `mu.json` that still names `laya` (in `tiers` or a route), or a judge of type `local`, is read without it: mude 1.0 takes its place when it's set up on this Mac, and otherwise the judges that remain answer, or Jev when none remain. mu updates `mu.json` once, at the start of the next session in the terminal or the app, keeps a copy of the old file in `~/.mu/backups`, and tells you. If `MU_JUDGE` names `laya`, mu skips it. For another decision model, use mude 1.0 or add one from Hugging Face as above.
+Earlier versions of mu included Laya, a third-party local judge. mu no longer does. A `mu.json` that still names `laya` (in `tiers` or a route), or a judge of type `local`, is read without it: mude 1.0 takes its place when it's set up on this Mac, and otherwise the judges that remain answer, or Jev when none remain. mu updates `mu.json` once, at the start of the next session in the terminal or the app, and keeps a copy of the old file in `~/.mu/backups`. It tells you which judge took over when you send your next message. If `MU_JUDGE` names `laya`, mu skips it. For another decision model, use mude 1.0 or add one from Hugging Face as above.
 
 ## Hosted Jev
 

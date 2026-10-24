@@ -132,14 +132,14 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
   const isMobile = useLayoutContext()?.isMobile ?? false;
   const { id, view, host, outgoing, closed, commandFailure, settings, request, send, abort, respond, expire } =
     conversation;
-  const { clearFailure, waiting, returned, takeBackWaiting } = conversation;
+  const { clearFailure, waiting, returned, takeBackWaiting, settingUp } = conversation;
   const cwd = conversation.conversation?.cwd;
   const [draft, setDraft] = useState('');
   // The project's files the person mentioned with `@` (the send box keeps them in step with the text).
   const [mentioned, setMentioned] = useState<FileSelectionItem[]>([]);
   const files = useNativeAttachments();
   const picker = useRef<HTMLInputElement>(null);
-  const models = useNativeModels(view, settings, request);
+  const models = useNativeModels(view, settings, request, settingUp);
   const permissions = useMemo(() => permissionState(view, settings), [settings, view]);
   const commands = useNativeCommands(host, draft, request);
   const working = isWorking(view);

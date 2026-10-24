@@ -1064,4 +1064,77 @@ describe('the sidebar’s native group', () => {
     setIs('mu.native.archived');
     success.mockRestore();
   });
+
+  it('shows a project’s "+" and menu under the pointer or the keyboard’s focus, and while its menu is open', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'a', cwd: '/work/alpha', updatedAt: 1, sessionFile: '/s/a.jsonl' });
+    sider(host.client);
+    await waitFor(() => expect(projectFolders()).toEqual(['/work/alpha']));
+    const project = within(projectOf('/work/alpha')!);
+    const buttons = () => [project.getByTestId('native-project-new'), project.getByTestId('native-project-menu')];
+    // Not for any focus inside the row: a click leaves its button focused, and they would stay after the pointer left.
+    for (const button of buttons()) {
+      expect(button).toHaveClass(
+        'hidden',
+        'group-hover:flex',
+        'group-focus-visible:flex',
+        'group-has-[:focus-visible]:flex'
+      );
+      expect(button).not.toHaveClass('group-focus-within:flex');
+    }
+    await act(async () => {
+      fireEvent.click(project.getByTestId('native-project-menu'));
+    });
+    await waitFor(() => expect(screen.getByTestId('native-project-archive')).toBeVisible());
+    expect(project.getByTestId('native-project-menu')).toHaveAttribute('aria-expanded', 'true');
+    // The pointer goes into the menu: both stay where they are.
+    for (const button of buttons()) {
+      expect(button).toHaveClass('flex');
+      expect(button).not.toHaveClass('hidden');
+    }
+    await act(async () => {
+      fireEvent.click(project.getByTestId('native-project-menu'));
+    });
+    expect(project.getByTestId('native-project-menu')).toHaveAttribute('aria-expanded', 'false');
+    for (const button of buttons()) expect(button).toHaveClass('hidden');
+  });
+
+  it('gives a row’s title the room before its folder: the folder gives way first, down to a few letters', async () => {
+    pinsAre(['b']);
+    const host = createFakeHost();
+    host.add({ id: 'b', cwd: '/work/release-notes-drafts', title: 'Draft the release notes', updatedAt: 2 });
+    host.add({ id: 'c', cwd: '/work/notes', updatedAt: 1 });
+    sider(host.client);
+    await waitFor(() => expect(shownIds()).toEqual(['b', 'c']));
+    const folder = within(items()[0]).getByTestId('native-sidebar-folder');
+    expect(folder).toHaveTextContent('release-notes-drafts');
+    // The title grows and shrinks from its own width; the folder shrinks a hundred times as fast, down to 3em (or all
+    // of a shorter name).
+    expect(folder.previousElementSibling).toHaveClass('flex-auto', 'min-w-0', 'truncate');
+    expect(folder).toHaveClass('shrink-[100]', 'min-w-[calc-size(max-content,min(size,3em))]', 'max-w-40%', 'truncate');
+    expect(folder).not.toHaveClass('shrink-0');
+    pinsAre();
+  });
+
+  it('keeps a project the person added when its only conversation is pinned; one its conversations made goes', async () => {
+    pinsAre();
+    const host = createFakeHost();
+    host.add({ id: 'a', cwd: '/work/alpha', updatedAt: 1, sessionFile: '/s/a.jsonl' });
+    host.add({ id: 'b', cwd: '/work/beta', updatedAt: 2, sessionFile: '/s/b.jsonl' });
+    sider(host.client);
+    await waitFor(() => expect(projectFolders()).toEqual(['/work/beta', '/work/alpha']));
+    host.pick('/work/alpha');
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('native-add-project-row'));
+    });
+    expect(stored('mu.native.projects')).toEqual([{ folder: '/work/alpha', addedAt: expect.any(Number) }]);
+    pinsAre(['a', 'b']);
+    // Both rows are above the projects; the added project stays, empty, with its "+" and menu.
+    expect(shownIds()).toEqual(['b', 'a']);
+    expect(projectFolders()).toEqual(['/work/alpha']);
+    expect(rowsOf('/work/alpha')).toEqual([]);
+    expect(within(projectOf('/work/alpha')!).getByTestId('native-project-new')).toBeInTheDocument();
+    pinsAre();
+    expect(projectFolders()).toEqual(['/work/alpha', '/work/beta']);
+  });
 });

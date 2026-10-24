@@ -8,9 +8,17 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 - **OpenAI's decision model can be the judge.** `gpt-6-luna` answers mu's decisions through OpenAI's Decisions API. Pick it with `mu setup --judge openai`, with `/mu judge openai` in a session, or as OpenAI on the Judges page in Settings, which has a field for its key. It uses its own key, `MU_JUDGE_OPENAI_KEY`, or else the OpenAI API key you already set up for mu's models (Sign in with ChatGPT doesn't work for it). To reach it through a relay or proxy that serves the same Decisions endpoint, give the judge a `baseUrl` and a key of its own in `~/.mu/agent/mu.json`: the key of mu's OpenAI models only ever goes to api.openai.com. OpenAI charges $0.10 per million uncached input tokens and nothing for output. It isn't measured on mu's questions yet.
 
+## [0.2.6] - 2026-10-24
+
+**0.2.6 shows the note that Laya was replaced when you send your first message, keeps mude 1.0 local only when it's installed again, stops `mu doctor` failing on a machine without Chrome, and tidies the sidebar, file links and model chip in the desktop app.** The desktop app carries mu-agent 0.2.6.
+
 ### Fixed
 
+- **You now see the note that Laya was replaced.** If your settings still named Laya, 0.2.5 was meant to tell you once which judge took its place. In the desktop app, the check the app runs on mu at every start got that note instead of you, before any conversation opened. mu still updates `mu.json` when a session starts, and now keeps the note until you send your first message, in the app or the terminal. If 0.2.5 already updated your `mu.json`, you won't see the note: your judge is mude 1.0 if it's set up on your Mac, otherwise the other judges in your list or Jev, and the old file is in `~/.mu/backups`.
+- **Installing mude 1.0 again keeps it local only.** Running `mu judge mude install` over a working local-only setup, or `mu judge model add` with mude's own repo, used to put Jev back behind it. It now keeps what you chose, as `mu judge mude enable` does; `--with-fallback` still changes it.
 - **`mu doctor` no longer fails on a machine without Chrome.** A browser is only needed for mu's browser, so the row now says it's optional instead of asking you to fix it, and `mu doctor` (and `/doctor` inside mu) passes when everything else is set up. `mu --help` also fits in a 100-column terminal now.
+- **Small visual fixes in the desktop app.** In the sidebar, a long project name now ends in an ellipsis before the project's **+** and menu buttons instead of running under them, and the buttons hide again when the pointer leaves after a click. A pinned conversation's title gets room before its folder name. In a reply, the folder icon after a file name no longer leaves a gap in the sentence while it's hidden, and a file name that doesn't exist is gray but easy to read. Right after you send from the home page, the model chip names the same model the home page showed instead of "Default model" while mu starts.
+- **A mistyped Hugging Face model name no longer says the model is private.** When you add a decision model under Settings → Judges or with `mu judge model add`, Hugging Face answers a name that doesn't exist the same way as a private or gated model, so mu now asks you to check the name and says it may not exist, or may be private or gated.
 
 ## [0.2.5] - 2026-10-24
 

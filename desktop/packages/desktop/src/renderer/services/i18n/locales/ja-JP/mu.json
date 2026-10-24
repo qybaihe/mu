@@ -270,7 +270,7 @@
       },
       "error": {
         "usage": "Hugging Face のモデルのリンクでも owner/name でもありません。",
-        "access": "Hugging Face がこのモデルを提供していません。非公開か、アクセス申請が必要です。",
+        "access": "Hugging Face でこのモデルを開けませんでした。名前を確認してください。存在しないか、非公開か、アクセス申請が必要な可能性があります。",
         "notFound": "Hugging Face にそのモデルはありません。",
         "notRunnable": "mu はこのモデルを実行できません。mude 1.0 と同じ形式のモデルに付属するサーバー d3_server_mac.py がありません。",
         "network": "Hugging Face に接続できませんでした。接続を確認してもう一度お試しください。ダウンロード済みの部分は残ります。",

@@ -168,31 +168,46 @@ export const createInitStyle = (
     outline-offset: 2px;
     border-radius: 4px;
   }
+  /* The folder icon after a link takes no room in the line: out of the flow, it sits where it would have been (no
+     offsets: its static position), over the start of the words after the link, which do not move when it shows. It
+     shows while the link is under the pointer or has the keyboard's focus (not a focus a click left behind, which would
+     keep it over those words), as a small button on the page's background, so it does not mix with them, and takes no
+     clicks while it is hidden. It starts right at the link's end: no gap the pointer
+     could fall into on its way to it. The reference is its containing block, so it scrolls with the reply. */
+  .markdown-shadow-body .markdown-file-ref {
+    position: relative;
+  }
   .markdown-shadow-body .markdown-file-ref-reveal {
+    position: absolute;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 20px;
     min-width: 20px;
     height: 20px;
-    margin-inline-start: 2px;
+    margin-top: 2px;
     border-radius: 4px;
-    vertical-align: middle;
+    background: var(--bg-1);
+    box-shadow: 0 0 0 1px var(--bg-3);
     color: var(--text-secondary);
     opacity: 0;
+    pointer-events: none;
     transition: opacity 0.15s ease;
   }
   .markdown-shadow-body .markdown-file-ref:hover .markdown-file-ref-reveal,
-  .markdown-shadow-body .markdown-file-ref:focus-within .markdown-file-ref-reveal {
+  .markdown-shadow-body .markdown-file-ref:has(:focus-visible) .markdown-file-ref-reveal {
     opacity: 1;
+    pointer-events: auto;
   }
   .markdown-shadow-body .markdown-file-ref-reveal:hover {
     background: var(--bg-3);
     color: var(--text-primary);
   }
+  /* A name that points at no file: quieter than the words around it, and still easy to read (the tertiary text colour
+     is above 4.5:1 on inline code's background in both themes; the disabled grey was 1.5:1). */
   .markdown-shadow-body .markdown-file-ref[aria-disabled='true'] code,
   .markdown-shadow-body .markdown-file-ref[aria-disabled='true'] .markdown-file-ref-label {
-    color: var(--text-disabled);
+    color: var(--bg-6);
     cursor: help;
   }
   h1{

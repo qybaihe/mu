@@ -270,7 +270,7 @@
       },
       "error": {
         "usage": "這不是 Hugging Face 模型的連結，也不是它的 owner/name。",
-        "access": "Hugging Face 不提供這個模型：它是私人的，或需要申請存取。",
+        "access": "無法在 Hugging Face 上開啟這個模型。請檢查名稱：它可能不存在，也可能是私人的或需要申請存取。",
         "notFound": "Hugging Face 上沒有這個模型。",
         "notRunnable": "mu 無法執行這個模型：它沒有 d3_server_mac.py，也就是以 mude 1.0 方式打包的模型自帶的伺服器。",
         "network": "無法連線到 Hugging Face。請檢查網路後重試，已下載的部分會保留。",

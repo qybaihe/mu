@@ -304,6 +304,7 @@
     "download": "Download this version",
     "full_agent": "Full mu-agent changelog",
     "headlines": {
+      "v0.2.6": "the note that Laya was replaced now reaches you; mude 1.0 stays local only; mu doctor passes without Chrome; sidebar and file-link fixes",
       "v0.2.5": "Laya is no longer built in, so mu switches to mude 1.0 or Jev on its own; opening a conversation no longer waits for the judge",
       "v0.2.4": "click a file named in a reply to open it; conversations grouped by project and opening instantly; Gemini 4 Argon; OpenAI-compatible relays fixed",
       "v0.2.3": "decision models from Hugging Face next to mude 1.0; mu decides when a mid-run message lands; ChatGPT sign-in copes with a busy port",
