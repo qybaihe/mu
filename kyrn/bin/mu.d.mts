@@ -58,6 +58,19 @@ export function wantsMude(input: {
 	platform: Platform;
 	readFile(path: string): string;
 }): boolean;
+interface LocalModelInput {
+	env: Env;
+	agentDir: string;
+	/** mu's home: the added models' records are under local-judge/models. */
+	muDir: string;
+	platform: Platform;
+	readFile(path: string): string;
+	exists(path: string): boolean;
+}
+/** The decision model added with `mu judge model add` that the configuration asks for, when mude isn't the one. */
+export function wantedModel(input: LocalModelInput): string | undefined;
+/** The arguments that start the server of the decision model the configuration asks for, mude's or an added one's. */
+export function localModelStart(input: LocalModelInput): string[] | undefined;
 /** How to run `mu judge mude start --no-wait` in the background before a session (macOS only). */
 export interface MudeStart {
 	command: string;

@@ -128,6 +128,20 @@ describe("looking a model up on Hugging Face", () => {
 	});
 
 	it("refuses a repository mu can't run, and says why Hugging Face won't show one", async () => {
+		// Each refusal has a kind the desktop app says in its own words.
+		await expect(
+			resolveModel({ repo: "owner/llm" }, { fetch: fakeHub("owner/llm", [weights]).fetcher }),
+		).rejects.toMatchObject({
+			kind: "notRunnable",
+		});
+		await expect(
+			resolveModel({ repo: "owner/x" }, { fetch: fakeHub("owner/x", [], { status: 403 }).fetcher }),
+		).rejects.toMatchObject({ kind: "access" });
+		const offline = (async () => {
+			throw new TypeError("fetch failed");
+		}) as unknown as typeof fetch;
+		await expect(resolveModel({ repo: "owner/x" }, { fetch: offline })).rejects.toMatchObject({ kind: "network" });
+		expect(() => parseModelRef("model")).toThrow(expect.objectContaining({ kind: "usage" }));
 		const plain = fakeHub("owner/llm", [weights]);
 		await expect(resolveModel({ repo: "owner/llm" }, { fetch: plain.fetcher })).rejects.toThrow(
 			"has no d3_server_mac.py",

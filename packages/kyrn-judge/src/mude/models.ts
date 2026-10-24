@@ -16,6 +16,20 @@ import { mudeBaseUrl } from "./server.ts";
  * log, and its state, as mude keeps them under local-judge/mude.
  */
 
+/**
+ * Why a model can't be added: usage (not a Hugging Face model's link or name), access (private or gated), notFound (no
+ * such model or revision), notRunnable (not packaged so mu can run it), network (Hugging Face could not be asked).
+ */
+export class ModelError extends Error {
+	readonly kind: "usage" | "access" | "notFound" | "notRunnable" | "network";
+
+	constructor(message: string, kind: ModelError["kind"]) {
+		super(message);
+		this.name = "ModelError";
+		this.kind = kind;
+	}
+}
+
 export interface ModelRef {
 	/** owner/name */
 	readonly repo: string;
@@ -48,16 +62,22 @@ export function parseModelRef(input: string): ModelRef {
 		try {
 			url = new URL(/^https?:\/\//i.test(text) ? text : `https://${text}`);
 		} catch {
-			throw new Error(`${text} isn't a Hugging Face link`);
+			throw new ModelError(`${text} isn't a Hugging Face link`, "usage");
 		}
 		if (!/^(www\.)?(huggingface\.co|hf\.co)$/i.test(url.hostname))
-			throw new Error(`${text} isn't a Hugging Face link`);
+			throw new ModelError(`${text} isn't a Hugging Face link`, "usage");
 		const parts = url.pathname.split("/").filter(Boolean).map(decodeURIComponent);
 		if (parts[0] === "datasets" || parts[0] === "spaces") {
-			throw new Error(`${text} is a Hugging Face ${parts[0] === "datasets" ? "dataset" : "Space"}, not a model`);
+			throw new ModelError(
+				`${text} is a Hugging Face ${parts[0] === "datasets" ? "dataset" : "Space"}, not a model`,
+				"usage",
+			);
 		}
 		if (parts.length < 2)
-			throw new Error(`${text} doesn't name a model: use a link like https://huggingface.co/owner/name`);
+			throw new ModelError(
+				`${text} doesn't name a model: use a link like https://huggingface.co/owner/name`,
+				"usage",
+			);
 		repo = `${parts[0]}/${parts[1]}`;
 		if (["tree", "blob", "resolve"].includes(parts[2] ?? "") && parts[3]) revision = parts[3];
 	} else {
@@ -67,12 +87,13 @@ export function parseModelRef(input: string): ModelRef {
 	}
 	const [owner, name, extra] = repo.split("/");
 	if (!owner || !name || extra !== undefined || !PART.test(owner) || !PART.test(name)) {
-		throw new Error(
+		throw new ModelError(
 			`${text} isn't a Hugging Face model: give its link or owner/name (for example qybaihe/mude-1.0-mlx-8bit)`,
+			"usage",
 		);
 	}
 	if (revision !== undefined && !/^[A-Za-z0-9][A-Za-z0-9._/-]{0,199}$/.test(revision)) {
-		throw new Error(`${revision} isn't a branch, tag or commit`);
+		throw new ModelError(`${revision} isn't a branch, tag or commit`, "usage");
 	}
 	return { repo, revision };
 }
@@ -106,15 +127,28 @@ export async function resolveModel(
 	const get = options.fetch ?? fetch;
 	const headers: Record<string, string> = options.token ? { Authorization: `Bearer ${options.token}` } : {};
 	const request = async (url: string): Promise<Response> => {
-		const response = await get(url, { headers, signal: AbortSignal.timeout(30_000) });
-		if (response.status === 401 || response.status === 403) {
-			throw new Error(
-				`Hugging Face won't show ${ref.repo} (${response.status}): it's private or gated. Accept its terms on huggingface.co, set HF_TOKEN, then add it again`,
+		let response: Response;
+		try {
+			response = await get(url, { headers, signal: AbortSignal.timeout(30_000) });
+		} catch (error) {
+			throw new ModelError(
+				`Couldn't reach Hugging Face (${error instanceof Error ? error.message : String(error)}): check the connection, then add it again`,
+				"network",
 			);
 		}
-		if (response.status === 404)
-			throw new Error(`Hugging Face has no model ${ref.repo}${ref.revision ? ` at ${ref.revision}` : ""}`);
-		if (!response.ok) throw new Error(`Hugging Face returned ${response.status} for ${ref.repo}`);
+		if (response.status === 401 || response.status === 403) {
+			throw new ModelError(
+				`Hugging Face won't show ${ref.repo} (${response.status}): it's private or gated. Accept its terms on huggingface.co, set HF_TOKEN, then add it again`,
+				"access",
+			);
+		}
+		if (response.status === 404) {
+			throw new ModelError(
+				`Hugging Face has no model ${ref.repo}${ref.revision ? ` at ${ref.revision}` : ""}`,
+				"notFound",
+			);
+		}
+		if (!response.ok) throw new ModelError(`Hugging Face returned ${response.status} for ${ref.repo}`, "network");
 		return response;
 	};
 	const info = (await (
@@ -139,8 +173,9 @@ export async function resolveModel(
 		next = /<([^>]+)>;\s*rel="next"/.exec(response.headers.get("link") ?? "")?.[1];
 	}
 	if (!files.some((file) => file.path === SERVER_FILE)) {
-		throw new Error(
+		throw new ModelError(
 			`${ref.repo} isn't packaged as a decision model mu can run: it has no ${SERVER_FILE}. mu runs models packaged like mude 1.0's MLX edition, with their own System One server`,
+			"notRunnable",
 		);
 	}
 	return { revision, files };

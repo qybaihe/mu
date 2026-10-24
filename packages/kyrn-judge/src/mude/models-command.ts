@@ -22,6 +22,7 @@ import {
 	findRecord,
 	listRecords,
 	localJudgeOf,
+	ModelError,
 	type ModelRecord,
 	modelId,
 	modelPaths,
@@ -314,7 +315,7 @@ export async function modelMain(
 		out.status(await status(each));
 		return 0;
 	} catch (error) {
-		const kind = error instanceof DownloadError ? error.kind : undefined;
+		const kind = error instanceof DownloadError || error instanceof ModelError ? error.kind : undefined;
 		out.error(error instanceof Error ? error.message : String(error), kind);
 		return 1;
 	}
