@@ -397,10 +397,14 @@
   overflow-wrap: anywhere;
 }
 
-/* The helper a line is about: a small chip in front of its sentence. */
+/*
+ * The helper a line is about: a small chip in front of its sentence, centred in the line's 18px (a clipped
+ * inline-block's baseline is its bottom edge, so it is placed from the top rather than on the baseline).
+ */
 .who {
   display: inline-block;
   max-width: 12em;
+  margin-top: 1px;
   margin-inline-end: 6px;
   padding: 0 5px;
   overflow: hidden;
@@ -408,10 +412,10 @@
   border-radius: 4px;
   color: var(--text-secondary);
   font-size: 11px;
-  line-height: 16px;
+  line-height: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
-  vertical-align: 1px;
+  vertical-align: top;
 }
 
 /* Something went wrong: told by the words and a hollow dot, never by a colour. */
