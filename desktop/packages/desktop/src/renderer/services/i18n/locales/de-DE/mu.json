@@ -1,11 +1,9 @@
 {
   "title": "mu-Einstellungen",
-  "description": "Alles, was du mu vorgeben kannst: Judges, Entscheidungspunkte, Funktionen, Modelle und Kontext. Gemeinsam mit der mu-Kommandozeile genutzt.",
   "reload": "Neu laden",
   "modified": "Geändert",
   "applyNote": "Änderungen gelten für neue Sitzungen. Eine laufende Sitzung behält die Konfiguration, mit der sie gestartet wurde; verbinde sie neu, um die Änderungen zu übernehmen.",
   "apiKey": "API-Schlüssel",
-  "keyHelp": "Nach dem Speichern wird der Schlüssel nie wieder angezeigt. Er bleibt auf diesem Computer und ist nur für dein Konto lesbar.",
   "keyKeep": "Leer lassen, um den gespeicherten Schlüssel zu behalten",
   "endpointRule": "Gib eine Adresse ein, die mit https:// oder http:// beginnt. Benutzernamen, Passwörter, Abfrageparameter oder Fragmente sind darin nicht erlaubt.",
   "endpointPlain": "Diese Adresse nutzt unverschlüsseltes http: Schlüssel und Nachrichten gehen unverschlüsselt über die Leitung. Für einen Server auf diesem Computer oder in deinem Netzwerk ist das in Ordnung, auch für einen Namen, den deine hosts-Datei dorthin lenkt. Über das Internet nutze https.",
@@ -73,7 +71,6 @@
     "useDefault": "Zurück zum Standard ({{mode}})"
   },
   "features": {
-    "lead": "Was mu im Hintergrund für dich erledigt. Schaltest du etwas aus, lässt mu es bleiben.",
     "beta": "Beta",
     "reset": "Standard wiederherstellen",
     "boardModelElsewhere": "Das Modell, das das Board schreibt, wählst du unter „Klartext-Modell“.",
@@ -87,9 +84,7 @@
     "details": "Details"
   },
   "judges": {
-    "tiersHelp": "Die Judges werden der Reihe nach gefragt. Ein späterer sieht nur, was die vorherigen offen gelassen haben.",
     "order": "Reihenfolge",
-    "orderHelp": "Der erste ist der Judge, der auf der Seite „Judges“ gewählt ist.",
     "firstTier": "Der auf der Seite „Judges“ gewählte Judge: Dienst, Adresse und Schlüssel werden dort eingestellt.",
     "tierTitle": "Stufe {{index}}: {{name}}",
     "service": "Dienst",
@@ -105,17 +100,14 @@
       },
       "typesafe": {
         "name": "TypeSafe",
-        "help": "Immer direkt über TypeSafe.",
         "key": "API-Schlüssel für TypeSafe"
       },
       "openrouter": {
         "name": "OpenRouter",
-        "help": "Immer über OpenRouter, mit einem API-Schlüssel von OpenRouter. Er wird nur für Jev gespeichert: Das Setzen ändert den Schlüssel der Chatmodelle von OpenRouter nicht.",
         "key": "API-Schlüssel für OpenRouter"
       },
       "gateway": {
         "name": "Vercel AI Gateway",
-        "help": "Immer über das Vercel AI Gateway.",
         "key": "API-Schlüssel für das Vercel AI Gateway"
       },
       "opencode": {
@@ -125,7 +117,6 @@
       },
       "cloudflare": {
         "name": "Cloudflare Workers AI",
-        "help": "Jev auf Cloudflare Workers AI, mit einem Cloudflare-API-Token und deiner Konto-ID.",
         "key": "Cloudflare-API-Token",
         "account": "Cloudflare-Konto-ID",
         "accountHelp": "Steht im Cloudflare-Dashboard auf der Seite Workers AI. Wird wie das Token gespeichert.",
@@ -139,19 +130,9 @@
     },
     "model": "Judge-Modell",
     "baseUrl": "Basis-URL",
-    "baseUrlHelp": "Leer lassen, dann gilt TypeSafes eigene Adresse.",
-    "customUrlHelp": "Die System-One-Adresse des Dienstes. Sein Schlüssel wird nur dorthin geschickt.",
     "baseUrlNeeded": "Ein eigener Dienst braucht seine Adresse.",
     "customTier": "Ein Judge, den du selbst hinzugefügt hast. Ändern kannst du ihn in der Einstellungsdatei von mu.",
-    "endpointDefault": "Standardadresse des Dienstes",
-    "types": {
-      "localHelp": "Läuft auf diesem Rechner.",
-      "clmHelp": "Läuft auf einem eigenen CLM-Server.",
-      "classifierHelp": "Ein Klassifikationsmodell aus mus Modellkatalog: {{model}}. mu erreicht es mit dem Schlüssel seines Anbieters."
-    },
-    "intro": "Während mu arbeitet, fallen viele kleine Fragen an: wie es mit dieser Nachricht umgehen soll, ob dieser Schritt gegen eine deiner Vorgaben verstößt. Der Judge beantwortet sie. Wähle einen aus.",
     "mode": "Urteile wirken",
-    "modeHelp": "An: Die Urteile des Judges wirken. Aus: Jeder Schritt läuft wie gewohnt. Schritte ohne eigene Einstellung folgen dieser.",
     "choose": "Judge wählen",
     "custom": "Der erste Judge ist gerade ein benutzerdefinierter: Auf der Seite „Reihenfolge der Judges“ kannst du ihn ansehen und ändern.",
     "keyPlaceholder": "Schlüssel einfügen",
@@ -179,7 +160,6 @@
         "description": "Beantwortet dieselben Fragen wie Jev, auf einem eigenen Server (clm-serve). Sein Encoder braucht eine GPU; pro Aufruf fallen keine Kosten an."
       }
     },
-    "localAddress": "Adresse: {{address}}",
     "laya": {
       "running": "Läuft auf diesem Rechner",
       "stopped": "Installiert, läuft aber nicht. mu startet Laya bei Bedarf.",
@@ -252,7 +232,6 @@
         "stopped": "Gestoppt"
       },
       "resources": "Während mude 1.0 läuft, belegt es etwa {{memory}} GB Arbeitsspeicher. Alle mu-Sitzungen auf diesem Mac teilen es sich, auch die im Terminal, und es läuft weiter, bis du es stoppst oder ausschaltest.",
-      "shared": "Alle mu-Sitzungen auf diesem Mac teilen es sich, auch die im Terminal, und es läuft weiter, bis du es stoppst oder ausschaltest.",
       "start": "Starten",
       "stop": "Stoppen",
       "openFolder": "Ordner öffnen",
@@ -303,12 +282,9 @@
     },
     "clm": {
       "address": "Serveradresse",
-      "addressHelp": "Wo clm-serve lauscht, etwa http://192.168.1.20:8700. Leer bedeutet dieser Computer ({{address}}).",
       "key": "Serverschlüssel",
       "keyPlaceholder": "Nur wenn der Server einen verlangt",
-      "keyHelp": "Nur ein Server, der mit CLM_API_KEY gestartet wurde, verlangt einen Schlüssel: Gib denselben Wert ein. Nach dem Speichern wird er nie wieder angezeigt.",
       "check": "Server prüfen",
-      "unmeasured": "Wie gut CLM die Entscheidungen von mu trifft, ist noch nicht gemessen.",
       "status": {
         "checking": "Server wird gefragt …",
         "ready": "Antwortet · {{models}} · {{ms}} ms",
@@ -332,11 +308,9 @@
   },
   "context": {
     "auto": "Automatische Verdichtung",
-    "autoHelp": "Verdichtet den Verlauf, wenn der Kontext fast voll ist.",
     "limit": "Kontextgrenze",
     "limitHelp": "0 folgt dem Kontextfenster des Modells abzüglich der Reserve. Sonst {{min}} bis {{max}}. Wird vor der nächsten Modellanfrage geprüft, kein harter Schnitt.",
-    "limitProblem": "Gib 0 oder eine ganze Zahl von {{min}} bis {{max}} ein.",
-    "lead": "Wann das Gespräch verdichtet wird, wie groß sein Kontext werden darf, und die Funktionen, die auf den Kontext wirken."
+    "limitProblem": "Gib 0 oder eine ganze Zahl von {{min}} bis {{max}} ein."
   },
   "permissions": {
     "modes": {
@@ -397,7 +371,6 @@
     "flagged": "Riskant: {{flag}}."
   },
   "providers": {
-    "lead": "Woher die Modelle kommen: Abos und Endpunkte. Modell und Denkstufe einer Unterhaltung wählst du in ihrem Eingabefeld.",
     "title": "Anbieter",
     "custom": "Benutzerdefinierte Anbieter",
     "manualGroup": "Von Hand geschrieben",
@@ -432,7 +405,6 @@
     "commented": "models.json enthält Kommentare. Beim Speichern von hier aus würden sie entfernt, daher sind die Anbieter schreibgeschützt. Entferne die Kommentare von Hand, um sie hier zu bearbeiten.",
     "modelCount_one": "{{count, number}} Modell",
     "modelCount_other": "{{count, number}} Modelle",
-    "summary": "Melde dich mit einem Abo an und leg direkt los, oder verbinde einen beliebigen OpenAI-, Anthropic- oder Gemini-kompatiblen Endpunkt.",
     "subscriptions": "Abos",
     "manualShort": "Von Hand",
     "needsSetup": "Noch nicht eingerichtet",
@@ -445,13 +417,10 @@
     "removeDefault": "Neue Sitzungen starten damit, daher wird auch das Standardmodell zurückgesetzt."
   },
   "defaults": {
-    "summary": "Womit eine neue Sitzung startet. In einer Unterhaltung kannst du trotzdem wechseln.",
     "provider": "Anbieter",
     "model": "Modell",
     "level": "Denkstufe",
     "levelUnset": "Nicht festlegen",
-    "levelHelp": "Stufen, die dieses Modell nicht unterstützt, sind deaktiviert.",
-    "levelClamped": "„Nicht festlegen“ heißt Mittel. Eine Stufe, die das Modell nicht unterstützt, wird zur nächstgelegenen, die es unterstützt.",
     "noReasoning": "Dieses Modell denkt nicht, daher startet eine Sitzung damit immer mit ausgeschaltetem Denken.",
     "notSet": "Nicht festgelegt",
     "pickProvider": "Wähle zuerst einen Anbieter."
@@ -462,7 +431,6 @@
     "signOutFailed": "Die Abmeldung wurde nicht abgeschlossen. Du kannst es erneut versuchen.",
     "signOutConfirm": "Von {{name}} abmelden? Um es wieder zu nutzen, musst du dich erneut anmelden.",
     "signedOut": "Nicht angemeldet",
-    "instant": "Anmelden und Abmelden wirken sofort, ohne Speichern.",
     "models": "Nutzbare Modelle",
     "byKey": "Nutzbar (API-Schlüssel)",
     "byKeyHelp": "Es ist kein Abo angemeldet, aber mu hat diesen Anbieter bei der letzten Verbindung als nutzbar gemeldet, meist weil sein API-Schlüssel in der Umgebung gesetzt ist. Nach der Anmeldung wird das Abo verwendet.",
@@ -526,12 +494,10 @@
     "noId": "Neues Modell",
     "show": "{{name}} anzeigen",
     "addListed": "{{name}} hinzufügen",
-    "levels": "Denkstufen",
-    "levelsHelp": "Nur angehakte Stufen bietet dieses Modell an. Sehr hoch und Maximal bleiben aus, bis du sie einschaltest."
+    "levels": "Denkstufen"
   },
   "test": {
     "run": "Verbindung testen",
-    "hint": "Eine kleinstmögliche Anfrage aus dieser App: die Modellliste, sonst eine Antwort aus einem Wort vom ersten Modell.",
     "okModels": "Verbunden ({{ms}} ms). Der Endpunkt listet {{count, number}} Modelle auf.",
     "okCompletion": "Verbunden ({{ms}} ms). Das Modell hat geantwortet.",
     "auth": "Der Schlüssel wurde abgelehnt (HTTP {{status}}).",
@@ -549,7 +515,7 @@
   },
   "boardModel": {
     "title": "Klartext-Modell",
-    "summary": "Schreibt das Klartext-Board: wie die Arbeit vorangeht, in einfachen Worten. Nur für dich, nie im Kontext der Unterhaltung; jede Aktualisierung kostet einen Modellaufruf.",
+    "summary": "Schreibt das Klartext-Board: wie die Arbeit vorangeht, in einfachen Worten. Jede Aktualisierung kostet einen Modellaufruf.",
     "pick": "Ein Modell deiner Wahl",
     "recommended": "Empfohlen: Claude Opus 4.6, am natürlichsten und beständigsten; danach Gemini 3.8 Flash, schneller und günstiger.",
     "recommendedTag": "empfohlen",
@@ -559,7 +525,6 @@
     "pickProvider": "Zuerst einen Anbieter wählen",
     "unset": "Noch keins: mu fragt, wenn das Board zum ersten Mal eingeschaltet wird.",
     "session": "Dasselbe Modell wie die Unterhaltung",
-    "sessionHelp": "Wechselt die Unterhaltung das Modell, wechselt das Board mit.",
     "update": "In dieser Version von mu lässt sich hier nicht festlegen, welches Modell das Board schreibt. Aktualisiere zuerst mu."
   },
   "levels": {
@@ -587,7 +552,6 @@
     "start": "Loslegen",
     "model": {
       "title": "Modell verbinden",
-      "subtitle": "mu schreibt damit Code und antwortet dir. Alles lässt sich später in den Einstellungen ändern.",
       "model": "Modell",
       "baseUrl": "Basis-URL",
       "key": "API-Schlüssel",
@@ -631,7 +595,6 @@
       "placeholder": "Schlüssel hier einfügen",
       "service": "Dienst",
       "servicePlaceholder": "Am Schlüssel erkannt",
-      "serviceHint": "mu erkennt den Dienst am Schlüssel. Klappt das nicht, wähle ihn hier aus.",
       "recognized": "Am Schlüssel erkannt.",
       "ambiguous": "So sehen die Schlüssel mehrerer Dienste aus. Von welchem ist dieser?",
       "unknown": "mu kennt diese Art Schlüssel nicht. Von welchem Dienst ist er?",
@@ -641,7 +604,6 @@
       "lookingLocal": "{{service}} wird auf diesem Rechner gesucht…",
       "recheck": "Erneut prüfen",
       "startsWith": "mu startet mit",
-      "modelHint": "Du kannst das Modell jederzeit wechseln.",
       "outcome": {
         "ok": "Der Schlüssel funktioniert.",
         "okLocal": "{{service}} läuft auf diesem Rechner.",
@@ -717,7 +679,6 @@
     },
     "judge": {
       "title": "Judge wählen",
-      "subtitle": "Der Judge beantwortet die kleinen Fragen, die bei der Arbeit von mu anfallen. mu läuft auch ohne Judge, nur eben ohne diese Prüfungen.",
       "readyFree": "Der kostenlose Jev ist bereit. Hier ist nichts zu tun.",
       "readyKey": "Jev ist bereit, mit dem Schlüssel, den du festgelegt hast.",
       "more": "Dienst wechseln oder eigenen Schlüssel verwenden",
@@ -730,7 +691,6 @@
     },
     "done": {
       "title": "Alles bereit",
-      "subtitle": "Prüfe alles noch einmal, dann kann es losgehen.",
       "model": "Modell",
       "judge": "Judge",
       "none": "Nicht festgelegt",
@@ -759,20 +719,6 @@
         "text_one": "mu hat auf diesem Computer {{count}} Unterhaltung mit einem anderen Programmierassistenten gefunden. Importiere sie mit ihrem ganzen Verlauf und mach hier weiter.",
         "text_other": "mu hat auf diesem Computer {{count}} Unterhaltungen mit anderen Programmierassistenten gefunden. Importiere sie mit ihrem ganzen Verlauf und mach hier weiter.",
         "open": "Unterhaltungen auswählen…"
-      },
-      "points": {
-        "judge": {
-          "title": "Eine Prüfung bei jedem Schritt",
-          "text": "Ein integrierter Judge achtet auf die entscheidenden Momente: erst nachdenken, dann handeln, deine Vorgaben einhalten und nichts als erledigt melden, was nicht überprüft ist."
-        },
-        "control": {
-          "title": "Alles im Blick, alles im Griff",
-          "text": "Mit Checkpoints lassen sich Änderungen rückgängig machen; nutzt mu den integrierten Browser, ist jeder Schritt sichtbar, und du kannst pausieren oder übernehmen."
-        },
-        "ready": {
-          "title": "Sofort einsatzbereit",
-          "text": "mu übernimmt die Regeln, Skills und MCP-Server, die du bereits in Claude Code, Cursor und Codex eingerichtet hast."
-        }
       },
       "start": "Einrichten"
     },
@@ -830,7 +776,6 @@
     },
     "permissions": {
       "title": "Wie viel mu selbst erledigt",
-      "subtitle": "Neue Unterhaltungen starten in dem Modus, den du hier wählst. Wechseln kannst du jederzeit im Eingabefeld oder mit /permissions.",
       "recommended": "Empfohlen"
     }
   },
@@ -937,11 +882,9 @@
   },
   "importChats": {
     "title": "Unterhaltungen importieren",
-    "description": "Hol Unterhaltungen, die du auf diesem Computer in Claude Code, Codex oder ZCode geführt hast, mit ihrem ganzen Verlauf in mu und führe sie hier fort.",
     "open": "Auswählen…",
     "dialog": {
       "title": "Unterhaltungen importieren",
-      "hint": "Jede ausgewählte Unterhaltung wird zu einer mu-Unterhaltung in ihrem Projektordner, mit ihrem ganzen Verlauf: Nachrichten, Werkzeugaufrufe, Denkschritte und Bilder. Wähle sie später erneut aus, um Neues nachzuholen.",
       "search": "Nach Wörtern oder Ordner suchen",
       "loading": "Unterhaltungen werden gesucht…",
       "empty": "Auf diesem Computer wurden keine Unterhaltungen aus Claude Code, Codex oder ZCode gefunden.",
@@ -1144,8 +1087,6 @@
     }
   },
   "details": {
-    "lead": "Ein Schalter pro Funktion, ihre Einstellungen unter „Optionen“. Die eingerückten Zeilen sind die Stellen, an denen sie den Judge fragt: Schaltest du eine aus, läuft dieser Schritt wie gewohnt.",
-    "featureOff": "Die Funktion ist aus",
     "askJudge": "Den Judge entscheiden lassen",
     "askJudgeAbout": "Den Judge entscheiden lassen: {{point}}",
     "areas": {
@@ -1172,7 +1113,6 @@
       "cursor": "aus Cursor"
     },
     "skills": {
-      "lead": "Die Skills, die mu in jeder Unterhaltung nutzen kann, und woher sie jeweils kommen.",
       "search": "Skills suchen",
       "open": "Ordner öffnen",
       "add": "Skill hinzufügen",
@@ -1183,33 +1123,26 @@
       "empty": "mu hat noch keine Skills.",
       "noMatch": "Kein Skill passt.",
       "failed": "Die Skills von mu konnten nicht gelesen werden.",
-      "project": "Die eigenen Skills eines Projekts (.mu/skills, .agents/skills, .claude/skills) werden nur in dessen Unterhaltungen geladen und hier nicht aufgeführt.",
       "groups": {
         "mu": {
-          "title": "Skills von mu",
-          "help": "In {{folder}}. Hinzugefügte Skills landen hier, und nur diese lassen sich entfernen."
+          "title": "Skills von mu"
         },
         "agents": {
-          "title": "Gemeinsame Skills",
-          "help": "In ~/.agents/skills, von mehreren Agenten genutzt. mu liest sie und ändert sie nie."
+          "title": "Gemeinsame Skills"
         },
         "builtin": {
-          "title": "Mit mu geliefert",
-          "help": "Kommen mit mu und sind an, solange die Funktion an ist, die sie mitbringt."
+          "title": "Mit mu geliefert"
         },
         "claude": {
-          "title": "Aus Claude Code",
-          "help": "Aus ~/.claude/skills. mu liest sie nur; features.inherit in mu.json beendet die Übernahme."
+          "title": "Aus Claude Code"
         },
         "codex": {
-          "title": "Aus Codex",
-          "help": "Aus ~/.codex/skills. mu liest sie nur; features.inherit in mu.json beendet die Übernahme."
+          "title": "Aus Codex"
         }
       }
     },
     "mcp": {
       "title": "MCP-Server",
-      "lead": "Die MCP-Server, die mu in jeder Unterhaltung nutzen kann, und wo sie jeweils eingerichtet sind.",
       "open": "Konfigurationsdatei öffnen",
       "add": "Server hinzufügen",
       "added": "{{name}} hinzugefügt. Neue Unterhaltungen können ihn nutzen.",
@@ -1221,7 +1154,6 @@
       "failed": "Die MCP-Server von mu konnten nicht gelesen werden.",
       "featureOff": "Die MCP-Funktion ist in mu.json aus: Nur die Server aus mcp.json werden genutzt.",
       "unreadable": "Diese Dateien konnten nicht gelesen werden, ihre Server fehlen daher: {{files}}",
-      "project": "Die eigenen Server eines Projekts (.mu/mcp.json, .mcp.json, .cursor/mcp.json) werden nur in dessen Unterhaltungen genutzt und hier nicht aufgeführt.",
       "locked": {
         "offInSource": {
           "label": "An der Quelle aus",
@@ -1234,20 +1166,16 @@
       },
       "groups": {
         "mu": {
-          "title": "Server von mu",
-          "help": "In mcp.json und mu.json. Hinzugefügte Server kommen wie bei mu mcp add in {{file}}."
+          "title": "Server von mu"
         },
         "claude": {
-          "title": "Aus Claude Code",
-          "help": "Aus ~/.claude.json. Hier abschalten schreibt nur in mu.json, nie in die Datei von Claude Code."
+          "title": "Aus Claude Code"
         },
         "cursor": {
-          "title": "Aus Cursor",
-          "help": "Aus ~/.cursor/mcp.json. Hier abschalten schreibt nur in mu.json, nie in die Datei von Cursor."
+          "title": "Aus Cursor"
         },
         "codex": {
-          "title": "Aus Codex",
-          "help": "Aus ~/.codex/config.toml. Hier abschalten schreibt nur in mu.json, nie in die Datei von Codex."
+          "title": "Aus Codex"
         }
       },
       "form": {

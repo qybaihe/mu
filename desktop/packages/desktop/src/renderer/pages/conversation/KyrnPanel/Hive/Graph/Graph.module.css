@@ -171,14 +171,6 @@
   color: var(--text-primary);
 }
 
-.hint {
-  margin: 4px 0 0;
-  color: var(--text-secondary);
-  font-size: 11px;
-  line-height: 1.6;
-  overflow-wrap: anywhere;
-}
-
 /* The transcript's miniature: dots on a small ring and the lines between them, with no words. */
 .miniature {
   display: block;

@@ -56,7 +56,6 @@
     "newTask": "新建任务",
     "createViaChat": "通过对话创建",
     "createManually": "手动创建",
-    "description": "按计划自动运行任务。你也可以在任意对话中直接让 mu 帮你创建一个定时任务。",
     "awakeBanner": "定时任务仅在电脑唤醒状态下运行。",
     "keepAwake": "保持唤醒",
     "keepAwakeTooltip": "开启后，mu 将阻止电脑进入休眠状态",

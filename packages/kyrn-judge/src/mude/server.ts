@@ -105,6 +105,8 @@ function tail(file: string, lines = 12): string {
 export interface StartOptions {
 	readonly port: number;
 	readonly key: string;
+	/** The model name the server answers to and the judge asks for. Default mude's. */
+	readonly name?: string;
 	/** How long to wait for /health. The first start loads 1.8 GB and compiles kernels; default 180 s. */
 	readonly timeoutMs?: number;
 	/** Start it and return without waiting for it to be ready. */
@@ -163,7 +165,7 @@ export async function startServer(paths: MudePaths, options: StartOptions): Prom
 			"--port",
 			String(options.port),
 			"--name",
-			MUDE_MODEL,
+			options.name ?? MUDE_MODEL,
 			"--verify",
 			"fast",
 		],

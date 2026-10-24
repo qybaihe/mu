@@ -15,15 +15,11 @@ If none of this helps, [open an issue](https://github.com/qybaihe/mu/issues/new/
 
 **Windows: the conversation says Git for Windows is missing.** mu runs commands in a POSIX shell on Windows. Install [Git for Windows](https://git-scm.com/download/win) and start a new conversation.
 
-**The app installed in `C:\Program Files\mu` can't start mu.** Fixed in 0.1.5: install the latest release over the old one; your data stays.
-
-**`mu install`, `mu list` or `mu config` starts a session instead.** Fixed in mu-agent 0.1.8 and desktop 0.1.7. Update to the latest release.
-
 ## Models and networks {#models}
 
 **No model is set up.** Run `mu setup`, or the app's first-run guide: paste an API key or sign in with a subscription.
 
-**"User location is not supported", or requests time out, in the app but not in a terminal.** The model's service refuses your network's region, or the app doesn't see your proxy. Since 0.1.5 the app follows the system proxy when `HTTPS_PROXY` isn't set; check that the proxy is on, or set `HTTPS_PROXY` for mu.
+**"User location is not supported", or requests time out, in the app but not in a terminal.** The model's service refuses your network's region, or the app doesn't see your proxy. The app follows the system proxy when `HTTPS_PROXY` isn't set; check that the proxy is on, or set `HTTPS_PROXY` for mu.
 
 ## The judge {#judge}
 
@@ -40,10 +36,6 @@ If none of this helps, [open an issue](https://github.com/qybaihe/mu/issues/new/
 **mude 1.0 isn't answering.** `mu judge mude status` shows whether its server is running, and `mu judge mude start` starts it; `mu doctor` checks the server and its key. Until it answers, its fallback judges answer instead, or, with `--local-only`, each decision point uses its default.
 
 **The mude 1.0 install stopped.** Run `mu judge mude install` again, or press **Continue installing** in the app: it picks up where it left off.
-
-## The terminal {#terminal}
-
-**The terminal UI crashes with "Rendered line … exceeds terminal width" when a subagent starts.** Fixed in mu-agent 0.1.8 and desktop 0.1.7. Update to the latest release.
 
 ## Starting over {#reset}
 

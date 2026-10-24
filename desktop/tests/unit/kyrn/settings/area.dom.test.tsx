@@ -483,23 +483,20 @@ describe('the details: every feature, with the decision points it asks under it'
     expect(sent.mode).toBe('off');
     expect(sent.decisionModes).toEqual({ 'tool.risk': 'active', 'input.preflight': 'active' });
   });
-  it('greys the points of a feature that is off and says so, and gives them back once it is on', async () => {
+  it('greys the points of a feature that is off, and gives them back once it is on', async () => {
     await open('details-team');
     const hive = screen.getByTestId('mu-feature-hive');
     const deliver = () => screen.getByTestId('mu-decision-hive.deliver');
     expect(askJudge(deliver(), 'Hive: delivery')).toBeEnabled();
-    expect(deliver()).not.toHaveTextContent('This feature is off');
     fireEvent.click(within(hive).getByRole('switch', { name: 'Hive' }));
     for (const id of ['hive.publish', 'hive.deliver']) {
       const point = screen.getByTestId(`mu-decision-${id}`);
-      expect(point).toHaveTextContent('This feature is off');
       expect(within(point).getByRole('switch')).toBeDisabled();
     }
     // The sub-agents' point, under a feature that is on, is not touched.
     expect(within(screen.getByTestId('mu-decision-swarm.routing')).getByRole('switch')).toBeEnabled();
     fireEvent.click(within(hive).getByRole('switch', { name: 'Hive' }));
     expect(askJudge(deliver(), 'Hive: delivery')).toBeEnabled();
-    expect(screen.queryByText('This feature is off')).not.toBeInTheDocument();
   });
 });
 
@@ -579,14 +576,14 @@ describe('the save bar', () => {
     expect(within(row()).getByRole('switch')).not.toBeChecked();
     expect(screen.queryByTestId('mu-save-bar')).not.toBeInTheDocument();
   });
-  it('shows a point whose feature is off as muted, with a plain sentence instead of a code name', async () => {
+  it('shows a point whose feature is off as muted and disabled, by its plain name, never its code name', async () => {
     bridge.settings.mockResolvedValue({
       ok: true,
       data: settings({ features: { ...settings().features, guard: { enabled: false, options: {} } } }),
     });
     await open('details-safety');
     const row = screen.getByTestId('mu-decision-tool.risk');
-    expect(row).toHaveTextContent('This feature is off');
+    expect(row).toHaveTextContent('Ask the judge');
     expect(row).not.toHaveTextContent('tool.risk');
     expect(within(row).getByRole('switch')).toBeDisabled();
   });
@@ -1090,7 +1087,7 @@ describe('providers and the default model', () => {
     expect(screen.queryByTestId('mu-model-levels-0')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Thinking 1' }));
     const levels = screen.getByTestId('mu-model-levels-0');
-    expect(levels).toHaveTextContent('Very high and Max stay off until you turn them on.');
+    // Very high and Max stay off until they are turned on.
     expect(within(levels).getByRole('checkbox', { name: 'Low 1' })).toBeChecked();
     expect(within(levels).getByRole('checkbox', { name: 'Very high 1' })).not.toBeChecked();
     expect(within(levels).getByRole('checkbox', { name: 'Max 1' })).not.toBeChecked();
@@ -1098,7 +1095,6 @@ describe('providers and the default model', () => {
     fireEvent.click(within(levels).getByRole('checkbox', { name: 'Low 1' }));
     fireEvent.click(screen.getByTestId('mu-nav-default-model'));
     const thinking = screen.getByTestId('mu-thinking-level');
-    expect(thinking).toHaveTextContent("Levels this model doesn't support are disabled.");
     expect(within(thinking).getByRole('radio', { name: 'Very high' })).toBeEnabled();
     expect(within(thinking).getByRole('radio', { name: 'Low' })).toBeDisabled();
     expect(within(thinking).getByRole('radio', { name: 'Max' })).toBeDisabled();
@@ -1617,7 +1613,8 @@ describe('the kernel pages', () => {
     // The switch every step without a setting of its own follows, first, as a switch.
     const verdicts = within(page).getByTestId('mu-judge-mode');
     expect(within(verdicts).getByRole('switch', { name: enMu.judges.mode })).toBeChecked();
-    expect(verdicts).toHaveTextContent(enMu.judges.modeHelp);
+    // The switch's name says it all: no sentence under it.
+    expect(verdicts).toHaveTextContent(new RegExp(`^${enMu.judges.mode}$`));
     // The three choices, Jev, Laya and CLM, and no second way to pick a judge.
     const choice = within(page).getByTestId('mu-judge-choice-jev');
     expect(verdicts.compareDocumentPosition(choice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -1639,7 +1636,7 @@ describe('the kernel pages', () => {
     const page = await screen.findByTestId('mu-section-judgeOrder');
     expect(within(page).getByRole('heading', { name: enMu.sections.judgeOrder })).toBeInTheDocument();
     const order = within(page).getByTestId('mu-judge-tiers');
-    expect(order).toHaveTextContent(enMu.judges.orderHelp);
+    expect(order).toHaveTextContent(enMu.judges.order);
     // The order says the judges' names, never the profiles' ids.
     const tags = [...order.querySelectorAll('.arco-tag')].map((tag) => tag.textContent);
     expect(tags).toEqual([enMu.judges.choices.jev.title, enMu.judges.choices.local.title]);
@@ -1807,7 +1804,6 @@ describe('the kernel pages', () => {
     expect(within(tile).getByRole('alert')).toHaveTextContent(enMu.endpointRule);
     fireEvent.change(address, { target: { value: 'http://192.168.1.20:8000/v1/systemone' } });
     expect(within(tile).queryByRole('alert')).not.toBeInTheDocument();
-    expect(tile).toHaveTextContent(enMu.judges.customUrlHelp);
     fireEvent.click(screen.getByText('Save'));
     await waitFor(() => expect(bridge.save).toHaveBeenCalledTimes(2));
     const sent = bridge.save.mock.calls[1][0] as SaveSettings;
@@ -1847,12 +1843,11 @@ describe('the kernel pages', () => {
     // Empty is clm-serve's own address on this machine, and the server there is asked.
     const address = within(tile).getByLabelText(enMu.judges.clm.address);
     expect(address).toHaveValue('');
-    expect(tile).toHaveTextContent('Leave empty for this computer (http://127.0.0.1:8700).');
+    expect(address).toHaveAttribute('placeholder', 'http://127.0.0.1:8700');
     await waitFor(() =>
       expect(within(tile).getByTestId('mu-clm-status')).toHaveTextContent('Online · clm-latest and clm-raw · 12 ms')
     );
     expect(bridge.clmCheck).toHaveBeenCalledWith({ baseUrl: '' });
-    expect(tile).toHaveTextContent(enMu.judges.clm.unmeasured);
     expect(screen.getAllByTestId('mu-clm-server')).toHaveLength(1);
     // A public address over plain HTTP breaks the rule, and is not asked.
     bridge.clmCheck.mockClear();

@@ -344,7 +344,6 @@
   "language": "Dil",
   "saveUploadToWorkspace": "Yüklemeleri Proje Klasörüne Kaydet",
   "startOnBoot": "Açılışta Başlat",
-  "startOnBootDesc": "macOS veya Windows oturumu açtığınızda mu'yu otomatik olarak başlatır.",
   "startOnBootUnsupported": "Yalnızca macOS ve Windows için yüklenmiş uygulamada kullanılabilir.",
   "startOnBootUpdateFailed": "Açılışta başlat ayarı güncellenemedi",
   "closeToTray": "Tepsiye Kapat",
@@ -373,10 +372,8 @@
   "groupApp": "Uygulama",
   "groupAbout": "Diğer",
   "agentIdleTimeout": "Aracı Boşta Kalma Süresi",
-  "agentIdleTimeoutDesc": "Boşta kalan aracı, bellek boşaltmak için bu süre sonunda durdurulur.",
   "previewTextSizeLimit": "Önizleme Boyut Sınırı",
   "previewTextSizeLimitUnit": "MB",
-  "previewTextSizeLimitDesc": "Bu boyutu aşan metin dosyaları içerik yerine bir bildirimle açılır. Yalnızca yeni açılan sekmeler için geçerlidir.",
   "gemini": "Gemini",
   "model": "Model",
   "system": "Sistem",
@@ -984,22 +981,18 @@
   "browserData": {
     "title": "Uygulama içi tarayıcı",
     "agentControlLabel": "Aracının uygulama içi tarayıcıyı kullanmasına izin ver",
-    "agentControlDesc": "Açık olduğunda aracı, uygulama içi tarayıcıda sizin adınıza sayfa açabilir, tıklayabilir ve form doldurabilir; örneğin bir şey araştırmak veya bir sitedeki işlemi tamamlamak için. Yalnızca bu tek tarayıcı görünümünü kullanabilir: mu arayüzünün kendisine erişemez ve hiçbir zaman ayrı bir Chrome penceresi açmaz. Kapattığınızda tarayıcıyı kendiniz kullanmaya devam edebilirsiniz; erişimi yalnızca aracı kaybeder.",
     "agentControlSaved": "Ayar kaydedildi",
     "agentControlFailed": "Ayar kaydedilemedi",
     "agentControlRestartRequired": "Bu ayar, uygulamayı yeniden başlattıktan sonra geçerli olur.",
     "clearLabel": "Tarama verilerini temizle",
-    "clearDesc": "Tarayıcıda oturum açılmış tüm sitelerden çıkış yapar ve önbelleği temizler. Açık sekmelerde yenilemeden sonra geçerli olur.",
     "clearConfirmTitle": "Tarama verileri temizlensin mi?",
     "clearConfirmContent": "Uygulama içi tarayıcıdaki tüm sitelerden çıkış yapılacak. Bu işlem geri alınamaz.",
     "clearSuccess": "Tarama verileri temizlendi",
-    "clearFailed": "Tarama verileri temizlenemedi",
-    "description": "Aracının uygulama içi tarayıcıyı kullanıp kullanamayacağı ve tarayıcının sakladıklarının temizlenmesi."
+    "clearFailed": "Tarama verileri temizlenemedi"
   },
   "archived": {
     "navLabel": "Arşivlenmiş konuşmalar",
     "title": "Arşiv",
-    "description": "Arşivlediğiniz konuşmalar. Bunları kenar çubuğuna geri yükleyebilir veya toplu olarak kalıcı biçimde silebilirsiniz.",
     "empty": "Arşivlenmiş öğe yok",
     "noProject": "Proje yok",
     "chatCount": "{{count}} sohbet",
@@ -1072,13 +1065,8 @@
   },
   "mcpAuthRequiredNamed": "{{name}} için giriş yapmanız gerekiyor",
   "mcpTestConnectionSuccessNamed": "{{name}} bağlandı",
-  "appearanceDescription": "Dil, tema, yazı tipleri ve ölçek.",
-  "systemDescription": "Açılışta başlatma, pencere kapandıktan sonra çalışmaya devam etme, bildirimler ve mu'nun çalıştığı ve günlük tuttuğu klasörler.",
-  "conversationsDescription": "Zaman aşımları, önizleme boyut sınırı, yüklemelerin konumu ve sohbetler arası mesajlar.",
-  "aboutDescription": "mu'nun hangi sürümü olduğu, güncellemeleri ve günlüklerine giden yol.",
   "developer": {
     "title": "Geliştirici",
-    "description": "Geliştirici araçları ile diğer araçların uygulama içi tarayıcıya bağlanmak için kullandığı bağlantı noktası ve MCP yapılandırmaları.",
     "devOnly": "Bu araçlar yalnızca mu kaynak kodundan çalıştırıldığında sunulur."
   },
   "search": {

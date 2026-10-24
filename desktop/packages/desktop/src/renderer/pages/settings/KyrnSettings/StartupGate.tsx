@@ -63,7 +63,6 @@ export default function StartupGate({ children, open = false }: { children: Reac
         {titlebar}
         <MuMark size={64} halo />
         <h2 className={styles.gateTitle}>{t('common.kyrn.starting')}</h2>
-        <p className={styles.gateHint}>{t('common.kyrn.startingHint')}</p>
         <div className={styles.gateBar} aria-hidden='true' />
       </div>
     );

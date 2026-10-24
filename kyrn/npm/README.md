@@ -2,7 +2,7 @@
 
 **A coding agent with a judgment kernel.** It hands its routine decisions to a small, fast judge model, so the main model can keep its attention on the work.
 
-> Source, docs and the desktop app: [github.com/qybaihe/mu](https://github.com/qybaihe/mu) (README in English, 简体中文, 繁體中文, 日本語 and 한국어).
+> Source, docs and the desktop app: [github.com/qybaihe/mu](https://github.com/qybaihe/mu).
 
 ## Install
 
@@ -13,7 +13,7 @@ mu
 
 You need Node.js 22.19 or newer. The package is `mu-agent`; the command is `mu`. It runs on macOS, Linux, Windows and WSL.
 
-`mu setup` connects a model from your shell. Paste an API key and mu detects the service from the key's format (OpenAI, Anthropic, Google Gemini, xAI, OpenRouter, OpenCode Zen, DeepSeek, Qwen, Kimi, GLM, SiliconFlow, StepFun), or pick Ollama or your own endpoint. It checks the key with one request, picks a starting model and sets up the judge. To use a ChatGPT, Grok or Google subscription instead, choose it there and mu starts on `/login`. If no model is set up yet, the first `mu` run offers to start setup.
+`mu setup` connects a model from your shell. Paste an API key and mu detects the service from the key's format (OpenAI, Anthropic, Google Gemini, xAI, OpenRouter, OpenCode Zen, DeepSeek, Qwen, Kimi, GLM, SiliconFlow, StepFun), or pick Ollama or your own endpoint. It checks the key with one request, picks a starting model and sets up the judge. To use a ChatGPT, Grok or Google subscription instead, choose it there and mu starts on `/login`.
 
 Inside mu, `/login` signs in to a provider or a subscription and `/model` switches models. `/help` lists everything. `mu doctor` checks your setup from the shell.
 
@@ -36,7 +36,7 @@ Out of the box, the judge is Jev 1.13, TypeSafe's hosted judge model, free on Op
 - **Laya** (local, macOS on Apple silicon): `mu judge setup` installs it into `~/.mu/local-judge`. It downloads about 930 MB, and only when you run that command.
 - **Any model you already use:** `/mu judge llm:<provider>/<model>`.
 
-33 of the 40 decision points act on their verdicts from the start (`active`); `context.compact` and `output.drift` belong to features that are off until you turn them on, `capability.disclosure` and `swarm.patch` are `off`, and `notify.routing`, `input.interjection` and `turn.drift` are in `shadow`. To only record what the judge would do, run `/mu mode default shadow`, or put `"modes": { "default": "shadow" }` in `~/.mu/agent/mu.json`.
+33 of the 40 decision points act on their verdicts from the start (`active`). To only record what the judge would do, run `/mu mode default shadow`, or put `"modes": { "default": "shadow" }` in `~/.mu/agent/mu.json`.
 
 ## Commands
 
@@ -57,10 +57,6 @@ mu help | version        show this help | print the version
 ```
 
 Everything else goes to pi unchanged: `mu --help` also shows pi's options. mu keeps its files in `~/.mu`, separate from a regular pi install in `~/.pi`.
-
-## Themes
-
-In the terminal, mu uses its own themes, `mu-dark` or `mu-light` to match your terminal, until you pick a theme in `/settings`. Choose `system` there to use your terminal's own palette.
 
 ## Update and remove
 

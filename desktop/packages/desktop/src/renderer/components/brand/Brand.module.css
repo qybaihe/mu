@@ -107,15 +107,6 @@
   line-height: 22px;
 }
 
-.gateHint {
-  max-width: 420px;
-  margin: -12px 0 0;
-  color: var(--text-secondary);
-  font-size: 12px;
-  line-height: 18px;
-  text-align: center;
-}
-
 .gateBar {
   position: relative;
   width: 132px;

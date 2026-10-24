@@ -3,8 +3,6 @@ title: The desktop app
 summary: The conversation, the work panel beside it, the send box, settings and how the app shares everything with the command line.
 ---
 
-The desktop app runs on macOS, Windows and Linux and bundles mu and its runtime. It runs the same agent and judgment kernel as the command line, in a process of its own, so everything the command line can do, the app can do. It adds a work panel next to the conversation, so you can see what the agent and the judge are doing.
-
 ## The conversation {#conversation}
 
 - **One list for both.** The conversation list is mu's own session files. A session you started in a terminal shows up in the app, and one started in the app can be continued with `mu -c` or `mu -r`.
@@ -42,23 +40,23 @@ The built-in browser keeps its own profile and never touches your own browser. E
 
 ## Signing in to models {#models}
 
-Settings → Models signs you in without leaving the app: a ChatGPT, Grok or Google (Gemini CLI or Antigravity) subscription, or an API key for any provider pi supports. ChatGPT uses OpenAI's own Sign in with ChatGPT (Plus or Pro plan): mu shows up as "mu" in your ChatGPT settings, where you can see what it uses, cap it or disconnect it. A server of your own works too, including a plain `http://` address on your machine or network. The thinking level of each model can be changed there.
+Settings → Models signs you in without leaving the app: a ChatGPT, Grok or Google (Gemini CLI or Antigravity) subscription, or an API key for any provider pi supports. ChatGPT uses OpenAI's own Sign in with ChatGPT (Plus or Pro plan). A server of your own works too, including a plain `http://` address on your machine or network.
 
 Google's two sign-ins are Google's logins for its own tools. Using them from another program may break Google's terms, so the app states the risk first and goes on only if you agree. A Gemini API key and Vertex AI need none of this.
 
 ## Settings {#settings}
 
-Settings are grouped by area, each page short: **Preferences**, **Models**, **Kernel**, **Details**, **Capabilities** and **System**. A search box at the top of the sidebar finds any setting.
+Settings are grouped by area: **Preferences**, **Models**, **Kernel**, **Details**, **Capabilities** and **System**. A search box at the top of the sidebar finds any setting.
 
 - **Kernel** lists each feature as one row with a switch; its decision points are listed under it, each with its own switch. The judges page chooses who answers.
 - **Capabilities** lists skills by source (mu's own, the project's or inherited from Claude Code, Codex and Cursor), lets you add a skill folder and remove your own; and lists MCP servers, each with a switch. Keys passed to a server as arguments are masked.
 - Everything the settings change is written to `~/.mu/agent/mu.json`, so it holds for the command line too, and vice versa.
 
-Light and dark follow the system. The interface comes in 13 languages, including Simplified and Traditional Chinese, English, Japanese and Korean.
+The interface comes in 13 languages, including Simplified and Traditional Chinese, English, Japanese and Korean.
 
 ## Importing conversations {#import}
 
-Conversations from Claude Code, the Codex CLI and ZCode can be imported and continued in mu with their full history: messages, tool calls, thinking and images. When the first-run guide finds some, it offers to import them on its first screen, under each app's icon; Settings has the same option. Importing a conversation again brings over what's new in it. The command line does it with `mu import --list` and `mu import <file>`.
+Conversations from Claude Code, the Codex CLI and ZCode can be imported and continued in mu with their full history: messages, tool calls, thinking and images. When the first-run guide finds some, it offers to import them on its first screen; Settings has the same option. Importing a conversation again brings over what's new in it. The command line does it with `mu import --list` and `mu import <file>`.
 
 ## Updates, proxies and logs {#updates}
 

@@ -62,9 +62,9 @@ export default function JudgesSection({ draft, base, onChange, onKey, onReload }
   const { t } = useTranslation();
   const on = shownMode(draft.settings.mode) === 'active';
   return (
-    <SectionShell id='judges' title={t('mu.sections.judges')} description={t('mu.judges.intro')}>
+    <SectionShell id='judges' title={t('mu.sections.judges')}>
       <Card testId='mu-judge-mode'>
-        <Row title={t('mu.judges.mode')} help={t('mu.judges.modeHelp')}>
+        <Row title={t('mu.judges.mode')}>
           {/* A stored shadow reads as off and stays in the file until the switch is turned. */}
           <Switch
             size='small'
@@ -86,7 +86,7 @@ export default function JudgesSection({ draft, base, onChange, onKey, onReload }
 export function JudgeOrderSection(props: JudgesSectionProps) {
   const { t } = useTranslation();
   return (
-    <SectionShell id='judgeOrder' title={t('mu.sections.judgeOrder')} description={t('mu.judges.tiersHelp')}>
+    <SectionShell id='judgeOrder' title={t('mu.sections.judgeOrder')}>
       <JudgeTiers {...props} />
     </SectionShell>
   );
@@ -229,7 +229,7 @@ export function JudgeChoiceTile({
 type BodyProps = {
   choice: JudgeChoice;
   draft: Draft;
-  /** In the first-run guide, which sets a judge up: Laya's address and its Stop belong to the settings. */
+  /** In the first-run guide, which sets a judge up: Laya's Stop belongs to the settings. */
   guide?: boolean;
   onChange: JudgesSectionProps['onChange'];
   onKey: JudgesSectionProps['onKey'];
@@ -270,9 +270,7 @@ export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: Bo
             <div className={fieldStyles.problem} role='alert'>
               {problem}
             </div>
-          ) : (
-            <div className={styles.choiceHint}>{t('mu.judges.clm.addressHelp', { address: CLM_DEFAULT_ADDRESS })}</div>
-          )}
+          ) : null}
         </div>
         <div className={styles.choiceField}>
           <label className={styles.choiceLabel}>
@@ -287,7 +285,6 @@ export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: Bo
             placeholder={set ? t('mu.keyKeep') : t('mu.judges.clm.keyPlaceholder')}
             onChange={(value) => onKey(variable, value)}
           />
-          <div className={styles.choiceHint}>{t('mu.judges.clm.keyHelp')}</div>
         </div>
         <div className={styles.choiceField}>
           <ClmServerCheck
@@ -295,7 +292,6 @@ export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: Bo
             model={judge.model || CLM_DEFAULT_MODEL}
             keySet={Boolean(set || draft.judgeKeys[variable])}
           />
-          <div className={styles.choiceHint}>{t('mu.judges.clm.unmeasured')}</div>
         </div>
       </div>
     );
@@ -304,6 +300,7 @@ export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: Bo
   if (choice === 'jev') {
     const service = serviceOf(judge) ?? 'auto';
     const address = addressOf(t, service, judge?.baseUrl ?? '');
+    const help = serviceHelp(t, service);
     return (
       <div className={styles.choiceFields}>
         <div className={styles.choiceField}>
@@ -318,7 +315,7 @@ export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: Bo
             }
             options={serviceOptions(t)}
           />
-          <OneLine text={t(`mu.judges.services.${service}.help`)} />
+          {help ? <OneLine text={help} /> : null}
         </div>
         {address && name ? (
           <div className={styles.choiceField}>
@@ -335,13 +332,14 @@ export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: Bo
               <div className={fieldStyles.problem} role='alert'>
                 {address.problem}
               </div>
-            ) : (
+            ) : address.help ? (
               <div className={styles.choiceHint}>{address.help}</div>
-            )}
+            ) : null}
           </div>
         ) : null}
         {jevVariables(judge).map((variable) => {
           const label = variableLabel(t, service, variable);
+          const where = variableHelp(t, variable);
           return (
             <div className={styles.choiceField} key={variable}>
               <label className={styles.choiceLabel}>
@@ -356,7 +354,7 @@ export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: Bo
                 draft={draft}
                 onKey={onKey}
               />
-              <div className={styles.choiceHint}>{variableHelp(t, variable)}</div>
+              {where ? <div className={styles.choiceHint}>{where}</div> : null}
             </div>
           );
         })}
@@ -367,11 +365,6 @@ export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: Bo
   return (
     <div className={styles.choiceField}>
       <LocalJudgePanel guide={guide} />
-      {guide ? null : (
-        <div className={styles.choiceHint}>
-          {t('mu.judges.localAddress', { address: judge?.baseUrl || t('mu.judges.endpointDefault') })}
-        </div>
-      )}
     </div>
   );
 }
@@ -411,11 +404,7 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
   return (
     <div className={styles.stack} data-testid='mu-judge-tiers'>
       <Card>
-        <Row
-          title={t('mu.judges.order')}
-          help={t('mu.judges.orderHelp')}
-          modified={base.tiers.join() !== settings.tiers.join()}
-        >
+        <Row title={t('mu.judges.order')} modified={base.tiers.join() !== settings.tiers.join()}>
           <MuSelect
             mode='multiple'
             size='small'
@@ -431,20 +420,15 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
         const judge = settings.judges[name];
         const kind = kindOf(judge);
         const classifier = kind === undefined && judge?.type === 'classifier';
-        // The first of Jev, Laya and CLM is the one the judges page chose: what it needs is asked for there.
+        // Where what a judge needs is set when it is not here: the first of Jev, Laya and CLM is the one the judges
+        // page chose, mude is set up there too, and a judge of another kind is set in mu's settings file.
         const summary = isMude(judge)
           ? t('mu.judges.mude.tierHelp')
           : index === 0 && kind !== undefined
             ? t('mu.judges.firstTier')
-            : kind === 'local'
-              ? t('mu.judges.types.localHelp')
-              : kind === 'clm'
-                ? t('mu.judges.types.clmHelp')
-                : classifier
-                  ? t('mu.judges.types.classifierHelp', { model: judge.model })
-                  : kind === undefined
-                    ? t('mu.judges.customTier')
-                    : undefined;
+            : kind === undefined && !classifier
+              ? t('mu.judges.customTier')
+              : undefined;
         return (
           <Card
             key={`${index}:${name}`}
@@ -494,10 +478,8 @@ function addressOf(t: TFunction, service: JevService, baseUrl: string) {
   else if (custom) problem = t('mu.judges.baseUrlNeeded');
   return {
     placeholder: custom ? CUSTOM_ENDPOINT : TYPESAFE_ENDPOINT,
-    help:
-      baseUrl && isPlainRemoteEndpoint(baseUrl)
-        ? t('mu.endpointPlain')
-        : t(custom ? 'mu.judges.customUrlHelp' : 'mu.judges.baseUrlHelp'),
+    // Only a warning: the placeholder already shows the address to use.
+    help: baseUrl && isPlainRemoteEndpoint(baseUrl) ? t('mu.endpointPlain') : undefined,
     problem,
   };
 }
@@ -508,8 +490,18 @@ const variableLabel = (t: TFunction, service: JevService, variable: string): str
     ? t('mu.judges.services.cloudflare.account')
     : t(`mu.judges.services.${service}.key`);
 
-const variableHelp = (t: TFunction, variable: string): string =>
-  t(variable === CLOUDFLARE_ACCOUNT_VARIABLE ? 'mu.judges.services.cloudflare.accountHelp' : 'mu.keyHelp');
+/** Where to find Cloudflare's account ID; a key needs no sentence. */
+const variableHelp = (t: TFunction, variable: string): string | undefined =>
+  variable === CLOUDFLARE_ACCOUNT_VARIABLE ? t('mu.judges.services.cloudflare.accountHelp') : undefined;
+
+/**
+ * The services whose sentence says something the name does not: what it costs, where the questions go, what a custom
+ * service has to speak. The others are named well enough by their names.
+ */
+const SERVICES_WITH_HELP: ReadonlySet<JevService> = new Set(['auto', 'opencodeFree', 'opencode', 'custom']);
+
+const serviceHelp = (t: TFunction, service: JevService): string | undefined =>
+  SERVICES_WITH_HELP.has(service) ? t(`mu.judges.services.${service}.help`) : undefined;
 
 type VariableInputProps = {
   className: string;
@@ -571,7 +563,7 @@ function JevFields({ draft, base, index, onChange, onKey }: JudgesSectionProps &
       {here ? (
         <Row
           title={t('mu.judges.service')}
-          help={t(`mu.judges.services.${service}.help`)}
+          help={serviceHelp(t, service)}
           modified={before !== undefined && serviceOf(before) !== service}
         >
           <MuSelect
@@ -700,7 +692,6 @@ function ClmFields({ draft, base, index, onChange, onKey }: JudgesSectionProps &
       {here ? (
         <Row
           title={t('mu.judges.clm.address')}
-          help={problem ? undefined : t('mu.judges.clm.addressHelp', { address: CLM_DEFAULT_ADDRESS })}
           problem={problem}
           modified={saved !== undefined && saved.baseUrl !== judge.baseUrl}
         >
@@ -729,7 +720,6 @@ function ClmFields({ draft, base, index, onChange, onKey }: JudgesSectionProps &
         <>
           <Row
             title={t('mu.judges.clm.key')}
-            help={t('mu.judges.clm.keyHelp')}
             modified={Boolean(draft.judgeKeys[variable])}
             badges={<Tag size='small'>{t(set ? 'mu.keyState.set' : 'mu.keyState.none')}</Tag>}
           >

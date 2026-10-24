@@ -344,7 +344,6 @@
   "language": "Language",
   "saveUploadToWorkspace": "Save uploads to the project folder",
   "startOnBoot": "Launch at login",
-  "startOnBootDesc": "Launch mu automatically when you sign in to macOS or Windows.",
   "startOnBootUnsupported": "Available only in the installed macOS and Windows apps.",
   "startOnBootUpdateFailed": "Couldn't change the Launch at login setting",
   "closeToTray": "Keep running in the tray when closed",
@@ -373,10 +372,8 @@
   "groupApp": "Application",
   "groupAbout": "Other",
   "agentIdleTimeout": "Agent idle timeout",
-  "agentIdleTimeoutDesc": "An idle agent stops after this long, to free memory.",
   "previewTextSizeLimit": "Preview size limit",
   "previewTextSizeLimitUnit": "MB",
-  "previewTextSizeLimitDesc": "Text files larger than this open with a notice instead of their content. Applies to newly opened tabs only.",
   "gemini": "Gemini CLI",
   "model": "Model",
   "system": "System",
@@ -984,22 +981,18 @@
   "browserData": {
     "title": "In-app browser",
     "agentControlLabel": "Let the agent use the in-app browser",
-    "agentControlDesc": "When on, the agent can open pages, click links and fill in forms in the in-app browser, for example to look something up or finish a task on a website. It can only control that browser view: it can't reach mu's own interface, and it never opens a separate Chrome window. When off, you can still use the browser; only the agent loses access.",
     "agentControlSaved": "Setting saved",
     "agentControlFailed": "Couldn't save setting",
     "agentControlRestartRequired": "Restart mu to apply this setting.",
     "clearLabel": "Clear browsing data",
-    "clearDesc": "Signs you out of every site in the in-app browser and clears its cache. Open tabs pick up the change after a reload.",
     "clearConfirmTitle": "Clear browsing data?",
     "clearConfirmContent": "You'll be signed out of every site in the in-app browser. This can't be undone.",
     "clearSuccess": "Browsing data cleared",
-    "clearFailed": "Couldn't clear browsing data",
-    "description": "Agent access and browsing data for the in-app browser."
+    "clearFailed": "Couldn't clear browsing data"
   },
   "archived": {
     "navLabel": "Archived conversations",
     "title": "Archived",
-    "description": "Conversations you've archived. Restore them to the sidebar, or delete them permanently.",
     "empty": "No archived conversations",
     "noProject": "No project",
     "chatCount": "{{count}} conversations",
@@ -1072,13 +1065,8 @@
   },
   "mcpAuthRequiredNamed": "{{name}} needs you to sign in",
   "mcpTestConnectionSuccessNamed": "{{name}} connected",
-  "appearanceDescription": "Language, theme, fonts and scale.",
-  "systemDescription": "Launch at login, behavior when the window closes, notifications and the folders mu uses for work and logs.",
-  "conversationsDescription": "Timeouts, preview size, where uploads go and messages between conversations.",
-  "aboutDescription": "Your version of mu, updates and logs.",
   "developer": {
     "title": "Developer",
-    "description": "Developer tools, plus the port and MCP configurations other tools use to reach the in-app browser.",
     "devOnly": "These tools are available only when mu runs from source."
   },
   "search": {

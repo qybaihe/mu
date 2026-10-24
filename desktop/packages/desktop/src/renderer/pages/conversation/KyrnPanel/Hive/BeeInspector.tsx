@@ -68,7 +68,6 @@ export default function BeeInspector({ bee, focus, events }: { bee: HiveBee; foc
         </Collapse.Item>
       </Collapse>
       <h4 className={styles.sectionLabel}>{t('common.kyrn.hiveView.records')}</h4>
-      <p className={styles.hint}>{t('common.kyrn.hiveView.contextHint')}</p>
       {!records.length && <p className={styles.hint}>{t('common.kyrn.hiveView.noRecords')}</p>}
       <Collapse bordered={false} className={styles.collapse}>
         {records.slice((page - 1) * 20, page * 20).map((entry) => (

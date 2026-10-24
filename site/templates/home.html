@@ -3,7 +3,6 @@
 {% block content %}
   <section class="wrap hero">
     <img class="hero-icon intro" style="--d: 120ms" src="{{ root }}assets/icon-256.png" alt="mu" width="104" height="104">
-    <p class="kicker" data-type="{{ H.kicker | e }}">{{ H.kicker }}</p>
     <h1 data-split>{{ H.h1 }}</h1>
     <p class="lead intro" style="--d: 900ms">{{ H.lead }}</p>
 
@@ -30,19 +29,15 @@
         <p class="hint"><span data-version>{{ release.tag }}</span> · {{ H.app_hint }}</p>
       </div>
     </div>
-    <p class="meta intro" style="--d: 1200ms">{{ H.meta }}</p>
     <figure class="app-shot intro" style="--d: 1350ms">
       <img class="only-light" src="{{ root }}assets/app-light.{{ L.shots }}.webp" alt="{{ H.app_alt | e }}" width="1600" height="1200">
       <img class="only-dark" src="{{ root }}assets/app-dark.{{ L.shots }}.webp" alt="{{ H.app_alt | e }}" width="1600" height="1200">
-      <figcaption>{{ H.app_caption }}</figcaption>
     </figure>
     <a class="cue intro" style="--d: 1500ms" href="#how"><span class="down" aria-hidden="true">↓</span>{{ H.cue }}</a>
   </section>
 
   <section class="wrap story-head" id="how">
-    <p class="label" data-reveal>{{ H.story_label }}</p>
-    <h2 data-reveal style="--d: 80ms">{{ H.story_h2 }}</h2>
-    <p class="section-intro" data-reveal style="--d: 160ms">{{ H.story_intro }}</p>
+    <h2 data-reveal>{{ H.story_h2 }}</h2>
   </section>
 
   <div class="wrap story">
@@ -60,22 +55,19 @@
             </div>
             <pre class="term-body" aria-label="{{ L.ui.term_label | e }}">{{ rec.final }}</pre>
           </div>
-          <figcaption>{{ H.chapters[0].caption }}</figcaption>
         </figure>
         <figure class="frame shot" data-frame="swarm">
           <img src="{{ root }}assets/swarm.{{ L.shots }}.webp" alt="{{ H.swarm_alt | e }}" width="1600" height="1184" loading="lazy">
-          <figcaption>{{ H.swarm_caption }}</figcaption>
         </figure>
         <figure class="frame shot" data-frame="board">
           <img src="{{ root }}assets/board.{{ L.shots }}.webp" alt="{{ H.board_alt | e }}" width="1600" height="1184" loading="lazy">
-          <figcaption>{{ H.board_caption }}</figcaption>
         </figure>
       </div>
     </div>
 
     <div class="chapters">
       {% for C in H.chapters %}
-      <article class="chapter" data-frame="{{ C.get('frame', 'term') }}"{% if C.get('seg') %} data-seg="{{ C.seg }}" data-caption="{{ C.caption | e }}"{% else %} id="{{ C.frame }}"{% endif %}>
+      <article class="chapter" data-frame="{{ C.get('frame', 'term') }}"{% if C.get('seg') %} data-seg="{{ C.seg }}"{% else %} id="{{ C.frame }}"{% endif %}>
         <div class="inline-frame"></div>
         <p class="label" data-reveal>{{ C.label }}</p>
         <h2 data-reveal style="--d: 60ms">{{ C.h2 }}</h2>
@@ -90,9 +82,7 @@
   </div>
 
   <section class="wrap callout" id="principles">
-    <p class="label" data-reveal>{{ H.principles_label }}</p>
-    <h2 data-reveal style="--d: 60ms">{{ H.principles_h2 }}</h2>
-    <p class="section-intro" data-reveal style="--d: 120ms">{{ H.principles_intro }}</p>
+    <h2 data-reveal>{{ H.principles_h2 }}</h2>
     <div class="grid">
       {% for P in H.principles %}<div class="card" data-reveal style="--d: {{ (loop.index0 % 3) * 80 }}ms"><span class="num">{{ "%02d" | format(loop.index) }}</span><h3>{{ P.h3 }}</h3><p>{{ P.p }}</p></div>
       {% endfor %}
@@ -101,8 +91,7 @@
   </section>
 
   <section class="wrap callout" id="more">
-    <p class="label" data-reveal>{{ H.more_label }}</p>
-    <h2 data-reveal style="--d: 60ms">{{ H.more_h2 }}</h2>
+    <h2 data-reveal>{{ H.more_h2 }}</h2>
     <div class="list">
       {% for M in H.more %}<div data-reveal style="--d: {{ (loop.index0 % 2) * 80 }}ms"><b>{{ M.b }}</b>{{ M.text }}</div>
       {% endfor %}
@@ -110,13 +99,11 @@
   </section>
 
   <section class="wrap callout" id="community">
-    <p class="label" data-reveal>{{ H.community_label }}</p>
-    <h2 data-reveal style="--d: 60ms">{{ H.community_h2 }}</h2>
+    <h2 data-reveal>{{ H.community_h2 }}</h2>
     <div class="grid">
       {% for C in H.community %}<a class="card" data-reveal style="--d: {{ loop.index0 * 80 }}ms" href="{{ C.href }}"><span class="go" aria-hidden="true">↗</span><h3>{{ C.h3 }}</h3><p>{{ C.p }}</p></a>
       {% endfor %}
     </div>
-    <p class="note" id="key" data-reveal>{{ H.key_note | replace("{decisions}", url(L, pages.decisions)) }}</p>
   </section>
 {% endblock %}
 {% block scripts %}<script type="application/json" id="replay-data">{{ rec.blob }}</script>

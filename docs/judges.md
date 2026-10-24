@@ -32,6 +32,19 @@ mu judge mude status
 
 By default, the judges you had before stay in `tiers` after it as fallbacks. They answer what mude can't (its server is stopped, or it's unsure) and handle the two injection checks mude isn't trusted with yet. With `--local-only`, mude is the only judge, and when it can't answer, the decision point uses its default. mude answers in about 0.1 s, and what it reads never leaves your Mac. Its server uses about 4 GB of memory while it runs, and mu starts it before a session when your configuration names it. If an install stops (Ctrl-C, a lost connection, a power cut), running it again picks up where it left off. On other platforms, serve the [full model](https://huggingface.co/qybaihe/mude-1.0) with its own System One server and add it as a `typesafe` judge, as its model card shows.
 
+### Other decision models
+
+`mu judge model` adds other decision models from Hugging Face the same way: paste a link or `owner/name`. mu pins the commit and every file's hash, downloads the model with resume and progress, runs it in mude's Python environment and makes it the judge. It must be packaged like mude 1.0's MLX edition, with its own `d3_server_mac.py`, which runs on your Mac: add only models you trust.
+
+```bash
+mu judge model add https://huggingface.co/owner/name   # or owner/name@revision; run it again to resume
+mu judge model list                                    # mude 1.0 and the models you added; which one is the judge
+mu judge model use mude                                # switch the judge back to mude 1.0 (or to another model)
+mu judge model remove name
+```
+
+One decision model runs at a time: switching stops the other one's server. In the desktop app, Settings → Judges has the same, next to mude 1.0.
+
 ## Hosted Jev
 
 Jev is a judgment model from TypeSafe, built for this kind of question. The built-in `jev` judge reaches it through the first service whose key is set:
@@ -102,4 +115,4 @@ The key itself never goes in the file: `apiKeyEnv` names the environment variabl
 3. Read the verdicts: `mu ledger [n]` prints the verdicts from the last n sessions, `mu ledger --json` gives every record with its probabilities and timings, and the desktop app's Judge tab shows each verdict with its question.
 4. Switch the point to `active` once its verdicts look right.
 
-`"recordState": true` also keeps the judged state in the ledger, which you need to train or distill your own judge on your sessions. It's off by default because the states contain your content.
+`"recordState": true` also keeps the judged state in the ledger, which you need to train your own judge on your sessions. It's off by default because the states contain your content.

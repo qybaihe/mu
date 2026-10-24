@@ -125,7 +125,6 @@ export default function BoardModelCard({ settings, available, accounts = [], hid
           <ChoiceTile
             testId='mu-board-model-session'
             title={t('mu.boardModel.session')}
-            description={t('mu.boardModel.sessionHelp')}
             active={session}
             onPick={() => pick(SESSION)}
           />
