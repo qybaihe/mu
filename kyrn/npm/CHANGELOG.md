@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- The `openai` judge (type and built-in name): OpenAI's decision model, `gpt-6-luna`, through `POST /v1/decisions` ([Decisions API](https://developers.openai.com/api/docs/guides/decisions)). Yes/no questions go out as predicates with their criteria in the instructions, choices as choices and scores as levels; answers come back with their probabilities and confidence, and usage with the cached and cache-write input tokens (`cachedInputTokens`, `cacheWriteTokens` in the ledger). A refusal or a missing answer fails the call as with TypeSafe, so the next judge or the fallback answers, and HTTP 401, 403, 429 and 5xx are classified the same way. The key is `MU_JUDGE_OPENAI_KEY`. Without it, at OpenAI's own address, the judge takes the key of the `openai` model provider (auth.json or `OPENAI_API_KEY`), but not a Sign in with ChatGPT token, nor the key of an `openai` provider that models.json points elsewhere. With a `baseUrl` (a relay or proxy that serves the same Decisions endpoint), only the judge's own key goes there. The keys of other judge services are never sent to it, and `MU_JUDGE_OPENAI_KEY` and `OPENAI_API_KEY` never to TypeSafe.
+- `mu setup` offers OpenAI's decision model in its judge step, and scripts use `--judge openai`: the OpenAI key mu has, or a key on stdin's second line, written to the .env as `MU_JUDGE_OPENAI_KEY`. `mu doctor` reports where its key comes from, and `/mu judge` lists `openai`.
+
 ### Fixed
 
 - `mu doctor` and `/doctor` mark a missing Chrome, Chromium, Edge or Brave as optional (`--`) instead of something to fix, so `mu doctor` exits 0 when everything else is set up. `mu --help` lines fit in 100 columns.

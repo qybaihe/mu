@@ -136,6 +136,7 @@ mu                  # 현재 디렉터리에서 세션 시작
 ## 판정기
 
 - **Jev**(클라우드). TypeSafe가 호스팅하는 판정 모델로, 답의 범위가 정해진 질문에 확률과 함께 답해요. TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode Zen, Cloudflare Workers AI, 또는 같은 프로토콜을 쓰는 어떤 서비스로든 부를 수 있고, 서비스마다 키가 따로 있어요(`TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY`와 `CLOUDFLARE_ACCOUNT_ID`). 데스크톱 앱의 '판정기' 페이지에서 고를 수 있고, 기본값은 키가 설정된 첫 번째 서비스예요. 키가 하나도 없으면 OpenCode Zen의 기간 한정 무료 Jev 1.13이 답해요. 판정에 필요한 내용은 OpenCode로 가지만 모델 학습에는 쓰이지 않고, mu가 하루에 한 번 알려 줘요. 키를 설정하면(`mu setup`이나 '판정기' 페이지) 다음 질문부터 그 키를 써요. 만든 사람들의 실제 세션에서 잰 값으로, HTTP/2 웜 연결에서 질문 하나에 약 0.3초, 도구 출력 16청크를 요청 하나로 판정하는 데 0.44초가 걸렸고, 상태는 한 번만 과금됐어요.
+- **OpenAI의 판정 모델** `gpt-6-luna`. OpenAI의 [Decisions API](https://developers.openai.com/api/docs/guides/decisions)로 OpenAI API 키(`MU_JUDGE_OPENAI_KEY` 또는 mu가 이미 가진 OpenAI 키)를 써서 답해요. `mu setup --judge openai`나 설정 → 판정기에서 고를 수 있어요.
 - **mude 1.0**(로컬, Apple 실리콘 Mac). 코딩에 맞게 최적화한 mu 자체 의사결정 모델이에요. `mu judge mude install`로 설치하고 판정기로 삼아요.
 - **Hugging Face의 다른 의사결정 모델**(로컬, Apple 실리콘 Mac). `mu judge model add <링크>`(또는 데스크톱 앱 설정의 '판정기')로 mude 1.0과 같은 방식으로 패키징된 모델을 추가하고 판정기로 삼아요. Laya는 이제 mu에 들어 있지 않아요. `mu.json`에 아직 Laya가 있으면 mude 1.0이 설정돼 있을 때는 mude 1.0이 그 자리를 맡고, 아니면 남은 판정기나 Jev를 쓰며, mu가 한 번 알려 줘요.
 - **pi 모델 카탈로그의 어떤 분류 모델이든** 계층 하나로 쓸 수 있어요: `classifier:<provider>/<model>`. Cloudflare의 Clef(`clef`, `clef-flash`), OpenRouter와 Vercel AI Gateway의 System One 모델, llama.cpp 분류 모델 등.
@@ -284,7 +285,7 @@ Node 22.19 이상이 필요해요. `mu -p "prompt"`는 한 번 실행하고 결�
 | 명령어 | 하는 일 |
 | --- | --- |
 | `/status` | 판정기, 판정 지점별 모드, 컨텍스트에서 뺀 것, 최근 판정 |
-| `/mu judge <judges>` | 어떤 판정기가 어떤 순서로 답할지: `jev`, `mude,jev`, `jev-opencode-free`, `classifier:<provider>/<model>`, `llm:<provider>/<model>` |
+| `/mu judge <judges>` | 어떤 판정기가 어떤 순서로 답할지: `jev`, `mude,jev`, `jev-opencode-free`, `openai`, `classifier:<provider>/<model>`, `llm:<provider>/<model>` |
 | `/mu route <point> <judge>` | 판정 지점 하나에 따로 판정기를 지정하기 |
 | `/mu mode <point> <off\|shadow\|active>` | 판정 지점 하나를 전환하기 |
 | `/frame` | 작업 프레임: 목표, 여러분의 제약과 그 출처, 인수 조건 |

@@ -279,6 +279,21 @@ for (const model of new Set(askedTiers.map(classifierOf).filter((judge) => judge
 	}
 }
 
+// OpenAI's decision model (gpt-6-luna) through its Decisions API, for the tiers and routes that use it. Its own key goes
+// to its address; at OpenAI's own address, an OpenAI key of mu's `openai` provider works too (kyrn-judge/src/registry.ts).
+const OPENAI_JUDGE = { type: "openai" };
+const openaiOf = (tier) => config?.judges?.[tier] ?? (tier === "openai" ? OPENAI_JUDGE : undefined);
+for (const judge of new Set(askedTiers.map(openaiOf).filter((judge) => judge?.type === "openai"))) {
+	const name = judge.apiKeyEnv ?? "MU_JUDGE_OPENAI_KEY";
+	const host = judge.baseUrl && URL.canParse(judge.baseUrl) ? new URL(judge.baseUrl).host : "api.openai.com";
+	const model = judge.model || "gpt-6-luna";
+	const providerKey = host === "api.openai.com" && name === "MU_JUDGE_OPENAI_KEY";
+	if (has(name)) row("ok", "openai", `${name} is set: ${model} is called at ${host} (value not shown)`);
+	else if (providerKey && has("OPENAI_API_KEY")) row("ok", "openai", `OPENAI_API_KEY is set: ${model} is called at ${host} (value not shown)`);
+	else if (providerKey && authBytes > 8) row("--", "openai", `${name} not set; an OpenAI API key stored with mu setup or /login works too (not read here)`);
+	else row("fix", "openai", `${name} not set: add it ${where}${providerKey ? ", or set up an OpenAI API key with mu setup" : ""}`);
+}
+
 // CLM-8B behind `clm-serve` (github.com/Contrastive-LM/CLM), for the tiers and routes that use it.
 /** As packages/kyrn-judge/src/providers/typesafe.ts reads a CLM address: `http://host:8700` is enough. */
 function clmEndpoint(baseUrl) {
@@ -359,7 +374,8 @@ const canRelate = (tier) =>
 	tier === "gateway" ||
 	tier.startsWith("llm:") ||
 	tier.startsWith("classifier:") ||
-	["llm", "clm", "classifier"].includes(judgeOf(tier)?.type);
+	tier === "openai" ||
+	["llm", "clm", "classifier", "openai"].includes(judgeOf(tier)?.type);
 const browseTiers = config?.routes?.["browser.step"] ?? tiers;
 const routed = Object.entries(config?.routes ?? {});
 if (routed.length > 0) row("--", "routes", routed.map(([id, value]) => `${id} -> ${[value].flat().join(" > ")}`).join(" · "));

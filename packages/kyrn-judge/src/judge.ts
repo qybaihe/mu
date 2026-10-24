@@ -72,6 +72,16 @@ export function validateQuestions(questions: Questions): void {
 	}
 }
 
+/** Adds `part` to `total`. The cache counts appear only once a provider reports them. */
+export function addUsage(total: JudgeUsage, part: JudgeUsage | undefined): void {
+	total.inputTokens = (total.inputTokens ?? 0) + (part?.inputTokens ?? 0);
+	total.outputTokens = (total.outputTokens ?? 0) + (part?.outputTokens ?? 0);
+	if (part?.cachedInputTokens !== undefined)
+		total.cachedInputTokens = (total.cachedInputTokens ?? 0) + part.cachedInputTokens;
+	if (part?.cacheWriteTokens !== undefined)
+		total.cacheWriteTokens = (total.cacheWriteTokens ?? 0) + part.cacheWriteTokens;
+}
+
 function isProbability(value: unknown): value is number {
 	return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1;
 }
@@ -157,8 +167,7 @@ export class Judge implements JudgeLike {
 		for (const response of responses) {
 			Object.assign(answers, response.answers);
 			if (response.warnings) warnings.push(...response.warnings);
-			usage.inputTokens = (usage.inputTokens ?? 0) + (response.usage?.inputTokens ?? 0);
-			usage.outputTokens = (usage.outputTokens ?? 0) + (response.usage?.outputTokens ?? 0);
+			addUsage(usage, response.usage);
 		}
 		for (const id of ids) {
 			const problem = answerProblem(request.questions[id], answers[id]);

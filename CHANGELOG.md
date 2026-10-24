@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Added
+
+- **OpenAI's decision model can be the judge.** `gpt-6-luna` answers mu's decisions through OpenAI's Decisions API. Pick it with `mu setup --judge openai`, with `/mu judge openai` in a session, or as OpenAI on the Judges page in Settings, which has a field for its key. It uses its own key, `MU_JUDGE_OPENAI_KEY`, or else the OpenAI API key you already set up for mu's models (Sign in with ChatGPT doesn't work for it). To reach it through a relay or proxy that serves the same Decisions endpoint, give the judge a `baseUrl` and a key of its own in `~/.mu/agent/mu.json`: the key of mu's OpenAI models only ever goes to api.openai.com. OpenAI charges $0.10 per million uncached input tokens and nothing for output. It isn't measured on mu's questions yet.
+
 ### Fixed
 
 - **`mu doctor` no longer fails on a machine without Chrome.** A browser is only needed for mu's browser, so the row now says it's optional instead of asking you to fix it, and `mu doctor` (and `/doctor` inside mu) passes when everything else is set up. `mu --help` also fits in a 100-column terminal now.
