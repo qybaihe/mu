@@ -289,7 +289,7 @@ export function registerWeb(runtime: KyrnRuntime): void {
 		kind: "tool",
 		title: "Web reading and search",
 		description:
-			"Read a web page as text and search the web from mainland China without a key, or through Tavily with TAVILY_API_KEY set.",
+			"Read a web page as text, and search the web with no key or through Tavily with TAVILY_API_KEY set. The default search source also works from mainland China.",
 		tools: ["web_fetch", "web_search"],
 		exposure: "always",
 	});
