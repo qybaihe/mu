@@ -131,7 +131,6 @@ export default function ContextPanel({ events }: { events: Activity[] }) {
                           }).join(' · ') || '—'}
                         </div>
                       )}
-                      <div className='text-12px text-t-tertiary'>{t('common.kyrn.compactionEstimate')}</div>
                     </>
                   )}
                   {/* The headline above says what happened; the harness's own message is the detail. */}

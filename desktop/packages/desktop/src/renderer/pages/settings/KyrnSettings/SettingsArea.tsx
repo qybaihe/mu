@@ -156,7 +156,7 @@ function Area({ page: routed, feature, part, focus, onView, mu }: SettingsAreaPr
     <div className={styles.area} data-testid='kyrn-settings'>
       {messageHolder}
       {/* Not sticky: the section list is what stays in view here. */}
-      {routed ? null : <SettingsPageHeader sticky={false} title={t('mu.title')} description={t('mu.description')} />}
+      {routed ? null : <SettingsPageHeader sticky={false} title={t('mu.title')} />}
       {base?.harness.status === 'unsupported' ? (
         <Alert type='warning' content={t('mu.harness.unsupported', { version: base.harness.version })} />
       ) : null}

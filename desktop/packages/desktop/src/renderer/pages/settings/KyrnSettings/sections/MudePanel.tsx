@@ -196,15 +196,13 @@ export default function MudePanel({ mude, unsaved }: MudePanelProps) {
   const installed = mudeInstalled(status);
   const supported = status?.supported !== false;
   const unfinished = mudeUnfinished(status);
-  // The line under the status: what it takes while it runs (where the status does not already say what it uses), how
-  // much of an install that stopped part way is there, or what installing takes.
+  // The line under the status: what it takes while it runs (only where the status does not already say what it
+  // uses), how much of an install that stopped part way is there, or what installing takes.
   let hint: string | undefined;
-  if (installed)
-    hint =
-      status?.running && status.ready && status.memoryBytes
-        ? t('mu.judges.mude.shared')
-        : t('mu.judges.mude.resources', { memory: formatNumber(MUDE_MEMORY_GB, language) });
-  else if (unfinished) hint = unfinishedLine(t, status, installEnded(task), language);
+  if (installed) {
+    if (!(status?.running && status.ready && status.memoryBytes))
+      hint = t('mu.judges.mude.resources', { memory: formatNumber(MUDE_MEMORY_GB, language) });
+  } else if (unfinished) hint = unfinishedLine(t, status, installEnded(task), language);
   else hint = consentLine(t, language);
 
   const install = () => {

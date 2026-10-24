@@ -19,7 +19,7 @@ const ImportChats: React.FC = () => {
   return (
     <>
       <div className='settings-list' data-testid='import-chats'>
-        <PreferenceRow label={t('mu.importChats.title')} description={t('mu.importChats.description')}>
+        <PreferenceRow label={t('mu.importChats.title')}>
           <span className='flex items-center gap-12px'>
             <span className='flex items-center gap-6px text-t-secondary'>
               {IMPORT_TOOLS.map((tool) => (

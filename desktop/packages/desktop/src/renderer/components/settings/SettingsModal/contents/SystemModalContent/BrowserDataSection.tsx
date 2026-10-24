@@ -106,10 +106,7 @@ const BrowserDataSection: React.FC = () => {
   return (
     // The page's title names it: the section is only its rows.
     <div className='settings-list'>
-      <PreferenceRow
-        label={t('settings.browserData.agentControlLabel')}
-        description={t('settings.browserData.agentControlDesc')}
-      >
+      <PreferenceRow label={t('settings.browserData.agentControlLabel')}>
         <Switch
           size='small'
           checked={agentControlEnabled}
@@ -134,7 +131,7 @@ const BrowserDataSection: React.FC = () => {
         </div>
       )}
 
-      <PreferenceRow label={t('settings.browserData.clearLabel')} description={t('settings.browserData.clearDesc')}>
+      <PreferenceRow label={t('settings.browserData.clearLabel')}>
         <Button size='small' status='danger' loading={clearing} onClick={handleClear}>
           {t('common.clear')}
         </Button>

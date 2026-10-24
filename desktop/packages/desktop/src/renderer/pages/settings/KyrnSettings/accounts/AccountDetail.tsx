@@ -81,7 +81,6 @@ export default function AccountDetail({ provider, flow, byKey, onShow }: Account
       <div className={providerStyles.fields}>
         <div className={providerStyles.field}>
           <div className={providerStyles.value}>{t(`mu.welcome.login.providers.${provider}.plan`)}</div>
-          <div className={providerStyles.hint}>{t('mu.accounts.instant')}</div>
           {byKey ? <div className={providerStyles.hint}>{t('mu.accounts.byKeyHelp')}</div> : null}
           {legacy ? (
             <div className={providerStyles.hint} data-testid='mu-account-legacy'>

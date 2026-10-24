@@ -55,7 +55,6 @@
     "newTask": "Neue Aufgabe",
     "createViaChat": "Per Chat erstellen",
     "createManually": "Manuell erstellen",
-    "description": "Aufgaben nach Zeitplan ausführen. Du kannst mu auch in jedem Gespräch bitten, eine zu erstellen.",
     "awakeBanner": "Geplante Aufgaben werden nur ausgeführt, wenn dein Computer aktiv ist.",
     "keepAwake": "Aktiv halten",
     "keepAwakeTooltip": "Wenn aktiviert, verhindert mu, dass dein Computer in den Ruhezustand geht",

@@ -46,39 +46,21 @@ describe('the pages that were one long system page', () => {
     vi.clearAllMocks();
   });
 
-  // Every settings page has the one header: its title, and one line on what the page holds.
+  // Every settings page has the one header: its title alone, with no sentence under it on what the page holds.
   it.each([
-    ['system', SystemSettings, 'settings.system', 'settings.systemDescription', 'system-modal-content'],
-    [
-      'conversations',
-      ConversationSettings,
-      'settings.conversations',
-      'settings.conversationsDescription',
-      'conversation-preferences',
-    ],
-    [
-      'in-app browser',
-      BrowserSettings,
-      'settings.browserData.title',
-      'settings.browserData.description',
-      'browser-data-section',
-    ],
-    ['about', AboutSettings, 'settings.about', 'settings.aboutDescription', 'about-modal-content'],
-    [
-      'developer tools',
-      DeveloperSettings,
-      'settings.developer.title',
-      'settings.developer.description',
-      'dev-settings',
-    ],
+    ['system', SystemSettings, 'settings.system', 'system-modal-content'],
+    ['conversations', ConversationSettings, 'settings.conversations', 'conversation-preferences'],
+    ['in-app browser', BrowserSettings, 'settings.browserData.title', 'browser-data-section'],
+    ['about', AboutSettings, 'settings.about', 'about-modal-content'],
+    ['developer tools', DeveloperSettings, 'settings.developer.title', 'dev-settings'],
   ])(
-    'gives the %s its own page, titled and described, in the page frame with no width of its own',
-    (_name, Page, title, description, content) => {
+    'gives the %s its own page, titled with nothing under the title, in the page frame with no width of its own',
+    (_name, Page, title, content) => {
       render(<Page />);
       const wrapper = screen.getByTestId('settings-page-wrapper');
       expect(wrapper).not.toHaveAttribute('data-content-class');
       expect(within(wrapper).getByRole('heading', { name: title })).toBeInTheDocument();
-      expect(within(wrapper).getByText(description)).toBeInTheDocument();
+      expect(wrapper.querySelector('.settings-page-header p')).toBeNull();
       expect(within(wrapper).getByTestId(content)).toBeInTheDocument();
     }
   );

@@ -103,16 +103,16 @@ describe('mu’s skills while mu runs inside the app', () => {
     );
     expect(groups).toEqual(['mu-skills-mu', 'mu-skills-agents', 'mu-skills-builtin', 'mu-skills-claude']);
     expect(own).toHaveTextContent("mu's skills");
-    expect(own).toHaveTextContent(`In ${FOLDER}.`);
+    // The group's title says where its skills come from: no sentence under it.
+    expect(own).not.toHaveTextContent(FOLDER);
     expect(within(own).getByTestId('mu-skill-review')).toHaveTextContent('What review does.');
     expect(within(own).getByRole('button', { name: 'review: Remove' })).toBeInTheDocument();
     const inherited = screen.getByTestId('mu-skills-claude');
     expect(inherited).toHaveTextContent('From Claude Code');
-    expect(inherited).toHaveTextContent('From ~/.claude/skills.');
     for (const id of ['mu-skills-agents', 'mu-skills-builtin', 'mu-skills-claude'])
       expect(within(screen.getByTestId(id)).queryByRole('button', { name: /Remove/ })).not.toBeInTheDocument();
-    // A project's own skills are not mu's to list here: the page says so.
-    expect(screen.getByText(/load only in that project's conversations/)).toBeInTheDocument();
+    // A project's own skills are not mu's to list here, and no footnote says so.
+    expect(screen.queryByText(/load only in that project's conversations/)).not.toBeInTheDocument();
   });
 
   it('finds a skill by its name or what it does, group by group', async () => {
@@ -239,21 +239,20 @@ describe('mu’s MCP servers while mu runs inside the app', () => {
     draw(<MuMcpPage />);
     const own = await screen.findByTestId('mu-mcp-mu');
     expect(screen.getByRole('heading', { name: 'MCP servers' })).toBeInTheDocument();
-    expect(own).toHaveTextContent(`Servers you add go into ${MCP_FILE}`);
+    expect(own).toHaveTextContent("mu's servers");
     expect(within(own).getByTestId('mu-mcp-filesystem')).toHaveTextContent('npx -y filesystem');
     expect(within(own).getByTestId('mu-mcp-github')).toHaveTextContent('https://api.example.com/mcp');
     expect(within(own).getByRole('switch', { name: 'Use github' })).toBeChecked();
     expect(within(own).getByRole('button', { name: 'github: Remove' })).toBeInTheDocument();
     // Taken over from Claude Code: a switch, nothing to remove.
     const claude = screen.getByTestId('mu-mcp-claude');
-    expect(claude).toHaveTextContent('From ~/.claude.json.');
+    expect(claude).toHaveTextContent('From Claude Code');
     expect(within(claude).getByRole('switch', { name: 'Use sentry' })).toBeInTheDocument();
     expect(within(claude).queryByRole('button', { name: /Remove/ })).not.toBeInTheDocument();
     // Off in Cursor's own file, or of a kind mu cannot speak to: it says so, with no switch.
     expect(screen.getByTestId('mu-mcp-lock-linear')).toHaveTextContent('Off in its source');
     expect(screen.getByTestId('mu-mcp-lock-legacy')).toHaveTextContent('Not supported');
     expect(screen.queryByRole('switch', { name: 'Use linear' })).not.toBeInTheDocument();
-    expect(screen.getByText(/are used only in that project's conversations/)).toBeInTheDocument();
   });
 
   it('switches a server off and shows the list the main process answered with', async () => {

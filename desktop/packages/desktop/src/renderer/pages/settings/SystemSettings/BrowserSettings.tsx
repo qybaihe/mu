@@ -13,7 +13,7 @@ import { SettingsPage } from '../components/SettingsPageHeader';
 const BrowserSettings: React.FC = () => {
   const { t } = useTranslation();
   return (
-    <SettingsPage title={t('settings.browserData.title')} description={t('settings.browserData.description')}>
+    <SettingsPage title={t('settings.browserData.title')}>
       <BrowserDataSection />
     </SettingsPage>
   );

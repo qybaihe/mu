@@ -71,7 +71,6 @@ const API_WAYS = ['openai', 'anthropic'] as const;
 type ApiWay = (typeof API_WAYS)[number];
 type OpenAiApi = Extract<GuideApi, 'openai-completions' | 'openai-responses'>;
 const OPENAI_APIS: readonly OpenAiApi[] = ['openai-completions', 'openai-responses'];
-const INTRO_POINTS = ['judge', 'control', 'ready'] as const;
 
 /**
  * One turn as the judge sees it, for the introduction: three real decision points, what each one's verdict said and
@@ -348,23 +347,12 @@ export default function Welcome() {
             ))}
           </ol>
         </figure>
-        <ul className={styles.points}>
-          {INTRO_POINTS.map((point) => (
-            <li key={point} className={styles.point}>
-              <div>
-                <div className={styles.pointTitle}>{t(`mu.welcome.intro.points.${point}.title`)}</div>
-                <div className={styles.pointText}>{t(`mu.welcome.intro.points.${point}.text`)}</div>
-              </div>
-            </li>
-          ))}
-        </ul>
       </>
     );
   } else if (step === 'model') {
     body = (
       <>
         <h1 className={styles.title}>{t('mu.welcome.model.title')}</h1>
-        <p className={styles.subtitle}>{t('mu.welcome.model.subtitle')}</p>
         {savedModel ? <Ready testId='mu-welcome-model-ready' text={savedModel} /> : null}
         <div className={choiceStyles.choices} role='radiogroup' aria-label={t('mu.welcome.model.title')}>
           <ChoiceTile
@@ -488,7 +476,6 @@ export default function Welcome() {
     body = (
       <>
         <h1 className={styles.title}>{t('mu.welcome.permissions.title')}</h1>
-        <p className={styles.subtitle}>{t('mu.welcome.permissions.subtitle')}</p>
         <div className={choiceStyles.choices} role='radiogroup' aria-label={t('mu.welcome.permissions.title')}>
           {permissionModes.map((mode) => (
             <ChoiceTile
@@ -508,7 +495,6 @@ export default function Welcome() {
     body = (
       <>
         <h1 className={styles.title}>{t('mu.welcome.judge.title')}</h1>
-        <p className={styles.subtitle}>{t('mu.welcome.judge.subtitle')}</p>
         {judgeReady && !mudePicked ? <Ready testId='mu-welcome-judge-ready' text={judgeReady} /> : null}
         <div
           className={choiceStyles.choices}
@@ -609,7 +595,6 @@ export default function Welcome() {
     body = (
       <>
         <h1 className={styles.title}>{t('mu.welcome.done.title')}</h1>
-        <p className={styles.subtitle}>{t('mu.welcome.done.subtitle')}</p>
         <dl className={styles.summary}>
           <div className={styles.summaryRow}>
             <dt>{t('mu.welcome.done.model')}</dt>

@@ -471,8 +471,8 @@ describe('mude as a choice of the judges page', () => {
     const tile = await judgesPage();
     expect(tile).toHaveAttribute('aria-checked', 'true');
     await waitFor(() => expect(tile).toHaveTextContent('Running on 127.0.0.1:8790 · 3.6 GB'));
-    expect(tile).toHaveTextContent('including ones in the terminal');
-    // What it uses is in the status already: no second figure under it.
+    // What it uses is in the status already: nothing under it.
+    expect(within(tile).queryByTestId('mu-mude-hint')).not.toBeInTheDocument();
     expect(tile).not.toHaveTextContent('about 4 GB');
     const only = within(within(tile).getByTestId('mu-mude-local-only')).getByRole('switch');
     expect(only).not.toBeChecked();

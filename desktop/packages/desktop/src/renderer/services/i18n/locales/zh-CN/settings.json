@@ -344,7 +344,6 @@
   "language": "语言",
   "saveUploadToWorkspace": "上传文件保存到项目文件夹",
   "startOnBoot": "开机启动",
-  "startOnBootDesc": "登录 macOS 或 Windows 后自动启动 mu。",
   "startOnBootUnsupported": "仅在安装版的 macOS 和 Windows 应用中可用。",
   "startOnBootUpdateFailed": "更新开机启动设置失败",
   "closeToTray": "关闭到托盘",
@@ -373,10 +372,8 @@
   "groupApp": "应用",
   "groupAbout": "其他",
   "agentIdleTimeout": "代理空闲超时",
-  "agentIdleTimeoutDesc": "代理空闲超过这个时长就会停下，以释放内存。",
   "previewTextSizeLimit": "预览大小上限",
   "previewTextSizeLimitUnit": "MB",
-  "previewTextSizeLimitDesc": "超过该大小的文本文件只显示提示、不加载内容。仅对新打开的标签页生效。",
   "gemini": "Gemini CLI",
   "model": "模型",
   "system": "系统",
@@ -985,22 +982,18 @@
   "browserData": {
     "title": "应用内浏览器",
     "agentControlLabel": "允许代理操作应用内浏览器",
-    "agentControlDesc": "开启后，代理可以在应用内浏览器里帮你打开网页、点击和填表，例如查资料或走完一个网站流程。它只能操作应用内浏览器这一个页面，碰不到 mu 界面本身，也不会打开单独的 Chrome 窗口。关闭后浏览器仍可自己使用，只是代理无法操作。",
     "agentControlSaved": "设置已保存",
     "agentControlFailed": "设置保存失败",
     "agentControlRestartRequired": "该设置需要重启应用后生效。",
     "clearLabel": "清空浏览数据",
-    "clearDesc": "退出浏览器中所有已登录的网站，并清空缓存。已打开的浏览器标签页刷新后生效。",
     "clearConfirmTitle": "确定清空浏览数据？",
     "clearConfirmContent": "应用内浏览器中所有网站的登录状态都会被退出，且无法恢复。",
     "clearSuccess": "浏览数据已清空",
-    "clearFailed": "清空浏览数据失败",
-    "description": "是否允许代理操作应用内浏览器，以及清除浏览器保存的数据。"
+    "clearFailed": "清空浏览数据失败"
   },
   "archived": {
     "navLabel": "已归档的对话",
     "title": "已归档",
-    "description": "你归档的会话。可以恢复到侧边栏，或批量删除将其永久删除。",
     "empty": "暂无归档内容",
     "noProject": "无项目",
     "chatCount": "{{count}} 个聊天",
@@ -1073,13 +1066,8 @@
   },
   "mcpAuthRequiredNamed": "{{name}} 需要身份验证",
   "mcpTestConnectionSuccessNamed": "{{name}} 连接测试成功",
-  "appearanceDescription": "界面语言、主题、字体和缩放。",
-  "systemDescription": "开机启动、关闭窗口后继续运行、通知，以及 mu 的工作目录和日志目录。",
-  "conversationsDescription": "超时时间、预览大小上限、上传文件的去处，以及对话之间的消息。",
-  "aboutDescription": "当前的 mu 版本、更新，以及日志文件夹的入口。",
   "developer": {
     "title": "开发者",
-    "description": "开发者工具，以及外部工具连接应用内浏览器用的端口和 MCP 配置。",
     "devOnly": "这些工具只在从源码运行的 mu 里提供。"
   },
   "search": {
