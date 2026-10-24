@@ -1093,9 +1093,11 @@
       "body": "O mu trabalha nesta pasta. Diga o que você quer que seja feito."
     },
     "sider": {
-      "title": "Recentes",
       "new": "Nova conversa em uma pasta",
       "empty": "Nenhuma conversa ainda",
+      "addProject": "Adicionar projeto",
+      "removeProject": "Remover projeto",
+      "archiveProjectConfirm": "Arquivar “{{name}}” e as conversas dele? Você pode restaurá-las em “Arquivados”, no fim da lista.",
       "all": "Mostrar todas ({{count}})",
       "fewer": "Mostrar menos",
       "deleteConfirm": "Excluir “{{title}}”? O arquivo da sessão vai para a lixeira, de onde ainda pode ser restaurado.",

@@ -1093,9 +1093,11 @@
       "body": "mu 會在這個資料夾裡工作。說說你想做什麼。"
     },
     "sider": {
-      "title": "最近",
       "new": "在資料夾裡新增對話",
       "empty": "還沒有對話",
+      "addProject": "新增專案",
+      "removeProject": "移除專案",
+      "archiveProjectConfirm": "確定歸檔「{{name}}」和其中的對話嗎？可以在列表末尾的「已歸檔」裡恢復。",
       "all": "顯示全部（{{count}}）",
       "fewer": "收合",
       "deleteConfirm": "刪除「{{title}}」？它的工作階段檔案會移到垃圾桶，之後仍可復原。",
