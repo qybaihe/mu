@@ -14,7 +14,12 @@ export const MUDE_MODEL = "mude";
 export interface MudeFile {
 	readonly path: string;
 	readonly size: number;
-	readonly sha256: string;
+	/**
+	 * The file's sha256. A decision model added from Hugging Face (models.ts) has it for the files kept in LFS; a small
+	 * file kept in git has its git blob sha1 instead.
+	 */
+	readonly sha256?: string;
+	readonly gitSha1?: string;
 }
 
 const FILES: ReadonlyArray<readonly [string, number, string]> = [
@@ -58,5 +63,10 @@ export const MUDE_BYTES = MUDE_FILES.reduce((sum, file) => sum + file.size, 0);
 
 /** Where a file of the pinned revision is downloaded from. */
 export function mudeFileUrl(path: string, endpoint = "https://huggingface.co"): string {
-	return `${endpoint.replace(/\/+$/, "")}/${MUDE_REPO}/resolve/${MUDE_REVISION}/${path.split("/").map(encodeURIComponent).join("/")}`;
+	return fileUrl(MUDE_REPO, MUDE_REVISION, path, endpoint);
+}
+
+/** Where a file of a Hugging Face model repository at `revision` is downloaded from. */
+export function fileUrl(repo: string, revision: string, path: string, endpoint = "https://huggingface.co"): string {
+	return `${endpoint.replace(/\/+$/, "")}/${repo}/resolve/${revision}/${path.split("/").map(encodeURIComponent).join("/")}`;
 }
