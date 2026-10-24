@@ -304,6 +304,7 @@
     "download": "下载这个版本",
     "full_agent": "mu-agent 的完整更新记录（英文）",
     "headlines": {
+      "v0.2.6": "Laya 被替换的提示现在能看到了；mude 1.0 重装后仍只用本地；没装 Chrome 时 mu doctor 不再报错；侧边栏和文件链接的小修复",
       "v0.2.5": "移除内置的 Laya：原来用 Laya 的自动换成 mude 1.0 或 Jev；打开对话不再等判定器启动",
       "v0.2.4": "回复里提到的文件可以点开；对话按项目归类、从首页立即进入；支持 Gemini 4 Argon；修复第三方 OpenAI 兼容服务",
       "v0.2.3": "可以添加 Hugging Face 上的其他决策模型；运行中发的消息由 mu 决定何时送达；ChatGPT 登录不再被端口占用卡住",
@@ -315,6 +316,18 @@
       "v0.1.8": "检查 MCP 工具描述里藏的指令，跑通的长任务可以存成技能"
     },
     "entries": [
+      {
+        "version": "v0.2.6",
+        "date": "2026-10-24",
+        "agent": "mu-agent 0.2.6",
+        "items": [
+          "<b>Laya 被替换的提示现在能看到了。</b>0.2.5 本应告诉原来用 Laya 的人「判定器换成了哪个」，但 App 每次启动时对 mu 做的检查抢先收走了这条提示。现在 mu 仍在会话开始时更新 <code>mu.json</code>，提示则等到你发出第一条消息时再显示（App 和终端都一样）。如果 0.2.5 已经改过你的 <code>mu.json</code>，这条提示不会再出现：判定器是 mude 1.0（已在这台 Mac 上装好时）、你列表里的其他判定器或 Jev，旧文件在 <code>~/.mu/backups</code>。",
+          "<b>重装 mude 1.0 后仍只用本地。</b>在已设为「只用本地」的情况下再运行 <code>mu judge mude install</code>，或用 <code>mu judge model add</code> 添加 mude 自己的仓库，以前会把 Jev 又放回它后面。现在会保留你的选择，和 <code>mu judge mude enable</code> 一样；用 <code>--with-fallback</code> 仍可更改。",
+          "<b>没装 Chrome 时 <code>mu doctor</code> 不再报错。</b>浏览器只有 mu 的浏览功能才需要，所以这一行现在标为可选，其他都设置好时 <code>mu doctor</code>（以及 mu 里的 <code>/doctor</code>）会通过。<code>mu --help</code> 也能在 100 列宽的终端里完整显示了。",
+          "<b>桌面端的几处小修复。</b>侧边栏里过长的项目名会先显示省略号，不再被「+」和菜单按钮盖住，点击后移开鼠标按钮也会隐藏；置顶对话的标题优先显示；回复里文件名后面的文件夹图标隐藏时不再留下空白，不存在的文件仍是灰色但能看清；从首页发出消息后，模型标签显示的是首页选的模型，而不是「Default model」。",
+          "<b>Hugging Face 模型名打错时，不再说成「私有」。</b>在「设置 → 判定器」或用 <code>mu judge model add</code> 添加决策模型时，Hugging Face 对不存在的名字和私有、受限的模型给出同样的回应，所以 mu 现在会请你先检查名字，并说明它可能不存在，也可能是私有或受限的。"
+        ]
+      },
       {
         "version": "v0.2.5",
         "date": "2026-10-24",
