@@ -35,7 +35,9 @@ const KIND_OF: Record<Exclude<JudgeType, 'classifier'>, JudgeChoice | undefined>
   gateway: 'jev',
   clm: 'clm',
   openai: 'openai',
+  systemone: undefined,
   llm: undefined,
+  logprob: undefined,
   http: undefined,
   mock: undefined,
 };
