@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { DEFAULT_CONFIG, retiredJudges, withoutRetired } from "./config.ts";
+import { DEFAULT_CONFIG, namesRetired, retiredJudges, withoutRetired } from "./config.ts";
 import { missingFiles } from "./mude/download.ts";
 import { MUDE_FILES, type MudeFile } from "./mude/manifest.ts";
 import { mudePaths } from "./mude/paths.ts";
@@ -151,9 +151,11 @@ function arrayText(text: string, original: Node, list: readonly string[]): strin
 	if (oneLine) {
 		return `[${list.map((item) => JSON.stringify(item)).join(/,\s/.test(old) || items.length < 2 ? ", " : ",")}]`;
 	}
+	// The file's own line ending: CRLF stays CRLF.
+	const eol = text.includes("\r\n") ? "\r\n" : "\n";
 	const closing = text.slice(text.lastIndexOf("\n", original.end - 1) + 1, original.end - 1);
-	const end = /^\s*$/.test(closing) ? `\n${closing}` : "";
-	return `[\n${list.map((item) => `${indent}${JSON.stringify(item)}`).join(",\n")}${end}]`;
+	const end = /^\s*$/.test(closing) ? `${eol}${closing}` : "";
+	return `[${eol}${list.map((item) => `${indent}${JSON.stringify(item)}`).join(`,${eol}`)}${end}]`;
 }
 
 /** Edits that take the properties `gone` out of `object`, commas and the lines they stood on included. */
@@ -240,7 +242,27 @@ export function migrateConfigText(text: string, replacement?: string): string | 
 	for (const edit of [...edits].sort((a, b) => b.start - a.start)) {
 		next = next.slice(0, edit.start) + edit.text + next.slice(edit.end);
 	}
-	return next;
+	// Written only when the result is plain JSON that no longer names Laya: a gap in the edits above must never leave a
+	// broken mu.json behind. The session reads the file without Laya either way (config.ts).
+	return stillValid(next) ? next : undefined;
+}
+
+/** Whether `text` parses as a JSON object that names no retired judge in `tiers`, a route, or `judges`. */
+function stillValid(text: string): boolean {
+	let value: unknown;
+	try {
+		value = JSON.parse(text);
+	} catch {
+		return false;
+	}
+	if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+	const config = value as Record<string, unknown>;
+	if (namesRetired(config)) return false;
+	const judges = config.judges;
+	if (typeof judges !== "object" || judges === null) return true;
+	return !Object.values(judges).some(
+		(entry) => typeof entry === "object" && entry !== null && (entry as { type?: unknown }).type === "local",
+	);
 }
 
 /**

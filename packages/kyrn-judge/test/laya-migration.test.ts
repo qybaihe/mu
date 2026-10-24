@@ -298,4 +298,151 @@ describe("migrateConfigText", () => {
 			migrateConfigText('{\n  "routes": {\n    "a": ["laya"],\n    "b": ["clm"],\n    "c": ["laya"]\n  }\n}'),
 		).toBe('{\n  "routes": {\n    "b": ["clm"]\n  }\n}');
 	});
+
+	it("takes out the last property, and the only one, of judges and routes, and leaves no dangling comma", () => {
+		const only =
+			'{\n  "tiers": ["jev"],\n  "routes": { "a": ["laya"] },\n  "judges": { "l": { "type": "local" } }\n}\n';
+		expect(migrateConfigText(only)).toBe('{\n  "tiers": ["jev"],\n  "routes": {},\n  "judges": {}\n}\n');
+
+		const last = [
+			"{",
+			'  "routes": {',
+			'    "kept": ["clm"],',
+			'    "gone": ["laya"]',
+			"  },",
+			'  "judges": {',
+			'    "luna": { "type": "llm", "model": "openai/gpt-5.6-luna" },',
+			'    "l": { "type": "local" }',
+			"  }",
+			"}",
+		].join("\n");
+		const next = migrateConfigText(last) ?? "";
+		expect(next).toBe(
+			[
+				"{",
+				'  "routes": {',
+				'    "kept": ["clm"]',
+				"  },",
+				'  "judges": {',
+				'    "luna": { "type": "llm", "model": "openai/gpt-5.6-luna" }',
+				"  }",
+				"}",
+			].join("\n"),
+		);
+		expect(JSON.parse(next)).toEqual({
+			routes: { kept: ["clm"] },
+			judges: { luna: { type: "llm", model: "openai/gpt-5.6-luna" } },
+		});
+	});
+
+	it("handles the commas around a removed entry wherever they stand", () => {
+		const layouts = [
+			// Comma after the value, before the next key, alone on a line, with spaces on both sides.
+			'{"routes":{"a":["laya"],"b":["clm"],"c":["laya"],"d":["jev"],"e":["laya"]}}',
+			'{ "routes" : { "a" : [ "laya" ] , "b" : [ "clm" ] , "c" : [ "laya" ] , "d" : [ "jev" ] , "e" : [ "laya" ] } }',
+			'{\n  "routes": {\n    "a": ["laya"]\n    ,\n    "b": ["clm"]\n    , "c": ["laya"],\n    "d": ["jev"]\n    ,"e": ["laya"]\n  }\n}',
+		];
+		for (const text of layouts) {
+			const next = migrateConfigText(text);
+			expect(next, text).toBeDefined();
+			expect(JSON.parse(next as string), text).toEqual({ routes: { b: ["clm"], d: ["jev"] } });
+		}
+		// A trailing comma is not JSON: such a file is left as it is.
+		expect(migrateConfigText('{"tiers":["laya","jev"],}')).toBeUndefined();
+		expect(migrateConfigText('{"routes":{"a":["laya"],},"tiers":["jev"]}')).toBeUndefined();
+	});
+
+	it("keeps CRLF line endings", () => {
+		const text = JSON.stringify(
+			{ tiers: ["laya", "jev"], routes: { a: ["laya"], b: ["clm"] }, writer: "x/y" },
+			null,
+			2,
+		)
+			.split("\n")
+			.join("\r\n");
+		const next = migrateConfigText(`${text}\r\n`, "mude") ?? "";
+		expect(next.replaceAll("\r\n", "")).not.toContain("\n");
+		expect(JSON.parse(next)).toEqual({ tiers: ["mude", "jev"], routes: { a: ["mude"], b: ["clm"] }, writer: "x/y" });
+		expect(next).toBe(
+			`${JSON.stringify({ tiers: ["mude", "jev"], routes: { a: ["mude"], b: ["clm"] }, writer: "x/y" }, null, 2)
+				.split("\n")
+				.join("\r\n")}\r\n`,
+		);
+	});
+
+	it("leaves a file with comments or anything else that is not JSON as it is", () => {
+		for (const text of [
+			'{\n  // the judges\n  "tiers": ["laya", "jev"]\n}',
+			'{ /* local first */ "tiers": ["laya", "jev"] }',
+			"{ tiers: ['laya', 'jev'] }",
+			'{ "tiers": ["laya", "jev"], "recordState": NaN }',
+			'{ "tiers": ["laya", "jev"] } trailing',
+			'{ "tiers": ["laya", "jev"]',
+			"",
+		]) {
+			expect(migrateConfigText(text, "mude"), text).toBeUndefined();
+		}
+	});
+
+	it("over many layouts and orders, writes JSON that names no Laya and keeps every other key", () => {
+		const unrelated = {
+			modes: { default: "active", "turn.drift": "shadow" },
+			features: { browser: { enabled: true }, memory: false, swarm: { models: ["a/b", "c/d"] } },
+			writer: "openai/gpt-5.6-luna",
+			recordState: false,
+			mcp: { servers: { files: { command: "npx", args: ["-y", "files"] } } },
+		};
+		const luna = { type: "llm", model: "openai/gpt-5.6-luna" };
+		const rotate = <T>(list: readonly T[], by: number): T[] => [...list.slice(by), ...list.slice(0, by)];
+		const routeEntries: [string, unknown][] = [
+			["a", ["laya"]],
+			["b", ["laya", "jev"]],
+			["c", "laya, clm"],
+			["d", ["clm"]],
+		];
+		const judgeEntries: [string, unknown][] = [
+			["luna", luna],
+			["mine", { type: "local", baseUrl: "http://127.0.0.1:47823" }],
+		];
+		const layouts: ((value: unknown) => string)[] = [
+			(value) => JSON.stringify(value),
+			(value) => JSON.stringify(value, null, 2),
+			(value) => `${JSON.stringify(value, null, "\t")}\n`,
+			(value) => `${JSON.stringify(value, null, 4).split("\n").join("\r\n")}\r\n`,
+		];
+		let checked = 0;
+		for (let order = 0; order < 4; order++) {
+			const top: [string, unknown][] = rotate(
+				[
+					["tiers", ["laya", "mine", "jev"]],
+					["routes", Object.fromEntries(rotate(routeEntries, order))],
+					["judges", Object.fromEntries(rotate(judgeEntries, order % 2))],
+					...Object.entries(unrelated),
+				],
+				order * 2,
+			);
+			const value = Object.fromEntries(top);
+			for (const layout of layouts) {
+				for (const replacement of [undefined, "mude"]) {
+					const text = layout(value);
+					const next = migrateConfigText(text, replacement);
+					expect(next, text).toBeDefined();
+					const parsed = JSON.parse(next as string);
+					for (const [key, kept] of Object.entries(unrelated)) expect(parsed[key], key).toEqual(kept);
+					expect(parsed.tiers).toEqual(replacement ? ["mude", "jev"] : ["jev"]);
+					expect(parsed.routes).toEqual(
+						replacement
+							? { a: ["mude"], b: ["mude", "jev"], c: "mude, clm", d: ["clm"] }
+							: { b: ["jev"], c: "clm", d: ["clm"] },
+					);
+					expect(parsed.judges).toEqual({ luna });
+					expect(Object.keys(parsed)).toEqual(Object.keys(value));
+					// Nothing left to change: a second pass leaves the file alone.
+					expect(migrateConfigText(next as string, replacement)).toBeUndefined();
+					checked++;
+				}
+			}
+		}
+		expect(checked).toBe(32);
+	});
 });
