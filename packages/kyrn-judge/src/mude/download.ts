@@ -273,7 +273,7 @@ async function fetchFile(
 			const code = (error as NodeJS.ErrnoException).code;
 			if (code === "ENOSPC" || code === "EDQUOT") {
 				throw new Error(
-					`The disk is full: ${file.path} could not be written. Free some space, then run mu judge mude install to go on from here`,
+					`The disk is full: ${file.path} could not be written. Free some space, then run mu judge mude install to resume`,
 				);
 			}
 			lastError = error;
@@ -285,7 +285,7 @@ async function fetchFile(
 	}
 	const reason = lastError instanceof Error ? lastError.message : String(lastError);
 	throw new DownloadError(
-		`${file.path} could not be downloaded (${reason}); run the install again to go on from here`,
+		`${file.path} could not be downloaded (${reason}). Run mu judge mude install again to resume`,
 		"network",
 	);
 }

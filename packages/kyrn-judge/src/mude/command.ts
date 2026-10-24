@@ -31,7 +31,7 @@ const USAGE = `mu judge mude: mude 1.0, mu's own decision model optimized for co
 (Apple silicon, macOS 14 or later)
 
   mu judge mude install [--local-only]   download it (${(MUDE_BYTES / 1e9).toFixed(1)} GB), set it up, start it and make it the judge;
-                                         after a stop (Ctrl-C, a lost connection, a power cut), it goes on from there
+                                         after a stop (Ctrl-C, a lost connection, a power cut), it picks up where it left off
   mu judge mude enable [--local-only | --with-fallback]
                                          make it the judge again, or change what happens when it can't answer
   mu judge mude disable                  back to the judges from before, and stop its server
@@ -131,7 +131,7 @@ function describe(status: MudeStatus): string {
 			status.installed
 				? `installed (${MUDE_REPO} @ ${MUDE_REVISION.slice(0, 7)})`
 				: status.downloadedBytes > 0
-					? `partly downloaded (${(status.downloadedBytes / 1e9).toFixed(1)} of ${(MUDE_BYTES / 1e9).toFixed(1)} GB): mu judge mude install goes on from there`
+					? `partly downloaded (${(status.downloadedBytes / 1e9).toFixed(1)} of ${(MUDE_BYTES / 1e9).toFixed(1)} GB): mu judge mude install resumes it`
 					: "not installed: mu judge mude install"
 		}`,
 	);
@@ -338,7 +338,7 @@ async function ensureInstalled(ctx: Context, out: Out): Promise<void> {
 		out.step(
 			"download",
 			already > 0
-				? `Going on with the mude 1.0 download (${MUDE_REPO}): ${gb(already)} of ${gb(MUDE_BYTES)} GB are here already`
+				? `Resuming the mude 1.0 download (${MUDE_REPO}): ${gb(already)} of ${gb(MUDE_BYTES)} GB already downloaded`
 				: `Downloading mude 1.0 (${MUDE_REPO}, ${gb(need)} GB) and checking every file`,
 		);
 		try {
@@ -353,7 +353,7 @@ async function ensureInstalled(ctx: Context, out: Out): Promise<void> {
 		} catch (error) {
 			if (error instanceof DownloadError && error.kind === "aborted") {
 				throw new DownloadError(
-					`Stopped with ${gb(downloadedBytes(ctx.paths.model, MUDE_FILES))} of ${gb(MUDE_BYTES)} GB downloaded: mu judge mude install goes on from there`,
+					`Stopped with ${gb(downloadedBytes(ctx.paths.model, MUDE_FILES))} of ${gb(MUDE_BYTES)} GB downloaded. Run mu judge mude install to resume`,
 					"aborted",
 				);
 			}
@@ -370,7 +370,7 @@ async function ensureInstalled(ctx: Context, out: Out): Promise<void> {
 			// Ctrl-C reaches uv too, which then fails: that is a stop, not a broken environment.
 			if (ctx.signal?.aborted) {
 				throw new DownloadError(
-					"Stopped while setting up the Python environment: mu judge mude install goes on from there",
+					"Stopped while setting up the Python environment. Run mu judge mude install to resume",
 					"aborted",
 				);
 			}
@@ -403,8 +403,8 @@ async function start(ctx: Context, out: Out, command: string, wait = true): Prom
 		if (error instanceof StartStopped) {
 			throw new DownloadError(
 				error.serverStopped
-					? `Stopped while the mude 1.0 server was starting, and stopped the server too: mu judge mude ${command} goes on from there`
-					: `Stopped waiting for the mude 1.0 server, which goes on starting: mu judge mude ${command} goes on from there`,
+					? `Stopped while the mude 1.0 server was starting, and stopped the server too. Run mu judge mude ${command} again to finish`
+					: `Stopped waiting for the mude 1.0 server, which is still starting. Run mu judge mude ${command} again to finish`,
 				"aborted",
 			);
 		}
