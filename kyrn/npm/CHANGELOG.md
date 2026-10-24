@@ -8,6 +8,10 @@
 - The `openai` judge checks a request against the API's limits before sending it (1–400 questions, 2–255 choices, 2–10 levels; `bad_request` otherwise, so the next judge answers), and exports the models the API serves (`OPENAI_DECISIONS_MODELS`, today `gpt-6-luna`). When it has no key (`missing`: signed out of OpenAI, or the key removed) or OpenAI answers 401, or a 403 not about billing (`rejected`), the session says so once: `judge.notice` with `code: "openai_key"` and `reason`, then the line.
 - `mu setup` offers OpenAI's decision model in its judge step, and scripts use `--judge openai`: the OpenAI key mu has, or a key on stdin's second line, written to the .env as `MU_JUDGE_OPENAI_KEY`. `mu doctor` reports where its key comes from, and `/mu judge` lists `openai`.
 
+### Changed
+
+- The `openai` provider's default model is `gpt-6.1-sol` (was `gpt-5.5`), as `openai-codex` and `github-copilot` already were; `mu setup` names it for an OpenAI key.
+
 ## [0.2.6] - 2026-10-24
 
 **0.2.6 shows the note that Laya was replaced when a person sends a message, keeps mude 1.0 local only when it's installed again, and stops `mu doctor` failing on a machine without Chrome.**

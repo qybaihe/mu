@@ -8,6 +8,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 - **OpenAI's decision model can be the judge.** `gpt-6-luna` answers mu's decisions through OpenAI's Decisions API. Pick it with `mu setup --judge openai`, with `/mu judge openai` in a session, or as OpenAI on the Judges page in Settings, which has a field for its key. It uses its own key, `MU_JUDGE_OPENAI_KEY`, or else the OpenAI API key you already set up for mu's models (Sign in with ChatGPT doesn't work for it). To reach it through a relay or proxy that serves the same Decisions endpoint, give the judge a `baseUrl` and a key of its own in `~/.mu/agent/mu.json`: the key of mu's OpenAI models only ever goes to api.openai.com. OpenAI charges $0.10 per million uncached input tokens and nothing for output. It isn't measured on mu's questions yet. If its key goes away (you sign out of OpenAI or remove the key) or OpenAI turns the key down, mu says so once per session, and the next judge or mu's fallbacks decide until a key is back. In the desktop app, the key has a Remove key button, and the model is picked from the list OpenAI serves.
 
+### Changed
+
+- **OpenAI's newest model is the default.** With an OpenAI API key or Sign in with ChatGPT and no model picked yet, mu now starts on GPT-6.1 Sol instead of GPT-5.5, and `mu setup` offers it for an OpenAI key.
+
 ## [0.2.6] - 2026-10-24
 
 **0.2.6 shows the note that Laya was replaced when you send your first message, keeps mude 1.0 local only when it's installed again, stops `mu doctor` failing on a machine without Chrome, and tidies the sidebar, file links and model chip in the desktop app.** The desktop app carries mu-agent 0.2.6.
