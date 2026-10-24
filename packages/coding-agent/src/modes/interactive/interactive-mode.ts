@@ -102,6 +102,7 @@ import { createCompactionSummaryMessage, createCustomMessage } from "../../core/
 import {
 	defaultModelPerProvider,
 	findExactModelReferenceMatch,
+	findInitialModel,
 	resolveModelScopeFromModels,
 } from "../../core/model-resolver.ts";
 import { CredentialSynchronizationError } from "../../core/model-runtime.ts";
@@ -6095,7 +6096,8 @@ export class InteractiveMode {
 							providerOption.authType === "oauth"
 								? `Logged out of ${providerOption.name}`
 								: `Removed stored API key for ${providerOption.name}. Environment variables and models.json config are unchanged.`;
-						this.showStatus(message);
+						const switched = await this.leaveLoggedOutModel(providerOption.id);
+						this.showStatus(switched ? `${message.replace(/\.?$/, ".")} ${switched}` : message);
 					} catch (error: unknown) {
 						const message = error instanceof Error ? error.message : String(error);
 						this.showError(
@@ -6112,6 +6114,33 @@ export class InteractiveMode {
 			);
 			return { component: selector, focus: selector };
 		});
+	}
+
+	/**
+	 * mu: after a logout, a session still on the provider's model would fail its next prompt for want of a key. It goes
+	 * on with the model a new session would start on (the saved default, else a provider's default, else the first
+	 * available model), and says so; with none left, it says how to get one. Nothing changes while the provider is
+	 * still configured another way (an API key in the environment).
+	 */
+	private async leaveLoggedOutModel(providerId: string): Promise<string | undefined> {
+		const current = this.session.model;
+		if (current?.provider !== providerId || this.session.modelRuntime.hasConfiguredAuth(providerId)) return undefined;
+		const { model } = await findInitialModel({
+			scopedModels: [],
+			isContinuing: true,
+			defaultProvider: this.settingsManager.getDefaultProvider(),
+			defaultModelId: this.settingsManager.getDefaultModel(),
+			modelRuntime: this.session.modelRuntime,
+		});
+		if (!model) return "No other model is available. Use /login to add one.";
+		try {
+			await this.session.setModel(model);
+		} catch {
+			return undefined;
+		}
+		this.footer.invalidate();
+		this.updateEditorBorderColor();
+		return `Switched to ${model.provider}/${model.id}.`;
 	}
 
 	private async completeProviderAuthentication(

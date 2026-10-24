@@ -4,8 +4,13 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Added
+
+- **Other decision models from Hugging Face, next to mude 1.0.** Paste a Hugging Face link or `owner/name` under mude on the Judges page in Settings (or run `mu judge model add <link>`). mu downloads the model with progress, checks every file, resumes a download that stopped, sets it up and makes it the judge. The list shows each added model with Use, Continue downloading and Remove, and "Use mude 1.0 as the judge" switches back. Only one decision model runs at a time. A model must be packaged like mude 1.0's MLX edition, with its own `d3_server_mac.py`, which runs on your Mac, so add only models you trust.
+
 ### Fixed
 
+- **Signing out of a subscription takes its models out of the model pickers at once.** After you signed out of ChatGPT, Grok or a Google account in Settings, the default model's and the board's pickers, the home page and open conversations kept listing that account's models until the app restarted. Now they drop them as soon as the sign-out finishes. If the default model or an open conversation was on one of them, it switches to another model you've set up and says so. `/logout` in the terminal does the same for the current session.
 - **Sign in with ChatGPT no longer fails with "Port 1455 is in use" when the port is held by another sign-in of mu.** ChatGPT's sign-in waits for the browser on port 1455, which OpenAI fixes and the Codex CLI uses too. Before, the app could start a new sign-in while the one before it still held the port, and a `/login` left open in a terminal blocked the app until it was cancelled there. Now the app starts a new sign-in only once the one before has ended (ending it after 3 seconds at most). An earlier sign-in of mu, in the app or in a terminal, hands the port over by itself.
 - **When another program holds the port, the app says which one and offers Retry.** For example: "Port 1455 is in use by codex (process 4321), probably for its own sign-in. Finish or cancel that sign-in there, then click Retry", in every language the app ships in. "Paste the address instead" signs in without the port: you sign in in the browser, then paste the address it ends on. Before, the app showed the flow's English error and nothing to do about it.
 - **Every way a sign-in ends gives the port back:** finishing, Cancel, the 15-minute limit, closing the app's last window, signing out (which now ends a sign-in still under way first) and quitting the app.

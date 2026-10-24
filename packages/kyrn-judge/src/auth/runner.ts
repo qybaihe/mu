@@ -49,6 +49,8 @@ export interface AuthOptions {
 	readonly modelsReadMs?: number;
 	/** What a flow is told about this mu: its name, and the stable id of this installation (Sign in with ChatGPT). */
 	readonly login?: LoginOptions;
+	/** Drops what pi keeps of a provider's models between runs (its catalogue store, models-store.json). */
+	readonly forgetModels?: (providerId: string) => Promise<void>;
 }
 
 export type AuthModel = { id: string; name: string };
@@ -164,7 +166,12 @@ export async function runAuth(argv: readonly string[], options: AuthOptions): Pr
 		if (mode === "logout") {
 			// Only a subscription sign-in is signed out here: a key stored for the same provider is left alone.
 			const stored = (await runtime.listCredentials()).find((credential) => credential.providerId === provider);
-			if (stored?.type === "oauth") await runtime.logout(provider);
+			if (stored?.type === "oauth") {
+				await runtime.logout(provider);
+				// The list of models the account itself gave goes with it: the next sign-in, maybe to another account,
+				// reads its own instead of starting from this one's.
+				if (LISTED_BY_ACCOUNT.has(provider)) await options.forgetModels?.(provider);
+			}
 			io.say(await status());
 			return 0;
 		}

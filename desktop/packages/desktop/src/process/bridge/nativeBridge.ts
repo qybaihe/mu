@@ -1,5 +1,6 @@
 import { app, shell } from 'electron';
 import { join } from 'node:path';
+import type { SwitchedModel } from '../../common/kyrn/login';
 import { nativeBridge, type NativeFailure, type NativeResult } from '../../common/kyrn/nativeBridge';
 import type { DialogAnswer, PiCommand, PiCommandType } from '../../common/utils/nativeHost/records';
 import { muHome } from '../agent/kyrn/naming';
@@ -8,6 +9,7 @@ import { NativeHostError } from '../services/nativeHost/NativeHost';
 import { cleanName } from '../services/nativeHost/conversations/Conversation';
 import { NativeRequestError } from '../services/nativeHost/conversations/errors';
 import { hostEnv } from '../services/nativeHost/conversations/hostEnv';
+import type { ModelChoice } from '../services/nativeHost/conversations/modelSearch';
 import { NativeConversations } from '../services/nativeHost/conversations/NativeConversations';
 import type { ConversationEvents, NativeConversationsApi } from '../services/nativeHost/conversations/types';
 import { AcpBindings } from '../services/nativeHost/sessions/acpBindings';
@@ -277,3 +279,10 @@ export function initNativeBridge(): void {
 /** The native conversation mu names by MU_DESKTOP_SESSION when it drives the app's browser (kyrnBrowserBridge.ts). */
 export const nativeConversationOf = (desktopSession: string): string | undefined =>
   conversations?.conversationOf(desktopSession);
+
+/**
+ * A sign-out of `provider` (kyrnBridge.ts): the native conversations running on one of its models go on with another
+ * (NativeConversations.leave). None while the native host is off.
+ */
+export const leaveInNativeConversations = async (provider: string, wanted?: ModelChoice): Promise<SwitchedModel[]> =>
+  conversations ? conversations.leave(provider, wanted) : [];

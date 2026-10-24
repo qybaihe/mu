@@ -4,7 +4,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { offeredProviders } from '../../../../packages/desktop/src/common/kyrn/login';
+import { offeredProviders, type SwitchedModel } from '../../../../packages/desktop/src/common/kyrn/login';
+import type { AvailableModels, ModelDefaults } from '../../../../packages/desktop/src/common/kyrn/models';
+import { leaveProvider } from '../../../../packages/desktop/src/process/agent/kyrn/config/signOut';
 import {
   LoginManager,
   openable,
@@ -601,5 +603,64 @@ describe('what the sign-in may open and run', () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+/**
+ * What a sign-out moves besides the credential (process/agent/kyrn/config/signOut.ts): the default model and the
+ * running conversations, from what mu reports once it was checked again.
+ */
+
+const usable = (providers: AvailableModels['providers']): AvailableModels => ({ providers, thinkingLevels: [] });
+const defaults = (provider: string, model: string): ModelDefaults => ({ provider, model, thinkingLevel: '' });
+
+function parts(before: ModelDefaults, switched: SwitchedModel[] = []) {
+  return {
+    defaults: vi.fn(() => before),
+    replaceDefault: vi.fn(),
+    conversations: vi.fn(async () => switched),
+  };
+}
+
+describe('a sign-out', () => {
+  it('moves the default off the account to the first model mu still offers, and the conversations with it', async () => {
+    const moved = parts(defaults('openai-codex', 'gpt-5.5'), [{ provider: 'relay', model: 'plain', name: 'Plain' }]);
+    const after = usable([
+      { id: 'corp-gateway', models: [] },
+      { id: 'relay', models: [{ id: 'plain', name: 'Plain' }] },
+      { id: 'xai', models: [{ id: 'grok-5', name: 'Grok 5' }] },
+    ]);
+    await expect(leaveProvider('openai-codex', after, moved)).resolves.toEqual({
+      defaultMoved: true,
+      conversations: 1,
+      to: { provider: 'relay', model: 'plain', name: 'Plain' },
+    });
+    expect(moved.replaceDefault).toHaveBeenCalledWith({ provider: 'relay', model: 'plain' });
+    expect(moved.conversations).toHaveBeenCalledWith('openai-codex', { provider: 'relay', id: 'plain' });
+  });
+
+  it('clears the default when no other model is set up', async () => {
+    const moved = parts(defaults('xai', 'grok-5'));
+    await expect(leaveProvider('xai', usable([]), moved)).resolves.toEqual({ defaultMoved: true, conversations: 0 });
+    expect(moved.replaceDefault).toHaveBeenCalledWith(undefined);
+    expect(moved.conversations).toHaveBeenCalledWith('xai', undefined);
+  });
+
+  it('keeps a default mu still offers (an API key for the same provider), and on another provider', async () => {
+    const byKey = parts(defaults('openai', 'gpt-5.5'));
+    const withKey = usable([{ id: 'openai', models: [{ id: 'gpt-5.5', name: 'GPT-5.5' }] }]);
+    await expect(leaveProvider('openai', withKey, byKey)).resolves.toEqual({ defaultMoved: false, conversations: 0 });
+    expect(byKey.replaceDefault).not.toHaveBeenCalled();
+
+    // A conversation on the account's model still goes on with the default, which is another provider's.
+    const elsewhere = parts(defaults('relay', 'plain'), [{ provider: 'relay', model: 'plain', name: 'Plain' }]);
+    const after = usable([{ id: 'relay', models: [{ id: 'plain', name: 'Plain' }] }]);
+    await expect(leaveProvider('google-antigravity', after, elsewhere)).resolves.toEqual({
+      defaultMoved: false,
+      conversations: 1,
+      to: { provider: 'relay', model: 'plain', name: 'Plain' },
+    });
+    expect(elsewhere.replaceDefault).not.toHaveBeenCalled();
+    expect(elsewhere.conversations).toHaveBeenCalledWith('google-antigravity', { provider: 'relay', id: 'plain' });
   });
 });

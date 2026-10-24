@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { Message } from '@arco-design/web-react';
+import { useTranslation } from 'react-i18next';
+import { mutate } from 'swr';
 import { kyrnBridge, unwrap } from '@/common/kyrn/bridge';
 import {
   offeredProviders,
@@ -10,8 +13,11 @@ import {
   type LoginStatus,
   type SubscriptionProvider,
 } from '@/common/kyrn/login';
+import { DEFAULT_MODEL_KEY } from '@/renderer/hooks/agent/useMuDefaultModel';
+import { emitter } from '@/renderer/utils/emitter';
 import { toMuError, type MuError } from '../fields/muError';
 import { recheckMu } from '../recheck';
+import { providerName } from './LoginWaiting';
 
 type Account = LoginStatus['signedIn'][number];
 
@@ -66,6 +72,7 @@ let lastStatus: LoginStatus = { signedIn: [] };
 export function useSubscriptionLogin(
   onSignedIn?: (provider: SubscriptionProvider, models: LoginModel[]) => void
 ): SubscriptionLoginFlow {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<LoginStatus>(lastStatus);
   useEffect(() => {
     lastStatus = status;
@@ -183,10 +190,28 @@ export function useSubscriptionLogin(
       setProblem({});
       try {
         setStatus(unwrap(await kyrnBridge.loginLogout.invoke({ provider })));
-        void recheckMu();
       } catch (error) {
         failed(provider, 'signOut', error);
+        return;
       }
+      // mu is checked again, so every model list drops the account's models. Then the model new conversations start
+      // on, and the conversations running on one of the account's models, go on with one mu still offers.
+      await recheckMu();
+      const moved = await kyrnBridge.loginSwitchModels
+        .invoke({ provider })
+        .then(unwrap)
+        .catch((): undefined => undefined);
+      if (!moved || (!moved.defaultMoved && !moved.conversations)) return;
+      if (moved.defaultMoved) {
+        void mutate(DEFAULT_MODEL_KEY);
+        emitter.emit('mu.files.changed');
+      }
+      const name = providerName(t, provider);
+      Message.info(
+        moved.to
+          ? t('mu.accounts.switched', { name, model: moved.to.name || moved.to.model })
+          : t('mu.accounts.noModelLeft', { name })
+      );
     },
   };
 }

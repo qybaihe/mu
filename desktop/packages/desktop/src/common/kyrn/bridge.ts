@@ -5,8 +5,8 @@ import { KyrnError, type KyrnResult } from './errors';
 import type { ImportedHistory, ImportList, ImportOutcome } from './importChats';
 import type { LessonChange, LessonsView } from './lessons';
 import type { LocalJudgeAction, LocalJudgeState } from './localJudge';
-import type { LoginState, LoginStatus, SubscriptionProvider } from './login';
-import type { MudeAction, MudeState } from './mude';
+import type { LoginState, LoginStatus, SignOutSwitch, SubscriptionProvider } from './login';
+import type { ModelRequest, ModelsState, MudeAction, MudeState } from './mude';
 import type {
   AvailableModels,
   DefaultModelChange,
@@ -65,6 +65,13 @@ export const kyrnBridge = {
   loginCancel: bridge.buildProvider<KyrnResult<LoginState>, void>('kyrn.login.cancel'),
   loginStatus: bridge.buildProvider<KyrnResult<LoginStatus>, void>('kyrn.login.status'),
   loginLogout: bridge.buildProvider<KyrnResult<LoginStatus>, { provider: SubscriptionProvider }>('kyrn.login.logout'),
+  /**
+   * After a sign-out, once mu was checked again: the model new conversations start on, and the conversations running on
+   * one of the account's models, go on with a model mu still offers.
+   */
+  loginSwitchModels: bridge.buildProvider<KyrnResult<SignOutSwitch>, { provider: SubscriptionProvider }>(
+    'kyrn.login.switchModels'
+  ),
   /** The local judge (Laya) on this machine; see common/kyrn/localJudge.ts. */
   localJudgeState: bridge.buildProvider<KyrnResult<LocalJudgeState>, void>('kyrn.localJudge.state'),
   /** `consent`: the person agreed to what `setup` downloads. */
@@ -78,6 +85,10 @@ export const kyrnBridge = {
    * `--local-only` (true) or `--with-fallback` (false).
    */
   mudeRun: bridge.buildProvider<KyrnResult<MudeState>, { action: MudeAction; localOnly?: boolean }>('kyrn.mude.run'),
+  /** Decision models from Hugging Face beside mude (common/kyrn/mude.ts): the list asked afresh, or what runs. */
+  modelsState: bridge.buildProvider<KyrnResult<ModelsState>, void>('kyrn.models.state'),
+  /** Runs `mu judge model add | use | remove` unless one runs already, or cancels a running add. */
+  modelsRun: bridge.buildProvider<KyrnResult<ModelsState>, ModelRequest>('kyrn.models.run'),
   /** How the CLM server behind a judge's address is (common/kyrn/clm.ts), asked by the main process. */
   clmCheck: bridge.buildProvider<KyrnResult<ClmServerState>, { baseUrl: string }>('kyrn.clm.check'),
   /** The skills mu loads in every conversation, and where each comes from (common/kyrn/capabilities.ts). */

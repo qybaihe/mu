@@ -14,6 +14,12 @@
 - When another program keeps port 1455 (the Codex CLI or the Codex app, while its own login waits), the sign-in now names it: "Port 1455 is in use by codex (process 4321), probably for its own sign-in … Finish or cancel that sign-in, then try again". That program is left alone. `mu auth` passes this on with `code: "port_in_use"`, the port and the program, so the app can say it in its own words. The program is looked up with `lsof` (or `ss`, or `netstat` on Windows); where none answers, the message says "another program".
 - Every way a ChatGPT sign-in ends now gives port 1455 back at once: success, an error, a cancel (Escape in `/login`, `cancel` or the input closing for `mu auth`), SIGTERM to `mu auth` (the app quitting or ending it), and a prompt that never answers. A sign-in nobody finishes stops listening after 15 minutes. The older ChatGPT sign-in through the Codex login (`openai-codex`) takes the port over from an earlier sign-in of mu the same way. When another program keeps the port, it still falls back to the pasted address, and now says which program it is.
 
+### Fixed
+
+- A session in RPC mode (each conversation of the desktop app) now checks `get_available_models` and `set_model` against the credential store, so a sign-in or sign-out made by another process counts at once: `mu auth logout`, or `/logout` in another terminal. Before, a signed-out subscription's models stayed listed until the session restarted.
+- `/logout` moves the session off the signed-out provider's model, to the default model (else a provider's default, else the first model available), and says so: "Logged out of ChatGPT. Switched to openai/gpt-5.5." Before, the next prompt failed with "No API key". With no model left, it says to use `/login`.
+- `mu auth logout google-antigravity` also drops the list of models the account gave from `models-store.json`, so the next sign-in starts from its own.
+
 ## [0.2.2] - 2026-10-24
 
 **0.2.2 makes `mu judge mude install` cope with a full disk, a stop at any step and two installs at once.**

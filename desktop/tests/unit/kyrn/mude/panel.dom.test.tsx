@@ -3,7 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createInstance } from 'i18next';
 import { I18nextProvider } from 'react-i18next';
-import type { MudeState, MudeStatus, MudeTask } from '@/common/kyrn/mude';
+import type { DecisionModel, ModelsState, MudeState, MudeStatus, MudeTask } from '@/common/kyrn/mude';
 import type { KyrnSettings, Result } from '@/common/kyrn/types';
 import enCommon from '@/renderer/services/i18n/locales/en-US/common.json';
 import enMu from '@/renderer/services/i18n/locales/en-US/mu.json';
@@ -19,6 +19,8 @@ const bridge = vi.hoisted(() => ({
   availableModels: vi.fn(),
   mudeState: vi.fn(),
   mudeRun: vi.fn(),
+  modelsState: vi.fn(),
+  modelsRun: vi.fn(),
   localJudgeState: vi.fn(),
 }));
 vi.mock('@/common/kyrn/bridge', () => ({
@@ -28,6 +30,8 @@ vi.mock('@/common/kyrn/bridge', () => ({
     availableModels: { invoke: bridge.availableModels },
     mudeState: { invoke: bridge.mudeState },
     mudeRun: { invoke: bridge.mudeRun },
+    modelsState: { invoke: bridge.modelsState },
+    modelsRun: { invoke: bridge.modelsRun },
     localJudgeState: { invoke: bridge.localJudgeState },
   },
   unwrap: <T,>(result: Result<T>) => {
@@ -140,6 +144,7 @@ beforeEach(() => {
     ok({ support: 'ok', installed: true, running: true, url: 'http://127.0.0.1:47823' })
   );
   bridge.mudeState.mockResolvedValue(state(NOT_INSTALLED));
+  bridge.modelsState.mockResolvedValue(ok({ available: true, models: [] }));
 });
 afterEach(() => {
   cleanup();
@@ -571,6 +576,156 @@ describe('mude as a choice of the judges page', () => {
     const order = await screen.findByTestId('mu-judge-tiers');
     const tags = [...order.querySelectorAll('.arco-select .arco-tag')].map((tag) => tag.textContent);
     expect(tags).toEqual([enMu.judges.mude.name, enMu.judges.choices.jev.title]);
+    expect(screen.getByTestId('mu-judge-tier-0')).toHaveTextContent(enMu.judges.mude.tierHelp);
+  });
+});
+
+describe('decision models from Hugging Face beside mude', () => {
+  const ADDED_PROFILE = {
+    type: 'typesafe' as const,
+    model: 'fast-judge',
+    baseUrl: 'http://127.0.0.1:8791/v1/systemone',
+    apiKeyEnv: 'MU_JUDGE_FAST_JUDGE_KEY',
+    timeoutMs: 4000,
+  };
+  const ADDED: DecisionModel = {
+    name: 'fast-judge',
+    label: 'fast-judge',
+    repo: 'owner/fast-judge',
+    revision: '0123456789abcdef0123456789abcdef01234567',
+    bytes: 900_000_000,
+    builtIn: false,
+    installed: true,
+    downloadedBytes: 900_000_000,
+    running: true,
+    ready: true,
+    enabled: true,
+    localOnly: false,
+  };
+  const MUDE_ROW: DecisionModel = {
+    ...ADDED,
+    name: 'mude',
+    label: 'mude 1.0',
+    repo: 'qybaihe/mude-1.0-mlx-8bit',
+    builtIn: true,
+    enabled: false,
+  };
+  const models = (list: DecisionModel[], task?: ModelsState['task']): Result<ModelsState> =>
+    ok({ available: true, models: list, ...(task ? { task } : {}) });
+  const withAdded = (patch: Partial<KyrnSettings> = {}) =>
+    settings({ tiers: ['fast-judge', 'jev'], judges: { ...settings().judges, 'fast-judge': ADDED_PROFILE }, ...patch });
+
+  it('shows an added model that is the judge under mude, with mude offered back', async () => {
+    platform.mac = true;
+    bridge.settings.mockResolvedValue(ok(withAdded()));
+    bridge.mudeState.mockResolvedValue(state(INSTALLED));
+    bridge.modelsState.mockResolvedValue(models([MUDE_ROW, ADDED]));
+    const tile = await judgesPage();
+    const row = await within(tile).findByTestId('mu-model-fast-judge');
+    // The decision model on this Mac is the choice, so its body is open without a click.
+    expect(tile).toHaveAttribute('aria-checked', 'true');
+    expect(row).toHaveTextContent('owner/fast-judge');
+    expect(row).toHaveTextContent('The judge · 0.9 GB');
+    expect(within(row).queryByTestId('mu-model-use-fast-judge')).not.toBeInTheDocument();
+    expect(within(tile).getByTestId('mu-mude-use')).toBeInTheDocument();
+    expect(within(tile).getByTestId('mu-models-trust')).toHaveTextContent(enMu.judges.models.trust);
+  });
+
+  it('adds a model from its link, with the download’s progress, and reads mude again when it ends', async () => {
+    platform.mac = true;
+    bridge.mudeState.mockResolvedValue(state(INSTALLED, undefined));
+    bridge.settings.mockResolvedValue(ok(settings({ tiers: ['mude', 'jev'] })));
+    const running: ModelsState['task'] = {
+      id: 900,
+      command: 'add',
+      target: 'https://huggingface.co/owner/fast-judge',
+      name: 'fast-judge',
+      phase: 'running',
+      step: 'download',
+      download: { file: 'weights.safetensors', done: 450_000_000, total: 900_000_000, checking: false },
+      log: [],
+    };
+    bridge.modelsRun.mockResolvedValue(models([MUDE_ROW], running));
+    const tile = await judgesPage();
+    fireEvent.click(tile);
+    const field = await within(tile).findByTestId('mu-models-link');
+    fireEvent.change(field, { target: { value: ' https://huggingface.co/owner/fast-judge ' } });
+    fireEvent.click(within(tile).getByTestId('mu-models-add'));
+    await waitFor(() =>
+      expect(bridge.modelsRun).toHaveBeenCalledWith({
+        action: 'add',
+        target: 'https://huggingface.co/owner/fast-judge',
+      })
+    );
+    expect(await within(tile).findByTestId('mu-models-download')).toHaveTextContent('0.5 of 0.9 GB');
+    expect(within(tile).getByTestId('mu-models-status')).toHaveTextContent(
+      'Downloading fast-judge and checking every file…'
+    );
+    // While it runs, mude's buttons that change the judge wait.
+    expect(within(tile).getByTestId('mu-mude-uninstall')).toBeDisabled();
+
+    const reads = bridge.mudeState.mock.calls.length;
+    bridge.modelsState.mockResolvedValue(models([MUDE_ROW, ADDED], { ...running, phase: 'done', download: undefined }));
+    await waitFor(() => expect(bridge.mudeState.mock.calls.length).toBeGreaterThan(reads), { timeout: 3000 });
+    expect(await within(tile).findByTestId('mu-model-fast-judge')).toBeInTheDocument();
+  });
+
+  it('says why a model could not be added, in the app’s words', async () => {
+    platform.mac = true;
+    bridge.settings.mockResolvedValue(ok(settings({ tiers: ['mude', 'jev'] })));
+    bridge.mudeState.mockResolvedValue(state(RUNNING));
+    bridge.modelsState.mockResolvedValue(
+      models([MUDE_ROW], {
+        id: 901,
+        command: 'add',
+        target: 'owner/llm',
+        phase: 'failed',
+        log: [],
+        error: { message: "owner/llm isn't packaged as a decision model mu can run", kind: 'notRunnable' },
+      })
+    );
+    const tile = await judgesPage();
+    fireEvent.click(tile);
+    expect(await within(tile).findByTestId('mu-models-failed')).toHaveTextContent(enMu.judges.models.error.notRunnable);
+  });
+
+  it('turns off the added model, not mude, when another judge is picked', async () => {
+    platform.mac = true;
+    bridge.settings.mockResolvedValue(ok(withAdded()));
+    bridge.mudeState.mockResolvedValue(state(INSTALLED));
+    bridge.modelsState.mockResolvedValue(models([MUDE_ROW, ADDED]));
+    bridge.modelsRun.mockResolvedValue(models([MUDE_ROW, ADDED]));
+    await judgesPage();
+    await settle();
+    fireEvent.click(screen.getByTestId('mu-judge-choice-jev'));
+    await waitFor(() => expect(bridge.modelsRun).toHaveBeenCalledWith({ action: 'disable', target: 'fast-judge' }));
+    expect(bridge.mudeRun).not.toHaveBeenCalled();
+  });
+
+  it('removes a model after asking', async () => {
+    platform.mac = true;
+    bridge.settings.mockResolvedValue(ok(withAdded()));
+    bridge.mudeState.mockResolvedValue(state(INSTALLED));
+    bridge.modelsState.mockResolvedValue(models([MUDE_ROW, ADDED]));
+    bridge.modelsRun.mockResolvedValue(models([MUDE_ROW]));
+    const tile = await judgesPage();
+    fireEvent.click(await within(tile).findByTestId('mu-model-remove-fast-judge'));
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent('Remove fast-judge?');
+    fireEvent.click(within(dialog).getByRole('button', { name: enMu.judges.models.remove }));
+    await waitFor(() => expect(bridge.modelsRun).toHaveBeenCalledWith({ action: 'remove', target: 'fast-judge' }));
+  });
+
+  it('names an added model in the order by its own name', async () => {
+    bridge.settings.mockResolvedValue(ok(withAdded()));
+    render(
+      <I18nextProvider i18n={i18n}>
+        <SettingsArea page='judge-order' />
+      </I18nextProvider>
+    );
+    const order = await screen.findByTestId('mu-judge-tiers');
+    const tags = [...order.querySelectorAll('.arco-select .arco-tag')].map((tag) => tag.textContent);
+    expect(tags).toEqual(['fast-judge', enMu.judges.choices.jev.title]);
     expect(screen.getByTestId('mu-judge-tier-0')).toHaveTextContent(enMu.judges.mude.tierHelp);
   });
 });

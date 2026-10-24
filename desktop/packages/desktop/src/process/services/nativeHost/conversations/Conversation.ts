@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { appendFile, open, stat } from 'node:fs/promises';
+import type { SwitchedModel } from '../../../../common/kyrn/login.ts';
 import type { NativeConversation, NativeHostStatus, NativeSnapshot } from '../../../../common/kyrn/nativeBridge.ts';
 import { readPresentation } from '../../../../common/utils/nativeHost/presentation.ts';
 import {
@@ -31,7 +32,7 @@ import {
   type SessionSummary,
 } from '../sessions/summary.ts';
 import { followsBranch } from './branch.ts';
-import { findModel, MODEL_WAITS_MS, PROMPT_MODEL_WAITS_MS, type ModelChoice } from './modelSearch.ts';
+import { findModel, MODEL_WAITS_MS, pickModel, PROMPT_MODEL_WAITS_MS, type ModelChoice } from './modelSearch.ts';
 import type { ConversationEvents, ConversationHost, StartHost } from './types.ts';
 
 /**
@@ -394,6 +395,34 @@ export class Conversation {
       await appendFile(file, `${lead}${JSON.stringify(entry)}\n`);
       this.name = clean || undefined;
       this.changed();
+    } finally {
+      this.inFlight -= 1;
+      this.owner.touched(this);
+    }
+  }
+
+  /**
+   * `provider` was signed out. A running host on one of its models that pi no longer offers goes on with `wanted` (the
+   * model new sessions start on), else the first model pi offers, as a host that started without a model does
+   * (modelSearch.ts). Resolves with the model it went on with; undefined when the host runs another provider's model,
+   * pi still offers this one (the provider takes an API key too), or offers none. No host starts for it: one that
+   * starts later falls back by itself, as pi resumes a session whose model has no credentials.
+   */
+  async leave(provider: string, wanted?: ModelChoice): Promise<SwitchedModel | undefined> {
+    const host = this.host;
+    if (!host || !this.ready) return undefined;
+    this.inFlight += 1;
+    try {
+      const model = asObject((await host.request({ type: 'get_state' })).model);
+      if (asText(model.provider) !== provider || host !== this.host) return undefined;
+      const offered = asList((await host.request({ type: 'get_available_models' })).models).map(asObject);
+      if (offered.some((each) => asText(each.provider) === provider && asText(each.id) === asText(model.id)))
+        return undefined;
+      const pick = pickModel(offered, wanted);
+      if (!pick || host !== this.host) return undefined;
+      const next = { provider: asText(pick.provider), model: asText(pick.id), name: asText(pick.name) };
+      await host.request({ type: 'set_model', provider: next.provider, modelId: next.model });
+      return next;
     } finally {
       this.inFlight -= 1;
       this.owner.touched(this);

@@ -74,6 +74,13 @@ interface EventTypes {
   'commandPalette.toggle': void;
   /** Open the message search with a query already typed in: the command palette hands its query on. */
   'conversationSearch.open': [string];
+  /**
+   * The backend checked mu again (recheckMu: after a save, a sign-in, a sign-out): a copy of what mu offers is read
+   * again, so a signed-out account's models leave every list at once.
+   */
+  'mu.rechecked': void;
+  /** The app changed mu's settings files outside a settings save (a sign-out moved the default model). */
+  'mu.files.changed': void;
 }
 
 export const emitter = new EventEmitter<EventTypes>();

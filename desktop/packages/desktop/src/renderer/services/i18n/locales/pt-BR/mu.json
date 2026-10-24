@@ -280,6 +280,53 @@
         "readyStopped": "O mude 1.0 é o seu juiz. O servidor dele inicia na sua próxima sessão do mu."
       }
     },
+    "models": {
+      "title": "Outros modelos de decisão",
+      "placeholder": "Link do Hugging Face ou owner/name",
+      "add": "Adicionar",
+      "trust": "Um modelo executa o próprio código de servidor neste Mac. Adicione só modelos em que você confia.",
+      "use": "Usar como juiz",
+      "continue": "Continuar o download",
+      "remove": "Remover",
+      "removeTitle": "Remover {{name}}?",
+      "removeText": "Isso tira {{name}} da ordem dos juízes e apaga os arquivos dele (cerca de {{size}} GB). Você pode adicioná-lo de novo depois.",
+      "noList": "Não foi possível ler os modelos de decisão: {{reason}}",
+      "cancelled": "Cancelado. O que já foi baixado fica guardado.",
+      "state": {
+        "judge": "O juiz · {{size}} GB",
+        "running": "Em execução · {{size}} GB",
+        "installed": "Instalado · {{size}} GB",
+        "partial": "{{done}} de {{total}} GB baixados",
+        "notDownloaded": "Não baixado · {{size}} GB"
+      },
+      "step": {
+        "resolve": "Procurando o modelo no Hugging Face…",
+        "download": "Baixando {{name}} e verificando cada arquivo…",
+        "python": "Preparando o ambiente Python…",
+        "start": "Iniciando o servidor de {{name}}…"
+      },
+      "working": {
+        "add": "Adicionando {{name}}…",
+        "use": "Trocando o juiz para {{name}}…",
+        "disable": "Desligando {{name}}…",
+        "remove": "Removendo {{name}}…"
+      },
+      "failed": {
+        "add": "Não foi possível adicionar o modelo.",
+        "use": "Não foi possível torná-lo o juiz.",
+        "disable": "Não foi possível desligá-lo.",
+        "remove": "Não foi possível removê-lo."
+      },
+      "error": {
+        "usage": "Isso não é um link para um modelo do Hugging Face nem o owner/name dele.",
+        "access": "O Hugging Face não compartilha este modelo: ele é privado ou tem acesso restrito.",
+        "notFound": "O Hugging Face não tem esse modelo.",
+        "notRunnable": "O mu não consegue executar este modelo: falta o d3_server_mac.py, o servidor que vem com os modelos empacotados como o mude 1.0.",
+        "network": "Não foi possível acessar o Hugging Face. Verifique sua conexão e tente de novo; o que já foi baixado fica guardado.",
+        "integrity": "Um arquivo baixado não passou na verificação. Tente de novo.",
+        "unsupported": "Este Mac não consegue executar modelos de decisão."
+      }
+    },
     "clm": {
       "address": "Endereço do servidor",
       "key": "Chave do servidor",
@@ -436,6 +483,8 @@
     "byKeyHelp": "Nenhuma assinatura está conectada, mas o mu o informou como disponível na última conexão, geralmente porque a chave de API dele está no ambiente. Ao entrar, ele passa a usar a assinatura.",
     "otherRunning": "O login em {{name}} está em andamento, e só um login é feito por vez.",
     "showRunning": "Mostrar",
+    "switched": "Você saiu de {{name}}. O modelo passou a ser {{model}}.",
+    "noModelLeft": "Você saiu de {{name}}. Nenhum outro modelo está configurado.",
     "legacy": {
       "openai-codex": "Este login antigo passa pelo login da CLI do Codex. Saia e depois entre com o ChatGPT.",
       "anthropic": "A Anthropic não permite que outros apps entrem com uma assinatura do Claude, então o mu não oferece mais essa opção. Saia e adicione uma chave de API da Anthropic."

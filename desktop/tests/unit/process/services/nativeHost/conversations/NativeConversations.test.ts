@@ -552,6 +552,55 @@ describe('native conversations', () => {
     expect(w.pi.last.sent).toContainEqual({ type: 'set_model', provider: 'e2e', modelId: 'fake2' });
   });
 
+  it('moves the running conversations off a signed-out account’s models, and starts no host for it', async () => {
+    const w = world();
+    w.pi.model = { provider: 'openai-codex', id: 'gpt-5.5' };
+    w.pi.available = [
+      { provider: 'openai-codex', id: 'gpt-5.5' },
+      { provider: 'e2e', id: 'fake' },
+    ];
+    const onCodex = await w.conversations.create({ cwd: w.project });
+    await w.conversations.request(onCodex.id, { type: 'get_state' });
+    const codexHost = w.pi.last;
+    const onOther = await w.conversations.create({ cwd: w.project });
+    await w.conversations.request(onOther.id, { type: 'set_model', provider: 'e2e', modelId: 'fake' });
+    const otherHost = w.pi.last;
+    // A conversation read from its file has no host: pi falls back by itself when one resumes it.
+    writeSession(join(w.sessionsDir, '--project--', '2026_cli.jsonl'), [
+      header('cli', w.project, 1),
+      user('u', null, 'Hello', 2),
+      assistant('a', 'u', 'Hi', 3),
+    ]);
+    await w.conversations.open('cli');
+    await settled(w);
+
+    // Still offered (an API key for the same provider): nothing moves.
+    await expect(w.conversations.leave('openai-codex', { provider: 'e2e', id: 'fake' })).resolves.toEqual([]);
+    // Signed out: pi lists the account's models no more.
+    w.pi.available = [
+      { provider: 'e2e', id: 'fake' },
+      { provider: 'e2e', id: 'fake2' },
+    ];
+    await expect(w.conversations.leave('openai-codex', { provider: 'e2e', id: 'fake2' })).resolves.toEqual([
+      { provider: 'e2e', model: 'fake2', name: 'fake2' },
+    ]);
+    expect(codexHost.model).toEqual({ provider: 'e2e', id: 'fake2' });
+    expect(otherHost.model).toEqual({ provider: 'e2e', id: 'fake' });
+    expect(otherHost.sent.filter((command) => command.type === 'set_model')).toHaveLength(1);
+    expect(w.pi.hosts).toHaveLength(2);
+    // The switch goes out as pi's answer, so every window's model chip follows it.
+    const id = codexHost.session.id;
+    expect(w.events.records.filter((event) => event.id === id).map((event) => event.record)).toContainEqual(
+      expect.objectContaining({ type: 'response', command: 'set_model', success: true })
+    );
+    // Without a model it would rather have, it takes the first one pi offers.
+    w.pi.available = [{ provider: 'e2e', id: 'fake3' }];
+    await w.conversations.request(id, { type: 'set_model', provider: 'openai-codex', modelId: 'gpt-5.5' });
+    await expect(w.conversations.leave('openai-codex')).resolves.toEqual([
+      { provider: 'e2e', model: 'fake3', name: 'fake3' },
+    ]);
+  });
+
   it('answers a dialog, and closes it in the view', async () => {
     const w = world();
     const draft = await w.conversations.create({ cwd: w.project });

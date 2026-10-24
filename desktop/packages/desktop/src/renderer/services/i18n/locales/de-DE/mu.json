@@ -280,6 +280,53 @@
         "readyStopped": "mude 1.0 ist jetzt dein Judge. Sein Server startet mit deiner nächsten mu-Sitzung."
       }
     },
+    "models": {
+      "title": "Weitere Entscheidungsmodelle",
+      "placeholder": "Hugging-Face-Link oder owner/name",
+      "add": "Hinzufügen",
+      "trust": "Ein Modell führt seinen eigenen Servercode auf diesem Mac aus. Füge nur Modelle hinzu, denen du vertraust.",
+      "use": "Als Judge verwenden",
+      "continue": "Download fortsetzen",
+      "remove": "Entfernen",
+      "removeTitle": "{{name}} entfernen?",
+      "removeText": "Damit wird {{name}} aus der Judge-Reihenfolge genommen und seine Dateien (etwa {{size}} GB) werden gelöscht. Du kannst es später wieder hinzufügen.",
+      "noList": "Die Entscheidungsmodelle konnten nicht gelesen werden: {{reason}}",
+      "cancelled": "Abgebrochen. Bereits Heruntergeladenes bleibt erhalten.",
+      "state": {
+        "judge": "Der Judge · {{size}} GB",
+        "running": "Läuft · {{size}} GB",
+        "installed": "Installiert · {{size}} GB",
+        "partial": "{{done}} von {{total}} GB heruntergeladen",
+        "notDownloaded": "Nicht heruntergeladen · {{size}} GB"
+      },
+      "step": {
+        "resolve": "Das Modell wird auf Hugging Face gesucht…",
+        "download": "{{name}} wird heruntergeladen und jede Datei geprüft…",
+        "python": "Die Python-Umgebung wird eingerichtet…",
+        "start": "Der Server von {{name}} wird gestartet…"
+      },
+      "working": {
+        "add": "{{name}} wird hinzugefügt…",
+        "use": "Der Judge wird auf {{name}} umgestellt…",
+        "disable": "{{name}} wird ausgeschaltet…",
+        "remove": "{{name}} wird entfernt…"
+      },
+      "failed": {
+        "add": "Das Modell konnte nicht hinzugefügt werden.",
+        "use": "Es konnte nicht zum Judge gemacht werden.",
+        "disable": "Es konnte nicht ausgeschaltet werden.",
+        "remove": "Es konnte nicht entfernt werden."
+      },
+      "error": {
+        "usage": "Das ist weder ein Link zu einem Hugging-Face-Modell noch dessen owner/name.",
+        "access": "Hugging Face gibt dieses Modell nicht frei: Es ist privat oder zugangsbeschränkt.",
+        "notFound": "Hugging Face hat kein solches Modell.",
+        "notRunnable": "mu kann dieses Modell nicht ausführen: Ihm fehlt d3_server_mac.py, der Server, den wie mude 1.0 verpackte Modelle mitbringen.",
+        "network": "Hugging Face ist nicht erreichbar. Prüfe deine Verbindung und versuch es noch einmal; bereits Heruntergeladenes bleibt erhalten.",
+        "integrity": "Eine heruntergeladene Datei hat die Prüfung nicht bestanden. Versuch es noch einmal.",
+        "unsupported": "Dieser Mac kann keine Entscheidungsmodelle ausführen."
+      }
+    },
     "clm": {
       "address": "Serveradresse",
       "key": "Serverschlüssel",
@@ -436,6 +483,8 @@
     "byKeyHelp": "Es ist kein Abo angemeldet, aber mu hat diesen Anbieter bei der letzten Verbindung als nutzbar gemeldet, meist weil sein API-Schlüssel in der Umgebung gesetzt ist. Nach der Anmeldung wird das Abo verwendet.",
     "otherRunning": "Die {{name}}-Anmeldung läuft gerade; es ist immer nur eine Anmeldung gleichzeitig möglich.",
     "showRunning": "Anzeigen",
+    "switched": "Von {{name}} abgemeldet. Gewechselt zu {{model}}.",
+    "noModelLeft": "Von {{name}} abgemeldet. Kein anderes Modell ist eingerichtet.",
     "legacy": {
       "openai-codex": "Diese ältere Anmeldung läuft über das Login der Codex CLI. Melde dich ab und dann mit ChatGPT an.",
       "anthropic": "Anthropic erlaubt anderen Apps keine Anmeldung mit einem Claude-Abo, daher bietet mu sie nicht mehr an. Melde dich ab und füge stattdessen einen Anthropic-API-Schlüssel hinzu."

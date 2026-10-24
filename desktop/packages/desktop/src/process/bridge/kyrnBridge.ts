@@ -5,16 +5,18 @@ import { app, net, shell, utilityProcess } from 'electron';
 import { kyrnBridge } from '../../common/kyrn/bridge';
 import { KyrnError, kyrnFailure, type KyrnResult } from '../../common/kyrn/errors';
 import { kyrnFolderBridge } from '../../common/kyrn/folderBridge';
+import { isSubscriptionProvider } from '../../common/kyrn/login';
 import type { KyrnCatalog } from '../../common/kyrn/types';
 import { httpRequest } from '../../common/adapter/httpBridge';
 import { SettingsStore } from '../agent/kyrn/settings';
 import { availableModels } from '../agent/kyrn/config/available';
+import { leaveProvider } from '../agent/kyrn/config/signOut';
 import { LoginManager, openable, spawnAuth } from '../agent/kyrn/login';
 import { testProvider } from '../agent/kyrn/config/connection';
 import { envFileOf, expectedHarness, findHarness, launcherOf, manifestOf } from '../agent/kyrn/harness';
 import { checkClmServer } from '../agent/kyrn/clmServer';
 import { LocalJudge } from '../agent/kyrn/localJudge';
-import { Mude } from '../agent/kyrn/mude';
+import { DecisionModels, Mude } from '../agent/kyrn/mude';
 import { OnnxLocalJudge, openFolder, usesOnnxJudge } from '../agent/kyrn/localJudgeOnnx';
 import { importCli, importService } from '../agent/kyrn/importChats';
 import { addSkill, listSkills, removeSkill, skillsFolder } from '../agent/kyrn/capabilities/skills';
@@ -35,6 +37,7 @@ import { asRecord, text } from '../agent/kyrn/piRpc';
 import { sessionBinding } from '../agent/kyrn/sessionBinding';
 import { conversationSessions } from '../agent/kyrn/conversationSession';
 import { getDataPath } from '../utils/utils';
+import { leaveInNativeConversations } from './nativeBridge';
 
 /**
  * `out/main/localJudgeOnnx.js`, next to the main entry even when this module sits in `out/main/chunks/`. Found from
@@ -133,12 +136,11 @@ export function initKyrnBridge(): void {
   kyrnBridge.save.provider((input) => result(() => settings.save(input)));
   kyrnBridge.defaultModel.provider(() => result(() => settings.defaultModel()));
   kyrnBridge.setDefaultModel.provider((input) => result(() => settings.setDefaultModel(input)));
-  kyrnBridge.availableModels.provider(() =>
-    result(async () => {
-      const agents = await httpRequest<Parameters<typeof findRegistration>[0]>('GET', '/api/agents/management');
-      return availableModels(findRegistration(agents, await own()));
-    })
-  );
+  const usable = async () => {
+    const agents = await httpRequest<Parameters<typeof findRegistration>[0]>('GET', '/api/agents/management');
+    return availableModels(findRegistration(agents, await own()));
+  };
+  kyrnBridge.availableModels.provider(() => result(usable));
   // After the start's own check, and one at a time: a change saved while a check runs is checked after it, so the
   // last check sees the last change.
   const recheck = async (): Promise<void> => {
@@ -163,6 +165,19 @@ export function initKyrnBridge(): void {
   kyrnBridge.loginCancel.provider(() => result(() => login.cancel()));
   kyrnBridge.loginStatus.provider(() => result(() => login.status()));
   kyrnBridge.loginLogout.provider(({ provider }) => result(() => login.logout(provider)));
+  // After a sign-out, once the check that follows it is done: what mu reports then decides which model the default and
+  // the running conversations go on with (config/signOut.ts).
+  kyrnBridge.loginSwitchModels.provider(({ provider }) =>
+    result(async () => {
+      if (!isSubscriptionProvider(provider)) throw new KyrnError('invalid', 'Unknown provider');
+      await rechecked.catch((): undefined => undefined);
+      return leaveProvider(provider, await usable(), {
+        defaults: () => settings.defaultModel(),
+        replaceDefault: (next) => settings.replaceDefaultModel(next),
+        conversations: leaveInNativeConversations,
+      });
+    })
+  );
   // A sign-in, or a look at who is signed in, still running when the app quits is ended with it.
   app.once('will-quit', () => login.dispose());
   // With no window left to show it (a Mac app stays open), a sign-in under way is cancelled: it would keep its
@@ -195,6 +210,19 @@ export function initKyrnBridge(): void {
   kyrnBridge.mudeState.provider(() => result(() => mude.state()));
   kyrnBridge.mudeRun.provider(({ action, localOnly }) =>
     result(() => mude.run(action, typeof localOnly === 'boolean' ? localOnly : undefined))
+  );
+  // Decision models from Hugging Face beside mude: `mu judge model … --json`, the same way.
+  const models = new DecisionModels(harness, { agentDir });
+  app.once('will-quit', () => models.dispose());
+  kyrnBridge.modelsState.provider(() => result(() => models.state()));
+  kyrnBridge.modelsRun.provider(({ action, target, localOnly }) =>
+    result(() =>
+      models.run({
+        action,
+        ...(typeof target === 'string' ? { target } : {}),
+        ...(typeof localOnly === 'boolean' ? { localOnly } : {}),
+      })
+    )
   );
   kyrnBridge.clmCheck.provider(({ baseUrl }) =>
     result(() => checkClmServer(typeof baseUrl === 'string' ? baseUrl : ''))

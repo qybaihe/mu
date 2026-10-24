@@ -280,6 +280,53 @@
         "readyStopped": "mude 1.0 现在是你的判定器，它的服务会在下次 mu 会话开始时启动。"
       }
     },
+    "models": {
+      "title": "其他决策模型",
+      "placeholder": "Hugging Face 链接或 owner/name",
+      "add": "添加",
+      "trust": "模型会在这台 Mac 上运行它自带的服务器代码，只添加你信任的模型。",
+      "use": "设为判定器",
+      "continue": "继续下载",
+      "remove": "移除",
+      "removeTitle": "移除 {{name}}？",
+      "removeText": "这会把 {{name}} 移出判定顺序，并删除它的文件（约 {{size}} GB）。以后可以再添加。",
+      "noList": "无法读取决策模型：{{reason}}",
+      "cancelled": "已取消。已下载的部分会保留。",
+      "state": {
+        "judge": "当前判定器 · {{size}} GB",
+        "running": "运行中 · {{size}} GB",
+        "installed": "已安装 · {{size}} GB",
+        "partial": "已下载 {{done}} / {{total}} GB",
+        "notDownloaded": "未下载 · {{size}} GB"
+      },
+      "step": {
+        "resolve": "正在 Hugging Face 上查找模型…",
+        "download": "正在下载 {{name}} 并校验每个文件…",
+        "python": "正在配置 Python 环境…",
+        "start": "正在启动 {{name}} 的服务器…"
+      },
+      "working": {
+        "add": "正在添加 {{name}}…",
+        "use": "正在把判定器切换到 {{name}}…",
+        "disable": "正在关闭 {{name}}…",
+        "remove": "正在移除 {{name}}…"
+      },
+      "failed": {
+        "add": "没能添加这个模型。",
+        "use": "没能把它设为判定器。",
+        "disable": "没能关闭它。",
+        "remove": "没能移除它。"
+      },
+      "error": {
+        "usage": "这不是 Hugging Face 模型的链接，也不是它的 owner/name。",
+        "access": "Hugging Face 不提供这个模型：它是私有的，或需要申请访问。",
+        "notFound": "Hugging Face 上没有这个模型。",
+        "notRunnable": "mu 运行不了这个模型：它没有 d3_server_mac.py，也就是按 mude 1.0 方式打包的模型自带的服务器。",
+        "network": "无法连接 Hugging Face。请检查网络后重试，已下载的部分会保留。",
+        "integrity": "有个下载的文件没通过校验，请重试。",
+        "unsupported": "这台 Mac 运行不了决策模型。"
+      }
+    },
     "clm": {
       "address": "服务器地址",
       "key": "服务器密钥",
@@ -436,6 +483,8 @@
     "byKeyHelp": "没有登录订阅，但 mu 上次连接时报告它能用，通常是因为环境里有它的 API 密钥。登录订阅后改用订阅。",
     "otherRunning": "{{name}} 正在登录，同一时间只能进行一个登录。",
     "showRunning": "去看看",
+    "switched": "已退出 {{name}} 的登录，已改用 {{model}}。",
+    "noModelLeft": "已退出 {{name}} 的登录。还没有设置其他模型。",
     "legacy": {
       "openai-codex": "这是经由 Codex CLI 的旧登录方式。请退出登录，再用 ChatGPT 登录。",
       "anthropic": "Anthropic 不允许其他应用用 Claude 订阅登录，所以 mu 不再提供。请退出登录，改为添加 Anthropic API key。"
