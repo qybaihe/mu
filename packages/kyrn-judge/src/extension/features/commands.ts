@@ -99,7 +99,7 @@ const helpSectionsEn = (): HelpSection[] => [
 	},
 	{
 		title: "Judgment kernel",
-		intro: `esc skips the wait for the judge's reading of a message; ${keyText("app.tools.expand")} shows the full answers behind a verdict.`,
+		intro: `While the judge reads a message, esc skips the wait; ${keyText("app.tools.expand")} shows the full answers behind a verdict.`,
 		rows: [
 			[
 				"/mu judge <judges>",

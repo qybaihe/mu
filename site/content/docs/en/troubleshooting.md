@@ -31,7 +31,7 @@ If none of this helps, [open an issue](https://github.com/qybaihe/mu/issues/new/
 
 **Verdicts are slow.** Every decision point has a time limit, after which mu carries on without the verdict; nothing blocks for long. `mu ledger --json` shows each verdict's latency. A slow or distant judge can be replaced per point with `routes`.
 
-**mu says Laya is no longer built in.** Your configuration still named Laya, the local judge mu had until 0.2.4. mu has already put another judge in its place: mude 1.0 if it's set up on your Mac, otherwise the other judges in your list, or Jev. It also fixed `mu.json` (the old file is in `~/.mu/backups`). See [Judges](@docs/judges#laya).
+**mu says Laya is no longer built in.** Your configuration still named Laya, the local judge mu had until 0.2.4. mu has already put another judge in its place: mude 1.0 if it's set up on your Mac, otherwise the other judges in your list, or Jev. It also updated `mu.json` (the old file is in `~/.mu/backups`). See [Judges](@docs/judges#laya).
 
 **mude 1.0 isn't answering.** `mu judge mude status` shows whether its server is running, and `mu judge mude start` starts it; `mu doctor` checks the server and its key. Until it answers, its fallback judges answer instead, or, with `--local-only`, each decision point uses its default.
 

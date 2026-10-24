@@ -304,8 +304,8 @@
     "download": "Download this version",
     "full_agent": "Full mu-agent changelog",
     "headlines": {
-      "v0.2.5": "Laya leaves the built-in judges: mu switches to mude 1.0 or Jev on its own; opening a conversation never waits for a judge",
-      "v0.2.4": "click a file a reply names to open it; conversations grouped by project and opened at once; Gemini 4 Argon; OpenAI-compatible relays fixed",
+      "v0.2.5": "Laya is no longer built in, so mu switches to mude 1.0 or Jev on its own; opening a conversation no longer waits for the judge",
+      "v0.2.4": "click a file named in a reply to open it; conversations grouped by project and opening instantly; Gemini 4 Argon; OpenAI-compatible relays fixed",
       "v0.2.3": "decision models from Hugging Face next to mude 1.0; mu decides when a mid-run message lands; ChatGPT sign-in copes with a busy port",
       "v0.2.2": "the mude 1.0 install copes with a full disk, a stop at any step and two installs at once; clearer English",
       "v0.2.1": "mude 1.0 is the recommended judge on a Mac, and installing it survives a power cut",

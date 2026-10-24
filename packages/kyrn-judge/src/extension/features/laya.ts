@@ -20,7 +20,7 @@ export function layaNotice(skipped: LayaSkipped, judge: string): string {
 	if (skipped.env && !skipped.file) {
 		return say({
 			zh: `mu：不再内置 Laya，所以跳过了 MU_JUDGE 里的 laya，判定器现在是 ${name}。想用别的决策模型，可以从 Hugging Face 添加：mu judge model add <链接>（或在桌面端「设置 → 判定器」里添加）。`,
-			en: `mu: Laya is no longer built in, so mu skips the laya in MU_JUDGE and your judge is now ${name}. To use another decision model, add it from Hugging Face: mu judge model add <link> (or Settings → Judges in the desktop app).`,
+			en: `mu: Laya is no longer built in, so mu skips laya in MU_JUDGE and your judge is now ${name}. To use another decision model, add it from Hugging Face: mu judge model add <link> (or Settings → Judges in the desktop app).`,
 		});
 	}
 	return say({

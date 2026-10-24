@@ -771,8 +771,8 @@ export const AUTH_USAGE = [
 	"  mu auth status",
 	"  mu auth login <provider> [--paste]",
 	"  mu auth logout <provider>",
-	"In a terminal, /login inside mu signs in the same way. With --paste, the sign-in takes the address the browser",
-	"ends on as pasted instead of listening for it: for when another program (the Codex CLI) holds the callback port.",
+	"In a terminal, /login inside mu signs in the same way. With --paste, you paste the address the browser ends on",
+	"instead of mu listening for it. Use it when another program, such as the Codex CLI, holds the callback port.",
 	"",
 	"pi's auth commands:",
 ].join("\n");
