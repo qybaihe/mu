@@ -616,7 +616,7 @@ describe('decision models from Hugging Face beside mude', () => {
     // The decision model on this Mac is the choice, so its body is open without a click.
     expect(tile).toHaveAttribute('aria-checked', 'true');
     expect(row).toHaveTextContent('owner/fast-judge');
-    expect(row).toHaveTextContent('The judge · 0.9 GB');
+    expect(row).toHaveTextContent('Current judge · 0.9 GB');
     expect(within(row).queryByTestId('mu-model-use-fast-judge')).not.toBeInTheDocument();
     expect(within(tile).getByTestId('mu-mude-use')).toBeInTheDocument();
     expect(within(tile).getByTestId('mu-models-trust')).toHaveTextContent(enMu.judges.models.trust);
