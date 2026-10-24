@@ -6,6 +6,8 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ### Fixed
 
+- **Installing mude 1.0 again keeps it local only.** Running `mu judge mude install` over a working local-only setup, or `mu judge model add` with mude's own repo, used to put Jev back behind it. It now keeps what you chose, as `mu judge mude enable` does; `--with-fallback` still changes it.
+- **A mistyped model name no longer reads as a private model.** Without a Hugging Face token, Hugging Face answers a model that doesn't exist the same way as a private one, so `mu judge model add` said a typo was private or gated. It now says the model doesn't exist or is private or gated, and to check the name first.
 - **`mu doctor` no longer fails on a machine without Chrome.** A browser is only needed for mu's browser, so the row now says it's optional instead of asking you to fix it, and `mu doctor` (and `/doctor` inside mu) passes when everything else is set up. `mu --help` also fits in a 100-column terminal now.
 
 ## [0.2.5] - 2026-10-24

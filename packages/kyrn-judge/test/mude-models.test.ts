@@ -147,7 +147,13 @@ describe("looking a model up on Hugging Face", () => {
 			"has no d3_server_mac.py",
 		);
 		const gated = fakeHub("owner/gated", [], { status: 401 });
-		await expect(resolveModel({ repo: "owner/gated" }, { fetch: gated.fetcher })).rejects.toThrow("private or gated");
+		// Without a token a 401 may just as well be a typo: Hugging Face answers so for a model that doesn't exist.
+		await expect(resolveModel({ repo: "owner/gated" }, { fetch: gated.fetcher })).rejects.toThrow(
+			"Couldn't open owner/gated on Hugging Face (401): it doesn't exist, or it's private or gated. Check the name",
+		);
+		await expect(resolveModel({ repo: "owner/gated" }, { fetch: gated.fetcher, token: "hf_test" })).rejects.toThrow(
+			"owner/gated is private or gated on Hugging Face (401)",
+		);
 		const missing = fakeHub("owner/none", [], { status: 404 });
 		await expect(resolveModel({ repo: "owner/none", revision: "v9" }, { fetch: missing.fetcher })).rejects.toThrow(
 			"Hugging Face has no model owner/none at v9",

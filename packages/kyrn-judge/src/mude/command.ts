@@ -260,17 +260,20 @@ const gb = (bytes: number) => (bytes / 1e9).toFixed(1);
 
 /**
  * Whether an install makes mude the only judge: as its flags say, else as the install it goes on from was asked (one
- * that stopped part way left install.json), else not.
+ * that stopped part way left install.json), else as it is now. An install run again over a working one, or reached
+ * through `mu judge model add` with mude's own repo, keeps local only as enable does.
  */
 export function installLocalOnly(ctx: Context, args: readonly string[]): boolean {
 	if (args.includes("--local-only")) return true;
 	if (args.includes("--with-fallback")) return false;
 	try {
 		const value: unknown = JSON.parse(readFileSync(ctx.paths.install, "utf8"));
-		return typeof value === "object" && value !== null && "localOnly" in value && value.localOnly === true;
+		if (typeof value === "object" && value !== null && "localOnly" in value) return value.localOnly === true;
 	} catch {
-		return false;
+		// No install to go on from.
 	}
+	const current = judgeSetting(ctx.files, pkgOf(ctx).judge.name);
+	return current.enabled && current.localOnly;
 }
 
 /** When `pid` started, as ps says; with the pid, it tells a process from one that took over the number since. */

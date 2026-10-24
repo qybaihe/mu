@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- `mu judge mude install` without `--local-only` or `--with-fallback` keeps the current setting when mude 1.0 is already the judge (as `enable` does), instead of putting Jev back behind it.
+- `mu judge model add`: a 401 without `HF_TOKEN` says the model doesn't exist or is private or gated, and to check the name, since Hugging Face answers both the same way.
 - `mu doctor` and `/doctor` mark a missing Chrome, Chromium, Edge or Brave as optional (`--`) instead of something to fix, so `mu doctor` exits 0 when everything else is set up. `mu --help` lines fit in 100 columns.
 
 ## [0.2.5] - 2026-10-24
