@@ -179,9 +179,9 @@
     "mac_p": "The Mac edition: MLX, 8-bit, a 1.8 GB download. It's the one mu installs.",
     "install_label": "INSTALL",
     "install_h2": "One command on a Mac",
-    "install_intro": "One-click install works on Macs with Apple silicon today, with macOS 14 or later and at least 8 GB of memory. While it runs, the server uses about 4 GB.",
+    "install_intro": "One-click install works on Macs with Apple silicon today, with macOS 14 or later and at least 8 GB of memory. On such a Mac, mude is the recommended judge, and <code>mu setup</code> offers it first. While it runs, the server uses about 4 GB.",
     "cli": {
-      "install": "download, verify every file, start it on 127.0.0.1, make it the judge",
+      "install": "download (resumes after a stop), verify every file, start it on 127.0.0.1, make it the judge",
       "status": "what is installed, running and enabled",
       "local_only": "mude only: nothing goes to a hosted judge",
       "disable": "back to the previous judge; stops its server",
@@ -189,7 +189,7 @@
     },
     "app_h3": "In the desktop app",
     "app": [
-      { "b": "First-run guide", "text": "The judge step offers to install mude and shows the download's progress. You can skip it, and try again if it fails. On a Mac that can't run mude, the guide says so and keeps the cloud judge." },
+      { "b": "First-run guide", "text": "On a Mac that can run it, the judge step starts with mude picked, as the recommended judge. One click installs it and shows the download's progress. You can pick another judge or skip it, and try again if it fails. An install that stops, even in a power cut, goes on from where it stopped: click Continue installing. On a Mac that can't run mude, the guide says so and keeps the cloud judge." },
       { "b": "Settings → Judges", "text": "The mude card installs, starts and stops it, makes it the judge and uninstalls it. It also has the Only local switch." }
     ],
     "other_h3": "On other machines",
