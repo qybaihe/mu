@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.2.10] - 2026-10-24
+
+**0.2.10 has no changes to the agent. It keeps the version in step with the 0.2.10 desktop app.**
+
 ## [0.2.9] - 2026-10-24
 
 **0.2.9 is board v2.1: the writer gives each subagent a `label` in the board's language, kept per session and used wherever the board names it; delegate titles are asked for in the person's language.**
