@@ -67,7 +67,7 @@ Judges and modes:
 | `MU_WRITER` | `provider/model-id` for the writer model. |
 | `MU_PERMISSIONS` | Permission mode for this run: `full`, `judge` or `ask`. |
 
-Keys for the hosted judges, each sent only to the service it belongs to (see [Judges](judges.md#hosted-jev)): `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`, and `MU_JUDGE_CLM_API_KEY`.
+Keys for the hosted judges, each sent only to the service it belongs to (see [Judges](judges.md#hosted-jev)): `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`, `MU_JUDGE_CLM_API_KEY`, and `MU_JUDGE_OPENAI_KEY` ([OpenAI's decision model](judges.md#openais-decision-model)).
 
 Time:
 

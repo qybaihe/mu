@@ -62,7 +62,7 @@ Judges and modes:
 | `MU_WRITER` | `provider/model` for the writing model |
 | `MU_PERMISSIONS` | Permission mode for this run: `full`, `judge` or `ask` |
 
-Keys for the hosted judges, each sent only to its own service: `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`, `MU_JUDGE_CLM_API_KEY`.
+Keys for the hosted judges, each sent only to its own service: `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`, `MU_JUDGE_CLM_API_KEY`, `MU_JUDGE_OPENAI_KEY`.
 
 Time:
 

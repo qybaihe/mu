@@ -62,7 +62,7 @@ mu가 이해하지 못하는 부분은 mu를 멈추지 않고 기본값으로 �
 | `MU_WRITER` | 글쓰기 모델의 `provider/model` |
 | `MU_PERMISSIONS` | 이번 실행의 권한 모드: `full`, `judge`, `ask` |
 
-호스팅 판정기의 키(각각 자기 서비스로만 보내져요): `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY`와 `CLOUDFLARE_ACCOUNT_ID`, `MU_JUDGE_CLM_API_KEY`.
+호스팅 판정기의 키(각각 자기 서비스로만 보내져요): `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY`와 `CLOUDFLARE_ACCOUNT_ID`, `MU_JUDGE_CLM_API_KEY`, `MU_JUDGE_OPENAI_KEY`.
 
 시간:
 

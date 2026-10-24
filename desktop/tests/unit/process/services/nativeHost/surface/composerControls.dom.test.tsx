@@ -48,13 +48,6 @@ vi.mock('@arco-design/web-react', async (importOriginal) => {
       </div>
     ),
     ItemGroup: ({ children }: Props) => <div role='group'>{children}</div>,
-    // Both levels at once: the row and what it opens.
-    SubMenu: ({ children, title, ...rest }: Props & { title?: React.ReactNode }) => (
-      <div {...dataOf(rest)}>
-        <div>{title}</div>
-        <div>{children}</div>
-      </div>
-    ),
   });
   return {
     ...actual,
@@ -361,9 +354,10 @@ describe('the native send box’s model, thinking level and permission mode', ()
     expect(chip()).toHaveTextContent('Default model');
   });
 
-  it('lists pi’s models when the chip opens, and switches the model, then the level the person picked', async () => {
+  it('lists pi’s models when the chip opens, switches the model, and offers the levels of the model in use', async () => {
     const host = createFakeHost();
     host.add({ id: 'c1' });
+    let inUse = 'one';
     host.answer((_id, command) => {
       if (command.type === 'get_available_models')
         return {
@@ -376,7 +370,12 @@ describe('the native send box’s model, thinking level and permission mode', ()
             ],
           },
         };
-      if (command.type === 'get_available_thinking_levels') return { ok: true, data: { levels: ['off'] } };
+      if (command.type === 'set_model') inUse = String(command.modelId);
+      if (command.type === 'get_available_thinking_levels')
+        return {
+          ok: true,
+          data: { levels: inUse === 'thinker' ? ['off', 'minimal', 'low', 'medium', 'high'] : ['off'] },
+        };
       return { ok: true, data: undefined };
     });
     await mount(host);
@@ -388,26 +387,81 @@ describe('the native send box’s model, thinking level and permission mode', ()
     expect(commands(host)).toEqual([{ type: 'get_available_models' }, { type: 'get_available_thinking_levels' }]);
     const row = (value: string) =>
       screen.getAllByTestId('composer-model-option').find((each) => each.getAttribute('data-value') === value)!;
-    // A model that reasons opens to the levels pi's rule gives it; one that does not is picked as it is.
-    const levels = within(row('e2e/thinker')).getAllByTestId('composer-level-option');
-    expect(levels.map((each) => each.getAttribute('data-value'))).toEqual(['off', 'minimal', 'low', 'medium', 'high']);
-    expect(within(row('e2e/one')).queryAllByTestId('composer-level-option')).toHaveLength(0);
+    // The model in use takes one level: nothing to choose under the list.
+    expect(screen.queryByTestId('composer-thinking')).toBeNull();
+    // A row switches the model only: pi keeps a level of its own choosing.
     await act(async () => {
-      fireEvent.click(levels[4]);
+      fireEvent.click(row('e2e/thinker'));
     });
-    expect(commands(host).slice(2)).toEqual([
-      { type: 'set_model', provider: 'e2e', modelId: 'thinker' },
-      { type: 'set_thinking_level', level: 'high' },
-    ]);
-    // pi answers the switch: the chip follows the view.
+    expect(commands(host).slice(2)).toEqual([{ type: 'set_model', provider: 'e2e', modelId: 'thinker' }]);
     act(() => {
       host.play('c1', [
         { type: 'response', command: 'set_model', success: true, data: { provider: 'e2e', id: 'thinker' } },
-        { type: 'thinking_level_changed', level: 'high' },
+        { type: 'thinking_level_changed', level: 'medium' },
       ]);
     });
     expect(chip()).toHaveAttribute('data-model', 'e2e/thinker');
+
+    // Open again: the levels of the model that reasons, by pi's own answer, under the list.
+    fireEvent.click(screen.getByTestId('native-model-pill'));
+    await waitFor(() => expect(screen.getByTestId('composer-thinking')).toBeInTheDocument());
+    const levels = screen.getAllByTestId('composer-level-option');
+    expect(levels.map((each) => each.getAttribute('data-value'))).toEqual(['off', 'minimal', 'low', 'medium', 'high']);
+    await act(async () => {
+      fireEvent.click(levels[4]);
+    });
+    expect(commands(host).slice(5)).toEqual([{ type: 'set_thinking_level', level: 'high' }]);
+    act(() => {
+      host.play('c1', [{ type: 'thinking_level_changed', level: 'high' }]);
+    });
+    expect(chip()).toHaveAttribute('data-model', 'e2e/thinker');
     expect(chip()).toHaveAttribute('data-level', 'high');
+  });
+
+  it('lists the newest OpenAI models and the one in use, and every model once asked', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    host.answer((_id, command) => {
+      if (command.type === 'get_available_models')
+        return {
+          ok: true,
+          data: {
+            models: [
+              { provider: 'openai', id: 'gpt-4.1', name: 'GPT-4.1' },
+              { provider: 'openai', id: 'gpt-4o', name: 'GPT-4o' },
+              { provider: 'openai', id: 'gpt-5', name: 'GPT-5', reasoning: true },
+              { provider: 'openai', id: 'gpt-5.5', name: 'GPT-5.5', reasoning: true },
+              { provider: 'openai', id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', reasoning: true },
+              { provider: 'openai', id: 'o3', name: 'o3', reasoning: true },
+            ],
+          },
+        };
+      if (command.type === 'get_available_thinking_levels') return { ok: true, data: { levels: ['low', 'high'] } };
+      return { ok: true, data: undefined };
+    });
+    await mount(host);
+    act(() => {
+      host.push('c1', state('openai', 'gpt-5.5', 'high'));
+    });
+    fireEvent.click(screen.getByTestId('native-model-pill'));
+    const listed = () => screen.getAllByTestId('composer-model-option').map((each) => each.getAttribute('data-value'));
+    // The conversation's own older model stays listed beside the newest series.
+    await waitFor(() => expect(listed()).toEqual(['openai/gpt-5.5', 'openai/gpt-6.1-sol']));
+    expect(screen.getByTestId('composer-thinking')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('composer-model-show-all'));
+    expect(listed()).toEqual([
+      'openai/gpt-4.1',
+      'openai/gpt-4o',
+      'openai/gpt-5',
+      'openai/gpt-5.5',
+      'openai/gpt-6.1-sol',
+      'openai/o3',
+    ]);
+    fireEvent.click(screen.getByTestId('composer-model-show-all'));
+    expect(listed()).toEqual(['openai/gpt-5.5', 'openai/gpt-6.1-sol']);
+    // A search looks through every model.
+    fireEvent.change(screen.getByTestId('composer-model-search'), { target: { value: '4o' } });
+    expect(listed()).toEqual(['openai/gpt-4o']);
   });
 
   it('waits for the run to end before a model switch', async () => {

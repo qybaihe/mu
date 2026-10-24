@@ -608,7 +608,9 @@
     "defaultTag": "par défaut",
     "makeDefault": "Utiliser par défaut pour les nouvelles conversations",
     "madeDefault": "Les nouvelles conversations commenceront avec ce modèle.",
-    "makeDefaultFailed": "Impossible d'enregistrer le modèle par défaut."
+    "makeDefaultFailed": "Impossible d'enregistrer le modèle par défaut.",
+    "showAllModels": "Afficher tous les modèles ({{count}})",
+    "showFewerModels": "Afficher moins de modèles"
   },
   "agentTip": {
     "codes": {

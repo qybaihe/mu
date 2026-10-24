@@ -65,6 +65,22 @@ A key is only ever sent to the service it belongs to. Name a route directly, suc
 
 **Speed and cost.** Measured in the authors' own sessions: one question on a warm connection in about 0.3 s; 16 chunks of tool output judged in one request in 0.44 s, the state billed once. While a session is in use, one tiny question every 50 seconds keeps the connection warm, so the questions before a turn skip 1 to 3 seconds of connecting.
 
+## OpenAI's decision model {#openai}
+
+The built-in `openai` judge asks `gpt-6-luna` through OpenAI's [Decisions API](https://developers.openai.com/api/docs/guides/decisions) (`POST /v1/decisions`), with an OpenAI API key. Its key is `MU_JUDGE_OPENAI_KEY`. Without it, the judge uses the OpenAI API key mu already has for its `openai` provider (from `mu setup`, `/login` or `OPENAI_API_KEY`); Sign in with ChatGPT doesn't count. `mu setup --judge openai` or the app's judges page sets it up, or put it in `mu.json`:
+
+```json
+{ "tiers": ["openai"] }
+```
+
+OpenAI charges $0.10 per million uncached input tokens, and nothing for output. Not measured on mu's questions yet.
+
+To reach it through a relay or proxy that serves the same Decisions endpoint, give it a `baseUrl` and a key of its own. The key of mu's `openai` provider only ever goes to `api.openai.com`:
+
+```json
+{ "judges": { "relay": { "type": "openai", "baseUrl": "https://relay.example.com/v1", "apiKeyEnv": "MU_JUDGE_RELAY_KEY" } } }
+```
+
 ## If your configuration still names Laya {#laya}
 
 Laya, the third-party local judge mu shipped until 0.2.4, is no longer built in. A `mu.json` that still names it, in `tiers`, in a route or as a judge of type `local`, keeps working: mude 1.0 takes its place when it's set up on your Mac; otherwise the judges left in the list answer, or Jev when none are left. mu updates `mu.json` once, changing only those entries and keeping a copy of the old file in `~/.mu/backups`, and tells you which judge took over. If `MU_JUDGE` names `laya`, mu skips it. For another decision model on your machine, [add one from Hugging Face](@docs/judges#models).
@@ -97,6 +113,7 @@ Under `judges` in `mu.json`, give a name and a type:
 | `llm` | A chat model from pi's registry |
 | `classifier` | A classifier from pi's catalog |
 | `clm` | A `clm-serve` |
+| `openai` | OpenAI's Decisions API at `baseUrl`, OpenAI's own by default |
 
 The key never goes in the file: `apiKeyEnv` names the environment variable that holds it, set in your environment or in mu's `.env`.
 

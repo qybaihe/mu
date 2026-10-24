@@ -32,7 +32,7 @@ const helpZh = () => `mu ${VERSIONS.mu} · 先判断再动手的编程代理，�
 
 判断层
   按 esc 不等判定器读完消息；${keyText("app.tools.expand")} 可以看每个判定背后的全部回答。
-  /mu judge <判定器>：由哪些模型来判定、按什么顺序，比如 jev | mude,jev | jev-opencode-free | clm | classifier:<提供商>/<模型> | llm:<提供商>/<模型>
+  /mu judge <判定器>：由哪些模型来判定、按什么顺序，比如 jev | mude,jev | jev-opencode-free | openai | clm | classifier:<提供商>/<模型> | llm:<提供商>/<模型>
   /mu route <判定点> <判定器|default>：让某一个判定点用自己的判定器，比如 browser.step llm:openai/gpt-5.6-luna
   /mu mode <判定点|default> <off|shadow|active>：off 关闭，shadow 影子（只记录，不起作用），active 生效
   /frame：查看任务帧，也就是 mu 记住的目标、你的硬约束（原话加出处）和验收条件
@@ -103,7 +103,7 @@ const helpSectionsEn = (): HelpSection[] => [
 		rows: [
 			[
 				"/mu judge <judges>",
-				"set which judges answer, in order: jev | mude,jev | jev-opencode-free | clm | classifier:<provider>/<model> | llm:<provider>/<model>",
+				"set which judges answer, in order: jev | mude,jev | jev-opencode-free | openai | clm | classifier:<provider>/<model> | llm:<provider>/<model>",
 			],
 			[
 				"/mu route <point> <judge|default>",

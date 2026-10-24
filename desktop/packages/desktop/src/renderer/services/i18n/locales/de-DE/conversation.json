@@ -609,7 +609,9 @@
     "defaultTag": "Standard",
     "makeDefault": "Als Standard für neue Unterhaltungen festlegen",
     "madeDefault": "Neue Unterhaltungen starten mit diesem Modell.",
-    "makeDefaultFailed": "Das Standardmodell konnte nicht gespeichert werden."
+    "makeDefaultFailed": "Das Standardmodell konnte nicht gespeichert werden.",
+    "showAllModels": "Alle Modelle anzeigen ({{count}})",
+    "showFewerModels": "Weniger Modelle anzeigen"
   },
   "agentTip": {
     "codes": {

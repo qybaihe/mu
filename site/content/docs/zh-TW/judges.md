@@ -65,6 +65,22 @@ Jev 是 TypeSafe 做的判定模型，專門回答這類問題。內建的 `jev`
 
 **速度和成本。** 在作者自己的工作階段裡實測：熱連線上一個問題約 0.3 秒；16 塊工具輸出在一個請求裡判完用 0.44 秒，狀態只計費一次。工作階段使用中時，每 50 秒問一個很小的問題讓連線保持熱的，所以一輪開始前的提問能省掉 1 到 3 秒的連線建立時間。
 
+## OpenAI 的決策模型 {#openai}
+
+內建的 `openai` 判定器透過 OpenAI 的 [Decisions API](https://developers.openai.com/api/docs/guides/decisions)（`POST /v1/decisions`）向 `gpt-6-luna` 提問，使用 OpenAI 的 API 金鑰。它的金鑰是 `MU_JUDGE_OPENAI_KEY`；沒有設定時，使用 mu 已經為 `openai` 提供者保存的 OpenAI API 金鑰（來自 `mu setup`、`/login` 或 `OPENAI_API_KEY`），用 ChatGPT 登入的不算。`mu setup --judge openai` 或桌面端的「判定器」頁可以設定它，也可以寫進 `mu.json`：
+
+```json
+{ "tiers": ["openai"] }
+```
+
+OpenAI 依未命中快取的輸入 token 收費，每百萬 0.10 美元，輸出不收費。還沒有在 mu 的問題上測過。
+
+要透過提供同一 Decisions 端點的中繼服務或代理存取它，給它一個 `baseUrl` 和它自己的金鑰。mu 的 `openai` 提供者的金鑰只會送到 `api.openai.com`：
+
+```json
+{ "judges": { "relay": { "type": "openai", "baseUrl": "https://relay.example.com/v1", "apiKeyEnv": "MU_JUDGE_RELAY_KEY" } } }
+```
+
 ## 設定裡還寫著 Laya {#laya}
 
 Laya 是 mu 在 0.2.4 及以前內建的第三方本機判定器，現在已不再內建。`mu.json` 裡還寫著它（在 `tiers` 裡、某個 `routes` 裡，或是一個 `local` 類型的判定器）也照常能用：這台 Mac 上裝好了 mude 1.0，就由 mude 1.0 取代它；否則由清單裡剩下的判定器回答，一個都不剩就用 Jev。mu 只改一次 `mu.json`，只動這幾項，舊檔案在 `~/.mu/backups` 裡留一份，並告訴你換成了哪個判定器。`MU_JUDGE=laya` 會被略過。想在本機用別的決策模型，可以[從 Hugging Face 新增](@docs/judges#models)。
@@ -97,6 +113,7 @@ Laya 是 mu 在 0.2.4 及以前內建的第三方本機判定器，現在已不�
 | `llm` | pi 模型註冊表裡的一個聊天模型 |
 | `classifier` | pi 模型目錄裡的一個分類模型 |
 | `clm` | 一個 `clm-serve` |
+| `openai` | `baseUrl` 處的 OpenAI Decisions API，預設是 OpenAI 自己的 |
 
 金鑰從不寫進檔案：`apiKeyEnv` 寫的是存放金鑰的環境變數名稱，這個變數設在你的環境裡，或 mu 的 `.env` 裡。
 
