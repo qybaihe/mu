@@ -4,13 +4,8 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
-### Added
-
-- **OpenAI's decision model can be the judge.** `gpt-6-luna` answers mu's decisions through OpenAI's Decisions API. Pick it with `mu setup --judge openai`, with `/mu judge openai` in a session, or as OpenAI on the Judges page in Settings, which has a field for its key. It uses its own key, `MU_JUDGE_OPENAI_KEY`, or else the OpenAI API key you already set up for mu's models (Sign in with ChatGPT doesn't work for it). To reach it through a relay or proxy that serves the same Decisions endpoint, give the judge a `baseUrl` and a key of its own in `~/.mu/agent/mu.json`: the key of mu's OpenAI models only ever goes to api.openai.com. OpenAI charges $0.10 per million uncached input tokens and nothing for output. It isn't measured on mu's questions yet. If its key goes away (you sign out of OpenAI or remove the key) or OpenAI turns the key down, mu says so once per session, and the next judge or mu's fallbacks decide until a key is back. In the desktop app, the key has a Remove key button, and the model is picked from the list OpenAI serves.
-
 ### Changed
 
-- **OpenAI's newest model is the default.** With an OpenAI API key or Sign in with ChatGPT and no model picked yet, mu now starts on GPT-6.1 Sol instead of GPT-5.5, and `mu setup` offers it for an OpenAI key.
 - **The plain-language board talks like a teammate giving a quick update.** It leads with one line on who is doing what, or what just happened, then says what's stuck and on what, and what comes next. It starts from what changed since its last update instead of rewording it, names the file, test or command that matters, and leaves out filler such as "making progress". When a check fails, the board can say why, from the check's own output, with any key taken out. In the terminal, the board above the editor shows that line, then what needs you or what's stuck, then the latest step; `/board` shows the rest.
 - **The board says what each subagent is doing.** While subagents work, the board lists them by name with what each is doing and for how long. When one comes back or fails, the board says so right away, with the first line of its report or why it stopped, instead of waiting for all of them. "2 subagents finished" now says "1 with errors" when one of them failed or timed out.
 - **The board tells you when something is stuck, while it's stuck.** A command that runs for a minute, or a subagent that goes a minute without output, gets a line on the board ("Still running npm test, 3 min in") that updates at 1, 3 and 10 minutes, and the board looks again each time. Set `features.board.stallMs` to change the minute, or 0 to turn it off.
@@ -20,6 +15,23 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 - **A permission prompt stays on the board until you answer it.** A board update that started just before mu asked for permission could replace the "Needs you" line while the prompt was still open. The board also showed the stage the agent was in, such as "Making changes", instead of "Waiting for you".
 - **A busy agent no longer keeps the board from updating.** When the agent said something every few seconds, each board update gave way to the next one, and the board could stay unwritten until the agent stopped. Now the board is written anyway once it's 15 seconds old (`features.board.maxStaleMs`). Mid-run, the board's model gets 20 seconds instead of 60, since a later update is already out of date.
+
+## [0.2.7] - 2026-10-24
+
+**0.2.7 adds OpenAI's decision model as a judge, starts OpenAI on GPT-6.1 Sol, shortens the model menu to the OpenAI models worth picking, and keeps the thinking level in view.** The desktop app carries mu-agent 0.2.7.
+
+### Added
+
+- **OpenAI's decision model can be the judge.** `gpt-6-luna` answers mu's decisions through OpenAI's Decisions API. Pick it with `mu setup --judge openai`, with `/mu judge openai` in a session, or as OpenAI on the Judges page in Settings, which has a field for its key. It uses its own key, `MU_JUDGE_OPENAI_KEY`, or else the OpenAI API key you already set up for mu's models (Sign in with ChatGPT doesn't work for it). To reach it through a relay or proxy that serves the same Decisions endpoint, give the judge a `baseUrl` and a key of its own in `~/.mu/agent/mu.json`: the key of mu's OpenAI models only ever goes to api.openai.com. OpenAI charges $0.10 per million uncached input tokens and nothing for output. It isn't measured on mu's questions yet. If its key goes away (you sign out of OpenAI or remove the key) or OpenAI turns the key down, mu says so once per session, and the next judge or mu's fallbacks decide until a key is back. In the desktop app, the key has a Remove key button, and the model is picked from the list OpenAI serves.
+
+### Changed
+
+- **OpenAI's newest model is the default.** With an OpenAI API key or Sign in with ChatGPT and no model picked yet, mu now starts on GPT-6.1 Sol instead of GPT-5.5, and `mu setup` offers it for an OpenAI key.
+- **The model menu lists the OpenAI models worth picking.** With Sign in with ChatGPT or an OpenAI key, the desktop app's model menu shows GPT-5.6 and newer (GPT-5.6 Luna, Sol and Terra, GPT-6 Astra, Luna and Sol, and GPT-6.1 Sol) instead of every OpenAI model back to GPT-4. Search still finds any model, **Show all models** at the end of the list shows the rest, and the model a conversation already uses always stays in the list.
+
+### Fixed
+
+- **The thinking level stays in view.** It used to open in a side menu that a long model list pushed down, past the bottom of a small window. It now sits under the model list in the same menu, outside the part that scrolls, so the model and its thinking level always show together, in a narrow window too.
 
 ## [0.2.6] - 2026-10-24
 
