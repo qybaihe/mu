@@ -18,8 +18,8 @@ describe("KYRN events in the app's native cards", () => {
       rawOutput: { preflight: 'pending' },
     });
     // The judge that was asked names the row until a verdict says who answered.
-    expect(frame('preflight.pending', { judge: 'laya>jev-latest', mode: 'active' })[0]).toMatchObject({
-      rawOutput: { preflight: 'pending', judge: 'laya>jev-latest' },
+    expect(frame('preflight.pending', { judge: 'mude>jev-latest', mode: 'active' })[0]).toMatchObject({
+      rawOutput: { preflight: 'pending', judge: 'mude>jev-latest' },
     });
     expect(frame('preflight.verdict', { turnType: 'chat' })[0]).toMatchObject({
       sessionUpdate: 'tool_call_update',

@@ -9,7 +9,7 @@ import type { JsonObject, NativeView } from '@/common/utils/nativeHost';
 export type StatusRow =
   /** Nothing ran yet. */
   | { kind: 'idle' }
-  /** The judge classifies the message before the run starts; `judge` is the one asked (`jev-latest`, `laya`, …). */
+  /** The judge classifies the message before the run starts; `judge` is the one asked (`jev-latest`, `mude`, …). */
   | { kind: 'classifying'; judge: string }
   | { kind: 'compacting' }
   /** A request failed and pi tries again after `delayMs`: this is attempt `attempt` of `maxAttempts`. */

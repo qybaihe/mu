@@ -1314,6 +1314,24 @@ describe('what mu notifies', () => {
       f.cleanup();
     }
   });
+
+  it('says once, by code, that Laya is gone and which judge is in its place, and not again in mu’s words', async () => {
+    const f = fixture();
+    try {
+      await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
+      const line = 'mu: Laya is no longer built in, so your judge is now mude 1.0.';
+      f.emit(shown('judge.notice', { code: 'laya_removed', judge: 'mude', message: line }));
+      notify(f, line, 'info');
+      f.emit(shown('judge.notice', { code: 'laya_removed', judge: 'mude', message: line }));
+      await vi.waitFor(() => expect(noticesOf(f.updates)).toHaveLength(1));
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      expect(noticesOf(f.updates).map((update) => [update.title, update.rawInput])).toEqual([
+        [line, { notice: 'laya_removed', judge: 'mude' }],
+      ]);
+    } finally {
+      f.cleanup();
+    }
+  });
 });
 
 const asRecordOf = (value: unknown): Record<string, unknown> =>
@@ -1410,7 +1428,7 @@ describe('the judge’s line', () => {
     try {
       const { sessionId } = await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
       const running = f.agent.prompt({ sessionId, prompt: [{ type: 'text', text: 'Test' }] });
-      f.emit(shown('preflight.pending', { judge: 'laya>jev-latest', mode: 'active' }));
+      f.emit(shown('preflight.pending', { judge: 'mude>jev-latest', mode: 'active' }));
       f.emit(shown('preflight.wait_end', { reason: 'timeout' }));
       f.finish();
       await running;
@@ -1418,8 +1436,8 @@ describe('the judge’s line', () => {
         .map((each) => each.update)
         .filter((update) => 'toolCallId' in update && update.toolCallId === 'jev:r:0');
       expect(rows.map((update) => ('rawOutput' in update ? update.rawOutput : undefined))).toEqual([
-        { preflight: 'pending', judge: 'laya>jev-latest' },
-        { preflight: 'fallback', judge: 'laya>jev-latest' },
+        { preflight: 'pending', judge: 'mude>jev-latest' },
+        { preflight: 'fallback', judge: 'mude>jev-latest' },
       ]);
     } finally {
       f.cleanup();

@@ -149,59 +149,10 @@
         "tagRecommended": "Recommandé · sur ce Mac",
         "description": "Le modèle de décision de mu, optimisé pour la programmation et à l’état de l’art pour les décisions d’un agent de programmation. Il tourne sur ce Mac : sans clé et sans coût par appel. Il faut une puce Apple."
       },
-      "local": {
-        "title": "Laya local",
-        "tag": "Gratuit · hors ligne",
-        "description": "S’exécute sur cet ordinateur, sans réseau ni coût. Bon pour classer ; moins fiable pour mettre en relation et noter."
-      },
       "clm": {
         "title": "CLM",
         "tag": "Auto-hébergé",
         "description": "Répond aux mêmes questions que Jev, sur un serveur à vous (clm-serve). Son encodeur a besoin d’un GPU ; rien n’est facturé à l’appel."
-      }
-    },
-    "laya": {
-      "running": "En cours d’exécution sur cette machine",
-      "stopped": "Installé, mais arrêté. mu le démarre quand il en a besoin.",
-      "missing": "Pas encore installé.",
-      "platform": "Laya ne peut pas fonctionner sur cet ordinateur : il nécessite Windows ou Linux (x64 ou arm64), ou un Mac avec puce Apple Silicon.",
-      "needsUv": "L’installation nécessite uv, un gestionnaire de paquets Python. Installez-le, puis revenez ici.",
-      "uvLink": "Comment installer uv",
-      "install": "Installer Laya",
-      "start": "Démarrer",
-      "stop": "Arrêter",
-      "confirmTitle": "Télécharger et installer Laya ?",
-      "confirmText": "Environ {{size}} Mo seront téléchargés depuis PyPI et Hugging Face (paquets Python et poids du modèle) dans le dossier de mu, ce qui prend quelques minutes. Laya démarre une fois installé.",
-      "confirmOk": "Télécharger et installer",
-      "working": {
-        "setup": "Installation de Laya…",
-        "start": "Démarrage de Laya…",
-        "stop": "Arrêt de Laya…"
-      },
-      "failed": {
-        "setup": "L’installation n’a pas abouti. Vous pouvez réessayer.",
-        "start": "Laya n’a pas démarré.",
-        "stop": "Laya ne s’est pas arrêté."
-      },
-      "onnx": {
-        "missing": "Le modèle de Laya n’est pas encore sur cet ordinateur (environ {{size}} Mo). mu ne le télécharge pas pour vous : récupérez les fichiers sur Hugging Face, placez-les dans le dossier du modèle, puis cliquez sur « Vérifier et démarrer ».",
-        "stopped": "Le modèle est en place et Laya est arrêté. Si Laya est votre juge, mu le démarre tout seul à l’ouverture de l’app.",
-        "starting": "Vérification du modèle et démarrage de Laya… La première vérification lit tout le modèle et prend un moment.",
-        "missingFiles": "Il manque encore : {{files}}",
-        "wrongFiles": "Ce n’est pas la version testée avec mu, téléchargez-les à nouveau : {{files}}",
-        "folder": "Dossier du modèle : {{folder}}",
-        "command": "Avec la ligne de commande Hugging Face (hf), cette seule commande récupère tout :",
-        "page": "Obtenir sur Hugging Face",
-        "openFolder": "Ouvrir le dossier du modèle",
-        "check": "Vérifier et démarrer",
-        "problem": {
-          "missing": "Certains fichiers du modèle manquent.",
-          "wrong": "Certains fichiers du modèle ne sont pas la version testée avec mu. Téléchargez-les à nouveau.",
-          "runtime": "Cet ordinateur n’a pas pu exécuter le modèle.",
-          "port": "Un autre programme utilise déjà le port de Laya ({{port}}).",
-          "stopped": "Laya s’est arrêté avant d’être prêt.",
-          "foreign": "Un Laya que mu n’a pas démarré tourne ici. Arrêtez-le là où il a été démarré."
-        }
       }
     },
     "mude": {
@@ -867,6 +818,8 @@
       "paid": "Le Jev gratuit d'OpenCode Zen demande désormais une clé ou un paiement : des règles simples décident pour l'instant. Saisissez une clé Jev dans Paramètres → Juges pour retrouver le juge.",
       "gone": "OpenCode Zen ne propose plus le Jev gratuit : des règles simples décident pour l'instant. Saisissez une clé Jev dans Paramètres → Juges pour retrouver le juge."
     },
+    "layaRemoved": "Laya n'est plus intégré à mu : votre juge est désormais {{judge}}. Pour utiliser un autre modèle de décision, ajoutez-le depuis Hugging Face dans Paramètres → Juges.",
+    "layaRemovedNoModels": "Laya n'est plus intégré à mu : votre juge est désormais {{judge}}.",
     "checkpointOffWhy": {
       "gitMissing": "Les points de restauration sont désactivés dans cette conversation : Git est introuvable sur cet ordinateur. Installez Git, puis ouvrez une nouvelle conversation pour les avoir.",
       "xcodeLicense": "Les points de restauration sont désactivés dans cette conversation : Git ne peut pas s’exécuter sur ce Mac tant que la licence Xcode n’est pas acceptée. Acceptez-la avec sudo xcodebuild -license dans le Terminal, puis ouvrez une nouvelle conversation pour les avoir.",

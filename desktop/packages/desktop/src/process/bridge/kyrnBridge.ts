@@ -1,23 +1,23 @@
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { basename, dirname, join } from 'node:path';
-import { app, net, shell, utilityProcess } from 'electron';
+import { dirname, join } from 'node:path';
+import { app, net, shell } from 'electron';
 import { kyrnBridge } from '../../common/kyrn/bridge';
 import { KyrnError, kyrnFailure, type KyrnResult } from '../../common/kyrn/errors';
 import { kyrnFolderBridge } from '../../common/kyrn/folderBridge';
 import { isSubscriptionProvider } from '../../common/kyrn/login';
+import { isMudeInstalled } from '../../common/kyrn/mude';
 import type { KyrnCatalog } from '../../common/kyrn/types';
 import { httpRequest } from '../../common/adapter/httpBridge';
-import { SettingsStore } from '../agent/kyrn/settings';
+import { SettingsStore, type ReadOptions } from '../agent/kyrn/settings';
+import { MUDE_STATUS_WAIT_MS, within } from '../agent/kyrn/config/laya';
 import { availableModels } from '../agent/kyrn/config/available';
 import { leaveProvider } from '../agent/kyrn/config/signOut';
 import { LoginManager, openable, spawnAuth } from '../agent/kyrn/login';
 import { testProvider } from '../agent/kyrn/config/connection';
 import { envFileOf, expectedHarness, findHarness, launcherOf, manifestOf } from '../agent/kyrn/harness';
 import { checkClmServer } from '../agent/kyrn/clmServer';
-import { LocalJudge } from '../agent/kyrn/localJudge';
 import { DecisionModels, Mude } from '../agent/kyrn/mude';
-import { OnnxLocalJudge, openFolder, usesOnnxJudge } from '../agent/kyrn/localJudgeOnnx';
 import { importCli, importService } from '../agent/kyrn/importChats';
 import { addSkill, listSkills, removeSkill, skillsFolder } from '../agent/kyrn/capabilities/skills';
 import {
@@ -28,24 +28,16 @@ import {
   switchMcpServer,
 } from '../agent/kyrn/capabilities/mcp';
 import { LessonsStore, lessonsProject, type LessonsProject } from '../agent/kyrn/lessons';
-import { listFolder, readFolder } from '../agent/kyrn/folderFiles';
+import { listFolder, openFolder, readFolder } from '../agent/kyrn/folderFiles';
 import { activityPage, modelLevels } from '../agent/kyrn/telemetry';
 import { findRegistration, initializeKyrn, recheckKyrn, type OwnCommand } from '../agent/kyrn/product';
 import { ownLauncher } from '../agent/kyrn/windows/launcherCommand';
-import { muAgentDir, muEnv, muHome } from '../agent/kyrn/naming';
+import { muAgentDir, muHome } from '../agent/kyrn/naming';
 import { asRecord, text } from '../agent/kyrn/piRpc';
 import { sessionBinding } from '../agent/kyrn/sessionBinding';
 import { conversationSessions } from '../agent/kyrn/conversationSession';
 import { getDataPath } from '../utils/utils';
 import { leaveInNativeConversations } from './nativeBridge';
-
-/**
- * `out/main/localJudgeOnnx.js`, next to the main entry even when this module sits in `out/main/chunks/`. Found from
- * `__dirname`: `require.main.filename` is the string "electron" in Electron 44, so a path built from it is relative.
- */
-function localJudgeEntry(): string {
-  return join(basename(__dirname) === 'chunks' ? dirname(__dirname) : __dirname, 'localJudgeOnnx.js');
-}
 
 // Always answer IPC, including failure: the generic bridge otherwise only logs exceptions.
 async function result<T>(work: () => T | Promise<T>): Promise<KyrnResult<T>> {
@@ -99,6 +91,21 @@ export function initKyrnBridge(): void {
     env: envFileOf(harness, home, process.platform),
     manifest: manifestOf(harness, process.platform),
   });
+  // mude: mu's own commands do the work (`mu judge mude … --json`); macOS only, and nothing is run elsewhere.
+  const mude = new Mude(harness, {
+    agentDir,
+    open: (folder) => openFolder(folder, (path) => shell.openPath(path)),
+  });
+  // How mu.json is read while it still names Laya (config/laya.ts): mude 1.0 takes Laya's place where it is installed,
+  // as mu's own move of the file decides. mu's command is asked only then, and not for long; otherwise nothing is run.
+  const readOptions = async (): Promise<ReadOptions> =>
+    settings.laya()
+      ? {
+          mudeInstalled: isMudeInstalled(
+            await within(async () => (await mude.state()).status, MUDE_STATUS_WAIT_MS, undefined)
+          ),
+        }
+      : {};
   // The registration is found by this path, so it stays `acp` where it always was. Windows cannot start a bash
   // script: there the command is acp.cmd, which runs the same adapter with Node. The packaged app has no sources:
   // it carries the adapter bundled (out/main/mu-acp.js) and its launchers in resources/mu.
@@ -132,8 +139,8 @@ export function initKyrnBridge(): void {
     return initialization;
   };
   kyrnBridge.catalog.provider(() => result(catalog));
-  kyrnBridge.settings.provider(() => result(() => settings.read()));
-  kyrnBridge.save.provider((input) => result(() => settings.save(input)));
+  kyrnBridge.settings.provider(() => result(async () => settings.read(await readOptions())));
+  kyrnBridge.save.provider((input) => result(async () => settings.save(input, await readOptions())));
   kyrnBridge.defaultModel.provider(() => result(() => settings.defaultModel()));
   kyrnBridge.setDefaultModel.provider((input) => result(() => settings.setDefaultModel(input)));
   const usable = async () => {
@@ -186,26 +193,6 @@ export function initKyrnBridge(): void {
   // callback port, which the Codex CLI and a terminal /login use too, until its time limit.
   app.on('window-all-closed', () => {
     login.cancel();
-  });
-  // Core ML on Apple Silicon Macs, the app's own ONNX judge on Windows and Linux: the same state and actions.
-  const localJudge = usesOnnxJudge(process.platform, process.arch, process.env)
-    ? new OnnxLocalJudge({
-        fork: (env) =>
-          utilityProcess.fork(localJudgeEntry(), [], { env, stdio: 'pipe', serviceName: 'mu local judge' }),
-        open: (folder) => openFolder(folder, (path) => shell.openPath(path)),
-      })
-    : new LocalJudge(
-        root,
-        harness.layout === 'package' ? { stateDir: muEnv('LOCAL_JUDGE_RUN_DIR') || join(home, 'local-judge') } : {}
-      );
-  if (localJudge instanceof OnnxLocalJudge)
-    void localJudge.autoStart(agentDir).catch((error: unknown) => console.warn('[mu] local judge autostart:', error));
-  kyrnBridge.localJudgeState.provider(() => result(() => localJudge.state()));
-  kyrnBridge.localJudgeRun.provider(({ action, consent }) => result(() => localJudge.run(action, consent === true)));
-  // mude: mu's own commands do the work (`mu judge mude … --json`); macOS only, and nothing is run elsewhere.
-  const mude = new Mude(harness, {
-    agentDir,
-    open: (folder) => openFolder(folder, (path) => shell.openPath(path)),
   });
   // An install still running when the app quits is ended with it: the command resumes the download next time.
   app.once('will-quit', () => mude.dispose());

@@ -1326,7 +1326,8 @@
     "eventLine": {
       "judgeNotice": {
         "freeJev": "Ключ Jev не задано: відповідає безкоштовний Jev на OpenCode Zen",
-        "freeJevUnavailable": "Безкоштовний Jev перестав відповідати: доки не задано ключ Jev, вирішують фіксовані правила"
+        "freeJevUnavailable": "Безкоштовний Jev перестав відповідати: доки не задано ключ Jev, вирішують фіксовані правила",
+        "layaRemoved": "Laya більше не входить до mu: тепер суддя — {{judge}}"
       },
       "detail": "Деталі: {{detail}}",
       "progress": {

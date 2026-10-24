@@ -1273,7 +1273,8 @@
     "eventLine": {
       "judgeNotice": {
         "freeJev": "Jev anahtarı yok: OpenCode Zen'deki ücretsiz Jev yanıtlıyor",
-        "freeJevUnavailable": "Ücretsiz Jev yanıt vermeyi bıraktı: Bir Jev anahtarı ayarlanana kadar sabit kurallar karar veriyor"
+        "freeJevUnavailable": "Ücretsiz Jev yanıt vermeyi bıraktı: Bir Jev anahtarı ayarlanana kadar sabit kurallar karar veriyor",
+        "layaRemoved": "Laya artık mu'ya yerleşik değil: hakem artık {{judge}}"
       },
       "detail": "Ayrıntılar: {{detail}}",
       "progress": {

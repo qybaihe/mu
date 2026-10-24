@@ -4,7 +4,6 @@ import type { ClmServerState } from './clm';
 import { KyrnError, type KyrnResult } from './errors';
 import type { ImportedHistory, ImportList, ImportOutcome } from './importChats';
 import type { LessonChange, LessonsView } from './lessons';
-import type { LocalJudgeAction, LocalJudgeState } from './localJudge';
 import type { LoginState, LoginStatus, SignOutSwitch, SubscriptionProvider } from './login';
 import type { ModelRequest, ModelsState, MudeAction, MudeState } from './mude';
 import type {
@@ -71,12 +70,6 @@ export const kyrnBridge = {
    */
   loginSwitchModels: bridge.buildProvider<KyrnResult<SignOutSwitch>, { provider: SubscriptionProvider }>(
     'kyrn.login.switchModels'
-  ),
-  /** The local judge (Laya) on this machine; see common/kyrn/localJudge.ts. */
-  localJudgeState: bridge.buildProvider<KyrnResult<LocalJudgeState>, void>('kyrn.localJudge.state'),
-  /** `consent`: the person agreed to what `setup` downloads. */
-  localJudgeRun: bridge.buildProvider<KyrnResult<LocalJudgeState>, { action: LocalJudgeAction; consent?: boolean }>(
-    'kyrn.localJudge.run'
   ),
   /** mude, mu's own judge on a Mac with Apple silicon (common/kyrn/mude.ts): its status asked afresh, or what runs. */
   mudeState: bridge.buildProvider<KyrnResult<MudeState>, void>('kyrn.mude.state'),

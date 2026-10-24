@@ -13,8 +13,8 @@ import { readJudgePreflightRow } from '@/renderer/utils/chat/judgePreflight';
  * kyrn/docs/features/presentation-codes.md), in their order; present only when there are some. The harness sends the
  * verdict again once the turn has started, with them; a rule's hint (`answered`) can come with no class at all.
  *
- * `judge` names the judge that was asked or answered (the verdict's `by`, the wait's `judge`): `jev-latest`, `laya`,
- * a cascade such as `laya>jev-latest`. It is empty for rows that never named one; those were Jev's.
+ * `judge` names the judge that was asked or answered (the verdict's `by`, the wait's `judge`): `jev-latest`, `mude`,
+ * a cascade such as `mude>jev-latest`. It is empty for rows that never named one; those were Jev's.
  */
 export type JudgeLine =
   | { stage: 'classifying'; judge: string }
@@ -58,16 +58,15 @@ const record = (value: unknown): Record<string, unknown> =>
 const str = (value: unknown): string => (typeof value === 'string' ? value : '');
 
 /**
- * The judge a label names, as the app calls it: Jev, Laya or CLM by the label's start (`jev-latest` is Jev), the first
- * tier of a cascade (`laya>jev-latest` asks Laya first), and a label the app does not know as it is. Empty, it is Jev,
- * the only judge there was before judges were named.
+ * The judge a label names, as the app calls it: Jev or CLM by the label's start (`jev-latest` is Jev), the first tier
+ * of a cascade (`mude>jev-latest` asks mude first), and a label the app does not know as it is (`mude`, or `laya` in a
+ * conversation from before mu dropped that judge). Empty, it is Jev, the only judge there was before judges were named.
  */
 export function judgeName(label: string | undefined): string {
   const first = (label ?? '').split('>')[0].trim();
   // A model id may come with its provider in front (`openrouter/jev-latest`).
   const lower = (first.split('/').at(-1) ?? '').toLowerCase();
   if (!first || lower.startsWith('jev')) return 'Jev';
-  if (lower.startsWith('laya')) return 'Laya';
   if (lower.startsWith('clm')) return 'CLM';
   return first;
 }

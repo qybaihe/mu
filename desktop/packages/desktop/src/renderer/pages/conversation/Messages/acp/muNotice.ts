@@ -14,6 +14,7 @@ export const MU_NOTICE_CODES = [
   'checkpoint_off',
   'free_jev',
   'free_jev_unavailable',
+  'laya_removed',
   'stopped',
   'to_model',
 ] as const;
@@ -30,6 +31,8 @@ export type MuNotice = {
   /** What mu told the model (`to_model`): the message's type (`kyrn.nudge`, …) and the words the model got. */
   kind?: string;
   sent?: string;
+  /** The judge in Laya's place (`laya_removed`), by its name in the order (`mude`, `jev`, …). */
+  judge?: string;
 };
 
 /** The i18n key of each notice's line. */
@@ -39,6 +42,7 @@ export const MU_NOTICE_KEYS: Readonly<Record<MuNoticeCode, string>> = {
   checkpoint_off: 'mu.notices.checkpointOff',
   free_jev: 'mu.notices.freeJev',
   free_jev_unavailable: 'mu.notices.freeJevUnavailable.paid',
+  laya_removed: 'mu.notices.layaRemoved',
   stopped: 'mu.notices.stopped',
   to_model: 'mu.notices.toModel.other',
 };
@@ -132,6 +136,7 @@ export function muNotice(message: TMessage): MuNotice | undefined {
   if (code === 'to_model') return { code, title, kind: str(input.kind), sent: str(input.text) };
   const reason = str(input.code);
   if (code === 'free_jev_unavailable') return { code, title, ...(reason ? { reason } : {}) };
+  if (code === 'laya_removed') return { code, title, judge: str(input.judge) || 'jev' };
   if (code !== 'checkpoint_off') return { code, title };
   return { code, title, ...(reason ? { reason } : {}), params: readCheckpointParams(input.params) };
 }

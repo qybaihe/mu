@@ -480,8 +480,10 @@ when its `timeout` passes; a dialog without a timeout that pi stops waiting on (
 4. **Abort during a tool reads as an error.** Aborting while mu asked about a bash command gave a tool result
    "Operation aborted", then an assistant message with stop reason `error` and "This operation was aborted". The view
    reports what pi says, so the run shows as failed, not stopped. Ask: stop reason `aborted` there.
-5. **`prepareLaunch` blocks the main process when it starts the local judge** (`spawnSync kyrn-judge-local start`).
-   Ask: an asynchronous variant, or a way for the app to start the judge itself (it already runs the ONNX judge).
+5. **`prepareLaunch` blocked the main process when it started the local judge** (`spawnSync kyrn-judge-local start`).
+   Done: `prepareLaunchAsync` (2026-09-29), and since 0.2.5 mu has no local judge to start (Laya is gone). The app
+   hands a launcher from before 0.2.5 its plan with `startJudge: false`, so a conversation never waits for one; mude's
+   server, or a decision model's, starts in the background without being waited for.
 6. **Progress frames have no end.** `live.progress` stays until the run settles. Ask: an end marker, if the surface
    wants to clear it sooner.
 7. **A session list without importing pi into the main process**: `SessionManager.listAll` needs pi. Options: an RPC

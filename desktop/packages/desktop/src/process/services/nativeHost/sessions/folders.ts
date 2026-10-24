@@ -5,7 +5,7 @@ import { muEnv, muHome } from '../../../agent/kyrn/naming.ts';
 
 /**
  * Where this computer's mu keeps its sessions, worked out without starting anything: no launcher import, no
- * `prepareLaunch` (which can start the local judge). The rules are the launcher's (`agentDirFor` and `muHome` in the
+ * `prepareLaunch` (which makes folders and can start mude's server). The rules are the launcher's (`agentDirFor` and `muHome` in the
  * harness's kyrn/bin/mu.mjs) and pi's (its session folder in main.ts and session-manager.ts):
  *
  * - the agent folder is MU_AGENT_DIR, else MU_CODING_AGENT_DIR (either with the old KYRN_ spelling), else

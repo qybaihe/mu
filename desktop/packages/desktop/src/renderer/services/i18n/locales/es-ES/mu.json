@@ -149,59 +149,10 @@
         "tagRecommended": "Recomendado · en este Mac",
         "description": "El modelo de decisión propio de mu, optimizado para programar y de última generación en las decisiones de un agente de programación. Funciona en este Mac: sin clave y sin coste por llamada. Necesita Apple silicon."
       },
-      "local": {
-        "title": "Laya local",
-        "tag": "Gratis · sin conexión",
-        "description": "Se ejecuta en este ordenador, sin red y sin coste. Clasifica bien; relacionar y puntuar es menos fiable."
-      },
       "clm": {
         "title": "CLM",
         "tag": "Autoalojado",
         "description": "Responde las mismas preguntas que Jev, en un servidor propio (clm-serve). Su codificador necesita una GPU; no se cobra por llamada."
-      }
-    },
-    "laya": {
-      "running": "Ejecutándose en este ordenador",
-      "stopped": "Instalado, pero no se está ejecutando. mu lo inicia cuando lo necesita.",
-      "missing": "Aún no está instalado.",
-      "platform": "Laya no puede ejecutarse en este ordenador: necesita Windows o Linux (x64 o arm64), o un Mac con Apple Silicon.",
-      "needsUv": "Para instalarlo hace falta uv, un gestor de paquetes de Python. Instálalo y vuelve aquí.",
-      "uvLink": "Cómo instalar uv",
-      "install": "Instalar Laya",
-      "start": "Iniciar",
-      "stop": "Detener",
-      "confirmTitle": "¿Descargar e instalar Laya?",
-      "confirmText": "Se descargan unos {{size}} MB de PyPI y Hugging Face (paquetes de Python y los pesos del modelo) en la carpeta de mu; tarda unos minutos. Laya se inicia en cuanto termina la instalación.",
-      "confirmOk": "Descargar e instalar",
-      "working": {
-        "setup": "Instalando Laya…",
-        "start": "Iniciando Laya…",
-        "stop": "Deteniendo Laya…"
-      },
-      "failed": {
-        "setup": "No se completó la instalación. Puedes intentarlo de nuevo.",
-        "start": "Laya no se inició.",
-        "stop": "Laya no se detuvo."
-      },
-      "onnx": {
-        "missing": "El modelo de Laya aún no está en este ordenador (unos {{size}} MB). mu no lo descarga por ti: descarga los archivos de Hugging Face, ponlos en la carpeta del modelo y pulsa «Comprobar e iniciar».",
-        "stopped": "El modelo está listo y Laya no se está ejecutando. Si Laya es tu juez, mu lo inicia solo al abrir la app.",
-        "starting": "Comprobando el modelo e iniciando Laya… La primera comprobación lee el modelo entero y tarda un momento.",
-        "missingFiles": "Faltan todavía: {{files}}",
-        "wrongFiles": "No es la versión probada con mu, vuelve a descargarlos: {{files}}",
-        "folder": "Carpeta del modelo: {{folder}}",
-        "command": "Con la línea de comandos de Hugging Face (hf), este único comando lo descarga todo:",
-        "page": "Obtener en Hugging Face",
-        "openFolder": "Abrir la carpeta del modelo",
-        "check": "Comprobar e iniciar",
-        "problem": {
-          "missing": "Faltan algunos archivos del modelo.",
-          "wrong": "Algunos archivos del modelo no son la versión probada con mu. Vuelve a descargarlos.",
-          "runtime": "Este ordenador no pudo ejecutar el modelo.",
-          "port": "Otro programa ya usa el puerto de Laya ({{port}}).",
-          "stopped": "Laya se detuvo antes de estar listo.",
-          "foreign": "Aquí se está ejecutando un Laya que mu no inició. Detenlo donde se inició."
-        }
       }
     },
     "mude": {
@@ -867,6 +818,8 @@
       "paid": "El Jev gratuito de OpenCode Zen ahora pide una clave o un pago, así que por ahora deciden reglas simples. Escribe una clave de Jev en Configuración → Jueces para recuperar el juez.",
       "gone": "OpenCode Zen ya no ofrece el Jev gratuito, así que por ahora deciden reglas simples. Escribe una clave de Jev en Configuración → Jueces para recuperar el juez."
     },
+    "layaRemoved": "Laya ya no viene integrado en mu, así que tu juez ahora es {{judge}}. Para usar otro modelo de decisión, añádelo desde Hugging Face en Configuración → Jueces.",
+    "layaRemovedNoModels": "Laya ya no viene integrado en mu, así que tu juez ahora es {{judge}}.",
     "checkpointOffWhy": {
       "gitMissing": "Los puntos de control están desactivados en esta conversación: no se encontró Git en este ordenador. Instala Git y empieza una conversación nueva para tenerlos.",
       "xcodeLicense": "Los puntos de control están desactivados en esta conversación: Git no puede ejecutarse en este Mac hasta que se acepte la licencia de Xcode. Acéptala con sudo xcodebuild -license en Terminal y empieza una conversación nueva para tenerlos.",

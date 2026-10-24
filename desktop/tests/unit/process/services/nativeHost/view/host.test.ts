@@ -249,6 +249,16 @@ describe('notices', () => {
     ).toEqual([{ id: 'n1', level: 'info', text: free, code: 'free_jev' }]);
   });
 
+  it('says once, by code, that Laya is gone and which judge is in its place', () => {
+    const line = 'mu: Laya is no longer built in, so your judge is now mude 1.0.';
+    const view = reduceAll([
+      frame('judge.notice', { code: 'laya_removed', judge: 'mude', message: line }),
+      notify(line, 'info'),
+      frame('judge.notice', { code: 'laya_removed', judge: 'mude', message: line }),
+    ]);
+    expect(view.host.notices).toEqual([{ id: 'n1', level: 'info', text: line, code: 'laya_removed', judge: 'mude' }]);
+  });
+
   it('keeps the latest notices only', () => {
     let view = emptyView();
     for (let index = 0; index < NOTICE_LIMIT + 2; index++) view = reduce(view, notify(`answer ${index}`));

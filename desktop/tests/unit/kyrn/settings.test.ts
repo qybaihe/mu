@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import type { JudgeType } from '../../../packages/desktop/src/common/kyrn/types';
 import { SettingsStore } from '../../../packages/desktop/src/process/agent/kyrn/settings';
 import {
   AGENT_DESCRIPTION,
@@ -282,24 +283,6 @@ describe('native mu settings', () => {
       f.cleanup();
     }
   });
-  it('writes Laya with its whole built-in capability profile when it first goes into the file', () => {
-    const f = fixture();
-    try {
-      const current = f.store.read();
-      f.store.save({
-        ...current,
-        tiers: ['laya', 'jev'],
-        judges: { ...current.judges, laya: { ...current.judges.laya, baseUrl: 'http://127.0.0.1:47900' } },
-      });
-      const written = JSON.parse(readFileSync(join(f.dir, 'kyrn.json'), 'utf8'));
-      expect(written.judges.laya.profile).toEqual({
-        capabilities: { relate: false, rate: false, meta: false, screen: false, intent: false },
-      });
-      expect(written.judges.laya.baseUrl).toBe('http://127.0.0.1:47900');
-    } finally {
-      f.cleanup();
-    }
-  });
   it('offers CLM as a built-in: on this machine, or at an address on the network with the key its server asks for', () => {
     const f = fixture();
     try {
@@ -350,6 +333,83 @@ describe('native mu settings', () => {
   });
 });
 
+describe('a mu.json that still names Laya, the local judge mu no longer has', () => {
+  const write = (f: ReturnType<typeof fixture>, config: unknown) =>
+    writeFileSync(join(f.dir, 'kyrn.json'), JSON.stringify(config));
+  const written = (f: ReturnType<typeof fixture>) => JSON.parse(readFileSync(join(f.dir, 'kyrn.json'), 'utf8'));
+  /** mude 1.0 set up, as `mu judge mude enable` leaves it: its key in the .env. */
+  const mudeKey = (f: ReturnType<typeof fixture>) => writeFileSync(join(f.root, '.env'), 'MU_JUDGE_MUDE_KEY=k\n');
+  // Only the .env says whether mude's key is set here.
+  beforeEach(() => {
+    vi.stubEnv('MU_JUDGE_MUDE_KEY', '');
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('reads the order as mu leaves it: mude in Laya’s place where it is set up, else the judges behind it, else Jev', () => {
+    const f = fixture();
+    try {
+      write(f, { tiers: ['laya'] });
+      expect(f.store.laya()).toBe('first');
+      expect(f.store.read().tiers).toEqual(['jev']);
+      // Installed but without its key, as the harness has it: not set up, so not in Laya's place.
+      expect(f.store.read({ mudeInstalled: true }).tiers).toEqual(['jev']);
+      mudeKey(f);
+      expect(f.store.read({ mudeInstalled: true }).tiers).toEqual(['mude']);
+      expect(f.store.read().judges.laya).toBeUndefined();
+      write(f, { tiers: ['laya', 'clm'] });
+      expect(f.store.read().tiers).toEqual(['clm']);
+      expect(f.store.read({ mudeInstalled: true }).tiers).toEqual(['mude', 'clm']);
+      // A judge of Laya's `local` type under a name of its own is Laya too; mude already in the order is asked once.
+      write(f, {
+        tiers: ['jev', 'my-laya', 'mude'],
+        judges: { 'my-laya': { type: 'local', baseUrl: 'http://127.0.0.1:47823' } },
+      });
+      expect(f.store.laya()).toBe('later');
+      expect(f.store.read().tiers).toEqual(['jev', 'mude']);
+      expect(f.store.read({ mudeInstalled: true }).tiers).toEqual(['jev', 'mude']);
+      expect(Object.keys(f.store.read().judges)).not.toContain('my-laya');
+      write(f, { tiers: ['jev'] });
+      expect(f.store.laya()).toBeUndefined();
+    } finally {
+      f.cleanup();
+    }
+  });
+
+  it('writes nothing for Laya: a save keeps its entry, and the order unless it was changed', () => {
+    const f = fixture();
+    try {
+      const laya = { type: 'local', baseUrl: 'http://127.0.0.1:47823', profile: { capabilities: { rate: false } } };
+      write(f, { tiers: ['laya'], judges: { laya } });
+      mudeKey(f);
+      const read = f.store.read({ mudeInstalled: true });
+      expect(read.tiers).toEqual(['mude']);
+      // Another change: the order and Laya's entry stay for mu to move on.
+      expect(f.store.save({ ...read, mode: 'shadow' }, { mudeInstalled: true }).tiers).toEqual(['mude']);
+      expect(written(f)).toMatchObject({ tiers: ['laya'], judges: { laya }, modes: { default: 'shadow' } });
+      // A judge picked: the order is written, without Laya.
+      const saved = f.store.save({ ...f.store.read(), tiers: ['clm'] });
+      expect(saved.tiers).toEqual(['clm']);
+      expect(written(f)).toMatchObject({ tiers: ['clm'], judges: { laya } });
+      expect(f.store.laya()).toBeUndefined();
+    } finally {
+      f.cleanup();
+    }
+  });
+
+  it('refuses a judge of the local type: mu no longer runs one', () => {
+    const f = fixture();
+    try {
+      const read = f.store.read();
+      const old = { ...read.judges.jev, type: 'local' as unknown as JudgeType, baseUrl: 'http://127.0.0.1:47823' };
+      expect(() => f.store.save({ ...read, tiers: ['old'], judges: { ...read.judges, old } })).toThrow('Invalid judge');
+    } finally {
+      f.cleanup();
+    }
+  });
+});
+
 describe('the rename from KYRN to mu', () => {
   it('keeps saving to kyrn.json while that is the only file, and follows it once it is renamed', () => {
     const f = fixture();
@@ -371,8 +431,8 @@ describe('the rename from KYRN to mu', () => {
   it('reads mu.json first when both files are there, and writes mu.json on a fresh machine', () => {
     const f = fixture();
     try {
-      writeFileSync(join(f.dir, 'mu.json'), JSON.stringify({ tiers: ['laya'] }));
-      expect(f.store.read().tiers).toEqual(['laya']);
+      writeFileSync(join(f.dir, 'mu.json'), JSON.stringify({ tiers: ['clm'] }));
+      expect(f.store.read().tiers).toEqual(['clm']);
       const fresh = join(f.root, 'fresh');
       mkdirSync(fresh);
       expect(configPath(fresh)).toBe(join(fresh, 'mu.json'));

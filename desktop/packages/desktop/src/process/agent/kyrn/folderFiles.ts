@@ -1,3 +1,4 @@
+import { mkdirSync } from 'node:fs';
 import { readdir, stat } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { KyrnError } from '../../../common/kyrn/errors';
@@ -11,6 +12,7 @@ import {
 /*
  * The files tab of a native conversation (common/kyrn/folderBridge.ts): one directory of the conversation's folder at
  * a time, read afresh for every answer, so what the model wrote shows at the next look. Nothing is written here.
+ * Also `openFolder`, which shows one of mu's folders in the file manager, making it first when it is not there yet.
  */
 
 const LONGEST_PATH = 4096;
@@ -77,4 +79,11 @@ export async function listFolder(folder: string, path: unknown): Promise<FolderL
     kind: entry.dir ? 'dir' : 'file',
   }));
   return { path: where.relative, entries, more: sorted.length - entries.length };
+}
+
+/** Creates the folder if needed; `show` opens it in the file manager (Electron's `shell.openPath`). */
+export async function openFolder(folder: string, show: (path: string) => Promise<string>): Promise<void> {
+  mkdirSync(folder, { recursive: true });
+  const problem = await show(folder);
+  if (problem) throw new KyrnError('unreadable', problem, { file: folder });
 }

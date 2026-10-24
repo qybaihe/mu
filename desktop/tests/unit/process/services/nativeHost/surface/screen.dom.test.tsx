@@ -368,7 +368,7 @@ describe('the native conversation page', () => {
     // The folder it works in comes with it: the panel reads its lessons and files by it.
     expect(screen.getByTestId('panel')).toHaveAttribute('data-folder', '/project');
     act(() => {
-      host.play('c1', [{ type: 'agent_start' }, frame('preflight.pending', { judge: 'laya' })]);
+      host.play('c1', [{ type: 'agent_start' }, frame('preflight.pending', { judge: 'mude' })]);
     });
     // The panel reads the view at most twice a second.
     await waitFor(() => expect(screen.getByTestId('panel')).toHaveTextContent('2:true'));

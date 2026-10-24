@@ -149,59 +149,10 @@
         "tagRecommended": "Önerilen · bu Mac'te",
         "description": "mu'nun kendi karar modeli; kodlama için optimize edildi ve bir kodlama ajanının kararlarında SOTA düzeyinde. Bu Mac'te çalışır: anahtar yok, çağrı başına ücret yok. Apple çip gerektirir."
       },
-      "local": {
-        "title": "Yerel Laya",
-        "tag": "Ücretsiz · çevrimdışı",
-        "description": "Bu bilgisayarda çalışır; ağ yok, ücret yok. Sınıflandırmada iyidir; ilişkilendirme ve puanlama daha az güvenilirdir."
-      },
       "clm": {
         "title": "CLM",
         "tag": "Kendi sunucunuz",
         "description": "Jev ile aynı soruları kendi sunucunuzda (clm-serve) yanıtlar. Kodlayıcısı GPU ister; çağrı başına ücret yoktur."
-      }
-    },
-    "laya": {
-      "running": "Bu makinede çalışıyor",
-      "stopped": "Kurulu, çalışmıyor. mu gerektiğinde onu başlatır.",
-      "missing": "Henüz kurulu değil.",
-      "platform": "Laya bu bilgisayarda çalışamaz: Windows veya Linux (x64 ya da arm64) ya da Apple Silicon işlemcili bir Mac gerekir.",
-      "needsUv": "Kurulum için bir Python paket yöneticisi olan uv gerekiyor. Onu kurun, sonra buraya dönün.",
-      "uvLink": "uv nasıl kurulur",
-      "install": "Laya'yı kur",
-      "start": "Başlat",
-      "stop": "Durdur",
-      "confirmTitle": "Laya indirilip kurulsun mu?",
-      "confirmText": "Bu işlem PyPI ve Hugging Face'ten mu'nun klasörüne yaklaşık {{size}} MB (Python paketleri ve modelin ağırlıkları) indirir ve birkaç dakika sürer. Laya kurulduktan sonra başlar.",
-      "confirmOk": "İndir ve kur",
-      "working": {
-        "setup": "Laya kuruluyor…",
-        "start": "Laya başlatılıyor…",
-        "stop": "Laya durduruluyor…"
-      },
-      "failed": {
-        "setup": "Kurulum tamamlanmadı. Yeniden deneyebilirsiniz.",
-        "start": "Laya başlamadı.",
-        "stop": "Laya durmadı."
-      },
-      "onnx": {
-        "missing": "Laya'nın modeli henüz bu bilgisayarda yok (yaklaşık {{size}} MB). mu onu sizin yerinize indirmez: dosyaları Hugging Face'ten indirip model klasörüne koyun, ardından \"Denetle ve başlat\"a basın.",
-        "stopped": "Model yerinde, Laya çalışmıyor. Hakem olarak Laya seçiliyse mu, uygulama açıldığında onu kendisi başlatır.",
-        "starting": "Model denetleniyor ve Laya başlatılıyor… İlk denetim modelin tamamını okur, biraz sürer.",
-        "missingFiles": "Hâlâ eksik: {{files}}",
-        "wrongFiles": "mu ile test edilen sürüm değil, yeniden indirin: {{files}}",
-        "folder": "Model klasörü: {{folder}}",
-        "command": "Hugging Face komut satırı (hf) varsa bu tek komut her şeyi indirir:",
-        "page": "Hugging Face'ten al",
-        "openFolder": "Model klasörünü aç",
-        "check": "Denetle ve başlat",
-        "problem": {
-          "missing": "Bazı model dosyaları eksik.",
-          "wrong": "Bazı model dosyaları mu ile test edilen sürüm değil. Yeniden indirin.",
-          "runtime": "Bu bilgisayar modeli çalıştıramadı.",
-          "port": "Laya'nın bağlantı noktasını ({{port}}) başka bir program kullanıyor.",
-          "stopped": "Laya hazır olmadan durdu.",
-          "foreign": "Burada mu'nun başlatmadığı bir Laya çalışıyor. Onu başlatıldığı yerden durdurun."
-        }
       }
     },
     "mude": {
@@ -867,6 +818,8 @@
       "paid": "OpenCode Zen'deki ücretsiz Jev artık anahtar veya ödeme istiyor; şimdilik basit kurallar karar veriyor. Hakemi geri almak için Ayarlar → Hakemler'e bir Jev anahtarı girin.",
       "gone": "OpenCode Zen artık ücretsiz Jev sunmuyor; şimdilik basit kurallar karar veriyor. Hakemi geri almak için Ayarlar → Hakemler'e bir Jev anahtarı girin."
     },
+    "layaRemoved": "Laya artık mu'ya yerleşik değil, bu yüzden hakeminiz artık {{judge}}. Başka bir karar modeli kullanmak için Ayarlar → Hakemler bölümünden Hugging Face'ten ekleyin.",
+    "layaRemovedNoModels": "Laya artık mu'ya yerleşik değil, bu yüzden hakeminiz artık {{judge}}.",
     "checkpointOffWhy": {
       "gitMissing": "Bu konuşmada kontrol noktaları kapalı: Bu bilgisayarda Git bulunamadı. Git'i kurun, ardından kontrol noktaları için yeni bir konuşma başlatın.",
       "xcodeLicense": "Bu konuşmada kontrol noktaları kapalı: Xcode lisansı kabul edilene kadar Git bu Mac'te çalışamaz. Terminal'de sudo xcodebuild -license ile kabul edin, ardından kontrol noktaları için yeni bir konuşma başlatın.",

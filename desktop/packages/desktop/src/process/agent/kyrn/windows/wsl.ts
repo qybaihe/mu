@@ -9,8 +9,7 @@
  *   of settings for both. The session file stays where the app keeps it. WSL translates both paths itself: WSLENV
  *   carries them with the `/p` flag.
  * - Keys the harness reads from its `.env` come from the distribution's own `~/.mu/.env`.
- * - The app's local judge and browser bridge listen on Windows' loopback, which WSL reaches in mirrored networking
- *   mode only.
+ * - The app's browser bridge listens on Windows' loopback, which WSL reaches in mirrored networking mode only.
  */
 
 /** Where a Windows path points inside WSL, when it does. */

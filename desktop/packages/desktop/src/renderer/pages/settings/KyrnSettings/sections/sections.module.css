@@ -232,12 +232,13 @@
   text-wrap: balance;
 }
 
-/* Laya further down the judge order: its panel in the group's list, spaced as a row. */
+/* A judge further down the order with a panel of its own (CLM's server check): in the group's list, spaced as a row. */
 .tierPanel {
   padding: 12px 0;
 }
 
-/* Laya on this machine: where it stands, what can be done, and the script's last words while it works. */
+/* A judge's panel (mude, a decision model, a CLM server): where it stands, what can be done, and the command's last
+   words while it works. */
 .localJudge {
   display: flex;
   flex-direction: column;
