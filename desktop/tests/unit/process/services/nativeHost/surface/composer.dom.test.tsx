@@ -247,7 +247,7 @@ describe('the native send box', () => {
     expect(screen.queryByText('After')).toBeNull();
     expect(box()).toHaveAttribute('data-loading', 'true');
     expect(box()).toHaveAttribute('data-send', 'true');
-    expect(input()).toHaveAttribute('placeholder', 'Message mu. It decides when to bring this into the work…');
+    expect(input()).toHaveAttribute('placeholder', 'Message mu. It decides when to act on it…');
     type('also check the tests');
     await send();
     type('then write the notes');

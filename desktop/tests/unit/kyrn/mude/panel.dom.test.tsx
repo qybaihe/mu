@@ -627,7 +627,7 @@ describe('decision models from Hugging Face beside mude', () => {
     // The decision model on this Mac is the choice, so its body is open without a click.
     expect(tile).toHaveAttribute('aria-checked', 'true');
     expect(row).toHaveTextContent('owner/fast-judge');
-    expect(row).toHaveTextContent('The judge · 0.9 GB');
+    expect(row).toHaveTextContent('Current judge · 0.9 GB');
     expect(within(row).queryByTestId('mu-model-use-fast-judge')).not.toBeInTheDocument();
     expect(within(tile).getByTestId('mu-mude-use')).toBeInTheDocument();
     expect(within(tile).getByTestId('mu-models-trust')).toHaveTextContent(enMu.judges.models.trust);
@@ -689,6 +689,28 @@ describe('decision models from Hugging Face beside mude', () => {
     const tile = await judgesPage();
     fireEvent.click(tile);
     expect(await within(tile).findByTestId('mu-models-failed')).toHaveTextContent(enMu.judges.models.error.notRunnable);
+  });
+
+  it('says a name Hugging Face refused may be mistyped, not only private or gated', async () => {
+    // Without a token, Hugging Face answers 401 for a model that does not exist too: a typo comes back as `access`.
+    platform.mac = true;
+    bridge.settings.mockResolvedValue(ok(settings({ tiers: ['mude', 'jev'] })));
+    bridge.mudeState.mockResolvedValue(state(RUNNING));
+    bridge.modelsState.mockResolvedValue(
+      models([MUDE_ROW], {
+        id: 902,
+        command: 'add',
+        target: 'qybaihe/does-not-exist-xyz',
+        phase: 'failed',
+        log: [],
+        error: { message: 'Hugging Face refused the download (401).', kind: 'access' },
+      })
+    );
+    const tile = await judgesPage();
+    fireEvent.click(tile);
+    expect(await within(tile).findByTestId('mu-models-failed')).toHaveTextContent(
+      "Couldn't open this model on Hugging Face. Check the name: it may not exist, or it may be private or gated."
+    );
   });
 
   it('turns off the added model, not mude, when another judge is picked', async () => {

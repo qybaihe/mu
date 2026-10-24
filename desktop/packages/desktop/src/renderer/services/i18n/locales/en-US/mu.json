@@ -246,10 +246,10 @@
       "remove": "Remove",
       "removeTitle": "Remove {{name}}?",
       "removeText": "This takes {{name}} out of the judge order and deletes its files (about {{size}} GB). You can add it again later.",
-      "noList": "Couldn't read the decision models: {{reason}}",
+      "noList": "Couldn't load the decision models: {{reason}}",
       "cancelled": "Canceled. What's downloaded is kept.",
       "state": {
-        "judge": "The judge · {{size}} GB",
+        "judge": "Current judge · {{size}} GB",
         "running": "Running · {{size}} GB",
         "installed": "Installed · {{size}} GB",
         "partial": "{{done}} of {{total}} GB downloaded",
@@ -274,10 +274,10 @@
         "remove": "Couldn't remove it."
       },
       "error": {
-        "usage": "That isn't a link to a Hugging Face model, or its owner/name.",
-        "access": "Hugging Face won't share this model: it's private or gated.",
-        "notFound": "Hugging Face has no such model.",
-        "notRunnable": "mu can't run this model: it has no d3_server_mac.py, the server that models packaged like mude 1.0 come with.",
+        "usage": "That isn't a Hugging Face model link or owner/name.",
+        "access": "Couldn't open this model on Hugging Face. Check the name: it may not exist, or it may be private or gated.",
+        "notFound": "Couldn't find this model on Hugging Face.",
+        "notRunnable": "mu can't run this model: it doesn't include d3_server_mac.py, the server script that mude 1.0 ships with.",
         "network": "Couldn't reach Hugging Face. Check your connection and try again; what's already downloaded is kept.",
         "integrity": "A downloaded file failed verification. Try again.",
         "unsupported": "This Mac can't run decision models."
@@ -769,7 +769,7 @@
       "failed": "Couldn't sign in. Try again.",
       "retry": "Retry",
       "pasteInstead": "Paste the address instead",
-      "takenOver": "Another sign-in took over the port this one was waiting on (a /login in a terminal, or the Codex CLI), so this one stopped.",
+      "takenOver": "This sign-in stopped because another one took over its port (a /login in a terminal, or the Codex CLI).",
       "portInUse": {
         "program": "Port {{port}} is in use by {{command}} (process {{pid}}), probably for its own sign-in. Finish or cancel that sign-in there, then click Retry.",
         "process": "Port {{port}} is in use by process {{pid}}, probably for its own sign-in (the Codex CLI and the Codex app use this port). Finish or cancel that sign-in there, then click Retry.",
@@ -1008,7 +1008,7 @@
     },
     "send": {
       "placeholder": "Message mu…",
-      "placeholderWorking": "Message mu. It decides when to bring this into the work…"
+      "placeholderWorking": "Message mu. It decides when to act on it…"
     },
     "queue": {
       "title": "Queued",

@@ -275,7 +275,7 @@
       },
       "error": {
         "usage": "Das ist weder ein Link zu einem Hugging-Face-Modell noch dessen owner/name.",
-        "access": "Hugging Face gibt dieses Modell nicht frei: Es ist privat oder zugangsbeschränkt.",
+        "access": "Dieses Modell lässt sich auf Hugging Face nicht öffnen. Prüfe den Namen: Vielleicht existiert es nicht, oder es ist privat oder zugangsbeschränkt.",
         "notFound": "Hugging Face hat kein solches Modell.",
         "notRunnable": "mu kann dieses Modell nicht ausführen: Ihm fehlt d3_server_mac.py, der Server, den wie mude 1.0 verpackte Modelle mitbringen.",
         "network": "Hugging Face ist nicht erreichbar. Prüfe deine Verbindung und versuch es noch einmal; bereits Heruntergeladenes bleibt erhalten.",

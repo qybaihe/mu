@@ -297,7 +297,7 @@ provider, and not in the real Electron app.
 ## First-run guide and subscription sign-in (2026-09-22)
 
 - **The guide** (`/welcome`) opens once for someone without a startup model (`mu.onboarding.v1` in localStorage marks
-  it seen) and again from Settings → Models → "新手引导": what mu is, a model, a judge (Jev with its key; since 0.2.3
+  it seen) and again from Settings → Models → "新手引导": what mu is, a model, a judge (Jev with its key; since 0.2.0
   mude 1.0 too, and the local Laya until 0.2.5), a summary. Everything is written in one save at the end, keys only as
   credentials. The OpenAI tile asks for Chat Completions or Responses; the judge page offers Jev and mude 1.0 only, the
   full tier editor stays under "高级设置".

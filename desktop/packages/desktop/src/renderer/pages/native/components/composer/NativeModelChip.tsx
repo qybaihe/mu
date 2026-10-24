@@ -56,16 +56,20 @@ const NativeModelChip: React.FC<{
 
   // mu runs without a model: the chip says so and opens the list to pick one.
   const noModel = source === 'host' && !model;
+  // Nothing says the conversation's model yet (mu has not started, no reply names one): mu starts it on its default
+  // model, which the chip names, as the home page's pill does, rather than "Default model".
+  const named = model ?? (source === 'none' ? muDefault.model : undefined);
+  const namedLevel = level ?? (source === 'none' && muDefault.level ? muDefault.level : undefined);
   // By name before the menu was ever opened too: what mu last reported names it.
-  const modelLabel = model
-    ? offer?.options.find((option) => option.value === model)?.label || modelDisplayName(model, modelNames)
+  const modelLabel = named
+    ? offer?.options.find((option) => option.value === named)?.label || modelDisplayName(named, modelNames)
     : t('common.defaultModel');
   const label = noModel
     ? t('mu.noModel.chip')
     : composeRuntimeSelectorLabel({
         t,
         modelLabel,
-        thoughtLevel: level ? { currentValue: level, options: [] } : null,
+        thoughtLevel: namedLevel ? { currentValue: namedLevel, options: [] } : null,
       });
   const disabled = busy || switching;
 

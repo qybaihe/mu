@@ -10,13 +10,20 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fauxAssistantMessage } from "@earendil-works/pi-ai";
+import type { ExtensionUIContext } from "@earendil-works/pi-coding-agent";
 import { afterEach, describe, expect, it } from "vitest";
-import { loadConfig } from "../src/config.ts";
-import { layaNotice, registerLayaNotice } from "../src/extension/features/laya.ts";
+import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
+import { loadConfig, parseConfig } from "../src/config.ts";
+import { registerFreeJevNotice } from "../src/extension/features/free-jev.ts";
+import { layaNotice, pendingLayaNotice, registerLayaNotice } from "../src/extension/features/laya.ts";
+import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
+import type { KyrnPresentationEvent } from "../src/extension/presentation.ts";
 import type { KyrnRuntime } from "../src/extension/runtime.ts";
 import { migrateConfigText, mudeReady } from "../src/laya-migration.ts";
 import type { MudeFile } from "../src/mude/manifest.ts";
 import { mudePaths } from "../src/mude/paths.ts";
+import { MockJudgeProvider } from "../src/providers/mock.ts";
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -52,8 +59,14 @@ function machine(config: string | undefined, options: { mude?: boolean; file?: s
 
 type Machine = ReturnType<typeof machine>;
 
-/** A session starting as kyrn-judge.ts starts one: the configuration read, then the notice at session_start. */
-function start(at: Machine, options: { env?: Record<string, string>; hasUI?: boolean } = {}) {
+type Source = "interactive" | "rpc" | "extension";
+
+/**
+ * A session starting as kyrn-judge.ts starts one: the configuration read, the feature registered, session_start.
+ * `send` is a message to it, as pi's `input` event brings one: from a person (`interactive` in the terminal, `rpc`
+ * from the desktop app), or from an extension.
+ */
+function open(at: Machine, options: { env?: Record<string, string>; hasUI?: boolean } = {}) {
 	const env = { ...at.env, ...options.env };
 	const loaded = loadConfig({
 		dir: at.agentDir,
@@ -62,24 +75,37 @@ function start(at: Machine, options: { env?: Record<string, string>; hasUI?: boo
 	});
 	const notified: { message: string; type?: string }[] = [];
 	const presented: { kind: string; payload: unknown }[] = [];
-	let sessionStart: ((event: unknown, ctx: unknown) => void) | undefined;
+	const handlers = new Map<string, (event: unknown, ctx: unknown) => void>();
 	const runtime = {
 		config: loaded.config,
-		pi: {
-			on: (event: string, listener: (event: unknown, ctx: unknown) => void) => {
-				if (event === "session_start") sessionStart = listener;
-			},
-		},
+		pi: { on: (event: string, listener: (event: unknown, ctx: unknown) => void) => handlers.set(event, listener) },
 		present: (kind: string, payload: unknown) => presented.push({ kind, payload }),
+		touch: () => {},
 	};
-	if (loaded.laya) {
-		const roots = { home: at.home, agentDir: at.agentDir };
-		registerLayaNotice(runtime as unknown as KyrnRuntime, loaded.laya, roots, at.home);
-	}
-	const ui = { notify: (message: string, type?: string) => notified.push({ message, type }) };
-	sessionStart?.({}, { hasUI: options.hasUI ?? true, ui });
-	return { config: loaded.config, laya: loaded.laya, problem: loaded.problem, notified, presented };
+	registerLayaNotice(
+		runtime as unknown as KyrnRuntime,
+		loaded.laya,
+		{ home: at.home, agentDir: at.agentDir },
+		at.home,
+	);
+	const ctx = {
+		hasUI: options.hasUI ?? true,
+		ui: { notify: (message: string, type?: string) => notified.push({ message, type }) },
+	};
+	handlers.get("session_start")?.({ type: "session_start" }, ctx);
+	const send = (text: string, source: Source = "rpc") => handlers.get("input")?.({ type: "input", text, source }, ctx);
+	return { config: loaded.config, laya: loaded.laya, problem: loaded.problem, notified, presented, send };
 }
+
+/** A session a person writes in: it starts, and they send their first message. */
+function start(at: Machine, options: { env?: Record<string, string>; hasUI?: boolean } = {}) {
+	const session = open(at, options);
+	session.send("hello");
+	return session;
+}
+
+/** The notice waiting in notices.json for someone to see it. */
+const pending = (at: Machine) => pendingLayaNotice(join(at.agentDir, "mu", "notices.json"));
 
 const backups = (at: Machine): string[] =>
 	existsSync(join(at.home, "backups")) ? readdirSync(join(at.home, "backups")) : [];
@@ -206,7 +232,7 @@ describe("a configuration that still names Laya, which mu no longer has", () => 
 		const named = start(at, { env: { MU_JUDGE: "laya,jev" } });
 		expect(named.config.tiers).toEqual(["jev"]);
 		expect(named.notified[0].message).toBe(
-			"mu: Laya is no longer built in, so mu skips the laya in MU_JUDGE and your judge is now Jev. To use another decision model, add it from Hugging Face: mu judge model add <link> (or Settings → Judges in the desktop app).",
+			"mu: Laya is no longer built in, so mu skips laya in MU_JUDGE and your judge is now Jev. To use another decision model, add it from Hugging Face: mu judge model add <link> (or Settings → Judges in the desktop app).",
 		);
 		// MU_JUDGE naming nothing else leaves the file's judges.
 		const alone = start(at, { env: { KYRN_JUDGE: "laya" } });
@@ -251,14 +277,177 @@ describe("a configuration that still names Laya, which mu no longer has", () => 
 		const previous = process.env.MU_LANG;
 		process.env.MU_LANG = "zh-CN";
 		try {
-			expect(layaNotice({ file: true, env: false, replacement: "mude" }, "jev")).toBe(
+			expect(layaNotice({ judge: "mude", from: "mu.json" })).toBe(
 				"mu：不再内置 Laya，你的判定器现在是 mude 1.0。想用别的决策模型，可以从 Hugging Face 添加：mu judge model add <链接>（或在桌面端「设置 → 判定器」里添加）。",
 			);
-			expect(layaNotice({ file: false, env: true }, "jev")).toContain("跳过了 MU_JUDGE 里的 laya，判定器现在是 Jev");
+			expect(layaNotice({ judge: "jev", from: "MU_JUDGE" })).toContain(
+				"跳过了 MU_JUDGE 里的 laya，判定器现在是 Jev",
+			);
 		} finally {
 			if (previous === undefined) delete process.env.MU_LANG;
 			else process.env.MU_LANG = previous;
 		}
+	});
+});
+
+const JEV_NOTICE =
+	"mu: Laya is no longer built in, so your judge is now Jev. To use another decision model, add it from Hugging Face: mu judge model add <link> (or Settings → Judges in the desktop app).";
+
+describe("the Laya notice waits for the first message a person sends", () => {
+	it("is left by a session that gets no message, as the app's health check, and said once at the next one's first", () => {
+		const at = machine('{"tiers":["laya","jev"]}');
+		// The desktop app's backend opens a session at every app start to check that mu runs, and sends it nothing.
+		const check = open(at);
+		expect(at.read()).toBe('{"tiers":["jev"]}');
+		expect(backups(at)).toHaveLength(1);
+		expect(check.notified).toEqual([]);
+		expect(check.presented).toEqual([]);
+		expect(pending(at)).toEqual({ judge: "jev", from: "mu.json" });
+
+		// The conversation the person opens next reads a mu.json without Laya, and the notice still waits.
+		const conversation = open(at);
+		expect(conversation.laya).toBeUndefined();
+		expect(conversation.notified).toEqual([]);
+		conversation.send("Fix the flaky login test");
+		expect(conversation.notified).toEqual([{ type: "info", message: JEV_NOTICE }]);
+		expect(conversation.presented).toEqual([
+			{ kind: "judge.notice", payload: { code: "laya_removed", judge: "jev", message: JEV_NOTICE } },
+		]);
+		expect(pending(at)).toBeUndefined();
+		conversation.send("And the signup test");
+		expect(conversation.notified).toHaveLength(1);
+
+		// Once seen, no later session says it.
+		const later = start(at);
+		expect(later.notified).toEqual([]);
+		expect(later.presented).toEqual([]);
+		expect(backups(at)).toHaveLength(1);
+	});
+
+	it("is not taken by a message an extension sends, or an empty one", () => {
+		const at = machine('{"tiers":["laya","jev"]}', { mude: true });
+		const session = open(at);
+		session.send("Carry on with the plan.", "extension");
+		session.send("  \n ", "interactive");
+		expect(session.notified).toEqual([]);
+		expect(pending(at)).toEqual({ judge: "mude", from: "mu.json" });
+		session.send("hello", "interactive");
+		expect(session.notified).toHaveLength(1);
+		expect(session.notified[0].message).toContain("so your judge is now mude 1.0.");
+		expect(session.presented[0]).toMatchObject({ payload: { code: "laya_removed", judge: "mude" } });
+	});
+
+	it("is left where it is by a run nobody watches, which changes no file either", () => {
+		const at = machine('{"tiers":["laya","jev"]}');
+		const printed = start(at, { hasUI: false });
+		expect(printed.notified).toEqual([]);
+		expect(at.read()).toBe('{"tiers":["laya","jev"]}');
+		expect(pending(at)).toBeUndefined();
+
+		open(at);
+		const printedAfter = start(at, { hasUI: false });
+		expect(printedAfter.notified).toEqual([]);
+		expect(printedAfter.presented).toEqual([]);
+		expect(pending(at)).toEqual({ judge: "jev", from: "mu.json" });
+		expect(start(at).notified).toEqual([{ type: "info", message: JEV_NOTICE }]);
+	});
+
+	it("says MU_JUDGE's at the first message of every session started with laya in it", () => {
+		const at = machine('{"tiers":["clm","jev"]}');
+		open(at, { env: { MU_JUDGE: "laya,jev" } });
+		expect(pending(at)).toEqual({ judge: "jev", from: "MU_JUDGE" });
+		const first = start(at, { env: { MU_JUDGE: "laya,jev" } });
+		expect(first.notified[0].message).toContain("so mu skips laya in MU_JUDGE and your judge is now Jev.");
+		expect(pending(at)).toBeUndefined();
+		expect(start(at, { env: { MU_JUDGE: "laya,jev" } }).notified).toHaveLength(1);
+		expect(start(at).notified).toEqual([]);
+		expect(at.read()).toBe('{"tiers":["clm","jev"]}');
+		expect(backups(at)).toEqual([]);
+	});
+
+	it("keeps a notice about mu.json over a later one about MU_JUDGE", () => {
+		const at = machine('{"tiers":["laya","jev"]}');
+		open(at);
+		open(at, { env: { MU_JUDGE: "laya,clm" } });
+		expect(pending(at)).toEqual({ judge: "jev", from: "mu.json" });
+	});
+
+	it("is said in its own session when notices.json cannot be written", () => {
+		const at = machine('{"tiers":["laya","jev"]}');
+		// A file where mu's state folder would be.
+		writeFileSync(join(at.agentDir, "mu"), "");
+		const session = start(at);
+		expect(at.read()).toBe('{"tiers":["jev"]}');
+		expect(session.notified).toEqual([{ type: "info", message: JEV_NOTICE }]);
+	});
+
+	it("shares notices.json with the free Jev notice, which keeps it", () => {
+		const at = machine('{"tiers":["laya","jev"]}');
+		open(at);
+		const runtime = {
+			ctx: { hasUI: true, ui: { notify: () => {} } },
+			present: () => {},
+			onFreeJev: undefined as ((outcome: string) => void) | undefined,
+		};
+		registerFreeJevNotice(runtime as unknown as KyrnRuntime, { home: at.home, agentDir: at.agentDir });
+		runtime.onFreeJev?.("answered");
+		const notices = JSON.parse(readFileSync(join(at.agentDir, "mu", "notices.json"), "utf8"));
+		expect(notices.freeJev).toMatch(/^\d{4}-\d\d-\d\d$/);
+		expect(pending(at)).toEqual({ judge: "jev", from: "mu.json" });
+		expect(start(at).notified).toEqual([{ type: "info", message: JEV_NOTICE }]);
+		expect(JSON.parse(readFileSync(join(at.agentDir, "mu", "notices.json"), "utf8"))).toEqual({
+			version: 1,
+			freeJev: notices.freeJev,
+		});
+	});
+});
+
+describe("the Laya notice in a pi session", () => {
+	const harnesses: Harness[] = [];
+	afterEach(() => {
+		while (harnesses.length > 0) harnesses.pop()?.cleanup();
+	});
+
+	it("waits through mu's own commands, which start no turn, and is said at the first message over RPC", async () => {
+		const at = machine('{"tiers":["jev"]}');
+		mkdirSync(join(at.agentDir, "mu"), { recursive: true });
+		writeFileSync(
+			join(at.agentDir, "mu", "notices.json"),
+			JSON.stringify({ version: 1, layaRemoved: { judge: "jev", from: "mu.json" } }),
+		);
+		const events: KyrnPresentationEvent[] = [];
+		const harness = await createHarness({
+			extensionFactories: [
+				createKyrnJudgeExtension({
+					provider: new MockJudgeProvider(() => ({})),
+					config: parseConfig({ features: { memory: false } }),
+					only: ["goal"],
+					roots: { home: at.home, agentDir: at.agentDir },
+					onPresentation: (event) => events.push(event),
+				}),
+			],
+		});
+		harnesses.push(harness);
+		const notes: string[] = [];
+		const known: Record<string, unknown> = { notify: (message: string) => notes.push(message) };
+		const ui = new Proxy(known, {
+			get: (target, key) => (key in target ? target[key as string] : () => undefined),
+		}) as unknown as ExtensionUIContext;
+		await harness.session.bindExtensions({ uiContext: ui, mode: "rpc" });
+		const notices = () => events.filter((event) => event.kind === "judge.notice").map((event) => event.payload);
+
+		// What the app sends by itself is a command of mu's own, as /goal clear is.
+		await harness.session.prompt("/goal clear");
+		expect(notices()).toEqual([]);
+		expect(pending(at)).toEqual({ judge: "jev", from: "mu.json" });
+
+		harness.setResponses([fauxAssistantMessage("Hi."), fauxAssistantMessage("Done.")]);
+		await harness.session.prompt("hello");
+		expect(notices()).toEqual([{ code: "laya_removed", judge: "jev", message: JEV_NOTICE }]);
+		expect(notes.filter((note) => note === JEV_NOTICE)).toHaveLength(1);
+		expect(pending(at)).toBeUndefined();
+		await harness.session.prompt("thanks");
+		expect(notices()).toHaveLength(1);
 	});
 });
 
