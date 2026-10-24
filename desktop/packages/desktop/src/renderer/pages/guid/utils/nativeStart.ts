@@ -1,13 +1,14 @@
 /**
  * The home page's send while the native host is on (docs/native-host-ui.md): a conversation on the native host in the
- * chosen folder and permission mode, the model the pill picked, then the message. Files go the way the classic path
- * sends them: an image as pi's `images`, every other file as its path under the message (the `[[AION_FILES]]` block
- * the message list shows as chips).
+ * chosen folder and permission mode, then the model the pill picked and the message, which its screen sends. Files go
+ * the way the classic path sends them: an image as pi's `images`, every other file as its path under the message (the
+ * `[[AION_FILES]]` block the message list shows as chips).
  */
 import { FILES_MARKER } from '@/common/config/constants';
 import type { NativeFailure } from '@/common/kyrn/nativeBridge';
 import { chatFileRefPath, type ChatFileRef } from '@/common/types/chatFile';
-import type { PiImage } from '@/common/utils/nativeHost';
+import type { PiCommand, PiImage } from '@/common/utils/nativeHost';
+import type { FirstMessage } from '@/renderer/pages/native/hooks/useNativeConversation';
 import type { NativeClient } from '@/renderer/pages/native/utils/nativeClient';
 
 /** The images pi takes, as the ACP adapter lets them through (KyrnAgent.prompt), and how large one may be. */
@@ -38,7 +39,8 @@ export type NativeStart = {
 /** An attached file read as a data URL (`data:image/png;base64,…`); undefined when it cannot be read. */
 export type ReadImage = (file: ChatFileRef) => Promise<string | undefined>;
 
-export type NativeStarted = { ok: true; id: string } | NativeFailure;
+/** The conversation made, and what its screen sends first (`stageFirstMessage`). */
+export type NativeStarted = { ok: true; id: string; first: FirstMessage } | NativeFailure;
 
 /** The IPC itself failed: said as a host that could not start. */
 const broken = (error: unknown): NativeFailure => ({
@@ -75,47 +77,35 @@ export async function promptOf(
 }
 
 /**
- * Makes the conversation and sends its first message; resolves with the id to open once pi took the message. With
- * nothing typed it only makes the conversation, as the classic "start chat" does. A start that fails on the way leaves
- * no conversation behind: what was typed stays on the home page, to send again.
+ * Makes the conversation, and what its screen is to send first: the model the pill picked, the thinking level, then the
+ * message (nothing typed: only the model and level, as the classic "start chat" does). It resolves once the conversation
+ * is made, which takes no time: no host starts for it. The page opens it at once, and sends the rest while mu starts,
+ * so the person is in the conversation, and can type, while mu and its judge get ready. A file that cannot be read
+ * goes as its path.
  */
 export async function startNativeConversation(
   client: NativeClient,
   start: NativeStart,
   readImage: ReadImage
 ): Promise<NativeStarted> {
+  const typed = start.input.trim() ? start.input : undefined;
+  const prompt = typed ? await promptOf(typed, start.files, readImage) : undefined;
   const created = await client.create(start.cwd, start.permissions).catch(broken);
   if (created.ok === false) return created;
-  let id = created.data.id;
-  // The draft takes its session's id once its host starts: the page opens under the id it has then.
-  const stop = client.onChanged((event) => {
-    if (!('removed' in event) && event.replaces === id) id = event.conversation.id;
-  });
-  const giveUp = async (failure: NativeFailure): Promise<NativeFailure> => {
-    await client.remove(id).catch((): undefined => undefined);
-    return failure;
+  const setup: PiCommand[] = [];
+  const slash = start.model?.indexOf('/') ?? -1;
+  if (start.model && slash > 0)
+    setup.push({ type: 'set_model', provider: start.model.slice(0, slash), modelId: start.model.slice(slash + 1) });
+  // After the model: `set_model` sets the level back.
+  if (start.level) setup.push({ type: 'set_thinking_level', level: start.level });
+  return {
+    ok: true,
+    id: created.data.id,
+    first: {
+      setup,
+      ...(prompt
+        ? { text: prompt.message, typed, ...(prompt.images.length > 0 ? { images: prompt.images } : {}) }
+        : {}),
+    },
   };
-  try {
-    const slash = start.model?.indexOf('/') ?? -1;
-    if (start.model && slash > 0) {
-      const provider = start.model.slice(0, slash);
-      const set = await client.request(id, { type: 'set_model', provider, modelId: start.model.slice(slash + 1) });
-      if (set.ok === false) return await giveUp(set);
-    }
-    // After the model: `set_model` sets the level back.
-    if (start.level) {
-      const thought = await client.request(id, { type: 'set_thinking_level', level: start.level });
-      if (thought.ok === false) return await giveUp(thought);
-    }
-    if (start.input.trim()) {
-      const { message, images } = await promptOf(start.input, start.files, readImage);
-      const sent = await client.request(id, { type: 'prompt', message, ...(images.length > 0 ? { images } : {}) });
-      if (sent.ok === false) return await giveUp(sent);
-    }
-    return { ok: true, id };
-  } catch (error) {
-    return giveUp(broken(error));
-  } finally {
-    stop();
-  }
 }

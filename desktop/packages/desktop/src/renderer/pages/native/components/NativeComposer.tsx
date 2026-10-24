@@ -24,7 +24,7 @@ import GoalLine from '@/renderer/pages/conversation/platforms/acp/Composer/GoalL
 import { GOAL_CLEAR_COMMAND } from '@/renderer/pages/conversation/platforms/acp/Composer/goalState';
 import { getChatSurfaceWidthClass } from '@/renderer/pages/conversation/utils/chatSurfaceWidth';
 import { useAddEventListener, type SendBoxCommandState } from '@/renderer/utils/emitter';
-import type { FileSelectionItem } from '@/renderer/utils/file/fileSelection';
+import { mergeFileSelectionItems, type FileSelectionItem } from '@/renderer/utils/file/fileSelection';
 import { useNativeAttachments } from '../hooks/useNativeAttachments';
 import { useNativeCommands } from '../hooks/useNativeCommands';
 import type { NativeConversationApi, NativeConversationState } from '../hooks/useNativeConversation';
@@ -61,14 +61,16 @@ const SendBoxMessages: React.FC<{ rows: TMessage[] }> = ({ rows }) => {
  * What pi holds to send, which shows where mu put each message: steering messages first (they go at the model's next
  * step), then the ones for after the run.
  */
-const Queue: React.FC<{ steering: string[]; followUp: string[]; onTakeBack: () => void }> = ({
+const Queue: React.FC<{ steering: string[]; waiting: string[]; followUp: string[]; onTakeBack: () => void }> = ({
   steering,
+  waiting,
   followUp,
   onTakeBack,
 }) => {
   const { t } = useTranslation();
+  // What waits on screen for the message before it goes next, as a steer of the run that message starts.
   const rows = [
-    ...steering.map((text) => ({ text, when: t('mu.native.queue.steer') })),
+    ...[...steering, ...waiting].map((text) => ({ text, when: t('mu.native.queue.steer') })),
     ...followUp.map((text) => ({ text, when: t('mu.native.queue.followUp') })),
   ];
   if (!rows.length) return null;
@@ -130,7 +132,7 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
   const isMobile = useLayoutContext()?.isMobile ?? false;
   const { id, view, host, outgoing, closed, commandFailure, settings, request, send, abort, respond, expire } =
     conversation;
-  const { clearFailure } = conversation;
+  const { clearFailure, waiting, returned, takeBackWaiting } = conversation;
   const cwd = conversation.conversation?.cwd;
   const [draft, setDraft] = useState('');
   // The project's files the person mentioned with `@` (the send box keeps them in step with the text).
@@ -141,7 +143,8 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
   const permissions = useMemo(() => permissionState(view, settings), [settings, view]);
   const commands = useNativeCommands(host, draft, request);
   const working = isWorking(view);
-  // A message on its way (the judge reads it) or a compaction holds the box: pi takes no other prompt then.
+  // A message on its way (mu starting, the judge reading it) or a compaction holds the box: pi takes no other prompt
+  // then. One sent while a message is on its way waits its turn (`waiting`); a compaction takes none.
   const held = Boolean(outgoing) || view.live.compacting;
   const dialogs = view.dialogs.filter((dialog) => !closed.has(dialog.id));
   const { steering, followUp } = view.host.queue;
@@ -179,6 +182,14 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
   // what is there, as the classic box does.
   useAddEventListener('sendbox.fill', (text: string) => setDraft((old) => (old ? `${old}${text}` : text)), []);
 
+  // A first message that could not be sent comes back into the box, before what was typed since.
+  const tookBack = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!returned || tookBack.current === returned.id) return;
+    tookBack.current = returned.id;
+    setDraft((old) => (old ? `${returned.text}\n\n${old}` : returned.text));
+  }, [returned]);
+
   const onSend = useCallback(
     async (text: string): Promise<void | false> => {
       const paths = [
@@ -188,14 +199,18 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
           return path ? [path] : [];
         }),
       ];
-      const result = await send(withFiles(text, paths), files.images(), {
-        command: runsCommand(text, commands.extensions),
-      });
-      // What did not reach pi goes back into the box, attachments included.
-      if (result.ok === false) return false;
+      const images = files.images();
+      // The box is free at once, for the next message: this one may wait its turn behind the one on its way.
+      const attached = files.attachments;
+      const named = mentioned;
       files.clear();
       setMentioned([]);
-      return undefined;
+      const result = await send(withFiles(text, paths), images, { command: runsCommand(text, commands.extensions) });
+      if (result.ok !== false) return undefined;
+      // What did not reach pi goes back into the box, attachments included.
+      files.restore(attached);
+      setMentioned((old) => mergeFileSelectionItems(named, old));
+      return false;
     },
     [commands.extensions, cwd, files, mentioned, send]
   );
@@ -224,12 +239,13 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
   }, [abort]);
 
   const takeBack = useCallback(async () => {
-    const result = await request({ type: 'clear_queue' });
-    if (result.ok === false) return;
-    const taken = (result.data ?? {}) as { steering?: string[]; followUp?: string[] };
-    const texts = [...(taken.steering ?? []), ...(taken.followUp ?? [])];
+    // What waits on screen first: none of it goes once taken back, whatever pi answers.
+    const mine = takeBackWaiting();
+    const result = steering.length || followUp.length ? await request({ type: 'clear_queue' }) : undefined;
+    const taken = (result?.ok ? (result.data ?? {}) : {}) as { steering?: string[]; followUp?: string[] };
+    const texts = [...(taken.steering ?? []), ...mine, ...(taken.followUp ?? [])];
     if (texts.length) setDraft((old) => [...texts, old].filter(Boolean).join('\n\n'));
-  }, [request]);
+  }, [followUp.length, request, steering.length, takeBackWaiting]);
 
   return (
     // `data-composer-zone`: the work panel, floating in a narrow window, stops above this.
@@ -239,7 +255,12 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
       onDropCapture={onDropCapture}
       onPasteCapture={onPasteCapture}
     >
-      <Queue steering={steering} followUp={followUp} onTakeBack={() => void takeBack()} />
+      <Queue
+        steering={steering}
+        waiting={waiting.map((each) => each.text)}
+        followUp={followUp}
+        onTakeBack={() => void takeBack()}
+      />
       <NativeHostNotice host={host} commandFailure={commandFailure} onClearFailure={clearFailure} />
       {dialogs.length ? (
         <div className='mb-8px'>
@@ -278,7 +299,7 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
             onSend={onSend}
             onStop={onStop}
             loading={working || held}
-            allowSendWhileLoading={working && !held}
+            allowSendWhileLoading={(working || Boolean(outgoing)) && !view.live.compacting}
             className='z-10'
             testIds={SEND_BOX_IDS}
             defaultMultiLine={!isMobile}

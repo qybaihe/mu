@@ -54,6 +54,8 @@ export type NativeAttachments = {
   add: (files: readonly File[]) => Promise<void>;
   remove: (id: string) => void;
   clear: () => void;
+  /** Puts attachments a message took back, before the ones attached since. */
+  restore: (taken: readonly NativeAttachment[]) => void;
   /** The images as pi's prompt takes them, and the files' paths. */
   images: () => PiImage[];
   paths: () => string[];
@@ -80,6 +82,14 @@ export function useNativeAttachments(): NativeAttachments {
 
   const remove = useCallback((id: string) => setAttachments((old) => old.filter((each) => each.id !== id)), []);
   const clear = useCallback(() => setAttachments([]), []);
+  const restore = useCallback(
+    (taken: readonly NativeAttachment[]) =>
+      setAttachments((old) => {
+        const paths = new Set(taken.flatMap((each) => (each.kind === 'file' ? [each.path] : [])));
+        return [...taken, ...old.filter((each) => each.kind === 'image' || !paths.has(each.path))];
+      }),
+    []
+  );
   const images = useCallback(
     (): PiImage[] =>
       attachments.flatMap((each) =>
@@ -92,5 +102,5 @@ export function useNativeAttachments(): NativeAttachments {
     [attachments]
   );
 
-  return { attachments, add, remove, clear, images, paths };
+  return { attachments, add, remove, clear, restore, images, paths };
 }

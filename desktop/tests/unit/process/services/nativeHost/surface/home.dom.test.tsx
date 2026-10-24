@@ -9,14 +9,16 @@ import { DEFAULT_RECENT_WS_KEY } from '@/renderer/components/workspace/recentWor
 import GuidWorkspaceFootnote from '@/renderer/pages/guid/components/GuidWorkspaceFootnote';
 import { useGuidNativeSend, type GuidNativeSendDeps } from '@/renderer/pages/guid/hooks/useGuidNativeSend';
 import { withNativeFolders } from '@/renderer/pages/guid/hooks/useNativeFolders';
+import { useNativeConversation } from '@/renderer/pages/native/hooks/useNativeConversation';
 import { NativeClientContext, type NativeClient } from '@/renderer/pages/native/utils/nativeClient';
 import enMu from '@/renderer/services/i18n/locales/en-US/mu.json';
 import { createFakeHost, type FakeHost } from './fakeClient';
 
 /**
- * The home page while the native host is on: its send starts a native conversation (the folder, the permission mode,
- * the model the pill picked, the message with its files) and opens it; a send that cannot says why and keeps what was
- * typed; its folder list takes in the native conversations' folders, and stays as it was while the host is off.
+ * The home page while the native host is on: its send makes a native conversation in the folder and permission mode and
+ * opens it at once, and the conversation's screen sends the rest (the model the pill picked, the level, the message
+ * with its files) while mu starts; a send that cannot make one says why and keeps what was typed; its folder list takes
+ * in the native conversations' folders, and stays as it was while the host is off.
  */
 
 afterEach(cleanup);
@@ -79,6 +81,20 @@ const listed = () => [...document.querySelectorAll('[class*="wsDropdownItemName"
 const requests = (host: FakeHost) =>
   host.calls.filter((call) => call.method === 'request').map((call) => ({ id: call.id, command: call.command }));
 
+/** What the conversation the page made sends first, once its screen opens it (the page navigated there). */
+async function opened(host: FakeHost, id = 'draft-1') {
+  renderHook(() => useNativeConversation(id), {
+    wrapper: ({ children }) => (
+      <NativeClientContext.Provider value={host.client}>{children}</NativeClientContext.Provider>
+    ),
+  });
+  await waitFor(() => expect(host.calls.some((call) => call.method === 'open')).toBe(true));
+  await act(async () => {});
+  await act(async () => {});
+  // Leaves out the screen asking pi, after the prompt, whether a run started.
+  return requests(host).filter(({ command }) => command?.type !== 'get_state');
+}
+
 describe('the home page’s send on the native host', () => {
   beforeEach(() => {
     vi.spyOn(Message, 'warning').mockImplementation(() => undefined as never);
@@ -86,17 +102,8 @@ describe('the home page’s send on the native host', () => {
   });
   afterEach(() => vi.restoreAllMocks());
 
-  it('makes the conversation in the folder and mode, sets the model, sends the message with its files, opens it', async () => {
+  it('makes the conversation in the folder and mode and opens it at once; its screen sets the model and sends the message with its files', async () => {
     const host = createFakeHost();
-    // pi names the session while it takes the message: the page opens under the session's id.
-    host.answer((id, command) => {
-      if (command.type === 'prompt')
-        host.change({
-          conversation: { id: 's-1', cwd: '/work/app', title: '', createdAt: 1, updatedAt: 1, live: true },
-          replaces: id,
-        });
-      return { ok: true, data: undefined };
-    });
     const files: ChatFileRef[] = [localFileRef('/shots/screen.PNG'), uploadFileRef('/uploads/spec.pdf')];
     const readImage = vi.fn(async () => 'data:image/png;base64,AAAA');
     const { hook, setters, send } = home(host.client, {
@@ -107,12 +114,14 @@ describe('the home page’s send on the native host', () => {
     });
     expect(hook.result.current.isButtonDisabled).toBe(false);
     await send();
-    expect(host.calls.find((call) => call.method === 'create')).toEqual({
-      method: 'create',
-      cwd: '/work/app',
-      permissions: 'ask',
-    });
-    expect(requests(host)).toEqual([
+    // The page waits for nothing but the conversation: mu starts, and its judge reads the message, on its screen.
+    expect(host.calls).toEqual([{ method: 'create', cwd: '/work/app', permissions: 'ask' }]);
+    expect(readImage).toHaveBeenCalledTimes(1);
+    expect(setters.navigate).toHaveBeenCalledWith('/conversation/native/draft-1');
+    expect(setters.setInput).toHaveBeenCalledWith('');
+    expect(setters.setFiles).toHaveBeenCalledWith([]);
+    expect(setters.setDir).toHaveBeenCalledWith('');
+    expect(await opened(host)).toEqual([
       { id: 'draft-1', command: { type: 'set_model', provider: 'e2e', modelId: 'e2e-fake-model-2' } },
       {
         id: 'draft-1',
@@ -123,12 +132,6 @@ describe('the home page’s send on the native host', () => {
         },
       },
     ]);
-    expect(readImage).toHaveBeenCalledTimes(1);
-    expect(setters.navigate).toHaveBeenCalledWith('/conversation/native/s-1');
-    expect(setters.setInput).toHaveBeenCalledWith('');
-    expect(setters.setFiles).toHaveBeenCalledWith([]);
-    expect(setters.setDir).toHaveBeenCalledWith('');
-    expect(host.calls.some((call) => call.method === 'remove')).toBe(false);
   });
 
   it('sends an image it cannot read as its path, a mode that is not mu’s and a model without a provider not at all', async () => {
@@ -139,8 +142,8 @@ describe('the home page’s send on the native host', () => {
       files: [localFileRef('/shots/gone.png')],
     });
     await send();
-    expect(host.calls.find((call) => call.method === 'create')).toEqual({ method: 'create', cwd: '/work/app' });
-    expect(requests(host)).toEqual([
+    expect(host.calls).toEqual([{ method: 'create', cwd: '/work/app' }]);
+    expect(await opened(host)).toEqual([
       {
         id: 'draft-1',
         command: { type: 'prompt', message: 'fix the build\n\n[[AION_FILES]]\n/shots/gone.png' },
@@ -153,7 +156,7 @@ describe('the home page’s send on the native host', () => {
     const { send } = home(host.client, { selectedAcpModel: 'e2e/e2e-fake-thinker', pickedThoughtLevel: 'high' });
     await send();
     // The model first: `set_model` sets the level back.
-    expect(requests(host).map(({ command }) => command)).toEqual([
+    expect((await opened(host)).map(({ command }) => command)).toEqual([
       { type: 'set_model', provider: 'e2e', modelId: 'e2e-fake-thinker' },
       { type: 'set_thinking_level', level: 'high' },
       { type: 'prompt', message: 'fix the build' },
@@ -163,33 +166,33 @@ describe('the home page’s send on the native host', () => {
   it('sets a level picked on the model the pill already showed without setting a model, and sends none the pill only shows', async () => {
     const shown = createFakeHost();
     await home(shown.client, { pickedThoughtLevel: 'low' }).send();
-    expect(requests(shown).map(({ command }) => command.type)).toEqual(['set_thinking_level', 'prompt']);
+    expect((await opened(shown)).map(({ command }) => command.type)).toEqual(['set_thinking_level', 'prompt']);
+    cleanup();
     const unpicked = createFakeHost();
     await home(unpicked.client, { selectedAcpModel: 'e2e/e2e-fake-thinker' }).send();
-    expect(requests(unpicked).map(({ command }) => command.type)).toEqual(['set_model', 'prompt']);
+    expect((await opened(unpicked)).map(({ command }) => command.type)).toEqual(['set_model', 'prompt']);
   });
 
-  it('leaves no conversation behind when pi refuses the level, and keeps what was typed', async () => {
+  it('starts an empty conversation when nothing is typed, as the classic page does, with the model and level picked', async () => {
     const host = createFakeHost();
-    host.answer((_id, command) =>
-      command.type === 'set_thinking_level'
-        ? { ok: false, kind: 'command', message: 'Unknown thinking level bogus' }
-        : { ok: true, data: undefined }
-    );
-    const { setters, send } = home(host.client, { pickedThoughtLevel: 'bogus' });
-    await send();
-    expect(Message.error).toHaveBeenCalledWith(expect.stringContaining('Unknown thinking level bogus'));
-    expect(host.calls.map((call) => call.method)).toEqual(['create', 'request', 'remove']);
-    expect(setters.navigate).not.toHaveBeenCalled();
-    expect(setters.setInput).not.toHaveBeenCalled();
-  });
-
-  it('starts an empty conversation when nothing is typed, as the classic page does', async () => {
-    const host = createFakeHost();
-    const { setters, send } = home(host.client, { input: '   ' });
+    const { setters, send } = home(host.client, { input: '   ', pickedThoughtLevel: 'low' });
     await send();
     expect(host.calls.map((call) => call.method)).toEqual(['create']);
     expect(setters.navigate).toHaveBeenCalledWith('/conversation/native/draft-1');
+    expect((await opened(host)).map(({ command }) => command)).toEqual([{ type: 'set_thinking_level', level: 'low' }]);
+  });
+
+  it('opens the conversation without waiting for mu: what fails once it is open, the conversation says', async () => {
+    const host = createFakeHost();
+    host.answer(() => ({ ok: false, kind: 'failed', message: 'spawn ENOENT' }));
+    const { setters, send } = home(host.client, { pickedThoughtLevel: 'bogus' });
+    await send();
+    expect(setters.navigate).toHaveBeenCalledWith('/conversation/native/draft-1');
+    expect(setters.setInput).toHaveBeenCalledWith('');
+    expect(await opened(host)).toEqual([{ id: 'draft-1', command: { type: 'set_thinking_level', level: 'bogus' } }]);
+    // Nothing said on the home page, and the conversation stays, for the person to send again in.
+    expect(Message.error).not.toHaveBeenCalled();
+    expect(host.calls.some((call) => call.method === 'remove')).toBe(false);
   });
 
   it('says a folder is needed, and makes nothing', async () => {
@@ -213,18 +216,6 @@ describe('the home page’s send on the native host', () => {
     expect(setters.navigate).not.toHaveBeenCalled();
     expect(setters.setInput).not.toHaveBeenCalled();
     expect(setters.setLoading).toHaveBeenLastCalledWith(false);
-  });
-
-  it('leaves no conversation behind when mu does not start, and keeps what was typed', async () => {
-    const host = createFakeHost();
-    host.answer(() => ({ ok: false, kind: 'failed', message: 'spawn ENOENT' }));
-    const { setters, send } = home(host.client);
-    await send();
-    expect(Message.error).toHaveBeenCalledWith('mu stopped before it could start. spawn ENOENT');
-    expect(host.calls.map((call) => call.method)).toEqual(['create', 'request', 'remove']);
-    expect(host.calls.at(-1)).toEqual({ method: 'remove', id: 'draft-1' });
-    expect(setters.navigate).not.toHaveBeenCalled();
-    expect(setters.setInput).not.toHaveBeenCalled();
   });
 });
 
