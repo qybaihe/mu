@@ -1274,6 +1274,8 @@
       "judgeNotice": {
         "freeJev": "No Jev key is set, so mu is using Jev's free tier on OpenCode Zen",
         "freeJevUnavailable": "Jev's free tier stopped answering, so mu's default rules decide until you add a Jev key",
+        "openaiKeyMissing": "OpenAI's decision model has no API key, so the next judge or mu's default rules decide",
+        "openaiKeyRejected": "OpenAI rejected the decision model's API key, so the next judge or mu's default rules decide",
         "layaRemoved": "Laya is no longer built into mu, so the judge is now {{judge}}"
       },
       "detail": "Details: {{detail}}",

@@ -1315,6 +1315,25 @@ describe('what mu notifies', () => {
     }
   });
 
+  it('says once, by code, that OpenAI’s decision model has no usable key, and not again in mu’s words', async () => {
+    const f = fixture();
+    try {
+      await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
+      const missing = 'mu: OpenAI’s decision model has no API key now, so the next judge answers until one is set.';
+      f.emit(shown('judge.notice', { code: 'openai_key', reason: 'missing', message: missing }));
+      notify(f, missing, 'warning');
+      // Once per conversation: a key OpenAI turns down later in it is not said again.
+      f.emit(shown('judge.notice', { code: 'openai_key', reason: 'rejected', message: 'again' }));
+      await vi.waitFor(() => expect(noticesOf(f.updates)).toHaveLength(1));
+      await new Promise((done) => setTimeout(done, 200));
+      expect(noticesOf(f.updates).map((update) => [update.title, update.rawInput])).toEqual([
+        [missing, { notice: 'openai_key', code: 'missing' }],
+      ]);
+    } finally {
+      f.cleanup();
+    }
+  });
+
   it('says once, by code, that Laya is gone and which judge is in its place, and not again in mu’s words', async () => {
     const f = fixture();
     try {

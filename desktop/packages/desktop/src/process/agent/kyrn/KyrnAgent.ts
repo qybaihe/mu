@@ -213,6 +213,13 @@ export const MU_NOTICES = {
    * is the judge in its place by its name in the order (`mude`, `jev`, …). Said once, in the first session after it.
    */
   laya_removed: 'mu: Laya is no longer built in, so another judge answers now.',
+  /**
+   * OpenAI's decision model has no usable API key (mu's `judge.notice`); the input's `code` says why: `missing` (signed
+   * out of OpenAI, or its key removed) or `rejected` (OpenAI refused the key). The next judge answers, or mu's
+   * fallbacks when it is the last one, until a key is set.
+   */
+  openai_key:
+    "mu: OpenAI's decision model has no usable API key, so another judge or mu's fallbacks decide until one is set.",
   /** The person stopped the reply: what came before this line is all of it. */
   stopped: 'You stopped this reply.',
 } as const;
@@ -997,14 +1004,16 @@ export class KyrnAgent implements Agent {
   }
   /**
    * mu's `judge.notice`: the judge answers with the free Jev on OpenCode Zen (`free_jev`), the free Jev stopped
-   * (`free_jev_unavailable`, why in `reason`), or Laya is gone and `judge` answers in its place (`laya_removed`, said in
-   * the first session after mu moved the configuration on). One line each per conversation, by code, which the desktop
+   * (`free_jev_unavailable`, why in `reason`), Laya is gone and `judge` answers in its place (`laya_removed`, said in
+   * the first session after mu moved the configuration on), or OpenAI's decision model has no usable key (`openai_key`,
+   * why in `reason`). One line each per conversation, by code, which the desktop
    * words in the app's language; mu's own line, its title, comes right after as a notification and is not said again.
    * A code this build does not know leaves mu's line to say it.
    */
   private judgeNotice(id: string, session: Session, payload: JsonRecord): void {
     const code = text(payload.code);
-    if (code !== 'free_jev' && code !== 'free_jev_unavailable' && code !== 'laya_removed') return;
+    if (code !== 'free_jev' && code !== 'free_jev_unavailable' && code !== 'laya_removed' && code !== 'openai_key')
+      return;
     const message = text(payload.message).trim();
     if (message) {
       session.said.add(`coded:${message}`);

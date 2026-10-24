@@ -189,14 +189,20 @@ describe('mude as a choice of the judges page', () => {
     await waitFor(() => expect(bridge.mudeState).toHaveBeenCalled());
     expect(screen.queryByTestId('mu-judge-choice-mude')).not.toBeInTheDocument();
     // Nothing else changes: Jev stays the recommended one, in the usual order.
-    expect(tilesOf()).toEqual(['mu-judge-choice-jev', 'mu-judge-choice-clm']);
+    expect(tilesOf()).toEqual(['mu-judge-choice-jev', 'mu-judge-choice-clm', 'mu-judge-choice-openai']);
     expect(within(screen.getByTestId('mu-judge-choice-jev')).getByText('Recommended')).toBeInTheDocument();
   });
 
   it('on a Mac that can run it: first and recommended, Jev hosted, and the judge chosen still the settings’ own', async () => {
     const tile = await judgesPage();
     await waitFor(
-      () => expect(tilesOf()).toEqual(['mu-judge-choice-mude', 'mu-judge-choice-jev', 'mu-judge-choice-clm']),
+      () =>
+        expect(tilesOf()).toEqual([
+          'mu-judge-choice-mude',
+          'mu-judge-choice-jev',
+          'mu-judge-choice-clm',
+          'mu-judge-choice-openai',
+        ]),
       { timeout: 3000 }
     );
     expect(within(tile).getByText('Recommended · on this Mac')).toBeInTheDocument();
@@ -218,7 +224,7 @@ describe('mude as a choice of the judges page', () => {
           answer = resolve;
         })
     );
-    const order = ['mu-judge-choice-mude', 'mu-judge-choice-jev', 'mu-judge-choice-clm'];
+    const order = ['mu-judge-choice-mude', 'mu-judge-choice-jev', 'mu-judge-choice-clm', 'mu-judge-choice-openai'];
     const tile = await judgesPage();
     expect(tilesOf()).toEqual(order);
     expect(within(tile).getByText('Recommended · on this Mac')).toBeInTheDocument();
@@ -236,7 +242,12 @@ describe('mude as a choice of the judges page', () => {
     const tile = await judgesPage();
     await waitFor(() => expect(tile).toHaveAttribute('aria-disabled', 'true'));
     // Not recommended here: the usual order and tags.
-    expect(tilesOf()).toEqual(['mu-judge-choice-jev', 'mu-judge-choice-mude', 'mu-judge-choice-clm']);
+    expect(tilesOf()).toEqual([
+      'mu-judge-choice-jev',
+      'mu-judge-choice-mude',
+      'mu-judge-choice-clm',
+      'mu-judge-choice-openai',
+    ]);
     expect(within(tile).getByText('On this Mac')).toBeInTheDocument();
     expect(within(screen.getByTestId('mu-judge-choice-jev')).getByText('Recommended')).toBeInTheDocument();
     expect(within(tile).getByTestId('mu-mude-unsupported')).toHaveTextContent(
@@ -763,7 +774,12 @@ describe('a mu.json that still asks Laya first, the local judge mu no longer has
     bridge.settings.mockResolvedValue(ok(leftover(false)));
     await judgesPage();
     await waitFor(() => expect(screen.getByTestId('mu-judge-choice-jev')).toHaveAttribute('aria-checked', 'true'));
-    expect(tilesOf()).toEqual(['mu-judge-choice-mude', 'mu-judge-choice-jev', 'mu-judge-choice-clm']);
+    expect(tilesOf()).toEqual([
+      'mu-judge-choice-mude',
+      'mu-judge-choice-jev',
+      'mu-judge-choice-clm',
+      'mu-judge-choice-openai',
+    ]);
     const page = screen.getByTestId('mu-section-judges');
     expect(page).not.toHaveTextContent(/laya/i);
     expect(page).not.toHaveTextContent(enMu.judges.custom);

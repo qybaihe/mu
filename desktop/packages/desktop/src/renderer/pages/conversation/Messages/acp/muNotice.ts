@@ -15,6 +15,7 @@ export const MU_NOTICE_CODES = [
   'free_jev',
   'free_jev_unavailable',
   'laya_removed',
+  'openai_key',
   'stopped',
   'to_model',
 ] as const;
@@ -25,7 +26,10 @@ export type MuNotice = {
   title: string;
   /** How a notice of mu's own reads; a coded one has its own look. */
   level?: MuNoticeLevel;
-  /** Why checkpoints are off (`checkpoint_off`), or why the free Jev stopped (`free_jev_unavailable`): mu's code. */
+  /**
+   * Why checkpoints are off (`checkpoint_off`), why the free Jev stopped (`free_jev_unavailable`), or why OpenAI's
+   * decision model has no usable key (`openai_key`): mu's code.
+   */
   reason?: string;
   params?: Record<string, number>;
   /** What mu told the model (`to_model`): the message's type (`kyrn.nudge`, …) and the words the model got. */
@@ -43,6 +47,7 @@ export const MU_NOTICE_KEYS: Readonly<Record<MuNoticeCode, string>> = {
   free_jev: 'mu.notices.freeJev',
   free_jev_unavailable: 'mu.notices.freeJevUnavailable.paid',
   laya_removed: 'mu.notices.layaRemoved',
+  openai_key: 'mu.notices.openaiKey.missing',
   stopped: 'mu.notices.stopped',
   to_model: 'mu.notices.toModel.other',
 };
@@ -71,6 +76,12 @@ export const TO_MODEL_PREFIX = 'kyrn.';
 export const FREE_JEV_UNAVAILABLE_KEYS: Readonly<Record<string, string>> = {
   paid: 'mu.notices.freeJevUnavailable.paid',
   gone: 'mu.notices.freeJevUnavailable.gone',
+};
+
+/** Why OpenAI's decision model has no usable key, by mu's reason (`missing`: none set; `rejected`: OpenAI refused it). */
+export const OPENAI_KEY_KEYS: Readonly<Record<string, string>> = {
+  missing: 'mu.notices.openaiKey.missing',
+  rejected: 'mu.notices.openaiKey.rejected',
 };
 
 /** A page the line ends with, where the person can act on it: the same address in every language. */
@@ -135,7 +146,7 @@ export function muNotice(message: TMessage): MuNotice | undefined {
   if (!isCode(code)) return { title, ...(LEVELS.has(level) ? { level: level as MuNoticeLevel } : {}) };
   if (code === 'to_model') return { code, title, kind: str(input.kind), sent: str(input.text) };
   const reason = str(input.code);
-  if (code === 'free_jev_unavailable') return { code, title, ...(reason ? { reason } : {}) };
+  if (code === 'free_jev_unavailable' || code === 'openai_key') return { code, title, ...(reason ? { reason } : {}) };
   if (code === 'laya_removed') return { code, title, judge: str(input.judge) || 'jev' };
   if (code !== 'checkpoint_off') return { code, title };
   return { code, title, ...(reason ? { reason } : {}), params: readCheckpointParams(input.params) };

@@ -1274,6 +1274,8 @@
       "judgeNotice": {
         "freeJev": "Nenhuma chave do Jev definida: o Jev gratuito do OpenCode Zen responde",
         "freeJevUnavailable": "O Jev gratuito parou de responder: regras fixas decidem até que uma chave do Jev seja definida",
+        "openaiKeyMissing": "O modelo de decisão da OpenAI está sem chave de API: o próximo juiz ou regras fixas decidem",
+        "openaiKeyRejected": "A OpenAI recusou a chave de API do modelo de decisão: o próximo juiz ou regras fixas decidem",
         "layaRemoved": "O Laya não vem mais integrado ao mu: o juiz agora é {{judge}}"
       },
       "detail": "Detalhes: {{detail}}",

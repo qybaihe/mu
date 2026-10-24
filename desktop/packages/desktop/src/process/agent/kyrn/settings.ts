@@ -64,6 +64,8 @@ const defaults: Record<string, Partial<JudgeSettings>> = {
   'jev-cloudflare': { type: 'classifier', model: 'cloudflare-workers-ai/typesafe/jev' },
   clef: { type: 'classifier', model: 'cloudflare-workers-ai/@cf/cloudflare/clef' },
   'clef-flash': { type: 'classifier', model: 'cloudflare-workers-ai/@cf/cloudflare/clef-flash' },
+  // OpenAI's decision model, gpt-6-luna, through its Decisions API, with a key of its own.
+  openai: { type: 'openai', model: 'gpt-6-luna', apiKeyEnv: 'MU_JUDGE_OPENAI_KEY' },
   mock: { type: 'mock' },
 };
 const types = new Set<string>(JUDGE_TYPES);
@@ -77,11 +79,28 @@ const variable = /^(?:TYPESAFE_API_KEY|AI_GATEWAY_API_KEY|(?:MU|KYRN)_JUDGE_[A-Z
 const classifierVariables = ['OPENCODE_API_KEY', 'CLOUDFLARE_API_KEY', 'CLOUDFLARE_ACCOUNT_ID'];
 const saved = (name: string): boolean => variable.test(name) || classifierVariables.includes(name);
 /**
- * Keys for a service other than TypeSafe: Jev on OpenRouter or at an address of one's own, and a CLM server. The
+ * Keys for a service other than TypeSafe: Jev on OpenRouter or at an address of one's own, a CLM server, and OpenAI. The
  * harness refuses a System One judge keyed by one of them that has no address of its own (KEYS_FOR_ELSEWHERE in
  * kyrn-judge's registry), so such a key never goes to TypeSafe.
  */
-const keysForElsewhere = new Set(['MU_JUDGE_OPENROUTER_API_KEY', 'MU_JUDGE_CUSTOM_API_KEY', CLM_KEY_VARIABLE]);
+const keysForElsewhere = new Set([
+  'MU_JUDGE_OPENROUTER_API_KEY',
+  'MU_JUDGE_CUSTOM_API_KEY',
+  CLM_KEY_VARIABLE,
+  'MU_JUDGE_OPENAI_KEY',
+]);
+/**
+ * Keys of the other judge services, which the harness never sends to OpenAI (KEYS_NOT_FOR_OPENAI in kyrn-judge's
+ * registry): an OpenAI judge keyed by one of them is refused.
+ */
+const keysNotForOpenAI = new Set([
+  'TYPESAFE_API_KEY',
+  'AI_GATEWAY_API_KEY',
+  'MU_JUDGE_OPENROUTER_API_KEY',
+  'MU_JUDGE_CUSTOM_API_KEY',
+  CLM_KEY_VARIABLE,
+  'MU_JUDGE_MUDE_KEY',
+]);
 /** Keys of custom model providers, referenced from models.json as `"$MU_PROVIDER_<ID>_API_KEY"`. */
 const providerVariable = /^MU_PROVIDER_[A-Z0-9_]{1,80}_API_KEY$/;
 /** The .env is sourced by a shell (`kyrn/bin/mu`), so nothing a shell would interpret may get into a value. */
@@ -262,6 +281,10 @@ export class SettingsStore {
         throw new KyrnError('judgeEndpoint', `Judge ${name} has no base URL, and its key is not sent to TypeSafe`, {
           name,
         });
+      if (judge.type === 'openai' && keysNotForOpenAI.has(judge.apiKeyEnv))
+        throw new KyrnError('keyVariable', `Judge ${name}'s key belongs to another service and is not sent to OpenAI`, {
+          name: judge.apiKeyEnv,
+        });
     }
     const credentials: Credential[] = [...(input.credential ? [input.credential] : []), ...(input.credentials ?? [])];
     for (const credential of credentials) {
@@ -272,6 +295,18 @@ export class SettingsStore {
     }
     const providerKeys = credentials.filter((credential) => providerVariable.test(credential.name));
     if (providerKeys.length && !input.models) throw new KyrnError('invalid', 'Invalid credential');
+    // A judge's key removed (a sign-out of its service): only a variable this page saves, and never one set by the same
+    // save. A provider's key goes with its provider (applyModels), never this way. What came over IPC is checked as it
+    // is, whatever its type says.
+    const removals: unknown[] = Array.isArray(input.removeCredentials) ? input.removeCredentials : [];
+    if (
+      (input.removeCredentials !== undefined && !Array.isArray(input.removeCredentials)) ||
+      removals.length > 16 ||
+      removals.some(
+        (name) => typeof name !== 'string' || !saved(name) || credentials.some((credential) => credential.name === name)
+      )
+    )
+      throw new KyrnError('invalid', 'Invalid credential');
 
     // Judges: only the ones that were changed are written, so a built-in one nobody touched is not frozen into the file.
     const previous = asRecord(config.judges);
@@ -360,6 +395,8 @@ export class SettingsStore {
       for (const [name, value] of change.env) env.set(name, value);
     }
     for (const credential of credentials) if (saved(credential.name)) env.set(credential.name, credential.value);
+    // Removed: the line goes from the .env (withVariables).
+    for (const name of removals) if (typeof name === 'string') env.set(name, undefined);
 
     // Everything above only checked and prepared. The key goes first: a provider must never point at a missing one.
     if (env.size) atomic(this.envPath, withVariables(files.env, env));

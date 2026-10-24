@@ -1274,6 +1274,8 @@
       "judgeNotice": {
         "freeJev": "Jev anahtarı yok: OpenCode Zen'deki ücretsiz Jev yanıtlıyor",
         "freeJevUnavailable": "Ücretsiz Jev yanıt vermeyi bıraktı: Bir Jev anahtarı ayarlanana kadar sabit kurallar karar veriyor",
+        "openaiKeyMissing": "OpenAI'ın karar modelinin API anahtarı yok: Sıradaki hakem veya sabit kurallar karar veriyor",
+        "openaiKeyRejected": "OpenAI, karar modelinin API anahtarını reddetti: Sıradaki hakem veya sabit kurallar karar veriyor",
         "layaRemoved": "Laya artık mu'ya yerleşik değil: hakem artık {{judge}}"
       },
       "detail": "Ayrıntılar: {{detail}}",

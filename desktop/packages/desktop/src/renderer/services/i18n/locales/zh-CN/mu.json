@@ -136,6 +136,7 @@
     "choose": "选择判定器",
     "custom": "现在排在第一位的是自定义判定器，可以在「判定顺序」页查看和修改。",
     "keyPlaceholder": "粘贴密钥",
+    "removeKey": "移除密钥",
     "choices": {
       "jev": {
         "title": "Jev",
@@ -153,6 +154,11 @@
         "title": "CLM",
         "tag": "自建",
         "description": "回答和 Jev 一样的问题，运行在你自己的服务器上（clm-serve）。编码器需要 GPU，不按次计费。"
+      },
+      "openai": {
+        "title": "OpenAI",
+        "tag": "云端",
+        "description": "OpenAI 的决策模型 gpt-6-luna，用 OpenAI API 密钥。OpenAI 按输入 token 计费。"
       }
     },
     "mude": {
@@ -294,12 +300,17 @@
         "mock": "这台服务器运行的是 CLM 的模拟编码器：它的回答是噪声，不是 CLM 的判断。",
         "failed": "没能询问服务器。"
       }
+    },
+    "openai": {
+      "key": "OpenAI API 密钥",
+      "keyHelp": "不填时，mu 用 OpenAI 提供商的 API 密钥（设置 → 提供商）或 OPENAI_API_KEY，不用 ChatGPT 登录。"
     }
   },
   "keyState": {
     "none": "未配置",
     "set": "已配置",
     "typed": "已输入新密钥，待保存",
+    "removed": "已移除密钥，待保存",
     "empty": "变量为空",
     "managed": "已配置",
     "manual": "已配置（手动）"
@@ -817,6 +828,10 @@
     "freeJevUnavailable": {
       "paid": "OpenCode Zen 上的免费 Jev 现在要密钥或付费了，判定暂时交给规则。在「设置 → 判定器」里填一个 Jev 密钥就能恢复。",
       "gone": "OpenCode Zen 已经不提供免费的 Jev 了，判定暂时交给规则。在「设置 → 判定器」里填一个 Jev 密钥就能恢复。"
+    },
+    "openaiKey": {
+      "missing": "OpenAI 的决策模型现在没有 API 密钥，暂时不参与判定。在「设置 → 判定器」里填一个，或换一个判定器。",
+      "rejected": "OpenAI 拒绝了决策模型的 API 密钥，暂时不参与判定。在「设置 → 判定器」里换一个密钥，或换一个判定器。"
     },
     "layaRemoved": "mu 不再内置 Laya，你的判定器现在是 {{judge}}。想用其他决策模型，在「设置 → 判定器」里从 Hugging Face 添加。",
     "layaRemovedNoModels": "mu 不再内置 Laya，你的判定器现在是 {{judge}}。",

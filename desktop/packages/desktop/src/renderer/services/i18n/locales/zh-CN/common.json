@@ -1274,6 +1274,8 @@
       "judgeNotice": {
         "freeJev": "未配置 Jev 密钥，使用 OpenCode Zen 上的免费 Jev",
         "freeJevUnavailable": "免费 Jev 已停止回答：配置 Jev 密钥之前由固定规则决定",
+        "openaiKeyMissing": "OpenAI 的决策模型没有 API 密钥：由下一个判定器或固定规则决定",
+        "openaiKeyRejected": "OpenAI 拒绝了决策模型的 API 密钥：由下一个判定器或固定规则决定",
         "layaRemoved": "mu 不再内置 Laya，判定器现在是 {{judge}}"
       },
       "detail": "详情：{{detail}}",
