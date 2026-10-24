@@ -120,8 +120,18 @@ const SiderRow: React.FC<RowProps> = ({
       {pinned ? (
         <Pushpin theme='filled' size='12' className='shrink-0 text-t-tertiary' data-testid='native-sidebar-pinned' />
       ) : null}
-      <span className='min-w-0 flex-1 truncate text-14px font-[500] lh-24px text-t-primary'>{title}</span>
-      {folder ? <span className='shrink-0 max-w-40% truncate text-12px text-t-tertiary'>{folder}</span> : null}
+      {/* The title comes first: it takes the room it needs, and the folder gives up its own before the title does,
+          down to its first few letters (3em, or all of a shorter name), so a long folder name never leaves the title
+          at two words. */}
+      <span className='min-w-0 flex-auto truncate text-14px font-[500] lh-24px text-t-primary'>{title}</span>
+      {folder ? (
+        <span
+          className='shrink-[100] min-w-[calc-size(max-content,min(size,3em))] max-w-40% truncate text-12px text-t-tertiary'
+          data-testid='native-sidebar-folder'
+        >
+          {folder}
+        </span>
+      ) : null}
       {/* The row's end: a spinner while a run goes, else a dot in the brand's colour once it wanted its person, else the
           green dot of a running host; in its place the menu's button while the row is hovered or focused or its menu is
           open. A slot of its own, so the button covers no text; its clicks are not the row's. */}

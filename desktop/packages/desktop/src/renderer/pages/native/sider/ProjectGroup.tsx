@@ -1,7 +1,8 @@
 /**
  * One project in the sidebar's native group (NativeSiderGroup.tsx): its folder's name, which folds it, and at its end,
- * on hover or focus, a new conversation in it and its menu (archive it with its conversations, or remove an empty
- * one). Under it its conversations, newest first: the first few, all of them when asked, and the one open always.
+ * under the pointer, with the keyboard's focus in the row, or while its menu is open, a new conversation in it and its
+ * menu (archive it with its conversations, or remove an empty one). Under it its conversations, newest first: the first
+ * few, all of them when asked, and the one open always.
  */
 import { Dropdown, Menu, Tooltip } from '@arco-design/web-react';
 import { DeleteOne, FolderClose, MoreOne, Plus } from '@icon-park/react';
@@ -26,6 +27,11 @@ const pressed = (action: () => void) => (event: React.KeyboardEvent) => {
 
 const ACTION =
   'flex-center cursor-pointer transition-colors text-t-secondary hover:text-t-primary size-20px rd-4px sider-action-btn';
+/**
+ * When the buttons show: under the pointer, or with the keyboard's focus on the row or on one of them. Not for a focus a
+ * click left behind (`:focus-visible` is the keyboard's), so they go with the pointer after a click.
+ */
+const SHOWN_ON = 'hidden group-hover:flex group-focus-visible:flex group-has-[:focus-visible]:flex';
 
 type Props = {
   project: Project;
@@ -43,6 +49,9 @@ type Props = {
 const ProjectGroup: React.FC<Props> = ({ project, folded, onToggle, activeId, renderRow, onNew, onArchive }) => {
   const { t } = useTranslation();
   const [all, setAll] = useState(false);
+  // Its menu is open: both buttons stay where they are while the pointer is in the menu.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const shownOn = menuOpen ? 'flex' : SHOWN_ON;
   const { conversations } = project;
   const empty = conversations.length === 0;
   const shown = all
@@ -68,7 +77,7 @@ const ProjectGroup: React.FC<Props> = ({ project, folded, onToggle, activeId, re
                 tabIndex={0}
                 aria-label={t('conversation.history.newConversationInProject')}
                 data-testid='native-project-new'
-                className={classNames(ACTION, 'hidden group-hover:flex group-focus-within:flex')}
+                className={classNames(ACTION, shownOn)}
                 onClick={onNew}
                 onKeyDown={pressed(onNew)}
               >
@@ -79,6 +88,7 @@ const ProjectGroup: React.FC<Props> = ({ project, folded, onToggle, activeId, re
               trigger='click'
               position='br'
               getPopupContainer={() => document.body}
+              onVisibleChange={setMenuOpen}
               droplist={
                 <Menu onClickMenuItem={onArchive}>
                   <Menu.Item key='archive' data-testid='native-project-archive'>
@@ -94,8 +104,10 @@ const ProjectGroup: React.FC<Props> = ({ project, folded, onToggle, activeId, re
                 role='button'
                 tabIndex={0}
                 aria-label={t('conversation.history.projectActions')}
+                aria-haspopup='menu'
+                aria-expanded={menuOpen}
                 data-testid='native-project-menu'
-                className={classNames(ACTION, 'hidden group-hover:flex group-focus-within:flex')}
+                className={classNames(ACTION, shownOn)}
               >
                 <MoreOne theme='outline' size='14' fill='currentColor' className='block leading-none' />
               </span>
