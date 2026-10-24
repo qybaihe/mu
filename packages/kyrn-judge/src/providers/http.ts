@@ -1,6 +1,20 @@
+import type { JudgeErrorKind } from "../errors.ts";
 import type { JudgeWarning } from "../types.ts";
 
 export const MAX_ERROR_MESSAGE_LENGTH = 300;
+
+/**
+ * The kind of a failed call by its HTTP status, for the hosted judges (TypeSafe, OpenAI). A 403 that speaks of credit,
+ * payment, billing or quota is an account that can't pay yet; any other 403 is a key without access.
+ */
+export function errorKindForStatus(status: number, message: string): JudgeErrorKind {
+	if (status === 401) return "auth";
+	if (status === 402) return "payment_required";
+	if (status === 403) return /credit|payment|billing|quota/i.test(message) ? "payment_required" : "auth";
+	if (status === 429) return "rate_limited";
+	if (status >= 500) return "server";
+	return "bad_request";
+}
 
 /** Reads `{error: {message}}`, `{error: "..."}`, `{message}` or `{detail: "..."}`; returns "" when there is none. */
 export function messageFromErrorBody(body: unknown): string {

@@ -15,6 +15,7 @@ import { CONFIG_FILE, LEGACY_CONFIG_FILE, muEnv } from "./naming.ts";
  * - `llm`:     a generative model from the host's model registry, prompted to answer as JSON.
  * - `classifier`: a classifier model from the host's model catalog (Jev on OpenCode Zen or Cloudflare, Clef, the
  *              System One models on OpenRouter, a llama.cpp classifier), reached with the host's own credentials.
+ * - `openai`:  OpenAI's decision model (`gpt-6-luna`) through its Decisions API, with an OpenAI API key.
  * - `mock`:    neutral answers, for tests and offline work.
  */
 export interface JudgeConfig {
@@ -25,17 +26,20 @@ export interface JudgeConfig {
 	 * CLOUDFLARE_ACCOUNT_ID are, else the Vercel AI Gateway with the key pi keeps for it. `typesafe` is Jev over
 	 * System One at `baseUrl` (TypeSafe's own, OpenRouter's, a relay's), `gateway` through the Vercel AI Gateway.
 	 * `clm` is CLM-8B (github.com/Contrastive-LM/CLM) at the address of a `clm-serve`, which speaks System One too.
+	 * `openai` is OpenAI's decision model through `POST /v1/decisions`.
 	 */
-	readonly type: "jev" | "typesafe" | "clm" | "gateway" | "local" | "http" | "llm" | "classifier" | "mock";
+	readonly type: "jev" | "typesafe" | "clm" | "gateway" | "local" | "http" | "llm" | "classifier" | "openai" | "mock";
 	/**
-	 * jev, typesafe, gateway: judge model id. clm: a model the server serves, default "clm-latest". llm and
-	 * classifier: "provider/model-id", e.g. "opencode/jev-1.13" or "cloudflare-workers-ai/@cf/cloudflare/clef".
+	 * jev, typesafe, gateway: judge model id. clm: a model the server serves, default "clm-latest". openai: default
+	 * "gpt-6-luna". llm and classifier: "provider/model-id", e.g. "opencode/jev-1.13" or
+	 * "cloudflare-workers-ai/@cf/cloudflare/clef".
 	 */
 	readonly model?: string;
 	/**
 	 * gateway, local, http, clm, and the System One route (`typesafe`, or `jev` when a TypeSafe key is set).
 	 * For System One this is the endpoint URL; empty uses TypeSafe's own. For clm, the server's address
-	 * (`http://host:8700` is enough); empty is http://127.0.0.1:8700.
+	 * (`http://host:8700` is enough); empty is http://127.0.0.1:8700. For openai, the API's address (an Azure
+	 * resource's `…/openai/v1`, a relay's); empty is https://api.openai.com/v1.
 	 */
 	readonly baseUrl?: string;
 	/** http: request path, default "/evaluate". */
@@ -45,7 +49,9 @@ export interface JudgeConfig {
 	 * file. A typesafe judge keyed by MU_JUDGE_OPENROUTER_API_KEY, MU_JUDGE_CUSTOM_API_KEY or MU_JUDGE_CLM_API_KEY needs
 	 * its own `baseUrl`: those keys belong to another service and never go to TypeSafe. clm reads MU_JUDGE_CLM_API_KEY
 	 * unless told otherwise, and calls without a key when it is not set: a CLM server asks for one only when it was
-	 * started with CLM_API_KEY.
+	 * started with CLM_API_KEY. openai reads MU_JUDGE_OPENAI_KEY unless told otherwise; at OpenAI's own address, without
+	 * it, the key of mu's `openai` model provider (`/login`, `mu setup`, OPENAI_API_KEY). Neither the provider's key nor
+	 * a key of another judge service is ever sent to another address.
 	 */
 	readonly apiKeyEnv?: string;
 	/** llm: thinking level for the judge model, default "off". */
@@ -57,7 +63,7 @@ export interface JudgeConfig {
 export interface KyrnConfig {
 	/** Judges tried in order; each later one only sees what the earlier ones left uncertain. */
 	readonly tiers: readonly string[];
-	/** Named judges, merged over the built-in ones (`jev` and its routes, `clef`, `clm`, `laya`, `mude`, `mock`). */
+	/** Named judges, merged over the built-in ones (`jev` and its routes, `clef`, `clm`, `laya`, `mude`, `openai`, `mock`). */
 	readonly judges: Readonly<Record<string, JudgeConfig>>;
 	/** `default` plus per-decision overrides keyed by spec id. */
 	readonly modes: Readonly<Record<string, DecisionMode>>;
@@ -125,6 +131,8 @@ export const BUILT_IN_JUDGES: Readonly<Record<string, JudgeConfig>> = {
 		apiKeyEnv: "MU_JUDGE_MUDE_KEY",
 		timeoutMs: 4000,
 	},
+	// OpenAI's decision model, gpt-6-luna, through the Decisions API. Not measured on mu's questions yet.
+	openai: { type: "openai" },
 	mock: { type: "mock" },
 };
 
@@ -163,6 +171,7 @@ const JUDGE_TYPES: readonly string[] = [
 	"http",
 	"llm",
 	"classifier",
+	"openai",
 	"mock",
 ] satisfies JudgeConfig["type"][];
 

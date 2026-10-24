@@ -63,7 +63,7 @@ mu 看不懂的部分會退回預設值，而不是讓 mu 停下。完全無法�
 | `MU_PERMISSIONS` | 這次執行的權限模式：`full`、`judge` 或 `ask` |
 | `MU_LOCAL_JUDGE_URL` | 本機判定器伺服器的位址，用於 `mu judge start` 啟動的那個之外的伺服器 |
 
-雲端判定器的金鑰，每個只送給它自己的服務：`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`、`MU_JUDGE_CLM_API_KEY`。
+雲端判定器的金鑰，每個只送給它自己的服務：`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`、`MU_JUDGE_CLM_API_KEY`、`MU_JUDGE_OPENAI_KEY`。
 
 時間：
 

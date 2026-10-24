@@ -130,6 +130,13 @@ export {
 export { DEFAULT_LOCAL_JUDGE_URL, LocalJudgeProvider, type LocalJudgeProviderOptions } from "./providers/local.ts";
 export { MockJudgeProvider, type MockResponder } from "./providers/mock.ts";
 export {
+	OPENAI_DECISIONS_BASE_URL,
+	OPENAI_DECISIONS_DEFAULT_MODEL,
+	OPENAI_JUDGE_KEY,
+	OpenAIDecisionsJudgeProvider,
+	type OpenAIDecisionsJudgeProviderOptions,
+} from "./providers/openai-decisions.ts";
+export {
 	TYPESAFE_BASE_URL,
 	TYPESAFE_DEFAULT_MODEL,
 	TypeSafeJudgeProvider,

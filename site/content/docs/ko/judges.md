@@ -65,6 +65,22 @@ Jev는 TypeSafe가 만든 판정 모델로, 바로 이런 질문을 위해 만�
 
 **속도와 비용.** 만든 사람들의 실제 세션에서 잰 값이에요. 웜 연결에서 질문 하나에 약 0.3초, 도구 출력 16청크를 요청 하나로 판정하는 데 0.44초가 걸렸고, 상태는 한 번만 과금됐어요. 세션을 쓰는 동안에는 50초마다 아주 작은 질문 하나로 연결을 웜 상태로 유지해서, 턴 전의 질문들이 연결에 드는 1~3초를 건너뛰어요.
 
+## OpenAI의 판정 모델 {#openai}
+
+내장된 `openai` 판정기는 OpenAI의 [Decisions API](https://developers.openai.com/api/docs/guides/decisions)(`POST /v1/decisions`)로 `gpt-6-luna`에 물어요. OpenAI API 키가 필요해요. 키는 `MU_JUDGE_OPENAI_KEY`예요. 없으면 mu가 `openai` 프로바이더용으로 이미 가진 OpenAI API 키(`mu setup`, `/login` 또는 `OPENAI_API_KEY`)를 써요. ChatGPT로 로그인한 건 해당되지 않아요. `mu setup --judge openai`나 앱의 판정기 페이지에서 설정하거나 `mu.json`에 적으세요.
+
+```json
+{ "tiers": ["openai"] }
+```
+
+OpenAI는 캐시되지 않은 입력 토큰 100만 개에 0.10달러를 받고, 출력은 무료예요. mu의 질문으로는 아직 측정하지 않았어요.
+
+Azure 리소스나 중계 서비스를 거쳐 쓰려면 `baseUrl`과 전용 키를 지정하세요. mu의 `openai` 프로바이더 키는 `api.openai.com`으로만 보내져요.
+
+```json
+{ "judges": { "azure": { "type": "openai", "baseUrl": "https://example.openai.azure.com/openai/v1", "apiKeyEnv": "MU_JUDGE_AZURE_KEY" } } }
+```
+
 ## Laya, 여러분의 컴퓨터에서 {#laya}
 
 로컬에서 돌아가고 네트워크에는 전혀 닿지 않는 322M 파라미터 판정기예요.
@@ -106,6 +122,7 @@ Laya는 단순한 술어(이 글이 오류를 설명하는가?)에는 믿을 만
 | `classifier` | pi 카탈로그의 분류 모델 |
 | `local` | Laya와 호환되는 로컬 서버 |
 | `clm` | `clm-serve` |
+| `openai` | `baseUrl`의 OpenAI Decisions API(기본값은 OpenAI 자체) |
 
 키는 절대 파일에 넣지 않아요. `apiKeyEnv`는 키를 담은 환경 변수의 이름이고, 그 변수는 여러분의 환경이나 mu의 `.env`에 설정해요.
 

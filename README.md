@@ -161,6 +161,7 @@ Every point, with its feature switch and options: [docs/reference/decision-point
 
   Measured in the authors' own sessions: a warm question takes about 0.3 s over HTTP/2, and 16 chunks of tool output are judged in a single request in 0.44 s, with the shared state billed once.
 - **mude 1.0** (local, a Mac with Apple silicon) is mu's own decision model, optimized for coding ([more below](#mude-10-a-decision-model-optimized-for-coding)).
+- **OpenAI's decision model**, `gpt-6-luna`, answers through OpenAI's [Decisions API](https://developers.openai.com/api/docs/guides/decisions) with an OpenAI API key: `MU_JUDGE_OPENAI_KEY`, or the OpenAI key mu already has. Pick it with `mu setup --judge openai` or under Settings → Judges ([details](docs/judges.md#openais-decision-model)).
 - **Laya** (local, macOS on Apple silicon) is a 322M-parameter judge that runs on your machine and never touches the network. It's reliable on simple predicates and weaker on meta-judgments, so run it in shadow alongside your current judge and read the ledger before you give it a decision point.
 - **Any classifier model** in pi's catalog can serve as a tier: `classifier:<provider>/<model>`. Examples include Cloudflare's Clef (`clef`, `clef-flash`), the System One models on OpenRouter and the Vercel AI Gateway, or a llama.cpp classifier.
 - **Any LLM** can serve as a tier: `llm:<provider>/<model>`.
@@ -353,7 +354,7 @@ Requires Node.js 22.19 or newer. `mu -p "prompt"` runs a single prompt and print
 | Command | What it does |
 | --- | --- |
 | `/status` | Show the judges, each decision point's mode, what was kept out of the context and the latest verdicts |
-| `/mu judge <judges>` | Set which judges answer, in which order: `laya`, `laya,jev`, `jev-opencode-free`, `classifier:<provider>/<model>`, `llm:<provider>/<model>` |
+| `/mu judge <judges>` | Set which judges answer, in which order: `laya`, `laya,jev`, `jev-opencode-free`, `openai`, `classifier:<provider>/<model>`, `llm:<provider>/<model>` |
 | `/mu route <point> <judge>` | Give one decision point its own judge |
 | `/mu mode <point> <off\|shadow\|active>` | Switch one decision point's mode |
 | `/frame` | Show the task frame: the goal, your constraints with their source and the acceptance criteria |

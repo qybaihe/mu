@@ -137,6 +137,7 @@ mu                  # 在当前目录开一个会话
 
 - **Jev**：TypeSafe 托管的判定模型。有边界的问题，答案带概率。可以经 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI，或任何支持同一协议的服务调用，每个服务有自己的密钥（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`）：在桌面端的「判定器」页选一个，默认用第一个设置了密钥的。一个密钥都没有时，默认由 OpenCode Zen 上限时免费的 Jev 1.13 回答：判定要读的内容会发给 OpenCode，它不拿来训练模型，mu 每天提示一次。配上密钥（`mu setup`，或「判定器」页）后，下一个问题起就用你的密钥。在作者自己的会话里实测：HTTP/2 上一个热连接的问题约 0.3 秒；16 块工具输出并成一个请求判完 0.44 秒，状态只计费一次。
 - **mude 1.0**（本地，Apple 芯片的 Mac）：mu 自己的决策模型，针对编程场景优化，见[下文](#mude-10针对编程场景优化的决策模型)。
+- **OpenAI 的决策模型** `gpt-6-luna`。通过 OpenAI 的 [Decisions API](https://developers.openai.com/api/docs/guides/decisions) 回答，用 OpenAI 的 API 密钥（`MU_JUDGE_OPENAI_KEY`，或 mu 已有的 OpenAI 密钥）。用 `mu setup --judge openai` 或在设置 → 判定器里选它。
 - **Laya**（本地）。一个 3.22 亿参数的判定器，在你的机器上跑，不走网络。简单谓词上可靠，元判断上偏弱：先让它以影子模式和你当前的判定器并行跑，看过流水再把判定点交给它。
 - **pi 模型目录里的任何分类模型**，作为一级：`classifier:<提供商>/<模型>`。比如 Cloudflare 的 Clef（`clef`、`clef-flash`）、OpenRouter 和 Vercel AI Gateway 上的 System One 模型、llama.cpp 的分类模型。
 - **任何大模型**，作为一级：`llm:<提供商>/<模型>`。
@@ -300,7 +301,7 @@ mu doctor     # 检查安装、判定器和各项连接
 | 命令 | 做什么 |
 | --- | --- |
 | `/status` | 判定器、各判定点的模式、没放进上下文的内容、最近的判定 |
-| `/mu judge <判定器>` | 由哪些判定器回答、按什么顺序：`laya`、`laya,jev`、`jev-opencode-free`、`classifier:<提供商>/<模型>`、`llm:<提供商>/<模型>` |
+| `/mu judge <判定器>` | 由哪些判定器回答、按什么顺序：`laya`、`laya,jev`、`jev-opencode-free`、`openai`、`classifier:<提供商>/<模型>`、`llm:<提供商>/<模型>` |
 | `/mu route <判定点> <判定器>` | 让某一个判定点用自己的判定器 |
 | `/mu mode <判定点> <off\|shadow\|active>` | 切换某一个判定点 |
 | `/frame` | 任务帧：目标、你的约束及其出处、验收条件 |

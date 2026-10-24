@@ -65,6 +65,22 @@ Jev は TypeSafe による判定モデルで、この種の問いのために作
 
 **速度とコスト。** 作者たち自身のセッションでの実測では、ウォームな接続で 1 問あたり約 0.3 秒、ツール出力 16 チャンクを 1 リクエストで判定して 0.44 秒で、状態の課金は 1 回だけでした。セッションの使用中は、50 秒ごとに小さな問いを 1 つ送って接続をウォームに保つので、ターン前の問いは接続にかかる 1〜3 秒を省けます。
 
+## OpenAI の判定モデル {#openai}
+
+組み込みの `openai` 判定器は、OpenAI の [Decisions API](https://developers.openai.com/api/docs/guides/decisions)（`POST /v1/decisions`）で `gpt-6-luna` に問い合わせます。OpenAI の API キーが必要です。キーは `MU_JUDGE_OPENAI_KEY` です。設定されていなければ、mu が `openai` プロバイダー用にすでに持っている OpenAI の API キー（`mu setup`、`/login`、`OPENAI_API_KEY` のいずれか）を使います。ChatGPT でのサインインはこれに含まれません。`mu setup --judge openai` かアプリの「判定器」ページで設定するか、`mu.json` に書きます。
+
+```json
+{ "tiers": ["openai"] }
+```
+
+OpenAI の料金は、キャッシュされていない入力 100 万トークンあたり 0.10 ドルで、出力は無料です。mu の問いではまだ測っていません。
+
+Azure のリソースや中継サービス経由で使うときは、`baseUrl` と専用のキーを指定します。mu の `openai` プロバイダーのキーは `api.openai.com` にしか送られません。
+
+```json
+{ "judges": { "azure": { "type": "openai", "baseUrl": "https://example.openai.azure.com/openai/v1", "apiKeyEnv": "MU_JUDGE_AZURE_KEY" } } }
+```
+
 ## Laya（ローカル） {#laya}
 
 322M パラメータの判定器で、ローカルで動き、ネットワークには一切触れません。
@@ -106,6 +122,7 @@ Laya は単純な述語（このテキストはエラーを説明しているか
 | `classifier` | pi のカタログにある分類モデル |
 | `local` | Laya 互換のローカルサーバー |
 | `clm` | `clm-serve` |
+| `openai` | `baseUrl` の OpenAI Decisions API（既定は OpenAI 自身） |
 
 キーはファイルに書きません。`apiKeyEnv` には、キーを持つ環境変数の名前を書きます。その変数は、自分の環境か mu の `.env` で設定します。
 

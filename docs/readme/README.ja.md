@@ -136,6 +136,7 @@ mu                  # 現在のディレクトリでセッションを始める
 ## 判定器
 
 - **Jev**（クラウド）。TypeSafe がホストする判定モデルで、範囲の決まった問いに確率付きで答えます。TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI、または同じプロトコルを話す任意のサービスから呼び出せて、サービスごとにキーを持ちます（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` と `CLOUDFLARE_ACCOUNT_ID`）。デスクトップアプリの「判定器」ページで選べて、既定ではキーが設定されている最初のものを使います。キーが一つもなければ、OpenCode Zen 上で期間限定無料の Jev 1.13 が答えます。判定に必要な内容は OpenCode に送られますが、モデルの学習には使われません。mu はそのことを 1 日 1 回知らせます。キーを設定すると（`mu setup`、または「判定器」ページ）、次の問いからそのキーを使います。作者たち自身のセッションでの実測では、HTTP/2 のウォームな接続で 1 問あたり約 0.3 秒、ツール出力 16 チャンクを 1 リクエストで判定して 0.44 秒で、状態の課金は 1 回だけでした。
+- **OpenAI の判定モデル** `gpt-6-luna`。OpenAI の [Decisions API](https://developers.openai.com/api/docs/guides/decisions) で、OpenAI の API キー（`MU_JUDGE_OPENAI_KEY`、または mu がすでに持っている OpenAI のキー）を使って答えます。`mu setup --judge openai` か、設定 → 判定器で選べます。
 - **Laya**（ローカル）。322M パラメータの判定器で、あなたのマシンで動き、ネットワークには一切触れません。単純な述語には強く、メタ判断には弱めです。判定ポイントを任せる前に、シャドーモードで今の判定器と並べて動かし、台帳を確認してください。
 - **pi のモデルカタログにある任意の分類モデル**も、階層の一つとして使えます：`classifier:<provider>/<model>`。Cloudflare の Clef（`clef`、`clef-flash`）、OpenRouter と Vercel AI Gateway の System One モデル、llama.cpp の分類モデルなど。
 - **任意の LLM** も、階層の一つとして使えます：`llm:<provider>/<model>`。
@@ -283,7 +284,7 @@ Node 22.19 以降が必要です。`mu -p "prompt"` は 1 回だけ実行して�
 | コマンド | 内容 |
 | --- | --- |
 | `/status` | 判定器、各判定ポイントのモード、コンテキストに入れなかったもの、最新の判定 |
-| `/mu judge <judges>` | どの判定器がどの順で答えるか：`laya`、`laya,jev`、`jev-opencode-free`、`classifier:<provider>/<model>`、`llm:<provider>/<model>` |
+| `/mu judge <judges>` | どの判定器がどの順で答えるか：`laya`、`laya,jev`、`jev-opencode-free`、`openai`、`classifier:<provider>/<model>`、`llm:<provider>/<model>` |
 | `/mu route <point> <judge>` | 一つの判定ポイントに専用の判定器を割り当てる |
 | `/mu mode <point> <off\|shadow\|active>` | 一つの判定ポイントを切り替える |
 | `/frame` | タスクフレーム：目標、あなたの制約とその出どころ、受け入れ条件 |

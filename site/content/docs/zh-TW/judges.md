@@ -65,6 +65,22 @@ Jev 是 TypeSafe 做的判定模型，專門回答這類問題。內建的 `jev`
 
 **速度和成本。** 在作者自己的工作階段裡實測：熱連線上一個問題約 0.3 秒；16 塊工具輸出在一個請求裡判完用 0.44 秒，狀態只計費一次。工作階段使用中時，每 50 秒問一個很小的問題讓連線保持熱的，所以一輪開始前的提問能省掉 1 到 3 秒的連線建立時間。
 
+## OpenAI 的決策模型 {#openai}
+
+內建的 `openai` 判定器透過 OpenAI 的 [Decisions API](https://developers.openai.com/api/docs/guides/decisions)（`POST /v1/decisions`）向 `gpt-6-luna` 提問，使用 OpenAI 的 API 金鑰。它的金鑰是 `MU_JUDGE_OPENAI_KEY`；沒有設定時，使用 mu 已經為 `openai` 提供者保存的 OpenAI API 金鑰（來自 `mu setup`、`/login` 或 `OPENAI_API_KEY`），用 ChatGPT 登入的不算。`mu setup --judge openai` 或桌面端的「判定器」頁可以設定它，也可以寫進 `mu.json`：
+
+```json
+{ "tiers": ["openai"] }
+```
+
+OpenAI 依未命中快取的輸入 token 收費，每百萬 0.10 美元，輸出不收費。還沒有在 mu 的問題上測過。
+
+要透過 Azure 資源或中繼服務存取它，給它一個 `baseUrl` 和它自己的金鑰。mu 的 `openai` 提供者的金鑰只會送到 `api.openai.com`：
+
+```json
+{ "judges": { "azure": { "type": "openai", "baseUrl": "https://example.openai.azure.com/openai/v1", "apiKeyEnv": "MU_JUDGE_AZURE_KEY" } } }
+```
+
 ## Laya（本機） {#laya}
 
 一個 3.22 億參數的判定器，在你的機器上執行，從不連網。
@@ -106,6 +122,7 @@ Laya 在簡單的述詞上可靠（這段文字是不是在描述一個錯誤？
 | `classifier` | pi 模型目錄裡的一個分類模型 |
 | `local` | 一個相容 Laya 的本機伺服器 |
 | `clm` | 一個 `clm-serve` |
+| `openai` | `baseUrl` 處的 OpenAI Decisions API，預設是 OpenAI 自己的 |
 
 金鑰從不寫進檔案：`apiKeyEnv` 寫的是存放金鑰的環境變數名稱，這個變數設在你的環境裡，或 mu 的 `.env` 裡。
 

@@ -63,7 +63,7 @@ Judges and modes:
 | `MU_PERMISSIONS` | Permission mode for this run: `full`, `judge` or `ask` |
 | `MU_LOCAL_JUDGE_URL` | Address of a local judge server other than the one `mu judge start` runs |
 
-Keys for the hosted judges, each sent only to its own service: `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`, `MU_JUDGE_CLM_API_KEY`.
+Keys for the hosted judges, each sent only to its own service: `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`, `MU_JUDGE_CLM_API_KEY`, `MU_JUDGE_OPENAI_KEY`.
 
 Time:
 

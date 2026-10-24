@@ -14,6 +14,7 @@ import { CompositeLedger, type LedgerRecord, type LedgerSink, MemoryLedger } fro
 import type { ClassifierCall } from "../providers/classifier.ts";
 import type { FreeJevOutcome } from "../providers/free-jev.ts";
 import type { LlmCompletion } from "../providers/llm.ts";
+import { isOpenAIAddress } from "../providers/openai-decisions.ts";
 import { buildJudge, resolveJudgeConfig } from "../registry.ts";
 import type { Capability } from "../types.ts";
 import { createJudgeFetch, type JudgeFetch } from "./judge-fetch.ts";
@@ -26,6 +27,7 @@ import {
 
 export const LEDGER_ENTRY_TYPE = "kyrn.decision";
 const GATEWAY_PROVIDER_ID = "vercel-ai-gateway";
+const OPENAI_PROVIDER_ID = "openai";
 const STATUS_KEY = "kyrn";
 
 export function textOf(content: unknown): string {
@@ -295,6 +297,16 @@ export class KyrnRuntime {
 				gatewayApiKey: async () =>
 					(await this.latestCtx?.modelRegistry.getApiKeyForProvider(GATEWAY_PROVIDER_ID)) ??
 					process.env.AI_GATEWAY_API_KEY,
+				openaiApiKey: async () => {
+					const registry = this.latestCtx?.modelRegistry;
+					const models = registry?.getAll().filter((model) => model.provider === OPENAI_PROVIDER_ID) ?? [];
+					// A models.json that moves the `openai` provider elsewhere makes its key that address's.
+					if (models.some((model) => !isOpenAIAddress(model.baseUrl))) return undefined;
+					// The Decisions API takes API keys only, never the token of a Sign in with ChatGPT.
+					const signedIn = models.length > 0 && registry?.isUsingOAuth(models[0]) === true;
+					const stored = signedIn ? undefined : await registry?.getApiKeyForProvider(OPENAI_PROVIDER_ID);
+					return stored ?? process.env.OPENAI_API_KEY;
+				},
 				llm: (model, options) => this.llm(model, options),
 				classify: (model) => this.classifier(model),
 				freeJev: (outcome) => this.onFreeJev?.(outcome),

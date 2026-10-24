@@ -1,6 +1,6 @@
 import { JudgeError } from "./errors.ts";
 import type { JudgeCall, JudgeLike, JudgeResult, JudgeTierReport } from "./judge.ts";
-import { validateQuestions } from "./judge.ts";
+import { addUsage, validateQuestions } from "./judge.ts";
 import { DEFAULT_THRESHOLDS, neutralAnswer, type Thresholds } from "./policy.ts";
 import type { Answer, AnswersFor, Capability, JudgeUsage, JudgeWarning, Question, Questions } from "./types.ts";
 
@@ -113,8 +113,7 @@ export class CascadeJudge implements JudgeLike {
 			}
 
 			requests += result.requests;
-			usage.inputTokens = (usage.inputTokens ?? 0) + (result.usage.inputTokens ?? 0);
-			usage.outputTokens = (usage.outputTokens ?? 0) + (result.usage.outputTokens ?? 0);
+			addUsage(usage, result.usage);
 			warnings.push(...result.warnings);
 			modelId ??= result.modelId;
 
