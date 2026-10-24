@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { BUILT_IN_JUDGES, parseConfig } from "../src/config.ts";
 import { isJudgeError } from "../src/errors.ts";
-import { decisionsEndpoint, isOpenAIAddress, OpenAIDecisionsJudgeProvider } from "../src/providers/openai-decisions.ts";
+import {
+	decisionsEndpoint,
+	isOpenAIAddress,
+	OPENAI_DECISIONS_DEFAULT_MODEL,
+	OPENAI_DECISIONS_MODELS,
+	OpenAIDecisionsJudgeProvider,
+	type OpenAIKeyProblem,
+} from "../src/providers/openai-decisions.ts";
 import { buildJudge, resolveJudgeConfig } from "../src/registry.ts";
 import type { Questions } from "../src/types.ts";
 
@@ -202,6 +209,115 @@ describe("OpenAIDecisionsJudgeProvider", () => {
 		expect(seen.calls).toBe(0);
 	});
 
+	it("reads a whole Decision as the API reference writes it, extra usage fields and all", async () => {
+		// developers.openai.com/api/reference/typescript/resources/decisions/methods/create, "Returns".
+		const decision = {
+			answers: [
+				{ name: "edit", probability: 0.12, type: "predicate" },
+				{
+					choice: "other",
+					confidence: 0.66,
+					name: "kind",
+					probabilities: [
+						{ probability: 0.34, value: "chat" },
+						{ probability: 0.66, value: "other" },
+					],
+					type: "choice",
+				},
+				{
+					confidence: 0.9,
+					name: "size",
+					probabilities: [
+						{ label: "small", probability: 0.9, value: 0 },
+						{ label: "medium", probability: 0.08, value: 1 },
+						{ label: "large", probability: 0.02, value: 2 },
+					],
+					score: 0.12,
+					type: "score",
+				},
+			],
+			model: "gpt-6-luna",
+			usage: {
+				input_tokens: 2048,
+				input_tokens_details: { cache_write_tokens: 0, cached_tokens: 1024 },
+				output_tokens: 0,
+				output_tokens_details: { reasoning_tokens: 0 },
+				total_tokens: 2048,
+			},
+		};
+		const provider = new OpenAIDecisionsJudgeProvider({ apiKey: "k", fetch: fakeFetch(200, decision) });
+		const result = await provider.evaluate({ state: "a question about the code", questions });
+		expect(result.answers).toEqual({
+			edit: { type: "boolean", probability: 0.12 },
+			kind: { type: "choice", choice: "other", probabilities: { chat: 0.34, other: 0.66 }, confidence: 0.66 },
+			size: { type: "score", score: 0.12, probabilities: { 0: 0.9, 1: 0.08, 2: 0.02 }, confidence: 0.9 },
+		});
+		expect(result.usage).toEqual({
+			inputTokens: 2048,
+			outputTokens: 0,
+			cachedInputTokens: 1024,
+			cacheWriteTokens: 0,
+		});
+		expect(result.modelId).toBe("gpt-6-luna");
+	});
+
+	it("serves the one model the API reference lists, by default", () => {
+		expect(OPENAI_DECISIONS_MODELS).toEqual(["gpt-6-luna"]);
+		expect(OPENAI_DECISIONS_DEFAULT_MODEL).toBe("gpt-6-luna");
+		expect(new OpenAIDecisionsJudgeProvider({ apiKey: "k" }).id).toBe("openai:gpt-6-luna");
+	});
+
+	it("never sends what the API would turn down: 1–400 questions, 2–255 choices, 2–10 levels", async () => {
+		const seen: Seen = { calls: 0 };
+		const provider = new OpenAIDecisionsJudgeProvider({ apiKey: "k", fetch: answered(seen) });
+		const ask = (asked: Questions) =>
+			provider.evaluate({ state: "s", questions: asked }).catch((caught: unknown) => caught);
+		const predicates = (count: number): Questions =>
+			Object.fromEntries(
+				Array.from({ length: count }, (_, index) => [`q${index}`, { type: "boolean", instructions: "Yes?" }]),
+			);
+		expect(await ask({})).toMatchObject({
+			kind: "bad_request",
+			message: "OpenAI's Decisions API takes 1 to 400 questions, not 0",
+		});
+		expect(await ask(predicates(401))).toMatchObject({
+			message: "OpenAI's Decisions API takes 1 to 400 questions, not 401",
+		});
+		expect(
+			await ask({ one: { type: "choice", instructions: "Which?", criteria: { only: "The only one" } } }),
+		).toMatchObject({
+			kind: "bad_request",
+			message: 'OpenAI\'s Decisions API takes 2 to 255 choices, not 1 for "one"',
+		});
+		const levels = Array.from({ length: 11 }, (_, index) => `level ${index}`);
+		expect(await ask({ fine: { type: "score", instructions: "How fine?", criteria: levels } })).toMatchObject({
+			kind: "bad_request",
+			message: 'OpenAI\'s Decisions API takes 2 to 10 levels, not 11 for "fine"',
+		});
+		expect(seen.calls).toBe(0);
+		await provider.evaluate({ state: "s", questions: predicates(400) }).catch(() => undefined);
+		expect(seen.calls).toBe(1);
+	});
+
+	it("tells its host when the key is gone or OpenAI turns it down, and not for a billing or passing failure", async () => {
+		const told: OpenAIKeyProblem[] = [];
+		const tell = (problem: OpenAIKeyProblem) => told.push(problem);
+		const statuses = [
+			[401, { error: { message: "Incorrect API key provided." } }],
+			[403, { error: { message: "Your account does not have access to the Decisions API." } }],
+			[403, { error: { message: "You exceeded your current quota, check your billing details." } }],
+			[429, { error: { message: "Rate limit reached." } }],
+			[500, {}],
+		] as const;
+		await failure(new OpenAIDecisionsJudgeProvider({ apiKey: () => "", fetch: answered(), onKeyProblem: tell }));
+		for (const [status, body] of statuses) {
+			await failure(
+				new OpenAIDecisionsJudgeProvider({ apiKey: "k", fetch: fakeFetch(status, body), onKeyProblem: tell }),
+			);
+		}
+		expect(told).toEqual(["missing", "rejected", "rejected"]);
+	});
+
 	it("posts to the Decisions endpoint of any address that serves it, and names that host", async () => {
 		expect(decisionsEndpoint(undefined)).toBe("https://api.openai.com/v1/decisions");
 		expect(decisionsEndpoint("")).toBe("https://api.openai.com/v1/decisions");
@@ -260,6 +376,20 @@ describe("the openai judge", () => {
 		expect(bearer(seen)).toBe("Bearer judge-key");
 		// The cache counts reach the result through the judge and the cascade.
 		expect(result.usage).toEqual({ inputTokens: 300, outputTokens: 0, cachedInputTokens: 120, cacheWriteTokens: 40 });
+	});
+
+	it("tells the host when it has no key at all: signed out of OpenAI, nothing in the environment", async () => {
+		const told: OpenAIKeyProblem[] = [];
+		const seen: Seen = { calls: 0 };
+		const built = buildJudge(parseConfig({ tiers: ["openai"] }), {
+			env: {},
+			openaiApiKey: () => undefined,
+			openaiKeyProblem: (problem) => told.push(problem),
+			fetch: answered(seen),
+		});
+		await built.judge.evaluate({ state: "s", questions }).catch(() => undefined);
+		expect(told).toEqual(["missing"]);
+		expect(seen.calls).toBe(0);
 	});
 
 	it("at OpenAI's own address, falls back to the openai provider's key: the host's, else OPENAI_API_KEY", async () => {

@@ -8,7 +8,12 @@ import { type ApiKeyResolver, GatewayJudgeProvider } from "./providers/gateway.t
 import { HttpJudgeProvider } from "./providers/http-judge.ts";
 import { type LlmCompletion, LlmJudgeProvider } from "./providers/llm.ts";
 import { MockJudgeProvider } from "./providers/mock.ts";
-import { isOpenAIAddress, OPENAI_JUDGE_KEY, OpenAIDecisionsJudgeProvider } from "./providers/openai-decisions.ts";
+import {
+	isOpenAIAddress,
+	OPENAI_JUDGE_KEY,
+	OpenAIDecisionsJudgeProvider,
+	type OpenAIKeyProblem,
+} from "./providers/openai-decisions.ts";
 import { CLM_DEFAULT_MODEL, clmEndpoint, TypeSafeJudgeProvider } from "./providers/typesafe.ts";
 import type { JudgeProvider } from "./types.ts";
 
@@ -20,6 +25,8 @@ export interface JudgeHost {
 	 * OpenAI's own address that has no key of its own. Without it, OPENAI_API_KEY from `env`.
 	 */
 	openaiApiKey?: ApiKeyResolver;
+	/** Told when an `openai` judge has no key any more, or OpenAI turns its key down. */
+	openaiKeyProblem?: (problem: OpenAIKeyProblem) => void;
 	/** The `fetch` judge providers call with, e.g. one that keeps its connections open between calls. */
 	fetch?: typeof fetch;
 	/** A completion function bound to "provider/model-id", or undefined when the host has no such model. */
@@ -157,6 +164,7 @@ function createProvider(name: string, judge: JudgeConfig, host: JudgeHost): Judg
 				model: judge.model,
 				baseUrl: judge.baseUrl,
 				fetch: host.fetch,
+				onKeyProblem: host.openaiKeyProblem,
 			});
 		}
 		case "jev": {

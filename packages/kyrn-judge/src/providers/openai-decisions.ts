@@ -12,13 +12,25 @@ import type { ApiKeyResolver } from "./gateway.ts";
 import { errorKindForStatus, MAX_ERROR_MESSAGE_LENGTH, messageFromErrorBody } from "./http.ts";
 
 /**
- * OpenAI's Decisions API (developers.openai.com/api/docs/guides/decisions, generally available since 2026-10-22):
- * `POST /v1/decisions` with an OpenAI API key, and `gpt-6-luna`, the one model it serves.
+ * OpenAI's Decisions API (developers.openai.com/api/docs/guides/decisions; the request and answer shapes are in
+ * developers.openai.com/api/reference/typescript/resources/decisions/methods/create): `POST /v1/decisions` with an
+ * OpenAI API key. "Only `gpt-6-luna` is supported."
  */
 export const OPENAI_DECISIONS_BASE_URL = "https://api.openai.com/v1";
+/** The models OpenAI's Decisions API serves, as its reference lists them. */
+export const OPENAI_DECISIONS_MODELS: readonly string[] = ["gpt-6-luna"];
 export const OPENAI_DECISIONS_DEFAULT_MODEL = "gpt-6-luna";
 /** The judge's own key, set in Settings → Judges or by `mu setup`. */
 export const OPENAI_JUDGE_KEY = "MU_JUDGE_OPENAI_KEY";
+
+/** The API's limits per request: 1–400 questions, 2–255 choices to a choice, 2–10 levels to a score. */
+const LIMITS = { questions: [1, 400], choices: [2, 255], levels: [2, 10] } as const;
+
+/**
+ * Why the judge has no usable key: none is set any more (the person signed out of OpenAI or removed it), or OpenAI
+ * turned the one it has down (401, or a 403 that is not about billing: revoked, or no access to the Decisions API).
+ */
+export type OpenAIKeyProblem = "missing" | "rejected";
 
 /**
  * The Decisions endpoint at an address written as `https://host`, `https://host/v1` (OpenAI's, or a relay's or
@@ -49,6 +61,8 @@ export interface OpenAIDecisionsJudgeProviderOptions {
 	/** OpenAI's API unless set: a relay or proxy that serves the same Decisions endpoint. */
 	baseUrl?: string;
 	fetch?: typeof fetch;
+	/** Told when the call fails for want of a usable key, before the call's own error is thrown. */
+	onKeyProblem?: (problem: OpenAIKeyProblem) => void;
 }
 
 type WireQuestion =
@@ -146,6 +160,19 @@ function fromDecisionsAnswer(question: Question, raw: Record<string, unknown> | 
 	return { type: "choice", choice: raw.choice, probabilities, confidence };
 }
 
+/** What the API would turn down (HTTP 400), named before anything is sent. */
+function overLimit(questions: readonly WireQuestion[]): string | undefined {
+	const within = (count: number, [min, max]: readonly [number, number]) => count >= min && count <= max;
+	if (!within(questions.length, LIMITS.questions)) return `takes 1 to 400 questions, not ${questions.length}`;
+	for (const question of questions) {
+		if (question.type === "choice" && !within(question.choices.length, LIMITS.choices))
+			return `takes 2 to 255 choices, not ${question.choices.length} for "${question.name}"`;
+		if (question.type === "score" && !within(question.levels.length, LIMITS.levels))
+			return `takes 2 to 10 levels, not ${question.levels.length} for "${question.name}"`;
+	}
+	return undefined;
+}
+
 function usageOf(body: DecisionsBody): JudgeUsage {
 	const details = body.usage?.input_tokens_details;
 	const usage: JudgeUsage = {
@@ -178,6 +205,7 @@ export class OpenAIDecisionsJudgeProvider implements JudgeProvider {
 	/** "OpenAI" at OpenAI's own address, otherwise the host the requests go to. */
 	private readonly service: string;
 	private readonly fetchImpl: typeof fetch;
+	private readonly onKeyProblem: ((problem: OpenAIKeyProblem) => void) | undefined;
 
 	constructor(options: OpenAIDecisionsJudgeProviderOptions) {
 		this.apiKey = options.apiKey;
@@ -185,16 +213,22 @@ export class OpenAIDecisionsJudgeProvider implements JudgeProvider {
 		this.model = options.model || OPENAI_DECISIONS_DEFAULT_MODEL;
 		this.endpoint = decisionsEndpoint(options.baseUrl);
 		this.fetchImpl = options.fetch ?? fetch;
+		this.onKeyProblem = options.onKeyProblem;
 		const host = URL.canParse(this.endpoint) ? new URL(this.endpoint).host : this.endpoint;
 		this.service = isOpenAIAddress(options.baseUrl) ? "OpenAI" : host;
 		this.id = `${this.service === "OpenAI" ? "openai" : host}:${this.model}`;
 	}
 
 	async evaluate(request: JudgeRequest): Promise<ProviderResponse> {
-		const apiKey = typeof this.apiKey === "string" ? this.apiKey : await this.apiKey();
-		if (!apiKey) throw new JudgeError("auth", `No API key is configured for ${this.service} (${this.keyName})`);
-
 		const questions = Object.entries(request.questions).map(([id, question]) => toDecisionsQuestion(id, question));
+		const limit = overLimit(questions);
+		if (limit) throw new JudgeError("bad_request", `${this.service}'s Decisions API ${limit}`);
+		const apiKey = typeof this.apiKey === "string" ? this.apiKey : await this.apiKey();
+		if (!apiKey) {
+			this.onKeyProblem?.("missing");
+			throw new JudgeError("auth", `No API key is configured for ${this.service} (${this.keyName})`);
+		}
+
 		// Text as it is, structured state as its JSON text, as pi-ai's classifier sends it.
 		const input = text(request.state);
 		let response: Response;
@@ -214,11 +248,11 @@ export class OpenAIDecisionsJudgeProvider implements JudgeProvider {
 		if (!response.ok) {
 			const body: unknown = await response.json().catch(() => undefined);
 			const message = messageFromErrorBody(body).replaceAll(apiKey, "…").slice(0, MAX_ERROR_MESSAGE_LENGTH);
-			throw new JudgeError(
-				errorKindForStatus(response.status, message),
-				message || `${this.service} responded with HTTP ${response.status}`,
-				{ status: response.status },
-			);
+			const kind = errorKindForStatus(response.status, message);
+			if (kind === "auth") this.onKeyProblem?.("rejected");
+			throw new JudgeError(kind, message || `${this.service} responded with HTTP ${response.status}`, {
+				status: response.status,
+			});
 		}
 
 		const body = (await response.json().catch(() => undefined)) as DecisionsBody | undefined;

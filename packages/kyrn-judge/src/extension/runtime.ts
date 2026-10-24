@@ -14,7 +14,7 @@ import { CompositeLedger, type LedgerRecord, type LedgerSink, MemoryLedger } fro
 import type { ClassifierCall } from "../providers/classifier.ts";
 import type { FreeJevOutcome } from "../providers/free-jev.ts";
 import type { LlmCompletion } from "../providers/llm.ts";
-import { isOpenAIAddress } from "../providers/openai-decisions.ts";
+import { isOpenAIAddress, type OpenAIKeyProblem } from "../providers/openai-decisions.ts";
 import { buildJudge, resolveJudgeConfig } from "../registry.ts";
 import type { Capability } from "../types.ts";
 import { createJudgeFetch, type JudgeFetch } from "./judge-fetch.ts";
@@ -242,6 +242,8 @@ export class KyrnRuntime {
 	onPresentation?: PresentationListener;
 	/** Set by the free Jev notice: how each call went when the `jev` judge falls back to the free Jev. */
 	onFreeJev?: (outcome: FreeJevOutcome) => void;
+	/** Told when the `openai` judge has no usable key (features/openai-key.ts says so once). */
+	onOpenAIKey?: (problem: OpenAIKeyProblem) => void;
 	/** Features that show the person what another feature announced: the board says a permission is waiting. */
 	private readonly observers = new Map<KyrnPresentationEvent["kind"], Set<(payload: unknown) => void>>();
 
@@ -310,6 +312,7 @@ export class KyrnRuntime {
 				llm: (model, options) => this.llm(model, options),
 				classify: (model) => this.classifier(model),
 				freeJev: (outcome) => this.onFreeJev?.(outcome),
+				openaiKeyProblem: (problem) => this.onOpenAIKey?.(problem),
 			},
 		);
 		this.problems.push(...built.problems);
