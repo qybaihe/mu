@@ -4,7 +4,7 @@
 
 - [Getting started](getting-started.md): install the desktop app or the command line, connect a model, and watch or turn off the judge's decisions.
 - [Configuration](configuration.md): `mu.json`, modes, environment variables and proxies.
-- [Judges](judges.md): hosted Jev, the free Jev, the local judge, classifier models and LLMs, and how to compare them.
+- [Judges](judges.md): hosted Jev, the free Jev, mude 1.0 and other decision models on your Mac, classifier models and LLMs, and how to compare them.
 - [Troubleshooting](troubleshooting.md): what to do when something doesn't work.
 
 ## Reference

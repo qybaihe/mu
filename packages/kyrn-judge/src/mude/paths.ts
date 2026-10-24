@@ -2,7 +2,7 @@ import { join } from "node:path";
 import { MUDE_REVISION } from "./manifest.ts";
 
 /**
- * Where mude lives on this machine: <mu home>/local-judge/mude, beside Laya's sidecar. Nothing of it is in the agent
+ * Where mude lives on this machine: <mu home>/local-judge/mude. Nothing of it is in the agent
  * folder; mu.json and the .env only name it.
  */
 export interface MudePaths {

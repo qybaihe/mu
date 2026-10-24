@@ -132,7 +132,7 @@ export function registerBrowser(runtime: KyrnRuntime): void {
 		if (!/^https?:\/\//i.test(params.url)) {
 			return { text: "Only http and https pages can be opened.", status: "refused", url: params.url };
 		}
-		// A goal needs a judge that can relate it to a page. A small local one (Laya) is rightly not trusted with
+		// A goal needs a judge that can relate it to a page. A small classifier is rightly not trusted with
 		// that: every step would get a neutral answer, and the run would end blocked after its first look.
 		const judge = runtime.engine.judgeFor(browserStep.id);
 		if (params.goal?.trim() && judge instanceof CascadeJudge && !judge.trusts("relate")) {

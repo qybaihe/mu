@@ -8,7 +8,7 @@ summary: 由誰回答判定點，怎樣選擇、串接和比較判定器，以�
 `~/.mu/agent/mu.json` 裡的 `tiers` 依序列出判定器。後一個判定器只看到前面幾個拿不準的問題，所以可以讓便宜的本機判定器先答，雲端的判定器接住剩下的：
 
 ```json
-{ "tiers": ["laya", "jev"] }
+{ "tiers": ["mude", "jev"] }
 ```
 
 `routes` 讓一個判定點用自己的判定器：
@@ -17,7 +17,7 @@ summary: 由誰回答判定點，怎樣選擇、串接和比較判定器，以�
 { "routes": { "browser.step": ["jev"], "memory.capture": ["llm:anthropic/claude-haiku-4-5"] } }
 ```
 
-在工作階段裡，`/mu judge <judges>` 和 `/mu route <point> <judges|default>` 做同樣的事；`MU_JUDGE=laya,jev mu` 只為一次執行指定判定器。`/status` 顯示哪個判定器回答什麼，桌面版的「判定器」頁也能設定這些。
+在工作階段裡，`/mu judge <judges>` 和 `/mu route <point> <judges|default>` 做同樣的事；`MU_JUDGE=mude,jev mu` 只為一次執行指定判定器。`/status` 顯示哪個判定器回答什麼，桌面版的「判定器」頁也能設定這些。
 
 沒有判定器按時回答時，每個判定點就照沒有判定時那樣做（通常是什麼都不變），帳本裡記下原因。
 
@@ -65,17 +65,9 @@ Jev 是 TypeSafe 做的判定模型，專門回答這類問題。內建的 `jev`
 
 **速度和成本。** 在作者自己的工作階段裡實測：熱連線上一個問題約 0.3 秒；16 塊工具輸出在一個請求裡判完用 0.44 秒，狀態只計費一次。工作階段使用中時，每 50 秒問一個很小的問題讓連線保持熱的，所以一輪開始前的提問能省掉 1 到 3 秒的連線建立時間。
 
-## Laya（本機） {#laya}
+## 設定裡還寫著 Laya {#laya}
 
-一個 3.22 億參數的判定器，在你的機器上執行，從不連網。
-
-```bash
-mu judge setup     # 下載模型前會先問你
-mu judge start     # 啟動它
-mu judge status
-```
-
-Laya 在簡單的述詞上可靠（這段文字是不是在描述一個錯誤？），在關於關係或關於請求本身的問題上偏弱。mu 知道這一點，從不把它答不好的問題交給它，所以在 `["laya", "jev"]` 這樣的鏈裡，這些問題直接交給下一個判定器。在「判定模式」下，審批不交給 Laya。先讓它以影子模式和你目前的判定器平行執行，看過帳本，再把某個判定點單獨交給它。
+Laya 是 mu 在 0.2.4 及以前內建的第三方本機判定器，現在已不再內建。`mu.json` 裡還寫著它（在 `tiers` 裡、某個 `routes` 裡，或是一個 `local` 類型的判定器）也照常能用：這台 Mac 上裝好了 mude 1.0，就由 mude 1.0 取代它；否則由清單裡剩下的判定器回答，一個都不剩就用 Jev。mu 只改一次 `mu.json`，只動這幾項，舊檔案在 `~/.mu/backups` 裡留一份，並告訴你換成了哪個判定器。`MU_JUDGE=laya` 會被略過。想在本機用別的決策模型，可以[從 Hugging Face 新增](@docs/judges#models)。
 
 ## 分類模型和大模型 {#other-judges}
 
@@ -104,7 +96,6 @@ Laya 在簡單的述詞上可靠（這段文字是不是在描述一個錯誤？
 | `http` | 任何接收 `{ state, questions }`、回傳 `{ answers }` 的端點 |
 | `llm` | pi 模型註冊表裡的一個聊天模型 |
 | `classifier` | pi 模型目錄裡的一個分類模型 |
-| `local` | 一個相容 Laya 的本機伺服器 |
 | `clm` | 一個 `clm-serve` |
 
 金鑰從不寫進檔案：`apiKeyEnv` 寫的是存放金鑰的環境變數名稱，這個變數設在你的環境裡，或 mu 的 `.env` 裡。

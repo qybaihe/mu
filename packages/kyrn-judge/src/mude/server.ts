@@ -8,7 +8,7 @@ import type { MudePaths } from "./paths.ts";
 
 /**
  * mude's server: the package's own `d3_server_mac.py` (the System One API, POST /v1/systemone), run from mu's venv on
- * 127.0.0.1 with a key, as one process for every mu session on this machine, like Laya's sidecar. It is started on
+ * 127.0.0.1 with a key, as one process for every mu session on this machine. It is started on
  * demand and keeps running until `mu judge mude stop` (or disable, or uninstall): about 3.5-4 GB of memory while it runs.
  */
 

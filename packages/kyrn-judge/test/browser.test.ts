@@ -138,7 +138,7 @@ describe("browser.step", () => {
 	});
 
 	it("abstains when no tier is trusted to relate a goal to a page", async () => {
-		const small = new MockJudgeProvider(() => ({ operation: choose("CLICK"), click_target: choose("3") }), "laya");
+		const small = new MockJudgeProvider(() => ({ operation: choose("CLICK"), click_target: choose("3") }), "small");
 		const cascade = new CascadeJudge([
 			{ judge: new Judge({ provider: small }), profile: { capabilities: { relate: false } } },
 		]);
@@ -170,7 +170,15 @@ describe("browser.step", () => {
 					provider,
 					mode: "active",
 					config: parseConfig({
-						routes: { "browser.step": ["laya"] },
+						// A small classifier behind a server of one's own, rightly not trusted to relate a goal to a page.
+						judges: {
+							small: {
+								type: "http",
+								baseUrl: "http://127.0.0.1:9",
+								profile: { capabilities: { relate: false } },
+							},
+						},
+						routes: { "browser.step": ["small"] },
 						features: attended({ memory: false, permissions: { mode: "full" }, browser: { enabled: true } }),
 					}),
 				}),
@@ -194,7 +202,7 @@ describe("browser.step", () => {
 		}
 
 		// Before any step, and before a browser is started: not "blocked at step 1" after a wasted look.
-		expect(seen).toContain("the judge for browser.step (local:laya) is not trusted to relate a goal to a page");
+		expect(seen).toContain("the judge for browser.step (http:small) is not trusted to relate a goal to a page");
 		expect(seen).toContain("/mu route browser.step");
 		expect(provider.calls.filter((call) => "operation" in call.questions)).toHaveLength(0);
 	});

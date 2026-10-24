@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="880" height="470" viewBox="0 0 880 470" role="img" aria-labelledby="t d" font-family="-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Noto Sans&quot;, Helvetica, Arial, sans-serif">
 <title id="t">The pieces</title>
-<desc id="d">The desktop app (desktop/, which runs pi in a utility process over pi’s RPC protocol) and the mu command (kyrn/bin/mu.mjs) both start pi, the coding agent: its agent loop, tools, sessions and providers. Inside pi runs the judgment kernel (packages/kyrn-judge): features that hook pi’s events and act on verdicts, a decision engine with modes, judges and fallbacks, and a ledger of every verdict in the session. pi calls the main model, any provider it supports. The engine asks the judges: Jev (hosted, with probabilities), Laya (local, offline), any classifier model or any LLM.</desc>
+<desc id="d">The desktop app (desktop/, which runs pi in a utility process over pi’s RPC protocol) and the mu command (kyrn/bin/mu.mjs) both start pi, the coding agent: its agent loop, tools, sessions and providers. Inside pi runs the judgment kernel (packages/kyrn-judge): features that hook pi’s events and act on verdicts, a decision engine with modes, judges and fallbacks, and a ledger of every verdict in the session. pi calls the main model, any provider it supports. The engine asks the judges: Jev (hosted, with probabilities), mude 1.0 (local, offline), any classifier model or any LLM.</desc>
 <defs><marker id="a" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#818b98"/></marker><marker id="p" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#d6409f"/></marker></defs>
 <text x="0" y="22" font-size="18" font-weight="600" fill="#1f2328">The pieces</text>
 <text x="0" y="46" font-size="13.5" fill="#59636e">mu is pi with a judgment kernel loaded as an extension. The desktop app runs the same two.</text>
@@ -52,7 +52,7 @@
 <text x="32" y="431" font-size="12" fill="#59636e">hosted · probabilities</text>
 <rect x="223" y="390" width="211" height="52" rx="10" fill="rgba(238, 111, 191, 0.07)" stroke="rgba(214, 64, 159, 0.4)"/>
 <rect x="238" y="406" width="6" height="6" rx="1" fill="#d6409f" stroke="rgba(238, 111, 191, 0.22)" stroke-width="2" transform="rotate(45 241 409)"/>
-<text x="255" y="413" font-size="14" font-weight="600" fill="#1f2328">Laya</text>
+<text x="255" y="413" font-size="14" font-weight="600" fill="#1f2328">mude 1.0</text>
 <text x="255" y="431" font-size="12" fill="#59636e">local · offline</text>
 <rect x="446" y="390" width="211" height="52" rx="10" fill="rgba(238, 111, 191, 0.07)" stroke="rgba(214, 64, 159, 0.4)"/>
 <rect x="461" y="406" width="6" height="6" rx="1" fill="#d6409f" stroke="rgba(238, 111, 191, 0.22)" stroke-width="2" transform="rotate(45 464 409)"/>

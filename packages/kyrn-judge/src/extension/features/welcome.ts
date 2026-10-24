@@ -91,8 +91,8 @@ const HEALTH_ERROR: Readonly<Record<string, string>> = {
 };
 
 /**
- * A judge's label as people read it: "jev" is Jev, "jev-1.13-free" is "Jev 1.13 (free)", and a cascade ("laya>jev" or
- * "laya,jev") is "Laya, Jev". Other labels stay as they are.
+ * A judge's label as people read it: "jev" is Jev, "jev-1.13-free" is "Jev 1.13 (free)", and a cascade ("clm>jev" or
+ * "clm,jev") is "clm, Jev". Other labels stay as they are.
  */
 export function judgeDisplayName(label: string): string {
 	return label
@@ -100,7 +100,6 @@ export function judgeDisplayName(label: string): string {
 		.map((name) => {
 			// TypeSafe's own model id for Jev is jev-latest; OpenCode Zen names a version, and its free one says so.
 			if (name === "jev" || name === "jev-latest") return "Jev";
-			if (name === "laya") return "Laya";
 			const versioned = /^jev-([\d.]+)(-free)?$/.exec(name);
 			if (!versioned) return name;
 			return versioned[2] ? `Jev ${versioned[1]} (free)` : `Jev ${versioned[1]}`;
@@ -167,7 +166,7 @@ export function renderWelcome(view: WelcomeView, width: number, paint: Paint): s
 				'  checks risky commands, and catches drift, loops and unverified "done"',
 				"  drives the browser click by click and gives each subagent a role and a model",
 				paint.fg("muted", "Change it"),
-				"  /mu judge laya,jev     which models answer, in order",
+				"  /mu judge mude,jev     which models answer, in order",
 				"  /mu mode default shadow     log verdicts without acting on them",
 			]
 		: [];

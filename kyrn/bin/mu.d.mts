@@ -45,12 +45,6 @@ export function packageEntries(input: { root: string; platform: Platform }): {
 };
 export function envFilePath(input: { layout: Layout; root: string; muDir: string; platform: Platform }): string;
 export function agentDirFor(input: { env: Env; muDir: string; platform: Platform }): string;
-export function wantsLaya(input: {
-	env: Env;
-	agentDir: string;
-	platform: Platform;
-	readFile(path: string): string;
-}): boolean;
 /** Whether the configuration asks for mude: MU_JUDGE, else `tiers` or a route in mu.json. */
 export function wantsMude(input: {
 	env: Env;
@@ -67,6 +61,13 @@ interface LocalModelInput {
 	readFile(path: string): string;
 	exists(path: string): boolean;
 }
+/**
+ * Whether mu.json still names Laya, which mu no longer has (`laya`, or a judge of type `local`), with MU_JUDGE unset:
+ * mude 1.0 takes its place in the session when it is set up, so its server is started too.
+ */
+export function namesLaya(input: { env: Env; agentDir: string; platform: Platform; readFile(path: string): string }): boolean;
+/** Whether mude 1.0's environment is installed under mu's home and its key is set. */
+export function mudeSetUp(input: { env: Env; muDir: string; platform: Platform; exists(path: string): boolean }): boolean;
 /** The decision model added with `mu judge model add` that the configuration asks for, when mude isn't the one. */
 export function wantedModel(input: LocalModelInput): string | undefined;
 /** The arguments that start the server of the decision model the configuration asks for, mude's or an added one's. */
@@ -77,11 +78,6 @@ export interface MudeStart {
 	args: string[];
 	env: Record<string, string>;
 }
-export function localJudgeSupport(input: { platform: Platform; env: Env; wsl?: boolean }): {
-	runs: boolean;
-	url?: string;
-	message?: string;
-};
 export function launchStrategy(input: { platform: Platform; env: Env; canExec: boolean }): "exec" | "spawn";
 
 export interface LaunchPlan {
@@ -95,7 +91,6 @@ export interface LaunchPlan {
 	/** PI_PACKAGE_DIR: the view at <home>/app for a checkout, the package itself for mu-agent. */
 	appDir: string;
 	agentDir: string;
-	startJudge: boolean;
 	startMude?: MudeStart;
 	notes: string[];
 	preface?: string;
@@ -134,7 +129,6 @@ export interface HostPlan {
 	/** PI_PACKAGE_DIR: the view at <home>/app for a checkout, the package itself for mu-agent. */
 	appDir: string;
 	agentDir: string;
-	startJudge: boolean;
 	startMude?: MudeStart;
 	notes: string[];
 }
@@ -155,21 +149,20 @@ export function planHost(input: {
 
 /**
  * What is done before pi starts, for the command line and the app's host alike: the app view of a checkout, mu's agent
- * folder, the configuration's notes and the local judge. `bin` is the launcher's folder (kyrn/bin).
+ * folder, the configuration's notes, and the server of the decision model it asks for, started in the background.
+ * Nothing waits for a judge.
  */
 export function prepareLaunch(input: PrepareLaunchInput): void;
 
-/**
- * prepareLaunch for a program that must not stop while the local judge starts (the desktop app's main process): the
- * same steps and notes, the local judge started through a child process that is waited for without blocking.
- */
+/** prepareLaunch as a promise, for the hosts that await it (the desktop app's main process). */
 export function prepareLaunchAsync(input: PrepareLaunchInput): Promise<void>;
 
 export interface PrepareLaunchInput {
-	plan: Pick<HostPlan, "layout" | "appDir" | "agentDir" | "notes" | "startJudge" | "env"> & { startMude?: MudeStart };
+	plan: Pick<HostPlan, "layout" | "appDir" | "agentDir" | "notes" | "env"> & { startMude?: MudeStart };
 	platform: Platform;
 	root: string;
-	bin: string;
+	/** The launcher's folder (kyrn/bin). Not needed any more; hosts may still pass it. */
+	bin?: string;
 	err(message: string): void;
 }
 
@@ -205,17 +198,15 @@ export function planAuth(input: {
 	fs: { exists(path: string): boolean; isDir(path: string): boolean; readFile(path: string): string };
 }): AuthPlan | { error: string };
 
-export type JudgePlan =
-	| { kind: "script"; command: string; args: string[] }
-	| { kind: "health"; url: string }
-	| { kind: "unsupported"; message: string };
-export function planJudge(input: {
-	platform: Platform;
-	env: Env;
-	argv: readonly string[];
-	bin: string;
-	wsl?: boolean;
-}): JudgePlan;
+/** `mu judge help`. */
+export const JUDGE_USAGE: string;
+/** `mu judge <cmd>` other than `mude` and `model`: what to print, and the exit code (stdout for 0, stderr otherwise). */
+export interface JudgePlan {
+	kind: "usage" | "removed" | "unknown";
+	code: 0 | 1 | 2;
+	text: string;
+}
+export function planJudge(input: { argv: readonly string[] }): JudgePlan;
 
 export function planImport(input: {
 	platform: Platform;
