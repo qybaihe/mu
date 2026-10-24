@@ -130,13 +130,13 @@ describe('the draft of the settings area', () => {
     expect([...dirtySections(base, newDraft(on))]).toEqual(['features']);
   });
   it('names the one judges page for the choice, the order, a profile’s field and any judge’s key', () => {
-    const laya = { type: 'local' as const, model: '', baseUrl: '', apiKeyEnv: '', timeoutMs: 3000 };
-    const one = { ...base, judges: { ...base.judges, laya } };
-    const two = { ...one, tiers: ['jev', 'laya'] };
-    // Laya picked: the one judge now.
-    expect([...dirtySections(two, newDraft({ ...two, tiers: ['laya'] }))]).toEqual(['judges']);
+    const clm = { type: 'clm' as const, model: '', baseUrl: '', apiKeyEnv: '', timeoutMs: 3000 };
+    const one = { ...base, judges: { ...base.judges, clm } };
+    const two = { ...one, tiers: ['jev', 'clm'] };
+    // CLM picked: the one judge now.
+    expect([...dirtySections(two, newDraft({ ...two, tiers: ['clm'] }))]).toEqual(['judges']);
     // The order turned round, and a second judge added.
-    expect([...dirtySections(two, newDraft({ ...two, tiers: ['laya', 'jev'] }))]).toEqual(['judges']);
+    expect([...dirtySections(two, newDraft({ ...two, tiers: ['clm', 'jev'] }))]).toEqual(['judges']);
     expect([...dirtySections(one, newDraft(two))]).toEqual(['judges']);
     // A profile's field.
     const slower = structuredClone(one);
@@ -144,8 +144,8 @@ describe('the draft of the settings area', () => {
     expect([...dirtySections(one, newDraft(slower))]).toEqual(['judges']);
     // A key, of the judge chosen or of one further down the order.
     expect([...dirtySections(base, { ...newDraft(base), judgeKeys: { MU_JUDGE_OWN: 'k' } })]).toEqual(['judges']);
-    const layaFirst = { ...one, tiers: ['laya', 'jev'] };
-    expect([...dirtySections(layaFirst, { ...newDraft(layaFirst), judgeKeys: { TYPESAFE_API_KEY: 'k' } })]).toEqual([
+    const clmFirst = { ...one, tiers: ['clm', 'jev'] };
+    expect([...dirtySections(clmFirst, { ...newDraft(clmFirst), judgeKeys: { TYPESAFE_API_KEY: 'k' } })]).toEqual([
       'judges',
     ]);
   });
@@ -194,7 +194,7 @@ describe('a draft moved onto the files after mu judge mude wrote them', () => {
     const draft = newDraft(structuredClone(base));
     draft.settings.models.defaults = { provider: 'relay', model: 'plain', thinkingLevel: '' };
     draft.settings.permissions = { mode: 'full', from: 'default' };
-    draft.settings.tiers = ['laya'];
+    draft.settings.tiers = ['clm'];
     draft.settings.mode = 'off';
     draft.judgeKeys = { TYPESAFE_API_KEY: 'typed' };
     return draft;
@@ -216,7 +216,7 @@ describe('a draft moved onto the files after mu judge mude wrote them', () => {
 
   it('keeps a judge picked in the draft since, and takes what was not touched from the files', () => {
     const moved = rebaseDraft(base, edited(), fresh, 'draft');
-    expect(moved.settings.tiers).toEqual(['laya']);
+    expect(moved.settings.tiers).toEqual(['clm']);
     expect(moved.settings.mode).toBe('off');
     const untouched = rebaseDraft(base, newDraft(structuredClone(base)), fresh, 'draft');
     expect(untouched.settings.tiers).toEqual(['mude', 'jev']);

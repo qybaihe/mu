@@ -30,7 +30,6 @@ mu                     # 在当前目录开一个交互会话
 | `mu ledger [n] [--json]` | 最近 n 个会话里判定器做了哪些决定。`--json` 给出每条记录及其概率和耗时。 |
 | `mu import --list` | 找出你的 Claude Code、Codex 和 ZCode 对话 |
 | `mu import <file>…` | 把它们连同完整历史导入 mu，在这里接着聊；之后再运行一次会带来新增的内容 |
-| `mu judge setup \| start \| stop \| status` | 本地判定器 Laya。`setup` 下载模型前会先问你。 |
 | `mu judge mude install \| enable \| disable \| start \| stop \| status \| uninstall` | [mude 1.0](@docs/judges#mude)，mu 自己的决策模型，在 Apple 芯片的 Mac 上运行。下载中途停下后，`install` 会从中断的地方接着下。 |
 | `mu judge model add \| list \| use \| start \| stop \| status \| disable \| remove` | Hugging Face 上的[其他决策模型](@docs/judges#models)，像 mude 1.0 一样运行。`add` 接受链接或 `owner/name`，下载中途停下后会接着下。 |
 | `mu link` / `mu unlink` | 把 `mu` 命令放进 PATH（`~/.local/bin`），或移除 |
@@ -42,7 +41,7 @@ mu                     # 在当前目录开一个交互会话
 | 命令 | 做什么 |
 | --- | --- |
 | `/status` | 判定器、各判定点的模式、没放进上下文的内容、最近的判定 |
-| `/mu judge <judges>` | 由哪些判定器回答、按什么顺序：`laya`、`laya,jev`、`jev-opencode-free`、`classifier:<provider>/<model>`、`llm:<provider>/<model>` |
+| `/mu judge <judges>` | 由哪些判定器回答、按什么顺序：`jev`、`mude,jev`、`jev-opencode-free`、`classifier:<provider>/<model>`、`llm:<provider>/<model>` |
 | `/mu route <point> <judges>` | 让某一个判定点用自己的判定器 |
 | `/mu mode <point> <off\|shadow\|active>` | 在这个会话里切换某一个判定点，或用 `default` 切换全部 |
 | `/frame` | 任务帧：目标、你的约束及你在哪里说的、验收条件 |
@@ -70,7 +69,7 @@ pi 自己的命令原样保留：`/model`、`/thinking`、`/login`、`/resume`�
 
 | 变量 | 效果 |
 | --- | --- |
-| `MU_JUDGE=laya,jev mu` | 只为这次运行指定判定器。`MU_JUDGE=off` 关掉判定内核。 |
+| `MU_JUDGE=mude,jev mu` | 只为这次运行指定判定器。`MU_JUDGE=off` 关掉判定内核。 |
 | `MU_JUDGE_MODE=shadow mu` | 这次运行里所有判定点都用影子模式 |
 | `MU_PERMISSIONS=ask mu` | 这次运行的权限模式：`full`、`judge` 或 `ask` |
 | `MU_LANG=zh-CN mu` | mu 自己的消息用中文（`zh`）或英文（其他任何值） |

@@ -4,6 +4,24 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-10-24
+
+**0.2.5 removes Laya from mu's built-in judges. If Laya was your judge, mu switches to mude 1.0 when it's set up on your Mac, otherwise to Jev, and says so once; opening a conversation never waits for a judge to start.** The desktop app carries mu-agent 0.2.5.
+
+### Changed
+
+- **If Laya was your judge, the desktop app shows mude 1.0 or Jev in its place.** The Judges page shows mude 1.0 as your judge when it's set up on your Mac, otherwise the judges you had behind Laya, or Jev when there were none: the same choice mu makes when it switches your settings over. The app doesn't change `mu.json` for this. The first conversation you open says once which judge you have now and, on a Mac, that you can add other decision models from Hugging Face under Settings → Judges. The app doesn't delete what Laya downloaded. You can delete these folders yourself: `~/.mu/local-judge/laya-multilingual-onnx` on Windows and Linux, and `~/.mu/local-judge/models/laya-multilingual-coreml` and `~/.mu/local-judge/.venv` on a Mac.
+- **Opening a conversation never waits for a judge to start.** The app no longer starts Laya before mu, and mude 1.0 or a decision model from Hugging Face starts in the background while the conversation opens.
+
+### Removed
+
+- **Laya is no longer built into mu.** Laya, the third-party local judge (`mu judge setup`, `mu judge start`), its sidecar and the `local` judge type are gone. If your judge was Laya, the first session you open in the terminal or the app switches it over: to mude 1.0 when it's set up on your Mac, otherwise to the judges you had behind Laya, or to Jev when there were none. mu changes only those values in `~/.mu/agent/mu.json`, keeps a copy of the file in `~/.mu/backups`, and tells you once what your judge is now. `MU_JUDGE=laya` is skipped. To use another decision model on your Mac, add it from Hugging Face with `mu judge model add <link>`, or under Settings → Judges in the app.
+- **Laya is no longer built into the desktop app.** The "Local Laya" choice is gone from the Judges page in Settings and from the first-run guide, with its install and start buttons and the copy of Laya the app ran itself on Windows and Linux. The Judges page offers Jev, mude 1.0 (on a Mac with Apple silicon) and CLM, and the guide offers Jev and mude 1.0. To use another decision model, add it from Hugging Face under mude 1.0 on the Judges page, or with `mu judge model add <link>`. It must be packaged like mude 1.0. The Windows and Linux downloads are smaller, because they no longer carry the ONNX runtime.
+
+## [0.2.4] - 2026-10-24
+
+**0.2.4 turns files a reply names into links, groups conversations by project, opens a conversation from the home page at once, brings Gemini 4 Argon through Google Antigravity, and fixes third-party OpenAI-compatible providers that turned away the `developer` role.** The desktop app carries mu-agent 0.2.4.
+
 ### Added
 
 - **Files named in a reply are links in the desktop app.** When a reply names a file as inline code, like `07_card.png` or `out/report.pdf`, or links to one, the name becomes a link once the file is found. A relative name is read against the conversation's folder, and a bare file name is also looked for in its subfolders. An image opens in the side panel, where you can zoom in and out and step through every image the reply names with the arrow keys or buttons. Any other file opens in its default app, and the folder icon beside it shows it in Finder (File Explorer on Windows). A program, such as a `.sh`, `.command` or `.exe` file, is only shown in its folder, never run. A clear path to a file that doesn't exist is greyed out, with "File not found" on hover. Ordinary code, like `npm run build` or `x.length`, stays as it was.
@@ -16,9 +34,6 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 ### Fixed
 
 - **Gemini 4 Argon shows up after you sign in with Google Antigravity, and works.** mu introduced itself to Antigravity as its IDE, and Google gives Gemini 4 Argon and the Gemini 3.8 Flash tiers only to its command line, so they were missing from the model pickers and a request for them failed. Now the app and the terminal list Gemini 4 Argon (Low, Medium and High) and the Gemini 3.8 Flash tiers when your plan includes them. An account that was already signed in gets them as a session starts, without signing in again, and signing out removes them with the account's other models.
-
-### Fixed
-
 - **A third-party OpenAI-compatible provider no longer fails with "unknown role developer".** mu sent a thinking model's instructions as a `developer` message, the role OpenAI's newer models use, to every OpenAI-compatible endpoint. Many relays and gateways know only `system`, so every request failed with `Model request failed: 502 … unknown role developer`, although the provider's connection check passed. Now only OpenAI, Azure OpenAI and Xiaomi MiMo, whose docs list `developer`, get it; every other endpoint gets `system`, and the reply-length field all of them read, `max_tokens`, instead of OpenAI's `max_completion_tokens`, which some ignore. If an endpoint still turns a request away over the role or a field it doesn't know, such as `max_completion_tokens`, `reasoning_effort`, `stream_options` or `store`, mu asks once more without it, before any reply shows, and keeps doing so for that model until it restarts. Set `compat` in `models.json` to choose yourself.
 
 ## [0.2.3] - 2026-10-24

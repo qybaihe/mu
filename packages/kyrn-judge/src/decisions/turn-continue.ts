@@ -14,9 +14,9 @@ import { threeZone } from "../policy.ts";
  * go-ahead after a request for work, but on something the user did not ask for. Read as a go-ahead it once cost 7
  * turns of out-of-scope work. Only a go-ahead on what the user asked for counts, so `beyond_request` must be "no".
  *
- * `promised` needs `intent`, which the local judge (Laya) is not trusted on: on Terminal-Bench 2.1 it read "Done.
- * Created …" as a promise of more work. With Laya alone, `promised` is then unanswered and never sends the agent back;
- * only the rule for an ending with no message does (features/continuation.ts).
+ * `promised` needs `intent`: a small classifier can read "Done. Created …" as a promise of more work. With only judges
+ * not trusted on it, `promised` is unanswered and never sends the agent back; only the rule for an ending with no
+ * message does (features/continuation.ts).
  */
 export interface ContinueInput {
 	readonly userMessage: string;
@@ -25,8 +25,8 @@ export interface ContinueInput {
 
 export type ContinueOutcome = "end" | "promised" | "go_ahead";
 
-// Relating the two messages is beyond the local judge (Laya): it leaves `beyond_request` unanswered, and then nothing
-// counts as a go-ahead. It leaves `promised` unanswered too (`intent`).
+// A judge not trusted to relate the two messages leaves `beyond_request` unanswered, and then nothing counts as a
+// go-ahead.
 const CAPABILITIES = { promised: "intent", work_requested: "meta", beyond_request: "relate" } as const;
 
 export const turnContinue = defineDecision({
@@ -88,9 +88,3 @@ export const turnContinue = defineDecision({
 		return "end";
 	},
 });
-
-/** turn.continue with `promised` asked of every judge, the local one included (`continuation.localPromised`). */
-export const turnContinueLocalPromised: typeof turnContinue = {
-	...turnContinue,
-	capabilities: { ...CAPABILITIES, promised: "classify" },
-};

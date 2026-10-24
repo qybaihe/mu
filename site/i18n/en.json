@@ -118,7 +118,7 @@
       { "h3": "Fewer interruptions", "p": "In Judge mode, the judge lets through what the task clearly needs and asks you about the rest." },
       { "h3": "No toolbox in every prompt", "p": "Each message is judged: small talk, a follow-up or work to do. Skills and MCP servers that aren't needed stay out of the context." },
       { "h3": "Fewer summaries", "p": "When the context grows, stale tool results are dropped instead of summarized, and summary-free compaction is an option. Before the cache expires, mu judges whether a refresh is worth it." },
-      { "h3": "No locked-in judge", "p": "{points} decision points, each with its own switch and its own judge: the free Jev, the local Laya or any LLM." },
+      { "h3": "No locked-in judge", "p": "{points} decision points, each with its own switch and its own judge: the free Jev, mude 1.0 on your Mac or any LLM." },
       { "h3": "No judge key needed to start", "p": "Without a judge key, the free Jev on OpenCode Zen answers, and mu says so once a day." },
       { "h3": "No new foundation", "p": "The command line is built on pi, with its models, extensions, skills and session tree. The desktop app runs the same sessions." }
     ],
@@ -304,6 +304,8 @@
     "download": "Download this version",
     "full_agent": "Full mu-agent changelog",
     "headlines": {
+      "v0.2.5": "Laya leaves the built-in judges: mu switches to mude 1.0 or Jev on its own; opening a conversation never waits for a judge",
+      "v0.2.4": "click a file a reply names to open it; conversations grouped by project and opened at once; Gemini 4 Argon; OpenAI-compatible relays fixed",
       "v0.2.3": "decision models from Hugging Face next to mude 1.0; mu decides when a mid-run message lands; ChatGPT sign-in copes with a busy port",
       "v0.2.2": "the mude 1.0 install copes with a full disk, a stop at any step and two installs at once; clearer English",
       "v0.2.1": "mude 1.0 is the recommended judge on a Mac, and installing it survives a power cut",

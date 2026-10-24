@@ -8,7 +8,7 @@ summary: Who answers the decision points, how to choose, chain and compare judge
 `tiers` in `~/.mu/agent/mu.json` lists the judges in order. Each later judge only sees the questions the earlier ones left uncertain, so a cheap local judge can go first and a hosted one catch the rest:
 
 ```json
-{ "tiers": ["laya", "jev"] }
+{ "tiers": ["mude", "jev"] }
 ```
 
 `routes` gives one decision point its own judges:
@@ -17,7 +17,7 @@ summary: Who answers the decision points, how to choose, chain and compare judge
 { "routes": { "browser.step": ["jev"], "memory.capture": ["llm:anthropic/claude-haiku-4-5"] } }
 ```
 
-In a session, `/mu judge <judges>` and `/mu route <point> <judges|default>` do the same; `MU_JUDGE=laya,jev mu` sets the judges for one run. `/status` shows which judge answers what, and the app's judges page sets the same things.
+In a session, `/mu judge <judges>` and `/mu route <point> <judges|default>` do the same; `MU_JUDGE=mude,jev mu` sets the judges for one run. `/status` shows which judge answers what, and the app's judges page sets the same things.
 
 When no judge answers in time, each decision point does what it would do without a verdict (usually: nothing changes), and the ledger records why.
 
@@ -65,17 +65,9 @@ A key is only ever sent to the service it belongs to. Name a route directly, suc
 
 **Speed and cost.** Measured in the authors' own sessions: one question on a warm connection in about 0.3 s; 16 chunks of tool output judged in one request in 0.44 s, the state billed once. While a session is in use, one tiny question every 50 seconds keeps the connection warm, so the questions before a turn skip 1 to 3 seconds of connecting.
 
-## Laya, on your machine {#laya}
+## If your configuration still names Laya {#laya}
 
-A judge of 322 million parameters that runs locally and never touches the network.
-
-```bash
-mu judge setup     # asks before downloading the model
-mu judge start     # starts it
-mu judge status
-```
-
-Laya is reliable on simple predicates (does this text describe an error?) and weak on questions about relations or about the request itself. mu knows this and never sends it a question it can't answer well, so in a chain such as `["laya", "jev"]` those go straight to the next judge. Laya isn't trusted with approvals in *Judge mode*. Run it in shadow next to your current judge and read the ledger before giving it a decision point of its own.
+Laya, the third-party local judge mu shipped until 0.2.4, is no longer built in. A `mu.json` that still names it, in `tiers`, in a route or as a judge of type `local`, keeps working: mude 1.0 takes its place when it's set up on your Mac; otherwise the judges left in the list answer, or Jev when none are left. mu fixes `mu.json` once, changing only those entries and keeping a copy of the old file in `~/.mu/backups`, and tells you which judge took over. `MU_JUDGE=laya` is skipped. For another decision model on your machine, [add one from Hugging Face](@docs/judges#models).
 
 ## Classifier models and LLMs {#other-judges}
 
@@ -104,7 +96,6 @@ Under `judges` in `mu.json`, give a name and a type:
 | `http` | Any endpoint that takes `{ state, questions }` and returns `{ answers }` |
 | `llm` | A chat model from pi's registry |
 | `classifier` | A classifier from pi's catalog |
-| `local` | A Laya-compatible local server |
 | `clm` | A `clm-serve` |
 
 The key never goes in the file: `apiKeyEnv` names the environment variable that holds it, set in your environment or in mu's `.env`.

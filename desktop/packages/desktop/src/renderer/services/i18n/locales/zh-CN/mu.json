@@ -149,11 +149,6 @@
         "tagRecommended": "推荐 · 在这台 Mac 上",
         "description": "mu 自己的决策模型，针对编程场景特别优化，编程场景的决策能力达到 SOTA 级。在这台 Mac 上运行，不需要密钥，不按次收费，需要 Apple 芯片。"
       },
-      "local": {
-        "title": "本地 Laya",
-        "tag": "免费 · 离线",
-        "description": "在这台电脑上运行，不联网、不花钱。适合分类判断，关联和打分不够可靠。"
-      },
       "clm": {
         "title": "CLM",
         "tag": "自建",
@@ -163,50 +158,6 @@
         "title": "OpenAI",
         "tag": "云端",
         "description": "OpenAI 的决策模型 gpt-6-luna，用 OpenAI API 密钥。OpenAI 按输入 token 计费。"
-      }
-    },
-    "laya": {
-      "running": "正在本机运行",
-      "stopped": "已安装，没有运行。mu 用到它时会自己启动。",
-      "missing": "还没有安装。",
-      "platform": "这台电脑跑不了 Laya：它需要 Windows 或 Linux（x64 或 arm64），或者 Apple Silicon 的 Mac。",
-      "needsUv": "安装需要先装好 uv（Python 的包管理工具），装好后回到这里。",
-      "uvLink": "怎么安装 uv",
-      "install": "安装 Laya",
-      "start": "启动",
-      "stop": "停止",
-      "confirmTitle": "下载并安装 Laya？",
-      "confirmText": "这会从 PyPI 和 Hugging Face 下载约 {{size}} MB（Python 依赖和模型权重）到 mu 的目录，需要几分钟。装好后 Laya 会自动启动。",
-      "confirmOk": "下载并安装",
-      "working": {
-        "setup": "正在安装 Laya…",
-        "start": "正在启动 Laya…",
-        "stop": "正在停止 Laya…"
-      },
-      "failed": {
-        "setup": "安装没有完成，可以再试一次。",
-        "start": "Laya 没能启动。",
-        "stop": "Laya 没能停止。"
-      },
-      "onnx": {
-        "missing": "这台电脑上还没有 Laya 的模型（约 {{size}} MB）。mu 不会替你下载：请从 Hugging Face 下载这些文件，放进模型文件夹，再点「检查并启动」。",
-        "stopped": "模型已就位，Laya 没有运行。选了 Laya 作为判定器时，mu 会在打开 App 时自己启动它。",
-        "starting": "正在检查模型并启动 Laya… 第一次检查要读完整个模型，需要一会儿。",
-        "missingFiles": "还缺：{{files}}",
-        "wrongFiles": "这些文件不是 mu 测试过的版本，请重新下载：{{files}}",
-        "folder": "模型文件夹：{{folder}}",
-        "command": "装了 Hugging Face 命令行（hf）的话，一条命令就能下全：",
-        "page": "去 Hugging Face 下载",
-        "openFolder": "打开模型文件夹",
-        "check": "检查并启动",
-        "problem": {
-          "missing": "缺少部分模型文件。",
-          "wrong": "部分模型文件不是 mu 测试过的版本，请重新下载。",
-          "runtime": "这台电脑运行不了这个模型。",
-          "port": "Laya 的端口（{{port}}）已被别的程序占用。",
-          "stopped": "Laya 还没准备好就停了。",
-          "foreign": "这里在运行一个不是 mu 启动的 Laya，请在启动它的地方停止它。"
-        }
       }
     },
     "mude": {
@@ -875,6 +826,8 @@
       "paid": "OpenCode Zen 上的免费 Jev 现在要密钥或付费了，判定暂时交给规则。在「设置 → 判定器」里填一个 Jev 密钥就能恢复。",
       "gone": "OpenCode Zen 已经不提供免费的 Jev 了，判定暂时交给规则。在「设置 → 判定器」里填一个 Jev 密钥就能恢复。"
     },
+    "layaRemoved": "mu 不再内置 Laya，你的判定器现在是 {{judge}}。想用其他决策模型，在「设置 → 判定器」里从 Hugging Face 添加。",
+    "layaRemovedNoModels": "mu 不再内置 Laya，你的判定器现在是 {{judge}}。",
     "checkpointOffWhy": {
       "gitMissing": "这个对话的检查点已关闭：这台电脑上找不到 Git。装好 Git 后新开一个对话就有了。",
       "xcodeLicense": "这个对话的检查点已关闭：这台 Mac 要先同意 Xcode 许可协议才能运行 Git。在终端运行 sudo xcodebuild -license 同意后，新开一个对话就有了。",

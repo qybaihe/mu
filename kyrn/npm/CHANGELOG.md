@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-10-24
+
+**0.2.5 removes Laya from mu's built-in judges. A configuration that still names it switches to mude 1.0 or Jev on its own.**
+
+### Changed
+
+- A configuration that still names Laya keeps working. `laya` in `tiers` or a route, and a judge of type `local`, are read without it: mude 1.0 takes its place when it is installed on this Mac and its key (`MU_JUDGE_MUDE_KEY`) is set, otherwise the judges left do, or Jev when none is left. A route left with no judge goes back to `tiers`. The first session with a terminal or the desktop app (not `mu --print` or json mode) writes that to mu.json once. It changes only those values, keeps a copy in `~/.mu/backups`, and says so once: `judge.notice` with the code `laya_removed` and the `judge`, then the line itself. A mu.json that isn't plain JSON is left alone. `MU_JUDGE=laya` is skipped in every session that has it. For such a configuration the launcher starts mude's server in the background, as it does for `mude`.
+- `/mu judge laya` and `/mu route <point> laya` say that Laya is no longer built in. An `http` judge needs a `baseUrl`; its client is `HttpJudgeProvider` (it was `LocalJudgeProvider`).
+
+### Removed
+
+- Laya, the third-party local judge, is no longer built in: the `laya` judge, the `local` judge type, its sidecar (`kyrn/bin/kyrn-judge-local`, `kyrn/local-judge/server.py` and its lock, no longer in the package) and `mu judge setup | start | stop | status | run`. Those commands now say so and point to `mu judge mude install` and `mu judge model add <link>`; `mu judge` alone prints the judge commands. The launcher no longer starts a sidecar, and `mu doctor` drops its rows.
+- `continuation.localPromised`, which only Laya used, and the one-question-at-a-time path of a `local` judge: `tool.admission` and `tool.injection` always ask in batches, and the questions about a message start together.
+
+## [0.2.4] - 2026-10-24
+
+**0.2.4 brings Gemini 4 Argon through Google Antigravity and fixes third-party OpenAI-compatible providers that turned away the `developer` role.**
+
 ### Fixed
 
 - Signed in with Google Antigravity, mu now lists Gemini 4 Argon (`gemini-4-argon-low`, `-medium` and `-high`) and the Gemini 3.8 Flash tiers, and can use them. mu introduced itself to Antigravity as its IDE, version 1.107.0 (`antigravity/1.107.0 darwin/arm64`). Google lists and serves those models only to the Antigravity command line from 1.3.0, and answered 404 for them. mu now introduces itself as the command line (`antigravity/cli/1.4.0`; `MU_ANTIGRAVITY_VERSION` still raises the version). Gemini 4 Argon thinks at low, medium or high, never off. A placeholder for a model the account may not use, such as `gemini-4-argon-disabled`, is left out. The context Antigravity gives a model (1 million tokens for Claude Opus and Sonnet 5.5) is now used.

@@ -16,8 +16,8 @@ import type { Answer, Question, Questions } from "../types.ts";
  * drops and leaves a one-line pointer, which keeps a wrong verdict recoverable.
  *
  * The capability is `screen`: a judge that is not trusted to screen tool output
- * (the local Laya) leaves the chunks to the next tier, and with none left, the
- * output goes in whole.
+ * leaves the chunks to the next tier, and with none left, the output goes in
+ * whole.
  */
 export interface AdmissionInput {
 	/** The call that produced the output, e.g. the shell command. */
@@ -84,8 +84,7 @@ export const toolAdmission = defineDecision({
  * the chunks sit in the state as `c1`, `c2`, … and each has its own question.
  * The state is billed once, and the verdicts come back together. Measured on
  * jev (2026-09-23): 16 chunks in 0.44 s and 7.6k tokens, against 1.4 s and
- * 11.6k tokens as 16 requests, with the same verdicts. Only for a judge whose
- * window holds the chunks; the local sidecar takes them one at a time.
+ * 11.6k tokens as 16 requests, with the same verdicts.
  */
 export interface AdmissionBatchInput {
 	readonly call: string;

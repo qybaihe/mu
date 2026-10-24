@@ -1,4 +1,7 @@
 import React from 'react';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createInstance } from 'i18next';
@@ -10,6 +13,7 @@ import enMu from '@/renderer/services/i18n/locales/en-US/mu.json';
 import zhCommon from '@/renderer/services/i18n/locales/zh-CN/common.json';
 import zhMu from '@/renderer/services/i18n/locales/zh-CN/mu.json';
 import SettingsArea from '@/renderer/pages/settings/KyrnSettings/SettingsArea';
+import { SettingsStore } from '@/process/agent/kyrn/settings';
 
 /** mude as a choice of the judges page: every command through the bridge to `mu judge mude`, played by the test. */
 
@@ -21,7 +25,7 @@ const bridge = vi.hoisted(() => ({
   mudeRun: vi.fn(),
   modelsState: vi.fn(),
   modelsRun: vi.fn(),
-  localJudgeState: vi.fn(),
+  clmCheck: vi.fn(),
 }));
 vi.mock('@/common/kyrn/bridge', () => ({
   kyrnBridge: {
@@ -32,7 +36,7 @@ vi.mock('@/common/kyrn/bridge', () => ({
     mudeRun: { invoke: bridge.mudeRun },
     modelsState: { invoke: bridge.modelsState },
     modelsRun: { invoke: bridge.modelsRun },
-    localJudgeState: { invoke: bridge.localJudgeState },
+    clmCheck: { invoke: bridge.clmCheck },
   },
   unwrap: <T,>(result: Result<T>) => {
     if (!result.ok) throw Object.assign(new Error(result.error), result);
@@ -75,7 +79,7 @@ function settings(patch: Partial<KyrnSettings> = {}): KyrnSettings {
     judges: {
       jev: { type: 'jev', model: 'jev-latest', baseUrl: '', apiKeyEnv: 'TYPESAFE_API_KEY', timeoutMs: 10000 },
       mude: MUDE_PROFILE,
-      laya: { type: 'local', model: '', baseUrl: 'http://127.0.0.1:47823', apiKeyEnv: '', timeoutMs: 4000 },
+      clm: { type: 'clm', model: 'clm-latest', baseUrl: '', apiKeyEnv: 'MU_JUDGE_CLM_API_KEY', timeoutMs: 10000 },
     },
     mode: 'active',
     betaCompression: false,
@@ -140,9 +144,7 @@ const task = (command: MudeTask['command'], phase: MudeTask['phase'], patch: Par
 beforeEach(() => {
   bridge.settings.mockResolvedValue(ok(settings()));
   bridge.availableModels.mockResolvedValue(ok({ providers: [], thinkingLevels: [] }));
-  bridge.localJudgeState.mockResolvedValue(
-    ok({ support: 'ok', installed: true, running: true, url: 'http://127.0.0.1:47823' })
-  );
+  bridge.clmCheck.mockResolvedValue(ok({ status: 'down' }));
   bridge.mudeState.mockResolvedValue(state(NOT_INSTALLED));
   bridge.modelsState.mockResolvedValue(ok({ available: true, models: [] }));
 });
@@ -187,12 +189,7 @@ describe('mude as a choice of the judges page', () => {
     await waitFor(() => expect(bridge.mudeState).toHaveBeenCalled());
     expect(screen.queryByTestId('mu-judge-choice-mude')).not.toBeInTheDocument();
     // Nothing else changes: Jev stays the recommended one, in the usual order.
-    expect(tilesOf()).toEqual([
-      'mu-judge-choice-jev',
-      'mu-judge-choice-local',
-      'mu-judge-choice-clm',
-      'mu-judge-choice-openai',
-    ]);
+    expect(tilesOf()).toEqual(['mu-judge-choice-jev', 'mu-judge-choice-clm', 'mu-judge-choice-openai']);
     expect(within(screen.getByTestId('mu-judge-choice-jev')).getByText('Recommended')).toBeInTheDocument();
   });
 
@@ -203,7 +200,6 @@ describe('mude as a choice of the judges page', () => {
         expect(tilesOf()).toEqual([
           'mu-judge-choice-mude',
           'mu-judge-choice-jev',
-          'mu-judge-choice-local',
           'mu-judge-choice-clm',
           'mu-judge-choice-openai',
         ]),
@@ -228,13 +224,7 @@ describe('mude as a choice of the judges page', () => {
           answer = resolve;
         })
     );
-    const order = [
-      'mu-judge-choice-mude',
-      'mu-judge-choice-jev',
-      'mu-judge-choice-local',
-      'mu-judge-choice-clm',
-      'mu-judge-choice-openai',
-    ];
+    const order = ['mu-judge-choice-mude', 'mu-judge-choice-jev', 'mu-judge-choice-clm', 'mu-judge-choice-openai'];
     const tile = await judgesPage();
     expect(tilesOf()).toEqual(order);
     expect(within(tile).getByText('Recommended · on this Mac')).toBeInTheDocument();
@@ -255,7 +245,6 @@ describe('mude as a choice of the judges page', () => {
     expect(tilesOf()).toEqual([
       'mu-judge-choice-jev',
       'mu-judge-choice-mude',
-      'mu-judge-choice-local',
       'mu-judge-choice-clm',
       'mu-judge-choice-openai',
     ]);
@@ -530,21 +519,21 @@ describe('mude as a choice of the judges page', () => {
     bridge.mudeState.mockResolvedValue(state(RUNNING));
     await judgesPage();
     bridge.mudeRun.mockResolvedValue(state(RUNNING, task('disable', 'running')));
-    fireEvent.click(screen.getByTestId('mu-judge-choice-local'));
+    fireEvent.click(screen.getByTestId('mu-judge-choice-clm'));
     await waitFor(() => expect(bridge.mudeRun).toHaveBeenCalledWith({ action: 'disable' }));
     // The command brings back the judges from before, and stops the server.
     bridge.settings.mockResolvedValue(ok(settings({ tiers: ['jev'] })));
     bridge.mudeState.mockResolvedValue(state({ ...INSTALLED }, task('disable', 'done')));
-    // Then Laya is picked in the settings read again: an edit like any other, for the save bar.
-    await waitFor(() => expect(screen.getByTestId('mu-judge-choice-local')).toHaveAttribute('aria-checked', 'true'), {
+    // Then CLM is picked in the settings read again: an edit like any other, for the save bar.
+    await waitFor(() => expect(screen.getByTestId('mu-judge-choice-clm')).toHaveAttribute('aria-checked', 'true'), {
       timeout: 3000,
     });
     expect(screen.getByTestId('mu-judge-choice-mude')).toHaveAttribute('aria-checked', 'false');
     expect(await screen.findByTestId('mu-save-bar')).toBeInTheDocument();
-    bridge.save.mockResolvedValue(ok(settings({ tiers: ['laya'], revision: 'r3' })));
+    bridge.save.mockResolvedValue(ok(settings({ tiers: ['clm'], revision: 'r3' })));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(bridge.save).toHaveBeenCalledTimes(1));
-    expect(bridge.save.mock.calls[0][0].tiers).toEqual(['laya']);
+    expect(bridge.save.mock.calls[0][0].tiers).toEqual(['clm']);
   });
 
   it('waits for unsaved changes before a command that writes mu.json', async () => {
@@ -740,5 +729,49 @@ describe('decision models from Hugging Face beside mude', () => {
     const tags = [...order.querySelectorAll('.arco-select .arco-tag')].map((tag) => tag.textContent);
     expect(tags).toEqual(['fast-judge', enMu.judges.choices.jev.title]);
     expect(screen.getByTestId('mu-judge-tier-0')).toHaveTextContent(enMu.judges.mude.tierHelp);
+  });
+});
+
+describe('a mu.json that still asks Laya first, the local judge mu no longer has', () => {
+  /** What the main process sends for it: the store's reading of the file, with mude 1.0 installed or not. */
+  function leftover(mudeInstalled: boolean): KyrnSettings {
+    const dir = mkdtempSync(join(tmpdir(), 'mu-laya-'));
+    try {
+      const laya = { type: 'local', baseUrl: 'http://127.0.0.1:47823' };
+      writeFileSync(join(dir, 'mu.json'), JSON.stringify({ tiers: ['laya'], judges: { laya } }));
+      // Set up, mude has its key in the .env (`mu judge mude enable` writes it).
+      if (mudeInstalled) writeFileSync(join(dir, '.env'), 'MU_JUDGE_MUDE_KEY=k\n');
+      const read = new SettingsStore(dir, dir).read({ mudeInstalled });
+      return settings({ revision: read.revision, tiers: read.tiers, judges: read.judges });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+
+  it('shows Jev as the judge where mude 1.0 is not installed, and nothing of Laya', async () => {
+    bridge.settings.mockResolvedValue(ok(leftover(false)));
+    await judgesPage();
+    await waitFor(() => expect(screen.getByTestId('mu-judge-choice-jev')).toHaveAttribute('aria-checked', 'true'));
+    expect(tilesOf()).toEqual([
+      'mu-judge-choice-mude',
+      'mu-judge-choice-jev',
+      'mu-judge-choice-clm',
+      'mu-judge-choice-openai',
+    ]);
+    const page = screen.getByTestId('mu-section-judges');
+    expect(page).not.toHaveTextContent(/laya/i);
+    expect(page).not.toHaveTextContent(enMu.judges.custom);
+  });
+
+  it('shows mude 1.0 as the judge where it is installed, one click from being turned on', async () => {
+    bridge.settings.mockResolvedValue(ok(leftover(true)));
+    bridge.mudeState.mockResolvedValue(state(INSTALLED));
+    const tile = await judgesPage();
+    await waitFor(() => expect(tile).toHaveAttribute('aria-checked', 'true'));
+    expect(await within(tile).findByTestId('mu-mude-use')).toBeInTheDocument();
+    expect(screen.getByTestId('mu-section-judges')).not.toHaveTextContent(/laya/i);
+    // Reading it runs nothing and writes nothing.
+    expect(bridge.mudeRun).not.toHaveBeenCalled();
+    expect(bridge.save).not.toHaveBeenCalled();
   });
 });

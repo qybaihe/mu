@@ -3,14 +3,17 @@ import { fauxAssistantMessage, fauxThinking, fauxToolCall } from "@earendil-work
 import { Type } from "typebox";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHarness, createTestUiContext, type Harness } from "../../coding-agent/test/suite/harness.ts";
-import { CascadeJudge } from "../src/cascade.ts";
-import { BUILT_IN_JUDGES, parseConfig } from "../src/config.ts";
+import { CascadeJudge, type JudgeProfile } from "../src/cascade.ts";
+import { parseConfig } from "../src/config.ts";
 import { DecisionEngine } from "../src/decision.ts";
-import { turnContinue, turnContinueLocalPromised } from "../src/decisions/turn-continue.ts";
+import { turnContinue } from "../src/decisions/turn-continue.ts";
 import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import { Judge } from "../src/judge.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
 import type { Answer, JudgeRequest } from "../src/types.ts";
+
+/** A small classifier's profile: trusted to classify a text, not on the intent of a message or how two relate. */
+const SMALL: JudgeProfile = { capabilities: { relate: false, rate: false, meta: false, screen: false, intent: false } };
 
 const yes: Answer = { type: "boolean", probability: 0.95 };
 const no: Answer = { type: "boolean", probability: 0.03 };
@@ -111,7 +114,7 @@ describe("carrying on after stopping short", () => {
 		expect(harness.getPendingResponseCount()).toBe(1);
 	});
 
-	it("never counts a go-ahead on the local judge, which does not answer how two messages relate", async () => {
+	it("never counts a go-ahead on a judge not trusted to say how two messages relate", async () => {
 		const goAhead = (request: JudgeRequest): Record<string, Answer> => ({
 			promised: no,
 			asks_go_ahead: yes,
@@ -120,7 +123,7 @@ describe("carrying on after stopping short", () => {
 			irreversible: no,
 		});
 		const input = { userMessage: "Fix the pager.", finalMessage: "It is a one-line change. Should I apply it?" };
-		const decide = async (profile?: (typeof BUILT_IN_JUDGES)["laya"]["profile"]) => {
+		const decide = async (profile?: JudgeProfile) => {
 			const provider = new MockJudgeProvider(goAhead);
 			const engine = new DecisionEngine({
 				judge: new CascadeJudge([{ judge: new Judge({ provider }), profile }]),
@@ -130,9 +133,9 @@ describe("carrying on after stopping short", () => {
 			return { outcome: decision.outcome, asked: Object.keys(provider.calls[0]?.questions ?? {}) };
 		};
 		expect(await decide()).toMatchObject({ outcome: "go_ahead" });
-		const laya = await decide(BUILT_IN_JUDGES.laya.profile);
-		expect(laya.asked).not.toContain("beyond_request");
-		expect(laya.outcome).toBe("end");
+		const small = await decide(SMALL);
+		expect(small.asked).not.toContain("beyond_request");
+		expect(small.outcome).toBe("end");
 	});
 
 	it("never pushes a step that reaches beyond this machine, and stops nudging after the limit", async () => {
@@ -152,7 +155,7 @@ describe("carrying on after stopping short", () => {
 	describe("a finished reply the judge mistakes for a promise (TB 2.1, constraints-scheduling)", () => {
 		const done = "Done. Created `/app/meeting_scheduled.ics` with the meeting on Tuesday at 10:00.";
 		const answered = "The work is already complete: nothing was left pending.";
-		/** Laya's mistake: every closing message read as a promise of more work. */
+		/** A small classifier's mistake: every closing message read as a promise of more work. */
 		const mistaken = () =>
 			new MockJudgeProvider((request: JudgeRequest): Record<string, Answer> => {
 				if (!("promised" in request.questions)) return {};
@@ -230,11 +233,11 @@ describe("carrying on after stopping short", () => {
 		});
 	});
 
-	it("leaves whether work was promised to a judge other than the local one, unless told otherwise", async () => {
+	it("leaves whether work was promised to a judge trusted on it", async () => {
 		const input = { userMessage: "Schedule the meeting.", finalMessage: "Done. Created /app/meeting_scheduled.ics." };
 		const promised = (request: JudgeRequest): Record<string, Answer> =>
 			Object.fromEntries(Object.keys(request.questions).map((id) => [id, id === "promised" ? yes : no]));
-		const decide = async (spec: typeof turnContinue, tiers: (typeof BUILT_IN_JUDGES)["laya"]["profile"][]) => {
+		const decide = async (spec: typeof turnContinue, tiers: (JudgeProfile | undefined)[]) => {
 			const providers = tiers.map(() => new MockJudgeProvider(promised));
 			const engine = new DecisionEngine({
 				judge: new CascadeJudge(
@@ -248,24 +251,19 @@ describe("carrying on after stopping short", () => {
 				asked: providers.map((provider) => Object.keys(provider.calls[0]?.questions ?? {})),
 			};
 		};
-		const laya = BUILT_IN_JUDGES.laya.profile;
-		// Laya alone: not asked, so its mistake sends nobody back.
-		const alone = await decide(turnContinue, [laya]);
+		// The small judge alone: not asked, so its mistake sends nobody back.
+		const alone = await decide(turnContinue, [SMALL]);
 		expect(alone.asked[0]).not.toContain("promised");
 		expect(alone.outcome).toBe("end");
-		// Laya, then Jev: the question goes straight to Jev.
-		const cascade = await decide(turnContinue, [laya, undefined]);
+		// The small judge, then Jev: the question goes straight to Jev.
+		const cascade = await decide(turnContinue, [SMALL, undefined]);
 		expect(cascade.asked[0]).not.toContain("promised");
 		expect(cascade.asked[1]).toContain("promised");
 		expect(cascade.outcome).toBe("promised");
-		// continuation.localPromised: Laya answers it again.
-		const trusted = await decide(turnContinueLocalPromised, [laya]);
-		expect(trusted.asked[0]).toContain("promised");
-		expect(trusted.outcome).toBe("promised");
 	});
 
-	it("with Laya alone, asks nothing at the end of a run, where its verdict could only be to end", async () => {
-		const run = async (continuation: Record<string, unknown>, tiers = ["laya"], route?: string) => {
+	it("with only a judge trusted on neither, asks nothing at the end of a run, where its verdict could only be to end", async () => {
+		const run = async (continuation: Record<string, unknown>, tiers = ["small"], route?: string) => {
 			const provider = stopJudge();
 			const harness = await createHarness({
 				extensionFactories: [
@@ -274,6 +272,7 @@ describe("carrying on after stopping short", () => {
 						mode: "active",
 						config: parseConfig({
 							tiers,
+							judges: { small: { type: "mock", profile: SMALL } },
 							features: { memory: false, permissions: { mode: "full" }, continuation },
 						}),
 					}),
@@ -285,13 +284,12 @@ describe("carrying on after stopping short", () => {
 			await harness.session.prompt("Fix the flaky test.");
 			return { calls: continueCalls(provider).length, nudges: nudges(harness).length };
 		};
-		// Laya is trusted on neither `promised` nor a go-ahead: the verdict could only be "end", so nothing is asked.
+		// The small judge is trusted on neither `promised` nor a go-ahead: the verdict could only be "end", so nothing is asked.
 		expect(await run({})).toEqual({ calls: 0, nudges: 0 });
-		// continuation.localPromised lets Laya answer `promised`: it is asked at both ends, and its yes sends the agent back.
-		expect(await run({ localPromised: true })).toEqual({ calls: 2, nudges: 1 });
-		// The same when only this decision is routed to Laya, during the session.
+		// Jev is asked at both ends, and its yes sends the agent back. Not when only this decision is routed to the small
+		// judge, during the session.
 		expect(await run({}, ["jev"])).toEqual({ calls: 2, nudges: 1 });
-		expect(await run({}, ["jev"], "/mu route turn.continue laya")).toEqual({ calls: 0, nudges: 0 });
+		expect(await run({}, ["jev"], "/mu route turn.continue small")).toEqual({ calls: 0, nudges: 0 });
 	});
 
 	it("sends a run that ended on thinking alone back to work, without a judge, and not forever", async () => {

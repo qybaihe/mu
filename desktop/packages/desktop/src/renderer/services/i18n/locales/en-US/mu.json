@@ -149,11 +149,6 @@
         "tagRecommended": "Recommended · on this Mac",
         "description": "mu's own decision model, optimized for coding and state of the art at the decisions a coding agent makes. Runs on this Mac: no key, no per-call cost. Needs Apple silicon."
       },
-      "local": {
-        "title": "Local Laya",
-        "tag": "Free · offline",
-        "description": "Runs on this computer with no network and no cost. Good at classifying; less reliable at matching related items and at scoring."
-      },
       "clm": {
         "title": "CLM",
         "tag": "Self-hosted",
@@ -163,50 +158,6 @@
         "title": "OpenAI",
         "tag": "Hosted",
         "description": "OpenAI's decision model, gpt-6-luna, with an OpenAI API key. OpenAI bills it per input token."
-      }
-    },
-    "laya": {
-      "running": "Running on this computer",
-      "stopped": "Installed but not running. mu starts it when needed.",
-      "missing": "Not installed.",
-      "platform": "Laya can't run on this computer. It needs Windows or Linux (x64 or arm64), or a Mac with Apple silicon.",
-      "needsUv": "Installing Laya requires uv, a Python package manager. Install uv, then come back here.",
-      "uvLink": "How to install uv",
-      "install": "Install Laya",
-      "start": "Start",
-      "stop": "Stop",
-      "confirmTitle": "Download and install Laya?",
-      "confirmText": "This downloads about {{size}} MB of Python packages and model weights from PyPI and Hugging Face into mu's folder, and takes a few minutes. Laya starts once it's installed.",
-      "confirmOk": "Download and install",
-      "working": {
-        "setup": "Installing Laya…",
-        "start": "Starting Laya…",
-        "stop": "Stopping Laya…"
-      },
-      "failed": {
-        "setup": "Couldn't install Laya. Try again.",
-        "start": "Couldn't start Laya. Try again.",
-        "stop": "Couldn't stop Laya. Try again."
-      },
-      "onnx": {
-        "missing": "Laya's model isn't on this computer yet (about {{size}} MB). mu doesn't download it for you: get the files from Hugging Face, put them in the model folder, then click Check and start.",
-        "stopped": "The model is in place, but Laya isn't running. When Laya is your judge, mu starts it automatically when the app opens.",
-        "starting": "Checking the model and starting Laya. The first check reads the whole model, so it takes a moment.",
-        "missingFiles": "Still missing: {{files}}",
-        "wrongFiles": "These files don't match the version mu was tested with. Download them again: {{files}}",
-        "folder": "Model folder: {{folder}}",
-        "command": "With the Hugging Face CLI (hf), this command downloads everything:",
-        "page": "Get it on Hugging Face",
-        "openFolder": "Open the model folder",
-        "check": "Check and start",
-        "problem": {
-          "missing": "Some model files are missing.",
-          "wrong": "Some model files don't match the version mu was tested with. Download them again.",
-          "runtime": "This computer couldn't run the model.",
-          "port": "Another program is already using Laya's port ({{port}}).",
-          "stopped": "Laya stopped before it was ready.",
-          "foreign": "A copy of Laya that mu didn't start is already running. Stop it from wherever it was started."
-        }
       }
     },
     "mude": {
@@ -875,6 +826,8 @@
       "paid": "Jev on OpenCode Zen now requires a key or payment, so mu is using its default rules for now. Add a Jev key under Settings → Judges to turn the judge back on.",
       "gone": "OpenCode Zen no longer offers Jev for free, so mu is using its default rules for now. Add a Jev key under Settings → Judges to turn the judge back on."
     },
+    "layaRemoved": "Laya is no longer built into mu, so your judge is now {{judge}}. To use another decision model, add it from Hugging Face under Settings → Judges.",
+    "layaRemovedNoModels": "Laya is no longer built into mu, so your judge is now {{judge}}.",
     "checkpointOffWhy": {
       "gitMissing": "Checkpoints are off in this conversation: Git wasn't found on this computer. Install Git, then start a new conversation to use them.",
       "xcodeLicense": "Checkpoints are off in this conversation: Git can't run on this Mac until you accept the Xcode license. Run sudo xcodebuild -license in Terminal to accept it, then start a new conversation.",

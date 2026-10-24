@@ -38,7 +38,6 @@ import {
 } from '../judgeChoice';
 import ClmServerCheck from './ClmServerCheck';
 import SectionShell, { Card } from './SectionShell';
-import LocalJudgePanel from './LocalJudgePanel';
 import DecisionModels, { useDecisionModels } from './mude/DecisionModels';
 import MudePanel, { MudeUnsupported, mudeInstalled, mudeOffered, mudeRecommended, useMude } from './mude/MudePanel';
 import styles from './sections.module.css';
@@ -59,8 +58,8 @@ type JudgesSectionProps = {
 /**
  * The judges page. First whether the judge's verdicts take effect at all (the mode every decision point without one
  * of its own follows), then the choice most people make once: which judge answers the small questions mu asks while
- * it works, and under it what that choice needs (Jev a service and its key, Laya the one-click panel, CLM its server's
- * address). The order of several judges is the next page.
+ * it works, and under it what that choice needs (Jev a service and its key, mude its panel, CLM its server's address).
+ * The order of several judges is the next page.
  */
 export default function JudgesSection({ draft, base, onChange, onKey, onReload }: JudgesSectionProps) {
   const { t } = useTranslation();
@@ -256,18 +255,16 @@ export function JudgeChoiceTile({
 type BodyProps = {
   choice: JudgeChoice;
   draft: Draft;
-  /** In the first-run guide, which sets a judge up: Laya's Stop belongs to the settings. */
-  guide?: boolean;
   onChange: JudgesSectionProps['onChange'];
   onKey: JudgesSectionProps['onKey'];
 };
 
 /**
  * What a choice needs: Jev the service it is reached through (with the address of a service that has one to set) and
- * that service's key, Laya to be installed and running (one click each), CLM the address of its server, the key of a
- * server that asks for one, and word from the server, OpenAI's decision model its key.
+ * that service's key, CLM the address of its server, the key of a server that asks for one, and word from the server;
+ * OpenAI's decision model its key.
  */
-export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: BodyProps) {
+export function ChoiceBody({ choice, draft, onChange, onKey }: BodyProps) {
   const { t } = useTranslation();
   const { settings } = draft;
   const name = profileFor(settings, choice);
@@ -340,82 +337,75 @@ export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: Bo
     );
   }
 
-  if (choice === 'jev') {
-    const service = serviceOf(judge) ?? 'auto';
-    const address = addressOf(t, service, judge?.baseUrl ?? '');
-    const help = serviceHelp(t, service);
-    return (
-      <div className={styles.choiceFields}>
-        <div className={styles.choiceField}>
-          <label className={styles.choiceLabel}>{t('mu.judges.service')}</label>
-          <MuSelect
-            className={styles.choiceInput}
-            aria-label={t('mu.judges.service')}
-            value={service}
-            // The Jev the order asks first: the one this choice stands for.
-            onChange={(next: JevService) =>
-              onChange((now) => withJevService(now, now.tiers.indexOf(profileFor(now, 'jev') ?? ''), next))
-            }
-            options={serviceOptions(t)}
-          />
-          {help ? <OneLine text={help} /> : null}
-        </div>
-        {address && name ? (
-          <div className={styles.choiceField}>
-            <label className={styles.choiceLabel}>{t('mu.judges.baseUrl')}</label>
-            <Input
-              className={styles.choiceInput}
-              aria-label={t('mu.judges.baseUrl')}
-              placeholder={address.placeholder}
-              status={address.problem ? 'error' : undefined}
-              value={judge?.baseUrl}
-              onChange={(baseUrl) => onChange((now) => withProfile(now, name, { baseUrl }))}
-            />
-            {address.problem ? (
-              <div className={fieldStyles.problem} role='alert'>
-                {address.problem}
-              </div>
-            ) : address.help ? (
-              <div className={styles.choiceHint}>{address.help}</div>
-            ) : null}
-          </div>
-        ) : null}
-        {jevVariables(judge).map((variable) => {
-          const label = variableLabel(t, service, variable);
-          const where = variableHelp(t, variable);
-          return (
-            <div className={styles.choiceField} key={variable}>
-              <label className={styles.choiceLabel}>
-                {label}
-                <Tag size='small'>{t(settings.keys[variable] ? 'mu.keyState.set' : 'mu.keyState.none')}</Tag>
-              </label>
-              <VariableInput
-                className={styles.choiceInput}
-                variable={variable}
-                label={label}
-                set={settings.keys[variable]}
-                draft={draft}
-                onKey={onKey}
-              />
-              {where ? <div className={styles.choiceHint}>{where}</div> : null}
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-
+  // Jev: the choice left.
+  const service = serviceOf(judge) ?? 'auto';
+  const address = addressOf(t, service, judge?.baseUrl ?? '');
+  const help = serviceHelp(t, service);
   return (
-    <div className={styles.choiceField}>
-      <LocalJudgePanel guide={guide} />
+    <div className={styles.choiceFields}>
+      <div className={styles.choiceField}>
+        <label className={styles.choiceLabel}>{t('mu.judges.service')}</label>
+        <MuSelect
+          className={styles.choiceInput}
+          aria-label={t('mu.judges.service')}
+          value={service}
+          // The Jev the order asks first: the one this choice stands for.
+          onChange={(next: JevService) =>
+            onChange((now) => withJevService(now, now.tiers.indexOf(profileFor(now, 'jev') ?? ''), next))
+          }
+          options={serviceOptions(t)}
+        />
+        {help ? <OneLine text={help} /> : null}
+      </div>
+      {address && name ? (
+        <div className={styles.choiceField}>
+          <label className={styles.choiceLabel}>{t('mu.judges.baseUrl')}</label>
+          <Input
+            className={styles.choiceInput}
+            aria-label={t('mu.judges.baseUrl')}
+            placeholder={address.placeholder}
+            status={address.problem ? 'error' : undefined}
+            value={judge?.baseUrl}
+            onChange={(baseUrl) => onChange((now) => withProfile(now, name, { baseUrl }))}
+          />
+          {address.problem ? (
+            <div className={fieldStyles.problem} role='alert'>
+              {address.problem}
+            </div>
+          ) : address.help ? (
+            <div className={styles.choiceHint}>{address.help}</div>
+          ) : null}
+        </div>
+      ) : null}
+      {jevVariables(judge).map((variable) => {
+        const label = variableLabel(t, service, variable);
+        const where = variableHelp(t, variable);
+        return (
+          <div className={styles.choiceField} key={variable}>
+            <label className={styles.choiceLabel}>
+              {label}
+              <Tag size='small'>{t(settings.keys[variable] ? 'mu.keyState.set' : 'mu.keyState.none')}</Tag>
+            </label>
+            <VariableInput
+              className={styles.choiceInput}
+              variable={variable}
+              label={label}
+              set={settings.keys[variable]}
+              draft={draft}
+              onKey={onKey}
+            />
+            {where ? <div className={styles.choiceHint}>{where}</div> : null}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
 /**
- * The judge tiers: the order, by the judges' names (Jev, Laya, CLM), then a group per judge in that order with what it
+ * The judge tiers: the order, by the judges' names (Jev, mude, CLM), then a group per judge in that order with what it
  * needs. The first judge is the one chosen on the judges page, which asks for its service, its address and its key
- * (Laya's install, CLM's server): here it has only its model. A judge further down the order needs everything here,
+ * (CLM's server too): here it has only its model. A judge further down the order needs everything here,
  * where it is the only place: Jev the service it is reached through, its model, the service's address where it has
  * one and its key; CLM its server's address, its model and its key. A judge of another kind (a model as judge, a
  * self-hosted HTTP service) goes by the name it was given.
@@ -430,7 +420,7 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
     const kind = kindOf(settings.judges[profile]);
     return kind ? t(`mu.judges.choices.${kind}.title`) : profile;
   };
-  // Every judge in the order, Jev, Laya and CLM when they are not in it yet, and the other classifier models (Clef).
+  // Every judge in the order, Jev and CLM when they are not in it yet, and the other classifier models (Clef).
   const offered = [
     ...settings.tiers,
     // mude goes into the order through its command only (it is installed and started there).
@@ -465,8 +455,8 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
         const judge = settings.judges[name];
         const kind = kindOf(judge);
         const classifier = kind === undefined && judge?.type === 'classifier';
-        // Where what a judge needs is set when it is not here: the first of Jev, Laya and CLM is the one the judges
-        // page chose, mude is set up there too, and a judge of another kind is set in mu's settings file.
+        // Where what a judge needs is set when it is not here: the first of Jev and CLM is the one the judges page
+        // chose, mude is set up there too, and a judge of another kind is set in mu's settings file.
         const summary =
           isMude(judge) || isAddedModel(judge)
             ? t('mu.judges.mude.tierHelp')
@@ -491,11 +481,6 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
               <ClmFields draft={draft} base={base} index={index} onChange={onChange} onKey={onKey} />
             ) : classifier ? (
               <ClassifierFields draft={draft} index={index} onKey={onKey} />
-            ) : kind === 'local' && index > 0 ? (
-              // The first judge is the one chosen on the judges page, whose choice installs and starts it.
-              <div className={styles.tierPanel}>
-                <LocalJudgePanel />
-              </div>
             ) : null}
           </Card>
         );

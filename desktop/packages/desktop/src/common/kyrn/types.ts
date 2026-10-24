@@ -7,17 +7,19 @@ export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
  * `classifier`: a classifier model of mu's model catalog, `model` = "provider/model-id" (Jev on OpenCode Zen, Clef…).
  * `openai`: OpenAI's decision model through its Decisions API.
  */
-export type JudgeType =
-  | 'jev'
-  | 'typesafe'
-  | 'clm'
-  | 'gateway'
-  | 'local'
-  | 'http'
-  | 'llm'
-  | 'classifier'
-  | 'openai'
-  | 'mock';
+export type JudgeType = 'jev' | 'typesafe' | 'clm' | 'gateway' | 'http' | 'llm' | 'classifier' | 'openai' | 'mock';
+/** The judge types mu runs. Laya's `local` is gone (process/agent/kyrn/config/laya.ts). */
+export const JUDGE_TYPES: readonly JudgeType[] = [
+  'jev',
+  'typesafe',
+  'clm',
+  'gateway',
+  'http',
+  'llm',
+  'classifier',
+  'openai',
+  'mock',
+];
 export type JudgeSettings = {
   type: JudgeType;
   model: string;

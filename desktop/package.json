@@ -1,6 +1,6 @@
 {
   "name": "mu-desktop",
-  "version": "0.2.3",
+  "version": "0.2.5",
   "description": "mu, the coding agent with a judge model, as a desktop app.",
   "keywords": [],
   "license": "MIT AND Apache-2.0",
@@ -85,7 +85,6 @@
     "@floating-ui/react": "^0.27.16",
     "@google/genai": "^1.16.0",
     "@grammyjs/transformer-throttler": "^1.2.1",
-    "@huggingface/tokenizers": "0.2.0",
     "@icon-park/react": "^1.4.2",
     "@iconify-json/vscode-icons": "^1.2.53",
     "@iconify/react": "^6.0.2",
@@ -133,7 +132,6 @@
     "mermaid": "^11.13.0",
     "multer": "^2.1.1",
     "officeparser": "^5.2.2",
-    "onnxruntime-node": "1.30.0",
     "openai": "^5.12.2",
     "postcss": "^8.5.8",
     "process": "^0.11.10",
@@ -251,7 +249,7 @@
   "electronRebuild": {
     "electronVersion": "^37.3.1"
   },
-  "muAgentVersion": "0.2.3",
+  "muAgentVersion": "0.2.5",
   "patchedDependencies": {
     "7zip-bin@5.2.0": "patches/7zip-bin@5.2.0.patch"
   },

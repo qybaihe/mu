@@ -40,8 +40,8 @@ On top of that, mu adds guards. They lower risk but aren't guarantees. Reports t
 ### What leaves your machine
 
 - Your conversation goes to the model provider you chose, as with any coding agent.
-- The judge sees only the fields each question needs. With no judge key, those questions go to the free Jev on OpenCode Zen (Jev is TypeSafe's hosted judge model, the default); with a key, to the service the key belongs to. `mu setup --judge off` (no decision point asks a judge), `MU_JUDGE=off` (the whole kernel off), or the local judge (Laya) keeps them on your machine.
-- Nothing is downloaded without your consent: the local judge's model, browser runtimes and app updates all ask first.
+- The judge sees only the fields each question needs. With no judge key, those questions go to the free Jev on OpenCode Zen (Jev is TypeSafe's hosted judge model, the default); with a key, to the service the key belongs to. `mu setup --judge off` (no decision point asks a judge), `MU_JUDGE=off` (the whole kernel off), or mude 1.0 with `--local-only` keeps them on your machine.
+- Nothing is downloaded without your consent: decision models (mude 1.0, or one you add from Hugging Face), browser runtimes and app updates all ask first.
 - The desktop app sends no telemetry and no crash reports.
 
 ## In scope

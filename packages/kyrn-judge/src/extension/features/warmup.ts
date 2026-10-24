@@ -41,10 +41,9 @@ function judgeAddress(config: KyrnConfig): string | undefined {
  * that asks the judge often sends few or none. Not counted as a decision:
  * `/status` counts probes apart.
  *
- * None for a local sidecar or a judge on this machine or the local network
- * (`nearby`), where a new connection costs nothing worth saving and a probe
- * would only queue in front of real questions on a server that answers one
- * at a time. None in an unattended run (`mu --print`, json mode;
+ * None for a judge on this machine or the local network (`nearby`), where a
+ * new connection costs nothing worth saving and a probe would only queue in
+ * front of real questions. None in an unattended run (`mu --print`, json mode;
  * `unattended`): it saves at most a tenth of a second on a short route there,
  * and costs about 19 requests a run.
  */
@@ -58,7 +57,7 @@ export function registerWarmup(runtime: KyrnRuntime): void {
 		/** Keep the judge warm in a `mu --print` or json run too. */
 		unattended: false,
 	});
-	if (!options.enabled || !runtime.judgeParallel) return;
+	if (!options.enabled) return;
 	if (!options.nearby && isNearby(judgeAddress(runtime.config))) return;
 	const { engine } = runtime;
 	let timer: ReturnType<typeof setTimeout> | undefined;

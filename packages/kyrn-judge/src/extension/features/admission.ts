@@ -114,9 +114,9 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 		judgeMinChars: 6000,
 		chunkChars: 1200,
 		maxChunks: 48,
-		/** Chunks put to a hosted judge in one request. The local sidecar is asked one chunk at a time whatever this says. */
+		/** Chunks put to the judge in one request. */
 		batchChunks: 16,
-		/** Requests in flight at once: batches for a hosted judge, chunks for the local sidecar. */
+		/** Requests in flight at once. */
 		concurrency: 4,
 		/**
 		 * A verdict later than this is not worth holding the result for: the output goes in whole, the verdict is only
@@ -155,23 +155,15 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 	);
 
 	/**
-	 * One verdict per chunk, in order. A hosted judge takes many chunks in one request, the state billed once
+	 * One verdict per chunk, in order. The judge takes many chunks in one request, the state billed once
 	 * (measured 2026-09-23 on jev: 16 chunks in 0.44 s and 7.6k tokens, against 1.4 s and 11.6k tokens as 16
-	 * requests, with the same verdicts). The local sidecar's window holds one chunk, so it is asked one at a time.
+	 * requests, with the same verdicts).
 	 */
 	const judgeChunks = async (
 		call: string,
 		middle: readonly string[],
 		signal: AbortSignal | undefined,
 	): Promise<readonly AdmissionOutcome[]> => {
-		if (!runtime.answersInBatches(toolAdmission.id, "screen")) {
-			const decisions = await runtime.engine.decideMany(
-				toolAdmission,
-				middle.map((chunk) => ({ call, chunk })),
-				{ signal, concurrency: options.concurrency },
-			);
-			return decisions.map((decision) => decision.outcome);
-		}
 		const size = Math.max(1, Math.min(options.batchChunks, Math.floor(BATCH_STATE_CHARS / options.chunkChars)));
 		const batches: { call: string; chunks: string[] }[] = [];
 		for (let start = 0; start < middle.length; start += size) {

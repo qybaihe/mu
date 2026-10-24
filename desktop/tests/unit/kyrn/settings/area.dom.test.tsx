@@ -35,8 +35,6 @@ const bridge = vi.hoisted(() => ({
   loginCancel: vi.fn(),
   loginLogout: vi.fn(),
   loginSwitchModels: vi.fn(),
-  localJudgeState: vi.fn(),
-  localJudgeRun: vi.fn(),
   mudeState: vi.fn(),
   mudeRun: vi.fn(),
   clmCheck: vi.fn(),
@@ -71,8 +69,6 @@ vi.mock('@/common/kyrn/bridge', () => ({
     loginCancel: { invoke: bridge.loginCancel },
     loginLogout: { invoke: bridge.loginLogout },
     loginSwitchModels: { invoke: bridge.loginSwitchModels },
-    localJudgeState: { invoke: bridge.localJudgeState },
-    localJudgeRun: { invoke: bridge.localJudgeRun },
     mudeState: { invoke: bridge.mudeState },
     mudeRun: { invoke: bridge.mudeRun },
     clmCheck: { invoke: bridge.clmCheck },
@@ -109,7 +105,7 @@ function settings(patch: Partial<KyrnSettings> = {}): KyrnSettings {
     tiers: ['jev'],
     judges: {
       jev: { type: 'jev', model: 'jev-latest', baseUrl: '', apiKeyEnv: 'TYPESAFE_API_KEY', timeoutMs: 10000 },
-      laya: { type: 'local', model: '', baseUrl: 'http://127.0.0.1:47823', apiKeyEnv: '', timeoutMs: 10000 },
+      clm: { type: 'clm', model: 'clm-latest', baseUrl: '', apiKeyEnv: 'MU_JUDGE_CLM_API_KEY', timeoutMs: 10000 },
     },
     mode: 'shadow',
     betaCompression: false,
@@ -160,10 +156,7 @@ beforeEach(async () => {
   bridge.settings.mockResolvedValue({ ok: true, data: settings() });
   // As off macOS: mude is not offered.
   bridge.mudeState.mockResolvedValue({ ok: true, data: { available: false } });
-  bridge.localJudgeState.mockResolvedValue({
-    ok: true,
-    data: { support: 'ok', installed: true, running: true, url: 'http://127.0.0.1:47823' },
-  });
+  bridge.clmCheck.mockResolvedValue({ ok: true, data: { status: 'down' } });
   bridge.availableModels.mockResolvedValue({
     ok: true,
     data: {
@@ -1607,7 +1600,7 @@ describe('the permission modes and the board', () => {
 
 describe('the kernel pages', () => {
   it('starts the judges page with whether verdicts take effect, then the choice; the order is a page of its own', async () => {
-    bridge.settings.mockResolvedValue({ ok: true, data: settings({ tiers: ['jev', 'laya'], mode: 'active' }) });
+    bridge.settings.mockResolvedValue({ ok: true, data: settings({ tiers: ['jev', 'clm'], mode: 'active' }) });
     render(<SettingsArea page='judges' />, { wrapper });
     const page = await screen.findByTestId('mu-section-judges');
     // The switch every step without a setting of its own follows, first, as a switch.
@@ -1615,11 +1608,13 @@ describe('the kernel pages', () => {
     expect(within(verdicts).getByRole('switch', { name: enMu.judges.mode })).toBeChecked();
     // The switch's name says it all: no sentence under it.
     expect(verdicts).toHaveTextContent(new RegExp(`^${enMu.judges.mode}$`));
-    // The three choices, Jev, Laya and CLM, and no second way to pick a judge.
+    // The choices, Jev, CLM and OpenAI where mude is not offered, no Laya, and no second way to pick a judge.
     const choice = within(page).getByTestId('mu-judge-choice-jev');
     expect(verdicts.compareDocumentPosition(choice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(within(page).getByTestId('mu-judge-choice-local')).toBeInTheDocument();
     expect(within(page).getByTestId('mu-judge-choice-clm')).toBeInTheDocument();
+    expect(within(page).getByTestId('mu-judge-choice-openai')).toBeInTheDocument();
+    expect(within(page).queryByTestId('mu-judge-choice-local')).not.toBeInTheDocument();
+    expect(within(page).getAllByRole('radio')).toHaveLength(3);
     // The service and its long help once, in the choice; no order and no model id on this page.
     expect(within(page).getAllByLabelText(enMu.judges.service)).toHaveLength(1);
     expect(page.textContent?.split(enMu.judges.services.auto.help)).toHaveLength(2);
@@ -1631,7 +1626,17 @@ describe('the kernel pages', () => {
   });
 
   it('lists the order by name, and asks of the first judge only what the judges page does not', async () => {
-    bridge.settings.mockResolvedValue({ ok: true, data: settings({ tiers: ['jev', 'laya'] }) });
+    const mude = {
+      type: 'typesafe' as const,
+      model: 'mude',
+      baseUrl: 'http://127.0.0.1:8790/v1/systemone',
+      apiKeyEnv: 'MU_JUDGE_MUDE_KEY',
+      timeoutMs: 4000,
+    };
+    bridge.settings.mockResolvedValue({
+      ok: true,
+      data: settings({ tiers: ['jev', 'mude'], judges: { ...settings().judges, mude } }),
+    });
     render(<SettingsArea page='judge-order' />, { wrapper });
     const page = await screen.findByTestId('mu-section-judgeOrder');
     expect(within(page).getByRole('heading', { name: enMu.sections.judgeOrder })).toBeInTheDocument();
@@ -1639,8 +1644,8 @@ describe('the kernel pages', () => {
     expect(order).toHaveTextContent(enMu.judges.order);
     // The order says the judges' names, never the profiles' ids.
     const tags = [...order.querySelectorAll('.arco-tag')].map((tag) => tag.textContent);
-    expect(tags).toEqual([enMu.judges.choices.jev.title, enMu.judges.choices.local.title]);
-    expect(order).not.toHaveTextContent(/\bjev\b|\blaya\b/);
+    expect(tags).toEqual([enMu.judges.choices.jev.title, enMu.judges.mude.name]);
+    expect(order).not.toHaveTextContent(/\bjev\b/);
     // Jev, first: its model. Its service, address and key are the judges page's.
     const jev = within(page).getByTestId('mu-judge-tier-0');
     expect(jev).toHaveTextContent(`Tier 1: ${enMu.judges.choices.jev.title}`);
@@ -1649,10 +1654,11 @@ describe('the kernel pages', () => {
     expect(within(jev).queryByLabelText(enMu.judges.service)).not.toBeInTheDocument();
     expect(within(jev).queryByLabelText(enMu.judges.services.auto.key)).not.toBeInTheDocument();
     expect(page).not.toHaveTextContent(enMu.judges.services.auto.help);
-    // Laya: its name and nothing to fill in.
-    const laya = within(page).getByTestId('mu-judge-tier-1');
-    expect(laya).toHaveTextContent(`Tier 2: ${enMu.judges.choices.local.title}`);
-    expect(within(laya).queryByRole('textbox')).not.toBeInTheDocument();
+    // mude: its name, where it is set up, and nothing to fill in.
+    const second = within(page).getByTestId('mu-judge-tier-1');
+    expect(second).toHaveTextContent(`Tier 2: ${enMu.judges.mude.name}`);
+    expect(second).toHaveTextContent(enMu.judges.mude.tierHelp);
+    expect(within(second).queryByRole('textbox')).not.toBeInTheDocument();
     // No variable names, endpoints or timeouts: none of it is a person's decision.
     expect(page).not.toHaveTextContent(/TYPESAFE_API_KEY|AI_GATEWAY_API_KEY|MU_JUDGE_|provider\/model-id/);
     expect(within(page).queryByLabelText('Timeout')).not.toBeInTheDocument();
@@ -1719,15 +1725,25 @@ describe('the kernel pages', () => {
   });
 
   it('asks for the service, address and key of a Jev further down the order, which the judges page does not show', async () => {
-    bridge.settings.mockResolvedValue({ ok: true, data: settings({ tiers: ['laya', 'jev'], keys: {} }) });
+    const mude = {
+      type: 'typesafe' as const,
+      model: 'mude',
+      baseUrl: 'http://127.0.0.1:8790/v1/systemone',
+      apiKeyEnv: 'MU_JUDGE_MUDE_KEY',
+      timeoutMs: 4000,
+    };
+    bridge.settings.mockResolvedValue({
+      ok: true,
+      data: settings({ tiers: ['mude', 'jev'], judges: { ...settings().judges, mude }, keys: {} }),
+    });
     render(<SettingsArea page='judge-order' />, { wrapper });
     const jev = await screen.findByTestId('mu-judge-tier-1');
     expect(within(jev).getByLabelText(enMu.judges.service)).toBeInTheDocument();
     fireEvent.change(within(jev).getByLabelText(enMu.judges.services.auto.key), { target: { value: 'jev-key' } });
     expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Judges');
-    // Laya, first, is installed and started from the choice on the judges page: no panel for it here.
-    expect(within(screen.getByTestId('mu-judge-tier-0')).queryByTestId('mu-laya')).not.toBeInTheDocument();
-    expect(screen.queryAllByTestId('mu-laya')).toHaveLength(0);
+    // mude, first, is set up from the choice on the judges page: no panel for it here.
+    expect(screen.getByTestId('mu-judge-tier-0')).toHaveTextContent(enMu.judges.mude.tierHelp);
+    expect(screen.queryAllByTestId('mu-mude')).toHaveLength(0);
   });
 
   it('reaches Jev through OpenRouter from the choice, with OpenRouter’s own key and nothing typed for another', async () => {
@@ -2015,7 +2031,7 @@ describe('one draft across the settings pages', () => {
 
   it('keeps an edit made on one page, unsaved, on the next and after a page that is not mu’s', async () => {
     renderSettings('/settings/judges');
-    fireEvent.click(await screen.findByTestId('mu-judge-choice-local'));
+    fireEvent.click(await screen.findByTestId('mu-judge-choice-clm'));
     expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Judges');
 
     fireEvent.click(screen.getByRole('link', { name: 'safety' }));
@@ -2028,13 +2044,13 @@ describe('one draft across the settings pages', () => {
     fireEvent.click(screen.getByRole('link', { name: 'appearance' }));
     expect(await screen.findByTestId('appearance')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('link', { name: 'judges' }));
-    expect(await screen.findByTestId('mu-judge-choice-local')).toHaveAttribute('aria-checked', 'true');
+    expect(await screen.findByTestId('mu-judge-choice-clm')).toHaveAttribute('aria-checked', 'true');
     // Loaded once for all the pages, and saved once for all of them.
     expect(bridge.settings).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByText('Save'));
     await waitFor(() => expect(bridge.save).toHaveBeenCalledTimes(1));
     const sent = bridge.save.mock.calls[0][0] as SaveSettings;
-    expect(sent.tiers).toEqual(['laya']);
+    expect(sent.tiers).toEqual(['clm']);
     expect(sent.decisionModes).toEqual({ 'tool.risk': 'active' });
   });
 

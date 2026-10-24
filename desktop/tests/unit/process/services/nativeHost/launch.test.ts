@@ -122,7 +122,7 @@ describe('prepareHost', () => {
     const prepareLaunchAsync = vi.fn(
       (input: { err(line: string): void }) =>
         new Promise<void>((resolve) => {
-          input.err('mu: the local judge did not start (mu judge status); decisions fall back to pi’s behaviour');
+          input.err('mu: .env: skipped line 2 (expected KEY=VALUE)');
           finish = resolve;
         })
     );
@@ -145,9 +145,26 @@ describe('prepareHost', () => {
     finish?.();
     await expect(preparing).resolves.toMatchObject({
       module: PLAN.module,
-      notes: ['mu: the local judge did not start (mu judge status); decisions fall back to pi’s behaviour'],
+      notes: ['mu: .env: skipped line 2 (expected KEY=VALUE)'],
     });
     expect(prepareLaunch).not.toHaveBeenCalled();
+  });
+
+  it('never lets a launcher from before 0.2.5 start Laya and wait for it before pi starts', async () => {
+    const prepareLaunchAsync = vi.fn(async () => undefined);
+    const prepareLaunch = vi.fn();
+    const importLauncher = vi.fn(async () => ({
+      planHost: () => ({ ...PLAN, startJudge: true }),
+      prepareLaunch,
+      prepareLaunchAsync,
+    }));
+    await prepareHost(options({ importLauncher }));
+    expect(prepareLaunchAsync).toHaveBeenCalledWith(expect.objectContaining({ plan: { ...PLAN, startJudge: false } }));
+    // The same for a launcher without prepareLaunchAsync, whose prepareLaunch would start it with spawnSync.
+    await prepareHost(
+      options({ importLauncher: async () => ({ planHost: () => ({ ...PLAN, startJudge: true }), prepareLaunch }) })
+    );
+    expect(prepareLaunch).toHaveBeenCalledWith(expect.objectContaining({ plan: { ...PLAN, startJudge: false } }));
   });
 
   it('says `plan` when the launcher cannot prepare the launch', async () => {

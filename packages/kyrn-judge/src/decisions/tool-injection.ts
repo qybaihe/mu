@@ -13,8 +13,8 @@ import type { Answer, Question, Questions } from "../types.ts";
  * exactly 0.5, withholds nothing). Relevance is not asked: the model already chose what to
  * fetch.
  *
- * The capability is `screen`: a judge that is not trusted to screen tool output (the local Laya) leaves the passages
- * to the next tier, and with none left, to the rules.
+ * The capability is `screen`: a judge that is not trusted to screen tool output leaves the passages to the next tier,
+ * and with none left, to the rules.
  */
 export interface InjectionInput {
 	/** Which tool returned the text, said as where it came from. */

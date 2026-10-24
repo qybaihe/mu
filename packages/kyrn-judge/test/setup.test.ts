@@ -775,7 +775,7 @@ describe("mu setup, asking in a terminal", () => {
 		mkdirSync(join(home, "agent"));
 		writeFileSync(join(home, ".env"), "# mine\nOTHER=1\n");
 		const mode = statSync(join(home, ".env")).mode & 0o777;
-		writeFileSync(join(home, "agent", "mu.json"), JSON.stringify({ tiers: ["laya"], modes: { default: "active" } }));
+		writeFileSync(join(home, "agent", "mu.json"), JSON.stringify({ tiers: ["clm"], modes: { default: "active" } }));
 		const run = await wizard({
 			home,
 			// The second "2": Jev with a key of one's own (the free Jev is offered first while no key is set).
@@ -790,7 +790,7 @@ describe("mu setup, asking in a terminal", () => {
 		expect(run.json("mu.json")).toEqual({ tiers: ["jev"], modes: { default: "active" } });
 		const backup = join(home, "backups", "2026-09-27T12-00-00");
 		expect(readFileSync(join(backup, ".env"), "utf8")).toBe("# mine\nOTHER=1\n");
-		expect(JSON.parse(readFileSync(join(backup, "mu.json"), "utf8")).tiers).toEqual(["laya"]);
+		expect(JSON.parse(readFileSync(join(backup, "mu.json"), "utf8")).tiers).toEqual(["clm"]);
 		expect(run.printed).toContain(`Backed up the previous files to ${join("~", "backups", "2026-09-27T12-00-00")}`);
 		expect(run.said).toContain("Done. mu will start on Anthropic · claude-opus-4-8. Judge: Jev.");
 	});
@@ -823,11 +823,11 @@ describe("mu setup, asking in a terminal", () => {
 		mkdirSync(join(home, "agent"));
 		writeFileSync(
 			join(home, "agent", "mu.json"),
-			JSON.stringify({ tiers: ["laya"], modes: { "turn.drift": "active" } }),
+			JSON.stringify({ tiers: ["clm"], modes: { "turn.drift": "active" } }),
 		);
 		// Subscription; judge: not now; no session.
 		const off = await wizard({ home, answers: ["3", "3", "n"] });
-		expect(off.json("mu.json")).toEqual({ tiers: ["laya"], modes: { default: "off", "turn.drift": "active" } });
+		expect(off.json("mu.json")).toEqual({ tiers: ["clm"], modes: { default: "off", "turn.drift": "active" } });
 		expect(off.printed).toContain("judge: off");
 		// Again, with the free Jev: the "off" goes, a point's own mode stays.
 		const on = await wizard({ home, answers: ["3", "1", "n"] });
@@ -857,7 +857,7 @@ describe("mu setup, asking in a terminal", () => {
 	it("leaves Jev as the judge when mude 1.0 does not get installed, and says how to go on", async () => {
 		const home = temp();
 		mkdirSync(join(home, "agent"));
-		writeFileSync(join(home, "agent", "mu.json"), JSON.stringify({ tiers: ["laya"], modes: { default: "off" } }));
+		writeFileSync(join(home, "agent", "mu.json"), JSON.stringify({ tiers: ["clm"], modes: { default: "off" } }));
 		const run = await wizard({ home, answers: ["3", "1", "n"], mude: 1 });
 		expect(run.code).toBe(SETUP_EXIT.done);
 		expect(run.json("mu.json")).toEqual({ tiers: ["jev"] });

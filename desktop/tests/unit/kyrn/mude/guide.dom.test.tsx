@@ -23,7 +23,6 @@ const bridge = vi.hoisted(() => ({
   importList: vi.fn(),
   loginStatus: vi.fn(),
   loginState: vi.fn(),
-  localJudgeState: vi.fn(),
   mudeState: vi.fn(),
   mudeRun: vi.fn(),
 }));
@@ -35,7 +34,6 @@ vi.mock('@/common/kyrn/bridge', () => ({
     importList: { invoke: bridge.importList },
     loginStatus: { invoke: bridge.loginStatus },
     loginState: { invoke: bridge.loginState },
-    localJudgeState: { invoke: bridge.localJudgeState },
     mudeState: { invoke: bridge.mudeState },
     mudeRun: { invoke: bridge.mudeRun },
   },
@@ -77,7 +75,7 @@ function newUser(patch: Partial<KyrnSettings> = {}): KyrnSettings {
     judges: {
       jev: { type: 'jev', model: 'jev-latest', baseUrl: '', apiKeyEnv: 'TYPESAFE_API_KEY', timeoutMs: 10000 },
       mude: MUDE_PROFILE,
-      laya: { type: 'local', model: '', baseUrl: 'http://127.0.0.1:47823', apiKeyEnv: '', timeoutMs: 4000 },
+      clm: { type: 'clm', model: 'clm-latest', baseUrl: '', apiKeyEnv: 'MU_JUDGE_CLM_API_KEY', timeoutMs: 10000 },
     },
     mode: 'active',
     betaCompression: false,
@@ -149,9 +147,6 @@ beforeEach(() => {
   bridge.importList.mockResolvedValue(ok({ conversations: [] }));
   bridge.loginStatus.mockResolvedValue(ok({ signedIn: [] }));
   bridge.loginState.mockResolvedValue(ok({ id: 0, phase: 'idle' }));
-  bridge.localJudgeState.mockResolvedValue(
-    ok({ support: 'ok', installed: true, running: true, url: 'http://127.0.0.1:47823' })
-  );
   bridge.mudeState.mockResolvedValue(state(NOT_INSTALLED));
   bridge.mudeRun.mockResolvedValue(state(NOT_INSTALLED));
   // The store answers with what it was given, under a new revision.
@@ -190,9 +185,9 @@ const tilesOf = (step: HTMLElement) =>
     .map((radio) => radio.getAttribute('data-testid'));
 
 /** Today's order, where mude is not the recommended judge. */
-const USUAL_ORDER = ['mu-judge-choice-jev', 'mu-judge-choice-mude', 'mu-judge-choice-local', 'mu-welcome-judge-none'];
+const USUAL_ORDER = ['mu-judge-choice-jev', 'mu-judge-choice-mude', 'mu-welcome-judge-none'];
 /** On a Mac that can run mude: mude first, then the others in their usual order. */
-const MUDE_FIRST = ['mu-judge-choice-mude', 'mu-judge-choice-jev', 'mu-judge-choice-local', 'mu-welcome-judge-none'];
+const MUDE_FIRST = ['mu-judge-choice-mude', 'mu-judge-choice-jev', 'mu-welcome-judge-none'];
 
 /** On to the last step, and Start: what the guide saved. */
 async function finish(): Promise<SaveSettings> {
@@ -274,10 +269,11 @@ describe('mude in the first-run guide', () => {
   });
 
   it('leaves a judge set up before as it is, and only puts mude first', async () => {
-    bridge.settings.mockResolvedValue(ok(newUser({ tiers: ['laya'] })));
+    // CLM on a server of the person's own, which the guide does not offer: no tile is picked for it, mude neither.
+    bridge.settings.mockResolvedValue(ok(newUser({ tiers: ['clm'] })));
     const { step, tile } = await judgeStep();
     await waitFor(() => expect(tilesOf(step)).toEqual(MUDE_FIRST), { timeout: 3000 });
-    expect(within(step).getByTestId('mu-judge-choice-local')).toHaveAttribute('aria-checked', 'true');
+    for (const radio of within(step).getAllByRole('radio')) expect(radio).toHaveAttribute('aria-checked', 'false');
     expect(tile).toHaveAttribute('aria-checked', 'false');
     cleanup();
     // Jev with a key of its own: set up on purpose, so it stays the pick too.
@@ -497,9 +493,10 @@ describe('mude in the first-run guide', () => {
     cleanup();
     const again = await judgeStep();
     fireEvent.click(again.tile);
-    fireEvent.click(screen.getByTestId('mu-judge-choice-local'));
+    fireEvent.click(screen.getByTestId('mu-welcome-judge-none'));
     expect(again.tile).toHaveAttribute('aria-checked', 'false');
     const saved = await finish();
-    expect(saved.tiers).toEqual(['laya']);
+    expect(saved.mode).toBe('off');
+    expect(saved.tiers).toEqual(['jev']);
   });
 });

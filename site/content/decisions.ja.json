@@ -31,7 +31,7 @@
     "judges_h2": "判定器は、インストール全体でも判定ポイントごとにも選べる",
     "judges": [
       { "h3": "Jev（クラウド）", "p": "キーがなくても、OpenCode Zen を通して無料で使えます。自分のキーがあれば、TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode、Cloudflare を使えます。", "code": "mu setup" },
-      { "h3": "Laya（ローカル）", "p": "322M パラメータで、ネットワークを使いません。単純な述語では信頼できます。任せる前に、シャドーモードで今の判定器と並べて動かしてください。", "code": "mu judge setup" },
+      { "h3": "mude 1.0（あなたの Mac で）", "p": "コーディング向けに最適化された mu 独自の意思決定モデルで、Apple シリコンの Mac で動きます。約 0.1 秒で答え、読んだ内容は Mac の外に出ません。", "code": "mu judge mude install" },
       { "h3": "分類モデル", "p": "pi のモデルカタログにある任意の分類モデル。たとえば Cloudflare の Clef を、すでにあるサインインで使えます。", "code": "classifier:<provider>/<model>" },
       { "h3": "任意の LLM", "p": "すでに使っているモデルに、JSON で答えさせます。遅く、判定のたびにトークンがかかります。", "code": "llm:<provider>/<model>" }
     ],

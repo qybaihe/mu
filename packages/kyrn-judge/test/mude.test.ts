@@ -376,18 +376,28 @@ describe("mude in mu.json", () => {
 	});
 
 	it("uses mude alone when asked, and goes back to the judges from before on disable", () => {
-		const { paths, files, read } = setup({ tiers: ["laya", "jev"], routes: { "tool.injection": ["clef"] } });
+		const { paths, files, read } = setup({ tiers: ["clm", "jev"], routes: { "tool.injection": ["clef"] } });
 		enableMude(paths, files, { port: 8790, key: "k", localOnly: true });
 		// A route someone set by hand stays as it is.
 		expect(read()).toMatchObject({ tiers: ["mude"], routes: { "tool.injection": ["clef"] } });
 		expect(judgeSetting(files)).toEqual({ enabled: true, localOnly: true, fallback: [] });
 		enableMude(paths, files, { port: 8790, key: "k", localOnly: false });
 		expect(read()).toMatchObject({
-			tiers: ["mude", "laya", "jev"],
-			routes: { "tool.injection": ["clef"], "tool.description": ["laya", "jev"] },
+			tiers: ["mude", "clm", "jev"],
+			routes: { "tool.injection": ["clef"], "tool.description": ["clm", "jev"] },
 		});
-		expect(disableMude(paths, files)).toEqual(["laya", "jev"]);
-		expect(read()).toEqual({ tiers: ["laya", "jev"], routes: { "tool.injection": ["clef"] } });
+		expect(disableMude(paths, files)).toEqual(["clm", "jev"]);
+		expect(read()).toEqual({ tiers: ["clm", "jev"], routes: { "tool.injection": ["clef"] } });
+	});
+
+	it("keeps Laya, which mu no longer has, out of the judges behind mude and of the order it goes back to", () => {
+		const { paths, files, read } = setup({ tiers: ["laya", "jev"] });
+		enableMude(paths, files, { port: 8790, key: "k", localOnly: false });
+		expect(read()).toMatchObject({ tiers: ["mude", "jev"] });
+		expect(disableMude(paths, files)).toEqual(["jev"]);
+		const alone = setup({ tiers: ["laya"] });
+		enableMude(alone.paths, alone.files, { port: 8790, key: "k", localOnly: false });
+		expect(alone.read()).toMatchObject({ tiers: ["mude", "jev"] });
 	});
 
 	it("turns a judge that was off on, and off again when mude is disabled", () => {

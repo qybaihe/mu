@@ -149,14 +149,6 @@ export function registerInjection(runtime: KyrnRuntime): void {
 		signal: AbortSignal | undefined,
 	): Promise<InjectionOutcome[]> => {
 		if (list.length === 0) return [];
-		if (!runtime.answersInBatches(toolInjection.id, "screen")) {
-			const decisions = await runtime.engine.decideMany(
-				toolInjection,
-				list.map((passage) => ({ source, passage })),
-				{ signal, concurrency: options.concurrency },
-			);
-			return decisions.map((decision) => (decision.source === "judge" ? decision.outcome : null));
-		}
 		const size = Math.max(1, Math.floor(BATCH_STATE_CHARS / options.passageChars));
 		const batches: { source: string; passages: string[] }[] = [];
 		for (let start = 0; start < list.length; start += size) {
