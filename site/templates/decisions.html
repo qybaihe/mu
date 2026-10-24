@@ -3,15 +3,12 @@
 {% block description %}{{ L.decisions.lead | striptags }}{% endblock %}
 {% block content %}
   <section class="wrap page-head">
-    <p class="label intro" style="--d: 120ms">mu · {{ L.decisions.title }}</p>
     <h1 class="intro" style="--d: 180ms">{{ L.decisions.title }}</h1>
     <p class="page-lead intro" style="--d: 260ms">{{ L.decisions.lead }}</p>
   </section>
 
   <section class="wrap dp-how" id="how">
-    <p class="label" data-reveal>{{ D.how_label }}</p>
-    <h2 data-reveal style="--d: 60ms">{{ D.how_h2 }}</h2>
-    <p class="section-intro" data-reveal style="--d: 120ms">{{ D.how_intro }}</p>
+    <h2 data-reveal>{{ D.how_h2 }}</h2>
     <ol class="dp-steps">
       {% for S in D.steps %}
       <li class="dp-step" data-reveal style="--d: {{ loop.index0 * 90 }}ms">
@@ -32,14 +29,11 @@
         {% for M in modes %}<div class="dp-mode"><span class="dp-mode-name mode-{{ M.value }}">{{ M.label }}</span><code>{{ M.value }}</code><p>{{ M.help }}</p></div>
         {% endfor %}
       </div>
-      <p class="dp-rules">{{ D.rules_note }}</p>
     </div>
   </section>
 
   <section class="wrap dp-map" id="map">
-    <p class="label" data-reveal>{{ D.map_label }}</p>
-    <h2 data-reveal style="--d: 60ms">{{ D.map_h2 }}</h2>
-    <p class="section-intro" data-reveal style="--d: 120ms">{{ D.map_intro }}</p>
+    <h2 data-reveal>{{ D.map_h2 }}</h2>
     <div class="lanes">
       {% for G in groups %}
       <div class="lane" data-reveal style="--d: {{ loop.index0 * 70 }}ms">
@@ -58,9 +52,7 @@
   </section>
 
   <section class="wrap dp-catalog" id="catalog">
-    <p class="label" data-reveal>{{ D.catalog_label }}</p>
-    <h2 data-reveal style="--d: 60ms">{{ D.catalog_h2 }}</h2>
-    <p class="section-intro" data-reveal style="--d: 120ms">{{ D.catalog_intro }}</p>
+    <h2 data-reveal>{{ D.catalog_h2 }}</h2>
     <div class="dp-bar">
       <div class="dp-filters" role="group" aria-label="{{ D.filter_label | e }}">
         <button type="button" class="dp-filter" data-filter="all" aria-pressed="true">{{ D.filter_all }}<span>{{ total }}</span></button>
@@ -100,9 +92,7 @@
   </section>
 
   <section class="wrap dp-judges" id="judges">
-    <p class="label" data-reveal>{{ D.judges_label }}</p>
-    <h2 data-reveal style="--d: 60ms">{{ D.judges_h2 }}</h2>
-    <p class="section-intro" data-reveal style="--d: 120ms">{{ D.judges_intro }}</p>
+    <h2 data-reveal>{{ D.judges_h2 }}</h2>
     <div class="grid four">
       {% for J in D.judges %}<div class="card" data-reveal style="--d: {{ loop.index0 * 70 }}ms"><h3>{{ J.h3 }}</h3><p>{{ J.p }}</p><code class="card-code">{{ J.code | e }}</code></div>
       {% endfor %}

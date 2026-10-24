@@ -1,18 +1,13 @@
 {
   "page": {
-    "how_label": "How it works",
     "how_h2": "One decision point, three steps",
-    "how_intro": "A decision point is a small, routine choice inside a turn that isn't about the code itself. mu takes it away from the main model and asks a judge instead.",
     "steps": [
       { "h3": "Read a small state", "p": "Never the whole conversation: the message you just sent, one chunk of tool output, the command about to run." },
       { "h3": "Ask one bounded question", "p": "Yes or no, one of a few named answers or a score, each with a probability. A warm question takes about 0.3 seconds." },
       { "h3": "Change the next step", "p": "A one-line hint, a passage left out, a call stopped, a nudge. Without an answer, mu does what it would do without a judge." }
     ],
     "modes_h3": "Each point has a mode",
-    "rules_note": "Rules come first. A dangerous-looking command is flagged by rules; the judge only confirms that you asked for it.",
-    "map_label": "Where they sit",
     "map_h2": "Five moments in a turn",
-    "map_intro": "The points are grouped by when they are asked, the same way the desktop app's settings group them. Pick one to jump to it.",
     "groups": {
       "input": "When your message arrives: what kind it is, whether it changes the task, whether it should interrupt.",
       "context": "What the model gets to see: skills, servers, tool output, old results, lessons, the cache.",
@@ -20,9 +15,7 @@
       "turn": "While the run goes on and when it wants to stop: still on course, really done or stopped short.",
       "team": "Between agents: who takes which task, and which finding reaches whom."
     },
-    "catalog_label": "Every point",
     "catalog_h2": "All {points}, with an example each",
-    "catalog_intro": "Each example is a typical situation, the answer the judge gives and what changes because of it.",
     "filter_label": "Show",
     "filter_all": "All",
     "search_placeholder": "Search a name or id",
@@ -35,9 +28,7 @@
     "default_off": "Off by default",
     "default_shadow": "Shadow by default",
     "needs_option": "Needs an option",
-    "judges_label": "Who answers",
     "judges_h2": "Pick the judge, per installation or per point",
-    "judges_intro": "The decision points never know which judge answered. Judges can be chained, so a cheap one goes first and the next only sees what it left uncertain.",
     "judges": [
       { "h3": "Jev, hosted", "p": "Free with no key, through OpenCode Zen. With your own key: TypeSafe, OpenRouter, Vercel AI Gateway, OpenCode or Cloudflare.", "code": "mu setup" },
       { "h3": "Laya, on your machine", "p": "322 million parameters, no network. Reliable on simple predicates; run it in shadow next to your current judge before trusting it.", "code": "mu judge setup" },

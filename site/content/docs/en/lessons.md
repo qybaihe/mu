@@ -3,8 +3,6 @@ title: Lessons
 summary: What mu learns from your corrections and from getting itself unstuck, how lessons are merged and recalled, and how unused ones retire.
 ---
 
-The lessons library is what mu remembers between sessions: your corrections, the rules you set, and the traps the agent fell into and how it got out. The command line and the desktop app share it. The judge decides what is worth keeping, whether it is new, when it applies and whether it was followed; a small writing model puts it into words.
-
 ## Where lessons come from {#sources}
 
 | Source | When | What the judge decides |
