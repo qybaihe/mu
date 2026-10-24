@@ -129,7 +129,6 @@ const BUILT_IN_MODES = {
 	"swarm.patch": "off",
 	"capability.disclosure": "off",
 	"notify.routing": "shadow",
-	"input.interjection": "shadow",
 	"turn.drift": "shadow",
 };
 // Whether any decision point asks a judge (DecisionEngine.asksJudge). With none, nothing is sent to one, and the rows

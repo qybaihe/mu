@@ -274,9 +274,27 @@ describe("judge configuration", () => {
 	});
 
 	it("keeps the points that only watch by default in shadow, unless mu.json says otherwise", () => {
-		expect(parseConfig({}).modes).toMatchObject({ "notify.routing": "shadow", "input.interjection": "shadow" });
+		expect(parseConfig({}).modes).toMatchObject({ "notify.routing": "shadow", "turn.drift": "shadow" });
 		const chosen = parseConfig({ modes: { default: "shadow", "notify.routing": "active" } }).modes;
-		expect(chosen).toMatchObject({ default: "shadow", "notify.routing": "active", "input.interjection": "shadow" });
+		expect(chosen).toMatchObject({ default: "shadow", "notify.routing": "active", "turn.drift": "shadow" });
+	});
+
+	it("leaves input.interjection to the default mode: active out of the box, and whatever mu.json makes the default", () => {
+		const modeOf = (raw: unknown): string => {
+			const { default: defaultMode, ...modes } = parseConfig(raw).modes;
+			const { default: _default, ...builtInModes } = DEFAULT_CONFIG.modes;
+			return new DecisionEngine({
+				judge: new Judge({ provider: new MockJudgeProvider(() => ({})) }),
+				defaultMode,
+				modes,
+				builtInModes,
+			}).getMode("input.interjection");
+		};
+		expect(DEFAULT_CONFIG.modes["input.interjection"]).toBeUndefined();
+		expect(modeOf({})).toBe("active");
+		expect(modeOf({ modes: { default: "shadow" } })).toBe("shadow");
+		expect(modeOf({ modes: { default: "off" } })).toBe("off");
+		expect(modeOf({ modes: { "input.interjection": "shadow" } })).toBe("shadow");
 	});
 });
 
