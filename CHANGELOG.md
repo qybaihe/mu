@@ -7,6 +7,11 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 ### Added
 
 - **Files named in a reply are links in the desktop app.** When a reply names a file as inline code, like `07_card.png` or `out/report.pdf`, or links to one, the name becomes a link once the file is found. A relative name is read against the conversation's folder, and a bare file name is also looked for in its subfolders. An image opens in the side panel, where you can zoom in and out and step through every image the reply names with the arrow keys or buttons. Any other file opens in its default app, and the folder icon beside it shows it in Finder (File Explorer on Windows). A program, such as a `.sh`, `.command` or `.exe` file, is only shown in its folder, never run. A clear path to a file that doesn't exist is greyed out, with "File not found" on hover. Ordinary code, like `npm run build` or `x.length`, stays as it was.
+- **Conversations are grouped by project in the desktop app's sidebar.** Each conversation goes under its project: the Git repository its folder is in, or the folder itself when it is in none. A conversation you start in a new folder makes its project as it appears, and the conversations you already have are sorted into theirs. **Add project** at the end of the list picks a folder and opens the home page in it. A project's **+** starts a conversation there, and its menu archives the project with its conversations. Each project shows its five newest conversations, with Show all for the rest, and pinned conversations stay above the projects.
+
+### Fixed
+
+- **Gemini 4 Argon shows up after you sign in with Google Antigravity, and works.** mu introduced itself to Antigravity as its IDE, and Google gives Gemini 4 Argon and the Gemini 3.8 Flash tiers only to its command line, so they were missing from the model pickers and a request for them failed. Now the app and the terminal list Gemini 4 Argon (Low, Medium and High) and the Gemini 3.8 Flash tiers when your plan includes them. An account that was already signed in gets them as a session starts, without signing in again, and signing out removes them with the account's other models.
 
 ### Fixed
 

@@ -1093,9 +1093,11 @@
       "body": "mu 会在这个文件夹里工作。说说你想做什么。"
     },
     "sider": {
-      "title": "最近",
       "new": "在文件夹里新建对话",
       "empty": "还没有对话",
+      "addProject": "添加项目",
+      "removeProject": "移除项目",
+      "archiveProjectConfirm": "确定归档「{{name}}」和其中的对话吗？可以在列表末尾的「已归档」里恢复。",
       "all": "显示全部（{{count}}）",
       "fewer": "收起",
       "deleteConfirm": "删除「{{title}}」？它的会话文件会移到废纸篓，之后仍可恢复。",

@@ -47,7 +47,7 @@ vi.mock('@renderer/pages/conversation/GroupedHistory', () => ({
 vi.mock('@renderer/pages/settings/components/SettingsSider', () => ({
   default: () => <nav data-testid='settings-sider' />,
 }));
-vi.mock('@renderer/pages/native/components/NativeSiderGroup', () => ({ default: () => null }));
+vi.mock('@renderer/pages/native/sider/NativeSiderGroup', () => ({ default: () => null }));
 vi.mock('@renderer/pages/native/hooks/useNativeConversations', () => ({ useNativeEnabled: () => nativeOn }));
 vi.mock('@renderer/components/layout/Sider/CommandPalette', () => ({
   default: () => <div data-testid='command-palette-host' />,

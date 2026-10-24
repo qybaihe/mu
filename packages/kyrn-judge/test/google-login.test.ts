@@ -13,8 +13,9 @@ import {
 	type ProviderAuthInteraction,
 	type RefreshModelsContext,
 } from "@earendil-works/pi-ai";
+import type { ExtensionUIContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import { parseConfig } from "../src/config.ts";
 import { freePort } from "../src/dap/client.ts";
@@ -26,7 +27,13 @@ import {
 	stream,
 	streamSimple,
 } from "../src/google-login/cloud-code.ts";
-import { ANTIGRAVITY_ENDPOINTS, CLOUD_CODE_API, CLOUD_CODE_ENDPOINT } from "../src/google-login/endpoints.ts";
+import {
+	ANTIGRAVITY_CLI_VERSION,
+	ANTIGRAVITY_ENDPOINTS,
+	antigravityUserAgent,
+	CLOUD_CODE_API,
+	CLOUD_CODE_ENDPOINT,
+} from "../src/google-login/endpoints.ts";
 import {
 	ANTIGRAVITY_LOGIN,
 	cloudCodeKey,
@@ -656,6 +663,77 @@ describe("Google providers", () => {
 		expect(antigravityModelsFrom({ models: 3 })).toEqual([]);
 	});
 
+	it("speaks to Antigravity as its command line, from 1.3.0, which is served Gemini 4 Argon; the version can be raised", () => {
+		expect(ANTIGRAVITY_CLI_VERSION).toBe("1.4.0");
+		expect(antigravityUserAgent(() => undefined)).toBe("antigravity/cli/1.4.0");
+		expect(antigravityUserAgent((name) => (name === "MU_ANTIGRAVITY_VERSION" ? "1.9.2" : undefined))).toBe(
+			"antigravity/cli/1.9.2",
+		);
+	});
+
+	it("reads Gemini 4 Argon's tiers as Antigravity lists them, and leaves out a model the account may not use", () => {
+		// Fields as a paid account's fetchAvailableModels answered the command line on 2026-10-24 (trimmed).
+		const argon = (tier: string) => ({
+			displayName: `Gemini 4 Argon (${tier})`,
+			supportsImages: true,
+			supportsThinking: true,
+			thinkingBudget: -1,
+			minThinkingBudget: 32,
+			maxTokens: 1048576,
+			maxOutputTokens: 65536,
+			tagTitle: "New",
+		});
+		const models = antigravityModelsFrom({
+			models: {
+				"gemini-4-argon-low": argon("Low"),
+				"gemini-4-argon-medium": argon("Medium"),
+				"gemini-4-argon-high": argon("High"),
+				"gemini-4-argon-disabled": argon("High"),
+				"gemini-3.8-flash-medium": { displayName: "Gemini 3.8 Flash (Medium)", maxTokens: 1048576 },
+				"claude-opus-5-5-low": {
+					displayName: "Claude Opus 5.5 (Low)",
+					supportsThinking: true,
+					maxTokens: 1000000,
+					maxOutputTokens: 128000,
+				},
+				"claude-sonnet-4-6": { displayName: "Claude Sonnet 4.6", disabled: true },
+			},
+		});
+		const byId = new Map(models.map((model) => [model.id, model]));
+		expect([...byId.keys()]).toEqual([
+			"gemini-4-argon-low",
+			"gemini-4-argon-medium",
+			"gemini-4-argon-high",
+			"gemini-3.8-flash-medium",
+			"claude-opus-5-5-low",
+		]);
+		expect(byId.get("gemini-4-argon-medium")).toMatchObject({
+			name: "Gemini 4 Argon (Medium) (Antigravity)",
+			provider: "google-antigravity",
+			reasoning: true,
+			input: ["text", "image"],
+			contextWindow: 1048576,
+			maxTokens: 65536,
+		});
+		// Gemini 4 thinks at low, medium or high: never off, never minimal (pi would send what Argon refuses).
+		expect(byId.get("gemini-4-argon-medium")?.thinkingLevelMap).toEqual({
+			off: null,
+			minimal: null,
+			low: "low",
+			medium: "medium",
+			high: "high",
+			xhigh: null,
+			max: null,
+		});
+		expect(byId.get("gemini-3.8-flash-medium")?.thinkingLevelMap?.minimal).toBe("minimal");
+		// The context Antigravity says, where it says one.
+		expect(byId.get("claude-opus-5-5-low")).toMatchObject({
+			contextWindow: 1000000,
+			maxTokens: 128000,
+			reasoning: true,
+		});
+	});
+
 	it("asks Antigravity what this account can use, endpoint by endpoint, and only when signed in", async () => {
 		const asked: { url: string; headers: Record<string, string> }[] = [];
 		const fetcher = (async (input: string | URL | Request, init?: RequestInit) => {
@@ -683,7 +761,7 @@ describe("Google providers", () => {
 			ANTIGRAVITY_ENDPOINTS.slice(0, 2).map((endpoint) => `${endpoint}/v1internal:fetchAvailableModels`),
 		);
 		expect(asked[0].headers.Authorization).toBe("Bearer tok");
-		expect(asked[0].headers["User-Agent"]).toMatch(/^antigravity\//);
+		expect(asked[0].headers["User-Agent"]).toBe(`antigravity/cli/${ANTIGRAVITY_CLI_VERSION}`);
 	});
 });
 
@@ -755,6 +833,67 @@ describe("googleLogin feature", () => {
 		expect(message.content).toEqual([{ type: "text", text: "hello" }]);
 		expect(calls[0].headers.Authorization).toBe("Bearer stored-token");
 		expect(calls[0].body.project).toBe("stored-project");
+	});
+
+	it("reads what Antigravity serves a signed-in account again as a terminal or app session starts", async () => {
+		const asked: { url: string; userAgent: string }[] = [];
+		vi.stubGlobal("fetch", async (input: string | URL | Request, init?: RequestInit) => {
+			asked.push({ url: String(input), userAgent: (init?.headers as Record<string, string>)["User-Agent"] });
+			return new Response(
+				JSON.stringify({ models: { "gemini-4-argon-medium": { displayName: "Gemini 4 Argon (Medium)" } } }),
+				{ status: 200 },
+			);
+		});
+		const ui = new Proxy({}, { get: () => () => undefined }) as unknown as ExtensionUIContext;
+		const session = async (mode: "rpc" | "print", signedIn: boolean) => {
+			harness?.cleanup();
+			harness = await createHarness({
+				extensionFactories: [
+					createKyrnJudgeExtension({
+						provider: new MockJudgeProvider(),
+						config: parseConfig({ features: {} }),
+						only: ["googleLogin"],
+					}),
+				],
+			});
+			if (signedIn) {
+				await harness.authStorage.modify("google-antigravity", async () => ({
+					type: "oauth",
+					access: "stored-token",
+					refresh: "stored-refresh",
+					expires: Date.now() + 3_600_000,
+					projectId: "stored-project",
+				}));
+				// As a process that starts signed in has it: the stored sign-in read before the session starts.
+				await harness.session.modelRuntime.refresh({ allowNetwork: false });
+			}
+			await harness.session.bindExtensions(mode === "rpc" ? { uiContext: ui, mode } : {});
+			return harness.session.modelRuntime;
+		};
+		try {
+			// Told to stay offline (as these tests run), not signed in, or a one-off print run: nothing is asked.
+			await session("rpc", true);
+			vi.stubEnv("PI_OFFLINE", undefined);
+			await session("rpc", false);
+			await session("print", true);
+			await new Promise((resolve) => setTimeout(resolve, 20));
+			expect(asked).toEqual([]);
+
+			const runtime = await session("rpc", true);
+			await vi.waitFor(() => expect(runtime.getModel("google-antigravity", "gemini-4-argon-medium")).toBeDefined());
+			expect(asked).toEqual([
+				{
+					url: `${ANTIGRAVITY_ENDPOINTS[0]}/v1internal:fetchAvailableModels`,
+					userAgent: `antigravity/cli/${ANTIGRAVITY_CLI_VERSION}`,
+				},
+			]);
+			// Once per session's process: a new session in it does not ask again.
+			await harness?.session.bindExtensions({ uiContext: ui, mode: "rpc" });
+			expect(asked).toHaveLength(1);
+		} finally {
+			vi.unstubAllEnvs();
+			vi.unstubAllGlobals();
+		}
 	});
 
 	it("each sign-in can be switched off", async () => {

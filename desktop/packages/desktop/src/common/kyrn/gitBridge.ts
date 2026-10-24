@@ -79,4 +79,10 @@ export const kyrnGitBridge = {
   diff: bridge.buildProvider<KyrnResult<FolderGitDiff>, { cwd: string; path: string; area: GitArea; from?: string }>(
     'kyrn.folder.git.diff'
   ),
+  /**
+   * The repository each folder is in, by the folder: the nearest folder up from it, itself included, that holds a
+   * `.git` (process/services/folderGit/repoRoots.ts). A folder in none is left out. For the sidebar, which groups a
+   * project's conversations under its repository.
+   */
+  roots: bridge.buildProvider<KyrnResult<Record<string, string>>, { folders: string[] }>('kyrn.folder.git.roots'),
 };

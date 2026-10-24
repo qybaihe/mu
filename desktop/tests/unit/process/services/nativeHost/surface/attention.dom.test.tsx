@@ -8,7 +8,7 @@ import { ipcBridge } from '@/common';
 import type { IMessageText } from '@/common/chat/chatLib';
 import { configService } from '@/common/config/configService';
 import NativeConversationPage from '@/renderer/pages/native';
-import NativeSiderGroup from '@/renderer/pages/native/components/NativeSiderGroup';
+import NativeSiderGroup from '@/renderer/pages/native/sider/NativeSiderGroup';
 import {
   clearNativeUnread,
   forgetNativeUnread,
