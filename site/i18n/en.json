@@ -304,6 +304,7 @@
     "download": "Download this version",
     "full_agent": "Full mu-agent changelog",
     "headlines": {
+      "v0.2.10": "the line that starts subagents names them by their short names too",
       "v0.2.9": "subagents are named in your language on the plain-language board",
       "v0.2.8": "the plain-language board talks like a teammate: who's doing what, what's stuck, what's next",
       "v0.2.7": "OpenAI's decision model as a judge; GPT-6.1 Sol by default; a shorter OpenAI model menu; the thinking level stays in view",

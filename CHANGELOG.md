@@ -4,6 +4,14 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+## [0.2.10] - 2026-10-24
+
+**0.2.10 names subagents by their short names in the line that starts them, too.** The desktop app carries mu-agent 0.2.10.
+
+### Fixed
+
+- **The line that starts subagents names them by their short names.** 0.2.9 gave each subagent a short name in your language, but the board's 「派出 2 个助手：…」 line still listed their task titles, because it is written before they have names. The desktop app now lists them by their short names, as 「派出 2 个助手：查计时、改测试」, separated the way your language lists things. The board in the terminal still shows that line as it was written.
+
 ## [0.2.9] - 2026-10-24
 
 **0.2.9 names subagents in your language on the plain-language board, so a Chinese board says 查计时 instead of an English task title.** The desktop app carries mu-agent 0.2.9.
