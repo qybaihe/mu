@@ -13,6 +13,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 - **Gemini 4 Argon shows up after you sign in with Google Antigravity, and works.** mu introduced itself to Antigravity as its IDE, and Google gives Gemini 4 Argon and the Gemini 3.8 Flash tiers only to its command line, so they were missing from the model pickers and a request for them failed. Now the app and the terminal list Gemini 4 Argon (Low, Medium and High) and the Gemini 3.8 Flash tiers when your plan includes them. An account that was already signed in gets them as a session starts, without signing in again, and signing out removes them with the account's other models.
 
+### Fixed
+
+- **A third-party OpenAI-compatible provider no longer fails with "unknown role developer".** mu sent a thinking model's instructions as a `developer` message, the role OpenAI's newer models use, to every OpenAI-compatible endpoint. Many relays and gateways know only `system`, so every request failed with `Model request failed: 502 … unknown role developer`, although the provider's connection check passed. Now only OpenAI, Azure OpenAI and Xiaomi MiMo, whose docs list `developer`, get it; every other endpoint gets `system`, and the reply-length field all of them read, `max_tokens`, instead of OpenAI's `max_completion_tokens`, which some ignore. If an endpoint still turns a request away over the role or a field it doesn't know, such as `max_completion_tokens`, `reasoning_effort`, `stream_options` or `store`, mu asks once more without it, before any reply shows, and keeps doing so for that model until it restarts. Set `compat` in `models.json` to choose yourself.
+
 ## [0.2.3] - 2026-10-24
 
 **0.2.3 adds decision models from Hugging Face next to mude 1.0, lets mu decide when a message sent mid-run reaches the work, and makes Sign in with ChatGPT cope with a busy port 1455.** The desktop app carries mu-agent 0.2.3.
