@@ -158,6 +158,11 @@
         "title": "CLM",
         "tag": "セルフホスト",
         "description": "Jev と同じ質問に、あなた自身のサーバー（clm-serve）で答えます。エンコーダーには GPU が必要で、呼び出しごとの課金はありません。"
+      },
+      "openai": {
+        "title": "OpenAI",
+        "tag": "クラウド",
+        "description": "OpenAI の判定モデル gpt-6-luna を、OpenAI の API キーで使います。課金は入力トークンごとです。"
       }
     },
     "laya": {
@@ -343,6 +348,9 @@
         "mock": "このサーバーは CLM のモックエンコーダーで動いています。回答はノイズで、CLM のものではありません。",
         "failed": "サーバーに問い合わせできませんでした。"
       }
+    },
+    "openai": {
+      "key": "OpenAI の API キー"
     }
   },
   "keyState": {

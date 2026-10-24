@@ -158,6 +158,11 @@
         "title": "CLM",
         "tag": "Selbst gehostet",
         "description": "Beantwortet dieselben Fragen wie Jev, auf einem eigenen Server (clm-serve). Sein Encoder braucht eine GPU; pro Aufruf fallen keine Kosten an."
+      },
+      "openai": {
+        "title": "OpenAI",
+        "tag": "Gehostet",
+        "description": "Das Entscheidungsmodell von OpenAI, gpt-6-luna, mit einem OpenAI-API-Schlüssel. OpenAI rechnet pro Eingabe-Token ab."
       }
     },
     "laya": {
@@ -343,6 +348,9 @@
         "mock": "Dieser Server läuft mit dem Mock-Encoder von CLM: Seine Antworten sind Rauschen, nicht die von CLM.",
         "failed": "Der Server konnte nicht gefragt werden."
       }
+    },
+    "openai": {
+      "key": "API-Schlüssel für OpenAI"
     }
   },
   "keyState": {

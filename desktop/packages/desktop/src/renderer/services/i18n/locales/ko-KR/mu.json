@@ -158,6 +158,11 @@
         "title": "CLM",
         "tag": "자체 호스팅",
         "description": "Jev와 같은 질문에 직접 운영하는 서버(clm-serve)에서 답합니다. 인코더에는 GPU가 필요하며, 호출마다 요금이 들지 않습니다."
+      },
+      "openai": {
+        "title": "OpenAI",
+        "tag": "클라우드",
+        "description": "OpenAI의 판정 모델 gpt-6-luna를 OpenAI API 키로 사용합니다. 입력 토큰마다 요금이 부과됩니다."
       }
     },
     "laya": {
@@ -343,6 +348,9 @@
         "mock": "이 서버는 CLM의 모의 인코더로 실행 중입니다. 답은 노이즈이며 CLM의 판단이 아닙니다.",
         "failed": "서버에 물어볼 수 없었습니다."
       }
+    },
+    "openai": {
+      "key": "OpenAI API 키"
     }
   },
   "keyState": {

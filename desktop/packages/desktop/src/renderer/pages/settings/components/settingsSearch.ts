@@ -47,6 +47,7 @@ const PAGE_TEXTS: Partial<Record<SettingsPageId, string[]>> = {
     'mu.judges.choices.jev.title',
     'mu.judges.choices.laya.title',
     'mu.judges.choices.clm.title',
+    'mu.judges.choices.openai.title',
   ],
   'judge-order': ['mu.judges.order', 'mu.judges.model'],
   'details-context': ['mu.context.auto', 'mu.context.limit'],

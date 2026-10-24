@@ -30,6 +30,8 @@ import {
   type JudgeChoice,
   jevVariables,
   kindOf,
+  OPENAI_DEFAULT_MODEL,
+  openaiKeyVariable,
   profileFor,
   serviceOf,
   withJevService,
@@ -263,7 +265,7 @@ type BodyProps = {
 /**
  * What a choice needs: Jev the service it is reached through (with the address of a service that has one to set) and
  * that service's key, Laya to be installed and running (one click each), CLM the address of its server, the key of a
- * server that asks for one, and word from the server.
+ * server that asks for one, and word from the server, OpenAI's decision model its key.
  */
 export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: BodyProps) {
   const { t } = useTranslation();
@@ -317,6 +319,22 @@ export function ChoiceBody({ choice, draft, guide = false, onChange, onKey }: Bo
             model={judge.model || CLM_DEFAULT_MODEL}
             keySet={Boolean(set || draft.judgeKeys[variable])}
           />
+        </div>
+      </div>
+    );
+  }
+
+  if (choice === 'openai') {
+    if (!judge) return null;
+    const variable = openaiKeyVariable(judge);
+    return (
+      <div className={styles.choiceFields}>
+        <div className={styles.choiceField}>
+          <label className={styles.choiceLabel}>
+            {t('mu.judges.openai.key')}
+            <Tag size='small'>{t(settings.keys[variable] ? 'mu.keyState.set' : 'mu.keyState.none')}</Tag>
+          </label>
+          <OpenAIKeyInput className={styles.choiceInput} variable={variable} draft={draft} onKey={onKey} />
         </div>
       </div>
     );
@@ -467,6 +485,8 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
           >
             {kind === 'jev' ? (
               <JevFields draft={draft} base={base} index={index} onChange={onChange} onKey={onKey} />
+            ) : kind === 'openai' ? (
+              <OpenAIFields draft={draft} base={base} index={index} onChange={onChange} onKey={onKey} />
             ) : kind === 'clm' ? (
               <ClmFields draft={draft} base={base} index={index} onChange={onChange} onKey={onKey} />
             ) : classifier ? (
@@ -769,6 +789,66 @@ function ClmFields({ draft, base, index, onChange, onKey }: JudgesSectionProps &
             />
           </div>
         </>
+      ) : null}
+    </>
+  );
+}
+
+type OpenAIKeyInputProps = {
+  className: string;
+  size?: 'small';
+  variable: string;
+  draft: Draft;
+  onKey: JudgesSectionProps['onKey'];
+};
+
+/** Where the key of OpenAI's decision model is typed, hidden as it is typed. */
+function OpenAIKeyInput({ className, size, variable, draft, onKey }: OpenAIKeyInputProps) {
+  const { t } = useTranslation();
+  return (
+    <Input.Password
+      size={size}
+      className={className}
+      aria-label={t('mu.judges.openai.key')}
+      autoComplete='new-password'
+      value={draft.judgeKeys[variable] ?? ''}
+      placeholder={draft.settings.keys[variable] ? t('mu.keyKeep') : t('mu.judges.keyPlaceholder')}
+      onChange={(value) => onKey(variable, value)}
+    />
+  );
+}
+
+/**
+ * OpenAI's decision model in the order: its model, and when it is not the judge chosen on the judges page (which asks
+ * for it), its key.
+ */
+function OpenAIFields({ draft, base, index, onChange, onKey }: JudgesSectionProps & { index: number }) {
+  const { t } = useTranslation();
+  const { settings } = draft;
+  const name = settings.tiers[index];
+  const judge = settings.judges[name];
+  const saved = base.judges[name];
+  const variable = openaiKeyVariable(judge);
+  return (
+    <>
+      <Row title={t('mu.judges.model')} modified={saved !== undefined && saved.model !== judge.model}>
+        <Input
+          size='small'
+          className={fieldStyles.wide}
+          aria-label={t('mu.judges.model')}
+          placeholder={OPENAI_DEFAULT_MODEL}
+          value={judge.model}
+          onChange={(model) => onChange((now) => withProfile(now, name, { model }))}
+        />
+      </Row>
+      {index > 0 ? (
+        <Row
+          title={t('mu.judges.openai.key')}
+          modified={Boolean(draft.judgeKeys[variable])}
+          badges={<Tag size='small'>{t(settings.keys[variable] ? 'mu.keyState.set' : 'mu.keyState.none')}</Tag>}
+        >
+          <OpenAIKeyInput size='small' className={fieldStyles.wide} variable={variable} draft={draft} onKey={onKey} />
+        </Row>
       ) : null}
     </>
   );

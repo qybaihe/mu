@@ -158,6 +158,11 @@
         "title": "CLM",
         "tag": "Kendi sunucunuz",
         "description": "Jev ile aynı soruları kendi sunucunuzda (clm-serve) yanıtlar. Kodlayıcısı GPU ister; çağrı başına ücret yoktur."
+      },
+      "openai": {
+        "title": "OpenAI",
+        "tag": "Bulutta",
+        "description": "OpenAI'ın karar modeli gpt-6-luna, bir OpenAI API anahtarıyla. OpenAI giriş token'ı başına ücretlendirir."
       }
     },
     "laya": {
@@ -343,6 +348,9 @@
         "mock": "Bu sunucu CLM'nin sahte kodlayıcısıyla çalışıyor: yanıtları gürültüdür, CLM'nin değil.",
         "failed": "Sunucuya sorulamadı."
       }
+    },
+    "openai": {
+      "key": "OpenAI API anahtarı"
     }
   },
   "keyState": {

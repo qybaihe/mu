@@ -158,6 +158,11 @@
         "title": "CLM",
         "tag": "Auto-hébergé",
         "description": "Répond aux mêmes questions que Jev, sur un serveur à vous (clm-serve). Son encodeur a besoin d’un GPU ; rien n’est facturé à l’appel."
+      },
+      "openai": {
+        "title": "OpenAI",
+        "tag": "Hébergé",
+        "description": "Le modèle de décision d’OpenAI, gpt-6-luna, avec une clé API OpenAI. OpenAI le facture au token d’entrée."
       }
     },
     "laya": {
@@ -343,6 +348,9 @@
         "mock": "Ce serveur utilise l’encodeur factice de CLM : ses réponses sont du bruit, pas celles de CLM.",
         "failed": "Impossible d’interroger le serveur."
       }
+    },
+    "openai": {
+      "key": "Clé API OpenAI"
     }
   },
   "keyState": {

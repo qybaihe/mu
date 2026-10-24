@@ -16,6 +16,8 @@ import {
   jevKeyVariable,
   jevVariables,
   kindOf,
+  OPENAI_DEFAULT_MODEL,
+  openaiKeyVariable,
   profileFor,
   serviceOf,
   withJevService,
@@ -119,7 +121,7 @@ describe('the judge choice', () => {
       timeoutMs: 10000,
     };
     const withClm = settings({ judges: { ...settings().judges, clm } });
-    expect(JUDGE_CHOICES).toEqual(['jev', 'mude', 'local', 'clm']);
+    expect(JUDGE_CHOICES).toEqual(['jev', 'mude', 'local', 'clm', 'openai']);
     expect(GUIDE_CHOICES).toEqual(['jev', 'mude', 'local']);
     expect(kindOf(clm)).toBe('clm');
     expect(serviceOf(clm)).toBeUndefined();
@@ -130,10 +132,35 @@ describe('the judge choice', () => {
     expect(clmKeyVariable({ ...clm, apiKeyEnv: '' })).toBe('MU_JUDGE_CLM_API_KEY');
   });
 
+  it('offers OpenAI’s decision model as a choice of the settings, with a key of its own, and not in the guide', () => {
+    const openai = {
+      type: 'openai' as const,
+      model: 'gpt-6-luna',
+      baseUrl: '',
+      apiKeyEnv: 'MU_JUDGE_OPENAI_KEY',
+      timeoutMs: 10000,
+    };
+    const withOpenAI = settings({ judges: { ...settings().judges, openai } });
+    expect(JUDGE_CHOICES).toContain('openai');
+    expect(GUIDE_CHOICES).not.toContain('openai');
+    expect(kindOf(openai)).toBe('openai');
+    expect(serviceOf(openai)).toBeUndefined();
+    expect(profileFor(withOpenAI, 'openai')).toBe('openai');
+    expect(choose(withOpenAI, 'openai').tiers).toEqual(['openai']);
+    expect(choiceOf(choose(withOpenAI, 'openai'))).toBe('openai');
+    // A profile of one's own (an Azure resource) stands for the choice when the order asks it.
+    const azure = { ...openai, baseUrl: 'https://example.openai.azure.com/openai/v1', apiKeyEnv: 'MU_JUDGE_AZURE_KEY' };
+    const viaAzure = settings({ judges: { ...withOpenAI.judges, azure }, tiers: ['azure'] });
+    expect(profileFor(viaAzure, 'openai')).toBe('azure');
+    expect(openaiKeyVariable(azure)).toBe('MU_JUDGE_AZURE_KEY');
+    expect(openaiKeyVariable({ ...openai, apiKeyEnv: '' })).toBe('MU_JUDGE_OPENAI_KEY');
+    expect(OPENAI_DEFAULT_MODEL).toBe('gpt-6-luna');
+  });
+
   it('puts mude first where it is the recommended judge, and leaves the order as it is elsewhere', () => {
-    expect(inShownOrder(JUDGE_CHOICES, true)).toEqual(['mude', 'jev', 'local', 'clm']);
+    expect(inShownOrder(JUDGE_CHOICES, true)).toEqual(['mude', 'jev', 'local', 'clm', 'openai']);
     expect(inShownOrder(GUIDE_CHOICES, true)).toEqual(['mude', 'jev', 'local']);
-    expect(inShownOrder(JUDGE_CHOICES, false)).toEqual(['jev', 'mude', 'local', 'clm']);
+    expect(inShownOrder(JUDGE_CHOICES, false)).toEqual(['jev', 'mude', 'local', 'clm', 'openai']);
     expect(inShownOrder(GUIDE_CHOICES, false)).toEqual(['jev', 'mude', 'local']);
     // Without mude among them, nothing moves.
     expect(inShownOrder(['jev', 'local'], true)).toEqual(['jev', 'local']);

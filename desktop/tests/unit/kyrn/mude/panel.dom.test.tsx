@@ -187,7 +187,12 @@ describe('mude as a choice of the judges page', () => {
     await waitFor(() => expect(bridge.mudeState).toHaveBeenCalled());
     expect(screen.queryByTestId('mu-judge-choice-mude')).not.toBeInTheDocument();
     // Nothing else changes: Jev stays the recommended one, in the usual order.
-    expect(tilesOf()).toEqual(['mu-judge-choice-jev', 'mu-judge-choice-local', 'mu-judge-choice-clm']);
+    expect(tilesOf()).toEqual([
+      'mu-judge-choice-jev',
+      'mu-judge-choice-local',
+      'mu-judge-choice-clm',
+      'mu-judge-choice-openai',
+    ]);
     expect(within(screen.getByTestId('mu-judge-choice-jev')).getByText('Recommended')).toBeInTheDocument();
   });
 
@@ -200,6 +205,7 @@ describe('mude as a choice of the judges page', () => {
           'mu-judge-choice-jev',
           'mu-judge-choice-local',
           'mu-judge-choice-clm',
+          'mu-judge-choice-openai',
         ]),
       { timeout: 3000 }
     );
@@ -222,7 +228,13 @@ describe('mude as a choice of the judges page', () => {
           answer = resolve;
         })
     );
-    const order = ['mu-judge-choice-mude', 'mu-judge-choice-jev', 'mu-judge-choice-local', 'mu-judge-choice-clm'];
+    const order = [
+      'mu-judge-choice-mude',
+      'mu-judge-choice-jev',
+      'mu-judge-choice-local',
+      'mu-judge-choice-clm',
+      'mu-judge-choice-openai',
+    ];
     const tile = await judgesPage();
     expect(tilesOf()).toEqual(order);
     expect(within(tile).getByText('Recommended · on this Mac')).toBeInTheDocument();
@@ -245,6 +257,7 @@ describe('mude as a choice of the judges page', () => {
       'mu-judge-choice-mude',
       'mu-judge-choice-local',
       'mu-judge-choice-clm',
+      'mu-judge-choice-openai',
     ]);
     expect(within(tile).getByText('On this Mac')).toBeInTheDocument();
     expect(within(screen.getByTestId('mu-judge-choice-jev')).getByText('Recommended')).toBeInTheDocument();
