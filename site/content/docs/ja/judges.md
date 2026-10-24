@@ -33,6 +33,19 @@ mu judge mude status
 
 デフォルトでは、それまでの判定器が `tiers` で mude の後ろに残ります。mude が答えられない問い（サーバーが止まっている、または確信がない）と、mude にまだ任せていない 2 つのインジェクション検査は、そちらが答えます。`--local-only` では mude が唯一の判定器になり、答えられない判断はフォールバックに従います。mude の回答は 1 回あたり約 0.1 秒で、mude が読んだ内容は Mac の外に出ません。サーバーは動作中に約 4 GB のメモリを使い、設定に mude があれば mu がセッションの前に起動します。途中で止まったインストール（Ctrl-C、回線切れ、停電）は、次回、中断したところから続きます。ほかのプラットフォームでは、[フルモデル](https://huggingface.co/qybaihe/mude-1.0)を付属の System One サーバーで動かし、モデルカードのとおり `typesafe` の判定器として追加します。
 
+### ほかの意思決定モデル {#models}
+
+`mu judge model` を使うと、Hugging Face にあるほかの意思決定モデルを同じやり方で追加できます。リンクか `owner/name` を貼るだけです。mu はコミットと全ファイルのハッシュを固定し、進捗を表示しながら再開できる形でダウンロードし、mude の Python 環境で動かして判定器にします。モデルは mude 1.0 の MLX 版と同じ形式で、自身の `d3_server_mac.py` を含んでいる必要があります。このコードはあなたの Mac で動くので、信頼できるモデルだけを追加してください。
+
+```bash
+mu judge model add https://huggingface.co/owner/name   # owner/name@revision でも可。もう一度実行すると再開
+mu judge model list                                    # mude 1.0 と追加したモデル
+mu judge model use mude                                # mude 1.0 に戻す、または別のモデルに切り替える
+mu judge model remove name
+```
+
+一度に動く意思決定モデルは一つだけです。切り替えると、もう一方のサーバーは止まります。デスクトップアプリでは「設定 → 判定器」の mude 1.0 の下に同じ機能があります。
+
 ## Jev（クラウド） {#jev}
 
 Jev は TypeSafe による判定モデルで、この種の問いのために作られています。組み込みの `jev` 判定器は、キーが設定されている最初のサービスを通して Jev に接続します：

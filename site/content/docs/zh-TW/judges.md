@@ -33,6 +33,19 @@ mu judge mude status
 
 預設情況下，你之前的判定器留在 `tiers` 裡 mude 的後面：mude 答不了的問題（它的服務沒在執行，或者它拿不準），以及 mude 還不被信任的兩項注入檢查，都交給它們。加上 `--local-only`，mude 就是唯一的判定器，它答不了的決策按備援規則處理。mude 每次回答約 0.1 秒，它讀到的內容不離開你的 Mac。它的服務執行時約占用 4 GB 記憶體；設定裡有 mude 時，mu 會在工作階段開始前啟動它。安裝中途停下（Ctrl-C、斷網、斷電），下次會從中斷的地方接著裝。在其他平台上，可以用[完整模型](https://huggingface.co/qybaihe/mude-1.0)附帶的 System One 服務部署它，再依模型卡的說明把它作為 `typesafe` 判定器加進來。
 
+### 其他決策模型 {#models}
+
+`mu judge model` 用同樣的方式新增 Hugging Face 上的其他決策模型：貼上連結或 `owner/name` 即可。mu 會固定提交版本和每個檔案的雜湊，帶進度、可續傳地下載模型，在 mude 的 Python 環境裡執行它，並把它設為判定器。模型須以 mude 1.0 MLX 版的方式打包，自帶 `d3_server_mac.py`，這段程式碼會在你的 Mac 上執行，所以只新增你信任的模型。
+
+```bash
+mu judge model add https://huggingface.co/owner/name   # 也可以寫 owner/name@revision；再執行一次即可續傳
+mu judge model list                                    # mude 1.0 和你新增的模型
+mu judge model use mude                                # 切回 mude 1.0，或切到另一個模型
+mu judge model remove name
+```
+
+同一時間只執行一個決策模型：切換時會停掉另一個的伺服器。桌面 App 的「設定 → 判定器」裡，mude 1.0 下面有同樣的功能。
+
 ## Jev（雲端） {#jev}
 
 Jev 是 TypeSafe 做的判定模型，專門回答這類問題。內建的 `jev` 判定器透過第一個設定了金鑰的服務呼叫它：
