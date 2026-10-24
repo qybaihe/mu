@@ -63,6 +63,11 @@ export interface PreviewMetadata {
   targetLine?: number; // 打开文件后定位到的目标行 / Target line to reveal after opening
   targetColumn?: number; // 打开文件后定位到的目标列 / Target column to reveal after opening
   missingFile?: boolean; // 文件不存在或无法读取 / Whether the referenced file is missing or unreadable
+  /**
+   * An image opened from a reply: the full paths of every image that reply names, in order (this one among them). The
+   * image viewer steps through them and reads each through the main process (components/ImageGallery/).
+   */
+  gallery?: string[];
 }
 
 export interface PreviewTab {

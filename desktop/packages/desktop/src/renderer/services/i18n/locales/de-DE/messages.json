@@ -116,5 +116,18 @@
   "optionNumber": "Option {{number}}",
   "copyFilesHeader": "Dateien:",
   "exportHeaderLine": "{{label}}: {{value}}",
-  "exportSpeakerLine": "{{speaker}}:"
+  "exportSpeakerLine": "{{speaker}}:",
+  "fileRef": {
+    "preview": "Vorschau von {{name}}",
+    "open": "{{name}} öffnen",
+    "reveal": {
+      "mac": "{{name}} im Finder anzeigen",
+      "windows": "{{name}} im Explorer anzeigen",
+      "linux": "{{name}} im Ordner anzeigen"
+    },
+    "missing": "Datei nicht gefunden",
+    "ambiguous": "Mehrere Dateien haben diesen Namen",
+    "gone": "{{name}} ist nicht mehr da. Die Datei wurde vielleicht verschoben oder gelöscht.",
+    "openFailed": "{{name}} konnte nicht geöffnet werden"
+  }
 }

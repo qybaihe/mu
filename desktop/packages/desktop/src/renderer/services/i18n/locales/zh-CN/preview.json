@@ -319,5 +319,18 @@
   "saveFailedWithDetail": "保存失败：{{detail}}",
   "zoomActualSize": "重置缩放",
   "zoomFit": "适应宽度",
-  "zoomFitTooltip": "缩放到面板宽度"
+  "zoomFitTooltip": "缩放到面板宽度",
+  "gallery": {
+    "label": "图片 {{name}}",
+    "previous": "上一张",
+    "next": "下一张",
+    "position": "{{index}} / {{count}}",
+    "gone": "这个文件已不在原处，可能已被移动或删除。",
+    "tooLarge": "图片太大（{{size}}），无法在这里显示。请用默认应用打开。"
+  },
+  "reveal": {
+    "mac": "在访达中显示",
+    "windows": "在文件资源管理器中显示",
+    "linux": "在文件夹中显示"
+  }
 }

@@ -319,5 +319,18 @@
   "saveFailedWithDetail": "儲存失敗：{{detail}}",
   "zoomActualSize": "重設縮放",
   "zoomFit": "符合寬度",
-  "zoomFitTooltip": "縮放至面板寬度"
+  "zoomFitTooltip": "縮放至面板寬度",
+  "gallery": {
+    "label": "圖片 {{name}}",
+    "previous": "上一張",
+    "next": "下一張",
+    "position": "{{index}} / {{count}}",
+    "gone": "這個檔案已不在原處，可能已被移動或刪除。",
+    "tooLarge": "圖片太大（{{size}}），無法在這裡顯示。請用預設應用程式開啟。"
+  },
+  "reveal": {
+    "mac": "在 Finder 中顯示",
+    "windows": "在檔案總管中顯示",
+    "linux": "在資料夾中顯示"
+  }
 }

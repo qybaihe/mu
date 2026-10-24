@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Added
+
+- **Files named in a reply are links in the desktop app.** When a reply names a file as inline code, like `07_card.png` or `out/report.pdf`, or links to one, the name becomes a link once the file is found. A relative name is read against the conversation's folder, and a bare file name is also looked for in its subfolders. An image opens in the side panel, where you can zoom in and out and step through every image the reply names with the arrow keys or buttons. Any other file opens in its default app, and the folder icon beside it shows it in Finder (File Explorer on Windows). A program, such as a `.sh`, `.command` or `.exe` file, is only shown in its folder, never run. A clear path to a file that doesn't exist is greyed out, with "File not found" on hover. Ordinary code, like `npm run build` or `x.length`, stays as it was.
+
 ## [0.2.3] - 2026-10-24
 
 **0.2.3 adds decision models from Hugging Face next to mude 1.0, lets mu decide when a message sent mid-run reaches the work, and makes Sign in with ChatGPT cope with a busy port 1455.** The desktop app carries mu-agent 0.2.3.

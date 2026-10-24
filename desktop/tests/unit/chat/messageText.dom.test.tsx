@@ -68,6 +68,10 @@ vi.mock('@/renderer/pages/conversation/Preview/context/PreviewContext', () => ({
   usePreviewContext: () => ({
     openPreview: previewMocks.openPreview,
   }),
+  // A reply's file references read the preview this way (components/media/FileRefs/).
+  useOptionalPreviewContext: () => ({
+    openPreview: previewMocks.openPreview,
+  }),
 }));
 
 vi.mock('@/renderer/components/chat/CollapsibleContent', () => ({
