@@ -20,7 +20,7 @@ The feature column names the switch in `features` that turns the whole behavior 
 | --- | --- | --- | --- |
 | `input.preflight` | Message preflight | Classifies each message and how much thinking it needs, then gives the model a one-line hint; it can also set the turn's thinking level. | [`preflight`](features.md#preflight) |
 | `task.frame` | Task frame update | Classifies each message as a new task, a new hard constraint, a correction, a new subgoal or no change. Only a change makes a model rewrite the task frame. | [`frame`](features.md#frame) |
-| `input.interjection` | Mid-run messages | For a message you send while the agent is working: bring it into the work at the next step, or hold it until the run is done. mu waits up to 1.5 seconds for the verdict; without one, the message goes as you sent it. | [`interjection`](features.md#interjection) |
+| `input.interjection` | Mid-run messages | For a message you send while the agent is working: deliver it at the next step, or hold it until the run is done. mu waits up to 1.5 seconds for the verdict; without one, the message goes as you sent it. | [`interjection`](features.md#interjection) |
 
 ## Context
 
@@ -67,7 +67,7 @@ The feature column names the switch in `features` that turns the whole behavior 
 | `output.drift` | Mid-stream correction | While the model writes, the judge checks the latest output against your hard constraints and the configured rules every few hundred characters. On a confident violation, the output is cut off, the rule is named, and the model continues from there. Runs only when the feature is turned on. | [`ttsr`](features.md#ttsr) |
 | `goal.met` | Goal met (judge fallback) | In goal mode, a model decides by default whether the goal is met. This decision point is used only when the judge is chosen or the model doesn't answer: it reads the closing message to judge whether the goal is met and whether you're needed. An open acceptance item or an unverified edit always means not yet. | [`goal`](features.md#goal) |
 | `board.read` | Plain-language board: where things stand | In a project with the board on, multiple-choice questions are asked whenever the agent says something, after a check or a ticked acceptance item, every few tool calls and whenever the agent stops. They read the agent's phase, the acceptance item it's working on and whether it's waiting for you, and sort what happened since the last update into news and routine. Only something new makes a plain-speaking model rewrite the board and retell the news in the running account. When a run ends, the news from the whole run is picked again for a summary. | [`board`](features.md#board) |
-| `notify.routing` | Notification routing | For events such as the context budget or a background job's end: tell the model now, later or not at all. In shadow by default: the verdict is only logged, and each event is delivered by its own rule: right away for a job's end and the context budget. | [`notify`](features.md#notify) |
+| `notify.routing` | Notification routing | For events such as the context budget or a background job's end: tell the model now, later or not at all. In shadow by default: the verdict is only logged, and each event is delivered by its own rule (right away for a job's end and the context budget). | [`notify`](features.md#notify) |
 
 ## Teamwork
 

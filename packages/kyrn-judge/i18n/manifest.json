@@ -239,7 +239,7 @@
 			"fa-IR": "پیام‌های حین کار"
 		},
 		"decisions[id=input.interjection].summary": {
-			"en": "For a message you send while the agent is working: bring it into the work at the next step, or hold it until the run is done. mu waits up to 1.5 seconds for the verdict; without one, the message goes as you sent it.",
+			"en": "For a message you send while the agent is working: deliver it at the next step, or hold it until the run is done. mu waits up to 1.5 seconds for the verdict; without one, the message goes as you sent it.",
 			"zh-TW": "任務進行中你又傳來一則訊息：判斷是在下一步就帶進工作，還是等這一輪做完再處理。判定最多等 1.5 秒；沒有判定時，訊息照你傳送的方式送達。",
 			"ja-JP": "エージェントの作業中に送ったメッセージを、次のステップで作業に取り込むか、実行が終わるまで待たせるかを判定します。判定は最大 1.5 秒待ち、判定がなければメッセージは送ったとおりに届きます。",
 			"ko-KR": "에이전트가 작업하는 중에 보낸 메시지를 다음 단계에서 작업에 반영할지, 실행이 끝날 때까지 기다리게 할지 판정합니다. 판정은 최대 1.5초 기다리며, 판정이 없으면 메시지는 보낸 그대로 전달됩니다.",
@@ -995,7 +995,7 @@
 			"fa-IR": "مسیریابی اعلان‌ها"
 		},
 		"decisions[id=notify.routing].summary": {
-			"en": "For events such as the context budget or a background job's end: tell the model now, later or not at all. In shadow by default: the verdict is only logged, and each event is delivered by its own rule: right away for a job's end and the context budget.",
+			"en": "For events such as the context budget or a background job's end: tell the model now, later or not at all. In shadow by default: the verdict is only logged, and each event is delivered by its own rule (right away for a job's end and the context budget).",
 			"zh-TW": "上下文預算、背景工作結束這類事件出現時，判斷該現在告訴模型、晚點再說，還是不必說。預設為影子模式：判定只記錄下來，事件各按自己的規則送達；背景工作結束和上下文預算都是立刻告知。",
 			"ja-JP": "コンテキスト予算やバックグラウンドジョブの終了などのイベントを、モデルにすぐ伝えるか、後で伝えるか、伝えないかを判定します。既定ではシャドーモードです。判定は記録するだけで、各イベントはそれぞれのルールで届けます。ジョブの終了とコンテキスト予算の場合は、すぐに届けます。",
 			"ko-KR": "컨텍스트 예산이나 백그라운드 작업 종료 같은 이벤트를 모델에게 지금 알릴지, 나중에 알릴지, 알리지 않을지 정합니다. 기본값은 섀도 모드입니다. 판정은 기록만 하고 각 이벤트는 자체 규칙에 따라 전달되는데, 작업 종료와 컨텍스트 예산은 바로 알립니다.",

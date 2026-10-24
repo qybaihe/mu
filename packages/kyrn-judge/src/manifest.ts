@@ -147,7 +147,7 @@ const DESCRIBED: HarnessManifest = {
 			title: { zh: "中途插话", en: "Mid-run messages" },
 			summary: {
 				zh: "任务进行中你又发来一句话：判断是在下一步就带进工作，还是等这一轮做完再处理。判定最多等 1.5 秒；没有判定时，消息按你发送的方式送达。",
-				en: "For a message you send while the agent is working: bring it into the work at the next step, or hold it until the run is done. mu waits up to 1.5 seconds for the verdict; without one, the message goes as you sent it.",
+				en: "For a message you send while the agent is working: deliver it at the next step, or hold it until the run is done. mu waits up to 1.5 seconds for the verdict; without one, the message goes as you sent it.",
 			},
 		},
 		{
@@ -467,7 +467,7 @@ const DESCRIBED: HarnessManifest = {
 			title: { zh: "通知分流", en: "Notification routing" },
 			summary: {
 				zh: "上下文预算、后台命令结束等事件出现时，判断该现在告诉模型、稍后再说，还是不必说。默认是影子模式：判定只记录，事件按各自的规则投递，后台命令结束和上下文预算都是立刻告知。",
-				en: "For events such as the context budget or a background job's end: tell the model now, later or not at all. In shadow by default: the verdict is only logged, and each event is delivered by its own rule: right away for a job's end and the context budget.",
+				en: "For events such as the context budget or a background job's end: tell the model now, later or not at all. In shadow by default: the verdict is only logged, and each event is delivered by its own rule (right away for a job's end and the context budget).",
 			},
 		},
 		{
