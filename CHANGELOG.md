@@ -6,6 +6,7 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ### Fixed
 
+- **You now see the note that Laya was replaced.** If your settings still named Laya, 0.2.5 was meant to tell you once which judge took its place. In the desktop app, the check the app runs on mu at every start got that note instead of you, before any conversation opened. mu still updates `mu.json` when a session starts, and now keeps the note until you send your first message, in the app or the terminal. If 0.2.5 already updated your `mu.json`, you won't see the note: your judge is mude 1.0 if it's set up on your Mac, otherwise the other judges in your list or Jev, and the old file is in `~/.mu/backups`.
 - **`mu doctor` no longer fails on a machine without Chrome.** A browser is only needed for mu's browser, so the row now says it's optional instead of asking you to fix it, and `mu doctor` (and `/doctor` inside mu) passes when everything else is set up. `mu --help` also fits in a 100-column terminal now.
 
 ## [0.2.5] - 2026-10-24

@@ -1,10 +1,9 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
 import type { JudgeErrorKind } from "../../errors.ts";
 import { say } from "../../language.ts";
 import type { FreeJevOutcome } from "../../providers/free-jev.ts";
 import type { KyrnRuntime } from "../runtime.ts";
 import type { HarnessRoots } from "./inherit.ts";
+import { noticesFile, readNotices, writeNotice } from "./notices.ts";
 
 /** Failures that mean the free Jev is no longer free or no longer there, not a passing hiccup. */
 const ENDED: ReadonlyMap<JudgeErrorKind, "paid" | "gone"> = new Map([
@@ -18,22 +17,16 @@ const today = (): string => {
 	return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 };
 
-/** The day the notice was last said, in `<agentDir>/mu/notices.json`. */
+/** The day the notice was last said, in `<agentDir>/mu/notices.json` (notices.ts). */
 function saidOn(file: string | undefined): string | undefined {
-	if (!file) return undefined;
-	try {
-		const value = JSON.parse(readFileSync(file, "utf8")) as { freeJev?: unknown };
-		return typeof value.freeJev === "string" ? value.freeJev : undefined;
-	} catch {
-		return undefined;
-	}
+	const day = readNotices(file).freeJev;
+	return typeof day === "string" ? day : undefined;
 }
 
 function markSaid(file: string | undefined, day: string): void {
 	if (!file) return;
 	try {
-		mkdirSync(dirname(file), { recursive: true });
-		writeFileSync(file, `${JSON.stringify({ version: 1, freeJev: day }, null, "\t")}\n`);
+		writeNotice(file, "freeJev", day);
 	} catch {
 		// Said again tomorrow at the latest: nothing worse.
 	}
@@ -45,7 +38,7 @@ function markSaid(file: string | undefined, day: string): void {
  * Jev stops answering because it now asks for a key or is gone: decision points use their fallbacks until a key is set.
  */
 export function registerFreeJevNotice(runtime: KyrnRuntime, roots: HarnessRoots | undefined): void {
-	const file = roots ? join(roots.agentDir, "mu", "notices.json") : undefined;
+	const file = roots ? noticesFile(roots.agentDir) : undefined;
 	let inUseSaid = false;
 	let endSaid = false;
 
