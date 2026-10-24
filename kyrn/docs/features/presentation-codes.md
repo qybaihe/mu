@@ -158,16 +158,28 @@ Before the first snapshot, the delegate tool's partial update carries `details: 
 
 ## board.update
 
-Only the updates with `by: "rules"` are fixed sentences.
+Only the updates with `by: "rules"` are fixed sentences, apart from a rules headline or a rules `blocked` line, which can sit on a board the model wrote and carry their own codes.
 
 - `progress` is rebuilt from `done` and `total`: none yet, all done, or N of M done.
 - `now` is rebuilt from `phase` (the table in plain-language-board.md) plus `focusText`, the text of the item being worked on, which is new.
 - `confirmCodes` holds one entry per `confirm` line: `waiting_reply` ("It waits for your reply."), or `null` for a line quoted from the agent.
 - `log` is the running account's latest lines (up to 40, oldest first), the same objects as `board.note` sends; the update replayed on opening (`restored: true`) carries it so a reopened conversation has its account.
+- `headline` is one spoken line on every board this kernel writes. The model writes it on a model board. A rules headline comes with `headlineCode` and `headlineParams`; it goes out on a rules board, and right after the judge decides to update (the stage changed, something is stuck or a permission is pending), before the model's board replaces it.
+- `blocked` and `next` are empty or one sentence. When the model left `blocked` empty while something is stuck, the rules fill it, with `blockedCode` and `blockedParams` (the account codes below; for now only `still_running`).
+- `agents` lists the subagents of the live runs, built by rules: `who`, `role` (when it differs from the name), `state` (`working`, `waiting`, `done`, `failed`, `stuck`), `doing` and `sinceMs`. `doing` is the model's words when it gave some for that exact name, otherwise a short summary by rule in Chinese or English: the report's first line, the command, "waiting for a slot", "thinking", or why it failed. A client may word `state` itself.
+- `updatedAt` is when the board was made, in epoch ms.
+- `phase` can be `blocked`: waiting on something other than the person (a long command, a subagent, the judge, the network).
+
+| headlineCode | params | zh / en |
+| --- | --- | --- |
+| `now_<phase>` | | The phase's sentence, the same as `now` without `focusText`; `now_unclear` when there is no phase. `now_blocked`: 在等一件慢的事做完：命令、助手或网络。 / Waiting on something slow: a command, a subagent or the network. |
+| `still_running` | `who?`, `what`, `minutes` | The same as the account line below |
+| `helpers_working` | `count` | N 个助手在分头干 / N subagents are working in parallel |
+| `waiting_permission` | `what` | 在等你允许：… / Waiting for your permission: … |
 
 ## board.note
 
-One line of the board's running account. `sequence` and `at` together identify a line: the same two sent again replace the earlier line (the `looked` line grows while the agent reads file after file). `by: "model"` lines are the board model's own words and have no code. `by: "rules"` lines carry `code` and `params`; `failed` marks a check that failed, a command that errored, a denied permission, trouble.
+One line of the board's running account. `sequence` and `at` together identify a line: the same two sent again replace the earlier line (the `looked` line grows while the agent reads file after file, and the `still_running` line while a call goes on). `by: "model"` lines are the board model's own words and have no code. `by: "rules"` lines carry `code` and `params`; `failed` marks a check that failed, a command that errored, a denied permission, trouble, a subagent that did not finish well. `who` names the subagent a line is about; lines about the main agent have none.
 
 | code | params | zh / en |
 | --- | --- | --- |
@@ -181,7 +193,10 @@ One line of the board's running account. `sequence` and `at` together identify a
 | `item_done` | `item` | 做完了一条：… / Done: … |
 | `item_added` | `item` | 清单上加了一条：… / Added to the checklist: … |
 | `helpers_sent` | `count`, `titles` | 派出 N 个助手：… / Sent out N helpers: … |
-| `helpers_back` | `count` | N 个助手回来了 / N helpers came back |
+| `helpers_back` | `count`, `failed` | N 个助手回来了 / N subagents finished; when `failed` > 0: 回来了 N 个，M 个出错 / N subagents finished, M with errors |
+| `helper_done` | `name`, `summary` (the first line of its report, may be empty) | name 回来了：… / name is back: … |
+| `helper_failed` | `name`, `reason` (`failed`, `timed_out`, `stopped`), `detail?` (why, in English) | name 出错了 / 超时了 / 被停了 · name failed / timed out / was stopped |
+| `still_running` | `what`, `minutes`; `who` for a subagent | 还在跑 …，N 分钟了 / Still running …, N min in; with `who`: who 跑 … N 分钟没动静 / who: … has run N min with no output |
 | `permission_allowed` | `summary` | 你允许了：… / You allowed: … |
 | `permission_denied` | `summary` | 你没允许：… / You did not allow: … |
 | `goal_round` | `round`, `reason` (already "：…" / ": …", or empty) | 目标还没达成，mu 让它接着干（第 N 轮）… / The goal is not met yet; mu sent it back to work (round N)… |
