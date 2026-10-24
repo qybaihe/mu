@@ -23,6 +23,7 @@ import {
 import {
 	capWords,
 	duration,
+	labelOf,
 	languageOf,
 	narratorRequest,
 	narratorSystem,
@@ -55,6 +56,7 @@ import {
 	failureExcerpt,
 	firstLine,
 	parseBoardEntry,
+	swarmNames,
 	swarmState,
 } from "../src/extension/features/board.ts";
 import { createKyrnJudgeExtension, type FeatureName } from "../src/extension/kyrn-judge.ts";
@@ -291,10 +293,21 @@ describe("board words", () => {
 		expect(en).toContain('the main agent is "it"');
 		expect(en).toContain("at most 14 words (24 Chinese characters)");
 		// Only the example in the board's language.
-		expect(zh).toContain("fixer 跑测试 6 分钟没动静");
+		expect(zh).toContain("改测试那边跑了 6 分钟，没动静");
 		expect(zh).not.toContain("fixer has run one test for 6 min");
 		expect(en).toContain("fixer has run one test for 6 min with no output");
-		expect(en).not.toContain("fixer 跑测试");
+		expect(en).not.toContain("改测试那边");
+		// A label per subagent: a short name in the language the board is written in, kept once given, and what the
+		// text calls it by.
+		expect(en).toContain('"agents": [{"who": "...", "label": "...", "doing": "..."}]');
+		expect(zh).toContain(
+			'"label": a short name for it in Simplified Chinese that says what it works on, at most 10 Chinese or Japanese characters or 4 words',
+		);
+		expect(en).toContain('Once SUBAGENTS shows a label for a subagent ("(label: …)"), keep that label.');
+		expect(en).toContain("a subagent goes by its label");
+		expect(en).not.toContain("subagent names exactly as the facts give them");
+		expect(zh).toContain('{"who":"audit timing in src/retry.ts","label":"查计时"');
+		expect(narratorSystem("en", "Japanese")).toContain('"label": a short name for it in Japanese');
 		// Another language the person writes in keeps the example in English.
 		expect(narratorSystem("en", "Japanese")).toContain("Write in Japanese.");
 
@@ -425,6 +438,59 @@ describe("board words", () => {
 		);
 	});
 
+	it("keeps a label only for a subagent it knows, cut to a short name, without filler", () => {
+		const helpers = [
+			"audit timing in src/retry.ts",
+			"rewrite retry.test.ts with fake timers",
+			"docs",
+			"lint",
+			"tests",
+		];
+		const reply = parseBoardText(
+			JSON.stringify({
+				headline: "查计时回来了",
+				now: "查计时回来了。",
+				progress: "p",
+				confirm: [],
+				agents: [
+					// Copied with what the request puts beside the name: still that name.
+					{ who: "audit timing in src/retry.ts (label: 查计时) (scout)", label: " 「查计时」。", doing: "查完了" },
+					{
+						who: "rewrite retry.test.ts with fake timers",
+						label: "把重试测试改成用假时钟来跑的那个",
+						doing: "跑测试",
+					},
+					{ who: "docs", label: "working on it" },
+					{ who: "lint", label: "  " },
+					{ who: "tests", label: "run the full test suite twice" },
+					{ who: "ghost", label: "幽灵", doing: "编的" },
+					// A name keeps the first label a reply gives it; filler gave none.
+					{ who: "docs", label: "改文档" },
+					{ who: "audit timing in src/retry.ts", label: "另一个名字" },
+					{ who: "lint", label: 3 },
+				],
+			}),
+			helpers,
+		);
+		expect(reply?.labels).toEqual({
+			"audit timing in src/retry.ts": "查计时",
+			// At most 10 Chinese characters, or 4 words.
+			"rewrite retry.test.ts with fake timers": "把重试测试改成用假时…",
+			tests: "run the full test…",
+			docs: "改文档",
+		});
+		expect(reply?.doing).toEqual({
+			"audit timing in src/retry.ts": "查完了",
+			"rewrite retry.test.ts with fake timers": "跑测试",
+		});
+		expect(labelOf("Timing audit.")).toBe("Timing audit");
+		expect(labelOf("making progress")).toBe("");
+		// No label at all: none on the reply.
+		expect(
+			parseBoardText('{"headline": "h", "now": "n", "agents": [{"who": "docs", "doing": "x"}]}', ["docs"]),
+		).not.toHaveProperty("labels");
+	});
+
 	it("speaks from fixed sentences without a model, with a headline a client can word from its code", () => {
 		expect(plainBoard(facts)).toEqual({
 			headline: "正在跑测试或检查，看改得对不对。",
@@ -484,6 +550,18 @@ describe("board words", () => {
 			headlineCode: "helpers_working",
 			headlineParams: { count: 2 },
 		});
+		// A stalled subagent with a label: the sentences call it by the label, the params keep its name.
+		const who = "rewrite retry.test.ts with fake timers";
+		expect(plainBoard({ ...facts, stall: { who, label: "改测试", what: "npx vitest", minutes: 6 } })).toMatchObject({
+			headline: "改测试 跑 npx vitest 6 分钟没动静",
+			headlineCode: "still_running",
+			headlineParams: { who, what: "npx vitest", minutes: 6 },
+			blocked: "改测试 跑 npx vitest 6 分钟没动静",
+			blockedParams: { who, what: "npx vitest", minutes: 6 },
+		});
+		expect(rulesHeadline("still_running", { who, what: "npx vitest", minutes: 6 }, "en", "test rewrite")).toBe(
+			"test rewrite: npx vitest has run 6 min with no output",
+		);
 		expect(rulesHeadline("now_blocked", {}, "zh")).toBe("在等一件慢的事做完：命令、助手或网络。");
 		expect(rulesHeadline("helpers_working", { count: 1 }, "en")).toBe("1 subagent is working in parallel");
 	});
@@ -521,6 +599,22 @@ describe("board words", () => {
 			],
 			updatedAt: 1234,
 		});
+		// A label reads back beside the name, and `/board` lists the subagent by it.
+		const labelled = parseBoardEntry({
+			progress: "p",
+			now: "n",
+			agents: [
+				{ who: "audit timing in src/retry.ts", label: "查计时", state: "done", doing: "查完了", sinceMs: 1000 },
+				{ who: "rewrite retry.test.ts with fake timers", label: "", state: "working", doing: "跑测试" },
+			],
+		});
+		expect(labelled?.agents).toEqual([
+			{ who: "audit timing in src/retry.ts", label: "查计时", state: "done", doing: "查完了", sinceMs: 1000 },
+			{ who: "rewrite retry.test.ts with fake timers", state: "working", doing: "跑测试" },
+		]);
+		expect(describeBoard(labelled, "zh")).toContain(
+			"助手:\n  - 查计时 (回来了, 1 s): 查完了\n  - rewrite retry.test.ts with fake timers (在干): 跑测试",
+		);
 		expect(full).toMatchObject({
 			headline: "fixer 跑测试 6 分钟没动静",
 			headlineCode: "still_running",
@@ -1913,6 +2007,165 @@ describe("board feature", () => {
 		expect(boards(harness).at(-1)).not.toHaveProperty("agents");
 	}, 20_000);
 
+	it("calls each subagent by the label the writer gave it, keeps the label across looks, and keeps the name as its identifier", async () => {
+		const dir = mkdtempSync(join(tmpdir(), "mu-board-labels-"));
+		temporary.push(dir);
+		const AUDIT = "audit timing in src/retry.ts";
+		const REWRITE = "rewrite retry.test.ts with fake timers";
+		let shown: KyrnPresentationEvent[] = [];
+		const updates = () =>
+			shown.filter((event) => event.kind === "board.update").map((event) => event.payload as BoardUpdate);
+		const labelled = () => updates().some((update) => update.agents?.some((agent) => agent.label));
+		const stalledByLabel = () =>
+			notesOf(shown).some((note) => note.code === "still_running" && note.label === "改测试");
+		let release: () => void = () => undefined;
+		const gate = new Promise<void>((resolve) => {
+			release = resolve;
+		});
+		const delegate: AgentTool = {
+			name: "delegate",
+			label: "delegate",
+			description: "delegate",
+			parameters: Type.Object({ tasks: Type.Array(Type.Object({ title: Type.String() })) }),
+			execute: async (_id, params, signal, onUpdate) => {
+				const run = new SwarmRun<object>({
+					kind: "delegate",
+					title: "2 tasks",
+					dir,
+					bees: (params as { tasks: { title: string }[] }).tasks.map((task) => ({
+						name: task.title,
+						task: { title: task.title, instructions: "look" },
+						assignment: {},
+						role: task.title === AUDIT ? "scout" : "worker",
+					})),
+				});
+				run.onChange = () =>
+					onUpdate?.({ content: [{ type: "text", text: "…" }], details: { snapshot: run.snapshot() } });
+				const outcomes = await run.run(async (task, _assignment, _stop, _env, observer) => {
+					observer?.event({ type: "agent_start" });
+					if (task.title === AUDIT) {
+						// Back once the board has named it.
+						await vi.waitFor(() => expect(labelled()).toBe(true), { timeout: 8000 });
+						const report = "backoff() reads Date.now() twice.";
+						observer?.event({
+							type: "message_end",
+							message: { role: "assistant", content: [{ type: "text", text: report }] },
+						});
+						return report;
+					}
+					// The other starts a test and says nothing until the test lets it go.
+					observer?.event({
+						type: "tool_execution_start",
+						toolName: "bash",
+						args: { command: "npx vitest test/retry.test.ts" },
+					});
+					await gate;
+					return "rewrote it";
+				}, signal);
+				return {
+					content: [{ type: "text", text: outcomes.map((outcome) => outcome.report).join("\n") }],
+					details: { snapshot: run.snapshot(), reports: outcomes.map((outcome) => outcome.report) },
+				};
+			},
+		};
+		const widgets: string[][] = [];
+		const started = await start(
+			reading(() => ({ phase: choice("understanding"), needs_user: no, changed: yes })),
+			{ language: "zh", stallMs: 1000 },
+			undefined,
+			{
+				setWidget: (key: string, lines?: string[]) => {
+					if (key === "mu-board" && lines) widgets.push(lines);
+				},
+			},
+			{ tools: [delegate], mode: "tui" },
+		);
+		const { harness, events } = started;
+		shown = events;
+		await harness.session.prompt("/board on");
+		const asked: string[] = [];
+		const agent = [
+			fauxAssistantMessage([fauxToolCall("delegate", { tasks: [{ title: AUDIT }, { title: REWRITE }] })], {
+				stopReason: "toolUse",
+			}),
+			fauxAssistantMessage("两个都回来了。"),
+		];
+		// Only the first reply gives labels; the later ones leave them out, and a label once given stays.
+		const writer = () =>
+			JSON.stringify({
+				headline: `看板 ${asked.length}`,
+				progress: "p",
+				now: "n",
+				blocked: "",
+				agents:
+					asked.length === 1
+						? [
+								{ who: AUDIT, label: "查计时", doing: "在查计时" },
+								{ who: REWRITE, label: "改测试", doing: "在改测试" },
+							]
+						: [
+								{ who: AUDIT, doing: "查完了" },
+								{ who: REWRITE, doing: "跑测试" },
+							],
+				confirm: [],
+			});
+		harness.setResponses(Array.from({ length: 16 }, () => router(agent, writer, asked)));
+		const done = harness.session.prompt("test/retry.test.ts 时不时挂，查一下。");
+		await vi.waitFor(() => expect(stalledByLabel()).toBe(true), { timeout: 10_000 });
+		release();
+		await done;
+		await vi.waitFor(() => expect(boards(harness).at(-1)?.ended).toBe(true), { timeout: 10_000 });
+
+		// The account: the sentence says the label, `who` and the params keep the name.
+		const back = notesOf(events).find((note) => note.code === "helper_done");
+		expect(back).toMatchObject({
+			who: AUDIT,
+			label: "查计时",
+			text: "查计时 回来了：backoff() reads Date.now() twice.",
+			params: { name: AUDIT },
+		});
+		const stall = notesOf(events)
+			.filter((note) => note.code === "still_running" && note.label)
+			.at(-1);
+		expect(stall).toMatchObject({
+			who: REWRITE,
+			label: "改测试",
+			params: { who: REWRITE, what: "npx vitest test/retry.test.ts" },
+		});
+		expect(stall?.text).toMatch(/^改测试 跑 npx vitest test\/retry\.test\.ts \d+ 分钟没动静$/);
+		// The writer heard the labels once given, beside the names.
+		expect(asked[0]).not.toContain("(label: 查计时)");
+		expect(asked.slice(1).some((request) => request.includes(`${AUDIT} (label: 查计时) (scout)`))).toBe(true);
+		expect(asked.slice(1).some((request) => request.includes(`${REWRITE} (label: 改测试) (worker)`))).toBe(true);
+		// Every board after the labels came lists the subagents by name with their labels, though later replies
+		// gave none.
+		const first = updates().findIndex((update) => update.agents?.some((each) => each.label));
+		const later = updates()
+			.slice(first)
+			.filter((update) => update.agents?.length);
+		expect(later.length).toBeGreaterThan(1);
+		for (const update of later) {
+			expect(update.agents?.map((each) => [each.who, each.label])).toEqual([
+				[AUDIT, "查计时"],
+				[REWRITE, "改测试"],
+			]);
+		}
+		expect(later.at(-1)?.agents?.[0]).toMatchObject({ doing: "查完了" });
+		// What the rules word themselves call it by the label too: what is stuck, and the headline before the writer's.
+		const blocked = updates().find(
+			(update) => update.blockedCode === "still_running" && update.blocked?.startsWith("改测试"),
+		);
+		expect(blocked?.blockedParams).toMatchObject({ who: REWRITE });
+		const headline = updates().find(
+			(update) => update.headlineCode === "still_running" && update.headline?.startsWith("改测试 跑"),
+		);
+		expect(headline?.headlineParams).toMatchObject({ who: REWRITE });
+		// The terminal's three lines say the labels.
+		const lines = widgets.flat();
+		expect(lines.some((line) => line.startsWith("  · 查计时 回来了："))).toBe(true);
+		expect(lines.some((line) => line.startsWith("  卡在: 改测试 跑 npx vitest"))).toBe(true);
+	}, 30_000);
+
 	it("says a long call is still running, on one line that grows, with one look at 1, 3 and 10 minutes", async () => {
 		let release: () => void = () => undefined;
 		const gate = new Promise<void>((resolve) => {
@@ -2107,6 +2360,81 @@ describe("board and subagents", () => {
 		expect(firstLine("(Warning: withheld text.)\n## Found it\nmore")).toBe("Found it");
 	});
 
+	it("shows the writer the label each subagent has, beside its exact name, for it to keep", () => {
+		const start = 1_000_000;
+		const now = start + 2 * 60_000;
+		const audit = "audit timing in src/retry.ts";
+		const rewrite = "rewrite retry.test.ts with fake timers";
+		const snapshot = {
+			kind: "delegate" as const,
+			title: "2 tasks",
+			startedAt: start,
+			now,
+			dir: "/tmp/x",
+			bees: [
+				{
+					...newBee(audit, start, { role: "scout" }),
+					startedAt: start,
+					status: "done" as const,
+					endedAt: now,
+					finals: ["backoff() reads Date.now() twice."],
+				},
+				{
+					...newBee(rewrite, start, { role: "worker" }),
+					startedAt: start,
+					status: "thinking" as const,
+					lastEventAt: now,
+				},
+				{
+					...newBee("scout", start, { role: "scout" }),
+					startedAt: start,
+					status: "thinking" as const,
+					lastEventAt: now,
+				},
+			],
+		};
+		const swarm = describeSwarms(
+			[snapshot],
+			now,
+			new Map([
+				[audit, "查计时"],
+				["scout", "scout"],
+			]),
+		);
+		expect(swarm).toBe(
+			[
+				"delegate, sent 2 min ago, 3 subagents (1 finished):",
+				'- audit timing in src/retry.ts (label: 查计时) (scout): back after 2 min; reported: "backoff() reads Date.now() twice."',
+				// No label yet: the name alone.
+				"- rewrite retry.test.ts with fake timers (worker): thinking, 2 min in",
+				"- scout (label: scout): thinking, 2 min in",
+			].join("\n"),
+		);
+		expect(
+			narratorRequest({
+				language: "zh",
+				goal: "修 retry 测试",
+				items: [],
+				needsUser: false,
+				steps: [],
+				latest: "",
+				swarm,
+			}),
+		).toContain(
+			"SUBAGENTS:\ndelegate, sent 2 min ago, 3 subagents (1 finished):\n- audit timing in src/retry.ts (label: 查计时) (scout): back",
+		);
+		// The names a delegation gives: the task titles, or the hive's member names.
+		expect(swarmNames("delegate", { tasks: [{ title: " scout " }, {}, { title: "fixer" }] })).toEqual([
+			"scout",
+			"fixer",
+		]);
+		expect(swarmNames("hive", { goal: "g", bees: [{ name: "repro" }, { name: "history" }] })).toEqual([
+			"repro",
+			"history",
+		]);
+		expect(swarmNames("bash", { command: "ls" })).toEqual([]);
+	});
+
 	it("tells the writer and the fixed sentences about the helpers", () => {
 		const facts = {
 			language: "en" as const,
@@ -2157,6 +2485,20 @@ describe("board account", () => {
 		expect(noteText("still_running", { who: "fixer", what: "npx vitest", minutes: 6 }, "en")).toBe(
 			"fixer: npx vitest has run 6 min with no output",
 		);
+		// A label stands in for the subagent's name in the words; a sentence that names none is the same with one.
+		expect(
+			noteText("helper_done", { name: "audit timing in src/retry.ts", summary: "读了两次时钟" }, "zh", "查计时"),
+		).toBe("查计时 回来了：读了两次时钟");
+		expect(noteText("helper_failed", { name: "x", reason: "timed_out" }, "en", "test rewrite")).toBe(
+			"test rewrite timed out",
+		);
+		expect(noteText("still_running", { who: "x", what: "npx vitest", minutes: 6 }, "zh", "改测试")).toBe(
+			"改测试 跑 npx vitest 6 分钟没动静",
+		);
+		expect(noteText("still_running", { what: "npm test", minutes: 3 }, "zh", "改测试")).toBe(
+			"还在跑 npm test，3 分钟了",
+		);
+		expect(noteText("check_failed", { command: "npm test" }, "zh", "查计时")).toBe("检查没通过：npm test");
 		expect(noteText("goal_round", { round: 2, reason: reasonTail("tests still fail", "en") }, "en")).toBe(
 			"The goal isn't met yet, so mu kept the agent working (round 2): tests still fail",
 		);
@@ -2198,6 +2540,13 @@ describe("board account", () => {
 		// A line about a subagent says which one.
 		expect(parseBoardNote({ ...note, who: "scout" })).toMatchObject({ who: "scout" });
 		expect(parseBoardNote({ ...note, who: "" })).not.toHaveProperty("who");
+		// And what the board calls it, only beside its name.
+		expect(parseBoardNote({ ...note, who: "audit timing in src/retry.ts", label: "查计时" })).toMatchObject({
+			who: "audit timing in src/retry.ts",
+			label: "查计时",
+		});
+		expect(parseBoardNote({ ...note, label: "查计时" })).not.toHaveProperty("label");
+		expect(parseBoardNote({ ...note, who: "scout", label: "" })).not.toHaveProperty("label");
 		expect(
 			parseBoardText('{"progress": "p", "now": "n", "confirm": [], "note": " It found the cause. "}')?.note,
 		).toBe("It found the cause.");

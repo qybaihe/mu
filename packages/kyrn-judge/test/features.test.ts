@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AgentTool } from "@earendil-works/pi-agent-core";
-import { fauxAssistantMessage, fauxText, fauxToolCall } from "@earendil-works/pi-ai";
+import { fauxAssistantMessage, fauxText, fauxToolCall, getCurrentTools } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
@@ -779,6 +779,27 @@ describe("kyrn features", () => {
 		expect(JSON.stringify(result)).toContain("design finished");
 		expect(JSON.stringify(result)).toContain("[planner, p/large, thinking high]");
 		expect(pickModel([], 0.9)).toBeUndefined();
+	});
+
+	it("swarm: asks for task titles a person can read, since the board and the list of subagents show them", async () => {
+		const harness = await start(() => ({}), { runner: async () => "ok" });
+		let titleHelp: unknown;
+		harness.setResponses([
+			(context) => {
+				const delegate = getCurrentTools(context.messages).find((each) => each.name === "delegate");
+				const tasks = (
+					delegate?.parameters as {
+						properties?: Record<string, { items?: { properties?: Record<string, { description?: string }> } }>;
+					}
+				)?.properties?.tasks;
+				titleHelp = tasks?.items?.properties?.title?.description;
+				return fauxAssistantMessage("done");
+			},
+		]);
+		await harness.session.prompt("go");
+		expect(titleHelp).toBe(
+			"Short name of the task, shown to the person on mu's board and in its list of subagents: a few words in the language the person writes in",
+		);
 	});
 
 	it("swarm: with no configuration a subagent gets the session's model, its thinking level and a built-in role", async () => {

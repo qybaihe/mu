@@ -128,6 +128,17 @@ export function swarmParts(
 	return undefined;
 }
 
+/** The names a delegation gives its sub-agents: the task titles, or the hive's member names. */
+export function swarmNames(name: string, input: Record<string, unknown>): string[] {
+	const list = name === "delegate" ? input.tasks : name === "hive" ? input.bees : undefined;
+	if (!Array.isArray(list)) return [];
+	const key = name === "delegate" ? "title" : "name";
+	return list.flatMap((item) => {
+		const value = (item as Record<string, unknown> | null)?.[key];
+		return typeof value === "string" && value.trim() ? [value.trim()] : [];
+	});
+}
+
 /** A delegation as a person hears of it: how many were sent and for what, not the JSON of the call. */
 export function describeSwarmCall(name: string, input: Record<string, unknown>): string | undefined {
 	const parts = swarmParts(name, input);
@@ -157,9 +168,13 @@ const beeArgs = (tool: { name: string; summary: string }) =>
 const beeWhat = (tool: { name: string; summary: string }) =>
 	clip(isShellTool(tool.name) ? beeArgs(tool) : `${tool.name} ${beeArgs(tool)}`, 80);
 
-/** One subagent, as the judge and the writer read it: how it ended, or what it is doing and for how long. */
-function describeBee(bee: BeeState, now: number): string {
-	const who = bee.role && bee.role !== bee.name ? `${bee.name} (${bee.role})` : bee.name;
+/**
+ * One subagent, as the judge and the writer read it: its name (with the label the board gave it, when it has one),
+ * how it ended, or what it is doing and for how long.
+ */
+function describeBee(bee: BeeState, now: number, label?: string): string {
+	const named = label ? `${bee.name} (label: ${label})` : bee.name;
+	const who = bee.role && bee.role !== bee.name ? `${named} (${bee.role})` : named;
 	const ran = duration((bee.endedAt ?? now) - (bee.startedAt ?? bee.queuedAt));
 	const failures = bee.toolErrors > 0 ? `; ${count(bee.toolErrors, "failed step")}` : "";
 	if (bee.status === "done") {
@@ -187,10 +202,15 @@ function describeBee(bee: BeeState, now: number): string {
 
 /**
  * The subagents at work, for the judge and the writer: a header per run (what kind, sent how long ago, how many
- * are back), then a line per subagent naming it exactly as the writer must, with what it is doing and for how long,
- * how long it has been silent, its failed steps, a retry, or what it reported.
+ * are back), then a line per subagent naming it exactly as the writer must, with the label the board gave it
+ * (`labels`, by name), what it is doing and for how long, how long it has been silent, its failed steps, a retry,
+ * or what it reported.
  */
-export function describeSwarms(snapshots: readonly SwarmSnapshot[], now = Date.now()): string | undefined {
+export function describeSwarms(
+	snapshots: readonly SwarmSnapshot[],
+	now = Date.now(),
+	labels: ReadonlyMap<string, string> = new Map(),
+): string | undefined {
 	if (snapshots.length === 0) return undefined;
 	return snapshots
 		.map((snapshot) => {
@@ -198,7 +218,7 @@ export function describeSwarms(snapshots: readonly SwarmSnapshot[], now = Date.n
 			const finished = bees.filter((bee) => isOver(bee.status)).length;
 			const kind = snapshot.kind === "hive" ? "hive" : "delegate";
 			const header = `${kind}, sent ${duration(now - snapshot.startedAt)} ago, ${count(bees.length, "subagent")} (${finished} finished):`;
-			return [header, ...bees.map((bee) => `- ${describeBee(bee, now)}`)].join("\n");
+			return [header, ...bees.map((bee) => `- ${describeBee(bee, now, labels.get(bee.name))}`)].join("\n");
 		})
 		.join("\n");
 }
@@ -240,7 +260,10 @@ interface LoggedEvent extends BoardEvent {
 
 /** One subagent on the board, by rule: who it is, where it stands, what it is doing and for how long. */
 export interface BoardAgent {
+	/** Its name, exactly as the run names it. */
 	readonly who: string;
+	/** What the board calls it: a short name in the board's language, once the writer gave one. */
+	readonly label?: string;
 	readonly role?: string;
 	readonly state: "working" | "waiting" | "done" | "failed" | "stuck";
 	/** The writer's words when it gave some for this exact name, else the rules' summary. */
@@ -305,6 +328,7 @@ export function parseBoardEntry(data: unknown): BoardUpdate | undefined {
 				return [
 					{
 						who: agent.who,
+						...(typeof agent.label === "string" && agent.label ? { label: agent.label } : {}),
 						...(typeof agent.role === "string" ? { role: agent.role } : {}),
 						state: agent.state as BoardAgent["state"],
 						doing: agent.doing,
@@ -451,7 +475,7 @@ export function describeBoard(
 			...board.agents.map((agent) => {
 				const state = AGENT_WORDS[agent.state][zh ? "zh" : "en"];
 				const since = agent.sinceMs !== undefined ? `, ${duration(agent.sinceMs)}` : "";
-				return `  - ${agent.who} (${state}${since}): ${agent.doing}`;
+				return `  - ${agent.label ?? agent.who} (${state}${since}): ${agent.doing}`;
 			}),
 		);
 	}
@@ -574,6 +598,12 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 	let swarmSeen = "";
 	/** Each subagent's status as last seen, so its end is told once: by run and name. */
 	let beesSeen = new Map<string, BeeStatus>();
+	/**
+	 * What the board calls each subagent, by its exact name: the label the writer gave it, a short name in the
+	 * board's language. It stays until the writer gives another for the same name, or a new delegation sends out a
+	 * subagent of that name.
+	 */
+	let labels = new Map<string, string>();
 	/** Runs seen live, to tell how each subagent ended when the call that sent them returns. */
 	let watched = new Set<{ readonly kind: string; readonly startedAt: number; readonly bees: readonly BeeState[] }>();
 	/** The clock that notices a call or a subagent that has gone quiet, while a run is on. */
@@ -783,21 +813,26 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		runtime.present("board.note", note);
 		showWidget(runtime.ctx);
 	};
-	/** A fixed sentence on the account, when the board is on here; `who` names the subagent it is about. */
+	/**
+	 * A fixed sentence on the account, when the board is on here; `who` names the subagent it is about, and the
+	 * sentence calls it by its label when it has one (the params keep its name).
+	 */
 	const tell = (kind: NoteKind, code: NoteCode, params: NoteParams, failed = false, who?: string) => {
 		reading = undefined;
 		const ctx = runtime.ctx;
 		if (!ctx || !on(ctx)) return;
+		const label = who ? labels.get(who) : undefined;
 		noteNow({
 			sequence: ++sequence,
 			at: Date.now(),
 			kind,
-			text: noteText(code, params, language()),
+			text: noteText(code, params, language(), label),
 			by: "rules",
 			code,
 			...(Object.keys(params).length > 0 ? { params } : {}),
 			...(failed ? { failed: true } : {}),
 			...(who ? { who } : {}),
+			...(label ? { label } : {}),
 		});
 	};
 	/** The writer's own words on the account. */
@@ -909,14 +944,23 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		return ended;
 	};
 
-	/** Each subagent at work, by rule: where it stands, what it is doing (the writer's words for an exact name). */
+	/**
+	 * Each subagent at work, by rule: where it stands, what it is doing (the writer's words for an exact name), and
+	 * its label when it has one.
+	 */
 	const liveAgents = (doing: Readonly<Record<string, string>> = {}): BoardAgent[] => {
 		const now = Date.now();
 		const zh = language() === "zh";
 		return activeRuns().flatMap((run) =>
 			run.bees.map((bee) => {
-				const agent = agentOf(bee, now, options.stallMs, zh);
-				return doing[bee.name] ? { ...agent, doing: doing[bee.name] } : agent;
+				const { who, ...agent } = agentOf(bee, now, options.stallMs, zh);
+				const label = labels.get(who);
+				return {
+					who,
+					...(label ? { label } : {}),
+					...agent,
+					...(doing[who] ? { doing: doing[who] } : {}),
+				};
 			}),
 		);
 	};
@@ -953,7 +997,8 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		const oldest = [...stalls.values()].sort((a, b) => a.since - b.since)[0];
 		if (!oldest) return undefined;
 		const minutes = Math.max(1, Math.round((Date.now() - oldest.since) / 60_000));
-		return { ...(oldest.who ? { who: oldest.who } : {}), what: oldest.what, minutes };
+		const label = oldest.who ? labels.get(oldest.who) : undefined;
+		return { ...(oldest.who ? { who: oldest.who } : {}), ...(label ? { label } : {}), what: oldest.what, minutes };
 	};
 
 	/** A stall that crossed its next step: the account line grows in place, the judge hears of it. True when one did. */
@@ -963,15 +1008,17 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		if (level <= (known?.level ?? 0)) return false;
 		const minutes = Math.max(1, Math.round(elapsed / 60_000));
 		const params = { ...(who ? { who } : {}), what, minutes };
+		const label = who ? labels.get(who) : undefined;
 		const note: BoardNote = {
 			sequence: known?.note.sequence ?? ++sequence,
 			at: known?.note.at ?? now,
 			kind: "step",
-			text: noteText("still_running", params, language()),
+			text: noteText("still_running", params, language(), label),
 			by: "rules",
 			code: "still_running",
 			params,
 			...(who ? { who } : {}),
+			...(label ? { label } : {}),
 		};
 		stalls.set(key, { note, level, ...(who ? { who } : {}), what, since: now - elapsed });
 		reading = undefined;
@@ -1066,6 +1113,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		const swarm = describeSwarms(
 			runs.map((run) => run.snapshot()),
 			started,
+			labels,
 		);
 		const flying = ended ? [] : inFlight(started);
 		const stall = ended ? undefined : longestStall();
@@ -1178,6 +1226,8 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 			}
 		}
 		if (at !== epoch) return;
+		// The writer's labels: a name keeps the one it has until the writer gives it another.
+		for (const [name, label] of Object.entries(text?.labels ?? {})) labels.set(name, label);
 		const askNow = pendingAsk;
 		// The same headline with nothing new is no update: the person would only see the board flicker.
 		if (
@@ -1200,7 +1250,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		if (text?.note) tellModel(kind, text.note);
 		else if (ended) tell("ended", read.needsUser ? "waiting_reply" : "ended", {});
 		else if (complete && quote) tell("said", "said_quote", { text: clip(quote.text, 160) });
-		const { doing, ...told } = text ?? { ...rules, doing: undefined };
+		const { doing, labels: _labels, ...told } = text ?? { ...rules, doing: undefined, labels: undefined };
 		// Rules say what is stuck when the writer did not: it may have written before the stall crossed a step.
 		const stuck = stall ?? (ended ? undefined : longestStall());
 		const blocked =
@@ -1210,6 +1260,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 							"still_running",
 							{ ...(stuck.who ? { who: stuck.who } : {}), what: stuck.what, minutes: stuck.minutes },
 							language(),
+							stuck.who ? labels.get(stuck.who) : undefined,
 						),
 						blockedCode: "still_running",
 						blockedParams: { ...(stuck.who ? { who: stuck.who } : {}), what: stuck.what, minutes: stuck.minutes },
@@ -1469,6 +1520,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 			notes = board?.log ? [...board.log] : [];
 			reading = undefined;
 			beesSeen = new Map();
+			labels = new Map();
 			watched = new Set();
 			reported = sequence;
 			judged = sequence;
@@ -1504,6 +1556,8 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 			>;
 			calls.set(event.toolCallId, { name: event.toolName, input, startedAt: Date.now() });
 			if (SWARM_TOOLS.has(event.toolName)) {
+				// A subagent sent out under a name used before is a new one: the label the old one had is not its.
+				for (const name of swarmNames(event.toolName, input)) labels.delete(name);
 				log({ kind: "step", text: `sent out ${describeSwarmCall(event.toolName, input) ?? "subagents"}` });
 				const parts = swarmParts(event.toolName, input);
 				tell("helpers", "helpers_sent", { count: parts?.count ?? 0, titles: parts?.titles ?? "" });
