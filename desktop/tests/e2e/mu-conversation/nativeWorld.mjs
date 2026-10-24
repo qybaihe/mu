@@ -355,6 +355,8 @@ export function createNativeWorld({ desktopRoot, prepare }) {
     await p.waitForURL((url) => /#\/conversation\/native\//.test(url.href) && url.href !== before, { timeout: 30_000 });
     run.conversationUrl = p.url();
     await expect(p.getByTestId('native-conversation')).toBeVisible();
+    // The route changes before the old conversation's rows leave the screen; a new one has none.
+    await expect(userRows()).toHaveCount(0, { timeout: 15_000 });
   }
 
   /**
