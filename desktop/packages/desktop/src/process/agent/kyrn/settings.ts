@@ -370,6 +370,18 @@ export class SettingsStore {
       atomic(this.piPath, serialise(pi, piRaw));
     return readDefaults(pi);
   }
+  /**
+   * After a sign-out took the model new sessions start on (config/signOut.ts): it becomes `next`, or none. Only pi's
+   * defaults change, as with `setDefaultModel`; the thinking default stays.
+   */
+  replaceDefaultModel(next?: { provider: string; model: string }): ModelDefaults {
+    const piRaw = readOptional(this.piPath);
+    const pi = parseObject(piRaw, this.piPath);
+    const before = readDefaults(pi);
+    const after = { provider: next?.provider ?? '', model: next?.model ?? '', thinkingLevel: before.thinkingLevel };
+    if (applyDefaults(pi, before, after)) atomic(this.piPath, serialise(pi, piRaw));
+    return readDefaults(pi);
+  }
   /** For the connection test: the saved key of a provider, which stays inside the main process. */
   storedKey(id: string): ReturnType<typeof storedKey> {
     return storedKey(parseModels(readOptional(this.modelsPath)), readOptional(this.envPath), id);

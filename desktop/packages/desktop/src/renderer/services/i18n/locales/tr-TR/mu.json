@@ -468,6 +468,8 @@
     "byKeyHelp": "Giriş yapılmış bir abonelik yok, ancak mu son bağlantısında bunu kullanılabilir olarak bildirdi; genellikle API anahtarı ortamda olduğu için. Giriş yaparsanız abonelik kullanılır.",
     "otherRunning": "{{name}} için giriş yapılıyor; aynı anda yalnızca bir giriş yapılabilir.",
     "showRunning": "Göster",
+    "switched": "{{name}} hesabından çıkış yapıldı. {{model}} modeline geçildi.",
+    "noModelLeft": "{{name}} hesabından çıkış yapıldı. Ayarlanmış başka model yok.",
     "legacy": {
       "openai-codex": "Bu eski giriş, Codex CLI'nin girişinden geçiyor. Çıkış yapın, ardından ChatGPT ile giriş yapın.",
       "anthropic": "Anthropic, diğer uygulamaların Claude aboneliğiyle giriş yapmasına izin vermiyor; bu yüzden mu artık bunu sunmuyor. Çıkış yapın ve bunun yerine bir Anthropic API anahtarı ekleyin."

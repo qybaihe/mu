@@ -468,6 +468,8 @@
     "byKeyHelp": "目前沒有登入訂閱帳號，但 mu 上次連線時回報它能用，通常是因為環境裡有它的 API 金鑰。登入後會改用訂閱。",
     "otherRunning": "{{name}} 正在登入，同一時間只能進行一個登入。",
     "showRunning": "查看",
+    "switched": "已登出 {{name}}，已改用 {{model}}。",
+    "noModelLeft": "已登出 {{name}}。尚未設定其他模型。",
     "legacy": {
       "openai-codex": "這是經由 Codex CLI 的舊登入方式。請登出，再用 ChatGPT 登入。",
       "anthropic": "Anthropic 不允許其他應用程式用 Claude 訂閱登入，所以 mu 不再提供。請登出，改為新增 Anthropic API 金鑰。"

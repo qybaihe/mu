@@ -34,6 +34,7 @@ const bridge = vi.hoisted(() => ({
   loginAnswer: vi.fn(),
   loginCancel: vi.fn(),
   loginLogout: vi.fn(),
+  loginSwitchModels: vi.fn(),
   localJudgeState: vi.fn(),
   localJudgeRun: vi.fn(),
   mudeState: vi.fn(),
@@ -46,6 +47,12 @@ vi.mock('@/renderer/hooks/agent/useManagedAgents', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/renderer/hooks/agent/useManagedAgents')>()),
   refreshManagedAgentCatalogAndAssistants: catalog.refresh,
 }));
+// What the app says in a passing notice (Message.info), such as where a sign-out moved the default model.
+const notices = vi.hoisted(() => [] as string[]);
+vi.mock('@arco-design/web-react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@arco-design/web-react')>();
+  return { ...actual, Message: { ...actual.Message, info: (text: string) => void notices.push(text) } };
+});
 // The routed page's frame (the settings rail's phone navigation, the scroll box) is not what is tested here.
 vi.mock('@/renderer/pages/settings/components/SettingsPageWrapper', () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -63,6 +70,7 @@ vi.mock('@/common/kyrn/bridge', () => ({
     loginAnswer: { invoke: bridge.loginAnswer },
     loginCancel: { invoke: bridge.loginCancel },
     loginLogout: { invoke: bridge.loginLogout },
+    loginSwitchModels: { invoke: bridge.loginSwitchModels },
     localJudgeState: { invoke: bridge.localJudgeState },
     localJudgeRun: { invoke: bridge.localJudgeRun },
     mudeState: { invoke: bridge.mudeState },
@@ -169,6 +177,7 @@ beforeEach(async () => {
   bridge.loginStatus.mockResolvedValue({ ok: true, data: { signedIn: [] } });
   bridge.loginState.mockResolvedValue({ ok: true, data: { id: 0, phase: 'idle' } });
   bridge.recheck.mockResolvedValue({ ok: true, data: undefined });
+  bridge.loginSwitchModels.mockResolvedValue({ ok: true, data: { defaultMoved: false, conversations: 0 } });
   catalog.refresh.mockResolvedValue([]);
   // The store answers a save with the whole state again.
   bridge.save.mockImplementation(
@@ -191,6 +200,7 @@ beforeEach(async () => {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  notices.length = 0;
 });
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -730,6 +740,90 @@ describe('providers and the default model', () => {
     await waitFor(() => expect(within(detail).getByTestId('mu-account-state')).toHaveTextContent('Not signed in'));
     expect(within(detail).getByTestId('mu-account-signin-xai')).toBeInTheDocument();
     await waitFor(() => expect(bridge.recheck).toHaveBeenCalledTimes(1));
+  });
+
+  it('drops a signed-out account’s models from the pickers at once, and says where the default model went', async () => {
+    const onCodex = settings();
+    onCodex.models.defaults = { provider: 'openai-codex', model: 'sol', thinkingLevel: '' };
+    bridge.settings.mockResolvedValue({ ok: true, data: onCodex });
+    bridge.loginStatus.mockResolvedValue({
+      ok: true,
+      data: { signedIn: [{ provider: 'openai-codex', models: [{ id: 'sol', name: 'Sol' }] }], offered: ['openai'] },
+    });
+    bridge.loginLogout.mockImplementation(async () => {
+      bridge.loginStatus.mockResolvedValue({ ok: true, data: { signedIn: [], offered: ['openai'] } });
+      return { ok: true, data: { signedIn: [], offered: ['openai'] } };
+    });
+    // mu checked again after the sign-out reports no Codex model, and the main process moved the default to Relay's.
+    bridge.recheck.mockImplementation(async () => {
+      bridge.availableModels.mockResolvedValue({
+        ok: true,
+        data: { providers: [{ id: 'corp-gateway', models: [] }], thinkingLevels: [] },
+      });
+      bridge.settings.mockResolvedValue({ ok: true, data: { ...settings(), revision: 'r2' } });
+      return { ok: true, data: undefined };
+    });
+    bridge.loginSwitchModels.mockResolvedValue({
+      ok: true,
+      data: { defaultMoved: true, conversations: 1, to: { provider: 'relay', model: 'plain', name: 'Plain' } },
+    });
+    const user = userEvent.setup();
+    await open('default-model');
+    const before = screen.getByTestId('mu-defaults');
+    await user.click(within(before).getByLabelText('Provider'));
+    expect(await screen.findByText('ChatGPT (Codex)', { selector: '.arco-select-option' })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+
+    fireEvent.click(screen.getByTestId('mu-nav-providers'));
+    fireEvent.click(await screen.findByTestId('mu-provider-item-account-openai-codex'));
+    const detail = screen.getByTestId('mu-account-openai-codex');
+    await waitFor(() => expect(within(detail).getByTestId('mu-account-state')).toHaveTextContent('Signed in'));
+    fireEvent.click(within(detail).getByTestId('mu-account-signout-openai-codex'));
+    const buttons = await screen.findAllByRole('button', { name: 'Sign out' });
+    fireEvent.click(buttons[buttons.length - 1]);
+    await waitFor(() => expect(bridge.loginSwitchModels).toHaveBeenCalledWith({ provider: 'openai-codex' }));
+    await waitFor(() => expect(notices).toEqual(['Signed out of ChatGPT (Codex). Switched to Plain.']));
+
+    // No restart, no reload: the account's provider is gone from the default model's picker, the default is the one
+    // the sign-out moved it to, and nothing is left unsaved (the files' new revision is the base).
+    fireEvent.click(screen.getByTestId('mu-nav-default-model'));
+    const after = screen.getByTestId('mu-defaults');
+    await waitFor(() => expect(within(after).getByLabelText('Provider')).toHaveTextContent('Relay'));
+    expect(within(after).getByLabelText('Model')).toHaveTextContent('plain');
+    await user.click(within(after).getByLabelText('Provider'));
+    expect(await screen.findByText('corp-gateway', { selector: '.arco-select-option' })).toBeInTheDocument();
+    expect(screen.queryByText('ChatGPT (Codex)', { selector: '.arco-select-option' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('mu-save-bar')).not.toBeInTheDocument();
+  });
+
+  it('says nothing after a sign-out that moved nothing, and that no model is left when none is', async () => {
+    bridge.loginStatus.mockResolvedValue({
+      ok: true,
+      data: { signedIn: [{ provider: 'xai', models: [{ id: 'grok-5', name: 'Grok 5' }] }] },
+    });
+    bridge.loginLogout.mockResolvedValue({ ok: true, data: { signedIn: [] } });
+    await open('providers');
+    fireEvent.click(await screen.findByTestId('mu-provider-item-account-xai'));
+    const detail = screen.getByTestId('mu-account-xai');
+    await waitFor(() => expect(within(detail).getByTestId('mu-account-state')).toHaveTextContent('Signed in'));
+    fireEvent.click(within(detail).getByTestId('mu-account-signout-xai'));
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Sign out' })).at(-1)!);
+    await waitFor(() => expect(bridge.loginSwitchModels).toHaveBeenCalledWith({ provider: 'xai' }));
+    expect(notices).toEqual([]);
+
+    bridge.loginStatus.mockResolvedValue({
+      ok: true,
+      data: { signedIn: [{ provider: 'xai', models: [{ id: 'grok-5', name: 'Grok 5' }] }] },
+    });
+    bridge.loginSwitchModels.mockResolvedValue({ ok: true, data: { defaultMoved: true, conversations: 0 } });
+    cleanup();
+    await open('providers');
+    fireEvent.click(await screen.findByTestId('mu-provider-item-account-xai'));
+    const again = screen.getByTestId('mu-account-xai');
+    await waitFor(() => expect(within(again).getByTestId('mu-account-state')).toHaveTextContent('Signed in'));
+    fireEvent.click(within(again).getByTestId('mu-account-signout-xai'));
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Sign out' })).at(-1)!);
+    await waitFor(() => expect(notices).toEqual(['Signed out of Grok. No other model is set up.']));
   });
 
   it('shows a Claude subscription signed in before only to sign it out, and says to use an API key', async () => {
