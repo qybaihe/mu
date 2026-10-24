@@ -136,6 +136,7 @@
     "choose": "Judge wählen",
     "custom": "Der erste Judge ist gerade ein benutzerdefinierter: Auf der Seite „Reihenfolge der Judges“ kannst du ihn ansehen und ändern.",
     "keyPlaceholder": "Schlüssel einfügen",
+    "removeKey": "Schlüssel entfernen",
     "choices": {
       "jev": {
         "title": "Jev",
@@ -301,13 +302,15 @@
       }
     },
     "openai": {
-      "key": "API-Schlüssel für OpenAI"
+      "key": "API-Schlüssel für OpenAI",
+      "keyHelp": "Ohne ihn nutzt mu den API-Schlüssel des OpenAI-Anbieters (Einstellungen → Anbieter) oder OPENAI_API_KEY, nie eine ChatGPT-Anmeldung."
     }
   },
   "keyState": {
     "none": "Nicht gesetzt",
     "set": "Gesetzt",
     "typed": "Neuer Schlüssel, noch nicht gespeichert",
+    "removed": "Schlüssel entfernt, noch nicht gespeichert",
     "empty": "Variable ist leer",
     "managed": "Gesetzt",
     "manual": "Gesetzt (von Hand)"
@@ -825,6 +828,10 @@
     "freeJevUnavailable": {
       "paid": "Der kostenlose Jev auf OpenCode Zen verlangt jetzt einen Schlüssel oder eine Zahlung, daher entscheiden vorerst feste Regeln. Trage unter Einstellungen → Judges einen Jev-Schlüssel ein, um den Judge zurückzubekommen.",
       "gone": "OpenCode Zen bietet den kostenlosen Jev nicht mehr an, daher entscheiden vorerst feste Regeln. Trage unter Einstellungen → Judges einen Jev-Schlüssel ein, um den Judge zurückzubekommen."
+    },
+    "openaiKey": {
+      "missing": "Das Entscheidungsmodell von OpenAI hat keinen API-Schlüssel mehr und urteilt daher nicht. Trage unter Einstellungen → Judges einen ein oder wähle einen anderen Judge.",
+      "rejected": "OpenAI hat den API-Schlüssel des Entscheidungsmodells abgelehnt, daher urteilt es nicht. Trage unter Einstellungen → Judges einen anderen Schlüssel ein oder wähle einen anderen Judge."
     },
     "layaRemoved": "Laya ist nicht mehr in mu enthalten, daher ist Ihr Judge jetzt {{judge}}. Um ein anderes Entscheidungsmodell zu nutzen, fügen Sie es unter Einstellungen → Judges von Hugging Face hinzu.",
     "layaRemovedNoModels": "Laya ist nicht mehr in mu enthalten, daher ist Ihr Judge jetzt {{judge}}.",

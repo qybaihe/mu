@@ -1274,6 +1274,8 @@
       "judgeNotice": {
         "freeJev": "کلید Jev تنظیم نشده است: Jev رایگان در OpenCode Zen پاسخ می‌دهد",
         "freeJevUnavailable": "Jev رایگان دیگر پاسخ نمی‌دهد: تا تنظیم کلید Jev، قواعد ثابت تصمیم می‌گیرند",
+        "openaiKeyMissing": "مدل تصمیم‌گیری OpenAI کلید API ندارد: داور بعدی یا قواعد ثابت تصمیم می‌گیرند",
+        "openaiKeyRejected": "OpenAI کلید API مدل تصمیم‌گیری را رد کرد: داور بعدی یا قواعد ثابت تصمیم می‌گیرند",
         "layaRemoved": "Laya دیگر به‌صورت داخلی در mu نیست: داور اکنون {{judge}} است"
       },
       "detail": "جزئیات: {{detail}}",

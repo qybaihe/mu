@@ -136,6 +136,7 @@
     "choose": "Bir hakem seçin",
     "custom": "Şu an ilk sıradaki hakem özel bir hakem: Hakem sırası sayfasında görüp değiştirebilirsiniz.",
     "keyPlaceholder": "Anahtarı yapıştırın",
+    "removeKey": "Anahtarı kaldır",
     "choices": {
       "jev": {
         "title": "Jev",
@@ -301,13 +302,15 @@
       }
     },
     "openai": {
-      "key": "OpenAI API anahtarı"
+      "key": "OpenAI API anahtarı",
+      "keyHelp": "Boş bırakılırsa mu, OpenAI sağlayıcısının API anahtarını (Ayarlar → Sağlayıcılar) veya OPENAI_API_KEY'i kullanır; ChatGPT girişini asla kullanmaz."
     }
   },
   "keyState": {
     "none": "Ayarlanmadı",
     "set": "Ayarlandı",
     "typed": "Yeni anahtar, henüz kaydedilmedi",
+    "removed": "Anahtar kaldırıldı, henüz kaydedilmedi",
     "empty": "Değişken boş",
     "managed": "Ayarlandı",
     "manual": "Ayarlandı (elle)"
@@ -825,6 +828,10 @@
     "freeJevUnavailable": {
       "paid": "OpenCode Zen'deki ücretsiz Jev artık anahtar veya ödeme istiyor; şimdilik basit kurallar karar veriyor. Hakemi geri almak için Ayarlar → Hakemler'e bir Jev anahtarı girin.",
       "gone": "OpenCode Zen artık ücretsiz Jev sunmuyor; şimdilik basit kurallar karar veriyor. Hakemi geri almak için Ayarlar → Hakemler'e bir Jev anahtarı girin."
+    },
+    "openaiKey": {
+      "missing": "OpenAI'ın karar modelinin artık API anahtarı yok, bu yüzden karar vermiyor. Ayarlar → Hakemler'e bir anahtar girin veya başka bir hakem seçin.",
+      "rejected": "OpenAI, karar modelinin API anahtarını reddetti, bu yüzden karar vermiyor. Ayarlar → Hakemler'e başka bir anahtar girin veya başka bir hakem seçin."
     },
     "layaRemoved": "Laya artık mu'ya yerleşik değil, bu yüzden hakeminiz artık {{judge}}. Başka bir karar modeli kullanmak için Ayarlar → Hakemler bölümünden Hugging Face'ten ekleyin.",
     "layaRemovedNoModels": "Laya artık mu'ya yerleşik değil, bu yüzden hakeminiz artık {{judge}}.",

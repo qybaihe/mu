@@ -149,9 +149,20 @@ export type Draft = {
   judgeKeys: Record<string, string>;
   /** Provider id -> the key typed for it. */
   providerKeys: Record<string, string>;
+  /** Credential variables of judges whose saved key goes from mu's .env on save; a key typed for one wins. */
+  removedKeys: string[];
 };
 
-export const newDraft = (settings: KyrnSettings): Draft => ({ settings, judgeKeys: {}, providerKeys: {} });
+export const newDraft = (settings: KyrnSettings): Draft => ({
+  settings,
+  judgeKeys: {},
+  providerKeys: {},
+  removedKeys: [],
+});
+
+/** Whether a judge's saved key goes on save: its removal asked for, and no key typed to replace it. */
+export const keyRemoved = (draft: Draft, variable: string): boolean =>
+  draft.removedKeys.includes(variable) && !draft.judgeKeys[variable];
 
 /**
  * The settings as the page reads them. A main process older than this page sends no permission default and no board
@@ -192,7 +203,8 @@ export function dirtySections(base: KyrnSettings, draft: Draft): Set<SectionId> 
     base.mode !== next.mode ||
     !same(base.tiers, next.tiers) ||
     !same(base.judges, next.judges) ||
-    hasKeys(draft.judgeKeys)
+    hasKeys(draft.judgeKeys) ||
+    draft.removedKeys.length > 0
   )
     dirty.add('judges');
   if (!same(base.decisionModes, next.decisionModes)) dirty.add('decisions');
@@ -264,6 +276,7 @@ export function toSave(draft: Draft, base?: KyrnSettings): SaveSettings {
       .filter(([id]) => models.providers.some((provider) => provider.id === id))
       .map(([id, value]) => ({ name: providerKeyVariable(id), value })),
   ].filter((credential) => credential.value);
+  const removeCredentials = draft.removedKeys.filter((name) => keyRemoved(draft, name));
   return {
     ...rest,
     ...(harness.status === 'ok' ? { decisionModes, features } : {}),
@@ -273,6 +286,7 @@ export function toSave(draft: Draft, base?: KyrnSettings): SaveSettings {
       ...(removeEntries.length ? { removeEntries } : {}),
     },
     ...(credentials.length ? { credentials } : {}),
+    ...(removeCredentials.length ? { removeCredentials } : {}),
     ...pick,
     ...(boardModel.supported ? { boardModel: { model: boardModel.model } } : {}),
   };

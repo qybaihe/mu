@@ -136,6 +136,7 @@
     "choose": "Choose a judge",
     "custom": "Your first judge is a custom one. View or change it on the Judge order page.",
     "keyPlaceholder": "Paste the key",
+    "removeKey": "Remove key",
     "choices": {
       "jev": {
         "title": "Jev",
@@ -301,13 +302,15 @@
       }
     },
     "openai": {
-      "key": "OpenAI API key"
+      "key": "OpenAI API key",
+      "keyHelp": "Without one, mu uses the OpenAI provider's API key (Settings → Providers) or OPENAI_API_KEY, never a ChatGPT sign-in."
     }
   },
   "keyState": {
     "none": "Not set",
     "set": "Set",
     "typed": "New key, not saved",
+    "removed": "Key removed, not saved",
     "empty": "Variable is empty",
     "managed": "Set",
     "manual": "Set (edited by hand)"
@@ -825,6 +828,10 @@
     "freeJevUnavailable": {
       "paid": "Jev on OpenCode Zen now requires a key or payment, so mu is using its default rules for now. Add a Jev key under Settings → Judges to turn the judge back on.",
       "gone": "OpenCode Zen no longer offers Jev for free, so mu is using its default rules for now. Add a Jev key under Settings → Judges to turn the judge back on."
+    },
+    "openaiKey": {
+      "missing": "OpenAI's decision model has no API key now, so it isn't judging. Add one under Settings → Judges, or pick another judge.",
+      "rejected": "OpenAI rejected the API key for its decision model, so it isn't judging. Add another key under Settings → Judges, or pick another judge."
     },
     "layaRemoved": "Laya is no longer built into mu, so your judge is now {{judge}}. To use another decision model, add it from Hugging Face under Settings → Judges.",
     "layaRemovedNoModels": "Laya is no longer built into mu, so your judge is now {{judge}}.",

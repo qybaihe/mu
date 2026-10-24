@@ -136,6 +136,7 @@
     "choose": "Elige un juez",
     "custom": "Ahora el primer juez es uno personalizado: puedes verlo y cambiarlo en la página «Orden de los jueces».",
     "keyPlaceholder": "Pega la clave",
+    "removeKey": "Quitar clave",
     "choices": {
       "jev": {
         "title": "Jev",
@@ -301,13 +302,15 @@
       }
     },
     "openai": {
-      "key": "Clave de API de OpenAI"
+      "key": "Clave de API de OpenAI",
+      "keyHelp": "Sin ella, mu usa la clave de API del proveedor OpenAI (Configuración → Proveedores) u OPENAI_API_KEY, nunca un inicio de sesión de ChatGPT."
     }
   },
   "keyState": {
     "none": "Sin definir",
     "set": "Definida",
     "typed": "Clave nueva, aún sin guardar",
+    "removed": "Clave quitada, aún sin guardar",
     "empty": "La variable está vacía",
     "managed": "Definida",
     "manual": "Definida (a mano)"
@@ -825,6 +828,10 @@
     "freeJevUnavailable": {
       "paid": "El Jev gratuito de OpenCode Zen ahora pide una clave o un pago, así que por ahora deciden reglas simples. Escribe una clave de Jev en Configuración → Jueces para recuperar el juez.",
       "gone": "OpenCode Zen ya no ofrece el Jev gratuito, así que por ahora deciden reglas simples. Escribe una clave de Jev en Configuración → Jueces para recuperar el juez."
+    },
+    "openaiKey": {
+      "missing": "El modelo de decisión de OpenAI ya no tiene clave de API, así que no está juzgando. Añade una en Configuración → Jueces o elige otro juez.",
+      "rejected": "OpenAI rechazó la clave de API del modelo de decisión, así que no está juzgando. Añade otra clave en Configuración → Jueces o elige otro juez."
     },
     "layaRemoved": "Laya ya no viene integrado en mu, así que tu juez ahora es {{judge}}. Para usar otro modelo de decisión, añádelo desde Hugging Face en Configuración → Jueces.",
     "layaRemovedNoModels": "Laya ya no viene integrado en mu, así que tu juez ahora es {{judge}}.",

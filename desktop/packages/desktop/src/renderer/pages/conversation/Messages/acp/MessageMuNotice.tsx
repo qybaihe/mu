@@ -11,6 +11,7 @@ import {
   FREE_JEV_UNAVAILABLE_KEYS,
   MU_NOTICE_KEYS,
   MU_NOTICE_LINKS,
+  OPENAI_KEY_KEYS,
   TO_MODEL_KEYS,
   type MuNotice,
 } from './muNotice';
@@ -106,6 +107,10 @@ function NoticeLine({ notice }: { notice: MuNotice }) {
     // A reason this build has no words for is said in mu's own.
     const key = notice.reason ? FREE_JEV_UNAVAILABLE_KEYS[notice.reason] : undefined;
     text = key ? t(key) : notice.title || t(MU_NOTICE_KEYS.free_jev_unavailable);
+  } else if (notice.code === 'openai_key') {
+    // A reason this build has no words for is said in mu's own.
+    const key = notice.reason ? OPENAI_KEY_KEYS[notice.reason] : undefined;
+    text = key ? t(key) : notice.title || t(MU_NOTICE_KEYS.openai_key);
   } else if (notice.code === 'laya_removed') {
     // Another decision model comes from Hugging Face where the app adds one: on a Mac.
     const key = isMacOS() ? MU_NOTICE_KEYS.laya_removed : 'mu.notices.layaRemovedNoModels';

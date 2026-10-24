@@ -136,6 +136,7 @@
     "choose": "判定器を選択",
     "custom": "現在、先頭の判定器はカスタム設定です。「判定器の順序」ページで確認・変更できます。",
     "keyPlaceholder": "キーを貼り付け",
+    "removeKey": "キーを削除",
     "choices": {
       "jev": {
         "title": "Jev",
@@ -301,13 +302,15 @@
       }
     },
     "openai": {
-      "key": "OpenAI の API キー"
+      "key": "OpenAI の API キー",
+      "keyHelp": "未入力の場合、mu は OpenAI プロバイダーの API キー（設定 → プロバイダー）か OPENAI_API_KEY を使います。ChatGPT のサインインは使えません。"
     }
   },
   "keyState": {
     "none": "未設定",
     "set": "設定済み",
     "typed": "新しいキー（未保存）",
+    "removed": "キーを削除（未保存）",
     "empty": "変数が空です",
     "managed": "設定済み",
     "manual": "設定済み（手動）"
@@ -825,6 +828,10 @@
     "freeJevUnavailable": {
       "paid": "OpenCode Zen の無料の Jev がキーか支払いを求めるようになったため、当面はルールで判定します。「設定 → 判定器」で Jev のキーを入力すると戻ります。",
       "gone": "OpenCode Zen が無料の Jev の提供を終えたため、当面はルールで判定します。「設定 → 判定器」で Jev のキーを入力すると戻ります。"
+    },
+    "openaiKey": {
+      "missing": "OpenAI の判定モデルに API キーがないため、判定に参加していません。「設定 → 判定器」でキーを入力するか、別の判定器を選んでください。",
+      "rejected": "OpenAI が判定モデルの API キーを拒否したため、判定に参加していません。「設定 → 判定器」で別のキーを入力するか、別の判定器を選んでください。"
     },
     "layaRemoved": "Laya は mu に組み込まれなくなったため、判定器は {{judge}} になりました。ほかの意思決定モデルを使うには、「設定 → 判定器」で Hugging Face から追加してください。",
     "layaRemovedNoModels": "Laya は mu に組み込まれなくなったため、判定器は {{judge}} になりました。",

@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Input, Switch, Tag } from '@arco-design/web-react';
+import { Button, Input, Switch, Tag } from '@arco-design/web-react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { CLM_DEFAULT_ADDRESS, CLM_DEFAULT_MODEL } from '@/common/kyrn/clm';
@@ -9,7 +9,7 @@ import MuSelect from '@/renderer/components/base/MuSelect';
 import OneLine from '@/renderer/components/settings/OneLine';
 import { formatNumber } from '@/renderer/services/i18n/format';
 import { isMacOS } from '@/renderer/utils/platform';
-import { dirtySections, type Draft } from '../draft';
+import { dirtySections, keyRemoved, type Draft } from '../draft';
 import ChoiceTile from '../fields/ChoiceTile';
 import { shownMode } from '../fields/mode';
 import Row from '../fields/Row';
@@ -32,6 +32,7 @@ import {
   kindOf,
   OPENAI_DEFAULT_MODEL,
   openaiKeyVariable,
+  openaiModelChoices,
   profileFor,
   serviceOf,
   withJevService,
@@ -47,6 +48,8 @@ type JudgesSectionProps = {
   base: KyrnSettings;
   onChange: (change: (settings: KyrnSettings) => KyrnSettings) => void;
   onKey: (variable: string, value: string) => void;
+  /** A judge's saved key is to go from mu's .env on save (OpenAI's); without it, no key is offered for removal. */
+  onRemoveKey?: (variable: string) => void;
   /**
    * mu's own command changed mu.json (mude): the settings are read again, and `change` made in the new draft (a choice
    * picked while mude was the judge, made once its command took mude out of the order). The page stays as it is
@@ -61,7 +64,7 @@ type JudgesSectionProps = {
  * it works, and under it what that choice needs (Jev a service and its key, mude its panel, CLM its server's address).
  * The order of several judges is the next page.
  */
-export default function JudgesSection({ draft, base, onChange, onKey, onReload }: JudgesSectionProps) {
+export default function JudgesSection({ draft, base, onChange, onKey, onRemoveKey, onReload }: JudgesSectionProps) {
   const { t } = useTranslation();
   const on = shownMode(draft.settings.mode) === 'active';
   return (
@@ -77,7 +80,14 @@ export default function JudgesSection({ draft, base, onChange, onKey, onReload }
           />
         </Row>
       </Card>
-      <JudgeChoices draft={draft} base={base} onChange={onChange} onKey={onKey} onReload={onReload} />
+      <JudgeChoices
+        draft={draft}
+        base={base}
+        onChange={onChange}
+        onKey={onKey}
+        onRemoveKey={onRemoveKey}
+        onReload={onReload}
+      />
     </SectionShell>
   );
 }
@@ -95,7 +105,7 @@ export function JudgeOrderSection(props: JudgesSectionProps) {
   );
 }
 
-type JudgeChoicesProps = Pick<JudgesSectionProps, 'draft' | 'base' | 'onChange' | 'onKey' | 'onReload'>;
+type JudgeChoicesProps = Pick<JudgesSectionProps, 'draft' | 'base' | 'onChange' | 'onKey' | 'onRemoveKey' | 'onReload'>;
 
 /**
  * The choice itself: which judge answers the small questions, and what that choice needs. mude (on a Mac) is chosen
@@ -106,7 +116,7 @@ type JudgeChoicesProps = Pick<JudgesSectionProps, 'draft' | 'base' | 'onChange' 
  * an edit like any other. A decision model added from Hugging Face (DecisionModels, under mude's body) counts as the
  * same choice: picking another judge while it is the judge runs its `disable` the same way.
  */
-export function JudgeChoices({ draft, base, onChange, onKey, onReload }: JudgeChoicesProps) {
+export function JudgeChoices({ draft, base, onChange, onKey, onRemoveKey, onReload }: JudgeChoicesProps) {
   const { t } = useTranslation();
   const { settings } = draft;
   const unsaved = dirtySections(base, draft).size > 0;
@@ -192,7 +202,7 @@ export function JudgeChoices({ draft, base, onChange, onKey, onReload }: JudgeCh
                   <DecisionModels models={models} unsaved={unsaved} mudeBusy={mude.busy} />
                 </>
               ) : (
-                <ChoiceBody choice={choice} draft={draft} onChange={onChange} onKey={onKey} />
+                <ChoiceBody choice={choice} draft={draft} onChange={onChange} onKey={onKey} onRemoveKey={onRemoveKey} />
               )}
             </JudgeChoiceTile>
           );
@@ -257,6 +267,7 @@ type BodyProps = {
   draft: Draft;
   onChange: JudgesSectionProps['onChange'];
   onKey: JudgesSectionProps['onKey'];
+  onRemoveKey?: JudgesSectionProps['onRemoveKey'];
 };
 
 /**
@@ -264,7 +275,7 @@ type BodyProps = {
  * that service's key, CLM the address of its server, the key of a server that asks for one, and word from the server;
  * OpenAI's decision model its key.
  */
-export function ChoiceBody({ choice, draft, onChange, onKey }: BodyProps) {
+export function ChoiceBody({ choice, draft, onChange, onKey, onRemoveKey }: BodyProps) {
   const { t } = useTranslation();
   const { settings } = draft;
   const name = profileFor(settings, choice);
@@ -327,11 +338,12 @@ export function ChoiceBody({ choice, draft, onChange, onKey }: BodyProps) {
     return (
       <div className={styles.choiceFields}>
         <div className={styles.choiceField}>
-          <label className={styles.choiceLabel}>
-            {t('mu.judges.openai.key')}
-            <Tag size='small'>{t(settings.keys[variable] ? 'mu.keyState.set' : 'mu.keyState.none')}</Tag>
-          </label>
+          <div className={styles.choiceLabel}>
+            <label>{t('mu.judges.openai.key')}</label>
+            <OpenAIKeyState variable={variable} draft={draft} onRemoveKey={onRemoveKey} />
+          </div>
           <OpenAIKeyInput className={styles.choiceInput} variable={variable} draft={draft} onKey={onKey} />
+          <div className={styles.choiceHint}>{t('mu.judges.openai.keyHelp')}</div>
         </div>
       </div>
     );
@@ -410,7 +422,7 @@ export function ChoiceBody({ choice, draft, onChange, onKey }: BodyProps) {
  * one and its key; CLM its server's address, its model and its key. A judge of another kind (a model as judge, a
  * self-hosted HTTP service) goes by the name it was given.
  */
-function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
+function JudgeTiers({ draft, base, onChange, onKey, onRemoveKey }: JudgesSectionProps) {
   const { t, i18n } = useTranslation();
   const { settings } = draft;
   const nameOf = (profile: string): string => {
@@ -476,7 +488,14 @@ function JudgeTiers({ draft, base, onChange, onKey }: JudgesSectionProps) {
             {kind === 'jev' ? (
               <JevFields draft={draft} base={base} index={index} onChange={onChange} onKey={onKey} />
             ) : kind === 'openai' ? (
-              <OpenAIFields draft={draft} base={base} index={index} onChange={onChange} onKey={onKey} />
+              <OpenAIFields
+                draft={draft}
+                base={base}
+                index={index}
+                onChange={onChange}
+                onKey={onKey}
+                onRemoveKey={onRemoveKey}
+              />
             ) : kind === 'clm' ? (
               <ClmFields draft={draft} base={base} index={index} onChange={onChange} onKey={onKey} />
             ) : classifier ? (
@@ -790,6 +809,7 @@ type OpenAIKeyInputProps = {
 /** Where the key of OpenAI's decision model is typed, hidden as it is typed. */
 function OpenAIKeyInput({ className, size, variable, draft, onKey }: OpenAIKeyInputProps) {
   const { t } = useTranslation();
+  const kept = draft.settings.keys[variable] && !keyRemoved(draft, variable);
   return (
     <Input.Password
       size={size}
@@ -797,17 +817,43 @@ function OpenAIKeyInput({ className, size, variable, draft, onKey }: OpenAIKeyIn
       aria-label={t('mu.judges.openai.key')}
       autoComplete='new-password'
       value={draft.judgeKeys[variable] ?? ''}
-      placeholder={draft.settings.keys[variable] ? t('mu.keyKeep') : t('mu.judges.keyPlaceholder')}
+      placeholder={kept ? t('mu.keyKeep') : t('mu.judges.keyPlaceholder')}
       onChange={(value) => onKey(variable, value)}
     />
   );
 }
 
+type OpenAIKeyStateProps = Pick<JudgesSectionProps, 'draft' | 'onRemoveKey'> & { variable: string };
+
 /**
- * OpenAI's decision model in the order: its model, and when it is not the judge chosen on the judges page (which asks
- * for it), its key.
+ * Whether OpenAI's key is set, and while it is, the way to remove it: it goes from mu's .env when the draft is saved,
+ * and until a key is set again, mu says so in the conversation and the next judge answers (or mu's fallbacks). A key
+ * typed in its place replaces it instead.
  */
-function OpenAIFields({ draft, base, index, onChange, onKey }: JudgesSectionProps & { index: number }) {
+function OpenAIKeyState({ variable, draft, onRemoveKey }: OpenAIKeyStateProps) {
+  const { t } = useTranslation();
+  const removed = draft.settings.keys[variable] && keyRemoved(draft, variable);
+  const set = draft.settings.keys[variable] && !removed;
+  return (
+    <>
+      <Tag size='small' data-testid='mu-openai-key-state'>
+        {t(removed ? 'mu.keyState.removed' : set ? 'mu.keyState.set' : 'mu.keyState.none')}
+      </Tag>
+      {set && onRemoveKey ? (
+        <Button type='text' size='mini' data-testid='mu-openai-key-remove' onClick={() => onRemoveKey(variable)}>
+          {t('mu.judges.removeKey')}
+        </Button>
+      ) : null}
+    </>
+  );
+}
+
+/**
+ * OpenAI's decision model in the order: its model, picked among the ones the Decisions API serves (a model mu.json
+ * names that is not one of them stays offered as it is), and when it is not the judge chosen on the judges page (which
+ * asks for it), its key.
+ */
+function OpenAIFields({ draft, base, index, onChange, onKey, onRemoveKey }: JudgesSectionProps & { index: number }) {
   const { t } = useTranslation();
   const { settings } = draft;
   const name = settings.tiers[index];
@@ -817,20 +863,22 @@ function OpenAIFields({ draft, base, index, onChange, onKey }: JudgesSectionProp
   return (
     <>
       <Row title={t('mu.judges.model')} modified={saved !== undefined && saved.model !== judge.model}>
-        <Input
+        <MuSelect
           size='small'
           className={fieldStyles.wide}
           aria-label={t('mu.judges.model')}
-          placeholder={OPENAI_DEFAULT_MODEL}
-          value={judge.model}
-          onChange={(model) => onChange((now) => withProfile(now, name, { model }))}
+          data-testid='mu-openai-model'
+          value={judge.model || OPENAI_DEFAULT_MODEL}
+          onChange={(model: string) => onChange((now) => withProfile(now, name, { model }))}
+          options={openaiModelChoices(saved?.model ?? '', judge.model).map((model) => ({ value: model, label: model }))}
         />
       </Row>
       {index > 0 ? (
         <Row
           title={t('mu.judges.openai.key')}
-          modified={Boolean(draft.judgeKeys[variable])}
-          badges={<Tag size='small'>{t(settings.keys[variable] ? 'mu.keyState.set' : 'mu.keyState.none')}</Tag>}
+          help={t('mu.judges.openai.keyHelp')}
+          modified={Boolean(draft.judgeKeys[variable]) || keyRemoved(draft, variable)}
+          badges={<OpenAIKeyState variable={variable} draft={draft} onRemoveKey={onRemoveKey} />}
         >
           <OpenAIKeyInput size='small' className={fieldStyles.wide} variable={variable} draft={draft} onKey={onKey} />
         </Row>

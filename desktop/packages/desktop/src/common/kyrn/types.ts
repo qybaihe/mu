@@ -70,7 +70,8 @@ export type KyrnSettings = {
 export type Credential = { name: string; value: string };
 /**
  * What `read()` returned, with changes. `decisionModes`, `features` and `models` may be left out: that part of the
- * files is then not touched. Keys only travel this way, in `credential` / `credentials`.
+ * files is then not touched. Keys only travel this way, in `credential` / `credentials`; `removeCredentials` names the
+ * judge keys to delete.
  */
 export type SaveSettings = Omit<
   KyrnSettings,
@@ -82,6 +83,8 @@ export type SaveSettings = Omit<
   models?: Pick<ModelsSettings, 'providers' | 'defaults'> & { removeEntries?: string[] };
   credential?: Credential;
   credentials?: Credential[];
+  /** Judge key variables to delete from the .env (a sign-out of a judge's service). Names only, never a value. */
+  removeCredentials?: string[];
   /** The permission mode of new conversations. Written only when it changes. */
   permissions?: Pick<PermissionDefault, 'mode'>;
   /** The board's model. Written only when it changes. */

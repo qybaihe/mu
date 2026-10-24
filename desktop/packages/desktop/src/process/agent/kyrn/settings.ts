@@ -295,6 +295,18 @@ export class SettingsStore {
     }
     const providerKeys = credentials.filter((credential) => providerVariable.test(credential.name));
     if (providerKeys.length && !input.models) throw new KyrnError('invalid', 'Invalid credential');
+    // A judge's key removed (a sign-out of its service): only a variable this page saves, and never one set by the same
+    // save. A provider's key goes with its provider (applyModels), never this way. What came over IPC is checked as it
+    // is, whatever its type says.
+    const removals: unknown[] = Array.isArray(input.removeCredentials) ? input.removeCredentials : [];
+    if (
+      (input.removeCredentials !== undefined && !Array.isArray(input.removeCredentials)) ||
+      removals.length > 16 ||
+      removals.some(
+        (name) => typeof name !== 'string' || !saved(name) || credentials.some((credential) => credential.name === name)
+      )
+    )
+      throw new KyrnError('invalid', 'Invalid credential');
 
     // Judges: only the ones that were changed are written, so a built-in one nobody touched is not frozen into the file.
     const previous = asRecord(config.judges);
@@ -383,6 +395,8 @@ export class SettingsStore {
       for (const [name, value] of change.env) env.set(name, value);
     }
     for (const credential of credentials) if (saved(credential.name)) env.set(credential.name, credential.value);
+    // Removed: the line goes from the .env (withVariables).
+    for (const name of removals) if (typeof name === 'string') env.set(name, undefined);
 
     // Everything above only checked and prepared. The key goes first: a provider must never point at a missing one.
     if (env.size) atomic(this.envPath, withVariables(files.env, env));

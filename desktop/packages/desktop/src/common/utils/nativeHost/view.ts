@@ -198,15 +198,16 @@ export type ViewActivity = {
  * What an extension said with `notify` (the answer to a command, a warning), as a line of the conversation after the
  * message it followed. A warning or an error is said once. `checkpoint_off` is mu's own notice that the session goes
  * without checkpoints, with its reason code and the numbers it names, for the app to word; `free_jev` and
- * `free_jev_unavailable` say that the judge answers with the free Jev on OpenCode Zen, or that it stopped, and
- * `laya_removed` that Laya is gone and `judge` answers in its place (mu's `judge.notice`).
+ * `free_jev_unavailable` say that the judge answers with the free Jev on OpenCode Zen, or that it stopped,
+ * `laya_removed` that Laya is gone and `judge` answers in its place, and `openai_key` that OpenAI's decision model has
+ * no usable key (`missing` or `rejected`), so the next judge or mu's fallbacks answer (mu's `judge.notice`).
  */
 export type ViewNotice = {
   /** `n1`, `n2`, … */
   id: string;
   level: 'info' | 'warning' | 'error';
   text: string;
-  code?: 'checkpoint_off' | 'free_jev' | 'free_jev_unavailable' | 'laya_removed';
+  code?: 'checkpoint_off' | 'free_jev' | 'free_jev_unavailable' | 'laya_removed' | 'openai_key';
   reason?: string;
   /** `laya_removed`: the judge in Laya's place, by its name in the order (`mude`, `jev`, …). */
   judge?: string;

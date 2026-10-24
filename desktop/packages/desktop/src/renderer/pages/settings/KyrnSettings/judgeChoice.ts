@@ -273,8 +273,23 @@ export const jevKeyVariable = (judge: JudgeSettings | undefined): string | undef
 /** The variable a CLM profile's key lives in: needed only by a server started with CLM_API_KEY. */
 export const clmKeyVariable = (judge: JudgeSettings | undefined): string => judge?.apiKeyEnv || CLM_KEY_VARIABLE;
 
-/** The model an OpenAI profile asks for when it names none: the one model the Decisions API serves. */
-export const OPENAI_DEFAULT_MODEL = 'gpt-6-luna';
+/**
+ * The models OpenAI's Decisions API serves, as its reference says (`POST /v1/decisions`: "Only `gpt-6-luna` is
+ * supported"). The judge order offers these and nothing else to pick.
+ */
+export const OPENAI_MODELS: readonly string[] = ['gpt-6-luna'];
+
+/** The model an OpenAI profile asks for when it names none: the first the Decisions API serves. */
+export const OPENAI_DEFAULT_MODEL = OPENAI_MODELS[0];
+
+/**
+ * The models to offer for an OpenAI profile: the ones the Decisions API serves, then any other the profile names (as
+ * saved in mu.json, as in the draft), since a relay may serve one: such a model stays as it is until someone picks
+ * another, and can be picked back.
+ */
+export const openaiModelChoices = (...named: string[]): string[] => [
+  ...new Set([...OPENAI_MODELS, ...named.filter(Boolean)]),
+];
 
 /**
  * The variable an OpenAI profile's key lives in. Without a value there, mu takes the OpenAI API key it has for its own

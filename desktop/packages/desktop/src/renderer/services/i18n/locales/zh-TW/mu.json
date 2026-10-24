@@ -136,6 +136,7 @@
     "choose": "選擇判定器",
     "custom": "現在排在第一位的是自訂的判定器，可以在「判定順序」頁查看和修改。",
     "keyPlaceholder": "貼上金鑰",
+    "removeKey": "移除金鑰",
     "choices": {
       "jev": {
         "title": "Jev",
@@ -301,13 +302,15 @@
       }
     },
     "openai": {
-      "key": "OpenAI API 金鑰"
+      "key": "OpenAI API 金鑰",
+      "keyHelp": "不填時，mu 使用 OpenAI 供應商的 API 金鑰（設定 → 供應商）或 OPENAI_API_KEY，不使用 ChatGPT 登入。"
     }
   },
   "keyState": {
     "none": "未設定",
     "set": "已設定",
     "typed": "已輸入新金鑰，待儲存",
+    "removed": "已移除金鑰，待儲存",
     "empty": "變數為空",
     "managed": "已設定",
     "manual": "已設定（手動）"
@@ -825,6 +828,10 @@
     "freeJevUnavailable": {
       "paid": "OpenCode Zen 上的免費 Jev 現在要金鑰或付費了，判定暫時交給規則。在「設定 → 判定器」裡填一把 Jev 金鑰就能恢復。",
       "gone": "OpenCode Zen 已經不提供免費的 Jev 了，判定暫時交給規則。在「設定 → 判定器」裡填一把 Jev 金鑰就能恢復。"
+    },
+    "openaiKey": {
+      "missing": "OpenAI 的決策模型現在沒有 API 金鑰，暫時不參與判定。在「設定 → 判定器」裡填一把，或換一個判定器。",
+      "rejected": "OpenAI 拒絕了決策模型的 API 金鑰，暫時不參與判定。在「設定 → 判定器」裡換一把金鑰，或換一個判定器。"
     },
     "layaRemoved": "mu 不再內建 Laya，你的判定器現在是 {{judge}}。想用其他決策模型，在「設定 → 判定器」裡從 Hugging Face 新增。",
     "layaRemovedNoModels": "mu 不再內建 Laya，你的判定器現在是 {{judge}}。",

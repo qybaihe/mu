@@ -136,6 +136,7 @@
     "choose": "판정기 선택",
     "custom": "현재 첫 번째 판정기는 사용자 정의 판정기입니다. 판정기 순서 페이지에서 확인하고 변경하세요.",
     "keyPlaceholder": "키를 붙여넣으세요",
+    "removeKey": "키 삭제",
     "choices": {
       "jev": {
         "title": "Jev",
@@ -301,13 +302,15 @@
       }
     },
     "openai": {
-      "key": "OpenAI API 키"
+      "key": "OpenAI API 키",
+      "keyHelp": "비워 두면 mu는 OpenAI 공급자의 API 키(설정 → 공급자)나 OPENAI_API_KEY를 사용합니다. ChatGPT 로그인은 쓸 수 없습니다."
     }
   },
   "keyState": {
     "none": "설정 안 됨",
     "set": "설정됨",
     "typed": "새 키(저장 전)",
+    "removed": "키 삭제(저장 전)",
     "empty": "변수가 비어 있음",
     "managed": "설정됨",
     "manual": "설정됨(수동)"
@@ -825,6 +828,10 @@
     "freeJevUnavailable": {
       "paid": "OpenCode Zen의 무료 Jev가 이제 키나 결제를 요구해서, 당분간 규칙으로 판정합니다. '설정 → 판정기'에서 Jev 키를 입력하면 돌아옵니다.",
       "gone": "OpenCode Zen이 무료 Jev 제공을 끝내서, 당분간 규칙으로 판정합니다. '설정 → 판정기'에서 Jev 키를 입력하면 돌아옵니다."
+    },
+    "openaiKey": {
+      "missing": "OpenAI 판정 모델에 API 키가 없어 지금은 판정하지 않습니다. '설정 → 판정기'에서 키를 입력하거나 다른 판정기를 고르세요.",
+      "rejected": "OpenAI가 판정 모델의 API 키를 거부해 지금은 판정하지 않습니다. '설정 → 판정기'에서 다른 키를 입력하거나 다른 판정기를 고르세요."
     },
     "layaRemoved": "Laya가 더 이상 mu에 기본으로 포함되지 않아 판정기가 {{judge}}(으)로 바뀌었습니다. 다른 의사결정 모델을 쓰려면 '설정 → 판정기'에서 Hugging Face로부터 추가하세요.",
     "layaRemovedNoModels": "Laya가 더 이상 mu에 기본으로 포함되지 않아 판정기가 {{judge}}(으)로 바뀌었습니다.",
