@@ -234,7 +234,7 @@ describe("downloading mude", () => {
 				},
 			}),
 		);
-		await expect(failed).rejects.toThrow(/^The disk is full: a\.txt could not be written/);
+		await expect(failed).rejects.toThrow(/^The disk is full: couldn't write a\.txt/);
 		expect(calls).toBe(1);
 		expect(waits).toEqual([]);
 	});

@@ -643,7 +643,7 @@ class Setup {
 			this.io.say(
 				this.t({
 					zh: `订阅账号在 mu 里用 /login 登录：选 Sign in with an account，再选 OpenAI（ChatGPT）、xAI（Grok）或 Google 的一项，按提示在浏览器里完成。setup 接着启动 mu 时，/login 已经打开。登录信息保存在 ${auth}。`,
-					en: `You sign in to a subscription inside mu, with /login: choose Sign in with an account, then OpenAI for ChatGPT, xAI for Grok, or one of the Google sign-ins, and finish in the browser. When setup starts mu, /login is already open. The sign-in is saved in ${auth}.`,
+					en: `Sign in to your subscription from inside mu with /login: choose Sign in with an account, then OpenAI for ChatGPT, xAI for Grok or one of the Google sign-ins, and finish in the browser. When setup starts mu, /login is already open. The sign-in is saved in ${auth}.`,
 				}),
 			);
 			return "subscription";

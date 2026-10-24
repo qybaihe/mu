@@ -126,7 +126,7 @@ export async function downloadUv(
 	]);
 	rmSync(join(paths.tools, archive), { force: true });
 	if (unpacked.code !== 0 || !executable(join(paths.tools, "uv")))
-		throw new Error(`uv could not be unpacked: ${unpacked.output}`);
+		throw new Error(`Couldn't unpack uv: ${unpacked.output}`);
 	return join(paths.tools, "uv");
 }
 
@@ -161,7 +161,7 @@ export async function ensureVenv(
 		env,
 		onLine: options.onLine,
 	});
-	if (made.code !== 0) throw new Error(`The Python environment could not be made (uv venv):\n${made.output}`);
+	if (made.code !== 0) throw new Error(`Couldn't create the Python environment (uv venv):\n${made.output}`);
 	const installed = await run(
 		uv,
 		[
@@ -179,6 +179,6 @@ export async function ensureVenv(
 		{ env, onLine: options.onLine },
 	);
 	if (installed.code !== 0)
-		throw new Error(`mude's Python packages could not be installed (uv pip install):\n${installed.output}`);
+		throw new Error(`Couldn't install mude's Python packages (uv pip install):\n${installed.output}`);
 	writeFileSync(paths.venvLock, `${lockDigest(lockFile)}\n`);
 }
