@@ -23,6 +23,18 @@ In a session, `/mu judge <judges>` and `/mu route <point> <judges|default>` do t
 
 When no judge answers in time, each decision point does what it would do without a verdict (usually: nothing changes), and the ledger records why. Nothing waits long: every point has a time limit.
 
+## mude 1.0, on your Mac {#mude}
+
+mude 1.0 is mu's own decision model, optimized for coding. It has 2B parameters and answers every question of a decision in one forward pass. On a Mac with Apple silicon (macOS 14 or later, 8 GB of memory or more), it is the recommended judge: `mu setup` offers it first, and the desktop app's first-run guide starts with it picked.
+
+```bash
+mu judge mude install               # download it (1.8 GB), check every file, start it and make it the judge
+mu judge mude enable --local-only   # mude only: nothing goes to a hosted judge
+mu judge mude status
+```
+
+By default the judges you had before stay behind it in `tiers`: they answer what mude can't (its server is stopped, or it is unsure) and the two injection checks mude isn't trusted with yet. With `--local-only`, mude is the only judge, and a decision it can't answer takes its fallback. mude answers in about 0.1 s, and what it reads never leaves your Mac. Its server uses about 4 GB of memory while it runs, and mu starts it before a session when your configuration names it. An install that stops (Ctrl-C, a lost connection, a power cut) goes on from where it stopped the next time. On other platforms, serve the [full model](https://huggingface.co/qybaihe/mude-1.0) with its own System One server and add it as a `typesafe` judge, as its model card shows.
+
 ## Jev, hosted {#jev}
 
 Jev is a judgment model by TypeSafe, made for this kind of question. The built-in `jev` judge reaches it through the first service whose key is set:
