@@ -159,7 +159,9 @@ export function initKyrnBridge(): void {
   const login = new LoginManager(spawnAuth(launcherOf(harness, process.platform), agentDir), (url) => {
     if (openable(url)) void shell.openExternal(url);
   });
-  kyrnBridge.loginStart.provider(({ provider, paste }) => result(() => login.start(provider, { paste: paste === true })));
+  kyrnBridge.loginStart.provider(({ provider, paste }) =>
+    result(() => login.start(provider, { paste: paste === true }))
+  );
   kyrnBridge.loginState.provider(() => result(() => login.state()));
   kyrnBridge.loginAnswer.provider(({ id, value }) => result(() => login.answer(id, value)));
   kyrnBridge.loginCancel.provider(() => result(() => login.cancel()));

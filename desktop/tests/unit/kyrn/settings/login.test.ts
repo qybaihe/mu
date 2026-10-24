@@ -278,7 +278,11 @@ describe('the callback port between sign-ins', () => {
     ]);
     runners[1].say({ type: 'event', event: { type: 'auth_url', url: 'https://auth.openai.com/authorize?state=2' } });
     await settle();
-    expect(manager.state()).toMatchObject({ id: 2, phase: 'running', url: 'https://auth.openai.com/authorize?state=2' });
+    expect(manager.state()).toMatchObject({
+      id: 2,
+      phase: 'running',
+      url: 'https://auth.openai.com/authorize?state=2',
+    });
   });
 
   it('ends a runner that does not stop, and starts the next one 3 s after at the latest', async () => {
@@ -336,7 +340,11 @@ describe('the callback port between sign-ins', () => {
 
   it('signs in by the pasted address alone when asked to', () => {
     const { manager, runners } = setup();
-    expect(manager.start('openai', { paste: true })).toMatchObject({ provider: 'openai', phase: 'running', paste: true });
+    expect(manager.start('openai', { paste: true })).toMatchObject({
+      provider: 'openai',
+      phase: 'running',
+      paste: true,
+    });
     expect(runners[0].args).toEqual(['login', 'openai', '--paste']);
     runners[0].end(1);
   });
