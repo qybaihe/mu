@@ -1126,7 +1126,8 @@
         "fixing": "Виправляє знайдене під час перевірки",
         "waiting": "Чекає на вас",
         "wrapping_up": "Завершує",
-        "stuck": "Схоже, застряг"
+        "stuck": "Схоже, застряг",
+        "blocked": "Чекає на інше"
       },
       "checks_one": "Перевірок виконано: {{done}} з {{total}}",
       "checks_other": "Перевірок виконано: {{done}} з {{total}}",
@@ -1156,8 +1157,9 @@
           "wrapping_up": "Роботу зроблено; наводить останні штрихи.",
           "stuck": "Схоже, ходить по колу; можливо, потрібна ваша підказка.",
           "unclear": "Працює.",
-          "focus": "{{now}} (Зараз: {{focus}})",
-          "planning": "Обмірковує, як це зробити; поки нічого не змінено."
+          "planning": "Обмірковує, як це зробити; поки нічого не змінено.",
+          "blocked": "Чекає на команду, помічника чи мережу.",
+          "focus": "{{now}} (Зараз: {{focus}})"
         }
       },
       "checks_few": "Перевірок виконано: {{done}} з {{total}}",
@@ -1196,8 +1198,43 @@
         "did": "Використав {{tool}}: {{what}}",
         "said_quote": "Агент сказав: {{text}}",
         "ended": "Зупинився.",
-        "waiting_reply": "Зупинився й чекає на вашу відповідь."
-      }
+        "waiting_reply": "Зупинився й чекає на вашу відповідь.",
+        "still_running": "Усе ще виконується {{what}}, уже {{minutes, number}} хв",
+        "still_running_who": "{{who}}: {{what}} іде {{minutes, number}} хв без виводу",
+        "helper_done": "{{name}} повернувся: {{summary}}",
+        "helper_failed": {
+          "failed": "{{name}}: помилка",
+          "timed_out": "{{name}}: час вийшов",
+          "stopped": "{{name}} зупинено"
+        },
+        "helpers_back_failed": "Повернулося помічників: {{count, number}}, з помилками: {{failed, number}}",
+        "helpers_back_failed_one": "Повернулося помічників: {{count, number}}, з помилками: {{failed, number}}",
+        "helpers_back_failed_few": "Повернулося помічників: {{count, number}}, з помилками: {{failed, number}}",
+        "helpers_back_failed_many": "Повернулося помічників: {{count, number}}, з помилками: {{failed, number}}",
+        "helpers_back_failed_other": "Повернулося помічників: {{count, number}}, з помилками: {{failed, number}}",
+        "with_detail": "{{line}}: {{detail}}"
+      },
+      "headlines": {
+        "helpers_working": "Працюють помічники: {{count, number}}",
+        "helpers_working_one": "Працюють помічники: {{count, number}}",
+        "helpers_working_few": "Працюють помічники: {{count, number}}",
+        "helpers_working_many": "Працюють помічники: {{count, number}}",
+        "helpers_working_other": "Працюють помічники: {{count, number}}",
+        "waiting_permission": "Чекає вашого дозволу: {{what}}"
+      },
+      "updated": "Оновлено {{ago}} тому",
+      "updatedNow": "Щойно оновлено",
+      "blocked": "Застрягло",
+      "blockedLine": "Застрягло: {{text}}",
+      "next": "Далі",
+      "agents": "Хто що робить",
+      "agentStates": {
+        "working": "Працює",
+        "waiting": "Чекає",
+        "stuck": "Застряг"
+      },
+      "stripOpen": "Зведення простими словами: {{headline}}",
+      "stripHint": "Натисніть, щоб відкрити зведення"
     },
     "lessonsView": {
       "filterLabel": "Які уроки показувати",

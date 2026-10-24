@@ -1125,7 +1125,8 @@
         "fixing": "Исправляет найденное при проверке",
         "waiting": "Ждёт вас",
         "wrapping_up": "Завершает",
-        "stuck": "Похоже, застрял"
+        "stuck": "Похоже, застрял",
+        "blocked": "Ждёт другого"
       },
       "checks_one": "Выполнено {{done}} из {{total}} проверки",
       "checks_other": "Выполнено {{done}} из {{total}} проверки",
@@ -1155,8 +1156,9 @@
           "wrapping_up": "Работа сделана; остались последние штрихи.",
           "stuck": "Похоже, ходит по кругу; возможно, нужна ваша подсказка.",
           "unclear": "Работает.",
-          "focus": "{{now}} (В работе: {{focus}})",
-          "planning": "Продумывает, как это сделать; пока ничего не изменено."
+          "planning": "Продумывает, как это сделать; пока ничего не изменено.",
+          "blocked": "Ждёт команду, помощника или сеть.",
+          "focus": "{{now}} (В работе: {{focus}})"
         }
       },
       "checks_few": "Выполнено {{done}} из {{total}} проверок",
@@ -1195,8 +1197,43 @@
         "did": "Использовал {{tool}}: {{what}}",
         "said_quote": "Агент сказал: {{text}}",
         "ended": "Остановился.",
-        "waiting_reply": "Остановился и ждёт вашего ответа."
-      }
+        "waiting_reply": "Остановился и ждёт вашего ответа.",
+        "still_running": "Всё ещё выполняется {{what}}, уже {{minutes, number}} мин",
+        "still_running_who": "{{who}}: {{what}} идёт {{minutes, number}} мин без вывода",
+        "helper_done": "{{name}} вернулся: {{summary}}",
+        "helper_failed": {
+          "failed": "{{name}}: ошибка",
+          "timed_out": "{{name}}: время вышло",
+          "stopped": "{{name}} остановлен"
+        },
+        "helpers_back_failed": "Вернулось помощников: {{count, number}}, с ошибками: {{failed, number}}",
+        "helpers_back_failed_one": "Вернулось помощников: {{count, number}}, с ошибками: {{failed, number}}",
+        "helpers_back_failed_few": "Вернулось помощников: {{count, number}}, с ошибками: {{failed, number}}",
+        "helpers_back_failed_many": "Вернулось помощников: {{count, number}}, с ошибками: {{failed, number}}",
+        "helpers_back_failed_other": "Вернулось помощников: {{count, number}}, с ошибками: {{failed, number}}",
+        "with_detail": "{{line}}: {{detail}}"
+      },
+      "headlines": {
+        "helpers_working": "Работают помощники: {{count, number}}",
+        "helpers_working_one": "Работают помощники: {{count, number}}",
+        "helpers_working_few": "Работают помощники: {{count, number}}",
+        "helpers_working_many": "Работают помощники: {{count, number}}",
+        "helpers_working_other": "Работают помощники: {{count, number}}",
+        "waiting_permission": "Ждёт вашего разрешения: {{what}}"
+      },
+      "updated": "Обновлено {{ago}} назад",
+      "updatedNow": "Обновлено только что",
+      "blocked": "Застряло",
+      "blockedLine": "Застряло: {{text}}",
+      "next": "Дальше",
+      "agents": "Кто что делает",
+      "agentStates": {
+        "working": "Работает",
+        "waiting": "Ждёт",
+        "stuck": "Застрял"
+      },
+      "stripOpen": "Сводка простыми словами: {{headline}}",
+      "stripHint": "Нажмите, чтобы открыть сводку"
     },
     "lessonsView": {
       "filterLabel": "Какие уроки показывать",

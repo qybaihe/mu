@@ -209,6 +209,7 @@ const NativeConversationScreen: React.FC<{ id: string }> = ({ id }) => {
         host={conversation.host}
         working={isWorking(view)}
         onRename={conversation.rename}
+        conversationId={conversation.id}
       />
       <div className={`${CHAT_SURFACE_CONTAINER_CLASS} flex-1 flex flex-col px-20px min-h-0`}>
         <MessageListRunProvider value={run}>

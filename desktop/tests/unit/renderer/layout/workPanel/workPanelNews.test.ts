@@ -48,6 +48,17 @@ describe('what counts as news in each tab', () => {
     expect(boardSignature([board(), board({ now: 'Running the tests' })])).not.toBe(first);
   });
 
+  it('the board: a new headline or a new blocked line is news, the same ones again are not', () => {
+    const v2 = (payload: Record<string, unknown> = {}) =>
+      board({ headline: 'Running npm test, 3 min in', blocked: '', updatedAt: 1_000, ...payload });
+    const first = boardSignature([v2()]);
+    expect(boardSignature([board()])).not.toBe(first);
+    // Made again later with the same words: nothing new to see.
+    expect(boardSignature([v2(), v2({ updatedAt: 2_000 })])).toBe(first);
+    expect(boardSignature([v2(), v2({ headline: 'Running npm test, 4 min in' })])).not.toBe(first);
+    expect(boardSignature([v2(), v2({ blocked: 'npm test has run 4 min with no output.' })])).not.toBe(first);
+  });
+
   it('the judge: a verdict is news, the wait before it is not', () => {
     const turn = { runtimeId: 'runtime-a', turnId: 1 };
     const waiting = [event('preflight.pending', { judge: 'jev' }, { ...turn, sequence: 1 })];

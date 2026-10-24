@@ -1109,7 +1109,8 @@
         "fixing": "確認で見つかった問題を修正中",
         "waiting": "あなたを待っています",
         "wrapping_up": "仕上げ中",
-        "stuck": "行き詰まっているようです"
+        "stuck": "行き詰まっているようです",
+        "blocked": "ほかの作業待ち"
       },
       "checks_one": "チェック {{done}}/{{total}} 完了",
       "checks_other": "チェック {{done}}/{{total}} 完了",
@@ -1135,8 +1136,9 @@
           "wrapping_up": "作業が終わったので、仕上げをしています。",
           "stuck": "堂々巡りしているようです。あなたからのヒントが必要かもしれません。",
           "unclear": "作業しています。",
-          "focus": "{{now}}（取り組み中: {{focus}}）",
-          "planning": "進め方を考えています。まだ何も変更していません。"
+          "planning": "進め方を考えています。まだ何も変更していません。",
+          "blocked": "コマンドや助っ人、ネットワークの結果を待っています。",
+          "focus": "{{now}}（取り組み中: {{focus}}）"
         }
       },
       "notes": {
@@ -1167,8 +1169,39 @@
         "did": "{{tool}} を使いました: {{what}}",
         "said_quote": "こう言いました: {{text}}",
         "ended": "手を止めました。",
-        "waiting_reply": "手を止めて、あなたの返事を待っています。"
-      }
+        "waiting_reply": "手を止めて、あなたの返事を待っています。",
+        "still_running": "{{what}} を実行中、{{minutes, number}} 分経過",
+        "still_running_who": "{{who}}：{{what}} が {{minutes, number}} 分間出力なし",
+        "helper_done": "{{name}} が戻りました：{{summary}}",
+        "helper_failed": {
+          "failed": "{{name}} でエラー",
+          "timed_out": "{{name}} がタイムアウト",
+          "stopped": "{{name}} は止められました"
+        },
+        "helpers_back_failed": "{{count, number}} 人戻り、{{failed, number}} 人がエラー",
+        "helpers_back_failed_one": "{{count, number}} 人戻り、{{failed, number}} 人がエラー",
+        "helpers_back_failed_other": "{{count, number}} 人戻り、{{failed, number}} 人がエラー",
+        "with_detail": "{{line}}：{{detail}}"
+      },
+      "headlines": {
+        "helpers_working": "助っ人 {{count, number}} 人が作業中",
+        "helpers_working_one": "助っ人 {{count, number}} 人が作業中",
+        "helpers_working_other": "助っ人 {{count, number}} 人が作業中",
+        "waiting_permission": "あなたの許可待ち：{{what}}"
+      },
+      "updated": "{{ago}}前に更新",
+      "updatedNow": "たった今更新",
+      "blocked": "足止め",
+      "blockedLine": "足止め：{{text}}",
+      "next": "次に",
+      "agents": "誰が何をしているか",
+      "agentStates": {
+        "working": "作業中",
+        "waiting": "待機中",
+        "stuck": "行き詰まり"
+      },
+      "stripOpen": "わかりやすいボード：{{headline}}",
+      "stripHint": "クリックでボードを開く"
     },
     "lessonsView": {
       "filterLabel": "表示する教訓",

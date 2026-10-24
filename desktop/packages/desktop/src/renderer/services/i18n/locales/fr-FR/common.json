@@ -1109,7 +1109,8 @@
         "fixing": "Corrige ce que la vérification a trouvé",
         "waiting": "Vous attend",
         "wrapping_up": "Finalise",
-        "stuck": "Semble bloqué"
+        "stuck": "Semble bloqué",
+        "blocked": "En attente d’autre chose"
       },
       "checks_one": "{{done}} sur {{total}} vérification faite",
       "checks_other": "{{done}} sur {{total}} vérifications faites",
@@ -1135,8 +1136,9 @@
           "wrapping_up": "Le travail est fait ; finalisation en cours.",
           "stuck": "Semble tourner en rond ; une indication de votre part pourrait l’aider.",
           "unclear": "Travail en cours.",
-          "focus": "{{now}} (En cours : {{focus}})",
-          "planning": "Cherche comment s’y prendre ; rien n’est encore modifié."
+          "planning": "Cherche comment s’y prendre ; rien n’est encore modifié.",
+          "blocked": "Attend une commande, un assistant ou le réseau.",
+          "focus": "{{now}} (En cours : {{focus}})"
         }
       },
       "notes": {
@@ -1167,8 +1169,39 @@
         "did": "A utilisé {{tool}} : {{what}}",
         "said_quote": "Il a dit : {{text}}",
         "ended": "S’est arrêté.",
-        "waiting_reply": "S’est arrêté et attend votre réponse."
-      }
+        "waiting_reply": "S’est arrêté et attend votre réponse.",
+        "still_running": "{{what}} tourne encore, depuis {{minutes, number}} min",
+        "still_running_who": "{{who}} : {{what}} tourne depuis {{minutes, number}} min sans rien afficher",
+        "helper_done": "{{name}} est revenu : {{summary}}",
+        "helper_failed": {
+          "failed": "{{name}} a échoué",
+          "timed_out": "{{name}} a dépassé le délai",
+          "stopped": "{{name}} a été arrêté"
+        },
+        "helpers_back_failed": "{{count, number}} assistants revenus, {{failed, number}} en erreur",
+        "helpers_back_failed_one": "{{count, number}} assistant revenu, {{failed, number}} en erreur",
+        "helpers_back_failed_other": "{{count, number}} assistants revenus, {{failed, number}} en erreur",
+        "with_detail": "{{line}} : {{detail}}"
+      },
+      "headlines": {
+        "helpers_working": "{{count, number}} assistants au travail",
+        "helpers_working_one": "{{count, number}} assistant au travail",
+        "helpers_working_other": "{{count, number}} assistants au travail",
+        "waiting_permission": "Attend votre autorisation : {{what}}"
+      },
+      "updated": "Mis à jour il y a {{ago}}",
+      "updatedNow": "Mis à jour à l’instant",
+      "blocked": "Bloqué",
+      "blockedLine": "Bloqué : {{text}}",
+      "next": "Ensuite",
+      "agents": "Qui fait quoi",
+      "agentStates": {
+        "working": "Au travail",
+        "waiting": "En attente",
+        "stuck": "Bloqué"
+      },
+      "stripOpen": "Tableau en clair : {{headline}}",
+      "stripHint": "Cliquez pour ouvrir le tableau"
     },
     "lessonsView": {
       "filterLabel": "Leçons à afficher",

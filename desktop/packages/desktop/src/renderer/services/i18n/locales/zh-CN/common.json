@@ -1109,7 +1109,8 @@
         "fixing": "在修问题",
         "waiting": "在等你",
         "wrapping_up": "在收尾",
-        "stuck": "好像卡住了"
+        "stuck": "好像卡住了",
+        "blocked": "在等别的"
       },
       "checks_one": "验收 {{done}}/{{total}}",
       "checks_other": "验收 {{done}}/{{total}}",
@@ -1133,6 +1134,7 @@
           "wrapping_up": "手上的活做完了，正在收尾。",
           "stuck": "好像在原地打转，可能需要你给个方向。",
           "unclear": "正在干活。",
+          "blocked": "在等命令、助手或网络那边出结果。",
           "focus": "{{now}}（在做：{{focus}}）"
         },
         "confirm": {
@@ -1167,8 +1169,39 @@
         "did": "用 {{tool}} 做了：{{what}}",
         "said_quote": "它说：{{text}}",
         "ended": "停下来了。",
-        "waiting_reply": "停下来了，在等你回复。"
-      }
+        "waiting_reply": "停下来了，在等你回复。",
+        "still_running": "还在跑 {{what}}，{{minutes, number}} 分钟了",
+        "still_running_who": "{{who}} 跑 {{what}} {{minutes, number}} 分钟没动静",
+        "helper_done": "{{name}} 回来了：{{summary}}",
+        "helper_failed": {
+          "failed": "{{name}} 出错了",
+          "timed_out": "{{name}} 超时了",
+          "stopped": "{{name}} 被停了"
+        },
+        "helpers_back_failed": "回来了 {{count, number}} 个，{{failed, number}} 个出错",
+        "helpers_back_failed_one": "回来了 {{count, number}} 个，{{failed, number}} 个出错",
+        "helpers_back_failed_other": "回来了 {{count, number}} 个，{{failed, number}} 个出错",
+        "with_detail": "{{line}}：{{detail}}"
+      },
+      "headlines": {
+        "helpers_working": "{{count, number}} 个助手在干活",
+        "helpers_working_one": "{{count, number}} 个助手在干活",
+        "helpers_working_other": "{{count, number}} 个助手在干活",
+        "waiting_permission": "在等你允许：{{what}}"
+      },
+      "updated": "{{ago}}前更新",
+      "updatedNow": "刚刚更新",
+      "blocked": "卡住了",
+      "blockedLine": "卡住了：{{text}}",
+      "next": "接下来",
+      "agents": "谁在做什么",
+      "agentStates": {
+        "working": "在做",
+        "waiting": "在等",
+        "stuck": "卡住了"
+      },
+      "stripOpen": "人话看板：{{headline}}",
+      "stripHint": "点一下打开看板"
     },
     "lessonsView": {
       "filterLabel": "显示哪些经验",
