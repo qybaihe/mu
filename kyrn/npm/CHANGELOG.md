@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-10-24
+
+**0.2.4 brings Gemini 4 Argon through Google Antigravity and fixes third-party OpenAI-compatible providers that turned away the `developer` role.**
+
 ### Fixed
 
 - Signed in with Google Antigravity, mu now lists Gemini 4 Argon (`gemini-4-argon-low`, `-medium` and `-high`) and the Gemini 3.8 Flash tiers, and can use them. mu introduced itself to Antigravity as its IDE, version 1.107.0 (`antigravity/1.107.0 darwin/arm64`). Google lists and serves those models only to the Antigravity command line from 1.3.0, and answered 404 for them. mu now introduces itself as the command line (`antigravity/cli/1.4.0`; `MU_ANTIGRAVITY_VERSION` still raises the version). Gemini 4 Argon thinks at low, medium or high, never off. A placeholder for a model the account may not use, such as `gemini-4-argon-disabled`, is left out. The context Antigravity gives a model (1 million tokens for Claude Opus and Sonnet 5.5) is now used.
