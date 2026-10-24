@@ -1093,9 +1093,11 @@
       "body": "mu works in this folder. Tell it what you want done."
     },
     "sider": {
-      "title": "Recent",
       "new": "New conversation in a folder",
       "empty": "No conversations yet",
+      "addProject": "Add project",
+      "removeProject": "Remove project",
+      "archiveProjectConfirm": "Archive \"{{name}}\" and its conversations? You can restore them from Archived at the end of the list.",
       "all": "Show all ({{count}})",
       "fewer": "Show fewer",
       "deleteConfirm": "Delete \"{{title}}\"? Its file moves to the trash, so you can still restore it.",

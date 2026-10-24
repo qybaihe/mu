@@ -1093,9 +1093,11 @@
       "body": "mu travaille dans ce dossier. Dites ce que vous voulez faire."
     },
     "sider": {
-      "title": "Récents",
       "new": "Nouvelle conversation dans un dossier",
       "empty": "Aucune conversation pour l’instant",
+      "addProject": "Ajouter un projet",
+      "removeProject": "Retirer le projet",
+      "archiveProjectConfirm": "Archiver « {{name}} » et ses conversations ? Vous pourrez les restaurer depuis « Archives », en bas de la liste.",
       "all": "Tout afficher ({{count}})",
       "fewer": "Afficher moins",
       "deleteConfirm": "Supprimer « {{title}} » ? Son fichier de session part à la corbeille, d’où vous pouvez encore le restaurer.",

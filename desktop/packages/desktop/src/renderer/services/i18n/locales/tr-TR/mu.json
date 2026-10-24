@@ -1093,9 +1093,11 @@
       "body": "mu bu klasörde çalışır. Ne yapılmasını istediğinizi söyleyin."
     },
     "sider": {
-      "title": "Son",
       "new": "Bir klasörde yeni konuşma",
       "empty": "Henüz konuşma yok",
+      "addProject": "Proje ekle",
+      "removeProject": "Projeyi kaldır",
+      "archiveProjectConfirm": "“{{name}}” ve içindeki konuşmalar arşivlensin mi? Listenin sonundaki Arşiv bölümünden geri yükleyebilirsiniz.",
       "all": "Tümünü göster ({{count}})",
       "fewer": "Daha az göster",
       "deleteConfirm": "“{{title}}” silinsin mi? Oturum dosyası çöp kutusuna taşınır; oradan hâlâ geri yükleyebilirsiniz.",

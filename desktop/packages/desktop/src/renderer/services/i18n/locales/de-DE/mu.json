@@ -1093,9 +1093,11 @@
       "body": "mu arbeitet in diesem Ordner. Sag, was erledigt werden soll."
     },
     "sider": {
-      "title": "Zuletzt",
       "new": "Neue Unterhaltung in einem Ordner",
       "empty": "Noch keine Unterhaltungen",
+      "addProject": "Projekt hinzufügen",
+      "removeProject": "Projekt entfernen",
+      "archiveProjectConfirm": "„{{name}}“ und die Unterhaltungen darin archivieren? Du kannst sie unter „Archiviert“ am Ende der Liste wiederherstellen.",
       "all": "Alle anzeigen ({{count}})",
       "fewer": "Weniger anzeigen",
       "deleteConfirm": "„{{title}}“ löschen? Die Sitzungsdatei landet im Papierkorb, wo du sie noch wiederherstellen kannst.",
