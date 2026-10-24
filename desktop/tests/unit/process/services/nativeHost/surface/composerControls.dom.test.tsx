@@ -9,7 +9,7 @@ import { emptyView, reduceAll, type PiCommand, type PiRecord } from '@/common/ut
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
 import { useMessageList } from '@/renderer/pages/conversation/Messages/hooks';
 import NativeComposer from '@/renderer/pages/native/components/NativeComposer';
-import { useNativeConversation } from '@/renderer/pages/native/hooks/useNativeConversation';
+import { stageFirstMessage, useNativeConversation } from '@/renderer/pages/native/hooks/useNativeConversation';
 import { NativeClientContext } from '@/renderer/pages/native/utils/nativeClient';
 import enAgent from '@/renderer/services/i18n/locales/en-US/agent.json';
 import enAgentMode from '@/renderer/services/i18n/locales/en-US/agentMode.json';
@@ -28,7 +28,12 @@ import { ended, frame, reply, text, user } from './records';
  * files by their path). The shared send box is stood in for by its contract; Arco's menus render their lists inline.
  */
 
-const { warning, mention } = vi.hoisted(() => ({ warning: vi.fn(), mention: { items: [] as unknown[] } }));
+const { warning, mention, muDefault } = vi.hoisted(() => ({
+  warning: vi.fn(),
+  mention: { items: [] as unknown[] },
+  // mu's default model, as the settings say it: none unless a test sets one.
+  muDefault: { model: undefined as string | undefined, level: '' },
+}));
 
 vi.mock('@arco-design/web-react', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
@@ -75,6 +80,14 @@ vi.mock('@/renderer/components/agent/MarqueePillLabel', () => ({
 }));
 
 vi.mock('@/renderer/hooks/agent/useProviderNames', () => ({ useProviderNames: () => new Map() }));
+
+vi.mock('@/renderer/hooks/agent/useMuDefaultModel', () => ({
+  useMuDefaultModel: () => ({
+    ...(muDefault.model ? { model: muDefault.model } : {}),
+    level: muDefault.level,
+    makeDefault: vi.fn(async () => true),
+  }),
+}));
 
 type BoxProps = {
   value?: string;
@@ -143,6 +156,8 @@ afterEach(() => {
   cleanup();
   warning.mockClear();
   mention.items = [];
+  muDefault.model = undefined;
+  muDefault.level = '';
 });
 
 const i18n = createInstance();
@@ -264,6 +279,86 @@ describe('the native send box’s model, thinking level and permission mode', ()
     expect(chip()).toHaveAttribute('data-source', 'none');
     expect(chip()).toHaveTextContent('Default model');
     expect(commands(host)).toEqual([]);
+  });
+
+  it('names mu’s default model, as the home page did, while nothing in the conversation says its model', async () => {
+    muDefault.model = 'e2e/one';
+    muDefault.level = 'low';
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    await mount(host);
+    expect(chip()).toHaveAttribute('data-source', 'none');
+    expect(chip()).toHaveAttribute('data-model', '');
+    expect(chip()).toHaveTextContent('one · Low');
+    expect(chip()).not.toHaveTextContent('Default model');
+    expect(commands(host)).toEqual([]);
+    // mu says what it runs with: that, from then on.
+    act(() => {
+      host.push('c1', state('e2e', 'two', 'off'));
+    });
+    expect(chip()).toHaveTextContent('two · Thinking off');
+  });
+
+  it('says the model and level the home page’s first message sets while mu starts, then what pi says', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    const pi: { setUp?: () => void } = {};
+    host.answer(async (_id, command) => {
+      // mu starts on the first command: it takes its time.
+      if (command.type === 'set_model')
+        await new Promise<void>((resolve) => {
+          pi.setUp = resolve;
+        });
+      return { ok: true, data: { isStreaming: false, isCompacting: false } };
+    });
+    stageFirstMessage('c1', {
+      setup: [
+        { type: 'set_model', provider: 'e2e', modelId: 'thinker' },
+        { type: 'set_thinking_level', level: 'high' },
+      ],
+      text: 'fix the build',
+    });
+    await mount(host);
+    await waitFor(() => expect(chip()).toHaveAttribute('data-source', 'setup'));
+    expect(chip()).toHaveAttribute('data-model', 'e2e/thinker');
+    expect(chip()).toHaveAttribute('data-level', 'high');
+    expect(chip()).toHaveTextContent('thinker · High');
+    // mu says first what it started with, which the set-up is about to change: the chip keeps what is being set.
+    act(() => {
+      host.push('c1', state('e2e', 'one', 'off'));
+    });
+    expect(chip()).toHaveAttribute('data-model', 'e2e/thinker');
+    expect(chip()).toHaveAttribute('data-level', 'high');
+    // Set up: what pi says counts from then on.
+    await act(async () => {
+      host.play('c1', [
+        { type: 'response', command: 'set_model', success: true, data: { provider: 'e2e', id: 'thinker' } },
+        { type: 'thinking_level_changed', level: 'high' },
+      ]);
+      pi.setUp?.();
+    });
+    await waitFor(() => expect(chip()).toHaveAttribute('data-source', 'host'));
+    expect(chip()).toHaveAttribute('data-model', 'e2e/thinker');
+    expect(chip()).toHaveAttribute('data-level', 'high');
+  });
+
+  it('stops saying the model the first message was setting once mu refuses it', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    host.answer((_id, command) =>
+      command.type === 'set_model'
+        ? { ok: false, kind: 'command', message: 'Unknown model e2e/gone' }
+        : { ok: true, data: undefined }
+    );
+    stageFirstMessage('c1', {
+      setup: [{ type: 'set_model', provider: 'e2e', modelId: 'gone' }],
+      text: 'fix the build',
+    });
+    await mount(host);
+    await waitFor(() => expect(screen.getByTestId('native-command-failed')).toBeInTheDocument());
+    expect(chip()).toHaveAttribute('data-source', 'none');
+    expect(chip()).toHaveAttribute('data-model', '');
+    expect(chip()).toHaveTextContent('Default model');
   });
 
   it('lists pi’s models when the chip opens, and switches the model, then the level the person picked', async () => {

@@ -270,7 +270,7 @@
       },
       "error": {
         "usage": "That isn't a Hugging Face model link or owner/name.",
-        "access": "This model is private or gated on Hugging Face, so mu can't download it.",
+        "access": "Couldn't open this model on Hugging Face. Check the name: it may not exist, or it may be private or gated.",
         "notFound": "Couldn't find this model on Hugging Face.",
         "notRunnable": "mu can't run this model: it doesn't include d3_server_mac.py, the server script that mude 1.0 ships with.",
         "network": "Couldn't reach Hugging Face. Check your connection and try again; what's already downloaded is kept.",
