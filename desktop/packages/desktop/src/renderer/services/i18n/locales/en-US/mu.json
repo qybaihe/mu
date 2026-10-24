@@ -166,7 +166,7 @@
         "title": "mude 1.0",
         "tag": "On this Mac",
         "tagRecommended": "Recommended · on this Mac",
-        "description": "mu's own decision model, optimized for coding and state of the art at a coding agent's decisions. Runs on this Mac: no key, no per-call cost. Needs Apple silicon."
+        "description": "mu's own decision model, optimized for coding and state of the art at the decisions a coding agent makes. Runs on this Mac: no key, no per-call cost. Needs Apple silicon."
       },
       "local": {
         "title": "Local Laya",
@@ -228,8 +228,8 @@
       "name": "mude 1.0 (on this Mac)",
       "tierHelp": "Runs on this Mac. Set it up on the Judges page.",
       "notInstalled": "Not installed.",
-      "unfinished": "The last install didn't finish. Continuing picks up where it stopped.",
-      "unfinishedDownloaded": "Downloaded {{done}} of {{total}} GB. Continuing picks up where it stopped.",
+      "unfinished": "The last install didn't finish. Continue installing to pick up where it left off.",
+      "unfinishedDownloaded": "Downloaded {{done}} of {{total}} GB. Continue installing to pick up where it left off.",
       "install": "Install mude 1.0",
       "continue": "Continue installing",
       "consent": {
@@ -239,11 +239,11 @@
         "after": "Once it's installed, mude 1.0 starts and becomes mu's judge.",
         "ok": "Download and install"
       },
-      "localOnly": "Only local — never ask a cloud judge",
+      "localOnly": "Local only — never ask a cloud judge",
       "localOnlyOn": "mude 1.0 is the only judge, and nothing goes to the cloud. When it can't answer, the decision point uses its default.",
-      "localOnlyOff": "Decisions mude 1.0 can't answer, for example while it's stopped or when it's unsure, go to {{judges}} in the cloud, so what's sent there leaves this Mac. Two security checks always go there too: screening tool descriptions, and screening fetched content for injected instructions.",
+      "localOnlyOff": "When mude 1.0 can't answer, for example while it's stopped or unsure, the question goes to {{judges}} in the cloud and leaves this Mac. Two security checks always go there too: screening tool descriptions and screening fetched content for injected instructions.",
       "localOnlyOffLocal": "Decisions mude 1.0 can't answer go to {{judges}}, which also runs on this Mac.",
-      "localOnlyNone": "No judge is set behind mude 1.0. When it can't answer, the decision point uses its default.",
+      "localOnlyNone": "No fallback judge is set for mude 1.0. When it can't answer, the decision point uses its default.",
       "use": "Use mude 1.0 as the judge",
       "status": {
         "running": "Running on 127.0.0.1:{{port}}",
@@ -287,7 +287,7 @@
       "error": {
         "access": "mude 1.0 isn't available for download yet. Try again later.",
         "network": "Couldn't reach Hugging Face. Check your connection and try again; what's already downloaded is kept.",
-        "integrity": "A downloaded file didn't pass its check. Try installing again.",
+        "integrity": "A downloaded file failed verification. Try installing again.",
         "unsupported": "mude 1.0 can't run on this Mac."
       },
       "noStatus": "Couldn't get mude 1.0's status: {{reason}}",

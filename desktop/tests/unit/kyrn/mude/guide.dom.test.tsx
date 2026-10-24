@@ -398,7 +398,7 @@ describe('mude in the first-run guide', () => {
     const { tile } = await judgeStep();
     fireEvent.click(tile);
     expect(await within(tile).findByTestId('mu-mude-hint')).toHaveTextContent(
-      'Downloaded 0.9 of 1.8 GB. Continuing picks up where it stopped.'
+      'Downloaded 0.9 of 1.8 GB. Continue installing to pick up where it left off.'
     );
     // Agreed to when it started: not what installing takes all over again.
     expect(tile).not.toHaveTextContent('to download');
@@ -408,7 +408,7 @@ describe('mude in the first-run guide', () => {
       state({ ...NOT_INSTALLED, downloadedBytes: 900_000_000 }, task('install', 'running'))
     );
     fireEvent.click(resume);
-    // No flag either way: the command keeps the "Only local" choice of the install that stopped.
+    // No flag either way: the command keeps the "Local only" choice of the install that stopped.
     await waitFor(() => expect(bridge.mudeRun).toHaveBeenCalledTimes(1));
     expect(bridge.mudeRun).toHaveBeenCalledWith({ action: 'install' });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();

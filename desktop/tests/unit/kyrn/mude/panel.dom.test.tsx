@@ -252,7 +252,7 @@ describe('mude as a choice of the judges page', () => {
     expect(bridge.mudeRun).not.toHaveBeenCalled();
   });
 
-  it('picked when not installed: the install, after the consent with "Only local", and nothing in the draft', async () => {
+  it('picked when not installed: the install, after the consent with "Local only", and nothing in the draft', async () => {
     const tile = await judgesPage();
     expect(tile).toHaveTextContent(enMu.judges.choices.mude.description);
     fireEvent.click(tile);
@@ -271,11 +271,11 @@ describe('mude as a choice of the judges page', () => {
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toHaveTextContent('Install mude 1.0?');
     expect(dialog).toHaveTextContent('about 1.8 GB');
-    expect(within(dialog).getByTestId('mu-mude-consent-help')).toHaveTextContent('go to Jev in the cloud');
+    expect(within(dialog).getByTestId('mu-mude-consent-help')).toHaveTextContent('goes to Jev in the cloud');
     fireEvent.click(within(dialog).getByRole('checkbox'));
     // The other explanation is shown in the same place, which kept room for it: the dialog does not change size.
     expect(within(dialog).getByTestId('mu-mude-consent-help')).toHaveTextContent('nothing goes to the cloud');
-    expect(within(dialog).getAllByText(/go to Jev in the cloud/)[0]).toHaveAttribute('aria-hidden', 'true');
+    expect(within(dialog).getAllByText(/goes to Jev in the cloud/)[0]).toHaveAttribute('aria-hidden', 'true');
     bridge.mudeRun.mockResolvedValue(state(NOT_INSTALLED, task('install', 'running')));
     fireEvent.click(within(dialog).getByRole('button', { name: 'Download and install' }));
     await waitFor(() => expect(bridge.mudeRun).toHaveBeenCalledWith({ action: 'install', localOnly: true }));
@@ -419,7 +419,7 @@ describe('mude as a choice of the judges page', () => {
     fireEvent.click(tile);
     expect(within(tile).getByTestId('mu-mude-status')).toHaveTextContent(enMu.judges.mude.notInstalled);
     expect(within(tile).getByTestId('mu-mude-hint')).toHaveTextContent(
-      'Downloaded 0.9 of 1.8 GB. Continuing picks up where it stopped.'
+      'Downloaded 0.9 of 1.8 GB. Continue installing to pick up where it left off.'
     );
     expect(tile).not.toHaveTextContent('to download');
     const resume = within(tile).getByTestId('mu-mude-install');
@@ -428,7 +428,7 @@ describe('mude as a choice of the judges page', () => {
       state({ ...NOT_INSTALLED, downloadedBytes: 900_000_000 }, task('install', 'running'))
     );
     fireEvent.click(resume);
-    // No flag either way: the command keeps the "Only local" choice of the install that stopped.
+    // No flag either way: the command keeps the "Local only" choice of the install that stopped.
     await waitFor(() => expect(bridge.mudeRun).toHaveBeenCalledTimes(1));
     expect(bridge.mudeRun).toHaveBeenCalledWith({ action: 'install' });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -440,7 +440,7 @@ describe('mude as a choice of the judges page', () => {
     const tile = await judgesPage();
     fireEvent.click(tile);
     expect(within(tile).getByTestId('mu-mude-hint')).toHaveTextContent(
-      "The last install didn't finish. Continuing picks up where it stopped."
+      "The last install didn't finish. Continue installing to pick up where it left off."
     );
     expect(within(tile).getByTestId('mu-mude-install')).toHaveTextContent('Continue installing');
   });
@@ -465,7 +465,7 @@ describe('mude as a choice of the judges page', () => {
     expect(screen.queryByTestId('mu-save-bar')).not.toBeInTheDocument();
   });
 
-  it('selected when the order starts with mude: its server, "Only local", its folder', async () => {
+  it('selected when the order starts with mude: its server, "Local only", its folder', async () => {
     bridge.settings.mockResolvedValue(ok(settings({ tiers: ['mude', 'jev'] })));
     bridge.mudeState.mockResolvedValue(state(RUNNING));
     const tile = await judgesPage();
@@ -477,7 +477,7 @@ describe('mude as a choice of the judges page', () => {
     const only = within(within(tile).getByTestId('mu-mude-local-only')).getByRole('switch');
     expect(only).not.toBeChecked();
     const help = within(tile).getByTestId('mu-mude-local-only-help');
-    expect(help).toHaveTextContent('go to Jev in the cloud');
+    expect(help).toHaveTextContent('goes to Jev in the cloud');
     expect(help).toHaveTextContent('screening tool descriptions');
     // No second switch for mude being the judge: the choice is that.
     expect(within(tile).queryByTestId('mu-mude-use')).not.toBeInTheDocument();
