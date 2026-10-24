@@ -805,8 +805,18 @@
       "submit": "Enviar",
       "openAgain": "Abrir a página de novo",
       "pasteCode": "Colar o código manualmente",
+      "pasteHint": "Depois de entrar, o navegador vai para um endereço que começa com {{address}}. A página pode mostrar um erro; tudo bem. Copie o endereço completo da barra de endereços e cole aqui.",
       "cancel": "Cancelar",
       "failed": "O login não foi concluído. Você pode tentar de novo.",
+      "retry": "Tentar de novo",
+      "pasteInstead": "Colar o endereço em vez disso",
+      "takenOver": "Outro login assumiu a porta que este esperava (um /login em um terminal ou a CLI do Codex), então este parou.",
+      "portInUse": {
+        "program": "A porta {{port}} está em uso por {{command}} (processo {{pid}}), provavelmente para o próprio login. Conclua ou cancele esse login lá e clique em “Tentar de novo”.",
+        "process": "A porta {{port}} está em uso pelo processo {{pid}}, provavelmente para o próprio login (a CLI do Codex e o app do Codex usam esta porta). Conclua ou cancele esse login lá e clique em “Tentar de novo”.",
+        "session": "A porta {{port}} está ocupada por um login não concluído em outra sessão do mu ou do pi (processo {{pid}}). Conclua ou cancele esse login lá (Esc em um terminal) e clique em “Tentar de novo”.",
+        "unknown": "A porta {{port}} está em uso por outro programa, provavelmente a CLI do Codex ou o app do Codex fazendo login. Conclua ou cancele esse login lá e clique em “Tentar de novo”."
+      },
       "asks": "{{name}} pergunta (com as próprias palavras):",
       "needAccount": "Entre em uma conta primeiro e depois escolha um modelo.",
       "experimental": "Experimental",

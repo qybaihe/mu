@@ -805,8 +805,18 @@
       "submit": "Gönder",
       "openAgain": "Sayfayı yeniden aç",
       "pasteCode": "Bunun yerine kod yapıştır",
+      "pasteHint": "Giriş yaptıktan sonra tarayıcınız {{address}} ile başlayan bir adrese gider. Sayfa bir hata gösterebilir; sorun değil. Adres çubuğundaki adresin tamamını kopyalayıp buraya yapıştırın.",
       "cancel": "İptal",
       "failed": "Giriş tamamlanmadı. Yeniden deneyebilirsiniz.",
+      "retry": "Yeniden dene",
+      "pasteInstead": "Bunun yerine adresi yapıştır",
+      "takenOver": "Başka bir giriş (terminaldeki bir /login ya da Codex CLI) bu girişin beklediği portu devraldı, bu yüzden bu giriş durdu.",
+      "portInUse": {
+        "program": "{{port}} numaralı port {{command}} (işlem {{pid}}) tarafından kullanılıyor, büyük olasılıkla kendi girişi için. O girişi orada tamamlayın ya da iptal edin, sonra “Yeniden dene” düğmesine tıklayın.",
+        "process": "{{port}} numaralı port {{pid}} numaralı işlem tarafından kullanılıyor, büyük olasılıkla kendi girişi için (Codex CLI ve Codex uygulaması bu portu kullanır). O girişi orada tamamlayın ya da iptal edin, sonra “Yeniden dene” düğmesine tıklayın.",
+        "session": "{{port}} numaralı port, başka bir mu veya pi oturumundaki tamamlanmamış bir giriş tarafından tutuluyor (işlem {{pid}}). Onu orada tamamlayın ya da iptal edin (terminalde Esc), sonra “Yeniden dene” düğmesine tıklayın.",
+        "unknown": "{{port}} numaralı port başka bir program tarafından kullanılıyor, büyük olasılıkla giriş yapan Codex CLI ya da Codex uygulaması. O girişi orada tamamlayın ya da iptal edin, sonra “Yeniden dene” düğmesine tıklayın."
+      },
       "asks": "{{name}} soruyor (kendi ifadesiyle):",
       "needAccount": "Önce bir hesapla giriş yapın, ardından bir model seçin.",
       "experimental": "Deneysel",

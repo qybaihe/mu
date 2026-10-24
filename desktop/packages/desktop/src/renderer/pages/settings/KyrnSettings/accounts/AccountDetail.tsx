@@ -104,7 +104,7 @@ export default function AccountDetail({ provider, flow, byKey, onShow }: Account
             onCancel={flow.cancel}
           />
         ) : null}
-        <LoginProblem failure={flow.failureOf(provider)} />
+        <LoginProblem failure={flow.failureOf(provider)} onStart={flow.start} />
         {models.length ? (
           <div className={providerStyles.field}>
             <div className={providerStyles.label}>{t('mu.accounts.models')}</div>

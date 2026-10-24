@@ -805,8 +805,18 @@
       "submit": "Absenden",
       "openAgain": "Seite erneut öffnen",
       "pasteCode": "Stattdessen Code einfügen",
+      "pasteHint": "Nach der Anmeldung öffnet dein Browser eine Adresse, die mit {{address}} beginnt. Die Seite zeigt vielleicht einen Fehler an, das macht nichts. Kopiere die ganze Adresse aus der Adressleiste und füge sie hier ein.",
       "cancel": "Abbrechen",
       "failed": "Die Anmeldung wurde nicht abgeschlossen. Du kannst es erneut versuchen.",
+      "retry": "Erneut versuchen",
+      "pasteInstead": "Stattdessen die Adresse einfügen",
+      "takenOver": "Eine andere Anmeldung hat den Port übernommen, auf den diese gewartet hat (ein /login im Terminal oder die Codex CLI), deshalb wurde diese beendet.",
+      "portInUse": {
+        "program": "Port {{port}} wird von {{command}} (Prozess {{pid}}) belegt, vermutlich für dessen eigene Anmeldung. Schließe diese Anmeldung dort ab oder brich sie ab und klicke dann auf „Erneut versuchen“.",
+        "process": "Port {{port}} wird von Prozess {{pid}} belegt, vermutlich für eine eigene Anmeldung (die Codex CLI und die Codex-App nutzen diesen Port). Schließe diese Anmeldung dort ab oder brich sie ab und klicke dann auf „Erneut versuchen“.",
+        "session": "Port {{port}} ist durch eine nicht abgeschlossene Anmeldung in einer anderen mu- oder pi-Sitzung belegt (Prozess {{pid}}). Schließe sie dort ab oder brich sie ab (im Terminal mit Esc) und klicke dann auf „Erneut versuchen“.",
+        "unknown": "Port {{port}} wird von einem anderen Programm belegt, vermutlich meldet sich gerade die Codex CLI oder die Codex-App an. Schließe diese Anmeldung dort ab oder brich sie ab und klicke dann auf „Erneut versuchen“."
+      },
       "asks": "{{name}} fragt (im Originalwortlaut):",
       "needAccount": "Melde dich zuerst bei einem Konto an und wähle dann ein Modell.",
       "experimental": "Experimentell",

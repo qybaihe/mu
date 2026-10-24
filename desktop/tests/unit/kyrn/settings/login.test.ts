@@ -152,6 +152,8 @@ describe('signing in to a subscription', () => {
     expect(runners[0].sent).toEqual([{ type: 'cancel' }]);
 
     runners[0].say({ type: 'done', provider: 'anthropic', models: [{ id: 'old' }] });
+    runners[0].end(0);
+    await settle();
     runners[1].say({ type: 'prompt', prompt: { type: 'manual_code', message: 'code' } });
     await settle();
     expect(manager.state()).toMatchObject({ id: 2, provider: 'openai-codex', phase: 'running' });
@@ -182,6 +184,8 @@ describe('signing in to a subscription', () => {
     });
 
     manager.start('xai');
+    runners[0].end(1);
+    await settle();
     runners[1].say({
       type: 'event',
       event: { type: 'device_code', userCode: 'X', verificationUri: 'file:///etc/hosts' },
@@ -238,6 +242,8 @@ describe('signing in to a subscription', () => {
     await vi.advanceTimersByTimeAsync(1);
     expect(manager.state()).toMatchObject({ phase: 'failed', error: 'The sign-in waited too long and was stopped' });
     expect(runners[0].sent).toEqual([{ type: 'cancel' }]);
+    runners[0].end(1);
+    await vi.advanceTimersByTimeAsync(0);
 
     manager.start('google-antigravity');
     runners[1].say({ type: 'signed_in' });
@@ -249,6 +255,128 @@ describe('signing in to a subscription', () => {
     const { manager, runners } = setup();
     expect(() => manager.start('google' as never)).toThrow('Unknown provider');
     expect(runners).toEqual([]);
+  });
+});
+
+// QA, 2026-10-23: Sign in with ChatGPT failed with "Port 1455 is in use, probably by an unfinished login in another pi
+// session or by the Codex CLI". The app started the next runner at once, while the one before could still be listening
+// on the callback port.
+describe('the callback port between sign-ins', () => {
+  it('starts the next runner only once the one before has ended', async () => {
+    const { manager, runners } = setup();
+    manager.start('openai');
+    expect(manager.start('openai')).toMatchObject({ id: 2, phase: 'running' });
+    await settle();
+    expect(runners).toHaveLength(1);
+    expect(runners[0].sent).toEqual([{ type: 'cancel' }]);
+
+    runners[0].end(1);
+    await settle();
+    expect(runners.map((runner) => runner.args)).toEqual([
+      ['login', 'openai'],
+      ['login', 'openai'],
+    ]);
+    runners[1].say({ type: 'event', event: { type: 'auth_url', url: 'https://auth.openai.com/authorize?state=2' } });
+    await settle();
+    expect(manager.state()).toMatchObject({
+      id: 2,
+      phase: 'running',
+      url: 'https://auth.openai.com/authorize?state=2',
+    });
+  });
+
+  it('ends a runner that does not stop, and starts the next one 3 s after at the latest', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    const { manager, runners } = setup();
+    manager.start('openai');
+    manager.start('openai');
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(runners[0].killed).toBe(true);
+    expect(runners).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(runners).toHaveLength(2);
+  });
+
+  it('never starts a sign-in cancelled while the one before was ending', async () => {
+    const { manager, runners } = setup();
+    manager.start('openai');
+    manager.start('openai');
+    expect(manager.cancel()).toMatchObject({ id: 2, phase: 'cancelled' });
+    runners[0].end(1);
+    await settle();
+    expect(runners).toHaveLength(1);
+  });
+
+  it('passes on why a sign-in failed, and which program keeps the port', async () => {
+    const { manager, runners } = setup();
+    manager.start('openai');
+    runners[0].say({
+      type: 'error',
+      message: 'Port 1455 is in use by codex (process 4321), probably for its own sign-in',
+      code: 'port_in_use',
+      port: 1455,
+      holder: { pid: 4321, command: 'codex', cwd: '/private' },
+    });
+    runners[0].end(1);
+    await settle();
+    expect(manager.state()).toEqual({
+      id: 1,
+      provider: 'openai',
+      phase: 'failed',
+      prompt: undefined,
+      error: 'Port 1455 is in use by codex (process 4321), probably for its own sign-in',
+      code: 'port_in_use',
+      port: 1455,
+      holder: { pid: 4321, command: 'codex' },
+    });
+
+    // A code the app does not know is no code at all.
+    manager.start('openai');
+    runners[1].say({ type: 'error', message: 'read ECONNRESET', code: 'ECONNRESET' });
+    await settle();
+    expect(manager.state()).toMatchObject({ id: 2, phase: 'failed', error: 'read ECONNRESET' });
+    expect(manager.state().code).toBeUndefined();
+  });
+
+  it('signs in by the pasted address alone when asked to', () => {
+    const { manager, runners } = setup();
+    expect(manager.start('openai', { paste: true })).toMatchObject({
+      provider: 'openai',
+      phase: 'running',
+      paste: true,
+    });
+    expect(runners[0].args).toEqual(['login', 'openai', '--paste']);
+    runners[0].end(1);
+  });
+
+  it('ends a sign-in under way before signing out, and signs in again after the sign-out', async () => {
+    const { manager, runners } = setup();
+    manager.start('openai');
+    const left = manager.logout('openai');
+    expect(manager.state()).toMatchObject({ id: 1, phase: 'cancelled' });
+    await settle();
+    expect(runners[0].sent).toEqual([{ type: 'cancel' }]);
+    // The sign-out waits for the sign-in's runner: it keeps the port, and writes the store the sign-out changes.
+    expect(runners).toHaveLength(1);
+    runners[0].end(1);
+    await settle();
+    expect(runners[1].args).toEqual(['logout', 'openai']);
+    runners[1].say({ type: 'status', signedIn: [] });
+    runners[1].end(0);
+    await expect(left).resolves.toEqual({ signedIn: [] });
+
+    expect(manager.start('openai')).toMatchObject({ id: 2, phase: 'running' });
+    expect(runners[2].args).toEqual(['login', 'openai']);
+  });
+
+  it('ends a runner still stopping when the app quits, and starts no other', async () => {
+    const { manager, runners } = setup();
+    manager.start('openai');
+    manager.start('openai');
+    manager.dispose();
+    expect(runners[0].killed).toBe(true);
+    await settle();
+    expect(runners).toHaveLength(1);
   });
 });
 

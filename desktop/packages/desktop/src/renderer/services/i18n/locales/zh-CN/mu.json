@@ -805,8 +805,18 @@
       "submit": "提交",
       "openAgain": "重新打开授权页",
       "pasteCode": "手动粘贴授权码",
+      "pasteHint": "登录后，浏览器会跳到一个以 {{address}} 开头的网址，页面可能显示出错，这没关系。把地址栏里的完整网址复制下来，粘贴到这里。",
       "cancel": "取消",
       "failed": "登录没有完成，可以再试一次。",
+      "retry": "重试",
+      "pasteInstead": "改为粘贴网址登录",
+      "takenOver": "另一个登录（终端里的 /login 或 Codex CLI）接手了这次登录在等的端口，这次登录已停止。",
+      "portInUse": {
+        "program": "端口 {{port}} 正被 {{command}}（进程 {{pid}}）占用，多半是它自己的登录。请在那里完成或取消登录，然后点「重试」。",
+        "process": "端口 {{port}} 正被进程 {{pid}} 占用，多半是它自己的登录（Codex CLI 和 Codex 应用也用这个端口）。请在那里完成或取消登录，然后点「重试」。",
+        "session": "端口 {{port}} 被另一个 mu 或 pi 会话里没完成的登录占着（进程 {{pid}}）。请在那里完成或取消登录（终端里按 Esc），然后点「重试」。",
+        "unknown": "端口 {{port}} 正被另一个程序占用，多半是 Codex CLI 或 Codex 应用在登录。请在那里完成或取消登录，然后点「重试」。"
+      },
       "asks": "{{name}} 的登录在问（以下是原文）：",
       "needAccount": "先登录一个账号，再选一个模型。",
       "experimental": "实验性",

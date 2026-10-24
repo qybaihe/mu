@@ -5,7 +5,10 @@ import { mutate } from 'swr';
 import { kyrnBridge, unwrap } from '@/common/kyrn/bridge';
 import {
   offeredProviders,
+  type LoginErrorCode,
   type LoginModel,
+  type LoginPortHolder,
+  type LoginStartOptions,
   type LoginState,
   type LoginStatus,
   type SubscriptionProvider,
@@ -21,10 +24,18 @@ type Account = LoginStatus['signedIn'][number];
 /** Why a sign-in or sign-out did not work, for a screen to word in the app language. */
 export type LoginFailure = {
   action: 'signIn' | 'signOut';
+  /** Whose sign-in or sign-out it was, so it can be tried again. */
+  provider?: SubscriptionProvider;
   /** The call's own failure, with the code the main process gave; unset when the flow itself reported an error. */
   error?: MuError;
   /** The raw words (the flow's error, the call's message): a detail line under the sentence. */
   detail: string;
+  /** What the flow said went wrong, when the app can act on it, and for `port_in_use` the port and who keeps it. */
+  code?: LoginErrorCode;
+  port?: number;
+  holder?: LoginPortHolder;
+  /** The sign-in that failed took the pasted address. */
+  paste?: boolean;
 };
 
 export type SubscriptionLoginFlow = {
@@ -40,7 +51,8 @@ export type SubscriptionLoginFlow = {
   failure: LoginFailure | undefined;
   /** The same, only when it was this provider's sign-in or sign-out. */
   failureOf: (provider: SubscriptionProvider) => LoginFailure | undefined;
-  start: (provider: SubscriptionProvider) => void;
+  /** Starts a sign-in; `paste` takes the address the browser ends on instead of listening for it. */
+  start: (provider: SubscriptionProvider, options?: LoginStartOptions) => void;
   cancel: () => void;
   answer: (value: string) => void;
   logout: (provider: SubscriptionProvider) => Promise<void>;
@@ -120,7 +132,7 @@ export function useSubscriptionLogin(
 
   const failed = (provider: SubscriptionProvider | undefined, action: LoginFailure['action'], cause: unknown) => {
     const error = toMuError(cause);
-    setProblem({ provider, failure: { action, error, detail: error.message } });
+    setProblem({ provider, failure: { action, provider, error, detail: error.message } });
   };
   const call = async (provider: SubscriptionProvider | undefined, work: () => Promise<LoginState>) => {
     setProblem({});
@@ -131,7 +143,17 @@ export function useSubscriptionLogin(
     }
   };
   const failedLogin: LoginFailure | undefined =
-    login?.phase === 'failed' ? { action: 'signIn', detail: login.error || '' } : undefined;
+    login?.phase === 'failed'
+      ? {
+          action: 'signIn',
+          provider: login.provider,
+          detail: login.error || '',
+          code: login.code,
+          port: login.port,
+          holder: login.holder,
+          paste: login.paste,
+        }
+      : undefined;
 
   return {
     offered: offeredProviders(status),
@@ -143,8 +165,8 @@ export function useSubscriptionLogin(
     failureOf: (provider) =>
       (problem.provider === provider ? problem.failure : undefined) ??
       (login?.provider === provider ? failedLogin : undefined),
-    start: (provider) => {
-      void call(provider, async () => unwrap(await kyrnBridge.loginStart.invoke({ provider })));
+    start: (provider, options) => {
+      void call(provider, async () => unwrap(await kyrnBridge.loginStart.invoke({ provider, ...options })));
     },
     cancel: () => {
       // Cancelled after the credential was stored (a slow model list): who is signed in is read again, and mu checked.

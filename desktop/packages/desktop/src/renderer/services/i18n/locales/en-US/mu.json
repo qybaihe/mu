@@ -805,8 +805,18 @@
       "submit": "Submit",
       "openAgain": "Reopen the page",
       "pasteCode": "Paste a code instead",
+      "pasteHint": "After you sign in, your browser goes to an address that starts with {{address}}. The page may show an error; that's fine. Copy the whole address from the address bar and paste it here.",
       "cancel": "Cancel",
       "failed": "Couldn't sign in. Try again.",
+      "retry": "Retry",
+      "pasteInstead": "Paste the address instead",
+      "takenOver": "Another sign-in took over the port this one was waiting on (a /login in a terminal, or the Codex CLI), so this one stopped.",
+      "portInUse": {
+        "program": "Port {{port}} is in use by {{command}} (process {{pid}}), probably for its own sign-in. Finish or cancel that sign-in there, then click Retry.",
+        "process": "Port {{port}} is in use by process {{pid}}, probably for its own sign-in (the Codex CLI and the Codex app use this port). Finish or cancel that sign-in there, then click Retry.",
+        "session": "Port {{port}} is held by an unfinished sign-in in another mu or pi session (process {{pid}}). Finish or cancel it there (Esc in a terminal), then click Retry.",
+        "unknown": "Port {{port}} is in use by another program, probably the Codex CLI or the Codex app signing in. Finish or cancel that sign-in there, then click Retry."
+      },
       "asks": "{{name}} asks:",
       "needAccount": "Sign in to an account first, then pick a model.",
       "experimental": "Experimental",

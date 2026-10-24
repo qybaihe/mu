@@ -57,7 +57,9 @@ export const kyrnBridge = {
   /** What an imported conversation said before it came to mu, to read back. */
   importHistory: bridge.buildProvider<KyrnResult<ImportedHistory>, { conversationId: string }>('kyrn.import.history'),
   /** Signing in to a subscription with pi's OAuth flow; see common/kyrn/login.ts. */
-  loginStart: bridge.buildProvider<KyrnResult<LoginState>, { provider: SubscriptionProvider }>('kyrn.login.start'),
+  loginStart: bridge.buildProvider<KyrnResult<LoginState>, { provider: SubscriptionProvider; paste?: boolean }>(
+    'kyrn.login.start'
+  ),
   loginState: bridge.buildProvider<KyrnResult<LoginState>, void>('kyrn.login.state'),
   loginAnswer: bridge.buildProvider<KyrnResult<LoginState>, { id: number; value: string }>('kyrn.login.answer'),
   loginCancel: bridge.buildProvider<KyrnResult<LoginState>, void>('kyrn.login.cancel'),

@@ -997,6 +997,68 @@ describe('signing in with a subscription', () => {
     expect(alert).toHaveTextContent('Token exchange request failed');
     expect(screen.getByTestId('mu-login-openai')).not.toBeDisabled();
   });
+
+  // QA, 2026-10-23: "Port 1455 is in use, probably by an unfinished login in another pi session or by the Codex CLI".
+  it('names the program keeping the callback port, tries again, and signs in by the pasted address instead', async () => {
+    await toSubscriptions();
+    const portTaken = {
+      ...running,
+      phase: 'failed',
+      error: 'Port 1455 is in use by codex (process 4321), probably for its own sign-in',
+      code: 'port_in_use',
+      port: 1455,
+      holder: { pid: 4321, command: 'codex' },
+    };
+    bridge.loginStart.mockResolvedValue({ ok: true, data: running });
+    bridge.loginState.mockResolvedValue({ ok: true, data: portTaken });
+    fireEvent.click(screen.getByTestId('mu-login-openai'));
+    const alert = await screen.findByText(
+      'Port 1455 is in use by codex (process 4321), probably for its own sign-in. Finish or cancel that sign-in there, then click Retry.',
+      {},
+      { timeout: 3000 }
+    );
+    // One sentence in the app language, not the flow's English under it.
+    expect(alert).not.toHaveTextContent('Couldn');
+    expect(screen.getByTestId('mu-login-problem')).not.toHaveTextContent('probably for its own sign-in Finish');
+
+    bridge.loginStart.mockResolvedValue({ ok: true, data: { ...running, id: 2 } });
+    bridge.loginState.mockResolvedValue({ ok: true, data: { ...portTaken, id: 2 } });
+    fireEvent.click(screen.getByTestId('mu-login-retry'));
+    await waitFor(() => expect(bridge.loginStart).toHaveBeenCalledTimes(2));
+    expect(bridge.loginStart).toHaveBeenLastCalledWith({ provider: 'openai' });
+    await screen.findByTestId('mu-login-paste-instead', {}, { timeout: 3000 });
+
+    const pasting = {
+      ...running,
+      id: 3,
+      paste: true,
+      prompt: {
+        type: 'manual_code',
+        message: 'Paste the address your browser ends on after sign-in:',
+        placeholder: 'http://127.0.0.1:1455/auth/callback',
+      },
+    };
+    bridge.loginStart.mockResolvedValue({ ok: true, data: pasting });
+    bridge.loginState.mockResolvedValue({ ok: true, data: pasting });
+    fireEvent.click(screen.getByTestId('mu-login-paste-instead'));
+    await waitFor(() => expect(bridge.loginStart).toHaveBeenLastCalledWith({ provider: 'openai', paste: true }));
+    // The field is there at once, with what to paste: nothing listens for the browser.
+    expect(await screen.findByTestId('mu-login-paste-hint')).toHaveTextContent(
+      'your browser goes to an address that starts with http://127.0.0.1:1455/auth/callback'
+    );
+    expect(screen.queryByTestId('mu-login-paste')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Authorization code'), {
+      target: { value: 'http://127.0.0.1:1455/auth/callback?code=c&state=s' },
+    });
+    bridge.loginAnswer.mockResolvedValue({ ok: true, data: { ...pasting, prompt: undefined } });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
+    await waitFor(() =>
+      expect(bridge.loginAnswer).toHaveBeenCalledWith({
+        id: 3,
+        value: 'http://127.0.0.1:1455/auth/callback?code=c&state=s',
+      })
+    );
+  });
 });
 
 /** A service's answer to the check: the models it lists for the key. */
