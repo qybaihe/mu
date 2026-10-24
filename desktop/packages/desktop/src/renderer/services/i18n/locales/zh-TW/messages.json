@@ -116,5 +116,18 @@
   "optionNumber": "選項 {{number}}",
   "copyFilesHeader": "檔案：",
   "exportHeaderLine": "{{label}}：{{value}}",
-  "exportSpeakerLine": "{{speaker}}："
+  "exportSpeakerLine": "{{speaker}}：",
+  "fileRef": {
+    "preview": "預覽 {{name}}",
+    "open": "開啟 {{name}}",
+    "reveal": {
+      "mac": "在 Finder 中顯示 {{name}}",
+      "windows": "在檔案總管中顯示 {{name}}",
+      "linux": "在資料夾中顯示 {{name}}"
+    },
+    "missing": "找不到這個檔案",
+    "ambiguous": "有多個檔案同名",
+    "gone": "{{name}} 已不在原處，可能已被移動或刪除。",
+    "openFailed": "無法開啟 {{name}}"
+  }
 }

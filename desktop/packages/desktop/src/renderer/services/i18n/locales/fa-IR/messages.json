@@ -116,5 +116,18 @@
   "optionNumber": "گزینهٔ {{number}}",
   "copyFilesHeader": "فایل‌ها:",
   "exportHeaderLine": "{{label}}: {{value}}",
-  "exportSpeakerLine": "{{speaker}}:"
+  "exportSpeakerLine": "{{speaker}}:",
+  "fileRef": {
+    "preview": "پیش‌نمایش {{name}}",
+    "open": "باز کردن {{name}}",
+    "reveal": {
+      "mac": "نمایش {{name}} در Finder",
+      "windows": "نمایش {{name}} در File Explorer",
+      "linux": "نمایش {{name}} در پوشه"
+    },
+    "missing": "فایل پیدا نشد",
+    "ambiguous": "بیش از یک فایل با این نام وجود دارد",
+    "gone": "{{name}} دیگر آنجا نیست. ممکن است جابه‌جا یا حذف شده باشد.",
+    "openFailed": "{{name}} باز نشد"
+  }
 }

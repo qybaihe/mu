@@ -199,6 +199,51 @@ What stays empty until the conversation's host runs again: the board (its update
 the judge tab's context line (pi's `get_state`), and mu's notices. The classic tabs read them from the telemetry file,
 which a native conversation does not write.
 
+## File references in a reply
+
+Problem: a reply names the files mu made or read, mostly as inline code, and the person had to find them by hand.
+
+Example: mu writes five images into `out/` and lists their bare names, `07_角色与场景关系卡_铁匠老秦_雨夜钢铁厂.png` and
+four more. Each name becomes a link. A click shows the image in the work panel's preview, where the arrows step through
+all five. In the same reply, `out/report.pdf` opens in the default app, and the folder icon beside it shows it in
+Finder (File Explorer on Windows, the file manager on Linux).
+
+Solution, in three steps:
+
+1. **Candidates** (`common/chat/fileRefs/pathLike.ts`, `renderer/components/media/FileRefs/findFileRefs.ts`). Only
+   inline code spans and links to a local path, never fenced code or prose. A span is a candidate when it has a known
+   extension (images, documents, media, archives, code and configuration) or starts with `/`, `~/`, `./`, `../` or a
+   drive letter, and holds no shell operator, quote, glob, brace, `=`, `#`, `%`, comma, URL scheme or call
+   (`name(`). Spaces are allowed only when the whole span is a file name (`My Report.pdf`), not a command
+   (`open report.pdf`, a `-flag`). A `:12` or `:12:7` suffix is allowed. Each candidate is `strong` (a separator or an
+   anchored start with a known extension, or a bare name with a document, media or image extension) or `weak` (a bare
+   name with a code extension, a span with spaces, an anchored path without an extension). Not found, a strong one is
+   greyed out; a weak one stays plain code, so `index.ts`, `console.log`, `/api/users` or `/help` never look broken.
+2. **Resolution** in the main process (`process/services/fileRefs/`, channel `fileRefs.resolve`). Absolute and `~/`
+   paths as they are; anything else under the conversation's folder (`cwd`, or the classic conversation's workspace).
+   A bare name not there is looked for below the folder by its exact name (Unicode NFC): at most 4 folders deep and
+   5,000 entries read, never inside a dot folder, `node_modules`, `__pycache__`, `venv` or a link to a folder; it counts
+   only when one file has it, and two make it `ambiguous`. Only regular files count (a link to one anywhere counts as
+   that file). The window gets the full path, the kind (`image`, `file` or `program`) and the size. One call per folder
+   carries every reference the replies on screen want within 30 ms; the answers are kept (a miss for 5 s, a find for a
+   minute) and the reply is drawn as plain code until they come.
+3. **Actions**, each checking the path again in the main process (`fileRefs.open`, `fileRefs.reveal`,
+   `fileRefs.readImage`). Nothing is run: a program (`.app`, `.command`, `.sh`, `.exe`, `.bat`, `.ps1`, `.py`, `.jar`,
+   `.dmg`, `.pkg`, a `.js` on Windows and others, or a file with an execute bit that is not a document) is shown in its
+   folder instead of opened. An image is read as a data URL of at most 20 MB, the preview's own limit for images: the
+   bridge drops any message over 50 MB, and a data URL is a third larger than the file. A file gone since it was found
+   reads as missing in every reply.
+
+The preview (`Preview/components/ImageGallery/`) is an `image` tab whose metadata lists the reply's images
+(`gallery`), so it is kept with the panel's tabs like any image. It fits the image to the panel, never above its own
+size; the zoom buttons, `+`, `-`, `0`, Ctrl or ⌘ with the wheel and a trackpad pinch zoom it, and once it is larger
+than the panel the wheel and a drag move it. The arrow buttons and keys (mirrored right to left) step through the
+reply's images in the same tab. The bar has the name, Open (default app) and Show in Finder; the toolbar's refresh reads
+the image again. A click in a reply moves the focus to the viewer, so the arrow keys work at once.
+
+A link to a file that is not an image keeps the link the app always drew (it opens in the preview, at its line). Inline
+code inside a link's text stays part of that link.
+
 ## The view on screen
 
 | View                                                                           | On screen                                                                                                                                 |
@@ -615,6 +660,9 @@ hover row, the page and the sidebar after the fork.
 - Fork and clone ran in the app with the fake model only: a fork of a session of thousands of entries, a fork of a
   message that had images (only its text comes back), and a fork an extension cancels ran in unit tests or not at all.
 - Right-to-left (fa-IR), windows narrower than 760 px, and Windows and Linux layouts were not looked at.
+- File references in a reply ran in unit and DOM tests only, not in the running app: the links' look in the reply's
+  shadow root, the viewer's zoom and drag with real image sizes, the focus moving to the viewer, and the system's
+  default app and Finder.
 - Fork and tree are not on the screen yet, so nothing tests them. The composer's controls are checked by the DOM
   tests and `native-composer.spec.mjs`.
 - Removing a conversation ran in the app against the test's own bin; the system's bin was not used. Quitting with a run

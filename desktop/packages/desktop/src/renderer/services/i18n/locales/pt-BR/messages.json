@@ -116,5 +116,18 @@
   "optionNumber": "Opção {{number}}",
   "copyFilesHeader": "Arquivos:",
   "exportHeaderLine": "{{label}}: {{value}}",
-  "exportSpeakerLine": "{{speaker}}:"
+  "exportSpeakerLine": "{{speaker}}:",
+  "fileRef": {
+    "preview": "Visualizar {{name}}",
+    "open": "Abrir {{name}}",
+    "reveal": {
+      "mac": "Mostrar {{name}} no Finder",
+      "windows": "Mostrar {{name}} no Explorador de Arquivos",
+      "linux": "Mostrar {{name}} na pasta"
+    },
+    "missing": "Arquivo não encontrado",
+    "ambiguous": "Há mais de um arquivo com este nome",
+    "gone": "{{name}} não está mais lá. Pode ter sido movido ou excluído.",
+    "openFailed": "Não foi possível abrir {{name}}"
+  }
 }

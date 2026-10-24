@@ -120,5 +120,18 @@
   "optionNumber": "Вариант {{number}}",
   "copyFilesHeader": "Файлы:",
   "exportHeaderLine": "{{label}}: {{value}}",
-  "exportSpeakerLine": "{{speaker}}:"
+  "exportSpeakerLine": "{{speaker}}:",
+  "fileRef": {
+    "preview": "Просмотреть {{name}}",
+    "open": "Открыть {{name}}",
+    "reveal": {
+      "mac": "Показать {{name}} в Finder",
+      "windows": "Показать {{name}} в Проводнике",
+      "linux": "Показать {{name}} в папке"
+    },
+    "missing": "Файл не найден",
+    "ambiguous": "Есть несколько файлов с таким именем",
+    "gone": "Файла {{name}} больше нет на месте. Возможно, его переместили или удалили.",
+    "openFailed": "Не удалось открыть {{name}}"
+  }
 }

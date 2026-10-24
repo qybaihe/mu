@@ -319,5 +319,18 @@
   "saveFailedWithDetail": "Échec de l’enregistrement : {{detail}}",
   "zoomActualSize": "Réinitialiser le zoom",
   "zoomFit": "Ajuster",
-  "zoomFitTooltip": "Ajuster à la largeur du panneau"
+  "zoomFitTooltip": "Ajuster à la largeur du panneau",
+  "gallery": {
+    "label": "Image {{name}}",
+    "previous": "Image précédente",
+    "next": "Image suivante",
+    "position": "{{index}} sur {{count}}",
+    "gone": "Ce fichier n'est plus là. Il a peut-être été déplacé ou supprimé.",
+    "tooLarge": "Cette image est trop volumineuse pour être affichée ici ({{size}}). Ouvrez-la dans l'application par défaut."
+  },
+  "reveal": {
+    "mac": "Afficher dans le Finder",
+    "windows": "Afficher dans l'Explorateur de fichiers",
+    "linux": "Afficher dans le dossier"
+  }
 }

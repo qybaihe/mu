@@ -135,6 +135,66 @@ export const createInitStyle = (
     background: var(--bg-3);
     color: var(--text-primary);
   }
+  /* A file a reply names (components/media/FileRefs): the inline code stays, drawn as a link to the file. */
+  .markdown-shadow-body .markdown-file-ref-open,
+  .markdown-shadow-body .markdown-file-ref-reveal {
+    display: inline;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    line-height: inherit;
+    color: inherit;
+    text-align: start;
+    vertical-align: baseline;
+    cursor: pointer;
+  }
+  .markdown-shadow-body .markdown-file-ref-open code,
+  .markdown-shadow-body .markdown-file-ref-open .markdown-file-ref-label {
+    color: var(--primary);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--primary) 40%, transparent);
+    text-underline-offset: 3px;
+  }
+  .markdown-shadow-body .markdown-file-ref-open:hover code,
+  .markdown-shadow-body .markdown-file-ref-open:hover .markdown-file-ref-label {
+    text-decoration-color: currentColor;
+  }
+  .markdown-shadow-body .markdown-file-ref-open:focus-visible,
+  .markdown-shadow-body .markdown-file-ref-reveal:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  .markdown-shadow-body .markdown-file-ref-reveal {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    min-width: 20px;
+    height: 20px;
+    margin-inline-start: 2px;
+    border-radius: 4px;
+    vertical-align: middle;
+    color: var(--text-secondary);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .markdown-shadow-body .markdown-file-ref:hover .markdown-file-ref-reveal,
+  .markdown-shadow-body .markdown-file-ref:focus-within .markdown-file-ref-reveal {
+    opacity: 1;
+  }
+  .markdown-shadow-body .markdown-file-ref-reveal:hover {
+    background: var(--bg-3);
+    color: var(--text-primary);
+  }
+  .markdown-shadow-body .markdown-file-ref[aria-disabled='true'] code,
+  .markdown-shadow-body .markdown-file-ref[aria-disabled='true'] .markdown-file-ref-label {
+    color: var(--text-disabled);
+    cursor: help;
+  }
   h1{
     font-size: 24px;
     line-height: 32px;

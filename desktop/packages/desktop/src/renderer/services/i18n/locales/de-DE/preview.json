@@ -319,5 +319,18 @@
   "saveFailedWithDetail": "Speichern fehlgeschlagen: {{detail}}",
   "zoomActualSize": "Zoom zurücksetzen",
   "zoomFit": "Einpassen",
-  "zoomFitTooltip": "An Panelbreite anpassen"
+  "zoomFitTooltip": "An Panelbreite anpassen",
+  "gallery": {
+    "label": "Bild {{name}}",
+    "previous": "Vorheriges Bild",
+    "next": "Nächstes Bild",
+    "position": "{{index}} von {{count}}",
+    "gone": "Diese Datei ist nicht mehr da. Sie wurde vielleicht verschoben oder gelöscht.",
+    "tooLarge": "Das Bild ist zu groß für die Vorschau ({{size}}). Bitte in der Standard-App öffnen."
+  },
+  "reveal": {
+    "mac": "Im Finder anzeigen",
+    "windows": "Im Explorer anzeigen",
+    "linux": "Im Ordner anzeigen"
+  }
 }

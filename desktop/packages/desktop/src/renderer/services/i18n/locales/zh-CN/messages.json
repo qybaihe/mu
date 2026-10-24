@@ -116,5 +116,18 @@
   "optionNumber": "选项 {{number}}",
   "copyFilesHeader": "文件：",
   "exportHeaderLine": "{{label}}：{{value}}",
-  "exportSpeakerLine": "{{speaker}}："
+  "exportSpeakerLine": "{{speaker}}：",
+  "fileRef": {
+    "preview": "预览 {{name}}",
+    "open": "打开 {{name}}",
+    "reveal": {
+      "mac": "在访达中显示 {{name}}",
+      "windows": "在文件资源管理器中显示 {{name}}",
+      "linux": "在文件夹中显示 {{name}}"
+    },
+    "missing": "找不到这个文件",
+    "ambiguous": "有多个文件同名",
+    "gone": "{{name}} 已不在原处，可能已被移动或删除。",
+    "openFailed": "无法打开 {{name}}"
+  }
 }

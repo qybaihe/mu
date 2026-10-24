@@ -7,7 +7,7 @@
 import { Message } from '@arco-design/web-react';
 import { Copy, Down, Up } from '@icon-park/react';
 import katex from 'katex';
-import React, { useRef, useState } from 'react';
+import React, { useContext, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { muCodeTheme } from './muCodeTheme';
@@ -16,6 +16,7 @@ import { codeLanguage } from './codeLanguage';
 import MermaidBlock from './MermaidBlock';
 import WavedromBlock from './WavedromBlock';
 import { formatCode, getDiffLineStyle } from './markdownUtils';
+import { MarkdownFileSlotsContext } from './markdownComponents';
 
 const PREVIEW_LINES = 3;
 // code span: font-size 13px, line-height 20px (per ShadowView injection)
@@ -88,6 +89,7 @@ function CodeBlock(props: CodeBlockProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const fileSlots = useContext(MarkdownFileSlotsContext);
   const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>(
     () => (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'light'
   );
@@ -148,11 +150,13 @@ function CodeBlock(props: CodeBlockProps) {
 
   // Inline code (single line)
   if (!String(children).includes('\n')) {
-    return (
+    const code = (
       <code {...rest} className={className} style={{ fontWeight: 'bold' }}>
         {children}
       </code>
     );
+    // A surface that draws some spans its own way (a reply's file references) gets the span and the plain code.
+    return fileSlots ? <fileSlots.InlineCode code={String(children)}>{code}</fileSlots.InlineCode> : code;
   }
 
   const formattedContent = formatCode(children);

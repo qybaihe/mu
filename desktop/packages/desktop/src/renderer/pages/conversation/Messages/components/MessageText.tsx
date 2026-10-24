@@ -23,6 +23,7 @@ import CollapsibleContent from '@renderer/components/chat/CollapsibleContent';
 import FilePreview from '@renderer/components/media/FilePreview';
 import HorizontalFileList from '@renderer/components/media/HorizontalFileList';
 import MarkdownView from '@renderer/components/Markdown';
+import { ReplyFileRefs } from '@renderer/components/media/FileRefs/ReplyFileRefs';
 import MessageImages from './MessageImages';
 import { closeOpenFence } from './streamMarkdown';
 import { stripThinkTags, hasThinkTags } from '@renderer/utils/chat/thinkTagFilter';
@@ -362,9 +363,12 @@ const MessageText: React.FC<{
               </CollapsibleContent>
             ) : (
               <div data-testid='message-text-content'>
-                <MarkdownView codeStyle={CODE_STYLE} onLocalFileLink={handleLocalFileLink}>
-                  {markdown}
-                </MarkdownView>
+                {/* The files the reply names become links: images to the preview, other files to their app. */}
+                <ReplyFileRefs markdown={typeof markdown === 'string' ? markdown : ''} cwd={workspace}>
+                  <MarkdownView codeStyle={CODE_STYLE} onLocalFileLink={handleLocalFileLink}>
+                    {markdown}
+                  </MarkdownView>
+                </ReplyFileRefs>
               </div>
             )}
           </div>

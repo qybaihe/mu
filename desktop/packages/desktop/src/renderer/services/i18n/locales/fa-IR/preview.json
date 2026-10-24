@@ -319,5 +319,18 @@
   "saveFailedWithDetail": "ذخیره ناموفق بود: {{detail}}",
   "zoomActualSize": "بازنشانی بزرگ‌نمایی",
   "zoomFit": "متناسب",
-  "zoomFitTooltip": "متناسب با عرض پنل"
+  "zoomFitTooltip": "متناسب با عرض پنل",
+  "gallery": {
+    "label": "تصویر {{name}}",
+    "previous": "تصویر قبلی",
+    "next": "تصویر بعدی",
+    "position": "{{index}} از {{count}}",
+    "gone": "این فایل دیگر آنجا نیست. ممکن است جابه‌جا یا حذف شده باشد.",
+    "tooLarge": "این تصویر برای نمایش در اینجا خیلی بزرگ است ({{size}}). لطفاً آن را در برنامهٔ پیش‌فرض باز کنید."
+  },
+  "reveal": {
+    "mac": "نمایش در Finder",
+    "windows": "نمایش در File Explorer",
+    "linux": "نمایش در پوشه"
+  }
 }
