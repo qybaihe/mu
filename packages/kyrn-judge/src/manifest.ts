@@ -1929,6 +1929,10 @@ const DESCRIBED: HarnessManifest = {
 					kind: "choice",
 					default: "auto",
 					label: { zh: "看板的语言", en: "Board language" },
+					help: {
+						zh: "自动：模型写的话跟着你发消息用的语言，看板上固定的句子跟着应用的界面语言。",
+						en: "Auto: what the model writes follows the language of your messages; the board's fixed lines follow the app's language.",
+					},
 					choices: [
 						{ value: "auto", label: { zh: "跟着你说的话", en: "The one you write in" } },
 						{ value: "zh", label: { zh: "中文", en: "Chinese" } },
@@ -1973,8 +1977,34 @@ const DESCRIBED: HarnessManifest = {
 					unit: ms,
 					label: { zh: "写看板最多等多久", en: "Max wait for the writer" },
 					help: {
-						zh: "超时就用固定的句子说。",
-						en: "After that, stock phrases are used.",
+						zh: "这是一轮结束时的上限；干活中途最多等 20 秒，再晚写出来也过时了。超时就用固定的句子说。",
+						en: "This is the limit when a run ends. Mid-run the writer gets 20 s at most, since a later update would already be out of date. After that, stock phrases are used.",
+					},
+				},
+				{
+					key: "stallMs",
+					kind: "number",
+					default: 60000,
+					min: 0,
+					max: 3600000,
+					unit: ms,
+					label: { zh: "一步跑多久算卡住", en: "Time before a long step counts as stuck" },
+					help: {
+						zh: "一个命令跑了这么久，或者一个子代理这么久没有输出，看板就记一行「还在跑」，到 3 倍、10 倍时更新这一行，每次都重新看一眼。0 表示不管。",
+						en: "When a command runs this long, or a subagent has no output for this long, the board adds a line saying it's still running, updates that line at 3 and 10 times this, and checks again each time. 0 turns this off.",
+					},
+				},
+				{
+					key: "maxStaleMs",
+					kind: "number",
+					default: 15000,
+					min: 0,
+					max: 300000,
+					unit: ms,
+					label: { zh: "事情接连发生时，看板最旧多久", en: "Oldest the board gets while things keep happening" },
+					help: {
+						zh: "判定器还在读时又发生了新的事，看板一般等下一次再写；但看板已经比这更旧时照写，免得代理一直在忙、看板一直不更新。",
+						en: "When something new happens while the judge is still reading, the board usually waits for the next check. If it's already older than this, it's rewritten anyway, so a busy agent can't keep it out of date.",
 					},
 				},
 				{

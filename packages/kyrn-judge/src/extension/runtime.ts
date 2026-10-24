@@ -372,8 +372,11 @@ export class KyrnRuntime {
 		};
 	}
 
-	/** A completion function over one of the host's models. Looked up per call, because models load after extensions. */
-	llm(modelRef: string, options: { thinking?: string } = {}): LlmCompletion {
+	/**
+	 * A completion function over one of the host's models. Looked up per call, because models load after extensions.
+	 * `maxTokens` caps the reply (2000 by default).
+	 */
+	llm(modelRef: string, options: { thinking?: string; maxTokens?: number } = {}): LlmCompletion {
 		return async ({ system, user, signal }) => {
 			const ctx = this.latestCtx;
 			if (!ctx) throw new JudgeError("unreachable", "No session is attached yet");
@@ -391,7 +394,7 @@ export class KyrnRuntime {
 					},
 					{
 						signal,
-						maxTokens: 2000,
+						maxTokens: options.maxTokens ?? 2000,
 						reasoning: thinking as never,
 						cacheRetention: "none",
 						sessionId: this.sessionId,

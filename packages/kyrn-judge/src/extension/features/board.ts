@@ -6,6 +6,7 @@ import type {
 	MessageEndEvent,
 	ToolExecutionEndEvent,
 	ToolExecutionStartEvent,
+	ToolExecutionUpdateEvent,
 } from "@earendil-works/pi-coding-agent";
 import {
 	addModelHelp,
@@ -19,12 +20,15 @@ import {
 import {
 	type BoardFacts,
 	type BoardLanguage,
+	type BoardStall,
 	type BoardText,
-	languageOf,
+	duration,
 	narratorRequest,
 	narratorSystem,
 	parseBoardText,
 	plainBoard,
+	rulesHeadline,
+	type WriterReply,
 } from "../../board/narrate.ts";
 import {
 	type BoardNote,
@@ -47,13 +51,14 @@ import {
 	describeEvent,
 	MAX_EVENTS,
 	MAX_KEY,
+	stepLine,
 } from "../../decisions/board-read.ts";
-import { appLanguage, say } from "../../language.ts";
+import { type AppLanguage, appLanguage, count, say, writingLanguage } from "../../language.ts";
 import type { LlmCompletion } from "../../providers/llm.ts";
 import { environmentSecrets, redactSecrets } from "../../redact.ts";
 import { activeRuns, type SwarmSnapshot } from "../../swarm/run.ts";
-import { type BeeState, type BeeStatus, isOver, isRunning } from "../../swarm/state.ts";
-import { clip, failOpen, type KyrnRuntime, textOf } from "../runtime.ts";
+import { type BeeState, type BeeStatus, isOver, isRunning, reportOf } from "../../swarm/state.ts";
+import { clip, failOpen, type KyrnRuntime, textOf, userWords } from "../runtime.ts";
 import { isShellTool } from "../shell-tools.ts";
 import { describeCall } from "./constraints.ts";
 import type { HarnessRoots } from "./inherit.ts";
@@ -68,6 +73,14 @@ const MAX_NOTES = 200;
 const LOG_LINES = 40;
 /** The latest account lines the writer is shown, so it adds to them instead of repeating them. */
 const ACCOUNT_LINES = 6;
+/** Mid-run, a board the writer has not written by then is out of date: it gets this long, and no longer. */
+const LIVE_TIMEOUT_MS = 20_000;
+/** Mid-run the writer's reply is one short JSON object: a runaway one only costs time. */
+const LIVE_MAX_TOKENS = 600;
+/** A stall is told again at these multiples of `stallMs`: 1, 3 and 10 minutes by default. */
+const STALL_STEPS = [1, 3, 10];
+/** A subagent this long without a sign of life is said to have had no new output. */
+const QUIET_MS = 30_000;
 /** Tools that change a file: the account names the file. */
 const CHANGE_TOOLS = new Set(["edit", "write", "sg_rewrite", "conflicts_resolve", "apply_patch_from"]);
 /** Reading and looking up: when it went fine, nothing a person would hear about. */
@@ -123,27 +136,69 @@ export function describeSwarmCall(name: string, input: Record<string, unknown>):
 	return `${parts.count} subagent${parts.count === 1 ? "" : "s"}: ${parts.titles}`;
 }
 
-/** The sub-agents at work, a line per run, for the judge and the writer: who is doing what, who is back. */
-export function describeSwarms(snapshots: readonly SwarmSnapshot[]): string | undefined {
+/** The first line of a report worth reading: not a warning or a "cut short" note in brackets, no heading marks. */
+export function firstLine(text: string): string {
+	const line = text
+		.split("\n")
+		.map((part) =>
+			part
+				.trim()
+				.replace(/^[#*>\s-]+/, "")
+				.replace(/\*\*/g, ""),
+		)
+		.find((part) => part && !/^\(.*\)$/.test(part));
+	return line ?? "";
+}
+
+/** What a subagent's tool call works on, without the tool's name its summary starts with ("bash npm test"). */
+const beeArgs = (tool: { name: string; summary: string }) =>
+	tool.summary.startsWith(`${tool.name} `) ? tool.summary.slice(tool.name.length + 1) : tool.summary;
+/** What a subagent's tool call works on: the command, or the tool and what it works on. */
+const beeWhat = (tool: { name: string; summary: string }) =>
+	clip(isShellTool(tool.name) ? beeArgs(tool) : `${tool.name} ${beeArgs(tool)}`, 80);
+
+/** One subagent, as the judge and the writer read it: how it ended, or what it is doing and for how long. */
+function describeBee(bee: BeeState, now: number): string {
+	const who = bee.role && bee.role !== bee.name ? `${bee.name} (${bee.role})` : bee.name;
+	const ran = duration((bee.endedAt ?? now) - (bee.startedAt ?? bee.queuedAt));
+	const failures = bee.toolErrors > 0 ? `; ${count(bee.toolErrors, "failed step")}` : "";
+	if (bee.status === "done") {
+		const report = firstLine(reportOf(bee) || bee.said || "");
+		return `${who}: back after ${ran}${report ? `; reported: "${clip(report, 160)}"` : ""}${failures}`;
+	}
+	if (isOver(bee.status)) {
+		const how = bee.status === "timed-out" ? "timed out" : bee.status;
+		return `${who}: ${how} after ${ran}${bee.error ? `: ${clip(bee.error, 100)}` : ""}${failures}`;
+	}
+	if (bee.status === "queued") return `${who}: waiting for a slot`;
+	const quiet = now - bee.lastEventAt;
+	const silence = quiet >= QUIET_MS ? `; no new output for ${duration(quiet)}` : "";
+	if (bee.retry) {
+		const { attempt, maxAttempts, message } = bee.retry;
+		return `${who}: retrying after an error (attempt ${attempt} of ${maxAttempts}): ${clip(message, 80)}${failures}`;
+	}
+	if (bee.status === "tool" && bee.tool) {
+		return `${who}: running ${bee.tool.name} \`${clip(beeArgs(bee.tool), 80)}\` for ${duration(now - bee.tool.startedAt)}${silence}${failures}`;
+	}
+	if (bee.status === "wrapping-up") return `${who}: writing its report${silence}${failures}`;
+	const said = bee.said ? `; last said: "${clip(bee.said, 80)}"` : "";
+	return `${who}: thinking, ${ran} in${said}${silence}${failures}`;
+}
+
+/**
+ * The subagents at work, for the judge and the writer: a header per run (what kind, sent how long ago, how many
+ * are back), then a line per subagent naming it exactly as the writer must, with what it is doing and for how long,
+ * how long it has been silent, its failed steps, a retry, or what it reported.
+ */
+export function describeSwarms(snapshots: readonly SwarmSnapshot[], now = Date.now()): string | undefined {
 	if (snapshots.length === 0) return undefined;
 	return snapshots
 		.map((snapshot) => {
 			const bees = snapshot.bees;
 			const finished = bees.filter((bee) => isOver(bee.status)).length;
-			const each = bees.map((bee) => {
-				const who = bee.role ? `${bee.name} (${bee.role})` : bee.name;
-				if (bee.status === "done") return `${who}: back${bee.said ? `, said: ${clip(bee.said, 120)}` : ""}`;
-				if (isOver(bee.status)) return `${who}: ${bee.status}${bee.error ? ` (${clip(bee.error, 80)})` : ""}`;
-				if (bee.status === "queued") return `${who}: waiting for a slot`;
-				const doing = bee.tool
-					? `${bee.tool.name} ${clip(bee.tool.summary, 60)}`
-					: bee.said
-						? `said: ${clip(bee.said, 80)}`
-						: bee.status;
-				return `${who}: ${doing}`;
-			});
 			const kind = snapshot.kind === "hive" ? "hive" : "delegate";
-			return `${kind}, ${bees.length} subagent${bees.length === 1 ? "" : "s"} (${finished} finished): ${each.join("; ")}`;
+			const header = `${kind}, sent ${duration(now - snapshot.startedAt)} ago, ${count(bees.length, "subagent")} (${finished} finished):`;
+			return [header, ...bees.map((bee) => `- ${describeBee(bee, now)}`)].join("\n");
 		})
 		.join("\n");
 }
@@ -157,10 +212,41 @@ export function swarmState(runs: readonly { readonly bees: readonly BeeState[] }
 	return runs.map((run) => run.bees.map((bee) => `${bee.name}:${stand(bee.status)}`).join(",")).join("|");
 }
 
+const ANSI = /\x1b\[[0-?]*[ -/]*[@-~]/g;
+const ERROR_LINE =
+	/\b(?:error|fail(?:ed|ure|s)?|expected|assert(?:ion)?|exception|traceback|panic(?:ked)?|denied|refused|timed? ?out|not found|cannot)\b|^[×✗✕✖]/i;
+
+/**
+ * Why a step failed, as its output says: its first error-like lines (or its last lines when none looks like one),
+ * at most 300 characters, credentials taken out. The writer can then say why a check failed, not only that it did.
+ */
+export function failureExcerpt(result: unknown): string | undefined {
+	const text = textOf((result as { content?: unknown } | undefined)?.content).replace(ANSI, "");
+	const lines = text
+		.split("\n")
+		.map((line) => line.trim())
+		.filter(Boolean);
+	if (lines.length === 0) return undefined;
+	const errors = lines.filter((line) => ERROR_LINE.test(line) && !/\b0 (?:failed|errors?)\b/i.test(line));
+	const picked = (errors.length > 0 ? errors.slice(0, 3) : lines.slice(-2)).join(" | ");
+	return clip(redactSecrets(picked, environmentSecrets()), 300);
+}
+
 interface LoggedEvent extends BoardEvent {
 	readonly sequence: number;
 	/** Picked as news for a board that was written. */
 	key?: boolean;
+}
+
+/** One subagent on the board, by rule: who it is, where it stands, what it is doing and for how long. */
+export interface BoardAgent {
+	readonly who: string;
+	readonly role?: string;
+	readonly state: "working" | "waiting" | "done" | "failed" | "stuck";
+	/** The writer's words when it gave some for this exact name, else the rules' summary. */
+	readonly doing: string;
+	/** How long it has been in this state. */
+	readonly sinceMs?: number;
 }
 
 export interface BoardUpdate extends BoardText {
@@ -184,15 +270,57 @@ export interface BoardUpdate extends BoardText {
 	readonly news?: readonly string[];
 	/** The latest lines of the running account, oldest first: what the agent did, as the board told it. */
 	readonly log?: readonly BoardNote[];
+	/** The subagents at work, built by rules from the live runs: absent without any. The main agent is not listed. */
+	readonly agents?: readonly BoardAgent[];
+	/** When this board was made (epoch ms), so a client can say how fresh it is. */
+	readonly updatedAt?: number;
 }
+
+const AGENT_STATES = new Set(["working", "waiting", "done", "failed", "stuck"]);
+const paramsOf = (value: unknown): NoteParams | undefined =>
+	typeof value === "object" && value !== null
+		? (Object.fromEntries(
+				Object.entries(value as Record<string, unknown>).filter(
+					([, item]) => typeof item === "string" || typeof item === "number",
+				),
+			) as NoteParams)
+		: undefined;
 
 export function parseBoardEntry(data: unknown): BoardUpdate | undefined {
 	if (typeof data !== "object" || data === null) return undefined;
 	const value = data as Record<string, unknown>;
 	if (typeof value.now !== "string" || typeof value.progress !== "string") return undefined;
+	const text = (key: string) => (typeof value[key] === "string" ? { [key]: value[key] as string } : {});
+	const coded = (key: string) => {
+		const params = paramsOf(value[`${key}Params`]);
+		return typeof value[`${key}Code`] === "string"
+			? { [`${key}Code`]: value[`${key}Code`] as string, ...(params ? { [`${key}Params`]: params } : {}) }
+			: {};
+	};
+	const agents = Array.isArray(value.agents)
+		? value.agents.flatMap((entry): BoardAgent[] => {
+				const agent = (entry ?? {}) as Record<string, unknown>;
+				if (typeof agent.who !== "string" || typeof agent.doing !== "string") return [];
+				if (typeof agent.state !== "string" || !AGENT_STATES.has(agent.state)) return [];
+				return [
+					{
+						who: agent.who,
+						...(typeof agent.role === "string" ? { role: agent.role } : {}),
+						state: agent.state as BoardAgent["state"],
+						doing: agent.doing,
+						...(typeof agent.sinceMs === "number" ? { sinceMs: agent.sinceMs } : {}),
+					},
+				];
+			})
+		: [];
 	return {
+		...text("headline"),
+		...coded("headline"),
 		progress: value.progress,
 		now: value.now,
+		...text("blocked"),
+		...coded("blocked"),
+		...text("next"),
 		confirm: Array.isArray(value.confirm) ? value.confirm.filter((item) => typeof item === "string") : [],
 		phase: typeof value.phase === "string" ? (value.phase as BoardPhase) : undefined,
 		focus: typeof value.focus === "string" ? value.focus : undefined,
@@ -209,24 +337,100 @@ export function parseBoardEntry(data: unknown): BoardUpdate | undefined {
 		ended: value.ended === true,
 		...(Array.isArray(value.news) ? { news: value.news.filter((line) => typeof line === "string") } : {}),
 		...(Array.isArray(value.log) ? { log: value.log.flatMap((line) => parseBoardNote(line) ?? []) } : {}),
+		...(agents.length > 0 ? { agents } : {}),
+		...(typeof value.updatedAt === "number" ? { updatedAt: value.updatedAt } : {}),
 	};
 }
 
 /**
- * The board above the editor of the terminal: the desktop draws its own panel from the presentation events.
- * `latest` is the newest line of the running account, shown under the state.
+ * The board above the editor of the terminal, three lines at most: the headline, then what waits on the person
+ * or what is stuck, then the newest line of the running account (`latest`). `/board` shows the rest. The desktop
+ * draws its own panel from the presentation events.
  */
 export function boardWidget(board: BoardUpdate, language: BoardLanguage, latest?: BoardNote): string[] {
 	const zh = language === "zh";
+	const [first, ...more] = board.confirm;
+	const second =
+		first !== undefined
+			? `  ${zh ? "要你确认" : "Needs you"}: ${first}${more.length > 0 ? ` (+${more.length})` : ""}`
+			: board.blocked
+				? `  ${zh ? "卡在" : "Blocked"}: ${board.blocked}`
+				: undefined;
 	return [
-		`${zh ? "\u03bc 看板" : "\u03bc board"} · ${board.progress}`,
-		`  ${board.now}`,
-		...board.confirm.map((item) => `  ${zh ? "要你确认" : "Needs you"}: ${item}`),
+		`\u03bc ${board.headline || board.now}`,
+		...(second ? [second] : []),
 		...(latest ? [`  · ${latest.text}`] : []),
 	];
 }
 
-/** For `/board`: the state, then the latest lines of the running account (`account`, else the board's own log). */
+/** How a subagent that did not finish well ended, in words. */
+const ENDINGS: Readonly<Record<string, { zh: string; en: string }>> = {
+	failed: { zh: "出错了", en: "failed" },
+	"timed-out": { zh: "超时了", en: "timed out" },
+	stopped: { zh: "被停了", en: "was stopped" },
+};
+
+/**
+ * One subagent on the board, by rule. Stuck: in a tool call with no sign of life for `stallMs`. `sinceMs` counts
+ * from when it entered its state: queued, ended, gone quiet, or started its tool call or its work.
+ */
+export function agentOf(bee: BeeState, now: number, stallMs: number, zh: boolean): BoardAgent {
+	const quiet = now - bee.lastEventAt;
+	const stuck = bee.status === "tool" && stallMs > 0 && quiet >= stallMs;
+	const say = (texts: { zh: string; en: string }) => (zh ? texts.zh : texts.en);
+	let state: BoardAgent["state"];
+	let doing: string;
+	let since: number;
+	if (bee.status === "done") {
+		state = "done";
+		doing = clip(firstLine(reportOf(bee) || bee.said || ""), 80) || say({ zh: "做完了", en: "done" });
+		since = now - (bee.endedAt ?? now);
+	} else if (isOver(bee.status)) {
+		state = "failed";
+		doing = `${say(ENDINGS[bee.status] ?? ENDINGS.failed)}${bee.error ? `: ${clip(bee.error, 60)}` : ""}`;
+		since = now - (bee.endedAt ?? now);
+	} else if (bee.status === "queued") {
+		state = "waiting";
+		doing = say({ zh: "等空位", en: "waiting for a slot" });
+		since = now - bee.queuedAt;
+	} else if (bee.retry) {
+		const { attempt, maxAttempts } = bee.retry;
+		state = "waiting";
+		doing = say({
+			zh: `出错后重试（第 ${attempt}/${maxAttempts} 次）`,
+			en: `retrying after an error (${attempt} of ${maxAttempts})`,
+		});
+		since = now - bee.lastEventAt;
+	} else if (bee.tool) {
+		state = stuck ? "stuck" : "working";
+		doing = beeWhat(bee.tool);
+		since = stuck ? quiet : now - bee.tool.startedAt;
+	} else {
+		state = "working";
+		doing =
+			bee.status === "wrapping-up"
+				? say({ zh: "在写报告", en: "writing its report" })
+				: say({ zh: "在想", en: "thinking" });
+		since = now - (bee.startedAt ?? now);
+	}
+	return {
+		who: bee.name,
+		...(bee.role && bee.role !== bee.name ? { role: bee.role } : {}),
+		state,
+		doing,
+		sinceMs: Math.max(0, since),
+	};
+}
+
+const AGENT_WORDS: Record<BoardAgent["state"], { zh: string; en: string }> = {
+	working: { zh: "在干", en: "working" },
+	waiting: { zh: "在等", en: "waiting" },
+	done: { zh: "回来了", en: "done" },
+	failed: { zh: "出错了", en: "failed" },
+	stuck: { zh: "没动静", en: "stuck" },
+};
+
+/** For `/board`: everything the widget leaves out, then the latest lines of the account (`account`, else the board's own log). */
 export function describeBoard(
 	board: BoardUpdate | undefined,
 	language: BoardLanguage,
@@ -234,7 +438,23 @@ export function describeBoard(
 ): string {
 	if (!board) return language === "zh" ? "看板还没有内容：等代理做一会儿再看。" : "Nothing on the board yet.";
 	const zh = language === "zh";
-	const lines = [`${zh ? "进展" : "Progress"}: ${board.progress}`, `${zh ? "正在做" : "Now"}: ${board.now}`];
+	const lines = [
+		...(board.headline && board.headline !== board.now ? [board.headline] : []),
+		`${zh ? "正在做" : "Now"}: ${board.now}`,
+		...(board.blocked ? [`${zh ? "卡在" : "Blocked"}: ${board.blocked}`] : []),
+		...(board.next ? [`${zh ? "接下来" : "Next"}: ${board.next}`] : []),
+		...(board.progress ? [`${zh ? "进展" : "Progress"}: ${board.progress}`] : []),
+	];
+	if (board.agents?.length) {
+		lines.push(
+			`${zh ? "助手" : "Subagents"}:`,
+			...board.agents.map((agent) => {
+				const state = AGENT_WORDS[agent.state][zh ? "zh" : "en"];
+				const since = agent.sinceMs !== undefined ? `, ${duration(agent.sinceMs)}` : "";
+				return `  - ${agent.who} (${state}${since}): ${agent.doing}`;
+			}),
+		);
+	}
 	if (board.confirm.length > 0) {
 		lines.push(`${zh ? "需要你确认" : "Waiting on you"}:`, ...board.confirm.map((item) => `  - ${item}`));
 	}
@@ -244,33 +464,28 @@ export function describeBoard(
 }
 
 /**
- * The plain-language board: where the work stands, in words a person who is
- * not a programmer can follow. The judge reads the session by multiple
- * choice (the phase, the acceptance item being worked on, whether the user is
- * needed, whether anything changed) every few tool calls and when the agent
- * stops; only when it sees something new does a model that explains well
- * write the board again. The board is for the person only: nothing of it
- * reaches the working model's context.
+ * The plain-language board: where the work stands, told like a teammate's quick spoken update to the person
+ * coordinating it: who is doing what, what is stuck on what, what comes next. The judge reads the session by
+ * multiple choice (the phase, the acceptance item being worked on, whether the user is needed, whether anything
+ * changed) every few tool calls and when the agent stops; only when it sees something new does a model that
+ * speaks well write the board again. The board is for the person only: nothing of it reaches the working
+ * model's context.
  *
- * What the writer is told is picked by the judge too: every step, item
- * ticked and thing the agent said is logged, and at each look the judge sorts
- * what happened since the last board into news and routine. When the run
- * ends, it picks again over the whole run (the news it picked before, and
- * what came after), and the board sums the run up. So the person has two
- * accounts of the same work: the agent's own, in the conversation, and the
- * board's, in plain words.
+ * What the writer is told is picked by the judge too: every step, item ticked and thing the agent said is
+ * logged, and at each look the judge sorts what happened since the last board into news and routine. When the
+ * run ends, it picks again over the whole run (the news it picked before, and what came after), and the board
+ * sums the run up. The writer also sees the board the person sees now, what is in flight and for how long, the
+ * subagents' detail, and why a failed step failed, so it tells what changed instead of rewording the last board.
  *
- * The board also keeps a running account, so the person is never left with
- * "done" and no idea what was done: every step becomes one fixed sentence the
- * moment it ends (a file changed, a check passed or failed, a command run;
- * reading is folded into one growing line), free of any model call, and
- * every time the agent says something the judge is asked at once whether it
- * is news. When it is, the writer retells it for a person, and its telling
- * joins the account. The summing up at the end is the account's last line.
+ * The board also keeps a running account, so the person is never left with "done" and no idea what was done:
+ * every step becomes one fixed sentence the moment it ends, free of any model call; a subagent back or failed
+ * gets a line of its own; and a tool call or a subagent that goes a minute without finishing or a sign of life
+ * gets one line that grows in place (1, 3, 10 minutes), with a look each time, so the board says what is stuck
+ * while it is stuck. Every time the agent says something the judge is asked at once whether it is news. When it
+ * is, the writer retells it for a person, and its telling joins the account.
  *
- * Off by default and switched per project (`/board on`), because every
- * update costs a model call. The first time it is switched on, the person
- * picks the model that writes it (`/board model` changes it later).
+ * Off by default and switched per project (`/board on`), because every update costs a model call. The first
+ * time it is switched on, the person picks the model that writes it (`/board model` changes it later).
  */
 export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefined): void {
 	const options = runtime.options("board", {
@@ -282,7 +497,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		 * <agentDir>/mu/board.json), else the writer model, else the session's.
 		 */
 		model: "",
-		/** zh, en, or auto: the language the user writes in. */
+		/** zh, en, or auto: the writer writes in the language the person writes in, fixed sentences follow the app. */
 		language: "auto",
 		/** Tool calls between two looks while the agent works. */
 		everyTools: 5,
@@ -290,7 +505,19 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		minIntervalMs: 20000,
 		/** Tool calls the judge sees, for what the agent is doing now. */
 		maxSteps: 10,
+		/** The writer's time at the end of a run; mid-run it gets 20 s at most (`LIVE_TIMEOUT_MS`). */
 		narrateTimeoutMs: 60000,
+		/**
+		 * A tool call or a subagent's tool call this long without finishing (a subagent: without a sign of life) is
+		 * said to be stuck, and again at 3 and 10 times this. 0: never.
+		 */
+		stallMs: 60000,
+		/**
+		 * A look whose news was overtaken by more while the judge read leaves the writing to the look after it, unless
+		 * the board the person sees is older than this: then it writes anyway, so a chatty agent cannot keep the
+		 * board from ever being written.
+		 */
+		maxStaleMs: 15000,
 		/**
 		 * Also in one-shot runs (`--print`, json mode). Off: nobody watches a board there, the terminal shows none and
 		 * the summing up is cut off when the process exits, so every look would only cost judge and writer calls.
@@ -305,9 +532,15 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 	if (!options.enabled || process.env.KYRN_SWARM_CONTROL) return;
 	const { pi } = runtime;
 	const projects = new BoardProjects(roots ? join(roots.agentDir, "mu") : undefined);
-	const calls = new Map<string, { name: string; input: Record<string, unknown> }>();
+	/** Tool calls in flight: since when, and when they last streamed output. */
+	const calls = new Map<
+		string,
+		{ name: string; input: Record<string, unknown>; startedAt: number; outputAt?: number }
+	>();
 	let steps: BoardStep[] = [];
 	let latest = "";
+	/** The person's latest messages, newest last: the language the writer writes in is read from them. */
+	let said: string[] = [];
 	/** What happened, numbered: the candidates the judge picks the news from. */
 	let events: LoggedEvent[] = [];
 	let sequence = 0;
@@ -320,6 +553,8 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 	let judged = 0;
 	/** The last event before this run started. */
 	let runStart = 0;
+	/** When the person's run started (a goal's continuations carry it on). */
+	let runStartedAt: number | undefined;
 	/** A check ran or an item was ticked: the next look need not wait for `everyTools` more steps. */
 	let moment = false;
 	/** The chosen model is not usable here: said once per session. */
@@ -327,6 +562,8 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 	let toolsSinceLook = 0;
 	let lastLookAt = 0;
 	let board: BoardUpdate | undefined;
+	/** The last board the writer or the rules wrote and the session keeps; `board` may be a line shown since. */
+	let kept: BoardUpdate | undefined;
 	/** The running account, oldest first. */
 	let notes: BoardNote[] = [];
 	/** The line "looked at N files" that grows while the agent reads file after file; anything else ends it. */
@@ -335,10 +572,27 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 	let following: ReturnType<typeof setInterval> | undefined;
 	/** The sub-agents' states (`swarmState`) at the last look. */
 	let swarmSeen = "";
+	/** Each subagent's status as last seen, so its end is told once: by run and name. */
+	let beesSeen = new Map<string, BeeStatus>();
+	/** Runs seen live, to tell how each subagent ended when the call that sent them returns. */
+	let watched = new Set<{ readonly kind: string; readonly startedAt: number; readonly bees: readonly BeeState[] }>();
+	/** The clock that notices a call or a subagent that has gone quiet, while a run is on. */
+	let clock: ReturnType<typeof setInterval> | undefined;
+	/**
+	 * What is stuck now: its account line, how many of `STALL_STEPS` it has crossed, who and what, and since when
+	 * (the call's start, or a subagent's last sign of life).
+	 */
+	const stalls = new Map<string, { note: BoardNote; level: number; who?: string; what: string; since: number }>();
+	/** Waits on the judge (a permission review) and on the goal check, since when. */
+	const waits = new Map<"judge" | "goal", { what: string; since: number }>();
+	/** Background jobs running, by id. */
+	const jobs = new Map<string, { command: string; since: number }>();
 	/** The person's turn the current run belongs to: a run mu starts itself (a goal continuation, a nudge) carries it on. */
 	let turnSeen = -1;
 	/** A permission the agent is waiting for, shown the moment it is asked. */
-	let pendingAsk: { id: string; summary: string } | undefined;
+	let pendingAsk: { id: string; summary: string; kind: string; toolCallId?: string; at: number } | undefined;
+	/** The headline and phase the board had when a permission was asked, given back once it is answered. */
+	let beforeAsk: Pick<BoardUpdate, "phase" | "headline" | "headlineCode" | "headlineParams"> | undefined;
 	let looking: Promise<void> | undefined;
 	/** A look asked for while another ran: done right after it, once. */
 	let again: boolean | undefined;
@@ -404,17 +658,28 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		if (!ctx?.hasUI || ctx.mode !== "tui") return;
 		ctx.ui.setWidget(WIDGET_KEY, board && on(ctx) ? boardWidget(board, language(), notes.at(-1)) : undefined);
 	};
-	/** A fixed language first, then the app's (MU_LANG), then the language the user writes in. */
+	/**
+	 * The language the writer writes in: a fixed one, else the one the person writes in (their latest messages,
+	 * then the app's language for a message that tells nothing, such as "ok").
+	 */
+	const writing = (): AppLanguage => {
+		if (options.language === "zh") return { code: "zh-CN", wording: "zh", name: "Simplified Chinese" };
+		if (options.language === "en") return { code: "en", wording: "en", name: "English" };
+		const latestFirst = [...said].reverse();
+		const now = runtime.turn.userMessage;
+		return writingLanguage(now && latestFirst[0] !== now ? [now, ...latestFirst] : latestFirst);
+	};
+	/**
+	 * The language of the fixed sentences: a fixed one, then the app's (MU_LANG), then the one the person writes in.
+	 * A client words them from their codes in its own language anyway.
+	 */
 	const language = (): BoardLanguage => {
 		if (options.language === "zh" || options.language === "en") return options.language;
-		return appLanguage()?.wording ?? languageOf(`${runtime.frame?.goal ?? ""} ${runtime.turn.userMessage}`);
+		return appLanguage()?.wording ?? writing().wording;
 	};
-	/** What the writer is told to write in: the app's own language when it has one mu has no wording for. */
-	const writeIn = (): string | undefined =>
-		options.language === "zh" || options.language === "en" ? undefined : appLanguage()?.name;
 
 	/** The plain-speaking model. A chosen one that cannot be used here (signed out, say) is said once, then stood in for. */
-	const writerModel = (ctx: ExtensionContext): LlmCompletion | undefined => {
+	const writerModel = (ctx: ExtensionContext, ended: boolean): LlmCompletion | undefined => {
 		const picked = chosen();
 		if (picked && picked !== SESSION_MODEL && !usable(ctx, picked) && !toldUnusable) {
 			toldUnusable = true;
@@ -430,7 +695,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 			}
 		}
 		const ref = writerRef(ctx);
-		return ref ? runtime.llm(ref, { thinking: "off" }) : undefined;
+		return ref ? runtime.llm(ref, { thinking: "off", ...(ended ? {} : { maxTokens: LIVE_MAX_TOKENS }) }) : undefined;
 	};
 	const words = (texts: { readonly zh: string; readonly en: string }) => (language() === "zh" ? texts.zh : texts.en);
 	/** Who writes the board, in words: a model, or the conversation's own. */
@@ -504,6 +769,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 			text: `${name} ${step.what} -> ${step.failed ? "error" : "ok"}`,
 			...(step.failed ? { failed: true } : {}),
 			...(step.check ? { check: true } : {}),
+			...(step.detail ? { detail: step.detail } : {}),
 		});
 		if (step.check) moment = true;
 	};
@@ -517,8 +783,8 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		runtime.present("board.note", note);
 		showWidget(runtime.ctx);
 	};
-	/** A fixed sentence on the account, when the board is on here. */
-	const tell = (kind: NoteKind, code: NoteCode, params: NoteParams, failed = false) => {
+	/** A fixed sentence on the account, when the board is on here; `who` names the subagent it is about. */
+	const tell = (kind: NoteKind, code: NoteCode, params: NoteParams, failed = false, who?: string) => {
 		reading = undefined;
 		const ctx = runtime.ctx;
 		if (!ctx || !on(ctx)) return;
@@ -531,6 +797,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 			code,
 			...(Object.keys(params).length > 0 ? { params } : {}),
 			...(failed ? { failed: true } : {}),
+			...(who ? { who } : {}),
 		});
 	};
 	/** The writer's own words on the account. */
@@ -555,8 +822,8 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		};
 		noteNow(reading);
 	};
-	/** The account's line for a step, the moment it ended. */
-	const account = (name: string, input: Record<string, unknown>, step: BoardStep) => {
+	/** The account's line for a step, the moment it ended. `failed` counts the subagents that did not finish well. */
+	const account = (name: string, input: Record<string, unknown>, step: BoardStep, failed = 0) => {
 		if (!step.failed && ROUTINE_TOOLS.has(name)) {
 			looked();
 			return;
@@ -570,7 +837,12 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 			return;
 		}
 		if (SWARM_TOOLS.has(name)) {
-			tell("helpers", "helpers_back", { count: swarmParts(name, input)?.count ?? 0 }, step.failed);
+			tell(
+				"helpers",
+				"helpers_back",
+				{ count: swarmParts(name, input)?.count ?? 0, failed },
+				step.failed || failed > 0,
+			);
 			return;
 		}
 		if (isShellTool(name)) {
@@ -606,6 +878,180 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		return [...earlier, ...fresh];
 	};
 
+	/**
+	 * A subagent that has ended since it was last seen becomes an event and a line of the account: back, with the
+	 * first line of its report, or failed, timed out or stopped. True when one did.
+	 */
+	const followBees = (
+		run: { readonly kind: string; readonly startedAt: number; readonly bees: readonly BeeState[] },
+		reports?: readonly unknown[],
+	): boolean => {
+		let ended = false;
+		run.bees.forEach((bee, index) => {
+			const key = `${run.kind}:${run.startedAt}:${bee.name}`;
+			const before = beesSeen.get(key);
+			beesSeen.set(key, bee.status);
+			if (!isOver(bee.status) || (before !== undefined && isOver(before))) return;
+			ended = true;
+			if (bee.status === "done") {
+				const report = clip(firstLine(reportOf(bee) || bee.said || String(reports?.[index] ?? "")), 200);
+				log({ kind: "step", text: `${bee.name} came back${report ? `, reporting: ${report}` : ""}` });
+				tell("helpers", "helper_done", { name: bee.name, summary: clip(report, 120) }, false, bee.name);
+				return;
+			}
+			const reason = bee.status === "timed-out" ? "timed_out" : bee.status === "stopped" ? "stopped" : "failed";
+			const why = bee.error ? clip(bee.error, 160) : "";
+			const how = reason === "timed_out" ? "timed out" : reason === "stopped" ? "was stopped" : "failed";
+			log({ kind: "step", text: `${bee.name} ${how}${why ? `: ${why}` : ""}`, failed: true });
+			tell("helpers", "helper_failed", { name: bee.name, reason, ...(why ? { detail: why } : {}) }, true, bee.name);
+		});
+		if (ended) moment = true;
+		return ended;
+	};
+
+	/** Each subagent at work, by rule: where it stands, what it is doing (the writer's words for an exact name). */
+	const liveAgents = (doing: Readonly<Record<string, string>> = {}): BoardAgent[] => {
+		const now = Date.now();
+		const zh = language() === "zh";
+		return activeRuns().flatMap((run) =>
+			run.bees.map((bee) => {
+				const agent = agentOf(bee, now, options.stallMs, zh);
+				return doing[bee.name] ? { ...agent, doing: doing[bee.name] } : agent;
+			}),
+		);
+	};
+
+	/** What a call in flight works on: the command, or the tool and what it works on. */
+	const callWhat = (name: string, input: Record<string, unknown>) =>
+		clip(isShellTool(name) ? String(input.command ?? "") : `${name} ${describeCall(name, input)}`, 80);
+	/** What is under way and for how long, for the judge and the writer. */
+	const inFlight = (now: number): string[] => {
+		const lines: string[] = [];
+		for (const [id, call] of calls) {
+			// Subagents have a section of their own; a call waiting for permission is the person's to answer.
+			if (SWARM_TOOLS.has(call.name) || pendingAsk?.toolCallId === id) continue;
+			const output =
+				call.outputAt !== undefined
+					? ` (last output ${duration(now - call.outputAt)} ago)`
+					: isShellTool(call.name)
+						? " (no output yet)"
+						: "";
+			lines.push(
+				`main agent: ${call.name} \`${callWhat(call.name, call.input)}\` running for ${duration(now - call.startedAt)}${output}`,
+			);
+		}
+		for (const job of jobs.values())
+			lines.push(`background job \`${job.command}\`: running ${duration(now - job.since)}`);
+		const judge = waits.get("judge");
+		if (judge) lines.push(`waiting on the judge: ${judge.what} (${duration(now - judge.since)})`);
+		const goal = waits.get("goal");
+		if (goal) lines.push(`${goal.what} (${duration(now - goal.since)})`);
+		return lines;
+	};
+	/** The stall that has gone longest, among those that crossed a step, with its minutes as of now. */
+	const longestStall = (): BoardStall | undefined => {
+		const oldest = [...stalls.values()].sort((a, b) => a.since - b.since)[0];
+		if (!oldest) return undefined;
+		const minutes = Math.max(1, Math.round((Date.now() - oldest.since) / 60_000));
+		return { ...(oldest.who ? { who: oldest.who } : {}), what: oldest.what, minutes };
+	};
+
+	/** A stall that crossed its next step: the account line grows in place, the judge hears of it. True when one did. */
+	const crossed = (key: string, elapsed: number, now: number, what: string, who?: string): boolean => {
+		const level = STALL_STEPS.filter((step) => elapsed >= step * options.stallMs).length;
+		const known = stalls.get(key);
+		if (level <= (known?.level ?? 0)) return false;
+		const minutes = Math.max(1, Math.round(elapsed / 60_000));
+		const params = { ...(who ? { who } : {}), what, minutes };
+		const note: BoardNote = {
+			sequence: known?.note.sequence ?? ++sequence,
+			at: known?.note.at ?? now,
+			kind: "step",
+			text: noteText("still_running", params, language()),
+			by: "rules",
+			code: "still_running",
+			params,
+			...(who ? { who } : {}),
+		};
+		stalls.set(key, { note, level, ...(who ? { who } : {}), what, since: now - elapsed });
+		reading = undefined;
+		noteNow(note);
+		log({
+			kind: "step",
+			text: who
+				? `${who}: \`${what}\` has run ${minutes} min with no new output`
+				: `\`${what}\` is still running, ${minutes} min in`,
+		});
+		return true;
+	};
+	/**
+	 * The stall clock's tick: a tool call of the main agent running past a step of `stallMs`, or a subagent's tool
+	 * call with no sign of life for as long. One line each, grown in place, and one look per step crossed.
+	 */
+	const checkStalls = () => {
+		const ctx = runtime.ctx;
+		if (!ctx || !on(ctx)) return;
+		const now = Date.now();
+		const live = new Set<string>();
+		let any = false;
+		for (const [id, call] of calls) {
+			if (SWARM_TOOLS.has(call.name) || pendingAsk?.toolCallId === id) continue;
+			live.add(`main:${id}`);
+			any = crossed(`main:${id}`, now - call.startedAt, now, callWhat(call.name, call.input)) || any;
+		}
+		for (const run of activeRuns()) {
+			for (const bee of run.bees) {
+				if (bee.status !== "tool" || !bee.tool) continue;
+				const key = `bee:${run.kind}:${run.startedAt}:${bee.name}:${bee.tool.startedAt}`;
+				live.add(key);
+				any = crossed(key, now - bee.lastEventAt, now, beeWhat(bee.tool), bee.name) || any;
+			}
+		}
+		for (const key of [...stalls.keys()]) if (!live.has(key)) stalls.delete(key);
+		if (!any) return;
+		moment = true;
+		schedule(ctx, false);
+	};
+	const startClock = () => {
+		if (clock || options.stallMs <= 0) return;
+		clock = setInterval(checkStalls, Math.max(1000, Math.min(15_000, Math.floor(options.stallMs / 4))));
+		clock.unref?.();
+	};
+	const stopClock = () => {
+		if (clock) clearInterval(clock);
+		clock = undefined;
+		stalls.clear();
+	};
+
+	/** The line a permission the agent waits for puts on the board. */
+	const askLine = (ask: { kind: string; summary: string }) => {
+		const kind = PERMISSION_KINDS[ask.kind] ?? PERMISSION_KINDS.other;
+		return words({
+			zh: `mu 想${kind.zh}：${ask.summary}。在等你允许。`,
+			en: `mu wants to ${kind.en}: ${ask.summary}. It's waiting for your permission.`,
+		});
+	};
+	const askHeadline = (ask: { summary: string }): Pick<BoardText, "headline" | "headlineCode" | "headlineParams"> => {
+		const params = { what: clip(ask.summary, 120) };
+		return {
+			headline: rulesHeadline("waiting_permission", params, language()),
+			headlineCode: "waiting_permission",
+			headlineParams: params,
+		};
+	};
+	/** A board as it goes out: the subagents at work, by rule, and when it was made. */
+	const finish = (update: BoardUpdate, doing?: Readonly<Record<string, string>>): BoardUpdate => {
+		const { agents: _old, ...rest } = update;
+		const agents = liveAgents(doing);
+		return { ...rest, ...(agents.length > 0 ? { agents } : {}), updatedAt: Date.now() };
+	};
+	/** Shows a board without keeping it in the session: a line that cannot wait for a look, or a look's first word. */
+	const sayNow = (update: BoardUpdate) => {
+		board = finish(update);
+		runtime.present("board.update", board);
+		showWidget(runtime.ctx);
+	};
+
 	const look = async (ctx: ExtensionContext, ended: boolean): Promise<void> => {
 		const at = epoch;
 		const gone = retired.signal;
@@ -615,7 +1061,14 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		const weighed = candidates(ended);
 		const frame = runtime.frame;
 		const items = (frame?.acceptance ?? []).map((item) => ({ id: item.id, text: item.text, done: item.done }));
-		const swarm = describeSwarms(activeRuns().map((run) => run.snapshot()));
+		const runs = activeRuns();
+		const started = Date.now();
+		const swarm = describeSwarms(
+			runs.map((run) => run.snapshot()),
+			started,
+		);
+		const flying = ended ? [] : inFlight(started);
+		const stall = ended ? undefined : longestStall();
 		const input: BoardInput = {
 			goal: frame?.goal ?? runtime.turn.userMessage,
 			items,
@@ -625,79 +1078,170 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 			events: weighed,
 			last: board ? { phase: board.phase, focus: board.focus, now: board.now } : undefined,
 			...(swarm ? { swarm } : {}),
+			...(flying.length > 0 ? { inFlight: flying } : {}),
+			...(stall ? { stalled: true } : {}),
 		};
 		const decision = await runtime.engine.decide(boardRead, input);
 		const read = decision.outcome;
 		if (at !== epoch) return;
 		toolsSinceLook = 0;
 		lastLookAt = Date.now();
-		// More happened while the judge read: the look queued behind this one covers all of it, this one would
-		// only cost a writer call for a board that is already out of date.
-		if (!ended && again !== undefined) return;
+		// More happened while the judge read: the look queued behind this one covers all of it, and this one would
+		// only cost a writer call for a board that is already out of date. Unless the board the person sees is old:
+		// an agent that says something every few seconds would otherwise keep the board from being written at all.
+		const fresh = board?.updatedAt !== undefined && lastLookAt - board.updatedAt < options.maxStaleMs;
+		if (!ended && again !== undefined && fresh) return;
 		if (!ended && decision.source === "judge") judged = Math.max(judged, upTo);
 		if (!read.update) return;
 
+		const asking = pendingAsk;
+		const phase: BoardPhase = asking && !ended ? "waiting" : read.phase;
 		const focusItem = read.focus ? items.find((item) => item.id === read.focus) : undefined;
 		const news = read.key.flatMap((index) => (weighed[index] ? [weighed[index]] : []));
+		const helpers = runs.flatMap((run) => run.bees.map((bee) => bee.name));
+		const now = Date.now();
 		const facts: BoardFacts = {
 			language: language(),
 			goal: input.goal,
+			...(frame?.currentSubgoal ? { subgoal: frame.currentSubgoal } : {}),
 			items,
-			phase: read.phase,
+			phase,
 			focus: focusItem?.text,
-			needsUser: read.needsUser,
+			needsUser: read.needsUser || asking !== undefined,
+			...(asking
+				? {
+						asking: {
+							kind: (PERMISSION_KINDS[asking.kind] ?? PERMISSION_KINDS.other).en,
+							summary: asking.summary,
+							sinceMs: now - asking.at,
+						},
+					}
+				: {}),
 			// With the news picked, the last few steps are enough to say what it is doing now.
-			steps: (weighed.length > 0 ? input.steps.slice(-4) : input.steps).map(
-				(step) => `${step.tool} ${step.what} -> ${step.failed ? "error" : "ok"}`,
-			),
+			steps: (weighed.length > 0 ? input.steps.slice(-4) : input.steps).map(stepLine),
 			latest: clip(latest, 1200),
 			...(weighed.length > 0 ? { keyEvents: news.map(describeEvent) } : {}),
 			ended,
-			...(swarm ? { swarm } : {}),
+			...(swarm ? { swarm: swarm.slice(0, 2400), helpers } : {}),
+			helpersWorking: runs.reduce((sum, run) => sum + run.bees.filter((bee) => !isOver(bee.status)).length, 0),
 			...(notes.length > 0 ? { account: notes.slice(-ACCOUNT_LINES).map((note) => note.text) } : {}),
+			...(board ? { previous: { headline: board.headline, now: board.now, blocked: board.blocked } } : {}),
+			...(runStartedAt !== undefined ? { runMs: now - runStartedAt } : {}),
+			...(board?.updatedAt !== undefined ? { sinceUpdateMs: now - board.updatedAt } : {}),
+			...(flying.length > 0 ? { inFlight: flying } : {}),
+			...(stall ? { stall } : {}),
+			...(frame?.openQuestions.length ? { openQuestions: frame.openQuestions } : {}),
 		};
-		let text: BoardText | undefined;
-		const complete = writerModel(ctx);
+		const rules = plainBoard(facts);
+		const meta = {
+			phase,
+			focus: read.focus ?? undefined,
+			...(focusItem ? { focusText: focusItem.text } : {}),
+			needsUser: facts.needsUser,
+			done: items.filter((item) => item.done).length,
+			total: items.length,
+			ended,
+		};
+		const complete = writerModel(ctx, ended);
+		// The rules' headline goes out at once when the stage changed or something is stuck, and the writer's
+		// replaces it: the person hears "running npm test, 3 min in" now, not in the 3 to 15 s the writer takes.
+		if (complete && rules.headline !== board?.headline && (!board || board.phase !== phase || stall || asking)) {
+			const headline = {
+				headline: rules.headline,
+				headlineCode: rules.headlineCode,
+				headlineParams: rules.headlineParams,
+			};
+			sayNow(
+				board && !board.ended
+					? { ...board, ...headline, ...meta, focusText: meta.focusText }
+					: { ...rules, ...meta, by: "rules", ...(notes.length > 0 ? { log: notes.slice(-LOG_LINES) } : {}) },
+			);
+		}
+		const tongue = writing();
+		let text: WriterReply | undefined;
 		if (complete) {
 			try {
 				const reply = await complete({
-					system: narratorSystem(facts.language, writeIn()),
+					system: narratorSystem(tongue.wording, tongue.name),
 					// The writer tells what the agent did, never the key it did it with.
 					user: redactSecrets(narratorRequest(facts), environmentSecrets()),
-					signal: AbortSignal.any([AbortSignal.timeout(options.narrateTimeoutMs), gone]),
+					signal: AbortSignal.any([
+						AbortSignal.timeout(
+							ended ? options.narrateTimeoutMs : Math.min(options.narrateTimeoutMs, LIVE_TIMEOUT_MS),
+						),
+						gone,
+					]),
 				});
-				text = parseBoardText(reply.text);
+				text = parseBoardText(reply.text, helpers);
 			} catch {
 				text = undefined;
 			}
 		}
 		if (at !== epoch) return;
+		const askNow = pendingAsk;
+		// The same headline with nothing new is no update: the person would only see the board flicker.
+		if (
+			text &&
+			!ended &&
+			!askNow &&
+			news.length === 0 &&
+			!text.note &&
+			board === kept &&
+			text.headline === kept?.headline
+		) {
+			reported = Math.max(reported, upTo);
+			return;
+		}
 		// The account: the writer's telling of the news, or, when it did not answer, the agent's own last
 		// words as a quote; a run that ended gets its last line either way.
 		const lastKind = news.at(-1)?.kind;
 		const kind: NoteKind = ended ? "ended" : lastKind === "ticked" ? "ticked" : lastKind === "said" ? "said" : "step";
-		const said = [...news].reverse().find((event) => event.kind === "said");
+		const quote = [...news].reverse().find((event) => event.kind === "said");
 		if (text?.note) tellModel(kind, text.note);
 		else if (ended) tell("ended", read.needsUser ? "waiting_reply" : "ended", {});
-		else if (complete && said) tell("said", "said_quote", { text: clip(said.text, 160) });
+		else if (complete && quote) tell("said", "said_quote", { text: clip(quote.text, 160) });
+		const { doing, ...told } = text ?? { ...rules, doing: undefined };
+		// Rules say what is stuck when the writer did not: it may have written before the stall crossed a step.
+		const stuck = stall ?? (ended ? undefined : longestStall());
+		const blocked =
+			text && !text.blocked && stuck
+				? {
+						blocked: noteText(
+							"still_running",
+							{ ...(stuck.who ? { who: stuck.who } : {}), what: stuck.what, minutes: stuck.minutes },
+							language(),
+						),
+						blockedCode: "still_running",
+						blockedParams: { ...(stuck.who ? { who: stuck.who } : {}), what: stuck.what, minutes: stuck.minutes },
+					}
+				: {};
+		// A permission asked while the writer wrote stays on the board until it is answered: the writer's board
+		// would otherwise take "Needs you" off while the picker is still open.
+		const ask =
+			askNow && !ended
+				? {
+						confirm: [askLine(askNow)],
+						confirmCodes: [null],
+						needsUser: true,
+						phase: "waiting" as const,
+						...(askNow !== asking || !text ? askHeadline(askNow) : {}),
+					}
+				: {};
 		const update: BoardUpdate = {
-			...(text ?? plainBoard(facts)),
-			phase: read.phase,
-			focus: read.focus ?? undefined,
-			...(focusItem ? { focusText: focusItem.text } : {}),
-			needsUser: read.needsUser,
-			done: items.filter((item) => item.done).length,
-			total: items.length,
+			...told,
+			...blocked,
+			...meta,
 			by: text ? "model" : "rules",
-			ended,
 			...(news.length > 0 ? { news: news.map(describeEvent) } : {}),
 			...(notes.length > 0 ? { log: notes.slice(-LOG_LINES) } : {}),
+			...ask,
 		};
 		for (const event of news) event.key = true;
 		reported = Math.max(reported, upTo);
-		board = update;
-		pi.appendEntry<BoardUpdate>(BOARD_ENTRY, update);
-		runtime.present("board.update", update);
+		board = finish(update, doing);
+		kept = board;
+		pi.appendEntry<BoardUpdate>(BOARD_ENTRY, board);
+		runtime.present("board.update", board);
 		showWidget(runtime.ctx ?? ctx);
 	};
 
@@ -722,23 +1266,28 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		following = undefined;
 	};
 	/**
-	 * While sub-agents work, a look every interval at what they are doing, until they are back: only when one of
-	 * them started, finished or failed since the last look. What a bee is doing at the moment (its tool line)
-	 * changes all the time and is no news: in a 45-minute run, 65 of 77 looks came from this clock with nothing
-	 * new, and each cost a writer call.
+	 * While sub-agents work, a tick a second: a subagent that came back or failed is told at once, with a look.
+	 * Otherwise a look only when one of them started or finished since the last look, and not more often than
+	 * `minIntervalMs`. What a bee is doing at the moment (its tool line) changes all the time and is no news: in a
+	 * 45-minute run, 65 of 77 looks came from this clock with nothing new, and each cost a writer call.
 	 */
 	const follow = (ctx: ExtensionContext) => {
 		if (following) return;
-		following = setInterval(
-			() => {
-				if (activeRuns().length === 0) {
-					unfollow();
-					return;
-				}
-				if (on(ctx) && (options.followAlways || swarmState() !== swarmSeen)) schedule(ctx, false);
-			},
-			Math.max(options.minIntervalMs, 1000),
-		);
+		following = setInterval(() => {
+			const runs = activeRuns();
+			if (runs.length === 0) {
+				unfollow();
+				return;
+			}
+			let ended = false;
+			for (const run of runs) {
+				watched.add(run);
+				ended = followBees(run) || ended;
+			}
+			if (!on(ctx)) return;
+			const due = Date.now() - lastLookAt >= options.minIntervalMs;
+			if (ended || (due && (options.followAlways || swarmState() !== swarmSeen))) schedule(ctx, false);
+		}, 1000);
 		following.unref?.();
 	};
 
@@ -767,25 +1316,37 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 			...(notes.length > 0 ? { log: notes.slice(-LOG_LINES) } : {}),
 		};
 	};
-	/** Says something on the board now, without a look: what the person has to act on cannot wait for the next one. */
-	const sayNow = (update: BoardUpdate) => {
-		board = update;
-		runtime.present("board.update", update);
-		showWidget(runtime.ctx);
-	};
 
-	// A permission the agent waits for is the one thing the person must act on: it is on the board the moment it is asked.
+	// A permission the agent waits for is the one thing the person must act on: it is on the board the moment it is
+	// asked, as what the agent waits on, and stays there until it is answered.
 	runtime.observe("permissions.request", (payload) => {
 		const ctx = runtime.ctx;
-		const ask = payload as { id?: unknown; kind?: unknown; summary?: unknown };
+		const ask = payload as { id?: unknown; kind?: unknown; summary?: unknown; toolCallId?: unknown };
 		if (!ctx || !on(ctx) || typeof ask.id !== "string" || typeof ask.summary !== "string") return;
-		pendingAsk = { id: ask.id, summary: ask.summary };
-		const kind = PERMISSION_KINDS[String(ask.kind)] ?? PERMISSION_KINDS.other;
-		const line = words({
-			zh: `mu 想${kind.zh}：${ask.summary}。在等你允许。`,
-			en: `mu wants to ${kind.en}: ${ask.summary}. It's waiting for your permission.`,
+		waits.delete("judge");
+		pendingAsk = {
+			id: ask.id,
+			summary: ask.summary,
+			kind: String(ask.kind),
+			...(typeof ask.toolCallId === "string" ? { toolCallId: ask.toolCallId } : {}),
+			at: Date.now(),
+		};
+		const shown = board ?? emptyBoard();
+		beforeAsk = {
+			phase: shown.phase,
+			headline: shown.headline,
+			headlineCode: shown.headlineCode,
+			headlineParams: shown.headlineParams,
+		};
+		sayNow({
+			...shown,
+			...askHeadline(pendingAsk),
+			confirm: [askLine(pendingAsk)],
+			confirmCodes: [null],
+			needsUser: true,
+			phase: "waiting",
+			ended: false,
 		});
-		sayNow({ ...(board ?? emptyBoard()), confirm: [line], confirmCodes: [null], needsUser: true, ended: false });
 	});
 	runtime.observe("permissions.resolved", (payload) => {
 		const answer = payload as { id?: unknown; answer?: unknown };
@@ -799,11 +1360,41 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 			...(denied ? { failed: true } : {}),
 		});
 		tell("asked", denied ? "permission_denied" : "permission_allowed", { summary: clip(summary, 120) }, denied);
-		if (board?.needsUser) sayNow({ ...board, confirm: [], confirmCodes: [], needsUser: false });
+		if (board?.needsUser) {
+			// The headline and the stage go back to what they were before the ask, unless a look has said more since.
+			const restore = board.headlineCode === "waiting_permission" ? beforeAsk : undefined;
+			sayNow({ ...board, ...(restore ?? {}), confirm: [], confirmCodes: [], needsUser: false });
+		}
+		beforeAsk = undefined;
 	});
+	// The judge reviewing a permission, and the goal check: waits the writer can name.
+	runtime.observe("progress", (payload) => {
+		const { code, params } = payload as { code?: unknown; params?: { summary?: unknown } };
+		if (code === "permission_review") {
+			waits.set("judge", {
+				what: `reviewing whether to allow ${clip(String(params?.summary ?? ""), 80)}`,
+				since: Date.now(),
+			});
+		} else if (code === "goal_check") {
+			waits.set("goal", { what: "the goal check is reading whether the goal is met", since: Date.now() });
+		}
+	});
+	runtime.observe("permissions.approved", () => waits.delete("judge"));
+	runtime.observe("background.start", (payload) => {
+		const job = payload as { id?: unknown; command?: unknown };
+		if (typeof job.id === "string")
+			jobs.set(job.id, { command: clip(String(job.command ?? ""), 80), since: Date.now() });
+	});
+	for (const kind of ["background.exit", "background.stop"] as const) {
+		runtime.observe(kind, (payload) => {
+			const job = payload as { id?: unknown };
+			if (typeof job.id === "string") jobs.delete(job.id);
+		});
+	}
 
 	// Goal mode: a run mu sends back to work has not ended for the person; what the check said is news.
 	runtime.observe("goal.state", (payload) => {
+		waits.delete("goal");
 		const state = payload as {
 			status?: unknown;
 			text?: unknown;
@@ -855,20 +1446,34 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 			runtime.touch(ctx);
 			retire();
 			unfollow();
+			stopClock();
 			pendingAsk = undefined;
+			beforeAsk = undefined;
 			board = undefined;
+			said = [];
 			for (const entry of ctx.sessionManager.getBranch()) {
 				if (entry.type === "custom" && entry.customType === BOARD_ENTRY)
 					board = parseBoardEntry(entry.data) ?? board;
+				if (entry.type === "message" && entry.message.role === "user") {
+					const typed = userWords(textOf(entry.message.content)).trim();
+					if (typed) said = [...said.slice(-2), typed];
+				}
 			}
+			kept = board;
+			calls.clear();
+			waits.clear();
+			jobs.clear();
 			steps = [];
 			latest = "";
 			events = [];
 			notes = board?.log ? [...board.log] : [];
 			reading = undefined;
+			beesSeen = new Map();
+			watched = new Set();
 			reported = sequence;
 			judged = sequence;
 			runStart = sequence;
+			runStartedAt = undefined;
 			moment = false;
 			toldUnusable = false;
 			toolsSinceLook = 0;
@@ -885,6 +1490,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		failOpen(() => {
 			retire();
 			unfollow();
+			stopClock();
 			return undefined;
 		}),
 	);
@@ -896,7 +1502,7 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 				string,
 				unknown
 			>;
-			calls.set(event.toolCallId, { name: event.toolName, input });
+			calls.set(event.toolCallId, { name: event.toolName, input, startedAt: Date.now() });
 			if (SWARM_TOOLS.has(event.toolName)) {
 				log({ kind: "step", text: `sent out ${describeSwarmCall(event.toolName, input) ?? "subagents"}` });
 				const parts = swarmParts(event.toolName, input);
@@ -909,24 +1515,54 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 	);
 
 	pi.on(
+		"tool_execution_update",
+		failOpen<ToolExecutionUpdateEvent, undefined>((event, ctx) => {
+			const call = calls.get(event.toolCallId);
+			if (call) call.outputAt = Date.now();
+			if (!SWARM_TOOLS.has(event.toolName)) return undefined;
+			// The swarm tools stream a snapshot of their subagents: one that came back or failed is told at once.
+			const snapshot = (event.partialResult as { details?: { snapshot?: SwarmSnapshot } } | undefined)?.details
+				?.snapshot;
+			if (snapshot?.bees && followBees(snapshot) && announce(ctx)) schedule(ctx, false);
+			return undefined;
+		}),
+	);
+
+	pi.on(
 		"tool_execution_end",
 		failOpen<ToolExecutionEndEvent, undefined>((event, ctx) => {
 			runtime.touch(ctx);
 			const call = calls.get(event.toolCallId);
 			calls.delete(event.toolCallId);
+			stalls.delete(`main:${event.toolCallId}`);
+			waits.delete("judge");
 			const name = call?.name ?? event.toolName;
 			const input = call?.input ?? {};
-			if (SWARM_TOOLS.has(name)) unfollow();
+			let failedBees = 0;
+			if (SWARM_TOOLS.has(name)) {
+				unfollow();
+				// How each subagent ended, before the line that says they are back: from the call's own last snapshot,
+				// else from the runs seen while they worked.
+				const details = (
+					event.result as { details?: { snapshot?: SwarmSnapshot; reports?: unknown[] } } | undefined
+				)?.details;
+				const runs = details?.snapshot?.bees ? [details.snapshot] : [...watched];
+				for (const run of runs) followBees(run, details?.reports);
+				failedBees = runs.reduce((sum, run) => sum + run.bees.filter((bee) => bee.status !== "done").length, 0);
+				watched = new Set();
+			}
 			const command = isShellTool(name) ? String(input.command ?? "") : "";
+			const detail = event.isError ? failureExcerpt(event.result) : undefined;
 			const step: BoardStep = {
 				tool: name,
 				what: clip(describeSwarmCall(name, input) ?? describeCall(name, input), 160),
 				failed: event.isError,
 				check: command !== "" && isCheckCommand(command),
+				...(detail ? { detail } : {}),
 			};
 			steps = [...steps.slice(-(options.maxSteps * 2)), step];
 			record(name, input, step);
-			account(name, input, step);
+			account(name, input, step, failedBees);
 			toolsSinceLook++;
 			if (!announce(ctx)) return undefined;
 			// A moment (a check, an item ticked, helpers sent or back) is looked at right away; plain steps every
@@ -942,11 +1578,11 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		"message_end",
 		failOpen<MessageEndEvent, undefined>((event, ctx) => {
 			if (event.message.role !== "assistant") return undefined;
-			const said = textOf((event.message as { content?: unknown }).content).trim();
-			if (!said) return undefined;
-			latest = said;
+			const text = textOf((event.message as { content?: unknown }).content).trim();
+			if (!text) return undefined;
+			latest = text;
 			reading = undefined;
-			log({ kind: "said", text: clip(said.replace(/\s+/g, " "), 300) });
+			log({ kind: "said", text: clip(text.replace(/\s+/g, " "), 300) });
 			// What the agent says is the jargon the board exists to retell: the judge is asked at once whether it
 			// is news, and the writer speaks only when it is. A message that ends the run is covered by the look
 			// the end brings a moment later.
@@ -962,7 +1598,12 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 			if (runtime.userTurns !== turnSeen) {
 				turnSeen = runtime.userTurns;
 				runStart = sequence;
+				runStartedAt = Date.now();
+				const typed = runtime.turn.userMessage.trim();
+				if (typed) said = [...said.slice(-2), typed];
 			}
+			waits.delete("goal");
+			startClock();
 			return undefined;
 		}),
 	);
@@ -972,6 +1613,8 @@ export function registerBoard(runtime: KyrnRuntime, roots: HarnessRoots | undefi
 		failOpen<AgentEndEvent, undefined>((_event, ctx) => {
 			runtime.touch(ctx);
 			reading = undefined;
+			stopClock();
+			waits.delete("judge");
 			// With a goal still running, the goal check has just sent the agent back: nothing has ended for the person.
 			if (announce(ctx)) schedule(ctx, !runtime.goalActive);
 			return undefined;
