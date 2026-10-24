@@ -61,6 +61,7 @@ describe('kernel summary', () => {
 
   it('names mude, named services and model judges by what a person would call them', () => {
     expect(describeTier('mude', NO_KEYS)).toEqual({ judge: 'mude 1.0', via: 'local', free: false });
+    expect(describeTier('openai', NO_KEYS)).toEqual({ judge: 'OpenAI', via: '', free: false });
     expect(describeTier('jev-direct', NO_KEYS)).toMatchObject({ judge: 'Jev', via: 'TypeSafe' });
     expect(describeTier('classifier:openrouter/acme/judge-1', NO_KEYS)).toMatchObject({ judge: 'acme/judge-1' });
     expect(describeTier('llm:anthropic/claude-haiku-5-5', NO_KEYS)).toMatchObject({ judge: 'claude-haiku-5-5' });
