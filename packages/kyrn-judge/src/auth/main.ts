@@ -3,7 +3,12 @@ import { join } from "node:path";
 import { createInterface } from "node:readline";
 import type { Provider } from "@earendil-works/pi-ai";
 // pi itself: its sources in a checkout (run with Node's own type stripping), its own bundle's index in the npm package (kyrn/npm/build.mjs).
-import { defaultModelPerProvider, ModelRuntime, SettingsManager } from "@earendil-works/pi-coding-agent";
+import {
+	defaultModelPerProvider,
+	FileModelsStore,
+	ModelRuntime,
+	SettingsManager,
+} from "@earendil-works/pi-coding-agent";
 import { featureOptions, loadConfig } from "../config.ts";
 import { antigravityProvider, geminiCliProvider } from "../google-login/providers.ts";
 import { muEnv, muHome } from "../naming.ts";
@@ -45,16 +50,18 @@ function googleProviders(): Provider[] {
 }
 
 async function main(): Promise<number> {
+	const modelsStore = new FileModelsStore(modelsStorePath);
 	const runtime = await ModelRuntime.create({
 		authPath,
 		modelsPath: join(agentDir, "models.json"),
-		modelsStorePath,
+		modelsStore,
 		refreshOnCreate: false,
 	});
 	return runAuth(process.argv.slice(2), {
 		runtime,
 		preferred: defaultModelPerProvider,
 		extra: googleProviders(),
+		forgetModels: (providerId) => modelsStore.delete(providerId),
 		login: {
 			agentName: "mu",
 			// The id pi keeps in settings.json for this installation: the same one a /login in the terminal sends.

@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- A session in RPC mode (each conversation of the desktop app) now checks `get_available_models` and `set_model` against the credential store, so a sign-in or sign-out made by another process counts at once: `mu auth logout`, or `/logout` in another terminal. Before, a signed-out subscription's models stayed listed until the session restarted.
+- `/logout` moves the session off the signed-out provider's model, to the default model (else a provider's default, else the first model available), and says so: "Logged out of ChatGPT. Switched to openai/gpt-5.5." Before, the next prompt failed with "No API key". With no model left, it says to use `/login`.
+- `mu auth logout google-antigravity` also drops the list of models the account gave from `models-store.json`, so the next sign-in starts from its own.
+
 ## [0.2.2] - 2026-10-24
 
 **0.2.2 makes `mu judge mude install` cope with a full disk, a stop at any step and two installs at once.**
