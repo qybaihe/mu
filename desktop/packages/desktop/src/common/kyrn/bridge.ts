@@ -6,7 +6,7 @@ import type { ImportedHistory, ImportList, ImportOutcome } from './importChats';
 import type { LessonChange, LessonsView } from './lessons';
 import type { LocalJudgeAction, LocalJudgeState } from './localJudge';
 import type { LoginState, LoginStatus, SubscriptionProvider } from './login';
-import type { MudeAction, MudeState } from './mude';
+import type { ModelRequest, ModelsState, MudeAction, MudeState } from './mude';
 import type {
   AvailableModels,
   DefaultModelChange,
@@ -76,6 +76,10 @@ export const kyrnBridge = {
    * `--local-only` (true) or `--with-fallback` (false).
    */
   mudeRun: bridge.buildProvider<KyrnResult<MudeState>, { action: MudeAction; localOnly?: boolean }>('kyrn.mude.run'),
+  /** Decision models from Hugging Face beside mude (common/kyrn/mude.ts): the list asked afresh, or what runs. */
+  modelsState: bridge.buildProvider<KyrnResult<ModelsState>, void>('kyrn.models.state'),
+  /** Runs `mu judge model add | use | remove` unless one runs already, or cancels a running add. */
+  modelsRun: bridge.buildProvider<KyrnResult<ModelsState>, ModelRequest>('kyrn.models.run'),
   /** How the CLM server behind a judge's address is (common/kyrn/clm.ts), asked by the main process. */
   clmCheck: bridge.buildProvider<KyrnResult<ClmServerState>, { baseUrl: string }>('kyrn.clm.check'),
   /** The skills mu loads in every conversation, and where each comes from (common/kyrn/capabilities.ts). */

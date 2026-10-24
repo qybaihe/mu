@@ -111,3 +111,88 @@ export const MUDE_PYTHON_GB = 1;
 export const MUDE_MEMORY_GB = 4;
 /** The memory a Mac needs to run mude at all (the command's own check). */
 export const MUDE_MIN_RAM_GB = 8;
+
+// ---------------------------------------------------------------------------------------------------------------
+
+/**
+ * Decision models from Hugging Face beside mude, on a Mac with Apple silicon. As for mude, the app runs mu's command,
+ * `mu judge model <cmd> --json` (DecisionModels in process/agent/kyrn/mude.ts), one at a time:
+ *
+ * - add: looks a model up on Hugging Face by its link or owner/name, downloads it (resuming one that stopped), sets it
+ *   up, starts its server and makes it mu's judge.
+ * - use: makes an added model, or mude, the judge again; the other one's server stops.
+ * - disable: takes it out of the judge order (the judges it replaced come back) and stops its server.
+ * - remove: takes it out of the judge order and deletes it.
+ *
+ * `cancel` ends a running add: the command resumes the download next time.
+ */
+
+export type ModelCommand = 'add' | 'use' | 'disable' | 'remove';
+export type ModelAction = ModelCommand | 'cancel';
+
+export const MODEL_COMMANDS: readonly ModelCommand[] = ['add', 'use', 'disable', 'remove'];
+
+/**
+ * Why adding a model failed, beside mude's kinds: notFound (no such model or revision on Hugging Face), notRunnable
+ * (not packaged so mu can run it: no d3_server_mac.py). access: private or gated.
+ */
+export type ModelErrorKind = MudeErrorKind | 'notFound' | 'notRunnable';
+
+/** One line of `mu judge model list --json`: mude first, then every model added here. */
+export type DecisionModel = {
+  /** Its name in the judge order and in the command: `mude`, or the id given when it was added. */
+  name: string;
+  label: string;
+  /** owner/name on Hugging Face. */
+  repo: string;
+  /** The commit it is pinned at. */
+  revision: string;
+  bytes: number;
+  /** mude itself. */
+  builtIn: boolean;
+  /** Downloaded and set up. */
+  installed: boolean;
+  downloadedBytes: number;
+  running: boolean;
+  ready: boolean;
+  /** First in the judge order. */
+  enabled: boolean;
+  localOnly: boolean;
+};
+
+/** The stages of a command: the lookup on Hugging Face (resolve, model), then the ones mude's install has. */
+export type ModelStep = 'resolve' | 'model' | 'download' | 'python' | 'start' | 'enable' | 'disable' | 'remove';
+
+export type ModelTask = {
+  id: number;
+  command: ModelCommand;
+  /** What the command was given: a link or owner/name for add, a name otherwise. */
+  target: string;
+  /** The model's name, once the command said it. */
+  name?: string;
+  phase: 'running' | 'done' | 'failed' | 'cancelled';
+  step?: ModelStep;
+  /** The command's sentence for its current step, in English. */
+  message?: string;
+  download?: MudeDownload;
+  log: string[];
+  error?: { message: string; kind?: ModelErrorKind };
+};
+
+export type ModelsState = {
+  /** On macOS only; elsewhere nothing is run. */
+  available: boolean;
+  /** What the list was last; unset until the command first answered. */
+  models?: DecisionModel[];
+  /** Why the list could not be read, in English. */
+  problem?: string;
+  task?: ModelTask;
+};
+
+export type ModelRequest = {
+  action: ModelAction;
+  /** add: a Hugging Face link or owner/name[@revision]. use, disable, remove: a model's name. */
+  target?: string;
+  /** add and use: the only judge, or with the judges behind it. */
+  localOnly?: boolean;
+};

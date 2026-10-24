@@ -301,6 +301,53 @@
         "readyStopped": "mude 1.0 est maintenant votre juge. Son serveur démarre avec votre prochaine session mu."
       }
     },
+    "models": {
+      "title": "Autres modèles de décision",
+      "placeholder": "Lien Hugging Face ou owner/name",
+      "add": "Ajouter",
+      "trust": "Un modèle exécute son propre code serveur sur ce Mac. N’ajoutez que des modèles de confiance.",
+      "use": "Utiliser comme juge",
+      "continue": "Poursuivre le téléchargement",
+      "remove": "Supprimer",
+      "removeTitle": "Supprimer {{name}} ?",
+      "removeText": "{{name}} sera retiré de l’ordre des juges et ses fichiers (environ {{size}} Go) seront supprimés. Vous pourrez l’ajouter de nouveau plus tard.",
+      "noList": "Impossible de lire les modèles de décision : {{reason}}",
+      "cancelled": "Annulé. Ce qui est déjà téléchargé est conservé.",
+      "state": {
+        "judge": "Le juge · {{size}} Go",
+        "running": "En marche · {{size}} Go",
+        "installed": "Installé · {{size}} Go",
+        "partial": "{{done}} Go sur {{total}} Go téléchargés",
+        "notDownloaded": "Non téléchargé · {{size}} Go"
+      },
+      "step": {
+        "resolve": "Recherche du modèle sur Hugging Face…",
+        "download": "Téléchargement de {{name}} et vérification de chaque fichier…",
+        "python": "Préparation de l’environnement Python…",
+        "start": "Démarrage du serveur de {{name}}…"
+      },
+      "working": {
+        "add": "Ajout de {{name}}…",
+        "use": "Passage du juge à {{name}}…",
+        "disable": "Arrêt de {{name}}…",
+        "remove": "Suppression de {{name}}…"
+      },
+      "failed": {
+        "add": "Impossible d’ajouter le modèle.",
+        "use": "Impossible d’en faire le juge.",
+        "disable": "Impossible de l’arrêter.",
+        "remove": "Impossible de le supprimer."
+      },
+      "error": {
+        "usage": "Ce n’est ni un lien vers un modèle Hugging Face, ni son owner/name.",
+        "access": "Hugging Face ne partage pas ce modèle : il est privé ou à accès restreint.",
+        "notFound": "Hugging Face n’a pas ce modèle.",
+        "notRunnable": "mu ne peut pas exécuter ce modèle : il lui manque d3_server_mac.py, le serveur fourni avec les modèles empaquetés comme mude 1.0.",
+        "network": "Impossible de joindre Hugging Face. Vérifiez votre connexion et réessayez ; ce qui est déjà téléchargé est conservé.",
+        "integrity": "Un fichier téléchargé n’a pas passé la vérification. Réessayez.",
+        "unsupported": "Ce Mac ne peut pas exécuter de modèles de décision."
+      }
+    },
     "clm": {
       "address": "Adresse du serveur",
       "addressHelp": "L’adresse où écoute clm-serve, par exemple http://192.168.1.20:8700. Vide : cet ordinateur ({{address}}).",

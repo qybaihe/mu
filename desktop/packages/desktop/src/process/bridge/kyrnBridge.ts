@@ -14,7 +14,7 @@ import { testProvider } from '../agent/kyrn/config/connection';
 import { envFileOf, expectedHarness, findHarness, launcherOf, manifestOf } from '../agent/kyrn/harness';
 import { checkClmServer } from '../agent/kyrn/clmServer';
 import { LocalJudge } from '../agent/kyrn/localJudge';
-import { Mude } from '../agent/kyrn/mude';
+import { DecisionModels, Mude } from '../agent/kyrn/mude';
 import { OnnxLocalJudge, openFolder, usesOnnxJudge } from '../agent/kyrn/localJudgeOnnx';
 import { importCli, importService } from '../agent/kyrn/importChats';
 import { addSkill, listSkills, removeSkill, skillsFolder } from '../agent/kyrn/capabilities/skills';
@@ -190,6 +190,19 @@ export function initKyrnBridge(): void {
   kyrnBridge.mudeState.provider(() => result(() => mude.state()));
   kyrnBridge.mudeRun.provider(({ action, localOnly }) =>
     result(() => mude.run(action, typeof localOnly === 'boolean' ? localOnly : undefined))
+  );
+  // Decision models from Hugging Face beside mude: `mu judge model … --json`, the same way.
+  const models = new DecisionModels(harness, { agentDir });
+  app.once('will-quit', () => models.dispose());
+  kyrnBridge.modelsState.provider(() => result(() => models.state()));
+  kyrnBridge.modelsRun.provider(({ action, target, localOnly }) =>
+    result(() =>
+      models.run({
+        action,
+        ...(typeof target === 'string' ? { target } : {}),
+        ...(typeof localOnly === 'boolean' ? { localOnly } : {}),
+      })
+    )
   );
   kyrnBridge.clmCheck.provider(({ baseUrl }) =>
     result(() => checkClmServer(typeof baseUrl === 'string' ? baseUrl : ''))

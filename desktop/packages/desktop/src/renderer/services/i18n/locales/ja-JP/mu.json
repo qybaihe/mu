@@ -301,6 +301,53 @@
         "readyStopped": "mude 1.0 があなたの判定器になりました。サーバーは次の mu セッションの開始時に起動します。"
       }
     },
+    "models": {
+      "title": "ほかの決定モデル",
+      "placeholder": "Hugging Face のリンクまたは owner/name",
+      "add": "追加",
+      "trust": "モデルは自身のサーバーコードをこの Mac で実行します。信頼できるモデルだけを追加してください。",
+      "use": "判定器として使う",
+      "continue": "ダウンロードを続ける",
+      "remove": "削除",
+      "removeTitle": "{{name}} を削除しますか？",
+      "removeText": "{{name}} を判定の順序から外し、そのファイル（約 {{size}} GB）を削除します。あとでまた追加できます。",
+      "noList": "決定モデルを読み込めませんでした：{{reason}}",
+      "cancelled": "キャンセルしました。ダウンロード済みの部分は残ります。",
+      "state": {
+        "judge": "現在の判定器 · {{size}} GB",
+        "running": "実行中 · {{size}} GB",
+        "installed": "インストール済み · {{size}} GB",
+        "partial": "{{done}} / {{total}} GB をダウンロード済み",
+        "notDownloaded": "未ダウンロード · {{size}} GB"
+      },
+      "step": {
+        "resolve": "Hugging Face でモデルを探しています…",
+        "download": "{{name}} をダウンロードし、すべてのファイルを検証しています…",
+        "python": "Python 環境を準備しています…",
+        "start": "{{name}} のサーバーを起動しています…"
+      },
+      "working": {
+        "add": "{{name}} を追加しています…",
+        "use": "判定器を {{name}} に切り替えています…",
+        "disable": "{{name}} をオフにしています…",
+        "remove": "{{name}} を削除しています…"
+      },
+      "failed": {
+        "add": "モデルを追加できませんでした。",
+        "use": "判定器にできませんでした。",
+        "disable": "オフにできませんでした。",
+        "remove": "削除できませんでした。"
+      },
+      "error": {
+        "usage": "Hugging Face のモデルのリンクでも owner/name でもありません。",
+        "access": "Hugging Face がこのモデルを提供していません。非公開か、アクセス申請が必要です。",
+        "notFound": "Hugging Face にそのモデルはありません。",
+        "notRunnable": "mu はこのモデルを実行できません。mude 1.0 と同じ形式のモデルに付属するサーバー d3_server_mac.py がありません。",
+        "network": "Hugging Face に接続できませんでした。接続を確認してもう一度お試しください。ダウンロード済みの部分は残ります。",
+        "integrity": "ダウンロードしたファイルが検証に失敗しました。もう一度お試しください。",
+        "unsupported": "この Mac では決定モデルを実行できません。"
+      }
+    },
     "clm": {
       "address": "サーバーのアドレス",
       "addressHelp": "clm-serve が待ち受けるアドレスです（例: http://192.168.1.20:8700）。空欄ならこのコンピューター（{{address}}）です。",

@@ -9,7 +9,8 @@ import type { JudgeSettings, JudgeType, KyrnSettings } from '@/common/kyrn/types
  * Clef, a model as judge, a mock, a self-hosted HTTP judge) is only named there, by the name it was given.
  *
  * mude is chosen through mu's own command (`mu judge mude`, see common/kyrn/mude.ts), never through `choose`: it is
- * installed, started and put first in the order by that command, which writes mu.json itself.
+ * installed, started and put first in the order by that command, which writes mu.json itself. So is a decision model
+ * added from Hugging Face (`mu judge model`), which counts as the same choice: a decision model on this Mac.
  */
 export type JudgeChoice = 'jev' | 'mude' | 'local' | 'clm';
 
@@ -50,10 +51,29 @@ export const MUDE_KEY_VARIABLE = 'MU_JUDGE_MUDE_KEY';
 export const isMude = (judge: JudgeSettings | undefined): boolean =>
   judge?.type === 'typesafe' && judge.apiKeyEnv === MUDE_KEY_VARIABLE;
 
+/** Keys of services elsewhere: a System One profile with one of them is Jev at an address of the person's own. */
+const KEYS_FOR_ELSEWHERE: ReadonlySet<string> = new Set([
+  'MU_JUDGE_OPENROUTER_API_KEY',
+  'MU_JUDGE_CUSTOM_API_KEY',
+  'MU_JUDGE_CLM_API_KEY',
+]);
+
+/**
+ * A decision model added from Hugging Face (`mu judge model add`, common/kyrn/mude.ts): a System One profile on
+ * 127.0.0.1 with the key its command wrote, `MU_JUDGE_<NAME>_KEY`. Like mude, it is the decision model on this Mac,
+ * switched by its command and not by `choose`.
+ */
+export const isAddedModel = (judge: JudgeSettings | undefined): boolean =>
+  judge?.type === 'typesafe' &&
+  !isMude(judge) &&
+  /^MU_JUDGE_[A-Z0-9_]+_KEY$/.test(judge.apiKeyEnv) &&
+  !KEYS_FOR_ELSEWHERE.has(judge.apiKeyEnv) &&
+  /^http:\/\/127\.0\.0\.1:\d+\/v1\/systemone$/.test(judge.baseUrl);
+
 /** Which kind a profile is; undefined for a model as judge, a self-hosted HTTP judge or the mock. */
 export function kindOf(judge: JudgeSettings | undefined): JudgeChoice | undefined {
   if (!judge) return undefined;
-  if (isMude(judge)) return 'mude';
+  if (isMude(judge) || isAddedModel(judge)) return 'mude';
   if (judge.type === 'classifier') return serviceOf(judge) ? 'jev' : undefined;
   return KIND_OF[judge.type];
 }
