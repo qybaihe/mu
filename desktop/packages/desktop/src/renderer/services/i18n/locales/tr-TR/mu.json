@@ -270,7 +270,7 @@
       },
       "error": {
         "usage": "Bu, bir Hugging Face modelinin bağlantısı ya da owner/name değeri değil.",
-        "access": "Hugging Face bu modeli paylaşmıyor: model özel ya da erişimi kısıtlı.",
+        "access": "Bu model Hugging Face'te açılamadı. Adını denetleyin: model olmayabilir ya da özel veya erişimi kısıtlı olabilir.",
         "notFound": "Hugging Face'te böyle bir model yok.",
         "notRunnable": "mu bu modeli çalıştıramaz: mude 1.0 gibi paketlenmiş modellerle gelen sunucu d3_server_mac.py eksik.",
         "network": "Hugging Face'e ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin; indirilmiş olanlar saklanır.",
