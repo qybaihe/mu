@@ -76,7 +76,7 @@ macOS 实测（Node 24.16，临时 HOME，9 次取中位数）：
 
 2026-10-24（0.2.5）起 Laya 已从 mu 移除：Core ML 的 sidecar（`kyrn-judge-local`、`server.py`）和 `mu judge setup|start|stop|status|run` 都没有了，这几个命令现在在所有平台上都打印一段说明并以 1 退出，指向 mude 1.0（`mu judge mude install`）和从 Hugging Face 添加的决策模型（`mu judge model add <链接>`）。这两者都只在 Apple Silicon 的 Mac 上跑；别的平台用 Jev、`mu.json` 里的 llm / classifier 判定器，或者一台说 System One 协议的服务器（`typesafe` 类型）。
 
-- 配置里还写着 laya（或一个 `local` 类型的判定器）：任何平台上都不再有启动提示，会话里直接跳过它（Mac 上装好了 mude 1.0 就由 mude 顶替），第一次有人看着的会话把 mu.json 改掉，并提示一次。
+- 配置里还写着 laya（或一个 `local` 类型的判定器）：任何平台上都不再有启动提示，会话里直接跳过它（Mac 上装好了 mude 1.0 就由 mude 顶替），第一次有人看着的会话把 mu.json 改掉；提示记在 `<agentDir>/mu/notices.json`，等有人发出第一条消息时说一次（桌面端启动时后端对 mu 的健康检查不发消息，不会把它用掉）。
 - 启动器不再拉起任何 sidecar；只在 Mac 上、配置要 mude 1.0 或已添加的模型时，后台启动它的服务器，不等它。
 
 ## 6. 仍然假设 POSIX 的地方（grep 审计，范围：`kyrn/` 与 `packages/kyrn-judge/src`）

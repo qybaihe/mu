@@ -188,7 +188,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 	const roots: HarnessRoots | undefined =
 		options.roots ?? (options.config || options.provider ? undefined : { home: homedir(), agentDir: getAgentDir() });
 	runtime.stateDir = roots ? join(roots.agentDir, "mu") : undefined;
-	if (loaded.laya) registerLayaNotice(runtime, loaded.laya, roots, home);
+	// Also with nothing about Laya in this configuration: an earlier session may have left its notice for this one.
+	registerLayaNotice(runtime, loaded.laya, roots, home);
 	if (loaded.disabled) {
 		// Asking the user needs no judge, so the permission mode the user chose holds with judging off too. In judge
 		// mode, with no judge to ask, what the judge would have decided goes to the user.
