@@ -23,12 +23,12 @@ import { describeTier } from '@/renderer/components/kernel/kernelSummary';
 import { KERNEL_SUMMARY_KEY } from '@/renderer/components/kernel/useKernelSummary';
 import { formatNumber } from '@/renderer/services/i18n/format';
 import { formatNameList } from '@/renderer/services/i18n/list';
-import MuErrorMessage from '../fields/MuErrorMessage';
-import { toMuError, type MuError } from '../fields/muError';
-import Row from '../fields/Row';
-import { StatusDot, type DotState } from '../providers/parts';
-import { recheckMu } from '../recheck';
-import styles from './sections.module.css';
+import MuErrorMessage from '../../fields/MuErrorMessage';
+import { toMuError, type MuError } from '../../fields/muError';
+import Row from '../../fields/Row';
+import { StatusDot, type DotState } from '../../providers/parts';
+import { recheckMu } from '../../recheck';
+import styles from '../sections.module.css';
 
 /** Memory is counted in binary gigabytes; downloads in decimal ones (DOWNLOAD_GB_BYTES), as Hugging Face gives them. */
 const GB = 1024 ** 3;
@@ -52,6 +52,8 @@ export type MudeControl = {
   /** A command runs. */
   busy: boolean;
   run: (action: MudeAction, localOnly?: boolean) => Promise<void>;
+  /** Reads the status again: after a command of the added models, which changes whether mude is the judge. */
+  refresh: () => Promise<void>;
 };
 
 /**
@@ -114,7 +116,7 @@ export function useMude(onSettled?: (task: MudeTask) => void): MudeControl {
     [take]
   );
 
-  return { state, problem, busy, run };
+  return { state, problem, busy, run, refresh: read };
 }
 
 /** Whether mude can be set up on this machine, as far as is known: unknown (still being read) counts as yes. */
@@ -173,6 +175,8 @@ type MudePanelProps = {
   mude: MudeControl;
   /** The settings have unsaved changes: a command that changes mu.json waits until they are saved or discarded. */
   unsaved: boolean;
+  /** A command of the added models runs: mude's that change the judge wait for it. */
+  waiting?: boolean;
 };
 
 /**
@@ -180,7 +184,7 @@ type MudePanelProps = {
  * part way), or where it is installed, its server, whether it is the only judge, its folder and uninstalling it. Each
  * applies at once through `mu judge mude` in the main process, outside the save bar.
  */
-export default function MudePanel({ mude, unsaved }: MudePanelProps) {
+export default function MudePanel({ mude, unsaved, waiting = false }: MudePanelProps) {
   const { t, i18n } = useTranslation();
   const [modal, modalHolder] = Modal.useModal();
   const { state, problem, busy, run } = mude;
@@ -269,7 +273,7 @@ export default function MudePanel({ mude, unsaved }: MudePanelProps) {
           <Button
             size='small'
             type='primary'
-            disabled={unsaved}
+            disabled={unsaved || waiting}
             data-testid='mu-mude-install'
             onClick={unfinished ? resume : install}
           >
@@ -282,7 +286,7 @@ export default function MudePanel({ mude, unsaved }: MudePanelProps) {
               <Button
                 size='small'
                 type='primary'
-                disabled={unsaved}
+                disabled={unsaved || waiting}
                 data-testid='mu-mude-use'
                 onClick={() => void run('enable')}
               >
@@ -301,7 +305,13 @@ export default function MudePanel({ mude, unsaved }: MudePanelProps) {
             <Button size='small' data-testid='mu-mude-open' onClick={() => void run('open')}>
               {t('mu.judges.mude.openFolder')}
             </Button>
-            <Button size='small' status='danger' disabled={unsaved} data-testid='mu-mude-uninstall' onClick={uninstall}>
+            <Button
+              size='small'
+              status='danger'
+              disabled={unsaved || waiting}
+              data-testid='mu-mude-uninstall'
+              onClick={uninstall}
+            >
               {t('mu.judges.mude.uninstall')}
             </Button>
           </>
@@ -324,7 +334,7 @@ export default function MudePanel({ mude, unsaved }: MudePanelProps) {
               size='small'
               aria-label={t('mu.judges.mude.localOnly')}
               checked={status.localOnly}
-              disabled={busy || unsaved}
+              disabled={busy || unsaved || waiting}
               onChange={(on: boolean) => void run('enable', on)}
             />
           </Row>

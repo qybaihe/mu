@@ -280,6 +280,53 @@
         "readyStopped": "mude 1.0 artık hakeminiz. Sunucusu bir sonraki mu oturumunda başlar."
       }
     },
+    "models": {
+      "title": "Diğer karar modelleri",
+      "placeholder": "Hugging Face bağlantısı veya owner/name",
+      "add": "Ekle",
+      "trust": "Bir model kendi sunucu kodunu bu Mac'te çalıştırır. Yalnızca güvendiğiniz modelleri ekleyin.",
+      "use": "Hakem olarak kullan",
+      "continue": "İndirmeye devam et",
+      "remove": "Kaldır",
+      "removeTitle": "{{name}} kaldırılsın mı?",
+      "removeText": "Bu, {{name}} modelini hakem sırasından çıkarır ve dosyalarını (yaklaşık {{size}} GB) siler. Daha sonra yeniden ekleyebilirsiniz.",
+      "noList": "Karar modelleri okunamadı: {{reason}}",
+      "cancelled": "İptal edildi. İndirilenler saklanır.",
+      "state": {
+        "judge": "Hakem · {{size}} GB",
+        "running": "Çalışıyor · {{size}} GB",
+        "installed": "Kurulu · {{size}} GB",
+        "partial": "{{total}} GB'ın {{done}} GB'ı indirildi",
+        "notDownloaded": "İndirilmedi · {{size}} GB"
+      },
+      "step": {
+        "resolve": "Model Hugging Face'te aranıyor…",
+        "download": "{{name}} indiriliyor ve her dosya denetleniyor…",
+        "python": "Python ortamı hazırlanıyor…",
+        "start": "{{name}} sunucusu başlatılıyor…"
+      },
+      "working": {
+        "add": "{{name}} ekleniyor…",
+        "use": "Hakem {{name}} olarak değiştiriliyor…",
+        "disable": "{{name}} kapatılıyor…",
+        "remove": "{{name}} kaldırılıyor…"
+      },
+      "failed": {
+        "add": "Model eklenemedi.",
+        "use": "Hakem yapılamadı.",
+        "disable": "Kapatılamadı.",
+        "remove": "Kaldırılamadı."
+      },
+      "error": {
+        "usage": "Bu, bir Hugging Face modelinin bağlantısı ya da owner/name değeri değil.",
+        "access": "Hugging Face bu modeli paylaşmıyor: model özel ya da erişimi kısıtlı.",
+        "notFound": "Hugging Face'te böyle bir model yok.",
+        "notRunnable": "mu bu modeli çalıştıramaz: mude 1.0 gibi paketlenmiş modellerle gelen sunucu d3_server_mac.py eksik.",
+        "network": "Hugging Face'e ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin; indirilmiş olanlar saklanır.",
+        "integrity": "İndirilen bir dosya doğrulamayı geçemedi. Yeniden deneyin.",
+        "unsupported": "Bu Mac karar modellerini çalıştıramaz."
+      }
+    },
     "clm": {
       "address": "Sunucu adresi",
       "key": "Sunucu anahtarı",
