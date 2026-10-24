@@ -168,12 +168,19 @@ export function takeCheckpointOff(view: NativeView, payload: JsonObject): Native
 }
 
 /** The codes of mu's `judge.notice` the app words. */
-const JUDGE_NOTICE_CODES: ReadonlySet<string> = new Set(['free_jev', 'free_jev_unavailable', 'laya_removed']);
+const JUDGE_NOTICE_CODES: ReadonlySet<string> = new Set([
+  'free_jev',
+  'free_jev_unavailable',
+  'laya_removed',
+  'openai_key',
+]);
+/** The judge notices that say the judge stopped answering: warnings. */
+const JUDGE_WARNINGS: ReadonlySet<string> = new Set(['free_jev_unavailable', 'openai_key']);
 
 /**
  * mu's `judge.notice`: the judge answers with the free Jev on OpenCode Zen (`free_jev`), the free Jev stopped
- * (`free_jev_unavailable`, with `paid` or `gone`), or Laya is gone and `judge` answers in its place (`laya_removed`),
- * said once each, by code, so the app words it. mu sends its own line with `notify` right after (`takeNotify` drops
+ * (`free_jev_unavailable`, with `paid` or `gone`), Laya is gone and `judge` answers in its place (`laya_removed`), or
+ * OpenAI's decision model has no usable key (`openai_key`, with `missing` or `rejected`), said once each, by code, so the app words it. mu sends its own line with `notify` right after (`takeNotify` drops
  * it); a line already said becomes the coded notice where it stands. A code this build does not know leaves mu's line
  * to say it.
  */
@@ -187,7 +194,7 @@ export function takeJudgeNotice(view: NativeView, payload: JsonObject): NativeVi
   const reason = asText(payload.reason);
   const judge = code === 'laya_removed' ? asText(payload.judge) : '';
   const coded: Pick<ViewNotice, 'level' | 'code' | 'reason' | 'judge'> = {
-    level: code === 'free_jev_unavailable' ? 'warning' : 'info',
+    level: JUDGE_WARNINGS.has(code) ? 'warning' : 'info',
     code,
     ...(reason ? { reason } : {}),
     ...(judge ? { judge } : {}),

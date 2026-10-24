@@ -608,7 +608,9 @@
     "defaultTag": "既定",
     "makeDefault": "新しい会話の既定モデルにする",
     "madeDefault": "新しい会話はこのモデルで始まります。",
-    "makeDefaultFailed": "既定モデルを保存できませんでした。"
+    "makeDefaultFailed": "既定モデルを保存できませんでした。",
+    "showAllModels": "すべてのモデルを表示（{{count}}）",
+    "showFewerModels": "折りたたむ"
   },
   "agentTip": {
     "codes": {

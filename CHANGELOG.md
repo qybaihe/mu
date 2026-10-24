@@ -4,8 +4,13 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Added
+
+- **OpenAI's decision model can be the judge.** `gpt-6-luna` answers mu's decisions through OpenAI's Decisions API. Pick it with `mu setup --judge openai`, with `/mu judge openai` in a session, or as OpenAI on the Judges page in Settings, which has a field for its key. It uses its own key, `MU_JUDGE_OPENAI_KEY`, or else the OpenAI API key you already set up for mu's models (Sign in with ChatGPT doesn't work for it). To reach it through a relay or proxy that serves the same Decisions endpoint, give the judge a `baseUrl` and a key of its own in `~/.mu/agent/mu.json`: the key of mu's OpenAI models only ever goes to api.openai.com. OpenAI charges $0.10 per million uncached input tokens and nothing for output. It isn't measured on mu's questions yet. If its key goes away (you sign out of OpenAI or remove the key) or OpenAI turns the key down, mu says so once per session, and the next judge or mu's fallbacks decide until a key is back. In the desktop app, the key has a Remove key button, and the model is picked from the list OpenAI serves.
+
 ### Changed
 
+- **OpenAI's newest model is the default.** With an OpenAI API key or Sign in with ChatGPT and no model picked yet, mu now starts on GPT-6.1 Sol instead of GPT-5.5, and `mu setup` offers it for an OpenAI key.
 - **The plain-language board talks like a teammate giving a quick update.** It leads with one line on who is doing what, or what just happened, then says what's stuck and on what, and what comes next. It starts from what changed since its last update instead of rewording it, names the file, test or command that matters, and leaves out filler such as "making progress". When a check fails, the board can say why, from the check's own output, with any key taken out. In the terminal, the board above the editor shows that line, then what needs you or what's stuck, then the latest step; `/board` shows the rest.
 - **The board says what each subagent is doing.** While subagents work, the board lists them by name with what each is doing and for how long. When one comes back or fails, the board says so right away, with the first line of its report or why it stopped, instead of waiting for all of them. "2 subagents finished" now says "1 with errors" when one of them failed or timed out.
 - **The board tells you when something is stuck, while it's stuck.** A command that runs for a minute, or a subagent that goes a minute without output, gets a line on the board ("Still running npm test, 3 min in") that updates at 1, 3 and 10 minutes, and the board looks again each time. Set `features.board.stallMs` to change the minute, or 0 to turn it off.

@@ -62,7 +62,7 @@ mu が理解できない部分は、mu を止めずにその既定値に戻り�
 | `MU_WRITER` | 書き手のモデルの `provider/model` |
 | `MU_PERMISSIONS` | この実行の権限モード：`full`、`judge`、`ask` |
 
-ホストされた判定器のキー（それぞれ自分のサービスにだけ送られます）：`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` と `CLOUDFLARE_ACCOUNT_ID`、`MU_JUDGE_CLM_API_KEY`。
+ホストされた判定器のキー（それぞれ自分のサービスにだけ送られます）：`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` と `CLOUDFLARE_ACCOUNT_ID`、`MU_JUDGE_CLM_API_KEY`、`MU_JUDGE_OPENAI_KEY`。
 
 時間：
 

@@ -1274,6 +1274,8 @@
       "judgeNotice": {
         "freeJev": "Jev キーが未設定のため、OpenCode Zen の無料 Jev を使用中",
         "freeJevUnavailable": "無料の Jev が応答しなくなりました。Jev キーを設定するまで固定ルールで判断します",
+        "openaiKeyMissing": "OpenAI の判定モデルに API キーがないため、次の判定器か固定ルールで判断します",
+        "openaiKeyRejected": "OpenAI が判定モデルの API キーを拒否したため、次の判定器か固定ルールで判断します",
         "layaRemoved": "Laya は mu に組み込まれなくなったため、判定器は {{judge}} になりました"
       },
       "detail": "詳細: {{detail}}",

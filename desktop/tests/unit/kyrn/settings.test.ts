@@ -331,6 +331,96 @@ describe('native mu settings', () => {
       f.cleanup();
     }
   });
+  it('offers OpenAI’s decision model as a built-in with a key of its own, which never goes to TypeSafe', () => {
+    const f = fixture();
+    try {
+      const read = f.store.read();
+      expect(read.judges.openai).toEqual({
+        type: 'openai',
+        model: 'gpt-6-luna',
+        baseUrl: '',
+        apiKeyEnv: 'MU_JUDGE_OPENAI_KEY',
+        timeoutMs: 10000,
+      });
+      expect(read.keys.MU_JUDGE_OPENAI_KEY).toBe(false);
+      // Chosen with its key: only the order is written, and the key goes to the .env, never back to the screen.
+      const saved = f.store.save({
+        ...read,
+        tiers: ['openai'],
+        credentials: [{ name: 'MU_JUDGE_OPENAI_KEY', value: 'sk-proj-fixture' }],
+      });
+      expect(saved.keys.MU_JUDGE_OPENAI_KEY).toBe(true);
+      expect(JSON.stringify(saved)).not.toContain('sk-proj-fixture');
+      const raw = JSON.parse(readFileSync(join(f.dir, 'kyrn.json'), 'utf8'));
+      expect(raw.tiers).toEqual(['openai']);
+      expect(raw.judges.openai).toBeUndefined();
+      expect(readFileSync(join(f.root, '.env'), 'utf8')).toContain('MU_JUDGE_OPENAI_KEY=sk-proj-fixture');
+      // A key of another judge service is never sent to OpenAI…
+      const now = f.store.read();
+      const stray = { ...now.judges.openai, apiKeyEnv: 'TYPESAFE_API_KEY' };
+      expect(() => f.store.save({ ...now, tiers: ['stray'], judges: { ...now.judges, stray } })).toThrow(
+        'not sent to OpenAI'
+      );
+      // …and OpenAI's key never to TypeSafe through a System One judge without an address.
+      const loose = {
+        type: 'typesafe' as const,
+        model: '',
+        baseUrl: '',
+        apiKeyEnv: 'MU_JUDGE_OPENAI_KEY',
+        timeoutMs: 10000,
+      };
+      expect(() => f.store.save({ ...now, tiers: ['loose'], judges: { ...now.judges, loose } })).toThrow('no base URL');
+    } finally {
+      f.cleanup();
+    }
+  });
+  it('removes a judge’s key from the .env on save, refuses any other name, and never says a value', () => {
+    const f = fixture();
+    try {
+      const envPath = join(f.root, '.env');
+      writeFileSync(
+        envPath,
+        'OPENAI_API_KEY=sk-provider-fixture\nMU_JUDGE_OPENAI_KEY=sk-judge-fixture\nTYPESAFE_API_KEY=ts-fixture\n'
+      );
+      const read = f.store.read();
+      expect(read.keys.MU_JUDGE_OPENAI_KEY).toBe(true);
+      const saved = f.store.save({ ...read, tiers: ['openai'], removeCredentials: ['MU_JUDGE_OPENAI_KEY'] });
+      // The judge's line goes; the rest of the .env stays as it was, the provider's OpenAI key too.
+      expect(readFileSync(envPath, 'utf8')).toBe('OPENAI_API_KEY=sk-provider-fixture\nTYPESAFE_API_KEY=ts-fixture\n');
+      expect(saved.keys.MU_JUDGE_OPENAI_KEY).toBe(false);
+      expect(saved.tiers).toEqual(['openai']);
+      expect(JSON.stringify(saved)).not.toContain('fixture');
+      // Only a variable this page saves: never a provider's key, the environment's OpenAI key or anything else.
+      const now = f.store.read();
+      const refused = (removeCredentials: unknown) => {
+        try {
+          f.store.save({ ...now, removeCredentials: removeCredentials as string[] });
+        } catch (error) {
+          expect((error as Error).message).toBe('Invalid credential');
+          return true;
+        }
+        return false;
+      };
+      for (const name of ['OPENAI_API_KEY', 'MU_PROVIDER_RELAY_API_KEY', 'PATH', 'MU_JUDGE_OPENAI_KEY=x', '', 42])
+        expect(refused([name]), String(name)).toBe(true);
+      expect(refused('MU_JUDGE_OPENAI_KEY')).toBe(true);
+      expect(refused(Array.from({ length: 17 }, (_, index) => `MU_JUDGE_K${index}`))).toBe(true);
+      // Never set and removed by one save.
+      expect(() =>
+        f.store.save({
+          ...now,
+          credentials: [{ name: 'TYPESAFE_API_KEY', value: 'ts-new' }],
+          removeCredentials: ['TYPESAFE_API_KEY'],
+        })
+      ).toThrow('Invalid credential');
+      expect(readFileSync(envPath, 'utf8')).toBe('OPENAI_API_KEY=sk-provider-fixture\nTYPESAFE_API_KEY=ts-fixture\n');
+      // Removing a key that is not there changes nothing.
+      f.store.save({ ...now, removeCredentials: ['MU_JUDGE_OPENAI_KEY'] });
+      expect(readFileSync(envPath, 'utf8')).toBe('OPENAI_API_KEY=sk-provider-fixture\nTYPESAFE_API_KEY=ts-fixture\n');
+    } finally {
+      f.cleanup();
+    }
+  });
 });
 
 describe('a mu.json that still names Laya, the local judge mu no longer has', () => {

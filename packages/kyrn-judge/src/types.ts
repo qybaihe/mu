@@ -79,6 +79,10 @@ export type AnswersFor<Qs extends Questions> = { readonly [Id in keyof Qs]: Answ
 export interface JudgeUsage {
 	inputTokens?: number;
 	outputTokens?: number;
+	/** Of the input tokens, those read from the provider's prompt cache, when it reports them (OpenAI). */
+	cachedInputTokens?: number;
+	/** Of the input tokens, those written to the provider's prompt cache, when it reports them (OpenAI). */
+	cacheWriteTokens?: number;
 }
 
 /**

@@ -96,24 +96,39 @@ vi.mock('@arco-design/web-react', () => {
         {children}
       </div>
     ),
-    // Both levels at once: the row and what it opens.
-    SubMenu: ({
-      children,
-      title,
-      triggerProps: _triggerProps,
-      ...rest
-    }: {
-      children?: React.ReactNode;
-      title?: React.ReactNode;
-      triggerProps?: unknown;
-      [key: string]: unknown;
-    }) => (
-      <div {...dataOf(rest)}>
-        <div>{title}</div>
-        <div>{children}</div>
-      </div>
-    ),
   });
+  // A radio group as the menu's levels use it: each radio says whether it is the group's value, a click picks it.
+  const RadioGroupContext = React.createContext<{ value?: string; onChange?: (value: string) => void }>({});
+  const Radio = Object.assign(
+    ({ children, value, ...rest }: { children?: React.ReactNode; value: string; [key: string]: unknown }) => {
+      const group = React.useContext(RadioGroupContext);
+      return (
+        <label
+          role='radio'
+          aria-checked={group.value === value}
+          onClick={() => group.onChange?.(value)}
+          {...dataOf(rest)}
+        >
+          {children}
+        </label>
+      );
+    },
+    {
+      Group: ({
+        children,
+        value,
+        onChange,
+      }: {
+        children?: React.ReactNode;
+        value?: string;
+        onChange?: (value: string) => void;
+      }) => (
+        <RadioGroupContext.Provider value={{ value, onChange }}>
+          <div role='radiogroup'>{children}</div>
+        </RadioGroupContext.Provider>
+      ),
+    }
+  );
   return {
     Button: ({
       children,
@@ -138,6 +153,7 @@ vi.mock('@arco-design/web-react', () => {
     ),
     Menu,
     Message: { error: messageErrorMock },
+    Radio,
     Tooltip: ({ children, content }: { children?: React.ReactNode; content?: React.ReactNode }) => (
       <span data-tooltip={typeof content === 'string' ? content : undefined}>{children}</span>
     ),
@@ -199,10 +215,11 @@ const renderChip = (props: { busy?: boolean } = {}) =>
 const chipLabel = () => screen.getByTestId('composer-model-pill').textContent;
 const modelRow = (value: string) =>
   screen.getAllByTestId('composer-model-option').find((row) => row.getAttribute('data-value') === value)!;
-const levelOption = (model: string, level: string) =>
-  within(modelRow(model))
-    .getAllByTestId('composer-level-option')
-    .find((row) => row.getAttribute('data-value') === level)!;
+/** A level under the list: the levels of the model in use. */
+const levelOption = (level: string) =>
+  screen.getAllByTestId('composer-level-option').find((option) => option.getAttribute('data-value') === level)!;
+const levelValues = () =>
+  screen.queryAllByTestId('composer-level-option').map((option) => option.getAttribute('data-value'));
 
 describe('ComposerModelChip', () => {
   beforeEach(() => {
@@ -250,22 +267,23 @@ describe('ComposerModelChip', () => {
     expect(modelLevelsInvokeMock).not.toHaveBeenCalled();
   });
 
-  it('lists every model with the levels it takes, and the cache note above them', async () => {
+  it('lists every model, and the levels of the model in use under them', async () => {
     renderChip();
     await waitFor(() => expect(screen.getAllByTestId('composer-model-option')).toHaveLength(3));
-    await waitFor(() =>
-      expect(within(modelRow('openai/gpt-5')).getAllByTestId('composer-level-option')).toHaveLength(5)
-    );
+    await waitFor(() => expect(levelValues()).toEqual(['off', 'low', 'medium', 'high']));
 
-    // The model in use takes the levels the session reports now; the others what mu recorded for them.
-    expect(
-      within(modelRow('anthropic/claude-sonnet-4-5'))
-        .getAllByTestId('composer-level-option')
-        .map((row) => row.textContent)
-    ).toEqual(['Off', 'Low', '\u2713Medium', 'High']);
-    // One level is no choice: the row switches the model only.
-    expect(within(modelRow('openai/gpt-4o')).queryAllByTestId('composer-level-option')).toHaveLength(0);
-    expect(within(modelRow('openai/gpt-5')).getByTestId('composer-thinking-note').textContent).toBe(
+    // The model in use takes the levels the session reports now, by the app's names, the one in force checked.
+    expect(screen.getAllByTestId('composer-level-option').map((option) => option.textContent)).toEqual([
+      'Off',
+      'Low',
+      'Medium',
+      'High',
+    ]);
+    expect(levelOption('medium').getAttribute('aria-checked')).toBe('true');
+    // The rows switch the model only: no row holds levels of its own.
+    expect(within(modelRow('openai/gpt-5')).queryAllByTestId('composer-level-option')).toHaveLength(0);
+    // The cache note is on the levels' title, on hover.
+    expect(screen.getByTestId('composer-thinking-note').closest('[data-tooltip]')?.getAttribute('data-tooltip')).toBe(
       'conversation.composer.thinkingNote'
     );
     // Grouped by provider.
@@ -273,21 +291,17 @@ describe('ComposerModelChip', () => {
     expect(screen.getByRole('group', { name: 'OpenAI' })).toBeTruthy();
   });
 
-  it('switches model and level through the session, and shows only what the session answered', async () => {
+  it('switches the model through the session, and shows only what the session answered', async () => {
     const modelSwitch = deferred();
-    setConfigOptionInvokeMock
-      // pi puts the new model at a level of its own choosing; the picked one follows.
-      .mockImplementationOnce(async () => {
-        await modelSwitch.promise;
-        return answer('openai/gpt-5', 'high', RECORDED['openai/gpt-5']);
-      })
-      .mockImplementationOnce(async () => answer('openai/gpt-5', 'low', RECORDED['openai/gpt-5']));
+    // pi puts the new model at a level of its own choosing.
+    setConfigOptionInvokeMock.mockImplementationOnce(async () => {
+      await modelSwitch.promise;
+      return answer('openai/gpt-5', 'high', RECORDED['openai/gpt-5']);
+    });
     renderChip();
-    await waitFor(() =>
-      expect(within(modelRow('openai/gpt-5')).getAllByTestId('composer-level-option')).toHaveLength(5)
-    );
+    await waitFor(() => expect(screen.getAllByTestId('composer-model-option')).toHaveLength(3));
 
-    fireEvent.click(levelOption('openai/gpt-5', 'low'));
+    fireEvent.click(modelRow('openai/gpt-5'));
     await waitFor(() =>
       expect(setConfigOptionInvokeMock).toHaveBeenCalledWith({
         conversation_id: conversationId,
@@ -301,25 +315,21 @@ describe('ComposerModelChip', () => {
     await act(async () => {
       modelSwitch.resolve();
     });
-    await waitFor(() => expect(chipLabel()).toBe('GPT-5 · Low'));
+    await waitFor(() => expect(chipLabel()).toBe('GPT-5 · High'));
     expect(setConfigOptionInvokeMock.mock.calls.map(([input]) => input)).toEqual([
       { conversation_id: conversationId, option_id: 'model', value: 'openai/gpt-5' },
-      { conversation_id: conversationId, option_id: 'thinking', value: 'low' },
     ]);
+    // The levels under the list are the new model's.
+    await waitFor(() => expect(levelValues()).toEqual(['off', 'minimal', 'low', 'medium', 'high']));
+    expect(levelOption('high').getAttribute('aria-checked')).toBe('true');
   });
 
-  it('sends nothing for a level that is already in force after the model switch', async () => {
-    setConfigOptionInvokeMock.mockImplementationOnce(async () =>
-      answer('openai/gpt-5', 'medium', RECORDED['openai/gpt-5'])
-    );
+  it('offers no levels while the model in use takes only one', async () => {
+    server = optionsFor('openai/gpt-4o', 'off', ['off']);
     renderChip();
-    await waitFor(() =>
-      expect(within(modelRow('openai/gpt-5')).getAllByTestId('composer-level-option')).toHaveLength(5)
-    );
-
-    fireEvent.click(levelOption('openai/gpt-5', 'medium'));
-    await waitFor(() => expect(chipLabel()).toBe('GPT-5 · Medium'));
-    expect(setConfigOptionInvokeMock).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(chipLabel()).toBe('GPT-4o · Off'));
+    expect(screen.getAllByTestId('composer-model-option')).toHaveLength(3);
+    expect(screen.queryByTestId('composer-thinking')).toBeNull();
   });
 
   it('changes only the level when the pick is the model in use', async () => {
@@ -327,7 +337,7 @@ describe('ComposerModelChip', () => {
     renderChip();
     await waitFor(() => expect(chipLabel()).toBe('Claude Sonnet 4.5 · Medium'));
 
-    fireEvent.click(levelOption('anthropic/claude-sonnet-4-5', 'high'));
+    fireEvent.click(levelOption('high'));
     await waitFor(() => expect(chipLabel()).toBe('Claude Sonnet 4.5 · High'));
     expect(setConfigOptionInvokeMock.mock.calls.map(([input]) => input)).toEqual([
       { conversation_id: conversationId, option_id: 'thinking', value: 'high' },

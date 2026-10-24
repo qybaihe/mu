@@ -14,6 +14,7 @@ import zhMu from '@/renderer/services/i18n/locales/zh-CN/mu.json';
 import MuSettingsPage, { MovedFeatureOptions } from '@/renderer/pages/settings/KyrnSettings';
 import SettingsArea from '@/renderer/pages/settings/KyrnSettings/SettingsArea';
 import { PAGE_ROWS, isTerminalOnly } from '@/renderer/pages/settings/KyrnSettings/draft';
+import { OPENAI_MODELS } from '@/renderer/pages/settings/KyrnSettings/judgeChoice';
 import { DETAIL_AREAS, MOVED_FEATURE_LISTS } from '@/renderer/pages/settings/settingsNav';
 import OptionField, { inSeconds } from '@/renderer/pages/settings/KyrnSettings/fields/OptionField';
 import { filterModelOption } from '@/renderer/pages/settings/KyrnSettings/providers/modelOptions';
@@ -1608,12 +1609,13 @@ describe('the kernel pages', () => {
     expect(within(verdicts).getByRole('switch', { name: enMu.judges.mode })).toBeChecked();
     // The switch's name says it all: no sentence under it.
     expect(verdicts).toHaveTextContent(new RegExp(`^${enMu.judges.mode}$`));
-    // The choices, Jev and CLM where mude is not offered, no Laya, and no second way to pick a judge.
+    // The choices, Jev, CLM and OpenAI where mude is not offered, no Laya, and no second way to pick a judge.
     const choice = within(page).getByTestId('mu-judge-choice-jev');
     expect(verdicts.compareDocumentPosition(choice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(page).getByTestId('mu-judge-choice-clm')).toBeInTheDocument();
+    expect(within(page).getByTestId('mu-judge-choice-openai')).toBeInTheDocument();
     expect(within(page).queryByTestId('mu-judge-choice-local')).not.toBeInTheDocument();
-    expect(within(page).getAllByRole('radio')).toHaveLength(2);
+    expect(within(page).getAllByRole('radio')).toHaveLength(3);
     // The service and its long help once, in the choice; no order and no model id on this page.
     expect(within(page).getAllByLabelText(enMu.judges.service)).toHaveLength(1);
     expect(page.textContent?.split(enMu.judges.services.auto.help)).toHaveLength(2);
@@ -1890,6 +1892,150 @@ describe('the kernel pages', () => {
     expect(sent.tiers).toEqual(['clm']);
     expect(sent.judges.clm).toMatchObject({ type: 'clm', baseUrl: 'http://192.168.1.20:8700' });
     expect(sent.credentials).toEqual([{ name: 'MU_JUDGE_CLM_API_KEY', value: 'clm-key' }]);
+  });
+
+  it('offers OpenAI’s decision model as a choice, which asks for its key and nothing else', async () => {
+    const openai = {
+      type: 'openai' as const,
+      model: 'gpt-6-luna',
+      baseUrl: '',
+      apiKeyEnv: 'MU_JUDGE_OPENAI_KEY',
+      timeoutMs: 10000,
+    };
+    // As the store sends it: the built-in profile, and the state of its key.
+    bridge.settings.mockResolvedValue({
+      ok: true,
+      data: settings({
+        judges: { ...settings().judges, openai },
+        keys: { TYPESAFE_API_KEY: true, MU_JUDGE_OPENAI_KEY: false },
+      }),
+    });
+    await open('judges');
+    const tile = screen.getByTestId('mu-judge-choice-openai');
+    expect(tile).toHaveTextContent(enMu.judges.choices.openai.title);
+    expect(tile).toHaveAttribute('aria-checked', 'false');
+    fireEvent.click(tile);
+    expect(tile).toHaveAttribute('aria-checked', 'true');
+    // Its key, hidden as it is typed; no service, address or model on this page.
+    const key = within(tile).getByLabelText(enMu.judges.openai.key);
+    expect(key).toHaveAttribute('type', 'password');
+    expect(within(tile).getByText(enMu.keyState.none)).toBeInTheDocument();
+    expect(within(tile).queryByLabelText(enMu.judges.service)).not.toBeInTheDocument();
+    expect(within(tile).queryByLabelText(enMu.judges.baseUrl)).not.toBeInTheDocument();
+    expect(within(tile).queryByLabelText(enMu.judges.model)).not.toBeInTheDocument();
+    fireEvent.change(key, { target: { value: 'sk-proj-made-up' } });
+    // The order: OpenAI by its name and its model; its key is the choice's.
+    fireEvent.click(screen.getByTestId('mu-nav-judge-order'));
+    const tier = screen.getByTestId('mu-judge-tier-0');
+    expect(tier).toHaveTextContent(`Tier 1: ${enMu.judges.choices.openai.title}`);
+    expect(within(tier).queryByLabelText(enMu.judges.openai.key)).not.toBeInTheDocument();
+    // The model is picked, never typed: only the models the Decisions API serves.
+    const model = within(tier).getByLabelText(enMu.judges.model);
+    expect(model).toHaveTextContent('gpt-6-luna');
+    expect(within(tier).queryByRole('textbox')).not.toBeInTheDocument();
+    fireEvent.click(model);
+    await waitFor(() => expect(document.querySelectorAll('.arco-select-option').length).toBeGreaterThan(0));
+    expect([...document.querySelectorAll('.arco-select-option')].map((choice) => choice.textContent)).toEqual([
+      ...OPENAI_MODELS,
+    ]);
+    fireEvent.click(screen.getByText('Save'));
+    await waitFor(() => expect(bridge.save).toHaveBeenCalled());
+    const sent = bridge.save.mock.calls[0][0] as SaveSettings;
+    expect(sent.tiers).toEqual(['openai']);
+    expect(sent.judges.openai).toEqual(openai);
+    expect(sent.credentials).toEqual([{ name: 'MU_JUDGE_OPENAI_KEY', value: 'sk-proj-made-up' }]);
+    expect(sent.removeCredentials).toBeUndefined();
+  });
+
+  it('removes OpenAI’s saved key on save, from the choice and from the order, and keeps a model a relay serves', async () => {
+    const openai = {
+      type: 'openai' as const,
+      model: 'gpt-6-luna',
+      baseUrl: '',
+      apiKeyEnv: 'MU_JUDGE_OPENAI_KEY',
+      timeoutMs: 10000,
+    };
+    // A relay that serves the Decisions API under a model of its own: mu.json names it, the app keeps it.
+    const relay = {
+      ...openai,
+      model: 'relay-luna',
+      baseUrl: 'https://relay.example.com/v1',
+      apiKeyEnv: 'MU_JUDGE_RELAY_KEY',
+    };
+    const stored = settings({
+      tiers: ['openai', 'relay'],
+      judges: { ...settings().judges, openai, relay },
+      keys: { TYPESAFE_API_KEY: true, MU_JUDGE_OPENAI_KEY: true, MU_JUDGE_RELAY_KEY: true },
+    });
+    bridge.settings.mockResolvedValue({ ok: true, data: stored });
+    // As the store answers: the removed key is no longer set.
+    bridge.save.mockImplementation(
+      async ({ removeCredentials, credentials: _credentials, ...input }: SaveSettings) => ({
+        ok: true,
+        data: {
+          ...stored,
+          tiers: input.tiers,
+          judges: input.judges,
+          revision: 'r2',
+          keys: {
+            ...stored.keys,
+            ...Object.fromEntries((removeCredentials ?? []).map((name) => [name, false])),
+          },
+        },
+      })
+    );
+    await open('judges');
+    const tile = screen.getByTestId('mu-judge-choice-openai');
+    expect(tile).toHaveAttribute('aria-checked', 'true');
+    // Set, with the way to remove it, and where else mu finds a key.
+    expect(within(tile).getByTestId('mu-openai-key-state')).toHaveTextContent(enMu.keyState.set);
+    expect(tile).toHaveTextContent(enMu.judges.openai.keyHelp);
+    expect(within(tile).getByLabelText(enMu.judges.openai.key)).toHaveAttribute('placeholder', enMu.keyKeep);
+    fireEvent.click(within(tile).getByRole('button', { name: enMu.judges.removeKey }));
+    // Removed in the draft: the save bar says so, and the key goes only when it is saved.
+    expect(within(tile).getByTestId('mu-openai-key-state')).toHaveTextContent(enMu.keyState.removed);
+    expect(within(tile).queryByRole('button', { name: enMu.judges.removeKey })).not.toBeInTheDocument();
+    expect(within(tile).getByLabelText(enMu.judges.openai.key)).toHaveAttribute(
+      'placeholder',
+      enMu.judges.keyPlaceholder
+    );
+    expect(screen.getByTestId('mu-save-bar')).toHaveTextContent('Unsaved changes in: Judges');
+    expect(tile).toHaveAttribute('aria-checked', 'true');
+
+    // The order: the relay's model stays its own, offered with the ones OpenAI serves.
+    fireEvent.click(screen.getByTestId('mu-nav-judge-order'));
+    const second = screen.getByTestId('mu-judge-tier-1');
+    const model = within(second).getByLabelText(enMu.judges.model);
+    expect(model).toHaveTextContent('relay-luna');
+    fireEvent.click(model);
+    await waitFor(() => expect(document.querySelectorAll('.arco-select-option').length).toBeGreaterThan(0));
+    expect([...document.querySelectorAll('.arco-select-option')].map((choice) => choice.textContent)).toEqual([
+      ...OPENAI_MODELS,
+      'relay-luna',
+    ]);
+    // The relay's key, further down the order, has the same action; a key typed in its place wins over it.
+    expect(within(second).getByTestId('mu-openai-key-state')).toHaveTextContent(enMu.keyState.set);
+    fireEvent.click(within(second).getByRole('button', { name: enMu.judges.removeKey }));
+    expect(within(second).getByTestId('mu-openai-key-state')).toHaveTextContent(enMu.keyState.removed);
+    fireEvent.change(within(second).getByLabelText(enMu.judges.openai.key), { target: { value: 'sk-relay-made-up' } });
+    expect(within(second).getByTestId('mu-openai-key-state')).toHaveTextContent(enMu.keyState.set);
+
+    fireEvent.click(screen.getByText('Save'));
+    await waitFor(() => expect(bridge.save).toHaveBeenCalled());
+    const sent = bridge.save.mock.calls[0][0] as SaveSettings;
+    expect(sent.removeCredentials).toEqual(['MU_JUDGE_OPENAI_KEY']);
+    expect(sent.credentials).toEqual([{ name: 'MU_JUDGE_RELAY_KEY', value: 'sk-relay-made-up' }]);
+    // Neither judge was rewritten: the relay's model is as mu.json has it, and the order is the same.
+    expect(sent.judges.relay).toEqual(relay);
+    expect(sent.judges.openai).toEqual(openai);
+    expect(sent.tiers).toEqual(['openai', 'relay']);
+
+    // Saved: the key is not set, and there is nothing to remove.
+    fireEvent.click(screen.getByTestId('mu-nav-judges'));
+    const after = await screen.findByTestId('mu-judge-choice-openai');
+    await waitFor(() => expect(within(after).getByTestId('mu-openai-key-state')).toHaveTextContent(enMu.keyState.none));
+    expect(within(after).queryByRole('button', { name: enMu.judges.removeKey })).not.toBeInTheDocument();
+    expect(after).toHaveAttribute('aria-checked', 'true');
   });
 
   it('puts the switches that carry the product on the core features page, each with the way to its row', async () => {

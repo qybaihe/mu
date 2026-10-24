@@ -136,6 +136,7 @@
     "choose": "Escolha um juiz",
     "custom": "No momento, o primeiro juiz é personalizado: veja e altere na página “Ordem dos juízes”.",
     "keyPlaceholder": "Cole a chave",
+    "removeKey": "Remover chave",
     "choices": {
       "jev": {
         "title": "Jev",
@@ -153,6 +154,11 @@
         "title": "CLM",
         "tag": "Auto-hospedado",
         "description": "Responde às mesmas perguntas que o Jev, em um servidor seu (clm-serve). O codificador precisa de uma GPU; nada é cobrado por chamada."
+      },
+      "openai": {
+        "title": "OpenAI",
+        "tag": "Hospedado",
+        "description": "O modelo de decisão da OpenAI, gpt-6-luna, com uma chave de API da OpenAI. A OpenAI cobra por token de entrada."
       }
     },
     "mude": {
@@ -294,12 +300,17 @@
         "mock": "Este servidor usa o codificador simulado do CLM: as respostas dele são ruído, não do CLM.",
         "failed": "Não foi possível consultar o servidor."
       }
+    },
+    "openai": {
+      "key": "Chave de API da OpenAI",
+      "keyHelp": "Sem ela, o mu usa a chave de API do provedor OpenAI (Configurações → Provedores) ou OPENAI_API_KEY, nunca um login do ChatGPT."
     }
   },
   "keyState": {
     "none": "Não definida",
     "set": "Definida",
     "typed": "Chave nova, ainda não salva",
+    "removed": "Chave removida, ainda não salva",
     "empty": "A variável está vazia",
     "managed": "Definida",
     "manual": "Definida (editada manualmente)"
@@ -817,6 +828,10 @@
     "freeJevUnavailable": {
       "paid": "O Jev grátis do OpenCode Zen agora pede uma chave ou pagamento, então regras simples decidem por enquanto. Preencha uma chave do Jev em Configurações → Juízes para ter o juiz de volta.",
       "gone": "O OpenCode Zen não oferece mais o Jev grátis, então regras simples decidem por enquanto. Preencha uma chave do Jev em Configurações → Juízes para ter o juiz de volta."
+    },
+    "openaiKey": {
+      "missing": "O modelo de decisão da OpenAI está sem chave de API, então não está julgando. Adicione uma em Configurações → Juízes ou escolha outro juiz.",
+      "rejected": "A OpenAI recusou a chave de API do modelo de decisão, então ele não está julgando. Adicione outra chave em Configurações → Juízes ou escolha outro juiz."
     },
     "layaRemoved": "O Laya não vem mais integrado ao mu, então seu juiz agora é {{judge}}. Para usar outro modelo de decisão, adicione-o pelo Hugging Face em Configurações → Juízes.",
     "layaRemovedNoModels": "O Laya não vem mais integrado ao mu, então seu juiz agora é {{judge}}.",

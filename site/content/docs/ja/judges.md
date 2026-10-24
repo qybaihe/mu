@@ -65,6 +65,22 @@ Jev は TypeSafe による判定モデルで、この種の問いのために作
 
 **速度とコスト。** 作者たち自身のセッションでの実測では、ウォームな接続で 1 問あたり約 0.3 秒、ツール出力 16 チャンクを 1 リクエストで判定して 0.44 秒で、状態の課金は 1 回だけでした。セッションの使用中は、50 秒ごとに小さな問いを 1 つ送って接続をウォームに保つので、ターン前の問いは接続にかかる 1〜3 秒を省けます。
 
+## OpenAI の判定モデル {#openai}
+
+組み込みの `openai` 判定器は、OpenAI の [Decisions API](https://developers.openai.com/api/docs/guides/decisions)（`POST /v1/decisions`）で `gpt-6-luna` に問い合わせます。OpenAI の API キーが必要です。キーは `MU_JUDGE_OPENAI_KEY` です。設定されていなければ、mu が `openai` プロバイダー用にすでに持っている OpenAI の API キー（`mu setup`、`/login`、`OPENAI_API_KEY` のいずれか）を使います。ChatGPT でのサインインはこれに含まれません。`mu setup --judge openai` かアプリの「判定器」ページで設定するか、`mu.json` に書きます。
+
+```json
+{ "tiers": ["openai"] }
+```
+
+OpenAI の料金は、キャッシュされていない入力 100 万トークンあたり 0.10 ドルで、出力は無料です。mu の問いではまだ測っていません。
+
+同じ Decisions エンドポイントを提供する中継サービスやプロキシ経由で使うときは、`baseUrl` と専用のキーを指定します。mu の `openai` プロバイダーのキーは `api.openai.com` にしか送られません。
+
+```json
+{ "judges": { "relay": { "type": "openai", "baseUrl": "https://relay.example.com/v1", "apiKeyEnv": "MU_JUDGE_RELAY_KEY" } } }
+```
+
 ## 設定にまだ Laya がある場合 {#laya}
 
 Laya は、mu 0.2.4 まで組み込まれていたサードパーティのローカル判定器で、いまは組み込まれていません。`mu.json` が `tiers` や `routes`、`local` タイプの判定器としてまだ Laya を指していても、そのまま動きます。この Mac で mude 1.0 がセットアップ済みなら mude 1.0 が代わりに入り、そうでなければリストに残った判定器が答え、何も残らなければ Jev が答えます。mu は `mu.json` を一度だけ直し（変えるのはその項目だけで、元のファイルは `~/.mu/backups` に残します）、どの判定器に切り替えたかを知らせます。`MU_JUDGE=laya` は無視されます。手元で別の意思決定モデルを使うには、[Hugging Face から追加](@docs/judges#models)してください。
@@ -97,6 +113,7 @@ Laya は、mu 0.2.4 まで組み込まれていたサードパーティのロー
 | `llm` | pi のレジストリにあるチャットモデル |
 | `classifier` | pi のカタログにある分類モデル |
 | `clm` | `clm-serve` |
+| `openai` | `baseUrl` の OpenAI Decisions API（既定は OpenAI 自身） |
 
 キーはファイルに書きません。`apiKeyEnv` には、キーを持つ環境変数の名前を書きます。その変数は、自分の環境か mu の `.env` で設定します。
 

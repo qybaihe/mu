@@ -16,6 +16,7 @@ import {
   MU_NOTICE_KEYS,
   MU_NOTICE_LINKS,
   muNotice,
+  OPENAI_KEY_KEYS,
 } from '@/renderer/pages/conversation/Messages/acp/muNotice';
 import { openExternalUrl } from '@/renderer/utils/platform';
 import enMu from '@/renderer/services/i18n/locales/en-US/mu.json';
@@ -78,7 +79,11 @@ describe('the bridge’s notices', () => {
           .reduce<unknown>((at, name) => (at as Record<string, unknown> | undefined)?.[name], mu);
       for (const code of MU_NOTICE_CODES)
         expect(sentence(MU_NOTICE_KEYS[code]), `${language} ${code}`).toEqual(expect.any(String));
-      for (const key of [...Object.values(FREE_JEV_UNAVAILABLE_KEYS), 'mu.notices.layaRemovedNoModels'])
+      for (const key of [
+        ...Object.values(FREE_JEV_UNAVAILABLE_KEYS),
+        ...Object.values(OPENAI_KEY_KEYS),
+        'mu.notices.layaRemovedNoModels',
+      ])
         expect(sentence(key), `${language} ${key}`).toEqual(expect.any(String));
     }
   });
@@ -254,6 +259,33 @@ describe('the free Jev', () => {
     // A reason this build has no words for is said in mu's own.
     showNotice('en', stopped('newer'));
     expect(screen.getByTestId('mu-notice')).toHaveTextContent('mu: it stopped');
+  });
+});
+
+describe('OpenAI’s decision model without a usable key', () => {
+  it('says why, as a warning, in the reader’s language', () => {
+    const keyless = (code?: string) =>
+      notice({ title: 'mu: no OpenAI key', raw_input: { notice: 'openai_key', ...(code ? { code } : {}) } });
+    expect(muNotice(keyless('rejected'))).toEqual({
+      code: 'openai_key',
+      title: 'mu: no OpenAI key',
+      reason: 'rejected',
+    });
+    const rejected = showNotice('en', keyless('rejected'));
+    expect(screen.getByTestId('mu-notice')).toHaveTextContent(enMu.notices.openaiKey.rejected);
+    expect(screen.getByTestId('mu-notice')).toHaveAttribute('data-code', 'openai_key');
+    // The warning's mark, not the quiet one of a notice that only informs.
+    expect(screen.getByTestId('mu-notice').querySelector('.text-warning')).not.toBeNull();
+    rejected.unmount();
+    const missing = showNotice('zh', keyless('missing'));
+    expect(screen.getByTestId('mu-notice')).toHaveTextContent(zhMu.notices.openaiKey.missing);
+    missing.unmount();
+    // A reason this build has no words for is said in mu's own; none at all, the missing key's line.
+    const newer = showNotice('en', keyless('newer'));
+    expect(screen.getByTestId('mu-notice')).toHaveTextContent('mu: no OpenAI key');
+    newer.unmount();
+    showNotice('en', notice({ title: '', raw_input: { notice: 'openai_key' } }));
+    expect(screen.getByTestId('mu-notice')).toHaveTextContent(enMu.notices.openaiKey.missing);
   });
 });
 

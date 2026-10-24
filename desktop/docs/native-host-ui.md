@@ -407,7 +407,8 @@ For the Playwright harness (`tests/e2e/mu-conversation/`). Stable; nothing else 
 | `native-source-more`, `native-source-diff-failed`                                      | Changes not listed (the count, or git wrote more than was read); a diff that could not be read (the path; its reason in `title`)                                                                                                                   |
 | `kernel-no-lessons`                                                                    | The lessons tab's note while a native conversation's folder is not known (it could not be opened)                                                                                                                                                  |
 | `native-model-chip`, `native-model-pill`                                               | The model · thinking level chip (`data-model` = `provider/id` or '' for none, `data-level`, `data-source` = host, file, reply or none); its button                                                                                                 |
-| `composer-model-option`, `composer-level-option`, `composer-model-search`              | In the chip's menu (the menu of mu's other conversations): a model (`data-value` = `provider/id`), a level of it (`data-value`), the search box past five models                                                                                   |
+| `composer-model-option`, `composer-model-show-all`, `composer-model-search`            | In the chip's menu (the menu of mu's other conversations): a model (`data-value` = `provider/id`), the row that lists every model or the short list again (`data-show-all`), the search box past five models (it searches every model)             |
+| `composer-thinking`, `composer-level-option`                                           | Under the list, outside the part that scrolls: the thinking levels of the model in use (none when it takes one); a level (`data-value`)                                                                                                            |
 | `native-model-loading`                                                                 | The chip's menu while pi is asked for its models                                                                                                                                                                                                   |
 | `native-permission-pill`, `native-permission`                                          | The permission mode (`data-mode` = full, judge, ask, or '' for mu's default); its button                                                                                                                                                           |
 | `native-permission-option`                                                             | A mode in its menu (`data-mode`)                                                                                                                                                                                                                   |
@@ -568,10 +569,11 @@ reopened judge tab empty ("本会话还没有判定记录"), which is what the f
 `tests/e2e/mu-conversation/native-composer.spec.mjs` in the same world. Eight steps, about 20 seconds: a new
 conversation shows the default model (nothing started) and the mode it was made in; typing `/` starts mu and lists its
 commands; the second model picked on the chip answers the next message (the fake model's request names it); the level
-"high" picked on the model that reasons reaches the request as `reasoning_effort`; a write asks in 最小权限 and, after
-the pill's switch to 完全访问, a second write asks nothing and the file is written; an image and a file attached from
-the picker reach the request (the image as an `image_url` part, the file by its full path), and ↑ brings the last
-message back without its files; a file mentioned with `@` reaches it by its full path; the quit leaves nothing running.
+"high" picked under the list once the model that reasons is in use reaches the request as `reasoning_effort`; a write
+asks in 最小权限 and, after the pill's switch to 完全访问, a second write asks nothing and the file is written; an image
+and a file attached from the picker reach the request (the image as an `image_url` part, the file by its full path),
+and ↑ brings the last message back without its files; a file mentioned with `@` reaches it by its full path; the quit
+leaves nothing running.
 
 Looked at (macOS, Electron 44, light and dark): the idle send box, the `/` menu, the model menu and its level submenu,
 the permission menu, the attachment chips, the person's row after the send (the file as a card, no image: see "Left
@@ -580,7 +582,10 @@ window's bottom edge with its last levels out of sight: Arco caps a dropdown men
 the note above the levels (mu's) took a fifth of that, so a model with five levels showed the note and four (the test
 clicked "high", the fourth). The flyout is no longer capped (`.model-level-note` in `arco-override.css`, which the
 classic conversation's chip shares), and the step checks that every level is inside the window; run at 1440×900 and
-1100×640 (`MU_E2E_WINDOW`).
+1100×640 (`MU_E2E_WINDOW`). In 0.2.7 the flyout went, and that rule with it: it opened to the left of the menu and,
+with a long model list (a ChatGPT sign-in lists 42 models), ran down to the window's edge. The levels of the model in
+use now sit under the list, outside the part that scrolls (`composer-thinking`), so they show however long the list is;
+the step picks the model, opens the menu again and clicks "high" there.
 
 `tests/e2e/mu-conversation/native-home.spec.mjs` runs with it (`--native` runs every `native*.spec.mjs`): seven steps,
 about 15 seconds. Before the start it writes three finished sessions and two backend records (an adapter record, an
@@ -596,9 +601,9 @@ after the delete. The last step writes a session file into the profile while the
 and brings the window to the front: the row shows, newest first.
 
 `native-home-level.spec.mjs` (two steps, about 10 seconds): mu's default model is the one that reasons, the home page's
-pill opens it to its levels, "high" picked there is the level the conversation's chip shows and the model is asked with
-`reasoning_effort: high`. The levels the pill lists are the ones mu's default model reported to the classic home page;
-another model's levels are not known there, so on the home page only the current model opens to levels.
+pill lists its levels under the models, "high" picked there is the level the conversation's chip shows and the model is
+asked with `reasoning_effort: high`. The levels the pill lists are the ones mu's default model reported to the classic
+home page; another model's levels are not known there.
 
 `native-firstrun.spec.mjs` (three steps, about 20 seconds): a start with no provider and no default model (the guide
 shows over the app). A conversation is made and a message sent: mu starts, has no model, and the screen shows the

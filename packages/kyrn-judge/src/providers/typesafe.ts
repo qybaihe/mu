@@ -1,7 +1,7 @@
-import { JudgeError, type JudgeErrorKind } from "../errors.ts";
+import { JudgeError } from "../errors.ts";
 import type { Answer, JudgeProvider, JudgeRequest, ProviderResponse, Question } from "../types.ts";
 import type { ApiKeyResolver } from "./gateway.ts";
-import { MAX_ERROR_MESSAGE_LENGTH, messageFromErrorBody, readWarnings } from "./http.ts";
+import { errorKindForStatus, MAX_ERROR_MESSAGE_LENGTH, messageFromErrorBody, readWarnings } from "./http.ts";
 
 export const TYPESAFE_BASE_URL = "https://api.typesafe.ai/v1/systemone";
 export const TYPESAFE_DEFAULT_MODEL = "jev-latest";
@@ -42,15 +42,6 @@ interface SystemOneBody {
 	answers?: Record<string, Record<string, unknown>>;
 	usage?: { input_tokens?: unknown; output_tokens?: unknown };
 	warnings?: unknown;
-}
-
-function errorKindForStatus(status: number, message: string): JudgeErrorKind {
-	if (status === 401) return "auth";
-	if (status === 402) return "payment_required";
-	if (status === 403) return /credit|payment|billing|quota/i.test(message) ? "payment_required" : "auth";
-	if (status === 429) return "rate_limited";
-	if (status >= 500) return "server";
-	return "bad_request";
 }
 
 /** System One calls a yes/no question `noul`; everything else has the kernel's own shape. */

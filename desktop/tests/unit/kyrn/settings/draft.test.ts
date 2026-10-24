@@ -12,6 +12,7 @@ import {
   areaRows,
   dirtySections,
   isStale,
+  keyRemoved,
   matches,
   newDraft,
   optionParts,
@@ -104,15 +105,29 @@ describe('the draft of the settings area', () => {
       settings: base,
       judgeKeys: { TYPESAFE_API_KEY: 'judge' },
       providerKeys: { relay: 'sk', gone: 'x' },
+      removedKeys: [],
     });
     expect(sent.credentials).toEqual([
       { name: 'TYPESAFE_API_KEY', value: 'judge' },
       { name: 'MU_PROVIDER_RELAY_API_KEY', value: 'sk' },
     ]);
+    expect(sent).not.toHaveProperty('removeCredentials');
     expect(Object.keys(sent)).not.toEqual(expect.arrayContaining(['keys', 'harness']));
     expect(Object.keys(sent.models ?? {})).toEqual(['providers', 'defaults']);
     const old = toSave(newDraft({ ...base, harness: { status: 'missing' }, features: {} }));
     expect(old).not.toHaveProperty('features');
+  });
+  it('names a judge’s removed key for the store, unless a key was typed in its place', () => {
+    const draft = { ...newDraft(base), removedKeys: ['MU_JUDGE_OPENAI_KEY', 'MU_JUDGE_RELAY_KEY'] };
+    expect([...dirtySections(base, draft)]).toEqual(['judges']);
+    expect(keyRemoved(draft, 'MU_JUDGE_OPENAI_KEY')).toBe(true);
+    expect(toSave(draft).removeCredentials).toEqual(['MU_JUDGE_OPENAI_KEY', 'MU_JUDGE_RELAY_KEY']);
+    const typed = { ...draft, judgeKeys: { MU_JUDGE_RELAY_KEY: 'sk-relay' } };
+    expect(keyRemoved(typed, 'MU_JUDGE_RELAY_KEY')).toBe(false);
+    expect(toSave(typed).removeCredentials).toEqual(['MU_JUDGE_OPENAI_KEY']);
+    expect(toSave(typed).credentials).toEqual([{ name: 'MU_JUDGE_RELAY_KEY', value: 'sk-relay' }]);
+    // A typed key cleared again: the removal stands.
+    expect(toSave({ ...draft, judgeKeys: { MU_JUDGE_RELAY_KEY: '' } }).removeCredentials).toHaveLength(2);
   });
   it('counts a removed hand-written entry as a change, and names it for the store only against the base', () => {
     const read = { ...base, models: { ...base.models, foreign: [entry('lab'), entry('anthropic')] } };
