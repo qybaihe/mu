@@ -1,49 +1,44 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="880" height="402" viewBox="0 0 880 402" role="img" aria-labelledby="t d" font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif'>
-<title id="t">Real failing test logs: 51% folded without loss</title>
-<desc id="d">5 failures, one diff each: 37,819 characters, 86% folded. DOM test, 4 failures: 34,115 characters, 44% folded. The same run, subagent: 34,115 characters, 44% folded. Shared stderr stack: 15,565 characters, 47% folded. 2 failures: 9,249 characters, 16% folded. 7 suites fail to parse: 4,953 characters, 0% folded. 5 different failures: 4,004 characters, 0% folded.</desc>
-<text x="0" y="22" font-size="18" font-weight="600" fill="#f0f6fc">Real failing test logs: 51% folded without loss</text>
-<text x="0" y="46" font-size="13.5" fill="#b7bdc8">The 7 test logs over 4,000 characters in two days of the authors' sessions (Vitest). A run of 6 or more lines</text>
-<text x="0" y="65" font-size="13.5" fill="#b7bdc8">identical to one kept above becomes one back-reference. The markers expand to the original, byte for byte.</text>
-<line x1="0" x2="880" y1="89" y2="89" stroke="#262c33"/>
-<path d="M0,101 H14 Q14,101 14,101 V113 Q14,113 14,113 H0 Z" fill="#5f5e5a"/>
-<text x="20" y="112" font-size="12.5" fill="#b7bdc8">kept, what the model reads</text>
-<path d="M196,101 H210 Q210,101 210,101 V113 Q210,113 210,113 H196 Z" fill="#3987e5"/>
-<text x="216" y="112" font-size="12.5" fill="#b7bdc8">exact repeats, folded by rule (no model call)</text>
-<line x1="200" x2="200" y1="132" y2="356" stroke="#3d444d"/>
-<line x1="335" x2="335" y1="132" y2="356" stroke="#262c33"/>
-<line x1="470" x2="470" y1="132" y2="356" stroke="#262c33"/>
-<line x1="605" x2="605" y1="132" y2="356" stroke="#262c33"/>
-<line x1="740" x2="740" y1="132" y2="356" stroke="#262c33"/>
-<text x="186" y="152.5" text-anchor="end" font-size="13.5" fill="#f0f6fc">5 failures, one diff each</text>
-<path d="M200,140 H271.4825 Q271.4825,140 271.4825,140 V156 Q271.4825,156 271.4825,156 H200 Z" fill="#5f5e5a"/>
-<path d="M273.4825,140 H706.5564999999999 Q710.5564999999999,140 710.5564999999999,144 V152 Q710.5564999999999,156 706.5564999999999,156 H273.4825 Z" fill="#3987e5"/>
-<text x="718.5564999999999" y="152.5" font-size="13.5" font-weight="600" fill="#f0f6fc" stroke="#0d1117" stroke-width="4" paint-order="stroke">86% folded</text>
-<text x="186" y="184.5" text-anchor="end" font-size="13.5" fill="#f0f6fc">DOM test, 4 failures</text>
-<path d="M200,172 H457.904 Q457.904,172 457.904,172 V188 Q457.904,188 457.904,188 H200 Z" fill="#5f5e5a"/>
-<path d="M459.904,172 H656.5525 Q660.5525,172 660.5525,176 V184 Q660.5525,188 656.5525,188 H459.904 Z" fill="#3987e5"/>
-<text x="668.5525" y="184.5" font-size="13.5" font-weight="600" fill="#f0f6fc" stroke="#0d1117" stroke-width="4" paint-order="stroke">44% folded</text>
-<text x="186" y="216.5" text-anchor="end" font-size="13.5" fill="#f0f6fc">The same run, subagent</text>
-<path d="M200,204 H457.904 Q457.904,204 457.904,204 V220 Q457.904,220 457.904,220 H200 Z" fill="#5f5e5a"/>
-<path d="M459.904,204 H656.5525 Q660.5525,204 660.5525,208 V216 Q660.5525,220 656.5525,220 H459.904 Z" fill="#3987e5"/>
-<text x="668.5525" y="216.5" font-size="13.5" font-weight="600" fill="#f0f6fc" stroke="#0d1117" stroke-width="4" paint-order="stroke">44% folded</text>
-<text x="186" y="248.5" text-anchor="end" font-size="13.5" fill="#f0f6fc">Shared stderr stack</text>
-<path d="M200,236 H311.3615 Q311.3615,236 311.3615,236 V252 Q311.3615,252 311.3615,252 H200 Z" fill="#5f5e5a"/>
-<path d="M313.3615,236 H406.1275 Q410.1275,236 410.1275,240 V248 Q410.1275,252 406.1275,252 H313.3615 Z" fill="#3987e5"/>
-<text x="418.1275" y="248.5" font-size="13.5" font-weight="600" fill="#f0f6fc" stroke="#0d1117" stroke-width="4" paint-order="stroke">47% folded</text>
-<text x="186" y="280.5" text-anchor="end" font-size="13.5" fill="#f0f6fc">2 failures</text>
-<path d="M200,268 H304.8815 Q304.8815,268 304.8815,268 V284 Q304.8815,284 304.8815,284 H200 Z" fill="#5f5e5a"/>
-<path d="M306.8815,268 H320.8615 Q324.8615,268 324.8615,272 V280 Q324.8615,284 320.8615,284 H306.8815 Z" fill="#3987e5"/>
-<text x="332.8615" y="280.5" font-size="13.5" font-weight="600" fill="#f0f6fc" stroke="#0d1117" stroke-width="4" paint-order="stroke">16% folded</text>
-<text x="186" y="312.5" text-anchor="end" font-size="13.5" fill="#f0f6fc">7 suites fail to parse</text>
-<path d="M200,300 H262.8655 Q266.8655,300 266.8655,304 V312 Q266.8655,316 262.8655,316 H200 Z" fill="#5f5e5a"/>
-<text x="274.8655" y="312.5" font-size="13.5" font-weight="400" fill="#b7bdc8" stroke="#0d1117" stroke-width="4" paint-order="stroke">0%, too little to fold</text>
-<text x="186" y="344.5" text-anchor="end" font-size="13.5" fill="#f0f6fc">5 different failures</text>
-<path d="M200,332 H250.054 Q254.054,332 254.054,336 V344 Q254.054,348 250.054,348 H200 Z" fill="#5f5e5a"/>
-<text x="262.054" y="344.5" font-size="13.5" font-weight="400" fill="#b7bdc8" stroke="#0d1117" stroke-width="4" paint-order="stroke">0%, no repeats</text>
-<text x="200" y="370" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">0</text>
-<text x="335" y="370" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">10K</text>
-<text x="470" y="370" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">20K</text>
-<text x="605" y="370" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">30K</text>
-<text x="740" y="370" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">40K</text>
-<text x="470" y="390" text-anchor="middle" font-size="12" fill="#b7bdc8">characters per log · 139,820 in all, 71,296 folded</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="357" viewBox="0 0 880 357" role="img" aria-labelledby="t d" font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif'>
+<title id="t">Folded without loss: 40% of Jest failure logs, 19.5% across 71 real failing test logs</title>
+<desc id="d">Jest · 4 projects: 14 logs, 584,229 characters, 40% folded. pytest · 2 projects: 5 logs, 255,721 characters, 27% folded. Vitest · 6 projects: 18 logs, 530,853 characters, 9% folded. Vitest · mu's own CI: 27 logs, 942,761 characters, 6% folded. Vitest · authors' sessions, Sep 21: 7 logs, 139,820 characters, 51% folded.</desc>
+<text x="0" y="22" font-size="18" font-weight="600" fill="#f0f6fc">Folded without loss: 40% of Jest failure logs, 19.5% across 71 real failing test logs</text>
+<text x="0" y="46" font-size="13.5" fill="#b7bdc8">Failing CI runs of 12 open-source projects and of mu, one log per run, as mu's bash tool hands it over; and the 7</text>
+<text x="0" y="65" font-size="13.5" fill="#b7bdc8">longest from two days of the authors' sessions. A run of 6 or more lines identical to one kept above becomes one</text>
+<text x="0" y="84" font-size="13.5" fill="#b7bdc8">back-reference. The markers expand to the original, byte for byte.</text>
+<line x1="0" x2="880" y1="108" y2="108" stroke="#262c33"/>
+<path d="M0,120 H14 V132 H0 Z" fill="#5f5e5a"/>
+<text x="20" y="131" font-size="12.5" fill="#b7bdc8">kept, what the model reads</text>
+<path d="M196,120 H210 V132 H196 Z" fill="#3987e5"/>
+<text x="216" y="131" font-size="12.5" fill="#b7bdc8">exact repeats, folded by rule (no model call)</text>
+<line x1="230" x2="230" y1="143" y2="303" stroke="#3d444d"/>
+<line x1="350" x2="350" y1="143" y2="303" stroke="#262c33"/>
+<line x1="470" x2="470" y1="143" y2="303" stroke="#262c33"/>
+<line x1="590" x2="590" y1="143" y2="303" stroke="#262c33"/>
+<line x1="710" x2="710" y1="143" y2="303" stroke="#262c33"/>
+<text x="216" y="163.5" text-anchor="end" font-size="13.5" fill="#f0f6fc">Jest · 4 projects</text>
+<path d="M230,151 H515.498498020468 V167 H230 Z" fill="#5f5e5a"/>
+<path d="M517.498498020468,151 H706 Q710,151 710,155 V163 Q710,167 706,167 H517.498498020468 Z" fill="#3987e5"/>
+<text x="718" y="163.5" font-size="13.5" font-weight="600" fill="#f0f6fc">40% folded · 14 logs</text>
+<text x="216" y="195.5" text-anchor="end" font-size="13.5" fill="#f0f6fc">pytest · 2 projects</text>
+<path d="M230,183 H579.8090418854924 V199 H230 Z" fill="#5f5e5a"/>
+<path d="M581.8090418854924,183 H706 Q710,183 710,187 V195 Q710,199 706,199 H581.8090418854924 Z" fill="#3987e5"/>
+<text x="718" y="195.5" font-size="13.5" font-weight="600" fill="#f0f6fc">27% folded · 5 logs</text>
+<text x="216" y="227.5" text-anchor="end" font-size="13.5" fill="#f0f6fc">Vitest · 6 projects</text>
+<path d="M230,215 H663.7120332747484 V231 H230 Z" fill="#5f5e5a"/>
+<path d="M665.7120332747484,215 H706 Q710,215 710,219 V227 Q710,231 706,231 H665.7120332747484 Z" fill="#3987e5"/>
+<text x="718" y="227.5" font-size="13.5" font-weight="600" fill="#f0f6fc">9% folded · 18 logs</text>
+<text x="216" y="259.5" text-anchor="end" font-size="13.5" fill="#f0f6fc">Vitest · mu's own CI</text>
+<path d="M230,247 H679.182006892521 V263 H230 Z" fill="#5f5e5a"/>
+<path d="M681.182006892521,247 H706 Q710,247 710,251 V259 Q710,263 706,263 H681.182006892521 Z" fill="#3987e5"/>
+<text x="718" y="259.5" font-size="13.5" font-weight="600" fill="#f0f6fc">6% folded · 27 logs</text>
+<text x="216" y="291.5" text-anchor="end" font-size="13.5" fill="#f0f6fc">Vitest · authors' sessions, Sep 21</text>
+<path d="M230,279 H463.24188242025457 V295 H230 Z" fill="#5f5e5a"/>
+<path d="M465.24188242025457,279 H706 Q710,279 710,283 V291 Q710,295 706,295 H465.24188242025457 Z" fill="#3987e5"/>
+<text x="718" y="291.5" font-size="13.5" font-weight="600" fill="#f0f6fc">51% folded · 7 logs</text>
+<text x="230" y="325" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">0%</text>
+<text x="350" y="325" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">25%</text>
+<text x="470" y="325" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">50%</text>
+<text x="590" y="325" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">75%</text>
+<text x="710" y="325" text-anchor="middle" font-size="11.5" fill="#8b949e" style="font-variant-numeric: tabular-nums">100%</text>
+<text x="470" y="345" text-anchor="middle" font-size="12" fill="#b7bdc8">share of each group's characters · 2,453,384 in all, 479,473 folded</text>
 </svg>

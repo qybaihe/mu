@@ -6,7 +6,7 @@
 >
 > 2026-10-21: mu now has more than one judge. Where "Jev" meant the judge in general, the text now says "the judge"; Jev names only TypeSafe's hosted judge model, so the measurements and the config value `jev` keep the name.
 
-Date: 2026-09-21. Status: **wired in as an optional strategy, off by default** (`features.admission.testLog`, one of `off`, `rules` or `jev`).
+Date: 2026-09-21; folding measured again on more logs on 2026-10-25 (section 8). Status: **wired in as an optional strategy, off by default** (`features.admission.testLog`, one of `off`, `rules` or `jev`).
 
 - Code: `packages/kyrn-judge/src/admission/test-log.ts`, wired in at `src/extension/features/admission.ts`
 - Tests: `test/test-log.test.ts` (26 tests, offline, covering all 38 samples) and `test/admission-test-log.test.ts` (6 tests, faux sessions)
@@ -173,6 +173,26 @@ Test logs take a separate branch. `isError` isn't skipped (failing runs are wher
 4. Before extending the repeated-run rule from test logs to all long bash output, measure the repetition rate on the 330 bash results in the history.
 5. Keep `jev` in shadow and evaluate it once the ledger has collected real judge candidates. With current usage, that may take a long time.
 
+## 8. Folding on more logs (2026-10-25)
+
+The replay in section 4 had 7 long logs, all Vitest, from two days of one person's sessions. Those session files are gone, and the repeat rule hasn't changed since (`test-log.ts` is the same as at the rename on 2026-09-22), so this round measured it on more logs with `kyrn/spikes/judge-bench/test-log-repeats.ts`: the `rules` arm only, no judge, and a round-trip check on every log.
+
+- **Sample.** Failed GitHub Actions runs, read as data and never run: from each of 12 open-source projects, chosen by test runner before measuring, its 6 most recent failed runs, and mu's own failed test runs since 2026-09-22. One failing test log per run, so a failure repeated across a CI matrix counts once, cut the way mu's bash tool cuts output (the last 2,000 lines or 50 KB) before admission sees it. Only logs mu recognizes as test logs count (`isTestLog`, 4,000 characters or more).
+- **Not usable.** The authors' recent agent sessions held only 6 failing test logs over 4,000 characters, because the agent piped most test runs through `tail`; none had a repeat to fold. The Terminal-Bench 2.1 runs held none: the agents there don't run test suites with long output. Go and Cargo logs aren't recognized as test logs (no run summary the parser knows), so they're never folded.
+
+| Failing test logs, one per run | Logs | Characters | Net saved | Folded logs | Largest |
+|---|---|---|---|---|---|
+| Jest: babel, docusaurus, react, jest | 14 | 584,229 | 40.1% | 12 | 81% |
+| pytest: poetry, pandas | 5 | 255,721 | 26.7% | 3 | 50% |
+| Vitest: nuxt, prettier, svelte, vite, vitest, vue | 18 | 530,853 | 9.2% | 4 | 36% |
+| Vitest: mu's own CI | 27 | 942,761 | 6.0% | 6 | 31% |
+| Vitest: the authors' sessions, 2026-09-21 (section 4) | 7 | 139,820 | 51.0% | 5 | 86% |
+| All | 71 | 2,453,384 | 19.5% | 30 | |
+
+Every folded log comes back byte for byte: in the public logs every omitted line is a back-reference to kept lines; in 6 of mu's CI logs, repeated stderr blocks are also omitted, and those come back from the archived original.
+
+**What changed.** The 51% from section 4 isn't typical. It came from logs where one diff or DOM dump repeats for every failed test. Jest and pytest print each failure's diff and stack trace in full, so their failing logs fold by a third or more; Vitest's default reporter repeats less, and most of its failing logs have nothing to fold.
+
 ## Reproducing
 
 ```bash
@@ -180,6 +200,8 @@ Test logs take a separate branch. `isError` isn't skipped (failing runs are wher
 node kyrn/spikes/judge-bench/test-log-replay.ts
 # Live Jev (sends only synthetic samples; the replay script for real session logs never calls the judge). SET=tuned|heldout reports the two sets separately
 SET=heldout KYRN_JUDGE=jev node --env-file=.env kyrn/spikes/judge-bench/test-log-replay.ts
+# Folding on your own logs: one {"command", "output"} JSON object per line; BASH_TOOL=1 cuts each output as mu's bash tool does
+BASH_TOOL=1 ONE_PER_RUN=1 node kyrn/spikes/judge-bench/test-log-repeats.ts shell-results.jsonl
 # Unit and integration tests (from packages/kyrn-judge)
 node ../../node_modules/vitest/dist/cli.js --run test/test-log.test.ts test/admission-test-log.test.ts
 ```
