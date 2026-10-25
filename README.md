@@ -24,7 +24,7 @@
   </picture>
 </p>
 
-Does this output matter? Is this command safe for the task? Is the work really done? A coding agent answers questions like these hundreds of times a session. Left to the main model or to fixed rules, they cost you in three ways:
+Does this output matter? Is this command safe for the task? Is the work really done? A coding agent answers questions like these hundreds of times a session. Handing them to the main model or to fixed rules costs you in three ways:
 
 - **Wasted tokens.** A 2,000-line test log goes into the context whole, and every request after it pays for it again. mu's judge reads long output chunk by chunk and lets in only what the task needs; the rest waits behind a pointer. Stale results are dropped without a summary, and when you're likely to be back, the prompt cache is refreshed before it expires. Test-log trimming, off by default, folds exact repeats: on the longest failing test logs it cut 51% of the characters, losslessly (see [Measured](#measured)).
 - **Commands approved on autopilot.** The agent asks before every step, so you click Allow without reading, or turn the prompts off. In *Judge mode*, the default, the judge lets through what the task clearly needs and asks you about the rest. Rules catch risky commands first, and web pages and MCP output are screened for instructions aimed at the AI before the model sees them.
@@ -255,7 +255,39 @@ The code map, and where each step lives: [docs/architecture.md](docs/architectur
 
 ## Measured
 
-The numbers below come from the repository's own replay script, [`kyrn/spikes/judge-bench/test-log-replay.ts`](kyrn/spikes/judge-bench/test-log-replay.ts). The method and the full tables are in [kyrn/docs/09-test-log-admission.en.md](kyrn/docs/09-test-log-admission.en.md).
+Does handing the small calls to a judge make an agent finish more of the work, or only spend less? Two measurements so far: whole tasks, end to end, and what reaches the model from a failing test run. Both say what they don't show.
+
+### Whole tasks: Terminal-Bench 2.1
+
+Same model, same tasks, same time limits, three attempts per task. mu passed 68.2% of its Terminal-Bench 2.1 attempts; pi, the harness mu is built on, passed 58.7%. mu passes more because fewer of its attempts run out of time. It isn't faster at the tasks both pass.
+
+| 88 tasks × 3 attempts, MiMo v2.6 Pro | mu · Jev | mu · pre-release mude | pi |
+| --- | --- | --- | --- |
+| Attempts passed | **180 of 264 (68.2%)** | 174 of 264 (65.9%) | 155 of 264 (58.7%) |
+| Difference from pi, 95% interval | +9.5 points (+3.8 to +15.2) | +7.2 points (+1.1 to +13.3) | |
+| Tasks mu passes more often / less often than pi | 25 / 8 (sign test p = 0.005) | 25 / 10 (p = 0.017) | |
+| Attempt 1 alone: tasks passed | 57 of 88 (McNemar p = 0.064) | 56 of 88 (p = 0.077) | 48 of 88 |
+| Attempts that hit the time limit | 87 | 81 | 97 |
+| Agent time per passed attempt | 23.6 min | 22.2 min | 27.4 min |
+| Cost per attempt / per passed attempt | $0.046 / $0.067 | $0.042 / $0.063 | $0.040 / $0.069 |
+
+Where mu doesn't come out ahead:
+
+- **One attempt doesn't settle it.** Attempt 1 alone points the same way but isn't significant, which is why every task ran three times.
+- **It isn't faster at a task.** On the tasks both passed, mu with Jev took 1.08 times as long as pi (0.98 to 1.21).
+- **An attempt costs more.** With Jev, 14% more than pi's, for the judge's calls and a longer request prefix. Per passed attempt, the cost is about the same.
+
+What this run is and isn't:
+
+- Terminal-Bench 2.1 through Harbor 0.24.0, at each task's own time limit; a timeout is a failure. pytorch-model-recovery is left out for every configuration, because the harness didn't pass its instruction to pi or mu in attempt 1. That leaves 88 of the 89 tasks.
+- MiMo v2.6 Pro with reasoning effort high, everywhere. pi 1.4.0 is the control. mu is mu-agent 0.1.12, built on pi 1.3.0, with its defaults; Jev is version 1.14. The mude column is a pre-release build with 24 layers, served on the same Mac. mude 1.0 is the 20-layer model made from it and hasn't been run on Terminal-Bench; neither has mu 0.2.x.
+- Three attempts per task, from 2026-10-22 to 2026-10-24, on one 16 GB Mac with Apple silicon. Attempts were rerun only for infrastructure failures, by rules set beforehand. Rosetta breaks four tasks for every configuration, so absolute pass rates are about 4.5 points lower than on x86_64 and can't be compared with the public leaderboard.
+
+Every attempt's result is in [docs/benchmarks/terminal-bench-2.1.csv](docs/benchmarks/terminal-bench-2.1.csv). The method, the statistics and the caveats are in [docs/benchmarks/terminal-bench-2.1.md](docs/benchmarks/terminal-bench-2.1.md).
+
+### What reaches the model: failing test logs
+
+The numbers below come from the repository's own replay script, [`kyrn/spikes/judge-bench/test-log-replay.ts`](kyrn/spikes/judge-bench/test-log-replay.ts), run on 2026-09-21. The method and the full tables are in [kyrn/docs/09-test-log-admission.en.md](kyrn/docs/09-test-log-admission.en.md).
 
 **Exact repeats.** A failing run often prints the same diff, DOM dump or stack trace once per failed test. mu keeps the first copy and replaces each later copy with a single line naming the lines it repeats. No model is called. The markers expand back to the original byte for byte, and the full log stays on disk, behind a pointer at the end of the output.
 
@@ -268,7 +300,7 @@ The numbers below come from the repository's own replay script, [`kyrn/spikes/ju
 
 <p align="center"><img src="docs/readme/test-log-folding.gif" width="960" alt="A failing Vitest run of 338 lines scrolls past with its repeated diff blocks highlighted, then the same run as the model sees it: 135 lines, with one marker line for each folded block. 7,686 characters become 4,262, with no model call."></p>
 
-**Goal-aware selection.** With a verbose reporter, what's worth keeping depends on what you asked for. Passing tests are noise when you're debugging a failure, and evidence when you ask which tests ran. In a single request, the judge is asked about each block of passing tests and each block of test output: does the goal still need it? The summary and the failures are never put to the judge. A block is left out only when the judge gives "not needed" a probability of 0.9 or higher. In these measurements, the judge is Jev.
+**Goal-aware selection.** With a verbose reporter, what's worth keeping depends on what you asked for. Passing tests are noise when you're debugging a failure, and evidence when you ask which tests ran. In a single request, the judge is asked about each block of passing tests and each block of test output: does the goal still need it? The summary and the failures are never put to the judge. A block is left out only when the judge gives "not needed" a probability of 0.9 or higher. In these measurements, the judge is Jev 1.13, the default at the time; they haven't been rerun with Jev 1.14.
 
 <p align="center">
   <picture>
@@ -286,7 +318,6 @@ What these numbers don't show:
 - The selection cases are real Vitest, node:test and pytest output from synthetic projects, plus 13 hand-written edge cases. The goals and labels were written by the authors. The held-out goals were labeled first and run once, and nothing was changed afterward.
 - They measure what reaches the model and what's lost, not whether the model then finishes the task.
 - The repeats come from two days of one developer's sessions: 15 test logs, all from Vitest, of which the 7 over 4,000 characters are charted. Other test runners haven't been measured.
-- There's no end-to-end comparison with pi, Claude Code or Codex on the same tasks yet.
 
 <details>
 <summary>The charts as tables</summary>
