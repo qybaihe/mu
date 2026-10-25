@@ -304,6 +304,7 @@
     "download": "이 버전 내려받기",
     "full_agent": "mu-agent 전체 변경 기록(영어)",
     "headlines": {
+      "v0.2.11": "판정 모드가 읽기만 하는 git 명령은 묻지 않아요",
       "v0.2.10": "도우미를 보내는 줄도 짧은 이름으로 불러요",
       "v0.2.9": "쉬운 말 보드에서 서브에이전트를 당신의 언어로 된 이름으로 불러요",
       "v0.2.8": "쉬운 말 보드가 동료처럼 알려 줘요. 누가 무엇을 하는지, 어디서 막혔는지, 다음엔 무엇을 하는지",
@@ -320,6 +321,14 @@
       "v0.1.8": "MCP 도구 설명 속 숨은 지시 검사, 잘 끝난 긴 작업을 스킬 초안으로"
     },
     "entries": [
+      {
+        "version": "v0.2.11",
+        "date": "2026-10-25",
+        "agent": "mu-agent 0.2.11",
+        "items": [
+          "<b>판정 모드가 읽기만 하는 git 명령은 묻지 않아요.</b>어떤 모델은 모든 명령 앞에 <code>cd &lt;프로젝트 폴더&gt; &amp;&amp;</code>를 붙여요. mu는 지금까지 <code>cd</code> 뒤의 git 명령을 모두 무언가를 바꿀 수 있는 명령으로 봐서, <code>cd 프로젝트 &amp;&amp; git diff</code>가 판정기로 갔고 판정기가 확신하지 못하면 여러분에게 물었어요. 이제 대화가 열린 폴더로 <code>cd</code>하면 git은 그대로 읽기 전용이고, 다른 곳으로 <code>cd</code>하면 전처럼 확인해요. <code>git branch --show-current</code>, <code>git tag -l</code>, <code>git remote -v</code>, <code>git stash list</code>처럼 목록만 보여 주는 명령도 바로 실행해요."
+        ]
+      },
       {
         "version": "v0.2.10",
         "date": "2026-10-24",

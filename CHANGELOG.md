@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+## [0.2.11] - 2026-10-25
+
+**0.2.11 stops asking you about read-only git commands in judge mode.** The desktop app carries mu-agent 0.2.11.
+
 ### Fixed
 
 - **Judge mode no longer asks about read-only git commands that start with `cd` into the project.** Some models begin every command with `cd <the project folder> &&`, and mu counted any git command after a `cd` as one that may change something, in case it ran in another repository. So `cd /path/to/project && git diff` went to the judge, and when the judge wasn't sure, to you. A `cd` to the folder the conversation runs in now keeps git read-only; a `cd` anywhere else still doesn't. More read-only git commands also go ahead without asking: `git branch` and `git tag` when they only list (`git branch --show-current`, `git branch -a`, `git tag -l`), `git remote -v`, `git stash list`, `git worktree list`, `git config user.name` and `--get`, `git grep`, `git rev-list`, `git ls-tree`, `git cat-file` and more. Commands that make, delete or run something, such as `git branch x`, `git stash`, `git -c … log` or `git grep -O`, are still checked.
