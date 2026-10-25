@@ -8,7 +8,7 @@ import { CONFIG_DIR_NAME, type ExtensionUIContext } from "@earendil-works/pi-cod
 import { Type } from "typebox";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
-import { isReadOnlyChain } from "../src/checkpoint/mutating.ts";
+import { isMutatingCall, isReadOnlyChain } from "../src/checkpoint/mutating.ts";
 import { parseConfig } from "../src/config.ts";
 import type { DecisionMode } from "../src/decision.ts";
 import { toolRisk } from "../src/decisions/tool-risk.ts";
@@ -185,6 +185,207 @@ describe("what needs permission", () => {
 		// The option off: only a single command or a pipeline only looks.
 		expect(permissionNeed("bash", { command: "git status; git log -3" }, cwd, [], false)).toBeDefined();
 		expect(permissionNeed("bash", { command: "git status | head" }, cwd, [], false)).toBeUndefined();
+	});
+
+	// Recording the README GIF, 2026-10-25: MiMo began every command with `cd <the conversation's folder> &&`, so
+	// `git diff` and `git branch --show-current` went to the judge, which was unsure (needed 0.79), and the user was asked.
+	// Git Bash on Windows spells the folder `/c/...`, which this does not read: there, git after a `cd` still asks.
+	it.skipIf(process.platform === "win32")(
+		"takes git as looking after a cd back to the conversation's folder, and in no other folder",
+		() => {
+			const dir = mkdtempSync(join(tmpdir(), "mu-cd-git-"));
+			try {
+				const project = join(dir, "project");
+				mkdirSync(join(project, "sub"), { recursive: true });
+				symlinkSync(project, join(dir, "link"));
+				for (const command of [
+					`cd ${project} && git diff`,
+					`cd ${project} && git branch --show-current && git status --short | head`,
+					`cd "${project}" && git log --oneline -5`,
+					`cd ${project}/ && git status`,
+					`cd ${join(dir, "link")} && git status`,
+					`cd /tmp && cd ${project} && git status`,
+					`cd ${project}/./sub && ls && cd ${project} && git diff --stat`,
+				]) {
+					expect(isReadOnlyChain(command, false, project), command).toBe(true);
+					expect(permissionNeed("bash", { command }, project), command).toBeUndefined();
+				}
+				for (const command of [
+					`cd ${project}/sub && git status`,
+					`cd ${project}/sub/.. && git status`,
+					`cd ${project} && cd /tmp && git status`,
+					`cd ${project}; cd ../other; git status`,
+					"cd sub && git status",
+					"cd . && git status",
+					"cd && git status",
+					"cd - && git status",
+					"cd ~ && git status",
+					"cd $HOME && git status",
+					`cd ${dir}/* && git status`,
+					`cd -P ${project} && git status`,
+					`cd -- ${project} && git status`,
+				]) {
+					expect(isReadOnlyChain(command, false, project), command).toBe(false);
+					expect(permissionNeed("bash", { command }, project), command).toBeDefined();
+				}
+				// Without the conversation's folder, git counts only before the first `cd`.
+				expect(isReadOnlyChain(`cd ${project} && git diff`)).toBe(false);
+				expect(permissionNeed("bash", { command: `cd ${project} && git diff` }, project, [], false)).toBeDefined();
+				expect(isMutatingCall("bash", { command: `cd ${project} && git diff` }, project)).toBe(false);
+				expect(isMutatingCall("bash", { command: `cd ${project}/sub && git diff` }, project)).toBe(true);
+			} finally {
+				rmSync(dir, { recursive: true, force: true });
+			}
+		},
+	);
+
+	it("takes git as looking in a background command only when it starts in the conversation's folder", () => {
+		expect(permissionNeed("bg_start", { command: "git status", cwd: "/tmp/download" }, cwd)).toBeDefined();
+		expect(permissionNeed("bg_start", { command: "git status", cwd: "sub" }, cwd)).toBeDefined();
+		expect(permissionNeed("bg_start", { command: "git status", cwd: "." }, cwd)).toBeUndefined();
+		expect(permissionNeed("bg_start", { command: "git status" }, cwd)).toBeUndefined();
+		expect(permissionNeed("bg_start", { command: "ls", cwd: "/tmp/download" }, cwd)).toBeUndefined();
+	});
+
+	it("takes a git command as looking only when it lists or shows, never when it makes, deletes or runs something", () => {
+		for (const command of [
+			"git branch",
+			"git branch --show-current",
+			"git branch -a",
+			"git branch -vv",
+			"git branch -r",
+			"git branch --list 'feat/*'",
+			"git branch -l 'feat*'",
+			"git branch --contains HEAD",
+			"git branch --merged main",
+			"git branch --sort=-committerdate --format='%(refname:short)'",
+			"git tag",
+			"git tag -l 'v0.2.*'",
+			"git tag -n5",
+			"git tag --contains HEAD",
+			"git tag --sort=-v:refname | head",
+			"git remote",
+			"git remote -v",
+			"git remote get-url origin",
+			"git stash list",
+			"git stash show -p",
+			"git worktree list --porcelain",
+			"git config user.name",
+			"git config --get remote.origin.url",
+			"git config --list --show-origin",
+			"git config -l",
+			"git config get user.email",
+			"git config --global --get user.name",
+			"git --no-pager log -5",
+			"git -P diff --stat",
+			"git --no-optional-locks status --short",
+			"git rev-list --count HEAD",
+			"git ls-tree -r HEAD --name-only",
+			"git cat-file -p HEAD",
+			"git merge-base HEAD origin/main",
+			"git for-each-ref --format='%(refname)' refs/heads",
+			"git show-ref --tags",
+			"git shortlog -sn",
+			"git diff-index --quiet HEAD",
+			"git name-rev HEAD",
+			"git grep -n TODO",
+			"git --version",
+			"git version",
+			"git log --oneline -10 && git diff HEAD~1 --stat",
+		]) {
+			expect(isReadOnlyChain(command, false, cwd), command).toBe(true);
+			expect(permissionNeed("bash", { command }, cwd), command).toBeUndefined();
+		}
+		for (const command of [
+			"git",
+			"git branch x",
+			"git branch -d x",
+			"git branch -D x",
+			"git branch -m a b",
+			"git branch -c a b",
+			"git branch -f x HEAD",
+			"git branch -u origin/x",
+			"git branch --set-upstream-to=origin/x",
+			"git branch --unset-upstream",
+			"git branch --edit-description",
+			"git branch -a x",
+			"git branch -v x",
+			"git branch --sort=refname x",
+			"git branch --show x",
+			"git tag v1",
+			"git tag -a v1 -m x",
+			"git tag -d v1",
+			"git tag -f v1",
+			"git tag -v v1",
+			"git tag -s v1",
+			"git stash",
+			"git stash push",
+			"git stash pop",
+			"git stash drop",
+			"git stash clear",
+			"git worktree add ../x",
+			"git worktree remove x",
+			"git worktree prune",
+			"git remote add x https://example.com/x.git",
+			"git remote set-url origin x",
+			"git remote remove origin",
+			"git remote show origin",
+			"git remote update",
+			"git config user.name x",
+			"git config --unset user.name",
+			"git config --get --unset user.name",
+			"git config --add a.b c",
+			"git config --replace-all a.b c",
+			"git config -e",
+			"git config --edit",
+			"git config set a.b c",
+			"git config unset a.b",
+			"git config --file x a.b",
+			// A config given on the command line can run any program, and another folder can hold another repository.
+			"git -c core.pager=./x log",
+			"git -c core.fsmonitor=./x status",
+			"git -C ../other status",
+			"git --git-dir=../other/.git log",
+			"git --work-tree=../other status",
+			"git -p log",
+			"GIT_EXTERNAL_DIFF=./x git diff",
+			"GIT_PAGER=./x git log",
+			// An alias is found for a command git does not know, without regard to case: `alias.status` for `git STATUS`.
+			"git STATUS",
+			"git Log",
+			"git grep -O x",
+			"git grep -Ovim x",
+			"git grep -iO x",
+			"git grep --open-files-in-pager=vim x",
+			"git grep --open x",
+			"git log --output=x",
+			"git show --out=x HEAD",
+			"git format-patch -1",
+			"git archive -o x.tar HEAD",
+			"git difftool",
+			"git fetch",
+			"git pull",
+			"git push",
+			"git checkout x",
+			"git switch x",
+			"git restore .",
+			"git add .",
+			"git commit -m x",
+			"git reset --hard",
+			"git clean -fd",
+			"git rebase main",
+			"git merge x",
+			"git reflog expire --all",
+			"git update-ref refs/heads/x HEAD",
+			"git symbolic-ref HEAD refs/heads/x",
+			"git submodule update",
+			"git gc",
+			"git help log",
+			"git status && git branch x",
+		]) {
+			expect(isReadOnlyChain(command, false, cwd), command).toBe(false);
+			expect(permissionNeed("bash", { command }, cwd), command).toBeDefined();
+		}
 	});
 
 	it("says what a call is, and what allowing it for the conversation would cover", () => {
@@ -694,6 +895,34 @@ describe("permission modes in a session", () => {
 		await off.harness.session.prompt("What changed?");
 		expect(off.asked).toHaveLength(1);
 	});
+
+	// Recording the README GIF, 2026-10-25: MiMo began every command with `cd <the conversation's folder> &&`.
+	it.skipIf(process.platform === "win32")(
+		"Judge mode: git after a cd back to the conversation's folder asks nobody; making a branch there still goes to the judge",
+		async () => {
+			const questions: string[] = [];
+			const { harness, ran, asked } = await start(
+				(request): Record<string, Answer> => {
+					if ("verdict" in request.questions)
+						questions.push(String((request.state as { tool_call: string }).tool_call));
+					return "verdict" in request.questions ? { verdict: verdict("unrelated") } : {};
+				},
+				{ mode: "judge", pick: (options) => options.at(-1) },
+			);
+			const home = harness.tempDir;
+			const look = `cd ${home} && git branch --show-current && git status --short | head`;
+			harness.setResponses([
+				call("bash", { command: `cd ${home} && git diff` }),
+				call("bash", { command: look }),
+				call("bash", { command: `cd ${home} && git branch x` }),
+				fauxAssistantMessage("Looked."),
+			]);
+			await harness.session.prompt("What changed?");
+			expect(ran).toEqual([`bash cd ${home} && git diff`, `bash ${look}`]);
+			expect(questions).toEqual([`bash: cd ${home} && git branch x`]);
+			expect(asked).toHaveLength(1);
+		},
+	);
 
 	it("with permission modes off, the guard alone runs a flagged command only when the user asked for it", async () => {
 		const questions: string[][] = [];
