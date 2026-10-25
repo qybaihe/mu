@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="880" height="357" viewBox="0 0 880 357" role="img" aria-labelledby="t d" font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif'>
-<title id="t">71 real failing test logs: 19.5% folded without loss</title>
+<title id="t">Folded without loss: 40% of Jest failure logs, 19.5% across 71 real failing test logs</title>
 <desc id="d">Jest · 4 projects: 14 logs, 584,229 characters, 40% folded. pytest · 2 projects: 5 logs, 255,721 characters, 27% folded. Vitest · 6 projects: 18 logs, 530,853 characters, 9% folded. Vitest · mu's own CI: 27 logs, 942,761 characters, 6% folded. Vitest · authors' sessions, Sep 21: 7 logs, 139,820 characters, 51% folded.</desc>
-<text x="0" y="22" font-size="18" font-weight="600" fill="#1f2328">71 real failing test logs: 19.5% folded without loss</text>
+<text x="0" y="22" font-size="18" font-weight="600" fill="#1f2328">Folded without loss: 40% of Jest failure logs, 19.5% across 71 real failing test logs</text>
 <text x="0" y="46" font-size="13.5" fill="#59636e">Failing CI runs of 12 open-source projects and of mu, one log per run, as mu's bash tool hands it over; and the 7</text>
 <text x="0" y="65" font-size="13.5" fill="#59636e">longest from two days of the authors' sessions. A run of 6 or more lines identical to one kept above becomes one</text>
 <text x="0" y="84" font-size="13.5" fill="#59636e">back-reference. The markers expand to the original, byte for byte.</text>

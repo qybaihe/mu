@@ -26,7 +26,7 @@
 
 Does this output matter? Is this command safe for the task? Is the work really done? A coding agent answers questions like these hundreds of times a session. Handing them to the main model or to fixed rules costs you in three ways:
 
-- **Wasted tokens.** A 2,000-line test log goes into the context whole, and every request after it pays for it again. mu's judge reads long output chunk by chunk and lets in only what the task needs; the rest waits behind a pointer. Stale results are dropped without a summary, and when you're likely to be back, the prompt cache is refreshed before it expires. Test-log trimming, off by default, folds exact repeats without losing a byte: across 71 real failing test logs it cut 19.5% of the characters, and 40% of the Jest ones (see [Measured](#measured)).
+- **Wasted tokens.** A 2,000-line test log goes into the context whole, and every request after it pays for it again. mu's judge reads long output chunk by chunk and lets in only what the task needs; the rest waits behind a pointer. Stale results are dropped without a summary, and when you're likely to be back, the prompt cache is refreshed before it expires. Test-log trimming, off by default, folds exact repeats without losing a byte: it cuts 40% of the characters in Jest failure logs and 19.5% across 71 real failing test logs (see [Measured](#measured)).
 - **Commands approved on autopilot.** The agent asks before every step, so you click Allow without reading, or turn the prompts off. In *Judge mode*, the default, the judge lets through what the task clearly needs and asks you about the rest. Rules catch risky commands first, and web pages and MCP output are screened for instructions aimed at the AI before the model sees them.
 - **Runs that stop halfway.** "Next I'll run the tests," and the turn ends. The judge catches a run that stopped short, or a "done" that nothing verified, and sends the agent back to finish, as in the recording above.
 
@@ -287,7 +287,7 @@ The numbers below come from the repository's own scripts. Folding was measured o
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/bench-test-log-repeats-dark.svg">
-    <img src="docs/readme/bench-test-log-repeats-light.svg" width="880" alt="71 real failing test logs, 2,453,384 characters: folding exact repeats removed 19.5%. Jest logs from 4 open-source projects: 40%. pytest, 2 projects: 27%. Vitest, 6 projects: 9%. Vitest in mu's own CI: 6%. Vitest in the authors' sessions on September 21: 51%.">
+    <img src="docs/readme/bench-test-log-repeats-light.svg" width="880" alt="Failing test logs folded without loss: 40% of the characters in Jest logs from 4 open-source projects, 27% in pytest logs from 2, 9% in Vitest logs from 6, 6% in Vitest logs from mu's own CI and 51% in Vitest logs from the authors' sessions on September 21; 19.5% across all 71 logs, 2,453,384 characters.">
   </picture>
 </p>
 
