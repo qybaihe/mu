@@ -2,7 +2,7 @@ import { lstatSync, mkdirSync, readFileSync, readlinkSync, realpathSync, renameS
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { isReadOnlyChain, isReadOnlyCommand } from "../checkpoint/mutating.ts";
+import { isReadOnlyChain, isReadOnlyCommand, shellStart } from "../checkpoint/mutating.ts";
 import { isShellTool } from "../extension/shell-tools.ts";
 
 /**
@@ -263,7 +263,11 @@ export function permissionNeed(
 		// PowerShell where that is the one shell tool. pi's bash tool runs bash on Windows too (Git Bash), where a quoted
 		// parenthesis, as in `rg 'useState\(' src`, is only text.
 		const powershell = toolName === "powershell" || (toolName === "bg_start" && process.platform === "win32");
-		if (chains ? isReadOnlyChain(command, powershell) : isReadOnlyCommand(command, powershell)) return undefined;
+		const start = shellStart(toolName, input, cwd);
+		if (
+			chains ? isReadOnlyChain(command, powershell, cwd, start) : isReadOnlyCommand(command, powershell, cwd, start)
+		)
+			return undefined;
 		const guarded = touches(command);
 		const prefix = commandPrefix(command);
 		return {

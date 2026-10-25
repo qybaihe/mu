@@ -7,6 +7,8 @@
  * A shell command is read with `isReadOnlyChain`, which also takes chains of them (`git status; git log -5`), as the
  * permission gate and the constraint gate read it.
  */
+import { realpathSync } from "node:fs";
+import { isAbsolute, resolve } from "node:path";
 import { isShellTool } from "../extension/shell-tools.ts";
 
 const READ_ONLY_TOOLS: ReadonlySet<string> = new Set([
@@ -29,7 +31,7 @@ const SHELL_TRICKS = /[<>;&`\n\r]|\$\(|\$\{/;
 /** PowerShell also runs what stands in a parenthesis, in `@( )` and in a script block, where an argument goes. */
 const POWERSHELL_TRICKS = /[(){}]/;
 const READ_ONLY_PROGRAM =
-	/^(?:ls|pwd|cat|head|tail|wc|which|file|stat|du|df|date|whoami|uname|echo|printf|rg|grep|sort|uniq|cut|nl|tree|git\s+(?:status|log|diff|show|blame|rev-parse|ls-files|describe)|Get-ChildItem|gci|dir|Get-Content|gc|type|Get-Location|Select-String|sls|Get-Item|gi|Get-Date|Write-Output|Write-Host)(?:\s|$)/i;
+	/^(?:ls|pwd|cat|head|tail|wc|which|file|stat|du|df|date|whoami|uname|echo|printf|rg|grep|sort|uniq|cut|nl|tree|git|Get-ChildItem|gci|dir|Get-Content|gc|type|Get-Location|Select-String|sls|Get-Item|gi|Get-Date|Write-Output|Write-Host)(?:\s|$)/i;
 
 /** Options with which a program of the list writes a file or starts another program. */
 const WRITES_OR_RUNS: ReadonlyMap<string, RegExp> = new Map([
@@ -64,29 +66,186 @@ function longOption(words: readonly string[], option: string, shortest = 1): boo
 	});
 }
 
-/** One program of the list with its arguments, none of which writes a file or starts another program. */
-function readOnlyProgram(piece: string): boolean {
+/** Git commands that only read, with any options but `--output` (and `-O` for `grep`, see `readOnlyGit`). */
+const GIT_READS: ReadonlySet<string> = new Set([
+	"status",
+	"log",
+	"diff",
+	"show",
+	"blame",
+	"rev-parse",
+	"ls-files",
+	"describe",
+	"shortlog",
+	"rev-list",
+	"ls-tree",
+	"cat-file",
+	"merge-base",
+	"name-rev",
+	"for-each-ref",
+	"show-ref",
+	"diff-tree",
+	"diff-index",
+	"diff-files",
+	"grep",
+	"version",
+]);
+
+/**
+ * Git commands that list with some options and make or delete with others: `git branch -a` lists the branches, `git
+ * branch x` makes one. `long` and `short`: the options that only choose or shape the list. `listing`: the ones after
+ * which a name is a pattern or a commit to list by, never a new branch or tag.
+ */
+const GIT_LISTS: ReadonlyMap<string, { long: ReadonlySet<string>; short: RegExp; listing: RegExp }> = new Map([
+	[
+		"branch",
+		{
+			long: new Set([
+				"show-current",
+				"list",
+				"all",
+				"remotes",
+				"verbose",
+				"contains",
+				"no-contains",
+				"merged",
+				"no-merged",
+				"points-at",
+				"sort",
+				"format",
+				"color",
+				"no-color",
+				"column",
+				"no-column",
+				"abbrev",
+				"no-abbrev",
+				"ignore-case",
+				"omit-empty",
+			]),
+			short: /^-[ailrv]+$/,
+			listing: /^(?:--(?:list|contains|no-contains|merged|no-merged|points-at)(?:=|$)|-[ailrv]*l)/,
+		},
+	],
+	[
+		"tag",
+		{
+			long: new Set([
+				"list",
+				"contains",
+				"no-contains",
+				"merged",
+				"no-merged",
+				"points-at",
+				"sort",
+				"format",
+				"color",
+				"no-color",
+				"column",
+				"no-column",
+				"ignore-case",
+				"omit-empty",
+			]),
+			// `-v` is not here: it verifies a tag with the program the config names.
+			short: /^-(?:[il]+|n\d*)$/,
+			listing: /^(?:--(?:list|contains|no-contains|merged|no-merged|points-at)(?:=|$)|-i*l|-n)/,
+		},
+	],
+]);
+
+/** Options of `git config` that say where to read from and how to show it. */
+const CONFIG_SHOWS =
+	/^(?:--(?:global|system|local|worktree|file|blob|show-origin|show-scope|name-only|null|includes|no-includes|type|bool|int|bool-or-int|path|expiry-date|default)(?:=|$)|-z$)/;
+/** The options that make `git config` read: git takes no second action next to one of them. */
+const CONFIG_GETS = /^(?:--(?:get|get-all|get-regexp|get-urlmatch|list)|-l)$/;
+
+/**
+ * The arguments of `git` (after the word itself) for a command that only reads. A command is taken as git spells it:
+ * git runs its own `status` whatever an alias says, but may find `alias.status` for `git STATUS`. Before the command,
+ * only options that keep git from starting a pager or taking locks; `-c` names a config, which can run any program,
+ * and `-C` another folder, which can hold another repository.
+ */
+function readOnlyGit(args: readonly string[]): boolean {
+	let at = 0;
+	while (/^(?:-P|--no-pager|--no-optional-locks)$/.test(args[at] ?? "")) at++;
+	const [command, ...rest] = args.slice(at);
+	if (command === "--version") return rest.length === 0;
+	if (command === "grep") {
+		// `-O` opens what it finds in the program it names.
+		return !rest.some((arg) => /^-[a-zA-Z]*O/.test(arg)) && !longOption(rest, "open-files-in-pager");
+	}
+	if (command !== undefined && GIT_READS.has(command)) return true;
+	const list = command === undefined ? undefined : GIT_LISTS.get(command);
+	if (list) {
+		let named = false;
+		for (const arg of rest) {
+			if (arg.startsWith("--")) {
+				if (!list.long.has(arg.slice(2).split("=")[0])) return false;
+			} else if (arg.startsWith("-")) {
+				if (!list.short.test(arg)) return false;
+			} else named = true;
+		}
+		return !named || rest.some((arg) => list.listing.test(arg));
+	}
+	// `git stash` alone stashes; `git remote show` asks the remote.
+	if (command === "stash") return rest[0] === "list" || rest[0] === "show";
+	if (command === "worktree") return rest[0] === "list";
+	if (command === "remote") return rest[0] === "get-url" || rest.every((arg) => arg === "-v" || arg === "--verbose");
+	if (command === "config") {
+		if (rest[0] === "get" || rest[0] === "list") return true;
+		// `git config user.name` reads it, and `git config user.name x` sets it.
+		const names = rest.filter((arg) => !arg.startsWith("-")).length;
+		return (
+			rest.every((arg) => !arg.startsWith("-") || CONFIG_GETS.test(arg) || CONFIG_SHOWS.test(arg)) &&
+			(rest.some((arg) => CONFIG_GETS.test(arg)) || names === 1)
+		);
+	}
+	return false;
+}
+
+/**
+ * One program of the list with its arguments, none of which writes a file or starts another program. `elsewhere`: it
+ * runs outside the conversation's folder, where git is not trusted (see `isReadOnlyChain`).
+ */
+function readOnlyProgram(piece: string, elsewhere = false): boolean {
 	if (!READ_ONLY_PROGRAM.test(piece)) return false;
 	const words = piece.split(/\s+/);
 	// `--output` writes a file (`git diff`, `sort`), and so does `--out`, the same option cut short.
 	if (longOption(words, "output")) return false;
 	// A case-insensitive file system finds `rg` for `RG` as well.
 	const program = words[0].toLowerCase();
+	if (program === "git") return !elsewhere && readOnlyGit(words.slice(1));
 	if (program === "uniq") return !uniqWrites(words);
 	if (program === "sort" && longOption(words, "compress-program", 2)) return false;
 	if (program === "file" && longOption(words, "compile", 2)) return false;
 	return !WRITES_OR_RUNS.get(program)?.test(piece);
 }
 
+/** Whether `dir` is the conversation's folder `cwd`, by any spelling or link. */
+function samePlace(dir: string, cwd: string): boolean {
+	if (resolve(dir) === resolve(cwd)) return true;
+	try {
+		return realpathSync.native(dir) === realpathSync.native(cwd);
+	} catch {
+		return false;
+	}
+}
+
+/** Whether a command that starts in `start` starts outside the conversation's folder `cwd`. Unknown `cwd`: it does not. */
+function startsElsewhere(cwd: string | undefined, start: string | undefined): boolean {
+	return cwd !== undefined && start !== undefined && !samePlace(start, cwd);
+}
+
 /**
  * True for a pipeline of plain read-only programs, e.g. `git status`, `cat a.txt | grep x | head -5`. `powershell`:
  * the command is PowerShell's (or may be), which evaluates more than a POSIX shell does where an argument goes.
+ * `cwd` and `start`: as `isReadOnlyChain` takes them.
  */
-export function isReadOnlyCommand(command: string, powershell = false): boolean {
+export function isReadOnlyCommand(command: string, powershell = false, cwd?: string, start = cwd): boolean {
 	const text = command.trim();
 	if (!text || SHELL_TRICKS.test(text) || /--output\b/.test(text)) return false;
 	if (powershell && POWERSHELL_TRICKS.test(text)) return false;
-	return text.split("|").every((part) => readOnlyProgram(part.trim()));
+	const elsewhere = startsElsewhere(cwd, start);
+	return text.split("|").every((part) => readOnlyProgram(part.trim(), elsewhere));
 }
 
 /** What makes `find` delete what it finds, run a program on it, or write a list of it to a file. */
@@ -211,32 +370,49 @@ function simpleCommands(text: string): string[][] | undefined {
  * and `rg '--pre=./x'` is the option it is. A redirection that writes a file, `sed -i`, `tee` or any program not on
  * the list makes the whole line one that may change something.
  *
- * Git is run only where the conversation started: a repository found elsewhere may carry a config that runs programs
- * (`core.fsmonitor`, a diff driver), so `cd` followed by `git` does not count. PowerShell gets no chains: its
- * command, and a background command on Windows that may run in it, is read as `isReadOnlyCommand` reads it.
+ * Git counts only in the conversation's folder, `cwd`: a repository found elsewhere may carry a config that runs
+ * programs (`core.fsmonitor`, a diff driver). A command starts in `start` (a background command can name a folder of
+ * its own), and a `cd` moves it on. A `cd` back to `cwd`, spelled from the root, keeps git: some models begin every
+ * command with one (`cd /work/app && git diff`). Any other `cd` does not, nor does a `start` elsewhere; without a
+ * `cwd`, git counts only before the first `cd`. PowerShell gets no chains: its command, and a background command on
+ * Windows that may run in it, is read as `isReadOnlyCommand` reads it.
  */
-export function isReadOnlyChain(command: string, powershell = false): boolean {
-	if (powershell) return isReadOnlyCommand(command, true);
+export function isReadOnlyChain(command: string, powershell = false, cwd?: string, start = cwd): boolean {
+	if (powershell) return isReadOnlyCommand(command, true, cwd, start);
 	const commands = simpleCommands(command.trim());
 	if (!commands?.some((words) => words.length > 0)) return false;
-	let moved = false;
+	let elsewhere = startsElsewhere(cwd, start);
 	return commands.every((words) => {
 		const [program] = words;
 		if (program === undefined || program === "true" || program === "false" || program === ":") return true;
 		if (program === "cd") {
-			moved = true;
+			// Only a folder from the root says for certain where `cd` goes: CDPATH finds a relative one anywhere, `..` after
+			// a link goes up from the link or from where it leads (as the shell is set), and `$`, `~` and wildcards expand.
+			const [, to, ...more] = words;
+			elsewhere =
+				cwd === undefined ||
+				to === undefined ||
+				more.length > 0 ||
+				!isAbsolute(to) ||
+				/[$*?[~]/.test(to) ||
+				to.split(/[\\/]/).includes("..") ||
+				!samePlace(to, cwd);
 			return true;
 		}
 		if (program === "find") return !words.some((word) => FIND_ACTS.test(word));
-		if (moved && program.toLowerCase() === "git") return false;
-		return readOnlyProgram(words.join(" "));
+		return readOnlyProgram(words.join(" "), elsewhere);
 	});
 }
 
-export function isMutatingCall(toolName: string, input: Readonly<Record<string, unknown>>): boolean {
+export function isMutatingCall(toolName: string, input: Readonly<Record<string, unknown>>, cwd?: string): boolean {
 	if (READ_ONLY_TOOLS.has(toolName)) return false;
-	if (isShellTool(toolName)) return !isReadOnlyChain(String(input.command ?? ""), toolName === "powershell");
+	if (isShellTool(toolName)) return !isReadOnlyChain(String(input.command ?? ""), toolName === "powershell", cwd);
 	return true;
+}
+
+/** Where a shell tool's call starts: in the conversation's folder, or for `bg_start` in the folder it names. */
+export function shellStart(toolName: string, input: Readonly<Record<string, unknown>>, cwd: string): string {
+	return toolName === "bg_start" && typeof input.cwd === "string" && input.cwd ? resolve(cwd, input.cwd) : cwd;
 }
 
 const CHECK_COMMAND =

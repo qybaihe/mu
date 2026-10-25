@@ -465,7 +465,7 @@ export function registerCheckpoint(
 				};
 			}
 			pending = undefined;
-			const mutating = isMutatingCall(event.toolName, event.input);
+			const mutating = isMutatingCall(event.toolName, event.input, ctx.cwd);
 			calls.set(event.toolCallId, { name: event.toolName, input: event.input, mutating });
 			if (mutating) turn.changed = true;
 			if (!mutating || off || turn.checkpoint || turn.snapshotFailed) return undefined;

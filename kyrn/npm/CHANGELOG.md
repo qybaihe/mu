@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Read-only shell commands (`isReadOnlyChain`, used by the permission gate, the constraint gate and checkpoints) take the conversation's folder: a `cd` to it, spelled from the root (no `..`, `~`, `$` or wildcard; links resolved), keeps git read-only. Any other `cd` still makes git count as a change. `bg_start` with a `cwd` outside the folder now makes git count as a change too; before, `bg_start {command: "git status", cwd: "/elsewhere"}` passed as read-only.
+- Git is read by subcommand, as git spells it (`git STATUS` can run `alias.status`). Read-only: `status`, `log`, `diff`, `show`, `blame`, `rev-parse`, `ls-files`, `describe`, `shortlog`, `rev-list`, `ls-tree`, `cat-file`, `merge-base`, `name-rev`, `for-each-ref`, `show-ref`, `diff-tree`, `diff-index`, `diff-files`, `version`, `grep` without `-O`/`--open-files-in-pager`; `branch` and `tag` with listing options only, and names only after `--list`/`-l`, `--contains`, `--merged`, `--points-at` (or `-n` for tags); `stash list|show`, `worktree list`, `remote` (`-v`, `get-url`); `config get|list`, `--get*`/`--list`, or one name. Before the subcommand only `--no-pager`, `-P` and `--no-optional-locks`. `--output` (also cut short) still writes. Recorded with MiMo v2.6 Pro: `cd <cwd> && git diff` and `cd <cwd> && git branch --show-current && git status --short | head` went to the judge (needed 0.79, under 0.8) and then to the user.
+
 ## [0.2.10] - 2026-10-24
 
 **0.2.10 has no changes to the agent. It keeps the version in step with the 0.2.10 desktop app.**
