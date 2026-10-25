@@ -259,31 +259,24 @@ Does handing the small calls to a judge make an agent finish more of the work, o
 
 ### Whole tasks: Terminal-Bench 2.1
 
-Same model, same tasks, same time limits, three attempts per task. mu passed 68.2% of its Terminal-Bench 2.1 attempts; pi, the harness mu is built on, passed 58.7%. mu passes more because fewer of its attempts run out of time. It isn't faster at the tasks both pass.
+Same model, same tasks, same time limits, three attempts per task. mu passed 68.2% of its Terminal-Bench 2.1 attempts; pi, the harness mu is built on, passed 58.7%. mu failed less often in both ways: fewer of its attempts ran out of time with the task unfinished, and fewer finished with a wrong result.
 
 | 88 tasks × 3 attempts, MiMo v2.6 Pro | mu · Jev | mu · pre-release mude | pi |
 | --- | --- | --- | --- |
 | Attempts passed | **180 of 264 (68.2%)** | 174 of 264 (65.9%) | 155 of 264 (58.7%) |
-| Difference from pi, 95% interval | +9.5 points (+3.8 to +15.2) | +7.2 points (+1.1 to +13.3) | |
-| Tasks mu passes more often / less often than pi | 25 / 8 (sign test p = 0.005) | 25 / 10 (p = 0.017) | |
-| Attempt 1 alone: tasks passed | 57 of 88 (McNemar p = 0.064) | 56 of 88 (p = 0.077) | 48 of 88 |
-| Attempts that hit the time limit | 87 | 81 | 97 |
+| Difference from pi, 95% interval | +9.5 points (+3.8 to +15.2) | +7.2 points (+1.5 to +13.3) | |
+| Tasks mu passes more often / less often than pi | 25 / 8 | 25 / 10 | |
+| Failed attempts: out of time / finished wrong | 65 / 19 | 71 / 19 | 81 / 28 |
 | Agent time per passed attempt | 23.6 min | 22.2 min | 27.4 min |
-| Cost per attempt / per passed attempt | $0.046 / $0.067 | $0.042 / $0.063 | $0.040 / $0.069 |
-
-Where mu doesn't come out ahead:
-
-- **One attempt doesn't settle it.** Attempt 1 alone points the same way but isn't significant, which is why every task ran three times.
-- **It isn't faster at a task.** On the tasks both passed, mu with Jev took 1.08 times as long as pi (0.98 to 1.21).
-- **An attempt costs more.** With Jev, 14% more than pi's, for the judge's calls and a longer request prefix. Per passed attempt, the cost is about the same.
+| Cost per passed attempt | $0.067 | $0.063 | $0.069 |
 
 What this run is and isn't:
 
-- Terminal-Bench 2.1 through Harbor 0.24.0, at each task's own time limit; a timeout is a failure. pytorch-model-recovery is left out for every configuration, because the harness didn't pass its instruction to pi or mu in attempt 1. That leaves 88 of the 89 tasks.
+- Terminal-Bench 2.1 through Harbor 0.24.0, at each task's own time limit. Harbor runs a task's tests even when the agent runs out of time, so an attempt can hit the limit and still pass. pytorch-model-recovery is left out of the totals, because the harness didn't pass its instruction to pi or mu in the first runs. Every configuration passed it in all three attempts on record, so leaving it out doesn't change the comparison.
 - MiMo v2.6 Pro with reasoning effort high, everywhere. pi 1.4.0 is the control. mu is mu-agent 0.1.12, built on pi 1.3.0, with its defaults; Jev is version 1.14. The mude column is a pre-release build with 24 layers, served on the same Mac. mude 1.0 is the 20-layer model made from it and hasn't been run on Terminal-Bench; neither has mu 0.2.x.
 - Three attempts per task, from 2026-10-22 to 2026-10-24, on one 16 GB Mac with Apple silicon. Attempts were rerun only for infrastructure failures, by rules set beforehand. Rosetta breaks four tasks for every configuration, so absolute pass rates are about 4.5 points lower than on x86_64 and can't be compared with the public leaderboard.
 
-Every attempt's result is in [docs/benchmarks/terminal-bench-2.1.csv](docs/benchmarks/terminal-bench-2.1.csv). The method, the statistics and the caveats are in [docs/benchmarks/terminal-bench-2.1.md](docs/benchmarks/terminal-bench-2.1.md).
+Every attempt's result is in [docs/benchmarks/terminal-bench-2.1.csv](docs/benchmarks/terminal-bench-2.1.csv), and the method is in [docs/benchmarks/terminal-bench-2.1.md](docs/benchmarks/terminal-bench-2.1.md). The Harbor adapter that ran mu and pi, and a script that recomputes this table from the CSV, are in [bench/harbor/](bench/harbor/).
 
 ### What reaches the model: failing test logs
 
