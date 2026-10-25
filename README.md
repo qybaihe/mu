@@ -26,7 +26,7 @@
 
 Does this output matter? Is this command safe for the task? Is the work really done? A coding agent answers questions like these hundreds of times a session. Handing them to the main model or to fixed rules costs you in three ways:
 
-- **Wasted tokens.** A 2,000-line test log goes into the context whole, and every request after it pays for it again. mu's judge reads long output chunk by chunk and lets in only what the task needs; the rest waits behind a pointer. Stale results are dropped without a summary, and when you're likely to be back, the prompt cache is refreshed before it expires. Test-log trimming, off by default, folds exact repeats: on the longest failing test logs it cut 51% of the characters, losslessly (see [Measured](#measured)).
+- **Wasted tokens.** A 2,000-line test log goes into the context whole, and every request after it pays for it again. mu's judge reads long output chunk by chunk and lets in only what the task needs; the rest waits behind a pointer. Stale results are dropped without a summary, and when you're likely to be back, the prompt cache is refreshed before it expires. Test-log trimming, off by default, folds exact repeats without losing a byte: across 71 real failing test logs it cut 19.5% of the characters, and 40% of the Jest ones (see [Measured](#measured)).
 - **Commands approved on autopilot.** The agent asks before every step, so you click Allow without reading, or turn the prompts off. In *Judge mode*, the default, the judge lets through what the task clearly needs and asks you about the rest. Rules catch risky commands first, and web pages and MCP output are screened for instructions aimed at the AI before the model sees them.
 - **Runs that stop halfway.** "Next I'll run the tests," and the turn ends. The judge catches a run that stopped short, or a "done" that nothing verified, and sends the agent back to finish, as in the recording above.
 
@@ -280,14 +280,14 @@ Every attempt's result is in [docs/benchmarks/terminal-bench-2.1.csv](docs/bench
 
 ### What reaches the model: failing test logs
 
-The numbers below come from the repository's own replay script, [`kyrn/spikes/judge-bench/test-log-replay.ts`](kyrn/spikes/judge-bench/test-log-replay.ts), run on 2026-09-21. The method and the full tables are in [kyrn/docs/09-test-log-admission.en.md](kyrn/docs/09-test-log-admission.en.md).
+The numbers below come from the repository's own scripts. Folding was measured on 2026-10-25 with [`test-log-repeats.ts`](kyrn/spikes/judge-bench/test-log-repeats.ts); goal-aware selection on 2026-09-21 with [`test-log-replay.ts`](kyrn/spikes/judge-bench/test-log-replay.ts), whose offline arms give the same results on today's code. The method and the full tables are in [kyrn/docs/09-test-log-admission.en.md](kyrn/docs/09-test-log-admission.en.md).
 
-**Exact repeats.** A failing run often prints the same diff, DOM dump or stack trace once per failed test. mu keeps the first copy and replaces each later copy with a single line naming the lines it repeats. No model is called. The markers expand back to the original byte for byte, and the full log stays on disk, behind a pointer at the end of the output.
+**Exact repeats.** A failing run often prints the same diff, DOM dump or stack trace once per failed test. mu keeps the first copy and replaces each later copy with a single line naming the lines it repeats. No model is called. The markers expand back to the original byte for byte, and the full log stays on disk, behind a pointer at the end of the output. How much goes depends on the runner: Jest and pytest print each failure's diff and stack trace in full, while Vitest's default reporter repeats less.
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/bench-test-log-repeats-dark.svg">
-    <img src="docs/readme/bench-test-log-repeats-light.svg" width="880" alt="Seven real failing Vitest logs from the authors' sessions, 139,820 characters in total. Folding exact repeats removed 86%, 44%, 44%, 47% and 16% of the five largest logs and left the two smallest whole: 51% overall.">
+    <img src="docs/readme/bench-test-log-repeats-light.svg" width="880" alt="71 real failing test logs, 2,453,384 characters: folding exact repeats removed 19.5%. Jest logs from 4 open-source projects: 40%. pytest, 2 projects: 27%. Vitest, 6 projects: 9%. Vitest in mu's own CI: 6%. Vitest in the authors' sessions on September 21: 51%.">
   </picture>
 </p>
 
@@ -310,7 +310,8 @@ What these numbers don't show:
 
 - The selection cases are real Vitest, node:test and pytest output from synthetic projects, plus 13 hand-written edge cases. The goals and labels were written by the authors. The held-out goals were labeled first and run once, and nothing was changed afterward.
 - They measure what reaches the model and what's lost, not whether the model then finishes the task.
-- The repeats come from two days of one developer's sessions: 15 test logs, all from Vitest, of which the 7 over 4,000 characters are charted. Other test runners haven't been measured.
+- The folding sample is mostly CI logs: from each of 12 open-source projects, chosen by test runner before measuring, its 6 most recent failed runs, and from mu's own CI its failed test runs since 2026-09-22, one failing log per run, cut to what mu's bash tool hands over (the last 2,000 lines or 50 KB). The 7 logs from the authors' sessions are the earlier sample. In their recent sessions the agent piped most test runs through `tail`, so few logs reached the 4,000 characters admission starts at.
+- Go and Cargo output isn't recognized as a test log, so it isn't folded.
 
 <details>
 <summary>The charts as tables</summary>
@@ -321,16 +322,14 @@ What these numbers don't show:
 | Perfect judge | 52.5% | 0 of 72 | 46.5% | 0 of 19 |
 | Keep failures only | 61.9% | 9 of 72 | 59.4% | 6 of 19 |
 
-| Real failing test log | Characters | Folded |
-| --- | --- | --- |
-| 5 failures, one diff each | 37,819 | 86% |
-| DOM test, 4 failures | 34,115 | 44% |
-| The same run, seen by a subagent | 34,115 | 44% |
-| Shared stderr stack | 15,565 | 47% |
-| 2 failures | 9,249 | 16% |
-| 7 suites fail to parse | 4,953 | 0%: one repeat, too small to fold |
-| 5 different failures | 4,004 | 0%: no repeats |
-| All 7 | 139,820 | 51.0% |
+| Failing test logs, one per run | Logs | Characters | Folded |
+| --- | --- | --- | --- |
+| Jest, 4 open-source projects | 14 | 584,229 | 40.1% |
+| pytest, 2 open-source projects | 5 | 255,721 | 26.7% |
+| Vitest, 6 open-source projects | 18 | 530,853 | 9.2% |
+| Vitest, mu's own CI | 27 | 942,761 | 6.0% |
+| Vitest, the authors' sessions (2026-09-21) | 7 | 139,820 | 51.0% |
+| All | 71 | 2,453,384 | 19.5% |
 
 </details>
 

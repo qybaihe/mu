@@ -4,7 +4,7 @@
 
 > 2026-10-21：判定器已不止 Jev 一个。正文里泛指判定器的地方已改称“判定器”；Jev 只指 TypeSafe 托管的那个模型，实测数据和配置值 `jev` 保持原样。
 
-日期：2026-09-21。状态：**已接入为可选策略，默认关闭**（`features.admission.testLog`，取值 `off` / `rules` / `jev`）。
+日期：2026-09-21；折叠于 2026-10-25 在更多日志上重测（第八节）。状态：**已接入为可选策略，默认关闭**（`features.admission.testLog`，取值 `off` / `rules` / `jev`）。
 
 代码：`packages/kyrn-judge/src/admission/test-log.ts`，接入点 `src/extension/features/admission.ts`
 测试：`test/test-log.test.ts`（26 项，离线，覆盖全部 38 个样本）、`test/admission-test-log.test.ts`（6 项，faux 会话）
@@ -171,6 +171,26 @@
 4. 把重复段规则从测试日志推广到所有长 bash 输出之前，先在历史里的 330 条 bash 结果上量一遍重复率。
 5. `jev` 保持 shadow，等账本里攒到真实的判断候选再评估；按现在的用法，可能很久都攒不到。
 
+## 八、更多日志上的折叠（2026-10-25）
+
+第四节的回放只有 7 份长日志，全部是 Vitest，来自一个人两天的会话。那些会话文件已经不在了；重复规则之后也没有改过（`test-log.ts` 和 2026-09-22 改名时一样），所以这一轮用 `kyrn/spikes/judge-bench/test-log-repeats.ts` 在更多日志上重测：只跑 `rules` 一档，不调判断器，每份日志都做还原检查。
+
+- **样本。** GitHub Actions 里失败的运行，只当数据读，从不执行：12 个开源项目（按测试运行器选定，选在测量之前）各取最近 6 次失败的运行，加上 mu 自己 2026-09-22 以来失败的测试运行。每次运行取一份失败的测试日志，同一个失败在 CI 矩阵里重复出现只算一次；并先按 mu 的 bash 工具的方式截取（最后 2,000 行或 50 KB），这才是 admission 看到的文本。只算 mu 认得出的测试日志（`isTestLog`，4,000 字符以上）。
+- **用不上的。** 作者最近的代理会话里，超过 4,000 字符的失败测试日志只有 6 份，因为代理大多把测试输出接到 `tail` 后面；这 6 份都没有可折叠的重复。Terminal-Bench 2.1 的运行里一份也没有：那里的代理不跑会打印长日志的测试套件。Go 和 Cargo 的日志不会被识别为测试日志（解析器不认识它们的汇总行），所以从不折叠。
+
+| 失败的测试日志，每次运行一份 | 份数 | 字符 | 净省 | 折叠的份数 | 最多 |
+|---|---|---|---|---|---|
+| Jest：babel、docusaurus、react、jest | 14 | 584,229 | 40.1% | 12 | 81% |
+| pytest：poetry、pandas | 5 | 255,721 | 26.7% | 3 | 50% |
+| Vitest：nuxt、prettier、svelte、vite、vitest、vue | 18 | 530,853 | 9.2% | 4 | 36% |
+| Vitest：mu 自己的 CI | 27 | 942,761 | 6.0% | 6 | 31% |
+| Vitest：作者的会话，2026-09-21（第四节） | 7 | 139,820 | 51.0% | 5 | 86% |
+| 合计 | 71 | 2,453,384 | 19.5% | 30 | |
+
+每一份折叠过的日志都能逐字节还原：公开项目的日志里，省掉的每一行都是指向保留行的回引；mu 的 CI 日志里有 6 份还省掉了重复的 stderr 块，这些从存档的原文还原。
+
+**结论的变化。** 第四节的 51% 不是常态，它来自同一份 diff 或 DOM dump 每个失败的测试各打一遍的日志。Jest 和 pytest 会把每个失败的 diff 和堆栈完整打一遍，失败日志能折掉三分之一以上；Vitest 的默认 reporter 重复得少，多数失败日志没有可折叠的。
+
 ## 复现
 
 ```bash
@@ -178,6 +198,8 @@
 node kyrn/spikes/judge-bench/test-log-replay.ts
 # 真实 Jev（只发送合成样本；真实会话日志的回放脚本不调用判断器）。SET=tuned|heldout 分开报告两组
 SET=heldout KYRN_JUDGE=jev node --env-file=.env kyrn/spikes/judge-bench/test-log-replay.ts
+# 用你自己的日志测折叠：每行一个 {"command", "output"} JSON 对象；BASH_TOOL=1 按 mu 的 bash 工具截取输出
+BASH_TOOL=1 ONE_PER_RUN=1 node kyrn/spikes/judge-bench/test-log-repeats.ts shell-results.jsonl
 # 单元与集成测试（在 packages/kyrn-judge 下）
 node ../../node_modules/vitest/dist/cli.js --run test/test-log.test.ts test/admission-test-log.test.ts
 ```
