@@ -2,7 +2,7 @@
   <img src="desktop/resources/app.png" width="96" alt="mu">
 </p>
 <h1 align="center">mu</h1>
-<p align="center">A coding agent that hands its routine decisions to a small, fast judge model, so the main model can focus on the code. Built on <a href="https://github.com/earendil-works/pi">pi</a>.</p>
+<p align="center">Most of what a coding agent decides isn't code. It's yes/no calls, and mu hands 40 kinds of them to a small model. Built on <a href="https://github.com/earendil-works/pi">pi</a>.</p>
 
 <p align="center">
   <a href="https://github.com/qybaihe/mu/actions/workflows/ci.yml"><img src="https://github.com/qybaihe/mu/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
@@ -24,15 +24,15 @@
   </picture>
 </p>
 
-A coding agent makes hundreds of decisions per session that aren't about the code: what goes into the context, whether a command is safe, whether a finding is worth passing to another agent, whether the work is really done. Handing these to the main model costs tokens, time and focus. Fixed rules get them wrong too often. mu hands them to a **judge**: a small, fast model that answers one bounded question at a time, at 40 decision points in the agent loop. The main model keeps its attention on the work.
+Does this output matter? Is this command safe for the task? Is the work really done? A coding agent answers questions like these hundreds of times a session. Left to the main model or to fixed rules, they cost you in three ways:
+
+- **Wasted tokens.** A 2,000-line test log goes into the context whole, and every request after it pays for it again. mu's judge reads long output chunk by chunk and lets in only what the task needs; the rest waits behind a pointer. Stale results are dropped without a summary, and when you're likely to be back, the prompt cache is refreshed before it expires. Test-log trimming, off by default, folds exact repeats: on the longest failing test logs it cut 51% of the characters, losslessly (see [Measured](#measured)).
+- **Commands approved on autopilot.** The agent asks before every step, so you click Allow without reading, or turn the prompts off. In *Judge mode*, the default, the judge lets through what the task clearly needs and asks you about the rest. Rules catch risky commands first, and web pages and MCP output are screened for instructions aimed at the AI before the model sees them.
+- **Runs that stop halfway.** "Next I'll run the tests," and the turn ends. The judge catches a run that stopped short, or a "done" that nothing verified, and sends the agent back to finish, as in the recording above.
+
+Asking the main model each of these costs tokens and its attention, and fixed rules get them wrong too often. mu asks a **judge**: a small, fast model that answers one bounded question at a time, at 40 decision points in the agent loop. 34 of them act on their verdicts out of the box. Every verdict goes into a local ledger with its probabilities and timing (`mu ledger`, `/status` or the desktop app's Judge tab), and any decision point can run in shadow mode, asked and logged but changing nothing, so you can compare judges before you rely on one.
 
 mu comes as a command-line tool, `mu`, which does everything pi does and adds the judgment kernel, and as a desktop app that bundles mu and its runtime. The default judge model is Jev, hosted by TypeSafe. It answers yes/no, choice and score questions with a probability for each answer. Any judge model can take its place: [mude 1.0](#mude-10-a-decision-model-optimized-for-coding), mu's own model, on your Mac; another decision model from Hugging Face; your own System One server; or any LLM.
-
-What you get:
-
-- **A lean context and a warm cache.** In the authors' own sessions, the context rarely fills: long tool output is judged chunk by chunk so only what's needed enters, and stale results are dropped without a summary. Test-log trimming, off by default, folds exact repeats: on the longest failing test logs it cut 51% of the characters, losslessly (see [Measured](#measured)). Before the prompt cache expires, the kernel predicts whether you'll be back and refreshes the cache if you will.
-- **Permission checks that don't stop you at every step.** In *Judge mode*, the default, the judge lets through what the task clearly needs and asks you about the rest. Rules catch risky commands first, and web pages and MCP output are screened for instructions aimed at the AI before the model sees them.
-- **Decisions you can audit.** Every verdict goes into a local ledger with its probabilities and timing (`mu ledger`, `/status` or the desktop app's Judge tab). Any decision point can run in shadow mode, asked and logged but changing nothing, so you can compare judges before you rely on one.
 
 **Contents:** [Quick start](#quick-start) · [How a turn works](#how-a-turn-works) · [Decision points](#decision-points) · [Judges](#judges) · [How mu is built](#how-mu-is-built) · [Measured](#measured) · [The hive](#the-hive) · [The board](#the-plain-language-board) · [Desktop app](#the-desktop-app) · [Command line](#command-line) · [Privacy](#privacy) · [Documentation](#documentation) · [Contributing](#contributing)
 

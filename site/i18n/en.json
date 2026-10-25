@@ -5,9 +5,9 @@
   "recording": "en",
   "shots": "en",
   "meta": {
-    "title": "mu · Only what's needed.",
-    "description": "mu is a coding agent with a judgment kernel: a small, fast judge model makes dozens of small decisions in every turn, so the task gets only the context it needs. Command line and desktop app, open source.",
-    "og_description": "A coding agent that gives the task only the context it needs. Built on pi, with a small, fast judge model for the routine decisions."
+    "title": "mu · A coding agent that hands its yes/no calls to a small model",
+    "description": "Most of what a coding agent decides isn't code. mu hands 40 kinds of yes/no calls to a small model: fewer wasted tokens, fewer approvals clicked through unread, fewer runs that stop halfway. Command line and desktop app, open source.",
+    "og_description": "Most of what a coding agent decides isn't code. mu hands those yes/no calls to a small model. Built on pi."
   },
   "ui": {
     "announce_pill": "New",
@@ -42,8 +42,8 @@
     "star_cta_button": "Star on GitHub"
   },
   "home": {
-    "h1": "Only the context<wbr> the task <em>needs</em>",
-    "lead": "mu is a coding agent. A small, fast judge model makes dozens of small decisions for the main model in every turn: what stays in the context, whether a command is safe, whether the work is really done. The main model keeps its attention on the work.",
+    "h1": "Most of what your agent decides<wbr> <em>isn't code</em>",
+    "lead": "Does this output matter? Is this command safe? Is the work really done? mu hands these yes/no calls to a small model at 40 decision points, so fewer tokens go to waste, fewer approvals get clicked through unread, and fewer runs stop halfway. The main model keeps its attention on the code.",
     "tab_cli": "Command line",
     "tab_app": "Desktop app",
     "cli_hint": "Needs Node.js 22.19 or newer. Run <code>mu setup</code> once to connect a model, then <code>mu</code> in a project folder.",

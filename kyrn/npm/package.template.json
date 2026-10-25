@@ -1,7 +1,7 @@
 {
 	"name": "mu-agent",
 	"version": "0.2.10",
-	"description": "mu: a coding agent that hands its routine decisions to a small, fast judge model, so the main model can keep its attention on the work. Built on pi.",
+	"description": "mu: most of what a coding agent decides isn't code. mu hands 40 kinds of yes/no calls to a small judge model: fewer wasted tokens, fewer approvals on autopilot, fewer runs that stop halfway. Built on pi.",
 	"type": "module",
 	"bin": {
 		"mu": "kyrn/bin/mu.mjs"

@@ -1,6 +1,6 @@
 # mu
 
-**A coding agent with a judgment kernel.** It hands its routine decisions to a small, fast judge model, so the main model can keep its attention on the work.
+**Most of what a coding agent decides isn't code.** Does this output matter? Is this command safe? Is the work really done? mu hands these yes/no calls to a small judge model at 40 decision points, so fewer tokens go to waste, fewer approvals get clicked through unread, and fewer runs stop halfway.
 
 > Source, docs and the desktop app: [github.com/qybaihe/mu](https://github.com/qybaihe/mu).
 
