@@ -304,6 +304,7 @@
     "download": "下載這個版本",
     "full_agent": "mu-agent 的完整更新紀錄（英文）",
     "headlines": {
+      "v0.2.11": "判定模式不再為唯讀的 git 指令來問你",
       "v0.2.10": "派出助手的那一行也用助手的短名字",
       "v0.2.9": "人話看板裡的助手用你說話的語言起名，不再顯示英文任務名",
       "v0.2.8": "人話看板像隊友一樣報進度：誰在做什麼、卡在哪、下一步做什麼",
@@ -320,6 +321,14 @@
       "v0.1.8": "檢查 MCP 工具描述裡藏的指令，跑通的長任務可以存成技能"
     },
     "entries": [
+      {
+        "version": "v0.2.11",
+        "date": "2026-10-25",
+        "agent": "mu-agent 0.2.11",
+        "items": [
+          "<b>判定模式不再為唯讀的 git 指令來問你。</b>有的模型在每條指令前都加上 <code>cd &lt;專案資料夾&gt; &amp;&amp;</code>，而 mu 以前把 <code>cd</code> 之後的任何 git 指令都當作可能改動東西的指令，於是 <code>cd 專案 &amp;&amp; git diff</code> 會交給判定器，判定器拿不準時就來問你。現在 <code>cd</code> 到對話所在的資料夾，git 仍算唯讀；<code>cd</code> 到別處則照舊檢查。<code>git branch --show-current</code>、<code>git tag -l</code>、<code>git remote -v</code>、<code>git stash list</code> 這類只列出內容的指令也直接執行。"
+        ]
+      },
       {
         "version": "v0.2.10",
         "date": "2026-10-24",

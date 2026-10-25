@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.2.11] - 2026-10-25
+
+**0.2.11: in judge mode, read-only git commands go ahead after a `cd` into the project, and more of git counts as read-only.**
+
 ### Fixed
 
 - Read-only shell commands (`isReadOnlyChain`, used by the permission gate, the constraint gate and checkpoints) take the conversation's folder: a `cd` to it, spelled from the root (no `..`, `~`, `$` or wildcard; links resolved), keeps git read-only. Any other `cd` still makes git count as a change. `bg_start` with a `cwd` outside the folder now makes git count as a change too; before, `bg_start {command: "git status", cwd: "/elsewhere"}` passed as read-only.

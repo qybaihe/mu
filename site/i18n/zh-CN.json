@@ -304,6 +304,7 @@
     "download": "下载这个版本",
     "full_agent": "mu-agent 的完整更新记录（英文）",
     "headlines": {
+      "v0.2.11": "判定模式不再为只读的 git 命令来问你",
       "v0.2.10": "派出助手的那一行也用助手的短名字",
       "v0.2.9": "人话看板里的助手用你说话的语言起名，不再显示英文任务名",
       "v0.2.8": "人话看板像队友一样报进度：谁在干什么、卡在哪、下一步做什么",
@@ -320,6 +321,14 @@
       "v0.1.8": "检查 MCP 工具描述里藏的指令，跑通的长任务可以存成技能"
     },
     "entries": [
+      {
+        "version": "v0.2.11",
+        "date": "2026-10-25",
+        "agent": "mu-agent 0.2.11",
+        "items": [
+          "<b>判定模式不再为只读的 git 命令来问你。</b>有的模型在每条命令前都加上 <code>cd &lt;项目目录&gt; &amp;&amp;</code>，而 mu 以前把 <code>cd</code> 之后的任何 git 命令都当作可能改动东西的命令，于是 <code>cd 项目 &amp;&amp; git diff</code> 会交给判定器，判定器拿不准时就来问你。现在 <code>cd</code> 到对话所在的目录，git 仍算只读；<code>cd</code> 到别处则照旧检查。<code>git branch --show-current</code>、<code>git tag -l</code>、<code>git remote -v</code>、<code>git stash list</code> 这类只列出内容的命令也直接执行。"
+        ]
+      },
       {
         "version": "v0.2.10",
         "date": "2026-10-24",
