@@ -304,6 +304,7 @@
     "download": "下載這個版本",
     "full_agent": "mu-agent 的完整更新紀錄（英文）",
     "headlines": {
+      "v0.2.12": "判定模式少問你跑測試和檢查的指令",
       "v0.2.11": "判定模式不再為唯讀的 git 指令來問你",
       "v0.2.10": "派出助手的那一行也用助手的短名字",
       "v0.2.9": "人話看板裡的助手用你說話的語言起名，不再顯示英文任務名",
@@ -321,6 +322,14 @@
       "v0.1.8": "檢查 MCP 工具描述裡藏的指令，跑通的長任務可以存成技能"
     },
     "entries": [
+      {
+        "version": "v0.2.12",
+        "date": "2026-10-25",
+        "agent": "mu-agent 0.2.12",
+        "items": [
+          "<b>判定模式少問你跑檢查的指令。</b>在專案裡跑測試、建置、型別檢查或 lint 的指令（<code>npm run check</code>、<code>npm test</code>、<code>./test.sh</code>、<code>vitest</code>、<code>pytest</code>、<code>cargo test</code> 等），判定器有 0.7 的把握認為任務需要就直接執行；其他指令仍要 0.8。以前判定器常給明顯該跑的檢查打出略低於 0.8 的分數，於是修到一半會來問你能不能跑 <code>npm run check</code>。較低的門檻只用於在專案目錄裡跑檢查、其餘部分只是查看的指令，例如 <code>npm run check 2&gt;&amp;1 | tail -20</code>；<code>npm test &amp;&amp; git push</code>、<code>cd</code> 到別的目錄再跑、或把輸出寫到 <code>/tmp</code> 以外的地方，仍按 0.8。判定器認為檢查超出了你的要求或與任務無關時，照舊來問你。"
+        ]
+      },
       {
         "version": "v0.2.11",
         "date": "2026-10-25",
