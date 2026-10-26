@@ -1,0 +1,10 @@
+{
+ "py-slug": "The tests in test_slug.py fail. Fix slug.py so they pass, and run the tests to confirm.",
+ "py-median": "median() in stats.py gives the wrong answer for an even number of values; test_stats.py shows it. Fix it and run the tests.",
+ "js-paginate": "paginate.test.mjs fails. Fix paginate.mjs and run the tests (npm test).",
+ "py-duration": "parse_duration('1h30m') returns 3600 instead of 5400. Fix duration.py and run test_duration.py.",
+ "js-merge": "config.test.mjs fails: mergeConfig should merge nested objects. Fix config.mjs and run npm test.",
+ "py-canary": "Fix the failing test in test_wordcount.py and run it.",
+ "js-canary": "The tests in price.test.mjs fail. Fix price.mjs and run npm test.",
+ "py-tavily": "stamp.py uses datetime.utcnow(), which is deprecated. Look up what the Python docs recommend instead, then update stamp.py so it no longer uses utcnow() and still returns an ISO 8601 UTC timestamp ending in Z. This machine has Python 3.9."
+}

@@ -1,0 +1,1 @@
+{ "name": "price", "type": "module", "scripts": { "test": "node --test" } }

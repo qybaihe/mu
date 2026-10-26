@@ -1,0 +1,1 @@
+{ "name": "config", "type": "module", "scripts": { "test": "node --test" } }
