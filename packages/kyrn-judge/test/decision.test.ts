@@ -43,6 +43,27 @@ describe("DecisionEngine", () => {
 		expect(ledger.records[0]).toMatchObject({ specId: "test.keep_chunk", specVersion: 1, outcome: "drop" });
 	});
 
+	it("records what was judged, in one line with the secrets taken out, for one input and for many", async () => {
+		const ledger = new MemoryLedger();
+		const provider = new MockJudgeProvider(() => ({ relevant: { type: "boolean", probability: 0.9 } }));
+		const engine = new DecisionEngine({
+			judge: new Judge({ provider }),
+			defaultMode: "active",
+			ledger,
+			knownSecrets: () => ["sk-test-1234567890abcdef"],
+		});
+
+		await engine.decide(keepChunk, input, {
+			about: "bash: curl -H 'Authorization: Bearer sk-test-1234567890abcdef'\n  https://x",
+		});
+		await engine.decideMany(keepChunk, [input, input], { about: 'web_search "glob 7" · Tavily, 8 results' });
+		await engine.decide(keepChunk, input);
+
+		expect(ledger.records[0].about).toBe("bash: curl -H 'Authorization: Bearer [redacted]' https://x");
+		expect(ledger.records[1]).toMatchObject({ about: 'web_search "glob 7" · Tavily, 8 results', batch: { size: 2 } });
+		expect(ledger.records[2].about).toBeUndefined();
+	});
+
 	it("records the verdict but returns the fallback in shadow mode", async () => {
 		const ledger = new MemoryLedger();
 		const { engine } = engineWith(0.03, "shadow", ledger);

@@ -7,6 +7,7 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 ### Added
 
 - `mu demo` replays a real recorded session with each verdict of the judge, its latency and the run's cost, with no key and no network; `mu replay` does the same for your own sessions.
+- `mu ledger` says what each verdict was about: the command the judge approved, or the web search it screened and that Tavily answered it.
 
 ## [0.2.13] - 2026-10-25
 

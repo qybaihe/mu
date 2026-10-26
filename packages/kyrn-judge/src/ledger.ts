@@ -14,6 +14,11 @@ export interface LedgerRecord {
 	readonly timestamp: string;
 	/** What the engine's `origin` option returned when the question was asked, such as the asking turn. */
 	readonly origin?: JsonValue;
+	/**
+	 * What was judged, in a line a person reads in the ledger: the command for an approval, the tool and where its
+	 * text came from for a screening ("web_search \"…\" · Tavily, 8 results"). Secrets redacted.
+	 */
+	readonly about?: string;
 	readonly specId: string;
 	readonly specVersion: number;
 	readonly mode: "shadow" | "active";

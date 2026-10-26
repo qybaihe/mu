@@ -4,7 +4,7 @@ import type { JudgeLike, JudgeTierReport } from "./judge.ts";
 import { validateQuestions } from "./judge.ts";
 import type { LedgerRecord, LedgerSink } from "./ledger.ts";
 import { hasEscapeOption } from "./policy.ts";
-import { environmentSecrets, redactJson } from "./redact.ts";
+import { environmentSecrets, redactJson, redactSecrets } from "./redact.ts";
 import type {
 	Answer,
 	AnswersFor,
@@ -355,6 +355,13 @@ export class DecisionEngine {
 		}
 	}
 
+	/** A caller's line about what was judged, for the ledger: one line, at most 200 characters, secrets redacted. */
+	private about(text: string | undefined): string | undefined {
+		if (!text) return undefined;
+		const line = redactSecrets(text.replace(/\s+/g, " ").trim(), this.knownSecrets());
+		return line.length > 200 ? `${line.slice(0, 199)}…` : line;
+	}
+
 	private async record(record: LedgerRecord): Promise<void> {
 		try {
 			await this.ledger?.append(record);
@@ -366,7 +373,7 @@ export class DecisionEngine {
 	async decide<In, const Qs extends Questions, Out extends JsonValue>(
 		spec: DecisionSpec<In, Qs, Out>,
 		input: In,
-		options: { signal?: AbortSignal } = {},
+		options: { signal?: AbortSignal; about?: string } = {},
 	): Promise<Decision<Out>> {
 		const mode = this.getMode(spec.id);
 		const fallback = spec.fallback(input);
@@ -385,6 +392,7 @@ export class DecisionEngine {
 			id: randomUUID(),
 			timestamp: new Date().toISOString(),
 			origin,
+			about: this.about(options.about),
 			specId: spec.id,
 			specVersion: spec.version,
 			mode,
@@ -429,7 +437,7 @@ export class DecisionEngine {
 	async decideMany<In, const Qs extends Questions, Out extends JsonValue>(
 		spec: DecisionSpec<In, Qs, Out>,
 		inputs: readonly In[],
-		options: { signal?: AbortSignal; concurrency?: number } = {},
+		options: { signal?: AbortSignal; concurrency?: number; about?: string } = {},
 	): Promise<Decision<Out>[]> {
 		const mode = this.getMode(spec.id);
 		if (mode === "off" || inputs.length === 0) {
@@ -485,6 +493,7 @@ export class DecisionEngine {
 			id: ledgerId,
 			timestamp: new Date().toISOString(),
 			origin,
+			about: this.about(options.about),
 			specId: spec.id,
 			specVersion: spec.version,
 			mode,

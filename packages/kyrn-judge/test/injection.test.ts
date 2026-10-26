@@ -14,7 +14,7 @@ import {
 	toolInjectionBatch,
 } from "../src/decisions/tool-injection.ts";
 import { UNTRUSTED } from "../src/extension/features/browser.ts";
-import { fetchesOutside, screenedFrom } from "../src/extension/features/injection.ts";
+import { fetchesOutside, screenedAbout, screenedFrom } from "../src/extension/features/injection.ts";
 import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import type { KyrnPresentationEvent } from "../src/extension/presentation.ts";
 import { Judge } from "../src/judge.ts";
@@ -181,6 +181,44 @@ describe("injection screening", () => {
 		const shown = events.filter((event) => event.kind === "tool.injection");
 		expect(shown).toHaveLength(1);
 		expect(shown[0].payload).toMatchObject({ tool: "web_fetch", withheld: 2, source: "judge" });
+	});
+
+	it("puts what it screened in the ledger: the search, and that Tavily answered it", async () => {
+		const search: AgentTool = {
+			name: "web_search",
+			label: "web_search",
+			description: "web_search",
+			parameters: Type.Object({ query: Type.String() }),
+			execute: async () => ({
+				content: [{ type: "text", text: `8 results from tavily\n\n${UNTRUSTED}\n\n${page}` }],
+				details: { query: "release notes", source: "tavily", results: 8 },
+			}),
+		};
+		const harness = await createHarness({
+			tools: [search],
+			extensionFactories: [
+				createKyrnJudgeExtension({ provider: screeningJudge(), mode: "active", only: ["injection"] }),
+			],
+		});
+		harnesses.push(harness);
+		harness.setResponses([
+			fauxAssistantMessage([fauxToolCall("web_search", { query: "release notes" })], { stopReason: "toolUse" }),
+			fauxAssistantMessage("Three login fixes."),
+		]);
+		await harness.session.prompt("What changed in the release?");
+		const records = harness.sessionManager
+			.getEntries()
+			.flatMap((entry) => (entry.type === "custom" && entry.customType === "kyrn.decision" ? [entry.data] : []))
+			.filter((record) => (record as { specId?: string }).specId === "tool.injection");
+		expect(records.length).toBeGreaterThan(0);
+		for (const record of records)
+			expect(record).toMatchObject({ about: 'web_search "release notes" · Tavily, 8 results' });
+		expect(screenedAbout("web_fetch", { url: "https://a.example/x" }, { via: "tavily" }, false)).toBe(
+			"web_fetch https://a.example/x · read through Tavily",
+		);
+		expect(screenedAbout("bash", { command: "curl -s https://a.example" }, undefined, true)).toBe(
+			"bash: curl -s https://a.example",
+		);
 	});
 
 	it("falls back to the rules when the judge gives no answer: only the plain phrase is withheld", async () => {

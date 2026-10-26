@@ -11,7 +11,7 @@ mu can run end to end on [Nebius Token Factory](https://tokenfactory.nebius.com)
 
 ## Try it without a key
 
-`mu demo` replays a real session recorded with mu: Nemotron 3 Super fixing a failing test on Token Factory, with each command, Nemotron 3 Ultra's verdict on it and its latency, and what the run cost. It needs no key and no network, and calls no model. `mu demo tavily` replays a session that searched the web through Tavily, with the judge screening every page before the agent read it; `mu replay` replays one of your own sessions the same way.
+`mu demo` replays a real session recorded with mu: Nemotron 3 Super fixing a failing test on Token Factory, where a comment in the code tells AI agents to run a command. Nemotron 3 Ultra approves the steps the task needs and sends that one back; the replay shows each command, each verdict and its latency, and what the run cost. It needs no key and no network, and calls no model. `mu demo tavily` replays a session that searched the web through Tavily, with the judge screening what came back before the agent read it, and `mu demo --list` names the rest; `mu replay` replays one of your own sessions the same way.
 
 ## Set up
 
@@ -117,7 +117,12 @@ MU_SANDBOX=nebius mu --provider nebius --model nvidia/nemotron-3-super-120b-a12b
 
 ## Web search with Tavily
 
-With `TAVILY_API_KEY` set, `web_search` asks [Tavily](https://tavily.com) first and `web_fetch` falls back to Tavily's extract for pages it cannot read itself. See [Configuration](configuration.md).
+With `TAVILY_API_KEY` set, `web_search` asks [Tavily](https://tavily.com) first and `web_fetch` falls back to Tavily's extract for pages it cannot read itself. Whatever comes back is screened by the judge for instructions aimed at the AI before the agent reads it, and the ledger says what was screened and where it came from:
+
+```
+tool.injection [web_search "datetime.utcnow() deprecated alternative python" · Tavily, 8 results]: 5 passages screened, none withheld
+```
+ See [Configuration](configuration.md).
 
 ```bash
 export TAVILY_API_KEY=...      # from app.tavily.com

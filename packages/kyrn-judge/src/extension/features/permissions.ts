@@ -258,7 +258,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 								: "an action outside this computer or program, such as a web page or a connected service",
 				check,
 			},
-			{ signal: ctx.signal },
+			{ signal: ctx.signal, about: call },
 		);
 		const verdict = decision.judged ?? decision.outcome;
 		if (verdict === "approve") return { approved: true, reason: "ask" };

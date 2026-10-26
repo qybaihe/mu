@@ -58,6 +58,13 @@ function textOf(content) {
 		.join("\n");
 }
 
+/** A screening's verdicts, one probability per passage (in batches for a batched judge), said as what was withheld. */
+function screening(judged) {
+	const scores = (Array.isArray(judged) ? judged : []).flat();
+	const withheld = scores.filter((score) => typeof score === "number" && score > 0.5).length;
+	return `${scores.length} ${scores.length === 1 ? "passage" : "passages"} screened, ${withheld === 0 ? "none" : withheld} withheld`;
+}
+
 const files = sessionFiles(sessionsDir)
 	.sort((a, b) => b.mtime - a.mtime)
 	.slice(0, limit)
@@ -92,8 +99,12 @@ for (const file of files) {
 				? `${judged.turnType} -> ${judged.gear}  files=${judged.needsFilesChanged} side=${judged.sideQuestion} clarify=${judged.needsClarification} memory=${judged.needsMemory} swarm=${judged.swarmWorthy} plan=${judged.planFirst}`
 				: judged === undefined
 					? `no verdict (${record.reason ?? "unknown"})`
-					: JSON.stringify(judged);
-		console.log(`${head}  ${record.specId}: ${verdict}`);
+					: record.specId === "tool.injection"
+						? screening(judged)
+						: JSON.stringify(judged);
+		// What was judged: the command for an approval, the search or page for a screening (records from mu-agent 0.2.14 on).
+		const about = record.about ? ` [${record.about}]` : "";
+		console.log(`${head}  ${record.specId}${about}: ${verdict}`);
 		console.log(`    "${lastUserMessage.replace(/\s+/g, " ").slice(0, 160)}"`);
 		for (const warning of record.warnings ?? []) console.log(`    ! ${warning.type} ${warning.questionId ?? ""}`);
 	}
