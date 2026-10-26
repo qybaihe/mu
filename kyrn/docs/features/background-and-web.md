@@ -103,6 +103,7 @@ pi 故意不做后台 shell，mu 补上。三个工具：
 - `test/web-search.test.ts` 14 个：必应（HTML 与 RSS）、360、搜狗、通用 / SearXNG 解析器，跟踪跳转还原，验证页，相关性检查（用实测到的诱饵结果），源的回退顺序和原因；经完整会话：读本机开发服务器、截断、重定向到内网被拒、`allowLoopback: false`、用本地假 SearXNG 搜索、全部失败时的报错。
 - `test/manifest.test.ts`、`extension.test.ts`、`features.test.ts`、`admission*.test.ts`、`browser.test.ts`、`catalog.test.ts` 通过；`npm run check` 通过。
 - **一次真实联网检查**（经由上述代理网络）：`web_fetch` 的读取器读 `https://www.runoob.com/nodejs/nodejs-process.html`：200，132908 字节，187 毫秒，标题“Node.js 多进程 | 菜鸟教程”，24922 字符文字；`web_search` 默认链查 “vitest mock fetch example”：360 应答，941 毫秒，6 条结果，5 条切题（CSDN 的 Vitest mock 文章），1 条是 360 翻译的小组件（之后已在解析器里过滤 `*.so.com` 小组件，并给链接盒子去掉网址；这两处修改只有离线测试，没有再联网）。
+- **Tavily 的真实调用**（2026-10-26，npm 上的 mu-agent 0.2.13，代理为 Nebius Token Factory 上的 Nemotron 3 Super）：`web_search` 查 “datetime.utcnow() deprecated Python docs recommendation”，Tavily 应答，8 条结果，切题；`web_fetch` 读一个有机器人检查的页面（403，要跑脚本才有文字），改用 Tavily 的 `/extract` 读到了 40437 字符正文，结果第一行写明“read through Tavily”。另用 `tavily.ts` 本身直接调了一次 `/search`（200，5 条结果）和 `/extract`（约 20 万字符，372 毫秒）。
 
 没有验证：
 
