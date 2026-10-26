@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.2.12] - 2026-10-25
+
+**0.2.12: in judge mode, `tool.approval` approves a check (`isCheckChain`) at needed 0.7; everything else keeps 0.8.**
+
 ### Changed
 
 - `tool.approval` (version 2) approves a check at `needed` ≥ 0.7 (`CHECK_APPROVE_AT`); everything else keeps `APPROVE_AT` 0.8. The permission gate passes `check` when the call is a shell call that `isCheckChain` accepts: every part is a check (`CHECK_RUN`: `npm|pnpm|yarn|bun [run] test|build|check|lint|typecheck`, `vitest`, `jest`, `pytest`, `tsc`, `eslint`, `biome`, `ruff`, `mypy` and others, directly, after `npx`/`bunx`/`pnpm exec`/`yarn` or `python3 -m`; `cargo|go|dotnet|swift|make|deno test|build|check|vet|clippy`; `node --test`; `test.sh` in the project, run as `./`, by path or with `sh`/`bash`), a `cd`, or a read-only command as `isReadOnlyChain` reads it, with at least one check. A check may be preceded by `env` and `PYTHONPATH`, `CI`, `NODE_ENV`, `FORCE_COLOR`, `NO_COLOR` or `RUST_BACKTRACE` (no `$` in the value), and may write its output to a file under `/tmp`. It must run in the conversation's folder: a `cd` elsewhere, or a `bg_start` `cwd` elsewhere, rules it out, as does PowerShell. `gradle` and `mvn` are left out (`mvn deploy`). The judge's state is unchanged; it is not told. `beyond` and `unrelated` still ask. Recorded with MiMo v2.6 Pro on 0.2.11: `cd <cwd> && npm run check 2>&1` (needed 0.78) and `cd <cwd> && ./test.sh >/tmp/pi-test.log 2>&1; echo "exit=$?"; grep … | tail -10` (0.79) asked the user.
