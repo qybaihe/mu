@@ -95,6 +95,7 @@ h1, h2 { word-break: keep-all; overflow-wrap: anywhere; }
   min-height: 40px; padding: 8px 16px; text-decoration: none; color: var(--muted); text-align: center;
 }
 .announce a:hover { color: var(--text); }
+.announce .agent { white-space: nowrap; }
 .announce .arrow { transition: transform 200ms var(--ease); }
 .announce a:hover .arrow { transform: translateX(3px); }
 .pill {
