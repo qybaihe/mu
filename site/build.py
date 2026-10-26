@@ -747,12 +747,11 @@ def main():
             docs[slug] = {"slug": slug, "section": U["sections"][section], "section_key": section, "title": fill(front["title"], facts),
                           "summary": fill(front["summary"], facts), "source": fill(body, facts), "page": PAGES[f"docs/{slug}"]}
         sidebar = [{"title": U["sections"][s], "entries": [docs[slug] for slug, sec in DOCS if sec == s]} for s in ("start", "use", "ref")]
-        # The banner: the newest release, with a line on what it brings when this language has one.
-        headline = L["changelog"].get("headlines", {}).get(latest["tag"])
-        announce = (L["ui"]["announce"] if headline else L["ui"]["announce_plain"]).format(tag=latest["tag"], headline=headline)
-        if release["agent"]:
-            announce += L["ui"]["announce_agent"].format(agent=release["agent"])
-        banner = {"text": announce, "anchor": re.sub(r"[^\w]+", "-", latest["tag"]).strip("-")}
+        # The banner: the newest release's version in the pill, then mu's one line on what it is for (the same for every
+        # release) and the mu-agent the release carries.
+        agent = L["ui"]["announce_agent"].format(agent=release["agent"]) if release["agent"] else ""
+        banner = {"pill": latest["tag"], "text": L["ui"]["announce_line"], "agent": agent,
+                  "anchor": re.sub(r"[^\w]+", "-", latest["tag"]).strip("-")}
         # The root page is the Chinese home page, and link previews (Reddit, X, Slack) read it without running its
         # script: its description and preview are English.
         root = lang == "zh-CN"
