@@ -7,8 +7,8 @@
  * A shell command is read with `isReadOnlyChain`, which also takes chains of them (`git status; git log -5`), as the
  * permission gate and the constraint gate read it.
  */
-import { realpathSync } from "node:fs";
-import { isAbsolute, resolve } from "node:path";
+import { existsSync, realpathSync } from "node:fs";
+import { dirname, isAbsolute, join, resolve, sep } from "node:path";
 import { isShellTool } from "../extension/shell-tools.ts";
 
 const READ_ONLY_TOOLS: ReadonlySet<string> = new Set([
@@ -287,8 +287,9 @@ function fileRedirect(text: string, at: number, writes: string[]): number | unde
  * splits them: at `;`, `&&`, `||`, `|` and line breaks outside quotes. A redirection that only throws output away is
  * left out (see `harmlessRedirect`). Undefined for whatever this does not read the way the shell does, or that can
  * do more than its words say: a substitution, `$'…'`, a heredoc or any other redirection, `&` alone, a subshell, a
- * group or brace expansion, a carriage return, a quote left open. With `writes`, a redirection to a file is left out
- * too, and the file it writes is added there (see `fileRedirect`).
+ * group or brace expansion, a carriage return, a quote left open. With `writes`, as `isCheckChain` reads a line, a
+ * redirection to a file is left out too, and the file it writes is added there (see `fileRedirect`); and
+ * `"$(git rev-parse --show-toplevel)"`, in double quotes, stands in its word as `TOP`.
  */
 function simpleCommands(text: string, writes?: string[]): string[][] | undefined {
 	if (text.includes("\r")) return undefined;
@@ -350,6 +351,11 @@ function simpleCommands(text: string, writes?: string[]): string[][] | undefined
 			let end = index + 1;
 			for (; end < text.length && text[end] !== '"'; end++) {
 				const inner = text[end];
+				if (writes && text.startsWith(TOP_SUBSTITUTION, end)) {
+					word += TOP;
+					end += TOP_SUBSTITUTION.length - 1;
+					continue;
+				}
 				if (inner === "`" || (inner === "$" && /[({[]/.test(text[end + 1] ?? ""))) return undefined;
 				if (inner === "\\" && /[$`"\\\n]/.test(text[end + 1] ?? "")) {
 					end++;
@@ -405,20 +411,21 @@ export function isReadOnlyChain(command: string, powershell = false, cwd?: strin
 	});
 }
 
+/**
+ * The folder a `cd`, as its words, goes to for certain: one spelled from the root. CDPATH finds a relative one
+ * anywhere, `..` after a link goes up from the link or from where it leads (as the shell is set), and `$`, `~` and
+ * wildcards expand.
+ */
+function cdTarget(words: readonly string[]): string | undefined {
+	const [, to, ...more] = words;
+	if (to === undefined || more.length > 0 || !isAbsolute(to) || /[$*?[~]/.test(to)) return undefined;
+	return to.split(/[\\/]/).includes("..") ? undefined : to;
+}
+
 /** Whether a `cd`, as its words, goes for certain to the conversation's folder `cwd`. */
 function cdHome(words: readonly string[], cwd: string | undefined): boolean {
-	// Only a folder from the root says for certain where `cd` goes: CDPATH finds a relative one anywhere, `..` after
-	// a link goes up from the link or from where it leads (as the shell is set), and `$`, `~` and wildcards expand.
-	const [, to, ...more] = words;
-	return (
-		cwd !== undefined &&
-		to !== undefined &&
-		more.length === 0 &&
-		isAbsolute(to) &&
-		!/[$*?[~]/.test(to) &&
-		!to.split(/[\\/]/).includes("..") &&
-		samePlace(to, cwd)
-	);
+	const to = cdTarget(words);
+	return cwd !== undefined && to !== undefined && samePlace(to, cwd);
 }
 
 /** One simple command of a read-only chain other than `cd`, as its words: see `isReadOnlyChain`. */
@@ -459,38 +466,103 @@ const CHECK_RUN =
 /** Settings a check may be given before it, `PYTHONPATH=src pytest`: none of them says which program runs. */
 const CHECK_SETTING = /^(?:PYTHONPATH|CI|NODE_ENV|FORCE_COLOR|NO_COLOR|RUST_BACKTRACE)=[^$]*$/;
 
+/** The one substitution a check may hold, in double quotes: the repository's top folder. */
+const TOP_SUBSTITUTION = "$(git rev-parse --show-toplevel)";
+/** Where it stood in a word: no word of a command line holds a NUL. */
+const TOP = "\0top\0";
+
+/** A check tool the project has, run by its path: `node node_modules/vitest/dist/cli.js`, `node_modules/.bin/tsc`. */
+const LOCAL_VITEST = /(?:^|\/)node_modules\/vitest\/(?:dist\/cli\.js|vitest\.mjs)$/;
+const LOCAL_BIN = /(?:^|\/)node_modules\/\.bin\/(?:vitest|jest|mocha|ava|tsc|eslint|biome)$/;
+
+/**
+ * Whether `run`, a simple command's words from its program on, runs a check tool the project has by its path, from
+ * `dir`, inside the project folder `home` (both as they really are).
+ */
+function localCheck(run: readonly string[], dir: string, home: string): boolean {
+	const [program, script] = run;
+	const path = program === "node" ? script : program;
+	if (path === undefined || !(program === "node" ? LOCAL_VITEST : LOCAL_BIN).test(path) || /[$*?[~]/.test(path))
+		return false;
+	// Up first, if at all, then down: a `..` after a link would go up from where the link leads.
+	const parts = path.split("/");
+	if (parts.slice(parts.findIndex((part) => part !== "..")).includes("..")) return false;
+	return resolve(dir, path).startsWith(`${home}${sep}`);
+}
+
+/** The top folder of the repository `dir` is in, by the `.git` nearest above it. */
+function repositoryTop(dir: string): string | undefined {
+	for (let at = dir; ; at = dirname(at)) {
+		if (existsSync(join(at, ".git"))) return at;
+		if (dirname(at) === at) return undefined;
+	}
+}
+
 /** Where a check may write its output: `/tmp`. */
 function tempFile(name: string): boolean {
 	return /^\/(?:private\/)?tmp\//.test(name) && !name.split("/").includes("..");
 }
 
 /**
- * True for a command line that runs a check in the conversation's folder and otherwise only looks: `npm run check
- * 2>&1 | tail -20`, `cd /work/app && ./test.sh >/tmp/test.log 2>&1; echo "exit=$?"; tail -5 /tmp/test.log`, `cargo
- * test; git diff --stat`. Each part is a check (`CHECK_RUN`, after `env` and the settings of `CHECK_SETTING`), a `cd`
- * or a read-only command as `isReadOnlyChain` reads it, and a file it writes is in the temporary folder. A check after
- * a `cd` elsewhere, or that starts elsewhere (`start`), is not one. The judge needs to be less sure to approve one
- * (see `tool.approval`): it runs the project's own code and changes nothing else. PowerShell gets none.
+ * True for a command line that runs a check in the conversation's folder `cwd`, or a folder inside it, and otherwise
+ * only looks: `npm run check 2>&1 | tail -20`, `cd /work/app && ./test.sh >/tmp/test.log 2>&1; echo "exit=$?"; tail
+ * -5 /tmp/test.log`, `cargo test; git diff --stat`, `cd /work/app/packages/a && node
+ * "$(git rev-parse --show-toplevel)/node_modules/vitest/dist/cli.js" --run test/a.test.ts`.
+ *
+ * Each part is a check, a `cd` or a read-only command as `isReadOnlyChain` reads it, and a file it writes is in the
+ * temporary folder. A check is `CHECK_RUN`, or a tool the project has run by its path (`localCheck`), after `env` and
+ * the settings of `CHECK_SETTING`. A `cd` spelled from the root may go into a folder of the project as it really is
+ * (not through a link out of it); a check after any other `cd`, or that starts elsewhere (`start`), is not one. Git
+ * counts as read-only only in `cwd` itself. `"$(git rev-parse --show-toplevel)"` is the one substitution read, as the
+ * folder the repository's `.git` is in, and only where that is `cwd`.
+ *
+ * The judge needs to be less sure to approve one (see `tool.approval`): it runs the project's own code and changes
+ * nothing else. PowerShell gets none.
  */
 export function isCheckChain(command: string, powershell = false, cwd?: string, start = cwd): boolean {
-	if (powershell) return false;
+	if (powershell || cwd === undefined) return false;
 	const writes: string[] = [];
 	const commands = simpleCommands(command.trim(), writes);
 	if (!commands || !writes.every(tempFile)) return false;
-	let elsewhere = startsElsewhere(cwd, start);
+	let home = resolve(cwd);
+	try {
+		home = realpathSync.native(cwd);
+	} catch {
+		// A folder that is not there has no links to follow.
+	}
+	/** `to` as it really is, when that is the project folder or a folder inside it. */
+	const inProject = (to: string): string | undefined => {
+		if (samePlace(to, cwd)) return home;
+		try {
+			const real = realpathSync.native(to);
+			return real.startsWith(`${home}${sep}`) ? real : undefined;
+		} catch {
+			return undefined;
+		}
+	};
+	/** Where the line is now, as it really is: undefined outside the project. */
+	let dir = start === undefined ? home : inProject(start);
 	let checks = 0;
-	const parts = commands.every((words) => {
+	const parts = commands.every((said) => {
+		let words = said;
+		if (said.some((word) => word.includes(TOP))) {
+			// Git prints the top folder as it really is.
+			if (dir === undefined || repositoryTop(dir) !== home) return false;
+			words = said.map((word) => word.replaceAll(TOP, home));
+		}
 		if (words[0] === "cd") {
-			elsewhere = !cdHome(words, cwd);
+			const to = cdTarget(words);
+			dir = to === undefined ? undefined : inProject(to);
 			return true;
 		}
 		let at = words[0] === "env" ? 1 : 0;
 		while (at < words.length && CHECK_SETTING.test(words[at])) at++;
-		if (CHECK_RUN.test(words.slice(at).join(" "))) {
+		const run = words.slice(at);
+		if (CHECK_RUN.test(run.join(" ")) || (dir !== undefined && localCheck(run, dir, home))) {
 			checks++;
-			return !elsewhere;
+			return dir !== undefined;
 		}
-		return at === 0 && readOnlyPart(words, elsewhere);
+		return at === 0 && readOnlyPart(words, dir !== home);
 	});
 	return parts && checks > 0;
 }

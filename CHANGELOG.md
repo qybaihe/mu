@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Fixed
+
+- **Judge mode counts the project's own test runner as a check.** 0.2.12 lowered the approval line for checks, but a single test file run the way many repositories' contributor notes say, from a package folder with the project's own vitest (`cd /path/to/project/packages/app && node "$(git rev-parse --show-toplevel)/node_modules/vitest/dist/cli.js" --run test/a.test.ts`), didn't count as a check, so the judge's 0.78 still meant asking you. A check may now run in a folder inside the project, with the project's own `node_modules/vitest` or `node_modules/.bin/<tool>`, and `"$(git rev-parse --show-toplevel)"` counts as the project folder when the repository starts there. A `cd` through a link out of the project or into a separate repository inside it, and any other `$(…)`, still don't count.
+
 ## [0.2.12] - 2026-10-25
 
 **0.2.12 asks you less often about running checks in judge mode.** The desktop app carries mu-agent 0.2.12.

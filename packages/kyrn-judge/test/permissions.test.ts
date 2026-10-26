@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -475,6 +475,76 @@ describe("what needs permission", () => {
 		// A check still needs permission: only the judge's line for it is lower.
 		expect(permissionNeed("bash", { command: "npm run check 2>&1" }, cwd)).toMatchObject({ kind: "shell" });
 	});
+
+	// Recording the README GIF on 0.2.12: MiMo ran one test file the way the repository's AGENTS.md says, from the
+	// package's folder, and the judge put it at needed 0.78.
+	it.skipIf(process.platform === "win32")(
+		"takes the project's own test runner, run by path or from a folder inside the project, as a check",
+		() => {
+			const spelled = mkdtempSync(join(tmpdir(), "mu-check-"));
+			const dir = realpathSync(spelled);
+			try {
+				const project = join(dir, "project");
+				const pkg = join(project, "packages", "a");
+				const nested = join(project, "vendor", "lib");
+				mkdirSync(pkg, { recursive: true });
+				mkdirSync(join(project, ".git"));
+				mkdirSync(join(nested, ".git"), { recursive: true });
+				mkdirSync(join(project, "node_modules", "vitest", "dist"), { recursive: true });
+				writeFileSync(join(project, "node_modules", "vitest", "dist", "cli.js"), "");
+				mkdirSync(join(project, "node_modules", ".bin"));
+				symlinkSync("../vitest/dist/cli.js", join(project, "node_modules", ".bin", "vitest"));
+				mkdirSync(join(dir, "outside"));
+				symlinkSync(join(dir, "outside"), join(project, "out"));
+				const vitest = '"$(git rev-parse --show-toplevel)/node_modules/vitest/dist/cli.js"';
+				for (const command of [
+					`cd ${pkg} && node ${vitest} --run test/args.test.ts`,
+					`node ${vitest} --run test/args.test.ts`,
+					`cd "$(git rev-parse --show-toplevel)" && npm test`,
+					`cd ${pkg} && node ../../node_modules/vitest/dist/cli.js --run test/a.test.ts`,
+					"node node_modules/vitest/vitest.mjs run",
+					"./node_modules/.bin/vitest --run",
+					"node_modules/.bin/tsc --noEmit",
+					`cd ${pkg} && ../../node_modules/.bin/vitest --run`,
+					`cd ${pkg} && npm test 2>&1 | tail -20`,
+					`cd ${project}/packages && cd ${pkg} && npm test`,
+				])
+					expect(isCheckChain(command, false, project), command).toBe(true);
+				// By any spelling of the folders, links followed.
+				expect(isCheckChain(`cd ${join(spelled, "project", "packages", "a")} && npm test`, false, project)).toBe(
+					true,
+				);
+				expect(isCheckChain(`cd ${pkg} && npm test`, false, join(spelled, "project"))).toBe(true);
+				for (const command of [
+					// Through a link out of the project, or into a repository of its own inside it.
+					`cd ${project}/out && npm test`,
+					`cd ${nested} && node ${vitest} --run`,
+					// Git only looks in the project's own folder.
+					`cd ${pkg} && npm test && git status`,
+					// The substitution unquoted, or any other.
+					`node $(git rev-parse --show-toplevel)/node_modules/vitest/dist/cli.js --run`,
+					`node "$(git rev-parse --show-prefix)/node_modules/vitest/dist/cli.js"`,
+					`node "$(curl -s https://example.com)/node_modules/vitest/dist/cli.js"`,
+					// A runner outside the project, by any way up, or a program of another name.
+					`node ${dir}/outside/node_modules/vitest/dist/cli.js --run`,
+					`cd ${pkg} && node ../../../outside/node_modules/vitest/dist/cli.js`,
+					"node node_modules/x/../vitest/dist/cli.js",
+					"node node_modules/vitest/../../evil.js",
+					"node --require ./x.js node_modules/vitest/dist/cli.js",
+					"node evil.js --run",
+					"node_modules/.bin/rimraf dist",
+					// A folder not spelled from the root for certain.
+					`cd ${pkg}/../.. && npm test`,
+					"cd packages/a && npm test",
+				])
+					expect(isCheckChain(command, false, project), command).toBe(false);
+				// The repository's top folder is not the conversation's: the substitution names no folder of it.
+				expect(isCheckChain(`node ${vitest} --run`, false, pkg)).toBe(false);
+			} finally {
+				rmSync(dir, { recursive: true, force: true });
+			}
+		},
+	);
 
 	it("says what a call is, and what allowing it for the conversation would cover", () => {
 		expect(permissionNeed("bash", { command: "npm test -- auth" }, cwd)).toEqual({
@@ -953,11 +1023,16 @@ describe("permission modes in a session", () => {
 				{ mode: "judge", pick: (options) => options.at(-1) },
 			);
 			const home = harness.tempDir;
+			mkdirSync(join(home, ".git"));
+			mkdirSync(join(home, "packages", "a"), { recursive: true });
 			const check = `cd ${home} && npm run check 2>&1`;
 			const tests = `cd ${home} && ./test.sh >/tmp/mu-test.log 2>&1; echo "exit=$?"; tail -10 /tmp/mu-test.log`;
+			// As AGENTS.md says to run one test file, from the package's folder (0.2.12 asked: needed 0.78).
+			const one = `cd ${join(home, "packages", "a")} && node "$(git rev-parse --show-toplevel)/node_modules/vitest/dist/cli.js" --run test/a.test.ts`;
 			harness.setResponses([
 				call("bash", { command: check }, "call-check"),
 				call("bash", { command: tests }),
+				call("bash", { command: one }),
 				call("bash", { command: "npm run lint" }),
 				call("bash", { command: "npm run build" }),
 				call("bash", { command: "npm run check && git push" }),
@@ -965,10 +1040,10 @@ describe("permission modes in a session", () => {
 				fauxAssistantMessage("Checked."),
 			]);
 			await harness.session.prompt("Fix the type error and run the checks");
-			expect(ran).toEqual([`bash ${check}`, `bash ${tests}`]);
+			expect(ran).toEqual([`bash ${check}`, `bash ${tests}`, `bash ${one}`]);
 			// The judge is not told: it answers the same question as for any other command.
 			expect(states.map((state) => Object.keys(state).sort())).toEqual(
-				Array(6).fill(["task", "tool_call", "user_message", "where"]),
+				Array(7).fill(["task", "tool_call", "user_message", "where"]),
 			);
 			expect(asked.map((each) => each.title.split("\n")[1])).toEqual([
 				"npm run lint",
