@@ -150,6 +150,11 @@ The fine-tuned 4B judge scored above Ultra:
 | --- | --- | --- | --- | --- |
 | Nemotron 3 Nano 4B, fine-tuned (`nemotron-local`) | **62.3** | 45.0 | **68.2** (61.0–76.0) | **59.9** (51.5–68.3) |
 | Nemotron 3 Ultra (`nemotron`) | 47.3 | 47.7 | 54.7 (44.6–64.0) | 48.4 (35.8–59.8) |
-| The 4B judge, then Ultra for what it is unsure of | 63.1 | 44.1 | 20.0 (−74.6–69.7) | 55.7 (44.8–66.4) |
 
-On test the 4B judge is ahead of Ultra by 13.6 on real requests (paired interval +8.1 to +20.7) and by 11.5 on constructed ones (+1.5 to +22.6). On 112 author-written development requests, hard by design, it is clearly weaker (19.6 against Ultra's 52.3). With Ultra behind it, a few of Ultra's confident answers in costly places (letting a tool's output into the context, keeping a memory) cost more on real test requests than the 4B judge's doubt. Details: [mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron#results).
+On test the 4B judge is ahead of Ultra by 13.6 on real requests (paired interval +8.1 to +20.7) and by 11.5 on constructed ones (+1.5 to +22.6). Details: [mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron#results).
+
+### Limitations
+
+- **A cascade did not pay.** With Ultra behind the 4B judge for the questions it was unsure of (about a fifth), dev looked neutral (63.1 real, 44.1 constructed) but real test requests scored 20.0, with a 95% interval from −74.6 to 69.7 (constructed: 55.7). The interval is that wide because each mistake is weighted by its cost and a handful of costly ones on rare decisions dominate: Ultra's confident answers in places such as letting a tool's output into the context (2 wrong in 520) or keeping a memory cost more than the 4B judge's doubt, which falls back to mu's default. So the 4B judge is recommended on its own.
+- **Hand-written hard cases.** On 112 development requests written by mu's author, hard by design, the 4B judge is clearly weaker (19.6 against Ultra's 52.3).
+- **A GPU.** The 4B judge's numbers come from a CUDA GPU; the Apple silicon backend is experimental.
