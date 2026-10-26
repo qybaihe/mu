@@ -57,6 +57,14 @@ check(
 	help.status === 0 && help.stdout.includes("a coding agent with a judgment kernel") && help.stdout.includes("pi's help"),
 );
 
+// The no-key demo: a recorded session, replayed with nothing configured.
+const demo = spawnSync(mu, ["demo", "--fast"], options);
+check(
+	"mu demo replays a recorded session without a key",
+	demo.status === 0 && demo.stdout.includes("Nemotron 3 Ultra") && demo.stdout.includes("In this session"),
+	demo.stderr.trim(),
+);
+
 // Without a login, doctor has something to fix and says so with exit code 1; the package row must be fine.
 const doctor = spawnSync(mu, ["doctor"], options);
 console.log(doctor.stdout.trimEnd().replace(/^/gm, "     "));

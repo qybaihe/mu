@@ -9,6 +9,10 @@ mu can run end to end on [Nebius Token Factory](https://tokenfactory.nebius.com)
 | The judge on your machine | Nemotron 3 Nano 4B, fine-tuned for mu's judge ([mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron)) | Free and local, about 0.1 s to approve a command; on held-out test it scored above Ultra (below) |
 | Where commands run, if you want them off your machine | Token Factory Sandboxes | Each command continues from the files the previous one left; changes come back only after you review the diff |
 
+## Try it without a key
+
+`mu demo` replays a real session recorded with mu: Nemotron 3 Super fixing a failing test on Token Factory, with each command, Nemotron 3 Ultra's verdict on it and its latency, and what the run cost. It needs no key and no network, and calls no model. `mu demo tavily` replays a session that searched the web through Tavily, with the judge screening every page before the agent read it; `mu replay` replays one of your own sessions the same way.
+
 ## Set up
 
 Install mu (Node.js 22.19 or newer). Token Factory and the Nemotron judges are in the npm package from mu-agent 0.2.9:

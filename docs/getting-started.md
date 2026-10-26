@@ -39,6 +39,7 @@ Some things to try:
 | `mu import --list` | Find Claude Code, Codex and ZCode conversations to bring in |
 | `mu doctor` | Check the installation, the judges and the connections |
 | `mu ledger 3` | Show what the judge decided in the last three sessions |
+| `mu demo` / `mu replay` | Replay a real recorded session, no key needed / replay one of your own, step by step with the judge's verdicts |
 
 Inside a session, `/status` shows the judge, each decision point's mode and the latest verdicts, and `/help` lists every command. The [README](../README.md#command-line) has the full list.
 

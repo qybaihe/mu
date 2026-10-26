@@ -385,7 +385,7 @@ mu doctor     # check the installation, the judges and the connections
   </picture>
 </p>
 
-Requires Node.js 22.19 or newer. `mu -p "prompt"` runs a single prompt and prints the answer; `mu -c` continues the last session. `mu import --list` finds your Claude Code, Codex and ZCode conversations, and `mu import <file>` brings one in with its full history; importing it again later brings over what's new. `mu ledger [n]` prints what the judge decided in the last n sessions. The command line and the desktop app share accounts, settings and lessons.
+Requires Node.js 22.19 or newer. `mu -p "prompt"` runs a single prompt and prints the answer; `mu -c` continues the last session. `mu import --list` finds your Claude Code, Codex and ZCode conversations, and `mu import <file>` brings one in with its full history; importing it again later brings over what's new. `mu ledger [n]` prints what the judge decided in the last n sessions; `mu demo` replays a real recorded session step by step with each verdict, no key needed, and `mu replay` does the same for your own sessions. The command line and the desktop app share accounts, settings and lessons.
 
 | Command | What it does |
 | --- | --- |

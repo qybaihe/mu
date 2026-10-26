@@ -1,0 +1,367 @@
+#!/usr/bin/env node
+// Replay a mu session from its record: what you asked, each step the agent took, and what the judge decided about it.
+//
+//   kyrn/bin/kyrn-replay demo              a real session recorded with mu, shipped with it (no key, no network)
+//   kyrn/bin/kyrn-replay demo <name>       another one; demo --list names them
+//   kyrn/bin/kyrn-replay replay            your most recent mu session
+//   kyrn/bin/kyrn-replay replay <n|file>   the n-th most recent, or a session file
+//
+// Reads session files and nothing else: no model is called and nothing is sent anywhere.
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { homedir } from "node:os";
+import { basename, dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const [command = "demo", ...args] = process.argv.slice(2);
+const demoDir = join(dirname(fileURLToPath(import.meta.url)), "..", "demo");
+
+const USAGE = [
+	"mu demo: a real mu session, replayed from its record. No key and no network: nothing is sent anywhere.",
+	"",
+	"  mu demo                  the main demo: Nemotron 3 Super fixes a failing test, Nemotron 3 Ultra judges",
+	"  mu demo <name>           another recorded session; mu demo --list names them",
+	"  mu replay                replay your own most recent mu session",
+	"  mu replay <n> | <file>   the n-th most recent, or a session file (.jsonl)",
+	"",
+	"  --fast                   no pauses",
+	"  --speed <x>              pauses x times shorter than in the recording (default 3)",
+].join("\n");
+
+if (args.includes("--help") || args.includes("-h") || command === "help") {
+	console.log(USAGE);
+	process.exit(0);
+}
+
+const flag = (name) => {
+	const at = args.indexOf(name);
+	return at === -1 ? undefined : (args[at + 1] ?? "");
+};
+const positional = args.filter((arg, i) => !arg.startsWith("-") && args[i - 1] !== "--speed");
+const speed = Number(flag("--speed") ?? 3);
+// Pauses only for a person watching: piped or captured output gets the whole replay at once.
+const paced = process.stdout.isTTY && !args.includes("--fast") && speed > 0;
+
+const color = process.stdout.isTTY && !process.env.NO_COLOR;
+const paint = (code) => (text) => (color ? `\x1b[${code}m${text}\x1b[0m` : text);
+const dim = paint("2");
+const bold = paint("1");
+const green = paint("32");
+const yellow = paint("33");
+const red = paint("31");
+const cyan = paint("36");
+const magenta = paint("35");
+
+/** `MU_<name>`, or the `KYRN_<name>` spelling from before the rename. */
+const env = (name) => process.env[`MU_${name}`] || process.env[`KYRN_${name}`];
+
+function demos() {
+	try {
+		return JSON.parse(readFileSync(join(demoDir, "demos.json"), "utf8"));
+	} catch {
+		return [];
+	}
+}
+
+function sessionFiles(dir) {
+	let found = [];
+	let entries = [];
+	try {
+		entries = readdirSync(dir, { withFileTypes: true });
+	} catch {
+		return found;
+	}
+	for (const entry of entries) {
+		const path = join(dir, entry.name);
+		if (entry.isDirectory()) found = found.concat(sessionFiles(path));
+		else if (entry.name.endsWith(".jsonl")) found.push({ path, mtime: statSync(path).mtimeMs });
+	}
+	return found;
+}
+
+/** The session file to replay, and the demo it belongs to, if any. */
+function pick() {
+	if (command === "demo") {
+		const list = demos();
+		if (args.includes("--list")) {
+			for (const demo of list) console.log(`  ${demo.name.padEnd(10)} ${demo.title}`);
+			process.exit(0);
+		}
+		const name = positional[0] ?? list[0]?.name;
+		const demo = list.find((entry) => entry.name === name);
+		if (!demo) {
+			console.error(`No demo called ${name}. mu demo --list names them.`);
+			process.exit(2);
+		}
+		return { path: join(demoDir, demo.file), demo };
+	}
+	const given = positional[0];
+	if (given && !/^\d+$/.test(given)) {
+		if (!existsSync(given)) {
+			console.error(`No such file: ${given}`);
+			process.exit(2);
+		}
+		return { path: given };
+	}
+	const home = existsSync(join(homedir(), ".mu")) || !existsSync(join(homedir(), ".kyrn")) ? ".mu" : ".kyrn";
+	const agentDir = env("AGENT_DIR") ?? process.env.PI_CODING_AGENT_DIR ?? join(homedir(), home, "agent");
+	const files = sessionFiles(env("SESSIONS_DIR") ?? join(agentDir, "sessions")).sort((a, b) => b.mtime - a.mtime);
+	const file = files[Number(given ?? 1) - 1];
+	if (!file) {
+		console.error(files.length === 0 ? "No mu sessions yet. Try: mu demo" : `There are only ${files.length} sessions.`);
+		process.exit(2);
+	}
+	return { path: file.path };
+}
+
+function read(path) {
+	const entries = [];
+	for (const line of readFileSync(path, "utf8").split("\n")) {
+		if (!line.trim()) continue;
+		try {
+			entries.push(JSON.parse(line));
+		} catch {}
+	}
+	return entries;
+}
+
+function textOf(content) {
+	if (typeof content === "string") return content;
+	if (!Array.isArray(content)) return "";
+	return content
+		.filter((block) => block?.type === "text" && typeof block.text === "string")
+		.map((block) => block.text)
+		.join("\n");
+}
+
+const oneLine = (text, max = 110) => {
+	const line = String(text ?? "")
+		.replace(/\s+/g, " ")
+		.trim();
+	return line.length > max ? `${line.slice(0, max - 1)}…` : line;
+};
+
+/** "llm:nebius/nvidia/Nemotron-3-Ultra-550b-a55b" -> "Nemotron 3 Ultra". */
+function judgeName(id = "") {
+	const known = [
+		[/Nemotron-3-Ultra/i, "Nemotron 3 Ultra"],
+		[/nemotron-3-super/i, "Nemotron 3 Super"],
+		[/Nemotron-3_5-Lightning|Nemotron-3\.5-Lightning/i, "Nemotron 3.5 Lightning"],
+		[/mu-judge-nemotron|127\.0\.0\.1:8770|nemotron-local/i, "the fine-tuned Nemotron 3 Nano 4B, local"],
+		[/mude/i, "mude 1.0, local"],
+	];
+	for (const [pattern, name] of known) if (pattern.test(id)) return name;
+	return id.replace(/^llm:/, "") || "rules";
+}
+
+/** USD per million tokens, in and out, for the judges this can name (Nebius Token Factory, 2026-10). Local judges cost nothing per call. */
+const PRICES = [
+	[/Nemotron-3-Ultra/i, 1.0, 3.0],
+	[/nemotron-3-super/i, 0.3, 0.9],
+	[/Lightning/i, 0.06, 0.24],
+	[/mu-judge-nemotron|127\.0\.0\.1|localhost|mude/i, 0, 0],
+];
+function judgeCost(id = "", usage = {}) {
+	const price = PRICES.find(([pattern]) => pattern.test(id));
+	if (!price) return undefined;
+	return ((usage.inputTokens ?? 0) * price[1] + (usage.outputTokens ?? 0) * price[2]) / 1e6;
+}
+
+const APPROVAL = {
+	approve: "approved: a step the task needs",
+	beyond: "asks you: more than the task asked for",
+	unrelated: "asks you: not part of the task",
+	unsure: "asks you: the judge cannot tell",
+};
+const CONTINUE = {
+	end: "the task is done: the turn ends",
+	promised: "the agent stopped before doing what it said it would: it goes on",
+	go_ahead: "the agent asked for a go-ahead it already has: it goes on",
+};
+
+/** One line for a decision the judge made: what it was asked, and what it said. */
+function describe(record) {
+	const judged = record.judged;
+	const by = record.source === "judge" ? judgeName(record.providerId) : "rules";
+	const timing = record.latencyMs === undefined ? "" : ` · ${record.latencyMs} ms`;
+	const tail = dim(`  ${by}${timing}`);
+	if (judged === undefined) return `${yellow("?")} ${record.specId}: no verdict (${record.reason ?? "unknown"}), so the rules decide${tail}`;
+	switch (record.specId) {
+		case "tool.approval": {
+			const sure = record.answers?.verdict?.probabilities?.needed;
+			const how = sure === undefined ? "" : dim(` (needed: ${sure.toFixed(2)})`);
+			const mark = judged === "approve" ? green("✓") : yellow("↑");
+			return `${mark} may this command run? ${APPROVAL[judged] ?? judged}${how}${tail}`;
+		}
+		case "tool.injection": {
+			const scores = (Array.isArray(judged) ? judged : []).flat();
+			const withheld = scores.filter((score) => typeof score === "number" && score > 0.5).length;
+			const what = `${scores.length} ${scores.length === 1 ? "passage" : "passages"}`;
+			return withheld === 0
+				? `${green("✓")} screened ${what} of what came back for instructions aimed at the AI: none${tail}`
+				: `${red("✗")} screened ${what} of what came back: ${withheld} carried instructions aimed at the AI and were withheld${tail}`;
+		}
+		case "turn.continue":
+			return `${judged === "end" ? green("✓") : yellow("→")} is the task done? ${CONTINUE[judged] ?? judged}${tail}`;
+		case "input.preflight":
+			return `${green("✓")} read the request first: ${oneLine(typeof judged === "object" ? Object.entries(judged).map(([k, v]) => `${k}=${v}`).join(" ") : judged, 80)}${tail}`;
+		default:
+			return `${green("·")} ${record.specId}: ${oneLine(typeof judged === "string" ? judged : JSON.stringify(judged), 70)}${tail}`;
+	}
+}
+
+/** What a tool call does, in a line: the command, the file, the query. */
+function callLine(call) {
+	const a = call.arguments ?? {};
+	switch (call.name) {
+		case "bash":
+			return `${bold("run")}    ${oneLine(a.command, 100)}`;
+		case "read":
+			return `${bold("read")}   ${a.path}`;
+		case "write":
+			return `${bold("write")}  ${a.path} ${dim(`(${String(a.content ?? "").split("\n").length} lines)`)}`;
+		case "edit":
+			return `${bold("edit")}   ${a.path}`;
+		case "web_search":
+			return `${bold("search")} ${oneLine(a.query, 90)}`;
+		case "web_fetch":
+			return `${bold("fetch")}  ${oneLine(a.url, 90)}`;
+		default:
+			return `${bold(call.name)} ${oneLine(JSON.stringify(a), 90)}`;
+	}
+}
+
+/** What came back from a call, in at most a few lines. */
+function resultLines(message) {
+	const d = message.details ?? {};
+	const text = textOf(message.content);
+	if (message.toolName === "edit" && typeof d.diff === "string") {
+		return d.diff
+			.split("\n")
+			.filter((line) => /^[+-]/.test(line))
+			.slice(0, 6)
+			.map((line) => (line.startsWith("+") ? green(line) : red(line)));
+	}
+	if (message.toolName === "web_search" && d.source) {
+		return [`${d.results ?? 0} results from ${d.source === "tavily" ? "Tavily" : d.source}`];
+	}
+	if (message.toolName === "web_fetch" && d.url) {
+		const via = d.via === "tavily" ? `, read through Tavily (this machine got ${d.status})` : "";
+		return [`${d.chars ?? 0} characters of text${via}`];
+	}
+	const lines = text.split("\n").filter((line) => line.trim());
+	if (message.toolName === "read") return [dim(`${lines.length} lines`)];
+	const shown = lines.slice(0, 3).map((line) => oneLine(line, 100));
+	if (lines.length > 3) shown.push(dim(`… ${lines.length - 3} more lines`));
+	return shown;
+}
+
+const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
+const timeOf = (entry) => {
+	const t = entry.message?.timestamp ?? entry.timestamp;
+	return typeof t === "number" ? t : Date.parse(t ?? "");
+};
+
+const { path, demo } = pick();
+const entries = read(path);
+const session = entries.find((entry) => entry.type === "session");
+const model = entries.find((entry) => entry.type === "model_change");
+const decisions = entries.filter((entry) => entry.type === "custom" && entry.customType === "kyrn.decision").map((entry) => entry.data ?? {});
+const judges = [...new Set(decisions.filter((record) => record.source === "judge").map((record) => judgeName(record.providerId)))];
+
+const out = (line = "") => console.log(line);
+const who = { you: cyan("you   "), agent: magenta("agent "), judge: yellow("judge "), tool: dim("      ") };
+
+if (demo) {
+	out(bold(`mu demo: ${demo.title}`));
+	out(dim("A real session, replayed from its record. No key and no network: nothing is sent anywhere."));
+	if (demo.note) out(dim(demo.note));
+} else {
+	out(bold(`mu replay: ${basename(path)}`));
+}
+const when = session?.timestamp ? new Date(session.timestamp).toISOString().slice(0, 16).replace("T", " ") : "";
+out(
+	dim(
+		[
+			when && `${when} UTC`,
+			session?.cwd && `in ${basename(session.cwd)}/`,
+			model && `agent: ${judgeName(`${model.modelId}`)} (${model.provider})`,
+			`judge: ${judges.join(", ") || "none"}`,
+		]
+			.filter(Boolean)
+			.join(" · "),
+	),
+);
+out();
+
+let previous;
+const calls = [];
+let finalText = "";
+for (const entry of entries) {
+	const at = timeOf(entry);
+	if (paced && previous !== undefined && at > previous) await sleep(Math.min((at - previous) / speed, 1200));
+	if (at) previous = at;
+	const message = entry.type === "message" ? entry.message : undefined;
+	if (message?.role === "user") {
+		out(`${who.you}${bold(oneLine(textOf(message.content), 200))}`);
+	} else if (message?.role === "assistant") {
+		const text = textOf(message.content).trim();
+		const toolCalls = (message.content ?? []).filter((block) => block?.type === "toolCall");
+		if (text && toolCalls.length === 0) finalText = text;
+		else if (text) out(`${who.agent}${oneLine(text, 160)}`);
+		for (const call of toolCalls) {
+			calls.push(call);
+			out(`${who.agent}${callLine(call)}`);
+		}
+	} else if (message?.role === "toolResult") {
+		const lines = resultLines(message);
+		for (const line of lines) out(`${who.tool}${message.isError ? red(line) : dim(line)}`);
+	} else if (entry.type === "custom" && entry.customType === "kyrn.decision") {
+		out(`${who.judge}${describe(entry.data ?? {})}`);
+	}
+}
+if (finalText) {
+	out();
+	finalText
+		.split("\n")
+		.slice(0, 12)
+		.forEach((line, i) => out(`${i === 0 ? who.agent : who.tool}${line}`));
+	const more = finalText.split("\n").length - 12;
+	if (more > 0) out(dim(`      … ${more} more lines`));
+}
+
+// What the session cost, and what the judge saved the person.
+const approvals = decisions.filter((record) => record.specId === "tool.approval");
+const approved = approvals.filter((record) => record.judged === "approve").length;
+const edits = calls.filter((call) => call.name === "edit" || call.name === "write").length;
+const latencies = decisions
+	.filter((record) => record.source === "judge" && typeof record.latencyMs === "number")
+	.map((record) => record.latencyMs)
+	.sort((a, b) => a - b);
+const median = latencies.length ? latencies[Math.floor(latencies.length / 2)] : undefined;
+const judgeIn = decisions.reduce((sum, record) => sum + (record.usage?.inputTokens ?? 0), 0);
+const judgeOut = decisions.reduce((sum, record) => sum + (record.usage?.outputTokens ?? 0), 0);
+const costs = decisions.filter((record) => record.source === "judge").map((record) => judgeCost(record.providerId, record.usage));
+const judgeUsd = costs.every((cost) => cost !== undefined) ? costs.reduce((sum, cost) => sum + cost, 0) : undefined;
+const usages = entries.filter((entry) => entry.message?.role === "assistant").map((entry) => entry.message.usage ?? {});
+const agentIn = usages.reduce((sum, usage) => sum + (usage.input ?? 0) + (usage.cacheRead ?? 0), 0);
+const agentOut = usages.reduce((sum, usage) => sum + (usage.output ?? 0), 0);
+const agentUsd = usages.reduce((sum, usage) => sum + (usage.cost?.total ?? 0), 0);
+const times = entries.map(timeOf).filter((t) => Number.isFinite(t) && t > 0);
+const seconds = times.length > 1 ? Math.round((Math.max(...times) - Math.min(...times)) / 1000) : undefined;
+const usd = (value) => `$${value.toFixed(4)}`;
+const n = (value) => value.toLocaleString("en-US");
+
+out();
+out(bold("In this session"));
+out(`  ${decisions.length} judge ${decisions.length === 1 ? "verdict" : "verdicts"}${median === undefined ? "" : `, median ${median} ms (${latencies[0]}–${latencies.at(-1)} ms)`}.`);
+if (approvals.length) {
+	out(`  ${approvals.length} commands went to the judge: ${approved} approved without asking you, ${approvals.length - approved} came back to you.`);
+	out(`  In Ask-first mode, without a judge, you would have been asked ${approvals.length + edits} times: each of those commands and each of the ${edits} edits.`);
+}
+out(
+	`  Judge: ${n(judgeIn)} tokens in, ${n(judgeOut)} out${judgeUsd === undefined ? "" : `, ${judgeUsd === 0 ? "$0 (on this machine)" : usd(judgeUsd)}`}.`,
+);
+out(`  Agent: ${usages.length} model calls, ${n(agentIn)} tokens in, ${n(agentOut)} out, ${usd(agentUsd)}.`);
+if (seconds !== undefined) out(`  ${seconds} s from the request to the end of the turn.`);
+out();
+out(dim(demo ? "mu demo --list shows the other recordings; mu ledger lists the judge's verdicts from your own sessions." : "mu ledger lists the judge's verdicts from your recent sessions."));

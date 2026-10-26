@@ -109,6 +109,8 @@ export function usage(platform) {
 		"  mu judge model <cmd>     other decision models from Hugging Face:",
 		"                           add <link> | list | use | remove (mu judge model help)",
 		"  mu ledger [n] [--json]   print the judge's verdicts from the last n sessions",
+		"  mu demo [name]           replay a real session recorded with mu: no key, no network",
+		"  mu replay [n | file]     replay one of your own sessions, with each verdict of the judge",
 		"  mu import <file>...      import Claude Code, Codex and ZCode conversations; --list shows",
 		"                           them (mu import --help)",
 		"  mu doctor                check the installation, the judges and the connections",
@@ -1661,6 +1663,9 @@ export async function main(argv = process.argv.slice(2)) {
 	}
 	if (command === "ledger") {
 		return handOver({ command: process.execPath, args: [path.join(bin, "kyrn-ledger"), ...rest], env, strategy });
+	}
+	if (command === "demo" || command === "replay") {
+		return handOver({ command: process.execPath, args: [path.join(bin, "kyrn-replay"), command, ...rest], env, strategy });
 	}
 	if (command === "import") {
 		const plan = planImport({

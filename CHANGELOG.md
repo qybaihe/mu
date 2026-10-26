@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Added
+
+- `mu demo` replays a real recorded session with each verdict of the judge, its latency and the run's cost, with no key and no network; `mu replay` does the same for your own sessions.
+
 ## [0.2.13] - 2026-10-25
 
 **0.2.13 counts the project's own test runner as a check in judge mode.** The desktop app carries mu-agent 0.2.13.

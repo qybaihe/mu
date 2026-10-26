@@ -1,0 +1,14 @@
+[
+	{
+		"name": "fix",
+		"file": "fix.jsonl",
+		"title": "Nemotron 3 Super fixes a failing test, Nemotron 3 Ultra judges each command",
+		"note": "Recorded 2026-10-26 with mu-agent 0.2.13 in Judge mode: the agent and the judge on Nebius Token Factory."
+	},
+	{
+		"name": "tavily",
+		"file": "tavily.jsonl",
+		"title": "the agent looks up a deprecation with Tavily; the judge screens every page before the agent reads it",
+		"note": "Recorded 2026-10-26 with mu-agent 0.2.13 in Judge mode: Nemotron 3 Super and Nemotron 3 Ultra on Nebius Token Factory, web search through Tavily."
+	}
+]

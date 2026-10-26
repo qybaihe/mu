@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- `mu demo` replays a real session recorded with mu, shipped in the package (`kyrn/demo`): the request, each tool call and what came back, each verdict of the judge with its latency, and at the end the judge's and the agent's tokens and cost, how many commands the judge approved or sent back to the person, and how many questions Ask-first mode would have asked. No key and no network. `mu demo --list` names the recordings (`fix`: Nemotron 3 Super fixes a failing test with Nemotron 3 Ultra judging; `tavily`: a web search through Tavily, each page screened by the judge). `mu replay [n | file]` replays one of the person's own sessions the same way. `scripts/demo-session.mjs` turns a session into a recording: the project folder, the home folder and the user name replaced, the system prompt left out.
+
 ## [0.2.13] - 2026-10-25
 
 **0.2.13: `isCheckChain` follows a `cd` into the project's folders and reads the project's own runner by path and `"$(git rev-parse --show-toplevel)"`.**
