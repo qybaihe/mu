@@ -34,6 +34,11 @@ describe("mu demo and mu replay", () => {
 		expect(run.stdout).toContain("run touch .agent-was-here: not part of the task");
 		expect(run.stdout).toContain("you would have been asked 5 times: for those 4 commands and 1 edit.");
 		expect(run.stdout).toMatch(/Judge: [\d,]+ tokens in, [\d,]+ out, \$0\.0\d+\./);
+		// --brief keeps the steps and the verdicts and leaves out what each step printed.
+		const brief = replay(["demo", "--brief"]);
+		expect(brief.stdout).toContain("agent run    touch .agent-was-here");
+		expect(brief.stdout).not.toContain("Command exited");
+		expect(brief.stdout.split("\n").length).toBeLessThan(run.stdout.split("\n").length);
 		const fix = replay(["demo", "fix"]);
 		expect(fix.stdout).toContain("6 commands went to the judge: 5 approved without asking you, 1 came back to you.");
 	});
