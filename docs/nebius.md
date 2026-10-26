@@ -113,7 +113,14 @@ MU_SANDBOX=nebius mu --provider nebius --model nvidia/nemotron-3-super-120b-a12b
 
 ## Web search with Tavily
 
-With `TAVILY_API_KEY` set, `web_search` asks [Tavily](https://tavily.com) first and `web_fetch` falls back to Tavily's extract for pages it cannot read itself. See [Configuration](configuration.md). Like the sandbox, this is new and tested so far with mocked responses rather than live calls.
+With `TAVILY_API_KEY` set, `web_search` asks [Tavily](https://tavily.com) first and `web_fetch` falls back to Tavily's extract for pages it cannot read itself. See [Configuration](configuration.md).
+
+```bash
+export TAVILY_API_KEY=...      # from app.tavily.com
+mu --provider nebius --model nvidia/nemotron-3-super-120b-a12b
+```
+
+Checked against the live Tavily API on 2026-10-26, with mu-agent 0.2.13 from npm and Nemotron 3 Super on Token Factory as the agent. Asked whether `datetime.utcnow()` is deprecated, mu's `web_search` answered from Tavily (8 results) and the agent updated the code. Asked to read a page behind a bot check (HTTP 403, no text until its scripts run), `web_fetch` read it through Tavily's extract.
 
 ## Measured
 
