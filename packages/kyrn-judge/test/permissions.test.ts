@@ -8,7 +8,7 @@ import { CONFIG_DIR_NAME, type ExtensionUIContext } from "@earendil-works/pi-cod
 import { Type } from "typebox";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
-import { isMutatingCall, isReadOnlyChain } from "../src/checkpoint/mutating.ts";
+import { isCheckChain, isMutatingCall, isReadOnlyChain } from "../src/checkpoint/mutating.ts";
 import { parseConfig } from "../src/config.ts";
 import type { DecisionMode } from "../src/decision.ts";
 import { toolRisk } from "../src/decisions/tool-risk.ts";
@@ -386,6 +386,94 @@ describe("what needs permission", () => {
 			expect(isReadOnlyChain(command, false, cwd), command).toBe(false);
 			expect(permissionNeed("bash", { command }, cwd), command).toBeDefined();
 		}
+	});
+
+	// Recording the README GIF on 0.2.11: the judge put `npm run check` at needed 0.78 and `./test.sh` at 0.79.
+	it("takes a command line as a check only when it runs one in the project and otherwise only looks", () => {
+		for (const command of [
+			"npm run check 2>&1",
+			"npm run check 2>&1 | tail -20",
+			"npm test -- a",
+			"yarn lint",
+			"npx vitest --run test/a.test.ts",
+			"pnpm exec tsc --noEmit",
+			"bunx biome check src",
+			'python3 -m pytest -v tests -k "split or statement"',
+			"PYTHONPATH=src python3 -m pytest -v tests/test_iban.py",
+			"env PYTHONPATH=src CI=1 pytest -q",
+			"cargo test --doc dedent; git diff --check; git diff --stat",
+			"node --test test/a.test.mjs && git status --short",
+			"go vet ./... && go test ./...",
+			"make check",
+			"./test.sh",
+			"sh ci/test.sh",
+			"bash tools/test.sh",
+			"bash ./test.sh",
+			"scripts/test.sh -q",
+			'./test.sh >/tmp/pi-test.log 2>&1; echo "exit=$?"; grep -E "Test Files|Tests |pass |fail " /tmp/pi-test.log | tail -10',
+			"npm test > /private/tmp/t.log 2>&1 && tail -5 /private/tmp/t.log",
+			"npm test &>/tmp/t.log",
+			"npm test 2>/dev/null",
+		])
+			expect(isCheckChain(command, false, cwd), command).toBe(true);
+		for (const command of [
+			"",
+			"ls",
+			"git status --short",
+			// Something more than a check.
+			"npm run check && git push",
+			"npm test; rm -rf dist",
+			"npm install && npm test",
+			"npm publish",
+			"npm test | tee /tmp/t.log",
+			"npm test && curl -s https://example.com",
+			"python3 -c 'import os' && pytest",
+			"npm test; result=$?; node -e 'process.exit(0)'",
+			"npm test & curl x",
+			"npm test $(curl x)",
+			"npm test `id`",
+			"npm test <<EOF\nx\nEOF",
+			// A word of a check in another command.
+			"rm vitest.config.ts",
+			"cat test.sh",
+			"echo npm test",
+			// Output written anywhere but /tmp.
+			"npm test > src/out.txt",
+			"npm test > test.log",
+			"npm test > /tmp/../etc/x",
+			"npm test > ~/t.log",
+			"npm test >> $LOG",
+			"npm test >| /tmp/t.log",
+			"npm test > /tmpfoo/t.log",
+			// Settings that say which program runs, or what it loads.
+			"PATH=/tmp/bin:$PATH npm test",
+			"NODE_OPTIONS=--require=/tmp/x.js npm test",
+			"PYTHONPATH=$HOME pytest",
+			"env -i npm test",
+			"env PATH=/tmp npm test",
+			// A launcher told to fetch something else, and goals that publish.
+			"npx --package=evil vitest",
+			"npx -y vitest",
+			"mvn deploy",
+			"gradle publish",
+			// A script outside the project, or found on the PATH.
+			"../other/test.sh",
+			"/opt/ci/test.sh",
+			"bash ../x/test.sh",
+			"test.sh",
+			"./test.sh.bak",
+			// Somewhere else.
+			"cd ../other && npm test",
+			"cd /elsewhere && npm test",
+			"cd && npm test",
+			"cd sub && npm test",
+		])
+			expect(isCheckChain(command, false, cwd), command).toBe(false);
+		expect(isCheckChain("npm test", true, cwd)).toBe(false);
+		expect(isCheckChain("npm test", false, cwd, "/elsewhere")).toBe(false);
+		expect(isCheckChain(`cd ${cwd} && npm test`, false, cwd, "/elsewhere")).toBe(true);
+		// A check still needs permission: only the judge's line for it is lower.
+		expect(permissionNeed("bash", { command: "npm run check 2>&1" }, cwd)).toMatchObject({ kind: "shell" });
 	});
 
 	it("says what a call is, and what allowing it for the conversation would cover", () => {
@@ -847,6 +935,50 @@ describe("permission modes in a session", () => {
 			params: { summary: "npm test -- a" },
 		});
 	});
+
+	// Recording the README GIF on 0.2.11: `npm run check` (needed 0.78) and `./test.sh` (0.79) asked the user.
+	it.skipIf(process.platform === "win32")(
+		"Judge mode: a check the judge puts at 0.7 or more runs; anything more than a check, or a doubtful verdict, asks",
+		async () => {
+			const states: Record<string, unknown>[] = [];
+			const { harness, ran, asked, of } = await start(
+				(request): Record<string, Answer> => {
+					if (!("verdict" in request.questions)) return {};
+					states.push(request.state as Record<string, unknown>);
+					const tool = String((request.state as { tool_call: string }).tool_call);
+					if (tool.includes("lint")) return { verdict: verdict("needed", 0.65) };
+					if (tool.includes("build")) return { verdict: verdict("beyond", 0.75) };
+					return { verdict: verdict("needed", 0.75) };
+				},
+				{ mode: "judge", pick: (options) => options.at(-1) },
+			);
+			const home = harness.tempDir;
+			const check = `cd ${home} && npm run check 2>&1`;
+			const tests = `cd ${home} && ./test.sh >/tmp/mu-test.log 2>&1; echo "exit=$?"; tail -10 /tmp/mu-test.log`;
+			harness.setResponses([
+				call("bash", { command: check }, "call-check"),
+				call("bash", { command: tests }),
+				call("bash", { command: "npm run lint" }),
+				call("bash", { command: "npm run build" }),
+				call("bash", { command: "npm run check && git push" }),
+				call("bash", { command: "make deploy" }),
+				fauxAssistantMessage("Checked."),
+			]);
+			await harness.session.prompt("Fix the type error and run the checks");
+			expect(ran).toEqual([`bash ${check}`, `bash ${tests}`]);
+			// The judge is not told: it answers the same question as for any other command.
+			expect(states.map((state) => Object.keys(state).sort())).toEqual(
+				Array(6).fill(["task", "tool_call", "user_message", "where"]),
+			);
+			expect(asked.map((each) => each.title.split("\n")[1])).toEqual([
+				"npm run lint",
+				"npm run build",
+				"npm run check && git push",
+				"make deploy",
+			]);
+			expect(of("permissions.approved")[0]).toMatchObject({ toolCallId: "call-check", by: "judge" });
+		},
+	);
 
 	it("Judge mode: a sure 'needed' is required, and without anyone to ask the rest is refused", async () => {
 		const { harness, ran } = await start(

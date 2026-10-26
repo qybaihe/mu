@@ -21,16 +21,24 @@ export interface ToolApprovalInput {
 	readonly call: string;
 	/** Where the call acts, said plainly: "inside the project folder" or where else. */
 	readonly where: string;
+	/** The call runs a check in the project and otherwise only looks (`isCheckChain`). Not shown to the judge. */
+	readonly check?: boolean;
 }
 
 export type ToolApprovalOutcome = "approve" | "beyond" | "unrelated" | "unsure";
 
 /** How sure the judge has to be that a step is needed before it runs without the user. */
 export const APPROVE_AT = 0.8;
+/**
+ * The same for a check: a test run, build, type check or linter in the project, with nothing else but looking. The
+ * judge often lands just under 0.8 on one the task plainly needs (`npm run check`, `./test.sh`), and on mubench's
+ * real requests none it put at 0.7 or more needed the user. A "beyond" or "unrelated" verdict still asks.
+ */
+export const CHECK_APPROVE_AT = 0.7;
 
 export const toolApproval = defineDecision({
 	id: "tool.approval",
-	version: 1,
+	version: 2,
 	cacheImpact: "none",
 	latency: "inline",
 	capabilities: "relate",
@@ -51,11 +59,12 @@ export const toolApproval = defineDecision({
 	buildState(input: ToolApprovalInput) {
 		return { tool_call: input.call, where: input.where, task: input.task, user_message: input.userMessage };
 	},
-	policy(answers): ToolApprovalOutcome {
+	policy(answers, input): ToolApprovalOutcome {
 		const { choice, probabilities } = answers.verdict;
 		if (isEscapeOption(choice)) return "unsure";
 		const p = probabilities?.[choice];
-		if (choice === "needed") return p === undefined || p >= APPROVE_AT ? "approve" : "unsure";
+		const line = input.check ? CHECK_APPROVE_AT : APPROVE_AT;
+		if (choice === "needed") return p === undefined || p >= line ? "approve" : "unsure";
 		return choice === "beyond" || choice === "unrelated" ? choice : "unsure";
 	},
 	// Nobody could look at it: the user decides.
