@@ -269,13 +269,28 @@ function harmlessRedirect(text: string, at: number, both: boolean): number | und
 }
 
 /**
+ * Where a redirection at `at` (its `>`) ends when it sends output to a file named in plain characters (`>/tmp/x.log`,
+ * `>> out.txt`), whose name it adds to `writes`. Undefined for any other.
+ */
+function fileRedirect(text: string, at: number, writes: string[]): number | undefined {
+	let index = at + 1;
+	if (text[index] === ">") index++;
+	while (text[index] === " " || text[index] === "\t") index++;
+	const name = /^[\w./@%+,:=-]+/.exec(text.slice(index))?.[0];
+	if (!name || !/^(?:[\s;&|]|$)/.test(text.slice(index + name.length, index + name.length + 1))) return undefined;
+	writes.push(name);
+	return index + name.length - 1;
+}
+
+/**
  * The simple commands of a POSIX command line, each as its words with the quoting taken off, split where the shell
  * splits them: at `;`, `&&`, `||`, `|` and line breaks outside quotes. A redirection that only throws output away is
  * left out (see `harmlessRedirect`). Undefined for whatever this does not read the way the shell does, or that can
  * do more than its words say: a substitution, `$'…'`, a heredoc or any other redirection, `&` alone, a subshell, a
- * group or brace expansion, a carriage return, a quote left open.
+ * group or brace expansion, a carriage return, a quote left open. With `writes`, a redirection to a file is left out
+ * too, and the file it writes is added there (see `fileRedirect`).
  */
-function simpleCommands(text: string): string[][] | undefined {
+function simpleCommands(text: string, writes?: string[]): string[][] | undefined {
 	if (text.includes("\r")) return undefined;
 	const commands: string[][] = [];
 	let words: string[] = [];
@@ -311,7 +326,8 @@ function simpleCommands(text: string): string[][] | undefined {
 				endCommand();
 			} else if (next === ">") {
 				endWord();
-				const end = harmlessRedirect(text, index + 1, true);
+				const end =
+					harmlessRedirect(text, index + 1, true) ?? (writes ? fileRedirect(text, index + 1, writes) : undefined);
 				if (end === undefined) return undefined;
 				index = end;
 			} else return undefined;
@@ -321,7 +337,7 @@ function simpleCommands(text: string): string[][] | undefined {
 				word = "";
 				started = false;
 			} else endWord();
-			const end = harmlessRedirect(text, index, false);
+			const end = harmlessRedirect(text, index, false) ?? (writes ? fileRedirect(text, index, writes) : undefined);
 			if (end === undefined) return undefined;
 			index = end;
 		} else if (char === "'") {
@@ -383,25 +399,34 @@ export function isReadOnlyChain(command: string, powershell = false, cwd?: strin
 	if (!commands?.some((words) => words.length > 0)) return false;
 	let elsewhere = startsElsewhere(cwd, start);
 	return commands.every((words) => {
-		const [program] = words;
-		if (program === undefined || program === "true" || program === "false" || program === ":") return true;
-		if (program === "cd") {
-			// Only a folder from the root says for certain where `cd` goes: CDPATH finds a relative one anywhere, `..` after
-			// a link goes up from the link or from where it leads (as the shell is set), and `$`, `~` and wildcards expand.
-			const [, to, ...more] = words;
-			elsewhere =
-				cwd === undefined ||
-				to === undefined ||
-				more.length > 0 ||
-				!isAbsolute(to) ||
-				/[$*?[~]/.test(to) ||
-				to.split(/[\\/]/).includes("..") ||
-				!samePlace(to, cwd);
-			return true;
-		}
-		if (program === "find") return !words.some((word) => FIND_ACTS.test(word));
-		return readOnlyProgram(words.join(" "), elsewhere);
+		if (words[0] !== "cd") return readOnlyPart(words, elsewhere);
+		elsewhere = !cdHome(words, cwd);
+		return true;
 	});
+}
+
+/** Whether a `cd`, as its words, goes for certain to the conversation's folder `cwd`. */
+function cdHome(words: readonly string[], cwd: string | undefined): boolean {
+	// Only a folder from the root says for certain where `cd` goes: CDPATH finds a relative one anywhere, `..` after
+	// a link goes up from the link or from where it leads (as the shell is set), and `$`, `~` and wildcards expand.
+	const [, to, ...more] = words;
+	return (
+		cwd !== undefined &&
+		to !== undefined &&
+		more.length === 0 &&
+		isAbsolute(to) &&
+		!/[$*?[~]/.test(to) &&
+		!to.split(/[\\/]/).includes("..") &&
+		samePlace(to, cwd)
+	);
+}
+
+/** One simple command of a read-only chain other than `cd`, as its words: see `isReadOnlyChain`. */
+function readOnlyPart(words: readonly string[], elsewhere: boolean): boolean {
+	const [program] = words;
+	if (program === undefined || program === "true" || program === "false" || program === ":") return true;
+	if (program === "find") return !words.some((word) => FIND_ACTS.test(word));
+	return readOnlyProgram(words.join(" "), elsewhere);
 }
 
 export function isMutatingCall(toolName: string, input: Readonly<Record<string, unknown>>, cwd?: string): boolean {
@@ -421,4 +446,51 @@ const CHECK_COMMAND =
 /** A command whose exit code says whether the work holds up: a test run, a build, a type check, a linter. */
 export function isCheckCommand(command: string): boolean {
 	return CHECK_COMMAND.test(command);
+}
+
+/**
+ * A check as one simple command, its program first: `npm run check`, `npx vitest --run`, `python3 -m pytest -v`,
+ * `cargo test`, `node --test`, `./test.sh`, `bash ci/test.sh`. Not `gradle` or `mvn`, whose goals also publish
+ * (`mvn deploy`), nor a script outside the project (`../x/test.sh`, `/opt/test.sh`).
+ */
+const CHECK_RUN =
+	/^(?:(?:(?:npx|bunx)\s+|(?:pnpm|yarn)\s+(?:exec\s+)?|python3?\s+-m\s+)?(?:vitest|jest|pytest|mocha|ava|tsc|eslint|biome|ruff|mypy|rspec|phpunit|ctest|tox|nox)|(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?(?:test|build|check|lint|typecheck)|(?:cargo|go|dotnet|swift|make|deno)\s+(?:test|build|check|vet|clippy)|node\s+--test|(?:(?:ba)?sh\s+(?:\.\/)?|\.\/)(?:[\w-][\w.-]*\/)*test\.sh|(?:[\w-][\w.-]*\/)+test\.sh)(?:\s|$)/;
+
+/** Settings a check may be given before it, `PYTHONPATH=src pytest`: none of them says which program runs. */
+const CHECK_SETTING = /^(?:PYTHONPATH|CI|NODE_ENV|FORCE_COLOR|NO_COLOR|RUST_BACKTRACE)=[^$]*$/;
+
+/** Where a check may write its output: `/tmp`. */
+function tempFile(name: string): boolean {
+	return /^\/(?:private\/)?tmp\//.test(name) && !name.split("/").includes("..");
+}
+
+/**
+ * True for a command line that runs a check in the conversation's folder and otherwise only looks: `npm run check
+ * 2>&1 | tail -20`, `cd /work/app && ./test.sh >/tmp/test.log 2>&1; echo "exit=$?"; tail -5 /tmp/test.log`, `cargo
+ * test; git diff --stat`. Each part is a check (`CHECK_RUN`, after `env` and the settings of `CHECK_SETTING`), a `cd`
+ * or a read-only command as `isReadOnlyChain` reads it, and a file it writes is in the temporary folder. A check after
+ * a `cd` elsewhere, or that starts elsewhere (`start`), is not one. The judge needs to be less sure to approve one
+ * (see `tool.approval`): it runs the project's own code and changes nothing else. PowerShell gets none.
+ */
+export function isCheckChain(command: string, powershell = false, cwd?: string, start = cwd): boolean {
+	if (powershell) return false;
+	const writes: string[] = [];
+	const commands = simpleCommands(command.trim(), writes);
+	if (!commands || !writes.every(tempFile)) return false;
+	let elsewhere = startsElsewhere(cwd, start);
+	let checks = 0;
+	const parts = commands.every((words) => {
+		if (words[0] === "cd") {
+			elsewhere = !cdHome(words, cwd);
+			return true;
+		}
+		let at = words[0] === "env" ? 1 : 0;
+		while (at < words.length && CHECK_SETTING.test(words[at])) at++;
+		if (CHECK_RUN.test(words.slice(at).join(" "))) {
+			checks++;
+			return !elsewhere;
+		}
+		return at === 0 && readOnlyPart(words, elsewhere);
+	});
+	return parts && checks > 0;
 }

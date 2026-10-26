@@ -15,7 +15,7 @@ summary: The three permission modes, what the judge may approve for you, your ha
 
 ## What the judge approves {#judge-mode}
 
-In *Judge mode*, each command, change outside the project, external action and subagent goes to the judge model first, with one question: is this call **needed** for the task and what you said, does it go **beyond** it, is it **unrelated** or is it **unclear**? Only a call with a *needed* verdict at 0.8 or higher runs without asking you. For anything else, mu asks you, and the prompt says why, for example *The judge thinks this goes beyond what you asked for*.
+In *Judge mode*, each command, change outside the project, external action and subagent goes to the judge model first, with one question: is this call **needed** for the task and what you said, does it go **beyond** it, is it **unrelated** or is it **unclear**? Only a call with a *needed* verdict at 0.8 or higher runs without asking you; for a check (a test run, build, type check or linter in the project, such as `npm run check` or `./test.sh`, with nothing else in the command but looking), 0.7 is enough. For anything else, mu asks you, and the prompt says why, for example *The judge thinks this goes beyond what you asked for*.
 
 When no judge can answer (no key and the free Jev unavailable, an exhausted account or only a local judge, which isn't trusted with approvals), mu asks you about every step and says so. Set a Jev key with `mu setup`, or switch the mode.
 

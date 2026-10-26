@@ -6,6 +6,7 @@ import {
 	type ToolCallEvent,
 	type ToolCallEventResult,
 } from "@earendil-works/pi-coding-agent";
+import { isCheckChain, shellStart } from "../../checkpoint/mutating.ts";
 import type { Decision } from "../../decision.ts";
 import { toolApproval } from "../../decisions/tool-approval.ts";
 import { toolRisk } from "../../decisions/tool-risk.ts";
@@ -232,6 +233,12 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 			return { approved: asked && (decision.judged ?? decision.outcome) === "allow", reason: "flagged" };
 		}
 		const frame = runtime.frame;
+		const input = event.input as Record<string, unknown>;
+		const powershell =
+			event.toolName === "powershell" || (event.toolName === "bg_start" && process.platform === "win32");
+		const check =
+			need.kind === "shell" &&
+			isCheckChain(String(input.command ?? ""), powershell, ctx.cwd, shellStart(event.toolName, input, ctx.cwd));
 		const decision = await runtime.engine.decide(
 			toolApproval,
 			{
@@ -249,6 +256,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 							: need.kind === "delegate"
 								? "subagents working on the project"
 								: "an action outside this computer or program, such as a web page or a connected service",
+				check,
 			},
 			{ signal: ctx.signal },
 		);

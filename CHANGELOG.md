@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+### Changed
+
+- **Judge mode asks you less often about running checks.** A test run, build, type check or linter in the project (`npm run check`, `npm test`, `./test.sh`, `vitest`, `pytest`, `cargo test` and the like) now runs without asking when the judge is at least 0.7 sure the task needs it; other commands still need 0.8. The judge often landed just under 0.8 on checks the task plainly needed, so you were asked to allow `npm run check` in the middle of a fix. The lower line counts only for a command line that runs a check in the project folder and otherwise only looks, such as `npm run check 2>&1 | tail -20` or `./test.sh >/tmp/test.log 2>&1; tail /tmp/test.log`. `npm test && git push`, a check after a `cd` into another folder, or one that writes its output anywhere but `/tmp` still needs 0.8. When the judge thinks a check goes beyond what you asked for, or isn't part of the task, mu still asks you.
+
 ## [0.2.11] - 2026-10-25
 
 **0.2.11 stops asking you about read-only git commands in judge mode.** The desktop app carries mu-agent 0.2.11.
