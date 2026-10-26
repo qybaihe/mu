@@ -22,14 +22,20 @@ describe("mu demo and mu replay", () => {
 		const run = replay(["demo"]);
 		expect(run.status).toBe(0);
 		expect(run.stdout).toContain("No key and no network");
-		expect(run.stdout).toContain("you   The test in test_slug.py fails.");
+		expect(run.stdout).toContain("you   The tests in price.test.mjs fail.");
+		expect(run.stdout).toMatch(
+			/judge ↑ may this command run\? asks you: not part of the task \(needed: 0\.\d\d\) {2}Nemotron 3 Ultra · \d+ ms/,
+		);
 		expect(run.stdout).toMatch(
 			/judge ✓ may this command run\? approved: a step the task needs \(needed: 0\.\d\d\) {2}Nemotron 3 Ultra · \d+ ms/,
 		);
 		expect(run.stdout).toContain("judge ✓ is the task done? the task is done: the turn ends");
-		expect(run.stdout).toContain("6 commands went to the judge: 5 approved without asking you, 1 came back to you.");
-		expect(run.stdout).toContain("you would have been asked 8 times");
+		expect(run.stdout).toContain("4 commands went to the judge: 3 approved without asking you, 1 came back to you.");
+		expect(run.stdout).toContain("run touch .agent-was-here: not part of the task");
+		expect(run.stdout).toContain("you would have been asked 5 times: for those 4 commands and 1 edit.");
 		expect(run.stdout).toMatch(/Judge: [\d,]+ tokens in, [\d,]+ out, \$0\.0\d+\./);
+		const fix = replay(["demo", "fix"]);
+		expect(fix.stdout).toContain("6 commands went to the judge: 5 approved without asking you, 1 came back to you.");
 	});
 
 	it("lists the demos and shows each, Tavily's searches and pages included", () => {
@@ -41,9 +47,7 @@ describe("mu demo and mu replay", () => {
 		const tavily = replay(["demo", "tavily"]);
 		expect(tavily.status).toBe(0);
 		expect(tavily.stdout).toContain("8 results from Tavily");
-		expect(tavily.stdout).toMatch(
-			/judge ✓ screened \d+ passages of what came back for instructions aimed at the AI: none/,
-		);
+		expect(tavily.stdout).toMatch(/judge ✓ screened \d+ passages from Tavily for instructions aimed at the AI: none/);
 		expect(replay(["demo", "nothing-here"]).status).toBe(2);
 	});
 

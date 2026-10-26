@@ -195,10 +195,11 @@ function describe(record) {
 		case "tool.injection": {
 			const scores = (Array.isArray(judged) ? judged : []).flat();
 			const withheld = scores.filter((score) => typeof score === "number" && score > 0.5).length;
-			const what = `${scores.length} ${scores.length === 1 ? "passage" : "passages"}`;
+			const from = /Tavily/.test(record.about ?? "") ? " from Tavily" : "";
+			const what = `${scores.length} ${scores.length === 1 ? "passage" : "passages"}${from}`;
 			return withheld === 0
-				? `${green("✓")} screened ${what} of what came back for instructions aimed at the AI: none${tail}`
-				: `${red("✗")} screened ${what} of what came back: ${withheld} carried instructions aimed at the AI and were withheld${tail}`;
+				? `${green("✓")} screened ${what} for instructions aimed at the AI: none${tail}`
+				: `${red("✗")} screened ${what}: ${withheld} carried instructions aimed at the AI and were withheld${tail}`;
 		}
 		case "turn.continue":
 			return `${judged === "end" ? green("✓") : yellow("→")} is the task done? ${CONTINUE[judged] ?? judged}${tail}`;
@@ -295,6 +296,10 @@ out();
 
 let previous;
 const calls = [];
+/** The commands the judge sent back to the person, with why. */
+const sentBack = [];
+/** Calls that never ran because their arguments were malformed: no mode would have asked about them. */
+const malformed = new Set();
 let finalText = "";
 for (const entry of entries) {
 	const at = timeOf(entry);
@@ -313,10 +318,16 @@ for (const entry of entries) {
 			out(`${who.agent}${callLine(call)}`);
 		}
 	} else if (message?.role === "toolResult") {
+		if (message.isError && textOf(message.content).startsWith("Validation failed")) malformed.add(message.toolCallId);
 		const lines = resultLines(message);
 		for (const line of lines) out(`${who.tool}${message.isError ? red(line) : dim(line)}`);
 	} else if (entry.type === "custom" && entry.customType === "kyrn.decision") {
-		out(`${who.judge}${describe(entry.data ?? {})}`);
+		const record = entry.data ?? {};
+		out(`${who.judge}${describe(record)}`);
+		if (record.specId === "tool.approval" && record.judged !== "approve") {
+			const call = calls.at(-1);
+			sentBack.push({ what: record.about ?? (call ? oneLine(callLine(call).replace(/\x1b\[\d+m/g, ""), 80) : "a call"), why: APPROVAL[record.judged] ?? "no verdict" });
+		}
 	}
 }
 if (finalText) {
@@ -332,7 +343,7 @@ if (finalText) {
 // What the session cost, and what the judge saved the person.
 const approvals = decisions.filter((record) => record.specId === "tool.approval");
 const approved = approvals.filter((record) => record.judged === "approve").length;
-const edits = calls.filter((call) => call.name === "edit" || call.name === "write").length;
+const edits = calls.filter((call) => (call.name === "edit" || call.name === "write") && !malformed.has(call.id)).length;
 const latencies = decisions
 	.filter((record) => record.source === "judge" && typeof record.latencyMs === "number")
 	.map((record) => record.latencyMs)
@@ -356,7 +367,11 @@ out(bold("In this session"));
 out(`  ${decisions.length} judge ${decisions.length === 1 ? "verdict" : "verdicts"}${median === undefined ? "" : `, median ${median} ms (${latencies[0]}–${latencies.at(-1)} ms)`}.`);
 if (approvals.length) {
 	out(`  ${approvals.length} commands went to the judge: ${approved} approved without asking you, ${approvals.length - approved} came back to you.`);
-	out(`  In Ask-first mode, without a judge, you would have been asked ${approvals.length + edits} times: each of those commands and each of the ${edits} edits.`);
+	for (const back of sentBack) out(dim(`    ${back.what}: ${back.why.replace(/^asks you: /, "")}`));
+	const plural = (count, word) => `${count} ${word}${count === 1 ? "" : "s"}`;
+	out(
+		`  In Ask-first mode, without a judge, you would have been asked ${approvals.length + edits} times: for those ${plural(approvals.length, "command")} and ${plural(edits, "edit")}.`,
+	);
 }
 out(
 	`  Judge: ${n(judgeIn)} tokens in, ${n(judgeOut)} out${judgeUsd === undefined ? "" : `, ${judgeUsd === 0 ? "$0 (on this machine)" : usd(judgeUsd)}`}.`,

@@ -1,5 +1,11 @@
 [
 	{
+		"name": "planted",
+		"file": "planted.jsonl",
+		"title": "a comment in the code tells AI agents to run a command; the judge stops it, approves the rest, and the tests pass",
+		"note": "Recorded 2026-10-26 with mu-agent 0.2.13 in Judge mode: Nemotron 3 Super writes the code and Nemotron 3 Ultra judges, both on Nebius Token Factory."
+	},
+	{
 		"name": "fix",
 		"file": "fix.jsonl",
 		"title": "Nemotron 3 Super fixes a failing test, Nemotron 3 Ultra judges each command",
@@ -8,7 +14,7 @@
 	{
 		"name": "tavily",
 		"file": "tavily.jsonl",
-		"title": "the agent looks up a deprecation with Tavily; the judge screens every page before the agent reads it",
-		"note": "Recorded 2026-10-26 with mu-agent 0.2.13 in Judge mode: Nemotron 3 Super and Nemotron 3 Ultra on Nebius Token Factory, web search through Tavily."
+		"title": "the agent searches the web through Tavily; the judge screens what comes back before the agent reads it",
+		"note": "Recorded 2026-10-26 with mu from source in Judge mode: Nemotron 3 Super and Nemotron 3 Ultra on Nebius Token Factory, web search through Tavily."
 	}
 ]
