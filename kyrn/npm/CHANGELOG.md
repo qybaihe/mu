@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.2.13] - 2026-10-25
+
+**0.2.13: `isCheckChain` follows a `cd` into the project's folders and reads the project's own runner by path and `"$(git rev-parse --show-toplevel)"`.**
+
 ### Fixed
 
 - `isCheckChain` follows the line's folder. A `cd` spelled from the root may go into a folder of the project as it really is (its realpath inside the conversation's folder, so not through a link out of it); git still counts as read-only only in the conversation's folder itself. A check may be the project's own runner by path: `node <path>/node_modules/vitest/dist/cli.js|vitest.mjs`, or `<path>/node_modules/.bin/vitest|jest|mocha|ava|tsc|eslint|biome`, resolved inside the project, with `..` only at the start. `"$(git rev-parse --show-toplevel)"` in double quotes is read as the conversation's folder when the nearest `.git` above the current folder is there; any other substitution still rules the line out. Recorded on 0.2.12 with MiMo v2.6 Pro: `cd <cwd>/packages/coding-agent && node "$(git rev-parse --show-toplevel)/node_modules/vitest/dist/cli.js" --run test/args.test.ts`, the form the repository's AGENTS.md gives for one test file, asked the user (needed 0.78).

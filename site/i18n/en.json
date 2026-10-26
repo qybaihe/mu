@@ -304,6 +304,7 @@
     "download": "Download this version",
     "full_agent": "Full mu-agent changelog",
     "headlines": {
+      "v0.2.13": "judge mode counts the project's own test runner as a check",
       "v0.2.12": "judge mode asks less often about running tests and checks",
       "v0.2.11": "judge mode stops asking about read-only git commands",
       "v0.2.10": "the line that starts subagents names them by their short names too",
