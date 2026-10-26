@@ -334,11 +334,12 @@ for (const entry of entries) {
 }
 if (finalText) {
 	out();
+	const shown = brief ? 3 : 12;
 	finalText
 		.split("\n")
-		.slice(0, 12)
+		.slice(0, shown)
 		.forEach((line, i) => out(`${i === 0 ? who.agent : who.tool}${line}`));
-	const more = finalText.split("\n").length - 12;
+	const more = finalText.split("\n").length - shown;
 	if (more > 0) out(dim(`      … ${more} more lines`));
 }
 
