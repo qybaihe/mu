@@ -304,6 +304,7 @@
     "download": "이 버전 내려받기",
     "full_agent": "mu-agent 전체 변경 기록(영어)",
     "headlines": {
+      "v0.2.13": "판정 모드가 프로젝트 자체 테스트 러너도 검사로 봐요",
       "v0.2.12": "판정 모드가 테스트와 검사 실행은 덜 물어봐요",
       "v0.2.11": "판정 모드가 읽기만 하는 git 명령은 묻지 않아요",
       "v0.2.10": "도우미를 보내는 줄도 짧은 이름으로 불러요",
@@ -322,6 +323,14 @@
       "v0.1.8": "MCP 도구 설명 속 숨은 지시 검사, 잘 끝난 긴 작업을 스킬 초안으로"
     },
     "entries": [
+      {
+        "version": "v0.2.13",
+        "date": "2026-10-25",
+        "agent": "mu-agent 0.2.13",
+        "items": [
+          "<b>판정 모드가 프로젝트 자체 테스트 러너도 검사로 봐요.</b>0.2.12에서 검사 명령의 승인 기준을 낮췄지만, 많은 저장소의 기여 안내가 권하는 방식, 즉 패키지 폴더에서 프로젝트 자체 vitest로 테스트 파일 하나를 돌리는 명령(<code>cd /프로젝트/packages/app &amp;&amp; node \"$(git rev-parse --show-toplevel)/node_modules/vitest/dist/cli.js\" --run test/a.test.ts</code>)은 검사로 치지 않아서, 판정기가 0.78을 주면 여전히 여러분에게 물었어요. 이제 프로젝트 안의 하위 폴더에서도 검사를 돌릴 수 있고, 프로젝트 자체의 <code>node_modules/vitest</code>나 <code>node_modules/.bin/&lt;도구&gt;</code>도 검사로 봐요. 저장소가 프로젝트 폴더에서 시작하면 <code>\"$(git rev-parse --show-toplevel)\"</code>도 프로젝트 폴더로 봐요. 링크를 통해 프로젝트 밖으로 가는 <code>cd</code>, 프로젝트 안의 다른 저장소로 가는 <code>cd</code>, 그 밖의 <code>$(…)</code>는 여전히 검사로 치지 않아요."
+        ]
+      },
       {
         "version": "v0.2.12",
         "date": "2026-10-25",

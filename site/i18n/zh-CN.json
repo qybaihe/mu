@@ -304,6 +304,7 @@
     "download": "下载这个版本",
     "full_agent": "mu-agent 的完整更新记录（英文）",
     "headlines": {
+      "v0.2.13": "判定模式把项目自带的测试运行器也算作检查",
       "v0.2.12": "判定模式少问你跑测试和检查的命令",
       "v0.2.11": "判定模式不再为只读的 git 命令来问你",
       "v0.2.10": "派出助手的那一行也用助手的短名字",
@@ -322,6 +323,14 @@
       "v0.1.8": "检查 MCP 工具描述里藏的指令，跑通的长任务可以存成技能"
     },
     "entries": [
+      {
+        "version": "v0.2.13",
+        "date": "2026-10-25",
+        "agent": "mu-agent 0.2.13",
+        "items": [
+          "<b>判定模式把项目自带的测试运行器也算作检查。</b>0.2.12 降低了检查类命令的放行门槛，但很多仓库的贡献说明让你在包目录里用项目自带的 vitest 跑单个测试文件（<code>cd /项目/packages/app &amp;&amp; node \"$(git rev-parse --show-toplevel)/node_modules/vitest/dist/cli.js\" --run test/a.test.ts</code>），这种写法当时不算检查，判定器给 0.78 分仍会来问你。现在检查可以在项目内的子目录里跑，可以用项目自己的 <code>node_modules/vitest</code> 或 <code>node_modules/.bin/&lt;工具&gt;</code>；仓库从项目目录开始时，<code>\"$(git rev-parse --show-toplevel)\"</code> 也算项目目录。通过链接 <code>cd</code> 到项目外、进入项目里另一个独立仓库，或其他 <code>$(…)</code>，仍不算检查。"
+        ]
+      },
       {
         "version": "v0.2.12",
         "date": "2026-10-25",
