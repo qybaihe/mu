@@ -21,7 +21,7 @@
 > **Nebius x NVIDIA Global AI Hackathon.** mu runs end to end on NVIDIA Nemotron with Nebius Token Factory: Nemotron 3 Super writes the code and Nemotron 3 Ultra judges each step. We also fine-tuned Nemotron 3 Nano 4B to be the judge on your own GPU ([mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron), [weights](https://huggingface.co/qybaihe/mu-judge-nemotron-nano-4b)): on 3,244 held-out real decisions it removed 68% of the cost of mu's no-judge mistakes, against 55% for Ultra.
 >
 > ```bash
-> npx -y mu-agent demo        # no key: a real run replayed, with every verdict of the judge
+> npx -y mu-agent@hackathon demo   # no key: a real run replayed, with every verdict of the judge
 > npm i -g mu-agent && mu setup   # with a Token Factory key: choose Nemotron 3 Ultra as the judge
 > ```
 >

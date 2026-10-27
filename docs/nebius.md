@@ -11,7 +11,11 @@ mu can run end to end on [Nebius Token Factory](https://tokenfactory.nebius.com)
 
 ## Try it without a key
 
-`mu demo` replays a real session recorded with mu: Nemotron 3 Super fixing a failing test on Token Factory, where a comment in the code tells AI agents to run a command. Nemotron 3 Ultra approves the steps the task needs and sends that one back; the replay shows each command, each verdict and its latency, and what the run cost. It needs no key and no network, and calls no model. `mu demo tavily` replays a session that searched the web through Tavily, with the judge screening what came back before the agent read it, and `mu demo --list` names the rest; `mu replay` replays one of your own sessions the same way.
+```bash
+npx -y mu-agent@hackathon demo
+```
+
+`mu demo` (mu-agent 0.2.14, on npm under the tag `hackathon`) replays a real session recorded with mu: Nemotron 3 Super fixing a failing test on Token Factory, where a comment in the code tells AI agents to run a command. Nemotron 3 Ultra approves the steps the task needs and sends that one back; the replay shows each command, each verdict and its latency, and what the run cost. It needs no key and no network, and calls no model. `npx -y mu-agent@hackathon demo tavily` replays a session that searched the web through Tavily, with the judge screening what came back before the agent read it, and `--list` names the rest; `mu replay` replays one of your own sessions the same way.
 
 ## Set up
 
