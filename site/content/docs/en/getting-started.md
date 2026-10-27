@@ -16,7 +16,7 @@ summary: Install the desktop app or the command line, connect a model and run a 
 
    The Windows builds aren't code-signed yet, so SmartScreen warns the first time: choose **More info**, then **Run anyway**.
 2. Open it. The first-run guide walks through four steps: a model, a permission mode, a judge and a start.
-   - **Model.** Paste an API key, and mu recognizes the service from the key's format (OpenAI, Anthropic, Google Gemini, xAI, OpenRouter, DeepSeek, Kimi, Qwen, GLM, SiliconFlow and more) and checks it with one request. Or sign in with a ChatGPT, Grok or Google subscription.
+   - **Model.** Paste an API key, and mu recognizes the service from the key's format (OpenAI, Anthropic, Google Gemini, xAI, OpenRouter, DeepSeek, Kimi, Qwen, GLM, SiliconFlow and more) and checks it with one request. Or sign in with ChatGPT.
    - **Permissions.** *Judge mode* is preselected; see [Permissions and safety](@docs/permissions).
    - **Judge.** On a Mac that can run [mude 1.0](@docs/judges#mude), mu's own decision model, it's preselected, and one click installs it. Otherwise, with no key, Jev (TypeSafe's hosted judge model) answers for free through OpenCode Zen. To send nothing to a judge, choose **No judge**.
    - **Start.** If mu finds Claude Code, Codex or ZCode conversations, it offers to import them.
@@ -30,7 +30,7 @@ mu setup               # connect a model and choose the judge
 mu                     # a session in the current directory
 ```
 
-To use a ChatGPT, Grok or Google subscription instead of a key, choose it in `mu setup`: mu then starts on `/login`, and you finish signing in in the browser. For scripts, `mu setup --help` shows the non-interactive forms; a key is read from standard input, never from the command line.
+To sign in with ChatGPT instead of a key, choose it in `mu setup`: mu then starts on `/login`, and you finish signing in in the browser. For scripts, `mu setup --help` shows the non-interactive forms; a key is read from standard input, never from the command line.
 
 Some things to try:
 

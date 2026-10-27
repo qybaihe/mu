@@ -16,7 +16,7 @@ summary: デスクトップアプリかコマンドラインをインストー�
 
    Windows 版はまだコード署名がないため、初回は SmartScreen が警告します。**詳細情報**を選び、**実行**を選んでください。
 2. アプリを開きます。初回ガイドが 4 つのステップを案内します。モデル、権限モード、判定器、開始です。
-   - **モデル。** API キーを貼り付けると、mu はキーの形からサービスを見分け（OpenAI、Anthropic、Google Gemini、xAI、OpenRouter、DeepSeek、Kimi、Qwen、GLM、SiliconFlow など）、1 回のリクエストで確かめます。または ChatGPT、Grok、Google のサブスクリプションでサインインします。
+   - **モデル。** API キーを貼り付けると、mu はキーの形からサービスを見分け（OpenAI、Anthropic、Google Gemini、xAI、OpenRouter、DeepSeek、Kimi、Qwen、GLM、SiliconFlow など）、1 回のリクエストで確かめます。または ChatGPT でサインインします。
    - **権限。** 最初から判定モードが選ばれています。[権限と安全性](@docs/permissions)を参照してください。
    - **判定器。** [mude 1.0](@docs/judges#mude)（mu 独自の意思決定モデル）を動かせる Mac では最初から mude が選ばれていて、クリック一つでインストールできます。それ以外では、キーがなければ、無料の Jev（TypeSafe がホストする判定モデル。OpenCode Zen 経由）が答えます。判定器に何も送りたくなければ、**判定器を使わない**を選びます。
    - **開始。** Claude Code、Codex、ZCode の会話が見つかると、インポートを提案します。
@@ -30,7 +30,7 @@ mu setup               # モデルを接続し、判定器を選ぶ
 mu                     # 現在のディレクトリでセッションを始める
 ```
 
-キーの代わりに ChatGPT、Grok、Google のサブスクリプションを使うなら、`mu setup` で選んでください。mu は `/login` を開いた状態で始まり、サインインはブラウザーで済ませます。スクリプトでは、`mu setup --help` で対話なしの書き方を確認できます。キーは標準入力から読み込み、コマンドラインから読むことはありません。
+キーの代わりに ChatGPT でサインインするなら、`mu setup` で選んでください。mu は `/login` を開いた状態で始まり、サインインはブラウザーで済ませます。スクリプトでは、`mu setup --help` で対話なしの書き方を確認できます。キーは標準入力から読み込み、コマンドラインから読むことはありません。
 
 試してみるとよいこと：
 

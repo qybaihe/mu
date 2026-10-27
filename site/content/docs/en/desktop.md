@@ -40,7 +40,7 @@ The built-in browser keeps its own profile and never touches your own browser. E
 
 ## Signing in to models {#models}
 
-Settings → Models signs you in without leaving the app: a ChatGPT, Grok or Google (Gemini CLI or Antigravity) subscription, or an API key for any provider pi supports. ChatGPT uses OpenAI's own Sign in with ChatGPT (Plus or Pro plan). A server of your own works too, including a plain `http://` address on your machine or network.
+Settings → Models connects a model without leaving the app: sign in with ChatGPT, or paste an API key for any provider pi supports. ChatGPT uses OpenAI's own Sign in with ChatGPT (Plus or Pro plan). A server of your own works too, including a plain `http://` address on your machine or network.
 
 Google's two sign-ins are Google's logins for its own tools. Using them from another program may break Google's terms, so the app states the risk first and goes on only if you agree. A Gemini API key and Vertex AI need none of this.
 
