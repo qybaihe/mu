@@ -4,6 +4,10 @@
 <h1 align="center">mu</h1>
 <p align="center">コーディングエージェントが下す判断の多くは、コードではなく Yes/No の問いです。mu はそのうち 40 種類を小さなモデルに任せます。ベースは <a href="https://github.com/earendil-works/pi">pi</a>。</p>
 
+<p align="center"><b>Terminal-Bench 2.1、同じモデル・同じタスクで：</b>mu の試行の成功率は 68.2%、pi は 58.7%（9.5 ポイント高く、95% 区間は +3.8〜+15.2）。<a href="#実測">測り方</a></p>
+
+<p align="center"><code>npm i -g mu-agent &amp;&amp; mu setup &amp;&amp; mu</code> · Node.js 22.19 以降 · macOS、Windows、Linux 向けの<a href="https://github.com/qybaihe/mu/releases/latest">デスクトップアプリ</a>もあります</p>
+
 <p align="center">
   <a href="https://github.com/qybaihe/mu/actions/workflows/ci.yml"><img src="https://github.com/qybaihe/mu/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/qybaihe/mu/actions/workflows/desktop.yml"><img src="https://github.com/qybaihe/mu/actions/workflows/desktop.yml/badge.svg" alt="Desktop app"></a>
@@ -40,7 +44,7 @@
 
 ## クイックスタート
 
-**デスクトップアプリ。** [Releases](https://github.com/qybaihe/mu/releases/latest) から macOS、Windows、Linux 用のインストーラーをダウンロードして開き、API キーを貼り付けるか、ChatGPT、Grok、Google のサブスクリプションでサインインします。ほかにインストールするものはありません。
+**デスクトップアプリ。** [Releases](https://github.com/qybaihe/mu/releases/latest) から macOS、Windows、Linux 用のインストーラーをダウンロードして開き、ChatGPT でサインインするか、任意のプロバイダーの API キーを貼り付けます。ほかにインストールするものはありません。
 
 **コマンドライン。**
 
@@ -290,7 +294,7 @@ mu とそのランタイムを内蔵したデスクトップアプリです。No
   </picture>
 </p>
 
-画面下部のバーで、カーネルの状態をいつでも確認できます。どの判定器が答えていてどこで動いているか、有効な判定ポイントの数、会話中ならそれまでの判定数、直近の判定の所要時間、コンテキストの使用量です。権限モードと目標は入力欄にあり、`⌘K` でコマンドパレットが開きます。モデルへのログインはアプリの中で行います。ChatGPT、Grok、Google（Gemini CLI / Antigravity）のサブスクリプションか、pi が対応する任意のプロバイダーの API キーを使えます。Claude Code、Codex CLI、ZCode の会話は、インポートして続きから話せます。
+画面下部のバーで、カーネルの状態をいつでも確認できます。どの判定器が答えていてどこで動いているか、有効な判定ポイントの数、会話中ならそれまでの判定数、直近の判定の所要時間、コンテキストの使用量です。権限モードと目標は入力欄にあり、`⌘K` でコマンドパレットが開きます。モデルへのログインはアプリの中で行います。ChatGPT でサインインするか、pi が対応する任意のプロバイダーの API キーを使えます。Claude Code、Codex CLI、ZCode の会話は、インポートして続きから話せます。
 
 macOS（Apple シリコン / Intel）、Windows（x64 / Arm）、Linux（x64 / Arm）向けのビルドは GitHub Actions で作成し、[Releases](https://github.com/qybaihe/mu/releases) で公開しています。
 
