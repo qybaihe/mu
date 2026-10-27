@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-27
+
+**0.3.0: the model catalog generated on 2026-10-26 (#242); nothing else in the agent changed since 0.2.13.**
+
+### Changed
+
+- `packages/ai/model-catalog.json` is the generator's catalog of 2026-10-26 from live sources: 36 models added, 27 dropped and 60 changed (57 of them in price, the rest in output or context limits, thinking levels or input types) across 15 providers. New ones include `kimi-k3.1-pro` and `kimi-k3.1-pro-highspeed` (Moonshot AI; `k3.1-pro` on Kimi Coding), MiniMax M3.1 Flash, DeepSeek V4.1 Flash and `au.anthropic.claude-sonnet-5-5` on Amazon Bedrock. Dropped ones are models their providers stopped listing, such as `openai/gpt-3.5-turbo` on OpenRouter and the Vercel AI Gateway, and `devstral-small-2507` and `mistral-large-2411` on Mistral.
+
 ## [0.2.13] - 2026-10-25
 
 **0.2.13: `isCheckChain` follows a `cd` into the project's folders and reads the project's own runner by path and `"$(git rev-parse --show-toplevel)"`.**

@@ -4,6 +4,14 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-27
+
+**0.3.0 brings the model list up to date; otherwise the agent is the same as 0.2.13.** The desktop app carries mu-agent 0.3.0.
+
+### Changed
+
+- **The model list is up to date.** Newer models are in it, among them Kimi K3.1 Pro, MiniMax M3.1 Flash and DeepSeek V4.1 Flash, and models their providers no longer serve are gone.
+
 ## [0.2.13] - 2026-10-25
 
 **0.2.13 counts the project's own test runner as a check in judge mode.** The desktop app carries mu-agent 0.2.13.
