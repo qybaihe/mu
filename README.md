@@ -169,7 +169,6 @@ Every point, with its feature switch and options: [docs/reference/decision-point
 - **Other decision models from Hugging Face** (local, a Mac with Apple silicon): `mu judge model add <link>` (or Settings → Judges in the app) adds one that is packaged like mude 1.0 and makes it the judge. Laya is no longer included: a `mu.json` that still names it gets mude 1.0 in its place when mude is set up, otherwise the remaining judges or Jev, and mu says so once.
 - **Any classifier model** in pi's catalog can serve as a tier: `classifier:<provider>/<model>`. Examples include Cloudflare's Clef (`clef`, `clef-flash`), the System One models on OpenRouter and the Vercel AI Gateway, or a llama.cpp classifier.
 - **Any LLM** can serve as a tier: `llm:<provider>/<model>`.
-- **NVIDIA Nemotron** can be the judge too: [docs/nebius.md](docs/nebius.md).
 
 Judges can be chained in tiers, cheapest first:
 
