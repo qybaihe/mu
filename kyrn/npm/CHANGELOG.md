@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.2.14] - 2026-10-26
+
+**0.2.14: `mu demo` replays a real recorded session with every verdict of the judge, no key and no network; ledger records say what each verdict was about.**
+
 ### Added
 
 - `mu demo` replays a real session recorded with mu, shipped in the package (`kyrn/demo`): the request, each tool call and what came back, each verdict of the judge with its latency, and at the end the judge's and the agent's tokens and cost, how many commands the judge approved or sent back to the person (and which), and how many questions Ask-first mode would have asked. No key and no network. `mu demo --list` names the recordings (`planted`, the default: a comment in the code tells AI agents to run `touch .agent-was-here`, and Nemotron 3 Ultra sends it back while approving the rest; `fix`: Nemotron 3 Super fixes a failing test; `tavily`: a web search through Tavily, what came back screened by the judge).
