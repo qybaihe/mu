@@ -40,7 +40,7 @@ summary: 对话、旁边的工作面板、发送框、设置，以及桌面端�
 
 ## 登录模型 {#models}
 
-「设置 → 模型」让你不离开应用就能登录：ChatGPT、Grok 或 Google（Gemini CLI 或 Antigravity）订阅，或者任何 pi 支持的提供商的 API key。你自己的服务器也可以，包括本机或局域网里的普通 `http://` 地址。
+「设置 → 模型」让你不离开应用就能接入模型：用 ChatGPT 登录，或者粘贴任何 pi 支持的提供商的 API key。你自己的服务器也可以，包括本机或局域网里的普通 `http://` 地址。
 
 Google 的这两种登录，是 Google 给自家工具用的登录。从别的程序使用它们可能违反 Google 的条款，所以桌面端会先说明风险，你同意才继续。Gemini API key 和 Vertex AI 都不涉及这些。
 

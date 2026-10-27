@@ -16,7 +16,7 @@ summary: 데스크톱 앱이나 명령줄을 설치하고, 모델을 연결하�
 
    Windows 빌드는 아직 코드 서명이 없어서 처음 실행할 때 SmartScreen이 경고를 띄워요. **추가 정보**를 누른 다음 **실행**을 누르세요.
 2. 앱을 여세요. 처음 실행하면 설정 가이드가 모델, 권한 모드, 판정기, 시작의 네 단계를 안내해요.
-   - **모델.** API 키를 붙여 넣으면 mu가 키의 형식으로 서비스를 알아보고(OpenAI, Anthropic, Google Gemini, xAI, OpenRouter, DeepSeek, Kimi, Qwen, GLM, SiliconFlow 등) 요청 하나로 확인해요. ChatGPT, Grok, Google 구독으로 로그인할 수도 있어요.
+   - **모델.** API 키를 붙여 넣으면 mu가 키의 형식으로 서비스를 알아보고(OpenAI, Anthropic, Google Gemini, xAI, OpenRouter, DeepSeek, Kimi, Qwen, GLM, SiliconFlow 등) 요청 하나로 확인해요. ChatGPT로 로그인할 수도 있어요.
    - **권한.** *판정 모드*가 미리 선택되어 있어요. [권한과 안전](@docs/permissions)을 보세요.
    - **판정기.** [mude 1.0](@docs/judges#mude)(mu의 자체 의사결정 모델)을 돌릴 수 있는 Mac에서는 처음부터 mude가 선택되어 있고, 한 번 누르면 설치돼요. 그 밖에는 키가 없으면 OpenCode Zen을 통해 무료 Jev(TypeSafe가 호스팅하는 판정 모델)가 답해요. 판정기에 아무것도 보내고 싶지 않으면 **판정기 없음**을 고르세요.
    - **시작.** mu가 Claude Code, Codex, ZCode 대화를 찾으면 가져오기를 제안해요.
@@ -30,7 +30,7 @@ mu setup               # 모델 연결, 판정기 선택
 mu                     # 현재 디렉터리에서 세션 시작
 ```
 
-키 대신 ChatGPT, Grok, Google 구독을 쓰려면 `mu setup`에서 구독 로그인을 고르세요. mu가 `/login`을 연 채로 시작하고, 로그인은 브라우저에서 마무리해요. 스크립트용으로는 `mu setup --help`가 대화형이 아닌 형식을 보여 줘요. 키는 표준 입력에서 읽고, 명령줄 인수로는 절대 받지 않아요.
+키 대신 ChatGPT로 로그인하려면 `mu setup`에서 ChatGPT 로그인을 고르세요. mu가 `/login`을 연 채로 시작하고, 로그인은 브라우저에서 마무리해요. 스크립트용으로는 `mu setup --help`가 대화형이 아닌 형식을 보여 줘요. 키는 표준 입력에서 읽고, 명령줄 인수로는 절대 받지 않아요.
 
 해 볼 만한 것:
 

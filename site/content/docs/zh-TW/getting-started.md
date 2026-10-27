@@ -16,7 +16,7 @@ summary: 安裝桌面版或命令列，接上一個模型，跑第一個任務�
 
    Windows 版還沒有程式碼簽署，所以第一次執行時 SmartScreen 會警告：選**其他資訊**，再選**仍要執行**。
 2. 開啟它。新手引導分四步：模型、權限模式、判定器、開始。
-   - **模型。** 貼上一組 API 金鑰，mu 會從格式認出是哪家服務（DeepSeek、Kimi、Qwen、GLM、SiliconFlow、OpenRouter、OpenAI、Anthropic、Google Gemini、xAI 等），並用一次請求檢查它。也可以用 ChatGPT、Grok 或 Google 訂閱登入。
+   - **模型。** 貼上一組 API 金鑰，mu 會從格式認出是哪家服務（DeepSeek、Kimi、Qwen、GLM、SiliconFlow、OpenRouter、OpenAI、Anthropic、Google Gemini、xAI 等），並用一次請求檢查它。也可以用 ChatGPT 登入。
    - **權限。** 預設選取「判定模式」；請見[權限與安全](@docs/permissions)。
    - **判定器。** 在能執行 [mude 1.0](@docs/judges#mude)（mu 自己的決策模型）的 Mac 上，一開始就選中它，點一下就能裝好。否則，沒有金鑰時，由免費的 Jev 回答（TypeSafe 託管的判定模型，透過 OpenCode Zen 提供）。不想傳送任何內容給判定器，就選**不用判定器**。
    - **開始。** 如果 mu 找到 Claude Code、Codex 或 ZCode 的對話，會提議幫你匯入。
@@ -30,7 +30,7 @@ mu setup               # 接上一個模型，選擇判定器
 mu                     # 在目前目錄開啟一個工作階段
 ```
 
-想用 ChatGPT、Grok 或 Google 的訂閱取代金鑰，就在 `mu setup` 裡選訂閱登入：mu 啟動後直接打開 `/login`，在瀏覽器裡完成登入。寫指令碼時，`mu setup --help` 列出非互動式的用法；金鑰從標準輸入讀取，從不寫在命令列上。
+想用 ChatGPT 帳號取代金鑰，就在 `mu setup` 裡選 ChatGPT 登入：mu 啟動後直接打開 `/login`，在瀏覽器裡完成登入。寫指令碼時，`mu setup --help` 列出非互動式的用法；金鑰從標準輸入讀取，從不寫在命令列上。
 
 可以試試這些：
 
