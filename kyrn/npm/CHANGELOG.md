@@ -4,7 +4,7 @@
 
 ## [0.2.14] - 2026-10-26
 
-**0.2.14: `mu demo` replays a real recorded session with every verdict of the judge, no key and no network; ledger records say what each verdict was about.**
+**0.2.14: `mu demo` replays a real recorded session with every verdict of the judge, no key and no network; ledger records say what each verdict was about.** Published from the `nebius-hackathon` branch under the npm tag `hackathon` (`npx -y mu-agent@hackathon demo`); `latest` stays 0.2.13.
 
 ### Added
 

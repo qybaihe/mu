@@ -159,8 +159,10 @@ jobs:
           echo "VERSION=$version" >> "$GITHUB_ENV"
           echo "TARBALL=$tarball" >> "$GITHUB_ENV"
 
+      # The nebius-hackathon branch publishes under the dist-tag `hackathon` (`npx mu-agent@hackathon`), so `latest`
+      # stays on the release from main.
       - name: Publish
-        run: npm publish "$TARBALL" --access public
+        run: npm publish "$TARBALL" --access public --tag hackathon
 
       - name: Check that npm serves this tarball
         shell: bash
