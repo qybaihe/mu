@@ -304,6 +304,14 @@
     "full_agent": "mu-agent の詳しい変更履歴（英語）",
     "entries": [
       {
+        "version": "v0.3.0",
+        "date": "2026-10-27",
+        "agent": "mu-agent 0.3.0",
+        "items": [
+          "<b>モデル一覧を最新にしました。</b>Kimi K3.1 Pro、MiniMax M3.1 Flash、DeepSeek V4.1 Flash などの新しいモデルが加わり、提供元が提供をやめたモデルは一覧から外れました。それ以外は 0.2.13 と同じです。"
+        ]
+      },
+      {
         "version": "v0.2.13",
         "date": "2026-10-25",
         "agent": "mu-agent 0.2.13",
