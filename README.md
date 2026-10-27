@@ -4,6 +4,10 @@
 <h1 align="center">mu</h1>
 <p align="center">Most of what a coding agent decides isn't code. It's yes/no calls, and mu hands 40 kinds of them to a small model. Built on <a href="https://github.com/earendil-works/pi">pi</a>.</p>
 
+<p align="center"><b>Terminal-Bench 2.1, same model, same tasks:</b> mu passed 68.2% of attempts, pi 58.7% (+9.5 points, 95% interval +3.8 to +15.2). <a href="#measured">How it was measured</a></p>
+
+<p align="center"><code>npm i -g mu-agent &amp;&amp; mu setup &amp;&amp; mu</code> · Node.js 22.19 or newer · or the <a href="https://github.com/qybaihe/mu/releases/latest">desktop app</a> for macOS, Windows and Linux</p>
+
 <p align="center">
   <a href="https://github.com/qybaihe/mu/actions/workflows/ci.yml"><img src="https://github.com/qybaihe/mu/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/qybaihe/mu/actions/workflows/desktop.yml"><img src="https://github.com/qybaihe/mu/actions/workflows/desktop.yml/badge.svg" alt="Desktop app"></a>
@@ -38,7 +42,7 @@ mu comes as a command-line tool, `mu`, which does everything pi does and adds th
 
 ## Quick start
 
-**Desktop app.** Download the installer for macOS, Windows or Linux from [Releases](https://github.com/qybaihe/mu/releases/latest), open it and paste an API key or sign in with a ChatGPT, Grok or Google subscription. There's nothing else to install.
+**Desktop app.** Download the installer for macOS, Windows or Linux from [Releases](https://github.com/qybaihe/mu/releases/latest), open it and sign in with ChatGPT, or paste an API key for any provider. There's nothing else to install.
 
 **Command line.**
 
@@ -47,8 +51,6 @@ npm i -g mu-agent   # Node.js 22.19 or newer
 mu setup            # connect a model
 mu                  # start a session in the current directory
 ```
-
-**On Nebius Token Factory with NVIDIA Nemotron.** Paste a Token Factory key into `mu setup`: mu starts on Nemotron 3 Super and offers Nemotron 3 Ultra as the judge. This is in the npm package from mu-agent 0.2.9; [docs/nebius.md](docs/nebius.md) has the steps, the measurements behind the choice of models, and a Nemotron 3 Nano 4B judge, fine-tuned for mu, that runs on your machine.
 
 You don't need a judge key to start: until you set one, the free Jev on OpenCode Zen answers. Out of the box, 34 of the 40 decision points act on their verdicts, and every verdict is logged (`/status`, `mu ledger` or the app's Judge tab). To record what the judge would do without acting on it, put `{"modes": {"default": "shadow"}}` in `~/.mu/agent/mu.json`. More in [Getting started](docs/getting-started.md).
 
@@ -167,7 +169,7 @@ Every point, with its feature switch and options: [docs/reference/decision-point
 - **Other decision models from Hugging Face** (local, a Mac with Apple silicon): `mu judge model add <link>` (or Settings → Judges in the app) adds one that is packaged like mude 1.0 and makes it the judge. Laya is no longer included: a `mu.json` that still names it gets mude 1.0 in its place when mude is set up, otherwise the remaining judges or Jev, and mu says so once.
 - **Any classifier model** in pi's catalog can serve as a tier: `classifier:<provider>/<model>`. Examples include Cloudflare's Clef (`clef`, `clef-flash`), the System One models on OpenRouter and the Vercel AI Gateway, or a llama.cpp classifier.
 - **Any LLM** can serve as a tier: `llm:<provider>/<model>`.
-- **NVIDIA Nemotron on Nebius Token Factory**: `nemotron` is Nemotron 3 Ultra with thinking off, and `nemotron-local` is Nemotron 3 Nano 4B, fine-tuned for mu's judge, served on your machine. With Nemotron 3 Super as the coding model, both of mu's model roles run on Token Factory: see [docs/nebius.md](docs/nebius.md), which also covers running commands in Token Factory Sandboxes (new, and so far tested only against a stand-in for the Sandboxes API).
+- **NVIDIA Nemotron** can be the judge too: [docs/nebius.md](docs/nebius.md).
 
 Judges can be chained in tiers, cheapest first:
 
@@ -180,7 +182,7 @@ Judges can be chained in tiers, cheapest first:
 
 ### mude 1.0, a decision model optimized for coding
 
-mude 1.0 is mu's own decision model, optimized for coding: trained for the decisions a coding agent makes and state of the art at making them. It has 2B parameters and answers every question in a decision in one forward pass, with a probability for each answer. It runs on your machine, so what it judges never leaves it. Both editions, the [full model](https://huggingface.co/qybaihe/mude-1.0) and the [MLX 8-bit edition](https://huggingface.co/qybaihe/mude-1.0-mlx-8bit) (1.8 GB), are under the MIT license. For now, the one-step setup supports Macs with Apple silicon (macOS 14 or later, 8 GB of memory or more) and uses the MLX edition:
+mude 1.0 is mu's own decision model, optimized for coding: trained for the decisions a coding agent makes, and on mubench in the same range as Jev 1.14, the hosted default. It has 2B parameters and answers every question in a decision in one forward pass, with a probability for each answer. It runs on your machine, so what it judges never leaves it. Both editions, the [full model](https://huggingface.co/qybaihe/mude-1.0) and the [MLX 8-bit edition](https://huggingface.co/qybaihe/mude-1.0-mlx-8bit) (1.8 GB), are under the MIT license. For now, the one-step setup supports Macs with Apple silicon (macOS 14 or later, 8 GB of memory or more) and uses the MLX edition:
 
 ```bash
 mu judge mude install               # download it, check every file, start it on 127.0.0.1 and make it the judge
@@ -220,16 +222,6 @@ Decision accuracy is a separate, plainer measure: the share of checks a model ge
     <img src="docs/images/mubench/accuracy-en-light.svg" width="880" alt="mubench 1.0: decision accuracy, with 95% intervals. Main board, 3,193 requests from real coding sessions on open-source repositories: No decision model 78.0% (75.9–80.2); mude 1.0 91.5% (89.6–93.3); Jev 1.14 90.1% (88.9–91.3); Jev 1.13 89.4% (87.7–91.1); d3-nano (original) 83.5% (82.1–84.9). Sub-board, 1,655 constructed scenarios: No decision model 44.5% (42.8–46.2); mude 1.0 92.1% (91.1–93.1); Jev 1.14 91.8% (90.8–92.8); Jev 1.13 91.1% (90.0–92.0); d3-nano (original) 80.1% (78.6–81.7).">
   </picture>
 </p>
-
-## NVIDIA Nemotron on Nebius Token Factory
-
-With one [Token Factory](https://tokenfactory.nebius.com) key, `mu setup` puts both of mu's model roles on NVIDIA Nemotron:
-
-- **Nemotron 3 Super writes, runs and tests the code** through mu's tools. mu's thinking levels map onto the `reasoning_effort` values Super accepts.
-- **Nemotron 3 Ultra is the judge** (`nemotron`). `nemotron-think` asks it with thinking on; a few lines of config route the four decision points where that measurably decides better to it.
-- **A Nemotron 3 Nano 4B fine-tuned for mu's judge runs on your own GPU** (`nemotron-local`, from [mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron); weights on [Hugging Face](https://huggingface.co/qybaihe/mu-judge-nemotron-nano-4b)), approving a command in about 0.1 s.
-
-Token Factory is what made choosing these models a measurement rather than a guess. Every Nemotron it serves sat in the judge's seat on the same 1,353 held-out judge requests from mu's sessions, scored by what mu then did; only Ultra clearly beat having no judge (47.3 on real requests, Super 2.7, Lightning 15.4). We then fine-tuned Nemotron 3 Nano 4B as mu's judge, and on 4,838 held-out test requests, scored once, the 4B judge scored above Ultra (68.2 against 54.7 on real requests, 59.9 against 48.4 on constructed ones). All of it came to about $27 of Token Factory credit, with no model of our own to host. Setup, routes and the numbers with their confidence intervals: [docs/nebius.md](docs/nebius.md).
 
 ## How mu is built
 
@@ -366,7 +358,7 @@ A desktop app with mu and its runtime built in: there's no Node.js to install an
   </picture>
 </p>
 
-A bar along the bottom keeps the kernel in view: which judge answers and where it runs, how many decision points are active and, in a conversation, the verdicts so far, the latest judge latency and the context in use. The permission mode and the goal sit in the composer, and `⌘K` opens the command palette. You connect models inside the app: sign in with a ChatGPT, Grok or Google (Gemini CLI / Antigravity) subscription, or add an API key for any provider pi supports. You can import Claude Code, Codex CLI and ZCode conversations and continue them.
+A bar along the bottom keeps the kernel in view: which judge answers and where it runs, how many decision points are active and, in a conversation, the verdicts so far, the latest judge latency and the context in use. The permission mode and the goal sit in the composer, and `⌘K` opens the command palette. You connect models inside the app: sign in with ChatGPT, or add an API key for any provider pi supports. You can import Claude Code, Codex CLI and ZCode conversations and continue them.
 
 GitHub Actions builds the app for macOS (Apple silicon / Intel), Windows (x64 / Arm) and Linux (x64 / Arm) and publishes it under [Releases](https://github.com/qybaihe/mu/releases).
 
@@ -415,7 +407,7 @@ Your keys stay on your machine. mu never downloads a model or a runtime on its o
 
 ## Documentation
 
-- [Getting started](docs/getting-started.md) · [Configuration](docs/configuration.md) · [Judges](docs/judges.md) · [Nebius and NVIDIA Nemotron](docs/nebius.md) · [Troubleshooting](docs/troubleshooting.md)
+- [Getting started](docs/getting-started.md) · [Configuration](docs/configuration.md) · [Judges](docs/judges.md) · [Troubleshooting](docs/troubleshooting.md)
 - Reference: [every decision point](docs/reference/decision-points.md) · [every feature and option](docs/reference/features.md) · [Changelog](CHANGELOG.md)
 - For contributors: [How mu works](docs/architecture.md) · [Adding a decision point](docs/adding-a-decision-point.md) · [Translations](docs/translations.md) · [Writing style](docs/writing-style.md)
 

@@ -4,6 +4,10 @@
 <h1 align="center">mu</h1>
 <p align="center">코딩 에이전트가 내리는 결정은 대부분 코드가 아니라 예/아니요 질문이에요. mu는 그중 40가지를 작은 모델에 맡겨요. <a href="https://github.com/earendil-works/pi">pi</a> 기반.</p>
 
+<p align="center"><b>Terminal-Bench 2.1, 같은 모델·같은 작업:</b> mu의 시도 통과율 68.2%, pi 58.7%(9.5%포인트 높음, 95% 구간 +3.8~+15.2). <a href="#실측">측정 방법</a></p>
+
+<p align="center"><code>npm i -g mu-agent &amp;&amp; mu setup &amp;&amp; mu</code> · Node.js 22.19 이상 · macOS, Windows, Linux용 <a href="https://github.com/qybaihe/mu/releases/latest">데스크톱 앱</a>도 있어요</p>
+
 <p align="center">
   <a href="https://github.com/qybaihe/mu/actions/workflows/ci.yml"><img src="https://github.com/qybaihe/mu/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/qybaihe/mu/actions/workflows/desktop.yml"><img src="https://github.com/qybaihe/mu/actions/workflows/desktop.yml/badge.svg" alt="Desktop app"></a>
@@ -40,7 +44,7 @@
 
 ## 빠른 시작
 
-**데스크톱 앱.** [Releases](https://github.com/qybaihe/mu/releases/latest)에서 macOS, Windows, Linux용 설치 파일을 내려받아 열고, API 키를 붙여 넣거나 ChatGPT, Grok, Google 구독으로 로그인하세요. 따로 설치할 것은 없어요.
+**데스크톱 앱.** [Releases](https://github.com/qybaihe/mu/releases/latest)에서 macOS, Windows, Linux용 설치 파일을 내려받아 열고, ChatGPT로 로그인하거나 어떤 프로바이더의 API 키든 붙여 넣으세요. 따로 설치할 것은 없어요.
 
 **명령줄.**
 
@@ -290,7 +294,7 @@ mu와 런타임이 들어 있는 데스크톱 앱이에요. Node를 설치할 �
   </picture>
 </p>
 
-아래쪽 막대에서 커널 상태를 늘 볼 수 있어요. 어떤 판정기가 답하고 어디서 도는지, 켜진 판정 지점이 몇 개인지, 대화 중이라면 지금까지의 판정 수, 마지막 판정에 걸린 시간, 사용 중인 컨텍스트까지 보여 줘요. 권한 모드와 목표는 입력창에 있고, `⌘K`로 명령어 팔레트를 열어요. 모델 로그인은 앱 안에서 해요. ChatGPT, Grok, Google(Gemini CLI / Antigravity) 구독이나, pi가 지원하는 어떤 프로바이더의 API 키든 쓸 수 있어요. Claude Code, Codex CLI, ZCode의 대화는 가져와서 이어 갈 수 있어요.
+아래쪽 막대에서 커널 상태를 늘 볼 수 있어요. 어떤 판정기가 답하고 어디서 도는지, 켜진 판정 지점이 몇 개인지, 대화 중이라면 지금까지의 판정 수, 마지막 판정에 걸린 시간, 사용 중인 컨텍스트까지 보여 줘요. 권한 모드와 목표는 입력창에 있고, `⌘K`로 명령어 팔레트를 열어요. 모델 로그인은 앱 안에서 해요. ChatGPT로 로그인하거나, pi가 지원하는 어떤 프로바이더의 API 키든 쓸 수 있어요. Claude Code, Codex CLI, ZCode의 대화는 가져와서 이어 갈 수 있어요.
 
 macOS(Apple 실리콘 / Intel), Windows(x64 / Arm), Linux(x64 / Arm)용 빌드는 GitHub Actions에서 만들어 [Releases](https://github.com/qybaihe/mu/releases)에 올려요.
 

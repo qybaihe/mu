@@ -4,6 +4,10 @@
 <h1 align="center">mu</h1>
 <p align="center">编码代理做的决定，大多不是代码，而是一道道是非题。mu 把其中 40 类交给一个小模型。基于 <a href="https://github.com/earendil-works/pi">pi</a>。</p>
 
+<p align="center"><b>Terminal-Bench 2.1，同一个模型、同一批任务：</b>mu 的尝试通过率 68.2%，pi 58.7%（高 9.5 个百分点，95% 区间 +3.8 到 +15.2）。<a href="#实测">怎么测的</a></p>
+
+<p align="center"><code>npm i -g mu-agent &amp;&amp; mu setup &amp;&amp; mu</code> · Node.js 22.19 或更新 · 也可以用 macOS、Windows、Linux 的<a href="https://github.com/qybaihe/mu/releases/latest">桌面端</a></p>
+
 <p align="center">
   <a href="https://github.com/qybaihe/mu/actions/workflows/ci.yml"><img src="https://github.com/qybaihe/mu/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/qybaihe/mu/actions/workflows/desktop.yml"><img src="https://github.com/qybaihe/mu/actions/workflows/desktop.yml/badge.svg" alt="Desktop app"></a>
@@ -40,7 +44,7 @@
 
 ## 快速开始
 
-**桌面端。** 从 [Releases](https://github.com/qybaihe/mu/releases/latest) 下载 macOS、Windows 或 Linux 安装包，打开后粘贴一个 API key，或用 ChatGPT、Grok、Google 订阅登录。不用再装别的。
+**桌面端。** 从 [Releases](https://github.com/qybaihe/mu/releases/latest) 下载 macOS、Windows 或 Linux 安装包，打开后用 ChatGPT 登录，或粘贴任意提供商的 API key。不用再装别的。
 
 **命令行。**
 
@@ -152,7 +156,7 @@ mu                  # 在当前目录开一个会话
 
 ### mude 1.0：针对编程场景优化的决策模型
 
-mude 1.0 是 mu 自己的决策模型，针对编程场景特别优化：经过微调和训练，在编程场景的决策上达到 SOTA 级。它有 2B 参数，一次前向就答完一个判定的所有问题，每个答案带概率；它在你的机器上跑，判定的内容不离开本机。[完整版](https://huggingface.co/qybaihe/mude-1.0)和 [MLX 8-bit 版](https://huggingface.co/qybaihe/mude-1.0-mlx-8bit)（1.8 GB）都采用 MIT 许可证。目前一键安装支持 Apple 芯片的 Mac（macOS 14 及以上，内存 8 GB 及以上），用的是 MLX 版：
+mude 1.0 是 mu 自己的决策模型，针对编程场景特别优化：经过微调和训练，在 mubench 上和托管的默认判定器 Jev 1.14 处在同一水平。它有 2B 参数，一次前向就答完一个判定的所有问题，每个答案带概率；它在你的机器上跑，判定的内容不离开本机。[完整版](https://huggingface.co/qybaihe/mude-1.0)和 [MLX 8-bit 版](https://huggingface.co/qybaihe/mude-1.0-mlx-8bit)（1.8 GB）都采用 MIT 许可证。目前一键安装支持 Apple 芯片的 Mac（macOS 14 及以上，内存 8 GB 及以上），用的是 MLX 版：
 
 ```bash
 mu judge mude install               # 下载、逐个校验文件、在 127.0.0.1 上启动，并设为判定器
@@ -306,7 +310,7 @@ mubench 是 mu 给决策模型做的评测。主榜的每一道题，都是 mu �
   </picture>
 </p>
 
-底部的一条栏让内核一直在视线里：哪个判定器在回答、跑在哪里，启用了多少个判定点；在对话里，还有到目前为止的判定数、最近一次判定的耗时和上下文占用。权限模式和目标在发送框里；`⌘K` 打开命令面板。模型登录在应用内完成：ChatGPT、Grok 和 Google（Gemini CLI / Antigravity）订阅，或任何 pi 支持的提供商的 API 密钥。Claude Code、Codex CLI 和 ZCode 的对话可以导入并接着聊。
+底部的一条栏让内核一直在视线里：哪个判定器在回答、跑在哪里，启用了多少个判定点；在对话里，还有到目前为止的判定数、最近一次判定的耗时和上下文占用。权限模式和目标在发送框里；`⌘K` 打开命令面板。模型登录在应用内完成：用 ChatGPT 登录，或填入任何 pi 支持的提供商的 API 密钥。Claude Code、Codex CLI 和 ZCode 的对话可以导入并接着聊。
 
 macOS（Apple 芯片 / Intel）、Windows（x64 / Arm）、Linux（x64 / Arm）的安装包由 GitHub Actions 构建，发布在 [Releases](https://github.com/qybaihe/mu/releases)。
 
