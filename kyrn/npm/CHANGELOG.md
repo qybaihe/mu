@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-10-30
+
+**0.3.4 has no changes to the agent. It keeps the version in step with the 0.3.4 desktop app.**
+
 ## [0.3.3] - 2026-10-29
 
 **0.3.3: with a Nebius Token Factory key, mu now starts on Nemotron 3.5 Super VL. Token Factory retires Nemotron 3 Super on 2026-11-09.**
