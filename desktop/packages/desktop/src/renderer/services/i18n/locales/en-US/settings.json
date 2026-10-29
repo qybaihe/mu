@@ -1079,5 +1079,5 @@
   "keepAwakeWhileRunning": "Keep the computer awake while a conversation runs",
   "keepAwakeWhileRunningDesc": "While a run is going, the computer doesn't go to sleep when idle. The display can still turn off, and closing the lid still puts it to sleep.",
   "completionSound": "Play a sound when a conversation finishes or needs you",
-  "completionSoundDesc": "A short chime, even while you're looking at mu. A different one when mu asks something or a run fails. While it's on, system notifications stay silent so you don't hear two sounds."
+  "completionSoundDesc": "Plays a short chime even while mu is in front, and a different one when mu asks something or a run fails. While it's on, system notifications stay silent, so you don't hear two sounds."
 }
