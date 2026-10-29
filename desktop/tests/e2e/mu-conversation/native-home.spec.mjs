@@ -148,8 +148,10 @@ test('the native list leaves out the sessions the backend’s conversations use'
   // mu's own session is listed; the two backend uses are not (they would show twice: here and as its conversations).
   await expect(rows()).toHaveCount(1);
   await expect(row(made.free.id)).toContainText(OLD_TITLE);
-  // Its tooltip: the title, the folder, how many messages (the profile's language is Chinese).
-  await expect(row(made.free.id)).toHaveAttribute('title', `${OLD_TITLE}\n${made.elsewhere}\n消息数：2`);
+  // Its tooltip: the title, the folder, how many messages (the profile's language is Chinese), and the key that opens
+  // it, the first row's.
+  const key = process.platform === 'darwin' ? '⌘1' : 'Ctrl+1';
+  await expect(row(made.free.id)).toHaveAttribute('title', `${OLD_TITLE}\n${made.elsewhere}\n消息数：2\n${key}`);
   await expect(p.getByTestId('native-sidebar-group')).not.toContainText(BOUND_TITLE);
   await expect(p.getByTestId('native-sidebar-group')).not.toContainText(IMPORTED_TITLE);
   expectNoProblems();
