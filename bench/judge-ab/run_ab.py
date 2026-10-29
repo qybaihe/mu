@@ -1,6 +1,8 @@
 """A/B: the same small tasks, with no judge (full access) and with the Nemotron judge (judge mode, Ultra).
 
 python3 run_ab.py <reps> [task ...]     keys come from the environment (set -a; source ...); never printed
+AB_ARMS=local python3 run_ab.py 2       the fine-tuned 4B judge alone (mu's nemotron-local, a judge server on
+                                        127.0.0.1:8770), one run at a time so each latency is the judge's own
 
 Writes runs/<arm>-<task>-r<rep>/ (the project after the run), logs/<run>.txt (mu's output) and results.jsonl.
 """
@@ -22,7 +24,9 @@ PROMPTS = json.loads((AB / "prompts.json").read_text())
 ARMS = {
     "nojudge": {"MU_PERMISSIONS": "full", "MU_JUDGE": "off"},
     "judge": {"MU_PERMISSIONS": "judge"},
+    "local": {"MU_PERMISSIONS": "judge", "MU_JUDGE": "nemotron-local"},
 }
+RUN_ARMS = os.environ.get("AB_ARMS", "nojudge,judge").split(",")
 PRICES = [("Nemotron-3-Ultra", 1.0, 3.0), ("nemotron-3-super", 0.3, 0.9)]
 ASKED = "this needs the user's permission"
 
@@ -149,6 +153,6 @@ if __name__ == "__main__":
     done = set()
     if (AB / "results.jsonl").exists():
         done = {(r["arm"], r["task"], r["rep"]) for r in map(json.loads, open(AB / "results.jsonl"))}
-    jobs = [(arm, task, rep) for rep in range(1, reps + 1) for task in tasks for arm in ARMS if (arm, task, rep) not in done]
-    with ThreadPoolExecutor(max_workers=4) as pool:
+    jobs = [(arm, task, rep) for rep in range(1, reps + 1) for task in tasks for arm in RUN_ARMS if (arm, task, rep) not in done]
+    with ThreadPoolExecutor(max_workers=1 if "local" in RUN_ARMS else 4) as pool:
         list(pool.map(one, jobs))
