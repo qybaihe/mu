@@ -2,12 +2,13 @@
  * The source tab beside a native conversation: the changes of the repository its folder is in, as the main process
  * reads them with git (common/kyrn/gitBridge.ts), in sections (a merge to resolve, staged, changes, untracked) drawn
  * with the classic source control's section and row. A click on a row opens the file's diff in the preview, as the
- * classic tab does. Read only: nothing is staged, discarded or committed here. When git cannot run, or the folder is
- * in no repository, the tab says so.
+ * classic tab does. A row's button stages the file or takes it out of the index, a section's does it for all of its
+ * files, and the box at the top commits (NativeCommitBox). Nothing is discarded here: the conversation's checkpoints
+ * are where files go back. When git cannot run, or the folder is in no repository, the tab says so.
  */
 import React, { useState } from 'react';
 import { Button, Spin } from '@arco-design/web-react';
-import { BranchTwo, Refresh } from '@icon-park/react';
+import { BranchTwo, Minus, Plus, Refresh } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
 import { unwrap } from '@/common/kyrn/bridge';
 import {
@@ -20,8 +21,10 @@ import {
 import { usePreviewContext } from '@/renderer/pages/conversation/Preview';
 import { ScmResourceRow } from '@/renderer/pages/conversation/SourceControl/ScmResourceRow';
 import { ScmSection } from '@/renderer/pages/conversation/SourceControl/ScmSection';
-import { useFolderGit } from '../hooks/useFolderGit';
-import { changeKey, drifted, sectionsOf, toResource } from '../utils/gitRows';
+import { useFolderGit } from '../../hooks/useFolderGit';
+import { changeKey, drifted, sectionsOf, toResource } from '../../utils/gitRows';
+import NativeCommitBox from './NativeCommitBox';
+import { useSourceActions, type SourceAction } from './useSourceActions';
 
 /** What the tab shows (`data-state`). */
 type SourceState = 'loading' | 'failed' | 'no-git' | 'not-repository' | 'clean' | 'changes';
@@ -57,9 +60,21 @@ function Note({ text, detail }: { text: string; detail?: string }) {
   );
 }
 
-export default function NativeSource({ cwd, visible, refresh }: { cwd: string; visible: boolean; refresh: string }) {
+export default function NativeSource({
+  cwd,
+  visible,
+  refresh,
+  conversationId,
+}: {
+  cwd: string;
+  visible: boolean;
+  refresh: string;
+  /** The conversation the tab is beside, for "Let mu commit". */
+  conversationId?: string;
+}) {
   const { t } = useTranslation();
   const { status, error, reading, read } = useFolderGit(cwd, { visible, refresh });
+  const { busy, act } = useSourceActions(cwd, read);
   const { openPreview } = usePreviewContext();
   const [selected, setSelected] = useState<string>();
   const [diffFailed, setDiffFailed] = useState<{ path: string; reason: string }>();
@@ -103,6 +118,29 @@ export default function NativeSource({ cwd, visible, refresh }: { cwd: string; v
     }
   };
 
+  /** A section's button: stage all of its files, or take them all out of the index. A conflict's section has none. */
+  const sectionAction = (area: GitArea, changes: GitChange[]): React.ReactNode => {
+    if (area === 'conflicted') return null;
+    const action: SourceAction = area === 'staged' ? 'unstage' : 'stage';
+    const label = t(`conversation.explorer.scm.actions.${action === 'stage' ? 'stageAll' : 'unstageAll'}`);
+    return (
+      <Button
+        type='text'
+        size='mini'
+        icon={action === 'stage' ? <Plus size={13} /> : <Minus size={13} />}
+        aria-label={label}
+        title={label}
+        disabled={busy.size > 0}
+        data-testid='native-source-section-action'
+        data-action={action}
+        onClick={(event) => {
+          event.stopPropagation();
+          void act(action, changes);
+        }}
+      />
+    );
+  };
+
   const branchLine = (branch: GitBranch): string => {
     const head = branch.name ?? (branch.commit ? t('mu.native.panel.source.detached', { commit: branch.commit }) : '');
     return branch.commit ? head : `${head} · ${t('mu.native.panel.source.noCommits')}`;
@@ -120,8 +158,17 @@ export default function NativeSource({ cwd, visible, refresh }: { cwd: string; v
     if (state === 'not-repository') return <Note text={t('conversation.explorer.scm.notARepository')} />;
     if (!repository) return null;
     if (state === 'clean') return <Note text={t('conversation.explorer.scm.noChanges')} />;
+    const staged = repository.changes.filter((change) => change.area === 'staged').length;
     return (
       <>
+        <NativeCommitBox
+          cwd={cwd}
+          conversationId={conversationId}
+          staged={staged}
+          changes={repository.changes.length}
+          conflicted={repository.changes.some((change) => change.area === 'conflicted')}
+          read={read}
+        />
         {sectionsOf(repository.changes).map(({ area, changes }) => (
           <div key={area} data-testid='native-source-group' data-group={area}>
             <ScmSection
@@ -129,6 +176,7 @@ export default function NativeSource({ cwd, visible, refresh }: { cwd: string; v
               title={sectionTitle(area)}
               collapsed={folded.has(area)}
               badge={changes.length}
+              actions={sectionAction(area, changes)}
               onToggleCollapsed={() =>
                 setFolded((old) => {
                   const next = new Set(old);
@@ -151,6 +199,11 @@ export default function NativeSource({ cwd, visible, refresh }: { cwd: string; v
                       selected={selected === changeKey(change)}
                       onSelect={() => void showDiff(change)}
                       staging
+                      discard={false}
+                      busy={busy.has(changeKey(change))}
+                      onAction={(action) => {
+                        if (action === 'stage' || action === 'unstage') void act(action, [change]);
+                      }}
                     />
                   </div>
                 ))}

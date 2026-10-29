@@ -1092,7 +1092,21 @@
         "untracked": "Nicht verfolgt",
         "detached": "Losgelöst bei {{commit}}",
         "noCommits": "Noch keine Commits",
-        "upstream": "{{ahead}} vor {{upstream}}, {{behind}} dahinter"
+        "upstream": "{{ahead}} vor {{upstream}}, {{behind}} dahinter",
+        "commit": {
+          "message": "Commit-Nachricht",
+          "placeholder": "Commit-Nachricht ({{shortcut}} zum Committen)",
+          "commit": "Committen",
+          "commitAll": "Alles committen",
+          "commitAllHint": "Nichts ist vorgemerkt, daher werden zuerst alle Änderungen vorgemerkt, neue Dateien eingeschlossen.",
+          "conflicts": "Löse die Merge-Konflikte, bevor du committest.",
+          "done": "{{commit}} committet: {{subject}}",
+          "failed": "Git hat nicht committet. Ausgabe:",
+          "dismiss": "Schließen",
+          "ask": "mu committen lassen",
+          "askHint": "mu teilt die Änderungen in Commits auf und schreibt ihre Nachrichten. Es zeigt dir den Plan und committet erst, wenn du zustimmst."
+        },
+        "actionFailed": "Git konnte das nicht tun: {{reason}}"
       },
       "files": {
         "label": "Dateien in {{folder}}",

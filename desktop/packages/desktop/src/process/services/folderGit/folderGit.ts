@@ -5,6 +5,9 @@ import {
   GIT_AREAS,
   GIT_CHANGE_LIMIT,
   GIT_DIFF_LIMIT,
+  GIT_MESSAGE_LIMIT,
+  GIT_OUTPUT_LIMIT,
+  type FolderGitCommit,
   type FolderGitDiff,
   type FolderGitStatus,
   type GitArea,
@@ -14,8 +17,9 @@ import { firstLine, GitNotStarted, gitRunner, type GitRunner } from './runGit';
 
 /*
  * The 源码 tab of a native conversation (common/kyrn/gitBridge.ts): the repository of the conversation's folder, read
- * afresh for every answer with the git the app's PATH finds. Nothing is written: no stage, no discard, no commit.
- * A repository nested inside the folder's own is not looked for.
+ * afresh for every answer with the git the app's PATH finds. What is written is only what the person asks for in the
+ * tab: files staged or taken out of the index, and commits, with the repository's hooks. Nothing is discarded or
+ * pushed. A repository nested inside the folder's own is not looked for.
  */
 
 /** A quick answer: finding the repository, the version. */
@@ -25,6 +29,14 @@ const SLOW_MS = 15_000;
 /** What is read of a status: far more than GIT_CHANGE_LIMIT changes' worth. */
 const STATUS_BYTES = 8 * 1024 * 1024;
 const LONGEST_PATH = 4096;
+/** A stage or an unstage of many files in a large repository. */
+const INDEX_MS = 60_000;
+/** A commit, with the hooks it runs (a formatter, a linter, the tests). */
+const COMMIT_MS = 5 * 60_000;
+/** What a commit and its hooks may write before the rest is dropped. */
+const COMMIT_BYTES = 4 * 1024 * 1024;
+/** Files per git run when staging or unstaging, so the command line stays short (Windows takes about 32,000 characters). */
+const PATHS_PER_RUN = 100;
 
 const NOT_A_REPOSITORY = /not a git repository/i;
 
@@ -73,6 +85,28 @@ function cut(text: string, limit: number, partial: boolean): string {
 
 const BINARY = /^(Binary files .* differ|GIT binary patch)$/m;
 
+/** A commit message as the screen sends it: text, not empty once trimmed, at most GIT_MESSAGE_LIMIT characters. */
+function readMessage(value: unknown): string {
+  if (typeof value !== 'string' || value.includes('\u0000') || value.length > GIT_MESSAGE_LIMIT)
+    throw new KyrnError('invalid', 'Invalid message');
+  const message = value.replace(/\r\n?/g, '\n').trim();
+  if (!message) throw new KyrnError('invalid', 'The message is empty');
+  return message;
+}
+
+/** The end of what git wrote, at most GIT_OUTPUT_LIMIT bytes, from a whole line on. */
+function tail(text: string): string {
+  const bytes = Buffer.from(text, 'utf8');
+  if (bytes.length <= GIT_OUTPUT_LIMIT) return text.trim();
+  const end = bytes.subarray(bytes.length - GIT_OUTPUT_LIMIT).toString('utf8');
+  const start = end.indexOf('\n');
+  return (start < 0 ? end : end.slice(start + 1)).trim();
+}
+
+/** `items` in runs of `size`. */
+const runsOf = <T>(items: T[], size: number): T[][] =>
+  Array.from({ length: Math.ceil(items.length / size) }, (_, index) => items.slice(index * size, (index + 1) * size));
+
 export type FolderGitOptions = {
   run?: GitRunner;
   /** The most changes a status carries (tests make it small). */
@@ -84,6 +118,9 @@ export type FolderGitOptions = {
 export type FolderGit = {
   status: (cwd: unknown) => Promise<FolderGitStatus>;
   diff: (request: { cwd: unknown; path: unknown; area: unknown; from?: unknown }) => Promise<FolderGitDiff>;
+  stage: (request: { cwd: unknown; paths: unknown }) => Promise<void>;
+  unstage: (request: { cwd: unknown; paths: unknown }) => Promise<void>;
+  commit: (request: { cwd: unknown; message: unknown; all?: unknown }) => Promise<FolderGitCommit>;
 };
 
 export function createFolderGit({
@@ -117,6 +154,31 @@ export function createFolderGit({
         reason: firstLine(version.stderr) || firstLine(version.stdout) || `exit ${version.code}`,
       };
     throw new KyrnError('unknown', firstLine(found.stderr) || `git rev-parse ended with ${found.code}`);
+  }
+
+  /** The repository of a folder the person acts in: there must be one git can read. */
+  async function repositoryOf(cwd: unknown): Promise<string> {
+    const found = await rootOf(readFolder(cwd));
+    if (!('root' in found)) throw new KyrnError('invalid', 'The folder is not in a repository git can read');
+    return found.root;
+  }
+
+  /** Files named by the screen: at least one, at most GIT_CHANGE_LIMIT, each inside the repository. */
+  function readPaths(root: string, value: unknown): string[] {
+    if (!Array.isArray(value) || value.length === 0 || value.length > changeLimit)
+      throw new KyrnError('invalid', 'Invalid paths');
+    return [...new Set(value.map((path) => readPath(root, path)))];
+  }
+
+  /** `git <args> -- <paths>`, a run per PATHS_PER_RUN files; git's first line when one refuses. */
+  async function onIndex(root: string, args: string[], paths: string[]): Promise<void> {
+    for (const part of runsOf(paths, PATHS_PER_RUN)) {
+      // One after another: each run takes the index's lock.
+      // eslint-disable-next-line no-await-in-loop
+      const result = await run([...args, '--', ...part], { cwd: root, timeoutMs: INDEX_MS, maxBytes: 1024 * 1024 });
+      if (result.code !== 0)
+        throw new KyrnError('unknown', firstLine(result.stderr) || `git ${args[0]} ended with ${result.code}`);
+    }
   }
 
   // Two windows asking about one folder at once share one read.
@@ -177,6 +239,43 @@ export function createFolderGit({
       if (BINARY.test(result.stdout)) return { patch: '', binary: true, truncated: false };
       const patch = cut(result.stdout, diffLimit, result.overflow);
       return { patch, binary: false, truncated: result.overflow || patch.length < result.stdout.length };
+    },
+
+    async stage({ cwd, paths }) {
+      const root = await repositoryOf(cwd);
+      // `-A`: a file deleted in the working tree is staged as deleted.
+      await onIndex(root, ['add', '-A'], readPaths(root, paths));
+    },
+
+    async unstage({ cwd, paths }) {
+      const root = await repositoryOf(cwd);
+      // `reset`, not `restore --staged`: it also works before the first commit, taking a new file out of the index.
+      await onIndex(root, ['reset', '-q'], readPaths(root, paths));
+    },
+
+    async commit({ cwd, message, all }) {
+      const root = await repositoryOf(cwd);
+      const text = readMessage(message);
+      if (all === true) {
+        const added = await run(['add', '-A'], { cwd: root, timeoutMs: INDEX_MS, maxBytes: 1024 * 1024 });
+        if (added.code !== 0)
+          throw new KyrnError('unknown', firstLine(added.stderr) || `git add ended with ${added.code}`);
+      }
+      // As the person's own git: their name, signing and hooks. `--no-edit` never waits for an editor.
+      const made = await run(['commit', '--no-edit', '-m', text], {
+        cwd: root,
+        timeoutMs: COMMIT_MS,
+        maxBytes: COMMIT_BYTES,
+        asPerson: true,
+      });
+      if (made.code !== 0) return { committed: false, output: tail(`${made.stdout}\n${made.stderr}`) };
+      const head = await run(['log', '-1', '--format=%h%x00%s'], {
+        cwd: root,
+        timeoutMs: QUICK_MS,
+        maxBytes: 64 * 1024,
+      });
+      const [commit = '', subject = ''] = head.stdout.trim().split('\u0000');
+      return { committed: true, commit, subject };
     },
   };
 }

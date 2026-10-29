@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { unwrap } from '@/common/kyrn/bridge';
 import { kyrnFolderBridge, type FolderEntry } from '@/common/kyrn/folderBridge';
 import { useLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
-import NativeSource from '@/renderer/pages/native/components/NativeSource';
+import NativeSource from '@/renderer/pages/native/components/source/NativeSource';
 import FileTypeIcon from './fileIcon/FileTypeIcon';
 import type { ExplorerView } from './ExplorerContainer';
 
@@ -38,6 +38,7 @@ export default function FolderFiles({
   view,
   visible,
   refresh,
+  conversationId,
 }: {
   cwd: string;
   view: ExplorerView;
@@ -45,6 +46,8 @@ export default function FolderFiles({
   visible: boolean;
   /** Changes when the tree should be read again (a run of the conversation ended). */
   refresh: string;
+  /** The conversation the panel is beside (the source tab sends it mu's `/commit`). */
+  conversationId?: string;
 }) {
   const { t } = useTranslation();
   const [listings, setListings] = useState<ReadonlyMap<string, Listing>>(() => new Map());
@@ -86,7 +89,8 @@ export default function FolderFiles({
     if (opening) void read(path);
   };
 
-  if (view === 'changes') return <NativeSource key={cwd} cwd={cwd} visible={visible} refresh={refresh} />;
+  if (view === 'changes')
+    return <NativeSource key={cwd} cwd={cwd} visible={visible} refresh={refresh} conversationId={conversationId} />;
 
   const rows = (path: string, depth: number): React.ReactNode => {
     const listing = listings.get(path);

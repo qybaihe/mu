@@ -1092,7 +1092,21 @@
         "untracked": "İzlenmeyen",
         "detached": "{{commit}} üzerinde ayrık",
         "noCommits": "Henüz commit yok",
-        "upstream": "{{upstream}} dalının {{ahead}} önünde, {{behind}} gerisinde"
+        "upstream": "{{upstream}} dalının {{ahead}} önünde, {{behind}} gerisinde",
+        "commit": {
+          "message": "Commit mesajı",
+          "placeholder": "Commit mesajı (commit için {{shortcut}})",
+          "commit": "Commit et",
+          "commitAll": "Tümünü commit et",
+          "commitAllHint": "Hiçbir şey hazırlanmadığı için önce yeni dosyalar dahil tüm değişiklikler hazırlanır.",
+          "conflicts": "Commit etmeden önce birleştirme çakışmalarını çözün.",
+          "done": "{{commit}} commit edildi: {{subject}}",
+          "failed": "Git commit etmedi. Çıktısı:",
+          "dismiss": "Kapat",
+          "ask": "mu commit etsin",
+          "askHint": "mu değişiklikleri commit'lere böler ve mesajlarını yazar. Planı size gösterir, yalnızca onaylarsanız commit eder."
+        },
+        "actionFailed": "Git bunu yapamadı: {{reason}}"
       },
       "files": {
         "label": "{{folder}} içindeki dosyalar",
