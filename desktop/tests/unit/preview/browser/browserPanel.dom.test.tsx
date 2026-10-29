@@ -599,7 +599,7 @@ describe('showing mu the page as it is on screen and what its console said', () 
 
     fireEvent.click(screen.getByTestId('browser-send-console'));
     expect(picking.addDomSnippet).toHaveBeenCalledWith(
-      'Console of localhost',
+      'localhost console',
       `[warning] Slow network\n[error] Uncaught TypeError: x is undefined (${shop}app.js:12)`,
       'Console of the page http://localhost:5173/ ("Shop") since it loaded: 1 error and 1 warning; all of them, oldest first:',
       { fence: 'text' }

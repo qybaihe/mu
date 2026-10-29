@@ -173,8 +173,8 @@
     },
     "console": {
       "send": "Send the page's console errors and warnings to mu",
-      "chip": "Console of {{site}}",
-      "added": "Added the console of {{site}} to your message"
+      "chip": "{{site}} console",
+      "added": "Added the {{site}} console to your message"
     }
   },
   "saveConflict": "Couldn't save: this file has changed on disk since you opened it. Reload to see the other changes — your edits are still here, unsaved.",
