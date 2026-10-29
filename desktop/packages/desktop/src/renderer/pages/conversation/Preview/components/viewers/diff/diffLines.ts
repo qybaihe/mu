@@ -18,11 +18,17 @@ const numberIn = (cell: Element | null, selector: string): number | undefined =>
   return Number.isInteger(value) && value > 0 ? value : undefined;
 };
 
-/** The file a row belongs to: the name in its file's header; a renamed file by its new name. */
+/**
+ * The file a row belongs to: the name in its file's header; a renamed file by its new name. diff2html writes a rename
+ * as `old → new`, or only the part that changed, in braces: `src/{old → new}/name.ts`.
+ */
 export function fileOfRow(row: Element): string | undefined {
   const name = row.closest('.d2h-file-wrapper')?.querySelector('.d2h-file-name')?.textContent?.trim();
   if (!name) return undefined;
-  const renamed = name.split('→');
+  const renamed = name
+    .replace(/\{[^{}]*→\s*([^{}]*)\}/, '$1')
+    .replace(/\/{2,}/g, '/')
+    .split('→');
   return renamed[renamed.length - 1].trim() || undefined;
 }
 

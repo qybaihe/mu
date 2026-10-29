@@ -9,7 +9,7 @@
  */
 import { Button, Input } from '@arco-design/web-react';
 import { Close, Comment } from '@icon-park/react';
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { isPlatformPrimaryModifier } from '@/renderer/utils/ui/keyboardShortcuts';
@@ -27,6 +27,7 @@ import styles from './DiffComments.module.css';
 
 type Hovered = { line: DiffLineAt; top: number; height: number };
 type Slot = { key: string; cell: HTMLTableCellElement };
+type Note = Slot & { row: HTMLTableRowElement; at: Omit<DiffLineAt, 'kind' | 'text'> };
 
 const EDITOR = 'editor';
 
@@ -117,6 +118,9 @@ export default function DiffComments({ diff, drawn, enabled }: DiffCommentsProps
   const [hovered, setHovered] = useState<Hovered | null>(null);
   const [editing, setEditing] = useState<DiffLineAt | null>(null);
   const [slots, setSlots] = useState<Slot[]>([]);
+  // The rows added to the diff, by comment (or the editor): kept while their comment stays on the same line of the
+  // same drawing, so a comment being written isn't drawn again (and lost) when another comment comes or goes.
+  const notes = useRef(new Map<string, Note>());
   const on = enabled && Boolean(diff && addDomSnippet);
 
   // The comments the send box holds on lines of this diff, in the order they were written.
@@ -155,33 +159,47 @@ export default function DiffComments({ diff, drawn, enabled }: DiffCommentsProps
   // Another diff: the comment being written goes with the old one.
   useEffect(() => setEditing(null), [drawn]);
 
-  // A row under each commented line, and one for the comment being written, added to the diff as it is drawn now.
+  // A row under each commented line, and one for the comment being written, in the diff as it is drawn now.
   useLayoutEffect(() => {
-    const added: HTMLTableRowElement[] = [];
-    const next: Slot[] = [];
+    const held = notes.current;
+    const wanted = new Map<string, Note['at']>();
     if (diff && on) {
-      const place = (key: string, at: Omit<DiffLineAt, 'kind' | 'text'>) => {
-        const row = rowOfLine(diff, at);
-        if (!row) return;
-        const after = lastNoteUnder(row);
-        const note = document.createElement('tr');
-        note.className = NOTE_ROW_CLASS;
-        note.dataset.note = key;
-        const cell = document.createElement('td');
-        cell.colSpan = 2;
-        note.append(cell);
-        after.after(note);
-        added.push(note);
-        next.push({ key, cell });
-      };
-      for (const snippet of comments) if (snippet.comment) place(snippet.id, snippet.comment);
-      if (editing) place(EDITOR, editing);
+      for (const snippet of comments) if (snippet.comment) wanted.set(snippet.id, snippet.comment);
+      if (editing) wanted.set(EDITOR, editing);
     }
-    setSlots(next);
-    return () => {
-      for (const note of added) note.remove();
-    };
+    for (const [key, note] of held) {
+      const at = wanted.get(key);
+      if (at && sameLine(at, note.at) && diff?.contains(note.row)) continue;
+      note.row.remove();
+      held.delete(key);
+    }
+    for (const [key, at] of wanted) {
+      if (held.has(key) || !diff) continue;
+      const line = rowOfLine(diff, at);
+      if (!line) continue;
+      const row = document.createElement('tr');
+      row.className = NOTE_ROW_CLASS;
+      row.dataset.note = key;
+      const cell = document.createElement('td');
+      cell.colSpan = 2;
+      row.append(cell);
+      lastNoteUnder(line).after(row);
+      held.set(key, { key, cell, row, at });
+    }
+    setSlots((old) => {
+      const now = [...held.values()];
+      return old.length === now.length && old.every((slot, index) => slot.cell === now[index].cell) ? old : now;
+    });
   }, [comments, diff, drawn, editing, on]);
+
+  // Gone: so are its rows.
+  useLayoutEffect(() => {
+    const held = notes.current;
+    return () => {
+      for (const note of held.values()) note.row.remove();
+      held.clear();
+    };
+  }, []);
 
   const save = useCallback(
     (text: string) => {

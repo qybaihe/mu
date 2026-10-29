@@ -70,10 +70,10 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-const show = () =>
+const show = (content = DIFF) =>
   render(
     <I18nextProvider i18n={i18n}>
-      <DiffPreview content={DIFF} hideToolbar />
+      <DiffPreview content={content} hideToolbar />
     </I18nextProvider>
   );
 
@@ -186,6 +186,64 @@ describe('a comment on a line of a diff', () => {
     show();
     expect(screen.getAllByTestId('diff-comment')).toHaveLength(1);
     expect(row('const c = 4').nextElementSibling).toHaveTextContent('Rename c');
+  });
+
+  it('keeps a comment being written while other comments come and go', () => {
+    show();
+    hover(row('const c = 4'));
+    fireEvent.click(addButton()!);
+    write('half written');
+    const box = editor();
+
+    // A comment on another line comes (from another diff, or this one) and goes.
+    act(() =>
+      store.set([
+        {
+          id: 'mine',
+          tag: 'app.ts:1',
+          html: ' const a = 1;',
+          fence: 'diff',
+          comment: { file: 'src/app.ts', side: 'new', line: 1, text: 'Rename a' },
+        },
+      ])
+    );
+    expect(row('const a = 1').nextElementSibling).toHaveTextContent('Rename a');
+    act(() => store.set([]));
+
+    expect(editor()).toBe(box);
+    expect(within(box).getByRole('textbox')).toHaveValue('half written');
+    expect(row('const c = 4').nextElementSibling).toContainElement(box);
+    expect(document.querySelectorAll('tr.mu-diff-note')).toHaveLength(1);
+  });
+
+  it('names a renamed file by its new path', () => {
+    show(
+      [
+        'diff --git a/src/old/name.ts b/src/new/name.ts',
+        'similarity index 80%',
+        'rename from src/old/name.ts',
+        'rename to src/new/name.ts',
+        '--- a/src/old/name.ts',
+        '+++ b/src/new/name.ts',
+        '@@ -1,2 +1,2 @@',
+        ' const a = 1;',
+        '-const b = 2;',
+        '+const b = 3;',
+        '',
+      ].join('\n')
+    );
+    // diff2html shows only the part that changed: src/{old → new}/name.ts.
+    expect(document.querySelector('.d2h-file-name')).toHaveTextContent('src/{old → new}/name.ts');
+    hover(row('const b = 3'));
+    fireEvent.click(addButton()!);
+    write('Moved');
+    fireEvent.click(screen.getByTestId('diff-comment-save'));
+    expect(store.added[0]).toEqual([
+      'name.ts:2',
+      '+const b = 3;',
+      'Comment on `src/new/name.ts`, added line 2:\nMoved',
+      { fence: 'diff', comment: { file: 'src/new/name.ts', side: 'new', line: 2, text: 'Moved' } },
+    ]);
   });
 
   it('takes no comments in the side-by-side view', () => {
