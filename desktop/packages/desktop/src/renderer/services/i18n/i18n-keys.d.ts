@@ -3938,6 +3938,8 @@ export type I18nKey =
   | 'settings.commandHelp'
   | 'settings.commandLabel'
   | 'settings.commandPlaceholder'
+  | 'settings.completionSound'
+  | 'settings.completionSoundDesc'
   | 'settings.configMode'
   | 'settings.configureCustomAgent'
   | 'settings.configureModel'

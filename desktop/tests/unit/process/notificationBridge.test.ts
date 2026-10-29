@@ -6,6 +6,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 let notificationEnabled: boolean | undefined = true;
+let completionSound: boolean | undefined;
 const clickedEmit = vi.fn();
 const platformSend = vi.fn();
 const setBadgeCount = vi.hoisted(() => vi.fn());
@@ -18,7 +19,7 @@ const { FakeElectronNotification } = vi.hoisted(() => {
     static isSupported = vi.fn(() => true);
     handlers: Record<string, () => void> = {};
     show = vi.fn();
-    constructor(public options: { title: string; body: string; icon?: string }) {
+    constructor(public options: { title: string; body: string; icon?: string; silent?: boolean }) {
       FakeElectronNotification.instances.push(this);
     }
     on(event: string, cb: () => void): this {
@@ -46,7 +47,9 @@ vi.mock('@/common/platform', () => ({
 }));
 
 vi.mock('@process/utils/initStorage', () => ({
-  ProcessConfig: { get: vi.fn(async () => notificationEnabled) },
+  ProcessConfig: {
+    get: vi.fn(async (key: string) => (key === 'system.completionSound' ? completionSound : notificationEnabled)),
+  },
 }));
 
 vi.mock('@/common/electronSafe', () => ({
@@ -97,6 +100,7 @@ let logSpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
   notificationEnabled = true;
+  completionSound = undefined;
   clickedEmit.mockClear();
   platformSend.mockClear();
   FakeElectronNotification.instances.length = 0;
@@ -113,6 +117,15 @@ describe('showNotification', () => {
     await showNotification({ title: 'mu', body: 'done', conversation_id: 'c1' });
     expect(FakeElectronNotification.instances).toHaveLength(1);
     expect(FakeElectronNotification.instances[0].show).toHaveBeenCalledTimes(1);
+  });
+
+  it('is silent while the app plays its own chime, and makes the system sound otherwise', async () => {
+    setNotificationMainWindow(makeWindow(false) as never);
+    await showNotification({ title: 'mu', body: 'done', conversation_id: 'c1' });
+    expect(FakeElectronNotification.instances[0].options.silent).toBeUndefined();
+    completionSound = true;
+    await showNotification({ title: 'mu', body: 'done', conversation_id: 'c1' });
+    expect(FakeElectronNotification.instances[1].options.silent).toBe(true);
   });
 
   it('does not notify when the main window is focused', async () => {

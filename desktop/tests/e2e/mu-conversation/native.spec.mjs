@@ -118,6 +118,18 @@ test('a plain reply streams in, in several pieces', async () => {
   expectNoProblems();
 });
 
+test('the window can play the chime with no click first, as a run that ends in the background needs', async () => {
+  // The chime (attentionSound.ts) is made with Web Audio when a conversation finishes, often while nobody touches the
+  // window: an AudioContext made then must run, not wait for a gesture.
+  const state = await page().evaluate(async () => {
+    const audio = new AudioContext();
+    const now = audio.state;
+    await audio.close();
+    return now;
+  });
+  expect(state).toBe('running');
+});
+
 test('最小权限: a write asks once, allowing it writes the file, and the run finishes', async () => {
   const question = await sendAndAnswer(`E2E:WRITE ${WRITTEN}`, 'first', 'WRITE-DONE');
   expect(question, 'the question names the file').toContain(WRITTEN);

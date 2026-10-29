@@ -56,6 +56,8 @@ export interface IConfigStorageRefer {
   // 阻止系统休眠以保证定时任务执行 / Prevent system sleep to ensure scheduled tasks run
   'system.keepAwake'?: boolean;
   'system.keepAwakeWhileRunning'?: boolean;
+  // A chime when a conversation finishes or needs the person; the system notification is silent while it is on
+  'system.completionSound'?: boolean;
   // Automatically preview newly created Office files in the current workspace
   // Skills Market: whether the external skills market source is enabled
   'skillsMarket.enabled'?: boolean;

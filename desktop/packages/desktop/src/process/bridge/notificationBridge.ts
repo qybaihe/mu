@@ -84,7 +84,14 @@ export async function showNotification({
   // Prefer a real Electron notification so the click can focus + navigate.
   if (electronNotification) {
     try {
-      const notification = new electronNotification({ title, body, ...(iconPath ? { icon: iconPath } : {}) });
+      // The app's own chime is on (attentionSound.ts): the notification is silent, so the person hears one sound.
+      const silent = (await ProcessConfig.get('system.completionSound')) === true;
+      const notification = new electronNotification({
+        title,
+        body,
+        ...(iconPath ? { icon: iconPath } : {}),
+        ...(silent ? { silent: true } : {}),
+      });
       notification.on('click', () => {
         const win = mainWindowRef;
         if (win && !win.isDestroyed()) {

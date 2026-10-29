@@ -42,6 +42,15 @@ vi.mock('@/renderer/utils/platform', () => ({
   isMacOS: platformMocks.isMacOS,
 }));
 
+const chimes = vi.hoisted(() => [] as string[]);
+vi.mock('@/renderer/hooks/system/notification/attentionSound', () => ({
+  COMPLETION_SOUND_SETTING: 'system.completionSound',
+  playAttentionSound: (kind: string) => {
+    chimes.push(kind);
+    return true;
+  },
+}));
+
 vi.mock('@/renderer/components/base/MuScrollArea', () => ({
   default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
@@ -287,6 +296,22 @@ describe('SystemModalContent directory settings', () => {
     expect(toggle).toHaveAttribute('aria-checked', 'true');
     fireEvent.click(toggle);
     expect(configServiceMock.set).toHaveBeenCalledWith('system.keepAwakeWhileRunning', false);
+  });
+
+  it('plays a sound when a conversation finishes or needs the person once turned on, and plays it as it is turned on', async () => {
+    renderContent();
+
+    await screen.findByText('/work');
+    expect(screen.getByText('settings.completionSoundDesc')).toBeInTheDocument();
+    const toggle = screen.getByRole('switch', { name: 'settings.completionSound' });
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
+    chimes.length = 0;
+    fireEvent.click(toggle);
+    expect(configServiceMock.set).toHaveBeenCalledWith('system.completionSound', true);
+    expect(chimes).toEqual(['done']);
+    fireEvent.click(toggle);
+    expect(configServiceMock.set).toHaveBeenLastCalledWith('system.completionSound', false);
+    expect(chimes).toEqual(['done']);
   });
 
   it('names the menu bar on a Mac, where the closed app lives on', async () => {

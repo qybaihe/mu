@@ -8,6 +8,7 @@ import { ipcBridge } from '@/common';
 import type { IGpuStatus, IStartOnBootStatus } from '@/common/adapter/ipcBridge';
 import { configService } from '@/common/config/configService';
 import MuScrollArea from '@/renderer/components/base/MuScrollArea';
+import { COMPLETION_SOUND_SETTING, playAttentionSound } from '@/renderer/hooks/system/notification/attentionSound';
 import { useKeepAwakeSetting } from '@/renderer/hooks/system/useKeepAwakeWhileRunning';
 import { notifyManualRestartRequired } from '@/renderer/utils/appRestart';
 import { isElectronDesktop, isMacOS } from '@/renderer/utils/platform';
@@ -47,6 +48,7 @@ const SystemModalContent: React.FC = () => {
   const [notificationEnabled, setNotificationEnabled] = useState(true);
   const [cronNotificationEnabled, setCronNotificationEnabled] = useState(false);
   const keepAwakeWhileRunning = useKeepAwakeSetting();
+  const [completionSound, setCompletionSound] = useState(false);
 
   useEffect(() => {
     if (!isDesktop) {
@@ -85,6 +87,7 @@ const SystemModalContent: React.FC = () => {
     }
     setNotificationEnabled(configService.get('system.notificationEnabled') ?? true);
     setCronNotificationEnabled(configService.get('system.cronNotificationEnabled') ?? false);
+    setCompletionSound(configService.get(COMPLETION_SOUND_SETTING) === true);
   }, [isDesktop]);
 
   const handleCloseToTrayChange = useCallback(
@@ -191,6 +194,16 @@ const SystemModalContent: React.FC = () => {
   const handleKeepAwakeWhileRunningChange = useCallback((checked: boolean) => {
     configService.set('system.keepAwakeWhileRunning', checked).catch(() => {
       configService.setLocal('system.keepAwakeWhileRunning', !checked);
+    });
+  }, []);
+
+  // Turned on, it plays once, so the person hears what they chose.
+  const handleCompletionSoundChange = useCallback((checked: boolean) => {
+    setCompletionSound(checked);
+    if (checked) playAttentionSound('done');
+    configService.set(COMPLETION_SOUND_SETTING, checked).catch(() => {
+      setCompletionSound(!checked);
+      configService.setLocal(COMPLETION_SOUND_SETTING, !checked);
     });
   }, []);
 
@@ -336,6 +349,16 @@ const SystemModalContent: React.FC = () => {
                   />
                 </PreferenceRow>
               </div>
+            ) : null}
+            {isDesktop ? (
+              <PreferenceRow label={t('settings.completionSound')} description={t('settings.completionSoundDesc')}>
+                <Switch
+                  size='small'
+                  checked={completionSound}
+                  onChange={handleCompletionSoundChange}
+                  data-testid='completion-sound-switch'
+                />
+              </PreferenceRow>
             ) : null}
           </div>
 

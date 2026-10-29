@@ -1,8 +1,9 @@
 /**
  * A native conversation wants its person, who may not be looking: a run ended or failed, or pi asks something (the
- * main process says so once a run has settled for a moment: NativeAttentionEvent). Two things follow, as they do for a
+ * main process says so once a run has settled for a moment: NativeAttentionEvent). What follows is what follows for a
  * classic conversation:
  *
+ * - a chime, if the person turned it on (`system.completionSound`, attentionSound.ts), in front or not;
  * - a system notification, which the main process shows only when notifications are on and the window is not the one in
  *   front (`showNotification`); a click on it opens the conversation (`useNotificationClick`);
  * - a mark on the conversation's sidebar row until it is opened, unless it is the conversation on screen: a person
@@ -18,6 +19,7 @@ import { useLocation } from 'react-router-dom';
 import { ipcBridge } from '@/common';
 import { configService } from '@/common/config/configService';
 import type { NativeAttentionEvent } from '@/common/kyrn/nativeBridge';
+import { soundForAttention } from '@/renderer/hooks/system/notification/attentionSound';
 import { truncateConversationName } from '@/renderer/hooks/system/notification/browserNotificationCore';
 import { isElectronDesktop } from '@/renderer/utils/platform';
 import { useNativeClient } from '../utils/nativeClient';
@@ -77,6 +79,8 @@ export function useNativeAttention(): void {
     () =>
       client.onAttention((event) => {
         if (viewing.current !== nativeConversationPath(event.id)) markNativeUnread(event.id);
+        // The chime, if the person turned it on: in front or not, notifications on or not.
+        soundForAttention(event.kind);
         // Cheap gate here; the main process still re-checks the setting and whether the window is in front.
         if (!isElectronDesktop() || configService.get('system.notificationEnabled') === false) return;
         void ipcBridge.notification.show.invoke({

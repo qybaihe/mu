@@ -29,6 +29,13 @@ side"). Nothing here shows unless the main process says the native host is on (`
   its own row. The app's Dock icon (the launcher entry on Linux) carries the number of conversations marked so, native
   and classic (a reply finished out of view, a confirmation waiting, marked unread by hand), each counted once
   (`useAppBadge`, `notification.badge`); Windows has no such number.
+- **A chime.** With "Play a sound when a conversation finishes or needs you" on in the system settings
+  (`system.completionSound`, off by default; turning it on plays it once), the window plays two short soft notes when
+  a conversation finishes, asks something or fails, native or classic, whether the window is in front or not and
+  whether notifications are on or not: up for done (C6, E6), a knock for a question (A5 twice), down for a failure
+  (E5, C5). They are made with Web Audio (`attentionSound.ts`, one AudioContext for the window, nothing to load), and
+  chimes within 1.5 s of each other are one. While it is on, the system notification is `silent`, so a person hears
+  one sound, not two.
 - **Awake while it runs.** While a native run or a classic reply goes, the computer does not go to sleep when idle
   (Electron's `prevent-app-suspension`; the display may still turn off, and closing the lid still puts it to sleep), so a long run is
   not cut short because nobody touched the keyboard. The window says when a run starts and ends
@@ -624,8 +631,9 @@ with a file's view compare `durable(view)`.
 `node scripts/kyrn/e2e-conversation.mjs --native` (`bun run e2e:conversation --native`; `--skip-build` reuses `out/`;
 `MU_E2E_KEEP=1` keeps the throwaway profile and the screenshots in its `logs/`) builds the app and runs
 `tests/e2e/mu-conversation/native.spec.mjs` on Electron with the default (nothing names `MU_NATIVE_HOST`), the fake model and the offline mock
-judge. Seven steps, about 30 seconds: a conversation made from the sidebar's popover (the folder picker answered by the
-test, 最小权限), a streaming reply (three or more partial states), one permission question answered "allow once" (the
+judge. Eight steps, about 30 seconds: a conversation made from the sidebar's popover (the folder picker answered by the
+test, 最小权限), a streaming reply (three or more partial states), an AudioContext the window makes with no click
+first that runs (the chime needs that), one permission question answered "allow once" (the
 file is written; the call's row is `completed`), one answered "don't allow" (the model is told, the row is `denied`,
 the conversation goes on), a window reload in the middle of a run (the main process's view brings the run back, still
 growing), a stop (`aborted`), a quit (no process left) and a reopen from the session file (the same messages and calls,
