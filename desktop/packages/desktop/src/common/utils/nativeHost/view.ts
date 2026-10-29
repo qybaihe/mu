@@ -274,6 +274,9 @@ export type ViewJob = {
   lingering?: boolean;
 };
 
+/** A background job that still runs something: it runs, is being stopped, or ended leaving processes behind. */
+export const isJobLive = (job: ViewJob): boolean => job.state !== 'exited' || job.lingering === true;
+
 /**
  * A checkpoint mu took (its `kyrn.checkpoint` entry, on the branch): before the first file change of the turn that
  * the person's message `entryId` started. `/rewind <id>` goes back to it.

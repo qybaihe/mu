@@ -10,7 +10,7 @@ import { Down, FileText, Terminal } from '@icon-park/react';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { NativeResult } from '@/common/kyrn/nativeBridge';
-import type { PiCommand, ViewJob } from '@/common/utils/nativeHost';
+import { isJobLive, type PiCommand, type ViewJob } from '@/common/utils/nativeHost';
 import RuntimeSelectorPill from '@/renderer/components/agent/RuntimeSelectorPill';
 import { useOptionalLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
 import { formatDuration } from '@/renderer/services/i18n/format';
@@ -20,7 +20,6 @@ import { iconColors } from '@/renderer/styles/colors';
 const ENDED_SHOWN = 3;
 
 /** A job still has something running: itself, or processes it started. */
-export const isLive = (job: ViewJob): boolean => job.state !== 'exited' || job.lingering === true;
 
 /** mu's command that stops a job, or every job that runs. */
 export const stopCommand = (id: string | 'all'): string => `/jobs stop ${id}`;
@@ -52,7 +51,7 @@ function JobRow({
     <div className='flex items-start gap-8px py-6px' data-testid='native-job' data-job={job.id} data-state={job.state}>
       <span
         aria-hidden='true'
-        className={`mt-6px h-6px w-6px shrink-0 rd-full ${isLive(job) ? 'bg-success' : 'bg-fill-3'}`}
+        className={`mt-6px h-6px w-6px shrink-0 rd-full ${isJobLive(job) ? 'bg-success' : 'bg-fill-3'}`}
       />
       <div className='min-w-0 flex-1'>
         <div className='flex items-baseline gap-6px min-w-0'>
@@ -76,7 +75,7 @@ function JobRow({
             onClick={onLog}
           />
         ) : null}
-        {isLive(job) ? (
+        {isJobLive(job) ? (
           <Button
             size='mini'
             loading={busy}
@@ -103,8 +102,8 @@ const NativeJobs: React.FC<{
   const [stopping, setStopping] = useState<string>();
   const [now, setNow] = useState(() => Date.now());
   const openFile = useOptionalLocalFilePreview(cwd);
-  const live = jobs.filter(isLive);
-  const ended = jobs.filter((job) => !isLive(job)).slice(-ENDED_SHOWN);
+  const live = jobs.filter(isJobLive);
+  const ended = jobs.filter((job) => !isJobLive(job)).slice(-ENDED_SHOWN);
 
   // The running time counts up while the list is open.
   useEffect(() => {

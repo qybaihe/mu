@@ -96,7 +96,9 @@ export const JOB_LIMIT = 20;
 
 /**
  * A background job's frame (`background.start`, `background.stop`, `background.exit`), at `at`: a job starts running,
- * is being stopped, or ended. A stop or an end for a job the view never saw start is left out.
+ * is being stopped, or ended. mu says a job was stopped once its kill is done, after the job's end when it ended: a job
+ * that ended keeps its end, and what it left running (`lingering`) is gone. A stop or an end for a job the view never
+ * saw start is left out.
  */
 export function takeJob(view: NativeView, kind: string, payload: JsonObject, at: number): NativeView {
   const id = asText(payload.id);
@@ -117,8 +119,11 @@ export function takeJob(view: NativeView, kind: string, payload: JsonObject, at:
   } else if (!known) {
     return view;
   } else if (kind === 'background.stop') {
-    if (known.state !== 'running' && !known.lingering) return view;
-    next = { ...known, state: 'stopping' };
+    if (known.state === 'running') next = { ...known, state: 'stopping' };
+    else if (known.state === 'exited' && known.lingering) {
+      const { lingering: _lingering, ...rest } = known;
+      next = rest;
+    } else return view;
   } else if (kind === 'background.exit') {
     const exitCode = asNumber(payload.exitCode);
     const durationMs = asNumber(payload.durationMs);

@@ -69,9 +69,19 @@ describe('the background jobs of a view', () => {
     expect(view.host.jobs?.[0].state).toBe('stopping');
     view = reduceAll([frame('background.exit', { id: 'dev', exitCode: 0, durationMs: 5, lingering: true })], view);
     expect(view.host.jobs?.[0]).toMatchObject({ state: 'exited', lingering: true });
-    // Stopping it again ends what lingers.
+    // Stopping it again ends what lingers: mu says so once it is gone, and the job keeps its end.
     view = reduceAll([frame('background.stop', { id: 'dev' })], view);
-    expect(view.host.jobs?.[0].state).toBe('stopping');
+    expect(view.host.jobs?.[0]).toMatchObject({ state: 'exited', exitCode: 0, durationMs: 5 });
+    expect(view.host.jobs?.[0].lingering).toBeUndefined();
+  });
+
+  it('keeps a stopped job ended when mu says it was stopped after its end', () => {
+    const view = reduceAll([
+      started('dev'),
+      frame('background.exit', { id: 'dev', exitCode: 143, durationMs: 9000, stoppedBy: 'user', lingering: false }),
+      frame('background.stop', { id: 'dev', exitCode: 143 }),
+    ]);
+    expect(view.host.jobs?.[0]).toMatchObject({ state: 'exited', exitCode: 143, stoppedBy: 'user' });
   });
 
   it('leaves out a stop or an end for a job it never saw start, and a frame without an id', () => {
