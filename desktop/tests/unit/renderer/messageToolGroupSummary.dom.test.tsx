@@ -6,6 +6,7 @@ import type { TMessage } from '@/common/chat/chatLib';
 import type { ToolMessage } from '@/common/chat/normalizeToolCall';
 import MessageToolGroupSummary from '@/renderer/pages/conversation/Messages/components/MessageToolGroupSummary';
 import { shortPath } from '@/renderer/pages/conversation/Messages/components/toolActivity';
+import * as browserStore from '@/renderer/pages/conversation/Preview/browser/browserStore';
 
 vi.mock('@/common', () => ({
   ipcBridge: {
@@ -143,6 +144,32 @@ describe('MessageToolGroupSummary', () => {
 
     expect(screen.getAllByRole('button', { name: 'messages.fileRef.preview' })).toHaveLength(1);
     expect(screen.getByRole('button', { name: 'messages.fileRef.preview' })).toHaveAttribute('title', 'src/app.ts');
+  });
+
+  it("offers the address a dev server printed, opened in the work panel's browser, on the call and on its fold", () => {
+    const opened = vi.spyOn(browserStore, 'openBrowserPage').mockReturnValue('tab-1');
+    const banner = '  ➜  Local:   http://localhost:5173/\n  ➜  Network: use --host to expose';
+    const { unmount } = render(
+      <MessageToolGroupSummary messages={[tool('bash', 'completed', { command: 'npm run dev' }, banner)]} />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'tools.execution.openInBrowser' }));
+    expect(screen.getByTestId('tool-local-url')).toHaveTextContent('localhost:5173');
+    expect(opened).toHaveBeenCalledWith('http://localhost:5173/', { by: 'user', reuse: true });
+    unmount();
+
+    render(
+      <MessageToolGroupSummary
+        messages={[
+          tool('bg_start', 'completed', { command: 'npm run dev' }, 'started bg-1'),
+          tool('bg_output', 'completed', { id: 'bg-1' }, banner),
+        ]}
+      />
+    );
+    // Closed, the fold still shows it; open, the call that printed it does.
+    expect(screen.getAllByTestId('tool-local-url')).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: /2 steps|other/ }));
+    expect(screen.getAllByTestId('tool-local-url')).toHaveLength(1);
+    opened.mockRestore();
   });
 
   it('keeps a command whole, cut at its end, with the whole of it on hover', () => {

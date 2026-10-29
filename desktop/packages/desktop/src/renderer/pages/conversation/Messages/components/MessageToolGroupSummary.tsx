@@ -6,7 +6,7 @@
 
 import type { BadgeProps } from '@arco-design/web-react';
 import { Badge, Button, Message, Tooltip } from '@arco-design/web-react';
-import { Down, Download, Right } from '@icon-park/react';
+import { Browser, Down, Download, Right } from '@icon-park/react';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ipcBridge } from '@/common';
@@ -17,6 +17,7 @@ import LocalImageView from '@/renderer/components/media/LocalImageView';
 import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
 import { HiveToolCard } from '@/renderer/pages/conversation/KyrnPanel/Hive';
 import { swarmProgressText } from '@/renderer/pages/conversation/KyrnPanel/Hive/codes';
+import { openBrowserPage } from '@/renderer/pages/conversation/Preview/browser/browserStore';
 import { useOptionalLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
 import { formatNumber } from '@/renderer/services/i18n/format';
 import { downloadFileFromPath } from '@/renderer/utils/file/download';
@@ -31,7 +32,9 @@ import {
   toolActivityErrors,
   toolActivityParts,
   toolActivityKind,
+  toolActivityLocalUrls,
   toolErrorLine,
+  toolLocalUrls,
   toolLabel,
   shortPath,
   type ToolLabel,
@@ -112,6 +115,37 @@ const opensFile = (item: NormalizedToolCall, label: ToolLabel): boolean => {
   return kind === 'read' || kind === 'edit';
 };
 
+/**
+ * The local web addresses a command printed (a dev server's `http://localhost:5173/`), each a chip that opens it in
+ * the work panel's browser, beside the conversation. A second click comes back to the page already open.
+ */
+const LocalUrlChips: React.FC<{ urls: string[] }> = ({ urls }) => {
+  const { t } = useTranslation();
+  if (!urls.length) return null;
+  return (
+    <div className={styles.localUrls}>
+      {urls.map((url) => {
+        const address = url.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+        return (
+          <Button
+            key={url}
+            className={styles.localUrl}
+            type='secondary'
+            size='mini'
+            icon={<Browser theme='outline' size='12' />}
+            title={url}
+            aria-label={t('tools.execution.openInBrowser', { address })}
+            data-testid='tool-local-url'
+            onClick={() => openBrowserPage(url, { by: 'user', reuse: true })}
+          >
+            {address}
+          </Button>
+        );
+      })}
+    </div>
+  );
+};
+
 const ClippedOutput: React.FC<{ text: string }> = ({ text }) => {
   const { t } = useTranslation();
   const [full, setFull] = useState(false);
@@ -147,6 +181,7 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
   // A refused call's output is mu's refusal, written for the model: the row says what happened instead.
   const output = item.denied ? undefined : displayItem.output;
   const hasDetail = Boolean(displayItem.input || output || item.truncated || item.imagePath);
+  const urls = useMemo(() => toolLocalUrls(displayItem), [displayItem]);
   const [messageApi, messageContext] = Message.useMessage();
   const handleDownloadImage = useCallback(
     async (path: string) => {
@@ -265,6 +300,7 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
       {!item.denied && item.status === 'error' && !expanded && !displayItem.hive && (
         <div className={styles.callError}>{toolErrorLine(displayItem)}</div>
       )}
+      <LocalUrlChips urls={urls} />
       {expanded && hasDetail && (
         <div className={styles.detailPanel}>
           {loadingFull && <div className={styles.detailLabel}>{t('tools.execution.loading')}</div>}
@@ -336,6 +372,7 @@ const ToolActivityGroup: React.FC<{ tools: NormalizedToolCall[]; language?: stri
   const summary = useMemo(() => summarizeToolActivity(tools), [tools]);
   const errors = useMemo(() => toolActivityErrors(tools), [tools]);
   const refused = useMemo(() => toolActivityDenied(tools), [tools]);
+  const urls = useMemo(() => toolActivityLocalUrls(tools), [tools]);
   const steps = formatNumber(summary.steps, language);
   // What the stretch did, by kind: "read 3 files · ran 1 command".
   const done = toolActivityParts(tools)
@@ -381,6 +418,7 @@ const ToolActivityGroup: React.FC<{ tools: NormalizedToolCall[]; language?: stri
             </span>
           </div>
         ))}
+      {!expanded && <LocalUrlChips urls={urls} />}
       {expanded && (
         <div className={styles.activityBody}>
           <ToolRows tools={tools} />

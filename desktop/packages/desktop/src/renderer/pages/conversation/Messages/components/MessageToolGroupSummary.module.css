@@ -142,6 +142,29 @@
   font: 12px/1.6 var(--font-mono);
   overflow-wrap: anywhere;
 }
+/* A local web address a command printed: a chip that opens it in the work panel's browser. */
+.localUrls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 8px 4px 32px;
+  min-width: 0;
+}
+.localUrl:global(.arco-btn) {
+  max-width: 100%;
+  height: 22px;
+  padding: 0 8px;
+  overflow: hidden;
+  border-radius: 11px;
+  color: var(--text-secondary);
+  font: 12px/22px var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: ltr;
+}
+.localUrl:global(.arco-btn:hover) {
+  color: var(--text-primary);
+}
 /* A step the person said no to: it did not run, which is no failure. Said quietly, in words. */
 .callDenied {
   margin: 0 8px 4px 32px;

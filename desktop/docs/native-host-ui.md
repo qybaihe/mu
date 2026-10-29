@@ -220,6 +220,11 @@ The same goes for a file a tool call read or wrote: the path in its row (`read s
 read against the conversation's folder, and a click anywhere else on the row still opens the call. A lookup's path
 (`ls`, `grep`) may be a folder and stays text.
 
+A local web address a command printed (`http://localhost:5173/` in a dev server's banner, read by `bash` or
+`bg_output`) is a chip under the call, and under a folded run of calls while it is closed. A click opens it in the
+work panel's browser, or brings back the page already open there. Only `localhost`, `*.localhost`, `127.0.0.1`,
+`[::1]` and `0.0.0.0` (read as `localhost`) count, at most three per call (`localUrls` in `toolActivity.ts`).
+
 Solution, in three steps:
 
 1. **Candidates** (`common/chat/fileRefs/pathLike.ts`, `renderer/components/media/FileRefs/findFileRefs.ts`). Only

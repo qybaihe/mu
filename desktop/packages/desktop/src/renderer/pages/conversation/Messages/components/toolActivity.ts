@@ -174,6 +174,54 @@ export function toolActivityErrors(tools: NormalizedToolCall[]): ToolActivityErr
 export const toolActivityDenied = (tools: NormalizedToolCall[]): { key: string; label: ToolLabel }[] =>
   tools.filter((item) => item.denied).map((item) => ({ key: item.key, label: toolLabel(item) }));
 
+// ── local web addresses ─────────────────────────────────────────────────────
+
+/**
+ * A web address on this machine as a command prints it: `http://localhost:5173/`, `http://127.0.0.1:8000`,
+ * `http://[::1]:3000`, `http://app.localhost`. It ends at a space, a quote or a closing bracket, so the address in
+ * `Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/)` comes out whole.
+ */
+const LOCAL_URL =
+  /\bhttps?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1?\]|[\w-]+\.localhost)(?!\.?[\w-])(?::\d{1,5})?(?:[/?#][^\s'"`<>)\]}]*)?/gi;
+
+/** Colour codes a dev server paints its banner with. */
+// oxlint-disable-next-line no-control-regex -- terminal colour codes are what this removes
+const ANSI_CODE = /\u001b\[[0-9;]*[A-Za-z]/g;
+
+/** The tools whose output is a command's: a dev server's banner is read there. */
+const printsCommandOutput = (name: string): boolean =>
+  toolActivityKind(name) === 'run' || name.toLowerCase().startsWith('bg_');
+
+/** At most this many addresses from one call or one stretch: a server prints its own two or three. */
+const LOCAL_URL_MAX = 3;
+
+/**
+ * The local web addresses a command printed, once each, in the order printed. `0.0.0.0` and `[::]` mean "every
+ * address" to a server and nothing to a browser, so they read as `localhost`.
+ */
+export function localUrls(text: string, max = LOCAL_URL_MAX): string[] {
+  const found: string[] = [];
+  const seen = new Set<string>();
+  for (const match of text.replace(ANSI_CODE, '').matchAll(LOCAL_URL)) {
+    const url = match[0].replace(/[.,;:!?]+$/, '').replace(/^(https?:\/\/)(?:0\.0\.0\.0|\[::\])/i, '$1localhost');
+    const key = url.toLowerCase().replace(/\/$/, '');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    found.push(url);
+    if (found.length >= max) break;
+  }
+  return found;
+}
+
+/** The local web addresses in a call's output, when the call ran a command. */
+export const toolLocalUrls = (item: NormalizedToolCall): string[] =>
+  item.denied || !item.output || !printsCommandOutput(item.name) ? [] : localUrls(item.output);
+
+/** The local web addresses a stretch's commands printed, once each. They stay visible while the group is closed. */
+export function toolActivityLocalUrls(tools: NormalizedToolCall[]): string[] {
+  return localUrls(tools.flatMap(toolLocalUrls).join('\n'));
+}
+
 /**
  * Below this a stretch is just its line. A header over a single call is a box more than it is a summary (user,
  * 2026-09-22), and from two calls up the fold is what keeps a long turn readable.

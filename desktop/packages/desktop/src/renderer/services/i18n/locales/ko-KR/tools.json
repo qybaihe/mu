@@ -78,7 +78,8 @@
     "callAria": "{{name}} · {{status}}",
     "denied": "실행하지 않음: 허용하지 않았습니다.",
     "showMore": "더 보기",
-    "showLess": "접기"
+    "showLess": "접기",
+    "openInBrowser": "브라우저에서 {{address}} 열기"
   },
   "activity": {
     "running": "{{steps}}단계 · 실행 중 {{label}}",
