@@ -650,6 +650,62 @@ describe('the picture of an element picked in the browser', () => {
   });
 });
 
+describe('the commands mu runs in the background', () => {
+  const started = (id: string) =>
+    frame('background.start', { id, name: id, command: `npm run ${id}`, logPath: `/logs/${id}.log` }, 1, Date.now());
+
+  it('show as a pill while one runs; its list stops one or all with mu’s /jobs, and says how one ended', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1', cwd: '/work/project' });
+    host.answer(() => ({ ok: true, data: undefined }));
+    await mount(host);
+    expect(screen.queryByTestId('native-jobs')).toBeNull();
+
+    act(() => host.play('c1', [started('dev'), started('watch')]));
+    expect(screen.getByTestId('native-jobs')).toHaveAttribute('data-count', '2');
+    expect(screen.getByTestId('native-jobs-pill')).toHaveTextContent('Background · 2');
+    fireEvent.click(screen.getByTestId('native-jobs-pill'));
+    const list = await screen.findByTestId('native-jobs-list');
+    expect(
+      within(list)
+        .getAllByTestId('native-job')
+        .map((row) => row.getAttribute('data-job'))
+    ).toEqual(['dev', 'watch']);
+    expect(within(list).getByText('npm run dev')).toBeInTheDocument();
+    expect(within(list).getAllByText(/^running for /)).toHaveLength(2);
+
+    await act(async () => {
+      fireEvent.click(within(list).getAllByTestId('native-job-stop')[0]);
+    });
+    expect(sent(host, 'prompt').at(-1)).toEqual({ type: 'prompt', message: '/jobs stop dev' });
+    await act(async () => {
+      fireEvent.click(within(list).getByTestId('native-jobs-stop-all'));
+    });
+    expect(sent(host, 'prompt').at(-1)).toEqual({ type: 'prompt', message: '/jobs stop all' });
+
+    // The first ended: it stays listed under the one that runs, with how it ended.
+    act(() =>
+      host.play('c1', [frame('background.exit', { id: 'dev', exitCode: 1, durationMs: 65_000 }, 1, Date.now())])
+    );
+    expect(screen.getByTestId('native-jobs')).toHaveAttribute('data-count', '1');
+    const endedRow = within(screen.getByTestId('native-jobs-list'))
+      .getAllByTestId('native-job')
+      .find((row) => row.getAttribute('data-job') === 'dev');
+    expect(endedRow).toHaveAttribute('data-state', 'exited');
+    expect(endedRow).toHaveTextContent(/exited with code 1 after/);
+    expect(within(endedRow as HTMLElement).queryByTestId('native-job-stop')).toBeNull();
+    expect(screen.queryByTestId('native-jobs-stop-all')).toBeNull();
+
+    // Nothing runs: the pill goes.
+    act(() =>
+      host.play('c1', [
+        frame('background.exit', { id: 'watch', exitCode: 0, durationMs: 1, stoppedBy: 'user' }, 1, Date.now()),
+      ])
+    );
+    expect(screen.queryByTestId('native-jobs')).toBeNull();
+  });
+});
+
 describe('the send box’s ↑/↓ history and /copy', () => {
   it('read the conversation’s text: the person’s words without their files, and the replies', async () => {
     const host = createFakeHost();

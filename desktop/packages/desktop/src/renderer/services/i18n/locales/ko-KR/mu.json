@@ -1107,6 +1107,18 @@
     },
     "attach": {
       "failed": "{{name}}을(를) 첨부할 수 없습니다."
+    },
+    "jobs": {
+      "label": "백그라운드",
+      "title": "백그라운드 명령",
+      "runningFor": "{{time}} 실행 중",
+      "stopping": "중지하는 중…",
+      "stoppedAfter": "{{time}} 후 중지됨",
+      "exited": "{{time}} 후 종료됨(코드 {{code}})",
+      "lingering": "이 명령이 시작한 프로세스가 아직 실행 중입니다",
+      "log": "로그 열기",
+      "stop": "중지",
+      "stopAll": "모두 중지"
     }
   },
   "details": {

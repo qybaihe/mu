@@ -19,7 +19,7 @@ import {
 } from '../../../../common/utils/nativeHost/records.ts';
 import { fromEntries, reduce } from '../../../../common/utils/nativeHost/reducer.ts';
 import type { SessionSettings } from '../../../../common/utils/nativeHost/settings.ts';
-import { emptyView, type NativeView } from '../../../../common/utils/nativeHost/view.ts';
+import { emptyView, isJobLive, type NativeView } from '../../../../common/utils/nativeHost/view.ts';
 import { NativeHostError, type NativeHostState } from '../NativeHost.ts';
 import type { SessionRead, SessionViewRead } from '../sessions/readSession.ts';
 import type { StoredSession } from '../sessions/SessionStore.ts';
@@ -291,7 +291,10 @@ export class Conversation {
     };
   }
 
-  /** Something runs, waits or is on its way: a run, a dialog, a compaction, a command, a start. Never ended idle. */
+  /**
+   * Something runs, waits or is on its way: a run, a dialog, a compaction, a command, a start, a command in the
+   * background (ending the host would stop it). Never ended idle.
+   */
   busy(): boolean {
     return (
       this.starting !== undefined ||
@@ -300,7 +303,8 @@ export class Conversation {
       this.inFlight > 0 ||
       this.running ||
       this.view.dialogs.length > 0 ||
-      this.view.live.compacting
+      this.view.live.compacting ||
+      (this.view.host.jobs ?? []).some(isJobLive)
     );
   }
 
@@ -437,6 +441,12 @@ export class Conversation {
     if (host) {
       this.detach(host);
       this.setStatus({ phase: 'idle' });
+      // Its commands in the background end with it: mu stops them as its session closes.
+      if (this.view.host.jobs) {
+        const { jobs: _jobs, ...rest } = this.view.host;
+        this.view = { ...this.view, host: rest };
+        this.emitReplaced();
+      }
       // A start this end overtook says it when it lets go (ensureHost).
       if (!starting) this.changed();
       await host.dispose();

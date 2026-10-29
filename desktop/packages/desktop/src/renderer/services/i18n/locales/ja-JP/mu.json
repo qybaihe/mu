@@ -1107,6 +1107,18 @@
     },
     "attach": {
       "failed": "{{name}} を添付できませんでした。"
+    },
+    "jobs": {
+      "label": "バックグラウンド",
+      "title": "バックグラウンドのコマンド",
+      "runningFor": "{{time}} 実行中",
+      "stopping": "停止中…",
+      "stoppedAfter": "{{time}} 後に停止",
+      "exited": "{{time}} 後に終了（コード {{code}}）",
+      "lingering": "これが起動したプロセスはまだ動いています",
+      "log": "ログを開く",
+      "stop": "停止",
+      "stopAll": "すべて停止"
     }
   },
   "details": {

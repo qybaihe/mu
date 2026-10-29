@@ -2,7 +2,8 @@
 // The native send box's controls, end to end, in the real app on the native host (on by default): the model chip
 // (a second model, then a thinking level on the model that reasons, each seen by the fake model), the permission pill
 // (a switch from minimal to full access, and mu stops asking), pi's slash commands in the `/` menu, files and images
-// attached (they reach the model's request), ↑ bringing back the last message, and a file mentioned with `@`.
+// attached (they reach the model's request), ↑ bringing back the last message, a file mentioned with `@`, and a
+// command the model starts in the background: the pill beside the send box lists it and stops it.
 // Pictures of the composer's states, light and dark, go to the profile's logs. Run with
 // `node scripts/kyrn/e2e-conversation.mjs --native -- native-composer.spec`.
 //
@@ -250,6 +251,25 @@ test('a file mentioned with @ reaches the model by its full path', async () => {
   await p.getByTestId('native-send').click();
   await replyWith('MENTION-OK');
   expect(requestWith('MENTION-OK')?.lastUser).toContain(join(paths().project, 'notes', 'attach-me.md'));
+  expectNoProblems();
+});
+
+test('a command the model starts in the background shows beside the send box, and stops from there', async () => {
+  test.skip(process.platform === 'win32', 'The background command is a POSIX sleep');
+  const p = page();
+  await send('E2E:BG sleep 600');
+  await replyWith('BG-STARTED');
+  const jobs = p.getByTestId('native-jobs');
+  await expect(jobs).toHaveAttribute('data-count', '1', { timeout: 15_000 });
+  await p.getByTestId('native-jobs-pill').click();
+  const job = p.getByTestId('native-jobs-list').getByTestId('native-job');
+  await expect(job).toHaveAttribute('data-state', 'running');
+  await expect(job).toContainText('e2e-bg');
+  await expect(job).toContainText('sleep 600');
+  await shot('background-jobs');
+  await job.getByTestId('native-job-stop').click();
+  // mu stops it: the pill goes with the last one that ran.
+  await expect(jobs).toHaveCount(0, { timeout: 15_000 });
   expectNoProblems();
 });
 

@@ -1107,6 +1107,18 @@
     },
     "attach": {
       "failed": "Impossible de joindre {{name}}."
+    },
+    "jobs": {
+      "label": "Arrière-plan",
+      "title": "Commandes en arrière-plan",
+      "runningFor": "en cours depuis {{time}}",
+      "stopping": "arrêt en cours…",
+      "stoppedAfter": "arrêtée après {{time}}",
+      "exited": "terminée avec le code {{code}} après {{time}}",
+      "lingering": "Les processus qu'elle a lancés tournent encore",
+      "log": "Ouvrir son journal",
+      "stop": "Arrêter",
+      "stopAll": "Tout arrêter"
     }
   },
   "details": {

@@ -1107,6 +1107,18 @@
     },
     "attach": {
       "failed": "Não foi possível anexar {{name}}."
+    },
+    "jobs": {
+      "label": "Segundo plano",
+      "title": "Comandos em segundo plano",
+      "runningFor": "em execução há {{time}}",
+      "stopping": "parando…",
+      "stoppedAfter": "parado após {{time}}",
+      "exited": "encerrou com código {{code}} após {{time}}",
+      "lingering": "Os processos que ele iniciou ainda estão em execução",
+      "log": "Abrir o log",
+      "stop": "Parar",
+      "stopAll": "Parar todos"
     }
   },
   "details": {

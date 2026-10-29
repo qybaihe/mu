@@ -1107,6 +1107,18 @@
     },
     "attach": {
       "failed": "{{name}} eklenemedi."
+    },
+    "jobs": {
+      "label": "Arka plan",
+      "title": "Arka plan komutları",
+      "runningFor": "{{time}} süredir çalışıyor",
+      "stopping": "durduruluyor…",
+      "stoppedAfter": "{{time}} sonra durduruldu",
+      "exited": "{{time}} sonra {{code}} koduyla çıktı",
+      "lingering": "Başlattığı işlemler hâlâ çalışıyor",
+      "log": "Günlüğünü aç",
+      "stop": "Durdur",
+      "stopAll": "Tümünü durdur"
     }
   },
   "details": {

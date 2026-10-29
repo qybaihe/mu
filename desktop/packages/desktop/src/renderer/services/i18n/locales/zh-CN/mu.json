@@ -1107,6 +1107,18 @@
     },
     "attach": {
       "failed": "无法附加 {{name}}。"
+    },
+    "jobs": {
+      "label": "后台",
+      "title": "后台命令",
+      "runningFor": "已运行 {{time}}",
+      "stopping": "正在停止…",
+      "stoppedAfter": "运行 {{time}} 后已停止",
+      "exited": "运行 {{time}} 后退出，退出码 {{code}}",
+      "lingering": "它启动的进程还在运行",
+      "log": "打开日志",
+      "stop": "停止",
+      "stopAll": "全部停止"
     }
   },
   "details": {

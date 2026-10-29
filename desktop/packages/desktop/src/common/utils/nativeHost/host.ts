@@ -9,7 +9,16 @@
  */
 import type { PresentationFrame } from './presentation.ts';
 import { asList, asNumber, asObject, asText, hasModel, type JsonObject, type PiRecord } from './records.ts';
-import type { NativeView, ViewActivity, ViewHost, ViewNotice, ViewPermission, ViewSession, ViewUsage } from './view.ts';
+import type {
+  NativeView,
+  ViewActivity,
+  ViewHost,
+  ViewJob,
+  ViewNotice,
+  ViewPermission,
+  ViewSession,
+  ViewUsage,
+} from './view.ts';
 
 /** How many lines of activity a view keeps: the oldest go first. */
 export const ACTIVITY_LIMIT = 2000;
@@ -80,6 +89,64 @@ export function addFrame(view: NativeView, frame: PresentationFrame): NativeView
   }
   const at = frame.at ?? clockOf(view);
   return addActivity(view, { kind: frame.kind, payload, at, ...frame.correlation });
+}
+
+/** How many background jobs a view keeps: the oldest that ended go first. */
+export const JOB_LIMIT = 20;
+
+/**
+ * A background job's frame (`background.start`, `background.stop`, `background.exit`), at `at`: a job starts running,
+ * is being stopped, or ended. mu says a job was stopped once its kill is done, after the job's end when it ended: a job
+ * that ended keeps its end, and what it left running (`lingering`) is gone. A stop or an end for a job the view never
+ * saw start is left out.
+ */
+export function takeJob(view: NativeView, kind: string, payload: JsonObject, at: number): NativeView {
+  const id = asText(payload.id);
+  if (!id) return view;
+  const jobs = view.host.jobs ?? [];
+  const known = jobs.find((job) => job.id === id);
+  let next: ViewJob;
+  if (kind === 'background.start') {
+    next = {
+      id,
+      name: asText(payload.name) || id,
+      command: asText(payload.command),
+      ...(asText(payload.cwd) ? { cwd: asText(payload.cwd) } : {}),
+      ...(asText(payload.logPath) ? { logPath: asText(payload.logPath) } : {}),
+      state: 'running',
+      startedAt: at,
+    };
+  } else if (!known) {
+    return view;
+  } else if (kind === 'background.stop') {
+    if (known.state === 'running') next = { ...known, state: 'stopping' };
+    else if (known.state === 'exited' && known.lingering) {
+      const { lingering: _lingering, ...rest } = known;
+      next = rest;
+    } else return view;
+  } else if (kind === 'background.exit') {
+    const exitCode = asNumber(payload.exitCode);
+    const durationMs = asNumber(payload.durationMs);
+    const { exitCode: _code, durationMs: _ms, stoppedBy: _by, lingering: _lingering, ...rest } = known;
+    next = {
+      ...rest,
+      state: 'exited',
+      ...(exitCode !== undefined ? { exitCode } : {}),
+      ...(durationMs !== undefined ? { durationMs } : {}),
+      ...(asText(payload.stoppedBy) ? { stoppedBy: asText(payload.stoppedBy) } : {}),
+      ...(payload.lingering === true ? { lingering: true } : {}),
+    };
+  } else {
+    return view;
+  }
+  const others = jobs.filter((job) => job.id !== id);
+  const kept = [...others, next];
+  // Over the limit: the oldest that ended (and left nothing running) go first.
+  while (kept.length > JOB_LIMIT) {
+    const gone = kept.findIndex((job) => job.state === 'exited' && !job.lingering);
+    kept.splice(gone >= 0 ? gone : 0, 1);
+  }
+  return withHost(view, { jobs: kept });
 }
 
 /** One of pi's events the panel reads (a run's start and end, a compaction), at the latest time the view has seen. */

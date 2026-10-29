@@ -22,7 +22,7 @@ import {
 import { NativeHostError } from '../../../../../../packages/desktop/src/process/services/nativeHost/NativeHost.ts';
 import type { SessionFolders } from '../../../../../../packages/desktop/src/process/services/nativeHost/sessions/folders.ts';
 import { assistant, header, user, writeSession } from '../sessions/sessionFiles.ts';
-import { FakePi } from './fakePi.ts';
+import { FakePi, frame } from './fakePi.ts';
 
 /**
  * The native conversations (process/services/nativeHost/conversations/) on a stand-in pi (fakePi.ts): drafts and their
@@ -323,6 +323,28 @@ describe('native conversations', () => {
     await asked;
     await vi.advanceTimersByTimeAsync(1100);
     expect(w.pi.last.disposed).toBe(true);
+  });
+
+  it('keeps a host while a command it started runs in the background; the jobs end with the host', async () => {
+    vi.useFakeTimers();
+    const w = world({ idleMs: 1000 });
+    const draft = await w.conversations.create({ cwd: w.project });
+    await turn(w, draft.id, 'hello');
+    const id = w.pi.last.session.id;
+    w.pi.last.emit(frame('background.start', { id: 'bg1', name: 'dev', command: 'npm run dev' }));
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(w.pi.last.disposed).toBe(false);
+    w.pi.last.emit(frame('background.exit', { id: 'bg1', exitCode: 0, durationMs: 5000 }));
+    await vi.advanceTimersByTimeAsync(2100);
+    expect(w.pi.last.disposed).toBe(true);
+
+    // Closed while one runs: the view lets go of it with the host.
+    await w.conversations.request(id, { type: 'get_state' });
+    w.pi.last.emit(frame('background.start', { id: 'bg2', name: 'watch', command: 'npm run watch' }));
+    await expect(w.conversations.open(id)).resolves.toMatchObject({ view: { host: { jobs: [{ id: 'bg2' }] } } });
+    await w.conversations.close(id);
+    expect(w.events.replaced.at(-1)?.view.host.jobs).toBeUndefined();
+    expect((await w.conversations.open(id)).view.host.jobs).toBeUndefined();
   });
 
   it('ends a dialog pi stopped waiting on, so an idle host can end', async () => {
