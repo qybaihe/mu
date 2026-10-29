@@ -1092,7 +1092,21 @@
         "untracked": "Untracked",
         "detached": "Detached at {{commit}}",
         "noCommits": "No commits yet",
-        "upstream": "{{ahead}} ahead of {{upstream}}, {{behind}} behind"
+        "upstream": "{{ahead}} ahead of {{upstream}}, {{behind}} behind",
+        "commit": {
+          "message": "Commit message",
+          "placeholder": "Commit message ({{shortcut}} to commit)",
+          "commit": "Commit",
+          "commitAll": "Commit all",
+          "commitAllHint": "Nothing is staged, so every change is staged first, new files included.",
+          "conflicts": "Resolve the merge conflicts before you commit.",
+          "done": "Committed {{commit}}: {{subject}}",
+          "failed": "Git didn't commit. What it said:",
+          "dismiss": "Dismiss",
+          "ask": "Let mu commit",
+          "askHint": "mu splits the changes into commits and writes their messages. It shows you the plan and commits only when you agree."
+        },
+        "actionFailed": "Git couldn't do that: {{reason}}"
       },
       "files": {
         "label": "Files in {{folder}}",

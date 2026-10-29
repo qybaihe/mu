@@ -122,8 +122,8 @@ tells the list, its anchor rail and `MessageText` that the rows come from a host
 | `…/utils/dialogCard.ts`, `errorWords.ts`, `paths.ts`, `nativeClient.ts`                                   | Permission card words from mu's codes; a sentence per error kind; routes and folder names; the client over the bridge (a test hands in its own).                                                                                                                                                                                                                        |
 | `…/pages/guid/hooks/useGuidNativeSend.ts`, `utils/nativeStart.ts`                                         | The home page's send on the native host: `create`, then the conversation opened at once with its first message staged (model, level, `prompt` with images and paths).                                                                                                                                                                                                   |
 | `…/pages/guid/hooks/useNativeFolders.ts`                                                                  | The native conversations' folders for the home page's folder list.                                                                                                                                                                                                                                                                                                      |
-| `…/native/components/NativeSource.tsx`, `…/hooks/useFolderGit.ts`, `…/utils/gitRows.ts`                   | The source tab: the folder's repository in sections with the classic source control's section and row, a row's diff in the preview; when it reads; a change as a classic row.                                                                                                                                                                                           |
-| `common/kyrn/gitBridge.ts`, `process/services/folderGit/`                                                 | The contract and the main process's side: git run in the folder (root, status, one file's diff), read only.                                                                                                                                                                                                                                                             |
+| `…/native/components/source/NativeSource.tsx`, `…/hooks/useFolderGit.ts`, `…/utils/gitRows.ts`            | The source tab: the folder's repository in sections with the classic source control's section and row, a row's diff in the preview; when it reads; a change as a classic row.                                                                                                                                                                                           |
+| `common/kyrn/gitBridge.ts`, `process/services/folderGit/`                                                 | The contract and the main process's side: git run in the folder (root, status, one file's diff; staging, unstaging and a commit when the person asks).                                                                                                                                                                                                                  |
 
 Shared components changed, each only where a native conversation is concerned: `Messages/hooks.ts` (the
 `MessageListRun` context), `MessageList.tsx` (run state and ids from it; native row test ids), `MessageAnchorRail.tsx`
@@ -185,14 +185,23 @@ providers keyed by a folder (`common/kyrn/folderBridge.ts`, answered in `process
   dots only, so the agent still never opens the panel by itself. A toggle on the workspace tabs turns following off
   for every conversation (kept with the panel's memory, `follow` in `mu-work-panel`); it is on by default. An app
   conversation follows the same way when its stream names the edited file (an ACP call's location or diff path).
-- The source tab (`native/components/NativeSource.tsx`): the classic source control is the backend's, by project entry,
+- The source tab (`native/components/source/NativeSource.tsx`): the classic source control is the backend's, by project entry,
   so the main process runs git itself in the folder (`process/services/folderGit/`): `rev-parse --show-toplevel`, then
   `status --porcelain=v2 -z --branch --untracked-files=all` (at most 1000 changes, the rest counted), and for a
   clicked row `diff` of that one file (`--cached` for a staged row, against `/dev/null` for a new file, against `HEAD`
   for a conflict; a binary file marked; over 256 KB cut at a line's end, the preview's last line says so). `execFile`
   with argument arrays, a timeout, `GIT_OPTIONAL_LOCKS=0` (a status never takes the index lock the model's git needs),
   `core.quotepath=false`, literal pathspecs, no fsmonitor, text conversion or external diff; the app's `GIT_*`
-  variables are left out. Read only: no stage, unstage, discard or commit. The rows are the classic `ScmSection` and
+  variables are left out. What it writes is only what the person asks for there: a row's button stages its file
+  (`add -A -- <path>`, a deletion included) or takes it out of the index (`reset -q -- <path>`, which also works
+  before the first commit; a rename takes its old path with it), a section's button does it for all of its files
+  (100 paths per git run), and the box at the top (`NativeCommitBox.tsx`) commits what is staged with the message,
+  or, with nothing staged, every change first (`add -A`). A commit runs as the person's own git: their name, signing
+  and hooks, with only the variables that point at another repository left out and no prompt (`asPerson`; up to
+  5 minutes for hooks). When git refuses, the end of what it and the hooks wrote shows under the box and the message
+  stays; a merge with conflicts commits nothing. "Let mu commit" sends mu's `/commit` to the conversation (mu
+  splits the change into commits, shows the plan and commits only when the person agrees). Nothing is discarded
+  here, nor pushed: the conversation's checkpoints are where files go back. The rows are the classic `ScmSection` and
   `ScmResourceRow` (letters, colours, `old → new` for a rename), unchanged; a click opens the diff with the classic
   tab's `openPreview(patch, 'diff')`. It reads when the tab comes into view, after each run, on the window's focus and
   on its refresh button: one read at a time, the ones it starts itself at least 2 s apart, never polled. The tab is
@@ -562,8 +571,8 @@ Elsewhere: `tests/unit/renderer/hooks/guidPage.dom.test.tsx` (the classic send w
 - **The context ring with no host**: the context window is the model's, which only pi knows; a conversation read
   from its file shows the ring once a host has run.
 - **Close and remove**: the bridge has them; a remove moves the session file to the bin and wants a confirmation.
-- **Source control actions**: the source tab is read only (no stage, unstage, discard or commit, no tree view, no
-  history or graph); a repository nested inside the folder's own is not looked for. The files tab is a plain tree: no search, no rename or new file, no drag and drop, no "add to chat"; its dot
+- **Source control actions**: the source tab stages, unstages and commits, but doesn't discard, amend or push, and
+  has no tree view, history or graph; a repository nested inside the folder's own is not looked for. The files tab is a plain tree: no search, no rename or new file, no drag and drop, no "add to chat"; its dot
   comes from the model's own `write` and `edit` calls, not from a file a shell command changed.
 - **Pin** is kept in the window's storage (`mu.native.pinned`, a list of session ids), not with the session: another
   window shares it, the command line and a new install do not. A conversation with no session file yet cannot be
@@ -591,7 +600,7 @@ with a file's view compare `durable(view)`.
   their session files: the sidebar then needs one list, and the backend's mu rows need a route to the native page (by
   session file or id), with rename, close and remove.
 - **The full explorer by folder**: the backend serves it by project; a native conversation has only its `cwd` (the
-  files tab, the lessons and, read only, source control read by it now).
+  files tab, the lessons and source control by it now).
 - **Large sessions.** The page maps the whole view to rows (unchanged messages reuse their rows). Views near the IPC
   cap need cut tool outputs fetched when shown, and a list that does not hold every row.
 - **The home page**: done (its send creates a native conversation; its folder list takes in the native folders).
@@ -709,7 +718,7 @@ while a second conversation is made in the same window and answered; the second'
 sidebar lists both with a host's green dot; the first, opened again from its row, has streamed on meanwhile (well past
 its third chunk), shows none of the second's messages, and runs to its last chunk; the second is as it was.
 
-`tests/e2e/mu-conversation/native-source.spec.mjs` (`--native -- native-source.spec`): seven steps.
+`tests/e2e/mu-conversation/native-source.spec.mjs` (`--native -- native-source.spec`): eight steps.
 The project is made a repository with one commit by the test's own git (name and address on the command line, the
 profile's home, no system config). The app takes its PATH from the login shell (`fix-path`), which in the profile's
 home is the system's, where a Mac has the Xcode stub first; so the profile's home gets a `.zprofile` and a
@@ -718,7 +727,9 @@ home is the system's, where a Mac has the Xcode stub first; so the profile's hom
 the tab in view: the row shows under 变更 with nothing clicked (the run's end read the repository again), and a click
 opens its diff in 预览 (the removed and the added lines). A comment on the added line, written in the diff, reaches the
 fake model's request with the next message (where, the words, the line in a `diff` fence) and leaves the diff once
-sent. A file the test stages shows under 已暂存的变更 after the refresh button. Dark theme: the list and the diff. Last,
+sent. A file the test stages shows under 已暂存的变更 after the refresh button; its row's buttons take it out of the index
+and back, and the commit box commits it with a message, as the person the profile's `.gitconfig` names (README.md
+stays a change). Dark theme: the list and the diff. Last,
 the rewind button under the README message: mu's question asks what goes back, and with files and conversation
 README.md is as committed, the message leaves the transcript and is in the send box again. Skipped without a git that
 runs, and on Windows. Its first run found

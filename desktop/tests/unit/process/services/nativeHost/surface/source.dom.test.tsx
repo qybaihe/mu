@@ -4,11 +4,13 @@ import { createInstance } from 'i18next';
 import { I18nextProvider } from 'react-i18next';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FolderGitStatus, GitChange } from '@/common/kyrn/gitBridge';
-import NativeSource from '@/renderer/pages/native/components/NativeSource';
+import NativeSource from '@/renderer/pages/native/components/source/NativeSource';
 import { FOLDER_GIT_GAP_MS, forgetFolderGit } from '@/renderer/pages/native/hooks/useFolderGit';
 import common from '@/renderer/services/i18n/locales/en-US/common.json';
 import conversation from '@/renderer/services/i18n/locales/en-US/conversation.json';
 import mu from '@/renderer/services/i18n/locales/en-US/mu.json';
+import { emitter } from '@/renderer/utils/emitter';
+import { Message } from '@arco-design/web-react';
 
 /**
  * The source tab beside a native conversation (docs/native-host-ui.md): the folder's repository as the main process
@@ -24,6 +26,13 @@ const wires = vi.hoisted(() => ({
   statusCalls: [] as string[],
   diffs: {} as Record<string, unknown>,
   diffCalls: [] as unknown[],
+  /** Stage, unstage and commit requests, and how each is answered (by default: done, nothing to say). */
+  acts: [] as Array<[string, unknown]>,
+  answer: {} as Record<string, unknown>,
+  act(kind: string, request: unknown): unknown {
+    this.acts.push([kind, request]);
+    return this.answer[kind] ?? { ok: true, data: undefined };
+  },
   opened: [] as Array<{ content: string; type: string; meta: unknown }>,
 }));
 
@@ -41,8 +50,12 @@ vi.mock('@/common/kyrn/gitBridge', () => ({
         return wires.diffs[request.path] ?? { ok: false, error: 'git diff ended with 128', code: 'unknown' };
       },
     },
+    stage: { invoke: async (request: unknown) => wires.act('stage', request) },
+    unstage: { invoke: async (request: unknown) => wires.act('unstage', request) },
+    commit: { invoke: async (request: unknown) => wires.act('commit', request) },
   },
 }));
+vi.mock('@/renderer/utils/platform', () => ({ isMacOS: () => true, openExternalUrl: vi.fn() }));
 vi.mock('@/common/kyrn/bridge', () => ({
   unwrap: (result: Answer) => {
     if (!result.ok) throw new Error(result.error);
@@ -70,6 +83,8 @@ beforeEach(() => {
   wires.statusCalls = [];
   wires.diffs = {};
   wires.diffCalls = [];
+  wires.acts = [];
+  wires.answer = {};
   wires.opened = [];
 });
 afterEach(() => {
@@ -95,10 +110,15 @@ const settle = () =>
     for (let turn = 0; turn < 5; turn += 1) await Promise.resolve();
   });
 
-const show = (props: { visible?: boolean; refresh?: string } = {}) => {
-  const view = (next: { visible?: boolean; refresh?: string }) => (
+const show = (props: { visible?: boolean; refresh?: string; conversationId?: string } = {}) => {
+  const view = (next: { visible?: boolean; refresh?: string; conversationId?: string }) => (
     <I18nextProvider i18n={i18n}>
-      <NativeSource cwd='/work/app' visible={next.visible ?? true} refresh={next.refresh ?? 'r0'} />
+      <NativeSource
+        cwd='/work/app'
+        visible={next.visible ?? true}
+        refresh={next.refresh ?? 'r0'}
+        conversationId={next.conversationId ?? props.conversationId}
+      />
     </I18nextProvider>
   );
   const rendered = render(view(props));
@@ -106,6 +126,8 @@ const show = (props: { visible?: boolean; refresh?: string } = {}) => {
 };
 
 const tab = () => screen.getByTestId('native-source');
+/** A file's row itself (it holds its stage or unstage button too). */
+const rowButton = (row: Element | undefined): HTMLElement => row?.querySelector('[data-scm-resource]') as HTMLElement;
 const note = () => screen.getByTestId('native-source-note');
 const rows = () =>
   screen
@@ -195,8 +217,14 @@ describe('a repository with changes', () => {
     expect(row('gone.txt', 'unstaged')).toHaveTextContent(conversation.explorer.scm.badge.deleted);
     expect(row('b2.txt', 'staged')).toHaveTextContent('b.txt → b2.txt');
     expect(row('merge.txt', 'conflicted')).toHaveTextContent(conversation.explorer.scm.badge.conflicted);
-    // Read only: no stage, unstage or discard.
-    expect(tab().querySelectorAll('[data-scm-action]')).toHaveLength(0);
+    // A row stages or unstages its file; a conflict has no button, and nothing is ever discarded here.
+    const actions = (element: HTMLElement) =>
+      [...element.querySelectorAll<HTMLElement>('[data-scm-action]')].map((button) => button.dataset.scmAction);
+    expect(actions(row('notes/hello.txt', 'untracked'))).toEqual(['stage']);
+    expect(actions(row('README.md', 'unstaged'))).toEqual(['stage']);
+    expect(actions(row('a.txt', 'staged'))).toEqual(['unstage']);
+    expect(actions(row('merge.txt', 'conflicted'))).toEqual([]);
+    expect(tab().querySelectorAll('[data-scm-action="discard"]')).toHaveLength(0);
   });
 
   it('opens a row’s diff in the preview, for the side the row is on', async () => {
@@ -208,7 +236,7 @@ describe('a repository with changes', () => {
     show();
     await settle();
     const readme = screen.getAllByTestId('native-source-file').find((element) => element.dataset.path === 'README.md');
-    fireEvent.click(within(readme as HTMLElement).getByRole('button'));
+    fireEvent.click(rowButton(readme));
     await settle();
     expect(wires.diffCalls).toEqual([{ cwd: '/work/app', path: 'README.md', area: 'unstaged' }]);
     expect(wires.opened).toEqual([
@@ -218,11 +246,11 @@ describe('a repository with changes', () => {
         meta: { file_name: 'README.md', title: 'README.md' },
       },
     ]);
-    expect(within(readme as HTMLElement).getByRole('button')).toHaveAttribute('aria-current', 'true');
+    expect(rowButton(readme)).toHaveAttribute('aria-current', 'true');
 
     // A rename asks with its old path.
     const renamed = screen.getAllByTestId('native-source-file').find((element) => element.dataset.path === 'b2.txt');
-    fireEvent.click(within(renamed as HTMLElement).getByRole('button'));
+    fireEvent.click(rowButton(renamed));
     await settle();
     expect(wires.diffCalls.at(-1)).toEqual({ cwd: '/work/app', path: 'b2.txt', area: 'staged', from: 'b.txt' });
   });
@@ -244,7 +272,7 @@ describe('a repository with changes', () => {
     await settle();
     const click = async (path: string) => {
       const row = screen.getAllByTestId('native-source-file').find((element) => element.dataset.path === path);
-      fireEvent.click(within(row as HTMLElement).getByRole('button'));
+      fireEvent.click(rowButton(row));
       await settle();
     };
     await click('image.png');
@@ -383,5 +411,149 @@ describe('when the tab comes back', () => {
     expect(tab()).toHaveAttribute('data-state', 'loading');
     await settle();
     expect(tab()).toHaveAttribute('data-state', 'not-repository');
+  });
+});
+
+describe('staging from the tab', () => {
+  const changes: GitChange[] = [
+    { path: 'b2.txt', from: 'b.txt', area: 'staged', kind: 'renamed' },
+    { path: 'README.md', area: 'unstaged', kind: 'modified' },
+    { path: 'notes/hello.txt', area: 'untracked', kind: 'untracked' },
+    { path: 'notes/more.txt', area: 'untracked', kind: 'untracked' },
+  ];
+  const file = (path: string) =>
+    screen.getAllByTestId('native-source-file').find((element) => element.dataset.path === path) as HTMLElement;
+  const section = (area: string) =>
+    screen.getAllByTestId('native-source-group').find((element) => element.dataset.group === area) as HTMLElement;
+
+  it('stages a file from its row and a section’s files at once, unstages a rename with its old name, then reads again', async () => {
+    wires.answers = [repository(changes)];
+    show();
+    await settle();
+    const reads = wires.statusCalls.length;
+
+    fireEvent.click(file('README.md').querySelector('[data-scm-action="stage"]') as HTMLElement);
+    await settle();
+    fireEvent.click(within(section('untracked')).getByTestId('native-source-section-action'));
+    await settle();
+    fireEvent.click(file('b2.txt').querySelector('[data-scm-action="unstage"]') as HTMLElement);
+    await settle();
+    expect(wires.acts).toEqual([
+      ['stage', { cwd: '/work/app', paths: ['README.md'] }],
+      ['stage', { cwd: '/work/app', paths: ['notes/hello.txt', 'notes/more.txt'] }],
+      ['unstage', { cwd: '/work/app', paths: ['b2.txt', 'b.txt'] }],
+    ]);
+    expect(within(section('staged')).getByTestId('native-source-section-action')).toHaveAttribute(
+      'data-action',
+      'unstage'
+    );
+    // After each, the repository is read again.
+    expect(wires.statusCalls.length).toBe(reads + 3);
+  });
+
+  it('says what git said when it refuses', async () => {
+    wires.answers = [repository(changes)];
+    wires.answer.stage = { ok: false, error: 'fatal: Unable to create index.lock: File exists.' };
+    const said = vi.spyOn(Message, 'error').mockImplementation(() => () => {});
+    show();
+    await settle();
+    fireEvent.click(file('README.md').querySelector('[data-scm-action="stage"]') as HTMLElement);
+    await settle();
+    expect(said).toHaveBeenCalledWith(
+      mu.native.panel.source.actionFailed.replace('{{reason}}', 'fatal: Unable to create index.lock: File exists.')
+    );
+    said.mockRestore();
+  });
+});
+
+describe('the commit box', () => {
+  const staged: GitChange = { path: 'a.txt', area: 'staged', kind: 'modified' };
+  const message = () => screen.getByTestId('native-commit-message');
+  const commit = () => screen.getByTestId('native-commit');
+
+  it('commits what is staged with the message, empties the box and says the commit', async () => {
+    wires.answers = [repository([staged, changed('b.txt')])];
+    wires.answer.commit = { ok: true, data: { committed: true, commit: 'def5678', subject: 'Fix the parser' } };
+    const said = vi.spyOn(Message, 'success').mockImplementation(() => () => {});
+    show();
+    await settle();
+    expect(commit()).toHaveTextContent(mu.native.panel.source.commit.commit);
+    expect(commit()).toBeDisabled();
+    fireEvent.change(message(), { target: { value: 'Fix the parser\n\nIt took dashes for options.' } });
+    expect(commit()).toBeEnabled();
+    const reads = wires.statusCalls.length;
+    fireEvent.click(commit());
+    await settle();
+    expect(wires.acts).toEqual([
+      ['commit', { cwd: '/work/app', message: 'Fix the parser\n\nIt took dashes for options.' }],
+    ]);
+    expect(message()).toHaveValue('');
+    expect(said).toHaveBeenCalledWith('Committed def5678: Fix the parser');
+    said.mockRestore();
+    expect(wires.statusCalls.length).toBe(reads + 1);
+  });
+
+  it('commits every change when nothing is staged, and with ⌘Enter', async () => {
+    wires.answers = [repository([changed('a.txt'), { path: 'new.txt', area: 'untracked', kind: 'untracked' }])];
+    show();
+    await settle();
+    expect(commit()).toHaveTextContent(mu.native.panel.source.commit.commitAll);
+    expect(commit()).toHaveAttribute('data-all', 'true');
+    fireEvent.change(message(), { target: { value: 'Everything' } });
+    fireEvent.keyDown(message(), { key: 'Enter', metaKey: true });
+    await settle();
+    expect(wires.acts).toEqual([['commit', { cwd: '/work/app', message: 'Everything', all: true }]]);
+  });
+
+  it('keeps the message and shows what git and the hooks wrote when git does not commit', async () => {
+    wires.answers = [repository([staged])];
+    wires.answer.commit = {
+      ok: true,
+      data: { committed: false, output: 'eslint: 2 problems\nhusky - pre-commit failed' },
+    };
+    show();
+    await settle();
+    fireEvent.change(message(), { target: { value: 'Lint me' } });
+    fireEvent.click(commit());
+    await settle();
+    const refusal = screen.getByTestId('native-commit-refusal');
+    expect(refusal).toHaveTextContent(mu.native.panel.source.commit.failed);
+    expect(refusal).toHaveTextContent('husky - pre-commit failed');
+    expect(message()).toHaveValue('Lint me');
+    fireEvent.click(within(refusal).getByRole('button', { name: mu.native.panel.source.commit.dismiss }));
+    expect(screen.queryByTestId('native-commit-refusal')).toBeNull();
+  });
+
+  it('commits nothing while a merge has conflicts', async () => {
+    wires.answers = [repository([staged, { path: 'm.txt', area: 'conflicted', kind: 'conflicted' }])];
+    show();
+    await settle();
+    fireEvent.change(message(), { target: { value: 'Merge' } });
+    expect(commit()).toBeDisabled();
+    expect(screen.getByTestId('native-commit-blocked')).toHaveTextContent(mu.native.panel.source.commit.conflicts);
+  });
+
+  it('asks mu to commit in the conversation beside the tab, and is not there with no changes', async () => {
+    const sent = vi.spyOn(emitter, 'emit');
+    wires.answers = [repository([staged])];
+    show({ conversationId: 'c1' });
+    await settle();
+    fireEvent.click(screen.getByTestId('native-commit-ask'));
+    expect(sent).toHaveBeenCalledWith('sendbox.command', '/commit', 'c1');
+    sent.mockRestore();
+    cleanup();
+
+    // No conversation to send it to: no button. No changes: no box.
+    forgetFolderGit();
+    wires.answers = [repository([staged])];
+    show();
+    await settle();
+    expect(screen.queryByTestId('native-commit-ask')).toBeNull();
+    cleanup();
+    forgetFolderGit();
+    wires.answers = [repository([])];
+    show({ conversationId: 'c1' });
+    await settle();
+    expect(screen.queryByTestId('native-commit-box')).toBeNull();
   });
 });

@@ -1092,7 +1092,21 @@
         "untracked": "Non suivis",
         "detached": "Détaché sur {{commit}}",
         "noCommits": "Aucun commit pour l’instant",
-        "upstream": "{{ahead}} en avance sur {{upstream}}, {{behind}} en retard"
+        "upstream": "{{ahead}} en avance sur {{upstream}}, {{behind}} en retard",
+        "commit": {
+          "message": "Message du commit",
+          "placeholder": "Message du commit ({{shortcut}} pour valider)",
+          "commit": "Valider",
+          "commitAll": "Tout valider",
+          "commitAllHint": "Rien n'est indexé : toutes les modifications sont d'abord indexées, nouveaux fichiers compris.",
+          "conflicts": "Résolvez les conflits de fusion avant de valider.",
+          "done": "{{commit}} validé : {{subject}}",
+          "failed": "Git n'a pas validé. Sa sortie :",
+          "dismiss": "Fermer",
+          "ask": "Laisser mu valider",
+          "askHint": "mu répartit les modifications en commits et rédige leurs messages. Il vous montre le plan et ne valide que si vous êtes d'accord."
+        },
+        "actionFailed": "Git n'a pas pu le faire : {{reason}}"
       },
       "files": {
         "label": "Fichiers de {{folder}}",

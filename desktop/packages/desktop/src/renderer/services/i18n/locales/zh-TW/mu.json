@@ -1092,7 +1092,21 @@
         "untracked": "未追蹤",
         "detached": "分離於 {{commit}}",
         "noCommits": "尚無提交",
-        "upstream": "領先 {{upstream}} {{ahead}} 個提交，落後 {{behind}} 個"
+        "upstream": "領先 {{upstream}} {{ahead}} 個提交，落後 {{behind}} 個",
+        "commit": {
+          "message": "提交說明",
+          "placeholder": "提交說明（{{shortcut}} 提交）",
+          "commit": "提交",
+          "commitAll": "全部提交",
+          "commitAllHint": "還沒有暫存任何變更，所以會先暫存所有變更（包括新檔案），再提交。",
+          "conflicts": "先解決合併衝突，再提交。",
+          "done": "已提交 {{commit}}：{{subject}}",
+          "failed": "Git 沒有提交。它的輸出：",
+          "dismiss": "關閉",
+          "ask": "讓 mu 提交",
+          "askHint": "mu 會把變更拆成幾個提交並寫好說明，先給你看計畫，你同意才提交。"
+        },
+        "actionFailed": "Git 沒能完成：{{reason}}"
       },
       "files": {
         "label": "{{folder}} 中的檔案",
