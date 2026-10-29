@@ -15,14 +15,14 @@ mu can run end to end on [Nebius Token Factory](https://tokenfactory.nebius.com)
 npx -y mu-agent@hackathon demo
 ```
 
-`mu demo` (mu-agent 0.2.14, on npm under the tag `hackathon`) replays a real session recorded with mu: Nemotron 3 Super fixing a failing test on Token Factory, where a comment in the code tells AI agents to run a command. Nemotron 3 Ultra approves the steps the task needs and sends that one back; the replay shows each command, each verdict and its latency, and what the run cost. It needs no key and no network, and calls no model. `npx -y mu-agent@hackathon demo tavily` replays a session that searched the web through Tavily, with the judge screening what came back before the agent read it, and `--list` names the rest; `mu replay` replays one of your own sessions the same way.
+`mu demo` (in the build of this branch, on npm under the tag `hackathon`) replays a real session recorded with mu: Nemotron 3 Super fixing a failing test on Token Factory, where a comment in the code tells AI agents to run a command. Nemotron 3 Ultra approves the steps the task needs and sends that one back; the replay shows each command, each verdict and its latency, and what the run cost. It needs no key and no network, and calls no model. `npx -y mu-agent@hackathon demo tavily` replays a session that searched the web through Tavily, with the judge screening what came back before the agent read it, and `--list` names the rest; `mu replay` replays one of your own sessions the same way.
 
 ## Set up
 
-Install mu (Node.js 22.19 or newer). Token Factory and the Nemotron judges are in the npm package from mu-agent 0.2.9:
+Install mu (Node.js 22.19 or newer). Token Factory and the Nemotron judges are in the npm package from mu-agent 0.2.9; the build of this branch is on npm under the tag `hackathon`:
 
 ```bash
-npm i -g mu-agent
+npm i -g mu-agent@hackathon
 ```
 
 The hackathon test build, built and checked by CI before that release, still works too:
@@ -34,7 +34,7 @@ npm i -g https://github.com/qybaihe/mu/releases/download/nebius-hackathon-1/mu-a
 Or run mu from source:
 
 ```bash
-git clone https://github.com/qybaihe/mu && cd mu
+git clone -b nebius-hackathon https://github.com/qybaihe/mu && cd mu
 npm ci && npm run generate:models   # the model catalog is generated, not committed
 ./kyrn/bin/mu setup                 # then ./kyrn/bin/mu wherever `mu` appears below
 ```
@@ -161,4 +161,4 @@ On test the 4B judge is ahead of Ultra by 13.6 on real requests (paired interval
 
 - **A cascade did not pay.** With Ultra behind the 4B judge for the questions it was unsure of (about a fifth), dev looked neutral (63.1 real, 44.1 constructed) but real test requests scored 20.0, with a 95% interval from −74.6 to 69.7 (constructed: 55.7). The interval is that wide because each mistake is weighted by its cost and a handful of costly ones on rare decisions dominate: Ultra's confident answers in places such as letting a tool's output into the context (2 wrong in 520) or keeping a memory cost more than the 4B judge's doubt, which falls back to mu's default. So the 4B judge is recommended on its own.
 - **Hand-written hard cases.** On 112 development requests written by mu's author, hard by design, the 4B judge is clearly weaker (19.6 against Ultra's 52.3).
-- **A GPU.** The 4B judge's numbers come from a CUDA GPU; the Apple silicon backend is experimental.
+- **A GPU, or a Mac in 8-bit.** The 4B judge's scores come from a CUDA GPU (an A100). Converted to MLX 8-bit on a 16 GB Mac (M6), it gave the same answer as on CUDA to 98.7% of 1,420 questions (400 random dev requests; yes/no questions 99.6%), at 0.41 s per request at the median, and it judged the third arm of [bench/judge-ab](../bench/judge-ab) there; the scores themselves were not measured again on the Mac.

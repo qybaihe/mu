@@ -22,10 +22,10 @@
 >
 > ```bash
 > npx -y mu-agent@hackathon demo   # no key: a real run replayed, with every verdict of the judge
-> npm i -g mu-agent && mu setup   # with a Token Factory key: choose Nemotron 3 Ultra as the judge
+> npm i -g mu-agent@hackathon && mu setup   # with a Token Factory key: choose Nemotron 3 Ultra as the judge
 > ```
 >
-> What we built, how it measures up and where it falls short: [docs/nebius.md](docs/nebius.md). The same 8 tasks with and without the judge: [bench/judge-ab](bench/judge-ab).
+> What we built, how it measures up and where it falls short: [docs/nebius.md](docs/nebius.md). The same 8 tasks with and without the judge: [bench/judge-ab](bench/judge-ab). How to check each number: [REPRODUCE.md](REPRODUCE.md).
 
 <p align="center">
   <picture>
