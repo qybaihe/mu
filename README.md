@@ -18,7 +18,7 @@
 </p>
 
 > [!NOTE]
-> **Nebius x NVIDIA Global AI Hackathon.** mu runs end to end on NVIDIA Nemotron with Nebius Token Factory: Nemotron 3 Super writes the code and Nemotron 3 Ultra judges each step. We also fine-tuned Nemotron 3 Nano 4B to be the judge on your own GPU ([mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron), [weights](https://huggingface.co/qybaihe/mu-judge-nemotron-nano-4b)): on 3,244 held-out real decisions it removed 68% of the cost of mu's no-judge mistakes, against 55% for Ultra.
+> **Nebius x NVIDIA Global AI Hackathon.** mu runs end to end on NVIDIA Nemotron with Nebius Token Factory: Nemotron 3 Super writes the code (from mu-agent 0.2.16, Nemotron 3.5 Super VL: Token Factory retires Super on 2026-11-09) and Nemotron 3 Ultra judges each step. We also fine-tuned Nemotron 3 Nano 4B to be the judge on your own GPU ([mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron), [weights](https://huggingface.co/qybaihe/mu-judge-nemotron-nano-4b)): on 3,244 held-out real decisions it removed 68% of the cost of mu's no-judge mistakes, against 55% for Ultra.
 >
 > ```bash
 > npx -y mu-agent@hackathon demo   # no key: a real run replayed, with every verdict of the judge
@@ -62,7 +62,7 @@ mu setup            # connect a model
 mu                  # start a session in the current directory
 ```
 
-**On Nebius Token Factory with NVIDIA Nemotron.** Paste a Token Factory key into `mu setup`: mu starts on Nemotron 3 Super and offers Nemotron 3 Ultra as the judge. This is in the npm package from mu-agent 0.2.9; [docs/nebius.md](docs/nebius.md) has the steps, the measurements behind the choice of models, and a Nemotron 3 Nano 4B judge, fine-tuned for mu, that runs on your machine.
+**On Nebius Token Factory with NVIDIA Nemotron.** Paste a Token Factory key into `mu setup`: mu starts on Nemotron 3.5 Super VL (Nemotron 3 Super before mu-agent 0.2.16) and offers Nemotron 3 Ultra as the judge. This is in the npm package from mu-agent 0.2.9; [docs/nebius.md](docs/nebius.md) has the steps, the measurements behind the choice of models, and a Nemotron 3 Nano 4B judge, fine-tuned for mu, that runs on your machine.
 
 You don't need a judge key to start: until you set one, the free Jev on OpenCode Zen answers. Out of the box, 34 of the 40 decision points act on their verdicts, and every verdict is logged (`/status`, `mu ledger` or the app's Judge tab). To record what the judge would do without acting on it, put `{"modes": {"default": "shadow"}}` in `~/.mu/agent/mu.json`. More in [Getting started](docs/getting-started.md).
 
@@ -239,7 +239,7 @@ Decision accuracy is a separate, plainer measure: the share of checks a model ge
 
 With one [Token Factory](https://tokenfactory.nebius.com) key, `mu setup` puts both of mu's model roles on NVIDIA Nemotron:
 
-- **Nemotron 3 Super writes, runs and tests the code** through mu's tools. mu's thinking levels map onto the `reasoning_effort` values Super accepts.
+- **Nemotron 3.5 Super VL writes, runs and tests the code** through mu's tools (Nemotron 3 Super before mu-agent 0.2.16: Token Factory retires Nemotron 3 Super from Serverless on 2026-11-09 and names Nemotron 3.5 Super VL its replacement). mu's thinking levels map onto the `reasoning_effort` values it accepts.
 - **Nemotron 3 Ultra is the judge** (`nemotron`). `nemotron-think` asks it with thinking on; a few lines of config route the four decision points where that measurably decides better to it.
 - **A Nemotron 3 Nano 4B fine-tuned for mu's judge runs on your own GPU** (`nemotron-local`, from [mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron); weights on [Hugging Face](https://huggingface.co/qybaihe/mu-judge-nemotron-nano-4b)), approving a command in about 0.1 s.
 

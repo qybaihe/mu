@@ -18,7 +18,7 @@ Each one replays a session recorded with mu: the request, each tool call and wha
 ```bash
 npm i -g mu-agent@hackathon
 mu setup        # paste the key; choose "Nemotron 3 Ultra" as the judge
-mu              # in any project: Nemotron 3 Super writes the code, Ultra judges, in Judge mode
+mu              # in any project: Nemotron 3.5 Super VL writes the code, Ultra judges, in Judge mode
 mu ledger       # afterwards: every verdict, what it was about, and its latency
 ```
 

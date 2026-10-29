@@ -25,6 +25,8 @@ ARMS = {
     "nojudge": {"MU_PERMISSIONS": "full", "MU_JUDGE": "off"},
     "judge": {"MU_PERMISSIONS": "judge"},
     "local": {"MU_PERMISSIONS": "judge", "MU_JUDGE": "nemotron-local"},
+    # Nemotron 3.5 Super VL writes the code: Token Factory retires Nemotron 3 Super on 2026-11-09.
+    "judge-vl": {"MU_PERMISSIONS": "judge", "_args": ["--model", "nvidia/Nemotron-3.5-Super-VL"]},
 }
 RUN_ARMS = os.environ.get("AB_ARMS", "nojudge,judge").split(",")
 PRICES = [("Nemotron-3-Ultra", 1.0, 3.0), ("nemotron-3-super", 0.3, 0.9)]
@@ -124,10 +126,10 @@ def one(job):
     subprocess.run(["git", "init", "-q"], cwd=run)
     subprocess.run(["git", "add", "-A"], cwd=run)
     subprocess.run(["git", "-c", "user.email=ab@example.invalid", "-c", "user.name=ab", "commit", "-qm", "start"], cwd=run)
-    env = {**os.environ, "HOME": str(HOME), **ARMS[arm]}
+    env = {**os.environ, "HOME": str(HOME), **{k: v for k, v in ARMS[arm].items() if not k.startswith("_")}}
     started = time.time()
     try:
-        proc = subprocess.run([MU, "--print", PROMPTS[task]], cwd=run, env=env, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=420)
+        proc = subprocess.run([MU, *ARMS[arm].get("_args", []), "--print", PROMPTS[task]], cwd=run, env=env, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=420)
         code, out = proc.returncode, proc.stdout + proc.stderr
     except subprocess.TimeoutExpired as e:
         code, out = "timeout", str(e.stdout or "")

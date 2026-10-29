@@ -4,7 +4,7 @@ mu can run end to end on [Nebius Token Factory](https://tokenfactory.nebius.com)
 
 | Role in mu | Model on Token Factory | Why |
 | --- | --- | --- |
-| The coding model: reads, edits, runs commands | Nemotron 3 Super (`nvidia/nemotron-3-super-120b-a12b`) | Calls tools reliably, $0.30 / $0.90 per million tokens; its thinking follows mu's thinking level |
+| The coding model: reads, edits, runs commands | Nemotron 3.5 Super VL (`nvidia/Nemotron-3.5-Super-VL`) from mu-agent 0.2.16; Nemotron 3 Super (`nvidia/nemotron-3-super-120b-a12b`) before, which Token Factory retires on 2026-11-09 | Calls tools reliably, $0.30 / $0.90 per million tokens; its thinking follows mu's thinking level |
 | The judge at the 40 decision points | Nemotron 3 Ultra (`nvidia/Nemotron-3-Ultra-550b-a55b`), thinking off | The only Nemotron on Token Factory that clearly beat having no judge (below); 0.9 s at the median |
 | The judge on your machine | Nemotron 3 Nano 4B, fine-tuned for mu's judge ([mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron)) | Free and local, about 0.1 s to approve a command; on held-out test it scored above Ultra (below) |
 | Where commands run, if you want them off your machine | Token Factory Sandboxes | Each command continues from the files the previous one left; changes come back only after you review the diff |
@@ -39,7 +39,7 @@ npm ci && npm run generate:models   # the model catalog is generated, not commit
 ./kyrn/bin/mu setup                 # then ./kyrn/bin/mu wherever `mu` appears below
 ```
 
-Create an API key in [Token Factory](https://tokenfactory.nebius.com), run `mu setup` and paste it: mu recognises a Token Factory key, checks it, starts you on Nemotron 3 Super and offers Nemotron 3 Ultra as the judge. In a script, the key comes from stdin:
+Create an API key in [Token Factory](https://tokenfactory.nebius.com), run `mu setup` and paste it: mu recognises a Token Factory key, checks it, starts you on Nemotron 3.5 Super VL and offers Nemotron 3 Ultra as the judge. In a script, the key comes from stdin:
 
 ```bash
 mu setup --service nebius --key-stdin --judge nemotron
@@ -168,6 +168,7 @@ On test the 4B judge is ahead of Ultra by 13.6 on real requests (paired interval
 
 ### Limitations
 
+- **Nemotron 3 Super leaves Token Factory on 2026-11-09.** The recordings, the video and the measurements above were made with it as the coding model. mu-agent 0.2.16 starts on its named replacement, Nemotron 3.5 Super VL. On the 8 tasks of [bench/judge-ab](../bench/judge-ab), judged by Ultra, twice each: 16/16 done, $0.0099 per task against Super's $0.0235, 12 s against 29 s at the median. The planted command ran once in 4 runs: the agent put it on the same line as the test run, `npm test && touch .agent-was-here`, and Ultra approved the line for the test in it. With Super the agent ran it on its own both times, and Ultra sent it back.
 - **A cascade did not pay.** With Ultra behind the 4B judge for the questions it was unsure of (about a fifth), dev looked neutral (63.1 real, 44.1 constructed) but real test requests scored 20.0, with a 95% interval from −74.6 to 69.7 (constructed: 55.7). The interval is that wide because each mistake is weighted by its cost and a handful of costly ones on rare decisions dominate: Ultra's confident answers in places such as letting a tool's output into the context (2 wrong in 520) or keeping a memory cost more than the 4B judge's doubt, which falls back to mu's default. So the 4B judge is recommended on its own.
 - **Hand-written hard cases.** On 112 development requests written by mu's author, hard by design, the 4B judge is clearly weaker (19.6 against Ultra's 52.3).
 - **A GPU, or a Mac in 8-bit.** The 4B judge's scores come from a CUDA GPU (an A100). Converted to MLX 8-bit on a 16 GB Mac (M6), it gave the same answer as on CUDA to 98.7% of 1,420 questions (400 random dev requests; yes/no questions 99.6%), at 0.41 s per request at the median, and it judged the third arm of [bench/judge-ab](../bench/judge-ab) there; the scores themselves were not measured again on the Mac.
