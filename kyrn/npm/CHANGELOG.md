@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.2.16] - 2026-10-29
+
+**0.2.16: on Nebius Token Factory, mu starts on Nemotron 3.5 Super VL, as Token Factory retires Nemotron 3 Super on 2026-11-09.** Published from the `nebius-hackathon` branch under the npm tag `hackathon`.
+
+### Changed
+
+- `mu setup` with a Token Factory key, and the `nebius` provider without a model named, start on `nvidia/Nemotron-3.5-Super-VL`. Token Factory removes `nvidia/nemotron-3-super-120b-a12b` from Serverless on 2026-11-09, does not reroute its requests, and names Super VL as its replacement (same price, $0.30 / $0.90 per million tokens). The model catalog is the one of 2026-10-26, which lists Super VL. `mu demo` names it in a replay and prices it. On the 8 tasks of `bench/judge-ab`, with Ultra judging: 16/16 done, $0.0099 per task against $0.0235 with Super.
+
 ## [0.2.15] - 2026-10-29
 
 **0.2.15: `mu demo local` replays the fine-tuned Nemotron 3 Nano 4B judging alone on a Mac; run through npx, the replay names the npx command.** Published from the `nebius-hackathon` branch under the npm tag `hackathon`; `latest` is the release from main.
