@@ -1,6 +1,6 @@
 {
 	"name": "mu-agent",
-	"version": "0.3.0",
+	"version": "0.3.1",
 	"description": "mu: most of what a coding agent decides isn't code. mu hands 40 kinds of yes/no calls to a small judge model: fewer wasted tokens, fewer approvals on autopilot, fewer runs that stop halfway. Built on pi.",
 	"type": "module",
 	"bin": {
