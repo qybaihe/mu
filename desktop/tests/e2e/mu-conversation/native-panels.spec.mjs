@@ -4,7 +4,9 @@
 // model, and mu's lesson store holds lessons written before the start. Each tab of the panel is opened and pictured,
 // light and dark: the folder's files with the one the model wrote, a file in the preview, the folder's lessons, the
 // judge's judgments, the board, the sub-agents, source control (here: no repository) and the browser. A file the model writes
-// while another tab is in view puts a dot on the files tab (and one the conversation held when it opened does not).
+// while another tab is in view puts a dot on the files tab (and one the conversation held when it opened does not); one
+// it writes while the workspace is in view shows in the preview (following the agent). A tool call's path, quick open
+// (Cmd/Ctrl+P) and a local address a command printed each open beside the conversation.
 // Run it with
 // `node scripts/kyrn/e2e-conversation.mjs --native -- native-panels.spec.mjs` (nativeWorld.mjs, profile.mjs).
 import { expect, test } from '@playwright/test';
@@ -183,6 +185,9 @@ test('the work panel shows the folder, its lessons, the judge’s judgments, the
 test('the panel reads the folder again after the next run, with the files tab in view', async () => {
   const p = page();
   await showTab('files');
+  // Not following the agent here: the files tab stays in view while the model writes.
+  await p.getByTestId('work-panel-follow').click();
+  await expect(p.getByTestId('work-panel-follow')).toHaveAttribute('aria-pressed', 'false');
   const files = p.getByTestId('native-files');
   await expect(files.getByText('hello.txt', { exact: true })).toBeVisible();
   await expect(files.getByText('second.txt', { exact: true })).toHaveCount(0);
@@ -191,6 +196,55 @@ test('the panel reads the folder again after the next run, with the files tab in
   await replyWith('second.txt');
   // Nothing was clicked: the run's end had the folder read again.
   await expect(files.getByText('second.txt', { exact: true })).toBeVisible({ timeout: 15_000 });
+  expectNoProblems();
+});
+
+test('following the agent, and what opens beside the conversation: a path, quick open, a local address', async () => {
+  const p = page();
+
+  await test.step('a file the model writes shows in 预览 while the workspace is in view', async () => {
+    await showTab('files');
+    await p.getByTestId('work-panel-follow').click();
+    await expect(p.getByTestId('work-panel-follow')).toHaveAttribute('aria-pressed', 'true');
+    await send('E2E:WRITE notes/fourth.txt');
+    await replyWith('fourth.txt');
+    await expect(tab('preview')).toHaveAttribute('aria-selected', 'true', { timeout: 15_000 });
+    await expect(body('preview')).toContainText('fourth.txt', { timeout: 15_000 });
+    await expect(body('preview')).toContainText('Written by the fake model');
+    await shot('panel-follow');
+  });
+
+  await test.step('a tool call’s path opens its file in 预览', async () => {
+    await showTab('board');
+    await p.getByTestId('tool-call-path').filter({ hasText: 'second.txt' }).first().click();
+    await expect(tab('preview')).toHaveAttribute('aria-selected', 'true', { timeout: 15_000 });
+    await expect(body('preview')).toContainText('second.txt', { timeout: 15_000 });
+  });
+
+  await test.step('quick open finds a file of the folder by its name', async () => {
+    await showTab('board');
+    await p.keyboard.press('ControlOrMeta+P');
+    const box = p.getByTestId('quick-open');
+    await expect(box).toBeVisible();
+    await expect(box.locator('[data-path="notes/hello.txt"]')).toBeVisible({ timeout: 15_000 });
+    await box.getByRole('combobox').fill('hello');
+    await shot('quick-open');
+    await p.keyboard.press('Enter');
+    await expect(box).toHaveCount(0);
+    await expect(tab('preview')).toHaveAttribute('aria-selected', 'true', { timeout: 15_000 });
+    await expect(body('preview')).toContainText('hello.txt', { timeout: 15_000 });
+  });
+
+  await test.step('a local address a command printed opens in 浏览器', async () => {
+    await showTab('board');
+    await send('E2E:BASH echo "ready on http://localhost:5173/"');
+    await replyWith('BASH-SAW');
+    const chip = p.getByTestId('tool-local-url').filter({ hasText: 'localhost:5173' }).first();
+    await expect(chip).toBeVisible({ timeout: 15_000 });
+    await shot('local-url-chip');
+    await chip.click();
+    await expect(tab('browser')).toHaveAttribute('aria-selected', 'true', { timeout: 15_000 });
+  });
   expectNoProblems();
 });
 
@@ -223,7 +277,7 @@ test('after a quit, the reopened conversation’s panel reads its file: judgment
   await showTab('judge');
   await expect(p.getByTestId('judge-line').first()).toBeVisible({ timeout: 30_000 });
   await shot('reopened-judge');
-  // The three files the conversation holds are where it stands, not news: the panel has read the view by now.
+  // The files the conversation holds are where they stand, not news: the panel has read the view by now.
   await sleep(1500);
   await expect(dot('files')).toHaveCount(0);
   await showTab('lessons');
