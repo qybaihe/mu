@@ -339,5 +339,12 @@
     "mac": "Afficher dans le Finder",
     "windows": "Afficher dans l'Explorateur de fichiers",
     "linux": "Afficher dans le dossier"
+  },
+  "diffComment": {
+    "add": "Commenter cette ligne",
+    "placeholder": "Que doit changer mu ici ?",
+    "save": "Ajouter le commentaire",
+    "hint": "Les commentaires partent avec votre prochain message",
+    "remove": "Supprimer le commentaire"
   }
 }

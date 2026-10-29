@@ -339,5 +339,12 @@
     "mac": "Finder에서 보기",
     "windows": "파일 탐색기에서 보기",
     "linux": "폴더에서 보기"
+  },
+  "diffComment": {
+    "add": "이 줄에 댓글 달기",
+    "placeholder": "여기서 mu가 무엇을 바꿔야 하나요?",
+    "save": "댓글 추가",
+    "hint": "댓글은 다음 메시지와 함께 전송됩니다",
+    "remove": "댓글 삭제"
   }
 }

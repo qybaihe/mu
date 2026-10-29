@@ -4,18 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { PreviewMetadata } from '../../context/PreviewContext';
+import type { PreviewMetadata } from '../../../context/PreviewContext';
 import { useTextSelection } from '@/renderer/hooks/ui/useTextSelection';
 import { Checkbox } from '@arco-design/web-react';
 import classNames from 'classnames';
 import { html } from 'diff2html';
 import 'diff2html/bundles/css/diff2html.min.css';
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { muCodeTheme } from '@renderer/components/Markdown/muCodeTheme';
 import { diff2htmlTemplates } from '@renderer/components/media/diff2htmlTemplates';
-import SelectionToolbar from '../renderers/SelectionToolbar';
+import SelectionToolbar from '../../renderers/SelectionToolbar';
+import DiffComments from './DiffComments';
 import { useTranslation } from 'react-i18next';
 
 interface DiffPreviewProps {
@@ -28,7 +29,8 @@ interface DiffPreviewProps {
 }
 
 /**
- * Diff preview component with rich diff2html rendering
+ * Diff preview component with rich diff2html rendering. In the line-by-line view a line takes a comment for the next
+ * message (`DiffComments`).
  */
 const DiffPreview: React.FC<DiffPreviewProps> = ({
   content,
@@ -38,7 +40,13 @@ const DiffPreview: React.FC<DiffPreviewProps> = ({
 }) => {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
-  const diffContainerRef = useRef<HTMLDivElement>(null);
+  const diffContainerRef = useRef<HTMLDivElement | null>(null);
+  // The same element, as state: the comments need it once it is there.
+  const [diffElement, setDiffElement] = useState<HTMLDivElement | null>(null);
+  const diffRef = useCallback((element: HTMLDivElement | null) => {
+    diffContainerRef.current = element;
+    setDiffElement(element);
+  }, []);
   const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>(() => {
     return (document.documentElement.getAttribute('data-theme') as 'light' | 'dark') || 'light';
   });
@@ -193,20 +201,23 @@ const DiffPreview: React.FC<DiffPreviewProps> = ({
             {content}
           </SyntaxHighlighter>
         ) : (
-          <div
-            ref={diffContainerRef}
-            className={classNames(
-              'w-full max-w-full min-w-0',
-              '![&_.line-num1]:hidden ![&_.line-num2]:w-30px',
-              '[&_td:first-child]:w-40px ![&_td:nth-child(2)>div]:ps-45px',
-              '[&_div.d2h-file-wrapper]:rd-[0.3rem_0.3rem_0px_0px]',
-              '[&_div.d2h-file-header]:items-center [&_div.d2h-file-header]:bg-bg-3',
-              {
-                'd2h-dark-color-scheme': currentTheme === 'dark',
-              }
-            )}
-            dangerouslySetInnerHTML={{ __html: diffHtmlContent }}
-          />
+          <div className='relative'>
+            <div
+              ref={diffRef}
+              className={classNames(
+                'w-full max-w-full min-w-0',
+                '![&_.line-num1]:hidden ![&_.line-num2]:w-30px',
+                '[&_td:first-child]:w-40px ![&_td:nth-child(2)>div]:ps-45px',
+                '[&_div.d2h-file-wrapper]:rd-[0.3rem_0.3rem_0px_0px]',
+                '[&_div.d2h-file-header]:items-center [&_div.d2h-file-header]:bg-bg-3',
+                {
+                  'd2h-dark-color-scheme': currentTheme === 'dark',
+                }
+              )}
+              dangerouslySetInnerHTML={{ __html: diffHtmlContent }}
+            />
+            <DiffComments diff={diffElement} drawn={diffHtmlContent} enabled={!sideBySide} />
+          </div>
         )}
       </div>
 
