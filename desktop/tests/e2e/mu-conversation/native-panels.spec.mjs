@@ -345,9 +345,8 @@ test('an element picked on a page in the browser reaches the model’s request, 
     await test.step('the message carries where the element is, its HTML and its picture', async () => {
       await send('E2E:ECHO PICK-OK');
       await replyWith('PICK-OK');
-      const asked = requests().findLast(
-        (request) => request.lastUser.includes('PICK-OK') || request.lastUser.includes('#buy')
-      );
+      // The conversation's own request: the board's summary of the run quotes the reply too.
+      const asked = requests().findLast((request) => request.lastUser.includes('<button id="buy"'));
       expect(asked?.lastUser).toContain('selector: `#buy`');
       expect(asked?.lastUser).toContain('<button id="buy" class="primary">Buy now</button>');
       expect(asked?.images, 'the picture went as an image').toBe(1);
