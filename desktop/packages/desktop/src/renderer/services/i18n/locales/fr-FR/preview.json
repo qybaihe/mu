@@ -164,6 +164,17 @@
       "hint": "Cliquez sur un élément pour l'ajouter à votre message · ↑ sélectionne son parent · Échap annule",
       "added": "{{name}} ajouté à votre message",
       "failed": "Impossible de sélectionner les éléments de cette page"
+    },
+    "screenshot": {
+      "send": "Montrer à mu cette page telle qu'elle est affichée",
+      "chip": "Capture de {{site}}",
+      "added": "Capture de {{site}} ajoutée à votre message",
+      "failed": "Impossible de capturer cette page pour le moment"
+    },
+    "console": {
+      "send": "Envoyer à mu les erreurs et avertissements de la console de la page",
+      "chip": "Console de {{site}}",
+      "added": "Console de {{site}} ajoutée à votre message"
     }
   },
   "saveConflict": "Échec de l'enregistrement : ce fichier a changé sur le disque depuis que vous l'avez ouvert. Rechargez pour voir les autres modifications — vos modifications sont toujours là, non enregistrées.",

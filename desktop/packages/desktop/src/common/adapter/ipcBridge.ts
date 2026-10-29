@@ -739,7 +739,8 @@ export const application = {
    */
   pictureOfBrowserArea: bridge.buildProvider<
     string | null,
-    { webContentsId: number; area: { x: number; y: number; width: number; height: number } }
+    // No area: all of the page that is on screen.
+    { webContentsId: number; area?: { x: number; y: number; width: number; height: number } }
   >('app.picture-of-browser-area'),
   getStartOnBootStatus: bridge.buildProvider<IBridgeResponse<IStartOnBootStatus>, void>('app.get-start-on-boot-status'),
   setStartOnBoot: bridge.buildProvider<IBridgeResponse<IStartOnBootStatus>, { enabled: boolean }>(

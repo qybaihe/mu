@@ -164,6 +164,17 @@
       "hint": "Mesajına eklemek için bir öğeye tıkla · ↑ üst öğeyi seçer · Esc iptal eder",
       "added": "{{name}} mesajına eklendi",
       "failed": "Bu sayfadaki öğeler seçilemiyor"
+    },
+    "screenshot": {
+      "send": "Bu sayfanın şu anki görünümünü mu'ya göster",
+      "chip": "{{site}} ekran görüntüsü",
+      "added": "{{site}} ekran görüntüsü mesajınıza eklendi",
+      "failed": "Bu sayfanın şu anda görüntüsü alınamıyor"
+    },
+    "console": {
+      "send": "Sayfanın konsol hatalarını ve uyarılarını mu'ya gönder",
+      "chip": "{{site}} konsolu",
+      "added": "{{site}} konsolu mesajınıza eklendi"
     }
   },
   "saveConflict": "Kaydedilemedi: bu dosya siz açtıktan sonra diskte değişti. Diğer değişiklikleri görmek için yeniden yükleyin — düzenlemeleriniz kaydedilmemiş olarak duruyor.",

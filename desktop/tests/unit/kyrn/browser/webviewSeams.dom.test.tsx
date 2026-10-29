@@ -2,6 +2,7 @@ import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render } from '@testing-library/react';
 import WebviewHost, {
+  type PageConsoleEntry,
   type WebviewNavigation,
   type WebviewNavigationState,
 } from '@/renderer/components/media/WebviewHost';
@@ -167,5 +168,54 @@ describe('where the page goes, and where it is sent', () => {
     expect(view.loadURL).toHaveBeenCalledTimes(1);
     expect(view.loadURL).toHaveBeenCalledWith('https://second.test/');
     expect(view.getAttribute('src')).toBe('https://first.test/');
+  });
+});
+
+describe('the seam for the page’s console (the in-app browser keeps it for the person to send)', () => {
+  const said = (view: HTMLElement, level: unknown, message: string, more: Record<string, unknown> = {}) =>
+    act(async () => {
+      view.dispatchEvent(
+        Object.assign(new Event('console-message'), { level, message, line: 0, sourceId: '', ...more })
+      );
+    });
+
+  it('passes on the page’s warnings and errors, never its other messages or this host’s own', async () => {
+    const entries: PageConsoleEntry[] = [];
+    const { container } = render(
+      <WebviewHost url='https://example.com/' onConsoleMessage={(entry) => entries.push(entry)} />
+    );
+    const { view } = await ready(container);
+
+    await said(view, 3, 'Uncaught TypeError: x is undefined', { line: 12, sourceId: 'https://example.com/app.js' });
+    await said(view, 'warning', 'Slow network');
+    await said(view, 1, 'hello');
+    await said(view, 0, 'verbose');
+    await said(view, 3, '__WEBVIEW_HOST_NAVIGATE__ {"url":"https://example.com/x"}');
+    await said(view, 1, '__MU_WEBVIEW_ZOOM_RESET__');
+
+    expect(entries).toEqual([
+      {
+        level: 'error',
+        message: 'Uncaught TypeError: x is undefined',
+        source: 'https://example.com/app.js',
+        line: 12,
+        at: expect.any(Number),
+      },
+      { level: 'warning', message: 'Slow network', at: expect.any(Number) },
+    ]);
+  });
+
+  it('says when the page loads a new document, and not when it only changes its address in place', async () => {
+    const onNewDocument = vi.fn();
+    const { container } = render(<WebviewHost url='https://example.com/' onNewDocument={onNewDocument} />);
+    const { view } = await ready(container);
+    await act(async () => {
+      view.dispatchEvent(Object.assign(new Event('did-navigate-in-page'), { url: 'https://example.com/#a' }));
+    });
+    expect(onNewDocument).not.toHaveBeenCalled();
+    await act(async () => {
+      view.dispatchEvent(Object.assign(new Event('did-navigate'), { url: 'https://example.com/next' }));
+    });
+    expect(onNewDocument).toHaveBeenCalledTimes(1);
   });
 });

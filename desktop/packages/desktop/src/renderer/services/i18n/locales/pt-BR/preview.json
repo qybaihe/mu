@@ -164,6 +164,17 @@
       "hint": "Clique em um elemento para adicioná-lo à mensagem · ↑ seleciona o elemento pai · Esc cancela",
       "added": "{{name}} adicionado à mensagem",
       "failed": "Não é possível selecionar elementos desta página"
+    },
+    "screenshot": {
+      "send": "Mostrar ao mu como esta página está agora",
+      "chip": "Captura de {{site}}",
+      "added": "Captura de {{site}} adicionada à sua mensagem",
+      "failed": "Não é possível capturar esta página agora"
+    },
+    "console": {
+      "send": "Enviar ao mu os erros e avisos do console da página",
+      "chip": "Console de {{site}}",
+      "added": "Console de {{site}} adicionado à sua mensagem"
     }
   },
   "saveConflict": "Não foi possível salvar: este arquivo mudou no disco depois que você o abriu. Recarregue para ver as outras alterações — suas edições continuam aqui, não salvas.",

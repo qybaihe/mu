@@ -164,6 +164,17 @@
       "hint": "Klicke auf ein Element, um es deiner Nachricht hinzuzufügen · ↑ wählt das übergeordnete · Esc bricht ab",
       "added": "{{name}} zur Nachricht hinzugefügt",
       "failed": "Elemente dieser Seite lassen sich nicht auswählen"
+    },
+    "screenshot": {
+      "send": "mu zeigen, wie diese Seite gerade aussieht",
+      "chip": "Screenshot von {{site}}",
+      "added": "Screenshot von {{site}} zur Nachricht hinzugefügt",
+      "failed": "Diese Seite kann gerade nicht aufgenommen werden"
+    },
+    "console": {
+      "send": "Fehler und Warnungen aus der Konsole der Seite an mu senden",
+      "chip": "Konsole von {{site}}",
+      "added": "Konsole von {{site}} zur Nachricht hinzugefügt"
     }
   },
   "saveConflict": "Speichern fehlgeschlagen: Diese Datei wurde auf der Festplatte geändert, nachdem du sie geöffnet hast. Lade neu, um die anderen Änderungen zu sehen – deine Bearbeitungen sind noch da, aber nicht gespeichert.",
