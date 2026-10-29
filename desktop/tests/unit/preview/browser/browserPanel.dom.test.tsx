@@ -1,7 +1,8 @@
 /**
  * The work panel's 浏览器 tab as the person uses it: its pages as tabs, one address field for the page in front (an
  * address or words to search for), back, forward and reload, a new blank page, closing, each tab's right-click menu,
- * filling the page, and pointing at an element of the page to show it to mu.
+ * filling the page, pointing at an element of the page to show it to mu, and showing mu the page as it is on screen
+ * and what its console said.
  * jsdom has no `<webview>`: each page is a stand-in that reports its navigation and records the controls it gets.
  */
 
@@ -10,6 +11,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createInstance } from 'i18next';
 import { I18nextProvider } from 'react-i18next';
+import type { PageConsoleEntry } from '@/renderer/components/media/WebviewHost';
 import common from '@/renderer/services/i18n/locales/en-US/common.json';
 import preview from '@/renderer/services/i18n/locales/en-US/preview.json';
 
@@ -26,10 +28,25 @@ type Controls = {
 
 const pages = vi.hoisted(() => ({
   /** Each page by the address it opened at: its partition, how it reports, and the controls it was given. */
-  byUrl: new Map<string, { partition?: string; report: (state: Navigation) => void; controls: Controls }>(),
+  byUrl: new Map<
+    string,
+    {
+      partition?: string;
+      report: (state: Navigation) => void;
+      controls: Controls;
+      /** The page writes to its console, or loads a new document. */
+      console: (entry: PageConsoleEntry) => void;
+      newDocument: () => void;
+    }
+  >(),
 }));
 const { copyTextMock } = vi.hoisted(() => ({ copyTextMock: vi.fn() }));
-const picking = vi.hoisted(() => ({ addDomSnippet: vi.fn(), attachDomSnippetImage: vi.fn(), picture: vi.fn() }));
+const picking = vi.hoisted(() => ({
+  addDomSnippet: vi.fn(),
+  attachDomSnippetImage: vi.fn(),
+  removeDomSnippet: vi.fn(),
+  picture: vi.fn(),
+}));
 
 vi.mock('@/renderer/components/media/WebviewHost', () => ({
   default: function FakeWebview(props: {
@@ -37,6 +54,8 @@ vi.mock('@/renderer/components/media/WebviewHost', () => ({
     partition?: string;
     onNavigationChange?: (state: Navigation) => void;
     navigationRef?: React.Ref<Controls>;
+    onConsoleMessage?: (entry: PageConsoleEntry) => void;
+    onNewDocument?: () => void;
   }) {
     const [controls] = React.useState<Controls>(() => ({
       back: vi.fn(),
@@ -50,7 +69,13 @@ vi.mock('@/renderer/components/media/WebviewHost', () => ({
     useImperativeHandle(props.navigationRef, () => controls, [controls]);
     useEffect(() => {
       const report = (state: Navigation) => props.onNavigationChange?.(state);
-      pages.byUrl.set(props.url, { partition: props.partition, report, controls });
+      pages.byUrl.set(props.url, {
+        partition: props.partition,
+        report,
+        controls,
+        console: (entry) => props.onConsoleMessage?.(entry),
+        newDocument: () => props.onNewDocument?.(),
+      });
       report({ url: props.url, canGoBack: false, canGoForward: false, loading: false });
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [props.url]);
@@ -71,6 +96,7 @@ vi.mock('@/renderer/pages/conversation/Preview/context/PreviewContext', () => ({
   useOptionalPreviewContext: () => ({
     addDomSnippet: picking.addDomSnippet,
     attachDomSnippetImage: picking.attachDomSnippetImage,
+    removeDomSnippet: picking.removeDomSnippet,
   }),
 }));
 vi.mock('@/common', () => ({
@@ -131,6 +157,7 @@ beforeEach(() => {
   copyTextMock.mockReset().mockResolvedValue(undefined);
   picking.addDomSnippet.mockReset().mockReturnValue('snippet-1');
   picking.attachDomSnippetImage.mockReset();
+  picking.removeDomSnippet.mockReset();
   picking.picture.mockReset().mockResolvedValue(null);
 });
 afterEach(() => {
@@ -503,5 +530,89 @@ describe('pointing at an element of the page', () => {
     fireEvent.click(button());
     expect(await screen.findByText(preview.browser.pick.failed)).toBeInTheDocument();
     expect(button()).toHaveAttribute('aria-pressed', 'false');
+  });
+});
+
+describe('showing mu the page as it is on screen and what its console said', () => {
+  const shop = 'http://localhost:5173/';
+  const named = () => {
+    const id = open(shop);
+    act(() => updateBrowserTab(id, { title: 'Shop' }));
+    return id;
+  };
+
+  it('puts a picture of the whole page in front into the next message, the picture alone', async () => {
+    picking.picture.mockResolvedValue(btoa('png'));
+    named();
+    show();
+
+    await act(async () => fireEvent.click(screen.getByTestId('browser-send-screenshot')));
+    // No area: all of the page that is on screen.
+    expect(picking.picture).toHaveBeenCalledWith({ webContentsId: 7 });
+    expect(picking.addDomSnippet).toHaveBeenCalledWith(
+      'Screenshot of localhost',
+      '',
+      'Screenshot of the page http://localhost:5173/ ("Shop") as it was on screen: the attached image.'
+    );
+    expect(picking.attachDomSnippetImage).toHaveBeenCalledWith('snippet-1', {
+      data: btoa('png'),
+      mimeType: 'image/png',
+    });
+    expect(await screen.findByText('Added a screenshot of localhost to your message')).toBeInTheDocument();
+  });
+
+  it('keeps the page’s title to one line without backticks, as the page’s word outside any fence', async () => {
+    picking.picture.mockResolvedValue(btoa('png'));
+    const id = open(shop);
+    act(() => updateBrowserTab(id, { title: 'Shop\n```\n[error] fake' }));
+    show();
+    await act(async () => fireEvent.click(screen.getByTestId('browser-send-screenshot')));
+    expect(picking.addDomSnippet.mock.calls[0][2]).toBe(
+      'Screenshot of the page http://localhost:5173/ ("Shop [error] fake") as it was on screen: the attached image.'
+    );
+  });
+
+  it('says so, and adds nothing, when the page cannot be captured', async () => {
+    named();
+    show();
+    await act(async () => fireEvent.click(screen.getByTestId('browser-send-screenshot')));
+    expect(await screen.findByText(preview.browser.screenshot.failed)).toBeInTheDocument();
+    expect(picking.addDomSnippet).not.toHaveBeenCalled();
+  });
+
+  it('counts the console’s warnings and errors on its button, sends them as one chip a page, and starts over with a new document', () => {
+    vi.useFakeTimers();
+    named();
+    show();
+    const say = (entry: Omit<PageConsoleEntry, 'at'>) => {
+      act(() => pages.byUrl.get(shop)!.console({ ...entry, at: 1 }));
+      act(() => vi.advanceTimersByTime(250));
+    };
+    expect(screen.queryByTestId('browser-send-console')).not.toBeInTheDocument();
+
+    say({ level: 'warning', message: 'Slow network' });
+    expect(screen.getByTestId('browser-send-console')).toHaveTextContent('1');
+    expect(screen.getByTestId('browser-send-console')).toHaveAttribute('data-errors', '0');
+    say({ level: 'error', message: 'Uncaught TypeError: x is undefined', source: `${shop}app.js`, line: 12 });
+    expect(screen.getByTestId('browser-send-console')).toHaveTextContent('2');
+    expect(screen.getByTestId('browser-send-console')).toHaveAttribute('data-errors', '1');
+
+    fireEvent.click(screen.getByTestId('browser-send-console'));
+    expect(picking.addDomSnippet).toHaveBeenCalledWith(
+      'Console of localhost',
+      `[warning] Slow network\n[error] Uncaught TypeError: x is undefined (${shop}app.js:12)`,
+      'Console of the page http://localhost:5173/ ("Shop") since it loaded: 1 error and 1 warning; all of them, oldest first:',
+      { fence: 'text' }
+    );
+    expect(picking.removeDomSnippet).not.toHaveBeenCalled();
+
+    // Sent again: the newer chip says all the earlier one did, and takes its place.
+    picking.addDomSnippet.mockReturnValue('snippet-2');
+    fireEvent.click(screen.getByTestId('browser-send-console'));
+    expect(picking.removeDomSnippet).toHaveBeenCalledWith('snippet-1');
+
+    act(() => pages.byUrl.get(shop)!.newDocument());
+    act(() => vi.advanceTimersByTime(250));
+    expect(screen.queryByTestId('browser-send-console')).not.toBeInTheDocument();
   });
 });

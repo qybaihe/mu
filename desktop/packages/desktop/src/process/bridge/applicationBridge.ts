@@ -254,7 +254,7 @@ export function initApplicationBridge(): void {
     try {
       return await pictureOfPageArea(webContentsId, area);
     } catch (e) {
-      console.warn('[browser] No picture of the picked element:', e instanceof Error ? e.message : e);
+      console.warn('[browser] No picture of the page:', e instanceof Error ? e.message : e);
       return null;
     }
   });

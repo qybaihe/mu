@@ -198,6 +198,46 @@ describe('SendBox: the elements picked for the message', () => {
     );
   });
 
+  it('sends a page’s screenshot as its line and its picture, and a page’s console in a text fence', async () => {
+    preview.snippets = [
+      {
+        id: 's',
+        tag: 'Screenshot of a.test',
+        html: '',
+        about: 'Screenshot of the page https://a.test/ as it was on screen: the attached image.',
+        image: { data: 'cG5n', mimeType: 'image/png' },
+      },
+      {
+        id: 'k',
+        tag: 'Console of a.test',
+        html: '[error] boom',
+        about:
+          'Console of the page https://a.test/ since it loaded: 1 error and 0 warnings; all of them, oldest first:',
+        fence: 'text',
+      },
+    ];
+    const onSend = vi.fn().mockResolvedValue(undefined);
+    render(<Harness onSend={onSend} />);
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('sendbox-send-btn'));
+    });
+    expect(onSend).toHaveBeenCalledWith(
+      [
+        '',
+        '',
+        '---',
+        'Screenshot of the page https://a.test/ as it was on screen: the attached image.',
+        '',
+        '---',
+        'Console of the page https://a.test/ since it loaded: 1 error and 0 warnings; all of them, oldest first:',
+        '```text',
+        '[error] boom',
+        '```',
+      ].join('\n'),
+      { images: [{ data: 'cG5n', mimeType: 'image/png' }] }
+    );
+  });
+
   it('sends an element with no text of its own', async () => {
     preview.snippets = [
       { id: 'a', tag: 'h1', html: '<h1>Hi</h1>', about: 'Element on the page https://a.test/ (h1):' },

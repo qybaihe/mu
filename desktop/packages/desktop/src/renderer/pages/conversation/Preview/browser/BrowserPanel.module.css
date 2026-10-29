@@ -267,6 +267,27 @@
   background: var(--bg-hover);
 }
 
+/* The page's console has something to send: its count, red with an error among it, else in the warning color. */
+.consoleErrors:global(.arco-btn),
+.consoleWarnings:global(.arco-btn) {
+  gap: 2px;
+  padding: 0 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.consoleErrors:global(.arco-btn) {
+  color: rgb(var(--danger-6));
+}
+
+.consoleWarnings:global(.arco-btn) {
+  color: rgb(var(--warning-6));
+}
+
+.consoleErrors:global(.arco-btn:not(:disabled):hover),
+.consoleWarnings:global(.arco-btn:not(:disabled):hover) {
+  background: var(--bg-hover);
+}
+
 /* A wide browser: the pages and the address share the one line. */
 @container mu-browser (min-width: 640px) {
   .bar {

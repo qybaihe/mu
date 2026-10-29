@@ -257,6 +257,17 @@ it), so the host keeps only the fields it expects, each but the HTML on one line
 backticks: a page cannot write lines of its own into the person's message. The picture is taken in the main process of
 a `<webview>` page only (`app.picture-of-browser-area`, `process/services/muBrowser/areaPicture.ts`).
 
+Beside the pointer button, the screenshot button puts all of the page in front that is on screen into the next message:
+the same picture with no area, a chip with a picture and no HTML, so the message gets one line (the page's address and
+title, and that the picture is attached) and the picture as an image. A second one of the same page takes the first
+one's place. The page's console is kept for each open page from the moment it loads a document (a reload or a new
+address starts it over; a change of address in place does not): its warnings and errors, an uncaught exception among
+them, the last 50 with each message cut at 2,000 characters, and how many there were in all (`browserStore.ts`, in
+memory only; `WebviewHost`'s `onConsoleMessage` hears them and leaves out the host's own messages). While there is any,
+a button shows their count, red with an error among them; it puts them into the next message, oldest first, one a line
+with their level and where they came from, in a `text` fence under a line that names the page and the counts. A
+page has one console chip: sending its console again replaces it.
+
 A line of a diff in the preview (a file's changes from the source tab, a tool call's diff) takes a comment for the next
 message: the line under the pointer shows a comment button in the gutter, which opens a box under the line; Cmd/Ctrl+
 Enter or 添加评论 adds it, Escape or 取消 drops it. The comment shows under its line, where it can be taken back, and
@@ -647,7 +658,9 @@ access, then every tab: 文件 lists the folder and the written file, a click op
 lesson and the one for everywhere (not the other), 判定 shows the turn's lines, 看板 the fake model's board, 蜂群, 源码
 and 浏览器 open; the same tabs in the dark theme. A second write shows in 文件 with nothing clicked (the run's end read
 the folder again). After a quit and a new start, the conversation opened from its file shows its judgments, lessons and
-files with no host running. Looked at: every tab's picture, light and dark. The run before the ledger fix showed the
+files with no host running. On pages the test serves, an element picked (its HTML and its picture), and a page's
+screenshot and console (a warning, an error and an uncaught exception, oldest first) reach the model's request. Looked
+at: every tab's picture, light and dark. The run before the ledger fix showed the
 reopened judge tab empty ("本会话还没有判定记录"), which is what the fix is for.
 
 `node scripts/kyrn/e2e-conversation.mjs --native -- native-composer.spec` runs

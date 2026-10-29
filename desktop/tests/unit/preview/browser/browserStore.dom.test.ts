@@ -1,14 +1,20 @@
 /**
  * The in-app browser's pages (the work panel's 浏览器 tab): what opens where, the cap, what a page writes back, what is
- * kept per project across restarts, and how the pages an older build kept among the preview's tabs come over.
+ * kept per project across restarts, how the pages an older build kept among the preview's tabs come over, and what
+ * each page's console said.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  browserConsoleNow,
   browserNow,
+  clearPageConsole,
   closeBrowserTab,
   closeOtherBrowserTabs,
   markBrowserAgentActive,
+  MAX_CONSOLE_ENTRIES,
+  MAX_CONSOLE_MESSAGE,
+  notePageConsole,
   openBrowserPage,
   resetBrowserStoreForTest,
   setBrowserMaximized,
@@ -414,5 +420,39 @@ describe('pages an older build kept among the preview’s tabs', () => {
     switchBrowserScope('project-a');
     expect(urls()).toEqual(['https://new.test/']);
     expect(browserNow().handOver).toBe(false);
+  });
+});
+
+describe('what a page’s console said', () => {
+  const error = (message: string) => ({ level: 'error' as const, message, at: 1 });
+  const warning = (message: string) => ({ level: 'warning' as const, message, at: 1 });
+
+  it('keeps the last entries of each page and counts them all, cutting a long message', () => {
+    const a = openBrowserPage('https://a.test')!;
+    const b = openBrowserPage('https://b.test')!;
+    for (let i = 0; i < MAX_CONSOLE_ENTRIES + 5; i++) notePageConsole(a, i % 2 ? warning(`w${i}`) : error(`e${i}`));
+    notePageConsole(b, error('x'.repeat(MAX_CONSOLE_MESSAGE + 10)));
+
+    const said = browserConsoleNow(a);
+    expect(said.entries).toHaveLength(MAX_CONSOLE_ENTRIES);
+    expect(said.entries[0].message).toBe('w5');
+    expect(said.entries.at(-1)?.message).toBe(`e${MAX_CONSOLE_ENTRIES + 4}`);
+    expect([said.errors, said.warnings]).toEqual([28, 27]);
+    expect(browserConsoleNow(b).entries[0].message).toBe(`${'x'.repeat(MAX_CONSOLE_MESSAGE)}…`);
+    expect(browserConsoleNow(null).entries).toEqual([]);
+  });
+
+  it('starts over with a new document, forgets a page that closed, and ignores a page it does not have', () => {
+    const a = openBrowserPage('https://a.test')!;
+    const b = openBrowserPage('https://b.test')!;
+    notePageConsole(a, error('boom'));
+    notePageConsole(b, warning('slow'));
+
+    clearPageConsole(a);
+    expect(browserConsoleNow(a).errors).toBe(0);
+    closeBrowserTab(b);
+    expect(browserConsoleNow(b).warnings).toBe(0);
+    notePageConsole('browser-gone', error('late'));
+    expect(browserConsoleNow('browser-gone').entries).toEqual([]);
   });
 });

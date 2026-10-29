@@ -164,6 +164,17 @@
       "hint": "Click an element to add it to your message · ↑ selects its parent · Esc cancels",
       "added": "Added {{name}} to your message",
       "failed": "Elements on this page can't be selected"
+    },
+    "screenshot": {
+      "send": "Show mu this page as it looks now",
+      "chip": "Screenshot of {{site}}",
+      "added": "Added a screenshot of {{site}} to your message",
+      "failed": "This page can't be captured right now"
+    },
+    "console": {
+      "send": "Send the page's console errors and warnings to mu",
+      "chip": "Console of {{site}}",
+      "added": "Added the console of {{site}} to your message"
     }
   },
   "saveConflict": "Couldn't save: this file has changed on disk since you opened it. Reload to see the other changes — your edits are still here, unsaved.",
