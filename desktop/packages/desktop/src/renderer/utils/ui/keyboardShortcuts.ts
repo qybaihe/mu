@@ -24,6 +24,9 @@ export type PrimaryShortcutOptions = {
  */
 export const COMMAND_PALETTE_SHORTCUT: PrimaryShortcutOptions = { key: 'k', targetGuard: 'embedded-editor' };
 
+/** Cmd/Ctrl+P: quick open, a file of the open conversation's folder by its name. Not from an embedded editor. */
+export const QUICK_OPEN_SHORTCUT: PrimaryShortcutOptions = { key: 'p', targetGuard: 'embedded-editor' };
+
 /** Cmd/Ctrl+Shift+F: the search through what was said in every conversation. */
 export const MESSAGE_SEARCH_SHORTCUT: PrimaryShortcutOptions = {
   key: 'f',

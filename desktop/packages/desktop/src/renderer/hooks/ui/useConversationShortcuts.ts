@@ -6,6 +6,7 @@ import { emitter } from '@/renderer/utils/emitter';
 import { isElectronDesktop } from '@/renderer/utils/platform';
 import {
   COMMAND_PALETTE_SHORTCUT,
+  QUICK_OPEN_SHORTCUT,
   isPlatformPrimaryModifier,
   isPrimaryApplicationShortcut,
 } from '@/renderer/utils/ui/keyboardShortcuts';
@@ -87,6 +88,13 @@ export const useConversationShortcuts = ({ navigate, toggleSider }: UseConversat
       if (isPrimaryApplicationShortcut(event, COMMAND_PALETTE_SHORTCUT)) {
         event.preventDefault();
         emitter.emit('commandPalette.toggle');
+        return;
+      }
+
+      // Quick open is mounted beside the palette; it finds the files of the open conversation's folder.
+      if (isPrimaryApplicationShortcut(event, QUICK_OPEN_SHORTCUT)) {
+        event.preventDefault();
+        emitter.emit('quickOpen.toggle');
         return;
       }
 

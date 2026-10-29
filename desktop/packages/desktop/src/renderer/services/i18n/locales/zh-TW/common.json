@@ -1526,7 +1526,8 @@
     "openSettings": "開啟設定",
     "actions": {
       "newConversation": "開始新會話",
-      "scheduledTasks": "開啟定時任務"
+      "scheduledTasks": "開啟定時任務",
+      "quickOpen": "依名稱開啟檔案"
     },
     "commandWaits": "等這一輪結束後執行"
   },
@@ -1575,5 +1576,13 @@
   },
   "firstHint": {
     "close": "知道了"
+  },
+  "quickOpen": {
+    "title": "開啟檔案",
+    "placeholder": "搜尋本對話資料夾裡的檔案",
+    "loading": "正在讀取資料夾…",
+    "failed": "無法讀取本對話的資料夾。",
+    "more": "這個資料夾的檔案比列出的多。多輸入幾個字可以縮小範圍。",
+    "noFolder": "先開啟一個帶資料夾的對話，才能依名稱找它的檔案。"
   }
 }

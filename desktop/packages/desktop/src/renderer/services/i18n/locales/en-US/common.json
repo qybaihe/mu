@@ -1526,7 +1526,8 @@
     "openSettings": "Open Settings",
     "actions": {
       "newConversation": "Start a new conversation",
-      "scheduledTasks": "Open scheduled tasks"
+      "scheduledTasks": "Open scheduled tasks",
+      "quickOpen": "Open a file by name"
     },
     "commandWaits": "Runs after this reply is done"
   },
@@ -1575,5 +1576,13 @@
   },
   "firstHint": {
     "close": "Got it"
+  },
+  "quickOpen": {
+    "title": "Open a file",
+    "placeholder": "Search files in this conversation's folder",
+    "loading": "Reading the folder…",
+    "failed": "Couldn't read this conversation's folder.",
+    "more": "This folder has more files than are listed. Type more of the name to narrow it down.",
+    "noFolder": "Open a conversation with a folder to find its files by name."
   }
 }

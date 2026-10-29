@@ -23,9 +23,12 @@ export const MATCHED_SETTINGS = 8;
 /** Commands an empty query lists: the first ones the harness offers. A slash or a query lists them all. */
 export const TOP_COMMANDS = 5;
 
-/** What the app itself can do from the palette, wherever it is open: start a conversation, open the scheduled tasks. */
-export type PaletteAction = 'newConversation' | 'scheduledTasks';
-const ACTIONS: readonly PaletteAction[] = ['newConversation', 'scheduledTasks'];
+/**
+ * What the app itself can do from the palette, wherever it is open: start a conversation, open the scheduled tasks,
+ * find a file of the open conversation by its name (quick open).
+ */
+export type PaletteAction = 'newConversation' | 'scheduledTasks' | 'quickOpen';
+const ACTIONS: readonly PaletteAction[] = ['newConversation', 'scheduledTasks', 'quickOpen'];
 
 /**
  * One row. `hits` are the indices of `label` that the query matched; they are underlined. A conversation on the native

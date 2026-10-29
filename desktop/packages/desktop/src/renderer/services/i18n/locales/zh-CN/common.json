@@ -1526,7 +1526,8 @@
     "openSettings": "打开设置",
     "actions": {
       "newConversation": "开始新会话",
-      "scheduledTasks": "打开定时任务"
+      "scheduledTasks": "打开定时任务",
+      "quickOpen": "按名称打开文件"
     },
     "commandWaits": "等这一轮结束后执行"
   },
@@ -1575,5 +1576,13 @@
   },
   "firstHint": {
     "close": "知道了"
+  },
+  "quickOpen": {
+    "title": "打开文件",
+    "placeholder": "搜索本会话文件夹里的文件",
+    "loading": "正在读取文件夹…",
+    "failed": "无法读取本会话的文件夹。",
+    "more": "这个文件夹的文件比列出的多。多输入几个字可以缩小范围。",
+    "noFolder": "先打开一个带文件夹的会话，才能按名称找它的文件。"
   }
 }

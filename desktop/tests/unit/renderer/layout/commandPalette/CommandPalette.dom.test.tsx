@@ -25,6 +25,10 @@ const state = vi.hoisted(() => ({
   nativeOn: undefined as boolean | undefined,
   commands: [] as unknown[],
   slashCommandCalls: [] as Array<{ id: string; options: Record<string, unknown> }>,
+  /** Quick open: the folder's files as the main process lists them, the folders asked for, the files opened. */
+  files: [] as string[],
+  filesAsked: [] as string[],
+  opened: [] as Array<{ folder?: string; path: string }>,
 }));
 const navigate = vi.hoisted(() => vi.fn());
 
@@ -84,6 +88,22 @@ vi.mock('@/renderer/hooks/chat/useSlashCommands', () => ({
 vi.mock('@/renderer/pages/conversation/GroupedHistory/hooks/useVisibleConversationIds', () => ({
   useVisibleConversationIds: (): string[] => [],
 }));
+vi.mock('@/common/kyrn/folderBridge', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/common/kyrn/folderBridge')>()),
+  kyrnFolderBridge: {
+    find: {
+      invoke: async ({ cwd }: { cwd: string }) => {
+        state.filesAsked.push(cwd);
+        return { ok: true, data: { paths: state.files, more: false } };
+      },
+    },
+  },
+}));
+vi.mock('@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview', () => ({
+  useOptionalLocalFilePreview: (folder?: string) => async (path: string) => {
+    state.opened.push({ folder, path });
+  },
+}));
 // The message search has its own tests; here it only has to be there.
 vi.mock('@/renderer/pages/conversation/GroupedHistory/ConversationSearchPopover', () => ({
   default: (): null => null,
@@ -97,6 +117,7 @@ import {
 } from '@/renderer/pages/conversation/explorer/currentConversationStore';
 import { emitter } from '@/renderer/utils/emitter';
 import { BUILTIN_AGENT } from '@/common/platform/backendNames';
+import { publishNativeActivity } from '@/renderer/pages/native/utils/nativeActivityStore';
 
 const MINUTE = 60_000;
 const NOW = Date.now();
@@ -187,6 +208,56 @@ describe('command palette', () => {
     resetCurrentConversationForTest();
     emitter.removeAllListeners('sendbox.command');
     emitter.removeAllListeners('conversationSearch.open');
+  });
+
+  describe('quick open', () => {
+    const native = () =>
+      act(() =>
+        publishNativeActivity({
+          conversationId: 'n1',
+          activity: { events: [], loading: false, settled: true },
+          cwd: '/work/app',
+        })
+      );
+    const openQuickly = () => press(window, state.mac ? { key: 'p', metaKey: true } : { key: 'p', ctrlKey: true });
+    const files = () => screen.getAllByRole('option').map((row) => row.getAttribute('data-path'));
+
+    beforeEach(() => {
+      state.files = ['README.md', 'src/app.ts', 'src/components/AppShell.tsx', 'docs/app-notes.md'];
+      state.filesAsked = [];
+      state.opened = [];
+    });
+    afterEach(() => {
+      publishNativeActivity(undefined);
+    });
+
+    it('finds a file of the open conversation’s folder by its name with Cmd+P, and opens it in the preview', async () => {
+      setCurrentConversation('n1');
+      native();
+      render(<Harness />);
+      openQuickly();
+      await waitFor(() => expect(files()).toEqual(state.files));
+      expect(state.filesAsked).toEqual(['/work/app']);
+
+      type('app');
+      expect(files()).toEqual(['src/app.ts', 'docs/app-notes.md', 'src/components/AppShell.tsx']);
+      key('ArrowDown');
+      key('Enter');
+      expect(state.opened).toEqual([{ folder: '/work/app', path: 'docs/app-notes.md' }]);
+      await waitFor(() => expect(queryInput()).not.toBeInTheDocument());
+    });
+
+    it('opens from the palette’s row too, and says so when the conversation has no folder', async () => {
+      setCurrentConversation(null);
+      render(<Harness />);
+      openPalette();
+      type('open a file');
+      expect(labelsOf('commands')).toContain('Open a file by name');
+      key('Enter');
+      expect(await screen.findByTestId('quick-open-no-folder')).toHaveTextContent(
+        'Open a conversation with a folder to find its files by name.'
+      );
+    });
   });
 
   describe('opening and closing', () => {
@@ -320,7 +391,7 @@ describe('command palette', () => {
       openPalette();
 
       expect(groupsShown()).toEqual(['settings', 'commands']);
-      expect(labelsOf('commands')).toEqual(['Start a new conversation', 'Open scheduled tasks']);
+      expect(labelsOf('commands')).toEqual(['Start a new conversation', 'Open scheduled tasks', 'Open a file by name']);
       expect(screen.getByTestId('command-palette-hint')).toHaveTextContent(
         'No conversations yet. Type to find settings and commands.'
       );

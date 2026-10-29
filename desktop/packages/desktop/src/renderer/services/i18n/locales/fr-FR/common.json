@@ -1526,7 +1526,8 @@
     "openSettings": "Ouvrir les paramètres",
     "actions": {
       "newConversation": "Commencer un nouveau chat",
-      "scheduledTasks": "Ouvrir les tâches planifiées"
+      "scheduledTasks": "Ouvrir les tâches planifiées",
+      "quickOpen": "Ouvrir un fichier par son nom"
     },
     "commandWaits": "S’exécutera une fois cette réponse terminée"
   },
@@ -1575,5 +1576,13 @@
   },
   "firstHint": {
     "close": "Compris"
+  },
+  "quickOpen": {
+    "title": "Ouvrir un fichier",
+    "placeholder": "Rechercher des fichiers dans le dossier de cette conversation",
+    "loading": "Lecture du dossier…",
+    "failed": "Impossible de lire le dossier de cette conversation.",
+    "more": "Ce dossier contient plus de fichiers que ceux listés. Tapez davantage du nom pour affiner.",
+    "noFolder": "Ouvrez une conversation avec un dossier pour trouver ses fichiers par nom."
   }
 }

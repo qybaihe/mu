@@ -12,6 +12,7 @@ import ConversationSearchPopover from '@/renderer/pages/conversation/GroupedHist
 import { emitter, useAddEventListener } from '@/renderer/utils/emitter';
 import CommandPalettePanel from './CommandPalettePanel';
 import type { PaletteItem } from './paletteGroups';
+import QuickOpen, { toggleQuickOpen } from './QuickOpen';
 import styles from './CommandPalette.module.css';
 
 /**
@@ -39,7 +40,8 @@ type CommandPaletteProps = {
  *
  * The message search stays beside it. The palette finds conversations by title; the message search looks through
  * what was said in them and jumps to the message, so it keeps Cmd/Ctrl+Shift+F, and the palette hands a query on to
- * it from its last row.
+ * it from its last row. Quick open (Cmd/Ctrl+P), which finds a file of the open conversation by its name, is mounted
+ * with it, and one of the palette's rows opens it too.
  */
 const CommandPalette: React.FC<CommandPaletteProps> = ({ onNavigate }) => {
   const navigate = useNavigate();
@@ -94,6 +96,10 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ onNavigate }) => {
           return;
         case 'action':
           close(false);
+          if (item.action === 'quickOpen') {
+            toggleQuickOpen();
+            return;
+          }
           // As the sidebar's own rows do: a new conversation starts from a fresh home page.
           if (item.action === 'newConversation') void navigate('/guid', { state: { resetAssistant: true } });
           else void navigate('/scheduled');
@@ -132,6 +138,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ onNavigate }) => {
         <CommandPalettePanel onRun={run} />
       </Modal>
       <ConversationSearchPopover renderTrigger={() => null} onConversationSelect={onNavigate} />
+      <QuickOpen />
     </>
   );
 };

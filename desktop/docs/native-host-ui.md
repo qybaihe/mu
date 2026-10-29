@@ -271,6 +271,21 @@ the image again. A click in a reply moves the focus to the viewer, so the arrow 
 A link to a file that is not an image keeps the link the app always drew (it opens in the preview, at its line). Inline
 code inside a link's text stays part of that link.
 
+## Quick open
+
+Problem: a file the person wanted to look at, beside the conversation, had to be found in the files tab one folder at
+a time. Example: `Cmd+P` (`Ctrl+P`), `wps`, Enter shows `src/…/workPanelStore.ts` in the work panel's preview.
+
+Solution: quick open (`Sider/CommandPalette/QuickOpen.tsx`), mounted with the command palette, which also offers it
+as a row. Its folder is the native conversation's `cwd`, or the classic conversation's workspace. The main process
+lists the folder's files each time the box opens (`kyrn.folder.find`, `findFiles` in
+`process/agent/kyrn/folderFiles.ts`): in a git repository, `git ls-files --cached --others --exclude-standard` (what
+git tracks and the new files it does not ignore), else a breadth-first walk with no dot folders, `node_modules`,
+caches or build output, 12 folders deep and 50,000 entries at most; never more than 20,000 paths, and the box says
+when some were left out. A query ranks them as it is typed (`quickOpenModel.ts`): the name before the path, one run
+of characters before characters with gaps, the name the query is all of first, then the shorter name and path.
+Enter opens the file as a file link does (`useLocalFilePreview`).
+
 ## The view on screen
 
 | View                                                                           | On screen                                                                                                                                 |

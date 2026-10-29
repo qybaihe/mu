@@ -1526,7 +1526,8 @@
     "openSettings": "Einstellungen öffnen",
     "actions": {
       "newConversation": "Neuen Chat beginnen",
-      "scheduledTasks": "Geplante Aufgaben öffnen"
+      "scheduledTasks": "Geplante Aufgaben öffnen",
+      "quickOpen": "Datei nach Namen öffnen"
     },
     "commandWaits": "Wird ausgeführt, wenn diese Antwort fertig ist"
   },
@@ -1575,5 +1576,13 @@
   },
   "firstHint": {
     "close": "Verstanden"
+  },
+  "quickOpen": {
+    "title": "Datei öffnen",
+    "placeholder": "Dateien im Ordner dieser Unterhaltung suchen",
+    "loading": "Ordner wird gelesen…",
+    "failed": "Der Ordner dieser Unterhaltung konnte nicht gelesen werden.",
+    "more": "Dieser Ordner enthält mehr Dateien als aufgelistet. Gib mehr vom Namen ein, um einzugrenzen.",
+    "noFolder": "Öffne eine Unterhaltung mit Ordner, um ihre Dateien nach Namen zu finden."
   }
 }

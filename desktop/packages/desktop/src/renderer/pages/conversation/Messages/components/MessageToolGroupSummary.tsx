@@ -173,9 +173,12 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
   const run = useMessageListRun();
   const conversation = useConversationContextSafe();
   const openFile = useOptionalLocalFilePreview(conversation?.workspace ?? run?.workspace);
+  const target = label.target;
   const openTarget =
-    openFile && label.target && opensFile(displayItem, label)
-      ? () => void openFile(label.target as string)
+    openFile && target && opensFile(displayItem, label)
+      ? (): void => {
+          void openFile(target);
+        }
       : undefined;
   const statusKey = statusLabelKey(item.status, item.denied);
   // A refused call's output is mu's refusal, written for the model: the row says what happened instead.

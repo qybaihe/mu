@@ -1526,7 +1526,8 @@
     "openSettings": "Abrir configurações",
     "actions": {
       "newConversation": "Começar um novo chat",
-      "scheduledTasks": "Abrir tarefas agendadas"
+      "scheduledTasks": "Abrir tarefas agendadas",
+      "quickOpen": "Abrir um arquivo pelo nome"
     },
     "commandWaits": "Será executado quando esta resposta terminar"
   },
@@ -1575,5 +1576,13 @@
   },
   "firstHint": {
     "close": "Entendi"
+  },
+  "quickOpen": {
+    "title": "Abrir um arquivo",
+    "placeholder": "Pesquisar arquivos na pasta desta conversa",
+    "loading": "Lendo a pasta…",
+    "failed": "Não foi possível ler a pasta desta conversa.",
+    "more": "Esta pasta tem mais arquivos do que os listados. Digite mais do nome para filtrar.",
+    "noFolder": "Abra uma conversa com uma pasta para encontrar os arquivos pelo nome."
   }
 }

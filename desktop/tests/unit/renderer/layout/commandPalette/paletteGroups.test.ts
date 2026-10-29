@@ -156,6 +156,7 @@ describe('buildPaletteGroups', () => {
     expect(group(groups, 'commands')?.items).toMatchObject([
       { kind: 'action', action: 'newConversation', label: 'common.commandPalette.actions.newConversation' },
       { kind: 'action', action: 'scheduledTasks', label: 'common.commandPalette.actions.scheduledTasks' },
+      { kind: 'action', action: 'quickOpen', label: 'common.commandPalette.actions.quickOpen' },
     ]);
   });
 
