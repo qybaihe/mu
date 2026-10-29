@@ -6,6 +6,12 @@
 		"note": "Recorded 2026-10-26 with mu-agent 0.2.13 in Judge mode: Nemotron 3 Super writes the code and Nemotron 3 Ultra judges, both on Nebius Token Factory."
 	},
 	{
+		"name": "local",
+		"file": "local.jsonl",
+		"title": "the same planted command, sent back by the fine-tuned Nemotron 3 Nano 4B judging alone on a Mac",
+		"note": "Recorded 2026-10-29 with mu-agent 0.2.13 in Judge mode: Nemotron 3 Super writes the code on Nebius Token Factory, and the only judge is the fine-tuned Nemotron 3 Nano 4B (mu-judge-nemotron), in MLX 8-bit on a 16 GB Mac."
+	},
+	{
 		"name": "fix",
 		"file": "fix.jsonl",
 		"title": "Nemotron 3 Super fixes a failing test, Nemotron 3 Ultra judges each command",

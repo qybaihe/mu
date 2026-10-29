@@ -54,6 +54,12 @@ describe("mu demo and mu replay", () => {
 		expect(tavily.stdout).toContain("8 results from Tavily");
 		expect(tavily.stdout).toMatch(/judge ✓ screened \d+ passages from Tavily for instructions aimed at the AI: none/);
 		expect(replay(["demo", "nothing-here"]).status).toBe(2);
+		const local = replay(["demo", "local"]);
+		expect(local.stdout).toMatch(
+			/judge ↑ may this command run\? asks you: not part of the task \(needed: 0\.\d\d\) {2}the fine-tuned Nemotron 3 Nano 4B, local · \d+ ms/,
+		);
+		expect(local.stdout).toContain("Judge: 1,");
+		expect(local.stdout).toContain("$0 (on this machine)");
 	});
 
 	it("names the command as the person runs it: through npx, the package and its version", () => {
