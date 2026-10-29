@@ -94,9 +94,18 @@ On held-out test requests this raised Ultra's score from 54.7 to 57.9 on real re
 [mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron) fine-tunes Nemotron 3 Nano 4B as mu's judge and serves it over System One, the protocol mu's judges speak. Its weights are on Hugging Face as [qybaihe/mu-judge-nemotron-nano-4b](https://huggingface.co/qybaihe/mu-judge-nemotron-nano-4b). On a machine with an NVIDIA GPU, in a clone of mu-judge-nemotron:
 
 ```bash
-uv pip install -e '.[train]'
+pip install 'torch>=2.6' 'transformers>=5.0' 'peft>=0.17'   # what '.[train]' declares
 python serve/systemone_server.py --model qybaihe/mu-judge-nemotron-nano-4b --port 8770
 ```
+
+On a Mac with Apple silicon, the same weights in MLX 8-bit (about 4 GB; at full precision a 16 GB Mac went into swap), in a clone of mu-judge-nemotron:
+
+```bash
+uv run --with 'mlx-lm>=0.32' python -m mlx_lm convert --hf-path qybaihe/mu-judge-nemotron-nano-4b -q --q-bits 8 --mlx-path mu-judge-nemotron-mlx-8bit
+uv run --with 'mlx-lm>=0.32' python serve/systemone_server.py --backend mlx --model mu-judge-nemotron-mlx-8bit --port 8770
+```
+
+On a 16 GB Mac (M6) it gave the same answer as the CUDA judge to 98.7% of 1,420 questions from 400 random dev requests, at 0.41 s per request at the median and 1.0 s at p90. Long requests are much slower than on a GPU: one of about 40,000 prompt tokens over 9 questions took 82 s (12 s on an A100).
 
 Then use the built-in `nemotron-local` judge:
 

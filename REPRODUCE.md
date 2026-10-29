@@ -30,7 +30,14 @@ Ask it for something small, such as fixing a failing test. Optional web search t
 
 ## 4. The fine-tuned judge on your machine
 
-[mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron#use-it-with-mu) serves the fine-tuned Nemotron 3 Nano 4B ([weights](https://huggingface.co/qybaihe/mu-judge-nemotron-nano-4b)) on an NVIDIA GPU; mu then uses it with `{ "tiers": ["nemotron-local"] }` in `~/.mu/agent/mu.json`. The same repository rebuilds the training data, trains the judge and serves it; every Token Factory call it made is booked with its price (`python pipeline/spend.py`).
+[mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron#use-it-with-mu) serves the fine-tuned Nemotron 3 Nano 4B ([weights](https://huggingface.co/qybaihe/mu-judge-nemotron-nano-4b)) on an NVIDIA GPU, or in MLX 8-bit on a Mac with Apple silicon (16 GB is enough). On a Mac, in a clone of mu-judge-nemotron (the first line downloads the 8 GB weights once and writes the 4 GB 8-bit copy):
+
+```bash
+uv run --with 'mlx-lm>=0.32' python -m mlx_lm convert --hf-path qybaihe/mu-judge-nemotron-nano-4b -q --q-bits 8 --mlx-path mu-judge-nemotron-mlx-8bit
+uv run --with 'mlx-lm>=0.32' python serve/systemone_server.py --backend mlx --model mu-judge-nemotron-mlx-8bit --port 8770
+```
+
+mu then uses it with `{ "tiers": ["nemotron-local"] }` in `~/.mu/agent/mu.json` (or `MU_JUDGE=nemotron-local` for one session); `mu ledger` shows each of its verdicts with its latency. The same repository rebuilds the training data, trains the judge and serves it; every Token Factory call it made is booked with its price (`python pipeline/spend.py`).
 
 ## 5. The judge scores (68.2 against 54.7)
 
