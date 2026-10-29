@@ -159,6 +159,7 @@ function judgeName(id = "") {
 	const known = [
 		[/Nemotron-3-Ultra/i, "Nemotron 3 Ultra"],
 		[/nemotron-3-super/i, "Nemotron 3 Super"],
+		[/Nemotron-3\.5-Super-VL/i, "Nemotron 3.5 Super VL"],
 		[/Nemotron-3_5-Lightning|Nemotron-3\.5-Lightning/i, "Nemotron 3.5 Lightning"],
 		[/mu-judge-nemotron|127\.0\.0\.1:8770|nemotron-local/i, "the fine-tuned Nemotron 3 Nano 4B, local"],
 		[/mude/i, "mude 1.0, local"],
@@ -170,7 +171,7 @@ function judgeName(id = "") {
 /** USD per million tokens, in and out, for the judges this can name (Nebius Token Factory, 2026-10). Local judges cost nothing per call. */
 const PRICES = [
 	[/Nemotron-3-Ultra/i, 1.0, 3.0],
-	[/nemotron-3-super/i, 0.3, 0.9],
+	[/nemotron-3-super|Nemotron-3\.5-Super-VL/i, 0.3, 0.9],
 	[/Lightning/i, 0.06, 0.24],
 	[/mu-judge-nemotron|127\.0\.0\.1|localhost|mude/i, 0, 0],
 ];
