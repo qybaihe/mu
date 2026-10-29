@@ -129,5 +129,8 @@
     "ambiguous": "Bu ada sahip birden fazla dosya var",
     "gone": "{{name}} artık orada değil. Taşınmış veya silinmiş olabilir.",
     "openFailed": "{{name}} açılamadı"
+  },
+  "rewind": {
+    "action": "Bu mesajdan öncesine dön"
   }
 }

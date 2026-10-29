@@ -40,6 +40,8 @@ const [useChatKey, ChatKeyProvider] = createContext('');
  * `fork`: for a text row, what its fork button does, where the host forks its own session (a native conversation's:
  * pi's `fork` and `clone`), or nothing for a row that has no fork point; the list has none while a run goes or a message
  * is on its way, and none at all where the backend forks (the backend's), whose button the row decides itself.
+ * `rewind`: for the person's message, what its rewind button does (a native conversation's: mu's `/rewind` to the
+ * checkpoint taken before that message's turn changed files), or nothing; none while a run goes.
  */
 export type MessageListRun = {
   conversationId: string;
@@ -48,6 +50,7 @@ export type MessageListRun = {
   workspace?: string;
   loadEarlier?: () => boolean;
   fork?: (message: IMessageText) => (() => void) | undefined;
+  rewind?: (message: IMessageText) => (() => void) | undefined;
 };
 
 // React's own context: this value changes while the list is shown (a run starts and ends).

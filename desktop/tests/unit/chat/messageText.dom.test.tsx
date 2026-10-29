@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IMessageText } from '@/common/chat/chatLib';
 import { ipcBridge } from '@/common';
@@ -151,10 +151,16 @@ vi.mock('@arco-design/web-react', () => ({
     error: vi.fn(),
   },
   Tooltip: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  Button: ({ icon, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { icon?: React.ReactNode }) => (
+    <button type='button' {...props}>
+      {icon}
+    </button>
+  ),
 }));
 
 vi.mock('@icon-park/react', () => ({
   Copy: () => <span data-testid='copy-icon' />,
+  Undo: () => <span data-testid='undo-icon' />,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -827,6 +833,38 @@ describe('MessageText fork entry point', () => {
     fireEvent.click(screen.getByTestId('message-fork-button'));
     expect(action).toHaveBeenCalledTimes(1);
     expect(forkMocks.fork).not.toHaveBeenCalled();
+  });
+
+  it('offers going back to before the person’s message where the host has a checkpoint, and goes back through it', () => {
+    const action = vi.fn();
+    const rewind = vi.fn(() => action);
+    const { unmount } = render(
+      <MessageListRunProvider value={{ conversationId: 'native-1', isProcessing: false, hydrated: true, rewind }}>
+        <MessageText message={forkMessage({ position: 'right' })} isLastMessage={false} />
+      </MessageListRunProvider>
+    );
+    expect(rewind).toHaveBeenCalledWith(expect.objectContaining({ id: 'msg-fork-1' }));
+    fireEvent.click(screen.getByTestId('message-rewind-button'));
+    expect(action).toHaveBeenCalledTimes(1);
+    unmount();
+
+    // None on a reply, nor where the host has no checkpoint.
+    render(
+      <MessageListRunProvider value={{ conversationId: 'native-1', isProcessing: false, hydrated: true, rewind }}>
+        <MessageText message={forkMessage()} isLastMessage={false} />
+        <MessageText message={forkMessage({ id: 'msg-2', msg_id: 'msg-2', position: 'right' })} isLastMessage={false} />
+      </MessageListRunProvider>
+    );
+    expect(screen.getAllByTestId('message-rewind-button')).toHaveLength(1);
+    cleanup();
+    render(
+      <MessageListRunProvider
+        value={{ conversationId: 'native-1', isProcessing: false, hydrated: true, rewind: () => undefined }}
+      >
+        <MessageText message={forkMessage({ position: 'right' })} isLastMessage={false} />
+      </MessageListRunProvider>
+    );
+    expect(screen.queryByTestId('message-rewind-button')).toBeNull();
   });
 
   it('offers no host fork on a message the host has no fork point for, nor while the list has none (a run goes)', () => {

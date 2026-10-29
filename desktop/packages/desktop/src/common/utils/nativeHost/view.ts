@@ -243,7 +243,18 @@ export type ViewHost = {
   notices: ViewNotice[];
   queue: ViewQueue;
   session?: ViewSession;
+  /**
+   * Text pi's side put into the person's editor (an extension's `setEditorText`: a checkpoint rewind gives the request
+   * back to send again). `id` tells one from the next with the same words.
+   */
+  editorText?: { id: string; text: string };
 };
+
+/**
+ * A checkpoint mu took (its `kyrn.checkpoint` entry, on the branch): before the first file change of the turn that
+ * the person's message `entryId` started. `/rewind <id>` goes back to it.
+ */
+export type ViewCheckpoint = { id: number; entryId: string; label: string; turn: number; at: number };
 
 /**
  * The goal mu works towards (`/goal <condition>`: the agent keeps going until the condition holds), as mu last said
@@ -264,6 +275,8 @@ export type NativeView = {
   host: ViewHost;
   /** The goal mu works towards, once one was set in the session. */
   goal?: ViewGoal;
+  /** The checkpoints on the branch, oldest first; absent before the first. */
+  checkpoints?: ViewCheckpoint[];
 };
 
 export const emptyHost = (): ViewHost => ({ activity: [], notices: [], queue: { steering: [], followUp: [] } });

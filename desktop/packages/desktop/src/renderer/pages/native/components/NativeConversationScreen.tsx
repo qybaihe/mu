@@ -35,7 +35,7 @@ import { clearNativeUnread } from '../hooks/useNativeAttention';
 import { useNativeConversation } from '../hooks/useNativeConversation';
 import { useNativePanel } from '../hooks/useNativePanel';
 import { errorKey } from '../utils/errorWords';
-import { forkableIds, forkPoint } from '../utils/forkPoint';
+import { forkableIds, forkPoint, rewindPoints } from '../utils/forkPoint';
 import { folderName, nativeConversationPath } from '../utils/paths';
 import { ROW_WINDOW, windowStart } from '../utils/rowWindow';
 import { isWorking } from '../utils/statusRow';
@@ -173,9 +173,20 @@ const NativeConversationScreen: React.FC<{ id: string }> = ({ id }) => {
     [request, t]
   );
 
+  // A message's rewind button: mu's `/rewind` to the checkpoint taken before that message's turn changed files. mu
+  // asks what goes back (files, the conversation, both) in its own question above the send box, and says what it did.
+  const rewind = useCallback(
+    (checkpoint: number): void => {
+      void request({ type: 'prompt', message: `/rewind ${checkpoint}` });
+    },
+    [request]
+  );
+
   const working = isWorking(view) || Boolean(outgoing);
   // The messages a fork button is drawn under: found again only when the view changes while nothing runs.
   const forkable = useMemo(() => (working ? undefined : forkableIds(view)), [view, working]);
+  // The messages a rewind button is drawn under, with their checkpoints: the same.
+  const rewindable = useMemo(() => (working ? undefined : rewindPoints(view)), [view, working]);
   const run = useMemo<MessageListRun>(
     () => ({
       conversationId: conversation.id,
@@ -189,8 +200,16 @@ const NativeConversationScreen: React.FC<{ id: string }> = ({ id }) => {
               forkable.has(message.msg_id ?? message.id) ? () => void fork(message) : undefined,
           }
         : {}),
+      ...(rewindable?.size
+        ? {
+            rewind: (message: IMessageText) => {
+              const checkpoint = rewindable.get(message.msg_id ?? message.id);
+              return checkpoint === undefined ? undefined : () => rewind(checkpoint);
+            },
+          }
+        : {}),
     }),
-    [conversation.id, cwd, fork, forkable, loadEarlier, loading, working]
+    [conversation.id, cwd, fork, forkable, loadEarlier, loading, rewind, rewindable, working]
   );
 
   if (failure) return <OpenFailure failure={failure} onRetry={conversation.retry} />;

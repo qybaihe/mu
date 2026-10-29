@@ -2340,6 +2340,7 @@ export type I18nKey =
   | 'messages.processing'
   | 'messages.requestDetails'
   | 'messages.responseSentSuccessfully'
+  | 'messages.rewind.action'
   | 'messages.scrollToBottom'
   | 'messages.slash.empty'
   | 'messages.slash.hint'

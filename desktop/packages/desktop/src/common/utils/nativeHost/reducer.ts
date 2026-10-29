@@ -66,6 +66,8 @@ export const DECISION_ENTRY = 'kyrn.decision';
 export const VERDICT_ENTRY = 'kyrn.verdict';
 /** mu's goal, saved each time it changes (GOAL_ENTRY in the harness); its `goal.state` frame says the same. */
 export const GOAL_ENTRY = 'kyrn.goal';
+/** A checkpoint mu took before a turn's first file change (`ViewCheckpoint`). */
+export const CHECKPOINT_ENTRY = 'kyrn.checkpoint';
 export const GOAL_FRAME = 'goal.state';
 
 const GOAL_STATUSES: ReadonlySet<string> = new Set(['active', 'paused', 'met', 'cleared']);
@@ -79,6 +81,21 @@ export function readGoal(data: unknown): ViewGoal | undefined {
 }
 
 /** The view with the goal `data` says, or as it was when `data` says nothing usable. */
+/** A checkpoint entry's data, when it names its number and the person's message it goes back to before. */
+function addCheckpoint(view: NativeView, data: JsonObject): NativeView {
+  const id = asNumber(data.id);
+  const entryId = asText(data.entryId);
+  if (id === undefined || !Number.isSafeInteger(id) || !entryId) return view;
+  const checkpoint = {
+    id,
+    entryId,
+    label: asText(data.label),
+    turn: asNumber(data.turn) ?? 0,
+    at: asNumber(data.at) ?? 0,
+  };
+  return { ...view, checkpoints: [...(view.checkpoints ?? []).filter((each) => each.id !== id), checkpoint] };
+}
+
 function takeGoal(view: NativeView, data: unknown): NativeView {
   const goal = readGoal(data);
   return goal ? { ...view, goal } : view;
@@ -425,6 +442,7 @@ function addEntry(view: NativeView, entry: JsonObject): NativeView {
     if (entry.customType === DECISION_ENTRY) return addJudgment(view, asObject(entry.data));
     if (entry.customType === VERDICT_ENTRY) return attachVerdict(view, asObject(entry.data));
     if (entry.customType === GOAL_ENTRY) return takeGoal(view, entry.data);
+    if (entry.customType === CHECKPOINT_ENTRY) return addCheckpoint(view, asObject(entry.data));
     return view;
   }
   // Extensions' messages for the person that pi writes at a turn's boundary come only as entries.
@@ -466,6 +484,10 @@ function uiRequest(view: NativeView, record: PiRecord): NativeView {
   const method = asText(record.method);
   if ((DIALOG_METHODS as readonly string[]).includes(method)) return openDialog(view, record, method as DialogMethod);
   if (method === 'notify') return takeNotify(view, record);
+  if (method === 'set_editor_text') {
+    const id = asText(record.id);
+    return id ? { ...view, host: { ...view.host, editorText: { id, text: asText(record.text) } } } : view;
+  }
   const frame = readPresentation(record);
   if (!frame || frame.version !== 1) return view;
   const shown = addFrame(view, frame);

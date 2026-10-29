@@ -60,7 +60,8 @@ side"). Nothing here shows unless the main process says the native host is on (`
   cost when it cost anything. Beside the kernel bar, which reads the context all the time, the ring shows only once
   the fill passes 70% (`showsContextRing`), where it turns amber; in a narrow window, without the bar, always. Under each message, with the copy button, the fork button of mu's other conversations
   (`message-fork-button`): "Fork from here" makes a new session of the conversation up to that point and goes on in it
-  (below); it is not there while a run goes.
+  (below); it is not there while a run goes. Under the person's message whose turn changed files, the rewind button
+  (`message-rewind-button`): "Go back to before this message" (below).
 - **Work panel.** The judgment tabs (board, judge, sub-agents) read the page's view. The lessons tab lists the lessons of
   the conversation's folder (and those for everywhere), which can be reworded and retired as for any mu conversation;
   the files tab lists the folder, the model's new files included after each run, opens a file in the preview and gets its
@@ -416,6 +417,14 @@ conversation; the browser's own find sees the drawn rows only.
   offered while a run goes or a message is on its way (pi may not fork then), and a message without an entry id (a
   record of a harness that does not say it) says so in a toast. A fork pi refuses shows above the send box like any
   failed command; one an extension cancels (`cancelled`) does nothing.
+- A message's rewind button (`rewindPoints` in `forkPoint.ts`): mu takes a checkpoint before the first file change of
+  a turn and writes a `kyrn.checkpoint` entry naming the person's message that started it; the view keeps them
+  (`checkpoints`, along the branch). The button under that message sends mu's `/rewind <#>`, and mu asks above the send
+  box what goes back (files and conversation, files only, the conversation only) with the files it would change, and
+  says what it did. Going back with the conversation moves pi's branch to before the message: the main process rebuilds
+  the view after the command (the message leaves the transcript), and mu gives the request back for the editor
+  (`set_editor_text`, the view's `host.editorText`), which goes into the send box before what was typed. Not offered
+  while a run goes or a message is on its way; `/rewind undo` reverses it.
 - A prompt that runs a command an extension answers itself (`/goal …`, `/lessons`: pi's `get_commands` says
   `source: 'extension'`) adds no message of the person's: it is no longer on its way once pi took it, even when it
   starts a run (a goal does). A prompt template or a skill (`source: 'prompt' | 'skill'`) becomes a message and waits
@@ -451,6 +460,7 @@ For the Playwright harness (`tests/e2e/mu-conversation/`). Stable; nothing else 
 | `native-empty`, `native-open-failed`, `native-open-retry`                              | An empty conversation; one that could not be opened; try again                                                                                                                                                                                     |
 | `native-message-user`, `native-message-assistant`                                      | A row of the person's text; of mu's text                                                                                                                                                                                                           |
 | `message-fork-button`                                                                  | The fork button in the hover row under a message (the classic id: the same button; shown while the pointer is over the message and no run goes)                                                                                                    |
+| `message-rewind-button`                                                                | The rewind button under the person's message whose turn changed files (shown while the pointer is over the message and no run goes)                                                                                                                |
 | `native-tool-call`                                                                     | One call in the tool box; `data-tool` = pi's tool name, `data-status` = pending, running, completed, error, canceled or denied                                                                                                                     |
 | `native-status`                                                                        | Always there; `data-status` = the view's status (idle, working, thinking, settled, aborted, error); `data-sending` = whether a message is on its way to pi; a line inside only while something happens                                             |
 | `native-send-input`, `native-send`, `native-abort`                                     | The send box's text field, send button, stop button (while a run, a message on its way or a compaction goes)                                                                                                                                       |
@@ -698,8 +708,10 @@ home is the system's, where a Mac has the Xcode stub first; so the profile's hom
 the tab in view: the row shows under 变更 with nothing clicked (the run's end read the repository again), and a click
 opens its diff in 预览 (the removed and the added lines). A comment on the added line, written in the diff, reaches the
 fake model's request with the next message (where, the words, the line in a `diff` fence) and leaves the diff once
-sent. A file the test stages shows under 已暂存的变更 after the
-refresh button. Dark theme: the list and the diff. Skipped without a git that runs, and on Windows. Its first run found
+sent. A file the test stages shows under 已暂存的变更 after the refresh button. Dark theme: the list and the diff. Last,
+the rewind button under the README message: mu's question asks what goes back, and with files and conversation
+README.md is as committed, the message leaves the transcript and is in the send box again. Skipped without a git that
+runs, and on Windows. Its first run found
 that the runner searched the launch PATH (see the work panel above). `native-panels.spec.mjs`'s source step now
 expects the tab to say the folder is in no repository, or, with the stub first on PATH, that git cannot run (with
 the stub's words).

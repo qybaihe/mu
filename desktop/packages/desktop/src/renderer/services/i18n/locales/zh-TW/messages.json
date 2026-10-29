@@ -129,5 +129,8 @@
     "ambiguous": "有多個檔案同名",
     "gone": "{{name}} 已不在原處，可能已被移動或刪除。",
     "openFailed": "無法開啟 {{name}}"
+  },
+  "rewind": {
+    "action": "回到這則訊息之前"
   }
 }

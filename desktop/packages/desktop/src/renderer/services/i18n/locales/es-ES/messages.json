@@ -129,5 +129,8 @@
     "ambiguous": "Hay más de un archivo con este nombre",
     "gone": "{{name}} ya no está ahí. Puede que se haya movido o eliminado.",
     "openFailed": "No se pudo abrir {{name}}"
+  },
+  "rewind": {
+    "action": "Volver a antes de este mensaje"
   }
 }

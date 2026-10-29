@@ -4,7 +4,9 @@
 // fake model writes a new file (listed as untracked after the run), then changes the committed README.md (listed as
 // changed after that run, with nothing clicked; a click shows its diff in 预览); a comment on a line of that diff
 // reaches the model's request with the next message; a file the test stages shows under staged after the refresh
-// button. Pictured light and dark. Run it with
+// button. Pictured light and dark. Last, the rewind button on the message that changed README.md: mu asks what goes
+// back, and with files and conversation README.md is as committed again, the message leaves the transcript and comes
+// back into the send box. Run it with
 // `node scripts/kyrn/e2e-conversation.mjs --native -- native-source.spec.mjs` (nativeWorld.mjs, profile.mjs).
 //
 // A working git first on the app's PATH: the app takes its PATH from the login shell (fix-path), which in the
@@ -13,7 +15,7 @@
 // a link to a git that runs here first on PATH.
 import { expect, test } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createNativeWorld } from './nativeWorld.mjs';
@@ -60,6 +62,8 @@ const {
   replyWith,
   newConversation,
   requests,
+  userRows,
+  dialogs,
 } = createNativeWorld({ desktopRoot });
 
 /** Runs the test's own git in the project: a name and address on the line, the profile's home, no system config. */
@@ -200,6 +204,27 @@ test('the same tab and diff in the dark theme', async () => {
   await shot('source-diff-dark');
   await p.getByTestId('theme-toggle').click();
   await sleep(600);
+  expectNoProblems();
+});
+
+test('going back to before the README change puts the file back and the message into the send box', async () => {
+  const p = page();
+  const readme = () => readFileSync(join(paths().project, 'README.md'), 'utf8');
+  const committed = gitIn('show', 'HEAD:README.md');
+  expect(readme()).not.toBe(committed);
+  // Both messages changed files: each has a checkpoint to go back to.
+  await expect(p.getByTestId('message-rewind-button')).toHaveCount(2);
+  const asked = userRows().filter({ hasText: 'E2E:WRITE README.md' });
+  await asked.hover();
+  await asked.getByTestId('message-rewind-button').click();
+  await expect(dialogs()).toContainText('go back to checkpoint #2', { timeout: 15_000 });
+  await shot('rewind-question');
+  await dialogs().getByTestId('native-dialog-option').filter({ hasText: 'Files and conversation' }).click();
+  await expect.poll(readme, { timeout: 15_000 }).toBe(committed);
+  await expect(userRows().filter({ hasText: 'E2E:WRITE README.md' })).toHaveCount(0, { timeout: 15_000 });
+  await expect(userRows().filter({ hasText: 'E2E:WRITE notes/hello.txt' })).toHaveCount(1);
+  await expect(p.getByTestId('native-send-input')).toHaveValue('E2E:WRITE README.md', { timeout: 15_000 });
+  await shot('rewound');
   await stop();
   expectNoProblems();
   run.passed = true;

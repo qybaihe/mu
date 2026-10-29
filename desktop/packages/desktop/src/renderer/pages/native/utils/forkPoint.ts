@@ -53,3 +53,21 @@ export function forkableIds(view: NativeView): Set<string> {
   }
   return ids;
 }
+
+/**
+ * The checkpoint each of the person's messages can go back to, by the message's id (a row's `msg_id`): mu took it
+ * before the first file change of the turn the message started (`kyrn.checkpoint`, naming the message's entry). A
+ * turn that changed no file has none. `/rewind <id>` goes back to before the message: its files, the conversation,
+ * or both, as the person picks in mu's question.
+ */
+export function rewindPoints(view: NativeView): Map<string, number> {
+  const points = new Map<string, number>();
+  if (!view.checkpoints?.length) return points;
+  const byEntry = new Map(view.checkpoints.map((checkpoint) => [checkpoint.entryId, checkpoint.id]));
+  for (const message of view.messages) {
+    if (message.role !== 'user' || !message.entryId) continue;
+    const id = byEntry.get(message.entryId);
+    if (id !== undefined) points.set(message.id, id);
+  }
+  return points;
+}

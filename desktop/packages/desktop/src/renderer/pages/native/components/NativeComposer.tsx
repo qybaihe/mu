@@ -182,6 +182,17 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
   // what is there, as the classic box does.
   useAddEventListener('sendbox.fill', (text: string) => setDraft((old) => (old ? `${old}${text}` : text)), []);
 
+  // Text mu put into the person's editor (a checkpoint rewind gives the request back, to send again): into the box,
+  // before what was typed since. Each once; an empty one clears nothing the person typed.
+  const editorText = view.host.editorText;
+  const tookEditorText = useRef<string | undefined>(editorText?.id);
+  useEffect(() => {
+    if (!editorText || tookEditorText.current === editorText.id) return;
+    tookEditorText.current = editorText.id;
+    const text = editorText.text;
+    if (text.trim()) setDraft((old) => (old.trim() ? `${text}\n\n${old}` : text));
+  }, [editorText]);
+
   // A first message that could not be sent comes back into the box, before what was typed since.
   const tookBack = useRef<string | undefined>(undefined);
   useEffect(() => {

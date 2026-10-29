@@ -44,12 +44,15 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
 }));
 vi.mock('@/renderer/pages/conversation/Messages/components/MessageText', () => ({
   default: ({ message }: { message: IMessageText }) => {
-    // The real row's fork button, when the list's host forks its own session.
-    const fork = useMessageListRun()?.fork?.(message);
+    // The real row's fork and rewind buttons, when the list's host forks its own session and takes checkpoints.
+    const run = useMessageListRun();
+    const fork = run?.fork?.(message);
+    const rewind = message.position === 'right' ? run?.rewind?.(message) : undefined;
     return (
       <div data-testid={`row-text-${message.position}`}>
         {message.content.content}
         {fork ? <button type='button' data-testid='row-fork' onClick={fork} /> : null}
+        {rewind ? <button type='button' data-testid='row-rewind' onClick={rewind} /> : null}
       </div>
     );
   },
@@ -134,6 +137,12 @@ const opened = async () => {
 };
 
 const phase = () => screen.getByTestId('native-header-phase');
+
+/** mu's checkpoint entry #`id`, taken in the turn the person's message `entryId` started. */
+const checkpoint = (id: number, entryId: string) => ({
+  type: 'entry_appended',
+  entry: { type: 'custom', id: `k${id}`, customType: 'kyrn.checkpoint', data: { id, turn: id, entryId, label: '' } },
+});
 
 describe('the native conversation page', () => {
   it('shows a new conversation where mu will work, and the host as it goes from idle to running', async () => {
@@ -316,6 +325,41 @@ describe('the native conversation page', () => {
       expect(host.calls.filter((call) => call.method === 'request' && call.command?.type === 'clone')).toHaveLength(1)
     );
     expect(screen.getByTestId('native-send-input')).toHaveValue('');
+  });
+
+  it('goes back to before a message that changed files with mu’s /rewind, and the request comes back into the box', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1', cwd: '/work/app' });
+    host.answer(() => ({ ok: true, data: undefined }));
+    page(host.client);
+    await opened();
+    act(() =>
+      host.play('c1', [
+        ended(user('just asking'), 'u1'),
+        ended(reply([text('an answer')]), 'a1'),
+        ended(user('write the docs'), 'u2'),
+        checkpoint(1, 'u2'),
+        ended(reply([text('written')]), 'a2'),
+      ])
+    );
+    // Only the message whose turn changed files has one.
+    const rows = [...screen.getAllByTestId('row-text-right')];
+    expect(rows.map((row) => within(row).queryByTestId('row-rewind') !== null)).toEqual([false, true]);
+    fireEvent.click(within(rows[1]).getByTestId('row-rewind'));
+    await waitFor(() =>
+      expect(host.calls.filter((call) => call.method === 'request' && call.command?.type === 'prompt')).toEqual([
+        { method: 'request', id: 'c1', command: { type: 'prompt', message: '/rewind 1' } },
+      ])
+    );
+    // mu went back and gives the request back to send again: it goes into the box, before what was typed.
+    fireEvent.change(screen.getByTestId('native-send-input'), { target: { value: 'and the tests' } });
+    act(() =>
+      host.play('c1', [{ type: 'extension_ui_request', id: 'e1', method: 'set_editor_text', text: 'write the docs' }])
+    );
+    expect(screen.getByTestId('native-send-input')).toHaveValue('write the docs\n\nand the tests');
+    // Once: the same text again later is another request of mu's.
+    act(() => host.play('c1', [{ type: 'extension_ui_request', id: 'e2', method: 'set_editor_text', text: '' }]));
+    expect(screen.getByTestId('native-send-input')).toHaveValue('write the docs\n\nand the tests');
   });
 
   it('draws the button under the messages that have a fork point only', async () => {
