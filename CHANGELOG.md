@@ -4,6 +4,21 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-10-29
+
+**0.3.2 lets you point at what you mean: an element of a page, a line of a diff, a message to go back to.** It also shows what runs in the background. The agent is the same as 0.3.1; the desktop app carries mu-agent 0.3.2.
+
+### Added
+
+- **Show mu an element of a page.** In the work panel's browser, the pointer button lets you click an element of the page; the click doesn't reach the page. The element goes into your next message with the page's address, a selector that finds it, its text, styles and HTML, and a picture of it is attached. ↑ selects its parent, and Esc cancels.
+- **Comment on a diff's lines.** In a diff in the preview, the button beside a line opens a comment box under it. Your comments go with your next message, each with its file, line and code, and you can remove one before you send.
+- **Go back to before a message.** Under a message of yours whose turn changed files, a button goes back to the checkpoint mu took then. mu asks whether the files, the conversation or both go back. When the conversation goes back, your message returns to the send box to send again.
+- **Background commands beside the send box.** While a command the agent started in the background runs, such as a dev server, a watcher or a long build, a pill beside the send box says how many. Its list shows each command, how long it has run and its log, with buttons to stop one or all of them.
+
+### Fixed
+
+- A message that carried an element picked in the HTML preview dropped the reply it quoted. It keeps the quote now, and the send box keeps several picked elements instead of only the last one.
+
 ## [0.3.1] - 2026-10-29
 
 **0.3.1 makes the desktop app smoother to work in: what a conversation shows opens beside it, and the work panel keeps up with the agent.** The agent is the same as 0.3.0; the desktop app carries mu-agent 0.3.1.
