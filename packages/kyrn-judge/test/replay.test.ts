@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -54,6 +54,21 @@ describe("mu demo and mu replay", () => {
 		expect(tavily.stdout).toContain("8 results from Tavily");
 		expect(tavily.stdout).toMatch(/judge ✓ screened \d+ passages from Tavily for instructions aimed at the AI: none/);
 		expect(replay(["demo", "nothing-here"]).status).toBe(2);
+	});
+
+	it("names the command as the person runs it: through npx, the package and its version", () => {
+		const pkg = mkdtempSync(join(tmpdir(), "mu-replay-pkg-"));
+		mkdirSync(join(pkg, "kyrn", "bin"), { recursive: true });
+		copyFileSync(script, join(pkg, "kyrn", "bin", "kyrn-replay"));
+		cpSync(demoDir, join(pkg, "kyrn", "demo"), { recursive: true });
+		writeFileSync(join(pkg, "package.json"), JSON.stringify({ name: "mu-agent", version: "9.9.9" }));
+		const run = (env: Record<string, string>) =>
+			spawnSync(process.execPath, [join(pkg, "kyrn", "bin", "kyrn-replay"), "demo", "--fast"], {
+				encoding: "utf8",
+				env: { PATH: process.env.PATH ?? "", HOME: pkg, NO_COLOR: "1", ...env },
+			}).stdout;
+		expect(run({ npm_command: "exec" })).toContain("npx -y mu-agent@9.9.9 demo --list shows the other recordings");
+		expect(run({})).toContain("\nmu demo --list shows the other recordings");
 	});
 
 	it("replays a session file of your own, and says so when there is none", () => {

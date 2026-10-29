@@ -15,10 +15,21 @@ import { fileURLToPath } from "node:url";
 const [command = "demo", ...args] = process.argv.slice(2);
 const demoDir = join(dirname(fileURLToPath(import.meta.url)), "..", "demo");
 
+// How the person runs mu, for the hints below: through npx, `mu demo --list` is no command they have.
+const mu = (() => {
+	if (process.env.npm_command !== "exec") return "mu";
+	try {
+		const pkg = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "package.json"), "utf8"));
+		return pkg.name === "mu-agent" ? `npx -y mu-agent@${pkg.version}` : "mu";
+	} catch {
+		return "mu";
+	}
+})();
+
 const USAGE = [
 	"mu demo: a real mu session, replayed from its record. No key and no network: nothing is sent anywhere.",
 	"",
-	"  mu demo                  the main demo: Nemotron 3 Super fixes a failing test, Nemotron 3 Ultra judges",
+	"  mu demo                  the main demo: a planted command, sent back by Nemotron 3 Ultra; the rest approved",
 	"  mu demo <name>           another recorded session; mu demo --list names them",
 	"  mu replay                replay your own most recent mu session",
 	"  mu replay <n> | <file>   the n-th most recent, or a session file (.jsonl)",
@@ -26,6 +37,7 @@ const USAGE = [
 	"  --brief                  only the steps and the verdicts, not what each step printed",
 	"  --fast                   no pauses",
 	"  --speed <x>              pauses x times shorter than in the recording (default 3)",
+	...(mu === "mu" ? [] : ["", `Through npx, put \`${mu}\` where these say \`mu\`.`]),
 ].join("\n");
 
 if (args.includes("--help") || args.includes("-h") || command === "help") {
@@ -91,7 +103,7 @@ function pick() {
 		const name = positional[0] ?? list[0]?.name;
 		const demo = list.find((entry) => entry.name === name);
 		if (!demo) {
-			console.error(`No demo called ${name}. mu demo --list names them.`);
+			console.error(`No demo called ${name}. ${mu} demo --list names them.`);
 			process.exit(2);
 		}
 		return { path: join(demoDir, demo.file), demo };
@@ -109,7 +121,7 @@ function pick() {
 	const files = sessionFiles(env("SESSIONS_DIR") ?? join(agentDir, "sessions")).sort((a, b) => b.mtime - a.mtime);
 	const file = files[Number(given ?? 1) - 1];
 	if (!file) {
-		console.error(files.length === 0 ? "No mu sessions yet. Try: mu demo" : `There are only ${files.length} sessions.`);
+		console.error(files.length === 0 ? `No mu sessions yet. Try: ${mu} demo` : `There are only ${files.length} sessions.`);
 		process.exit(2);
 	}
 	return { path: file.path };
@@ -382,4 +394,4 @@ out(
 out(`  Agent: ${usages.length} model calls, ${n(agentIn)} tokens in, ${n(agentOut)} out, ${usd(agentUsd)}.`);
 if (seconds !== undefined) out(`  ${seconds} s from the request to the end of the turn.`);
 out();
-out(dim(demo ? "mu demo --list shows the other recordings; mu ledger lists the judge's verdicts from your own sessions." : "mu ledger lists the judge's verdicts from your recent sessions."));
+out(dim(demo ? `${mu} demo --list shows the other recordings; mu ledger lists the judge's verdicts from your own sessions.` : "mu ledger lists the judge's verdicts from your recent sessions."));
