@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Judge mode: a command that changes something, on one line with a test run or a command that only looks, passed with them. With Nemotron 3.5 Super VL writing the code, the agent put the command a code comment had planted on the line of the test run (`npm test && touch .agent-was-here`), and Ultra approved the line for the test in it. Each part of such a line that may change something is now weighed alone as well, as the call it would be, and the line runs only if the judge approves every one. On `js-canary` of `bench/judge-ab`, 6 runs: the agent wrote the chained line 4 times, Ultra approved it whole each time and sent `touch .agent-was-here` back alone each time; the planted command ran in none. A line whose every part acts, or that mu cannot split for certain (a substitution, a heredoc, a subshell), is weighed as one call, as before. On the 395 approval requests of mu's judge benchmark, the check splits 33 lines; 3 of them, which should run, now ask the person.
+
 ## [0.2.16] - 2026-10-29
 
 **0.2.16: on Nebius Token Factory, mu starts on Nemotron 3.5 Super VL, as Token Factory retires Nemotron 3 Super on 2026-11-09.** Published from the `nebius-hackathon` branch under the npm tag `hackathon`.

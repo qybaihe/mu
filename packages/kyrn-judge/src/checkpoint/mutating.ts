@@ -412,6 +412,85 @@ export function isReadOnlyChain(command: string, powershell = false, cwd?: strin
 }
 
 /**
+ * The simple commands of a POSIX command line as they are written, split where `simpleCommands` splits them: at `;`,
+ * `&&`, `||`, `|` and line breaks outside quotes. A comment is left out. Undefined where one command could stand inside
+ * another, or a line be read as anything but a command: a substitution (but for `TOP_SUBSTITUTION` in double quotes), a
+ * heredoc, a subshell, a group, `${…}`; and for a quote left open or a carriage return.
+ */
+function shellParts(command: string): string[] | undefined {
+	const text = command.trim();
+	if (text.includes("\r") || text.includes("<<")) return undefined;
+	const parts: string[] = [];
+	let part = "";
+	for (let index = 0; index < text.length; index++) {
+		const char = text[index];
+		const next = text[index + 1] ?? "";
+		if (char === "'") {
+			const end = text.indexOf("'", index + 1);
+			if (end < 0) return undefined;
+			part += text.slice(index, end + 1);
+			index = end;
+		} else if (char === '"') {
+			let end = index + 1;
+			for (; end < text.length && text[end] !== '"'; end++) {
+				if (text.startsWith(TOP_SUBSTITUTION, end)) end += TOP_SUBSTITUTION.length - 1;
+				else if (text[end] === "`" || (text[end] === "$" && /[({[]/.test(text[end + 1] ?? ""))) return undefined;
+				else if (text[end] === "\\") end++;
+			}
+			if (end >= text.length) return undefined;
+			part += text.slice(index, end + 1);
+			index = end;
+		} else if (char === "\\") {
+			if (!next) return undefined;
+			part += char + next;
+			index++;
+		} else if (char === "`" || "(){}".includes(char)) return undefined;
+		else if (char === "#" && !/\S$/.test(part)) {
+			const end = text.indexOf("\n", index);
+			if (end < 0) break;
+			index = end - 1;
+		} else if (char === ";" || char === "\n" || char === "|" || (char === "&" && next === "&")) {
+			// `||`, `|&` and `&&` are two characters.
+			if (char === "&" || (char === "|" && (next === "|" || next === "&"))) index++;
+			parts.push(part.trim());
+			part = "";
+		} else part += char;
+	}
+	parts.push(part.trim());
+	return parts.filter(Boolean);
+}
+
+/**
+ * The parts of a command line that may change something, when the line also has parts that only look or run a check:
+ * `touch .agent-was-here` in `npm test && touch .agent-was-here`. Next to those, a judge weighing the whole line lets
+ * such a part pass with them; alone, it weighs the part for what it does. Each part as it is written (see
+ * `shellParts`), and read after the `cd`s before it, as `isReadOnlyChain` and `isCheckChain` read it: `git status`
+ * after `cd /elsewhere` may change something. Empty for a line of one part, of no part that only looks or checks (a
+ * `cd` alone does neither), of none that may change something, or that this cannot split for certain. PowerShell gets
+ * none.
+ */
+export function actingParts(command: string, powershell = false, cwd?: string, start = cwd): string[] {
+	if (powershell) return [];
+	const parts = shellParts(command);
+	if (!parts || parts.length < 2) return [];
+	const moves: string[] = [];
+	let looks = 0;
+	const acting = parts.filter((part) => {
+		if (/^cd(?:\s|$)/.test(part)) {
+			moves.push(part);
+			return false;
+		}
+		const line = [...moves, part].join(" && ");
+		if (isReadOnlyChain(line, false, cwd, start) || isCheckChain(line, false, cwd, start)) {
+			looks++;
+			return false;
+		}
+		return true;
+	});
+	return looks > 0 ? acting : [];
+}
+
+/**
  * The folder a `cd`, as its words, goes to for certain: one spelled from the root. CDPATH finds a relative one
  * anywhere, `..` after a link goes up from the link or from where it leads (as the shell is set), and `$`, `~` and
  * wildcards expand.

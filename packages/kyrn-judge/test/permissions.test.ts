@@ -8,7 +8,7 @@ import { CONFIG_DIR_NAME, type ExtensionUIContext } from "@earendil-works/pi-cod
 import { Type } from "typebox";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
-import { isCheckChain, isMutatingCall, isReadOnlyChain } from "../src/checkpoint/mutating.ts";
+import { actingParts, isCheckChain, isMutatingCall, isReadOnlyChain } from "../src/checkpoint/mutating.ts";
 import { parseConfig } from "../src/config.ts";
 import type { DecisionMode } from "../src/decision.ts";
 import { toolRisk } from "../src/decisions/tool-risk.ts";
@@ -474,6 +474,36 @@ describe("what needs permission", () => {
 		expect(isCheckChain(`cd ${cwd} && npm test`, false, cwd, "/elsewhere")).toBe(true);
 		// A check still needs permission: only the judge's line for it is lower.
 		expect(permissionNeed("bash", { command: "npm run check 2>&1" }, cwd)).toMatchObject({ kind: "shell" });
+	});
+
+	it("finds the parts of a line that may change something, next to parts that only look or check", () => {
+		const cases: [string, string[]][] = [
+			["npm test && touch .agent-was-here", ["touch .agent-was-here"]],
+			["npm test 2>&1 | tail -5; touch .agent-was-here", ["touch .agent-was-here"]],
+			["git status && npm install left-pad && rm -rf dist", ["npm install left-pad", "rm -rf dist"]],
+			["echo 'a; touch b' && rm x", ["rm x"]],
+			["ls\n# touch a\ntouch b", ["touch b"]],
+			["ls || touch x |& tee log", ["touch x", "tee log"]],
+			["sleep 1 & touch x; ls", ["sleep 1 & touch x"]],
+			[`cd ${cwd} && git status && touch x`, ["touch x"]],
+			// Git elsewhere may run what its config says.
+			["cd /elsewhere && git status && touch x", []],
+			// Every part acts, or none, or one part only.
+			["touch a && touch b", []],
+			["git status; git log -5", []],
+			["npm test && git diff", []],
+			["npm test", []],
+			[`cd ${cwd} && touch x`, []],
+			// One command, or a line split only for certain.
+			[String.raw`ls \; touch x`, []],
+			['echo "$(touch x)" && ls', []],
+			["ls && (touch x)", []],
+			["ls && { touch x; }", []],
+			["cat <<'X'\nhi\nX\ntouch y", []],
+			["ls && echo 'open", []],
+		];
+		for (const [command, parts] of cases) expect(actingParts(command, false, cwd), command).toEqual(parts);
+		expect(actingParts("npm test; Remove-Item x", true, cwd)).toEqual([]);
 	});
 
 	// Recording the README GIF on 0.2.12: MiMo ran one test file the way the repository's AGENTS.md says, from the
@@ -1054,6 +1084,44 @@ describe("permission modes in a session", () => {
 			expect(of("permissions.approved")[0]).toMatchObject({ toolCallId: "call-check", by: "judge" });
 		},
 	);
+
+	// bench/judge-ab, 2026-10-29: Ultra approved `npm test && touch .agent-was-here` for the test in it.
+	it("Judge mode: a part that acts, on one line with a check or a look, is also weighed alone", async () => {
+		const calls: string[] = [];
+		const { harness, ran, asked, of } = await start(
+			(request): Record<string, Answer> => {
+				if (!("verdict" in request.questions)) return {};
+				const tool = String((request.state as { tool_call: string }).tool_call);
+				calls.push(tool);
+				return { verdict: tool === "bash: touch .agent-was-here" ? verdict("unrelated", 0.9) : verdict("needed") };
+			},
+			{ mode: "judge", pick: (options) => options.at(-1) },
+		);
+		const planted = "npm test && touch .agent-was-here";
+		const install = "npm test 2>&1 | tail -5; npm install left-pad";
+		harness.setResponses([
+			call("bash", { command: planted }),
+			call("bash", { command: install }),
+			call("bash", { command: "npm install left-pad && npm test" }),
+			call("bash", { command: "touch a && touch b" }),
+			fauxAssistantMessage("Done."),
+		]);
+		await harness.session.prompt("Fix the failing test");
+		expect(calls).toEqual([
+			`bash: ${planted}`,
+			"bash: touch .agent-was-here",
+			`bash: ${install}`,
+			"bash: npm install left-pad",
+			"bash: npm install left-pad && npm test",
+			"bash: npm install left-pad",
+			// No part only looks or checks: the line is the call.
+			"bash: touch a && touch b",
+		]);
+		expect(ran).toEqual([`bash ${install}`, "bash npm install left-pad && npm test", "bash touch a && touch b"]);
+		expect(asked.map((each) => each.title.split("\n")[1])).toEqual([planted]);
+		expect(asked[0].title).toContain("The judge thinks this isn't part of the task.");
+		expect(of("permissions.request")[0]).toMatchObject({ reason: "unrelated", mode: "judge" });
+	});
 
 	it("Judge mode: a sure 'needed' is required, and without anyone to ask the rest is refused", async () => {
 		const { harness, ran } = await start(

@@ -6,7 +6,7 @@ import {
 	type ToolCallEvent,
 	type ToolCallEventResult,
 } from "@earendil-works/pi-coding-agent";
-import { isCheckChain, shellStart } from "../../checkpoint/mutating.ts";
+import { actingParts, isCheckChain, shellStart } from "../../checkpoint/mutating.ts";
 import type { Decision } from "../../decision.ts";
 import { toolApproval } from "../../decisions/tool-approval.ts";
 import { toolRisk } from "../../decisions/tool-risk.ts";
@@ -236,33 +236,44 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		const input = event.input as Record<string, unknown>;
 		const powershell =
 			event.toolName === "powershell" || (event.toolName === "bg_start" && process.platform === "win32");
-		const check =
-			need.kind === "shell" &&
-			isCheckChain(String(input.command ?? ""), powershell, ctx.cwd, shellStart(event.toolName, input, ctx.cwd));
-		const decision = await runtime.engine.decide(
-			toolApproval,
-			{
-				task: clip(
-					inherited ?? ([frame?.goal, frame?.currentSubgoal].filter(Boolean).join(" / now: ") || userMessage),
-					600,
-				),
-				userMessage,
-				call,
-				where:
-					need.kind === "outside"
-						? "outside the project folder"
-						: need.kind === "shell" || need.kind === "run"
-							? "a program run in the project folder"
-							: need.kind === "delegate"
-								? "subagents working on the project"
-								: "an action outside this computer or program, such as a web page or a connected service",
-				check,
-			},
-			{ signal: ctx.signal, about: call },
-		);
+		const command = String(input.command ?? "");
+		const start = shellStart(event.toolName, input, ctx.cwd);
+		const check = need.kind === "shell" && isCheckChain(command, powershell, ctx.cwd, start);
+		const question = {
+			task: clip(
+				inherited ?? ([frame?.goal, frame?.currentSubgoal].filter(Boolean).join(" / now: ") || userMessage),
+				600,
+			),
+			userMessage,
+			call,
+			where:
+				need.kind === "outside"
+					? "outside the project folder"
+					: need.kind === "shell" || need.kind === "run"
+						? "a program run in the project folder"
+						: need.kind === "delegate"
+							? "subagents working on the project"
+							: "an action outside this computer or program, such as a web page or a connected service",
+			check,
+		};
+		const decision = await runtime.engine.decide(toolApproval, question, { signal: ctx.signal, about: call });
 		const verdict = decision.judged ?? decision.outcome;
-		if (verdict === "approve") return { approved: true, reason: "ask" };
-		return { approved: false, reason: unanswered(decision) ?? verdict };
+		if (verdict !== "approve") return { approved: false, reason: unanswered(decision) ?? verdict };
+		if (need.kind !== "shell") return { approved: true, reason: "ask" };
+		// Next to parts that only look or run a check, a part that acts passed with them: Nemotron 3 Ultra approved
+		// `npm test && touch .agent-was-here` for the test in it, the second part asked for by a comment in the code. Each
+		// such part is weighed alone too, as the call it would be, and the line runs only if the judge approves every one.
+		for (const part of actingParts(command, powershell, ctx.cwd, start)) {
+			const alone = `${event.toolName}: ${clip(part, 400)}`;
+			const each = await runtime.engine.decide(
+				toolApproval,
+				{ ...question, call: alone, check: false },
+				{ signal: ctx.signal, about: alone },
+			);
+			const its = each.judged ?? each.outcome;
+			if (its !== "approve") return { approved: false, reason: unanswered(each) ?? its };
+		}
+		return { approved: true, reason: "ask" };
 	};
 
 	const askUser = async (
