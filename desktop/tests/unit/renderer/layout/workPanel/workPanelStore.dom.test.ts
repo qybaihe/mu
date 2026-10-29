@@ -3,16 +3,21 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   bumpWorkPanelNews,
+  followAgentTo,
+  followsAgent,
   handPreviewToBrowser,
   markWorkPanelUsed,
   noteWorkPanelSignature,
   readWorkPanelMemory,
+  readWorkPanelFollow,
   rememberWorkPanel,
   resetWorkPanelStoreForTest,
+  setWorkPanelFollow,
   setWorkPanelViewing,
   useWorkPanelUnread,
   useWorkPanelUsed,
   WORK_PANEL_TABS,
+  type WorkPanelTab,
 } from '@/renderer/components/layout/WorkPanel/workPanelStore';
 import { renderHook } from '@testing-library/react';
 
@@ -185,6 +190,48 @@ describe('which tabs have news', () => {
   });
 });
 
+describe('following the agent', () => {
+  /** The conversation on screen, its panel open on `tab`, as the panel's hook reports it. */
+  const looking = (conversationId: string, tab: WorkPanelTab) => {
+    rememberWorkPanel(conversationId, { open: true, tab });
+    setWorkPanelViewing(conversationId, tab);
+  };
+
+  it('is on until the person turns it off, for every conversation, and kept across a restart', () => {
+    expect(readWorkPanelFollow()).toBe(true);
+    setWorkPanelFollow(false);
+    resetWorkPanelStoreForTest();
+    expect(readWorkPanelFollow()).toBe(false);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}').follow).toBe(false);
+  });
+
+  it('turns a panel open on the workspace to what the agent does there', () => {
+    looking('conv-1', 'files');
+    expect(followAgentTo('conv-1', 'browser')).toBe(true);
+    expect(readWorkPanelMemory('conv-1')).toMatchObject({ open: true, tab: 'browser' });
+    setWorkPanelViewing('conv-1', 'browser');
+    expect(followAgentTo('conv-1', 'preview')).toBe(true);
+    expect(readWorkPanelMemory('conv-1').tab).toBe('preview');
+  });
+
+  it('leaves a closed panel, a kernel tab, another conversation, and a person who turned it off alone', () => {
+    // Closed: the panel is not being looked at.
+    expect(followAgentTo('conv-1', 'browser')).toBe(false);
+    expect(readWorkPanelMemory('conv-1').open).toBe(false);
+
+    looking('conv-1', 'board');
+    expect(followsAgent('conv-1')).toBe(false);
+    expect(followAgentTo('conv-1', 'browser')).toBe(false);
+    expect(readWorkPanelMemory('conv-1').tab).toBe('board');
+
+    looking('conv-1', 'source');
+    expect(followsAgent('conv-2')).toBe(false);
+    setWorkPanelFollow(false);
+    expect(followAgentTo('conv-1', 'preview')).toBe(false);
+    expect(readWorkPanelMemory('conv-1').tab).toBe('source');
+  });
+});
+
 describe('which tabs a conversation used', () => {
   it('counts a tab the person opened, once, in that conversation only', () => {
     expect(used('conv-1').size).toBe(0);
@@ -239,7 +286,10 @@ describe('the words of the work panel', () => {
           path.join(REPO_ROOT, 'packages/desktop/src/renderer/services/i18n/locales', language, 'common.json'),
           'utf8'
         )
-      ) as { more: string; workPanel: Record<string, unknown> & { tabs: Record<string, string> } };
+      ) as {
+        more: string;
+        workPanel: Record<string, unknown> & { tabs: Record<string, string>; follow: Record<string, string> };
+      };
       for (const tab of WORK_PANEL_TABS) expect(common.workPanel.tabs[tab], `${language} ${tab}`).toBeTruthy();
       for (const key of [
         'label',
@@ -253,6 +303,7 @@ describe('the words of the work panel', () => {
       ])
         expect(common.workPanel[key], `${language} ${key}`).toBeTruthy();
       expect(common.workPanel.unread, language).toContain('{{tab}}');
+      for (const key of ['label', 'on', 'off']) expect(common.workPanel.follow[key], `${language} follow.${key}`).toBeTruthy();
       // 更多, where the tabs a conversation has not used wait.
       expect(common.more, `${language} more`).toBeTruthy();
     }

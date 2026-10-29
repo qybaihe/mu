@@ -167,6 +167,16 @@ providers keyed by a folder (`common/kyrn/folderBridge.ts`, answered in `process
   half a second before the panel read it, was counted against the empty view the screen started with, and a
   conversation with edits opened with its dot on. A shell command that changes files says nothing of which, so it
   does not mark the tab (the folder is read again after every run in any case).
+- Following the agent (`followAgentTo`, `followsAgent` in `WorkPanel/workPanelStore.ts`). Problem: with the panel open
+  on the files, the person saw a dot when the model finished a file, and had to find it and open it; the same for a
+  page mu's browser opened while they looked at the preview. Example: the person watches the preview while the model
+  writes `src/b.ts`, then `src/c.ts`: each shows there as it is finished. Solution: while the panel is open on a
+  workspace tab (files, preview, source, browser) in the conversation on screen, a finished `write` or `edit` opens its
+  file in the preview (the newest when a read holds several; `finishedEditPaths`), and a page the agent opens or its
+  browser at work turns the panel to the browser. A closed panel, or one on the board, judge, hive or lessons, keeps the
+  dots only, so the agent still never opens the panel by itself. A toggle on the workspace tabs turns following off
+  for every conversation (kept with the panel's memory, `follow` in `mu-work-panel`); it is on by default. An app
+  conversation follows the same way when its stream names the edited file (an ACP call's location or diff path).
 - The source tab (`native/components/NativeSource.tsx`): the classic source control is the backend's, by project entry,
   so the main process runs git itself in the folder (`process/services/folderGit/`): `rev-parse --show-toplevel`, then
   `status --porcelain=v2 -z --branch --untracked-files=all` (at most 1000 changes, the rest counted), and for a

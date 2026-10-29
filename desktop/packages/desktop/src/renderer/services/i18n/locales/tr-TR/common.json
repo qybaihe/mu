@@ -1557,7 +1557,12 @@
     "previewEmpty": "Henüz önizlenecek bir şey yok. Konuşmadan açılan dosyalar burada görünür.",
     "previewHidden": "Önizleme gizli.",
     "browserEmpty": "Açık sayfa yok. Yukarıya bir adres ya da arama yazın. Konuşmadan açılan sayfalar da burada görünür.",
-    "firstHint": "Pano ilerlemeyi sade bir dille anlatır, Kararlar her kararı listeler, Dosyalar bu konuşmanın klasörüdür. Diğer sekmeler kullanıldıklarında görünür."
+    "firstHint": "Pano ilerlemeyi sade bir dille anlatır, Kararlar her kararı listeler, Dosyalar bu konuşmanın klasörüdür. Diğer sekmeler kullanıldıklarında görünür.",
+    "follow": {
+      "label": "Ajanı takip et",
+      "on": "Ajan takip ediliyor: düzenlediği dosyalar ve açtığı sayfalar burada görünür. Durdurmak için tıklayın.",
+      "off": "Ajanı takip et: düzenlediği dosyaları ve açtığı sayfaları burada göster."
+    }
   },
   "nodeRuntime": {
     "title": "Node.js indirilsin mi?",

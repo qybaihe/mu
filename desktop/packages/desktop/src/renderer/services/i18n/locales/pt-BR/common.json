@@ -1557,7 +1557,12 @@
     "previewEmpty": "Nada para pré-visualizar ainda. Arquivos abertos na conversa aparecem aqui.",
     "previewHidden": "A prévia está oculta.",
     "browserEmpty": "Nenhuma página aberta. Digite um endereço ou uma pesquisa acima. As páginas abertas na conversa também aparecem aqui.",
-    "firstHint": "Painel conta o progresso em palavras simples, Vereditos lista cada veredito e Arquivos é a pasta desta conversa. As outras abas aparecem quando são usadas."
+    "firstHint": "Painel conta o progresso em palavras simples, Vereditos lista cada veredito e Arquivos é a pasta desta conversa. As outras abas aparecem quando são usadas.",
+    "follow": {
+      "label": "Acompanhar o agente",
+      "on": "Acompanhando o agente: os arquivos que ele edita e as páginas que abre aparecem aqui. Clique para parar.",
+      "off": "Acompanhar o agente: mostrar aqui os arquivos que ele edita e as páginas que abre."
+    }
   },
   "nodeRuntime": {
     "title": "Baixar o Node.js?",

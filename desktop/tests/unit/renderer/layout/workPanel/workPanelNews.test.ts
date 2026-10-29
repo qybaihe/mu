@@ -102,16 +102,25 @@ describe('what counts as news in each tab', () => {
   it('the files: an edit the agent finished, told once, whatever the stream it came in', () => {
     const edited = createEditWatcher();
     // The kind comes with the call's start only; the status alone comes with its end.
-    expect(edited(acp({ tool_call_id: 't1', kind: 'edit', status: 'in_progress' }))).toBe(false);
-    expect(edited(acp({ tool_call_id: 't1', status: 'completed' }))).toBe(true);
-    expect(edited(acp({ tool_call_id: 't2', kind: 'read', status: 'completed' }))).toBe(false);
-    expect(edited(acp({ tool_call_id: 't3', status: 'completed', content: [{ type: 'diff' }] }))).toBe(true);
-    expect(edited(acp({ tool_call_id: 't4', kind: 'edit', status: 'failed' }))).toBe(false);
+    expect(edited(acp({ tool_call_id: 't1', kind: 'edit', status: 'in_progress' }))).toBeUndefined();
+    expect(edited(acp({ tool_call_id: 't1', status: 'completed' }))).toEqual({});
+    expect(edited(acp({ tool_call_id: 't2', kind: 'read', status: 'completed' }))).toBeUndefined();
+    expect(edited(acp({ tool_call_id: 't3', status: 'completed', content: [{ type: 'diff' }] }))).toEqual({});
+    expect(edited(acp({ tool_call_id: 't4', kind: 'edit', status: 'failed' }))).toBeUndefined();
 
-    expect(edited(group('Executing'))).toBe(false);
-    expect(edited(group('Success'))).toBe(true);
+    expect(edited(group('Executing'))).toBeUndefined();
+    expect(edited(group('Success'))).toEqual({});
     // The same finished call streamed again is not a second edit.
-    expect(edited(group('Success'))).toBe(false);
-    expect(edited({ type: 'content', data: 'hello' })).toBe(false);
+    expect(edited(group('Success'))).toBeUndefined();
+    expect(edited({ type: 'content', data: 'hello' })).toBeUndefined();
+  });
+
+  it('the files: which file an edit changed, when its start or its diff names it', () => {
+    const edited = createEditWatcher();
+    edited(acp({ tool_call_id: 'p1', kind: 'edit', status: 'in_progress', locations: [{ path: '/work/app/a.ts' }] }));
+    expect(edited(acp({ tool_call_id: 'p1', status: 'completed' }))).toEqual({ path: '/work/app/a.ts' });
+    expect(
+      edited(acp({ tool_call_id: 'p2', status: 'completed', content: [{ type: 'diff', path: '/work/app/b.ts' }] }))
+    ).toEqual({ path: '/work/app/b.ts' });
   });
 });

@@ -9,7 +9,8 @@ import { useCallback, useSyncExternalStore } from 'react';
  * open in a new conversation too.
  *
  * News is per conversation and per tab, in memory only. The panel never opens itself for news: a tab with something
- * the person has not seen gets a dot until they look at it. Which tabs a conversation has used (news there, something
+ * the person has not seen gets a dot until they look at it; only a panel already open on the workspace may turn to what
+ * the agent is doing there, when the person follows the agent (`followAgentTo`). Which tabs a conversation has used (news there, something
  * to show, or the person opening it) is kept with its news: the strip shows the tabs every conversation needs, and
  * the others once they are used (WorkPanelTabs).
  */
@@ -42,7 +43,8 @@ const DEFAULT_MEMORY: WorkPanelMemory = { open: false, tab: 'board', width: WORK
 
 /** One conversation's memory, and when it last changed. The memory object is kept as is while it holds. */
 type Remembered = { memory: WorkPanelMemory; at: number };
-type State = { last: WorkPanelMemory; conversations: Readonly<Record<string, Remembered>> };
+/** `follow`: whether the panel follows the agent (see `followAgentTo`); one choice for every conversation. */
+type State = { last: WorkPanelMemory; conversations: Readonly<Record<string, Remembered>>; follow: boolean };
 type News = {
   unread: ReadonlySet<WorkPanelTab>;
   signatures: Readonly<Partial<Record<WorkPanelTab, string>>>;
@@ -94,7 +96,7 @@ function load(): State {
     const at = record(value).at;
     if (memory) conversations[id] = { memory, at: typeof at === 'number' ? at : 0 };
   }
-  state = { last: readMemory(stored.last) ?? DEFAULT_MEMORY, conversations };
+  state = { last: readMemory(stored.last) ?? DEFAULT_MEMORY, conversations, follow: stored.follow !== false };
   return state;
 }
 
@@ -103,7 +105,7 @@ function persist(next: State): void {
     Object.entries(next.conversations).map(([id, { memory, at }]) => [id, { ...memory, at }])
   );
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ last: next.last, conversations }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ last: next.last, conversations, follow: next.follow }));
   } catch {
     // Out of quota or no storage: the panel still remembers for this session.
   }
@@ -152,7 +154,7 @@ export function rememberWorkPanel(conversationId: string, patch: Partial<WorkPan
     const oldest = ids.toSorted((a, b) => conversations[a].at - conversations[b].at);
     for (const id of oldest.slice(0, ids.length - MAX_REMEMBERED)) delete conversations[id];
   }
-  state = { last: memory, conversations };
+  state = { ...current, last: memory, conversations };
   persist(state);
   emit();
 }
@@ -168,6 +170,44 @@ export function handPreviewToBrowser(conversationId: string): void {
 export function useWorkPanelMemory(conversationId: string | null): WorkPanelMemory {
   const snapshot = useCallback(() => readWorkPanelMemory(conversationId), [conversationId]);
   return useSyncExternalStore(subscribe, snapshot, snapshot);
+}
+
+// ── following the agent ─────────────────────────────────────────────────────
+
+/** The workspace tabs: while the panel is open on one of them, it follows the agent. */
+export const FOLLOWED_TABS: ReadonlySet<WorkPanelTab> = new Set(['files', 'preview', 'source', 'browser']);
+
+export const readWorkPanelFollow = (): boolean => load().follow;
+
+/** Turn following the agent on or off, for every conversation. */
+export function setWorkPanelFollow(follow: boolean): void {
+  const current = load();
+  if (current.follow === follow) return;
+  state = { ...current, follow };
+  persist(state);
+  emit();
+}
+
+export function useWorkPanelFollow(): boolean {
+  return useSyncExternalStore(subscribe, readWorkPanelFollow, readWorkPanelFollow);
+}
+
+/**
+ * The agent did something the workspace shows (finished writing a file, opened a page, set its browser to work): the
+ * panel turns to it when the person follows the agent and is looking at the workspace in this conversation (文件, 预览,
+ * 源码 or 浏览器). Says whether it did; otherwise the tab only gets its dot. A closed panel, or one on the kernel's tabs,
+ * stays as the person left it: the agent still never opens the panel by itself.
+ */
+export function followAgentTo(conversationId: string, tab: 'preview' | 'browser'): boolean {
+  if (!followsAgent(conversationId)) return false;
+  if (viewing.get(conversationId) !== tab) rememberWorkPanel(conversationId, { tab });
+  return true;
+}
+
+/** Whether the panel would follow the agent in this conversation now. */
+export function followsAgent(conversationId: string): boolean {
+  const tab = viewing.get(conversationId);
+  return load().follow && tab !== undefined && FOLLOWED_TABS.has(tab);
 }
 
 const withTab = (tabs: ReadonlySet<WorkPanelTab>, tab: WorkPanelTab): ReadonlySet<WorkPanelTab> =>

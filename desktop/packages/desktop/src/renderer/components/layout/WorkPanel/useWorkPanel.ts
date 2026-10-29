@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ipcBridge } from '@/common';
 import type { Activity } from '@/common/kyrn/types';
 import { onHiveFocus, type HiveFocusRequest } from '@/renderer/pages/conversation/KyrnPanel/focus';
 import { isBrowserMcpActivity } from '@/renderer/pages/conversation/Preview/browser/agentActivity';
 import { takeBrowserHandOver, useBrowserHandOver } from '@/renderer/pages/conversation/Preview/browser/browserStore';
 import { onPreviewOpened } from '@/renderer/pages/conversation/Preview/context/previewOpeners';
+import { useOptionalLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
 import { WORKSPACE_TOGGLE_EVENT, dispatchWorkspaceStateEvent } from '@/renderer/utils/workspace/workspaceEvents';
 import { boardSignature, createEditWatcher, hiveSignature, judgeSignature, lessonsSignature } from './news';
 import {
   bumpWorkPanelNews,
+  followAgentTo,
+  followsAgent,
   handPreviewToBrowser,
   markWorkPanelUsed,
   noteWorkPanelSignature,
@@ -29,6 +32,8 @@ import {
  * changed, and on the browser a page the agent opened, a run of mu's starting in it, or the agent's browser tool
  * at work. Nothing else the agent does opens the panel; the one exception is mu's browser typing into its page or
  * asking the person to confirm a step on it, which is done where the person can see it (see `previewOpeners.ts`).
+ * A panel already open on the workspace follows the agent there, unless the person turned that off: a file it
+ * finished editing shows in 预览, a page it opened or its browser at work in 浏览器 (`followAgentTo`).
  */
 export function useWorkPanel(conversationId: string | null, kernel: { events: Activity[]; settled: boolean }) {
   const memory = useWorkPanelMemory(conversationId);
@@ -52,8 +57,8 @@ export function useWorkPanel(conversationId: string | null, kernel: { events: Ac
       rememberWorkPanel(conversationId, { open: true, tab: 'hive' });
     });
     const stopOpened = onPreviewOpened((by, where) => {
-      if (by === 'agent') bumpWorkPanelNews(conversationId, where);
-      else rememberWorkPanel(conversationId, { open: true, tab: where });
+      if (by !== 'agent') rememberWorkPanel(conversationId, { open: true, tab: where });
+      else if (!followAgentTo(conversationId, where)) bumpWorkPanelNews(conversationId, where);
     });
     return () => {
       window.removeEventListener(WORKSPACE_TOGGLE_EVENT, toggle);
@@ -91,15 +96,24 @@ export function useWorkPanel(conversationId: string | null, kernel: { events: Ac
   }, [conversationId, kernel.events, kernel.settled]);
 
   // Files the agent changed and the agent's browser tool at work, in any conversation: the dot waits there for the
-  // person's return.
+  // person's return. In the conversation on screen, a panel open on the workspace follows them instead.
+  const openFile = useOptionalLocalFilePreview();
+  const openFileRef = useRef(openFile);
+  openFileRef.current = openFile;
   useEffect(() => {
     const stream = ipcBridge.conversation?.responseStream;
     if (!stream?.on) return undefined;
     const edited = createEditWatcher();
     return stream.on((message) => {
-      if (!message.conversation_id) return;
-      if (edited(message)) bumpWorkPanelNews(message.conversation_id, 'files');
-      if (isBrowserMcpActivity(message.type, message.data)) bumpWorkPanelNews(message.conversation_id, 'browser');
+      const id = message.conversation_id;
+      if (!id) return;
+      const edit = edited(message);
+      if (edit) {
+        bumpWorkPanelNews(id, 'files');
+        if (edit.path && followsAgent(id)) void openFileRef.current?.(edit.path);
+      }
+      if (isBrowserMcpActivity(message.type, message.data) && !followAgentTo(id, 'browser'))
+        bumpWorkPanelNews(id, 'browser');
     });
   }, []);
 

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button, Dropdown, Menu, Tooltip } from '@arco-design/web-react';
 import {
+  Aiming,
   ArrowLeft,
   Bee,
   Brain,
@@ -15,7 +16,14 @@ import {
   ViewGridDetail,
 } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
-import { ALWAYS_SHOWN_TABS, WORK_PANEL_TABS, type WorkPanelTab } from './workPanelStore';
+import {
+  ALWAYS_SHOWN_TABS,
+  FOLLOWED_TABS,
+  WORK_PANEL_TABS,
+  setWorkPanelFollow,
+  useWorkPanelFollow,
+  type WorkPanelTab,
+} from './workPanelStore';
 import styles from './WorkPanel.module.css';
 
 export const workPanelTabId = (tab: WorkPanelTab): string => `mu-work-panel-tab-${tab}`;
@@ -74,7 +82,8 @@ function useLabelsFit(list: React.RefObject<HTMLDivElement | null>, labels: stri
  * the person has not seen carries a small dot (news also brings a tab into the strip). Arrow keys move between the
  * tabs shown. A panel too narrow for every label shows one icon per tab instead, each named by its tooltip, so no tab
  * is ever out of view. While the panel fills the row (the transcript set aside), the strip leads with a named way back
- * to the conversation (`onBack`).
+ * to the conversation (`onBack`). On the workspace tabs, a toggle before the close button says whether the panel
+ * follows the agent (on until the person turns it off; workPanelStore's `followAgentTo`).
  */
 export default function WorkPanelTabs({
   active,
@@ -93,6 +102,7 @@ export default function WorkPanelTabs({
   onBack?: () => void;
 }) {
   const { t } = useTranslation();
+  const follow = useWorkPanelFollow();
   const list = useRef<HTMLDivElement>(null);
   const tabs = WORK_PANEL_TABS.filter(
     // The others wait under 更多 until used, so a conversation that never ran a swarm or opened a page does not carry
@@ -225,6 +235,24 @@ export default function WorkPanelTabs({
           </Dropdown>
         ) : null}
       </div>
+      {FOLLOWED_TABS.has(active) ? (
+        <Tooltip
+          content={t(follow ? 'common.workPanel.follow.on' : 'common.workPanel.follow.off')}
+          position='bottom'
+          mini
+        >
+          <Button
+            type='text'
+            size='mini'
+            className={styles.follow}
+            icon={<Aiming size={14} />}
+            aria-label={t('common.workPanel.follow.label')}
+            aria-pressed={follow}
+            data-testid='work-panel-follow'
+            onClick={() => setWorkPanelFollow(!follow)}
+          />
+        </Tooltip>
+      ) : null}
       <Button
         type='text'
         size='mini'

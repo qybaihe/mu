@@ -1557,7 +1557,12 @@
     "previewEmpty": "Nothing to preview yet. Files opened from the conversation appear here.",
     "previewHidden": "The preview is hidden.",
     "browserEmpty": "No pages open. Enter an address or search above. Pages opened from the conversation appear here too.",
-    "firstHint": "Board shows progress in plain words, Judge lists every verdict and Files shows this conversation's folder. Other tabs appear once they're used."
+    "firstHint": "Board shows progress in plain words, Judge lists every verdict and Files shows this conversation's folder. Other tabs appear once they're used.",
+    "follow": {
+      "label": "Follow the agent",
+      "on": "Following the agent: files it edits and pages it opens show here. Click to stop.",
+      "off": "Follow the agent: show the files it edits and the pages it opens here."
+    }
   },
   "nodeRuntime": {
     "title": "Download Node.js?",

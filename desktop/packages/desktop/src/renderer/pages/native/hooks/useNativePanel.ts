@@ -11,7 +11,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { NativeFailure } from '@/common/kyrn/nativeBridge';
 import type { NativeView } from '@/common/utils/nativeHost';
-import { bumpWorkPanelNews } from '@/renderer/components/layout/WorkPanel/workPanelStore';
+import { bumpWorkPanelNews, followsAgent } from '@/renderer/components/layout/WorkPanel/workPanelStore';
 import {
   getCurrentConversation,
   setCurrentConversation,
@@ -19,7 +19,8 @@ import {
 import { setCurrentProject } from '@/renderer/pages/conversation/explorer/currentProjectStore';
 import { useOptionalPreviewContext } from '@/renderer/pages/conversation/Preview/context/PreviewContext';
 import { previewScopeKey } from '@/renderer/pages/conversation/Preview/context/previewScope';
-import { finishedEdits } from '../utils/editNews';
+import { useOptionalLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
+import { finishedEditPaths } from '../utils/editNews';
 import { publishNativeActivity, withdrawNativeActivity } from '../utils/nativeActivityStore';
 import { toActivity } from '../utils/toActivity';
 
@@ -90,13 +91,23 @@ export function useNativePanel(
   useEffect(() => () => withdrawNativeActivity(id), [id]);
 
   // A file the model finished writing or editing is news for the files tab, which gets its dot unless the person is
-  // looking at it. What a view held when it came (opened, replaced by a fork) is where it stands, not news, so the count
-  // is taken from the first read of that view, and a view that shrinks lowers what news is measured from.
-  const edits = useMemo(() => finishedEdits(shown), [shown]);
+  // looking at it; a panel open on the workspace follows the agent to the latest such file instead, in 预览, unless the
+  // person turned following off. What a view held when it came (opened, replaced by a fork) is where it stands, not
+  // news, so the count is taken from the first read of that view, and a view that shrinks lowers what news is measured
+  // from.
+  const editPaths = useMemo(() => finishedEditPaths(shown), [shown]);
+  const edits = editPaths.length;
+  const latestEdit = editPaths[edits - 1];
+  const openFile = useOptionalLocalFilePreview(cwd);
+  const openFileRef = useRef(openFile);
+  openFileRef.current = openFile;
   const seen = useRef<{ epoch: number; edits: number }>(undefined);
   useEffect(() => {
     if (looked.epoch !== epoch) return;
-    if (seen.current?.epoch === epoch && edits > seen.current.edits) bumpWorkPanelNews(id, 'files');
+    if (seen.current?.epoch === epoch && edits > seen.current.edits) {
+      bumpWorkPanelNews(id, 'files');
+      if (latestEdit && followsAgent(id)) void openFileRef.current?.(latestEdit);
+    }
     seen.current = { epoch, edits };
-  }, [edits, epoch, id, looked.epoch]);
+  }, [edits, epoch, id, latestEdit, looked.epoch]);
 }
