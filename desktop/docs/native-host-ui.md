@@ -26,7 +26,9 @@ side"). Nothing here shows unless the main process says the native host is on (`
   words: "… has finished responding", "… is waiting for your confirmation", and "… stopped with an error"), which the
   main process shows only when notifications are on and the window is not in front; a click on it opens the
   conversation on the native page. A run you stopped tells nothing, and neither does the conversation on screen mark
-  its own row.
+  its own row. The app's Dock icon (the launcher entry on Linux) carries the number of conversations marked so, native
+  and classic (a reply finished out of view, a confirmation waiting, marked unread by hand), each counted once
+  (`useAppBadge`, `notification.badge`); Windows has no such number.
 - **Home page.** While the host is on, its send starts a native conversation instead of a backend one: the folder
   picked there (its list takes in the native conversations' folders), the permission mode picked there, the model
   the pill picked (`set_model`), the thinking level picked (`set_thinking_level`), then the message. Images go as pi's `images` (png, jpeg, webp, gif, 16 MB at most);

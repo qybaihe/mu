@@ -13,7 +13,7 @@
 
 import { getPlatformServices } from '@/common/platform';
 import { ipcBridge } from '@/common';
-import { electronNotification } from '@/common/electronSafe';
+import { electronApp, electronNotification } from '@/common/electronSafe';
 import { ProcessConfig } from '@process/utils/initStorage';
 import type { BrowserWindow } from 'electron';
 import path from 'path';
@@ -111,10 +111,27 @@ export async function showNotification({
 }
 
 /**
+ * The number on the app's icon: the Dock on macOS, the launcher on Linux (Unity and those that follow it); 0 takes it
+ * away. Windows has no such number, so nothing shows there. A count that is not a whole number of at least 0 is 0.
+ */
+export function setAppBadge(count: unknown): void {
+  const shown = typeof count === 'number' && Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
+  if (process.platform === 'win32' || !electronApp) return;
+  try {
+    electronApp.setBadgeCount(shown);
+  } catch (error) {
+    console.warn('[Notification] Could not set the badge:', error);
+  }
+}
+
+/**
  * Register IPC provider so renderer can trigger notifications cross-process.
  */
 export function initNotificationBridge(): void {
   ipcBridge.notification.show.provider(async (options) => {
     await showNotification(options);
+  });
+  ipcBridge.notification.badge.provider(async ({ count }) => {
+    setAppBadge(count);
   });
 }

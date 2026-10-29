@@ -1573,6 +1573,8 @@ export type INotificationOptions = {
 export const notification = {
   show: bridge.buildProvider<void, INotificationOptions>('notification.show'),
   clicked: bridge.buildEmitter<{ conversation_id?: string; native?: boolean }>('notification.clicked'),
+  /** The number on the app's Dock icon (macOS) or launcher entry (Linux): conversations waiting for the person. */
+  badge: bridge.buildProvider<void, { count: number }>('notification.badge'),
 };
 
 // ---------------------------------------------------------------------------
