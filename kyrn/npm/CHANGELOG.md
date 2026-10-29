@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-29
+
+**0.3.1 has no changes to the agent. It keeps the version in step with the 0.3.1 desktop app.**
+
 ## [0.3.0] - 2026-10-27
 
 **0.3.0: the model catalog generated on 2026-10-26 (#242); nothing else in the agent changed since 0.2.13.**

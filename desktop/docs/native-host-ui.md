@@ -30,7 +30,7 @@ side"). Nothing here shows unless the main process says the native host is on (`
   and classic (a reply finished out of view, a confirmation waiting, marked unread by hand), each counted once
   (`useAppBadge`, `notification.badge`); Windows has no such number.
 - **Awake while it runs.** While a native run or a classic reply goes, the computer does not go to sleep when idle
-  (Electron's `prevent-app-suspension`; the display may still turn off, a closed lid still sleeps), so a long run is
+  (Electron's `prevent-app-suspension`; the display may still turn off, and closing the lid still puts it to sleep), so a long run is
   not cut short because nobody touched the keyboard. The window says when a run starts and ends
   (`useKeepAwakeWhileRunning`), and the main process keeps one hold at a time (`holdAwake`). The system settings turn
   it off (`system.keepAwakeWhileRunning`, on by default).

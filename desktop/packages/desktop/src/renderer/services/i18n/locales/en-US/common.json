@@ -1582,7 +1582,7 @@
     "placeholder": "Search files in this conversation's folder",
     "loading": "Reading the folder…",
     "failed": "Couldn't read this conversation's folder.",
-    "more": "This folder has more files than are listed. Type more of the name to narrow it down.",
+    "more": "Not every file is listed. Keep typing to narrow it down.",
     "noFolder": "Open a conversation with a folder to find its files by name."
   }
 }
