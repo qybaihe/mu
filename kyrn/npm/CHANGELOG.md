@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-10-29
+
+**0.3.2 has no changes to the agent. It keeps the version in step with the 0.3.2 desktop app.**
+
 ## [0.3.1] - 2026-10-29
 
 **0.3.1 has no changes to the agent. It keeps the version in step with the 0.3.1 desktop app.**
