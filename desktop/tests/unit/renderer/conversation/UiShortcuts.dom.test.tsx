@@ -7,6 +7,9 @@ const testState = vi.hoisted(() => ({
   pathname: '/conversation/conversation-1',
   desktop: true,
   mac: true,
+  /** The native host is on: the keys go to the native conversations. */
+  native: false,
+  visible: [] as string[],
 }));
 
 const serviceMocks = vi.hoisted(() => ({
@@ -24,7 +27,11 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('@/renderer/pages/conversation/GroupedHistory/hooks/useVisibleConversationIds', () => ({
-  useVisibleConversationIds: () => [],
+  useVisibleConversationIds: () => testState.visible,
+}));
+
+vi.mock('@/renderer/pages/native/hooks/useNativeConversations', () => ({
+  useNativeEnabled: () => testState.native,
 }));
 
 vi.mock('@/renderer/utils/platform', () => ({
@@ -52,7 +59,17 @@ vi.mock('@/renderer/components/base', () => ({
   MuSearchInput: () => null,
 }));
 
+import { Message } from '@arco-design/web-react';
 import { useConversationShortcuts } from '@/renderer/hooks/ui/useConversationShortcuts';
+import { forgetNativeUnread, markNativeUnread } from '@/renderer/pages/native/hooks/useNativeAttention';
+import {
+  nativeConversationAt,
+  nativeConversationBeside,
+  nextWaitingConversation,
+  publishNativeSiderOrder,
+  resetNativeSiderOrderForTest,
+} from '@/renderer/pages/native/sider/jump';
+import { nativeConversationPath } from '@/renderer/pages/native/utils/paths';
 import ConversationSearchPopover from '@/renderer/pages/conversation/GroupedHistory/ConversationSearchPopover';
 import { useMinimapPanel } from '@/renderer/pages/conversation/components/ConversationTitleMinimap/useMinimapPanel';
 import { useWorkspaceCollapse } from '@/renderer/pages/conversation/hooks/useWorkspaceCollapse';
@@ -654,6 +671,124 @@ describe('existing conversation search shortcuts', () => {
 
     const event = dispatchShortcut(document.body, { key: 'f', metaKey: true });
 
+    expect(event.defaultPrevented).toBe(false);
+  });
+});
+
+describe('the keys that go to a conversation', () => {
+  beforeEach(() => {
+    testState.pathname = '/guid';
+    testState.desktop = true;
+    testState.mac = true;
+    testState.native = true;
+    testState.visible = [];
+    resetNativeSiderOrderForTest();
+    forgetNativeUnread();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+    vi.clearAllMocks();
+  });
+
+  it('knows the sidebar’s places, the rows beside one, and the next one marked, round to the start', () => {
+    expect(nativeConversationAt(1)).toBeUndefined();
+    // Before the list said its order, the marks' own.
+    expect(nextWaitingConversation(new Set(['x']))).toBe('x');
+
+    publishNativeSiderOrder(['a', 'b', 'c'], ['a', 'b', 'c', 'hidden']);
+    expect([nativeConversationAt(1), nativeConversationAt(3), nativeConversationAt(4)]).toEqual(['a', 'c', undefined]);
+    expect(nativeConversationBeside('c', 1)).toBe('a');
+    expect(nativeConversationBeside('a', -1)).toBe('c');
+    expect(nativeConversationBeside(undefined, 1)).toBe('a');
+    expect(nativeConversationBeside(undefined, -1)).toBe('c');
+
+    const unread = new Set(['a', 'hidden']);
+    expect(nextWaitingConversation(unread, 'b')).toBe('hidden');
+    expect(nextWaitingConversation(unread, 'hidden')).toBe('a');
+    expect(nextWaitingConversation(unread, 'a')).toBe('hidden');
+    expect(nextWaitingConversation(new Set(['a']), 'a')).toBeUndefined();
+    // Nothing on screen (the sidebar a rail): the places of all it lists.
+    publishNativeSiderOrder([], ['a', 'b']);
+    expect(nativeConversationAt(2)).toBe('b');
+  });
+
+  it('opens the conversation in a place of the sidebar with Cmd+1 to 9, by the key’s place on the keyboard too', () => {
+    publishNativeSiderOrder(['a', 'b', 'c'], ['a', 'b', 'c']);
+    const { navigate } = renderConversationShortcuts();
+
+    const second = dispatchShortcut(window, { key: '2', code: 'Digit2', metaKey: true });
+    expect(navigate).toHaveBeenLastCalledWith(nativeConversationPath('b'));
+    expect(second.defaultPrevented).toBe(true);
+    // AZERTY: the digit's key without Shift types "&".
+    dispatchShortcut(window, { key: '&', code: 'Digit1', metaKey: true });
+    expect(navigate).toHaveBeenLastCalledWith(nativeConversationPath('a'));
+
+    // No conversation in that place, another modifier, or Ctrl on a Mac: nothing, and the key stays the page's.
+    const ninth = dispatchShortcut(window, { key: '9', code: 'Digit9', metaKey: true });
+    dispatchShortcut(window, { key: '3', code: 'Digit3', metaKey: true, shiftKey: true });
+    dispatchShortcut(window, { key: '3', code: 'Digit3', ctrlKey: true });
+    expect(navigate).toHaveBeenCalledTimes(2);
+    expect(ninth.defaultPrevented).toBe(false);
+  });
+
+  it('leaves Cmd+digit to an editor or terminal in the page', () => {
+    publishNativeSiderOrder(['a'], ['a']);
+    const { navigate } = renderConversationShortcuts();
+    const editor = document.createElement('div');
+    editor.className = 'cm-editor';
+    document.body.append(editor);
+    dispatchShortcut(editor, { key: '1', code: 'Digit1', metaKey: true });
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('goes to the classic list’s places while the native host is off', () => {
+    testState.native = false;
+    testState.visible = ['c1', 'c2'];
+    const { navigate } = renderConversationShortcuts();
+    dispatchShortcut(window, { key: '2', code: 'Digit2', metaKey: true });
+    expect(navigate).toHaveBeenLastCalledWith('/conversation/c2');
+  });
+
+  it('walks the native rows with Ctrl+Tab and Ctrl+Shift+Tab from the one on screen', () => {
+    publishNativeSiderOrder(['a', 'b', 'c'], ['a', 'b', 'c']);
+    testState.pathname = nativeConversationPath('b');
+    const { navigate } = renderConversationShortcuts();
+    dispatchShortcut(window, { key: 'Tab', ctrlKey: true });
+    expect(navigate).toHaveBeenLastCalledWith(nativeConversationPath('c'));
+    dispatchShortcut(window, { key: 'Tab', ctrlKey: true, shiftKey: true });
+    expect(navigate).toHaveBeenLastCalledWith(nativeConversationPath('a'));
+  });
+
+  it('goes to the next conversation that wants its person with Cmd+Shift+A or the palette, and says when none does', () => {
+    publishNativeSiderOrder(['a', 'b', 'c'], ['a', 'b', 'c']);
+    testState.pathname = nativeConversationPath('b');
+    const info = vi.spyOn(Message, 'info').mockImplementation(() => undefined as never);
+    const { navigate } = renderConversationShortcuts();
+
+    dispatchShortcut(window, { key: 'a', metaKey: true, shiftKey: true });
+    expect(navigate).not.toHaveBeenCalled();
+    expect(info).toHaveBeenCalledWith('mu.native.sider.noneWaiting');
+
+    markNativeUnread('a');
+    const event = dispatchShortcut(window, { key: 'A', metaKey: true, shiftKey: true });
+    expect(navigate).toHaveBeenLastCalledWith(nativeConversationPath('a'));
+    expect(event.defaultPrevented).toBe(true);
+
+    markNativeUnread('c');
+    act(() => {
+      emitter.emit('conversation.nextWaiting');
+    });
+    expect(navigate).toHaveBeenLastCalledWith(nativeConversationPath('c'));
+  });
+
+  it('leaves Cmd+Shift+A alone while the native host is off', () => {
+    testState.native = false;
+    markNativeUnread('a');
+    const { navigate } = renderConversationShortcuts();
+    const event = dispatchShortcut(window, { key: 'a', metaKey: true, shiftKey: true });
+    expect(navigate).not.toHaveBeenCalled();
     expect(event.defaultPrevented).toBe(false);
   });
 });

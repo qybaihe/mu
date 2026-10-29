@@ -1071,7 +1071,8 @@
       "deleteConfirm": "刪除「{{title}}」？它的工作階段檔案會移到垃圾桶，之後仍可復原。",
       "messages": "訊息數：{{count}}",
       "unread": "有新動態",
-      "working": "處理中"
+      "working": "處理中",
+      "noneWaiting": "沒有等你處理的對話"
     },
     "notify": {
       "failed": "一次執行因錯誤而停止",

@@ -1071,7 +1071,8 @@
       "deleteConfirm": "“{{title}}”을(를) 삭제할까요? 세션 파일은 휴지통으로 이동하며, 거기서 복원할 수 있습니다.",
       "messages": "메시지: {{count}}",
       "unread": "새 활동",
-      "working": "작업 중"
+      "working": "작업 중",
+      "noneWaiting": "나를 기다리는 대화가 없어요"
     },
     "notify": {
       "failed": "실행이 오류로 중단되었습니다",

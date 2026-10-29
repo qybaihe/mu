@@ -17,6 +17,14 @@ import type { Project } from './projects';
 /** Rows a project shows before "show all". */
 export const SHOWN = 5;
 
+/** The conversations a project shows: the first few, all of them when asked, and the one open always. */
+export const shownRows = (
+  conversations: readonly NativeConversation[],
+  all: boolean,
+  activeId?: string
+): readonly NativeConversation[] =>
+  all ? conversations : conversations.filter((conversation, index) => index < SHOWN || conversation.id === activeId);
+
 /** A key on a span that acts as a button: Enter or Space acts, and the row under it does not fold. */
 const pressed = (action: () => void) => (event: React.KeyboardEvent) => {
   if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -39,6 +47,9 @@ type Props = {
   onToggle: () => void;
   /** The conversation on screen, if it is one of this project's: shown even past the first few. */
   activeId?: string;
+  /** All its conversations are shown, not only the first few (the group keeps it: it publishes the rows' order). */
+  all: boolean;
+  onToggleAll: () => void;
   renderRow: (conversation: NativeConversation) => React.ReactNode;
   /** A new conversation in the project's folder. */
   onNew: () => void;
@@ -46,17 +57,24 @@ type Props = {
   onArchive: () => void;
 };
 
-const ProjectGroup: React.FC<Props> = ({ project, folded, onToggle, activeId, renderRow, onNew, onArchive }) => {
+const ProjectGroup: React.FC<Props> = ({
+  project,
+  folded,
+  onToggle,
+  activeId,
+  all,
+  onToggleAll,
+  renderRow,
+  onNew,
+  onArchive,
+}) => {
   const { t } = useTranslation();
-  const [all, setAll] = useState(false);
   // Its menu is open: both buttons stay where they are while the pointer is in the menu.
   const [menuOpen, setMenuOpen] = useState(false);
   const shownOn = menuOpen ? 'flex' : SHOWN_ON;
   const { conversations } = project;
   const empty = conversations.length === 0;
-  const shown = all
-    ? conversations
-    : conversations.filter((conversation, index) => index < SHOWN || conversation.id === activeId);
+  const shown = shownRows(conversations, all, activeId);
   return (
     <div className='min-w-0' data-testid='native-project-group' data-folder={project.folder}>
       <WorkspaceCollapse
@@ -123,8 +141,8 @@ const ProjectGroup: React.FC<Props> = ({ project, folded, onToggle, activeId, re
               tabIndex={0}
               className='ms-40px me-12px my-2px self-start cursor-pointer text-12px text-t-tertiary hover:text-t-primary'
               data-testid='native-sidebar-more'
-              onClick={() => setAll((old) => !old)}
-              onKeyDown={pressed(() => setAll((old) => !old))}
+              onClick={onToggleAll}
+              onKeyDown={pressed(onToggleAll)}
             >
               {all ? t('mu.native.sider.fewer') : t('mu.native.sider.all', { count: conversations.length })}
             </span>

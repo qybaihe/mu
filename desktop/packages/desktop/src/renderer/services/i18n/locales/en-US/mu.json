@@ -1071,7 +1071,8 @@
       "deleteConfirm": "Delete \"{{title}}\"? Its file moves to the trash, so you can still restore it.",
       "messages": "Messages: {{count}}",
       "unread": "New activity",
-      "working": "Working"
+      "working": "Working",
+      "noneWaiting": "No conversation is waiting for you"
     },
     "notify": {
       "failed": "A run stopped with an error",

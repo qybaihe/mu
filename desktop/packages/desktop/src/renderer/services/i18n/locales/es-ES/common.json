@@ -1527,7 +1527,8 @@
     "actions": {
       "newConversation": "Empezar un chat nuevo",
       "scheduledTasks": "Abrir las tareas programadas",
-      "quickOpen": "Abrir un archivo por su nombre"
+      "quickOpen": "Abrir un archivo por su nombre",
+      "nextWaiting": "Ir a la siguiente conversación que te espera"
     },
     "commandWaits": "Se ejecutará cuando termine esta respuesta"
   },

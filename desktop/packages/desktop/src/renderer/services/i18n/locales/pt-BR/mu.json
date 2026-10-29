@@ -1071,7 +1071,8 @@
       "deleteConfirm": "Excluir “{{title}}”? O arquivo da sessão vai para a lixeira, de onde ainda pode ser restaurado.",
       "messages": "Mensagens: {{count}}",
       "unread": "Nova atividade",
-      "working": "Trabalhando"
+      "working": "Trabalhando",
+      "noneWaiting": "Nenhuma conversa está esperando por você"
     },
     "notify": {
       "failed": "Uma execução parou com um erro",

@@ -1527,7 +1527,8 @@
     "actions": {
       "newConversation": "Start a new conversation",
       "scheduledTasks": "Open scheduled tasks",
-      "quickOpen": "Open a file by name"
+      "quickOpen": "Open a file by name",
+      "nextWaiting": "Go to the next conversation waiting for you"
     },
     "commandWaits": "Runs after this reply is done"
   },

@@ -1071,7 +1071,8 @@
       "deleteConfirm": "„{{title}}“ löschen? Die Sitzungsdatei landet im Papierkorb, wo du sie noch wiederherstellen kannst.",
       "messages": "Nachrichten: {{count}}",
       "unread": "Neue Aktivität",
-      "working": "Arbeitet"
+      "working": "Arbeitet",
+      "noneWaiting": "Keine Unterhaltung wartet auf dich"
     },
     "notify": {
       "failed": "Ein Durchlauf wurde mit einem Fehler beendet",

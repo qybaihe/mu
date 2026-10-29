@@ -1071,7 +1071,8 @@
       "deleteConfirm": "删除「{{title}}」？它的会话文件会移到废纸篓，之后仍可恢复。",
       "messages": "消息数：{{count}}",
       "unread": "有新动态",
-      "working": "处理中"
+      "working": "处理中",
+      "noneWaiting": "没有等你处理的会话"
     },
     "notify": {
       "failed": "一次运行因出错而停止",

@@ -1071,7 +1071,8 @@
       "deleteConfirm": "¿Eliminar “{{title}}”? Su archivo de sesión va a la papelera, desde donde aún puedes restaurarlo.",
       "messages": "Mensajes: {{count}}",
       "unread": "Nueva actividad",
-      "working": "Trabajando"
+      "working": "Trabajando",
+      "noneWaiting": "Ninguna conversación te está esperando"
     },
     "notify": {
       "failed": "Una ejecución se detuvo con un error",

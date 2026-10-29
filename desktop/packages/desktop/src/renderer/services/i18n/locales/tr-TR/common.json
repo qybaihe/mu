@@ -1527,7 +1527,8 @@
     "actions": {
       "newConversation": "Yeni sohbet başlat",
       "scheduledTasks": "Zamanlanmış görevleri aç",
-      "quickOpen": "Adına göre dosya aç"
+      "quickOpen": "Adına göre dosya aç",
+      "nextWaiting": "Sizi bekleyen sonraki konuşmaya git"
     },
     "commandWaits": "Bu yanıt bitince çalışır"
   },

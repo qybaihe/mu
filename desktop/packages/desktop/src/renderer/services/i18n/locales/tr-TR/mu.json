@@ -1071,7 +1071,8 @@
       "deleteConfirm": "“{{title}}” silinsin mi? Oturum dosyası çöp kutusuna taşınır; oradan hâlâ geri yükleyebilirsiniz.",
       "messages": "Mesajlar: {{count}}",
       "unread": "Yeni etkinlik",
-      "working": "Çalışıyor"
+      "working": "Çalışıyor",
+      "noneWaiting": "Sizi bekleyen konuşma yok"
     },
     "notify": {
       "failed": "Bir çalıştırma hatayla durdu",
