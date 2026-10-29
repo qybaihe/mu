@@ -6,11 +6,14 @@
 // judge's judgments, the board, the sub-agents, source control (here: no repository) and the browser. A file the model writes
 // while another tab is in view puts a dot on the files tab (and one the conversation held when it opened does not); one
 // it writes while the workspace is in view shows in the preview (following the agent). A tool call's path, quick open
-// (Cmd/Ctrl+P) and a local address a command printed each open beside the conversation.
+// (Cmd/Ctrl+P) and a local address a command printed each open beside the conversation. An element picked on a page
+// in the browser reaches the model's request: where it is, its HTML and a picture of it, and the click never reaches
+// the page.
 // Run it with
 // `node scripts/kyrn/e2e-conversation.mjs --native -- native-panels.spec.mjs` (nativeWorld.mjs, profile.mjs).
 import { expect, test } from '@playwright/test';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:http';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BOARD_REPLY, FAKE_MODEL_ID } from './fakeModel.mjs';
@@ -23,8 +26,29 @@ const PROJECT_LESSON = 'E2E-LESSON-PROJECT: run the desktop tests with Node 24 f
 const EVERYWHERE_LESSON = 'E2E-LESSON-EVERYWHERE: answer in the language the person writes in.';
 const OTHER_LESSON = 'E2E-LESSON-OTHER: this one belongs to another project.';
 
-const { run, page, paths, sleep, start, stop, expectNoProblems, shot, reachSidebar, send, replyWith, newConversation } =
-  createNativeWorld({ desktopRoot });
+const {
+  run,
+  page,
+  paths,
+  sleep,
+  start,
+  stop,
+  expectNoProblems,
+  shot,
+  reachSidebar,
+  send,
+  replyWith,
+  newConversation,
+  requests,
+} = createNativeWorld({ desktopRoot });
+
+/** A page with one button where the test knows it is; a click that reached the page would change its title. */
+const SHOP_PAGE = `<!doctype html><html><head><title>E2E shop</title><style>
+  body { margin: 0; }
+  #buy { all: unset; position: absolute; left: 40px; top: 40px; width: 200px; height: 80px; background: #2563eb; color: #fff; }
+</style></head><body><button id="buy" class="primary">Buy now</button>
+<script>document.getElementById('buy').addEventListener('click', () => { document.title = 'CLICKED'; });</script>
+</body></html>`;
 
 /** One line of mu's lesson store, as the harness writes a whole lesson. */
 const lessonLine = (id, text, cwd) => {
@@ -46,6 +70,11 @@ const lessonLine = (id, text, cwd) => {
 // After the world's own set-up (registered first): what this spec adds to mu's folder before the app starts.
 test.beforeAll(() => {
   const { agentDir, project } = paths();
+  // Every model takes images here, so a picked element's picture reaches the request as itself.
+  const models = join(agentDir, 'models.json');
+  const written = JSON.parse(readFileSync(models, 'utf8'));
+  for (const model of written.providers.e2e.models) model.input = ['text', 'image'];
+  writeFileSync(models, JSON.stringify(written));
   // The mock judge in shadow mode: every decision point asks it, and nothing it says changes what pi does.
   writeFileSync(join(agentDir, 'mu.json'), `${JSON.stringify({ tiers: ['mock'], modes: { default: 'shadow' } })}\n`);
   mkdirSync(join(agentDir, 'mu'), { recursive: true });
@@ -245,6 +274,91 @@ test('following the agent, and what opens beside the conversation: a path, quick
     await chip.click();
     await expect(tab('browser')).toHaveAttribute('aria-selected', 'true', { timeout: 15_000 });
   });
+  expectNoProblems();
+});
+
+test('an element picked on a page in the browser reaches the model’s request, with a picture of it', async () => {
+  const p = page();
+  const server = createServer((_request, response) => {
+    response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    response.end(SHOP_PAGE);
+  });
+  await new Promise((done) => server.listen(0, '127.0.0.1', () => done(undefined)));
+  const address = server.address();
+  const url = `http://127.0.0.1:${typeof address === 'object' && address ? address.port : 0}/`;
+  /** The page's own title, read in the main process. */
+  const shopTitle = () =>
+    run.state.app.evaluate(
+      ({ webContents }, at) =>
+        webContents
+          .getAllWebContents()
+          .find((contents) => contents.getType() === 'webview' && contents.getURL().startsWith(at))
+          ?.getTitle() ?? null,
+      url
+    );
+  try {
+    await test.step('the page opens in 浏览器', async () => {
+      await showTab('browser');
+      const field = p.getByTestId('browser-panel').getByRole('textbox', { name: '输入网址或搜索内容' });
+      await field.fill(url);
+      await field.press('Enter');
+      await expect.poll(shopTitle, { timeout: 15_000 }).toBe('E2E shop');
+    });
+
+    await test.step('the picker takes the button the pointer clicks, and the page never hears the click', async () => {
+      const pick = p.getByTestId('browser-pick-element');
+      await pick.click();
+      await expect(pick).toHaveAttribute('aria-pressed', 'true');
+      const view = p.getByTestId('browser-panel').locator(`webview[src="${url}"]`);
+      const box = await view.boundingBox();
+      expect(box, 'the page is on screen').not.toBeNull();
+      const x = (box?.x ?? 0) + 140;
+      const y = (box?.y ?? 0) + 80;
+      await p.mouse.move(x, y, { steps: 4 });
+      await sleep(300);
+      await shot('element-picker');
+      await p.mouse.click(x, y);
+      const snippet = p.locator('[data-composer-zone]').getByText('button#buy.primary', { exact: true });
+      const taken = await snippet
+        .waitFor({ timeout: 5_000 })
+        .then(() => true)
+        .catch(() => false);
+      if (!taken) {
+        // Where the driver's pointer does not reach into a page, the same pointer events in the page itself.
+        console.log('[e2e] the pointer did not reach the page: pointing with events in the page');
+        await run.state.app.evaluate(async ({ webContents }, at) => {
+          const shop = webContents
+            .getAllWebContents()
+            .find((contents) => contents.getType() === 'webview' && contents.getURL().startsWith(at));
+          await shop?.executeJavaScript(`(() => {
+            const box = document.getElementById('buy').getBoundingClientRect();
+            const at = { clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 };
+            window.dispatchEvent(new MouseEvent('mousemove', at));
+            window.dispatchEvent(new MouseEvent('click', { ...at, button: 0, cancelable: true }));
+          })()`);
+        }, url);
+      }
+      await expect(snippet).toBeVisible({ timeout: 15_000 });
+      await expect(pick).toHaveAttribute('aria-pressed', 'false');
+      // The picture is the chip's own: it shows on the chip once taken.
+      await expect(p.getByTestId('sendbox-dom-snippet')).toHaveAttribute('data-picture', 'true', { timeout: 15_000 });
+      expect(await shopTitle(), 'the click stayed with the picker').toBe('E2E shop');
+      await shot('element-picked');
+    });
+
+    await test.step('the message carries where the element is, its HTML and its picture', async () => {
+      await send('E2E:ECHO PICK-OK');
+      await replyWith('PICK-OK');
+      // The conversation's own request: the board's summary of the run quotes the reply too.
+      const asked = requests().findLast((request) => request.lastUser.includes('<button id="buy"'));
+      expect(asked?.lastUser).toContain('selector: `#buy`');
+      expect(asked?.lastUser).toContain('<button id="buy" class="primary">Buy now</button>');
+      expect(asked?.images, 'the picture went as an image').toBe(1);
+      await expect(p.getByTestId('sendbox-dom-snippet')).toHaveCount(0);
+    });
+  } finally {
+    server.close();
+  }
   expectNoProblems();
 });
 

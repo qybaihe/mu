@@ -157,7 +157,14 @@
     "tabLimitReached": "Limite d'onglets atteinte ({{count}}). L'onglet le plus ancien a été réutilisé.",
     "agentFirstUseTitle": "L'agent utilise le navigateur intégré",
     "agentFirstUseContent": "Il peut ouvrir des pages, cliquer et lire du contenu dans ce panneau. Votre connexion est conservée.",
-    "agentFirstUseAction": "Ouvrir les paramètres"
+    "agentFirstUseAction": "Ouvrir les paramètres",
+    "pick": {
+      "start": "Sélectionner un élément à montrer à mu",
+      "stop": "Arrêter la sélection",
+      "hint": "Cliquez sur un élément pour l'ajouter à votre message · ↑ sélectionne son parent · Échap annule",
+      "added": "{{name}} ajouté à votre message",
+      "failed": "Impossible de sélectionner les éléments de cette page"
+    }
   },
   "saveConflict": "Échec de l'enregistrement : ce fichier a changé sur le disque depuis que vous l'avez ouvert. Rechargez pour voir les autres modifications — vos modifications sont toujours là, non enregistrées.",
   "persistQuotaExceeded": "Le stockage local est plein : les onglets ouverts de ce projet ne peuvent plus être mémorisés. Fermez des onglets ou effacez les données du site.",

@@ -157,7 +157,14 @@
     "tabLimitReached": "Tab-Limit erreicht ({{count}}). Der älteste Tab wurde wiederverwendet.",
     "agentFirstUseTitle": "Der Agent nutzt den integrierten Browser",
     "agentFirstUseContent": "Er kann in diesem Bereich Seiten öffnen, klicken und Inhalte lesen. Deine Anmeldung bleibt erhalten.",
-    "agentFirstUseAction": "Einstellungen öffnen"
+    "agentFirstUseAction": "Einstellungen öffnen",
+    "pick": {
+      "start": "Element auswählen, um es mu zu zeigen",
+      "stop": "Auswahl beenden",
+      "hint": "Klicke auf ein Element, um es deiner Nachricht hinzuzufügen · ↑ wählt das übergeordnete · Esc bricht ab",
+      "added": "{{name}} zur Nachricht hinzugefügt",
+      "failed": "Elemente dieser Seite lassen sich nicht auswählen"
+    }
   },
   "saveConflict": "Speichern fehlgeschlagen: Diese Datei wurde auf der Festplatte geändert, nachdem du sie geöffnet hast. Lade neu, um die anderen Änderungen zu sehen – deine Bearbeitungen sind noch da, aber nicht gespeichert.",
   "persistQuotaExceeded": "Der lokale Speicher ist voll, offene Tabs dieses Projekts können nicht mehr gemerkt werden. Schließen Sie einige Tabs oder löschen Sie die Websitedaten.",

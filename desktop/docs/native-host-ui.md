@@ -242,6 +242,20 @@ A local web address a command printed (`http://localhost:5173/` in a dev server'
 work panel's browser, or brings back the page already open there. Only `localhost`, `*.localhost`, `127.0.0.1`,
 `[::1]` and `0.0.0.0` (read as `localhost`) count, at most three per call (`localUrls` in `toolActivity.ts`).
 
+To show mu a part of a page, the person points at it: the browser's pointer button (beside filling the page) outlines
+the element under the pointer on the page in front, ↑ widens the outline to its parent and ↓ narrows it back, and a
+click or Enter takes it; the click never reaches the page. Escape, the button again, another page in front or the page
+going elsewhere calls it off. The element goes into the next message as a chip in the send box (up to five, the same
+one once): the message gets the page's address and title, a selector that finds the element alone, its text, size and
+the styles not at their defaults, and its HTML (4,000 characters at most), in a fence longer than any run of backticks
+in it. A picture of what of it is on screen, at most 1,600 pixels on its longest side, is the chip's own (a picture on
+the chip): it goes with the message as an image (`onSend`'s `extras.images`, which the native conversation sends with
+its own images) and is taken back with the chip. The picker runs in the page (`elementPicker.ts`) and draws with the
+page's style objects, which a content security policy allows. What it answers is the page's word (the page's script
+can shape it), so the host keeps only the fields it expects, each but the HTML on one line without control characters
+or backticks: a page cannot write lines of its own into the person's message. The picture is taken in the main
+process of a `<webview>` page only (`app.picture-of-browser-area`, `process/services/muBrowser/areaPicture.ts`).
+
 Solution, in three steps:
 
 1. **Candidates** (`common/chat/fileRefs/pathLike.ts`, `renderer/components/media/FileRefs/findFileRefs.ts`). Only

@@ -8,9 +8,17 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Message } from '@arco-design/web-react';
 import type { RefInputType } from '@arco-design/web-react/es/Input/interface';
 import { useTranslation } from 'react-i18next';
+import { ipcBridge } from '@/common';
+import {
+  CANCEL_PICK_SCRIPT,
+  describePickedElement,
+  pickElementScript,
+  readPickedElement,
+} from '@/renderer/components/media/elementPicker';
 import type { WebviewNavigation, WebviewNavigationState } from '@/renderer/components/media/WebviewHost';
 import { copyText } from '@/renderer/utils/ui/clipboard';
 import { isPlatformPrimaryModifier } from '@/renderer/utils/ui/keyboardShortcuts';
+import { useOptionalPreviewContext } from '../context/PreviewContext';
 import BrowserChrome from './BrowserChrome';
 import BrowserTabLayer from './BrowserTabLayer';
 import {
@@ -36,6 +44,10 @@ const sameNavigation = (a: WebviewNavigationState, b: WebviewNavigationState): b
  *
  * Cmd/Ctrl+W inside the browser closes the page in front, as it closes the preview's tab inside the preview; the
  * pages' own keys stay theirs.
+ *
+ * The person can point at an element of the page in front to show it to mu (`elementPicker.ts`): it goes into the
+ * next message, its address, selector, text, look and HTML, with a picture of it (the chip's own: sent with it). Another page in front,
+ * the page going elsewhere or Escape calls the picker off.
  */
 export default function BrowserPanel({
   maximized,
@@ -105,6 +117,83 @@ export default function BrowserPanel({
   const inFront = (): WebviewNavigation | null =>
     activeTabId ? (handles.current.get(activeTabId)?.current ?? null) : null;
 
+  // The element picker: which page runs it, and a count that tells a picker called off from the one running now.
+  const preview = useOptionalPreviewContext();
+  const addDomSnippet = preview?.addDomSnippet;
+  const attachDomSnippetImage = preview?.attachDomSnippetImage;
+  const [picking, setPicking] = useState<string | null>(null);
+  const pickingRef = useRef<string | null>(null);
+  pickingRef.current = picking;
+  const pickRun = useRef(0);
+  const stopPicking = useCallback(() => {
+    pickRun.current += 1;
+    const tabId = pickingRef.current;
+    if (tabId)
+      void handles.current
+        .get(tabId)
+        ?.current?.run(CANCEL_PICK_SCRIPT)
+        .catch((): undefined => undefined);
+    setPicking(null);
+  }, []);
+
+  const startPicking = async () => {
+    const page = inFront();
+    if (!page || !activeTabId || !addDomSnippet) return;
+    const run = ++pickRun.current;
+    setPicking(activeTabId);
+    page.focus();
+    let said: unknown;
+    let failed = false;
+    try {
+      said = await page.run(pickElementScript(t('preview.browser.pick.hint')));
+    } catch {
+      failed = true;
+    }
+    if (run !== pickRun.current) return;
+    setPicking(null);
+    const picked = readPickedElement(said);
+    if (!picked) {
+      if (failed) message.error?.(t('preview.browser.pick.failed'));
+      return;
+    }
+    const snippet = addDomSnippet(picked.label, picked.html, describePickedElement(picked));
+    message.success?.(t('preview.browser.pick.added', { name: picked.label }));
+    // The picture goes with the chip: taken back with it, and sent with it (the chip says it has one).
+    const webContentsId = page.webContentsId();
+    if (webContentsId === undefined || !picked.rect.width || !picked.rect.height) return;
+    const picture = await ipcBridge.application.pictureOfBrowserArea
+      .invoke({ webContentsId, area: picked.rect })
+      .catch((): null => null);
+    if (picture) attachDomSnippetImage?.(snippet, { data: picture, mimeType: 'image/png' });
+  };
+
+  // Another page in front, the page going elsewhere, or the panel going away: the picker stops.
+  const pickedPageUrl = picking ? navigation[picking]?.url : undefined;
+  useEffect(() => {
+    if (picking && (picking !== activeTabId || !tabs.some((tab) => tab.id === picking))) stopPicking();
+  }, [activeTabId, picking, stopPicking, tabs]);
+  const pickedFrom = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!picking) {
+      pickedFrom.current = undefined;
+      return;
+    }
+    if (pickedFrom.current === undefined) pickedFrom.current = pickedPageUrl;
+    else if (pickedPageUrl !== pickedFrom.current) stopPicking();
+  }, [pickedPageUrl, picking, stopPicking]);
+  useEffect(() => () => stopPicking(), [stopPicking]);
+  // Escape where the app has the keyboard; on the page, the picker hears it itself.
+  useEffect(() => {
+    if (!picking) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      event.preventDefault();
+      stopPicking();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [picking, stopPicking]);
+
   const newPage = useCallback(() => {
     openBrowserPage(undefined, { by: 'user' });
     // A blank page is for typing an address: the field is ready for it.
@@ -147,6 +236,8 @@ export default function BrowserPanel({
         onForward={() => inFront()?.forward()}
         onReload={() => inFront()?.reload()}
         onSubmit={submit}
+        picking={Boolean(picking)}
+        onPick={activeTabId && addDomSnippet ? () => (picking ? stopPicking() : void startPicking()) : undefined}
         maximized={maximized}
         onToggleMaximize={onToggleMaximize}
       />

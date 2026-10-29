@@ -26,6 +26,12 @@ export type WebviewNavigation = {
   reload: () => void;
   /** Go to an address (already a URL); the page's own address again reloads it. */
   go: (url: string) => void;
+  /** Runs a script in the page and resolves with what it evaluates to (a promise's value); rejects with no page. */
+  run: (script: string) => Promise<unknown>;
+  /** The page's webContents id, for the main process; undefined before the page exists. */
+  webContentsId: () => number | undefined;
+  /** Gives the page the keyboard. */
+  focus: () => void;
 };
 
 export interface WebviewHostProps {
@@ -651,6 +657,21 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
       forward: handleGoForward,
       reload: handleRefresh,
       go: (targetUrl: string) => (targetUrl === currentUrl ? handleRefresh() : navigateToWithHistory(targetUrl)),
+      run: async (script: string) => {
+        const view = webviewRef.current;
+        if (!view || !view.isConnected) throw new Error('The page is not open');
+        // A user gesture: what the person asked for may need one (a picker reading the page's own focus).
+        return view.executeJavaScript(script, true);
+      },
+      webContentsId: () => {
+        try {
+          return webviewRef.current?.getWebContentsId();
+        } catch {
+          // Before the page's dom-ready a webview has no webContents.
+          return undefined;
+        }
+      },
+      focus: () => webviewRef.current?.focus(),
     }),
     [handleGoBack, handleGoForward, handleRefresh, navigateToWithHistory, currentUrl]
   );

@@ -13,6 +13,7 @@ import { getZoomFactor, setZoomFactor } from '@process/utils/zoom';
 import { getCdpStatus, updateCdpConfig } from '@process/utils/configureChromium';
 import { getCdpBridgeHandle } from '@process/utils/cdpBridgeRegistry';
 import { getGpuStatus, setGpuUserOverride } from '@process/utils/gpuRecovery';
+import { pictureOfPageArea } from '@process/services/muBrowser/areaPicture';
 import { initApplicationBridgeCore } from './applicationBridgeCore';
 import type { IStartOnBootStatus } from '@/common/adapter/ipcBridge';
 import { restartApplication } from './restartApplication';
@@ -246,6 +247,15 @@ export function initApplicationBridge(): void {
       return { success: true };
     } catch (e) {
       return { success: false, msg: e instanceof Error ? e.message : String(e) };
+    }
+  });
+
+  ipcBridge.application.pictureOfBrowserArea.provider(async ({ webContentsId, area }) => {
+    try {
+      return await pictureOfPageArea(webContentsId, area);
+    } catch (e) {
+      console.warn('[browser] No picture of the picked element:', e instanceof Error ? e.message : e);
+      return null;
     }
   });
 

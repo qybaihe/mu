@@ -48,10 +48,11 @@ const sourceFiles = (dir: string): string[] =>
   });
 
 /**
- * CSS the renderer writes as text (a `boxSizing` value, a transition list) that the class pattern below also matches.
- * They are not classes, so emitting nothing is right for them.
+ * CSS the renderer writes as text (a `boxSizing` value, a transition list, the element picker's styles for the page and
+ * the properties it reads) that the class pattern below also matches. They are not classes, so emitting nothing is
+ * right for them.
  */
-const CSS_WORDS = new Set(['border-box', 'border-color']);
+const CSS_WORDS = new Set(['border-box', 'border-color', 'border-radius', 'box-sizing:border-box']);
 
 /**
  * Every class of the colour families `bg-bg-*`, `text-t-*`, `bg-fill-*`, `border-*` and `divide-*` in the renderer

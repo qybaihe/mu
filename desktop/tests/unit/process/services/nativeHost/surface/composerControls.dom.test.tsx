@@ -85,7 +85,7 @@ vi.mock('@/renderer/hooks/agent/useMuDefaultModel', () => ({
 type BoxProps = {
   value?: string;
   onChange?: (value: string) => void;
-  onSend: (message: string) => Promise<void | false>;
+  onSend: (message: string, extras?: { images?: Array<{ data: string; mimeType: string }> }) => Promise<void | false>;
   tools?: React.ReactNode;
   rightTools?: React.ReactNode;
   prefix?: React.ReactNode;
@@ -131,6 +131,14 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
             void props.onSend(value).then((result) => {
               if (result === false) props.onChange?.(value);
             });
+          }}
+        />
+        <button
+          type='button'
+          data-testid='send-with-picture'
+          onClick={() => {
+            props.onChange?.('');
+            void props.onSend(value, { images: [{ data: 'cG5n', mimeType: 'image/png' }] });
           }}
         />
         <button
@@ -621,6 +629,24 @@ describe('the native send box’s commands, mentions and attachments', () => {
     } finally {
       electron.electronAPI = before;
     }
+  });
+});
+
+describe('the picture of an element picked in the browser', () => {
+  it('goes to pi as an image with the message that carries the element', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1', cwd: '/work/project' });
+    host.answer(() => ({ ok: true, data: undefined }));
+    await mount(host);
+    type('make it blue');
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('send-with-picture'));
+    });
+    expect(sent(host, 'prompt').at(-1)).toEqual({
+      type: 'prompt',
+      message: 'make it blue',
+      images: [{ type: 'image', mimeType: 'image/png', data: 'cG5n' }],
+    });
   });
 });
 

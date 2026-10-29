@@ -28,7 +28,20 @@ export interface DomSnippet {
   tag: string;
   /** 完整 HTML / Full HTML */
   html: string;
+  /**
+   * What the message says above the HTML: where the element is (a page of the browser: its address, a selector, its
+   * text and look). Without it, the preview's "DOM Snippet (tag):".
+   */
+  about?: string;
+  /** A picture of the element (a page's element: what of it was on screen), sent with the message as an image. */
+  image?: DomSnippetImage;
 }
+
+/** A picture that goes with a snippet: base64 data and its type. */
+export type DomSnippetImage = { data: string; mimeType: string };
+
+/** The send box keeps this many elements for the next message; the oldest goes first. */
+export const MAX_DOM_SNIPPETS = 5;
 
 export interface PreviewMetadata {
   language?: string;
@@ -192,7 +205,10 @@ export interface PreviewContextValue {
 
   // DOM 片段管理 / DOM snippet management
   domSnippets: DomSnippet[];
-  addDomSnippet: (tag: string, html: string) => void;
+  /** Adds an element to the next message (the same one again replaces it) and says its id. */
+  addDomSnippet: (tag: string, html: string, about?: string) => string;
+  /** Gives a snippet its picture, when it is still there (the person may have taken it back, or sent it). */
+  attachDomSnippetImage: (id: string, image: DomSnippetImage) => void;
   removeDomSnippet: (id: string) => void;
   clearDomSnippets: () => void;
 }
@@ -1133,10 +1149,20 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, []);
 
   // DOM 片段管理函数 / DOM snippet management functions
-  // 只保留最新的一个片段 / Only keep the latest snippet
-  const addDomSnippet = useCallback((tag: string, html: string) => {
+  // The elements the person picked for the next message, up to MAX_DOM_SNIPPETS: "this one and that one".
+  const addDomSnippet = useCallback((tag: string, html: string, about?: string) => {
     const id = `snippet-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-    setDomSnippets([{ id, tag, html }]);
+    setDomSnippets((prev) => {
+      const others = prev.filter((s) => s.html !== html || s.about !== about);
+      return [...others, { id, tag, html, ...(about ? { about } : {}) }].slice(-MAX_DOM_SNIPPETS);
+    });
+    return id;
+  }, []);
+
+  const attachDomSnippetImage = useCallback((id: string, image: DomSnippetImage) => {
+    setDomSnippets((prev) =>
+      prev.some((s) => s.id === id) ? prev.map((s) => (s.id === id ? { ...s, image } : s)) : prev
+    );
   }, []);
 
   const removeDomSnippet = useCallback((id: string) => {
@@ -1336,6 +1362,7 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setSendBoxHandler,
       domSnippets,
       addDomSnippet,
+      attachDomSnippetImage,
       removeDomSnippet,
       clearDomSnippets,
     };
@@ -1367,6 +1394,7 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setSendBoxHandler,
     domSnippets,
     addDomSnippet,
+    attachDomSnippetImage,
     removeDomSnippet,
     clearDomSnippets,
   ]);

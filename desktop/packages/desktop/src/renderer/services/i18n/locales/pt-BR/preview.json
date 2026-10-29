@@ -157,7 +157,14 @@
     "tabLimitReached": "Limite de abas atingido ({{count}}). A aba mais antiga foi reutilizada.",
     "agentFirstUseTitle": "O agente está usando o navegador integrado",
     "agentFirstUseContent": "Ele pode abrir páginas, clicar e ler conteúdo neste painel. Seu login é preservado.",
-    "agentFirstUseAction": "Abrir configurações"
+    "agentFirstUseAction": "Abrir configurações",
+    "pick": {
+      "start": "Selecionar um elemento para mostrar ao mu",
+      "stop": "Parar de selecionar",
+      "hint": "Clique em um elemento para adicioná-lo à mensagem · ↑ seleciona o elemento pai · Esc cancela",
+      "added": "{{name}} adicionado à mensagem",
+      "failed": "Não é possível selecionar elementos desta página"
+    }
   },
   "saveConflict": "Não foi possível salvar: este arquivo mudou no disco depois que você o abriu. Recarregue para ver as outras alterações — suas edições continuam aqui, não salvas.",
   "persistQuotaExceeded": "O armazenamento local está cheio, então as abas abertas deste projeto não podem mais ser lembradas. Feche algumas abas ou limpe os dados do site.",

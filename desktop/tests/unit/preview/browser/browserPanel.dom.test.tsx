@@ -1,7 +1,7 @@
 /**
  * The work panel's 浏览器 tab as the person uses it: its pages as tabs, one address field for the page in front (an
  * address or words to search for), back, forward and reload, a new blank page, closing, each tab's right-click menu,
- * and filling the page.
+ * filling the page, and pointing at an element of the page to show it to mu.
  * jsdom has no `<webview>`: each page is a stand-in that reports its navigation and records the controls it gets.
  */
 
@@ -14,13 +14,22 @@ import common from '@/renderer/services/i18n/locales/en-US/common.json';
 import preview from '@/renderer/services/i18n/locales/en-US/preview.json';
 
 type Navigation = { url: string; canGoBack: boolean; canGoForward: boolean; loading: boolean };
-type Controls = { back: () => void; forward: () => void; reload: () => void; go: (url: string) => void };
+type Controls = {
+  back: () => void;
+  forward: () => void;
+  reload: () => void;
+  go: (url: string) => void;
+  run: ReturnType<typeof vi.fn>;
+  webContentsId: () => number | undefined;
+  focus: () => void;
+};
 
 const pages = vi.hoisted(() => ({
   /** Each page by the address it opened at: its partition, how it reports, and the controls it was given. */
   byUrl: new Map<string, { partition?: string; report: (state: Navigation) => void; controls: Controls }>(),
 }));
 const { copyTextMock } = vi.hoisted(() => ({ copyTextMock: vi.fn() }));
+const picking = vi.hoisted(() => ({ addDomSnippet: vi.fn(), attachDomSnippetImage: vi.fn(), picture: vi.fn() }));
 
 vi.mock('@/renderer/components/media/WebviewHost', () => ({
   default: function FakeWebview(props: {
@@ -34,6 +43,9 @@ vi.mock('@/renderer/components/media/WebviewHost', () => ({
       forward: vi.fn(),
       reload: vi.fn(),
       go: vi.fn(),
+      run: vi.fn(),
+      webContentsId: () => 7,
+      focus: vi.fn(),
     }));
     useImperativeHandle(props.navigationRef, () => controls, [controls]);
     useEffect(() => {
@@ -55,8 +67,20 @@ vi.mock('@/common/kyrn/browserBridge', () => ({
 }));
 vi.mock('@/renderer/utils/platform', () => ({ isMacOS: () => true, isElectronDesktop: () => true }));
 vi.mock('@/renderer/utils/ui/clipboard', () => ({ copyText: copyTextMock }));
+vi.mock('@/renderer/pages/conversation/Preview/context/PreviewContext', () => ({
+  useOptionalPreviewContext: () => ({
+    addDomSnippet: picking.addDomSnippet,
+    attachDomSnippetImage: picking.attachDomSnippetImage,
+  }),
+}));
+vi.mock('@/common', () => ({
+  ipcBridge: { application: { pictureOfBrowserArea: { invoke: picking.picture } } },
+}));
 
 import BrowserPanel from '@/renderer/pages/conversation/Preview/browser/BrowserPanel';
+import { CANCEL_PICK_SCRIPT } from '@/renderer/components/media/elementPicker';
+
+const noAnswer = (_value: unknown): void => undefined;
 import {
   browserNow,
   markBrowserAgentActive,
@@ -105,6 +129,9 @@ beforeEach(() => {
   resetBrowserStoreForTest();
   pages.byUrl.clear();
   copyTextMock.mockReset().mockResolvedValue(undefined);
+  picking.addDomSnippet.mockReset().mockReturnValue('snippet-1');
+  picking.attachDomSnippetImage.mockReset();
+  picking.picture.mockReset().mockResolvedValue(null);
 });
 afterEach(() => {
   cleanup();
@@ -359,5 +386,122 @@ describe('filling the page', () => {
   it('offers nothing where the browser cannot fill the page', () => {
     show();
     expect(screen.queryByRole('button', { name: preview.maximizePanel })).not.toBeInTheDocument();
+  });
+});
+
+describe('pointing at an element of the page', () => {
+  const button = () => screen.getByTestId('browser-pick-element');
+  const picked = {
+    url: 'http://localhost:5173/',
+    title: 'Shop',
+    selector: 'button.primary',
+    label: 'button.primary',
+    text: 'Get started',
+    html: '<button class="primary">Get started</button>',
+    rect: { x: 10, y: 20, width: 120, height: 40 },
+    size: { width: 120, height: 40 },
+    styles: { color: 'rgb(255, 255, 255)' },
+  };
+
+  /** The page's picker, answered by the test. */
+  const pickerOn = (url: string) => {
+    let answer: (value: unknown) => void = noAnswer;
+    const controls = pages.byUrl.get(url)!.controls;
+    controls.run.mockImplementation((script: string) =>
+      script === CANCEL_PICK_SCRIPT ? Promise.resolve(undefined) : new Promise((resolve) => (answer = resolve))
+    );
+    return { controls, answer: (value: unknown) => act(async () => answer(value)) };
+  };
+
+  it('offers no picker without a page', () => {
+    show();
+    expect(screen.queryByTestId('browser-pick-element')).not.toBeInTheDocument();
+  });
+
+  it('runs the picker on the page in front, and puts the element and its picture into the next message', async () => {
+    picking.picture.mockResolvedValue(btoa('png'));
+    open('http://localhost:5173/');
+    show();
+    const picker = pickerOn('http://localhost:5173/');
+
+    fireEvent.click(button());
+    expect(button()).toHaveAttribute('aria-pressed', 'true');
+    expect(button()).toHaveAccessibleName(preview.browser.pick.stop);
+    expect(picker.controls.focus).toHaveBeenCalled();
+    expect(picker.controls.run.mock.calls[0][0]).toContain(JSON.stringify(preview.browser.pick.hint));
+
+    await picker.answer(picked);
+    expect(button()).toHaveAttribute('aria-pressed', 'false');
+    expect(picking.addDomSnippet).toHaveBeenCalledWith(
+      'button.primary',
+      picked.html,
+      expect.stringContaining('Element on the page http://localhost:5173/ ("Shop") (button.primary):')
+    );
+    expect(picking.picture).toHaveBeenCalledWith({ webContentsId: 7, area: picked.rect });
+    // The picture is the chip's own: sent with it, taken back with it.
+    expect(picking.attachDomSnippetImage).toHaveBeenCalledWith('snippet-1', {
+      data: btoa('png'),
+      mimeType: 'image/png',
+    });
+  });
+
+  it('adds the element without a picture when none could be taken, and nothing when the person called it off', async () => {
+    open('http://localhost:5173/');
+    show();
+    const picker = pickerOn('http://localhost:5173/');
+
+    fireEvent.click(button());
+    await picker.answer({ ...picked, rect: { x: 0, y: 0, width: 0, height: 0 } });
+    expect(picking.addDomSnippet).toHaveBeenCalledTimes(1);
+    expect(picking.picture).not.toHaveBeenCalled();
+
+    fireEvent.click(button());
+    await picker.answer(null);
+    expect(picking.addDomSnippet).toHaveBeenCalledTimes(1);
+    expect(picking.attachDomSnippetImage).not.toHaveBeenCalled();
+  });
+
+  it('stops on a second click, on Escape, when another page comes in front, or when the page goes elsewhere', async () => {
+    const a = open('https://a.example');
+    open('https://b.example');
+    act(() => switchBrowserTab(a));
+    show();
+    const picker = pickerOn('https://a.example');
+    const cancels = () => picker.controls.run.mock.calls.filter(([script]) => script === CANCEL_PICK_SCRIPT).length;
+
+    fireEvent.click(button());
+    fireEvent.click(button());
+    expect(button()).toHaveAttribute('aria-pressed', 'false');
+    expect(cancels()).toBe(1);
+
+    fireEvent.click(button());
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(button()).toHaveAttribute('aria-pressed', 'false');
+    expect(cancels()).toBe(2);
+
+    fireEvent.click(button());
+    act(() =>
+      pages.byUrl
+        .get('https://a.example')!
+        .report({ url: 'https://a.example/next', canGoBack: true, canGoForward: false, loading: true })
+    );
+    expect(button()).toHaveAttribute('aria-pressed', 'false');
+    expect(cancels()).toBe(3);
+
+    fireEvent.click(button());
+    fireEvent.click(page('b.example'));
+    expect(cancels()).toBe(4);
+    // A picker called off answers nothing the panel takes.
+    await picker.answer(picked);
+    expect(picking.addDomSnippet).not.toHaveBeenCalled();
+  });
+
+  it('says so when the page cannot run the picker', async () => {
+    open('https://a.example');
+    show();
+    pages.byUrl.get('https://a.example')!.controls.run.mockRejectedValue(new Error('no page'));
+    fireEvent.click(button());
+    expect(await screen.findByText(preview.browser.pick.failed)).toBeInTheDocument();
+    expect(button()).toHaveAttribute('aria-pressed', 'false');
   });
 });

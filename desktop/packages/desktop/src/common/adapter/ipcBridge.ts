@@ -733,6 +733,14 @@ export const application = {
   reportBrowserWebContentsId: bridge.buildProvider<IBridgeResponse<void>, { webContentsId: number }>(
     'app.report-browser-webcontents-id'
   ),
+  /**
+   * A picture of part of an in-app browser page, as base64 PNG: the element the person picked to show mu. The area is
+   * in the page's CSS pixels. Null when there is nothing to take; main takes pictures of `<webview>` pages only.
+   */
+  pictureOfBrowserArea: bridge.buildProvider<
+    string | null,
+    { webContentsId: number; area: { x: number; y: number; width: number; height: number } }
+  >('app.picture-of-browser-area'),
   getStartOnBootStatus: bridge.buildProvider<IBridgeResponse<IStartOnBootStatus>, void>('app.get-start-on-boot-status'),
   setStartOnBoot: bridge.buildProvider<IBridgeResponse<IStartOnBootStatus>, { enabled: boolean }>(
     'app.set-start-on-boot'
