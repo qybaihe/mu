@@ -231,12 +231,13 @@ export const SETUP_SERVICES: readonly SetupService[] = [
 	},
 	{
 		// Not in the app's table yet. Open models, NVIDIA's Nemotron among them; the same key reaches the `nemotron`
-		// judge (Nemotron 3 Ultra on Token Factory).
+		// judge (Nemotron 3 Ultra on Token Factory). Nemotron 3.5 Super VL: Token Factory retires Nemotron 3 Super
+		// (nvidia/nemotron-3-super-120b-a12b) from Serverless on 2026-11-09 and names it as the replacement.
 		id: "nebius",
 		name: "Nebius Token Factory",
 		baseUrls: ["https://api.tokenfactory.nebius.com/v1"],
 		api: "openai-completions",
-		models: ["nvidia/nemotron-3-super-120b-a12b"],
+		models: ["nvidia/Nemotron-3.5-Super-VL"],
 		// "v1.", then two base64url parts.
 		keyShape: /^v1\.[A-Za-z0-9_-]{40,}\.[A-Za-z0-9_-]{40,}$/,
 		keyPage: "https://tokenfactory.nebius.com",

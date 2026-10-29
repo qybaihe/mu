@@ -1202,7 +1202,7 @@ describe("mu setup in a script", () => {
 
 	it("makes Nemotron 3 Ultra the judge with a Nebius key, and wants one for it", async () => {
 		const run = await stdinRun(["--service", "nebius", "--judge", "nemotron"], `${KEYS.nebius}\n`, {
-			respond: () => listing("nvidia/nemotron-3-super-120b-a12b", "nvidia/Nemotron-3-Ultra-550b-a55b"),
+			respond: () => listing("nvidia/Nemotron-3.5-Super-VL", "nvidia/Nemotron-3-Ultra-550b-a55b"),
 		});
 		expect(run.code).toBe(SETUP_EXIT.done);
 		expect((run.pi as FakePi).stored).toEqual([{ provider: "nebius", key: KEYS.nebius }]);
