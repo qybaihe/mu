@@ -6,7 +6,7 @@
  */
 import { useEffect, useMemo } from 'react';
 import { ipcBridge } from '@/common';
-import { useConversationListSync } from '@/renderer/pages/conversation/GroupedHistory/hooks/useConversationListSync';
+import { useConversationActivitySets } from '@/renderer/pages/conversation/GroupedHistory/hooks/useConversationListSync';
 import { useNativeUnread } from '@/renderer/pages/native/hooks/useNativeAttention';
 import { isElectronDesktop } from '@/renderer/utils/platform';
 
@@ -18,7 +18,7 @@ export function waitingCount(...marks: ReadonlyArray<ReadonlySet<string>>): numb
 export function useAppBadge(): void {
   const native = useNativeUnread();
   const { completionUnreadConversationIds, manualUnreadConversationIds, waitingConfirmationConversationIds } =
-    useConversationListSync();
+    useConversationActivitySets();
   const count = useMemo(
     () =>
       waitingCount(

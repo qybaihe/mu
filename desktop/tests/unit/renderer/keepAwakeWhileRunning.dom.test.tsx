@@ -38,7 +38,7 @@ vi.mock('@/renderer/pages/native/hooks/useNativeConversations', () => ({
   useNativeConversations: () => ({ conversations: state.native, loading: false }),
 }));
 vi.mock('@/renderer/pages/conversation/GroupedHistory/hooks/useConversationListSync', () => ({
-  useConversationListSync: () => ({ generatingConversationIds: state.generating }),
+  useConversationActivitySets: () => ({ generatingConversationIds: state.generating }),
 }));
 vi.mock('@/renderer/utils/platform', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/renderer/utils/platform')>()),

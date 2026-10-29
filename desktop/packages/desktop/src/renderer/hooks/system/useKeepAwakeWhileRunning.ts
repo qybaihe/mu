@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react';
 import { ipcBridge } from '@/common';
 import { configService } from '@/common/config/configService';
-import { useConversationListSync } from '@/renderer/pages/conversation/GroupedHistory/hooks/useConversationListSync';
+import { useConversationActivitySets } from '@/renderer/pages/conversation/GroupedHistory/hooks/useConversationListSync';
 import { useNativeConversations, useNativeEnabled } from '@/renderer/pages/native/hooks/useNativeConversations';
 import { isElectronDesktop } from '@/renderer/utils/platform';
 
@@ -26,7 +26,7 @@ export function useKeepAwakeSetting(): boolean {
 export function useKeepAwakeWhileRunning(): void {
   const wanted = useKeepAwakeSetting();
   const { conversations } = useNativeConversations(useNativeEnabled() === true);
-  const { generatingConversationIds } = useConversationListSync();
+  const { generatingConversationIds } = useConversationActivitySets();
   const running = conversations.some((conversation) => conversation.running) || generatingConversationIds.size > 0;
   const on = wanted && running;
   useEffect(() => {

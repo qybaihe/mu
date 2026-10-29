@@ -24,7 +24,7 @@ vi.mock('@/common', () => ({
   },
 }));
 vi.mock('@/renderer/pages/conversation/GroupedHistory/hooks/useConversationListSync', () => ({
-  useConversationListSync: () => classic,
+  useConversationActivitySets: () => classic,
 }));
 vi.mock('@/renderer/utils/platform', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/renderer/utils/platform')>()),
