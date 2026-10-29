@@ -4,7 +4,7 @@ mu can run end to end on [Nebius Token Factory](https://tokenfactory.nebius.com)
 
 | Role in mu | Model on Token Factory | Why |
 | --- | --- | --- |
-| The coding model: reads, edits, runs commands | Nemotron 3 Super (`nvidia/nemotron-3-super-120b-a12b`) | Calls tools reliably, $0.30 / $0.90 per million tokens; its thinking follows mu's thinking level |
+| The coding model: reads, edits, runs commands | Nemotron 3.5 Super VL (`nvidia/Nemotron-3.5-Super-VL`) from mu-agent 0.3.3; Nemotron 3 Super (`nvidia/nemotron-3-super-120b-a12b`) before, which Token Factory retires from Serverless on 2026-11-09 | Calls tools reliably, $0.30 / $0.90 per million tokens; its thinking follows mu's thinking level |
 | The judge at the 40 decision points | Nemotron 3 Ultra (`nvidia/Nemotron-3-Ultra-550b-a55b`), thinking off | The only Nemotron on Token Factory that clearly beat having no judge (below); 0.9 s at the median |
 | The judge on your machine | Nemotron 3 Nano 4B, fine-tuned for mu's judge ([mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron)) | Free and local, about 0.1 s to approve a command; on held-out test it scored above Ultra (below) |
 | Where commands run, if you want them off your machine | Token Factory Sandboxes | Each command continues from the files the previous one left; changes come back only after you review the diff |
@@ -31,13 +31,13 @@ npm ci && npm run generate:models   # the model catalog is generated, not commit
 ./kyrn/bin/mu setup                 # then ./kyrn/bin/mu wherever `mu` appears below
 ```
 
-Create an API key in [Token Factory](https://tokenfactory.nebius.com), run `mu setup` and paste it: mu recognises a Token Factory key, checks it, starts you on Nemotron 3 Super and offers Nemotron 3 Ultra as the judge. In a script, the key comes from stdin:
+Create an API key in [Token Factory](https://tokenfactory.nebius.com), run `mu setup` and paste it: mu recognises a Token Factory key, checks it, starts you on Nemotron 3.5 Super VL and offers Nemotron 3 Ultra as the judge. In a script, the key comes from stdin:
 
 ```bash
 mu setup --service nebius --key-stdin --judge nemotron
 ```
 
-This keeps the key in `~/.mu/agent/auth.json`, makes Super the default model and writes the judge to `~/.mu/agent/mu.json`:
+This keeps the key in `~/.mu/agent/auth.json`, makes Super VL the default model and writes the judge to `~/.mu/agent/mu.json`:
 
 ```json
 { "tiers": ["nemotron"] }
@@ -47,7 +47,7 @@ Then run `mu`. Without setup, the environment works too (or put the key in `~/.m
 
 ```bash
 export NEBIUS_API_KEY=...
-MU_JUDGE=nemotron mu --provider nebius --model nvidia/nemotron-3-super-120b-a12b
+MU_JUDGE=nemotron mu --provider nebius --model nvidia/Nemotron-3.5-Super-VL
 ```
 
 In Judge mode (the default permission mode) Nemotron 3 Ultra approves what the task clearly needs and asks you about the rest. Every verdict goes to the ledger with its latency: `mu ledger`, `/status`, or the Judge tab in the desktop app. A typical run, fixing a failing test in a small Python project:
@@ -106,7 +106,7 @@ This is new. Sandboxes must be enabled for your Token Factory project, and so fa
 
 ```bash
 export NEBIUS_PROJECT_ID=...   # Token Factory → Project settings
-MU_SANDBOX=nebius mu --provider nebius --model nvidia/nemotron-3-super-120b-a12b
+MU_SANDBOX=nebius mu --provider nebius --model nvidia/Nemotron-3.5-Super-VL
 ```
 
 `/sandbox status` shows the sandbox and the image it has reached; the options (base image, time limits) are under `features.sandbox` in [the feature reference](reference/features.md#sandbox).
@@ -117,7 +117,7 @@ With `TAVILY_API_KEY` set, `web_search` asks [Tavily](https://tavily.com) first 
 
 ```bash
 export TAVILY_API_KEY=...      # from app.tavily.com
-mu --provider nebius --model nvidia/nemotron-3-super-120b-a12b
+mu --provider nebius --model nvidia/Nemotron-3.5-Super-VL
 ```
 
 Checked against the live Tavily API on 2026-10-26, with mu-agent 0.2.13 from npm and Nemotron 3 Super on Token Factory as the agent. Asked whether `datetime.utcnow()` is deprecated, mu's `web_search` answered from Tavily (8 results) and the agent updated the code. Asked to read a page behind a bot check (HTTP 403, no text until its scripts run), `web_fetch` read it through Tavily's extract.

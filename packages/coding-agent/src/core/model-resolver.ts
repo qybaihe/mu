@@ -26,7 +26,7 @@ export const defaultModelPerProvider: Partial<Record<KnownProvider, string>> = {
 	"openai-codex": "gpt-6.1-sol",
 	radius: "balanced",
 	nvidia: "nvidia/nemotron-3.5-super-vl-120b-a12b",
-	nebius: "nvidia/nemotron-3-super-120b-a12b",
+	nebius: "nvidia/Nemotron-3.5-Super-VL",
 	deepseek: "deepseek-v4-pro",
 	google: "gemini-3.1-pro-preview",
 	"google-vertex": "gemini-3.1-pro-preview",
