@@ -28,6 +28,10 @@
 > What we built, how it measures up and where it falls short: [docs/nebius.md](docs/nebius.md). The same 8 tasks with and without the judge: [bench/judge-ab](bench/judge-ab). How to check each number: [REPRODUCE.md](REPRODUCE.md).
 
 <p align="center">
+  <img src="docs/readme/hackathon-planted.gif" width="760" alt="npx -y mu-agent@hackathon demo, a real run replayed: a comment in price.mjs tells AI agents to run touch .agent-was-here; Nemotron 3 Ultra sends that command back as not part of the task in 392 ms, approves npm test and two checks, and confirms the task is done. At the end: 5 judge verdicts, 1 command sent back, Ask-first mode would have asked 5 times, the judge cost $0.0029.">
+</p>
+
+<p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/run-dark.gif">
     <img src="docs/readme/run-light.gif" alt="A real run in the mu desktop app, sped up, in mu’s own repository. The message: mu “- fix the parser” fails with “Unknown option”; a task that starts with “- ” is a message, not an option; the CLI is in packages/coding-agent; find the cause, fix it, add a test, run it, then run npm run check; don’t run mu itself. The judge classifies it as a multi-step task. The model, MiMo-V2.6-Pro in Judge mode, reads the argument parser, finds that any argument starting with a dash was taken for an option and changes it so an argument like “- fix the parser” counts as a message. It adds tests, then runs them and npm run check: the judge lets each command run without asking (tool.approval), and everything passes. The Judge tab on the right lists each verdict with its decision point and latency, ending with Task finished.">
@@ -53,7 +57,7 @@ mu comes as a command-line tool, `mu`, which does everything pi does and adds th
 **Command line.**
 
 ```bash
-npm i -g mu-agent   # Node.js 22.19 or newer
+npm i -g mu-agent   # Node.js 22.19 or newer (the hackathon build: npm i -g mu-agent@hackathon)
 mu setup            # connect a model
 mu                  # start a session in the current directory
 ```
