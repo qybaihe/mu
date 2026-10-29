@@ -148,6 +148,7 @@ mu                  # 在目前目錄開一個工作階段
 - **Jev**：TypeSafe 託管的判定模型，回答有邊界的問題，答案帶機率。可以經 TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI，或任何支援同一協定的服務呼叫，每個服務有自己的金鑰（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`）：在桌面版的「判定器」頁選一個，預設用第一個設定了金鑰的。一把金鑰都沒有時，預設由 OpenCode Zen 上限時免費的 Jev 1.13 回答：判定要讀的內容會送到 OpenCode，它不拿來訓練模型，mu 每天提示一次。設定金鑰（`mu setup`，或「判定器」頁）後，下一個問題起就用你的金鑰。在作者自己的工作階段裡實測：HTTP/2 上一個熱連線的問題約 0.3 秒；16 塊工具輸出併成一個請求判完 0.44 秒，狀態只計費一次。
 - **mude 1.0**（本機，Apple 晶片的 Mac）：mu 自己的決策模型，針對程式設計場景最佳化，見[下文](#mude-10針對程式設計場景最佳化的決策模型)。
 - **OpenAI 的決策模型** `gpt-6-luna`。透過 OpenAI 的 [Decisions API](https://developers.openai.com/api/docs/guides/decisions) 回答，使用 OpenAI 的 API 金鑰（`MU_JUDGE_OPENAI_KEY`，或 mu 已有的 OpenAI 金鑰）。用 `mu setup --judge openai` 或在設定 → 判定器裡選它。
+- **NVIDIA Nemotron 3 Ultra** `nemotron`。透過 [Nebius Token Factory](https://tokenfactory.nebius.com) 回答，使用 Token Factory 的 API 金鑰（`NEBIUS_API_KEY`，或 `mu setup` 保存的金鑰）。用 `mu setup --judge nemotron` 選它。用 Token Factory 的金鑰執行 `mu setup` 時，主模型也會設為 Nemotron 3.5 Super VL，mu 的兩個模型都在 Token Factory 上執行。`nemotron-think` 讓 Ultra 開著思考回答（[詳情](../judges.md#nvidia-nemotron-on-nebius-token-factory)，英文）。
 - **Hugging Face 上的其他決策模型**（本機，Apple 晶片的 Mac）：`mu judge model add <連結>`（或桌面版設定的「判定器」頁）加入一個和 mude 1.0 同樣打包的模型，並讓它擔任判定器。mu 不再內建 Laya：`mu.json` 裡還寫著它的，mude 1.0 裝好了就由 mude 1.0 頂替，否則用剩下的判定器或 Jev，mu 會提示一次。
 - **pi 模型目錄裡的任何分類模型**，作為一個層級：`classifier:<provider>/<model>`。例如 Cloudflare 的 Clef（`clef`、`clef-flash`）、OpenRouter 和 Vercel AI Gateway 上的 System One 模型、llama.cpp 的分類模型。
 - **任何大模型**，作為一個層級：`llm:<provider>/<model>`。
@@ -334,7 +335,7 @@ mu doctor     # 檢查安裝、判定器和各項連線
 | 指令 | 做什麼 |
 | --- | --- |
 | `/status` | 判定器、各判定點的模式、沒放進上下文的內容、最近的判定 |
-| `/mu judge <judges>` | 由哪些判定器回答、按什麼順序：`jev`、`mude,jev`、`jev-opencode-free`、`openai`、`classifier:<provider>/<model>`、`llm:<provider>/<model>` |
+| `/mu judge <judges>` | 由哪些判定器回答、按什麼順序：`jev`、`mude,jev`、`jev-opencode-free`、`openai`、`nemotron`、`classifier:<provider>/<model>`、`llm:<provider>/<model>` |
 | `/mu route <point> <judge>` | 讓某一個判定點用自己的判定器 |
 | `/mu mode <point> <off\|shadow\|active>` | 切換某一個判定點 |
 | `/frame` | 任務框架：目標、你的約束及其出處、驗收條件 |

@@ -147,6 +147,7 @@ mu                  # 現在のディレクトリでセッションを始める
 
 - **Jev**（クラウド）。TypeSafe がホストする判定モデルで、範囲の決まった問いに確率付きで答えます。TypeSafe、OpenRouter、Vercel AI Gateway、OpenCode Zen、Cloudflare Workers AI、または同じプロトコルを話す任意のサービスから呼び出せて、サービスごとにキーを持ちます（`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` と `CLOUDFLARE_ACCOUNT_ID`）。デスクトップアプリの「判定器」ページで選べて、既定ではキーが設定されている最初のものを使います。キーが一つもなければ、OpenCode Zen 上で期間限定無料の Jev 1.13 が答えます。判定に必要な内容は OpenCode に送られますが、モデルの学習には使われません。mu はそのことを 1 日 1 回知らせます。キーを設定すると（`mu setup`、または「判定器」ページ）、次の問いからそのキーを使います。作者たち自身のセッションでの実測では、HTTP/2 のウォームな接続で 1 問あたり約 0.3 秒、ツール出力 16 チャンクを 1 リクエストで判定して 0.44 秒で、状態の課金は 1 回だけでした。
 - **OpenAI の判定モデル** `gpt-6-luna`。OpenAI の [Decisions API](https://developers.openai.com/api/docs/guides/decisions) で、OpenAI の API キー（`MU_JUDGE_OPENAI_KEY`、または mu がすでに持っている OpenAI のキー）を使って答えます。`mu setup --judge openai` か、設定 → 判定器で選べます。
+- **NVIDIA Nemotron 3 Ultra** `nemotron`。[Nebius Token Factory](https://tokenfactory.nebius.com) で、Token Factory の API キー（`NEBIUS_API_KEY`、または `mu setup` が保存したキー）を使って答えます。`mu setup --judge nemotron` で選べます。Token Factory のキーで `mu setup` を実行すると、メインモデルも Nemotron 3.5 Super VL になり、mu の二つのモデルがどちらも Token Factory で動きます。`nemotron-think` は Ultra に思考をオンにして尋ねます（[詳細](../judges.md#nvidia-nemotron-on-nebius-token-factory)、英語）。
 - **mude 1.0**（ローカル、Apple シリコンの Mac）。mu 自身の意思決定モデルで、コーディング向けに最適化されています。`mu judge mude install` でインストールし、判定器にします。
 - **Hugging Face のほかの意思決定モデル**（ローカル、Apple シリコンの Mac）。`mu judge model add <リンク>`（またはデスクトップアプリの設定の「判定器」）で、mude 1.0 と同じ形でパッケージされたモデルを追加し、判定器にします。Laya は mu に含まれなくなりました。`mu.json` にまだ Laya があると、mude 1.0 がセットアップ済みなら mude 1.0 が代わりを務め、そうでなければ残りの判定器か Jev を使い、mu が一度だけ知らせます。
 - **pi のモデルカタログにある任意の分類モデル**も、階層の一つとして使えます：`classifier:<provider>/<model>`。Cloudflare の Clef（`clef`、`clef-flash`）、OpenRouter と Vercel AI Gateway の System One モデル、llama.cpp の分類モデルなど。
@@ -318,7 +319,7 @@ Node 22.19 以降が必要です。`mu -p "prompt"` は 1 回だけ実行して�
 | コマンド | 内容 |
 | --- | --- |
 | `/status` | 判定器、各判定ポイントのモード、コンテキストに入れなかったもの、最新の判定 |
-| `/mu judge <judges>` | どの判定器がどの順で答えるか：`jev`、`mude,jev`、`jev-opencode-free`、`openai`、`classifier:<provider>/<model>`、`llm:<provider>/<model>` |
+| `/mu judge <judges>` | どの判定器がどの順で答えるか：`jev`、`mude,jev`、`jev-opencode-free`、`openai`、`nemotron`、`classifier:<provider>/<model>`、`llm:<provider>/<model>` |
 | `/mu route <point> <judge>` | 一つの判定ポイントに専用の判定器を割り当てる |
 | `/mu mode <point> <off\|shadow\|active>` | 一つの判定ポイントを切り替える |
 | `/frame` | タスクフレーム：目標、あなたの制約とその出どころ、受け入れ条件 |
