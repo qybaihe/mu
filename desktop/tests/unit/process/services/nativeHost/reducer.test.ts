@@ -541,8 +541,12 @@ describe('reduce', () => {
 
   it('opens no dialog for pi’s fire-and-forget requests', () => {
     const view = emptyView();
-    for (const method of ['setStatus', 'setWidget', 'setTitle', 'set_editor_text'])
+    for (const method of ['setStatus', 'setWidget', 'setTitle'])
       expect(reduce(view, { type: 'extension_ui_request', id: 'x', method, message: 'hi' })).toBe(view);
+    // The editor's text is for the send box, not a question.
+    const edited = reduce(view, { type: 'extension_ui_request', id: 'x', method: 'set_editor_text', text: 'hi' });
+    expect(edited.dialogs).toEqual([]);
+    expect(edited.host.editorText).toEqual({ id: 'x', text: 'hi' });
     expect(reduce(view, { type: 'extension_ui_request', id: 'x', method: 'notify', message: 'hi' }).dialogs).toEqual(
       []
     );

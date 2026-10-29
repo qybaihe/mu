@@ -129,5 +129,8 @@
     "ambiguous": "More than one file has this name",
     "gone": "{{name}} isn't there anymore. It may have been moved or deleted.",
     "openFailed": "Couldn't open {{name}}"
+  },
+  "rewind": {
+    "action": "Go back to before this message"
   }
 }

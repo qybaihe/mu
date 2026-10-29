@@ -13,8 +13,8 @@ import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
 import { formatDateTime, formatTime } from '@/renderer/services/i18n/format';
 import { iconColors } from '@/renderer/styles/colors';
-import { Alert, Message, Tooltip } from '@arco-design/web-react';
-import { Copy } from '@icon-park/react';
+import { Alert, Button, Message, Tooltip } from '@arco-design/web-react';
+import { Copy, Undo } from '@icon-park/react';
 import classNames from 'classnames';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -248,6 +248,22 @@ const MessageText: React.FC<{
     </Tooltip>
   ) : null;
 
+  // Going back to before the person's message, where its host took a checkpoint then (a native conversation's mu).
+  const hostRewind = isUserMessage ? run?.rewind?.(message) : undefined;
+  const rewindButton = hostRewind ? (
+    <Tooltip content={t('messages.rewind.action')}>
+      <Button
+        type='text'
+        size='mini'
+        className='!px-4px opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto'
+        icon={<Undo theme='outline' size='16' fill={iconColors.secondary} />}
+        aria-label={t('messages.rewind.action')}
+        onClick={hostRewind}
+        data-testid='message-rewind-button'
+      />
+    </Tooltip>
+  ) : null;
+
   const cronMeta = message.content.cronMeta;
   const displaySenderName = senderName === 'team_system' ? t('team.systemNotice.sender') : senderName;
   const fallbackBackendLogo = senderAgentType ? resolveAgentLogo(logos, { backend: senderAgentType }) : null;
@@ -390,6 +406,7 @@ const MessageText: React.FC<{
           >
             {copyButton}
             {forkButton}
+            {rewindButton}
             {message.created_at && (
               <span className='text-12px text-t-secondary opacity-0 group-hover:opacity-100 transition-opacity select-none'>
                 {formatMessageTime(message.created_at, i18n?.language)}
