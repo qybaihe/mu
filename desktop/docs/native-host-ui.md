@@ -699,7 +699,7 @@ while a second conversation is made in the same window and answered; the second'
 sidebar lists both with a host's green dot; the first, opened again from its row, has streamed on meanwhile (well past
 its third chunk), shows none of the second's messages, and runs to its last chunk; the second is as it was.
 
-`tests/e2e/mu-conversation/native-source.spec.mjs` (`--native -- native-source.spec`): five steps, about 15 seconds.
+`tests/e2e/mu-conversation/native-source.spec.mjs` (`--native -- native-source.spec`): seven steps.
 The project is made a repository with one commit by the test's own git (name and address on the command line, the
 profile's home, no system config). The app takes its PATH from the login shell (`fix-path`), which in the profile's
 home is the system's, where a Mac has the Xcode stub first; so the profile's home gets a `.zprofile` and a
