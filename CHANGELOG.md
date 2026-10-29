@@ -12,10 +12,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 - **Files open beside the conversation.** Click the path of a file a tool call read or wrote, or a file a reply names, and it opens in the work panel's preview: code and other text, Markdown, HTML, PDF, CSV, images and diffs. Other files still open in their own app.
 - **Your dev server opens in the app.** When a command prints a local address such as `http://localhost:5173/`, a button under it opens the page in the work panel's browser.
-- **The work panel follows the agent.** While the panel is open on Files, Preview, Source or Browser, a file the agent finishes writing shows in the preview, and the agent's browser at work brings the Browser tab forward. A closed panel only gets dots, as before. A toggle on those tabs turns following off.
+- **The work panel follows the agent.** While the panel is open on Files, Preview, Source or Browser, a file the agent finishes writing shows in the preview, and when the agent uses its browser, the Browser tab comes forward. A closed panel only gets dots, as before. A toggle on those tabs turns following off.
 - **Quick open.** ⌘P (Ctrl+P on Windows and Linux) finds a file in the conversation's folder by its name and opens it in the preview. The command palette offers it too.
 - **A count on the Dock icon** shows how many conversations are waiting for you (macOS; the launcher on Linux).
-- **The computer stays awake while a conversation runs,** so idle sleep doesn't cut a long run short. The display can still turn off, and closing the lid still sleeps. Settings → System turns it off.
+- **The computer stays awake while a conversation runs,** so idle sleep doesn't cut a long run short. The display can still turn off, and closing the lid still puts it to sleep. Settings → System turns it off.
 
 ## [0.3.0] - 2026-10-27
 

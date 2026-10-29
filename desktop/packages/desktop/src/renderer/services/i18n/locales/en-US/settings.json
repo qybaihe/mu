@@ -1076,6 +1076,6 @@
   },
   "learnMore": "Learn more",
   "showLess": "Show less",
-  "keepAwakeWhileRunning": "Keep awake while a conversation runs",
-  "keepAwakeWhileRunningDesc": "While a run is going, the computer doesn't go to sleep when idle. The display can still turn off, and closing the lid still sleeps."
+  "keepAwakeWhileRunning": "Keep the computer awake while a conversation runs",
+  "keepAwakeWhileRunningDesc": "While a run is going, the computer doesn't go to sleep when idle. The display can still turn off, and closing the lid still puts it to sleep."
 }
