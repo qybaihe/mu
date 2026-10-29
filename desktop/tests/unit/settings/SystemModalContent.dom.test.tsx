@@ -22,6 +22,7 @@ const { systemInfoMock, updateSystemInfoMock, restartMock, showOpenMock, message
       get: vi.fn(() => undefined),
       set: vi.fn(() => Promise.resolve()),
       setLocal: vi.fn(),
+      subscribe: vi.fn(() => () => {}),
     },
   }));
 const clientBusinessSettingsMocks = vi.hoisted(() => ({
@@ -275,6 +276,17 @@ describe('SystemModalContent directory settings', () => {
     expect(screen.queryByText('settings.promptTimeout')).not.toBeInTheDocument();
     expect(screen.queryByText('settings.crossSessionMessage')).not.toBeInTheDocument();
     expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+  });
+
+  it('keeps the computer awake while a conversation runs, on until it is turned off', async () => {
+    renderContent();
+
+    await screen.findByText('/work');
+    expect(screen.getByText('settings.keepAwakeWhileRunningDesc')).toBeInTheDocument();
+    const toggle = screen.getByRole('switch', { name: 'settings.keepAwakeWhileRunning' });
+    expect(toggle).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(toggle);
+    expect(configServiceMock.set).toHaveBeenCalledWith('system.keepAwakeWhileRunning', false);
   });
 
   it('names the menu bar on a Mac, where the closed app lives on', async () => {

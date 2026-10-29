@@ -1075,5 +1075,7 @@
     "results": "Suchergebnisse"
   },
   "learnMore": "Mehr erfahren",
-  "showLess": "Weniger"
+  "showLess": "Weniger",
+  "keepAwakeWhileRunning": "Wach bleiben, solange eine Unterhaltung läuft",
+  "keepAwakeWhileRunningDesc": "Solange ein Lauf aktiv ist, geht der Computer im Leerlauf nicht in den Ruhezustand. Der Bildschirm kann trotzdem ausgehen, und Zuklappen versetzt ihn weiterhin in den Ruhezustand."
 }

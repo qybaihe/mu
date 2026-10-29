@@ -1524,6 +1524,8 @@ export const systemSettings = {
     cronNotificationEnabled: p.enabled,
   })),
   getKeepAwake: httpGetClientSetting<boolean>('keepAwake'),
+  /** Hold the computer awake (no idle sleep; the display may still turn off) while `on`, or let it sleep again. */
+  keepAwakeWhileRunning: bridge.buildProvider<void, { on: boolean }>('system-settings:keep-awake-while-running'),
   setKeepAwake: httpPut<void, { enabled: boolean }>('/api/settings/client', (p) => ({ keepAwake: p.enabled })),
   /**
    * Saves the language to the backend and makes the main process follow it (`syncMainLanguage`). The main process

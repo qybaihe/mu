@@ -38,6 +38,7 @@ import { useNotificationClick } from '@renderer/hooks/system/notification/useNot
 import { useDesktopTurnNotification } from '@renderer/hooks/system/notification/useDesktopTurnNotification';
 import { useNativeAttention } from '@renderer/pages/native/hooks/useNativeAttention';
 import { useAppBadge } from '@renderer/hooks/system/notification/useAppBadge';
+import { useKeepAwakeWhileRunning } from '@renderer/hooks/system/useKeepAwakeWhileRunning';
 import { cleanupSiderTooltips } from '@renderer/utils/ui/siderTooltip';
 import { useConversationShortcuts } from '@renderer/hooks/ui/useConversationShortcuts';
 import { isElectronDesktop } from '@renderer/utils/platform';
@@ -149,6 +150,7 @@ const Layout: React.FC<{
   useDesktopTurnNotification();
   useNativeAttention();
   useAppBadge();
+  useKeepAwakeWhileRunning();
   const navigate = useNavigate();
   const location = useLocation();
   const workspaceAvailable = location.pathname.startsWith('/conversation/');

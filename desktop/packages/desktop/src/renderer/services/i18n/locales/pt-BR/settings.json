@@ -1078,5 +1078,7 @@
     "results": "Resultados da busca"
   },
   "learnMore": "Saiba mais",
-  "showLess": "Mostrar menos"
+  "showLess": "Mostrar menos",
+  "keepAwakeWhileRunning": "Manter acordado enquanto uma conversa roda",
+  "keepAwakeWhileRunningDesc": "Enquanto uma execução estiver em andamento, o computador não entra em repouso por inatividade. A tela ainda pode desligar, e fechar a tampa ainda o põe em repouso."
 }

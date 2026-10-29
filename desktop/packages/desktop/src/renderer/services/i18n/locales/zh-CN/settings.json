@@ -1076,5 +1076,7 @@
     "results": "搜索结果"
   },
   "learnMore": "了解更多",
-  "showLess": "收起"
+  "showLess": "收起",
+  "keepAwakeWhileRunning": "会话运行时不让电脑睡眠",
+  "keepAwakeWhileRunningDesc": "有任务在跑时，电脑不会因闲置而睡眠。屏幕仍可关闭，合上盖子仍会睡眠。"
 }

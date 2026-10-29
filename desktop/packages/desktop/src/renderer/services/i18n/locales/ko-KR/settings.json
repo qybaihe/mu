@@ -1076,5 +1076,7 @@
     "results": "검색 결과"
   },
   "learnMore": "자세히",
-  "showLess": "접기"
+  "showLess": "접기",
+  "keepAwakeWhileRunning": "대화가 실행되는 동안 잠자기 방지",
+  "keepAwakeWhileRunningDesc": "실행 중에는 유휴 상태여도 컴퓨터가 잠자기 모드로 전환되지 않습니다. 화면은 꺼질 수 있으며, 덮개를 닫으면 잠자기 모드로 전환됩니다."
 }

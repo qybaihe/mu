@@ -1075,5 +1075,7 @@
     "results": "Resultados de la búsqueda"
   },
   "learnMore": "Más información",
-  "showLess": "Mostrar menos"
+  "showLess": "Mostrar menos",
+  "keepAwakeWhileRunning": "Mantener activo mientras una conversación se ejecuta",
+  "keepAwakeWhileRunningDesc": "Mientras haya una ejecución en curso, el equipo no entra en reposo por inactividad. La pantalla puede apagarse y cerrar la tapa sigue suspendiéndolo."
 }

@@ -27,6 +27,8 @@ export type ConfigKeyMap = {
   'system.notificationEnabled': boolean | undefined;
   'system.cronNotificationEnabled': boolean | undefined;
   'system.keepAwake': boolean | undefined;
+  /** Keep the computer from sleeping while a conversation runs (on unless turned off): useKeepAwakeWhileRunning. */
+  'system.keepAwakeWhileRunning': boolean | undefined;
   'skillsMarket.enabled': boolean | undefined;
   // Removed: 'system.autoPreviewOfficeFiles'. It gated "auto-open a preview tab
   // when an Office file appears in the workspace", a behaviour that was dropped
