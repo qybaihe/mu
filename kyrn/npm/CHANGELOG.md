@@ -4,7 +4,7 @@
 
 ## [0.3.3] - 2026-10-29
 
-**0.3.3: a Nebius Token Factory key starts mu on Nemotron 3.5 Super VL; Token Factory retires Nemotron 3 Super on 2026-11-09.**
+**0.3.3: with a Nebius Token Factory key, mu now starts on Nemotron 3.5 Super VL. Token Factory retires Nemotron 3 Super on 2026-11-09.**
 
 ### Changed
 

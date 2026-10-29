@@ -6,7 +6,7 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [0.3.3] - 2026-10-29
 
-**0.3.3 starts a Nebius Token Factory key on Nemotron 3.5 Super VL, before Token Factory retires Nemotron 3 Super on 2026-11-09.** Nothing else changed since 0.3.2; the desktop app carries mu-agent 0.3.3.
+**With a Nebius Token Factory key, 0.3.3 starts you on Nemotron 3.5 Super VL, ahead of Token Factory retiring Nemotron 3 Super on 2026-11-09.** Nothing else changed since 0.3.2; the desktop app carries mu-agent 0.3.3.
 
 ### Changed
 
