@@ -27,6 +27,8 @@ ARMS = {
     "local": {"MU_PERMISSIONS": "judge", "MU_JUDGE": "nemotron-local"},
     # Nemotron 3.5 Super VL writes the code: Token Factory retires Nemotron 3 Super on 2026-11-09.
     "judge-vl": {"MU_PERMISSIONS": "judge", "_args": ["--model", "nvidia/Nemotron-3.5-Super-VL"]},
+    # The same on mu-agent 0.2.17, which weighs alone each part of a line that may change something next to a check.
+    "judge-vl-parts": {"MU_PERMISSIONS": "judge", "_args": ["--model", "nvidia/Nemotron-3.5-Super-VL"]},
 }
 RUN_ARMS = os.environ.get("AB_ARMS", "nojudge,judge").split(",")
 PRICES = [("Nemotron-3-Ultra", 1.0, 3.0), ("nemotron-3-super", 0.3, 0.9)]
