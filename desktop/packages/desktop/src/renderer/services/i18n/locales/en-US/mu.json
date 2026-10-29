@@ -1107,6 +1107,18 @@
     },
     "attach": {
       "failed": "Couldn't attach {{name}}."
+    },
+    "jobs": {
+      "label": "Background",
+      "title": "Background commands",
+      "runningFor": "running for {{time}}",
+      "stopping": "stopping…",
+      "stoppedAfter": "stopped after {{time}}",
+      "exited": "exited with code {{code}} after {{time}}",
+      "lingering": "Processes it started are still running",
+      "log": "Open its log",
+      "stop": "Stop",
+      "stopAll": "Stop all"
     }
   },
   "details": {

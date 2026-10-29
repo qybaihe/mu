@@ -9,6 +9,7 @@
 //   E2E:PLAIN            a plain reply, streamed in several chunks
 //   E2E:WRITE <path>     calls `write` with <path>; once the result is back, says WRITE-DONE and what the tool said
 //   E2E:BASH <command>   calls `bash` with <command>; once the result is back, says BASH-SAW and what the tool said
+//   E2E:BG <command>     calls `bg_start` with <command> (named e2e-bg); once the result is back, says BG-STARTED
 //   E2E:SLOW [<n>]       a long reply, one chunk every 200 ms, for stopping in the middle; <n> chunks (150 without it)
 //   E2E:ECHO <text>      replies <text>
 //
@@ -80,7 +81,7 @@ export function planReply(messages) {
   if (/You are the voice of a coding session's status board/.test(system)) {
     return { scenario: 'board', kind: 'text', chunks: [JSON.stringify(BOARD_REPLY)] };
   }
-  const marker = /E2E:(PLAIN|WRITE|BASH|SLOW|ECHO)(?:[ \t]+([^\n]*))?/.exec(user);
+  const marker = /E2E:(PLAIN|WRITE|BASH|BG|SLOW|ECHO)(?:[ \t]+([^\n]*))?/.exec(user);
   if (!marker) return { scenario: 'other', kind: 'text', chunks: ['OK.'] };
   const [, name, rawArgument = ''] = marker;
   const argument = rawArgument.trim();
@@ -122,6 +123,11 @@ export function planReply(messages) {
         return { scenario: 'bash', kind: 'tool', tool: 'bash', args: { command: argument } };
       }
       return { scenario: 'bash', kind: 'text', chunks: ['BASH-SAW: ', lastResult.slice(0, 300)], result: lastResult };
+    case 'BG':
+      if (results.length === 0) {
+        return { scenario: 'bg', kind: 'tool', tool: 'bg_start', args: { command: argument, name: 'e2e-bg' } };
+      }
+      return { scenario: 'bg', kind: 'text', chunks: ['BG-STARTED: ', lastResult.slice(0, 300)], result: lastResult };
     default:
       return { scenario: 'other', kind: 'text', chunks: ['OK.'] };
   }

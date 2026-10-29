@@ -1107,6 +1107,18 @@
     },
     "attach": {
       "failed": "無法附加 {{name}}。"
+    },
+    "jobs": {
+      "label": "背景",
+      "title": "背景命令",
+      "runningFor": "已執行 {{time}}",
+      "stopping": "正在停止…",
+      "stoppedAfter": "執行 {{time}} 後已停止",
+      "exited": "執行 {{time}} 後結束，結束碼 {{code}}",
+      "lingering": "它啟動的程序仍在執行",
+      "log": "開啟記錄",
+      "stop": "停止",
+      "stopAll": "全部停止"
     }
   },
   "details": {

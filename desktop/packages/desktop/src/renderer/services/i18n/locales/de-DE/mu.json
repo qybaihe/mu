@@ -1107,6 +1107,18 @@
     },
     "attach": {
       "failed": "{{name}} konnte nicht angehängt werden."
+    },
+    "jobs": {
+      "label": "Hintergrund",
+      "title": "Befehle im Hintergrund",
+      "runningFor": "läuft seit {{time}}",
+      "stopping": "wird beendet…",
+      "stoppedAfter": "nach {{time}} beendet",
+      "exited": "nach {{time}} mit Code {{code}} beendet",
+      "lingering": "Von ihm gestartete Prozesse laufen noch",
+      "log": "Protokoll öffnen",
+      "stop": "Beenden",
+      "stopAll": "Alle beenden"
     }
   },
   "details": {

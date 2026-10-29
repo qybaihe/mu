@@ -22,9 +22,11 @@
 import {
   addFrame,
   addRunEvent,
+  clockOf,
   nextNumber,
   readPermission,
   takeCheckpointOff,
+  takeJob,
   takeJudgeNotice,
   takeNotify,
   takeQueue,
@@ -534,6 +536,10 @@ function uiRequest(view: NativeView, record: PiRecord): NativeView {
     }
     case 'checkpoint.off':
       return takeCheckpointOff(shown, frame.payload);
+    case 'background.start':
+    case 'background.stop':
+    case 'background.exit':
+      return takeJob(shown, frame.kind, frame.payload, frame.at ?? clockOf(shown));
     case 'judge.notice':
       return takeJudgeNotice(shown, frame.payload);
     case GOAL_FRAME:

@@ -248,6 +248,30 @@ export type ViewHost = {
    * back to send again). `id` tells one from the next with the same words.
    */
   editorText?: { id: string; text: string };
+  /** The commands mu runs in the background for the agent, oldest first; absent before the first. */
+  jobs?: ViewJob[];
+};
+
+/**
+ * A command mu runs in the background for the agent (`bg_start`: a dev server, a watcher, a long build), as mu's
+ * `background.*` frames tell it: running until it exits; `stopping` once the person or the model asked it to stop.
+ */
+export type ViewJob = {
+  id: string;
+  name: string;
+  command: string;
+  cwd?: string;
+  /** Where mu writes its output. */
+  logPath?: string;
+  state: 'running' | 'stopping' | 'exited';
+  /** When it started, as mu's frame says (ms). */
+  startedAt: number;
+  exitCode?: number;
+  durationMs?: number;
+  /** Who stopped it (`user`, `model`), when it did not end by itself. */
+  stoppedBy?: string;
+  /** It exited, and processes it started still run (stopping it ends them). */
+  lingering?: boolean;
 };
 
 /**

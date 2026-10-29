@@ -6,7 +6,8 @@
  * A command another panel sends to this conversation (the board's switch: `/board on`) goes to pi as it is.
  *
  * The send box carries what mu's other conversations have (docs/native-host-ui.md): files and images attached
- * (picked, dropped or pasted), mu's permission mode, the model and its thinking level, pi's slash commands in the `/`
+ * (picked, dropped or pasted), mu's permission mode, the commands mu runs in the background (while one runs), the
+ * model and its thinking level, pi's slash commands in the `/`
  * menu, and `@` mentions of the project's files. An image goes to pi as itself; a file as its full path. The box's
  * ↑/↓ history and `/copy` read the conversation's text. Above it, the goal mu works towards (`/goal <condition>`),
  * which the person can end; beside the send button, how full the model's context is.
@@ -34,6 +35,7 @@ import { useNativeClient } from '../utils/nativeClient';
 import { isWorking } from '../utils/statusRow';
 import { mentionPath, permissionState, runsCommand, sendBoxMessages, withFiles } from './composer/composerModel';
 import { NativeAttachButton, NativeAttachmentList } from './composer/NativeAttachments';
+import NativeJobs from './composer/NativeJobs';
 import NativeModelChip from './composer/NativeModelChip';
 import NativePermissionPill from './composer/NativePermissionPill';
 import NativeDialog from './NativeDialog';
@@ -342,6 +344,7 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
               <>
                 <NativeAttachButton onClick={() => picker.current?.click()} />
                 <NativePermissionPill state={permissions} held={held} request={request} />
+                <NativeJobs jobs={view.host.jobs} cwd={cwd} request={request} />
               </>
             }
             rightTools={<NativeModelChip models={models} busy={working || held} />}
