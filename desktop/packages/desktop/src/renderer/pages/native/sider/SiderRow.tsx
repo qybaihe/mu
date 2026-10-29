@@ -2,7 +2,7 @@
  * One conversation in the sidebar's native group (NativeSiderGroup.tsx): its title, the folder it works in where the
  * place it is listed does not say it, and at its end a spinner while a run goes, a dot once it wanted its person, or
  * the green dot of a running host. Its menu pins it, marks it read or unread, renames, archives or restores, and
- * deletes it; its tooltip says the folder, how many messages, and what it was forked from.
+ * deletes it; its tooltip says the folder, how many messages, what it was forked from, and the key that opens it.
  */
 import { Dropdown, Menu, Spin } from '@arco-design/web-react';
 import { DeleteOne, EditOne, FolderClose, FolderOpen, Inbox, MoreOne, Pushpin } from '@icon-park/react';
@@ -14,8 +14,13 @@ import { iconColors } from '@/renderer/styles/colors';
 
 type Translate = ReturnType<typeof useTranslation>['t'];
 
-/** The row's tooltip: its title, its folder, how many messages it holds, what it was forked from. */
-function tooltipOf(t: Translate, conversation: NativeConversation, parent: NativeConversation | undefined): string {
+/** The row's tooltip: its title, its folder, how many messages it holds, what it was forked from, the key that opens it. */
+function tooltipOf(
+  t: Translate,
+  conversation: NativeConversation,
+  parent: NativeConversation | undefined,
+  shortcut: string | undefined
+): string {
   const fork = conversation.forkedFrom
     ? parent
       ? t('conversation.history.forkedFrom', { name: parent.title || t('mu.native.untitled') })
@@ -26,6 +31,7 @@ function tooltipOf(t: Translate, conversation: NativeConversation, parent: Nativ
     conversation.cwd,
     conversation.messageCount === undefined ? '' : t('mu.native.sider.messages', { count: conversation.messageCount }),
     fork,
+    shortcut ?? '',
   ]
     .filter(Boolean)
     .join('\n');
@@ -40,6 +46,8 @@ export type RowProps = {
   /** The conversation it was forked from, when the list has it. */
   parent?: NativeConversation;
   active: boolean;
+  /** The key that opens it from anywhere (⌘1 to ⌘9 for the first nine rows on screen), for its tooltip. */
+  shortcut?: string;
   pinned: boolean;
   /** Archived by the person: shown in the fold under the list, with a menu that restores it. */
   archived: boolean;
@@ -62,6 +70,7 @@ const SiderRow: React.FC<RowProps> = ({
   indented = false,
   parent,
   active,
+  shortcut,
   pinned,
   archived,
   unread,
@@ -91,7 +100,7 @@ const SiderRow: React.FC<RowProps> = ({
       tabIndex={0}
       aria-current={active ? 'page' : undefined}
       aria-label={title}
-      title={tooltipOf(t, conversation, parent)}
+      title={tooltipOf(t, conversation, parent, shortcut)}
       data-testid='native-sidebar-item'
       data-id={conversation.id}
       data-pinned={pinned ? 'true' : undefined}

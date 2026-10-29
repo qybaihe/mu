@@ -5,7 +5,8 @@
  * (NativeNewConversation) and one to add a project by picking a folder; then an "Archived" fold, whose rows offer to
  * restore them. A row's menu (SiderRow.tsx) pins, marks as read or unread,
  * renames, archives (the session file is untouched) and deletes (the session file goes to the bin, after a
- * confirmation). Nothing at all while the host is off.
+ * confirmation). Nothing at all while the host is off. Its order, the rows on screen and all it lists, goes to the
+ * keys that open a conversation from anywhere (jump.ts); the first nine rows' tooltips say their key.
  */
 import { Button, Input, Message, Modal, Spin } from '@arco-design/web-react';
 import { FolderPlus, Right } from '@icon-park/react';
@@ -14,6 +15,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { NativeConversation, NativeFailure, NativeResult } from '@/common/kyrn/nativeBridge';
+import { formatPrimaryShortcut } from '@/renderer/utils/ui/keyboardShortcuts';
 import NativeNewConversation from '../components/NativeNewConversation';
 import { pruneNativeUnread, toggleNativeUnread, useNativeUnread } from '../hooks/useNativeAttention';
 import { useNativeArchived } from '../hooks/useNativeArchived';
@@ -22,7 +24,8 @@ import { useNativePins } from '../hooks/useNativePins';
 import { errorKey } from '../utils/errorWords';
 import { useNativeClient } from '../utils/nativeClient';
 import { folderName, nativeConversationPath } from '../utils/paths';
-import ProjectGroup from './ProjectGroup';
+import { publishNativeSiderOrder } from './jump';
+import ProjectGroup, { shownRows } from './ProjectGroup';
 import { folderKey, groupProjects, type Project } from './projects';
 import SiderRow from './SiderRow';
 import { addProject, forgetProject, useAddedProjects, useFoldedProjects, useRepoRoots } from './useProjects';
@@ -95,6 +98,8 @@ const Group: React.FC<{ onSessionClick?: () => void }> = ({ onSessionClick }) =>
   const { folded: foldedProjects, toggle: toggleProject } = useFoldedProjects();
   const [pinsFolded, setPinsFolded] = useState(false);
   const [projectsFolded, setProjectsFolded] = useState(false);
+  // The projects showing all their conversations, by folder key; the others show their first few.
+  const [allShown, setAllShown] = useState<ReadonlySet<string>>(() => new Set());
   const [shelfOpen, setShelfOpen] = useState(false);
   const [menuFor, setMenuFor] = useState<string>();
   const [renaming, setRenaming] = useState<{ id: string; name: string }>();
@@ -138,6 +143,38 @@ const Group: React.FC<{ onSessionClick?: () => void }> = ({ onSessionClick }) =>
     [conversations]
   );
   const activeId = conversations.find((conversation) => pathname === nativeConversationPath(conversation.id))?.id;
+
+  // The rows on screen, top to bottom, and every conversation listed (not the archived ones), for the keys (jump.ts).
+  const shownIds = useMemo(
+    () =>
+      [
+        ...(pinsFolded ? [] : pinnedRows),
+        ...(projectsFolded || loading || !ready
+          ? []
+          : projects.flatMap((project) => {
+              const key = folderKey(project.folder);
+              return foldedProjects.has(key) ? [] : shownRows(project.conversations, allShown.has(key), activeId);
+            })),
+      ].map((conversation) => conversation.id),
+    [activeId, allShown, foldedProjects, loading, pinnedRows, pinsFolded, projects, projectsFolded, ready]
+  );
+  const listedIds = useMemo(
+    () =>
+      [...pinnedRows, ...projects.flatMap((project) => project.conversations)].map((conversation) => conversation.id),
+    [pinnedRows, projects]
+  );
+  useEffect(() => publishNativeSiderOrder(shownIds, listedIds), [shownIds, listedIds]);
+  const keyOf = useMemo(
+    () => new Map(shownIds.slice(0, 9).map((id, index) => [id, formatPrimaryShortcut({ key: String(index + 1) })])),
+    [shownIds]
+  );
+  const toggleAll = (folder: string) =>
+    setAllShown((old) => {
+      const next = new Set(old);
+      const key = folderKey(folder);
+      if (!next.delete(key)) next.add(key);
+      return next;
+    });
 
   const open = (id: string) => {
     void navigate(nativeConversationPath(id));
@@ -231,6 +268,7 @@ const Group: React.FC<{ onSessionClick?: () => void }> = ({ onSessionClick }) =>
       indented={indented}
       parent={conversation.forkedFrom ? bySessionFile.get(conversation.forkedFrom) : undefined}
       active={conversation.id === activeId}
+      shortcut={shelf ? undefined : keyOf.get(conversation.id)}
       pinned={!shelf && pinned.has(conversation.id)}
       archived={shelf}
       unread={!shelf && unread.has(conversation.id)}
@@ -297,6 +335,8 @@ const Group: React.FC<{ onSessionClick?: () => void }> = ({ onSessionClick }) =>
                   folded={foldedProjects.has(folderKey(project.folder))}
                   onToggle={() => toggleProject(project.folder)}
                   activeId={activeId}
+                  all={allShown.has(folderKey(project.folder))}
+                  onToggleAll={() => toggleAll(project.folder)}
                   renderRow={(conversation) =>
                     row(conversation, {
                       indented: true,

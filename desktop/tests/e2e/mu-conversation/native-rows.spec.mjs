@@ -2,7 +2,8 @@
 // A native conversation's row in the sidebar, end to end in the real app (native is the default): its menu marks it unread
 // (a dot in the theme's colour) and read again, and archives it (the row leaves the list for an Archived fold, whose
 // rows offer to restore it). Both are kept in the window's storage, so they outlive a restart of the app; opening a
-// conversation takes its mark off. Run with `bun run e2e:conversation --native` (every native*.spec.mjs).
+// conversation takes its mark off. The keys go to a row: Cmd/Ctrl+1 to 9 by its place, Cmd/Ctrl+Shift+A to the next one
+// marked. Run with `bun run e2e:conversation --native` (every native*.spec.mjs).
 import { expect, test } from '@playwright/test';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -121,6 +122,34 @@ test('opening a marked conversation takes its mark off, and the Archived fold re
   await expect(archivedToggle()).toHaveCount(0);
   await expect(rowOf('ROWS-TWO')).not.toHaveAttribute('data-archived');
   await expect(rowOf('ROWS-TWO')).toHaveCount(1);
+  expectNoProblems();
+});
+
+test('Cmd/Ctrl+1 and 2 open the rows in those places, and Cmd/Ctrl+Shift+A the one marked, or say none is', async () => {
+  const p = page();
+  const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
+  const rows = p.locator('[data-testid="native-sidebar-item"]:not([data-archived])');
+  await expect(rows).toHaveCount(2);
+  const [first, second] = await Promise.all([rows.nth(0).getAttribute('data-id'), rows.nth(1).getAttribute('data-id')]);
+  const on = (id) =>
+    expect.poll(() => decodeURIComponent(p.url()), { timeout: 15_000 }).toContain(`/conversation/native/${id}`);
+
+  await p.keyboard.press(`${mod}+2`);
+  await on(second);
+  await p.keyboard.press(`${mod}+1`);
+  await on(first);
+
+  // The other row marked while the first is on screen: the key goes to it, and opening it takes its mark off.
+  const other = p.locator(`[data-testid="native-sidebar-item"][data-id="${second}"]`);
+  await pick((await other.getAttribute('aria-label')) ?? '', 'native-sidebar-mark');
+  await expect(other).toHaveAttribute('data-unread', 'true');
+  await p.keyboard.press(`${mod}+Shift+A`);
+  await on(second);
+  await expect(other).not.toHaveAttribute('data-unread');
+
+  await p.keyboard.press(`${mod}+Shift+A`);
+  await expect(p.getByText('没有等你处理的会话')).toBeVisible();
+  await shot('rows-keys-none-waiting');
   expectNoProblems();
 });
 

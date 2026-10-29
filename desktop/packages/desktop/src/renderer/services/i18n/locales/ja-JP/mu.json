@@ -1071,7 +1071,8 @@
       "deleteConfirm": "「{{title}}」を削除しますか？セッションファイルはゴミ箱に移り、あとで復元できます。",
       "messages": "メッセージ数: {{count}}",
       "unread": "新しいアクティビティ",
-      "working": "作業中"
+      "working": "作業中",
+      "noneWaiting": "対応待ちの会話はありません"
     },
     "notify": {
       "failed": "実行がエラーで停止しました",

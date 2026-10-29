@@ -48,6 +48,9 @@ export const forgetNativeUnread = (): void => store.clear();
 /** The conversations marked in the sidebar. */
 export const useNativeUnread = (): ReadonlySet<string> => useIdSet(store);
 
+/** The conversations marked now, for code that is not a component (the key to the next one, jump.ts). */
+export const nativeUnreadNow = (): ReadonlySet<string> => store.get();
+
 /** What a notification says: the classic conversations' words for a finished reply and a question, ours for a failure. */
 function bodyOf(t: TFunction, { kind, title }: NativeAttentionEvent): string {
   const name = truncateConversationName(title);

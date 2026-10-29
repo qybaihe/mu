@@ -25,10 +25,13 @@ export const TOP_COMMANDS = 5;
 
 /**
  * What the app itself can do from the palette, wherever it is open: start a conversation, open the scheduled tasks,
- * find a file of the open conversation by its name (quick open).
+ * find a file of the open conversation by its name (quick open), and with the native host on, go to the next
+ * conversation that wants its person.
  */
-export type PaletteAction = 'newConversation' | 'scheduledTasks' | 'quickOpen';
-const ACTIONS: readonly PaletteAction[] = ['newConversation', 'scheduledTasks', 'quickOpen'];
+export type PaletteAction = 'newConversation' | 'scheduledTasks' | 'quickOpen' | 'nextWaiting';
+const ACTIONS: readonly PaletteAction[] = ['newConversation', 'scheduledTasks', 'quickOpen', 'nextWaiting'];
+/** Actions for the native host's conversations only: the marks they follow are its own. */
+const NATIVE_ACTIONS: ReadonlySet<PaletteAction> = new Set(['nextWaiting']);
 
 /**
  * One row. `hits` are the indices of `label` that the query matched; they are underlined. A conversation on the native
@@ -172,8 +175,9 @@ const settingsRows = ({ t, native = false }: PaletteSources, keyword: string): P
   );
 };
 
-const actionRows = ({ t }: PaletteSources, keyword: string): PaletteItem[] =>
+const actionRows = ({ t, native }: PaletteSources, keyword: string): PaletteItem[] =>
   ACTIONS.flatMap((action) => {
+    if (!native && NATIVE_ACTIONS.has(action)) return [];
     const label = t(`common.commandPalette.actions.${action}`);
     const hits = getFuzzyMatchIndices(label, keyword);
     return hits ? [{ kind: 'action' as const, key: `action:${action}`, label, hits, action }] : [];

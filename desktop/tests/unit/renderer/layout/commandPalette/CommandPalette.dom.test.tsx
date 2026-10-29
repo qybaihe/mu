@@ -116,6 +116,10 @@ import {
   setCurrentConversation,
 } from '@/renderer/pages/conversation/explorer/currentConversationStore';
 import { emitter } from '@/renderer/utils/emitter';
+import { formatPrimaryShortcut, NEXT_WAITING_SHORTCUT } from '@/renderer/utils/ui/keyboardShortcuts';
+import { forgetNativeUnread, markNativeUnread } from '@/renderer/pages/native/hooks/useNativeAttention';
+import { publishNativeSiderOrder, resetNativeSiderOrderForTest } from '@/renderer/pages/native/sider/jump';
+import { nativeConversationPath } from '@/renderer/pages/native/utils/paths';
 import { BUILTIN_AGENT } from '@/common/platform/backendNames';
 import { publishNativeActivity } from '@/renderer/pages/native/utils/nativeActivityStore';
 
@@ -382,6 +386,24 @@ describe('command palette', () => {
 
       type('model');
       expect(labelsOf('settings')).toEqual(['Default model', 'Board model', 'Providers']);
+    });
+
+    it('with the native host on, goes to the next conversation waiting for the person from its row, which says its key', async () => {
+      state.nativeOn = true;
+      setCurrentConversation(null);
+      publishNativeSiderOrder(['n1', 'n2'], ['n1', 'n2']);
+      markNativeUnread('n2');
+      render(<Harness />);
+      // The hook hears the host is on once its answer is in.
+      await act(async () => {});
+      openPalette();
+      type('waiting');
+      const row = screen.getByRole('option', { name: /Go to the next conversation waiting for you/ });
+      expect(row).toHaveTextContent(formatPrimaryShortcut(NEXT_WAITING_SHORTCUT));
+      key('Enter');
+      expect(navigate).toHaveBeenLastCalledWith(nativeConversationPath('n2'));
+      forgetNativeUnread();
+      resetNativeSiderOrderForTest();
     });
 
     it('with no conversation yet, shows the way into the settings and what the app can do, and says why', () => {

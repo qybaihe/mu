@@ -1527,7 +1527,8 @@
     "actions": {
       "newConversation": "開始新會話",
       "scheduledTasks": "開啟定時任務",
-      "quickOpen": "依名稱開啟檔案"
+      "quickOpen": "依名稱開啟檔案",
+      "nextWaiting": "前往下一個等你處理的對話"
     },
     "commandWaits": "等這一輪結束後執行"
   },

@@ -160,6 +160,16 @@ describe('buildPaletteGroups', () => {
     ]);
   });
 
+  it('offers the next conversation that wants its person only with the native host on, whose marks it follows', () => {
+    const actions = (hostOn: boolean) =>
+      group(buildPaletteGroups(sources({ commandTarget: null, native: hostOn })), 'commands')?.items.map((item) =>
+        item.kind === 'action' ? item.action : item.kind
+      );
+
+    expect(actions(false)).not.toContain('nextWaiting');
+    expect(actions(true)).toEqual(['newConversation', 'scheduledTasks', 'quickOpen', 'nextWaiting']);
+  });
+
   it('finds the settings by the word for them and by their group, leading with the row that opens them', () => {
     const words: Record<string, string> = {
       'common.settings': '设置',

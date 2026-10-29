@@ -6,6 +6,7 @@ import { useIndexedItemRefs } from '@/renderer/hooks/ui/useIndexedItemRefs';
 import {
   formatPrimaryShortcut,
   MESSAGE_SEARCH_SHORTCUT,
+  NEXT_WAITING_SHORTCUT,
   QUICK_OPEN_SHORTCUT,
 } from '@/renderer/utils/ui/keyboardShortcuts';
 import { splitByHits, type PaletteItem } from './paletteGroups';
@@ -119,6 +120,9 @@ const CommandPalettePanel: React.FC<{ onRun: (item: PaletteItem) => void }> = ({
                   {item.kind === 'messages' ? <span className={styles.meta}>{messageSearchShortcut}</span> : null}
                   {item.kind === 'action' && item.action === 'quickOpen' ? (
                     <span className={styles.meta}>{formatPrimaryShortcut(QUICK_OPEN_SHORTCUT)}</span>
+                  ) : null}
+                  {item.kind === 'action' && item.action === 'nextWaiting' ? (
+                    <span className={styles.meta}>{formatPrimaryShortcut(NEXT_WAITING_SHORTCUT)}</span>
                   ) : null}
                 </div>
               );

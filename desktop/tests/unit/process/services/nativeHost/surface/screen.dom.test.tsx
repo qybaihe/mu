@@ -14,6 +14,7 @@ import { KernelBody } from '@/renderer/pages/conversation/KyrnPanel';
 import NativeConversationPage from '@/renderer/pages/native';
 import NativeSiderGroup from '@/renderer/pages/native/sider/NativeSiderGroup';
 import { forgetNativeUnread } from '@/renderer/pages/native/hooks/useNativeAttention';
+import { nativeConversationAt, nextWaitingConversation } from '@/renderer/pages/native/sider/jump';
 import { forgetProjects, forgetRepoRoots } from '@/renderer/pages/native/sider/useProjects';
 import { NativeClientContext, type NativeClient } from '@/renderer/pages/native/utils/nativeClient';
 import { useNativeActivity, useNativeFolder } from '@/renderer/pages/native/utils/nativeActivityStore';
@@ -22,6 +23,7 @@ import enConversation from '@/renderer/services/i18n/locales/en-US/conversation.
 import enMessages from '@/renderer/services/i18n/locales/en-US/messages.json';
 import enMu from '@/renderer/services/i18n/locales/en-US/mu.json';
 import enSettings from '@/renderer/services/i18n/locales/en-US/settings.json';
+import { formatPrimaryShortcut } from '@/renderer/utils/ui/keyboardShortcuts';
 import { createFakeHost, type FakeHost } from './fakeClient';
 import { ended, frame, reply, text, user } from './records';
 
@@ -664,17 +666,24 @@ describe('the sidebar’s native group', () => {
     expect(shownIds()).toEqual(['new', 'a']);
   });
 
-  it('shows the newest few of a project, and all of them when asked', async () => {
+  it('shows the newest few of a project, and all of them when asked, and gives the keys the rows on screen', async () => {
     const host = createFakeHost();
     for (let index = 1; index <= 10; index++) host.add({ id: `c${index}`, updatedAt: index });
     sider(host.client);
     await waitFor(() => expect(shownIds()).toHaveLength(5));
     expect(shownIds()[0]).toBe('c10');
     expect(shownIds()).not.toContain('c5');
+    // Cmd/Ctrl+1 to 9 count the rows on screen; the next one marked unread is looked for among all of them.
+    expect([nativeConversationAt(5), nativeConversationAt(6)]).toEqual(['c6', undefined]);
+    expect(nextWaitingConversation(new Set(['c1']), 'c10')).toBe('c1');
     expect(screen.getByTestId('native-sidebar-more')).toHaveTextContent('Show all (10)');
     fireEvent.click(screen.getByTestId('native-sidebar-more'));
     expect(shownIds()).toHaveLength(10);
     expect(shownIds()).toContain('c1');
+    expect(nativeConversationAt(6)).toBe('c5');
+    // The ninth row's tooltip says its key; the tenth has none.
+    expect(items()[8].getAttribute('title')).toContain(formatPrimaryShortcut({ key: '9' }));
+    expect(items()[9].getAttribute('title')).not.toMatch(/(⌘|Ctrl\+)\d/);
   });
 
   const menuOf = async (id: string) => {
@@ -885,7 +894,7 @@ describe('the sidebar’s native group', () => {
     expect(screen.getByTestId('native-sidebar-delete')).toBeVisible();
   });
 
-  it('says the folder, how many messages and what a conversation was forked from in its row’s tooltip', async () => {
+  it('says the folder, how many messages, what a conversation was forked from and its key in its row’s tooltip', async () => {
     const host = createFakeHost();
     host.add({
       id: 'p',
@@ -900,10 +909,12 @@ describe('the sidebar’s native group', () => {
     sider(host.client);
     await waitFor(() => expect(shownIds()).toEqual(['g', 'f', 'p']));
     const [g, f, p] = items();
-    expect(p.getAttribute('title')).toBe('The plan\n/work/app\nMessages: 4');
-    expect(f.getAttribute('title')).toBe('Try B\n/work/app\nMessages: 6\nForked from "The plan"');
+    // The key that opens it from anywhere: its place among the rows on screen.
+    const key = (place: number) => formatPrimaryShortcut({ key: String(place) });
+    expect(p.getAttribute('title')).toBe(`The plan\n/work/app\nMessages: 4\n${key(3)}`);
+    expect(f.getAttribute('title')).toBe(`Try B\n/work/app\nMessages: 6\nForked from "The plan"\n${key(2)}`);
     // The parent is not in the list; how many messages is not known.
-    expect(g.getAttribute('title')).toBe('New conversation\n/work/app\nForked conversation');
+    expect(g.getAttribute('title')).toBe(`New conversation\n/work/app\nForked conversation\n${key(1)}`);
   });
 
   it('renames a conversation from its row’s menu', async () => {

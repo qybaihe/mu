@@ -1071,7 +1071,8 @@
       "deleteConfirm": "Supprimer « {{title}} » ? Son fichier de session part à la corbeille, d’où vous pouvez encore le restaurer.",
       "messages": "Messages : {{count}}",
       "unread": "Nouvelle activité",
-      "working": "En cours"
+      "working": "En cours",
+      "noneWaiting": "Aucune conversation ne vous attend"
     },
     "notify": {
       "failed": "Une exécution s'est arrêtée sur une erreur",

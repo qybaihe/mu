@@ -1527,7 +1527,8 @@
     "actions": {
       "newConversation": "새 채팅 시작",
       "scheduledTasks": "예약 작업 열기",
-      "quickOpen": "이름으로 파일 열기"
+      "quickOpen": "이름으로 파일 열기",
+      "nextWaiting": "나를 기다리는 다음 대화로 이동"
     },
     "commandWaits": "이 응답이 끝나면 실행됩니다"
   },

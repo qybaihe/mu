@@ -100,6 +100,11 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ onNavigate }) => {
             toggleQuickOpen();
             return;
           }
+          if (item.action === 'nextWaiting') {
+            emitter.emit('conversation.nextWaiting');
+            onNavigate?.();
+            return;
+          }
           // As the sidebar's own rows do: a new conversation starts from a fresh home page.
           if (item.action === 'newConversation') void navigate('/guid', { state: { resetAssistant: true } });
           else void navigate('/scheduled');
