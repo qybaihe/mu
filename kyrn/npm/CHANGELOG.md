@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-10-29
+
+**0.3.3: a Nebius Token Factory key starts mu on Nemotron 3.5 Super VL; Token Factory retires Nemotron 3 Super on 2026-11-09.**
+
 ### Changed
 
 - **Nebius Token Factory starts on Nemotron 3.5 Super VL.** Token Factory retires Nemotron 3 Super (`nvidia/nemotron-3-super-120b-a12b`) from Serverless on 2026-11-09, doesn't send its requests anywhere else, and names Nemotron 3.5 Super VL (`nvidia/Nemotron-3.5-Super-VL`) as its replacement, at the same price. `mu setup` with a Token Factory key and the `nebius` provider's default model now start on it. If you set mu up with a Token Factory key before, run `mu setup` again or pick Super VL with `/model`: Nemotron 3 Super stops answering on 2026-11-09.

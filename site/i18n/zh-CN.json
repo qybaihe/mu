@@ -304,6 +304,14 @@
     "full_agent": "mu-agent 的完整更新记录（英文）",
     "entries": [
       {
+        "version": "v0.3.3",
+        "date": "2026-10-29",
+        "agent": "mu-agent 0.3.3",
+        "items": [
+          "<b>Nebius Token Factory 改用 Nemotron 3.5 Super VL。</b>Token Factory 将在 2026-11-09 下线 Nemotron 3 Super，并指定 Nemotron 3.5 Super VL 接替它，价格不变。现在用 Token Factory 的密钥运行 <code>mu setup</code>，以及 nebius 服务商的默认模型，都从 Super VL 开始。之前用 Token Factory 密钥设置过 mu 的，请重新运行 <code>mu setup</code>，或用 <code>/model</code> 换成 Super VL：Nemotron 3 Super 在 11-09 之后就不再回答。"
+        ]
+      },
+      {
         "version": "v0.3.2",
         "date": "2026-10-29",
         "agent": "mu-agent 0.3.2",
