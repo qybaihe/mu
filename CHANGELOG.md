@@ -10,10 +10,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ### Added
 
-- **Show mu an element of a page.** In the work panel's browser, the pointer button lets you click an element of the page; the click doesn't reach the page. The element goes into your next message with the page's address, a selector that finds it, its text, look and HTML, and a picture of it is attached. ↑ selects its parent, and Esc cancels.
-- **Comment on a diff's lines.** In a diff in the preview, the button beside a line opens a comment box under it. Your comments go with your next message, each with its file, line and code, and you can take one back before you send.
-- **Go back to before a message.** Under a message of yours whose turn changed files, a button goes back to the checkpoint mu took then. mu asks whether the files, the conversation or both go back, and puts your message back in the send box to send again.
-- **Background commands beside the send box.** While a command the agent started in the background runs, such as a dev server, a watcher or a long build, a pill beside the send box says how many. Its list shows each command, how long it has run and its log, and stops one or all of them.
+- **Show mu an element of a page.** In the work panel's browser, the pointer button lets you click an element of the page; the click doesn't reach the page. The element goes into your next message with the page's address, a selector that finds it, its text, styles and HTML, and a picture of it is attached. ↑ selects its parent, and Esc cancels.
+- **Comment on a diff's lines.** In a diff in the preview, the button beside a line opens a comment box under it. Your comments go with your next message, each with its file, line and code, and you can remove one before you send.
+- **Go back to before a message.** Under a message of yours whose turn changed files, a button goes back to the checkpoint mu took then. mu asks whether the files, the conversation or both go back. When the conversation goes back, your message returns to the send box to send again.
+- **Background commands beside the send box.** While a command the agent started in the background runs, such as a dev server, a watcher or a long build, a pill beside the send box says how many. Its list shows each command, how long it has run and its log, with buttons to stop one or all of them.
 
 ### Fixed
 
