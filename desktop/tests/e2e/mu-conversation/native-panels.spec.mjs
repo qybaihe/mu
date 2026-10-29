@@ -12,7 +12,7 @@
 // Run it with
 // `node scripts/kyrn/e2e-conversation.mjs --native -- native-panels.spec.mjs` (nativeWorld.mjs, profile.mjs).
 import { expect, test } from '@playwright/test';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -70,6 +70,11 @@ const lessonLine = (id, text, cwd) => {
 // After the world's own set-up (registered first): what this spec adds to mu's folder before the app starts.
 test.beforeAll(() => {
   const { agentDir, project } = paths();
+  // Every model takes images here, so a picked element's picture reaches the request as itself.
+  const models = join(agentDir, 'models.json');
+  const written = JSON.parse(readFileSync(models, 'utf8'));
+  for (const model of written.providers.e2e.models) model.input = ['text', 'image'];
+  writeFileSync(models, JSON.stringify(written));
   // The mock judge in shadow mode: every decision point asks it, and nothing it says changes what pi does.
   writeFileSync(join(agentDir, 'mu.json'), `${JSON.stringify({ tiers: ['mock'], modes: { default: 'shadow' } })}\n`);
   mkdirSync(join(agentDir, 'mu'), { recursive: true });
