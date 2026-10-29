@@ -82,7 +82,9 @@ export type FinishedEdit = { path?: string };
 const acpPath = (update: Record<string, unknown>): string | undefined => {
   const location = Array.isArray(update.locations) ? record(update.locations[0]) : {};
   if (str(location.path)) return str(location.path);
-  const diff = Array.isArray(update.content) ? update.content.map(record).find((item) => item.type === 'diff') : undefined;
+  const diff = Array.isArray(update.content)
+    ? update.content.map(record).find((item) => item.type === 'diff')
+    : undefined;
   return str(diff?.path) || undefined;
 };
 

@@ -141,18 +141,39 @@ export const isOfficeFile = (file_path: string): boolean => {
  * Text files the preview reads as code. A name with no mapped type falls to `code`, which would draw a binary file as
  * noise, so a file named in a reply opens in the panel only when its type is known to read as text.
  */
-const TEXT_EXTENSIONS: ReadonlySet<string> = new Set([
-  ...'ts tsx mts cts js jsx mjs cjs json jsonc json5 jsonl ndjson py pyi rb go rs java kt kts swift c h cc cpp cxx hpp hh'.split(' '),
-  ...'cs m mm php pl pm lua r scala sh bash zsh fish ps1 bat cmd sql graphql gql proto yaml yml toml ini cfg conf env'.split(' '),
-  ...'txt text log css scss sass less styl vue svelte astro xml xsd xsl plist gradle dart ex exs erl hrl hs clj cljs'.split(' '),
-  ...'elm ml mli fs fsx tf tfvars hcl nix zig vim lock gitignore gitattributes dockerignore editorconfig npmrc nvmrc'.split(' '),
-  ...'rst tex bib adoc org properties mk cmake sbt jl rkt scm lisp el sol prisma tsv'.split(' '),
-]);
+const TEXT_EXTENSIONS: ReadonlySet<string> = new Set(
+  [
+    'ts tsx mts cts js jsx mjs cjs json jsonc json5 jsonl ndjson py pyi rb go rs java',
+    'kt kts swift c h cc cpp cxx hpp hh cs m mm php pl pm lua r scala sh bash zsh',
+    'fish ps1 bat cmd sql graphql gql proto yaml yml toml ini cfg conf env txt text',
+    'log css scss sass less styl vue svelte astro xml xsd xsl plist gradle dart ex',
+    'exs erl hrl hs clj cljs elm ml mli fs fsx tf tfvars hcl nix zig vim lock',
+    'gitignore gitattributes dockerignore editorconfig npmrc nvmrc rst tex bib adoc',
+    'org properties mk cmake sbt jl rkt scm lisp el sol prisma tsv',
+  ]
+    .join(' ')
+    .split(' ')
+);
 
 /** Text files that carry no extension. */
-const TEXT_NAMES: ReadonlySet<string> = new Set(
-  ['makefile', 'dockerfile', 'containerfile', 'license', 'licence', 'readme', 'gemfile', 'procfile', 'justfile', 'rakefile', 'brewfile', 'vagrantfile', 'codeowners', 'notice', 'authors', 'changelog']
-);
+const TEXT_NAMES: ReadonlySet<string> = new Set([
+  'makefile',
+  'dockerfile',
+  'containerfile',
+  'license',
+  'licence',
+  'readme',
+  'gemfile',
+  'procfile',
+  'justfile',
+  'rakefile',
+  'brewfile',
+  'vagrantfile',
+  'codeowners',
+  'notice',
+  'authors',
+  'changelog',
+]);
 
 /**
  * Whether the preview panel draws this file well: a type it renders (Markdown, HTML, PDF, CSV, images, diffs) or text

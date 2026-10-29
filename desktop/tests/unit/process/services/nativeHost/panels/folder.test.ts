@@ -118,6 +118,19 @@ const line = (id: string, cwd?: string) => ({
   updated: '2026-09-29T08:00:00.000Z',
 });
 
+/** git in a folder outside any repository, and no git at all. */
+const notRepository: GitRunner = async () => ({
+  code: 128,
+  stdout: '',
+  stderr: 'not a git repository',
+  overflow: false,
+});
+const noGit: GitRunner = async () => {
+  throw new GitNotStarted('spawn git ENOENT');
+};
+/** git listing more than it may write: cut in the middle of a name. */
+const cutShort: GitRunner = async () => ({ code: 0, stdout: 'a.ts\0b.ts\0c.t', stderr: '', overflow: true });
+
 describe('a folder’s files for quick open', () => {
   it('are git’s own list in a repository: tracked and new, never what it ignores', async () => {
     const asked: string[][] = [];
@@ -130,13 +143,13 @@ describe('a folder’s files for quick open', () => {
   });
 
   it('drops the name a cut list ends in, and says some were left out', async () => {
-    const git: GitRunner = async () => ({ code: 0, stdout: 'a.ts\0b.ts\0c.t', stderr: '', overflow: true });
-    expect(await findFiles('/work/app', git)).toEqual({ paths: ['a.ts', 'b.ts'], more: true });
+    expect(await findFiles('/work/app', cutShort)).toEqual({ paths: ['a.ts', 'b.ts'], more: true });
   });
 
   it('walks the folder outside a repository, or without git: no dot folders, dependencies or build output', async () => {
     const folder = temp();
-    for (const dir of ['src/deep', '.cache', 'node_modules/pkg', 'dist']) mkdirSync(join(folder, dir), { recursive: true });
+    for (const dir of ['src/deep', '.cache', 'node_modules/pkg', 'dist'])
+      mkdirSync(join(folder, dir), { recursive: true });
     writeFileSync(join(folder, 'README.md'), '');
     writeFileSync(join(folder, '.env'), '');
     writeFileSync(join(folder, '.DS_Store'), '');
@@ -145,14 +158,10 @@ describe('a folder’s files for quick open', () => {
     writeFileSync(join(folder, '.cache', 'x'), '');
     writeFileSync(join(folder, 'node_modules', 'pkg', 'index.js'), '');
     writeFileSync(join(folder, 'dist', 'out.js'), '');
-    const notRepository: GitRunner = async () => ({ code: 128, stdout: '', stderr: 'not a git repository', overflow: false });
-    const noGit: GitRunner = async () => {
-      throw new GitNotStarted('spawn git ENOENT');
-    };
-    for (const git of [notRepository, noGit, undefined]) {
-      const found = await findFiles(folder, git);
-      expect(found.more).toBe(false);
-      expect(found.paths.toSorted()).toEqual(['.env', 'README.md', 'src/a.ts', 'src/deep/b.ts']);
+    const found = await Promise.all([notRepository, noGit, undefined].map((git) => findFiles(folder, git)));
+    for (const { paths, more } of found) {
+      expect(more).toBe(false);
+      expect(paths.toSorted()).toEqual(['.env', 'README.md', 'src/a.ts', 'src/deep/b.ts']);
     }
   });
 });

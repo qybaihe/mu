@@ -235,7 +235,11 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
     </>
   );
   const callAria = t('tools.execution.callAria', { name: displayItem.name, status: t(`tools.status.${statusKey}`) });
-  const chevron = expanded ? <Down size={12} className={styles.chevron} /> : <Right size={12} className={styles.chevron} />;
+  const chevron = expanded ? (
+    <Down size={12} className={styles.chevron} />
+  ) : (
+    <Right size={12} className={styles.chevron} />
+  );
 
   // A native conversation's end-to-end tests read each call by pi's tool name and how it stands.
   const native = run !== undefined;

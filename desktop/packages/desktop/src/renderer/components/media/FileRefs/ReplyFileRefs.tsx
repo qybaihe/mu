@@ -135,7 +135,9 @@ function Found({
         type='text'
         size='mini'
         className='markdown-file-ref-open'
-        aria-label={label ? t(inPanel ? 'messages.fileRef.preview' : 'messages.fileRef.open', { name: label }) : undefined}
+        aria-label={
+          label ? t(inPanel ? 'messages.fileRef.preview' : 'messages.fileRef.open', { name: label }) : undefined
+        }
         onClick={() => {
           if (inPanel) inPanel(answer.path);
           else void openFileRef(answer.path).then((result) => notice(result, name));

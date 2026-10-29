@@ -12,7 +12,7 @@ import { useCallback, useState } from 'react';
  * the groups and wrap around, Enter runs the chosen one. A new query starts again from the first row. Esc belongs to
  * the dialog.
  */
-export const usePaletteNavigation = <Item,>(items: readonly Item[], query: string, onRun: (item: Item) => void) => {
+export const usePaletteNavigation = <Item>(items: readonly Item[], query: string, onRun: (item: Item) => void) => {
   // The cursor remembers which query it was set for, so a new query needs no effect to reset it.
   const [cursor, setCursor] = useState({ query, index: 0 });
   const index = cursor.query === query ? Math.min(cursor.index, items.length - 1) : 0;

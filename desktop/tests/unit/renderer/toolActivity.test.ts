@@ -210,7 +210,9 @@ describe('the local web addresses a command printed', () => {
   });
 
   it('reads 0.0.0.0 as localhost and stops at a bracket, a quote or a full stop', () => {
-    expect(localUrls('Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...')).toEqual(['http://localhost:8000/']);
+    expect(localUrls('Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...')).toEqual([
+      'http://localhost:8000/',
+    ]);
     expect(localUrls('Open "http://127.0.0.1:8888/lab?token=abc".')).toEqual(['http://127.0.0.1:8888/lab?token=abc']);
     expect(localUrls('Listening on http://[::1]:4000. Docs at http://api.localhost/docs')).toEqual([
       'http://[::1]:4000',
@@ -219,13 +221,17 @@ describe('the local web addresses a command printed', () => {
   });
 
   it('leaves other addresses and refused connections alone, and stops at three', () => {
-    expect(localUrls('https://example.com http://localhost.example.com connect ECONNREFUSED 127.0.0.1:3000')).toEqual([]);
+    expect(localUrls('https://example.com http://localhost.example.com connect ECONNREFUSED 127.0.0.1:3000')).toEqual(
+      []
+    );
     expect(localUrls('http://localhost:1 http://localhost:2 http://localhost:3 http://localhost:4')).toHaveLength(3);
   });
 
   it('looks only in what a command printed, never in a file it read or a call that did not run', () => {
     const banner = 'ready on http://localhost:3000';
-    expect(toolLocalUrls(call('bash', 'completed', { command: 'npm run dev' }, banner))).toEqual(['http://localhost:3000']);
+    expect(toolLocalUrls(call('bash', 'completed', { command: 'npm run dev' }, banner))).toEqual([
+      'http://localhost:3000',
+    ]);
     expect(toolLocalUrls(call('bg_output', 'completed', { id: 'bg-1' }, banner))).toEqual(['http://localhost:3000']);
     expect(toolLocalUrls(call('read', 'completed', { path: 'README.md' }, banner))).toEqual([]);
     expect(toolLocalUrls({ ...call('bash', 'error', { command: 'npm run dev' }, banner), denied: true })).toEqual([]);

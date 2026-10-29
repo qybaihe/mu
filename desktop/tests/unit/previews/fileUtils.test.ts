@@ -144,7 +144,16 @@ describe('fileUtils', () => {
     });
 
     it('leaves binaries, unknown types, Office files and what the panel cannot render to the system app', () => {
-      for (const name of ['archive.zip', 'app.dmg', 'song.mp3', 'clip.mov', 'old.doc', 'deck.pptx', 'photo.heic', 'build'])
+      for (const name of [
+        'archive.zip',
+        'app.dmg',
+        'song.mp3',
+        'clip.mov',
+        'old.doc',
+        'deck.pptx',
+        'photo.heic',
+        'build',
+      ])
         expect(isPanelPreviewable(name)).toBe(false);
     });
   });

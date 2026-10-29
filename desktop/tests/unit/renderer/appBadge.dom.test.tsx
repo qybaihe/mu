@@ -32,7 +32,11 @@ vi.mock('@/renderer/utils/platform', async (importOriginal) => ({
 }));
 
 import { useAppBadge, waitingCount } from '@/renderer/hooks/system/notification/useAppBadge';
-import { clearNativeUnread, forgetNativeUnread, markNativeUnread } from '@/renderer/pages/native/hooks/useNativeAttention';
+import {
+  clearNativeUnread,
+  forgetNativeUnread,
+  markNativeUnread,
+} from '@/renderer/pages/native/hooks/useNativeAttention';
 
 afterEach(() => {
   forgetNativeUnread();

@@ -303,7 +303,8 @@ describe('the words of the work panel', () => {
       ])
         expect(common.workPanel[key], `${language} ${key}`).toBeTruthy();
       expect(common.workPanel.unread, language).toContain('{{tab}}');
-      for (const key of ['label', 'on', 'off']) expect(common.workPanel.follow[key], `${language} follow.${key}`).toBeTruthy();
+      for (const key of ['label', 'on', 'off'])
+        expect(common.workPanel.follow[key], `${language} follow.${key}`).toBeTruthy();
       // 更多, where the tabs a conversation has not used wait.
       expect(common.more, `${language} more`).toBeTruthy();
     }

@@ -130,14 +130,20 @@ async function gitFiles(folder: string, git: GitRunner): Promise<FolderFiles | u
 async function walkFiles(folder: string): Promise<FolderFiles> {
   const paths: string[] = [];
   let read = 0;
-  let more = false;
   let level = [''];
-  for (let depth = 0; level.length && depth <= WALK_DEPTH; depth++) {
+  // One level at a time, its folders read together: breadth first, so a cut leaves out the deepest files.
+  for (let depth = 0; level.length; depth++) {
+    if (depth > WALK_DEPTH) return { paths, more: true };
+    const listed = await Promise.all(
+      level.map((dir) =>
+        readdir(join(folder, ...dir.split('/').filter(Boolean)), { withFileTypes: true }).then(
+          (entries) => ({ dir, entries }),
+          (): { dir: string; entries: Dirent[] } => ({ dir, entries: [] })
+        )
+      )
+    );
     const next: string[] = [];
-    for (const dir of level) {
-      const entries = await readdir(join(folder, ...dir.split('/').filter(Boolean)), { withFileTypes: true }).catch(
-        (): Dirent[] => []
-      );
+    for (const { dir, entries } of listed) {
       for (const entry of entries) {
         if (++read > WALK_ENTRIES || paths.length >= FOLDER_FIND_LIMIT) return { paths, more: true };
         const path = dir ? `${dir}/${entry.name}` : entry.name;
@@ -147,9 +153,8 @@ async function walkFiles(folder: string): Promise<FolderFiles> {
       }
     }
     level = next;
-    if (depth === WALK_DEPTH && next.length) more = true;
   }
-  return { paths, more };
+  return { paths, more: false };
 }
 
 /** Creates the folder if needed; `show` opens it in the file manager (Electron's `shell.openPath`). */

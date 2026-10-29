@@ -21,7 +21,12 @@ export function useAppBadge(): void {
     useConversationListSync();
   const count = useMemo(
     () =>
-      waitingCount(native, completionUnreadConversationIds, manualUnreadConversationIds, waitingConfirmationConversationIds),
+      waitingCount(
+        native,
+        completionUnreadConversationIds,
+        manualUnreadConversationIds,
+        waitingConfirmationConversationIds
+      ),
     [native, completionUnreadConversationIds, manualUnreadConversationIds, waitingConfirmationConversationIds]
   );
   useEffect(() => {

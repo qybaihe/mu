@@ -37,7 +37,12 @@ const call = (
   options: { end?: boolean; error?: boolean; path?: string } = {}
 ): PiRecord[] => [
   ended(reply([toolCall(id, tool, { path: options.path ?? 'a.txt', content: 'x' })], { stopReason: 'toolUse' })),
-  { type: 'tool_execution_start', toolCallId: id, toolName: tool, args: { path: options.path ?? 'a.txt', content: 'x' } },
+  {
+    type: 'tool_execution_start',
+    toolCallId: id,
+    toolName: tool,
+    args: { path: options.path ?? 'a.txt', content: 'x' },
+  },
   ...(options.end === false
     ? []
     : [
