@@ -1077,5 +1077,7 @@
   "learnMore": "Más información",
   "showLess": "Mostrar menos",
   "keepAwakeWhileRunning": "Mantener activo mientras una conversación se ejecuta",
-  "keepAwakeWhileRunningDesc": "Mientras haya una ejecución en curso, el equipo no entra en reposo por inactividad. La pantalla puede apagarse y cerrar la tapa sigue suspendiéndolo."
+  "keepAwakeWhileRunningDesc": "Mientras haya una ejecución en curso, el equipo no entra en reposo por inactividad. La pantalla puede apagarse y cerrar la tapa sigue suspendiéndolo.",
+  "completionSound": "Reproducir un sonido cuando una conversación termine o te necesite",
+  "completionSoundDesc": "Un aviso corto, incluso mientras miras mu. Otro distinto cuando mu pregunta algo o una ejecución falla. Mientras esté activado, las notificaciones del sistema no suenan, para que no oigas dos sonidos."
 }

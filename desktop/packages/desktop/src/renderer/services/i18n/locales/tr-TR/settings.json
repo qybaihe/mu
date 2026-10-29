@@ -1077,5 +1077,7 @@
   "learnMore": "Daha fazla",
   "showLess": "Daha az",
   "keepAwakeWhileRunning": "Konuşma çalışırken uyku moduna geçme",
-  "keepAwakeWhileRunningDesc": "Bir çalışma sürerken bilgisayar boşta kaldığında uyku moduna geçmez. Ekran yine kapanabilir, kapağı kapatmak yine uyutur."
+  "keepAwakeWhileRunningDesc": "Bir çalışma sürerken bilgisayar boşta kaldığında uyku moduna geçmez. Ekran yine kapanabilir, kapağı kapatmak yine uyutur.",
+  "completionSound": "Bir konuşma bittiğinde veya size ihtiyaç duyduğunda ses çal",
+  "completionSoundDesc": "Kısa bir ses; mu'ya bakarken bile çalar. mu bir şey sorduğunda veya bir çalıştırma başarısız olduğunda farklı bir ses çalar. Açıkken sistem bildirimleri sessiz kalır, böylece iki ses duymazsınız."
 }

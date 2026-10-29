@@ -1080,5 +1080,7 @@
   "learnMore": "Saiba mais",
   "showLess": "Mostrar menos",
   "keepAwakeWhileRunning": "Manter acordado enquanto uma conversa roda",
-  "keepAwakeWhileRunningDesc": "Enquanto uma execução estiver em andamento, o computador não entra em repouso por inatividade. A tela ainda pode desligar, e fechar a tampa ainda o põe em repouso."
+  "keepAwakeWhileRunningDesc": "Enquanto uma execução estiver em andamento, o computador não entra em repouso por inatividade. A tela ainda pode desligar, e fechar a tampa ainda o põe em repouso.",
+  "completionSound": "Tocar um som quando uma conversa terminar ou precisar de você",
+  "completionSoundDesc": "Um toque curto, mesmo quando você está olhando para o mu. Outro quando o mu pergunta algo ou uma execução falha. Enquanto estiver ligado, as notificações do sistema ficam silenciosas para você não ouvir dois sons."
 }

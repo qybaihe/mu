@@ -1077,5 +1077,7 @@
   "learnMore": "En savoir plus",
   "showLess": "Réduire",
   "keepAwakeWhileRunning": "Rester éveillé pendant qu'une conversation s'exécute",
-  "keepAwakeWhileRunningDesc": "Pendant une exécution, l'ordinateur ne se met pas en veille par inactivité. L'écran peut toujours s'éteindre, et fermer le capot le met toujours en veille."
+  "keepAwakeWhileRunningDesc": "Pendant une exécution, l'ordinateur ne se met pas en veille par inactivité. L'écran peut toujours s'éteindre, et fermer le capot le met toujours en veille.",
+  "completionSound": "Jouer un son quand une conversation se termine ou a besoin de vous",
+  "completionSoundDesc": "Un court carillon, même quand vous regardez mu. Un autre quand mu pose une question ou qu'une exécution échoue. Tant qu'il est activé, les notifications système restent silencieuses pour ne pas entendre deux sons."
 }

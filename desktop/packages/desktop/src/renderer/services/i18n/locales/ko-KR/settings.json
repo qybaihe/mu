@@ -1078,5 +1078,7 @@
   "learnMore": "자세히",
   "showLess": "접기",
   "keepAwakeWhileRunning": "대화가 실행되는 동안 잠자기 방지",
-  "keepAwakeWhileRunningDesc": "실행 중에는 유휴 상태여도 컴퓨터가 잠자기 모드로 전환되지 않습니다. 화면은 꺼질 수 있으며, 덮개를 닫으면 잠자기 모드로 전환됩니다."
+  "keepAwakeWhileRunningDesc": "실행 중에는 유휴 상태여도 컴퓨터가 잠자기 모드로 전환되지 않습니다. 화면은 꺼질 수 있으며, 덮개를 닫으면 잠자기 모드로 전환됩니다.",
+  "completionSound": "대화가 끝나거나 내가 필요할 때 소리 내기",
+  "completionSoundDesc": "짧은 알림음으로, mu를 보고 있을 때도 울려요. mu가 질문하거나 실행이 실패하면 다른 소리가 나요. 켜 두면 시스템 알림은 소리를 내지 않아서 두 번 울리지 않아요."
 }

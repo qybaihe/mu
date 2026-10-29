@@ -1077,5 +1077,7 @@
   "learnMore": "Mehr erfahren",
   "showLess": "Weniger",
   "keepAwakeWhileRunning": "Wach bleiben, solange eine Unterhaltung läuft",
-  "keepAwakeWhileRunningDesc": "Solange ein Lauf aktiv ist, geht der Computer im Leerlauf nicht in den Ruhezustand. Der Bildschirm kann trotzdem ausgehen, und Zuklappen versetzt ihn weiterhin in den Ruhezustand."
+  "keepAwakeWhileRunningDesc": "Solange ein Lauf aktiv ist, geht der Computer im Leerlauf nicht in den Ruhezustand. Der Bildschirm kann trotzdem ausgehen, und Zuklappen versetzt ihn weiterhin in den Ruhezustand.",
+  "completionSound": "Ton abspielen, wenn eine Unterhaltung fertig ist oder dich braucht",
+  "completionSoundDesc": "Ein kurzer Klang, auch wenn du gerade auf mu schaust. Ein anderer, wenn mu etwas fragt oder ein Lauf fehlschlägt. Solange er an ist, bleiben Systembenachrichtigungen stumm, damit du nicht zwei Töne hörst."
 }
