@@ -26,7 +26,14 @@ side"). Nothing here shows unless the main process says the native host is on (`
   words: "… has finished responding", "… is waiting for your confirmation", and "… stopped with an error"), which the
   main process shows only when notifications are on and the window is not in front; a click on it opens the
   conversation on the native page. A run you stopped tells nothing, and neither does the conversation on screen mark
-  its own row.
+  its own row. The app's Dock icon (the launcher entry on Linux) carries the number of conversations marked so, native
+  and classic (a reply finished out of view, a confirmation waiting, marked unread by hand), each counted once
+  (`useAppBadge`, `notification.badge`); Windows has no such number.
+- **Awake while it runs.** While a native run or a classic reply goes, the computer does not go to sleep when idle
+  (Electron's `prevent-app-suspension`; the display may still turn off, a closed lid still sleeps), so a long run is
+  not cut short because nobody touched the keyboard. The window says when a run starts and ends
+  (`useKeepAwakeWhileRunning`), and the main process keeps one hold at a time (`holdAwake`). The system settings turn
+  it off (`system.keepAwakeWhileRunning`, on by default).
 - **Home page.** While the host is on, its send starts a native conversation instead of a backend one: the folder
   picked there (its list takes in the native conversations' folders), the permission mode picked there, the model
   the pill picked (`set_model`), the thinking level picked (`set_thinking_level`), then the message. Images go as pi's `images` (png, jpeg, webp, gif, 16 MB at most);
@@ -167,6 +174,16 @@ providers keyed by a folder (`common/kyrn/folderBridge.ts`, answered in `process
   half a second before the panel read it, was counted against the empty view the screen started with, and a
   conversation with edits opened with its dot on. A shell command that changes files says nothing of which, so it
   does not mark the tab (the folder is read again after every run in any case).
+- Following the agent (`followAgentTo`, `followsAgent` in `WorkPanel/workPanelStore.ts`). Problem: with the panel open
+  on the files, the person saw a dot when the model finished a file, and had to find it and open it; the same for a
+  page mu's browser opened while they looked at the preview. Example: the person watches the preview while the model
+  writes `src/b.ts`, then `src/c.ts`: each shows there as it is finished. Solution: while the panel is open on a
+  workspace tab (files, preview, source, browser) in the conversation on screen, a finished `write` or `edit` opens its
+  file in the preview (the newest when a read holds several; `finishedEditPaths`), and a page the agent opens or its
+  browser at work turns the panel to the browser. A closed panel, or one on the board, judge, hive or lessons, keeps the
+  dots only, so the agent still never opens the panel by itself. A toggle on the workspace tabs turns following off
+  for every conversation (kept with the panel's memory, `follow` in `mu-work-panel`); it is on by default. An app
+  conversation follows the same way when its stream names the edited file (an ACP call's location or diff path).
 - The source tab (`native/components/NativeSource.tsx`): the classic source control is the backend's, by project entry,
   so the main process runs git itself in the folder (`process/services/folderGit/`): `rev-parse --show-toplevel`, then
   `status --porcelain=v2 -z --branch --untracked-files=all` (at most 1000 changes, the rest counted), and for a
@@ -211,8 +228,19 @@ Problem: a reply names the files mu made or read, mostly as inline code, and the
 
 Example: mu writes five images into `out/` and lists their bare names, `07_角色与场景关系卡_铁匠老秦_雨夜钢铁厂.png` and
 four more. Each name becomes a link. A click shows the image in the work panel's preview, where the arrows step through
-all five. In the same reply, `out/report.pdf` opens in the default app, and the folder icon beside it shows it in
-Finder (File Explorer on Windows, the file manager on Linux).
+all five. In the same reply, `out/report.pdf` and `src/app.ts` open in the preview too, beside the reply, and the
+folder icon beside each shows it in Finder (File Explorer on Windows, the file manager on Linux). `out/deck.pptx`
+opens in the default app: the panel draws only what it draws well (code and other text, Markdown, HTML, PDF, CSV,
+images, diffs; `isPanelPreviewable` in `Preview/fileUtils.ts`), and Office files only with officecli installed.
+
+The same goes for a file a tool call read or wrote: the path in its row (`read src/app.ts`) opens it in the preview,
+read against the conversation's folder, and a click anywhere else on the row still opens the call. A lookup's path
+(`ls`, `grep`) may be a folder and stays text.
+
+A local web address a command printed (`http://localhost:5173/` in a dev server's banner, read by `bash` or
+`bg_output`) is a chip under the call, and under a folded run of calls while it is closed. A click opens it in the
+work panel's browser, or brings back the page already open there. Only `localhost`, `*.localhost`, `127.0.0.1`,
+`[::1]` and `0.0.0.0` (read as `localhost`) count, at most three per call (`localUrls` in `toolActivity.ts`).
 
 Solution, in three steps:
 
@@ -249,6 +277,21 @@ the image again. A click in a reply moves the focus to the viewer, so the arrow 
 
 A link to a file that is not an image keeps the link the app always drew (it opens in the preview, at its line). Inline
 code inside a link's text stays part of that link.
+
+## Quick open
+
+Problem: a file the person wanted to look at, beside the conversation, had to be found in the files tab one folder at
+a time. Example: `Cmd+P` (`Ctrl+P`), `wps`, Enter shows `src/…/workPanelStore.ts` in the work panel's preview.
+
+Solution: quick open (`Sider/CommandPalette/QuickOpen.tsx`), mounted with the command palette, which also offers it
+as a row. Its folder is the native conversation's `cwd`, or the classic conversation's workspace. The main process
+lists the folder's files each time the box opens (`kyrn.folder.find`, `findFiles` in
+`process/agent/kyrn/folderFiles.ts`): in a git repository, `git ls-files --cached --others --exclude-standard` (what
+git tracks and the new files it does not ignore), else a breadth-first walk with no dot folders, `node_modules`,
+caches or build output, 12 folders deep and 50,000 entries at most; never more than 20,000 paths, and the box says
+when some were left out. A query ranks them as it is typed (`quickOpenModel.ts`): the name before the path, one run
+of characters before characters with gaps, the name the query is all of first, then the shorter name and path.
+Enter opens the file as a file link does (`useLocalFilePreview`).
 
 ## The view on screen
 

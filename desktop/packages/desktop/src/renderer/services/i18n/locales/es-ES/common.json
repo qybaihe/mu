@@ -1526,7 +1526,8 @@
     "openSettings": "Abrir la configuración",
     "actions": {
       "newConversation": "Empezar un chat nuevo",
-      "scheduledTasks": "Abrir las tareas programadas"
+      "scheduledTasks": "Abrir las tareas programadas",
+      "quickOpen": "Abrir un archivo por su nombre"
     },
     "commandWaits": "Se ejecutará cuando termine esta respuesta"
   },
@@ -1557,7 +1558,12 @@
     "previewEmpty": "Aún no hay nada que previsualizar. Aquí aparecen los archivos que se abren desde la conversación.",
     "previewHidden": "La vista previa está oculta.",
     "browserEmpty": "No hay páginas abiertas. Escribe una dirección o una búsqueda arriba. Las páginas que se abren desde la conversación también aparecen aquí.",
-    "firstHint": "Tablero cuenta el avance con palabras sencillas, Veredictos lista cada valoración y Archivos es la carpeta de esta conversación. Las demás pestañas aparecen cuando se usan."
+    "firstHint": "Tablero cuenta el avance con palabras sencillas, Veredictos lista cada valoración y Archivos es la carpeta de esta conversación. Las demás pestañas aparecen cuando se usan.",
+    "follow": {
+      "label": "Seguir al agente",
+      "on": "Siguiendo al agente: los archivos que edita y las páginas que abre aparecen aquí. Haz clic para dejar de seguirlo.",
+      "off": "Seguir al agente: mostrar aquí los archivos que edita y las páginas que abre."
+    }
   },
   "nodeRuntime": {
     "title": "¿Descargar Node.js?",
@@ -1570,5 +1576,13 @@
   },
   "firstHint": {
     "close": "Entendido"
+  },
+  "quickOpen": {
+    "title": "Abrir un archivo",
+    "placeholder": "Buscar archivos en la carpeta de esta conversación",
+    "loading": "Leyendo la carpeta…",
+    "failed": "No se pudo leer la carpeta de esta conversación.",
+    "more": "Esta carpeta tiene más archivos de los que se muestran. Escribe más del nombre para acotar.",
+    "noFolder": "Abre una conversación con carpeta para buscar sus archivos por nombre."
   }
 }

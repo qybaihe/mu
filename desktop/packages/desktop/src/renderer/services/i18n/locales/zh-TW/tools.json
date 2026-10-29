@@ -78,7 +78,8 @@
     "callAria": "{{name}} · {{status}}",
     "denied": "沒有執行：你沒有允許。",
     "showMore": "展開全部",
-    "showLess": "收合"
+    "showLess": "收合",
+    "openInBrowser": "在瀏覽器中開啟 {{address}}"
   },
   "activity": {
     "running": "{{steps}} 步 · 正在執行 {{label}}",

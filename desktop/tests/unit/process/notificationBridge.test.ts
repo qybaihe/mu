@@ -8,6 +8,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 let notificationEnabled: boolean | undefined = true;
 const clickedEmit = vi.fn();
 const platformSend = vi.fn();
+const setBadgeCount = vi.hoisted(() => vi.fn());
 
 // Defined via vi.hoisted so the hoisted vi.mock factory can reference the class
 // at evaluation time without a temporal-dead-zone error.
@@ -50,11 +51,38 @@ vi.mock('@process/utils/initStorage', () => ({
 
 vi.mock('@/common/electronSafe', () => ({
   electronNotification: FakeElectronNotification,
+  electronApp: { setBadgeCount },
 }));
 
 vi.mock('fs', () => ({ default: { existsSync: () => false }, existsSync: () => false }));
 
-import { showNotification, setNotificationMainWindow } from '@/process/bridge/notificationBridge';
+import { setAppBadge, showNotification, setNotificationMainWindow } from '@/process/bridge/notificationBridge';
+
+describe('the number on the app’s icon', () => {
+  const platform = process.platform;
+  afterEach(() => {
+    Object.defineProperty(process, 'platform', { value: platform });
+    setBadgeCount.mockReset();
+  });
+
+  it('shows how many conversations wait, and goes away at 0, on macOS and Linux', () => {
+    for (const os of ['darwin', 'linux']) {
+      Object.defineProperty(process, 'platform', { value: os });
+      setAppBadge(3);
+      setAppBadge(0);
+      setAppBadge(-2);
+      setAppBadge(Number.NaN);
+      setAppBadge('4');
+    }
+    expect(setBadgeCount.mock.calls.flat()).toEqual([3, 0, 0, 0, 0, 3, 0, 0, 0, 0]);
+  });
+
+  it('leaves Windows alone, which has no such number', () => {
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    setAppBadge(3);
+    expect(setBadgeCount).not.toHaveBeenCalled();
+  });
+});
 
 const makeWindow = (focused: boolean) => ({
   isDestroyed: () => false,

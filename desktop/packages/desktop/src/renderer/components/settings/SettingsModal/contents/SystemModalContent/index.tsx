@@ -8,6 +8,7 @@ import { ipcBridge } from '@/common';
 import type { IGpuStatus, IStartOnBootStatus } from '@/common/adapter/ipcBridge';
 import { configService } from '@/common/config/configService';
 import MuScrollArea from '@/renderer/components/base/MuScrollArea';
+import { useKeepAwakeSetting } from '@/renderer/hooks/system/useKeepAwakeWhileRunning';
 import { notifyManualRestartRequired } from '@/renderer/utils/appRestart';
 import { isElectronDesktop, isMacOS } from '@/renderer/utils/platform';
 import { Alert, Form, Message, Modal, Switch } from '@arco-design/web-react';
@@ -45,6 +46,7 @@ const SystemModalContent: React.FC = () => {
   const [gpuStatus, setGpuStatus] = useState<IGpuStatus | null>(null);
   const [notificationEnabled, setNotificationEnabled] = useState(true);
   const [cronNotificationEnabled, setCronNotificationEnabled] = useState(false);
+  const keepAwakeWhileRunning = useKeepAwakeSetting();
 
   useEffect(() => {
     if (!isDesktop) {
@@ -186,6 +188,12 @@ const SystemModalContent: React.FC = () => {
     });
   }, []);
 
+  const handleKeepAwakeWhileRunningChange = useCallback((checked: boolean) => {
+    configService.set('system.keepAwakeWhileRunning', checked).catch(() => {
+      configService.setLocal('system.keepAwakeWhileRunning', !checked);
+    });
+  }, []);
+
   const handleCronNotificationEnabledChange = useCallback((checked: boolean) => {
     setCronNotificationEnabled(checked);
     configService.set('system.cronNotificationEnabled', checked).catch(() => {
@@ -228,6 +236,18 @@ const SystemModalContent: React.FC = () => {
       label: isDesktop && isMacOS() ? t('settings.closeToMenuBar') : t('settings.closeToTray'),
       component: <Switch size='small' checked={closeToTray} onChange={handleCloseToTrayChange} />,
     },
+    ...(isDesktop
+      ? [
+          {
+            key: 'keepAwakeWhileRunning',
+            label: t('settings.keepAwakeWhileRunning'),
+            description: t('settings.keepAwakeWhileRunningDesc'),
+            component: (
+              <Switch size='small' checked={keepAwakeWhileRunning} onChange={handleKeepAwakeWhileRunningChange} />
+            ),
+          },
+        ]
+      : []),
     ...(isDesktop && gpuStatus
       ? [
           {

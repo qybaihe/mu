@@ -1526,7 +1526,8 @@
     "openSettings": "Ayarları aç",
     "actions": {
       "newConversation": "Yeni sohbet başlat",
-      "scheduledTasks": "Zamanlanmış görevleri aç"
+      "scheduledTasks": "Zamanlanmış görevleri aç",
+      "quickOpen": "Adına göre dosya aç"
     },
     "commandWaits": "Bu yanıt bitince çalışır"
   },
@@ -1557,7 +1558,12 @@
     "previewEmpty": "Henüz önizlenecek bir şey yok. Konuşmadan açılan dosyalar burada görünür.",
     "previewHidden": "Önizleme gizli.",
     "browserEmpty": "Açık sayfa yok. Yukarıya bir adres ya da arama yazın. Konuşmadan açılan sayfalar da burada görünür.",
-    "firstHint": "Pano ilerlemeyi sade bir dille anlatır, Kararlar her kararı listeler, Dosyalar bu konuşmanın klasörüdür. Diğer sekmeler kullanıldıklarında görünür."
+    "firstHint": "Pano ilerlemeyi sade bir dille anlatır, Kararlar her kararı listeler, Dosyalar bu konuşmanın klasörüdür. Diğer sekmeler kullanıldıklarında görünür.",
+    "follow": {
+      "label": "Ajanı takip et",
+      "on": "Ajan takip ediliyor: düzenlediği dosyalar ve açtığı sayfalar burada görünür. Durdurmak için tıklayın.",
+      "off": "Ajanı takip et: düzenlediği dosyaları ve açtığı sayfaları burada göster."
+    }
   },
   "nodeRuntime": {
     "title": "Node.js indirilsin mi?",
@@ -1570,5 +1576,13 @@
   },
   "firstHint": {
     "close": "Anladım"
+  },
+  "quickOpen": {
+    "title": "Dosya aç",
+    "placeholder": "Bu konuşmanın klasöründe dosya ara",
+    "loading": "Klasör okunuyor…",
+    "failed": "Bu konuşmanın klasörü okunamadı.",
+    "more": "Bu klasörde listelenenden daha fazla dosya var. Daraltmak için adın devamını yazın.",
+    "noFolder": "Dosyalarını adına göre bulmak için klasörü olan bir konuşma açın."
   }
 }

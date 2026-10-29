@@ -103,6 +103,9 @@ vi.mock('@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview', () =>
   useLocalFilePreview: () => async (path: string) => {
     wires.opened.push(path);
   },
+  useOptionalLocalFilePreview: () => async (path: string) => {
+    wires.opened.push(path);
+  },
 }));
 vi.mock('@/common', () => ({
   ipcBridge: {
@@ -495,6 +498,47 @@ describe('the work panel', () => {
     expect(dots()).toEqual(['files']);
   });
 
+  it('follows the agent while it is open on the workspace: the file it edited, the page it browses', async () => {
+    show();
+    await settle();
+    const edit = (id: string, path: string) =>
+      act(() =>
+        wires.stream?.({
+          type: 'acp_tool_call',
+          conversation_id: 'conv-1',
+          data: { update: { tool_call_id: id, kind: 'edit', status: 'completed', locations: [{ path }] } },
+        })
+      );
+    // Closed: the dot only.
+    edit('a', '/work/app/a.ts');
+    expect(wires.opened).not.toContain('/work/app/a.ts');
+    expect(dots()).toEqual(['files']);
+
+    act(() => {
+      dispatchWorkspaceToggleEvent();
+    });
+    fireEvent.click(tab('Files'));
+    edit('b', '/work/app/b.ts');
+    expect(wires.opened).toContain('/work/app/b.ts');
+
+    act(() =>
+      wires.stream?.({
+        type: 'tool_group',
+        conversation_id: 'conv-1',
+        data: [{ name: `${BUILTIN_MCP_SERVER_NAMES.browser}__navigate_page`, status: 'Executing' }],
+      })
+    );
+    expect(selected()).toHaveTextContent('Browser');
+
+    // Turned off, the panel stays where the person left it.
+    fireEvent.click(screen.getByRole('button', { name: common.workPanel.follow.label }));
+    fireEvent.click(tab('Files'));
+    edit('c', '/work/app/c.ts');
+    expect(wires.opened).not.toContain('/work/app/c.ts');
+    act(() => announcePreviewOpened('agent'));
+    expect(selected()).toHaveTextContent('Files');
+  });
+
   it('comes up on its preview when the person opens something, and only marks the preview when the agent does', async () => {
     show();
     await settle();
@@ -541,12 +585,12 @@ describe('the work panel', () => {
     expect(browserNow().activeTabId).toBe(agentPage);
     expect(dots()).toEqual([]);
 
-    // Elsewhere in the panel, the agent's page is news on the browser only.
-    fromMore('preview');
+    // On a kernel tab, the agent's page is news on the browser only. (The workspace tabs follow the agent there.)
+    fireEvent.click(tab('Judge'));
     act(() => {
       openBrowserPage('https://agent.test/third', { by: 'agent' });
     });
-    expect(selected()).toHaveTextContent('Preview');
+    expect(selected()).toHaveTextContent('Judge');
     expect(dots()).toEqual(['browser']);
 
     // mu about to type into its page, or asking the person to confirm a step, brings the browser into view.

@@ -10,7 +10,8 @@ import { resetFileRefsForTest } from '@/renderer/components/media/FileRefs/fileR
 /**
  * A reply's file references on screen (renderer/components/media/FileRefs/): the reply is drawn as it always was, and
  * the references the main process finds become links: images to the preview panel, which steps through the reply's
- * images, other files to their app, programs to their folder; a clear path to nothing is greyed out; code stays code.
+ * images, files the panel draws well to the panel too, other files to their app, programs to their folder; a clear path
+ * to nothing is greyed out; code stays code.
  */
 
 const mocks = vi.hoisted(() => ({
@@ -19,6 +20,7 @@ const mocks = vi.hoisted(() => ({
   open: vi.fn(),
   reveal: vi.fn(),
   openPreview: vi.fn(),
+  openFile: vi.fn(),
 }));
 
 vi.mock('@/common/chat/fileRefs/fileRefBridge', async (importOriginal) => ({
@@ -33,6 +35,10 @@ vi.mock('@/common/chat/fileRefs/fileRefBridge', async (importOriginal) => ({
 
 vi.mock('@/renderer/pages/conversation/Preview/context/PreviewContext', () => ({
   useOptionalPreviewContext: () => ({ openPreview: mocks.openPreview, openBrowserTab: vi.fn() }),
+}));
+
+vi.mock('@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview', () => ({
+  useOptionalLocalFilePreview: () => mocks.openFile,
 }));
 
 // The reply's markdown is drawn into a shadow root in the app; here, in place, so the screen queries reach it.
@@ -95,6 +101,7 @@ beforeEach(() => {
   mocks.open.mockReset().mockResolvedValue({ ok: true, data: { action: 'opened' } });
   mocks.reveal.mockReset().mockResolvedValue({ ok: true, data: undefined });
   mocks.openPreview.mockReset();
+  mocks.openFile.mockReset().mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -151,13 +158,25 @@ describe('a reply naming images', () => {
 });
 
 describe('a reply naming other files', () => {
-  it('opens a file in its default app, and shows it in its folder from the icon beside it', async () => {
+  it('opens a file the panel draws well beside the reply, and shows it in its folder from the icon', async () => {
     mocks.files.set('out/report.pdf', { state: 'found', path: `${CWD}/out/report.pdf`, kind: 'file', size: 3 });
-    reply('The report is `out/report.pdf`.');
-    fireEvent.click(await screen.findByRole('button', { name: 'messages.fileRef.open:out/report.pdf' }));
-    expect(mocks.open).toHaveBeenCalledWith({ path: `${CWD}/out/report.pdf` });
+    mocks.files.set('src/app.ts', { state: 'found', path: `${CWD}/src/app.ts`, kind: 'file', size: 3 });
+    reply('The report is `out/report.pdf`, built by `src/app.ts`.');
+    fireEvent.click(await screen.findByRole('button', { name: 'messages.fileRef.preview:out/report.pdf' }));
+    expect(mocks.openFile).toHaveBeenCalledWith(`${CWD}/out/report.pdf`);
+    fireEvent.click(screen.getByRole('button', { name: 'messages.fileRef.preview:src/app.ts' }));
+    expect(mocks.openFile).toHaveBeenCalledWith(`${CWD}/src/app.ts`);
     fireEvent.click(screen.getByRole('button', { name: /^messages\.fileRef\.reveal\.\w+:out\/report\.pdf$/ }));
     expect(mocks.reveal).toHaveBeenCalledWith({ path: `${CWD}/out/report.pdf` });
+    expect(mocks.open).not.toHaveBeenCalled();
+  });
+
+  it('opens any other file in its default app', async () => {
+    mocks.files.set('out/deck.pptx', { state: 'found', path: `${CWD}/out/deck.pptx`, kind: 'file', size: 3 });
+    reply('The deck is `out/deck.pptx`.');
+    fireEvent.click(await screen.findByRole('button', { name: 'messages.fileRef.open:out/deck.pptx' }));
+    expect(mocks.open).toHaveBeenCalledWith({ path: `${CWD}/out/deck.pptx` });
+    expect(mocks.openFile).not.toHaveBeenCalled();
     expect(mocks.openPreview).not.toHaveBeenCalled();
   });
 
@@ -171,12 +190,12 @@ describe('a reply naming other files', () => {
 
   it('says so, and greys the reference out, when the file went away since', async () => {
     const warning = vi.spyOn(Message, 'warning').mockImplementation(() => () => undefined);
-    mocks.files.set('notes.md', { state: 'found', path: `${CWD}/notes.md`, kind: 'file', size: 3 });
+    mocks.files.set('notes.zip', { state: 'found', path: `${CWD}/notes.zip`, kind: 'file', size: 3 });
     mocks.open.mockResolvedValue({ ok: false, error: 'gone', code: 'notFound' });
-    reply('See `notes.md`.');
-    fireEvent.click(await screen.findByRole('button', { name: 'messages.fileRef.open:notes.md' }));
-    await waitFor(() => expect(warning).toHaveBeenCalledWith('messages.fileRef.gone:notes.md'));
-    expect(screen.getByText('notes.md').closest('[data-file-ref]')).toHaveAttribute('aria-disabled', 'true');
+    reply('See `notes.zip`.');
+    fireEvent.click(await screen.findByRole('button', { name: 'messages.fileRef.open:notes.zip' }));
+    await waitFor(() => expect(warning).toHaveBeenCalledWith('messages.fileRef.gone:notes.zip'));
+    expect(screen.getByText('notes.zip').closest('[data-file-ref]')).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('keeps the app’s own link for a link to a file that is not an image', async () => {

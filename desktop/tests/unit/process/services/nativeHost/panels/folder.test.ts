@@ -4,7 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { KyrnError } from '@/common/kyrn/errors';
 import { FOLDER_LISTING_LIMIT } from '@/common/kyrn/folderBridge';
-import { listFolder, readFolder } from '@/process/agent/kyrn/folderFiles';
+import { findFiles, listFolder, readFolder } from '@/process/agent/kyrn/folderFiles';
+import { GitNotStarted, type GitRunner } from '@/process/services/folderGit/runGit';
 import { lessonsProject, LessonsStore } from '@/process/agent/kyrn/lessons';
 import { canSymlink } from '../symlinks.ts';
 
@@ -115,6 +116,54 @@ const line = (id: string, cwd?: string) => ({
   uses: { recalled: 0, applied: 0 },
   created: '2026-09-29T08:00:00.000Z',
   updated: '2026-09-29T08:00:00.000Z',
+});
+
+/** git in a folder outside any repository, and no git at all. */
+const notRepository: GitRunner = async () => ({
+  code: 128,
+  stdout: '',
+  stderr: 'not a git repository',
+  overflow: false,
+});
+const noGit: GitRunner = async () => {
+  throw new GitNotStarted('spawn git ENOENT');
+};
+/** git listing more than it may write: cut in the middle of a name. */
+const cutShort: GitRunner = async () => ({ code: 0, stdout: 'a.ts\0b.ts\0c.t', stderr: '', overflow: true });
+
+describe('a folder’s files for quick open', () => {
+  it('are git’s own list in a repository: tracked and new, never what it ignores', async () => {
+    const asked: string[][] = [];
+    const git: GitRunner = async (args) => {
+      asked.push(args);
+      return { code: 0, stdout: 'src/a.ts\0README.md\0src/new.ts\0', stderr: '', overflow: false };
+    };
+    expect(await findFiles('/work/app', git)).toEqual({ paths: ['src/a.ts', 'README.md', 'src/new.ts'], more: false });
+    expect(asked).toEqual([['ls-files', '--cached', '--others', '--exclude-standard', '-z']]);
+  });
+
+  it('drops the name a cut list ends in, and says some were left out', async () => {
+    expect(await findFiles('/work/app', cutShort)).toEqual({ paths: ['a.ts', 'b.ts'], more: true });
+  });
+
+  it('walks the folder outside a repository, or without git: no dot folders, dependencies or build output', async () => {
+    const folder = temp();
+    for (const dir of ['src/deep', '.cache', 'node_modules/pkg', 'dist'])
+      mkdirSync(join(folder, dir), { recursive: true });
+    writeFileSync(join(folder, 'README.md'), '');
+    writeFileSync(join(folder, '.env'), '');
+    writeFileSync(join(folder, '.DS_Store'), '');
+    writeFileSync(join(folder, 'src', 'a.ts'), '');
+    writeFileSync(join(folder, 'src', 'deep', 'b.ts'), '');
+    writeFileSync(join(folder, '.cache', 'x'), '');
+    writeFileSync(join(folder, 'node_modules', 'pkg', 'index.js'), '');
+    writeFileSync(join(folder, 'dist', 'out.js'), '');
+    const found = await Promise.all([notRepository, noGit, undefined].map((git) => findFiles(folder, git)));
+    for (const { paths, more } of found) {
+      expect(more).toBe(false);
+      expect(paths.toSorted()).toEqual(['.env', 'README.md', 'src/a.ts', 'src/deep/b.ts']);
+    }
+  });
 });
 
 describe('a folder’s lessons', () => {

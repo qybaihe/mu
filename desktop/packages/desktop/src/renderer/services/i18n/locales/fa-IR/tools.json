@@ -78,7 +78,8 @@
     "callAria": "{{name}} · {{status}}",
     "denied": "اجرا نشد: شما اجازه ندادید.",
     "showMore": "نمایش بیشتر",
-    "showLess": "نمایش کمتر"
+    "showLess": "نمایش کمتر",
+    "openInBrowser": "باز کردن {{address}} در مرورگر"
   },
   "activity": {
     "running": "در حال اجرای {{label}} · {{steps}} گام",

@@ -1075,5 +1075,7 @@
     "results": "Résultats de la recherche"
   },
   "learnMore": "En savoir plus",
-  "showLess": "Réduire"
+  "showLess": "Réduire",
+  "keepAwakeWhileRunning": "Rester éveillé pendant qu'une conversation s'exécute",
+  "keepAwakeWhileRunningDesc": "Pendant une exécution, l'ordinateur ne se met pas en veille par inactivité. L'écran peut toujours s'éteindre, et fermer le capot le met toujours en veille."
 }

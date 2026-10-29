@@ -1076,5 +1076,7 @@
     "results": "搜尋結果"
   },
   "learnMore": "了解更多",
-  "showLess": "收起"
+  "showLess": "收起",
+  "keepAwakeWhileRunning": "對話執行時不讓電腦睡眠",
+  "keepAwakeWhileRunningDesc": "有任務在跑時，電腦不會因閒置而睡眠。螢幕仍可關閉，闔上蓋子仍會睡眠。"
 }

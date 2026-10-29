@@ -78,7 +78,8 @@
     "callAria": "{{name}} · {{status}}",
     "denied": "Не виконано: ви не дозволили.",
     "showMore": "Показати більше",
-    "showLess": "Показати менше"
+    "showLess": "Показати менше",
+    "openInBrowser": "Відкрити {{address}} у браузері"
   },
   "activity": {
     "running": "{{steps}} кроків · виконується {{label}}",

@@ -1076,5 +1076,7 @@
     "results": "検索結果"
   },
   "learnMore": "詳しく",
-  "showLess": "閉じる"
+  "showLess": "閉じる",
+  "keepAwakeWhileRunning": "会話の実行中はスリープしない",
+  "keepAwakeWhileRunningDesc": "実行中は、操作がなくてもコンピューターがスリープしません。画面は消えることがあり、蓋を閉じるとスリープします。"
 }

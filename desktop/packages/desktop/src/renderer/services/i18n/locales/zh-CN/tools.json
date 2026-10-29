@@ -78,7 +78,8 @@
     "callAria": "{{name}} · {{status}}",
     "denied": "没有运行：你没有允许。",
     "showMore": "展开全部",
-    "showLess": "收起"
+    "showLess": "收起",
+    "openInBrowser": "在浏览器中打开 {{address}}"
   },
   "activity": {
     "running": "{{steps}} 步 · 正在执行 {{label}}",

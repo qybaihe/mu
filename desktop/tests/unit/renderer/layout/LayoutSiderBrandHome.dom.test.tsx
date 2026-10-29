@@ -91,6 +91,8 @@ vi.mock('@/common', () => ({
 vi.mock('@/renderer/components/layout/Titlebar', () => ({ default: () => null }));
 vi.mock('@renderer/hooks/system/useDeepLink', () => ({ useDeepLink: () => {} }));
 vi.mock('@renderer/hooks/system/notification/useNotificationClick', () => ({ useNotificationClick: () => {} }));
+vi.mock('@renderer/hooks/system/notification/useAppBadge', () => ({ useAppBadge: () => {} }));
+vi.mock('@renderer/hooks/system/useKeepAwakeWhileRunning', () => ({ useKeepAwakeWhileRunning: () => {} }));
 vi.mock('@renderer/hooks/file/useDirectorySelection', () => ({
   useDirectorySelection: () => ({ contextHolder: null }),
 }));

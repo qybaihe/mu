@@ -1075,5 +1075,7 @@
     "results": "Arama sonuçları"
   },
   "learnMore": "Daha fazla",
-  "showLess": "Daha az"
+  "showLess": "Daha az",
+  "keepAwakeWhileRunning": "Konuşma çalışırken uyku moduna geçme",
+  "keepAwakeWhileRunningDesc": "Bir çalışma sürerken bilgisayar boşta kaldığında uyku moduna geçmez. Ekran yine kapanabilir, kapağı kapatmak yine uyutur."
 }

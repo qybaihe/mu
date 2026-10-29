@@ -6,6 +6,7 @@ import type { TMessage } from '@/common/chat/chatLib';
 import type { ToolMessage } from '@/common/chat/normalizeToolCall';
 import MessageToolGroupSummary from '@/renderer/pages/conversation/Messages/components/MessageToolGroupSummary';
 import { shortPath } from '@/renderer/pages/conversation/Messages/components/toolActivity';
+import * as browserStore from '@/renderer/pages/conversation/Preview/browser/browserStore';
 
 vi.mock('@/common', () => ({
   ipcBridge: {
@@ -15,6 +16,12 @@ vi.mock('@/common', () => ({
       },
     },
   },
+}));
+
+// The preview panel's file opener: none unless a test sets one, as in a window with no panel.
+const preview = vi.hoisted(() => ({ open: undefined as undefined | ((path: string) => Promise<void>) }));
+vi.mock('@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview', () => ({
+  useOptionalLocalFilePreview: () => preview.open,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -65,6 +72,7 @@ const tool = (
 
 afterEach(() => {
   vi.mocked(ipcBridge.database.getConversationMessage.invoke).mockReset();
+  preview.open = undefined;
 });
 
 describe('MessageToolGroupSummary', () => {
@@ -99,6 +107,69 @@ describe('MessageToolGroupSummary', () => {
     expect(shortPath('/Users2/me/a.ts')).toBe('/Users2/me/a.ts');
     expect(shortPath('/tmp/a.ts')).toBe('/tmp/a.ts');
     expect(shortPath('src/a.ts')).toBe('src/a.ts');
+  });
+
+  it('opens the file a call read or wrote in the preview panel, and the rest of the row still opens the call', () => {
+    const open = vi.fn().mockResolvedValue(undefined);
+    preview.open = open;
+    render(
+      <MessageToolGroupSummary
+        messages={[tool('read', 'completed', { path: '/Users/me/project/src/app.ts' }, 'export const app = 1;')]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'messages.fileRef.preview' }));
+    expect(open).toHaveBeenCalledWith('/Users/me/project/src/app.ts');
+    const row = screen.getByRole('button', { name: 'read · tools.status.success' });
+    expect(row).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(row);
+    expect(row).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText('export const app = 1;')).toBeInTheDocument();
+    expect(open).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves a lookup's path and a command as text: a folder or a command line is no file to show", () => {
+    preview.open = vi.fn().mockResolvedValue(undefined);
+    render(
+      <MessageToolGroupSummary
+        messages={[
+          tool('ls', 'completed', { path: 'src' }),
+          tool('edit', 'completed', { path: 'src/app.ts' }),
+          tool('bash', 'completed', { command: 'cat src/app.ts' }),
+        ]}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /3 steps|looked up 1/ }));
+
+    expect(screen.getAllByRole('button', { name: 'messages.fileRef.preview' })).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'messages.fileRef.preview' })).toHaveAttribute('title', 'src/app.ts');
+  });
+
+  it("offers the address a dev server printed, opened in the work panel's browser, on the call and on its fold", () => {
+    const opened = vi.spyOn(browserStore, 'openBrowserPage').mockReturnValue('tab-1');
+    const banner = '  ➜  Local:   http://localhost:5173/\n  ➜  Network: use --host to expose';
+    const { unmount } = render(
+      <MessageToolGroupSummary messages={[tool('bash', 'completed', { command: 'npm run dev' }, banner)]} />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'tools.execution.openInBrowser' }));
+    expect(screen.getByTestId('tool-local-url')).toHaveTextContent('localhost:5173');
+    expect(opened).toHaveBeenCalledWith('http://localhost:5173/', { by: 'user', reuse: true });
+    unmount();
+
+    render(
+      <MessageToolGroupSummary
+        messages={[
+          tool('bg_start', 'completed', { command: 'npm run dev' }, 'started bg-1'),
+          tool('bg_output', 'completed', { id: 'bg-1' }, banner),
+        ]}
+      />
+    );
+    // Closed, the fold still shows it; open, the call that printed it does.
+    expect(screen.getAllByTestId('tool-local-url')).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: /2 steps|other/ }));
+    expect(screen.getAllByTestId('tool-local-url')).toHaveLength(1);
+    opened.mockRestore();
   });
 
   it('keeps a command whole, cut at its end, with the whole of it on hover', () => {
