@@ -6,18 +6,18 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [0.3.4] - 2026-10-30
 
-**0.3.4 brings commits from the Source tab, a sound when a conversation is done or needs you, a page's screenshot and console for mu, and keys to move between conversations.** The agent is the same as 0.3.3; the desktop app carries mu-agent 0.3.4.
+**0.3.4 lets you commit from the Source tab, hear when a conversation is done or needs you, show mu a page's screenshot and console, and move between conversations from the keyboard.** The agent is the same as 0.3.3; the desktop app carries mu-agent 0.3.4.
 
 ### Added
 
-- **Commit from the Source tab.** In the work panel's Source tab, stage or unstage a file or a whole section, write a message and commit with Cmd/Ctrl+Enter. With nothing staged, "Commit all" stages every change first, new files included. "Let mu commit" has mu split the changes into commits and write their messages; it shows you the plan and commits only when you agree. When git refuses (a hook, no identity set), what it said shows under the box.
+- **Commit from the Source tab.** In the work panel's Source tab, stage or unstage a file or a whole section, write a message and commit with Cmd/Ctrl+Enter. With nothing staged, "Commit all" stages every change first, new files included. "Let mu commit" has mu split the changes into commits and write their messages; it shows you the plan and commits only when you agree. If git refuses (a hook fails, or no identity is set), its output shows under the box.
 - **A sound when a conversation finishes or needs you.** Settings → System → "Play a sound when a conversation finishes or needs you". It plays a short chime even while mu is in front, and a different one when mu asks something or a run fails. While it's on, system notifications stay silent, so you don't hear two sounds. It's off by default.
-- **Show mu the page and its console.** In the work panel's browser, the screenshot button puts the page as it looks now into your next message, as an image. Once the page has written errors or warnings to its console since it loaded, a button shows how many; it puts the last 50 into your next message, oldest first, each with where it came from.
-- **Keys to move between conversations.** Cmd/Ctrl+1 to 9 open the conversation in that place of the sidebar. Cmd/Ctrl+Shift+A opens the next one that finished or asked something while you were elsewhere. Ctrl+Tab and Ctrl+Shift+Tab open the one below or above. A row's tooltip shows its key, and the command palette offers the next waiting conversation too.
+- **Show mu the page and its console.** In the work panel's browser, the screenshot button puts the page as it looks now into your next message, as an image. When the page has logged errors or warnings since it loaded, a console button shows how many; clicking it adds the last 50 to your next message, oldest first, each with its source.
+- **Keys to move between conversations.** Cmd/Ctrl+1 to 9 open the conversation at that position in the sidebar. Cmd/Ctrl+Shift+A opens the next one that finished or asked something while you were elsewhere. Ctrl+Tab and Ctrl+Shift+Tab open the one below or above. A row's tooltip shows its key, and the command palette offers the next waiting conversation too.
 
 ### Fixed
 
-- Ctrl+Tab did nothing in a conversation on the native host. It now moves through the sidebar's rows.
+- Ctrl+Tab and Ctrl+Shift+Tab did nothing in a conversation. They now move through the sidebar's rows.
 
 ## [0.3.3] - 2026-10-29
 
