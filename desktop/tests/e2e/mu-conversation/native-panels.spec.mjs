@@ -335,9 +335,8 @@ test('an element picked on a page in the browser reaches the model’s request, 
       }
       await expect(snippet).toBeVisible({ timeout: 15_000 });
       await expect(pick).toHaveAttribute('aria-pressed', 'false');
-      const picture = p.getByTestId('native-attachment');
-      await expect(picture).toHaveCount(1, { timeout: 15_000 });
-      await expect(picture).toHaveAttribute('data-kind', 'image');
+      // The picture is the chip's own: it shows on the chip once taken.
+      await expect(p.getByTestId('sendbox-dom-snippet')).toHaveAttribute('data-picture', 'true', { timeout: 15_000 });
       expect(await shopTitle(), 'the click stayed with the picker').toBe('E2E shop');
       await shot('element-picked');
     });
@@ -350,7 +349,7 @@ test('an element picked on a page in the browser reaches the model’s request, 
       expect(asked?.lastUser).toContain('selector: `#buy`');
       expect(asked?.lastUser).toContain('<button id="buy" class="primary">Buy now</button>');
       expect(asked?.images, 'the picture went as an image').toBe(1);
-      await expect(p.getByTestId('native-attachment')).toHaveCount(0);
+      await expect(p.getByTestId('sendbox-dom-snippet')).toHaveCount(0);
     });
   } finally {
     server.close();

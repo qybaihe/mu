@@ -33,7 +33,12 @@ export interface DomSnippet {
    * text and look). Without it, the preview's "DOM Snippet (tag):".
    */
   about?: string;
+  /** A picture of the element (a page's element: what of it was on screen), sent with the message as an image. */
+  image?: DomSnippetImage;
 }
+
+/** A picture that goes with a snippet: base64 data and its type. */
+export type DomSnippetImage = { data: string; mimeType: string };
 
 /** The send box keeps this many elements for the next message; the oldest goes first. */
 export const MAX_DOM_SNIPPETS = 5;
@@ -200,8 +205,10 @@ export interface PreviewContextValue {
 
   // DOM 片段管理 / DOM snippet management
   domSnippets: DomSnippet[];
-  /** Adds an element to the next message (the same one again is not added twice). */
-  addDomSnippet: (tag: string, html: string, about?: string) => void;
+  /** Adds an element to the next message (the same one again replaces it) and says its id. */
+  addDomSnippet: (tag: string, html: string, about?: string) => string;
+  /** Gives a snippet its picture, when it is still there (the person may have taken it back, or sent it). */
+  attachDomSnippetImage: (id: string, image: DomSnippetImage) => void;
   removeDomSnippet: (id: string) => void;
   clearDomSnippets: () => void;
 }
@@ -1149,6 +1156,13 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const others = prev.filter((s) => s.html !== html || s.about !== about);
       return [...others, { id, tag, html, ...(about ? { about } : {}) }].slice(-MAX_DOM_SNIPPETS);
     });
+    return id;
+  }, []);
+
+  const attachDomSnippetImage = useCallback((id: string, image: DomSnippetImage) => {
+    setDomSnippets((prev) =>
+      prev.some((s) => s.id === id) ? prev.map((s) => (s.id === id ? { ...s, image } : s)) : prev
+    );
   }, []);
 
   const removeDomSnippet = useCallback((id: string) => {
@@ -1348,6 +1362,7 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setSendBoxHandler,
       domSnippets,
       addDomSnippet,
+      attachDomSnippetImage,
       removeDomSnippet,
       clearDomSnippets,
     };
@@ -1379,6 +1394,7 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setSendBoxHandler,
     domSnippets,
     addDomSnippet,
+    attachDomSnippetImage,
     removeDomSnippet,
     clearDomSnippets,
   ]);

@@ -399,6 +399,14 @@ describe('the elements picked for the next message', () => {
       'li:nth-of-type(4)',
     ]);
 
+    // A picture goes to the snippet it was taken for, while it is there.
+    const picked = ctx.domSnippets.at(-1)!.id;
+    act(() => ctx.attachDomSnippetImage(picked, { data: 'cG5n', mimeType: 'image/png' }));
+    act(() => ctx.attachDomSnippetImage('gone', { data: 'eA==', mimeType: 'image/png' }));
+    expect(ctx.domSnippets.filter((snippet) => snippet.image)).toEqual([
+      expect.objectContaining({ id: picked, image: { data: 'cG5n', mimeType: 'image/png' } }),
+    ]);
+
     act(() => ctx.removeDomSnippet(ctx.domSnippets[0].id));
     expect(ctx.domSnippets).toHaveLength(4);
     act(() => ctx.clearDomSnippets());

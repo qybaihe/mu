@@ -29,7 +29,7 @@ const pages = vi.hoisted(() => ({
   byUrl: new Map<string, { partition?: string; report: (state: Navigation) => void; controls: Controls }>(),
 }));
 const { copyTextMock } = vi.hoisted(() => ({ copyTextMock: vi.fn() }));
-const picking = vi.hoisted(() => ({ addDomSnippet: vi.fn(), picture: vi.fn() }));
+const picking = vi.hoisted(() => ({ addDomSnippet: vi.fn(), attachDomSnippetImage: vi.fn(), picture: vi.fn() }));
 
 vi.mock('@/renderer/components/media/WebviewHost', () => ({
   default: function FakeWebview(props: {
@@ -68,7 +68,10 @@ vi.mock('@/common/kyrn/browserBridge', () => ({
 vi.mock('@/renderer/utils/platform', () => ({ isMacOS: () => true, isElectronDesktop: () => true }));
 vi.mock('@/renderer/utils/ui/clipboard', () => ({ copyText: copyTextMock }));
 vi.mock('@/renderer/pages/conversation/Preview/context/PreviewContext', () => ({
-  useOptionalPreviewContext: () => ({ addDomSnippet: picking.addDomSnippet }),
+  useOptionalPreviewContext: () => ({
+    addDomSnippet: picking.addDomSnippet,
+    attachDomSnippetImage: picking.attachDomSnippetImage,
+  }),
 }));
 vi.mock('@/common', () => ({
   ipcBridge: { application: { pictureOfBrowserArea: { invoke: picking.picture } } },
@@ -76,7 +79,6 @@ vi.mock('@/common', () => ({
 
 import BrowserPanel from '@/renderer/pages/conversation/Preview/browser/BrowserPanel';
 import { CANCEL_PICK_SCRIPT } from '@/renderer/components/media/elementPicker';
-import { emitter } from '@/renderer/utils/emitter';
 
 const noAnswer = (_value: unknown): void => undefined;
 import {
@@ -127,7 +129,8 @@ beforeEach(() => {
   resetBrowserStoreForTest();
   pages.byUrl.clear();
   copyTextMock.mockReset().mockResolvedValue(undefined);
-  picking.addDomSnippet.mockReset();
+  picking.addDomSnippet.mockReset().mockReturnValue('snippet-1');
+  picking.attachDomSnippetImage.mockReset();
   picking.picture.mockReset().mockResolvedValue(null);
 });
 afterEach(() => {
@@ -416,8 +419,6 @@ describe('pointing at an element of the page', () => {
   });
 
   it('runs the picker on the page in front, and puts the element and its picture into the next message', async () => {
-    const attached = vi.fn();
-    emitter.on('sendbox.attach', attached);
     picking.picture.mockResolvedValue(btoa('png'));
     open('http://localhost:5173/');
     show();
@@ -437,16 +438,14 @@ describe('pointing at an element of the page', () => {
       expect.stringContaining('Element on the page http://localhost:5173/ ("Shop") (button.primary):')
     );
     expect(picking.picture).toHaveBeenCalledWith({ webContentsId: 7, area: picked.rect });
-    expect(attached).toHaveBeenCalledTimes(1);
-    const [[file]] = attached.mock.calls[0] as [[File]];
-    expect(file.name).toBe('button.primary.png');
-    expect(file.type).toBe('image/png');
-    emitter.off('sendbox.attach', attached);
+    // The picture is the chip's own: sent with it, taken back with it.
+    expect(picking.attachDomSnippetImage).toHaveBeenCalledWith('snippet-1', {
+      data: btoa('png'),
+      mimeType: 'image/png',
+    });
   });
 
   it('adds the element without a picture when none could be taken, and nothing when the person called it off', async () => {
-    const attached = vi.fn();
-    emitter.on('sendbox.attach', attached);
     open('http://localhost:5173/');
     show();
     const picker = pickerOn('http://localhost:5173/');
@@ -459,8 +458,7 @@ describe('pointing at an element of the page', () => {
     fireEvent.click(button());
     await picker.answer(null);
     expect(picking.addDomSnippet).toHaveBeenCalledTimes(1);
-    expect(attached).not.toHaveBeenCalled();
-    emitter.off('sendbox.attach', attached);
+    expect(picking.attachDomSnippetImage).not.toHaveBeenCalled();
   });
 
   it('stops on a second click, on Escape, when another page comes in front, or when the page goes elsewhere', async () => {

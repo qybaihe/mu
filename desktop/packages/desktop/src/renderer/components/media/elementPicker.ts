@@ -263,7 +263,12 @@ export function pageSide(options: PageSideOptions): Promise<unknown> {
       event.preventDefault();
       event.stopImmediatePropagation();
     };
-    const onMove = (event: MouseEvent) => outline(doc.elementFromPoint(event.clientX, event.clientY));
+    const onMove = (event: MouseEvent) => {
+      const target = doc.elementFromPoint(event.clientX, event.clientY);
+      // Widened with ↑: the pointer moving inside the wider element keeps it; leaving it outlines what it is over.
+      if (narrower.length && current && target && current.contains(target)) return;
+      outline(target);
+    };
     const onClick = (event: MouseEvent) => {
       swallow(event);
       if (event.button !== 0) return;
@@ -337,14 +342,28 @@ export function pageSide(options: PageSideOptions): Promise<unknown> {
 /* eslint-enable unicorn/consistent-function-scoping */
 
 const text = (value: unknown, limit: number): string => (typeof value === 'string' ? value.slice(0, limit) : '');
+/**
+ * A field the message says on one line, outside any code fence: the page's word on one line, without control
+ * characters or backticks, so a page cannot write lines of its own into the person's message.
+ */
+const line = (value: unknown, limit: number): string =>
+  text(value, limit * 2)
+    // oxlint-disable-next-line no-control-regex -- control characters are what this removes
+    .replace(/[\u0000-\u001f\u007f\u2028\u2029`]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, limit);
 const amount = (value: unknown): number =>
   typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.min(value, 100_000) : 0;
 
-/** What the picker said, if it is a picked element: only the expected fields, each cut to size. */
+/**
+ * What the picker said, if it is a picked element: only the expected fields, each cut to size, and each but the HTML
+ * on one clean line. The page's own script may have shaped it (it runs in the page), so nothing is taken on trust.
+ */
 export function readPickedElement(raw: unknown): PickedElement | null {
   if (!raw || typeof raw !== 'object') return null;
   const value = raw as Record<string, unknown>;
-  const selector = text(value.selector, 500);
+  const selector = line(value.selector, 500);
   const html = text(value.html, PICKED_HTML_LIMIT + 40);
   if (!selector || !html) return null;
   const rect = (value.rect ?? {}) as Record<string, unknown>;
@@ -352,15 +371,15 @@ export function readPickedElement(raw: unknown): PickedElement | null {
   const styles: Record<string, string> = {};
   const given = (value.styles ?? {}) as Record<string, unknown>;
   for (const property of PICKED_STYLES) {
-    const style = text(given[property], 200);
+    const style = line(given[property], 200);
     if (style) styles[property] = style;
   }
   return {
-    url: text(value.url, 2000),
-    title: text(value.title, 200),
+    url: line(value.url, 2000),
+    title: line(value.title, 200),
     selector,
-    label: text(value.label, 120) || selector.slice(0, 120),
-    text: text(value.text, PICKED_TEXT_LIMIT),
+    label: line(value.label, 120) || selector.slice(0, 120),
+    text: line(value.text, PICKED_TEXT_LIMIT),
     html,
     rect: { x: amount(rect.x), y: amount(rect.y), width: amount(rect.width), height: amount(rect.height) },
     size: { width: Math.round(amount(size.width)), height: Math.round(amount(size.height)) },
@@ -378,15 +397,4 @@ export function describePickedElement(element: PickedElement): string {
   const styles = Object.entries(element.styles);
   if (styles.length) lines.push(`- styles: ${styles.map(([property, value]) => `${property}: ${value}`).join('; ')}`);
   return lines.join('\n');
-}
-
-/** The picture of a picked element (base64 PNG) as a file for the send box, named after the element. */
-export function pictureFile(base64: string, label: string): File {
-  const bytes = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
-  const name =
-    label
-      .replace(/[^\w.-]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 60) || 'element';
-  return new File([bytes], `${name}.png`, { type: 'image/png' });
 }

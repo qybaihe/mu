@@ -13,11 +13,9 @@ import {
   CANCEL_PICK_SCRIPT,
   describePickedElement,
   pickElementScript,
-  pictureFile,
   readPickedElement,
 } from '@/renderer/components/media/elementPicker';
 import type { WebviewNavigation, WebviewNavigationState } from '@/renderer/components/media/WebviewHost';
-import { emitter } from '@/renderer/utils/emitter';
 import { copyText } from '@/renderer/utils/ui/clipboard';
 import { isPlatformPrimaryModifier } from '@/renderer/utils/ui/keyboardShortcuts';
 import { useOptionalPreviewContext } from '../context/PreviewContext';
@@ -48,7 +46,7 @@ const sameNavigation = (a: WebviewNavigationState, b: WebviewNavigationState): b
  * pages' own keys stay theirs.
  *
  * The person can point at an element of the page in front to show it to mu (`elementPicker.ts`): it goes into the
- * next message, its address, selector, text, look and HTML, with a picture of it attached. Another page in front,
+ * next message, its address, selector, text, look and HTML, with a picture of it (the chip's own: sent with it). Another page in front,
  * the page going elsewhere or Escape calls the picker off.
  */
 export default function BrowserPanel({
@@ -122,6 +120,7 @@ export default function BrowserPanel({
   // The element picker: which page runs it, and a count that tells a picker called off from the one running now.
   const preview = useOptionalPreviewContext();
   const addDomSnippet = preview?.addDomSnippet;
+  const attachDomSnippetImage = preview?.attachDomSnippetImage;
   const [picking, setPicking] = useState<string | null>(null);
   const pickingRef = useRef<string | null>(null);
   pickingRef.current = picking;
@@ -157,14 +156,15 @@ export default function BrowserPanel({
       if (failed) message.error?.(t('preview.browser.pick.failed'));
       return;
     }
-    addDomSnippet(picked.label, picked.html, describePickedElement(picked));
+    const snippet = addDomSnippet(picked.label, picked.html, describePickedElement(picked));
     message.success?.(t('preview.browser.pick.added', { name: picked.label }));
+    // The picture goes with the chip: taken back with it, and sent with it (the chip says it has one).
     const webContentsId = page.webContentsId();
     if (webContentsId === undefined || !picked.rect.width || !picked.rect.height) return;
     const picture = await ipcBridge.application.pictureOfBrowserArea
       .invoke({ webContentsId, area: picked.rect })
       .catch((): null => null);
-    if (picture) emitter.emit('sendbox.attach', [pictureFile(picture, picked.label)]);
+    if (picture) attachDomSnippetImage?.(snippet, { data: picture, mimeType: 'image/png' });
   };
 
   // Another page in front, the page going elsewhere, or the panel going away: the picker stops.

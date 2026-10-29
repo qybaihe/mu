@@ -47,8 +47,6 @@ interface EventTypes {
   'sendbox.fill': [string]; // prompt text to fill
   'sendbox.reply': [ReplyQuote]; // reply/quote a message
   'sendbox.reply.clear': void; // clear reply quote
-  /** Files another part of the screen attaches to the next message (the picture of an element picked in the browser). */
-  'sendbox.attach': [File[]];
   /**
    * A command the app sends into a conversation for the person, as if typed: mu's board switch sends `/board on`.
    * Sent at once when the agent is idle; while it works, the latest one waits and goes out as soon as it is idle

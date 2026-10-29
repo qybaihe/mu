@@ -151,6 +151,29 @@ describe('SendBox: the elements picked for the message', () => {
     expect(preview.clear).toHaveBeenCalled();
   });
 
+  it('fences HTML longer than any run of backticks in it, and sends the pictures of the elements with the message', async () => {
+    preview.snippets = [
+      {
+        id: 'p',
+        tag: 'pre',
+        html: '<pre>```\nnot the end\n````</pre>',
+        about: 'Element on the page https://a.test/ (pre):',
+        image: { data: 'cG5n', mimeType: 'image/png' },
+      },
+    ];
+    const onSend = vi.fn().mockResolvedValue(undefined);
+    render(<Harness onSend={onSend} />);
+    // The chip says it has a picture.
+    expect(screen.getByTestId('sendbox-dom-snippet')).toHaveAttribute('data-picture', 'true');
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('sendbox-send-btn'));
+    });
+    expect(onSend).toHaveBeenCalledWith(
+      '\n\n---\nElement on the page https://a.test/ (pre):\n`````html\n<pre>```\nnot the end\n````</pre>\n`````',
+      { images: [{ data: 'cG5n', mimeType: 'image/png' }] }
+    );
+  });
+
   it('sends an element with no text of its own', async () => {
     preview.snippets = [
       { id: 'a', tag: 'h1', html: '<h1>Hi</h1>', about: 'Element on the page https://a.test/ (h1):' },

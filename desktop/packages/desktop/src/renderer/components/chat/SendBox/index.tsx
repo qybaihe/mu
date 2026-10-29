@@ -45,7 +45,7 @@ import { copyText } from '@/renderer/utils/ui/clipboard';
 import { blurActiveElement, shouldBlockMobileInputFocus } from '@/renderer/utils/ui/focus';
 import { formatPrimaryEnterShortcut, isPlatformPrimaryModifier } from '@/renderer/utils/ui/keyboardShortcuts';
 import { Button, Input, Message, Tag, Tooltip } from '@arco-design/web-react';
-import { CloseSmall, Plus, Quote } from '@icon-park/react';
+import { CloseSmall, Pic, Plus, Quote } from '@icon-park/react';
 import { chatFileRefKey } from '@/common/types/chatFile';
 import type { SlashCommandItem } from '@/common/chat/slash/types';
 import { buildSkillSlashCommands, mergeSlashCommands } from '@/common/chat/slash/mergeSlashCommands';
@@ -224,7 +224,11 @@ function extractBtwQuestion(value: string): string | null {
 const SendBox: React.FC<{
   value?: string;
   onChange?: (value: string) => void;
-  onSend: (message: string) => Promise<void | false>;
+  /**
+   * Sends the message. `extras.images`: the pictures of the elements picked for it (a page's element), for a host that
+   * sends images with a message (a native conversation); others leave them.
+   */
+  onSend: (message: string, extras?: { images?: Array<{ data: string; mimeType: string }> }) => Promise<void | false>;
   onStop?: () => Promise<void>;
   disabled?: boolean;
   /**
@@ -1611,13 +1615,18 @@ const SendBox: React.FC<{
       finalMessage = `${quotedLines}\n\n${finalMessage}`;
     }
 
-    // 如果有 DOM 片段，附加完整 HTML / If has DOM snippets, append full HTML (after the quote and the text)
+    // 如果有 DOM 片段，附加完整 HTML / If has DOM snippets, append full HTML (after the quote and the text), each in a
+    // fence longer than any run of backticks in it, so what it holds cannot end it.
     if (domSnippets.length > 0) {
       const snippetsHtml = domSnippets
-        .map((s) => `\n\n---\n${s.about ?? `DOM Snippet (${s.tag}):`}\n\`\`\`html\n${s.html}\n\`\`\``)
+        .map((s) => {
+          const fence = '`'.repeat(Math.max(3, ...(s.html.match(/`+/g) ?? []).map((run) => run.length + 1)));
+          return `\n\n---\n${s.about ?? `DOM Snippet (${s.tag}):`}\n${fence}html\n${s.html}\n${fence}`;
+        })
         .join('');
       finalMessage += snippetsHtml;
     }
+    const snippetImages = domSnippets.flatMap((s) => (s.image ? [s.image] : []));
 
     // 立即清空输入框，避免异步 onSend 完成后覆盖用户新输入
     // Clear input immediately to prevent async onSend completion from overwriting new user input
@@ -1625,7 +1634,7 @@ const SendBox: React.FC<{
     clearDomSnippets();
     setReplyQuote(null);
 
-    onSend(finalMessage)
+    (snippetImages.length ? onSend(finalMessage, { images: snippetImages }) : onSend(finalMessage))
       .then((result) => {
         if (result === false) {
           setInput(finalMessage);
@@ -2034,8 +2043,11 @@ const SendBox: React.FC<{
                   key={snippet.id}
                   closable
                   closeIcon={<CloseSmall theme='outline' size='12' />}
+                  icon={snippet.image ? <Pic theme='outline' size='12' /> : undefined}
                   onClose={() => removeDomSnippet(snippet.id)}
                   className='text-12px bg-fill-2 rd-4px'
+                  data-testid='sendbox-dom-snippet'
+                  data-picture={snippet.image ? 'true' : undefined}
                 >
                   {snippet.tag}
                 </Tag>

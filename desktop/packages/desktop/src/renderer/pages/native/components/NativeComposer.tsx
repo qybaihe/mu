@@ -182,10 +182,6 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
   // what is there, as the classic box does.
   useAddEventListener('sendbox.fill', (text: string) => setDraft((old) => (old ? `${old}${text}` : text)), []);
 
-  // Files another part of the screen attaches (the picture of an element picked in the browser), as if dropped here.
-  const attach = files.add;
-  useAddEventListener('sendbox.attach', (attached: File[]) => void attach(attached), [attach]);
-
   // A first message that could not be sent comes back into the box, before what was typed since.
   const tookBack = useRef<string | undefined>(undefined);
   useEffect(() => {
@@ -195,7 +191,7 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
   }, [returned]);
 
   const onSend = useCallback(
-    async (text: string): Promise<void | false> => {
+    async (text: string, extras?: { images?: Array<{ data: string; mimeType: string }> }): Promise<void | false> => {
       const paths = [
         ...files.paths(),
         ...mentioned.flatMap((item): string[] => {
@@ -203,7 +199,11 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
           return path ? [path] : [];
         }),
       ];
-      const images = files.images();
+      // The pictures of the elements picked in the browser go with the files' images.
+      const images = [
+        ...files.images(),
+        ...(extras?.images ?? []).map(({ data, mimeType }) => ({ type: 'image' as const, data, mimeType })),
+      ];
       // The box is free at once, for the next message: this one may wait its turn behind the one on its way.
       const attached = files.attachments;
       const named = mentioned;
