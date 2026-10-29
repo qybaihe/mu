@@ -175,18 +175,24 @@ const NativeConversationScreen: React.FC<{ id: string }> = ({ id }) => {
 
   // A message's rewind button: mu's `/rewind` to the checkpoint taken before that message's turn changed files. mu
   // asks what goes back (files, the conversation, both) in its own question above the send box, and says what it did.
+  const [rewinding, setRewinding] = useState(false);
   const rewind = useCallback(
     (checkpoint: number): void => {
-      void request({ type: 'prompt', message: `/rewind ${checkpoint}` });
+      setRewinding(true);
+      void request({ type: 'prompt', message: `/rewind ${checkpoint}` }).finally(() => setRewinding(false));
     },
     [request]
   );
 
   const working = isWorking(view) || Boolean(outgoing);
+  // While mu asks something (a rewind's own question among others) or a rewind is on its way, no message offers to go
+  // back or to fork: one at a time.
+  const asking = view.dialogs.some((dialog) => !conversation.closed.has(dialog.id));
+  const still = !working && !asking && !rewinding;
   // The messages a fork button is drawn under: found again only when the view changes while nothing runs.
-  const forkable = useMemo(() => (working ? undefined : forkableIds(view)), [view, working]);
+  const forkable = useMemo(() => (still ? forkableIds(view) : undefined), [still, view]);
   // The messages a rewind button is drawn under, with their checkpoints: the same.
-  const rewindable = useMemo(() => (working ? undefined : rewindPoints(view)), [view, working]);
+  const rewindable = useMemo(() => (still ? rewindPoints(view) : undefined), [still, view]);
   const run = useMemo<MessageListRun>(
     () => ({
       conversationId: conversation.id,

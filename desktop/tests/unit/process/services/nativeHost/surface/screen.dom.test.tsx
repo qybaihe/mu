@@ -362,6 +362,64 @@ describe('the native conversation page', () => {
     expect(screen.getByTestId('native-send-input')).toHaveValue('write the docs\n\nand the tests');
   });
 
+  it('offers no rewind or fork while mu asks something, or while a rewind is on its way', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1', cwd: '/work/app' });
+    let answered: (() => void) | undefined;
+    host.answer((_id, command) =>
+      command.type === 'prompt'
+        ? new Promise((resolve) => {
+            answered = () => resolve({ ok: true, data: undefined });
+          })
+        : { ok: true, data: undefined }
+    );
+    page(host.client);
+    await opened();
+    act(() =>
+      host.play('c1', [ended(user('write the docs'), 'u1'), checkpoint(1, 'u1'), ended(reply([text('written')]), 'a1')])
+    );
+    const offered = () => ({
+      rewind: screen.queryAllByTestId('row-rewind').length,
+      fork: screen.queryAllByTestId('row-fork').length,
+    });
+    expect(offered()).toEqual({ rewind: 1, fork: 2 });
+
+    // On its way: mu hasn't answered yet.
+    fireEvent.click(screen.getByTestId('row-rewind'));
+    await waitFor(() => expect(offered()).toEqual({ rewind: 0, fork: 0 }));
+    // mu asks what goes back: still none, until the question is answered.
+    act(() =>
+      host.play('c1', [
+        {
+          type: 'extension_ui_request',
+          id: 'q1',
+          method: 'select',
+          title: 'Rewind to checkpoint 1',
+          options: ['Files and conversation', 'Files only', 'Conversation only'],
+        },
+      ])
+    );
+    await act(async () => answered?.());
+    expect(offered()).toEqual({ rewind: 0, fork: 0 });
+    act(() => host.replace('c1', { ...host.viewOf('c1'), dialogs: [] }));
+    expect(offered()).toEqual({ rewind: 1, fork: 2 });
+  });
+
+  it('does not put back into the box a request mu gave back before the conversation was opened', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1', cwd: '/work/app' });
+    host.play('c1', [
+      ended(user('write the docs'), 'u1'),
+      { type: 'extension_ui_request', id: 'e1', method: 'set_editor_text', text: 'write the docs' },
+    ]);
+    page(host.client);
+    await opened();
+    expect(screen.getByTestId('native-send-input')).toHaveValue('');
+    // One given while it is open goes in.
+    act(() => host.play('c1', [{ type: 'extension_ui_request', id: 'e2', method: 'set_editor_text', text: 'again' }]));
+    expect(screen.getByTestId('native-send-input')).toHaveValue('again');
+  });
+
   it('draws the button under the messages that have a fork point only', async () => {
     const host = createFakeHost();
     host.add({ id: 'c1', cwd: '/work/app' });
