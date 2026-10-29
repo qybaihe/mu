@@ -4,8 +4,9 @@
  * regular file (fileRefStore.ts). Until it answers, the reply is drawn as it always was; then:
  *
  * - an image opens in the preview panel, which steps through every image this reply names;
- * - any other file opens in the system's default app, and its folder icon shows it in Finder (File Explorer, the file
- *   manager); a program is only ever shown there;
+ * - a file the panel draws well (code, text, Markdown, HTML, PDF) opens there too, beside the reply;
+ * - any other file opens in the system's default app; every file's folder icon shows it in Finder (File Explorer, the
+ *   file manager), and a program is only ever shown there;
  * - a clear path that names nothing is greyed out, with why on hover; a reference that may be code stays plain.
  *
  * A link to a file that is not an image keeps the link the app always drew (it opens in the preview panel).
@@ -21,6 +22,8 @@ import type { LocalFileLinkReference } from '@/renderer/components/Markdown/mark
 import { MarkdownFileSlotsContext, type MarkdownFileSlots } from '@/renderer/components/Markdown/markdownComponents';
 import { openGalleryImage } from '@/renderer/pages/conversation/Preview/components/ImageGallery/galleryTab';
 import { useOptionalPreviewContext } from '@/renderer/pages/conversation/Preview/context/PreviewContext';
+import { isPanelPreviewable } from '@/renderer/pages/conversation/Preview/fileUtils';
+import { useOptionalLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
 import { openFileRef, requestFileRefs, revealFileRef, revealPlatform, useFileRefAnswers } from './fileRefStore';
 import { findFileRefs } from './findFileRefs';
 
@@ -29,6 +32,8 @@ type ReplyFileRefsValue = {
   /** A reference of this reply that the main process has answered, with how surely it is a path. */
   lookup: (ref: string) => { strength: FileRefStrength; answer: FileRefAnswer } | undefined;
   openImage: (path: string) => void;
+  /** Opens a file in the preview panel; undefined where there is no panel. */
+  openFile?: (path: string) => void;
 };
 
 const ReplyFileRefsContext = createContext<ReplyFileRefsValue | null>(null);
@@ -123,15 +128,17 @@ function Found({
       </span>
     );
   }
+  const inPanel = reply?.openFile && isPanelPreviewable(answer.path) ? reply.openFile : undefined;
   return (
-    <span className='markdown-file-ref' data-file-ref='file' title={answer.path}>
+    <span className='markdown-file-ref' data-file-ref={inPanel ? 'preview' : 'file'} title={answer.path}>
       <Button
         type='text'
         size='mini'
         className='markdown-file-ref-open'
-        aria-label={label ? t('messages.fileRef.open', { name: label }) : undefined}
+        aria-label={label ? t(inPanel ? 'messages.fileRef.preview' : 'messages.fileRef.open', { name: label }) : undefined}
         onClick={() => {
-          void openFileRef(answer.path).then((result) => notice(result, name));
+          if (inPanel) inPanel(answer.path);
+          else void openFileRef(answer.path).then((result) => notice(result, name));
         }}
       >
         {children}
@@ -226,6 +233,10 @@ export function ReplyFileRefs({
   const preview = useOptionalPreviewContext();
   const previewRef = useRef(preview);
   previewRef.current = preview;
+  const openInPanel = useOptionalLocalFilePreview(cwd || undefined);
+  const openInPanelRef = useRef(openInPanel);
+  openInPanelRef.current = openInPanel;
+  const hasPanel = Boolean(openInPanel);
 
   const value = useMemo<ReplyFileRefsValue>(() => {
     const strengths = new Map(refs.map((item) => [item.ref, item.strength]));
@@ -247,8 +258,9 @@ export function ReplyFileRefs({
         const openPreview = previewRef.current?.openPreview;
         if (openPreview) openGalleryImage(openPreview, path, gallery);
       },
+      openFile: hasPanel ? (path) => void openInPanelRef.current?.(path) : undefined,
     };
-  }, [answers, cwd, refs]);
+  }, [answers, cwd, refs, hasPanel]);
 
   // Always both providers, references or not: a reply that streams its first one must not draw its markdown anew.
   return (

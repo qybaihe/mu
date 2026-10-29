@@ -14,8 +14,10 @@ import { getAcpImageFileName } from '@/common/chat/acpToolCallOutput';
 import type { NormalizedToolCall, NormalizedToolStatus, ToolMessage } from '@/common/chat/normalizeToolCall';
 import { normalizeToolMessages } from '@/common/chat/normalizeToolCall';
 import LocalImageView from '@/renderer/components/media/LocalImageView';
+import { useConversationContextSafe } from '@/renderer/hooks/context/ConversationContext';
 import { HiveToolCard } from '@/renderer/pages/conversation/KyrnPanel/Hive';
 import { swarmProgressText } from '@/renderer/pages/conversation/KyrnPanel/Hive/codes';
+import { useOptionalLocalFilePreview } from '@/renderer/pages/conversation/Preview/hooks/useLocalFilePreview';
 import { formatNumber } from '@/renderer/services/i18n/format';
 import { downloadFileFromPath } from '@/renderer/utils/file/download';
 import { useMessageListRun } from '../hooks';
@@ -28,6 +30,7 @@ import {
   toolActivityDenied,
   toolActivityErrors,
   toolActivityParts,
+  toolActivityKind,
   toolErrorLine,
   toolLabel,
   shortPath,
@@ -60,9 +63,11 @@ const labelText = ({ verb, target }: ToolLabel): string => (target ? `${verb} ${
 
 /**
  * What a call ran on, whole on hover. The home folder reads as `~`. A path cut for a narrow row gives up the middle of
- * its folders, never its own name: `~/project/src/…/index.ts`, not `~/project/src/comp…`.
+ * its folders, never its own name: `~/project/src/…/index.ts`, not `~/project/src/comp…`. `onOpen`: the path names a
+ * file the preview panel can show, and a click shows it there.
  */
-const CallTarget: React.FC<{ label: ToolLabel }> = ({ label }) => {
+const CallTarget: React.FC<{ label: ToolLabel; onOpen?: () => void }> = ({ label, onOpen }) => {
+  const { t } = useTranslation();
   const { target } = label;
   if (!target) return null;
   if (!label.path)
@@ -73,12 +78,38 @@ const CallTarget: React.FC<{ label: ToolLabel }> = ({ label }) => {
     );
   const shown = shortPath(target);
   const cut = Math.max(shown.lastIndexOf('/'), shown.lastIndexOf('\\')) + 1;
-  return (
-    <code className={`${styles.callPreview} ${styles.pathPreview}`} title={target} data-testid='tool-call-path'>
+  const parts = (
+    <>
       <span className={styles.pathHead}>{shown.slice(0, cut)}</span>
       <span className={styles.pathTail}>{shown.slice(cut)}</span>
+    </>
+  );
+  if (onOpen)
+    return (
+      <Button
+        className={styles.pathLink}
+        type='text'
+        size='mini'
+        title={target}
+        aria-label={t('messages.fileRef.preview', { name: shown })}
+        data-testid='tool-call-path'
+        onClick={onOpen}
+      >
+        {parts}
+      </Button>
+    );
+  return (
+    <code className={`${styles.callPreview} ${styles.pathPreview}`} title={target} data-testid='tool-call-path'>
+      {parts}
     </code>
   );
+};
+
+/** The calls whose path names one file: reading it, writing it, editing it. A lookup's path may be a folder. */
+const opensFile = (item: NormalizedToolCall, label: ToolLabel): boolean => {
+  if (!label.path || !label.target || label.target.startsWith('~') || /[\\/]$/.test(label.target)) return false;
+  const kind = toolActivityKind(item.name);
+  return kind === 'read' || kind === 'edit';
 };
 
 const ClippedOutput: React.FC<{ text: string }> = ({ text }) => {
@@ -104,6 +135,14 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
   const [loadError, setLoadError] = useState(false);
   const displayItem = fullItem ?? item;
   const label = toolLabel(displayItem);
+  // A file the call read or wrote opens in the preview panel, read against the conversation's folder.
+  const run = useMessageListRun();
+  const conversation = useConversationContextSafe();
+  const openFile = useOptionalLocalFilePreview(conversation?.workspace ?? run?.workspace);
+  const openTarget =
+    openFile && label.target && opensFile(displayItem, label)
+      ? () => void openFile(label.target as string)
+      : undefined;
   const statusKey = statusLabelKey(item.status, item.denied);
   // A refused call's output is mu's refusal, written for the model: the row says what happened instead.
   const output = item.denied ? undefined : displayItem.output;
@@ -154,12 +193,14 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
       />
       <ToolKindIcon name={displayItem.name} />
       <span className={styles.callName}>{label.verb}</span>
-      <CallTarget label={label} />
+      <CallTarget label={label} onOpen={openTarget} />
     </>
   );
+  const callAria = t('tools.execution.callAria', { name: displayItem.name, status: t(`tools.status.${statusKey}`) });
+  const chevron = expanded ? <Down size={12} className={styles.chevron} /> : <Right size={12} className={styles.chevron} />;
 
   // A native conversation's end-to-end tests read each call by pi's tool name and how it stands.
-  const native = useMessageListRun() !== undefined;
+  const native = run !== undefined;
   return (
     <div
       className={styles.call}
@@ -186,17 +227,31 @@ const ToolItemDetail: React.FC<{ item: NormalizedToolCall }> = ({ item }) => {
             </Button>
           )}
         </>
+      ) : hasDetail && openTarget ? (
+        // The path is a control of its own, so the row's toggle lies under the line instead of around it.
+        <div className={styles.callLine}>
+          <Button
+            className={styles.callToggle}
+            type='text'
+            size='mini'
+            aria-label={callAria}
+            aria-expanded={expanded}
+            onClick={toggleExpanded}
+          />
+          {line}
+          {chevron}
+        </div>
       ) : hasDetail ? (
         <Button
           className={styles.callButton}
           type='text'
           size='mini'
-          aria-label={t('tools.execution.callAria', { name: displayItem.name, status: t(`tools.status.${statusKey}`) })}
+          aria-label={callAria}
           aria-expanded={expanded}
           onClick={toggleExpanded}
         >
           {line}
-          {expanded ? <Down size={12} /> : <Right size={12} />}
+          {chevron}
         </Button>
       ) : (
         <div className={styles.callStatic}>{line}</div>

@@ -211,8 +211,14 @@ Problem: a reply names the files mu made or read, mostly as inline code, and the
 
 Example: mu writes five images into `out/` and lists their bare names, `07_角色与场景关系卡_铁匠老秦_雨夜钢铁厂.png` and
 four more. Each name becomes a link. A click shows the image in the work panel's preview, where the arrows step through
-all five. In the same reply, `out/report.pdf` opens in the default app, and the folder icon beside it shows it in
-Finder (File Explorer on Windows, the file manager on Linux).
+all five. In the same reply, `out/report.pdf` and `src/app.ts` open in the preview too, beside the reply, and the
+folder icon beside each shows it in Finder (File Explorer on Windows, the file manager on Linux). `out/deck.pptx`
+opens in the default app: the panel draws only what it draws well (code and other text, Markdown, HTML, PDF, CSV,
+images, diffs; `isPanelPreviewable` in `Preview/fileUtils.ts`), and Office files only with officecli installed.
+
+The same goes for a file a tool call read or wrote: the path in its row (`read src/app.ts`) opens it in the preview,
+read against the conversation's folder, and a click anywhere else on the row still opens the call. A lookup's path
+(`ls`, `grep`) may be a folder and stays text.
 
 Solution, in three steps:
 

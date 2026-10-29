@@ -11,6 +11,7 @@ import {
   isImageFile,
   isTextFile,
   isOfficeFile,
+  isPanelPreviewable,
   FILE_EXTENSION_MAP,
 } from '@/renderer/pages/conversation/Preview/fileUtils';
 
@@ -131,6 +132,20 @@ describe('fileUtils', () => {
     it('contains image extensions', () => {
       expect(FILE_EXTENSION_MAP.image).toContain('png');
       expect(FILE_EXTENSION_MAP.image).toContain('svg');
+    });
+  });
+
+  describe('isPanelPreviewable', () => {
+    it('takes what the panel renders and text it shows as code', () => {
+      for (const name of ['notes.md', 'index.html', 'report.pdf', 'data.csv', 'shot.png', 'fix.diff'])
+        expect(isPanelPreviewable(name)).toBe(true);
+      for (const name of ['src/app.tsx', 'main.py', 'config.yaml', 'Makefile', 'LICENSE', '.gitignore'])
+        expect(isPanelPreviewable(name)).toBe(true);
+    });
+
+    it('leaves binaries, unknown types, Office files and what the panel cannot render to the system app', () => {
+      for (const name of ['archive.zip', 'app.dmg', 'song.mp3', 'clip.mov', 'old.doc', 'deck.pptx', 'photo.heic', 'build'])
+        expect(isPanelPreviewable(name)).toBe(false);
     });
   });
 });

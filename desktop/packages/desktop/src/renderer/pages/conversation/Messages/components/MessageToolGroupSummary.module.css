@@ -32,6 +32,63 @@
   flex-shrink: 0;
   color: var(--text-secondary);
 }
+/*
+ * A call whose path opens in the preview: the toggle lies under the whole line, so a click anywhere opens the call, and
+ * the path sits above it as a control of its own.
+ */
+.callLine {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+.callLine:hover {
+  background: var(--bg-hover);
+}
+.callLine > :global(.i-icon) {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+.callLine > .chevron {
+  margin-inline-start: auto;
+}
+.callToggle:global(.arco-btn),
+.callToggle:global(.arco-btn:hover) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border-radius: 8px;
+  background: transparent;
+}
+.pathLink:global(.arco-btn) {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  height: auto;
+  padding: 0 2px;
+  margin: 0 -2px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font: 12px/1.6 var(--font-mono);
+  direction: ltr;
+  unicode-bidi: isolate;
+  background: transparent;
+}
+.pathLink:global(.arco-btn:hover) {
+  color: var(--text-primary);
+  text-decoration: underline;
+  background: transparent;
+}
 .kindIcon {
   display: inline-flex;
   flex-shrink: 0;
