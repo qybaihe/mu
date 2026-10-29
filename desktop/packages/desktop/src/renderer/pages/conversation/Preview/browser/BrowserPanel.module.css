@@ -261,6 +261,12 @@
   color: var(--text-primary);
 }
 
+/* The element picker on: a toggle, pressed while it runs. */
+.actionButton:global(.arco-btn)[aria-pressed='true'] {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
 /* A wide browser: the pages and the address share the one line. */
 @container mu-browser (min-width: 640px) {
   .bar {

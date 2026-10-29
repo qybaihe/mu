@@ -17,6 +17,7 @@ import enCommon from '@/renderer/services/i18n/locales/en-US/common.json';
 import enConversation from '@/renderer/services/i18n/locales/en-US/conversation.json';
 import enMessages from '@/renderer/services/i18n/locales/en-US/messages.json';
 import enMu from '@/renderer/services/i18n/locales/en-US/mu.json';
+import { emitter } from '@/renderer/utils/emitter';
 import type { FileSelectionItem } from '@/renderer/utils/file/fileSelection';
 import { createFakeHost, type FakeHost } from './fakeClient';
 import { ended, frame, reply, text, user } from './records';
@@ -621,6 +622,27 @@ describe('the native send box’s commands, mentions and attachments', () => {
     } finally {
       electron.electronAPI = before;
     }
+  });
+});
+
+describe('the picture of an element picked in the browser', () => {
+  it('is attached to the next message as an image, as one dropped into the box', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1', cwd: '/work/project' });
+    host.answer(() => ({ ok: true, data: undefined }));
+    await mount(host);
+    const bytes = new Uint8Array([137, 80, 78, 71]);
+    await act(async () => {
+      emitter.emit('sendbox.attach', [new File([bytes], 'button.primary.png', { type: 'image/png' })]);
+    });
+    await waitFor(() => expect(screen.queryAllByTestId('native-attachment')).toHaveLength(1));
+    type('make it blue');
+    await send();
+    expect(sent(host, 'prompt').at(-1)).toEqual({
+      type: 'prompt',
+      message: 'make it blue',
+      images: [{ type: 'image', mimeType: 'image/png', data: Buffer.from(bytes).toString('base64') }],
+    });
   });
 });
 

@@ -157,7 +157,14 @@
     "tabLimitReached": "Sekme sınırına ulaşıldı ({{count}}). En eski sekme yeniden kullanıldı.",
     "agentFirstUseTitle": "Aracı uygulama içi tarayıcıyı kullanıyor",
     "agentFirstUseContent": "Bu panelde sayfa açabilir, tıklayabilir ve içerik okuyabilir. Oturum bilgileriniz korunur.",
-    "agentFirstUseAction": "Ayarları aç"
+    "agentFirstUseAction": "Ayarları aç",
+    "pick": {
+      "start": "mu'ya göstermek için bir öğe seç",
+      "stop": "Seçmeyi durdur",
+      "hint": "Mesajına eklemek için bir öğeye tıkla · ↑ üst öğeyi seçer · Esc iptal eder",
+      "added": "{{name}} mesajına eklendi",
+      "failed": "Bu sayfadaki öğeler seçilemiyor"
+    }
   },
   "saveConflict": "Kaydedilemedi: bu dosya siz açtıktan sonra diskte değişti. Diğer değişiklikleri görmek için yeniden yükleyin — düzenlemeleriniz kaydedilmemiş olarak duruyor.",
   "persistQuotaExceeded": "Yerel depolama dolu, bu proje için açık sekmeler artık hatırlanamıyor. Bazı sekmeleri kapatın veya site verilerini temizleyin.",

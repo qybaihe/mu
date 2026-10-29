@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button, Dropdown, Input, Menu } from '@arco-design/web-react';
 import type { RefInputType } from '@arco-design/web-react/es/Input/interface';
-import { Close, Earth, FullScreen, Left, Loading, OffScreen, Plus, Refresh, Right } from '@icon-park/react';
+import { Click, Close, Earth, FullScreen, Left, Loading, OffScreen, Plus, Refresh, Right } from '@icon-park/react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import type { WebviewNavigationState } from '@/renderer/components/media/WebviewHost';
@@ -28,6 +28,10 @@ export type BrowserChromeProps = {
   onReload: () => void;
   /** What the person typed into the address field, not yet resolved to an address. */
   onSubmit: (input: string) => void;
+  /** The element picker runs on the page in front. */
+  picking?: boolean;
+  /** Starts or stops the element picker; absent with no page in front (no button then). */
+  onPick?: () => void;
   maximized: boolean;
   /** Absent where the browser cannot fill the page (a phone's sheet): no button then. */
   onToggleMaximize?: () => void;
@@ -73,6 +77,8 @@ export default function BrowserChrome({
   onForward,
   onReload,
   onSubmit,
+  picking = false,
+  onPick,
   maximized,
   onToggleMaximize,
 }: BrowserChromeProps) {
@@ -247,6 +253,19 @@ export default function BrowserChrome({
         </div>
 
         <div className={styles.actions}>
+          {onPick ? (
+            <Button
+              type='text'
+              size='mini'
+              className={styles.actionButton}
+              icon={<Click size={14} />}
+              aria-label={picking ? t('preview.browser.pick.stop') : t('preview.browser.pick.start')}
+              title={picking ? t('preview.browser.pick.stop') : t('preview.browser.pick.start')}
+              aria-pressed={picking}
+              data-testid='browser-pick-element'
+              onClick={onPick}
+            />
+          ) : null}
           {onToggleMaximize ? (
             <Button
               type='text'

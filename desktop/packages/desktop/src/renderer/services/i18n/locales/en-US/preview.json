@@ -157,7 +157,14 @@
     "tabLimitReached": "Browser tab limit reached ({{count}}). The oldest tab was reused.",
     "agentFirstUseTitle": "The agent is using the in-app browser",
     "agentFirstUseContent": "It can open pages, click on them and read their content in this panel. You stay signed in to sites after you restart mu.",
-    "agentFirstUseAction": "Open settings"
+    "agentFirstUseAction": "Open settings",
+    "pick": {
+      "start": "Select an element to show mu",
+      "stop": "Stop selecting",
+      "hint": "Click an element to add it to your message · ↑ selects its parent · Esc cancels",
+      "added": "Added {{name}} to your message",
+      "failed": "Elements on this page can't be selected"
+    }
   },
   "saveConflict": "Couldn't save: this file has changed on disk since you opened it. Reload to see the other changes — your edits are still here, unsaved.",
   "persistQuotaExceeded": "Local storage is full, so open tabs can no longer be remembered for this project. Close some tabs or clear site data.",

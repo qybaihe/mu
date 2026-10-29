@@ -378,3 +378,30 @@ describe('PreviewContext updateTab', () => {
     expect(ctx.tabs[0].content).toBe('');
   });
 });
+
+describe('the elements picked for the next message', () => {
+  it('keeps each one picked, the same one once, and the latest five', () => {
+    renderProvider();
+    act(() => ctx.addDomSnippet('div', '<div>preview</div>'));
+    act(() => ctx.addDomSnippet('button.primary', '<button>Buy</button>', 'Element on the page https://shop.test/'));
+    act(() => ctx.addDomSnippet('button.primary', '<button>Buy</button>', 'Element on the page https://shop.test/'));
+    expect(ctx.domSnippets.map((snippet) => [snippet.tag, snippet.about])).toEqual([
+      ['div', undefined],
+      ['button.primary', 'Element on the page https://shop.test/'],
+    ]);
+
+    for (const n of [1, 2, 3, 4]) act(() => ctx.addDomSnippet(`li:nth-of-type(${n})`, `<li>${n}</li>`));
+    expect(ctx.domSnippets.map((snippet) => snippet.tag)).toEqual([
+      'button.primary',
+      'li:nth-of-type(1)',
+      'li:nth-of-type(2)',
+      'li:nth-of-type(3)',
+      'li:nth-of-type(4)',
+    ]);
+
+    act(() => ctx.removeDomSnippet(ctx.domSnippets[0].id));
+    expect(ctx.domSnippets).toHaveLength(4);
+    act(() => ctx.clearDomSnippets());
+    expect(ctx.domSnippets).toEqual([]);
+  });
+});

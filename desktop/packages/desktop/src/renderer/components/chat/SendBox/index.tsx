@@ -1611,12 +1611,12 @@ const SendBox: React.FC<{
       finalMessage = `${quotedLines}\n\n${finalMessage}`;
     }
 
-    // 如果有 DOM 片段，附加完整 HTML / If has DOM snippets, append full HTML
+    // 如果有 DOM 片段，附加完整 HTML / If has DOM snippets, append full HTML (after the quote and the text)
     if (domSnippets.length > 0) {
       const snippetsHtml = domSnippets
-        .map((s) => `\n\n---\nDOM Snippet (${s.tag}):\n\`\`\`html\n${s.html}\n\`\`\``)
+        .map((s) => `\n\n---\n${s.about ?? `DOM Snippet (${s.tag}):`}\n\`\`\`html\n${s.html}\n\`\`\``)
         .join('');
-      finalMessage = input + snippetsHtml;
+      finalMessage += snippetsHtml;
     }
 
     // 立即清空输入框，避免异步 onSend 完成后覆盖用户新输入
