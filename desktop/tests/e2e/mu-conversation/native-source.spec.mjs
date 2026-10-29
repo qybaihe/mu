@@ -2,8 +2,9 @@
 // The source tab beside a native conversation, end to end: pi runs inside the app (native is the default), the project
 // folder is a git repository with one commit, and the main process reads it with the git the app's PATH finds. The
 // fake model writes a new file (listed as untracked after the run), then changes the committed README.md (listed as
-// changed after that run, with nothing clicked; a click shows its diff in 预览); a file the test stages shows under
-// staged after the refresh button. Pictured light and dark. Run it with
+// changed after that run, with nothing clicked; a click shows its diff in 预览); a comment on a line of that diff
+// reaches the model's request with the next message; a file the test stages shows under staged after the refresh
+// button. Pictured light and dark. Run it with
 // `node scripts/kyrn/e2e-conversation.mjs --native -- native-source.spec.mjs` (nativeWorld.mjs, profile.mjs).
 //
 // A working git first on the app's PATH: the app takes its PATH from the login shell (fix-path), which in the
@@ -45,8 +46,21 @@ function workingGit() {
 const GIT = workingGit();
 test.skip(!GIT || process.platform === 'win32', 'No git that runs on this machine (or Windows: no login shell here)');
 
-const { run, page, paths, sleep, start, stop, expectNoProblems, shot, reachSidebar, send, replyWith, newConversation } =
-  createNativeWorld({ desktopRoot });
+const {
+  run,
+  page,
+  paths,
+  sleep,
+  start,
+  stop,
+  expectNoProblems,
+  shot,
+  reachSidebar,
+  send,
+  replyWith,
+  newConversation,
+  requests,
+} = createNativeWorld({ desktopRoot });
 
 /** Runs the test's own git in the project: a name and address on the line, the profile's home, no system config. */
 const gitIn = (...args) =>
@@ -132,6 +146,32 @@ test('a change to the committed file shows after the run, and its diff on a clic
   await expect(preview).toContainText('Written by the fake model for the E2E test.', { timeout: 15_000 });
   await expect(preview).toContainText('E2E project');
   await shot('source-diff');
+  expectNoProblems();
+});
+
+test('a comment on a line of the diff goes to the model with the next message', async () => {
+  const p = page();
+  const preview = body('preview');
+  const line = preview.locator('tr').filter({ hasText: 'Written by the fake model for the E2E test.' }).first();
+  await expect(line).toBeVisible({ timeout: 15_000 });
+  await line.hover();
+  const add = p.getByTestId('diff-comment-add');
+  await expect(add).toBeVisible();
+  await add.click();
+  await p.getByTestId('diff-comment-editor').getByRole('textbox').fill('Say which test wrote this.');
+  await shot('diff-comment-editor');
+  await p.getByTestId('diff-comment-save').click();
+  await expect(p.getByTestId('diff-comment')).toContainText('Say which test wrote this.');
+  await expect(p.locator('[data-composer-zone]').getByText(/^README\.md:\d+$/)).toBeVisible();
+  await shot('diff-comment');
+
+  await send('E2E:ECHO COMMENT-OK');
+  await replyWith('COMMENT-OK');
+  const asked = requests().findLast((request) => request.lastUser.includes('Say which test wrote this.'));
+  expect(asked?.lastUser).toMatch(/Comment on `README\.md`, added line \d+:\nSay which test wrote this\./);
+  expect(asked?.lastUser).toContain('```diff\n+Written by the fake model for the E2E test.');
+  // Sent: the comment leaves the diff and the send box.
+  await expect(p.getByTestId('diff-comment')).toHaveCount(0);
   expectNoProblems();
 });
 

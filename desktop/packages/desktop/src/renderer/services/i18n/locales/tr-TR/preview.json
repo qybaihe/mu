@@ -339,5 +339,12 @@
     "mac": "Finder'da göster",
     "windows": "Dosya Gezgini'nde göster",
     "linux": "Klasörde göster"
+  },
+  "diffComment": {
+    "add": "Bu satıra yorum yap",
+    "placeholder": "mu burada neyi değiştirmeli?",
+    "save": "Yorum ekle",
+    "hint": "Yorumlar bir sonraki mesajınla gider",
+    "remove": "Yorumu kaldır"
   }
 }

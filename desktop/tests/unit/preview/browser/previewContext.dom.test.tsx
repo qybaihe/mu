@@ -51,6 +51,7 @@ vi.mock('@/renderer/pages/conversation/Preview/browser/firstUseNotice', () => ({
 }));
 
 import {
+  MAX_DOM_SNIPPETS,
   PreviewProvider,
   usePreviewContext,
   type PreviewContextValue,
@@ -380,7 +381,7 @@ describe('PreviewContext updateTab', () => {
 });
 
 describe('the elements picked for the next message', () => {
-  it('keeps each one picked, the same one once, and the latest five', () => {
+  it('keeps each one picked, the same one once, in the order picked', () => {
     renderProvider();
     act(() => ctx.addDomSnippet('div', '<div>preview</div>'));
     act(() => ctx.addDomSnippet('button.primary', '<button>Buy</button>', 'Element on the page https://shop.test/'));
@@ -392,6 +393,7 @@ describe('the elements picked for the next message', () => {
 
     for (const n of [1, 2, 3, 4]) act(() => ctx.addDomSnippet(`li:nth-of-type(${n})`, `<li>${n}</li>`));
     expect(ctx.domSnippets.map((snippet) => snippet.tag)).toEqual([
+      'div',
       'button.primary',
       'li:nth-of-type(1)',
       'li:nth-of-type(2)',
@@ -407,9 +409,21 @@ describe('the elements picked for the next message', () => {
       expect.objectContaining({ id: picked, image: { data: 'cG5n', mimeType: 'image/png' } }),
     ]);
 
+    // A comment on a diff line keeps its fence and where it is.
+    const comment = { file: 'src/app.ts', side: 'new' as const, line: 2, text: 'Make it 30.' };
+    act(() => ctx.addDomSnippet('app.ts:2', '+const b = 3;', 'Comment on `src/app.ts`', { fence: 'diff', comment }));
+    expect(ctx.domSnippets.at(-1)).toMatchObject({ tag: 'app.ts:2', fence: 'diff', comment });
+
     act(() => ctx.removeDomSnippet(ctx.domSnippets[0].id));
-    expect(ctx.domSnippets).toHaveLength(4);
+    expect(ctx.domSnippets).toHaveLength(6);
     act(() => ctx.clearDomSnippets());
     expect(ctx.domSnippets).toEqual([]);
+  });
+
+  it('keeps the latest twenty', () => {
+    renderProvider();
+    for (let n = 1; n <= 25; n += 1) act(() => ctx.addDomSnippet(`li${n}`, `<li>${n}</li>`));
+    expect(ctx.domSnippets).toHaveLength(MAX_DOM_SNIPPETS);
+    expect(ctx.domSnippets[0].tag).toBe('li6');
   });
 });

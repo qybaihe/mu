@@ -35,13 +35,27 @@ export interface DomSnippet {
   about?: string;
   /** A picture of the element (a page's element: what of it was on screen), sent with the message as an image. */
   image?: DomSnippetImage;
+  /** The code fence `html` goes in, in the message: `html` without it. */
+  fence?: string;
+  /** A comment on a line of a diff: where the line is and what the person wrote (the diff draws it there). */
+  comment?: DiffLineComment;
 }
 
 /** A picture that goes with a snippet: base64 data and its type. */
 export type DomSnippetImage = { data: string; mimeType: string };
 
-/** The send box keeps this many elements for the next message; the oldest goes first. */
-export const MAX_DOM_SNIPPETS = 5;
+/** A comment the person wrote on a line of a diff, for the next message. */
+export type DiffLineComment = {
+  /** The file's path as the diff names it. */
+  file: string;
+  /** Which side's numbering `line` is in: a removed line has only the old one. */
+  side: 'old' | 'new';
+  line: number;
+  text: string;
+};
+
+/** The send box keeps this many picked elements and comments for the next message; the oldest goes first. */
+export const MAX_DOM_SNIPPETS = 20;
 
 export interface PreviewMetadata {
   language?: string;
@@ -205,8 +219,8 @@ export interface PreviewContextValue {
 
   // DOM 片段管理 / DOM snippet management
   domSnippets: DomSnippet[];
-  /** Adds an element to the next message (the same one again replaces it) and says its id. */
-  addDomSnippet: (tag: string, html: string, about?: string) => string;
+  /** Adds an element or a comment to the next message (the same one again replaces it) and says its id. */
+  addDomSnippet: (tag: string, html: string, about?: string, more?: Pick<DomSnippet, 'fence' | 'comment'>) => string;
   /** Gives a snippet its picture, when it is still there (the person may have taken it back, or sent it). */
   attachDomSnippetImage: (id: string, image: DomSnippetImage) => void;
   removeDomSnippet: (id: string) => void;
@@ -1149,15 +1163,18 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, []);
 
   // DOM 片段管理函数 / DOM snippet management functions
-  // The elements the person picked for the next message, up to MAX_DOM_SNIPPETS: "this one and that one".
-  const addDomSnippet = useCallback((tag: string, html: string, about?: string) => {
-    const id = `snippet-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-    setDomSnippets((prev) => {
-      const others = prev.filter((s) => s.html !== html || s.about !== about);
-      return [...others, { id, tag, html, ...(about ? { about } : {}) }].slice(-MAX_DOM_SNIPPETS);
-    });
-    return id;
-  }, []);
+  // The elements the person picked and the comments they wrote for the next message, up to MAX_DOM_SNIPPETS.
+  const addDomSnippet = useCallback(
+    (tag: string, html: string, about?: string, more?: Pick<DomSnippet, 'fence' | 'comment'>) => {
+      const id = `snippet-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      setDomSnippets((prev) => {
+        const others = prev.filter((s) => s.html !== html || s.about !== about);
+        return [...others, { id, tag, html, ...(about ? { about } : {}), ...more }].slice(-MAX_DOM_SNIPPETS);
+      });
+      return id;
+    },
+    []
+  );
 
   const attachDomSnippetImage = useCallback((id: string, image: DomSnippetImage) => {
     setDomSnippets((prev) =>

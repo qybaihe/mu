@@ -339,5 +339,12 @@
     "mac": "Mostrar en el Finder",
     "windows": "Mostrar en el Explorador de archivos",
     "linux": "Mostrar en la carpeta"
+  },
+  "diffComment": {
+    "add": "Comentar esta línea",
+    "placeholder": "¿Qué debería cambiar mu aquí?",
+    "save": "Añadir comentario",
+    "hint": "Los comentarios se envían con tu próximo mensaje",
+    "remove": "Quitar comentario"
   }
 }

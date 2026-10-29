@@ -1,0 +1,77 @@
+/*
+ * Comments on a diff's lines: the button that starts one, on the line under the pointer; the comment being written and
+ * the comments written, each in a row of its own under its line. Quiet, in the diff's own frame.
+ */
+
+.add:global(.arco-btn) {
+  position: absolute;
+  left: 2px;
+  z-index: 2;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  color: var(--text-primary);
+  background: var(--bg-1);
+  border: 1px solid var(--border-base);
+  border-radius: 4px;
+}
+
+.add:global(.arco-btn:not(:disabled):hover) {
+  background: var(--bg-hover);
+}
+
+.note {
+  margin: 4px 8px 6px 40px;
+  padding: 8px 10px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--text-primary);
+  white-space: normal;
+  background: var(--bg-1);
+  border: 1px solid var(--border-base);
+  border-radius: 6px;
+}
+
+.comment {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.commentIcon {
+  flex: none;
+  margin-top: 3px;
+  color: var(--text-secondary);
+}
+
+.commentText {
+  flex: 1;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.remove:global(.arco-btn) {
+  flex: none;
+  color: var(--text-secondary);
+}
+
+.editorFooter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+}

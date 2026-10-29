@@ -1621,7 +1621,7 @@ const SendBox: React.FC<{
       const snippetsHtml = domSnippets
         .map((s) => {
           const fence = '`'.repeat(Math.max(3, ...(s.html.match(/`+/g) ?? []).map((run) => run.length + 1)));
-          return `\n\n---\n${s.about ?? `DOM Snippet (${s.tag}):`}\n${fence}html\n${s.html}\n${fence}`;
+          return `\n\n---\n${s.about ?? `DOM Snippet (${s.tag}):`}\n${fence}${s.fence ?? 'html'}\n${s.html}\n${fence}`;
         })
         .join('');
       finalMessage += snippetsHtml;

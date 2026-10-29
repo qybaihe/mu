@@ -339,5 +339,12 @@
     "mac": "在 Finder 中顯示",
     "windows": "在檔案總管中顯示",
     "linux": "在資料夾中顯示"
+  },
+  "diffComment": {
+    "add": "評論這一行",
+    "placeholder": "這裡要 mu 怎麼改？",
+    "save": "新增評論",
+    "hint": "評論會隨下一則訊息一起送出",
+    "remove": "刪除評論"
   }
 }

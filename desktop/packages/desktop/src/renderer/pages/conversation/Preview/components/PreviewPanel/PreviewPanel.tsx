@@ -30,7 +30,7 @@ import { previewTabDisplayTitle } from '../../context/tabTitle';
 import { useResizableSplit } from '@/renderer/hooks/ui/useResizableSplit';
 import { Link, Message } from '@arco-design/web-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import DiffPreview from '../viewers/DiffViewer';
+import DiffPreview from '../viewers/diff/DiffViewer';
 import ExcelPreview from '../viewers/ExcelViewer';
 import HTMLEditor from '../editors/HTMLEditor';
 import HTMLRenderer from '../renderers/HTMLRenderer';

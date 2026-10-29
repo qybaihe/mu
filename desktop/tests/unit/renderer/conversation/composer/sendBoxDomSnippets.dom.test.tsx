@@ -1,6 +1,7 @@
 /**
- * What the send box sends with the elements picked for the message: the text, then each element under its own rule,
- * a page's element said with where it is (`about`), the preview's as a DOM snippet. A quoted reply stays first.
+ * What the send box sends with the elements picked and the comments written for the message: the text, then each under
+ * its own rule, a page's element said with where it is (`about`), the preview's as a DOM snippet, a diff comment with
+ * its line in a diff fence.
  */
 
 import { act, fireEvent, render, screen } from '@testing-library/react';
@@ -171,6 +172,29 @@ describe('SendBox: the elements picked for the message', () => {
     expect(onSend).toHaveBeenCalledWith(
       '\n\n---\nElement on the page https://a.test/ (pre):\n`````html\n<pre>```\nnot the end\n````</pre>\n`````',
       { images: [{ data: 'cG5n', mimeType: 'image/png' }] }
+    );
+  });
+
+  it('sends a comment on a diff line in a diff fence', async () => {
+    preview.snippets = [
+      {
+        id: 'c',
+        tag: 'app.ts:2',
+        html: '+const b = 3;',
+        about: 'Comment on `src/app.ts`, added line 2:\nMake it 30.',
+        fence: 'diff',
+        comment: { file: 'src/app.ts', side: 'new', line: 2, text: 'Make it 30.' },
+      },
+    ];
+    const onSend = vi.fn().mockResolvedValue(undefined);
+    render(<Harness onSend={onSend} />);
+    expect(screen.getByText('app.ts:2')).toBeInTheDocument();
+    fireEvent.change(input(), { target: { value: 'Review' } });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('sendbox-send-btn'));
+    });
+    expect(onSend).toHaveBeenCalledWith(
+      'Review\n\n---\nComment on `src/app.ts`, added line 2:\nMake it 30.\n```diff\n+const b = 3;\n```'
     );
   });
 

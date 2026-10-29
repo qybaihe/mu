@@ -339,5 +339,12 @@
     "mac": "Show in Finder",
     "windows": "Show in File Explorer",
     "linux": "Show in folder"
+  },
+  "diffComment": {
+    "add": "Comment on this line",
+    "placeholder": "What should mu change here?",
+    "save": "Add comment",
+    "hint": "Comments go with your next message",
+    "remove": "Remove comment"
   }
 }

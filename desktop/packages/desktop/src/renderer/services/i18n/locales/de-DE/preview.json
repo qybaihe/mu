@@ -339,5 +339,12 @@
     "mac": "Im Finder anzeigen",
     "windows": "Im Explorer anzeigen",
     "linux": "Im Ordner anzeigen"
+  },
+  "diffComment": {
+    "add": "Diese Zeile kommentieren",
+    "placeholder": "Was soll mu hier ändern?",
+    "save": "Kommentar hinzufügen",
+    "hint": "Kommentare gehen mit deiner nächsten Nachricht mit",
+    "remove": "Kommentar entfernen"
   }
 }

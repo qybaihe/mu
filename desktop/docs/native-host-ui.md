@@ -245,16 +245,25 @@ work panel's browser, or brings back the page already open there. Only `localhos
 To show mu a part of a page, the person points at it: the browser's pointer button (beside filling the page) outlines
 the element under the pointer on the page in front, ↑ widens the outline to its parent and ↓ narrows it back, and a
 click or Enter takes it; the click never reaches the page. Escape, the button again, another page in front or the page
-going elsewhere calls it off. The element goes into the next message as a chip in the send box (up to five, the same
-one once): the message gets the page's address and title, a selector that finds the element alone, its text, size and
-the styles not at their defaults, and its HTML (4,000 characters at most), in a fence longer than any run of backticks
-in it. A picture of what of it is on screen, at most 1,600 pixels on its longest side, is the chip's own (a picture on
-the chip): it goes with the message as an image (`onSend`'s `extras.images`, which the native conversation sends with
-its own images) and is taken back with the chip. The picker runs in the page (`elementPicker.ts`) and draws with the
-page's style objects, which a content security policy allows. What it answers is the page's word (the page's script
-can shape it), so the host keeps only the fields it expects, each but the HTML on one line without control characters
-or backticks: a page cannot write lines of its own into the person's message. The picture is taken in the main
-process of a `<webview>` page only (`app.picture-of-browser-area`, `process/services/muBrowser/areaPicture.ts`).
+going elsewhere calls it off. The element goes into the next message as a chip in the send box (the same one once):
+the message gets the page's address and title, a selector that finds the element alone, its text, size and the styles
+not at their defaults, and its HTML (4,000 characters at most), in a fence longer than any run of backticks in it. A
+picture of what of it is on screen, at most 1,600 pixels on its longest side, is the chip's own (a picture on the
+chip): it goes with the message as an image (`onSend`'s `extras.images`, which the native conversation sends with its
+own images) and is taken back with the chip. The picker runs in the page (`elementPicker.ts`) and draws with the page's
+style objects, which a content security policy allows. What it answers is the page's word (the page's script can shape
+it), so the host keeps only the fields it expects, each but the HTML on one line without control characters or
+backticks: a page cannot write lines of its own into the person's message. The picture is taken in the main process of
+a `<webview>` page only (`app.picture-of-browser-area`, `process/services/muBrowser/areaPicture.ts`).
+
+A line of a diff in the preview (a file's changes from the source tab, a tool call's diff) takes a comment for the next
+message: the line under the pointer shows a comment button in the gutter, which opens a box under the line; Cmd/Ctrl+
+Enter or 添加评论 adds it, Escape or 取消 drops it. The comment shows under its line, where it can be taken back, and
+as a chip in the send box (`app.ts:42`). The message says where (`Comment on \`src/app.ts\`, added line 42:`, a removed
+line by its old number), the words, and the line itself in a `diff` fence; sending it takes the comments off the diff.
+The line is read back from diff2html's rows (`viewers/diff/diffLines.ts`); the comments' rows are added to its table
+and drawn again whenever the diff is (`DiffComments.tsx`). The side-by-side view takes none. The send box keeps twenty
+elements and comments at most, the oldest going first.
 
 Solution, in three steps:
 
@@ -687,7 +696,9 @@ home is the system's, where a Mac has the Xcode stub first; so the profile's hom
 `.bash_profile` that put a folder holding only a link to a git that runs here first. The fake model writes
 `notes/hello.txt`: 源码 lists it under 未跟踪 below the branch `main`, README.md not. It then overwrites README.md with
 the tab in view: the row shows under 变更 with nothing clicked (the run's end read the repository again), and a click
-opens its diff in 预览 (the removed and the added lines). A file the test stages shows under 已暂存的变更 after the
+opens its diff in 预览 (the removed and the added lines). A comment on the added line, written in the diff, reaches the
+fake model's request with the next message (where, the words, the line in a `diff` fence) and leaves the diff once
+sent. A file the test stages shows under 已暂存的变更 after the
 refresh button. Dark theme: the list and the diff. Skipped without a git that runs, and on Windows. Its first run found
 that the runner searched the launch PATH (see the work panel above). `native-panels.spec.mjs`'s source step now
 expects the tab to say the folder is in no repository, or, with the stub first on PATH, that git cannot run (with
