@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ipcBridge } from '@/common';
 import type { IMessageText } from '@/common/chat/chatLib';
 import { configService } from '@/common/config/configService';
+import { forgetAttentionSound } from '@/renderer/hooks/system/notification/attentionSound';
 import NativeConversationPage from '@/renderer/pages/native';
 import NativeSiderGroup from '@/renderer/pages/native/sider/NativeSiderGroup';
 import {
@@ -71,13 +72,45 @@ beforeEach(() => {
   vi.spyOn(ipcBridge.notification.show, 'invoke').mockImplementation(async (options) => {
     shown(options);
   });
+  soundOn = undefined;
   vi.spyOn(configService, 'get').mockImplementation(((key: string) =>
-    key === 'system.notificationEnabled' ? notificationsOn : undefined) as never);
+    key === 'system.notificationEnabled'
+      ? notificationsOn
+      : key === 'system.completionSound'
+        ? soundOn
+        : undefined) as never);
+  forgetAttentionSound();
+  played.length = 0;
+  vi.stubGlobal('AudioContext', SoundCatcher);
 });
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
+
+let soundOn: boolean | undefined;
+/** The notes of the chimes played, in Hz (attentionSound.ts). */
+const played: number[] = [];
+class SoundCatcher {
+  state = 'running';
+  currentTime = 0;
+  destination = {};
+  createOscillator() {
+    return {
+      frequency: { setValueAtTime: (value: number) => played.push(Math.round(value)) },
+      connect: (next: unknown) => next,
+      start: () => undefined,
+      stop: () => undefined,
+    };
+  }
+  createGain() {
+    return {
+      gain: { setValueAtTime: () => undefined, exponentialRampToValueAtTime: () => undefined },
+      connect: (n: unknown) => n,
+    };
+  }
+}
 
 const Listening: React.FC = () => {
   useNativeAttention();
@@ -240,5 +273,23 @@ describe('the sidebar row’s end', () => {
     await waitFor(() => expect(mark('c1', 'unread')).not.toBeNull());
     expect(row('c1')).not.toHaveAttribute('data-running');
     expect(mark('c1', 'live')).toBeNull();
+  });
+});
+
+describe('the chime for a conversation that wants its person', () => {
+  it('plays, in front or not and notifications on or not, only when the person turned it on', async () => {
+    const host = twoConversations();
+    app(host.client, '/conversation/native/c1');
+    await listed();
+    act(() => host.attend({ id: 'c1', kind: 'done', title: 'Alpha' }));
+    expect(played).toEqual([]);
+
+    soundOn = true;
+    notificationsOn = false;
+    shown.mockClear();
+    act(() => host.attend({ id: 'c1', kind: 'done', title: 'Alpha' }));
+    // Up for done: C6, then E6.
+    expect(played).toEqual([1047, 1319]);
+    expect(shown).not.toHaveBeenCalled();
   });
 });

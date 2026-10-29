@@ -1616,12 +1616,15 @@ const SendBox: React.FC<{
     }
 
     // 如果有 DOM 片段，附加完整 HTML / If has DOM snippets, append full HTML (after the quote and the text), each in a
-    // fence longer than any run of backticks in it, so what it holds cannot end it.
+    // fence longer than any run of backticks in it, so what it holds cannot end it. A snippet that is only a picture (a
+    // page's screenshot) has its line alone.
     if (domSnippets.length > 0) {
       const snippetsHtml = domSnippets
         .map((s) => {
+          const about = s.about ?? `DOM Snippet (${s.tag}):`;
+          if (!s.html) return `\n\n---\n${about}`;
           const fence = '`'.repeat(Math.max(3, ...(s.html.match(/`+/g) ?? []).map((run) => run.length + 1)));
-          return `\n\n---\n${s.about ?? `DOM Snippet (${s.tag}):`}\n${fence}${s.fence ?? 'html'}\n${s.html}\n${fence}`;
+          return `\n\n---\n${about}\n${fence}${s.fence ?? 'html'}\n${s.html}\n${fence}`;
         })
         .join('');
       finalMessage += snippetsHtml;

@@ -1093,7 +1093,21 @@
         "untracked": "未追跡",
         "detached": "{{commit}} で切り離し中",
         "noCommits": "まだコミットがありません",
-        "upstream": "{{upstream}} より {{ahead}} 件進み、{{behind}} 件遅れています"
+        "upstream": "{{upstream}} より {{ahead}} 件進み、{{behind}} 件遅れています",
+        "commit": {
+          "message": "コミットメッセージ",
+          "placeholder": "コミットメッセージ（{{shortcut}} でコミット）",
+          "commit": "コミット",
+          "commitAll": "すべてコミット",
+          "commitAllHint": "ステージされた変更がないため、新しいファイルを含むすべての変更を先にステージします。",
+          "conflicts": "コミットする前にマージの競合を解決してください。",
+          "done": "{{commit}} をコミットしました：{{subject}}",
+          "failed": "Git はコミットしませんでした。出力：",
+          "dismiss": "閉じる",
+          "ask": "mu にコミットを任せる",
+          "askHint": "mu が変更をいくつかのコミットに分けてメッセージを書きます。計画を見せ、あなたが同意したときだけコミットします。"
+        },
+        "actionFailed": "Git が完了できませんでした：{{reason}}"
       },
       "files": {
         "label": "{{folder}} のファイル",

@@ -50,6 +50,15 @@ const SHOP_PAGE = `<!doctype html><html><head><title>E2E shop</title><style>
 <script>document.getElementById('buy').addEventListener('click', () => { document.title = 'CLICKED'; });</script>
 </body></html>`;
 
+/** A page that writes a warning and an error to its console as it loads, and then throws one nothing catches. */
+const CONSOLE_PAGE = `<!doctype html><html><head><title>E2E console</title></head><body><h1>Half broken</h1>
+<script>
+  console.warn('E2E console slow');
+  console.error('E2E console boom');
+  setTimeout(() => { throw new Error('E2E uncaught'); }, 0);
+</script>
+</body></html>`;
+
 /** One line of mu's lesson store, as the harness writes a whole lesson. */
 const lessonLine = (id, text, cwd) => {
   const at = new Date().toISOString();
@@ -354,6 +363,60 @@ test('an element picked on a page in the browser reaches the model’s request, 
       expect(asked?.lastUser).toContain('selector: `#buy`');
       expect(asked?.lastUser).toContain('<button id="buy" class="primary">Buy now</button>');
       expect(asked?.images, 'the picture went as an image').toBe(1);
+      await expect(p.getByTestId('sendbox-dom-snippet')).toHaveCount(0);
+    });
+  } finally {
+    server.close();
+  }
+  expectNoProblems();
+});
+
+test('a page’s screenshot and what its console said reach the model’s request', async () => {
+  const p = page();
+  const server = createServer((_request, response) => {
+    response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    response.end(CONSOLE_PAGE);
+  });
+  await new Promise((done) => server.listen(0, '127.0.0.1', () => done(undefined)));
+  const address = server.address();
+  const url = `http://127.0.0.1:${typeof address === 'object' && address ? address.port : 0}/`;
+  const consoleButton = p.getByTestId('browser-send-console');
+  try {
+    await test.step('the page opens in 浏览器, and its console’s count shows on its button', async () => {
+      await showTab('browser');
+      const field = p.getByTestId('browser-panel').getByRole('textbox', { name: '输入网址或搜索内容' });
+      await field.fill(url);
+      await field.press('Enter');
+      await expect(consoleButton).toBeVisible({ timeout: 15_000 });
+      await expect(consoleButton).toHaveAttribute('data-errors', '2', { timeout: 15_000 });
+      await shot('browser-console-count');
+    });
+
+    await test.step('the screenshot and the console go into the message as two chips, the screenshot with its picture', async () => {
+      await p.getByTestId('browser-send-screenshot').click();
+      const chips = p.getByTestId('sendbox-dom-snippet');
+      await expect(chips.filter({ hasText: '127.0.0.1' })).toHaveCount(1, { timeout: 15_000 });
+      await expect(chips.first()).toHaveAttribute('data-picture', 'true');
+      await consoleButton.click();
+      await expect(chips).toHaveCount(2);
+      // Sent again: the newer console chip takes the earlier one's place.
+      await consoleButton.click();
+      await expect(chips).toHaveCount(2);
+      await shot('browser-console-chips');
+    });
+
+    await test.step('the message carries the page’s console, oldest first, and the screenshot as an image', async () => {
+      await send('E2E:ECHO CONSOLE-OK');
+      await replyWith('CONSOLE-OK');
+      const asked = requests().findLast((request) => request.lastUser.includes('E2E console boom'));
+      // The fake model keeps the message's last 400 characters: the screenshot's line is cut at its start.
+      const lines = asked?.lastUser ?? '';
+      expect(lines).toContain(`${url} ("E2E console") as it was on screen: the attached image.`);
+      expect(lines).toContain(`Console of the page ${url} ("E2E console") since it loaded: 2 errors and 1 warning`);
+      expect(lines.indexOf('[warning] E2E console slow')).toBeGreaterThan(-1);
+      expect(lines.indexOf('[error] E2E console boom')).toBeGreaterThan(lines.indexOf('[warning] E2E console slow'));
+      expect(lines).toContain('Uncaught Error: E2E uncaught');
+      expect(asked?.images, 'the screenshot went as an image').toBe(1);
       await expect(p.getByTestId('sendbox-dom-snippet')).toHaveCount(0);
     });
   } finally {

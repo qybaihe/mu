@@ -1093,7 +1093,21 @@
         "untracked": "추적되지 않음",
         "detached": "{{commit}}에서 분리됨",
         "noCommits": "아직 커밋이 없습니다",
-        "upstream": "{{upstream}}보다 {{ahead}}개 앞서고 {{behind}}개 뒤처짐"
+        "upstream": "{{upstream}}보다 {{ahead}}개 앞서고 {{behind}}개 뒤처짐",
+        "commit": {
+          "message": "커밋 메시지",
+          "placeholder": "커밋 메시지({{shortcut}}로 커밋)",
+          "commit": "커밋",
+          "commitAll": "모두 커밋",
+          "commitAllHint": "스테이징된 변경이 없어서, 새 파일을 포함한 모든 변경을 먼저 스테이징해요.",
+          "conflicts": "커밋하기 전에 병합 충돌을 해결하세요.",
+          "done": "{{commit}} 커밋됨: {{subject}}",
+          "failed": "Git이 커밋하지 않았어요. 출력:",
+          "dismiss": "닫기",
+          "ask": "mu에게 커밋 맡기기",
+          "askHint": "mu가 변경을 여러 커밋으로 나누고 메시지를 써요. 계획을 먼저 보여 주고, 동의할 때만 커밋해요."
+        },
+        "actionFailed": "Git이 완료하지 못했어요: {{reason}}"
       },
       "files": {
         "label": "{{folder}}의 파일",

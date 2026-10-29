@@ -276,6 +276,7 @@ export default function WorkPanelHost({ rowWidth, isMobile }: { rowWidth: number
                   view={wantedView}
                   visible={open && explorerActive}
                   refresh={lastRun}
+                  conversationId={conversationId}
                 />
               ) : (
                 <p className={styles.quiet}>{t('common.workPanel.noProject')}</p>

@@ -34,6 +34,24 @@ export type WebviewNavigation = {
   focus: () => void;
 };
 
+/** A warning or an error the page wrote to its console (an uncaught exception is one). */
+export type PageConsoleEntry = {
+  level: 'error' | 'warning';
+  message: string;
+  /** The script that wrote it, when the page says. */
+  source?: string;
+  line?: number;
+  /** When it was heard, in ms since the epoch. */
+  at: number;
+};
+
+/** The console's level as Electron gives it (0 verbose, 1 info, 2 warning, 3 error; a name in later versions). */
+const consoleLevel = (level: unknown): PageConsoleEntry['level'] | null => {
+  if (level === 3 || level === 'error') return 'error';
+  if (level === 2 || level === 'warning') return 'warning';
+  return null;
+};
+
 export interface WebviewHostProps {
   /** URL to display */
   url: string;
@@ -86,6 +104,10 @@ export interface WebviewHostProps {
   onNavigationChange?: (state: WebviewNavigationState) => void;
   /** Filled with the page's navigation while it is mounted (see `onNavigationChange`). */
   navigationRef?: React.Ref<WebviewNavigation>;
+  /** Hears the warnings and errors the page writes to its console; this host's own messages are not among them. */
+  onConsoleMessage?: (entry: PageConsoleEntry) => void;
+  /** The page loaded a new document (an address, a reload): not when it only changes its address in place. */
+  onNewDocument?: () => void;
 }
 
 const MIN_ZOOM_FACTOR = 0.75;
@@ -119,6 +141,8 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
   pristine = false,
   onNavigationChange,
   navigationRef,
+  onConsoleMessage,
+  onNewDocument,
 }) => {
   const { t, i18n } = useTranslation();
   // An owner that draws the navigation gets the state instead of a bar; the loading veil is for bare embeds only.
@@ -143,6 +167,10 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
   onFaviconChangeRef.current = onFaviconChange;
   const onNavigationChangeRef = useRef(onNavigationChange);
   onNavigationChangeRef.current = onNavigationChange;
+  const onConsoleMessageRef = useRef(onConsoleMessage);
+  onConsoleMessageRef.current = onConsoleMessage;
+  const onNewDocumentRef = useRef(onNewDocument);
+  onNewDocumentRef.current = onNewDocument;
 
   // Navigation state
   const [currentUrl, setCurrentUrl] = useState(url);
@@ -365,11 +393,24 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
 
         if (event.message.includes('__MU_WEBVIEW_ZOOM_RESET__')) {
           setZoomFactor(1);
+          return;
         }
+
+        const level = consoleLevel(event.level);
+        if (level && onConsoleMessageRef.current)
+          onConsoleMessageRef.current({
+            level,
+            message: String(event.message),
+            ...(event.sourceId ? { source: event.sourceId } : {}),
+            ...(event.line > 0 ? { line: event.line } : {}),
+            at: Date.now(),
+          });
       } catch {
         // Ignore parse errors
       }
     };
+
+    const handleNewDocument = () => onNewDocumentRef.current?.();
 
     const handleDidNavigate = (event: Event & { url?: string }) => {
       const newUrl = event.url;
@@ -528,6 +569,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
     webviewEl.addEventListener('did-stop-loading', handleStopLoading);
     webviewEl.addEventListener('dom-ready', handleDomReady);
     webviewEl.addEventListener('did-navigate', handleDidNavigate as EventListener);
+    webviewEl.addEventListener('did-navigate', handleNewDocument);
     webviewEl.addEventListener('did-navigate-in-page', handleDidNavigate as EventListener);
     webviewEl.addEventListener('console-message', handleConsoleMessage as EventListener);
     webviewEl.addEventListener('did-finish-load', handleDidFinishLoad);
@@ -540,6 +582,7 @@ const WebviewHost: React.FC<WebviewHostProps> = ({
       webviewEl.removeEventListener('did-stop-loading', handleStopLoading);
       webviewEl.removeEventListener('dom-ready', handleDomReady);
       webviewEl.removeEventListener('did-navigate', handleDidNavigate as EventListener);
+      webviewEl.removeEventListener('did-navigate', handleNewDocument);
       webviewEl.removeEventListener('did-navigate-in-page', handleDidNavigate as EventListener);
       webviewEl.removeEventListener('console-message', handleConsoleMessage as EventListener);
       webviewEl.removeEventListener('did-finish-load', handleDidFinishLoad);

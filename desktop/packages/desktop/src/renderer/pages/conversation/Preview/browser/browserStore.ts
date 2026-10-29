@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import type { PageConsoleEntry } from '@/renderer/components/media/WebviewHost';
 import { announcePreviewOpened, type PreviewOpener } from '../context/previewOpeners';
 import { BROWSER_SCOPE_KEY_PREFIX, browserScopeStorageKey, previewScopeStorageKey } from '../context/previewScope';
 import { BROWSER_BLANK_URL, MAX_BROWSER_TABS, isAppAddress } from './constants';
@@ -173,9 +174,12 @@ function persist(): void {
 
 /** Replace the state; what is stored (the pages and the one in front) is written when it changed. */
 function set(next: BrowserState, { store = true }: { store?: boolean } = {}): void {
-  const changed = next.tabs !== state.tabs || next.activeTabId !== state.activeTabId;
+  const tabsChanged = next.tabs !== state.tabs;
+  const changed = tabsChanged || next.activeTabId !== state.activeTabId;
   state = next;
   if (store && changed) persist();
+  // A closed page's console goes with it.
+  if (tabsChanged) forgetClosedConsoles();
   emit();
 }
 
@@ -196,6 +200,7 @@ export function switchBrowserScope(next: string | null): void {
   };
   // Pages carried over from the preview are written here at once: the preview's next write leaves them out.
   if (loaded.carried) persist();
+  forgetClosedConsoles();
   emit();
 }
 
@@ -324,8 +329,86 @@ export const useBrowserHandOver = (): boolean => useSyncExternalStore(subscribe,
 /** For code outside React (mu's browser answering the main process). */
 export const browserNow = (): BrowserState => state;
 
+/**
+ * What a page's console said since the page loaded: its last warnings and errors (an uncaught exception is one), for
+ * the person to send to mu, and how many there were in all. Kept in memory for the pages open now, never stored.
+ */
+export type BrowserConsole = {
+  readonly entries: readonly PageConsoleEntry[];
+  readonly errors: number;
+  readonly warnings: number;
+};
+
+/** The last entries a page's console keeps; older ones are still counted. */
+export const MAX_CONSOLE_ENTRIES = 50;
+/** The longest message kept, in characters; a longer one is cut there. */
+export const MAX_CONSOLE_MESSAGE = 2000;
+/** How long the console waits to tell the chrome about new entries, so a page that logs in a loop is heard in batches. */
+const CONSOLE_NOTICE_MS = 200;
+
+const NO_CONSOLE: BrowserConsole = { entries: [], errors: 0, warnings: 0 };
+const consoles = new Map<string, BrowserConsole>();
+const consoleListeners = new Set<() => void>();
+let consoleNotice: ReturnType<typeof setTimeout> | null = null;
+
+const noticeConsoles = (): void => {
+  if (consoleNotice !== null) return;
+  consoleNotice = setTimeout(() => {
+    consoleNotice = null;
+    for (const listener of consoleListeners) listener();
+  }, CONSOLE_NOTICE_MS);
+};
+
+const subscribeConsoles = (listener: () => void): (() => void) => {
+  consoleListeners.add(listener);
+  return () => consoleListeners.delete(listener);
+};
+
+function forgetClosedConsoles(): void {
+  const open = new Set(state.tabs.map((tab) => tab.id));
+  let forgot = false;
+  for (const id of consoles.keys())
+    if (!open.has(id)) {
+      consoles.delete(id);
+      forgot = true;
+    }
+  if (forgot) noticeConsoles();
+}
+
+/** A page wrote a warning or an error to its console. */
+export function notePageConsole(tabId: string, entry: PageConsoleEntry): void {
+  if (!state.tabs.some((tab) => tab.id === tabId)) return;
+  const known = consoles.get(tabId) ?? NO_CONSOLE;
+  const message =
+    entry.message.length > MAX_CONSOLE_MESSAGE ? `${entry.message.slice(0, MAX_CONSOLE_MESSAGE)}…` : entry.message;
+  consoles.set(tabId, {
+    entries: [...known.entries, { ...entry, message }].slice(-MAX_CONSOLE_ENTRIES),
+    errors: known.errors + (entry.level === 'error' ? 1 : 0),
+    warnings: known.warnings + (entry.level === 'warning' ? 1 : 0),
+  });
+  noticeConsoles();
+}
+
+/** A page started a new document: what its console said before is about the one it left. */
+export function clearPageConsole(tabId: string): void {
+  if (consoles.delete(tabId)) noticeConsoles();
+}
+
+/** The console of a page (null: no page), as of now: for the button that sends it. */
+export const browserConsoleNow = (tabId: string | null): BrowserConsole =>
+  (tabId ? consoles.get(tabId) : undefined) ?? NO_CONSOLE;
+
+/** The console of a page (null: no page), following it as it says more (in batches, see `CONSOLE_NOTICE_MS`). */
+export const useBrowserConsole = (tabId: string | null): BrowserConsole => {
+  const read = () => browserConsoleNow(tabId);
+  return useSyncExternalStore(subscribeConsoles, read, read);
+};
+
 /** Forget everything, storage aside: tests start from a clean module. */
 export function resetBrowserStoreForTest(): void {
   scope = null;
   state = EMPTY;
+  consoles.clear();
+  if (consoleNotice !== null) clearTimeout(consoleNotice);
+  consoleNotice = null;
 }

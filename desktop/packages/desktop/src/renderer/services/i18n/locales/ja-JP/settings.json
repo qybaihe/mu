@@ -1078,5 +1078,7 @@
   "learnMore": "詳しく",
   "showLess": "閉じる",
   "keepAwakeWhileRunning": "会話の実行中はスリープしない",
-  "keepAwakeWhileRunningDesc": "実行中は、操作がなくてもコンピューターがスリープしません。画面は消えることがあり、蓋を閉じるとスリープします。"
+  "keepAwakeWhileRunningDesc": "実行中は、操作がなくてもコンピューターがスリープしません。画面は消えることがあり、蓋を閉じるとスリープします。",
+  "completionSound": "会話が終わったときや対応が必要なときに音を鳴らす",
+  "completionSoundDesc": "短いチャイムで、mu を見ているときも鳴ります。mu が質問したときや実行に失敗したときは別の音です。オンの間はシステム通知の音は鳴らないので、二重に鳴りません。"
 }

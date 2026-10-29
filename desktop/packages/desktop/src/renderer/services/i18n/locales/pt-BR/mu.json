@@ -1093,7 +1093,21 @@
         "untracked": "Não rastreados",
         "detached": "Desanexado em {{commit}}",
         "noCommits": "Ainda não há commits",
-        "upstream": "{{ahead}} à frente de {{upstream}}, {{behind}} atrás"
+        "upstream": "{{ahead}} à frente de {{upstream}}, {{behind}} atrás",
+        "commit": {
+          "message": "Mensagem do commit",
+          "placeholder": "Mensagem do commit ({{shortcut}} para fazer o commit)",
+          "commit": "Fazer commit",
+          "commitAll": "Fazer commit de tudo",
+          "commitAllHint": "Nada está preparado, então todas as alterações são preparadas primeiro, incluindo arquivos novos.",
+          "conflicts": "Resolva os conflitos de mesclagem antes de fazer o commit.",
+          "done": "Commit {{commit}} feito: {{subject}}",
+          "failed": "O Git não fez o commit. O que ele disse:",
+          "dismiss": "Fechar",
+          "ask": "Deixar o mu fazer o commit",
+          "askHint": "O mu divide as alterações em commits e escreve as mensagens. Ele mostra o plano e só faz o commit se você concordar."
+        },
+        "actionFailed": "O Git não conseguiu fazer isso: {{reason}}"
       },
       "files": {
         "label": "Arquivos em {{folder}}",

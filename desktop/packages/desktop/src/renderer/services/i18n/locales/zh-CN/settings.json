@@ -1078,5 +1078,7 @@
   "learnMore": "了解更多",
   "showLess": "收起",
   "keepAwakeWhileRunning": "会话运行时不让电脑睡眠",
-  "keepAwakeWhileRunningDesc": "有任务在跑时，电脑不会因闲置而睡眠。屏幕仍可关闭，合上盖子仍会睡眠。"
+  "keepAwakeWhileRunningDesc": "有任务在跑时，电脑不会因闲置而睡眠。屏幕仍可关闭，合上盖子仍会睡眠。",
+  "completionSound": "会话完成或需要你时播放提示音",
+  "completionSoundDesc": "一声简短的提示音，即使你正在看 mu 也会响。mu 提问或运行失败时是另一种声音。开启后，系统通知不再发声，免得响两次。"
 }

@@ -22,20 +22,59 @@ import { useOptionalPreviewContext } from '../context/PreviewContext';
 import BrowserChrome from './BrowserChrome';
 import BrowserTabLayer from './BrowserTabLayer';
 import {
+  type BrowserConsole,
+  browserConsoleNow,
   closeBrowserTab,
   closeOtherBrowserTabs,
   openBrowserPage,
   switchBrowserTab,
   updateBrowserTab,
   useBrowser,
+  useBrowserConsole,
 } from './browserStore';
-import { MAX_BROWSER_TABS, resolveAddressBarInput } from './constants';
+import {
+  BROWSER_TAB_FALLBACK_TITLE,
+  MAX_BROWSER_TABS,
+  browserTabLabelFromUrl,
+  resolveAddressBarInput,
+} from './constants';
 import styles from './BrowserPanel.module.css';
 
 type NavigationRef = { current: WebviewNavigation | null };
 
 const sameNavigation = (a: WebviewNavigationState, b: WebviewNavigationState): boolean =>
   a.url === b.url && a.canGoBack === b.canGoBack && a.canGoForward === b.canGoForward && a.loading === b.loading;
+
+/**
+ * A page as the message names it: its address, and its title when it has one. The title is the page's word and sits
+ * outside any fence, so it stays one line with no backticks or control characters (as a picked element's fields do).
+ */
+const pageForMessage = (url: string, title: string): string => {
+  // oxlint-disable-next-line no-control-regex -- control characters are what this removes
+  const named = title.replace(/[\u0000-\u001f\u007f`]+/g, ' ').trim();
+  return (named ? `${url} ("${named}")` : url) || 'in the browser';
+};
+
+const counted = (count: number, what: string): string => `${count} ${what}${count === 1 ? '' : 's'}`;
+
+/** What the message says above a screenshot of the page (the picture itself goes with the message). */
+export const describePageScreenshot = (url: string, title: string): string =>
+  `Screenshot of the page ${pageForMessage(url, title)} as it was on screen: the attached image.`;
+
+/** What the message says above the page's console. */
+export function describePageConsole(said: BrowserConsole, url: string, title: string): string {
+  const which = said.entries.length < said.errors + said.warnings ? `the last ${said.entries.length}` : 'all of them';
+  return `Console of the page ${pageForMessage(url, title)} since it loaded: ${counted(said.errors, 'error')} and ${counted(said.warnings, 'warning')}; ${which}, oldest first:`;
+}
+
+/** The console's entries, one a line: its level, what it said and where. */
+export const pageConsoleLines = (said: BrowserConsole): string =>
+  said.entries
+    .map(
+      (entry) =>
+        `[${entry.level}] ${entry.message}${entry.source ? ` (${entry.source}${entry.line ? `:${entry.line}` : ''})` : ''}`
+    )
+    .join('\n');
 
 /**
  * The work panel's 浏览器 tab: the in-app browser. Its pages (`browserStore.ts`) stay mounted under one chrome, their
@@ -47,7 +86,9 @@ const sameNavigation = (a: WebviewNavigationState, b: WebviewNavigationState): b
  *
  * The person can point at an element of the page in front to show it to mu (`elementPicker.ts`): it goes into the
  * next message, its address, selector, text, look and HTML, with a picture of it (the chip's own: sent with it). Another page in front,
- * the page going elsewhere or Escape calls the picker off.
+ * the page going elsewhere or Escape calls the picker off. They can also put the whole page as it is on screen into
+ * the message, and the warnings and errors its console wrote since it loaded (the button shows their count): one
+ * console chip a page, the latest.
  */
 export default function BrowserPanel({
   maximized,
@@ -121,6 +162,7 @@ export default function BrowserPanel({
   const preview = useOptionalPreviewContext();
   const addDomSnippet = preview?.addDomSnippet;
   const attachDomSnippetImage = preview?.attachDomSnippetImage;
+  const removeDomSnippet = preview?.removeDomSnippet;
   const [picking, setPicking] = useState<string | null>(null);
   const pickingRef = useRef<string | null>(null);
   pickingRef.current = picking;
@@ -194,6 +236,53 @@ export default function BrowserPanel({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [picking, stopPicking]);
 
+  // The page in front as the message names it: where it is now, and its own title.
+  const pageInFront = () => {
+    const tab = tabs.find((item) => item.id === activeTabId);
+    const url = (activeTabId ? navigation[activeTabId]?.url : undefined) ?? tab?.url ?? '';
+    const title = tab?.title && tab.title !== BROWSER_TAB_FALLBACK_TITLE ? tab.title : '';
+    return { url, title, site: browserTabLabelFromUrl(url) };
+  };
+
+  const sendScreenshot = async () => {
+    const webContentsId = inFront()?.webContentsId();
+    if (webContentsId === undefined || !addDomSnippet) return;
+    const { url, title, site } = pageInFront();
+    const picture = await ipcBridge.application.pictureOfBrowserArea.invoke({ webContentsId }).catch((): null => null);
+    if (!picture) {
+      message.error?.(t('preview.browser.screenshot.failed'));
+      return;
+    }
+    // No HTML: the picture is the snippet. Another one of the same page takes the earlier one's place.
+    const snippet = addDomSnippet(
+      t('preview.browser.screenshot.chip', { site }),
+      '',
+      describePageScreenshot(url, title)
+    );
+    attachDomSnippetImage?.(snippet, { data: picture, mimeType: 'image/png' });
+    message.success?.(t('preview.browser.screenshot.added', { site }));
+  };
+
+  // The console chip of each page: a newer one says all the earlier one did, and takes its place.
+  const consoleChips = useRef(new Map<string, string>());
+  const pageConsole = useBrowserConsole(activeTabId);
+  const sendConsole = () => {
+    if (!activeTabId || !addDomSnippet) return;
+    const said = browserConsoleNow(activeTabId);
+    if (!said.entries.length) return;
+    const { url, title, site } = pageInFront();
+    const earlier = consoleChips.current.get(activeTabId);
+    if (earlier) removeDomSnippet?.(earlier);
+    const snippet = addDomSnippet(
+      t('preview.browser.console.chip', { site }),
+      pageConsoleLines(said),
+      describePageConsole(said, url, title),
+      { fence: 'text' }
+    );
+    consoleChips.current.set(activeTabId, snippet);
+    message.success?.(t('preview.browser.console.added', { site }));
+  };
+
   const newPage = useCallback(() => {
     openBrowserPage(undefined, { by: 'user' });
     // A blank page is for typing an address: the field is ready for it.
@@ -238,6 +327,9 @@ export default function BrowserPanel({
         onSubmit={submit}
         picking={Boolean(picking)}
         onPick={activeTabId && addDomSnippet ? () => (picking ? stopPicking() : void startPicking()) : undefined}
+        onScreenshot={activeTabId && addDomSnippet ? () => void sendScreenshot() : undefined}
+        pageConsole={pageConsole}
+        onSendConsole={activeTabId && addDomSnippet ? sendConsole : undefined}
         maximized={maximized}
         onToggleMaximize={onToggleMaximize}
       />

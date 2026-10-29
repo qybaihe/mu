@@ -1,6 +1,6 @@
 /**
- * The picture of an element picked in the app's browser: taken of an app page only, at the page's zoom, scaled down
- * when large, and nothing when there is nothing to take.
+ * The picture of an element picked in the app’s browser, or of all the page on screen: taken of an app page only, at
+ * the page’s zoom, scaled down when large, and nothing when there is nothing to take.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -43,6 +43,12 @@ describe('a picture of part of a page in the app’s browser', () => {
     const contents = page({ zoom: 1.25 });
     expect(decoded(await pictureOfPageArea(7, area))).toBe('png 240x80');
     expect(contents.capturePage).toHaveBeenCalledWith({ x: 13, y: 25, width: 150, height: 51 });
+  });
+
+  it('with no area, takes all of the page that is on screen', async () => {
+    const contents = page({ zoom: 1.25 });
+    expect(decoded(await pictureOfPageArea(7))).toBe('png 240x80');
+    expect(contents.capturePage).toHaveBeenCalledWith();
   });
 
   it('scales a large picture down to the longest side the model takes', async () => {

@@ -4,7 +4,8 @@
 // fake model writes a new file (listed as untracked after the run), then changes the committed README.md (listed as
 // changed after that run, with nothing clicked; a click shows its diff in 预览); a comment on a line of that diff
 // reaches the model's request with the next message; a file the test stages shows under staged after the refresh
-// button. Pictured light and dark. Last, the rewind button on the message that changed README.md: mu asks what goes
+// button; the tab takes that file out of the index and back with its row's buttons, and commits it with a message
+// from its box (as the person the profile's git config names). Pictured light and dark. Last, the rewind button on the message that changed README.md: mu asks what goes
 // back, and with files and conversation README.md is as committed again, the message leaves the transcript and comes
 // back into the send box. Run it with
 // `node scripts/kyrn/e2e-conversation.mjs --native -- native-source.spec.mjs` (nativeWorld.mjs, profile.mjs).
@@ -90,6 +91,11 @@ test.beforeAll(() => {
   const line = `export PATH='${bin}':"$PATH"\n`;
   writeFileSync(join(home, '.zprofile'), line);
   writeFileSync(join(home, '.bash_profile'), line);
+  // The person the app commits as, when the source tab commits: as a person who commits has in their git config.
+  writeFileSync(
+    join(home, '.gitconfig'),
+    '[user]\n\tname = mu E2E\n\temail = e2e@mu.invalid\n[commit]\n\tgpgsign = false\n'
+  );
   console.log(`[mu e2e] git for the app: ${GIT} (linked in ${bin})`);
 });
 
@@ -188,6 +194,28 @@ test('a file staged outside the app shows under staged after a refresh', async (
   await expect(row('notes/hello.txt')).toHaveAttribute('data-kind', 'added');
   await expect(row('README.md')).toHaveAttribute('data-group', 'unstaged');
   await shot('source-staged');
+  expectNoProblems();
+});
+
+test('the source tab takes a file out of the index and back, and commits it with a message', async () => {
+  const p = page();
+  await showTab('source');
+  await row('notes/hello.txt').hover();
+  await row('notes/hello.txt').locator('[data-scm-action="unstage"]').click();
+  await expect(row('notes/hello.txt')).toHaveAttribute('data-group', 'untracked', { timeout: 15_000 });
+  await row('notes/hello.txt').hover();
+  await row('notes/hello.txt').locator('[data-scm-action="stage"]').click();
+  await expect(row('notes/hello.txt')).toHaveAttribute('data-group', 'staged', { timeout: 15_000 });
+  // Something is staged: the button commits that, not everything.
+  await expect(p.getByTestId('native-commit')).not.toHaveAttribute('data-all', 'true');
+  await p.getByTestId('native-commit-message').fill('E2E: the hello note');
+  await shot('source-commit');
+  await p.getByTestId('native-commit').click();
+  await expect(row('notes/hello.txt')).toHaveCount(0, { timeout: 30_000 });
+  expect(gitIn('log', '-1', '--format=%an|%s').trim()).toBe('mu E2E|E2E: the hello note');
+  expect(gitIn('show', '--name-only', '--format=', 'HEAD').trim()).toBe('notes/hello.txt');
+  await expect(row('README.md')).toHaveAttribute('data-group', 'unstaged');
+  await expect(p.getByTestId('native-commit-message')).toHaveValue('');
   expectNoProblems();
 });
 
