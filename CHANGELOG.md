@@ -4,6 +4,25 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-10-30
+
+**0.3.5 lets you stage one change from a file's diff, see the branch's pull request and its checks in the Source tab, run the project's package.json scripts from the send box and list every keyboard shortcut.** The desktop app carries mu-agent 0.3.5, which adds `/jobs start` and makes session files and rewinds safer.
+
+### Added
+
+- **Stage one change at a time.** In a file's diff from the Source tab, each change has a "Stage this change" button, or "Unstage this change" in the staged diff, so you can commit part of a file. Staging never touches the file on disk. If the file has changed since the diff was shown, nothing is staged and the diff refreshes.
+- **The branch's pull request in the Source tab.** Under the branch line you see the pull request's number and title (click to open it on GitHub) and its state: open, draft, merged or closed. Next to it, a count shows how many of its checks passed; click it to list the checks and open one. While a check is still running, the row updates every 30 seconds. On a branch without a pull request, "Let mu open one" puts a request in the send box for mu to push the branch and open one; mu shows you the title, description, repository and base branch first. It uses GitHub's `gh` CLI, signed in as you; without it, there's no row.
+- **Run package.json scripts from the send box.** When the conversation's folder has a package.json with scripts, the background jobs pill beside the send box shows **Run** and lists them. Run starts one as a background job, with its log and a stop button. When it ends, mu is told, so you can ask it why the tests failed. In the terminal, `/jobs start [--name <label>] <command>` does the same.
+- **A list of keyboard shortcuts.** Cmd/Ctrl+/ lists every shortcut the app handles, written the way your system shows keys (⇧⌘A on a Mac, Ctrl+Shift+A elsewhere). It's also in the command palette and under Help → Keyboard shortcuts.
+
+### Fixed
+
+- A file's diff in the preview lost its comment rows and its side-by-side toggle whenever the preview redrew, for example when the diff was opened again. They now stay.
+- Tool call names, the preview's tabs, the Source tab's section headers and the assistant cards in Settings can now be reached with Tab and opened with Enter or Space.
+- A rewind could delete a file through a folder that had been replaced by a symlink, and it reported files it couldn't remove as removed. It now leaves such files alone and says why.
+- Rewriting a session file (opening an older session, branching) could leave it cut short after a crash. It's now written to a new file and swapped in, and an entry that can't be saved no longer joins the session.
+- The judge model's answers are checked more closely: a choice must be one of the question's own options. Commands that expand a variable (`$NAME`), and `git --ext-diff` or `--textconv`, no longer count as read-only.
+
 ## [0.3.4] - 2026-10-30
 
 **0.3.4 lets you commit from the Source tab, hear when a conversation is done or needs you, show mu a page's screenshot and console, and move between conversations from the keyboard.** The agent is the same as 0.3.3; the desktop app carries mu-agent 0.3.4.
