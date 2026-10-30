@@ -103,6 +103,7 @@ const PreviewPanel: React.FC = () => {
     clearTabUpdate,
     addDomSnippet,
     persistQuotaExceededAt,
+    updateTab,
   } = usePreviewContext();
   const layout = useLayoutContext();
 
@@ -1067,6 +1068,9 @@ const PreviewPanel: React.FC = () => {
           hideToolbar
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          onReplace={
+            activeTabId ? (next, patch) => updateTab(activeTabId, { content: next, metadata: patch }) : undefined
+          }
         />
       );
     } else if (content_type === 'code' || content_type === 'csv') {

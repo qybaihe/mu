@@ -357,5 +357,11 @@
     "save": "Yorum ekle",
     "hint": "Yorumlar bir sonraki mesajınla gider",
     "remove": "Yorumu kaldır"
+  },
+  "diffHunk": {
+    "stage": "Bu değişikliği hazırla",
+    "unstage": "Bu değişikliği hazırlıktan çıkar",
+    "stale": "Bu fark gösterildikten sonra dosya değişti, bu yüzden hiçbir şey değişmedi. İşte şu anki hâli.",
+    "failed": "Git bunu yapamadı: {{reason}}"
   }
 }

@@ -2,7 +2,8 @@
  * Comments on a diff's lines, as the person writes them in the preview: the line under the pointer offers the button,
  * the box opens under the line, and the comment goes to the send box with its file, line and the line itself; the
  * comments the send box holds show under their lines and can be taken back. Hunk headers take none, nor does the
- * side-by-side view. The send box's store is the test's own.
+ * side-by-side view. The send box's store is the test's own. A source-tab diff's hunks are staged or unstaged one by
+ * one from their header rows, through a main process that is the test's own.
  */
 
 import React, { useSyncExternalStore } from 'react';
@@ -42,6 +43,10 @@ vi.mock('@/renderer/pages/conversation/Preview/context/PreviewContext', () => ({
       removeDomSnippet: (id: string) => store.set(store.state.snippets.filter((snippet) => snippet.id !== id)),
     };
   },
+}));
+const git = vi.hoisted(() => ({ hunk: vi.fn(), diff: vi.fn() }));
+vi.mock('@/common/kyrn/gitBridge', () => ({
+  kyrnGitBridge: { hunk: { invoke: git.hunk }, diff: { invoke: git.diff } },
 }));
 vi.mock('@/renderer/utils/platform', () => ({ isMacOS: () => true, openExternalUrl: vi.fn() }));
 vi.mock('@/renderer/pages/conversation/Preview/components/renderers/SelectionToolbar', () => ({ default: () => null }));
@@ -266,5 +271,94 @@ describe('a comment on a line of a diff', () => {
     expect(screen.queryByTestId('diff-comment')).not.toBeInTheDocument();
     hover(document.querySelector('.d2h-code-side-line') ?? document.body);
     expect(addButton()).not.toBeInTheDocument();
+  });
+});
+
+describe('a source-tab diff’s hunks, one at a time', () => {
+  const TWO = [
+    'diff --git a/src/app.ts b/src/app.ts',
+    'index 1111111..2222222 100644',
+    '--- a/src/app.ts',
+    '+++ b/src/app.ts',
+    '@@ -1,3 +1,3 @@',
+    ' const a = 1;',
+    '-const b = 2;',
+    '+const b = 3;',
+    ' const c = 4;',
+    '@@ -20,3 +20,3 @@',
+    ' const x = 1;',
+    '-const y = 2;',
+    '+const y = 3;',
+    ' const z = 4;',
+    '',
+  ].join('\n');
+  const FIRST = '@@ -1,3 +1,3 @@\n const a = 1;\n-const b = 2;\n+const b = 3;\n const c = 4;\n';
+  const SECOND = '@@ -20,3 +20,3 @@\n const x = 1;\n-const y = 2;\n+const y = 3;\n const z = 4;\n';
+  const source = { cwd: '/work/app', path: 'src/app.ts', area: 'unstaged' as const };
+
+  const shown = (props: Partial<React.ComponentProps<typeof DiffPreview>> = {}) =>
+    render(
+      <I18nextProvider i18n={i18n}>
+        <DiffPreview content={TWO} hideToolbar metadata={{ gitHunks: source }} onReplace={vi.fn()} {...props} />
+      </I18nextProvider>
+    );
+  const buttons = () => screen.queryAllByTestId('diff-hunk-action');
+
+  beforeEach(() => {
+    git.hunk.mockReset();
+    git.diff.mockReset();
+  });
+
+  it('stages the hunk whose header was used, and shows the file’s diff as it is now in its place', async () => {
+    const onReplace = vi.fn();
+    const rest = TWO.split('@@ -1,3')[0] + SECOND;
+    git.hunk.mockResolvedValue({ ok: true, data: { patch: rest, binary: false, truncated: false, hunks: true } });
+    shown({ onReplace });
+
+    expect(buttons().map((button) => button.textContent)).toEqual([preview.diffHunk.stage, preview.diffHunk.stage]);
+    await act(async () => fireEvent.click(buttons()[1]));
+
+    expect(git.hunk).toHaveBeenCalledWith({ ...source, hunk: SECOND });
+    expect(onReplace).toHaveBeenCalledWith(rest, { gitHunks: source });
+  });
+
+  it('unstages from a staged diff, and leaves the hunks once the diff has none to offer', async () => {
+    const onReplace = vi.fn();
+    git.hunk.mockResolvedValue({ ok: true, data: { patch: '', binary: false, truncated: false } });
+    shown({ onReplace, metadata: { gitHunks: { ...source, area: 'staged' } } });
+
+    expect(buttons()[0]).toHaveTextContent(preview.diffHunk.unstage);
+    await act(async () => fireEvent.click(buttons()[0]));
+
+    expect(git.hunk).toHaveBeenCalledWith({ ...source, area: 'staged', hunk: FIRST });
+    // The test's words have no conversation module: the key stands for "No textual changes".
+    expect(onReplace).toHaveBeenCalledWith('conversation.explorer.scm.diff.empty', { gitHunks: undefined });
+  });
+
+  it('says the file changed and shows it as it is now when the hunk is gone, and what git said when it refused', async () => {
+    const onReplace = vi.fn();
+    git.hunk.mockResolvedValueOnce({ ok: false, error: 'changed', code: 'stale' });
+    git.diff.mockResolvedValue({ ok: true, data: { patch: TWO, binary: false, truncated: false, hunks: true } });
+    shown({ onReplace });
+
+    await act(async () => fireEvent.click(buttons()[0]));
+    expect(await screen.findByText(preview.diffHunk.stale)).toBeInTheDocument();
+    expect(git.diff).toHaveBeenCalledWith(source);
+    expect(onReplace).toHaveBeenCalledWith(TWO, { gitHunks: source });
+
+    git.hunk.mockResolvedValueOnce({ ok: false, error: 'index.lock exists' });
+    await act(async () => fireEvent.click(buttons()[0]));
+    expect(await screen.findByText("Git couldn't do that: index.lock exists")).toBeInTheDocument();
+  });
+
+  it('offers nothing for a diff that is not the source tab’s, nor in the side-by-side view', () => {
+    shown({ metadata: {} });
+    expect(buttons()).toHaveLength(0);
+    cleanup();
+
+    shown({ hideToolbar: false });
+    expect(buttons()).toHaveLength(2);
+    fireEvent.click(screen.getAllByRole('checkbox', { name: preview.sideBySide })[0]);
+    expect(buttons()).toHaveLength(0);
   });
 });
