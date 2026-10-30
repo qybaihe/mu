@@ -274,7 +274,9 @@ test('going back to before the README change puts the file back and the message 
   // Both messages changed files: each has a checkpoint to go back to.
   await expect(p.getByTestId('message-rewind-button')).toHaveCount(2);
   const asked = userRows().filter({ hasText: 'E2E:WRITE README.md' });
-  await asked.hover();
+  // The message itself, not the middle of its row: a person's message sits at the row's far end, and its buttons show
+  // while the pointer is on it.
+  await asked.getByTestId('message-text-content').hover();
   await asked.getByTestId('message-rewind-button').click();
   await expect(dialogs()).toContainText('go back to checkpoint #2', { timeout: 15_000 });
   await shot('rewind-question');
