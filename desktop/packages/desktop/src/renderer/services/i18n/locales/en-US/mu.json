@@ -1111,7 +1111,7 @@
         "pr": {
           "none": "No pull request for this branch",
           "ask": "Let mu open one",
-          "prompt": "Push this branch and open a pull request for it with gh. Write the title and description from the branch's commits, and before you create it, show them to me with the repository and base branch it will go to.",
+          "prompt": "Push this branch and open a pull request for it with gh. Write the title and description from the branch's commits. Before you create it, show me the title and description along with the repository and base branch it will target.",
           "checks": "Checks: {{passed}} passed, {{failed}} failed, {{pending}} running",
           "status": {
             "open": "Open",

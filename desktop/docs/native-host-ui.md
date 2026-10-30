@@ -237,7 +237,7 @@ providers keyed by a folder (`common/kyrn/folderBridge.ts`, answered in `process
   two of its three checks done, the row under the branch reads "#42 Add x", Open, and a yellow 2/3; a click on the
   count lists the three checks, and a click on one opens its page. Solution: the main process asks GitHub's own CLI,
   signed in as the person, as they would in a terminal: `gh pr view --json number,title,url,state,isDraft,statusCheckRollup`
-  in the folder, with no prompt, pager, colour or update notice and a 15 s limit. A check run counts as passed,
+  in the folder, with no prompt, pager, color or update notice and a 15 s limit. A check run counts as passed,
   failed, skipped (neutral or skipped) or running (not completed); a commit status by its state. Only `https:` links
   are kept. It only reads: nothing is pushed or opened from here. It reads when the tab reads the repository (in view,
   after a run, on its refresh button) and on the window's focus, and again every 30 s while a check is running and
@@ -252,7 +252,7 @@ providers keyed by a folder (`common/kyrn/folderBridge.ts`, answered in `process
   Example: this repository's clone has `origin` (the fork) and `upstream` (where it came from); on the branch of a
   pull request opened in the fork, `gh pr view` said "no pull requests found" and the tab offered to open one. Solution:
   when gh finds none, the main process reads the branch's push remote (else its upstream's, else `origin`) with git,
-  names its repository from the URL (`[host/]owner/repo`, https, ssh or `git@host:`), and asks
+  works out its repository from the URL (`[host/]owner/repo`, https, ssh or `git@host:`), and asks
   `gh pr view <branch> --repo <it>`, keeping the answer only when the pull request's branch is that owner's
   (`headRepositoryOwner`), not another fork's branch of the same name. The default branch is then that repository's.
 - Which git: the one on the main process's PATH, looked up at each run. Problem: the bridges are made while the main

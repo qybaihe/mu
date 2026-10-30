@@ -9,7 +9,7 @@ import { firstLine, GitNotStarted, type GitRun, type GitRunner, gitRunner } from
  * pushed or opened here. Without gh, signed out, or in a repository GitHub does not hold, there is nothing to show.
  */
 
-/** Runs `gh <args>` in a folder: no prompt, no colour, no pager, no update notice, within a time. */
+/** Runs `gh <args>` in a folder: no prompt, no color, no pager, no update notice, within a time. */
 export type GhRunner = (args: string[], options: { cwd: string; timeoutMs: number }) => Promise<GitRun>;
 
 const GH_MS = 15_000;
