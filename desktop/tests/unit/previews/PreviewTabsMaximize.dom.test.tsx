@@ -53,3 +53,42 @@ describe('PreviewTabs maximize button', () => {
     expect(onToggleMaximize).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('PreviewTabs from the keyboard', () => {
+  afterEach(() => cleanup());
+
+  it('lists the tabs as tabs: Enter or Space opens one, and its close button closes it without opening it', () => {
+    const props = {
+      ...baseProps(),
+      tabs: [
+        { id: 't1', title: 'file.md' },
+        { id: 't2', title: 'other.ts' },
+      ],
+    };
+    render(<PreviewTabs {...props} onToggleMaximize={vi.fn()} />);
+    expect(screen.getByRole('tablist')).toBeInTheDocument();
+    const [first, second] = screen.getAllByRole('tab');
+    expect(first).toHaveAttribute('aria-selected', 'true');
+    expect(second).toHaveAttribute('aria-selected', 'false');
+    expect(second).toHaveAttribute('tabindex', '0');
+
+    fireEvent.keyDown(second, { key: 'Enter' });
+    fireEvent.keyDown(second, { key: ' ' });
+    expect(props.onSwitchTab.mock.calls).toEqual([['t2'], ['t2']]);
+
+    const close = screen.getByRole('button', { name: 'common.close other.ts' });
+    fireEvent.keyDown(close, { key: 'Enter' });
+    expect(props.onCloseTab).toHaveBeenCalledWith('t2');
+    expect(props.onSwitchTab).toHaveBeenCalledTimes(2);
+  });
+
+  it('names the panel buttons, and presses them with Enter or Space', () => {
+    const onToggleMaximize = vi.fn();
+    const props = baseProps();
+    render(<PreviewTabs {...props} isMaximized={false} onToggleMaximize={onToggleMaximize} />);
+    fireEvent.keyDown(screen.getByRole('button', { name: 'preview.maximizePanel' }), { key: 'Enter' });
+    fireEvent.keyDown(screen.getByRole('button', { name: 'preview.collapsePanel' }), { key: ' ' });
+    expect(onToggleMaximize).toHaveBeenCalledTimes(1);
+    expect(props.onClosePanel).toHaveBeenCalledTimes(1);
+  });
+});
