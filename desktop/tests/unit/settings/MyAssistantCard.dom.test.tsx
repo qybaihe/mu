@@ -159,3 +159,20 @@ describe('MyAssistantCard', () => {
     expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ id: 'card-1' }));
   });
 });
+
+describe('MyAssistantCard from the keyboard', () => {
+  it('opens with Enter or Space on the card, and not when the key is pressed on its switch', () => {
+    const { onOpenDetail, onToggleEnabled } = renderCard(makeAssistant({ id: 'card-1' }));
+    const card = screen.getByTestId('assistant-card-card-1');
+    expect(card).toHaveAttribute('role', 'button');
+    expect(card).toHaveAttribute('tabindex', '0');
+
+    fireEvent.keyDown(card, { key: 'Enter' });
+    fireEvent.keyDown(card, { key: ' ' });
+    expect(onOpenDetail).toHaveBeenCalledTimes(2);
+
+    fireEvent.keyDown(screen.getByTestId('switch-enabled-card-1'), { key: 'Enter' });
+    expect(onOpenDetail).toHaveBeenCalledTimes(2);
+    expect(onToggleEnabled).not.toHaveBeenCalled();
+  });
+});

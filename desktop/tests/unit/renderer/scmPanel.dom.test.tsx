@@ -627,6 +627,14 @@ describe('ScmPanel section framework (VS Code SCM parity)', () => {
     expect(document.querySelector('[data-scm-section-header="changes"]')).not.toBeNull();
     expect(header.getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByText('a.ts')).toBeNull();
+
+    // From the keyboard too: it is a tab stop, and Enter or Space opens and closes it.
+    expect(header).toHaveAttribute('tabindex', '0');
+    fireEvent.keyDown(header, { key: 'Enter' });
+    expect(header.getAttribute('aria-expanded')).toBe('true');
+    expect(await screen.findByText('a.ts')).toBeInTheDocument();
+    fireEvent.keyDown(header, { key: ' ' });
+    expect(header.getAttribute('aria-expanded')).toBe('false');
   });
 
   it('shows a divider only when both sections are open', async () => {
