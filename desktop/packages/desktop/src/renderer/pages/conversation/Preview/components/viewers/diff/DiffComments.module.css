@@ -75,3 +75,25 @@
   display: flex;
   gap: 6px;
 }
+
+/* A hunk's button, after its header's @@ line (DiffHunks.tsx): quiet until the pointer is on it. */
+.hunkActions {
+  display: inline-flex;
+  margin-inline-start: 12px;
+  vertical-align: middle;
+}
+
+.hunkAction:global(.arco-btn) {
+  height: 20px;
+  padding: 0 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-base);
+  border-radius: 4px;
+  background: var(--bg-1);
+}
+
+.hunkAction:global(.arco-btn:not(:disabled):hover) {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}

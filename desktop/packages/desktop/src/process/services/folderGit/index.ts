@@ -22,4 +22,5 @@ export function initFolderGitBridge(git: FolderGit = createFolderGit()): void {
   kyrnGitBridge.stage.provider((request) => result(() => git.stage(request)));
   kyrnGitBridge.unstage.provider((request) => result(() => git.unstage(request)));
   kyrnGitBridge.commit.provider((request) => result(() => git.commit(request)));
+  kyrnGitBridge.hunk.provider((request) => result(() => git.hunk(request)));
 }

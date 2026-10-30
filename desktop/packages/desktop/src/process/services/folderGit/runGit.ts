@@ -14,7 +14,14 @@ export type GitRun = { code: number; stdout: string; stderr: string; overflow: b
  * that point at another repository are taken away, and prompts stay off. Their language, optional locks and pathspecs
  * are the person's, so a hook works as it does for them.
  */
-export type GitRunOptions = { cwd: string; timeoutMs: number; maxBytes: number; asPerson?: boolean };
+export type GitRunOptions = {
+  cwd: string;
+  timeoutMs: number;
+  maxBytes: number;
+  asPerson?: boolean;
+  /** What git reads on its standard input (a patch for `git apply -`); nothing when absent. */
+  input?: string;
+};
 
 /** Runs `git <args>` with the options every call here takes. */
 export type GitRunner = (args: string[], options: GitRunOptions) => Promise<GitRun>;
@@ -79,9 +86,9 @@ type ExecError = Error & { code?: number | string; killed?: boolean; signal?: st
  * launched with (a Finder launch's is /usr/bin:/bin:..., where macOS has the Xcode stub).
  */
 export function gitRunner({ command = 'git', env }: { command?: string; env?: NodeJS.ProcessEnv } = {}): GitRunner {
-  return (args, { cwd, timeoutMs, maxBytes, asPerson }) =>
+  return (args, { cwd, timeoutMs, maxBytes, asPerson, input }) =>
     new Promise((resolve, reject) => {
-      execFile(
+      const child = execFile(
         command,
         [...FIXED_CONFIG, ...args],
         {
@@ -103,6 +110,9 @@ export function gitRunner({ command = 'git', env }: { command?: string; env?: No
           resolve({ code: typeof failure.code === 'number' ? failure.code : 1, stdout, stderr, overflow: false });
         }
       );
+      // git reads to the end of its input: it gets what it is given, or nothing, so it never waits for more.
+      child.stdin?.on('error', () => undefined);
+      child.stdin?.end(input ?? '');
     });
 }
 

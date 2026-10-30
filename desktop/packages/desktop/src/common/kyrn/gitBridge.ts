@@ -64,8 +64,12 @@ export type FolderGitStatus =
       truncated: boolean;
     };
 
-/** One file's diff as git writes it (unified), or `binary` with no patch; `truncated` when GIT_DIFF_LIMIT cut it. */
-export type FolderGitDiff = { patch: string; binary: boolean; truncated: boolean };
+/**
+ * One file's diff as git writes it (unified), or `binary` with no patch; `truncated` when GIT_DIFF_LIMIT cut it.
+ * `hunks`: each of its hunks can be staged (an unstaged diff) or unstaged (a staged one) by itself (`hunk`): a change
+ * to a file's content, shown whole, that is not a new or deleted file, a rename or a change of mode.
+ */
+export type FolderGitDiff = { patch: string; binary: boolean; truncated: boolean; hunks?: boolean };
 
 /**
  * How a commit ended. `committed`: its commit (abbreviated) and the first line of its message. Otherwise git refused
@@ -111,5 +115,13 @@ export const kyrnGitBridge = {
    */
   commit: bridge.buildProvider<KyrnResult<FolderGitCommit>, { cwd: string; message: string; all?: boolean }>(
     'kyrn.folder.git.commit'
+  ),
+  /**
+   * Stages one hunk of a file's unstaged diff, or unstages one of its staged diff (`git apply --cached`, the working
+   * tree untouched); `hunk` is its text as the diff showed it, from its `@@` line. The diff is read again first and the
+   * hunk must still be in it, or nothing changes (`stale`). Answers the file's diff for the same area, as it is now.
+   */
+  hunk: bridge.buildProvider<KyrnResult<FolderGitDiff>, { cwd: string; path: string; area: GitArea; hunk: string }>(
+    'kyrn.folder.git.hunk'
   ),
 };

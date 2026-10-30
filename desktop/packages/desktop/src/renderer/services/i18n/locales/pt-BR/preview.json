@@ -357,5 +357,11 @@
     "save": "Adicionar comentário",
     "hint": "Os comentários vão com sua próxima mensagem",
     "remove": "Remover comentário"
+  },
+  "diffHunk": {
+    "stage": "Preparar esta alteração",
+    "unstage": "Remover esta alteração da preparação",
+    "stale": "O arquivo mudou depois que este diff foi mostrado, então nada foi alterado. Aqui está como ele está agora.",
+    "failed": "O Git não conseguiu fazer isso: {{reason}}"
   }
 }

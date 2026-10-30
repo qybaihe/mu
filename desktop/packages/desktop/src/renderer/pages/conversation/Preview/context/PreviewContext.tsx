@@ -95,6 +95,11 @@ export interface PreviewMetadata {
    * image viewer steps through them and reads each through the main process (components/ImageGallery/).
    */
   gallery?: string[];
+  /**
+   * A diff of a file in the source tab whose hunks can be staged (an unstaged diff) or taken out of the index (a staged
+   * one) one by one: its repository's folder, the file and the area (`DiffHunks.tsx`).
+   */
+  gitHunks?: { cwd: string; path: string; area: 'staged' | 'unstaged' };
 }
 
 export interface PreviewTab {

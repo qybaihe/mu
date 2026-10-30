@@ -357,5 +357,11 @@
     "save": "Kommentar hinzufügen",
     "hint": "Kommentare gehen mit deiner nächsten Nachricht mit",
     "remove": "Kommentar entfernen"
+  },
+  "diffHunk": {
+    "stage": "Diese Änderung vormerken",
+    "unstage": "Diese Änderung aus der Vormerkung nehmen",
+    "stale": "Die Datei hat sich geändert, seit dieser Diff angezeigt wurde, daher wurde nichts geändert. So sieht sie jetzt aus.",
+    "failed": "Git konnte das nicht tun: {{reason}}"
   }
 }
