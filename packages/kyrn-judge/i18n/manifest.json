@@ -1107,7 +1107,7 @@
 			"fa-IR": "Hive: تحویل"
 		},
 		"decisions[id=hive.deliver].summary": {
-			"en": "Decides whether a finding on the board matters to a bee's current work. It's held back only when the judge is sure it doesn't; otherwise, and when the judge can't answer, it's delivered, up to each bee's limit.",
+			"en": "Decides whether a finding on the board matters to a bee's current work. Unless the judge is sure it doesn't, the finding is delivered, up to each bee's limit. It's also delivered when the judge can't answer.",
 			"zh-TW": "共享看板上的一則發現和某個蜂群成員手上的工作有沒有關係。只有判定器確定無關時才不送；其餘情況，包括判定器答不上來時，都會送達（不超過每個成員的上限）。",
 			"ja-JP": "共有ボード上の発見が、あるビーの現在の作業に関係するかを判定します。判定器が関係ないと確信したときだけ配信を止め、それ以外の場合と判定器が答えられない場合は、各ビーの上限まで配信します。",
 			"ko-KR": "공유 보드의 발견이 어떤 비의 현재 작업에 중요한지 판정합니다. 판정기가 중요하지 않다고 확신할 때만 보류하고, 그 밖의 경우와 판정기가 답하지 못하는 경우에는 비마다 정해진 한도까지 전달합니다.",

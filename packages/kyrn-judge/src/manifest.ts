@@ -507,7 +507,7 @@ const DESCRIBED: HarnessManifest = {
 			title: { zh: "蜂群：投递", en: "Hive: delivery" },
 			summary: {
 				zh: "公告板上的一条发现与某只蜂手头的工作有没有关系。只有判定器确定无关时才不送；其余情况，包括判定器答不上来时，都会送达（不超过每只蜂的上限）。",
-				en: "Decides whether a finding on the board matters to a bee's current work. It's held back only when the judge is sure it doesn't; otherwise, and when the judge can't answer, it's delivered, up to each bee's limit.",
+				en: "Decides whether a finding on the board matters to a bee's current work. Unless the judge is sure it doesn't, the finding is delivered, up to each bee's limit. It's also delivered when the judge can't answer.",
 			},
 		},
 		{
