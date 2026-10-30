@@ -1111,7 +1111,7 @@
         "pr": {
           "none": "No hay pull request para esta rama",
           "ask": "Que mu la abra",
-          "prompt": "Sube esta rama y abre una pull request con gh. Escribe el título y la descripción a partir de los commits de la rama y enséñamelos antes de crearla.",
+          "prompt": "Sube esta rama y abre una pull request con gh. Escribe el título y la descripción a partir de los commits de la rama y, antes de crearla, enséñamelos junto con el repositorio y la rama base a la que irá.",
           "checks": "Comprobaciones: {{passed}} correctas, {{failed}} fallidas, {{pending}} en curso",
           "status": {
             "open": "Abierta",

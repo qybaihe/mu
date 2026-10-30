@@ -1111,7 +1111,7 @@
         "pr": {
           "none": "Kein Pull Request für diesen Branch",
           "ask": "mu einen öffnen lassen",
-          "prompt": "Pushe diesen Branch und öffne mit gh einen Pull Request dafür. Schreib Titel und Beschreibung anhand der Commits des Branches und zeig sie mir, bevor du ihn erstellst.",
+          "prompt": "Pushe diesen Branch und öffne mit gh einen Pull Request dafür. Schreib Titel und Beschreibung anhand der Commits des Branches und zeig sie mir, bevor du ihn erstellst, zusammen mit dem Repository und dem Basis-Branch, in den er geht.",
           "checks": "Checks: {{passed}} bestanden, {{failed}} fehlgeschlagen, {{pending}} laufen",
           "status": {
             "open": "Offen",
