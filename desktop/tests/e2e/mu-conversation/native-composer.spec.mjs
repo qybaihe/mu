@@ -2,8 +2,9 @@
 // The native send box's controls, end to end, in the real app on the native host (on by default): the model chip
 // (a second model, then a thinking level on the model that reasons, each seen by the fake model), the permission pill
 // (a switch from minimal to full access, and mu stops asking), pi's slash commands in the `/` menu, files and images
-// attached (they reach the model's request), ↑ bringing back the last message, a file mentioned with `@`, and a
-// command the model starts in the background: the pill beside the send box lists it and stops it.
+// attached (they reach the model's request), ↑ bringing back the last message, a file mentioned with `@`, a
+// command the model starts in the background: the pill beside the send box lists it and stops it, and a script of the
+// project's package.json run from that pill as the person's own background job (Run).
 // Pictures of the composer's states, light and dark, go to the profile's logs. Run with
 // `node scripts/kyrn/e2e-conversation.mjs --native -- native-composer.spec`.
 //
@@ -270,6 +271,34 @@ test('a command the model starts in the background shows beside the send box, an
   await job.getByTestId('native-job-stop').click();
   // mu stops it: the pill goes with the last one that ran.
   await expect(jobs).toHaveCount(0, { timeout: 15_000 });
+  expectNoProblems();
+});
+
+test('a script of the project’s package.json runs from the pill as the person’s background job', async () => {
+  const p = page();
+  writeFileSync(
+    join(paths().project, 'package.json'),
+    JSON.stringify({ name: 'e2e-project', private: true, scripts: { greet: 'node -e "console.log(1 + 1)"' } })
+  );
+  // The scripts are read again when a run ends.
+  await send('E2E:ECHO SCRIPTS-OK');
+  await replyWith('SCRIPTS-OK');
+  const jobs = p.getByTestId('native-jobs');
+  await expect(jobs).toHaveAttribute('data-count', '0', { timeout: 15_000 });
+  await expect(p.getByTestId('native-jobs-pill')).toHaveText(/Run|运行/);
+  await p.getByTestId('native-jobs-pill').click();
+  const script = p.getByTestId('native-scripts').getByTestId('native-script');
+  await expect(script).toHaveAttribute('data-script', 'greet');
+  await expect(script).toContainText('node -e');
+  await shot('run-scripts');
+  await script.getByTestId('native-script-run').click();
+  // mu starts it in the project; it ends at once, and stays listed with how it ended (npm on this PATH or not).
+  const job = p.getByTestId('native-jobs-list').getByTestId('native-job');
+  await expect(job).toHaveAttribute('data-state', 'exited', { timeout: 30_000 });
+  await expect(job).toContainText('greet');
+  await expect(job).toContainText('npm run greet');
+  await shot('run-scripts-ended');
+  await p.keyboard.press('Escape');
   expectNoProblems();
 });
 

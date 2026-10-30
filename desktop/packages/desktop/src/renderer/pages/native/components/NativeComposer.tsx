@@ -344,7 +344,7 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
               <>
                 <NativeAttachButton onClick={() => picker.current?.click()} />
                 <NativePermissionPill state={permissions} held={held} request={request} />
-                <NativeJobs jobs={view.host.jobs} cwd={cwd} request={request} />
+                <NativeJobs jobs={view.host.jobs} cwd={cwd} refresh={working} request={request} />
               </>
             }
             rightTools={<NativeModelChip models={models} busy={working || held} />}

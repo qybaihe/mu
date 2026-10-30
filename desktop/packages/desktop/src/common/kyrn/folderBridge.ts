@@ -32,6 +32,19 @@ export type FolderFiles = { paths: string[]; more: boolean };
 /** The most files quick open takes from one folder. */
 export const FOLDER_FIND_LIMIT = 20000;
 
+/** What runs a folder's package.json scripts: its `packageManager`, else the lockfile it has, else npm. */
+export type ScriptRunner = 'npm' | 'pnpm' | 'yarn' | 'bun';
+
+/**
+ * The scripts of the package.json at the top of a folder, in its order, those a shell takes by name as they are (a
+ * letter, digit, `_` or `.` first, then also `:@/+-`); `more` counts those left out, by their name or past
+ * FOLDER_SCRIPTS_LIMIT.
+ */
+export type FolderScripts = { runner: ScriptRunner; scripts: { name: string; command: string }[]; more: number };
+
+/** The most scripts a folder offers to run. */
+export const FOLDER_SCRIPTS_LIMIT = 40;
+
 export const kyrnFolderBridge = {
   /** A folder's lessons: its own and those for everywhere, in any state. */
   lessons: bridge.buildProvider<KyrnResult<LessonsView>, { cwd: string }>('kyrn.folder.lessons'),
@@ -43,4 +56,6 @@ export const kyrnFolderBridge = {
   files: bridge.buildProvider<KyrnResult<FolderListing>, { cwd: string; path: string }>('kyrn.folder.files'),
   /** Every file of a folder worth opening by name: git's own list in a repository, else a bounded walk. */
   find: bridge.buildProvider<KyrnResult<FolderFiles>, { cwd: string }>('kyrn.folder.find'),
+  /** The scripts of the folder's package.json; null when it has none, or no package.json mu can read. */
+  scripts: bridge.buildProvider<KyrnResult<FolderScripts | null>, { cwd: string }>('kyrn.folder.scripts'),
 };

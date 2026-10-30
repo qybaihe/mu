@@ -977,7 +977,7 @@
     "browse": "Yerleşik tarayıcıyı bir adrese gönderip söylediğinizi yaptırır: /browse <url> [hedef]",
     "inherit": "mu’nun Claude Code, Cursor ve Codex’ten neyi, nereden devraldığı",
     "mcp": "MCP sunucularını yönet: oturum aç, yeniden bağlan, aç veya kapat, görünürlüğü değiştir",
-    "jobs": "Arka plan işleri: /jobs, /jobs stop <id|all>",
+    "jobs": "Arka plan işleri: /jobs, /jobs start <komut>, /jobs stop <id|all>",
     "commit": "Commit edilmemiş değişikliği commit’lere böler: önce planı gösterir, yalnızca onay verdiğinizde commit eder, asla push yapmaz",
     "review": "Commit edilmemiş değişikliği ya da belirttiğinizi inceleyici alt ajanla gözden geçirir; bulgular P0’dan P3’e sıralanır",
     "mu": "mu durumu. Ayrıca: /mu judge <kademeler> | /mu route <karar noktası> <kademeler|default> | /mu mode <karar noktası|default> <off|shadow|active>",
@@ -1133,7 +1133,12 @@
       "lingering": "Başlattığı işlemler hâlâ çalışıyor",
       "log": "Günlüğünü aç",
       "stop": "Durdur",
-      "stopAll": "Tümünü durdur"
+      "stopAll": "Tümünü durdur",
+      "run": "Çalıştır",
+      "scripts": "Bir betik çalıştır",
+      "scriptsFrom": "package.json · {{runner}}",
+      "scriptRunning": "Çalışıyor",
+      "scriptsMore": "{{count}} tane daha listelenmedi: tırnak gerektiren adlar ya da ilk 40’tan sonrakiler"
     }
   },
   "details": {

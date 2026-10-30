@@ -977,7 +977,7 @@
     "browse": "Have the built-in browser open a page and do what you ask: /browse <url> [goal]",
     "inherit": "Show what mu inherited from Claude Code, Cursor and Codex, and from which files",
     "mcp": "Manage MCP servers: sign in, reconnect, enable or disable, and change exposure",
-    "jobs": "List background jobs; /jobs stop <id|all> stops them",
+    "jobs": "Background jobs: /jobs lists them, /jobs start <command> runs one, /jobs stop <id|all> stops them",
     "commit": "Split uncommitted changes into commits: shows the plan, commits only when you approve and never pushes",
     "review": "Have the reviewer subagent review uncommitted changes, or whatever you name; the judge ranks findings from P0 to P3",
     "mu": "Show mu's status. Also: /mu judge <judges> | /mu route <point> <judge|default> | /mu mode <point|default> <off|shadow|active>",
@@ -1133,7 +1133,12 @@
       "lingering": "Processes it started are still running",
       "log": "Open its log",
       "stop": "Stop",
-      "stopAll": "Stop all"
+      "stopAll": "Stop all",
+      "run": "Run",
+      "scripts": "Run a script",
+      "scriptsFrom": "package.json · {{runner}}",
+      "scriptRunning": "Running",
+      "scriptsMore": "{{count}} more not listed: names a shell would need quoted, or past the first 40"
     }
   },
   "details": {
