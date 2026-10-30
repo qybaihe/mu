@@ -361,7 +361,7 @@
   "diffHunk": {
     "stage": "Stage this change",
     "unstage": "Unstage this change",
-    "stale": "The file changed since this diff was shown, so nothing changed. Here it is as it is now.",
+    "stale": "The file has changed since this diff was shown, so nothing was done. Here's the current diff.",
     "failed": "Git couldn't do that: {{reason}}"
   }
 }
