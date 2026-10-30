@@ -193,6 +193,22 @@ describe("hive gates", () => {
 		expect((await engine.decide(hiveDeliver, { ...deliver, kind: "finding" })).outcome.deliver).toBe(false);
 	});
 
+	it("delivers a note unless the judge is sure it is of no use to the bee", async () => {
+		const deliver = {
+			focus: "read the auth code",
+			note: "login fails only with TZ=UTC",
+			from: "repro",
+			kind: "finding" as const,
+		};
+		const useful = (probability: number) =>
+			engineWith(() => ({ useful: { type: "boolean", probability } as Answer }));
+		expect((await useful(0.95).decide(hiveDeliver, deliver)).outcome).toEqual({ deliver: true, score: 0.95 });
+		expect((await useful(0.6).decide(hiveDeliver, deliver)).outcome).toEqual({ deliver: true, score: 0.6 });
+		expect((await useful(0.21).decide(hiveDeliver, deliver)).outcome.deliver).toBe(true);
+		expect((await useful(0.2).decide(hiveDeliver, deliver)).outcome).toEqual({ deliver: false, score: 0.2 });
+		expect((await useful(0.05).decide(hiveDeliver, deliver)).outcome.deliver).toBe(false);
+	});
+
 	it("delivers without a judge rather than cutting the bees off from each other", async () => {
 		const deliver = { focus: "read the auth code", note: "login fails only with TZ=UTC", from: "repro" };
 		const down = engineWith(() => {

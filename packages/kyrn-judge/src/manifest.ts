@@ -506,8 +506,8 @@ const DESCRIBED: HarnessManifest = {
 			feature: "hive",
 			title: { zh: "蜂群：投递", en: "Hive: delivery" },
 			summary: {
-				zh: "公告板上的一条发现与某只蜂手头的工作有没有关系，有关系才送达。判定器答不上来时照样送达（不超过每只蜂的上限）。",
-				en: "Decides whether a finding on the board matters to a bee's current work; only then is it delivered. When the judge can't answer, it's delivered anyway, up to each bee's limit.",
+				zh: "公告板上的一条发现与某只蜂手头的工作有没有关系。只有判定器确定无关时才不送；其余情况，包括判定器答不上来时，都会送达（不超过每只蜂的上限）。",
+				en: "Decides whether a finding on the board matters to a bee's current work. Unless the judge is sure it doesn't, the finding is delivered, up to each bee's limit. It's also delivered when the judge can't answer.",
 			},
 		},
 		{
@@ -2497,8 +2497,8 @@ const DESCRIBED: HarnessManifest = {
 			name: "background",
 			title: { zh: "后台命令", en: "Background commands" },
 			summary: {
-				zh: "开发服务器、长时间构建放到后台跑，不占用回合；任务结束时立刻告诉代理；会话结束时全部终止，无人值守的单次运行除外。",
-				en: "bg_start / bg_output / bg_stop: run dev servers and long builds without blocking the turn. The agent hears of a finished job right away; every job stops when the session ends, except in an unattended one-shot run.",
+				zh: "开发服务器、长时间构建放到后台跑，不占用回合。你也可以用 `/jobs start [--name <名字>] <命令>` 自己启动一个（桌面端的「运行」按钮替 package.json 脚本发送的就是它）；它结束时，代理会得知，也会知道是你启动的。任务结束时立刻告诉代理；会话结束时全部终止，无人值守的单次运行除外。",
+				en: "bg_start / bg_output / bg_stop: run dev servers and long builds without blocking the turn. You can start one yourself with `/jobs start [--name <label>] <command>` (the desktop's Run button sends this for a package.json script); when it ends, the agent is told, along with the fact that you started it. The agent hears of a finished job right away; every job stops when the session ends, except in an unattended one-shot run.",
 			},
 			defaultEnabled: true,
 			options: [
