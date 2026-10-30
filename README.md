@@ -394,7 +394,7 @@ Requires Node.js 22.19 or newer. `mu -p "prompt"` runs a single prompt and print
 | `/review`, `/commit` | Review the change, with findings ranked P0 to P3; write the commits |
 | `/checkpoints`, `/rewind` | List checkpoints; go back to one |
 | `/agents`, `/swarm` | List subagent roles; watch running subagents |
-| `/browse`, `/jobs` | Open the built-in browser; list background jobs |
+| `/browse`, `/jobs` | Open the built-in browser; list, start or stop background jobs |
 | `/capabilities`, `/ledger` | Show installed capabilities and which are turned on; show the latest verdicts |
 | `/import-chat` | Import a Claude Code, Codex or ZCode conversation |
 | `/doctor` | Check the setup and the connections |

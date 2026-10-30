@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { fauxAssistantMessage, fauxToolCall } from "@earendil-works/pi-ai";
+import type { ExtensionUIContext } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
@@ -531,6 +532,41 @@ describe.skipIf(!posix)("background feature", () => {
 		expect(harness.session.getActiveToolNames()).toEqual(
 			expect.arrayContaining(["bg_start", "bg_output", "bg_stop"]),
 		);
+	});
+
+	it("runs the user's own command from /jobs start, and tells the model of its end as the user's", async () => {
+		const { harness, presented } = await start(() => ({}));
+		const notes: string[] = [];
+		const ui = new Proxy({ notify: (message: string) => notes.push(message) } as Record<string, unknown>, {
+			get: (target, key) => (key in target ? target[key as string] : () => undefined),
+		}) as unknown as ExtensionUIContext;
+		await harness.session.bindExtensions({ uiContext: ui, mode: "rpc" });
+
+		await harness.session.prompt("/jobs start");
+		expect(notes.at(-1)).toContain("Say what to run");
+
+		await harness.session.prompt("/jobs start --name greet printf 'hi\\n'; exit 3");
+		expect(notes.at(-1)).toMatch(/^Started bg-1 "greet" · printf 'hi\\n'; exit 3 · running/);
+		await vi.waitFor(() => expect(presented.map((event) => event.kind)).toContain("background.exit"), {
+			timeout: 5000,
+		});
+		expect(presented.find((event) => event.kind === "background.start")?.payload).toMatchObject({
+			id: "bg-1",
+			name: "greet",
+			cwd: harness.tempDir,
+		});
+		// A command, not a message: nothing went to the model when it started.
+		expect(harness.session.messages.filter((message) => message.role === "user")).toEqual([]);
+
+		let seen = "";
+		harness.setResponses([
+			(context) => {
+				seen = JSON.stringify(context.messages);
+				return fauxAssistantMessage("It printed hi and exited with 3.");
+			},
+		]);
+		await harness.session.prompt("Why did it fail?");
+		expect(seen).toMatch(/The user's background job bg-1 \(`printf 'hi\\\\n'; exit 3`\) exited with code 3/);
 	});
 
 	it("puts bg_start through the risk guard like a foreground command", async () => {
