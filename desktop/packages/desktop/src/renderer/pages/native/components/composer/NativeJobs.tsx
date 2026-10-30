@@ -8,8 +8,8 @@
  * The person starts one too: when the folder's package.json has scripts, the pill is there with nothing running, as
  * Run, and its list offers them. A script runs as mu's `/jobs start --name <script> <runner> run <script>` (at once,
  * during a run too); it is the person's job, and the model hears of its end as theirs. The scripts are read when the
- * conversation's folder is known, when a run starts and ends (the model may have changed package.json) and whenever the
- * list opens.
+ * conversation's folder is known, when a run ends (the model may have changed package.json) and whenever the list
+ * opens.
  */
 import { Button, Popover } from '@arco-design/web-react';
 import { Down, FileText, PlayOne, Terminal } from '@icon-park/react';
@@ -133,7 +133,7 @@ const NativeJobs: React.FC<{
   jobs: readonly ViewJob[] | undefined;
   /** The conversation's folder, where a log opens in the preview from and whose package.json scripts Run offers. */
   cwd?: string;
-  /** Changes when the scripts are worth reading again: a run started or ended. */
+  /** Changes when the scripts are worth reading again: a run ended. */
   refresh?: unknown;
   request: (command: PiCommand) => Promise<NativeResult<unknown>>;
 }> = ({ jobs = [], cwd, refresh, request }) => {

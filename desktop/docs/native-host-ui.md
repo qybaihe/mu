@@ -441,8 +441,8 @@ conversation; the browser's own find sees the drawn rows only.
   process reads the scripts (`kyrn.folder.scripts`, `folderScripts` in `process/agent/kyrn/folderFiles.ts`): the
   package.json at the top of the folder only, read afresh, in its order, at most 40, and only names a shell takes as
   they are (none to quote, none starting with `-` or `@`); what runs them is package.json's `packageManager`, else the
-  first lockfile (bun, pnpm, yarn), else npm. They are read when the folder is known, when a run starts and ends (the
-  model may have changed package.json) and whenever the list opens. A script runs as mu's
+  first lockfile (bun, pnpm, yarn), else npm. They are read when the folder is known, when a run ends (the model may
+  have changed package.json) and whenever the list opens. A script runs as mu's
   `/jobs start --name <script> <runner> run <script>`, a prompt that runs at once, during a run too: a background job
   like the model's, in the session's folder, listed above with its log and stop button. It is the person's own command:
   the risk guard doesn't ask about it, as it doesn't about a command typed into a terminal. When it ends the model is

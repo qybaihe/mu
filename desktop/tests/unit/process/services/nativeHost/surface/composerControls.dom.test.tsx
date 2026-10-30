@@ -772,12 +772,17 @@ describe('the folder’s scripts, run from the send box', () => {
     expect(screen.getByTestId('native-job')).toHaveTextContent(/exited with code 1 after/);
   });
 
-  it('offer nothing when the folder has no scripts', async () => {
+  it('offer nothing when the folder has no scripts, and are read again when a run ends', async () => {
     const host = createFakeHost();
     host.add({ id: 'c1', cwd: '/work/project' });
     await mount(host);
     await waitFor(() => expect(folderScripts).toHaveBeenCalled());
     expect(screen.queryByTestId('native-jobs')).toBeNull();
+
+    // The model wrote a package.json: the run that did it ended, however quickly.
+    folderScripts.mockImplementation(async () => ({ ok: true, data: scripts }));
+    act(() => host.play('c1', [{ type: 'agent_start' }, ended(reply([text('done')])), { type: 'agent_settled' }]));
+    expect(await screen.findByTestId('native-jobs-pill')).toHaveTextContent(/^Run$/);
   });
 });
 
