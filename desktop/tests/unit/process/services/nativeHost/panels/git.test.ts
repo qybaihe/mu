@@ -15,6 +15,7 @@ import { join } from 'node:path';
 import { KyrnError } from '@/common/kyrn/errors';
 import type { FolderGitStatus } from '@/common/kyrn/gitBridge';
 import { createFolderGit } from '@/process/services/folderGit';
+import { splitPatch } from '@/process/services/folderGit/folderGit';
 import { parseStatus } from '@/process/services/folderGit/parseStatus';
 import { GitNotStarted, gitEnv, gitRunner } from '@/process/services/folderGit/runGit';
 
@@ -328,6 +329,96 @@ describe.skipIf(!working)('one file’s diff', () => {
     expect(await failure(() => diff({ cwd: dir, path: 'a.txt', area: 'everything' }))).toBe('invalid');
     expect(await failure(() => diff({ cwd: dir, path: 'b2.txt', area: 'staged', from: '../b.txt' }))).toBe('invalid');
     expect(await failure(() => diff({ cwd: temp(), path: 'a.txt', area: 'unstaged' }))).toBe('invalid');
+  });
+});
+
+describe.skipIf(!working)('one hunk of a file’s diff', () => {
+  /** twenty.txt committed with lines 1 to 20, then lines 2 and 18 changed: two hunks, far apart. */
+  const twoHunks = (): string => {
+    const dir = repository();
+    const lines = Array.from({ length: 20 }, (_, index) => `line ${index + 1}`);
+    writeFileSync(join(dir, 'twenty.txt'), `${lines.join('\n')}\n`);
+    git(dir, 'add', 'twenty.txt');
+    git(dir, 'commit', '-q', '-m', 'twenty');
+    lines[1] = 'line 2, changed';
+    lines[17] = 'line 18, changed';
+    writeFileSync(join(dir, 'twenty.txt'), `${lines.join('\n')}\n`);
+    return dir;
+  };
+  const hunksOf = (patch: string) => splitPatch(patch)?.hunks ?? [];
+
+  it('stages one hunk of an unstaged diff and unstages it again, the working tree untouched', async () => {
+    const dir = twoHunks();
+    const { diff, hunk } = folderGit();
+    const before = readFileSync(join(dir, 'twenty.txt'), 'utf8');
+    const unstaged = await diff({ cwd: dir, path: 'twenty.txt', area: 'unstaged' });
+    expect(unstaged.hunks).toBe(true);
+    const [first, second] = hunksOf(unstaged.patch);
+    expect(first).toContain('+line 2, changed');
+    expect(second).toContain('+line 18, changed');
+
+    // The answer is the area's diff as it is now: the other hunk alone.
+    const left = await hunk({ cwd: dir, path: 'twenty.txt', area: 'unstaged', hunk: first });
+    expect(hunksOf(left.patch)).toEqual([second]);
+    const staged = await diff({ cwd: dir, path: 'twenty.txt', area: 'staged' });
+    expect(staged.patch).toContain('+line 2, changed');
+    expect(staged.patch).not.toContain('line 18, changed');
+    expect(readFileSync(join(dir, 'twenty.txt'), 'utf8')).toBe(before);
+
+    const [stagedHunk] = hunksOf(staged.patch);
+    expect((await hunk({ cwd: dir, path: 'twenty.txt', area: 'staged', hunk: stagedHunk })).patch).toBe('');
+    expect(hunksOf((await diff({ cwd: dir, path: 'twenty.txt', area: 'unstaged' })).patch)).toHaveLength(2);
+    expect(readFileSync(join(dir, 'twenty.txt'), 'utf8')).toBe(before);
+  });
+
+  it('changes nothing when the hunk is no longer in the diff, and says so', async () => {
+    const dir = twoHunks();
+    const { diff, hunk } = folderGit();
+    const [first] = hunksOf((await diff({ cwd: dir, path: 'twenty.txt', area: 'unstaged' })).patch);
+    writeFileSync(
+      join(dir, 'twenty.txt'),
+      readFileSync(join(dir, 'twenty.txt'), 'utf8').replace('line 2, changed', 'line 2, again')
+    );
+
+    expect(await failure(() => hunk({ cwd: dir, path: 'twenty.txt', area: 'unstaged', hunk: first }))).toBe('stale');
+    expect((await diff({ cwd: dir, path: 'twenty.txt', area: 'staged' })).patch).toBe('');
+    // A hunk made up by the screen is not one of the diff's either.
+    const madeUp = '@@ -1,1 +1,1 @@\n-line 1\n+rm -rf\n';
+    expect(await failure(() => hunk({ cwd: dir, path: 'twenty.txt', area: 'unstaged', hunk: madeUp }))).toBe('stale');
+  });
+
+  it('offers no hunks for a new file, a rename, a change of mode or an untracked file, and refuses other areas', async () => {
+    const dir = repository();
+    const { diff, hunk } = folderGit();
+    writeFileSync(join(dir, 'new.txt'), 'new\n');
+    git(dir, 'add', 'new.txt');
+    git(dir, 'mv', 'b.txt', 'b2.txt');
+    chmodSync(join(dir, 'a.txt'), 0o755);
+    writeFileSync(join(dir, 'a.txt'), 'one, and more\n');
+    writeFileSync(join(dir, 'loose.txt'), 'loose\n');
+
+    expect((await diff({ cwd: dir, path: 'new.txt', area: 'staged' })).hunks).toBeUndefined();
+    expect((await diff({ cwd: dir, path: 'b2.txt', area: 'staged', from: 'b.txt' })).hunks).toBeUndefined();
+    expect((await diff({ cwd: dir, path: 'loose.txt', area: 'untracked' })).hunks).toBeUndefined();
+    const moded = await diff({ cwd: dir, path: 'a.txt', area: 'unstaged' });
+    if (moded.patch.includes('new mode')) expect(moded.hunks).toBeUndefined();
+
+    const any = '@@ -1 +1 @@\n-x\n+y\n';
+    expect(await failure(() => hunk({ cwd: dir, path: 'loose.txt', area: 'untracked', hunk: any }))).toBe('invalid');
+    expect(await failure(() => hunk({ cwd: dir, path: 'a.txt', area: 'unstaged', hunk: 42 }))).toBe('invalid');
+    expect(await failure(() => hunk({ cwd: dir, path: '../out.txt', area: 'unstaged', hunk: any }))).toBe('invalid');
+  });
+});
+
+describe('a diff taken apart into its hunks', () => {
+  it('splits a content change’s diff at its @@ lines, and none whose header says more', () => {
+    const patch = 'diff --git a/x b/x\nindex 1..2 100644\n--- a/x\n+++ b/x\n@@ -1 +1 @@\n-a\n+b\n@@ -9 +9 @@\n-c\n+d\n';
+    expect(splitPatch(patch)).toEqual({
+      header: 'diff --git a/x b/x\nindex 1..2 100644\n--- a/x\n+++ b/x\n',
+      hunks: ['@@ -1 +1 @@\n-a\n+b\n', '@@ -9 +9 @@\n-c\n+d\n'],
+    });
+    expect(splitPatch(patch.replace('index 1..2 100644\n', 'old mode 100644\nnew mode 100755\n'))).toBeNull();
+    expect(splitPatch('')).toBeNull();
   });
 });
 

@@ -18,8 +18,8 @@ import { firstLine, GitNotStarted, gitRunner, type GitRunner } from './runGit';
 /*
  * The 源码 tab of a native conversation (common/kyrn/gitBridge.ts): the repository of the conversation's folder, read
  * afresh for every answer with the git the app's PATH finds. What is written is only what the person asks for in the
- * tab: files staged or taken out of the index, and commits, with the repository's hooks. Nothing is discarded or
- * pushed. A repository nested inside the folder's own is not looked for.
+ * tab: files, or single hunks of a file's diff, staged or taken out of the index, and commits, with the repository's
+ * hooks. Nothing is discarded or pushed. A repository nested inside the folder's own is not looked for.
  */
 
 /** A quick answer: finding the repository, the version. */
@@ -39,6 +39,30 @@ const COMMIT_BYTES = 4 * 1024 * 1024;
 const PATHS_PER_RUN = 100;
 
 const NOT_A_REPOSITORY = /not a git repository/i;
+
+/** The lines of a diff's header for a change to a file's content alone; any other (a mode, a rename) rules hunks out. */
+const PLAIN_HEADER = /^(diff --git |index |--- |\+\+\+ )/;
+
+/**
+ * A file's diff in its header (up to its first `@@` line) and its hunks, each from its `@@` line, every line with its
+ * end. Null for a diff with no hunk or with a header line other than a content change's.
+ */
+export function splitPatch(patch: string): { header: string; hunks: string[] } | null {
+  const lines = patch.split(/(?<=\n)/);
+  const first = lines.findIndex((line) => line.startsWith('@@'));
+  if (first < 1) return null;
+  const header = lines.slice(0, first);
+  if (!header.every((line) => PLAIN_HEADER.test(line))) return null;
+  const hunks: string[] = [];
+  for (const line of lines.slice(first)) {
+    if (line.startsWith('@@')) hunks.push(line);
+    else hunks[hunks.length - 1] += line;
+  }
+  return { header: header.join(''), hunks };
+}
+
+/** A hunk as compared: what it says, whatever ends its last line. */
+const hunkText = (hunk: string): string => hunk.replace(/\r?\n$/, '');
 
 /** A folder as the screen sends it: a full path, one line, not too long. */
 function readFolder(value: unknown): string {
@@ -118,6 +142,7 @@ export type FolderGitOptions = {
 export type FolderGit = {
   status: (cwd: unknown) => Promise<FolderGitStatus>;
   diff: (request: { cwd: unknown; path: unknown; area: unknown; from?: unknown }) => Promise<FolderGitDiff>;
+  hunk: (request: { cwd: unknown; path: unknown; area: unknown; hunk: unknown }) => Promise<FolderGitDiff>;
   stage: (request: { cwd: unknown; paths: unknown }) => Promise<void>;
   unstage: (request: { cwd: unknown; paths: unknown }) => Promise<void>;
   commit: (request: { cwd: unknown; message: unknown; all?: unknown }) => Promise<FolderGitCommit>;
@@ -181,6 +206,29 @@ export function createFolderGit({
     }
   }
 
+  /** A file's diff for its area in the repository at `root` (`old`: a staged rename's old path). */
+  async function readDiff(root: string, file: string, area: GitArea, old?: string): Promise<FolderGitDiff> {
+    const plain = ['--no-color', '--no-ext-diff', '--no-textconv'];
+    const args =
+      area === 'staged'
+        ? ['diff', '--cached', '-M', ...plain, '--', ...(old ? [old] : []), file]
+        : area === 'unstaged'
+          ? ['diff', ...plain, '--', file]
+          : area === 'conflicted'
+            ? ['diff', 'HEAD', ...plain, '--', file]
+            : // A new file: all of it added, against nothing.
+              ['diff', '--no-index', ...plain, '--', '/dev/null', file];
+    const result = await run(args, { cwd: root, timeoutMs: SLOW_MS, maxBytes: diffLimit });
+    // `--no-index` ends with 1 when the files differ, which a new file always does.
+    if (result.code !== 0 && !(area === 'untracked' && result.code === 1))
+      throw new KyrnError('unknown', firstLine(result.stderr) || `git diff ended with ${result.code}`);
+    if (BINARY.test(result.stdout)) return { patch: '', binary: true, truncated: false };
+    const patch = cut(result.stdout, diffLimit, result.overflow);
+    const truncated = result.overflow || patch.length < result.stdout.length;
+    const hunks = (area === 'staged' || area === 'unstaged') && !old && !truncated && splitPatch(patch) !== null;
+    return { patch, binary: false, truncated, ...(hunks ? { hunks: true } : {}) };
+  }
+
   // Two windows asking about one folder at once share one read.
   const reading = new Map<string, Promise<FolderGitStatus>>();
 
@@ -222,23 +270,31 @@ export function createFolderGit({
       if (!('root' in found)) throw new KyrnError('invalid', 'The folder is not in a repository git can read');
       const file = readPath(found.root, path);
       const old = from === undefined || from === '' ? undefined : readPath(found.root, from);
-      const plain = ['--no-color', '--no-ext-diff', '--no-textconv'];
-      const args =
-        area === 'staged'
-          ? ['diff', '--cached', '-M', ...plain, '--', ...(old ? [old] : []), file]
-          : area === 'unstaged'
-            ? ['diff', ...plain, '--', file]
-            : area === 'conflicted'
-              ? ['diff', 'HEAD', ...plain, '--', file]
-              : // A new file: all of it added, against nothing.
-                ['diff', '--no-index', ...plain, '--', '/dev/null', file];
-      const result = await run(args, { cwd: found.root, timeoutMs: SLOW_MS, maxBytes: diffLimit });
-      // `--no-index` ends with 1 when the files differ, which a new file always does.
-      if (result.code !== 0 && !(area === 'untracked' && result.code === 1))
-        throw new KyrnError('unknown', firstLine(result.stderr) || `git diff ended with ${result.code}`);
-      if (BINARY.test(result.stdout)) return { patch: '', binary: true, truncated: false };
-      const patch = cut(result.stdout, diffLimit, result.overflow);
-      return { patch, binary: false, truncated: result.overflow || patch.length < result.stdout.length };
+      return readDiff(found.root, file, area as GitArea, old);
+    },
+
+    async hunk({ cwd, path, area, hunk }) {
+      if (area !== 'staged' && area !== 'unstaged') throw new KyrnError('invalid', 'Invalid area');
+      if (typeof hunk !== 'string' || !hunk.startsWith('@@') || hunk.length > diffLimit)
+        throw new KyrnError('invalid', 'Invalid hunk');
+      const root = await repositoryOf(cwd);
+      const file = readPath(root, path);
+      // The hunk is looked for in the diff as it is now, and only that diff's own header and hunk go to git: what the
+      // screen sends picks a hunk, it never writes one.
+      const now = await readDiff(root, file, area);
+      const parts = now.hunks ? splitPatch(now.patch) : null;
+      const found = parts?.hunks.find((each) => hunkText(each) === hunkText(hunk));
+      if (!parts || !found) throw new KyrnError('stale', 'The file changed since its diff was shown', { file });
+      const args = area === 'unstaged' ? ['apply', '--cached'] : ['apply', '--cached', '-R'];
+      const result = await run([...args, '--whitespace=nowarn', '-'], {
+        cwd: root,
+        timeoutMs: INDEX_MS,
+        maxBytes: 1024 * 1024,
+        input: parts.header + (found.endsWith('\n') ? found : `${found}\n`),
+      });
+      if (result.code !== 0)
+        throw new KyrnError('unknown', firstLine(result.stderr) || `git apply ended with ${result.code}`);
+      return readDiff(root, file, area);
     },
 
     async stage({ cwd, paths }) {
