@@ -1107,7 +1107,25 @@
           "ask": "mu에게 커밋 맡기기",
           "askHint": "mu가 변경을 여러 커밋으로 나누고 메시지를 써요. 계획을 먼저 보여 주고, 동의할 때만 커밋해요."
         },
-        "actionFailed": "Git이 완료하지 못했어요: {{reason}}"
+        "actionFailed": "Git이 완료하지 못했어요: {{reason}}",
+        "pr": {
+          "none": "이 브랜치에는 풀 리퀘스트가 없습니다",
+          "ask": "mu에게 만들게 하기",
+          "prompt": "이 브랜치를 푸시하고 gh로 풀 리퀘스트를 만들어 주세요. 제목과 설명은 브랜치의 커밋을 바탕으로 쓰고, 만들기 전에 보낼 저장소와 기준 브랜치와 함께 먼저 보여 주세요.",
+          "checks": "검사: 통과 {{passed}}, 실패 {{failed}}, 실행 중 {{pending}}",
+          "status": {
+            "open": "열림",
+            "draft": "초안",
+            "merged": "병합됨",
+            "closed": "닫힘"
+          },
+          "state": {
+            "pass": "통과",
+            "fail": "실패",
+            "pending": "실행 중",
+            "skipped": "건너뜀"
+          }
+        }
       },
       "files": {
         "label": "{{folder}}의 파일",

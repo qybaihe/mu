@@ -80,6 +80,32 @@ export type FolderGitCommit =
   | { committed: true; commit: string; subject: string }
   | { committed: false; output: string };
 
+/** A pull request check: passed, failed (cancelled and timed out too), still to finish, or skipped (neutral too). */
+export type GitCheckState = 'pass' | 'fail' | 'pending' | 'skipped';
+
+/** One check of a pull request (a CI job, a commit status), with the page that says more when there is one. */
+export type GitCheck = { name: string; state: GitCheckState; url?: string };
+
+/**
+ * The pull request of the folder's branch, read with GitHub's CLI (process/services/folderGit/githubPr.ts):
+ * - `no-gh`: gh is not installed (not on the app's PATH);
+ * - `unavailable`: gh cannot say (signed out, a repository GitHub does not hold, no branch); `reason` is gh's words;
+ * - `none`: the branch has no pull request; `defaultBranch` is the repository's, which gets none of its own;
+ * - `pr`: its number, title, page, where it stands, and its checks.
+ */
+export type FolderGitPr =
+  | { state: 'no-gh' }
+  | { state: 'unavailable'; reason: string }
+  | { state: 'none'; defaultBranch?: string }
+  | {
+      state: 'pr';
+      number: number;
+      title: string;
+      url: string;
+      status: 'open' | 'draft' | 'merged' | 'closed';
+      checks: GitCheck[];
+    };
+
 /** The longest commit message, in characters. */
 export const GIT_MESSAGE_LIMIT = 20_000;
 
@@ -124,4 +150,6 @@ export const kyrnGitBridge = {
   hunk: bridge.buildProvider<KyrnResult<FolderGitDiff>, { cwd: string; path: string; area: GitArea; hunk: string }>(
     'kyrn.folder.git.hunk'
   ),
+  /** The pull request of the folder's branch and its checks, read with gh; nothing is pushed or opened. */
+  pr: bridge.buildProvider<KyrnResult<FolderGitPr>, { cwd: string }>('kyrn.folder.git.pr'),
 };

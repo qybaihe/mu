@@ -1107,7 +1107,25 @@
           "ask": "Let mu commit",
           "askHint": "mu splits the changes into commits and writes their messages. It shows you the plan and commits only when you agree."
         },
-        "actionFailed": "Git couldn't do that: {{reason}}"
+        "actionFailed": "Git couldn't do that: {{reason}}",
+        "pr": {
+          "none": "No pull request for this branch",
+          "ask": "Let mu open one",
+          "prompt": "Push this branch and open a pull request for it with gh. Write the title and description from the branch's commits. Before you create it, show me the title and description along with the repository and base branch it will target.",
+          "checks": "Checks: {{passed}} passed, {{failed}} failed, {{pending}} running",
+          "status": {
+            "open": "Open",
+            "draft": "Draft",
+            "merged": "Merged",
+            "closed": "Closed"
+          },
+          "state": {
+            "pass": "Passed",
+            "fail": "Failed",
+            "pending": "Running",
+            "skipped": "Skipped"
+          }
+        }
       },
       "files": {
         "label": "Files in {{folder}}",

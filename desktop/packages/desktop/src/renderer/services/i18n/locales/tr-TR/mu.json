@@ -1107,7 +1107,25 @@
           "ask": "mu commit etsin",
           "askHint": "mu değişiklikleri commit'lere böler ve mesajlarını yazar. Planı size gösterir, yalnızca onaylarsanız commit eder."
         },
-        "actionFailed": "Git bunu yapamadı: {{reason}}"
+        "actionFailed": "Git bunu yapamadı: {{reason}}",
+        "pr": {
+          "none": "Bu dal için çekme isteği yok",
+          "ask": "mu açsın",
+          "prompt": "Bu dalı gönder ve gh ile bir çekme isteği aç. Başlığı ve açıklamayı dalın commit'lerinden yaz, oluşturmadan önce gideceği depo ve temel dalla birlikte bana göster.",
+          "checks": "Denetimler: {{passed}} geçti, {{failed}} başarısız, {{pending}} çalışıyor",
+          "status": {
+            "open": "Açık",
+            "draft": "Taslak",
+            "merged": "Birleştirildi",
+            "closed": "Kapalı"
+          },
+          "state": {
+            "pass": "Geçti",
+            "fail": "Başarısız",
+            "pending": "Çalışıyor",
+            "skipped": "Atlandı"
+          }
+        }
       },
       "files": {
         "label": "{{folder}} içindeki dosyalar",

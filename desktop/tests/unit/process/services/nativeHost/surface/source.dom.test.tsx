@@ -34,6 +34,10 @@ const wires = vi.hoisted(() => ({
     return this.answer[kind] ?? { ok: true, data: undefined };
   },
   opened: [] as Array<{ content: string; type: string; meta: unknown }>,
+  /** The branch's pull request as gh says it; none asked about by default. */
+  pr: { ok: true, data: { state: 'no-gh' } } as unknown,
+  prCalls: 0,
+  links: [] as string[],
 }));
 
 vi.mock('@/common/kyrn/gitBridge', () => ({
@@ -53,9 +57,20 @@ vi.mock('@/common/kyrn/gitBridge', () => ({
     stage: { invoke: async (request: unknown) => wires.act('stage', request) },
     unstage: { invoke: async (request: unknown) => wires.act('unstage', request) },
     commit: { invoke: async (request: unknown) => wires.act('commit', request) },
+    pr: {
+      invoke: async () => {
+        wires.prCalls += 1;
+        return wires.pr;
+      },
+    },
   },
 }));
-vi.mock('@/renderer/utils/platform', () => ({ isMacOS: () => true, openExternalUrl: vi.fn() }));
+vi.mock('@/renderer/utils/platform', () => ({
+  isMacOS: () => true,
+  openExternalUrl: async (url: string) => {
+    wires.links.push(url);
+  },
+}));
 vi.mock('@/common/kyrn/bridge', () => ({
   unwrap: (result: Answer) => {
     if (!result.ok) throw new Error(result.error);
@@ -86,6 +101,9 @@ beforeEach(() => {
   wires.acts = [];
   wires.answer = {};
   wires.opened = [];
+  wires.pr = { ok: true, data: { state: 'no-gh' } };
+  wires.prCalls = 0;
+  wires.links = [];
 });
 afterEach(() => {
   cleanup();
@@ -555,5 +573,97 @@ describe('the commit box', () => {
     show({ conversationId: 'c1' });
     await settle();
     expect(screen.queryByTestId('native-commit-box')).toBeNull();
+  });
+});
+
+describe('the branch’s pull request', () => {
+  const branch = (name: string) => repository([], { branch: { name, commit: 'abc1234' } });
+  const pr = (checks: Array<{ name: string; state: string; url?: string }>, status = 'open') => ({
+    ok: true,
+    data: { state: 'pr', number: 267, title: 'Stage one hunk', url: 'https://github.com/o/r/pull/267', status, checks },
+  });
+
+  it('shows its number, title and state, opens it on GitHub, and counts and lists its checks', async () => {
+    wires.answers = [branch('feat/hunks')];
+    wires.pr = pr([
+      { name: 'Desktop · checks', state: 'pass', url: 'https://github.com/o/r/actions/runs/1' },
+      { name: 'lint', state: 'fail' },
+      { name: 'Windows tests', state: 'pending' },
+    ]);
+    show();
+    await settle();
+
+    const row = screen.getByTestId('native-source-pr');
+    expect(row).toHaveAttribute('data-status', 'open');
+    expect(screen.getByTestId('native-source-pr-open')).toHaveTextContent('#267 Stage one hunk');
+    expect(screen.getByTestId('native-source-pr-status')).toHaveTextContent(mu.native.panel.source.pr.status.open);
+    fireEvent.click(screen.getByTestId('native-source-pr-open'));
+    expect(wires.links).toEqual(['https://github.com/o/r/pull/267']);
+
+    const checks = screen.getByTestId('native-source-pr-checks');
+    expect(checks).toHaveAttribute('data-failed', '1');
+    expect(checks).toHaveAccessibleName('Checks: 1 passed, 1 failed, 1 running');
+    fireEvent.click(checks);
+    const listed = await screen.findAllByTestId('native-source-pr-check');
+    expect(listed.map((check) => check.dataset.state)).toEqual(['pass', 'fail', 'pending']);
+    fireEvent.click(listed[0]);
+    expect(wires.links.at(-1)).toBe('https://github.com/o/r/actions/runs/1');
+  });
+
+  it('reads the checks again every 30 seconds while one is running, and stops once none is', async () => {
+    vi.useFakeTimers();
+    wires.answers = [branch('feat/hunks')];
+    wires.pr = pr([{ name: 'build', state: 'pending' }]);
+    show();
+    await settle();
+    const first = wires.prCalls;
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+    expect(wires.prCalls).toBe(first + 1);
+    wires.pr = pr([{ name: 'build', state: 'pass' }]);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+    const done = wires.prCalls;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(90_000);
+    });
+    expect(wires.prCalls).toBe(done);
+  });
+
+  it('offers to have mu open one on a branch with none, by putting the request in the send box', async () => {
+    wires.answers = [branch('feat/hunks')];
+    wires.pr = { ok: true, data: { state: 'none', defaultBranch: 'main' } };
+    const filled: string[] = [];
+    const fill = (text: string) => filled.push(text);
+    emitter.on('sendbox.fill', fill);
+    try {
+      show();
+      await settle();
+      expect(screen.getByTestId('native-source-pr')).toHaveAttribute('data-state', 'none');
+      fireEvent.click(screen.getByTestId('native-source-pr-ask'));
+      expect(filled).toEqual([mu.native.panel.source.pr.prompt]);
+    } finally {
+      emitter.off('sendbox.fill', fill);
+    }
+  });
+
+  it('shows nothing on the default branch with none, without gh, or when gh cannot say', async () => {
+    for (const answer of [
+      { ok: true, data: { state: 'none', defaultBranch: 'main' } },
+      { ok: true, data: { state: 'no-gh' } },
+      { ok: true, data: { state: 'unavailable', reason: 'gh auth login' } },
+      { ok: false, error: 'boom' },
+    ]) {
+      cleanup();
+      forgetFolderGit();
+      wires.answers = [branch('main')];
+      wires.pr = answer;
+      show();
+      await settle();
+      expect(screen.queryByTestId('native-source-pr')).toBeNull();
+    }
   });
 });
