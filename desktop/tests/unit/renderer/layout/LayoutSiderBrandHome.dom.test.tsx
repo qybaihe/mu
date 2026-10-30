@@ -54,7 +54,7 @@ vi.mock('@/common', () => ({
       openDevTools: { invoke: () => openDevTools() },
       logStream: { on: () => () => {} },
       menuCommand: {
-        on: (callback: (event: { command: 'newChat' | 'openSettings' }) => void) => {
+        on: (callback: (event: { command: 'newChat' | 'openSettings' | 'shortcuts' }) => void) => {
           menuMocks.command = callback;
           return () => {
             menuMocks.command = undefined;
@@ -114,6 +114,7 @@ vi.mock('@renderer/components/layout/WorkPanel', () => ({
 }));
 
 import Layout from '@renderer/components/layout/Layout';
+import { emitter } from '@/renderer/utils/emitter';
 
 const renderLayout = () => render(<Layout sider={<div>sider</div>} />);
 
@@ -336,6 +337,19 @@ describe('Layout sider brand Home button', () => {
 
     act(() => menuMocks.command?.({ command: 'openSettings' }));
     expect(navigate).toHaveBeenLastCalledWith('/settings/providers');
+  });
+
+  it('shows the keyboard shortcuts when Help asks', () => {
+    platformMocks.isElectronDesktopMock.mockReturnValue(true);
+    renderLayout();
+    const shown = vi.fn();
+    emitter.on('shortcuts.toggle', shown);
+
+    act(() => menuMocks.command?.({ command: 'shortcuts' }));
+
+    expect(shown).toHaveBeenCalledTimes(1);
+    expect(navigate).not.toHaveBeenCalled();
+    emitter.off('shortcuts.toggle', shown);
   });
 
   it('stays on the settings page shown when the menu asks for the settings there', () => {

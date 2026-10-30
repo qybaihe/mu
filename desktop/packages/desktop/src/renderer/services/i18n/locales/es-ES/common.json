@@ -1504,7 +1504,8 @@
     "bringAllToFront": "Traer todo al frente",
     "help": "Ayuda",
     "checkForUpdates": "Buscar actualizaciones…",
-    "projectPage": "{{name}} en GitHub"
+    "projectPage": "{{name}} en GitHub",
+    "keyboardShortcuts": "Atajos de teclado"
   },
   "trayMenu": {
     "runningTasks": "Tareas en ejecución: {{count}}"
@@ -1528,7 +1529,8 @@
       "newConversation": "Empezar un chat nuevo",
       "scheduledTasks": "Abrir las tareas programadas",
       "quickOpen": "Abrir un archivo por su nombre",
-      "nextWaiting": "Ir a la siguiente conversación que te espera"
+      "nextWaiting": "Ir a la siguiente conversación que te espera",
+      "shortcuts": "Mostrar atajos de teclado"
     },
     "commandWaits": "Se ejecutará cuando termine esta respuesta"
   },
@@ -1585,5 +1587,38 @@
     "failed": "No se pudo leer la carpeta de esta conversación.",
     "more": "Esta carpeta tiene más archivos de los que se muestran. Escribe más del nombre para acotar.",
     "noFolder": "Abre una conversación con carpeta para buscar sus archivos por nombre."
+  },
+  "shortcuts": {
+    "title": "Atajos de teclado",
+    "groups": {
+      "general": "General",
+      "conversations": "Conversaciones",
+      "panels": "Paneles",
+      "sendBox": "Cuadro de envío",
+      "view": "Vista"
+    },
+    "rows": {
+      "palette": "Buscar conversaciones, ajustes y comandos",
+      "quickOpen": "Abrir un archivo por su nombre",
+      "searchMessages": "Buscar en todos los mensajes",
+      "findInConversation": "Buscar en esta conversación",
+      "newConversation": "Nueva conversación",
+      "settings": "Ajustes",
+      "shortcuts": "Atajos de teclado",
+      "byPosition": "Abrir la conversación en esa posición de la barra lateral",
+      "nextWaiting": "Siguiente conversación que te espera",
+      "nextPrevious": "Conversación siguiente o anterior",
+      "sidebar": "Mostrar u ocultar la barra lateral",
+      "workPanel": "Mostrar u ocultar el panel de trabajo",
+      "closeTab": "Cerrar la pestaña de vista previa o la página del navegador en la que estás",
+      "saveFile": "Guardar el archivo que estás editando",
+      "send": "Enviar",
+      "newLine": "Nueva línea",
+      "history": "Recuperar un mensaje anterior",
+      "commands": "Ejecutar un comando",
+      "mention": "Mencionar un archivo",
+      "zoom": "Acercar o alejar",
+      "resetZoom": "Tamaño real"
+    }
   }
 }

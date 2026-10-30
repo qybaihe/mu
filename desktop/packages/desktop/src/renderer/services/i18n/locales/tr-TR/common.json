@@ -1504,7 +1504,8 @@
     "bringAllToFront": "Tümünü öne getir",
     "help": "Yardım",
     "checkForUpdates": "Güncellemeleri kontrol et…",
-    "projectPage": "GitHub'da {{name}}"
+    "projectPage": "GitHub'da {{name}}",
+    "keyboardShortcuts": "Klavye kısayolları"
   },
   "trayMenu": {
     "runningTasks": "Çalışan görevler: {{count}}"
@@ -1528,7 +1529,8 @@
       "newConversation": "Yeni sohbet başlat",
       "scheduledTasks": "Zamanlanmış görevleri aç",
       "quickOpen": "Adına göre dosya aç",
-      "nextWaiting": "Sizi bekleyen sonraki konuşmaya git"
+      "nextWaiting": "Sizi bekleyen sonraki konuşmaya git",
+      "shortcuts": "Klavye kısayollarını göster"
     },
     "commandWaits": "Bu yanıt bitince çalışır"
   },
@@ -1585,5 +1587,38 @@
     "failed": "Bu konuşmanın klasörü okunamadı.",
     "more": "Bu klasörde listelenenden daha fazla dosya var. Daraltmak için adın devamını yazın.",
     "noFolder": "Dosyalarını adına göre bulmak için klasörü olan bir konuşma açın."
+  },
+  "shortcuts": {
+    "title": "Klavye kısayolları",
+    "groups": {
+      "general": "Genel",
+      "conversations": "Konuşmalar",
+      "panels": "Paneller",
+      "sendBox": "Gönderme kutusu",
+      "view": "Görünüm"
+    },
+    "rows": {
+      "palette": "Konuşmaları, ayarları ve komutları ara",
+      "quickOpen": "Adıyla dosya aç",
+      "searchMessages": "Tüm mesajlarda ara",
+      "findInConversation": "Bu konuşmada bul",
+      "newConversation": "Yeni konuşma",
+      "settings": "Ayarlar",
+      "shortcuts": "Klavye kısayolları",
+      "byPosition": "Kenar çubuğunda o konumdaki konuşmayı aç",
+      "nextWaiting": "Sizi bekleyen sonraki konuşma",
+      "nextPrevious": "Sonraki veya önceki konuşma",
+      "sidebar": "Kenar çubuğunu göster veya gizle",
+      "workPanel": "Çalışma panelini göster veya gizle",
+      "closeTab": "İçinde bulunduğunuz önizleme sekmesini veya tarayıcı sayfasını kapat",
+      "saveFile": "Düzenlediğiniz dosyayı kaydet",
+      "send": "Gönder",
+      "newLine": "Yeni satır",
+      "history": "Önceki bir mesajı geri getir",
+      "commands": "Komut çalıştır",
+      "mention": "Dosyadan bahset",
+      "zoom": "Yakınlaştır veya uzaklaştır",
+      "resetZoom": "Gerçek boyut"
+    }
   }
 }

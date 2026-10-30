@@ -25,6 +25,8 @@ export type ApplicationMenuActions = {
   /** The update check of 关于 (About); mu updates itself from its GitHub releases in every build. */
   checkForUpdates: () => void;
   openProjectPage: () => void;
+  /** 键盘快捷键: the sheet of the app's keys. */
+  showShortcuts: () => void;
   /** The app's own zoom steps, as the keyboard's. */
   zoom: (action: ZoomShortcutAction) => void;
 };
@@ -41,8 +43,8 @@ const separator: MenuItemConstructorOptions = { type: 'separator' };
 /**
  * The application menu template. On a Mac: the app menu (about, updates, settings, services, hide, quit), File (a new
  * conversation, close the window), Edit, View (zoom, full screen; reload and the developer tools only in a build run
- * from its sources), Window and Help (the project's page). Windows and Linux get File (with the settings and quit),
- * Edit, View and Help (with the update check).
+ * from its sources), Window and Help (the keyboard shortcuts, the project's page). Windows and Linux get File (with
+ * the settings and quit), Edit, View and Help (with the update check).
  *
  * Every visible item carries its own label: Electron's role defaults follow the operating system's language, not the
  * app's. A label keeps the role's behaviour (and its accelerator).
@@ -159,6 +161,9 @@ export function buildApplicationMenuTemplate(
     // The help role keeps the macOS search field in this menu.
     role: 'help',
     submenu: [
+      // No accelerator: on a Mac the menu would take Cmd+/ from an editor in the page (its comment toggle); the
+      // page handles the key itself, with that editor left alone, and the sheet shows it.
+      { label: t('common.menu.keyboardShortcuts'), click: () => actions.showShortcuts() },
       { label: t('common.menu.projectPage', { name }), click: () => actions.openProjectPage() },
       ...(isMac ? [] : [separator, checkForUpdates]),
     ],
@@ -192,6 +197,10 @@ const applicationMenuActions: ApplicationMenuActions = {
     void shell.openExternal(MU_PROJECT_URL).catch((error: unknown) => {
       console.error('[mu] Failed to open the project page:', error);
     });
+  },
+  showShortcuts: () => {
+    revealMainWindow();
+    ipcBridge.application.menuCommand.emit({ command: 'shortcuts' });
   },
   zoom: zoomFromMenu,
 };

@@ -12,6 +12,7 @@ import classNames from 'classnames';
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { emitter } from '@/renderer/utils/emitter';
 import { setGlobalNavigate } from '@/renderer/utils/navigation';
 import { usePreviewContext } from '@renderer/pages/conversation/Preview';
 import WorkPanelHost, { panelGeometry } from '@renderer/components/layout/WorkPanel';
@@ -364,14 +365,16 @@ const Layout: React.FC<{
       void navigate('/settings/about');
       void ipcBridge.update.run.invoke({ action: 'check' });
     });
-    // The application menu's 新会话 (⌘N), as the sidebar's button, and 设置… (⌘,), which stays on the settings page
-    // already open.
+    // The application menu's 新会话 (⌘N), as the sidebar's button, 设置… (⌘,), which stays on the settings page
+    // already open, and Help's keyboard shortcuts.
     const removeMenuCommandListener = ipcBridge.application.menuCommand.on(({ command }) => {
       cleanupSiderTooltips();
       if (command === 'newChat') {
         void navigate('/guid', { state: { resetAssistant: true } });
       } else if (command === 'openSettings' && !pathnameRef.current.startsWith('/settings')) {
         void navigate(SETTINGS_HOME);
+      } else if (command === 'shortcuts') {
+        emitter.emit('shortcuts.toggle');
       }
     });
 

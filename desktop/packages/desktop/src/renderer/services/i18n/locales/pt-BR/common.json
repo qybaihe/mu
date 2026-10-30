@@ -1504,7 +1504,8 @@
     "bringAllToFront": "Trazer todas para a frente",
     "help": "Ajuda",
     "checkForUpdates": "Verificar atualizações…",
-    "projectPage": "{{name}} no GitHub"
+    "projectPage": "{{name}} no GitHub",
+    "keyboardShortcuts": "Atalhos de teclado"
   },
   "trayMenu": {
     "runningTasks": "Tarefas em execução: {{count}}"
@@ -1528,7 +1529,8 @@
       "newConversation": "Começar um novo chat",
       "scheduledTasks": "Abrir tarefas agendadas",
       "quickOpen": "Abrir um arquivo pelo nome",
-      "nextWaiting": "Ir para a próxima conversa esperando por você"
+      "nextWaiting": "Ir para a próxima conversa esperando por você",
+      "shortcuts": "Mostrar atalhos de teclado"
     },
     "commandWaits": "Será executado quando esta resposta terminar"
   },
@@ -1585,5 +1587,38 @@
     "failed": "Não foi possível ler a pasta desta conversa.",
     "more": "Esta pasta tem mais arquivos do que os listados. Digite mais do nome para filtrar.",
     "noFolder": "Abra uma conversa com uma pasta para encontrar os arquivos pelo nome."
+  },
+  "shortcuts": {
+    "title": "Atalhos de teclado",
+    "groups": {
+      "general": "Geral",
+      "conversations": "Conversas",
+      "panels": "Painéis",
+      "sendBox": "Caixa de envio",
+      "view": "Visualização"
+    },
+    "rows": {
+      "palette": "Pesquisar conversas, configurações e comandos",
+      "quickOpen": "Abrir um arquivo pelo nome",
+      "searchMessages": "Pesquisar todas as mensagens",
+      "findInConversation": "Localizar nesta conversa",
+      "newConversation": "Nova conversa",
+      "settings": "Configurações",
+      "shortcuts": "Atalhos de teclado",
+      "byPosition": "Abrir a conversa nessa posição da barra lateral",
+      "nextWaiting": "Próxima conversa esperando por você",
+      "nextPrevious": "Conversa seguinte ou anterior",
+      "sidebar": "Mostrar ou ocultar a barra lateral",
+      "workPanel": "Mostrar ou ocultar o painel de trabalho",
+      "closeTab": "Fechar a aba de visualização ou a página do navegador em que você está",
+      "saveFile": "Salvar o arquivo que você está editando",
+      "send": "Enviar",
+      "newLine": "Nova linha",
+      "history": "Trazer de volta uma mensagem anterior",
+      "commands": "Executar um comando",
+      "mention": "Mencionar um arquivo",
+      "zoom": "Aumentar ou diminuir o zoom",
+      "resetZoom": "Tamanho real"
+    }
   }
 }

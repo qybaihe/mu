@@ -1504,7 +1504,8 @@
     "bringAllToFront": "將全部移至最前",
     "help": "說明",
     "checkForUpdates": "檢查更新…",
-    "projectPage": "GitHub 上的 {{name}}"
+    "projectPage": "GitHub 上的 {{name}}",
+    "keyboardShortcuts": "鍵盤快速鍵"
   },
   "trayMenu": {
     "runningTasks": "執行中的任務：{{count}}"
@@ -1528,7 +1529,8 @@
       "newConversation": "開始新會話",
       "scheduledTasks": "開啟定時任務",
       "quickOpen": "依名稱開啟檔案",
-      "nextWaiting": "前往下一個等你處理的對話"
+      "nextWaiting": "前往下一個等你處理的對話",
+      "shortcuts": "顯示鍵盤快速鍵"
     },
     "commandWaits": "等這一輪結束後執行"
   },
@@ -1585,5 +1587,38 @@
     "failed": "無法讀取本對話的資料夾。",
     "more": "這個資料夾的檔案比列出的多。多輸入幾個字可以縮小範圍。",
     "noFolder": "先開啟一個帶資料夾的對話，才能依名稱找它的檔案。"
+  },
+  "shortcuts": {
+    "title": "鍵盤快速鍵",
+    "groups": {
+      "general": "一般",
+      "conversations": "對話",
+      "panels": "面板",
+      "sendBox": "輸入框",
+      "view": "檢視"
+    },
+    "rows": {
+      "palette": "搜尋對話、設定和命令",
+      "quickOpen": "依名稱開啟檔案",
+      "searchMessages": "搜尋所有訊息",
+      "findInConversation": "在目前對話中尋找",
+      "newConversation": "新對話",
+      "settings": "設定",
+      "shortcuts": "鍵盤快速鍵",
+      "byPosition": "開啟側欄中對應位置的對話",
+      "nextWaiting": "下一個等你處理的對話",
+      "nextPrevious": "下一個或上一個對話",
+      "sidebar": "顯示或隱藏側欄",
+      "workPanel": "顯示或隱藏工作面板",
+      "closeTab": "關閉你所在的預覽分頁或瀏覽器頁面",
+      "saveFile": "儲存正在編輯的檔案",
+      "send": "傳送",
+      "newLine": "換行",
+      "history": "叫出之前傳過的訊息",
+      "commands": "執行命令",
+      "mention": "提及檔案",
+      "zoom": "放大或縮小",
+      "resetZoom": "實際大小"
+    }
   }
 }

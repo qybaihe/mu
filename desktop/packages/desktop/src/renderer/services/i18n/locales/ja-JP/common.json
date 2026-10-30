@@ -1504,7 +1504,8 @@
     "bringAllToFront": "すべてを手前に移動",
     "help": "ヘルプ",
     "checkForUpdates": "更新を確認…",
-    "projectPage": "GitHub の {{name}}"
+    "projectPage": "GitHub の {{name}}",
+    "keyboardShortcuts": "キーボードショートカット"
   },
   "trayMenu": {
     "runningTasks": "実行中のタスク: {{count}}"
@@ -1528,7 +1529,8 @@
       "newConversation": "新しいチャットを始める",
       "scheduledTasks": "スケジュールタスクを開く",
       "quickOpen": "名前でファイルを開く",
-      "nextWaiting": "対応待ちの次の会話へ移動"
+      "nextWaiting": "対応待ちの次の会話へ移動",
+      "shortcuts": "キーボードショートカットを表示"
     },
     "commandWaits": "この応答が終わってから実行します"
   },
@@ -1585,5 +1587,38 @@
     "failed": "この会話のフォルダーを読み込めませんでした。",
     "more": "このフォルダーには一覧より多くのファイルがあります。名前をもう少し入力すると絞り込めます。",
     "noFolder": "フォルダーのある会話を開くと、そのファイルを名前で探せます。"
+  },
+  "shortcuts": {
+    "title": "キーボードショートカット",
+    "groups": {
+      "general": "全般",
+      "conversations": "会話",
+      "panels": "パネル",
+      "sendBox": "入力欄",
+      "view": "表示"
+    },
+    "rows": {
+      "palette": "会話・設定・コマンドを検索",
+      "quickOpen": "名前でファイルを開く",
+      "searchMessages": "すべてのメッセージを検索",
+      "findInConversation": "この会話内を検索",
+      "newConversation": "新しい会話",
+      "settings": "設定",
+      "shortcuts": "キーボードショートカット",
+      "byPosition": "サイドバーのその位置の会話を開く",
+      "nextWaiting": "対応待ちの次の会話",
+      "nextPrevious": "次または前の会話",
+      "sidebar": "サイドバーの表示・非表示",
+      "workPanel": "作業パネルの表示・非表示",
+      "closeTab": "今いるプレビューのタブやブラウザのページを閉じる",
+      "saveFile": "編集中のファイルを保存",
+      "send": "送信",
+      "newLine": "改行",
+      "history": "以前に送ったメッセージを呼び出す",
+      "commands": "コマンドを実行",
+      "mention": "ファイルをメンション",
+      "zoom": "拡大・縮小",
+      "resetZoom": "実際のサイズ"
+    }
   }
 }

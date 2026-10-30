@@ -189,3 +189,75 @@
   line-height: 18px;
   color: var(--bg-6);
 }
+
+/* The keyboard shortcuts: the palette's surface, wider, with the groups in two columns where there is room. */
+.wrap .palette.sheet {
+  top: 10vh;
+  width: 720px;
+}
+
+.sheetBody {
+  max-height: 76vh;
+  overflow-y: auto;
+  padding: 14px 16px 16px;
+  columns: 2 300px;
+  column-gap: 24px;
+}
+
+.sheetTitle {
+  column-span: all;
+  padding: 0 10px 6px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.sheetGroup {
+  break-inside: avoid;
+  margin-bottom: 8px;
+}
+
+.sheetList {
+  margin: 0;
+}
+
+.sheetRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.sheetRow dt {
+  min-width: 0;
+}
+
+.sheetKeys {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+}
+
+.sheetKey {
+  min-width: 20px;
+  padding: 1px 6px;
+  border: 1px solid var(--border-base);
+  border-radius: 4px;
+  background-color: var(--bg-2);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.sheetOr {
+  font-size: 12px;
+  color: var(--bg-6);
+}

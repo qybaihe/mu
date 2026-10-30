@@ -1504,7 +1504,8 @@
     "bringAllToFront": "Tout ramener au premier plan",
     "help": "Aide",
     "checkForUpdates": "Vérifier les mises à jour…",
-    "projectPage": "{{name}} sur GitHub"
+    "projectPage": "{{name}} sur GitHub",
+    "keyboardShortcuts": "Raccourcis clavier"
   },
   "trayMenu": {
     "runningTasks": "Tâches en cours : {{count}}"
@@ -1528,7 +1529,8 @@
       "newConversation": "Commencer un nouveau chat",
       "scheduledTasks": "Ouvrir les tâches planifiées",
       "quickOpen": "Ouvrir un fichier par son nom",
-      "nextWaiting": "Aller à la prochaine conversation qui vous attend"
+      "nextWaiting": "Aller à la prochaine conversation qui vous attend",
+      "shortcuts": "Afficher les raccourcis clavier"
     },
     "commandWaits": "S’exécutera une fois cette réponse terminée"
   },
@@ -1585,5 +1587,38 @@
     "failed": "Impossible de lire le dossier de cette conversation.",
     "more": "Ce dossier contient plus de fichiers que ceux listés. Tapez davantage du nom pour affiner.",
     "noFolder": "Ouvrez une conversation avec un dossier pour trouver ses fichiers par nom."
+  },
+  "shortcuts": {
+    "title": "Raccourcis clavier",
+    "groups": {
+      "general": "Général",
+      "conversations": "Conversations",
+      "panels": "Panneaux",
+      "sendBox": "Zone de saisie",
+      "view": "Affichage"
+    },
+    "rows": {
+      "palette": "Rechercher conversations, réglages et commandes",
+      "quickOpen": "Ouvrir un fichier par son nom",
+      "searchMessages": "Rechercher dans tous les messages",
+      "findInConversation": "Rechercher dans cette conversation",
+      "newConversation": "Nouvelle conversation",
+      "settings": "Réglages",
+      "shortcuts": "Raccourcis clavier",
+      "byPosition": "Ouvrir la conversation à cette position de la barre latérale",
+      "nextWaiting": "Prochaine conversation qui vous attend",
+      "nextPrevious": "Conversation suivante ou précédente",
+      "sidebar": "Afficher ou masquer la barre latérale",
+      "workPanel": "Afficher ou masquer le panneau de travail",
+      "closeTab": "Fermer l'onglet d'aperçu ou la page du navigateur où vous êtes",
+      "saveFile": "Enregistrer le fichier en cours de modification",
+      "send": "Envoyer",
+      "newLine": "Nouvelle ligne",
+      "history": "Rappeler un message précédent",
+      "commands": "Lancer une commande",
+      "mention": "Mentionner un fichier",
+      "zoom": "Zoom avant ou arrière",
+      "resetZoom": "Taille réelle"
+    }
   }
 }

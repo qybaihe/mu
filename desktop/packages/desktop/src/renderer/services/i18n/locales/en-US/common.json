@@ -1504,7 +1504,8 @@
     "bringAllToFront": "Bring all to front",
     "help": "Help",
     "checkForUpdates": "Check for updates…",
-    "projectPage": "{{name}} on GitHub"
+    "projectPage": "{{name}} on GitHub",
+    "keyboardShortcuts": "Keyboard shortcuts"
   },
   "trayMenu": {
     "runningTasks": "Running tasks: {{count}}"
@@ -1528,7 +1529,8 @@
       "newConversation": "Start a new conversation",
       "scheduledTasks": "Open scheduled tasks",
       "quickOpen": "Open a file by name",
-      "nextWaiting": "Go to the next conversation waiting for you"
+      "nextWaiting": "Go to the next conversation waiting for you",
+      "shortcuts": "Show keyboard shortcuts"
     },
     "commandWaits": "Runs after this reply is done"
   },
@@ -1585,5 +1587,38 @@
     "failed": "Couldn't read this conversation's folder.",
     "more": "Not every file is listed. Keep typing to narrow it down.",
     "noFolder": "Open a conversation with a folder to find its files by name."
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "groups": {
+      "general": "General",
+      "conversations": "Conversations",
+      "panels": "Panels",
+      "sendBox": "Send box",
+      "view": "View"
+    },
+    "rows": {
+      "palette": "Search conversations, settings and commands",
+      "quickOpen": "Open a file by name",
+      "searchMessages": "Search all messages",
+      "findInConversation": "Find in this conversation",
+      "newConversation": "New conversation",
+      "settings": "Settings",
+      "shortcuts": "Keyboard shortcuts",
+      "byPosition": "Open the conversation at that position in the sidebar",
+      "nextWaiting": "Next conversation waiting for you",
+      "nextPrevious": "Next or previous conversation",
+      "sidebar": "Show or hide the sidebar",
+      "workPanel": "Show or hide the work panel",
+      "closeTab": "Close the preview tab or browser page you're in",
+      "saveFile": "Save the file you're editing",
+      "send": "Send",
+      "newLine": "New line",
+      "history": "Bring back an earlier message",
+      "commands": "Run a command",
+      "mention": "Mention a file",
+      "zoom": "Zoom in or out",
+      "resetZoom": "Actual size"
+    }
   }
 }

@@ -165,6 +165,9 @@ const openPalette = () => {
 };
 const type = (value: string) => fireEvent.change(input(), { target: { value } });
 const key = (name: string) => fireEvent.keyDown(input(), { key: name });
+/** The keys a row of the keyboard shortcuts shows, as written. */
+const keysOf = (id: string) =>
+  Array.from(document.querySelectorAll(`[data-shortcut="${id}"] kbd`)).map((node) => node.textContent);
 const groupsShown = () =>
   Array.from(document.querySelectorAll('[data-palette-group]')).map((node) => node.getAttribute('data-palette-group'));
 /** The labels of a group's rows, without the time or description beside them. */
@@ -261,6 +264,68 @@ describe('command palette', () => {
       expect(await screen.findByTestId('quick-open-no-folder')).toHaveTextContent(
         'Open a conversation with a folder to find its files by name.'
       );
+    });
+  });
+
+  describe('keyboard shortcuts', () => {
+    const sheet = () => screen.queryByTestId('shortcut-sheet');
+
+    it('shows the app’s keys in groups with Cmd+/, as a Mac writes them, and the same keys close them', async () => {
+      render(<Harness />);
+      press(window, { key: '/', metaKey: true });
+
+      expect(sheet()).toHaveTextContent('Keyboard shortcuts');
+      expect(
+        Array.from(document.querySelectorAll('[data-shortcut-group]')).map((node) =>
+          node.getAttribute('data-shortcut-group')
+        )
+      ).toEqual(['general', 'conversations', 'panels', 'sendBox', 'view']);
+      expect(document.querySelector('[data-shortcut="palette"]')).toHaveTextContent(
+        'Search conversations, settings and commands'
+      );
+      expect(keysOf('palette')).toEqual(['⌘K']);
+      expect(keysOf('nextWaiting')).toEqual(['⇧⌘A']);
+      expect(keysOf('byPosition')).toEqual(['⌘1', '⌘9']);
+      expect(keysOf('nextPrevious')).toEqual(['⌃Tab', '⌃⇧Tab']);
+      expect(keysOf('newLine')).toEqual(['⇧Enter']);
+
+      press(window, { key: '/', metaKey: true });
+      await waitFor(() => expect(sheet()).not.toBeInTheDocument());
+    });
+
+    it('writes them with Ctrl on Windows and Linux, and opens with Ctrl+/ there', () => {
+      state.mac = false;
+      render(<Harness />);
+      press(window, { key: '/', ctrlKey: true });
+
+      expect(keysOf('nextWaiting')).toEqual(['Ctrl+Shift+A']);
+      expect(keysOf('nextPrevious')).toEqual(['Ctrl+Tab', 'Ctrl+Shift+Tab']);
+      expect(keysOf('newLine')).toEqual(['Shift+Enter']);
+    });
+
+    it('leaves Cmd+/ to an editor in the page (its comment toggle)', () => {
+      render(<Harness />);
+      const editor = document.createElement('div');
+      editor.className = 'cm-editor';
+      document.body.append(editor);
+
+      press(editor, { key: '/', metaKey: true });
+
+      expect(sheet()).not.toBeInTheDocument();
+      editor.remove();
+    });
+
+    it('opens from the palette’s row, which says its key', () => {
+      setCurrentConversation(null);
+      render(<Harness />);
+      openPalette();
+      type('shortcuts');
+      const row = screen.getByRole('option', { name: /Show keyboard shortcuts/ });
+      expect(row).toHaveTextContent('⌘/');
+
+      key('Enter');
+
+      expect(sheet()).toBeInTheDocument();
     });
   });
 
@@ -413,7 +478,12 @@ describe('command palette', () => {
       openPalette();
 
       expect(groupsShown()).toEqual(['settings', 'commands']);
-      expect(labelsOf('commands')).toEqual(['Start a new conversation', 'Open scheduled tasks', 'Open a file by name']);
+      expect(labelsOf('commands')).toEqual([
+        'Start a new conversation',
+        'Open scheduled tasks',
+        'Open a file by name',
+        'Show keyboard shortcuts',
+      ]);
       expect(screen.getByTestId('command-palette-hint')).toHaveTextContent(
         'No conversations yet. Type to find settings and commands.'
       );
@@ -470,7 +540,8 @@ describe('command palette', () => {
       openPalette();
       type('board');
 
-      expect(groupsShown()).not.toContain('commands');
+      // "board" matches the app's own "Show keyboard shortcuts", but no command of the harness's.
+      expect(document.querySelector('[data-kind="command"]')).toBeNull();
     });
 
     it('offers no commands in a conversation whose send box does not take them', () => {
@@ -479,7 +550,7 @@ describe('command palette', () => {
       openPalette();
       type('board');
 
-      expect(groupsShown()).not.toContain('commands');
+      expect(document.querySelector('[data-kind="command"]')).toBeNull();
     });
 
     it('asks for the commands without starting the runtime of the conversation', async () => {

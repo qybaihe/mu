@@ -10,6 +10,7 @@ import {
   QUICK_OPEN_SHORTCUT,
 } from '@/renderer/utils/ui/keyboardShortcuts';
 import { splitByHits, type PaletteItem } from './paletteGroups';
+import { SHORTCUT_SHEET_SHORTCUT } from './ShortcutSheet';
 import { usePaletteGroups } from './usePaletteGroups';
 import { usePaletteNavigation } from './usePaletteNavigation';
 import styles from './CommandPalette.module.css';
@@ -123,6 +124,9 @@ const CommandPalettePanel: React.FC<{ onRun: (item: PaletteItem) => void }> = ({
                   ) : null}
                   {item.kind === 'action' && item.action === 'nextWaiting' ? (
                     <span className={styles.meta}>{formatPrimaryShortcut(NEXT_WAITING_SHORTCUT)}</span>
+                  ) : null}
+                  {item.kind === 'action' && item.action === 'shortcuts' ? (
+                    <span className={styles.meta}>{formatPrimaryShortcut(SHORTCUT_SHEET_SHORTCUT)}</span>
                   ) : null}
                 </div>
               );

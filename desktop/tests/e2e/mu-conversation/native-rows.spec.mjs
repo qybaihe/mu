@@ -3,7 +3,7 @@
 // (a dot in the theme's colour) and read again, and archives it (the row leaves the list for an Archived fold, whose
 // rows offer to restore it). Both are kept in the window's storage, so they outlive a restart of the app; opening a
 // conversation takes its mark off. The keys go to a row: Cmd/Ctrl+1 to 9 by its place, Cmd/Ctrl+Shift+A to the next one
-// marked. Run with `bun run e2e:conversation --native` (every native*.spec.mjs).
+// marked, Cmd/Ctrl+/ lists them all. Run with `bun run e2e:conversation --native` (every native*.spec.mjs).
 import { expect, test } from '@playwright/test';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -150,6 +150,17 @@ test('Cmd/Ctrl+1 and 2 open the rows in those places, and Cmd/Ctrl+Shift+A the o
   await p.keyboard.press(`${mod}+Shift+A`);
   await expect(p.getByText('没有等你处理的会话')).toBeVisible();
   await shot('rows-keys-none-waiting');
+
+  // Cmd/Ctrl+/ lists the keys, written as this computer writes them; the same keys close the list.
+  await p.keyboard.press(`${mod}+/`);
+  const sheet = p.getByTestId('shortcut-sheet');
+  await expect(sheet).toBeVisible();
+  await expect(sheet.locator('[data-shortcut="nextWaiting"] kbd')).toHaveText(
+    process.platform === 'darwin' ? '⇧⌘A' : 'Ctrl+Shift+A'
+  );
+  await shot('shortcut-sheet');
+  await p.keyboard.press(`${mod}+/`);
+  await expect(sheet).toHaveCount(0);
   expectNoProblems();
 });
 
