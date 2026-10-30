@@ -13,6 +13,7 @@ import { emitter, useAddEventListener } from '@/renderer/utils/emitter';
 import CommandPalettePanel from './CommandPalettePanel';
 import type { PaletteItem } from './paletteGroups';
 import QuickOpen, { toggleQuickOpen } from './QuickOpen';
+import ShortcutSheet, { toggleShortcutSheet } from './ShortcutSheet';
 import styles from './CommandPalette.module.css';
 
 /**
@@ -100,6 +101,10 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ onNavigate }) => {
             toggleQuickOpen();
             return;
           }
+          if (item.action === 'shortcuts') {
+            toggleShortcutSheet();
+            return;
+          }
           if (item.action === 'nextWaiting') {
             emitter.emit('conversation.nextWaiting');
             onNavigate?.();
@@ -144,6 +149,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ onNavigate }) => {
       </Modal>
       <ConversationSearchPopover renderTrigger={() => null} onConversationSelect={onNavigate} />
       <QuickOpen />
+      <ShortcutSheet />
     </>
   );
 };

@@ -1504,7 +1504,8 @@
     "bringAllToFront": "前置全部窗口",
     "help": "帮助",
     "checkForUpdates": "检查更新…",
-    "projectPage": "GitHub 上的 {{name}}"
+    "projectPage": "GitHub 上的 {{name}}",
+    "keyboardShortcuts": "键盘快捷键"
   },
   "trayMenu": {
     "runningTasks": "运行中的任务：{{count}}"
@@ -1528,7 +1529,8 @@
       "newConversation": "开始新会话",
       "scheduledTasks": "打开定时任务",
       "quickOpen": "按名称打开文件",
-      "nextWaiting": "转到下一个等你处理的会话"
+      "nextWaiting": "转到下一个等你处理的会话",
+      "shortcuts": "显示键盘快捷键"
     },
     "commandWaits": "等这一轮结束后执行"
   },
@@ -1585,5 +1587,38 @@
     "failed": "无法读取本会话的文件夹。",
     "more": "这个文件夹的文件比列出的多。多输入几个字可以缩小范围。",
     "noFolder": "先打开一个带文件夹的会话，才能按名称找它的文件。"
+  },
+  "shortcuts": {
+    "title": "键盘快捷键",
+    "groups": {
+      "general": "通用",
+      "conversations": "会话",
+      "panels": "面板",
+      "sendBox": "输入框",
+      "view": "显示"
+    },
+    "rows": {
+      "palette": "搜索会话、设置和命令",
+      "quickOpen": "按名称打开文件",
+      "searchMessages": "搜索所有消息",
+      "findInConversation": "在当前会话中查找",
+      "newConversation": "新会话",
+      "settings": "设置",
+      "shortcuts": "键盘快捷键",
+      "byPosition": "打开侧栏中对应位置的会话",
+      "nextWaiting": "下一个等你处理的会话",
+      "nextPrevious": "下一个或上一个会话",
+      "sidebar": "显示或隐藏侧栏",
+      "workPanel": "显示或隐藏工作面板",
+      "closeTab": "关闭你所在的预览标签或浏览器页面",
+      "saveFile": "保存正在编辑的文件",
+      "send": "发送",
+      "newLine": "换行",
+      "history": "你之前发过的消息",
+      "commands": "命令",
+      "mention": "提及文件",
+      "zoom": "放大或缩小",
+      "resetZoom": "实际大小"
+    }
   }
 }

@@ -76,6 +76,8 @@ interface EventTypes {
   'quickOpen.toggle': void;
   /** Go to the next native conversation that wants its person: the command palette's row (Cmd/Ctrl+Shift+A's twin). */
   'conversation.nextWaiting': void;
+  /** Open the keyboard shortcuts, or close them when they are open: Cmd/Ctrl+/, the palette's row, Help's item. */
+  'shortcuts.toggle': void;
   /** Open the message search with a query already typed in: the command palette hands its query on. */
   'conversationSearch.open': [string];
   /**

@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { NavigateFunction } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
+import { SHORTCUT_SHEET_SHORTCUT } from '@/renderer/components/layout/Sider/CommandPalette/ShortcutSheet';
 import { useVisibleConversationIds } from '@/renderer/pages/conversation/GroupedHistory/hooks/useVisibleConversationIds';
 import { nativeUnreadNow } from '@/renderer/pages/native/hooks/useNativeAttention';
 import { useNativeEnabled } from '@/renderer/pages/native/hooks/useNativeConversations';
@@ -70,7 +71,7 @@ const nativeConversationOn = (pathname: string): string | undefined => {
  * The app's keys for conversations and panels. Ctrl+Tab and Ctrl+Shift+Tab go to the conversation under or above the
  * one on screen, and Cmd/Ctrl+1 to 9 to the one in that place of the sidebar's list; with the native host on, the
  * native conversations as the sidebar shows them (jump.ts), and Cmd/Ctrl+Shift+A goes to the next one that wants its
- * person, or says that none does.
+ * person, or says that none does. Cmd/Ctrl+/ shows them all (ShortcutSheet.tsx).
  */
 export const useConversationShortcuts = ({ navigate, toggleSider }: UseConversationShortcutsParams): void => {
   const { t } = useTranslation();
@@ -154,6 +155,13 @@ export const useConversationShortcuts = ({ navigate, toggleSider }: UseConversat
       if (isPrimaryApplicationShortcut(event, COMMAND_PALETTE_SHORTCUT)) {
         event.preventDefault();
         emitter.emit('commandPalette.toggle');
+        return;
+      }
+
+      // The keyboard shortcuts are mounted beside the palette too.
+      if (isPrimaryApplicationShortcut(event, SHORTCUT_SHEET_SHORTCUT)) {
+        event.preventDefault();
+        emitter.emit('shortcuts.toggle');
         return;
       }
 

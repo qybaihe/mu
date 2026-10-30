@@ -157,6 +157,7 @@ describe('buildPaletteGroups', () => {
       { kind: 'action', action: 'newConversation', label: 'common.commandPalette.actions.newConversation' },
       { kind: 'action', action: 'scheduledTasks', label: 'common.commandPalette.actions.scheduledTasks' },
       { kind: 'action', action: 'quickOpen', label: 'common.commandPalette.actions.quickOpen' },
+      { kind: 'action', action: 'shortcuts', label: 'common.commandPalette.actions.shortcuts' },
     ]);
   });
 
@@ -167,7 +168,7 @@ describe('buildPaletteGroups', () => {
       );
 
     expect(actions(false)).not.toContain('nextWaiting');
-    expect(actions(true)).toEqual(['newConversation', 'scheduledTasks', 'quickOpen', 'nextWaiting']);
+    expect(actions(true)).toEqual(['newConversation', 'scheduledTasks', 'quickOpen', 'nextWaiting', 'shortcuts']);
   });
 
   it('finds the settings by the word for them and by their group, leading with the row that opens them', () => {

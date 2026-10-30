@@ -1504,7 +1504,8 @@
     "bringAllToFront": "모두 앞으로 가져오기",
     "help": "도움말",
     "checkForUpdates": "업데이트 확인…",
-    "projectPage": "GitHub의 {{name}}"
+    "projectPage": "GitHub의 {{name}}",
+    "keyboardShortcuts": "키보드 단축키"
   },
   "trayMenu": {
     "runningTasks": "실행 중인 작업: {{count}}"
@@ -1528,7 +1529,8 @@
       "newConversation": "새 채팅 시작",
       "scheduledTasks": "예약 작업 열기",
       "quickOpen": "이름으로 파일 열기",
-      "nextWaiting": "나를 기다리는 다음 대화로 이동"
+      "nextWaiting": "나를 기다리는 다음 대화로 이동",
+      "shortcuts": "키보드 단축키 보기"
     },
     "commandWaits": "이 응답이 끝나면 실행됩니다"
   },
@@ -1585,5 +1587,38 @@
     "failed": "이 대화의 폴더를 읽을 수 없습니다.",
     "more": "이 폴더에는 목록보다 많은 파일이 있습니다. 이름을 더 입력해 범위를 좁히세요.",
     "noFolder": "폴더가 있는 대화를 열면 그 파일을 이름으로 찾을 수 있습니다."
+  },
+  "shortcuts": {
+    "title": "키보드 단축키",
+    "groups": {
+      "general": "일반",
+      "conversations": "대화",
+      "panels": "패널",
+      "sendBox": "입력창",
+      "view": "보기"
+    },
+    "rows": {
+      "palette": "대화, 설정, 명령 검색",
+      "quickOpen": "이름으로 파일 열기",
+      "searchMessages": "모든 메시지 검색",
+      "findInConversation": "이 대화에서 찾기",
+      "newConversation": "새 대화",
+      "settings": "설정",
+      "shortcuts": "키보드 단축키",
+      "byPosition": "사이드바의 그 위치에 있는 대화 열기",
+      "nextWaiting": "나를 기다리는 다음 대화",
+      "nextPrevious": "다음 또는 이전 대화",
+      "sidebar": "사이드바 표시 또는 숨기기",
+      "workPanel": "작업 패널 표시 또는 숨기기",
+      "closeTab": "지금 있는 미리보기 탭이나 브라우저 페이지 닫기",
+      "saveFile": "편집 중인 파일 저장",
+      "send": "보내기",
+      "newLine": "줄 바꿈",
+      "history": "이전에 보낸 메시지",
+      "commands": "명령",
+      "mention": "파일 언급",
+      "zoom": "확대 또는 축소",
+      "resetZoom": "실제 크기"
+    }
   }
 }

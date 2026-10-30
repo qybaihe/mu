@@ -1504,7 +1504,8 @@
     "bringAllToFront": "Alle nach vorne bringen",
     "help": "Hilfe",
     "checkForUpdates": "Nach Updates suchen…",
-    "projectPage": "{{name}} auf GitHub"
+    "projectPage": "{{name}} auf GitHub",
+    "keyboardShortcuts": "Tastenkürzel"
   },
   "trayMenu": {
     "runningTasks": "Laufende Aufgaben: {{count}}"
@@ -1528,7 +1529,8 @@
       "newConversation": "Neuen Chat beginnen",
       "scheduledTasks": "Geplante Aufgaben öffnen",
       "quickOpen": "Datei nach Namen öffnen",
-      "nextWaiting": "Zur nächsten Unterhaltung, die auf dich wartet"
+      "nextWaiting": "Zur nächsten Unterhaltung, die auf dich wartet",
+      "shortcuts": "Tastenkürzel anzeigen"
     },
     "commandWaits": "Wird ausgeführt, wenn diese Antwort fertig ist"
   },
@@ -1585,5 +1587,38 @@
     "failed": "Der Ordner dieser Unterhaltung konnte nicht gelesen werden.",
     "more": "Dieser Ordner enthält mehr Dateien als aufgelistet. Gib mehr vom Namen ein, um einzugrenzen.",
     "noFolder": "Öffne eine Unterhaltung mit Ordner, um ihre Dateien nach Namen zu finden."
+  },
+  "shortcuts": {
+    "title": "Tastenkürzel",
+    "groups": {
+      "general": "Allgemein",
+      "conversations": "Unterhaltungen",
+      "panels": "Bereiche",
+      "sendBox": "Eingabefeld",
+      "view": "Ansicht"
+    },
+    "rows": {
+      "palette": "Unterhaltungen, Einstellungen und Befehle suchen",
+      "quickOpen": "Datei nach Namen öffnen",
+      "searchMessages": "Alle Nachrichten durchsuchen",
+      "findInConversation": "In dieser Unterhaltung suchen",
+      "newConversation": "Neue Unterhaltung",
+      "settings": "Einstellungen",
+      "shortcuts": "Tastenkürzel",
+      "byPosition": "Unterhaltung an dieser Position der Seitenleiste öffnen",
+      "nextWaiting": "Nächste Unterhaltung, die auf dich wartet",
+      "nextPrevious": "Nächste oder vorherige Unterhaltung",
+      "sidebar": "Seitenleiste ein- oder ausblenden",
+      "workPanel": "Arbeitsbereich ein- oder ausblenden",
+      "closeTab": "Die Vorschau-Registerkarte oder Browserseite schließen, in der du bist",
+      "saveFile": "Die bearbeitete Datei speichern",
+      "send": "Senden",
+      "newLine": "Neue Zeile",
+      "history": "Deine früheren Nachrichten",
+      "commands": "Befehle",
+      "mention": "Datei erwähnen",
+      "zoom": "Vergrößern oder verkleinern",
+      "resetZoom": "Originalgröße"
+    }
   }
 }

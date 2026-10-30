@@ -25,11 +25,17 @@ export const TOP_COMMANDS = 5;
 
 /**
  * What the app itself can do from the palette, wherever it is open: start a conversation, open the scheduled tasks,
- * find a file of the open conversation by its name (quick open), and with the native host on, go to the next
- * conversation that wants its person.
+ * find a file of the open conversation by its name (quick open), with the native host on go to the next conversation
+ * that wants its person, and show the keyboard shortcuts.
  */
-export type PaletteAction = 'newConversation' | 'scheduledTasks' | 'quickOpen' | 'nextWaiting';
-const ACTIONS: readonly PaletteAction[] = ['newConversation', 'scheduledTasks', 'quickOpen', 'nextWaiting'];
+export type PaletteAction = 'newConversation' | 'scheduledTasks' | 'quickOpen' | 'nextWaiting' | 'shortcuts';
+const ACTIONS: readonly PaletteAction[] = [
+  'newConversation',
+  'scheduledTasks',
+  'quickOpen',
+  'nextWaiting',
+  'shortcuts',
+];
 /** Actions for the native host's conversations only: the marks they follow are its own. */
 const NATIVE_ACTIONS: ReadonlySet<PaletteAction> = new Set(['nextWaiting']);
 

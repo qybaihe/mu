@@ -756,7 +756,7 @@ export const application = {
   ),
   devToolsStateChanged: bridge.buildEmitter<{ isOpen: boolean }>('app.devtools-state-changed'),
   /** The application menu's items the page carries out: 新会话 (⌘N) and 设置… (⌘,). */
-  menuCommand: bridge.buildEmitter<{ command: 'newChat' | 'openSettings' }>('app.menu-command'),
+  menuCommand: bridge.buildEmitter<{ command: 'newChat' | 'openSettings' | 'shortcuts' }>('app.menu-command'),
 };
 
 // ---------------------------------------------------------------------------
