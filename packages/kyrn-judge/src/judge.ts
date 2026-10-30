@@ -86,12 +86,26 @@ function isProbability(value: unknown): value is number {
 	return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1;
 }
 
+/**
+ * A choice's probabilities for the question's own options, each between 0 and 1: what a model adds beyond them is
+ * dropped rather than failing the whole answer, since its choice stands either way. None left: no probabilities.
+ */
+function withOwnProbabilities(question: Question, answer: Answer): Answer {
+	if (answer.type !== "choice" || question.type !== "choice" || !answer.probabilities) return answer;
+	const own = Object.entries(answer.probabilities).filter(
+		([option, probability]) => Object.hasOwn(question.criteria, option) && isProbability(probability),
+	);
+	if (own.length === Object.keys(answer.probabilities).length) return answer;
+	return { ...answer, probabilities: own.length > 0 ? Object.fromEntries(own) : undefined };
+}
+
 function answerProblem(question: Question, answer: Answer | undefined): string | undefined {
 	if (!answer) return "is missing";
 	if (answer.type !== question.type) return `has type "${answer.type}", expected "${question.type}"`;
 	if (answer.type === "boolean") return isProbability(answer.probability) ? undefined : "has an invalid probability";
 	if (answer.type === "choice" && question.type === "choice") {
-		return answer.choice in question.criteria ? undefined : `picked unknown option "${answer.choice}"`;
+		// The question's own options only: `in` also finds what every object has ("toString", "constructor").
+		return Object.hasOwn(question.criteria, answer.choice) ? undefined : `picked unknown option "${answer.choice}"`;
 	}
 	if (answer.type === "score" && question.type === "score") {
 		const max = question.criteria.length - 1;
@@ -172,6 +186,7 @@ export class Judge implements JudgeLike {
 		for (const id of ids) {
 			const problem = answerProblem(request.questions[id], answers[id]);
 			if (problem) throw new JudgeError("invalid_response", `Answer for "${id}" ${problem}`);
+			answers[id] = withOwnProbabilities(request.questions[id], answers[id]);
 		}
 
 		return {
