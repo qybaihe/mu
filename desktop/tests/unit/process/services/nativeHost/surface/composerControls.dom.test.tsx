@@ -747,7 +747,7 @@ describe('the folder’s scripts, run from the send box', () => {
         .map((row) => row.getAttribute('data-script'))
     ).toEqual(['dev', 'test']);
     expect(within(list).getByText('vitest --run')).toBeInTheDocument();
-    expect(list).toHaveTextContent('2 more not listed');
+    expect(list).toHaveTextContent('2 more not shown');
     // Opening the list read package.json again.
     expect(folderScripts.mock.calls.length).toBeGreaterThan(1);
 

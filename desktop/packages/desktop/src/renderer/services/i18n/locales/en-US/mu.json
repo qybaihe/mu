@@ -1138,7 +1138,7 @@
       "scripts": "Run a script",
       "scriptsFrom": "package.json · {{runner}}",
       "scriptRunning": "Running",
-      "scriptsMore": "{{count}} more not listed: names a shell would need quoted, or past the first 40"
+      "scriptsMore": "{{count}} more not shown: past the first 40, or with names that need shell quoting"
     }
   },
   "details": {
