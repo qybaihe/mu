@@ -1614,8 +1614,8 @@
       "saveFile": "保存正在编辑的文件",
       "send": "发送",
       "newLine": "换行",
-      "history": "你之前发过的消息",
-      "commands": "命令",
+      "history": "调出之前发过的消息",
+      "commands": "运行命令",
       "mention": "提及文件",
       "zoom": "放大或缩小",
       "resetZoom": "实际大小"

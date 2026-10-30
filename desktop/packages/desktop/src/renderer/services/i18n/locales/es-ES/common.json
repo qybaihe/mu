@@ -1614,8 +1614,8 @@
       "saveFile": "Guardar el archivo que estás editando",
       "send": "Enviar",
       "newLine": "Nueva línea",
-      "history": "Tus mensajes anteriores",
-      "commands": "Comandos",
+      "history": "Recuperar un mensaje anterior",
+      "commands": "Ejecutar un comando",
       "mention": "Mencionar un archivo",
       "zoom": "Acercar o alejar",
       "resetZoom": "Tamaño real"

@@ -1614,8 +1614,8 @@
       "saveFile": "編集中のファイルを保存",
       "send": "送信",
       "newLine": "改行",
-      "history": "以前に送ったメッセージ",
-      "commands": "コマンド",
+      "history": "以前に送ったメッセージを呼び出す",
+      "commands": "コマンドを実行",
       "mention": "ファイルをメンション",
       "zoom": "拡大・縮小",
       "resetZoom": "実際のサイズ"

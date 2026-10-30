@@ -1614,8 +1614,8 @@
       "saveFile": "Düzenlediğiniz dosyayı kaydet",
       "send": "Gönder",
       "newLine": "Yeni satır",
-      "history": "Önceki mesajlarınız",
-      "commands": "Komutlar",
+      "history": "Önceki bir mesajı geri getir",
+      "commands": "Komut çalıştır",
       "mention": "Dosyadan bahset",
       "zoom": "Yakınlaştır veya uzaklaştır",
       "resetZoom": "Gerçek boyut"

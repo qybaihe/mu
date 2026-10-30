@@ -1614,8 +1614,8 @@
       "saveFile": "儲存正在編輯的檔案",
       "send": "傳送",
       "newLine": "換行",
-      "history": "你之前傳過的訊息",
-      "commands": "命令",
+      "history": "叫出之前傳過的訊息",
+      "commands": "執行命令",
       "mention": "提及檔案",
       "zoom": "放大或縮小",
       "resetZoom": "實際大小"

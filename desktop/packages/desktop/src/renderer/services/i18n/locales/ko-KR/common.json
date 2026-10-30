@@ -1614,8 +1614,8 @@
       "saveFile": "편집 중인 파일 저장",
       "send": "보내기",
       "newLine": "줄 바꿈",
-      "history": "이전에 보낸 메시지",
-      "commands": "명령",
+      "history": "이전에 보낸 메시지 불러오기",
+      "commands": "명령 실행",
       "mention": "파일 언급",
       "zoom": "확대 또는 축소",
       "resetZoom": "실제 크기"

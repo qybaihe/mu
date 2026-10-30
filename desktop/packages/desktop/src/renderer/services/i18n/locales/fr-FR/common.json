@@ -1614,8 +1614,8 @@
       "saveFile": "Enregistrer le fichier en cours de modification",
       "send": "Envoyer",
       "newLine": "Nouvelle ligne",
-      "history": "Vos messages précédents",
-      "commands": "Commandes",
+      "history": "Rappeler un message précédent",
+      "commands": "Lancer une commande",
       "mention": "Mentionner un fichier",
       "zoom": "Zoom avant ou arrière",
       "resetZoom": "Taille réelle"

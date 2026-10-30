@@ -1614,8 +1614,8 @@
       "saveFile": "Die bearbeitete Datei speichern",
       "send": "Senden",
       "newLine": "Neue Zeile",
-      "history": "Deine früheren Nachrichten",
-      "commands": "Befehle",
+      "history": "Eine frühere Nachricht zurückholen",
+      "commands": "Einen Befehl ausführen",
       "mention": "Datei erwähnen",
       "zoom": "Vergrößern oder verkleinern",
       "resetZoom": "Originalgröße"
