@@ -89,8 +89,8 @@ side"). Nothing here shows unless the main process says the native host is on (`
   the files tab lists the folder, the model's new files included after each run, opens a file in the preview and gets its
   dot when the model finishes a write or an edit while another tab is in view; the
   source tab lists the changes of the folder's repository (to resolve, staged, changes, untracked) under its branch,
-  again after each run, and a click shows a file's diff in the preview; when git cannot run or the folder is in no
-  repository, it says so; the browser tab holds the tabs mu's browser tool opens for this conversation.
+  again after each run, and a click shows a file's diff in the preview, and below the branch its pull request on GitHub
+  and that pull request's checks; when git cannot run or the folder is in no repository, it says so; the browser tab holds the tabs mu's browser tool opens for this conversation.
 
 ## How a message travels
 
@@ -172,13 +172,14 @@ Example: a conversation in `~/work/app` writes `notes/hello.txt`. mu keeps the l
 Solution: the page publishes its folder with its activity (`useNativeFolder`), and the panel reads by it through three
 providers keyed by a folder (`common/kyrn/folderBridge.ts`, answered in `process/bridge/kyrnBridge.ts`):
 
-| Provider                     | What it answers                                                                                                                           |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `kyrn.folder.lessons`        | The folder's lessons (by the path as given and its real path) and those for everywhere, from the same `LessonsStore` as the classic tab.  |
-| `kyrn.folder.lessons.change` | A new text or a retirement of one of them, one line appended, as `kyrn.lessons.change` does.                                              |
-| `kyrn.folder.files`          | One directory of the folder (`path` relative, `''` for the folder): folders first, `.git` left out, at most 1000 entries, never above it. |
-| `kyrn.folder.git.status`     | The folder's repository: root, branch (ahead/behind, detached, no commit yet), changes by area; or `no-git`, `not-repository`.            |
-| `kyrn.folder.git.diff`       | One file's diff for its row's area: staged, unstaged, a new file against nothing, a conflict against HEAD.                                |
+| Provider                     | What it answers                                                                                                                                                     |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kyrn.folder.lessons`        | The folder's lessons (by the path as given and its real path) and those for everywhere, from the same `LessonsStore` as the classic tab.                            |
+| `kyrn.folder.lessons.change` | A new text or a retirement of one of them, one line appended, as `kyrn.lessons.change` does.                                                                        |
+| `kyrn.folder.files`          | One directory of the folder (`path` relative, `''` for the folder): folders first, `.git` left out, at most 1000 entries, never above it.                           |
+| `kyrn.folder.git.status`     | The folder's repository: root, branch (ahead/behind, detached, no commit yet), changes by area; or `no-git`, `not-repository`.                                      |
+| `kyrn.folder.git.diff`       | One file's diff for its row's area: staged, unstaged, a new file against nothing, a conflict against HEAD.                                                          |
+| `kyrn.folder.git.pr`         | The pull request of the folder's branch from GitHub's CLI (gh's repository, then the one it is pushed to): number, title, link, state, checks; or none, or no `gh`. |
 
 (`kyrn.folder.git.*` are declared in `common/kyrn/gitBridge.ts` and answered in `process/services/folderGit/`.)
 
@@ -230,6 +231,30 @@ providers keyed by a folder (`common/kyrn/folderBridge.ts`, answered in `process
   made again each time the person comes back to it from the files, so it starts from the last answer for its folder
   (kept while the app runs) and shows that at once, with the button's spinner, until the new one comes; it is keyed
   by the folder, so another conversation's folder never shows this one's answer.
+- The branch's pull request (`native/components/source/NativeSourcePr.tsx`, `process/services/folderGit/githubPr.ts`).
+  Problem: the tab showed the branch and what changed on it, but whether it had a pull request, and whether that
+  pull request's checks passed, meant going to a terminal or the browser. Example: on `feat/x` with #42 open and
+  two of its three checks done, the row under the branch reads "#42 Add x", Open, and a yellow 2/3; a click on the
+  count lists the three checks, and a click on one opens its page. Solution: the main process asks GitHub's own CLI,
+  signed in as the person, as they would in a terminal: `gh pr view --json number,title,url,state,isDraft,statusCheckRollup`
+  in the folder, with no prompt, pager, colour or update notice and a 15 s limit. A check run counts as passed,
+  failed, skipped (neutral or skipped) or running (not completed); a commit status by its state. Only `https:` links
+  are kept. It only reads: nothing is pushed or opened from here. It reads when the tab reads the repository (in view,
+  after a run, on its refresh button) and on the window's focus, and again every 30 s while a check is running and
+  the tab is in view. A branch with no pull request, unless it is the repository's default branch (`gh repo view`),
+  gets "No pull request for this branch" and "Let mu open one", which puts the request into the send box for the
+  person to send; the push and the pull request are then mu's work, asked about as any command is. The request asks
+  mu to show the repository and base branch with the title and description before it creates anything: in a fork,
+  gh's own choice can be the repository it came from. Without `gh`, signed out, a detached HEAD, or a repository
+  GitHub does not hold, there is no row, and the tab is otherwise as it was.
+- Which repository gh asks. Problem: with no `gh repo set-default`, gh takes a remote named `upstream` as the folder's
+  repository before `origin`, so in a fork it looks for the pull request in the repository the fork came from.
+  Example: this repository's clone has `origin` (the fork) and `upstream` (where it came from); on the branch of a
+  pull request opened in the fork, `gh pr view` said "no pull requests found" and the tab offered to open one. Solution:
+  when gh finds none, the main process reads the branch's push remote (else its upstream's, else `origin`) with git,
+  names its repository from the URL (`[host/]owner/repo`, https, ssh or `git@host:`), and asks
+  `gh pr view <branch> --repo <it>`, keeping the answer only when the pull request's branch is that owner's
+  (`headRepositoryOwner`), not another fork's branch of the same name. The default branch is then that repository's.
 - Which git: the one on the main process's PATH, looked up at each run. Problem: the bridges are made while the main
   process's modules load (`process/utils/initBridge.ts`), before `fixPath()` gives it the login shell's PATH, and
   `execFile` searches the PATH of the environment it is passed. Example: a runner that copied `process.env` when made
@@ -570,8 +595,9 @@ Three things to know when driving it:
 | `surface/screen.dom.test.tsx`                                                                                                                                                                          | Page states, transcript rows, open failure and retry, flag off, a draft followed (the browser's host too), the panel feed and folder, the lessons note; sidebar list, new conversation (picked folder, recent folder, permission mode), create failure, show all; projects (by repository or folder, a new folder's, one added, its "+", folded, archived or removed), the open row kept in view.                                                                                                                                                                    |
 | `panels/folder.test.ts`, `panels/browser.test.ts`                                                                                                                                                      | A folder's listing (order, links, limit, never above it) and its lessons by real path; the browser's lookup by `MU_DESKTOP_SESSION` on native conversations and the panel host.                                                                                                                                                                                                                                                                                                                                                                                      |
 | `panels/git.test.ts` (15)                                                                                                                                                                              | Repositories made in the test with the git on PATH (skipped without one): no git, no repository, clean, every area, renames, odd names, a subfolder, the branch line, the cap, diffs by area, binary, cut, refused paths; PATH read at each run.                                                                                                                                                                                                                                                                                                                     |
+| `panels/githubPr.test.ts` (9)                                                                                                                                                                          | A pull request and its checks as `gh pr view --json` says them (a check run, a commit status, neutral and skipped, cancelled, no `https:` page), asked in the folder; none with the default branch; the repository the branch is pushed to asked when gh found none (another owner's branch of the same name not taken); a remote's URL as `[host/]owner/repo`; why when gh cannot answer; no gh.                                                                                                                                                                    |
 | `panels/projects.test.ts`                                                                                                                                                                              | `repoRoots` on folders made in the test (a repository, a worktree's `.git` file, a nested one, a folder that is gone; each looked at once; the cap), and the grouping: paths compared, the deepest folder that holds one, the order.                                                                                                                                                                                                                                                                                                                                 |
-| `surface/source.dom.test.tsx` (14)                                                                                                                                                                     | The source tab's states and words, sections and classic rows without actions, a row's diff in the preview (a rename with its old path), binary, cut and failed diffs, folding, the cap, the branch line, when it reads, the kept answer.                                                                                                                                                                                                                                                                                                                             |
+| `surface/source.dom.test.tsx` (25)                                                                                                                                                                     | The source tab's states and words, sections and classic rows without actions, a row's diff in the preview (a rename with its old path), binary, cut and failed diffs, folding, the cap, the branch line, when it reads, the kept answer; the pull request row (its checks counted and listed, read again while one runs, "Let mu open one", no row on the default branch, without gh or when gh cannot say).                                                                                                                                                         |
 | `tests/unit/renderer/layout/workPanel/WorkPanel.dom.test.tsx` ("beside a native conversation")                                                                                                         | Lessons read and retired by the folder, the note while it is unknown, the files tab read again after a run and a file opened, the source tab by the folder, a project's explorer kept (files, source); no folder read for an app conversation.                                                                                                                                                                                                                                                                                                                       |
 | `surface/smoke.dom.test.tsx`                                                                                                                                                                           | The conversation recorded from a real host (`fixtures/record.mjs`) played record by record into the page, with the real list and tool box.                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `surface/home.dom.test.tsx`                                                                                                                                                                            | The home page's native send (folder, mode, the conversation opened at once, its first message: model, level, images and file paths, empty text), its failures, the folder list with the host on and off.                                                                                                                                                                                                                                                                                                                                                             |
@@ -605,7 +631,8 @@ Elsewhere: `tests/unit/renderer/hooks/guidPage.dom.test.tsx` (the classic send w
   from its file shows the ring once a host has run.
 - **Close and remove**: the bridge has them; a remove moves the session file to the bin and wants a confirmation.
 - **Source control actions**: the source tab stages, unstages and commits, but doesn't discard, amend or push, and
-  has no tree view, history or graph; a repository nested inside the folder's own is not looked for. The files tab is a plain tree: no search, no rename or new file, no drag and drop, no "add to chat"; its dot
+  has no tree view, history or graph; the pull request row reads GitHub through `gh` only (no other host, no sign-in
+  of its own), and doesn't merge, review or rerun a check; a repository nested inside the folder's own is not looked for. The files tab is a plain tree: no search, no rename or new file, no drag and drop, no "add to chat"; its dot
   comes from the model's own `write` and `edit` calls, not from a file a shell command changed.
 - **Pin** is kept in the window's storage (`mu.native.pinned`, a list of session ids), not with the session: another
   window shares it, the command line and a new install do not. A conversation with no session file yet cannot be
@@ -825,6 +852,9 @@ hover row, the page and the sidebar after the fork.
 - The files tab with a large folder (1000 entries and more) and a folder that cannot be read were checked in unit tests
   only. The source tab with a conflict, a rename, a repository of more than 1000 changes, a cut or a binary diff, and
   on Windows and Linux: unit and DOM tests only.
+- The source tab's pull request row ran in DOM tests only; the main process's lookup ran on this Mac against GitHub
+  with the person's own gh, in this repository's clone (a branch whose pull request is in the fork, found through the
+  push remote; a branch with none). A GitHub Enterprise host and a commit status from another service were not tried.
 - In the running app: the command palette's native rows, images and files sent from the home page, a rename without a
   host (the `session_info` entry the main process appends), and a model picked on the home page (the pill's default is
   mu's default model, so the run cannot tell whether `set_model` was sent).
