@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **`hive.deliver` holds a note back only on a confident no** (spec version 3). A note on the board goes to another bee unless the judge model answers that it isn't useful to that bee's work (p ≤ 0.2). Before, it needed a confident yes (p ≥ 0.8), so an unsure answer held it back, while with no judge model every note was delivered (since version 2). The judge model is rarely sure either way about a note from a bee on the same problem, so asking it delivered fewer of the notes bees needed than not asking. A `decision` note still goes to every bee, and `features.hive.maxDeliveriesPerBee` (10) still caps what a bee hears.
+
 ## [0.3.5] - 2026-10-30
 
 **0.3.5 adds `/jobs start` for running your own command in the background, and makes session files, rewinds and the judge model's answers safer.**

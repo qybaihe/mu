@@ -29,7 +29,7 @@ The main agent then decides: `apply_patch_from` applies all of it or nothing, wi
 A hive is two to six bees, each with its own angle. Bees read code, run commands and use the browser; they never change code, which stays the main model's job. `/hive <question>` starts one; the agent also starts one when a problem resists a direct attempt.
 
 - **Publishing** (`hive.publish`). Whenever a bee has said its piece, the judge asks: is there a finding, a dead end, a decision or a blocker worth sharing? If so, it goes on an append-only shared board.
-- **Delivery** (`hive.deliver`). For every new note, the judge asks of each other bee: does this matter to its angle? Only then is it delivered, marked as *a finding, not an instruction*.
+- **Delivery** (`hive.deliver`). For every new note, the judge asks of each other bee: does this matter to its angle? Unless the judge is sure it doesn't, it's delivered, marked as *a finding, not an instruction*.
 - **Corrections** (`hive.relate`). A later finding can overturn an earlier one: a bee reports the tests can't run, another later clears an environment variable and they run. The judge reads how two notes relate: *replaces*, *contradicts* or *supports*. A replaced finding becomes a correction sent to every bee that heard the old one. A contradiction keeps both as a dispute; if no one settles it within a minute, a verifier bee is sent to check.
 
 ## Watching and stopping {#control}

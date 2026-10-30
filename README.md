@@ -150,7 +150,7 @@ The 40 points fall into five groups:
 | `swarm.routing` | Which role, model tier and thinking level suit this delegated task? | The subagent that fits |
 | `swarm.patch` | Did the subagent's patch stay within its task? | Judged from the task, the paths and the line counts |
 | `hive.publish` | Is a bee's finding worth posting to the shared board? | Published, or kept to itself |
-| `hive.deliver` | Does a note on the board matter to this bee's work? | Delivered only if it does |
+| `hive.deliver` | Does a note on the board matter to this bee's work? | Delivered unless the judge model is sure it doesn't |
 | `hive.relate` | Does a new finding supersede, contradict or support an earlier one? | Corrections and disputes reach the bees that hold the old note |
 
 </details>
@@ -327,7 +327,7 @@ What these numbers don't show:
 
 ## The hive
 
-A hive is two to six bees, each with its own focus. Bees read code, run commands and browse the web, but never edit; the main model makes the changes. Each time a bee finishes a message, `hive.publish` asks once: is there a finding, a dead end, a decision or a blocker here worth sharing? If so, it goes on a shared, append-only board. For each new note, `hive.deliver` asks once per other bee: does this touch its focus? If it does, the note is delivered, marked *a finding, not an instruction*.
+A hive is two to six bees, each with its own focus. Bees read code, run commands and browse the web, but never edit; the main model makes the changes. Each time a bee finishes a message, `hive.publish` asks once: is there a finding, a dead end, a decision or a blocker here worth sharing? If so, it goes on a shared, append-only board. For each new note, `hive.deliver` asks once per other bee: does this touch its focus? Unless the judge model is sure it doesn't, the note is delivered, marked *a finding, not an instruction*.
 
 The board is append-only, so an earlier conclusion stays even after a later one overturns it: a bee reports that the tests won't run, then unsets an environment variable and they do. `hive.relate` decides how two notes relate: *supersedes*, *contradicts* or *supports*. When a conclusion is superseded, a correction goes to every bee that holds the old note. When two notes contradict each other, both stay, marked as a dispute; if nobody settles it within a minute, a bee is sent to verify.
 

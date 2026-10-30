@@ -73,8 +73,8 @@ export type DeliverOutcome = { readonly deliver: boolean; readonly score: number
 
 export const hiveDeliver = defineDecision({
 	id: "hive.deliver",
-	// 2: the fallback delivers.
-	version: 2,
+	// 2: the fallback delivers. 3: so does an unsure answer; only a confident no holds a note back.
+	version: 3,
 	// A delivered note is appended to the receiving bee's context, nothing before it changes.
 	cacheImpact: "append-only",
 	latency: "background",
@@ -88,7 +88,12 @@ export const hiveDeliver = defineDecision({
 	policy(answers, input): DeliverOutcome {
 		// A decision binds everyone, whatever they are working on. That takes no judgment.
 		if (input.kind === "decision") return { deliver: true, score: 1 };
-		return { deliver: threeZone(answers.useful) === "yes", score: answers.useful.probability };
+		// The note goes unless the judge is sure it is of no use to this bee. A note the bee did not need costs it a
+		// line; one it needed and never heard costs it the work of finding it again, or a wrong turn. The judge is
+		// rarely sure either way about a note from a bee on the same problem, and holding back every unsure one
+		// delivered fewer of the notes the bees needed than asking no judge at all (the fallback below). The delivery
+		// cap still bounds what a bee hears.
+		return { deliver: threeZone(answers.useful) !== "no", score: answers.useful.probability };
 	},
 	// Without a judge every note goes to every bee, up to the delivery cap: they all work on one problem, and a
 	// hive whose bees hear nothing from each other is only isolated sub-agents (51 of 58 notes were delivered when
