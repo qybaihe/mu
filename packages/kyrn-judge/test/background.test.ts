@@ -543,7 +543,7 @@ describe.skipIf(!posix)("background feature", () => {
 		await harness.session.bindExtensions({ uiContext: ui, mode: "rpc" });
 
 		await harness.session.prompt("/jobs start");
-		expect(notes.at(-1)).toContain("Say what to run");
+		expect(notes.at(-1)).toContain("Give a command to run");
 
 		await harness.session.prompt("/jobs start --name greet printf 'hi\\n'; exit 3");
 		expect(notes.at(-1)).toMatch(/^Started bg-1 "greet" · printf 'hi\\n'; exit 3 · running/);

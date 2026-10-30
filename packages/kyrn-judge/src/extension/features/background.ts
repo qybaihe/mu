@@ -329,7 +329,7 @@ export function registerBackground(runtime: KyrnRuntime): void {
 		const named = /^--name\s+(\S+)\s+([\s\S]+)$/.exec(rest);
 		const command = (named ? named[2] : rest).trim();
 		if (!command) {
-			ctx.ui.notify("Say what to run: /jobs start [--name <label>] <command>", "warning");
+			ctx.ui.notify("Give a command to run: /jobs start [--name <label>] <command>", "warning");
 			return;
 		}
 		if (options.inheritShell) shell = readShellSettings(ctx.cwd, undefined, ctx.isProjectTrusted());
@@ -374,7 +374,7 @@ export function registerBackground(runtime: KyrnRuntime): void {
 			ctx.ui.notify(
 				jobs.length > 0
 					? jobs.map((job) => `${describeJob(job)}\n    log: ${job.logPath}`).join("\n")
-					: "No background jobs. The agent starts them with bg_start; /jobs start <command> runs one yourself.",
+					: "No background jobs. The agent starts them with bg_start, or you can start one with /jobs start <command>.",
 				"info",
 			);
 		},
