@@ -445,19 +445,20 @@ export class DecisionEngine {
 		const origin = this.asked();
 		const startedAt = performance.now();
 		const evaluations: Evaluation<Out>[] = new Array(inputs.length);
+		// Each state is built once: for its call and for the ledger's digest.
+		const states = inputs.map((input) => spec.buildState(input));
 		let next = 0;
 		const worker = async () => {
 			while (next < inputs.length) {
 				const index = next++;
-				evaluations[index] = await this.evaluate(
-					spec,
-					inputs[index],
-					spec.buildState(inputs[index]),
-					options.signal,
-				);
+				evaluations[index] = await this.evaluate(spec, inputs[index], states[index], options.signal);
 			}
 		};
-		const workers = Math.max(1, Math.min(options.concurrency ?? 4, inputs.length));
+		// The callers pass mu.json's values: one that is no whole number of at least one (0, 2.5) is taken as the nearest
+		// that is, and one that is no number at all (NaN) as the default, rather than starting no worker.
+		const asked = options.concurrency ?? 4;
+		const concurrency = Number.isFinite(asked) ? Math.max(1, Math.floor(asked)) : 4;
+		const workers = Math.min(concurrency, inputs.length);
 		await Promise.all(Array.from({ length: workers }, worker));
 
 		const ledgerId = randomUUID();
@@ -480,6 +481,12 @@ export class DecisionEngine {
 		});
 
 		const inputTokens = evaluations.reduce((sum, evaluation) => sum + (evaluation.usage?.inputTokens ?? 0), 0);
+		const outputTokens = evaluations.reduce((sum, evaluation) => sum + (evaluation.usage?.outputTokens ?? 0), 0);
+		// Small batches keep what each call asked, as one decision does with `recordState`; large ones would bloat the session.
+		const requests =
+			this.recordState && inputs.length <= MAX_BATCH_ANSWERS
+				? evaluations.map((evaluation) => evaluation.request ?? null)
+				: undefined;
 		const failures = evaluations.filter((evaluation) => evaluation.failure?.startsWith("error:")).length;
 		await this.record({
 			id: ledgerId,
@@ -496,7 +503,9 @@ export class DecisionEngine {
 				mode === "shadow" && !spec.actsInShadow ? "shadow" : failures === inputs.length ? "error:all" : undefined,
 			judged: evaluations.map((evaluation) => evaluation.judged ?? null),
 			latencyMs: Math.round(performance.now() - startedAt),
-			usage: { inputTokens, outputTokens: 0 },
+			usage: { inputTokens, outputTokens },
+			state: requests?.map((request) => request?.state ?? null),
+			questions: requests?.map((request) => request?.questions ?? null),
 			batch: {
 				size: inputs.length,
 				failures,
@@ -506,9 +515,7 @@ export class DecisionEngine {
 						? evaluations.map((evaluation) => evaluation.answers ?? null)
 						: undefined,
 			},
-			stateDigest: createHash("sha256")
-				.update(JSON.stringify(inputs.map((input) => spec.buildState(input))))
-				.digest("hex"),
+			stateDigest: createHash("sha256").update(JSON.stringify(states)).digest("hex"),
 		});
 		return decisions;
 	}

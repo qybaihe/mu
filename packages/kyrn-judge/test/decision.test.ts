@@ -213,6 +213,55 @@ describe("DecisionEngine", () => {
 		expect(await recorded(keepChunk, true)).toEqual(keepChunk.questions);
 	});
 
+	it("records a batch's own tokens, builds each state once, and keeps each call's request on request", async () => {
+		let builds = 0;
+		const counted = defineDecision({
+			...keepChunk,
+			buildState: (value: typeof input) => {
+				builds++;
+				return keepChunk.buildState(value);
+			},
+		});
+		const provider: JudgeProvider = {
+			id: "counting",
+			evaluate: async () => ({
+				answers: { relevant: { type: "boolean", probability: 0.97 } },
+				usage: { inputTokens: 30, outputTokens: 4 },
+				modelId: "counting",
+			}),
+		};
+		const secret = "sk-test-0123456789abcdef";
+		const ledger = new MemoryLedger();
+		const engine = new DecisionEngine({
+			judge: new Judge({ provider }),
+			ledger,
+			recordState: true,
+			knownSecrets: () => [secret],
+		});
+		const inputs = [input, { intent: "deploy", chunk: `export KEY=${secret}` }];
+
+		await engine.decideMany(counted, inputs);
+
+		expect(builds).toBe(inputs.length);
+		const [record] = ledger.records;
+		expect(record.usage).toEqual({ inputTokens: 60, outputTokens: 8 });
+		// As the judge saw each call: known secrets redacted.
+		expect(record.state).toEqual([{ intent: input.intent, chunk: input.chunk }, expect.any(Object)]);
+		expect(JSON.stringify(record.state)).not.toContain(secret);
+		expect(record.questions).toEqual([keepChunk.questions, keepChunk.questions]);
+	});
+
+	it("records no batch requests without recordState, and decides every input whatever concurrency it is given", async () => {
+		const ledger = new MemoryLedger();
+		const { engine, provider } = engineWith(0.97, "active", ledger);
+		for (const concurrency of [Number.NaN, 0, -1, 2.5, 1]) {
+			const decisions = await engine.decideMany(keepChunk, [input, input, input], { concurrency });
+			expect(decisions.map((decision) => decision.outcome)).toEqual(["keep", "keep", "keep"]);
+		}
+		expect(provider.calls).toHaveLength(15);
+		expect(ledger.records.every((record) => record.state === undefined && record.questions === undefined)).toBe(true);
+	});
+
 	it("records where the caller was when it asked, not where it is when a slow judge answers", async () => {
 		const waiting: ((answers: Record<string, Answer>) => void)[] = [];
 		const provider = new MockJudgeProvider(

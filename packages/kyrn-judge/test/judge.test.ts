@@ -103,6 +103,40 @@ describe("Judge", () => {
 		});
 	});
 
+	it("takes the question's own options only, and keeps a choice's probabilities for them that are probabilities", async () => {
+		const questions = {
+			team: { type: "choice", instructions: "Which team?", criteria: { billing: null, other: null } },
+		} as const satisfies Questions;
+		for (const choice of ["toString", "constructor", "__proto__"]) {
+			const inherited = new Judge({ provider: new MockJudgeProvider(() => ({ team: { type: "choice", choice } })) });
+			await expect(inherited.evaluate({ state: "s", questions })).rejects.toMatchObject({
+				kind: "invalid_response",
+			});
+		}
+
+		const noisy = new Judge({
+			provider: new MockJudgeProvider(() => ({
+				team: {
+					type: "choice",
+					choice: "billing",
+					probabilities: { billing: 0.8, other: Number.NaN, shipping: 0.2, toString: 0.1 },
+				},
+			})),
+		});
+		const { answers } = await noisy.evaluate({ state: "s", questions });
+		expect(answers.team).toEqual({ type: "choice", choice: "billing", probabilities: { billing: 0.8 } });
+
+		const none = new Judge({
+			provider: new MockJudgeProvider(() => ({
+				team: { type: "choice", choice: "other", probabilities: { billing: 4, shipping: 1 } },
+			})),
+		});
+		expect((await none.evaluate({ state: "s", questions })).answers.team).toEqual({
+			type: "choice",
+			choice: "other",
+		});
+	});
+
 	it("refuses malformed question sets before any I/O", async () => {
 		const provider = new MockJudgeProvider();
 		const judge = new Judge({ provider });

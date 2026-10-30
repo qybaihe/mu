@@ -168,6 +168,8 @@ function readOnlyGit(args: readonly string[]): boolean {
 	let at = 0;
 	while (/^(?:-P|--no-pager|--no-optional-locks)$/.test(args[at] ?? "")) at++;
 	const [command, ...rest] = args.slice(at);
+	// An external diff or a text conversion runs the program the repository's config names.
+	if (rest.some((arg) => /^--(?:ext-diff|textconv)$/.test(arg))) return false;
 	if (command === "--version") return rest.length === 0;
 	if (command === "grep") {
 		// `-O` opens what it finds in the program it names.
@@ -242,10 +244,29 @@ function startsElsewhere(cwd: string | undefined, start: string | undefined): bo
  */
 export function isReadOnlyCommand(command: string, powershell = false, cwd?: string, start = cwd): boolean {
 	const text = command.trim();
-	if (!text || SHELL_TRICKS.test(text) || /--output\b/.test(text)) return false;
+	if (!text || SHELL_TRICKS.test(text) || expandsVariable(text) || /--output\b/.test(text)) return false;
 	if (powershell && POWERSHELL_TRICKS.test(text)) return false;
 	const elsewhere = startsElsewhere(cwd, start);
 	return text.split("|").every((part) => readOnlyProgram(part.trim(), elsewhere));
+}
+
+/**
+ * Whether a command expands a variable or parameter (`sort "$OPTS" a.txt`, `rg $ARGS .`, `"$1"`): its arguments are
+ * then whatever the variable holds, an option that writes a file included. A `$` in single quotes is itself (`rg
+ * 'foo$'`), and so is one that no name follows (`grep "end$"`).
+ */
+function expandsVariable(text: string): boolean {
+	let quote: "'" | '"' | undefined;
+	for (let index = 0; index < text.length; index++) {
+		const char = text[index];
+		if (quote === "'") {
+			if (char === "'") quote = undefined;
+		} else if (char === "\\") index++;
+		else if (char === '"') quote = quote ? undefined : '"';
+		else if (char === "'" && !quote) quote = "'";
+		else if (char === "$" && /[\w@*#?!$-]/.test(text[index + 1] ?? "")) return true;
+	}
+	return false;
 }
 
 /** What makes `find` delete what it finds, run a program on it, or write a list of it to a file. */
@@ -401,6 +422,7 @@ function simpleCommands(text: string, writes?: string[]): string[][] | undefined
  */
 export function isReadOnlyChain(command: string, powershell = false, cwd?: string, start = cwd): boolean {
 	if (powershell) return isReadOnlyCommand(command, true, cwd, start);
+	if (expandsVariable(command)) return false;
 	const commands = simpleCommands(command.trim());
 	if (!commands?.some((words) => words.length > 0)) return false;
 	let elsewhere = startsElsewhere(cwd, start);
