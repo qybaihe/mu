@@ -145,6 +145,8 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
   const permissions = useMemo(() => permissionState(view, settings), [settings, view]);
   const commands = useNativeCommands(host, draft, request);
   const working = isWorking(view);
+  // A run that ended: the folder's scripts are read again, as the model may have changed package.json.
+  const ranLast = useMemo(() => lastSettled(view.host.activity), [view.host.activity]);
   // A message on its way (mu starting, the judge reading it) or a compaction holds the box: pi takes no other prompt
   // then. One sent while a message is on its way waits its turn (`waiting`); a compaction takes none.
   const held = Boolean(outgoing) || view.live.compacting;
@@ -344,7 +346,7 @@ const NativeComposer: React.FC<{ conversation: Conversation }> = ({ conversation
               <>
                 <NativeAttachButton onClick={() => picker.current?.click()} />
                 <NativePermissionPill state={permissions} held={held} request={request} />
-                <NativeJobs jobs={view.host.jobs} cwd={cwd} request={request} />
+                <NativeJobs jobs={view.host.jobs} cwd={cwd} refresh={ranLast} request={request} />
               </>
             }
             rightTools={<NativeModelChip models={models} busy={working || held} />}

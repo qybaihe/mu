@@ -461,7 +461,7 @@ On by default: yes. Decision points: `browser.step`.
 
 ## background
 
-**Background commands.** bg_start / bg_output / bg_stop: run dev servers and long builds without blocking the turn. The agent hears of a finished job right away; every job stops when the session ends, except in an unattended one-shot run.
+**Background commands.** bg_start / bg_output / bg_stop: run dev servers and long builds without blocking the turn. You can start one yourself with `/jobs start [--name <label>] <command>` (the desktop's Run button sends this for a package.json script); when it ends, the agent is told, along with the fact that you started it. The agent hears of a finished job right away; every job stops when the session ends, except in an unattended one-shot run.
 
 On by default: yes.
 

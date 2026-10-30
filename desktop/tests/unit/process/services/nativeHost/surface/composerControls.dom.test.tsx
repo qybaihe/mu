@@ -28,11 +28,18 @@ import { ended, frame, reply, text, user } from './records';
  * files by their path). The shared send box is stood in for by its contract; Arco's menus render their lists inline.
  */
 
-const { warning, mention, muDefault } = vi.hoisted(() => ({
+const { warning, mention, muDefault, folderScripts } = vi.hoisted(() => ({
   warning: vi.fn(),
   mention: { items: [] as unknown[] },
   // mu's default model, as the settings say it: none unless a test sets one.
   muDefault: { model: undefined as string | undefined, level: '' },
+  // The folder's package.json scripts, as the main process reads them: none unless a test sets some.
+  folderScripts: vi.fn(async () => ({ ok: true, data: null }) as unknown),
+}));
+
+vi.mock('@/common/kyrn/folderBridge', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/common/kyrn/folderBridge')>()),
+  kyrnFolderBridge: { scripts: { invoke: folderScripts } },
 }));
 
 vi.mock('@arco-design/web-react', async (importOriginal) => {
@@ -156,6 +163,8 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
 afterEach(() => {
   cleanup();
   warning.mockClear();
+  folderScripts.mockReset();
+  folderScripts.mockImplementation(async () => ({ ok: true, data: null }));
   mention.items = [];
   muDefault.model = undefined;
   muDefault.level = '';
@@ -703,6 +712,77 @@ describe('the commands mu runs in the background', () => {
       ])
     );
     expect(screen.queryByTestId('native-jobs')).toBeNull();
+  });
+});
+
+describe('the folder’s scripts, run from the send box', () => {
+  const scripts = {
+    runner: 'pnpm',
+    scripts: [
+      { name: 'dev', command: 'vite' },
+      { name: 'test', command: 'vitest --run' },
+    ],
+    more: 2,
+  };
+  const started = (id: string, name: string) =>
+    frame('background.start', { id, name, command: `pnpm run ${name}` }, 1, Date.now());
+
+  it('show as Run with nothing running, and run as the person’s background job with mu’s /jobs start', async () => {
+    folderScripts.mockImplementation(async () => ({ ok: true, data: scripts }));
+    const host = createFakeHost();
+    host.add({ id: 'c1', cwd: '/work/project' });
+    host.answer(() => ({ ok: true, data: undefined }));
+    await mount(host);
+
+    const run = await screen.findByTestId('native-jobs-pill');
+    expect(run).toHaveTextContent(/^Run$/);
+    expect(folderScripts).toHaveBeenCalledWith({ cwd: '/work/project' });
+    fireEvent.click(run);
+    const list = await screen.findByTestId('native-scripts');
+    expect(list).toHaveAttribute('data-runner', 'pnpm');
+    expect(list).toHaveTextContent('package.json · pnpm');
+    expect(
+      within(list)
+        .getAllByTestId('native-script')
+        .map((row) => row.getAttribute('data-script'))
+    ).toEqual(['dev', 'test']);
+    expect(within(list).getByText('vitest --run')).toBeInTheDocument();
+    expect(list).toHaveTextContent('2 more not shown');
+    // Opening the list read package.json again.
+    expect(folderScripts.mock.calls.length).toBeGreaterThan(1);
+
+    await act(async () => {
+      fireEvent.click(within(list).getAllByTestId('native-script-run')[1]);
+    });
+    expect(sent(host, 'prompt').at(-1)).toEqual({ type: 'prompt', message: '/jobs start --name test pnpm run test' });
+
+    // It runs: the pill counts it, its row says so, and the scripts stay below it.
+    act(() => host.play('c1', [started('bg-1', 'test')]));
+    expect(screen.getByTestId('native-jobs-pill')).toHaveTextContent('Background · 1');
+    expect(within(screen.getByTestId('native-jobs-list')).getAllByTestId('native-job')).toHaveLength(1);
+    const testRun = within(screen.getByTestId('native-scripts')).getAllByTestId('native-script-run')[1];
+    expect(testRun).toHaveTextContent('Running');
+    expect(testRun).toBeDisabled();
+
+    // Ended: Run again, the job listed with how it ended.
+    act(() =>
+      host.play('c1', [frame('background.exit', { id: 'bg-1', exitCode: 1, durationMs: 4000 }, 1, Date.now())])
+    );
+    expect(screen.getByTestId('native-jobs-pill')).toHaveTextContent(/^Run$/);
+    expect(screen.getByTestId('native-job')).toHaveTextContent(/exited with code 1 after/);
+  });
+
+  it('offer nothing when the folder has no scripts, and are read again when a run ends', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1', cwd: '/work/project' });
+    await mount(host);
+    await waitFor(() => expect(folderScripts).toHaveBeenCalled());
+    expect(screen.queryByTestId('native-jobs')).toBeNull();
+
+    // The model wrote a package.json: the run that did it ended, however quickly.
+    folderScripts.mockImplementation(async () => ({ ok: true, data: scripts }));
+    act(() => host.play('c1', [{ type: 'agent_start' }, ended(reply([text('done')])), { type: 'agent_settled' }]));
+    expect(await screen.findByTestId('native-jobs-pill')).toHaveTextContent(/^Run$/);
   });
 });
 
