@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-10-30
+
+**0.3.5 adds `/jobs start` for running your own command in the background, and makes session files, rewinds and the judge model's answers safer.**
+
+### Added
+
+- **`/jobs start [--name <label>] <command>`** runs a command in the background in the session's folder, the way `bg_start` does for the model. It's your own command, so mu doesn't ask for approval, just as it wouldn't for a command you type in a terminal. When it ends, the model is told it was your job, so it can read the output with `bg_output` (to answer "why did the tests fail?", say). `/jobs` with nothing running mentions it.
+
+### Fixed
+
+- **Session files are rewritten atomically.** Opening an older session (the version migration), giving a branch its own file or adding the header to an empty file rewrote the file in place, so a crash or a write error midway left the conversation cut off. It's now written beside the file, synced and renamed into place. A new session's first write still refuses to overwrite a file already at that path.
+- **An entry that can't be saved no longer joins the session.** An entry that doesn't serialize, or a full disk, used to leave the session in memory with an entry the file never got, and reloading lost the branch from there. The entry is now saved first.
+- **A rewind no longer deletes through a symlinked folder.** If a folder on the way had been replaced by a link since the checkpoint, a rewind removed the file at the link's target. Such a file is now left alone. A file that can't be removed (a permission error, say) is reported with its error code instead of as removed.
+- **The judge model's choices must be the question's own options.** An answer like `"toString"` used to pass as a valid choice. A choice's probabilities keep only the question's options, with values from 0 to 1.
+- **Fewer commands count as read-only.** A command that expands a variable (`$NAME`, `"$1"`) can write files, so it's no longer read-only; a `$` in single quotes or at the end of a pattern (`rg 'foo$'`) still is. `git --ext-diff` and `--textconv` run a program the repository names, so they aren't read-only either.
+- **Batch decisions** record their output tokens (always 0 before), and a `concurrency` in mu.json that isn't a number falls back to 4 instead of starting no worker.
+
 ## [0.3.4] - 2026-10-30
 
 **0.3.4 has no changes to the agent. It keeps the version in step with the 0.3.4 desktop app.**
