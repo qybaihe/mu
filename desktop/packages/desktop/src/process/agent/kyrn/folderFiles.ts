@@ -1,22 +1,26 @@
 import { mkdirSync, type Dirent } from 'node:fs';
-import { readdir, stat } from 'node:fs/promises';
+import { readFile, readdir, stat } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { KyrnError } from '../../../common/kyrn/errors';
 import {
   FOLDER_FIND_LIMIT,
   FOLDER_HIDDEN,
   FOLDER_LISTING_LIMIT,
+  FOLDER_SCRIPTS_LIMIT,
   type FolderEntry,
   type FolderFiles,
   type FolderListing,
+  type FolderScripts,
+  type ScriptRunner,
 } from '../../../common/kyrn/folderBridge';
 import type { GitRunner } from '../../services/folderGit/runGit';
 
 /*
  * The files tab of a native conversation (common/kyrn/folderBridge.ts): one directory of the conversation's folder at
  * a time, read afresh for every answer, so what the model wrote shows at the next look. Nothing is written here.
- * Also `findFiles`, every file of the folder for quick open, and `openFolder`, which shows one of mu's folders in the
- * file manager, making it first when it is not there yet.
+ * Also `findFiles`, every file of the folder for quick open, `folderScripts`, the scripts its package.json names (the
+ * send box's Run), and `openFolder`, which shows one of mu's folders in the file manager, making it first when it is
+ * not there yet.
  */
 
 const LONGEST_PATH = 4096;
@@ -155,6 +159,60 @@ async function walkFiles(folder: string): Promise<FolderFiles> {
     level = next;
   }
   return { paths, more: false };
+}
+
+/** A package.json larger than this is not read for its scripts. */
+const LARGEST_PACKAGE_JSON = 1024 * 1024;
+/** A script name a shell takes as it is, on every platform: nothing to quote. */
+const PLAIN_SCRIPT_NAME = /^[\w.][\w:.@/+-]{0,99}$/;
+const LOCKFILES: [string, ScriptRunner][] = [
+  ['bun.lock', 'bun'],
+  ['bun.lockb', 'bun'],
+  ['pnpm-lock.yaml', 'pnpm'],
+  ['yarn.lock', 'yarn'],
+];
+
+/**
+ * The scripts of the package.json at the top of the folder, read afresh, with what runs them: package.json's
+ * `packageManager`, else the first lockfile found, else npm. None (null) without a package.json, one that does not
+ * parse or is too large, or one with no scripts.
+ */
+export async function folderScripts(folder: string): Promise<FolderScripts | null> {
+  const file = join(folder, 'package.json');
+  let manifest: unknown;
+  try {
+    if ((await stat(file)).size > LARGEST_PACKAGE_JSON) return null;
+    manifest = JSON.parse(await readFile(file, 'utf8'));
+  } catch {
+    return null;
+  }
+  if (!manifest || typeof manifest !== 'object') return null;
+  const { scripts, packageManager } = manifest as { scripts?: unknown; packageManager?: unknown };
+  if (!scripts || typeof scripts !== 'object' || Array.isArray(scripts)) return null;
+  const all = Object.entries(scripts).filter(
+    (entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1].trim() !== ''
+  );
+  if (all.length === 0) return null;
+  const plain = all.filter(([name]) => PLAIN_SCRIPT_NAME.test(name)).slice(0, FOLDER_SCRIPTS_LIMIT);
+  return {
+    runner: await scriptRunner(folder, packageManager),
+    scripts: plain.map(([name, command]) => ({ name, command })),
+    more: all.length - plain.length,
+  };
+}
+
+async function scriptRunner(folder: string, packageManager: unknown): Promise<ScriptRunner> {
+  const named = typeof packageManager === 'string' ? packageManager.split('@')[0] : '';
+  if (named === 'npm' || named === 'pnpm' || named === 'yarn' || named === 'bun') return named;
+  const present = await Promise.all(
+    LOCKFILES.map(([lockfile]) =>
+      stat(join(folder, lockfile)).then(
+        () => true,
+        () => false
+      )
+    )
+  );
+  return LOCKFILES[present.indexOf(true)]?.[1] ?? 'npm';
 }
 
 /** Creates the folder if needed; `show` opens it in the file manager (Electron's `shell.openPath`). */

@@ -177,6 +177,7 @@ providers keyed by a folder (`common/kyrn/folderBridge.ts`, answered in `process
 | `kyrn.folder.lessons`        | The folder's lessons (by the path as given and its real path) and those for everywhere, from the same `LessonsStore` as the classic tab.                            |
 | `kyrn.folder.lessons.change` | A new text or a retirement of one of them, one line appended, as `kyrn.lessons.change` does.                                                                        |
 | `kyrn.folder.files`          | One directory of the folder (`path` relative, `''` for the folder): folders first, `.git` left out, at most 1000 entries, never above it.                           |
+| `kyrn.folder.scripts`        | The scripts of the package.json at the top of the folder and what runs them, for the send box's Run; none without one.                                              |
 | `kyrn.folder.git.status`     | The folder's repository: root, branch (ahead/behind, detached, no commit yet), changes by area; or `no-git`, `not-repository`.                                      |
 | `kyrn.folder.git.diff`       | One file's diff for its row's area: staged, unstaged, a new file against nothing, a conflict against HEAD.                                                          |
 | `kyrn.folder.git.hunk`       | One hunk of a file's staged or unstaged diff into the index or out of it, if it is still in the diff; the file's diff as it is now.                                 |
@@ -470,8 +471,20 @@ conversation; the browser's own find sees the drawn rows only.
   in the preview) and a stop button, and with more than one running a button that stops them all. Stopping is mu's
   `/jobs stop <id|all>` as a prompt, which runs at once, during a run too. The list is the view's `host.jobs`, from
   mu's `background.start`, `background.stop` and `background.exit` frames (live only: a host that stopped took its jobs
-  with it); a job that ended stays listed while another runs, and processes it left running count as running. The pill
-  goes with the last one.
+  with it); the last three that ended stay listed, and processes a job left running count as running. The pill goes
+  with the last one, unless the folder has scripts to run.
+- Run (`NativeJobs` too): when the conversation's folder has a package.json with scripts, the same pill is there with
+  nothing running, as 运行, and its list offers the scripts under the jobs: name, command and a Run button. The main
+  process reads the scripts (`kyrn.folder.scripts`, `folderScripts` in `process/agent/kyrn/folderFiles.ts`): the
+  package.json at the top of the folder only, read afresh, in its order, at most 40, and only names a shell takes as
+  they are (none to quote, none starting with `-` or `@`); what runs them is package.json's `packageManager`, else the
+  first lockfile (bun, pnpm, yarn), else npm. They are read when the folder is known, when a run ends (the model may
+  have changed package.json) and whenever the list opens. A script runs as mu's
+  `/jobs start --name <script> <runner> run <script>`, a prompt that runs at once, during a run too: a background job
+  like the model's, in the session's folder, listed above with its log and stop button. It is the person's own command:
+  the risk guard doesn't ask about it, as it doesn't about a command typed into a terminal. When it ends the model is
+  told, as the user's job, so "why did the tests fail?" can be answered from its output. A script already running
+  under its name says so and can't be started twice.
 - The `/` menu: `get_commands` when a host is running (again after each start), or when the person types `/` first
   (which starts one). `/clear` and `/new` are not offered, as in mu's other conversations.
 - `@` mentions: the send box searches the conversation's folder (it gets it as its conversation context's workspace).
@@ -729,7 +742,7 @@ at: every tab's picture, light and dark. The run before the ledger fix showed th
 reopened judge tab empty ("本会话还没有判定记录"), which is what the fix is for.
 
 `node scripts/kyrn/e2e-conversation.mjs --native -- native-composer.spec` runs
-`tests/e2e/mu-conversation/native-composer.spec.mjs` in the same world. Nine steps, about 20 seconds: a new
+`tests/e2e/mu-conversation/native-composer.spec.mjs` in the same world. Ten steps, about 25 seconds: a new
 conversation shows the default model (nothing started) and the mode it was made in; typing `/` starts mu and lists its
 commands; the second model picked on the chip answers the next message (the fake model's request names it); the level
 "high" picked under the list once the model that reasons is in use reaches the request as `reasoning_effort`; a write
@@ -737,7 +750,9 @@ asks in 最小权限 and, after the pill's switch to 完全访问, a second writ
 and a file attached from the picker reach the request (the image as an `image_url` part, the file by its full path),
 and ↑ brings the last message back without its files; a file mentioned with `@` reaches it by its full path; a
 `sleep 600` the fake model starts with `bg_start` puts the background pill beside the send box, its list says it runs,
-and its stop button stops it (the pill goes; not on Windows); the quit leaves nothing running.
+and its stop button stops it (the pill goes; not on Windows); a package.json the test writes into the project shows
+its `greet` script under Run once a run has ended, and its Run button starts `npm run greet` as a job listed under its
+name (stopped from the list if the npm on the app's PATH is still at it); the quit leaves nothing running.
 
 Looked at (macOS, Electron 44, light and dark): the idle send box, the `/` menu, the model menu and its level submenu,
 the permission menu, the attachment chips, the person's row after the send (the file as a card, no image: see "Left

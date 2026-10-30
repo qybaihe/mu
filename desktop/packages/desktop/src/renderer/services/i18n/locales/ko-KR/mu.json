@@ -977,7 +977,7 @@
     "browse": "내장 브라우저로 주소를 열고 말한 대로 조작합니다: /browse <URL> [할 일]",
     "inherit": "mu가 Claude Code, Cursor, Codex에서 가져온 설정과 그 출처",
     "mcp": "MCP 서버 관리: 로그인, 다시 연결, 켜기·끄기, 노출 방식 변경",
-    "jobs": "백그라운드 작업: /jobs로 보기, /jobs stop <ID|all>로 중지",
+    "jobs": "백그라운드 작업: /jobs로 보기, /jobs start <명령>으로 실행, /jobs stop <ID|all>로 중지",
     "commit": "커밋하지 않은 변경을 여러 커밋으로 나눕니다: 먼저 계획을 보여 주고, 동의할 때만 커밋하며, 푸시는 하지 않습니다",
     "review": "리뷰 하위 에이전트가 커밋하지 않은 변경(또는 지정한 내용)을 검토하고, 발견 사항을 P0부터 P3까지 심각도순으로 정리합니다",
     "mu": "mu 상태. 그 밖에: /mu judge <판정기> | /mu route <판정 지점> <판정기|default> | /mu mode <판정 지점|default> <off|shadow|active>",
@@ -1151,7 +1151,12 @@
       "lingering": "이 명령이 시작한 프로세스가 아직 실행 중입니다",
       "log": "로그 열기",
       "stop": "중지",
-      "stopAll": "모두 중지"
+      "stopAll": "모두 중지",
+      "run": "실행",
+      "scripts": "스크립트 실행",
+      "scriptsFrom": "package.json · {{runner}}",
+      "scriptRunning": "실행 중",
+      "scriptsMore": "{{count}}개는 표시하지 않았습니다: 따옴표가 필요한 이름이거나 처음 40개 이후입니다"
     }
   },
   "details": {

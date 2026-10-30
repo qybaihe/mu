@@ -977,7 +977,7 @@
     "browse": "内蔵ブラウザで URL を開き、指示どおりに操作させます：/browse <URL> [やること]",
     "inherit": "mu が Claude Code、Cursor、Codex から引き継いだ設定と、その出どころ",
     "mcp": "MCP サーバーを管理：サインイン、再接続、有効化・無効化、公開方法の変更",
-    "jobs": "バックグラウンドジョブ：/jobs で表示、/jobs stop <ID|all> で停止",
+    "jobs": "バックグラウンドジョブ：/jobs で表示、/jobs start <コマンド> で実行、/jobs stop <ID|all> で停止",
     "commit": "未コミットの変更を複数のコミットに分けます：まず計画を示し、同意したときだけコミットし、プッシュはしません",
     "review": "レビュー担当のサブエージェントが未コミットの変更（または指定した内容）をレビューし、指摘を P0〜P3 の重さ順に並べます",
     "mu": "mu の状態。ほかに：/mu judge <判定器> | /mu route <判定ポイント> <判定器|default> | /mu mode <判定ポイント|default> <off|shadow|active>",
@@ -1151,7 +1151,12 @@
       "lingering": "これが起動したプロセスはまだ動いています",
       "log": "ログを開く",
       "stop": "停止",
-      "stopAll": "すべて停止"
+      "stopAll": "すべて停止",
+      "run": "実行",
+      "scripts": "スクリプトを実行",
+      "scriptsFrom": "package.json · {{runner}}",
+      "scriptRunning": "実行中",
+      "scriptsMore": "ほかに {{count}} 件は表示していません（引用符が必要な名前、または先頭 40 件より後）"
     }
   },
   "details": {

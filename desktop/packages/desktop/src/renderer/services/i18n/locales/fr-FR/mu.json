@@ -977,7 +977,7 @@
     "browse": "Faire ouvrir une adresse au navigateur intégré et lui faire faire ce que vous dites : /browse <url> [objectif]",
     "inherit": "Ce que mu a repris de Claude Code, Cursor et Codex, et d’où",
     "mcp": "Gérer les serveurs MCP : connexion, reconnexion, activation ou désactivation, et mode d'exposition",
-    "jobs": "Processus en arrière-plan : /jobs, /jobs stop <id|all>",
+    "jobs": "Processus en arrière-plan : /jobs, /jobs start <commande>, /jobs stop <id|all>",
     "commit": "Découper la modification non validée en commits : montre le plan, ne valide qu’avec votre accord, ne pousse jamais",
     "review": "Faire relire la modification non validée, ou ce que vous désignez, par le sous-agent relecteur ; constats classés de P0 à P3",
     "mu": "État de mu. Aussi : /mu judge <paliers> | /mu route <point de décision> <paliers|default> | /mu mode <point de décision|default> <off|shadow|active>",
@@ -1151,7 +1151,12 @@
       "lingering": "Les processus qu'elle a lancés tournent encore",
       "log": "Ouvrir son journal",
       "stop": "Arrêter",
-      "stopAll": "Tout arrêter"
+      "stopAll": "Tout arrêter",
+      "run": "Lancer",
+      "scripts": "Lancer un script",
+      "scriptsFrom": "package.json · {{runner}}",
+      "scriptRunning": "En cours",
+      "scriptsMore": "{{count}} autres non listés : des noms qu’il faudrait mettre entre guillemets, ou au-delà des 40 premiers"
     }
   },
   "details": {

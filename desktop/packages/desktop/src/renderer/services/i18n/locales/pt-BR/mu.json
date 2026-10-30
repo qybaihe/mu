@@ -977,7 +977,7 @@
     "browse": "Fazer o navegador integrado abrir um endereço e fazer o que você disser: /browse <url> [objetivo]",
     "inherit": "O que o mu herdou do Claude Code, do Cursor e do Codex, e de onde",
     "mcp": "Gerenciar servidores MCP: entrar, reconectar, ativar ou desativar e mudar a exposição",
-    "jobs": "Tarefas em segundo plano: /jobs, /jobs stop <id|all>",
+    "jobs": "Tarefas em segundo plano: /jobs, /jobs start <comando>, /jobs stop <id|all>",
     "commit": "Dividir a alteração não commitada em commits: mostra o plano, só faz commit quando você concorda e nunca faz push",
     "review": "Revisar a alteração não commitada, ou o que você indicar, com o subagente revisor; achados ordenados de P0 a P3",
     "mu": "Status do mu. Também: /mu judge <camadas> | /mu route <ponto de decisão> <camadas|default> | /mu mode <ponto de decisão|default> <off|shadow|active>",
@@ -1151,7 +1151,12 @@
       "lingering": "Os processos que ele iniciou ainda estão em execução",
       "log": "Abrir o log",
       "stop": "Parar",
-      "stopAll": "Parar todos"
+      "stopAll": "Parar todos",
+      "run": "Executar",
+      "scripts": "Executar um script",
+      "scriptsFrom": "package.json · {{runner}}",
+      "scriptRunning": "Em execução",
+      "scriptsMore": "Mais {{count}} não listados: nomes que precisariam de aspas, ou além dos 40 primeiros"
     }
   },
   "details": {

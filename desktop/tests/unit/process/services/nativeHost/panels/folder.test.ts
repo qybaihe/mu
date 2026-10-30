@@ -3,8 +3,8 @@ import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { KyrnError } from '@/common/kyrn/errors';
-import { FOLDER_LISTING_LIMIT } from '@/common/kyrn/folderBridge';
-import { findFiles, listFolder, readFolder } from '@/process/agent/kyrn/folderFiles';
+import { FOLDER_LISTING_LIMIT, FOLDER_SCRIPTS_LIMIT } from '@/common/kyrn/folderBridge';
+import { findFiles, folderScripts, listFolder, readFolder } from '@/process/agent/kyrn/folderFiles';
 import { GitNotStarted, type GitRunner } from '@/process/services/folderGit/runGit';
 import { lessonsProject, LessonsStore } from '@/process/agent/kyrn/lessons';
 import { canSymlink } from '../symlinks.ts';
@@ -163,6 +163,61 @@ describe('a folder’s files for quick open', () => {
       expect(more).toBe(false);
       expect(paths.toSorted()).toEqual(['.env', 'README.md', 'src/a.ts', 'src/deep/b.ts']);
     }
+  });
+});
+
+describe('a folder’s scripts for the send box’s Run', () => {
+  const manifest = (dir: string, value: unknown) =>
+    writeFileSync(join(dir, 'package.json'), typeof value === 'string' ? value : JSON.stringify(value));
+
+  it('lists package.json’s scripts in its order, with npm when nothing names another runner', async () => {
+    const dir = temp();
+    manifest(dir, { scripts: { dev: 'vite', test: 'vitest --run', 'test:e2e': 'playwright test', empty: '  ' } });
+    expect(await folderScripts(dir)).toEqual({
+      runner: 'npm',
+      scripts: [
+        { name: 'dev', command: 'vite' },
+        { name: 'test', command: 'vitest --run' },
+        { name: 'test:e2e', command: 'playwright test' },
+      ],
+      more: 0,
+    });
+  });
+
+  it('runs them with packageManager’s runner, else the lockfile’s', async () => {
+    const dir = temp();
+    manifest(dir, { scripts: { build: 'tsc' } });
+    writeFileSync(join(dir, 'yarn.lock'), '');
+    expect((await folderScripts(dir))?.runner).toBe('yarn');
+    writeFileSync(join(dir, 'pnpm-lock.yaml'), '');
+    expect((await folderScripts(dir))?.runner).toBe('pnpm');
+    writeFileSync(join(dir, 'bun.lock'), '');
+    expect((await folderScripts(dir))?.runner).toBe('bun');
+    manifest(dir, { packageManager: 'yarn@4.5.0', scripts: { build: 'tsc' } });
+    expect((await folderScripts(dir))?.runner).toBe('yarn');
+  });
+
+  it('leaves out a name a shell would need quoted, and counts what it left out', async () => {
+    const dir = temp();
+    const many = Object.fromEntries(Array.from({ length: FOLDER_SCRIPTS_LIMIT + 2 }, (_, i) => [`s${i}`, 'true']));
+    manifest(dir, { scripts: { 'two words': 'true', '-flag': 'true', '@scope': 'true', 'a;b': 'true', ...many } });
+    const read = await folderScripts(dir);
+    expect(read?.scripts).toHaveLength(FOLDER_SCRIPTS_LIMIT);
+    expect(read?.scripts[0]).toEqual({ name: 's0', command: 'true' });
+    expect(read?.more).toBe(6);
+  });
+
+  it('offers none without a package.json, scripts, or JSON that parses', async () => {
+    const dir = temp();
+    expect(await folderScripts(dir)).toBeNull();
+    manifest(dir, { name: 'app' });
+    expect(await folderScripts(dir)).toBeNull();
+    manifest(dir, { scripts: ['build'] });
+    expect(await folderScripts(dir)).toBeNull();
+    manifest(dir, '{ "scripts": ');
+    expect(await folderScripts(dir)).toBeNull();
+    manifest(dir, 'null');
+    expect(await folderScripts(dir)).toBeNull();
   });
 });
 

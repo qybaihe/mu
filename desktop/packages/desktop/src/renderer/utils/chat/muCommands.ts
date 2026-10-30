@@ -158,8 +158,9 @@ export const MU_COMMAND_WORDS: ReadonlyMap<string, readonly string[]> = new Map(
   [
     'jobs',
     [
+      'Background jobs: /jobs lists them, /jobs start <command> runs one, /jobs stop <id|all> stops them',
+      '后台命令：/jobs 查看，/jobs start <命令> 运行，/jobs stop <编号|all> 停掉',
       'List background jobs; /jobs stop <id|all> stops them',
-      '后台命令：/jobs 查看，/jobs stop <编号|all> 停掉',
       'Background jobs: /jobs lists them, /jobs stop <id|all> stops them',
       'Background jobs: /jobs, /jobs stop <id|all>',
     ],

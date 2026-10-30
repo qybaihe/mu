@@ -28,7 +28,7 @@ import {
   switchMcpServer,
 } from '../agent/kyrn/capabilities/mcp';
 import { LessonsStore, lessonsProject, type LessonsProject } from '../agent/kyrn/lessons';
-import { findFiles, listFolder, openFolder, readFolder } from '../agent/kyrn/folderFiles';
+import { findFiles, folderScripts, listFolder, openFolder, readFolder } from '../agent/kyrn/folderFiles';
 import { gitRunner } from '../services/folderGit/runGit';
 import { activityPage, modelLevels } from '../agent/kyrn/telemetry';
 import { findRegistration, initializeKyrn, recheckKyrn, type OwnCommand } from '../agent/kyrn/product';
@@ -250,6 +250,7 @@ export function initKyrnBridge(): void {
   );
   kyrnFolderBridge.files.provider(({ cwd, path }) => result(() => listFolder(readFolder(cwd), path)));
   kyrnFolderBridge.find.provider(({ cwd }) => result(() => findFiles(readFolder(cwd), gitRunner())));
+  kyrnFolderBridge.scripts.provider(({ cwd }) => result(() => folderScripts(readFolder(cwd))));
   const imports = importService({
     cli: importCli(harness),
     // A conversation deleted since it was made is no error here: the import makes a new one.
