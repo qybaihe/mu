@@ -712,8 +712,8 @@ and a file attached from the picker reach the request (the image as an `image_ur
 and ↑ brings the last message back without its files; a file mentioned with `@` reaches it by its full path; a
 `sleep 600` the fake model starts with `bg_start` puts the background pill beside the send box, its list says it runs,
 and its stop button stops it (the pill goes; not on Windows); a package.json the test writes into the project shows
-its `greet` script under Run once a run has ended, and its Run button starts `npm run greet` as a job, listed with how
-it ended (whether or not npm is on the app's PATH); the quit leaves nothing running.
+its `greet` script under Run once a run has ended, and its Run button starts `npm run greet` as a job listed under its
+name (stopped from the list if the npm on the app's PATH is still at it); the quit leaves nothing running.
 
 Looked at (macOS, Electron 44, light and dark): the idle send box, the `/` menu, the model menu and its level submenu,
 the permission menu, the attachment chips, the person's row after the send (the file as a card, no image: see "Left

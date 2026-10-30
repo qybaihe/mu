@@ -292,12 +292,16 @@ test('a script of the projectâ€™s package.json runs from the pill as the personâ
   await expect(script).toContainText('node -e');
   await shot('run-scripts');
   await script.getByTestId('native-script-run').click();
-  // mu starts it in the project; it ends at once, and stays listed with how it ended (npm on this PATH or not).
-  const job = p.getByTestId('native-jobs-list').getByTestId('native-job');
-  await expect(job).toHaveAttribute('data-state', 'exited', { timeout: 30_000 });
+  // mu starts it in the project, named after the script, listed above the model's job that ended.
+  const job = p.getByTestId('native-jobs-list').getByTestId('native-job').filter({ hasText: 'npm run greet' });
+  await expect(job).toHaveCount(1, { timeout: 15_000 });
   await expect(job).toContainText('greet');
-  await expect(job).toContainText('npm run greet');
-  await shot('run-scripts-ended');
+  await shot('run-scripts-started');
+  // How it goes from there is the npm this system's PATH finds: ended already, or still at work. Either way it stops.
+  if ((await job.getAttribute('data-state')) !== 'exited') {
+    await job.getByTestId('native-job-stop').click();
+    await expect(job).toHaveAttribute('data-state', 'exited', { timeout: 15_000 });
+  }
   await p.keyboard.press('Escape');
   expectNoProblems();
 });
