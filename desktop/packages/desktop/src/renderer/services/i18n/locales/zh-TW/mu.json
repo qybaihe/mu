@@ -1107,7 +1107,25 @@
           "ask": "讓 mu 提交",
           "askHint": "mu 會把變更拆成幾個提交並寫好說明，先給你看計畫，你同意才提交。"
         },
-        "actionFailed": "Git 沒能完成：{{reason}}"
+        "actionFailed": "Git 沒能完成：{{reason}}",
+        "pr": {
+          "none": "這個分支還沒有拉取請求",
+          "ask": "讓 mu 建立",
+          "prompt": "推送這個分支，並用 gh 為它建立拉取請求。根據分支上的提交寫標題和描述，建立之前先給我看。",
+          "checks": "檢查：{{passed}} 個通過，{{failed}} 個失敗，{{pending}} 個執行中",
+          "status": {
+            "open": "開啟",
+            "draft": "草稿",
+            "merged": "已合併",
+            "closed": "已關閉"
+          },
+          "state": {
+            "pass": "通過",
+            "fail": "失敗",
+            "pending": "執行中",
+            "skipped": "已略過"
+          }
+        }
       },
       "files": {
         "label": "{{folder}} 中的檔案",

@@ -24,6 +24,7 @@ import { ScmSection } from '@/renderer/pages/conversation/SourceControl/ScmSecti
 import { useFolderGit } from '../../hooks/useFolderGit';
 import { changeKey, drifted, sectionsOf, toResource } from '../../utils/gitRows';
 import NativeCommitBox from './NativeCommitBox';
+import NativeSourcePr from './NativeSourcePr';
 import { useSourceActions, type SourceAction } from './useSourceActions';
 
 /** What the tab shows (`data-state`). */
@@ -74,6 +75,8 @@ export default function NativeSource({
 }) {
   const { t } = useTranslation();
   const { status, error, reading, read } = useFolderGit(cwd, { visible, refresh });
+  // The refresh button reads the pull request again too.
+  const [asked, setAsked] = useState(0);
   const { busy, act } = useSourceActions(cwd, read);
   const { openPreview } = usePreviewContext();
   const [selected, setSelected] = useState<string>();
@@ -265,9 +268,15 @@ export default function NativeSource({
           aria-label={t('mu.native.panel.files.refresh')}
           title={t('mu.native.panel.files.refresh')}
           data-testid='native-source-refresh'
-          onClick={read}
+          onClick={() => {
+            read();
+            setAsked((times) => times + 1);
+          }}
         />
       </div>
+      {repository ? (
+        <NativeSourcePr cwd={cwd} branch={repository.branch.name} visible={visible} refresh={`${refresh}:${asked}`} />
+      ) : null}
       <div className='flex-1 min-h-0 overflow-y-auto p-4px'>
         {body()}
         {diffFailed ? (

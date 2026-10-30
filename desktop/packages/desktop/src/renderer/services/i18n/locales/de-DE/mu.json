@@ -1107,7 +1107,25 @@
           "ask": "mu committen lassen",
           "askHint": "mu teilt die Änderungen in Commits auf und schreibt ihre Nachrichten. Es zeigt dir den Plan und committet erst, wenn du zustimmst."
         },
-        "actionFailed": "Git konnte das nicht tun: {{reason}}"
+        "actionFailed": "Git konnte das nicht tun: {{reason}}",
+        "pr": {
+          "none": "Kein Pull Request für diesen Branch",
+          "ask": "mu einen öffnen lassen",
+          "prompt": "Pushe diesen Branch und öffne mit gh einen Pull Request dafür. Schreib Titel und Beschreibung anhand der Commits des Branches und zeig sie mir, bevor du ihn erstellst.",
+          "checks": "Checks: {{passed}} bestanden, {{failed}} fehlgeschlagen, {{pending}} laufen",
+          "status": {
+            "open": "Offen",
+            "draft": "Entwurf",
+            "merged": "Gemergt",
+            "closed": "Geschlossen"
+          },
+          "state": {
+            "pass": "Bestanden",
+            "fail": "Fehlgeschlagen",
+            "pending": "Läuft",
+            "skipped": "Übersprungen"
+          }
+        }
       },
       "files": {
         "label": "Dateien in {{folder}}",

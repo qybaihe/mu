@@ -1107,7 +1107,25 @@
           "ask": "让 mu 提交",
           "askHint": "mu 会把改动拆成几个提交并写好说明，先给你看计划，你同意才提交。"
         },
-        "actionFailed": "Git 没能完成：{{reason}}"
+        "actionFailed": "Git 没能完成：{{reason}}",
+        "pr": {
+          "none": "这个分支还没有拉取请求",
+          "ask": "让 mu 创建",
+          "prompt": "推送这个分支，并用 gh 为它创建拉取请求。根据分支上的提交写标题和描述，创建之前先给我看。",
+          "checks": "检查：{{passed}} 个通过，{{failed}} 个失败，{{pending}} 个运行中",
+          "status": {
+            "open": "打开",
+            "draft": "草稿",
+            "merged": "已合并",
+            "closed": "已关闭"
+          },
+          "state": {
+            "pass": "通过",
+            "fail": "失败",
+            "pending": "运行中",
+            "skipped": "已跳过"
+          }
+        }
       },
       "files": {
         "label": "{{folder}} 中的文件",

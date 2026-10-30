@@ -1107,7 +1107,25 @@
           "ask": "Laisser mu valider",
           "askHint": "mu répartit les modifications en commits et rédige leurs messages. Il vous montre le plan et ne valide que si vous êtes d'accord."
         },
-        "actionFailed": "Git n'a pas pu le faire : {{reason}}"
+        "actionFailed": "Git n'a pas pu le faire : {{reason}}",
+        "pr": {
+          "none": "Aucune pull request pour cette branche",
+          "ask": "Laisser mu l’ouvrir",
+          "prompt": "Pousse cette branche et ouvre une pull request avec gh. Écris le titre et la description à partir des commits de la branche, et montre-les-moi avant de la créer.",
+          "checks": "Vérifications : {{passed}} réussies, {{failed}} échouées, {{pending}} en cours",
+          "status": {
+            "open": "Ouverte",
+            "draft": "Brouillon",
+            "merged": "Fusionnée",
+            "closed": "Fermée"
+          },
+          "state": {
+            "pass": "Réussie",
+            "fail": "Échouée",
+            "pending": "En cours",
+            "skipped": "Ignorée"
+          }
+        }
       },
       "files": {
         "label": "Fichiers de {{folder}}",
