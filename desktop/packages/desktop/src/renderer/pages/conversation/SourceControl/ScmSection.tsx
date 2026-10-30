@@ -62,7 +62,16 @@ export const ScmSection: React.FC<ScmSectionProps> = ({
         className='flex-shrink-0 flex items-center gap-4px h-24px px-6px cursor-pointer select-none hover:bg-[var(--bg-2)]'
         onClick={onToggleCollapsed}
         role='button'
+        tabIndex={0}
         aria-expanded={!collapsed}
+        onKeyDown={(event) => {
+          // The header's own key, not one pressed on a section action inside it.
+          if (event.target !== event.currentTarget) return;
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onToggleCollapsed();
+          }
+        }}
       >
         {collapsed ? <Right theme='outline' size='14' /> : <Down theme='outline' size='14' />}
         <span className='text-13px font-600 uppercase tracking-wide text-t-secondary truncate'>{title}</span>

@@ -179,6 +179,7 @@ providers keyed by a folder (`common/kyrn/folderBridge.ts`, answered in `process
 | `kyrn.folder.files`          | One directory of the folder (`path` relative, `''` for the folder): folders first, `.git` left out, at most 1000 entries, never above it.                           |
 | `kyrn.folder.git.status`     | The folder's repository: root, branch (ahead/behind, detached, no commit yet), changes by area; or `no-git`, `not-repository`.                                      |
 | `kyrn.folder.git.diff`       | One file's diff for its row's area: staged, unstaged, a new file against nothing, a conflict against HEAD.                                                          |
+| `kyrn.folder.git.hunk`       | One hunk of a file's staged or unstaged diff into the index or out of it, if it is still in the diff; the file's diff as it is now.                                 |
 | `kyrn.folder.git.pr`         | The pull request of the folder's branch from GitHub's CLI (gh's repository, then the one it is pushed to): number, title, link, state, checks; or none, or no `gh`. |
 
 (`kyrn.folder.git.*` are declared in `common/kyrn/gitBridge.ts` and answered in `process/services/folderGit/`.)
@@ -218,8 +219,13 @@ providers keyed by a folder (`common/kyrn/folderBridge.ts`, answered in `process
   variables are left out. What it writes is only what the person asks for there: a row's button stages its file
   (`add -A -- <path>`, a deletion included) or takes it out of the index (`reset -q -- <path>`, which also works
   before the first commit; a rename takes its old path with it), a section's button does it for all of its files
-  (100 paths per git run), and the box at the top (`NativeCommitBox.tsx`) commits what is staged with the message,
-  or, with nothing staged, every change first (`add -A`). A commit runs as the person's own git: their name, signing
+  (100 paths per git run), a hunk's header in a row's diff stages that hunk alone (an unstaged diff) or takes it out
+  of the index (a staged one; `viewers/diff/DiffHunks.tsx`), and the box at the top (`NativeCommitBox.tsx`) commits what is staged with the message,
+  or, with nothing staged, every change first (`add -A`). For a hunk the main process reads the file's diff again and
+  applies the hunk only if it is still in it, byte for byte (`apply --cached [-R] --whitespace=nowarn`, the patch on
+  stdin); the preview then shows the file's diff as it is now, and a hunk that is gone changes nothing: the diff is
+  read again and a line says the file changed. Only a plain content change offers hunks: not a new or deleted file,
+  a rename, a change of mode, a cut or binary diff, nor the side-by-side view. A commit runs as the person's own git: their name, signing
   and hooks, with only the variables that point at another repository left out and no prompt (`asPerson`; up to
   5 minutes for hooks). When git refuses, the end of what it and the hooks wrote shows under the box and the message
   stays; a merge with conflicts commits nothing. "Let mu commit" sends mu's `/commit` to the conversation (mu
@@ -594,7 +600,7 @@ Three things to know when driving it:
 | `surface/composerControls.dom.test.tsx`, `view/settings.test.ts`                                                                                                                                       | The model, level and mode shown without a host (from the file, the last reply), the model menu and switch, the mode switch, the `/` menu, `@` mentions, attachments picked, dropped and pasted, the text ↑/↓ and `/copy` read; a session file's settings.                                                                                                                                                                                                                                                                                                            |
 | `surface/screen.dom.test.tsx`                                                                                                                                                                          | Page states, transcript rows, open failure and retry, flag off, a draft followed (the browser's host too), the panel feed and folder, the lessons note; sidebar list, new conversation (picked folder, recent folder, permission mode), create failure, show all; projects (by repository or folder, a new folder's, one added, its "+", folded, archived or removed), the open row kept in view.                                                                                                                                                                    |
 | `panels/folder.test.ts`, `panels/browser.test.ts`                                                                                                                                                      | A folder's listing (order, links, limit, never above it) and its lessons by real path; the browser's lookup by `MU_DESKTOP_SESSION` on native conversations and the panel host.                                                                                                                                                                                                                                                                                                                                                                                      |
-| `panels/git.test.ts` (15)                                                                                                                                                                              | Repositories made in the test with the git on PATH (skipped without one): no git, no repository, clean, every area, renames, odd names, a subfolder, the branch line, the cap, diffs by area, binary, cut, refused paths; PATH read at each run.                                                                                                                                                                                                                                                                                                                     |
+| `panels/git.test.ts` (28)                                                                                                                                                                              | Repositories made in the test with the git on PATH (skipped without one): no git, no repository, clean, every area, renames, odd names, a subfolder, the branch line, the cap, diffs by area, binary, cut, refused paths; PATH read at each run; one hunk staged and unstaged with the working tree untouched, a stale hunk, no hunks where the header says more; staging and committing as the person.                                                                                                                                                              |
 | `panels/githubPr.test.ts` (9)                                                                                                                                                                          | A pull request and its checks as `gh pr view --json` says them (a check run, a commit status, neutral and skipped, cancelled, no `https:` page), asked in the folder; none with the default branch; the repository the branch is pushed to asked when gh found none (another owner's branch of the same name not taken); a remote's URL as `[host/]owner/repo`; why when gh cannot answer; no gh.                                                                                                                                                                    |
 | `panels/projects.test.ts`                                                                                                                                                                              | `repoRoots` on folders made in the test (a repository, a worktree's `.git` file, a nested one, a folder that is gone; each looked at once; the cap), and the grouping: paths compared, the deepest folder that holds one, the order.                                                                                                                                                                                                                                                                                                                                 |
 | `surface/source.dom.test.tsx` (25)                                                                                                                                                                     | The source tab's states and words, sections and classic rows without actions, a row's diff in the preview (a rename with its old path), binary, cut and failed diffs, folding, the cap, the branch line, when it reads, the kept answer; the pull request row (its checks counted and listed, read again while one runs, "Let mu open one", no row on the default branch, without gh or when gh cannot say).                                                                                                                                                         |
@@ -630,9 +636,9 @@ Elsewhere: `tests/unit/renderer/hooks/guidPage.dom.test.tsx` (the classic send w
 - **The context ring with no host**: the context window is the model's, which only pi knows; a conversation read
   from its file shows the ring once a host has run.
 - **Close and remove**: the bridge has them; a remove moves the session file to the bin and wants a confirmation.
-- **Source control actions**: the source tab stages, unstages and commits, but doesn't discard, amend or push, and
-  has no tree view, history or graph; the pull request row reads GitHub through `gh` only (no other host, no sign-in
-  of its own), and doesn't merge, review or rerun a check; a repository nested inside the folder's own is not looked for. The files tab is a plain tree: no search, no rename or new file, no drag and drop, no "add to chat"; its dot
+- **Source control actions**: the source tab stages, unstages (a file or one hunk) and commits, but doesn't discard, amend or push, and
+  has no tree view, history or graph; the pull request row reads GitHub through `gh` only (not
+  GitLab or another service, and no sign-in of its own), and doesn't merge, review or rerun a check; a repository nested inside the folder's own is not looked for. The files tab is a plain tree: no search, no rename or new file, no drag and drop, no "add to chat"; its dot
   comes from the model's own `write` and `edit` calls, not from a file a shell command changed.
 - **Pin** is kept in the window's storage (`mu.native.pinned`, a list of session ids), not with the session: another
   window shares it, the command line and a new install do not. A conversation with no session file yet cannot be
@@ -781,7 +787,7 @@ while a second conversation is made in the same window and answered; the second'
 sidebar lists both with a host's green dot; the first, opened again from its row, has streamed on meanwhile (well past
 its third chunk), shows none of the second's messages, and runs to its last chunk; the second is as it was.
 
-`tests/e2e/mu-conversation/native-source.spec.mjs` (`--native -- native-source.spec`): eight steps.
+`tests/e2e/mu-conversation/native-source.spec.mjs` (`--native -- native-source.spec`): nine steps.
 The project is made a repository with one commit by the test's own git (name and address on the command line, the
 profile's home, no system config). The app takes its PATH from the login shell (`fix-path`), which in the profile's
 home is the system's, where a Mac has the Xcode stub first; so the profile's home gets a `.zprofile` and a
@@ -792,7 +798,8 @@ opens its diff in 预览 (the removed and the added lines). A comment on the add
 fake model's request with the next message (where, the words, the line in a `diff` fence) and leaves the diff once
 sent. A file the test stages shows under 已暂存的变更 after the refresh button; its row's buttons take it out of the index
 and back, and the commit box commits it with a message, as the person the profile's `.gitconfig` names (README.md
-stays a change). Dark theme: the list and the diff. Last,
+stays a change). README.md's diff stages its one hunk from the hunk's header (in the index, the working tree as it
+was, the row under 已暂存的变更), and the staged diff's header takes it out again. Dark theme: the list and the diff. Last,
 the rewind button under the README message: mu's question asks what goes back, and with files and conversation
 README.md is as committed, the message leaves the transcript and is in the send box again. Skipped without a git that
 runs, and on Windows. Its first run found

@@ -17,6 +17,7 @@ import { muCodeTheme } from '@renderer/components/Markdown/muCodeTheme';
 import { diff2htmlTemplates } from '@renderer/components/media/diff2htmlTemplates';
 import SelectionToolbar from '../../renderers/SelectionToolbar';
 import DiffComments from './DiffComments';
+import DiffHunks, { diffBody } from './DiffHunks';
 import { useTranslation } from 'react-i18next';
 
 interface DiffPreviewProps {
@@ -26,14 +27,18 @@ interface DiffPreviewProps {
   hideToolbar?: boolean;
   viewMode?: 'source' | 'preview';
   onViewModeChange?: (mode: 'source' | 'preview') => void;
+  /** The tab shows another diff in this one's place (a hunk staged or unstaged: the file's diff as it is now). */
+  onReplace?: (content: string, metadata: PreviewMetadata) => void;
 }
 
 /**
  * Diff preview component with rich diff2html rendering. In the line-by-line view a line takes a comment for the next
- * message (`DiffComments`).
+ * message (`DiffComments`), and a source-tab diff's hunks can be staged or unstaged one by one (`DiffHunks`).
  */
 const DiffPreview: React.FC<DiffPreviewProps> = ({
   content,
+  metadata,
+  onReplace,
   hideToolbar = false,
   viewMode: externalViewMode,
   onViewModeChange,
@@ -87,6 +92,10 @@ const DiffPreview: React.FC<DiffPreviewProps> = ({
     });
     // `t` is a new function after a language switch, so the templates follow it.
   }, [content, sideBySide, t]);
+  // One object per markup: React 19 sets `innerHTML` again whenever `dangerouslySetInnerHTML` is a new object, which
+  // would draw the diff afresh on every render and drop what is added to its rows (comments, hunk buttons, the
+  // side-by-side toggle in its header) until the markup itself changes.
+  const diffMarkup = useMemo(() => ({ __html: diffHtmlContent }), [diffHtmlContent]);
 
   // Portal container for injecting side-by-side toggle into d2h-file-header
   const operatorRef = useRef<HTMLDivElement | null>(null);
@@ -214,9 +223,19 @@ const DiffPreview: React.FC<DiffPreviewProps> = ({
                   'd2h-dark-color-scheme': currentTheme === 'dark',
                 }
               )}
-              dangerouslySetInnerHTML={{ __html: diffHtmlContent }}
+              dangerouslySetInnerHTML={diffMarkup}
             />
             <DiffComments diff={diffElement} drawn={diffHtmlContent} enabled={!sideBySide} />
+            <DiffHunks
+              diff={diffElement}
+              drawn={diffHtmlContent}
+              enabled={!sideBySide && Boolean(onReplace)}
+              patch={content}
+              source={metadata?.gitHunks}
+              onChanged={(now) =>
+                onReplace?.(diffBody(now, t), { gitHunks: now.hunks ? metadata?.gitHunks : undefined })
+              }
+            />
           </div>
         )}
       </div>

@@ -469,16 +469,26 @@ export async function planRestore(store: Store, commit: string, nowTree: string)
 }
 
 /** The first thing on disk that makes writing `path` unsafe, or undefined. git's forced checkout would delete it instead. */
-function obstacle(store: Store, path: string, mustBeAbsent: boolean): string | undefined {
+/**
+ * Why a path's folders are not folders of the project's any more: one is a file or a link (`lstat` does not follow
+ * it) where the checkpoint had a folder. A folder that is not there is no obstacle: nothing is under it.
+ */
+function folderOnTheWay(store: Store, path: string): string | undefined {
 	const parts = path.split("/");
 	for (let depth = 1; depth < parts.length; depth++) {
 		try {
 			if (!lstatSync(join(store.root, ...parts.slice(0, depth))).isDirectory())
 				return "a file is where its folder should be";
 		} catch {
-			break;
+			return undefined;
 		}
 	}
+	return undefined;
+}
+
+function obstacle(store: Store, path: string, mustBeAbsent: boolean): string | undefined {
+	const way = folderOnTheWay(store, path);
+	if (way) return way;
 	try {
 		const stats = lstatSync(onDisk(store, path));
 		if (stats.isDirectory()) return "a folder is in the way";
@@ -509,6 +519,12 @@ export async function applyRestore(
 	const removed: string[] = [];
 	for (const path of plan.remove) {
 		if (kept(path)) continue;
+		// A folder on the way that became a link since leads elsewhere: what is removed there is not the project's.
+		const way = folderOnTheWay(store, path);
+		if (way) {
+			leftAlone.push({ path, why: way });
+			continue;
+		}
 		try {
 			const stats = lstatSync(onDisk(store, path));
 			if (stats.isDirectory()) {
@@ -516,8 +532,13 @@ export async function applyRestore(
 				continue;
 			}
 			unlinkSync(onDisk(store, path));
-		} catch {
-			// Already gone: that is the state asked for.
+		} catch (error) {
+			// Already gone is the state asked for; anything else (no permission, a busy file) left it there.
+			const code = (error as NodeJS.ErrnoException).code;
+			if (code !== "ENOENT") {
+				leftAlone.push({ path, why: `it could not be removed (${code ?? String(error)})` });
+				continue;
+			}
 		}
 		removed.push(path);
 		// Folders the removed file leaves empty go too; rmdir refuses anything that still holds a file.

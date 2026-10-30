@@ -357,5 +357,11 @@
     "save": "Add comment",
     "hint": "Comments go with your next message",
     "remove": "Remove comment"
+  },
+  "diffHunk": {
+    "stage": "Stage this change",
+    "unstage": "Unstage this change",
+    "stale": "The file has changed since this diff was shown, so nothing was done. Here's the current diff.",
+    "failed": "Git couldn't do that: {{reason}}"
   }
 }

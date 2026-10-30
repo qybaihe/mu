@@ -755,6 +755,21 @@ describe("turn.rewind and what counts as a change", () => {
 		]) {
 			expect(isReadOnlyCommand(command), command).toBe(false);
 		}
+		// A variable's value becomes arguments, an option that writes included (`OPTS='-o out'`); a `$` that names
+		// nothing, or one in single quotes, is the character itself.
+		for (const command of ['sort "$OPTS" input.txt', "rg $ARGS .", 'cat "$1"', "head -n $N a.txt"]) {
+			expect(isReadOnlyCommand(command), command).toBe(false);
+			expect(isMutatingCall("bash", { command }), command).toBe(true);
+		}
+		for (const command of ["rg 'foo$' src", 'grep -n "end$" a.txt', "grep -c 'a$' a.txt", "rg 'cost \\$5' ."]) {
+			expect(isReadOnlyCommand(command), command).toBe(true);
+			expect(isMutatingCall("bash", { command }), command).toBe(false);
+		}
+		expect(isMutatingCall("bash", { command: "git log --oneline | grep -E 'fix$|feat$'" })).toBe(false);
+		// Git runs the program a repository's config names for an external diff or a text conversion.
+		for (const command of ["git diff --ext-diff", "git show --textconv HEAD:a.txt", "git log -p --ext-diff"]) {
+			expect(isReadOnlyCommand(command), command).toBe(false);
+		}
 		expect(isMutatingCall("read", { path: "a" })).toBe(false);
 		expect(isMutatingCall("bash", { command: "git log -3" })).toBe(false);
 		expect(isMutatingCall("bash", { command: "sed -i s/a/b/ x" })).toBe(true);

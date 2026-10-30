@@ -21,6 +21,7 @@ import {
 import { usePreviewContext } from '@/renderer/pages/conversation/Preview';
 import { ScmResourceRow } from '@/renderer/pages/conversation/SourceControl/ScmResourceRow';
 import { ScmSection } from '@/renderer/pages/conversation/SourceControl/ScmSection';
+import { diffBody } from '@/renderer/pages/conversation/Preview/components/viewers/diff/DiffHunks';
 import { useFolderGit } from '../../hooks/useFolderGit';
 import { changeKey, drifted, sectionsOf, toResource } from '../../utils/gitRows';
 import NativeCommitBox from './NativeCommitBox';
@@ -106,16 +107,13 @@ export default function NativeSource({
           ...(change.from ? { from: change.from } : {}),
         })
       );
-      // A diff the cap cut ends with a line that says so, where the reader's eye stops.
-      const body = diff.binary
-        ? t('conversation.explorer.scm.diff.binary')
-        : !diff.patch
-          ? t('conversation.explorer.scm.diff.empty')
-          : diff.truncated
-            ? `${diff.patch} ${t('conversation.explorer.scm.diff.truncated')}\n`
-            : diff.patch;
       const name = change.path.split('/').at(-1) || change.path;
-      openPreview(body, 'diff', { file_name: name, title: name });
+      // A staged or unstaged change to a file's content: its hunks can be staged or unstaged one by one there.
+      const hunks =
+        diff.hunks && (change.area === 'staged' || change.area === 'unstaged')
+          ? { gitHunks: { cwd, path: change.path, area: change.area } }
+          : {};
+      openPreview(diffBody(diff, t), 'diff', { file_name: name, title: name, ...hunks });
     } catch (failure) {
       setDiffFailed({ path: change.path, reason: failure instanceof Error ? failure.message : String(failure) });
     }
