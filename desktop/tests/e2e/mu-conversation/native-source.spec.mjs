@@ -145,13 +145,15 @@ test('源码 lists the new file as untracked, under the branch, and not the comm
 });
 
 test('a change to the committed file shows after the run, and its diff on a click', async () => {
-  // The tab stays in view: the run's end has it read again, with nothing clicked.
+  // The run's end has the tab read again, with nothing clicked. The app shows the file the model wrote in the preview,
+  // so the person goes back to 源码 to see it listed.
   await send('E2E:WRITE README.md');
   await replyWith('README.md');
   await expect(row('README.md')).toHaveAttribute('data-group', 'unstaged', { timeout: 15_000 });
   await expect(row('README.md')).toHaveAttribute('data-kind', 'modified');
+  await showTab('source');
   await shot('source-changed');
-  await row('README.md').getByRole('button').click();
+  await row('README.md').locator('[data-scm-resource]').click();
   await expect(tab('preview')).toHaveAttribute('aria-selected', 'true', { timeout: 15_000 });
   const preview = body('preview');
   await expect(preview).toContainText('Written by the fake model for the E2E test.', { timeout: 15_000 });
@@ -224,7 +226,7 @@ test('the diff’s one hunk goes into the index from its header, and out of it a
   const preview = body('preview');
   const hunk = preview.getByTestId('diff-hunk-action');
   await showTab('source');
-  await row('README.md').getByRole('button').click();
+  await row('README.md').locator('[data-scm-resource]').click();
   await expect(preview).toContainText('Written by the fake model for the E2E test.', { timeout: 15_000 });
   await expect(hunk).toHaveCount(1);
   await expect(hunk).toHaveAttribute('data-action', 'stage');
@@ -237,7 +239,7 @@ test('the diff’s one hunk goes into the index from its header, and out of it a
   await showTab('source');
   await expect(row('README.md')).toHaveAttribute('data-group', 'staged', { timeout: 15_000 });
 
-  await row('README.md').getByRole('button').click();
+  await row('README.md').locator('[data-scm-resource]').click();
   await expect(hunk).toHaveAttribute('data-action', 'unstage', { timeout: 15_000 });
   await shot('diff-hunk-unstage');
   await hunk.click();
@@ -255,7 +257,7 @@ test('the same tab and diff in the dark theme', async () => {
   await showTab('source');
   await sleep(200);
   await shot('source-dark');
-  await row('README.md').getByRole('button').click();
+  await row('README.md').locator('[data-scm-resource]').click();
   await expect(body('preview')).toContainText('Written by the fake model for the E2E test.', { timeout: 15_000 });
   await sleep(200);
   await shot('source-diff-dark');

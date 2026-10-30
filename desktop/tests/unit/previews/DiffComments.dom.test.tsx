@@ -351,6 +351,19 @@ describe('a source-tab diff’s hunks, one at a time', () => {
     expect(await screen.findByText("Git couldn't do that: index.lock exists")).toBeInTheDocument();
   });
 
+  it('keeps its buttons when the preview draws again with the same diff', () => {
+    const { rerender } = shown();
+    expect(buttons()).toHaveLength(2);
+    // The tab opened again from its row: the same diff, its metadata a new object.
+    rerender(
+      <I18nextProvider i18n={i18n}>
+        <DiffPreview content={TWO} hideToolbar metadata={{ gitHunks: { ...source } }} onReplace={vi.fn()} />
+      </I18nextProvider>
+    );
+    expect(buttons()).toHaveLength(2);
+    expect(buttons().every((button) => button.isConnected)).toBe(true);
+  });
+
   it('offers nothing for a diff that is not the source tab’s, nor in the side-by-side view', () => {
     shown({ metadata: {} });
     expect(buttons()).toHaveLength(0);

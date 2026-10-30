@@ -92,6 +92,10 @@ const DiffPreview: React.FC<DiffPreviewProps> = ({
     });
     // `t` is a new function after a language switch, so the templates follow it.
   }, [content, sideBySide, t]);
+  // One object per markup: React 19 sets `innerHTML` again whenever `dangerouslySetInnerHTML` is a new object, which
+  // would draw the diff afresh on every render and drop what is added to its rows (comments, hunk buttons, the
+  // side-by-side toggle in its header) until the markup itself changes.
+  const diffMarkup = useMemo(() => ({ __html: diffHtmlContent }), [diffHtmlContent]);
 
   // Portal container for injecting side-by-side toggle into d2h-file-header
   const operatorRef = useRef<HTMLDivElement | null>(null);
@@ -219,7 +223,7 @@ const DiffPreview: React.FC<DiffPreviewProps> = ({
                   'd2h-dark-color-scheme': currentTheme === 'dark',
                 }
               )}
-              dangerouslySetInnerHTML={{ __html: diffHtmlContent }}
+              dangerouslySetInnerHTML={diffMarkup}
             />
             <DiffComments diff={diffElement} drawn={diffHtmlContent} enabled={!sideBySide} />
             <DiffHunks
