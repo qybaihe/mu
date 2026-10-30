@@ -134,6 +134,10 @@ test('a native conversation writes a file, with the judge judging and the board 
   // The page followed the draft to the id pi's session gave it: the one a reopen comes back to.
   expect(page().url()).not.toContain('draft-');
   run.conversationUrl = page().url();
+  // The panel counts a finished write when it next reads the view, up to half a second after the reply, and follows it
+  // to 预览 if it is open on the workspace by then. It is closed here, so the write only marks 文件; waiting for that
+  // keeps the next test, which opens 文件 at once, from being turned to 预览 by this write (it was, on a macOS runner).
+  await expect(dot('files')).toHaveCount(1, { timeout: 15_000 });
   expectNoProblems();
 });
 
