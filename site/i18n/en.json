@@ -43,6 +43,7 @@
   "home": {
     "h1": "Most of what your agent decides<wbr> <em>isn't code</em>",
     "lead": "Does this output matter? Is this command safe? Is the work really done? mu hands these yes/no calls to a small model at 40 decision points, so fewer tokens go to waste, fewer approvals get clicked through unread, and fewer runs stop halfway. The main model keeps its attention on the code.",
+    "proof": "<b>Terminal-Bench 2.1, same model, same tasks:</b> mu passed 68.2% of attempts, pi 58.7% (+9.5 points, 95% interval +3.8 to +15.2). <a href=\"https://github.com/qybaihe/mu/blob/main/docs/benchmarks/terminal-bench-2.1.md\">How it was measured</a>",
     "tab_cli": "Command line",
     "tab_app": "Desktop app",
     "cli_hint": "Needs Node.js 22.19 or newer. Run <code>mu setup</code> once to connect a model, then <code>mu</code> in a project folder.",
@@ -145,7 +146,7 @@
   "models": {
     "title": "Models",
     "h1": "mude 1.0: a decision model optimized for coding",
-    "lead": "mu's own decision model, trained for the decisions a coding agent makes and state of the art at making them. It runs on your machine, so what it judges never leaves it.",
+    "lead": "mu's own decision model, trained for the decisions a coding agent makes, and on mubench in the same range as Jev 1.14, the hosted default. It runs on your machine, so what it judges never leaves it.",
     "mude_h2": "A judge that runs on your machine",
     "facts": [
       { "h3": "2B parameters", "p": "One forward pass answers every question in a decision, each with a probability." },

@@ -164,6 +164,9 @@ h1, h2 { word-break: keep-all; overflow-wrap: anywhere; }
 /* Inline, not inline-block: text-wrap: balance over inline-block characters crashes Chrome once the headline wraps (phone widths). */
 .hero h1 .ch { position: relative; }
 .lead { max-width: 660px; margin: 22px auto 0; font-size: 18px; color: var(--muted); }
+.proof { max-width: 660px; margin: 14px auto 0; font-size: 14px; color: var(--muted); text-wrap: balance; }
+.proof b { color: var(--text); font-weight: 600; }
+.proof a { color: inherit; text-underline-offset: 3px; }
 .caret {
   display: inline-block; width: 0.55em; height: 1.1em; margin-left: 2px; vertical-align: -0.18em;
   background: currentColor; opacity: 0.55; animation: blink 1.05s steps(1) infinite;
@@ -376,6 +379,7 @@ footer { margin-top: 112px; border-top: 1px solid var(--line); padding: 36px 0 4
   .hero h1 { font-size: clamp(32px, 9.4vw, 40px); }
   .verdict { font-size: 12px; }
   .lead { font-size: 16px; }
+  .proof { font-size: 13px; }
   .tab { flex: 1; padding: 0 10px; }
   .tab .sub { display: none; }
   .panel { padding: 16px; }
