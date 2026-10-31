@@ -8,6 +8,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 - **Hive bees hear more of each other's findings.** A note on the board now goes to another bee unless the judge model is sure it doesn't matter to that bee's work. Before, it went only when the judge model was sure it did, and the judge model is rarely sure either way about a note from a bee on the same problem. So a hive with a judge model delivered fewer of the notes its bees needed than a hive without one, where every note goes. Each bee's delivery limit is unchanged.
 
+### Fixed
+
+- mu-agent's HTTP client, undici, is updated to 8.12.3 for its security fixes. Among them, a malicious or compromised server could crash the process by renegotiating TLS with another host's certificate or by sending a response with more than five content encodings.
+
 ## [0.3.5] - 2026-10-30
 
 **0.3.5 lets you stage one change from a file's diff, see the branch's pull request and its checks in the Source tab, run the project's package.json scripts from the send box and list every keyboard shortcut.** The desktop app carries mu-agent 0.3.5, which adds `/jobs start` and makes session files and rewinds safer.

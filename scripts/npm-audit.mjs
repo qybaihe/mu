@@ -11,12 +11,19 @@ const severities = ["info", "low", "moderate", "high", "critical"];
 
 /** @type {Record<string, { package: string; reason: string }>} */
 const acceptedAdvisories = {
-	"GHSA-86w9-cpqp-85rv": {
-		package: "node-forge",
+	"GHSA-mrhx-c7xc-m3w5": {
+		package: "zod",
 		reason:
-			"No fixed node-forge release exists. It is only reachable through @earendil-works/gondolin in the private, " +
-			"unpublished gondolin example extension. Gondolin only verifies leaf certificates against its own locally " +
-			"generated CA (public exponent 65537), so the low-exponent signature forgery does not apply.",
+			"No fixed zod 3 release exists, and the newest @anthropic-ai/sandbox-runtime still requires zod 3. It is only " +
+			"reachable through the private, unpublished sandbox example extension, which hands sandbox-runtime a config " +
+			"object; sandbox-runtime validates with zod only in its own srt CLI, which the extension does not run.",
+	},
+	"GHSA-g3hv-75wg-m249": {
+		package: "minimatch",
+		reason:
+			"The amplification is in firstPhasePreProcess(), which minimatch runs only at optimizationLevel 2 or above. " +
+			"coding-agent calls minimatch with the default level 1 (model-resolver.ts, package-manager.ts). The fix is " +
+			"minimatch 11, which replaces the matcher and changes what some patterns match.",
 	},
 };
 
