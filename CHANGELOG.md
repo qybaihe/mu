@@ -10,7 +10,7 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ### Fixed
 
-- mu-agent's HTTP client, undici, is updated to 8.12.3 for its security fixes. Among them: a malicious or compromised server could crash the process by renegotiating TLS with another host's certificate, or with a response that lists more than five content encodings.
+- mu-agent's HTTP client, undici, is updated to 8.12.3 for its security fixes. Among them, a malicious or compromised server could crash the process by renegotiating TLS with another host's certificate or by sending a response with more than five content encodings.
 
 ## [0.3.5] - 2026-10-30
 

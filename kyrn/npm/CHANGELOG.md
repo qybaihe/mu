@@ -8,7 +8,7 @@
 
 ### Fixed
 
-- **`undici` 8.12.3**, for its security fixes. undici makes mu's calls to the model and the judge model. Among the fixes: a malicious or compromised server could crash the process by renegotiating TLS with another host's certificate, or with a response that lists more than five content encodings.
+- **`undici` 8.12.3**, for its security fixes. undici makes mu's calls to the model and the judge model. Among the fixes, a malicious or compromised server could crash the process by renegotiating TLS with another host's certificate or by sending a response with more than five content encodings.
 
 ## [0.3.5] - 2026-10-30
 
