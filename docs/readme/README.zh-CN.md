@@ -326,7 +326,7 @@ mu doctor     # 检查安装、判定器和各项连接
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="cli-dark.png">
-    <img src="cli-light.png" width="720" alt="终端里 mu 的欢迎界面：μ 标记，“mu v0.1.10, judgment-first coding agent, built on pi 1.3.0”，然后是判定器（Jev，137 毫秒回答，判定点已启用）、模型和工作目录，以及值得记住的几个按键。">
+    <img src="cli-light.png" width="720" alt="终端里 mu 的欢迎界面：μ 标记，“mu v0.3.5, judgment-first coding agent, built on pi 1.3.0”，然后是判定器（免费的 Jev 1.13，329 毫秒回答，判定点已启用）、模型（MiMo v2.6 Pro，推理档位 high）和工作目录，以及值得记住的几个按键。">
   </picture>
 </p>
 

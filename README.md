@@ -373,7 +373,7 @@ mu doctor     # check the installation, the judges and the connections
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/cli-dark.png">
-    <img src="docs/readme/cli-light.png" width="720" alt="mu's welcome screen in a terminal: the μ mark, &quot;mu v0.1.10, judgment-first coding agent, built on pi 1.3.0&quot;, then the judge (Jev, answering in 137 ms, decision points active), the model and the working directory, and the key bindings worth knowing.">
+    <img src="docs/readme/cli-light.png" width="720" alt="mu's welcome screen in a terminal: the μ mark, &quot;mu v0.3.5, judgment-first coding agent, built on pi 1.3.0&quot;, then the judge (the free Jev 1.13, answering in 329 ms, decision points active), the model (MiMo v2.6 Pro, thinking high) and the working directory, and the key bindings worth knowing.">
   </picture>
 </p>
 

@@ -310,7 +310,7 @@ mu doctor     # インストール、判定器、各接続を確認する
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="cli-dark.png">
-    <img src="cli-light.png" width="720" alt="ターミナルでの mu のウェルカム画面：μ のマーク、「mu v0.1.10, judgment-first coding agent, built on pi 1.3.0」、続いて判定器（Jev、137 ms で応答、判定ポイント有効）、モデルと作業ディレクトリ、覚えておくと便利なキー。">
+    <img src="cli-light.png" width="720" alt="ターミナルでの mu のウェルカム画面：μ のマーク、「mu v0.3.5, judgment-first coding agent, built on pi 1.3.0」、続いて判定器（無料の Jev 1.13、329 ms で応答、判定ポイント有効）、モデル（MiMo v2.6 Pro、推論レベル high）と作業ディレクトリ、覚えておくと便利なキー。">
   </picture>
 </p>
 

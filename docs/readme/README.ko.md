@@ -310,7 +310,7 @@ mu doctor     # 설치, 판정기, 연결 상태 점검
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="cli-dark.png">
-    <img src="cli-light.png" width="720" alt="터미널에서 본 mu의 환영 화면: μ 마크, &quot;mu v0.1.10, judgment-first coding agent, built on pi 1.3.0&quot;, 이어서 판정기(Jev, 137 ms에 응답, 판정 지점 켜짐), 모델과 작업 디렉터리, 알아 두면 좋은 키.">
+    <img src="cli-light.png" width="720" alt="터미널에서 본 mu의 환영 화면: μ 마크, &quot;mu v0.3.5, judgment-first coding agent, built on pi 1.3.0&quot;, 이어서 판정기(무료 Jev 1.13, 329 ms에 응답, 판정 지점 켜짐), 모델(MiMo v2.6 Pro, 추론 수준 high)과 작업 디렉터리, 알아 두면 좋은 키.">
   </picture>
 </p>
 
