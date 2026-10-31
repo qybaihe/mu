@@ -218,7 +218,7 @@ mubench 是 mu 给决策模型做的评测。主榜的每一道题，都是 mu �
 这次测试是什么、不是什么：
 
 - Terminal-Bench 2.1，经 Harbor 0.24.0 运行，每题用它自己的时限。agent 到了时限，Harbor 仍会对它留下的结果跑测试，所以一次尝试可能超时却通过。pytorch-model-recovery 不计入总数，因为最初几轮里测试框架没有把它的题面传给 pi 和 mu。有记录的三次里每个配置都通过了它，所以去掉它不影响对比。
-- 全部用 MiMo v2.6 Pro，推理档位 high。对照组是 pi 1.4.0。mu 是 mu-agent 0.1.12（基于 pi 1.3.0），默认设置；Jev 是 1.14 版。mude 一列是 24 层的预发布版，和测试跑在同一台 Mac 上。mude 1.0 是由它做出的 20 层模型，还没有在 Terminal-Bench 上跑过；mu 0.2.x 也没有。
+- 全部用 MiMo v2.6 Pro，推理档位 high。对照组是 pi 1.4.0。mu 是 mu-agent 0.1.12（基于 pi 1.3.0），默认设置；Jev 是 1.14 版。mude 一列是 24 层的预发布版，和测试跑在同一台 Mac 上。mude 1.0 是由它做出的 20 层模型，还没有在 Terminal-Bench 上跑过；0.1.12 之后的 mu 版本也没有。
 - 每题三次，2026-10-22 到 2026-10-24，在一台 16 GB 的 Apple 芯片 Mac 上。只有基础设施故障才重跑，规则事先定好。Rosetta 让每个配置都有四道题做不成，所以绝对通过率比 x86_64 上低约 4.5 个百分点，不能和公开榜单比较。
 
 每次尝试的结果见 [docs/benchmarks/terminal-bench-2.1.csv](../benchmarks/terminal-bench-2.1.csv)，方法见 [docs/benchmarks/terminal-bench-2.1.md](../benchmarks/terminal-bench-2.1.md)（英文）。运行 mu 和 pi 的 Harbor 适配器，以及用 CSV 重算这张表的脚本，在 [bench/harbor/](../../bench/harbor/)。
