@@ -1,7 +1,7 @@
 # @earendil-works/pi-schema
 
 JSON Schema builders and validation without `eval`. A schema compiles once into plain closures, so it checks values
-about as fast as validators that generate code, also under a strict Content Security Policy, and needs no
+at close to the speed of validators that generate code, also under a strict Content Security Policy, and needs no
 dependencies.
 
 - Drafts 2020-12 and 7. Passes 2,222 of the 2,223 core tests of the official
@@ -181,52 +181,106 @@ coerced by any pass.
 
 ## Benchmarks
 
-Node 24.4.1 on one core of an i9-13900, against TypeBox 1.3.27, @cfworker/json-schema 4.1.1 and @oh-my-pi/omptype
-18.13.3 (`fromJsonSchema`).
+Node 24.4.1 on one core of an i9-13900. The other libraries:
 
-| test suite (tests passed) | pi-schema | TypeBox | cfworker | omptype |
-|---|---:|---:|---:|---:|
-| draft 2020-12 core (1,298) | 1,297 | 1,276 | 1,249 | 863 |
-| draft 7 core (925) | 925 | 924 | 918 | 659 |
-| draft 2020-12 format (895), with `formats` | 895 | 895 | 740 | 412 |
+- ata-validator 1.61.3: its generated code, and its eval-free interpreter chosen with `engine: "interpreter"`;
+- Ajv 8.20.0, with ajv-formats 3.0.1 for the format tests;
+- Zod 4.6.7: native Zod schemas for speed, setup and memory, and `z.fromJSONSchema` for the test suite;
+- TypeBox 1.3.27;
+- @cfworker/json-schema 4.1.1;
+- @oh-my-pi/omptype 18.13.3, through `fromJsonSchema`.
 
-| check, valid value | pi-schema | TypeBox | cfworker | omptype |
-|---|---:|---:|---:|---:|
-| nested object with tagged unions | 409 ns | 474 ns | 44 µs | 689 ns |
-| union of 5 messages | 89 ns | 95 ns | 10 µs | 93 ns |
-| tool schema (read) | 31 ns | 9 ns | 1.9 µs | 9 ns |
-| MCP tool schema with `$ref` | 162 ns | 89 ns | 13 µs | 1.8 µs |
-| recursive `$ref` schema | 753 ns | 1.2 µs | 41 µs | 7.4 µs |
+| test suite (tests passed) | pi-schema | ata | ata interpreter | Ajv | Zod | TypeBox | cfworker | omptype |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| draft 2020-12 core (1,298) | 1,297 | 1,298 | 1,298 | 1,236 | 693 | 1,276 | 1,249 | 863 |
+| draft 7 core (925) | 925 | 925 | 925 | 917 | 632 | 924 | 918 | 659 |
+| draft 2020-12 format (895), with format checks | 895 | 814 | 814 | 750 | 412 | 895 | 740 | 412 |
 
-| same, without eval (strict CSP) | pi-schema | TypeBox | cfworker | omptype |
-|---|---:|---:|---:|---:|
-| nested object with tagged unions | 407 ns | 42 µs | 43 µs | 2.6 µs |
-| MCP tool schema with `$ref` | 162 ns | 36 µs | 12 µs | 2.0 µs |
-| recursive `$ref` schema | 750 ns | 124 µs | 41 µs | 9.0 µs |
+| check, valid value | pi-schema | ata | ata interpreter | Ajv | Zod | TypeBox | cfworker | omptype |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| nested object with tagged unions | 410 ns | 180 ns | 836 ns | 627 ns | 1.3 µs | 475 ns | 43 µs | 730 ns |
+| union of 5 messages | 86 ns | 37 ns | 212 ns | 70 ns | 297 ns | 95 ns | 11 µs | 96 ns |
+| tool schema (read) | 31 ns | 10 ns | 41 ns | 13 ns | 41 ns | 9 ns | 2.0 µs | 9 ns |
+| MCP tool schema with `$ref` | 161 ns | 64 ns | 314 ns | 136 ns | 927 ns | 87 ns | 15 µs | 1.9 µs |
+| recursive `$ref` schema | 755 ns | 307 ns | 1.9 µs | 378 ns | 2.7 µs | 1.2 µs | 41 µs | 7.5 µs |
 
-| cost | pi-schema | TypeBox | cfworker | omptype |
-|---|---:|---:|---:|---:|
-| compile a new schema | 21 µs | 203 µs | 20 µs | 26 µs + 106 µs on its first check |
-| memory, 3,200 distinct schemas | 7.1 MB | 54.7 MB | 7.6 MB | 20.0 MB |
-| bundle, minified + gzip | 8.5 KB | 35.2 KB | 5.8 KB | 38.8 KB |
+| same, without eval (strict CSP) | pi-schema | ata | ata interpreter | Ajv | Zod | TypeBox | cfworker | omptype |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| nested object with tagged unions | 411 ns | 1.6 µs | 844 ns | fails | 3.4 µs | 44 µs | 44 µs | 2.7 µs |
+| union of 5 messages | 87 ns | 396 ns | 209 ns | fails | 652 ns | 10 µs | 11 µs | 501 ns |
+| MCP tool schema with `$ref` | 164 ns | 484 ns | 326 ns | fails | 2.0 µs | 39 µs | 13 µs | 2.2 µs |
+| recursive `$ref` schema | 746 ns | 2.8 µs | 1.9 µs | fails | 7.3 µs | 130 µs | 42 µs | 9.0 µs |
 
-Reproduce with `npm run bench` in `packages/schema` (about 5 minutes). It runs every library through its fastest
-boolean path and keeps the object each returns. The scripts are in `test/bench/`.
+| cost | pi-schema | ata | ata interpreter | Ajv | Zod | TypeBox | cfworker | omptype |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| compile a new schema | 20 µs | 4.9 µs | 1.3 µs | 1.4 ms | 151 µs | 210 µs | 22 µs | 28 µs |
+| its first check | 0.8 µs | 335 µs | 87 µs | 195 µs | 466 µs | 41 µs | 7.1 µs | 109 µs |
+| memory, 3,200 distinct schemas | 7.1 MB | 36.0 MB | 51.3 MB | 59.7 MB | 170.8 MB | 54.7 MB | 7.6 MB | 19.9 MB |
+| bundle, minified + gzip | 8.5 KB | 134.0 KB | 134.0 KB | 39.7 KB | 24.4 KB | 35.2 KB | 5.8 KB | 38.8 KB |
 
-- **conformance:** every library on the vendored test suite, with the remote documents and meta-schemas the tests
-  reference.
-- **speed:** realistic schemas, in ns per check after warm-up; the median of 15 rounds, with the libraries'
-  order rotated in each round.
-- **speed without eval:** the same, run with `--disallow-code-generation-from-strings`.
-- **setup:** compiling 1,000 schemas a library has not seen, and their first checks.
-- **memory:** 3,200 distinct tool-like schemas, each library in its own process.
-- **size:** esbuild bundles of what a validator needs, minified and gzipped.
+Where code generation is unavailable:
 
-Where code generation is unavailable, TypeBox falls back to its interpreter, and omptype throws `EvalError` once per
-schema, then validates through its interpreter.
+- **ata** answers through its interpreted engine without being told. That automatic fallback measured slower than the
+  engine chosen with `engine: "interpreter"`.
+- **Ajv** cannot compile at all: `compile()` throws `EvalError`.
+- **Zod** notices and parses objects without its generated code.
+- **TypeBox** falls back to its interpreter.
+- **omptype** throws `EvalError` once per schema, then validates through its interpreter.
+
+ata, Zod and omptype compile on a schema's first check, so their compile cost shows there. ata's bundle is for the
+browser without code splitting; with splitting, its first load is about 53 KB plus a 76 KB generator chunk loaded
+later.
+
+Zod is not a JSON Schema validator:
+
+- **Speed, setup and memory:** Zod gets the same schemas written as native Zod schemas (`z.strictObject`,
+  `z.discriminatedUnion`, `z.lazy`), with `.describe()` for the corpus descriptions, and `safeParse` as the check.
+  Its memory includes building the schemas, which the other libraries receive as JSON. Without the descriptions it
+  is 131 MB.
+- **Test suite:** through `z.fromJSONSchema`, which is semi-experimental. It refuses `unevaluatedProperties`,
+  `unevaluatedItems`, `dependentSchemas`, `dependentRequired`, `if`/`then`/`else`, `not`, and every `$ref` that is
+  not local. A refused schema fails all its tests: 405 of the 1,298 draft 2020-12 core tests and 107 of the 925 draft
+  7 core tests.
+- **Bundle:** measured with Zod's documented `import * as z from "zod"`. A named `import { z }` keeps every locale
+  (about 90 KB gzipped), and `z.fromJSONSchema` brings it to 40.0 KB; `zod/mini` is about 6 KB.
 
 Flat objects of simple types check in 13–80 ns, against 7–15 ns for TypeBox. Without code generation, reading a
 property whose name comes from a list costs a few nanoseconds.
+
+### Reproduce
+
+`npm run bench` in `packages/schema` takes about 12 minutes. It runs every library through its fastest boolean path
+(ata's `isValidObject()`) and keeps the object each returns. ata runs with `ATA_NO_NATIVE=1`: its optional native
+addon only serves its buffer APIs. The scripts are in `test/bench/`.
+
+- **Conformance:** every library on the vendored test suite, with the remote documents and meta-schemas the tests
+  reference (Zod through `z.fromJSONSchema`, which takes no remote documents). ata reads the draft only from `$schema`, so draft 7 schemas without one get it declared. ata's defaults
+  (`useDefaults`, `assertFormat`) are turned off to match the other libraries; formats are checked only in the
+  format tests, by each library's own checks.
+- **Speed:** realistic schemas, in ns per check after warm-up. Each result is the median of 15 rounds, with the
+  libraries' order rotated in each round.
+- **Speed without eval:** the same, run with `--disallow-code-generation-from-strings`.
+- **Setup:** compiling 1,000 schemas a library has not seen, and their first checks.
+- **Memory:** 3,200 distinct tool-like schemas, compiled and each checked 3 times, each library in its own process.
+- **Size:** esbuild browser bundles of what a validator needs, minified and gzipped.
+
+### Code generated at build time
+
+Ajv (`ajv/dist/standalone`) and ata (`ata build`, `ata compile`, `toStandaloneModule()`) can also generate their
+validation code when the app is built. The app then imports plain modules and evaluates nothing at run time, so those
+checks run at code-generation speed under a strict CSP. This is not in the benchmark, because it is a different
+deal:
+
+- **A build step per schema.** Every schema must be known when the app is built. Schemas that arrive at run time
+  (MCP servers, extensions, user input) cannot be validated this way.
+- **Code per schema.** In a separate measurement on the same 3,200 schemas:
+  - Ajv: 1.8 ms to build and 8.9 KB of JavaScript per schema;
+  - ata: 1.1 ms and 13 KB per schema, or 0.3–0.8 KB gzipped when only its `isValid` export is bundled;
+  - importing all 3,200 generated validators took 40 MB of heap (Ajv, one module) and 68 MB (ata, one module per
+    schema).
+
+pi-schema compiles at run time in 25 µs per schema, generates no code, and covers schemas known at build time and
+schemas that arrive later.
 
 ## Development
 
