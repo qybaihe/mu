@@ -119,6 +119,7 @@ export type {
 	InputEvent,
 	InputEventResult,
 	InputSource,
+	KeybindingHints,
 	KeybindingsManager,
 	LoadExtensionsResult,
 	LsToolCallEvent,
@@ -243,6 +244,7 @@ export {
 // mu: `mu auth logout` drops the list of models an account gave from pi's catalogue store, also from pi's bundle.
 export { FileModelsStore } from "./core/models-store.ts";
 export type {
+	PackageInstallFailure,
 	PackageManager,
 	PathMetadata,
 	ProgressCallback,

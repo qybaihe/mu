@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // Regenerate packages/ai/model-catalog.json, the model catalog CI builds from, with mu's own generator
-// (packages/ai/scripts/generate-models.ts, from live sources), and check that it hydrates this checkout.
+// (packages/ai/catalog/generate.ts, from live sources), and check that it hydrates this checkout.
 // The weekly model-catalog workflow runs this and opens a pull request when the catalog changed.
 
 import { execFileSync } from "node:child_process";
@@ -17,7 +17,7 @@ const output = mkdtempSync(join(tmpdir(), "mu-model-catalog-"));
 try {
 	execFileSync(
 		process.execPath,
-		["packages/ai/scripts/generate-models.ts", "--strict", "--json-only", "--pretty", "--json-output", output],
+		["packages/ai/catalog/generate.ts", "--strict", "--json-only", "--pretty", "--json-output", output],
 		{ cwd: root, stdio: ["ignore", "ignore", "inherit"] },
 	);
 	const catalog = join(output, "models.all.json");

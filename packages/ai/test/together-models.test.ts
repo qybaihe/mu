@@ -70,9 +70,6 @@ describe("Together models", () => {
 			supportsReasoningEffort: true,
 			thinkingFormat: "together",
 		});
-
-		// The reasoning-only models (TOGETHER_REASONING_ONLY_MODELS: DeepSeek R1, MiniMax M2.7) are no longer in
-		// Together's catalog, so there is none to check here.
 	});
 
 	it("resolves TOGETHER_API_KEY from the environment", () => {

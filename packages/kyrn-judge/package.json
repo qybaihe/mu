@@ -79,6 +79,6 @@
 	},
 	"devDependencies": {
 		"shx": "0.4.0",
-		"vitest": "4.1.11"
+		"vitest": "4.1.12"
 	}
 }
