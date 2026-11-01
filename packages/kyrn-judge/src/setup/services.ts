@@ -175,7 +175,7 @@ export const SETUP_SERVICES: readonly SetupService[] = [
 	{
 		id: "opencode",
 		name: "OpenCode Zen",
-		baseUrls: ["https://opencode.ai/inference/v1"],
+		baseUrls: ["https://opencode.ai/inference/openai/v1"],
 		api: "openai-completions",
 		models: ["kimi-k2.6"],
 		keyPage: "https://opencode.ai/auth",

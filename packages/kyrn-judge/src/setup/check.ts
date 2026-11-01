@@ -197,11 +197,14 @@ export interface CheckOptions {
 /** One request to the service. Nothing but the answer's status and shape is kept of it. */
 export async function checkKey({
 	kind,
-	baseUrl,
+	baseUrl: givenBaseUrl,
 	key,
 	fetch,
 	timeoutMs = CHECK_TIMEOUT_MS,
 }: CheckOptions): Promise<CheckResult> {
+	// pi sends OpenCode Zen's OpenAI-compatible calls to …/inference/openai/v1, which lists no models and has no
+	// System One; both are still at Zen's general base, …/inference/v1 (seen 2026-11-01).
+	const baseUrl = kind === "opencode-key" ? givenBaseUrl.replace(/\/openai\/v1\/*$/, "/v1") : givenBaseUrl;
 	if (kind === "opencode-key") {
 		const refused = await opencodeRefuses(baseUrl, key, fetch, timeoutMs);
 		if (refused) return { ok: false, problem: refused };

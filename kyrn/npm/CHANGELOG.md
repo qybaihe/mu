@@ -4,6 +4,8 @@
 
 ### Changed
 
+- **Built on pi 1.4.0** and upstream main after it (b556cfe5b). Tool arguments are checked by pi-schema, so a model that sends a wrong argument reads pi-schema's messages (`- path: missing`, `- limit: expected number, got string`); which arguments are accepted is unchanged. The agent's system prompt is shorter. The model catalog is built from one definition per provider; Nebius Token Factory is defined that way too, with the same models. The catalog gains GPT-6.1 Terra, and the Codex provider no longer lists `gpt-5.5` and `gpt-5.3-codex-spark`, which ChatGPT accounts can't use.
+- `mu setup` checks an OpenCode Zen key at Zen's general address, `…/inference/v1`. pi now sends OpenCode's OpenAI-compatible calls to `…/inference/openai/v1`, which has no model list.
 - **`hive.deliver` holds a note back only on a confident no** (spec version 3). A note on the board goes to another bee unless the judge model answers that it isn't useful to that bee's work (p ≤ 0.2). Before, it needed a confident yes (p ≥ 0.8), so an unsure answer held it back, while with no judge model every note was delivered (since version 2). The judge model is rarely sure either way about a note from a bee on the same problem, so asking it delivered fewer of the notes bees needed than not asking. A `decision` note still goes to every bee, and `features.hive.maxDeliveriesPerBee` (10) still caps what a bee hears.
 
 ### Fixed
