@@ -80,7 +80,7 @@ jobs:
         include:
           # The oldest Node mu supports, and the current one.
           - { name: Linux (Node 22.19), os: ubuntu-latest, node: '22.19.0' }
-          - { name: macOS, os: macos-14, node: '24' }
+          - { name: macOS, os: macos-15, node: '24' }
           - { name: Windows, os: windows-2022, node: '24' }
           - { name: Windows on Arm, os: windows-11-arm, node: '24' }
     steps:
