@@ -6,7 +6,7 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ### Changed
 
-- Built on pi 1.4.0 and the upstream changes after it: tool arguments checked by pi-schema, a shorter system prompt, MCP sign-in with pi's client metadata document where the server supports it, tool rows that no longer redraw a long streamed file on every change, and fixes to `/resume` search, HTML export and Windows paths. The model list gains GPT-6.1 Terra; the Codex provider drops `gpt-5.5`, which ChatGPT accounts can't use.
+- Built on pi 1.4.0 and the upstream changes after it. Tool arguments are checked by pi-schema and the system prompt is shorter. Where an MCP server supports it, sign-in uses pi's OAuth client metadata document. Tool rows no longer redraw a long file on every change while it streams, and upstream fixes `/resume` search, HTML export and Windows paths. The model list gains GPT-6.1 Terra; the Codex provider drops `gpt-5.5` and `gpt-5.3-codex-spark`, which ChatGPT accounts can't use.
 - **Hive bees hear more of each other's findings.** A note on the board now goes to another bee unless the judge model is sure it doesn't matter to that bee's work. Before, it went only when the judge model was sure it did, and the judge model is rarely sure either way about a note from a bee on the same problem. So a hive with a judge model delivered fewer of the notes its bees needed than a hive without one, where every note goes. Each bee's delivery limit is unchanged.
 
 ### Fixed
