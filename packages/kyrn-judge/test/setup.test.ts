@@ -322,6 +322,24 @@ describe("the check", () => {
 		expect(explainProblem({ kind: "key", url: "" }, { service: "OpenAI" }, "en")).toContain("an OpenAI key");
 	});
 
+	it("checks an OpenCode key at Zen's general base, though pi sends chat to its OpenAI one", async () => {
+		const urls: string[] = [];
+		const result = await checkKey({
+			kind: "opencode-key",
+			baseUrl: "https://opencode.ai/inference/openai/v1",
+			key: "sk-opencode-good-key-0123456789",
+			timeoutMs: 1000,
+			fetch: (async (url: string) => {
+				urls.push(url);
+				return url.endsWith("/systemone")
+					? new Response(JSON.stringify({ answers: { check: { type: "noul", noul: 0.9 } } }), { status: 200 })
+					: new Response(JSON.stringify({ data: [{ id: "kimi-k2.6" }] }), { status: 200 });
+			}) as typeof fetch,
+		});
+		expect(result.ok).toBe(true);
+		expect(urls).toEqual(["https://opencode.ai/inference/v1/systemone", "https://opencode.ai/inference/v1/models"]);
+	});
+
 	it("gives up after the time it was given", async () => {
 		const result = await checkKey({
 			kind: "openai-models",

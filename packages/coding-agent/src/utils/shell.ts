@@ -1,4 +1,4 @@
-import { accessSync, constants } from "node:fs";
+import { accessSync, constants, existsSync } from "node:fs";
 import { delimiter, join, win32 } from "node:path";
 import { spawn, spawnSync } from "child_process";
 import { getBinDir } from "../config.ts";
@@ -81,10 +81,7 @@ function findExecutableOnPath(executable: string): string | null {
  * then beside each git.exe on PATH (Git adds its `cmd` folder there), whose bash is in the `bin` folder next to it.
  * `exists` is asked only about git.exe; the caller checks the bash paths.
  */
-export function gitBashCandidates(
-	env: NodeJS.ProcessEnv,
-	exists: (path: string) => boolean = shellPathExists,
-): string[] {
+export function gitBashCandidates(env: NodeJS.ProcessEnv, exists: (path: string) => boolean = existsSync): string[] {
 	const paths: string[] = [];
 	const add = (path: string) => {
 		if (!paths.some((known) => known.toLowerCase() === path.toLowerCase())) paths.push(path);
