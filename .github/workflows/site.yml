@@ -62,13 +62,13 @@ jobs:
       MU_SITE_DEPLOY_KEY: ${{ secrets.MU_SITE_DEPLOY_KEY }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # A tag, a Desktop app run or the schedule deploys what main says now, not what the tag's commit said.
           ref: ${{ github.event_name != 'pull_request' && 'main' || '' }}
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
@@ -78,7 +78,7 @@ jobs:
           python site/build.py _site
 
       - name: Keep the build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: usemu-site
           path: _site
@@ -86,7 +86,7 @@ jobs:
 
       - name: Setup Node.js
         if: github.event_name != 'pull_request' && env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 24
 
