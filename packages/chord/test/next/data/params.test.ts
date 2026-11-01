@@ -59,10 +59,10 @@ describe("checkParams", () => {
 			details: { path: "/extra" },
 		});
 		expect(refusal({ ...valid, page: "2" })).toMatchObject({
-			message: "params/page: must be integer",
+			message: "params/page: expected integer, got string",
 			details: { path: "/page" },
 		});
-		expect(refusal("S1")).toMatchObject({ message: "params: must be object", details: { path: "/" } });
+		expect(refusal("S1")).toMatchObject({ message: "params: expected object, got string", details: { path: "/" } });
 	});
 
 	it("enforces literal membership and constraints", () => {

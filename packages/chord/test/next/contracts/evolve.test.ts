@@ -1,4 +1,3 @@
-import Type from "typebox";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import type { Context } from "../../../src/context/index.ts";
 import { type Contract, contractData, type ShapeOf } from "../../../src/next/contracts/contract.ts";
@@ -136,16 +135,18 @@ describe("edits", () => {
 	});
 
 	it("checks every edit: closed arguments and the vocabulary", () => {
-		expect(() => evolve(NotesV1, (e) => e.args("add", Type.Object({ text: str() })))).toThrow(
+		expect(() => evolve(NotesV1, (e) => e.args("add", { type: "object", properties: { text: str() } }))).toThrow(
 			"notes v2.editor.methods.add.args: argument objects must be closed",
 		);
-		expect(() => evolve(InfoV1, (e) => e.addMethod("m", Type.Object({}), nul()))).toThrow(
+		expect(() => evolve(InfoV1, (e) => e.addMethod("m", { type: "object", properties: {} }, nul()))).toThrow(
 			"info v2.members.m.args: argument objects must be closed",
 		);
 		expect(() => evolve(NotesV1, (e) => e.state("editor", "count", { not: {} } as never))).toThrow(
 			'notes v2.editor.state.count: unsupported keyword "not"',
 		);
-		expect(() => evolve(NotesV1, (e) => e.state("editor", "count", Type.Object({})))).not.toThrow();
+		expect(() =>
+			evolve(NotesV1, (e) => e.state("editor", "count", { type: "object", properties: {} })),
+		).not.toThrow();
 	});
 });
 

@@ -1,13 +1,12 @@
 // Contract handles: the branded, immutable value an app declares, its type-level shape, and the Chord-owned data
 // behind it.
 
-import type { TNull } from "typebox";
 import type { Context } from "../../context/index.ts";
 import type { Watchable, WatchHandle } from "../../watch.ts";
 import type { Change, CurrentStep, History, VariantShape } from "./history.ts";
 import type { Address } from "./host-kind.ts";
 import type { Params, ParamsData } from "./params.ts";
-import type { Method, Static } from "./schema.ts";
+import type { Method, NullSchema, Static } from "./schema.ts";
 import type { Snapshot } from "./snapshot.ts";
 
 export type Kind = "remote" | "local";
@@ -88,7 +87,7 @@ export interface KeyedWatchable<T> {
 }
 
 /** A method as a function: without the argument when its argument schema is `null` (`null` stays the wire form). */
-type MethodFunction<M extends Method, X extends Context = Context> = M["args"] extends TNull
+type MethodFunction<M extends Method, X extends Context = Context> = M["args"] extends NullSchema
 	? (context: X) => Promise<Static<M["result"]>>
 	: (args: Static<M["args"]>, context: X) => Promise<Static<M["result"]>>;
 

@@ -72,7 +72,7 @@ tab.connect(webSocketLink(new WebSocket(url)), { principal: { kind: "server" } }
 
 ## For Chord's layers (`internal.ts`)
 
-- `Message` (`message.ts`): the protocol's one tagged union, from the TypeBox schema `MESSAGE`: `hello { protocol,
+- `Message` (`message.ts`): the protocol's one tagged union, from the schema `MESSAGE`: `hello { protocol,
   incarnation, calls }` (`calls`: how many concurrent calls this side accepts per origin, its call window),
   `hold { hold, type, version, fingerprint, params, address, principal?, incarnation? }` (`address`: `{ kind, params }`
   the caller's `hostAddress` computed, it routes the hold; the provider places it by its params; `principal` and `incarnation`: whom it acts for, read only

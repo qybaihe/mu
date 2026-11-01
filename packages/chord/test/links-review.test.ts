@@ -1,6 +1,6 @@
 // Regression tests for Astra's phase 1b review (findings #1-#11) and the shared-worker test gap.
 import assert from "node:assert/strict";
-import { Type } from "typebox";
+import { num, obj, str, unknown } from "@earendil-works/pi-schema";
 import { describe, it } from "vitest";
 import {
 	type Ctx,
@@ -66,14 +66,14 @@ class WatchedLink implements Link {
 
 const Counter = remote("t.counter", {
 	version: 1,
-	input: Type.Object({ name: Type.String() }),
+	input: obj({ name: str() }, { open: true }),
 	host: hostNamed("session:S1"),
 	variants: {
 		main: {
-			state: { count: Type.Object({ n: Type.Number() }) },
+			state: { count: obj({ n: num() }, { open: true }) },
 			methods: {
-				add: method(Type.Number(), Type.Number()),
-				who: method(undefined, Type.Unknown()),
+				add: method(num(), num()),
+				who: method(undefined, unknown()),
 				slow: method(),
 			},
 		},
@@ -138,7 +138,7 @@ function cluster() {
 					open: () => void log.push(`open ${input.name}`),
 					close: () => void log.push(`close ${input.name}`),
 				});
-				const count = self.state("count", Type.Object({ n: Type.Number() }), { n: 0 });
+				const count = self.state("count", obj({ n: num() }, { open: true }), { n: 0 });
 				return {
 					variant: "main",
 					count,
@@ -190,15 +190,15 @@ describe("links review: identity and stamping", () => {
 		const server = createHost({ self: { kind: "host" }, name: "server", onError: () => {} });
 		const Echo = remote("t.echo", {
 			version: 1,
-			input: Type.Object({}),
+			input: obj({}, { open: true }),
 			host: hostNamed("server"),
-			variants: { main: { methods: { root: method(undefined, Type.String()) } } },
+			variants: { main: { methods: { root: method(undefined, str()) } } },
 		});
 		const facet = (version: number): Facet => ({
 			name: "echo",
 			setup: (api) =>
 				api.serve(Echo, (_input, _principal, self) => {
-					self.state("n", Type.Number(), 0, { version });
+					self.state("n", num(), 0, { version });
 					return { variant: "main", root: (ctx: Ctx) => ctx.rootId };
 				}),
 		});
@@ -342,22 +342,22 @@ describe("links review: relay ownership", () => {
 	it("#11 snapshots through an accepts adapter are validated against the consumer's schema", async () => {
 		const DocV1 = remote("t.doc", {
 			version: 1,
-			input: Type.Object({}),
+			input: obj({}, { open: true }),
 			host: hostNamed("server"),
-			variants: { main: { state: { view: Type.Object({ text: Type.String() }) } } },
+			variants: { main: { state: { view: obj({ text: str() }, { open: true }) } } },
 		});
 		const DocV2 = remote("t.doc", {
 			version: 2,
-			input: Type.Object({}),
+			input: obj({}, { open: true }),
 			host: hostNamed("server"),
-			variants: { main: { state: { view: Type.Object({ body: Type.String() }) } } },
+			variants: { main: { state: { view: obj({ body: str() }, { open: true }) } } },
 		});
 		const server = createHost({ self: { kind: "host" }, name: "server", onError: () => {} });
 		server.serve(
 			DocV2,
 			(_input, _principal, self) => ({
 				variant: "main",
-				view: self.state("view", Type.Object({ body: Type.String() }), { body: "hi" }),
+				view: self.state("view", obj({ body: str() }, { open: true }), { body: "hi" }),
 			}),
 			{
 				accepts: {
@@ -402,9 +402,9 @@ describe("links review: relay ownership", () => {
 describe("links review: cross-host reload", () => {
 	const Greeter = remote("t.greeter", {
 		version: 1,
-		input: Type.Object({}),
+		input: obj({}, { open: true }),
 		host: hostNamed("session:S1"),
-		variants: { main: { methods: { greet: method(Type.String(), Type.String()) } } },
+		variants: { main: { methods: { greet: method(str(), str()) } } },
 	});
 	const greeterFacet = (greeting: string): Facet => ({
 		name: "greeter",
@@ -468,7 +468,7 @@ describe("links review: cross-host reload", () => {
 		const { server, modules } = setup();
 		await tick();
 		const results: unknown[] = [];
-		const Caller = local("t.caller", { version: 1, input: Type.Object({}) });
+		const Caller = local("t.caller", { version: 1, input: obj({}, { open: true }) });
 		const callerFacet = (active: boolean): Facet => ({
 			name: "caller",
 			setup: (api) =>
@@ -517,13 +517,13 @@ describe("links review: cross-host reload", () => {
 		await tick();
 		const Echo = remote("t.echo2", {
 			version: 1,
-			input: Type.Object({}),
+			input: obj({}, { open: true }),
 			host: hostNamed("server"),
 			variants: { main: { methods: { ping: method() } } },
 		});
 		const Bouncer = remote("t.bouncer", {
 			version: 1,
-			input: Type.Object({}),
+			input: obj({}, { open: true }),
 			host: hostNamed("session:S1"),
 			variants: { main: { methods: { bounce: method() } } },
 		});
@@ -531,7 +531,7 @@ describe("links review: cross-host reload", () => {
 			name: "echo",
 			setup: (api) =>
 				api.serve(Echo, (_input, _principal, self) => {
-					self.state("n", Type.Number(), 0, { version });
+					self.state("n", num(), 0, { version });
 					return { variant: "main", ping: () => {} };
 				}),
 		});

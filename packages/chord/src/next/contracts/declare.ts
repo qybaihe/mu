@@ -16,11 +16,11 @@ import type { MemberNames, MethodAt, VariantShape } from "./history.ts";
 import type { Address } from "./host-kind.ts";
 import { checkName } from "./names.ts";
 import { type Params, type RequiredFields, readParams } from "./params.ts";
-import { KeyedMember, Method, type Static, type TSchema } from "./schema.ts";
+import { KeyedMember, Method, type Schema, type Static } from "./schema.ts";
 import { type Snapshot, snapshotArguments, snapshotSchema } from "./snapshot.ts";
 
 type VariantDeclaration = {
-	readonly state?: { readonly [member: string]: TSchema };
+	readonly state?: { readonly [member: string]: Schema };
 	readonly methods?: { readonly [member: string]: Method };
 };
 
@@ -42,7 +42,7 @@ type LocalVariants<M extends { readonly [member: string]: LocalMember }> = {
 };
 
 /** A local contract's member: a state schema, `method(...)` or `keyed(schema)`. */
-type LocalMember = TSchema | Method | KeyedMember;
+type LocalMember = Schema | Method | KeyedMember;
 
 type SchemaOf<M> = M extends KeyedMember<infer S> ? S : never;
 

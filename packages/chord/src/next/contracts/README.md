@@ -34,7 +34,12 @@ type NotesProvider = Implementation<typeof Notes>; // { variant: "editor"; membe
   key built like an identity key (`session|S1`); two addresses are equal when their keys are. The params are checked
   where the address is routed or served (`invalid/host_address`), not when it is made. No host-name strings in app code.
 - Schema helpers: `str`, `num`, `int`, `bool`, `nul`, `lit`, `oneOf`, `union`, `obj`, `arr`, `map`, `opt`, `bytes`,
-  `unknown`, and `Static`. They return ordinary TypeBox schemas.
+  `unknown`, `Schema` and `Static`, over `@earendil-works/pi-schema`'s builders: plain JSON Schema typed with the values
+  it accepts. They keep the shapes contracts were fingerprinted with: `lit` carries its JSON `type`, `oneOf(...)` is a
+  union of `lit`s, `map` one pattern property (`^.*$`), `obj` is closed. `opt(...)` marks an object field (or a table
+  column) optional and is no schema elsewhere. Any other JSON Schema object of the vocabulary below works too; a
+  non-enumerable key (a TypeBox schema's metadata) is refused. `format` is an annotation: it is part of the normal form
+  and the fingerprint, but no format is checked.
 - `evolve(previous, (e) => e...)`: the next version from structured edits (`state`, `addState`, `removeState`, `args`,
   `result`, `method`, `addMethod`, `removeMethod`); it must return the editor it was given.
 - Types: `Contract`, `Implementation<C, X>` (what a factory returns: for `local` a `Watchable` per state member and a

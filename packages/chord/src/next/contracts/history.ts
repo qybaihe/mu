@@ -1,13 +1,13 @@
 // The type-level history of a contract: every version's members and the changes that produced it.
 
-import type { Method, TSchema } from "./schema.ts";
+import type { Method, Schema } from "./schema.ts";
 
 /** One variant's members at one version: state schemas and method signatures. */
 export type VariantShape = {
-	readonly state: { readonly [member: string]: TSchema };
+	readonly state: { readonly [member: string]: Schema };
 	readonly methods: { readonly [member: string]: Method };
 	/** A local contract's keyed state members (slice 6a §12). */
-	readonly keyed?: { readonly [member: string]: TSchema };
+	readonly keyed?: { readonly [member: string]: Schema };
 };
 
 /** Variants by name. A local contract has the single variant `members`. */

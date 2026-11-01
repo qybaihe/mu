@@ -1,6 +1,6 @@
 // Arguments: a provider's binding (its dispatch table per accepted version) and the per-call argument check.
 
-import type { Validator } from "typebox/compile";
+import type { Validator } from "@earendil-works/pi-schema";
 import type { Context } from "../../context/index.ts";
 import { type AcceptedVersion, type AcceptsTable, checkAccepts } from "../contracts/accepts.ts";
 import {

@@ -1,4 +1,3 @@
-import Type from "typebox";
 import { describe, expect, it } from "vitest";
 import {
 	arr,
@@ -143,7 +142,12 @@ describe("declaration checks", () => {
 		[
 			"open arguments",
 			"n",
-			{ version: 1, params: {}, hostAddress, variants: { a: { methods: { m: method(Type.Object({})) } } } },
+			{
+				version: 1,
+				params: {},
+				hostAddress,
+				variants: { a: { methods: { m: method({ type: "object", properties: {} }) } } },
+			},
 			"n.a.methods.m.args: argument objects must be closed",
 		],
 		[
@@ -166,7 +170,7 @@ describe("declaration checks", () => {
 		],
 		[
 			"open arguments",
-			{ version: 1, params: {}, members: { m: method(Type.Object({})) } },
+			{ version: 1, params: {}, members: { m: method({ type: "object", properties: {} }) } },
 			"i.members.m.args: argument objects must be closed",
 		],
 	])("local refuses %s", (_case, declaration, message) => {
@@ -181,7 +185,13 @@ describe("declaration checks", () => {
 	});
 
 	it("does not check state for closed objects", () => {
-		expect(() => local("i", { version: 1, params: {}, members: { s: Type.Object({ a: str() }) } })).not.toThrow();
+		expect(() =>
+			local("i", {
+				version: 1,
+				params: {},
+				members: { s: { type: "object", properties: { a: str() }, required: ["a"] } },
+			}),
+		).not.toThrow();
 	});
 });
 

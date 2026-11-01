@@ -16,7 +16,7 @@ import {
 import { checkMembers, memberPath, readMethod } from "./declare.ts";
 import { materialize } from "./fingerprint.ts";
 import type { Change, CurrentStep, Increment, MemberNames, MethodAt, Variants, VariantsWith } from "./history.ts";
-import { Method, type TSchema } from "./schema.ts";
+import { Method, type Schema } from "./schema.ts";
 import { type Snapshot, snapshotArguments, snapshotSchema } from "./snapshot.ts";
 
 /** Method edits, the same for both kinds: each changes the method in every variant that has it. */
@@ -25,7 +25,7 @@ interface MethodEditor<K extends Kind, V extends Variants, C extends Change> {
 	readonly "~variants"?: V;
 	/** Type only: the changes made by the edits so far. */
 	readonly "~changes"?: C;
-	args<M extends MemberNames<V, "methods">, A extends TSchema>(
+	args<M extends MemberNames<V, "methods">, A extends Schema>(
 		member: M,
 		args: A,
 	): Editor<
@@ -33,7 +33,7 @@ interface MethodEditor<K extends Kind, V extends Variants, C extends Change> {
 		Put<V, VariantsWith<V, M>, "methods", M, Method<A, MethodAt<V, M>["result"]>>,
 		C | [VariantsWith<V, M>, M, "args"]
 	>;
-	result<M extends MemberNames<V, "methods">, R extends TSchema>(
+	result<M extends MemberNames<V, "methods">, R extends Schema>(
 		member: M,
 		result: R,
 	): Editor<
@@ -41,7 +41,7 @@ interface MethodEditor<K extends Kind, V extends Variants, C extends Change> {
 		Put<V, VariantsWith<V, M>, "methods", M, Method<MethodAt<V, M>["args"], R>>,
 		C | [VariantsWith<V, M>, M, "result"]
 	>;
-	method<M extends MemberNames<V, "methods">, A extends TSchema, R extends TSchema>(
+	method<M extends MemberNames<V, "methods">, A extends Schema, R extends Schema>(
 		member: M,
 		args: A,
 		result: R,
@@ -51,12 +51,12 @@ interface MethodEditor<K extends Kind, V extends Variants, C extends Change> {
 
 /** Edits of a remote contract. */
 interface RemoteEditor<V extends Variants, C extends Change> extends MethodEditor<"remote", V, C> {
-	state<X extends keyof V & string, M extends keyof V[X]["state"] & string, S extends TSchema>(
+	state<X extends keyof V & string, M extends keyof V[X]["state"] & string, S extends Schema>(
 		variant: X,
 		member: M,
 		schema: S,
 	): RemoteEditor<Put<V, X, "state", M, S>, C | [X, M, "state"]>;
-	addState<X extends keyof V & string, const M extends string, S extends TSchema>(
+	addState<X extends keyof V & string, const M extends string, S extends Schema>(
 		variant: X,
 		member: M,
 		schema: S,
@@ -65,7 +65,7 @@ interface RemoteEditor<V extends Variants, C extends Change> extends MethodEdito
 		variant: X,
 		member: M,
 	): RemoteEditor<Drop<V, X, "state", M>, C>;
-	addMethod<X extends keyof V & string, const M extends string, A extends TSchema, R extends TSchema>(
+	addMethod<X extends keyof V & string, const M extends string, A extends Schema, R extends Schema>(
 		variant: X,
 		member: M,
 		args: A,
@@ -75,26 +75,26 @@ interface RemoteEditor<V extends Variants, C extends Change> extends MethodEdito
 
 /** Edits of a local contract: like remote ones, without a variant. */
 interface LocalEditor<V extends Variants, C extends Change> extends MethodEditor<"local", V, C> {
-	state<M extends keyof V[Local]["state"] & string, S extends TSchema>(
+	state<M extends keyof V[Local]["state"] & string, S extends Schema>(
 		member: M,
 		schema: S,
 	): LocalEditor<Put<V, Local, "state", M, S>, C | [Local, M, "state"]>;
-	addState<const M extends string, S extends TSchema>(
+	addState<const M extends string, S extends Schema>(
 		member: M,
 		schema: S,
 	): LocalEditor<Put<V, Local, "state", M, S>, C | [Local, M, "state"]>;
 	removeState<M extends keyof V[Local]["state"] & string>(member: M): LocalEditor<Drop<V, Local, "state", M>, C>;
-	addMethod<const M extends string, A extends TSchema, R extends TSchema>(
+	addMethod<const M extends string, A extends Schema, R extends Schema>(
 		member: M,
 		args: A,
 		result: R,
 	): LocalEditor<Put<V, Local, "methods", M, Method<A, R>>, C | [Local, M, "args" | "result"]>;
 	/** Changes keyed member `member`'s schema (slice 7b: an older consumer reads each key mapped, or is refused). */
-	keyed<M extends KeyedNames<V> & string, S extends TSchema>(
+	keyed<M extends KeyedNames<V> & string, S extends Schema>(
 		member: M,
 		schema: S,
 	): LocalEditor<PutKeyed<V, M, S>, C | [Local, M, "keyed"]>;
-	addKeyed<const M extends string, S extends TSchema>(
+	addKeyed<const M extends string, S extends Schema>(
 		member: M,
 		schema: S,
 	): LocalEditor<PutKeyed<V, M, S>, C | [Local, M, "keyed"]>;
@@ -220,14 +220,14 @@ class Draft {
 		this.#kinds = new Map(data.kinds);
 	}
 
-	state(variant: string, member: string, schema: TSchema): object {
+	state(variant: string, member: string, schema: Schema): object {
 		if (!this.#variant(variant).state.has(member)) {
 			throw new Error(`${this.#path(variant, member, "state")}: no such state member`);
 		}
 		return this.#putState(variant, member, schema);
 	}
 
-	addState(variant: string, member: string, schema: TSchema): object {
+	addState(variant: string, member: string, schema: Schema): object {
 		this.#refuseDeclared(variant, member, "state");
 		return this.#putState(variant, member, schema);
 	}
@@ -239,19 +239,19 @@ class Draft {
 		return this.editor;
 	}
 
-	args(member: string, args: TSchema): object {
+	args(member: string, args: Schema): object {
 		return this.#changeMethod(member, args, undefined);
 	}
 
-	result(member: string, result: TSchema): object {
+	result(member: string, result: Schema): object {
 		return this.#changeMethod(member, undefined, result);
 	}
 
-	method(member: string, args: TSchema, result: TSchema): object {
+	method(member: string, args: Schema, result: Schema): object {
 		return this.#changeMethod(member, args, result);
 	}
 
-	addMethod(variant: string, member: string, args: TSchema, result: TSchema): object {
+	addMethod(variant: string, member: string, args: Schema, result: Schema): object {
 		this.#refuseDeclared(variant, member, "method");
 		this.#variant(variant).methods.set(
 			member,
@@ -261,14 +261,14 @@ class Draft {
 		return this.#checked();
 	}
 
-	keyed(variant: string, member: string, schema: TSchema): object {
+	keyed(variant: string, member: string, schema: Schema): object {
 		if (!this.#variant(variant).keyed.has(member)) {
 			throw new Error(`${this.#path(variant, member, "keyed")}: no such keyed member`);
 		}
 		return this.#putKeyed(variant, member, schema);
 	}
 
-	addKeyed(variant: string, member: string, schema: TSchema): object {
+	addKeyed(variant: string, member: string, schema: Schema): object {
 		this.#refuseDeclared(variant, member, "keyed");
 		return this.#putKeyed(variant, member, schema);
 	}
@@ -292,20 +292,20 @@ class Draft {
 		return { ...this.#data, versions: [...versions, version], kinds: this.#kinds };
 	}
 
-	#putState(variant: string, member: string, schema: TSchema): object {
+	#putState(variant: string, member: string, schema: Schema): object {
 		this.#variant(variant).state.set(member, snapshotSchema(schema, this.#path(variant, member, "state")));
 		this.#changes.push([variant, member, "state"]);
 		return this.#checked();
 	}
 
-	#putKeyed(variant: string, member: string, schema: TSchema): object {
+	#putKeyed(variant: string, member: string, schema: Schema): object {
 		this.#variant(variant).keyed.set(member, snapshotSchema(schema, this.#path(variant, member, "keyed")));
 		this.#changes.push([variant, member, "keyed"]);
 		return this.#checked();
 	}
 
 	/** Changes the given sides of a method in every variant that has it. */
-	#changeMethod(member: string, args: TSchema | undefined, result: TSchema | undefined): object {
+	#changeMethod(member: string, args: Schema | undefined, result: Schema | undefined): object {
 		const variants = this.#variantsWith(member);
 		const path = this.#path(variants[0]!, member, "method");
 		const newArgs = args === undefined ? undefined : snapshotArguments(args, `${path}.args`);
@@ -355,16 +355,16 @@ class Draft {
 /** The local editor: the draft's edits with the variant filled in. */
 function localEditor(draft: Draft): object {
 	draft.editor = {
-		state: (member: string, schema: TSchema) => draft.state(LOCAL, member, schema),
-		addState: (member: string, schema: TSchema) => draft.addState(LOCAL, member, schema),
+		state: (member: string, schema: Schema) => draft.state(LOCAL, member, schema),
+		addState: (member: string, schema: Schema) => draft.addState(LOCAL, member, schema),
 		removeState: (member: string) => draft.removeState(LOCAL, member),
-		addMethod: (member: string, args: TSchema, result: TSchema) => draft.addMethod(LOCAL, member, args, result),
-		args: (member: string, args: TSchema) => draft.args(member, args),
-		result: (member: string, result: TSchema) => draft.result(member, result),
-		method: (member: string, args: TSchema, result: TSchema) => draft.method(member, args, result),
+		addMethod: (member: string, args: Schema, result: Schema) => draft.addMethod(LOCAL, member, args, result),
+		args: (member: string, args: Schema) => draft.args(member, args),
+		result: (member: string, result: Schema) => draft.result(member, result),
+		method: (member: string, args: Schema, result: Schema) => draft.method(member, args, result),
 		removeMethod: (member: string) => draft.removeMethod(member),
-		keyed: (member: string, schema: TSchema) => draft.keyed(LOCAL, member, schema),
-		addKeyed: (member: string, schema: TSchema) => draft.addKeyed(LOCAL, member, schema),
+		keyed: (member: string, schema: Schema) => draft.keyed(LOCAL, member, schema),
+		addKeyed: (member: string, schema: Schema) => draft.addKeyed(LOCAL, member, schema),
 		removeKeyed: (member: string) => draft.removeKeyed(LOCAL, member),
 	};
 	return draft.editor;

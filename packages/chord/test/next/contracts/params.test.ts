@@ -1,4 +1,3 @@
-import Type from "typebox";
 import { describe, expect, it } from "vitest";
 import {
 	arr,
@@ -48,7 +47,7 @@ describe("params policy", () => {
 		["arrays", arr(str())],
 		["bytes", bytes()],
 		["numeric literals", oneOf(1, 2)],
-		["defaults", Type.String({ default: "x" })],
+		["defaults", str({ default: "x" })],
 	])("refuses %s, in the types and at declaration", (_case, schema) => {
 		// @ts-expect-error: not a params field schema
 		expect(() => remote("n", { version: 1, params: { p: schema }, hostAddress: () => Server(), variants })).toThrow(
