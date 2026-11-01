@@ -4,8 +4,8 @@ import type { ExtensionToolContext, ToolDefinition } from "../extensions/types.t
 
 /**
  * An `AgentTool` with a TypeBox parameter schema whose `execute` and `prepareArguments` are typed by TypeBox's
- * `Static`, as the built-in tools are (pi-agent-core types `params` through pi-schema, which gives `unknown` for
- * TypeBox schemas). Spreads into a `ToolDefinition` of the same schema.
+ * `Static`, as the built-in tools are (pi-agent-core types `params` through pi-schema, which maps only the common
+ * TypeBox kinds). Spreads into a `ToolDefinition` of the same schema.
  */
 export type TypeBoxAgentTool<TParams extends TSchema = TSchema, TDetails = any> = Omit<
 	AgentTool<TParams, TDetails>,

@@ -463,8 +463,8 @@ export interface AgentToolCallOutcome {
 export type AgentToolUpdateCallback<T = any> = (partialResult: AgentToolResult<T>) => void;
 
 /**
- * The arguments type of a tool with parameter schema `TParameters`: `Static<TParameters>` for schemas built with
- * `@earendil-works/pi-schema`'s builders, `unknown` for other schemas, and `any` for `AgentTool<any>`.
+ * The arguments type of a tool with parameter schema `TParameters`: pi-schema's `Static<TParameters>` (the builders'
+ * type, TypeBox's for the common TypeBox kinds, else `unknown`), and `any` for `AgentTool<any>`.
  */
 export type AgentToolParams<TParameters> = IsAny<TParameters> extends true ? any : Static<TParameters>;
 

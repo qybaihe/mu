@@ -333,8 +333,8 @@ export interface ToolExecutionApi<TDetails extends JsonValue = JsonValue> extend
 }
 
 /**
- * The arguments type of a tool with parameter schema `TParameters`: `Static<TParameters>` for schemas built with
- * `@earendil-works/pi-schema`'s builders, `unknown` for other JSON Schema, and `any` for `ToolRegistration<any>`.
+ * The arguments type of a tool with parameter schema `TParameters`: pi-schema's `Static<TParameters>` (the builders'
+ * type, TypeBox's for the common TypeBox kinds, else `unknown`), and `any` for `ToolRegistration<any>`.
  */
 export type ToolArgs<TParameters> = IsAny<TParameters> extends true ? any : Static<TParameters>;
 

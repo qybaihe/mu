@@ -77,6 +77,12 @@ compile(Block).errors({ kind: "video" });
 // [{ path: "/kind", keyword: "anyOf", message: 'expected one of ["text","image"]' }]
 ```
 
+`Static` also types schemas built with TypeBox 1.x, read from TypeBox's type shapes (pi-schema does not import
+TypeBox): `String`, `Number`, `Integer`, `Boolean`, `Null`, `Literal`, `Array`, `Object` (with `Type.Optional` and
+`Type.Readonly` properties), `Union`, `Record`, `Unsafe`, `Unknown` and `Any` give TypeBox's own static type, so
+`Static<typeof Type.Object({ path: Type.String() })>` is `{ path: string }`. Other TypeBox kinds (`Enum`, `Tuple`,
+`Intersect`, `Cyclic`, ...) give `unknown` where they stand. Other JSON Schema objects give `unknown`.
+
 ### Options
 
 ```typescript
