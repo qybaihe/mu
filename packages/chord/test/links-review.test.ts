@@ -311,6 +311,29 @@ describe("links review: relay ownership", () => {
 		assert.ok(!(c.workers.get("session:S1")?.link.sent ?? []).some((frame) => frame.t === "hold"));
 	});
 
+	it("a release while the route resolves still admits the resolved worker: its references upstream go live", async () => {
+		const Feed = remote("t.feed", {
+			version: 1,
+			input: obj({}, { open: true }),
+			host: hostNamed("server"),
+			variants: { main: { methods: { ping: method(undefined, str()) } } },
+		});
+		const c = cluster();
+		c.server.serve(Feed, () => ({ variant: "main", ping: () => "pong" }));
+		const gate = latch();
+		c.resolveGate = gate.promise;
+		const { raw } = c.raw({ guest: "g" });
+		raw.send({ t: "hold", id: 1, at: "session:S1", token: Counter.description, input: { name: "a" } });
+		await sleep(5);
+		// The client goes away while the worker starts: the route still hands over the worker it spawned.
+		raw.send({ t: "release", id: 1 });
+		gate.open();
+		await until(() => c.workers.has("session:S1"));
+		const worker = c.workers.get("session:S1")!.host;
+		const feed = await worker.get(Feed, {}, { signal: AbortSignal.timeout(500) });
+		assert.equal(await feed.ping(), "pong");
+	});
+
 	it("#9 an origin disconnect removes its relayed holds and subscriptions downstream", async () => {
 		const c = cluster();
 		const browser = c.browser({ guest: "g" });

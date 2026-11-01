@@ -37,6 +37,7 @@
 
 ### Fixed
 
+- A host a route resolves is admitted even when the relayed reference that asked for it is released, its client disconnects, or its principal is refused or revoked while the route resolves. Before, the parent never read the new host's link: a spawned worker's own references to its parent (its `lifetime: "host"` objects' upstream references) waited until they failed `unavailable/ready_timeout`, reported as a possible reference cycle across hosts.
 - The Node SQLite driver keeps the 256 most recently used prepared statements per connection instead of every statement it ever prepared, so callers generating SQL of unbounded shapes (a query builder) no longer grow memory without bound.
 - Fixed append ops from the delta tracker and `diffRevisions()` keeping the whole string they were cut from alive (V8 represents a slice as a view of its source), so a delta chain, a watch backlog or a replica built from appends to a growing text held one copy of the text per commit ([#9265](https://github.com/earendil-works/pi/issues/9265))
 
