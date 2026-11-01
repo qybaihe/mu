@@ -46,7 +46,7 @@ import type {
 	CodemodeSandboxBase,
 } from "@earendil-works/pi-codemode/portable";
 import { CODEMODE_SOURCE_GRAMMAR, parseCodemodeSource } from "@earendil-works/pi-codemode/source";
-import { type Static, Type } from "typebox";
+import { obj, type Static, str } from "@earendil-works/pi-schema";
 import { defineDoc } from "../documents.ts";
 import type { ExecutionEnv } from "../env/index.ts";
 import { errorMessage } from "../errors.ts";
@@ -210,7 +210,7 @@ export type CodemodeGlobal = {
 	execute(args: unknown, api: ToolExecutionApi, context: Context): Promise<JsonValue | undefined>;
 };
 
-const codemodeSchema = Type.Object({ code: Type.String({ description: "Raw JavaScript source." }) });
+const codemodeSchema = obj({ code: str({ description: "Raw JavaScript source." }) }, { open: true });
 
 export type CodemodeToolInput = Static<typeof codemodeSchema>;
 

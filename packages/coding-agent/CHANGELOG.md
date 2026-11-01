@@ -12,6 +12,8 @@
 
 ### Changed
 
+- Tool argument validation runs on `@earendil-works/pi-schema`. TypeBox features outside JSON Schema (`Type.Refine()`, `Type.BigInt()`, `Type.Undefined()`, codecs, `Format.Set()` formats) no longer apply to tool arguments; see [Tool parameter schemas and TypeBox](docs/extensions.md#tool-parameter-schemas-and-typebox). Validation failures the model sees list pi-schema's messages (`- path: missing`, `- limit: expected number, got string`) instead of TypeBox's (`must have required properties path`, `must be number`); which arguments are accepted and how they are coerced is unchanged for extension and built-in tools.
+- Extensions keep importing `Type`, `Static` and `TSchema` from `@earendil-works/pi-ai`: Pi maps that import to pi-ai's compat entry plus the TypeBox it bundles, now that pi-ai itself no longer re-exports TypeBox, and its `StringEnum` there stays a TypeBox `TUnsafe<T>`. The built-in tool factories (`createReadTool()` and the others) return `TypeBoxAgentTool<typeof schema>`, which keeps `params` typed for TypeBox.
 - Tightened system prompt
 - `pi update` for installs from the pi.dev installer no longer passes `--min-release-age=0` to `npm ci`. The release lockfile pins every package, so the flag had no effect, and security scanners that block it stopped the update ([#11262](https://github.com/earendil-works/pi/issues/11262))
 - `/model` and `/scoped-models` now show a model's name next to its ID when the name adds words the ID lacks, such as a renamed `models.json` override ([#5916](https://github.com/earendil-works/pi/issues/5916), [#11347](https://github.com/earendil-works/pi/pull/11347))

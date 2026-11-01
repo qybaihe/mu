@@ -26,6 +26,9 @@ export class Resolver {
 	private readonly root: JsonSchema;
 	private readonly options: CompileOptions;
 	private readonly registry = new Map<string, JsonSchema>();
+	private readonly rejectUnresolved: boolean;
+	/** The references that named nothing and resolved to `false` (with `unresolvedRefs: "reject"`). */
+	private readonly unresolved = new Set<string>();
 	private readonly resources = new Map<string, unknown>();
 	private readonly anchors = new Map<string, SchemaObject>();
 	private indexed = false;
@@ -34,6 +37,7 @@ export class Resolver {
 		this.draft = options.draft === "7" ? "7" : "2020-12";
 		this.root = root;
 		this.options = options;
+		this.rejectUnresolved = options.unresolvedRefs === "reject";
 		this.rootBase = isSchemaObject(root) ? this.baseFor(root, DEFAULT_BASE) : DEFAULT_BASE;
 	}
 
@@ -61,9 +65,27 @@ export class Resolver {
 		this.index(this.root, DEFAULT_BASE);
 	}
 
-	/** The schema a reference names, with the base URI it compiles under. Throws if it names nothing. */
+	/**
+	 * The schema a reference names, with the base URI it compiles under. Throws if it names nothing, or, with
+	 * `unresolvedRefs: "reject"`, resolves to `false`, the schema no value passes.
+	 */
 	resolve(ref: string, base: string): Resolved {
 		this.ensureIndexed();
+		if (!this.rejectUnresolved) return this.find(ref, base);
+		try {
+			return this.find(ref, base);
+		} catch {
+			this.unresolved.add(resolveUri(ref, base));
+			return { node: false, base };
+		}
+	}
+
+	/** Whether `ref`, from `base`, named nothing and resolved to `false`. */
+	isUnresolved(ref: string, base: string): boolean {
+		return this.unresolved.has(resolveUri(ref, base));
+	}
+
+	private find(ref: string, base: string): Resolved {
 		const uri = resolveUri(ref, base);
 		const doc = documentOf(uri);
 		const fragment = uri.length > doc.length ? decodeURIComponent(uri.slice(doc.length + 1)) : "";

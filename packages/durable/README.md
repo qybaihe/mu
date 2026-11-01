@@ -257,15 +257,15 @@ registry.install(createCodingTools({ images: await createNodePhotonImages() }));
 
 A model without image input sees a placeholder instead of the image, and `read` says so in a diagnostic. `/images/node` prepares images in a worker thread, so a large photo (a second or two of work) never blocks the event loop; the worker exits after 30 s without images, freeing Photon's WebAssembly memory (`createNodePhotonImages({ worker: false, idleMs })`). Elsewhere, `createPhotonImages()` and `/images/cloudflare` work on the calling thread, and decoding takes the image's full size in WebAssembly memory, which does not shrink again; leave the processor out on memory-constrained hosts such as Cloudflare Workers unless images stay small.
 
-Define your own tool with a TypeBox schema. `defineTool()` types `args` from `parameters`, which the Harness validates before `execute()`. `api.output()` streams running output, which becomes the result when `execute()` returns no `output`:
+Define your own tool with a JSON Schema, built here with `@earendil-works/pi-schema`. `defineTool()` types `args` from `parameters` (through pi-schema's `Static`; other JSON Schema gives `unknown`), which the Harness coerces and validates before `execute()`. `api.output()` streams running output, which becomes the result when `execute()` returns no `output`:
 
 ```typescript
-import { Type } from "@earendil-works/pi-ai";
+import { num, obj, str } from "@earendil-works/pi-schema";
 
 const count = defineTool({
 	name: "count",
 	description: "Count from 1 to n",
-	parameters: Type.Object({ n: Type.Number() }),
+	parameters: obj({ n: num() }),
 	execute: async (args, api) => {
 		for (let i = 1; i <= args.n; i++) api.output(`${i}\n`);
 		return {};
@@ -282,8 +282,8 @@ A result has three channels: `output` for the model, `structuredOutput` for prog
 const lines = defineTool({
 	name: "lines",
 	description: "Count the lines of a file",
-	parameters: Type.Object({ path: Type.String() }),
-	structuredOutputSchema: Type.Object({ lines: Type.Number() }),
+	parameters: obj({ path: str() }),
+	structuredOutputSchema: obj({ lines: num() }),
 	execute: async (args, api, context) => {
 		const text = await readText(api, args.path, context);
 		const count = text.split("\n").length;
@@ -312,7 +312,7 @@ A tool calls another tool with `api.executeTool()`, as a code mode script or an 
 const testsPass = defineTool({
 	name: "tests_pass",
 	description: "Run the test suite and say whether it passed",
-	parameters: Type.Object({}),
+	parameters: obj({}),
 	execute: async (_args, api, context) => {
 		const run = await api.executeTool("bash", { command: "npm test" }, context, { progress: false });
 		// Absent when bash did not finish, for example on a timeout.
@@ -722,7 +722,7 @@ const Subagent: Extension = defineExtension({
 		defineTool({
 			name: "subagent",
 			description: "Delegate a self-contained task to a subagent and get its answer back.",
-			parameters: Type.Object({ task: Type.String() }),
+			parameters: obj({ task: str() }),
 			replay: "safe", // a rerun after a crash finds the same child and submission
 			execute: async (args, api, context) => {
 				const child = await api.commit(async (tx) => {
@@ -905,7 +905,7 @@ registerStorageConformance({ describe, expect, it }, "My Storage", async (use) =
 });
 ```
 
-The package root loads TypeBox, because the tool task validates arguments with pi-ai's `validateToolArguments()`. That costs about 23 MB of peak RSS unbundled, about 4 MB in a tree-shaken bundle.
+The package root loads pi-schema, because the tool task validates arguments with pi-ai's `validateToolArguments()`.
 
 ## Errors
 

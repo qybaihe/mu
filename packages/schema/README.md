@@ -86,11 +86,19 @@ const validator = compile(schema, {
 	draft: "7", // "2020-12" (default) or "7"
 	formats, // check `format`; without it `format` is an annotation, as 2020-12 specifies
 	schemas: { "https://example.com/point.json": point }, // documents for $refs to other documents, by URI
+	unresolvedRefs: "reject", // a $ref that names nothing rejects values at its place; default "throw"
+	coerce: true, // adds coerce() and parse(), see Coercion
 });
 ```
 
-`formats` has every format 2020-12 defines (`date-time`, `email`, `uri`, `uuid`, `ipv6`, ...). Pass your own map to
-check fewer formats, or custom ones. A `$ref` that names nothing throws when the schema compiles.
+`formats` has every format 2020-12 defines (`date-time`, `email`, `uri`, `uuid`, `ipv6`, ...), plus `url` and
+`json-pointer-uri-fragment`, which TypeBox and ajv-formats also check. Pass your own map to check fewer formats, or
+custom ones.
+
+A `$ref` that names nothing (a missing definition, a document not in `schemas`) throws when the schema compiles. With
+`unresolvedRefs: "reject"` it compiles as `false` instead: only values at that place fail, with the error
+`unresolved reference <ref>`, and the rest of the schema works. Use it for schemas from other systems, such as MCP
+servers, whose references may dangle.
 
 ### TypeBox schemas
 
@@ -104,6 +112,56 @@ const user = compile(Type.Object({ name: Type.String(), tags: Type.Array(Type.St
 
 TypeBox's JavaScript-only types (`BigInt`, `Undefined`, `Function`, ...), refinements and codecs are not JSON Schema
 and are not supported.
+
+### Coercion
+
+`compile(schema, { coerce: true })` adds `coerce()` and `parse()`, for loosely typed input such as a model's tool call
+arguments. Without the option the validator has neither, and its `check` pays nothing for them: the coercion rules are
+built on the first `coerce()` or `parse()`.
+
+```typescript
+const read = compile(Read, { coerce: true });
+
+read.coerce({ path: "a.txt", offset: "10", mode: "text" }); // { path: "a.txt", offset: 10, mode: "text" }
+
+const result = read.parse({ path: "a.txt", offset: "ten", mode: "text" });
+if (result.ok) result.value.offset; // number
+else result.errors; // [{ path: "/offset", keyword: "type", message: "expected integer, got string" }]
+```
+
+`coerce(value)` returns the coerced value. It copies only the paths it changes, returns `value` itself when nothing
+changes, and never modifies `value`. A value no rule applies to stays as it is. `parse(value)` coerces, then checks:
+`{ ok: true, value }` with the coerced value, or `{ ok: false, errors }` with the errors of the coerced value.
+
+Three passes run in order:
+
+1. **Optional nulls.** A `null` in an optional property whose schema rejects `null` is dropped, as if omitted.
+2. **Conversions**, ported from TypeBox 1.3.27's `Value.Convert` and keyed on JSON Schema keywords (the first that
+   applies to a schema): `$ref` follows the reference; `const` and `enum` take the member the value converts to;
+   `anyOf`/`oneOf` keep a value one branch accepts, else take the first branch's conversion the whole schema
+   accepts; `allOf` converts with each member in turn; then by `type`:
+   - `string`: numbers and booleans to their text, `null` to `"null"`.
+   - `number`: numeric strings (`""` is 0), `"true"`/`"false"`, booleans to 1/0, `null` to 0.
+   - `integer`: as `number`, then truncated (`"3.5"` and `3.5` become 3).
+   - `boolean`: `"true"`/`"false"` (any case), `"1"`/`"0"`, 1/0, `null` to `false`.
+   - `null`: `"null"`, `"undefined"`, `""`, `"0"`, 0 and `false`.
+   - `array`: a single value becomes a one-item array, then each item converts; a tuple (`prefixItems` or an `items`
+     array) converts its items and never wraps.
+   - `object`: each property converts by `properties`, `patternProperties` or `additionalProperties`.
+3. **Primitive coercion by type**, as Ajv's `coerceTypes`, for what pass 2 leaves (type arrays such as
+   `["integer", "null"]`): numbers from numeric strings and booleans, booleans from `"true"`/`"false"` and 1/0,
+   strings from numbers and booleans, `null` from `""`, 0 and `false`, and `null` to `""`, 0 or `false`. A value that
+   already has one of a type array's types stays.
+
+Where passes 2 and 3 disagree, pass 2 wins: `null` for a required string becomes `"null"`, not `""`. A union's
+branches convert in order and only until one is accepted; a union node that also declares properties converts them into
+each branch's candidate before checking it. A recursive schema (a tree through `$ref`) that meets a value it cannot
+convert leaves the value as it is, so `check` reports it, and results through a `$ref` are reused within one call, so a
+recursive union does not convert (or explain) the same child once per branch.
+
+Pass 1 drops optional nulls inside the values of `properties`, `patternProperties` and `additionalProperties` alike; a
+pattern or additional key itself is never dropped. Items past a draft-7 `items` array (`additionalItems`) are not
+coerced by any pass.
 
 ### Values
 

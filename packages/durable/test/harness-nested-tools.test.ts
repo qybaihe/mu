@@ -10,7 +10,6 @@ import {
 	fauxText,
 	fauxToolCall,
 	type ToolResultMessage,
-	Type,
 	type Usage,
 } from "@earendil-works/pi-ai";
 import {
@@ -33,6 +32,7 @@ import {
 	type ToolTaskResult,
 	UsageDoc,
 } from "@earendil-works/pi-durable";
+import { obj, opt, str } from "@earendil-works/pi-schema";
 import { afterEach, describe, expect, it } from "vitest";
 import { openNodeSqliteStorage } from "../src/storage/sqlite/node.ts";
 import { commitWrites } from "../src/testing/commit-writes.ts";
@@ -42,7 +42,7 @@ import { endedAt, nestedResultOf, nestedResults, slotsOf, startOrder, viewHistor
 import { context, onValue } from "./session-support.ts";
 import { aborted, deferred, eventually } from "./task-support.ts";
 
-const Parameters = Type.Object({ text: Type.Optional(Type.String()) });
+const Parameters = obj({ text: opt(str()) });
 type Tool = ToolRegistration<typeof Parameters>;
 
 function tool(name: string, execute: Tool["execute"], extra: Partial<Tool> = {}): Tool {
@@ -329,7 +329,7 @@ describe("nested tool calls", () => {
 			defineTool({
 				name: "pair",
 				description: "pair",
-				parameters: Type.Object({ a: Type.String(), b: Type.String() }),
+				parameters: obj({ a: str(), b: str() }),
 				execute: async (args) => {
 					runs++;
 					return { output: [{ type: "text", text: `${args.a}${args.b}` }] };
