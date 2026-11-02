@@ -4,6 +4,10 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+## [0.3.6] - 2026-11-02
+
+**0.3.6 is built on pi 1.4.0, and hive bees hear more of each other's findings.** mu's HTTP client is updated for security fixes. The desktop app's own code is unchanged from 0.3.5; it now carries mu-agent 0.3.6.
+
 ### Changed
 
 - Built on pi 1.4.0 and the upstream changes after it. Tool arguments are checked by pi-schema and the system prompt is shorter. Where an MCP server supports it, sign-in uses pi's OAuth client metadata document. Tool rows no longer redraw a long file on every change while it streams, and upstream fixes `/resume` search, HTML export and Windows paths. The model list gains GPT-6.1 Terra; the Codex provider drops `gpt-5.5` and `gpt-5.3-codex-spark`, which ChatGPT accounts can't use.
