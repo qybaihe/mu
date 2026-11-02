@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.3.6] - 2026-11-02
+
+**0.3.6 is built on pi 1.4.0. Hive bees hear more of each other's notes, and undici is updated for its security fixes.**
+
 ### Changed
 
 - **Built on pi 1.4.0** and upstream main after it (b556cfe5b). Tool arguments are checked by pi-schema, so a model that sends a wrong argument reads pi-schema's messages (`- path: missing`, `- limit: expected number, got string`); which arguments are accepted is unchanged. The agent's system prompt is shorter. The model catalog is built from one definition per provider; Nebius Token Factory is defined that way too, with the same models. The catalog gains GPT-6.1 Terra, and the Codex provider no longer lists `gpt-5.5` and `gpt-5.3-codex-spark`, which ChatGPT accounts can't use.
