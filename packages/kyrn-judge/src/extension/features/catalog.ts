@@ -325,9 +325,7 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 				const capability = await open(id, "user").catch(() => undefined);
 				applyLoadout();
 				ctx.ui.notify(
-					capability
-						? `${capability.title} is now open.`
-						: `"${id}" is unknown, already open, or failed to start.`,
+					capability ? `${capability.title} is now open.` : `"${id}" is unknown, already open or failed to start.`,
 					capability ? "info" : "warning",
 				);
 				return;
