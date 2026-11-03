@@ -7,7 +7,9 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ipcBridge } from '@/common';
 import { LayoutContext } from '@/renderer/hooks/context/LayoutContext';
+import { ensureBackendMcpCatalog } from '@/renderer/hooks/mcp/catalog';
 
 const {
   modelSelectionMock,
@@ -380,6 +382,24 @@ describe('GuidPage', () => {
     });
     agentSelectionMock.selectedAcpModel = null;
   });
+
+  // A mu conversation takes neither, so with the native host on the + menu offers none.
+  it.each([false, true])(
+    'offers skills and MCP servers in the + menu only with the native host off (on: %s)',
+    async (enabled) => {
+      nativeHost.enabled = enabled;
+      const skills = [{ name: 'pdf', description: 'Read PDFs', source: 'builtin', is_auto_inject: false }];
+      vi.mocked(ipcBridge.fs.listAvailableSkills.invoke).mockResolvedValueOnce(skills as never);
+      vi.mocked(ensureBackendMcpCatalog).mockResolvedValueOnce({
+        allServers: [{ id: 'fs', name: 'filesystem' }],
+      } as never);
+      render(<GuidPage />);
+      await act(async () => undefined);
+      const props = capturedGuidActionRowProps.at(-1) as { allSkills: unknown[]; mcpServers: unknown[] };
+      expect(props.allSkills).toHaveLength(enabled ? 0 : 1);
+      expect(props.mcpServers).toHaveLength(enabled ? 0 : 1);
+    }
+  );
 
   it('hands the native start only a thinking level picked on the page, and drops it when another model is picked', () => {
     nativeHost.enabled = true;
