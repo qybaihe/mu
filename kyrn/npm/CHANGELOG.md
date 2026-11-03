@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.3.7] - 2026-11-03
+
+**0.3.7 has OpenRouter's current prices for five models and output limits for two. It keeps the version in step with the 0.3.7 desktop app.**
+
+### Changed
+
+- **OpenRouter prices.** The model catalog has OpenRouter's current prices for `google/gemma-4-26b-a4b-it`, `minimax/minimax-m3.1-flash`, `openai/gpt-oss-120b`, `tencent/hy3` and `tencent/hy4-preview`. Its output limits are now 32,768 tokens for `google/gemma-4-26b-a4b-it` and 943,718 for `meta/muse-spark-open`.
+
 ## [0.3.6] - 2026-11-02
 
 **0.3.6 is built on pi 1.4.0. Hive bees hear more of each other's notes, and undici is updated for its security fixes.**
