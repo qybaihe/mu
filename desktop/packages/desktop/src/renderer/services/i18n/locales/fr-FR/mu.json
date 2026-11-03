@@ -148,7 +148,7 @@
         "title": "mude 1.0",
         "tag": "Sur ce Mac",
         "tagRecommended": "Recommandé · sur ce Mac",
-        "description": "Le modèle de décision de mu, optimisé pour la programmation et à l’état de l’art pour les décisions d’un agent de programmation. Il tourne sur ce Mac : sans clé et sans coût par appel. Il faut une puce Apple."
+        "description": "Le modèle de décision de mu, optimisé pour la programmation : sur mubench, ses scores sont du même ordre que ceux de Jev 1.14, le modèle hébergé par défaut. Il tourne sur ce Mac : sans clé et sans coût par appel. Il faut une puce Apple."
       },
       "clm": {
         "title": "CLM",
