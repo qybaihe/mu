@@ -37,6 +37,7 @@
     "replay": "↻ 重播",
     "replay_label": "重播这一段",
     "term_label": "mu 命令行的录屏",
+    "term_note": "录屏里大模型的回复是预先写好的，判定器的回答是现场给出的。",
     "star_cta_h2": "喜欢 mu，就去 GitHub 点个 Star",
     "star_cta_button": "在 GitHub 上 Star"
   },

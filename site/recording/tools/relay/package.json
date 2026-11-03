@@ -1,0 +1,10 @@
+{
+  "name": "relay",
+  "version": "0.4.2",
+  "private": true,
+  "description": "A small job queue: workers pull jobs from named queues and run them with a timeout and backoff.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}
