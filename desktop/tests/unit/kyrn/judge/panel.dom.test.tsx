@@ -131,6 +131,8 @@ describe('a judgment, opened', () => {
       new Set([copy.state.shadow, copy.state.late, copy.state.fallback, copy.state.rule, copy.state.returned]).size
     ).toBe(5);
     expect(cards().map((card) => card.getAttribute('data-state'))).toEqual(['rule', 'fallback', 'late', 'shadow']);
+    // Each state tag carries the judge's diamond, in the tone of the card's edge.
+    for (const card of cards()) expect(within(card).getByTestId('judge-state-mark')).toBeInTheDocument();
     // A default is described as a default, never as permission.
     expect(copy.actions.useDefault).toMatch(/isn't permission to proceed/);
   });
@@ -702,6 +704,8 @@ describe('the judge log', () => {
     const [judgment, followed] = lines();
     fireEvent.click(within(judgment).getByRole('button'));
     const card = within(within(judgment).getByTestId('judge-card'));
+    // The log's opened line says what it is already: its tag has no diamond.
+    expect(card.queryByTestId('judge-state-mark')).toBeNull();
     expect(card.getByText(copy.fields.applied).parentElement).toHaveTextContent(
       'Run the tests before saying it is done.'
     );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createInstance } from 'i18next';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter } from 'react-router-dom';
@@ -158,6 +158,10 @@ describe('the native send box', () => {
     expect(box()).toHaveAttribute('data-loading', 'true');
     expect(box()).toHaveAttribute('data-send', 'true');
     expect(status()).toHaveTextContent('The judge is reading your message…');
+    // mu's own line: the judge's dot while it reads, the time since the message, and no spinner.
+    expect(within(status()).getByTestId('native-status-dot')).toHaveAttribute('data-judge', 'true');
+    expect(within(status()).getByTestId('native-status-time')).toHaveTextContent(/\d/);
+    expect(status().querySelector('.arco-spin')).toBeNull();
     await act(async () => {
       fireEvent.click(screen.getByTestId('native-abort'));
     });
@@ -369,6 +373,7 @@ describe('the native send box', () => {
       host.push('c1', frame('progress', { step: 'Checking lessons', code: 'lessons' }));
     });
     expect(status()).toHaveTextContent('Checking lessons from earlier conversations');
+    expect(within(status()).getByTestId('native-status-dot')).toHaveAttribute('data-judge', 'false');
     act(() => {
       host.push('c1', { type: 'auto_retry_start', attempt: 1, maxAttempts: 3, delayMs: 2000, errorMessage: '529' });
     });

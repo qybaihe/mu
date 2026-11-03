@@ -6,25 +6,12 @@ import type { Activity } from '@/common/kyrn/types';
 import { formatNumber } from '@/renderer/services/i18n/format';
 import { formatNameList } from '@/renderer/services/i18n/list';
 import { thinkingLevelLabel } from '@/renderer/utils/model/thinkingLevel';
-import { answerRows, resultFacts, type JudgeAnswer, type JudgeCard, type JudgeFact, type JudgeState } from './activity';
+import { answerRows, resultFacts, type JudgeAnswer, type JudgeCard, type JudgeFact } from './activity';
 import styles from './Judge.module.css';
 import { answerLabel, answerValue, hintLines, reasonText, scoreLevel } from './wording';
 import { useClock } from '../clock';
 
 const KEY = 'common.kyrn.judgeView';
-
-/** Arco palette names, so every state keeps a colour of its own in both themes. */
-const STATE_COLOR: Record<JudgeState, string | undefined> = {
-  pending: 'cyan',
-  returned: 'arcoblue',
-  confirmed: 'green',
-  shadow: 'gray',
-  fallback: 'orange',
-  late: 'gold',
-  rule: 'purple',
-  ended: undefined,
-  unknown: undefined,
-};
 
 /** A recorded number ("0.75"), or a count of identical answers ("×3"). */
 const NUMBER = /^-?\d+(?:\.\d+)?$/;
@@ -135,7 +122,8 @@ export default function JudgeCardView({
   return (
     <article className={plain ? styles.plainCard : styles.card} data-state={card.state} data-testid='judge-card'>
       <div className={styles.cardHead}>
-        <Tag size='small' color={plain ? undefined : STATE_COLOR[card.state]}>
+        <Tag size='small'>
+          {!plain && <span className={styles.stateMark} data-testid='judge-state-mark' aria-hidden='true' />}
           {t(`${KEY}.state.${card.state}`)}
         </Tag>
         {card.unlinked && (

@@ -257,9 +257,9 @@
 
 /*
  * Tags in the light theme: Arco writes the text in the palette's step 6 on its own pale tint, which
- * is 1.7:1 for gold and 1.9:1 for cyan. The judge tells its states apart by exactly these tags, so
- * each colour gets a deeper text colour (4.5:1 or better on its tint). `blue` moves to periwinkle,
- * so that the tool cards' status tag stops being the one upstream-blue thing on the page.
+ * is 1.7:1 for gold and 1.9:1 for cyan. Each colour gets a deeper text colour (4.5:1 or better on its
+ * tint). `blue` moves to periwinkle, so that the tool cards' status tag stops being the one
+ * upstream-blue thing on the page.
  */
 [data-color-scheme='mu'][data-theme='light'] .arco-tag-cyan.arco-tag-checked {
   color: #0b7a80;
