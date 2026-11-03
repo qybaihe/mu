@@ -743,9 +743,14 @@ describe("board model picker", () => {
 			{ label: "b (z/b)", ref: "z/b" },
 		]);
 		const help = addModelHelp("zh", RECOMMENDED_BOARD_MODELS[0]);
-		expect(help.split("\n")[0]).toBe("要用 Claude Opus 4.6，先登录 Anthropic（/login）。");
+		// A Claude subscription can't be signed in to any more (auth/runner.ts LEGACY_PROVIDERS): Opus comes with a key.
+		expect(help.split("\n")[0]).toBe("要用 Claude Opus 4.6，先用 mu setup 添加 Anthropic API key。");
 		expect(help).toContain("/board model");
-		expect(addModelHelp("en")).toMatch(/^To add a model, sign in to .* with \/login/);
+		expect(addModelHelp("en", RECOMMENDED_BOARD_MODELS[0]).split("\n")[0]).toBe(
+			"To use Claude Opus 4.6, first add an Anthropic API key with mu setup.",
+		);
+		expect(addModelHelp("en")).toMatch(/^To add a model, sign in to .* with \/login, add an API key with mu setup/);
+		expect(addModelHelp("en")).not.toContain("sign in to Anthropic");
 	});
 });
 
