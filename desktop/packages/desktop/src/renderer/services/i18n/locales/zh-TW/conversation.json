@@ -807,5 +807,9 @@
     "collapse": "收合計劃"
   },
   "createFailedWithDetail": "建立對話失敗：{{error}}",
-  "agentStartFailedWithDetail": "Agent 啟動失敗：{{error}}"
+  "agentStartFailedWithDetail": "Agent 啟動失敗：{{error}}",
+  "askMu": {
+    "label": "問問 mu",
+    "prompt": "我在 mu 對話過程中遇到了報錯，幫我排查一下。\n\n【報錯內容】{{error}}\n\n請幫我診斷原因並給出解決辦法。"
+  }
 }

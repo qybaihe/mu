@@ -18,29 +18,6 @@
  * CSS variable names for all theme colors
  */
 export const cssVars = {
-  // AOU colors
-  aou: {
-    1: '--color-aou-1',
-    2: {
-      disabled: '--color-aou-2-disabled',
-    },
-    3: {
-      specialDisabled: '--color-aou-3-special-disabled',
-    },
-    4: {
-      hover: '--color-aou-4-hover',
-    },
-    5: '--color-aou-5',
-    6: {
-      brand: '--color-aou-6-brand',
-    },
-    7: '--color-aou-7',
-    8: {
-      selected: '--color-aou-8-selected',
-    },
-    9: '--color-aou-9',
-    10: '--color-aou-10',
-  },
   // Background colors
   bg: {
     0: '--color-bg-0',
@@ -140,14 +117,6 @@ export const diffColors = {
  * Maps common hex values to their theme variable names
  */
 export const colorMapping: Record<string, string> = {
-  // AOU colors
-  '#EFF0F6': 'var(--color-aou-1)',
-  '#eff0f6': 'var(--color-aou-1)',
-  '#E5E7F0': 'var(--color-aou-2-disabled)',
-  '#e5e7f0': 'var(--color-aou-2-disabled)',
-  '#7583B2': 'var(--color-aou-6-brand)',
-  '#7583b2': 'var(--color-aou-6-brand)',
-
   // Background colors
   '#FFFFFF': 'var(--color-bg-0)',
   '#ffffff': 'var(--color-bg-0)',

@@ -290,7 +290,7 @@ packages/desktop/src/renderer/components/agent/MarqueePillLabel.tsx
 packages/desktop/src/renderer/components/agent/RuntimeSelectorPill.tsx
 packages/desktop/src/renderer/components/agent/ThemedLogo.tsx
 packages/desktop/src/renderer/components/agent/runtimeSelectorOptions.tsx
-packages/desktop/src/renderer/components/base/ButlerDiagnoseButton.tsx
+packages/desktop/src/renderer/components/base/AskMuButton.tsx
 packages/desktop/src/renderer/components/base/FileChangesPanel.tsx
 packages/desktop/src/renderer/components/base/FirstHint/index.tsx
 packages/desktop/src/renderer/components/base/ForkBranchIcon.tsx
@@ -1439,7 +1439,7 @@ tests/unit/cron/useCronJobs.dom.test.ts
 tests/unit/describeUncaughtError.test.ts
 tests/unit/extension/ExtensionSettingsPage.dom.test.tsx
 tests/unit/extension/extensionMapperIntegration.test.ts
-tests/unit/feedback/ButlerDiagnoseButton.dom.test.tsx
+tests/unit/feedback/AskMuButton.dom.test.tsx
 tests/unit/feedback/MessageTipsFeedback.dom.test.tsx
 tests/unit/gpuAutoDisableNotice.test.ts
 tests/unit/gpuRecovery.test.ts

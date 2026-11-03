@@ -807,5 +807,9 @@
     "collapse": "계획 접기"
   },
   "createFailedWithDetail": "대화 생성에 실패했습니다: {{error}}",
-  "agentStartFailedWithDetail": "에이전트를 시작하지 못했습니다: {{error}}"
+  "agentStartFailedWithDetail": "에이전트를 시작하지 못했습니다: {{error}}",
+  "askMu": {
+    "label": "mu에게 물어보기",
+    "prompt": "mu 대화 중 오류가 발생했습니다. 진단을 도와주세요.\n\n[오류 내용] {{error}}\n\n원인을 진단하고 해결 방법을 알려주세요."
+  }
 }

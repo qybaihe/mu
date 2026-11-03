@@ -972,10 +972,8 @@
       "addModel": "帮我添加一个新的 LLM 模型和 API Key，并设为默认模型。",
       "addMcp": "帮我配置一个 MCP 服务器。",
       "addSkill": "帮我导入一个技能，并绑定到助手上。",
-      "setupRemote": "帮我配置远程访问，让我在手机或外网也能打开 mu。",
-      "diagnoseChatError": "我在 mu 对话过程中遇到了报错，帮我排查一下。\n\n【报错内容】{{error}}\n\n请帮我诊断原因并给出解决办法。"
-    },
-    "solveWithButler": "找管家排查"
+      "setupRemote": "帮我配置远程访问，让我在手机或外网也能打开 mu。"
+    }
   },
   "providerIdConflict": "Provider ID 已存在，请重试。",
   "autoInjectedSkillsHint": "每次对话都会自动加载，无需手动启用；由智能体自行决定何时调用。",

@@ -807,5 +807,9 @@
     "collapse": "Collapse plan"
   },
   "createFailedWithDetail": "Couldn't create the conversation: {{error}}",
-  "agentStartFailedWithDetail": "Couldn't start the agent: {{error}}"
+  "agentStartFailedWithDetail": "Couldn't start the agent: {{error}}",
+  "askMu": {
+    "label": "Ask mu about this",
+    "prompt": "I hit an error in a mu conversation.\n\n[Error] {{error}}\n\nPlease find the cause and tell me how to fix it."
+  }
 }

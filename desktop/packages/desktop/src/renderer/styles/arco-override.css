@@ -229,8 +229,8 @@ body[arco-theme='dark'] .arco-tag-checked.arco-tag-gray {
 
 /* Steps wrapper styles */
 .mu-steps .arco-steps-item-process .arco-steps-item-icon {
-  background-color: var(--aou-6-brand) !important;
-  border-color: var(--aou-6-brand) !important;
+  background-color: var(--mu-accent-fill-active) !important;
+  border-color: var(--mu-accent-fill-active) !important;
 }
 
 .mu-steps .arco-steps-item-finish .arco-steps-item-icon {

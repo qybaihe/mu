@@ -329,13 +329,22 @@
   border-color: var(--mu-violet-2) !important;
 }
 
-/* A message is a surface, so it is the page's own: white or near-black, with one hairline. */
-[data-color-scheme='mu'] .arco-message-info {
+/*
+ * A message is a surface, so it is the page's own: white or near-black, with one hairline. Every kind looks the
+ * same; its icon carries the green, amber or red (arco-override.css gives each kind upstream's pastel gradient).
+ */
+[data-color-scheme='mu'] .arco-message-info,
+[data-color-scheme='mu'] .arco-message-success,
+[data-color-scheme='mu'] .arco-message-warning,
+[data-color-scheme='mu'] .arco-message-error {
   background: var(--bg-base) !important;
   border: 1px solid var(--border-base) !important;
 }
 
-[data-color-scheme='mu'] body[arco-theme='dark'] .arco-message-info {
+[data-color-scheme='mu'] body[arco-theme='dark'] .arco-message-info,
+[data-color-scheme='mu'] body[arco-theme='dark'] .arco-message-success,
+[data-color-scheme='mu'] body[arco-theme='dark'] .arco-message-warning,
+[data-color-scheme='mu'] body[arco-theme='dark'] .arco-message-error {
   background: var(--bg-base) !important;
   border: 1px solid var(--border-base) !important;
 }

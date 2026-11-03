@@ -807,5 +807,9 @@
     "collapse": "Réduire le plan"
   },
   "createFailedWithDetail": "Impossible de créer la conversation : {{error}}",
-  "agentStartFailedWithDetail": "Impossible de démarrer l’agent : {{error}}"
+  "agentStartFailedWithDetail": "Impossible de démarrer l’agent : {{error}}",
+  "askMu": {
+    "label": "Demander à mu",
+    "prompt": "J'ai rencontré une erreur lors d'une conversation dans mu, aidez-moi à la diagnostiquer.\n\n[Erreur] {{error}}\n\nVeuillez diagnostiquer la cause et me dire comment y remédier."
+  }
 }

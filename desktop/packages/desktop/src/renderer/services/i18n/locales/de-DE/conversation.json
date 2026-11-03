@@ -808,5 +808,9 @@
     "collapse": "Plan einklappen"
   },
   "createFailedWithDetail": "Die Unterhaltung konnte nicht erstellt werden: {{error}}",
-  "agentStartFailedWithDetail": "Der Agent konnte nicht gestartet werden: {{error}}"
+  "agentStartFailedWithDetail": "Der Agent konnte nicht gestartet werden: {{error}}",
+  "askMu": {
+    "label": "mu dazu fragen",
+    "prompt": "Während einer Unterhaltung in mu ist ein Fehler aufgetreten, hilf mir bei der Diagnose.\n\n[Fehler] {{error}}\n\nBitte diagnostiziere die Ursache und sag mir, wie ich es behebe."
+  }
 }

@@ -9,7 +9,7 @@ import { showAsMu } from '@/common/kyrn/displayName';
 import { Badge, Typography } from '@arco-design/web-react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import ButlerDiagnoseButton from '@/renderer/components/base/ButlerDiagnoseButton';
+import AskMuButton from '@/renderer/components/base/AskMuButton';
 
 const { Text } = Typography;
 
@@ -72,7 +72,7 @@ const MessageAgentStatus: React.FC<MessageAgentStatusProps> = ({ message }) => {
 
       <div className='flex-1 flex items-center gap-6px'>
         {getStatusBadge()}
-        {isError && <ButlerDiagnoseButton errorText={`${display_name}: ${t('acp.status.error')}`} />}
+        {isError && <AskMuButton errorText={`${display_name}: ${t('acp.status.error')}`} />}
       </div>
     </div>
   );

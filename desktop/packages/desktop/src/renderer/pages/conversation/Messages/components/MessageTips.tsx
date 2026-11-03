@@ -13,7 +13,7 @@ import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import MarkdownView from '@renderer/components/Markdown';
-import ButlerDiagnoseButton from '@renderer/components/base/ButlerDiagnoseButton';
+import AskMuButton from '@renderer/components/base/AskMuButton';
 import CollapsibleContent from '@renderer/components/chat/CollapsibleContent';
 import { iconColors } from '@/renderer/styles/colors';
 import { findMuTurnError, muTurnErrorKey, noModelDetail } from '@/renderer/utils/chat/muTurnErrors';
@@ -118,9 +118,8 @@ const MessageTips: React.FC<{ message: IMessageTips }> = ({ message }) => {
   const muErrorHeadline = muError ? t(muTurnErrorKey(muError)) : undefined;
   if (muError === 'noModel')
     return <NoModelCard detail={noModelDetail(structuredError?.detail || structuredError?.message || content || '')} />;
-  // The Butler chip shows on every error — environment issues are exactly
-  // what the Butler diagnoses best.
-  const shouldShowButler = type === 'error';
+  // Every error gets the "Ask mu about this" chip: environment problems are what mu can best look into.
+  const shouldShowAskMu = type === 'error';
 
   if (structuredError) {
     const errorCode = structuredError.code;
@@ -201,9 +200,9 @@ const MessageTips: React.FC<{ message: IMessageTips }> = ({ message }) => {
               )}
             </div>
           </div>
-          {shouldShowButler && (
+          {shouldShowAskMu && (
             <div className='flex justify-end'>
-              <ButlerDiagnoseButton errorText={[title, body, ...detailParts].filter(Boolean).join('\n')} />
+              <AskMuButton errorText={[title, body, ...detailParts].filter(Boolean).join('\n')} />
             </div>
           )}
         </div>
@@ -235,7 +234,7 @@ const MessageTips: React.FC<{ message: IMessageTips }> = ({ message }) => {
           </div>
           {type === 'error' && (
             <div className='flex justify-end'>
-              <ButlerDiagnoseButton errorText={showAsMu(JSON.stringify(data, null, 2))} />
+              <AskMuButton errorText={showAsMu(JSON.stringify(data, null, 2))} />
             </div>
           )}
         </div>
@@ -263,11 +262,9 @@ const MessageTips: React.FC<{ message: IMessageTips }> = ({ message }) => {
             </CollapsibleContent>
           </div>
         </div>
-        {shouldShowButler && (
+        {shouldShowAskMu && (
           <div className='flex justify-end'>
-            <ButlerDiagnoseButton
-              errorText={muErrorHeadline ? `${muErrorHeadline}\n${displayContent}` : displayContent}
-            />
+            <AskMuButton errorText={muErrorHeadline ? `${muErrorHeadline}\n${displayContent}` : displayContent} />
           </div>
         )}
       </div>

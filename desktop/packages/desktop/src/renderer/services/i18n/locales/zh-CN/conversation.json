@@ -807,5 +807,9 @@
     "collapse": "收起计划"
   },
   "createFailedWithDetail": "创建会话失败：{{error}}",
-  "agentStartFailedWithDetail": "Agent 启动失败：{{error}}"
+  "agentStartFailedWithDetail": "Agent 启动失败：{{error}}",
+  "askMu": {
+    "label": "问问 mu",
+    "prompt": "我在 mu 对话过程中遇到了报错，帮我排查一下。\n\n【报错内容】{{error}}\n\n请帮我诊断原因并给出解决办法。"
+  }
 }

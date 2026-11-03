@@ -971,10 +971,8 @@
       "addModel": "Aidez-moi à ajouter un nouveau fournisseur LLM et une clé API, puis à le définir comme modèle par défaut.",
       "addMcp": "Aidez-moi à configurer un serveur MCP.",
       "addSkill": "Aidez-moi à importer une compétence et à la joindre à un assistant.",
-      "setupRemote": "Aidez-moi à configurer l'accès à distance afin que je puisse ouvrir mu depuis mon téléphone ou via Internet.",
-      "diagnoseChatError": "J'ai rencontré une erreur lors d'une conversation dans mu, aidez-moi à la diagnostiquer.\n\n[Erreur] {{error}}\n\nVeuillez diagnostiquer la cause et me dire comment y remédier."
-    },
-    "solveWithButler": "Demander au majordome"
+      "setupRemote": "Aidez-moi à configurer l'accès à distance afin que je puisse ouvrir mu depuis mon téléphone ou via Internet."
+    }
   },
   "providerIdConflict": "L'ID du fournisseur existe déjà. Veuillez réessayer.",
   "autoInjectedSkillsHint": "Chargé automatiquement dans chaque conversation – pas besoin de les activer ; l'agent décide quand les utiliser.",
