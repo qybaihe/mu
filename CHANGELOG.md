@@ -4,6 +4,20 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [Unreleased]
 
+## [0.3.7] - 2026-11-03
+
+**In 0.3.7, more of the desktop app looks like mu: the stop button, the line above the send box, notices, the judge's icon and file cards.** "Ask mu about this" on an error now opens a new mu conversation. The desktop app carries mu-agent 0.3.7, which has OpenRouter's current prices for a few models.
+
+### Changed
+
+- **More of mu's own look.** While mu works, the stop button takes the send button's colors, with a small square in the middle, and the line above the send box shows a dot, what mu is doing and how long it has taken; the dot is pink while the judge model reads your message. Success, warning and error notices look like the info notice: the page's own surface with one hairline, and only the icon carries the color. The judge tab and the judge settings page use the judge's diamond (◆) instead of a gavel. Lessons use a graduation cap, so the brain icon only stands for the model. A file attached to a message shows mu's file icon.
+- **"Ask mu about this" opens a new mu conversation.** The button beside an error puts the error into a new conversation's send box, with a request to find the cause and a fix, ready to send. Before, it switched on a separate built-in assistant and sent the error there.
+- **The home page's + menu lists only what a mu conversation uses.** It no longer lists skills and MCP servers that a mu conversation never received. mu's own skills are in its `/` menu, and its MCP servers are under Settings → Capabilities.
+
+### Fixed
+
+- A message you jump to is highlighted again. The highlight used colors that were no longer defined, so it didn't show.
+
 ## [0.3.6] - 2026-11-02
 
 **0.3.6 is built on pi 1.4.0, and hive bees hear more of each other's findings.** mu's HTTP client is updated for security fixes. The desktop app's own code is unchanged from 0.3.5; it now carries mu-agent 0.3.6.
