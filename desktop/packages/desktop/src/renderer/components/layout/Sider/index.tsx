@@ -150,14 +150,16 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
             />
             {/* 2 — search, in the sidebar on every size: it is one of the three ways in. It opens the palette. */}
             <SiderSearchEntry isMobile={isMobile} collapsed={collapsed} siderTooltipProps={siderTooltipProps} />
-            {/* 3 — scheduled tasks */}
-            <SiderScheduledEntry
-              isMobile={isMobile}
-              isActive={pathname === '/scheduled'}
-              collapsed={collapsed}
-              siderTooltipProps={siderTooltipProps}
-              onClick={handleScheduledClick}
-            />
+            {/* 3 — scheduled tasks, with the native host off: they run the backend's assistants, never mu on the host. */}
+            {nativeOn ? null : (
+              <SiderScheduledEntry
+                isMobile={isMobile}
+                isActive={pathname === '/scheduled'}
+                collapsed={collapsed}
+                siderTooltipProps={siderTooltipProps}
+                onClick={handleScheduledClick}
+              />
+            )}
             {rail ? null : (
               <>
                 {/* The one hairline in the sidebar: above it the ways in, below it the conversations. */}

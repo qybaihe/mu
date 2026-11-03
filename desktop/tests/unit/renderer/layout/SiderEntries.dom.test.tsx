@@ -99,6 +99,16 @@ describe('sidebar entries', () => {
     expect(await screen.findByTestId('history')).toHaveAttribute('data-hide-empty', 'true');
   });
 
+  it('shows the scheduled tasks only with the native host off: they run the backend’s assistants, never mu', () => {
+    renderSider();
+    expect(screen.getByTestId('sider-scheduled')).toBeInTheDocument();
+    cleanup();
+    nativeOn = true;
+    renderSider();
+    expect(screen.queryByTestId('sider-scheduled')).toBeNull();
+    expect(screen.getByTestId('sider-search')).toBeInTheDocument();
+  });
+
   it('keeps search in the sidebar on the desktop, not only on a phone', () => {
     renderSider();
     expect(screen.getByTestId('sider-search')).toBeInTheDocument();
