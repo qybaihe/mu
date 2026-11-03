@@ -1,0 +1,8 @@
+{
+  "queues": {
+    "default": { "concurrency": 4, "timeout": "10m", "backoff": "30s", "attempts": 3 },
+    "reports": { "concurrency": 1, "timeout": "1h30m", "backoff": "5m", "attempts": 2 },
+    "exports": { "concurrency": 2, "timeout": "45m", "backoff": "2m", "attempts": 5 }
+  },
+  "poll": "250ms"
+}

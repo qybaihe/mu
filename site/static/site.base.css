@@ -282,6 +282,7 @@ html:not(.js) .term-tools { display: none; }
 .term-body i.w2 { width: 2ch; }
 /* A cell background fills the whole row height, as in a terminal, instead of only the glyph box. */
 .term-body span[style*="background"] { display: inline-block; height: 1.36em; margin-bottom: -0.04em; vertical-align: top; }
+.term-note { margin: 10px 2px 0; font-size: 13px; color: var(--muted); }
 .shot img { width: 100%; }
 .chapter { min-height: 72vh; padding: 8px 0 48px; transition: opacity 360ms var(--ease); }
 .chapter:last-child { min-height: 0; }

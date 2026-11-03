@@ -37,6 +37,7 @@
     "replay": "↻ リプレイ",
     "replay_label": "この部分をもう一度再生",
     "term_label": "mu コマンドラインの録画",
+    "term_note": "この録画では、コーディングモデルの返答はあらかじめ用意したもので、判定器の回答はその場のものです。",
     "star_cta_h2": "mu が役に立ったら、GitHub で Star を付けてください",
     "star_cta_button": "GitHub で Star を付ける"
   },
