@@ -237,32 +237,51 @@
 }
 
 .card {
+  --judge-tone: var(--border-base);
   min-width: 0;
   margin-block: 8px;
   padding: 12px 12px 4px;
   border: 1px solid var(--border-base);
-  border-inline-start: 3px solid var(--border-base);
+  border-inline-start: 3px solid var(--judge-tone);
   border-radius: 12px;
   background: var(--bg-1);
 }
 
-/* The accent repeats what the state tag says; the tag's text is what tells the states apart. */
+/*
+ * One tone per card, on its edge and on the judge's diamond in its state tag: violet while the judge is asked or has
+ * answered, green when its answer was acted on, amber when something else stood in, indigo for a rule, grey otherwise.
+ * The tone only repeats what the tag's text says, which is what tells the states apart.
+ */
 .card[data-state='returned'],
 .card[data-state='pending'] {
-  border-inline-start-color: var(--primary);
+  --judge-tone: var(--primary);
 }
 
 .card[data-state='confirmed'] {
-  border-inline-start-color: var(--success);
+  --judge-tone: var(--success);
 }
 
 .card[data-state='fallback'],
 .card[data-state='late'] {
-  border-inline-start-color: var(--warning);
+  --judge-tone: var(--warning);
 }
 
 .card[data-state='rule'] {
-  border-inline-start-color: var(--info);
+  --judge-tone: var(--info);
+}
+
+.stateMark {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-inline-end: 6px;
+  background: var(--judge-tone);
+  transform: rotate(45deg);
+  vertical-align: 1px;
+}
+
+.card:is([data-state='shadow'], [data-state='ended'], [data-state='unknown']) .stateMark {
+  background: var(--text-secondary);
 }
 
 .cardHead {
@@ -273,7 +292,7 @@
   min-width: 0;
 }
 
-/* The state is told by the tag's text (the mu colour scheme keeps every tag colour readable). */
+/* The state is told by the tag's text, on the neutral fill every tag here has. */
 .cardHead :global(.arco-tag) {
   font-weight: 500;
 }
