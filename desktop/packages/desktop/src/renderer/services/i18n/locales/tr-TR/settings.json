@@ -971,10 +971,8 @@
       "addModel": "Yeni bir LLM sağlayıcısı ve API anahtarı ekle, ardından varsayılan model olarak ayarla.",
       "addMcp": "Bir MCP sunucusu kurmama yardım et.",
       "addSkill": "Bir beceri içe aktarıp bir asistana eklememe yardım et.",
-      "setupRemote": "Telefonumdan veya internetten mu’yu açabilmem için uzaktan erişimi ayarlamama yardım et.",
-      "diagnoseChatError": "mu sohbeti sırasında bir hatayla karşılaştım, teşhis etmeme yardım et.\n\n[Hata] {{error}}\n\nLütfen nedenini teşhis et ve nasıl düzelteceğimi söyle."
-    },
-    "solveWithButler": "Kâhya'ya sor"
+      "setupRemote": "Telefonumdan veya internetten mu’yu açabilmem için uzaktan erişimi ayarlamama yardım et."
+    }
   },
   "providerIdConflict": "Provider ID zaten var. Lütfen tekrar deneyin.",
   "autoInjectedSkillsHint": "Her sohbete otomatik olarak yüklenir — etkinleştirmeye gerek yoktur; aracı bunları ne zaman kullanacağına karar verir.",

@@ -835,5 +835,9 @@
     "collapse": "Свернуть план"
   },
   "createFailedWithDetail": "Не удалось создать диалог: {{error}}",
-  "agentStartFailedWithDetail": "Не удалось запустить агента: {{error}}"
+  "agentStartFailedWithDetail": "Не удалось запустить агента: {{error}}",
+  "askMu": {
+    "label": "Спросить mu",
+    "prompt": "Во время разговора в mu возникла ошибка, помоги её диагностировать.\n\n[Ошибка] {{error}}\n\nПожалуйста, определи причину и подскажи, как исправить."
+  }
 }

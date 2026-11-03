@@ -813,5 +813,9 @@
     "collapse": "Recolher plano"
   },
   "createFailedWithDetail": "Não foi possível criar a conversa: {{error}}",
-  "agentStartFailedWithDetail": "Não foi possível iniciar o agente: {{error}}"
+  "agentStartFailedWithDetail": "Não foi possível iniciar o agente: {{error}}",
+  "askMu": {
+    "label": "Perguntar ao mu",
+    "prompt": "Ocorreu um erro durante uma conversa no mu, ajude-me a diagnosticá-lo.\n\n[Erro] {{error}}\n\nDiagnostique a causa e me diga como corrigir."
+  }
 }

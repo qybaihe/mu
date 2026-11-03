@@ -971,10 +971,8 @@
       "addModel": "Help me add a provider and API key, then make one of its models the default.",
       "addMcp": "Help me set up an MCP server.",
       "addSkill": "Help me import a skill and attach it to an assistant.",
-      "setupRemote": "Help me set up remote access so I can open mu from my phone or over the internet.",
-      "diagnoseChatError": "I hit an error in a mu conversation.\n\n[Error] {{error}}\n\nPlease find the cause and tell me how to fix it."
-    },
-    "solveWithButler": "Ask mu about this"
+      "setupRemote": "Help me set up remote access so I can open mu from my phone or over the internet."
+    }
   },
   "providerIdConflict": "A provider with this ID already exists. Try again.",
   "autoInjectedSkillsHint": "Loaded into every conversation automatically. You don't need to turn them on; the agent decides when to use them.",

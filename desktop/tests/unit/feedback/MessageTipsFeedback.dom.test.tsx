@@ -3,7 +3,7 @@
  * Copyright 2025 AionUi (aionui.com)
  * SPDX-License-Identifier: Apache-2.0
  *
- * Verifies MessageTips shows the Butler diagnose chip on error tips only, and
+ * Verifies MessageTips shows the "Ask mu about this" chip on error tips only, and
  * that no error surface offers to send a report anywhere.
  */
 
@@ -109,7 +109,7 @@ const buildTips = (
     content: { type, content, ...(error ? { error } : {}), ...extra },
   }) as IMessageTips;
 
-const BUTLER_CHIP = 'settings.talkToButler.solveWithButler';
+const ASK_MU_CHIP = (enConversation as { askMu: { label: string } }).askMu.label;
 const REPORT_CHIP = 'settings.oneClickFeedback';
 
 describe('MessageTips — error chips', () => {
@@ -117,35 +117,35 @@ describe('MessageTips — error chips', () => {
     cleanup();
   });
 
-  it('does not render the Butler chip on success tips', () => {
+  it('does not render the Ask mu chip on success tips', () => {
     render(<MessageTips message={buildTips('success')} />);
-    expect(screen.queryByText(BUTLER_CHIP)).not.toBeInTheDocument();
+    expect(screen.queryByText(ASK_MU_CHIP)).not.toBeInTheDocument();
   });
 
-  it('does not render the Butler chip on warning tips', () => {
+  it('does not render the Ask mu chip on warning tips', () => {
     render(<MessageTips message={buildTips('warning')} />);
-    expect(screen.queryByText(BUTLER_CHIP)).not.toBeInTheDocument();
+    expect(screen.queryByText(ASK_MU_CHIP)).not.toBeInTheDocument();
   });
 
-  it('does not render the Butler chip on info tips', () => {
+  it('does not render the Ask mu chip on info tips', () => {
     render(<MessageTips message={buildTips('info')} />);
-    expect(screen.queryByText(BUTLER_CHIP)).not.toBeInTheDocument();
+    expect(screen.queryByText(ASK_MU_CHIP)).not.toBeInTheDocument();
   });
 
-  it('renders the Butler chip, and no report chip, when tip type is error', () => {
+  it('renders the Ask mu chip, and no report chip, when tip type is error', () => {
     render(<MessageTips message={buildTips('error')} />);
-    expect(screen.getByText(BUTLER_CHIP)).toBeInTheDocument();
+    expect(screen.getByText(ASK_MU_CHIP)).toBeInTheDocument();
     expect(screen.queryByText(REPORT_CHIP)).not.toBeInTheDocument();
   });
 
-  it('renders the Butler chip on JSON-formatted error content too', () => {
+  it('renders the Ask mu chip on JSON-formatted error content too', () => {
     render(<MessageTips message={buildTips('error', '{"code":500}')} />);
-    expect(screen.getByText(BUTLER_CHIP)).toBeInTheDocument();
+    expect(screen.getByText(ASK_MU_CHIP)).toBeInTheDocument();
     expect(screen.queryByText(REPORT_CHIP)).not.toBeInTheDocument();
   });
 
   it.each([true, false])(
-    'renders the Butler chip, and no report chip, on structured errors (feedback_recommended=%s)',
+    'renders the Ask mu chip, and no report chip, on structured errors (feedback_recommended=%s)',
     (feedbackRecommended) => {
       render(
         <MessageTips
@@ -164,8 +164,8 @@ describe('MessageTips — error chips', () => {
         />
       );
 
-      // Environment problems are exactly what the Butler diagnoses best.
-      expect(screen.getByText(BUTLER_CHIP)).toBeInTheDocument();
+      // Environment problems are what mu can best look into.
+      expect(screen.getByText(ASK_MU_CHIP)).toBeInTheDocument();
       expect(screen.queryByText(REPORT_CHIP)).not.toBeInTheDocument();
     }
   );

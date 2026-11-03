@@ -26,8 +26,8 @@ vi.mock('@renderer/components/chat/CollapsibleContent', () => ({
 vi.mock('@renderer/components/Markdown', () => ({
   default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
-vi.mock('@renderer/components/base/ButlerDiagnoseButton', () => ({
-  default: () => <div data-testid='butler-chip' />,
+vi.mock('@renderer/components/base/AskMuButton', () => ({
+  default: () => <div data-testid='ask-mu-chip' />,
 }));
 
 import MessageTips from '@/renderer/pages/conversation/Messages/components/MessageTips';
@@ -77,10 +77,10 @@ describe('a conversation without a model', () => {
       enMu.noModel.body.replace('{{place}}', `${enCommon.settings} › ${enMu.sections.providers}`)
     );
     expect(card).toHaveTextContent('No API key found for anthropic.');
-    // Nothing a desktop user cannot act on: no terminal command, no harness doc, no Butler guess.
+    // Nothing a desktop user cannot act on: no terminal command, no harness doc, no Ask mu chip.
     expect(card).not.toHaveTextContent('/login');
     expect(card).not.toHaveTextContent('providers.md');
-    expect(screen.queryByTestId('butler-chip')).toBeNull();
+    expect(screen.queryByTestId('ask-mu-chip')).toBeNull();
     const open = screen.getByTestId('mu-no-model-open');
     expect(open).toHaveTextContent(enMu.noModel.open.replace('{{page}}', enMu.sections.providers));
     fireEvent.click(open);
@@ -99,6 +99,6 @@ describe('a conversation without a model', () => {
   it('leaves any other failed request as it was', () => {
     show('en', tip({ type: 'error', content: 'Model request failed: 429 rate limited' } as IMessageTips['content']));
     expect(screen.queryByTestId('mu-no-model')).toBeNull();
-    expect(screen.getByTestId('butler-chip')).toBeInTheDocument();
+    expect(screen.getByTestId('ask-mu-chip')).toBeInTheDocument();
   });
 });

@@ -268,8 +268,8 @@ const resolveActiveThinkingId = (
 };
 
 const highlightStyle: React.CSSProperties = {
-  backgroundColor: 'var(--color-aou-1)',
-  boxShadow: '0 0 0 1px var(--color-aou-6-brand) inset',
+  backgroundColor: 'var(--mu-accent-tint)',
+  boxShadow: '0 0 0 1px var(--mu-accent-border) inset',
   borderRadius: '12px',
 };
 

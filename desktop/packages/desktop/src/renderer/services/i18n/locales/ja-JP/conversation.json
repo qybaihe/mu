@@ -807,5 +807,9 @@
     "collapse": "プランを折りたたむ"
   },
   "createFailedWithDetail": "会話を作成できませんでした: {{error}}",
-  "agentStartFailedWithDetail": "エージェントを起動できませんでした: {{error}}"
+  "agentStartFailedWithDetail": "エージェントを起動できませんでした: {{error}}",
+  "askMu": {
+    "label": "mu に聞く",
+    "prompt": "mu の会話中にエラーが発生しました。診断を手伝ってください。\n\n【エラー内容】{{error}}\n\n原因を診断し、解決方法を教えてください。"
+  }
 }

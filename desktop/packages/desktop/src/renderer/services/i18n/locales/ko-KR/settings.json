@@ -972,10 +972,8 @@
       "addModel": "새 LLM 공급자와 API 키를 추가하고 기본 모델로 설정해 주세요.",
       "addMcp": "MCP 서버 설정을 도와주세요.",
       "addSkill": "스킬을 가져와 어시스턴트에 연결해 주세요.",
-      "setupRemote": "휴대폰이나 외부에서 mu를 열 수 있도록 원격 접속을 설정해 주세요.",
-      "diagnoseChatError": "mu 대화 중 오류가 발생했습니다. 진단을 도와주세요.\n\n[오류 내용] {{error}}\n\n원인을 진단하고 해결 방법을 알려주세요."
-    },
-    "solveWithButler": "집사에게 문의"
+      "setupRemote": "휴대폰이나 외부에서 mu를 열 수 있도록 원격 접속을 설정해 주세요."
+    }
   },
   "providerIdConflict": "Provider ID가 이미 있습니다. 다시 시도하세요.",
   "autoInjectedSkillsHint": "모든 대화에 자동으로 로드됩니다. 활성화할 필요가 없으며, 에이전트가 사용 시점을 결정합니다.",

@@ -1760,7 +1760,7 @@ const SendBox: React.FC<{
       shape='circle'
       type='secondary'
       className='bg-animate sendbox-stop-button'
-      icon={<div className='mx-auto size-12px bg-6'></div>}
+      icon={<div className='mx-auto size-10px sendbox-stop-square'></div>}
       onClick={stopHandler}
       data-testid={testIds?.stop ?? 'sendbox-stop-btn'}
       aria-label={t('conversation.sendbox.stop')}

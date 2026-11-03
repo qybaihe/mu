@@ -809,5 +809,9 @@
     "collapse": "Planı daralt"
   },
   "createFailedWithDetail": "Konuşma oluşturulamadı: {{error}}",
-  "agentStartFailedWithDetail": "Ajan başlatılamadı: {{error}}"
+  "agentStartFailedWithDetail": "Ajan başlatılamadı: {{error}}",
+  "askMu": {
+    "label": "mu'ya sor",
+    "prompt": "mu sohbeti sırasında bir hatayla karşılaştım, teşhis etmeme yardım et.\n\n[Hata] {{error}}\n\nLütfen nedenini teşhis et ve nasıl düzelteceğimi söyle."
+  }
 }

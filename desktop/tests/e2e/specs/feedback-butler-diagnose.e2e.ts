@@ -1,7 +1,7 @@
 /**
- * Butler diagnose button — the "Ask the Butler" chip on conversation error
- * bubbles. Clicking it must jump to the home chat with a diagnosis prompt
- * (containing the error text) pre-filled.
+ * The "Ask mu about this" chip on conversation error bubbles. Clicking it must
+ * jump to the home chat with a diagnosis prompt (containing the error text)
+ * pre-filled, for a new mu conversation.
  *
  * Uses the ACP E2E stream injector to fabricate an error tip without needing
  * a real broken agent session.
@@ -31,7 +31,7 @@ async function ensureRendererReady(page: Page): Promise<void> {
   );
 }
 
-test('error bubble butler chip pre-fills a diagnosis prompt in the home chat', async ({ page }) => {
+test('error bubble Ask mu chip pre-fills a diagnosis prompt in the home chat', async ({ page }) => {
   await goToGuid(page);
   await ensureRendererReady(page);
   const assistantId = await findAssistantIdForBackend(page, 'codex', { requireAvailable: true });
@@ -75,12 +75,12 @@ test('error bubble butler chip pre-fills a diagnosis prompt in the home chat', a
       { id: conversation.id, text: ERROR_TEXT }
     );
 
-    // The error bubble surfaces the Butler chip, and no report chip.
-    const butlerChip = page.locator('button:has-text("找管家排查"), button:has-text("Ask mu about this")').first();
-    await expect(butlerChip).toBeVisible({ timeout: 10_000 });
+    // The error bubble surfaces the Ask mu chip, and no report chip.
+    const askMuChip = page.locator('button:has-text("问问 mu"), button:has-text("Ask mu about this")').first();
+    await expect(askMuChip).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('button:has-text("反馈问题"), button:has-text("Report Issue")')).toHaveCount(0);
 
-    await butlerChip.click();
+    await askMuChip.click();
 
     // Lands on the home chat with the diagnosis prompt (incl. error text) seeded.
     await page.waitForFunction(() => window.location.hash.startsWith('#/guid'), { timeout: 10_000 });

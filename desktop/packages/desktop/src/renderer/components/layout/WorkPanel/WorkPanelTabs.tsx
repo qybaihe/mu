@@ -10,12 +10,12 @@ import {
   Code,
   Down,
   FolderOpen,
-  Gavel,
   More,
   PreviewOpen,
   ViewGridDetail,
 } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
+import JudgeIcon from '@/renderer/components/brand/JudgeIcon';
 import {
   ALWAYS_SHOWN_TABS,
   FOLLOWED_TABS,
@@ -33,7 +33,7 @@ export const workPanelBodyId = (tab: WorkPanelTab): string => `mu-work-panel-bod
 /** One monochrome icon per tab, drawn instead of the labels when the panel is too narrow for them. */
 const TAB_ICONS: Record<WorkPanelTab, typeof Bee> = {
   board: ViewGridDetail,
-  judge: Gavel,
+  judge: JudgeIcon,
   hive: Bee,
   lessons: Brain,
   files: FolderOpen,

@@ -961,10 +961,8 @@
       "addModel": "Hilf mir, einen neuen LLM-Anbieter und API-Schlüssel hinzuzufügen, und lege ihn als Standardmodell fest.",
       "addMcp": "Hilf mir, einen MCP-Server einzurichten.",
       "addSkill": "Hilf mir, einen Skill zu importieren und einem Assistenten zuzuordnen.",
-      "setupRemote": "Hilf mir, den Fernzugriff einzurichten, damit ich mu vom Handy oder über das Internet öffnen kann.",
-      "diagnoseChatError": "Während einer Unterhaltung in mu ist ein Fehler aufgetreten, hilf mir bei der Diagnose.\n\n[Fehler] {{error}}\n\nBitte diagnostiziere die Ursache und sag mir, wie ich es behebe."
-    },
-    "solveWithButler": "Butler fragen"
+      "setupRemote": "Hilf mir, den Fernzugriff einzurichten, damit ich mu vom Handy oder über das Internet öffnen kann."
+    }
   },
   "browserNotification": {
     "enable": "Browser-Benachrichtigungen aktivieren",

@@ -7,7 +7,6 @@ import {
   Communication,
   Cpu,
   DocDetail,
-  Gavel,
   Inbox,
   Info,
   LinkCloud,
@@ -25,6 +24,7 @@ import {
   Tool,
   Toolkit,
 } from '@icon-park/react';
+import JudgeIcon from '@/renderer/components/brand/JudgeIcon';
 
 /**
  * The settings rail: six groups of short pages. No page holds more than twelve rows: a list that would run longer is
@@ -187,7 +187,7 @@ export const SETTINGS_PAGES = [
     path: 'judges',
     route: '/settings/judges',
     labelKey: 'mu.sections.judges',
-    Icon: Gavel,
+    Icon: JudgeIcon,
   },
   {
     id: 'judge-order',

@@ -808,5 +808,9 @@
     "collapse": "Contraer plan"
   },
   "createFailedWithDetail": "No se pudo crear la conversación: {{error}}",
-  "agentStartFailedWithDetail": "No se pudo iniciar el agente: {{error}}"
+  "agentStartFailedWithDetail": "No se pudo iniciar el agente: {{error}}",
+  "askMu": {
+    "label": "Preguntar a mu",
+    "prompt": "Encontré un error durante una conversación en mu, ayúdame a diagnosticarlo.\n\n[Error] {{error}}\n\nPor favor, diagnostica la causa y dime cómo solucionarlo."
+  }
 }

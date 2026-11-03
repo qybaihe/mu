@@ -807,5 +807,9 @@
     "collapse": "جمع کردن برنامه"
   },
   "createFailedWithDetail": "ایجاد گفتگو ممکن نشد: {{error}}",
-  "agentStartFailedWithDetail": "راه‌اندازی ایجنت ممکن نشد: {{error}}"
+  "agentStartFailedWithDetail": "راه‌اندازی ایجنت ممکن نشد: {{error}}",
+  "askMu": {
+    "label": "از mu بپرس",
+    "prompt": "در حین گفتگو در mu با خطایی مواجه شدم، لطفاً کمک کن آن را عیب‌یابی کنم.\n\n[خطا] {{error}}\n\nلطفاً علت را تشخیص بده و بگو چطور آن را رفع کنم."
+  }
 }

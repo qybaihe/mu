@@ -11,7 +11,7 @@ import { Alert, Button, Image, Message, Radio, Tag, Tooltip } from '@arco-design
 import { Copy, Download, LoadingOne } from '@icon-park/react';
 import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import ButlerDiagnoseButton from '@/renderer/components/base/ButlerDiagnoseButton';
+import AskMuButton from '@/renderer/components/base/AskMuButton';
 import FileChangesPanel from '@/renderer/components/base/FileChangesPanel';
 import { useDiffPreviewHandlers } from '@/renderer/hooks/file/useDiffPreviewHandlers';
 import { parseDiff } from '@/renderer/utils/file/diffUtils';
@@ -582,7 +582,7 @@ const MessageToolGroup: React.FC<IMessageToolGroupProps> = ({ message }) => {
                 )}
                 {status === 'Error' && (
                   <div className='mt-4px flex justify-end'>
-                    <ButlerDiagnoseButton
+                    <AskMuButton
                       errorText={[name, description, typeof result_display === 'string' ? result_display : '']
                         .filter(Boolean)
                         .join('\n')}
