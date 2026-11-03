@@ -52,6 +52,9 @@ type GuidNavigationState = {
   [key: string]: unknown;
 };
 
+const NO_SKILLS: Array<{ name: string; description: string; isAuto: boolean }> = [];
+const NO_MCP_SERVERS: IMcpServer[] = [];
+
 const GuidPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -652,11 +655,13 @@ const GuidPage: React.FC = () => {
       selectedMode={startMode}
       dynamicModes={agentSelection.currentAgentModeOptions}
       onModeSelect={setGuidSelectedMode}
-      allSkills={allSkills}
+      // A mu conversation takes neither (useGuidNativeSend sends no skills or MCP servers; mu's own skills are in its
+      // `/` menu), so with the native host on the "+" menu offers none.
+      allSkills={nativeHost ? NO_SKILLS : allSkills}
       disabledBuiltinSkills={guidDisabledBuiltinSkills ?? []}
       enabledSkills={guidEnabledSkills ?? []}
       onToggleSkill={handleToggleSkill}
-      mcpServers={availableMcpServers}
+      mcpServers={nativeHost ? NO_MCP_SERVERS : availableMcpServers}
       selectedMcpServerIds={guidSelectedMcpServerIds ?? []}
       onToggleMcpServer={handleToggleMcpServer}
       loading={guidInput.loading}
