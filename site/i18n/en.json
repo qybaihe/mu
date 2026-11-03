@@ -54,7 +54,7 @@
     "app_alt": "The mu desktop app after a bug fix: the conversation in the middle, the Judge tab on the right listing each of the judge's verdicts with its decision point and time, and the kernel bar along the bottom",
     "cue": "Watch a turn",
     "story_h2": "Judge first, then act",
-    "swarm_alt": "The Hive tab in the desktop app: three bees investigate one bug at once; the arrows are findings the judge decided were worth delivering",
+    "swarm_alt": "The Hive tab in the desktop app: three bees investigate one bug at once; the arrows are findings delivered from one bee to another",
     "board_alt": "The plain-language board: what's being done, how far it got and the running account below",
     "chapters": [
       {
@@ -101,7 +101,7 @@
         "h2": "Several bees at work, the judge in the middle",
         "paras": [
           "When several agents work on one hard problem, splitting up the work is easy; communication is hard. Say nothing, and each walks into the same dead end. Say everything, and every context fills with the others' chatter.",
-          "In mu's hive, the judge weighs every finding: is it worth sharing, and does it matter to a given bee? Only then does it reach that bee as context. When a later finding overturns an earlier one, the correction goes to every bee that heard it."
+          "In mu's hive, the judge weighs every finding: is it worth sharing, and could it matter to a given bee? Unless the judge is sure it doesn't, the finding reaches that bee as context, marked as a finding, not an instruction. When a later finding overturns an earlier one, the correction goes to every bee that heard it."
         ]
       },
       {

@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Close } from '@icon-park/react';
+import { Close, FileText } from '@icon-park/react';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatByteSize } from '@/renderer/services/i18n/format';
 import { getFileExtension } from '@/renderer/services/FileService';
 import { ipcBridge } from '@/common';
 import { Image, Tooltip } from '@arco-design/web-react';
-import fileIcon from '@/renderer/assets/icons/file-icon.svg';
+import { iconColors } from '@/renderer/styles/colors';
 
 const IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg']);
 
@@ -142,8 +142,9 @@ const FilePreview: React.FC<FilePreviewProps> = ({ path, onRemove, readonly = fa
         className='h-60px flex items-center gap-12px px-12px rd-8px bg-bg-2 border border-solid'
         style={{ borderColor: 'var(--border-base)', boxShadow: '0 0 0 1px rgba(0,0,0,0.02)' }}
       >
-        <div className='w-40px h-40px rd-8px flex items-center justify-center flex-shrink-0'>
-          <img className='w-full h-full object-contain' src={fileIcon} alt='' />
+        {/* The file mark mu's own attachment chips use, on the quiet fill, not upstream's blue-grey sheet. */}
+        <div className='w-40px h-40px rd-8px bg-fill-2 flex items-center justify-center flex-shrink-0'>
+          <FileText theme='outline' size='20' fill={iconColors.secondary} />
         </div>
         <div className='flex flex-col gap-2px min-w-0'>
           <span className='text-14px text-t-primary max-w-150px truncate'>{file_name}</span>

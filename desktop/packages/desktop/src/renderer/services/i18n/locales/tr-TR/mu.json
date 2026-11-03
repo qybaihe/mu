@@ -148,7 +148,7 @@
         "title": "mude 1.0",
         "tag": "Bu Mac'te",
         "tagRecommended": "Önerilen · bu Mac'te",
-        "description": "mu'nun kendi karar modeli; kodlama için optimize edildi ve bir kodlama ajanının kararlarında SOTA düzeyinde. Bu Mac'te çalışır: anahtar yok, çağrı başına ücret yok. Apple çip gerektirir."
+        "description": "mu'nun kendi karar modeli, kodlama için optimize edildi: mubench'te barındırılan varsayılan model Jev 1.14 ile aynı aralıkta puan alır. Bu Mac'te çalışır: anahtar yok, çağrı başına ücret yok. Apple çip gerektirir."
       },
       "clm": {
         "title": "CLM",

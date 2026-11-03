@@ -148,7 +148,7 @@
         "title": "mude 1.0",
         "tag": "在这台 Mac 上",
         "tagRecommended": "推荐 · 在这台 Mac 上",
-        "description": "mu 自己的决策模型，针对编程场景特别优化，编程场景的决策能力达到 SOTA 级。在这台 Mac 上运行，不需要密钥，不按次收费，需要 Apple 芯片。"
+        "description": "mu 自己的决策模型，针对编程场景优化：在 mubench 上和托管的默认判定模型 Jev 1.14 同一水平。在这台 Mac 上运行，不需要密钥，不按次收费，需要 Apple 芯片。"
       },
       "clm": {
         "title": "CLM",

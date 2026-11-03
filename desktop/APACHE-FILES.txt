@@ -269,7 +269,6 @@ packages/desktop/src/process/utils/utils.ts
 packages/desktop/src/process/utils/windowBounds.ts
 packages/desktop/src/process/utils/zoom.ts
 packages/desktop/src/renderer/assets/icons/add-chat.svg
-packages/desktop/src/renderer/assets/icons/file-icon.svg
 packages/desktop/src/renderer/assets/logo.svg
 packages/desktop/src/renderer/assets/logos/brand/app.png
 packages/desktop/src/renderer/components/IconParkHOC.tsx
