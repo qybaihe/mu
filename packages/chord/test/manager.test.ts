@@ -78,6 +78,7 @@ describe("host manager (real child processes)", () => {
 		await server.close();
 	});
 
+	// Four child processes in a row: on a slow CI runner each start can take over a second, past vitest's 5 s default.
 	it("a child-owned kernel lock admits one live process; replace waits for the exit before the next start", async () => {
 		const lock = `chord2-test-${process.pid}-lock`;
 		const pids: number[] = [];
@@ -101,7 +102,7 @@ describe("host manager (real child processes)", () => {
 		await first.stop();
 		await second.start();
 		await second.stop();
-	});
+	}, 20_000);
 
 	it("a graceful exit still takes the child's descendants with it", async () => {
 		const file = scratch("grandchild-graceful");
