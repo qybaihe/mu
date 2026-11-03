@@ -295,7 +295,8 @@ export function createNativeWorld({ desktopRoot, prepare }) {
     const root = run.profile?.paths.root;
     if (!root) return;
     if (run.passed && process.env.MU_E2E_KEEP !== '1' && !process.env.MU_E2E_ROOT) {
-      rmSync(root, { recursive: true, force: true });
+      // On Windows a folder can stay locked for a moment after the app quits (EBUSY), so rmSync tries again.
+      rmSync(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
     } else {
       console.log(`[mu e2e] kept for a look: ${root} (logs in ${join(root, 'logs')})`);
     }

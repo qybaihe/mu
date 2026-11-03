@@ -23,6 +23,7 @@ const crypto = require('crypto');
 // "Device not configured" hdiutil errors (electron-builder#8415, actions/runner-images#12323).
 const DMG_RETRY_MAX = 3;
 const DMG_RETRY_DELAY_SEC = 30;
+const STAPLE_TRIES = 5;
 
 // Incremental build: hash of source files to detect changes
 const INCREMENTAL_CACHE_FILE = 'out/.build-hash';
@@ -524,6 +525,23 @@ function createMacArtifactsWithPrepackaged(appDir, targetArch) {
   );
 }
 
+// electron-builder staples the notarization ticket to the .app before it makes the zip and the DMG. When Apple's
+// ticket server drops the connection (stapler error 68) the build stops there, and the retry below would pack an
+// .app with no ticket, so the retry staples it first.
+function stapleNotarizedApp(appDir) {
+  if (!process.env.APPLE_API_KEY) return;
+  const appName = fs.readdirSync(appDir).find((f) => f.endsWith('.app'));
+  if (!appName) return;
+  const appPath = path.join(appDir, appName);
+  if (spawnSync('xcrun', ['stapler', 'validate', appPath], { stdio: 'ignore' }).status === 0) return;
+  for (let attempt = 1; attempt <= STAPLE_TRIES; attempt++) {
+    console.log(`\n📎 Stapling the notarization ticket to ${appName} (try ${attempt}/${STAPLE_TRIES})...`);
+    if (spawnSync('xcrun', ['stapler', 'staple', appPath], { stdio: 'inherit' }).status === 0) return;
+    if (attempt < STAPLE_TRIES) spawnSync('sleep', [String(attempt * 15)]);
+  }
+  throw new Error(`Could not staple the notarization ticket to ${appPath}`);
+}
+
 function buildWithDmgRetry(cmd, targetArch) {
   const isMac = process.platform === 'darwin';
   const outDir = path.resolve(__dirname, '../out');
@@ -539,6 +557,7 @@ function buildWithDmgRetry(cmd, targetArch) {
     // .app exists but no .dmg → DMG creation failed
     console.log('\n🔄 Build failed during DMG creation (.app exists, .dmg missing)');
     console.log('   Retrying macOS distributable creation with --prepackaged...');
+    stapleNotarizedApp(appDir);
 
     for (let attempt = 1; attempt <= DMG_RETRY_MAX; attempt++) {
       cleanupDiskImages();
