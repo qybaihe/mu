@@ -161,14 +161,15 @@ describe('buildPaletteGroups', () => {
     ]);
   });
 
-  it('offers the next conversation that wants its person only with the native host on, whose marks it follows', () => {
+  it('offers the next conversation that wants its person only with the native host on, and the scheduled tasks only with it off', () => {
     const actions = (hostOn: boolean) =>
       group(buildPaletteGroups(sources({ commandTarget: null, native: hostOn })), 'commands')?.items.map((item) =>
         item.kind === 'action' ? item.action : item.kind
       );
 
-    expect(actions(false)).not.toContain('nextWaiting');
-    expect(actions(true)).toEqual(['newConversation', 'scheduledTasks', 'quickOpen', 'nextWaiting', 'shortcuts']);
+    expect(actions(false)).toEqual(['newConversation', 'scheduledTasks', 'quickOpen', 'shortcuts']);
+    // Scheduled tasks run the backend's assistants, never mu on the host.
+    expect(actions(true)).toEqual(['newConversation', 'quickOpen', 'nextWaiting', 'shortcuts']);
   });
 
   it('finds the settings by the word for them and by their group, leading with the row that opens them', () => {
