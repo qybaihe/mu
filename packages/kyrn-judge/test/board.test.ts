@@ -749,8 +749,14 @@ describe("board model picker", () => {
 		expect(addModelHelp("en", RECOMMENDED_BOARD_MODELS[0]).split("\n")[0]).toBe(
 			"To use Claude Opus 4.6, first add an Anthropic API key with mu setup.",
 		);
-		expect(addModelHelp("en")).toMatch(/^To add a model, sign in to .* with \/login, add an API key with mu setup/);
-		expect(addModelHelp("en")).not.toContain("sign in to Anthropic");
+		expect(addModelHelp("en", RECOMMENDED_BOARD_MODELS[1]).split("\n")[0]).toBe(
+			"To use Gemini 3.8 Flash, first add a Gemini API key with mu setup.",
+		);
+		// The one subscription sign-in mu names is ChatGPT's; every other way in is a key.
+		expect(addModelHelp("en")).toMatch(
+			/^To add a model, sign in with ChatGPT using \/login, add an API key with mu setup/,
+		);
+		expect(addModelHelp("en")).not.toMatch(/sign in (to|with) (Anthropic|Google)/);
 	});
 });
 
