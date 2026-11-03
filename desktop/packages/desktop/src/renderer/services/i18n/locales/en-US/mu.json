@@ -148,7 +148,7 @@
         "title": "mude 1.0",
         "tag": "On this Mac",
         "tagRecommended": "Recommended · on this Mac",
-        "description": "mu's own decision model, optimized for coding and state of the art at the decisions a coding agent makes. Runs on this Mac: no key, no per-call cost. Needs Apple silicon."
+        "description": "mu's own decision model, optimized for coding: on mubench it scores in the same range as Jev 1.14, the hosted default. Runs on this Mac: no key, no per-call cost. Needs Apple silicon."
       },
       "clm": {
         "title": "CLM",

@@ -148,7 +148,7 @@
         "title": "mude 1.0",
         "tag": "En este Mac",
         "tagRecommended": "Recomendado · en este Mac",
-        "description": "El modelo de decisión propio de mu, optimizado para programar y de última generación en las decisiones de un agente de programación. Funciona en este Mac: sin clave y sin coste por llamada. Necesita Apple silicon."
+        "description": "El modelo de decisión propio de mu, optimizado para programar: en mubench puntúa en el mismo rango que Jev 1.14, el modelo alojado por defecto. Funciona en este Mac: sin clave y sin coste por llamada. Necesita Apple silicon."
       },
       "clm": {
         "title": "CLM",

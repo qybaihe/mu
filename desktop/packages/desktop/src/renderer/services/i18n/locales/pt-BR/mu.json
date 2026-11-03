@@ -148,7 +148,7 @@
         "title": "mude 1.0",
         "tag": "Neste Mac",
         "tagRecommended": "Recomendado · neste Mac",
-        "description": "O modelo de decisão do próprio mu, otimizado para programação e no estado da arte nas decisões de um agente de programação. Roda neste Mac: sem chave e sem custo por chamada. Requer Apple silicon."
+        "description": "O modelo de decisão do próprio mu, otimizado para programação: no mubench, pontua na mesma faixa que o Jev 1.14, o modelo hospedado padrão. Roda neste Mac: sem chave e sem custo por chamada. Requer Apple silicon."
       },
       "clm": {
         "title": "CLM",

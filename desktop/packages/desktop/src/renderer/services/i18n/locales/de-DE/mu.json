@@ -148,7 +148,7 @@
         "title": "mude 1.0",
         "tag": "Auf diesem Mac",
         "tagRecommended": "Empfohlen · auf diesem Mac",
-        "description": "Das eigene Entscheidungsmodell von mu, fürs Programmieren optimiert und bei den Entscheidungen eines Coding-Agenten auf State-of-the-Art-Niveau. Läuft auf diesem Mac: kein Schlüssel, keine Kosten pro Aufruf. Braucht Apple Silicon."
+        "description": "Das eigene Entscheidungsmodell von mu, fürs Programmieren optimiert: Auf mubench liegt es im selben Bereich wie Jev 1.14, das gehostete Standardmodell. Läuft auf diesem Mac: kein Schlüssel, keine Kosten pro Aufruf. Braucht Apple Silicon."
       },
       "clm": {
         "title": "CLM",
