@@ -3,8 +3,8 @@ import { Button, Dropdown, Menu, Tooltip } from '@arco-design/web-react';
 import {
   Aiming,
   ArrowLeft,
+  BachelorCap,
   Bee,
-  Brain,
   Browser,
   Close,
   Code,
@@ -35,7 +35,7 @@ const TAB_ICONS: Record<WorkPanelTab, typeof Bee> = {
   board: ViewGridDetail,
   judge: JudgeIcon,
   hive: Bee,
-  lessons: Brain,
+  lessons: BachelorCap,
   files: FolderOpen,
   preview: PreviewOpen,
   source: Code,

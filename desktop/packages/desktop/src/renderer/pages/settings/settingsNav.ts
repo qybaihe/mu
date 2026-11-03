@@ -1,6 +1,6 @@
 import {
+  BachelorCap,
   Book,
-  Brain,
   Browser,
   Code,
   Comments,
@@ -107,7 +107,8 @@ export type SettingsPage = {
 const DETAIL_ICONS: Record<DetailArea, unknown> = {
   input: Login,
   context: DocDetail,
-  memory: Brain,
+  // Lessons get a mark of their own: the brain is the model's (the model chips).
+  memory: BachelorCap,
   tools: Tool,
   safety: Protect,
   turn: Refresh,
