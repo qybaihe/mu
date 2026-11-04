@@ -14,6 +14,8 @@ import {
 	type Floor,
 	floorFor,
 	prepareFloor,
+	refusalNote,
+	refusedWrites,
 	seatbeltProfile,
 	shellQuote,
 } from "../src/confine/floor.ts";
@@ -107,6 +109,60 @@ describe("the write floor", () => {
 			expect(spawnSync("/bin/bash", ["-c", line], { encoding: "utf8" }).stdout).toBe("a b\nit's\ntab\there\n");
 		},
 	);
+
+	// POSIX paths: there is no write sandbox on Windows.
+	it.skipIf(process.platform === "win32")("finds the writes it refused in a command's output, as macOS and Linux tools word them", () => {
+		const floor: Floor = {
+			project: "/w/app",
+			writable: ["/w/app", "/tmp-real"],
+			readOnly: ["/w/app/.git/hooks", "/w/app/.git/config"],
+		};
+		// As measured under Seatbelt (bash, touch, node, python, git) and as bubblewrap's read-only binds give them.
+		const output = [
+			"/bin/bash: /home/u/.zshrc: Operation not permitted",
+			"touch: /home/u/a.txt: Operation not permitted",
+			"Error: EPERM: operation not permitted, open '/home/u/d.txt'",
+			"PermissionError: [Errno 1] Operation not permitted: '/home/u/e.txt'",
+			"error: could not write config file .git/config: Operation not permitted",
+			"touch: cannot touch '/home/u/f.txt': Read-only file system",
+			"OSError: [Errno 30] Read-only file system: '/home/u/g.txt'",
+			// Inside the floor: something else refused it.
+			"chmod: /w/app/locked: Operation not permitted",
+			// No refusal on the line.
+			"wrote /home/u/h.txt",
+		].join("\n");
+		expect(refusedWrites(output, floor, "/w/app")).toEqual([
+			{ path: "/home/u/.zshrc", readOnly: false },
+			{ path: "/home/u/a.txt", readOnly: false },
+			{ path: "/home/u/d.txt", readOnly: false },
+			{ path: "/home/u/e.txt", readOnly: false },
+			{ path: "/w/app/.git/config", readOnly: true },
+			{ path: "/home/u/f.txt", readOnly: false },
+			{ path: "/home/u/g.txt", readOnly: false },
+		]);
+		expect(refusedWrites("all fine", floor, "/w/app")).toEqual([]);
+	});
+
+	// POSIX paths: there is no write sandbox on Windows.
+	it.skipIf(process.platform === "win32")("says which writes it refused and what to do instead, the project's paths as the project names them", () => {
+		const floor: Floor = { project: "/w/app", writable: ["/w/app"], readOnly: ["/w/app/.git/config"] };
+		expect(refusalNote([], floor)).toBeUndefined();
+		const note = refusalNote(
+			[
+				{ path: "/home/u/.zshrc", readOnly: false },
+				{ path: "/w/app/.git/config", readOnly: true },
+			],
+			floor,
+		);
+		expect(note).toBe(
+			[
+				"[mu write sandbox: /home/u/.zshrc is outside what commands may write here (this project, the temporary folders and package caches), so the write was refused. Do the work inside the project, or tell the user which folder the task needs: they can allow it with features.confine.writable.]",
+				"[mu write sandbox: .git/config is read-only here, as .git/hooks and .git/config always are, so the write was refused. Commands such as git config and git remote add need the user: tell them what to run.]",
+			].join("\n"),
+		);
+		const many = ["a", "b", "c", "d", "e"].map((name) => ({ path: `/home/u/${name}`, readOnly: false }));
+		expect(refusalNote(many, floor)).toContain("/home/u/a, /home/u/b, /home/u/c and 2 more are outside");
+	});
 
 	it("refuses to start where it cannot, and says why", async () => {
 		const project = folder("project");
@@ -234,6 +290,10 @@ describe("the write floor in a session", () => {
 			expect(readFileSync(join(harness.tempDir, "inside.txt"), "utf8")).toBe("ok\n");
 			expect(existsSync(join(outside, "b.txt"))).toBe(false);
 			expect(results(harness)[0]).toContain("Operation not permitted");
+			// The model is told why, so it does not look for another way to write there.
+			expect(results(harness)[0]).toContain(
+				`[mu write sandbox: ${join(outside, "b.txt")} is outside what commands may write here`,
+			);
 		},
 	);
 });
