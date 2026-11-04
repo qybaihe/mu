@@ -195,12 +195,17 @@ export function registerBackground(runtime: KyrnRuntime): void {
 			runtime.touch(ctx);
 			if (options.inheritShell) shell = readShellSettings(ctx.cwd, undefined, ctx.isProjectTrusted());
 			const cwd = params.cwd ? (isAbsolute(params.cwd) ? params.cwd : resolve(ctx.cwd, params.cwd)) : ctx.cwd;
+			// With the write floor on, the agent's job runs inside it as its bash commands do, or not at all.
+			const floor = runtime.floor ? await runtime.floor(ctx.cwd) : undefined;
+			if (floor && !floor.ok)
+				throw new Error(`mu: the write sandbox is on but cannot start here (${floor.reason}). Nothing ran.`);
 			try {
 				const job = start(ctx.mode).start({
 					command: params.command,
 					cwd,
 					name: params.name,
 					watch: params.watch,
+					...(floor?.ok ? { confine: floor.confinement } : {}),
 				});
 				const after = keep
 					? "\nThis run is unattended: the job keeps running after the run ends. Stop it with bg_stop if it should not."

@@ -3007,6 +3007,28 @@ const DESCRIBED: HarnessManifest = {
 			],
 		},
 		{
+			name: "confine",
+			title: { zh: "写入沙箱（实验）", en: "Write sandbox (experimental)" },
+			summary: {
+				zh: "agent 跑的 bash 命令和后台任务由操作系统限制，只能写项目目录、临时目录和包管理器的缓存；项目的 .git/hooks 和 .git/config 只读。macOS 用 Seatbelt，Linux 用 bubblewrap，Windows 没有。起不来时（没有 bubblewrap、用户命名空间被关掉）每条命令都拒绝执行，不会退回到不受限制地运行。判定器和权限模式照常询问。",
+				en: "The agent's bash commands and background jobs can write only to the project, the temporary folders and package caches, enforced by the operating system; the project's .git/hooks and .git/config are read-only. Seatbelt on macOS, bubblewrap on Linux, none on Windows. When it cannot start (no bubblewrap, user namespaces turned off), every command is refused rather than run unconfined. The judge and the permission modes ask as before.",
+			},
+			defaultEnabled: false,
+			beta: true,
+			options: [
+				{
+					key: "writable",
+					kind: "list",
+					default: [],
+					label: { zh: "另外允许写入的目录", en: "More folders commands may write" },
+					help: {
+						zh: "比如 mu 不认识的缓存目录。主目录本身和 ~/.mu 不会因此变成可写。",
+						en: "For example, a cache mu doesn't know about. The home folder itself and ~/.mu never become writable this way.",
+					},
+				},
+			],
+		},
+		{
 			name: "sandbox",
 			title: { zh: "Nebius 沙箱（实验）", en: "Nebius sandbox (experimental)" },
 			summary: {
