@@ -56,6 +56,11 @@ export type SubscriptionLoginFlow = {
   cancel: () => void;
   answer: (value: string) => void;
   logout: (provider: SubscriptionProvider) => Promise<void>;
+  /**
+   * Which of an account's models the model menus offer: these ids, or 'default' (all of them, the ones the account
+   * gains later too). Rejects with the main process's error when the harness refused the choice.
+   */
+  enable: (provider: SubscriptionProvider, models: string[] | 'default') => Promise<void>;
 };
 
 /**
@@ -122,9 +127,10 @@ export function useSubscriptionLogin(
     handled.current = login.id;
     const provider = login.provider;
     const models = login.models ?? [];
+    const enabled = login.enabled ? { enabled: login.enabled } : {};
     setStatus((now) => ({
       ...now,
-      signedIn: [...now.signedIn.filter((entry) => entry.provider !== provider), { provider, models }],
+      signedIn: [...now.signedIn.filter((entry) => entry.provider !== provider), { provider, models, ...enabled }],
     }));
     heard.current?.(provider, models);
     void recheckMu();
@@ -185,6 +191,10 @@ export function useSubscriptionLogin(
       void call(login.provider, async () =>
         unwrap(await kyrnBridge.loginAnswer.invoke({ id: login.id, value: reply }))
       );
+    },
+    enable: async (provider, models) => {
+      const choice = models === 'default' ? { provider, byDefault: true } : { provider, models };
+      setStatus(unwrap(await kyrnBridge.loginEnable.invoke(choice)));
     },
     logout: async (provider) => {
       setProblem({});

@@ -579,6 +579,60 @@ describe('signing out', () => {
   });
 });
 
+describe('choosing an account’s models', () => {
+  it('asks the runner to enable those models, or the default, and reads who is signed in with them', async () => {
+    const { manager, runners } = setup();
+    const chosen = manager.enable({
+      provider: 'google-antigravity',
+      models: ['gemini-3.1-pro-high', 'claude-sonnet-4-6'],
+    });
+    expect(runners[0].args).toEqual(['enable', 'google-antigravity', 'gemini-3.1-pro-high', 'claude-sonnet-4-6']);
+    const models = [
+      { id: 'gemini-3.1-pro-high', name: 'Gemini 3.1 Pro High' },
+      { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6' },
+      { id: 'gpt-oss-120b-medium', name: 'GPT-OSS 120B' },
+    ];
+    runners[0].say({
+      type: 'status',
+      signedIn: [{ provider: 'google-antigravity', models, enabled: ['gemini-3.1-pro-high', 'claude-sonnet-4-6'] }],
+    });
+    runners[0].end(0);
+    await expect(chosen).resolves.toEqual({
+      signedIn: [{ provider: 'google-antigravity', models, enabled: ['gemini-3.1-pro-high', 'claude-sonnet-4-6'] }],
+    });
+
+    const reset = manager.enable({ provider: 'google-antigravity', byDefault: true });
+    await settle();
+    expect(runners[1].args).toEqual(['enable', 'google-antigravity', '--default']);
+    runners[1].say({ type: 'status', signedIn: [] });
+    runners[1].end(0);
+    await expect(reset).resolves.toEqual({ signedIn: [] });
+  });
+
+  it('refuses what is not a model id, an unknown provider, and passes on the runner’s refusal', async () => {
+    const { manager, runners } = setup();
+    await expect(manager.enable({ provider: 'openai', models: ['--default'] })).rejects.toThrow('Invalid model');
+    await expect(manager.enable({ provider: 'openai', models: ['two words'] })).rejects.toThrow('Invalid model');
+    await expect(manager.enable({ provider: 'openai' })).rejects.toThrow('Invalid model');
+    await expect(manager.enable({ provider: 'google' as never, models: [] })).rejects.toThrow('Unknown provider');
+    expect(runners).toHaveLength(0);
+    const none = manager.enable({ provider: 'openai', models: [] });
+    expect(runners[0].args).toEqual(['enable', 'openai']);
+    runners[0].say({ type: 'error', message: 'At least one model must stay enabled' });
+    runners[0].end(1);
+    await expect(none).rejects.toThrow('At least one model must stay enabled');
+  });
+
+  it('keeps the enabled models a sign-in ends with', async () => {
+    const { manager, runners } = setup();
+    manager.start('openai');
+    await settle();
+    runners[0].say({ type: 'done', provider: 'openai', models: [{ id: 'gpt-6-sol' }], enabled: ['gpt-6-sol'] });
+    await settle();
+    expect(manager.state()).toMatchObject({ phase: 'done', models: [{ id: 'gpt-6-sol' }], enabled: ['gpt-6-sol'] });
+  });
+});
+
 describe('what the sign-in may open and run', () => {
   it('opens web pages only', () => {
     expect(openable('https://auth.openai.com/oauth/authorize?x=1')).toBe(true);

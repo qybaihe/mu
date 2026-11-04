@@ -452,6 +452,17 @@
     "legacy": {
       "openai-codex": "This older sign-in goes through the Codex CLI's login. Sign out, then sign in with ChatGPT.",
       "anthropic": "Anthropic doesn't allow other apps to sign in with a Claude subscription, so mu no longer offers it. Sign out and add an Anthropic API key instead."
+    },
+    "enable": {
+      "title": "Shown in the model picker",
+      "count": "{{count}} of {{total}}",
+      "hint": "Only checked models appear when you pick a model in a conversation. All of them is the default; then models the account gains later appear too.",
+      "all": "Select all",
+      "none": "Select none",
+      "reset": "Restore default",
+      "fresh": "Signed in to {{name}}, which offers {{count}} models. Uncheck the ones you don't want in the model picker.",
+      "lastModel": "Keep at least one model enabled.",
+      "failed": "Couldn't save the model choice. Try again."
     }
   },
   "endpoints": {
@@ -793,7 +804,8 @@
         "continue": "Sign in anyway",
         "cancel": "Don't sign in"
       },
-      "readingModels": "Signed in to {{name}}. Loading the models this account can use…"
+      "readingModels": "Signed in to {{name}}. Loading the models this account can use…",
+      "chooseLater": "Too many models? Choose which ones the model picker shows in Settings > Providers > Subscriptions."
     },
     "permissions": {
       "title": "How much mu can do on its own",

@@ -5,6 +5,7 @@ import { LEGACY_PROVIDERS, type SubscriptionProvider } from '@/common/kyrn/login
 import ProviderMark from '@renderer/components/brand/ProviderMark';
 import { ProviderHead } from '../providers/parts';
 import providerStyles from '../providers/providers.module.css';
+import AccountModels from './AccountModels';
 import LoginWaiting, { ExperimentalTag, LoginProblem, providerName } from './LoginWaiting';
 import type { SubscriptionLoginFlow } from './useSubscriptionLogin';
 
@@ -19,7 +20,8 @@ type AccountDetailProps = {
 
 /**
  * One subscription in the right pane: signed in or not, signing in or out (at once, outside the save bar: the
- * credential is pi's, in its own store), and what the account can use.
+ * credential is pi's, in its own store), and what the account can use: signed in, which of its models the model menus
+ * offer, asked for at once after a sign-in here.
  */
 export default function AccountDetail({ provider, flow, byKey, onShow }: AccountDetailProps) {
   const { t } = useTranslation();
@@ -105,7 +107,16 @@ export default function AccountDetail({ provider, flow, byKey, onShow }: Account
           />
         ) : null}
         <LoginProblem failure={flow.failureOf(provider)} onStart={flow.start} />
-        {models.length ? (
+        {account && account.models.length ? (
+          <AccountModels
+            key={provider}
+            provider={provider}
+            models={account.models}
+            enabled={account.enabled}
+            fresh={login?.provider === provider && login.phase === 'done'}
+            enable={flow.enable}
+          />
+        ) : models.length ? (
           <div className={providerStyles.field}>
             <div className={providerStyles.label}>{t('mu.accounts.models')}</div>
             <div className={providerStyles.suggestions}>

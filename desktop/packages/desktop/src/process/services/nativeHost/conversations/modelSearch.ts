@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { UNOFFERED_PROVIDER_IDS } from '../../../../common/kyrn/models.ts';
+import { enabledModels, UNOFFERED_PROVIDER_IDS } from '../../../../common/kyrn/models.ts';
 import { asList, asObject, asText, hasModel, type JsonObject } from '../../../../common/utils/nativeHost/records.ts';
 import type { ConversationHost } from './types.ts';
 
@@ -36,13 +36,22 @@ const sleep = (ms: number): Promise<void> =>
     (timer as { unref?: () => void }).unref?.();
   });
 
-/** Of the models pi offers (`get_available_models`), `wanted` when it is one, else the first the app offers. */
-export function pickModel(models: readonly JsonObject[], wanted?: ModelChoice): JsonObject | undefined {
+/**
+ * Of the models pi offers (`get_available_models`), `wanted` when it is one, else the first the app offers: the first
+ * one enabled (`enabled`, pi's `enabledModels`) when there is one.
+ */
+export function pickModel(
+  models: readonly JsonObject[],
+  wanted?: ModelChoice,
+  enabled?: ReadonlySet<string>
+): JsonObject | undefined {
+  const offered = models.filter(
+    (model) => asText(model.provider) && asText(model.id) && !UNOFFERED_PROVIDER_IDS.has(asText(model.provider))
+  );
   return (
     models.find((model) => asText(model.provider) === wanted?.provider && asText(model.id) === wanted?.id) ??
-    models.find(
-      (model) => asText(model.provider) && asText(model.id) && !UNOFFERED_PROVIDER_IDS.has(asText(model.provider))
-    )
+    offered.find((model) => enabled?.has(`${asText(model.provider)}/${asText(model.id)}`)) ??
+    offered[0]
   );
 }
 
@@ -59,8 +68,8 @@ export async function findModel(
     if (wait) await sleep(wait);
     if (!options.still()) return false;
     // oxlint-disable-next-line no-await-in-loop -- as above
-    const models = asList((await host.request({ type: 'get_available_models' })).models).map(asObject);
-    const pick = pickModel(models, options.wanted);
+    const answer = await host.request({ type: 'get_available_models' });
+    const pick = pickModel(asList(answer.models).map(asObject), options.wanted, enabledModels(answer));
     if (!pick) continue;
     // oxlint-disable-next-line no-await-in-loop -- as above
     if (hasModel((await host.request({ type: 'get_state' })).model) || !options.still()) return false;

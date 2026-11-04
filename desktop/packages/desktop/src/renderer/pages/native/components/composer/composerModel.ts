@@ -113,9 +113,14 @@ export type OfferedModels = {
 
 /**
  * pi's models as the menu lists them: `provider/id`, named by their name, each with the thinking levels it takes by
- * pi's own rule. Providers the app does not offer are left out, unless the conversation runs on one of their models.
+ * pi's own rule. Providers the app does not offer are left out, and so are the models nobody enabled (`enabled`, from
+ * pi's `enabledModels`; every one when undefined), unless the conversation runs on one of them.
  */
-export function offeredModels(models: readonly unknown[], current?: string): OfferedModels {
+export function offeredModels(
+  models: readonly unknown[],
+  current?: string,
+  enabled?: ReadonlySet<string>
+): OfferedModels {
   const options: OfferedModels['options'] = [];
   const levels: ModelThinkingLevels = {};
   for (const model of models.map(asObject)) {
@@ -123,7 +128,7 @@ export function offeredModels(models: readonly unknown[], current?: string): Off
     const id = asText(model.id);
     if (!provider || !id) continue;
     const value = `${provider}/${id}`;
-    if (UNOFFERED_PROVIDER_IDS.has(provider) && value !== current) continue;
+    if ((UNOFFERED_PROVIDER_IDS.has(provider) || (enabled && !enabled.has(value))) && value !== current) continue;
     if (levels[value]) continue;
     options.push({ value, label: asText(model.name) || id, description: provider });
     levels[value] = supportedThinkingLevels(model.reasoning === true, asObject(model.thinkingLevelMap));

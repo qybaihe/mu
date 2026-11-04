@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { appendFile, open, stat } from 'node:fs/promises';
 import type { SwitchedModel } from '../../../../common/kyrn/login.ts';
+import { enabledModels } from '../../../../common/kyrn/models.ts';
 import type { NativeConversation, NativeHostStatus, NativeSnapshot } from '../../../../common/kyrn/nativeBridge.ts';
 import { readPresentation } from '../../../../common/utils/nativeHost/presentation.ts';
 import {
@@ -419,10 +420,11 @@ export class Conversation {
     try {
       const model = asObject((await host.request({ type: 'get_state' })).model);
       if (asText(model.provider) !== provider || host !== this.host) return undefined;
-      const offered = asList((await host.request({ type: 'get_available_models' })).models).map(asObject);
+      const answer = await host.request({ type: 'get_available_models' });
+      const offered = asList(answer.models).map(asObject);
       if (offered.some((each) => asText(each.provider) === provider && asText(each.id) === asText(model.id)))
         return undefined;
-      const pick = pickModel(offered, wanted);
+      const pick = pickModel(offered, wanted, enabledModels(answer));
       if (!pick || host !== this.host) return undefined;
       const next = { provider: asText(pick.provider), model: asText(pick.id), name: asText(pick.name) };
       await host.request({ type: 'set_model', provider: next.provider, modelId: next.model });

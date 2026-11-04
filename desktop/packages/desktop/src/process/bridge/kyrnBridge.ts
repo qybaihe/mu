@@ -175,6 +175,7 @@ export function initKyrnBridge(): void {
   kyrnBridge.loginCancel.provider(() => result(() => login.cancel()));
   kyrnBridge.loginStatus.provider(() => result(() => login.status()));
   kyrnBridge.loginLogout.provider(({ provider }) => result(() => login.logout(provider)));
+  kyrnBridge.loginEnable.provider((choice) => result(() => login.enable(choice)));
   // After a sign-out, once the check that follows it is done: what mu reports then decides which model the default and
   // the running conversations go on with (config/signOut.ts).
   kyrnBridge.loginSwitchModels.provider(({ provider }) =>

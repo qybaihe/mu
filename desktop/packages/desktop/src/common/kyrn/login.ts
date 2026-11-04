@@ -90,6 +90,8 @@ export type LoginState = {
   prompt?: LoginPrompt;
   /** After success: what the account can use, from pi's catalogue. */
   models?: LoginModel[];
+  /** After success: the ids of those models the model menus offer (pi's `enabledModels`). */
+  enabled?: string[];
   error?: string;
   /** With a failure the app can act on: what it was, and for `port_in_use` the port and who keeps it. */
   code?: LoginErrorCode;
@@ -107,9 +109,19 @@ export type LoginStartOptions = { paste?: boolean };
  * in the order they are shown; absent when the runner did not say).
  */
 export type LoginStatus = {
-  signedIn: { provider: SubscriptionProvider; models: LoginModel[] }[];
+  /**
+   * `enabled`: the ids of the account's models the model menus offer, from pi's global `enabledModels` (all of them
+   * until a choice is made); absent from an older harness, which offers them all.
+   */
+  signedIn: { provider: SubscriptionProvider; models: LoginModel[]; enabled?: string[] }[];
   offered?: SubscriptionProvider[];
 };
+
+/**
+ * Which of an account's models the model menus offer (`mu auth enable`): `models`, the ids to offer, or `byDefault`,
+ * all of them, the ones the account gains later too, which is how an account starts.
+ */
+export type LoginEnable = { provider: SubscriptionProvider; models?: string[]; byDefault?: boolean };
 
 /** A model a sign-out switched to: pi's provider and model ids, and the model's name. */
 export type SwitchedModel = { provider: string; model: string; name: string };

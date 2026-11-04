@@ -272,6 +272,19 @@ export const BUILTIN_PROVIDER_NAMES: Readonly<Record<string, string>> = {
  */
 export const UNOFFERED_PROVIDER_IDS: ReadonlySet<string> = new Set(['vercel-ai-gateway']);
 
+/**
+ * The models a model menu offers, as `provider/id`, from pi's answer to `get_available_models`: its `enabledModels`,
+ * the ones pi's global `enabledModels` setting enables (chosen per account in Settings, `/scoped-models` in a
+ * terminal). Undefined while every model is enabled, and from an older mu, which does not say.
+ */
+export function enabledModels(answer: unknown): ReadonlySet<string> | undefined {
+  const listed =
+    answer && typeof answer === 'object' ? (answer as { enabledModels?: unknown }).enabledModels : undefined;
+  if (!Array.isArray(listed)) return undefined;
+  const ids = listed.filter((id): id is string => typeof id === 'string' && id.length > 0);
+  return ids.length ? new Set(ids) : undefined;
+}
+
 /** The credential variable of a provider: `my-proxy` -> `MU_PROVIDER_MY_PROXY_API_KEY`. */
 export function providerKeyVariable(id: string): string {
   return `MU_PROVIDER_${id.toUpperCase().replace(/[^A-Z0-9]/g, '_')}_API_KEY`;
