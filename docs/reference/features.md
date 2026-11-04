@@ -578,7 +578,7 @@ On by default: yes.
 
 ## confine
 
-**Write sandbox (experimental).** The agent's bash commands and background jobs can write only to the project, the temporary folders and package caches, enforced by the operating system; the project's .git/hooks and .git/config are read-only. Seatbelt on macOS, bubblewrap on Linux, none on Windows. When it cannot start (no bubblewrap, user namespaces turned off), every command is refused rather than run unconfined. The judge and the permission modes ask as before.
+**Write sandbox (experimental).** The agent's bash commands and background jobs can write only to the project, the temporary folders and package caches, enforced by the operating system; the project's .git/hooks and .git/config are read-only. Seatbelt on macOS, bubblewrap on Linux, none on Windows. When it cannot start (no bubblewrap, user namespaces turned off), every command is refused rather than run unconfined. The judge and the permission modes ask as before. A command that must write elsewhere (git config, git remote add) can ask to run outside the sandbox, once. That is asked about in every permission mode, full access included: by the judge, and by you when it is unsure (in Ask first, by you), never for the whole conversation.
 
 On by default: no.
 

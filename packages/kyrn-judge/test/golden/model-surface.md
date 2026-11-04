@@ -1,7 +1,7 @@
 # What the main model is given
 
 Written by `model-surface.test.ts`: the system prompt and the tools offered with every feature of mu on, in a
-fresh session. Do not edit by hand; run the test with `-u`.
+fresh session, then what a feature that is off by default changes. Do not edit by hand; run the test with `-u`.
 
 ## System prompt
 
@@ -629,6 +629,39 @@ Search the web. Returns titles, URLs and snippets; read a result with web_fetch.
 		"count": {
 			"type": "number",
 			"description": "Results wanted, default 8"
+		}
+	}
+}
+```
+
+## Tool: bash, with the write sandbox on (`features.confine`)
+
+```text
+Execute a bash command in the current working directory. Returns stdout and stderr. Output is truncated to last 2000 lines or 50KB (whichever is hit first). If truncated, full output is saved to a temp file. Optionally provide a timeout in seconds. Commands run in a write sandbox: they can write only to the project, the temporary folders and package caches, and the project's .git/hooks and .git/config are read-only. A command that must write elsewhere (git config, git remote add, a file in the home folder) can set outside: true with a reason: it then runs outside the sandbox, once, if the judge or the user allows it. Ask for that only for a write the task needs.
+```
+
+```json
+{
+	"type": "object",
+	"required": [
+		"command"
+	],
+	"properties": {
+		"command": {
+			"type": "string",
+			"description": "Shell command to execute"
+		},
+		"timeout": {
+			"type": "number",
+			"description": "Timeout in seconds (optional, no default timeout)"
+		},
+		"outside": {
+			"type": "boolean",
+			"description": "Run this command outside the write sandbox, once, if the judge or the user allows it. Only for a write the task needs that the sandbox refuses."
+		},
+		"reason": {
+			"type": "string",
+			"description": "With outside: true, required: why this command must write outside the sandbox, shown to the user if they are asked."
 		}
 	}
 }

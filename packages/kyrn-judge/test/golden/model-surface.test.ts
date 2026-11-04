@@ -46,7 +46,7 @@ describe.skipIf(process.platform === "win32")("what the main model is given", ()
 			"# What the main model is given",
 			"",
 			"Written by `model-surface.test.ts`: the system prompt and the tools offered with every feature of mu on, in a",
-			"fresh session. Do not edit by hand; run the test with `-u`.",
+			"fresh session, then what a feature that is off by default changes. Do not edit by hand; run the test with `-u`.",
 			"",
 			"## System prompt",
 			"",
@@ -68,6 +68,33 @@ describe.skipIf(process.platform === "win32")("what the main model is given", ()
 				"```",
 			);
 		}
+		// Off by default, and model-facing when on: the write sandbox's bash, with its way out.
+		const confined = await createHarness({
+			extensionFactories: [
+				createKyrnJudgeExtension({
+					provider: new MockJudgeProvider(() => ({})),
+					config: parseConfig({ features: { memory: false, confine: { enabled: true } } }),
+					only: ["confine"],
+					confine: { probe: async () => ({ ok: true }), tmp: [] },
+				}),
+			],
+		});
+		harnesses.push(confined);
+		await confined.session.bindExtensions({});
+		const bash = confined.session.agent.state.tools.find((tool) => tool.name === "bash");
+		if (!bash) throw new Error("no bash with the write sandbox on");
+		parts.push(
+			"",
+			"## Tool: bash, with the write sandbox on (`features.confine`)",
+			"",
+			"```text",
+			plain(bash.description),
+			"```",
+			"",
+			"```json",
+			plain(JSON.stringify(bash.parameters, null, "\t")),
+			"```",
+		);
 		await expect(`${parts.join("\n")}\n`).toMatchFileSnapshot(GOLDEN);
 	});
 });

@@ -1,6 +1,6 @@
 # Local write sandbox
 
-Status: step 1 of the rollout is built (`features.confine`, off by default, 2026-11-04), and so is the denial line of step 2. The way out (`outside: true`) and step 3 are proposed.
+Status: steps 1 and 2 of the rollout are built (`features.confine`, off by default, 2026-11-04): the floor, the denial line and the way out (`outside: true`). Step 3 is proposed.
 
 The judge and the permission modes run inside mu's own process, and most of what they decide is a model's judgment. This proposal adds a floor that does not depend on any model being right: the commands the agent runs can write only to the project and the temporary folders, enforced by the operating system.
 
@@ -77,14 +77,19 @@ At session start mu runs `/usr/bin/true` under the profile. The project is taken
 
 The model has to know the sandbox refused a write, or it will look for another way to make the same change.
 
-- **Not run, or refused.** If the runner fails before the command starts (a bad profile, `bwrap` cannot set up namespaces), the result says so: the command did not run. If the command ran and a write was refused, the result gets a fixed line (built, `refusedWrites` and `refusalNote` in `floor.ts`). It is added when a line of the output says `Operation not permitted`, `EPERM`, `Read-only file system` or `EROFS` and names a path outside every writable folder, or in a read-only part, resolved to its real location: `[mu write sandbox: <path> is outside what commands may write here (this project, the temporary folders and package caches), so the write was refused. Do the work inside the project, or tell the user which folder the task needs: they can allow it with features.confine.writable.]`, and for `.git/hooks` or `.git/config` a line that says to tell the user what to run. Once the way out exists, the line will name it instead.
-- **A way out.** `bash` gets two optional parameters, `outside: true` and `reason`. Such a call goes to the judge first (`tool.approval`, with `where: "outside the write sandbox"` and the reason in the state), and to the user when the judge is not sure. It is allowed once only, never for the session. A flagged or credential-carrying call follows its own rules as before.
+- **Not run, or refused.** If the runner fails before the command starts (a bad profile, `bwrap` cannot set up namespaces), the result says so: the command did not run. If the command ran and a write was refused, the result gets a fixed line (built, `refusedWrites` and `refusalNote` in `floor.ts`). It is added when a line of the output says `Operation not permitted`, `EPERM`, `Read-only file system` or `EROFS` and names a path outside every writable folder, or in a read-only part, resolved to its real location: `[mu write sandbox: <path> is outside what commands may write here (this project, the temporary folders and package caches), so the write was refused. Do the work inside the project if you can. If the task needs this write, run the command again with outside: true and a reason: it then runs outside the sandbox, once, if the judge or the user allows it. A folder the task keeps needing, the user can allow with features.confine.writable.]`, and for `.git/hooks` or `.git/config` a line that names the same way out. With the permission feature off nobody can allow the way out, and the line says instead to tell the user what to run or which folder to allow.
+- **A way out (built).** The confined `bash` has two optional parameters, `outside: true` and `reason`. The permission gate decides such a call, and the confine feature runs it unconfined only when the gate allowed that call, with that command (`runtime.floorExit`).
+  - **Who decides.** The judge first (`tool.approval`, `where`: outside the write sandbox, a command that can write anywhere this computer lets it), then the user when the judge is not sure. It is allowed once, never for the session, and each answer is kept (`kyrn.outcome` with `outsideFloor: true`). A flagged, credential-carrying or protected call follows its own rules as before.
+  - **In every mode.** Full access asks too, the judge and then the user, or refuses where nobody can be asked: a way out allowed without a question would leave the floor bounding nothing. Minimal permissions ask the user directly, as for everything else.
+  - **The reason.** The user sees it, in the question. The judge does not: the model wrote it, and only the user's words vouch for a call. The judge weighs the command against the task and what the user said, as for any other call.
+  - **What stays inside.** A call without a reason is refused before anyone is asked. A command that only looks runs inside the floor, which lets it read everything, and nobody is asked. With the permission feature off, nobody can allow the way out, so `outside: true` runs inside the floor and the result says why.
+  - **Not yet.** Background jobs (`bg_start`) have no way out: they stay inside the floor.
 
 ### With the permission modes
 
 There are two independent settings: the sandbox (`features.confine.enabled`) and the permission mode (`full`, `judge`, `ask`).
 
-- **First version.** The floor only. Every mode asks what it asks today, and the sandbox bounds what an approved command can do.
+- **First version (built).** Every mode asks what it asks today, and the sandbox bounds what an approved command can do. The way out is asked about in every mode, full access too.
 - **Later, after measuring.** In Judge mode with the floor on, a command could run without the judge when it neither asks to go outside nor carries a credential, since the floor bounds its writes. The judge's work narrows to the way out and to actions outside this computer. That would make Judge mode faster and cheaper. It needs the denial line and the way out to work well first.
 
 ## Rollout
@@ -93,7 +98,7 @@ There are two independent settings: the sandbox (`features.confine.enabled`) and
    - Unit tests cover the generated profile and bwrap arguments.
    - A macOS-only test runs real `sandbox-exec` (CI's harness job is Linux, so that test runs locally and on macOS runners).
    - A Linux test runs only where `bwrap` works.
-2. **The denial line and `outside: true`**, through the judge. The denial line is built, for `bash`; a background job's output is read later, by `bg_log`, and gets no line yet.
+2. **The denial line and `outside: true`**, through the judge. Built, for `bash`. A background job's output is read later, by `bg_log`, and gets no line yet; a background job has no way out.
 3. **Turn it on for mu's own runs** (TB2.1, mubench real tasks) and count:
    - commands refused that the task needed;
    - which cache folders were missing;

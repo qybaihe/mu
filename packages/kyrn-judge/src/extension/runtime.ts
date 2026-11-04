@@ -222,6 +222,15 @@ export class KyrnRuntime {
 	 */
 	floor?: (cwd: string) => Promise<FloorReady>;
 	/**
+	 * Set by the confine feature with the floor: the way out of it. `asks` tells a call that asks to run outside the floor
+	 * (`bash` with `outside: true`); the permission gate decides it, in every mode, and `allow` lets that one call out,
+	 * once, as its input is. A call nobody allowed runs inside the floor like any other.
+	 */
+	floorExit?: {
+		readonly asks: (toolName: string, input: unknown) => boolean;
+		readonly allow: (toolCallId: string, input: unknown) => void;
+	};
+	/**
 	 * Set by the memory feature: for each sub-agent task, the lessons of this project that apply to it,
 	 * one line each, for the "known lessons" of its brief. Undefined while that feature is off.
 	 */
