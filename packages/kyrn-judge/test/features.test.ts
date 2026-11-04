@@ -116,7 +116,7 @@ describe("kyrn features", () => {
 		expect(riskFlag("Remove-Item a.txt")).toBeUndefined();
 	});
 
-	it("guard: a long flagged command reaches the judge with the parts its flag is about", async () => {
+	it("guard: a flagged command too long for the judge to read whole is confirmed, shown the parts its flag is about", async () => {
 		const steps = (from: number, count: number) =>
 			Array.from({ length: count }, (_, i) => `echo step-${from + i}`).join(" && ");
 		const short = `${steps(0, 5)} && rm -rf build`;
@@ -151,11 +151,18 @@ describe("kyrn features", () => {
 			{ tools: [tool("bash", () => "ok")], features: { permissions: false } },
 		);
 		harness.setResponses([
+			fauxAssistantMessage([fauxToolCall("bash", { command: short })], { stopReason: "toolUse" }),
 			fauxAssistantMessage([fauxToolCall("bash", { command: late })], { stopReason: "toolUse" }),
 			fauxAssistantMessage("I could not clean up."),
 		]);
 		await harness.session.prompt("Why is the build slow?");
-		expect(seen).toEqual([excerpt]);
+		// The short one is read whole. The long one would run whole, and the judge would read only an excerpt of it.
+		expect(seen).toEqual([short]);
+		const results = harness.session.messages.filter((message) => message.role === "toolResult");
+		expect(results.map((message) => JSON.stringify(message.content))).toEqual([
+			expect.stringContaining("needs confirmation"),
+			expect.stringContaining("needs confirmation"),
+		]);
 	});
 
 	it("guard: inside a subagent, only the user's goal passed down says what was asked for", async () => {

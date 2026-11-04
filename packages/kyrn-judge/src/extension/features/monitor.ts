@@ -517,6 +517,7 @@ export function registerMonitor(runtime: KyrnRuntime): void {
 			started.set(event.toolCallId, Date.now());
 			return undefined;
 		}),
+		{ final: true },
 	);
 
 	pi.on(

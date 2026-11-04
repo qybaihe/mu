@@ -1,3 +1,4 @@
+import type { Decision } from "../../decision.ts";
 import { toolRisk } from "../../decisions/tool-risk.ts";
 import { say } from "../../language.ts";
 import { subAgentUserGoal } from "../../swarm/brief.ts";
@@ -137,6 +138,11 @@ function runsSavedDownload(command: string): boolean {
 	return false;
 }
 
+/** Whether the judge read the whole state: a judge with a bounded window says when it cut the rest (`state_truncated`). */
+export function readWhole(decision: Decision<unknown>): boolean {
+	return !decision.warnings?.some((warning) => warning.type === "state_truncated");
+}
+
 /** Why a shell command deserves a second look, or undefined when no rule matches. */
 export function riskFlag(command: string): string | undefined {
 	const plain = unquoted(command);
@@ -145,31 +151,38 @@ export function riskFlag(command: string): string | undefined {
 }
 
 /**
- * How much of a flagged command the judge reads: all of it up to here, past here its start and every flagged part.
- * Not more: amid hundreds of harmless lines the judge loses what the user did and did not ask for. On 36 dev scenarios
- * hidden in read-only commands from real sessions (1,500 to 16,000 characters), the whole script up to 8,000 cost
- * about a third more than this excerpt, and more false allows.
+ * The longest flagged command the judge is asked about, whole. Not longer: amid hundreds of harmless lines the judge
+ * loses what the user did and did not ask for. On 36 dev scenarios hidden in read-only commands from real sessions
+ * (1,500 to 16,000 characters), the whole script up to 8,000 cost about a third more than an excerpt of its start and
+ * flagged parts, and more false allows. Nor an excerpt: the judge would vouch for the parts it read, and the parts it
+ * did not read would run too (`npm publish` between two flagged lines). A longer command is the user's to confirm.
  */
 export const RISK_COMMAND_CHARS = 1500;
-/** The same for the person asked to confirm it. */
+/** How much of a long flagged command the person asked to confirm it reads (`riskExcerpt`). */
 export const RISK_CONFIRM_CHARS = 1500;
 
 /**
- * A flagged command as the judge, or the person asked to confirm it, reads it: whole when it fits in `limit`, else its
- * start and every part a rule matched, with some text on each side, in order and joined by "…". Cut at a fixed length
- * instead, a long script whose `rm -rf` came late read as harmless: the judge cannot weigh a flag it cannot see. Each
+ * A command as a judge reads it whole: spaces run together and blank lines go, but line breaks stay. In a script each
+ * one ends a command, and run into one line `echo done` and the `rm -rf build` under it read as one echo.
+ */
+export function commandLines(command: string): string {
+	return command
+		.split(/\r\n?|\n/)
+		.map((line) => line.replace(/\s+/g, " ").trim())
+		.filter(Boolean)
+		.join("\n");
+}
+
+/**
+ * A flagged command as the person asked to confirm it reads it: whole when it fits in `limit`, else its start and
+ * every part a rule matched, with some text on each side, in order and joined by "…". Cut at a fixed length instead,
+ * a long script whose `rm -rf` came late read as harmless: nobody can weigh a flag they cannot see. Each
  * rule that matched keeps at least one part even past `limit`. A rule that only matches the command as the shell
- * reads its words (`r''m -rf`) has the excerpt taken from those words. Spaces run together but line breaks stay: in a
- * script each one ends a command, and run into one line `echo done` and the `rm -rf build` under it read as one echo.
+ * reads its words (`r''m -rf`) has the excerpt taken from those words. Lines as in `commandLines`.
  */
 export function riskExcerpt(command: string, limit = RISK_COMMAND_CHARS): string {
-	const tidy = (text: string) =>
-		text
-			.split(/\r\n?|\n/)
-			.map((line) => line.replace(/\s+/g, " ").trim())
-			.filter(Boolean)
-			.join("\n");
-	if (tidy(command).length <= limit) return tidy(command);
+	const whole = commandLines(command);
+	if (whole.length <= limit) return whole;
 	const plain = unquoted(command);
 	const source = RULES.some(([pattern]) => !pattern.test(command) && pattern.test(plain)) ? plain : command;
 	const around = Math.floor(limit / 12);
@@ -208,7 +221,9 @@ export function riskExcerpt(command: string, limit = RISK_COMMAND_CHARS): string
 			else merged.push([...span]);
 			return merged;
 		}, []);
-	const text = spans.map(([start, end]) => `${start > 0 ? "… " : ""}${tidy(source.slice(start, end))}`).join(" ");
+	const text = spans
+		.map(([start, end]) => `${start > 0 ? "… " : ""}${commandLines(source.slice(start, end))}`)
+		.join(" ");
 	const tail = spans[spans.length - 1][1] < source.length ? " …" : "";
 	return `${text}${tail}${left > 0 ? ` (${left} more flagged parts left out)` : ""}`;
 }
@@ -235,13 +250,16 @@ export function registerGuard(runtime: KyrnRuntime): void {
 
 			// In a sub-agent the message is what the parent's model wrote: only the user's goal says what was asked for.
 			const asked = subAgentUserGoal() ?? runtime.turn.userMessage;
-			const decision = await runtime.engine.decide(
-				toolRisk,
-				{ command: riskExcerpt(command), userMessage: clip(asked, 400), flag },
-				{ signal: ctx.signal },
-			);
-			// Off and shadow leave pi's own behavior alone; only an active gate may stop a command.
-			if (decision.mode !== "active" || decision.outcome === "allow") return undefined;
+			// The judge vouches only for what it read, and a command too long to read whole runs whole: the user confirms it.
+			if (commandLines(command).length <= RISK_COMMAND_CHARS) {
+				const decision = await runtime.engine.decide(
+					toolRisk,
+					{ command: commandLines(command), userMessage: clip(asked, 400), flag },
+					{ signal: ctx.signal },
+				);
+				// Off and shadow leave pi's own behavior alone; only an active gate may stop a command.
+				if (decision.mode !== "active" || (decision.outcome === "allow" && readWhole(decision))) return undefined;
+			} else if (runtime.mode(toolRisk.id) !== "active") return undefined;
 			if (!ctx.hasUI)
 				return { block: true, reason: `mu: "${flag}" needs confirmation, which this mode cannot ask for.` };
 			const approved = await ctx.ui.confirm(
@@ -250,5 +268,6 @@ export function registerGuard(runtime: KyrnRuntime): void {
 			);
 			return approved ? undefined : { block: true, reason: `The user declined this command (${flag}).` };
 		}),
+		{ final: true },
 	);
 }

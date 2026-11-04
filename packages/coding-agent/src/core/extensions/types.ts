@@ -1484,6 +1484,20 @@ export interface ToolCallEventResult {
 	terminate?: boolean;
 }
 
+/** mu: how a `tool_call` handler is registered. */
+export interface ToolCallHandlerOptions {
+	/**
+	 * Run after every `tool_call` handler registered without this option, by any extension, and read the call as it
+	 * will run: `event.input` is a deep-frozen copy of the input those handlers left. A final handler can block the call
+	 * but not change it. For checks that must review what executes: without it, a handler of an extension loaded later
+	 * can still change the input in place after the check. Final handlers run in extension load order among themselves.
+	 */
+	final?: boolean;
+}
+
+/** mu: where an extension keeps its final `tool_call` handlers (see {@link ToolCallHandlerOptions}). Not an event. */
+export const FINAL_TOOL_CALL_HANDLERS = "tool_call:final";
+
 /** Result from user_bash event handler */
 export type UserBashEventResult =
 	| {
@@ -1684,7 +1698,11 @@ export interface ExtensionAPI {
 	on(event: "tool_execution_end", handler: ExtensionHandler<ToolExecutionEndEvent>): () => void;
 	on(event: "model_select", handler: ExtensionHandler<ModelSelectEvent>): () => void;
 	on(event: "thinking_level_select", handler: ExtensionHandler<ThinkingLevelSelectEvent>): () => void;
-	on(event: "tool_call", handler: ExtensionHandler<ToolCallEvent, ToolCallEventResult>): () => void;
+	on(
+		event: "tool_call",
+		handler: ExtensionHandler<ToolCallEvent, ToolCallEventResult>,
+		options?: ToolCallHandlerOptions,
+	): () => void;
 	on(event: "tool_result", handler: ExtensionHandler<ToolResultEvent, ToolResultEventResult>): () => void;
 	on(event: "user_bash", handler: ExtensionHandler<UserBashEvent, UserBashEventResult>): () => void;
 	on(event: "input", handler: ExtensionHandler<InputEvent, InputEventResult>): () => void;

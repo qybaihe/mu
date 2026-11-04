@@ -211,7 +211,9 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 
 	// Order matters where two features share an event: interjection must see a
 	// mid-run message before anything else, and preflight must set the turn's
-	// gear before memory and skills read it.
+	// gear before memory and skills read it. Every `tool_call` handler is final
+	// (pi's `ToolCallHandlerOptions`): mu loads before the user's extensions, and
+	// its checks read the call as it runs, after theirs changed it, in this order.
 	const features: readonly [FeatureName, (runtime: KyrnRuntime) => void][] = [
 		["interjection", registerInterjection],
 		["preflight", registerPreflight],

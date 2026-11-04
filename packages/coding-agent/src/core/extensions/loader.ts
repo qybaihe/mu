@@ -32,9 +32,11 @@ import type {
 	MessageRenderer,
 	ProviderConfig,
 	RegisteredCommand,
+	ToolCallHandlerOptions,
 	ToolDefinition,
 	ToolRendererResolver,
 } from "./types.ts";
+import { FINAL_TOOL_CALL_HANDLERS } from "./types.ts";
 
 const require = createRequire(import.meta.url);
 
@@ -273,20 +275,22 @@ function createExtensionAPI(
 
 	const api = {
 		// Registration methods - write to extension
-		on(event: string, handler: HandlerFn): () => void {
+		on(event: string, handler: HandlerFn, options?: ToolCallHandlerOptions): () => void {
 			assertActive();
+			// mu: final tool_call handlers are kept apart, and the runner calls them after every other one.
+			const key = event === "tool_call" && options?.final === true ? FINAL_TOOL_CALL_HANDLERS : event;
 			const registeredHandler: HandlerFn = (...args) => handler(...args);
-			const list = extension.handlers.get(event) ?? [];
+			const list = extension.handlers.get(key) ?? [];
 			list.push(registeredHandler);
-			extension.handlers.set(event, list);
+			extension.handlers.set(key, list);
 
 			return () => {
-				const handlers = extension.handlers.get(event);
+				const handlers = extension.handlers.get(key);
 				if (!handlers) return;
 				const handlerIndex = handlers.indexOf(registeredHandler);
 				if (handlerIndex === -1) return;
 				handlers.splice(handlerIndex, 1);
-				if (handlers.length === 0) extension.handlers.delete(event);
+				if (handlers.length === 0) extension.handlers.delete(key);
 			};
 		},
 

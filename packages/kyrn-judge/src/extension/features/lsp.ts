@@ -249,6 +249,7 @@ export function registerLsp(runtime: KyrnRuntime): void {
 			calls.set(event.toolCallId, file);
 			return undefined;
 		}),
+		{ final: true },
 	);
 
 	pi.on(
