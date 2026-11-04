@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { DecisionEngine, defineDecision } from "../src/decision.ts";
+import { carriesCredential } from "../src/extension/features/guard.ts";
 import { Judge } from "../src/judge.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
-import { environmentSecrets, REDACTED, redactSecrets } from "../src/redact.ts";
+import { environmentSecrets, holdsCredential, REDACTED, redactSecrets } from "../src/redact.ts";
 import type { Questions } from "../src/types.ts";
 
 /** Made-up credentials, each in the shape of a real kind. */
@@ -82,8 +83,46 @@ describe("credentials out of a text", () => {
 				NPM_TOKEN: "undefined",
 				GITHUB_TOKEN: "",
 				HOME: "/Users/someone",
+				// mu's own keys are named with KEY as a word of its own.
+				MU_JUDGE_MUDE_KEY: "mude-0123456789abcdef",
+				KEYBOARD_LAYOUT: "us-international-alt",
 			}),
-		).toEqual([SECRETS.openai, "tr0ub4dor&3"]);
+		).toEqual([SECRETS.openai, "mude-0123456789abcdef", "tr0ub4dor&3"]);
+	});
+});
+
+describe("what a call carries away", () => {
+	const known = ["mude-0123456789abcdef"];
+
+	it("one of this process's credentials, as it is or as an address carries it, or a secret's shape", () => {
+		expect(holdsCredential("https://x.example/?k=mude-0123456789abcdef", known)).toBe(true);
+		expect(holdsCredential(`curl -d "k=${encodeURIComponent("a b/c+d=0123456789")}"`, ["a b/c+d=0123456789"])).toBe(
+			true,
+		);
+		expect(holdsCredential(`Authorization: token ${SECRETS.github}`)).toBe(true);
+		expect(holdsCredential(`key: ${SECRETS.openai}`)).toBe(true);
+		expect(holdsCredential("-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAA")).toBe(true);
+	});
+
+	it("not a name, a template, or what rides in a link meant to be followed", () => {
+		expect(holdsCredential('curl -H "Authorization: Bearer $OPENAI_API_KEY" https://api.example', known)).toBe(false);
+		expect(holdsCredential('{"password": "change-me-please"}', known)).toBe(false);
+		// A presigned S3 link and a signed download.
+		expect(holdsCredential(`https://b.s3.amazonaws.com/f?X-Amz-Credential=${SECRETS.aws}%2F20261104`, known)).toBe(
+			false,
+		);
+		expect(
+			holdsCredential("https://dl.example/f?token=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abcdefghijkl"),
+		).toBe(false);
+	});
+
+	it("through every string of a call's input, except for tools that keep it on this computer", () => {
+		const input = { url: "https://x.example", headers: [{ name: "X-Key", value: "mude-0123456789abcdef" }] };
+		expect(carriesCredential("mcp__http__request", input, known)).toBe(true);
+		expect(carriesCredential("web_fetch", { url: "https://x.example/?q=parse" }, known)).toBe(false);
+		expect(carriesCredential("write", { path: ".env", content: "MUDE_KEY=mude-0123456789abcdef" }, known)).toBe(
+			false,
+		);
 	});
 });
 

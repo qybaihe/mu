@@ -25,10 +25,12 @@ import {
 	toolPath,
 } from "../../permissions/modes.ts";
 import { threeZone } from "../../policy.ts";
+import { environmentSecrets, redactSecrets } from "../../redact.ts";
 import { subAgentUserGoal } from "../../swarm/brief.ts";
 import { clip, type KyrnRuntime } from "../runtime.ts";
 import { isShellTool } from "../shell-tools.ts";
 import {
+	carriesCredential,
 	commandLines,
 	FLAG_CODES,
 	FLAG_ZH,
@@ -37,6 +39,7 @@ import {
 	readWhole,
 	riskExcerpt,
 	riskFlag,
+	SENDS_CREDENTIAL,
 } from "./guard.ts";
 import type { HarnessRoots } from "./inherit.ts";
 
@@ -310,7 +313,9 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		const verdict = decision.judged ?? decision.outcome;
 		// A judge with a bounded window that cut the state did not read the whole call either.
 		if (verdict === "approve")
-			return readWhole(decision) || !readAll ? { approved: true, reason: "ask" } : { approved: false, reason: "long" };
+			return readWhole(decision) || !readAll
+				? { approved: true, reason: "ask" }
+				: { approved: false, reason: "long" };
 		return { approved: false, reason: unanswered(decision) ?? verdict };
 	};
 
@@ -369,7 +374,8 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 					say({ zh: `mu 想${KIND_TEXT[need.kind].zh}，需要你授权`, en: `mu wants to ${KIND_TEXT[need.kind].en}` }),
 					// A flagged command shows the parts its flag is about, which a summary cut at a fixed length can leave out,
 					// and a long command as much of itself as a person reads at once.
-					flag || (reason === "long" && typeof (event.input as { command?: unknown }).command === "string")
+					(flag && flag !== SENDS_CREDENTIAL) ||
+					(reason === "long" && typeof (event.input as { command?: unknown }).command === "string")
 						? riskExcerpt(String((event.input as { command?: unknown }).command ?? ""), RISK_CONFIRM_CHARS)
 						: need.summary,
 					why,
@@ -393,19 +399,32 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 	const gate = async (event: ToolCallEvent, ctx: ExtensionContext): Promise<ToolCallEventResult | undefined> => {
 		if (mode === "full") return undefined;
 		const input = event.input as Record<string, unknown>;
-		const need = permissionNeed(
+		const found = permissionNeed(
 			event.toolName,
 			input,
 			ctx.cwd,
 			[...guarded, ...projectSettings(ctx.cwd)],
 			options.readOnlyChains,
 		);
-		if (!need) return undefined;
 		const command = isShellTool(event.toolName) || event.toolName === "bg_start" ? String(input.command ?? "") : "";
-		const flag = command ? riskFlag(command) : undefined;
+		// A call that would carry a credential away is the user's to allow, each time, even one that only looks (a
+		// `web_fetch` with the key in its address). The person reads it with the credential taken out.
+		const leaking = carriesCredential(event.toolName, input);
+		const need: PermissionNeed | undefined = leaking
+			? {
+					kind: found?.kind ?? (command ? "shell" : "other"),
+					summary: redactSecrets(
+						found?.summary ?? clip(`${event.toolName} ${JSON.stringify(input)}`, 300),
+						environmentSecrets(),
+					),
+					...(found?.protected ? { protected: found.protected } : {}),
+				}
+			: found;
+		if (!need) return undefined;
+		const flag = leaking ? SENDS_CREDENTIAL : command ? riskFlag(command) : undefined;
 		if (!need.protected && !flag && need.grant && grants.has(need.grant.key)) return approvedBy(event, need, "grant");
 		let reason: AskReason = need.protected ? "protected" : flag ? "flagged" : "ask";
-		if (mode === "judge" && !need.protected) {
+		if (mode === "judge" && !need.protected && flag !== SENDS_CREDENTIAL) {
 			// Editing the project is the task itself, and a checkpoint can take it back.
 			if (need.kind === "edit" && need.inProject && !flag) return undefined;
 			const verdict = await judgeApproves(event, need, flag, ctx);
