@@ -221,7 +221,7 @@ One line of the board's running account. `sequence` and `at` together identify a
 
 These fields are added:
 
-- `flagCode`, for a flagged command: `recursive_or_forced_delete`, `discards_git_work`, `force_push`, `drops_database_objects`, `overwrites_device`, `opens_permissions_recursively`, `runs_downloaded_script`, `runs_as_administrator` or `runs_as_root`.
+- `flagCode`, for a flagged command: `recursive_or_forced_delete`, `discards_git_work`, `force_push`, `drops_database_objects`, `overwrites_device`, `opens_permissions_recursively`, `runs_downloaded_script`, `runs_as_administrator` or `runs_as_root`. Since 2026-11-04 also `sends_credential`, for any call (a command, `web_fetch`, an MCP tool) whose input carries one of mu's credentials or a value only a secret looks like. Its `summary` has the credential taken out, it is never put to the judge, and no "for this session" answer is offered.
 - `answerIds`, in the order of `answers`: `once`, `session` (when offered) and `deny`. These are the same ids `permissions.resolved` reports.
 - `toolCallId`, here and in `permissions.resolved`: the tool call the question is about. Show the answer on that call's row in your own words. The call's tool result keeps the English reason the model reads.
 

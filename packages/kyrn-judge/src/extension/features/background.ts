@@ -1,5 +1,9 @@
 import { isAbsolute, join, resolve } from "node:path";
-import type { ExtensionCommandContext, SessionShutdownEvent } from "@earendil-works/pi-coding-agent";
+import {
+	type ExtensionCommandContext,
+	type SessionShutdownEvent,
+	withoutCredentials,
+} from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { JobError, type JobEvent, type JobInfo, JobManager, pruneLogDirs } from "../../background/jobs.ts";
 import {
@@ -166,7 +170,8 @@ export function registerBackground(runtime: KyrnRuntime): void {
 					platform,
 				});
 			},
-			env: () => shellEnv(process.env, agentBinDir(), platform),
+			// As bash's: a command in the background is no less the agent's, and gets none of mu's credentials either.
+			env: () => shellEnv(withoutCredentials(process.env), agentBinDir(), platform),
 			onEvent,
 			outputToFile: keep,
 		});

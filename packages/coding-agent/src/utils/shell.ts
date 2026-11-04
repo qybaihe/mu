@@ -1,7 +1,7 @@
 import { accessSync, constants, existsSync } from "node:fs";
 import { delimiter, join, win32 } from "node:path";
 import { spawn, spawnSync } from "child_process";
-import { getBinDir } from "../config.ts";
+import { APP_NAME, getBinDir } from "../config.ts";
 
 export interface ShellConfig {
 	shell: string;
@@ -196,6 +196,31 @@ export function getShellEnv(): NodeJS.ProcessEnv {
 		...process.env,
 		[pathKey]: updatedPath,
 	};
+}
+
+/**
+ * mu: names that say a variable holds a credential. A command the agent runs inherits the environment, and mu's own
+ * keys (the model providers', the judge's, those from mu's `.env`) are in it: `echo $OPENAI_API_KEY`, or a test script
+ * the agent wrote, would read them.
+ */
+const CREDENTIAL_NAME = /KEY|TOKEN|SECRET|PASSW(?:OR)?D|CREDENTIAL/i;
+
+/** mu: names of credential variables the agent's commands still get, separated by commas or spaces (`MU_PASS_ENV`). */
+export const ENV_PASS_ENV = `${APP_NAME.toUpperCase()}_PASS_ENV`;
+
+/**
+ * mu: `env` without its credentials, for a command the agent runs: every variable whose name says it holds one and
+ * whose value looks like one, except those `ENV_PASS_ENV` names. A short value without a digit is a setting
+ * (`MAX_TOKENS=4096`, `TOKENIZERS_PARALLELISM=false`) and stays.
+ */
+export function withoutCredentials(env: NodeJS.ProcessEnv, pass: string = env[ENV_PASS_ENV] ?? ""): NodeJS.ProcessEnv {
+	const passed = new Set(pass.split(/[\s,]+/).filter(Boolean));
+	const clean: NodeJS.ProcessEnv = {};
+	for (const [name, value] of Object.entries(env)) {
+		const secretish = value !== undefined && (value.length >= 16 || (value.length >= 8 && /\d/.test(value)));
+		if (!secretish || !CREDENTIAL_NAME.test(name) || passed.has(name)) clean[name] = value;
+	}
+	return clean;
 }
 
 /**

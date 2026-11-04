@@ -534,6 +534,21 @@ describe.skipIf(!posix)("background feature", () => {
 		);
 	});
 
+	it.skipIf(process.platform === "win32")("runs a job without the credentials in mu's environment", async () => {
+		vi.stubEnv("OPENAI_API_KEY", "sk-test-0123456789abcdef");
+		const { harness } = await start(() => ({}));
+		harness.setResponses([
+			call("bg_start", { command: 'printf "key=[%s]\\n" "$OPENAI_API_KEY"' }),
+			call("bg_output", { id: "bg-1", timeout: 10 }),
+			fauxAssistantMessage("Done."),
+		]);
+		await harness.session.prompt("Print the key in the background.");
+
+		const output = results(harness)[1];
+		expect(output).toContain("key=[]");
+		expect(output).not.toContain("sk-test-0123456789abcdef");
+	});
+
 	it("runs the user's own command from /jobs start, and tells the model of its end as the user's", async () => {
 		const { harness, presented } = await start(() => ({}));
 		const notes: string[] = [];
