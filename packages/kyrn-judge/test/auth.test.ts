@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmdirSync, rmSync } from "node:fs";
 import { createServer, get } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { AuthInteraction, LoginOptions, ModelsStore, Provider } from "@earendil-works/pi-ai";
+import type { Api, AuthInteraction, LoginOptions, Model, ModelsStore, Provider } from "@earendil-works/pi-ai";
 import * as pi from "@earendil-works/pi-coding-agent";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AUTH_USAGE, AUTH_COMMANDS as LAUNCHER_COMMANDS } from "../../../kyrn/bin/mu.mjs";
@@ -59,6 +59,14 @@ class FakeRuntime implements AuthRuntime {
 	getModels(providerId?: string) {
 		return providerId ? (this.models[providerId] ?? []) : Object.values(this.models).flat();
 	}
+	/** The models of every provider with a credential, as pi's runtime gives them (only what enabledModels reads). */
+	async getAvailable() {
+		return this.credentials.flatMap(({ providerId }) =>
+			(this.models[providerId] ?? []).map(
+				(model) => ({ ...model, name: model.name ?? model.id, provider: providerId }) as unknown as Model<Api>,
+			),
+		);
+	}
 	async listCredentials() {
 		return this.credentials;
 	}
@@ -98,6 +106,9 @@ function pipe() {
 const preferred = { "openai-codex": "gpt-5.5", openai: "gpt-5.5", anthropic: "claude-opus-4-8" };
 const googleish = (id: string) => ({ id }) as Provider;
 
+const USAGE =
+	"usage: mu auth status | mu auth login <provider> [--paste] | mu auth logout <provider> | mu auth enable <provider> [--default | <model>...]";
+
 describe("mu auth", () => {
 	it("says who is signed in with a subscription, and what this mu can sign in to", async () => {
 		// ChatGPT is offered through Sign in with ChatGPT (`openai`). An account signed in before through the Codex CLI's
@@ -126,8 +137,14 @@ describe("mu auth", () => {
 							{ id: "gpt-5.4", name: "GPT-5.4" },
 							{ id: "gpt-5.5-mini", name: "gpt-5.5-mini" },
 						],
+						// Nothing chosen yet: every model is enabled.
+						enabled: ["gpt-5.5", "gpt-5.4", "gpt-5.5-mini"],
 					},
-					{ provider: "anthropic", models: [{ id: "claude-opus-4-8", name: "Claude Opus 4.8" }] },
+					{
+						provider: "anthropic",
+						models: [{ id: "claude-opus-4-8", name: "Claude Opus 4.8" }],
+						enabled: ["claude-opus-4-8"],
+					},
 				],
 			},
 		]);
@@ -229,6 +246,7 @@ describe("mu auth", () => {
 					{ id: "gpt-5.4", name: "GPT-5.4" },
 					{ id: "gpt-5.5-mini", name: "gpt-5.5-mini" },
 				],
+				enabled: ["gpt-5.5", "gpt-5.4", "gpt-5.5-mini"],
 			},
 		]);
 		expect(JSON.stringify(app.said)).not.toContain(SECRET);
@@ -257,7 +275,99 @@ describe("mu auth", () => {
 				{ id: "gemini-3.1-pro", name: "Gemini 3.1 Pro" },
 				{ id: "claude-sonnet-4-6", name: "claude-sonnet-4-6" },
 			],
+			enabled: ["gemini-3.1-pro", "claude-sonnet-4-6"],
 		});
+	});
+
+	/** pi's global `enabledModels`, kept in memory. */
+	function setting(patterns?: string[]) {
+		const state = { patterns, writes: 0 };
+		return {
+			state,
+			enabledModels: {
+				read: () => state.patterns,
+				write: async (next: string[] | undefined) => {
+					state.patterns = next;
+					state.writes += 1;
+				},
+			},
+		};
+	}
+
+	it("chooses which of an account's models are enabled, and leaves the others as they were", async () => {
+		const runtime = new FakeRuntime();
+		runtime.credentials = [
+			{ providerId: "openai", type: "oauth" },
+			{ providerId: "google-antigravity", type: "oauth" },
+		];
+		const extra = [googleish("google-antigravity")];
+		const { state, enabledModels } = setting();
+		const run = async (argv: string[]) => {
+			const app = pipe();
+			const code = await runAuth(argv, { runtime, preferred, extra, io: app.io, enabledModels });
+			return { code, line: app.said.at(-1) };
+		};
+
+		const narrowed = await run(["enable", "openai", "gpt-5.5", "gpt-5.4"]);
+		expect(narrowed.code).toBe(0);
+		expect(state.patterns).toEqual(["google-antigravity/*", "openai/gpt-5.5", "openai/gpt-5.4"]);
+		expect(narrowed.line).toMatchObject({
+			type: "status",
+			signedIn: [
+				{ provider: "openai", enabled: ["gpt-5.5", "gpt-5.4"] },
+				{ provider: "google-antigravity", enabled: ["gemini-3.1-pro"] },
+			],
+		});
+
+		// None of Antigravity's: the ChatGPT models stay.
+		expect((await run(["enable", "google-antigravity"])).code).toBe(0);
+		expect(state.patterns).toEqual(["openai/gpt-5.5", "openai/gpt-5.4"]);
+
+		// Back to the default for both: no list is left.
+		expect((await run(["enable", "google-antigravity", "--default"])).code).toBe(0);
+		expect(state.patterns).toEqual(["openai/gpt-5.5", "openai/gpt-5.4", "google-antigravity/*"]);
+		expect((await run(["enable", "openai", "--default"])).code).toBe(0);
+		expect(state.patterns).toBeUndefined();
+	});
+
+	it("refuses a model the account does not have, and a choice that leaves no model at all", async () => {
+		const runtime = new FakeRuntime();
+		runtime.credentials = [{ providerId: "openai", type: "oauth" }];
+		const { state, enabledModels } = setting();
+		const cases: [string[], string][] = [
+			[["enable", "openai", "gpt-9"], "openai has no model gpt-9"],
+			[["enable", "openai"], "At least one model must stay enabled"],
+			[["enable", "xai", "grok-5"], "xai has no model grok-5"],
+			[["enable", "xai", "--default"], "No models of xai are available: sign in to it first"],
+			[["enable", "openai", "gpt-5.5", "--default"], USAGE],
+		];
+		for (const [argv, message] of cases) {
+			const app = pipe();
+			expect(await runAuth(argv, { runtime, preferred, extra: [], io: app.io, enabledModels })).toBe(1);
+			expect(app.said).toEqual([{ type: "error", message }]);
+		}
+		expect(state.writes).toBe(0);
+		const app = pipe();
+		expect(await runAuth(["enable", "openai", "--default"], { runtime, preferred, extra: [], io: app.io })).toBe(1);
+		expect(app.said).toEqual([{ type: "error", message: "This version of mu can't choose an account's models" }]);
+	});
+
+	it("offers a newly signed-in account that a chosen list leaves out", async () => {
+		const runtime = new FakeRuntime();
+		runtime.credentials = [{ providerId: "openai", type: "oauth" }];
+		const { state, enabledModels } = setting(["openai/gpt-5.5"]);
+		const app = pipe();
+		const extra = [googleish("google-antigravity")];
+		expect(
+			await runAuth(["login", "google-antigravity"], { runtime, preferred, extra, io: app.io, enabledModels }),
+		).toBe(0);
+		expect(state.patterns).toEqual(["openai/gpt-5.5", "google-antigravity/*"]);
+		expect(app.said.at(-1)).toMatchObject({ type: "done", enabled: ["gemini-3.1-pro", "claude-sonnet-4-6"] });
+
+		// Signed in again: its models are already offered, and nothing is written.
+		const again = pipe();
+		await runAuth(["login", "google-antigravity"], { runtime, preferred, extra, io: again.io, enabledModels });
+		expect(state.writes).toBe(1);
 	});
 
 	it("stops when the app cancels, and when the app goes away", async () => {
@@ -303,9 +413,11 @@ describe("mu auth", () => {
 	});
 
 	it("says what went wrong, as a line, with exit code 1", async () => {
-		const usage = "usage: mu auth status | mu auth login <provider> [--paste] | mu auth logout <provider>";
+		const usage = USAGE;
 		const cases: [string[], string][] = [
 			[[], usage],
+			[["enable", "openai", "--paste"], usage],
+			[["login", "openai", "--default"], usage],
 			[["login"], usage],
 			[["login", "openai", "--fast"], usage],
 			[["logout", "openai", "--paste"], usage],

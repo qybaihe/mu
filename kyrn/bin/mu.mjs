@@ -755,7 +755,7 @@ export async function prepareLaunchAsync(input) {
 // ---------------------------------------------------------------------------------------------------------
 
 /** What `mu auth` answers itself. Every other `auth` command (check, print-api-key, ...) is pi's own. */
-export const AUTH_COMMANDS = ["status", "login", "logout"];
+export const AUTH_COMMANDS = ["status", "login", "logout", "enable"];
 
 /** `mu link --help` and `mu unlink --help`. */
 export const LINK_USAGE = [
@@ -775,14 +775,17 @@ export const AUTH_USAGE = [
 	"  mu auth status",
 	"  mu auth login <provider> [--paste]",
 	"  mu auth logout <provider>",
+	"  mu auth enable <provider> [--default | <model>...]",
 	"In a terminal, /login inside mu signs in the same way. With --paste, you paste the address the browser ends on",
 	"instead of mu listening for it. Use it when another program, such as the Codex CLI, holds the callback port.",
+	"enable chooses which of an account's models /model and the app offer (--default: all of them, the default);",
+	"in a terminal, /scoped-models <provider> does the same.",
 	"",
 	"pi's auth commands:",
 ].join("\n");
 
 /**
- * `mu auth status | login <provider> | logout <provider>`: the sign-in the desktop app runs, with pi's own OAuth
+ * `mu auth status | login <provider> | logout <provider> | enable <provider> ...`: the sign-in the desktop app runs, with pi's own OAuth
  * flows and credential store (packages/kyrn-judge/src/auth). It is pi's code, so it runs the way pi does here:
  * from its sources in a checkout (sourceRuntime), built in the package. It reads no key, so no .env is read for it.
  */
