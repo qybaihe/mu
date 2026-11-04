@@ -63,3 +63,5 @@ The browser is a TypeScript port of [browser-use/jev-ultrafast](https://github.c
 cd packages/kyrn-judge && npx vitest --run    # browser tests start a headless Chrome and skip themselves without one
 npm run check                                 # from the repository root
 ```
+
+`test/golden/decision-requests.md` holds what every decision asks the judge, and `test/golden/model-surface.md` what the main model is given: the system prompt and every tool. A change to either shows up as a diff. A decision whose request changed needs a new `version`; the test fails until it has one, even with `-u`. Then `npx vitest --run test/golden -u` writes the files.
