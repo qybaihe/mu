@@ -302,6 +302,8 @@
       },
       "markedWrong": "你把這次判定標記為有誤。",
       "markedWrongWhy": "你把這次判定標記為有誤：{{note}}",
+      "markWrong": "判錯了",
+      "markWrongHint": "告訴 mu 這次判定判錯了。這個標記和判定一起記在這次對話的 ledger 裡。",
       "unlinked": "獨立記錄",
       "unlinkedHint": "這筆記錄沒有輪次關聯資訊，因此單獨顯示，不會與時間相近的記錄合併。",
       "state": {

@@ -302,6 +302,8 @@
       },
       "markedWrong": "You marked this verdict as wrong.",
       "markedWrongWhy": "You marked this verdict as wrong: {{note}}",
+      "markWrong": "Mark as wrong",
+      "markWrongHint": "Tell mu this verdict was wrong. The mark is kept with the verdict in this session's ledger.",
       "unlinked": "Standalone record",
       "unlinkedHint": "Not linked to a turn, so it's shown on its own and not merged with nearby records.",
       "state": {

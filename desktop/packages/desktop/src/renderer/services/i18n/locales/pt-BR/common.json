@@ -302,6 +302,8 @@
       },
       "markedWrong": "Você marcou este veredito como errado.",
       "markedWrongWhy": "Você marcou este veredito como errado: {{note}}",
+      "markWrong": "Marcar como errado",
+      "markWrongHint": "Diga ao mu que este veredito estava errado. A marcação fica guardada com o veredito no ledger desta sessão.",
       "unlinked": "Registro independente",
       "unlinkedHint": "Registrado sem correlação de turno. É exibido sozinho e não é combinado com registros próximos no tempo.",
       "state": {

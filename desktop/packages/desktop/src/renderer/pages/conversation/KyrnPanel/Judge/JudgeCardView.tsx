@@ -1,5 +1,5 @@
-import React from 'react';
-import { Collapse, Tag, Tooltip } from '@arco-design/web-react';
+import React, { useState } from 'react';
+import { Button, Collapse, Tag, Tooltip } from '@arco-design/web-react';
 import { ArrowRight, Help, Lightning, ListCheckbox } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
 import type { Activity } from '@/common/kyrn/types';
@@ -31,17 +31,35 @@ const recorded = (events: Activity[]): string =>
 /**
  * One judgment as question, verdict and effect. `plain` is the judge log's opened line: no frame of its own and no
  * state colours, since the line above it already says what it is. `lessonText` names the lessons a result is about.
+ * `markWrong` tells mu the verdict was wrong (`/ledger wrong <id>`), where the app can send the conversation's mu a
+ * command; true once mu took it. The mark comes back as an entry of the session and the card says it then.
  */
 export default function JudgeCardView({
   card,
   plain = false,
   lessonText,
+  markWrong,
 }: {
   card: JudgeCard;
   plain?: boolean;
   lessonText?: (id: string) => string;
+  markWrong?: (recordId: string) => Promise<boolean>;
 }) {
   const { t, i18n } = useTranslation();
+  // Sent and not yet back as an entry, or on its way: the button waits. A command mu did not take can be sent again.
+  const [marking, setMarking] = useState(false);
+  const recordId = card.recordId;
+  const canMark = Boolean(markWrong && recordId && !card.markedWrong);
+  const mark = () => {
+    if (!markWrong || !recordId) return;
+    setMarking(true);
+    void markWrong(recordId).then(
+      (taken) => {
+        if (!taken) setMarking(false);
+      },
+      () => setMarking(false)
+    );
+  };
   const language = i18n.language;
   const clock = useClock();
   const percent = (probability: number): string =>
@@ -219,6 +237,15 @@ export default function JudgeCardView({
             {card.markedWrong.note
               ? t(`${KEY}.markedWrongWhy`, { note: card.markedWrong.note })
               : t(`${KEY}.markedWrong`)}
+          </div>
+        )}
+        {canMark && (
+          <div className={styles.effect}>
+            <Tooltip content={t(`${KEY}.markWrongHint`)}>
+              <Button type='text' size='mini' disabled={marking} onClick={mark} data-testid='judge-mark-wrong'>
+                {t(`${KEY}.markWrong`)}
+              </Button>
+            </Tooltip>
           </div>
         )}
       </section>

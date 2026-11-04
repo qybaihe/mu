@@ -148,6 +148,8 @@ export type JudgeCard = {
   /** A classification record without correlation fields. It stands alone; nothing is merged into it. */
   unlinked: boolean;
   evidence: Activity[];
+  /** The ledger record the card is of, by its whole id: what `/ledger wrong` names. Absent for a card with none. */
+  recordId?: string;
   /** What the person answered to the permission question this judgment sent them to. */
   userAnswer?: JudgeUserAnswer;
   /** The person marked this judgment wrong, with what they said when they did. */
@@ -157,6 +159,9 @@ export type JudgeCard = {
 /** The person's answer to a permission question: allowed once, for the session, not allowed, closed, nobody to ask. */
 export type JudgeUserAnswer = 'once' | 'session' | 'deny' | 'dismissed' | 'none';
 const USER_ANSWERS: ReadonlySet<string> = new Set(['once', 'session', 'deny', 'dismissed', 'none']);
+
+/** The command that tells mu a verdict was wrong (`/ledger wrong`), for the record of that id. */
+export const markWrongCommand = (recordId: string): string => `/ledger wrong ${recordId}`;
 
 /** What the person did about a judgment, as its record carries it beside the ledger's fields. */
 function personOf(ledger: Payload): Pick<JudgeCard, 'userAnswer' | 'markedWrong'> {
@@ -225,6 +230,7 @@ function decisionCard(group: Group, ledger: Payload): JudgeCard {
     preview: '',
     unlinked: group.unlinked,
     evidence: group.events,
+    ...(str(ledger.id) ? { recordId: str(ledger.id) } : {}),
     ...personOf(ledger),
   };
 }
