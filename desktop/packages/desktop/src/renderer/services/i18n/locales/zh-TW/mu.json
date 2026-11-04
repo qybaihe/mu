@@ -353,7 +353,8 @@
       "unrelated": "判定器認為這一步和目前的任務無關。",
       "protected": "這會動到 mu 自己的設定，只能由你決定。",
       "nojudge": "還沒有可用的判定器，所以每一步都先問你。",
-      "judgedown": "判定器這次沒有回答，所以先問你。"
+      "judgedown": "判定器這次沒有回答，所以先問你。",
+      "long": "這一步太長，判定器讀不完，所以先問你。"
     },
     "flagged": "危險操作：{{flag}}。",
     "flag": {
@@ -365,7 +366,8 @@
       "opens_permissions_recursively": "遞迴開放權限",
       "runs_downloaded_script": "執行下載來的指令碼",
       "runs_as_administrator": "以系統管理員身分執行",
-      "runs_as_root": "以 root 身分執行"
+      "runs_as_root": "以 root 身分執行",
+      "sends_credential": "把憑證送出去"
     },
     "answer": {
       "once": "允許這一次",

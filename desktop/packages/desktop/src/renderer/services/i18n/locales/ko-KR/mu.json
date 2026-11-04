@@ -353,7 +353,8 @@
       "unrelated": "판정기는 이 단계가 작업에 포함되지 않는다고 봅니다.",
       "protected": "mu 자체 설정을 건드리는 단계이므로 사용자만 허용할 수 있습니다.",
       "nojudge": "아직 사용할 수 있는 판정기가 없어 mu가 단계마다 사용자에게 묻습니다.",
-      "judgedown": "이번에는 판정기가 응답하지 않아 mu가 사용자에게 묻습니다."
+      "judgedown": "이번에는 판정기가 응답하지 않아 mu가 사용자에게 묻습니다.",
+      "long": "이 단계는 너무 길어 판정기가 전부 읽을 수 없으므로 mu가 사용자에게 묻습니다."
     },
     "answer": {
       "once": "한 번 허용",
@@ -375,7 +376,8 @@
       "opens_permissions_recursively": "재귀적 권한 개방",
       "runs_downloaded_script": "다운로드한 스크립트 실행",
       "runs_as_administrator": "관리자 권한으로 실행",
-      "runs_as_root": "root 권한으로 실행"
+      "runs_as_root": "root 권한으로 실행",
+      "sends_credential": "자격 증명 전송"
     },
     "flagged": "위험: {{flag}}."
   },

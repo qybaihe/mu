@@ -353,7 +353,8 @@
       "unrelated": "Der Judge meint, das gehört nicht zur Aufgabe.",
       "protected": "Das betrifft die Einstellungen von mu selbst; nur du kannst es erlauben.",
       "nojudge": "Noch ist kein Judge verfügbar, daher fragt mu dich bei jedem Schritt.",
-      "judgedown": "Der Judge hat diesmal nicht geantwortet, daher fragt mu dich."
+      "judgedown": "Der Judge hat diesmal nicht geantwortet, daher fragt mu dich.",
+      "long": "Dieser Schritt ist zu lang, als dass der Judge ihn ganz lesen könnte, daher fragt mu dich."
     },
     "answer": {
       "once": "Einmal erlauben",
@@ -375,7 +376,8 @@
       "opens_permissions_recursively": "öffnet Berechtigungen rekursiv",
       "runs_downloaded_script": "führt ein heruntergeladenes Skript aus",
       "runs_as_administrator": "läuft als Administrator",
-      "runs_as_root": "läuft als root"
+      "runs_as_root": "läuft als root",
+      "sends_credential": "sendet Zugangsdaten"
     },
     "flagged": "Riskant: {{flag}}."
   },
