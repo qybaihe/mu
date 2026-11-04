@@ -6,7 +6,9 @@
 //   kyrn/bin/kyrn-ledger --json       one JSON object per decision, for scripts
 //
 // Reads the `kyrn.decision` entries the kernel appends to pi session files and
-// pairs each with the user message it judged. Nothing is sent anywhere.
+// pairs each with the user message it judged, and with what the user answered
+// when the judge's verdict sent a call to them (`kyrn.outcome`). Nothing is sent
+// anywhere.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -15,7 +17,8 @@ const args = process.argv.slice(2);
 if (args.includes("--help") || args.includes("-h")) {
 	console.log(
 		[
-			"mu ledger: the judge's verdicts from your recent sessions, each with the message it judged.",
+			"mu ledger: the judge's verdicts from your recent sessions, each with the message it judged, and your answer",
+			"when a verdict sent a call to you.",
 			"",
 			"  mu ledger            verdicts from the 5 most recent sessions",
 			"  mu ledger <n>        from the n most recent",
@@ -66,21 +69,28 @@ const files = sessionFiles(sessionsDir)
 let count = 0;
 for (const file of files) {
 	let lastUserMessage = "";
+	const entries = [];
 	for (const line of readFileSync(file.path, "utf8").split("\n")) {
 		if (!line.trim()) continue;
-		let entry;
 		try {
-			entry = JSON.parse(line);
-		} catch {
-			continue;
-		}
+			entries.push(JSON.parse(line));
+		} catch {}
+	}
+	// What the user answered about a call the judge sent to them, by the judge's record.
+	const answers = new Map();
+	for (const entry of entries) {
+		const outcome = entry.type === "custom" && entry.customType === "kyrn.outcome" ? entry.data : undefined;
+		if (outcome?.ledgerId && outcome.answer) answers.set(outcome.ledgerId, outcome.answer);
+	}
+	for (const entry of entries) {
 		if (entry.type === "message" && entry.message?.role === "user") lastUserMessage = textOf(entry.message.content);
 		if (entry.type !== "custom" || entry.customType !== "kyrn.decision") continue;
 
 		const record = entry.data ?? {};
+		const userAnswer = answers.get(record.id);
 		count++;
 		if (asJson) {
-			console.log(JSON.stringify({ session: file.path, userMessage: lastUserMessage, ...record }));
+			console.log(JSON.stringify({ session: file.path, userMessage: lastUserMessage, ...record, ...(userAnswer ? { userAnswer } : {}) }));
 			continue;
 		}
 		const judged = record.judged;
@@ -93,7 +103,7 @@ for (const file of files) {
 				: judged === undefined
 					? `no verdict (${record.reason ?? "unknown"})`
 					: JSON.stringify(judged);
-		console.log(`${head}  ${record.specId}: ${verdict}`);
+		console.log(`${head}  ${record.specId}: ${verdict}${userAnswer ? `  -> you: ${userAnswer}` : ""}`);
 		console.log(`    "${lastUserMessage.replace(/\s+/g, " ").slice(0, 160)}"`);
 		for (const warning of record.warnings ?? []) console.log(`    ! ${warning.type} ${warning.questionId ?? ""}`);
 	}
