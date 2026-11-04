@@ -353,7 +353,8 @@
       "unrelated": "Hakem bunun görevin bir parçası olmadığını düşünüyor.",
       "protected": "Bu, mu'nun kendi ayarlarına dokunuyor; buna yalnızca siz izin verebilirsiniz.",
       "nojudge": "Henüz kullanılabilir bir hakem yok, bu yüzden mu her adımda size soruyor.",
-      "judgedown": "Hakem bu kez yanıt vermedi, bu yüzden mu size soruyor."
+      "judgedown": "Hakem bu kez yanıt vermedi, bu yüzden mu size soruyor.",
+      "long": "Bu adım hakemin tamamını okuyamayacağı kadar uzun, bu yüzden mu size soruyor."
     },
     "answer": {
       "once": "Bir kez izin ver",
@@ -375,7 +376,8 @@
       "opens_permissions_recursively": "izinleri özyinelemeli olarak açar",
       "runs_downloaded_script": "indirilen bir betiği çalıştırır",
       "runs_as_administrator": "yönetici olarak çalışır",
-      "runs_as_root": "root olarak çalışır"
+      "runs_as_root": "root olarak çalışır",
+      "sends_credential": "kimlik bilgisi gönderir"
     },
     "flagged": "Riskli: {{flag}}."
   },

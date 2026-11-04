@@ -124,7 +124,7 @@ export type ViewPermission = {
   /** The answers as mu words them, which the dialog offers as its options. */
   answers: string[];
   answerIds?: string[];
-  /** ask, unsure, beyond, unrelated, flagged, protected, nojudge, judgedown. */
+  /** ask, unsure, beyond, unrelated, flagged, protected, nojudge, judgedown, long. */
   reason?: string;
   /** What makes a flagged command risky (`force_push`, …). */
   flagCode?: string;

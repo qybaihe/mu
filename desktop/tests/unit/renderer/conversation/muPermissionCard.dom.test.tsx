@@ -174,7 +174,8 @@ describe('the wording of mu’s permission card in the app’s own languages', (
   // not lag: the English fallback would otherwise stand in for mu's own Chinese.
   const KINDS = ['edit', 'shell', 'run', 'outside', 'delegate', 'other'];
   // `nojudge` and `judgedown`: judge mode without a verdict (no judge could answer, or the judge did not this time).
-  const REASONS = ['ask', 'unsure', 'beyond', 'unrelated', 'protected', 'nojudge', 'judgedown'];
+  // `long`: a step too long for the judge to read in full.
+  const REASONS = ['ask', 'unsure', 'beyond', 'unrelated', 'protected', 'nojudge', 'judgedown', 'long'];
   const FLAGS = [
     'recursive_or_forced_delete',
     'discards_git_work',
@@ -185,6 +186,7 @@ describe('the wording of mu’s permission card in the app’s own languages', (
     'runs_downloaded_script',
     'runs_as_administrator',
     'runs_as_root',
+    'sends_credential',
   ];
 
   it.each([

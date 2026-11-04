@@ -353,7 +353,8 @@
       "unrelated": "Le juge estime que cela ne fait pas partie de la tâche.",
       "protected": "Cela touche aux paramètres de mu ; l’autorisation ne peut venir que de vous.",
       "nojudge": "Aucun juge n’est encore disponible, donc mu vous demande à chaque étape.",
-      "judgedown": "Le juge n’a pas répondu cette fois, donc mu vous demande."
+      "judgedown": "Le juge n’a pas répondu cette fois, donc mu vous demande.",
+      "long": "Cette étape est trop longue pour que le juge la lise en entier, donc mu vous demande."
     },
     "answer": {
       "once": "Autoriser une fois",
@@ -375,7 +376,8 @@
       "opens_permissions_recursively": "ouverture récursive des droits d’accès",
       "runs_downloaded_script": "exécution d’un script téléchargé",
       "runs_as_administrator": "exécution en tant qu’administrateur",
-      "runs_as_root": "exécution en tant que root"
+      "runs_as_root": "exécution en tant que root",
+      "sends_credential": "envoi d’identifiants"
     },
     "flagged": "Opération risquée : {{flag}}."
   },

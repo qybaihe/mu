@@ -353,7 +353,8 @@
       "unrelated": "El juez cree que esto no forma parte de la tarea.",
       "protected": "Esto afecta a la propia configuración de mu; solo tú puedes permitirlo.",
       "nojudge": "Todavía no hay ningún juez disponible, así que mu te pregunta en cada paso.",
-      "judgedown": "El juez no ha respondido esta vez, así que mu te pregunta."
+      "judgedown": "El juez no ha respondido esta vez, así que mu te pregunta.",
+      "long": "Este paso es demasiado largo para que el juez lo lea entero, así que mu te pregunta."
     },
     "answer": {
       "once": "Permitir una vez",
@@ -375,7 +376,8 @@
       "opens_permissions_recursively": "abre permisos de forma recursiva",
       "runs_downloaded_script": "ejecuta un script descargado",
       "runs_as_administrator": "se ejecuta como administrador",
-      "runs_as_root": "se ejecuta como root"
+      "runs_as_root": "se ejecuta como root",
+      "sends_credential": "envía una credencial"
     },
     "flagged": "Riesgo: {{flag}}."
   },

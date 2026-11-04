@@ -353,7 +353,8 @@
       "unrelated": "The judge thinks this isn't part of the task.",
       "protected": "This touches mu's own settings; only you can allow it.",
       "nojudge": "No judge is available yet, so mu asks you about each step.",
-      "judgedown": "The judge didn't answer this time, so mu is asking you."
+      "judgedown": "The judge didn't answer this time, so mu is asking you.",
+      "long": "This step is too long for the judge to read in full, so mu is asking you."
     },
     "flagged": "Risky: {{flag}}.",
     "flag": {
@@ -365,7 +366,8 @@
       "opens_permissions_recursively": "loosens permissions recursively",
       "runs_downloaded_script": "runs a downloaded script",
       "runs_as_administrator": "runs as administrator",
-      "runs_as_root": "runs as root"
+      "runs_as_root": "runs as root",
+      "sends_credential": "sends a credential"
     },
     "answer": {
       "once": "Allow once",
