@@ -452,6 +452,17 @@
     "legacy": {
       "openai-codex": "Cette ancienne connexion passe par celle de la CLI Codex. Déconnectez-vous, puis connectez-vous avec ChatGPT.",
       "anthropic": "Anthropic n'autorise pas les autres applications à se connecter avec un abonnement Claude : mu ne le propose donc plus. Déconnectez-vous et ajoutez plutôt une clé API Anthropic."
+    },
+    "enable": {
+      "title": "Affichés dans le sélecteur de modèle",
+      "count": "{{count}} sur {{total}}",
+      "hint": "Seuls les modèles cochés apparaissent quand vous choisissez un modèle dans une conversation. Par défaut, tous sont affichés, et les modèles que le compte obtient plus tard apparaissent aussi.",
+      "all": "Tout sélectionner",
+      "none": "Tout désélectionner",
+      "reset": "Rétablir par défaut",
+      "fresh": "Connecté à {{name}}, qui propose {{count}} modèles. Décochez ceux que vous ne voulez pas voir dans le sélecteur de modèle.",
+      "lastModel": "Gardez au moins un modèle activé.",
+      "failed": "Impossible d'enregistrer le choix des modèles. Réessayez."
     }
   },
   "endpoints": {
@@ -793,7 +804,8 @@
         "continue": "Je comprends le risque, me connecter",
         "cancel": "Ne pas se connecter"
       },
-      "readingModels": "Connecté à {{name}}. Lecture des modèles disponibles pour ce compte…"
+      "readingModels": "Connecté à {{name}}. Lecture des modèles disponibles pour ce compte…",
+      "chooseLater": "Trop de modèles ? Choisissez ceux qu'affiche le sélecteur de modèle dans Paramètres → Fournisseurs → Abonnements."
     },
     "permissions": {
       "title": "Ce que mu fait de lui-même",

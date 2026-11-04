@@ -456,7 +456,7 @@
     "enable": {
       "title": "Shown in the model picker",
       "count": "{{count}} of {{total}}",
-      "hint": "Only checked models appear when you pick a model in a conversation. All of them is the default; then models the account gains later appear too.",
+      "hint": "Only checked models appear when you pick a model in a conversation. By default all of them are shown, and models the account gains later appear too.",
       "all": "Select all",
       "none": "Select none",
       "reset": "Restore default",
@@ -805,7 +805,7 @@
         "cancel": "Don't sign in"
       },
       "readingModels": "Signed in to {{name}}. Loading the models this account can use…",
-      "chooseLater": "Too many models? Choose which ones the model picker shows in Settings > Providers > Subscriptions."
+      "chooseLater": "Too many models? Choose which ones the model picker shows in Settings → Providers → Subscriptions."
     },
     "permissions": {
       "title": "How much mu can do on its own",
