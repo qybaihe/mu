@@ -4,9 +4,10 @@ import type { JudgeTierReport } from "./judge.ts";
 import type { Answer, JsonValue, JudgeUsage, JudgeWarning } from "./types.ts";
 
 /**
- * One decision, as recorded. Later signals (a pruned item being recalled, a
- * routed model needing escalation) are joined on `id` to label it, which is
- * how thresholds get calibrated per user and per project.
+ * One decision, as recorded. Later signals are joined on `id` to label it,
+ * which is how thresholds get calibrated per user and per project: so far the
+ * user's answer to a permission question the verdict sent them (a
+ * `kyrn.outcome` entry, `PermissionOutcome`).
  */
 export interface LedgerRecord {
 	readonly id: string;

@@ -27,6 +27,7 @@ import {
 import { threeZone } from "../../policy.ts";
 import { environmentSecrets, redactSecrets } from "../../redact.ts";
 import { subAgentUserGoal } from "../../swarm/brief.ts";
+import type { JsonValue } from "../../types.ts";
 import { clip, type KyrnRuntime } from "../runtime.ts";
 import { isShellTool } from "../shell-tools.ts";
 import {
@@ -45,6 +46,41 @@ import type { HarnessRoots } from "./inherit.ts";
 
 /** Session entry: the mode this conversation was switched to. A reopened conversation keeps it. */
 export const PERMISSIONS_ENTRY = "mu.permissions";
+/** Session entry: what the user answered when asked to allow a call (`PermissionOutcome`). */
+export const OUTCOME_ENTRY = "kyrn.outcome";
+
+/**
+ * What the user answered when asked to allow a call, kept in the session. When a judge was asked first, `ledgerId`
+ * is its record's id (a `kyrn.decision` entry): the judge said `judged`, the user chose `answer`. These are labels
+ * from real work, for calibrating the approval lines, and the record of who allowed what. No state is kept here: the
+ * ledger record holds it when the engine records states.
+ */
+export interface PermissionOutcome {
+	readonly kind: "permission";
+	readonly toolCallId: string;
+	readonly tool: string;
+	readonly mode: PermissionMode;
+	/** Why the user was asked. */
+	readonly reason: AskReason;
+	readonly flagCode?: string;
+	/** The judge's record this answer labels, and what the judge said. Absent when no judge was asked. */
+	readonly ledgerId?: string;
+	readonly specId?: string;
+	readonly judged?: JsonValue;
+	/** `dismissed`: the question was closed or cancelled. `none`: nobody could be asked, so the call was refused. */
+	readonly answer: "once" | "session" | "deny" | "dismissed" | "none";
+	/** What "for this session" allowed, when that was the answer. */
+	readonly grant?: string;
+	/** How long the question waited for the answer. */
+	readonly waitedMs: number;
+}
+
+/** What the judge said about a call before the user was asked, for the user's answer to label. */
+interface JudgeSaid {
+	readonly ledgerId?: string;
+	readonly specId: string;
+	readonly judged?: JsonValue;
+}
 const MODE_STATUS = "mu.permissions";
 const PENDING_STATUS = "mu.permissions.pending";
 
@@ -138,6 +174,15 @@ function unanswered(decision: Decision<unknown>): "nojudge" | "judgedown" | unde
 	const judges = Object.values(decision.answers ?? {}).map((answer) => answer.judge);
 	if (judges.length > 0 && judges.every((judge) => judge === "untrusted")) return "nojudge";
 	return judges.includes("unavailable") ? "judgedown" : undefined;
+}
+
+/** The judge's record of a decision, for the user's answer about the same call to label. */
+function saidBy(decision: Decision<unknown>, specId: string): JudgeSaid {
+	return {
+		...(decision.ledgerId ? { ledgerId: decision.ledgerId } : {}),
+		specId,
+		...(decision.judged !== undefined ? { judged: decision.judged as JsonValue } : {}),
+	};
 }
 
 /** Where mu keeps its own settings, as a command may spell it, and where it really is: a call touching it is the user's to allow. */
@@ -250,7 +295,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		need: PermissionNeed,
 		flag: string | undefined,
 		ctx: ExtensionContext,
-	): Promise<{ approved: boolean; reason: AskReason }> => {
+	): Promise<{ approved: boolean; reason: AskReason; said?: JudgeSaid }> => {
 		// The judge vouches only for what it read, and what runs is the whole call: one too long to read is the user's.
 		// Starting subagents is the exception, as their every step is put to the judge again.
 		const call = approvalCall(event.toolName, event.input);
@@ -280,7 +325,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 			const requested = decision.answers?.requested;
 			const asked = requested?.type === "boolean" && threeZone(requested) === "yes";
 			const allowed = asked && (decision.judged ?? decision.outcome) === "allow";
-			return { approved: allowed && readWhole(decision), reason: "flagged" };
+			return { approved: allowed && readWhole(decision), reason: "flagged", said: saidBy(decision, toolRisk.id) };
 		}
 		const frame = runtime.frame;
 		const input = event.input as Record<string, unknown>;
@@ -311,12 +356,13 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 			{ signal: ctx.signal },
 		);
 		const verdict = decision.judged ?? decision.outcome;
+		const said = saidBy(decision, toolApproval.id);
 		// A judge with a bounded window that cut the state did not read the whole call either.
 		if (verdict === "approve")
 			return readWhole(decision) || !readAll
-				? { approved: true, reason: "ask" }
-				: { approved: false, reason: "long" };
-		return { approved: false, reason: unanswered(decision) ?? verdict };
+				? { approved: true, reason: "ask", said }
+				: { approved: false, reason: "long", said };
+		return { approved: false, reason: unanswered(decision) ?? verdict, said };
 	};
 
 	const askUser = async (
@@ -325,7 +371,26 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		reason: AskReason,
 		flag: string | undefined,
 		ctx: ExtensionContext,
+		said?: JudgeSaid,
 	): Promise<ToolCallEventResult | undefined> => {
+		const askedAt = Date.now();
+		const record = (answer: PermissionOutcome["answer"], grantKey?: string) => {
+			const outcome: PermissionOutcome = {
+				kind: "permission",
+				toolCallId: event.toolCallId,
+				tool: event.toolName,
+				mode,
+				reason,
+				...(flag ? { flagCode: FLAG_CODES[flag] ?? flag } : {}),
+				...(said?.ledgerId ? { ledgerId: said.ledgerId } : {}),
+				...(said ? { specId: said.specId } : {}),
+				...(said?.judged !== undefined ? { judged: said.judged } : {}),
+				answer,
+				...(grantKey ? { grant: grantKey } : {}),
+				waitedMs: Date.now() - askedAt,
+			};
+			pi.appendEntry(OUTCOME_ENTRY, outcome);
+		};
 		const why =
 			reason === "flagged"
 				? say({ zh: `危险操作：${FLAG_ZH[flag ?? ""] ?? flag}。`, en: `Risky: ${flag}.` })
@@ -333,6 +398,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		// A flagged, protected or long call is decided each time: a grant for its first word would cover what comes next.
 		const grant = flag || need.protected || reason === "long" ? undefined : need.grant;
 		if (!ctx.hasUI) {
+			record("none");
 			return {
 				block: true,
 				reason: `mu: this needs the user's permission (${modeLabel(mode)}: ${why}), and there is nobody to ask here. Do not try another way around it; say what you needed.`,
@@ -387,6 +453,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 			ctx.ui.setStatus(PENDING_STATUS, undefined);
 		}
 		const answer = picked === once ? "once" : session && picked === session ? "session" : "deny";
+		record(picked === undefined ? "dismissed" : answer, answer === "session" ? grant?.key : undefined);
 		runtime.present("permissions.resolved", { id, toolCallId: event.toolCallId, answer });
 		if (answer === "session" && grant) grants.add(grant.key);
 		if (answer !== "deny") return undefined;
@@ -424,14 +491,16 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		const flag = leaking ? SENDS_CREDENTIAL : command ? riskFlag(command) : undefined;
 		if (!need.protected && !flag && need.grant && grants.has(need.grant.key)) return approvedBy(event, need, "grant");
 		let reason: AskReason = need.protected ? "protected" : flag ? "flagged" : "ask";
+		let said: JudgeSaid | undefined;
 		if (mode === "judge" && !need.protected && flag !== SENDS_CREDENTIAL) {
 			// Editing the project is the task itself, and a checkpoint can take it back.
 			if (need.kind === "edit" && need.inProject && !flag) return undefined;
 			const verdict = await judgeApproves(event, need, flag, ctx);
 			if (verdict.approved) return approvedBy(event, need, "judge");
 			reason = verdict.reason;
+			said = verdict.said;
 		}
-		return askUser(event, need, reason, flag, ctx);
+		return askUser(event, need, reason, flag, ctx, said);
 	};
 
 	// A gate that failed must not open: an error asks the user, or refuses where nobody can be asked.

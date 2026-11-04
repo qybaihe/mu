@@ -10,6 +10,7 @@ import { loadAgents } from "../agents.ts";
 import { promptsFor } from "../localized-prompts.ts";
 import { failOpen, type KyrnRuntime } from "../runtime.ts";
 import type { HarnessRoots } from "./inherit.ts";
+import { OUTCOME_ENTRY, type PermissionOutcome } from "./permissions.ts";
 import { modelRef, VERSIONS } from "./welcome.ts";
 
 const MODES: readonly string[] = ["off", "shadow", "active"];
@@ -262,7 +263,18 @@ const helpEn = () =>
 		helpWidth(),
 	);
 
-function describeRecord(record: LedgerRecord): string[] {
+/** What the user answered about the calls the judge's records were about, by record id (`kyrn.outcome` entries). */
+function userAnswers(ctx: ExtensionCommandContext): Map<string, string> {
+	const answers = new Map<string, string>();
+	for (const entry of ctx.sessionManager.getBranch()) {
+		if (entry.type !== "custom" || entry.customType !== OUTCOME_ENTRY) continue;
+		const outcome = entry.data as Partial<PermissionOutcome> | undefined;
+		if (outcome?.ledgerId && outcome.answer) answers.set(outcome.ledgerId, outcome.answer);
+	}
+	return answers;
+}
+
+function describeRecord(record: LedgerRecord, answer?: string): string[] {
 	const verdict = record.judged === undefined ? (record.reason ?? "no verdict") : JSON.stringify(record.judged);
 	const timing = record.latencyMs === undefined ? "" : ` ${record.latencyMs}ms`;
 	const batch = record.batch ? ` x${record.batch.size}` : "";
@@ -273,7 +285,7 @@ function describeRecord(record: LedgerRecord): string[] {
 		)
 		.join(", ");
 	const lines = [
-		`${record.timestamp.slice(11, 19)} ${record.specId} v${record.specVersion}${batch} [${record.source}]${timing}${tiers ? ` (${tiers})` : ""} ${verdict.slice(0, 200)}`,
+		`${record.timestamp.slice(11, 19)} ${record.specId} v${record.specVersion}${batch} [${record.source}]${timing}${tiers ? ` (${tiers})` : ""} ${verdict.slice(0, 200)}${answer ? ` -> you: ${answer}` : ""}`,
 	];
 	for (const warning of record.warnings ?? []) {
 		lines.push(
@@ -397,10 +409,11 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 		handler: async (args, ctx) => {
 			const count = Math.min(50, Math.max(1, Number.parseInt(args.trim(), 10) || 15));
 			const records = runtime.memory.records.slice(-count);
+			const answers = userAnswers(ctx);
 			ctx.ui.notify(
 				records.length === 0
 					? "No verdicts in this session yet. For all sessions, run mu ledger"
-					: records.flatMap(describeRecord).join("\n"),
+					: records.flatMap((record) => describeRecord(record, answers.get(record.id))).join("\n"),
 				"info",
 			);
 		},
