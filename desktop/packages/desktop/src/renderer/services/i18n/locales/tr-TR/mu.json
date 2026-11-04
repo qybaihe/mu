@@ -452,6 +452,17 @@
     "legacy": {
       "openai-codex": "Bu eski giriş, Codex CLI'nin girişinden geçiyor. Çıkış yapın, ardından ChatGPT ile giriş yapın.",
       "anthropic": "Anthropic, diğer uygulamaların Claude aboneliğiyle giriş yapmasına izin vermiyor; bu yüzden mu artık bunu sunmuyor. Çıkış yapın ve bunun yerine bir Anthropic API anahtarı ekleyin."
+    },
+    "enable": {
+      "title": "Model seçicide gösterilenler",
+      "count": "{{count}} / {{total}}",
+      "hint": "Bir konuşmada model seçerken yalnızca işaretli modeller görünür. Varsayılan olarak hepsi gösterilir ve hesabın sonradan kazandığı modeller de görünür.",
+      "all": "Tümünü seç",
+      "none": "Hiçbirini seçme",
+      "reset": "Varsayılana dön",
+      "fresh": "{{name}} ile giriş yapıldı; {{count}} model sunuyor. Model seçicide görmek istemediklerinizin işaretini kaldırın.",
+      "lastModel": "En az bir modeli açık tutun.",
+      "failed": "Model seçimi kaydedilemedi. Tekrar deneyin."
     }
   },
   "endpoints": {
@@ -793,7 +804,8 @@
         "continue": "Riski anlıyorum, giriş yap",
         "cancel": "Giriş yapma"
       },
-      "readingModels": "{{name}} ile giriş yapıldı. Bu hesabın kullanabileceği modeller okunuyor…"
+      "readingModels": "{{name}} ile giriş yapıldı. Bu hesabın kullanabileceği modeller okunuyor…",
+      "chooseLater": "Model çok mu fazla? Model seçicinin hangilerini göstereceğini Ayarlar → Sağlayıcılar → Abonelikler bölümünden seçin."
     },
     "permissions": {
       "title": "mu kendi başına ne kadar yapsın",

@@ -452,6 +452,17 @@
     "legacy": {
       "openai-codex": "Este inicio de sesión anterior pasa por el de la CLI de Codex. Cierra la sesión y luego inicia sesión con ChatGPT.",
       "anthropic": "Anthropic no permite que otras apps inicien sesión con una suscripción de Claude, así que mu ya no lo ofrece. Cierra la sesión y añade una clave de API de Anthropic."
+    },
+    "enable": {
+      "title": "Visibles en el selector de modelos",
+      "count": "{{count}} de {{total}}",
+      "hint": "Al elegir un modelo en una conversación solo aparecen los marcados. De forma predeterminada se muestran todos, y también aparecen los modelos que la cuenta reciba más adelante.",
+      "all": "Seleccionar todos",
+      "none": "No seleccionar ninguno",
+      "reset": "Restablecer predeterminado",
+      "fresh": "Sesión iniciada en {{name}}, que ofrece {{count}} modelos. Desmarca los que no quieras ver en el selector de modelos.",
+      "lastModel": "Mantén al menos un modelo activado.",
+      "failed": "No se pudo guardar la selección de modelos. Inténtalo de nuevo."
     }
   },
   "endpoints": {
@@ -793,7 +804,8 @@
         "continue": "Entiendo el riesgo, iniciar sesión",
         "cancel": "No iniciar sesión"
       },
-      "readingModels": "Sesión iniciada en {{name}}. Leyendo los modelos que puede usar esta cuenta…"
+      "readingModels": "Sesión iniciada en {{name}}. Leyendo los modelos que puede usar esta cuenta…",
+      "chooseLater": "¿Demasiados modelos? Elige cuáles muestra el selector de modelos en Configuración → Proveedores → Suscripciones."
     },
     "permissions": {
       "title": "Cuánto hace mu por su cuenta",

@@ -452,6 +452,17 @@
     "legacy": {
       "openai-codex": "Diese ältere Anmeldung läuft über das Login der Codex CLI. Melde dich ab und dann mit ChatGPT an.",
       "anthropic": "Anthropic erlaubt anderen Apps keine Anmeldung mit einem Claude-Abo, daher bietet mu sie nicht mehr an. Melde dich ab und füge stattdessen einen Anthropic-API-Schlüssel hinzu."
+    },
+    "enable": {
+      "title": "In der Modellauswahl angezeigt",
+      "count": "{{count}} von {{total}}",
+      "hint": "Beim Auswählen eines Modells in einer Unterhaltung erscheinen nur die angehakten Modelle. Standardmäßig werden alle angezeigt, und Modelle, die das Konto später dazubekommt, erscheinen ebenfalls.",
+      "all": "Alle auswählen",
+      "none": "Keine auswählen",
+      "reset": "Standard wiederherstellen",
+      "fresh": "Bei {{name}} angemeldet, mit {{count}} Modellen. Entferne den Haken bei denen, die du nicht in der Modellauswahl sehen willst.",
+      "lastModel": "Mindestens ein Modell muss aktiviert bleiben.",
+      "failed": "Die Modellauswahl konnte nicht gespeichert werden. Versuche es noch einmal."
     }
   },
   "endpoints": {
@@ -793,7 +804,8 @@
         "continue": "Risiko verstanden, anmelden",
         "cancel": "Nicht anmelden"
       },
-      "readingModels": "Bei {{name}} angemeldet. Die Modelle für dieses Konto werden geladen…"
+      "readingModels": "Bei {{name}} angemeldet. Die Modelle für dieses Konto werden geladen…",
+      "chooseLater": "Zu viele Modelle? Unter Einstellungen → Anbieter → Abos legst du fest, welche die Modellauswahl zeigt."
     },
     "permissions": {
       "title": "Wie viel mu selbst erledigt",
