@@ -303,7 +303,7 @@
       "markedWrong": "Du hast dieses Urteil als falsch markiert.",
       "markedWrongWhy": "Du hast dieses Urteil als falsch markiert: {{note}}",
       "markWrong": "Als falsch markieren",
-      "markWrongHint": "Sag mu, dass dieses Urteil falsch war. mu nutzt solche Markierungen, um seine Urteile abzustimmen.",
+      "markWrongHint": "Sag mu, dass dieses Urteil falsch war. Die Markierung wird mit dem Urteil im ledger dieser Sitzung gespeichert.",
       "unlinked": "Einzelaufzeichnung",
       "unlinkedHint": "Ohne Zuordnung zu einer Runde aufgezeichnet. Der Eintrag steht für sich und wird nicht mit zeitlich nahen Aufzeichnungen zusammengeführt.",
       "state": {

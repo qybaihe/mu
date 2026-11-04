@@ -303,7 +303,7 @@
       "markedWrong": "Vous avez signalé ce jugement comme erroné.",
       "markedWrongWhy": "Vous avez signalé ce jugement comme erroné : {{note}}",
       "markWrong": "Signaler comme erroné",
-      "markWrongHint": "Indiquez à mu que ce jugement était erroné. mu se sert de ces signalements pour ajuster ses jugements.",
+      "markWrongHint": "Indiquez à mu que ce jugement était erroné. Le signalement est conservé avec le jugement dans le ledger de cette session.",
       "unlinked": "Enregistrement isolé",
       "unlinkedHint": "Enregistré sans corrélation de tour. Il est affiché seul et n’est pas fusionné avec des enregistrements proches dans le temps.",
       "state": {

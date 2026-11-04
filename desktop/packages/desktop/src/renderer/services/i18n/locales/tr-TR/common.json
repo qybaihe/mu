@@ -303,7 +303,7 @@
       "markedWrong": "Bu kararı yanlış olarak işaretlediniz.",
       "markedWrongWhy": "Bu kararı yanlış olarak işaretlediniz: {{note}}",
       "markWrong": "Yanlış olarak işaretle",
-      "markWrongHint": "mu'ya bu kararın yanlış olduğunu söyleyin. mu bu işaretleri kararlarını ayarlamak için kullanır.",
+      "markWrongHint": "mu'ya bu kararın yanlış olduğunu söyleyin. İşaret, kararla birlikte bu oturumun ledger kaydında tutulur.",
       "unlinked": "Bağımsız kayıt",
       "unlinkedHint": "Tur ilişkilendirmesi olmadan kaydedildi. Tek başına gösterilir ve yakın zamanlı kayıtlarla birleştirilmez.",
       "state": {
