@@ -293,6 +293,15 @@
       "batchFailures": "Candidates with no answer (default used): {{count}}.",
       "changedThinking": "Thinking level: {{from}} → {{to}}",
       "sentHints": "Hints sent to the main model",
+      "userAnswer": {
+        "once": "You allowed it once.",
+        "session": "You allowed it for this conversation.",
+        "deny": "You didn't allow it.",
+        "dismissed": "You closed the question without answering.",
+        "none": "Nobody could be asked, so the step was refused."
+      },
+      "markedWrong": "You marked this verdict wrong.",
+      "markedWrongWhy": "You marked this verdict wrong: {{note}}",
       "unlinked": "Standalone record",
       "unlinkedHint": "Not linked to a turn, so it's shown on its own and not merged with nearby records.",
       "state": {

@@ -6,6 +6,7 @@ import {
   durable,
   emptyView,
   fromEntries,
+  OUTCOME_ENTRY,
   PRESENTATION_STATUS_KEY,
   readPresentation,
   reduce,
@@ -497,6 +498,52 @@ describe('reduce', () => {
       { id: 'a', turn: 1, record: { id: 'a', specId: 'input.preflight', origin: { turn: 1 } } },
       { id: 'late', turn: 1, record: { id: 'late', specId: 'input.preflight', origin: { turn: 1 } } },
     ]);
+  });
+
+  it('joins what the person did about a judgment to it by its record, live as from the file', () => {
+    const approval = { id: 'ask-1', specId: 'tool.approval', origin: { turn: 1 } };
+    const outcomes: Json[] = [
+      { kind: 'permission', toolCallId: 'c1', ledgerId: 'ask-1', specId: 'tool.approval', answer: 'session' },
+      // A mark that it judged wrong joins the same judgment and leaves the answer as it is.
+      {
+        kind: 'mark',
+        ledgerId: 'ask-1',
+        specId: 'tool.approval',
+        specVersion: 3,
+        mark: 'wrong',
+        note: ' it was the test ',
+      },
+      // No judge was asked, and a record this view does not have: neither makes a judgment.
+      { kind: 'permission', toolCallId: 'c2', answer: 'deny' },
+      { kind: 'permission', toolCallId: 'c3', ledgerId: 'elsewhere', answer: 'once' },
+      // Not an answer mu gives.
+      { kind: 'permission', toolCallId: 'c4', ledgerId: 'ask-1', answer: 'maybe' },
+    ];
+    const live = reduceAll([
+      ledgerEntry(approval),
+      frame('decision', approval, 1, 2),
+      ...outcomes.map(
+        (data, index): PiRecord => ({
+          type: 'entry_appended',
+          entry: { type: 'custom', customType: OUTCOME_ENTRY, id: `outcome-${index}`, parentId: null, data },
+        })
+      ),
+    ]);
+    expect(live.judgments).toEqual([
+      { id: 'ask-1', turn: 1, record: approval, answer: 'session', markedWrong: { note: 'it was the test' } },
+    ]);
+    const file = fromEntries([
+      { type: 'session', id: 's', timestamp: '2026-11-04T00:00:00.000Z', cwd: '/p' },
+      { type: 'custom', customType: DECISION_ENTRY, id: 'd1', parentId: null, data: approval },
+      ...outcomes.map((data, index) => ({
+        type: 'custom',
+        customType: OUTCOME_ENTRY,
+        id: `o${index}`,
+        parentId: index === 0 ? 'd1' : `o${index - 1}`,
+        data,
+      })),
+    ]);
+    expect(file.judgments).toEqual(live.judgments);
   });
 
   it('takes the turn of a record that names none from its frame', () => {

@@ -293,6 +293,15 @@
       "batchFailures": "Sem resposta, com a estratégia padrão aplicada: {{count}}.",
       "changedThinking": "Nível de raciocínio: {{from}} → {{to}}",
       "sentHints": "Dicas enviadas ao modelo principal",
+      "userAnswer": {
+        "once": "Você permitiu uma vez.",
+        "session": "Você permitiu nesta conversa.",
+        "deny": "Você não permitiu.",
+        "dismissed": "Você fechou a pergunta sem responder.",
+        "none": "Não havia ninguém para perguntar, então a etapa foi recusada."
+      },
+      "markedWrong": "Você marcou este veredito como errado.",
+      "markedWrongWhy": "Você marcou este veredito como errado: {{note}}",
       "unlinked": "Registro independente",
       "unlinkedHint": "Registrado sem correlação de turno. É exibido sozinho e não é combinado com registros próximos no tempo.",
       "state": {

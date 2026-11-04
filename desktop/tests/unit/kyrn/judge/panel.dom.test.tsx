@@ -269,6 +269,57 @@ describe('a judgment, opened', () => {
     expect(screen.queryByText(copy.questions.other)).not.toBeInTheDocument();
   });
 
+  it('says what the person answered to the question a judgment sent them to, and that they marked it wrong', () => {
+    view([
+      event(
+        'decision',
+        ledger({ id: 'ask-1', specId: 'tool.approval', outcome: 'unsure', userAnswer: 'session' }),
+        turn('r', 4, 2)
+      ),
+      event(
+        'decision',
+        ledger({
+          id: 'ask-2',
+          specId: 'tool.approval',
+          outcome: 'beyond',
+          userAnswer: 'deny',
+          markedWrong: { note: 'it was the test I asked for' },
+        }),
+        turn('r', 4, 3)
+      ),
+      event('decision', ledger({ id: 'ask-3', specId: 'tool.approval', outcome: 'approve' }), turn('r', 4, 4)),
+    ]);
+
+    const [approved, denied, answered] = cards().map((card) => within(card));
+    expect(answered.getByTestId('judge-user-answer')).toHaveTextContent(copy.userAnswer.session);
+    expect(answered.queryByTestId('judge-marked-wrong')).not.toBeInTheDocument();
+    expect(denied.getByTestId('judge-user-answer')).toHaveTextContent(copy.userAnswer.deny);
+    expect(denied.getByTestId('judge-marked-wrong')).toHaveTextContent(
+      'You marked this verdict wrong: it was the test I asked for'
+    );
+    // A verdict that let the step run sent nobody a question.
+    expect(approved.queryByTestId('judge-user-answer')).not.toBeInTheDocument();
+  });
+
+  it('says the person’s answer in Chinese with mu’s own words for it', async () => {
+    const zh = createInstance();
+    await zh.init({
+      lng: 'zh-CN',
+      resources: { 'zh-CN': { translation: { common: zhCommon, mu: zhMu } } },
+      interpolation: { escapeValue: false },
+    });
+    render(
+      <I18nextProvider i18n={zh}>
+        <Judge
+          events={[
+            event('decision', ledger({ id: 'ask-1', specId: 'tool.approval', userAnswer: 'once' }), turn('r', 5, 2)),
+          ]}
+        />
+      </I18nextProvider>
+    );
+    expect(screen.getByTestId('judge-user-answer')).toHaveTextContent('你选了「允许这一次」。');
+  });
+
   it('asks the experience library’s questions and says which lessons were followed', () => {
     view([
       event(

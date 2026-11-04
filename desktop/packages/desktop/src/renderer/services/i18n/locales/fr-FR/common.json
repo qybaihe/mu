@@ -293,6 +293,15 @@
       "batchFailures": "Sans réponse, stratégie par défaut appliquée : {{count}}.",
       "changedThinking": "Niveau de réflexion : {{from}} → {{to}}",
       "sentHints": "Indications envoyées au modèle principal",
+      "userAnswer": {
+        "once": "Vous avez autorisé une fois.",
+        "session": "Vous avez autorisé pour cette conversation.",
+        "deny": "Vous n’avez pas autorisé.",
+        "dismissed": "Vous avez fermé la question sans répondre.",
+        "none": "Personne ne pouvait être consulté, l’étape a donc été refusée."
+      },
+      "markedWrong": "Vous avez signalé ce jugement comme erroné.",
+      "markedWrongWhy": "Vous avez signalé ce jugement comme erroné : {{note}}",
       "unlinked": "Enregistrement isolé",
       "unlinkedHint": "Enregistré sans corrélation de tour. Il est affiché seul et n’est pas fusionné avec des enregistrements proches dans le temps.",
       "state": {

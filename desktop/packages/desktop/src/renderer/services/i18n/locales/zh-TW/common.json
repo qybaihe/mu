@@ -293,6 +293,15 @@
       "batchFailures": "未得到回答、已改用預設策略：{{count}} 個。",
       "changedThinking": "思考強度：{{from}} → {{to}}",
       "sentHints": "傳給主模型的提示",
+      "userAnswer": {
+        "once": "你選了「允許這一次」。",
+        "session": "你選了「這次對話都允許」。",
+        "deny": "你選了「不允許」。",
+        "dismissed": "你關掉了提問，沒有作答。",
+        "none": "當時沒有人可以詢問，這一步被拒絕了。"
+      },
+      "markedWrong": "你標記了這次判定有誤。",
+      "markedWrongWhy": "你標記了這次判定有誤：{{note}}",
       "unlinked": "獨立記錄",
       "unlinkedHint": "這筆記錄沒有輪次關聯資訊，因此單獨顯示，不會與時間相近的記錄合併。",
       "state": {
