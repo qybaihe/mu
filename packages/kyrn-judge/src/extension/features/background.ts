@@ -198,7 +198,7 @@ export function registerBackground(runtime: KyrnRuntime): void {
 			// With the write floor on, the agent's job runs inside it as its bash commands do, or not at all.
 			const floor = runtime.floor ? await runtime.floor(ctx.cwd) : undefined;
 			if (floor && !floor.ok)
-				throw new Error(`mu: the write floor is on but cannot start here (${floor.reason}). Nothing ran.`);
+				throw new Error(`mu: the write sandbox is on but cannot start here (${floor.reason}). Nothing ran.`);
 			try {
 				const job = start(ctx.mode).start({
 					command: params.command,

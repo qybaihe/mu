@@ -572,13 +572,13 @@ On by default: yes.
 
 ## confine
 
-**Write floor (experimental).** The agent's bash commands and background jobs can write only to the project, the temporary folders and package caches, held to it by the operating system; the project's .git/hooks and .git/config are read-only. Seatbelt on macOS, bubblewrap on Linux, none on Windows. When it cannot start (no bubblewrap, user namespaces turned off), every command is refused rather than run unconfined. The judge and the permission modes ask as before.
+**Write sandbox (experimental).** The agent's bash commands and background jobs can write only to the project, the temporary folders and package caches, enforced by the operating system; the project's .git/hooks and .git/config are read-only. Seatbelt on macOS, bubblewrap on Linux, none on Windows. When it cannot start (no bubblewrap, user namespaces turned off), every command is refused rather than run unconfined. The judge and the permission modes ask as before.
 
 On by default: no.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `writable` | none | More folders commands may write. Such as a cache mu does not know. The home folder itself and ~/.mu never become writable this way. |
+| `writable` | none | More folders commands may write. For example, a cache mu doesn't know about. The home folder itself and ~/.mu never become writable this way. |
 
 ## sandbox
 

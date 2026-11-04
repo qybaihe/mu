@@ -60,12 +60,12 @@ export function registerConfine(runtime: KyrnRuntime, deps: ConfineDeps = {}): v
 	const bash = createBashToolDefinition(process.cwd());
 	pi.registerTool({
 		...bash,
-		description: `${bash.description} Commands run under a write floor: they can write only to the project, the temporary folders and package caches, and the project's .git/hooks and .git/config are read-only.`,
+		description: `${bash.description} Commands run in a write sandbox: they can write only to the project, the temporary folders and package caches, and the project's .git/hooks and .git/config are read-only.`,
 		async execute(id, params, signal, onUpdate, ctx) {
 			runtime.touch(ctx);
 			const state = await floor(ctx.cwd);
 			if (!state.ok)
-				throw new Error(`mu: the write floor is on but cannot start here (${state.reason}). Nothing ran.`);
+				throw new Error(`mu: the write sandbox is on but cannot start here (${state.reason}). Nothing ran.`);
 			const shell = readShellSettings(ctx.cwd, undefined, ctx.isProjectTrusted());
 			return createBashToolDefinition(ctx.cwd, {
 				operations: confinedOperations(state.confinement, shell.shellPath),
@@ -82,7 +82,7 @@ export function registerConfine(runtime: KyrnRuntime, deps: ConfineDeps = {}): v
 		if (ctx.hasUI)
 			ctx.ui.setStatus(
 				"mu.confine",
-				state.ok ? "Write floor: on" : `Write floor: cannot start (${state.reason}); commands are refused`,
+				state.ok ? "Write sandbox: on" : `Write sandbox: cannot start (${state.reason}); commands are refused`,
 			);
 	});
 }

@@ -170,7 +170,7 @@ export async function prepareFloor(
 	const floor = floorFor(cwd, place);
 	if ("problem" in floor) return { ok: false, reason: floor.problem };
 	const how = confinement(floor, platform);
-	if (!how) return { ok: false, reason: `mu has no write floor on ${platform}` };
+	if (!how) return { ok: false, reason: `mu has no write sandbox on ${platform}` };
 	const tried = await tryIt(how);
 	return tried.ok ? { ok: true, floor, confinement: how } : { ok: false, reason: tried.reason };
 }

@@ -112,7 +112,7 @@ describe("the write floor", () => {
 		const project = folder("project");
 		expect(await prepareFloor(project, { platform: "win32", tmp: [] })).toEqual({
 			ok: false,
-			reason: "mu has no write floor on win32",
+			reason: "mu has no write sandbox on win32",
 		});
 		expect(
 			await prepareFloor(project, { platform: "linux", tmp: [] }, async () => ({ ok: false, reason: "no bwrap" })),
@@ -208,9 +208,9 @@ describe("the write floor in a session", () => {
 		expect(existsSync(marker)).toBe(false);
 		const [bash, background] = results(harness);
 		expect(bash).toContain(
-			"the write floor is on but cannot start here (bwrap: setting up uid map: Permission denied)",
+			"the write sandbox is on but cannot start here (bwrap: setting up uid map: Permission denied)",
 		);
-		expect(background).toContain("the write floor is on but cannot start here");
+		expect(background).toContain("the write sandbox is on but cannot start here");
 	});
 
 	it.skipIf(process.platform !== "darwin" || !existsSync("/usr/bin/sandbox-exec"))(
