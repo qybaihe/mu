@@ -73,6 +73,8 @@ export interface PermissionOutcome {
 	readonly grant?: string;
 	/** How long the question waited for the answer. */
 	readonly waitedMs: number;
+	/** The call asked to run outside the write sandbox (`outside: true`). */
+	readonly outsideFloor?: true;
 }
 
 /** What the judge said about a call before the user was asked, for the user's answer to label. */
@@ -108,6 +110,9 @@ const KIND_TEXT: Readonly<Record<PermissionKind, { zh: string; en: string }>> = 
 	delegate: { zh: "派出子代理", en: "start subagents" },
 	other: { zh: "对外操作", en: "act outside this computer" },
 };
+
+/** What a command that asks out of the write sandbox wants to do. */
+const LEAVING_TEXT = { zh: "在写入沙箱外运行命令", en: "run a command outside the write sandbox" };
 
 const REASON_TEXT: Readonly<Record<Exclude<AskReason, "flagged">, { zh: string; en: string }>> = {
 	ask: {
@@ -151,6 +156,13 @@ export function approvalCall(toolName: string, input: unknown): { text: string; 
 	if (text.length <= APPROVAL_CALL_CHARS) return { text, whole: true };
 	return { text: `${text.slice(0, APPROVAL_CALL_CHARS - 1)}…`, whole: false };
 }
+
+/**
+ * Where a command that asks out of the write sandbox acts, for the judge. The model's reason is not shown to it: the
+ * model wrote it, and only the user's words vouch for a call.
+ */
+export const OUTSIDE_FLOOR_WHERE =
+	"outside the write sandbox: a command that can write anywhere this computer lets it, not only in the project folder";
 
 /** The answers, fixed so a client can draw them as buttons. */
 export const ANSWERS = {
@@ -295,6 +307,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		need: PermissionNeed,
 		flag: string | undefined,
 		ctx: ExtensionContext,
+		leaving = false,
 	): Promise<{ approved: boolean; reason: AskReason; said?: JudgeSaid }> => {
 		// The judge vouches only for what it read, and what runs is the whole call: one too long to read is the user's.
 		// Starting subagents is the exception, as their every step is put to the judge again.
@@ -332,6 +345,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		const powershell =
 			event.toolName === "powershell" || (event.toolName === "bg_start" && process.platform === "win32");
 		const check =
+			!leaving &&
 			need.kind === "shell" &&
 			isCheckChain(String(input.command ?? ""), powershell, ctx.cwd, shellStart(event.toolName, input, ctx.cwd));
 		const decision = await runtime.engine.decide(
@@ -343,8 +357,9 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 				),
 				userMessage,
 				call: call.text,
-				where:
-					need.kind === "outside"
+				where: leaving
+					? OUTSIDE_FLOOR_WHERE
+					: need.kind === "outside"
 						? "outside the project folder"
 						: need.kind === "shell" || need.kind === "run"
 							? "a program run in the project folder"
@@ -372,6 +387,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		flag: string | undefined,
 		ctx: ExtensionContext,
 		said?: JudgeSaid,
+		leaving = false,
 	): Promise<ToolCallEventResult | undefined> => {
 		const askedAt = Date.now();
 		const record = (answer: PermissionOutcome["answer"], grantKey?: string) => {
@@ -388,6 +404,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 				answer,
 				...(grantKey ? { grant: grantKey } : {}),
 				waitedMs: Date.now() - askedAt,
+				...(leaving ? { outsideFloor: true as const } : {}),
 			};
 			pi.appendEntry(OUTCOME_ENTRY, outcome);
 		};
@@ -437,7 +454,10 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		try {
 			picked = await ctx.ui.select(
 				[
-					say({ zh: `mu 想${KIND_TEXT[need.kind].zh}，需要你授权`, en: `mu wants to ${KIND_TEXT[need.kind].en}` }),
+					say({
+						zh: `mu 想${(leaving ? LEAVING_TEXT : KIND_TEXT[need.kind]).zh}，需要你授权`,
+						en: `mu wants to ${(leaving ? LEAVING_TEXT : KIND_TEXT[need.kind]).en}`,
+					}),
 					// A flagged command shows the parts its flag is about, which a summary cut at a fixed length can leave out,
 					// and a long command as much of itself as a person reads at once.
 					(flag && flag !== SENDS_CREDENTIAL) ||
@@ -463,9 +483,22 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		};
 	};
 
+	/** A call that asks to run outside the write sandbox (`outside: true`), while the sandbox is on. */
+	const leavesFloor = (event: ToolCallEvent) => runtime.floorExit?.asks(event.toolName, event.input) === true;
+
 	const gate = async (event: ToolCallEvent, ctx: ExtensionContext): Promise<ToolCallEventResult | undefined> => {
-		if (mode === "full") return undefined;
+		// The way out of the write sandbox is decided in full access too: allowed without a question, the sandbox would
+		// bound nothing.
+		const leaving = leavesFloor(event);
+		if (mode === "full" && !leaving) return undefined;
 		const input = event.input as Record<string, unknown>;
+		const why = leaving ? String(input.reason ?? "").trim() : "";
+		if (leaving && !why)
+			return {
+				block: true,
+				reason:
+					"mu: outside: true needs a reason: say why this command must write outside the write sandbox. Nothing ran.",
+			};
 		const found = permissionNeed(
 			event.toolName,
 			input,
@@ -477,7 +510,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		// A call that would carry a credential away is the user's to allow, each time, even one that only looks (a
 		// `web_fetch` with the key in its address). The person reads it with the credential taken out.
 		const leaking = carriesCredential(event.toolName, input);
-		const need: PermissionNeed | undefined = leaking
+		const asked: PermissionNeed | undefined = leaking
 			? {
 					kind: found?.kind ?? (command ? "shell" : "other"),
 					summary: redactSecrets(
@@ -487,20 +520,37 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 					...(found?.protected ? { protected: found.protected } : {}),
 				}
 			: found;
-		if (!need) return undefined;
+		// A command that only looks runs inside the sandbox, which lets it read everything: nothing to let out.
+		if (!asked) return undefined;
+		// Out of the sandbox, a command may change files anywhere: allowed once each time, with the model's reason shown.
+		const need: PermissionNeed = leaving
+			? {
+					kind: "outside",
+					summary: `${asked.summary}${say({ zh: `（在写入沙箱外运行：`, en: " (outside the write sandbox: " })}${redactSecrets(clip(why, 200), environmentSecrets())}${say({ zh: "）", en: ")" })}`,
+					...(asked.protected ? { protected: asked.protected } : {}),
+				}
+			: asked;
 		const flag = leaking ? SENDS_CREDENTIAL : command ? riskFlag(command) : undefined;
 		if (!need.protected && !flag && need.grant && grants.has(need.grant.key)) return approvedBy(event, need, "grant");
 		let reason: AskReason = need.protected ? "protected" : flag ? "flagged" : "ask";
 		let said: JudgeSaid | undefined;
-		if (mode === "judge" && !need.protected && flag !== SENDS_CREDENTIAL) {
+		// The way out goes to the judge first in full access as well; minimal permissions ask the user about it, as about
+		// everything else.
+		if ((mode === "judge" || (leaving && mode === "full")) && !need.protected && flag !== SENDS_CREDENTIAL) {
 			// Editing the project is the task itself, and a checkpoint can take it back.
 			if (need.kind === "edit" && need.inProject && !flag) return undefined;
-			const verdict = await judgeApproves(event, need, flag, ctx);
-			if (verdict.approved) return approvedBy(event, need, "judge");
+			const verdict = await judgeApproves(event, need, flag, ctx, leaving);
+			if (verdict.approved) return letOut(event, approvedBy(event, need, "judge"));
 			reason = verdict.reason;
 			said = verdict.said;
 		}
-		return askUser(event, need, reason, flag, ctx, said);
+		return letOut(event, await askUser(event, need, reason, flag, ctx, said, leaving));
+	};
+
+	/** A call that asked out of the write sandbox and was allowed goes out, this once. */
+	const letOut = (event: ToolCallEvent, result: ToolCallEventResult | undefined) => {
+		if (!result?.block && leavesFloor(event)) runtime.floorExit?.allow(event.toolCallId, event.input);
+		return result;
 	};
 
 	// A gate that failed must not open: an error asks the user, or refuses where nobody can be asked.
@@ -511,7 +561,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 			try {
 				return await gate(event, ctx);
 			} catch (error) {
-				if (mode === "full") return undefined;
+				if (mode === "full" && !leavesFloor(event)) return undefined;
 				const problem = error instanceof Error ? error.message : String(error);
 				if (ctx.signal?.aborted) return { block: true, reason: "Canceled." };
 				if (ctx.hasUI) {
@@ -521,7 +571,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 							`${event.toolName}\n\n${problem}`,
 						)
 						.catch(() => false);
-					if (allowed) return undefined;
+					if (allowed) return letOut(event, undefined);
 				}
 				return { block: true, reason: `mu could not check permission for this call: ${problem}` };
 			}

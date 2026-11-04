@@ -81,7 +81,7 @@ export function recoveryNote(calls: readonly InterruptedCall[]): string {
 		return `- ${named(call)}: it started, and whether it took effect is unknown. Before running it again, check whether it did (read the file, git status or git log, the remote's state), or ask the user. Running it twice may do it twice.`;
 	});
 	return [
-		"[mu] mu stopped while the last tool calls were running, so these have no result (they show as \"No result provided\"):",
+		'[mu] mu stopped while the last tool calls were running, so these have no result (they show as "No result provided"):',
 		...lines,
 	].join("\n");
 }

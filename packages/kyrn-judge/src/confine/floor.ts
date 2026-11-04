@@ -205,9 +205,10 @@ export function refusedWrites(output: string, floor: Floor, cwd: string): Refuse
 
 /**
  * The line a command's result gets when the floor refused some of its writes, so the model knows why and does not look
- * for another way to make the same change.
+ * for another way to make the same change. `wayOut`: the permission gate is there to decide `outside: true`, so the
+ * line names it.
  */
-export function refusalNote(refused: readonly RefusedWrite[], floor: Floor): string | undefined {
+export function refusalNote(refused: readonly RefusedWrite[], floor: Floor, wayOut = false): string | undefined {
 	if (refused.length === 0) return undefined;
 	const shown = (paths: readonly RefusedWrite[]) =>
 		paths
@@ -216,14 +217,16 @@ export function refusalNote(refused: readonly RefusedWrite[], floor: Floor): str
 			.join(", ") + (paths.length > 3 ? ` and ${paths.length - 3} more` : "");
 	const outside = refused.filter((write) => !write.readOnly);
 	const readOnly = refused.filter((write) => write.readOnly);
+	const out =
+		"If the task needs this write, run the command again with outside: true and a reason: it then runs outside the sandbox, once, if the judge or the user allows it.";
 	const lines: string[] = [];
 	if (outside.length > 0)
 		lines.push(
-			`[mu write sandbox: ${shown(outside)} ${outside.length === 1 ? "is" : "are"} outside what commands may write here (this project, the temporary folders and package caches), so the write was refused. Do the work inside the project, or tell the user which folder the task needs: they can allow it with features.confine.writable.]`,
+			`[mu write sandbox: ${shown(outside)} ${outside.length === 1 ? "is" : "are"} outside what commands may write here (this project, the temporary folders and package caches), so the write was refused. ${wayOut ? `Do the work inside the project if you can. ${out} A folder the task keeps needing, the user can allow with features.confine.writable.` : "Do the work inside the project, or tell the user which folder the task needs: they can allow it with features.confine.writable."}]`,
 		);
 	if (readOnly.length > 0)
 		lines.push(
-			`[mu write sandbox: ${shown(readOnly)} ${readOnly.length === 1 ? "is" : "are"} read-only here, as .git/hooks and .git/config always are, so the write was refused. Commands such as git config and git remote add need the user: tell them what to run.]`,
+			`[mu write sandbox: ${shown(readOnly)} ${readOnly.length === 1 ? "is" : "are"} read-only here, as .git/hooks and .git/config always are, so the write was refused. ${wayOut ? out : "Commands such as git config and git remote add need the user: tell them what to run."}]`,
 		);
 	return lines.join("\n");
 }

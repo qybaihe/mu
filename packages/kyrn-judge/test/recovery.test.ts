@@ -3,13 +3,13 @@ import { type SessionEntry, SessionManager } from "@earendil-works/pi-coding-age
 import { afterEach, describe, expect, it } from "vitest";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import { parseConfig } from "../src/config.ts";
-import { createKyrnJudgeExtension, type FeatureName } from "../src/extension/kyrn-judge.ts";
 import {
 	DISPATCH_ENTRY,
 	interruptedCalls,
 	RECOVERY_MESSAGE,
 	recoveryNote,
 } from "../src/extension/features/recovery.ts";
+import { createKyrnJudgeExtension, type FeatureName } from "../src/extension/kyrn-judge.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
 
 const push = fauxToolCall("bash", { command: "git push origin main" }, { id: "call-push" });
@@ -25,7 +25,8 @@ function interrupted(): SessionManager {
 	return session;
 }
 
-const entry = (fields: Record<string, unknown>) => ({ id: "x", parentId: null, timestamp: "", ...fields }) as SessionEntry;
+const entry = (fields: Record<string, unknown>) =>
+	({ id: "x", parentId: null, timestamp: "", ...fields }) as SessionEntry;
 
 describe("calls an interruption left without a result", () => {
 	it("are those of the last turn with no result: started, never started, or only reading", () => {
@@ -50,7 +51,10 @@ describe("calls an interruption left without a result", () => {
 	it("are none once the user has written, once the note was given, or when the turn was cut off", () => {
 		const branch = interrupted().getBranch();
 		expect(
-			interruptedCalls([...branch, entry({ type: "message", message: { role: "user", content: "x", timestamp: 3 } })]),
+			interruptedCalls([
+				...branch,
+				entry({ type: "message", message: { role: "user", content: "x", timestamp: 3 } }),
+			]),
 		).toEqual([]);
 		expect(
 			interruptedCalls([
@@ -148,7 +152,8 @@ describe("interrupted tool calls in a session", () => {
 		const branch = harness.sessionManager.getBranch();
 		const marked = branch.findIndex((item) => item.type === "custom" && item.customType === DISPATCH_ENTRY);
 		const result = branch.findIndex(
-			(item) => item.type === "message" && item.message.role === "toolResult" && item.message.toolCallId === "call-touch",
+			(item) =>
+				item.type === "message" && item.message.role === "toolResult" && item.message.toolCallId === "call-touch",
 		);
 		expect(marked).toBeGreaterThan(-1);
 		expect(marked).toBeLessThan(result);

@@ -4,6 +4,7 @@ import {
 	createLocalBashOperations,
 	getShellConfig,
 } from "@earendil-works/pi-coding-agent";
+import { Type } from "typebox";
 import { readShellSettings } from "../../background/shell.ts";
 import {
 	type Confinement,
@@ -15,6 +16,12 @@ import {
 	refusedWrites,
 } from "../../confine/floor.ts";
 import type { KyrnRuntime } from "../runtime.ts";
+
+/** What a bash call adds to ask out of the floor. */
+interface Outside {
+	readonly outside?: boolean;
+	readonly reason?: string;
+}
 
 export interface ConfineDeps {
 	readonly platform?: NodeJS.Platform;
@@ -42,10 +49,14 @@ function withRefusalNote<T extends { content: readonly { type: string; text?: st
 	result: T,
 	floor: Floor,
 	cwd: string,
+	wayOut: boolean,
 ): T {
 	const output = result.content.map((block) => (block.type === "text" ? (block.text ?? "") : "")).join("\n");
-	const note = refusalNote(refusedWrites(output, floor, cwd), floor);
-	return note ? { ...result, content: [...result.content, { type: "text", text: `\n${note}` }] } : result;
+	return withLine(result, refusalNote(refusedWrites(output, floor, cwd), floor, wayOut));
+}
+
+function withLine<T extends { content: readonly { type: string; text?: string }[] }>(result: T, line?: string): T {
+	return line ? { ...result, content: [...result.content, { type: "text", text: `\n${line}` }] } : result;
 }
 
 /**
@@ -55,6 +66,11 @@ function withRefusalNote<T extends { content: readonly { type: string; text?: st
  * cannot start (no bubblewrap, user namespaces turned off, Windows) refuses every command rather than running it
  * unconfined. The judge and the permission modes ask as before: the floor bounds what an approved command can do.
  * A bash result whose output shows a refused write gets a line saying so (`refusalNote`).
+ *
+ * The way out: a bash call with `outside: true` and a reason runs outside the floor, once, when the permission gate
+ * allowed it (`runtime.floorExit`). The gate decides it in every mode, full access too, since otherwise the floor
+ * bounds nothing: the judge first, then the user, never for the session. One it did not allow, or one the gate let
+ * through because it only looks, runs inside the floor like any other.
  * Design and measurements: kyrn/docs/13-local-write-sandbox.md. The Nebius sandbox, when on, takes bash over again.
  */
 export function registerConfine(runtime: KyrnRuntime, deps: ConfineDeps = {}): void {
@@ -79,23 +95,63 @@ export function registerConfine(runtime: KyrnRuntime, deps: ConfineDeps = {}): v
 		return found;
 	};
 	runtime.floor = floor;
+	/**
+	 * The calls the permission gate let out of the floor, each until it runs, with the command it allowed: a provider
+	 * that numbers its calls afresh every turn gives a later call the same id.
+	 */
+	const allowedOut = new Map<string, string>();
+	const asks = (toolName: string, input: unknown): input is Outside & { command?: unknown } =>
+		toolName === "bash" && typeof input === "object" && input !== null && (input as Outside).outside === true;
+	runtime.floorExit = {
+		asks,
+		allow: (toolCallId, input) => {
+			if (asks("bash", input)) allowedOut.set(toolCallId, String(input.command ?? ""));
+		},
+	};
 
 	const bash = createBashToolDefinition(process.cwd());
 	pi.registerTool({
 		...bash,
-		description: `${bash.description} Commands run in a write sandbox: they can write only to the project, the temporary folders and package caches, and the project's .git/hooks and .git/config are read-only.`,
+		description: `${bash.description} Commands run in a write sandbox: they can write only to the project, the temporary folders and package caches, and the project's .git/hooks and .git/config are read-only. A command that must write elsewhere (git config, git remote add, a file in the home folder) can set outside: true with a reason: it then runs outside the sandbox, once, if the judge or the user allows it. Ask for that only for a write the task needs.`,
+		parameters: Type.Object({
+			...bash.parameters.properties,
+			outside: Type.Optional(
+				Type.Boolean({
+					description:
+						"Run this command outside the write sandbox, once, if the judge or the user allows it. Only for a write the task needs that the sandbox refuses.",
+				}),
+			),
+			reason: Type.Optional(
+				Type.String({
+					description:
+						"With outside: true, required: why this command must write outside the sandbox, shown to the user if they are asked.",
+				}),
+			),
+		}),
 		async execute(id, params, signal, onUpdate, ctx) {
 			runtime.touch(ctx);
 			const state = await floor(ctx.cwd);
 			if (!state.ok)
 				throw new Error(`mu: the write sandbox is on but cannot start here (${state.reason}). Nothing ran.`);
 			const shell = readShellSettings(ctx.cwd, undefined, ctx.isProjectTrusted());
+			const { outside, reason: _reason, ...call } = params;
+			const out = outside === true && allowedOut.get(id) === call.command;
+			allowedOut.delete(id);
+			// Without the permission gate nobody can let a call out.
+			const wayOut = runtime.permissionMode !== undefined;
 			const result = await createBashToolDefinition(ctx.cwd, {
-				operations: confinedOperations(state.confinement, shell.shellPath),
+				...(out ? {} : { operations: confinedOperations(state.confinement, shell.shellPath) }),
 				commandPrefix: shell.commandPrefix,
 				shellPath: shell.shellPath,
-			}).execute(id, params, signal, onUpdate, ctx);
-			return withRefusalNote(result, state.floor, ctx.cwd);
+			}).execute(id, call, signal, onUpdate, ctx);
+			if (out) return result;
+			const noted = withRefusalNote(result, state.floor, ctx.cwd, wayOut);
+			return outside === true && !wayOut
+				? withLine(
+						noted,
+						"[mu write sandbox: outside: true needs mu's permission check, which is off here, so the command ran inside the sandbox.]",
+					)
+				: noted;
 		},
 	});
 
