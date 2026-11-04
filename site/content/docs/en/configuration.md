@@ -61,6 +61,7 @@ Judges and modes:
 | `MU_JUDGE_MODE` | Default mode for this run: `off`, `shadow` or `active` |
 | `MU_WRITER` | `provider/model` for the writing model |
 | `MU_PERMISSIONS` | Permission mode for this run: `full`, `judge` or `ask` |
+| `MU_PASS_ENV` | Credential variables the agent's commands still get, comma-separated, such as `GH_TOKEN,NPM_TOKEN`. Every other variable that holds a credential is left out of them ([permissions](@docs/permissions#always)). |
 
 Keys for the hosted judges, each sent only to its own service: `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`, `MU_JUDGE_CLM_API_KEY`, `MU_JUDGE_OPENAI_KEY`.
 

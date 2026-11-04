@@ -37,10 +37,13 @@ A command with chaining, redirection or substitution, or one starting with `sudo
 - **Reading is never asked about**: reading, searching and listing files, web search and web reading, and shell commands made only of read-only programs such as `git status` or `cat … | grep …`.
 - **Unknown tools are asked about.** A tool mu doesn't know, such as an MCP tool, needs permission.
 - **mu's own settings are yours.** mu asks you about every call that touches `~/.mu/agent`; the judge can't approve it.
+- **Your keys stay out of the agent's commands.** Commands the agent runs don't get environment variables that hold a credential (a name with `KEY`, `TOKEN`, `SECRET`, `PASSWORD` or `CREDENTIAL`, and a value that looks like one), so they can't read mu's keys or yours. `MU_PASS_ENV=GH_TOKEN,NPM_TOKEN` passes on the ones a command needs; commands you type with `!` get everything.
 
 ## Risky commands {#risky}
 
 Rules flag commands that look dangerous: `rm -rf`, force pushes, `sudo`, running a downloaded script and others. In *Judge mode* such a command runs only when the judge is sure you asked for it; in *Ask first* the flag is shown in the question. A flagged command can be allowed once, never for the whole conversation.
+
+A call that would send a credential away asks you every time, in *Judge mode* and *Ask first*: one whose input holds the value of one of mu's keys (the model providers', the judge's or those in mu's `.env`), written out or URL-encoded, or something only a secret looks like, such as `sk-…`, `ghp_…` or a private key. Reading tools count too, so a `web_fetch` with a key in its address asks. The judge isn't asked, the question shows the call with the key taken out, and it can only be allowed once. Naming a variable, as in `curl -H "Authorization: Bearer $GH_TOKEN"`, carries nothing and is judged as usual.
 
 ## Content from outside {#injection}
 

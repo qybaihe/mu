@@ -61,6 +61,7 @@ mu 看不懂的部分会退回默认值，而不是让 mu 停下。完全无法�
 | `MU_JUDGE_MODE` | 这次运行的默认模式：`off`、`shadow` 或 `active` |
 | `MU_WRITER` | 写作模型的 `provider/model` |
 | `MU_PERMISSIONS` | 这次运行的权限模式：`full`、`judge` 或 `ask` |
+| `MU_PASS_ENV` | agent 的命令仍然能拿到的凭据变量，用逗号分隔，比如 `GH_TOKEN,NPM_TOKEN`。其他存着凭据的变量都不会传给这些命令（见[权限](@docs/permissions#always)）。 |
 
 托管判定器的密钥，每个只发给它自己的服务：`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` 加 `CLOUDFLARE_ACCOUNT_ID`、`MU_JUDGE_CLM_API_KEY`、`MU_JUDGE_OPENAI_KEY`。
 

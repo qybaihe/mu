@@ -61,6 +61,7 @@ mu が理解できない部分は、mu を止めずにその既定値に戻り�
 | `MU_JUDGE_MODE` | この実行の既定のモード：`off`、`shadow`、`active` |
 | `MU_WRITER` | 書き手のモデルの `provider/model` |
 | `MU_PERMISSIONS` | この実行の権限モード：`full`、`judge`、`ask` |
+| `MU_PASS_ENV` | エージェントのコマンドに引き続き渡す認証情報の変数。カンマ区切りで、たとえば `GH_TOKEN,NPM_TOKEN`。認証情報を持つほかの変数は渡されません（[権限](@docs/permissions#always)）。 |
 
 ホストされた判定器のキー（それぞれ自分のサービスにだけ送られます）：`TYPESAFE_API_KEY`、`MU_JUDGE_OPENROUTER_API_KEY`、`AI_GATEWAY_API_KEY`、`OPENCODE_API_KEY`、`CLOUDFLARE_API_KEY` と `CLOUDFLARE_ACCOUNT_ID`、`MU_JUDGE_CLM_API_KEY`、`MU_JUDGE_OPENAI_KEY`。
 
