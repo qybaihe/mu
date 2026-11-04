@@ -570,6 +570,16 @@ On by default: yes.
 | `geminiCli` | `true` | Gemini CLI sign-in. The Gemini models, on the free tier for a personal account or with a Code Assist license. |
 | `antigravity` | `true` | Antigravity sign-in. Gemini, Claude and GPT-OSS; once you're signed in, the list shows what the account can use. |
 
+## confine
+
+**Write floor (experimental).** The agent's bash commands and background jobs can write only to the project, the temporary folders and package caches, held to it by the operating system; the project's .git/hooks and .git/config are read-only. Seatbelt on macOS, bubblewrap on Linux, none on Windows. When it cannot start (no bubblewrap, user namespaces turned off), every command is refused rather than run unconfined. The judge and the permission modes ask as before.
+
+On by default: no.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `writable` | none | More folders commands may write. Such as a cache mu does not know. The home folder itself and ~/.mu never become writable this way. |
+
 ## sandbox
 
 **Nebius sandbox (experimental).** bash, read, write and edit run in a Nebius Token Factory sandbox VM instead of on this machine: the project is copied in at the start, and every command continues from the files the previous one left. Changes come back here only through /sandbox pull, after you have seen the diff and agreed. Needs NEBIUS_API_KEY and NEBIUS_PROJECT_ID; MU_SANDBOX=nebius also turns it on.

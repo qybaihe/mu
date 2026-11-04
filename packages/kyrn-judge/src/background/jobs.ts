@@ -12,6 +12,7 @@ import {
 } from "node:fs";
 import { constants as osConstants } from "node:os";
 import { join } from "node:path";
+import type { Confinement } from "../confine/floor.ts";
 import { OutputCleaner, RingBuffer } from "./ring-buffer.ts";
 import { groupAlive, type KillStep, killPlan, runKillStep, type SpawnPlan } from "./shell.ts";
 
@@ -156,7 +157,8 @@ export class JobManager {
 		this.platform = options.platform ?? process.platform;
 	}
 
-	start(request: { command: string; cwd: string; name?: string; watch?: string }): JobInfo {
+	/** `confine`: start the command inside the write floor (`src/confine/floor.ts`), as the agent's own jobs are. */
+	start(request: { command: string; cwd: string; name?: string; watch?: string; confine?: Confinement }): JobInfo {
 		const command = request.command.trim();
 		if (!command) throw new JobError("The command is empty.");
 		const running = [...this.jobs.values()].filter((job) => !job.finished);
@@ -171,7 +173,10 @@ export class JobManager {
 			throw new JobError(`Working directory does not exist: ${request.cwd}`);
 		}
 
-		const plan = this.options.plan(command);
+		const planned = this.options.plan(command);
+		const plan = request.confine
+			? { ...planned, file: request.confine.runner, args: [...request.confine.args, planned.file, ...planned.args] }
+			: planned;
 		const id = `bg-${++this.sequence}`;
 		mkdirSync(this.options.logDir, { recursive: true });
 		const logPath = join(this.options.logDir, `${id}.log`);

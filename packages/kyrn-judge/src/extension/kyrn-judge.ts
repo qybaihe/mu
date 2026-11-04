@@ -33,6 +33,7 @@ import { type CheckpointDeps, registerCheckpoint } from "./features/checkpoint.t
 import { registerCommands } from "./features/commands.ts";
 import { registerCompaction } from "./features/compaction.ts";
 import { registerCompletion } from "./features/completion.ts";
+import { type ConfineDeps, registerConfine } from "./features/confine.ts";
 import { registerConstraints } from "./features/constraints.ts";
 import { registerContinuation } from "./features/continuation.ts";
 import { registerDeadline } from "./features/deadline.ts";
@@ -102,6 +103,8 @@ export interface KyrnJudgeExtensionOptions {
 	checkpoint?: CheckpointDeps;
 	/** For tests of the sandbox feature: the HTTP client, the environment and how the project is packed. */
 	sandbox?: SandboxDeps;
+	/** For tests of the write floor: the platform, how the floor is tried, the home and temporary folders. */
+	confine?: ConfineDeps;
 }
 
 export type FeatureName =
@@ -140,6 +143,7 @@ export type FeatureName =
 	| "inherit"
 	| "mcp"
 	| "background"
+	| "confine"
 	| "sandbox"
 	| "web"
 	| "packs"
@@ -267,6 +271,9 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["inherit", (shared) => registerInherit(shared, roots)],
 		["mcp", (shared) => registerMcp(shared, roots)],
 		["background", registerBackground],
+		// Replaces bash with one under the write floor when switched on; off by default. Before the Nebius sandbox,
+		// which takes bash over again when it is on: nothing runs on this machine then.
+		["confine", (shared) => registerConfine(shared, options.confine)],
 		// Replaces bash, read, write and edit when switched on; off by default.
 		["sandbox", (shared) => registerSandbox(shared, options.sandbox)],
 		["web", registerWeb],
