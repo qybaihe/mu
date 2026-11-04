@@ -1,6 +1,6 @@
 # Local write sandbox
 
-Status: proposed, 2026-11-04. Nothing here is built yet. Refs ANALYSIS.md (the deepseek-harness comparison) S1, S4 and S7.
+Status: proposed, 2026-11-04. Nothing here is built yet.
 
 The judge and the permission modes run inside mu's own process, and most of what they decide is a model's judgment. This proposal adds a floor that does not depend on any model being right: the commands the agent runs can write only to the project and the temporary folders, enforced by the operating system.
 
