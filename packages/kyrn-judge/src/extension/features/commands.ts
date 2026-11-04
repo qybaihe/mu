@@ -8,9 +8,9 @@ import { appLanguage, say } from "../../language.ts";
 import type { LedgerRecord } from "../../ledger.ts";
 import { loadAgents } from "../agents.ts";
 import { promptsFor } from "../localized-prompts.ts";
-import { failOpen, type KyrnRuntime } from "../runtime.ts";
+import { failOpen, type KyrnRuntime, LEDGER_ENTRY_TYPE } from "../runtime.ts";
 import type { HarnessRoots } from "./inherit.ts";
-import { OUTCOME_ENTRY, type PermissionOutcome } from "./permissions.ts";
+import { type JudgmentMark, OUTCOME_ENTRY, type PermissionOutcome } from "./permissions.ts";
 import { modelRef, VERSIONS } from "./welcome.ts";
 
 const MODES: readonly string[] = ["off", "shadow", "active"];
@@ -44,7 +44,7 @@ const helpZh = () => `mu ${VERSIONS.mu} · 先判断再动手的编程代理，�
   /permissions [模式]：mu 不问你就能做多少事，可选 full（完全访问）、judge（判定模式，由判定器替你批，
     拿不准才问你）、ask（最小权限，除了读都要问你）
   /capabilities：装了哪些能力，这次打开了哪些；/capabilities open <ID> 打开一个
-  /ledger [条数]：最近几条判定和用时
+  /ledger [条数]：最近几条判定和用时；/ledger wrong <编号> [原因] 把一条标为判错了
   /remember <经验>：记一条经验，以后的会话都会用上
   /lessons [all]：这个项目的经验，召回和照做了几次；all 连到处适用的和已退役的一起列
   /forget <id>：让一条经验退役，以后不再召回
@@ -126,7 +126,10 @@ const helpSectionsEn = (): HelpSection[] => [
 				"set how much mu can do without asking: full (Full access), judge (Judge mode: the judge allows what the task clearly needs and asks you about the rest), ask (Ask first: asks before anything but reading)",
 			],
 			["/capabilities", "show what's installed and what's open for this task; /capabilities open <id> opens one"],
-			["/ledger [n]", "show the last n verdicts and their latency"],
+			[
+				"/ledger [n]",
+				"show the last n verdicts and their latency; /ledger wrong <id> [why] marks one the judge got wrong",
+			],
 			["/remember <lesson>", "save a lesson for future sessions"],
 			[
 				"/lessons [all]",
@@ -263,18 +266,32 @@ const helpEn = () =>
 		helpWidth(),
 	);
 
-/** What the user answered about the calls the judge's records were about, by record id (`kyrn.outcome` entries). */
-function userAnswers(ctx: ExtensionCommandContext): Map<string, string> {
-	const answers = new Map<string, string>();
-	for (const entry of ctx.sessionManager.getBranch()) {
-		if (entry.type !== "custom" || entry.customType !== OUTCOME_ENTRY) continue;
-		const outcome = entry.data as Partial<PermissionOutcome> | undefined;
-		if (outcome?.ledgerId && outcome.answer) answers.set(outcome.ledgerId, outcome.answer);
-	}
-	return answers;
+/** What the user said of one of the judge's records: their answer to the question it sent them, their mark on it. */
+interface UserLabel {
+	answer?: string;
+	wrong?: { note?: string };
 }
 
-function describeRecord(record: LedgerRecord, answer?: string): string[] {
+/** What the user said of the judge's records, by record id (`kyrn.outcome` entries). */
+function userLabels(ctx: ExtensionCommandContext): Map<string, UserLabel> {
+	const labels = new Map<string, UserLabel>();
+	const of = (id: string) => labels.get(id) ?? (labels.set(id, {}).get(id) as UserLabel);
+	for (const entry of ctx.sessionManager.getBranch()) {
+		if (entry.type !== "custom" || entry.customType !== OUTCOME_ENTRY) continue;
+		const outcome = entry.data as Partial<PermissionOutcome> | Partial<JudgmentMark> | undefined;
+		if (!outcome?.ledgerId) continue;
+		if (outcome.kind === "mark" && outcome.mark === "wrong")
+			of(outcome.ledgerId).wrong = outcome.note ? { note: outcome.note } : {};
+		else if (outcome.kind !== "mark" && "answer" in outcome && outcome.answer)
+			of(outcome.ledgerId).answer = outcome.answer;
+	}
+	return labels;
+}
+
+/** A record's short name in `/ledger`, enough to mark it with `/ledger wrong`. */
+const shortId = (id: string) => id.replace(/-/g, "").slice(0, 8);
+
+function describeRecord(record: LedgerRecord, label?: UserLabel): string[] {
 	const verdict = record.judged === undefined ? (record.reason ?? "no verdict") : JSON.stringify(record.judged);
 	const timing = record.latencyMs === undefined ? "" : ` ${record.latencyMs}ms`;
 	const batch = record.batch ? ` x${record.batch.size}` : "";
@@ -284,8 +301,12 @@ function describeRecord(record: LedgerRecord, answer?: string): string[] {
 				`${tier.judgeId.split(/[:/]/).pop()} ${tier.kept}/${tier.asked}${tier.error ? ` ${tier.error}` : ""}`,
 		)
 		.join(", ");
+	const said = [
+		...(label?.answer ? [label.answer] : []),
+		...(label?.wrong ? [`marked wrong${label.wrong.note ? ` (${label.wrong.note.slice(0, 80)})` : ""}`] : []),
+	].join(", ");
 	const lines = [
-		`${record.timestamp.slice(11, 19)} ${record.specId} v${record.specVersion}${batch} [${record.source}]${timing}${tiers ? ` (${tiers})` : ""} ${verdict.slice(0, 200)}${answer ? ` -> you: ${answer}` : ""}`,
+		`${record.timestamp.slice(11, 19)} #${shortId(record.id)} ${record.specId} v${record.specVersion}${batch} [${record.source}]${timing}${tiers ? ` (${tiers})` : ""} ${verdict.slice(0, 200)}${said ? ` -> you: ${said}` : ""}`,
 	];
 	for (const warning of record.warnings ?? []) {
 		lines.push(
@@ -293,6 +314,18 @@ function describeRecord(record: LedgerRecord, answer?: string): string[] {
 		);
 	}
 	return lines;
+}
+
+/** The judge's records of this session, as saved in it and as still in memory, oldest first, each once. */
+function sessionRecords(ctx: ExtensionCommandContext, memory: readonly LedgerRecord[]): LedgerRecord[] {
+	const found = new Map<string, LedgerRecord>();
+	for (const entry of ctx.sessionManager.getBranch()) {
+		if (entry.type !== "custom" || entry.customType !== LEDGER_ENTRY_TYPE) continue;
+		const record = entry.data as LedgerRecord | undefined;
+		if (record?.id) found.set(record.id, record);
+	}
+	for (const record of memory) if (!found.has(record.id)) found.set(record.id, record);
+	return [...found.values()];
 }
 
 /**
@@ -403,17 +436,58 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 
 	pi.registerCommand("ledger", {
 		description: say({
-			zh: "判定器最近的判定和用时：/ledger [条数]",
-			en: "Show the last n verdicts and their latency: /ledger [n]",
+			zh: "判定器最近的判定和用时：/ledger [条数]；判错了就 /ledger wrong <编号> [原因]",
+			en: "Show the last n verdicts and their latency: /ledger [n]; mark one the judge got wrong: /ledger wrong <id> [why]",
 		}),
 		handler: async (args, ctx) => {
-			const count = Math.min(50, Math.max(1, Number.parseInt(args.trim(), 10) || 15));
+			const [first = "", second = "", ...rest] = args.trim().split(/\s+/);
+			if (first === "wrong") {
+				// The record by its id, as `/ledger` shows it (#a1b2c3d4) or whole, as the app sends it.
+				const wanted = second.replace(/^#/, "").replace(/-/g, "").toLowerCase();
+				const records = sessionRecords(ctx, runtime.memory.records);
+				const matching =
+					wanted.length >= 4 ? records.filter((record) => record.id.replace(/-/g, "").startsWith(wanted)) : [];
+				if (matching.length !== 1) {
+					ctx.ui.notify(
+						matching.length > 1
+							? `More than one verdict starts with #${wanted}: give more of its id.`
+							: "Which verdict? /ledger wrong <id> [why], with the id /ledger shows (#a1b2c3d4).",
+						"warning",
+					);
+					return;
+				}
+				const record = matching[0] as LedgerRecord;
+				if (userLabels(ctx).get(record.id)?.wrong) {
+					ctx.ui.notify(`#${shortId(record.id)} is already marked wrong.`, "info");
+					return;
+				}
+				const note = rest.join(" ").trim();
+				const mark: JudgmentMark = {
+					kind: "mark",
+					ledgerId: record.id,
+					specId: record.specId,
+					specVersion: record.specVersion,
+					...(record.judged !== undefined ? { judged: record.judged } : {}),
+					mark: "wrong",
+					...(note ? { note: note.slice(0, 500) } : {}),
+				};
+				pi.appendEntry(OUTCOME_ENTRY, mark);
+				ctx.ui.notify(
+					say({
+						zh: `已把 #${shortId(record.id)}（${record.specId}）标为判错了。`,
+						en: `Marked #${shortId(record.id)} (${record.specId}) as wrong.`,
+					}),
+					"info",
+				);
+				return;
+			}
+			const count = Math.min(50, Math.max(1, Number.parseInt(first, 10) || 15));
 			const records = runtime.memory.records.slice(-count);
-			const answers = userAnswers(ctx);
+			const labels = userLabels(ctx);
 			ctx.ui.notify(
 				records.length === 0
 					? "No verdicts in this session yet. For all sessions, run mu ledger"
-					: records.flatMap((record) => describeRecord(record, answers.get(record.id))).join("\n"),
+					: records.flatMap((record) => describeRecord(record, labels.get(record.id))).join("\n"),
 				"info",
 			);
 		},

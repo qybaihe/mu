@@ -19,7 +19,7 @@ describe("mu ledger", () => {
 		return result.stdout;
 	};
 
-	it("shows what the user answered when the judge's verdict sent a call to them", () => {
+	it("shows what the user answered when the judge's verdict sent a call to them, and what they marked wrong", () => {
 		const sessions = mkdtempSync(join(tmpdir(), "mu-ledger-"));
 		dirs.push(sessions);
 		mkdirSync(join(sessions, "project"));
@@ -44,19 +44,35 @@ describe("mu ledger", () => {
 				decision("d1", "beyond"),
 				entry("kyrn.outcome", { kind: "permission", ledgerId: "d1", answer: "once", waitedMs: 900 }),
 				decision("d2", "approve"),
+				decision("d3", "unrelated"),
+				entry("kyrn.outcome", { kind: "permission", ledgerId: "d3", answer: "once", waitedMs: 400 }),
+				entry("kyrn.outcome", {
+					kind: "mark",
+					ledgerId: "d3",
+					specId: "tool.approval",
+					specVersion: 3,
+					judged: "unrelated",
+					mark: "wrong",
+					note: "publishing is the task",
+				}),
 			].join("\n"),
 		);
 
 		const lines = run(sessions).split("\n");
 		expect(lines.find((line) => line.includes('"beyond"'))).toContain('tool.approval: "beyond"  -> you: once');
 		expect(lines.find((line) => line.includes('"approve"'))).not.toContain("-> you");
+		// A mark does not take the place of the answer.
+		expect(lines.find((line) => line.includes('"unrelated"'))).toContain(
+			'tool.approval: "unrelated"  -> you: once, marked wrong (publishing is the task)',
+		);
 		const records = run(sessions, "--json")
 			.trim()
 			.split("\n")
-			.map((line) => JSON.parse(line) as { id: string; userAnswer?: string });
-		expect(records.map((record) => [record.id, record.userAnswer])).toEqual([
-			["d1", "once"],
-			["d2", undefined],
+			.map((line) => JSON.parse(line) as { id: string; userAnswer?: string; userMark?: unknown });
+		expect(records.map((record) => [record.id, record.userAnswer, record.userMark])).toEqual([
+			["d1", "once", undefined],
+			["d2", undefined, undefined],
+			["d3", "once", { mark: "wrong", note: "publishing is the task" }],
 		]);
 	});
 });

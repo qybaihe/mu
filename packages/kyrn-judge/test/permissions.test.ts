@@ -1258,6 +1258,29 @@ describe("permission modes in a session", () => {
 		await harness.session.prompt("/ledger");
 		expect(notes.at(-1)).toMatch(/tool\.approval v3 .*"unsure" -> you: session/);
 		expect(notes.at(-1)).toMatch(/tool\.approval v3 .*"beyond" -> you: deny/);
+
+		// The user marks a verdict wrong by the id /ledger shows; the app sends the whole id.
+		const short = String(records[1].id).replace(/-/g, "").slice(0, 8);
+		expect(notes.at(-1)).toContain(`#${short} tool.approval v3`);
+		await harness.session.prompt(`/ledger wrong #${short} publishing is what I asked for`);
+		expect(notes.at(-1)).toBe(`Marked #${short} (tool.approval) as wrong.`);
+		await harness.session.prompt(`/ledger wrong ${records[1].id}`);
+		expect(notes.at(-1)).toBe(`#${short} is already marked wrong.`);
+		await harness.session.prompt("/ledger wrong");
+		expect(notes.at(-1)).toContain("Which verdict? /ledger wrong <id> [why]");
+		expect(custom(OUTCOME_ENTRY).at(-1)).toEqual({
+			kind: "mark",
+			ledgerId: records[1].id,
+			specId: "tool.approval",
+			specVersion: 3,
+			judged: "beyond",
+			mark: "wrong",
+			note: "publishing is what I asked for",
+		});
+		await harness.session.prompt("/ledger");
+		// The answer stays; the mark comes after it.
+		expect(notes.at(-1)).toMatch(/"beyond" -> you: deny, marked wrong \(publishing is what I asked for\)/);
+		expect(notes.at(-1)).toMatch(/"unsure" -> you: session$/m);
 	});
 
 	it("keeps a refusal where nobody could be asked, and an answer no judge was asked about", async () => {

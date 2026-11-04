@@ -6,9 +6,9 @@
 //   kyrn/bin/kyrn-ledger --json       one JSON object per decision, for scripts
 //
 // Reads the `kyrn.decision` entries the kernel appends to pi session files and
-// pairs each with the user message it judged, and with what the user answered
-// when the judge's verdict sent a call to them (`kyrn.outcome`). Nothing is sent
-// anywhere.
+// pairs each with the user message it judged, with what the user answered when
+// the judge's verdict sent a call to them, and with their mark when they said the
+// judge got it wrong (`kyrn.outcome`). Nothing is sent anywhere.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -17,8 +17,8 @@ const args = process.argv.slice(2);
 if (args.includes("--help") || args.includes("-h")) {
 	console.log(
 		[
-			"mu ledger: the judge's verdicts from your recent sessions, each with the message it judged, and your answer",
-			"when a verdict sent a call to you.",
+			"mu ledger: the judge's verdicts from your recent sessions, each with the message it judged, your answer",
+			"when a verdict sent a call to you, and your mark when you said the judge got it wrong (/ledger wrong).",
 			"",
 			"  mu ledger            verdicts from the 5 most recent sessions",
 			"  mu ledger <n>        from the n most recent",
@@ -76,11 +76,15 @@ for (const file of files) {
 			entries.push(JSON.parse(line));
 		} catch {}
 	}
-	// What the user answered about a call the judge sent to them, by the judge's record.
+	// What the user answered about a call the judge sent to them, and the judgments they marked wrong (`/ledger
+	// wrong`), by the judge's record.
 	const answers = new Map();
+	const marks = new Map();
 	for (const entry of entries) {
 		const outcome = entry.type === "custom" && entry.customType === "kyrn.outcome" ? entry.data : undefined;
-		if (outcome?.ledgerId && outcome.answer) answers.set(outcome.ledgerId, outcome.answer);
+		if (!outcome?.ledgerId) continue;
+		if (outcome.kind === "mark" && outcome.mark === "wrong") marks.set(outcome.ledgerId, { mark: "wrong", ...(outcome.note ? { note: outcome.note } : {}) });
+		else if (outcome.kind !== "mark" && outcome.answer) answers.set(outcome.ledgerId, outcome.answer);
 	}
 	for (const entry of entries) {
 		if (entry.type === "message" && entry.message?.role === "user") lastUserMessage = textOf(entry.message.content);
@@ -88,9 +92,18 @@ for (const file of files) {
 
 		const record = entry.data ?? {};
 		const userAnswer = answers.get(record.id);
+		const userMark = marks.get(record.id);
 		count++;
 		if (asJson) {
-			console.log(JSON.stringify({ session: file.path, userMessage: lastUserMessage, ...record, ...(userAnswer ? { userAnswer } : {}) }));
+			console.log(
+				JSON.stringify({
+					session: file.path,
+					userMessage: lastUserMessage,
+					...record,
+					...(userAnswer ? { userAnswer } : {}),
+					...(userMark ? { userMark } : {}),
+				}),
+			);
 			continue;
 		}
 		const judged = record.judged;
@@ -103,7 +116,8 @@ for (const file of files) {
 				: judged === undefined
 					? `no verdict (${record.reason ?? "unknown"})`
 					: JSON.stringify(judged);
-		console.log(`${head}  ${record.specId}: ${verdict}${userAnswer ? `  -> you: ${userAnswer}` : ""}`);
+		const said = [userAnswer, userMark && `marked wrong${userMark.note ? ` (${userMark.note.slice(0, 80)})` : ""}`].filter(Boolean).join(", ");
+		console.log(`${head}  ${record.specId}: ${verdict}${said ? `  -> you: ${said}` : ""}`);
 		console.log(`    "${lastUserMessage.replace(/\s+/g, " ").slice(0, 160)}"`);
 		for (const warning of record.warnings ?? []) console.log(`    ! ${warning.type} ${warning.questionId ?? ""}`);
 	}
