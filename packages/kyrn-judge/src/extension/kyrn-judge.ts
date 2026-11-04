@@ -60,6 +60,7 @@ import { registerPacks } from "./features/packs.ts";
 import { registerPermissions } from "./features/permissions.ts";
 import { registerPreflight } from "./features/preflight.ts";
 import { registerProcedures } from "./features/procedures.ts";
+import { registerRecovery } from "./features/recovery.ts";
 import { registerSandbox, type SandboxDeps } from "./features/sandbox.ts";
 import { registerSkills } from "./features/skills.ts";
 import { registerSwarm, type SwarmRunner } from "./features/swarm.ts";
@@ -147,7 +148,8 @@ export type FeatureName =
 	| "sandbox"
 	| "web"
 	| "packs"
-	| "googleLogin";
+	| "googleLogin"
+	| "recovery";
 
 export function createKyrnJudgeExtension(options: KyrnJudgeExtensionOptions = {}): (pi: ExtensionAPI) => void {
 	return (pi) => registerKyrn(pi, options);
@@ -279,6 +281,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["web", registerWeb],
 		["packs", registerPacks],
 		["googleLogin", registerGoogleLogin],
+		// Last: its tool_call handler marks a call as started, so every check that may stop the call comes first.
+		["recovery", registerRecovery],
 	];
 	for (const [name, register] of features) {
 		if (!options.only || options.only.includes(name)) register(runtime);

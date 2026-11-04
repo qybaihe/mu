@@ -570,6 +570,12 @@ On by default: yes.
 | `geminiCli` | `true` | Gemini CLI sign-in. The Gemini models, on the free tier for a personal account or with a Code Assist license. |
 | `antigravity` | `true` | Antigravity sign-in. Gemini, Claude and GPT-OSS; once you're signed in, the list shows what the account can use. |
 
+## recovery
+
+**Interrupted tool calls.** When mu is killed, the machine sleeps or the app quits while tool calls run, reopening the session tells the model and you which calls have no result: which never started, which only read, and which started with an outcome nobody knows. For those, the model is told to check the outside state or ask you first, so a git push, a publish or a migration does not run twice. Before each call that may change something starts, the session gets a marker.
+
+On by default: yes.
+
 ## confine
 
 **Write sandbox (experimental).** The agent's bash commands and background jobs can write only to the project, the temporary folders and package caches, enforced by the operating system; the project's .git/hooks and .git/config are read-only. Seatbelt on macOS, bubblewrap on Linux, none on Windows. When it cannot start (no bubblewrap, user namespaces turned off), every command is refused rather than run unconfined. The judge and the permission modes ask as before.
