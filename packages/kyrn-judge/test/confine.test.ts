@@ -294,6 +294,29 @@ describe("the write floor in a session", () => {
 	});
 
 	it.skipIf(process.platform !== "darwin" || !existsSync("/usr/bin/sandbox-exec"))(
+		"on macOS, a background job's refused write is said so where its output is read",
+		async () => {
+			const harness = await start(async () => ({ ok: true }));
+			const target = join(folder("outside"), "job.txt");
+			harness.setResponses([
+				fauxAssistantMessage([fauxToolCall("bg_start", { command: `echo x > ${shellQuote(target)}` })], {
+					stopReason: "toolUse",
+				}),
+				fauxAssistantMessage([fauxToolCall("bg_output", { id: "bg-1", timeout: 10 })], { stopReason: "toolUse" }),
+				fauxAssistantMessage("Done."),
+			]);
+			await harness.session.prompt("Write it in the background");
+
+			expect(existsSync(target)).toBe(false);
+			const output = results(harness)[1];
+			expect(output).toContain("Operation not permitted");
+			expect(output).toContain(`[mu write sandbox: ${target} is outside what commands may write here`);
+			// mu's own line, above the job's output, which is marked as not to be trusted.
+			expect(output.indexOf("[mu write sandbox:")).toBeLessThan(output.indexOf("Operation not permitted"));
+		},
+	);
+
+	it.skipIf(process.platform !== "darwin" || !existsSync("/usr/bin/sandbox-exec"))(
 		"on macOS, the agent's bash command writes the project and is refused outside it",
 		async () => {
 			const harness = await start(async () => ({ ok: true }));

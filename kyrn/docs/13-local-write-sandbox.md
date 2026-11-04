@@ -98,7 +98,7 @@ There are two independent settings: the sandbox (`features.confine.enabled`) and
    - Unit tests cover the generated profile and bwrap arguments.
    - A macOS-only test runs real `sandbox-exec` (CI's harness job is Linux, so that test runs locally and on macOS runners).
    - A Linux test runs only where `bwrap` works.
-2. **The denial line and `outside: true`**, through the judge. Built, for `bash`. A background job's output is read later, by `bg_log`, and gets no line yet; a background job has no way out.
+2. **The denial line and `outside: true`**, through the judge. Built, for `bash`. A background job's output gets the same line where it is read (`bg_output`), among mu's own notes above the job's output; a background job has no way out, so its line sends the model to the project or to the user.
 3. **Turn it on for mu's own runs** (TB2.1, mubench real tasks) and count:
    - commands refused that the task needed;
    - which cache folders were missing;

@@ -15,6 +15,7 @@ import {
 	shellEnv,
 	shellKind,
 } from "../../background/shell.ts";
+import { refusalNote, refusedWrites } from "../../confine/floor.ts";
 import type { NotifyOutcome } from "../../decisions/notify-routing.ts";
 import { say } from "../../language.ts";
 import { muHome } from "../../naming.ts";
@@ -277,6 +278,13 @@ export function registerBackground(runtime: KyrnRuntime): void {
 					`[showing the last ${result.text.length} of ${result.text.length + result.skipped} new characters; the full log is ${job.logPath}]`,
 				);
 			}
+			// A job runs inside the write floor as bash does: a write it refused is said so here, where its output is read.
+			// A job has no way out of the floor, so the note sends the model to the project or to the user.
+			const floor = runtime.floor && result.text ? await runtime.floor(ctx.cwd) : undefined;
+			const refused = floor?.ok
+				? refusalNote(refusedWrites(result.text, floor.floor, job.cwd), floor.floor)
+				: undefined;
+			if (refused) notes.push(refused);
 			const text = [
 				describeJob(job),
 				...notes,
