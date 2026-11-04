@@ -985,6 +985,8 @@ Behavior guarantees:
 - Return values from `tool_call` control blocking via `{ block: true, reason?: string, terminate?: boolean }`
 - `terminate` only applies to a blocked call; the agent stops early only when every finalized result in the batch is terminating
 
+A handler that checks a call, rather than changing it, can ask to read the call as it will run: `pi.on("tool_call", handler, { final: true })`. Final handlers run after every other `tool_call` handler, including those of extensions loaded later, in extension load order among themselves. Their `event.input` is a deep-frozen copy of the input those handlers left, so a final handler can block the call but not change it: an assignment to it throws, and the call is blocked with that error. Without `final`, a handler of an extension loaded after yours can still change the input after your check approved it.
+
 ```typescript
 import { isToolCallEventType } from "@earendil-works/pi-coding-agent";
 
