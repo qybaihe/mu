@@ -1206,7 +1206,7 @@ describe("permission modes in a session", () => {
 	});
 
 	it("keeps what the user answered, joined to the judge's record of the same call", async () => {
-		const { harness } = await start(
+		const { harness, notes } = await start(
 			(request): Record<string, Answer> =>
 				"verdict" in request.questions
 					? {
@@ -1254,6 +1254,10 @@ describe("permission modes in a session", () => {
 				answer: "deny",
 			}),
 		]);
+		// /ledger puts the answer after the verdict it labels.
+		await harness.session.prompt("/ledger");
+		expect(notes.at(-1)).toMatch(/tool\.approval v3 .*"unsure" -> you: session/);
+		expect(notes.at(-1)).toMatch(/tool\.approval v3 .*"beyond" -> you: deny/);
 	});
 
 	it("keeps a refusal where nobody could be asked, and an answer no judge was asked about", async () => {

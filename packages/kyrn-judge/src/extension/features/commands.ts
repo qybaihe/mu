@@ -285,7 +285,7 @@ function describeRecord(record: LedgerRecord, answer?: string): string[] {
 		)
 		.join(", ");
 	const lines = [
-		`${record.timestamp.slice(11, 19)} ${record.specId} v${record.specVersion}${batch} [${record.source}]${timing}${tiers ? ` (${tiers})` : ""} ${verdict.slice(0, 200)}${answer ? ` -> user: ${answer}` : ""}`,
+		`${record.timestamp.slice(11, 19)} ${record.specId} v${record.specVersion}${batch} [${record.source}]${timing}${tiers ? ` (${tiers})` : ""} ${verdict.slice(0, 200)}${answer ? ` -> you: ${answer}` : ""}`,
 	];
 	for (const warning of record.warnings ?? []) {
 		lines.push(
