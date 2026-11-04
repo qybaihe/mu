@@ -480,6 +480,7 @@ export function registerCheckpoint(
 			await exclusive(() => takeCheckpoint(ctx)).catch((error) => giveUp(ctx, error));
 			return undefined;
 		}),
+		{ final: true },
 	);
 
 	pi.on(

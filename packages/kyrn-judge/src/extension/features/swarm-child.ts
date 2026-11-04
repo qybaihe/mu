@@ -98,5 +98,6 @@ export function registerSwarmChild(runtime: KyrnRuntime, path: string, frameOutP
 			}
 			return state.wrapping ? { block: true, reason: toolsClosed(state.reason) } : undefined;
 		}),
+		{ final: true },
 	);
 }

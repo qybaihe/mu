@@ -416,23 +416,31 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 	};
 
 	// A gate that failed must not open: an error asks the user, or refuses where nobody can be asked.
-	pi.on("tool_call", async (event, ctx) => {
-		runtime.touch(ctx);
-		try {
-			return await gate(event, ctx);
-		} catch (error) {
-			if (mode === "full") return undefined;
-			const problem = error instanceof Error ? error.message : String(error);
-			if (ctx.signal?.aborted) return { block: true, reason: "Canceled." };
-			if (ctx.hasUI) {
-				const allowed = await ctx.ui
-					.confirm(say({ zh: "mu 需要你授权", en: "mu needs your permission" }), `${event.toolName}\n\n${problem}`)
-					.catch(() => false);
-				if (allowed) return undefined;
+	pi.on(
+		"tool_call",
+		async (event, ctx) => {
+			runtime.touch(ctx);
+			try {
+				return await gate(event, ctx);
+			} catch (error) {
+				if (mode === "full") return undefined;
+				const problem = error instanceof Error ? error.message : String(error);
+				if (ctx.signal?.aborted) return { block: true, reason: "Canceled." };
+				if (ctx.hasUI) {
+					const allowed = await ctx.ui
+						.confirm(
+							say({ zh: "mu 需要你授权", en: "mu needs your permission" }),
+							`${event.toolName}\n\n${problem}`,
+						)
+						.catch(() => false);
+					if (allowed) return undefined;
+				}
+				return { block: true, reason: `mu could not check permission for this call: ${problem}` };
 			}
-			return { block: true, reason: `mu could not check permission for this call: ${problem}` };
-		}
-	});
+		},
+		// What is allowed is what runs: mu loads before the user's extensions, and one of theirs may still change the call.
+		{ final: true },
+	);
 
 	pi.registerCommand("permissions", {
 		description: say({
