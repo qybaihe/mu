@@ -293,6 +293,15 @@
       "batchFailures": "Sin respuesta; se usó la estrategia predeterminada: {{count}}.",
       "changedThinking": "Nivel de razonamiento: {{from}} → {{to}}",
       "sentHints": "Indicaciones enviadas al modelo principal",
+      "userAnswer": {
+        "once": "Lo has permitido una vez.",
+        "session": "Lo has permitido en esta conversación.",
+        "deny": "No lo has permitido.",
+        "dismissed": "Has cerrado la pregunta sin responder.",
+        "none": "No había nadie a quien preguntar, así que el paso se rechazó."
+      },
+      "markedWrong": "Has marcado este veredicto como erróneo.",
+      "markedWrongWhy": "Has marcado este veredicto como erróneo: {{note}}",
       "unlinked": "Registro independiente",
       "unlinkedHint": "Se registró sin correlación de turno. Se muestra por separado y no se combina con registros cercanos en el tiempo.",
       "state": {

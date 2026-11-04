@@ -5,7 +5,8 @@
  *
  * - every presentation frame and the run's edges, as the view keeps them (`host.activity`), a decision frame with its
  *   ledger record (the view files the record under `judgments`); a judgment no frame carries, as a decision at the time
- *   its record says: a view read from the session file (a reopened conversation) has the ledger and no frames;
+ *   its record says: a view read from the session file (a reopened conversation) has the ledger and no frames. Beside
+ *   the record, what the person did about it: `userAnswer` (as `mu ledger --json` names it) and `markedWrong`;
  * - what the telemetry makes of pi's records: the latest reply's token counts (`turn.usage`), the session's context
  *   (`context.usage`), a hive's manifest and its latest snapshots (`hive.manifest`, `swarm.snapshot`), and the images
  *   tools gave back (`artifact.image`).
@@ -13,12 +14,19 @@
  * What the telemetry reads from files beside a hive run (its notes, deliveries, relations, gates and each bee's
  * transcript) is not in the view: the renderer reads no files, so the hive tab shows the snapshots only.
  */
-import type { NativeView, ViewAssistantMessage, ViewToolCall } from '@/common/utils/nativeHost';
+import type { NativeView, ViewAssistantMessage, ViewJudgment, ViewToolCall } from '@/common/utils/nativeHost';
 import type { Activity } from '@/common/kyrn/types';
 
 const record = (value: unknown): Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 const text = (value: unknown): string => (typeof value === 'string' ? value : '');
+
+/** A judgment's record as the panel reads it, with what the person did about it beside the record's own fields. */
+const judgmentPayload = (judgment: ViewJudgment): Record<string, unknown> => ({
+  ...judgment.record,
+  ...(judgment.answer ? { userAnswer: judgment.answer } : {}),
+  ...(judgment.markedWrong ? { markedWrong: judgment.markedWrong } : {}),
+});
 
 /** The images the panel shows, as the telemetry takes them. */
 const IMAGE_TYPE = /^image\/(png|jpeg|webp|gif)$/;
@@ -120,7 +128,7 @@ function fromLedger(view: NativeView, framed: ReadonlySet<string>): Activity[] {
       id: `judgment:${judgment.id}`,
       at: Number.isFinite(at) ? at : 0,
       kind: 'decision',
-      payload: judgment.record,
+      payload: judgmentPayload(judgment),
     });
   }
   return events;
@@ -128,7 +136,7 @@ function fromLedger(view: NativeView, framed: ReadonlySet<string>): Activity[] {
 
 /** The panel's activity of one view, in time order. */
 export function toActivity(view: NativeView): Activity[] {
-  const judgments = new Map(view.judgments.map((judgment) => [judgment.id, judgment.record]));
+  const judgments = new Map(view.judgments.map((judgment) => [judgment.id, judgmentPayload(judgment)]));
   const framed = new Set<string>();
   const events: Activity[] = view.host.activity.map((line) => {
     const id = line.kind === 'decision' ? text(line.payload.id) : '';

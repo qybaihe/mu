@@ -208,6 +208,19 @@ export default function JudgeCardView({
             </ul>
           </div>
         )}
+        {/* What the person did about it: their answer to the question it sent them to, and a mark that it was wrong. */}
+        {card.userAnswer && (
+          <div className={styles.effect} data-testid='judge-user-answer'>
+            {t(`${KEY}.userAnswer.${card.userAnswer}`)}
+          </div>
+        )}
+        {card.markedWrong && (
+          <div className={styles.effect} data-testid='judge-marked-wrong'>
+            {card.markedWrong.note
+              ? t(`${KEY}.markedWrongWhy`, { note: card.markedWrong.note })
+              : t(`${KEY}.markedWrong`)}
+          </div>
+        )}
       </section>
 
       <Collapse bordered={false} className={styles.collapse}>

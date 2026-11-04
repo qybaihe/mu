@@ -32,6 +32,30 @@ describe('the work panel’s activity', () => {
     });
   });
 
+  it('carries what the person did about a judgment beside its record, framed or read from the file', () => {
+    const judgment = {
+      id: 'ask-1',
+      record: { id: 'ask-1', specId: 'tool.approval', timestamp: '2026-11-04T00:00:00.000Z' },
+      answer: 'deny' as const,
+      markedWrong: { note: 'it was the test' },
+    };
+    const fromFile = toActivity({ ...emptyView(), judgments: [judgment] });
+    const framed = toActivity({
+      ...emptyView(),
+      judgments: [judgment],
+      host: { ...emptyView().host, activity: [{ id: 'f1', at: 5, kind: 'decision', payload: { id: 'ask-1' } }] },
+    });
+    for (const events of [fromFile, framed])
+      expect(events.find((event) => event.kind === 'decision')?.payload).toEqual({
+        ...judgment.record,
+        userAnswer: 'deny',
+        markedWrong: { note: 'it was the test' },
+      });
+    // A judgment nobody answered carries its record only.
+    const plain = toActivity({ ...emptyView(), judgments: [{ id: 'j', record: { id: 'j', specId: 'tool.risk' } }] });
+    expect(plain.find((event) => event.kind === 'decision')?.payload).toEqual({ id: 'j', specId: 'tool.risk' });
+  });
+
   it('holds the judgments of a conversation read from its file, which has the ledger and no frames', () => {
     const view = fromEntries(recordedSession);
     expect(view.host.activity).toEqual([]);
