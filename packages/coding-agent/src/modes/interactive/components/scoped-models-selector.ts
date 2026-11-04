@@ -81,6 +81,9 @@ export interface ModelsConfig {
 	allModels: Model<any>[];
 	enabledModelIds: string[] | null;
 	refreshStatus?: string;
+	/** mu: the heading and the line under it, for one provider's models (after a sign-in, `/scoped-models <provider>`). */
+	title?: string;
+	subtitle?: string;
 }
 
 export interface ModelsCallbacks {
@@ -136,9 +139,16 @@ export class ScopedModelsSelectorComponent extends Container implements Focusabl
 		// Header
 		this.addChild(new DynamicBorder());
 		this.addChild(new Spacer(1));
-		this.addChild(new Text(theme.fg("accent", theme.bold("Model Configuration")), 0, 0));
+		this.addChild(new Text(theme.fg("accent", theme.bold(config.title ?? "Model Configuration")), 0, 0));
 		this.addChild(
-			new Text(theme.fg("muted", `Session-only. ${keyDisplayText("app.models.save")} to save to settings.`), 0, 0),
+			new Text(
+				theme.fg(
+					"muted",
+					config.subtitle ?? `Session-only. ${keyDisplayText("app.models.save")} to save to settings.`,
+				),
+				0,
+				0,
+			),
 		);
 		this.addChild(new Spacer(1));
 
