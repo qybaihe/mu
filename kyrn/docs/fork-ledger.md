@@ -479,7 +479,7 @@ A `// mu:` comment next to a change in code says the same thing in place.
 
 - **Files**
   - `.github/workflows/upstream-sync.yml`
-- **Why**: mu merges pi's main every week. The workflow merges it into a branch and opens a pull request; a conflict in `package-lock.json` alone is resolved by keeping mu's and refreshing it, and any other conflict opens an issue.
+- **Why**: mu merges pi's main every week. The workflow merges it into a branch and opens a pull request; a conflict in `package-lock.json` alone is resolved by keeping mu's and refreshing it, and any other conflict opens an issue. The pull request quotes this ledger's entries for the files the merge changes, and the issue quotes them for the conflicting files (`fork-ledger.mjs explain`).
 - **In a merge**: mu's alone; upstream has no such file.
 
 ### M45 The fork ledger and its check
