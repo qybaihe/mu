@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { existsSync, realpathSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { dirname, join, sep } from "node:path";
+import { basename, dirname, join, relative, resolve, sep } from "node:path";
 
 /**
  * The write floor: the commands the agent runs can write only to the project, the temporary folders and package
@@ -153,6 +153,79 @@ export function confinement(floor: Floor, platform: NodeJS.Platform = process.pl
 	if (platform === "darwin") return { runner: "/usr/bin/sandbox-exec", args: ["-p", seatbeltProfile(floor)] };
 	if (platform === "linux") return { runner: "bwrap", args: [...bwrapArgs(floor), "--"] };
 	return undefined;
+}
+
+/** How a refused write reads: Seatbelt says EPERM, a read-only bind of bubblewrap says EROFS. */
+const REFUSED = /operation not permitted|\bEPERM\b|read-only file system|\bEROFS\b/i;
+
+/** The paths a refusal line names: quoted ones, then bare ones; a program's own name at the start is not one. */
+function namedPaths(line: string): string[] {
+	const quoted = [...line.matchAll(/'([^']+)'|"([^"]+)"|‘([^’]+)’/g)].map((match) => match[1] ?? match[2] ?? match[3]);
+	const bare = [...line.matchAll(/(?:^|[\s(])((?:\/|\.{1,2}\/|\.git\/)[^\s:'",)]*)/g)]
+		.filter((match) => !(match.index === 0 && line.slice(match[0].length).startsWith(":")))
+		.map((match) => match[1]);
+	return [...quoted, ...bare].filter((path): path is string => Boolean(path && /\//.test(path)));
+}
+
+/** A path with its existing part resolved to its real location: a file that was never made has no real path of its own. */
+function realAsFarAsItExists(path: string): string {
+	const found = real(path);
+	if (found) return found;
+	const parent = dirname(path);
+	return parent === path ? path : join(realAsFarAsItExists(parent), basename(path));
+}
+
+/** A write the floor refused, as a command's output tells it. */
+export interface RefusedWrite {
+	/** The path as the output names it, made absolute. */
+	readonly path: string;
+	/** In one of the project's read-only parts, rather than outside every writable folder. */
+	readonly readOnly: boolean;
+}
+
+/**
+ * The writes in a confined command's output that the floor refused: a path on a line that says the operating system
+ * refused it, outside every writable folder or in a read-only part. A path the floor lets through is not one: its
+ * refusal came from somewhere else.
+ */
+export function refusedWrites(output: string, floor: Floor, cwd: string): RefusedWrite[] {
+	const found = new Map<string, RefusedWrite>();
+	for (const line of output.split("\n")) {
+		if (!REFUSED.test(line)) continue;
+		for (const named of namedPaths(line)) {
+			const path = resolve(cwd, named);
+			// The floor's folders are real paths; `/tmp/x` is `/private/tmp/x` on macOS.
+			const where = realAsFarAsItExists(path);
+			const readOnly = floor.readOnly.some((part) => inside(where, part));
+			if (readOnly || !floor.writable.some((folder) => inside(where, folder))) found.set(path, { path, readOnly });
+		}
+	}
+	return [...found.values()];
+}
+
+/**
+ * The line a command's result gets when the floor refused some of its writes, so the model knows why and does not look
+ * for another way to make the same change.
+ */
+export function refusalNote(refused: readonly RefusedWrite[], floor: Floor): string | undefined {
+	if (refused.length === 0) return undefined;
+	const shown = (paths: readonly RefusedWrite[]) =>
+		paths
+			.slice(0, 3)
+			.map((write) => (inside(write.path, floor.project) ? relative(floor.project, write.path) : write.path))
+			.join(", ") + (paths.length > 3 ? ` and ${paths.length - 3} more` : "");
+	const outside = refused.filter((write) => !write.readOnly);
+	const readOnly = refused.filter((write) => write.readOnly);
+	const lines: string[] = [];
+	if (outside.length > 0)
+		lines.push(
+			`[mu write sandbox: ${shown(outside)} ${outside.length === 1 ? "is" : "are"} outside what commands may write here (this project, the temporary folders and package caches), so the write was refused. Do the work inside the project, or tell the user which folder the task needs: they can allow it with features.confine.writable.]`,
+		);
+	if (readOnly.length > 0)
+		lines.push(
+			`[mu write sandbox: ${shown(readOnly)} ${readOnly.length === 1 ? "is" : "are"} read-only here, as .git/hooks and .git/config always are, so the write was refused. Commands such as git config and git remote add need the user: tell them what to run.]`,
+		);
+	return lines.join("\n");
 }
 
 /** A floor ready to confine commands with, or why it cannot start here. */

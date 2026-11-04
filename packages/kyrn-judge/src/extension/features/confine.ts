@@ -5,7 +5,15 @@ import {
 	getShellConfig,
 } from "@earendil-works/pi-coding-agent";
 import { readShellSettings } from "../../background/shell.ts";
-import { type Confinement, confinedCommand, type FloorReady, prepareFloor } from "../../confine/floor.ts";
+import {
+	type Confinement,
+	confinedCommand,
+	type Floor,
+	type FloorReady,
+	prepareFloor,
+	refusalNote,
+	refusedWrites,
+} from "../../confine/floor.ts";
 import type { KyrnRuntime } from "../runtime.ts";
 
 export interface ConfineDeps {
@@ -27,11 +35,26 @@ function confinedOperations(how: Confinement, shellPath: string | undefined): Ba
 }
 
 /**
+ * A result whose output shows the floor refused a write gets a line that says so: without it the model reads a bare
+ * "Operation not permitted" and looks for another way to make the same change.
+ */
+function withRefusalNote<T extends { content: readonly { type: string; text?: string }[] }>(
+	result: T,
+	floor: Floor,
+	cwd: string,
+): T {
+	const output = result.content.map((block) => (block.type === "text" ? (block.text ?? "") : "")).join("\n");
+	const note = refusalNote(refusedWrites(output, floor, cwd), floor);
+	return note ? { ...result, content: [...result.content, { type: "text", text: `\n${note}` }] } : result;
+}
+
+/**
  * The write floor (`features.confine`, off by default): the agent's bash commands and background jobs run where the
  * operating system lets them write only the project, the temporary folders and package caches, with the project's
  * `.git/hooks` and `.git/config` read-only. Seatbelt on macOS, bubblewrap on Linux, nothing on Windows. A floor that
  * cannot start (no bubblewrap, user namespaces turned off, Windows) refuses every command rather than running it
  * unconfined. The judge and the permission modes ask as before: the floor bounds what an approved command can do.
+ * A bash result whose output shows a refused write gets a line saying so (`refusalNote`).
  * Design and measurements: kyrn/docs/13-local-write-sandbox.md. The Nebius sandbox, when on, takes bash over again.
  */
 export function registerConfine(runtime: KyrnRuntime, deps: ConfineDeps = {}): void {
@@ -67,11 +90,12 @@ export function registerConfine(runtime: KyrnRuntime, deps: ConfineDeps = {}): v
 			if (!state.ok)
 				throw new Error(`mu: the write sandbox is on but cannot start here (${state.reason}). Nothing ran.`);
 			const shell = readShellSettings(ctx.cwd, undefined, ctx.isProjectTrusted());
-			return createBashToolDefinition(ctx.cwd, {
+			const result = await createBashToolDefinition(ctx.cwd, {
 				operations: confinedOperations(state.confinement, shell.shellPath),
 				commandPrefix: shell.commandPrefix,
 				shellPath: shell.shellPath,
 			}).execute(id, params, signal, onUpdate, ctx);
+			return withRefusalNote(result, state.floor, ctx.cwd);
 		},
 	});
 

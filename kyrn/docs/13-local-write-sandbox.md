@@ -1,6 +1,6 @@
 # Local write sandbox
 
-Status: step 1 of the rollout is built (`features.confine`, off by default, 2026-11-04). Steps 2 and 3 are proposed.
+Status: step 1 of the rollout is built (`features.confine`, off by default, 2026-11-04), and so is the denial line of step 2. The way out (`outside: true`) and step 3 are proposed.
 
 The judge and the permission modes run inside mu's own process, and most of what they decide is a model's judgment. This proposal adds a floor that does not depend on any model being right: the commands the agent runs can write only to the project and the temporary folders, enforced by the operating system.
 
@@ -77,7 +77,7 @@ At session start mu runs `/usr/bin/true` under the profile. The project is taken
 
 The model has to know the sandbox refused a write, or it will look for another way to make the same change.
 
-- **Not run, or refused.** If the runner fails before the command starts (a bad profile, `bwrap` cannot set up namespaces), the result says so: the command did not run. If the command ran and a write was refused, the result gets a fixed line: `[mu sandbox: writing <path> is not allowed in this project's sandbox. If the task needs it, call bash again with outside: true and say why.]`. The line is added when the command fails and its output names a path outside the writable set, together with `Operation not permitted` or `EPERM`.
+- **Not run, or refused.** If the runner fails before the command starts (a bad profile, `bwrap` cannot set up namespaces), the result says so: the command did not run. If the command ran and a write was refused, the result gets a fixed line (built, `refusedWrites` and `refusalNote` in `floor.ts`). It is added when a line of the output says `Operation not permitted`, `EPERM`, `Read-only file system` or `EROFS` and names a path outside every writable folder, or in a read-only part, resolved to its real location: `[mu write sandbox: <path> is outside what commands may write here (this project, the temporary folders and package caches), so the write was refused. Do the work inside the project, or tell the user which folder the task needs: they can allow it with features.confine.writable.]`, and for `.git/hooks` or `.git/config` a line that says to tell the user what to run. Once the way out exists, the line will name it instead.
 - **A way out.** `bash` gets two optional parameters, `outside: true` and `reason`. Such a call goes to the judge first (`tool.approval`, with `where: "outside the write sandbox"` and the reason in the state), and to the user when the judge is not sure. It is allowed once only, never for the session. A flagged or credential-carrying call follows its own rules as before.
 
 ### With the permission modes
@@ -93,7 +93,7 @@ There are two independent settings: the sandbox (`features.confine.enabled`) and
    - Unit tests cover the generated profile and bwrap arguments.
    - A macOS-only test runs real `sandbox-exec` (CI's harness job is Linux, so that test runs locally and on macOS runners).
    - A Linux test runs only where `bwrap` works.
-2. **The denial line and `outside: true`**, through the judge.
+2. **The denial line and `outside: true`**, through the judge. The denial line is built, for `bash`; a background job's output is read later, by `bg_log`, and gets no line yet.
 3. **Turn it on for mu's own runs** (TB2.1, mubench real tasks) and count:
    - commands refused that the task needed;
    - which cache folders were missing;
