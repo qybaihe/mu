@@ -28,7 +28,7 @@ import { isConversationId, readImportRecord, writeImportRecord, type ImportRecor
 import { muEnv, muHome } from './naming.ts';
 import { Telemetry } from './telemetry.ts';
 import { slashCommands } from './commands.ts';
-import { supportedThinkingLevels, UNOFFERED_PROVIDER_IDS } from '../../../common/kyrn/models.ts';
+import { enabledModels, supportedThinkingLevels, UNOFFERED_PROVIDER_IDS } from '../../../common/kyrn/models.ts';
 import {
   answerIndex,
   answerKind,
@@ -529,10 +529,17 @@ export class KyrnAgent implements Agent {
       if (wait) await delay(wait);
       if (this.sessions.get(id) !== session || session.stopped) return;
       // eslint-disable-next-line no-await-in-loop
-      const models = array((await session.rpc.send({ type: 'get_available_models' })).models).map(asRecord);
+      const answer = await session.rpc.send({ type: 'get_available_models' });
+      const models = array(answer.models).map(asRecord);
+      const enabled = enabledModels(answer);
+      const offered = models.filter(
+        (each) => text(each.provider) && text(each.id) && !UNOFFERED_PROVIDER_IDS.has(text(each.provider))
+      );
+      // The model new sessions start on, else the first one offered: the first enabled one when there is one.
       const pick =
         models.find((each) => text(each.provider) === wanted?.provider && text(each.id) === wanted?.id) ??
-        models.find((each) => text(each.provider) && text(each.id) && !UNOFFERED_PROVIDER_IDS.has(text(each.provider)));
+        offered.find((each) => enabled?.has(`${text(each.provider)}/${text(each.id)}`)) ??
+        offered[0];
       if (!pick) continue;
       // eslint-disable-next-line no-await-in-loop
       if (!isNoModel((await this.state(id)).model)) return;
@@ -658,14 +665,16 @@ export class KyrnAgent implements Agent {
     const current = asRecord(state.model);
     // No model is no value: pi's placeholder (`unknown/unknown`) is not a model the send box could name.
     const currentValue = isNoModel(current) ? '' : `${text(current.provider)}/${text(current.id)}`;
+    // The models the person chose to offer (Settings, per account); every one while no choice is made.
+    const enabled = enabledModels(models);
     const offered = array(models.models)
       .map(asRecord)
       // A model already in use stays listed, so the picker still shows what the conversation runs on.
-      .filter(
-        (model) =>
-          !UNOFFERED_PROVIDER_IDS.has(text(model.provider)) ||
-          `${text(model.provider)}/${text(model.id)}` === currentValue
-      );
+      .filter((model) => {
+        const value = `${text(model.provider)}/${text(model.id)}`;
+        if (value === currentValue) return true;
+        return !UNOFFERED_PROVIDER_IDS.has(text(model.provider)) && (!enabled || enabled.has(value));
+      });
     // What each model takes, by pi's own rule, beside the options: an ACP select option has no room for it. The send
     // box offers each model with its levels, so one pick can switch both.
     session.telemetry.levels(

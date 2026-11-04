@@ -4,7 +4,7 @@ import type { ClmServerState } from './clm';
 import { KyrnError, type KyrnResult } from './errors';
 import type { ImportedHistory, ImportList, ImportOutcome } from './importChats';
 import type { LessonChange, LessonsView } from './lessons';
-import type { LoginState, LoginStatus, SignOutSwitch, SubscriptionProvider } from './login';
+import type { LoginEnable, LoginState, LoginStatus, SignOutSwitch, SubscriptionProvider } from './login';
 import type { ModelRequest, ModelsState, MudeAction, MudeState } from './mude';
 import type {
   AvailableModels,
@@ -64,6 +64,8 @@ export const kyrnBridge = {
   loginCancel: bridge.buildProvider<KyrnResult<LoginState>, void>('kyrn.login.cancel'),
   loginStatus: bridge.buildProvider<KyrnResult<LoginStatus>, void>('kyrn.login.status'),
   loginLogout: bridge.buildProvider<KyrnResult<LoginStatus>, { provider: SubscriptionProvider }>('kyrn.login.logout'),
+  /** Which of a signed-in account's models the model menus offer; answers who is signed in, with them. */
+  loginEnable: bridge.buildProvider<KyrnResult<LoginStatus>, LoginEnable>('kyrn.login.enable'),
   /**
    * After a sign-out, once mu was checked again: the model new conversations start on, and the conversations running on
    * one of the account's models, go on with a model mu still offers.

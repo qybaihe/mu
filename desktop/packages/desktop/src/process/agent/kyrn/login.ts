@@ -3,6 +3,7 @@ import { createInterface } from 'node:readline';
 import type { Readable, Writable } from 'node:stream';
 import {
   isSubscriptionProvider,
+  type LoginEnable,
   LOGIN_ERROR_CODES,
   type LoginModel,
   type LoginPrompt,
@@ -98,6 +99,13 @@ const toModels = (value: unknown): LoginModel[] =>
     .map(record)
     .filter((model) => str(model.id))
     .map((model) => ({ id: str(model.id), name: str(model.name) || str(model.id) }));
+
+/** The ids of an account's enabled models; undefined when the runner did not say (an older harness offers them all). */
+const toEnabled = (value: unknown): string[] | undefined =>
+  Array.isArray(value) ? value.map(str).filter(Boolean) : undefined;
+
+/** A model id as `mu auth enable` takes it: one argument, never a flag. */
+const MODEL_ID = /^[^\s-][^\s]{0,199}$/;
 
 /**
  * One sign-in at a time. The flow runs in a child process, `mu auth` (pi's code, pi's credential store); this keeps the
@@ -209,7 +217,13 @@ export class LoginManager {
       } else if (message.type === 'prompt') update({ prompt: toPrompt(message.prompt) });
       else if (message.type === 'prompt_done') update({ prompt: undefined });
       else if (message.type === 'signed_in') update({ stored: true, prompt: undefined });
-      else if (message.type === 'done') update({ phase: 'done', prompt: undefined, models: toModels(message.models) });
+      else if (message.type === 'done')
+        update({
+          phase: 'done',
+          prompt: undefined,
+          models: toModels(message.models),
+          enabled: toEnabled(message.enabled),
+        });
       else if (message.type === 'error' && this.current.phase === 'running')
         update(
           // The person said no inside the flow (the risk question of a Google sign-in): not a failure.
@@ -303,6 +317,20 @@ export class LoginManager {
     return this.oneAtATime(this.stopping.size === 0 ? signOut : () => ended.then(signOut));
   }
 
+  /**
+   * Which of a signed-in account's models the model menus offer (pi's global `enabledModels`), then who is signed in.
+   * One at a time with the looks and sign-outs: each writes pi's settings or reads its stores.
+   */
+  enable(choice: LoginEnable, timeoutMs = 20000): Promise<LoginStatus> {
+    const { provider, models, byDefault } = choice ?? {};
+    if (!isSubscriptionProvider(provider)) return Promise.reject(new Error('Unknown provider'));
+    const ids = byDefault === true ? [] : Array.isArray(models) ? models : undefined;
+    if (!ids || ids.some((id) => typeof id !== 'string' || !MODEL_ID.test(id)))
+      return Promise.reject(new Error('Invalid model'));
+    const args = ['enable', provider, ...(byDefault === true ? ['--default'] : ids)];
+    return this.oneAtATime(() => this.statusAfter(args, timeoutMs));
+  }
+
   /** Starts `work` now when no runner is going, else once the one going has ended. */
   private oneAtATime<T>(work: () => Promise<T>): Promise<T> {
     const before = this.running;
@@ -355,7 +383,11 @@ export class LoginManager {
         const signedIn = (Array.isArray(message.signedIn) ? message.signedIn : [])
           .map(record)
           .filter((entry) => isSubscriptionProvider(entry.provider))
-          .map((entry) => ({ provider: entry.provider as SubscriptionProvider, models: toModels(entry.models) }));
+          .map((entry) => ({
+            provider: entry.provider as SubscriptionProvider,
+            models: toModels(entry.models),
+            enabled: toEnabled(entry.enabled),
+          }));
         finish(
           Array.isArray(message.offered)
             ? { signedIn, offered: message.offered.filter(isSubscriptionProvider) }
@@ -410,10 +442,10 @@ export class LoginManager {
 }
 
 /**
- * The runner as a child process: `mu auth status | login <provider> | logout <provider>`, the harness's own sign-in,
- * started through its launcher as a session is (harness.ts, launcherOf), so it is the same for a checkout, mu-agent
- * from npm and the copy inside the packaged app. It signs in to mu's agent dir, the one the settings read. Without a
- * shell, so nothing in a path is ever parsed as a command, on Windows as elsewhere.
+ * The runner as a child process: `mu auth status | login <provider> | logout <provider> | enable <provider> ...`, the
+ * harness's own sign-in, started through its launcher as a session is (harness.ts, launcherOf), so it is the same for
+ * a checkout, mu-agent from npm and the copy inside the packaged app. It signs in to mu's agent dir, the one the
+ * settings read. Without a shell, so nothing in a path is ever parsed as a command, on Windows as elsewhere.
  */
 export function spawnAuth(launcher: string, agentDir: string): SpawnRunner {
   return (args) => {

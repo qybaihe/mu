@@ -508,4 +508,25 @@ A `// mu:` comment next to a change in code says the same thing in place.
 - **Why**: The lockfile also resolves mu's workspace package `packages/kyrn-judge` (`@kyrn/judge`) and its dependencies, such as `shx` and `shelljs`, which pi's lockfile does not have.
 - **In a merge**: Keep mu's lockfile and refresh it, as the sync workflow does: `git checkout --ours package-lock.json`, then `npm install --package-lock-only --ignore-scripts`. Keeping mu's side keeps mu's resolved versions where upstream raised them, for a security advisory among other reasons: compare the versions upstream's side changed (`git diff <base> upstream/main -- package-lock.json`) and raise those in mu's lockfile too.
 
+### M48 One account's models are chosen for /model and the app's model menus
+
+- **Files**
+  - `packages/coding-agent/src/core/enabled-models.ts`
+  - `packages/coding-agent/src/core/settings-manager.ts`
+  - `packages/coding-agent/src/core/slash-commands.ts`
+  - `packages/coding-agent/src/index.ts`
+  - `packages/coding-agent/src/modes/interactive/interactive-mode.ts`
+  - `packages/coding-agent/src/modes/interactive/components/scoped-models-selector.ts`
+  - `packages/coding-agent/src/modes/rpc/rpc-mode.ts`
+  - `packages/coding-agent/src/modes/rpc/rpc-types.ts`
+  - `packages/coding-agent/docs/models.md`
+  - `packages/coding-agent/docs/rpc-commands.md`
+  - `packages/coding-agent/docs/slash-commands.md`
+- **Why**: A sign-in to ChatGPT (44 OpenAI models) or Antigravity puts every model of the account in `/model` and in the app's model menus. pi's `enabledModels` already decides what `/model` shows first, but only `/scoped-models` sets it, for every provider at once, and the app's menus ignored it. `enabled-models.ts` writes the list one provider at a time (`withProviderModels`: `<provider>/*` for all of its models, the default, or one `<provider>/<id>` per chosen model; the other providers' entries stay) and adds `<provider>/*` after a sign-in to a provider the list leaves out (`withProviderOffered`), so a new account never ends up hidden. The TUI asks right after a subscription sign-in with several models, and `/scoped-models <provider>` asks again (`showProviderModelsSelector()`, the scoped models selector with its own heading). RPC `get_available_models` adds `enabledModels`, read again from the settings files each time (`reloadEnabledModels()`), since the app chooses with `mu auth enable`, another process. `index.ts` exports the functions for `mu auth`.
+- **In a merge**: Keep `enabledModels` in the `get_available_models` answer, `reloadEnabledModels()`, the `offerSignedInProvider()` call before `completeProviderAuthentication()` in both login dialogs, the selector after an OAuth one, and `/scoped-models <provider>`. If upstream changes how `enabledModels` patterns are read (`resolveModelScopeFromModels`), check `enabled-models.test.ts` still passes.
+- **Tests**
+  - `packages/coding-agent/test/enabled-models.test.ts`
+  - `packages/coding-agent/test/suite/provider-models-selector.test.ts`
+  - `packages/coding-agent/test/suite/rpc-models-signed-out-elsewhere.test.ts`
+
 ## Retired

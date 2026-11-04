@@ -96,6 +96,11 @@ export default function SubscriptionLogin({ value, onChange }: Props) {
             options={account.models.map((model) => ({ value: `${account.provider}/${model.id}`, label: model.name }))}
             onChange={(next: string) => onChange(next)}
           />
+          {account.models.length > 1 ? (
+            <div className={choiceStyles.choiceHint} data-testid='mu-login-choose-later'>
+              {t('mu.welcome.login.chooseLater')}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

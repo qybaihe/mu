@@ -161,4 +161,36 @@ describe("RPC mode after a sign-in or sign-out in another process", () => {
 			restoreListeners(listeners);
 		}
 	});
+
+	// mu: the app chooses an account's models with `mu auth enable`, another process. Its model menu asks a running
+	// session, which answered with the models enabled when it started.
+	test("says which models the settings enable now", async () => {
+		const listeners = takeListenerSnapshot();
+		const harness = await createHarness();
+		try {
+			const runtime = harness.session.modelRuntime;
+			await harness.authStorage.modify("account", async () => SIGNED_IN);
+			runtime.registerNativeProvider(subscription(harness));
+			await runtime.refresh({ allowNetwork: false });
+			void runRpcMode(createRuntimeHost(harness));
+			await vi.waitFor(() => expect(rpcIo.lineHandler).toBeDefined());
+			const enabled = async () =>
+				((await send({ type: "get_available_models" })).data as { enabledModels?: string[] }).enabledModels;
+			expect(await enabled()).toBeUndefined();
+
+			// Saved by another process: this session's settings were read before it.
+			const storage = Reflect.get(harness.settingsManager, "storage") as {
+				withLock(scope: "global", fn: (current: string | undefined) => string | undefined): void;
+			};
+			storage.withLock("global", () => JSON.stringify({ enabledModels: ["account/*"] }));
+			expect(await enabled()).toEqual(["account/plus"]);
+
+			// A list that matches no model enables every model, as pi reads it.
+			storage.withLock("global", () => JSON.stringify({ enabledModels: ["nobody/*"] }));
+			expect(await enabled()).toBeUndefined();
+		} finally {
+			harness.cleanup();
+			restoreListeners(listeners);
+		}
+	});
 });

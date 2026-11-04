@@ -51,6 +51,13 @@ function googleProviders(): Provider[] {
 	}
 }
 
+/** pi's settings for this agent directory, read once when a command needs them. */
+let settings: SettingsManager | undefined;
+const piSettings = (): SettingsManager => {
+	settings ??= SettingsManager.create(process.cwd(), agentDir);
+	return settings;
+};
+
 async function main(): Promise<number> {
 	const modelsStore = new FileModelsStore(modelsStorePath);
 	const runtime = await ModelRuntime.create({
@@ -64,10 +71,18 @@ async function main(): Promise<number> {
 		preferred: defaultModelPerProvider,
 		extra: googleProviders(),
 		forgetModels: (providerId) => modelsStore.delete(providerId),
+		// The global list, the one /scoped-models saves and every session of mu reads.
+		enabledModels: {
+			read: () => piSettings().getGlobalSettings().enabledModels,
+			write: async (patterns) => {
+				piSettings().setEnabledModels(patterns);
+				await piSettings().flush();
+			},
+		},
 		login: {
 			agentName: "mu",
 			// The id pi keeps in settings.json for this installation: the same one a /login in the terminal sends.
-			getDeviceId: () => SettingsManager.create(process.cwd(), agentDir).getOrCreateDeviceId(),
+			getDeviceId: () => piSettings().getOrCreateDeviceId(),
 		},
 		io: {
 			say,

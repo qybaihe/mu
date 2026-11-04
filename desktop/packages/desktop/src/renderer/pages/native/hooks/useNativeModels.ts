@@ -6,6 +6,7 @@
  * use, `get_available_thinking_levels`), which starts the host when none runs. Only the person sets the thinking level.
  */
 import { useCallback, useRef, useState } from 'react';
+import { enabledModels } from '@/common/kyrn/models';
 import type { NativeResult } from '@/common/kyrn/nativeBridge';
 import {
   asList,
@@ -58,7 +59,11 @@ export function useNativeModels(
         request({ type: 'get_available_thinking_levels' }),
       ]);
       if (models.ok === false) return;
-      const offered = offeredModels(asList(asObject(models.data).models), current.current.model);
+      const offered = offeredModels(
+        asList(asObject(models.data).models),
+        current.current.model,
+        enabledModels(models.data)
+      );
       const currentLevels = levels.ok ? asList(asObject(levels.data).levels).map(asText).filter(Boolean) : undefined;
       setOffer({ ...offered, ...(currentLevels?.length ? { currentLevels } : {}) });
     } finally {

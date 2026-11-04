@@ -160,7 +160,8 @@ export type RpcResponse =
 			type: "response";
 			command: "get_available_models";
 			success: true;
-			data: { models: Model<any>[] };
+			/** mu: `enabledModels`, the `provider/id` of the models the settings enable; absent while all are. */
+			data: { models: Model<any>[]; enabledModels?: string[] };
 	  }
 
 	// Thinking

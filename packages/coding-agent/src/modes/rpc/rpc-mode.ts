@@ -13,6 +13,7 @@
 
 import * as crypto from "node:crypto";
 import type { AgentSessionRuntime } from "../../core/agent-session-runtime.ts";
+import { enabledModelIds } from "../../core/enabled-models.ts";
 import type {
 	ExtensionUIContext,
 	ExtensionUIDialogOptions,
@@ -498,7 +499,10 @@ export async function runRpcMode(
 
 			case "get_available_models": {
 				const models = await availableModels();
-				return success(id, "get_available_models", { models });
+				// mu: the ones the settings enable (`enabledModels`, read again: the app may have changed it), so an app's
+				// model menu shows the models /model shows. Left out while every model is enabled.
+				const enabledModels = enabledModelIds(session.settingsManager.reloadEnabledModels(), models);
+				return success(id, "get_available_models", { models, ...(enabledModels ? { enabledModels } : {}) });
 			}
 
 			// =================================================================

@@ -50,6 +50,8 @@ export {
 	serializeConversation,
 	shouldCompact,
 } from "./core/compaction/index.ts";
+// mu: `mu auth` reads and sets which of an account's models are enabled, also from pi's bundle.
+export { enabledModelIds, withProviderModels, withProviderOffered } from "./core/enabled-models.ts";
 export { createEventBus, type EventBus, type EventBusController } from "./core/event-bus.ts";
 // Extension system
 export type {
