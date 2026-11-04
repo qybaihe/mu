@@ -77,6 +77,22 @@ export interface PermissionOutcome {
 	readonly outsideFloor?: true;
 }
 
+/**
+ * The user's mark on one of the judge's records: it judged wrong (`/ledger wrong`, or the app's button), with why when
+ * they said. Kept in the session as a `kyrn.outcome` entry beside the permission answers, and joined on `ledgerId` the
+ * same way: a label for a judgment that sent nobody a question too, such as a skill the judge left out.
+ */
+export interface JudgmentMark {
+	readonly kind: "mark";
+	readonly ledgerId: string;
+	readonly specId: string;
+	readonly specVersion: number;
+	/** What the judge said, as its record has it. */
+	readonly judged?: JsonValue;
+	readonly mark: "wrong";
+	readonly note?: string;
+}
+
 /** What the judge said about a call before the user was asked, for the user's answer to label. */
 interface JudgeSaid {
 	readonly ledgerId?: string;
