@@ -64,4 +64,4 @@ cd packages/kyrn-judge && npx vitest --run    # browser tests start a headless C
 npm run check                                 # from the repository root
 ```
 
-`test/golden/decision-requests.md` holds what every decision asks the judge, and `test/golden/model-surface.md` what the main model is given: the system prompt and every tool. A change to either shows up as a diff. A decision whose request changed needs a new `version`; the test fails until it has one, even with `-u`. Then `npx vitest --run test/golden -u` writes the files.
+`test/golden/decision-requests.md` holds what every decision asks the judge, `test/golden/decision-policies.md` what it does with the answers (the outcome as each answer moves across its range), and `test/golden/model-surface.md` what the main model is given: the system prompt and every tool. A change to any of them shows up as a diff. A decision whose request or policy changed needs a new `version`; the test fails until it has one, even with `-u`. Then `npx vitest --run test/golden -u` writes the files.

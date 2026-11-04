@@ -51,7 +51,7 @@ export interface GoldenCase {
  * Ties an input to its spec's input type, so a changed input type fails the type check here. `NoInfer` keeps the
  * input from widening `In` to its own literal type, which would let a renamed optional field through unflagged.
  */
-function golden<In, Qs extends Questions, Out extends JsonValue>(
+export function golden<In, Qs extends Questions, Out extends JsonValue>(
 	spec: DecisionSpec<In, Qs, Out>,
 	input: NoInfer<In>,
 ): GoldenCase {
