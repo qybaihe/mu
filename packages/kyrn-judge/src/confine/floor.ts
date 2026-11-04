@@ -157,6 +157,12 @@ export function confinement(floor: Floor, platform: NodeJS.Platform = process.pl
 
 /** How a refused write reads: Seatbelt says EPERM, a read-only bind of bubblewrap says EROFS. */
 const REFUSED = /operation not permitted|\bEPERM\b|read-only file system|\bEROFS\b/i;
+/**
+ * How replacing a file that bubblewrap binds read-only reads: git writes `.git/config.lock` and renames it over
+ * `.git/config`, and a rename onto a mount point is EBUSY (measured: `git config` under bwrap 0.8, Linux 6.8). Only a
+ * read-only part is such a mount point; a busy path anywhere else is not the floor's.
+ */
+const BUSY = /device or resource busy|\bEBUSY\b/i;
 
 /** The paths a refusal line names: quoted ones, then bare ones; a program's own name at the start is not one. */
 function namedPaths(line: string): string[] {
@@ -191,13 +197,15 @@ export interface RefusedWrite {
 export function refusedWrites(output: string, floor: Floor, cwd: string): RefusedWrite[] {
 	const found = new Map<string, RefusedWrite>();
 	for (const line of output.split("\n")) {
-		if (!REFUSED.test(line)) continue;
+		const refused = REFUSED.test(line);
+		if (!refused && !BUSY.test(line)) continue;
 		for (const named of namedPaths(line)) {
 			const path = resolve(cwd, named);
 			// The floor's folders are real paths; `/tmp/x` is `/private/tmp/x` on macOS.
 			const where = realAsFarAsItExists(path);
 			const readOnly = floor.readOnly.some((part) => inside(where, part));
-			if (readOnly || !floor.writable.some((folder) => inside(where, folder))) found.set(path, { path, readOnly });
+			const outside = refused && !floor.writable.some((folder) => inside(where, folder));
+			if (readOnly || outside) found.set(path, { path, readOnly });
 		}
 	}
 	return [...found.values()];

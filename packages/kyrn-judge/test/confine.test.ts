@@ -146,6 +146,14 @@ describe("the write floor", () => {
 				{ path: "/home/u/g.txt", readOnly: false },
 			]);
 			expect(refusedWrites("all fine", floor, "/w/app")).toEqual([]);
+			// Under bubblewrap, git renames its lock file over .git/config, a read-only bind of its own: EBUSY. A busy path
+			// anywhere else is not the floor's.
+			expect(
+				refusedWrites("error: could not write config file .git/config: Device or resource busy", floor, "/w/app"),
+			).toEqual([{ path: "/w/app/.git/config", readOnly: true }]);
+			expect(
+				refusedWrites("umount: /home/u/disk: target is busy (Device or resource busy)", floor, "/w/app"),
+			).toEqual([]);
 		},
 	);
 
