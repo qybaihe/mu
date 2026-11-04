@@ -1,5 +1,5 @@
 import { isAbsolute, relative, resolve } from "node:path";
-import type { SessionShutdownEvent } from "@earendil-works/pi-coding-agent";
+import { type SessionShutdownEvent, withoutCredentials } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import {
 	type AdapterSpec,
@@ -277,6 +277,8 @@ export function debuggerPack(shared: PackShared, options: DebuggerOptions): Pack
 						plan: spawnPlan(executable, spec.args, platform, process.env),
 						transport: spec.transport,
 						cwd,
+						// The program being debugged is the agent's to run, as a command is: none of mu's credentials.
+						env: withoutCredentials(process.env),
 						platform,
 					});
 					const session = new DebugSession(client, {

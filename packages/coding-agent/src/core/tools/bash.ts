@@ -11,6 +11,7 @@ import {
 	type ShellConfig,
 	trackDetachedChildPid,
 	untrackDetachedChildPid,
+	withoutCredentials,
 } from "../../utils/shell.ts";
 import type { ExtensionContext, ToolDefinition } from "../extensions/types.ts";
 import { OutputAccumulator } from "./output-accumulator.ts";
@@ -189,7 +190,8 @@ function resolveSpawnContext(
 	exposeSessionEnvironment: boolean,
 	ctx: ExtensionContext | undefined,
 ): BashSpawnContext {
-	const env = { ...getShellEnv() };
+	// mu: the agent's commands do not get the credentials in mu's environment.
+	const env = withoutCredentials(getShellEnv());
 	delete env.PI_SESSION_ID;
 	delete env.PI_SESSION_FILE;
 	delete env.PI_PROVIDER;

@@ -511,5 +511,5 @@ export { parseFrontmatter, stripFrontmatter } from "./utils/frontmatter.ts";
 export { convertToPng } from "./utils/image-convert.ts";
 export { formatDimensionNote, type ResizedImage, resizeImage } from "./utils/image-resize.ts";
 export { detectSupportedImageMimeTypeFromFile } from "./utils/mime.ts";
-// Shell utilities
-export { getPowerShellConfig, getShellConfig } from "./utils/shell.ts";
+// Shell utilities. mu: `withoutCredentials` too, for the judgment layer's tools that run commands for the agent.
+export { ENV_PASS_ENV, getPowerShellConfig, getShellConfig, withoutCredentials } from "./utils/shell.ts";

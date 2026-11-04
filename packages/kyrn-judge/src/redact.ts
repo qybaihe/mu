@@ -56,8 +56,12 @@ const LINE_VALUE = new RegExp(
 	"gim",
 );
 
-/** Names of environment variables that hold credentials. */
-const CREDENTIAL_NAME = /SECRET|TOKEN|PASSWD|PASSWORD|API_?KEY|ACCESS_?KEY|PRIVATE_?KEY|CREDENTIAL/i;
+/**
+ * Names of environment variables that hold credentials. `KEY` as a word of its own too: mu's own keys are named so
+ * (`MUDE_KEY`, `MU_JUDGE_OPENAI_KEY`).
+ */
+const CREDENTIAL_NAME =
+	/SECRET|TOKEN|PASSWD|PASSWORD|API_?KEY|ACCESS_?KEY|PRIVATE_?KEY|CREDENTIAL|(?:^|_)KEYS?(?:_|$)/i;
 
 /**
  * The values of `env`'s credential variables, longest first so none is left half replaced. A short
@@ -84,6 +88,24 @@ export function redactSecrets(text: string, known: readonly string[] = []): stri
 		.replace(ENV_VALUE, `$1${REDACTED}`)
 		.replace(QUOTED_VALUE, `$1$2${REDACTED}$2`)
 		.replace(LINE_VALUE, `$1${REDACTED}`);
+}
+
+/**
+ * Shapes that are a credential on their own, wherever they go. An AWS key id and a JSON web token also ride in links
+ * that are meant to be followed (a presigned S3 link's `X-Amz-Credential`, a signed download), so they are left out.
+ */
+const SECRET_SHAPES = SHAPES.filter((shape) => !/AKIA|eyJ/.test(shape.source));
+
+/**
+ * Whether `text` holds a credential: one of `known` as it is or as a URL carries it, or a value in a shape only a
+ * secret has. For a call that would carry it away; a value under a credential's name (`password: …`) is not enough,
+ * since a config template has one.
+ */
+export function holdsCredential(text: string, known: readonly string[] = []): boolean {
+	return (
+		known.some((secret) => text.includes(secret) || text.includes(encodeURIComponent(secret))) ||
+		SECRET_SHAPES.some((shape) => text.search(shape) !== -1)
+	);
 }
 
 /** The same through a JSON value: every string in it, keys kept as they are. */

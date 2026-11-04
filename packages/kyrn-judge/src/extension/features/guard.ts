@@ -1,6 +1,7 @@
 import type { Decision } from "../../decision.ts";
 import { toolRisk } from "../../decisions/tool-risk.ts";
 import { say } from "../../language.ts";
+import { environmentSecrets, holdsCredential, redactSecrets } from "../../redact.ts";
 import { subAgentUserGoal } from "../../swarm/brief.ts";
 import { clip, failOpen, type KyrnRuntime } from "../runtime.ts";
 import { SHELL_TOOLS } from "../shell-tools.ts";
@@ -70,6 +71,48 @@ function unquoted(command: string): string {
 	return command.replace(/\\(?=[A-Za-z])/g, "").replace(/(["'])([^"'\s]*)\1/g, "$2");
 }
 
+/**
+ * The flag of a call that carries a credential (`carriesCredential`). No judge is asked about it: a page or a file the
+ * agent read can ask for exactly this, and a judge that believed it would send the key away.
+ */
+export const SENDS_CREDENTIAL = "sends a credential";
+
+/** Tools that only read or change files here: whatever they are given stays on this computer. */
+const LOCAL_TOOLS: ReadonlySet<string> = new Set([
+	"read",
+	"write",
+	"edit",
+	"grep",
+	"find",
+	"ls",
+	"todo",
+	"remember",
+	"sg_rewrite",
+	"apply_patch_from",
+]);
+
+/** Every string in a JSON value. */
+function strings(value: unknown): string[] {
+	if (typeof value === "string") return [value];
+	if (Array.isArray(value)) return value.flatMap(strings);
+	if (value && typeof value === "object") return Object.values(value).flatMap(strings);
+	return [];
+}
+
+/**
+ * Whether a call would carry a credential to wherever it goes: one of this process's own (`environmentSecrets`: the
+ * model providers' and the judge's keys, those from mu's `.env`), or a value only a secret looks like, anywhere in its
+ * input. `curl -H "Authorization: Bearer $GH_TOKEN"` names a variable and carries nothing; the key written out does.
+ * A tool that only works on files here carries nothing away.
+ */
+export function carriesCredential(
+	toolName: string,
+	input: unknown,
+	known: readonly string[] = environmentSecrets(),
+): boolean {
+	return !LOCAL_TOOLS.has(toolName) && strings(input).some((text) => holdsCredential(text, known));
+}
+
 /** What each flag says to a person reading Chinese. The judge and the model read the English. */
 export const FLAG_ZH: Readonly<Record<string, string>> = {
 	"recursive or forced delete": "递归或强制删除",
@@ -81,6 +124,7 @@ export const FLAG_ZH: Readonly<Record<string, string>> = {
 	"runs a downloaded script": "运行下载来的脚本",
 	"runs as administrator": "以管理员身份运行",
 	"runs as root": "以 root 身份运行",
+	[SENDS_CREDENTIAL]: "把凭据发出去",
 };
 
 /** Each flag as a stable code, for a client that translates it into a language mu has no wording for. */
@@ -94,6 +138,7 @@ export const FLAG_CODES: Readonly<Record<string, string>> = {
 	"runs a downloaded script": "runs_downloaded_script",
 	"runs as administrator": "runs_as_administrator",
 	"runs as root": "runs_as_root",
+	[SENDS_CREDENTIAL]: "sends_credential",
 };
 
 /** Tools whose `command` is a shell command line. A command is no safer for running in the background. */
@@ -245,13 +290,14 @@ export function registerGuard(runtime: KyrnRuntime): void {
 			if (runtime.permissionMode) return undefined;
 			if (!COMMAND_TOOLS.has(event.toolName)) return undefined;
 			const command = String((event.input as { command?: unknown }).command ?? "");
-			const flag = riskFlag(command);
+			const flag = carriesCredential(event.toolName, event.input) ? SENDS_CREDENTIAL : riskFlag(command);
 			if (!flag) return undefined;
 
 			// In a sub-agent the message is what the parent's model wrote: only the user's goal says what was asked for.
 			const asked = subAgentUserGoal() ?? runtime.turn.userMessage;
 			// The judge vouches only for what it read, and a command too long to read whole runs whole: the user confirms it.
-			if (commandLines(command).length <= RISK_COMMAND_CHARS) {
+			// Nor does it vouch for a credential leaving.
+			if (flag !== SENDS_CREDENTIAL && commandLines(command).length <= RISK_COMMAND_CHARS) {
 				const decision = await runtime.engine.decide(
 					toolRisk,
 					{ command: commandLines(command), userMessage: clip(asked, 400), flag },
@@ -262,9 +308,10 @@ export function registerGuard(runtime: KyrnRuntime): void {
 			} else if (runtime.mode(toolRisk.id) !== "active") return undefined;
 			if (!ctx.hasUI)
 				return { block: true, reason: `mu: "${flag}" needs confirmation, which this mode cannot ask for.` };
+			const shown = flag === SENDS_CREDENTIAL ? redactSecrets(command, environmentSecrets()) : command;
 			const approved = await ctx.ui.confirm(
 				`mu: ${say({ zh: FLAG_ZH[flag] ?? flag, en: flag })}`,
-				`${say({ zh: "要运行这条命令吗？", en: "Run this command?" })}\n\n${riskExcerpt(command, RISK_CONFIRM_CHARS)}`,
+				`${say({ zh: "要运行这条命令吗？", en: "Run this command?" })}\n\n${riskExcerpt(shown, RISK_CONFIRM_CHARS)}`,
 			);
 			return approved ? undefined : { block: true, reason: `The user declined this command (${flag}).` };
 		}),
