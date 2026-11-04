@@ -10591,6 +10591,19 @@
 			]
 		},
 		{
+			"name": "recovery",
+			"title": {
+				"zh": "中断的工具调用",
+				"en": "Interrupted tool calls"
+			},
+			"summary": {
+				"zh": "mu 在工具调用跑到一半时被杀掉、断电或退出，再打开会话时，会告诉模型和你哪些调用没有结果：哪些没开始、哪些只是读，哪些已经开始、结果不明。结果不明的会提醒模型先核对外部状态或问你，免得 git push、发布、数据库迁移做两次。每个可能改东西的调用开始前，会话里记一条标记。",
+				"en": "When mu is killed, the machine sleeps or the app quits while tool calls run, reopening the session tells the model and you which calls have no result: which never started, which only read, and which started with an outcome nobody knows. For those, the model is told to check the outside state or ask you first, so a git push, a publish or a migration does not run twice. Before each call that may change something starts, the session gets a marker."
+			},
+			"defaultEnabled": true,
+			"options": []
+		},
+		{
 			"name": "confine",
 			"title": {
 				"zh": "写入沙箱（实验）",
