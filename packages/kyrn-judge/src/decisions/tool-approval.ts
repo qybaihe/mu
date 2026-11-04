@@ -12,12 +12,16 @@ import { isEscapeOption } from "../policy.ts";
  * One choice question rather than booleans: choice distributions are sharp on
  * clear cases, and "beyond" versus "unrelated" tells the user why they are
  * being asked.
+ *
+ * Version 3: `call` is the whole call with its line breaks, and a tool other
+ * than a shell shows its whole input. Version 2 read the first 400 characters
+ * of a short description, run into one line.
  */
 export interface ToolApprovalInput {
 	/** The task as the frame has it: goal, and the current subgoal when there is one. */
 	readonly task: string;
 	readonly userMessage: string;
-	/** "bash: npm install lodash", "write /etc/hosts". */
+	/** `bash: npm install lodash`, `write: {"path":"/etc/hosts","content":"…"}`: all of it (`approvalCall`). */
 	readonly call: string;
 	/** Where the call acts, said plainly: "inside the project folder" or where else. */
 	readonly where: string;
@@ -38,7 +42,7 @@ export const CHECK_APPROVE_AT = 0.7;
 
 export const toolApproval = defineDecision({
 	id: "tool.approval",
-	version: 2,
+	version: 3,
 	cacheImpact: "none",
 	latency: "inline",
 	capabilities: "relate",

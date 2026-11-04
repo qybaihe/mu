@@ -232,6 +232,12 @@ These fields are added:
 | `nojudge` | No judge is available yet, so mu asks about each step. |
 | `judgedown` | The judge did not answer this time, so mu asks you. |
 
+One more was added on 2026-11-04:
+
+| reason | English |
+| --- | --- |
+| `long` | The step is too long for the judge to read in full, so mu asks you. A command is then shown as its start and the parts a rule flagged; no "for this session" answer is offered. |
+
 The mode labels and descriptions are already in Chinese or English. Key your own strings on `mode` and `modes[].id`.
 
 ## web.search

