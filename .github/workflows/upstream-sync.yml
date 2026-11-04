@@ -94,6 +94,17 @@ jobs:
           body="Merges earendil-works/pi main at \`$head\` ($ahead commits not yet in main).
 
           Opened by the weekly upstream-sync workflow. CI is started on this branch by the workflow. Read the upstream changes for anything that touches mu's integrations before merging. Merge with a merge commit, not a squash: the upstream history has to stay an ancestor of main."
+          # The fork ledger's entries for the files this merge changes: there, check that mu's side survived.
+          ledger=$(git diff --name-only HEAD^1 HEAD | node scripts/fork-ledger.mjs explain --skip-unlisted - || true)
+          if [ -n "$ledger" ]; then
+            body="$body
+
+          ## mu's changes in files this merge touches
+
+          From kyrn/docs/fork-ledger.md. Check that each still does what it says.
+
+          $ledger"
+          fi
           if gh pr view "$BRANCH" --json state --jq .state 2>/dev/null | grep -q OPEN; then
             gh pr edit "$BRANCH" --title "merge: pi upstream $head" --body "$body"
             exit 0
@@ -117,6 +128,8 @@ jobs:
 
       - name: Report conflicts
         if: steps.merge.outputs.result == 'conflict'
+        env:
+          CONFLICTS: ${{ steps.merge.outputs.files }}
         run: |
           head="${{ steps.fetch.outputs.head }}"
           title="pi upstream merge needs hands: $head"
@@ -127,6 +140,17 @@ jobs:
           \`\`\`
 
           Merge locally: \`git fetch upstream && git merge upstream/main\`, adapt mu, then \`npm run check\` and \`./test.sh\`."
+          # What mu's side of each conflicting file is for, from the fork ledger.
+          ledger=$(printf '%s\n' "$CONFLICTS" | node scripts/fork-ledger.mjs explain - || true)
+          if [ -n "$ledger" ]; then
+            body="$body
+
+          ## What mu changes in these files
+
+          From kyrn/docs/fork-ledger.md. Keep what each entry says to keep.
+
+          $ledger"
+          fi
           existing=$(gh issue list --state open --search "in:title pi upstream merge needs hands" --json number --jq '.[0].number')
           if [ -n "$existing" ]; then
             gh issue edit "$existing" --title "$title" --body "$body"

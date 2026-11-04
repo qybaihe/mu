@@ -99,6 +99,31 @@ jobs:
       - name: Unit tests
         run: bunx vitest run
 
+  # Every file of pi's that mu changes has an entry in kyrn/docs/fork-ledger.md saying why, so a weekly upstream merge
+  # that conflicts there shows what mu's side is for. Compared with the last upstream commit merged into this one.
+  fork-ledger:
+    name: Fork ledger
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: Fetch pi upstream
+        run: |
+          git remote add upstream https://github.com/earendil-works/pi.git
+          git fetch upstream main --no-tags
+
+      - name: Check the ledger
+        run: node scripts/fork-ledger.mjs --require-upstream
+
   mcp-conformance:
     runs-on: ubuntu-latest
     steps:

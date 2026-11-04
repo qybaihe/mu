@@ -4,6 +4,8 @@
 
 > 2026-10-24（0.2.5）：Laya 已从 mu 移除。`kyrn/bin/kyrn-judge-local`、`kyrn/local-judge/server.py` 和 `local` 类型的判定器都已删掉，`kyrn/local-judge/` 里只剩 mude 1.0 的 Python 依赖锁。下面的文件地图、启动命令和 provider 列表已按此改过；第 9 节等处仍是当时的记录。
 
+> 2026-11-04：mu 对 pi 文件的改动早已不止 `package-lock.json`。完整清单、每处改动的原因和合并时要保留什么，见 [fork-ledger.md](fork-ledger.md)；CI 的 Fork ledger 检查会在漏记时失败。§1.1 和 §8 里「只有 package-lock.json」是 2026-09-20 的记录。
+
 > 2026-09-20 · 基于上游 `earendil-works/pi` 提交 `d1230ea20`（v0.86.0 之后）
 > 行号来自对源码的静态阅读（两份测绘 + 我对承重结论的抽查），未逐条运行验证；上游更新后行号会漂移，以函数名为准。
 > 决策点编号（A1、B2…）见 [01-jev-integration-brainstorm.md](01-jev-integration-brainstorm.md) §4。
@@ -26,7 +28,7 @@ KYRN/                      = pi 的分叉（git）
 ```
 
 - 远端 `upstream` = earendil-works/pi；分支 `main` = 上游纯净镜像，`kyrn` = 开发分支。还没有 `origin`（没推到任何地方）。
-- **对上游文件的改动面：只有 `package-lock.json` +24 行**（新 workspace 包的条目）。其余全是新增文件。
+- **对上游文件的改动面：只有 `package-lock.json` +24 行**（新 workspace 包的条目）。其余全是新增文件。现在的改动面见 [fork-ledger.md](fork-ledger.md)。
 - 品牌常量暂时不改。pi 官方支持用 `packages/coding-agent/package.json` 的 `piConfig: { name, configDir }` + `bin` 改名（`src/config.ts:480-509`），但会把环境变量前缀一起改成 `KYRN_*`，而上游有 9 个测试文件硬编码 `PI_CODING_AGENT_DIR`。现在用 `PI_CODING_AGENT_DIR=~/.kyrn/agent` 做配置隔离（零源码改动），正式改名留作单独一步。
 
 ### 1.2 运行与测试
@@ -197,7 +199,7 @@ npm install --package-lock-only --ignore-scripts   # lockfile 冲突时重新生
 npm run check
 ```
 
-目前唯一会冲突的是 `package-lock.json`，机械可解。动手做蜂群之前读一遍 pi 的 [RFC](https://rfc.earendil.com/keyword/pi/)。
+当时唯一会冲突的是 `package-lock.json`，机械可解；现在会冲突的文件和该保留什么，见 [fork-ledger.md](fork-ledger.md)。动手做蜂群之前读一遍 pi 的 [RFC](https://rfc.earendil.com/keyword/pi/)。
 
 ## 9. 下一步
 
