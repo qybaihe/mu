@@ -40,6 +40,8 @@ export interface LedgerRecord {
 		readonly failures: number;
 		/** Per-item answers, kept only for small batches. */
 		readonly answers?: readonly (Readonly<Record<string, Answer>> | null)[];
+		/** SHA-256 of each item's state, beside its answers: what a replay matches an item's request by. */
+		readonly digests?: readonly string[];
 	};
 	/** SHA-256 of the submitted state. The state itself is stored only when the engine is told to. */
 	readonly stateDigest: string;

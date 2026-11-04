@@ -136,6 +136,7 @@ export {
 	OpenAIDecisionsJudgeProvider,
 	type OpenAIDecisionsJudgeProviderOptions,
 } from "./providers/openai-decisions.ts";
+export { type ReplayCall, ReplayJudgeProvider, type ReplayMiss, replayCalls } from "./providers/replay.ts";
 export {
 	TYPESAFE_BASE_URL,
 	TYPESAFE_DEFAULT_MODEL,

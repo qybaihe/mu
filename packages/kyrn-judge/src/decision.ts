@@ -20,6 +20,9 @@ export const ABSTAIN: unique symbol = Symbol("kyrn.judge.abstain");
 
 /** Batches up to this size record each item's answers in the ledger. */
 const MAX_BATCH_ANSWERS = 8;
+
+/** A state's digest in the ledger: SHA-256 of its JSON, as the decision built it. */
+export const digestOf = (state: unknown): string => createHash("sha256").update(JSON.stringify(state)).digest("hex");
 export type Abstain = typeof ABSTAIN;
 
 /**
@@ -399,7 +402,7 @@ export class DecisionEngine {
 			usage: evaluation.usage,
 			warnings: evaluation.warnings,
 			tiers: evaluation.tiers,
-			stateDigest: createHash("sha256").update(JSON.stringify(state)).digest("hex"),
+			stateDigest: digestOf(state),
 			state: evaluation.request?.state,
 			questions: evaluation.request?.questions,
 		};
@@ -514,8 +517,9 @@ export class DecisionEngine {
 					inputs.length <= MAX_BATCH_ANSWERS
 						? evaluations.map((evaluation) => evaluation.answers ?? null)
 						: undefined,
+				digests: inputs.length <= MAX_BATCH_ANSWERS ? states.map(digestOf) : undefined,
 			},
-			stateDigest: createHash("sha256").update(JSON.stringify(states)).digest("hex"),
+			stateDigest: digestOf(states),
 		});
 		return decisions;
 	}
