@@ -995,6 +995,8 @@ export type I18nKey =
   | 'common.kyrn.judgeView.log.latest'
   | 'common.kyrn.judgeView.log.thisTurn'
   | 'common.kyrn.judgeView.log.times'
+  | 'common.kyrn.judgeView.markWrong'
+  | 'common.kyrn.judgeView.markWrongHint'
   | 'common.kyrn.judgeView.markedWrong'
   | 'common.kyrn.judgeView.markedWrongWhy'
   | 'common.kyrn.judgeView.more'

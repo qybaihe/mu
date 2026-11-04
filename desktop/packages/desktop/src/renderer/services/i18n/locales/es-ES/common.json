@@ -302,6 +302,8 @@
       },
       "markedWrong": "Has marcado este veredicto como erróneo.",
       "markedWrongWhy": "Has marcado este veredicto como erróneo: {{note}}",
+      "markWrong": "Marcar como erróneo",
+      "markWrongHint": "Dile a mu que este veredicto fue erróneo. mu usa estas marcas para ajustar sus veredictos.",
       "unlinked": "Registro independiente",
       "unlinkedHint": "Se registró sin correlación de turno. Se muestra por separado y no se combina con registros cercanos en el tiempo.",
       "state": {

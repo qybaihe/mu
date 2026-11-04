@@ -302,6 +302,8 @@
       },
       "markedWrong": "이 판정을 잘못된 것으로 표시했습니다.",
       "markedWrongWhy": "이 판정을 잘못된 것으로 표시했습니다: {{note}}",
+      "markWrong": "잘못됨으로 표시",
+      "markWrongHint": "이 판정이 틀렸다고 mu에 알립니다. mu는 이 표시를 판정을 보정하는 데 씁니다.",
       "unlinked": "독립 기록",
       "unlinkedHint": "턴 연관 정보 없이 기록되었습니다. 단독으로 표시되며 시간이 가까운 기록과 합치지 않습니다.",
       "state": {
