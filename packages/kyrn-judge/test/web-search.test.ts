@@ -367,6 +367,37 @@ describe("tavily", () => {
 		expect(JSON.stringify(outcome)).not.toContain(KEY);
 	});
 
+	it("does not follow a redirect, so the key and the query go nowhere else", async () => {
+		const elsewhere: string[] = [];
+		const other = createServer((request, response) => {
+			elsewhere.push(String(request.headers.authorization));
+			response.end("{}");
+		});
+		const api = createServer((_request, response) => {
+			const { port } = other.address() as AddressInfo;
+			response.writeHead(307, { Location: `http://127.0.0.1:${port}/search` });
+			response.end();
+		});
+		await Promise.all([other, api].map((server) => new Promise<void>((done) => server.listen(0, "127.0.0.1", done))));
+		try {
+			// The real fetch, sent to a local stand-in for the API.
+			const toLocal: typeof fetch = (input, init) =>
+				fetch(String(input).replace(TAVILY_API, `http://127.0.0.1:${(api.address() as AddressInfo).port}`), init);
+			const outcome = await searchWeb("captcha solver", {
+				sources: [tavilySource(KEY, { fetch: toLocal })],
+				count: 5,
+				get: noGet,
+			});
+			expect(outcome.problems).toEqual([
+				"tavily: the API answered with a redirect, which is not followed with the key",
+			]);
+			await expect(tavilyExtract(KEY, "https://example.com/a", { fetch: toLocal })).rejects.toThrow("redirect");
+			expect(elsewhere).toEqual([]);
+		} finally {
+			await Promise.all([other, api].map((server) => new Promise((done) => server.close(done))));
+		}
+	});
+
 	it("extracts one page as markdown, and says why when it could not", async () => {
 		const sent: Sent[] = [];
 		const page = await tavilyExtract(KEY, "https://example.com/a", {

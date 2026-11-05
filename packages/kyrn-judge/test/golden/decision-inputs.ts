@@ -1,3 +1,4 @@
+import { testLogSelection } from "../../src/admission/test-log.ts";
 import type { DecisionSpec } from "../../src/decision.ts";
 import { boardRead } from "../../src/decisions/board-read.ts";
 import { browserStep } from "../../src/decisions/browser-step.ts";
@@ -329,6 +330,28 @@ export const GOLDEN_CASES: readonly GoldenCase[] = [
 		chunks: [
 			" ✓ test/format.test.ts (6 tests) 12ms\n ✓ test/util.test.ts (5 tests) 8ms",
 			" FAIL test/parse.test.ts > parseDuration > hours and minutes\nAssertionError: expected 3600 to be 5400",
+		],
+	}),
+	golden(testLogSelection, {
+		call: "bash: npm test",
+		goal: GOAL,
+		intent: "Run the tests to see whether parseDuration passes now",
+		run: " FAIL  test/parse.test.ts > parseDuration > hours and minutes\n      Tests  1 failed | 11 passed (12)",
+		candidates: [
+			{
+				id: "part_1",
+				kind: "pass",
+				text: " ✓ test/format.test.ts (6 tests) 12ms\n ✓ test/util.test.ts (5 tests) 8ms\n",
+				lines: 2,
+				label: "passing tests",
+			},
+			{
+				id: "part_2",
+				kind: "output",
+				text: "stdout | test/parse.test.ts > parseDuration > minutes\nparsed 90 as 90 seconds\n",
+				lines: 2,
+				label: "stdout of passing tests",
+			},
 		],
 	}),
 	golden(toolApproval, {

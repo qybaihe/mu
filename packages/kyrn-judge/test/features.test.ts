@@ -236,6 +236,56 @@ describe("kyrn features", () => {
 		expect(steers[0]).toContain("3 times");
 	});
 
+	it("monitor: says so again, more plainly, at 5 and 8 repeats", async () => {
+		const harness = await start(() => ({}), { tools: [tool("check", () => "still failing")] });
+		const call = () => fauxAssistantMessage([fauxToolCall("check", { path: "a.ts" })], { stopReason: "toolUse" });
+		harness.setResponses([...Array.from({ length: 9 }, call), fauxAssistantMessage("Giving up on this check.")]);
+
+		await harness.session.prompt("Make the check pass.");
+
+		const steers = customMessages(harness, "kyrn.steer");
+		expect(steers).toHaveLength(3);
+		expect(steers[0]).toMatch(/run 3 times .*Say what it told you and try a different approach\.$/);
+		expect(steers[1]).toMatch(/run 5 times .*Stop repeating it/);
+		expect(steers[2]).toMatch(/run 8 times .*Do not make this call again\. Tell the user/);
+	});
+
+	it("monitor: counts a refused call, which never runs and has no result", async () => {
+		const ran: string[] = [];
+		const bash = tool("bash", (params) => {
+			ran.push(String(params.command));
+			return "ok";
+		});
+		// The guard on its own refuses a flagged command nobody asked for when nobody can confirm it.
+		const harness = await start(
+			(request): Record<string, Answer> =>
+				"requested" in request.questions ? { destructive: yes, requested: no } : {},
+			{ tools: [bash], features: { permissions: false } },
+		);
+		const call = () =>
+			fauxAssistantMessage([fauxToolCall("bash", { command: "rm -rf ./build-cache" })], { stopReason: "toolUse" });
+		harness.setResponses([call(), call(), call(), fauxAssistantMessage("I could not clean up.")]);
+
+		await harness.session.prompt("Why is the build slow?");
+
+		expect(ran).toEqual([]);
+		const steers = customMessages(harness, "kyrn.steer");
+		expect(steers).toHaveLength(1);
+		expect(steers[0]).toMatch(
+			/^The same call has now been refused 3 times \(bash: rm -rf \.\/build-cache -> refused\); sent again as it is, it will be refused again\. Say what stopped it/,
+		);
+		const loops = harness.sessionManager
+			.getBranch()
+			.flatMap((entry) =>
+				entry.type === "custom" && entry.customType === "kyrn.monitor"
+					? [entry.data as Record<string, unknown>]
+					: [],
+			);
+		expect(loops).toEqual([
+			{ kind: "loop", action: "bash: rm -rf ./build-cache -> refused", times: 3, refused: true },
+		]);
+	});
+
 	it("monitor: paging through a file, or scripts alike in their first 300 characters, is no loop", async () => {
 		const harness = await start(() => ({}), {
 			tools: [tool("read", (params) => `lines ${String(params.offset)} on`), tool("bash", () => "ok")],

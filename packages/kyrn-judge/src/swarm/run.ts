@@ -168,7 +168,8 @@ const setError = (bee: BeeState, reason: string, coded: Coded | undefined) => {
 };
 
 /**
- * What a bee that ran spent, as a `kyrn.usage` entry for the parent's session: the child keeps no session of its own.
+ * What a bee that ran spent, as a `kyrn.usage` entry for the parent's session. This entry is where the spend is
+ * counted: a child keeps a session of its own only when its parent does, and that file is not part of the parent's.
  * Undefined for a bee that never started. One that did not finish is `partial`: a request it was in the middle of
  * when it was stopped, or that failed, reports no usage.
  */
@@ -225,6 +226,8 @@ export class SwarmRun<Assignment> {
 	onChange?: () => void;
 	/** Hive only: the state of the shared board, read fresh for every snapshot. */
 	board?: () => BoardSummary;
+	/** Called once for each bee as it starts, before its runner: a bee stopped while it waited for a slot never is. */
+	onBeeStart?: (bee: BeeState, spec: BeeSpec<Assignment>) => void;
 	/** Called once for each bee that started, when it has ended however it ended. */
 	onBeeEnd?: (bee: BeeState) => void;
 	private readonly specs: BeeSpec<Assignment>[];
@@ -460,6 +463,11 @@ export class SwarmRun<Assignment> {
 			bee.status = "starting";
 			bee.startedAt = this.now();
 			bee.lastEventAt = bee.startedAt;
+			try {
+				this.onBeeStart?.(bee, spec);
+			} catch {
+				// Bookkeeping, as for onBeeEnd; the bee runs anyway.
+			}
 			this.onChange?.();
 			const observer: BeeObserver = {
 				event: (event) => {

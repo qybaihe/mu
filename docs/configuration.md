@@ -66,7 +66,7 @@ Judges and modes:
 | `MU_JUDGE_MODE` | Default mode for this run: `off`, `shadow` or `active`. |
 | `MU_WRITER` | `provider/model-id` for the writer model. |
 | `MU_PERMISSIONS` | Permission mode for this run: `full`, `judge` or `ask`. |
-| `MU_PASS_ENV` | Credential variables the agent's commands still get, comma-separated, such as `GH_TOKEN,NPM_TOKEN`. Every other variable whose name says it holds a credential (`KEY`, `TOKEN`, `SECRET`, `PASSWORD`, `CREDENTIAL`) and whose value looks like one is left out of the commands the agent runs, so a command cannot read mu's own keys. Commands you type with `!` keep them all. |
+| `MU_PASS_ENV` | Credential variables the agent's commands still get, comma-separated, such as `GH_TOKEN,NPM_TOKEN`. Every other variable whose name says it holds a credential (`KEY`, `TOKEN`, `SECRET`, `PASSWORD`, `CREDENTIAL`) and whose value looks like one is left out of the commands the agent runs and of the MCP servers in `mcp.json`, so a command or a server cannot read mu's own keys. Commands you type with `!` keep them all; a server that sets `"inheritEnv": true` gets them all. |
 
 Keys for the hosted judges, each sent only to the service it belongs to (see [Judges](judges.md#hosted-jev)): `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY` with `CLOUDFLARE_ACCOUNT_ID`, `MU_JUDGE_CLM_API_KEY`, and `MU_JUDGE_OPENAI_KEY` ([OpenAI's decision model](judges.md#openais-decision-model)).
 

@@ -1,5 +1,15 @@
 import { spawnSync } from "node:child_process";
-import { chmodSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+	chmodSync,
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	realpathSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { fauxAssistantMessage } from "@earendil-works/pi-ai";
@@ -15,7 +25,7 @@ import {
 } from "../src/dap/adapters.ts";
 import { DapClient } from "../src/dap/client.ts";
 import { DebugSession, type Where } from "../src/dap/session.ts";
-import { launchExtra } from "../src/extension/features/packs/debugger.ts";
+import { confinedPlan, launchExtra } from "../src/extension/features/packs/debugger.ts";
 import { tempArea } from "./fixtures/git-repo.ts";
 import { active, call, disclosing, registered, startPacks, toolResults } from "./packs-helpers.ts";
 
@@ -335,6 +345,86 @@ describe("pack:debugger", () => {
 		expect(missing).toContain("is not on this machine's PATH. Install it with: go install github.com/go-delve/delve");
 		expect(noProgram).toContain("Name the program to run");
 		expect(noRun).toContain("No debugging run. Start one with debug_start.");
+	});
+
+	describe.skipIf(process.platform === "win32")("with the write sandbox on", () => {
+		/** Another platform's floor: its runner is not on this machine, so an adapter started inside it cannot start. */
+		const elsewhere: NodeJS.Platform = process.platform === "darwin" ? "linux" : "darwin";
+
+		it("starts the adapter inside the floor, or nothing when the floor cannot start", async () => {
+			expect(
+				confinedPlan(
+					{ command: "/usr/bin/python3", args: ["-m", "debugpy.adapter"] },
+					{ runner: "bwrap", args: ["--ro-bind", "/", "/", "--"] },
+				),
+			).toEqual({
+				command: "bwrap",
+				args: ["--ro-bind", "/", "/", "--", "/usr/bin/python3", "-m", "debugpy.adapter"],
+			});
+
+			const inside = await startPacks(harnesses, {
+				responder: disclosing("Debugger"),
+				packs: adapters(),
+				confine: { probe: async () => ({ ok: true }), tmp: [], platform: elsewhere },
+			});
+			writeFileSync(join(inside.harness.tempDir, "prog.fake"), `${PROGRAM.join("\n")}\n`);
+			inside.harness.setResponses([
+				call("debug_start", { program: "prog.fake", breakpoints: [{ file: "prog.fake", line: 4 }] }),
+				fauxAssistantMessage("It did not start."),
+			]);
+			await inside.harness.session.prompt("Debug prog.fake.");
+			const runner = elsewhere === "linux" ? "bwrap" : "/usr/bin/sandbox-exec";
+			expect(toolResults(inside.harness)[0]).toContain(
+				`the debug adapter could not be started: spawn ${runner} ENOENT`,
+			);
+
+			const closed = await startPacks(harnesses, {
+				responder: disclosing("Debugger"),
+				packs: adapters(),
+				confine: { probe: async () => ({ ok: false, reason: "no runner here" }), tmp: [] },
+			});
+			writeFileSync(join(closed.harness.tempDir, "prog.fake"), `${PROGRAM.join("\n")}\n`);
+			closed.harness.setResponses([
+				call("debug_start", { program: "prog.fake", breakpoints: [] }),
+				fauxAssistantMessage("The sandbox cannot start."),
+			]);
+			await closed.harness.session.prompt("Debug prog.fake.");
+			expect(toolResults(closed.harness)[0]).toContain(
+				"mu: the write sandbox is on but cannot start here (no runner here). Nothing ran.",
+			);
+		});
+
+		it.skipIf(process.platform !== "darwin" || !existsSync("/usr/bin/sandbox-exec"))(
+			"runs the program where it can write only the project, and says so of a write it refused (macOS Seatbelt)",
+			async () => {
+				const away = realpathSync(mkdtempSync(join(tmpdir(), "mu-floor-dap-")));
+				cleanup.push(() => rmSync(away, { recursive: true, force: true }));
+				const { harness } = await startPacks(harnesses, {
+					responder: disclosing("Debugger"),
+					packs: adapters(),
+					confine: { tmp: [] },
+				});
+				const outside = join(away, "made.txt");
+				writeFileSync(
+					join(harness.tempDir, "prog.fake"),
+					["x = 1", "write inside.txt", `write ${outside}`, "print done", ""].join("\n"),
+				);
+				harness.setResponses([
+					call("debug_start", { program: "prog.fake", breakpoints: [] }),
+					fauxAssistantMessage("It ran."),
+				]);
+				await harness.session.prompt("Debug prog.fake.");
+				const [result] = toolResults(harness);
+				expect(result).toContain("The program ended");
+				expect(existsSync(join(harness.tempDir, "inside.txt"))).toBe(true);
+				expect(existsSync(outside)).toBe(false);
+				expect(result).toContain("operation not permitted");
+				expect(result).toContain(`[mu write sandbox: ${outside} is outside what commands may write here`);
+				// mu's note comes before the program's output, which is not to be trusted.
+				expect(result.indexOf("[mu write sandbox:")).toBeLessThan(result.indexOf("come from the program"));
+			},
+			30_000,
+		);
 	});
 
 	it("ends a run that is still stopped when the session shuts down", async () => {

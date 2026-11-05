@@ -86,9 +86,10 @@ export interface McpStdioServerConfig extends McpServerConfigBase {
 	/** Relative paths resolve against the session working directory. */
 	cwd?: string;
 	/**
-	 * mu: false starts the server with `env` only, without pi's own environment, which holds model keys. mu
-	 * registers the servers it takes over from other tools this way, with the few variables a program needs.
-	 * Default: true.
+	 * mu: what of pi's own environment, which holds model keys, the server starts with besides `env`. Unset: all of it
+	 * except the variables that hold credentials (as for the agent's commands; `MU_PASS_ENV` names ones to keep).
+	 * true: all of it. false: none, `env` only; mu registers the servers it takes over from other tools this way,
+	 * with the few variables a program needs.
 	 */
 	inheritEnv?: boolean;
 }

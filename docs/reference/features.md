@@ -168,7 +168,7 @@ On by default: yes. Decision points: `tool.admission`, `tool.admission.test-log`
 | `maxChunks` | `48` | Judge at most this many chunks. Range 4 to 400. |
 | `batchChunks` | `16` | Chunks per request. The judge takes many chunks in one request, with the shared context billed once. Range 1 to 32. |
 | `waitMs` | `2000` ms | Wait at most `2000` ms. After this, the full output goes in; the verdict is only recorded. Range 500 to 30000. |
-| `passThrough` | `read`, `edit`, `write`, `delegate`, `hive`, `web_fetch` | Never filter these tools. |
+| `passThrough` | `read`, `edit`, `write`, `delegate`, `hive`, `web_fetch`, `recall` | Never filter these tools. |
 | `printCommands` | `cat`, `sed -n`, `head`, `tail`, `nl`, `less`, `bat`, `grep`, `rg`, `od`, `xxd`, `git show`, `git diff`, `readelf`, `objdump` | Never filter file prints. When a bash command only prints a file with these programs (after a cd, or piped through them), its output goes in whole, as with read: the model asked to see that file. Build, test, background-job and other output is still judged. Empty: all of it is judged. |
 | `testLog` | `off` | Test log trimming. One of `off` (Off), `rules` (Drop exact repeats only (lossless)), `jev` (Also let the judge pick from the rest). |
 | `agentEnv` | `true` | Tell test runners an agent is reading. Vitest and other runners then print only failures and the summary. |
@@ -186,6 +186,16 @@ On by default: yes. Decision points: `context.forget`.
 | `minAgeTurns` | `2` | At least this many turns old. Range 0 to 50. |
 | `maxPerBatch` | `12` | Judge at most per batch. Range 1 to 100. |
 | `waitMs` | `4000` ms | Wait at most `4000` ms. The current request waits this long; later verdicts apply from the next request on. Range 500 to 30000. |
+
+## recall
+
+**Read back shortened output.** Tool output mu left out to save context can be read back by the model with recall, a piece at a time by the call's id, instead of running the command or fetching the page again: old results forgetting replaced, noise admission archived, the rest of a page web_fetch cut. Only this conversation; the rest of a page goes through the injection screen first.
+
+On by default: yes.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `maxChars` | `20000` chars | Max text per recall call. Range 1000 to 200000. |
 
 ## compaction
 
@@ -236,7 +246,7 @@ On by default: yes. Decision points: `turn.drift`.
 | `maxMinutes` | `10` min | Check at least this often. A check comes after this long whatever happened, so a long reply with no tool call is checked too. Range 1 to 120. |
 | `stuckMinutes` | `10` min | No progress for this long before a drift steer. It also takes two drift readings in a row, each at least 90% sure. Progress is a new file written, more tests passing, a different error, a command of a minute or more that succeeds, or an item ticked. Range 0 to 120. |
 | `cooldownMinutes` | `15` min | At least this long between two steers. The judge's steers (on drift or a loop) wait this long after the monitor's last steer, including one from the loop rule. Range 0 to 240. |
-| `repeats` | `3` | Repeats that count as a loop. Only the same input with the same result counts as the same call; paging through a file does not. Range 2 to 20. |
+| `repeats` | `3` | Repeats that count as a loop. Only the same input with the same result counts as the same call; paging through a file does not. A call that was refused and never ran counts by its input alone. The monitor says so at this many, and again 2 and 5 repeats later, more plainly each time. Range 2 to 20. |
 | `window` | `8` | Recent calls checked. Range 2 to 100. |
 | `unattended` | `false` | Also check for drift in unattended runs. Unattended means a one-shot mu --print or json-mode run. Off by default. The rule that catches going in circles still applies. |
 
@@ -578,7 +588,7 @@ On by default: yes.
 
 ## confine
 
-**Write sandbox (experimental).** The agent's bash commands and background jobs can write only to the project, the temporary folders and package caches, enforced by the operating system; the project's .git/hooks and .git/config are read-only. Seatbelt on macOS, bubblewrap on Linux, none on Windows. When it cannot start (no bubblewrap, user namespaces turned off), every command is refused rather than run unconfined. The judge and the permission modes ask as before. A command that must write elsewhere (git config, git remote add) can ask to run outside the sandbox, once. In every permission mode, Full access included, the judge decides, and asks you when it's unsure (in Ask first, you decide). It's never allowed for the whole conversation.
+**Write sandbox (experimental).** The agent's bash commands, background jobs and the programs it debugs can write only to the project, the temporary folders and package caches, enforced by the operating system; the project's .git/hooks and .git/config are read-only. Seatbelt on macOS, bubblewrap on Linux, none on Windows. When it cannot start (no bubblewrap, user namespaces turned off), every command is refused rather than run unconfined. The judge and the permission modes ask as before. A command that must write elsewhere (git config, git remote add) can ask to run outside the sandbox, once. In every permission mode, Full access included, the judge decides, and asks you when it's unsure (in Ask first, you decide). It's never allowed for the whole conversation.
 
 On by default: no.
 
