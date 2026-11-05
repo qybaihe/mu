@@ -61,6 +61,8 @@ The format matches other MCP clients:
 
 Stdio servers use `command`, `args`, `env`, and `cwd`. Relative `cwd` values resolve against the session directory. A leading `~/` in `command`, an argument, or `cwd` names the home directory.
 
+A stdio server starts with mu's environment except the variables that hold credentials: a name with `KEY`, `TOKEN`, `SECRET`, `PASSWORD`, or `CREDENTIAL` and a value that looks like one, the same rule as for the agent's commands. Give a server the credentials it needs in `env`, for example `"GITHUB_TOKEN": "${GITHUB_TOKEN}"`, or list them in `MU_PASS_ENV`. `"inheritEnv": true` passes the whole environment, and `"inheritEnv": false` passes only `env`.
+
 HTTP servers use `url`, `headers`, and `oauth` (see [Authenticate with OAuth](#authenticate-with-oauth)). The legacy SSE transport is not supported.
 
 Both server types support:
