@@ -21,7 +21,7 @@ if (args.includes("--help") || args.includes("-h")) {
 	console.log(
 		[
 			"mu ledger: the judge's verdicts from your recent sessions, each with the message it judged, your answer",
-			"when a verdict sent a call to you, your mark when you said the judge got it wrong (/ledger wrong), and",
+			"when a verdict sent a call to you, your mark when you said the judge got it wrong (/ledger wrong) and",
 			"what the agent did when a verdict sent it back to work: called tools, or ended again without one.",
 			"",
 			"  mu ledger            verdicts from the 5 most recent sessions",

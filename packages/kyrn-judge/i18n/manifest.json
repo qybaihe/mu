@@ -3389,7 +3389,7 @@
 			"fa-IR": "تعریف‌ها، ارجاع‌ها، پیاده‌سازی‌ها و نوع‌ها، از همان فرایندهای سروری که پیام‌های تشخیصی را می‌دهند. در فهرست توانایی‌ها است و وقتی کاری به آن نیاز دارد باز می‌شود، پس در هر درخواست نیست."
 		},
 		"features[name=lsp].options[key=navigationResults].label": {
-			"en": "Places one navigation answer lists, at most",
+			"en": "Max places listed per answer",
 			"zh-TW": "導覽一次最多列幾處",
 			"ja-JP": "1 回のナビゲーションで示す箇所の最大数",
 			"ko-KR": "탐색 한 번에 보여 줄 최대 위치 수",

@@ -269,7 +269,7 @@ On by default: yes. Decision points: `diagnostics.delivery`.
 | `maxServers` | `4` | Servers running at once, at most `4`. Range 1 to 16. |
 | `waitMs` | `4000` ms | Wait for the judge, at most `4000` ms. Range 500 to 30000. |
 | `navigation` | `true` | The lsp navigation tool. Definitions, references, implementations and types, from the same server processes as the diagnostics. It's in the capability catalog and opened when a task needs it, so it isn't in every request. |
-| `navigationResults` | `30` | Places one navigation answer lists, at most `30`. Range 1 to 200. |
+| `navigationResults` | `30` | Max places listed per answer. Range 1 to 200. |
 
 ## ttsr
 
@@ -591,7 +591,7 @@ On by default: yes.
 
 ## interrupted
 
-**Replies you stop.** When you stop a reply while it's being written, pi leaves the whole reply out of what the model is sent next, so after "stop, and expand your second point" the model has no second point. mu gives the model back the text you saw, in a message only the model reads, without the reasoning or tool calls. Replies mu cuts itself (thinking too long, breaking a rule) are left out: those say what they cut.
+**Replies you stop.** When you stop a reply while it's being written, pi leaves the whole reply out of what the model is sent next, so after "stop, and expand your second point" the model has no second point. mu gives the model back the text you saw, in a message only the model reads, without the reasoning or tool calls. Replies mu cuts itself (thinking too long, breaking a rule) aren't given back: those say what they cut.
 
 On by default: yes.
 
