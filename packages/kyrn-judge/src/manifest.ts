@@ -1164,7 +1164,7 @@ const DESCRIBED: HarnessManifest = {
 				{
 					key: "passThrough",
 					kind: "list",
-					default: ["read", "edit", "write", "delegate", "hive", "web_fetch"],
+					default: ["read", "edit", "write", "delegate", "hive", "web_fetch", "recall"],
 					label: { zh: "这些工具的输出不筛", en: "Never filter these tools" },
 				},
 				{
@@ -1274,6 +1274,26 @@ const DESCRIBED: HarnessManifest = {
 						zh: "这次请求最多等这么久；来晚的判定在下一次请求生效。",
 						en: "The current request waits this long; later verdicts apply from the next request on.",
 					},
+				},
+			],
+		},
+		{
+			name: "recall",
+			title: { zh: "取回省略的输出", en: "Read back shortened output" },
+			summary: {
+				zh: "mu 为省上下文而省略的工具输出，模型可以用 recall 按调用 id 分段取回原文，不必重跑命令：遗忘换掉的旧结果、准入归档的噪声。只读本次对话。",
+				en: "Tool output mu left out to save context can be read back by the model with recall, a piece at a time by the call's id, instead of running the command again: old results forgetting replaced, noise admission archived. Only this conversation.",
+			},
+			defaultEnabled: true,
+			options: [
+				{
+					key: "maxChars",
+					kind: "number",
+					default: 20000,
+					min: 1000,
+					max: 200000,
+					unit: chars,
+					label: { zh: "一次取回最多返回", en: "Max text per recall call" },
 				},
 			],
 		},

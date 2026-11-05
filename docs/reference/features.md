@@ -168,7 +168,7 @@ On by default: yes. Decision points: `tool.admission`, `tool.admission.test-log`
 | `maxChunks` | `48` | Judge at most this many chunks. Range 4 to 400. |
 | `batchChunks` | `16` | Chunks per request. The judge takes many chunks in one request, with the shared context billed once. Range 1 to 32. |
 | `waitMs` | `2000` ms | Wait at most `2000` ms. After this, the full output goes in; the verdict is only recorded. Range 500 to 30000. |
-| `passThrough` | `read`, `edit`, `write`, `delegate`, `hive`, `web_fetch` | Never filter these tools. |
+| `passThrough` | `read`, `edit`, `write`, `delegate`, `hive`, `web_fetch`, `recall` | Never filter these tools. |
 | `printCommands` | `cat`, `sed -n`, `head`, `tail`, `nl`, `less`, `bat`, `grep`, `rg`, `od`, `xxd`, `git show`, `git diff`, `readelf`, `objdump` | Never filter file prints. When a bash command only prints a file with these programs (after a cd, or piped through them), its output goes in whole, as with read: the model asked to see that file. Build, test, background-job and other output is still judged. Empty: all of it is judged. |
 | `testLog` | `off` | Test log trimming. One of `off` (Off), `rules` (Drop exact repeats only (lossless)), `jev` (Also let the judge pick from the rest). |
 | `agentEnv` | `true` | Tell test runners an agent is reading. Vitest and other runners then print only failures and the summary. |
@@ -186,6 +186,16 @@ On by default: yes. Decision points: `context.forget`.
 | `minAgeTurns` | `2` | At least this many turns old. Range 0 to 50. |
 | `maxPerBatch` | `12` | Judge at most per batch. Range 1 to 100. |
 | `waitMs` | `4000` ms | Wait at most `4000` ms. The current request waits this long; later verdicts apply from the next request on. Range 500 to 30000. |
+
+## recall
+
+**Read back shortened output.** Tool output mu left out to save context can be read back by the model with recall, a piece at a time by the call's id, instead of running the command again: old results forgetting replaced, noise admission archived. Only this conversation.
+
+On by default: yes.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `maxChars` | `20000` chars | Max text per recall call. Range 1000 to 200000. |
 
 ## compaction
 
