@@ -80,10 +80,20 @@ export default function ProviderManager(props: ProviderManagerProps) {
   const { providers, foreign, commented, problem, defaults } = draft.settings.models;
   const readOnly = commented || Boolean(problem);
   const [selection, setSelection] = useState<Selection>();
-  // Opened from a model menu's "Choose which models appear": on the account of the model in use.
+  // Opened from a model menu's "Choose which models appear": on the provider of the model in use, an account or one
+  // an API key makes usable (one no longer listed falls back as any gone choice does).
   useEffect(() => {
     const asked = takeAccountToShow();
-    if (asked && isSubscriptionProvider(asked)) setSelection({ kind: 'account', provider: asked });
+    if (!asked) return;
+    const index = providers.findIndex((provider) => provider.id === asked);
+    setSelection(
+      isSubscriptionProvider(asked)
+        ? { kind: 'account', provider: asked }
+        : index >= 0
+          ? { kind: 'custom', index }
+          : { kind: 'builtin', id: asked }
+    );
+    // Only when the page opens: the request is taken once.
   }, []);
 
   const saved = new Map(base.models.providers.map((provider) => [provider.id, provider]));

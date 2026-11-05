@@ -836,6 +836,21 @@ describe('providers and the default model', () => {
     expect(await screen.findByTestId('mu-provider-editor')).toBeInTheDocument();
   });
 
+  it('opens on a provider an API key makes usable when the model in use is one of its', async () => {
+    const routed = [{ id: 'qwen/qwen3-coder', name: 'Qwen3 Coder' }];
+    bridge.availableModels.mockResolvedValue({
+      ok: true,
+      data: { providers: [{ id: 'openrouter', models: routed }], thinkingLevels: [] },
+    });
+    bridge.loginStatus.mockResolvedValue({
+      ok: true,
+      data: { signedIn: [], usable: [{ provider: 'openrouter', models: routed }] },
+    });
+    showAccountNext('openrouter');
+    await open('providers');
+    expect(await screen.findByTestId('mu-account-models-openrouter')).toBeInTheDocument();
+  });
+
   it('chooses the models of a provider an API key makes usable, searching a long list', async () => {
     const routed = [
       ...['qwen/qwen3-coder', 'qwen/qwen3-max', 'z-ai/glm-5'].map((id) => ({ id, name: id })),
