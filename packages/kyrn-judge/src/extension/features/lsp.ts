@@ -15,7 +15,7 @@ import { formatReport, lineMap, type ReportItem } from "../../lsp/diagnostics.ts
 import { LspManager } from "../../lsp/manager.ts";
 import { mergeServers, type ServerSpec } from "../../lsp/servers.ts";
 import { DiagnosticsTracker, type Tracked } from "../../lsp/tracker.ts";
-import { clip, failOpen, type KyrnRuntime, textOf } from "../runtime.ts";
+import { clip, failOpen, type KyrnRuntime } from "../runtime.ts";
 import { registerNavigation, toolPath } from "./lsp-navigation.ts";
 
 export const DIAGNOSTICS_MESSAGE = "kyrn.diagnostics";
@@ -225,17 +225,6 @@ export function registerLsp(runtime: KyrnRuntime): void {
 		"input",
 		failOpen((event) => {
 			if (event.source !== "extension" && !event.streamingBehavior) newTurn();
-			return undefined;
-		}),
-	);
-
-	pi.on(
-		"message_end",
-		failOpen((event) => {
-			const message = event.message as { role?: unknown; content?: unknown };
-			if (message.role !== "assistant") return undefined;
-			const text = textOf(message.content);
-			if (text.trim()) runtime.lastAssistantText = text;
 			return undefined;
 		}),
 	);

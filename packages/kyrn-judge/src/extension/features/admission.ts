@@ -156,18 +156,6 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 	// An explicit reporter flag still wins, so the agent can list every passing test when it needs them.
 	if (options.agentEnv) process.env.AI_AGENT ??= "1";
 
-	pi.on(
-		"message_end",
-		failOpen((event, ctx) => {
-			runtime.touch(ctx);
-			const message = event.message as { role?: unknown; content?: unknown };
-			if (message.role !== "assistant") return undefined;
-			const text = textOf(message.content);
-			if (text.trim()) runtime.lastAssistantText = text;
-			return undefined;
-		}),
-	);
-
 	/**
 	 * One verdict per chunk, in order. The judge takes many chunks in one request, the state billed once
 	 * (measured 2026-09-23 on jev: 16 chunks in 0.44 s and 7.6k tokens, against 1.4 s and 11.6k tokens as 16

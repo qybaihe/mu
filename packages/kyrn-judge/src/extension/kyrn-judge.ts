@@ -78,7 +78,7 @@ import { registerWelcome } from "./features/welcome.ts";
 import type { PresentationListener } from "./presentation.ts";
 import { registerLockSafeQuit } from "./quit.ts";
 import { registerRejectionLog } from "./rejections.ts";
-import { failOpen, KyrnRuntime, recentTurnDigests } from "./runtime.ts";
+import { failOpen, KyrnRuntime, recentTurnDigests, textOf } from "./runtime.ts";
 
 export { recentTurnDigests };
 
@@ -220,6 +220,20 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		if (roots) registerLockSafeQuit(pi, roots.agentDir);
 		return;
 	}
+
+	// What the agent said last, the stated intent of the calls that follow it: interjection, memory, admission, lsp,
+	// notify and warming read it, whichever of them are on.
+	pi.on(
+		"message_end",
+		failOpen((event, ctx) => {
+			runtime.touch(ctx);
+			const message = event.message as { role?: unknown; content?: unknown };
+			if (message.role !== "assistant") return undefined;
+			const text = textOf(message.content);
+			if (text.trim()) runtime.lastAssistantText = text;
+			return undefined;
+		}),
+	);
 
 	// A sub-agent first of all listens to its parent: a wrap-up request has to be known before anything else reacts to a step.
 	if (process.env.KYRN_SWARM_CONTROL)

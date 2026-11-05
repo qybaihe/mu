@@ -85,14 +85,12 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 
 ### `message_end`
 
-1. `frame`
-2. `memory`
-3. `admission`
-4. `ttsr` (off by default)
-5. `watchdog`
-6. `interrupted`
-7. `lsp`
-8. `board`
+1. `kernel`
+2. `frame`
+3. `ttsr` (off by default)
+4. `watchdog`
+5. `interrupted`
+6. `board`
 
 ### `message_start`
 
@@ -311,7 +309,7 @@ is marked: two features that set it in the same turn decide between them by the 
 | `goalActive` | `extension/features/goal.ts` | `extension/features/board.ts`, `extension/features/completion.ts`, `extension/features/continuation.ts` |
 | `harnessAbort` (set in more than one file) | `extension/features/ttsr.ts`, `extension/features/watchdog.ts` | `extension/features/completion.ts`, `extension/features/continuation.ts`, `extension/features/goal.ts`, `extension/features/interrupted.ts` |
 | `knownLessons` | `extension/features/memory.ts` | `extension/features/hive.ts`, `extension/features/swarm.ts` |
-| `lastAssistantText` (set in more than one file) | `extension/features/admission.ts`, `extension/features/lsp.ts`, `extension/features/memory.ts` | `extension/features/admission.ts`, `extension/features/interjection.ts`, `extension/features/lsp.ts`, `extension/features/memory.ts`, `extension/features/notify.ts`, `extension/features/warming.ts` |
+| `lastAssistantText` | `extension/kyrn-judge.ts` | `extension/features/admission.ts`, `extension/features/interjection.ts`, `extension/features/lsp.ts`, `extension/features/memory.ts`, `extension/features/notify.ts`, `extension/features/warming.ts` |
 | `notify` | `extension/features/notify.ts` | `extension/features/background.ts` |
 | `onFreeJev` | `extension/features/free-jev.ts` | `extension/runtime.ts` |
 | `onOpenAIKey` | `extension/features/openai-key.ts` | `extension/runtime.ts` |

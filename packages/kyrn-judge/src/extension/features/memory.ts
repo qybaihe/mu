@@ -402,19 +402,6 @@ export function registerMemory(runtime: KyrnRuntime, roots?: HarnessRoots): void
 
 	// Write side: the user --------------------------------------------------------------------------------
 
-	// The capture reads what the agent said last. Admission keeps it too; memory must not depend on that being on.
-	pi.on(
-		"message_end",
-		failOpen((event, ctx) => {
-			runtime.touch(ctx);
-			const message = event.message as { role?: unknown; content?: unknown };
-			if (message.role !== "assistant") return undefined;
-			const text = textOf(message.content);
-			if (text.trim()) runtime.lastAssistantText = text;
-			return undefined;
-		}),
-	);
-
 	/** The writer phrases a correction as a lesson. Without one, the user's own words are kept. */
 	const phraseCorrection = async (words: string, previous: string): Promise<LessonText> => {
 		const writer = runtime.writer();
