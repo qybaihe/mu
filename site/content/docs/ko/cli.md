@@ -28,6 +28,7 @@ mu                     # 현재 디렉터리에서 대화형 세션 시작
 | `mu setup` | 모델 연결(API 키, 또는 목록에서 고른 서비스)과 판정기 선택. `mu setup --help`는 스크립트용 형식을 보여 줘요. |
 | `mu doctor` | 설치, 모델, 판정기, 연결 상태를 점검하고 무엇을 고칠지 알려 줌 |
 | `mu ledger [n] [--json]` | 최근 n개 세션에서 판정기가 내린 판정. `--json`은 모든 기록을 확률, 소요 시간과 함께 내보내요. |
+| `mu ledger --timeline` | 한 세션을 순서대로 다시 보여 줘요. 내 메시지, 모델의 응답, 각 판정, 각 도구 결과를 시간과 함께 차례로 보여 주고, 기본은 가장 최근 세션이며 `--session <파일 또는 id>`로 고를 수 있어요. |
 | `mu import --list` | Claude Code, Codex, ZCode 대화 찾기 |
 | `mu import <file>…` | 그 대화를 기록 전체와 함께 mu로 가져와 이어 가기. 나중에 다시 하면 새로 생긴 내용이 더해져요 |
 | `mu judge mude install \| enable \| disable \| start \| stop \| status \| uninstall` | Apple 실리콘 Mac에서 돌아가는 mu의 자체 의사결정 모델 [mude 1.0](@docs/judges#mude). 내려받기가 중간에 멈추면 `install`이 멈춘 곳부터 이어 가요. |

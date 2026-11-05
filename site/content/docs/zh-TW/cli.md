@@ -28,6 +28,7 @@ mu                     # 在目前目錄開啟一個互動式工作階段
 | `mu setup` | 接上一個模型（一組 API 金鑰，或從清單裡選一個服務），並選擇判定器。`mu setup --help` 列出指令碼用的形式。 |
 | `mu doctor` | 檢查安裝、模型、判定器和各項連線，並告訴你要修什麼 |
 | `mu ledger [n] [--json]` | 最近 n 個工作階段裡判定器做了哪些決定。`--json` 給出每筆紀錄及其機率和耗時。 |
+| `mu ledger --timeline` | 一步步重播一個工作階段：你的訊息、模型的回覆、每次判定和每個工具結果，依順序並附時間。預設是最近一個工作階段，也可以用 `--session <檔案或 id>` 指定。 |
 | `mu import --list` | 找出你的 Claude Code、Codex 和 ZCode 對話 |
 | `mu import <file>…` | 把它們連同完整歷史匯入 mu，在這裡接著聊；之後再執行一次會帶來新增的內容 |
 | `mu judge mude install \| enable \| disable \| start \| stop \| status \| uninstall` | [mude 1.0](@docs/judges#mude)，mu 自己的決策模型，在 Apple 晶片的 Mac 上執行。下載中途停下後，`install` 會從中斷的地方接著下載。 |

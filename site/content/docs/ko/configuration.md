@@ -61,6 +61,7 @@ mu가 이해하지 못하는 부분은 mu를 멈추지 않고 기본값으로 �
 | `MU_JUDGE_MODE` | 이번 실행의 기본 모드: `off`, `shadow`, `active` |
 | `MU_WRITER` | 글쓰기 모델의 `provider/model` |
 | `MU_PERMISSIONS` | 이번 실행의 권한 모드: `full`, `judge`, `ask` |
+| `MU_PASS_ENV` | 에이전트의 명령이 계속 받을 자격 증명 변수. 쉼표로 구분하며, 예를 들어 `GH_TOKEN,NPM_TOKEN`. 자격 증명을 담은 다른 변수는 넘기지 않아요([권한](@docs/permissions#always)). |
 
 호스팅 판정기의 키(각각 자기 서비스로만 보내져요): `TYPESAFE_API_KEY`, `MU_JUDGE_OPENROUTER_API_KEY`, `AI_GATEWAY_API_KEY`, `OPENCODE_API_KEY`, `CLOUDFLARE_API_KEY`와 `CLOUDFLARE_ACCOUNT_ID`, `MU_JUDGE_CLM_API_KEY`, `MU_JUDGE_OPENAI_KEY`.
 

@@ -17,6 +17,8 @@ summary: The three permission modes, what the judge may approve for you, your ha
 
 In *Judge mode*, each command, change outside the project, external action and subagent goes to the judge model first, with one question: is this call **needed** for the task and what you said, does it go **beyond** it, is it **unrelated** or is it **unclear**? Only a call with a *needed* verdict at 0.8 or higher runs without asking you; for a check (a test run, build, type check or linter in the project, such as `npm run check` or `./test.sh`, with nothing else in the command but looking), 0.7 is enough. For anything else, mu asks you, and the prompt says why, for example *The judge thinks this goes beyond what you asked for*.
 
+The judge reads the whole call. A call too long for it to read in full (more than 4,000 characters, or a flagged command of more than 1,500) isn't put to it: mu asks you instead, shows the start of the command and the parts a rule flagged, and doesn't offer **Allow for this conversation**.
+
 When no judge can answer (no key and the free Jev unavailable, an exhausted account or only a local judge, which isn't trusted with approvals), mu asks you about every step and says so. Set a Jev key with `mu setup`, or switch the mode.
 
 ## When mu asks {#asking}
@@ -35,10 +37,13 @@ A command with chaining, redirection or substitution, or one starting with `sudo
 - **Reading is never asked about**: reading, searching and listing files, web search and web reading, and shell commands made only of read-only programs such as `git status` or `cat … | grep …`.
 - **Unknown tools are asked about.** A tool mu doesn't know, such as an MCP tool, needs permission.
 - **mu's own settings are yours.** mu asks you about every call that touches `~/.mu/agent`; the judge can't approve it.
+- **Your keys stay out of the agent's commands.** Commands the agent runs don't get environment variables that hold a credential (a name with `KEY`, `TOKEN`, `SECRET`, `PASSWORD` or `CREDENTIAL`, and a value that looks like one), so they can't read mu's keys or yours. `MU_PASS_ENV=GH_TOKEN,NPM_TOKEN` passes on the ones a command needs; commands you type with `!` get everything. MCP servers started from `mcp.json` don't get them either; give a server the key it needs in its `env`, or name it in `MU_PASS_ENV`.
 
 ## Risky commands {#risky}
 
 Rules flag commands that look dangerous: `rm -rf`, force pushes, `sudo`, running a downloaded script and others. In *Judge mode* such a command runs only when the judge is sure you asked for it; in *Ask first* the flag is shown in the question. A flagged command can be allowed once, never for the whole conversation.
+
+A call that would send a credential away asks you every time, in *Judge mode* and *Ask first*: one whose input holds the value of one of mu's keys (the model providers', the judge's or those in mu's `.env`), written out or URL-encoded, or something only a secret looks like, such as `sk-…`, `ghp_…` or a private key. Reading tools count too, so a `web_fetch` with a key in its address asks. So does a command that names a credential file, such as an ssh private key, a `.env` file or `~/.aws/credentials`, and sends something off the computer (`curl`, `scp`, `nc` and the like). The judge isn't asked, the question shows the call with the key taken out, and it can only be allowed once. Naming a variable, as in `curl -H "Authorization: Bearer $GH_TOKEN"`, carries nothing and is judged as usual.
 
 ## Content from outside {#injection}
 
