@@ -7,24 +7,25 @@ order of the table in `packages/kyrn-judge/src/extension/kyrn-judge.ts`, and pi 
 order they were registered, except that `tool_call` handlers registered as final run after all the others. So
 the order under each event is the order its handlers run in. `kernel` is what mu registers around the features.
 
-The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `procedures`, `skills`, `catalog`, `injection`, `guard`, `constraints`, `permissions`, `admission`, `forgetting`, `recall`, `compaction` (off by default), `monitor`, `ttsr` (off by default), `deadline`, `watchdog`, `interrupted`, `lsp`, `goal`, `completion`, `continuation`, `board`, `checkpoint`, `notify`, `warming`, `warmup`, `prefix`, `swarm`, `hive`, `tools`, `judgeItems`, `browser`, `inherit`, `mcp`, `background`, `confine` (off by default), `sandbox` (off by default), `web`, `packs`, `googleLogin`, `recovery`.
+The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `procedures`, `skills`, `catalog`, `injection`, `guard`, `constraints`, `permissions`, `admission`, `forgetting`, `recall`, `compaction` (off by default), `monitor`, `ttsr` (off by default), `deadline`, `watchdog`, `interrupted`, `lsp`, `goal`, `completion`, `continuation`, `board`, `checkpoint`, `notify`, `warming`, `warmup`, `prefix`, `swarm`, `hive`, `tools`, `judgeItems`, `browser`, `inherit`, `mcp`, `confine` (off by default), `background`, `sandbox` (off by default), `web`, `packs`, `googleLogin`, `recovery`.
 
 ## Events
 
 ### `agent_end`
 
-1. `preflight`
-2. `frame`
-3. `memory`
-4. `procedures`
-5. `monitor`
-6. `deadline`
-7. `lsp`
-8. `goal`
-9. `completion`
-10. `continuation`
-11. `board`
-12. `checkpoint`
+1. `kernel`
+2. `preflight`
+3. `frame`
+4. `memory`
+5. `procedures`
+6. `monitor`
+7. `deadline`
+8. `lsp`
+9. `goal`
+10. `completion`
+11. `continuation`
+12. `board`
+13. `checkpoint`
 
 ### `agent_settled`
 
@@ -238,10 +239,10 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 | `locate` | `tools` |
 | `judge_items` | `judgeItems` |
 | `browse` | `browser` |
+| `bash` | `confine` (off by default) |
 | `bg_start` | `background` |
 | `bg_output` | `background` |
 | `bg_stop` | `background` |
-| `bash` | `confine` (off by default) |
 | `bash` | `sandbox` (off by default) |
 | `read` | `sandbox` (off by default) |
 | `write` | `sandbox` (off by default) |
@@ -308,19 +309,20 @@ is marked: two features that set it in the same turn decide between them by the 
 | `deadlineAt` | `extension/features/deadline.ts` | `extension/features/deadline.ts`, `extension/features/watchdog.ts` |
 | `enabled` | `extension/kyrn-judge.ts` | `extension/features/commands.ts`, `extension/features/welcome.ts`, `extension/runtime.ts` |
 | `floor` | `extension/features/confine.ts` | `extension/features/background.ts`, `extension/features/packs/debugger.ts` |
-| `floorExit` | `extension/features/confine.ts` | `extension/features/confine.ts`, `extension/features/permissions.ts` |
+| `floorExit` | `extension/features/confine.ts` | `extension/features/background.ts`, `extension/features/confine.ts`, `extension/features/permissions.ts` |
 | `frameState` | `extension/features/frame.ts` | `extension/features/frame.ts`, `extension/runtime.ts` |
 | `goalActive` | `extension/features/goal.ts` | `extension/features/board.ts`, `extension/features/completion.ts`, `extension/features/continuation.ts` |
 | `harnessAbort` (set in more than one file) | `extension/features/ttsr.ts`, `extension/features/watchdog.ts` | `extension/features/completion.ts`, `extension/features/continuation.ts`, `extension/features/goal.ts`, `extension/features/interrupted.ts` |
 | `knownLessons` | `extension/features/memory.ts` | `extension/features/hive.ts`, `extension/features/swarm.ts` |
 | `lastAssistantText` | `extension/kyrn-judge.ts` | `extension/features/admission.ts`, `extension/features/interjection.ts`, `extension/features/lsp.ts`, `extension/features/memory.ts`, `extension/features/notify.ts`, `extension/features/warming.ts` |
 | `notify` | `extension/features/notify.ts` | `extension/features/background.ts` |
+| `nudges` | `extension/kyrn-judge.ts` | `extension/features/completion.ts`, `extension/features/continuation.ts` |
 | `onFreeJev` | `extension/features/free-jev.ts` | `extension/runtime.ts` |
 | `onOpenAIKey` | `extension/features/openai-key.ts` | `extension/runtime.ts` |
 | `onPresentation` | `extension/kyrn-judge.ts` | `extension/runtime.ts` |
 | `onProgress` | `extension/features/preflight.ts` | `extension/runtime.ts` |
 | `onTurnBegin` | `extension/features/frame.ts` | `extension/runtime.ts` |
-| `permissionMode` | `extension/features/permissions.ts` | `extension/features/confine.ts`, `extension/features/guard.ts`, `extension/features/swarm.ts` |
+| `permissionMode` | `extension/features/permissions.ts` | `extension/features/background.ts`, `extension/features/confine.ts`, `extension/features/guard.ts`, `extension/features/swarm.ts` |
 | `skillsHidden` | `extension/features/skills.ts` | `extension/features/swarm.ts` |
 | `stateDir` | `extension/kyrn-judge.ts` | `extension/features/tool-descriptions.ts` |
 | `toolCalls` | `extension/features/preflight.ts` | `extension/features/preflight.ts` |

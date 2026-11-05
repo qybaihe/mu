@@ -751,3 +751,44 @@ Execute a bash command in the current working directory. Returns stdout and stde
 	}
 }
 ```
+
+## Tool: bg_start, with the write sandbox on (`features.confine`)
+
+```text
+Start a long-running shell command (dev server, watcher, long build or test run) in the background and get its job id at once. Read it with bg_output, end it with bg_stop. Jobs end with the session, except in an unattended run, where they keep running after it. Jobs run in the write sandbox, as bash commands do. A job that must write elsewhere can set outside: true with a reason: it then runs outside the sandbox, if the judge or the user allows it, for as long as it runs. Ask for that only for a write the task needs.
+```
+
+```json
+{
+	"type": "object",
+	"required": [
+		"command"
+	],
+	"properties": {
+		"command": {
+			"type": "string",
+			"description": "Shell command"
+		},
+		"name": {
+			"type": "string",
+			"description": "Short label"
+		},
+		"cwd": {
+			"type": "string",
+			"description": "Working directory"
+		},
+		"watch": {
+			"type": "string",
+			"description": "Regex: tell me when a line of output matches"
+		},
+		"outside": {
+			"type": "boolean",
+			"description": "Run this job outside the write sandbox, if the judge or the user allows it. Only for a write the task needs that the sandbox refuses."
+		},
+		"reason": {
+			"type": "string",
+			"description": "With outside: true, required: why this job must write outside the sandbox, shown to the user if they are asked."
+		}
+	}
+}
+```

@@ -131,7 +131,7 @@ The key itself never goes in the file: `apiKeyEnv` names the environment variabl
 
 1. Put the decision point in `shadow` and route it to the judge you want to try, or run the whole kernel in shadow mode.
 2. Work as usual for a while.
-3. Read the verdicts: `mu ledger [n]` prints the verdicts from the last n sessions, `mu ledger --json` gives every record with its probabilities and timings, `mu ledger --timeline` puts each verdict between the reply and the tool result it came with, and the desktop app's Judge tab shows each verdict with its question.
+3. Read the verdicts: `mu ledger [n]` prints the verdicts from the last n sessions, `mu ledger --json` gives every record with its probabilities and timings, `mu ledger --timeline` puts each verdict between the reply and the tool result it came with, and the desktop app's Judge tab shows each verdict with its question. Where an active `turn.continue` or `turn.completion` verdict sent the agent back to work, `mu ledger` also says what it did next: `-> then: ended without a tool call` marks a nudge that achieved nothing.
 4. Switch the point to `active` once its verdicts look right.
 
 `"recordState": true` also keeps each judge request in the ledger: the state and the questions as the judge received them, with known secrets redacted. You need it to train your own judge on your sessions ([mu-judge-nemotron](https://github.com/qybaihe/mu-judge-nemotron) turns them into training data). It's off by default because the states contain your content.

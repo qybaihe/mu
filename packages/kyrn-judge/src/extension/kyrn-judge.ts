@@ -56,6 +56,7 @@ import { registerMcp } from "./features/mcp.ts";
 import { registerMemory } from "./features/memory.ts";
 import { registerMonitor } from "./features/monitor.ts";
 import { registerNotify } from "./features/notify.ts";
+import { registerNudgeOutcomes } from "./features/nudge-outcome.ts";
 import { registerOpenAIKeyNotice } from "./features/openai-key.ts";
 import { registerPacks } from "./features/packs.ts";
 import { registerPermissions } from "./features/permissions.ts";
@@ -304,10 +305,11 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["browser", registerBrowser],
 		["inherit", (shared) => registerInherit(shared, roots)],
 		["mcp", (shared) => registerMcp(shared, roots)],
-		["background", registerBackground],
 		// Replaces bash with one under the write floor when switched on; off by default. Before the Nebius sandbox,
-		// which takes bash over again when it is on: nothing runs on this machine then.
+		// which takes bash over again when it is on: nothing runs on this machine then. Before background, whose bg_start
+		// offers the floor's way out when there is one.
 		["confine", (shared) => registerConfine(shared, options.confine)],
+		["background", registerBackground],
 		// Replaces bash, read, write and edit when switched on; off by default.
 		["sandbox", (shared) => registerSandbox(shared, options.sandbox)],
 		["web", registerWeb],
@@ -316,6 +318,9 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		// Last: its tool_call handler marks a call as started, so every check that may stop the call comes first.
 		["recovery", registerRecovery],
 	];
+	// Before the features that send the agent back to work: the end of the run that answers a nudge is read here before
+	// they decide on it, and they may send another.
+	runtime.nudges = registerNudgeOutcomes(runtime);
 	for (const [name, register] of features) {
 		if (options.only && !options.only.includes(name)) continue;
 		options.trace?.(name);
