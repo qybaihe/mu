@@ -24,6 +24,7 @@ const READ_ONLY_TOOLS: ReadonlySet<string> = new Set([
 	"web_fetch",
 	"web_search",
 	"bg_output",
+	"recall",
 ]);
 
 /** Redirection, chaining, substitution, a second line: anything that lets a command do more than it says first. */

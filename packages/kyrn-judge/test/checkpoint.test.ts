@@ -718,7 +718,7 @@ describe("checkpoints and the judged rewind", () => {
 });
 
 describe("turn.rewind and what counts as a change", () => {
-	it("proposes only for a confident dead end with no progress", async () => {
+	it("proposes only for a confident dead end with no likely progress", async () => {
 		const verdict = async (dead_end: Answer, progress: Answer) =>
 			(
 				await new DecisionEngine({
@@ -735,6 +735,10 @@ describe("turn.rewind and what counts as a change", () => {
 		expect(await verdict(yes, yes)).toBe("continue");
 		expect(await verdict(unsure, no)).toBe("continue");
 		expect(await verdict(no, no)).toBe("continue");
+		// No progress only has to be the likelier reading; at 0.5 the judge has no opinion.
+		expect(await verdict(yes, { type: "boolean", probability: 0.4 })).toBe("propose");
+		expect(await verdict(yes, unsure)).toBe("continue");
+		expect(await verdict(yes, { type: "boolean", probability: 0.6 })).toBe("continue");
 		expect(turnRewind.fallback({ goal: "", recentSteps: [], trigger: "", editsSinceCheckpoint: 0 })).toBe("continue");
 	});
 

@@ -61,12 +61,13 @@ function withLine<T extends { content: readonly { type: string; text?: string }[
 }
 
 /**
- * The write floor (`features.confine`, off by default): the agent's bash commands and background jobs run where the
- * operating system lets them write only the project, the temporary folders and package caches, with the project's
- * `.git/hooks` and `.git/config` read-only. Seatbelt on macOS, bubblewrap on Linux, nothing on Windows. A floor that
- * cannot start (no bubblewrap, user namespaces turned off, Windows) refuses every command rather than running it
- * unconfined. The judge and the permission modes ask as before: the floor bounds what an approved command can do.
- * A bash result whose output shows a refused write gets a line saying so (`refusalNote`).
+ * The write floor (`features.confine`, off by default): the agent's bash commands, background jobs and the programs it
+ * debugs (`debug_start`) run where the operating system lets them write only the project, the temporary folders and
+ * package caches, with the project's `.git/hooks` and `.git/config` read-only. Seatbelt on macOS, bubblewrap on Linux,
+ * nothing on Windows. A floor that cannot start (no bubblewrap, user namespaces turned off, Windows) refuses every
+ * command rather than running it unconfined. The judge and the permission modes ask as before: the floor bounds what an
+ * approved command can do. A result whose output shows a refused write (bash, `bg_output`, the debugger's) gets a line
+ * saying so (`refusalNote`).
  *
  * The way out: a bash call with `outside: true` and a reason runs outside the floor, once, when the permission gate
  * allowed it (`runtime.floorExit`). The gate decides it in every mode, full access too, since otherwise the floor

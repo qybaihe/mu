@@ -56,6 +56,7 @@ pi 故意不做后台 shell，mu 补上。三个工具：
 - **HTML 转文字，零依赖。** 容错的标签扫描器建一棵轻量树；丢掉 script、style、noscript、template、svg、nav、footer、aside、form、iframe、button、select 和隐藏元素（`hidden`、`aria-hidden`、`display:none`：隐藏文字是提示注入最常见的藏身处）；保留标题、`#` 级标题、段落、列表（含嵌套）、代码块、表格（每行 `| a | b |`）、引用、图片的 alt。有 `<main>` / `role=main` / `<article>` 且占正文四成以上就只取它。链接只在正文里写成 `文字 (网址)`；`<header>` 和“几乎全是链接的盒子”（≥5 个链接且链接文字占七成：侧边栏、菜单，很多站点并不写 `<nav>`）只留文字。JSON 和纯文本原样返回。
 - 页面文字很少而脚本很多时，明说“这个页面要跑脚本，请用 `browse`”。
 - 结果第一行是标题，第二行是最终地址和事实（状态码、类型、编码、字节数、重定向次数），然后是与 `browse` **同一句**不可信标注（从 `browser.ts` 导出的 `UNTRUSTED`），再是正文，超出 `max_length` 时写明截到哪。
+- **截掉的后半页留着。** 模型有 `recall` 时，截断的页面全文存进会话的临时目录（只有用户能读，`0600`），会话里记一条 `kyrn.full-output`，截断说明改成 `recall({ id, offset })` 取后面的内容。这样不用重新抓一遍（页面可能已经变了），也不用把整页拉进上下文。后半页模型从没看过，也没筛过，所以 `recall` 取回时先过注入筛查（`tool.injection`），前面照样带不可信标注。没有 `recall` 时，说明仍是「用 max_length 要更多」。
 
 ## 3. `web_search`
 

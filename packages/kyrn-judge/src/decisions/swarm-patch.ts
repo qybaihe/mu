@@ -1,5 +1,5 @@
 import { defineDecision } from "../decision.ts";
-import { threeZone } from "../policy.ts";
+import { DEFAULT_THRESHOLDS, type Thresholds, threeZone } from "../policy.ts";
 import type { Questions } from "../types.ts";
 
 /**
@@ -32,6 +32,13 @@ export type PatchReviewOutcome = {
 	readonly judged: number;
 };
 
+/**
+ * Where a file counts as unrelated. A small judge often stops between 0.2 and 0.3 on a file the task never needs (a
+ * lockfile, a scratch script, an editor's settings), so on held-out sessions a "no" here starts at 0.3. At 0.5 the
+ * judge has no opinion and nothing is said.
+ */
+export const UNRELATED_FILE: Thresholds = { no: 0.3, yes: DEFAULT_THRESHOLDS.yes };
+
 /** One question per file costs tokens per file; beyond this the overall question has to do. */
 export const MAX_JUDGED_FILES = 12;
 
@@ -41,7 +48,8 @@ export function patchFileQuestionId(index: number): string {
 
 export const swarmPatch = defineDecision({
 	id: "swarm.patch",
-	version: 1,
+	// v2: a file is unrelated from p <= 0.3 (was 0.2).
+	version: 2,
 	// One line appended to a tool result.
 	cacheImpact: "append-only",
 	latency: "inline",
@@ -72,8 +80,8 @@ export const swarmPatch = defineDecision({
 		const unrelated = judged
 			.filter((_, index) => {
 				const answer = answers[patchFileQuestionId(index)];
-				// Only a confident "no": a file the judge merely hesitates about is not worth the parent's attention.
-				return answer?.type === "boolean" && threeZone(answer) === "no";
+				// Only a "no": a file the judge merely hesitates about is not worth the parent's attention.
+				return answer?.type === "boolean" && threeZone(answer, UNRELATED_FILE) === "no";
 			})
 			.map((file) => file.path);
 		return { withinTask: verdict === "unsure" ? null : verdict === "yes", unrelated, judged: judged.length };

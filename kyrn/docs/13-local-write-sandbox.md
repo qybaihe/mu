@@ -72,7 +72,7 @@ The denial line reads all of them, `EBUSY` on a read-only part included.
 
 ### Where the floor goes
 
-The commands the agent chooses: `bash` and `bg_start`. The program `debug_start` starts is not confined yet (see the open questions). mu's own programs stay outside: the tool packs (`gh`, `git` with fixed arguments), language servers, MCP servers and subagents, which are mu processes and confine their own commands.
+The programs the agent chooses: `bash`, `bg_start`, and the program `debug_start` debugs. The debug adapter starts inside the floor, and the program is its child, so it can write no more than a command could; a refused write gets the same line in the debugger's result, above the program's output. mu's own programs stay outside: the tool packs (`gh`, `git` with fixed arguments), language servers, MCP servers and subagents, which are mu processes and confine their own commands.
 
 The seam already exists. The Nebius feature replaces `bash` with `createBashToolDefinition(cwd, { operations })`. A local sandbox wraps `createLocalBashOperations()` the same way: `exec(command, cwd, options)` runs `sandbox-exec -p <profile> <shell> -c <command>`, or `bwrap … -- <shell> -c <command>`, with the shell and prefix the foreground tool uses (`background.ts` already reads them). The profile goes on the command line rather than in a file, since a file in a writable folder could be rewritten by the command it confines, for the next one. Only one of the two sandboxes can be on: the Nebius one takes precedence, since nothing runs locally then.
 
@@ -85,7 +85,7 @@ The seam already exists. The Nebius feature replaces `bash` with `createBashTool
 
 ### Probe, and failing closed
 
-At session start mu runs `/usr/bin/true` under the profile. The project is taken as its real path, so a symlink to elsewhere confines to where it leads. If the probe fails while the sandbox is on, because `sandbox-exec` or `bwrap` is missing or user namespaces are restricted, or if the project folder is `/` or holds the home folder, `bash` and `bg_start` refuse every command: "mu: the write sandbox is on but cannot start here (<reason>). Nothing ran." mu never quietly falls back to running unconfined. The status line says why.
+At session start mu runs `/usr/bin/true` under the profile. The project is taken as its real path, so a symlink to elsewhere confines to where it leads. If the probe fails while the sandbox is on, because `sandbox-exec` or `bwrap` is missing or user namespaces are restricted, or if the project folder is `/` or holds the home folder, `bash`, `bg_start` and `debug_start` refuse every command: "mu: the write sandbox is on but cannot start here (<reason>). Nothing ran." mu never quietly falls back to running unconfined. The status line says why.
 
 ### When a write is refused
 
@@ -112,7 +112,7 @@ There are two independent settings: the sandbox (`features.confine.enabled`) and
    - Unit tests cover the generated profile and bwrap arguments.
    - A macOS-only test runs real `sandbox-exec` (CI's harness job is Linux, so that test runs locally and on macOS runners).
    - A Linux test runs only where `bwrap` works.
-2. **The denial line and `outside: true`**, through the judge. Built, for `bash`. A background job's output gets the same line where it is read (`bg_output`), among mu's own notes above the job's output; a background job has no way out, so its line sends the model to the project or to the user.
+2. **The denial line and `outside: true`**, through the judge. Built, for `bash`. A background job's output gets the same line where it is read (`bg_output`), among mu's own notes above the job's output; a background job has no way out, so its line sends the model to the project or to the user. A debugging run's results (`debug_start`, `debug_step`) get it the same way, above the program's output, and have no way out either.
 3. **Turn it on for mu's own runs** (TB2.1, mubench real tasks) and count:
    - commands refused that the task needed;
    - which cache folders were missing;
@@ -122,5 +122,5 @@ There are two independent settings: the sandbox (`features.confine.enabled`) and
 
 ## Open questions
 
-- `debug_start`: debugpy and the Node inspector may write caches of their own. Step 1 leaves debuggers unconfined; list those caches before confining them.
+- Debuggers that attach with the operating system's debugging interface. `debug_start` runs inside the floor (measured on macOS 27 with debugpy 1.8.21: it stops at breakpoints and reads locals as before, the program writes in the project, and its write to the home folder is refused with `PermissionError: [Errno 1] Operation not permitted`; debugpy needs no folder outside the floor). lldb-dap and delve are not measured: lldb on the machine measured cannot debug a process without macOS developer mode, with or without the floor, and delve was not installed. Their caches (Go's build cache, lldb's module cache) are under `~/Library/Caches` and `~/.cache`, which the floor lets them write; whether Seatbelt lets them attach to the program is the open part.
 - `git push -u` and `git remote add` will ask for the way out every time. One option is a narrower exception that lets git write `.git/config` for `branch.*` and `remote.*` keys only, through a wrapper; Seatbelt cannot tell keys apart.

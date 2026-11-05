@@ -31,6 +31,7 @@ import {
 import { McpOAuthAuthorizationRequiredError, type OAuthChallenge } from "@earendil-works/pi-mcp/oauth";
 import { VERSION } from "../../config.ts";
 import { resolveConfigValueOrThrow, resolveHeadersOrThrow } from "../../core/resolve-config-value.ts";
+import { withoutCredentials } from "../../utils/shell.ts";
 import type { McpServerEntry } from "./config.ts";
 import type { McpServerLog } from "./log.ts";
 import {
@@ -108,7 +109,13 @@ export function createDefaultTransport(
 			authProvider,
 		});
 	}
+	// mu: see McpStdioServerConfig.inheritEnv. Without it the server gets pi's environment minus its credentials.
 	const env: Record<string, string> = {};
+	if (config.inheritEnv === undefined) {
+		for (const [key, value] of Object.entries(withoutCredentials(process.env))) {
+			if (value !== undefined) env[key] = value;
+		}
+	}
 	for (const [key, value] of Object.entries(config.env ?? {})) {
 		env[key] = resolveConfigValueOrThrow(value, `MCP server "${name}" env "${key}"`);
 	}
@@ -117,8 +124,7 @@ export function createDefaultTransport(
 		args: config.args?.map(expandHome),
 		cwd: resolve(cwd, expandHome(config.cwd ?? ".")),
 		env,
-		// mu: see McpStdioServerConfig.inheritEnv.
-		...(config.inheritEnv === false ? { inheritEnv: false } : {}),
+		inheritEnv: config.inheritEnv === true,
 		stderr: "pipe",
 	});
 }

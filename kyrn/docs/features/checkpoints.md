@@ -84,7 +84,7 @@
 - `dead_end`：Does `recent_steps` show the same approach failing again and again?
 - `progress`：Does `recent_steps` show progress towards `goal`?
 
-策略：`dead_end` 确信为是**且** `progress` 确信为否 → 提议；其他一切（包括拿不准）→ 继续。兜底 = 继续。**它只提议，从不回退**：
+策略：`dead_end` 确信为是（≥ 0.8）**且** `progress` 偏向否（< 0.5；v2 起，v1 要求 ≤ 0.2）→ 提议；其他一切（包括死路拿不准、`progress` 恰好 0.5 即没有倾向）→ 继续。兜底 = 继续。**它只提议，从不回退**：
 
 - `active` 且有界面：一个确认框，写明触发原因、会放回/删除/找回哪些文件、“之后模型从你的请求重新开始，附一句什么没做成；`/rewind undo` 可撤销”，默认等 120 s（`confirmSeconds`，0 为一直等）。同意 → 手改文件另问 → 第 5 节的流程；拒绝 → 什么都不动，这个回合不再提。
 - `active` 但没有界面（print / json）：不动文件，给模型一条 steer：这条路像死胡同，退回去换一条。无人值守的运行默认不拍检查点（第 7 节），那里只要这个回合跑过会改文件的调用（有界面时就会在这里拍检查点）就照样问，不预览还原方案，只发这条 steer。

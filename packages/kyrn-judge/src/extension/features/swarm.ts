@@ -35,6 +35,7 @@ import {
 	type SwarmSnapshot,
 	subagentUsage,
 } from "../../swarm/run.ts";
+import { SUBAGENT_SESSION_ENTRY, type SubagentSessionEntry, subagentSessionFile } from "../../swarm/sessions.ts";
 import { type BeeEvent, codedError } from "../../swarm/state.ts";
 import { renderSwarm, swarmText } from "../../swarm/view.ts";
 import { USAGE_ENTRY, type UsageEntry } from "../../usage.ts";
@@ -53,6 +54,8 @@ export interface SwarmAssignment extends Placement {
 	thinking: AgentThinking;
 	/** Who settled the role: the main model, the judge, or nobody (the default role). */
 	routedBy: "caller" | "judge" | "default";
+	/** The session file the sub-agent keeps (`subagentSessionFile`). Undefined when the parent keeps none: neither does it. */
+	session?: string;
 }
 
 /**
@@ -154,8 +157,10 @@ export function forwardedExtensionArgs(argv: readonly string[] = process.argv.sl
 
 /** The command line of one sub-agent, without the executable. Exported for tests. */
 export function childArgs(task: SwarmTask, assignment: SwarmAssignment, promptPath?: string): string[] {
-	// JSON mode: the child reports every step as it takes it, not just its last words when it is over.
-	const args = ["--mode", "json", "-p", "--no-session", "--thinking", assignment.thinking];
+	// JSON mode: the child reports every step as it takes it, not just its last words when it is over. It keeps a
+	// session file where it was given one, so what it did can be read afterwards.
+	const session = assignment.session ? ["--session", assignment.session] : ["--no-session"];
+	const args = ["--mode", "json", "-p", ...session, "--thinking", assignment.thinking];
 	if (assignment.model) args.push("--model", assignment.model);
 	if (assignment.agent?.tools) args.push("--tools", assignment.agent.tools.join(","));
 	if (promptPath) args.push("--append-system-prompt", promptPath);
@@ -462,13 +467,30 @@ export function renderSwarmResult(
 }
 
 /**
- * Each sub-agent's spend goes into this session as a `kyrn.usage` entry when it ends: the child keeps no session of
- * its own, so without it its tokens are in no session file at all.
+ * Each sub-agent's spend goes into this session as a `kyrn.usage` entry when it ends. A child without a session of its
+ * own has its tokens in no file but this one; a child with one has them in a file nobody totals with this session.
  */
 export function recordBeeUsage(runtime: KyrnRuntime, run: SwarmRun<SwarmAssignment>): void {
 	run.onBeeEnd = (bee) => {
 		const entry = subagentUsage(run.kind, bee);
 		if (entry) runtime.pi.appendEntry<UsageEntry>(USAGE_ENTRY, entry);
+	};
+}
+
+/**
+ * Each sub-agent that keeps a session gets a `kyrn.subagent-session` entry in this one as it starts, tying `toolCallId`
+ * and its name to that file: what it did can be read afterwards, also when this session was killed while it ran.
+ */
+export function recordSubagentSessions(runtime: KyrnRuntime, run: SwarmRun<SwarmAssignment>, toolCallId: string): void {
+	run.onBeeStart = (bee, spec) => {
+		const session = spec.assignment.session;
+		if (!session) return;
+		runtime.pi.appendEntry<SubagentSessionEntry>(SUBAGENT_SESSION_ENTRY, {
+			toolCallId,
+			kind: run.kind,
+			name: bee.name,
+			session,
+		});
 	};
 }
 
@@ -573,7 +595,7 @@ export function registerSwarm(runtime: KyrnRuntime, runner: SwarmRunner = spawnR
 				}),
 			),
 		}),
-		execute: async (_toolCallId, params, signal, onUpdate, ctx) => {
+		execute: async (toolCallId, params, signal, onUpdate, ctx) => {
 			runtime.touch(ctx);
 			const parent = runtime.frame;
 			// What the user asked for goes down with each part: inside the sub-agent it is what its calls are weighed against.
@@ -635,6 +657,7 @@ export function registerSwarm(runtime: KyrnRuntime, runner: SwarmRunner = spawnR
 						judged: verdict.thinking,
 					}),
 					routedBy: named ? "caller" : judged ? "judge" : "default",
+					session: subagentSessionFile(ctx.sessionManager, names[index]),
 				};
 			});
 
@@ -697,6 +720,7 @@ export function registerSwarm(runtime: KyrnRuntime, runner: SwarmRunner = spawnR
 			});
 			streamUpdates(run, onUpdate);
 			recordBeeUsage(runtime, run);
+			recordSubagentSessions(runtime, run, toolCallId);
 			const outcomes = await run.run(placedRunner, signal);
 			const reports = outcomes.map((outcome) => outcome.report);
 			const frames = await Promise.all(tasks.map((_task, index) => readFrameOut(frameOutPath(runDir, index))));

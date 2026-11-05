@@ -107,7 +107,17 @@ export function keyByRule(events: readonly BoardEvent[]): number[] {
 }
 
 const MAX_ITEMS = 8;
-const READ_ONLY_TOOLS = new Set(["read", "grep", "find", "ls", "web_fetch", "web_search", "browse", "locate"]);
+const READ_ONLY_TOOLS = new Set([
+	"read",
+	"grep",
+	"find",
+	"ls",
+	"web_fetch",
+	"web_search",
+	"browse",
+	"locate",
+	"recall",
+]);
 const CHANGE_TOOLS = new Set(["edit", "write", "sg_rewrite", "conflicts_resolve", "apply_patch_from"]);
 
 const PHASES: Record<BoardPhase | "other", string> = {

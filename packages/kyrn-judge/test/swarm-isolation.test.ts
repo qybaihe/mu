@@ -407,6 +407,17 @@ describe("swarm.patch", () => {
 		);
 	});
 
+	it("counts a file as unrelated from 0.3 down, not while the judge only hesitates", async () => {
+		const at = (p: number) => ({ type: "boolean" as const, probability: p });
+		const decision = await engineWith(() => ({
+			within_task: yes,
+			file_0: yes,
+			file_1: at(0.25),
+			file_2: at(0.35),
+		})).decide(swarmPatch, input);
+		expect(decision.outcome).toEqual({ withinTask: true, unrelated: ["package-lock.json"], judged: 3 });
+	});
+
 	it("says nothing when the judge is unsure, unavailable or off, and caps the files it asks about", async () => {
 		const unsure = await engineWith(() => ({})).decide(swarmPatch, input);
 		expect(describePatchReview(unsure.outcome, 3)).toBeUndefined();
