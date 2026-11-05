@@ -18,11 +18,14 @@ import {
 import { nextStep } from "../next-step.ts";
 import type { KyrnRuntime } from "../runtime.ts";
 
-/** What a bash call adds to ask out of the floor. */
+/** What a bash or bg_start call adds to ask out of the floor. */
 interface Outside {
 	readonly outside?: boolean;
 	readonly reason?: string;
 }
+
+/** The tools whose calls can ask out of the floor: the agent's commands, in the foreground or as a background job. */
+const LEAVING_TOOLS = new Set(["bash", "bg_start"]);
 
 export interface ConfineDeps {
 	readonly platform?: NodeJS.Platform;
@@ -69,8 +72,8 @@ function withLine<T extends { content: readonly { type: string; text?: string }[
  * approved command can do. A result whose output shows a refused write (bash, `bg_output`, the debugger's) gets a line
  * saying so (`refusalNote`).
  *
- * The way out: a bash call with `outside: true` and a reason runs outside the floor, once, when the permission gate
- * allowed it (`runtime.floorExit`). The gate decides it in every mode, full access too, since otherwise the floor
+ * The way out: a bash or bg_start call with `outside: true` and a reason runs outside the floor, once, when the
+ * permission gate allowed it (`runtime.floorExit`); a background job let out stays out for as long as it runs. The gate decides it in every mode, full access too, since otherwise the floor
  * bounds nothing: the judge first, then the user, never for the session. One it did not allow, or one the gate let
  * through because it only looks, runs inside the floor like any other.
  * Design and measurements: kyrn/docs/13-local-write-sandbox.md. The Nebius sandbox, when on, takes bash over again.
@@ -102,12 +105,17 @@ export function registerConfine(runtime: KyrnRuntime, deps: ConfineDeps = {}): v
 	 * that numbers its calls afresh every turn gives a later call the same id.
 	 */
 	const allowedOut = new Map<string, string>();
-	const asks = (toolName: string, input: unknown): input is Outside & { command?: unknown } =>
-		toolName === "bash" && typeof input === "object" && input !== null && (input as Outside).outside === true;
+	const asksOut = (input: unknown): input is Outside & { command?: unknown } =>
+		typeof input === "object" && input !== null && (input as Outside).outside === true;
 	runtime.floorExit = {
-		asks,
+		asks: (toolName, input) => LEAVING_TOOLS.has(toolName) && asksOut(input),
 		allow: (toolCallId, input) => {
-			if (asks("bash", input)) allowedOut.set(toolCallId, String(input.command ?? ""));
+			if (asksOut(input)) allowedOut.set(toolCallId, String(input.command ?? ""));
+		},
+		take: (toolCallId, command) => {
+			const allowed = allowedOut.get(toolCallId) === command;
+			allowedOut.delete(toolCallId);
+			return allowed;
 		},
 	};
 
@@ -139,8 +147,8 @@ export function registerConfine(runtime: KyrnRuntime, deps: ConfineDeps = {}): v
 				);
 			const shell = readShellSettings(ctx.cwd, undefined, ctx.isProjectTrusted());
 			const { outside, reason: _reason, ...call } = params;
-			const out = outside === true && allowedOut.get(id) === call.command;
-			allowedOut.delete(id);
+			const allowed = runtime.floorExit?.take(id, call.command) === true;
+			const out = outside === true && allowed;
 			// Without the permission gate nobody can let a call out.
 			const wayOut = runtime.permissionMode !== undefined;
 			const result = await createBashToolDefinition(ctx.cwd, {

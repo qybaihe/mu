@@ -395,6 +395,7 @@ describe.skipIf(process.platform === "win32")("the way out of the write floor", 
 					only: [
 						...(setup.permissions === false ? [] : ["preflight", "frame", "permissions"]),
 						"confine",
+						"background",
 					] as never,
 					confine: setup.real ? { tmp: [] } : { probe: async () => ({ ok: true }), tmp: [], platform: elsewhere },
 				}),
@@ -432,6 +433,10 @@ describe.skipIf(process.platform === "win32")("the way out of the write floor", 
 	const bash = (args: Record<string, string | boolean>, id?: string) =>
 		fauxAssistantMessage([fauxToolCall("bash", args, id ? { id } : undefined)], { stopReason: "toolUse" });
 	const reason = "the task adds the git remote, and git writes it to .git/config";
+	const job = (args: Record<string, string | boolean>) =>
+		fauxAssistantMessage([fauxToolCall("bg_start", args)], { stopReason: "toolUse" });
+	const read = (id: string) =>
+		fauxAssistantMessage([fauxToolCall("bg_output", { id, timeout: 10 })], { stopReason: "toolUse" });
 
 	it("Judge mode: the judge decides the way out from the call and the user's words, not the model's reason, and only that call goes out", async () => {
 		const { harness, judged } = await start(() => ({ verdict: verdict("needed") }), { mode: "judge" });
@@ -548,6 +553,73 @@ describe.skipIf(process.platform === "win32")("the way out of the write floor", 
 			"outside: true needs mu's permission check, which is off here, so the command ran inside the sandbox.",
 		);
 	});
+
+	it("a background job asks out the same way: the judge lets that job out, and one that did not ask stays in", async () => {
+		const { harness, judged, results } = await start(() => ({ verdict: verdict("needed") }), { mode: "judge" });
+		const out = join(harness.tempDir, "out.txt");
+		const inside = join(harness.tempDir, "inside.txt");
+		harness.setResponses([
+			job({ command: `echo x > ${shellQuote(out)}`, outside: true, reason }),
+			read("bg-1"),
+			job({ command: `echo x > ${shellQuote(inside)}` }),
+			read("bg-2"),
+			fauxAssistantMessage("Done."),
+		]);
+		await harness.session.prompt("Start it");
+
+		expect(existsSync(out)).toBe(true);
+		expect(existsSync(inside)).toBe(false);
+		expect(judged[0]).toEqual(
+			expect.objectContaining({ tool_call: `bg_start: echo x > ${shellQuote(out)}`, where: OUTSIDE_FLOOR_WHERE }),
+		);
+		expect(results()[0]).toContain("It runs outside the write sandbox, as allowed.");
+		expect(results()[2]).not.toContain("outside the write sandbox");
+	});
+
+	it("a background job's way out needs the permission gate too: without it the job runs inside", async () => {
+		const { harness, results } = await start(() => ({}), { mode: "full", permissions: false });
+		const marker = join(harness.tempDir, "marker.txt");
+		harness.setResponses([
+			job({ command: `echo x > ${shellQuote(marker)}`, outside: true, reason }),
+			read("bg-1"),
+			fauxAssistantMessage("Done."),
+		]);
+		await harness.session.prompt("Write it");
+		expect(existsSync(marker)).toBe(false);
+		expect(results()[0]).toContain(
+			"outside: true needs mu's permission check, which is off here, so the job runs inside the sandbox.",
+		);
+	});
+
+	it.skipIf(process.platform !== "darwin" || !existsSync("/usr/bin/sandbox-exec"))(
+		"on macOS, a job let out writes outside the project, and one kept inside is told of the way out where its output is read",
+		async () => {
+			const { harness, results } = await start(() => ({ verdict: verdict("needed") }), {
+				mode: "judge",
+				real: true,
+			});
+			const elsewhereDir = realpathSync(mkdtempSync(join(tmpdir(), "mu-floor-away-")));
+			try {
+				const away = join(elsewhereDir, "out.txt");
+				const kept = join(elsewhereDir, "kept.txt");
+				harness.setResponses([
+					job({ command: `echo x > ${shellQuote(away)}`, outside: true, reason }),
+					read("bg-1"),
+					job({ command: `echo x > ${shellQuote(kept)}` }),
+					read("bg-2"),
+					fauxAssistantMessage("Done."),
+				]);
+				await harness.session.prompt("Write it");
+				expect(readFileSync(away, "utf8")).toBe("x\n");
+				expect(existsSync(kept)).toBe(false);
+				expect(results()[1]).not.toContain("[mu write sandbox:");
+				expect(results()[3]).toContain(`[mu write sandbox: ${kept} is outside what commands may write here`);
+				expect(results()[3]).toContain("run the command again with outside: true and a reason");
+			} finally {
+				rmSync(elsewhereDir, { recursive: true, force: true });
+			}
+		},
+	);
 
 	it.skipIf(process.platform !== "darwin" || !existsSync("/usr/bin/sandbox-exec"))(
 		"on macOS, a command let out writes outside the project, and the same one kept inside is refused and told of the way out",
