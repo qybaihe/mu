@@ -610,7 +610,8 @@
     "madeDefault": "گفتگوهای جدید با این مدل شروع می‌شوند.",
     "makeDefaultFailed": "مدل پیش‌فرض ذخیره نشد.",
     "showAllModels": "نمایش همه مدل‌ها ({{count}})",
-    "showFewerModels": "نمایش مدل‌های کمتر"
+    "showFewerModels": "نمایش مدل‌های کمتر",
+    "chooseModels": "انتخاب مدل‌های نمایش‌داده‌شده…"
   },
   "agentTip": {
     "codes": {

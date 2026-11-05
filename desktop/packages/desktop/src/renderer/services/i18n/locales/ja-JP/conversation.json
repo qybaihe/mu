@@ -610,7 +610,8 @@
     "madeDefault": "新しい会話はこのモデルで始まります。",
     "makeDefaultFailed": "既定モデルを保存できませんでした。",
     "showAllModels": "すべてのモデルを表示（{{count}}）",
-    "showFewerModels": "折りたたむ"
+    "showFewerModels": "折りたたむ",
+    "chooseModels": "表示するモデルを選ぶ…"
   },
   "agentTip": {
     "codes": {

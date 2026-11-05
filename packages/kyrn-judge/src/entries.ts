@@ -400,6 +400,15 @@ export const ENTRY_TYPES: readonly EntryType[] = [
 		summary: "The text of a reply the user stopped, which pi leaves out of the next request, for the model only.",
 	},
 	{
+		type: "kyrn.prefix",
+		kind: "entry",
+		version: 1,
+		writers: [features("prefix")],
+		readers: [],
+		summary:
+			"A request to the model that no longer starts with the one before it: what changed, and what mu decided in between.",
+	},
+	{
 		type: "kyrn.frame",
 		kind: "entry",
 		version: 1,

@@ -40,6 +40,11 @@ type ModelLevelMenuProps = {
   defaultModel?: string | null;
   /** Makes the model in use the default; offered under the list when it is not the default already. */
   onMakeDefault?: () => void;
+  /**
+   * Opens where the models the menu offers are chosen (Settings, Providers: an account's models). Offered under the
+   * list: a model unchecked there is in no list here, "Show all" included.
+   */
+  onChooseModels?: () => void;
 };
 
 /**
@@ -66,8 +71,10 @@ export function modelLevelMenu(
     onShowAll,
     defaultModel,
     onMakeDefault,
+    onChooseModels,
   }: ModelLevelMenuProps
 ): React.ReactElement {
+  const makeDefault = Boolean(onMakeDefault && current && current !== defaultModel);
   const row = (entry: MenuModel) => {
     const inUse = entry.value === current;
     return (
@@ -174,11 +181,18 @@ export function modelLevelMenu(
           </Radio.Group>
         </div>
       ) : null}
-      {onMakeDefault && current && current !== defaultModel ? (
+      {makeDefault || onChooseModels ? (
         <div className='mt-4px pt-4px border-0 border-t border-solid border-[var(--color-border-2)]'>
-          <Menu.Item key='make-default' data-testid='composer-make-default' onClick={onMakeDefault}>
-            <span className='pl-24px text-12px text-t-secondary'>{t('conversation.composer.makeDefault')}</span>
-          </Menu.Item>
+          {makeDefault ? (
+            <Menu.Item key='make-default' data-testid='composer-make-default' onClick={onMakeDefault}>
+              <span className='pl-24px text-12px text-t-secondary'>{t('conversation.composer.makeDefault')}</span>
+            </Menu.Item>
+          ) : null}
+          {onChooseModels ? (
+            <Menu.Item key='choose-models' data-testid='composer-choose-models' onClick={onChooseModels}>
+              <span className='pl-24px text-12px text-t-secondary'>{t('conversation.composer.chooseModels')}</span>
+            </Menu.Item>
+          ) : null}
         </div>
       ) : null}
     </Menu>

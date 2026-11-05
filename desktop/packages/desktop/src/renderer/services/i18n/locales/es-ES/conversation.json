@@ -611,7 +611,8 @@
     "madeDefault": "Las conversaciones nuevas empezarán con este modelo.",
     "makeDefaultFailed": "No se pudo guardar el modelo predeterminado.",
     "showAllModels": "Mostrar todos los modelos ({{count}})",
-    "showFewerModels": "Mostrar menos modelos"
+    "showFewerModels": "Mostrar menos modelos",
+    "chooseModels": "Elegir qué modelos se muestran…"
   },
   "agentTip": {
     "codes": {

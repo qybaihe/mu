@@ -5,16 +5,17 @@ import { enabledModelIds, withProviderModels, withProviderOffered } from "@earen
  * `mu auth`: signing in to a provider's subscription outside any session, for the desktop app, with pi's own
  * OAuth flows and pi's credential store (<agent dir>/auth.json), exactly as /login does in the terminal.
  *
- *   mu auth status                     who is signed in, and what this mu can sign in to
+ *   mu auth status                     who is signed in, what this mu can sign in to, and what else is usable
  *   mu auth login <provider>           one sign-in, from the browser's page to the stored credential
  *   mu auth login <provider> --paste   the same, taking the address the browser ends on as pasted, with no
  *                                      callback server (for when another program holds the callback port)
  *   mu auth logout <provider>          signs that subscription out, then says who is still signed in
  *   mu auth enable <provider> <model>...
- *                                      the account's models /model and the app's model menus offer: these, the
+ *                                      the provider's models /model and the app's model menus offer: these, the
  *                                      other providers' as they were (pi's `enabledModels`, global settings); then
- *                                      says who is signed in. With --default, all of them, the ones the account
- *                                      gains later too; with no model, none.
+ *                                      says who is signed in. With --default, all of them, the ones the provider
+ *                                      gains later too; with no model, none. Any provider with a usable model: a
+ *                                      signed-in account, or one an API key or models.json makes usable.
  *
  * It speaks JSON lines. Out: `event` (what the flow reports: the page to open, a device code, progress),
  * `prompt` and `prompt_done` (a question for the person, and its withdrawal when the browser answered first),
@@ -25,6 +26,8 @@ import { enabledModelIds, withProviderModels, withProviderOffered } from "@earen
  * the open prompt) and `cancel`; the input ending cancels too. No line ever carries a credential.
  *
  * Each signed-in account in `status`, and `done`, carries `enabled`: the ids of its models the settings enable.
+ * `status` also lists, as `usable`, every other provider with a usable model (an API key's, models.json's), each with
+ * its models and `enabled` the same way, so the app can choose those models too.
  */
 
 /** What of pi's model runtime a sign-in uses. */
@@ -186,15 +189,19 @@ export async function runAuth(argv: readonly string[], options: AuthOptions): Pr
 			const accounts = (await runtime.listCredentials()).filter(
 				(credential) => credential.type === "oauth" && known.includes(credential.providerId),
 			);
-			const enabled = accounts.length > 0 ? await enabledNow(runtime, setting) : undefined;
-			return {
-				type: "status",
-				offered,
-				signedIn: accounts.map(({ providerId }) => {
-					const models = modelsOf(runtime, providerId, preferred);
-					return { provider: providerId, models, enabled: enabledIn(enabled, providerId, models) };
-				}),
+			const available = await runtime.getAvailable();
+			const patterns = setting?.read();
+			const enabled = patterns?.length ? enabledModelIds(patterns, available) : undefined;
+			const entry = (provider: string) => {
+				const models = modelsOf(runtime, provider, preferred);
+				return { provider, models, enabled: enabledIn(enabled, provider, models) };
 			};
+			const signedIn = accounts.map(({ providerId }) => providerId);
+			// Usable without a sign-in here: an API key's provider, models.json's. In the order pi lists them.
+			const usable = [...new Set(available.map((model) => model.provider))].filter(
+				(provider) => !signedIn.includes(provider),
+			);
+			return { type: "status", offered, signedIn: signedIn.map(entry), usable: usable.map(entry) };
 		};
 
 		if (mode === "status") {
@@ -202,7 +209,8 @@ export async function runAuth(argv: readonly string[], options: AuthOptions): Pr
 			return 0;
 		}
 		if (!provider) throw new Error(USAGE);
-		if (!(mode === "login" ? offered : known).includes(provider)) {
+		// Any provider's models can be chosen: one with none usable is refused below.
+		if (mode !== "enable" && !(mode === "login" ? offered : known).includes(provider)) {
 			throw new Error(`This version of mu can't sign in to ${provider}`);
 		}
 		if (mode === "enable") {
@@ -212,7 +220,7 @@ export async function runAuth(argv: readonly string[], options: AuthOptions): Pr
 			if (unknown.length > 0) throw new Error(`${provider} has no model ${unknown.join(", ")}`);
 			const available = await runtime.getAvailable();
 			if (!available.some((model) => model.provider === provider)) {
-				throw new Error(`No models of ${provider} are available: sign in to it first`);
+				throw new Error(`No models of ${provider} are available: sign in to it, or give it an API key, first`);
 			}
 			const patterns = withProviderModels(setting.read(), available, provider, byDefault ? "all" : extra);
 			await setting.write(patterns);

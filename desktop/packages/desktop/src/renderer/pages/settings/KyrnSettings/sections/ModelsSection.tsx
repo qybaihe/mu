@@ -68,15 +68,20 @@ export default function ProvidersSection({ draft, base, available, onDraft }: Mo
  */
 export function DefaultModelSection({ draft, base, available, onDraft }: ModelsSectionProps) {
   const { t } = useTranslation();
-  const { accounts } = useSubscriptionLogin();
+  const { accounts, usable } = useSubscriptionLogin();
+  const hidden = hiddenOf(draft.settings);
+  // An API key's provider is offered with the models chosen for the menus; an entry of models.json is edited here.
+  const { providers, foreign } = draft.settings.models;
+  const own = new Set([...providers.map((provider) => provider.id), ...foreign.map((entry) => entry.id), ...hidden]);
+  const chosen = [...accounts, ...usable.filter((entry) => !own.has(entry.provider))];
   return (
     <SectionShell id='defaultModel' title={t('mu.sections.defaultModel')}>
       <DefaultModelCard
         settings={draft.settings}
         base={base}
         available={available}
-        accounts={accounts}
-        hidden={hiddenOf(draft.settings)}
+        accounts={chosen}
+        hidden={hidden}
         onChange={(defaults) =>
           onDraft((now) => ({
             ...now,

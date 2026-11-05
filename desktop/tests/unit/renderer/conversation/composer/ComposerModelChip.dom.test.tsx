@@ -1,9 +1,11 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import React from 'react';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { SWRConfig } from 'swr';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IResponseMessage } from '@/common/adapter/ipcBridge';
 import type { AcpConfigOptionDto, SetConfigOptionResponse } from '@/common/types/platform/acpTypes';
+import { takeAccountToShow } from '@/renderer/hooks/agent/useChooseModels';
 import ComposerModelChip from '@/renderer/pages/conversation/platforms/acp/Composer/ComposerModelChip';
 import { resetEnsureConversationRuntimeStateForTests } from '@/renderer/pages/conversation/utils/ensureConversationRuntime';
 
@@ -205,11 +207,19 @@ function deferred() {
 let conversationId = '';
 let conversations = 0;
 
+/** Where the app is: the menu can open the settings. */
+function Here() {
+  return <div data-testid='here'>{useLocation().pathname}</div>;
+}
+
 const renderChip = (props: { busy?: boolean } = {}) =>
   render(
-    <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0, revalidateOnFocus: false }}>
-      <ComposerModelChip conversation_id={conversationId} busy={props.busy ?? false} />
-    </SWRConfig>
+    <MemoryRouter initialEntries={['/conversation/1']}>
+      <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0, revalidateOnFocus: false }}>
+        <ComposerModelChip conversation_id={conversationId} busy={props.busy ?? false} />
+      </SWRConfig>
+      <Here />
+    </MemoryRouter>
   );
 
 const chipLabel = () => screen.getByTestId('composer-model-pill').textContent;
@@ -289,6 +299,16 @@ describe('ComposerModelChip', () => {
     // Grouped by provider.
     // A provider goes by its name, not its id.
     expect(screen.getByRole('group', { name: 'OpenAI' })).toBeTruthy();
+  });
+
+  it('opens, under the list, the settings where the models it offers are chosen', async () => {
+    renderChip();
+    await waitFor(() => expect(screen.getAllByTestId('composer-model-option')).toHaveLength(3));
+    expect(screen.getByTestId('composer-choose-models')).toHaveTextContent('conversation.composer.chooseModels');
+    fireEvent.click(screen.getByTestId('composer-choose-models'));
+    expect(screen.getByTestId('here')).toHaveTextContent('/settings/providers');
+    // On the account of the model in use.
+    expect(takeAccountToShow()).toBe('anthropic');
   });
 
   it('switches the model through the session, and shows only what the session answered', async () => {

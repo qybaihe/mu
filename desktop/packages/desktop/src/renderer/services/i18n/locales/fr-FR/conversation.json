@@ -610,7 +610,8 @@
     "madeDefault": "Les nouvelles conversations commenceront avec ce modèle.",
     "makeDefaultFailed": "Impossible d'enregistrer le modèle par défaut.",
     "showAllModels": "Afficher tous les modèles ({{count}})",
-    "showFewerModels": "Afficher moins de modèles"
+    "showFewerModels": "Afficher moins de modèles",
+    "chooseModels": "Choisir les modèles affichés…"
   },
   "agentTip": {
     "codes": {

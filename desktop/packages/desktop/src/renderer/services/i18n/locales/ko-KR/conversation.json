@@ -610,7 +610,8 @@
     "madeDefault": "새 대화는 이 모델로 시작합니다.",
     "makeDefaultFailed": "기본 모델을 저장하지 못했습니다.",
     "showAllModels": "모든 모델 보기({{count}})",
-    "showFewerModels": "접기"
+    "showFewerModels": "접기",
+    "chooseModels": "표시할 모델 선택…"
   },
   "agentTip": {
     "codes": {

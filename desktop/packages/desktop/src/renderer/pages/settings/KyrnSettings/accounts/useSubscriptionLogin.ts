@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { mutate } from 'swr';
 import { kyrnBridge, unwrap } from '@/common/kyrn/bridge';
 import {
+  enabledAccountModels,
   offeredProviders,
   type LoginErrorCode,
   type LoginModel,
@@ -12,6 +13,7 @@ import {
   type LoginState,
   type LoginStatus,
   type SubscriptionProvider,
+  type UsableProvider,
 } from '@/common/kyrn/login';
 import { DEFAULT_MODEL_KEY } from '@/renderer/hooks/agent/useMuDefaultModel';
 import { emitter } from '@/renderer/utils/emitter';
@@ -44,6 +46,11 @@ export type SubscriptionLoginFlow = {
   /** Who is signed in, with what each account can use. */
   accounts: Account[];
   account: (provider: SubscriptionProvider) => Account | undefined;
+  /**
+   * The other providers with a usable model (an API key's, models.json's), with their models and the ones offered;
+   * empty from an older harness.
+   */
+  usable: UsableProvider[];
   /** The sign-in the main process runs now or ran last; undefined before the first one. */
   login: LoginState | undefined;
   running: boolean;
@@ -57,10 +64,11 @@ export type SubscriptionLoginFlow = {
   answer: (value: string) => void;
   logout: (provider: SubscriptionProvider) => Promise<void>;
   /**
-   * Which of an account's models the model menus offer: these ids, or 'default' (all of them, the ones the account
-   * gains later too). Rejects with the main process's error when the harness refused the choice.
+   * Which of a provider's models the model menus offer, a signed-in account's or a usable one's: these ids, or
+   * 'default' (all of them, the ones it gains later too). Rejects with the main process's error when the harness
+   * refused the choice.
    */
-  enable: (provider: SubscriptionProvider, models: string[] | 'default') => Promise<void>;
+  enable: (provider: string, models: string[] | 'default') => Promise<void>;
 };
 
 /**
@@ -72,7 +80,7 @@ let lastStatus: LoginStatus = { signedIn: [] };
 /**
  * Subscription sign-in as a screen sees it. pi's OAuth flow runs in the main process; this reads who is signed in,
  * picks up a sign-in still running from an earlier visit, reads its state twice a second while it runs, and hears
- * of every finished one once (`onSignedIn`).
+ * of every finished one once (`onSignedIn`, with the account's models the model menus offer).
  */
 export function useSubscriptionLogin(
   onSignedIn?: (provider: SubscriptionProvider, models: LoginModel[]) => void
@@ -132,7 +140,7 @@ export function useSubscriptionLogin(
       ...now,
       signedIn: [...now.signedIn.filter((entry) => entry.provider !== provider), { provider, models, ...enabled }],
     }));
-    heard.current?.(provider, models);
+    heard.current?.(provider, enabledAccountModels({ models, ...enabled }));
     void recheckMu();
   }, [login]);
 
@@ -165,6 +173,7 @@ export function useSubscriptionLogin(
     offered: offeredProviders(status),
     accounts: status.signedIn,
     account: (provider) => status.signedIn.find((entry) => entry.provider === provider),
+    usable: status.usable ?? [],
     login,
     running,
     failure: problem.failure ?? failedLogin,
