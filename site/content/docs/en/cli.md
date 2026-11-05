@@ -35,6 +35,7 @@ mu                     # an interactive session in the current directory
 | `mu judge model add \| list \| use \| start \| stop \| status \| disable \| remove` | [Other decision models](@docs/judges#models) from Hugging Face, run like mude 1.0. `add` takes a link or `owner/name` and resumes a stopped download. |
 | `mu link` / `mu unlink` | Put the `mu` command on your PATH (`~/.local/bin`), or remove it |
 | `mu auth status \| login <provider> \| logout <provider>` | Subscription sign-in, as used by the desktop app |
+| `mu auth enable <provider> [--default \| <model>...]` | Which of a provider's models `/model` and the app offer. `--default` shows them all again; inside mu, `/scoped-models <provider>` does the same. |
 | `mu migrate [--dry-run]` | One-time: move the old `~/.kyrn` folder to `~/.mu` |
 
 ## Commands inside a session {#slash-commands}

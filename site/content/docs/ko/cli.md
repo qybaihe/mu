@@ -35,6 +35,7 @@ mu                     # 현재 디렉터리에서 대화형 세션 시작
 | `mu judge model add \| list \| use \| start \| stop \| status \| disable \| remove` | Hugging Face의 [다른 의사결정 모델](@docs/judges#models)을 mude 1.0처럼 실행. `add`는 링크나 `owner/name`을 받고, 멈춘 내려받기를 이어 가요. |
 | `mu link` / `mu unlink` | `mu` 명령을 PATH(`~/.local/bin`)에 넣거나 빼기 |
 | `mu auth status \| login <provider> \| logout <provider>` | 데스크톱 앱이 쓰는 구독 로그인 |
+| `mu auth enable <provider> [--default \| <model>...]` | `/model`과 앱에 보일 공급자의 모델을 골라요. `--default`는 다시 모두 보이게 해요. mu 안에서는 `/scoped-models <provider>`로도 할 수 있어요. |
 | `mu migrate [--dry-run]` | 한 번만: 이름을 바꾸기 전의 홈 `~/.kyrn`을 `~/.mu`로 옮기기 |
 
 ## 세션 안의 명령어 {#slash-commands}

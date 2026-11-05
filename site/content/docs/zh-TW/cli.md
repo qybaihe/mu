@@ -35,6 +35,7 @@ mu                     # 在目前目錄開啟一個互動式工作階段
 | `mu judge model add \| list \| use \| start \| stop \| status \| disable \| remove` | Hugging Face 上的[其他決策模型](@docs/judges#models)，像 mude 1.0 一樣執行。`add` 接受連結或 `owner/name`，下載中途停下後會接著下載。 |
 | `mu link` / `mu unlink` | 把 `mu` 指令放進 PATH（`~/.local/bin`），或移除 |
 | `mu auth status \| login <provider> \| logout <provider>` | 訂閱登入，和桌面版用的一樣 |
+| `mu auth enable <provider> [--default \| <model>...]` | 選擇 `/model` 和桌面版顯示某個服務商的哪些模型。`--default` 恢復為全部顯示；在 mu 裡用 `/scoped-models <provider>` 也一樣。 |
 | `mu migrate [--dry-run]` | 一次性：把改名前的主目錄 `~/.kyrn` 搬到 `~/.mu` |
 
 ## 工作階段裡的指令 {#slash-commands}

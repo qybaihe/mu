@@ -35,6 +35,7 @@ mu                     # 在当前目录开一个交互会话
 | `mu judge model add \| list \| use \| start \| stop \| status \| disable \| remove` | Hugging Face 上的[其他决策模型](@docs/judges#models)，像 mude 1.0 一样运行。`add` 接受链接或 `owner/name`，下载中途停下后会接着下。 |
 | `mu link` / `mu unlink` | 把 `mu` 命令放进 PATH（`~/.local/bin`），或移除 |
 | `mu auth status \| login <provider> \| logout <provider>` | 订阅登录，和桌面端用的一样 |
+| `mu auth enable <provider> [--default \| <model>...]` | 选择 `/model` 和桌面端显示某个服务商的哪些模型。`--default` 恢复为全部显示；在 mu 里用 `/scoped-models <provider>` 也一样。 |
 | `mu migrate [--dry-run]` | 一次性：把改名前的主目录 `~/.kyrn` 搬到 `~/.mu` |
 
 ## 会话里的命令 {#slash-commands}

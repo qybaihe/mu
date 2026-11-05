@@ -35,6 +35,7 @@ mu                     # 現在のディレクトリで対話セッションを�
 | `mu judge model add \| list \| use \| start \| stop \| status \| disable \| remove` | Hugging Face の[ほかの意思決定モデル](@docs/judges#models)を mude 1.0 と同じように動かす。`add` はリンクか `owner/name` を受け取り、止まったダウンロードを再開する。 |
 | `mu link` / `mu unlink` | `mu` コマンドを PATH（`~/.local/bin`）に置く、または取り除く |
 | `mu auth status \| login <provider> \| logout <provider>` | デスクトップアプリが使うサブスクリプションのサインイン |
+| `mu auth enable <provider> [--default \| <model>...]` | `/model` とアプリに表示する、プロバイダーのモデルを選ぶ。`--default` ですべての表示に戻す。mu の中では `/scoped-models <provider>` で同じことができる。 |
 | `mu migrate [--dry-run]` | 一度だけ実行：名前変更前のホーム `~/.kyrn` を `~/.mu` に移す |
 
 ## セッション内のコマンド {#slash-commands}
