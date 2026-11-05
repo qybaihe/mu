@@ -6,21 +6,21 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ## [0.3.8] - 2026-11-05
 
-**0.3.8 makes what the judge approves the call that runs, keeps your keys out of the agent's commands and MCP servers, and lets you choose which of an account's models the model menus show.** A session reopened after an interruption says which calls may already have run, a reply you stop keeps its text for the model, and the agent gets a language-server tool and a way to read back output mu shortened. An experimental write sandbox can keep the agent's commands to the project. The desktop app carries mu-agent 0.3.8.
+**In 0.3.8 the judge reads the whole call it approves, and your keys stay out of the agent's commands and MCP servers. You can also choose which of an account's models the model menus show.** A session reopened after an interruption says which calls may already have run, a reply you stop keeps its text for the model, and the agent gets a language-server tool and a way to read back output mu shortened. An experimental write sandbox can keep the agent's commands to the project. The desktop app carries mu-agent 0.3.8.
 
 ### Worth knowing before you update
 
 - **The agent's commands no longer see your keys.** Commands, background jobs and programs run under the debugger start without the environment variables that hold a credential: a name with KEY, TOKEN, SECRET, PASSWORD or CREDENTIAL and a value that looks like one. A setting such as `MAX_TOKENS=4096` stays. If a command needs a key, such as `npm publish` with `NPM_TOKEN`, name it in `MU_PASS_ENV` (`MU_PASS_ENV=NPM_TOKEN`). `gh`, `npm` and `aws` reading their own config files are unaffected.
-- **MCP servers from `mcp.json` start without them too.** A server that read a token from the environment without naming it now needs it in the entry's `env`, in `MU_PASS_ENV`, or `"inheritEnv": true`. Servers mu takes over from Claude Code, Cursor and Codex already started this way.
-- **Some calls now ask you.** In Judge mode, a call too long for the judge to read whole (over 4,000 characters, or a flagged command over 1,500) asks you instead of being judged on an excerpt. In Judge and Ask first, a call that carries one of your keys, or a command that sends a credential file (`.env`, an ssh key, `.npmrc`, `.aws/credentials` and the like) off the computer, asks you every time and is never allowed for the whole conversation. Full access is unchanged.
-- **A mistake in mu.json's `features` is said, and a value of the wrong kind is no longer used.** `"enabled": "false"` is text and used to count as on; now it keeps the default. A misspelt feature or option, or a value of the wrong kind, is named at the start of the session and in `/doctor` and `/status`, with the closest name when it looks like a typo.
+- **MCP servers from `mcp.json` start without them too.** A server that read a token from the environment without naming it now needs it in the entry's `env` or in `MU_PASS_ENV`, or `"inheritEnv": true` on the entry. Servers mu inherits from Claude Code, Cursor and Codex already started this way.
+- **Some calls now ask you.** In Judge mode, a call too long for the judge to read whole (over 4,000 characters, or a flagged command over 1,500) asks you instead of being judged on an excerpt. In Judge mode and Ask first, a call that carries one of your keys, or a command that sends a credential file (`.env`, an ssh key, `.npmrc`, `.aws/credentials` and the like) off the computer, asks you every time and is never allowed for the whole conversation. Full access is unchanged.
+- **mu points out mistakes in mu.json's `features`, and a value of the wrong kind is no longer used.** `"enabled": "false"` is text and used to count as on; now it keeps the default. A misspelled feature or option, or a value of the wrong kind, is named at the start of the session and in `/doctor` and `/status`, with the closest name when it looks like a typo.
 
 ### Safer runs
 
 - **The judge reads the call that runs.** In Judge mode the approval judge read only the first 400 characters of a command, and the whole command ran. It now reads the whole call, a command line by line, and a change another extension makes to a call is made before the judge reads it, not after.
 - **A call that carries a key asks you.** The question, and what the model reads when it's refused, show the call with the key taken out. Naming a variable (`$GH_TOKEN`) carries nothing and is judged as usual.
 - Web search and page reading through Tavily never follow a redirect with your key.
-- The full output mu keeps when it shortens a tool result can be read only by you, and archives nothing has written to for 14 days are removed.
+- The full output mu keeps when it shortens a tool result is readable only by your user account, and archives untouched for 14 days are removed.
 
 ### Choose which models the model menus show
 
@@ -40,9 +40,9 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 - **Shortened output can be read back.** Output mu left out to save context (an old result, noise folded out of a log, the rest of a long web page) is read back a piece at a time with `recall`, instead of running the command or fetching the page again.
 - **A subfolder's instructions reach the model.** A folder's own AGENTS.md or CLAUDE.md below the project folder, such as one package's in a monorepo, is passed to the model the first time the work reads or changes a file there. `features.inherit.folders: false` turns this off.
 - **Writing a file and running it in one step works.** When the model writes a file and runs it in the same batch of tool calls, the run waits for the write. The calls between two file changes still run in parallel.
-- **Loops are caught sooner and said more than once.** A call refused again and again, by a check or by you, now counts as a loop, and mu speaks up at 3, 5 and 8 repeats instead of once.
+- **Loops are caught sooner, and mu speaks up more than once.** A call refused again and again, by a check or by you, now counts as a loop, and mu speaks up at 3, 5 and 8 repeats instead of once.
 - **A dead end says what to do next.** A capability that can't start, or a write sandbox that can't, ends its message with who can fix it and whether trying again helps, so the model stops retrying or installing things on its own.
-- **Subagents keep a session.** Each `delegate` or `hive` subagent keeps a session file of its own (in `~/.mu/agent/subagents/`), so what it did can be read after it ended, also when its parent was killed. They don't appear in `/resume` or the app's conversation list.
+- **Subagents keep a session.** Each `delegate` or `hive` subagent keeps a session file of its own (in `~/.mu/agent/subagents/`), so what it did can be read after it ended, even when its parent was killed. They don't appear in `/resume` or the app's conversation list.
 - **Subagents think hard less often.** When the judge picks a subagent's thinking level, "high" now starts a little higher on its reasoning scale, so routine multi-step tasks get medium thinking and finish sooner and cheaper. Tasks the judge rates as deep reasoning still get high.
 - **Judged rewind speaks up a little sooner.** When the agent goes in circles, mu proposes going back to the turn's checkpoint if the judge is sure the approach is a dead end and reads progress as less likely than not; before, it also had to be sure there was no progress. It still only proposes: nothing goes back without you.
 - **A subagent's patch review names more unrelated files.** With `swarm.patch` turned on (it is off by default), a file the judge leans against is named as unrelated from p 0.3 down, not only from 0.2.
@@ -56,7 +56,7 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 ### Write sandbox (experimental, off by default)
 
-- **`features.confine`**, in Settings as "Write sandbox (experimental)", lets the agent's commands, background jobs and the programs it debugs write only to the project, the temporary folders and package caches, enforced by the operating system: Seatbelt on macOS, bubblewrap on Linux, nothing on Windows. The project's `.git/hooks` and `.git/config` stay read-only. `features.confine.writable` adds folders.
+- **`features.confine`**, in Settings as "Write sandbox (experimental)", lets the agent's commands, background jobs and the programs it debugs write only to the project, the temporary folders and package caches, enforced by the operating system: Seatbelt on macOS and bubblewrap on Linux; there's no sandbox on Windows. The project's `.git/hooks` and `.git/config` stay read-only. `features.confine.writable` adds folders.
 - A write the sandbox refuses is named as the sandbox's, with what to do instead, rather than a bare "Operation not permitted".
 - A command or background job that must write elsewhere (`git config`, `git remote add`) can ask to run outside the sandbox, once. The judge decides in every mode, Full access included, and asks you when it's unsure; in Ask first you decide. It's never allowed for the whole conversation.
 - When the sandbox can't start (no bubblewrap, user namespaces turned off), every command is refused rather than run unconfined, and the message says how to fix it or turn the sandbox off.
