@@ -310,7 +310,7 @@ describe("mu auth", () => {
 
 		const narrowed = await run(["enable", "openai", "gpt-5.5", "gpt-5.4"]);
 		expect(narrowed.code).toBe(0);
-		expect(state.patterns).toEqual(["google-antigravity/*", "openai/gpt-5.5", "openai/gpt-5.4"]);
+		expect(state.patterns).toEqual(["google-antigravity/**", "openai/gpt-5.5", "openai/gpt-5.4"]);
 		expect(narrowed.line).toMatchObject({
 			type: "status",
 			signedIn: [
@@ -325,7 +325,7 @@ describe("mu auth", () => {
 
 		// Back to the default for both: no list is left.
 		expect((await run(["enable", "google-antigravity", "--default"])).code).toBe(0);
-		expect(state.patterns).toEqual(["openai/gpt-5.5", "openai/gpt-5.4", "google-antigravity/*"]);
+		expect(state.patterns).toEqual(["openai/gpt-5.5", "openai/gpt-5.4", "google-antigravity/**"]);
 		expect((await run(["enable", "openai", "--default"])).code).toBe(0);
 		expect(state.patterns).toBeUndefined();
 	});
@@ -361,7 +361,7 @@ describe("mu auth", () => {
 		expect(
 			await runAuth(["login", "google-antigravity"], { runtime, preferred, extra, io: app.io, enabledModels }),
 		).toBe(0);
-		expect(state.patterns).toEqual(["openai/gpt-5.5", "google-antigravity/*"]);
+		expect(state.patterns).toEqual(["openai/gpt-5.5", "google-antigravity/**"]);
 		expect(app.said.at(-1)).toMatchObject({ type: "done", enabled: ["gemini-3.1-pro", "claude-sonnet-4-6"] });
 
 		// Signed in again: its models are already offered, and nothing is written.

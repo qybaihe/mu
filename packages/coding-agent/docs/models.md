@@ -32,7 +32,7 @@ Run `/thinking` to select the thinking level for the current model. Press `Ctrl+
 
 `Ctrl+P` cycles through available models. Use `/scoped-models` to control that cycle and save the selection, or configure model patterns through [Settings](settings.md#model-cycling).
 
-The saved selection (`enabledModels`) also decides what `/model` shows first (`Tab` there shows every model). `/scoped-models <provider>` chooses one provider's models and leaves the others as they are; all of a provider's models, saved as `<provider>/*`, is the default. After a subscription sign-in with several models (ChatGPT, Antigravity), the same selector opens for that provider, and a sign-in to a provider the saved selection leaves out adds `<provider>/*` so its models show.
+The saved selection (`enabledModels`) also decides what `/model` shows first (`Tab` there shows every model). `/scoped-models <provider>` chooses one provider's models and leaves the others as they are; all of a provider's models, saved as `<provider>/**` (`**`, not `*`, so ids with a slash, as OpenRouter's, are taken too), is the default. After a subscription sign-in with several models (ChatGPT, Antigravity), the same selector opens for that provider, and a sign-in to a provider the saved selection leaves out adds `<provider>/**` so its models show.
 
 A session records model and thinking-level changes. Resuming the session restores them without changing defaults for new sessions.
 

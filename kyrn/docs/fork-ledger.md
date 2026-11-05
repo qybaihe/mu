@@ -524,7 +524,7 @@ A `// mu:` comment next to a change in code says the same thing in place.
   - `packages/coding-agent/docs/models.md`
   - `packages/coding-agent/docs/rpc-commands.md`
   - `packages/coding-agent/docs/slash-commands.md`
-- **Why**: A sign-in to ChatGPT (44 OpenAI models) or Antigravity puts every model of the account in `/model` and in the app's model menus. pi's `enabledModels` already decides what `/model` shows first, but only `/scoped-models` sets it, for every provider at once, and the app's menus ignored it. `enabled-models.ts` writes the list one provider at a time (`withProviderModels`: `<provider>/*` for all of its models, the default, or one `<provider>/<id>` per chosen model; the other providers' entries stay) and adds `<provider>/*` after a sign-in to a provider the list leaves out (`withProviderOffered`), so a new account never ends up hidden. The TUI asks right after a subscription sign-in with several models, and `/scoped-models <provider>` asks again (`showProviderModelsSelector()`, the scoped models selector with its own heading). RPC `get_available_models` adds `enabledModels`, read again from the settings files each time (`reloadEnabledModels()`), since the app chooses with `mu auth enable`, another process. `index.ts` exports the functions for `mu auth`.
+- **Why**: A sign-in to ChatGPT (44 OpenAI models) or Antigravity puts every model of the account in `/model` and in the app's model menus. pi's `enabledModels` already decides what `/model` shows first, but only `/scoped-models` sets it, for every provider at once, and the app's menus ignored it. `enabled-models.ts` writes the list one provider at a time (`withProviderModels`: `<provider>/**` for all of its models, the default, `**` so that ids with a slash of their own such as OpenRouter's are taken too, or one `<provider>/<id>` per chosen model; the other providers' entries stay, a whole one written as `<provider>/*` before rewritten as `<provider>/**`) and adds `<provider>/**` after a sign-in to a provider the list leaves out (`withProviderOffered`), so a new account never ends up hidden. The TUI asks right after a subscription sign-in with several models, and `/scoped-models <provider>` asks again (`showProviderModelsSelector()`, the scoped models selector with its own heading). RPC `get_available_models` adds `enabledModels`, read again from the settings files each time (`reloadEnabledModels()`), since the app chooses with `mu auth enable`, another process. `index.ts` exports the functions for `mu auth`.
 - **In a merge**: Keep `enabledModels` in the `get_available_models` answer, `reloadEnabledModels()`, the `offerSignedInProvider()` call before `completeProviderAuthentication()` in both login dialogs, the selector after an OAuth one, and `/scoped-models <provider>`. If upstream changes how `enabledModels` patterns are read (`resolveModelScopeFromModels`), check `enabled-models.test.ts` still passes.
 - **Tests**
   - `packages/coding-agent/test/enabled-models.test.ts`
@@ -555,5 +555,16 @@ A `// mu:` comment next to a change in code says the same thing in place.
 - **Tests**
   - `packages/agent/test/agent-loop.test.ts`
   - `packages/coding-agent/test/suite/agent-session-batch-order.test.ts`
+
+### M51 A glob that names a provider takes only that provider's models
+
+- **Files**
+  - `packages/coding-agent/src/core/model-resolver.ts`
+  - `packages/coding-agent/docs/cli.md`
+  - `packages/coding-agent/docs/extensions.md`
+- **Why**: pi tries a scope glob (`--models`, `enabledModels`) against `provider/id` and against the bare id, so `openai/*` also took OpenRouter's `openai/gpt-5.5`, an id that starts with another provider's name. M48 writes `openai/**` for all of ChatGPT's models, which then kept the OpenRouter models a person had unchecked. A glob whose part before the first slash is one of the models' providers is now matched against `provider/id` only (`namesProvider()`); one that names no provider (`*sonnet*`, `qwen/*` while no provider is called `qwen`) is still tried against bare ids.
+- **In a merge**: Keep `!named &&` on the bare-id match in `resolveModelScopeFromModels()`.
+- **Tests**
+  - `packages/coding-agent/test/enabled-models.test.ts`
 
 ## Retired

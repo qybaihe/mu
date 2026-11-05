@@ -101,7 +101,7 @@ describe("one provider's models in /model", () => {
 		view.selector.handleInput("\r");
 		view.selector.handleInput("\x13");
 		const faux = harness?.getModel().provider;
-		expect(harness?.settingsManager.getEnabledModels()).toEqual([`${faux}/*`, "account/luna", "account/terra"]);
+		expect(harness?.settingsManager.getEnabledModels()).toEqual([`${faux}/**`, "account/luna", "account/terra"]);
 		expect(harness?.session.scopedModels.map((scoped) => `${scoped.model.provider}/${scoped.model.id}`)).toEqual([
 			`${faux}/${harness?.getModel().id}`,
 			"account/luna",
@@ -130,7 +130,7 @@ describe("one provider's models in /model", () => {
 		const faux = `${harness?.getModel().provider}/${harness?.getModel().id}`;
 		harness?.settingsManager.setEnabledModels([faux]);
 		method<[string]>("offerSignedInProvider").call(view.context, "account");
-		expect(harness?.settingsManager.getEnabledModels()).toEqual([faux, "account/*"]);
+		expect(harness?.settingsManager.getEnabledModels()).toEqual([faux, "account/**"]);
 		expect(harness?.session.scopedModels).toEqual([]);
 	});
 });
