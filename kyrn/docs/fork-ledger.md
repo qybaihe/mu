@@ -529,4 +529,15 @@ A `// mu:` comment next to a change in code says the same thing in place.
   - `packages/coding-agent/test/suite/provider-models-selector.test.ts`
   - `packages/coding-agent/test/suite/rpc-models-signed-out-elsewhere.test.ts`
 
+### M49 Skills for working on mu's own code
+
+- **Files**
+  - `.pi/skills/agent-experience.md`
+  - `.pi/skills/ci-test-reliability.md`
+  - `.pi/skills/error-handling.md`
+  - `.pi/skills/performance.md`
+  - `.pi/skills/trim-reasoning-leakage.md`
+- **Why**: pi loads `.pi/skills/` as the project's skills when an agent works in this repository, beside pi's own `interactive-testing.md`, `release.md` and the rest. These five are about mu's code: what a tool costs in `model-surface.md`, tests that hold on mu's CI (Windows and the desktop end-to-end runs included), which way a judge, gate or sandbox failure goes, measuring the judge's latency per turn, and comments that cite plans outside the repo. They are not shipped: no package's `files` includes `.pi/`.
+- **In a merge**: New files that upstream does not have. If upstream adds a skill with the same name, keep both under different names.
+
 ## Retired
