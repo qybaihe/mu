@@ -131,7 +131,7 @@ Set them in `mu.json` under `modes` (a `default` plus one entry per point), for 
 
 1. Put the decision point in shadow and route it to the judge you want to try, or run every point in shadow.
 2. Work as usual for a while.
-3. Read the verdicts: `mu ledger [n]` prints the last n sessions, `mu ledger --json` gives every record with its probabilities and timings, and the app's Judge tab shows each verdict with its question.
+3. Read the verdicts: `mu ledger [n]` prints the last n sessions, `mu ledger --json` gives every record with its probabilities and timings, `mu ledger --timeline` puts each verdict between the reply and the tool result it came with, and the app's Judge tab shows each verdict with its question. When the judge gets one wrong, mark it: `/ledger wrong <id> [why]` in the terminal, or **Mark as wrong** on an opened verdict in the Judge tab.
 4. Switch the point back to active when its verdicts look right.
 
 `"recordState": true` also keeps the judged state in the ledger, which you need to train a judge of your own. It is off by default because the states hold your content.

@@ -28,6 +28,7 @@ mu                     # 現在のディレクトリで対話セッションを�
 | `mu setup` | モデルを接続し（API キー、または一覧からサービスを選ぶ）、判定器を選ぶ。`mu setup --help` でスクリプト向けの書き方を表示する。 |
 | `mu doctor` | インストール、モデル、判定器、各接続を確認し、何を直せばよいかを示す |
 | `mu ledger [n] [--json]` | 直近 n 回のセッションで判定器が下した判定。`--json` で、すべての記録を確率と所要時間付きで出力する。 |
+| `mu ledger --timeline` | 1 つのセッションを順に再現する。あなたのメッセージ、モデルの返信、各判定、各ツール結果を、時刻付きで順番に表示する。既定は直近のセッションで、`--session <ファイルまたは id>` で指定もできる。 |
 | `mu import --list` | Claude Code、Codex、ZCode の会話を探す |
 | `mu import <file>…` | それらを履歴ごと mu に取り込み、そこで続ける。あとでもう一度実行すると新しい内容が加わる |
 | `mu judge mude install \| enable \| disable \| start \| stop \| status \| uninstall` | Apple シリコンの Mac で動く、mu 独自の意思決定モデル [mude 1.0](@docs/judges#mude)。ダウンロードが途中で止まっても、`install` は中断したところから続ける。 |
