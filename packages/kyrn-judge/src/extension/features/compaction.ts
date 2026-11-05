@@ -1,5 +1,3 @@
-import { mkdirSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { convertToLlm, type ExtensionContext } from "@earendil-works/pi-coding-agent";
 import {
@@ -12,6 +10,7 @@ import {
 } from "../../compaction/history.ts";
 import { analyze, apply, type CallVerdict, plan } from "../../compaction/prune.ts";
 import { type CompactCallInput, contextCompact } from "../../decisions/context-compact.ts";
+import { archiveDir as archiveDirOf, writeArchive } from "../archive.ts";
 import { clip, failOpen, type KyrnRuntime } from "../runtime.ts";
 
 const DETAILS_VERSION = 1;
@@ -180,12 +179,11 @@ export function registerCompaction(runtime: KyrnRuntime): void {
 				return undefined;
 			}
 
-			const archiveDir = join(tmpdir(), `kyrn-${runtime.sessionId}`, "compacted");
+			const archiveDir = join(archiveDirOf(runtime.sessionId), "compacted");
 			const pruned = apply(items, planned.plans, options, (call) => {
 				try {
-					mkdirSync(archiveDir, { recursive: true });
 					const path = join(archiveDir, `${call.id.replace(/[^\w.-]/g, "_")}.txt`);
-					writeFileSync(path, call.result, { mode: 0o600 });
+					writeArchive(path, call.result);
 					return path;
 				} catch {
 					return undefined;
