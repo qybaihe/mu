@@ -610,7 +610,8 @@
     "madeDefault": "新对话会默认用这个模型。",
     "makeDefaultFailed": "没能保存默认模型。",
     "showAllModels": "显示全部模型（{{count}}）",
-    "showFewerModels": "收起"
+    "showFewerModels": "收起",
+    "chooseModels": "选择显示哪些模型…"
   },
   "agentTip": {
     "codes": {

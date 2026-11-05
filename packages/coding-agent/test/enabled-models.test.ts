@@ -4,6 +4,7 @@ import { join } from "node:path";
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { afterEach, describe, expect, it } from "vitest";
 import { enabledModelIds, withProviderModels, withProviderOffered } from "../src/core/enabled-models.ts";
+import { resolveModelScopeFromModels } from "../src/core/model-resolver.ts";
 import { SettingsManager } from "../src/core/settings-manager.ts";
 
 function model(provider: string, id: string): Model<Api> {
@@ -45,8 +46,8 @@ describe("enabled models by provider", () => {
 			"claude-sonnet-4-6",
 		]);
 		expect(patterns).toEqual([
-			"openai/*",
-			"anthropic/*",
+			"openai/**",
+			"anthropic/**",
 			"google-antigravity/gemini-3.1-pro-high",
 			"google-antigravity/claude-sonnet-4-6",
 		]);
@@ -67,15 +68,16 @@ describe("enabled models by provider", () => {
 			"google-antigravity/claude-sonnet-4-6",
 			"anthropic/claude-sonnet-5-5",
 		]);
+		// A whole provider written as `/*` before is written in the form that takes ids with a slash too.
 		expect(withProviderModels(before, MODELS, "openai", [])).toEqual([
-			"google-antigravity/*",
+			"google-antigravity/**",
 			"anthropic/claude-sonnet-5-5",
 		]);
 	});
 
 	it("spells out a pattern of another form that reaches the provider", () => {
 		const patterns = withProviderModels(["*sonnet*:high", "openai/*"], MODELS, "google-antigravity", []);
-		expect(patterns).toEqual(["anthropic/claude-sonnet-5-5:high", "openai/*"]);
+		expect(patterns).toEqual(["anthropic/claude-sonnet-5-5:high", "openai/**"]);
 	});
 
 	it("goes back to pi's default when every provider has all its models", () => {
@@ -92,7 +94,32 @@ describe("enabled models by provider", () => {
 			"google-antigravity",
 			"all",
 		);
-		expect(patterns).toEqual(["anthropic/*", "google-antigravity/*"]);
+		expect(patterns).toEqual(["anthropic/**", "google-antigravity/**"]);
+	});
+
+	it("keeps a provider whole whose ids have a slash of their own, apart from the provider they name", () => {
+		// OpenRouter's ids start with the maker's name: `openai/gpt-6-sol` is OpenRouter's, not ChatGPT's.
+		const routed = [...MODELS, model("openrouter", "openai/gpt-6-sol"), model("openrouter", "qwen/qwen3-coder")];
+		const chatgpt = withProviderModels(undefined, routed, "openai", ["gpt-6-sol"]);
+		expect(chatgpt).toEqual(["google-antigravity/**", "anthropic/**", "openrouter/**", "openai/gpt-6-sol"]);
+		expect(enabledModelIds(chatgpt, routed)).toContain("openrouter/qwen/qwen3-coder");
+		const both = withProviderModels(chatgpt, routed, "openrouter", ["qwen/qwen3-coder"]);
+		expect(both).toEqual([
+			"google-antigravity/**",
+			"anthropic/**",
+			"openrouter/qwen/qwen3-coder",
+			"openai/gpt-6-sol",
+		]);
+		expect(enabledModelIds(both, routed)?.filter((id) => id.startsWith("openrouter/"))).toEqual([
+			"openrouter/qwen/qwen3-coder",
+		]);
+		// ChatGPT whole again: OpenRouter's `openai/...` model stays out.
+		const whole = withProviderModels(both, routed, "openai", "all");
+		expect(enabledModelIds(whole, routed)).not.toContain("openrouter/openai/gpt-6-sol");
+		// `openrouter/*`, as written before, matched none of OpenRouter's models: the next write takes them all.
+		const mended = withProviderModels(["openrouter/*", "openai/gpt-6-sol"], routed, "anthropic", "all");
+		expect(mended).toEqual(["openrouter/**", "openai/gpt-6-sol", "anthropic/**"]);
+		expect(enabledModelIds(mended, routed)).toContain("openrouter/qwen/qwen3-coder");
 	});
 
 	it("refuses a list that enables no model at all", () => {
@@ -104,13 +131,26 @@ describe("enabled models by provider", () => {
 		const patterns = ["openai/gpt-6-sol"];
 		expect(withProviderOffered(patterns, MODELS, "google-antigravity")).toEqual([
 			"openai/gpt-6-sol",
-			"google-antigravity/*",
+			"google-antigravity/**",
 		]);
 		expect(withProviderOffered(patterns, MODELS, "openai")).toBeUndefined();
 		expect(withProviderOffered(undefined, MODELS, "openai")).toBeUndefined();
 		// A list that matches nothing offers every model already.
 		expect(withProviderOffered(["nobody/*"], MODELS, "openai")).toBeUndefined();
 		expect(withProviderOffered(patterns, MODELS, "xai")).toBeUndefined();
+	});
+});
+
+describe("a glob that names a provider", () => {
+	const routed = [model("openai", "gpt-6-sol"), model("openrouter", "openai/gpt-6-sol"), model("openrouter", "z/glm")];
+	const ids = (patterns: string[]) =>
+		resolveModelScopeFromModels(patterns, routed).scopedModels.map(({ model }) => `${model.provider}/${model.id}`);
+
+	it("means that provider's models, not another's whose ids start with its name", () => {
+		expect(ids(["openai/*"])).toEqual(["openai/gpt-6-sol"]);
+		expect(ids(["openrouter/**"])).toEqual(["openrouter/openai/gpt-6-sol", "openrouter/z/glm"]);
+		// No provider is called `z`: the glob is still tried against the ids alone.
+		expect(ids(["z/*"])).toEqual(["openrouter/z/glm"]);
 	});
 });
 

@@ -146,6 +146,8 @@ describe("mu auth", () => {
 						enabled: ["claude-opus-4-8"],
 					},
 				],
+				// Nothing else has a usable model here.
+				usable: [],
 			},
 		]);
 		expect(runtime.refreshed).toEqual([]);
@@ -310,7 +312,7 @@ describe("mu auth", () => {
 
 		const narrowed = await run(["enable", "openai", "gpt-5.5", "gpt-5.4"]);
 		expect(narrowed.code).toBe(0);
-		expect(state.patterns).toEqual(["google-antigravity/*", "openai/gpt-5.5", "openai/gpt-5.4"]);
+		expect(state.patterns).toEqual(["google-antigravity/**", "openai/gpt-5.5", "openai/gpt-5.4"]);
 		expect(narrowed.line).toMatchObject({
 			type: "status",
 			signedIn: [
@@ -325,8 +327,54 @@ describe("mu auth", () => {
 
 		// Back to the default for both: no list is left.
 		expect((await run(["enable", "google-antigravity", "--default"])).code).toBe(0);
-		expect(state.patterns).toEqual(["openai/gpt-5.5", "openai/gpt-5.4", "google-antigravity/*"]);
+		expect(state.patterns).toEqual(["openai/gpt-5.5", "openai/gpt-5.4", "google-antigravity/**"]);
 		expect((await run(["enable", "openai", "--default"])).code).toBe(0);
+		expect(state.patterns).toBeUndefined();
+	});
+
+	it("lists the providers an API key makes usable, and chooses their models the same way", async () => {
+		const runtime = new FakeRuntime();
+		runtime.models.openrouter = [
+			{ id: "anthropic/claude-opus-4.8", name: "Claude Opus 4.8" },
+			{ id: "openai/gpt-5.5", name: "GPT-5.5" },
+			{ id: "qwen/qwen3-coder" },
+		];
+		runtime.credentials = [
+			{ providerId: "openai", type: "oauth" },
+			{ providerId: "openrouter", type: "api_key" },
+		];
+		const { state, enabledModels } = setting();
+		const run = async (argv: string[]) => {
+			const app = pipe();
+			const code = await runAuth(argv, { runtime, preferred, extra: [], io: app.io, enabledModels });
+			return { code, line: app.said.at(-1) };
+		};
+
+		const before = await run(["status"]);
+		expect(before.line).toMatchObject({
+			signedIn: [{ provider: "openai", enabled: ["gpt-5.5", "gpt-5.4", "gpt-5.5-mini"] }],
+			usable: [
+				{
+					provider: "openrouter",
+					models: [
+						{ id: "anthropic/claude-opus-4.8", name: "Claude Opus 4.8" },
+						{ id: "openai/gpt-5.5", name: "GPT-5.5" },
+						{ id: "qwen/qwen3-coder", name: "qwen/qwen3-coder" },
+					],
+					enabled: ["anthropic/claude-opus-4.8", "openai/gpt-5.5", "qwen/qwen3-coder"],
+				},
+			],
+		});
+
+		// A model id with a slash of its own is one model, not a provider.
+		const narrowed = await run(["enable", "openrouter", "qwen/qwen3-coder"]);
+		expect(narrowed.code).toBe(0);
+		expect(state.patterns).toEqual(["openai/**", "openrouter/qwen/qwen3-coder"]);
+		expect(narrowed.line).toMatchObject({
+			signedIn: [{ provider: "openai", enabled: ["gpt-5.5", "gpt-5.4", "gpt-5.5-mini"] }],
+			usable: [{ provider: "openrouter", enabled: ["qwen/qwen3-coder"] }],
+		});
+		expect((await run(["enable", "openrouter", "--default"])).code).toBe(0);
 		expect(state.patterns).toBeUndefined();
 	});
 
@@ -338,7 +386,10 @@ describe("mu auth", () => {
 			[["enable", "openai", "gpt-9"], "openai has no model gpt-9"],
 			[["enable", "openai"], "At least one model must stay enabled"],
 			[["enable", "xai", "grok-5"], "xai has no model grok-5"],
-			[["enable", "xai", "--default"], "No models of xai are available: sign in to it first"],
+			[
+				["enable", "xai", "--default"],
+				"No models of xai are available: sign in to it, or give it an API key, first",
+			],
 			[["enable", "openai", "gpt-5.5", "--default"], USAGE],
 		];
 		for (const [argv, message] of cases) {
@@ -361,7 +412,7 @@ describe("mu auth", () => {
 		expect(
 			await runAuth(["login", "google-antigravity"], { runtime, preferred, extra, io: app.io, enabledModels }),
 		).toBe(0);
-		expect(state.patterns).toEqual(["openai/gpt-5.5", "google-antigravity/*"]);
+		expect(state.patterns).toEqual(["openai/gpt-5.5", "google-antigravity/**"]);
 		expect(app.said.at(-1)).toMatchObject({ type: "done", enabled: ["gemini-3.1-pro", "claude-sonnet-4-6"] });
 
 		// Signed in again: its models are already offered, and nothing is written.

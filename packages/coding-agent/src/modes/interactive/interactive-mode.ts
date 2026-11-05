@@ -5640,7 +5640,7 @@ export class InteractiveMode {
 	}
 
 	/**
-	 * mu: a sign-in to a provider that `enabledModels` leaves out adds all of its models (`<provider>/*`), so the new
+	 * mu: a sign-in to a provider that `enabledModels` leaves out adds all of its models (`<provider>/**`), so the new
 	 * account's models are offered until its own are chosen.
 	 */
 	private offerSignedInProvider(providerId: string): void {
@@ -5664,7 +5664,7 @@ export class InteractiveMode {
 	/**
 	 * mu: which of one provider's models /model and Ctrl+P offer, saved to the global `enabledModels` with the save key
 	 * (the other providers' models stay as they are). Shown after a subscription sign-in and by
-	 * `/scoped-models <provider>`. All of them enabled is the default: saved as `<provider>/*`, which takes in the
+	 * `/scoped-models <provider>`. All of them enabled is the default: saved as `<provider>/**`, which takes in the
 	 * models the account gains later.
 	 */
 	private showProviderModelsSelector(providerId: string): void {

@@ -609,18 +609,45 @@ describe('choosing an account’s models', () => {
     await expect(reset).resolves.toEqual({ signedIn: [] });
   });
 
-  it('refuses what is not a model id, an unknown provider, and passes on the runner’s refusal', async () => {
+  it('refuses what is not a model id or a provider id, and passes on the runner’s refusal', async () => {
     const { manager, runners } = setup();
     await expect(manager.enable({ provider: 'openai', models: ['--default'] })).rejects.toThrow('Invalid model');
     await expect(manager.enable({ provider: 'openai', models: ['two words'] })).rejects.toThrow('Invalid model');
     await expect(manager.enable({ provider: 'openai' })).rejects.toThrow('Invalid model');
-    await expect(manager.enable({ provider: 'google' as never, models: [] })).rejects.toThrow('Unknown provider');
+    // A provider is one argument, never a flag.
+    await expect(manager.enable({ provider: '--default', models: [] })).rejects.toThrow('Unknown provider');
+    await expect(manager.enable({ provider: 'open router', models: [] })).rejects.toThrow('Unknown provider');
+    await expect(manager.enable({ provider: 42 as never, models: [] })).rejects.toThrow('Unknown provider');
     expect(runners).toHaveLength(0);
     const none = manager.enable({ provider: 'openai', models: [] });
     expect(runners[0].args).toEqual(['enable', 'openai']);
     runners[0].say({ type: 'error', message: 'At least one model must stay enabled' });
     runners[0].end(1);
     await expect(none).rejects.toThrow('At least one model must stay enabled');
+  });
+
+  it('chooses the models of a provider an API key makes usable, and reads the usable ones with who is signed in', async () => {
+    const { manager, runners } = setup();
+    const chosen = manager.enable({ provider: 'openrouter', models: ['qwen/qwen3-coder'] });
+    expect(runners[0].args).toEqual(['enable', 'openrouter', 'qwen/qwen3-coder']);
+    const models = [
+      { id: 'qwen/qwen3-coder', name: 'Qwen3 Coder' },
+      { id: 'openai/gpt-5.5', name: 'GPT-5.5' },
+    ];
+    runners[0].say({
+      type: 'status',
+      signedIn: [],
+      usable: [
+        { provider: 'openrouter', models, enabled: ['qwen/qwen3-coder'] },
+        // Not a provider id the app would pass back: left out.
+        { provider: '--x', models: [{ id: 'm' }] },
+      ],
+    });
+    runners[0].end(0);
+    await expect(chosen).resolves.toEqual({
+      signedIn: [],
+      usable: [{ provider: 'openrouter', models, enabled: ['qwen/qwen3-coder'] }],
+    });
   });
 
   it('keeps the enabled models a sign-in ends with', async () => {

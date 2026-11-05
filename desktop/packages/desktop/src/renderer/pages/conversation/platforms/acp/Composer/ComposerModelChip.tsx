@@ -7,6 +7,7 @@
 import RuntimeSelectorPill from '@/renderer/components/agent/RuntimeSelectorPill';
 import { composeRuntimeSelectorLabel } from '@/renderer/components/agent/runtimeSelectorOptions';
 import { useAcpConfigOptions, type AcpConfigOptionsPort } from '@/renderer/hooks/agent/useAcpConfigOptions';
+import { useChooseModels } from '@/renderer/hooks/agent/useChooseModels';
 import { useProviderNames } from '@/renderer/hooks/agent/useProviderNames';
 import { iconColors } from '@/renderer/styles/colors';
 import { providerDisplayName } from '@/renderer/utils/model/providerName';
@@ -35,6 +36,7 @@ const ComposerModelChip: React.FC<{
   configOptionsPort?: AcpConfigOptionsPort;
 }> = ({ conversation_id, busy, prepareRuntime, prepareSetRuntime, configOptionsPort }) => {
   const { t } = useTranslation();
+  const chooseModels = useChooseModels();
   const [visible, setVisible] = useState(false);
   const [query, setQuery] = useState('');
   const [showAll, setShowAll] = useState(false);
@@ -92,6 +94,10 @@ const ComposerModelChip: React.FC<{
     showAll,
     onShowAll: setShowAll,
     onPick: pick,
+    onChooseModels: () => {
+      close();
+      chooseModels(model.currentValue);
+    },
   });
 
   const pill = (
