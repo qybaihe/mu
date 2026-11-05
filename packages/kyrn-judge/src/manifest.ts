@@ -1164,7 +1164,7 @@ const DESCRIBED: HarnessManifest = {
 				{
 					key: "passThrough",
 					kind: "list",
-					default: ["read", "edit", "write", "delegate", "hive", "web_fetch"],
+					default: ["read", "edit", "write", "delegate", "hive", "web_fetch", "recall"],
 					label: { zh: "这些工具的输出不筛", en: "Never filter these tools" },
 				},
 				{
@@ -1274,6 +1274,26 @@ const DESCRIBED: HarnessManifest = {
 						zh: "这次请求最多等这么久；来晚的判定在下一次请求生效。",
 						en: "The current request waits this long; later verdicts apply from the next request on.",
 					},
+				},
+			],
+		},
+		{
+			name: "recall",
+			title: { zh: "取回省略的输出", en: "Read back shortened output" },
+			summary: {
+				zh: "mu 为省上下文而省略的工具输出，模型可以用 recall 按调用 id 分段取回原文，不必重跑命令或重新抓网页：遗忘换掉的旧结果、准入归档的噪声、web_fetch 截掉的后半页。只读本次对话；取回的网页后半部分会先过注入筛查。",
+				en: "Tool output mu left out to save context can be read back by the model with recall, a piece at a time by the call's id, instead of running the command or fetching the page again: old results forgetting replaced, noise admission archived, the rest of a page web_fetch cut. Only this conversation; the rest of a page goes through the injection screen first.",
+			},
+			defaultEnabled: true,
+			options: [
+				{
+					key: "maxChars",
+					kind: "number",
+					default: 20000,
+					min: 1000,
+					max: 200000,
+					unit: chars,
+					label: { zh: "一次取回最多返回", en: "Max text per recall call" },
 				},
 			],
 		},
@@ -1551,8 +1571,8 @@ const DESCRIBED: HarnessManifest = {
 					max: 20,
 					label: { zh: "同一调用重复几次算打转", en: "Repeats that count as a loop" },
 					help: {
-						zh: "输入完全相同、结果也完全相同才算同一调用；分段读同一个文件不算。",
-						en: "Only the same input with the same result counts as the same call; paging through a file does not.",
+						zh: "输入完全相同、结果也完全相同才算同一调用；分段读同一个文件不算。被拦下、没有执行的调用，输入相同就算。到这个次数提醒一次，再多 2 次、5 次时各提醒一次，一次比一次直接。",
+						en: "Only the same input with the same result counts as the same call; paging through a file does not. A call that was refused and never ran counts by its input alone. The monitor says so at this many, and again 2 and 5 repeats later, more plainly each time.",
 					},
 				},
 				{
@@ -3038,8 +3058,8 @@ const DESCRIBED: HarnessManifest = {
 			name: "confine",
 			title: { zh: "写入沙箱（实验）", en: "Write sandbox (experimental)" },
 			summary: {
-				zh: "agent 跑的 bash 命令和后台任务由操作系统限制，只能写项目目录、临时目录和包管理器的缓存；项目的 .git/hooks 和 .git/config 只读。macOS 用 Seatbelt，Linux 用 bubblewrap，Windows 没有。起不来时（没有 bubblewrap、用户命名空间被关掉）每条命令都拒绝执行，不会退回到不受限制地运行。判定器和权限模式照常询问。确实要写别处的命令（git config、git remote add）可以申请在沙箱外运行一次。任何权限模式下都要审，完全访问也一样：先由判定器审，它拿不准再问你（最小权限下直接问你），不会给整个对话授权。",
-				en: "The agent's bash commands and background jobs can write only to the project, the temporary folders and package caches, enforced by the operating system; the project's .git/hooks and .git/config are read-only. Seatbelt on macOS, bubblewrap on Linux, none on Windows. When it cannot start (no bubblewrap, user namespaces turned off), every command is refused rather than run unconfined. The judge and the permission modes ask as before. A command that must write elsewhere (git config, git remote add) can ask to run outside the sandbox, once. In every permission mode, Full access included, the judge decides, and asks you when it's unsure (in Ask first, you decide). It's never allowed for the whole conversation.",
+				zh: "agent 跑的 bash 命令、后台任务和调试的程序由操作系统限制，只能写项目目录、临时目录和包管理器的缓存；项目的 .git/hooks 和 .git/config 只读。macOS 用 Seatbelt，Linux 用 bubblewrap，Windows 没有。起不来时（没有 bubblewrap、用户命名空间被关掉）每条命令都拒绝执行，不会退回到不受限制地运行。判定器和权限模式照常询问。确实要写别处的命令（git config、git remote add）可以申请在沙箱外运行一次。任何权限模式下都要审，完全访问也一样：先由判定器审，它拿不准再问你（最小权限下直接问你），不会给整个对话授权。",
+				en: "The agent's bash commands, background jobs and the programs it debugs can write only to the project, the temporary folders and package caches, enforced by the operating system; the project's .git/hooks and .git/config are read-only. Seatbelt on macOS, bubblewrap on Linux, none on Windows. When it cannot start (no bubblewrap, user namespaces turned off), every command is refused rather than run unconfined. The judge and the permission modes ask as before. A command that must write elsewhere (git config, git remote add) can ask to run outside the sandbox, once. In every permission mode, Full access included, the judge decides, and asks you when it's unsure (in Ask first, you decide). It's never allowed for the whole conversation.",
 			},
 			defaultEnabled: false,
 			beta: true,

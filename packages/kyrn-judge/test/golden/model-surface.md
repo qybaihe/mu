@@ -244,6 +244,35 @@ List installed capabilities that are not in your tool list yet (debugger, struct
 }
 ```
 
+## Tool: recall
+
+```text
+Read back an earlier tool result in full where mu left part of it out; mu's note names the call id. Returns up to 20000 characters from offset.
+```
+
+```json
+{
+	"type": "object",
+	"required": [
+		"id"
+	],
+	"properties": {
+		"id": {
+			"type": "string",
+			"description": "Tool call id from mu's note"
+		},
+		"offset": {
+			"type": "number",
+			"description": "Character to start at, default 0"
+		},
+		"limit": {
+			"type": "number",
+			"description": "Most characters to return"
+		}
+	}
+}
+```
+
 ## Tool: lsp
 
 ```text

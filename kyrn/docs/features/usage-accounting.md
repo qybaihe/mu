@@ -3,7 +3,7 @@
 Whoever totals a session's usage adds up the `usage` of its assistant messages (and the judge's, from `kyrn.decision`). Two kinds of model spend never reach an assistant message of the session:
 
 - **A reply the watchdog cut.** The request is aborted, and an OpenAI-compatible stream reports usage only in its last chunk, which never comes. The aborted message keeps its reasoning text with a usage of zero. On Terminal-Bench 2.1, 9 cuts of about 27k reasoning tokens each were recorded as 0.
-- **Sub-agents** (`delegate`, `hive`, a hive's verifiers). A child runs with `--no-session`, so its usage is only in the JSON events it streams to the parent. One hive run spent $0.089, three times its parent's recorded cost, and no session file showed it.
+- **Sub-agents** (`delegate`, `hive`, a hive's verifiers). A child's usage is in the JSON events it streams to the parent, and not in the parent's session file. One hive run spent $0.089, three times its parent's recorded cost, and no session file showed it. A child keeps a session file of its own when its parent does ([subagent-sessions.md](subagent-sessions.md)), but that file is kept out of the sessions folder and is not part of the parent's.
 
 mu records both as `kyrn.usage` entries in the parent's session file. They are custom entries (`pi.appendEntry`): kept in the file, never sent to the model.
 
@@ -53,4 +53,5 @@ Written in the parent's session when a sub-agent ends, however it ends (`src/swa
 - A child's own `kyrn.usage` entries (its watchdog's cuts) arrive as `entry_appended` events and are added in, with `estimated` and `estimatedOutput`.
 - `partial: true` when the sub-agent did not finish (`status` is `failed`, `stopped` or `timed-out`): a request it was in when it was stopped, or that failed, reports no usage. Events after it was stopped are not read.
 - A bee that never started (stopped while it waited for a slot) gets no entry.
-- Not included: the judge calls made inside the child (its `kyrn.decision` entries stay in its in-memory session).
+- Not included: the judge calls made inside the child. Its `kyrn.decision` entries are in its own session file, when it keeps one.
+- Count a sub-agent's spend from this entry only. Its own session file, when it has one, carries the same assistant messages: adding that file to the parent's totals counts them twice.

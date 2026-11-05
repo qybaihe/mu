@@ -90,6 +90,7 @@ const LOCAL_TOOLS: ReadonlySet<string> = new Set([
 	"remember",
 	"sg_rewrite",
 	"apply_patch_from",
+	"recall",
 ]);
 
 /** Every string in a JSON value. */

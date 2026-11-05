@@ -490,20 +490,20 @@ p 0.05). Do not edit by hand. A section that changes needs a new `version` in it
 - no answer: {"hide":[],"relevant":[]}
 - the judge failed: {"hide":[],"relevant":[]} (fallback)
 
-## swarm.patch v1
+## swarm.patch v2
 
 - `within_task` (boolean), the others high:
   - p(true): 0.01–0.2 → {"withinTask":false,"unrelated":[],"judged":2}; 0.3–0.75 → {"withinTask":null,"unrelated":[],"judged":2}; 0.8–0.99 → {"withinTask":true,"unrelated":[],"judged":2}
 - `within_task` (boolean), the others low:
   - p(true): 0.01–0.2 → {"withinTask":false,"unrelated":["src/parse.ts","package-lock.json"],"judged":2}; 0.3–0.75 → {"withinTask":null,"unrelated":["src/parse.ts","package-lock.json"],"judged":2}; 0.8–0.99 → {"withinTask":true,"unrelated":["src/parse.ts","package-lock.json"],"judged":2}
 - `file_0` (boolean), the others high:
-  - p(true): 0.01–0.2 → {"withinTask":true,"unrelated":["src/parse.ts"],"judged":2}; 0.3–0.99 → {"withinTask":true,"unrelated":[],"judged":2}
+  - p(true): 0.01–0.3 → {"withinTask":true,"unrelated":["src/parse.ts"],"judged":2}; 0.4–0.99 → {"withinTask":true,"unrelated":[],"judged":2}
 - `file_0` (boolean), the others low:
-  - p(true): 0.01–0.2 → {"withinTask":false,"unrelated":["src/parse.ts","package-lock.json"],"judged":2}; 0.3–0.99 → {"withinTask":false,"unrelated":["package-lock.json"],"judged":2}
+  - p(true): 0.01–0.3 → {"withinTask":false,"unrelated":["src/parse.ts","package-lock.json"],"judged":2}; 0.4–0.99 → {"withinTask":false,"unrelated":["package-lock.json"],"judged":2}
 - `file_1` (boolean), the others high:
-  - p(true): 0.01–0.2 → {"withinTask":true,"unrelated":["package-lock.json"],"judged":2}; 0.3–0.99 → {"withinTask":true,"unrelated":[],"judged":2}
+  - p(true): 0.01–0.3 → {"withinTask":true,"unrelated":["package-lock.json"],"judged":2}; 0.4–0.99 → {"withinTask":true,"unrelated":[],"judged":2}
 - `file_1` (boolean), the others low:
-  - p(true): 0.01–0.2 → {"withinTask":false,"unrelated":["src/parse.ts","package-lock.json"],"judged":2}; 0.3–0.99 → {"withinTask":false,"unrelated":["src/parse.ts"],"judged":2}
+  - p(true): 0.01–0.3 → {"withinTask":false,"unrelated":["src/parse.ts","package-lock.json"],"judged":2}; 0.4–0.99 → {"withinTask":false,"unrelated":["src/parse.ts"],"judged":2}
 - no answer: {"withinTask":null,"unrelated":[],"judged":2}
 - the judge failed: {"withinTask":null,"unrelated":[],"judged":0} (fallback)
 
@@ -583,6 +583,27 @@ p 0.05). Do not edit by hand. A section that changes needs a new `version` in it
   - other: 0.3–0.99 → [{"kind":"unknown","drop":false},{"kind":"unknown","drop":false}]; without p → [{"kind":"unknown","drop":false},{"kind":"unknown","drop":false}]
 - no answer: [{"kind":"unknown","drop":false},{"kind":"unknown","drop":false}]
 - the judge failed: [{"kind":"unknown","drop":false},{"kind":"unknown","drop":false}] (fallback)
+
+## tool.admission.test-log v3
+
+- `part_1` (choice), the others high:
+  - needed: 0.3–0.99 → {"omit":[]}; without p → {"omit":[]}
+  - not_needed: 0.3–0.85 → {"omit":[]}; 0.9–0.99 → {"omit":["part_1"]}; without p → {"omit":[]}
+  - unclear: 0.3–0.99 → {"omit":[]}; without p → {"omit":[]}
+- `part_1` (choice), the others low:
+  - needed: 0.3–0.99 → {"omit":[]}; without p → {"omit":[]}
+  - not_needed: 0.3–0.85 → {"omit":[]}; 0.9–0.99 → {"omit":["part_1"]}; without p → {"omit":[]}
+  - unclear: 0.3–0.99 → {"omit":[]}; without p → {"omit":[]}
+- `part_2` (choice), the others high:
+  - needed: 0.3–0.99 → {"omit":[]}; without p → {"omit":[]}
+  - not_needed: 0.3–0.85 → {"omit":[]}; 0.9–0.99 → {"omit":["part_2"]}; without p → {"omit":[]}
+  - unclear: 0.3–0.99 → {"omit":[]}; without p → {"omit":[]}
+- `part_2` (choice), the others low:
+  - needed: 0.3–0.99 → {"omit":[]}; without p → {"omit":[]}
+  - not_needed: 0.3–0.85 → {"omit":[]}; 0.9–0.99 → {"omit":["part_2"]}; without p → {"omit":[]}
+  - unclear: 0.3–0.99 → {"omit":[]}; without p → {"omit":[]}
+- no answer: {"omit":[]}
+- the judge failed: {"omit":[]} (fallback)
 
 ## tool.approval v3
 
@@ -696,14 +717,14 @@ p 0.05). Do not edit by hand. A section that changes needs a new `version` in it
 - no answer: "unknown" (fallback)
 - the judge failed: "unknown" (fallback)
 
-## turn.rewind v1
+## turn.rewind v2
 
 - `dead_end` (boolean), the others high:
   - p(true): 0.01–0.99 → "continue"
 - `dead_end` (boolean), the others low:
   - p(true): 0.01–0.75 → "continue"; 0.8–0.99 → "propose"
 - `progress` (boolean), the others high:
-  - p(true): 0.01–0.2 → "propose"; 0.3–0.99 → "continue"
+  - p(true): 0.01–0.4 → "propose"; 0.5–0.99 → "continue"
 - `progress` (boolean), the others low:
   - p(true): 0.01–0.99 → "continue"
 - no answer: "continue" (fallback)

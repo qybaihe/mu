@@ -12,10 +12,28 @@ const MINUTE = 60_000;
  * read and drops its offset, and cuts a script after 300 characters, so a file paged through and two scripts that
  * differ only further down would look like one call made three times. The key holds all of the input and the result.
  */
-function callKey(toolName: string, input: unknown, isError: boolean, content: unknown): string {
+function callKey(toolName: string, input: unknown, outcome: unknown): string {
 	return createHash("sha1")
-		.update(JSON.stringify([toolName, input ?? null, isError, textOf(content)]))
+		.update(JSON.stringify([toolName, input ?? null, outcome]))
 		.digest("hex");
+}
+
+/**
+ * What the loop rule says when a call has come back the same way `times` times in a row, at `step` (0, 1, 2) of its
+ * three: the same advice first, then plainer.
+ */
+export function loopSteerText(action: string, times: number, refused: boolean, step: number): string {
+	const what = refused
+		? `The same call has now been refused ${times} times (${action}); sent again as it is, it will be refused again.`
+		: `The same call has now run ${times} times with the same outcome (${action}).`;
+	const next = [
+		refused
+			? "Say what stopped it and try a different approach."
+			: "Say what it told you and try a different approach.",
+		"Stop repeating it: say what you learned from it, and change the approach.",
+		"Do not make this call again. Tell the user what you tried and what is in the way.",
+	];
+	return `${what} ${next[Math.min(step, next.length - 1)]}`;
 }
 
 /** One tool result as the drift check reads it. */
@@ -385,11 +403,17 @@ export function registerMonitor(runtime: KyrnRuntime): void {
 	});
 	if (!options.enabled) return;
 	const { pi } = runtime;
-	/** The last `repeats` calls as the loop rule compares them. */
-	let keys: string[] = [];
-	let warnedLoops = new Set<string>();
+	/** The latest call as the loop rule compares them, and how many times in a row it came back the same way. */
+	let lastKey: string | undefined;
+	let streak = 0;
+	/** The loop rule steers at `repeats`, and again 2 and 5 repeats later. */
+	const steps = [options.repeats, options.repeats + 2, options.repeats + 5];
+	/** For each call, the last of `steps` a loop steer was sent at. */
+	let warnedLoops = new Map<string, number>();
 	/** When each call started, for tools that do not report their own time. */
 	const started = new Map<string, number>();
+	/** What each call asked for, from its start: a call that never ran has no `tool_result` to read it from. */
+	const asked = new Map<string, { readonly toolName: string; readonly args: Record<string, unknown> }>();
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	/** Ended with the run: a verdict after it has nothing left to steer. */
 	let run: AbortController | undefined;
@@ -470,9 +494,11 @@ export function registerMonitor(runtime: KyrnRuntime): void {
 		"input",
 		failOpen((event) => {
 			if (event.source !== "extension" && !event.streamingBehavior) {
-				keys = [];
-				warnedLoops = new Set();
+				lastKey = undefined;
+				streak = 0;
+				warnedLoops = new Map();
 				started.clear();
+				asked.clear();
 				watch = fresh();
 			}
 			return undefined;
@@ -520,6 +546,48 @@ export function registerMonitor(runtime: KyrnRuntime): void {
 		{ final: true },
 	);
 
+	/** Counts a call toward the loop rule, and steers when its streak reaches one of `steps`. Says whether it did. */
+	const loopRule = (key: string, action: string, refused: boolean, now: number): boolean => {
+		streak = key === lastKey ? streak + 1 : 1;
+		lastKey = key;
+		const step = steps.indexOf(streak);
+		if (step < 0 || step <= (warnedLoops.get(key) ?? -1)) return false;
+		warnedLoops.set(key, step);
+		watch.steeredOnLoop(now);
+		pi.appendEntry("kyrn.monitor", { kind: "loop", action, times: streak, ...(refused ? { refused: true } : {}) });
+		runtime.trouble("loop", action);
+		steer(loopSteerText(action, streak, refused, step));
+		return true;
+	};
+
+	pi.on(
+		"tool_execution_start",
+		failOpen((event) => {
+			asked.set(event.toolCallId, { toolName: event.toolName, args: event.args ?? {} });
+			return undefined;
+		}),
+	);
+
+	// A call a check refused, an unknown tool, or arguments that do not fit never run, so no `tool_result` comes for
+	// them, and without this the model could send the same refused call, and the user be asked again, any number of
+	// times. Whatever the refusal said, the same call would be refused again: its input alone is the key.
+	pi.on(
+		"tool_execution_end",
+		failOpen((event) => {
+			const call = asked.get(event.toolCallId);
+			asked.delete(event.toolCallId);
+			if (event.durationMs !== undefined || !call) return undefined;
+			started.delete(event.toolCallId);
+			loopRule(
+				callKey(call.toolName, call.args, "refused"),
+				`${describeCall(call.toolName, call.args)} -> refused`,
+				true,
+				Date.now(),
+			);
+			return undefined;
+		}),
+	);
+
 	pi.on(
 		"tool_result",
 		failOpen((event, ctx) => {
@@ -527,7 +595,7 @@ export function registerMonitor(runtime: KyrnRuntime): void {
 			const now = Date.now();
 			const toolName = "toolName" in event ? String(event.toolName) : "tool";
 			const action = `${describeCall(toolName, event.input)} -> ${event.isError ? "error" : "ok"}`;
-			const key = callKey(toolName, event.input, event.isError, event.content);
+			const key = callKey(toolName, event.input, [event.isError, textOf(event.content)]);
 			const since = started.get(event.toolCallId);
 			started.delete(event.toolCallId);
 			const text = textOf(event.content);
@@ -543,20 +611,7 @@ export function registerMonitor(runtime: KyrnRuntime): void {
 				},
 				now,
 			);
-			keys = [...keys, key].slice(-options.repeats);
-
-			const looping = keys.length === options.repeats && keys.every((entry) => entry === key);
-			if (looping && !warnedLoops.has(key)) {
-				warnedLoops.add(key);
-				watch.steeredOnLoop(now);
-				pi.appendEntry("kyrn.monitor", { kind: "loop", action });
-				runtime.trouble("loop", action);
-				steer(
-					`The same call has now run ${options.repeats} times with the same outcome (${action}). Say what it told you and try a different approach.`,
-				);
-				return undefined;
-			}
-
+			if (loopRule(key, action, false, now)) return undefined;
 			if (watch.due(now)) check();
 			return undefined;
 		}),

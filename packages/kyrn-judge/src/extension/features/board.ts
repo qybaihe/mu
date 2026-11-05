@@ -96,6 +96,7 @@ const ROUTINE_TOOLS = new Set([
 	"bg_output",
 	"web_search",
 	"web_fetch",
+	"recall",
 ]);
 
 /** Tools that send sub-agents out: while they work the agent takes no step of its own, so the board looks on a clock. */

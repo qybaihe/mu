@@ -3,6 +3,7 @@
 //   name = <json>    an assignment
 //   print <text>     a line on stdout
 //   raise <message>  an exception (stops there when the "uncaught" filter is set)
+//   write <path>     a file the program makes; a write that fails is printed on stderr, as node words it
 //   loop             runs on the spot until paused
 // Flags: --port N (listen there, as delve does), --answer-launch-first (lldb-dap's order:
 // launch is answered before `initialized`; the default is debugpy's: after configurationDone),
@@ -103,6 +104,13 @@ function execute() {
 	const assignment = /^(\w+)\s*=\s*(.+)$/.exec(line);
 	if (assignment) locals[assignment[1]] = JSON.parse(assignment[2]);
 	else if (line.startsWith("print ")) event("output", { category: "stdout", output: `${line.slice(6)}\n` });
+	else if (line.startsWith("write ")) {
+		try {
+			writeFileSync(line.slice(6), "written by the program\n");
+		} catch (error) {
+			event("output", { category: "stderr", output: `${error.message}\n` });
+		}
+	}
 	else if (line.startsWith("raise ")) {
 		const message = line.slice(6);
 		if (exception === undefined && filters.includes("uncaught")) {

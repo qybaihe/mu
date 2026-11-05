@@ -2,6 +2,7 @@ import { fauxAssistantMessage, fauxToolCall } from "@earendil-works/pi-ai";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import { parseConfig } from "../src/config.ts";
 import type { DecisionMode } from "../src/decision.ts";
+import type { ConfineDeps } from "../src/extension/features/confine.ts";
 import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import { MockJudgeProvider, type MockResponder } from "../src/providers/mock.ts";
 import type { Answer } from "../src/types.ts";
@@ -34,6 +35,8 @@ export async function startPacks(
 		mode?: DecisionMode;
 		packs?: Record<string, unknown>;
 		features?: Record<string, unknown>;
+		/** The write floor on, placed and tried this way. */
+		confine?: ConfineDeps;
 	} = {},
 ): Promise<{ harness: Harness; provider: MockJudgeProvider }> {
 	const provider = new MockJudgeProvider(options.responder ?? disclosing());
@@ -45,10 +48,16 @@ export async function startPacks(
 				mode,
 				config: parseConfig({
 					modes: { "capability.disclosure": mode },
-					features: attended({ memory: false, packs: options.packs ?? {}, ...options.features }),
+					features: attended({
+						memory: false,
+						packs: options.packs ?? {},
+						...(options.confine ? { confine: { enabled: true } } : {}),
+						...options.features,
+					}),
 				}),
 				// Preflight is what counts user turns.
-				only: ["preflight", "catalog", "packs"],
+				only: ["preflight", "catalog", "packs", ...(options.confine ? (["confine"] as const) : [])],
+				confine: options.confine,
 			}),
 		],
 	});

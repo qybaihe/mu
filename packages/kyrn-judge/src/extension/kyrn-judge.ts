@@ -60,6 +60,7 @@ import { registerPacks } from "./features/packs.ts";
 import { registerPermissions } from "./features/permissions.ts";
 import { registerPreflight } from "./features/preflight.ts";
 import { registerProcedures } from "./features/procedures.ts";
+import { registerRecall } from "./features/recall.ts";
 import { registerRecovery } from "./features/recovery.ts";
 import { registerSandbox, type SandboxDeps } from "./features/sandbox.ts";
 import { registerSkills } from "./features/skills.ts";
@@ -149,7 +150,8 @@ export type FeatureName =
 	| "web"
 	| "packs"
 	| "googleLogin"
-	| "recovery";
+	| "recovery"
+	| "recall";
 
 export function createKyrnJudgeExtension(options: KyrnJudgeExtensionOptions = {}): (pi: ExtensionAPI) => void {
 	return (pi) => registerKyrn(pi, options);
@@ -240,6 +242,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["permissions", (shared) => registerPermissions(shared, roots)],
 		["admission", registerAdmission],
 		["forgetting", registerForgetting],
+		// Reads back what admission, forgetting and web_fetch left out; they point to it only while the model has it.
+		["recall", registerRecall],
 		["compaction", registerCompaction],
 		[
 			"monitor",

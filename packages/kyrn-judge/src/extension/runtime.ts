@@ -218,7 +218,7 @@ export class KyrnRuntime {
 	permissionMode?: () => "full" | "judge" | "ask";
 	/**
 	 * Set by the confine feature while it is on: the write floor for a project folder, made ready on first use, or why
-	 * it cannot start here. The agent's background jobs run inside it, as its bash commands do.
+	 * it cannot start here. The agent's background jobs and the programs it debugs run inside it, as its bash commands do.
 	 */
 	floor?: (cwd: string) => Promise<FloorReady>;
 	/**
