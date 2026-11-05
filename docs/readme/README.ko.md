@@ -291,7 +291,7 @@ mu와 런타임이 들어 있는 데스크톱 앱이에요. Node를 설치할 �
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="app-dark.png">
-    <img src="app-light.png" width="880" alt="작업 큐 프로젝트 relay에서 버그를 고친 뒤의 mu 데스크톱 앱. timeout이 1h30m인 작업이 한 시간 만에 종료된 것은 1분이 1,000 ms로 정의되어 있었기 때문이다. 판정기는 메시지를 여러 단계 작업으로 판정했고(input.preflight), 두 번의 테스트 실행을 통과시켰고(tool.approval), 턴이 끝났다고 판정했다(turn.continue). 오른쪽 판정 탭에는 판정마다 판정 지점과 걸린 시간(약 60~120 ms)이 나온다. 사이드바에는 세 프로젝트의 이전 대화가, 아래쪽 막대에는 판정기(TypeSafe를 거친 Jev), 판정 지점 40개 중 켜진 38개, 판정 5건, 사용 중인 컨텍스트가 나온다.">
+    <img src="app-light.png" width="880" alt="작업 큐 프로젝트 relay에서 버그를 고친 뒤의 mu 데스크톱 앱. timeout이 1h30m인 작업이 한 시간 만에 종료된 것은 1분이 1,000 ms로 정의되어 있었기 때문이다. 판정기는 메시지를 여러 단계 작업으로 판정했고(input.preflight), 두 번의 테스트 실행을 통과시켰고(tool.approval), 턴이 끝났다고 판정했다(turn.continue). 오른쪽 판정 탭에는 판정마다 판정 지점과 걸린 시간(약 250~420 ms)이 나온다. 사이드바에는 세 프로젝트의 이전 대화가, 입력창에는 권한 모드(판정 모드)와 모델(MiMo-V2.6-Pro, 사고 수준 높음)이, 아래쪽 막대에는 판정기(OpenCode Zen의 무료 Jev), 판정 지점 40개 중 켜진 34개, 판정 4건, 사용 중인 컨텍스트가 나온다.">
   </picture>
 </p>
 
