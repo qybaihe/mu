@@ -48,6 +48,7 @@ import { registerImport } from "./features/import.ts";
 import { type HarnessRoots, registerInherit } from "./features/inherit.ts";
 import { registerInjection } from "./features/injection.ts";
 import { registerInterjection } from "./features/interjection.ts";
+import { registerInterrupted } from "./features/interrupted.ts";
 import { registerJudgeItems } from "./features/judge-items.ts";
 import { registerLayaNotice } from "./features/laya.ts";
 import { registerLsp } from "./features/lsp.ts";
@@ -151,7 +152,8 @@ export type FeatureName =
 	| "packs"
 	| "googleLogin"
 	| "recovery"
-	| "recall";
+	| "recall"
+	| "interrupted";
 
 export function createKyrnJudgeExtension(options: KyrnJudgeExtensionOptions = {}): (pi: ExtensionAPI) => void {
 	return (pi) => registerKyrn(pi, options);
@@ -256,6 +258,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		// Before the watchdog, which cuts sooner when the run has a deadline.
 		["deadline", registerDeadline],
 		["watchdog", registerWatchdog],
+		// A reply the user stopped; the watchdog's and the correction's own cuts are left to them.
+		["interrupted", registerInterrupted],
 		// Before the goal and completion checks: errors an edit introduced are said before "verify your change" is.
 		["lsp", registerLsp],
 		["goal", registerGoal],
