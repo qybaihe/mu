@@ -90,6 +90,7 @@ const LOOKING: ReadonlySet<string> = new Set([
 	"find_skill",
 	"find_capability",
 	"locate",
+	"lsp",
 	"todo",
 	"web_search",
 	"web_fetch",

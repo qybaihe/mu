@@ -1,6 +1,5 @@
 import { readFileSync, statSync } from "node:fs";
-import { homedir } from "node:os";
-import { join, relative, resolve } from "node:path";
+import { join, relative } from "node:path";
 import {
 	type AgentEndEvent,
 	CONFIG_DIR_NAME,
@@ -17,6 +16,7 @@ import { LspManager } from "../../lsp/manager.ts";
 import { mergeServers, type ServerSpec } from "../../lsp/servers.ts";
 import { DiagnosticsTracker, type Tracked } from "../../lsp/tracker.ts";
 import { clip, failOpen, type KyrnRuntime, textOf } from "../runtime.ts";
+import { registerNavigation, toolPath } from "./lsp-navigation.ts";
 
 export const DIAGNOSTICS_MESSAGE = "kyrn.diagnostics";
 /** A project names its own servers here, next to pi's project settings. */
@@ -58,8 +58,9 @@ function weight(item: Tracked): number {
  * - whatever was decided, errors that are still there when the model stops are
  *   delivered once, so "done" is never said over a build this turn broke.
  *
- * Nothing is installed and nothing starts until a matching file is edited. With
- * no server on PATH the feature does nothing at all.
+ * Nothing is installed and nothing starts until a matching file is edited, or
+ * asked about with the `lsp` tool (`lsp-navigation.ts`, on the same servers).
+ * With no server on PATH the feature does nothing at all.
  */
 export function registerLsp(runtime: KyrnRuntime): void {
 	const options = runtime.options("lsp", {
@@ -79,6 +80,10 @@ export function registerLsp(runtime: KyrnRuntime): void {
 		maxServers: 4,
 		maxFileBytes: 2_000_000,
 		waitMs: 4000,
+		/** The `lsp` tool: definitions, references, implementations and hover, found in the capability catalog. */
+		navigation: true,
+		/** Places one `lsp` answer lists, at most. */
+		navigationResults: 30,
 	});
 	if (!options.enabled || (process.env.KYRN_SWARM_DEPTH && !options.subAgents)) return;
 	const { pi } = runtime;
@@ -196,6 +201,16 @@ export function registerLsp(runtime: KyrnRuntime): void {
 		toldAtTurnEnd = false;
 	};
 
+	if (options.navigation) {
+		registerNavigation(runtime, {
+			manager,
+			table: (ctx) => servers(ctx),
+			read,
+			maxResults: options.navigationResults,
+			maxFileBytes: options.maxFileBytes,
+		});
+	}
+
 	pi.on(
 		"session_start",
 		failOpen((_event, ctx) => {
@@ -232,11 +247,7 @@ export function registerLsp(runtime: KyrnRuntime): void {
 			if (!options.editTools.includes(event.toolName)) return undefined;
 			const raw = (event.input as { path?: unknown }).path;
 			if (typeof raw !== "string" || !raw.trim()) return undefined;
-			const named = raw.startsWith("@") ? raw.slice(1) : raw;
-			const file = resolve(
-				ctx.cwd,
-				named === "~" || named.startsWith("~/") ? join(homedir(), named.slice(1)) : named,
-			);
+			const file = toolPath(ctx.cwd, raw);
 			const { servers: specs, trusted } = servers(ctx);
 			const serving = manager.serving(file, specs, trusted);
 			if (serving.length === 0) return undefined;

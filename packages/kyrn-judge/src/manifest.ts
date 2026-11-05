@@ -1577,10 +1577,10 @@ const DESCRIBED: HarnessManifest = {
 		},
 		{
 			name: "lsp",
-			title: { zh: "语言服务器诊断", en: "Language server diagnostics" },
+			title: { zh: "语言服务器", en: "Language servers" },
 			summary: {
-				zh: "接本机已装的语言服务器（不代装），只留这次改动新引入的报错，由判定器决定何时告诉模型。",
-				en: "Uses language servers already installed on this machine (it installs none), keeps only diagnostics an edit newly introduced and lets the judge decide when to tell the model.",
+				zh: "接本机已装的语言服务器（不代装）：只留这次改动新引入的报错，由判定器决定何时告诉模型；另有用到时才打开的 lsp 工具，查定义、引用、实现和类型说明。",
+				en: "Uses language servers already installed on this machine (it installs none). It keeps only the diagnostics an edit newly introduced and lets the judge decide when to tell the model. Its lsp tool, opened when a task needs it, finds definitions, references and implementations and shows a symbol's type.",
 			},
 			defaultEnabled: true,
 			options: [
@@ -1678,6 +1678,24 @@ const DESCRIBED: HarnessManifest = {
 					max: 30000,
 					unit: ms,
 					label: { zh: "等判定最多多久", en: "Wait for the judge, at most" },
+				},
+				{
+					key: "navigation",
+					kind: "boolean",
+					default: true,
+					label: { zh: "lsp 导航工具", en: "The lsp navigation tool" },
+					help: {
+						zh: "查定义、引用、实现和类型说明，和诊断用同一批服务器进程。它在能力目录里，任务用到时才打开，平时不占工具表。",
+						en: "Definitions, references, implementations and types, from the same server processes as the diagnostics. It's in the capability catalog and opened when a task needs it, so it isn't in every request.",
+					},
+				},
+				{
+					key: "navigationResults",
+					kind: "number",
+					default: 30,
+					min: 1,
+					max: 200,
+					label: { zh: "导航一次最多列几处", en: "Places one navigation answer lists, at most" },
 				},
 			],
 		},

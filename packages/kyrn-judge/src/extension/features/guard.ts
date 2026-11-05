@@ -85,6 +85,7 @@ const LOCAL_TOOLS: ReadonlySet<string> = new Set([
 	"grep",
 	"find",
 	"ls",
+	"lsp",
 	"todo",
 	"remember",
 	"sg_rewrite",
