@@ -268,7 +268,7 @@ export function registerMcp(runtime: KyrnRuntime, roots: HarnessRoots | undefine
 				code: coded?.code ?? "start_failed",
 				...(coded?.params ? { params: coded.params } : {}),
 			});
-			throw new Error(reason);
+			throw codedError(reason, coded ?? { code: "start_failed" });
 		}
 	}
 

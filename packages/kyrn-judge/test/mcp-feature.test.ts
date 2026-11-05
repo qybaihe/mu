@@ -219,6 +219,7 @@ describe("MCP servers in the capability catalog", () => {
 		const results = toolResults(harness);
 		expect(results[0]).toContain("could not be started");
 		expect(results[0]).toContain("cannot open database");
+		expect(results[0]).toContain("Next: opening it again fails the same way until the cause above is fixed.");
 		// Still hidden, and still there to be found.
 		expect(results[1]).toContain("mcp:broken");
 		expect(kinds(events, "mcp.failed")).toEqual([
@@ -522,6 +523,7 @@ describe("servers a project defines", () => {
 		openDb(refused.harness);
 		await refused.harness.session.prompt("Query the database.");
 		expect(toolResults(refused.harness)[0]).toContain("you didn't allow");
+		expect(toolResults(refused.harness)[0]).toContain("Next: the user said no. Do not open it again");
 		expect(mcpTools(refused.harness)).toEqual([]);
 
 		// Print mode: no dialog can be shown, so the answer is no, with the way out spelled out. A print run leaves
@@ -535,6 +537,7 @@ describe("servers a project defines", () => {
 		openDb(headless.harness);
 		await headless.harness.session.prompt("Query the database.");
 		expect(toolResults(headless.harness)[0]).toContain("hasn't been approved");
+		expect(toolResults(headless.harness)[0]).toContain("Next: only the user can approve it");
 		expect(mcpTools(headless.harness)).toEqual([]);
 	});
 

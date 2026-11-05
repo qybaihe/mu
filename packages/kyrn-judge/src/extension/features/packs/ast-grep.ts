@@ -11,7 +11,7 @@ import {
 	runSg,
 	type SgQuery,
 } from "../../../packs/ast-grep.ts";
-import { installHint } from "../../../packs/exec.ts";
+import { missingProgram } from "../../../packs/exec.ts";
 import { type Pack, type PackShared, text } from "./pack.ts";
 
 /** Counting stops here: a pattern like `$A` matches every node of every file. */
@@ -33,7 +33,7 @@ export function astGrepPack(
 
 	const find = async (): Promise<AstGrepBinary> => {
 		binary ??= await findAstGrep(shared.run, { command: options.command || undefined, cwd: shared.cwd() });
-		if (!binary) throw new Error(installHint("ast-grep", shared.platform));
+		if (!binary) throw missingProgram("ast-grep", shared.platform);
 		return binary;
 	};
 

@@ -2,8 +2,9 @@ import { defineTool } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import type { Capability, CapabilityKind, OpenedBy } from "../../catalog/catalog.ts";
 import { capabilityDisclosure } from "../../decisions/capability-disclosure.ts";
-import { say } from "../../language.ts";
+import { codeOf, say } from "../../language.ts";
 import { CAPABILITIES_OPEN_ENV, inheritedNames } from "../../swarm/brief.ts";
+import { nextStep } from "../next-step.ts";
 import { failOpen, type KyrnRuntime, userWords } from "../runtime.ts";
 import { isUnattended } from "./unattended.ts";
 
@@ -276,8 +277,14 @@ export function registerCatalog(runtime: KyrnRuntime): void {
 					await open(params.open, "requested");
 				} catch (error) {
 					const reason = error instanceof Error ? error.message : String(error);
+					const coded = codeOf(error);
 					return {
-						content: [{ type: "text", text: `${known.title} could not be started: ${reason}` }],
+						content: [
+							{
+								type: "text",
+								text: `${known.title} could not be started: ${reason}\n${nextStep(coded?.code, coded?.params)}`,
+							},
+						],
 						details: { opened: undefined, matches: [] } satisfies FindDetails as FindDetails,
 					};
 				}

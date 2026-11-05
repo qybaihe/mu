@@ -299,6 +299,9 @@ describe("the write floor in a session", () => {
 			"the write sandbox is on but cannot start here (bwrap: setting up uid map: Permission denied)",
 		);
 		expect(background).toContain("the write sandbox is on but cannot start here");
+		for (const result of [bash, background]) {
+			expect(result).toContain("Next: every command will be refused the same way, so do not run it again.");
+		}
 	});
 
 	it.skipIf(process.platform !== "darwin" || !existsSync("/usr/bin/sandbox-exec"))(
