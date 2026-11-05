@@ -610,7 +610,8 @@
     "madeDefault": "新對話會預設使用這個模型。",
     "makeDefaultFailed": "無法儲存預設模型。",
     "showAllModels": "顯示全部模型（{{count}}）",
-    "showFewerModels": "收合"
+    "showFewerModels": "收合",
+    "chooseModels": "選擇顯示哪些模型…"
   },
   "agentTip": {
     "codes": {

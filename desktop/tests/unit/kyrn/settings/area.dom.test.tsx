@@ -20,6 +20,7 @@ import OptionField, { inSeconds } from '@/renderer/pages/settings/KyrnSettings/f
 import { filterModelOption } from '@/renderer/pages/settings/KyrnSettings/providers/modelOptions';
 import { MuSettingsProvider } from '@/renderer/pages/settings/KyrnSettings/useMuSettings';
 import { consumePendingDeepLink, offerAddProviderLink } from '@/renderer/hooks/system/useDeepLink';
+import { showAccountNext } from '@/renderer/hooks/agent/useChooseModels';
 import manifestJson from './manifest.fixture.json';
 import { withOwnPlaces } from './muState.fixture';
 
@@ -819,6 +820,20 @@ describe('providers and the default model', () => {
       )
     );
     expect(within(detail).getByTestId('mu-account-models-count')).toHaveTextContent('1 of 2');
+  });
+
+  it('opens on the account a model menu asked for, its models to check', async () => {
+    bridge.loginStatus.mockResolvedValue({
+      ok: true,
+      data: { signedIn: [{ provider: 'xai', models: [{ id: 'grok-5', name: 'Grok 5' }] }] },
+    });
+    showAccountNext('xai');
+    await open('providers');
+    expect(await screen.findByTestId('mu-account-models-xai')).toBeInTheDocument();
+    // Once: the page opened again starts where it always does, on the first endpoint.
+    cleanup();
+    await open('providers');
+    expect(await screen.findByTestId('mu-provider-editor')).toBeInTheDocument();
   });
 
   it('drops a signed-out account’s models from the pickers at once, and says where the default model went', async () => {

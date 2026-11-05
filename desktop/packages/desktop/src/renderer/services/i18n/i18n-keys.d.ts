@@ -1591,6 +1591,7 @@ export type I18nKey =
   | 'conversation.commandQueue.sendNow'
   | 'conversation.commandQueue.title'
   | 'conversation.commandQueue.tooManyFiles'
+  | 'conversation.composer.chooseModels'
   | 'conversation.composer.defaultTag'
   | 'conversation.composer.goalLine.end'
   | 'conversation.composer.goalLine.endLabel'

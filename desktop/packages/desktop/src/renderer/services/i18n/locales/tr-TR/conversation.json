@@ -612,7 +612,8 @@
     "madeDefault": "Yeni sohbetler bu modelle başlayacak.",
     "makeDefaultFailed": "Varsayılan model kaydedilemedi.",
     "showAllModels": "Tüm modelleri göster ({{count}})",
-    "showFewerModels": "Daha az model göster"
+    "showFewerModels": "Daha az model göster",
+    "chooseModels": "Gösterilecek modelleri seç…"
   },
   "agentTip": {
     "codes": {

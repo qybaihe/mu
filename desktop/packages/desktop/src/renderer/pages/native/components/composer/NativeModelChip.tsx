@@ -12,6 +12,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import RuntimeSelectorPill from '@/renderer/components/agent/RuntimeSelectorPill';
 import { composeRuntimeSelectorLabel } from '@/renderer/components/agent/runtimeSelectorOptions';
+import { useChooseModels } from '@/renderer/hooks/agent/useChooseModels';
 import { useModelNames } from '@/renderer/hooks/agent/useModelNames';
 import { useMuDefaultModel } from '@/renderer/hooks/agent/useMuDefaultModel';
 import { useProviderNames } from '@/renderer/hooks/agent/useProviderNames';
@@ -27,6 +28,7 @@ const NativeModelChip: React.FC<{
   busy: boolean;
 }> = ({ models, busy }) => {
   const { t } = useTranslation();
+  const chooseModels = useChooseModels();
   const names = useProviderNames();
   const modelNames = useModelNames();
   const muDefault = useMuDefaultModel();
@@ -103,6 +105,10 @@ const NativeModelChip: React.FC<{
         onPick: (value, picked) => {
           close();
           void pick(value, picked);
+        },
+        onChooseModels: () => {
+          close();
+          chooseModels(model);
         },
         defaultModel: muDefault.model,
         ...(model

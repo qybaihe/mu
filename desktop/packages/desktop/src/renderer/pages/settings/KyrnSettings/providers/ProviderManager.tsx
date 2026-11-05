@@ -19,6 +19,7 @@ import {
 } from '@/common/kyrn/models';
 import type { KyrnSettings } from '@/common/kyrn/types';
 import ProviderMark from '@renderer/components/brand/ProviderMark';
+import { takeAccountToShow } from '@/renderer/hooks/agent/useChooseModels';
 import { providerDisplayName } from '@/renderer/utils/model/providerName';
 import {
   consumePendingDeepLink,
@@ -78,6 +79,11 @@ export default function ProviderManager(props: ProviderManagerProps) {
   const { providers, foreign, commented, problem, defaults } = draft.settings.models;
   const readOnly = commented || Boolean(problem);
   const [selection, setSelection] = useState<Selection>();
+  // Opened from a model menu's "Choose which models appear": on the account of the model in use.
+  useEffect(() => {
+    const asked = takeAccountToShow();
+    if (asked && isSubscriptionProvider(asked)) setSelection({ kind: 'account', provider: asked });
+  }, []);
 
   const saved = new Map(base.models.providers.map((provider) => [provider.id, provider]));
   const own = new Set([...providers.map((provider) => provider.id), ...foreign.map((entry) => entry.id)]);

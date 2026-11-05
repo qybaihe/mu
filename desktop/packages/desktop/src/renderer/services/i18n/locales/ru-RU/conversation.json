@@ -624,7 +624,8 @@
     "madeDefault": "Новые беседы начнутся с этой модели.",
     "makeDefaultFailed": "Не удалось сохранить модель по умолчанию.",
     "showAllModels": "Показать все модели ({{count}})",
-    "showFewerModels": "Показать меньше моделей"
+    "showFewerModels": "Показать меньше моделей",
+    "chooseModels": "Выбрать, какие модели показывать…"
   },
   "agentTip": {
     "codes": {

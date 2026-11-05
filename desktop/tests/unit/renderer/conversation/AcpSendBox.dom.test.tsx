@@ -186,6 +186,8 @@ vi.mock('@/renderer/components/chat/SendBox', () => ({
 }));
 
 vi.mock('@/renderer/components/agent/AgentModeSelector', () => ({ default: () => null }));
+// The model menu's way to Settings needs the app's router, which these tests do not render.
+vi.mock('@/renderer/hooks/agent/useChooseModels', () => ({ useChooseModels: () => () => {} }));
 // The goal as the harness last reported it, set by each test.
 vi.mock('@/renderer/pages/conversation/platforms/acp/Composer/useConversationGoal', () => ({
   useConversationGoal: (_conversationId: string, enabled: boolean) => (enabled ? goalState.current : null),
