@@ -1,8 +1,7 @@
-import { mkdirSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { isTestLog, planTestLog, renderTestLog, type TestLogStrategy } from "../../admission/test-log.ts";
 import { type AdmissionOutcome, toolAdmission, toolAdmissionBatch } from "../../decisions/tool-admission.ts";
+import { archiveDir as archiveDirOf, sweepArchives, writeArchive } from "../archive.ts";
 import { clip, failOpen, type KyrnRuntime, textOf, within } from "../runtime.ts";
 
 /** What one batched request may carry in chunks: the judge takes 64 KiB, and the call and the questions need room too. */
@@ -138,7 +137,21 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 		agentEnv: true,
 	});
 	if (!options.enabled) return;
+	const archiveDir = archiveDirOf(runtime.sessionId);
 	const { pi } = runtime;
+
+	// Archives were never removed. Once per process, in the background: the session never waits for it.
+	let swept = false;
+	pi.on(
+		"session_start",
+		failOpen(() => {
+			if (swept) return undefined;
+			swept = true;
+			void sweepArchives(archiveDir).catch(() => {});
+			return undefined;
+		}),
+	);
+
 	// An explicit reporter flag still wins, so the agent can list every passing test when it needs them.
 	if (options.agentEnv) process.env.AI_AGENT ??= "1";
 
@@ -204,7 +217,6 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 				toolName,
 				typeof details?.command === "string" ? { command: details.command } : event.input,
 			);
-			const archiveDir = join(tmpdir(), `kyrn-${runtime.sessionId}`);
 			const archivePath = join(archiveDir, `${event.toolCallId.replace(/[^\w.-]/g, "_")}.txt`);
 
 			if (options.testLog !== "off" && isTestLog(call, text)) {
@@ -219,8 +231,7 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 				const rendered = renderTestLog(plan, archivePath);
 				if (!rendered.applied) return undefined;
 				// The markers count lines of this text, so this text is what gets archived, not pi's own full-output file.
-				mkdirSync(archiveDir, { recursive: true });
-				writeFileSync(archivePath, text);
+				writeArchive(archivePath, text);
 				runtime.savings.admissionOmittedChars += rendered.omittedChars;
 				return { content: [{ type: "text" as const, text: rendered.text }] };
 			}
@@ -243,8 +254,7 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 			const dropped = outcomes.map((outcome) => outcome.drop);
 			if (!dropped.some(Boolean)) return undefined;
 
-			mkdirSync(archiveDir, { recursive: true });
-			writeFileSync(archivePath, text);
+			writeArchive(archivePath, text);
 
 			const kept: string[] = [chunks[0]];
 			let omittedChars = 0;
