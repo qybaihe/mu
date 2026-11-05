@@ -15,6 +15,7 @@ import {
 	refusalNote,
 	refusedWrites,
 } from "../../confine/floor.ts";
+import { nextStep } from "../next-step.ts";
 import type { KyrnRuntime } from "../runtime.ts";
 
 /** What a bash call adds to ask out of the floor. */
@@ -133,7 +134,9 @@ export function registerConfine(runtime: KyrnRuntime, deps: ConfineDeps = {}): v
 			runtime.touch(ctx);
 			const state = await floor(ctx.cwd);
 			if (!state.ok)
-				throw new Error(`mu: the write sandbox is on but cannot start here (${state.reason}). Nothing ran.`);
+				throw new Error(
+					`mu: the write sandbox is on but cannot start here (${state.reason}). Nothing ran.\n${nextStep("sandbox_unavailable")}`,
+				);
 			const shell = readShellSettings(ctx.cwd, undefined, ctx.isProjectTrusted());
 			const { outside, reason: _reason, ...call } = params;
 			const out = outside === true && allowedOut.get(id) === call.command;

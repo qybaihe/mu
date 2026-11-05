@@ -1,8 +1,8 @@
 /**
  * A minimal Language Server Protocol client: one child process, JSON-RPC over
- * its stdio, and the documents the agent has edited.
+ * its stdio, and the documents the agent has edited or asked about.
  *
- * It exists to answer one question: what did this change introduce? So every
+ * It mostly exists to answer one question: what did this change introduce? So every
  * document keeps a `base` (its text and diagnostics before the agent's latest
  * edit) next to what the server says now, and `fresh()` is the difference.
  *
@@ -12,6 +12,10 @@
  *   server therefore still yields a baseline; nothing blocks while it warms up.
  * - Servers that publish give no "done" signal and publish in stages. A
  *   snapshot only counts once nothing more has arrived for `quietMs`.
+ *
+ * The agent's questions about the code (where is this defined, who uses it)
+ * go through `ask`, on documents opened the same way: a file opened for a
+ * question has its first diagnostics as its base, as one opened for an edit.
  */
 import { type ChildProcess, spawn } from "node:child_process";
 import { basename } from "node:path";
@@ -117,6 +121,8 @@ export class LspClient {
 	private readonly progress = new Set<string>();
 	private progressSeen = false;
 	private stderr = "";
+	/** What the server said it can do, in its answer to `initialize`. */
+	private capabilities: Readonly<Record<string, unknown>> = {};
 	private pull = false;
 	private wantsSave = false;
 	private saveWithText = false;
@@ -138,6 +144,33 @@ export class LspClient {
 
 	get usesPull(): boolean {
 		return this.pull;
+	}
+
+	/** The server reported work in progress (indexing, loading the project) that has not ended yet. */
+	get busy(): boolean {
+		return this.progress.size > 0;
+	}
+
+	/** Whether the server said it answers a request of this kind, by its capability name (`definitionProvider`). */
+	supports(capability: string): boolean {
+		const value = this.capabilities[capability];
+		return value !== undefined && value !== null && value !== false;
+	}
+
+	/** A request about the code (`textDocument/definition`), sent once the server runs. Rejects when it is not running. */
+	ask(method: string, params: unknown, timeoutMs?: number): Promise<unknown> {
+		if (this.state !== "running") return Promise.reject(new Error("the language server is not running"));
+		return this.request(method, params, timeoutMs);
+	}
+
+	/** The URI the server knows a file by. */
+	uriOf(path: string): string {
+		return pathToUri(path, this.options.uriStyle);
+	}
+
+	/** The file a URI the server sent names, or undefined when it names no file on this machine. */
+	pathOf(uri: string): string | undefined {
+		return uriToPath(uri, this.options.uriStyle);
 	}
 
 	/** Spawns the server and shakes hands. Resolves once it takes documents; rejects when it cannot be started. */
@@ -215,6 +248,10 @@ export class LspClient {
 							tagSupport: { valueSet: [1, 2] },
 						},
 						diagnostic: { dynamicRegistration: false, relatedDocumentSupport: true },
+						definition: { dynamicRegistration: false, linkSupport: true },
+						implementation: { dynamicRegistration: false, linkSupport: true },
+						references: { dynamicRegistration: false },
+						hover: { dynamicRegistration: false, contentFormat: ["markdown", "plaintext"] },
 					},
 					workspace: { workspaceFolders: true, configuration: true, diagnostics: { refreshSupport: true } },
 					window: { workDoneProgress: true },
@@ -224,6 +261,7 @@ export class LspClient {
 		);
 		const result = (await Promise.race([handshake, exited])) as { capabilities?: Record<string, unknown> } | null;
 		const capabilities = result?.capabilities ?? {};
+		this.capabilities = capabilities;
 		this.pull = capabilities.diagnosticProvider !== undefined && capabilities.diagnosticProvider !== null;
 		const sync = capabilities.textDocumentSync;
 		const save = typeof sync === "object" && sync !== null ? (sync as { save?: unknown }).save : undefined;

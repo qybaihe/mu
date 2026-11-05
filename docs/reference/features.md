@@ -252,7 +252,7 @@ On by default: yes. Decision points: `turn.drift`.
 
 ## lsp
 
-**Language server diagnostics.** Uses language servers already installed on this machine (it installs none), keeps only diagnostics an edit newly introduced and lets the judge decide when to tell the model.
+**Language servers.** Uses language servers already installed on this machine (it installs none). It keeps only the diagnostics an edit newly introduced and lets the judge decide when to tell the model. Its lsp tool, opened when a task needs it, finds definitions, references and implementations and shows a symbol's type.
 
 On by default: yes. Decision points: `diagnostics.delivery`.
 
@@ -268,6 +268,8 @@ On by default: yes. Decision points: `diagnostics.delivery`.
 | `maxItems` | `10` | Diagnostics reported at once, at most `10`. Range 1 to 100. |
 | `maxServers` | `4` | Servers running at once, at most `4`. Range 1 to 16. |
 | `waitMs` | `4000` ms | Wait for the judge, at most `4000` ms. Range 500 to 30000. |
+| `navigation` | `true` | The lsp navigation tool. Definitions, references, implementations and types, from the same server processes as the diagnostics. It's in the capability catalog and opened when a task needs it, so it isn't in every request. |
+| `navigationResults` | `30` | Places one navigation answer lists, at most `30`. Range 1 to 200. |
 
 ## ttsr
 

@@ -4,6 +4,8 @@
 //   kyrn/bin/kyrn-ledger              decisions from the 5 most recent mu sessions
 //   kyrn/bin/kyrn-ledger 20           ... from the 20 most recent
 //   kyrn/bin/kyrn-ledger --json       one JSON object per decision, for scripts
+//   kyrn/bin/kyrn-ledger --timeline   the most recent session, step by step: messages, model replies, tool calls,
+//                                     verdicts and mu's own messages in the order they happened
 //
 // Reads the `kyrn.decision` entries the kernel appends to pi session files and
 // pairs each with the user message it judged, with what the user answered when
@@ -23,12 +25,20 @@ if (args.includes("--help") || args.includes("-h")) {
 			"  mu ledger            verdicts from the 5 most recent sessions",
 			"  mu ledger <n>        from the n most recent",
 			"  mu ledger --json     one JSON object per verdict, for scripts",
+			"",
+			"  mu ledger --timeline [--session <file or id>]",
+			"      one session step by step: your messages, the model's replies (how long, how many tokens, which tools),",
+			"      each verdict where the judge gave it, each tool result (how long, whether it failed) and mu's own",
+			"      messages. Default: the most recent session. With --json, one JSON object per step.",
 		].join("\n"),
 	);
 	process.exit(0);
 }
 const asJson = args.includes("--json");
-const limit = Number(args.find((arg) => /^\d+$/.test(arg)) ?? 5);
+const asTimeline = args.includes("--timeline");
+const sessionAt = args.indexOf("--session");
+const sessionWanted = sessionAt >= 0 ? args[sessionAt + 1] : undefined;
+const limit = Number(args.find((arg, index) => /^\d+$/.test(arg) && index !== sessionAt + 1) ?? 5);
 /** `MU_<name>`, or the `KYRN_<name>` spelling from before the rename. */
 const env = (name) => process.env[`MU_${name}`] || process.env[`KYRN_${name}`];
 // Until ~/.kyrn is moved to ~/.mu by hand, the old home stays in use.
@@ -61,23 +71,19 @@ function textOf(content) {
 		.join("\n");
 }
 
-const files = sessionFiles(sessionsDir)
-	.sort((a, b) => b.mtime - a.mtime)
-	.slice(0, limit)
-	.reverse();
-
-let count = 0;
-for (const file of files) {
-	let lastUserMessage = "";
+function readEntries(path) {
 	const entries = [];
-	for (const line of readFileSync(file.path, "utf8").split("\n")) {
+	for (const line of readFileSync(path, "utf8").split("\n")) {
 		if (!line.trim()) continue;
 		try {
 			entries.push(JSON.parse(line));
 		} catch {}
 	}
-	// What the user answered about a call the judge sent to them, and the judgments they marked wrong (`/ledger
-	// wrong`), by the judge's record.
+	return entries;
+}
+
+/** What the user answered about each call the judge sent to them, and the judgments they marked wrong, by record id. */
+function userSaid(entries) {
 	const answers = new Map();
 	const marks = new Map();
 	for (const entry of entries) {
@@ -86,6 +92,140 @@ for (const file of files) {
 		if (outcome.kind === "mark" && outcome.mark === "wrong") marks.set(outcome.ledgerId, { mark: "wrong", ...(outcome.note ? { note: outcome.note } : {}) });
 		else if (outcome.kind !== "mark" && outcome.answer) answers.set(outcome.ledgerId, outcome.answer);
 	}
+	return { answers, marks };
+}
+
+const tilde = (path) => (path.startsWith(homedir()) ? `~${path.slice(homedir().length)}` : path);
+const oneLine = (text, max) => {
+	const flat = String(text ?? "").replace(/\s+/g, " ").trim();
+	return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;
+};
+const seconds = (ms) => (ms === undefined ? "" : ms < 1000 ? `${Math.round(ms)}ms` : `${(ms / 1000).toFixed(1)}s`);
+const timeOf = (entry) => {
+	const at = Date.parse(entry.data?.timestamp ?? entry.timestamp ?? "");
+	return Number.isFinite(at) ? at : undefined;
+};
+/** A tool call as a short line: its command, path or pattern when it has one. */
+function callLine(name, input) {
+	const value = input && typeof input === "object" ? (input.command ?? input.path ?? input.pattern ?? input.query ?? input.url) : undefined;
+	return value === undefined ? name : `${name} ${oneLine(value, 90)}`;
+}
+
+/**
+ * One session step by step, in the order its file holds them, which is the order they happened: a verdict on a call is
+ * written after the reply that made the call and before the call's result.
+ */
+function timeline(path) {
+	const entries = readEntries(path);
+	const { answers, marks } = userSaid(entries);
+	const calls = new Map();
+	const steps = [];
+	const start = entries.map(timeOf).find((at) => at !== undefined);
+	for (const entry of entries) {
+		const at = timeOf(entry);
+		const step = (lane, text, data) => steps.push({ at: at === undefined || start === undefined ? undefined : at - start, lane, text, ...data });
+		const message = entry.type === "message" ? entry.message : undefined;
+		if (message?.role === "user") step("you", `"${oneLine(textOf(message.content), 140)}"`, { message: textOf(message.content) });
+		else if (message?.role === "bashExecution") step("you", `!${oneLine(message.command, 120)}`, { command: message.command });
+		else if (message?.role === "assistant") {
+			const used = (Array.isArray(message.content) ? message.content : []).filter((block) => block?.type === "toolCall");
+			for (const call of used) calls.set(call.id, call);
+			const text = oneLine(textOf(message.content), 100);
+			const tokens = message.usage?.totalTokens;
+			const parts = [
+				message.model ?? "model",
+				seconds(message.durationMs),
+				tokens ? `${tokens} tokens` : "",
+				used.length > 0 ? `-> ${used.map((call) => call.name).join(", ")}` : text ? `"${text}"` : "",
+				message.stopReason && message.stopReason !== "toolUse" && message.stopReason !== "stop" ? `(${message.stopReason})` : "",
+			];
+			step("model", parts.filter(Boolean).join("  "), {
+				model: message.model,
+				durationMs: message.durationMs,
+				tokens,
+				stopReason: message.stopReason,
+				tools: used.map((call) => call.name),
+			});
+		} else if (message?.role === "toolResult") {
+			const call = calls.get(message.toolCallId);
+			const failed = message.isError === true;
+			step("tool", [callLine(message.toolName, call?.arguments), seconds(message.durationMs), failed ? "FAILED" : ""].filter(Boolean).join("  "), {
+				tool: message.toolName,
+				toolCallId: message.toolCallId,
+				durationMs: message.durationMs,
+				isError: failed,
+			});
+		} else if (entry.type === "custom" && entry.customType === "kyrn.decision") {
+			const record = entry.data ?? {};
+			const verdict = record.judged === undefined ? `no verdict (${record.reason ?? record.source ?? "unknown"})` : oneLine(JSON.stringify(record.judged), 90);
+			const answer = answers.get(record.id);
+			const mark = marks.get(record.id);
+			const said = [answer, mark && `marked wrong${mark.note ? ` (${oneLine(mark.note, 60)})` : ""}`].filter(Boolean).join(", ");
+			step("judge", [`${record.specId} ${verdict}`, seconds(record.latencyMs), record.mode !== "active" ? `[${record.mode}]` : "", said ? `-> you: ${said}` : ""].filter(Boolean).join("  "), {
+				id: record.id,
+				specId: record.specId,
+				mode: record.mode,
+				judged: record.judged,
+				source: record.source,
+				latencyMs: record.latencyMs,
+				...(answer ? { userAnswer: answer } : {}),
+				...(mark ? { userMark: mark } : {}),
+			});
+		} else if (entry.type === "custom_message") {
+			const shown = entry.display === true ? "" : "  (to the model only)";
+			step("mu", `${entry.customType} "${oneLine(textOf(entry.content), 110)}"${shown}`, { customType: entry.customType, display: entry.display === true });
+		} else if (entry.type === "compaction") {
+			step("mu", `compacted the conversation${entry.tokensBefore ? ` (${entry.tokensBefore} tokens before)` : ""}`, { compaction: true });
+		}
+	}
+	return steps;
+}
+
+const clock = (ms) => {
+	if (ms === undefined) return "     ";
+	const total = Math.max(0, Math.round(ms / 1000));
+	const pad = (value) => String(value).padStart(2, "0");
+	const hours = Math.floor(total / 3600);
+	return hours > 0 ? `${hours}:${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}` : `${pad(Math.floor(total / 60))}:${pad(total % 60)}`;
+};
+
+if (asTimeline) {
+	const all = sessionFiles(sessionsDir).sort((a, b) => b.mtime - a.mtime);
+	const chosen = sessionWanted
+		? existsSync(sessionWanted)
+			? { path: sessionWanted }
+			: all.find((file) => file.path.includes(sessionWanted))
+		: all[0];
+	if (!chosen) {
+		console.log(sessionWanted ? `No session matches ${sessionWanted} under ${tilde(sessionsDir)}` : `No sessions under ${tilde(sessionsDir)}`);
+		process.exit(sessionWanted ? 1 : 0);
+	}
+	const steps = timeline(chosen.path);
+	if (asJson) {
+		for (const step of steps) console.log(JSON.stringify({ session: chosen.path, ...step }));
+	} else {
+		console.log(tilde(chosen.path));
+		for (const step of steps) console.log(`${clock(step.at)}  ${step.lane.padEnd(5)}  ${step.text}`);
+		const count = (lane, one, many) => {
+			const n = steps.filter((step) => step.lane === lane).length;
+			return `${n} ${n === 1 ? one : many}`;
+		};
+		console.log(`\n${count("model", "model reply", "model replies")}, ${count("tool", "tool result", "tool results")}, ${count("judge", "verdict", "verdicts")}`);
+	}
+	process.exit(0);
+}
+
+const files = sessionFiles(sessionsDir)
+	.sort((a, b) => b.mtime - a.mtime)
+	.slice(0, limit)
+	.reverse();
+
+let count = 0;
+for (const file of files) {
+	let lastUserMessage = "";
+	const entries = readEntries(file.path);
+	// What the user answered about a call the judge sent to them, and the judgments they marked wrong (`/ledger wrong`).
+	const { answers, marks } = userSaid(entries);
 	for (const entry of entries) {
 		if (entry.type === "message" && entry.message?.role === "user") lastUserMessage = textOf(entry.message.content);
 		if (entry.type !== "custom" || entry.customType !== "kyrn.decision") continue;
@@ -123,5 +263,4 @@ for (const file of files) {
 	}
 }
 
-const tilde = (path) => (path.startsWith(homedir()) ? `~${path.slice(homedir().length)}` : path);
 if (!asJson) console.log(count === 0 ? `No verdicts found under ${tilde(sessionsDir)}` : `\n${count} ${count === 1 ? "verdict" : "verdicts"} from ${files.length} ${files.length === 1 ? "session" : "sessions"}`);

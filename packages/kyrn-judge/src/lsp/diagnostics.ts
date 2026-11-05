@@ -187,6 +187,12 @@ export interface Report {
 
 const MESSAGE_LENGTH = 300;
 
+/** A file as the model is shown it: relative to the session's folder when it is inside it, otherwise absolute. */
+export function shownPath(path: string, cwd: string): string {
+	const local = relative(cwd, path);
+	return local && !local.startsWith("..") ? local : path;
+}
+
 function count(total: number, word: string): string {
 	return `${total} ${word}${total === 1 ? "" : "s"}`;
 }
@@ -207,8 +213,7 @@ export function formatReport(items: readonly ReportItem[], options: { cwd: strin
 	const warnings = sorted.length - errors;
 	const shown = sorted.slice(0, Math.max(1, options.max));
 	const lines = shown.map(({ path, diagnostic, elsewhere, unchecked }) => {
-		const local = relative(options.cwd, path);
-		const name = local && !local.startsWith("..") ? local : path;
+		const name = shownPath(path, options.cwd);
 		const message = diagnostic.message.replace(/\s+/g, " ").trim().slice(0, MESSAGE_LENGTH);
 		const notes = [elsewhere ? "in a file you did not edit" : "", unchecked ? "not re-checked" : ""].filter(Boolean);
 		return `${name}:${diagnostic.line + 1}:${diagnostic.character + 1} ${diagnostic.severity === 1 ? "error" : "warning"} ${

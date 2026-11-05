@@ -19,6 +19,7 @@ const READ_ONLY_TOOLS: ReadonlySet<string> = new Set([
 	"find_skill",
 	"find_capability",
 	"locate",
+	"lsp",
 	"todo",
 	"browse",
 	"web_fetch",

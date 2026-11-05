@@ -75,4 +75,95 @@ describe("mu ledger", () => {
 			["d3", "once", { mark: "wrong", note: "publishing is the task" }],
 		]);
 	});
+
+	it("shows one session step by step with --timeline: messages, replies, verdicts, tool results, mu's messages", () => {
+		const sessions = mkdtempSync(join(tmpdir(), "mu-ledger-"));
+		dirs.push(sessions);
+		mkdirSync(join(sessions, "project"));
+		const at = (second: number) => new Date(Date.UTC(2026, 10, 4, 10, 0, second)).toISOString();
+		const line = (value: Record<string, unknown>) => JSON.stringify(value);
+		const message = (second: number, body: Record<string, unknown>) =>
+			line({ type: "message", timestamp: at(second), message: body });
+		writeFileSync(
+			join(sessions, "project", "2026-11-04T10-00-00_one.jsonl"),
+			[
+				line({ type: "session", timestamp: at(0) }),
+				message(0, { role: "user", content: "Run the tests and fix what fails." }),
+				message(3, {
+					role: "assistant",
+					model: "big-model",
+					durationMs: 2400,
+					usage: { totalTokens: 1250 },
+					stopReason: "toolUse",
+					content: [{ type: "toolCall", id: "c1", name: "bash", arguments: { command: "npm test" } }],
+				}),
+				line({
+					type: "custom",
+					customType: "kyrn.decision",
+					timestamp: at(3),
+					data: {
+						id: "d1",
+						timestamp: at(3),
+						specId: "tool.approval",
+						mode: "active",
+						judged: "approve",
+						source: "judge",
+						latencyMs: 310,
+					},
+				}),
+				line({
+					type: "custom",
+					customType: "kyrn.outcome",
+					data: { kind: "mark", ledgerId: "d1", mark: "wrong", note: "it ran the slow suite" },
+				}),
+				message(75, { role: "toolResult", toolCallId: "c1", toolName: "bash", durationMs: 71_500, isError: true }),
+				line({
+					type: "custom_message",
+					customType: "kyrn.nudge",
+					timestamp: at(76),
+					content: "You edited a file and nothing has run since.",
+					display: false,
+				}),
+				message(80, {
+					role: "assistant",
+					model: "big-model",
+					durationMs: 900,
+					stopReason: "stop",
+					content: [{ type: "text", text: "Two tests fail." }],
+				}),
+			].join("\n"),
+		);
+		writeFileSync(
+			join(sessions, "project", "2026-11-03T09-00-00_older.jsonl"),
+			message(0, { role: "user", content: "older" }),
+		);
+
+		const lines = run(sessions, "--timeline", "--session", "_one").split("\n");
+		expect(lines.slice(1, 8)).toEqual([
+			'00:00  you    "Run the tests and fix what fails."',
+			"00:03  model  big-model  2.4s  1250 tokens  -> bash",
+			'00:03  judge  tool.approval "approve"  310ms  -> you: marked wrong (it ran the slow suite)',
+			"01:15  tool   bash npm test  71.5s  FAILED",
+			'01:16  mu     kyrn.nudge "You edited a file and nothing has run since."  (to the model only)',
+			'01:20  model  big-model  900ms  "Two tests fail."',
+			"",
+		]);
+		expect(lines.at(-2)).toBe("2 model replies, 1 tool result, 1 verdict");
+		const steps = run(sessions, "--timeline", "--json", "--session", "_one")
+			.trim()
+			.split("\n")
+			.map((text) => JSON.parse(text) as { at: number; lane: string; durationMs?: number; userMark?: unknown });
+		expect(steps.map((step) => [step.at, step.lane])).toEqual([
+			[0, "you"],
+			[3000, "model"],
+			[3000, "judge"],
+			[75_000, "tool"],
+			[76_000, "mu"],
+			[80_000, "model"],
+		]);
+		expect(steps[2].userMark).toEqual({ mark: "wrong", note: "it ran the slow suite" });
+		expect(run(sessions, "--timeline", "--session", "nothing-like-it")).toContain(
+			"No session matches nothing-like-it",
+		);
+	});
 });
