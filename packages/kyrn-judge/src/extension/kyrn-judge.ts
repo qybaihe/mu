@@ -17,7 +17,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { type ExtensionAPI, getAgentDir } from "@earendil-works/pi-coding-agent";
 import type { Capability } from "../catalog/catalog.ts";
-import { DEFAULT_CONFIG, type KyrnConfig, loadConfig } from "../config.ts";
+import { DEFAULT_CONFIG, featureConfigProblems, type KyrnConfig, loadConfig } from "../config.ts";
 import type { DecisionMode } from "../decision.ts";
 import { Judge } from "../judge.ts";
 import { mudeReady } from "../laya-migration.ts";
@@ -77,7 +77,7 @@ import { registerWelcome } from "./features/welcome.ts";
 import type { PresentationListener } from "./presentation.ts";
 import { registerLockSafeQuit } from "./quit.ts";
 import { registerRejectionLog } from "./rejections.ts";
-import { KyrnRuntime, recentTurnDigests } from "./runtime.ts";
+import { failOpen, KyrnRuntime, recentTurnDigests } from "./runtime.ts";
 
 export { recentTurnDigests };
 
@@ -290,6 +290,25 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 	];
 	for (const [name, register] of features) {
 		if (!options.only || options.only.includes(name)) register(runtime);
+	}
+	// Every feature has read its options by now. What mu.json sets that no feature takes is said, not ignored: in
+	// /doctor and /status, and once when the session starts.
+	if (!options.only) {
+		const wrong = featureConfigProblems(config.features, runtime.optionDefaults);
+		runtime.problems.push(...wrong);
+		if (wrong.length > 0) {
+			pi.on(
+				"session_start",
+				failOpen((_event, ctx) => {
+					if (ctx.hasUI)
+						ctx.ui.notify(
+							`mu.json: ${wrong.length === 1 ? "a setting under features does" : `${wrong.length} settings under features do`} nothing as written. ${wrong[0]}${wrong.length > 1 ? " /doctor lists the rest." : ""}`,
+							"warning",
+						);
+					return undefined;
+				}),
+			);
+		}
 	}
 	registerFreeJevNotice(runtime, roots);
 	registerOpenAIKeyNotice(runtime);

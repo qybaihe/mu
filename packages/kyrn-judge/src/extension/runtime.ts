@@ -468,7 +468,11 @@ export class KyrnRuntime {
 		return this.engine.getMode(specId);
 	}
 
+	/** The options each feature read, with their defaults: what `features.<name>` in mu.json is checked against. */
+	readonly optionDefaults = new Map<string, Record<string, unknown>>();
+
 	options<T extends { enabled: boolean }>(feature: string, defaults: T): T {
+		this.optionDefaults.set(feature, { ...defaults, ...this.optionDefaults.get(feature) });
 		return featureOptions(this.config, feature, defaults);
 	}
 
