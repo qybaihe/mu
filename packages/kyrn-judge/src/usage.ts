@@ -4,8 +4,9 @@
  *
  * - `watchdog-cut`: a reply the watchdog cut. The request is aborted and the provider reports no usage for it, so its
  *   reasoning tokens (often 20,000 or more) appear nowhere. Estimated from the reasoning text that had streamed.
- * - `subagent`: a `delegate` or `hive` sub-agent, verifiers included. Children run with `--no-session`, so their
- *   usage is only in the events they stream to the parent.
+ * - `subagent`: a `delegate` or `hive` sub-agent, verifiers included. Its usage arrives in the events it streams to
+ *   the parent. A child keeps a session file of its own only when its parent does, out of the sessions folder
+ *   (`src/swarm/sessions.ts`); this entry, not that file, is where its spend is counted.
  *
  * A custom entry (`pi.appendEntry`) is kept in the session file and never sent to the model.
  */

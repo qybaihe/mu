@@ -241,13 +241,15 @@ A `// mu:` comment next to a change in code says the same thing in place.
 ### M19 MCP on pi's built-in client, with what mu's server catalog needs
 
 - **Files**
+  - `packages/coding-agent/docs/mcp.md`
   - `packages/coding-agent/src/core/mcp-servers.ts`
   - `packages/coding-agent/src/extensions/mcp/index.ts`
   - `packages/coding-agent/src/extensions/mcp/runtime.ts`
   - `packages/coding-agent/src/index.ts`
-- **Why**: mu runs MCP on pi's client and adds a catalog of servers it takes over from other tools' configuration, connected when a task needs one. It needs `inheritEnv: false` on stdio servers, which start with their own `env` only so model keys never reach them; an `mcp:connection` event (`MCP_CONNECTION_EVENT`) on `pi.events` when a server's connection changes, with its tool names; and the `loadMcpConfig` export, to read which servers `mcp.json` defines.
-- **In a merge**: Keep `inheritEnv` in `McpStdioServerConfig` and `validateMcpServerConfig()`, its pass-through in `createDefaultTransport()`, the `pi.events.emit(MCP_CONNECTION_EVENT, …)` after `emitChange()` in the connection-state handler, and the exports in `index.ts`.
+- **Why**: mu runs MCP on pi's client and adds a catalog of servers it takes over from other tools' configuration, connected when a task needs one. It needs `inheritEnv` on stdio servers: unset, a server starts with pi's environment minus its credentials (`withoutCredentials`, as for the agent's commands), so model keys never reach it; `false`, with its own `env` only, which mu uses for the servers it takes over; `true`, with all of it, as upstream does by default; an `mcp:connection` event (`MCP_CONNECTION_EVENT`) on `pi.events` when a server's connection changes, with its tool names; and the `loadMcpConfig` export, to read which servers `mcp.json` defines.
+- **In a merge**: Keep `inheritEnv` in `McpStdioServerConfig` and `validateMcpServerConfig()`, the environment `createDefaultTransport()` builds from it, the paragraph on it in `docs/mcp.md`, the `pi.events.emit(MCP_CONNECTION_EVENT, …)` after `emitChange()` in the connection-state handler, and the exports in `index.ts`.
 - **Tests**
+  - `packages/coding-agent/test/mcp-extension.test.ts`
   - `packages/kyrn-judge/test/mcp-feature.test.ts`
 
 ### M20 Resource walks enter each symlinked folder once
@@ -528,5 +530,16 @@ A `// mu:` comment next to a change in code says the same thing in place.
   - `packages/coding-agent/test/enabled-models.test.ts`
   - `packages/coding-agent/test/suite/provider-models-selector.test.ts`
   - `packages/coding-agent/test/suite/rpc-models-signed-out-elsewhere.test.ts`
+
+### M49 Skills for working on mu's own code
+
+- **Files**
+  - `.pi/skills/agent-experience.md`
+  - `.pi/skills/ci-test-reliability.md`
+  - `.pi/skills/error-handling.md`
+  - `.pi/skills/performance.md`
+  - `.pi/skills/trim-reasoning-leakage.md`
+- **Why**: pi loads `.pi/skills/` as the project's skills when an agent works in this repository, beside pi's own `interactive-testing.md`, `release.md` and the rest. These five are about mu's code: what a tool costs in `model-surface.md`, tests that hold on mu's CI (Windows and the desktop end-to-end runs included), which way a judge, gate or sandbox failure goes, measuring the judge's latency per turn, and comments that cite plans outside the repo. They are not shipped: no package's `files` includes `.pi/`.
+- **In a merge**: New files that upstream does not have. If upstream adds a skill with the same name, keep both under different names.
 
 ## Retired

@@ -30,6 +30,7 @@ import {
 	McpServerLog,
 } from "../src/extensions/mcp/runtime.ts";
 import { convertMcpResult, createMcpResultSchema, createMcpToolName } from "../src/extensions/mcp/tools.ts";
+import { ENV_PASS_ENV } from "../src/utils/shell.ts";
 
 // Config values are resolved at connect time, so the literal reference must survive loading.
 // biome-ignore lint/suspicious/noTemplateCurlyInString: literal config value reference
@@ -580,6 +581,90 @@ for await (const line of createInterface({ input: process.stdin })) {
 				await connection.close();
 				process.env.HOME = previousHome;
 				rmSync(home, { recursive: true, force: true });
+			}
+		},
+	);
+
+	// mu: a stdio server gets pi's environment without its credentials unless the entry says otherwise.
+	it.skipIf(process.platform === "win32")(
+		"starts stdio servers without pi's credentials unless inheritEnv is set",
+		async () => {
+			const dir = mkdtempSync(join(tmpdir(), "pi-mcp-env-"));
+			// Answers every tool call with the variables it was asked about that it can see.
+			writeFileSync(
+				join(dir, "server.mjs"),
+				`import { createInterface } from "node:readline";
+const names = ["MCP_TEST_API_KEY", "MCP_TEST_PASSED_TOKEN", "MCP_TEST_SETTING", "DECLARED"];
+for await (const line of createInterface({ input: process.stdin })) {
+	const message = JSON.parse(line);
+	if (!("id" in message)) continue;
+	const result = message.method === "initialize"
+		? { protocolVersion: "2025-06-18", capabilities: { tools: {} }, serverInfo: { name: "env", version: "1" } }
+		: message.method === "tools/list"
+			? { tools: [{ name: "env", inputSchema: { type: "object" } }] }
+			: { content: [{ type: "text", text: JSON.stringify(Object.fromEntries(names.map((n) => [n, process.env[n] ?? null]))) }] };
+	process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id: message.id, result }) + "\\n");
+}`,
+			);
+			const saved = { ...process.env };
+			process.env.MCP_TEST_API_KEY = "sk-test-0123456789abcdef";
+			process.env.MCP_TEST_PASSED_TOKEN = "ghp_0123456789abcdef";
+			process.env.MCP_TEST_SETTING = "on";
+			// MU_PASS_ENV in mu.
+			process.env[ENV_PASS_ENV] = "MCP_TEST_PASSED_TOKEN";
+			const seen = async (inheritEnv: boolean | undefined): Promise<Record<string, string | null>> => {
+				const connection = new McpServerConnection({
+					entry: {
+						name: "env",
+						config: {
+							command: process.execPath,
+							args: [join(dir, "server.mjs")],
+							// biome-ignore lint/suspicious/noTemplateCurlyInString: literal config value reference
+							env: { DECLARED: "${MCP_TEST_API_KEY}" },
+							...(inheritEnv === undefined ? {} : { inheritEnv }),
+						},
+						source: "test",
+					},
+					cwd: dir,
+					createTransport: createDefaultTransport,
+					credentials: new McpOAuthCredentialStore(new InMemoryAuthStorageBackend()),
+					onTools: () => {},
+				});
+				try {
+					const result = await connection.callTool("env", {}, {});
+					return JSON.parse((result.content[0] as { text: string }).text);
+				} finally {
+					await connection.close();
+				}
+			};
+			try {
+				const key = "sk-test-0123456789abcdef";
+				const token = "ghp_0123456789abcdef";
+				// A credential the entry names in env, or the pass list names, still reaches the server.
+				expect(await seen(undefined)).toEqual({
+					MCP_TEST_API_KEY: null,
+					MCP_TEST_PASSED_TOKEN: token,
+					MCP_TEST_SETTING: "on",
+					DECLARED: key,
+				});
+				expect(await seen(true)).toEqual({
+					MCP_TEST_API_KEY: key,
+					MCP_TEST_PASSED_TOKEN: token,
+					MCP_TEST_SETTING: "on",
+					DECLARED: key,
+				});
+				expect(await seen(false)).toEqual({
+					MCP_TEST_API_KEY: null,
+					MCP_TEST_PASSED_TOKEN: null,
+					MCP_TEST_SETTING: null,
+					DECLARED: key,
+				});
+			} finally {
+				for (const name of ["MCP_TEST_API_KEY", "MCP_TEST_PASSED_TOKEN", "MCP_TEST_SETTING", ENV_PASS_ENV]) {
+					if (saved[name] === undefined) delete process.env[name];
+					else process.env[name] = saved[name];
+				}
+				rmSync(dir, { recursive: true, force: true });
 			}
 		},
 	);
