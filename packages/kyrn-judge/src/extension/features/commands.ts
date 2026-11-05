@@ -353,6 +353,12 @@ export function registerCommands(runtime: KyrnRuntime, roots?: HarnessRoots): vo
 		];
 		if (stats.lastError) lines.push(`last error: ${stats.lastError.kind} - ${stats.lastError.message}`);
 		for (const problem of runtime.problems) lines.push(`problem: ${problem}`);
+		const held = runtime.toolMasks.held();
+		if (held.length > 0) {
+			lines.push(`tools kept off the model's list: ${held.length}`);
+			for (const { tool, by } of held)
+				lines.push(`  ${tool}: ${by.map(({ owner, why }) => `${owner} (${why})`).join("; ")}`);
+		}
 		for (const record of runtime.memory.records.slice(-6)) lines.push(...describeRecord(record));
 		return lines.join("\n");
 	};
