@@ -8,6 +8,7 @@ What changed in each release of mu: the desktop app and the `mu` command line to
 
 - **Judged rewind speaks up a little sooner.** When the agent goes in circles, mu proposes going back to the turn's checkpoint if the judge is sure the approach is a dead end and reads progress as less likely than not; before, it also had to be sure there was no progress. It still only proposes: nothing goes back without you.
 - **A subagent's patch review names more unrelated files.** With `swarm.patch` turned on (it is off by default), a file the judge leans against is named as unrelated from p 0.3 down, not only from 0.2.
+- **Subagents think hard less often.** When the judge picks a subagent's thinking level, "high" now starts a little higher on its reasoning scale, so routine multi-step tasks get medium thinking and finish sooner and cheaper. Tasks the judge rates as deep reasoning still get high.
 
 ## [0.3.7] - 2026-11-03
 

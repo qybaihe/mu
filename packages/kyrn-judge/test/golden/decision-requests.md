@@ -974,7 +974,7 @@ changes needs a new `version` in its decision; then run the test with `-u`.
 }
 ```
 
-## swarm.routing v3
+## swarm.routing v4
 
 ```json
 {

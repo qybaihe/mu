@@ -586,6 +586,12 @@ On by default: yes.
 
 On by default: yes.
 
+## interrupted
+
+**Replies you stop.** When you stop a reply while it's being written, pi leaves the whole reply out of what the model is sent next, so after "stop, and expand your second point" the model has no second point. mu gives the model back the text you saw, in a message only the model reads, without the reasoning or tool calls. Replies mu cuts itself (thinking too long, breaking a rule) are left out: those say what they cut.
+
+On by default: yes.
+
 ## prefix
 
 **Prompt cache watch.** Each request to the model is compared with the one before it. When it no longer starts with what was sent before, the provider can't reuse its prompt cache for the rest, so the session records what changed (the model, the system prompt and tools, or the first message that differs) and which of mu's decisions acted in between, each with what it declares it does to the cache. Only hashes, positions and roles are kept, and nothing is sent anywhere.

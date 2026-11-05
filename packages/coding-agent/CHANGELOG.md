@@ -21,6 +21,7 @@
 - `/model` and `/scoped-models` now show a model's name next to its ID when the name adds words the ID lacks, such as a renamed `models.json` override ([#5916](https://github.com/earendil-works/pi/issues/5916), [#11347](https://github.com/earendil-works/pi/pull/11347))
 - MCP OAuth sign-in now uses pi's Client ID Metadata Document by default when the authorization server supports it for public clients, and registers a client dynamically otherwise, like Codex, Claude Code, and opencode. Clients registered before stay in use while their redirect URI matches. The new default `oauth.clientRegistration: "auto"` registers when `clientName` or a non-default `callbackUrl` is set; `"dcr"` always registers. `pi mcp add --oauth-client-registration` sets the mode ([#11426](https://github.com/earendil-works/pi/issues/11426))
 - Changed the default `retry.maxRetries` from 3 to 8: with the 60-second cap per wait, about four minutes of backoff before a failed request ends the run.
+- `edit` and `write` run in order within their batch of tool calls: a call after one in the same assistant message starts once the file is written, so `[write run.sh, bash ./run.sh]` no longer runs the script before it exists. A tool with `executionMode: "sequential"` is a barrier in its batch instead of making the whole batch sequential, so the calls around it still run in parallel.
 
 ### Fixed
 
