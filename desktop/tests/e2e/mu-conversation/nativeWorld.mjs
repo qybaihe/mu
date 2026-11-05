@@ -17,6 +17,7 @@ import {
   problems,
   processTree,
   quitApp,
+  startedSince,
   warmUpProcessLook,
 } from './app.mjs';
 import { FAKE_API_KEY, FAKE_MODEL_ID, startFakeModel } from './fakeModel.mjs';
@@ -50,9 +51,10 @@ export function createNativeWorld({ desktopRoot, prepare }) {
    *   conversationUrl: string,
    *   untouched: Array<{ path: string, before: string }>,
    *   passed: boolean,
+   *   beganAt: number,
    * }}
    */
-  const run = { starts: 0, seen: new Map(), conversationUrl: '', untouched: [], passed: false };
+  const run = { starts: 0, seen: new Map(), conversationUrl: '', untouched: [], passed: false, beganAt: Date.now() };
 
   const page = () => {
     if (!run.state) throw new Error('the app is not running');
@@ -290,15 +292,26 @@ export function createNativeWorld({ desktopRoot, prepare }) {
 
   test.afterAll(async () => {
     await stop().catch(() => {});
-    endProcessLook();
     await run.fake?.close();
     const root = run.profile?.paths.root;
-    if (!root) return;
-    if (run.passed && process.env.MU_E2E_KEEP !== '1' && !process.env.MU_E2E_ROOT) {
-      // On Windows a folder can stay locked for a moment after the app quits (EBUSY), so rmSync tries again.
-      rmSync(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
-    } else {
-      console.log(`[mu e2e] kept for a look: ${root} (logs in ${join(root, 'logs')})`);
+    try {
+      if (!root) return;
+      if (run.passed && process.env.MU_E2E_KEEP !== '1' && !process.env.MU_E2E_ROOT) {
+        // On Windows a folder can stay locked for a moment after the app quits (EBUSY), so rmSync tries again.
+        try {
+          rmSync(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+        } catch (error) {
+          // What holds it, if a process does: one in the folder, maybe left by a job whose shell has ended.
+          const running = await startedSince(run.beganAt).catch((look) => [`(no look: ${look.message})`]);
+          console.log(`[mu e2e] ${root} cannot be removed (${error.code}). Started during the run and still running:`);
+          console.log(running.join('\n') || '(none)');
+          throw error;
+        }
+      } else {
+        console.log(`[mu e2e] kept for a look: ${root} (logs in ${join(root, 'logs')})`);
+      }
+    } finally {
+      endProcessLook();
     }
   });
 
