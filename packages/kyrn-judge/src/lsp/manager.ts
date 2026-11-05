@@ -1,7 +1,7 @@
 /**
  * The language servers of one session. Nothing runs until the agent edits a
- * file that an installed server handles; then one process per (server,
- * workspace root) is started in the background and kept for the session.
+ * file that an installed server handles, or asks about one (`lsp`); then one
+ * process per (server, workspace root) is started and kept for the session.
  *
  * A server that dies is started once more, on its next use. After a second
  * death it stays down for the session: a crashing server must not turn every
@@ -60,6 +60,18 @@ export interface ServerStatus {
 		readonly starts: number;
 		readonly lastError: string | undefined;
 	}[];
+}
+
+/** A server that runs and has the file the agent asked about. */
+export interface ReadyServer {
+	readonly id: string;
+	readonly client: LspClient;
+}
+
+/** A server that should have answered and cannot: not started, or stopped for the session. */
+export interface FailedServer {
+	readonly id: string;
+	readonly reason: string;
 }
 
 export function isExecutableFile(path: string, platform: string = process.platform): boolean {
@@ -129,6 +141,39 @@ export class LspManager {
 			instance.client.setText(file, text, true);
 		}
 		return fresh;
+	}
+
+	/**
+	 * The agent asks about `file`, whose text is `text`: opens it on each of the servers given, starting them if
+	 * needed, and waits until each one runs or has failed. Unlike an edit, a question cannot be answered before then.
+	 */
+	async prepare(
+		file: string,
+		text: string,
+		servers: readonly DetectedServer[],
+		cwd: string,
+	): Promise<{ running: ReadyServer[]; failed: FailedServer[] }> {
+		const outcomes = await Promise.all(
+			servers.map(async (server): Promise<ReadyServer | FailedServer> => {
+				const id = server.spec.id;
+				const instance = this.instanceFor(server, file, cwd);
+				if (!instance) {
+					const known = [...this.instances.values()].find((each) => each.spec.id === id);
+					return { id, reason: known?.lastError ?? "it stopped twice in this session" };
+				}
+				instance.client.setText(file, text, true);
+				try {
+					await instance.client.start();
+					return { id, client: instance.client };
+				} catch {
+					return { id, reason: instance.client.lastError ?? "it could not be started" };
+				}
+			}),
+		);
+		return {
+			running: outcomes.filter((outcome): outcome is ReadyServer => "client" in outcome),
+			failed: outcomes.filter((outcome): outcome is FailedServer => "reason" in outcome),
+		};
 	}
 
 	/** The edit is done (or failed): this is the file now. */

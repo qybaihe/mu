@@ -90,6 +90,7 @@ const ROUTINE_TOOLS = new Set([
 	"find",
 	"ls",
 	"locate",
+	"lsp",
 	"find_skill",
 	"find_capability",
 	"bg_output",

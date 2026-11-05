@@ -273,6 +273,62 @@ Read back an earlier tool result in full where mu left part of it out; mu's note
 }
 ```
 
+## Tool: lsp
+
+```text
+Ask a language server about a symbol: where it is defined (definition), every place that uses it, the declaration included (references), what implements an interface or abstract method (implementation), or its type and documentation (hover). Lines and columns count from 1. Find and read code with grep and read as usual; use this when the text alone is ambiguous: a name defined in several places, an interface's implementations, a definition in another file or package.
+```
+
+```json
+{
+	"type": "object",
+	"required": [
+		"op",
+		"path",
+		"line"
+	],
+	"properties": {
+		"op": {
+			"anyOf": [
+				{
+					"type": "string",
+					"const": "definition"
+				},
+				{
+					"type": "string",
+					"const": "references"
+				},
+				{
+					"type": "string",
+					"const": "implementation"
+				},
+				{
+					"type": "string",
+					"const": "hover"
+				}
+			],
+			"description": "What to ask"
+		},
+		"path": {
+			"type": "string",
+			"description": "File the symbol is in"
+		},
+		"line": {
+			"type": "number",
+			"description": "Line it is on, from 1"
+		},
+		"symbol": {
+			"type": "string",
+			"description": "Its name as written on that line"
+		},
+		"column": {
+			"type": "number",
+			"description": "Its column, from 1, when the name is on the line more than once"
+		}
+	}
+}
+```
+
 ## Tool: apply_patch_from
 
 ```text
