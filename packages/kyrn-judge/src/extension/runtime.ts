@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
 import type { ClassifierQuestion, JsonObject } from "@earendil-works/pi-ai";
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { AgentEndEvent, ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { isTrusted } from "../cascade.ts";
 import { CapabilityCatalog } from "../catalog/catalog.ts";
 import { DEFAULT_CONFIG, featureOptions, type JudgeConfig, type KyrnConfig } from "../config.ts";
 import type { FloorReady } from "../confine/floor.ts";
-import { DecisionEngine, type DecisionMode } from "../decision.ts";
+import { type Decision, DecisionEngine, type DecisionMode } from "../decision.ts";
 import type { PreflightOutcome, TaskFrame } from "../decisions/input-preflight.ts";
 import type { NotifyFn } from "../decisions/notify-routing.ts";
 import { JudgeError } from "../errors.ts";
@@ -17,7 +17,7 @@ import type { FreeJevOutcome } from "../providers/free-jev.ts";
 import type { LlmCompletion } from "../providers/llm.ts";
 import { isOpenAIAddress, type OpenAIKeyProblem } from "../providers/openai-decisions.ts";
 import { buildJudge, resolveJudgeConfig } from "../registry.ts";
-import type { Capability } from "../types.ts";
+import type { Capability, JsonValue } from "../types.ts";
 import { createJudgeFetch, type JudgeFetch } from "./judge-fetch.ts";
 import {
 	type KyrnPresentationEvent,
@@ -209,6 +209,11 @@ export class KyrnRuntime {
 	 * the agent back to work, so a later check says nothing more about the same end. One voice is enough.
 	 */
 	readonly nudgedEnds = new WeakSet<object>();
+	/**
+	 * Set before the features register: a feature that sent the agent back to work on a judge's verdict tells it here,
+	 * and what the agent did next is recorded (`nudge-outcome.ts`).
+	 */
+	nudges?: { sent: (decision: Decision<JsonValue>, nudged: AgentEndEvent) => void };
 	/**
 	 * Whoever keeps the task frame sets this. It hears of a message the moment its turn is counted,
 	 * so the frame's judge runs alongside preflight's instead of after its wait.

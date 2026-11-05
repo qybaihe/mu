@@ -9,8 +9,9 @@
 //
 // Reads the `kyrn.decision` entries the kernel appends to pi session files and
 // pairs each with the user message it judged, with what the user answered when
-// the judge's verdict sent a call to them, and with their mark when they said the
-// judge got it wrong (`kyrn.outcome`). Nothing is sent anywhere.
+// the judge's verdict sent a call to them, with their mark when they said the
+// judge got it wrong, and with what the agent did when a verdict sent it back to
+// work (`kyrn.outcome`). Nothing is sent anywhere.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -20,7 +21,8 @@ if (args.includes("--help") || args.includes("-h")) {
 	console.log(
 		[
 			"mu ledger: the judge's verdicts from your recent sessions, each with the message it judged, your answer",
-			"when a verdict sent a call to you, and your mark when you said the judge got it wrong (/ledger wrong).",
+			"when a verdict sent a call to you, your mark when you said the judge got it wrong (/ledger wrong), and",
+			"what the agent did when a verdict sent it back to work: called tools, or ended again without one.",
 			"",
 			"  mu ledger            verdicts from the 5 most recent sessions",
 			"  mu ledger <n>        from the n most recent",
@@ -82,18 +84,27 @@ function readEntries(path) {
 	return entries;
 }
 
-/** What the user answered about each call the judge sent to them, and the judgments they marked wrong, by record id. */
+/**
+ * What the user answered about each call the judge sent to them, the judgments they marked wrong, and what the agent
+ * did with each nudge a verdict sent it (`turn.continue`, `turn.completion`), by record id.
+ */
 function userSaid(entries) {
 	const answers = new Map();
 	const marks = new Map();
+	const followed = new Map();
 	for (const entry of entries) {
 		const outcome = entry.type === "custom" && entry.customType === "kyrn.outcome" ? entry.data : undefined;
 		if (!outcome?.ledgerId) continue;
 		if (outcome.kind === "mark" && outcome.mark === "wrong") marks.set(outcome.ledgerId, { mark: "wrong", ...(outcome.note ? { note: outcome.note } : {}) });
+		else if (outcome.kind === "followed") followed.set(outcome.ledgerId, { outcome: outcome.followed, calls: outcome.calls ?? 0 });
 		else if (outcome.kind !== "mark" && outcome.answer) answers.set(outcome.ledgerId, outcome.answer);
 	}
-	return { answers, marks };
+	return { answers, marks, followed };
 }
+
+/** What the agent did with a nudge: a run that called tools, or one that ended again without a call. */
+const thenLine = (then) =>
+	then.outcome === "acted" ? `-> then: acted (${then.calls} tool ${then.calls === 1 ? "call" : "calls"})` : "-> then: ended without a tool call";
 
 const tilde = (path) => (path.startsWith(homedir()) ? `~${path.slice(homedir().length)}` : path);
 const oneLine = (text, max) => {
@@ -117,7 +128,7 @@ function callLine(name, input) {
  */
 function timeline(path) {
 	const entries = readEntries(path);
-	const { answers, marks } = userSaid(entries);
+	const { answers, marks, followed } = userSaid(entries);
 	const calls = new Map();
 	const steps = [];
 	const start = entries.map(timeOf).find((at) => at !== undefined);
@@ -161,7 +172,8 @@ function timeline(path) {
 			const answer = answers.get(record.id);
 			const mark = marks.get(record.id);
 			const said = [answer, mark && `marked wrong${mark.note ? ` (${oneLine(mark.note, 60)})` : ""}`].filter(Boolean).join(", ");
-			step("judge", [`${record.specId} ${verdict}`, seconds(record.latencyMs), record.mode !== "active" ? `[${record.mode}]` : "", said ? `-> you: ${said}` : ""].filter(Boolean).join("  "), {
+			const then = followed.get(record.id);
+			step("judge", [`${record.specId} ${verdict}`, seconds(record.latencyMs), record.mode !== "active" ? `[${record.mode}]` : "", said ? `-> you: ${said}` : "", then ? thenLine(then) : ""].filter(Boolean).join("  "), {
 				id: record.id,
 				specId: record.specId,
 				mode: record.mode,
@@ -170,6 +182,7 @@ function timeline(path) {
 				latencyMs: record.latencyMs,
 				...(answer ? { userAnswer: answer } : {}),
 				...(mark ? { userMark: mark } : {}),
+				...(then ? { followed: then } : {}),
 			});
 		} else if (entry.type === "custom_message") {
 			const shown = entry.display === true ? "" : "  (to the model only)";
@@ -225,7 +238,7 @@ for (const file of files) {
 	let lastUserMessage = "";
 	const entries = readEntries(file.path);
 	// What the user answered about a call the judge sent to them, and the judgments they marked wrong (`/ledger wrong`).
-	const { answers, marks } = userSaid(entries);
+	const { answers, marks, followed } = userSaid(entries);
 	for (const entry of entries) {
 		if (entry.type === "message" && entry.message?.role === "user") lastUserMessage = textOf(entry.message.content);
 		if (entry.type !== "custom" || entry.customType !== "kyrn.decision") continue;
@@ -233,6 +246,7 @@ for (const file of files) {
 		const record = entry.data ?? {};
 		const userAnswer = answers.get(record.id);
 		const userMark = marks.get(record.id);
+		const then = followed.get(record.id);
 		count++;
 		if (asJson) {
 			console.log(
@@ -242,6 +256,7 @@ for (const file of files) {
 					...record,
 					...(userAnswer ? { userAnswer } : {}),
 					...(userMark ? { userMark } : {}),
+					...(then ? { followed: then } : {}),
 				}),
 			);
 			continue;
@@ -257,7 +272,7 @@ for (const file of files) {
 					? `no verdict (${record.reason ?? "unknown"})`
 					: JSON.stringify(judged);
 		const said = [userAnswer, userMark && `marked wrong${userMark.note ? ` (${userMark.note.slice(0, 80)})` : ""}`].filter(Boolean).join(", ");
-		console.log(`${head}  ${record.specId}: ${verdict}${said ? `  -> you: ${said}` : ""}`);
+		console.log(`${head}  ${record.specId}: ${verdict}${said ? `  -> you: ${said}` : ""}${then ? `  ${thenLine(then)}` : ""}`);
 		console.log(`    "${lastUserMessage.replace(/\s+/g, " ").slice(0, 160)}"`);
 		for (const warning of record.warnings ?? []) console.log(`    ! ${warning.type} ${warning.questionId ?? ""}`);
 	}
