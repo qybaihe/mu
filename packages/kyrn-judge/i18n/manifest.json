@@ -5670,6 +5670,34 @@
 			"tr-TR": "Kapalıyken yalnızca mu.json içinde mcp.servers altındaki sunucular kullanılır.",
 			"fa-IR": "وقتی خاموش باشد، فقط سرورهای mcp.servers در mu.json به کار می‌روند."
 		},
+		"features[name=inherit].options[key=folders].label": {
+			"en": "AGENTS.md and CLAUDE.md in subfolders",
+			"zh-TW": "子資料夾裡的 AGENTS.md 和 CLAUDE.md",
+			"ja-JP": "サブフォルダーの AGENTS.md と CLAUDE.md",
+			"ko-KR": "하위 폴더의 AGENTS.md와 CLAUDE.md",
+			"de-DE": "AGENTS.md und CLAUDE.md in Unterordnern",
+			"fr-FR": "AGENTS.md et CLAUDE.md des sous-dossiers",
+			"es-ES": "AGENTS.md y CLAUDE.md en subcarpetas",
+			"pt-BR": "AGENTS.md e CLAUDE.md em subpastas",
+			"ru-RU": "AGENTS.md и CLAUDE.md во вложенных папках",
+			"uk-UA": "AGENTS.md і CLAUDE.md у вкладених папках",
+			"tr-TR": "Alt klasörlerdeki AGENTS.md ve CLAUDE.md",
+			"fa-IR": "AGENTS.md و CLAUDE.md در زیرپوشه‌ها"
+		},
+		"features[name=inherit].options[key=folders].help": {
+			"en": "A folder's own instructions below the project folder, such as one package's AGENTS.md in a monorepo, are passed to the model once, with the result of the first tool that reads or changes a file there, as Claude Code and Codex do. The project folder's own are loaded by pi at the start. Those inside node_modules are left out.",
+			"zh-TW": "專案資料夾下某個資料夾自己的說明（例如 monorepo 裡某個套件的 AGENTS.md），會在工具第一次讀寫那裡的檔案時隨結果交給模型一次，和 Claude Code、Codex 一樣。專案資料夾本身的由 pi 在啟動時載入。node_modules 裡的不算。",
+			"ja-JP": "プロジェクトフォルダーの下にあるフォルダー独自の指示（monorepo の 1 パッケージの AGENTS.md など）を、そこにあるファイルをツールが初めて読み書きしたときに、その結果と一緒に 1 回だけモデルに渡します。Claude Code や Codex と同じです。プロジェクトフォルダー自体のものは pi が起動時に読み込みます。node_modules 内のものは対象外です。",
+			"ko-KR": "프로젝트 폴더 아래 폴더의 자체 지침(예: 모노레포에서 한 패키지의 AGENTS.md)을, 도구가 그 폴더의 파일을 처음 읽거나 바꿀 때 결과와 함께 모델에 한 번 전달합니다. Claude Code, Codex와 같습니다. 프로젝트 폴더 자체의 지침은 pi가 시작할 때 불러옵니다. node_modules 안의 것은 제외됩니다.",
+			"de-DE": "Eigene Anweisungen eines Ordners unterhalb des Projektordners, etwa die AGENTS.md eines Pakets in einem Monorepo, gehen einmal an das Modell, mit dem Ergebnis des ersten Werkzeugs, das dort eine Datei liest oder ändert, wie bei Claude Code und Codex. Die des Projektordners selbst lädt pi beim Start. Solche in node_modules bleiben außen vor.",
+			"fr-FR": "Les instructions propres à un dossier sous le dossier du projet, comme l’AGENTS.md d’un paquet dans un monorepo, sont transmises une fois au modèle, avec le résultat du premier outil qui lit ou modifie un fichier de ce dossier, comme le font Claude Code et Codex. Celles du dossier du projet lui-même sont chargées par pi au démarrage. Celles de node_modules sont ignorées.",
+			"es-ES": "Las instrucciones propias de una carpeta bajo la carpeta del proyecto, como el AGENTS.md de un paquete en un monorepo, se pasan una vez al modelo, con el resultado de la primera herramienta que lee o cambia un archivo de esa carpeta, como hacen Claude Code y Codex. Las de la carpeta del proyecto las carga pi al empezar. Las de node_modules no se tienen en cuenta.",
+			"pt-BR": "As instruções próprias de uma pasta abaixo da pasta do projeto, como o AGENTS.md de um pacote num monorepo, são passadas uma vez ao modelo, com o resultado da primeira ferramenta que lê ou altera um arquivo dessa pasta, como fazem o Claude Code e o Codex. As da própria pasta do projeto o pi carrega ao iniciar. As de node_modules ficam de fora.",
+			"ru-RU": "Собственные инструкции папки внутри папки проекта, например AGENTS.md одного пакета в монорепозитории, передаются модели один раз вместе с результатом первого инструмента, который читает или меняет файл в этой папке, как в Claude Code и Codex. Инструкции самой папки проекта pi загружает при запуске. Файлы из node_modules не учитываются.",
+			"uk-UA": "Власні інструкції папки всередині папки проєкту, наприклад AGENTS.md одного пакета в монорепозиторії, передаються моделі один раз разом із результатом першого інструмента, який читає або змінює файл у цій папці, як у Claude Code і Codex. Інструкції самої папки проєкту pi завантажує під час запуску. Файли з node_modules не враховуються.",
+			"tr-TR": "Proje klasörünün altındaki bir klasörün kendi talimatları (ör. bir monorepo'daki bir paketin AGENTS.md dosyası), oradaki bir dosyayı ilk okuyan veya değiştiren aracın sonucuyla birlikte modele bir kez iletilir; Claude Code ve Codex de böyle yapar. Proje klasörünün kendi talimatlarını pi başlangıçta yükler. node_modules içindekiler dikkate alınmaz.",
+			"fa-IR": "دستورالعمل‌های خودِ یک پوشه در زیر پوشهٔ پروژه، مثل AGENTS.md یک بسته در یک مونوریپو، یک بار همراه با نتیجهٔ نخستین ابزاری که فایلی را در آن پوشه می‌خواند یا تغییر می‌دهد به مدل داده می‌شود، همان‌طور که Claude Code و Codex انجام می‌دهند. دستورالعمل‌های خودِ پوشهٔ پروژه را pi هنگام شروع بارگذاری می‌کند. موارد داخل node_modules کنار گذاشته می‌شوند."
+		},
 		"features[name=inherit].options[key=maxRuleChars].unit": {
 			"en": "chars",
 			"zh-TW": "字元",
