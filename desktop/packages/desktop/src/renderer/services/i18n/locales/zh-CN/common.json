@@ -293,6 +293,17 @@
       "batchFailures": "未得到回答、已回退到默认策略：{{count}} 个。",
       "changedThinking": "思考强度：{{from}} → {{to}}",
       "sentHints": "发给主模型的提示",
+      "userAnswer": {
+        "once": "你选了「允许这一次」。",
+        "session": "你选了「这次对话都允许」。",
+        "deny": "你选了「不允许」。",
+        "dismissed": "你关掉了提问，没有作答。",
+        "none": "当时没人可问，这一步被拒绝了。"
+      },
+      "markedWrong": "你把这次判定标记为有误。",
+      "markedWrongWhy": "你把这次判定标记为有误：{{note}}",
+      "markWrong": "判错了",
+      "markWrongHint": "告诉 mu 这次判定判错了。这个标记和判定一起记在这次对话的 ledger 里。",
       "unlinked": "独立记录",
       "unlinkedHint": "这条记录没有轮次关联信息，因此单独显示，不会与时间相近的记录合并。",
       "state": {

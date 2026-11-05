@@ -4,6 +4,7 @@ import { decodeBody, type FetchLimits, fetchBody, type ReadPage, readUrl } from 
 import { resolveSource, type SearchSource, SOURCES, searchWeb } from "../../web/search.ts";
 import { checkUrl, FetchRefusal, isLoopbackUrl } from "../../web/ssrf.ts";
 import { type Extracted, tavilyExtract, tavilySource } from "../../web/tavily.ts";
+import { canRecall, keepPage, recallCall } from "../full-output.ts";
 import type { KyrnRuntime } from "../runtime.ts";
 import { UNTRUSTED } from "./browser.ts";
 
@@ -126,13 +127,16 @@ export function registerWeb(runtime: KyrnRuntime): void {
 			url: Type.String({ description: "http(s) URL" }),
 			max_length: Type.Optional(Type.Number({ description: "Most characters to return" })),
 		}),
-		execute: async (_toolCallId, params, signal, _onUpdate, ctx) => {
+		execute: async (toolCallId, params, signal, _onUpdate, ctx) => {
 			runtime.touch(ctx);
 			const maxChars = Math.max(500, Math.min(params.max_length ?? options.maxChars, 200_000));
-			const clip = (text: string): string =>
-				text.length > maxChars
-					? `${text.slice(0, maxChars)}\n\n[cut at ${maxChars} of ${text.length} characters; ask for more with max_length]`
-					: text || "(the page has no text)";
+			/** A cut page is kept whole for recall, which reads the rest without fetching it again. */
+			const clip = (text: string): string => {
+				if (text.length <= maxChars) return text || "(the page has no text)";
+				const kept = canRecall(runtime) && keepPage(runtime, toolCallId, text) !== undefined;
+				const more = kept ? `${recallCall(toolCallId, maxChars)} reads the rest` : "ask for more with max_length";
+				return `${text.slice(0, maxChars)}\n\n[cut at ${maxChars} of ${text.length} characters; ${more}]`;
+			};
 			const throughTavily = (extracted: Extracted, why: string, status?: number) => {
 				const details: FetchDetails = {
 					url: extracted.url,

@@ -862,6 +862,34 @@ describe('beside a native conversation', () => {
     expect(screen.queryAllByTestId('mu-lesson')).toHaveLength(0);
   });
 
+  it('sends the conversation’s mu the command its judge tab asks for: a verdict marked wrong', async () => {
+    const command = vi.fn(async (_text: string) => true);
+    const verdict: Activity = {
+      id: 'judgment:rec-1',
+      at: 1_000,
+      kind: 'decision',
+      payload: { id: 'rec-1', specId: 'tool.approval', mode: 'active', source: 'judge', outcome: 'unsure' },
+    };
+    act(() => {
+      publishNativeActivity({
+        conversationId: 'conv-1',
+        activity: { events: [verdict], loading: false, settled: true },
+        cwd: '/work/app',
+        command,
+      });
+    });
+    show();
+    await settle();
+    openPanel();
+    fireEvent.click(tab('Judge'));
+    fireEvent.click(within(screen.getAllByTestId('judge-line')[0]).getAllByRole('button')[0]);
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('judge-mark-wrong'));
+    });
+    expect(command).toHaveBeenCalledWith('/ledger wrong rec-1');
+    expect(command).toHaveBeenCalledTimes(1);
+  });
+
   it('says its lessons show once the conversation has opened, while its folder is not known', async () => {
     native([], null);
     show();

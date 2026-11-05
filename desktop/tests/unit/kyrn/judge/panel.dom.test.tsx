@@ -269,6 +269,57 @@ describe('a judgment, opened', () => {
     expect(screen.queryByText(copy.questions.other)).not.toBeInTheDocument();
   });
 
+  it('says what the person answered to the question a judgment sent them to, and that they marked it wrong', () => {
+    view([
+      event(
+        'decision',
+        ledger({ id: 'ask-1', specId: 'tool.approval', outcome: 'unsure', userAnswer: 'session' }),
+        turn('r', 4, 2)
+      ),
+      event(
+        'decision',
+        ledger({
+          id: 'ask-2',
+          specId: 'tool.approval',
+          outcome: 'beyond',
+          userAnswer: 'deny',
+          markedWrong: { note: 'it was the test I asked for' },
+        }),
+        turn('r', 4, 3)
+      ),
+      event('decision', ledger({ id: 'ask-3', specId: 'tool.approval', outcome: 'approve' }), turn('r', 4, 4)),
+    ]);
+
+    const [approved, denied, answered] = cards().map((card) => within(card));
+    expect(answered.getByTestId('judge-user-answer')).toHaveTextContent(copy.userAnswer.session);
+    expect(answered.queryByTestId('judge-marked-wrong')).not.toBeInTheDocument();
+    expect(denied.getByTestId('judge-user-answer')).toHaveTextContent(copy.userAnswer.deny);
+    expect(denied.getByTestId('judge-marked-wrong')).toHaveTextContent(
+      'You marked this verdict as wrong: it was the test I asked for'
+    );
+    // A verdict that let the step run sent nobody a question.
+    expect(approved.queryByTestId('judge-user-answer')).not.toBeInTheDocument();
+  });
+
+  it('says the person’s answer in Chinese with mu’s own words for it', async () => {
+    const zh = createInstance();
+    await zh.init({
+      lng: 'zh-CN',
+      resources: { 'zh-CN': { translation: { common: zhCommon, mu: zhMu } } },
+      interpolation: { escapeValue: false },
+    });
+    render(
+      <I18nextProvider i18n={zh}>
+        <Judge
+          events={[
+            event('decision', ledger({ id: 'ask-1', specId: 'tool.approval', userAnswer: 'once' }), turn('r', 5, 2)),
+          ]}
+        />
+      </I18nextProvider>
+    );
+    expect(screen.getByTestId('judge-user-answer')).toHaveTextContent('你选了「允许这一次」。');
+  });
+
   it('asks the experience library’s questions and says which lessons were followed', () => {
     view([
       event(
@@ -727,6 +778,81 @@ describe('the judge log', () => {
     );
     await act(async () => undefined);
     expect(lessons).not.toHaveBeenCalled();
+  });
+
+  it('offers to tell mu a verdict was wrong, where it can send mu a command, and sends exactly /ledger wrong <id>', async () => {
+    const record = 'c0ffee00-1d2e-4f00-9a00-000000000001';
+    const judged = [
+      // A verdict with no ledger record of its own: nothing to name.
+      event('preflight.verdict', verdict(), turn('r', 1, 2)),
+      event('decision', ledger({ id: record, specId: 'tool.approval', outcome: 'unsure' }), turn('r', 1, 3)),
+      event(
+        'decision',
+        ledger({ id: 'already', specId: 'tool.risk', outcome: 'confirm', markedWrong: {} }),
+        turn('r', 1, 4)
+      ),
+    ];
+    let answer: ((taken: boolean) => void) | undefined;
+    const command = vi.fn((_text: string) => new Promise<boolean>((resolve) => (answer = resolve)));
+    const shown = (events: Activity[], send?: typeof command) => (
+      <I18nextProvider i18n={i18n}>
+        <MemoryRouter>
+          <JudgeLog events={events} command={send} />
+        </MemoryRouter>
+      </I18nextProvider>
+    );
+    const result = render(shown(judged, command));
+    const open = () => lines().forEach((line) => fireEvent.click(within(line).getAllByRole('button')[0]));
+    open();
+    const buttons = () => screen.queryAllByTestId('judge-mark-wrong');
+    // Only the verdict with a record that is not marked yet.
+    expect(buttons()).toHaveLength(1);
+    expect(within(lines()[1]).getByTestId('judge-mark-wrong')).toHaveTextContent(copy.markWrong);
+
+    fireEvent.click(buttons()[0]);
+    expect(command).toHaveBeenCalledTimes(1);
+    expect(command).toHaveBeenCalledWith(`/ledger wrong ${record}`);
+    // It waits while mu takes it, and after: the mark comes back as an entry.
+    expect(buttons()[0]).toBeDisabled();
+    await act(async () => answer?.(true));
+    expect(buttons()[0]).toBeDisabled();
+    fireEvent.click(buttons()[0]);
+    expect(command).toHaveBeenCalledTimes(1);
+
+    // The mark arrived: the card says so, and offers nothing more.
+    result.rerender(
+      shown(
+        judged.map((each) =>
+          each.payload.id === record ? { ...each, payload: { ...each.payload, markedWrong: {} } } : each
+        ),
+        command
+      )
+    );
+    expect(buttons()).toHaveLength(0);
+    expect(within(lines()[1]).getByTestId('judge-marked-wrong')).toHaveTextContent(copy.markedWrong);
+
+    // Where the app has no line to the conversation's mu, there is no button at all.
+    result.rerender(shown(judged));
+    expect(buttons()).toHaveLength(0);
+  });
+
+  it('lets a mark mu did not take be sent again', async () => {
+    const command = vi.fn(async (_text: string) => false);
+    render(
+      <I18nextProvider i18n={i18n}>
+        <MemoryRouter>
+          <JudgeLog
+            events={[event('decision', ledger({ id: 'r1', specId: 'tool.risk', outcome: 'confirm' }), turn('r', 2, 2))]}
+            command={command}
+          />
+        </MemoryRouter>
+      </I18nextProvider>
+    );
+    fireEvent.click(within(lines()[0]).getAllByRole('button')[0]);
+    const button = screen.getByTestId('judge-mark-wrong');
+    await act(async () => fireEvent.click(button));
+    expect(command).toHaveBeenCalledWith('/ledger wrong r1');
+    expect(button).not.toBeDisabled();
   });
 
   it('opens a line to the whole record: a judgment as its card, an event as its words and raw payload', () => {

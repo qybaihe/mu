@@ -63,3 +63,7 @@ The browser is a TypeScript port of [browser-use/jev-ultrafast](https://github.c
 cd packages/kyrn-judge && npx vitest --run    # browser tests start a headless Chrome and skip themselves without one
 npm run check                                 # from the repository root
 ```
+
+`test/golden/decision-requests.md` holds what every decision asks the judge, `test/golden/decision-policies.md` what it does with the answers (the outcome as each answer moves across its range), and `test/golden/model-surface.md` what the main model is given: the system prompt and every tool. A change to any of them shows up as a diff. A decision whose request or policy changed needs a new `version`; the test fails until it has one, even with `-u`. Then `npx vitest --run test/golden -u` writes the files.
+
+A recorded run's judge can be replayed: `ReplayJudgeProvider` (`src/providers/replay.ts`) answers each request with the answers the ledger recorded for the same state, found by its digest and its questions, never by order. A request nothing was recorded for is a miss (`misses`): what a decision builds for the judge changed, or the run went another way. `test/replay.test.ts` records every decision of `decision-inputs.ts` and a Judge-mode conversation, then replays them.

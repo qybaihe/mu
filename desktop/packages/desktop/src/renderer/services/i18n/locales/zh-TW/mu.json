@@ -353,7 +353,8 @@
       "unrelated": "判定器認為這一步和目前的任務無關。",
       "protected": "這會動到 mu 自己的設定，只能由你決定。",
       "nojudge": "還沒有可用的判定器，所以每一步都先問你。",
-      "judgedown": "判定器這次沒有回答，所以先問你。"
+      "judgedown": "判定器這次沒有回答，所以先問你。",
+      "long": "這一步太長，判定器讀不完，所以先問你。"
     },
     "flagged": "危險操作：{{flag}}。",
     "flag": {
@@ -365,7 +366,8 @@
       "opens_permissions_recursively": "遞迴開放權限",
       "runs_downloaded_script": "執行下載來的指令碼",
       "runs_as_administrator": "以系統管理員身分執行",
-      "runs_as_root": "以 root 身分執行"
+      "runs_as_root": "以 root 身分執行",
+      "sends_credential": "把憑證送出去"
     },
     "answer": {
       "once": "允許這一次",
@@ -450,6 +452,17 @@
     "legacy": {
       "openai-codex": "這是經由 Codex CLI 的舊登入方式。請登出，再用 ChatGPT 登入。",
       "anthropic": "Anthropic 不允許其他應用程式用 Claude 訂閱登入，所以 mu 不再提供。請登出，改為新增 Anthropic API 金鑰。"
+    },
+    "enable": {
+      "title": "在模型選擇裡顯示",
+      "count": "{{count}}/{{total}}",
+      "hint": "對話裡選模型時只顯示勾選的模型。預設全部顯示，此時帳號之後新增的模型也會出現。",
+      "all": "全選",
+      "none": "全不選",
+      "reset": "恢復預設",
+      "fresh": "已登入 {{name}}，共有 {{count}} 個模型。取消勾選不想在模型選擇裡看到的。",
+      "lastModel": "至少要保留一個啟用的模型。",
+      "failed": "模型選擇沒有儲存成功，可以再試一次。"
     }
   },
   "endpoints": {
@@ -791,7 +804,8 @@
         "continue": "我了解風險，繼續登入",
         "cancel": "不登入了"
       },
-      "readingModels": "已登入 {{name}}，正在讀取這個帳號能用的模型…"
+      "readingModels": "已登入 {{name}}，正在讀取這個帳號能用的模型…",
+      "chooseLater": "模型太多？可以在「設定 → 供應商 → 訂閱登入」裡選擇模型選擇裡顯示哪些。"
     },
     "permissions": {
       "title": "mu 自己能做多少",

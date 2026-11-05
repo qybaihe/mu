@@ -55,6 +55,8 @@ type FixtureOptions = {
   commands?: JsonRecord[];
   /** What pi's `get_available_models` answers; unset: a fixture model and the judge's gateway model. */
   models?: JsonRecord[];
+  /** The `enabledModels` pi answers beside them (the settings' choice); unset: every model is enabled. */
+  enabledModels?: string[];
   /** The model mu runs on until `set_model`; unset: the fixture model. pi says `unknown/unknown` while it has none. */
   model?: JsonRecord;
   /** pi refuses the next messages with these errors, one each, before it takes one. */
@@ -145,6 +147,7 @@ function fixture(options: FixtureOptions = {}) {
                   { provider: 'fixture', id: 'model', name: 'Fixture Model' },
                   { provider: 'vercel-ai-gateway', id: 'openai/gpt-5', name: 'GPT-5' },
                 ],
+                ...(options.enabledModels ? { enabledModels: options.enabledModels } : {}),
               };
             case 'get_session_stats':
               return { tokens: { input: 100, cacheRead: 800, cacheWrite: 100, output: 200 } };
@@ -472,6 +475,28 @@ describe('KYRN ACP bridge', () => {
         'fixture/model': ['off', 'low', 'medium', 'high', 'xhigh'],
         'fixture/plain': ['off'],
       });
+    } finally {
+      f.cleanup();
+    }
+  });
+  it('offers only the models the settings enable, and the one the conversation runs on', async () => {
+    const f = fixture({
+      models: [
+        { provider: 'fixture', id: 'model', name: 'Fixture Model' },
+        { provider: 'fixture', id: 'plain', name: 'Plain' },
+        { provider: 'google-antigravity', id: 'gemini-3.1-pro-high', name: 'Gemini 3.1 Pro High' },
+        { provider: 'google-antigravity', id: 'gpt-oss-120b-medium', name: 'GPT-OSS 120B' },
+      ],
+      enabledModels: ['fixture/plain', 'google-antigravity/gemini-3.1-pro-high'],
+    });
+    try {
+      const { configOptions } = await f.agent.newSession({ cwd: tmpdir(), mcpServers: [] });
+      const picker = configOptions?.find((option) => option.id === 'model');
+      expect(picker && 'options' in picker ? picker.options.map((option) => option.value) : []).toEqual([
+        'fixture/model',
+        'fixture/plain',
+        'google-antigravity/gemini-3.1-pro-high',
+      ]);
     } finally {
       f.cleanup();
     }

@@ -353,7 +353,8 @@
       "unrelated": "O juiz acha que isto não faz parte da tarefa.",
       "protected": "Isto mexe nas configurações do próprio mu; só você pode permitir.",
       "nojudge": "Ainda não há nenhum juiz disponível, então o mu pergunta a você a cada passo.",
-      "judgedown": "O juiz não respondeu desta vez, então o mu pergunta a você."
+      "judgedown": "O juiz não respondeu desta vez, então o mu pergunta a você.",
+      "long": "Este passo é longo demais para o juiz ler por inteiro, então o mu pergunta a você."
     },
     "answer": {
       "once": "Permitir uma vez",
@@ -375,7 +376,8 @@
       "opens_permissions_recursively": "libera permissões recursivamente",
       "runs_downloaded_script": "executa um script baixado",
       "runs_as_administrator": "executa como administrador",
-      "runs_as_root": "executa como root"
+      "runs_as_root": "executa como root",
+      "sends_credential": "envia uma credencial"
     },
     "flagged": "Arriscado: {{flag}}."
   },
@@ -450,6 +452,17 @@
     "legacy": {
       "openai-codex": "Este login antigo passa pelo login da CLI do Codex. Saia e depois entre com o ChatGPT.",
       "anthropic": "A Anthropic não permite que outros apps entrem com uma assinatura do Claude, então o mu não oferece mais essa opção. Saia e adicione uma chave de API da Anthropic."
+    },
+    "enable": {
+      "title": "Exibidos no seletor de modelos",
+      "count": "{{count}} de {{total}}",
+      "hint": "Ao escolher um modelo numa conversa, só aparecem os marcados. Por padrão todos são exibidos, e os modelos que a conta ganhar depois também aparecem.",
+      "all": "Selecionar todos",
+      "none": "Desmarcar todos",
+      "reset": "Restaurar padrão",
+      "fresh": "Conectado a {{name}}, que oferece {{count}} modelos. Desmarque os que você não quer ver no seletor de modelos.",
+      "lastModel": "Mantenha pelo menos um modelo ativado.",
+      "failed": "Não foi possível salvar a escolha de modelos. Tente de novo."
     }
   },
   "endpoints": {
@@ -791,7 +804,8 @@
         "continue": "Entendo o risco, entrar",
         "cancel": "Não entrar"
       },
-      "readingModels": "Conectado a {{name}}. Lendo os modelos que esta conta pode usar…"
+      "readingModels": "Conectado a {{name}}. Lendo os modelos que esta conta pode usar…",
+      "chooseLater": "Modelos demais? Escolha quais o seletor de modelos mostra em Configurações → Provedores → Assinaturas."
     },
     "permissions": {
       "title": "Quanto o mu faz sozinho",

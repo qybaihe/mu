@@ -1374,6 +1374,24 @@ export class SettingsManager {
 		this.save();
 	}
 
+	/**
+	 * mu: `enabledModels` read again from the settings files, and kept. A process that runs for long (an app's RPC
+	 * session) offers the models another process (the app's settings, `mu auth enable`) chose meanwhile. A value this
+	 * process changed and has not written yet stays.
+	 */
+	reloadEnabledModels(): string[] | undefined {
+		if (!this.modifiedFields.has("enabledModels") && !this.globalSettingsLoadError) {
+			const global = SettingsManager.tryLoadFromStorage(this.storage, "global");
+			if (!global.error) this.globalSettings.enabledModels = global.settings.enabledModels;
+		}
+		if (this.projectTrusted && !this.modifiedProjectFields.has("enabledModels") && !this.projectSettingsLoadError) {
+			const project = SettingsManager.tryLoadFromStorage(this.storage, "project", true);
+			if (!project.error) this.projectSettings.enabledModels = project.settings.enabledModels;
+		}
+		this.settings.enabledModels = this.projectSettings.enabledModels ?? this.globalSettings.enabledModels;
+		return this.getEnabledModels();
+	}
+
 	getDoubleEscapeAction(): "fork" | "tree" | "none" {
 		return this.settings.doubleEscapeAction ?? SETTINGS_DEFAULTS.doubleEscapeAction;
 	}

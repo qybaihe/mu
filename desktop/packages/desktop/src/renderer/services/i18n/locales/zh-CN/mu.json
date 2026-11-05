@@ -353,7 +353,8 @@
       "unrelated": "判定器认为这一步和当前任务无关。",
       "protected": "这会动到 mu 自己的设置，只能由你决定。",
       "nojudge": "还没有可用的判定器，所以每一步都先问你。",
-      "judgedown": "判定器这次没有回答，所以先问你。"
+      "judgedown": "判定器这次没有回答，所以先问你。",
+      "long": "这一步太长，判定器读不全，所以先问你。"
     },
     "flagged": "危险操作：{{flag}}。",
     "flag": {
@@ -365,7 +366,8 @@
       "opens_permissions_recursively": "递归放开权限",
       "runs_downloaded_script": "运行下载来的脚本",
       "runs_as_administrator": "以管理员身份运行",
-      "runs_as_root": "以 root 身份运行"
+      "runs_as_root": "以 root 身份运行",
+      "sends_credential": "把凭据发出去"
     },
     "answer": {
       "once": "允许这一次",
@@ -450,6 +452,17 @@
     "legacy": {
       "openai-codex": "这是经由 Codex CLI 的旧登录方式。请退出登录，再用 ChatGPT 登录。",
       "anthropic": "Anthropic 不允许其他应用用 Claude 订阅登录，所以 mu 不再提供。请退出登录，改为添加 Anthropic API key。"
+    },
+    "enable": {
+      "title": "在模型选择里显示",
+      "count": "{{count}}/{{total}}",
+      "hint": "对话里选模型时只显示勾选的模型。默认全部显示，此时账号以后新增的模型也会出现。",
+      "all": "全选",
+      "none": "全不选",
+      "reset": "恢复默认",
+      "fresh": "已登录 {{name}}，共有 {{count}} 个模型。取消勾选不想在模型选择里看到的。",
+      "lastModel": "至少要保留一个启用的模型。",
+      "failed": "模型选择没有保存成功，可以再试一次。"
     }
   },
   "endpoints": {
@@ -791,7 +804,8 @@
         "continue": "我了解风险，继续登录",
         "cancel": "不登录了"
       },
-      "readingModels": "已登录 {{name}}，正在读取这个账号能用的模型…"
+      "readingModels": "已登录 {{name}}，正在读取这个账号能用的模型…",
+      "chooseLater": "模型太多？可以在「设置 → 提供商 → 订阅登录」里选择模型选择里显示哪些。"
     },
     "permissions": {
       "title": "mu 自己能做多少",

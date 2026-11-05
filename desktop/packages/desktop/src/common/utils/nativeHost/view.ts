@@ -105,11 +105,29 @@ export type ViewCompaction = { id: string; role: 'compaction'; tokensBefore: num
 export type ViewMessage = ViewUserMessage | ViewAssistantMessage | ViewCustomMessage | ViewCompaction;
 
 /**
+ * What the person answered to the permission question a judgment sent them to (a `kyrn.outcome` entry of kind
+ * `permission`): allowed once, for the session, not allowed, the question closed, or nobody there to ask (`none`, and
+ * the call was refused).
+ */
+export type ViewUserAnswer = 'once' | 'session' | 'deny' | 'dismissed' | 'none';
+
+export const USER_ANSWERS: readonly ViewUserAnswer[] = ['once', 'session', 'deny', 'dismissed', 'none'];
+
+/**
  * One of the judge's judgments: a decision ledger record, without the state the judge was shown, filed under the turn
  * that asked (the ledger's `origin.turn`, which a late verdict keeps). `turn` is missing only for records of a mu from
  * before `origin`.
+ *
+ * What the person did about it, from the `kyrn.outcome` entries that name its record (`ledgerId`): their answer to the
+ * permission question it sent them to (`answer`), and a mark that it judged wrong (`markedWrong`, with what they said).
  */
-export type ViewJudgment = { id: string; turn?: number; record: JsonObject };
+export type ViewJudgment = {
+  id: string;
+  turn?: number;
+  record: JsonObject;
+  answer?: ViewUserAnswer;
+  markedWrong?: { note?: string };
+};
 
 /**
  * What mu said about the permission question a select dialog asks (its `permissions.request` frame), for a card in
@@ -124,7 +142,7 @@ export type ViewPermission = {
   /** The answers as mu words them, which the dialog offers as its options. */
   answers: string[];
   answerIds?: string[];
-  /** ask, unsure, beyond, unrelated, flagged, protected, nojudge, judgedown. */
+  /** ask, unsure, beyond, unrelated, flagged, protected, nojudge, judgedown, long. */
   reason?: string;
   /** What makes a flagged command risky (`force_push`, …). */
   flagCode?: string;

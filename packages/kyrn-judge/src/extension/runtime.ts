@@ -4,6 +4,7 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import { isTrusted } from "../cascade.ts";
 import { CapabilityCatalog } from "../catalog/catalog.ts";
 import { DEFAULT_CONFIG, featureOptions, type JudgeConfig, type KyrnConfig } from "../config.ts";
+import type { FloorReady } from "../confine/floor.ts";
 import { DecisionEngine, type DecisionMode } from "../decision.ts";
 import type { PreflightOutcome, TaskFrame } from "../decisions/input-preflight.ts";
 import type { NotifyFn } from "../decisions/notify-routing.ts";
@@ -215,6 +216,20 @@ export class KyrnRuntime {
 	 * off, and then the guard alone looks at risky commands, as before there were modes.
 	 */
 	permissionMode?: () => "full" | "judge" | "ask";
+	/**
+	 * Set by the confine feature while it is on: the write floor for a project folder, made ready on first use, or why
+	 * it cannot start here. The agent's background jobs and the programs it debugs run inside it, as its bash commands do.
+	 */
+	floor?: (cwd: string) => Promise<FloorReady>;
+	/**
+	 * Set by the confine feature with the floor: the way out of it. `asks` tells a call that asks to run outside the floor
+	 * (`bash` with `outside: true`); the permission gate decides it, in every mode, and `allow` lets that one call out,
+	 * once, as its input is. A call nobody allowed runs inside the floor like any other.
+	 */
+	floorExit?: {
+		readonly asks: (toolName: string, input: unknown) => boolean;
+		readonly allow: (toolCallId: string, input: unknown) => void;
+	};
 	/**
 	 * Set by the memory feature: for each sub-agent task, the lessons of this project that apply to it,
 	 * one line each, for the "known lessons" of its brief. Undefined while that feature is off.

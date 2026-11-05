@@ -33,6 +33,7 @@ import { type CheckpointDeps, registerCheckpoint } from "./features/checkpoint.t
 import { registerCommands } from "./features/commands.ts";
 import { registerCompaction } from "./features/compaction.ts";
 import { registerCompletion } from "./features/completion.ts";
+import { type ConfineDeps, registerConfine } from "./features/confine.ts";
 import { registerConstraints } from "./features/constraints.ts";
 import { registerContinuation } from "./features/continuation.ts";
 import { registerDeadline } from "./features/deadline.ts";
@@ -59,6 +60,8 @@ import { registerPacks } from "./features/packs.ts";
 import { registerPermissions } from "./features/permissions.ts";
 import { registerPreflight } from "./features/preflight.ts";
 import { registerProcedures } from "./features/procedures.ts";
+import { registerRecall } from "./features/recall.ts";
+import { registerRecovery } from "./features/recovery.ts";
 import { registerSandbox, type SandboxDeps } from "./features/sandbox.ts";
 import { registerSkills } from "./features/skills.ts";
 import { registerSwarm, type SwarmRunner } from "./features/swarm.ts";
@@ -102,6 +105,8 @@ export interface KyrnJudgeExtensionOptions {
 	checkpoint?: CheckpointDeps;
 	/** For tests of the sandbox feature: the HTTP client, the environment and how the project is packed. */
 	sandbox?: SandboxDeps;
+	/** For tests of the write floor: the platform, how the floor is tried, the home and temporary folders. */
+	confine?: ConfineDeps;
 }
 
 export type FeatureName =
@@ -140,10 +145,13 @@ export type FeatureName =
 	| "inherit"
 	| "mcp"
 	| "background"
+	| "confine"
 	| "sandbox"
 	| "web"
 	| "packs"
-	| "googleLogin";
+	| "googleLogin"
+	| "recovery"
+	| "recall";
 
 export function createKyrnJudgeExtension(options: KyrnJudgeExtensionOptions = {}): (pi: ExtensionAPI) => void {
 	return (pi) => registerKyrn(pi, options);
@@ -234,6 +242,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["permissions", (shared) => registerPermissions(shared, roots)],
 		["admission", registerAdmission],
 		["forgetting", registerForgetting],
+		// Reads back what admission, forgetting and web_fetch left out; they point to it only while the model has it.
+		["recall", registerRecall],
 		["compaction", registerCompaction],
 		[
 			"monitor",
@@ -267,11 +277,16 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["inherit", (shared) => registerInherit(shared, roots)],
 		["mcp", (shared) => registerMcp(shared, roots)],
 		["background", registerBackground],
+		// Replaces bash with one under the write floor when switched on; off by default. Before the Nebius sandbox,
+		// which takes bash over again when it is on: nothing runs on this machine then.
+		["confine", (shared) => registerConfine(shared, options.confine)],
 		// Replaces bash, read, write and edit when switched on; off by default.
 		["sandbox", (shared) => registerSandbox(shared, options.sandbox)],
 		["web", registerWeb],
 		["packs", registerPacks],
 		["googleLogin", registerGoogleLogin],
+		// Last: its tool_call handler marks a call as started, so every check that may stop the call comes first.
+		["recovery", registerRecovery],
 	];
 	for (const [name, register] of features) {
 		if (!options.only || options.only.includes(name)) register(runtime);

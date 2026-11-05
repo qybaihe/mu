@@ -14,7 +14,7 @@ type MuPermissionCodes = { kind?: string; reason?: string; flagCode?: string; gr
 const KINDS: ReadonlySet<string> = new Set(['edit', 'shell', 'run', 'outside', 'delegate', 'other']);
 /**
  * `flagged` is worded by the flag. `nojudge`: no judge could be asked, so every step asks; `judgedown`: the judge did
- * not answer this time.
+ * not answer this time; `long`: the step is too long for the judge to read in full.
  */
 const REASONS: ReadonlySet<string> = new Set([
   'ask',
@@ -24,6 +24,7 @@ const REASONS: ReadonlySet<string> = new Set([
   'protected',
   'nojudge',
   'judgedown',
+  'long',
 ]);
 const FLAGS: ReadonlySet<string> = new Set([
   'recursive_or_forced_delete',
@@ -35,6 +36,8 @@ const FLAGS: ReadonlySet<string> = new Set([
   'runs_downloaded_script',
   'runs_as_administrator',
   'runs_as_root',
+  // Any call, not only a command, whose input carries one of mu's credentials.
+  'sends_credential',
 ]);
 const ANSWERS: ReadonlySet<string> = new Set(['once', 'session', 'deny']);
 const ANSWER_PREFIX = 'mu:';

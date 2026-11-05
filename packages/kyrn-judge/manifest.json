@@ -3776,7 +3776,8 @@
 						"write",
 						"delegate",
 						"hive",
-						"web_fetch"
+						"web_fetch",
+						"recall"
 					],
 					"label": {
 						"zh": "这些工具的输出不筛",
@@ -4147,6 +4148,35 @@
 						"uk-UA": "Поточний запит чекає стільки; рішення, що надходять пізніше, застосовуються до наступного запиту.",
 						"tr-TR": "Bu istek bu kadar bekler; daha sonra gelen kararlar bir sonraki istekte uygulanır.",
 						"fa-IR": "این درخواست همین‌قدر صبر می‌کند؛ نتیجه‌هایی که دیرتر برسند در درخواست بعدی اعمال می‌شوند."
+					}
+				}
+			]
+		},
+		{
+			"name": "recall",
+			"title": {
+				"zh": "取回省略的输出",
+				"en": "Read back shortened output"
+			},
+			"summary": {
+				"zh": "mu 为省上下文而省略的工具输出，模型可以用 recall 按调用 id 分段取回原文，不必重跑命令或重新抓网页：遗忘换掉的旧结果、准入归档的噪声、web_fetch 截掉的后半页。只读本次对话；取回的网页后半部分会先过注入筛查。",
+				"en": "Tool output mu left out to save context can be read back by the model with recall, a piece at a time by the call's id, instead of running the command or fetching the page again: old results forgetting replaced, noise admission archived, the rest of a page web_fetch cut. Only this conversation; the rest of a page goes through the injection screen first."
+			},
+			"defaultEnabled": true,
+			"options": [
+				{
+					"key": "maxChars",
+					"kind": "number",
+					"default": 20000,
+					"min": 1000,
+					"max": 200000,
+					"unit": {
+						"zh": "字符",
+						"en": "chars"
+					},
+					"label": {
+						"zh": "一次取回最多返回",
+						"en": "Max text per recall call"
 					}
 				}
 			]
@@ -5153,19 +5183,19 @@
 						"fa-IR": "تکرارهایی که حلقه به شمار می‌آیند"
 					},
 					"help": {
-						"zh": "输入完全相同、结果也完全相同才算同一调用；分段读同一个文件不算。",
-						"en": "Only the same input with the same result counts as the same call; paging through a file does not.",
-						"zh-TW": "輸入完全相同、結果也完全相同，才算同一個呼叫；分段讀同一個檔案不算。",
-						"ja-JP": "入力も結果もまったく同じ場合だけを同じ呼び出しとみなします。ファイルを少しずつ読み進めるのは含みません。",
-						"ko-KR": "입력과 결과가 모두 같아야 같은 호출로 봅니다. 파일을 나눠 읽어 나가는 것은 해당하지 않습니다.",
-						"de-DE": "Nur dieselbe Eingabe mit demselben Ergebnis zählt als derselbe Aufruf; abschnittsweises Lesen einer Datei nicht.",
-						"fr-FR": "Seule une entrée identique avec un résultat identique compte comme le même appel ; parcourir un fichier par morceaux, non.",
-						"es-ES": "Solo la misma entrada con el mismo resultado cuenta como la misma llamada; recorrer un archivo por partes, no.",
-						"pt-BR": "Só a mesma entrada com o mesmo resultado conta como a mesma chamada; percorrer um arquivo por partes, não.",
-						"ru-RU": "Одним и тем же вызовом считается только тот же ввод с тем же результатом; постраничное чтение файла — нет.",
-						"uk-UA": "Тим самим викликом вважається лише той самий вхід із тим самим результатом; почастинне читання файлу — ні.",
-						"tr-TR": "Yalnızca aynı sonucu veren aynı girdi aynı çağrı sayılır; bir dosyada parça parça ilerlemek sayılmaz.",
-						"fa-IR": "فقط ورودی یکسان با نتیجهٔ یکسان، فراخوانی یکسان به شمار می‌آید؛ ورق زدن تکه‌تکهٔ یک فایل نه."
+						"zh": "输入完全相同、结果也完全相同才算同一调用；分段读同一个文件不算。被拦下、没有执行的调用，输入相同就算。到这个次数提醒一次，再多 2 次、5 次时各提醒一次，一次比一次直接。",
+						"en": "Only the same input with the same result counts as the same call; paging through a file does not. A call that was refused and never ran counts by its input alone. The monitor says so at this many, and again 2 and 5 repeats later, more plainly each time.",
+						"zh-TW": "輸入完全相同、結果也完全相同，才算同一個呼叫；分段讀同一個檔案不算。被攔下、沒有執行的呼叫，輸入相同就算。到這個次數提醒一次，再多 2 次、5 次時各提醒一次，一次比一次直接。",
+						"ja-JP": "入力も結果もまったく同じ場合だけを同じ呼び出しとみなします。ファイルを少しずつ読み進めるのは含みません。拒否されて実行されなかった呼び出しは、入力が同じなら同じとみなします。この回数で一度知らせ、さらに 2 回、5 回重なったときにもう一度ずつ、より率直に知らせます。",
+						"ko-KR": "입력과 결과가 모두 같아야 같은 호출로 봅니다. 파일을 나눠 읽어 나가는 것은 해당하지 않습니다. 거부되어 실행되지 않은 호출은 입력만 같으면 같은 호출로 봅니다. 이 횟수에 한 번 알리고, 2회와 5회 더 반복되면 한 번씩 더 분명하게 알립니다.",
+						"de-DE": "Nur dieselbe Eingabe mit demselben Ergebnis zählt als derselbe Aufruf; abschnittsweises Lesen einer Datei nicht. Ein abgelehnter Aufruf, der nie lief, zählt allein nach seiner Eingabe. Der Monitor meldet sich bei dieser Anzahl und noch einmal 2 und 5 Wiederholungen später, jedes Mal deutlicher.",
+						"fr-FR": "Seule une entrée identique avec un résultat identique compte comme le même appel ; parcourir un fichier par morceaux, non. Un appel refusé, qui n'a jamais été exécuté, compte d'après son entrée seule. Le moniteur le signale à ce nombre, puis encore 2 et 5 répétitions plus tard, chaque fois plus nettement.",
+						"es-ES": "Solo la misma entrada con el mismo resultado cuenta como la misma llamada; recorrer un archivo por partes, no. Una llamada rechazada, que nunca se ejecutó, cuenta solo por su entrada. El monitor lo dice al llegar a este número, y otra vez 2 y 5 repeticiones después, cada vez con más claridad.",
+						"pt-BR": "Só a mesma entrada com o mesmo resultado conta como a mesma chamada; percorrer um arquivo por partes, não. Uma chamada recusada, que nunca rodou, conta só pela entrada. O monitor avisa ao chegar a esse número, e de novo 2 e 5 repetições depois, cada vez de forma mais direta.",
+						"ru-RU": "Одним и тем же вызовом считается только тот же ввод с тем же результатом; постраничное чтение файла — нет. Отклонённый вызов, который так и не выполнился, считается только по вводу. Монитор говорит об этом на этом числе повторов и ещё раз через 2 и 5 повторов, каждый раз прямее.",
+						"uk-UA": "Тим самим викликом вважається лише той самий вхід із тим самим результатом; почастинне читання файлу — ні. Відхилений виклик, який так і не виконався, рахується лише за входом. Монітор каже про це на цій кількості повторів і ще раз через 2 і 5 повторів, щоразу пряміше.",
+						"tr-TR": "Yalnızca aynı sonucu veren aynı girdi aynı çağrı sayılır; bir dosyada parça parça ilerlemek sayılmaz. Reddedilip hiç çalışmayan bir çağrı yalnızca girdisine göre sayılır. İzleyici bu sayıda bir kez uyarır, 2 ve 5 tekrar sonra birer kez daha, her seferinde daha açık.",
+						"fa-IR": "فقط ورودی یکسان با نتیجهٔ یکسان، فراخوانی یکسان به شمار می‌آید؛ ورق زدن تکه‌تکهٔ یک فایل نه. فراخوانی‌ای که رد شد و هرگز اجرا نشد، فقط با ورودی‌اش شمرده می‌شود. ناظر در این تعداد یک بار هشدار می‌دهد، و ۲ و ۵ تکرار بعد هم هر بار یک بار دیگر، هر بار صریح‌تر."
 					}
 				},
 				{
@@ -10586,6 +10616,47 @@
 						"uk-UA": "Gemini, Claude і GPT-OSS; після входу список відповідає тому, що доступно обліковому запису.",
 						"tr-TR": "Gemini, Claude ve GPT-OSS; giriş yapıldıktan sonra liste, hesabın kullanabildiklerine göre güncellenir.",
 						"fa-IR": "Gemini، Claude و GPT-OSS؛ پس از ورود، فهرست بر اساس مدل‌هایی که حساب می‌تواند استفاده کند به‌روز می‌شود."
+					}
+				}
+			]
+		},
+		{
+			"name": "recovery",
+			"title": {
+				"zh": "中断的工具调用",
+				"en": "Interrupted tool calls"
+			},
+			"summary": {
+				"zh": "mu 在工具调用跑到一半时被杀掉、断电或退出，再打开会话时，会告诉模型和你哪些调用没有结果：哪些没开始、哪些只是读，哪些已经开始、结果不明。结果不明的会提醒模型先核对外部状态或问你，免得 git push、发布、数据库迁移做两次。每个可能改东西的调用开始前，会话里记一条标记。",
+				"en": "When mu is killed, the machine sleeps or the app quits while tool calls run, reopening the session tells the model and you which calls have no result: which never started, which only read, and which started with an outcome nobody knows. For those, the model is told to check the outside state or ask you first, so a git push, a publish or a migration does not run twice. Before each call that may change something starts, the session gets a marker."
+			},
+			"defaultEnabled": true,
+			"options": []
+		},
+		{
+			"name": "confine",
+			"title": {
+				"zh": "写入沙箱（实验）",
+				"en": "Write sandbox (experimental)"
+			},
+			"summary": {
+				"zh": "agent 跑的 bash 命令、后台任务和调试的程序由操作系统限制，只能写项目目录、临时目录和包管理器的缓存；项目的 .git/hooks 和 .git/config 只读。macOS 用 Seatbelt，Linux 用 bubblewrap，Windows 没有。起不来时（没有 bubblewrap、用户命名空间被关掉）每条命令都拒绝执行，不会退回到不受限制地运行。判定器和权限模式照常询问。确实要写别处的命令（git config、git remote add）可以申请在沙箱外运行一次。任何权限模式下都要审，完全访问也一样：先由判定器审，它拿不准再问你（最小权限下直接问你），不会给整个对话授权。",
+				"en": "The agent's bash commands, background jobs and the programs it debugs can write only to the project, the temporary folders and package caches, enforced by the operating system; the project's .git/hooks and .git/config are read-only. Seatbelt on macOS, bubblewrap on Linux, none on Windows. When it cannot start (no bubblewrap, user namespaces turned off), every command is refused rather than run unconfined. The judge and the permission modes ask as before. A command that must write elsewhere (git config, git remote add) can ask to run outside the sandbox, once. In every permission mode, Full access included, the judge decides, and asks you when it's unsure (in Ask first, you decide). It's never allowed for the whole conversation."
+			},
+			"defaultEnabled": false,
+			"beta": true,
+			"options": [
+				{
+					"key": "writable",
+					"kind": "list",
+					"default": [],
+					"label": {
+						"zh": "另外允许写入的目录",
+						"en": "More folders commands may write"
+					},
+					"help": {
+						"zh": "比如 mu 不认识的缓存目录。主目录本身和 ~/.mu 不会因此变成可写。",
+						"en": "For example, a cache mu doesn't know about. The home folder itself and ~/.mu never become writable this way."
 					}
 				}
 			]

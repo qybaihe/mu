@@ -548,12 +548,13 @@ export async function planTestLog(
 
 /**
  * Replaces each omitted run with one marker line and appends one pointer to the
- * archived original. Every kept byte is the original's. If the markers and the
+ * archived original: `fullOutput` is how the pointer names it, a `recall` call or
+ * the archive's path. Every kept byte is the original's. If the markers and the
  * pointer eat the saving, the original is returned untouched.
  */
 export function renderTestLog(
 	plan: TestLogPlan,
-	archivePath: string,
+	fullOutput: string,
 	options: { minNetChars?: number; minNetShare?: number } = {},
 ): RenderedTestLog {
 	const untouched: RenderedTestLog = {
@@ -608,7 +609,7 @@ export function renderTestLog(
 	flush();
 	if (omittedLines === 0) return untouched;
 	if (!text.endsWith("\n")) text += eol;
-	text += `[mu: ${omittedLines} lines omitted above as not needed for this step; full output: ${archivePath}]${eol}`;
+	text += `[mu: ${omittedLines} lines omitted above as not needed for this step; full output: ${fullOutput}]${eol}`;
 
 	const netSavedChars = plan.output.length - text.length;
 	const floor = Math.max(options.minNetChars ?? 300, plan.output.length * (options.minNetShare ?? 0.1));

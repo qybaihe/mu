@@ -17,7 +17,11 @@ import { forgetNativeUnread } from '@/renderer/pages/native/hooks/useNativeAtten
 import { nativeConversationAt, nextWaitingConversation } from '@/renderer/pages/native/sider/jump';
 import { forgetProjects, forgetRepoRoots } from '@/renderer/pages/native/sider/useProjects';
 import { NativeClientContext, type NativeClient } from '@/renderer/pages/native/utils/nativeClient';
-import { useNativeActivity, useNativeFolder } from '@/renderer/pages/native/utils/nativeActivityStore';
+import {
+  useNativeActivity,
+  useNativeCommand,
+  useNativeFolder,
+} from '@/renderer/pages/native/utils/nativeActivityStore';
 import enCommon from '@/renderer/services/i18n/locales/en-US/common.json';
 import enConversation from '@/renderer/services/i18n/locales/en-US/conversation.json';
 import enMessages from '@/renderer/services/i18n/locales/en-US/messages.json';
@@ -478,6 +482,33 @@ describe('the native conversation page', () => {
     await waitFor(() => expect(screen.getByTestId('panel')).toHaveTextContent('2:true'));
     view.unmount();
     expect(getCurrentConversation()).toBeNull();
+  });
+
+  it('gives the work panel a line to its mu: a command the panel sends goes to pi as a prompt', async () => {
+    const host = createFakeHost();
+    host.add({ id: 'c1' });
+    const Sender: React.FC = () => {
+      const command = useNativeCommand('c1');
+      return (
+        <button
+          type='button'
+          data-testid='send'
+          disabled={!command}
+          onClick={() => void command?.('/ledger wrong rec-1')}
+        >
+          send
+        </button>
+      );
+    };
+    page(host.client, 'c1', <Sender />);
+    await opened();
+    await waitFor(() => expect(screen.getByTestId('send')).not.toBeDisabled());
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('send'));
+    });
+    expect(host.calls.filter((call) => call.method === 'request' && call.command?.type === 'prompt')).toEqual([
+      expect.objectContaining({ id: 'c1', command: { type: 'prompt', message: '/ledger wrong rec-1' } }),
+    ]);
   });
 
   it('says a native conversation’s lessons show once it has opened, while its folder is not known', () => {

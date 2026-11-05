@@ -293,6 +293,17 @@
       "batchFailures": "Ohne Antwort, Standardstrategie angewendet: {{count}}.",
       "changedThinking": "Denkstufe: {{from}} → {{to}}",
       "sentHints": "An das Hauptmodell gesendete Hinweise",
+      "userAnswer": {
+        "once": "Du hast das einmal erlaubt.",
+        "session": "Du hast das für diese Unterhaltung erlaubt.",
+        "deny": "Du hast das nicht erlaubt.",
+        "dismissed": "Du hast die Frage ohne Antwort geschlossen.",
+        "none": "Niemand konnte gefragt werden, daher wurde der Schritt abgelehnt."
+      },
+      "markedWrong": "Du hast dieses Urteil als falsch markiert.",
+      "markedWrongWhy": "Du hast dieses Urteil als falsch markiert: {{note}}",
+      "markWrong": "Als falsch markieren",
+      "markWrongHint": "Sag mu, dass dieses Urteil falsch war. Die Markierung wird mit dem Urteil im ledger dieser Sitzung gespeichert.",
       "unlinked": "Einzelaufzeichnung",
       "unlinkedHint": "Ohne Zuordnung zu einer Runde aufgezeichnet. Der Eintrag steht für sich und wird nicht mit zeitlich nahen Aufzeichnungen zusammengeführt.",
       "state": {

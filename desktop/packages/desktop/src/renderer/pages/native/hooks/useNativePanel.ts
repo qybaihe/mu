@@ -6,11 +6,12 @@
  * (not the project of the conversation shown before); the panel reads the conversation's folder instead (`cwd`).
  *
  * `epoch` is the conversation state's (hooks/useNativeConversation.ts): which view this is, new each time the whole view
- * is replaced (the snapshot came, another session, a fork).
+ * is replaced (the snapshot came, another session, a fork). `request` is its line to pi: the panel's tabs send mu
+ * their commands through it, as prompts.
  */
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { NativeFailure } from '@/common/kyrn/nativeBridge';
-import type { NativeView } from '@/common/utils/nativeHost';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { NativeFailure, NativeResult } from '@/common/kyrn/nativeBridge';
+import type { NativeView, PiCommand } from '@/common/utils/nativeHost';
 import { bumpWorkPanelNews, followsAgent } from '@/renderer/components/layout/WorkPanel/workPanelStore';
 import {
   getCurrentConversation,
@@ -56,7 +57,8 @@ export function useNativePanel(
   epoch: number,
   loading: boolean,
   failure?: NativeFailure,
-  cwd?: string
+  cwd?: string,
+  request?: (command: PiCommand) => Promise<NativeResult<unknown>>
 ): void {
   // Before paint: the layout keeps the last project on every /conversation/ route.
   useLayoutEffect(() => setCurrentProject(null), [id]);
@@ -85,9 +87,18 @@ export function useNativePanel(
     () => ({ events, loading, settled: !loading, ...(error !== undefined ? { error } : {}) }),
     [error, events, loading]
   );
+  const command = useCallback(
+    async (text: string): Promise<boolean> => (request ? (await request({ type: 'prompt', message: text })).ok : false),
+    [request]
+  );
   useEffect(() => {
-    publishNativeActivity({ conversationId: id, activity, ...(cwd ? { cwd } : {}) });
-  }, [activity, cwd, id]);
+    publishNativeActivity({
+      conversationId: id,
+      activity,
+      ...(cwd ? { cwd } : {}),
+      ...(request ? { command } : {}),
+    });
+  }, [activity, command, cwd, id, request]);
   useEffect(() => () => withdrawNativeActivity(id), [id]);
 
   // A file the model finished writing or editing is news for the files tab, which gets its dot unless the person is

@@ -11,7 +11,8 @@
  *   extensions edit what the model reads, not what the person saw.
  * - The judge's judgments are the ledger's `kyrn.decision` records: live they come twice (the `entry_appended` and the
  *   `decision` presentation frame), once in the file, and count once by record id. Each is filed under the turn that
- *   asked (`origin.turn`), not the turn during which it arrived.
+ *   asked (`origin.turn`), not the turn during which it arrived. What the person did about one (`kyrn.outcome`: their
+ *   answer to the permission question it sent them to, a mark that it was wrong) joins it by that id.
  * - The verdict line of a message (`kyrn.verdict`) follows its user message, live and in the file.
  * - mu's goal is its latest `kyrn.goal` entry, or a `goal.state` frame after it (view.ts `ViewGoal`).
  * - The status comes from pi's events: `agent_start` to `agent_settled` is a run, a thinking block is `thinking`, and
@@ -59,11 +60,15 @@ import {
   type ViewMessage,
   type ViewToolCall,
   type ViewToolResult,
+  type ViewUserAnswer,
+  USER_ANSWERS,
 } from './view.ts';
 import { wordsOf } from './words.ts';
 
 /** The judgment layer's ledger entries (LEDGER_ENTRY_TYPE in the harness). */
 export const DECISION_ENTRY = 'kyrn.decision';
+/** What the person did about a judgment, joined to its record by `ledgerId` (OUTCOME_ENTRY in the harness). */
+export const OUTCOME_ENTRY = 'kyrn.outcome';
 /** The verdict line the preflight shows under a message (VERDICT_ENTRY in the harness). */
 export const VERDICT_ENTRY = 'kyrn.verdict';
 /** mu's goal, saved each time it changes (GOAL_ENTRY in the harness); its `goal.state` frame says the same. */
@@ -416,6 +421,30 @@ function addJudgment(view: NativeView, data: JsonObject, frameTurn?: number): Na
   return { ...view, judgments: [...view.judgments, judgment] };
 }
 
+/**
+ * What the person did about a judgment, on the judgment whose record it names: their answer to the permission question
+ * (`kind: permission`), or a mark that it judged wrong (`kind: mark`); neither replaces the other. An outcome no
+ * judgment here has is left out: no judge was asked (no `ledgerId`), or its record is not in this view. The harness
+ * writes the record before the person is asked, so it comes first, live and in the file.
+ */
+function addOutcome(view: NativeView, data: JsonObject): NativeView {
+  const ledgerId = asText(data.ledgerId);
+  const index = ledgerId ? view.judgments.findIndex((judgment) => judgment.id === ledgerId) : -1;
+  if (index < 0) return view;
+  const judgment = view.judgments[index];
+  let next: ViewJudgment | undefined;
+  const answer = asText(data.answer) as ViewUserAnswer;
+  if (data.kind === 'permission' && USER_ANSWERS.includes(answer)) next = { ...judgment, answer };
+  else if (data.kind === 'mark' && data.mark === 'wrong') {
+    const note = asText(data.note).trim();
+    next = { ...judgment, markedWrong: note ? { note } : {} };
+  }
+  if (!next) return view;
+  const judgments = view.judgments.slice();
+  judgments[index] = next;
+  return { ...view, judgments };
+}
+
 /** The verdict line of the latest user message. */
 function attachVerdict(view: NativeView, verdict: JsonObject): NativeView {
   for (let index = view.messages.length - 1; index >= 0; index--) {
@@ -442,6 +471,7 @@ function contextEdit(view: NativeView, entry: JsonObject): NativeView {
 function addEntry(view: NativeView, entry: JsonObject): NativeView {
   if (entry.type === 'custom') {
     if (entry.customType === DECISION_ENTRY) return addJudgment(view, asObject(entry.data));
+    if (entry.customType === OUTCOME_ENTRY) return addOutcome(view, asObject(entry.data));
     if (entry.customType === VERDICT_ENTRY) return attachVerdict(view, asObject(entry.data));
     if (entry.customType === GOAL_ENTRY) return takeGoal(view, entry.data);
     if (entry.customType === CHECKPOINT_ENTRY) return addCheckpoint(view, asObject(entry.data));

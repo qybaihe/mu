@@ -293,6 +293,17 @@
       "batchFailures": "답변을 받지 못해 기본 전략으로 처리: {{count}}개.",
       "changedThinking": "사고 수준: {{from}} → {{to}}",
       "sentHints": "메인 모델에 보낸 힌트",
+      "userAnswer": {
+        "once": "‘한 번 허용’을 선택했습니다.",
+        "session": "‘이 대화 동안 허용’을 선택했습니다.",
+        "deny": "‘허용 안 함’을 선택했습니다.",
+        "dismissed": "답하지 않고 질문을 닫았습니다.",
+        "none": "물어볼 사람이 없어 이 단계는 거부되었습니다."
+      },
+      "markedWrong": "이 판정을 잘못된 것으로 표시했습니다.",
+      "markedWrongWhy": "이 판정을 잘못된 것으로 표시했습니다: {{note}}",
+      "markWrong": "잘못됨으로 표시",
+      "markWrongHint": "이 판정이 틀렸다고 mu에 알립니다. 이 표시는 판정과 함께 이번 대화의 ledger에 기록됩니다.",
       "unlinked": "독립 기록",
       "unlinkedHint": "턴 연관 정보 없이 기록되었습니다. 단독으로 표시되며 시간이 가까운 기록과 합치지 않습니다.",
       "state": {

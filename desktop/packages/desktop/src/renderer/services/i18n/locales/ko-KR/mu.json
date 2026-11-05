@@ -353,7 +353,8 @@
       "unrelated": "판정기는 이 단계가 작업에 포함되지 않는다고 봅니다.",
       "protected": "mu 자체 설정을 건드리는 단계이므로 사용자만 허용할 수 있습니다.",
       "nojudge": "아직 사용할 수 있는 판정기가 없어 mu가 단계마다 사용자에게 묻습니다.",
-      "judgedown": "이번에는 판정기가 응답하지 않아 mu가 사용자에게 묻습니다."
+      "judgedown": "이번에는 판정기가 응답하지 않아 mu가 사용자에게 묻습니다.",
+      "long": "이 단계는 너무 길어 판정기가 전부 읽을 수 없으므로 mu가 사용자에게 묻습니다."
     },
     "answer": {
       "once": "한 번 허용",
@@ -375,7 +376,8 @@
       "opens_permissions_recursively": "재귀적 권한 개방",
       "runs_downloaded_script": "다운로드한 스크립트 실행",
       "runs_as_administrator": "관리자 권한으로 실행",
-      "runs_as_root": "root 권한으로 실행"
+      "runs_as_root": "root 권한으로 실행",
+      "sends_credential": "자격 증명 전송"
     },
     "flagged": "위험: {{flag}}."
   },
@@ -450,6 +452,17 @@
     "legacy": {
       "openai-codex": "이 이전 로그인은 Codex CLI의 로그인을 거쳐요. 로그아웃한 다음 ChatGPT로 로그인하세요.",
       "anthropic": "Anthropic은 다른 앱이 Claude 구독으로 로그인하는 것을 허용하지 않아 mu에서 더 이상 제공하지 않아요. 로그아웃하고 Anthropic API 키를 추가하세요."
+    },
+    "enable": {
+      "title": "모델 선택에 표시",
+      "count": "{{count}}/{{total}}",
+      "hint": "대화에서 모델을 고를 때 체크한 모델만 나와요. 기본값은 전부 표시이고, 이때는 계정에 나중에 추가되는 모델도 나와요.",
+      "all": "모두 선택",
+      "none": "모두 해제",
+      "reset": "기본값으로 되돌리기",
+      "fresh": "{{name}}에 로그인했어요. 모델이 {{count}}개 있어요. 모델 선택에 보이지 않게 할 모델은 체크를 해제하세요.",
+      "lastModel": "모델을 하나 이상 켜 두세요.",
+      "failed": "모델 선택을 저장하지 못했어요. 다시 시도하세요."
     }
   },
   "endpoints": {
@@ -791,7 +804,8 @@
         "continue": "위험을 이해하고 로그인",
         "cancel": "로그인하지 않기"
       },
-      "readingModels": "{{name}}에 로그인했습니다. 이 계정에서 쓸 수 있는 모델을 불러오는 중…"
+      "readingModels": "{{name}}에 로그인했습니다. 이 계정에서 쓸 수 있는 모델을 불러오는 중…",
+      "chooseLater": "모델이 너무 많나요? 설정 → 공급자 → 구독에서 모델 선택에 보일 모델을 고를 수 있어요."
     },
     "permissions": {
       "title": "mu가 스스로 하는 범위",

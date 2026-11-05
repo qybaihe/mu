@@ -101,6 +101,8 @@ const harness = await createHarness({
 
 Cover the verdict taking effect in active mode, nothing changing in shadow mode, the fallback when the judge is silent, and the limits (how often, how long). See `test/continuation.test.ts` and `test/injection.test.ts`.
 
+Give the decision a fixed input in `test/golden/decision-inputs.ts`, then run `npx vitest --run test/golden -u` from `packages/kyrn-judge`. That writes what it asks the judge (`decision-requests.md`) and what it does with each answer (`decision-policies.md`). The golden test fails for a decision point without an input. Later, a change to either file needs a new `version`.
+
 ## 5. The desktop app
 
 In `desktop/packages/desktop/src/renderer/pages/conversation/KyrnPanel/Judge/`:

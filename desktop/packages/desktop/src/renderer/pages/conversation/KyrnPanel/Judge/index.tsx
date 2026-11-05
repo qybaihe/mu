@@ -11,6 +11,7 @@ import { memoryEvents } from '../Lessons/model';
 import { useLessons } from '../Lessons/useLessons';
 import ContextPanel from './ContextPanel';
 import { contextView } from './context';
+import { markWrongCommand } from './activity';
 import JudgeCardView from './JudgeCardView';
 import {
   eventDetail,
@@ -43,20 +44,27 @@ type LessonText = (id: string) => string;
  * they scroll up; the verdict on the message being worked on stays pinned above the log while its turn runs. A line
  * opens to the whole record: its code, then a judgment as question, verdict and effect, an event as its words and raw
  * payload. Lessons are named by their words: the lessons file is read while the tab is in view and the log names one,
- * by the conversation, or by `cwd` for a native conversation's folder.
+ * by the conversation, or by `cwd` for a native conversation's folder. `command` sends the conversation's mu a
+ * command, where the app can (a native conversation): an opened verdict then offers to tell mu it was wrong.
  */
 export default function JudgeLog({
   events,
   conversationId,
   visible = true,
   cwd,
+  command,
 }: {
   events: Activity[];
   conversationId?: string;
   visible?: boolean;
   cwd?: string;
+  command?: (text: string) => Promise<boolean>;
 }) {
   const { t, i18n } = useTranslation();
+  const markWrong = useMemo(
+    () => (command ? (recordId: string) => command(markWrongCommand(recordId)) : undefined),
+    [command]
+  );
   const navigate = useNavigate();
   const items = useMemo(() => logItems(events), [events]);
   // The same line many times in a row reads once, with a count.
@@ -154,6 +162,7 @@ export default function JudgeLog({
               open={opened.has(row.key)}
               onToggle={() => toggle(row.key)}
               lessonText={lessonText}
+              markWrong={markWrong}
             />
           ))}
         </ol>
@@ -233,12 +242,14 @@ function Line({
   open,
   onToggle,
   lessonText,
+  markWrong,
 }: {
   item: LogItem;
   count: number;
   open: boolean;
   onToggle: () => void;
   lessonText: LessonText;
+  markWrong?: (recordId: string) => Promise<boolean>;
 }) {
   const code = itemCode(item);
   return (
@@ -253,7 +264,7 @@ function Line({
             {code}
           </p>
           {item.type === 'judgment' ? (
-            <JudgeCardView card={item.card} plain lessonText={lessonText} />
+            <JudgeCardView card={item.card} plain lessonText={lessonText} markWrong={markWrong} />
           ) : (
             <EventDetail event={item.event} about={item.about} lessonText={lessonText} />
           )}

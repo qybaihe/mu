@@ -80,6 +80,7 @@ import {
 import { formatCacheWarmingStatus, formatCacheWarmingUsage } from "../../core/cache-warmer.ts";
 import { findExtensionStackMatches, recordCrash, takeUnnotifiedCrash } from "../../core/crash-log.ts";
 import { DEFAULT_THINKING_LEVEL, THINKING_LEVEL_OPTIONS } from "../../core/defaults.ts";
+import { enabledModelIds, withProviderModels, withProviderOffered } from "../../core/enabled-models.ts";
 import type {
 	AutocompleteProviderFactory,
 	EditorFactory,
@@ -3286,9 +3287,12 @@ export class InteractiveMode {
 				this.editor.setText("");
 				return;
 			}
-			if (text === "/scoped-models") {
+			if (text === "/scoped-models" || text.startsWith("/scoped-models ")) {
+				// mu: `/scoped-models <provider>` chooses one provider's models.
+				const provider = text.slice("/scoped-models".length).trim();
 				this.editor.setText("");
-				await this.showModelsSelector();
+				if (provider) this.showProviderModelsSelectorFor(provider);
+				else await this.showModelsSelector();
 				return;
 			}
 			if (text === "/model" || text.startsWith("/model ")) {
@@ -5617,6 +5621,155 @@ export class InteractiveMode {
 		});
 	}
 
+	/**
+	 * mu: `enabledModels` as mu changed it, saved, and the session's scope to match: what it enables, or every model
+	 * when it enables all of them.
+	 */
+	private applyEnabledModels(patterns: string[] | undefined): void {
+		this.settingsManager.setEnabledModels(patterns);
+		this.scopeSessionTo(patterns);
+	}
+
+	private scopeSessionTo(patterns: readonly string[] | undefined): void {
+		const available = this.session.modelRuntime.getAvailableSnapshot();
+		const scoped = patterns?.length ? resolveModelScopeFromModels([...patterns], available).scopedModels : [];
+		this.session.setScopedModels(
+			scoped.length === available.length ? [] : scoped.map(({ model, thinkingLevel }) => ({ model, thinkingLevel })),
+		);
+		this.updateAvailableProviderCount();
+	}
+
+	/**
+	 * mu: a sign-in to a provider that `enabledModels` leaves out adds all of its models (`<provider>/*`), so the new
+	 * account's models are offered until its own are chosen.
+	 */
+	private offerSignedInProvider(providerId: string): void {
+		const patterns = withProviderOffered(
+			this.settingsManager.getEnabledModels(),
+			this.session.modelRuntime.getAvailableSnapshot(),
+			providerId,
+		);
+		if (patterns) this.applyEnabledModels(patterns);
+	}
+
+	/** mu: `/scoped-models <provider>`, by provider id, any case. */
+	private showProviderModelsSelectorFor(name: string): void {
+		const providerId = this.session.modelRuntime
+			.getAvailableSnapshot()
+			.find((model) => model.provider.toLowerCase() === name.toLowerCase())?.provider;
+		if (providerId) this.showProviderModelsSelector(providerId);
+		else this.showError(`No models available from "${name}". Use /login to sign in to it.`);
+	}
+
+	/**
+	 * mu: which of one provider's models /model and Ctrl+P offer, saved to the global `enabledModels` with the save key
+	 * (the other providers' models stay as they are). Shown after a subscription sign-in and by
+	 * `/scoped-models <provider>`. All of them enabled is the default: saved as `<provider>/*`, which takes in the
+	 * models the account gains later.
+	 */
+	private showProviderModelsSelector(providerId: string): void {
+		const runtime = this.session.modelRuntime;
+		const providerName = runtime.getProvider(providerId)?.name ?? providerId;
+		const own = (models: readonly Model<any>[]) => models.filter((model) => model.provider === providerId);
+		let available = [...runtime.getAvailableSnapshot()];
+		/** The provider's enabled models as the selector takes them: null when all are. */
+		const enabledOf = (models: readonly Model<any>[]): string[] | null => {
+			const mine = own(models).map((model) => `${model.provider}/${model.id}`);
+			const enabled = enabledModelIds(this.settingsManager.getEnabledModels(), models)?.filter((id) =>
+				mine.includes(id),
+			);
+			return !enabled || enabled.length === mine.length ? null : enabled;
+		};
+		const patternsFor = (enabledIds: string[] | null) =>
+			withProviderModels(
+				this.settingsManager.getEnabledModels(),
+				available,
+				providerId,
+				enabledIds === null ? "all" : enabledIds.map((id) => id.slice(providerId.length + 1)),
+			);
+		let changed = false;
+
+		this.showSelector((done) => {
+			let disposed = false;
+			let timedOut = false;
+			const controller = new AbortController();
+			const timeout = setTimeout(() => {
+				timedOut = true;
+				controller.abort();
+			}, 15_000);
+			const selector = new ScopedModelsSelectorComponent(
+				{
+					allModels: own(available),
+					enabledModelIds: enabledOf(available),
+					refreshStatus: "Refreshing model catalogs…",
+					title: `${providerName} models`,
+					subtitle: `Choose the ones /model and ${keyDisplayText("app.model.cycleForward")} offer. ${keyDisplayText("app.models.save")} saves to settings; all of them is the default.`,
+				},
+				{
+					onChange: (enabledIds) => {
+						changed = true;
+						try {
+							this.scopeSessionTo(patternsFor(enabledIds));
+						} catch {
+							// No model left at all: the session keeps its scope until one is enabled again.
+						}
+						this.ui.requestRender();
+					},
+					onPersist: (enabledIds) => {
+						try {
+							this.applyEnabledModels(patternsFor(enabledIds));
+						} catch (error) {
+							this.showError(error instanceof Error ? error.message : String(error));
+							return;
+						}
+						const count = enabledIds?.length ?? own(available).length;
+						this.showStatus(`/model offers ${count} ${providerName} model${count === 1 ? "" : "s"}`);
+					},
+					onCancel: () => {
+						done();
+						this.ui.requestRender();
+					},
+				},
+			);
+			void refreshModelCatalogs(runtime, controller.signal)
+				.then((result) => {
+					if (disposed) return;
+					available = [...runtime.getAvailableSnapshot()];
+					// An account that lists its models (Antigravity) may list others once signed in.
+					selector.updateModels(own(available), changed ? undefined : enabledOf(available));
+					selector.setRefreshStatus(
+						result.aborted && timedOut
+							? "Model refresh timed out; showing cached models."
+							: result.errors.size > 0
+								? `Could not refresh ${[...result.errors.keys()].join(", ")}; showing cached models.`
+								: "Model catalogs refreshed.",
+						result.errors.size > 0 || (result.aborted && timedOut) ? "warning" : "success",
+					);
+					this.ui.requestRender();
+				})
+				.catch((error: unknown) => {
+					if (disposed) return;
+					selector.setRefreshStatus(
+						timedOut
+							? "Model refresh timed out; showing cached models."
+							: `Could not refresh model catalogs: ${error instanceof Error ? error.message : String(error)}`,
+						"warning",
+					);
+					this.ui.requestRender();
+				})
+				.finally(() => clearTimeout(timeout));
+			return {
+				component: selector,
+				focus: selector,
+				dispose: () => {
+					disposed = true;
+					clearTimeout(timeout);
+					controller.abort();
+				},
+			};
+		});
+	}
+
 	private showUserMessageSelector(): void {
 		const userMessages = this.session.getUserMessagesForForking();
 
@@ -6388,6 +6541,7 @@ export class InteractiveMode {
 		try {
 			await this.loginProvider(dialog, providerId, providerName, "api_key");
 			restoreEditor();
+			this.offerSignedInProvider(providerId);
 			await this.completeProviderAuthentication(providerId, providerName, "api_key", previousModel);
 		} catch (error: unknown) {
 			restoreEditor();
@@ -6521,8 +6675,14 @@ export class InteractiveMode {
 		try {
 			await this.loginProvider(dialog, providerId, providerName, "oauth");
 			restoreEditor();
+			this.offerSignedInProvider(providerId);
 			await this.completeProviderAuthentication(providerId, providerName, "oauth", previousModel);
 			if (providerId === RADIUS_PROVIDER_ID) this.offerRadiusMcpServer(providerId, providerName);
+			// mu: a subscription with several models (ChatGPT, Antigravity) asks at once which of them to offer.
+			else if (
+				this.session.modelRuntime.getAvailableSnapshot().filter((model) => model.provider === providerId).length > 1
+			)
+				this.showProviderModelsSelector(providerId);
 		} catch (error: unknown) {
 			restoreEditor();
 			const errorMsg = error instanceof Error ? error.message : String(error);
