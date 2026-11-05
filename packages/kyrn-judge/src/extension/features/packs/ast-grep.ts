@@ -76,6 +76,8 @@ export function astGrepPack(
 			runtime.pi.registerTool({
 				name: "sg_rewrite",
 				label: "ast-grep rewrite",
+				// It changes files: a call after it in the same batch starts once it has ended.
+				executionMode: "sequential",
 				description:
 					"Rewrite every match of an ast-grep pattern. A dry run that returns the diff, unless apply is true.",
 				parameters: Type.Object({
