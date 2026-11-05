@@ -59,6 +59,7 @@ import { registerNotify } from "./features/notify.ts";
 import { registerOpenAIKeyNotice } from "./features/openai-key.ts";
 import { registerPacks } from "./features/packs.ts";
 import { registerPermissions } from "./features/permissions.ts";
+import { registerPrefix } from "./features/prefix.ts";
 import { registerPreflight } from "./features/preflight.ts";
 import { registerProcedures } from "./features/procedures.ts";
 import { registerRecall } from "./features/recall.ts";
@@ -153,7 +154,8 @@ export type FeatureName =
 	| "googleLogin"
 	| "recovery"
 	| "recall"
-	| "interrupted";
+	| "interrupted"
+	| "prefix";
 
 export function createKyrnJudgeExtension(options: KyrnJudgeExtensionOptions = {}): (pi: ExtensionAPI) => void {
 	return (pi) => registerKyrn(pi, options);
@@ -273,6 +275,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["notify", registerNotify],
 		["warming", registerWarming],
 		["warmup", registerWarmup],
+		// Watches what the others' changes do to the prompt cache: it only reads each request.
+		["prefix", registerPrefix],
 		["swarm", (shared) => registerSwarm(shared, options.swarmRunner)],
 		["hive", (shared) => registerHive(shared, options.swarmRunner)],
 		["tools", registerTools],
