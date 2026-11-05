@@ -1,6 +1,6 @@
 import { JudgeError } from "../errors.ts";
 import type { Answer, JudgeProvider, JudgeRequest, JudgeUsage, ProviderResponse } from "../types.ts";
-import { MAX_ERROR_MESSAGE_LENGTH, messageFromErrorBody, readWarnings } from "./http.ts";
+import { errorKindForStatus, MAX_ERROR_MESSAGE_LENGTH, messageFromErrorBody, readWarnings } from "./http.ts";
 
 export interface HttpJudgeProviderOptions {
 	/** The server's address. */
@@ -60,7 +60,7 @@ export class HttpJudgeProvider implements JudgeProvider {
 			const body: unknown = await response.json().catch(() => undefined);
 			const message = messageFromErrorBody(body).slice(0, MAX_ERROR_MESSAGE_LENGTH);
 			throw new JudgeError(
-				response.status >= 500 ? "server" : "bad_request",
+				errorKindForStatus(response.status, message),
 				message || `Judge server responded with HTTP ${response.status}`,
 				{ status: response.status },
 			);
