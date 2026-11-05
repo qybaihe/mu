@@ -409,11 +409,95 @@ export function loadConfig(source: ConfigSource = {}): {
 	return { config, disabled: false, problem, ...(laya ? { laya } : {}) };
 }
 
-/** A feature's options: its defaults, overridden by `features.<name>` when that is an object; `false` disables it. */
+/**
+ * A feature's options: its defaults, overridden by `features.<name>` when that is an object; `false` disables it. A
+ * value of another type than its default (`"enabled": "false"`, a number given as text) is not taken: the default
+ * stays, and `featureConfigProblems` says so.
+ */
 export function featureOptions<T extends { enabled: boolean }>(config: KyrnConfig, name: string, defaults: T): T {
 	const value = config.features[name];
 	if (value === false) return { ...defaults, enabled: false };
 	if (value === true) return { ...defaults, enabled: true };
-	if (isRecord(value)) return { ...defaults, ...value } as T;
-	return defaults;
+	if (!isRecord(value)) return defaults;
+	const taken = Object.entries(value).filter(
+		([key, given]) => !(key in defaults) || sameKind(defaults[key as keyof T], given),
+	);
+	return { ...defaults, ...Object.fromEntries(taken) } as T;
+}
+
+/** What a value is, as mu.json shows it. */
+function kindOf(value: unknown): string {
+	if (Array.isArray(value)) return "a list";
+	if (value === null) return "null";
+	if (typeof value === "object") return "an object";
+	if (typeof value === "string") return "text";
+	return `a ${typeof value}`;
+}
+
+/** Whether `given` can stand for an option whose default is `fallback`. A default of nothing takes anything. */
+function sameKind(fallback: unknown, given: unknown): boolean {
+	return fallback === undefined || fallback === null || kindOf(fallback) === kindOf(given);
+}
+
+/** The closest of `known` to `name` when it is one or two typos away. */
+function nearest(name: string, known: Iterable<string>): string | undefined {
+	const distance = (a: string, b: string): number => {
+		let row = Array.from({ length: b.length + 1 }, (_, index) => index);
+		for (let i = 1; i <= a.length; i++) {
+			const next = [i];
+			for (let j = 1; j <= b.length; j++)
+				next[j] = Math.min(row[j] + 1, next[j - 1] + 1, row[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+			row = next;
+		}
+		return row[b.length];
+	};
+	let best: { name: string; distance: number } | undefined;
+	for (const candidate of known) {
+		const d = distance(name.toLowerCase(), candidate.toLowerCase());
+		if (d <= 2 && (!best || d < best.distance)) best = { name: candidate, distance: d };
+	}
+	return best?.name;
+}
+
+/**
+ * What is wrong with `features` in mu.json, checked against the options each feature read (`read`: their defaults,
+ * by feature): a feature mu does not have, a value that is neither true, false nor an object, an option the feature
+ * does not have, and an option of another type than its default. Each would otherwise be ignored without a word,
+ * and the setting would not do what its author thinks.
+ */
+export function featureConfigProblems(
+	features: Readonly<Record<string, unknown>>,
+	read: ReadonlyMap<string, Readonly<Record<string, unknown>>>,
+): string[] {
+	const problems: string[] = [];
+	const didYouMean = (name: string, known: Iterable<string>) => {
+		const close = nearest(name, known);
+		return close ? ` Did you mean ${close}?` : "";
+	};
+	for (const [name, value] of Object.entries(features)) {
+		const defaults = read.get(name);
+		if (!defaults) {
+			problems.push(
+				`features.${name}: mu has no feature by that name, so it does nothing.${didYouMean(name, read.keys())}`,
+			);
+			continue;
+		}
+		if (typeof value === "boolean") continue;
+		if (!isRecord(value)) {
+			problems.push(`features.${name} is ${kindOf(value)}: it takes true, false or an object of its options.`);
+			continue;
+		}
+		for (const [key, given] of Object.entries(value)) {
+			if (!(key in defaults)) {
+				problems.push(
+					`features.${name}.${key}: ${name} has no such option, so it does nothing.${didYouMean(key, Object.keys(defaults))}`,
+				);
+			} else if (!sameKind(defaults[key], given)) {
+				problems.push(
+					`features.${name}.${key} is ${kindOf(given)} (${JSON.stringify(given)?.slice(0, 40)}), where it takes ${kindOf(defaults[key])}: mu uses its default, ${JSON.stringify(defaults[key])?.slice(0, 40)}.`,
+				);
+			}
+		}
+	}
+	return problems;
 }

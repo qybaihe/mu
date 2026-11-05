@@ -98,7 +98,7 @@ mu follows `HTTPS_PROXY`, `HTTP_PROXY` and `NO_PROXY`. When `HTTPS_PROXY` isn't 
 
 ## Per-feature options
 
-Each feature's options, defaults and ranges are listed in a reference generated from the same manifest the app's settings use: [reference/features.md](reference/features.md). Some that people often change:
+Each feature's options, defaults and ranges are listed in a reference generated from the same manifest the app's settings use: [reference/features.md](reference/features.md). A name under `features` that mu doesn't have, an option a feature doesn't have, and a value of the wrong kind (`"enabled": "false"`, a number written as text) would do nothing as written, so mu says so when a session starts and lists them in `/doctor`. A value of the wrong kind is not used: the option keeps its default. Some that people often change:
 
 | Setting | What it does |
 | --- | --- |
