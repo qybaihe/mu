@@ -18,7 +18,13 @@ pi 故意不做后台 shell，mu 补上。三个工具：
 
 - **同一个 shell。** 复用 pi 的 `getShellConfig` / `getPowerShellConfig`（`/bin/bash`、Windows 上的 Git Bash、从 stdin 取命令的旧版 WSL 启动器），并读取 `settings.json` 的 `shellPath`、`shellCommandPrefix`（项目级设置只在项目受信任时生效：仓库不能指定要运行的二进制）。Windows 上只有当 `powershell` 是唯一启用的 shell 工具时才用 PowerShell，并带上 pi 的 UTF-8 前缀。环境变量与前台一致（agent 的 `bin` 目录排在 PATH 最前）。
 - **输出两份。** 环形缓冲（默认 262144 字符，只留最新，去掉颜色码，回车换成换行）给模型读；日志文件留全部原始字节，默认在 `~/.mu/jobs/<会话 id>/bg-N.log`，单个日志 50 MB 封顶，7 天前的会话目录在下次启动任务时清掉。`since` 早于缓冲起点时，结果里写明丢了多少字符、日志在哪。
-- **杀的是进程树。** POSIX 上 shell 以 `detached` 启动，自成进程组：先向整组发 SIGTERM，`killGraceMs`（默认 3 秒）后还活着就 SIGKILL。Windows 上是 `taskkill /T /PID`，之后 `taskkill /T /F /PID`，用 `System32` 下的绝对路径。命令里自己写了 `&` 的情况（`server & echo ok`：shell 退出了，子进程还在组里）会标成 `lingering`，`bg_stop` 和会话结束时照样清理。
+- **杀的是进程树。**
+  - POSIX：shell 以 `detached` 启动，自成进程组。先向整组发 SIGTERM，`killGraceMs`（默认 3 秒）后还活着就 SIGKILL。
+  - Windows 用 Git Bash（或其他 MSYS bash）时，不能只靠 `taskkill /T`，它按父进程号找子进程。带 `#!` 行的脚本（npm、npx、pnpm、yarn）经 `/usr/bin/env` 执行；MSYS 的 exec 会起一个新的 Windows 进程、结束旧的，于是 npm 的父进程已经退出，`taskkill /T` 从 shell 找不到它，也找不到它下面的 cmd.exe 和脚本。2026-11-05 之前，停掉的 `npm run` 会在项目目录里继续跑，退出应用后也一样（#307 没修好的 Windows e2e EBUSY 就是它）。
+  - 现在的做法：MSYS 在这些 exec 之间保留自己的进程组，npm 的 node.exe 这类原生程序也在组里，Git 自带的 `ps` 能列出每个的 Windows pid。job 的 bash 启动时先把自己的 pid（就是组号）写到日志旁的 `bg-N.group`。停止时用一条 `taskkill /T /F` 结束 shell 和组里的每个进程，原生程序下面的 cmd.exe 和脚本也一起结束。不先“请求”：Windows 上不加 `/F` 结束不了控制台程序。
+  - Windows 用 PowerShell 或旧版 WSL 启动器时，仍是 `taskkill /T /PID`，之后 `taskkill /T /F /PID`。这两种情况下进程树是完整的。
+  - 都用 `System32` 下的绝对路径。
+  - 命令里自己写了 `&` 的情况（`server & echo ok`：shell 退出了，子进程还在组里）会标成 `lingering`，`bg_stop` 和会话结束时照样清理。Windows 上用 Git Bash 时也一样：shell 退出时查一次 MSYS 的组。
 - **不会悄悄活过会话。** `session_shutdown`（退出、reload、新建、恢复、分叉）时全部终止；不是退出的情况下会告诉用户停了几个。进程不经 `session_shutdown` 直接退出时，`process.on("exit")` 里同步 SIGKILL 兜底。
 - **风险闸门一视同仁。** `guard.ts` 现在检查 `bash` 和 `bg_start` 两个工具的 `command`：危险命令不会因为放到后台就变安全。约束闸门（`constraints.ts`）的 `MUTATING` 里本来就有 `bg_start`，工具名保持不变。
 - **准入控制一视同仁。** `bg_output` 的结果在 `details.command` 里带着任务的命令，`admission.ts` 用它来描述这次调用。于是后台跑的 `vitest` 长日志同样走测试日志策略（`testLog: "rules" | "jev"`），其他长输出走分块分类。输出前有一行“不可信数据”的标注。
@@ -108,7 +114,12 @@ pi 故意不做后台 shell，mu 补上。三个工具：
 
 没有验证：
 
-- **没有在 Windows 和 WSL 上运行过。** `taskkill` 的参数拼装、PowerShell 前缀、Git Bash / 旧版 WSL 启动器的命令传递只有按平台参数化的单元测试。Windows 没有进程组，shell 退出后遗留的孙进程 `taskkill /T` 找不到（`lingering` 只在 POSIX 上能发现）；旧版 WSL 的 `bash.exe` 被杀后 Linux 侧子进程是否跟着退出，未知。
+- **Windows 只验证了 Git Bash。** `test/background-windows.test.ts`（2026-11-05 加入，只在 Windows 上跑，CI 的 windows-tests.yml）在 windows-2022 上用真的 Git Bash、node、npm 跑过：
+  - 停掉的 `npm run` 结束了 npm、cmd 和脚本，项目目录能立即删掉；
+  - 会话结束也一样；
+  - `server &` 被标成 `lingering`，会话结束时被结束。
+
+  打包后的桌面应用在 Windows x64 和 arm64 上的 e2e 也通过。PowerShell 前缀和旧版 WSL 启动器仍只有按平台参数化的单元测试；旧版 WSL 的 `bash.exe` 被杀后 Linux 侧子进程是否跟着退出，未知。
 - **没有在“不开隧道的国内直连网络”上测过任何搜索源**，包括必应。上表只说明这台机器上的情况。必应的诱饵结果是它对脚本客户端的反应还是对隧道出口 IP 的反应，没有分清。
 - 解析器的 fixture 是照着观察到的标记手写的，不是保存的真实页面（不提交抓取的页面）。搜索引擎改版会让对应解析器失效；失效时表现为“没有结果”，自动换下一个源。
 - `wait_for` / `watch` 的正则来自模型，限制了长度（300）和被匹配的行长（2000），但没有超时：病态正则仍可能卡住事件循环。
