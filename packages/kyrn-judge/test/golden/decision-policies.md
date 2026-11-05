@@ -584,6 +584,27 @@ p 0.05). Do not edit by hand. A section that changes needs a new `version` in it
 - no answer: [{"kind":"unknown","drop":false},{"kind":"unknown","drop":false}]
 - the judge failed: [{"kind":"unknown","drop":false},{"kind":"unknown","drop":false}] (fallback)
 
+## tool.admission.test-log v3
+
+- `part_1` (choice), the others high:
+  - needed: 0.3–0.99 → {"omit":[]}; without p → {"omit":[]}
+  - not_needed: 0.3–0.85 → {"omit":[]}; 0.9–0.99 → {"omit":["part_1"]}; without p → {"omit":[]}
+  - unclear: 0.3–0.99 → {"omit":[]}; without p → {"omit":[]}
+- `part_1` (choice), the others low:
+  - needed: 0.3–0.99 → {"omit":[]}; without p → {"omit":[]}
+  - not_needed: 0.3–0.85 → {"omit":[]}; 0.9–0.99 → {"omit":["part_1"]}; without p → {"omit":[]}
+  - unclear: 0.3–0.99 → {"omit":[]}; without p → {"omit":[]}
+- `part_2` (choice), the others high:
+  - needed: 0.3–0.99 → {"omit":[]}; without p → {"omit":[]}
+  - not_needed: 0.3–0.85 → {"omit":[]}; 0.9–0.99 → {"omit":["part_2"]}; without p → {"omit":[]}
+  - unclear: 0.3–0.99 → {"omit":[]}; without p → {"omit":[]}
+- `part_2` (choice), the others low:
+  - needed: 0.3–0.99 → {"omit":[]}; without p → {"omit":[]}
+  - not_needed: 0.3–0.85 → {"omit":[]}; 0.9–0.99 → {"omit":["part_2"]}; without p → {"omit":[]}
+  - unclear: 0.3–0.99 → {"omit":[]}; without p → {"omit":[]}
+- no answer: {"omit":[]}
+- the judge failed: {"omit":[]} (fallback)
+
 ## tool.approval v3
 
 - `verdict` (choice):

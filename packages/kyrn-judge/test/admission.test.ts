@@ -9,6 +9,7 @@ import { parseConfig } from "../src/config.ts";
 import { DecisionEngine } from "../src/decision.ts";
 import { toolAdmission, toolAdmissionBatch } from "../src/decisions/tool-admission.ts";
 import { chunkLines, describeCall, printsFile } from "../src/extension/features/admission.ts";
+import { FULL_OUTPUT_ENTRY, type FullOutputRecord } from "../src/extension/full-output.ts";
 import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
 import { Judge } from "../src/judge.ts";
 import { MockJudgeProvider } from "../src/providers/mock.ts";
@@ -122,9 +123,15 @@ describe("tool output admission", () => {
 		expect(text).toContain("Tests: 1 failed, 211 passed");
 		expect(text.length).toBeLessThan(output.length / 2);
 
-		const pointer = /full output: (\S+)\]/.exec(text);
-		expect(pointer).not.toBeNull();
-		const archive = pointer?.[1] ?? "";
+		// The notes send the model to recall, which finds the archive by the entry beside the result (recall.test.ts).
+		expect(text).toMatch(/omitted; recall\(\{ id: "[^"]+", offset: \d+, limit: \d+ \}\) reads them back\]/);
+		const archive = harness.sessionManager
+			.getBranch()
+			.flatMap((entry) =>
+				entry.type === "custom" && entry.customType === FULL_OUTPUT_ENTRY
+					? [(entry.data as FullOutputRecord).path]
+					: [],
+			)[0];
 		expect(existsSync(archive)).toBe(true);
 		expect(readFileSync(archive, "utf8")).toBe(output);
 

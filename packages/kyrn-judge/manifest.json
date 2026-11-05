@@ -3776,7 +3776,8 @@
 						"write",
 						"delegate",
 						"hive",
-						"web_fetch"
+						"web_fetch",
+						"recall"
 					],
 					"label": {
 						"zh": "这些工具的输出不筛",
@@ -4147,6 +4148,35 @@
 						"uk-UA": "Поточний запит чекає стільки; рішення, що надходять пізніше, застосовуються до наступного запиту.",
 						"tr-TR": "Bu istek bu kadar bekler; daha sonra gelen kararlar bir sonraki istekte uygulanır.",
 						"fa-IR": "این درخواست همین‌قدر صبر می‌کند؛ نتیجه‌هایی که دیرتر برسند در درخواست بعدی اعمال می‌شوند."
+					}
+				}
+			]
+		},
+		{
+			"name": "recall",
+			"title": {
+				"zh": "取回省略的输出",
+				"en": "Read back shortened output"
+			},
+			"summary": {
+				"zh": "mu 为省上下文而省略的工具输出，模型可以用 recall 按调用 id 分段取回原文，不必重跑命令或重新抓网页：遗忘换掉的旧结果、准入归档的噪声、web_fetch 截掉的后半页。只读本次对话；取回的网页后半部分会先过注入筛查。",
+				"en": "Tool output mu left out to save context can be read back by the model with recall, a piece at a time by the call's id, instead of running the command or fetching the page again: old results forgetting replaced, noise admission archived, the rest of a page web_fetch cut. Only this conversation; the rest of a page goes through the injection screen first."
+			},
+			"defaultEnabled": true,
+			"options": [
+				{
+					"key": "maxChars",
+					"kind": "number",
+					"default": 20000,
+					"min": 1000,
+					"max": 200000,
+					"unit": {
+						"zh": "字符",
+						"en": "chars"
+					},
+					"label": {
+						"zh": "一次取回最多返回",
+						"en": "Max text per recall call"
 					}
 				}
 			]
@@ -5153,19 +5183,19 @@
 						"fa-IR": "تکرارهایی که حلقه به شمار می‌آیند"
 					},
 					"help": {
-						"zh": "输入完全相同、结果也完全相同才算同一调用；分段读同一个文件不算。",
-						"en": "Only the same input with the same result counts as the same call; paging through a file does not.",
-						"zh-TW": "輸入完全相同、結果也完全相同，才算同一個呼叫；分段讀同一個檔案不算。",
-						"ja-JP": "入力も結果もまったく同じ場合だけを同じ呼び出しとみなします。ファイルを少しずつ読み進めるのは含みません。",
-						"ko-KR": "입력과 결과가 모두 같아야 같은 호출로 봅니다. 파일을 나눠 읽어 나가는 것은 해당하지 않습니다.",
-						"de-DE": "Nur dieselbe Eingabe mit demselben Ergebnis zählt als derselbe Aufruf; abschnittsweises Lesen einer Datei nicht.",
-						"fr-FR": "Seule une entrée identique avec un résultat identique compte comme le même appel ; parcourir un fichier par morceaux, non.",
-						"es-ES": "Solo la misma entrada con el mismo resultado cuenta como la misma llamada; recorrer un archivo por partes, no.",
-						"pt-BR": "Só a mesma entrada com o mesmo resultado conta como a mesma chamada; percorrer um arquivo por partes, não.",
-						"ru-RU": "Одним и тем же вызовом считается только тот же ввод с тем же результатом; постраничное чтение файла — нет.",
-						"uk-UA": "Тим самим викликом вважається лише той самий вхід із тим самим результатом; почастинне читання файлу — ні.",
-						"tr-TR": "Yalnızca aynı sonucu veren aynı girdi aynı çağrı sayılır; bir dosyada parça parça ilerlemek sayılmaz.",
-						"fa-IR": "فقط ورودی یکسان با نتیجهٔ یکسان، فراخوانی یکسان به شمار می‌آید؛ ورق زدن تکه‌تکهٔ یک فایل نه."
+						"zh": "输入完全相同、结果也完全相同才算同一调用；分段读同一个文件不算。被拦下、没有执行的调用，输入相同就算。到这个次数提醒一次，再多 2 次、5 次时各提醒一次，一次比一次直接。",
+						"en": "Only the same input with the same result counts as the same call; paging through a file does not. A call that was refused and never ran counts by its input alone. The monitor says so at this many, and again 2 and 5 repeats later, more plainly each time.",
+						"zh-TW": "輸入完全相同、結果也完全相同，才算同一個呼叫；分段讀同一個檔案不算。被攔下、沒有執行的呼叫，輸入相同就算。到這個次數提醒一次，再多 2 次、5 次時各提醒一次，一次比一次直接。",
+						"ja-JP": "入力も結果もまったく同じ場合だけを同じ呼び出しとみなします。ファイルを少しずつ読み進めるのは含みません。拒否されて実行されなかった呼び出しは、入力が同じなら同じとみなします。この回数で一度知らせ、さらに 2 回、5 回重なったときにもう一度ずつ、より率直に知らせます。",
+						"ko-KR": "입력과 결과가 모두 같아야 같은 호출로 봅니다. 파일을 나눠 읽어 나가는 것은 해당하지 않습니다. 거부되어 실행되지 않은 호출은 입력만 같으면 같은 호출로 봅니다. 이 횟수에 한 번 알리고, 2회와 5회 더 반복되면 한 번씩 더 분명하게 알립니다.",
+						"de-DE": "Nur dieselbe Eingabe mit demselben Ergebnis zählt als derselbe Aufruf; abschnittsweises Lesen einer Datei nicht. Ein abgelehnter Aufruf, der nie lief, zählt allein nach seiner Eingabe. Der Monitor meldet sich bei dieser Anzahl und noch einmal 2 und 5 Wiederholungen später, jedes Mal deutlicher.",
+						"fr-FR": "Seule une entrée identique avec un résultat identique compte comme le même appel ; parcourir un fichier par morceaux, non. Un appel refusé, qui n'a jamais été exécuté, compte d'après son entrée seule. Le moniteur le signale à ce nombre, puis encore 2 et 5 répétitions plus tard, chaque fois plus nettement.",
+						"es-ES": "Solo la misma entrada con el mismo resultado cuenta como la misma llamada; recorrer un archivo por partes, no. Una llamada rechazada, que nunca se ejecutó, cuenta solo por su entrada. El monitor lo dice al llegar a este número, y otra vez 2 y 5 repeticiones después, cada vez con más claridad.",
+						"pt-BR": "Só a mesma entrada com o mesmo resultado conta como a mesma chamada; percorrer um arquivo por partes, não. Uma chamada recusada, que nunca rodou, conta só pela entrada. O monitor avisa ao chegar a esse número, e de novo 2 e 5 repetições depois, cada vez de forma mais direta.",
+						"ru-RU": "Одним и тем же вызовом считается только тот же ввод с тем же результатом; постраничное чтение файла — нет. Отклонённый вызов, который так и не выполнился, считается только по вводу. Монитор говорит об этом на этом числе повторов и ещё раз через 2 и 5 повторов, каждый раз прямее.",
+						"uk-UA": "Тим самим викликом вважається лише той самий вхід із тим самим результатом; почастинне читання файлу — ні. Відхилений виклик, який так і не виконався, рахується лише за входом. Монітор каже про це на цій кількості повторів і ще раз через 2 і 5 повторів, щоразу пряміше.",
+						"tr-TR": "Yalnızca aynı sonucu veren aynı girdi aynı çağrı sayılır; bir dosyada parça parça ilerlemek sayılmaz. Reddedilip hiç çalışmayan bir çağrı yalnızca girdisine göre sayılır. İzleyici bu sayıda bir kez uyarır, 2 ve 5 tekrar sonra birer kez daha, her seferinde daha açık.",
+						"fa-IR": "فقط ورودی یکسان با نتیجهٔ یکسان، فراخوانی یکسان به شمار می‌آید؛ ورق زدن تکه‌تکهٔ یک فایل نه. فراخوانی‌ای که رد شد و هرگز اجرا نشد، فقط با ورودی‌اش شمرده می‌شود. ناظر در این تعداد یک بار هشدار می‌دهد، و ۲ و ۵ تکرار بعد هم هر بار یک بار دیگر، هر بار صریح‌تر."
 					}
 				},
 				{

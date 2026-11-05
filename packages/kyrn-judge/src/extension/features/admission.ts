@@ -2,6 +2,7 @@ import { join } from "node:path";
 import { isTestLog, planTestLog, renderTestLog, type TestLogStrategy } from "../../admission/test-log.ts";
 import { type AdmissionOutcome, toolAdmission, toolAdmissionBatch } from "../../decisions/tool-admission.ts";
 import { archiveDir as archiveDirOf, sweepArchives, writeArchive } from "../archive.ts";
+import { canRecall, recallCall, recordFullOutput } from "../full-output.ts";
 import { clip, failOpen, type KyrnRuntime, textOf, within } from "../runtime.ts";
 
 /** What one batched request may carry in chunks: the judge takes 64 KiB, and the call and the questions need room too. */
@@ -125,10 +126,10 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 		 */
 		waitMs: 2000,
 		/**
-		 * Tools whose output is never judged: file contents and pages the model asked for, and sub-agent reports the bees
-		 * already shaped.
+		 * Tools whose output is never judged: file contents and pages the model asked for, output it read back, and
+		 * sub-agent reports the bees already shaped.
 		 */
-		passThrough: ["read", "edit", "write", "delegate", "hive", "web_fetch"],
+		passThrough: ["read", "edit", "write", "delegate", "hive", "web_fetch", "recall"],
 		/** Shell commands made of these programs only print files, and are not judged either (`printsFile`). Empty: all are. */
 		printCommands: [...PRINT_COMMANDS],
 		/** "rules" omits exact repeats in test-runner output; "jev" also asks the judge about what is left. */
@@ -218,6 +219,10 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 				typeof details?.command === "string" ? { command: details.command } : event.input,
 			);
 			const archivePath = join(archiveDir, `${event.toolCallId.replace(/[^\w.-]/g, "_")}.txt`);
+			// The notes point to recall when the model has it, which then finds the archive by the entry recorded for it.
+			const recall = canRecall(runtime);
+			const archive = () =>
+				recordFullOutput(runtime, { toolCallId: event.toolCallId, path: archivePath, kind: "archive" });
 
 			if (options.testLog !== "off" && isTestLog(call, text)) {
 				const frame = runtime.taskFrame();
@@ -228,10 +233,11 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 				const plan = await planTestLog({ call, goal, intent, output: text }, strategy, runtime.engine, {
 					signal: ctx.signal,
 				});
-				const rendered = renderTestLog(plan, archivePath);
+				const rendered = renderTestLog(plan, recall ? recallCall(event.toolCallId) : archivePath);
 				if (!rendered.applied) return undefined;
 				// The markers count lines of this text, so this text is what gets archived, not pi's own full-output file.
 				writeArchive(archivePath, text);
+				archive();
 				runtime.savings.admissionOmittedChars += rendered.omittedChars;
 				return { content: [{ type: "text" as const, text: rendered.text }] };
 			}
@@ -255,25 +261,38 @@ export function registerAdmission(runtime: KyrnRuntime): void {
 			if (!dropped.some(Boolean)) return undefined;
 
 			writeArchive(archivePath, text);
+			archive();
 
+			// Where each chunk starts in the archived text, so a note can send recall to the part it stands for.
+			const starts: number[] = [];
+			let cursor = 0;
+			for (const chunk of chunks) {
+				cursor = text.indexOf(chunk, cursor);
+				starts.push(cursor);
+				cursor += chunk.length;
+			}
 			const kept: string[] = [chunks[0]];
 			let omittedChars = 0;
-			let run: string[] = [];
+			/** Indexes in `chunks` of the dropped chunks in a row, not yet replaced by their note. */
+			let run: number[] = [];
 			const kinds = new Set<string>();
 			const flush = () => {
 				if (run.length === 0) return;
-				const chars = run.reduce((sum, chunk) => sum + chunk.length, 0);
-				const lines = run.reduce((sum, chunk) => sum + chunk.split("\n").length, 0);
+				const chars = run.reduce((sum, index) => sum + chunks[index].length, 0);
+				const lines = run.reduce((sum, index) => sum + chunks[index].split("\n").length, 0);
+				const from = starts[run[0]];
+				const last = run[run.length - 1];
+				const where = recall
+					? `${recallCall(event.toolCallId, from, starts[last] + chunks[last].length - from)} reads them back`
+					: `full output: ${archivePath}`;
 				omittedChars += chars;
-				kept.push(
-					`[mu: ${lines} lines (${chars} chars) of ${[...kinds].join("/")} output omitted; full output: ${archivePath}]`,
-				);
+				kept.push(`[mu: ${lines} lines (${chars} chars) of ${[...kinds].join("/")} output omitted; ${where}]`);
 				kinds.clear();
 				run = [];
 			};
 			middle.forEach((chunk, index) => {
 				if (dropped[index]) {
-					run.push(chunk);
+					run.push(index + 1);
 					kinds.add(outcomes[index].kind);
 				} else {
 					flush();

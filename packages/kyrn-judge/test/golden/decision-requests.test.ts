@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { DecisionEngine } from "../../src/decision.ts";
+import { MANIFEST } from "../../src/manifest.ts";
 import { GOLDEN_CASES } from "./decision-inputs.ts";
 import { RecordingJudge, unbumped } from "./golden-support.ts";
 
@@ -56,5 +57,10 @@ describe("what the decisions ask the judge", () => {
 	it("covers each decision once", () => {
 		const specs = GOLDEN_CASES.map((golden) => golden.spec);
 		expect(new Set(specs).size).toBe(specs.length);
+	});
+
+	it("covers every decision point mu has", () => {
+		const covered = new Set(GOLDEN_CASES.map((golden) => golden.spec.id));
+		expect(MANIFEST.decisions.map((decision) => decision.id).filter((id) => !covered.has(id))).toEqual([]);
 	});
 });

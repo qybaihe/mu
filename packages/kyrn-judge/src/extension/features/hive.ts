@@ -26,6 +26,7 @@ import {
 	NOTES_HEADER,
 } from "../../swarm/markers.ts";
 import { type BeeSpec, type BoardSummary, SwarmRun } from "../../swarm/run.ts";
+import { subagentSessionFile } from "../../swarm/sessions.ts";
 import { loadAgents } from "../agents.ts";
 import { clip, failOpen, type KyrnRuntime, textOf, userWords } from "../runtime.ts";
 import {
@@ -37,6 +38,7 @@ import {
 	pickModel,
 	ratingMatters,
 	recordBeeUsage,
+	recordSubagentSessions,
 	registerSwarmCommand,
 	renderSwarmResult,
 	routeTasks,
@@ -441,7 +443,7 @@ export function registerHive(runtime: KyrnRuntime, runner: SwarmRunner = spawnRu
 				{ minItems: 2 },
 			),
 		}),
-		execute: async (_toolCallId, params, signal, onUpdate, ctx) => {
+		execute: async (toolCallId, params, signal, onUpdate, ctx) => {
 			runtime.touch(ctx);
 			const asked = params.bees.slice(0, options.maxBees);
 			const names = uniqueNames(asked.map((bee) => bee.name));
@@ -514,7 +516,8 @@ export function registerHive(runtime: KyrnRuntime, runner: SwarmRunner = spawnRu
 				return {
 					name: member.name,
 					task: { title: member.name, instructions },
-					assignment: member.assignment,
+					// Like a delegate's subagent, a bee keeps a session of its own where this one does.
+					assignment: { ...member.assignment, session: subagentSessionFile(ctx.sessionManager, member.name) },
 					role: member.assignment.agent?.name,
 					model: member.assignment.model,
 					thinking: member.assignment.thinking,
@@ -549,6 +552,7 @@ export function registerHive(runtime: KyrnRuntime, runner: SwarmRunner = spawnRu
 			run.board = () => summarizeBoard(board);
 			streamUpdates(run, onUpdate);
 			recordBeeUsage(runtime, run);
+			recordSubagentSessions(runtime, run, toolCallId);
 
 			// A dispute nobody settles gets a verifier of its own, while the hive still runs: one more bee whose
 			// angle is the two notes. What it finds goes through the same gates, so the losing side is corrected
