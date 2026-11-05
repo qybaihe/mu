@@ -76,6 +76,58 @@ describe("mu ledger", () => {
 		]);
 	});
 
+	// A verdict that sends the agent back for nothing reads as one: the run that answered it ended without a call.
+	it("shows what the agent did with a nudge a verdict sent it", () => {
+		const sessions = mkdtempSync(join(tmpdir(), "mu-ledger-"));
+		dirs.push(sessions);
+		mkdirSync(join(sessions, "project"));
+		const entry = (customType: string, data: Record<string, unknown>) =>
+			JSON.stringify({ type: "custom", customType, data });
+		const nudge = (id: string, specId: string) =>
+			entry("kyrn.decision", {
+				id,
+				timestamp: "2026-11-04T10:00:00.000Z",
+				specId,
+				specVersion: 2,
+				mode: "active",
+				providerId: "jev",
+				judged: "continue",
+				source: "judge",
+			});
+		const followed = (ledgerId: string, specId: string, how: "acted" | "ended", calls: number) =>
+			entry("kyrn.outcome", { kind: "followed", ledgerId, specId, judged: "continue", followed: how, calls });
+		writeFileSync(
+			join(sessions, "project", "session.jsonl"),
+			[
+				JSON.stringify({ type: "message", message: { role: "user", content: "Fix the build" } }),
+				nudge("n1", "turn.continue"),
+				followed("n1", "turn.continue", "acted", 2),
+				nudge("n2", "turn.completion"),
+				followed("n2", "turn.completion", "ended", 0),
+				nudge("n3", "turn.continue"),
+			].join("\n"),
+		);
+
+		const verdicts = run(sessions)
+			.split("\n")
+			.filter((text) => text.includes(': "continue"'));
+		expect(verdicts).toHaveLength(3);
+		expect(verdicts[0]).toContain('turn.continue: "continue"  -> then: acted (2 tool calls)');
+		expect(verdicts[1]).toContain('turn.completion: "continue"  -> then: ended without a tool call');
+		expect(verdicts[2]).not.toContain("-> then");
+		const records = run(sessions, "--json")
+			.trim()
+			.split("\n")
+			.map((text) => JSON.parse(text) as { id: string; followed?: unknown });
+		expect(records.map((record) => [record.id, record.followed])).toEqual([
+			["n1", { outcome: "acted", calls: 2 }],
+			["n2", { outcome: "ended", calls: 0 }],
+			["n3", undefined],
+		]);
+		const timeline = run(sessions, "--timeline").split("\n");
+		expect(timeline.find((text) => text.includes("turn.completion"))).toContain("-> then: ended without a tool call");
+	});
+
 	it("shows one session step by step with --timeline: messages, replies, verdicts, tool results, mu's messages", () => {
 		const sessions = mkdtempSync(join(tmpdir(), "mu-ledger-"));
 		dirs.push(sessions);
