@@ -376,4 +376,27 @@ describe("MCP tool description screening", () => {
 		expect(requests[1]).not.toContain("mcp__evil__add");
 		expect(descriptionCalls(provider)).toHaveLength(1);
 	});
+
+	it("says in /status which tool it keeps off the list and why", async () => {
+		const { harness } = await start(descriptionJudge(), [
+			mcpTool("mcp__math__add", POISONED),
+			mcpTool("mcp__math__mul", "Multiplies two numbers."),
+		]);
+		harness.setResponses([fauxAssistantMessage("done")]);
+		await harness.session.prompt("go");
+		const shown: string[] = [];
+		await harness.session.extensionRunner.getCommand("status")?.handler("", {
+			cwd: harness.tempDir,
+			hasUI: true,
+			model: harness.getModel(),
+			modelRegistry: { getAvailable: () => [], find: () => undefined },
+			getContextUsage: () => undefined,
+			ui: { notify: (message: string) => shown.push(message), setStatus: () => {} },
+		} as never);
+		const lines = shown.join("\n").split("\n");
+		expect(lines).toContain("tools kept off the model's list: 1");
+		expect(lines).toContain(
+			"  mcp__math__add: tool.description (its description carries instructions to the AI beyond using the tool)",
+		);
+	});
 });

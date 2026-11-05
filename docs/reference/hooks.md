@@ -7,7 +7,7 @@ order of the table in `packages/kyrn-judge/src/extension/kyrn-judge.ts`, and pi 
 order they were registered, except that `tool_call` handlers registered as final run after all the others. So
 the order under each event is the order its handlers run in. `kernel` is what mu registers around the features.
 
-The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `procedures`, `skills`, `catalog`, `injection`, `guard`, `constraints`, `permissions`, `admission`, `forgetting`, `recall`, `compaction` (off by default), `monitor`, `ttsr` (off by default), `deadline`, `watchdog`, `interrupted`, `lsp`, `goal`, `completion`, `continuation`, `board`, `checkpoint`, `notify`, `warming`, `warmup`, `swarm`, `hive`, `tools`, `judgeItems`, `browser`, `inherit`, `mcp`, `background`, `confine` (off by default), `sandbox` (off by default), `web`, `packs`, `googleLogin`, `recovery`.
+The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `procedures`, `skills`, `catalog`, `injection`, `guard`, `constraints`, `permissions`, `admission`, `forgetting`, `recall`, `compaction` (off by default), `monitor`, `ttsr` (off by default), `deadline`, `watchdog`, `interrupted`, `lsp`, `goal`, `completion`, `continuation`, `board`, `checkpoint`, `notify`, `warming`, `warmup`, `prefix`, `swarm`, `hive`, `tools`, `judgeItems`, `browser`, `inherit`, `mcp`, `background`, `confine` (off by default), `sandbox` (off by default), `web`, `packs`, `googleLogin`, `recovery`.
 
 ## Events
 
@@ -58,6 +58,10 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 11. `inherit`
 12. `mcp`
 13. `packs`
+
+### `before_provider_request`
+
+1. `prefix`
 
 ### `cache_warming_decision`
 
@@ -212,7 +216,7 @@ The features, in that order: `interjection`, `preflight`, `frame`, `memory`, `pr
 
 ### `turn_start`
 
-1. `injection`
+1. `kernel`
 
 ### `user_bash`
 

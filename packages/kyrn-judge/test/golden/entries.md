@@ -28,6 +28,7 @@ without one.
 | `kyrn.notice` | message | src/extension/features/notify.ts | - | An event the notify feature passes on to the model, now or with the next turn. |
 | `kyrn.nudge` | message | src/extension/features/continuation.ts; src/extension/features/completion.ts | - | Sends a run that stopped short, or left a change unverified, back to work. |
 | `kyrn.outcome` | entry | src/extension/features/permissions.ts; src/extension/features/commands.ts | desktop: nativeHost/reducer.ts; mu ledger: kyrn/bin/kyrn-ledger; /ledger: src/extension/features/commands.ts | What the user did about a judgment: their answer to the question it sent them, or a mark that it was wrong. |
+| `kyrn.prefix` | entry | src/extension/features/prefix.ts | - | A request to the model that no longer starts with the one before it: what changed, and what mu decided in between. |
 | `kyrn.recovery` | message | src/extension/features/recovery.ts | - | Which calls an interruption left without a result, and what to check before running them again. |
 | `kyrn.rewind` | message | src/extension/features/checkpoint.ts | - | The lesson of a rewind, for the model to start over with. |
 | `kyrn.rewound` | entry | src/extension/features/checkpoint.ts | - | A rewind that happened, with the snapshot that undoes it. |
@@ -824,6 +825,10 @@ A entry, read by another program:
 	]
 }
 ```
+
+## kyrn.prefix v1
+
+A entry. No schema: no other program reads it.
 
 ## kyrn.recovery v1
 

@@ -59,6 +59,7 @@ import { registerNotify } from "./features/notify.ts";
 import { registerOpenAIKeyNotice } from "./features/openai-key.ts";
 import { registerPacks } from "./features/packs.ts";
 import { registerPermissions } from "./features/permissions.ts";
+import { registerPrefix } from "./features/prefix.ts";
 import { registerPreflight } from "./features/preflight.ts";
 import { registerProcedures } from "./features/procedures.ts";
 import { registerRecall } from "./features/recall.ts";
@@ -158,7 +159,8 @@ export type FeatureName =
 	| "googleLogin"
 	| "recovery"
 	| "recall"
-	| "interrupted";
+	| "interrupted"
+	| "prefix";
 
 export function createKyrnJudgeExtension(options: KyrnJudgeExtensionOptions = {}): (pi: ExtensionAPI) => void {
 	return (pi) => registerKyrn(pi, options);
@@ -293,6 +295,8 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["notify", registerNotify],
 		["warming", registerWarming],
 		["warmup", registerWarmup],
+		// Watches what the others' changes do to the prompt cache: it only reads each request.
+		["prefix", registerPrefix],
 		["swarm", (shared) => registerSwarm(shared, options.swarmRunner)],
 		["hive", (shared) => registerHive(shared, options.swarmRunner)],
 		["tools", registerTools],
@@ -318,6 +322,15 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		register(runtime);
 	}
 	options.trace?.("kernel");
+	// What was put back on the model's list since by something other than the masks (another extension, a tool that
+	// sets the list itself) comes off again before the next request.
+	pi.on(
+		"turn_start",
+		failOpen(() => {
+			runtime.toolMasks.apply();
+			return undefined;
+		}),
+	);
 	// Every feature has read its options by now. What mu.json sets that no feature takes is said, not ignored: in
 	// /doctor and /status, and once when the session starts.
 	if (!options.only) {
