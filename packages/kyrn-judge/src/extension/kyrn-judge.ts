@@ -108,6 +108,11 @@ export interface KyrnJudgeExtensionOptions {
 	sandbox?: SandboxDeps;
 	/** For tests of the write floor: the platform, how the floor is tried, the home and temporary folders. */
 	confine?: ConfineDeps;
+	/**
+	 * Told which part of mu registers next, before it does: a feature's name from the table below, or `kernel` for what
+	 * mu registers around them. For the generated hook table (`test/golden/hooks.test.ts`, `docs/reference/hooks.md`).
+	 */
+	trace?: (part: FeatureName | "kernel") => void;
 }
 
 export type FeatureName =
@@ -168,6 +173,7 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 	// inherits that variable: an Electron app the agent starts would run as a script. Only mu's own sub-agents, which
 	// run on this same binary, get it back (swarm.ts).
 	delete process.env.ELECTRON_RUN_AS_NODE;
+	options.trace?.("kernel");
 	// Whatever else is on or off: in RPC mode, a promise nothing handled is logged instead of ending mu.
 	registerRejectionLog(pi);
 	// An injected provider or config means the caller owns the setup: do not read the user's files.
@@ -293,8 +299,11 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		["recovery", registerRecovery],
 	];
 	for (const [name, register] of features) {
-		if (!options.only || options.only.includes(name)) register(runtime);
+		if (options.only && !options.only.includes(name)) continue;
+		options.trace?.(name);
+		register(runtime);
 	}
+	options.trace?.("kernel");
 	// Every feature has read its options by now. What mu.json sets that no feature takes is said, not ignored: in
 	// /doctor and /status, and once when the session starts.
 	if (!options.only) {
