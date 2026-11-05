@@ -80,7 +80,7 @@ import { registerWelcome } from "./features/welcome.ts";
 import type { PresentationListener } from "./presentation.ts";
 import { registerLockSafeQuit } from "./quit.ts";
 import { registerRejectionLog } from "./rejections.ts";
-import { failOpen, KyrnRuntime, recentTurnDigests } from "./runtime.ts";
+import { failOpen, KyrnRuntime, recentTurnDigests, textOf } from "./runtime.ts";
 
 export { recentTurnDigests };
 
@@ -110,6 +110,11 @@ export interface KyrnJudgeExtensionOptions {
 	sandbox?: SandboxDeps;
 	/** For tests of the write floor: the platform, how the floor is tried, the home and temporary folders. */
 	confine?: ConfineDeps;
+	/**
+	 * Told which part of mu registers next, before it does: a feature's name from the table below, or `kernel` for what
+	 * mu registers around them. For the generated hook table (`test/golden/hooks.test.ts`, `docs/reference/hooks.md`).
+	 */
+	trace?: (part: FeatureName | "kernel") => void;
 }
 
 export type FeatureName =
@@ -171,6 +176,7 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 	// inherits that variable: an Electron app the agent starts would run as a script. Only mu's own sub-agents, which
 	// run on this same binary, get it back (swarm.ts).
 	delete process.env.ELECTRON_RUN_AS_NODE;
+	options.trace?.("kernel");
 	// Whatever else is on or off: in RPC mode, a promise nothing handled is logged instead of ending mu.
 	registerRejectionLog(pi);
 	// An injected provider or config means the caller owns the setup: do not read the user's files.
@@ -217,6 +223,20 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 		if (roots) registerLockSafeQuit(pi, roots.agentDir);
 		return;
 	}
+
+	// What the agent said last, the stated intent of the calls that follow it: interjection, memory, admission, lsp,
+	// notify and warming read it, whichever of them are on.
+	pi.on(
+		"message_end",
+		failOpen((event, ctx) => {
+			runtime.touch(ctx);
+			const message = event.message as { role?: unknown; content?: unknown };
+			if (message.role !== "assistant") return undefined;
+			const text = textOf(message.content);
+			if (text.trim()) runtime.lastAssistantText = text;
+			return undefined;
+		}),
+	);
 
 	// A sub-agent first of all listens to its parent: a wrap-up request has to be known before anything else reacts to a step.
 	if (process.env.KYRN_SWARM_CONTROL)
@@ -302,8 +322,11 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 	// they decide on it, and they may send another.
 	runtime.nudges = registerNudgeOutcomes(runtime);
 	for (const [name, register] of features) {
-		if (!options.only || options.only.includes(name)) register(runtime);
+		if (options.only && !options.only.includes(name)) continue;
+		options.trace?.(name);
+		register(runtime);
 	}
+	options.trace?.("kernel");
 	// What was put back on the model's list since by something other than the masks (another extension, a tool that
 	// sets the list itself) comes off again before the next request.
 	pi.on(
