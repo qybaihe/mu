@@ -307,7 +307,7 @@ mubench 是 mu 给决策模型做的评测。主榜的每一道题，都是 mu �
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="app-dark.zh-CN.png">
-    <img src="app-light.zh-CN.png" width="880" alt="mu 桌面端在任务队列项目 relay 里修好一个 bug 之后：timeout 为 1h30m 的任务一小时就被杀掉，因为一分钟被定义成了 1,000 毫秒。判定器把消息判为多步任务（input.preflight），两次跑测试都放行（tool.approval），并判定这一轮已经做完（turn.continue）。右侧判定页列出每次判定的判定点和耗时，约 70 到 120 毫秒。侧栏里是三个项目里之前的对话，底部的栏显示判定器（Jev，经 TypeSafe）、40 个判定点里启用了 38 个、5 次判定和上下文占用。">
+    <img src="app-light.zh-CN.png" width="880" alt="mu 桌面端在任务队列项目 relay 里修好一个 bug 之后：timeout 为 1h30m 的任务一小时就被杀掉，因为一分钟被定义成了 1,000 毫秒。判定器把消息判为多步任务（input.preflight），两次跑测试都放行（tool.approval），并判定这一轮已经做完（turn.continue）。右侧判定页列出每次判定的判定点和耗时，约 200 到 320 毫秒。侧栏里是三个项目里之前的对话，输入框显示权限模式（判定模式）和模型（MiMo-V2.6-Pro，思考程度高），底部的栏显示判定器（OpenCode Zen 上免费的 Jev）、40 个判定点里启用了 34 个、4 次判定和上下文占用。">
   </picture>
 </p>
 

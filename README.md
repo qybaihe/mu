@@ -354,7 +354,7 @@ A desktop app with mu and its runtime built in: there's no Node.js to install an
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme/app-dark.png">
-    <img src="docs/readme/app-light.png" width="880" alt="The mu desktop app after a bug fix in relay, a job-queue project: jobs with a 1h30m timeout were killed after an hour because a minute was defined as 1,000 ms. The judge classified the message as a multi-step task (input.preflight), let both test runs through (tool.approval) and found the turn complete (turn.continue). The Judge tab on the right lists each verdict with its decision point and latency, about 60 to 120 ms. The sidebar holds earlier conversations in three projects, and the bar along the bottom shows the judge (Jev, through TypeSafe), 38 of 40 decision points active, 5 verdicts and the context in use.">
+    <img src="docs/readme/app-light.png" width="880" alt="The mu desktop app after a bug fix in relay, a job-queue project: jobs with a 1h30m timeout were killed after an hour because a minute was defined as 1,000 ms. The judge classified the message as a multi-step task (input.preflight), let both test runs through (tool.approval) and found the turn complete (turn.continue). The Judge tab on the right lists each verdict with its decision point and latency, about 250 to 420 ms. The sidebar holds earlier conversations in three projects, the composer shows the permission mode (Judge mode) and the model (MiMo-V2.6-Pro, thinking high), and the bar along the bottom shows the judge (the free Jev on OpenCode Zen), 34 of 40 decision points active, 4 verdicts and the context in use.">
   </picture>
 </p>
 

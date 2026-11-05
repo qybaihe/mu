@@ -291,7 +291,7 @@ mu とそのランタイムを内蔵したデスクトップアプリです。No
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="app-dark.png">
-    <img src="app-light.png" width="880" alt="ジョブキューのプロジェクト relay でバグを直したあとの mu デスクトップアプリ。timeout が 1h30m のジョブが 1 時間で止められていたのは、1 分が 1,000 ms と定義されていたため。判定器はメッセージを複数ステップのタスクと判断し（input.preflight）、2 回のテスト実行を通し（tool.approval）、ターンが終わったと判定した（turn.continue）。右の判定タブには各判定が判定ポイントと所要時間（約 60〜120 ms）付きで並ぶ。サイドバーには 3 つのプロジェクトの過去の会話、下部のバーには判定器（TypeSafe 経由の Jev）、40 の判定ポイントのうち有効な 38、判定 5 件、コンテキストの使用量が出ている。">
+    <img src="app-light.png" width="880" alt="ジョブキューのプロジェクト relay でバグを直したあとの mu デスクトップアプリ。timeout が 1h30m のジョブが 1 時間で止められていたのは、1 分が 1,000 ms と定義されていたため。判定器はメッセージを複数ステップのタスクと判断し（input.preflight）、2 回のテスト実行を通し（tool.approval）、ターンが終わったと判定した（turn.continue）。右の判定タブには各判定が判定ポイントと所要時間（約 250〜420 ms）付きで並ぶ。サイドバーには 3 つのプロジェクトの過去の会話、入力欄には権限モード（判定モード）とモデル（MiMo-V2.6-Pro、思考レベル高）、下部のバーには判定器（OpenCode Zen の無料の Jev）、40 の判定ポイントのうち有効な 34、判定 4 件、コンテキストの使用量が出ている。">
   </picture>
 </p>
 
