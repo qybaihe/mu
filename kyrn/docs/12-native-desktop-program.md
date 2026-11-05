@@ -1,5 +1,7 @@
 # 12. 原生桌面端计划：PI-Desktop 对照与交付路线
 
+Status: 记录。2026-09-23 的计划。
+
 2026-09-23。本文是 `/goal` 交付计划的总纲：对照 [vastsa/PI-Desktop](https://github.com/vastsa/PI-Desktop)
 （Electron + Rust host core + pi harness + 插件平台，LGPL-3.0，0.15.x 早期预览）与 mu 桌面端（
 `/Users/baihe/Documents/KYRN-desktop`，分支 `codex/kyrn-desktop`），列出差距、决定取舍、分阶段派工。

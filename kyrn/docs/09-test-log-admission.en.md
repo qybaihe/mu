@@ -1,5 +1,9 @@
 # Test-log admission: survey, design, Jev validation and a replay of real sessions
 
+Status: Record. The experiment and the replay, last updated 2026-10-24; test-log admission is in the code (`features.admission`).
+
+<!-- translated from 09-test-log-admission.md, sha256 4e001dce545a379f -->
+
 > English translation of [09-test-log-admission.md](09-test-log-admission.md); the Chinese original is authoritative.
 >
 > The project was renamed mu on 2026-09-21 (command `mu`, logo μ). This note was written before the rename and its text is left as it was; [10-rename-to-mu.md](10-rename-to-mu.md) maps the old names to the new ones.
