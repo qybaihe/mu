@@ -326,7 +326,7 @@ mu doctor     # 檢查安裝、判定器和各項連線
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="cli-dark.png">
-    <img src="cli-light.png" width="720" alt="終端機裡 mu 的歡迎畫面：μ 標記，「mu v0.3.7, judgment-first coding agent, built on pi 1.4.0」，接著是判定器（免費的 Jev 1.13，321 毫秒回答，判定點已啟用）、模型（MiMo v2.6 Pro，推理強度 high）和工作目錄，以及值得記住的幾個按鍵。">
+    <img src="cli-light.png" width="720" alt="終端機裡 mu 的歡迎畫面：μ 標記，「mu v0.3.8, judgment-first coding agent, built on pi 1.4.0」，接著是判定器（免費的 Jev 1.13，288 毫秒回答，判定點已啟用）、模型（MiMo v2.6 Pro，推理強度 high）和工作目錄，以及值得記住的幾個按鍵。">
   </picture>
 </p>
 
