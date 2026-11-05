@@ -1551,8 +1551,8 @@ const DESCRIBED: HarnessManifest = {
 					max: 20,
 					label: { zh: "同一调用重复几次算打转", en: "Repeats that count as a loop" },
 					help: {
-						zh: "输入完全相同、结果也完全相同才算同一调用；分段读同一个文件不算。",
-						en: "Only the same input with the same result counts as the same call; paging through a file does not.",
+						zh: "输入完全相同、结果也完全相同才算同一调用；分段读同一个文件不算。被拦下、没有执行的调用，输入相同就算。到这个次数提醒一次，再多 2 次、5 次时各提醒一次，一次比一次直接。",
+						en: "Only the same input with the same result counts as the same call; paging through a file does not. A call that was refused and never ran counts by its input alone. The monitor says so at this many, and again 2 and 5 repeats later, more plainly each time.",
 					},
 				},
 				{
