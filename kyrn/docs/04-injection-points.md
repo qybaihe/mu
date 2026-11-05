@@ -140,7 +140,8 @@
 - 角色就是 pi subagent 示例的那种 markdown 文件（frontmatter：`name` / `description` / `tools` / `model`，正文是 system prompt），KYRN 多认一个 `thinking`。为 pi 写的 agent 文件可以原样放进 `~/.kyrn/agent/agents/`；同名覆盖内置。**不读项目目录里的 agent 文件**：那是一段 system prompt，不能让克隆下来的仓库提供。
 - 内置五个角色（`packages/kyrn-judge/agents/`）：`scout` 只读侦察、`planner` 出计划、`worker` 全工具实现、`reviewer` 只读审查、`browser` 只带 `browse`。内置角色不钉模型，模型和思考强度交给判断模型按任务定。
 - 零配置可用：没有 `kyrn.json` 也能跑（内置角色 + 当前会话模型 + 判断模型定思考强度）。配了 `features.swarm.models` 梯队后，容易的任务自动落到便宜模型上。
-- 子进程：`pi -p --no-session --thinking <t> --model <m> --tools <角色的工具> --append-system-prompt <角色正文的临时文件> -e <父进程的扩展> "Task: …"`。命令行上的 `-e` 不在任何 settings 里，所以要显式传给子进程，否则子代理里没有 `browse` / `locate`。
+- 子进程：`pi --mode json -p --session <子会话文件> --thinking <t> --model <m> --tools <角色的工具> --append-system-prompt <角色正文的临时文件> -e <父进程的扩展> "Task: …"`。命令行上的 `-e` 不在任何 settings 里，所以要显式传给子进程，否则子代理里没有 `browse` / `locate`。
+- 子会话：父会话落盘时，子代理的会话放在 `<agentDir>/subagents/<父会话 id>/`，父会话里记一条 `kyrn.subagent-session`（tool call id、名字、文件路径）；父会话不落盘时，子代理用 `--no-session`。见 `features/subagent-sessions.md`。
 - `/agents` 列出所有角色、来源、工具和模型梯队。
 - **实测**：一次 `delegate` 两个未点名的任务 → "找 CascadeJudge 在哪" 被路由到 `scout` + `gpt-5.6-terra`；"去 MDN 查 WeakSet" 落到默认 `worker`（Laya 没把它归到 browser，但 worker 也带 `browse`，任务照样完成）。两个答案都对，总耗时 69 s。
 
