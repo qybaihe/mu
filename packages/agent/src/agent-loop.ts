@@ -533,13 +533,49 @@ async function executeToolCalls(
 	emit: AgentEventSink,
 ): Promise<ExecutedToolCallBatch> {
 	const toolCalls = assistantMessage.content.filter((c) => c.type === "toolCall");
-	const hasSequentialToolCall = toolCalls.some(
-		(tc) => currentContext.tools?.find((t) => t.name === tc.name)?.executionMode === "sequential",
-	);
-	if (config.toolExecution === "sequential" || hasSequentialToolCall) {
+	if (config.toolExecution === "sequential") {
 		return executeToolCallsSequential(currentContext, assistantMessage, toolCalls, config, signal, emit);
 	}
-	return executeToolCallsParallel(currentContext, assistantMessage, toolCalls, config, signal, emit);
+	// mu: a sequential tool is a barrier in the batch rather than a reason to run all of it one call at a time. The
+	// calls before it have ended when it starts, and the calls after it start when it has ended; calls between two
+	// barriers still run in parallel. A batch that writes a file and then runs it runs in that order, and the reads
+	// around the write stay concurrent.
+	const isSequential = (toolCall: AgentToolCall) =>
+		currentContext.tools?.find((t) => t.name === toolCall.name)?.executionMode === "sequential";
+	if (!toolCalls.some(isSequential)) {
+		return executeToolCallsParallel(currentContext, assistantMessage, toolCalls, config, signal, emit);
+	}
+	const messages: ToolResultMessage[] = [];
+	let terminate = true;
+	for (const segment of barrierSegments(toolCalls, isSequential)) {
+		const batch = await executeToolCallsParallel(currentContext, assistantMessage, segment, config, signal, emit);
+		messages.push(...batch.messages);
+		terminate &&= batch.terminate;
+		if (signal?.aborted) {
+			break;
+		}
+	}
+	return { messages, terminate: messages.length > 0 && terminate };
+}
+
+/** mu: the batch cut at its sequential calls, each of which is a segment of its own, in the model's order. */
+function barrierSegments(
+	toolCalls: AgentToolCall[],
+	isSequential: (toolCall: AgentToolCall) => boolean,
+): AgentToolCall[][] {
+	const segments: AgentToolCall[][] = [];
+	let open: AgentToolCall[] = [];
+	for (const toolCall of toolCalls) {
+		if (!isSequential(toolCall)) {
+			open.push(toolCall);
+			continue;
+		}
+		if (open.length > 0) segments.push(open);
+		segments.push([toolCall]);
+		open = [];
+	}
+	if (open.length > 0) segments.push(open);
+	return segments;
 }
 
 type ExecutedToolCallBatch = {

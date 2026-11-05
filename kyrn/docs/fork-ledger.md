@@ -529,4 +529,13 @@ A `// mu:` comment next to a change in code says the same thing in place.
   - `packages/coding-agent/test/suite/provider-models-selector.test.ts`
   - `packages/coding-agent/test/suite/rpc-models-signed-out-elsewhere.test.ts`
 
+### M50 A sequential tool is a barrier in a batch of tool calls
+
+- **Files**
+  - `packages/agent/src/agent-loop.ts`
+- **Why**: pi runs a batch of tool calls in parallel, and one call of a tool that declares `executionMode: "sequential"` makes the whole batch run one call at a time. A tool that changes files has to declare it for a batch like `[write run.sh, bash "chmod +x run.sh && ./run.sh"]` to run in order, and then every read and command in such a batch loses its concurrency. In 1341 Terminal-Bench sessions of mu, 6212 of 19074 tool-calling turns sent two calls or more, 481 of those had an edit or a write, and in 89 a later call named the file an earlier edit or write changed. `executeToolCalls()` now cuts the batch at its sequential calls (`barrierSegments()`): the calls before one have ended when it starts, the calls after it start when it has ended, and the calls between two of them run in parallel as before. Results stay in the model's order.
+- **In a merge**: Keep the segment loop in `executeToolCalls()` and `barrierSegments()`. If upstream changes how a batch runs (`executeToolCallsParallel()`, `executeToolCallsSequential()`), keep a sequential call running alone, after the calls before it, without serializing the rest of the batch. `config.toolExecution === "sequential"` still runs everything one call at a time.
+- **Tests**
+  - `packages/agent/test/agent-loop.test.ts`
+
 ## Retired
