@@ -507,7 +507,7 @@ p 0.05). Do not edit by hand. A section that changes needs a new `version` in it
 - no answer: {"withinTask":null,"unrelated":[],"judged":2}
 - the judge failed: {"withinTask":null,"unrelated":[],"judged":0} (fallback)
 
-## swarm.routing v3
+## swarm.routing v4
 
 - `agent` (choice), the others high:
   - worker: 0.3–0.4 → {"strength":1,"thinking":"high","agent":null}; 0.5–0.99 → {"strength":1,"thinking":"high","agent":"worker"}; without p → {"strength":1,"thinking":"high","agent":"worker"}
