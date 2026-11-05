@@ -109,7 +109,7 @@ const DecisionSchema = Type.Object({
 
 const PermissionModeSchema = Type.Union([Type.Literal("full"), Type.Literal("judge"), Type.Literal("ask")]);
 
-/** `PermissionOutcome` and `JudgmentMark` in permissions.ts. */
+/** `PermissionOutcome` and `JudgmentMark` in permissions.ts, and `NudgeFollowed` in nudge-outcome.ts. */
 const OutcomeSchema = Type.Union([
 	Type.Object({
 		kind: Type.Literal("permission"),
@@ -138,6 +138,14 @@ const OutcomeSchema = Type.Union([
 		judged: Type.Optional(Type.Unknown()),
 		mark: Type.Literal("wrong"),
 		note: Type.Optional(Type.String()),
+	}),
+	Type.Object({
+		kind: Type.Literal("followed"),
+		ledgerId: Type.String(),
+		specId: Type.String(),
+		judged: Type.Optional(Type.Unknown()),
+		followed: Type.Union([Type.Literal("acted"), Type.Literal("ended")]),
+		calls: Type.Number(),
 	}),
 ]);
 
@@ -220,11 +228,11 @@ export const ENTRY_TYPES: readonly EntryType[] = [
 	{
 		type: "kyrn.outcome",
 		kind: "entry",
-		version: 1,
-		writers: [features("permissions"), features("commands")],
+		version: 2,
+		writers: [features("permissions"), features("commands"), features("nudge-outcome")],
 		readers: [DESKTOP_REDUCER, LEDGER_CLI, `/ledger: ${features("commands")}`],
 		summary:
-			"What the user did about a judgment: their answer to the question it sent them, or a mark that it was wrong.",
+			"What became of a judgment: the user's answer to the question it sent them, their mark that it was wrong, or what the agent did with the nudge it sent.",
 		schema: OutcomeSchema,
 	},
 	{

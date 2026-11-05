@@ -1,9 +1,11 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { fauxAssistantMessage, fauxToolCall } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
+import { Value } from "typebox/value";
 import { afterEach, describe, expect, it } from "vitest";
 import { createHarness, type Harness } from "../../coding-agent/test/suite/harness.ts";
 import { parseConfig } from "../src/config.ts";
+import { ENTRY_TYPES } from "../src/entries.ts";
 import type { NudgeFollowed } from "../src/extension/features/nudge-outcome.ts";
 import { OUTCOME_ENTRY } from "../src/extension/features/permissions.ts";
 import { createKyrnJudgeExtension } from "../src/extension/kyrn-judge.ts";
@@ -85,6 +87,9 @@ describe("what the agent did with a nudge", () => {
 				calls: 1,
 			},
 		]);
+		// The desktop app and mu ledger read kyrn.outcome: the record fits the schema they are written against.
+		const schema = ENTRY_TYPES.find((entry) => entry.type === OUTCOME_ENTRY)?.schema;
+		expect(schema && Value.Check(schema, outcomes[0])).toBe(true);
 	});
 
 	it("records that it ended again without a tool call", async () => {

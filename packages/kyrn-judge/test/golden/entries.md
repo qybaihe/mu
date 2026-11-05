@@ -27,7 +27,7 @@ without one.
 | `kyrn.monitor` | entry | src/extension/features/monitor.ts | - | What the drift check or the loop rule said, or in shadow mode would have said: the record a shadow run is judged by. |
 | `kyrn.notice` | message | src/extension/features/notify.ts | - | An event the notify feature passes on to the model, now or with the next turn. |
 | `kyrn.nudge` | message | src/extension/features/continuation.ts; src/extension/features/completion.ts | - | Sends a run that stopped short, or left a change unverified, back to work. |
-| `kyrn.outcome` | entry | src/extension/features/permissions.ts; src/extension/features/commands.ts | desktop: nativeHost/reducer.ts; mu ledger: kyrn/bin/kyrn-ledger; /ledger: src/extension/features/commands.ts | What the user did about a judgment: their answer to the question it sent them, or a mark that it was wrong. |
+| `kyrn.outcome` | entry | src/extension/features/permissions.ts; src/extension/features/commands.ts; src/extension/features/nudge-outcome.ts | desktop: nativeHost/reducer.ts; mu ledger: kyrn/bin/kyrn-ledger; /ledger: src/extension/features/commands.ts | What became of a judgment: the user's answer to the question it sent them, their mark that it was wrong, or what the agent did with the nudge it sent. |
 | `kyrn.recovery` | message | src/extension/features/recovery.ts | - | Which calls an interruption left without a result, and what to check before running them again. |
 | `kyrn.rewind` | message | src/extension/features/checkpoint.ts | - | The lesson of a rewind, for the model to start over with. |
 | `kyrn.rewound` | entry | src/extension/features/checkpoint.ts | - | A rewind that happened, with the snapshot that undoes it. |
@@ -657,7 +657,7 @@ A message. No schema: no other program reads it.
 
 A message. No schema: no other program reads it.
 
-## kyrn.outcome v1
+## kyrn.outcome v2
 
 A entry, read by another program:
 
@@ -818,6 +818,44 @@ A entry, read by another program:
 				},
 				"note": {
 					"type": "string"
+				}
+			}
+		},
+		{
+			"type": "object",
+			"required": [
+				"kind",
+				"ledgerId",
+				"specId",
+				"followed",
+				"calls"
+			],
+			"properties": {
+				"kind": {
+					"type": "string",
+					"const": "followed"
+				},
+				"ledgerId": {
+					"type": "string"
+				},
+				"specId": {
+					"type": "string"
+				},
+				"judged": {},
+				"followed": {
+					"anyOf": [
+						{
+							"type": "string",
+							"const": "acted"
+						},
+						{
+							"type": "string",
+							"const": "ended"
+						}
+					]
+				},
+				"calls": {
+					"type": "number"
 				}
 			}
 		}
