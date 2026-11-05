@@ -10634,6 +10634,19 @@
 			"options": []
 		},
 		{
+			"name": "interrupted",
+			"title": {
+				"zh": "你打断的回复",
+				"en": "Replies you stop"
+			},
+			"summary": {
+				"zh": "你在回复写到一半时打断它，pi 会把整条回复从下次发给模型的内容里去掉，于是你说「停，展开第二点」时，模型手里没有第二点。mu 把你已经看到的那部分文字作为只给模型看的消息还给它，不带推理过程和工具调用。mu 自己掐断的回复（长时间只思考、违反规则）不在此列，它们各自会说明。",
+				"en": "When you stop a reply while it's being written, pi leaves the whole reply out of what the model is sent next, so after \"stop, and expand your second point\" the model has no second point. mu gives the model back the text you saw, in a message only the model reads, without the reasoning or tool calls. Replies mu cuts itself (thinking too long, breaking a rule) are left out: those say what they cut."
+			},
+			"defaultEnabled": true,
+			"options": []
+		},
+		{
 			"name": "confine",
 			"title": {
 				"zh": "写入沙箱（实验）",

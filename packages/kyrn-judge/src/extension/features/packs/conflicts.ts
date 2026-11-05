@@ -172,6 +172,8 @@ export function conflictsPack(shared: PackShared, options: { maxSideLines: numbe
 			runtime.pi.registerTool({
 				name: "conflicts_resolve",
 				label: "Resolve conflicts",
+				// It changes files: a call after it in the same batch starts once it has ended.
+				executionMode: "sequential",
 				description:
 					"Resolve one conflicted file: give the resolved text of each of its conflict blocks, or take one side for the whole file. When no block is left the file is marked resolved (git add). Never commits.",
 				parameters: Type.Object({

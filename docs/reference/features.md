@@ -586,6 +586,12 @@ On by default: yes.
 
 On by default: yes.
 
+## interrupted
+
+**Replies you stop.** When you stop a reply while it's being written, pi leaves the whole reply out of what the model is sent next, so after "stop, and expand your second point" the model has no second point. mu gives the model back the text you saw, in a message only the model reads, without the reasoning or tool calls. Replies mu cuts itself (thinking too long, breaking a rule) are left out: those say what they cut.
+
+On by default: yes.
+
 ## confine
 
 **Write sandbox (experimental).** The agent's bash commands, background jobs and the programs it debugs can write only to the project, the temporary folders and package caches, enforced by the operating system; the project's .git/hooks and .git/config are read-only. Seatbelt on macOS, bubblewrap on Linux, none on Windows. When it cannot start (no bubblewrap, user namespaces turned off), every command is refused rather than run unconfined. The judge and the permission modes ask as before. A command that must write elsewhere (git config, git remote add) can ask to run outside the sandbox, once. In every permission mode, Full access included, the judge decides, and asks you when it's unsure (in Ask first, you decide). It's never allowed for the whole conversation.

@@ -45,10 +45,17 @@ const SCORES = {
 	},
 } satisfies Questions;
 
+/**
+ * Reasoning rated at or above this gets "high" thinking. Small and large judges alike rate a routine multi-step task
+ * a little over "A lot" (2), so "high" starts short of "Deep multi-step reasoning" (3) but above 2.2.
+ */
+export const HIGH_THINKING_FROM = 2.4;
+
 export const swarmRouting = defineDecision({
 	id: "swarm.routing",
 	// 3: the ratings are asked only when they can pick a model or a thinking level.
-	version: 3,
+	// 4: "high" thinking from reasoning 2.4 (was 2.2).
+	version: 4,
 	cacheImpact: "none",
 	latency: "inline",
 	// A delegated task has no "unchanged behaviour" to fall back to: the judge routes in shadow too.
@@ -77,7 +84,7 @@ export const swarmRouting = defineDecision({
 		const depth = reasoning?.type === "score" ? reasoning.score : 1.5;
 		return {
 			strength: Math.min(1, Math.max(0, hardness / 3)),
-			thinking: depth >= 2.2 ? "high" : depth >= 1.1 ? "medium" : "low",
+			thinking: depth >= HIGH_THINKING_FROM ? "high" : depth >= 1.1 ? "medium" : "low",
 			agent: agent?.type === "choice" ? (pickChoice(agent, { minProbability: 0.5 }) ?? null) : null,
 		};
 	},
