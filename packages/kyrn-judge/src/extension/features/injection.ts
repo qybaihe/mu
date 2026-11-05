@@ -11,6 +11,7 @@ import {
 } from "../../decisions/tool-injection.ts";
 import { clip, failOpen, type KyrnRuntime, textOf, within } from "../runtime.ts";
 import { UNTRUSTED } from "./browser.ts";
+import type { RecallDetails } from "./recall.ts";
 import { registerToolDescriptions } from "./tool-descriptions.ts";
 import { SEARCH_UNTRUSTED } from "./web.ts";
 
@@ -86,7 +87,8 @@ export function screenedFrom(text: string): number {
 /**
  * tool.injection: what a web page, a search, an MCP server or a shell command that fetches from another machine
  * (`curl`, `gh issue view`) hands the agent is read before the model reads it, and passages that carry instructions
- * aimed at an AI are withheld (see decisions/tool-injection.ts). Registered before
+ * aimed at an AI are withheld (see decisions/tool-injection.ts). So is the rest of a cut page when `recall` reads it
+ * back, the part of it no screening read before. Registered before
  * admission control, so what it archives is the screened text, and before the MCP feature, whose label then stands
  * in front of the screened result.
  *
@@ -210,17 +212,26 @@ export function registerInjection(runtime: KyrnRuntime): void {
 			runtime.touch(ctx);
 			const toolName = "toolName" in event ? String(event.toolName) : "";
 			const command = typeof event.input.command === "string" ? event.input.command : "";
-			const shell = options.shell.includes(toolName) && !screened(toolName);
-			if (shell ? !fetchesOutside(command, options.fetchCommands) : !screened(toolName)) return undefined;
+			// A page read back past what the model was shown: no screening has read that part yet.
+			const recalled = toolName === "recall" ? (event.details as Partial<RecallDetails> | undefined) : undefined;
+			const shell = !recalled && options.shell.includes(toolName) && !screened(toolName);
+			const outside = recalled
+				? recalled.unscreened === true && typeof recalled.tool === "string" && screened(recalled.tool)
+				: shell
+					? fetchesOutside(command, options.fetchCommands)
+					: screened(toolName);
+			if (!outside) return undefined;
 			const mode = runtime.mode(toolInjection.id);
 			if (mode === "off" || event.content.some((block) => block.type !== "text")) return undefined;
 			const text = textOf(event.content);
 			const from = screenedFrom(text);
 			const pieces = passages(text.slice(from), options.passageChars);
 			if (pieces.length === 0) return undefined;
-			const source = shell
-				? `output of the shell command \`${clip(command, 160)}\`, fetched from outside this machine`
-				: `result of the ${toolName} tool, from outside this machine`;
+			const source = recalled
+				? `result of the ${recalled.tool} tool, from outside this machine, read back with recall`
+				: shell
+					? `output of the shell command \`${clip(command, 160)}\`, fetched from outside this machine`
+					: `result of the ${toolName} tool, from outside this machine`;
 			if (mode !== "active") {
 				void judgeAll(source, pieces, undefined).catch(() => {});
 				return undefined;

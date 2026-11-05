@@ -1,6 +1,7 @@
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import type { Decision } from "../../decision.ts";
 import { contextForget, type ForgetOutcome } from "../../decisions/context-forget.ts";
+import { canRecall, recallCall } from "../full-output.ts";
 import { failOpen, type KyrnRuntime, textOf, within } from "../runtime.ts";
 import { describeCall } from "./admission.ts";
 
@@ -45,9 +46,10 @@ function isForgettingState(value: unknown): value is ForgettingState {
 	);
 }
 
-function shrink(text: string, call: string): string {
+/** `then`: what the note tells the model to do for the rest, `recall` when it has the tool. */
+function shrink(text: string, call: string, then: string): string {
 	const omitted = text.length - 2 * KEEP_EDGE_CHARS;
-	return `${text.slice(0, KEEP_EDGE_CHARS)}\n[mu: ${omitted} chars of old output from "${call}" omitted; run it again if you need them]\n${text.slice(-KEEP_EDGE_CHARS)}`;
+	return `${text.slice(0, KEEP_EDGE_CHARS)}\n[mu: ${omitted} chars of old output from "${call}" omitted; ${then}]\n${text.slice(-KEEP_EDGE_CHARS)}`;
 }
 
 /**
@@ -225,6 +227,8 @@ export function registerForgetting(runtime: KyrnRuntime): void {
 			}
 
 			if (mode !== "active" || replaced.size === 0) return undefined;
+			// Forgetting never changes the session, so recall can read back any result shrunk here.
+			const recall = canRecall(runtime);
 			let changed = false;
 			const next = messages.map((message) => {
 				if (message.role !== "toolResult") return message;
@@ -232,7 +236,8 @@ export function registerForgetting(runtime: KyrnRuntime): void {
 				const replacement = replaced.get(result.toolCallId);
 				if (!replacement) return message;
 				const text = textOf(result.content);
-				const body = replacement === "shrink" ? shrink(text, result.toolName) : replacement;
+				const then = recall ? `${recallCall(result.toolCallId)} reads them back` : "run it again if you need them";
+				const body = replacement === "shrink" ? shrink(text, result.toolName, then) : replacement;
 				if (body.length >= text.length) return message;
 				changed = true;
 				// This runs on every request; count each result once.
