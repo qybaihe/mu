@@ -295,6 +295,15 @@ function registerKyrn(pi: ExtensionAPI, options: KyrnJudgeExtensionOptions): voi
 	for (const [name, register] of features) {
 		if (!options.only || options.only.includes(name)) register(runtime);
 	}
+	// What was put back on the model's list since by something other than the masks (another extension, a tool that
+	// sets the list itself) comes off again before the next request.
+	pi.on(
+		"turn_start",
+		failOpen(() => {
+			runtime.toolMasks.apply();
+			return undefined;
+		}),
+	);
 	// Every feature has read its options by now. What mu.json sets that no feature takes is said, not ignored: in
 	// /doctor and /status, and once when the session starts.
 	if (!options.only) {
