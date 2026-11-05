@@ -2784,8 +2784,8 @@ const DESCRIBED: HarnessManifest = {
 					default: true,
 					label: { zh: "子文件夹里的 AGENTS.md 和 CLAUDE.md", en: "AGENTS.md and CLAUDE.md in subfolders" },
 					help: {
-						zh: "项目文件夹下面某个文件夹自己的说明（比如 monorepo 里一个包的 AGENTS.md），在工具第一次读写那里的文件时随结果交给模型一次，和 Claude Code、Codex 一样。项目文件夹本身的由 pi 在启动时加载。node_modules 里的不算。",
-						en: "A folder's own instructions below the project folder, such as one package's AGENTS.md in a monorepo, are passed to the model once, with the result of the first tool that reads or changes a file there, as Claude Code and Codex do. The project folder's own are loaded by pi at the start. Those inside node_modules are left out.",
+						zh: "项目文件夹下面某个文件夹自己的说明（比如 monorepo 里一个包的 AGENTS.md），在工具第一次读写那里的文件时随结果交给模型一次。项目文件夹本身的由 pi 在启动时加载。node_modules 里的不算。",
+						en: "Instructions in a folder below the project folder, such as one package's AGENTS.md in a monorepo, are passed to the model once, with the result of the first tool that reads or changes a file there. The project folder's own are loaded by pi at the start. Those inside node_modules are left out.",
 					},
 				},
 				{

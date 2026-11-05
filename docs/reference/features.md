@@ -530,7 +530,7 @@ On by default: yes.
 | `rules` | `true` | Inherit rules. |
 | `skills` | `true` | Inherit skills. |
 | `mcp` | `true` | Inherit MCP servers. When off, only the servers under mcp.servers in mu.json are used. |
-| `folders` | `true` | AGENTS.md and CLAUDE.md in subfolders. A folder's own instructions below the project folder, such as one package's AGENTS.md in a monorepo, are passed to the model once, with the result of the first tool that reads or changes a file there, as Claude Code and Codex do. The project folder's own are loaded by pi at the start. Those inside node_modules are left out. |
+| `folders` | `true` | AGENTS.md and CLAUDE.md in subfolders. Instructions in a folder below the project folder, such as one package's AGENTS.md in a monorepo, are passed to the model once, with the result of the first tool that reads or changes a file there. The project folder's own are loaded by pi at the start. Those inside node_modules are left out. |
 | `maxRuleChars` | `4000` chars | Max size of a file-scoped rule passed along. The rest stays in the file for the model to read. Range 500 to 20000. |
 | `maxAlwaysChars` | `16000` chars | Budget for always-on rules. Always-on rules that don't fit are listed by description instead, so they can't bloat the prompt. Range 0 to 100000. |
 
