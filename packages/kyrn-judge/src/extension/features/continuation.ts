@@ -143,6 +143,7 @@ export function registerContinuation(runtime: KyrnRuntime): void {
 			turn.continued += 1;
 			runtime.nudgedEnds.add(event);
 			nudgedIn = turn;
+			runtime.nudges?.sent(decision, event);
 			pi.sendMessage(
 				{ customType: CONTINUE_MESSAGE, content: SAID[decision.outcome], display: true },
 				{ triggerTurn: true },
