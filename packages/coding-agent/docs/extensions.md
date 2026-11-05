@@ -2288,7 +2288,7 @@ async execute(toolCallId, params) {
 
 **Structured output:** Declare `outputSchema` and return a matching `structuredContent` when the result is data. The model still receives `content`; programmatic callers such as codemode scripts receive `structuredContent` instead of the text. Tools without `outputSchema` are passed to scripts as their text content. To report a failure that still carries data, return the result with `isError: true` instead of throwing: the model sees an error, and scripts still receive `structuredContent`.
 
-**Execution mode:** Tool calls from one assistant message run in parallel by default. Set `executionMode: "sequential"` when a tool must not run concurrently with other calls, for example because it shares mutable in-memory state.
+**Execution mode:** Tool calls from one assistant message run in parallel by default. Set `executionMode: "sequential"` when a tool must not run concurrently with other calls, for example because it shares mutable in-memory state or changes files. Such a call runs alone: the calls before it in the message have ended when it starts, and the calls after it start when it has ended; the others still run in parallel. The built-in `edit` and `write` are sequential.
 
 **Other definition fields:**
 

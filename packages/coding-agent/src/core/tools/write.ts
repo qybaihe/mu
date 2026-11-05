@@ -53,6 +53,8 @@ export function createWriteToolDefinition(
 		promptSnippet: writeToolSystemPromptContribution.snippet,
 		promptGuidelines: [...writeToolSystemPromptContribution.guidelines],
 		parameters: writeSchema,
+		// mu: a barrier in its batch (M50): a call after it, such as running the file, starts once the file is written.
+		executionMode: "sequential",
 		constrainedSampling: { type: "json_schema", strict: "prefer" },
 		async execute(
 			_toolCallId,

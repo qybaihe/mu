@@ -278,6 +278,8 @@ export class Isolation {
 		runtime.pi.registerTool({
 			name: "apply_patch_from",
 			label: "Apply patch",
+			// It changes files: a call after it in the same batch starts once it has ended.
+			executionMode: "sequential",
 			description:
 				'Bring the patch of an isolated subagent into the working tree with git apply --3way: all of it or, on a conflict, none of it. Nothing is staged or committed. Look first with action "stat" (files) or "diff" (one file).',
 			parameters: Type.Object({

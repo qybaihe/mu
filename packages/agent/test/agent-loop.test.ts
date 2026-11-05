@@ -1032,6 +1032,73 @@ describe("agentLoop with AgentMessage", () => {
 		expect(executionOrder).toContain("fast:b");
 	});
 
+	// mu: a sequential tool is a barrier, not a switch that makes the whole batch sequential.
+	it("runs the calls between sequential tools in parallel, and a sequential tool between the calls around it", async () => {
+		const toolSchema = obj({ value: str() });
+		const timeline: string[] = [];
+		const run = async (name: string, value: string) => {
+			timeline.push(`start:${value}`);
+			await new Promise((resolve) => setTimeout(resolve, 20));
+			timeline.push(`end:${value}`);
+			return { content: [{ type: "text" as const, text: `${name}: ${value}` }], details: { value } };
+		};
+		const fastTool: AgentTool<typeof toolSchema, { value: string }> = {
+			name: "fast",
+			label: "Fast",
+			description: "Fast tool",
+			parameters: toolSchema,
+			execute: (_toolCallId, params) => run("fast", params.value),
+		};
+		const writeTool: AgentTool<typeof toolSchema, { value: string }> = {
+			name: "write",
+			label: "Write",
+			description: "Write tool",
+			parameters: toolSchema,
+			executionMode: "sequential",
+			execute: (_toolCallId, params) => run("write", params.value),
+		};
+		const context: AgentContext = { messages: [], tools: [fastTool, writeTool] };
+		const config: AgentLoopConfig = { model: createModel(), convertToLlm: identityConverter };
+
+		let callIndex = 0;
+		const stream = agentLoop([createUserMessage("run them")], context, config, undefined, () => {
+			const mockStream = createAssistantMessageEventStream();
+			queueMicrotask(() => {
+				const message =
+					callIndex === 0
+						? createAssistantMessage(
+								["a", "b", "w", "c", "d"].map((value, index) => ({
+									type: "toolCall" as const,
+									id: `tool-${index}`,
+									name: value === "w" ? "write" : "fast",
+									arguments: { value },
+								})),
+								"toolUse",
+							)
+						: createAssistantMessage([{ type: "text", text: "done" }]);
+				mockStream.push({ type: "done", reason: callIndex === 0 ? "toolUse" : "stop", message });
+				callIndex++;
+			});
+			return mockStream;
+		});
+		const results: string[] = [];
+		for await (const event of stream) {
+			if (event.type === "message_end" && event.message.role === "toolResult") {
+				results.push(event.message.toolCallId);
+			}
+		}
+
+		const at = (entry: string) => timeline.indexOf(entry);
+		// a and b overlap, and so do c and d.
+		expect(at("start:b")).toBeLessThan(at("end:a"));
+		expect(at("start:d")).toBeLessThan(at("end:c"));
+		// The write starts after a and b ended, and c and d start after it ended.
+		expect(at("start:w")).toBeGreaterThan(Math.max(at("end:a"), at("end:b")));
+		expect(at("end:w")).toBeLessThan(Math.min(at("start:c"), at("start:d")));
+		// The results stay in the model's order.
+		expect(results).toEqual(["tool-0", "tool-1", "tool-2", "tool-3", "tool-4"]);
+	});
+
 	it("should allow parallel execution when all tools have executionMode=parallel", async () => {
 		const toolSchema = obj({ value: str() });
 		let firstResolved = false;
